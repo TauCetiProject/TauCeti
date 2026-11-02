@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Polygon.DoublePoint
 public import Mathlib.Topology.Instances.Matrix
 public import Mathlib.Topology.Instances.Sign
+public import Mathlib.Topology.Algebra.Module.FiniteDimension
+public import Mathlib.Topology.Algebra.Group.Torsor
 
 /-!
 # Stability of transverse polygon crossings
@@ -22,9 +24,12 @@ perturbations. Both the over/under choice and the sign of the ordered triple of 
 are unchanged. This is the local control of ordinary crossings needed when comparing diagrams
 along a deformation; it does not address the singular events giving Reidemeister moves.
 
-We work in coordinate three-space, with its standard orientation. The equation is
-`edgePath i s = edgePath j t + a • d`, so `a > 0` means that the first strand is over when
-viewed from the side into which `d` points.
+We work in an affine three-space with a chosen basis `b` of its vector space. The equation is
+`edgePath i s = a • d +ᵥ edgePath j t`, so `a > 0` means that the first strand is over when
+viewed from the side into which `d` points. The preserved orientation sign is computed by
+`b.det`, as in the polygon Gauss-code API. Coordinate three-space is recovered by taking
+`b = Pi.basisFun ℝ (Fin 3)`. For continuity, the vector space is a Hausdorff topological real
+vector space and subtraction of affine points is continuous.
 
 ## References
 
@@ -34,71 +39,75 @@ viewed from the side into which `d` points.
 
 public section
 
-open Set Filter Topology Matrix
+open Set Filter Topology Matrix Module
 
 namespace Polygon
 
-variable {n : ℕ}
+variable {V A : Type*} [AddCommGroup V] [Module ℝ V] [AddTorsor V A] {n : ℕ}
 
-/-- The crossing system for edges `i`, `j`: its columns are the first edge direction, minus the
-second edge direction, and minus the viewing direction. -/
-def crossingMatrix (poly : Polygon (Fin 3 → ℝ) n) (d : Fin 3 → ℝ) (i j : Fin n) :
-    Matrix (Fin 3) (Fin 3) ℝ :=
-  (Matrix.of ![poly (finRotate n i) - poly i, -(poly (finRotate n j) - poly j), -d])ᵀ
+/-- The crossing system for edges `i`, `j` in the basis `b`: its columns are the first edge
+direction, minus the second edge direction, and minus the viewing direction. -/
+noncomputable def crossingMatrix (poly : Polygon A n) (b : Basis (Fin 3) ℝ V) (d : V)
+    (i j : Fin n) : Matrix (Fin 3) (Fin 3) ℝ :=
+  b.toMatrix ![poly (finRotate n i) -ᵥ poly i, -(poly (finRotate n j) -ᵥ poly j), -d]
 
 /-- The crossing coordinates `(s, t, a)`, satisfying
-`edgePath i s = edgePath j t + a • d` when the crossing system is nonsingular.
+`edgePath i s = a • d +ᵥ edgePath j t` when the crossing system is nonsingular.
 Outside that locus these are the values of Mathlib's totalized matrix inverse. -/
-noncomputable def crossingCoordinates (poly : Polygon (Fin 3 → ℝ) n) (d : Fin 3 → ℝ)
+noncomputable def crossingCoordinates (poly : Polygon A n) (b : Basis (Fin 3) ℝ V) (d : V)
     (i j : Fin n) : Fin 3 → ℝ :=
-  (poly.crossingMatrix d i j)⁻¹ *ᵥ (poly j - poly i)
+  (poly.crossingMatrix b d i j)⁻¹ *ᵥ b.equivFun (poly j -ᵥ poly i)
 
-/-- The determinant of the crossing system is the oriented volume of the ordered triple of
-the two edge directions and the viewing direction. The two minus signs cancel. -/
+/-- The determinant of the crossing system is the oriented volume in the basis `b` of the
+ordered triple of the two edge directions and the viewing direction. The two minus signs cancel. -/
 @[simp]
-theorem det_crossingMatrix (poly : Polygon (Fin 3 → ℝ) n) (d : Fin 3 → ℝ) (i j : Fin n) :
-    (poly.crossingMatrix d i j).det =
-      Matrix.det (Matrix.of
-        ![poly (finRotate n i) - poly i, poly (finRotate n j) - poly j, d]) := by
-  simp [crossingMatrix, Matrix.det_transpose, Matrix.det_fin_three]
-  ring
+theorem det_crossingMatrix (poly : Polygon A n) (b : Basis (Fin 3) ℝ V) (d : V)
+    (i j : Fin n) :
+    (poly.crossingMatrix b d i j).det =
+      b.det ![poly (finRotate n i) -ᵥ poly i, poly (finRotate n j) -ᵥ poly j, d] := by
+  simp [crossingMatrix, Basis.det_apply, Basis.toMatrix_apply, Matrix.det_fin_three,
+    -neg_vsub_eq_vsub_rev]
 
 /-- A transverse ordered triple of edge directions and viewing direction gives a nonsingular
 crossing system. -/
-theorem det_crossingMatrix_ne_zero {poly : Polygon (Fin 3 → ℝ) n} {d : Fin 3 → ℝ}
+theorem det_crossingMatrix_ne_zero {poly : Polygon A n} (b : Basis (Fin 3) ℝ V) {d : V}
     {i j : Fin n}
     (h : LinearIndependent ℝ
-      ![poly (finRotate n i) - poly i, poly (finRotate n j) - poly j, d]) :
-    (poly.crossingMatrix d i j).det ≠ 0 := by
-  rw [det_crossingMatrix]
-  exact isUnit_iff_ne_zero.mp ((Matrix.isUnit_iff_isUnit_det _).mp
-    (Matrix.linearIndependent_row_iff_isUnit.mp h))
+      ![poly (finRotate n i) -ᵥ poly i, poly (finRotate n j) -ᵥ poly j, d]) :
+    (poly.crossingMatrix b d i j).det ≠ 0 := by
+  rw [det_crossingMatrix, Basis.det_apply, ← Matrix.det_transpose]
+  apply isUnit_iff_ne_zero.mp
+  apply (Matrix.isUnit_iff_isUnit_det _).mp
+  apply Matrix.linearIndependent_row_iff_isUnit.mp
+  exact h.map' b.equivFun.toLinearMap (LinearMap.ker_eq_bot.mpr b.equivFun.injective)
 
-private theorem crossingMatrix_mulVec (poly : Polygon (Fin 3 → ℝ) n) (d : Fin 3 → ℝ)
-    (i j : Fin n) (c : Fin 3 → ℝ) :
-    (poly.crossingMatrix d i j) *ᵥ c =
-      c 0 • (poly (finRotate n i) - poly i) -
-        c 1 • (poly (finRotate n j) - poly j) - c 2 • d := by
+private theorem crossingMatrix_mulVec (poly : Polygon A n) (b : Basis (Fin 3) ℝ V)
+    (d : V) (i j : Fin n) (c : Fin 3 → ℝ) :
+    (poly.crossingMatrix b d i j) *ᵥ c =
+      b.equivFun (c 0 • (poly (finRotate n i) -ᵥ poly i) -
+        c 1 • (poly (finRotate n j) -ᵥ poly j) - c 2 • d) := by
   ext k
-  simp [crossingMatrix, Matrix.mulVec, dotProduct, Fin.sum_univ_three]
+  simp [crossingMatrix, Basis.toMatrix_apply, Basis.equivFun_apply,
+    Matrix.mulVec, dotProduct, Fin.sum_univ_three, -neg_vsub_eq_vsub_rev]
   ring
 
 /-- The linear system is exactly the equality of the two edge points up to displacement in
 the viewing direction. This characterization also holds for singular systems. -/
-theorem crossingMatrix_mulVec_eq_iff (poly : Polygon (Fin 3 → ℝ) n) (d : Fin 3 → ℝ)
-    (i j : Fin n) (c : Fin 3 → ℝ) :
-    (poly.crossingMatrix d i j) *ᵥ c = poly j - poly i ↔
-      poly.edgePath ℝ i (c 0) = poly.edgePath ℝ j (c 1) + c 2 • d := by
-  rw [crossingMatrix_mulVec]
-  simp only [edgePath, AffineMap.lineMap_apply, vsub_eq_sub, vadd_eq_add]
+theorem crossingMatrix_mulVec_eq_iff (poly : Polygon A n) (b : Basis (Fin 3) ℝ V)
+    (d : V) (i j : Fin n) (c : Fin 3 → ℝ) :
+    (poly.crossingMatrix b d i j) *ᵥ c = b.equivFun (poly j -ᵥ poly i) ↔
+      poly.edgePath ℝ i (c 0) = c 2 • d +ᵥ poly.edgePath ℝ j (c 1) := by
+  rw [crossingMatrix_mulVec, b.equivFun.injective.eq_iff]
+  rw [← (vsub_left_injective (poly i)).eq_iff]
+  simp only [edgePath, AffineMap.lineMap_apply, vadd_vsub_assoc, vsub_self, add_zero]
   constructor <;> intro h <;> linear_combination (norm := module) h
 
 /-- At a transverse pair of edges the crossing coordinates are the unique solution, including
 solutions outside the edges themselves. -/
-theorem crossingCoordinates_eq_iff {poly : Polygon (Fin 3 → ℝ) n} {d : Fin 3 → ℝ}
-    {i j : Fin n} (h : (poly.crossingMatrix d i j).det ≠ 0) (c : Fin 3 → ℝ) :
-    poly.crossingCoordinates d i j = c ↔
-      poly.edgePath ℝ i (c 0) = poly.edgePath ℝ j (c 1) + c 2 • d := by
+theorem crossingCoordinates_eq_iff {poly : Polygon A n} {b : Basis (Fin 3) ℝ V} {d : V}
+    {i j : Fin n} (h : (poly.crossingMatrix b d i j).det ≠ 0) (c : Fin 3 → ℝ) :
+    poly.crossingCoordinates b d i j = c ↔
+      poly.edgePath ℝ i (c 0) = c 2 • d +ᵥ poly.edgePath ℝ j (c 1) := by
   rw [← crossingMatrix_mulVec_eq_iff]
   constructor
   · intro hc
@@ -109,18 +118,21 @@ theorem crossingCoordinates_eq_iff {poly : Polygon (Fin 3 → ℝ) n} {d : Fin 3
       Matrix.nonsing_inv_mul _ (isUnit_iff_ne_zero.mpr h), Matrix.one_mulVec]
 
 /-- The points specified by the crossing coordinates have the same projection. -/
-theorem crossingCoordinates_projAlong_eq {poly : Polygon (Fin 3 → ℝ) n} {d : Fin 3 → ℝ}
-    {i j : Fin n} (h : (poly.crossingMatrix d i j).det ≠ 0) (p₀ : Fin 3 → ℝ) :
-    projAlong ℝ p₀ d (poly.edgePath ℝ i (poly.crossingCoordinates d i j 0)) =
-      projAlong ℝ p₀ d (poly.edgePath ℝ j (poly.crossingCoordinates d i j 1)) := by
-  have hc := (crossingCoordinates_eq_iff h (poly.crossingCoordinates d i j)).mp rfl
-  exact projAlong_eq_projAlong_iff.mpr ⟨poly.crossingCoordinates d i j 2, by
-    rw [hc, vsub_eq_sub, add_sub_cancel_left]⟩
+theorem crossingCoordinates_projAlong_eq {poly : Polygon A n} {b : Basis (Fin 3) ℝ V} {d : V}
+    {i j : Fin n} (h : (poly.crossingMatrix b d i j).det ≠ 0) (p₀ : A) :
+    projAlong ℝ p₀ d (poly.edgePath ℝ i (poly.crossingCoordinates b d i j 0)) =
+      projAlong ℝ p₀ d (poly.edgePath ℝ j (poly.crossingCoordinates b d i j 1)) := by
+  have hc := (crossingCoordinates_eq_iff h (poly.crossingCoordinates b d i j)).mp rfl
+  exact projAlong_eq_projAlong_iff.mpr ⟨poly.crossingCoordinates b d i j 2, by
+    rw [hc, vadd_vsub]⟩
 
 section Families
 
-variable {X : Type*} [TopologicalSpace X] {x : X}
-  {P : X → Polygon (Fin 3 → ℝ) n} {d : X → Fin 3 → ℝ} {i j : Fin n}
+variable [TopologicalSpace V] [IsTopologicalAddGroup V] [ContinuousSMul ℝ V] [T2Space V]
+  [TopologicalSpace A] [IsTopologicalAddTorsor A]
+  (b : Basis (Fin 3) ℝ V)
+  {X : Type*} [TopologicalSpace X] {x : X}
+  {P : X → Polygon A n} {d : X → V} {i j : Fin n}
 
 /-- The crossing matrix depends continuously on its four endpoints and the viewing direction.
 No simplicity or regularity assumption on the other edges is required. -/
@@ -130,15 +142,16 @@ theorem continuousAt_crossingMatrix
     (hj : ContinuousAt (fun y ↦ P y j) x)
     (hj' : ContinuousAt (fun y ↦ P y (finRotate n j)) x)
     (hd : ContinuousAt d x) :
-    ContinuousAt (fun y ↦ (P y).crossingMatrix (d y) i j) x := by
+    ContinuousAt (fun y ↦ (P y).crossingMatrix b (d y) i j) x := by
   apply continuousAt_pi.mpr
   intro k
   apply continuousAt_pi.mpr
   intro l
-  fin_cases l <;> simp only [crossingMatrix, Matrix.transpose_apply, Matrix.of_apply]
-  · exact (continuous_apply k).continuousAt.comp (hi'.sub hi)
-  · exact (continuous_apply k).continuousAt.comp ((hj'.sub hj).neg)
-  · exact (continuous_apply k).continuousAt.comp hd.neg
+  have hb := (continuous_apply k).comp (continuous_equivFun_basis b)
+  fin_cases l <;> simp only [crossingMatrix, Basis.toMatrix_apply]
+  · exact hb.continuousAt.comp (hi'.vsub hi)
+  · exact hb.continuousAt.comp ((hj'.vsub hj).neg)
+  · exact hb.continuousAt.comp hd.neg
 
 /-- The crossing parameters and signed separation depend continuously on moving endpoints and
 viewing direction at every transverse pair. -/
@@ -148,62 +161,66 @@ theorem continuousAt_crossingCoordinates
     (hj : ContinuousAt (fun y ↦ P y j) x)
     (hj' : ContinuousAt (fun y ↦ P y (finRotate n j)) x)
     (hd : ContinuousAt d x)
-    (h : ((P x).crossingMatrix (d x) i j).det ≠ 0) :
-    ContinuousAt (fun y ↦ (P y).crossingCoordinates (d y) i j) x := by
-  have hm := continuousAt_crossingMatrix hi hi' hj hj' hd
-  have hdetinv : ContinuousAt Ring.inverse ((P x).crossingMatrix (d x) i j).det := by
+    (h : ((P x).crossingMatrix b (d x) i j).det ≠ 0) :
+    ContinuousAt (fun y ↦ (P y).crossingCoordinates b (d y) i j) x := by
+  have hm := continuousAt_crossingMatrix b hi hi' hj hj' hd
+  have hdetinv : ContinuousAt Ring.inverse ((P x).crossingMatrix b (d x) i j).det := by
     rw [Ring.inverse_eq_inv']
     exact continuousAt_inv₀ h
   have hinv := (continuousAt_matrix_inv _ hdetinv).comp
-    (f := fun y ↦ (P y).crossingMatrix (d y) i j) hm
+    (f := fun y ↦ (P y).crossingMatrix b (d y) i j) hm
   exact (continuous_fst.matrix_mulVec continuous_snd).continuousAt.comp
-    (hinv.prodMk (hj.sub hi))
+    (hinv.prodMk ((continuous_equivFun_basis b).continuousAt.comp (hj.vsub hi)))
 
 /-- An interior transverse crossing with nonzero separation persists under small perturbations.
 The canonical crossing parameters remain interior, the system remains nonsingular, and both
-its oriented determinant sign and its over/under choice are unchanged. -/
+its oriented determinant sign in the basis `b` and its over/under choice are unchanged. -/
 theorem eventually_crossingCoordinates_mem_and_sign_eq
     (hi : ContinuousAt (fun y ↦ P y i) x)
     (hi' : ContinuousAt (fun y ↦ P y (finRotate n i)) x)
     (hj : ContinuousAt (fun y ↦ P y j) x)
     (hj' : ContinuousAt (fun y ↦ P y (finRotate n j)) x)
     (hd : ContinuousAt d x)
-    (h : ((P x).crossingMatrix (d x) i j).det ≠ 0)
-    (hs : (P x).crossingCoordinates (d x) i j 0 ∈ Ioo (0 : ℝ) 1)
-    (ht : (P x).crossingCoordinates (d x) i j 1 ∈ Ioo (0 : ℝ) 1)
-    (ha : (P x).crossingCoordinates (d x) i j 2 ≠ 0) :
+    (h : ((P x).crossingMatrix b (d x) i j).det ≠ 0)
+    (hs : (P x).crossingCoordinates b (d x) i j 0 ∈ Ioo (0 : ℝ) 1)
+    (ht : (P x).crossingCoordinates b (d x) i j 1 ∈ Ioo (0 : ℝ) 1)
+    (ha : (P x).crossingCoordinates b (d x) i j 2 ≠ 0) :
     ∀ᶠ y in 𝓝 x,
-      ((P y).crossingMatrix (d y) i j).det ≠ 0 ∧
-      (P y).crossingCoordinates (d y) i j 0 ∈ Ioo (0 : ℝ) 1 ∧
-      (P y).crossingCoordinates (d y) i j 1 ∈ Ioo (0 : ℝ) 1 ∧
-      SignType.sign ((P y).crossingCoordinates (d y) i j 2) =
-        SignType.sign ((P x).crossingCoordinates (d x) i j 2) ∧
-      SignType.sign (((P y).crossingMatrix (d y) i j).det) =
-        SignType.sign (((P x).crossingMatrix (d x) i j).det) := by
-  have hm : ContinuousAt (fun y ↦ ((P y).crossingMatrix (d y) i j).det) x :=
+      ((P y).crossingMatrix b (d y) i j).det ≠ 0 ∧
+      (P y).crossingCoordinates b (d y) i j 0 ∈ Ioo (0 : ℝ) 1 ∧
+      (P y).crossingCoordinates b (d y) i j 1 ∈ Ioo (0 : ℝ) 1 ∧
+      SignType.sign ((P y).crossingCoordinates b (d y) i j 2) =
+        SignType.sign ((P x).crossingCoordinates b (d x) i j 2) ∧
+      SignType.sign (b.det ![(P y) (finRotate n i) -ᵥ (P y) i,
+        (P y) (finRotate n j) -ᵥ (P y) j, d y]) =
+        SignType.sign (b.det ![(P x) (finRotate n i) -ᵥ (P x) i,
+          (P x) (finRotate n j) -ᵥ (P x) j, d x]) := by
+  have hm : ContinuousAt (fun y ↦ ((P y).crossingMatrix b (d y) i j).det) x :=
     continuous_id.matrix_det.continuousAt.comp
-      (continuousAt_crossingMatrix hi hi' hj hj' hd)
-  have hc (k : Fin 3) : ContinuousAt (fun y ↦ (P y).crossingCoordinates (d y) i j k) x :=
-    (continuous_apply k).continuousAt.comp (continuousAt_crossingCoordinates hi hi' hj hj' hd h)
+      (continuousAt_crossingMatrix b hi hi' hj hj' hd)
+  have hc (k : Fin 3) : ContinuousAt (fun y ↦ (P y).crossingCoordinates b (d y) i j k) x :=
+    (continuous_apply k).continuousAt.comp (continuousAt_crossingCoordinates b hi hi' hj hj' hd h)
   have hs' := (hc 0).eventually (isOpen_Ioo.mem_nhds hs)
   have ht' := (hc 1).eventually (isOpen_Ioo.mem_nhds ht)
-  have hsa : ContinuousAt (fun y ↦ SignType.sign ((P y).crossingCoordinates (d y) i j 2)) x :=
+  have hsa : ContinuousAt (fun y ↦ SignType.sign ((P y).crossingCoordinates b (d y) i j 2)) x :=
     (continuousAt_sign_of_ne_zero ha).comp
-      (f := fun y ↦ (P y).crossingCoordinates (d y) i j 2) (hc 2)
-  have hsm : ContinuousAt (fun y ↦ SignType.sign (((P y).crossingMatrix (d y) i j).det)) x :=
+      (f := fun y ↦ (P y).crossingCoordinates b (d y) i j 2) (hc 2)
+  have hsm : ContinuousAt (fun y ↦ SignType.sign (((P y).crossingMatrix b (d y) i j).det)) x :=
     (continuousAt_sign_of_ne_zero h).comp
-      (f := fun y ↦ ((P y).crossingMatrix (d y) i j).det) hm
+      (f := fun y ↦ ((P y).crossingMatrix b (d y) i j).det) hm
   have ha' := hsa.eventually ((isOpen_discrete _).mem_nhds (Set.mem_singleton _))
   have hm' := hsm.eventually ((isOpen_discrete _).mem_nhds (Set.mem_singleton _))
   filter_upwards [hm.eventually_ne h, hs', ht', ha', hm'] with y hy hs ht ha hm
-  exact ⟨hy, hs, ht, ha, hm⟩
+  exact ⟨hy, hs, ht, ha, by simpa only [det_crossingMatrix] using hm⟩
 
 /-- An ordinary crossing of a regular projection persists when its four endpoints and the
 viewing direction vary continuously. Near the original parameter there is a unique crossing of
 the same two edges, with interior parameters, the same sign of separation, and the same determinant
-sign. No continuity or regularity of the rest of the perturbed diagram is required. -/
+sign in the basis `b`. No continuity or regularity of the rest of the perturbed diagram is
+required. -/
 theorem IsRegularProjection.eventually_exists_crossing
-    {p₀ : Fin 3 → ℝ} (hπ : (P x).IsRegularProjection ℝ (projAlong ℝ p₀ (d x)))
+    {p₀ : A} (hπ : (P x).IsRegularProjection ℝ (projAlong ℝ p₀ (d x)))
+    (b : Basis (Fin 3) ℝ V)
     (hi : ContinuousAt (fun y ↦ P y i) x)
     (hi' : ContinuousAt (fun y ↦ P y (finRotate n i)) x)
     (hj : ContinuousAt (fun y ↦ P y j) x)
@@ -215,30 +232,32 @@ theorem IsRegularProjection.eventually_exists_crossing
     (hproj : projAlong ℝ p₀ (d x) ((P x).edgePath ℝ i s) =
       projAlong ℝ p₀ (d x) ((P x).edgePath ℝ j t)) :
     ∃ a : ℝ, a ≠ 0 ∧
-      (P x).edgePath ℝ i s = (P x).edgePath ℝ j t + a • d x ∧
+      (P x).edgePath ℝ i s = a • d x +ᵥ (P x).edgePath ℝ j t ∧
       ∀ᶠ y in 𝓝 x, ∃! c : Fin 3 → ℝ,
-        (P y).edgePath ℝ i (c 0) = (P y).edgePath ℝ j (c 1) + c 2 • d y ∧
+        (P y).edgePath ℝ i (c 0) = c 2 • d y +ᵥ (P y).edgePath ℝ j (c 1) ∧
         c 0 ∈ Ioo (0 : ℝ) 1 ∧ c 1 ∈ Ioo (0 : ℝ) 1 ∧
         SignType.sign (c 2) = SignType.sign a ∧
-        SignType.sign (((P y).crossingMatrix (d y) i j).det) =
-          SignType.sign (((P x).crossingMatrix (d x) i j).det) := by
+        SignType.sign (b.det ![(P y) (finRotate n i) -ᵥ (P y) i,
+          (P y) (finRotate n j) -ᵥ (P y) j, d y]) =
+          SignType.sign (b.det ![(P x) (finRotate n i) -ᵥ (P x) i,
+            (P x) (finRotate n j) -ᵥ (P x) j, d x]) := by
   obtain ⟨a, ha⟩ := projAlong_eq_projAlong_iff.mp hproj
   have ha0 : a ≠ 0 := by
     rintro rfl
     exact hne (vsub_eq_zero_iff_eq.mp (by simpa using ha.symm))
-  have heq : (P x).edgePath ℝ i s = (P x).edgePath ℝ j t + a • d x := by
-    rw [ha, vsub_eq_sub, add_sub_cancel]
-  have hm := det_crossingMatrix_ne_zero
+  have heq : (P x).edgePath ℝ i s = a • d x +ᵥ (P x).edgePath ℝ j t := by
+    rw [ha, vsub_vadd]
+  have hm := det_crossingMatrix_ne_zero b
     (hπ.linearIndependent_of_projAlong_eq hsimple hs ht hne hproj)
-  have hc : (P x).crossingCoordinates (d x) i j = ![s, t, a] :=
+  have hc : (P x).crossingCoordinates b (d x) i j = ![s, t, a] :=
     (crossingCoordinates_eq_iff hm _).mpr heq
   refine ⟨a, ha0, heq, ?_⟩
-  have hev := eventually_crossingCoordinates_mem_and_sign_eq hi hi' hj hj' hd hm
+  have hev := eventually_crossingCoordinates_mem_and_sign_eq b hi hi' hj hj' hd hm
     (by simpa [hc] using hs)
     (by simpa [hc] using ht)
     (by simpa [hc] using ha0)
   filter_upwards [hev] with y hy
-  refine ⟨(P y).crossingCoordinates (d y) i j, ?_, ?_⟩
+  refine ⟨(P y).crossingCoordinates b (d y) i j, ?_, ?_⟩
   · exact ⟨(crossingCoordinates_eq_iff hy.1 _).mp rfl, hy.2.1, hy.2.2.1,
       by simpa [hc] using hy.2.2.2.1, hy.2.2.2.2⟩
   · intro c hcross
