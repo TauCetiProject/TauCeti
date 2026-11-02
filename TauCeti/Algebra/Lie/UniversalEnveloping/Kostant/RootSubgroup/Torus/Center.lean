@@ -20,7 +20,7 @@ This file determines which torus points are central in `B_S(A)`. The pinning equ
 `α i` takes the value one at `s`, and the torus is commutative, so
 
 ```text
-t(s) ∈ Z(B_S(A))   ⟸   (α i)(s) = 1 for every i ∈ S.
+t(s) ∈ Z(B_S(A))   if   (α i)(s) = 1 for every i ∈ S.
 ```
 
 Conversely, if `t(s)` commutes with `xᵢ(1)`, the pinning equation gives `xᵢ((α i)(s)) = xᵢ(1)`, so
