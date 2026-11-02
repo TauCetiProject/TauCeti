@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Topology.Algebra.Nonarchimedean.AdicTopology
 public import Mathlib.Topology.Maps.Strict.Basic
-public import Mathlib.RingTheory.Filtration
+public import TauCeti.RingTheory.Ideal.ArtinRees
 public import TauCeti.Topology.Algebra.Nonarchimedean.SubmodulesBasis
 
 /-!
@@ -97,16 +97,13 @@ theorem isEmbedding_subtype_adicModuleTopology [IsNoetherianRing R] [Module.Fini
   · exact Filter.map_le_iff_le_comap.mp
       (by simpa only [ContinuousAt, Filter.Tendsto, map_zero] using
         (P.subtype.continuous_adicModuleTopology I).continuousAt (x := 0))
-  obtain ⟨k, hk⟩ := I.exists_pow_inf_eq_pow_smul P
+  obtain ⟨k, hk⟩ := TauCeti.ArtinRees.exists_controlled_lift I P
   refine ((I.hasBasis_nhds_zero_adicModule (M := M)).comap P.subtype).le_basis_iff
     (I.hasBasis_nhds_zero_adicModule (M := P)) |>.mpr ?_
   intro n _
   refine ⟨n + k, trivial, fun x hx ↦ ?_⟩
-  have hmem : (x : M) ∈ I ^ (n + k) • (⊤ : Submodule R M) ⊓ P := ⟨hx, x.property⟩
-  rw [hk (n + k) (by omega), Nat.add_sub_cancel] at hmem
-  have hle : I ^ n • (I ^ k • (⊤ : Submodule R M) ⊓ P) ≤ I ^ n • P :=
-    smul_mono_right _ inf_le_right
-  exact (Submodule.mem_smul_top_iff (I := I ^ n) P x).mpr (hle hmem)
+  obtain ⟨y, hy, hxy⟩ := hk (LinearMap.id : P →ₗ[R] P) Function.surjective_id n x hx
+  exact hxy ▸ hy
 
 end Submodule
 
