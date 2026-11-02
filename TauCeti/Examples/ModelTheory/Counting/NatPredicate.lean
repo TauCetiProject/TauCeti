@@ -59,7 +59,7 @@ theorem modelsOf_oneElementSentence_fin_one :
   ext c
   simp
 
-/-- There are no infinite-carrier models of the one-element sentence. -/
+/-- The one-element sentence has no models on the countably infinite carrier `ℕ`. -/
 @[simp]
 theorem modelsOf_oneElementSentence_nat :
     modelsOf (V := ℕ) oneElementSentence = ∅ := by
@@ -80,11 +80,9 @@ private noncomputable def code (z : ℕ → Bool) :
 
 private theorem eval_code (z : ℕ → Bool) (i : ℕ) (x : Fin 1 → Fin 1) :
     (code z).eval (atom (NatPredicateRel.pred i) x) = z i := by
-  let := natPredicateStructure {i | z i = true}
-  simp only [code]
-  -- `erw` unfolds the structure hidden by `code`'s `letI` to match this local instance.
-  erw [Equiv.eval_encodeVia]
-  simp [relMap_natPredicateStructure]
+  exact (@Equiv.eval_encodeVia natPredicateLanguage Unit (Fin 1)
+    (natPredicateStructure {i | z i = true}) (Equiv.ofUnique Unit (Fin 1)) 1
+    (NatPredicateRel.pred i) x).trans (by simp [relMap_natPredicateStructure])
 
 /-- A Boolean sequence specifies the truth values of all the unary predicates on `Fin 1`.
 This is a homeomorphism: every one-element configuration is obtained uniquely this way. -/
