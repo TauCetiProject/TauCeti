@@ -299,8 +299,8 @@ an unrestricted `a` it is just the twisted exterior power.
 
 As with `TauCeti.VermaModule`, the carrier is a definition with its module structures declared one
 by one, so that statements about it are made against this name rather than against the exterior
-power it is built from; the roadmap will later cut that construction down to an irreducible
-quotient.
+power it is built from. The irreducible module of a dominant weight, cut out of such a carrier as a
+subquotient, is named separately, as `TauCeti.glIrreducible`.
 `TauCeti.glTraceTwistedYoungWedge.linearEquiv` is the identification of the underlying `R`-modules
 and `TauCeti.glTraceTwistedYoungWedge.isGlHighestWeightVector_linearEquiv_symm` populates it. It is
 finite over `R`, hence finite-dimensional over a field. -/
