@@ -50,7 +50,8 @@ variable (k : Type u) [CommRing k]
 
 attribute [local instance] standardComodule
 
-private theorem minusculeCharacter_injective : Function.Injective minusculeCharacter := by
+/-- The fifty-four doubled minuscule coordinates have distinct weight-torus characters. -/
+theorem minusculeCharacter_injective : Function.Injective minusculeCharacter := by
   intro a b h
   apply matrixIndexEquiv.symm.injective
   apply e6DoubledMinusculeWeight_injective
@@ -58,7 +59,9 @@ private theorem minusculeCharacter_injective : Function.Injective minusculeChara
   simpa only [minusculeCharacter, SplitTorus.toAdd_weightCharacter, matrixWeight_apply] using
     congrArg (fun χ : Multiplicative (Fin 6 →₀ ℤ) ↦ Multiplicative.toAdd χ i) h
 
-private theorem root_mulVec_single_sub (j : Fin 6 ⊕ Fin 6) (a : Fin 54)
+/-- Subtracting a coordinate vector from its image under a root point of parameter one gives
+its reflected coordinate vector, with the sign of its minuscule summand. -/
+theorem root_mulVec_single_sub (j : Fin 6 ⊕ Fin 6) (a : Fin 54)
     (ha : matrixWeight a (Sum.elim id id j) =
       (Sum.elim (fun _ ↦ -1) (fun _ ↦ 1) j : ℤ)) :
     (((rootSubgroupPoints j k (Multiplicative.ofAdd 1) :
