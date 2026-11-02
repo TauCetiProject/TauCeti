@@ -30,8 +30,9 @@ The block density of `c` at `(u, v)` is the average over the block of the indica
 color `c`. Hence weighting any function constant on blocks by these densities is the same as
 summing it over the pairs of color `c` (`TauCeti.PairColorSystem.sum_pairColorDensity_part_mul`).
 Consequently, for a refinement `Q ≤ P`, the mean square deviation of the fine block densities
-from the coarse ones is exactly the energy gap (`TauCeti.PairColorSystem.densityDeviation_sq`),
-so the energy does not decrease under refinement and lies in `[0, 1]`.
+from the coarse ones is exactly the energy gap
+(`TauCeti.PairColorSystem.sum_sq_pairColorDensity_sub_div_eq_energy_sub`), so the energy does not
+decrease under refinement and lies in `[0, 1]`.
 
 If a family of coarse blocks has rectangles `X ×ˢ Y` inside them whose sides are unions of parts
 of `Q`, each carrying a positive proportion of its block and a color density far from the block
@@ -48,13 +49,14 @@ pairs of parts, this is the energy increment of the regularity lemma for pair-co
 * `TauCeti.PairColorSystem.sum_pairColorDensity_part_mul`: block densities act as conditional
   expectations of the color indicators.
 * `TauCeti.PairColorSystem.energy_nonneg` and `TauCeti.PairColorSystem.energy_le_one`.
-* `TauCeti.PairColorSystem.densityDeviation_sq`: the refinement defect identity.
+* `TauCeti.PairColorSystem.sum_sq_pairColorDensity_sub_div_eq_energy_sub`: the refinement defect
+  identity.
 * `TauCeti.PairColorSystem.energy_mono_of_refines`: refining the partition does not decrease the
   energy.
 * `TauCeti.PairColorSystem.card_mul_sq_pairColorDensity_sub_le_sum`: Cauchy–Schwarz on a rectangle
   whose sides are unions of parts.
-* `TauCeti.PairColorSystem.mul_card_le_sum_densityDeviation_sq_of_witness`: the deviation gain on
-  a single block from one resolved witness rectangle.
+* `TauCeti.PairColorSystem.mul_card_le_sum_sq_pairColorDensity_sub_of_witness`: the deviation gain
+  on a single block from one resolved witness rectangle.
 * `TauCeti.PairColorSystem.energy_increment_of_witnesses`: the quantitative energy gain from a
   family of resolved witness rectangles.
 
@@ -262,7 +264,7 @@ private theorem sum_pairColorDensity_part_mul_pairColorDensity_part (c : κ) :
 /-- **Refinement defect identity.** For a refinement `Q ≤ P`, the mean over the ordered distinct
 pairs of the squared deviations of the block densities of `Q` from those of `P`, summed over
 colors, equals the energy gap. -/
-theorem densityDeviation_sq :
+theorem sum_sq_pairColorDensity_sub_div_eq_energy_sub :
     (∑ p ∈ (univ : Finset V).offDiag, ∑ c,
         ((pairColorDensity S c (Q.part p.1) (Q.part p.2) : ℝ) -
           pairColorDensity S c (P.part p.1) (P.part p.2)) ^ 2) / #(univ : Finset V).offDiag =
@@ -283,7 +285,7 @@ theorem densityDeviation_sq :
 /-- **Monotonicity under refinement.** If `Q` refines `P`, the energy of `Q` is at least the
 energy of `P`. -/
 theorem energy_mono_of_refines : S.energy P ≤ S.energy Q := by
-  rw [← sub_nonneg, ← S.densityDeviation_sq h]
+  rw [← sub_nonneg, ← S.sum_sq_pairColorDensity_sub_div_eq_energy_sub h]
   exact div_nonneg (sum_nonneg fun _ _ ↦ sum_nonneg fun _ _ ↦ sq_nonneg _) (Nat.cast_nonneg _)
 
 omit h in
@@ -293,7 +295,7 @@ has at least an `α`-fraction of the ordered distinct pairs of the block, and it
 at least `δ` away from that of the block, then the squared deviations of the block densities of
 `Q` from those of `P`, summed over the colors and over the ordered distinct pairs of the block,
 total at least `α δ²` times the number of those pairs. -/
-theorem mul_card_le_sum_densityDeviation_sq_of_witness {A B X Y : Finset V} (hA : A ∈ P.parts)
+theorem mul_card_le_sum_sq_pairColorDensity_sub_of_witness {A B X Y : Finset V} (hA : A ∈ P.parts)
     (hB : B ∈ P.parts) (hXA : X ⊆ A) (hYB : Y ⊆ B) (hX : ∀ C ∈ Q.parts, C ⊆ X ∨ Disjoint C X)
     (hY : ∀ C ∈ Q.parts, C ⊆ Y ∨ Disjoint C Y) (c : κ) {α δ : ℝ} (hδ : 0 ≤ δ)
     (hsize : α * #((A ×ˢ B).filter fun p => p.1 ≠ p.2) ≤ #((X ×ˢ Y).filter fun p => p.1 ≠ p.2))
@@ -354,7 +356,7 @@ theorem energy_increment_of_witnesses (B : Finset (Finset V × Finset V))
     pairColorDensity S k (P.part x.1) (P.part x.2)) ^ 2
   have hlocal (AB : Finset V × Finset V) (hAB : AB ∈ B) :
       α * δ ^ 2 * #(T AB) ≤ ∑ x ∈ T AB, ∑ k, d x k :=
-    S.mul_card_le_sum_densityDeviation_sq_of_witness (hB AB hAB).1 (hB AB hAB).2 (hXsub AB hAB)
+    S.mul_card_le_sum_sq_pairColorDensity_sub_of_witness (hB AB hAB).1 (hB AB hAB).2 (hXsub AB hAB)
       (hYsub AB hAB) (hX AB hAB) (hY AB hAB) (c AB) hδ (hsize AB hAB) (hdev AB hAB)
   -- Blocks of distinct pairs of parts are disjoint.
   have hdisj : (B : Set (Finset V × Finset V)).PairwiseDisjoint T := by
@@ -372,7 +374,7 @@ theorem energy_increment_of_witnesses (B : Finset (Finset V × Finset V))
       _ ≤ ∑ AB ∈ B, ∑ x ∈ T AB, ∑ k, d x k := sum_le_sum hlocal
       _ = ∑ x ∈ B.biUnion T, ∑ k, d x k := (sum_biUnion hdisj).symm
       _ ≤ _ := sum_le_sum_of_subset_of_nonneg hsub fun x _ _ ↦ sum_nonneg fun k _ ↦ sq_nonneg _
-  rw [← S.densityDeviation_sq h, ← mul_div_assoc]
+  rw [← S.sum_sq_pairColorDensity_sub_div_eq_energy_sub h, ← mul_div_assoc]
   exact div_le_div_of_nonneg_right hsum (Nat.cast_nonneg _)
 
 end Refinement
