@@ -30,6 +30,8 @@ of scalars is measurable even at zero.
 * `TauCeti.measurable_matrix_mul` — matrix multiplication is measurable, and the
   `MeasurableMul₂` instance it supplies for square matrices.
 * `TauCeti.measurable_matrix_mul_conjTranspose` — the Gram matrix `X * Xᴴ` is measurable.
+* `TauCeti.measurable_matrix_of_curry` — reshaping a function on a product into a matrix is
+  measurable.
 * `TauCeti.measurable_matrix_blockSucc` — the upper-left block extension `Matrix.blockSucc` is
   measurable.
 * `TauCeti.measurable_matrix_inv` — matrix inversion is measurable, and the `MeasurableInv`
@@ -94,6 +96,19 @@ theorem measurable_matrix_mul_conjTranspose {𝕜 : Type*} [RCLike 𝕜] [Measur
   simp only [Matrix.mul_apply, Matrix.conjTranspose_apply]
   exact Finset.measurable_sum _ fun k _ ↦
     measurable_id.eval_matrix.mul (continuous_star.measurable.comp measurable_id.eval_matrix)
+
+/-- The real part of the trace of `X * X.conjTranspose` is the sum of the squared entry norms. -/
+theorem re_trace_mul_conjTranspose_self {𝕜 : Type*} [RCLike 𝕜] {m n : Type*}
+    [Fintype m] [Fintype n] (X : Matrix m n 𝕜) :
+    RCLike.re (Matrix.trace (X * X.conjTranspose)) = ∑ i, ∑ j, ‖X i j‖ ^ 2 := by
+  simp [Matrix.trace, Matrix.diag, Matrix.mul_apply, Matrix.conjTranspose_apply,
+    RCLike.star_def, RCLike.mul_conj]
+
+/-- Reshaping a function on a product into a matrix is measurable. -/
+@[fun_prop]
+theorem measurable_matrix_of_curry {κ ι α : Type*} [MeasurableSpace α] :
+    Measurable (fun z : κ × ι → α => Matrix.of (fun i j => z (i, j))) :=
+  Measurable.of_eval_matrix _ fun _ _ ↦ measurable_pi_apply _
 
 /-- Square matrices inherit `MeasurableMul₂` from the measurability of matrix multiplication, which
 makes the generic `Measurable.mul` dot notation available for matrix-valued maps. -/

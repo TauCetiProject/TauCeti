@@ -85,8 +85,6 @@ finite-product form of `MeasureTheory.Measure.prod_apply_symm`.
   preserving;
 * `TauCeti.measurePreserving_piSplitAt` — separating the coordinate `i₀` from the rest is
   measure preserving;
-* `TauCeti.measurePreserving_eval_eval` — each entry of a doubly indexed product measure has the
-  common marginal law.
 * `TauCeti.measurePreserving_update_update` — the two-coordinate refresh is measure
   preserving;
 * `TauCeti.finThreeArrow` and `TauCeti.finFourArrow`, with
@@ -418,14 +416,6 @@ theorem measurePreserving_finFourArrowPairPair (μ : Measure β) [SigmaFinite μ
       (measurePreserving_piCongrLeft (fun _ : Fin 4 => μ) (Equiv.swap 1 2)))
 
 end FinArrow
-
-/-- Each entry of a doubly indexed product measure has the common marginal law. -/
-theorem measurePreserving_eval_eval {α : Type*} [MeasurableSpace α] (μ : Measure α)
-    [IsProbabilityMeasure μ] {κ ι : Type*} [Fintype κ] [Fintype ι] (i : κ) (j : ι) :
-    MeasurePreserving (fun X : κ → ι → α ↦ X i j)
-      (Measure.pi fun _ : κ ↦ Measure.pi fun _ : ι ↦ μ) μ :=
-  (measurePreserving_eval (fun _ : ι ↦ μ) j).comp
-    (measurePreserving_eval (fun _ : κ ↦ Measure.pi fun _ : ι ↦ μ) i)
 
 end TauCeti
 
