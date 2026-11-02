@@ -252,16 +252,6 @@ theorem zeroShakeGenus_lt_top_iff : zeroShakeGenus K < ⊤ ↔ Nonempty (ZeroSha
 
 /-! ### Slice discs as shake surfaces -/
 
-/-- The first homology of the closed unit disc vanishes, for any coefficient ring. -/
-private theorem subsingleton_homology_closedBall (R : Type) [Ring R] :
-    Subsingleton (((singularHomologyFunctor (ModuleCat R) 1).obj (ModuleCat.of R R)).obj
-      (TopCat.of (closedBall (0 : ℂ) 1))) := by
-  have : ContractibleSpace (closedBall (0 : ℂ) 1) :=
-    (convex_closedBall (0 : ℂ) 1).contractibleSpace (nonempty_closedBall.2 zero_le_one)
-  exact ModuleCat.isZero_iff_subsingleton.1 <|
-    isZero_singularHomologyFunctor_of_contractibleSpace (ModuleCat.of R R)
-      (TopCat.of (closedBall (0 : ℂ) 1)) one_ne_zero
-
 variable {Φ : closedBall (0 : ℂ) 1 → closedBall (0 : E) 1} {Ψ : SolidTorus → sphere (0 : E) 1}
 
 /-- A smooth slice disc `Φ` for `K`, together with a solid torus neighbourhood `Ψ` of `K` with the
@@ -296,12 +286,24 @@ def IsSmoothSliceDisc.toZeroShakeSurface (h : IsSmoothSliceDisc K Φ)
     refine ⟨fun ⟨x, hx, _⟩ ↦ hx.symm, fun hc ↦ ⟨circleHomeomorphBoundaryClosedBall z, hc.symm, ?_⟩⟩
     exact circleHomeomorphBoundaryClosedBall.symm_apply_apply z
   map_ker_eq_top := by
+    have := contractibleSpace_closedBall (x := (0 : ℂ)) zero_le_one
+    -- `singularHomologyFunctor` unfolds to the homology of the singular chain complex, so the
+    -- vanishing of the first homology of the contractible disc is the chain-level statement.
     have : Subsingleton (((singularChains ℤ).obj (TopCat.of (closedBall (0 : ℂ) 1))).homology 1) :=
-      subsingleton_homology_closedBall ℤ
+      inferInstanceAs (Subsingleton (((singularHomologyFunctor (ModuleCat ℤ) 1).obj
+        (ModuleCat.of ℤ ℤ)).obj (TopCat.of (closedBall (0 : ℂ) 1))))
     rw [LinearMap.ker_eq_top.2 (Subsingleton.elim _ _), Submodule.map_top, LinearMap.range_eq_top]
     -- The projection of the boundary circle to the core circle is a homeomorphism.
     exact (ContinuousMap.HomotopyEquiv.bijective_singularHomologyMap ℤ 1
       circleHomeomorphBoundaryClosedBall.symm.toHomotopyEquiv).2
+
+/-- A smooth slice disc, as a `0`-shake surface, is bounded by the single copy at the centre. -/
+@[simp]
+theorem IsSmoothSliceDisc.parallels_toZeroShakeSurface (h : IsSmoothSliceDisc K Φ)
+    (hΨ : IsSolidTorusNeighborhood K Ψ)
+    (hl : hΨ.boundaryHomologyMap (hΨ.framedBoundaryTorus.basis 1) = 0) :
+    (h.toZeroShakeSurface hΨ hl).parallels = {0} :=
+  (rfl)
 
 /-- A smooth slice disc, as a `0`-shake surface, has genus `0`: the disc is contractible and has a
 single boundary circle. -/
@@ -310,10 +312,13 @@ theorem IsSmoothSliceDisc.genus_toZeroShakeSurface (h : IsSmoothSliceDisc K Φ)
     (hΨ : IsSolidTorusNeighborhood K Ψ)
     (hl : hΨ.boundaryHomologyMap (hΨ.framedBoundaryTorus.basis 1) = 0) :
     (h.toZeroShakeSurface hΨ hl).genus = 0 := by
+  have := contractibleSpace_closedBall (x := (0 : ℂ)) zero_le_one
+  -- The carrier of `h.toZeroShakeSurface hΨ hl` is the closed unit disc by definition.
   have : Subsingleton (h.toZeroShakeSurface hΨ hl).firstHomology :=
-    subsingleton_homology_closedBall ℚ
+    inferInstanceAs (Subsingleton (((singularHomologyFunctor (ModuleCat ℚ) 1).obj
+      (ModuleCat.of ℚ ℚ)).obj (TopCat.of (closedBall (0 : ℂ) 1))))
   rw [ZeroShakeSurface.genus_def, finrank_zero_of_subsingleton]
-  simp [IsSmoothSliceDisc.toZeroShakeSurface]
+  simp
 
 /-- **Smoothly slice knots with a `0`-framed solid torus neighbourhood have `0`-shake genus
 `0`.** -/
