@@ -17,10 +17,11 @@ The combined trade costs zero and pays `c * (q - p) * β_T / β_0` at maturity.
 
 The stock and bond holdings are explicitly `(-c) • a` and
 `(-c) • b + (fun _ _ => c * (q - p) / B₀)`. Their properties are exposed separately:
-`IsSelfFinancing.staticClaim_offset` proves self-financing,
-`stronglyMeasurable_staticClaim_bond` preserves bond measurability (stock measurability follows
-from `StronglyMeasurable.const_mul`), and `staticClaim_offset_initial_cost` and
-`staticClaim_offset_terminal_payoff` give the cash-flow identities. The claim is held separately
+`IsSelfFinancing.staticClaim_offset` proves self-financing. Given bond measurability `hb`,
+`(hb.const_mul (-c)).add stronglyMeasurable_const` proves measurability of the offset bond
+holding; stock measurability follows from `StronglyMeasurable.const_mul`.
+`staticClaim_offset_initial_cost` and `staticClaim_offset_terminal_payoff` give the cash-flow
+identities. The claim is held separately
 until maturity: self-financing refers to the stock/bond part after its initial purchase, not to
 an assumed martingale property of the mispriced claim.
 
@@ -64,13 +65,6 @@ theorem IsSelfFinancing.staticClaim_offset (hsf : IsSelfFinancing τ n a b S β)
   have hconst : IsSelfFinancing τ n 0 (fun _ _ => c * (q - p) / B₀) S β :=
     isSelfFinancing_const 0 _
   simpa only [add_zero] using (hsf.smul (-c)).add hconst
-
-/-- Scaling the bond holding and adding the financed surplus preserves measurability.
-The stock holding is measurable by `StronglyMeasurable.const_mul`. -/
-theorem stronglyMeasurable_staticClaim_bond {mΩ : MeasurableSpace Ω} {j : ℕ}
-    (hb : StronglyMeasurable (b j)) (c p q B₀ : ℝ) :
-    StronglyMeasurable (fun ω => -c * b j ω + c * (q - p) / B₀) :=
-  (hb.const_mul _).add stronglyMeasurable_const
 
 /-- The static claim and its offsetting stock/bond holdings have zero combined initial cost
 when the replication costs `q` and the initial bond price is the nonzero constant `B₀`. -/
