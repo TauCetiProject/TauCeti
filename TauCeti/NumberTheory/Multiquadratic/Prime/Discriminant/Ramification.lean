@@ -214,7 +214,7 @@ theorem ramificationIdx_eq_two_of_liesOver_primeDiscriminantPrime
           Ideal.ramificationIdx_tower (R := ℤ) (𝔓.under (𝓞 U)) 𝔓
       _ = 𝔓.ramificationIdx (𝓞 U) := by rw [hUone, one_mul]
       _ ≤ Module.finrank (𝓞 U) (𝓞 L) :=
-          RamificationInertia.ramificationIdx_le_finrank (𝔓.under (𝓞 U)) 𝔓
+          RamificationInertia.ramificationIdx_le_finrank (𝓞 U) 𝔓
       _ = 2 := by
           rw [← IsFractionRing.finrank_eq (𝓞 U) U (𝓞 L) L, hU]
           exact finrank_over_adjoin_range_ne D root hD hinj heven hroot htop i

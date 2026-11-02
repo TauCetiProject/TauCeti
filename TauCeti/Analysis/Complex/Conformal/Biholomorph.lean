@@ -23,9 +23,8 @@ is holomorphic by `DifferentiableOn.invFunOn`. Both directions are conformal: in
 on an open neighbourhood forces the complex derivative to be nonzero, so Mathlib's
 `DifferentiableAt.conformalAt` applies.
 
-This is the packaging prerequisite for the conformal companion to the Riemann mapping theorem.
-It advances the `ConformalMapping/README.md` generality-bar requirement to derive packaged
-equivalence and `ConformalAt` API from a holomorphic bijection.
+This is the packaging prerequisite for the conformal companion to the Riemann mapping theorem: it
+derives the packaged equivalence and `ConformalAt` API from a holomorphic bijection.
 
 ## Main declarations
 

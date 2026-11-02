@@ -18,7 +18,8 @@ import Mathlib.Topology.Algebra.OpenSubgroup
 This file derives connectedness of a group from preconnectedness of a subgroup and its coset
 quotient, and develops the identity component `Subgroup.connectedComponentOfOne G` of a
 topological group `G`: it is a closed normal subgroup, it lies in every open subgroup, continuous
-homomorphisms preserve it, and the quotient of `G` by it is totally disconnected.  Thus a group
+homomorphisms preserve it, a continuous homomorphism from a connected group with open range is
+onto it, and the quotient of `G` by it is totally disconnected.  Thus a group
 whose quotient by its identity component is compact is an extension of a profinite group by a
 connected one.
 
@@ -34,6 +35,9 @@ connected one.
   neighbourhood of `1`.
 * `Subgroup.map_connectedComponentOfOne_le`: a continuous homomorphism maps the identity
   component into the identity component.
+* `MonoidHom.range_eq_connectedComponentOfOne`: a continuous homomorphism with open range, whose
+  kernel and the identity component of its source generate the source, is onto the identity
+  component of its target.
 * `ContinuousMulEquiv.map_connectedComponentOfOne`: a continuous multiplicative equivalence maps
   the identity component onto the identity component.
 * `QuotientGroup.totallyDisconnectedSpace_connectedComponentOfOne`: the quotient of a
@@ -159,6 +163,18 @@ theorem _root_.Subgroup.map_connectedComponentOfOne_le {G' : Type*} [Group G']
   rintro _ ⟨g, hg, rfl⟩
   have h := hf.mapsTo_connectedComponent 1 hg
   rwa [map_one] at h
+
+/-- A continuous homomorphism with open range is onto the identity component of its target,
+provided its kernel and the identity component of its source generate the source. The latter
+holds, for instance, when the source is connected. -/
+theorem _root_.MonoidHom.range_eq_connectedComponentOfOne {G' : Type*} [Group G']
+    [TopologicalSpace G'] [IsTopologicalGroup G'] {f : G →* G'} (hf : Continuous f)
+    (hopen : IsOpen (f.range : Set G')) (hgen : Subgroup.connectedComponentOfOne G ⊔ f.ker = ⊤) :
+    f.range = Subgroup.connectedComponentOfOne G' := by
+  refine le_antisymm ?_ (Subgroup.connectedComponentOfOne_le_of_isOpen hopen)
+  rw [MonoidHom.range_eq_map, ← hgen, Subgroup.map_sup, (Subgroup.map_eq_bot_iff _).mpr le_rfl,
+    sup_bot_eq]
+  exact Subgroup.map_connectedComponentOfOne_le hf
 
 /-- A continuous multiplicative equivalence maps identity components onto each other. -/
 theorem _root_.ContinuousMulEquiv.map_connectedComponentOfOne {G' : Type*} [Group G']

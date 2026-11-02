@@ -96,10 +96,7 @@ theorem coveredSquares_val_add_val_turnCut {x y z : GridState n}
         (Q.toGridRectangle.coveredSquares.map
           ((Equiv.swap a (finRotate n a)).prodCongr (Equiv.refl (Fin n))).toEmbedding).val =
       P.toGridRectangle.coveredSquares.val + Q.coveredSquares.val := by
-  -- The two pentagons share their bottom row, the row of `x` on the initial side of `P`.
-  have hbottom : Q.bottom = P.bottom := by
-    rw [GridRectangleBetween.bottom_def, Q.left_eq, ← P.right_eq, P.map_right,
-      GridRectangleBetween.bottom_def]
+  have hbottom := Q.bottom_eq_bottom_of_pentagon P
   have hP := Grid.ite_mem_cIco_eq_add_add P.turn_mem_cIco_bottom_top
   have hQ := Grid.ite_mem_cIco_eq_add_add Q.turn_mem_cIco_bottom_top
   rw [hbottom] at hQ

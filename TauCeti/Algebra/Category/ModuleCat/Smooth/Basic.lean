@@ -392,3 +392,20 @@ theorem discreteModules_restrictScalars {B : Type u'} [Ring B] [TopologicalSpace
 end Discrete
 
 end TauCeti
+
+namespace ModuleCat
+
+/-- The action annihilator of a discrete module is closed. -/
+theorem isClosed_annihilator_of_discreteModules {A : Type u} [Ring A] [TopologicalSpace A]
+    (M : ModuleCat.{v} A) (hM : TauCeti.discreteModules A M) :
+    IsClosed (Module.annihilator A M : Set A) := by
+  let : TopologicalSpace M := ⊥
+  let : DiscreteTopology M := ⟨rfl⟩
+  have heq : (Module.annihilator A M : Set A) = ⋂ m : M, {a : A | a • m = 0} := by
+    ext a
+    simp [Module.mem_annihilator]
+  rw [heq]
+  exact isClosed_iInter fun m =>
+    isClosed_eq ((TauCeti.discreteModules_iff.mp hM) m) continuous_const
+
+end ModuleCat

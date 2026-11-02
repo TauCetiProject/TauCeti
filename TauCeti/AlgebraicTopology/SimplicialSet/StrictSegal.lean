@@ -9,28 +9,66 @@ public import Mathlib.AlgebraicTopology.Quasicategory.StrictSegal
 public import TauCeti.AlgebraicTopology.SimplicialSet.BoundaryColimits
 
 /-!
-# Boundaries in strict Segal simplicial sets
+# Strict Segal simplicial sets
 
-A strict Segal simplicial set, such as the nerve of a category, is determined by its simplices of
-dimension at most two: a simplex is determined by its spine. This file records two consequences.
-A simplex of dimension at least two is determined by its first and last faces, which together
-contain its spine (`SSet.IsStrictSegal.ext_of_δ_zero_of_δ_last`). Every map from the boundary
-`∂Δ[n]` with `n ≥ 3` extends to `Δ[n]` (`SSet.IsStrictSegal.exists_boundary_extension`): fill
-the inner horn `Λ[n, 1]` and observe that the missing face is forced by the others. In dimensions
-one and two this fails, as the boundary of an edge or a triangle prescribes no composite.
+In a strict Segal simplicial set, such as the nerve of a category, a simplex is determined by its
+spine (Mathlib's `SSet.IsStrictSegal`), so it is determined by its simplices of dimension at most
+two. This file records consequences of this.
+
+A simplicial operator fixes a simplex as soon as it fixes every edge of its spine. A simplex of
+dimension at least two is determined by its first and last faces, which together contain its
+spine. Every map from the boundary `∂Δ[n]` with `n ≥ 3` extends to `Δ[n]`: fill the inner horn
+`Λ[n, 1]` and observe that the missing face is forced by the others. In dimensions one and two
+this fails, as the boundary of an edge or a triangle prescribes no composite.
+
+## Main results
+
+* `SSet.map_eq_of_isStrictSegal`: an `(n + 1)`-simplex whose face opposite to the last vertex is
+  constant at a vertex is fixed by any operator that fixes its last edge and collapses the other
+  edges of its spine to the vertex `n`.
+* `SSet.IsStrictSegal.ext_of_δ_zero_of_δ_last`: a simplex of dimension at least two is determined
+  by its first and last faces.
+* `SSet.IsStrictSegal.exists_boundary_extension`: every map `∂Δ[n + 3] ⟶ X` extends to
+  `Δ[n + 3]`.
 -/
 
 public section
+
+open CategoryTheory Opposite Simplicial SimplexCategory
 
 universe u
 
 namespace SSet
 
-open CategoryTheory Simplicial
+variable {X : SSet.{u}} [X.IsStrictSegal]
+
+/-- In a strict Segal simplicial set, an `(n + 1)`-simplex whose face opposite to the last vertex
+is constant at `x` is fixed by any operator `r` that fixes the last edge and sends every other
+edge of the spine to the vertex `n`. -/
+theorem map_eq_of_isStrictSegal {n : ℕ} (r : ⦋n + 1⦌ ⟶ ⦋n + 1⦌)
+    (hlast : mkOfSucc (Fin.last n) ≫ r = mkOfSucc (Fin.last n))
+    (hcast : ∀ j : Fin n, mkOfSucc j.castSucc ≫ r =
+      SimplexCategory.const ⦋1⦌ ⦋n⦌ (Fin.last n) ≫ δ (Fin.last (n + 1)))
+    {x : X _⦋0⦌} (σ : X _⦋n + 1⦌)
+    (hσ : X.δ (Fin.last (n + 1)) σ = X.map (SimplexCategory.const ⦋n⦌ ⦋0⦌ 0).op x) :
+    X.map r.op σ = σ := by
+  refine (IsStrictSegal.segal (X := X) (n + 1)).injective (Path.ext' fun i ↦ ?_)
+  rw [spine_arrow, spine_arrow, ← Functor.map_comp_apply, ← op_comp]
+  cases i using Fin.lastCases with
+  | last => rw [hlast]
+  | cast j =>
+    -- Both edges lie in the face opposite to the last vertex, which is constant at `x`.
+    rw [hcast, ← mkOfSucc_δ_lt (Fin.castSucc_lt_last _), op_comp, op_comp, Functor.map_comp_apply,
+      Functor.map_comp_apply]
+    -- `X.δ i` is by definition `X.map (δ i).op`; `change` exposes the face to rewrite with `hσ`.
+    change X.map _ (X.δ _ σ) = X.map _ (X.δ _ σ)
+    -- Both sides are now pullbacks of the totally degenerate simplex at `x`.
+    have key (f : ⦋1⦌ ⟶ ⦋n⦌) : X.map f.op (X.map (SimplexCategory.const ⦋n⦌ ⦋0⦌ 0).op x) =
+        X.map (SimplexCategory.const ⦋1⦌ ⦋0⦌ 0).op x := by
+      rw [← Functor.map_comp_apply, ← op_comp, Subsingleton.elim (f ≫ _)]
+    rw [hσ, key, key]
 
 namespace IsStrictSegal
-
-variable {X : SSet.{u}} [X.IsStrictSegal]
 
 /-- In a strict Segal simplicial set, a simplex of dimension at least two is determined by its
 first and last faces, which together contain its spine. -/
