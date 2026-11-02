@@ -148,6 +148,15 @@ theorem distortedRenyiEntropy_zero [q.fst.HaveLebesgueDecomposition m] (hN : 0 <
   filter_upwards [h₁, h₀] with z hz₁ hz₀
   rw [sub_zero, hz₁, hz₀, one_mul, zero_mul, add_zero]
 
+/-- If the integrand of `T_β^{(t)}(q | m)` is infinite `q`-almost everywhere and `q ≠ 0`, the
+distorted Rényi entropy is `-∞`. -/
+theorem distortedRenyiEntropy_eq_bot_of_ae (hq : q ≠ 0)
+    (h : ∀ᵐ z ∂q, β (1 - t) (dist z.1 z.2) * q.fst.rnDeriv m z.1 ^ (-N⁻¹) +
+      β t (dist z.1 z.2) * q.snd.rnDeriv m z.2 ^ (-N⁻¹) = ⊤) :
+    distortedRenyiEntropy β N m q t = ⊥ := by
+  rw [distortedRenyiEntropy_def, lintegral_congr_ae h, lintegral_const,
+    ENNReal.top_mul (Measure.measure_univ_ne_zero.2 hq), EReal.coe_ennreal_top, EReal.neg_top]
+
 end DistortedRenyiEntropy
 
 namespace MetricMeasureSpace
@@ -199,6 +208,11 @@ The condition is meant for `N ≥ 1`, where the coefficients carry their geometr
 def CurvatureDimension (M : MetricMeasureSpace X) (K N : ℝ) : Prop :=
   M.DistortedCurvatureDimension (distortionTau K) N
 
+/-- `CD(K, N)` is the curvature-dimension condition for the coefficients `τ_{K,N'}`. -/
+theorem curvatureDimension_iff :
+    M.CurvatureDimension K N ↔ M.DistortedCurvatureDimension (distortionTau K) N :=
+  (Iff.rfl)
+
 /-- The **reduced curvature-dimension condition** `CD*(K, N)` of Bacher and Sturm: the condition
 `CD(K, N)` (`TauCeti.MetricMeasureSpace.CurvatureDimension`) with the distortion coefficient
 `σ_{K,N'}` (`TauCeti.distortionSigma`) in place of `τ_{K,N'}`. That is, `m` has full support, and
@@ -209,6 +223,11 @@ optimal coupling `q` for the quadratic cost and a `W₂`-geodesic `(μ_t)` of su
 The condition is meant for `N ≥ 1`, where the coefficients carry their geometric meaning. -/
 def ReducedCurvatureDimension (M : MetricMeasureSpace X) (K N : ℝ) : Prop :=
   M.DistortedCurvatureDimension (distortionSigma K) N
+
+/-- `CD*(K, N)` is the curvature-dimension condition for the coefficients `σ_{K,N'}`. -/
+theorem reducedCurvatureDimension_iff :
+    M.ReducedCurvatureDimension K N ↔ M.DistortedCurvatureDimension (distortionSigma K) N :=
+  (Iff.rfl)
 
 /-- The condition for the coefficients `β` implies the condition for `N ≤ N'` and any smaller
 coefficients `β' ≤ β` on the times `[0, 1]`. -/
@@ -247,20 +266,13 @@ theorem DistortedCurvatureDimension.dist_le (h : M.DistortedCurvatureDimension �
   have hball : ∀ z, m (ball z r) ≠ 0 ∧ m (ball z r) ≠ ∞ := fun z ↦
     ⟨((M.mem_support_iff z).1 (h.support_eq_univ ▸ mem_univ z) _ (ball_mem_nhds z hr)).ne',
       (M.finite_bounded _ isBounded_ball).ne⟩
-  have hb : ∀ z, Bornology.IsBounded (m[|ball z r]).support := fun z ↦
-    isBounded_closedBall.subset (Measure.support_subset_of_isClosed isClosed_closedBall
-      (Filter.mem_of_superset (ae_cond_mem measurableSet_ball) ball_subset_closedBall))
   obtain ⟨hpos, hm⟩ := hball x
-  obtain ⟨μ₀, hμ₀⟩ := exists_coe_eq_cond_ball (p := 2) hpos hm
-  obtain ⟨μ₁, hμ₁⟩ := exists_coe_eq_cond_ball (p := 2) (hball y).1 (hball y).2
-  have hac₀ : ((μ₀ : ProbabilityMeasure X) : Measure X) ≪ m := by
-    rw [hμ₀]
-    exact cond_absolutelyContinuous
-  have hac₁ : ((μ₁ : ProbabilityMeasure X) : Measure X) ≪ m := by
-    rw [hμ₁]
-    exact cond_absolutelyContinuous
+  obtain ⟨μ₀, hμ₀, hb₀, hac₀⟩ :=
+    WassersteinSpace.exists_coe_eq_cond (p := 2) measurableSet_ball isBounded_ball hpos hm
+  obtain ⟨μ₁, hμ₁, hb₁, hac₁⟩ := WassersteinSpace.exists_coe_eq_cond (p := 2) measurableSet_ball
+    isBounded_ball (hball y).1 (hball y).2
   obtain ⟨q, hq, γ, hγ, hle⟩ :=
-    h.exists_isOptimalCoupling_isGeodesicSegment (hμ₀ ▸ hb x) hac₀ (hμ₁ ▸ hb y) hac₁
+    h.exists_isOptimalCoupling_isGeodesicSegment hb₀ hac₀ hb₁ hac₁
   replace hq := hq.toIsCoupling
   replace hle : renyiEntropy N m ((μ₀ : ProbabilityMeasure X) : Measure X) ≤
       distortedRenyiEntropy (β N) N m q 0 := by
@@ -297,10 +309,8 @@ theorem DistortedCurvatureDimension.dist_le (h : M.DistortedCurvatureDimension �
       · linarith [inv_pos.2 hN]
       · exact hzρ.ne h
     rw [sub_zero, hβ _ hD, ENNReal.top_mul hne, top_add]
-  have hbot : distortedRenyiEntropy (β N) N m q 0 = ⊥ := by
-    rw [distortedRenyiEntropy_def, lintegral_congr_ae hae, lintegral_const,
-      ENNReal.top_mul (by simp), EReal.coe_ennreal_top, EReal.neg_top]
-  exact hfin (le_bot_iff.1 (hbot ▸ hle))
+  rw [distortedRenyiEntropy_eq_bot_of_ae (IsProbabilityMeasure.ne_zero q) hae, le_bot_iff] at hle
+  exact hfin hle
 
 /-- **The Bonnet–Myers diameter bound** for the coefficients `β`: if `β_N^{(1)}(θ) = ∞` for every
 distance `θ > D ≥ 0`, the space has diameter at most `D`. -/
