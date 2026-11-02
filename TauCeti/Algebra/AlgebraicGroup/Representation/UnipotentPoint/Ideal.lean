@@ -84,6 +84,21 @@ def unipotenceIdeal : Ideal H :=
   Ideal.span (Set.range fun n ↦
     ((endOfPoint M (AlgHom.id R H)).charpoly - (X - 1) ^ finrank R M).coeff n)
 
+/-- The unipotence ideal is spanned by the coefficients of `χ - (X - 1) ^ rank M`, where `χ` is
+the characteristic polynomial of the action of the universal point. -/
+theorem unipotenceIdeal_def :
+    unipotenceIdeal R H M = Ideal.span (Set.range fun n ↦
+      ((endOfPoint M (AlgHom.id R H)).charpoly - (X - 1) ^ finrank R M).coeff n) := (rfl)
+
+variable (M) in
+/-- Each coefficient of `χ - (X - 1) ^ rank M` lies in the unipotence ideal, where `χ` is the
+characteristic polynomial of the action of the universal point. -/
+theorem coeff_mem_unipotenceIdeal (n : ℕ) :
+    ((endOfPoint M (AlgHom.id R H)).charpoly - (X - 1) ^ finrank R M).coeff n ∈
+      unipotenceIdeal R H M := by
+  rw [unipotenceIdeal_def]
+  exact Ideal.subset_span ⟨n, rfl⟩
+
 /-- A point annihilates the unipotence ideal exactly when its action on the scalar extension has
 characteristic polynomial `(X - 1) ^ rank M`. No hypothesis on the value ring is needed. -/
 theorem unipotenceIdeal_le_ker_iff {B : Type x} [CommRing B] [Algebra R B] (g : H →ₐ[R] B) :
@@ -94,7 +109,7 @@ theorem unipotenceIdeal_le_ker_iff {B : Type x} [CommRing B] [Algebra R B] (g : 
     simpa using charpoly_endOfPoint_comp (M := M) (AlgHom.id R H) g
   have hpow : ((X - 1 : B[X]) ^ finrank R M) = ((X - 1 : H[X]) ^ finrank R M).map g := by
     simp
-  rw [unipotenceIdeal, Ideal.span_le, Set.range_subset_iff, hg, hpow, ← sub_eq_zero,
+  rw [unipotenceIdeal_def, Ideal.span_le, Set.range_subset_iff, hg, hpow, ← sub_eq_zero,
     ← Polynomial.map_sub, Polynomial.ext_iff]
   simp only [SetLike.mem_coe, RingHom.mem_ker, Polynomial.coeff_map, Polynomial.coeff_zero,
     AlgHom.coe_toRingHom]
@@ -105,7 +120,7 @@ theorem unipotenceIdeal_eq_span_coeff_coefficientMatrix_charpoly {ι : Type x} [
     [DecidableEq ι] (b : Basis ι R M) :
     unipotenceIdeal R H M = Ideal.span (Set.range fun n ↦
       ((coefficientMatrix (C := H) b).charpoly - (X - 1) ^ finrank R M).coeff n) := by
-  rw [unipotenceIdeal, ← LinearMap.charpoly_toMatrix _ (b.baseChange H), toMatrix_endOfPoint,
+  rw [unipotenceIdeal_def, ← LinearMap.charpoly_toMatrix _ (b.baseChange H), toMatrix_endOfPoint,
     AlgHom.coe_id, Matrix.map_id]
 
 end Coalgebra
