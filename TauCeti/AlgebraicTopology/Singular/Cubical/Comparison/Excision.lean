@@ -233,9 +233,10 @@ theorem exists_boundary_eq_of_singularHomologyδ_eq (m : ℕ)
     singularCubicalHomologyIso_hom_cubicalHomologyδ k P (m + 1) m
   refine P.exists_boundary_eq_of_cubicalHomologyδ_eq k m _ z ?_
   rw [← hz, ← ModuleCat.comp_apply, key]
-  -- `ModuleCat.comp_apply`, which `rw` cannot use because the singular homology of `A` appears in
-  -- two forms, `(toSSetPair.obj P).left.homology` and `((singularChains k).obj A).homology`.
-  rfl
+  -- The goal is an instance of `ModuleCat.comp_apply`, but `rw` cannot use it because the singular
+  -- homology of `A` appears in two definitionally equal forms, `(toSSetPair.obj P).left.homology`
+  -- and `((singularChains k).obj A).homology`.
+  exact ModuleCat.comp_apply _ _ _
 
 /-! ### Excision -/
 
