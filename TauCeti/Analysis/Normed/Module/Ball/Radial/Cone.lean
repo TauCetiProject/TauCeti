@@ -5,18 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Module.RCLike.Basic
-public import Mathlib.Topology.Homeomorph.Defs
+public import Mathlib.Analysis.Normed.Module.Ball.RadialEquiv
+import Mathlib.Analysis.Normed.Module.RCLike.Basic
 
 /-!
 # Cones over maps on the unit sphere
 
 A map `f` defined on the unit sphere of a real normed space `E` extends to a positively homogeneous
 map on all of `E`, its **cone** `TauCeti.sphereCone f`: a vector `x ≠ 0` goes to
-`‖x‖ • f (‖x‖⁻¹ • x)` and the origin goes to the origin. On the ray through a unit vector `u` it is
-`r • u ↦ r • f u` (`TauCeti.sphereCone_smul_coe`). It is continuous when `f` is continuous and
-bounded (`TauCeti.continuous_sphereCone`), since near the origin it is bounded by a multiple of the
-norm.
+`‖x‖ • f (‖x‖⁻¹ • x)`, the direction `‖x‖⁻¹ • x` being read off the polar coordinates
+`homeomorphUnitSphereProd`, and the origin goes to the origin. On the ray through a unit vector `u`
+it is `r • u ↦ r • f u` (`TauCeti.sphereCone_smul_coe`). It is continuous when `f` is continuous
+and bounded (`TauCeti.continuous_sphereCone`), since near the origin it is bounded by a multiple of
+the norm.
 
 When `f` maps the unit sphere of `E` to the unit sphere of `F`, the cone preserves norms, and taking
 cones is compatible with composition (`TauCeti.sphereCone_sphereCone`). So a homeomorphism `σ`
@@ -36,7 +37,8 @@ extension used in the Alexander trick.
 * `TauCeti.sphereCone_smul`: the cone is positively homogeneous.
 * `TauCeti.continuous_sphereCone`: the cone over a continuous bounded map is continuous.
 * `TauCeti.norm_sphereCone`: the cone over a map into the unit sphere preserves norms.
-* `TauCeti.sphereCone_sphereCone`: the cone over a composite is the composite of the cones.
+* `TauCeti.sphereCone_sphereCone`, `Homeomorph.sphereCone_trans`: the cone over a composite is the
+  composite of the cones.
 -/
 
 public section
@@ -54,8 +56,7 @@ variable {E F G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCo
 `x ↦ ‖x‖ • f (‖x‖⁻¹ • x)` of `f` to `E`, sending the origin to the origin. -/
 def sphereCone (f : sphere (0 : E) 1 → F) (x : E) : F :=
   open scoped Classical in
-  if hx : x = 0 then 0 else
-    ‖x‖ • f ⟨‖x‖⁻¹ • x, mem_sphere_zero_iff_norm.2 (norm_smul_inv_norm (𝕜 := ℝ) hx)⟩
+  if hx : x = 0 then 0 else ‖x‖ • f (homeomorphUnitSphereProd E ⟨x, mem_compl_singleton_iff.2 hx⟩).1
 
 variable {f : sphere (0 : E) 1 → F}
 
@@ -64,9 +65,8 @@ theorem sphereCone_zero (f : sphere (0 : E) 1 → F) : sphereCone f 0 = 0 := by
   simp [sphereCone]
 
 theorem sphereCone_of_ne_zero {x : E} (hx : x ≠ 0) :
-    sphereCone f x =
-      ‖x‖ • f ⟨‖x‖⁻¹ • x, mem_sphere_zero_iff_norm.2 (norm_smul_inv_norm (𝕜 := ℝ) hx)⟩ := by
-  simp [sphereCone, hx]
+    sphereCone f x = ‖x‖ • f (homeomorphUnitSphereProd E ⟨x, mem_compl_singleton_iff.2 hx⟩).1 :=
+  by simp [sphereCone, hx]
 
 /-- On the ray through a unit vector `u`, the cone over `f` is `r • u ↦ r • f u`. -/
 theorem sphereCone_smul_coe {r : ℝ} (hr : 0 ≤ r) (u : sphere (0 : E) 1) :
@@ -76,11 +76,10 @@ theorem sphereCone_smul_coe {r : ℝ} (hr : 0 ≤ r) (u : sphere (0 : E) 1) :
   have hu : ‖(u : E)‖ = 1 := norm_eq_of_mem_sphere u
   have hne : r • (u : E) ≠ 0 := smul_ne_zero hr.ne' (norm_ne_zero_iff.1 (by simp [hu]))
   have hn : ‖r • (u : E)‖ = r := by rw [norm_smul, hu, mul_one, Real.norm_of_nonneg hr.le]
-  rw [sphereCone_of_ne_zero hne]
+  rw [sphereCone_of_ne_zero hne, hn]
   congr 2
   ext
-  simp only [hn]
-  rw [smul_smul, inv_mul_cancel₀ hr.ne', one_smul]
+  rw [homeomorphUnitSphereProd_apply_fst_coe, hn, smul_smul, inv_mul_cancel₀ hr.ne', one_smul]
 
 /-- The cone over `f` restricts to `f` on the unit sphere. -/
 @[simp]
@@ -118,9 +117,7 @@ theorem norm_sphereCone (hf : ∀ u, ‖f u‖ = 1) (x : E) : ‖sphereCone f x�
   · simp
   rw [sphereCone_smul_coe hr.le, norm_smul, norm_smul, hf, norm_eq_of_mem_sphere u]
 
-/-- The cone over a continuous map whose values are bounded in norm is continuous. At a nonzero
-vector it is given by its formula; at the origin its norm is bounded by a multiple of the norm of
-the argument. -/
+/-- The cone over a continuous map whose values are bounded in norm is continuous. -/
 theorem continuous_sphereCone (hf : Continuous f) {c : ℝ} (hc : ∀ u, ‖f u‖ ≤ c) :
     Continuous (sphereCone f) := by
   rw [continuous_iff_continuousAt]
@@ -136,20 +133,18 @@ theorem continuous_sphereCone (hf : Continuous f) {c : ℝ} (hc : ∀ u, ‖f u�
     have h0 : Tendsto (fun y : E => c * ‖y‖) (𝓝 0) (𝓝 0) :=
       (continuous_const.mul continuous_norm).tendsto' 0 0 (by simp)
     exact squeeze_zero (fun y => norm_nonneg _) hle h0
-  · -- Near a nonzero vector the cone agrees with its formula, which is continuous there.
-    have hopen : IsOpen ({0}ᶜ : Set E) := isOpen_compl_singleton
+  · -- Away from the origin the cone is `(u, r) ↦ r • f u` in polar coordinates.
     have hcont : ContinuousOn (sphereCone f) {0}ᶜ := by
       rw [continuousOn_iff_continuous_domRestrict]
-      have hnorm : Continuous fun y : ({0}ᶜ : Set E) => ‖(y : E)‖ :=
-        continuous_subtype_val.norm
-      have hdir : Continuous fun y : ({0}ᶜ : Set E) =>
-          (⟨‖(y : E)‖⁻¹ • (y : E), mem_sphere_zero_iff_norm.2 (norm_smul_inv_norm (𝕜 := ℝ) y.2)⟩ :
-            sphere (0 : E) 1) :=
-        ((hnorm.inv₀ fun y => norm_ne_zero_iff.2 y.2).smul continuous_subtype_val).subtype_mk _
-      convert hnorm.smul (hf.comp hdir) using 1
-      funext y
-      exact sphereCone_of_ne_zero y.2
-    exact hcont.continuousAt (hopen.mem_nhds hx)
+      have heq : ({0}ᶜ : Set E).domRestrict (sphereCone f) =
+          (fun p => (p.2 : ℝ) • f p.1) ∘ homeomorphUnitSphereProd E := by
+        funext y
+        rw [domRestrict_apply, sphereCone_of_ne_zero y.2, Function.comp_apply,
+          homeomorphUnitSphereProd_apply_snd_coe]
+      rw [heq]
+      exact ((continuous_subtype_val.comp continuous_snd).smul (hf.comp continuous_fst)).comp
+        (homeomorphUnitSphereProd E).continuous
+    exact hcont.continuousAt (isOpen_compl_singleton.mem_nhds hx)
 
 /-- **The cone over a composite is the composite of the cones**, when the inner map takes values in
 the unit sphere. -/
@@ -166,8 +161,8 @@ namespace Homeomorph
 
 open TauCeti
 
-variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
-  [NormedSpace ℝ F]
+variable {E F G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
+  [NormedSpace ℝ F] [NormedAddCommGroup G] [NormedSpace ℝ G]
 
 /-- The **cone over a homeomorphism of unit spheres**: the positively homogeneous, norm-preserving
 homeomorphism `x ↦ ‖x‖ • σ (‖x‖⁻¹ • x)` of the ambient spaces, sending the origin to the origin.
@@ -192,6 +187,19 @@ theorem coe_sphereCone : ⇑σ.sphereCone = TauCeti.sphereCone ((↑) ∘ σ) :=
 @[simp]
 theorem sphereCone_symm : σ.sphereCone.symm = σ.symm.sphereCone :=
   (rfl)
+
+/-- The cone over the identity of the unit sphere is the identity. -/
+@[simp]
+theorem sphereCone_refl : (Homeomorph.refl (sphere (0 : E) 1)).sphereCone = Homeomorph.refl E := by
+  ext x
+  simp [coe_sphereCone]
+
+/-- The cone over a composite of homeomorphisms of unit spheres is the composite of the cones. -/
+theorem sphereCone_trans (τ : sphere (0 : F) 1 ≃ₜ sphere (0 : G) 1) :
+    (σ.trans τ).sphereCone = σ.sphereCone.trans τ.sphereCone := by
+  ext x
+  simp only [coe_sphereCone, trans_apply, TauCeti.sphereCone_sphereCone]
+  rfl
 
 @[simp]
 theorem sphereCone_apply_zero : σ.sphereCone 0 = 0 :=

@@ -8,11 +8,9 @@ module
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Analysis.Normed.Module.Ball.Radial.Cone
 public import TauCeti.Geometry.Manifold.LocallyFlat.Basic
-import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
-import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
-import TauCeti.AlgebraicTopology.Sphere.SimplyConnected
-import TauCeti.AlgebraicTopology.UniversalCover.Circle.NotSimplyConnected
+import TauCeti.AlgebraicTopology.Sphere.CircleEmbedding
 import TauCeti.Analysis.Complex.Conformal.Jordan.Schoenflies
+import TauCeti.Analysis.InnerProductSpace.Sphere.Stereographic
 import TauCeti.Geometry.Manifold.LocallyFlat.Linear
 
 /-!
@@ -29,12 +27,13 @@ statement about the curve, which is where the Schoenflies theorem enters.
 By the Schoenflies theorem on the 2-sphere
 (`TauCeti.IsJordanCurve.exists_homeomorph_image_inner_eq_zero`), some homeomorphism `H` of `S²`
 carries a great circle onto the image of `γ`; a point of `S²` off the curve exists since `S²` is
-simply connected and the circle is not. Reparametrizing the great circle by a homeomorphism `τ` of
-the circle, `γ` is `H` composed with a linear isometric embedding `ι` of the unit circle of `ℂ` as a
-great circle, precomposed with `τ`. Taking cones (`Homeomorph.sphereCone`), the cone over `γ` is the
-homeomorphism `sphereCone H` of `E` applied to the linear embedding `ι` of the plane, precomposed
-with the homeomorphism `sphereCone τ` of the plane, and a linear plane in `E` is flat
-(`LinearMap.isLocallyFlat_of_injective`).
+simply connected and the circle is not
+(`TauCeti.not_surjective_of_continuous_injective_circle_sphere`). Reparametrizing the great circle
+by a homeomorphism `τ` of the circle, `γ` is `H` composed with a linear isometric embedding `ι` of
+the unit circle of `ℂ` as a great circle, precomposed with `τ`. Taking cones
+(`Homeomorph.sphereCone`), the cone over `γ` is the homeomorphism `sphereCone H` of `E` applied to
+the linear embedding `ι` of the plane, precomposed with the homeomorphism `sphereCone τ` of the
+plane, and a linear plane in `E` is flat (`LinearMap.isLocallyFlat_of_injective`).
 
 This is the local model of a piecewise-linear surface in a `3`-manifold: near a vertex such a
 surface is the cone over a polygonal Jordan curve in a small sphere around the vertex. The analogue
@@ -65,23 +64,6 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Fact (finrank ℝ E = 3)]
 
-/-- A continuous map of the unit circle of `ℂ` to the unit sphere of a three-dimensional real inner
-product space misses some point: otherwise, being injective, it would be a homeomorphism from the
-circle, which is not simply connected, onto the simply connected 2-sphere. -/
-private theorem exists_notMem_range_of_injective {γ : sphere (0 : ℂ) 1 → sphere (0 : E) 1}
-    (hγ : Continuous γ) (hγi : Injective γ) : ∃ v, v ∉ range γ := by
-  by_contra! hsurj
-  have hrank : 2 < Module.rank ℝ E := by
-    have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ 2
-    rw [← Module.finrank_eq_rank, Fact.out (p := finrank ℝ E = 3)]
-    norm_num
-  have : SimplyConnectedSpace (sphere (0 : E) 1) := simplyConnectedSpace_sphere hrank 0 zero_le_one
-  let e : sphere (0 : ℂ) 1 ≃ₜ sphere (0 : E) 1 :=
-    Continuous.homeoOfEquivCompactToT2 (f := Equiv.ofBijective γ ⟨hγi, fun v => hsurj v⟩) hγ
-  have : SimplyConnectedSpace (sphere (0 : ℂ) 1) := e.toHomotopyEquiv.simplyConnectedSpace
-  exact Circle.not_simplyConnectedSpace
-    (sphereCircleHomeomorph 0 one_pos).symm.toHomotopyEquiv.simplyConnectedSpace
-
 /-- **The cone over a Jordan curve in the 2-sphere is locally flat.** For an embedding `γ` of the
 unit circle into the unit sphere of a three-dimensional real inner product space `E`, the cone
 `r • u ↦ r • γ u` is a locally flat embedding of the plane `ℂ` into `E`, with complementary model
@@ -90,19 +72,21 @@ theorem isLocallyFlat_sphereCone {γ : sphere (0 : ℂ) 1 → sphere (0 : E) 1} 
     (hγi : Injective γ) : IsLocallyFlat ℂ ℝ (sphereCone fun u => (γ u : E)) := by
   have : Fact (finrank ℝ E = 2 + 1) := ⟨Fact.out (p := finrank ℝ E = 3)⟩
   have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ 2
-  /- A homeomorphism `H` of the sphere carrying the great circle `vᗮ` onto the curve. -/
-  obtain ⟨v, hv⟩ := exists_notMem_range_of_injective hγ hγi
+  /- A homeomorphism `H` of the sphere carrying the great circle `vᗮ` onto the curve, for a point
+  `v` off the curve. -/
+  have hrank : 2 < Module.rank ℝ E := by
+    rw [← Module.finrank_eq_rank, Fact.out (p := finrank ℝ E = 3)]
+    norm_num
+  obtain ⟨v, hv⟩ : ∃ v, v ∉ range γ := by
+    simpa [Surjective] using not_surjective_of_continuous_injective_circle_sphere hrank hγ hγi
   have hJ : IsJordanCurve (range γ) := by
     have h0 : IsJordanCurve (univ : Set (sphere (0 : ℂ) 1)) :=
       isJordanCurve_iff.2 ⟨(Homeomorph.Set.univ _).trans (sphereCircleHomeomorph 0 one_pos)⟩
     simpa [image_univ] using h0.image hγ.continuousOn hγi.injOn
   obtain ⟨H, -, hH⟩ := hJ.exists_homeomorph_image_inner_eq_zero hv
-  have hv1 : ‖(v : E)‖ = 1 := norm_eq_of_mem_sphere v
-  have hW : finrank ℝ (ℝ ∙ (v : E))ᗮ = 2 :=
-    Submodule.finrank_orthogonal_span_singleton (norm_ne_zero_iff.1 (by simp [hv1]))
   /- The plane `vᗮ`, parametrized isometrically by `ℂ`. -/
   let L : ℂ ≃ₗᵢ[ℝ] (ℝ ∙ (v : E))ᗮ :=
-    Complex.isometryOfOrthonormal ((stdOrthonormalBasis ℝ (ℝ ∙ (v : E))ᗮ).reindex (finCongr hW))
+    complexIsometryOrthogonalSpanSingleton (ne_zero_of_mem_unit_sphere v)
   let ι : ℂ → E := fun z => (L z : E)
   /- The reparametrization `τ` of the circle with `γ = H ∘ ι ∘ τ` on the circle. -/
   have hmem (u : sphere (0 : ℂ) 1) : (H.symm (γ u) : E) ∈ (ℝ ∙ (v : E))ᗮ := by

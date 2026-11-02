@@ -44,26 +44,10 @@ theorem LinearMap.isLocallyFlat_of_injective (f : F →ₗ[ℝ] E) (hf : Functio
     have := Submodule.finrank_add_eq_of_isCompl hW
     rw [LinearMap.finrank_range_of_inj hf] at this
     omega
-  let e : G ≃ₗ[ℝ] W := LinearEquiv.ofFinrankEq G W hWG
-  /- The linear isomorphism `(x, y) ↦ f x + e y` of `F × G` onto `E`. -/
-  let S₀ : F × G →ₗ[ℝ] E := f.coprod (W.subtype ∘ₗ e.toLinearMap)
-  have hS₀ (p : F × G) : S₀ p = f p.1 + (e p.2 : E) := by
-    simp [S₀]
-  have hS₀i : Function.Injective S₀ := by
-    rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
-    intro p hp
-    rw [hS₀] at hp
-    have hfe : f p.1 = -(e p.2 : E) := eq_neg_of_add_eq_zero_left hp
-    have h0 : (e p.2 : E) = 0 := by
-      refine Submodule.disjoint_def.1 hW.disjoint _ ⟨-p.1, ?_⟩ (e p.2).2
-      rw [map_neg, hfe, neg_neg]
-    have hy : p.2 = 0 := e.injective (Subtype.ext (by simpa using h0))
-    have hx : p.1 = 0 := hf (by rw [hfe, h0, neg_zero, map_zero])
-    exact Prod.ext hx hy
-  have hdim' : finrank ℝ (F × G) = finrank ℝ E := by
-    rw [Module.finrank_prod, hdim]
+  /- The linear isomorphism `(x, y) ↦ f x + e y` of `F × G` onto `E`, for `e : G ≃ W`. -/
   let S : F × G ≃ₜ E :=
-    (LinearMap.linearEquivOfInjective S₀ hS₀i hdim').toContinuousLinearEquiv.toHomeomorph
+    (((LinearEquiv.ofInjective f hf).prodCongr (LinearEquiv.ofFinrankEq G W hWG)).trans
+      (Submodule.prodEquivOfIsCompl _ _ hW)).toContinuousLinearEquiv.toHomeomorph
   convert (isLocallyFlat_prodMkLeft (N := F) (F := F) (F' := G)).homeomorph_comp S using 1
   funext x
-  simp [S, hS₀]
+  simp [S, Submodule.coe_prodEquivOfIsCompl']

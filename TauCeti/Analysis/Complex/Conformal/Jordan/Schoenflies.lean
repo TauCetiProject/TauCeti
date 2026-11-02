@@ -7,10 +7,11 @@ module
 
 public import Mathlib.Topology.Compactification.OnePoint.Sphere
 public import TauCeti.Analysis.Complex.Conformal.Jordan.Complement
-import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
 import Mathlib.Topology.Maps.Proper.CompactlyGenerated
 import TauCeti.Analysis.Complex.PlaneSeparation.JordanCurve
+import TauCeti.Analysis.InnerProductSpace.Sphere.Stereographic
 import TauCeti.Analysis.Normed.Module.Ball.Radial.Cone
+import TauCeti.Logic.Equiv.Set
 
 /-!
 # The Schoenflies theorem
@@ -48,8 +49,6 @@ homeomorphism extends to the point at infinity.
   `0` to a given point of the inside of `C` and the unit circle, open disc and closed disc onto
   `C`, its inside and its closure.
 * `TauCeti.IsJordanCurve.exists_homeomorph_image_sphere`: **the Schoenflies theorem**.
-* `TauCeti.exists_onePoint_homeomorph_sphere_preimage_inner_eq_zero`: the 2-sphere is the one-point
-  compactification of the plane, with the unit circle on a great circle.
 * `TauCeti.IsJordanCurve.exists_homeomorph_image_inner_eq_zero`: the Schoenflies theorem on the
   2-sphere.
 
@@ -70,14 +69,6 @@ namespace TauCeti
 
 variable {C : Set ℂ} {p : ℂ}
 
-/-- A map that agrees on `s` with a bijection `s ≃ t` is a bijection from `s` onto `t`. -/
-private theorem bijOn_of_equiv_coe {α β : Type*} {s : Set α} {t : Set β} {g : α → β}
-    (e : s ≃ t) (he : ∀ z : s, (e z : β) = g z) : BijOn g s t := by
-  refine ⟨fun z hz => he ⟨z, hz⟩ ▸ (e ⟨z, hz⟩).2, fun x hx y hy hxy => ?_, fun y hy => ?_⟩
-  · have := e.injective (Subtype.ext ((he ⟨x, hx⟩).trans (hxy.trans (he ⟨y, hy⟩).symm)))
-    exact congrArg Subtype.val this
-  · exact ⟨e.symm ⟨y, hy⟩, (e.symm ⟨y, hy⟩).2, by rw [← he, e.apply_symm_apply]⟩
-
 /-- **The Schoenflies theorem, centred at a point of the inside.** For a Jordan curve `C ⊆ ℂ` and a
 point `p` of its inside `filledHull C \ C`, there is a homeomorphism `e` of `ℂ` with `e 0 = p`
 carrying the unit circle onto `C`, the open unit disc onto the inside of `C`, and the closed unit
@@ -88,7 +79,7 @@ theorem IsJordanCurve.exists_homeomorph_image_sphere_of_mem (hC : IsJordanCurve 
       e '' closedBall 0 1 = filledHull C := by
   obtain ⟨g, hgc, -, hgb, hgs, hg0, e₁, he₁⟩ := hC.exists_homeomorph_closedBall_filledHull hp
   obtain ⟨h, hhc, -, hhb, hhs, hht, -⟩ := hC.exists_homeomorph_compl_ball_compl_filledHull_sdiff
-  have hg : BijOn g (closedBall 0 1) (filledHull C) := bijOn_of_equiv_coe e₁.toEquiv he₁
+  have hg : BijOn g (closedBall 0 1) (filledHull C) := BijOn.of_equiv_coe e₁.toEquiv he₁
   have hsph : sphere (0 : ℂ) 1 ⊆ (ball 0 1)ᶜ := fun z hz => by
     simp [mem_sphere_zero_iff_norm.1 hz]
   /- The circle homeomorphism `σ = h⁻¹ ∘ g` comparing the two parametrizations of `C`. -/
@@ -175,67 +166,9 @@ open Module OnePoint
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Fact (finrank ℝ E = 3)]
 
-/-- **The 2-sphere is the one-point compactification of the plane**, with the point at infinity at
-any given point `v` and the unit circle on the great circle `⟪x, v⟫ = 0`. The homeomorphism is the
-inverse stereographic projection from `v`, read on the plane `vᗮ` through an isometry with `ℂ`
-followed by the scaling by `2`, which carries the unit circle to the circle of radius `2` that the
-stereographic projection from `v` puts on the great circle. -/
-theorem exists_onePoint_homeomorph_sphere_preimage_inner_eq_zero (v : sphere (0 : E) 1) :
-    ∃ K : OnePoint ℂ ≃ₜ sphere (0 : E) 1, K ∞ = v ∧
-      K ⁻¹' {x | ⟪(x : E), (v : E)⟫_ℝ = 0} = (↑) '' sphere (0 : ℂ) 1 := by
-  have hv1 : ‖(v : E)‖ = 1 := norm_eq_of_mem_sphere v
-  have : Fact (finrank ℝ E = 2 + 1) := ⟨Fact.out (p := finrank ℝ E = 3)⟩
-  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ 2
-  have hW : finrank ℝ (ℝ ∙ (v : E))ᗮ = 2 :=
-    Submodule.finrank_orthogonal_span_singleton (norm_ne_zero_iff.1 (by simp [hv1]))
-  let L : ℂ ≃ₗᵢ[ℝ] (ℝ ∙ (v : E))ᗮ :=
-    Complex.isometryOfOrthonormal ((stdOrthonormalBasis ℝ (ℝ ∙ (v : E))ᗮ).reindex (finCongr hW))
-  let D : ℂ ≃ₜ (ℝ ∙ (v : E))ᗮ :=
-    (Homeomorph.smulOfNeZero (2 : ℝ) two_ne_zero).trans L.toHomeomorph
-  let K : OnePoint ℂ ≃ₜ sphere (0 : E) 1 :=
-    D.onePointCongr.trans (onePointHyperplaneHomeoUnitSphere hv1)
-  have hKinf : K ∞ = v := by
-    simp [K, onePointHyperplaneHomeoUnitSphere]
-  have hKz (z : ℂ) :
-      (K z : E) = (‖D z‖ ^ 2 + 4)⁻¹ • ((4 : ℝ) • (D z : E) + (‖D z‖ ^ 2 - 4) • v) := by
-    simp [K, onePointHyperplaneHomeoUnitSphere, stereographic]
-  have hDz (z : ℂ) : ‖D z‖ = 2 * ‖z‖ := by
-    simp [D]
-  have hinner (z : ℂ) : ⟪(K z : E), (v : E)⟫_ℝ = (‖D z‖ ^ 2 - 4) / (‖D z‖ ^ 2 + 4) := by
-    have hDv : ⟪(D z : E), (v : E)⟫_ℝ = 0 :=
-      Submodule.mem_orthogonal_singleton_iff_inner_left.1 (D z).2
-    rw [hKz, inner_smul_left, inner_add_left, inner_smul_left, inner_smul_left, hDv,
-      real_inner_self_eq_norm_sq, hv1]
-    simp only [RCLike.conj_to_real]
-    field_simp
-    ring
-  refine ⟨K, hKinf, ?_⟩
-  ext q
-  induction q using OnePoint.rec with
-  | infty =>
-    simp only [mem_preimage, mem_ofPred_eq, hKinf, real_inner_self_eq_norm_sq, hv1]
-    simp
-  | coe z =>
-    rw [mem_preimage, mem_ofPred_eq, hinner, coe_injective.mem_set_image, hDz,
-      mem_sphere_zero_iff_norm]
-    have hpos : 0 < (2 * ‖z‖) ^ 2 + 4 := by positivity
-    rw [div_eq_zero_iff, or_iff_left hpos.ne']
-    constructor
-    · intro h
-      nlinarith [norm_nonneg z]
-    · intro h
-      rw [h]
-      norm_num
-
 /-- **The Schoenflies theorem on the 2-sphere.** Let `C` be a Jordan curve in the unit sphere of a
 three-dimensional real inner product space, and `v` a point of the sphere off `C`. Then some
-homeomorphism of the sphere fixing `v` carries the great circle `⟪x, v⟫ = 0` onto `C`.
-
-Stereographic projection from `v` identifies the sphere with the one-point compactification of the
-plane, `v` being the point at infinity and the great circle the unit circle
-(`TauCeti.exists_onePoint_homeomorph_sphere_preimage_inner_eq_zero`); the curve becomes a Jordan
-curve in the plane, and the homeomorphism of the plane given by the Schoenflies theorem extends to
-the one-point compactification. -/
+homeomorphism of the sphere fixing `v` carries the great circle `⟪x, v⟫ = 0` onto `C`. -/
 theorem IsJordanCurve.exists_homeomorph_image_inner_eq_zero {C : Set (sphere (0 : E) 1)}
     (hC : IsJordanCurve C) {v : sphere (0 : E) 1} (hv : v ∉ C) :
     ∃ e : sphere (0 : E) 1 ≃ₜ sphere (0 : E) 1, e v = v ∧
