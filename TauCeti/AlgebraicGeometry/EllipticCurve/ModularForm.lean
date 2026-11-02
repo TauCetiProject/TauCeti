@@ -155,9 +155,11 @@ theorem isIntegralModularForm_iff_universal : IsIntegralModularForm k f ↔
   set ψ := eval₂Hom C.specialize (Coeff.rec W.a₁ W.a₂ W.a₃ W.a₄ W.a₆) with hψ
   have hW : (Universal.curve.map (MvPolynomial.map (Int.castRingHom _))).map ψ = W := by
     ext <;> simp [hψ]
+  -- On the change-of-variables coordinates, `ψ` restricts to the classifying map of `C`.
+  have hψC : ψ.comp (algebraMap CoordinateRing _) = C.specialize :=
+    RingHom.ext fun _ ↦ by simp [hψ]
   have hC : ((universalChange ℤ).map (algebraMap _ _)).map ψ = C := by
-    rw [VariableChange.map_map, show ψ.comp (algebraMap _ _) = C.specialize from
-      RingHom.ext fun _ ↦ by simp [hψ], VariableChange.map_specialize]
+    rw [VariableChange.map_map, hψC, VariableChange.map_specialize]
   clear_value ψ
   rw [← hW, ← hC, map_variableChange, specialize_map, specialize_map, RingHom.comp_apply, h,
     map_mul, map_pow]
