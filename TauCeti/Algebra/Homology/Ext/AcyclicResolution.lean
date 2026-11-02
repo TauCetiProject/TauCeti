@@ -41,6 +41,7 @@ gives zero exactly when it is a coboundary (`CochainComplex.extMk_succ_eq_zero_i
   resolution, from `CategoryTheory.ShortComplex.ShortExact.extClass_postcomp_bijective`.
 * `CochainComplex.extMk_add`, `CochainComplex.extMk_zero`, `CochainComplex.extMk_neg` and
   `CochainComplex.extMk_sub`: `extMk` is additive in the cocycle.
+* `CochainComplex.mk₀_comp_extMk`: `extMk` is natural in `P`.
 * `CochainComplex.extMk_surjective`, `CochainComplex.extMk_zero_eq_zero_iff` and
   `CochainComplex.extMk_succ_eq_zero_iff`: `extMk` identifies `Extⁿ(P, F)` with the cohomology
   of `Hom(P, K)`.
@@ -223,6 +224,23 @@ lemma extMk_sub {n : ℕ} (f g : P ⟶ K.X n) (hf : f ≫ K.d n (n + 1) = 0)
     K.extMk ι hι hι' hK (f - g) (by simp [hf, hg]) =
       K.extMk ι hι hι' hK f hf - K.extMk ι hι hι' hK g hg := by
   simp only [sub_eq_add_neg, ← K.extMk_neg ι hι hι' hK g hg, ← K.extMk_add]
+
+/-- The class of a cocycle is natural in `P`: precomposing it with `g : P' ⟶ P` gives the class of
+the cocycle `g ≫ f`. -/
+lemma mk₀_comp_extMk {n : ℕ} (f : P ⟶ K.X n) (hf : f ≫ K.d n (n + 1) = 0) {P' : C}
+    (g : P' ⟶ P) :
+    (Ext.mk₀ g).comp (K.extMk ι hι hι' hK f hf) (zero_add _) =
+      K.extMk ι hι hι' hK (g ≫ f) (by simp [hf]) := by
+  cases n with
+  | zero =>
+    rw [extMk_of_deg_zero, extMk_of_deg_zero, Ext.mk₀_comp_mk₀]
+    congr 1
+    simp [← cancel_mono ι, hι'.lift_f]
+  | succ n =>
+    rw [extMk_of_deg_succ, extMk_of_deg_succ, ← Ext.comp_assoc_of_second_deg_zero,
+      Ext.mk₀_comp_mk₀]
+    congr 2
+    simp [← cancel_mono (K.iCycles (n + 1))]
 
 include hP in
 /-- **Every class in `Extⁿ(P, F)` is the class of a cocycle** of `Hom(P, K)`, for a resolution

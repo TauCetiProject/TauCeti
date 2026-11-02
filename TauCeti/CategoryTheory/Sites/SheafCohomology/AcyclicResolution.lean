@@ -72,15 +72,6 @@ variable [HasExt.{w} (Sheaf J AddCommGrpCat.{v})] (ι : F ⟶ K.X 0) [Mono ι] (
   (hι' : (ShortComplex.mk ι (K.d 0 1) hι).Exact) (hK : ∀ j, K.ExactAt (j + 1)) (V : C)
   (hKV : ∀ j k, Subsingleton ((K.X j).H' (k + 1) V))
 
-omit [HasExt (Sheaf J AddCommGrpCat)] in
-/-- A section of `Kⁿ` over `V` is killed by the differential exactly when the corresponding
-morphism from the free abelian sheaf on `V` is. -/
-private lemma symm_comp_d_eq_zero_iff {n m : ℕ} (s : (K.X n).obj.obj (op V)) :
-    (freeYonedaSheafSectionsEquiv J V (K.X n)).symm s ≫ K.d n m = 0 ↔
-      (K.d n m).hom.app (op V) s = 0 := by
-  rw [← (freeYonedaSheafSectionsEquiv J V (K.X m)).injective.eq_iff,
-    freeYonedaSheafSectionsEquiv_naturality_right, AddEquiv.apply_symm_apply, map_zero]
-
 /-- The class `[s]` in `Hⁿ(V, F)` of a section `s` of `Kⁿ` over `V` killed by the differential,
 for a resolution `0 ⟶ F ⟶ K⁰ ⟶ K¹ ⟶ ⋯`. It is `CochainComplex.extMk` applied to the morphism
 from the free abelian sheaf on `V` corresponding to `s`, transported to `Hⁿ(V, F)` along
@@ -88,7 +79,8 @@ from the free abelian sheaf on `V` corresponding to `s`, transported to `Hⁿ(V,
 noncomputable def resolutionClass {n : ℕ} (s : (K.X n).obj.obj (op V))
     (hs : (K.d n (n + 1)).hom.app (op V) s = 0) : F.H' n V :=
   (F.H'AddEquivExt n V).symm <| K.extMk ι hι hι' hK
-    ((freeYonedaSheafSectionsEquiv J V (K.X n)).symm s) ((symm_comp_d_eq_zero_iff V s).2 hs)
+    ((freeYonedaSheafSectionsEquiv J V (K.X n)).symm s)
+    (by rw [freeYonedaSheafSectionsEquiv_symm_naturality_right, hs, map_zero])
 
 /-- `resolutionClass` is `CochainComplex.extMk` applied to the morphism from the free abelian sheaf
 on `V` corresponding to the section, transported along `CategoryTheory.Sheaf.H'AddEquivExt`. -/
@@ -96,7 +88,8 @@ lemma resolutionClass_def {n : ℕ} (s : (K.X n).obj.obj (op V))
     (hs : (K.d n (n + 1)).hom.app (op V) s = 0) :
     resolutionClass ι hι hι' hK V s hs =
       (F.H'AddEquivExt n V).symm (K.extMk ι hι hι' hK
-        ((freeYonedaSheafSectionsEquiv J V (K.X n)).symm s) (by rwa [symm_comp_d_eq_zero_iff])) :=
+        ((freeYonedaSheafSectionsEquiv J V (K.X n)).symm s)
+        (by rw [freeYonedaSheafSectionsEquiv_symm_naturality_right, hs, map_zero])) :=
   (rfl)
 
 /-- The class of a sum of sections is the sum of their classes. -/
@@ -142,7 +135,7 @@ theorem resolutionClass_surjective {n : ℕ} (x : F.H' n V) :
   obtain ⟨f, hf, hx⟩ := K.extMk_surjective ι hι hι' hK
     (by simpa only [sheafH'_eq] using hKV) (F.H'AddEquivExt n V x)
   refine ⟨freeYonedaSheafSectionsEquiv J V (K.X n) f,
-    (symm_comp_d_eq_zero_iff V _).1 (by rwa [AddEquiv.symm_apply_apply]), ?_⟩
+    by rw [← freeYonedaSheafSectionsEquiv_naturality_right, hf, map_zero], ?_⟩
   rw [resolutionClass_def, AddEquiv.symm_apply_eq, ← hx]
   congr 1
   exact AddEquiv.symm_apply_apply _ f
@@ -171,9 +164,7 @@ theorem resolutionClass_succ_eq_zero_iff {n : ℕ} (s : (K.X (n + 1)).obj.obj (o
   refine ⟨fun ⟨g, hg⟩ ↦ ⟨freeYonedaSheafSectionsEquiv J V (K.X n) g, ?_⟩,
     fun ⟨t, ht⟩ ↦ ⟨(freeYonedaSheafSectionsEquiv J V (K.X n)).symm t, ?_⟩⟩
   · rw [← freeYonedaSheafSectionsEquiv_naturality_right, hg, AddEquiv.apply_symm_apply]
-  · rw [← (freeYonedaSheafSectionsEquiv J V (K.X (n + 1))).injective.eq_iff,
-      freeYonedaSheafSectionsEquiv_naturality_right, AddEquiv.apply_symm_apply,
-      AddEquiv.apply_symm_apply, ht]
+  · rw [freeYonedaSheafSectionsEquiv_symm_naturality_right, ht]
 
 include hι' hK hKV in
 /-- **Exactness of sections of an acyclic resolution**, in the form used to show that derived
