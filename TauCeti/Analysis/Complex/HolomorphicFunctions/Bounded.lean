@@ -265,7 +265,8 @@ theorem isCompactOperator_restrict [ProperSpace E] {K : Set V} (hK : IsCompact K
   exact ⟨_, subset_closure ⟨f, hf, rfl⟩,
     BoundedContinuousFunction.ext fun z => (restrict_apply (hU'K.trans hKU) f z).symm⟩
 
-/-- Restriction to an open set with compact closure inside `U` is a compact operator. -/
+/-- If `E` is proper, restriction to an open set with compact closure inside `U` is a compact
+operator. -/
 theorem isCompactOperator_restrict_of_isCompact_closure [ProperSpace E]
     (hU' : IsCompact (closure (U' : Set V))) (hU'U : closure (U' : Set V) ⊆ U) :
     IsCompactOperator (restrict (E := E) (subset_closure.trans hU'U)) :=
