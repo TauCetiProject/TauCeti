@@ -290,9 +290,9 @@ followed by the coordinate change from `e` to `e'`, is the one given by `e'`. -/
 theorem continuousLinearEquivAt_trans_coordChangeL (hb : b ∈ e.baseSet) (hb' : b ∈ e'.baseSet) :
     (e.continuousLinearEquivAt 𝕜 b hb).trans (e.coordChangeL 𝕜 e' b) =
       e'.continuousLinearEquivAt 𝕜 b hb' := by
-  rw [← comp_continuousLinearEquivAt_eq_coord_change e e' ⟨hb, hb'⟩,
-    ← ContinuousLinearEquiv.trans_assoc, ContinuousLinearEquiv.self_trans_symm,
-    ContinuousLinearEquiv.refl_trans]
+  rw [← comp_continuousLinearEquivAt_eq_coord_change e e' ⟨hb, hb'⟩]
+  ext x
+  simp only [ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.symm_apply_apply]
 
 end Geometry
 
@@ -315,11 +315,15 @@ theorem singularCohomologyMap_complZeroPairIso_hom_eq_sign_smul {n : ℕ}
       (SignType.sign (e.coordChangeL ℝ e' b : F →L[ℝ] F).det : ℤ) •
         TopPair.singularCohomologyMap
           (e.continuousLinearEquivAt ℝ b hb).complZeroPairIso.hom n g := by
+  -- The coordinate change acts on the cohomology of `(F, F ∖ {0})` by the sign of its determinant.
+  have hc : TopPair.singularCohomologyMap (R := R') (k := K) (M := M')
+      (e.coordChangeL ℝ e' b).complZeroPairIso.hom n =
+        (SignType.sign (e.coordChangeL ℝ e' b : F →L[ℝ] F).det : ℤ) • 𝟙 _ := by
+    rw [ContinuousLinearEquiv.complZeroPairIso_hom]
+    exact singularCohomologyMap_continuousLinearMap_compl_zero R' M' _ _ n
   rw [← e.continuousLinearEquivAt_trans_coordChangeL ℝ e' hb hb',
     ContinuousLinearEquiv.complZeroPairIso_trans, Iso.trans_hom,
-    TopPair.singularCohomologyMap_comp_apply, ContinuousLinearEquiv.complZeroPairIso_hom,
-    singularCohomologyMap_continuousLinearMap_compl_zero R' M' (e.coordChangeL ℝ e' b : F →L[ℝ] F)
-      _ n]
+    TopPair.singularCohomologyMap_comp_apply, hc]
   simp only [ModuleCat.hom_zsmul, ModuleCat.hom_id, LinearMap.smul_apply, LinearMap.id_apply,
     map_zsmul]
 
