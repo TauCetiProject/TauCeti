@@ -23,10 +23,11 @@ entries as complete invariants, including for singular matrices and in dimension
 For the special unitary group the determinant is a second invariant, and together with the
 singular values it is complete:
 `Matrix.exists_specialUnitary_mul_mul_specialUnitary_iff_singularValues_eq_and_det_eq`.
-The reason is that the two-sided stabilizer of a square matrix contains unitary pairs with arbitrary
-prescribed determinants whose product is one, and, for a singular matrix, with independently
-prescribed determinants (`Matrix.exists_unitary_mul_mul_unitary_eq_self`). Both come from
-rescaling one diagonal entry of the singular value decomposition.
+The reason is that the two-sided stabilizer of a square matrix over a nonempty index type contains
+unitary pairs with arbitrary prescribed determinants whose product is one, and, for a singular
+matrix, with independently prescribed determinants
+(`Matrix.exists_unitary_mul_mul_unitary_eq_self`). Both come from rescaling one diagonal entry of
+the singular value decomposition.
 
 ## References
 
@@ -177,18 +178,18 @@ private theorem exists_unitary_mul_mul_unitary_eq_self_fin [NeZero n]
     · simpa using hi
     · simp [Function.update_of_ne h]
   -- Conjugation by a unitary matrix preserves the determinant.
-  have hdet (D U : unitaryGroup (Fin n) 𝕜) :
-      ((U * D * star U : unitaryGroup (Fin n) 𝕜) : Matrix (Fin n) (Fin n) 𝕜).det =
-        (D : Matrix (Fin n) (Fin n) 𝕜).det := by
-    rw [Submonoid.coe_mul, Submonoid.coe_mul, det_mul, det_mul, mul_right_comm, ← det_mul,
-      ← Submonoid.coe_mul, Unitary.mul_star_self, Submonoid.coe_one, det_one, one_mul]
-  -- The second factor is written as a conjugate by `star Q` so that `hdet` applies to it.
-  refine ⟨P * D₁ * star P, star Q * D₂ * star (star Q), ?_, ?_, ?_⟩
-  · rw [hdet, det_diagonal, Finset.prod_update_of_mem (Finset.mem_univ i)]
+  refine ⟨P * D₁ * star P, star Q * D₂ * Q, ?_, ?_, ?_⟩
+  · rw [Submonoid.coe_mul, Submonoid.coe_mul, Unitary.coe_star,
+      det_conj_of_mul_eq_one (Unitary.mul_star_self_of_mem P.2)
+        (Unitary.star_mul_self_of_mem P.2),
+      det_diagonal, Finset.prod_update_of_mem (Finset.mem_univ i)]
     simp
-  · rw [hdet, det_diagonal, Finset.prod_update_of_mem (Finset.mem_univ i)]
+  · rw [Submonoid.coe_mul, Submonoid.coe_mul, Unitary.coe_star,
+      det_conj_of_mul_eq_one (Unitary.star_mul_self_of_mem Q.2)
+        (Unitary.mul_star_self_of_mem Q.2),
+      det_diagonal, Finset.prod_update_of_mem (Finset.mem_univ i)]
     simp
-  · simp only [star_star, Submonoid.coe_mul]
+  · simp only [Submonoid.coe_mul]
     calc (P : Matrix (Fin n) (Fin n) 𝕜) * D₁ * ↑(star P) * A * (↑(star Q) * D₂ * Q)
         = P * D₁ * ↑(star P * P) * diagonal σ * ↑(Q * star Q) * D₂ * Q := by
           rw [hA]; simp only [Submonoid.coe_mul, Matrix.mul_assoc]
