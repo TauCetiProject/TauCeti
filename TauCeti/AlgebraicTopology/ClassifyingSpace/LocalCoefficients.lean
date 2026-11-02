@@ -194,7 +194,7 @@ abbrev classifyingSpaceLocalSystemFunctor :
 -- Instance search does not find the general instance at this quotient covering map, whose
 -- spaces are bundled with `TopCat.of`, so it is supplied directly.
 instance : (classifyingSpaceLocalSystemFunctor k G).Additive :=
-  IsQuotientCoveringMap.instAdditiveAssociatedLocalSystemFunctor _ k
+  IsQuotientCoveringMap.instAdditiveRepLocalCoefficientSystemAssociatedLocalSystemFunctor _ k
 
 variable {X : ShortComplex (Rep.{u} k G)}
 
