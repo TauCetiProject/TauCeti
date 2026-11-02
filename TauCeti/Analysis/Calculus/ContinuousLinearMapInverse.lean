@@ -26,11 +26,9 @@ vector-field pullback along a parametric family.
   `ContinuousLinearMap.isInvertible_of_norm_sub_le_half`: a continuous linear map closer to an
   invertible one than the reciprocal norm of its inverse — or than half of it — is itself
   invertible.
-* `ContinuousLinearMap.isInvertible_of_surjective_of_norm_le`: a surjective map bounded below,
-  `‖x‖ ≤ C * ‖L x‖`, is invertible, with `‖L⁻¹ y‖ ≤ C * ‖y‖`
-  (`ContinuousLinearMap.norm_inverse_apply_le_of_norm_le`).
 * `ContinuousLinearMap.isInvertible_of_mul_norm_sub_lt`: the perturbation criterion phrased through
-  such an a priori estimate, `C * ‖M - L‖ < 1`, as used in the method of continuity.
+  an a priori estimate `‖x‖ ≤ C * ‖L x‖`, `C * ‖M - L‖ < 1`, as used in the method of
+  continuity.
 * `HasDerivAt.clm_inverse`: differentiates `(A t)⁻¹`.
 * `HasDerivAt.clm_inverse_apply`: differentiates `(A t)⁻¹ (w t)`.
 * `DifferentiableAt.clm_inverse_of_completeSpace`: the inverse of a differentiable family between
@@ -99,31 +97,13 @@ theorem ContinuousLinearMap.isInvertible_of_norm_sub_le_half [CompleteSpace E]
     exact h ▸ ContinuousLinearMap.isInvertible_equiv
   · exact ContinuousLinearMap.isInvertible_of_norm_sub_lt L (h.trans_lt (NNReal.half_lt_self h0))
 
-/-- A surjective continuous linear map that is bounded below, `‖x‖ ≤ C * ‖L x‖`, is invertible.
-Neither space needs to be complete. -/
-theorem ContinuousLinearMap.isInvertible_of_surjective_of_norm_le {L : E →L[𝕜] F} {C : ℝ}
-    (hL : Function.Surjective L) (hC : ∀ x, ‖x‖ ≤ C * ‖L x‖) : L.IsInvertible := by
-  let e := LinearEquiv.ofBijective (L : E →ₗ[𝕜] F) ⟨injective_of_forall_norm_le hC, hL⟩
-  have he : ∀ x, e x = L x := fun x ↦ LinearEquiv.ofBijective_apply _ x
-  -- `toContinuousLinearEquivOfBounds` has no coercion lemma; it applies as `e` by definition.
-  refine ⟨e.toContinuousLinearEquivOfBounds ‖L‖ C L.le_opNorm fun y ↦ ?_, ext he⟩
-  calc ‖e.symm y‖ ≤ C * ‖e (e.symm y)‖ := hC (e.symm y)
-    _ = C * ‖y‖ := by rw [e.apply_symm_apply]
-
-/-- The inverse of a surjective continuous linear map with `‖x‖ ≤ C * ‖L x‖` satisfies
-`‖L⁻¹ y‖ ≤ C * ‖y‖`. -/
-theorem ContinuousLinearMap.norm_inverse_apply_le_of_norm_le {L : E →L[𝕜] F} {C : ℝ}
-    (hL : Function.Surjective L) (hC : ∀ x, ‖x‖ ≤ C * ‖L x‖) (y : F) :
-    ‖L.inverse y‖ ≤ C * ‖y‖ := by
-  simpa [(isInvertible_of_surjective_of_norm_le hL hC).self_apply_inverse] using hC (L.inverse y)
-
 /-- **Invertibility is stable under perturbations small against an a priori estimate.** Let `E`
 be a Banach space and `L : E →L[𝕜] F` surjective with `‖x‖ ≤ C * ‖L x‖`. Then every
 `M : E →L[𝕜] F` with `C * ‖M - L‖ < 1` is invertible. -/
 theorem ContinuousLinearMap.isInvertible_of_mul_norm_sub_lt [CompleteSpace E]
     {L M : E →L[𝕜] F} {C : ℝ} (hL : Function.Surjective L) (hC : ∀ x, ‖x‖ ≤ C * ‖L x‖)
     (hM : C * ‖M - L‖ < 1) : M.IsInvertible := by
-  obtain ⟨e, rfl⟩ := isInvertible_of_surjective_of_norm_le hL hC
+  obtain ⟨e, rfl⟩ := isInvertible_of_surjective_of_forall_norm_le hL hC
   rcases subsingleton_or_nontrivial E with hE | hE
   · -- On the zero space every continuous linear map agrees with `e`.
     have hMe : M = e := ext fun x ↦ by rw [Subsingleton.elim x 0, map_zero, map_zero]
@@ -132,7 +112,7 @@ theorem ContinuousLinearMap.isInvertible_of_mul_norm_sub_lt [CompleteSpace E]
   obtain ⟨x, hx⟩ := exists_ne (0 : E)
   have hC0 : 0 < C := pos_of_mul_pos_left ((norm_pos_iff.2 hx).trans_le (hC x)) (norm_nonneg _)
   have hsymm : ‖(e.symm : F →L[𝕜] E)‖ ≤ C := opNorm_le_bound _ hC0.le fun y ↦ by
-    simpa using norm_inverse_apply_le_of_norm_le e.surjective hC y
+    simpa using norm_inverse_apply_le_of_forall_norm_le e.surjective hC y
   have hsymm0 : 0 < ‖(e.symm : F →L[𝕜] E)‖ :=
     norm_pos_iff.2 fun h ↦ hx (by simpa using congr($h (e x)))
   refine isInvertible_of_norm_sub_lt e ?_

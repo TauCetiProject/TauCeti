@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
+public import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
 # The method of continuity
@@ -34,12 +35,12 @@ solvability at the end point.
 
 ## Main declarations
 
-* `IsPreconnected.surjective_iff_of_norm_le`: the method of continuity for a family on a
+* `IsPreconnected.surjective_iff_of_forall_norm_le`: the method of continuity for a family on a
   preconnected parameter set.
-* `IsPreconnected.isInvertible_of_norm_le` and `IsPreconnected.continuousOn_inverse_of_norm_le`:
-  once one member is surjective, every member is invertible and the inverses depend continuously
-  on the parameter.
-* `ContinuousLinearMap.surjective_iff_of_norm_le_lineMap`: the classical statement for the
+* `IsPreconnected.isInvertible_of_forall_norm_le` and
+  `IsPreconnected.continuousOn_inverse_of_forall_norm_le`: once one member is surjective, every
+  member is invertible and the inverses depend continuously on the parameter.
+* `ContinuousLinearMap.surjective_iff_of_forall_norm_le_lineMap`: the classical statement for the
   segment `t ↦ (1 - t) L₀ + t L₁`, `t ∈ [0, 1]`.
 
 ## References
@@ -62,7 +63,7 @@ namespace IsPreconnected
 maps `E →L[𝕜] F`, continuous in operator norm on a preconnected set `S`, satisfying the uniform
 a priori estimate `‖x‖ ≤ C * ‖L t x‖` for `t ∈ S`. Then for `s, t ∈ S`, `L s` is surjective if
 and only if `L t` is. -/
-theorem surjective_iff_of_norm_le (hS : IsPreconnected S) (hL : ContinuousOn L S)
+theorem surjective_iff_of_forall_norm_le (hS : IsPreconnected S) (hL : ContinuousOn L S)
     (hC : ∀ t ∈ S, ∀ x, ‖x‖ ≤ C * ‖L t x‖) (hs : s ∈ S) (ht : t ∈ S) :
     Surjective (L s) ↔ Surjective (L t) := by
   refine hS.induction₂ (fun s t ↦ Surjective (L s) ↔ Surjective (L t)) (fun s hs ↦ ?_)
@@ -76,22 +77,23 @@ theorem surjective_iff_of_norm_le (hS : IsPreconnected S) (hL : ContinuousOn L S
       (by rwa [norm_sub_rev])).surjective⟩
 
 /-- **The method of continuity, invertible form.** Under the hypotheses of
-`IsPreconnected.surjective_iff_of_norm_le`, if one `L s`, `s ∈ S`, is surjective, then every
-`L t`, `t ∈ S`, is invertible. Its inverse satisfies `‖(L t)⁻¹ y‖ ≤ C * ‖y‖` by
-`ContinuousLinearMap.norm_inverse_apply_le_of_norm_le`. -/
-theorem isInvertible_of_norm_le (hS : IsPreconnected S) (hL : ContinuousOn L S)
+`IsPreconnected.surjective_iff_of_forall_norm_le`, if one `L s`, `s ∈ S`, is surjective, then
+every `L t`, `t ∈ S`, is invertible. Its inverse satisfies `‖(L t)⁻¹ y‖ ≤ C * ‖y‖` by
+`ContinuousLinearMap.norm_inverse_apply_le_of_forall_norm_le`. -/
+theorem isInvertible_of_forall_norm_le (hS : IsPreconnected S) (hL : ContinuousOn L S)
     (hC : ∀ t ∈ S, ∀ x, ‖x‖ ≤ C * ‖L t x‖) (hs : s ∈ S) (ht : t ∈ S) (h : Surjective (L s)) :
     (L t).IsInvertible :=
-  ContinuousLinearMap.isInvertible_of_surjective_of_norm_le
-    ((hS.surjective_iff_of_norm_le hL hC hs ht).1 h) (hC t ht)
+  ContinuousLinearMap.isInvertible_of_surjective_of_forall_norm_le
+    ((hS.surjective_iff_of_forall_norm_le hL hC hs ht).1 h) (hC t ht)
 
-/-- Under the hypotheses of `IsPreconnected.surjective_iff_of_norm_le`, if one `L s`, `s ∈ S`, is
-surjective, then the inverses `(L t)⁻¹` depend continuously on `t ∈ S` in operator norm. -/
-theorem continuousOn_inverse_of_norm_le (hS : IsPreconnected S) (hL : ContinuousOn L S)
+/-- Under the hypotheses of `IsPreconnected.surjective_iff_of_forall_norm_le`, if one `L s`,
+`s ∈ S`, is surjective, then the inverses `(L t)⁻¹` depend continuously on `t ∈ S` in operator
+norm. -/
+theorem continuousOn_inverse_of_forall_norm_le (hS : IsPreconnected S) (hL : ContinuousOn L S)
     (hC : ∀ t ∈ S, ∀ x, ‖x‖ ≤ C * ‖L t x‖) (hs : s ∈ S) (h : Surjective (L s)) :
     ContinuousOn (fun t ↦ (L t).inverse) S := fun t ht ↦
-  ((hS.isInvertible_of_norm_le hL hC hs ht h).contDiffAt_map_inverse (n := 0)).continuousAt
-    |>.comp_continuousWithinAt (hL t ht)
+  ((hS.isInvertible_of_forall_norm_le hL hC hs ht h).contDiffAt_map_inverse
+    (n := 0)).continuousAt.comp_continuousWithinAt (hL t ht)
 
 end IsPreconnected
 
@@ -100,11 +102,11 @@ namespace ContinuousLinearMap
 /-- **The method of continuity** (Gilbarg–Trudinger, Theorem 5.2). Let `E` be a Banach space and
 `L₀, L₁ : E →L[𝕜] F`. If the operators `L t = (1 - t) L₀ + t L₁` satisfy the a priori estimate
 `‖x‖ ≤ C * ‖L t x‖` for every `t ∈ [0, 1]`, then `L₀` is surjective if and only if `L₁` is. -/
-theorem surjective_iff_of_norm_le_lineMap [NormedSpace ℝ F] [SMulCommClass 𝕜 ℝ F]
+theorem surjective_iff_of_forall_norm_le_lineMap [NormedSpace ℝ F] [SMulCommClass 𝕜 ℝ F]
     {L₀ L₁ : E →L[𝕜] F}
     (hC : ∀ t ∈ Icc (0 : ℝ) 1, ∀ x, ‖x‖ ≤ C * ‖AffineMap.lineMap L₀ L₁ t x‖) :
     Surjective L₀ ↔ Surjective L₁ := by
-  simpa using isPreconnected_Icc.surjective_iff_of_norm_le
+  simpa using isPreconnected_Icc.surjective_iff_of_forall_norm_le
     AffineMap.lineMap_continuous.continuousOn hC (left_mem_Icc.2 zero_le_one)
     (right_mem_Icc.2 zero_le_one)
 

@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Normed.Operator.NormedSpace
 public import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 public import TauCeti.Analysis.Normed.Operator.Basic
 public import TauCeti.Analysis.Normed.Ring.StableSequence
-import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 
 /-!
 # Stable sequences of operators
@@ -62,7 +61,7 @@ theorem isStableSequence_iff_exists_forall_norm_le [∀ n, FiniteDimensional �
     (h x).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg _))
   have hinj : Function.Injective (A n) := ContinuousLinearMap.injective_of_forall_norm_le h'
   -- The lower bound makes the algebraic inverse continuous, so no completeness is needed.
-  obtain ⟨e', he'⟩ := ContinuousLinearMap.isInvertible_of_surjective_of_norm_le
+  obtain ⟨e', he'⟩ := ContinuousLinearMap.isInvertible_of_surjective_of_forall_norm_le
     (LinearMap.injective_iff_surjective.mp hinj) h'
   have hunit : IsUnit (A n) := ⟨(ContinuousLinearEquiv.unitsEquiv 𝕜 (E n)).symm e', he'⟩
   exact ⟨hunit, ContinuousLinearMap.norm_ringInverse_le_of_forall_norm_le hunit
