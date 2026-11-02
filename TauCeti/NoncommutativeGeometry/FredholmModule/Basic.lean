@@ -7,8 +7,10 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.LinearAlgebra.Complex.Module
+public import TauCeti.Algebra.Star.SelfAdjoint
 public import TauCeti.Analysis.Normed.Operator.Compact.Basic
 public import TauCeti.Analysis.Normed.Operator.Compact.HilbertAdjoint
+public import TauCeti.LinearAlgebra.Complex.Module
 
 /-!
 # Fredholm modules
@@ -171,12 +173,6 @@ private theorem isCompactOperator_rep_mul_half_star_sub_self (π : A →⋆ₙ�
   rw [mul_smul_comm, FunLike.coe_smul]
   exact h.smul _
 
-/-- The real part `(F + F*) / 2` is `F` plus half the skew difference `F* - F`. -/
-private theorem realPart_eq_add_half_star_sub (F : H →L[ℂ] H) :
-    (ℜ F : H →L[ℂ] H) = F + (2 : ℝ)⁻¹ • (star F - F) := by
-  rw [realPart_apply_coe]
-  module
-
 /-- **Self-adjoint replacement.** Let `F` be a bounded operator whose skew part is compact
 relative to `π`, i.e. `(F - F*) π(a)` is compact for every `a`. If `[F, π(a)]` and
 `(F² - 1) π(a)` are compact for every `a`, then the real part `ℜ F = (F + F*) / 2` is the operator
@@ -321,13 +317,6 @@ variable (M : EvenFredholmModule A H)
 theorem star_grading : star M.grading = M.grading :=
   M.isSelfAdjoint_grading.star_eq
 
-/-- An operator anticommuting with a self-adjoint `γ` has an adjoint anticommuting with `γ`. -/
-private theorem grading_mul_star {γ F : H →L[ℂ] H} (hγ : IsSelfAdjoint γ)
-    (hγF : γ * F = -(F * γ)) : γ * star F = -(star F * γ) := by
-  have h := congrArg star hγF
-  rw [star_mul, star_neg, star_mul, hγ.star_eq] at h
-  rw [h, neg_neg]
-
 /-- **Self-adjoint replacement**, even version: if `γ` anticommutes with `F`, it anticommutes
 with the real part `ℜ F` used by `FredholmModule.ofRealPart`. -/
 def ofRealPart (π : A →⋆ₙₐ[ℂ] H →L[ℂ] H) (F : H →L[ℂ] H)
@@ -342,7 +331,7 @@ def ofRealPart (π : A →⋆ₙₐ[ℂ] H →L[ℂ] H) (F : H →L[ℂ] H)
   grading_mul_grading := hγγ
   commute_grading_rep := hγπ
   grading_mul_operator := by
-    simp [realPart_apply_coe, mul_add, add_mul, hγF, grading_mul_star hγ hγF, add_comm]
+    simp [realPart_apply_coe, mul_add, add_mul, hγF, hγ.mul_star_eq_neg_star_mul hγF, add_comm]
 
 @[simp]
 theorem ofRealPart_toFredholmModule (π : A →⋆ₙₐ[ℂ] H →L[ℂ] H) (F : H →L[ℂ] H)
