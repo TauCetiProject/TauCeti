@@ -126,12 +126,9 @@ theorem exists_ne_zero_pow_eq_zero_inseparableFibre (ha : ∀ c : k, c ^ p ≠ a
   let q : K[X] := X - C α
   let z : AdjoinRoot (q ^ p) := AdjoinRoot.mk (q ^ p) q
   have hz : z ≠ 0 := by
-    intro h
-    have hdvd : q ^ p ∣ q := AdjoinRoot.mk_eq_zero.mp h
-    have hdeg := natDegree_le_of_dvd hdvd (X_sub_C_ne_zero α)
-    simp only [q, natDegree_pow, natDegree_X_sub_C, mul_one] at hdeg
-    have := (Fact.out : p.Prime).two_le
-    omega
+    apply AdjoinRoot.mk_ne_zero_of_natDegree_lt ((monic_X_sub_C α).pow p)
+      (X_sub_C_ne_zero α)
+    simpa [q, natDegree_pow] using (Fact.out : p.Prime).one_lt
   refine ⟨e.symm z, (map_ne_zero_iff e.symm e.symm.injective).mpr hz, ?_⟩
   apply e.injective
   simp only [map_pow, AlgEquiv.apply_symm_apply, map_zero]
