@@ -9,6 +9,7 @@ public import TauCeti.RepresentationTheory.Homological.TateCohomology.LowDegree
 public import TauCeti.RepresentationTheory.Homological.TateCohomology.Periodic
 public import Mathlib.RepresentationTheory.Coinduced
 import TauCeti.LinearAlgebra.LinearMap.Cardinality
+import TauCeti.SetTheory.Cardinal.Finite
 import Mathlib.RepresentationTheory.Homological.FiniteCyclic
 import Mathlib.RepresentationTheory.Homological.GroupCohomology.Shapiro
 import TauCeti.RepresentationTheory.Homological.TateCohomology.Finite
@@ -376,7 +377,8 @@ private theorem exists_hexagon_natCard {S : ShortComplex (Rep R G)} (hS : S.Shor
           Nat.card (range (ModuleCat.Hom.hom
             (ShortComplex.homologyMap (normHomCompSubMap g S.g)))) := by
       intro j hj
-      refine card_range_eq_card_range_of_comp_eq _ _
+      rw [← SetLike.coe_sort_coe, coe_range, ← SetLike.coe_sort_coe, coe_range]
+      refine Nat.card_range_eq_card_range_of_comp_eq
         (periodicHomologyIsoOdd S.X₂ g hj).toLinearEquiv.surjective
         (periodicHomologyIsoOdd S.X₃ g hj).toLinearEquiv.injective ?_
       have h := congrArg ModuleCat.Hom.hom (homologyMap_comp_periodicHomologyIsoOdd g S.g hj)
