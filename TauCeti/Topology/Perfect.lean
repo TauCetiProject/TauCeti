@@ -7,9 +7,13 @@ module
 
 public import Mathlib.Topology.Perfect
 public import Mathlib.Topology.Constructions
+public import Mathlib.Topology.DerivedSet
 
 /-!
-# Products of infinitely many nontrivial spaces are perfect
+# Perfect sets: homeomorphic images and products
+
+A homeomorphism carries perfect sets exactly onto perfect sets (`Homeomorph.perfect_image`), so
+statements about perfect sets can be transported along homeomorphisms of the ambient spaces.
 
 A product of infinitely many nontrivial topological spaces has no isolated points: a
 neighbourhood of a point in the product topology constrains only finitely many coordinates, so
@@ -19,6 +23,8 @@ perfect.
 
 ## Main results
 
+* `Homeomorph.perfect_image`: the image of a set under a homeomorphism is perfect exactly when
+  the set is.
 * `TauCeti.perfectSpace_pi`: a product of infinitely many nontrivial spaces is a perfect space.
 
 ## References
@@ -34,6 +40,25 @@ public section
 open Set Topology
 
 universe u v
+
+namespace Homeomorph
+
+variable {X : Type u} {Y : Type v} [TopologicalSpace X] [TopologicalSpace Y]
+
+private theorem perfect_image_of_perfect (h : X ≃ₜ Y) {C : Set X} (hC : Perfect C) :
+    Perfect (h '' C) :=
+  ⟨h.isClosed_image.2 hC.closed, by
+    rintro _ ⟨x, hx, rfl⟩
+    simpa [Filter.map_principal] using
+      AccPt.map (hC.acc x hx) h.continuous.continuousAt h.injective⟩
+
+/-- The image of a set under a homeomorphism is perfect exactly when the set is perfect. -/
+@[simp]
+theorem perfect_image (h : X ≃ₜ Y) {C : Set X} : Perfect (h '' C) ↔ Perfect C := by
+  refine ⟨fun hC => ?_, perfect_image_of_perfect h⟩
+  simpa [Set.image_image] using perfect_image_of_perfect h.symm hC
+
+end Homeomorph
 
 namespace TauCeti
 

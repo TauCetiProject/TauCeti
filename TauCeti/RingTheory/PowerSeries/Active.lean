@@ -34,6 +34,10 @@ coefficients. The order comparison needs only a seminormed ring; the interval st
 a normed ring to ensure that a nonzero series has positive Gauss norm and that the norm is
 attained at interior radii.
 
+The lowest dominant degree at a positive radius `s` is the unique dominant degree at every radius
+`r < s` close enough to `s`: the finitely many earlier weighted coefficients stay below it by
+continuity, and the later ones lose a larger power of `r / s`.
+
 ## References
 
 * M. Lazard, *Les zéros d'une fonction analytique d'une variable sur un corps valué complet*,
@@ -43,6 +47,8 @@ attained at interior radii.
 public section
 
 open Set Filter
+
+open scoped Topology
 
 namespace PowerSeries.IsRestricted
 
@@ -162,6 +168,47 @@ theorem IsLowestDominant.le_of_le (hi : IsLowestDominant r i f) (hj : IsLowestDo
   · exact (hi.unique hj).le
   · exact index_le_of_norm_coeff_mul_pow_eq hr hrs hj.hasGaussNorm
       hi.gaussNorm_pos hi.norm_coeff_mul_pow_eq hj.norm_coeff_mul_pow_eq
+
+/-- **A lowest dominant degree is the unique dominant degree just inside its radius.** If `i` is
+the lowest dominant degree of `f` at a radius `s > 0`, then for all radii `r < s` close enough to
+`s`, the weighted coefficient in degree `i` is the only one attaining the Gauss norm at `r`, so `i`
+is both the distinguished and the lowest dominant degree of `f` at `r`. -/
+theorem IsLowestDominant.eventually_isDistinguished_and_isLowestDominant
+    (hf : IsLowestDominant s i f) (hs : 0 < s) :
+    ∀ᶠ r in 𝓝[<] s, IsDistinguished r i f ∧ IsLowestDominant r i f := by
+  have hi : 0 < ‖f.coeff i‖ :=
+    pos_of_mul_pos_left (hf.norm_coeff_mul_pow_eq ▸ hf.gaussNorm_pos) (pow_nonneg hs.le i)
+  -- Near `s`, each of the finitely many earlier weighted coefficients stays below degree `i`.
+  have hev : ∀ᶠ r in 𝓝[<] s, ∀ m ∈ Finset.range i,
+      ‖f.coeff m‖ * r ^ m < ‖f.coeff i‖ * r ^ i := by
+    rw [Finset.eventually_all]
+    intro m hm
+    refine nhdsWithin_le_nhds (ContinuousAt.eventually_lt (by fun_prop) (by fun_prop) ?_)
+    rw [hf.norm_coeff_mul_pow_eq]
+    exact hf.norm_coeff_mul_pow_lt m (Finset.mem_range.mp hm)
+  filter_upwards [hev, Ioo_mem_nhdsLT hs] with r hr ⟨hr0, hrs⟩
+  have key : ∀ m, m ≠ i → ‖f.coeff m‖ * r ^ m < ‖f.coeff i‖ * r ^ i := by
+    intro m hm
+    rcases hm.lt_or_gt with h | h
+    · exact hr m (Finset.mem_range.mpr h)
+    · have hq0 : 0 < r / s := div_pos hr0 hs
+      have hq1 : r / s < 1 := (div_lt_one hs).mpr hrs
+      calc ‖f.coeff m‖ * r ^ m = ‖f.coeff m‖ * s ^ m * (r / s) ^ m := by
+            rw [div_pow, mul_assoc, mul_div_cancel₀ _ (pow_ne_zero m hs.ne')]
+        _ ≤ ‖f.coeff i‖ * s ^ i * (r / s) ^ m := by
+            refine mul_le_mul_of_nonneg_right ?_ (pow_nonneg hq0.le m)
+            rw [hf.norm_coeff_mul_pow_eq]
+            exact _root_.PowerSeries.le_gaussNorm _ _ _ hf.hasGaussNorm m
+        _ < ‖f.coeff i‖ * s ^ i * (r / s) ^ i :=
+            mul_lt_mul_of_pos_left (pow_lt_pow_right_of_lt_one₀ hq0 hq1 h)
+              (mul_pos hi (pow_pos hs i))
+        _ = ‖f.coeff i‖ * r ^ i := by
+            rw [div_pow, mul_assoc, mul_div_cancel₀ _ (pow_ne_zero i hs.ne')]
+  have hg : f.gaussNorm norm r = ‖f.coeff i‖ * r ^ i :=
+    gaussNorm_eq_of_forall_le (s := i) fun m ↦
+      (eq_or_ne m i).elim (fun h ↦ h ▸ le_rfl) fun h ↦ (key m h).le
+  exact ⟨⟨hg.symm, fun m hm ↦ hg ▸ key m hm.ne'⟩,
+    ⟨hg ▸ mul_pos hi (pow_pos hr0 i), hg.symm, fun m hm ↦ hg ▸ key m hm.ne⟩⟩
 
 end SeminormedRing
 

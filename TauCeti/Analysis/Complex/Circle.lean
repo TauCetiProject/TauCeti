@@ -29,6 +29,8 @@ and records that the coordinate function `z ↦ z` is a unitary element of `C(S�
   `Multiplicative ℝ →ₜ* Circle`.
 * `Circle.coordinate`: the coordinate function `z ↦ z` in `C(S¹, ℂ)`, and
   `Circle.coordinate_mem_unitary`.
+* `Circle.re_sq_add_im_sq` and `Circle.coe_add_inv_coe`: `Re z ^ 2 + Im z ^ 2 = 1` and
+  `z + z⁻¹ = 2 Re z` on the circle.
 -/
 
 public section
@@ -52,6 +54,14 @@ theorem coe_homeomorphSphere_apply (z : Circle) : (homeomorphSphere z : ℂ) = z
 theorem coe_homeomorphSphere_symm_apply (z : sphere (0 : ℂ) 1) :
     (homeomorphSphere.symm z : ℂ) = z :=
   (rfl)
+
+/-- The real and imaginary parts of a point of the circle satisfy `Re z ^ 2 + Im z ^ 2 = 1`. -/
+theorem re_sq_add_im_sq (z : Circle) : (z : ℂ).re ^ 2 + (z : ℂ).im ^ 2 = 1 := by
+  simpa [Complex.normSq_apply, sq] using normSq_coe z
+
+/-- For a point of the circle, `z + z⁻¹ = 2 Re z`. -/
+theorem coe_add_inv_coe (z : Circle) : (z : ℂ) + (z : ℂ)⁻¹ = 2 * (z : ℂ).re := by
+  rw [← coe_inv, coe_inv_eq_conj, Complex.add_conj, Complex.ofReal_mul, Complex.ofReal_ofNat]
 
 /-- The map `t ↦ exp (i t)` from the real line to the circle, as a continuous homomorphism
 from `Multiplicative ℝ`. -/
