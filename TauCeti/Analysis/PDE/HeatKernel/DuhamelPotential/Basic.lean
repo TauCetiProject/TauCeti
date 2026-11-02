@@ -10,6 +10,7 @@ import TauCeti.Analysis.Calculus.ParametricIntegral
 import TauCeti.Analysis.PDE.HeatKernel.ApproximateIdentity
 import TauCeti.Analysis.PDE.HeatKernel.Derivatives
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.PowerBounds
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -437,13 +438,14 @@ private theorem exists_ae_norm_iteratedFDeriv_two_heatKernel_convolution_sub_le 
   rwa [norm_fderiv_iteratedFDeriv]
 
 /-- **The Hölder estimate for the Hessian of the Duhamel potential.** For `0 < α < 1` there is a
-constant `C`, depending only on `α` and the dimension, such that the Hessian `D² w(t, ·)` is
-`α`-Hölder with constant `C H` whenever `f` is jointly measurable and essentially bounded on
-`(0, t) × E` and `f(s, ·)` is `α`-Hölder with constant `H` for almost every `0 < s < t`. Neither
-the bound on `f` nor the time `t` enters the estimate. -/
+positive constant `C`, depending only on `α` and the dimension, such that the Hessian
+`D² w(t, ·)` is `α`-Hölder with constant `C H` whenever `f` is jointly measurable and essentially
+bounded on `(0, t) × E` and `f(s, ·)` is `α`-Hölder with constant `H` for almost every
+`0 < s < t`. Neither the bound on `f` nor the time `t` enters the estimate. -/
 theorem exists_holderWith_iteratedFDeriv_two_heatDuhamelPotential {α : ℝ≥0} (hα₀ : 0 < α)
     (hα₁ : α < 1) :
-    ∃ C : ℝ≥0, ∀ {f : ℝ → E → F} {M t : ℝ} {H : ℝ≥0}, StronglyMeasurable (Function.uncurry f) →
+    ∃ C : ℝ≥0, 0 < C ∧ ∀ {f : ℝ → E → F} {M t : ℝ} {H : ℝ≥0},
+      StronglyMeasurable (Function.uncurry f) →
       (∀ᵐ s ∂volume.restrict (Ioo 0 t), ∀ᵐ y, ‖f s y‖ ≤ M) →
       (∀ᵐ s ∂volume.restrict (Ioo 0 t), HolderWith H α (f s)) → 0 < t →
       HolderWith (C * H) α (iteratedFDeriv ℝ 2 (heatDuhamelPotential f t)) := by
@@ -456,7 +458,8 @@ theorem exists_holderWith_iteratedFDeriv_two_heatDuhamelPotential {α : ℝ≥0}
   have hα₀' : (0 : ℝ) < α := hα₀
   have hα₁' : (α : ℝ) < 1 := hα₁
   have h1α : (0 : ℝ) < 1 - α := by linarith
-  refine ⟨(2 / α * (2 * C₂) + 2 / (1 - α) * C₃).toNNReal, fun {f M t H} hf hfM hH ht => ?_⟩
+  refine ⟨(2 / α * (2 * C₂) + 2 / (1 - α) * C₃).toNNReal + 1, by positivity,
+    fun {f M t H} hf hfM hH ht => ?_⟩
   rw [← holderOnWith_univ]
   refine HolderOnWith.of_dist_le fun x _ y _ => ?_
   rcases eq_or_ne x y with rfl | hxy
@@ -473,13 +476,15 @@ theorem exists_holderWith_iteratedFDeriv_two_heatDuhamelPotential {α : ℝ≥0}
     ← intervalIntegral.integral_sub (hint x) (hint y), dist_eq_norm]
   refine (norm_integral_le_of_ae_norm_le_rpow (A := 2 * C₂ * H) (B := C₃ * H) hα₀' hα₁' ht
     (norm_pos_iff.2 (sub_ne_zero.2 hxy)) (by positivity) (by positivity) ((hint x).sub (hint y))
-    ?_ ?_).trans_eq ?_
+    ?_ ?_).trans ?_
   · filter_upwards [hae₂] with s hs hsI
     refine (norm_sub_le _ _).trans ?_
     linarith [hs hsI x, hs hsI y]
   · filter_upwards [hae₃] with s hs hsI using hs hsI x y
-  · rw [NNReal.coe_mul, Real.coe_toNNReal _ (by positivity)]
-    ring
+  · rw [NNReal.coe_mul, NNReal.coe_add, NNReal.coe_one,
+      Real.coe_toNNReal _ (by positivity)]
+    have hnonneg := mul_nonneg H.coe_nonneg (Real.rpow_nonneg (norm_nonneg (x - y)) (α : ℝ))
+    nlinarith
 
 end Duhamel
 
