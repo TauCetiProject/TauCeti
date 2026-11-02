@@ -8,7 +8,6 @@ module
 public import Mathlib.MeasureTheory.Measure.Typeclasses.Finite
 public import Mathlib.MeasureTheory.Measure.GiryMonad
 public import Mathlib.Order.Interval.Set.Basic
-import Mathlib.MeasureTheory.Constructions.Polish.Basic
 import Mathlib.MeasureTheory.Measure.Dirac.Basic
 
 /-!
