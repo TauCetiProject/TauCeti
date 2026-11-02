@@ -44,9 +44,9 @@ function field, containing exactly the constants in `K`. For the principal congr
 * `Subgroup.CompactifiedQuotient.hasSum_laurentQExpansion`: convergence near the cusp.
 * `Subgroup.CompactifiedQuotient.laurentQExpansion_ofMeromorphic`: the expansion of the
   meromorphic function defined by a function meromorphic at every point.
-* `Subgroup.CompactifiedQuotient.coeffSubfield` and
-  `Subgroup.CompactifiedQuotient.mem_coeffSubfield`: the subfield of functions with coefficients
-  in a subfield of `ℂ`.
+* `Subgroup.CompactifiedQuotient.coeffSubfield`, `Subgroup.CompactifiedQuotient.mem_coeffSubfield`
+  and `Subgroup.CompactifiedQuotient.mem_coeffSubfield_iff_exists_mapRingHom_eq`: the subfield of
+  functions with coefficients in a subfield of `ℂ`.
 
 ## References
 
@@ -206,6 +206,14 @@ theorem mem_coeffSubfield {K : Subfield ℂ} :
   rw [coeffSubfield, Subfield.mem_comap, RingHom.mem_fieldRange, ← RingHom.mem_rangeS,
     HahnSeries.mem_map_rangeS]
   simp
+
+/-- A meromorphic function lies in `coeffSubfield D K` exactly when its Laurent `q`-expansion at
+`D` is the image of a Laurent series over `K`. -/
+theorem mem_coeffSubfield_iff_exists_mapRingHom_eq {K : Subfield ℂ} :
+    F ∈ coeffSubfield D K ↔
+      ∃ φ : LaurentSeries K, HahnSeries.mapRingHom K.subtype φ = laurentQExpansion D F := by
+  rw [← RingHom.mem_rangeS, HahnSeries.mem_map_rangeS, mem_coeffSubfield]
+  exact forall_congr' fun n ↦ ⟨fun h ↦ ⟨⟨_, h⟩, rfl⟩, fun ⟨c, hc⟩ ↦ hc ▸ c.2⟩
 
 /-- A constant function lies in `coeffSubfield D K` exactly when its value lies in `K`. -/
 @[simp]
