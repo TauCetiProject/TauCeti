@@ -378,19 +378,7 @@ theorem cgf_inner_multivariateGaussianMixtureMeasure
     cgf (fun x ↦ ⟪θ, x⟫) (multivariateGaussianMixtureMeasure p m S) t =
       Real.log (∑ k, (p.weights k : ℝ) *
         Real.exp (t * ⟪θ, m k⟫ + t ^ 2 / 2 * ⟪θ, (S k).toEuclideanLin θ⟫)) := by
-  let _ : MeasurableSpace κ := ⊤
-  have ht : t ∈ integrableExpSet (fun x ↦ ⟪θ, x⟫)
-      ((categoricalMeasure p).bind fun k ↦ multivariateGaussian (m k) (S k)) := by
-    rw [← multivariateGaussianMixtureMeasure_eq_bind]
-    simp
-  rw [multivariateGaussianMixtureMeasure_eq_bind, Measure.cgf_bind _
-    Measurable.of_discrete.aemeasurable _ t ht, integral_categoricalMeasure]
-  congr 1
-  refine Finset.sum_congr rfl fun k _ ↦ ?_
-  by_cases hk : p.weights k = 0
-  · simp [hk]
-  · rw [smul_eq_mul, mgf_inner_multivariateGaussian (m k) θ
-      (hS k (pos_iff_ne_zero.mpr hk)) t]
+  rw [cgf, mgf_inner_multivariateGaussianMixtureMeasure hS θ t]
 
 /-- The characteristic function of a multivariate Gaussian mixture with positive-semidefinite
 positive-weight components is the weighted sum of the Gaussian characteristic functions. -/
