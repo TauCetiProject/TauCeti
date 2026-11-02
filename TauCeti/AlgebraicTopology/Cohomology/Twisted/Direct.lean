@@ -251,21 +251,20 @@ variable {L} {K N : LocalCoefficientSystem.{u, v, w} R X}
 
 /-- A morphism of coefficient systems acts on every simplex value by its fibre map. -/
 def cochainsCoefficientMap (η : L ⟶ K) : cochains L ⟶ cochains K where
-  app n := ModuleCat.ofHom (LinearMap.pi fun σ ↦
-    (η.app (initialVertex σ)).hom.comp (LinearMap.proj σ))
+  app n := ModuleCat.ofHom (LinearMap.piMap fun σ ↦ (η.app (initialVertex σ)).hom)
   naturality {m n} α := by
     dsimp only [cochains]
     ext c σ
     dsimp only [cochains, cochainsMap, ModuleCat.hom_comp, ModuleCat.hom_ofHom,
-      LinearMap.pi_apply, LinearMap.comp_apply, LinearMap.proj_apply]
+      LinearMap.piMap, LinearMap.pi_apply, LinearMap.comp_apply, LinearMap.proj_apply]
     exact congrArg (fun f ↦ f (c ((TopCat.toSSet.obj X).map α.op σ)))
       (η.naturality (inv (vertexTransport α.op σ)))
 
 /-- The component of a coefficient-system morphism is the product of its fibre maps. -/
 lemma cochainsCoefficientMap_app (η : L ⟶ K) (n : SimplexCategory) :
     (cochainsCoefficientMap η).app n = eqToHom (cochains_obj L n) ≫ ModuleCat.ofHom
-      (LinearMap.pi fun σ : (TopCat.toSSet.obj X).obj (Opposite.op n) ↦
-        (η.app (initialVertex σ)).hom.comp (LinearMap.proj σ)) ≫
+      (LinearMap.piMap fun σ : (TopCat.toSSet.obj X).obj (Opposite.op n) ↦
+        (η.app (initialVertex σ)).hom) ≫
       eqToHom (cochains_obj K n).symm := (rfl)
 
 /-- After identifying the degree objects with coefficient families, the coefficient map
