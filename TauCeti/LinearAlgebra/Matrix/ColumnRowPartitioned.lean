@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Matrix.ColumnRowPartitioned
 public import Mathlib.LinearAlgebra.Matrix.ToLin
+import TauCeti.LinearAlgebra.Matrix.ToLin
 
 /-!
 # Linear independence of rows in partitioned matrices
@@ -15,17 +16,17 @@ This file proves that the rows of a column-partitioned matrix `[A | B]` are line
 as soon as the rows of one of its blocks are: two distinct combinations of the rows already
 differ on the columns of that block, so no nontrivial combination of the rows vanishes.
 
-The main instance is a block that is an identity matrix. Consequently a matrix in systematic
-form has full row rank, which is what turns a row count into a dimension: over a field, `[I | A]`
-has as many rows as the dimension of the code it generates, and `[B | I]` has as many rows as
-the codimension of the code it checks.
+The main instance is a block that is an identity matrix, whose rows are linearly independent by
+`Matrix.linearIndependent_row_one`. Consequently a matrix in systematic form has full row rank,
+which is what turns a row count into a dimension: over a field, `[I | A]` has as many rows as the
+dimension of the code it generates, and `[B | I]` has as many rows as the codimension of the code
+it checks.
 
 ## Main declarations
 
 * `Matrix.linearIndependent_row_fromCols_of_left`,
   `Matrix.linearIndependent_row_fromCols_of_right`: the rows of `[A | B]` are linearly
   independent when those of `A`, respectively `B`, are.
-* `Matrix.linearIndependent_row_one`: the rows of an identity matrix are linearly independent.
 * `Matrix.linearIndependent_row_one_fromCols`: the rows of `[I | A]` are linearly independent.
 * `Matrix.linearIndependent_row_fromCols_one`: the rows of `[B | I]` are linearly
   independent.
@@ -48,14 +49,6 @@ theorem linearIndependent_row_fromCols_of_right {B : Matrix m n₂ R}
     (hB : LinearIndependent R B.row) (A : Matrix m n₁ R) :
     LinearIndependent R (fromCols A B).row :=
   .of_comp (LinearMap.funLeft R R Sum.inr) <| by convert hB using 1; ext; simp
-
-/-- The rows of an identity matrix are linearly independent: they are the standard basis
-vectors `Pi.single i 1`. -/
-theorem linearIndependent_row_one [DecidableEq m] :
-    LinearIndependent R (1 : Matrix m m R).row := by
-  convert Pi.linearIndependent_single_one m R using 1
-  ext i j
-  exact one_eq_pi_single
 
 /-- The rows of a systematic matrix `[I | A]` are linearly independent. -/
 theorem linearIndependent_row_one_fromCols [DecidableEq m] (A : Matrix m n₂ R) :
