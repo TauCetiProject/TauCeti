@@ -77,7 +77,7 @@ iterate of `f` twice is the `n`-th iterate of `g`. -/
 theorem iterate_iterate_apply {f g : G → G} (h : ∀ a, f (f a) = g a) (n : ℕ) (a : G) :
     f^[n] (f^[n] a) = g^[n] a := by
   rw [← Function.iterate_add_apply, ← Nat.two_mul, Function.iterate_mul,
-    (iterate_two f).trans (funext h)]
+    (Function.iterate_two f).trans (funext h)]
 
 /-- **One further application of a square root of a self-map after an odd iterate.** If `f ∘ f = g`
 then `f` after `f^[2 * n + 1]` is `g^[n + 1]`, the odd exponent becoming the even one
@@ -86,7 +86,7 @@ theorem apply_iterate_two_mul_add_one {f g : G → G} (h : ∀ a, f (f a) = g a)
     f (f^[2 * n + 1] a) = g^[n + 1] a := by
   have hn : (2 * n + 1).succ = 2 * (n + 1) := by omega
   rw [← Function.iterate_succ_apply' f, hn, Function.iterate_mul,
-    (iterate_two f).trans (funext h)]
+    (Function.iterate_two f).trans (funext h)]
 
 /-- **The odd iterates of a square root of a map that raises a parameter to its `p`-th power.** Let
 `f` carry the one-parameter map `x` to the one-parameter map `y`, raising the parameter to its
@@ -100,7 +100,7 @@ f^[2 * n + 1] (x t) = y (t ^ (p ^ n * e)).
 theorem iterate_two_mul_add_one_apply_pow {f : G → G} {x y : A → G} {e p : ℕ}
     (hf : ∀ t, f (x t) = y (t ^ e)) (hsq : ∀ t, f (f (y t)) = y (t ^ p)) (n : ℕ) (t : A) :
     f^[2 * n + 1] (x t) = y (t ^ (p ^ n * e)) := by
-  rw [Function.iterate_succ_apply, hf, Function.iterate_mul, iterate_two,
+  rw [Function.iterate_succ_apply, hf, Function.iterate_mul, Function.iterate_two,
     iterate_apply_pow (f := f ∘ f) hsq, ← pow_mul, Nat.mul_comm e]
 
 end TauCeti
