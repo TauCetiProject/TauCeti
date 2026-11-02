@@ -21,6 +21,30 @@ permissions:
   pull-requests: read
 
 jobs:
+  recover-maintenance:
+    if: ${{ !inputs.dry-run }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: read
+      actions: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - name: Prepare pinned shared tools
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@2573d44fa8f3b32884278ca730a40f303b29e286
+        with:
+          tools-repository: TauCetiProject/TauCetiTools
+          tools-ref: 2573d44fa8f3b32884278ca730a40f303b29e286
+          project-directory: .
+      - name: Recover maintenance PRs abandoned without a build status
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/maintenance_builds.py
+
   select:
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -34,10 +58,10 @@ jobs:
           ref: main
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@2573d44fa8f3b32884278ca730a40f303b29e286
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+          tools-ref: 2573d44fa8f3b32884278ca730a40f303b29e286
           project-directory: .
       - name: Install checksum-verified elan
         env:
@@ -78,10 +102,10 @@ jobs:
           ref: main
           fetch-depth: 0
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@2573d44fa8f3b32884278ca730a40f303b29e286
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: ad4e955b398d1419b0931e3c825a925f1c6a6e9b
+          tools-ref: 2573d44fa8f3b32884278ca730a40f303b29e286
           project-directory: .
       - name: Publish the fixed-target bump
         env:
