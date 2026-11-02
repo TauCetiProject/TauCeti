@@ -100,6 +100,13 @@ theorem cartanVector_def (i : Fin 4) :
       ⁅rootVector (B := B) (.inl i), rootVector (B := B) (.inr i)⁆ :=
   (rfl)
 
+/-- Coefficient change preserves the normalized integral Cartan vector. -/
+-- Match before simplification changes the counit-indexed integer module structure.
+@[simp↓]
+theorem mapValue_cartanVector {C : Type*} [CommRing C] (φ : B →ₐ[ℤ] C) (i : Fin 4) :
+    Derivation.mapValue φ (cartanVector (B := B) i) = cartanVector (B := C) i := by
+  simp only [cartanVector_def, Derivation.mapValue_lie, mapValue_rootVector]
+
 /-- The matrix of a Cartan vector is the integral diagonal simple-coroot matrix. -/
 @[simp]
 theorem tangentMatrix_cartanVector (i : Fin 4) :
@@ -182,15 +189,11 @@ theorem derivationCompLieHom_weightTorusIntegralCoordinateMap_injective :
 
 /-- The four numbered Cartan vectors are independent, including in characteristic two. -/
 theorem linearIndependent_cartanVector : LinearIndependent B (cartanVector (B := B)) := by
-  have h := (SplitTorus.tangentBasis (R := ℤ) (B := B) (I := Fin 4)).linearIndependent.map_injOn
-    (derivationCompLieHom (B := B) weightTorusIntegralCoordinateMap.hom).toLinearMap
-    derivationCompLieHom_weightTorusIntegralCoordinateMap_injective.injOn
-  have heq :
-      ⇑(derivationCompLieHom (B := B) weightTorusIntegralCoordinateMap.hom).toLinearMap ∘
-          SplitTorus.tangentBasis (R := ℤ) (B := B) (I := Fin 4) = cartanVector (B := B) := by
-    funext i
-    exact derivationCompLieHom_weightTorusIntegralCoordinateMap_tangentBasis i
-  rwa [heq] at h
+  convert SplitTorus.linearIndependent_derivationCompLieHom_cocharacter
+    (B := B) derivationCompLieHom_weightTorusIntegralCoordinateMap_injective using 1
+  funext i
+  rw [cartanVector_eq_derivationComp_corootCocharacter, corootCocharacter_def,
+    derivationCompLieHom_apply]
 
 /-- The normalized Cartan vectors form a basis of their span, the toral tangent image. -/
 def cartanBasis : Module.Basis (Fin 4) B (Submodule.span B (Set.range (cartanVector (B := B)))) :=

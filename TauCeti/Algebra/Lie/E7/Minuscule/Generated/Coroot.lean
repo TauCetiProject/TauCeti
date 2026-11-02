@@ -181,16 +181,11 @@ theorem derivationCompLieHom_generatedWeightTorusCoordinateMap_injective
 /-- The numbered Cartan vectors are independent, including in characteristic two. -/
 theorem linearIndependent_generatedCartanVector :
     LinearIndependent R (generatedCartanVector R) := by
-  have h := (SplitTorus.tangentBasis (R := R) (B := R) (I := Fin 7)).linearIndependent.map_injOn
-    (derivationCompLieHom (B := R) (generatedWeightTorusCoordinateMap R).hom).toLinearMap
-    (derivationCompLieHom_generatedWeightTorusCoordinateMap_injective R R).injOn
-  have heq :
-      ⇑(derivationCompLieHom (B := R) (generatedWeightTorusCoordinateMap R).hom).toLinearMap ∘
-          SplitTorus.tangentBasis (R := R) (B := R) (I := Fin 7) =
-        generatedCartanVector R := by
-    funext i
-    exact derivationCompLieHom_generatedWeightTorusCoordinateMap_tangentBasis R i
-  rwa [heq] at h
+  convert SplitTorus.linearIndependent_derivationCompLieHom_cocharacter
+    (derivationCompLieHom_generatedWeightTorusCoordinateMap_injective R R) using 1
+  funext i
+  rw [generatedCartanVector_eq_derivationComp_generatedCorootCocharacter,
+    generatedCorootCocharacter_def, derivationCompLieHom_apply]
 
 /-- The simple-coroot differentials form a basis of their span, the toral tangent image. -/
 def generatedCartanBasis :
