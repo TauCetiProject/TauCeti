@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Normed.Module.TensorProduct.Completion
 public import TauCeti.Analysis.Normed.Module.TensorProduct.Map
 public import TauCeti.Analysis.OperatorIdeal.Carrier
 
@@ -33,7 +34,8 @@ The forgetful map to bounded bilinear forms is the contraction
 `TauCeti.IntegralBilinearForm.liftIsometry` of integral bilinear forms with the dual of the
 injective tensor product shows that the carrier is a Banach space when `𝕜` is complete.
 Restricting a functional on the injective tensor product along the contraction from the projective
-tensor product recovers the functional induced by the underlying bounded bilinear form.
+tensor product recovers the functional induced by the underlying bounded bilinear form, and
+likewise for the completed tensor products.
 
 ## Main declarations
 
@@ -337,6 +339,17 @@ theorem liftIsometry_comp_toInjectiveTensor (B : IntegralBilinearForm 𝕜 E F) 
     liftIsometry 𝕜 E F B ∘L ProjectiveTensor.toInjectiveTensor 𝕜 E F =
       ProjectiveTensor.liftIsometry 𝕜 E F 𝕜 B.toContinuousLinearMap :=
   ProjectiveTensor.continuousLinearMap_ext fun x y ↦ by simp
+
+/-- The completed form of `liftIsometry_comp_toInjectiveTensor`: restricting the extension to
+`E ⊗̂ε F` of the functional induced by an integral bilinear form along the contraction
+`E ⊗̂π F → E ⊗̂ε F` gives the functional induced by the underlying bounded bilinear form. -/
+theorem liftIsometry_fromCompletion_comp_toCompletedInjectiveTensor [CompleteSpace 𝕜]
+    (B : IntegralBilinearForm 𝕜 E F) :
+    (liftIsometry 𝕜 E F B).fromCompletion ∘L
+        CompletedProjectiveTensor.toCompletedInjectiveTensor 𝕜 E F =
+      CompletedProjectiveTensor.liftIsometry 𝕜 E F 𝕜 B.toContinuousLinearMap :=
+  CompletedProjectiveTensor.continuousLinearMap_ext fun x y ↦ by
+    simp [ProjectiveTensor.toInjectiveTensor_apply]
 
 /-- Over a complete field, the integral bilinear forms form a Banach space. -/
 instance [CompleteSpace 𝕜] : CompleteSpace (IntegralBilinearForm 𝕜 E F) :=

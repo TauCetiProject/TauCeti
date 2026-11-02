@@ -178,20 +178,19 @@ theorem exists_hasSum_tmul_tendsto_zero (u : CompletedProjectiveTensor 𝕜 E F)
   set t : ℕ → 𝕜 := fun n ↦ ((c n * ‖y n‖ : ℝ) : 𝕜) with ht_def
   have ht (n : ℕ) (hy : y n ≠ 0) : t n ≠ 0 := by
     simp [ht_def, (hc0 n).ne', hy]
+  have hnt (n : ℕ) : ‖t n‖ = c n * ‖y n‖ := by
+    simp [ht_def, (hc0 n).le]
   refine ⟨fun n ↦ t n • x n, fun n ↦ (t n)⁻¹ • y n, ?_, ?_, ?_⟩
   · convert hu using 3 with n
     by_cases hy : y n = 0
     · simp [hy]
     · rw [TensorProduct.smul_tmul, smul_smul, mul_inv_cancel₀ (ht n hy), one_smul]
-  · refine hcxy.congr fun n ↦ ?_
-    rw [norm_smul, ht_def, RCLike.norm_ofReal, abs_of_nonneg (by have := hc0 n; positivity)]
-    ring
+  · exact hcxy.congr fun n ↦ by rw [norm_smul, hnt]; ring
   · refine squeeze_zero_norm (fun n ↦ ?_) (tendsto_inv_atTop_zero.comp hc)
     by_cases hy : y n = 0
     · simpa [hy] using (hc0 n).le
-    · rw [norm_smul, norm_inv, ht_def, RCLike.norm_ofReal,
-        abs_of_nonneg (by have := hc0 n; positivity), mul_inv, mul_assoc,
-        inv_mul_cancel₀ (norm_ne_zero_iff.2 hy), mul_one, Function.comp_apply]
+    · have : ‖y n‖ ≠ 0 := norm_ne_zero_iff.2 hy
+      simp [norm_smul, hnt, field]
 
 end RCLike
 

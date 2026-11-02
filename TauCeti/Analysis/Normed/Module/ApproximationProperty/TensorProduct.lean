@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Module.ApproximationProperty.Basic
-public import TauCeti.Analysis.Normed.Module.TensorProduct.Approximable
 public import TauCeti.Analysis.Normed.Operator.Nuclear
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
 import TauCeti.Analysis.Normed.Module.TensorProduct.Associator
@@ -25,10 +24,9 @@ has the approximation property. Consequently:
 * the contraction `E ⊗̂π F → E ⊗̂ε F` is injective when `E` or `F` has the approximation
   property;
 * for a Banach space `F`, the canonical operator `E* ⊗̂π F → (E →L[𝕜] F)`, whose range is the
-  space of nuclear operators, is injective when `E*` or `F` has the approximation property. In
-  general this operator is the contraction `E* ⊗̂π F → E* ⊗̂ε F` followed by the isometric
-  embedding of `E* ⊗̂ε F` into the bounded operators, so its injectivity is equivalent to that of
-  the contraction.
+  space of nuclear operators, is injective when `E*` or `F` has the approximation property. This
+  uses `injective_toContinuousLinearMap_iff` from `TauCeti.Analysis.Normed.Operator.Nuclear`: the
+  operator is injective exactly when the contraction `E* ⊗̂π F → E* ⊗̂ε F` is.
 
 Under these hypotheses a nuclear operator therefore has a unique representing tensor.
 
@@ -48,8 +46,6 @@ All declarations are in the namespace `TauCeti.CompletedProjectiveTensor`.
   functional vanishes is zero.
 * `injective_toCompletedInjectiveTensor_of_hasApproximationProperty_right` and its `_left`
   counterpart: the contraction `E ⊗̂π F → E ⊗̂ε F` is injective.
-* `injective_toContinuousLinearMap_iff`: the canonical operator `E* ⊗̂π F → (E →L[𝕜] F)` is
-  injective exactly when the contraction `E* ⊗̂π F → E* ⊗̂ε F` is.
 * `injective_toContinuousLinearMap_of_hasApproximationProperty` and
   `injective_toContinuousLinearMap_of_hasApproximationProperty_strongDual`: the canonical operator
   is injective when `F`, or `E*`, has the approximation property.
@@ -162,11 +158,9 @@ the contraction to `E ⊗̂ε F` sends to zero. -/
 private theorem liftIsometry_smulRight_eq_zero {u : CompletedProjectiveTensor 𝕜 E F}
     (hu : toCompletedInjectiveTensor 𝕜 E F u = 0) (f : StrongDual 𝕜 E) (g : StrongDual 𝕜 F) :
     liftIsometry 𝕜 E F 𝕜 (f.smulRight g) u = 0 := by
-  have h : (IntegralBilinearForm.liftIsometry 𝕜 E F
-      (IntegralBilinearForm.smulRight f g)).fromCompletion ∘L toCompletedInjectiveTensor 𝕜 E F =
-        liftIsometry 𝕜 E F 𝕜 (f.smulRight g) :=
-    continuousLinearMap_ext fun x y ↦ by simp [ProjectiveTensor.toInjectiveTensor_apply]
-  rw [← h, ContinuousLinearMap.comp_apply, hu, map_zero]
+  rw [← IntegralBilinearForm.toContinuousLinearMap_smulRight,
+    ← IntegralBilinearForm.liftIsometry_fromCompletion_comp_toCompletedInjectiveTensor,
+    ContinuousLinearMap.comp_apply, hu, map_zero]
 
 /-- If `F` has the approximation property, the contraction `E ⊗̂π F → E ⊗̂ε F` is injective. -/
 theorem injective_toCompletedInjectiveTensor_of_hasApproximationProperty_right
@@ -185,23 +179,6 @@ theorem injective_toCompletedInjectiveTensor_of_hasApproximationProperty_left
 section Operator
 
 variable [CompleteSpace F]
-
-variable (𝕜 E F) in
-/-- The canonical operator `E* ⊗̂π F → (E →L[𝕜] F)` is the contraction `E* ⊗̂π F → E* ⊗̂ε F`
-followed by the isometric embedding of `E* ⊗̂ε F` into the bounded operators. -/
-theorem toOperator_comp_toCompletedInjectiveTensor :
-    (CompletedInjectiveTensor.toOperator 𝕜 E F).toContinuousLinearMap ∘L
-        toCompletedInjectiveTensor 𝕜 (StrongDual 𝕜 E) F =
-      toContinuousLinearMap 𝕜 E F :=
-  continuousLinearMap_ext fun f y ↦ by simp [ProjectiveTensor.toInjectiveTensor_apply]
-
-/-- The canonical operator `E* ⊗̂π F → (E →L[𝕜] F)` is injective exactly when the contraction
-`E* ⊗̂π F → E* ⊗̂ε F` is. -/
-theorem injective_toContinuousLinearMap_iff :
-    Function.Injective (toContinuousLinearMap 𝕜 E F) ↔
-      Function.Injective (toCompletedInjectiveTensor 𝕜 (StrongDual 𝕜 E) F) := by
-  rw [← toOperator_comp_toCompletedInjectiveTensor, ContinuousLinearMap.coe_comp]
-  exact (CompletedInjectiveTensor.toOperator 𝕜 E F).injective.of_comp_iff _
 
 /-- If the Banach space `F` has the approximation property, the canonical operator
 `E* ⊗̂π F → (E →L[𝕜] F)` is injective: every nuclear operator `E → F` has a unique representing
