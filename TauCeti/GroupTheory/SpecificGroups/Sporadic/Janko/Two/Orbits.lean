@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.SpecificGroups.Sporadic.Janko.Two.Basic
-public import Mathlib.GroupTheory.Index
-public import Mathlib.GroupTheory.GroupAction.Transitive
-public import Mathlib.Algebra.Group.Submonoid.BigOperators
+public import TauCeti.GroupTheory.GroupAction.Stabilizer.Chain
+import TauCeti.GroupTheory.GroupAction.Orbit.Closure
+import Mathlib.Algebra.Group.Action.Prod
+import Mathlib.GroupTheory.GroupAction.Transitive
+import Mathlib.Algebra.Group.Submonoid.BigOperators
 
 /-!
 # The first two basic orbits of the second Janko group
@@ -35,6 +37,9 @@ public section
 namespace TauCeti.Sporadic.J2
 
 open MulAction
+
+/-- The ordered points `0, 1, 2, …`, reduced modulo 100, used for the stabilizer chain. -/
+def basePoint (i : ℕ) : Fin 100 := Fin.ofNat 100 i
 
 /-! ### Explicit orbit witnesses -/
 
@@ -168,11 +173,14 @@ private theorem pointWord_spec (x : Fin 100) : word (pointWord x) 0 = x := by
 instance : IsPretransitive J2 (Fin 100) := by
   apply (isPretransitive_iff_base (0 : Fin 100)).2
   intro x
-  exact ⟨⟨word (pointWord x), word_mem _⟩, pointWord_spec x⟩
+  refine ⟨⟨word (pointWord x), word_mem _⟩, ?_⟩
+  simpa only [Subgroup.smul_def, Equiv.Perm.smul_def] using pointWord_spec x
 
 /-- The first basic orbit of the ATLAS model has length 100. -/
 @[simp]
-theorem ncard_orbit_zero : (orbit J2 (0 : Fin 100)).ncard = 100 := by
+theorem ncard_orbit_zero :
+    (orbit (J2.stabilizerChain basePoint 0) (basePoint 0)).ncard = 100 := by
+  rw [Subgroup.stabilizerChain_zero]
   simp [orbit_eq_univ]
 
 /-! ### A binary invariant bounding the second basic orbit -/
@@ -288,21 +296,14 @@ private theorem orbital_a : ∀ x y, orbital (a x) (a y) = orbital x y := by
 private theorem orbital_b : ∀ x y, orbital (b x) (b y) = orbital x y := by
   decide +kernel
 
-private theorem orbital_perm {g : Equiv.Perm (Fin 100)} (hg : g ∈ J2) :
-    ∀ x y, orbital (g x) (g y) = orbital x y := by
-  rw [J2_def] at hg
-  induction hg using Subgroup.closure_induction with
-  | mem g hg =>
-    rcases hg with rfl | rfl
-    · exact orbital_a
-    · exact orbital_b
-  | one => intro x y; rfl
-  | mul g h _ _ hg hh =>
-    intro x y
-    exact (hg (h x) (h y)).trans (hh x y)
-  | inv g _ hg =>
-    intro x y
-    simpa using (hg (g⁻¹ x) (g⁻¹ y)).symm
+private theorem orbit_pair_subset_orbital :
+    orbit J2 ((0, 1) : Fin 100 × Fin 100) ⊆ {p | orbital p.1 p.2 = true} := by
+  rw [J2_def]
+  apply orbit_closure_subset_of_finite (Set.toFinite _) (by decide +kernel)
+  intro g hg ⟨x, y⟩ hp
+  rcases hg with rfl | rfl
+  · simpa only [Set.mem_ofPred_eq, Prod.smul_mk, Equiv.Perm.smul_def, orbital_a] using hp
+  · simpa only [Set.mem_ofPred_eq, Prod.smul_mk, Equiv.Perm.smul_def, orbital_b] using hp
 
 private def secondOrbit : Finset (Fin 100) :=
   {1, 2, 3, 6, 8, 9, 12, 13, 14, 15, 17, 19, 22, 23, 24, 25, 27, 28, 29, 30, 31, 32, 34,
@@ -434,24 +435,31 @@ private theorem pairWord_spec : ∀ x ∈ secondOrbit,
   decide +kernel
 
 private theorem orbit_stabilizer_eq_secondOrbit :
-    orbit ↥(J2 ⊓ stabilizer (Equiv.Perm (Fin 100)) (0 : Fin 100))
-      (1 : Fin 100) = secondOrbit := by
+    orbit (J2.stabilizerChain basePoint 1) (basePoint 1) = secondOrbit := by
+  have h0 : basePoint 0 = 0 := by decide +kernel
+  have h1 : basePoint 1 = 1 := by decide +kernel
+  rw [Subgroup.stabilizerChain_succ, Subgroup.stabilizerChain_zero, h0, h1]
   ext x
   constructor
   · rintro ⟨g, rfl⟩
     apply (mem_secondOrbit _).2
-    have hfix : (g : Equiv.Perm (Fin 100)) 0 = 0 := g.2.2
-    have h := orbital_perm g.2.1 0 1
-    rw [hfix] at h
-    exact h.trans (by decide +kernel)
+    have hfix : (g : Equiv.Perm (Fin 100)) 0 = 0 := by
+      simpa only [Equiv.Perm.smul_def] using mem_stabilizer_iff.mp g.2.2
+    have h := orbit_pair_subset_orbital
+      (mem_orbit_iff.mpr ⟨⟨g, g.2.1⟩, rfl⟩)
+    simpa only [Subgroup.smul_def, Prod.smul_mk, Equiv.Perm.smul_def,
+      Set.mem_ofPred_eq, hfix] using h
   · intro hx
     have hw := pairWord_spec x hx
-    exact mem_orbit_iff.mpr ⟨⟨word (pairWord x), word_mem _, hw.1⟩, hw.2⟩
+    have hfix : word (pairWord x) ∈ stabilizer (Equiv.Perm (Fin 100)) (0 : Fin 100) := by
+      simpa only [mem_stabilizer_iff, Equiv.Perm.smul_def] using hw.1
+    refine mem_orbit_iff.mpr ⟨⟨word (pairWord x), word_mem _, hfix⟩, ?_⟩
+    simpa only [Subgroup.smul_def, Equiv.Perm.smul_def] using hw.2
 
 /-- The orbit of `1` under the point stabilizer of `0` in the ATLAS model of `J₂`.
 It has only 63 points rather than all 99 points different from `0`. -/
 theorem orbit_stabilizer_zero_one :
-    orbit ↥(J2 ⊓ stabilizer (Equiv.Perm (Fin 100)) (0 : Fin 100)) (1 : Fin 100) =
+    orbit (J2.stabilizerChain basePoint 1) (basePoint 1) =
       ({1, 2, 3, 6, 8, 9, 12, 13, 14, 15, 17, 19, 22, 23, 24, 25, 27, 28, 29, 30, 31, 32, 34,
         35, 37, 39, 40, 41, 42, 43, 45, 47, 49, 56, 57, 58, 62, 63, 64, 66, 67, 69, 70, 72, 73,
         74, 75, 76, 77, 81, 82, 85, 86, 88, 89, 90, 93, 94, 95, 96, 97, 98, 99} :
@@ -461,24 +469,16 @@ theorem orbit_stabilizer_zero_one :
 /-- The second basic orbit, for the ordered base beginning `0, 1`, has length 63. -/
 @[simp]
 theorem ncard_orbit_stabilizer_zero_one :
-    (orbit ↥(J2 ⊓ stabilizer (Equiv.Perm (Fin 100)) (0 : Fin 100))
-      (1 : Fin 100)).ncard = 63 := by
+    (orbit (J2.stabilizerChain basePoint 1) (basePoint 1)).ncard = 63 := by
   rw [orbit_stabilizer_eq_secondOrbit, Set.ncard_coe_finset]
   decide +kernel
 
 /-- The first two basic orbits reduce the order of `J₂` to that of its two-point stabilizer.
 No order for the remaining stabilizer is assumed. -/
 theorem card_eq_mul_card_stabilizer_zero_one :
-    Nat.card J2 = 6300 * Nat.card
-      ↥((J2 ⊓ stabilizer (Equiv.Perm (Fin 100)) (0 : Fin 100)) ⊓
-        stabilizer (Equiv.Perm (Fin 100)) (1 : Fin 100)) := by
-  have h0 := Subgroup.relIndex_mul_card (stabilizer (Equiv.Perm (Fin 100)) (0 : Fin 100)) J2
-  have h1 := Subgroup.relIndex_mul_card (stabilizer (Equiv.Perm (Fin 100)) (1 : Fin 100))
-    (J2 ⊓ stabilizer (Equiv.Perm (Fin 100)) (0 : Fin 100))
-  rw [Subgroup.relIndex, stabilizer_subgroupOf, index_stabilizer, ncard_orbit_zero,
-    inf_comm] at h0
-  rw [Subgroup.relIndex, stabilizer_subgroupOf, index_stabilizer,
-    ncard_orbit_stabilizer_zero_one, inf_comm] at h1
-  omega
+    Nat.card J2 = 6300 * Nat.card (J2.stabilizerChain basePoint 2) := by
+  simpa only [Finset.prod_range_succ, Finset.prod_range_zero, one_mul,
+    ncard_orbit_zero, ncard_orbit_stabilizer_zero_one, Nat.reduceMul] using
+    (J2.prod_ncard_orbit_mul_card_stabilizerChain basePoint 2).symm
 
 end TauCeti.Sporadic.J2
