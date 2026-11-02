@@ -46,12 +46,14 @@ a double cover of `SO(Q) × U(1)` whenever `Spin(Q)` is a double cover of `SO(Q)
 
 * `CliffordAlgebra.mem_spinCKernel_iff`: the subgroup `spinCKernel Q hQ` is `{1, (-1, -1)}`.
 * `CliffordAlgebra.coe_spinCKernel`: the underlying set of that subgroup is the diagonal pair.
+* `CliffordAlgebra.finite_spinCKernel`: the diagonal kernel is finite.
 * `CliffordAlgebra.spinCGroup.mk_eq_mk_iff`: `[s, z] = [s', z']` exactly when
   `(s', z') = (s, z)` or `(s', z') = (-s, -z)`.
 * `CliffordAlgebra.spinCGroup.mem_ker_toSpecialOrthogonal_prod_det_iff`: the kernel of
   `Spinᶜ(Q) → SO(Q) × U(1)` is `{1, [1, -1]}`.
 * `CliffordAlgebra.spinCGroup.coe_ker_toSpecialOrthogonal_prod_det`: the underlying set of that
   kernel is the pair `{1, [1, -1]}`.
+* `CliffordAlgebra.spinCGroup.finite_ker_toSpecialOrthogonal_prod_det`: that kernel is finite.
 * `CliffordAlgebra.spinCGroup.toSpecialOrthogonal_prod_det_surjective`: this map is onto when the
   Spin action is onto `SO(Q)`.
 
@@ -97,6 +99,11 @@ theorem coe_spinCKernel :
       {1, (spinGroup.negOne Q hQ, -1)} := by
   ext p
   simp [mem_spinCKernel_iff]
+
+/-- The diagonal order-two kernel defining `Spinᶜ(Q)` is finite. -/
+theorem finite_spinCKernel : (spinCKernel Q hQ : Set (spinGroup Q × Circle)).Finite := by
+  rw [coe_spinCKernel]
+  exact Set.toFinite _
 
 /-- `(-1, -1)` lies in `spinCKernel Q hQ`. -/
 theorem negOne_neg_one_mem_spinCKernel : (spinGroup.negOne Q hQ, -1) ∈ spinCKernel Q hQ :=
@@ -301,6 +308,14 @@ theorem coe_ker_toSpecialOrthogonal_prod_det [FiniteDimensional ℝ M]
   have : Nontrivial M := QuadraticMap.nontrivial_of_ne_zero hQ
   ext x
   simp [mem_ker_toSpecialOrthogonal_prod_det_iff Q hQ hQn]
+
+/-- The frame-and-determinant kernel is finite for a nondegenerate form in positive finite
+dimension. -/
+theorem finite_ker_toSpecialOrthogonal_prod_det [FiniteDimensional ℝ M]
+    (hQn : Q.Nondegenerate) :
+    (((toSpecialOrthogonal Q hQ).prod (det Q hQ)).ker : Set (spinCGroup Q hQ)).Finite := by
+  rw [coe_ker_toSpecialOrthogonal_prod_det Q hQ hQn]
+  exact Set.toFinite _
 
 /-- **`Spinᶜ(Q) → SO(Q) × U(1)` is onto** whenever the Spin action is onto `SO(Q)`: every unit
 complex number has a square root on the circle. -/

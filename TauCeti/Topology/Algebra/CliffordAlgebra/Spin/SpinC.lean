@@ -49,9 +49,8 @@ namespace spinCGroup
 
 /-- The quotient topology on `Spinᶜ(Q)` is Hausdorff when Clifford multiplication is continuous. -/
 instance instT2Space [ContinuousMul (CliffordAlgebra Q)] : T2Space (spinCGroup Q hQ) := by
-  let : IsClosed (spinCKernel Q hQ : Set (spinGroup Q × Circle)) := by
-    rw [coe_spinCKernel]
-    exact (Set.toFinite {1, (spinGroup.negOne Q hQ, (-1 : Circle))}).isClosed
+  let : IsClosed (spinCKernel Q hQ : Set (spinGroup Q × Circle)) :=
+    (finite_spinCKernel Q hQ).isClosed
   infer_instance
 
 /-- The actual quotient map from `Spin(Q) × Circle` to `Spinᶜ(Q)` is a quotient covering map
@@ -62,14 +61,11 @@ theorem isQuotientCoveringMap_mk [ContinuousMul (CliffordAlgebra Q)] :
     convert QuotientGroup.isQuotientMap_mk (spinCKernel Q hQ) using 1
     funext p
     exact mk_apply Q hQ p
-  have hfinite : (spinCKernel Q hQ : Set (spinGroup Q × Circle)).Finite := by
-    rw [coe_spinCKernel]
-    exact Set.toFinite _
   exact (IsQuotientCoveringMap.subgroup_congr (mk Q hQ) (spinGroup Q × Circle)
     (mk Q hQ).ker (spinCKernel Q hQ) (ker_mk Q hQ)).mp <|
     hquot.isQuotientCoveringMap_of_isDiscrete_ker_monoidHom (by
       rw [ker_mk]
-      exact hfinite.isDiscrete)
+      exact (finite_spinCKernel Q hQ).isDiscrete)
 
 /-- The determinant character `[s, z] ↦ z²` is continuous for the quotient topology. -/
 @[fun_prop]
@@ -116,22 +112,15 @@ theorem isQuotientCoveringMap_toSpecialOrthogonal_prod_det
   let _ : CompactSpace (spinGroup Q) :=
     isCompact_iff_compactSpace.mp ((isCompact_spinGroup_iff_posDef_or_negDef Q hQn).mpr hdef)
   have hsurj : Function.Surjective (spinToSpecialOrthogonal Q) := by
-    apply MonoidHom.range_eq_top.mp
-    rw [range_spinToSpecialOrthogonal_eq_ker_spinorNorm Q hQn]
     rcases hdef with hpos | hneg
-    · rw [spinorNorm_eq_one_of_posDef Q hpos]
-      exact MonoidHom.ker_one
-    · rw [spinorNorm_eq_one_of_negDef Q hneg]
-      exact MonoidHom.ker_one
-  let f := (toSpecialOrthogonal Q hQ).prod (det Q hQ)
-  have hquot : IsQuotientMap f := IsQuotientMap.of_surjective_continuous
-    (toSpecialOrthogonal_prod_det_surjective Q hQ hsurj)
-    (continuous_toSpecialOrthogonal_prod_det Q hQ)
-  apply hquot.isQuotientCoveringMap_of_isDiscrete_ker_monoidHom
-  apply Set.Finite.isDiscrete
-  change (((toSpecialOrthogonal Q hQ).prod (det Q hQ)).ker : Set (spinCGroup Q hQ)).Finite
-  rw [coe_ker_toSpecialOrthogonal_prod_det Q hQ hQn]
-  exact Set.toFinite _
+    · exact spinToSpecialOrthogonal_surjective_of_posDef Q hpos
+    · exact spinToSpecialOrthogonal_surjective_of_negDef Q hneg
+  have hquot : IsQuotientMap ((toSpecialOrthogonal Q hQ).prod (det Q hQ)) :=
+    IsQuotientMap.of_surjective_continuous
+      (toSpecialOrthogonal_prod_det_surjective Q hQ hsurj)
+      (continuous_toSpecialOrthogonal_prod_det Q hQ)
+  exact hquot.isQuotientCoveringMap_of_isDiscrete_ker_monoidHom
+    (finite_ker_toSpecialOrthogonal_prod_det Q hQ hQn).isDiscrete
 
 end spinCGroup
 
