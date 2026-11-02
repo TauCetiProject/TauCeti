@@ -21,6 +21,8 @@ convolution conjugation, so it preserves the Lie bracket.
 * `Derivation.adjointLieEquiv`: every algebra-valued point acts by Lie algebra
   automorphisms on the scalar-extended tangent space.
 * `Derivation.adjointAction_bracket`: the established adjoint action preserves brackets.
+* `Derivation.endOfPoint_adjointComodule_bracket`: so does the point action of the adjoint
+  comodule.
 
 ## References
 
@@ -54,6 +56,24 @@ theorem adjointAction_bracket
     tangentScalarExtensionEquiv_bracket,
     tangentScalarExtensionEquiv_adjointAction,
     tangentScalarExtensionEquiv_adjointAction]
+  exact adDerivation_lie A (pointInCounitAlgebra A g) _ _
+
+/-- The point action of the adjoint comodule preserves the bracket on the scalar-extended
+tangent space. -/
+@[simp]
+theorem endOfPoint_adjointComodule_bracket
+    (A : CommAlgCat.{max u v} R) (g : HopfAlgebra.points (H := H) A)
+    (x y : A ⊗[R] Module.Dual R (Bialgebra.CotangentSpace R H)) :
+    letI := adjointComodule (R := R) (H := H)
+    Comodule.endOfPoint (Module.Dual R (Bialgebra.CotangentSpace R H)) g.ofConv ⁅x, y⁆ =
+      ⁅Comodule.endOfPoint (Module.Dual R (Bialgebra.CotangentSpace R H)) g.ofConv x,
+        Comodule.endOfPoint (Module.Dual R (Bialgebra.CotangentSpace R H)) g.ofConv y⁆ := by
+  apply (tangentScalarExtensionEquiv (R := R) (A := H) (B := A)).injective
+  rw [tangentScalarExtensionEquiv_bracket,
+    tangentScalarExtensionEquiv_adjointComodule_endOfPoint,
+    tangentScalarExtensionEquiv_bracket,
+    tangentScalarExtensionEquiv_adjointComodule_endOfPoint,
+    tangentScalarExtensionEquiv_adjointComodule_endOfPoint]
   exact adDerivation_lie A (pointInCounitAlgebra A g) _ _
 
 /-- Every algebra-valued point acts on the scalar-extended tangent space by a Lie algebra

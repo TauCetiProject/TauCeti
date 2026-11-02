@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.RingTheory.Flat.Basic
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Basic
 
@@ -30,6 +31,8 @@ are built from them.
   Galois connection.
 * `TauCeti.Subcomodule.comap_bot_toSubmodule`: the bottom inverse image as a kernel.
 * `TauCeti.Comodule.Hom.ker_finite`: kernels in noetherian modules are finite.
+* `TauCeti.Comodule.Hom.eigenspace`: an eigenspace of a comodule endomorphism, as a
+  subcomodule.
 
 ## References
 
@@ -220,6 +223,44 @@ theorem mem_ker_of_apply_eq_zero {f : Hom R C M N} {m : M} (hm : f m = 0) :
   mem_ker.mpr hm
 
 end Hom
+
+section Eigenspace
+
+variable {V : Type*} [AddCommGroup V] [Module R V] [Comodule R C V]
+
+namespace Hom
+
+/-- The comodule endomorphism `f - μ`, whose kernel is the `μ`-eigenspace of `f`. -/
+private def subSMulId (f : Hom R C V V) (μ : R) : Hom R C V V where
+  toLinearMap := f.toLinearMap - μ • LinearMap.id
+  map_coact := by
+    rw [← LinearMap.rTensor_def, LinearMap.rTensor_sub, LinearMap.rTensor_smul,
+      LinearMap.rTensor_id, LinearMap.sub_comp, LinearMap.rTensor_def, f.map_coact,
+      LinearMap.smul_comp, LinearMap.comp_sub, LinearMap.comp_smul, LinearMap.id_comp,
+      LinearMap.comp_id]
+
+/-- An eigenspace of a comodule endomorphism, over a flat coalgebra, is a subcomodule. -/
+def eigenspace (f : Hom R C V V) (μ : R) : Subcomodule R C V :=
+  ker (subSMulId f μ)
+
+/-- The underlying submodule of an eigenspace subcomodule is the eigenspace of the underlying
+linear map. -/
+@[simp]
+theorem eigenspace_toSubmodule (f : Hom R C V V) (μ : R) :
+    (f.eigenspace μ).toSubmodule = Module.End.eigenspace f.toLinearMap μ := by
+  rw [eigenspace, ker_toSubmodule, Module.End.eigenspace_def, Module.End.one_eq_id]
+  rfl
+
+/-- Membership in an eigenspace subcomodule. -/
+@[simp]
+theorem mem_eigenspace_iff {f : Hom R C V V} {μ : R} {v : V} :
+    v ∈ f.eigenspace μ ↔ f v = μ • v := by
+  rw [← Subcomodule.mem_toSubmodule, eigenspace_toSubmodule, Module.End.mem_eigenspace_iff]
+  rfl
+
+end Hom
+
+end Eigenspace
 
 end Comodule
 
