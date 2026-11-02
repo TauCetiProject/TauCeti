@@ -9,13 +9,16 @@ public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 public import TauCeti.Geometry.Manifold.IsManifold.Basic
 public import TauCeti.Geometry.Manifold.MFDeriv.Chart
 public import TauCeti.Geometry.Manifold.RegularValue
+import TauCeti.LinearAlgebra.Dimension.Submodule
 
 /-!
 # The rank of a map between manifolds
 
-The *rank* of a map `f : M → N` at a point `x` is the dimension of the image of its manifold
-derivative `df_x : T_x M → T_{f x} N` (`TauCeti.mfderivRank I J f x`). At a point where `f` is not
-differentiable the derivative is zero and so is the rank.
+The *rank* of a map `f : M → N` at a point `x` is the dimension (`Module.finrank`) of the image
+of its manifold derivative `df_x : T_x M → T_{f x} N` (`TauCeti.mfderivRank I J f x`). At a point
+where `f` is not differentiable the derivative is zero and so is the rank. As for any `finrank`, an
+infinite-dimensional image also gives rank zero by convention; the image is finite-dimensional
+whenever the source or the target is.
 
 Into a manifold modelled on a finite-dimensional space `E'`, the rank is at most `dim E'`, and a
 point is a regular point of `f` exactly when the rank there is maximal, equal to `dim E'`
@@ -78,8 +81,10 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {f : M → N} {x : M}
 
 variable (I J) in
-/-- The **rank** of a map `f` at `x`: the dimension of the image of the manifold derivative
-`df_x : T_x M → T_{f x} N`. It is zero at points where `f` is not differentiable. -/
+/-- The **rank** of a map `f` at `x`: the dimension (`Module.finrank`) of the image of the
+manifold derivative `df_x : T_x M → T_{f x} N`. It is zero at points where `f` is not
+differentiable, and, by the convention of `Module.finrank`, also when that image is
+infinite-dimensional. -/
 noncomputable def mfderivRank (f : M → N) (x : M) : ℕ :=
   finrank 𝕜 (LinearMap.range (mfderiv I J f x).toLinearMap)
 
@@ -137,16 +142,6 @@ theorem not_isRegularPoint_iff_mfderivRank_lt [FiniteDimensional 𝕜 E'] :
 
 /-! ### Invariance under changes of coordinates -/
 
-/-- The rank of a linear map is unchanged by composing on the left with an injective map and on the
-right with a surjective one. -/
-private theorem finrank_range_comp_comp {R V V' W W' : Type*} [Ring R] [AddCommGroup V]
-    [Module R V] [AddCommGroup V'] [Module R V'] [AddCommGroup W] [Module R W] [AddCommGroup W']
-    [Module R W'] (A : W →ₗ[R] W') (L : V →ₗ[R] W) (B : V' →ₗ[R] V) (hA : Injective A)
-    (hB : Surjective B) :
-    finrank R (LinearMap.range (A ∘ₗ L ∘ₗ B)) = finrank R (LinearMap.range L) := by
-  rw [LinearMap.range_comp, LinearMap.range_comp_of_range_eq_top _ (LinearMap.range_eq_top.2 hB)]
-  exact (Submodule.equivMapOfInjective _ hA _).finrank_eq.symm
-
 section Comp
 
 variable {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace 𝕜 E'']
@@ -159,7 +154,7 @@ theorem mfderivRank_comp_of_injective {g : N → P} (hg : MDifferentiableAt J K 
     (hf : MDifferentiableAt I J f x) (hinj : Injective (mfderiv J K g (f x))) :
     mfderivRank I K (g ∘ f) x = mfderivRank I J f x := by
   rw [mfderivRank_def, mfderivRank_def, mfderiv_comp x hg hf, ContinuousLinearMap.toLinearMap_comp]
-  simpa using finrank_range_comp_comp _ (mfderiv I J f x).toLinearMap LinearMap.id hinj
+  simpa using LinearMap.finrank_range_comp_comp _ (mfderiv I J f x).toLinearMap LinearMap.id hinj
     surjective_id
 
 /-- **Composition on the right with a submersion preserves the rank.** If `h` has surjective
@@ -169,7 +164,7 @@ theorem mfderivRank_comp_of_surjective {h : P → M} {p : P} (hf : MDifferentiab
     mfderivRank K J (f ∘ h) p = mfderivRank I J f (h p) := by
   rw [mfderivRank_def, mfderivRank_def, mfderiv_comp p hf hh, ContinuousLinearMap.toLinearMap_comp,
     Function.comp_apply]
-  simpa using finrank_range_comp_comp LinearMap.id (mfderiv I J f (h p)).toLinearMap _
+  simpa using LinearMap.finrank_range_comp_comp LinearMap.id (mfderiv I J f (h p)).toLinearMap _
     injective_id hsurj
 
 /-- **Diffeomorphisms of the target preserve the rank.** For a diffeomorphism `h`, the maps
@@ -216,7 +211,7 @@ theorem mfderivRank_eq_finrank_range_fderivWithin [IsManifold I 1 M] [IsManifold
       (h : ∀ v, D v = A (L (B v))) :
       finrank 𝕜 (LinearMap.range D) = finrank 𝕜 (LinearMap.range L) := by
     rw [show D = A.toLinearMap ∘ₗ L ∘ₗ B.toLinearMap from LinearMap.ext h]
-    exact finrank_range_comp_comp _ _ _ A.injective B.surjective
+    exact LinearMap.finrank_range_comp_comp _ _ _ A.injective B.surjective
   refine (key (mfderiv I J f x).toLinearMap _ A.toLinearEquiv B.toLinearEquiv fun v ↦ ?_).symm
   simp only [ContinuousLinearMap.coe_coe]
   rw [← hA, ← hB]
