@@ -70,8 +70,9 @@ theorem forall_raise_mul_eq_none_iff
       hz] at hi
     have hzi : (-1 : ℤ) < P.coroot' i lam + z := by
       exact_mod_cast hi.trans_le (min_le_right _ _)
+    have hzi_nonneg : (0 : ℤ) ≤ P.coroot' i lam + z := by omega
     have hn : (0 : 𝕜) ≤ (P.coroot' i lam : 𝕜) + (z : 𝕜) := by
-      exact_mod_cast (show (0 : ℤ) ≤ P.coroot' i lam + z by omega)
+      exact_mod_cast hzi_nonneg
     rw [hz]
     linarith
   · rintro ⟨rfl, h⟩ i
