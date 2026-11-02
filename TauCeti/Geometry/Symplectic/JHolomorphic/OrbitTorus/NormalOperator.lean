@@ -10,10 +10,11 @@ public import Mathlib.MeasureTheory.Integral.Prod
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import TauCeti.Analysis.ODE.DysonSeries
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Line
-import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Analysis.InnerProductSpace.Calculus
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Analysis.Calculus.PeriodicDeriv
+import TauCeti.MeasureTheory.Integral.Rectangle
 
 /-!
 # The kernel of the model normal operator of an orbit torus
@@ -43,9 +44,9 @@ element is independent of `s`. For the two characters twisted along the circle f
 (`TauCeti.eq_zero_of_orbitTorusOperator_eq_zero_of_antiperiodic`). For the two characters
 untwisted along the circle factor (`ε₁ = 1`), a kernel element is a solution of the loop equation
 `w' = J₀ S(t) w`, hence `u (s, t) = Ψ(t) (u 0)` with `Ψ` the propagator of that equation, and its
-value at the origin is an eigenvector of the return map `Ψ(d)` with eigenvalue `ε₂`. Conversely
-every such eigenvector produces a kernel element. In finite dimension the kernel is therefore
-nonzero exactly when `det (ε₂ - Ψ(d)) = 0`
+value at the origin lies in the `ε₂`-eigenspace of the return map `Ψ(d)`, nonzero exactly when
+`u` is. Conversely every such eigenvector produces a nonzero kernel element. In finite dimension
+the kernel is therefore nonzero exactly when `det (ε₂ - Ψ(d)) = 0`
 (`TauCeti.exists_ne_zero_orbitTorusOperator_eq_zero_iff_det_eq_zero`): the untwisted operator
 is degenerate exactly when `det (1 - Ψ(d)) = 0`, and the operator twisted along `γ` exactly when
 `det (1 + Ψ(d)) = 0`. In the geometric application `Ψ(d)` is the linearized return map of the
@@ -90,54 +91,6 @@ open scoped RealInnerProductSpace
 
 namespace TauCeti
 
-section Rectangle
-
-/-- The horizontal line through `(s, t)` has velocity `(1, 0)`. -/
-private theorem hasDerivAt_prodMk_fst (s t : ℝ) :
-    HasDerivAt (fun s : ℝ => (s, t)) stdComplexLineReal s :=
-  HasDerivAt.prodMk (hasDerivAt_id s) (hasDerivAt_const s t)
-
-/-- The vertical line through `(s, t)` has velocity `(0, 1)`. -/
-private theorem hasDerivAt_prodMk_snd (s t : ℝ) :
-    HasDerivAt (fun t : ℝ => (s, t)) stdComplexLineImag t :=
-  HasDerivAt.prodMk (hasDerivAt_const t s) (hasDerivAt_id t)
-
-variable {d : ℝ}
-
-/-- A continuous function is integrable on the rectangle `[0, 1] × [0, d]`. -/
-private theorem integrable_rect {f : ℝ × ℝ → ℝ} (hf : Continuous f) :
-    Integrable f ((volume.restrict (Icc (0 : ℝ) 1)).prod (volume.restrict (Icc 0 d))) := by
-  rw [Measure.prod_restrict, ← Measure.volume_eq_prod]
-  exact hf.continuousOn.integrableOn_compact (isCompact_Icc.prod isCompact_Icc)
-
-/-- A derivative in the first coordinate of a function `1`-periodic in that coordinate integrates
-to zero over the rectangle `[0, 1] × [0, d]`. -/
-private theorem setIntegral_rect_eq_zero_of_hasDerivAt_fst {Φ φ : ℝ × ℝ → ℝ}
-    (hφ : Continuous φ) (hΦ : ∀ s t, HasDerivAt (fun s => Φ (s, t)) (φ (s, t)) s)
-    (hper : ∀ t, Φ (1, t) = Φ (0, t)) : ∫ z in Icc (0 : ℝ) 1 ×ˢ Icc 0 d, φ z = 0 := by
-  rw [Measure.volume_eq_prod, ← Measure.prod_restrict, integral_prod_symm _ (integrable_rect hφ)]
-  refine integral_eq_zero_of_ae (Filter.Eventually.of_forall fun t => ?_)
-  dsimp only [Pi.zero_apply]
-  rw [integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le zero_le_one,
-    intervalIntegral.integral_eq_sub_of_hasDerivAt (fun s _ => hΦ s t)
-      ((hφ.comp (Continuous.prodMk_left t)).intervalIntegrable _ _), hper, sub_self]
-
-/-- A derivative in the second coordinate of a function `d`-periodic in that coordinate
-integrates to zero over the rectangle `[0, 1] × [0, d]`. -/
-private theorem setIntegral_rect_eq_zero_of_hasDerivAt_snd {Φ φ : ℝ × ℝ → ℝ}
-    (hφ : Continuous φ) (hΦ : ∀ s t, HasDerivAt (fun t => Φ (s, t)) (φ (s, t)) t)
-    (hper : ∀ s, Φ (s, d) = Φ (s, 0)) : ∫ z in Icc (0 : ℝ) 1 ×ˢ Icc 0 d, φ z = 0 := by
-  rw [Measure.volume_eq_prod, ← Measure.prod_restrict, integral_prod _ (integrable_rect hφ)]
-  refine integral_eq_zero_of_ae (Filter.Eventually.of_forall fun s => ?_)
-  dsimp only [Pi.zero_apply]
-  rcases lt_or_ge d 0 with hd | hd
-  · simp [Icc_eq_empty_of_lt hd]
-  rw [integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le hd,
-    intervalIntegral.integral_eq_sub_of_hasDerivAt (fun t _ => hΦ s t)
-      ((hφ.comp (Continuous.prodMk_right s)).intervalIntegrable _ _), hper, sub_self]
-
-end Rectangle
-
 section Operator
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
@@ -155,32 +108,6 @@ theorem orbitTorusOperator_apply (z : ℝ × ℝ) :
       fderiv ℝ u z stdComplexLineReal + (J₀ (fderiv ℝ u z stdComplexLineImag) + S z.2 (u z)) :=
   (rfl)
 
-/-- A twisted translation invariance of a differentiable map passes to its derivative. -/
-private theorem fderiv_add_eq_smul {a : ℝ × ℝ} {c : ℝ} (hu : Differentiable ℝ u)
-    (h : ∀ z, u (z + a) = c • u z) (z : ℝ × ℝ) : fderiv ℝ u (z + a) = c • fderiv ℝ u z := by
-  rw [← fderiv_comp_add_right, show (fun x => u (x + a)) = fun x => c • u x from funext h,
-    fderiv_fun_const_smul (hu z)]
-
-/-- The `s`-derivative of a first partial derivative of a `C²` map. -/
-private theorem hasDerivAt_fderiv_apply_fst (hu : ContDiff ℝ 2 u) (v : ℝ × ℝ) (s t : ℝ) :
-    HasDerivAt (fun s => fderiv ℝ u (s, t) v)
-      (fderiv ℝ (fderiv ℝ u) (s, t) stdComplexLineReal v) s := by
-  have hd : DifferentiableAt ℝ (fderiv ℝ u) (s, t) :=
-    (hu.fderiv_right (m := 1) le_rfl).differentiable one_ne_zero _
-  simpa [Function.comp_def] using
-    (hd.hasFDerivAt.clm_apply (hasFDerivAt_const v _)).comp_hasDerivAt s
-      (hasDerivAt_prodMk_fst s t)
-
-/-- The `t`-derivative of a first partial derivative of a `C²` map. -/
-private theorem hasDerivAt_fderiv_apply_snd (hu : ContDiff ℝ 2 u) (v : ℝ × ℝ) (s t : ℝ) :
-    HasDerivAt (fun t => fderiv ℝ u (s, t) v)
-      (fderiv ℝ (fderiv ℝ u) (s, t) stdComplexLineImag v) t := by
-  have hd : DifferentiableAt ℝ (fderiv ℝ u) (s, t) :=
-    (hu.fderiv_right (m := 1) le_rfl).differentiable one_ne_zero _
-  simpa [Function.comp_def] using
-    (hd.hasFDerivAt.clm_apply (hasFDerivAt_const v _)).comp_hasDerivAt t
-      (hasDerivAt_prodMk_snd s t)
-
 /-- The cross term `⟪∂s u, J₀ ∂t u + S(t) u⟫` of `‖D u‖²` integrates to zero over the fundamental
 rectangle: it is half of `∂s ⟪u, S u + J₀ ∂t u⟫ - ∂t ⟪u, J₀ ∂s u⟫`, and both potentials are
 periodic because the twists square to one. -/
@@ -195,16 +122,19 @@ private theorem setIntegral_inner_fderiv_eq_zero
   set e₂ := stdComplexLineImag
   have hu1 : Differentiable ℝ u := hu.differentiable (by norm_num)
   have hdu : Continuous (fderiv ℝ u) := hu.continuous_fderiv (by norm_num)
+  have hdu1 : Differentiable ℝ (fderiv ℝ u) :=
+    (hu.fderiv_right (m := 1) le_rfl).differentiable one_ne_zero
   have hddu : Continuous (fderiv ℝ (fderiv ℝ u)) :=
     (hu.fderiv_right (m := 1) le_rfl).continuous_fderiv one_ne_zero
   have hus (s t : ℝ) : HasDerivAt (fun s => u (s, t)) (fderiv ℝ u (s, t) e₁) s :=
-    (hu1 _).hasFDerivAt.comp_hasDerivAt s (hasDerivAt_prodMk_fst s t)
+    (hu1 _).hasFDerivAt.comp_hasDerivAt s (hasDerivAt_prodMk_left s t)
   have hut (s t : ℝ) : HasDerivAt (fun t => u (s, t)) (fderiv ℝ u (s, t) e₂) t :=
-    (hu1 _).hasFDerivAt.comp_hasDerivAt t (hasDerivAt_prodMk_snd s t)
+    (hu1 _).hasFDerivAt.comp_hasDerivAt t (hasDerivAt_prodMk_right s t)
   have hs' (s t : ℝ) : fderiv ℝ u (s + 1, t) = ε₁ • fderiv ℝ u (s, t) := by
-    simpa using fderiv_add_eq_smul hu1 (a := (1, 0)) (fun ⟨a, b⟩ => by simpa using hs a b) (s, t)
+    simpa using fderiv_add_eq_smul (c := ((1 : ℝ), (0 : ℝ)))
+      (fun ⟨a, b⟩ => by simpa using hs a b) (s, t)
   have ht' (s t : ℝ) : fderiv ℝ u (s, t + d) = ε₂ • fderiv ℝ u (s, t) := by
-    simpa using fderiv_add_eq_smul hu1 (a := (0, d)) (fun ⟨a, b⟩ => by simpa using ht a b) (s, t)
+    simpa using fderiv_add_eq_smul (c := ((0 : ℝ), d)) (fun ⟨a, b⟩ => by simpa using ht a b) (s, t)
   -- `φ₁` is the `s`-derivative of `⟪u, S u⟫ + ⟪u, J₀ ∂t u⟫`.
   let φ₁ : ℝ × ℝ → ℝ := fun z =>
     (⟪u z, S z.2 (fderiv ℝ u z e₁)⟫ + ⟪fderiv ℝ u z e₁, S z.2 (u z)⟫) +
@@ -220,7 +150,7 @@ private theorem setIntegral_inner_fderiv_eq_zero
       (Φ := fun z => ⟪u z, S z.2 (u z)⟫ + ⟪u z, J₀ (fderiv ℝ u z e₂)⟫)
       (fun s t => ((hus s t).inner ℝ ((S t).hasFDerivAt.comp_hasDerivAt s (hus s t))).add
         ((hus s t).inner ℝ (J₀.hasFDerivAt.comp_hasDerivAt s
-          (hasDerivAt_fderiv_apply_fst hu e₂ s t)))) fun t => ?_
+          (hasDerivAt_fderiv_apply_fst (hdu1 _) e₂)))) fun t => ?_
     have h0 := hs 0 t
     have h0' := hs' 0 t
     rw [zero_add] at h0 h0'
@@ -231,7 +161,7 @@ private theorem setIntegral_inner_fderiv_eq_zero
     refine setIntegral_rect_eq_zero_of_hasDerivAt_snd hφ₂
       (Φ := fun z => ⟪u z, J₀ (fderiv ℝ u z e₁)⟫)
       (fun s t => (hut s t).inner ℝ (J₀.hasFDerivAt.comp_hasDerivAt t
-        (hasDerivAt_fderiv_apply_snd hu e₁ s t))) fun s => ?_
+        (hasDerivAt_fderiv_apply_snd (hdu1 _) e₁))) fun s => ?_
     have h0 := ht s 0
     have h0' := ht' s 0
     rw [zero_add] at h0 h0'
@@ -285,23 +215,6 @@ theorem setIntegral_norm_sq_orbitTorusOperator
     (h₂.continuousOn.integrableOn_compact hR), integral_const_mul,
     setIntegral_inner_fderiv_eq_zero hJ₀ hS hScont hu hε₁ hε₂ hs ht, mul_zero, add_zero]
 
-/-- A continuous nonnegative function with zero integral over the rectangle `[0, 1] × [0, d]`,
-`d > 0`, vanishes on it. -/
-private theorem eqOn_zero_of_setIntegral_rect_eq_zero {f : ℝ × ℝ → ℝ} (hd : 0 < d)
-    (hf : Continuous f) (hf0 : 0 ≤ f) (hint : ∫ z in Icc (0 : ℝ) 1 ×ˢ Icc 0 d, f z = 0) :
-    EqOn f 0 (Icc (0 : ℝ) 1 ×ˢ Icc 0 d) := by
-  have hR : IsCompact (Icc (0 : ℝ) 1 ×ˢ Icc 0 d) := isCompact_Icc.prod isCompact_Icc
-  have hae := (setIntegral_eq_zero_iff_of_nonneg_ae (Filter.Eventually.of_forall hf0)
-    (hf.continuousOn.integrableOn_compact hR)).1 hint
-  have hU : EqOn f 0 (Ioo (0 : ℝ) 1 ×ˢ Ioo 0 d) :=
-    Measure.eqOn_open_of_ae_eq (ae_restrict_of_ae_restrict_of_subset
-      (prod_mono Ioo_subset_Icc_self Ioo_subset_Icc_self) hae) (isOpen_Ioo.prod isOpen_Ioo)
-      hf.continuousOn continuousOn_const
-  have hcl : closure (Ioo (0 : ℝ) 1 ×ˢ Ioo 0 d) = Icc (0 : ℝ) 1 ×ˢ Icc 0 d := by
-    rw [closure_prod_eq, closure_Ioo zero_ne_one, closure_Ioo hd.ne]
-  rw [← hcl]
-  exact hU.of_subset_closure hf.continuousOn continuousOn_const subset_closure subset_rfl
-
 /-- **Elements of the kernel are independent of `s`.** If a twisted periodic `C²` map, with
 twists squaring to one and period `d > 0` in `t`, solves `D u = 0`, then `∂s u = 0`
 everywhere. -/
@@ -311,12 +224,12 @@ theorem fderiv_apply_stdComplexLineReal_eq_zero_of_orbitTorusOperator_eq_zero (h
     (hs : ∀ s t, u (s + 1, t) = ε₁ • u (s, t)) (ht : ∀ s t, u (s, t + d) = ε₂ • u (s, t))
     (hD : ∀ z, orbitTorusOperator J₀ S u z = 0) (z : ℝ × ℝ) :
     fderiv ℝ u z stdComplexLineReal = 0 := by
-  have hu1 : Differentiable ℝ u := hu.differentiable (by norm_num)
   have hdu : Continuous (fderiv ℝ u) := hu.continuous_fderiv (by norm_num)
   have hu0 := hu.continuous
   have hf : Continuous fun z : ℝ × ℝ => ‖fderiv ℝ u z stdComplexLineReal‖ ^ 2 +
       ‖J₀ (fderiv ℝ u z stdComplexLineImag) + S z.2 (u z)‖ ^ 2 := by fun_prop
-  have hzero := eqOn_zero_of_setIntegral_rect_eq_zero hd hf (fun z => by positivity) <| by
+  have hzero := eqOn_zero_of_setIntegral_rect_eq_zero zero_lt_one hd hf
+      (fun z => by positivity) <| by
     rw [← setIntegral_norm_sq_orbitTorusOperator hJ₀ hS hScont hu hε₁ hε₂ hs ht]
     simp [hD]
   -- `‖∂s u‖` is periodic in both variables, so it suffices to look at the rectangle.
@@ -326,11 +239,12 @@ theorem fderiv_apply_stdComplexLineReal_eq_zero_of_orbitTorusOperator_eq_zero (h
     (by rw [sq_abs, hε₂])
   set g : ℝ × ℝ → ℝ := fun z => ‖fderiv ℝ u z stdComplexLineReal‖
   have hg₁ (t : ℝ) : Function.Periodic (fun s => g (s, t)) 1 := fun s => by
-    have := fderiv_add_eq_smul hu1 (a := (1, 0)) (fun ⟨a, b⟩ => by simpa using hs a b) (s, t)
+    have := fderiv_add_eq_smul (c := ((1 : ℝ), (0 : ℝ))) (fun ⟨a, b⟩ => by simpa using hs a b)
+      (s, t)
     simp only [Prod.mk_add_mk, add_zero] at this
     simp [g, this, norm_smul, habs₁]
   have hg₂ (s : ℝ) : Function.Periodic (fun t => g (s, t)) d := fun t => by
-    have := fderiv_add_eq_smul hu1 (a := (0, d)) (fun ⟨a, b⟩ => by simpa using ht a b) (s, t)
+    have := fderiv_add_eq_smul (c := ((0 : ℝ), d)) (fun ⟨a, b⟩ => by simpa using ht a b) (s, t)
     simp only [Prod.mk_add_mk, add_zero] at this
     simp [g, this, norm_smul, habs₂]
   obtain ⟨s, t⟩ := z
@@ -345,14 +259,6 @@ theorem fderiv_apply_stdComplexLineReal_eq_zero_of_orbitTorusOperator_eq_zero (h
     nlinarith
   have hz : g (s, t) = 0 := by rw [h₁, h₂, hg0]
   simpa [g] using hz
-
-/-- A map whose `s`-derivative vanishes is constant along every horizontal line. -/
-private theorem apply_eq_apply_zero_of_fderiv_fst_eq_zero (hu : Differentiable ℝ u)
-    (h : ∀ z, fderiv ℝ u z stdComplexLineReal = 0) (s t : ℝ) : u (s, t) = u (0, t) := by
-  have hl (s : ℝ) : HasDerivAt (fun s => u (s, t)) 0 s := by
-    simpa [h, Function.comp_def] using
-      (hu _).hasFDerivAt.comp_hasDerivAt s (hasDerivAt_prodMk_fst s t)
-  exact is_const_of_deriv_eq_zero (fun s => (hl s).differentiableAt) (fun s => (hl s).deriv) s 0
 
 /-- **Twisting along the circle factor kills the kernel.** A `C²` solution of `D u = 0` which is
 antiperiodic in `s`, and twisted periodic in `t` with period `d > 0` and a sign `ε₂`, vanishes. -/
@@ -390,7 +296,8 @@ theorem apply_eq_dysonSeriesLeft_apply_of_orbitTorusOperator_eq_zero (hd : 0 < d
   have hc := apply_eq_apply_zero_of_fderiv_fst_eq_zero hu1 h0
   -- On the line `s = 0`, the equation `J₀ ∂t u + S u = 0` reads `∂t u = J₀ S u`.
   have hw (t : ℝ) : HasDerivAt (fun t => u (0, t)) ((J₀ ∘L S t) (u (0, t))) t := by
-    have hl := (hu1 _).hasFDerivAt.comp_hasDerivAt t (hasDerivAt_prodMk_snd 0 t)
+    have hl : HasDerivAt (fun t => u (0, t)) (fderiv ℝ u (0, t) stdComplexLineImag) t :=
+      (hu1 _).hasFDerivAt.comp_hasDerivAt t (hasDerivAt_prodMk_right 0 t)
     have hz := hD (0, t)
     rw [orbitTorusOperator_apply, h0, zero_add, add_eq_zero_iff_eq_neg] at hz
     have hb : fderiv ℝ u (0, t) stdComplexLineImag = J₀ (S t (u (0, t))) := by
@@ -402,7 +309,8 @@ theorem apply_eq_dysonSeriesLeft_apply_of_orbitTorusOperator_eq_zero (hd : 0 < d
   rfl
 
 /-- **Return condition.** For a `C²` solution of `D u = 0` periodic in `s` and twisted by `ε₂`
-in `t`, the value `u 0` is an eigenvector of the return map `Ψ(d)` with eigenvalue `ε₂`. -/
+in `t`, the value `u 0` lies in the `ε₂`-eigenspace of the return map `Ψ(d)`, that is,
+`Ψ(d) (u 0) = ε₂ • u 0`. -/
 theorem dysonSeriesLeft_apply_eq_smul_of_orbitTorusOperator_eq_zero (hd : 0 < d)
     (hJ₀ : ∀ x y, ⟪J₀ x, y⟫ = -⟪x, J₀ y⟫) (hJ₀sq : ∀ x, J₀ (J₀ x) = -x)
     (hS : ∀ t x y, ⟪S t x, y⟫ = ⟪x, S t y⟫) (hScont : Continuous S) (hu : ContDiff ℝ 2 u)
