@@ -108,6 +108,8 @@ boundary component is null-homologous in it, which is not formalized here.
 * `TauCeti.IsSmoothlySlice.zeroShakeGenus_eq_zero`, `TauCeti.zeroShakeGenus_unknot`: a smoothly
   slice knot with a `0`-framed solid torus neighbourhood, in particular the unknot, has `0`-shake
   genus `0`.
+* `TauCeti.piccirilloShakeGenusTheorem_iff`: the defining characterization of Piccirillo's
+  theorem.
 * `TauCeti.PiccirilloShakeGenusTheorem.exists_not_isSmoothlySlice`: a knot witnessing
   Piccirillo's theorem bounds a `0`-shake surface, has positive slice genus and is not smoothly
   slice.
@@ -508,12 +510,20 @@ def PiccirilloShakeGenusTheorem : Prop :=
   ∃ K : SmoothCircleEmbedding (𝓡 3) (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1),
     zeroShakeGenus K < sliceGenus K
 
+/-- The defining characterization of **Piccirillo's theorem**: some knot has `0`-shake genus
+strictly smaller than its slice genus. -/
+theorem piccirilloShakeGenusTheorem_iff :
+    PiccirilloShakeGenusTheorem ↔
+      ∃ K : SmoothCircleEmbedding (𝓡 3) (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1),
+        zeroShakeGenus K < sliceGenus K :=
+  Iff.rfl
+
 /-- A knot witnessing **Piccirillo's theorem** bounds a `0`-shake surface, since its `0`-shake
 genus is finite, and has positive slice genus, so it is not smoothly slice. -/
 theorem PiccirilloShakeGenusTheorem.exists_not_isSmoothlySlice (h : PiccirilloShakeGenusTheorem) :
     ∃ K : SmoothCircleEmbedding (𝓡 3) (sphere (0 : EuclideanSpace ℝ (Fin 4)) 1),
       Nonempty (ZeroShakeSurface K) ∧ 0 < sliceGenus K ∧ ¬IsSmoothlySlice K := by
-  obtain ⟨K, hK⟩ := h
+  obtain ⟨K, hK⟩ := piccirilloShakeGenusTheorem_iff.1 h
   refine ⟨K, zeroShakeGenus_lt_top_iff.1 (hK.trans_le le_top), zero_le.trans_lt hK, fun hs ↦ ?_⟩
   rw [hs.sliceGenus_eq_zero] at hK
   exact not_lt_zero hK

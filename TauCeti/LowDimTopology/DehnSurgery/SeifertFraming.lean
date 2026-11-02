@@ -414,7 +414,7 @@ theorem boundaryHomologyMap_basis_one_eq_zero_of_map {Y : Type} [TopologicalSpac
     refine ContinuousMap.ext fun q ↦ Subtype.ext ?_
     exact (h'.coe_exteriorFrontierHomeomorph_apply q).trans
       (hm _ q (h.coe_exteriorFrontierHomeomorph_apply (q.1, g q.2))).symm
-  obtain ⟨n, hn⟩ := exists_singularHomologyMap_prodMap_torusClass_zero_one g
+  obtain ⟨n, hn⟩ := g.exists_singularHomologyMap_prodMap_torusClass_zero_one
   -- The boundary homology map is induced by the inclusion of the frontier of the exterior, the
   -- torus parametrized by the framing, so after the parametrization it is induced by the composite.
   have hmap (x) : h.boundaryHomologyMap x = singularHomologyMap ℤ 1 h.frontierToComplement x :=
@@ -425,8 +425,8 @@ theorem boundaryHomologyMap_basis_one_eq_zero_of_map {Y : Type} [TopologicalSpac
     FramedBoundaryTorus.torusCurveClass_eq_singularHomologyMap, ← singularHomologyMap_comp] at hΦ
   rw [hmap', FramedBoundaryTorus.ofHomeomorph_basis_one,
     FramedBoundaryTorus.torusCurveClass_eq_singularHomologyMap, ← singularHomologyMap_comp, hcomp,
-    singularHomologyMap_comp, singularHomologyMap_comp, hn, torusClass_eq, zero_smul, zero_add,
-    map_zsmul, hΦ, zsmul_zero, map_zero]
+    singularHomologyMap_comp, singularHomologyMap_comp, hn, torusClass_eq]
+  simp only [zero_smul, zero_add, map_zsmul, hΦ, zsmul_zero, map_zero]
 
 /-- On the boundary torus, the `(p, q)` curve is homologous in the knot complement to the
 `(p, q)` curve at radius `1 / 2`. -/

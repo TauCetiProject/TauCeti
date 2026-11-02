@@ -47,7 +47,7 @@ boundaries of solid tori `D² × S¹`.
 
 * `TauCeti.torusClass`: the class of an integer-winding curve on `S¹ × S¹`, with its
   coordinates, decomposition into the coordinate curves, and induced-map formula.
-* `TauCeti.exists_singularHomologyMap_prodMap_torusClass_zero_one`: reparametrizing the second
+* `ContinuousMap.exists_singularHomologyMap_prodMap_torusClass_zero_one`: reparametrizing the second
   circle keeps the `(0, 1)` curve a `(0, q)` curve.
 
 ## References
@@ -249,12 +249,15 @@ theorem singularHomologyMap_prodMk_const_torusClass (p q : ℤ) :
       (torusClass p q) = torusClass p 0 := by
   rw [ContinuousMap.singularHomologyMap_torusClass, torusClass_def]
   congr 1
-  -- Loops with the same underlying map have the same class.
-  rw [loopClass_eq_iff, sub_eq_zero.2 (congrArg (pathChain ℤ) (ContinuousMap.ext fun t ↦ ?_))]
-  · exact zero_mem _
-  rw [Path.coe_toContinuousMap, Path.coe_toContinuousMap, Path.map_coe, Function.comp_apply,
-    torusCurve_apply, torusCurve_apply]
+  refine loopClass_eq_of_apply_eq _ _ fun t ↦ ?_
+  rw [Path.map_coe, Function.comp_apply, torusCurve_apply, torusCurve_apply]
   simp
+
+end TauCeti
+
+namespace ContinuousMap
+
+open TauCeti
 
 /-- Reparametrizing the second circle of the torus by a self-map `g` of the circle sends the class
 of the `(0, 1)` curve to the class of a `(0, q)` curve: the first winding number stays `0`. -/
@@ -275,4 +278,4 @@ theorem exists_singularHomologyMap_prodMap_torusClass_zero_one (g : C(Circle, Ci
   rw [torusClass_eq_zero_iff] at hp
   rw [hpq, hp.1]
 
-end TauCeti
+end ContinuousMap
