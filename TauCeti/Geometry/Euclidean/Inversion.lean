@@ -51,6 +51,9 @@ of one orientation class give an oriented atlas.
 * `LinearIsometry.map_inversion`: the same for a linear isometry.
 * `EuclideanGeometry.norm_inversion_zero`, `EuclideanGeometry.norm_inversion_zero_one`: the norm
   of the inversion about the origin.
+* `EuclideanGeometry.inv_lt_norm_inversion_iff`, `EuclideanGeometry.norm_inversion_lt_inv_iff`:
+  the inversion about the origin in the unit sphere exchanges the regions `‖v‖ < r` and
+  `r⁻¹ < ‖w‖`.
 * `EuclideanGeometry.inner_fderiv_inversion`: inversion is conformal, its derivative scales inner
   products by `(R / dist x c) ^ 4`.
 * `EuclideanGeometry.inner_fderiv_inversion_div_dist_sq`: inversion preserves the cylinder metric
@@ -113,6 +116,7 @@ theorem hasFDerivAt_inversionFDerivEquiv {V : Type*} [NormedAddCommGroup V]
   rfl
 
 /-- The norm of the inversion about the origin in a sphere of radius `R`. -/
+@[simp]
 theorem norm_inversion_zero {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
     (R : ℝ) (x : V) : ‖inversion (0 : V) R x‖ = R ^ 2 / ‖x‖ := by
   simpa only [dist_zero_right] using dist_inversion_center (0 : V) x R
@@ -121,6 +125,20 @@ theorem norm_inversion_zero {V : Type*} [NormedAddCommGroup V] [InnerProductSpac
 theorem norm_inversion_zero_one {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
     (x : V) : ‖inversion (0 : V) 1 x‖ = ‖x‖⁻¹ := by
   rw [norm_inversion_zero, one_pow, one_div]
+
+/-- The inversion about the origin in the unit sphere carries the region `‖v‖ < r` onto
+`r⁻¹ < ‖w‖`. -/
+theorem inv_lt_norm_inversion_iff {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+    {r : ℝ} (hr : 0 < r) {v : V} (hv : v ≠ 0) :
+    r⁻¹ < ‖inversion (0 : V) 1 v‖ ↔ ‖v‖ < r := by
+  rw [norm_inversion_zero_one, inv_lt_inv₀ hr (norm_pos_iff.2 hv)]
+
+/-- The inversion about the origin in the unit sphere carries the region `r < ‖v‖` onto
+`‖w‖ < r⁻¹`. -/
+theorem norm_inversion_lt_inv_iff {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+    {r : ℝ} (hr : 0 < r) {v : V} (hv : v ≠ 0) :
+    ‖inversion (0 : V) 1 v‖ < r⁻¹ ↔ r < ‖v‖ := by
+  rw [norm_inversion_zero_one, inv_lt_inv₀ (norm_pos_iff.2 hv) hr]
 
 /-- **Inversion is conformal**: its derivative at `x` multiplies inner products by
 `(R / dist x c) ^ 4`. At the centre both sides vanish. -/
