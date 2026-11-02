@@ -78,9 +78,6 @@ four-manifold a one-form `a` with `(da)⁺ = 0` is closed.
   lying in the rough `Ω⁺` and `Ω⁻` (`TauCeti.SmoothForm.coe_mem_selfDualForms_iff`).
 * `TauCeti.SmoothForm.integralTopForm_inner_selfDualPart_eq_inner_antiSelfDualPart`: a compactly
   supported exact form has `∫_M |β⁺|² vol = ∫_M |β⁻|² vol`.
-* `TauCeti.SmoothForm.integralTopForm_inner_self_eq_add`: `∫_M |β|² vol = ∫_M |β⁺|² vol +
-  ∫_M |β⁻|² vol` for a compactly supported `β`; for an exact one this is `2 ∫_M |β^±|² vol`
-  (`TauCeti.SmoothForm.integralTopForm_inner_self_eq_two_mul_selfDualPart`).
 * `TauCeti.SmoothForm.integralTopForm_inner_selfDualPart_eq_zero`,
   `TauCeti.SmoothForm.integralTopForm_inner_antiSelfDualPart_eq_zero`: the self-dual, or
   anti-self-dual, part of an exact form is `L²`-orthogonal to the compactly supported closed
@@ -605,30 +602,6 @@ theorem antiSelfDualPart_mem_compactlySupportedForms {α : SmoothForm I M ℝ k}
     antiSelfDualPart o α ∈ compactlySupportedForms I M k := by
   simpa only [selfDualPart_neg_orientation] using selfDualPart_mem_compactlySupportedForms (-o) hα
 
-/-- **Pythagoras for the squared `L²` norm**: the squared `L²` norm of a compactly supported
-middle-degree form on an oriented Riemannian manifold of dimension `k + k`, `k` even, is the sum
-of the squared `L²` norms of its self-dual and anti-self-dual parts,
-`∫_M |β|² vol = ∫_M |β⁺|² vol + ∫_M |β⁻|² vol`. -/
-theorem integralTopForm_inner_self_eq_add (hk : Even k) {β : SmoothForm I M ℝ k}
-    (hc : β ∈ compactlySupportedForms I M k) :
-    integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k (β.1 x) (β.1 x) •
-        riemannianVolumeForm o x) =
-      integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k
-        ((selfDualPart o β).1 x) ((selfDualPart o β).1 x) • riemannianVolumeForm o x) +
-      integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k
-        ((antiSelfDualPart o β).1 x) ((antiSelfDualPart o β).1 x) • riemannianVolumeForm o x) := by
-  rw [← integralTopForm_add o
-    ((isSmoothForm_inner_smul_riemannianVolumeForm o rfl _ _).of_le bot_le)
-    ((isSmoothForm_inner_smul_riemannianVolumeForm o rfl _ _).of_le bot_le)
-    (RoughForm.isCompact_tsupport_inner_smul_riemannianVolumeForm o _ _
-      ((mem_compactlySupportedForms I).mp (selfDualPart_mem_compactlySupportedForms o hc)))
-    (RoughForm.isCompact_tsupport_inner_smul_riemannianVolumeForm o _ _
-      ((mem_compactlySupportedForms I).mp (antiSelfDualPart_mem_compactlySupportedForms o hc)))]
-  congr 1
-  funext x
-  rw [Pi.add_apply, ← add_smul, RoughForm.alternatingFormInner_self_eq_add o hk β.1 x,
-    coe_selfDualPart, coe_antiSelfDualPart]
-
 /-! ### Exact forms on a boundaryless manifold -/
 
 section Exact
@@ -692,34 +665,6 @@ theorem eq_zero_of_antiSelfDualPart_eq_zero (hk : Even k)
     {β : SmoothForm I M ℝ k} (hβ : β ∈ exactForms I M k)
     (hc : β ∈ compactlySupportedForms I M k) (h : antiSelfDualPart o β = 0) : β = 0 :=
   eq_zero_of_selfDualPart_eq_zero (-o) hk hβ hc (by rwa [selfDualPart_neg_orientation])
-
-/-- The squared `L²` norm of a compactly supported exact form `β` of degree `k`, on an oriented
-boundaryless Riemannian manifold of dimension `k + k` with `k` even, is twice the squared `L²`
-norm of its self-dual part: `∫_M |β|² vol = 2 ∫_M |β⁺|² vol`. -/
-theorem integralTopForm_inner_self_eq_two_mul_selfDualPart (hk : Even k)
-    {β : SmoothForm I M ℝ k} (hβ : β ∈ exactForms I M k)
-    (hc : β ∈ compactlySupportedForms I M k) :
-    integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k (β.1 x) (β.1 x) •
-        riemannianVolumeForm o x) =
-      2 * integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k
-        ((selfDualPart o β).1 x) ((selfDualPart o β).1 x) • riemannianVolumeForm o x) := by
-  rw [integralTopForm_inner_self_eq_add o hk hc,
-    ← integralTopForm_inner_selfDualPart_eq_inner_antiSelfDualPart o hk hβ hc]
-  ring
-
-/-- The squared `L²` norm of a compactly supported exact form `β` of degree `k`, on an oriented
-boundaryless Riemannian manifold of dimension `k + k` with `k` even, is twice the squared `L²`
-norm of its anti-self-dual part: `∫_M |β|² vol = 2 ∫_M |β⁻|² vol`. -/
-theorem integralTopForm_inner_self_eq_two_mul_antiSelfDualPart (hk : Even k)
-    {β : SmoothForm I M ℝ k} (hβ : β ∈ exactForms I M k)
-    (hc : β ∈ compactlySupportedForms I M k) :
-    integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k (β.1 x) (β.1 x) •
-        riemannianVolumeForm o x) =
-      2 * integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k
-        ((antiSelfDualPart o β).1 x) ((antiSelfDualPart o β).1 x) • riemannianVolumeForm o x) := by
-  rw [integralTopForm_inner_self_eq_add o hk hc,
-    integralTopForm_inner_selfDualPart_eq_inner_antiSelfDualPart o hk hβ hc]
-  ring
 
 /-- **The self-dual part of an exact form is orthogonal to the closed self-dual forms**: on an
 oriented boundaryless Riemannian manifold of dimension `k + k` with `k` even, for an exact
