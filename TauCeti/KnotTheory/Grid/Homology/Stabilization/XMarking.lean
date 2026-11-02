@@ -39,8 +39,6 @@ center `c` inserted (`XHomotopyCoefficient_stabilizeX_X_insertPoint`).
 
 ## Main results
 
-* `TauCeti.GridDiagram.left_eq_of_mem_XHomotopyRectangles_X`: a rectangle counted by the
-  `X`-marking homotopy of column `k` from the `X`-marking state has initial side `k`.
 * `TauCeti.GridDiagram.XHomotopyCoefficient_stabilizeX_X_insertPoint`: the matrix coefficients of
   `H_I^N` at `x⁻(G')`.
 * `TauCeti.GridDiagram.stabilizeXChainMap_single_X`: the stabilization chain map sends `x⁻(G')`
@@ -67,50 +65,7 @@ namespace GridDiagram
 
 variable {n : ℕ}
 
-/-! ### Rectangles leaving the `X`-marking state -/
-
-/-- A rectangle counted by the `X`-marking homotopy of column `k` from the `X`-marking state has
-initial side `k`: its initial lower corner is the lower-left corner of the `X`-marked square of
-its initial side column, so it covers that marking. -/
-theorem left_eq_of_mem_XHomotopyRectangles_X (G : GridDiagram n) {k : Fin n} {y : GridState n}
-    {r : GridRectangleBetween G.X y} (hr : r ∈ G.XHomotopyRectangles k G.X y) : r.left = k := by
-  have hmem : (r.left, r.bottom) ∈ r.toGridRectangle.coveredSquares ∩ G.XSet :=
-    Finset.mem_inter.mpr ⟨r.left_bottom_mem_coveredSquares,
-      (G.mem_XSet _).mpr (GridRectangleBetween.bottom_def r).symm⟩
-  rw [((G.mem_XHomotopyRectangles k r).mp hr).2, Finset.mem_singleton, Prod.mk.injEq] at hmem
-  exact hmem.1
-
-/-! ### The `X`-marking state of a stabilization -/
-
 variable (G : GridDiagram n) (s : Fin n)
-
-/-- The open arc between the two rows of the new block of a stabilization is empty. -/
-private theorem cIoo_castSucc_succ (r : Fin n) : Grid.cIoo r.castSucc r.succ = ∅ := by
-  rw [← Fin.finRotate_castSucc, Grid.cIoo_finRotate_eq_empty]
-
-/-- The `X`-marking state of the stabilization has its point `(G.X s).succ` in column
-`s.castSucc`. -/
-private theorem stabilizeX_X_castSucc :
-    (G.stabilizeX s.castSucc (G.X s).castSucc s).X s.castSucc = (G.X s).succ := by
-  have h := G.X.insertPoint_apply_succAbove s.succ (G.X s).castSucc s
-  rwa [Fin.succAbove_succ_self, Fin.succAbove_castSucc_self,
-    ← GridState.splitPoint_castSucc_eq_insertPoint, ← stabilizeX_X] at h
-
-/-- Exchanging the two points of the `X`-marking state of the stabilization in the new block gives
-the `X`-marking state of `G` with the center `(s.succ, (G.X s).succ)` of the block inserted. -/
-private theorem stabilizeX_X_swapColumns :
-    (G.stabilizeX s.castSucc (G.X s).castSucc s).X.swapColumns s.succ s.castSucc =
-      G.X.insertPoint s.succ (G.X s).succ := by
-  rw [GridState.swapColumns_eq_swapRows, stabilizeX_X_castSucc, stabilizeX_X,
-    GridState.splitPoint_castSucc_eq_insertPoint, GridState.insertPoint_apply_newColumn,
-    GridState.insertPoint_swapRows]
-
-/-- The `X`-marking state of the stabilization does not contain the center
-`(s.succ, (G.X s).succ)` of the new block. -/
-theorem stabilizeX_X_succ_ne :
-    (G.stabilizeX s.castSucc (G.X s).castSucc s).X s.succ ≠ (G.X s).succ := by
-  rw [stabilizeX_X, GridState.splitPoint_castSucc_apply_succ]
-  exact Fin.castSucc_lt_succ.ne
 
 section Coefficient
 
@@ -137,7 +92,7 @@ theorem XHomotopyCoefficient_stabilizeX_X_insertPoint (x : GridState n) :
       rw [hG', stabilizeX_X, GridState.splitPoint_castSucc_apply_succ]
     have hrows : Grid.cIco (G'.X s.succ) (G'.X s.castSucc) = {(G.X s).castSucc} := by
       rw [hbottom, hG', stabilizeX_X_castSucc, Grid.cIco_of_ne Fin.castSucc_lt_succ.ne,
-        cIoo_castSucc_succ, insert_empty_eq]
+        Grid.cIoo_castSucc_succ, insert_empty_eq]
     have hcov (p : Fin (n + 1) × Fin (n + 1)) : p ∈ r₀.toGridRectangle.coveredSquares ↔
         p.1 ∈ Grid.cIco s.succ s.castSucc ∧ p.2 = (G.X s).castSucc := by
       rw [GridRectangle.mem_coveredSquares, GridRectangle.mem_coveredColumns,
@@ -148,7 +103,7 @@ theorem XHomotopyCoefficient_stabilizeX_X_insertPoint (x : GridState n) :
       · rw [GridRectangleBetween.isEmpty_iff_forall_notMem_cIoo, GridRectangleBetween.bottom_def,
           GridRectangleBetween.top_def, GridRectangleBetween.ofSwapColumns_left,
           GridRectangleBetween.ofSwapColumns_right, hbottom, hG', stabilizeX_X_castSucc,
-          cIoo_castSucc_succ]
+          Grid.cIoo_castSucc_succ]
         exact fun _ _ => Finset.notMem_empty _
       · -- The row of the southeast `X`-marking carries no other `X`-marking.
         ext p
