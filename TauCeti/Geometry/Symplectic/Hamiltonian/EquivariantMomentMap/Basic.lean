@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint
+public import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Basic
 public import TauCeti.Geometry.Lie.FundamentalVectorField
 public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap
 

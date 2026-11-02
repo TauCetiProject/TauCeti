@@ -641,9 +641,11 @@ theorem exists_isThomClass_of_compactSpace [CompactSpace B] [VectorBundle ℝ F 
       rw [hu c b hc, hu c' b hc']
       -- In a module isomorphic to `K` there is only one generator, since `K` has only one unit.
       exact LinearEquiv.eq_of_span_singleton_eq_top
-        ((mapEquiv ((e c).fiberPairIso ℝ hc)).symm.trans gEquiv)
-        ((mapEquiv ((e c).fiberPairIso ℝ hc)).span_singleton_apply_eq_top_iff.2 hg)
-        ((mapEquiv ((e c').fiberPairIso ℝ hc')).span_singleton_apply_eq_top_iff.2 hg)
+        ((mapEquiv ((e c).continuousLinearEquivAt ℝ b hc).complZeroPairIso).symm.trans gEquiv)
+        ((mapEquiv ((e c).continuousLinearEquivAt ℝ b hc).complZeroPairIso
+          ).span_singleton_apply_eq_top_iff.2 hg)
+        ((mapEquiv ((e c').continuousLinearEquivAt ℝ b hc').complZeroPairIso
+          ).span_singleton_apply_eq_top_iff.2 hg)
   refine ⟨TopPair.singularCohomologyMap ((thomPairOverUnivIso F E).inv ≫ thomPairOverMap F E ht)
     _ x, isThomClass_iff.2 ⟨inferInstance, fun b ↦ ?_⟩⟩
   obtain ⟨c, hct, hbc⟩ := mem_iUnion₂.1 (ht (mem_univ b))
@@ -655,6 +657,7 @@ theorem exists_isThomClass_of_compactSpace [CompactSpace B] [VectorBundle ℝ F 
       fiberThomPairOverMap_comp_thomPairOverMap, fiberThomPairOverMap_comp_thomPairOverMap]
   rw [← TopPair.singularCohomologyMap_comp_apply, hfib, TopPair.singularCohomologyMap_comp_apply,
     hx c hct, hu c b hbc]
-  exact (mapEquiv ((e c).fiberPairIso ℝ hbc)).span_singleton_apply_eq_top_iff.2 hg
+  exact (mapEquiv ((e c).continuousLinearEquivAt ℝ b hbc).complZeroPairIso
+    ).span_singleton_apply_eq_top_iff.2 hg
 
 end TauCeti
