@@ -305,6 +305,24 @@ theorem mpullback_symm_eq_of_mpullback_eq {φ : M ≃ₘ⟮I, I'⟯ M'} {α : Sm
   have hid : ⇑φ ∘ ⇑φ.symm = id := funext φ.apply_symm_apply
   simp only [hid, mpullback_id, LinearMap.id_apply]
 
+/-- Pullback along a composite of diffeomorphisms is the composite of the pullbacks. -/
+theorem mpullback_trans (φ : M ≃ₘ⟮I, I'⟯ M') (ψ : M' ≃ₘ⟮I', I''⟯ M'')
+    (γ : SmoothForm I'' M'' F k) :
+    mpullback (φ.trans ψ) (φ.trans ψ).contMDiff γ =
+      mpullback φ φ.contMDiff (mpullback ψ ψ.contMDiff γ) := by
+  rw [← LinearMap.comp_apply, ← mpullback_comp]
+  rfl
+
+/-- Pullback along a diffeomorphism `φ` transports pointwise proportionality: at `x`, the
+pullback of `α` is `c` times the pullback of `β` exactly when `α` is `c` times `β` at `φ x`. -/
+theorem mpullback_apply_eq_smul_iff (φ : M ≃ₘ⟮I, I'⟯ M') (α β : SmoothForm I' M' F k) (c : ℝ)
+    (x : M) :
+    (mpullback φ φ.contMDiff α).1 x = c • (mpullback φ φ.contMDiff β).1 x ↔
+      α.1 (φ x) = c • β.1 (φ x) := by
+  rw [coe_mpullback, coe_mpullback, ← Pi.smul_apply, ← TauCeti.mpullback_smul]
+  exact TauCeti.mpullback_apply_eq_mpullback_apply_iff
+    (φ.isInvertible_mfderiv (n := ∞) (by simp) (x := x)).surjective
+
 /-- A smooth form preserved by a diffeomorphism `φ` is preserved by every integer power of `φ`. -/
 theorem mpullback_zpow_eq_self {φ : M ≃ₘ⟮I, I⟯ M} {σ : SmoothForm I M F k}
     (hσ : mpullback φ φ.contMDiff σ = σ) (j : ℤ) : mpullback ⇑(φ ^ j) (φ ^ j).contMDiff σ = σ := by
