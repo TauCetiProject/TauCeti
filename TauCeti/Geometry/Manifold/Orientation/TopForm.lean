@@ -253,8 +253,8 @@ private theorem exists_equiv_of_mpullback_eq_smul (hk : Module.finrank ℝ E = k
   rw [← hval]
   congr 1
   ext i
-  rw [Module.Basis.map_apply, ← he]
-  rfl
+  rw [Module.Basis.map_apply, ← he, ContinuousLinearEquiv.coe_coe,
+    ContinuousLinearEquiv.coe_toLinearEquiv]
 
 /-- If a map `f` pulls the top form `φ'` back at `x` to a nonzero multiple `c • φ` of the top
 form `φ`, its derivative at `x` is invertible, and it carries the orientation of `φ` at `x` to the
