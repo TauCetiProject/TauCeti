@@ -8,6 +8,8 @@ module
 public import TauCeti.NumberTheory.LocalField.QuadraticForm.Norm.DeepUnitIndex
 public import TauCeti.NumberTheory.LocalField.WorkedExamples.DyadicSqrt.Two
 
+import TauCeti.NumberTheory.LocalField.QuadraticForm.Ramification.Dictionary
+
 /-!
 # Deep units and unit norms over `ℚ₂(√2)`
 
@@ -37,13 +39,6 @@ public section
 open ValuativeRel
 
 namespace TauCeti.DyadicSqrtTwo
-
-/-- The normalized valuation of `2` in `ℚ₂(√2)` is the absolute ramification index `2`. -/
-private theorem dyadicLevel_eq_two (h2 : (2 : DyadicSqrtTwo) ≠ 0) :
-    dyadicLevel DyadicSqrtTwo h2 = 2 := by
-  rw [dyadicLevel_def]
-  exact (absoluteRamificationIndex_eq_natCastValuation (K := DyadicSqrtTwo) (p := 2)).symm.trans
-    absoluteRamificationIndex_eq_two
 
 /-- **The index of `U(K, 4) · (𝒪[K]ˣ)²` in `𝒪[K]ˣ` is four** for `K = ℚ₂(√2)`. -/
 theorem relIndex_unitFiltration_four_sup_square :
