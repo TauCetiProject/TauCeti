@@ -84,6 +84,7 @@ theorem substForm_X_self (h : κ) :
     substForm M i₀ (X (h, i₀ h)) = ∑ i, C (M h i) * X (h, i) := by
   simp [substForm]
 
+@[simp]
 theorem substForm_X_of_ne {h : κ} {i : ι} (hi : i ≠ i₀ h) :
     substForm M i₀ (X (h, i)) = X (h, i) := by
   simp [substForm, hi]
@@ -113,6 +114,7 @@ theorem substFormInv_X_self (h : κ) :
       C (M h (i₀ h))⁻¹ * (X (h, i₀ h) - ∑ i ∈ univ.erase (i₀ h), C (M h i) * X (h, i)) := by
   simp [substFormInv]
 
+@[simp]
 theorem substFormInv_X_of_ne {h : κ} {i : ι} (hi : i ≠ i₀ h) :
     substFormInv M i₀ (X (h, i)) = X (h, i) := by
   simp [substFormInv, hi]
@@ -130,7 +132,7 @@ theorem substForm_substFormInv (hM : ∀ h, M h (i₀ h) ≠ 0) (P : MvPolynomia
       sum_erase_C_mul_map_X fun i hi ↦ substForm_X_of_ne hi]
     rw [← Finset.add_sum_erase _ _ (mem_univ (i₀ h))]
     simp [← mul_assoc, ← C_mul, hM h]
-  · simp [substFormInv_X_of_ne hi, substForm_X_of_ne hi]
+  · simp [hi]
 
 /-- `substFormInv M i₀` undoes `substForm M i₀`. -/
 theorem substFormInv_substForm (hM : ∀ h, M h (i₀ h) ≠ 0) (P : MvPolynomial (κ × ι) K) :
@@ -144,7 +146,7 @@ theorem substFormInv_substForm (hM : ∀ h, M h (i₀ h) ≠ 0) (P : MvPolynomia
     simp only [map_add, map_sum, map_mul, algHom_C, algebraMap_eq, substFormInv_X_self,
       AlgHom.id_apply, sum_erase_C_mul_map_X fun i hi ↦ substFormInv_X_of_ne hi]
     simp [← mul_assoc, ← C_mul, hM h]
-  · simp [substFormInv_X_of_ne hi, substForm_X_of_ne hi]
+  · simp [hi]
 
 end Substitution
 
