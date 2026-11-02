@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Copyright (c) 2026 Lean FRO, LLC. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: Kim Morrison
 -/
 module
 
@@ -14,6 +14,12 @@ import Mathlib.Tactic.Ring
 We describe adjoining one element to a preordering and its least-extension property.
 Nonempty directed suprema preserve preorderings. Over a field, a preordering that
 contains one sign of every element is an ordering.
+
+The one-element construction is part of the classical preordering extension
+argument; see Salma Kuhlmann,
+[Real Algebraic Geometry, Lecture 3](https://www.math.uni-konstanz.de/algebra/WS0910/Notes03.pdf),
+Lemma 2.1. The proper extension to an ordering is proved in
+`TauCeti.Algebra.Order.Ring.Ordering.Extension`.
 -/
 
 public section
@@ -44,15 +50,16 @@ def adjoin (hP : P.IsPreordering) (a : R) : Subsemiring R where
     x ∈ hP.adjoin a ↔ ∃ u ∈ P, ∃ v ∈ P, x = u + a * v := Iff.rfl
 
 /-- The one-element extension contains the original preordering. -/
-theorem le_adjoin (hP : P.IsPreordering) (a : R) : P ≤ hP.adjoin a :=
+@[simp] theorem le_adjoin (hP : P.IsPreordering) (a : R) : P ≤ hP.adjoin a :=
   fun x hx => ⟨x, hx, 0, P.zero_mem, by simp⟩
 
 /-- The adjoined element belongs to the extension. -/
-theorem self_mem_adjoin (hP : P.IsPreordering) (a : R) : a ∈ hP.adjoin a :=
+-- Apply this before `mem_adjoin` expands membership into an existential formula.
+@[simp↓] theorem self_mem_adjoin (hP : P.IsPreordering) (a : R) : a ∈ hP.adjoin a :=
   ⟨0, P.zero_mem, 1, P.one_mem, by simp⟩
 
 /-- The extension is the least subsemiring containing the cone and the adjoined element. -/
-theorem adjoin_le_iff (hP : P.IsPreordering) (a : R) {Q : Subsemiring R} :
+@[simp] theorem adjoin_le_iff (hP : P.IsPreordering) (a : R) {Q : Subsemiring R} :
     hP.adjoin a ≤ Q ↔ P ≤ Q ∧ a ∈ Q := by
   refine ⟨fun h ↦ ⟨(hP.le_adjoin a).trans h, h (hP.self_mem_adjoin a)⟩, ?_⟩
   rintro ⟨hPQ, ha⟩ x ⟨u, hu, v, hv, rfl⟩
