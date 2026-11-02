@@ -116,6 +116,20 @@ submodule of the stage. The quotient of the stage by it is the cocenter of the s
 def stageCommutatorSpan (n : ℕ) : Submodule R (InfiniteTypeAHeckeAlgebra R q) :=
   (commutatorSubmodule R (stage R q n)).map (stage R q n).val.toLinearMap
 
+variable (R q) in
+/-- The commutator span of a stage is the image of the commutator submodule of the stage. -/
+theorem stageCommutatorSpan_def (n : ℕ) :
+    stageCommutatorSpan R q n =
+      (commutatorSubmodule R (stage R q n)).map (stage R q n).val.toLinearMap :=
+  (rfl)
+
+/-- An element lies in the commutator span of the stage `n` exactly when it is (the image of) an
+element of the commutator submodule of the stage. -/
+theorem mem_stageCommutatorSpan_iff {n : ℕ} {x : InfiniteTypeAHeckeAlgebra R q} :
+    x ∈ stageCommutatorSpan R q n ↔
+      ∃ c ∈ commutatorSubmodule R (stage R q n), (c : InfiniteTypeAHeckeAlgebra R q) = x :=
+  Iff.rfl
+
 /-- A commutator of two elements of the stage `n` lies in the commutator span of that stage. -/
 theorem mul_sub_mul_mem_stageCommutatorSpan {n : ℕ} {x y : InfiniteTypeAHeckeAlgebra R q}
     (hx : x ∈ stage R q n) (hy : y ∈ stage R q n) :
