@@ -15,13 +15,13 @@ public import TauCeti.Geometry.Manifold.Corners.Face
 The boundary `I.boundary M` of a manifold with corners is only a set, and at a corner it is not a
 manifold: the boundary of the quadrant `[0, ∞)²` has no smooth structure making its inclusion an
 immersion at the origin. It also forgets how many faces meet at a point, which is what Stokes'
-theorem and gluing along faces need. The *abstract boundary* `∂̃M` repairs both defects. Its points
-are the pairs of a point `x` of `M` and a local face through `x`, so the fibre of `∂̃M → M` over
+theorem and gluing along faces need. The *abstract boundary* `∂ₐM` repairs both defects. Its points
+are the pairs of a point `x` of `M` and a local face through `x`, so the fibre of `∂ₐM → M` over
 `x` has as many points as `x` has local faces, that is `depth x` of them; and near each of its
 points it looks like a single face of a chart, which is what makes it a manifold with corners one
 dimension down.
 
-This file constructs `∂̃M` as a topological space; its charts are not constructed here. It works
+This file constructs `∂ₐM` as a topological space; its charts are not constructed here. It works
 for models with corners `J` on `EuclideanSpace ℝ ι` whose range is cut out by the nonnegativity of
 some coordinates, such as the quadrant `𝓡c n` and the half-space `𝓡∂ n`. In a chart `e`, the
 faces of `range J` through `e.extend J x` are the hyperplanes `z i = 0` for the vanishing
@@ -29,15 +29,15 @@ coordinates `i` that are nonnegative on `range J`. The corresponding local face 
 is the germ at `x` of the set `{p | e.extend J p i = 0}` (`ModelWithCorners.faceGerm`), and
 `ModelWithCorners.localFaces J x` is the set of these germs, over all charts of the atlas.
 
-* `ModelWithCorners.AbstractBoundary J M`, written `∂̃M` above, has as points the pairs of a point
+* `ModelWithCorners.AbstractBoundary J M`, written `∂ₐM` above, has as points the pairs of a point
   `x` and a germ in `J.localFaces x`; `ModelWithCorners.AbstractBoundary.point` is the map to `M`.
 * For a chart `e` of the atlas and a coordinate `i` nonnegative on `range J`,
   `ModelWithCorners.AbstractBoundary.faceSection` sends each point `p` of the face
-  `{p ∈ e.source | e.extend J p i = 0}` to the point `(p, faceGerm e i p)` of `∂̃M`. The topology
-  of `∂̃M` is the finest one making all these maps continuous.
+  `{p ∈ e.source | e.extend J p i = 0}` to the point `(p, faceGerm e i p)` of `∂ₐM`. The topology
+  of `∂ₐM` is the finest one making all these maps continuous.
 
 With this topology each face section is an open embedding
-(`ModelWithCorners.AbstractBoundary.isOpenEmbedding_faceSection`), their ranges cover `∂̃M`, and the
+(`ModelWithCorners.AbstractBoundary.isOpenEmbedding_faceSection`), their ranges cover `∂ₐM`, and the
 map to `M` is continuous. The open embedding rests on germs propagating: if two face germs agree
 at `x`, the two face sets agree near `x`, so the germs agree at every nearby point
 (`ModelWithCorners.isOpen_setOf_faceGerm_eq`).
@@ -45,8 +45,8 @@ at `x`, the two face sets agree near `x`, so the germs agree at every nearby poi
 On a `C¹` manifold the local faces do not depend on the chart
 (`ModelWithCorners.existsUnique_equiv_extend_apply_eq_zero_iff`). Hence any single chart `e` of
 the maximal atlas at `x` lists the local faces through `x` without repetition
-(`ModelWithCorners.faceGermEquiv`), the fibre of `∂̃M → M` over `x` has exactly `depth x` points
-(`ModelWithCorners.AbstractBoundary.natCard_preimage_point`), and `∂̃M` is Hausdorff when `M` is
+(`ModelWithCorners.faceGermEquiv`), the fibre of `∂ₐM → M` over `x` has exactly `depth x` points
+(`ModelWithCorners.AbstractBoundary.natCard_preimage_point`), and `∂ₐM` is Hausdorff when `M` is
 (`ModelWithCorners.AbstractBoundary.t2Space`). On a manifold with boundary modelled on the
 half-space every boundary point has exactly one local face, and the abstract boundary is the
 boundary (`ModelWithCorners.AbstractBoundary.homeomorphBoundary`).
