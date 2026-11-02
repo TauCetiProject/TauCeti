@@ -35,9 +35,10 @@ weight included, so the file also translates a family indexed by the root number
 * `TauCeti.DynkinType.rootEquiv_apply_cartanBasis` and `TauCeti.DynkinType.coe_rootEquiv_eq_iff`:
   the root numbered `α` takes the values of root `α` of the pinned datum on the Cartan generators,
   and is characterized by them.
-* `TauCeti.DynkinType.rootEquiv_simpleIndex` and
-  `TauCeti.DynkinType.rootEquiv_reflectionPerm_self`: the enumeration matches the numbered simple
-  roots and commutes with negation.
+* `TauCeti.DynkinType.rootEquiv_simpleIndex`,
+  `TauCeti.DynkinType.rootEquiv_reflectionPerm_self` and
+  `TauCeti.DynkinType.rootEquiv_reflectionPerm`: the enumeration matches the numbered simple
+  roots and commutes with negation and with reflections.
 * `TauCeti.DynkinType.coe_rootEquiv_eq_add`: the enumeration carries sums of roots of the
   rational root system to sums of weights.
 * `TauCeti.DynkinType.extendRootFamily`: a family of vectors indexed by the root numbers, extended
@@ -197,6 +198,16 @@ which is the index of `-α` in the pinned datum, is the negative of the root ind
   rw [← reflectionPerm_rationalRootSystem]
   exact ((t.rationalRootSystemEquiv ht).toHom.indexEquiv_reflectionPerm α α).trans
     (rootSystem_reflectionPerm_self_eq_neg _)
+
+/-- **The enumeration commutes with reflections**: the root numbered by the reflection of `β` in
+`α` in the pinned datum is the reflection, in the Killing root system, of the root numbered `β` in
+the root numbered `α`. -/
+theorem rootEquiv_reflectionPerm (α β : Fin t.numRoots) :
+    t.rootEquiv ht ((t.simplyConnectedRootDatum ht).reflectionPerm α β) =
+      (rootSystem (t.cartanSubalgebra ht)).reflectionPerm (t.rootEquiv ht α)
+        (t.rootEquiv ht β) := by
+  rw [← reflectionPerm_rationalRootSystem]
+  exact (t.rationalRootSystemEquiv ht).toHom.indexEquiv_reflectionPerm α β
 
 /-- The numbered raising generator `eᵢ` is a root vector for the enumerated simple root
 `αᵢ`. -/

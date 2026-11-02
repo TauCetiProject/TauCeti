@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.LocalCoefficient.QuotientCovering
+public import TauCeti.AlgebraicTopology.LocalCoefficient.QuotientCovering.Basic
 public import TauCeti.AlgebraicTopology.Singular.Coinvariants
 public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Resolution
 public import TauCeti.AlgebraicTopology.Singular.Transfer.PermutationLocalSystem
