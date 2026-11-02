@@ -39,6 +39,8 @@ functions `S(L*)^L` with the Weyl-invariant polynomial functions on a Cartan sub
   is a Lie module over `L` through these derivations, with
   `TauCeti.SymmetricAlgebra.lie_eq_lieModuleDerivation` identifying the bracket.
 * `TauCeti.SymmetricAlgebra.lieInvariants`: the subalgebra `S(M)^L` of Lie invariants.
+* `TauCeti.SymmetricAlgebra.homogeneousLieInvariant`: the homogeneous invariants `S^n(M)^L` of
+  degree `n`.
 
 ## Main results
 
@@ -53,6 +55,10 @@ functions `S(L*)^L` with the Weyl-invariant polynomial functions on a Cartan sub
   all of its homogeneous components are.
 * `LieModuleEquiv.map_lieInvariants`: a Lie module equivalence carries the invariants
   onto the invariants.
+* `TauCeti.SymmetricAlgebra.lift_eval_eq_zero_of_mem_homogeneousLieInvariant`,
+  `TauCeti.SymmetricAlgebra.lift_eval_eq_zero_of_mem_lieInvariants`: an invariant polynomial
+  function on `M` of positive degree, respectively with zero constant term, vanishes at every
+  eigenvector `⁅y, x⁆ = a • x` of a nonzero eigenvalue `a`, by Euler's identity.
 
 ## References
 
@@ -202,6 +208,20 @@ theorem decompose_mem_lieInvariants {p : S} (hp : p ∈ lieInvariants R L M) (n 
     (DirectSum.decompose (homogeneousSubmodule R M) p n : S) ∈ lieInvariants R L M :=
   decompose_mem_lieInvariants_iff.mpr hp n
 
+variable (R L M) in
+/-- The **homogeneous Lie invariants** `S^n(M)^L` of degree `n`: the invariants that are
+homogeneous of degree `n`. -/
+noncomputable def homogeneousLieInvariant (n : ℕ) : Submodule R S :=
+  Subalgebra.toSubmodule (lieInvariants R L M) ⊓ homogeneousSubmodule R M n
+
+/-- Membership in the homogeneous Lie invariants of degree `n`: `p` is invariant and homogeneous
+of degree `n`. -/
+@[simp]
+theorem mem_homogeneousLieInvariant {n : ℕ} {p : S} :
+    p ∈ homogeneousLieInvariant R L M n ↔
+      p ∈ lieInvariants R L M ∧ p ∈ homogeneousSubmodule R M n :=
+  Iff.rfl
+
 section Equiv
 
 variable {N : Type w'} [AddCommGroup N] [Module R N] [LieRingModule L N] [LieModule R L N]
@@ -233,5 +253,48 @@ theorem _root_.LieModuleEquiv.map_lieInvariants (e : M ≃ₗ⁅R,L⁆ N) :
   exact ⟨_, e.map_mem_lieInvariants_iff.mp (hq'.symm ▸ hq), hq'⟩
 
 end Equiv
+
+/-! ### Vanishing at eigenvectors -/
+
+section Eigenvector
+
+open Module LieModule
+
+variable {R L M : Type*} [CommRing R] [NoZeroDivisors R] [CharZero R] [LieRing L] [LieAlgebra R L]
+  [AddCommGroup M] [Module R M] [LieRingModule L M] [LieModule R L M]
+
+/-- **A homogeneous invariant polynomial function of positive degree vanishes at every eigenvector
+of a nonzero eigenvalue.** If `p` on the Lie module `M` is invariant and homogeneous of degree
+`n ≠ 0`, and `⁅y, x⁆ = a • x` with `a ≠ 0`, then `p (x) = 0`. -/
+theorem lift_eval_eq_zero_of_mem_homogeneousLieInvariant {n : ℕ} (hn : n ≠ 0)
+    {p : _root_.SymmetricAlgebra R (Dual R M)} (hp : p ∈ homogeneousLieInvariant R L (Dual R M) n)
+    {y : L} {x : M} {a : R} (hyx : ⁅y, x⁆ = a • x) (ha : a ≠ 0) :
+    lift (Dual.eval R M x) p = 0 := by
+  rw [mem_homogeneousLieInvariant] at hp
+  -- evaluation at `x` turns the coadjoint action of `y` into multiplication by `-a`
+  have h := (lift (Dual.eval R M x)).apply_derivationOfEnd_eq_mul_of_mem_homogeneousSubmodule
+    (f := toEnd R L (Dual R M) y) (c := -a) (fun ξ ↦ by simp [hyx]) hp.2
+  rw [← lieModuleDerivation_apply, mem_lieInvariants.mp hp.1 y, map_zero] at h
+  simpa [hn, ha] using h.symm
+
+/-- **An invariant polynomial function with zero constant term vanishes at every eigenvector of a
+nonzero eigenvalue.** If `p` on the Lie module `M` is invariant with `algebraMapInv p = 0`, and
+`⁅y, x⁆ = a • x` with `a ≠ 0`, then `p (x) = 0`. -/
+theorem lift_eval_eq_zero_of_mem_lieInvariants {p : _root_.SymmetricAlgebra R (Dual R M)}
+    (hp : p ∈ lieInvariants R L (Dual R M)) (hp₀ : algebraMapInv p = 0) {y : L} {x : M} {a : R}
+    (hyx : ⁅y, x⁆ = a • x) (ha : a ≠ 0) :
+    lift (Dual.eval R M x) p = 0 := by
+  classical
+  rw [← DirectSum.sum_support_decompose (homogeneousSubmodule R (Dual R M)) p, map_sum]
+  refine Finset.sum_eq_zero fun n _ ↦ ?_
+  rcases eq_or_ne n 0 with rfl | hn
+  · -- the degree-zero component is the constant term
+    have h₀ := congr($(projZeroRingHom_eq_algebraMap_comp_algebraMapInv R (Dual R M)) p)
+    rw [GradedRing.projZeroRingHom_apply] at h₀
+    rw [h₀, RingHom.comp_apply, RingHom.coe_coe, hp₀, map_zero, map_zero]
+  · refine lift_eval_eq_zero_of_mem_homogeneousLieInvariant hn ?_ hyx ha
+    exact mem_homogeneousLieInvariant.mpr ⟨decompose_mem_lieInvariants hp n, SetLike.coe_mem _⟩
+
+end Eigenvector
 
 end TauCeti.SymmetricAlgebra

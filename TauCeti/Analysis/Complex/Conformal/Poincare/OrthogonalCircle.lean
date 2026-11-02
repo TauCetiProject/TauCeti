@@ -98,12 +98,11 @@ diameters, which the radial geodesics already trace, this closes the description
 
 ## Generality
 
-In accordance with the generality bar of `ConformalMapping/README.md`, which fixes scalar `ℂ`
-for layers L0--L6, everything is stated for the complex unit disc. The plane-geometry lemmas of
-the first section ask nothing of `a` beyond `‖a‖ < 1` and nothing of `u` beyond `‖u‖ = 1` — and
-several of them ask less: the discriminant identity is homogeneous in `u` and needs no hypothesis
-at all, and the degenerate case needs only `‖a‖ ≠ 1`. They are stated for bare complex numbers so
-that they can be reused off the `PoincareDisc` synonym.
+Everything is stated for the complex unit disc. The plane-geometry lemmas of the first section ask
+nothing of `a` beyond `‖a‖ < 1` and nothing of `u` beyond `‖u‖ = 1` — and several of them ask less:
+the discriminant identity is homogeneous in `u` and needs no hypothesis at all, and the degenerate
+case needs only `‖a‖ ≠ 1`. They are stated for bare complex numbers so that they can be reused off
+the `PoincareDisc` synonym.
 
 ## References
 

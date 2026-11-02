@@ -90,6 +90,12 @@ theorem Scheme.fromSpecAlgebraicClosure_apply (X : Scheme.{u}) (x : X)
     X.fromSpecAlgebraicClosure x p = x :=
   Scheme.fromSpecResidueField_apply x _
 
+/-- The geometric point over `x` has image exactly `{x}`. -/
+@[simp]
+theorem Scheme.range_fromSpecAlgebraicClosure (X : Scheme.{u}) (x : X) :
+    Set.range (X.fromSpecAlgebraicClosure x) = {x} :=
+  Set.range_eq_singleton (X.fromSpecAlgebraicClosure_apply x)
+
 section FromSpecResidueField
 
 variable {X : Scheme.{u}} (x : X)

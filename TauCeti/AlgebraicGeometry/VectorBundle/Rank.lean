@@ -9,6 +9,7 @@ public import Mathlib.Topology.LocallyConstant.Basic
 public import Mathlib.Topology.Sets.Closeds
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.FiniteLocallyFree
 public import TauCeti.AlgebraicGeometry.VectorBundle.FiniteLocallyFree
+public import TauCeti.Topology.LocallyConstant.Fiber
 
 /-!
 # The rank of a finite locally free sheaf
@@ -244,13 +245,13 @@ theorem rank_tensor_apply (E F : FiniteLocallyFreeSheaf X) (x : X) :
 
 /-- The rank locus of `E` in rank `n`: the clopen set of points at which `E` has rank `n`. -/
 def rankLocus (E : FiniteLocallyFreeSheaf X) (n : ℕ) : TopologicalSpace.Clopens X :=
-  ⟨E.rank ⁻¹' {n}, E.rank.isLocallyConstant.isClopen_fiber n⟩
+  E.rank.fiberClopens n
 
 /-- A point lies in the rank locus of `E` in rank `n` exactly when `E` has rank `n` there. -/
 @[simp]
 theorem mem_rankLocus {E : FiniteLocallyFreeSheaf X} {n : ℕ} {x : X} :
     x ∈ E.rankLocus n ↔ E.rank x = n :=
-  Iff.rfl
+  LocallyConstant.mem_fiberClopens
 
 end FiniteLocallyFreeSheaf
 

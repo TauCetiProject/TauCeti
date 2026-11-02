@@ -80,6 +80,20 @@ structure FiniteSlopeData (Γ : Type*) [Preorder Γ] where
 
 namespace FiniteSlopeData
 
+/-- Finite slope data is determined by its anchor, length and pointwise unit slopes,
+transported along the equality of lengths. -/
+theorem ext_of_slope {d e : FiniteSlopeData Γ} (hs : d.start = e.start)
+    (hy : d.initialHeight = e.initialHeight) (hl : d.length = e.length)
+    (hm : ∀ i, d.slope i = e.slope (i.cast hl)) : d = e := by
+  cases d
+  cases e
+  cases hs
+  cases hy
+  cases hl
+  simp only [Fin.cast_refl] at hm
+  cases funext hm
+  rfl
+
 section AddCommMonoid
 
 variable [AddCommMonoid Γ] [AddCommMonoid Γ'] (d : FiniteSlopeData Γ)
@@ -206,6 +220,7 @@ end FiniteSlopeData
 /-- The unit-slope presentation of a convex polygon whose finite domain is the half-line
 `[start, ∞)`. The edge from `start + i` to `start + i + 1` has slope `slope i`. A terminal
 ray is an eventually constant slope sequence; no slope is infinite. -/
+@[ext]
 structure InfiniteSlopeData (Γ : Type*) [Preorder Γ] where
   /-- The first index of the finite domain. -/
   start : ℕ
@@ -217,6 +232,31 @@ structure InfiniteSlopeData (Γ : Type*) [Preorder Γ] where
   monotone : Monotone slope
 
 namespace InfiniteSlopeData
+
+/-- Keep the anchor and first `n` unit slopes of an infinite slope presentation.
+For `n = 0` the truncation is the singleton at the anchor. -/
+def truncate (d : InfiniteSlopeData Γ) (n : ℕ) : FiniteSlopeData Γ where
+  start := d.start
+  initialHeight := d.initialHeight
+  length := n
+  slope i := d.slope i
+  monotone _ _ h := d.monotone h
+
+@[simp]
+theorem truncate_start (d : InfiniteSlopeData Γ) (n : ℕ) :
+    (d.truncate n).start = d.start := (rfl)
+
+@[simp]
+theorem truncate_initialHeight (d : InfiniteSlopeData Γ) (n : ℕ) :
+    (d.truncate n).initialHeight = d.initialHeight := (rfl)
+
+@[simp]
+theorem truncate_length (d : InfiniteSlopeData Γ) (n : ℕ) :
+    (d.truncate n).length = n := (rfl)
+
+@[simp]
+theorem truncate_slope (d : InfiniteSlopeData Γ) (n : ℕ) (i : Fin (d.truncate n).length) :
+    (d.truncate n).slope i = d.slope i := (rfl)
 
 section AddCommMonoid
 
@@ -257,6 +297,17 @@ theorem heights_start_add (k : ℕ) :
     d.heights (d.start + k) =
       ((d.initialHeight + ∑ i ∈ range k, d.slope i : Γ) : WithTop Γ) := by
   simp only [heights, Nat.le_add_right, ite_true, Nat.add_sub_cancel_left]
+
+/-- Truncation preserves heights on the interval from the anchor to its endpoint. -/
+@[simp]
+theorem heights_truncate_start_add (n : ℕ) {k : ℕ} (hk : k ≤ n) :
+    (d.truncate n).heights (d.start + k) = d.heights (d.start + k) := by
+  have h := (d.truncate n).heights_start_add (k := k) (by simpa using hk)
+  have hs : (d.truncate n).slope = fun i : Fin (d.truncate n).length => d.slope i :=
+    funext (d.truncate_slope n)
+  rw [hs, prefixSum_eq_sum_range] at h
+  simpa only [truncate_start, truncate_initialHeight, truncate_length,
+    min_eq_left hk, heights_start_add] using h
 
 /-- The height at the first index is the initial height. -/
 @[simp]

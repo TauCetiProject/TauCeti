@@ -7,8 +7,10 @@ module
 
 public import Mathlib.NumberTheory.ModularForms.LevelOne.Basic
 public import TauCeti.Algebra.Module.ZLattice.OrthSum
+public import TauCeti.NumberTheory.ModularForms.LevelOne.E4Discriminant
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.Cusp
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.Inversion
+public import TauCeti.NumberTheory.ModularForms.ThetaSeries.QExpansion
 
 /-!
 # Theta series of even unimodular lattices
@@ -29,6 +31,12 @@ Once `8 ∣ n`, the factor `(-i)^k` is `1`, so `Θ_L` is invariant under both ge
 `T` of `SL(2, ℤ)`; with holomorphy and boundedness at `i∞` this makes `Θ_L` a level-one modular
 form, `ZLattice.thetaForm`, built as Mathlib builds `CuspForm.discriminant`.
 
+Since `4 ∣ k`, the theta series is then a unique combination of the products `E₄ ^ a * Δ ^ b`
+with `4 a + 12 b = k`. Its `q`-expansion coefficients are the representation numbers `r_L(2m)`,
+and those of `E₄` and `Δ` are rational, so the coefficients of this combination are rational.
+This is the shape in which the theta series of a particular even unimodular lattice is identified
+inside the ring of level-one modular forms.
+
 ## Main definitions
 
 * `ZLattice.thetaForm`: the theta series of an even unimodular lattice of rank `2k`, as a modular
@@ -38,6 +46,9 @@ form, `ZLattice.thetaForm`, built as Mathlib builds `CuspForm.discriminant`.
 
 * `ZLattice.IsEven.eight_dvd_finrank`: the rank of an even unimodular lattice is divisible by `8`.
 * `ZLattice.IsEven.thetaSeries_slash_S`: `Θ_L ∣[k] S = Θ_L` for even unimodular `L`.
+* `ZLattice.IsEven.existsUnique_finsupp_thetaSeries_eq_E₄_discriminant`: for even unimodular `L`
+  of rank `2k`, `Θ_L = ∑_{4 a + 12 b = k} c (a, b) • E₄ ^ a * Δ ^ b` for a unique family of
+  rational coefficients `c (a, b)`.
 
 ## References
 
@@ -47,7 +58,8 @@ form, `ZLattice.thetaForm`, built as Mathlib builds `CuspForm.discriminant`.
 
 public section
 
-open Complex Module ModularGroup SlashInvariantForm
+open Complex Module ModularGroup SlashInvariantForm ModularForm
+open UpperHalfPlane (qExpansion)
 open scoped ModularForm MatrixGroups
 
 namespace ZLattice
@@ -123,5 +135,24 @@ noncomputable def thetaForm (hL : IsEven L) (hU : IsUnimodular L) (hk : finrank 
 theorem coe_thetaForm (hL : IsEven L) (hU : IsUnimodular L) (hk : finrank ℝ E = 2 * k) :
     ⇑(thetaForm hL hU hk) = thetaSeries L :=
   (rfl)
+
+/-- **The theta series of an even unimodular lattice is a rational polynomial in `E₄` and `Δ`.**
+If `L` is even unimodular and `dim E = 2k`, then
+`Θ_L = ∑_{4 a + 12 b = k} c (a, b) • E₄ ^ a * Δ ^ b` for a unique finitely supported family of
+rational coefficients `c (a, b)`. -/
+theorem IsEven.existsUnique_finsupp_thetaSeries_eq_E₄_discriminant (hL : IsEven L)
+    (hU : IsUnimodular L) (hk : finrank ℝ E = 2 * k) :
+    ∃! c : ℕ × ℕ →₀ ℚ, (∀ ab ∈ c.support, 4 * ab.1 + 12 * ab.2 = k) ∧
+      thetaSeries L = fun τ ↦ c.sum fun ab z ↦ (z : ℂ) * E₄ τ ^ ab.1 * discriminant τ ^ ab.2 := by
+  have h4 : 4 ∣ (k : ℤ) := by have := hL.eight_dvd_finrank hU; omega
+  -- The `q`-expansion of `Θ_L` has the representation numbers `r_L(2m)` as coefficients.
+  have hq : qExpansion 1 (thetaForm hL hU hk) ∈ (PowerSeries.map (Rat.castHom ℂ)).range :=
+    RingHom.mem_range.2 ⟨PowerSeries.mk fun m ↦ (representationNumber L (2 * m) : ℚ), by
+      ext m
+      simp [hL.qExpansion_thetaSeries_coeff]⟩
+  obtain ⟨c, ⟨hc, hfc⟩, huniq⟩ := existsUnique_finsupp_E₄_discriminant_of_qExpansion_mem_range
+    (Rat.castHom ℂ) (thetaForm hL hU hk) h4 hq
+  refine ⟨c, ⟨fun ab hab ↦ by exact_mod_cast hc ab hab, by simpa using hfc⟩,
+    fun c' ⟨hc', hfc'⟩ ↦ huniq c' ⟨fun ab hab ↦ by exact_mod_cast hc' ab hab, by simpa using hfc'⟩⟩
 
 end ZLattice
