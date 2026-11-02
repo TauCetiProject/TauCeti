@@ -7,7 +7,7 @@ module
 
 public import Mathlib.NumberTheory.NumberField.Basic
 import Mathlib.FieldTheory.KummerPolynomial
-import TauCeti.RingTheory.AdjoinRoot
+import TauCeti.RingTheory.AdjoinRoot.Basic
 
 /-!
 # Square roots of integers as algebraic integers
@@ -142,7 +142,8 @@ theorem exists_minpoly_eq_X_sq_sub_C_and_adjoin_eq_top_adjoinRoot (d : ℤ) (q :
   let K := AdjoinRoot (X ^ 2 - C q)
   let x : K := AdjoinRoot.root (X ^ 2 - C q)
   have hx : x ^ 2 = algebraMap ℤ K d := by
-    rw [TauCeti.AdjoinRoot.root_sq, IsScalarTower.algebraMap_apply ℤ ℚ]
+    rw [AdjoinRoot.root_X_pow_sub_C_pow, ← AdjoinRoot.algebraMap_eq,
+      IsScalarTower.algebraMap_apply ℤ ℚ]
     simp [hq]
   have hnoRoot : ∀ b, b ^ 2 ≠ q :=
     (X_pow_sub_C_irreducible_iff_of_prime Nat.prime_two).mp (Fact.out)
