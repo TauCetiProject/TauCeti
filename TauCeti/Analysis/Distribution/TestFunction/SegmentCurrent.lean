@@ -131,8 +131,7 @@ theorem norm_segmentCurrent_apply_le (p q : E) (ω : 𝓓^{n}(Ω, E [⋀^Fin 1]�
     (hω : ∀ x, ‖ω x‖ ≤ C) : ‖segmentCurrent p q ω‖ ≤ C * ‖q - p‖ := by
   have h := norm_curveIntegral_segment_le (ω := fun x => toDual (ω x)) (a := p) (b := q)
     fun z _ => (toDual.norm_map (ω z)).trans_le (hω z)
-  rw [segmentCurrent_apply]
-  exact h
+  simpa [segmentCurrent_apply, toDual] using h
 
 /-- The degenerate segment current `[[p, p]]` is zero. -/
 @[simp]
