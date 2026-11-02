@@ -33,6 +33,8 @@ Everything here concerns one completion. The comparison of two completions along
   prime lying under the maximal ideal of `𝒪_v`.
 * `IsDedekindDomain.HeightOneSpectrum.isUnit_algebraMap_adicCompletionIntegers_iff`: an element
   of `R` maps to a unit of `𝒪_v` exactly when it does not belong to `v`.
+* `IsDedekindDomain.HeightOneSpectrum.natCard_quotient_span_algebraMap_adicCompletionIntegers`:
+  consequently `𝒪_v` modulo such an element is trivial.
 * `IsDedekindDomain.HeightOneSpectrum.map_asIdeal_adicCompletionIntegers`: `v` generates the
   maximal ideal of `𝒪_v`.
 * `IsDedekindDomain.HeightOneSpectrum.mem_maximalIdeal_pow_iff`: membership in `𝔪 ^ n` is the
@@ -157,6 +159,16 @@ theorem isUnit_algebraMap_adicCompletionIntegers_iff (v : HeightOneSpectrum R) (
     IsUnit (algebraMap R (v.adicCompletionIntegers K) r) ↔ r ∉ v.asIdeal := by
   rw [← IsLocalRing.notMem_maximalIdeal, ← Ideal.mem_under,
     v.under_maximalIdeal_adicCompletionIntegers]
+
+/-- The quotient of the ring of integers of the completion at `v` by an element of `R` outside `v`
+is trivial, since that element maps to a unit. -/
+theorem natCard_quotient_span_algebraMap_adicCompletionIntegers (v : HeightOneSpectrum R) {r : R}
+    (hr : r ∉ v.asIdeal) :
+    Nat.card (v.adicCompletionIntegers K ⧸
+      Ideal.span {algebraMap R (v.adicCompletionIntegers K) r}) = 1 := by
+  rw [Ideal.span_singleton_eq_top.mpr ((v.isUnit_algebraMap_adicCompletionIntegers_iff r).mpr hr),
+    Nat.card_eq_one_iff_unique]
+  exact ⟨Ideal.Quotient.subsingleton_iff.mpr rfl, inferInstance⟩
 
 section SingleCompletion
 

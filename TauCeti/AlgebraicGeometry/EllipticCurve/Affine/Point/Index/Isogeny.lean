@@ -77,7 +77,8 @@ variable {A : Type*} [CommRing A] [IsDedekindDomain A]
 `E₁(F_u)` has finite index in `E₂(F_u)`, since it contains `deg f · E₂(F_u)`. -/
 theorem finiteIndex_range_pointMapHom_of_degree_notMem (hf : (f.degree : A) ∉ u.asIdeal) :
     f.pointMapHom.range.FiniteIndex := by
-  have := WeierstrassCurve.finiteIndex_range_nsmul u W₂ hf
+  have := WeierstrassCurve.finiteIndex_range_nsmul u W₂
+    (fun h ↦ hf (h ▸ u.asIdeal.zero_mem))
   refine AddSubgroup.finiteIndex_of_le (H := (nsmulAddMonoidHom f.degree).range) ?_
   rintro P ⟨Q, rfl⟩
   exact ⟨f.dual.pointMap Q, by simp [pointMap_dual_pointMap]⟩
@@ -97,7 +98,8 @@ theorem index_range_mul_index_range_dual_eq_card_ker_mul_card_ker_dual
       rw [AddMonoidHom.mem_ker, nsmulAddMonoidHom_apply, Submodule.mem_torsionBy_iff,
         natCast_zsmul])
   have hne : (nsmulAddMonoidHom (α := W₁.toAffine.Point) f.degree).range.index ≠ 0 :=
-    (WeierstrassCurve.finiteIndex_range_nsmul u W₁ hf).index_ne_zero
+    (WeierstrassCurve.finiteIndex_range_nsmul u W₁
+      (fun h ↦ hf (h ▸ u.asIdeal.zero_mem))).index_ne_zero
   -- `z(f̂) · z(f) = z([deg f])`, and the ratio for `[deg f]` is `1`
   have h := f.index_range_nsmul_mul_card_ker_mul_card_ker_dual
   rw [hker, ← hidx] at h

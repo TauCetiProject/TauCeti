@@ -65,8 +65,9 @@ bijective. So the points of `E(F_u)` killed by a power of `n` form a finite grou
   `#E(F_u)[n] · #(O_u ⧸ n O_u)`.
 * `WeierstrassCurve.exists_finiteIndex_bijective_nsmul`: `E(F_u)` has a subgroup of finite index
   on which multiplication by `n` is bijective, for `n` prime to `u`.
-* `WeierstrassCurve.finiteIndex_range_nsmul`: `n E(F_u)` has finite index for `n` prime to `u`.
-* `WeierstrassCurve.index_range_nsmul_eq_natCard_torsionBy`: its index is `#E(F_u)[n]`.
+* `WeierstrassCurve.finiteIndex_range_nsmul`: `n E(F_u)` has finite index.
+* `WeierstrassCurve.index_range_nsmul_eq_natCard_torsionBy`: its index is `#E(F_u)[n]` for `n`
+  prime to `u`.
 * `WeierstrassCurve.finite_primaryComponent`: the `n`-primary component of `E(F_u)` is finite.
 
 ## References
@@ -170,7 +171,7 @@ private theorem exists_finiteIndex_injective_nsmul_of_isMinimal
     exact mul_ne_zero (pow_ne_zero _ Nat.card_pos.ne') AddSubgroup.FiniteIndex.index_ne_zero
   · rw [hφ]
     exact φ.injective.comp
-      ((FormalGroupPoint.injective_nsmul_filtration hne (Nat.lt_succ_self e)).comp
+      ((FormalGroupPoint.nsmul_filtration_injective hne (Nat.lt_succ_self e)).comp
         φ.symm.injective)
   · rw [← AddEquiv.index_range_nsmulAddMonoidHom φ,
       FormalGroupPoint.index_range_nsmul_filtration hne (Nat.lt_succ_self e), hne,
@@ -241,32 +242,40 @@ theorem index_range_nsmul_eq_natCard_torsionBy_mul (hn : (n : A) ≠ 0) :
         natCast_zsmul])
   rw [h, hker]
 
-omit [Finite (A ⧸ u.asIdeal)] [W.IsElliptic] [DecidableEq F_u] in
-/-- At a place prime to `n`, the integer `n` is a unit of `O_u`, so `O_u ⧸ n O_u` is trivial. -/
-private theorem natCard_quotient_span_natCast (hn : (n : A) ∉ u.asIdeal) :
-    Nat.card (O_u ⧸ Ideal.span {(n : O_u)}) = 1 := by
-  have hunit : IsUnit (n : O_u) := by
-    simpa using (u.isUnit_algebraMap_adicCompletionIntegers_iff (K := F) (n : A)).mpr hn
-  rw [Ideal.span_singleton_eq_top.mpr hunit, Nat.card_eq_one_iff_unique]
-  exact ⟨Ideal.Quotient.subsingleton_iff.mpr rfl, inferInstance⟩
-
 /-- **`E(F_u)` has a uniquely `n`-divisible subgroup of finite index** for `n` prime to `u`. -/
 theorem exists_finiteIndex_bijective_nsmul (hn : (n : A) ∉ u.asIdeal) :
     ∃ U : AddSubgroup W.toAffine.Point, U.FiniteIndex ∧ Function.Bijective (fun P : U ↦ n • P) := by
   obtain ⟨U, hU, hinj, hidx⟩ :=
     W.exists_finiteIndex_injective_nsmul u (fun h ↦ hn (h ▸ u.asIdeal.zero_mem))
-  rw [natCard_quotient_span_natCast u hn, AddSubgroup.index_eq_one,
+  rw [← map_natCast (algebraMap A O_u),
+    u.natCard_quotient_span_algebraMap_adicCompletionIntegers hn, AddSubgroup.index_eq_one,
     AddMonoidHom.range_eq_top] at hidx
   exact ⟨U, hU, hinj, hidx⟩
 
 /-- **`n E(F_u)` has finite index in `E(F_u)`** for an elliptic curve over the completion at a
-height-one prime `u` with finite residue field, and an integer `n` prime to `u`. -/
-theorem finiteIndex_range_nsmul (hn : (n : A) ∉ u.asIdeal) :
+height-one prime `u` with finite residue field, and an integer `n` nonzero in `A`: it contains
+`n U` for the subgroup `U` of `WeierstrassCurve.exists_finiteIndex_injective_nsmul`. -/
+theorem finiteIndex_range_nsmul (hn : (n : A) ≠ 0) :
     (nsmulAddMonoidHom (α := W.toAffine.Point) n).range.FiniteIndex := by
-  obtain ⟨U, _, hbij⟩ := W.exists_finiteIndex_bijective_nsmul u hn
-  refine AddSubgroup.finiteIndex_of_le (H := U) fun P hP ↦ ?_
-  obtain ⟨Q, hQ⟩ := hbij.2 ⟨P, hP⟩
-  exact ⟨Q, congrArg Subtype.val hQ⟩
+  obtain ⟨U, hU, -, hidx⟩ := W.exists_finiteIndex_injective_nsmul u hn
+  -- `O_u ⧸ n O_u` is finite, as `n O_u` contains a power of the maximal ideal
+  have hfin : Finite (O_u ⧸ Ideal.span {(n : O_u)}) := by
+    obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible O_u
+    have hn' : Ideal.span {(n : O_u)} ≠ ⊥ := by
+      rw [Ne, Ideal.span_singleton_eq_bot, ← map_natCast (algebraMap A O_u),
+        map_eq_zero_iff _ (FaithfulSMul.algebraMap_injective A O_u)]
+      exact hn
+    obtain ⟨e, he⟩ := IsDiscreteValuationRing.ideal_eq_span_pow_irreducible hn' hϖ
+    exact finite_quotient_iff.mpr
+      ⟨e, by rw [he, hϖ.maximalIdeal_eq, Ideal.span_singleton_pow]⟩
+  have hnU : ((nsmulAddMonoidHom (α := U) n).range.map U.subtype).FiniteIndex := by
+    refine ⟨?_⟩
+    rw [AddSubgroup.index_map_subtype, hidx]
+    exact mul_ne_zero Nat.card_pos.ne' hU.index_ne_zero
+  refine AddSubgroup.finiteIndex_of_le
+    (H := (nsmulAddMonoidHom (α := U) n).range.map U.subtype) ?_
+  rintro _ ⟨_, ⟨Q, rfl⟩, rfl⟩
+  exact ⟨Q, rfl⟩
 
 /-- **The local Kummer index at a place prime to `n`**: for an elliptic curve over the completion
 at a height-one prime `u` with finite residue field, and an integer `n` prime to `u`,
@@ -278,7 +287,8 @@ theorem index_range_nsmul_eq_natCard_torsionBy (hn : (n : A) ∉ u.asIdeal) :
     (nsmulAddMonoidHom (α := W.toAffine.Point) n).range.index =
       Nat.card (Submodule.torsionBy ℤ W.toAffine.Point n) := by
   rw [W.index_range_nsmul_eq_natCard_torsionBy_mul u (fun h ↦ hn (h ▸ u.asIdeal.zero_mem)),
-    natCard_quotient_span_natCast u hn, mul_one]
+    ← map_natCast (algebraMap A O_u),
+    u.natCard_quotient_span_algebraMap_adicCompletionIntegers hn, mul_one]
 
 /-- **The `n`-primary component of `E(F_u)` is finite** for `n` prime to `u`: the points killed by
 a power of `n` meet the uniquely `n`-divisible kernel of reduction trivially. -/

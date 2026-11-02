@@ -42,7 +42,7 @@ over a local field `K` at a place dividing `n`.
 * `WeierstrassCurve.FormalGroupPoint.index_filtration`: `[Ê(I) : Ê(I ^ k)] = [I : I ^ k]`.
 * `WeierstrassCurve.FormalGroupPoint.map_nsmul_filtration`: over a complete discrete valuation
   ring, `n Ê(𝔪 ^ k) = Ê(𝔪 ^ (k + e))` when `(n) = 𝔪 ^ e` and `e < k`.
-* `WeierstrassCurve.FormalGroupPoint.injective_nsmul_filtration`: under the same hypotheses,
+* `WeierstrassCurve.FormalGroupPoint.nsmul_filtration_injective`: under the same hypotheses,
   multiplication by `n` is injective on `Ê(𝔪 ^ k)`.
 * `WeierstrassCurve.FormalGroupPoint.index_range_nsmul_filtration`: under the same hypotheses,
   `[Ê(𝔪 ^ k) : n Ê(𝔪 ^ k)] = #(O ⧸ 𝔪) ^ e`.
@@ -109,9 +109,9 @@ private noncomputable def gradedHom {k : ℕ} (hk : k ≠ 0) :
 
 private theorem gradedHom_surjective {k : ℕ} (hk : k ≠ 0) :
     Function.Surjective (gradedHom (W := W) (I := I) hk) := by
-  rintro ⟨⟨t, ht⟩⟩
-  have hI : I ^ k ≤ I := Ideal.pow_le_self hk
-  exact ⟨⟨⟨t, hI ht⟩, ht⟩, rfl⟩
+  intro x
+  obtain ⟨⟨t, ht⟩, rfl⟩ := QuotientAddGroup.mk_surjective x
+  exact ⟨⟨⟨t, Ideal.pow_le_self hk ht⟩, ht⟩, rfl⟩
 
 private theorem ker_gradedHom {k : ℕ} (hk : k ≠ 0) :
     (gradedHom (W := W) (I := I) hk).ker =
@@ -167,19 +167,18 @@ private theorem exists_coe_nsmul_eq (n : ℕ) {c : O} (hc : (n : O) ∣ c) :
         (P : O) = c * s →
           ((n • P : FormalGroupPoint W (maximalIdeal O)) : O) =
             n * c * aeval (hasEval_of_mem hs) g := by
-  set f := (formalGroup W).nsmulSeries n
-  have hf1 : coeff 1 f = n := (formalGroup W).coeff_one_nsmulSeries n
+  have hf1 : coeff 1 ((formalGroup W).nsmulSeries n) = n :=
+    (formalGroup W).coeff_one_nsmulSeries n
   obtain ⟨g, hg0, hg1, hfg⟩ :=
     exists_rescale_eq_C_mul ((formalGroup W).constantCoeff_nsmulSeries n) (hf1 ▸ hc)
   refine ⟨g, hg0, hg1 ▸ isUnit_one, fun P s hs hP ↦ ?_⟩
   have hcs : HasEval (c • s) := by
     rw [smul_eq_mul, ← hP]
     exact P.hasEval
-  rw [coe_nsmul, ← Algebra.algebraMap_self, ← coe_aeval P.hasEval]
-  have h := aeval_rescale (hasEval_of_mem hs) c hcs f
-  rw [hfg, map_mul, aeval_C, Algebra.algebraMap_self, RingHom.id_apply, hf1] at h
-  simp_rw [smul_eq_mul, ← hP] at h
-  exact h.symm
+  -- evaluate `[n](c X) = n c · g(X)` at `s`
+  have h := aeval_rescale (hasEval_of_mem hs) c hcs ((formalGroup W).nsmulSeries n)
+  rw [hfg, map_mul, aeval_C] at h
+  simpa [hf1, coe_nsmul, coe_aeval, ← hP] using h.symm
 
 /-- The value of a series without constant term at a parameter in `𝔪` lies in `𝔪`. -/
 private theorem aeval_mem {s : O} (hs : s ∈ maximalIdeal O) {g : O⟦X⟧}
@@ -188,18 +187,31 @@ private theorem aeval_mem {s : O} (hs : s ∈ maximalIdeal O) {g : O⟦X⟧}
   rw [hb]
   exact Ideal.mul_mem_right b _ hs
 
-omit [UniformSpace O] [IsUniformAddGroup O] [CompleteSpace O] [T2Space O] [IsTopologicalRing O]
-  [IsLinearTopology O O] [Fact (IsAdic (maximalIdeal O))] in
-/-- If `(n) = 𝔪 ^ e` with `e < k`, then `n` divides a generator `c` of `𝔪 ^ (k - 1)`, so that
-`𝔪 ^ k = c 𝔪` and `𝔪 ^ (k + e) = n c 𝔪`. -/
-private theorem exists_dvd_pow {n e k : ℕ}
+/-- The setup shared by `map_nsmul_filtration` and `nsmul_filtration_injective`: if `(n) = 𝔪 ^ e`
+with `e < k`, take for `c` the `(k - 1)`-st power of a uniformizer, which `n` divides. Then
+`𝔪 ^ k = c 𝔪`, `𝔪 ^ (k + e) = n c 𝔪`, and `[n](c s) = n c g(s)` for `s ∈ 𝔪` and a series
+`g(X) = X + ⋯` (`exists_coe_nsmul_eq`). -/
+private theorem exists_nsmul_filtration_eq {n e k : ℕ}
     (hn : Ideal.span {(n : O)} = maximalIdeal O ^ e) (hek : e < k) :
-    ∃ c : O, (n : O) ∣ c ∧ Ideal.span {c} = maximalIdeal O ^ (k - 1) := by
+    ∃ (c : O) (g : O⟦X⟧), maximalIdeal O ^ k = Ideal.span {c} * maximalIdeal O ∧
+      maximalIdeal O ^ (k + e) = Ideal.span {(n : O) * c} * maximalIdeal O ∧
+      constantCoeff g = 0 ∧ IsUnit (coeff 1 g) ∧
+      ∀ (P : FormalGroupPoint W (maximalIdeal O)) {s : O} (hs : s ∈ maximalIdeal O),
+        (P : O) = c * s →
+          ((n • P : FormalGroupPoint W (maximalIdeal O)) : O) =
+            n * c * aeval (hasEval_of_mem hs) g := by
   obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible O
-  refine ⟨ϖ ^ (k - 1), ?_, by rw [hϖ.maximalIdeal_eq, Ideal.span_singleton_pow]⟩
-  rw [← Ideal.span_singleton_le_span_singleton, hn, ← Ideal.span_singleton_pow,
-    ← hϖ.maximalIdeal_eq]
-  exact Ideal.pow_le_pow_right (by omega)
+  have hpow (j : ℕ) : maximalIdeal O ^ j = Ideal.span {ϖ ^ j} := by
+    rw [hϖ.maximalIdeal_eq, Ideal.span_singleton_pow]
+  have hnc : (n : O) ∣ ϖ ^ (k - 1) := by
+    rw [← Ideal.span_singleton_le_span_singleton, hn, hpow]
+    exact Ideal.span_singleton_le_span_singleton.mpr (pow_dvd_pow ϖ (by omega))
+  obtain ⟨g, hg0, hg1, hng⟩ := exists_coe_nsmul_eq (W := W) n hnc
+  refine ⟨ϖ ^ (k - 1), g, ?_, ?_, hg0, hg1, hng⟩
+  · rw [← hpow, ← pow_succ, Nat.sub_add_cancel (by omega)]
+  · rw [← Ideal.span_singleton_mul_span_singleton, hn, ← hpow, mul_assoc, ← pow_succ, ← pow_add]
+    congr 1
+    omega
 
 /-- **`n Ê(𝔪 ^ k) = Ê(𝔪 ^ (k + e))`**: over a complete discrete valuation ring, if `(n) = 𝔪 ^ e`
 with `e < k`, multiplication by `n` carries `Ê(𝔪 ^ k)` onto `Ê(𝔪 ^ (k + e))`. -/
@@ -207,17 +219,9 @@ theorem map_nsmul_filtration {n e k : ℕ} (hn : Ideal.span {(n : O)} = maximalI
     (hek : e < k) :
     (filtration W (maximalIdeal O) k).map (nsmulAddMonoidHom n) =
       filtration W (maximalIdeal O) (k + e) := by
-  obtain ⟨c, hnc, hc⟩ := exists_dvd_pow hn hek
-  obtain ⟨g, hg0, hg1, hng⟩ := exists_coe_nsmul_eq (W := W) n hnc
   -- the parameters of `Ê(𝔪 ^ k)` are the `c s` with `s ∈ 𝔪`, and those of `Ê(𝔪 ^ (k + e))` are
   -- the `n c s` with `s ∈ 𝔪`
-  have hk : maximalIdeal O ^ k = Ideal.span {c} * maximalIdeal O := by
-    rw [hc, ← pow_succ, Nat.sub_add_cancel (by omega)]
-  have hke : maximalIdeal O ^ (k + e) = Ideal.span {(n : O) * c} * maximalIdeal O := by
-    rw [← Ideal.span_singleton_mul_span_singleton, hn, hc, mul_assoc, ← pow_succ,
-      ← pow_add]
-    congr 1
-    omega
+  obtain ⟨c, g, hk, hke, hg0, hg1, hng⟩ := exists_nsmul_filtration_eq (W := W) hn hek
   ext Q
   constructor
   · rintro ⟨P, hP, rfl⟩
@@ -248,19 +252,14 @@ theorem map_nsmul_filtration {n e k : ℕ} (hn : Ideal.span {(n : O)} = maximalI
 
 /-- **`Ê(𝔪 ^ k)` has no nonzero `n`-torsion**: over a complete discrete valuation ring, if
 `(n) = 𝔪 ^ e` with `e < k`, multiplication by `n` is injective on `Ê(𝔪 ^ k)`. -/
-theorem injective_nsmul_filtration {n e k : ℕ} (hn : Ideal.span {(n : O)} = maximalIdeal O ^ e)
+theorem nsmul_filtration_injective {n e k : ℕ} (hn : Ideal.span {(n : O)} = maximalIdeal O ^ e)
     (hek : e < k) :
     Function.Injective (fun P : filtration W (maximalIdeal O) k ↦ n • P) := by
-  obtain ⟨c, hnc, hc⟩ := exists_dvd_pow hn hek
-  obtain ⟨g, hg0, hg1, hng⟩ := exists_coe_nsmul_eq (W := W) n hnc
+  obtain ⟨c, g, hk, hke, hg0, hg1, hng⟩ := exists_nsmul_filtration_eq (W := W) hn hek
   have hnc0 : (n : O) * c ≠ 0 := by
-    refine mul_ne_zero (fun h ↦ ?_) (fun h ↦ ?_)
-    · rw [h, Ideal.span_singleton_eq_bot.mpr rfl] at hn
-      exact pow_ne_zero e (IsDiscreteValuationRing.not_a_field O) hn.symm
-    · rw [h, Ideal.span_singleton_eq_bot.mpr rfl] at hc
-      exact pow_ne_zero (k - 1) (IsDiscreteValuationRing.not_a_field O) hc.symm
-  have hk : maximalIdeal O ^ k = Ideal.span {c} * maximalIdeal O := by
-    rw [hc, ← pow_succ, Nat.sub_add_cancel (by omega)]
+    rintro h
+    rw [h, Ideal.span_singleton_eq_bot.mpr rfl, Ideal.bot_mul] at hke
+    exact pow_ne_zero _ (IsDiscreteValuationRing.not_a_field O) hke
   refine (injective_iff_map_eq_zero
     (nsmulAddMonoidHom (α := filtration W (maximalIdeal O) k) n)).mpr fun P hP ↦ ?_
   have hP2 : ((P : FormalGroupPoint W (maximalIdeal O)) : O) ∈

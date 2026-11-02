@@ -101,8 +101,7 @@ theorem relIndex_maximalIdeal_pow_add (k e : ℕ) :
     simp [μ, hpow, Ideal.mem_span_singleton, pow_add,
       mul_dvd_mul_iff_left (pow_ne_zero k hϖ.ne_zero)]
   rw [← hrange, ← AddSubgroup.index_comap, hcomap, ← natCard_quotient_maximalIdeal_pow,
-    ← Submodule.cardQuot_apply]
-  rfl
+    ← Submodule.cardQuot_apply, Submodule.cardQuot]
 
 /-- The additive valuation of a nonzero element of a discrete valuation ring is the multiplicity
 of the maximal ideal in the principal ideal it generates. -/
