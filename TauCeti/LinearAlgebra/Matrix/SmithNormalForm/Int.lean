@@ -51,9 +51,10 @@ operations of determinant one:
   integer matrix is determined up to `SL₂(ℤ)`-equivalence by its determinant and the common
   divisors of its entries.
 
-`Matrix.exists_mul_mul_eq_diagonal_of_det_ne_zero` in
-`TauCeti.LinearAlgebra.Matrix.SmithNormalForm.Basic` diagonalises over a PID with transformations
-of unit determinant; this file refines it over `ℤ` in three ways that the general result does not
+`Matrix.exists_mul_mul_eq_diagonal` in
+`TauCeti.LinearAlgebra.Matrix.SmithNormalForm.Diagonal` diagonalises over a PID with transformations
+of unit determinant, allowing singular matrices; this file refines its nonsingular case over `ℤ`
+in three ways that the general result does not
 give: the transforming matrices have determinant `1` (not merely unit
 determinant), the diagonal entries are positive, and successive entries divide each other
 (the invariant-factor chain).  The proof first diagonalises using the general theorem,
@@ -206,7 +207,7 @@ private theorem exists_diagonal_of_det_pos (A : Matrix (Fin n) (Fin n) ℤ) (hde
       (L : Matrix (Fin n) (Fin n) ℤ) * A * (R : Matrix (Fin n) (Fin n) ℤ) =
       Matrix.diagonal d := by
   obtain ⟨P, Q, a, hP_unit, hQ_unit, hdiag⟩ :=
-    exists_mul_mul_eq_diagonal_of_det_ne_zero A hdet.ne'
+    exists_mul_mul_eq_diagonal A
   have ha_ne : ∀ i, a i ≠ 0 := by
     have hprod : P.det * A.det * Q.det = ∏ i, a i := by
       rw [← det_mul, ← det_mul, hdiag, det_diagonal]
