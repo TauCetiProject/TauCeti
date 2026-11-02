@@ -92,7 +92,6 @@ theorem sift_succ (i n : ℕ) (p g : G) :
   cases (T i).find? fun r ↦ decide ((p * r) • b i = g • b i) <;> rfl
 
 /-- A sift step that finds `r` continues from `p * r`. -/
-@[simp]
 theorem sift_succ_of_find?_eq_some {i n : ℕ} {p g r : G}
     (h : (T i).find? (fun r ↦ decide ((p * r) • b i = g • b i)) = some r) :
     sift b T i (n + 1) p g = sift b T (i + 1) n (p * r) g := by
@@ -196,8 +195,6 @@ private theorem prod_length_le_and_natCard_le_of_sift
   rw [← Finset.range_eq_Ico] at hcard
   have : Finite H := Finite.of_injective _ (inclusion_injective hH)
   exact ⟨this, Finset.prod_le_prod fun i hi ↦
-      have : Finite (H.stabilizerChain b i) :=
-        Finite.of_injective _ (inclusion_injective (H.stabilizerChain_le b i))
       length_le_ncard_orbit (hT i (Finset.mem_range.1 hi)) (hnodup i (Finset.mem_range.1 hi)),
     (card_le_of_le hH).trans hcard⟩
 
@@ -213,10 +210,7 @@ theorem natCard_eq_prod_length_of_sift (hT : ∀ i < k, ∀ r ∈ T i, r ∈ H.s
       TauCeti.sift b T i (k - i) 1 (s * r) = true) :
     Nat.card H = ∏ i ∈ Finset.range k, (T i).length := by
   obtain ⟨hfin, hlow, hup⟩ := prod_length_le_and_natCard_le_of_sift hT hne hnodup hH hsift
-  have hpos : 0 < Nat.card (H.stabilizerChain b k) :=
-    have : Finite (H.stabilizerChain b k) :=
-      Finite.of_injective _ (inclusion_injective (H.stabilizerChain_le b k))
-    Nat.card_pos
+  have hpos : 0 < Nat.card (H.stabilizerChain b k) := Nat.card_pos
   refine le_antisymm hup (hlow.trans ?_)
   rw [← H.prod_ncard_orbit_mul_card_stabilizerChain b k]
   exact Nat.le_mul_of_pos_right _ hpos
@@ -230,8 +224,6 @@ theorem stabilizerChain_eq_bot_of_sift (hT : ∀ i < k, ∀ r ∈ T i, r ∈ H.s
       TauCeti.sift b T i (k - i) 1 (s * r) = true) :
     H.stabilizerChain b k = ⊥ := by
   obtain ⟨hfin, hlow, hup⟩ := prod_length_le_and_natCard_le_of_sift hT hne hnodup hH hsift
-  have : Finite (H.stabilizerChain b k) :=
-    Finite.of_injective _ (inclusion_injective (H.stabilizerChain_le b k))
   have hpos : 0 < ∏ i ∈ Finset.range k, (T i).length :=
     Finset.prod_pos fun i hi ↦ List.length_pos_iff.2 (hne i (Finset.mem_range.1 hi))
   rw [← card_le_one_iff_eq_bot]
