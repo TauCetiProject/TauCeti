@@ -177,7 +177,7 @@ theorem existsUnique_sameCycle_basis (x : I ⊕ B.normTwoShell) :
 
 /-- The monodromy of the pinned action at the representative of a root cycle is the monodromy of
 that cycle. -/
-private theorem monodromy_basis_inr
+theorem monodromy_basis_inr
     (C : Quotient (Equiv.Perm.SameCycle.setoid (normTwoShellCongr hσ))) :
     (Equiv.Perm.sumCongr σ (normTwoShellCongr hσ)).monodromy
       (Sum.elim (1 : I → ℤˣ) (fun a : B.normTwoShell ↦ inversionSign B σ a))
