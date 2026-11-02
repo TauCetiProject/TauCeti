@@ -38,6 +38,8 @@ of the transpose (simplicity as a root of the characteristic polynomial, and the
 * `Matrix.IsIrreducible.isPrimitive_one_add`: if `A` is irreducible, then `1 + A` is primitive.
 * `Matrix.IsIrreducible.exists_mulVec_eq_smul`: an irreducible real matrix has an eigenvector with
   strictly positive entries, for a strictly positive eigenvalue.
+* `Matrix.IsIrreducible.exists_vecMul_eq_smul`: an irreducible real matrix with a strictly positive
+  eigenvector for `r` has a strictly positive left eigenvector for the same `r`.
 * `Matrix.IsIrreducible.exists_pos_eq_smul_of_mulVec_eq_smul`: a nonzero nonnegative eigenvector of
   an irreducible matrix is a positive multiple of any eigenvector with strictly positive entries.
 * `Matrix.IsIrreducible.exists_eq_smul_of_mulVec_eq_smul`: the eigenspace of the Perron root is
@@ -194,7 +196,7 @@ theorem IsIrreducible.exists_mulVec_eq_smul [Nonempty n] (hA : A.IsIrreducible) 
 
 /-- An irreducible real matrix with a strictly positive eigenvector for `r` has a strictly positive
 left eigenvector for the same `r`. -/
-private theorem IsIrreducible.exists_vecMul_eq_smul [Nonempty n] (hA : A.IsIrreducible)
+theorem IsIrreducible.exists_vecMul_eq_smul [Nonempty n] (hA : A.IsIrreducible)
     (hv : ∀ i, 0 < v i) (hAv : A *ᵥ v = r • v) :
     ∃ u : n → ℝ, (∀ i, 0 < u i) ∧ u ᵥ* A = r • u := by
   obtain ⟨s, -, u, hu, hAu⟩ := hA.transpose.exists_mulVec_eq_smul
