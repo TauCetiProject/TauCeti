@@ -68,6 +68,9 @@ theorem isUnit_formalDenom (C : VariableChange R) (W : WeierstrassCurve R) :
 private def inverseDenom (C : VariableChange R) (W : WeierstrassCurve R) : PowerSeries R :=
   invOfUnit (C.formalDenom W) (C.u ^ 3)
 
+private theorem inverseDenom_def (C : VariableChange R) (W : WeierstrassCurve R) :
+    C.inverseDenom W = invOfUnit (C.formalDenom W) (C.u ^ 3) := (rfl)
+
 private theorem formalDenom_mul_inverseDenom (C : VariableChange R)
     (W : WeierstrassCurve R) : C.formalDenom W * C.inverseDenom W = 1 :=
   mul_invOfUnit _ _ (C.constantCoeff_formalDenom W)
@@ -75,7 +78,17 @@ private theorem formalDenom_mul_inverseDenom (C : VariableChange R)
 private theorem constantCoeff_inverseDenom (C : VariableChange R)
     (W : WeierstrassCurve R) :
     constantCoeff (C.inverseDenom W) = ↑C.u⁻¹ ^ 3 := by
-  simp [inverseDenom, constantCoeff_invOfUnit]
+  simp [inverseDenom_def, constantCoeff_invOfUnit]
+
+private theorem coeff_one_formalNum_mul_inverseDenom (C : VariableChange R)
+    (W : WeierstrassCurve R) :
+    coeff 1 ((PowerSeries.C (C.u : R) ^ 2 * X +
+      PowerSeries.C C.r * formalW (C • W)) * C.inverseDenom W) = (↑(C.u⁻¹) : R) := by
+  simp [coeff_mul, Finset.Nat.antidiagonal_succ, constantCoeff_inverseDenom,
+    ← map_pow]
+  simp only [← Units.val_pow_eq_pow_val, ← Units.val_mul]
+  congr 1
+  group
 
 /-- The formal coordinate from the parameter of `C • W` to that of `W`, induced
 by `(x,y) ↦ (u²x+r, u³y+su²x+t)`. It is not in general strict. -/
@@ -86,33 +99,23 @@ def formalCoordinate (C : VariableChange R) (W : WeierstrassCurve R) :
       C.inverseDenom W
   constantCoeff_toPowerSeries := by simp
   isUnit_coeff_one := by
-    have h : coeff 1
-        ((PowerSeries.C (C.u : R) ^ 2 * X + PowerSeries.C C.r * formalW (C • W)) *
-          C.inverseDenom W) = (↑(C.u⁻¹) : R) := by
-      simp [coeff_mul, Finset.Nat.antidiagonal_succ, constantCoeff_inverseDenom,
-        ← map_pow]
-      simp only [← Units.val_pow_eq_pow_val, ← Units.val_mul]
-      congr 1
-      group
-    rw [h]
+    rw [coeff_one_formalNum_mul_inverseDenom]
     exact (C.u⁻¹).isUnit
 
 /-- The series of the formal coordinate induced by a Weierstrass change. -/
 theorem formalCoordinate_toPowerSeries (C : VariableChange R) (W : WeierstrassCurve R) :
     (C.formalCoordinate W).toPowerSeries =
       (PowerSeries.C (C.u : R) ^ 2 * X + PowerSeries.C C.r * formalW (C • W)) *
-        invOfUnit (C.formalDenom W) (C.u ^ 3) := (rfl)
+        invOfUnit (C.formalDenom W) (C.u ^ 3) := by
+  rw [← inverseDenom_def]
+  rfl
 
 /-- The induced parameter has linear coefficient `u⁻¹`, in the direction from
 `C • W` to `W`. -/
 @[simp]
 theorem coeff_one_formalCoordinate (C : VariableChange R) (W : WeierstrassCurve R) :
-    coeff 1 (C.formalCoordinate W).toPowerSeries = ↑C.u⁻¹ := by
-  simp [formalCoordinate_toPowerSeries, coeff_mul, Finset.Nat.antidiagonal_succ,
-    constantCoeff_invOfUnit, ← map_pow]
-  simp only [← Units.val_pow_eq_pow_val, ← Units.val_mul]
-  congr 1
-  group
+    coeff 1 (C.formalCoordinate W).toPowerSeries = ↑C.u⁻¹ :=
+  coeff_one_formalNum_mul_inverseDenom C W
 
 /-- The unit character of the formal coordinate transition is `u⁻¹`. -/
 @[simp]
@@ -141,13 +144,8 @@ theorem subst_formalCoordinate_formalW (C : VariableChange R) (W : WeierstrassCu
   let d := C.inverseDenom W
   let N := PowerSeries.C (C.u : R) ^ 2 * X + PowerSeries.C C.r * formalW (C • W)
   have hDd : D * d = 1 := C.formalDenom_mul_inverseDenom W
-  have hpoint : V.toProjective.Equation ![X, -1, formalW (C • W)] := by
-    have hw := formalW_wEquation (C • W)
-    simp only [wEquationRHS_powerSeries] at hw
-    simp only [Projective.equation_iff, V, map_a₁, map_a₂, map_a₃, map_a₄, map_a₆,
-      Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two, Matrix.head_cons,
-      Matrix.tail_cons]
-    linear_combination hw
+  have hpoint : V.toProjective.Equation ![X, -1, formalW (C • W)] :=
+    equation_formalW_point (C • W)
   have himage := (Projective.equation_variableChange (W.map PowerSeries.C)
     (C.map PowerSeries.C) _).mp (by simpa [V, map_variableChange] using hpoint)
   have hnormalized := (Projective.equation_smul (W' := (W.map PowerSeries.C).toProjective)
@@ -169,7 +167,7 @@ theorem subst_formalCoordinate_formalW (C : VariableChange R) (W : WeierstrassCu
   simp only [wEquationRHS_powerSeries]
   simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two, Matrix.head_cons,
     Matrix.tail_cons, map_a₁, map_a₂, map_a₃, map_a₄, map_a₆] at hnormalized
-  simp only [formalCoordinate_toPowerSeries, inverseDenom, N, d] at hnormalized ⊢
+  simp only [formalCoordinate_toPowerSeries, inverseDenom_def, N, d] at hnormalized ⊢
   linear_combination hnormalized
 
 /-- The transition denominators multiply after substitution. This is the
@@ -186,7 +184,7 @@ theorem subst_formalCoordinate_formalDenom_mul (C C' : VariableChange R)
     ← PowerSeries.C_apply, PowerSeries.coe_substAlgHom, hw]
   simp only [formalCoordinate_toPowerSeries, formalDenom_def, mul_smul]
   simp only [mul_def, Units.val_mul, map_add, map_mul, map_pow]
-  simp only [inverseDenom, formalDenom_def, map_mul, map_pow] at hd
+  simp only [inverseDenom_def, formalDenom_def, map_mul, map_pow] at hd
   grind
 
 /-- Formal parameter transitions reverse the native product, just like the
@@ -208,7 +206,7 @@ theorem formalCoordinate_mul (C C' : VariableChange R) (W : WeierstrassCurve R) 
     rw [← PowerSeries.coe_substAlgHom hp, ← map_mul, C'.formalDenom_mul_inverseDenom W,
       map_one]
   have hw : subst P (formalW (C' • W)) = formalW ((C * C') • W) * d := by
-    simpa only [P, d, inverseDenom, mul_smul] using C.subst_formalCoordinate_formalW (C' • W)
+    simpa only [P, d, inverseDenom_def, mul_smul] using C.subst_formalCoordinate_formalW (C' • W)
   have hE : subst P E * D = H := subst_formalCoordinate_formalDenom_mul C C' W
   have hN : subst P (PowerSeries.C (C'.u : R) ^ 2 * X +
       PowerSeries.C C'.r * formalW (C' • W)) = N * d := by
@@ -216,14 +214,14 @@ theorem formalCoordinate_mul (C C' : VariableChange R) (W : WeierstrassCurve R) 
       PowerSeries.substAlgHom_X, PowerSeries.subst_C, ← PowerSeries.C_apply,
       PowerSeries.coe_substAlgHom, hw]
     simp only [P, formalCoordinate_toPowerSeries, N, mul_smul]
-    simp only [d, inverseDenom, mul_def, Units.val_mul, map_add, map_mul, map_pow]
+    simp only [d, inverseDenom_def, mul_def, Units.val_mul, map_add, map_mul, map_pow]
     ring
   have hQ : subst P (C'.formalCoordinate W).toPowerSeries = N * d * subst P e := by
-    rw [formalCoordinate_toPowerSeries, PowerSeries.subst_mul hp, hN]
-    rfl
+    simp only [formalCoordinate_toPowerSeries, PowerSeries.subst_mul hp, hN,
+      e, inverseDenom_def]
   have hH : ((C * C').formalCoordinate W).toPowerSeries * H = N := by
     have h := (C * C').formalDenom_mul_inverseDenom W
-    simp only [formalCoordinate_toPowerSeries, N, H, inverseDenom] at *
+    simp only [formalCoordinate_toPowerSeries, N, H, inverseDenom_def] at *
     linear_combination N * h
   apply TauCeti.FormalCoordinate.ext
   apply ((C * C').isUnit_formalDenom W).mul_right_cancel
