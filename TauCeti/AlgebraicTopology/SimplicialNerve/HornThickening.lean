@@ -109,6 +109,10 @@ private def toCube {d : ℕ} (x : ComposableArrows (Path i j) d) :
   Monotone.functor (f := fun t ↦ {k : S i j c | k.1 ∈ (x.obj t).I})
     fun _ _ h _ hk ↦ monotone_chain x h hk
 
+private lemma mem_toCube_obj {d : ℕ} (x : ComposableArrows (Path i j) d) (t : Fin (d + 1))
+    (k : S i j c) : k ∈ (toCube c x).obj t ↔ k.1 ∈ (x.obj t).I :=
+  Iff.rfl
+
 open scoped Classical in
 variable (c) in
 /-- Whether a chain of paths passes through `c`, as a simplex of `Δ[1]`. -/
@@ -153,6 +157,10 @@ private def pathMk (Y : Set (S i j c)) (b : Prop) : Path i j where
     · exact h.2.1.le
     · exact hj.le
 
+private lemma mem_pathMk_iff {Y : Set (S i j c)} {b : Prop} {k : J} :
+    k ∈ (pathMk hi hj Y b).I ↔ k = i ∨ k = j ∨ (∃ h, (⟨k, h⟩ : S i j c) ∈ Y) ∨ (k = c ∧ b) :=
+  Iff.rfl
+
 private lemma pathMk_mono {Y Y' : Set (S i j c)} {b b' : Prop} (hY : Y ⊆ Y') (hb : b → b') :
     (pathMk hi hj Y b).I ⊆ (pathMk hi hj Y' b').I := by
   rintro k (rfl | rfl | ⟨h', hk⟩ | ⟨rfl, hk⟩)
@@ -175,8 +183,7 @@ private noncomputable def objEquiv (d : ℕ) :
   left_inv x := by
     refine ComposableArrows.ext (fun t ↦ Path.ext (Set.ext fun k ↦ ?_)) (by subsingleton)
     dsimp only
-    rw [chainMk_obj]
-    simp only [pathMk, Set.mem_ofPred_eq, SSet.stdSimplex.objMk_apply]
+    rw [chainMk_obj, mem_pathMk_iff, SSet.stdSimplex.objMk_apply]
     constructor
     · rintro (rfl | rfl | ⟨_, hk⟩ | ⟨rfl, hk⟩)
       · exact (x.obj t).left
@@ -197,10 +204,7 @@ private noncomputable def objEquiv (d : ℕ) :
   right_inv p := by
     refine Prod.ext (ComposableArrows.ext (fun t ↦ Set.ext fun k ↦ ?_) (by subsingleton))
       (SSet.stdSimplex.ext _ _ fun t ↦ ?_)
-    · -- A vertex lies in `toCube c x` exactly when the paths of `x` pass through it.
-      change k.1 ∈ ((chainMk _ _).obj t).I ↔ _
-      rw [chainMk_obj]
-      simp only [pathMk, Set.mem_ofPred_eq]
+    · rw [mem_toCube_obj, chainMk_obj, mem_pathMk_iff]
       constructor
       · rintro (h | h | ⟨_, hk⟩ | ⟨h, -⟩)
         · exact absurd h k.2.1.ne'
@@ -209,14 +213,14 @@ private noncomputable def objEquiv (d : ℕ) :
         · exact absurd h k.2.2.2
       · exact fun hk ↦ Or.inr (Or.inr (Or.inl ⟨k.2, hk⟩))
     · have : c ∈ (pathMk hi hj (p.1.obj t) (p.2 t = 1)).I ↔ p.2 t = 1 := by
-        simp only [pathMk, Set.mem_ofPred_eq]
+        rw [mem_pathMk_iff]
         constructor
         · rintro (h | h | ⟨h, -⟩ | ⟨-, h⟩)
           · exact absurd h hi.ne'
           · exact absurd h hj.ne
           · exact absurd rfl h.2.2
           · exact h
-        · exact fun h ↦ Or.inr (Or.inr (Or.inr ⟨trivial, h⟩))
+        · exact fun h ↦ Or.inr (Or.inr (Or.inr ⟨rfl, h⟩))
       rw [SSet.stdSimplex.objMk_apply, throughVertex_apply]
       simp only [chainMk_obj, this]
       generalize p.2 t = a
