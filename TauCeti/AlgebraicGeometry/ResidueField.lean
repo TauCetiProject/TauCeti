@@ -86,6 +86,12 @@ theorem Scheme.fromSpecAlgebraicClosure_apply (X : Scheme.{u}) (x : X)
     X.fromSpecAlgebraicClosure x p = x :=
   Scheme.fromSpecResidueField_apply x _
 
+/-- The geometric point over `x` has image exactly `{x}`. -/
+@[simp]
+theorem Scheme.range_fromSpecAlgebraicClosure (X : Scheme.{u}) (x : X) :
+    Set.range (X.fromSpecAlgebraicClosure x) = {x} :=
+  Set.range_eq_singleton (X.fromSpecAlgebraicClosure_apply x)
+
 /-- A morphism surjective on stalks induces isomorphisms on residue fields. -/
 instance Scheme.Hom.isIso_residueFieldMap_of_surjectiveOnStalks {X Y : Scheme.{u}}
     (f : X ⟶ Y) [SurjectiveOnStalks f] (x : X) : IsIso (f.residueFieldMap x) := by

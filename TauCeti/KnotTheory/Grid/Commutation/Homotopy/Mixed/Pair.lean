@@ -465,18 +465,19 @@ section TerminalInitial
 variable {x y z : GridState n} (P : GridPentagonBetween C.column C.turnRow x y)
   (Q : GridInitialPentagonBetween C.reverse.column C.reverse.turnRow y z)
 
-/-- A terminal-side pentagon and a following initial-side reverse pentagon share their bottom
-row. -/
-private theorem terminalInitial_bottom_eq : Q.bottom = P.bottom := by
-  rw [GridRectangleBetween.bottom_def, GridRectangleBetween.bottom_def, Q.left_eq,
-    C.reverse_column, ← P.right_eq, P.map_right]
+/-- A terminal-side pentagon and a following initial-side reverse pentagon share their
+bottom row. -/
+private theorem terminalInitial_bottom_eq : Q.bottom = P.bottom :=
+  GridInitialPentagonBetween.bottom_eq_bottom_of_pentagon
+    ⟨Q.toGridRectangleBetween, Q.left_eq.trans (congrArg (finRotate n) C.reverse_column),
+      Q.turn_mem⟩ P
 
 /-- The reverse turn row of a terminal--initial pentagon pair lies in the rows from the common
 bottom row up to the top row of the reverse pentagon. -/
 private theorem terminalInitial_oppositeTurnRow_mem_cIco :
     C.oppositeTurnRow ∈ Grid.cIco P.bottom Q.top := by
-  simpa only [C.reverse_turnRow, G.terminalInitial_bottom_eq C P Q] using
-    Q.turn_mem_cIco_bottom_top
+  have hbottom := G.terminalInitial_bottom_eq C P Q
+  simpa only [C.reverse_turnRow, hbottom] using Q.turn_mem_cIco_bottom_top
 
 /-- The weight of a terminal--initial pentagon pair is the product of the `O`-weights of the
 squares of the forward pentagon and of the reverse pentagon read in `G`. -/
@@ -791,7 +792,8 @@ theorem existsUnique_unpairedHexagonComposite_of_terminalInitialPentagonPair
     rcases Grid.mem_cIco_and_mem_cIoo_or_mem_cIco_and_mem_cIoo_of_ne P.turn_mem_cIco_bottom_top
         (G.terminalInitial_oppositeTurnRow_mem_cIco C P Q) C.turnRow_ne_oppositeTurnRow with
       hturn | hturn
-    · rw [← G.terminalInitial_bottom_eq C P Q] at hturn
+    · have hbottom := G.terminalInitial_bottom_eq C P Q
+      rw [← hbottom] at hturn
       exact G.terminalInitial_rectangleHexagon C R P Q hP hQ hturn
     · exact G.terminalInitial_hexagonRectangle C R P Q hP hQ hturn
   rw [← hFw]

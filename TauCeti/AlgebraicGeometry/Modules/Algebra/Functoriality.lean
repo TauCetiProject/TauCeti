@@ -42,6 +42,8 @@ relative spectra over `Y` and over `X` are related under base change, is natural
 * `AlgebraicGeometry.Scheme.Hom.globalSectionsSmul_pushforwardStructureAlgebraMap`: it is linear
   over global functions, multiplication by `c` on `q_* 𝒪_W` matching multiplication by `g^♯ c` on
   `p_* 𝒪_V`;
+* `AlgebraicGeometry.Scheme.Hom.pushforward_map_globalSectionsSmul_tensorHom_mul`: the
+  multiplication of `q_* 𝒪_W` is bilinear over the global functions of `W`;
 * `AlgebraicGeometry.Scheme.Hom.pushforwardStructureAlgebraCompIso_hom_naturality`: the
   comparison `f_* (q_* 𝒪_T) ≅ (q ≫ f)_* 𝒪_T` of function algebras is natural in `T`;
 * `TauCeti.AlgebraicGeometry.overFunctions X`: the function-algebra functor `q ↦ q_* 𝒪_T` on all
@@ -232,6 +234,43 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.globalSectionsSmul_pushforwardStructur
   rw [Scheme.Hom.pushforwardStructureAlgebraMap_hom]
   exact ((reassoc_of% h₁) _).trans (congrArg (_ ≫ ·) (((reassoc_of% h₂) _).trans
     (congrArg (_ ≫ ·) h₃)))
+
+open MonObj in
+variable (q) in
+/-- The multiplication of the function algebra `q_* 𝒪_W` is bilinear over the global functions
+of `W`: multiplying the two factors by `c` and `c'` and then multiplying them is multiplying them
+and then multiplying by `c * c'`. -/
+@[reassoc]
+lemma _root_.AlgebraicGeometry.Scheme.Hom.pushforward_map_globalSectionsSmul_tensorHom_mul
+    (c c' : Γ(W, ⊤)) :
+    ((Scheme.Modules.pushforward q).map (Scheme.Modules.globalSectionsSmul (𝟙_ W.Modules) c) ⊗ₘ
+        (Scheme.Modules.pushforward q).map
+          (Scheme.Modules.globalSectionsSmul (𝟙_ W.Modules) c')) ≫
+        μ[q.pushforwardStructureAlgebra.X] =
+      μ[q.pushforwardStructureAlgebra.X] ≫ (Scheme.Modules.pushforward q).map
+        (Scheme.Modules.globalSectionsSmul (𝟙_ W.Modules) (c * c')) := by
+  -- on `𝒪_W`, whose multiplication is the left unitor, multiplications by global functions
+  -- commute with the unitors
+  have h : (Scheme.Modules.globalSectionsSmul (𝟙_ W.Modules) c ⊗ₘ
+      Scheme.Modules.globalSectionsSmul (𝟙_ W.Modules) c') ≫ (λ_ (𝟙_ W.Modules)).hom =
+        (λ_ (𝟙_ W.Modules)).hom ≫ Scheme.Modules.globalSectionsSmul (𝟙_ W.Modules) (c * c') := by
+    rw [tensorHom_def, Category.assoc, leftUnitor_naturality, ← Category.assoc, unitors_equal,
+      rightUnitor_naturality, Category.assoc, ← unitors_equal, mul_comm,
+      Scheme.Modules.globalSectionsSmul_mul]
+  have h' : (Scheme.Modules.pushforward q).map (Scheme.Modules.globalSectionsSmul _ c ⊗ₘ
+      Scheme.Modules.globalSectionsSmul _ c') ≫
+        (Scheme.Modules.pushforward q).map (λ_ (𝟙_ W.Modules)).hom =
+      (Scheme.Modules.pushforward q).map (λ_ (𝟙_ W.Modules)).hom ≫
+        (Scheme.Modules.pushforward q).map
+          (Scheme.Modules.globalSectionsSmul (𝟙_ W.Modules) (c * c')) := by
+    rw [← Functor.map_comp, h, Functor.map_comp]
+  -- The function algebra is the image of the trivial algebra `𝒪_W` under the lax monoidal
+  -- pushforward, so its multiplication is by definition the lax structure map followed by the
+  -- pushforward of the left unitor; `rw` cannot unfold it, since its codomain is the carrier
+  -- `q.pushforwardStructureAlgebra.X`, so the naturality of the lax structure map is applied as a
+  -- term.
+  exact (Functor.LaxMonoidal.μ_natural_assoc (Scheme.Modules.pushforward q) _ _ _).trans
+    ((congrArg (_ ≫ ·) h').trans (Category.assoc _ _ _).symm)
 
 variable {Y T T' : Scheme.{u}}
 

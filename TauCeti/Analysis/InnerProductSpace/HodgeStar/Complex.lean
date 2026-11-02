@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Isometry
 public import TauCeti.LinearAlgebra.BilinearForm.Complexification
+public import TauCeti.LinearAlgebra.ExteriorPower.AlmostComplexType
 
 /-!
 # The complex-linear Hodge star and the conjugate Hodge star
@@ -23,6 +24,13 @@ extension of the real Gram product. The conjugate-linear `Orientation.barHodgeSt
 `(-1)^(k*l)` in complementary degrees and preserve the Gram metric (the latter with
 conjugation). These pointwise identities supply the pairing conventions for complex-valued
 forms; no integrability or almost complex structure on `V` is required.
+
+For an orthogonal complex structure `J` on `V`, of real dimension `2 * m`, the two stars obey the
+**type law**: `*` maps the `(p,q)`-vectors (`exteriorPower.typeSubmodule`) onto the
+`(m - q, m - p)`-vectors, and `barStar` onto the `(m - p, m - q)`-vectors. This needs only that `J`
+is skew-adjoint: its derivation action commutes with the real star
+(`Orientation.hodgeStar_lieMap`), so `*` preserves its eigenvalue `(p - q) * I` while changing the
+degree to the complementary one, and conjugation negates the eigenvalue.
 
 All constructions use the tensor complexification, Mathlib's scalar extension of linear maps,
 and `LinearMap.BilinForm.sesqComplexification`. In particular, the exterior-power metric is
@@ -186,6 +194,48 @@ theorem barHodgeStar_neg_orientation {k l : ℕ} (hkl : k + l = finrank ℝ V)
 
 variable {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℝ W]
   [FiniteDimensional ℝ W] [Fact (finrank ℝ W = n)]
+
+/-- The derivation action of a skew-adjoint endomorphism commutes with the complex Hodge star. -/
+theorem complexHodgeStar_lieMap {k l : ℕ} (hkl : k + l = finrank ℝ V) {A : V →ₗ[ℝ] V}
+    (hA : ∀ u w, ⟪A u, w⟫ = -⟪u, A w⟫) (x : ℂ ⊗[ℝ] ⋀[ℝ]^k V) :
+    o.complexHodgeStar hkl ((lieMap k A).baseChange ℂ x) =
+      (lieMap l A).baseChange ℂ (o.complexHodgeStar hkl x) := by
+  induction x using TensorProduct.inductionOn with
+  | tmul c x => simp [o.hodgeStar_lieMap hkl hA]
+  | add x y hx hy => simp only [map_add, hx, hy]
+
+/-- The derivation action of a skew-adjoint endomorphism commutes with the conjugate Hodge star. -/
+theorem barHodgeStar_lieMap {k l : ℕ} (hkl : k + l = finrank ℝ V) {A : V →ₗ[ℝ] V}
+    (hA : ∀ u w, ⟪A u, w⟫ = -⟪u, A w⟫) (x : ℂ ⊗[ℝ] ⋀[ℝ]^k V) :
+    o.barHodgeStar hkl ((lieMap k A).baseChange ℂ x) =
+      (lieMap l A).baseChange ℂ (o.barHodgeStar hkl x) := by
+  rw [barHodgeStar_apply, barHodgeStar_apply, tmulConj_baseChange,
+    o.complexHodgeStar_lieMap hkl hA]
+
+/-- **The type law for the complex Hodge star.** For a skew-adjoint endomorphism `J`, such as an
+orthogonal complex structure, `*` maps the `k`-vectors of type `(p,q)` onto the `l`-vectors of
+type `(p',q')` whenever `p' - q' = p - q`. If `finrank ℝ V = 2 * m` and `p, q ≤ m`, this is
+`(p', q') = (m - q, m - p)`. -/
+theorem complexHodgeStar_mem_typeSubmodule_iff {k l : ℕ} (hkl : k + l = finrank ℝ V)
+    {J : V →ₗ[ℝ] V} (hJ : ∀ u w, ⟪J u, w⟫ = -⟪u, J w⟫) {p q p' q' : ℕ} (hpq : p + q = k)
+    (hpq' : p' + q' = l) (h : p + q' = p' + q) {x : ℂ ⊗[ℝ] ⋀[ℝ]^k V} :
+    o.complexHodgeStar hkl x ∈ typeSubmodule l J p' q' ↔ x ∈ typeSubmodule k J p q := by
+  have hc : ((p' : ℂ) - q') * Complex.I = ((p : ℂ) - q) * Complex.I := by
+    have h' : (p : ℂ) + q' = p' + q := by exact_mod_cast h
+    linear_combination -Complex.I * h'
+  rw [mem_typeSubmodule hpq', mem_typeSubmodule hpq, ← o.complexHodgeStar_lieMap hkl hJ, hc,
+    ← map_smul, (o.complexHodgeStar hkl).injective.eq_iff]
+
+/-- **The type law for the conjugate Hodge star.** For a skew-adjoint endomorphism `J`, such as an
+orthogonal complex structure, `barStar` maps the `k`-vectors of type `(p,q)` onto the `l`-vectors of
+type `(p',q')` whenever `p' - q' = q - p`. If `finrank ℝ V = 2 * m` and `p, q ≤ m`, this is
+`(p', q') = (m - p, m - q)`. -/
+theorem barHodgeStar_mem_typeSubmodule_iff {k l : ℕ} (hkl : k + l = finrank ℝ V)
+    {J : V →ₗ[ℝ] V} (hJ : ∀ u w, ⟪J u, w⟫ = -⟪u, J w⟫) {p q p' q' : ℕ} (hpq : p + q = k)
+    (hpq' : p' + q' = l) (h : q + q' = p' + p) {x : ℂ ⊗[ℝ] ⋀[ℝ]^k V} :
+    o.barHodgeStar hkl x ∈ typeSubmodule l J p' q' ↔ x ∈ typeSubmodule k J p q := by
+  rw [barHodgeStar_apply, o.complexHodgeStar_mem_typeSubmodule_iff hkl hJ (by omega) hpq' h,
+    tmulConj_mem_typeSubmodule_iff]
 
 /-- An oriented real isometry, complexified on exterior powers, commutes with the complex star. -/
 theorem complexHodgeStar_map (φ : V ≃ₗᵢ[ℝ] W) {k l : ℕ}

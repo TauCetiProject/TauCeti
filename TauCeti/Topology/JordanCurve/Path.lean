@@ -48,11 +48,10 @@ equal endpoints repeats the value at the two distinct parameters `0` and `1`.
 * `TauCeti.isJordanCurve_range_union_range_of_inter_eq_pair` — two arcs with the same two
   endpoints, meeting exactly there, glue to a Jordan curve.
 
-## Roadmap role
+## Use in the Carathéodory boundary correspondence
 
-This is the topological gluing step used by layer **L5** of
-`TauCetiRoadmap/ConformalMapping/README.md`, the Carathéodory boundary correspondence. A
-finite-length image crosscut is already packaged as a path with exactly this simplicity property in
+This is the topological gluing step of the Carathéodory boundary correspondence. A finite-length
+image crosscut is packaged as a path with exactly this simplicity property in
 `TauCeti/Analysis/Complex/Conformal/Crosscut/Path.lean`; when its two boundary ends coincide, the
 first result below identifies the closure of that crosscut as a Jordan curve, and when they are
 distinct the second closes that crosscut up with an arc of the boundary of the image domain. The
