@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.InformationTheory.Coding.Equivalence
 public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.A1TwentyFour
 public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.A2Twelfth
 
