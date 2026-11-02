@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.RootSystem.CartanMatrix
 public import TauCeti.LinearAlgebra.Matrix.Submatrix
 public import TauCeti.LinearAlgebra.RootSystem.HighestRoot
+import TauCeti.LinearAlgebra.RootSystem.HomInvariance
 import TauCeti.LinearAlgebra.RootSystem.Isomorphism
 
 /-!
@@ -381,9 +382,7 @@ theorem pairingIn_highestRoot_apply_of_mem_matrixSymmetryGroup
     (j : b.support) :
     P.pairingIn ℤ b.highestRoot (τ j) = P.pairingIn ℤ b.highestRoot j := by
   obtain ⟨u, hθ, hu⟩ := b.exists_aut_of_mem_matrixSymmetryGroup hτ
-  have h := Hom.pairing u.toHom (i := b.highestRoot) (j := j)
-  rw [hθ, hu] at h
-  exact FaithfulSMul.algebraMap_injective ℤ R (by simpa only [algebraMap_pairingIn] using h)
+  simpa [hθ, hu] using u.toHom.pairingIn_indexEquiv ℤ b.highestRoot j
 
 /-- **A symmetry of the finite Cartan matrix preserves the pairings of the simple roots with the
 coroot of the highest root**, `⟨α_{τ i}, θ^∨⟩ = ⟨αᵢ, θ^∨⟩`. -/
@@ -392,9 +391,7 @@ theorem pairingIn_apply_highestRoot_of_mem_matrixSymmetryGroup
     (i : b.support) :
     P.pairingIn ℤ (τ i) b.highestRoot = P.pairingIn ℤ i b.highestRoot := by
   obtain ⟨u, hθ, hu⟩ := b.exists_aut_of_mem_matrixSymmetryGroup hτ
-  have h := Hom.pairing u.toHom (i := i) (j := b.highestRoot)
-  rw [hθ, hu] at h
-  exact FaithfulSMul.algebraMap_injective ℤ R (by simpa only [algebraMap_pairingIn] using h)
+  simpa [hθ, hu] using u.toHom.pairingIn_indexEquiv ℤ i b.highestRoot
 
 /-- **A symmetry of the finite Cartan matrix extends to the affine node**: fixing the affine node,
 it is a symmetry of the affine Cartan matrix. -/
@@ -450,18 +447,17 @@ theorem range_affineExtension :
   refine ⟨fun ⟨τ, hτ⟩ ↦ by simp [← hτ], fun hσ ↦ ?_⟩
   -- the restriction of `σ` to the simple nodes, which `σ` does not move to the affine node
   set τ := Equiv.removeNone (σ : Equiv.Perm (Option b.support))
-  have hsome (i : b.support) : some (τ i) = (σ : Equiv.Perm (Option b.support)) (some i) := by
-    refine Equiv.removeNone_some _ (Option.ne_none_iff_exists'.mp fun h ↦ ?_)
-    exact Option.some_ne_none i ((σ : Equiv.Perm (Option b.support)).injective (h.trans hσ.symm))
+  have hσ' : τ.optionCongr = σ := by
+    classical
+    rw [map_equiv_removeNone, hσ, Equiv.swap_self, ← Equiv.Perm.one_def, one_mul]
+  have hsome (i : b.support) : some (τ i) = (σ : Equiv.Perm (Option b.support)) (some i) :=
+    congr($hσ' (some i))
   have hτ : τ ∈ TauCeti.matrixSymmetryGroup b.cartanMatrix := by
     refine TauCeti.mem_matrixSymmetryGroup_iff.mpr (Matrix.ext fun i j ↦ ?_)
     have h := congrFun₂ (TauCeti.mem_matrixSymmetryGroup_iff.mp σ.2) (some i) (some j)
     simp only [Matrix.submatrix_apply, ← hsome, affineCartanMatrix_some_some] at h
     simpa [cartanMatrixIn_def] using h
-  refine ⟨⟨τ, hτ⟩, Subtype.ext (_root_.Equiv.ext fun k ↦ ?_)⟩
-  rcases k with _ | i
-  · simp [hσ]
-  · simp [hsome]
+  exact ⟨⟨τ, hτ⟩, Subtype.ext hσ'⟩
 
 /-- **The stabilizer of the affine node in the symmetry group of the affine Cartan matrix is the
 symmetry group of the finite Cartan matrix**, by restriction to the simple nodes. Its inverse is
