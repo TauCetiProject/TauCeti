@@ -53,7 +53,7 @@ noncomputable def generatedWeightTorusCoordinateMap :
   generatedCoordinateLift n hn R (.inr ())
 
 /-- The generated weight-torus morphism is the torus member of the generator lifts. -/
-theorem generatedWeightTorusCoordinateMap_eq :
+theorem generatedWeightTorusCoordinateMap_def :
     generatedWeightTorusCoordinateMap n hn R = generatedCoordinateLift n hn R (.inr ()) :=
   (rfl)
 

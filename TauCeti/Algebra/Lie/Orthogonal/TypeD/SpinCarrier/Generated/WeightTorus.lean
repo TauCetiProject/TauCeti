@@ -52,7 +52,7 @@ theorem generatedWeightTorusCoordinateMap_surjective :
     exact (weightTorusToBaseChangeCoordinateMap_surjective n hn R).comp
       (coordinateMap_surjective n hn R)
   rw [← generatedCoordinateMap_comp_generatedCoordinateLift] at h
-  rw [generatedWeightTorusCoordinateMap_eq]
+  rw [generatedWeightTorusCoordinateMap_def]
   exact Function.Surjective.of_comp h
 
 /-- The defining ideal of the weight torus inside the ground-ring-generated spin group. -/
@@ -107,7 +107,7 @@ grind_pattern splitTorusCommHopfAlgProperty_quotient_weightTorusDefiningIdeal =>
 theorem carrierDefiningIdeal_le_weightTorusDefiningIdeal :
     Positive.carrierDefiningIdeal n hn R ≤ weightTorusDefiningIdeal n hn R := by
   intro x hx
-  rw [mem_weightTorusDefiningIdeal, generatedWeightTorusCoordinateMap_eq]
+  rw [mem_weightTorusDefiningIdeal, generatedWeightTorusCoordinateMap_def]
   exact Positive.carrierDefiningIdeal_toIdeal_le_ker_generatedCoordinateLift n hn R (.inr ()) hx
 
 /-- On algebra-valued points, the generated torus morphism gives the named spin torus matrix. -/
@@ -182,7 +182,7 @@ theorem map_baseChange_weightTorusDefiningIdeal :
     (generatorCoordinateAlgebraBaseChangeIso n R S (.inr ()))
     (generatedWeightTorusCoordinateMap_surjective n hn R)
     (generatedWeightTorusCoordinateMap_surjective n hn S)
-  rw [generatedWeightTorusCoordinateMap_eq, generatedWeightTorusCoordinateMap_eq,
+  rw [generatedWeightTorusCoordinateMap_def, generatedWeightTorusCoordinateMap_def,
     baseChangeMap_generatedCoordinateLift_comp_generatorCoordinateAlgebraBaseChangeIso_hom,
     Iso.inv_hom_id_assoc]
 
