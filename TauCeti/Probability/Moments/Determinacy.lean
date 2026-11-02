@@ -216,12 +216,8 @@ theorem Measure.ext_of_forall_integral_pow_eq
     (hμ : (0 : ℝ) ∈ interior (integrableExpSet id μ))
     (hν : (0 : ℝ) ∈ interior (integrableExpSet id ν)) (hmom : ∀ n, ∫ x, x ^ n ∂μ = ∫ x, x ^ n ∂ν) :
     μ = ν := by
-  have hfinite (ρ : Measure ℝ) (hρ : (0 : ℝ) ∈ interior (integrableExpSet id ρ)) :
-      IsFiniteMeasure ρ := by
-    apply (integrable_const_iff_isFiniteMeasure (one_ne_zero : (1 : ℝ) ≠ 0)).mp
-    simpa [integrableExpSet] using interior_subset hρ
-  have := hfinite μ hμ
-  have := hfinite ν hν
+  have := isFiniteMeasure_of_zero_mem_integrableExpSet (interior_subset hμ)
+  have := isFiniteMeasure_of_zero_mem_integrableExpSet (interior_subset hν)
   exact Measure.ext_of_charFun (charFun_eq_of_forall_integral_pow_eq hμ hν hmom)
 
 /-- If `∫ e^{a|x|} dμ` is finite for a single `a > 0`, then `0` lies in the interior of the
