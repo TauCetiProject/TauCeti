@@ -61,6 +61,8 @@ noncomputable def dual (A : FiniteRankBundleCore 𝕜 B) : FiniteRankBundleCore 
       mem_baseSet_at := fun x => by simpa only [id_eq, A.indexAt_eq] using A.core.mem_baseSet_at x
       coordChange := fun i j x => (A.core.coordChange j i x).piTranspose
       coordChange_self := fun i x hx v => by
+        -- The core axiom is pointwise; lift it by extensionality to an operator equality so it
+        -- can be rewritten beneath `piTranspose`.
         rw [show A.core.coordChange i i x = ContinuousLinearMap.id 𝕜 _ from
           ContinuousLinearMap.ext (A.core.coordChange_self i x hx),
           ContinuousLinearMap.piTranspose_id, ContinuousLinearMap.id_apply]
