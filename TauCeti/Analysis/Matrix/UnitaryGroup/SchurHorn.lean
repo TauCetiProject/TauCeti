@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Matrix.Spectrum
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 public import TauCeti.Analysis.InnerProductSpace.SchurHorn
+public import TauCeti.Analysis.Matrix.EuclideanLin
 
 /-!
 # Diagonals of unitary orbits: the Schur–Horn theorem for matrices
@@ -36,8 +37,9 @@ give smaller orbits with the same description of the diagonals.
 
 Two special cases are worked out.
 
-* The orbit of `diag(c, 0, …, 0)` consists of the rank-one matrices `c v vᴴ` for unit vectors `v`
-  (`Matrix.mul_diagonal_single_mul_star`), a copy of the projective space `ℂℙⁿ⁻¹` when `c ≠ 0`.
+* The orbit of `diag(c, 0, …, 0)` consists of the matrices `c v vᴴ` of rank at most one, for unit
+  vectors `v` (`Matrix.mul_diagonal_single_mul_star`). When `c ≠ 0` it is a copy of the
+  projective space of lines in `𝕜ⁿ`: `ℂℙⁿ⁻¹` for `𝕜 = ℂ` and `ℝℙⁿ⁻¹` for `𝕜 = ℝ`.
   Its diagonals form the simplex with vertices `c eᵢ`, the standard simplex scaled by `c`
   (`Matrix.range_re_diag_unitary_mul_diagonal_single_mul_star`).
 * In size two, the explicit real symmetric matrix `!![d₁, b; b, d₂]` with
@@ -60,8 +62,8 @@ Two special cases are worked out.
   `diag(w)` form exactly the permutohedron of `w`.
 * `Matrix.IsHermitian.range_re_diag_unitary_mul_mul_star`: the same for the unitary orbit of a
   Hermitian matrix and the permutohedron of its eigenvalues.
-* `Matrix.range_re_diag_unitary_mul_diagonal_single_mul_star`: the rank-one orbit has the
-  simplex with vertices `c eᵢ` as its diagonals.
+* `Matrix.range_re_diag_unitary_mul_diagonal_single_mul_star`: the orbit of `diag(c, 0, …, 0)` has
+  the simplex with vertices `c eᵢ` as its diagonals.
 * `Matrix.exists_isSymm_fin_two_charpoly_eq_iff`: the `2 × 2` case, with an explicit matrix.
 
 ## References
@@ -97,7 +99,8 @@ theorem neg_I_mul_trace_mul_diagonal_I_mul (H : Matrix ι ι ℂ) (θ : ι → �
 
 /-! ### Schur's theorem: diagonals lie in the permutohedron -/
 
-/-- The diagonal entries of `U diag(w) Uᴴ` are the averages `∑ᵢ |Uₖᵢ|² wᵢ` of `w`. -/
+/-- The diagonal entries of `U diag(w) Uᴴ` are the weighted sums `∑ᵢ |Uₖᵢ|² wᵢ` of `w`; when
+`U` is unitary these are averages of `w`. -/
 theorem mul_diagonal_mul_star_apply_self (U : Matrix ι ι 𝕜) (w : ι → ℝ) (k : ι) :
     (U * diagonal (fun i ↦ (w i : 𝕜)) * star U) k k = ((∑ i, ‖U k i‖ ^ 2 * w i : ℝ) : 𝕜) := by
   rw [mul_apply]
@@ -107,8 +110,8 @@ theorem mul_diagonal_mul_star_apply_self (U : Matrix ι ι 𝕜) (w : ι → ℝ
   rw [← RCLike.mul_conj]
   ring
 
-/-- The real parts of the diagonal entries of `U diag(w) Uᴴ` are the averages `∑ᵢ |Uₖᵢ|² wᵢ`
-of `w`. -/
+/-- The real parts of the diagonal entries of `U diag(w) Uᴴ` are the weighted sums
+`∑ᵢ |Uₖᵢ|² wᵢ` of `w`; when `U` is unitary these are averages of `w`. -/
 theorem re_mul_diagonal_mul_star_apply_self (U : Matrix ι ι 𝕜) (w : ι → ℝ) (k : ι) :
     RCLike.re ((U * diagonal (fun i ↦ (w i : 𝕜)) * star U) k k) = ∑ i, ‖U k i‖ ^ 2 * w i := by
   rw [mul_diagonal_mul_star_apply_self, RCLike.ofReal_re]
@@ -137,29 +140,6 @@ theorem re_diag_mul_diagonal_mul_star_mem_convexHull {U : Matrix ι ι 𝕜}
   simp [re_mul_diagonal_mul_star_apply_self, mulVec, dotProduct]
 
 /-! ### Horn's theorem: every point of the permutohedron is a diagonal -/
-
-/-- The quadratic form of the diagonal operator `diag(w)` on Euclidean space is
-`x ↦ ∑ᵢ |xᵢ|² wᵢ`. -/
-private theorem re_inner_toEuclideanLin_diagonal_apply_self (w : ι → ℝ)
-    (x : EuclideanSpace 𝕜 ι) :
-    RCLike.re ⟪toEuclideanLin (diagonal fun i ↦ (w i : 𝕜)) x, x⟫_𝕜 = ∑ i, ‖x i‖ ^ 2 * w i := by
-  simp only [toLpLin_apply, PiLp.inner_apply, mulVec_diagonal, map_sum]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [RCLike.inner_apply', map_mul (starRingEnd 𝕜), RCLike.conj_ofReal, mul_assoc,
-    RCLike.conj_mul, ← RCLike.ofReal_pow, ← RCLike.ofReal_mul, RCLike.ofReal_re, mul_comm]
-
-/-- An orthonormal basis `e` of `EuclideanSpace 𝕜 ι` gives the unitary matrix whose rows are the
-conjugates of the vectors `e k`. The diagonal of `diag(w)` in the basis `e` is the diagonal of
-`U diag(w) Uᴴ`. -/
-private theorem exists_mem_unitaryGroup_re_diag_eq_re_inner (w : ι → ℝ)
-    (e : OrthonormalBasis ι 𝕜 (EuclideanSpace 𝕜 ι)) :
-    ∃ U ∈ unitaryGroup ι 𝕜, ∀ k, RCLike.re ((U * diagonal (fun i ↦ (w i : 𝕜)) * star U) k k) =
-      RCLike.re ⟪toEuclideanLin (diagonal fun i ↦ (w i : 𝕜)) (e k), e k⟫_𝕜 := by
-  refine ⟨star ((EuclideanSpace.basisFun ι 𝕜).toBasis.toMatrix e.toBasis),
-    Unitary.star_mem ((EuclideanSpace.basisFun ι 𝕜).toMatrix_orthonormalBasis_mem_unitary e),
-    fun k ↦ ?_⟩
-  rw [re_mul_diagonal_mul_star_apply_self, re_inner_toEuclideanLin_diagonal_apply_self]
-  simp [Module.Basis.toMatrix_apply]
 
 /-- **Horn's theorem.** Every point `d` of the convex hull of the rearrangements of `w` is the
 diagonal of `U diag(w) Uᴴ` for some unitary `U`. -/
@@ -202,9 +182,11 @@ theorem exists_mem_unitaryGroup_re_diag_mul_diagonal_mul_star_eq {w d : ι → �
     exact ⟨d, hd, rfl⟩
   obtain ⟨e, he⟩ :=
     hT.exists_orthonormalBasis_re_inner_apply_self_eq_of_mem_convexHull hn (hsub hd')
-  obtain ⟨U, hU, hUe⟩ := exists_mem_unitaryGroup_re_diag_eq_re_inner w (e.reindex eqv.symm)
+  obtain ⟨U, hU, hUe⟩ :=
+    exists_mem_unitaryGroup_mul_mul_star_apply_self_eq_inner (diagonal fun i ↦ (w i : 𝕜))
+      (e.reindex eqv.symm)
   refine ⟨U, hU, fun k ↦ ?_⟩
-  rw [hUe k, OrthonormalBasis.reindex_apply, Equiv.symm_symm]
+  rw [hUe k, inner_re_symm, OrthonormalBasis.reindex_apply, Equiv.symm_symm]
   simpa [T] using he (eqv k)
 
 /-- **The Schur–Horn theorem.** The diagonals of the matrices `U diag(w) Uᴴ`, for `U` unitary,
@@ -243,10 +225,10 @@ theorem IsHermitian.range_re_diag_unitary_mul_mul_star {A : Matrix ι ι 𝕜} (
     (fun (V : unitaryGroup ι 𝕜) (k : ι) ↦
       RCLike.re ((V * diagonal (fun i ↦ (hA.eigenvalues i : 𝕜)) * star V : Matrix ι ι 𝕜) k k))
 
-/-! ### The rank-one orbit and the standard simplex -/
+/-! ### Orbits of rank at most one and the standard simplex -/
 
-/-- The unitary orbit of `diag(0, …, c, …, 0)` consists of rank-one matrices: `U` conjugates it to
-`c v vᴴ`, where `v` is the column of `U` at the position of `c`. -/
+/-- The unitary orbit of `diag(0, …, c, …, 0)` consists of matrices of rank at most one: `U`
+conjugates it to `c v vᴴ`, where `v` is the column of `U` at the position of `c`. -/
 theorem mul_diagonal_single_mul_star (U : Matrix ι ι 𝕜) (i₀ : ι) (c : ℝ) :
     U * diagonal (fun i ↦ ((Pi.single i₀ c : ι → ℝ) i : 𝕜)) * star U =
       (c : 𝕜) • vecMulVec (fun k ↦ U k i₀) (star fun k ↦ U k i₀) := by
@@ -256,9 +238,10 @@ theorem mul_diagonal_single_mul_star (U : Matrix ι ι 𝕜) (i₀ : ι) (c : �
     Pi.star_apply, smul_eq_mul]
   ring
 
-/-- **The rank-one Schur–Horn theorem.** The diagonals of the unitary orbit of
-`diag(0, …, c, …, 0)`, the moment image of the projective space `ℂℙⁿ⁻¹` of rank-one matrices
-`c v vᴴ`, form the simplex with vertices `c eᵢ`, the standard simplex scaled by `c`. -/
+/-- **The Schur–Horn theorem in rank at most one.** The diagonals of the unitary orbit of
+`diag(0, …, c, …, 0)`, the matrices `c v vᴴ` for unit vectors `v`, form the simplex with vertices
+`c eᵢ`, the standard simplex scaled by `c`. For `c ≠ 0` this orbit is the projective space of
+lines in `𝕜ⁿ` (`ℂℙⁿ⁻¹` when `𝕜 = ℂ`), and the simplex is its moment image. -/
 theorem range_re_diag_unitary_mul_diagonal_single_mul_star (i₀ : ι) (c : ℝ) :
     (Set.range fun (U : unitaryGroup ι 𝕜) (k : ι) ↦
       RCLike.re ((U * diagonal (fun i ↦ ((Pi.single i₀ c : ι → ℝ) i : 𝕜)) * star U :
