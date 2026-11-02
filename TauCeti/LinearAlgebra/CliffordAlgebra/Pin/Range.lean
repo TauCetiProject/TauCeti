@@ -9,7 +9,6 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinorNorm.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.DetSquareClass
 import TauCeti.LinearAlgebra.CliffordAlgebra.CartanDieudonne
 import TauCeti.LinearAlgebra.CliffordAlgebra.Pin.Norm
-import TauCeti.LinearAlgebra.QuadraticForm.CartanDieudonne.SpecialOrthogonal
 
 /-!
 # The image of the Pin group
@@ -37,6 +36,8 @@ group exactly when `-Q v` is a square.
   Lipschitz element is the spinor norm times the determinant square class of its action.
 * `CliffordAlgebra.range_pinToOrthogonal`: the image of the Pin group is the kernel of the
   spinor norm times the determinant square class.
+* `CliffordAlgebra.orthogonalSpinorNorm_mul_orthogonalDetSquareClass_reflectionOrthogonal`: the
+  character `g ↦ θ(g) · [det g]` takes the value `[-Q v]` on a reflection `τ_v`.
 * `CliffordAlgebra.reflectionOrthogonal_mem_range_pinToOrthogonal_iff`: a reflection `τ_v` is
   the action of a Pin element exactly when `-Q v` is a square.
 
@@ -89,14 +90,24 @@ private theorem orthogonalStarNormClass_lipschitzToOrthogonal (Q : QuadraticForm
     (Function.surjInv (lipschitzToOrthogonal_surjective Q hQ))
     (Function.rightInverse_surjInv (lipschitzToOrthogonal_surjective Q hQ)) _ x
 
+/-- **The norm-sign character on a reflection.** The spinor norm times the determinant square
+class takes the value `[-Q v]` on the reflection `τ_v` in an anisotropic vector `v`. -/
+theorem orthogonalSpinorNorm_mul_orthogonalDetSquareClass_reflectionOrthogonal
+    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (v : V) [Invertible (Q v)] :
+    (orthogonalSpinorNorm Q hQ * orthogonalDetSquareClass Q)
+        (QuadraticMap.reflectionOrthogonal Q v) =
+      squareClassHom (-unitOfInvertible (Q v)) := by
+  rw [MonoidHom.mul_apply, orthogonalSpinorNorm_reflectionOrthogonal,
+    orthogonalDetSquareClass_apply, QuadraticMap.coe_reflectionOrthogonal,
+    QuadraticMap.det_reflection, ← map_mul, mul_neg_one]
+
 /-- On a reflection `τ_v` both characters take the value `[-Q v]`. -/
 private theorem orthogonalStarNormClass_eq (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) :
     orthogonalStarNormClass Q hQ = orthogonalSpinorNorm Q hQ * orthogonalDetSquareClass Q := by
   refine QuadraticMap.orthogonalGroup_hom_ext Q hQ fun v _ ↦ ?_
-  rw [MonoidHom.mul_apply, orthogonalSpinorNorm_reflectionOrthogonal,
-    orthogonalDetSquareClass_apply, QuadraticMap.coe_reflectionOrthogonal,
-    QuadraticMap.det_reflection, ← map_mul, mul_neg_one, ← lipschitzToOrthogonal_unitι,
-    orthogonalStarNormClass_lipschitzToOrthogonal, lipschitzNorm_unitι]
+  rw [orthogonalSpinorNorm_mul_orthogonalDetSquareClass_reflectionOrthogonal,
+    ← lipschitzToOrthogonal_unitι, orthogonalStarNormClass_lipschitzToOrthogonal,
+    lipschitzNorm_unitι]
 
 /-- **The `star` norm modulo squares.** The square class of the `star` norm `star x * x` of a
 Lipschitz element `x` is the spinor norm of its action times the square class of the determinant of
@@ -142,9 +153,8 @@ theorem reflectionOrthogonal_mem_range_pinToOrthogonal_iff (Q : QuadraticForm K 
     (hQ : Q.Nondegenerate) (v : V) [Invertible (Q v)] :
     QuadraticMap.reflectionOrthogonal Q v ∈ (pinToOrthogonal Q).range ↔
       IsSquare (-unitOfInvertible (Q v)) := by
-  rw [range_pinToOrthogonal Q hQ, MonoidHom.mem_ker, MonoidHom.mul_apply,
-    orthogonalSpinorNorm_reflectionOrthogonal, orthogonalDetSquareClass_apply,
-    QuadraticMap.coe_reflectionOrthogonal, QuadraticMap.det_reflection, ← map_mul, mul_neg_one,
+  rw [range_pinToOrthogonal Q hQ, MonoidHom.mem_ker,
+    orthogonalSpinorNorm_mul_orthogonalDetSquareClass_reflectionOrthogonal,
     squareClassHom_eq_one_iff]
 
 end CliffordAlgebra

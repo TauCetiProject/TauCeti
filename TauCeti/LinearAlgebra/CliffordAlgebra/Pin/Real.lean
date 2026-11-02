@@ -8,8 +8,6 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Pin.Range
 public import Mathlib.Basic.Real.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Basic
-import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpecialOrthogonal
-import TauCeti.LinearAlgebra.QuadraticForm.CartanDieudonne.Basic
 import TauCeti.FieldTheory.SquareClassGroup.Real
 
 /-!
@@ -90,11 +88,9 @@ theorem index_range_pinToOrthogonal (Q : QuadraticForm ℝ V) (hQ : Q.Nondegener
     rcases eq_one_or_eq_squareClassHom_neg_one x with rfl | rfl
     · exact ⟨1, map_one _⟩
     · refine ⟨QuadraticMap.reflectionOrthogonal Q w, ?_⟩
-      rw [MonoidHom.mul_apply, orthogonalSpinorNorm_reflectionOrthogonal,
-        orthogonalDetSquareClass_apply, QuadraticMap.coe_reflectionOrthogonal,
-        QuadraticMap.det_reflection, ← map_mul, mul_neg_one, squareClassHom_eq_iff,
-        Units.squareClass_eq_squareClass_neg_one_iff_neg, Units.val_neg, val_unitOfInvertible,
-        neg_neg_iff_pos]
+      rw [orthogonalSpinorNorm_mul_orthogonalDetSquareClass_reflectionOrthogonal,
+        squareClassHom_eq_iff, Units.squareClass_eq_squareClass_neg_one_iff_neg, Units.val_neg,
+        val_unitOfInvertible, neg_neg_iff_pos]
       exact hw
   rw [range_pinToOrthogonal Q hQ, Subgroup.index_ker, MonoidHom.range_eq_top.mpr hsurj,
     Subgroup.card_top, natCard_units_quotient_square_real]
