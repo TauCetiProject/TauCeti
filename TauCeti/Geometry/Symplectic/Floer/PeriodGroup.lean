@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Basic.Real.Basic
 public import Mathlib.GroupTheory.QuotientGroup.Basic
-public import Mathlib.GroupTheory.SpecificGroups.Cyclic.Subgroup
+public import TauCeti.GroupTheory.SpecificGroups.Cyclic.Int
 
 /-!
 # The period group of spherical classes
@@ -34,6 +34,9 @@ This file develops `Γ` for an arbitrary additive group `S` with two such homomo
   and first Chern number, with components `PeriodGroup.area` and `PeriodGroup.chern`.
 * `TauCeti.Floer.PeriodGroup.degree`: the degree `γ ↦ 2 c(γ)`, the grading shift of a recapping
   by `γ`.
+* `TauCeti.Floer.PeriodGroup.chernEquivInt`: integer coordinates with positive Chern generator
+  when the Chern map is injective and nonzero; `laurentExponent` reverses these coordinates
+  to make the Floer Laurent variable have positive valuation in the positive monotone case.
 * `TauCeti.Floer.PeriodGroup.map`: the homomorphism of period groups induced by a homomorphism of
   class groups preserving area and Chern number.
 
@@ -279,6 +282,79 @@ theorem area_injective_of_chern_eq_zero (h : ∀ s, c s = 0) :
   area_injective_iff.2 fun s _ => h s
 
 end ChernZero
+
+section Laurent
+
+variable {ω c}
+
+/-- Integer coordinates on a period group whose Chern map is injective and nonzero.
+The inverse image of one is the generator with positive Chern number. -/
+noncomputable def chernEquivInt (hker : c.ker ≤ ω.ker) (hc : c ≠ 0) : PeriodGroup ω c ≃+ ℤ :=
+  ((AddMonoidHom.ofInjective (chern_injective_iff.mpr hker)).trans
+    (AddEquiv.addSubgroupCongr (range_chern ω c))).trans (c.rangeOrderAddEquivInt hc).toAddEquiv
+
+/-- The positive generator has strictly positive Chern number, the minimal Chern number. -/
+theorem chern_chernEquivInt_symm_pos (hker : c.ker ≤ ω.ker) (hc : c ≠ 0) :
+    0 < chern ω c ((chernEquivInt hker hc).symm 1) := by
+  have h := c.rangeOrderAddEquivInt_symm_one_pos hc
+  -- The underlying additive equivalence and the ordered equivalence have the same inverse.
+  have he : (c.rangeOrderAddEquivInt hc).toAddEquiv.symm 1 =
+      (c.rangeOrderAddEquivInt hc).symm 1 := rfl
+  simpa only [chernEquivInt, AddEquiv.symm_trans_apply, he,
+    AddEquiv.addSubgroupCongr_symm_apply,
+    AddMonoidHom.apply_ofInjective_symm] using h
+
+/-- The Chern number in integer coordinates is the exponent times the minimal Chern number. -/
+theorem chern_chernEquivInt_symm (hker : c.ker ≤ ω.ker) (hc : c ≠ 0) (k : ℤ) :
+    chern ω c ((chernEquivInt hker hc).symm k) =
+      k * chern ω c ((chernEquivInt hker hc).symm 1) := by
+  have hk : k = k • (1 : ℤ) := by simp
+  conv_lhs => rw [hk]
+  rw [map_zsmul, map_zsmul, zsmul_eq_mul, Int.cast_id]
+
+/-- The Chern number of a period class determines its integer exponent by multiplication by
+the minimal Chern number. -/
+theorem chern_eq_mul_chernEquivInt (hker : c.ker ≤ ω.ker) (hc : c ≠ 0)
+    (γ : PeriodGroup ω c) :
+    chern ω c γ = chernEquivInt hker hc γ *
+      chern ω c ((chernEquivInt hker hc).symm 1) := by
+  simpa only [AddEquiv.symm_apply_apply] using
+    chern_chernEquivInt_symm hker hc (chernEquivInt hker hc γ)
+
+/-- Laurent exponents for Floer coefficients. The variable corresponds to the negative of the
+positive Chern generator, so its valuation is positive on positively monotone targets. -/
+noncomputable def laurentExponent (hker : c.ker ≤ ω.ker) (hc : c ≠ 0) :
+    PeriodGroup ω c ≃+ ℤ :=
+  (chernEquivInt hker hc).trans (AddEquiv.neg ℤ)
+
+/-- A Floer Laurent exponent is the negative of the positive-Chern integer coordinate. -/
+@[simp]
+theorem laurentExponent_apply (hker : c.ker ≤ ω.ker) (hc : c ≠ 0)
+    (γ : PeriodGroup ω c) :
+    laurentExponent hker hc γ = -chernEquivInt hker hc γ :=
+  (rfl)
+
+/-- The class of the Laurent monomial of exponent `k` has Chern number `-k N`,
+where `N` is the positive minimal Chern number. -/
+@[simp]
+theorem chern_laurentExponent_symm (hker : c.ker ≤ ω.ker) (hc : c ≠ 0) (k : ℤ) :
+    chern ω c ((laurentExponent hker hc).symm k) =
+      -k * chern ω c ((chernEquivInt hker hc).symm 1) := by
+  simpa only [laurentExponent, AddEquiv.symm_trans_apply, AddEquiv.neg_symm,
+    AddEquiv.neg_apply] using
+    chern_chernEquivInt_symm hker hc (-k)
+
+/-- In the monotone case the area of a Laurent monomial is minus its exponent times the area
+of the positive Chern generator. When `0 < τ`, positive exponents have positive Floer valuation. -/
+theorem area_laurentExponent_symm {τ : ℝ} (h : ∀ s, ω s = τ * c s) (hc : c ≠ 0)
+    (k : ℤ) :
+    area ω c ((laurentExponent (ker_le_ker_of_area_eq_mul_chern h) hc).symm k) =
+      -(τ * chern ω c ((chernEquivInt (ker_le_ker_of_area_eq_mul_chern h) hc).symm 1)) * k := by
+  rw [area_eq_mul_chern h, chern_laurentExponent_symm]
+  push_cast
+  ring
+
+end Laurent
 
 section Map
 

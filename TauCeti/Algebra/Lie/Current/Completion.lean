@@ -87,6 +87,10 @@ completion of `U(ĝ_κ₀) / (K - k)`.
 * `TauCeti.CurrentAlgebra.exists_forall_limπ_smul_eq_zero`: the orbit maps of the action of `U` on
   `Û` are continuous.
 * `TauCeti.CurrentAlgebra.limπ_mul`: the coordinates of a product, `(x y)_N = x · y_N`.
+* `TauCeti.CurrentAlgebra.mul_limSmul`, `TauCeti.CurrentAlgebra.one_limSmul`: on a smooth module,
+  `(x y) · m = x · (y · m)` and `1 · m = m`.
+* `TauCeti.CurrentAlgebra.limSmul_toCompletedEnveloping`: on a smooth module, the image in `Û` of
+  `b ∈ U` acts as `b`.
 * `TauCeti.CurrentAlgebra.limπ_one`, `TauCeti.CurrentAlgebra.coe_one_apply`: the coordinates of
   the unit are the classes of `1`.
 * `TauCeti.CurrentAlgebra.limπ_toCompletedEnveloping`: the coordinates of the image of `b ∈ U` are
@@ -170,6 +174,14 @@ theorem limπ_mul (x y : CompletedEnveloping Φ hΦ hΦs a) (n : ℕ) :
         x ((orderQuotientTower Φ hΦ hΦs a).limπ n y) :=
   ModuleTower.limπ_limMul _ x y n
 
+/-- The action of a product on a smooth module is the composite of the actions,
+`(x y) • m = x • (y • m)`, for the extension `TauCeti.ModuleTower.limSmul` of the action of `U`. -/
+theorem mul_limSmul {M : ModuleCat UK}
+    (hM : smoothModules (fun n : ℕ ↦ orderLeftIdeal Φ hΦ hΦs a n) M)
+    (x y : CompletedEnveloping Φ hΦ hΦs a) (m : M) :
+    ModuleTower.limSmul hM (x * y) m = ModuleTower.limSmul hM x (ModuleTower.limSmul hM y m) :=
+  ModuleTower.limSmul_limMul _ hM x y m
+
 /-- The coordinates of the unit of the completed enveloping algebra: `1_n` is the class of `1`. -/
 theorem limπ_one (n : ℕ) :
     (orderQuotientTower Φ hΦ hΦs a).limπ n 1 =
@@ -236,6 +248,19 @@ theorem limπ_toCompletedEnveloping (n : ℕ) (b : UK) :
     (orderQuotientTower Φ hΦ hΦs a).limπ n (toCompletedEnveloping Φ hΦ hΦs a b) =
       ModuleTower.quotientsπ _ (orderLeftIdeal_natCast_antitone Φ hΦ hΦs a) n b := by
   rw [coe_toCompletedEnveloping, ← LinearMap.comp_apply, ModuleTower.limπ_comp_toLimQuotients]
+
+/-- On a smooth module, the image in `Û` of an element of `U` acts as that element. -/
+theorem limSmul_toCompletedEnveloping {M : ModuleCat UK}
+    (hM : smoothModules (fun n : ℕ ↦ orderLeftIdeal Φ hΦ hΦs a n) M) (b : UK) (m : M) :
+    ModuleTower.limSmul hM (toCompletedEnveloping Φ hΦ hΦs a b) m = b • m :=
+  ModuleTower.limSmul_toLimQuotients hM b m
+
+/-- The unit of the completed enveloping algebra acts trivially on a smooth module. -/
+@[simp]
+theorem one_limSmul {M : ModuleCat UK}
+    (hM : smoothModules (fun n : ℕ ↦ orderLeftIdeal Φ hΦ hΦs a n) M) (m : M) :
+    ModuleTower.limSmul hM (1 : CompletedEnveloping Φ hΦ hΦs a) m = m := by
+  rw [← map_one (toCompletedEnveloping Φ hΦ hΦs a), limSmul_toCompletedEnveloping, one_smul]
 
 variable (Φ hΦ hΦs a)
 

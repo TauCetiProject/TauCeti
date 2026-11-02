@@ -94,6 +94,14 @@ theorem degreeCast_hom_comp_degreeCast_hom {n k l : ℕ} (h : n = k) (h' : k = l
     (degreeCast X h).hom ≫ (degreeCast X h').hom = (degreeCast X (h.trans h')).hom := by
   simp [degreeCast]
 
+/-- Two successive transports of a class are its transport along the composite equality. -/
+@[simp]
+theorem degreeCast_hom_degreeCast_hom_apply {n k l : ℕ} (h : n = k) (h' : k = l)
+    (x : continuousCohomology n X) :
+    (degreeCast X h').hom ((degreeCast X h).hom x) = (degreeCast X (h.trans h')).hom x := by
+  subst h h'
+  simp
+
 /-- **Transport along an equality of degrees is natural**: it commutes with any family of maps
 `f n : Hⁿ(G, X) ⟶ Hⁿ(H, Y)` indexed by the degree, such as restriction or a change of
 coefficients. -/

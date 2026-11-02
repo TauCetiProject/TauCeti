@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.ClosedIdeal
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Nullstellensatz
+import TauCeti.RingTheory.Ideal.Quotient.Operations
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Polynomial
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 
@@ -128,14 +129,10 @@ theorem polynomialQuotientAlgEquiv_mk (p : MvPolynomial σ K) :
 /-- If a maximal ideal `I` has a residue field finite over `K`, the polynomials in `I` form a
 maximal ideal of `K[X]`. -/
 theorem isMaximal_comap_polynomialToRestricted_of_finite [I.IsMaximal] :
-    (I.comap (polynomialToRestricted (R := K) c)).IsMaximal := by
-  have hker : RingHom.ker ((Ideal.Quotient.mkₐ K I).comp (polynomialToRestricted (R := K) c)) =
-      I.comap (polynomialToRestricted (R := K) c) := by
-    ext p
-    simp [RingHom.mem_ker, Ideal.Quotient.eq_zero_iff_mem]
-  let := Ideal.Quotient.field I
-  exact hker ▸ RingHom.ker_isMaximal_of_surjective _
-    (quotientMkₐ_comp_polynomialToRestricted_surjective I)
+    (I.comap (polynomialToRestricted (R := K) c)).IsMaximal :=
+  isMaximal_comap_of_surjective_quotient_mk_comp _ <| by
+    simpa only [AlgHom.coe_comp, Ideal.Quotient.mkₐ_eq_mk] using
+      quotientMkₐ_comp_polynomialToRestricted_surjective I
 
 end FiniteCodimension
 
