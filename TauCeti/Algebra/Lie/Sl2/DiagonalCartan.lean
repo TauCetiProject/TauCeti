@@ -29,6 +29,7 @@ algebraic closure is assumed.
 
 * `TauCeti.slTwoDiagonalCartan`: the diagonal matrices of `sl (Fin 2) R`.
 * `TauCeti.slTwoCartanGenerator`: the element `h` of the diagonal Cartan.
+* `TauCeti.slTwoWeight`: the weight taking the value `t` at `h`.
 * `TauCeti.slTwoRoot`: the weight `α`, with index `TauCeti.slTwoRootIndex` in the root system.
 * `TauCeti.slTwoPositiveBase`: the base `{α}` of the root system.
 
@@ -218,6 +219,12 @@ theorem eq_smul_slTwoCartanGenerator (x : slTwoDiagonalCartan K) :
     x = x.val.val 0 0 • slTwoCartanGenerator K :=
   Subtype.ext (eq_smul_singleSubSingle_of_mem_slTwoDiagonalCartan x.2)
 
+/-- A linear form on the diagonal Cartan is determined by its value at `h`. -/
+theorem dual_ext_slTwoCartanGenerator {lam mu : Module.Dual K (slTwoDiagonalCartan K)}
+    (h : lam (slTwoCartanGenerator K) = mu (slTwoCartanGenerator K)) : lam = mu :=
+  LinearMap.ext fun x ↦ by
+    rw [eq_smul_slTwoCartanGenerator x, map_smul, map_smul, h]
+
 /-- `α(h) = 2`. -/
 theorem slTwoRoot_slTwoCartanGenerator : slTwoRoot K (slTwoCartanGenerator K) = 2 := by
   rw [slTwoRoot_apply, coe_slTwoCartanGenerator, val_singleSubSingle_zero_zero, mul_one]
@@ -244,6 +251,18 @@ theorem weight_ext_slTwoCartanGenerator {χ ψ : Weight K (slTwoDiagonalCartan K
     (SpecialLinear.sl (Fin 2) K)} (h : χ (slTwoCartanGenerator K) = ψ (slTwoCartanGenerator K)) :
     χ = ψ :=
   Weight.ext fun x ↦ by rw [weight_apply_eq_mul χ, weight_apply_eq_mul ψ, h]
+
+/-- The weight of the diagonal Cartan taking the value `t` at `h`. -/
+noncomputable def slTwoWeight (t : K) : Module.Dual K (slTwoDiagonalCartan K) :=
+  ((2 : K)⁻¹ * t) • (slTwoRoot K).toLinear
+
+/-- The defining property of `slTwoWeight`. -/
+@[simp]
+theorem slTwoWeight_slTwoCartanGenerator (t : K) :
+    slTwoWeight t (slTwoCartanGenerator K) = t := by
+  simp only [slTwoWeight, LinearMap.smul_apply, Weight.toLinear_apply,
+    slTwoRoot_slTwoCartanGenerator, smul_eq_mul]
+  field_simp
 
 omit [CharZero K] in
 /-- The eigenvalues of `ad h` on a nonzero eigenvector of `sl₂` are `2`, `-2` and `0`. -/
@@ -295,6 +314,44 @@ noncomputable def slTwoRootIndex :
 theorem coe_slTwoRootIndex : (slTwoRootIndex K : Weight K (slTwoDiagonalCartan K)
     (SpecialLinear.sl (Fin 2) K)) = slTwoRoot K := (rfl)
 
+/-- The root index of `-α` is the reflection of `α` in itself. -/
+theorem eq_reflectionPerm_slTwoRootIndex
+    {i : (LieSubalgebra.root : Finset (Weight K (slTwoDiagonalCartan K)
+      (SpecialLinear.sl (Fin 2) K)))} (h : (i : Weight K (slTwoDiagonalCartan K)
+        (SpecialLinear.sl (Fin 2) K)) = -slTwoRoot K) :
+    i = (IsKilling.rootSystem (slTwoDiagonalCartan K)).reflectionPerm (slTwoRootIndex K)
+      (slTwoRootIndex K) :=
+  (IsKilling.rootSystem (slTwoDiagonalCartan K)).root.injective <| by
+    rw [RootPairing.root_reflectionPerm, RootPairing.reflection_apply_self,
+      IsKilling.rootSystem_root_apply, IsKilling.rootSystem_root_apply, coe_slTwoRootIndex, h]
+    exact Weight.toLinear_neg
+
+/-- Every root index is `α` or the reflection of `α` in itself, which is `-α`. -/
+theorem eq_slTwoRootIndex_or_eq_reflectionPerm
+    (i : (LieSubalgebra.root : Finset (Weight K (slTwoDiagonalCartan K)
+      (SpecialLinear.sl (Fin 2) K)))) :
+    i = slTwoRootIndex K ∨
+      i = (IsKilling.rootSystem (slTwoDiagonalCartan K)).reflectionPerm (slTwoRootIndex K)
+        (slTwoRootIndex K) :=
+  (eq_slTwoRoot_or_eq_neg_slTwoRoot (LieSubalgebra.isNonZero_coe_root i)).imp Subtype.ext
+    eq_reflectionPerm_slTwoRootIndex
+
+/-- A family on the root indices that negates under the reflection of `α` in itself, such as the
+roots and the coroots, takes every value in the closure of its value at `α`, up to sign. -/
+private theorem mem_closure_or_neg_mem_closure {M : Type*} [AddCommGroup M]
+    (f : ↥(LieSubalgebra.root : Finset (Weight K (slTwoDiagonalCartan K)
+      (SpecialLinear.sl (Fin 2) K))) → M)
+    (hf : f ((IsKilling.rootSystem (slTwoDiagonalCartan K)).reflectionPerm (slTwoRootIndex K)
+      (slTwoRootIndex K)) = -f (slTwoRootIndex K)) (i) :
+    f i ∈ AddSubmonoid.closure (f '' (({slTwoRootIndex K} : Finset _) : Set _)) ∨
+      -f i ∈ AddSubmonoid.closure (f '' (({slTwoRootIndex K} : Finset _) : Set _)) := by
+  have hmem : f (slTwoRootIndex K) ∈
+      AddSubmonoid.closure (f '' (({slTwoRootIndex K} : Finset _) : Set _)) :=
+    AddSubmonoid.subset_closure ⟨_, by simp, rfl⟩
+  obtain rfl | rfl := eq_slTwoRootIndex_or_eq_reflectionPerm i
+  · exact .inl hmem
+  · exact .inr (by rwa [hf, neg_neg])
+
 variable (K) in
 /-- **The positive base of `sl₂`**: the single simple root `α`, whose root space contains
 `e = E₀₁` (`TauCeti.slTwoPositiveBase_positive_generator`). -/
@@ -303,18 +360,10 @@ noncomputable def slTwoPositiveBase :
   support := {slTwoRootIndex K}
   linearIndepOn_root := by simpa using slTwoRoot_isNonZero
   linearIndepOn_coroot := by simpa using slTwoRoot_isNonZero
-  root_mem_or_neg_mem i := by
-    obtain h | h := eq_slTwoRoot_or_eq_neg_slTwoRoot (LieSubalgebra.isNonZero_coe_root i)
-    · refine .inl <| AddSubmonoid.subset_closure ⟨slTwoRootIndex K, by simp, ?_⟩
-      simp [h]
-    · refine .inr <| AddSubmonoid.subset_closure ⟨slTwoRootIndex K, by simp, ?_⟩
-      simp [h]
-  coroot_mem_or_neg_mem i := by
-    obtain h | h := eq_slTwoRoot_or_eq_neg_slTwoRoot (LieSubalgebra.isNonZero_coe_root i)
-    · refine .inl <| AddSubmonoid.subset_closure ⟨slTwoRootIndex K, by simp, ?_⟩
-      simp [h]
-    · refine .inr <| AddSubmonoid.subset_closure ⟨slTwoRootIndex K, by simp, ?_⟩
-      simp [h]
+  root_mem_or_neg_mem := mem_closure_or_neg_mem_closure _ <| by
+    rw [RootPairing.root_reflectionPerm, RootPairing.reflection_apply_self]
+  coroot_mem_or_neg_mem := mem_closure_or_neg_mem_closure _ <| by
+    rw [RootPairing.coroot_reflectionPerm, RootPairing.coreflection_apply_self]
 
 /-- The base has the single simple root `α`. -/
 @[simp]
@@ -348,6 +397,7 @@ theorem slTwoPositiveBase_positive_generator :
     single_zero_one_mem_rootSpace_slTwoRoot 1⟩
 
 /-- The coroot of the simple root is `h = E₀₀ - E₁₁`. -/
+@[simp]
 theorem coroot_slTwoRoot : IsKilling.coroot (slTwoRoot K) = slTwoCartanGenerator K :=
   Subtype.ext <| ((isSl2Triple_single (R := K) (zero_ne_one' (Fin 2))).h_eq_coroot
     slTwoRoot_isNonZero (single_zero_one_mem_rootSpace_slTwoRoot 1)

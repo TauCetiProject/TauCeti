@@ -39,7 +39,6 @@ projection (`TauCeti.hcProjection_injective`).
 
 * `TauCeti.slTwoOmega`: the element `Ω` of `U(sl₂)`, and `TauCeti.slTwoOmegaCenter` the same element
   in the centre.
-* `TauCeti.slTwoWeight`: the weight taking the value `t` at `h`.
 * `TauCeti.slTwoCenterEquiv`: the isomorphism `K[X] ≃ₐ[K] Z(U(sl₂))` sending `X` to `Ω`.
 
 ## Main results
@@ -78,14 +77,25 @@ section CommRing
 variable {R : Type*} [CommRing R]
 
 variable (R) in
-/-- **The generator `Ω = h² + 2h + 4fe` of the centre of `U(sl₂)`**, where `e = E₀₁`, `f = E₁₀` and
-`h = E₀₀ - E₁₁` are the standard basis. -/
+/-- **The element `Ω = h² + 2h + 4fe` of `U(sl₂)`**, where `e = E₀₁`, `f = E₁₀` and `h = E₀₀ - E₁₁`
+are the standard basis. Over a field of characteristic zero it is `8 •` the Casimir element
+(`TauCeti.slTwoOmega_eq_smul_casimirElement`) and generates the centre
+(`TauCeti.slTwoCenterEquiv`). -/
 noncomputable def slTwoOmega : _root_.UniversalEnvelopingAlgebra R (SpecialLinear.sl (Fin 2) R) :=
   _root_.UniversalEnvelopingAlgebra.ι R (slFinTwoBasis R 2) *
       _root_.UniversalEnvelopingAlgebra.ι R (slFinTwoBasis R 2) +
     (2 : R) • _root_.UniversalEnvelopingAlgebra.ι R (slFinTwoBasis R 2) +
     (4 : R) • (_root_.UniversalEnvelopingAlgebra.ι R (slFinTwoBasis R 1) *
       _root_.UniversalEnvelopingAlgebra.ι R (slFinTwoBasis R 0))
+
+/-- The defining equation `Ω = h² + 2h + 4fe`. -/
+theorem slTwoOmega_def :
+    slTwoOmega R =
+      _root_.UniversalEnvelopingAlgebra.ι R (slFinTwoBasis R 2) *
+          _root_.UniversalEnvelopingAlgebra.ι R (slFinTwoBasis R 2) +
+        (2 : R) • _root_.UniversalEnvelopingAlgebra.ι R (slFinTwoBasis R 2) +
+        (4 : R) • (_root_.UniversalEnvelopingAlgebra.ι R (slFinTwoBasis R 1) *
+          _root_.UniversalEnvelopingAlgebra.ι R (slFinTwoBasis R 0)) := (rfl)
 
 end CommRing
 
@@ -140,13 +150,8 @@ private theorem slFinTwoBasis_one_mem_negativeNilradical :
     ⟨-slTwoRoot K, by simpa [LieSubalgebra.root] using slTwoRoot_isNonZero⟩
   refine mem_negativeNilradical_of_mem_rootSpace (slTwoDiagonalCartan K) (slTwoPositiveBase K)
     (α := i) ?_ ?_
-  · have hi : i = (IsKilling.rootSystem (slTwoDiagonalCartan K)).reflectionPerm (slTwoRootIndex K)
-        (slTwoRootIndex K) :=
-      (IsKilling.rootSystem (slTwoDiagonalCartan K)).root.injective <| by
-        rw [RootPairing.root_reflectionPerm, RootPairing.reflection_apply_self,
-          IsKilling.rootSystem_root_apply, IsKilling.rootSystem_root_apply, coe_slTwoRootIndex]
-        exact Weight.toLinear_neg
-    rw [hi, reflectionPerm_self_mem_negRoots_iff_mem_posRoots]
+  · rw [eq_reflectionPerm_slTwoRootIndex (i := i) rfl,
+      reflectionPerm_self_mem_negRoots_iff_mem_posRoots]
     exact (mem_posRoots _ _ _).mpr
       (RootPairing.Base.isPos_of_mem_support slTwoRootIndex_mem_support)
   · rw [slFinTwoBasis_one]
@@ -169,6 +174,7 @@ theorem cartanProjection_slTwoOmega :
     hone, hι, cartanProjection_ι_coe_mul, ← hι, hone, smul_zero, add_zero]
 
 /-- **The Harish-Chandra projection of `Ω`** is `h² + 2h`. -/
+@[simp]
 theorem hcProjection_slTwoOmegaCenter :
     hcProjection (slTwoPositiveBase K) (slTwoOmegaCenter K) =
       SymmetricAlgebra.ι K _ (slTwoCartanGenerator K) ^ 2 +
@@ -177,31 +183,13 @@ theorem hcProjection_slTwoOmegaCenter :
     map_smul, UniversalEnvelopingAlgebra.symmetricAlgebraEquiv_symm_ι, sq]
 
 /-- **The central character of `Ω`**: in the coordinate `t = λ(h)` it is `t² + 2t`. -/
+@[simp]
 theorem vermaCentralCharacter_slTwoOmegaCenter
     (lam : Module.Dual K (slTwoDiagonalCartan K)) :
     vermaCentralCharacter (slTwoPositiveBase K) lam (slTwoOmegaCenter K) =
       lam (slTwoCartanGenerator K) ^ 2 + 2 * lam (slTwoCartanGenerator K) := by
   rw [← lift_hcProjection, hcProjection_slTwoOmegaCenter]
   simp
-
-/-- The weight of the diagonal Cartan taking the value `t` at `h`. -/
-noncomputable def slTwoWeight (t : K) : Module.Dual K (slTwoDiagonalCartan K) :=
-  ((2 : K)⁻¹ * t) • (slTwoRoot K).toLinear
-
-/-- The defining property of `slTwoWeight`. -/
-@[simp]
-theorem slTwoWeight_slTwoCartanGenerator (t : K) :
-    slTwoWeight t (slTwoCartanGenerator K) = t := by
-  simp only [slTwoWeight, LinearMap.smul_apply, Weight.toLinear_apply,
-    slTwoRoot_slTwoCartanGenerator, smul_eq_mul]
-  field_simp
-
-omit [CharZero K] in
-/-- A linear form on the diagonal Cartan is determined by its value at `h`. -/
-theorem dual_ext_slTwoCartanGenerator {lam mu : Module.Dual K (slTwoDiagonalCartan K)}
-    (h : lam (slTwoCartanGenerator K) = mu (slTwoCartanGenerator K)) : lam = mu :=
-  LinearMap.ext fun x ↦ by
-    rw [eq_smul_slTwoCartanGenerator x, map_smul, map_smul, h]
 
 /-- The value of a linear form at `h` is its pairing with the coroot of the simple root. -/
 theorem coroot'_slTwoRootIndex (lam : Module.Dual K (slTwoDiagonalCartan K)) :
@@ -211,6 +199,7 @@ theorem coroot'_slTwoRootIndex (lam : Module.Dual K (slTwoDiagonalCartan K)) :
     coroot_slTwoRoot]
 
 /-- The value of the Weyl vector at `h` is `1`. -/
+@[simp]
 theorem weylVector_slTwoCartanGenerator :
     weylVector (IsKilling.rootSystem (slTwoDiagonalCartan K)) (slTwoPositiveBase K)
       (slTwoCartanGenerator K) = 1 := by
@@ -224,6 +213,7 @@ theorem vermaCentralCharacter_slTwoWeight_natCast (n : ℕ) :
   ring
 
 /-- The linear Harish-Chandra projection of `Ω` is `h² - 1`. -/
+@[simp]
 theorem hcProjectionLinear_slTwoOmegaCenter :
     hcProjectionLinear (slTwoPositiveBase K) (slTwoOmegaCenter K) =
       SymmetricAlgebra.ι K _ (slTwoCartanGenerator K) ^ 2 - 1 := by
@@ -275,25 +265,6 @@ local notation "ι" => _root_.UniversalEnvelopingAlgebra.ι K
 
 open Polynomial
 
-/-- A polynomial invariant under `t ↦ -t - 2` is a polynomial in `t² + 2t`. -/
-private theorem exists_eq_comp_of_comp_neg_sub_two_eq {q : K[X]}
-    (hq : q.comp (-X - 2) = q) : ∃ r : K[X], q = r.comp (X ^ 2 + 2 * X) := by
-  have hq₁ : (q.comp (X - 1)).comp (-X) = q.comp (X - 1) := by
-    conv_rhs => rw [← hq]
-    rw [comp_assoc, comp_assoc]
-    congr 1
-    simp only [sub_comp, X_comp, one_comp, neg_comp, ofNat_comp]
-    ring
-  obtain ⟨r, hr⟩ := exists_eq_comp_X_sq_of_comp_neg_X_eq hq₁
-  refine ⟨r.comp (X + 1), ?_⟩
-  have hcomp := congrArg (·.comp (X + 1)) hr
-  simp only [comp_assoc, sub_comp, X_comp, one_comp, pow_comp] at hcomp
-  rw [show ((X : K[X]) + 1 - 1) = X by ring, comp_X] at hcomp
-  rw [hcomp, comp_assoc]
-  congr 1
-  simp only [add_comp, X_comp, one_comp]
-  ring
-
 /-- `p(Ω) = 0` forces `p = 0`, since `Ω` takes infinitely many values under central characters. -/
 private theorem aeval_slTwoOmegaCenter_injective :
     Function.Injective (aeval (R := K) (slTwoOmegaCenter K)) := by
@@ -344,7 +315,7 @@ private theorem exists_hcProjection_eq_aeval
     rw [heval, heval, dotAction_ofIdx_slTwoCartanGenerator,
       slTwoWeight_slTwoCartanGenerator] at this
     simpa [eval_comp] using this
-  obtain ⟨r, rfl⟩ := exists_eq_comp_of_comp_neg_sub_two_eq hinv
+  obtain ⟨r, rfl⟩ := exists_eq_comp_X_sq_add_two_mul_X_of_comp_neg_X_sub_two_eq hinv
   refine ⟨r, ?_⟩
   rw [← hq, aeval_comp, hcProjection_slTwoOmegaCenter]
   simp [two_smul, sq, two_mul]
