@@ -60,6 +60,7 @@ def proj (i : ι) : (∀ i, L i) →ₗ⁅R⁆ L i where
 @[simp]
 theorem proj_apply (i : ι) (x : ∀ i, L i) : proj (R := R) i x = x i := (rfl)
 
+variable (R L) in
 /-- Inclusion of a factor into a product of Lie algebras. -/
 def single [DecidableEq ι] (i : ι) : L i →ₗ⁅R⁆ (∀ i, L i) where
   toLinearMap := LinearMap.single R L i
@@ -72,6 +73,6 @@ def single [DecidableEq ι] (i : ι) : L i →ₗ⁅R⁆ (∀ i, L i) where
 
 @[simp]
 theorem single_apply [DecidableEq ι] (i : ι) (x : L i) :
-    single (R := R) i x = Pi.single i x := (rfl)
+    single R L i x = Pi.single i x := (rfl)
 
 end LieHom

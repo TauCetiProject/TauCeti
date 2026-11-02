@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.InvariantForm.Basic
 public import TauCeti.Algebra.Lie.Pi
-public import Mathlib.Algebra.Lie.Solvable
+public import TauCeti.Algebra.Lie.BaseChange.Perfect
 
 /-!
 # Invariant forms on finite products of perfect Lie algebras
@@ -44,31 +44,28 @@ theorem apply_pi_single_eq_zero (hΦ : Φ.lieInvariant (∀ i, L i)) {i j : ι}
     Φ (Pi.single i x) (Pi.single j y) = 0 := by
   let f : L i →ₗ[R] R := (Φ.compl₁₂ (LinearMap.single R L i)
     (LinearMap.single R L j)).flip y
-  have hspan : Submodule.span R {⁅a, b⁆ | (a : L i) (b : L i)} = ⊤ := by
-    rw [← coe_derivedSeries_one_eq, hi]
-    rfl
   have hf : Submodule.span R {⁅a, b⁆ | (a : L i) (b : L i)} ≤ f.ker := by
     refine Submodule.span_le.mpr ?_
     rintro _ ⟨a, b, rfl⟩
     have h := hΦ (Pi.single i a) (Pi.single i b) (Pi.single j y)
     rw [LieAlgebra.Pi.lie_single_single_of_ne hij, map_zero, neg_zero] at h
-    have hs := (LieHom.single (R := R) (L := L) i).map_lie a b
+    have hs := (LieHom.single R L i).map_lie a b
     simp only [LieHom.single_apply] at hs
     simpa [f, hs] using h
-  exact hf (hspan ▸ Submodule.mem_top)
+  exact hf (TauCeti.LieAlgebra.mem_span_lie_of_derivedSeries_one_eq_top hi x)
 
 end LinearMap.BilinForm.lieInvariant
 
 namespace TauCeti.LieModule
 
-variable {ι R : Type*} {L : ι → Type*} [CommRing R] [DecidableEq ι]
+variable {ι R : Type*} {L : ι → Type*} [CommRing R]
   [∀ i, LieRing (L i)] [∀ i, LieAlgebra R (L i)]
 
 /-- Restrict an invariant symmetric form on a product to a single factor. -/
-def invariantFormsPiRestrict (i : ι) :
+def invariantFormsPiRestrict [DecidableEq ι] (i : ι) :
     invariantForms R (∀ i, L i) (∀ i, L i) →ₗ[R] invariantForms R (L i) (L i) where
   toFun Φ := by
-    let s := LieHom.single (R := R) (L := L) i
+    let s := LieHom.single R L i
     refine ⟨(Φ : LinearMap.BilinForm R _).compl₁₂ s.toLinearMap s.toLinearMap,
       mem_invariantForms_iff.mpr ⟨?_, ?_⟩⟩
     · intro x y z
@@ -79,7 +76,7 @@ def invariantFormsPiRestrict (i : ι) :
   map_smul' r Φ := by ext x y; rfl
 
 @[simp]
-theorem invariantFormsPiRestrict_apply (i : ι)
+theorem invariantFormsPiRestrict_apply [DecidableEq ι] (i : ι)
     (Φ : invariantForms R (∀ i, L i) (∀ i, L i)) (x y : L i) :
     (invariantFormsPiRestrict i Φ : LinearMap.BilinForm R (L i)) x y =
       (Φ : LinearMap.BilinForm R _) (Pi.single i x) (Pi.single i y) := by
@@ -111,6 +108,8 @@ theorem invariantFormsPiSum_apply (Φ : ∀ i, invariantForms R (L i) (L i))
       ∑ i, (Φ i : LinearMap.BilinForm R (L i)) (x i) (y i) := by
   simp [invariantFormsPiSum]
 
+variable [DecidableEq ι]
+
 /-- Restriction to a factor recovers the corresponding summand. -/
 @[simp]
 theorem invariantFormsPiRestrict_sum (Φ : ∀ i, invariantForms R (L i) (L i)) (i : ι) :
@@ -134,6 +133,7 @@ theorem invariantForms_apply_eq_sum
     (mem_invariantForms_iff.mp Φ.2).1.apply_pi_single_eq_zero (hL j) hji _ _
 
 /-- Summing the restrictions reconstructs a form on a finite product of perfect Lie algebras. -/
+-- State perfectness in bracket form because it is the simp normal form of `derivedSeries` at one.
 @[simp]
 theorem invariantFormsPiSum_restrict
     (hL : ∀ i, ⁅(⊤ : LieIdeal R (L i)), (⊤ : LieIdeal R (L i))⁆ = ⊤)
@@ -143,7 +143,9 @@ theorem invariantFormsPiSum_restrict
   apply LinearMap.ext₂
   intro x y
   simpa only [invariantFormsPiSum_apply, invariantFormsPiRestrict_apply] using
-    (invariantForms_apply_eq_sum hL Φ x y).symm
+    (invariantForms_apply_eq_sum (fun i ↦ by
+      simpa only [derivedSeries_def, derivedSeriesOfIdeal_succ, derivedSeriesOfIdeal_zero]
+        using hL i) Φ x y).symm
 
 /-- Invariant symmetric forms on a finite product of perfect Lie algebras are exactly families
 of invariant symmetric forms on its factors. The inverse sums coordinate pullbacks. -/
@@ -160,7 +162,9 @@ def invariantFormsPiEquiv (hL : ∀ i, derivedSeries R (L i) 1 = ⊤) :
     (by
       apply LinearMap.ext
       intro Φ
-      exact invariantFormsPiSum_restrict hL Φ)
+      exact invariantFormsPiSum_restrict (fun i ↦ by
+        simpa only [derivedSeries_def, derivedSeriesOfIdeal_succ, derivedSeriesOfIdeal_zero]
+          using hL i) Φ)
 
 @[simp]
 theorem invariantFormsPiEquiv_apply (hL : ∀ i, derivedSeries R (L i) 1 = ⊤)
