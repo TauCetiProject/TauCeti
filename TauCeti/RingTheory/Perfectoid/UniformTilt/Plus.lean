@@ -39,6 +39,8 @@ one; for `I = (p)` the target is Mathlib's `PreTilt B⁺ p = Perfection (ModP B�
 ## Main results
 
 * `TauCeti.Perfectoid.uniformTilt.mem_plusSubring_iff_coeff_zero`: `x ∈ B♭⁺` iff `x⁽⁰⁾ ∈ B⁺`.
+* `TauCeti.Perfectoid.uniformTilt.coeff_add_sub_mem_span`: `(x + y)⁽ⁿ⁾ - x⁽ⁿ⁾ - y⁽ⁿ⁾ ∈ p B⁺` on
+  `B♭⁺`.
 * `TauCeti.Perfectoid.uniformTilt.plusSharp_add_sub_mem`: `(x + y)♯ - x♯ - y♯ ∈ p B⁺`.
 * `TauCeti.Perfectoid.uniformTilt.coeff_plusEquiv`: `plusEquiv` reduces every coordinate modulo `I`.
 * `TauCeti.Perfectoid.uniformTilt.coeff_zero_plusEquiv_symm`: the zeroth coordinate of the inverse
@@ -153,17 +155,27 @@ theorem coe_plusSharp (h : IsRingOfIntegralElements Bplus) (x : plusSubring p h)
     (plusSharp p h x : B) = coeff p B 0 x :=
   (rfl)
 
-/-- **The sharp map is additive modulo `p`**: `(x + y)♯ - x♯ - y♯ ∈ p B⁺` for `x, y ∈ B♭⁺`. -/
-theorem plusSharp_add_sub_mem (h : IsRingOfIntegralElements Bplus) (x y : plusSubring p h) :
-    plusSharp p h (x + y) - plusSharp p h x - plusSharp p h y ∈
+/-- The coordinates of the integral tilt are additive modulo `p`:
+`(x + y)⁽ⁿ⁾ - x⁽ⁿ⁾ - y⁽ⁿ⁾ ∈ p B⁺` for `x, y ∈ B♭⁺`. -/
+theorem coeff_add_sub_mem_span (h : IsRingOfIntegralElements Bplus) (x y : plusSubring p h)
+    (n : ℕ) :
+    (⟨coeff p B n (x + y), mem_plusSubring_iff.mp (x + y).2 n⟩ -
+        ⟨coeff p B n x, mem_plusSubring_iff.mp x.2 n⟩ -
+        ⟨coeff p B n y, mem_plusSubring_iff.mp y.2 n⟩ : Bplus) ∈
       Ideal.span {(p : Bplus)} := by
   obtain ⟨z, hz, he⟩ := Set.mem_smul_set.mp <| coeff_add_sub_mem_of_forall_mem
     (Bplus.toAddSubgroup.isClosed_of_isOpen h.isOpen) h.le_powerBoundedSubring
-    (mem_plusSubring_iff.mp x.2) (mem_plusSubring_iff.mp y.2) 0
+    (mem_plusSubring_iff.mp x.2) (mem_plusSubring_iff.mp y.2) n
   refine Ideal.mem_span_singleton'.mpr ⟨⟨z, hz⟩, Subtype.ext ?_⟩
   rw [smul_eq_mul, ← Subring.coe_add] at he
-  simp only [Subring.coe_mul, AddSubgroupClass.coe_sub, Subring.coe_natCast, coe_plusSharp]
+  simp only [Subring.coe_mul, AddSubgroupClass.coe_sub, Subring.coe_natCast]
   linear_combination he
+
+/-- **The sharp map is additive modulo `p`**: `(x + y)♯ - x♯ - y♯ ∈ p B⁺` for `x, y ∈ B♭⁺`. -/
+theorem plusSharp_add_sub_mem (h : IsRingOfIntegralElements Bplus) (x y : plusSubring p h) :
+    plusSharp p h (x + y) - plusSharp p h x - plusSharp p h y ∈
+      Ideal.span {(p : Bplus)} :=
+  coeff_add_sub_mem_span h x y 0
 
 /-- The integral tilt is multiplicatively the perfection of the monoid `B⁺`. -/
 private noncomputable def plusMulEquiv (h : IsRingOfIntegralElements Bplus) :
@@ -200,20 +212,10 @@ noncomputable def plusEquiv : plusSubring p h ≃+* Perfection (Bplus ⧸ I) p :
       refine Perfection.ext fun n ↦ ?_
       simp only [MulEquiv.toEquiv_eq_coe, Equiv.toFun_as_coe, EquivLike.coe_coe,
         MulEquiv.trans_apply, Perfection.coeff_quotientMulEquiv, map_add]
-      rw [← map_add, Ideal.Quotient.eq]
+      rw [← map_add, Ideal.Quotient.eq, ← sub_sub]
       -- the coordinates of `x + y` and of `x`, `y` differ by an element of `p • B⁺ ⊆ I`
-      obtain ⟨z, hz, he⟩ := Set.mem_smul_set.mp <| coeff_add_sub_mem_of_forall_mem
-        (Bplus.toAddSubgroup.isClosed_of_isOpen h.isOpen) h.le_powerBoundedSubring
-        (mem_plusSubring_iff.mp x.2) (mem_plusSubring_iff.mp y.2) n
-      rw [smul_eq_mul] at he
-      have he' : Perfection.coeffMonoidHom Bplus p n (plusMulEquiv h (x + y)) -
-          (Perfection.coeffMonoidHom Bplus p n (plusMulEquiv h x) +
-            Perfection.coeffMonoidHom Bplus p n (plusMulEquiv h y)) = (p : Bplus) * ⟨z, hz⟩ :=
-        Subtype.ext <| by
-          push_cast [coeffMonoidHom_plusMulEquiv]
-          linear_combination -he
-      rw [he']
-      exact I.mul_mem_right _ (I.natCast_mem_of_charP_quotient p) }
+      exact (Ideal.span_singleton_le_iff_mem I).mpr (I.natCast_mem_of_charP_quotient p)
+        (coeff_add_sub_mem_span h x y n) }
 
 private theorem plusEquiv_symm_apply (y : Perfection (Bplus ⧸ I) p) :
     (plusEquiv h I).symm y = (plusMulEquiv h).symm ((Perfection.quotientMulEquiv p I).symm y) :=

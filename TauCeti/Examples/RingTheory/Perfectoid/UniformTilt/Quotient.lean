@@ -68,11 +68,11 @@ noncomputable example :
     uniformTilt.plusSubring p (isRingOfIntegralElements_powerBoundedSubring ℂ_[p]) ⧸
         Ideal.span {rootTilt ϖ 0} ≃+*
       powerBoundedSubring ℂ_[p] ⧸ Ideal.span {ϖ.rootPB 0} :=
-  (uniformTilt.sharpQuotEquiv (isUnit_coeff_zero_rootTilt ϖ)
-    (plusSharp_rootTilt_zero_dvd ϖ)).trans (Ideal.quotEquivOfEq (by rw [plusSharp_rootTilt]))
+  (uniformTilt.sharpQuotEquiv _ (isUnit_coeff_zero_rootTilt ϖ) (plusSharp_rootTilt_zero_dvd ϖ)
+    (uniformTilt.sharpQuot_surjective _ _)).trans (Ideal.quotEquivOfEq (by rw [plusSharp_rootTilt]))
 
 /-- `ϖ ^ (1 / p)` is not divisible by `ϖ` in `ℂ_p°`: `‖ϖ‖ = ‖ϖ ^ (1 / p)‖ ^ p < ‖ϖ ^ (1 / p)‖`. -/
-theorem rootPB_one_not_mem_span_rootPB_zero : ϖ.rootPB 1 ∉ Ideal.span {ϖ.rootPB 0} := by
+theorem rootPB_one_notMem_span_rootPB_zero : ϖ.rootPB 1 ∉ Ideal.span {ϖ.rootPB 0} := by
   rw [Ideal.mem_span_singleton]
   rintro ⟨c, hc⟩
   have hc' : ϖ.root 1 = ϖ.root 1 ^ p * (c : ℂ_[p]) := by
@@ -88,18 +88,18 @@ theorem rootPB_one_not_mem_span_rootPB_zero : ϖ.rootPB 1 ∉ Ideal.span {ϖ.roo
 
 /-- The isomorphism sends the class of `ϖ♭ ^ (1 / p)` to the class of `ϖ ^ (1 / p)`. -/
 theorem sharpQuotEquiv_mk_rootTilt_one :
-    uniformTilt.sharpQuotEquiv (isUnit_coeff_zero_rootTilt ϖ) (plusSharp_rootTilt_zero_dvd ϖ)
-        (Ideal.Quotient.mk _ (rootTilt ϖ 1)) =
+    uniformTilt.sharpQuotEquiv _ (isUnit_coeff_zero_rootTilt ϖ) (plusSharp_rootTilt_zero_dvd ϖ)
+        (uniformTilt.sharpQuot_surjective _ _) (Ideal.Quotient.mk _ (rootTilt ϖ 1)) =
       Ideal.Quotient.mk _ (ϖ.rootPB 1) := by
   rw [uniformTilt.sharpQuotEquiv_mk, plusSharp_rootTilt, plusSharp_rootTilt]
 
 /-- `ϖ♭ ^ (1 / p)` does not lie in the ideal `(ϖ♭)` of `ℂ_p♭°`. -/
-theorem rootTilt_one_not_mem_span_rootTilt_zero :
+theorem rootTilt_one_notMem_span_rootTilt_zero :
     rootTilt ϖ 1 ∉ Ideal.span {rootTilt ϖ 0} := by
   rw [← Ideal.Quotient.eq_zero_iff_mem,
-    ← (uniformTilt.sharpQuotEquiv (isUnit_coeff_zero_rootTilt ϖ)
-      (plusSharp_rootTilt_zero_dvd ϖ)).map_eq_zero_iff, sharpQuotEquiv_mk_rootTilt_one,
-    Ideal.Quotient.eq_zero_iff_mem, plusSharp_rootTilt]
-  exact rootPB_one_not_mem_span_rootPB_zero ϖ
+    ← (uniformTilt.sharpQuotEquiv _ (isUnit_coeff_zero_rootTilt ϖ)
+      (plusSharp_rootTilt_zero_dvd ϖ) (uniformTilt.sharpQuot_surjective _ _)).map_eq_zero_iff,
+    sharpQuotEquiv_mk_rootTilt_one, Ideal.Quotient.eq_zero_iff_mem, plusSharp_rootTilt]
+  exact rootPB_one_notMem_span_rootPB_zero ϖ
 
 end TauCeti.Examples.UniformTiltQuotient
