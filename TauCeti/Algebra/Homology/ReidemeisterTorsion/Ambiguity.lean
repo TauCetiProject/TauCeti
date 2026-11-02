@@ -88,19 +88,6 @@ def mk : A →* TorsionClass m := (torsionCon m).mk'
 /-- Every torsion class has a scalar representative. -/
 theorem mk_surjective : Function.Surjective (mk m) := Con.mk'_surjective
 
-/-- To prove a property of torsion classes, it suffices to prove it on scalar representatives. -/
-@[elab_as_elim]
-theorem induction_on {P : TorsionClass m → Prop} (a : TorsionClass m)
-    (h : ∀ a, P (mk m a)) : P a := by
-  obtain ⟨a, rfl⟩ := mk_surjective m a
-  exact h a
-
-/-- Multiplicative maps out of torsion classes are determined on scalar representatives. -/
-@[ext]
-theorem hom_ext {M : Type*} [Monoid M] {f g : TorsionClass m →* M}
-    (h : ∀ a, f (mk m a) = g (mk m a)) : f = g :=
-  MonoidHom.ext ((mk_surjective m).forall.2 h)
-
 /-- Two representatives agree exactly when a unit in the ambiguity subgroup relates them. -/
 theorem mk_eq_mk_iff_exists_unit {a b : A} : mk m a = mk m b ↔
     ∃ u ∈ signedMonomialSubgroup m, a = (u : A) * b := by
