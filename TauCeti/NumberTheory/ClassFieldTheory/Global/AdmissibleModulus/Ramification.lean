@@ -55,9 +55,9 @@ outside the real places of `𝔪` are unramified. The finite components of a con
 for `𝔪` are units, so their local Artin symbols vanish at the unramified finite places
 (`localArtinAt_eq_one_of_normalizedValuation_eq_one`). Its components at the real places of `𝔪`
 are positive, and the places above the other infinite places are unramified, so its archimedean
-local Artin symbols vanish too. By the local–global character formula
-(`apply_globalArtinMap_eq_finsum`) the global Artin symbol of the class of `x` vanishes, that is,
-the class is a norm. In particular, for `L/K` abelian, the trivial modulus is admissible exactly
+local Artin symbols vanish too. By the local–global character formula, the global Artin symbol
+of the class of `x` vanishes (`globalArtinMap_eq_zero_of_forall_eq_one`), that is, the class is a
+norm. In particular, for `L/K` abelian, the trivial modulus is admissible exactly
 when `L/K` is unramified at every finite prime and at every infinite place
 (`isAdmissibleModulus_one_iff`), and the modulus `narrowModulus K` carrying every real place is
 admissible exactly when `L/K` is unramified at every finite prime
@@ -240,12 +240,7 @@ theorem isAdmissibleModulus_of_isUnramifiedAt [IsGalois K L]
       exact infiniteLocalArtinAt_eq_one_of_isUnramified _ w (hinf _ hv w) _
   -- By the local–global character formula, the global Artin symbol of the class of `x` vanishes.
   rw [QuotientGroup.mk'_apply, ← globalArtinMap_eq_zero_iff K L IsSepClosed.lift]
-  refine CharacterModule.eq_zero_of_character_apply fun χ ↦ ?_
-  let χ' : Additive (Abelianization Gal(L/K)) →+ AddCircle (1 : ℚ) := χ
-  have h := apply_globalArtinMap_eq_finsum K L IsSepClosed.lift χ' x
-  simp only [hfin', hinf', ofMul_one, map_zero, finsum_zero, Finset.sum_const_zero,
-    add_zero] at h
-  exact h
+  exact globalArtinMap_eq_zero_of_forall_eq_one K L _ hfin' hinf'
 
 /-- **The trivial modulus is admissible exactly for unramified extensions.** For an abelian
 extension `L/K` of number fields, the trivial modulus is admissible for `L/K` exactly when `L/K`
