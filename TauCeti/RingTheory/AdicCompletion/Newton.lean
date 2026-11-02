@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import TauCeti.Algebra.Polynomial.Identities
 public import TauCeti.LinearAlgebra.Matrix.Divisibility
-public import TauCeti.LinearAlgebra.Matrix.Nonsingular
+public import TauCeti.LinearAlgebra.Matrix.Nonsingular.Basic
 public import TauCeti.RingTheory.AdicCompletion.Pi
 
 /-!
