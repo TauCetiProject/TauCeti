@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
+public import Mathlib.Algebra.Ring.Defs
+public import Mathlib.Data.Finset.NoncommProd
 public import Mathlib.Data.Finset.Powerset
+public import TauCeti.Algebra.GroupWithZero.Indicator
 
 /-!
 # Splitting sums over the subsets of a finite set
@@ -21,14 +24,22 @@ A product over the `n + 1`-element subsets of `insert a s`, with `a ∉ s`, spli
 product over the `n + 1`-element subsets of `s` and the product over the sets `insert a t` with `t`
 an `n`-element subset of `s`. This is the inductive step for elementary symmetric sums.
 
+For a family commuting pairwise only on `s`, a sum of noncommutative products over the
+`n`-element subsets of `u ⊆ s` can be rewritten with the family extended by zero outside `s`,
+which commutes pairwise everywhere.
+
 ## Main results
 
 * `TauCeti.sum_powerset_eq_add_sum_singleton_add_sum_filter_add`: the four-part splitting.
 * `Finset.prod_powersetCard_succ_insert`, `Finset.sum_powersetCard_succ_insert`: splitting over
   the `n + 1`-element subsets of `insert a s`.
+* `Finset.sum_noncommProd_powersetCard_eq_indicator`: sums of noncommutative products over
+  `n`-element subsets, rewritten with the family extended by zero.
 -/
 
 public section
+
+open scoped Function
 
 namespace Finset
 
@@ -48,6 +59,18 @@ theorem prod_powersetCard_succ_insert [DecidableEq α] {s : Finset α} {a : α} 
   · exact insert_erase_invOn.2.injOn.mono fun t ht ↦
       notMem_mono (mem_powersetCard.1 ht).1 ha
   · aesop (add simp [disjoint_left, insert_subset_iff, mem_powersetCard])
+
+/-- For `u ⊆ s` and a family commuting pairwise on `s`, the sum of the products over the
+`n`-element subsets of `u` is the corresponding sum for the family extended by zero outside `s`. -/
+theorem sum_noncommProd_powersetCard_eq_indicator {ι R : Type*} [Semiring R] {s u : Finset ι}
+    (hu : u ⊆ s) (x : ι → R) (hc : (s : Set ι).Pairwise (Commute on x)) (n : ℕ) :
+    ∑ t : u.powersetCard n,
+        t.1.noncommProd x (hc.mono (coe_subset.2 ((mem_powersetCard.1 t.2).1.trans hu))) =
+      ∑ t ∈ u.powersetCard n,
+        t.noncommProd ((s : Set ι).indicator x) (hc.pairwise_commute_indicator.set_pairwise _) := by
+  rw [← sum_coe_sort (u.powersetCard n)]
+  exact sum_congr rfl fun (t : u.powersetCard n) _ ↦ noncommProd_congr rfl (fun i hi ↦
+    (Set.indicator_of_mem (mem_coe.2 ((mem_powersetCard.1 t.2).1.trans hu hi)) x).symm) _
 
 end Finset
 
