@@ -48,7 +48,8 @@ products, by `MvPolynomial.iInf_support_weight_mul`.
 * `MvPolynomial.mem_formIdeal_iff_le_formIndex`: the supremum defining the index is attained.
 * `MvPolynomial.formIndex_prod_pow`: the index of `∏ h, M h (X h) ^ j h` is `∑ h, j h / d h`.
 * `MvPolynomial.formIndex_eq_top_iff`, `MvPolynomial.min_formIndex_le_add`,
-  `MvPolynomial.formIndex_mul`, `MvPolynomial.formIndex_smul`: the index is a valuation.
+  `MvPolynomial.formIndex_mul`, `MvPolynomial.formIndex_pow`, `MvPolynomial.formIndex_smul`: the
+  index is a valuation.
 
 ## References
 
@@ -120,6 +121,7 @@ theorem substFormInv_X_of_ne {h : κ} {i : ι} (hi : i ≠ i₀ h) :
   simp [substFormInv, hi]
 
 /-- `substForm M i₀` undoes `substFormInv M i₀`. -/
+@[simp]
 theorem substForm_substFormInv (hM : ∀ h, M h (i₀ h) ≠ 0) (P : MvPolynomial (κ × ι) K) :
     substForm M i₀ (substFormInv M i₀ P) = P := by
   suffices (substForm M i₀).comp (substFormInv M i₀) = AlgHom.id K _ from
@@ -135,6 +137,7 @@ theorem substForm_substFormInv (hM : ∀ h, M h (i₀ h) ≠ 0) (P : MvPolynomia
   · simp [hi]
 
 /-- `substFormInv M i₀` undoes `substForm M i₀`. -/
+@[simp]
 theorem substFormInv_substForm (hM : ∀ h, M h (i₀ h) ≠ 0) (P : MvPolynomial (κ × ι) K) :
     substFormInv M i₀ (substForm M i₀ P) = P := by
   suffices (substFormInv M i₀).comp (substForm M i₀) = AlgHom.id K _ from
@@ -147,6 +150,11 @@ theorem substFormInv_substForm (hM : ∀ h, M h (i₀ h) ≠ 0) (P : MvPolynomia
       AlgHom.id_apply, sum_erase_C_mul_map_X fun i hi ↦ substFormInv_X_of_ne hi]
     simp [← mul_assoc, ← C_mul, hM h]
   · simp [hi]
+
+/-- `substFormInv M i₀` turns the form `M h (X h)` into the variable `X (h, i₀ h)`. -/
+theorem substFormInv_sum_C_mul_X (hM : ∀ h, M h (i₀ h) ≠ 0) (h : κ) :
+    substFormInv M i₀ (∑ i, C (M h i) * X (h, i)) = X (h, i₀ h) := by
+  rw [← substForm_X_self, substFormInv_substForm hM]
 
 end Substitution
 
@@ -168,6 +176,17 @@ noncomputable def formIndex (d : κ → ℕ) (M : κ → ι → R) (P : MvPolyno
   ⨆ (t : ℝ≥0∞) (_ : P ∈ formIdeal t d M), t
 
 variable {t : ℝ≥0∞} {d : κ → ℕ} {M : κ → ι → R} {P Q : MvPolynomial (κ × ι) R}
+
+/-- The defining generators of `formIdeal t d M`. -/
+theorem formIdeal_def (t : ℝ≥0∞) (d : κ → ℕ) (M : κ → ι → R) :
+    formIdeal t d M = Ideal.span ((fun j : κ → ℕ ↦ ∏ h, (∑ i, C (M h i) * X (h, i)) ^ j h) ''
+      {j | t ≤ ∑ h, (j h : ℝ≥0∞) / d h}) :=
+  (rfl)
+
+/-- The defining supremum of `formIndex d M P`. -/
+theorem formIndex_def (d : κ → ℕ) (M : κ → ι → R) (P : MvPolynomial (κ × ι) R) :
+    formIndex d M P = ⨆ (t : ℝ≥0∞) (_ : P ∈ formIdeal t d M), t :=
+  (rfl)
 
 /-- A product of powers of the forms lies in the ideal of every `t ≤ ∑ h, j h / d h`. -/
 theorem prod_pow_mem_formIdeal {j : κ → ℕ} (hj : t ≤ ∑ h, (j h : ℝ≥0∞) / d h) :
@@ -313,7 +332,13 @@ theorem formIndex_prod_pow (hM : ∀ h, M h ≠ 0) (j : κ → ℕ) :
     substFormInv_substForm hi₀]
   simp [support_monomial, blockExp_apply]
 
+/-- The constant `1` has index `0` along nonzero forms. -/
+@[simp]
+theorem formIndex_one (hM : ∀ h, M h ≠ 0) : formIndex d M (1 : MvPolynomial (κ × ι) K) = 0 := by
+  simpa using formIndex_prod_pow (d := d) hM 0
+
 /-- With positive degrees, only `0` has infinite index. -/
+@[simp]
 theorem formIndex_eq_top_iff (hM : ∀ h, M h ≠ 0) (hd : ∀ h, d h ≠ 0)
     {P : MvPolynomial (κ × ι) K} : formIndex d M P = ⊤ ↔ P = 0 := by
   classical
@@ -334,6 +359,13 @@ theorem formIndex_mul (hM : ∀ h, M h ≠ 0) (P Q : MvPolynomial (κ × ι) K) 
   choose i₀ hi₀ using fun h ↦ Function.ne_iff.mp (hM h)
   simp only [formIndex_eq_iInf hi₀, map_mul, ← Finsupp.weight_ite_inv_natCast_eq_sum_div]
   exact iInf_support_weight_mul _ _ _
+
+/-- The index of `P ^ n` along nonzero forms is `n` times the index of `P`. -/
+theorem formIndex_pow (hM : ∀ h, M h ≠ 0) (P : MvPolynomial (κ × ι) K) (n : ℕ) :
+    formIndex d M (P ^ n) = n • formIndex d M P := by
+  induction n with
+  | zero => simp [formIndex_one hM]
+  | succ n ih => rw [pow_succ, formIndex_mul hM, ih, succ_nsmul]
 
 end Field
 
