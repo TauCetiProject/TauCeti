@@ -71,10 +71,9 @@ theorem isQuotientCoveringMap_mk [ContinuousMul (CliffordAlgebra Q)] :
 @[fun_prop]
 theorem continuous_det : Continuous (det Q hQ) := by
   apply (QuotientGroup.isQuotientMap_mk (spinCKernel Q hQ)).continuous_iff.mpr
-  convert (continuous_snd.pow 2 : Continuous (fun p : spinGroup Q × Circle ↦ p.2 ^ 2)) using 1
-  funext p
-  rw [Function.comp_apply, ← mk_apply, det_mk]
-  rfl
+  simp only [Function.comp_def, ← mk_apply, det_mk]
+  -- Function powers are pointwise, so this is the square of the second projection.
+  exact continuous_snd.pow 2
 
 section Coordinates
 
