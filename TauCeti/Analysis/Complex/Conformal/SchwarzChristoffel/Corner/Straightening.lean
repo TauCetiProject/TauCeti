@@ -102,9 +102,8 @@ theorem exists_corner_power_of_arg_mem_sector {Ω : Set ℂ} {f : ℂ → ℂ} {
     nlinarith [mul_pos Real.pi_pos (sub_pos.mpr hβ.2)]
   have hrecover {z : ℂ} (hz : z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im}) :
       ((f z - w) ^ ((β⁻¹ : ℝ) : ℂ)) ^ (β : ℂ) = f z - w := by
-    apply cpow_inv_cpow_of_sector hβ.1
-    rw [abs_le]
-    simpa only [mem_Icc, mul_comm β Real.pi] using hsector_closed hz
+    refine cpow_inv_cpow_of_sector hβ.1 (Icc_subset_Ioc ?_ ?_ (hsector_closed hz)) <;>
+      linarith [mul_pos Real.pi_pos hβ.1]
   have hgcont : ContinuousOn g (Ω ∩ {z : ℂ | 0 ≤ z.im}) := by
     intro z hz
     have hbase : 0 ≤ (f z - w).re ∨ (f z - w).im ≠ 0 := by
