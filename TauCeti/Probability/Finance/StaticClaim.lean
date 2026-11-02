@@ -15,19 +15,23 @@ Suppose a self-financing simple stock/bond strategy costs `q` and replicates a t
 of the replicating strategy, and invest the initial surplus `c * (q - p)` in the bond.
 The combined trade costs zero and pays `c * (q - p) * β_T / β_0` at maturity.
 
-`IsSelfFinancing.exists_staticClaim_offset` constructs the stock and bond holdings, preserves
-their measurability at each trading date, and proves both cash-flow identities. All three
-theorems expose the holdings by equations `a' = (-c) • a` and
-`b' = (-c) • b + (fun _ _ => c * (q - p) / B₀)`. The claim is
-held separately until maturity: self-financing refers to the stock/bond part after its initial
-purchase, not to an assumed martingale property of the mispriced claim.
+The stock and bond holdings are explicitly `(-c) • a` and
+`(-c) • b + (fun _ _ => c * (q - p) / B₀)`. Their properties are exposed separately:
+`IsSelfFinancing.staticClaim_offset` proves self-financing,
+`stronglyMeasurable_staticClaim_bond` preserves bond measurability (stock measurability follows
+from `StronglyMeasurable.const_mul`), and `staticClaim_offset_initial_cost` and
+`staticClaim_offset_terminal_payoff` give the cash-flow identities. The claim is held separately
+until maturity: self-financing refers to the stock/bond part after its initial purchase, not to
+an assumed martingale property of the mispriced claim.
 
-`IsSelfFinancing.exists_staticClaim_sure_profit` chooses the profitable sign when both `N` and
-`-N` units of the claim are permitted. For a deterministic positive terminal bond price it
-produces the strictly positive constant payoff `N * |q - p| * β_T / β_0`, almost surely.
+`exists_staticClaim_payoff` chooses the profitable sign when both `N` and `-N` units of the
+claim are permitted. For positive `N`, distinct prices, and positive deterministic initial and
+terminal bond prices, its constant payoff `N * |q - p| * β_T / β_0` is strictly positive.
 One such trade has only that fixed surplus. Unbounded sure profit requires scaling:
-`IsSelfFinancing.exists_staticClaim_profit_gt` assumes explicitly that every positive and
-negative integer claim position is permitted. Stock and bond positions are unrestricted.
+`exists_staticClaim_profit_gt` assumes explicitly that every positive and negative integer
+claim position is permitted. Stock and bond positions are unrestricted. These payoff lemmas
+need only terminal replication; combine them with the separate initial-cost, self-financing,
+and measurability lemmas to obtain the corresponding zero-cost simple trades.
 
 These are cash-flow constructions, not a completeness theorem or a stochastic-integral
 admissibility criterion. No integrability of the claim is needed because its payoff cancels
@@ -48,107 +52,85 @@ open MeasureTheory
 
 namespace TauCeti.Finance
 
-variable {Ω ι : Type*} [Preorder ι] {mΩ : MeasurableSpace Ω} {P : Measure Ω}
-  {ℱ : Filtration ι mΩ} {τ : ℕ → ι} {n : ℕ}
+variable {Ω ι : Type*} {τ : ℕ → ι} {n : ℕ}
   {a b : ℕ → Ω → ℝ} {S β : ι → Ω → ℝ} {H : Ω → ℝ}
   {p q B₀ Bₜ : ℝ}
 
-/-- Offset `c` statically traded claims at price `p` by selling `c` copies of a simple
-replication costing `q`, and invest the surplus in the bond. The resulting stock/bond part is
-self-financing, chosen at the trading dates, costs `-c * p`, and cancels the claim at maturity,
-leaving only the financed surplus. The initial bond price is the nonzero constant `B₀`. -/
-theorem IsSelfFinancing.exists_staticClaim_offset
-    (hsf : IsSelfFinancing τ (n + 1) a b S β)
-    (ha : ∀ j ≤ n, StronglyMeasurable[ℱ (τ j)] (a j))
-    (hb : ∀ j ≤ n, StronglyMeasurable[ℱ (τ j)] (b j))
-    (hB₀ : B₀ ≠ 0) (hβ₀ : ∀ ω, β (τ 0) ω = B₀)
-    (hq : ∀ ω, a 0 ω * S (τ 0) ω + b 0 ω * β (τ 0) ω = q)
-    (hH : ∀ᵐ ω ∂P, a n ω * S (τ (n + 1)) ω + b n ω * β (τ (n + 1)) ω = H ω)
-    (c : ℝ) :
-    ∃ a' b' : ℕ → Ω → ℝ,
-      a' = (-c) • a ∧ b' = (-c) • b + (fun _ _ => c * (q - p) / B₀) ∧
-      IsSelfFinancing τ (n + 1) a' b' S β ∧
-      (∀ j ≤ n, StronglyMeasurable[ℱ (τ j)] (a' j) ∧
-        StronglyMeasurable[ℱ (τ j)] (b' j)) ∧
-      (∀ ω, a' 0 ω * S (τ 0) ω + b' 0 ω * β (τ 0) ω + c * p = 0) ∧
-      ∀ᵐ ω ∂P, a' n ω * S (τ (n + 1)) ω + b' n ω * β (τ (n + 1)) ω + c * H ω =
-        c * (q - p) * β (τ (n + 1)) ω / B₀ := by
-  refine ⟨fun j ω => -c * a j ω, fun j ω => -c * b j ω + c * (q - p) / B₀,
-    rfl, rfl, ?_, ?_, ?_, ?_⟩
-  · rw [isSelfFinancing_iff] at hsf ⊢
-    intro j hj ω
-    linear_combination -c * hsf j hj ω
-  · intro j hj
-    exact ⟨(ha j hj).const_mul _, ((hb j hj).const_mul _).add stronglyMeasurable_const⟩
-  · intro ω
-    have hq' := hq ω
-    rw [hβ₀ ω] at hq' ⊢
-    field_simp
-    linear_combination -c * hq'
-  · filter_upwards [hH] with ω hω
-    linear_combination -c * hω
+/-- Selling `c` copies of a self-financing strategy and adding a constant bond position
+preserves self-financing. The added bond position invests the claim/replication price surplus. -/
+theorem IsSelfFinancing.staticClaim_offset (hsf : IsSelfFinancing τ n a b S β) (c p q B₀ : ℝ) :
+    IsSelfFinancing τ n ((-c) • a)
+      ((-c) • b + (fun _ _ => c * (q - p) / B₀)) S β := by
+  have hconst : IsSelfFinancing τ n 0 (fun _ _ => c * (q - p) / B₀) S β :=
+    isSelfFinancing_const 0 _
+  simpa only [add_zero] using (hsf.smul (-c)).add hconst
 
-/-- If both signs of an `N`-unit claim position are permitted and `p ≠ q`, a zero-cost trade
-against a simple replication yields the strictly positive, constant terminal surplus
-`N * |q - p| * Bₜ / B₀`. The set `A` specifies permitted static claim positions; no constraint
-is imposed on stock or bond positions. The bond prices at the initial and terminal dates are
-the positive deterministic constants `B₀` and, almost surely, `Bₜ`. -/
-theorem IsSelfFinancing.exists_staticClaim_sure_profit
-    (hsf : IsSelfFinancing τ (n + 1) a b S β)
-    (ha : ∀ j ≤ n, StronglyMeasurable[ℱ (τ j)] (a j))
-    (hb : ∀ j ≤ n, StronglyMeasurable[ℱ (τ j)] (b j))
-    (hB₀ : 0 < B₀) (hβ₀ : ∀ ω, β (τ 0) ω = B₀)
-    (hBₜ : 0 < Bₜ) (hβₜ : ∀ᵐ ω ∂P, β (τ (n + 1)) ω = Bₜ)
-    (hq : ∀ ω, a 0 ω * S (τ 0) ω + b 0 ω * β (τ 0) ω = q)
+/-- Scaling the bond holding and adding the financed surplus preserves measurability.
+The stock holding is measurable by `StronglyMeasurable.const_mul`. -/
+theorem stronglyMeasurable_staticClaim_bond {mΩ : MeasurableSpace Ω} {j : ℕ}
+    (hb : StronglyMeasurable (b j)) (c p q B₀ : ℝ) :
+    StronglyMeasurable (fun ω => -c * b j ω + c * (q - p) / B₀) :=
+  (hb.const_mul _).add stronglyMeasurable_const
+
+/-- The static claim and its offsetting stock/bond holdings have zero combined initial cost
+when the replication costs `q` and the initial bond price is the nonzero constant `B₀`. -/
+theorem staticClaim_offset_initial_cost
+    (hB₀ : B₀ ≠ 0) (hβ₀ : ∀ ω, β (τ 0) ω = B₀)
+    (hq : ∀ ω, a 0 ω * S (τ 0) ω + b 0 ω * β (τ 0) ω = q) (c p : ℝ) (ω : Ω) :
+    (-c * a 0 ω) * S (τ 0) ω + (-c * b 0 ω + c * (q - p) / B₀) * β (τ 0) ω +
+      c * p = 0 := by
+  have hq' := hq ω
+  rw [hβ₀ ω] at hq' ⊢
+  field_simp
+  linear_combination -c * hq'
+
+/-- Against an almost-sure replication, the offsetting trade pays only the financed surplus.
+No initial-cost or self-financing assumption is needed for this terminal identity. -/
+theorem staticClaim_offset_terminal_payoff {mΩ : MeasurableSpace Ω} {P : Measure Ω}
     (hH : ∀ᵐ ω ∂P, a n ω * S (τ (n + 1)) ω + b n ω * β (τ (n + 1)) ω = H ω)
-    (hpq : p ≠ q) {A : Set ℝ} {N : ℝ} (hN : 0 < N) (hA : N ∈ A) (hA' : -N ∈ A) :
-    0 < N * |q - p| * Bₜ / B₀ ∧
-    ∃ c ∈ A, ∃ a' b' : ℕ → Ω → ℝ,
-      a' = (-c) • a ∧ b' = (-c) • b + (fun _ _ => c * (q - p) / B₀) ∧
-      IsSelfFinancing τ (n + 1) a' b' S β ∧
-      (∀ j ≤ n, StronglyMeasurable[ℱ (τ j)] (a' j) ∧
-        StronglyMeasurable[ℱ (τ j)] (b' j)) ∧
-      (∀ ω, a' 0 ω * S (τ 0) ω + b' 0 ω * β (τ 0) ω + c * p = 0) ∧
-      ∀ᵐ ω ∂P, a' n ω * S (τ (n + 1)) ω + b' n ω * β (τ (n + 1)) ω + c * H ω =
+    (c p q B₀ : ℝ) :
+    ∀ᵐ ω ∂P, (-c * a n ω) * S (τ (n + 1)) ω +
+      (-c * b n ω + c * (q - p) / B₀) * β (τ (n + 1)) ω + c * H ω =
+        c * (q - p) * β (τ (n + 1)) ω / B₀ := by
+  filter_upwards [hH] with ω hω
+  linear_combination -c * hω
+
+variable {mΩ : MeasurableSpace Ω} {P : Measure Ω}
+
+/-- If both signs of an `N`-unit claim position are permitted, choose the sign that yields
+terminal surplus `N * |q - p| * Bₜ / B₀` almost surely. This is strictly positive when `N`,
+`B₀`, and `Bₜ` are positive and `p ≠ q`. The set `A` constrains only static claim positions. -/
+theorem exists_staticClaim_payoff
+    (hβₜ : ∀ᵐ ω ∂P, β (τ (n + 1)) ω = Bₜ)
+    (hH : ∀ᵐ ω ∂P, a n ω * S (τ (n + 1)) ω + b n ω * β (τ (n + 1)) ω = H ω)
+    (p q B₀ : ℝ) {A : Set ℝ} {N : ℝ} (hA : N ∈ A) (hA' : -N ∈ A) :
+    ∃ c ∈ A, ∀ᵐ ω ∂P, (-c * a n ω) * S (τ (n + 1)) ω +
+      (-c * b n ω + c * (q - p) / B₀) * β (τ (n + 1)) ω + c * H ω =
         N * |q - p| * Bₜ / B₀ := by
-  have habs : 0 < |q - p| := abs_pos.mpr (sub_ne_zero.mpr hpq.symm)
-  refine ⟨by positivity, ?_⟩
   -- Select the cheaper side of the claim/replication pair; only the surplus remains exposed.
   obtain ⟨c, hc, hsign⟩ : ∃ c ∈ A, c * (q - p) = N * |q - p| := by
-    rcases lt_or_gt_of_ne hpq with h | h
-    · exact ⟨N, hA, by rw [abs_of_pos (sub_pos.mpr h)]⟩
+    rcases le_total p q with h | h
+    · exact ⟨N, hA, by rw [abs_of_nonneg (sub_nonneg.mpr h)]⟩
     · refine ⟨-N, hA', ?_⟩
-      rw [abs_of_neg (sub_neg.mpr h)]
+      rw [abs_of_nonpos (sub_nonpos.mpr h)]
       ring
-  obtain ⟨a', b', ha', hb', hs, hm, hcost, hpay⟩ :=
-    hsf.exists_staticClaim_offset ha hb hB₀.ne' hβ₀ hq hH c
-  refine ⟨c, hc, a', b', ha', hb', hs, hm, hcost, ?_⟩
-  filter_upwards [hpay, hβₜ] with ω hω hβω
+  refine ⟨c, hc, ?_⟩
+  filter_upwards [staticClaim_offset_terminal_payoff hH c p q B₀, hβₜ] with ω hω hβω
   simpa only [hβω, hsign] using hω
 
 /-- With unrestricted positive and negative integer scaling of static claim positions, a
-mispricing relative to a simple replication gives zero-cost trades whose terminal wealth
-exceeds any prescribed real bound almost surely. The scaling premise is `hscale`; the result
-does not infer unbounded profit from permission to make just one trade. -/
-theorem IsSelfFinancing.exists_staticClaim_profit_gt
-    (hsf : IsSelfFinancing τ (n + 1) a b S β)
-    (ha : ∀ j ≤ n, StronglyMeasurable[ℱ (τ j)] (a j))
-    (hb : ∀ j ≤ n, StronglyMeasurable[ℱ (τ j)] (b j))
-    (hB₀ : 0 < B₀) (hβ₀ : ∀ ω, β (τ 0) ω = B₀)
-    (hBₜ : 0 < Bₜ) (hβₜ : ∀ᵐ ω ∂P, β (τ (n + 1)) ω = Bₜ)
-    (hq : ∀ ω, a 0 ω * S (τ 0) ω + b 0 ω * β (τ 0) ω = q)
+mispricing relative to a simple replication gives terminal wealth exceeding any prescribed
+real bound almost surely. Combined with `staticClaim_offset_initial_cost` and
+`IsSelfFinancing.staticClaim_offset`, these are zero-cost self-financing offsets. The scaling
+premise is `hscale`; one fixed permitted trade does not imply unbounded profit. -/
+theorem exists_staticClaim_profit_gt
+    (hB₀ : 0 < B₀) (hBₜ : 0 < Bₜ) (hβₜ : ∀ᵐ ω ∂P, β (τ (n + 1)) ω = Bₜ)
     (hH : ∀ᵐ ω ∂P, a n ω * S (τ (n + 1)) ω + b n ω * β (τ (n + 1)) ω = H ω)
     (hpq : p ≠ q) {A : Set ℝ}
     (hscale : ∀ N : ℕ, 0 < N → (N : ℝ) ∈ A ∧ -(N : ℝ) ∈ A)
     (R : ℝ) :
-    ∃ c ∈ A, ∃ a' b' : ℕ → Ω → ℝ,
-      a' = (-c) • a ∧ b' = (-c) • b + (fun _ _ => c * (q - p) / B₀) ∧
-      IsSelfFinancing τ (n + 1) a' b' S β ∧
-      (∀ j ≤ n, StronglyMeasurable[ℱ (τ j)] (a' j) ∧
-        StronglyMeasurable[ℱ (τ j)] (b' j)) ∧
-      (∀ ω, a' 0 ω * S (τ 0) ω + b' 0 ω * β (τ 0) ω + c * p = 0) ∧
-      ∀ᵐ ω ∂P, max R 0 <
-        a' n ω * S (τ (n + 1)) ω + b' n ω * β (τ (n + 1)) ω + c * H ω := by
+    ∃ c ∈ A, ∀ᵐ ω ∂P, max R 0 < (-c * a n ω) * S (τ (n + 1)) ω +
+      (-c * b n ω + c * (q - p) / B₀) * β (τ (n + 1)) ω + c * H ω := by
   have habs : 0 < |q - p| := abs_pos.mpr (sub_ne_zero.mpr hpq.symm)
   have hg : 0 < |q - p| * Bₜ / B₀ := by positivity
   obtain ⟨N, hN⟩ := exists_nat_gt (max R 0 / (|q - p| * Bₜ / B₀))
@@ -156,10 +138,9 @@ theorem IsSelfFinancing.exists_staticClaim_profit_gt
   have hNnat : 0 < N := by exact_mod_cast hNpos
   have hbound : max R 0 < (N : ℝ) * |q - p| * Bₜ / B₀ := by
     simpa only [mul_div_assoc, mul_assoc] using (div_lt_iff₀ hg).mp hN
-  obtain ⟨_, c, hc, a', b', ha', hb', hs, hm, hcost, hpay⟩ :=
-    hsf.exists_staticClaim_sure_profit ha hb hB₀ hβ₀ hBₜ hβₜ hq hH hpq hNpos
-      (hscale N hNnat).1 (hscale N hNnat).2
-  refine ⟨c, hc, a', b', ha', hb', hs, hm, hcost, ?_⟩
+  obtain ⟨c, hc, hpay⟩ := exists_staticClaim_payoff hβₜ hH p q B₀
+    (hscale N hNnat).1 (hscale N hNnat).2
+  refine ⟨c, hc, ?_⟩
   filter_upwards [hpay] with ω hω
   rw [hω]
   exact hbound
