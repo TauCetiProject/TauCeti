@@ -18,6 +18,11 @@ inverse undoes `innerSL` on either side.
 
 * `InnerProductSpace.toDual_symm_innerSL`: `(toDual 𝕜 E).symm (innerSL 𝕜 w) = w`.
 * `InnerProductSpace.innerSL_toDual_symm`: `innerSL 𝕜 ((toDual 𝕜 E).symm q) = q`.
+* `InnerProductSpace.apply_toDual_symm_eq_conj`: `β(α♯) = conj (α(β♯))`, writing `α♯` for
+  `(toDual 𝕜 E).symm α`.
+* `InnerProductSpace.apply_toDual_symm_self`: `q(q♯) = ‖q‖²`.
+* `InnerProductSpace.toDualSymmL`: over `ℝ`, the inverse Riesz map `q ↦ q♯` as a continuous
+  linear map.
 -/
 
 public section
@@ -36,5 +41,31 @@ theorem toDual_symm_innerSL (w : E) : (toDual 𝕜 E).symm (innerSL 𝕜 w) = w 
 @[simp]
 theorem innerSL_toDual_symm (q : StrongDual 𝕜 E) : innerSL 𝕜 ((toDual 𝕜 E).symm q) = q := by
   ext v; simp [toDual_symm_apply]
+
+/-- Evaluating functionals at each other's Riesz representatives is conjugate-symmetric:
+`β(α♯) = conj (α(β♯))`. Over `ℝ` this says `β(α♯) = α(β♯)`. -/
+theorem apply_toDual_symm_eq_conj (α β : StrongDual 𝕜 E) :
+    β ((toDual 𝕜 E).symm α) = starRingEnd 𝕜 (α ((toDual 𝕜 E).symm β)) := by
+  rw [← toDual_symm_apply (y := β), ← toDual_symm_apply (y := α), inner_conj_symm]
+
+/-- A functional evaluated at its own Riesz representative is its squared norm. -/
+theorem apply_toDual_symm_self (q : StrongDual 𝕜 E) :
+    q ((toDual 𝕜 E).symm q) = (‖q‖ : 𝕜) ^ 2 := by
+  rw [← toDual_symm_apply, inner_self_eq_norm_sq_to_K, LinearIsometryEquiv.norm_map]
+
+section Real
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [CompleteSpace F]
+
+/-- On a real Hilbert space the inverse Riesz isomorphism `q ↦ q♯ = (toDual ℝ F).symm q` is
+linear; this is it as a continuous linear map. -/
+noncomputable def toDualSymmL : StrongDual ℝ F →L[ℝ] F :=
+  (toDual ℝ F).symm.toContinuousLinearEquiv.toContinuousLinearMap
+
+@[simp]
+theorem toDualSymmL_apply (q : StrongDual ℝ F) : toDualSymmL q = (toDual ℝ F).symm q :=
+  (rfl)
+
+end Real
 
 end InnerProductSpace

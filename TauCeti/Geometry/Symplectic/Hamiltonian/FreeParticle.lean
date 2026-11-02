@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Calculus
-public import Mathlib.Analysis.InnerProductSpace.Dual
+public import TauCeti.Analysis.InnerProductSpace.Dual
 public import TauCeti.Geometry.Symplectic.Cotangent.StrongDual
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Flow
 
@@ -60,25 +60,21 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteS
 /-- The Hamiltonian vector field `(q, p) ↦ (p♯ / m, 0)` of a free particle of mass `m`, where
 `p♯` is the Riesz representative of the covector `p`. -/
 def freeParticleVelocity (m : ℝ) : (E × StrongDual ℝ E) →L[ℝ] E × StrongDual ℝ E :=
-  let sharp : StrongDual ℝ E →L[ℝ] E :=
-    (toDual ℝ E).symm.toContinuousLinearEquiv.toContinuousLinearMap
-  (m⁻¹ • sharp.comp (snd ℝ E (StrongDual ℝ E))).prod 0
+  (m⁻¹ • toDualSymmL.comp (snd ℝ E (StrongDual ℝ E))).prod 0
 
 @[simp]
 theorem freeParticleVelocity_apply (m : ℝ) (x : E × StrongDual ℝ E) :
-    freeParticleVelocity m x = (m⁻¹ • (toDual ℝ E).symm x.2, 0) :=
-  (rfl)
+    freeParticleVelocity m x = (m⁻¹ • (toDual ℝ E).symm x.2, 0) := by
+  simp [freeParticleVelocity]
 
 /-- The time-`t` evolution `(q, p) ↦ (q + (t / m) p♯, p)` of a free particle of mass `m`. -/
 def freeParticleEvolution (m t : ℝ) : (E × StrongDual ℝ E) →L[ℝ] E × StrongDual ℝ E :=
-  let sharp : StrongDual ℝ E →L[ℝ] E :=
-    (toDual ℝ E).symm.toContinuousLinearEquiv.toContinuousLinearMap
-  (fst ℝ E (StrongDual ℝ E) + (t / m) • sharp.comp (snd ℝ E (StrongDual ℝ E))).prod
+  (fst ℝ E (StrongDual ℝ E) + (t / m) • toDualSymmL.comp (snd ℝ E (StrongDual ℝ E))).prod
     (snd ℝ E (StrongDual ℝ E))
 
 theorem freeParticleEvolution_apply (m t : ℝ) (x : E × StrongDual ℝ E) :
-    freeParticleEvolution m t x = (x.1 + (t / m) • (toDual ℝ E).symm x.2, x.2) :=
-  (rfl)
+    freeParticleEvolution m t x = (x.1 + (t / m) • (toDual ℝ E).symm x.2, x.2) := by
+  simp [freeParticleEvolution]
 
 @[simp]
 theorem freeParticleEvolution_apply_fst (m t : ℝ) (x : E × StrongDual ℝ E) :
@@ -132,10 +128,8 @@ theorem strongDualCotangentSymplecticForm_freeParticleEvolution (m t : ℝ)
     strongDualCotangentSymplecticForm (freeParticleEvolution m t u)
         (freeParticleEvolution m t v) =
       strongDualCotangentSymplecticForm u v := by
-  have hsymm (α β : StrongDual ℝ E) : β ((toDual ℝ E).symm α) = α ((toDual ℝ E).symm β) := by
-    rw [← toDual_symm_apply, real_inner_comm, toDual_symm_apply]
   simp only [strongDualCotangentSymplecticForm_apply, freeParticleEvolution_apply, map_add,
-    map_smul, smul_eq_mul, hsymm v.2 u.2]
+    map_smul, smul_eq_mul, apply_toDual_symm_eq_conj v.2 u.2, RCLike.conj_to_real]
   ring
 
 /-- The kinetic energy `H(q, p) = ‖p‖² / (2m)` of a free particle of mass `m`, the norm being
@@ -159,10 +153,8 @@ theorem hasFDerivAt_freeParticleHamiltonian (m : ℝ) (x : E × StrongDual ℝ E
     HasFDerivAt (freeParticleHamiltonian m)
       (m⁻¹ • (ContinuousLinearMap.apply ℝ ℝ ((toDual ℝ E).symm x.2)).comp
         (snd ℝ E (StrongDual ℝ E))) x := by
-  let sharp : StrongDual ℝ E →L[ℝ] E :=
-    (toDual ℝ E).symm.toContinuousLinearEquiv.toContinuousLinearMap
-  let L : (E × StrongDual ℝ E) →L[ℝ] E := sharp.comp (snd ℝ E (StrongDual ℝ E))
-  have hL (y : E × StrongDual ℝ E) : L y = (toDual ℝ E).symm y.2 := (rfl)
+  let L : (E × StrongDual ℝ E) →L[ℝ] E := toDualSymmL.comp (snd ℝ E (StrongDual ℝ E))
+  have hL (y : E × StrongDual ℝ E) : L y = (toDual ℝ E).symm y.2 := by simp [L]
   have hH : freeParticleHamiltonian (E := E) m = fun y ↦ (2 * m)⁻¹ * ‖L y‖ ^ 2 := by
     funext y
     rw [freeParticleHamiltonian_apply, hL, LinearIsometryEquiv.norm_map, div_eq_inv_mul]

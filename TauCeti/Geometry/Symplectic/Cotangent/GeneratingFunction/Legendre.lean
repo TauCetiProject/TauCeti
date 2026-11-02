@@ -153,15 +153,19 @@ theorem cotangentSecondKindRelated_iff_fderiv {F : V × StrongDual ℝ W → ℝ
     rw [hu, map_add, hq, hP]
     simp
 
+/-- The derivative of the pairing `(q, P) ↦ P(q)` at `(q, P)` is `(δq, δP) ↦ P(δq) + δP(q)`. -/
+theorem hasFDerivAt_pairing (z : V × StrongDual ℝ V) :
+    HasFDerivAt (fun z : V × StrongDual ℝ V ↦ z.2 z.1)
+      (z.2.comp (fst ℝ V (StrongDual ℝ V)) +
+        (ContinuousLinearMap.apply ℝ ℝ z.1).comp (snd ℝ V (StrongDual ℝ V))) z :=
+  (hasFDerivAt_snd.clm_apply hasFDerivAt_fst).congr_fderiv
+    (ContinuousLinearMap.ext fun u ↦ by simp)
+
 /-- **The pairing generates the identity.** The function `F(q, P) = P(q)` relates `(q, p)` to
 `(Q, P)` exactly when `(Q, P) = (q, p)`. -/
 theorem cotangentSecondKindRelated_pairing_iff {x y : V × StrongDual ℝ V} :
     CotangentSecondKindRelated (fun z : V × StrongDual ℝ V ↦ z.2 z.1) x y ↔ y = x := by
-  have hd : HasFDerivAt (fun z : V × StrongDual ℝ V ↦ z.2 z.1)
-      (y.2.comp (fst ℝ V (StrongDual ℝ V)) +
-        (ContinuousLinearMap.apply ℝ ℝ x.1).comp (snd ℝ V (StrongDual ℝ V))) (x.1, y.2) :=
-    (hasFDerivAt_snd.clm_apply hasFDerivAt_fst).congr_fderiv
-      (ContinuousLinearMap.ext fun u ↦ by simp)
+  have hd := hasFDerivAt_pairing (x.1, y.2)
   rw [cotangentSecondKindRelated_iff_fderiv, hd.fderiv]
   simp only [hd.differentiableAt, true_and, _root_.add_apply, coe_comp, Function.comp_apply,
     coe_fst', coe_snd', apply_apply, map_zero, add_zero, zero_add]
