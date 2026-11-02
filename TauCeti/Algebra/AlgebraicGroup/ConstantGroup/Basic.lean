@@ -30,9 +30,8 @@ stated for a finite monoid.
 * `TauCeti.ConstantGroup.functionAlgEquiv`: its canonical equivalence with `G → R`.
 * `TauCeti.ConstantGroup.eval`: evaluation at a group element as an algebra homomorphism.
 * `TauCeti.ConstantGroup.delta`: the indicator function of a group element.
-* `TauCeti.ConstantGroup.comul_delta`, `TauCeti.ConstantGroup.counit_delta`: the coalgebra
-  structure on indicator functions; `TauCeti.ConstantGroup.ofConv_delta_one` is the simp-normal
-  form of the counit.
+* `TauCeti.ConstantGroup.comul_delta`, `TauCeti.ConstantGroup.ofConv_delta_one`: the coalgebra
+  structure on indicator functions, with the counit in its simp-normal form.
 * `TauCeti.ConstantGroup.toPoints`: the monoid homomorphism from `G` to its algebra points.
 * `TauCeti.ConstantGroup.coordinateBialgHom`: contravariant pullback along a group homomorphism.
 
@@ -148,12 +147,6 @@ the simp-normal form of its counit. -/
 theorem ofConv_delta_one [DecidableEq G] (g : G) :
     (delta R G g).ofConv 1 = if g = 1 then 1 else 0 := by
   rw [MonoidAlgebra.one_def, ofConv_delta_single]
-  simp only [eq_comm]
-
-/-- The counit of the indicator function of `g` is `1` if `g = 1` and `0` otherwise. -/
-theorem counit_delta [DecidableEq G] (g : G) :
-    Coalgebra.counit (R := R) (delta R G g) = if g = 1 then 1 else 0 := by
-  rw [counit_apply, functionAlgEquiv_delta, Pi.single_apply]
   simp only [eq_comm]
 
 omit [Monoid G] in

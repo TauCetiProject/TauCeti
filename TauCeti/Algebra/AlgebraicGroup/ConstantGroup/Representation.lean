@@ -80,7 +80,8 @@ noncomputable def representationComodule (ρ : Representation R G V) :
     classical
     ext v
     simp only [LinearMap.coe_comp, Function.comp_apply, representationCoact_apply, map_sum,
-      LinearMap.lTensor_tmul, counit_delta, LinearMap.flip_apply, TensorProduct.mk_apply]
+      LinearMap.lTensor_tmul, ConvolutionDual.counit_apply, ofConv_delta_one,
+      LinearMap.flip_apply, TensorProduct.mk_apply]
     rw [Finset.sum_eq_single 1 (fun g _ hg ↦ by simp [hg]) (by simp)]
     simp
 
