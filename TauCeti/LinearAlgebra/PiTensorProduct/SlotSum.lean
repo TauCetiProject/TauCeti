@@ -319,19 +319,29 @@ theorem isHomogeneous_reindex [Fintype κ] (σ : ι ≃ κ) :
     ← σ.symm.sum_comp p]
   exact tprod_mem_totalDegreePiece fun k ↦ hm (σ.symm k)
 
-/-- Reindexing a tensor power detects as well as preserves total degree. -/
+/-- Reindexing a tensor product detects as well as preserves total degree. -/
 @[simp]
 theorem reindex_mem_totalDegreePiece_iff [Fintype κ]
-    {P : Type*} [AddCommMonoid P] [Module R P]
-    (ℳ : ι → A → Submodule R P) (σ : ι ≃ κ) (n : A) (z : ⨂[R] _ : ι, P) :
-    PiTensorProduct.reindex R (fun _ ↦ P) σ z ∈
-        totalDegreePiece κ (fun j ↦ ℳ (σ.symm j)) n ↔
+    (ℳ : ∀ i, A → Submodule R (M i)) (σ : ι ≃ κ) (n : A) (z : ⨂[R] i, M i) :
+    PiTensorProduct.reindex R M σ z ∈ totalDegreePiece κ (fun j ↦ ℳ (σ.symm j)) n ↔
       z ∈ totalDegreePiece ι ℳ n := by
   constructor
   · intro hz
-    have h := (isHomogeneous_reindex (ℳ := fun j ↦ ℳ (σ.symm j)) σ.symm).map_mem hz
-    simpa only [LinearEquiv.coe_coe, ← PiTensorProduct.reindex_symm,
-      LinearEquiv.symm_apply_apply, add_zero, Equiv.symm_symm, Equiv.symm_apply_apply] using h
+    have h : totalDegreePiece κ (fun j ↦ ℳ (σ.symm j)) n ≤
+        (totalDegreePiece ι ℳ n).comap (PiTensorProduct.reindex R M σ).symm.toLinearMap := by
+      refine totalDegreePiece_le_iff.2 ?_
+      intro p m hm hp
+      obtain ⟨m, rfl⟩ := (Equiv.piCongrLeft' M σ).surjective m
+      rw [funext (Equiv.piCongrLeft'_apply M σ m)] at hm ⊢
+      simp only [Submodule.mem_comap, LinearEquiv.coe_coe,
+        PiTensorProduct.reindex_symm_tprod]
+      rw [← hp, ← σ.sum_comp p]
+      apply tprod_mem_totalDegreePiece
+      intro i
+      obtain ⟨j, rfl⟩ := σ.symm.surjective i
+      simpa only [σ.apply_symm_apply] using hm j
+    simpa only [Submodule.mem_comap, LinearEquiv.coe_coe,
+      LinearEquiv.symm_apply_apply] using h hz
   · intro hz
     simpa only [LinearEquiv.coe_coe, add_zero] using (isHomogeneous_reindex σ).map_mem hz
 

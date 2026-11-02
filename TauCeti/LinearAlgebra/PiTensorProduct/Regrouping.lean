@@ -163,7 +163,8 @@ theorem prodEquiv_slotSum (d : ι → κ → Module.End R N)
       slotSum (ι × κ) (fun p ↦ d p.1 p.2) (PiTensorProduct.prodEquiv z) := by
   rw [PiTensorProduct.prodEquiv_def, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
     sigmaEquiv_slotSum]
-  exact (LinearMap.congr_fun
+  simpa only [LinearMap.comp_apply, LinearEquiv.coe_coe,
+    Equiv.sigmaEquivProd_symm_apply] using (LinearMap.congr_fun
     (slotSum_comp_reindex (fun p : Σ _ : ι, κ ↦ d p.1 p.2)
       (Equiv.sigmaEquivProd ι κ)) (PiTensorProduct.sigmaEquiv z)).symm
 
@@ -177,7 +178,7 @@ theorem prodEquiv_mem_totalDegreePiece_iff {A : Type*} [AddCommMonoid A]
       z ∈ totalDegreePiece ι (fun i ↦ totalDegreePiece κ (ℳ i)) n := by
   rw [PiTensorProduct.prodEquiv_def, LinearEquiv.trans_apply]
   rw [← sigmaEquiv_mem_totalDegreePiece_iff ℳ n z]
-  simpa only [Equiv.sigmaEquivProd, Equiv.coe_fn_symm_mk] using
+  simpa only [Equiv.sigmaEquivProd_symm_apply] using
     reindex_mem_totalDegreePiece_iff (fun p : Σ _ : ι, κ ↦ ℳ p.1 p.2)
       (Equiv.sigmaEquivProd ι κ) n (PiTensorProduct.sigmaEquiv z)
 
