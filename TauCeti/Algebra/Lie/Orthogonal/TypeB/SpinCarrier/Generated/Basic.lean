@@ -159,15 +159,13 @@ theorem generatedCoordinateMap_comp_generatedCoordinateLift
 numbered root subgroup is a closed subgroup. -/
 theorem generatedCoordinateLift_inl_surjective (k : Fin (n + 1) ⊕ Fin (n + 1)) :
     Function.Surjective (generatedCoordinateLift n A (.inl k)).hom := by
-  have h : Function.Surjective
-      (generatedCoordinateMap n A ≫ generatedCoordinateLift n A (.inl k)).hom := by
-    rw [generatedCoordinateMap_comp_generatedCoordinateLift, generatorCoordinateMap_inl,
-      ← coordinateMap_comp_rootSubgroupToBaseChangeCoordinateMap,
-      _root_.CommHopfAlgCat.hom_comp, BialgHom.coe_comp]
-    exact (rootSubgroupToBaseChangeCoordinateMap_surjective n A k).comp
-      (coordinateMap_surjective n A)
-  rw [_root_.CommHopfAlgCat.hom_comp, BialgHom.coe_comp] at h
-  exact Function.Surjective.of_comp h
+  apply CommHopfAlgCat.commonKernelLift_surjective_of_surjective
+    (generatorCoordinateMap n A) (.inl k)
+  rw [generatorCoordinateMap_inl,
+    ← coordinateMap_comp_rootSubgroupToBaseChangeCoordinateMap,
+    _root_.CommHopfAlgCat.hom_comp, BialgHom.coe_comp]
+  exact (rootSubgroupToBaseChangeCoordinateMap_surjective n A k).comp
+    (coordinateMap_surjective n A)
 
 /-- The lift is the unique factorization of the `j`th generator coordinate map through the
 generated subgroup. -/
