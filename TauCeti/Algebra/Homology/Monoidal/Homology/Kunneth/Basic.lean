@@ -194,17 +194,17 @@ omit [GradedObject.HasTensor (fun p ↦ K.homology p) (fun q ↦ L.homology q)] 
 class of their tensor product. -/
 private lemma xIsoHomology_tensorHom_homologyCross (hK : ∀ i j, K.d i j = 0)
     (hL : ∀ i j, L.d i j = 0) (p q : I) (h : p + q = n) :
-    ((K.XIsoHomologyOfDEqZero p (hK _ _) (hK _ _)).hom ⊗ₘ
-      (L.XIsoHomologyOfDEqZero q (hL _ _) (hL _ _)).hom) ≫ homologyCross K L p q n h =
+    ((K.iCyclesIso p _ rfl (hK _ _)).inv ≫ K.homologyπ p ⊗ₘ
+      (L.iCyclesIso q _ rfl (hL _ _)).inv ≫ L.homologyπ q) ≫ homologyCross K L p q n h =
       ιTensorObj K L p q n h ≫
-        ((tensorObj K L).XIsoHomologyOfDEqZero n (tensorObj_d_eq_zero hK hL _ _)
-          (tensorObj_d_eq_zero hK hL _ _)).hom := by
+        ((tensorObj K L).iCyclesIso n _ rfl (tensorObj_d_eq_zero hK hL _ _)).inv ≫
+          (tensorObj K L).homologyπ n := by
   have hcross : ((K.iCyclesIso p _ rfl (hK _ _)).inv ⊗ₘ (L.iCyclesIso q _ rfl (hL _ _)).inv) ≫
       cyclesCross K L p q n h =
         ιTensorObj K L p q n h ≫
           ((tensorObj K L).iCyclesIso n _ rfl (tensorObj_d_eq_zero hK hL _ _)).inv := by
     simp [← cancel_mono ((tensorObj K L).iCycles n), tensorHom_comp_tensorHom_assoc]
-  simp [XIsoHomologyOfDEqZero, ← tensorHom_comp_tensorHom_assoc, reassoc_of% hcross]
+  simp [← tensorHom_comp_tensorHom_assoc, reassoc_of% hcross]
 
 /-- **The Künneth map is an isomorphism for complexes with zero differentials**: then
 `Hₙ(K ⊗ L) = (K ⊗ L)ₙ` is the direct sum of the `K.X p ⊗ L.X q = Hₚ(K) ⊗ H_q(L)` with
@@ -221,7 +221,7 @@ theorem isIso_homologyKunneth_of_d_eq_zero (hK : ∀ i j, K.d i j = 0)
   · refine GradedObject.Monoidal.tensorObj_ext _ _ fun p q h ↦ ?_
     rw [← cancel_epi ((K.XIsoHomologyOfDEqZero p (hK _ _) (hK _ _)).hom ⊗ₘ
       (L.XIsoHomologyOfDEqZero q (hL _ _) (hL _ _)).hom)]
-    simp [reassoc_of% xIsoHomology_tensorHom_homologyCross n hK hL p q h]
+    simp [reassoc_of% xIsoHomology_tensorHom_homologyCross n hK hL p q h, e]
   · rw [← cancel_epi e.hom, Category.assoc, e.hom_inv_id_assoc, Category.comp_id]
     ext p q h
     simp [xIsoHomology_tensorHom_homologyCross n hK hL p q h, e]

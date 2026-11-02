@@ -49,9 +49,27 @@ variable {c}
 
 /-- If the differentials into and out of degree `i` vanish, the term in degree `i` is isomorphic
 to the homology in degree `i`: every element is a cycle, and none but zero is a boundary. -/
-@[expose] def XIsoHomologyOfDEqZero (K : HomologicalComplex C c) (i : ι) [K.HasHomology i]
+def XIsoHomologyOfDEqZero (K : HomologicalComplex C c) (i : ι) [K.HasHomology i]
     (h₁ : K.d (c.prev i) i = 0) (h₂ : K.d i (c.next i) = 0) : K.X i ≅ K.homology i :=
   (K.iCyclesIso i (c.next i) rfl h₂).symm ≪≫ K.isoHomologyπ (c.prev i) i rfl h₁
+
+/-- The isomorphism `K.XIsoHomologyOfDEqZero i h₁ h₂` sends a term to the class of the
+corresponding cycle. -/
+@[reassoc, simp]
+lemma XIsoHomologyOfDEqZero_hom (K : HomologicalComplex C c) (i : ι) [K.HasHomology i]
+    (h₁ : K.d (c.prev i) i = 0) (h₂ : K.d i (c.next i) = 0) :
+    (K.XIsoHomologyOfDEqZero i h₁ h₂).hom = (K.iCyclesIso i (c.next i) rfl h₂).inv ≫
+      K.homologyπ i := by
+  simp [XIsoHomologyOfDEqZero]
+
+/-- The inverse of `K.XIsoHomologyOfDEqZero i h₁ h₂` sends a homology class to its unique
+representing cycle, viewed as a term. -/
+@[reassoc, simp]
+lemma XIsoHomologyOfDEqZero_inv (K : HomologicalComplex C c) (i : ι) [K.HasHomology i]
+    (h₁ : K.d (c.prev i) i = 0) (h₂ : K.d i (c.next i) = 0) :
+    (K.XIsoHomologyOfDEqZero i h₁ h₂).inv = (K.isoHomologyπ (c.prev i) i rfl h₁).inv ≫
+      K.iCycles i := by
+  simp [XIsoHomologyOfDEqZero]
 
 /-- If the differentials into and out of degree `i` vanish, the homology in degree `i` is the
 term in degree `i`, so it is projective when that term is. -/
