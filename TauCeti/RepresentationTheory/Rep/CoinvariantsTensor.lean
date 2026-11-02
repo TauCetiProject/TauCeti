@@ -10,6 +10,7 @@ public import Mathlib.RepresentationTheory.Rep.Iso
 public import TauCeti.RepresentationTheory.Rep.Ihom
 import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 import TauCeti.CategoryTheory.Exact.KernelCokernelPair
+import TauCeti.LinearAlgebra.Finsupp.Exact
 
 /-!
 # Change of groups, maps out of tensor coinvariants, and coefficient exactness
@@ -306,9 +307,8 @@ theorem map_coinvariantsTensor_free {S : ShortComplex (Rep.{u} k G)}
   have hT : T.ShortExact := by
     refine ShortComplex.ShortExact.mk' ?_ ?_ ?_
     · rw [ShortComplex.moduleCat_exact_iff_range_eq_ker]
-      exact (Finsupp.range_mapRange_linearMap _ (LinearMap.ker_eq_bot.mpr hinj) α).trans
-        ((congrArg (fun p ↦ Finsupp.submodule fun _ : α ↦ p) hex).trans
-          (Finsupp.ker_mapRange _ α).symm)
+      exact (LinearMap.exact_iff.mp
+        (LinearMap.exact_iff.mpr hex.symm).finsupp_mapRange).symm
     · exact (ModuleCat.mono_iff_injective _).mpr
         (Finsupp.mapRange_injective _ (map_zero _) hinj)
     · exact (ModuleCat.epi_iff_surjective _).mpr
@@ -338,12 +338,11 @@ theorem map_coinvariantsTensor_projective {S : ShortComplex (Rep.{u} k G)}
   let i := S.mapNatTrans ((coinvariantsTensor k G).flip.map r.i)
   let p := S.mapNatTrans ((coinvariantsTensor k G).flip.map r.r)
   have hip : i ≫ p = 𝟙 _ := by
-    ext : 1 <;>
-      simp only [i, p, ShortComplex.comp_τ₁, ShortComplex.comp_τ₂, ShortComplex.comp_τ₃,
-        ShortComplex.mapNatTrans_τ₁, ShortComplex.mapNatTrans_τ₂, ShortComplex.mapNatTrans_τ₃,
-        ← NatTrans.comp_app, ← Functor.map_comp, r.retract, Functor.map_id, NatTrans.id_app,
-        ShortComplex.id_τ₁, ShortComplex.id_τ₂, ShortComplex.id_τ₃,
-        ShortComplex.map_X₁, ShortComplex.map_X₂, ShortComplex.map_X₃]
+    have h : (coinvariantsTensor k G).flip.map r.i ≫
+        (coinvariantsTensor k G).flip.map r.r = 𝟙 _ := by
+      rw [← Functor.map_comp, r.retract, Functor.map_id]
+    -- `mapNatTrans` has the components of its input transformation by construction.
+    ext : 1 <;> exact congrArg (fun τ ↦ τ.app _) h
   -- The coefficient sequence is a retract of the short exact free coefficient sequence.
   have hfree := hS.map_coinvariantsTensor_free P
   exact (TauCeti.IsKernelCokernelPair.of_retract
