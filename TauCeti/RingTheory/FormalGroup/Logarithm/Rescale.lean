@@ -7,8 +7,6 @@ module
 
 public import TauCeti.RingTheory.FormalGroup.Logarithm.Basic
 public import TauCeti.RingTheory.FormalGroup.Rescale
--- Proof-only: the coefficients of `f(0, Y)`.
-import TauCeti.RingTheory.MvPowerSeries.Substitution
 -- Proof-only: the derivative commutes with change of coefficients.
 import TauCeti.RingTheory.PowerSeries.Derivative
 
@@ -46,7 +44,6 @@ of the formal group `F(s 𝔪)` with the additive group `s 𝔪` through the log
 
 ## Main results
 
-* `FormalGroup.invariantDifferential_rescale`: the invariant differential of `F^s` is `P(s T)`.
 * `FormalGroup.smul_log_rescale`: over a `ℚ`-algebra, `s · log_{F^s}(T) = log_F(s T)`.
 * `FormalGroup.derivative_rescaleLog`: the derivative of the integral logarithm of `F^s` is the
   invariant differential of `F^s`; over a ring without additive torsion this characterises it
@@ -96,25 +93,6 @@ end TauCeti
 namespace FormalGroup
 
 variable {R : Type*} [CommRing R] (F : FormalGroup R) (s : R)
-
-/-- **The invariant differential of the rescaling** `F^s` is `P(s T)`, where `P(T) dT` is the
-invariant differential of `F`. -/
-theorem invariantDifferential_rescale :
-    (F.rescale s).invariantDifferential = PowerSeries.rescale s F.invariantDifferential := by
-  -- `F^s_X(0, T) = F_X(0, s T)`, comparing the coefficients of `X Yⁿ`
-  have key : subst ![0, PowerSeries.X] (pderiv 0 (F.rescale s).toPowerSeries) =
-      PowerSeries.rescale s (subst ![0, PowerSeries.X] (pderiv 0 F.toPowerSeries)) := by
-    ext n
-    rw [PowerSeries.coeff_rescale, coeff_subst_zero_X, coeff_subst_zero_X, coeff_pderiv,
-      coeff_pderiv, coeff_rescale]
-    have hd : (Finsupp.single 1 n + Finsupp.single 0 1 : Fin 2 →₀ ℕ).degree - 1 = n := by
-      simp
-    rw [hd]
-    ring
-  have h := congrArg (PowerSeries.rescale s) F.invariantDifferential_mul_subst_pderiv
-  rw [map_mul, map_one, ← key] at h
-  exact left_inv_eq_right_inv (F.rescale s).invariantDifferential_mul_subst_pderiv
-    (by rw [mul_comm]; exact h)
 
 /-- **The logarithm of the rescaling**: over a `ℚ`-algebra, `s · log_{F^s}(T) = log_F(s T)`. So
 `log_{F^s}(T) = s⁻¹ log_F(s T)` when `s` is a unit. -/
