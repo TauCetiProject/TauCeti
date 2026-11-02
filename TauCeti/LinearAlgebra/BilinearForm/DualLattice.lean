@@ -48,7 +48,7 @@ theorem _root_.LinearMap.BilinForm.dualSubmoduleToDual_surjective
     (N : Submodule R V) [N.IsLattice K] :
     Function.Surjective (B.dualSubmoduleToDual N) := by
   have := Module.Finite.of_isLattice (A := K) N
-  have := Submodule.IsLattice.isLocalizedModule_subtype K N
+  have := Submodule.IsLattice.isLocalizedModule_subtype K N Submodule.IsLattice.span_eq_top
   intro f
   let fK : Module.Dual K V :=
     IsLocalizedModule.mapExtendScalars (nonZeroDivisors R) N.subtype (Algebra.linearMap R K) K f
