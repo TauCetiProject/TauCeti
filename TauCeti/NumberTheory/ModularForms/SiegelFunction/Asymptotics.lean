@@ -89,8 +89,8 @@ theorem tendsto_siegelFunction_mul_exp_neg {r : Fin 2 → ℝ}
   simp only [Complex.exp_neg]
   field_simp
 
-/-- **The leading absolute value of a Siegel function.** Its norm divided by `|q|^(B₂(r₁)/2)`
-tends to `1`, or to `|1 - exp (2π i r₂)|` on the boundary `r₁ = 0`. -/
+/-- **The leading absolute value of a Siegel function.** For `0 ≤ r₁ < 1`, its norm divided by
+`|q|^(B₂(r₁)/2)` tends to `1`, or to `|1 - exp (2π i r₂)|` on the boundary `r₁ = 0`. -/
 theorem tendsto_norm_siegelFunction_div_rpow {r : Fin 2 → ℝ}
     (hlo : 0 ≤ r 0) (hhi : r 0 < 1) :
     Tendsto (fun τ : ℍ ↦ ‖siegelFunction r τ‖ /
@@ -109,8 +109,9 @@ theorem tendsto_norm_siegelFunction_div_rpow {r : Fin 2 → ℝ}
     mul_zero, zero_add, add_zero, mul_one, coe_im]
   ring
 
-/-- **The logarithmic `q`-order of a Siegel function is `B₂(r₁)/2`.** The nonintegrality
-hypothesis excludes the identically zero function at the corner of the strip. -/
+/-- **The logarithmic `q`-order of a Siegel function.** For `0 ≤ r₁ < 1` and `r ∉ ℤ²`, the
+logarithmic `q`-order of `g_r` is `B₂(r₁)/2`. The nonintegrality hypothesis excludes the
+identically zero function at the corner of the strip. -/
 theorem tendsto_log_norm_siegelFunction_div_log_norm_q {r : Fin 2 → ℝ}
     (hlo : 0 ≤ r 0) (hhi : r 0 < 1)
     (hr : ∀ s : Fin 2 → ℤ, r ≠ fun i ↦ (s i : ℝ)) :

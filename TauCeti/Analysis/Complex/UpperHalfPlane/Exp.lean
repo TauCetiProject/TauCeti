@@ -19,6 +19,8 @@ for `τ` in the upper half-plane, complementing `Mathlib.Analysis.Complex.UpperH
 * `TauCeti.UpperHalfPlane.exp_two_pi_I_eq_exp_pi_I_sq`: `e^{2π i τ} = (e^{π i τ})²`.
 * `TauCeti.UpperHalfPlane.norm_exp_two_pi_I_mul`: `|q| = e^{-2π Im τ}`.
 * `TauCeti.UpperHalfPlane.norm_exp_two_pi_I_mul_add`: `‖e^{2π i (x τ + y)}‖ = |q|^x`.
+* `TauCeti.UpperHalfPlane.tendsto_exp_two_pi_I_mul_add`: for `x > 0`,
+  `e^{2π i (x τ + y)} → 0` as `Im τ → ∞`.
 * `TauCeti.UpperHalfPlane.norm_exp_two_pi_I_mul_le`: `|q| ≤ e^{-2π t}` when `t ≤ Im τ`.
 * `TauCeti.UpperHalfPlane.norm_one_sub_exp_two_pi_I_mul`: `|1 - e^{2π i y}| = |2 sin (π y)|`.
 * `TauCeti.UpperHalfPlane.norm_exp_pi_I_lt_one`: `‖e^{π i τ}‖ < 1` on the upper half-plane.

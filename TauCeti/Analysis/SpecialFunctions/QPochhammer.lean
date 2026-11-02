@@ -34,6 +34,8 @@ holomorphy argument is adapted from `Mathlib.NumberTheory.ModularForms.DedekindE
   converges.
 * `TauCeti.tprod_one_sub_pow_mul_eq`: `∏_{n ≥ 1} (1 - qⁿ w) = (1 - q w) ∏_{n ≥ 1} (1 - qⁿ (q w))`.
 * `TauCeti.tprod_one_sub_pow_mul_ne_zero`: the product is nonzero when all of its factors are.
+* `TauCeti.tendsto_tprod_one_sub_pow_mul`: `∏_{n ≥ 1} (1 - qⁿ w) → 1` when `q → 0` and
+  `q w → 0`; `w` may be unbounded, and no completeness assumption is needed.
 * `TauCeti.tprod_one_sub_pow_ne_zero`: the Euler function `∏_{n ≥ 1} (1 - qⁿ)` is nonzero.
 * `TauCeti.norm_tprod_one_sub_pow_mul_le`, `TauCeti.norm_qTheta_le`: the bounds
   `‖∏_{n ≥ 1} (1 - qⁿ w)‖ ≤ exp (‖q‖ ‖w‖ / (1 - ‖q‖))` and
