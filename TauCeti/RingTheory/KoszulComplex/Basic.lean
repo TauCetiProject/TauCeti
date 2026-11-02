@@ -123,6 +123,15 @@ theorem zeroEquiv_koszulDifferential_zero (x : ⋀[R]^1 M) :
     exteriorPower.zeroEquiv R M (koszulDifferential φ 0 x) = φ (exteriorPower.oneEquiv R M x) :=
   LinearMap.congr_fun (zeroEquiv_comp_koszulDifferential_zero φ) x
 
+/-- The first Koszul differential sends a vector, viewed in `⋀¹ M`, to its value under `φ`,
+viewed in `⋀⁰ M`. -/
+@[simp]
+theorem koszulDifferential_zero_oneEquiv_symm (m : M) :
+    koszulDifferential φ 0 ((exteriorPower.oneEquiv R M).symm m) =
+      φ m • (exteriorPower.zeroEquiv R M).symm 1 := by
+  apply (exteriorPower.zeroEquiv R M).injective
+  simp
+
 /-- The image of the first Koszul differential, transported along `⋀⁰ M ≅ R`, is the image
 of `φ`. -/
 theorem map_zeroEquiv_range_koszulDifferential_zero :
