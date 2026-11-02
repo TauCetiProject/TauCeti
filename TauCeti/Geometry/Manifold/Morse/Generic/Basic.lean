@@ -35,6 +35,9 @@ gives a function Morse on all of `K`.
 
 ## Main results
 
+* `ContMDiffMap.exists_isMorseOn_union_hasCompactSupport_sub`: make a function Morse on a compact
+  set by a compactly supported perturbation inside a prescribed open set, while retaining the
+  Morse property on an already treated compact set.
 * `TauCeti.dense_setOf_isMorseOn`: for a compact set `K`, the smooth functions which are Morse on
   `K` are dense in the weak Whitney topology.
 * `TauCeti.dense_setOf_isMorse`: on a compact manifold, **Morse functions are dense**.
@@ -87,13 +90,12 @@ private theorem continuous_bumpPerturbation {c : M} (β : SmoothBumpFunction I c
     (g.contMDiff.comp contMDiff_snd).sub (contMDiff_fst.clm_apply
       ((β.contMDiff_smul contMDiffOn_extChartAt).comp contMDiff_snd))
 
-/-- **One chart of the approximation.** Every point `c` has an open neighbourhood `W` such that
-a smooth function which is Morse on a compact set `A` can be perturbed, inside any prescribed
-weak Whitney neighbourhood, to a smooth function which is Morse on both `A` and `W`. -/
-private theorem exists_isOpen_forall_exists_isMorseOn (c : M) :
+/-- One local perturbation, with its support confined to a prescribed neighbourhood. -/
+private theorem exists_isOpen_forall_exists_isMorseOn (c : M) {U : Set M} (hU : U ∈ 𝓝 c) :
     ∃ W : Set M, IsOpen W ∧ c ∈ W ∧ ∀ (g : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯) (A : Set M), IsCompact A →
-      IsMorseOn I g A → ∀ 𝒰 ∈ 𝓝 g, ∃ g' ∈ 𝒰, IsMorseOn I g' A ∧ IsMorseOn I g' W := by
-  obtain ⟨β⟩ : Nonempty (SmoothBumpFunction I c) := inferInstance
+      IsMorseOn I g A → ∀ 𝒰 ∈ 𝓝 g, ∃ g' ∈ 𝒰, IsMorseOn I g' A ∧ IsMorseOn I g' W ∧
+        HasCompactSupport (fun y ↦ g' y - g y) ∧ tsupport (fun y ↦ g' y - g y) ⊆ U := by
+  obtain ⟨β, -, hβU⟩ := (SmoothBumpFunction.nhds_basis_tsupport (I := I) c).mem_iff.mp hU
   set φ := extChartAt I c
   set e := chartAt H c
   -- On `W` the bump function is identically `1`, so the perturbation is `g - a ∘ φ` there.
@@ -128,8 +130,18 @@ private theorem exists_isOpen_forall_exists_isMorseOn (c : M) :
       ⟨(bumpPerturbation β g a).contMDiff.contMDiffOn, haA⟩⟩
   obtain ⟨a, ⟨ha𝒰, haA⟩, haU⟩ := (hnear.and_frequently (mem_closure_iff_frequently.1
     ((dense_setOfPred_hasNondegenerateCriticalPointsOn_sub hUo hgU) 0))).exists
-  refine ⟨_, ha𝒰, haA, (isMorseOn_iff_of_mem_maximalAtlas he
-    (fun y _ ↦ (bumpPerturbation β g a).contMDiff y) hWs).2 ?_⟩
+  have hsupp : tsupport (fun y ↦ bumpPerturbation β g a y - g y) ⊆ tsupport β := by
+    have hdiff : (fun y ↦ bumpPerturbation β g a y - g y) =
+        (fun y ↦ β y * (-a (extChartAt I c y))) := by
+      ext y
+      simp only [bumpPerturbation_apply, map_smul, smul_eq_mul]
+      ring
+    rw [hdiff]
+    exact tsupport_mul_subset_left
+  refine ⟨_, ha𝒰, haA, ?_,
+    β.hasCompactSupport.of_isClosed_subset (isClosed_tsupport _) hsupp, hsupp.trans hβU⟩
+  apply (isMorseOn_iff_of_mem_maximalAtlas he
+    (fun y _ ↦ (bumpPerturbation β g a).contMDiff y) hWs).2
   rw [hφe]
   -- On `U` the coordinate expression of the perturbation is `g ∘ φ.symm - a`.
   have hloc {z : E} (hz : z ∈ U) :
@@ -142,31 +154,59 @@ private theorem exists_isOpen_forall_exists_isMorseOn (c : M) :
   exact (hasNondegenerateCriticalPointsOn_iff.1 haU hz (by rwa [(hloc hz).fderiv_eq])
     ).congr_of_eventuallyEq (hloc hz)
 
+/-- A smooth function can be made Morse on a compact set `K` by an arbitrarily small weak
+Whitney perturbation with compact support inside any open neighbourhood `U` of `K`. The
+perturbed function remains Morse on a specified compact set `A` on which it already was Morse.
+In particular it is unchanged on a neighbourhood of every point outside `U`. -/
+theorem _root_.ContMDiffMap.exists_isMorseOn_union_hasCompactSupport_sub
+    (f : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯) {K U A : Set M} (hK : IsCompact K) (hU : IsOpen U)
+    (hKU : K ⊆ U) (hA : IsCompact A) (hfA : IsMorseOn I f A)
+    {𝒰 : Set C^∞⟮I, M; 𝓘(ℝ), ℝ⟯} (h𝒰 : 𝒰 ∈ 𝓝 f) :
+    ∃ g ∈ 𝒰, IsMorseOn I g (A ∪ K) ∧ HasCompactSupport (fun y ↦ g y - f y) ∧
+      tsupport (fun y ↦ g y - f y) ⊆ U := by
+  classical
+  obtain ⟨𝒱, h𝒱𝒰, h𝒱, hf𝒱⟩ := mem_nhds_iff.mp h𝒰
+  choose W hWo hcW hW using fun x : K ↦
+    exists_isOpen_forall_exists_isMorseOn (I := I) (x : M) (hU.mem_nhds (hKU x.2))
+  -- Cover only the compact region to be treated; every local cutoff stays inside `U`.
+  obtain ⟨t, hKt⟩ := hK.elim_finite_subcover W hWo fun x hx ↦
+    mem_iUnion.mpr ⟨⟨x, hx⟩, hcW ⟨x, hx⟩⟩
+  obtain ⟨L, hLc, hLW, hKL⟩ := hK.finite_compact_cover t W (fun x _ ↦ hWo x) hKt
+  suffices ∀ s : Finset K, ∃ g ∈ 𝒱, IsMorseOn I g (A ∪ ⋃ x ∈ s, L x) ∧
+      HasCompactSupport (fun y ↦ g y - f y) ∧ tsupport (fun y ↦ g y - f y) ⊆ U by
+    obtain ⟨g, hg, hgm, hgc, hgs⟩ := this t
+    exact ⟨g, h𝒱𝒰 hg, hKL ▸ hgm, hgc, hgs⟩
+  intro s
+  induction s using Finset.induction_on with
+  | empty => exact ⟨f, hf𝒱, by simpa using hfA, by simp [HasCompactSupport], by simp⟩
+  | insert x s _ ih =>
+    obtain ⟨g, hg𝒱, hg, hgc, hgs⟩ := ih
+    obtain ⟨g', hg'𝒱, hg'A, hg'W, hg'c, hg's⟩ := hW x g _
+      (hA.union (s.finite_toSet.isCompact_biUnion fun y _ ↦ hLc y)) hg
+      𝒱 (h𝒱.mem_nhds hg𝒱)
+    have hsub : (fun y ↦ g' y - f y) =
+        (fun y ↦ g' y - g y) + (fun y ↦ g y - f y) := by ext y; simp
+    refine ⟨g', hg'𝒱, ?_, hsub ▸ hg'c.add hgc, ?_⟩
+    · rw [isMorseOn_iff_criticalPoints]
+      refine ⟨g'.contMDiff.contMDiffOn, fun y hy hyc ↦ ?_⟩
+      rw [Finset.set_biUnion_insert, union_left_comm] at hy
+      exact hy.elim
+        (fun hy ↦ hg'W.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints (hLW x hy) hyc)
+        (fun hy ↦ hg'A.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints hy hyc)
+    · rw [hsub]
+      exact (tsupport_add _ _).trans (union_subset hg's hgs)
+
 /-- **Morse functions on a compact set are dense.** For a compact set `K` of a boundaryless
 finite-dimensional Hausdorff manifold, every smooth function is a limit, in the weak Whitney
 topology, of smooth functions which are Morse on `K`. -/
 theorem dense_setOf_isMorseOn {K : Set M} (hK : IsCompact K) :
     Dense {f : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯ | IsMorseOn I f K} := by
-  classical
-  choose W hWo hcW hW using exists_isOpen_forall_exists_isMorseOn (I := I) (M := M)
-  -- Cover `K` by finitely many compact pieces `L x ⊆ W x`.
-  obtain ⟨t, -, hKt⟩ := hK.elim_nhds_subcover W fun x _ ↦ (hWo x).mem_nhds (hcW x)
-  obtain ⟨L, hLc, hLW, rfl⟩ := hK.finite_compact_cover t W (fun x _ ↦ hWo x) hKt
   refine dense_iff_inter_open.2 fun 𝒰 h𝒰 ⟨f, hf⟩ ↦ ?_
-  -- Perturb one piece at a time, staying in `𝒰`.
-  suffices ∀ s : Finset M, ∃ g ∈ 𝒰, IsMorseOn I g (⋃ x ∈ s, L x) from this t
-  intro s
-  induction s using Finset.induction_on with
-  | empty => exact ⟨f, hf, isMorseOn_iff_criticalPoints.2 ⟨f.contMDiff.contMDiffOn, by simp⟩⟩
-  | insert x s _ ih =>
-    obtain ⟨g, hg𝒰, hg⟩ := ih
-    obtain ⟨g', hg'𝒰, hg'A, hg'W⟩ := hW x g _
-      (s.finite_toSet.isCompact_biUnion fun y _ ↦ hLc y) hg 𝒰 (h𝒰.mem_nhds hg𝒰)
-    refine ⟨g', hg'𝒰, ?_⟩
-    rw [Finset.set_biUnion_insert, isMorseOn_iff_criticalPoints]
-    refine ⟨g'.contMDiff.contMDiffOn, fun y hy hyc ↦ hy.elim (fun hy ↦ ?_) fun hy ↦ ?_⟩
-    · exact hg'W.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints (hLW x hy) hyc
-    · exact hg'A.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints hy hyc
+  have hfempty : IsMorseOn I f ∅ :=
+    isMorseOn_iff_criticalPoints.2 ⟨f.contMDiff.contMDiffOn, by simp⟩
+  obtain ⟨g, hg, hgm, -, -⟩ := f.exists_isMorseOn_union_hasCompactSupport_sub hK
+    isOpen_univ (subset_univ _) isCompact_empty hfempty (h𝒰.mem_nhds hf)
+  exact ⟨g, hg, by simpa using hgm⟩
 
 /-- **Morse functions are dense** in the smooth functions on a compact boundaryless
 finite-dimensional Hausdorff manifold, for the weak Whitney topology. -/
