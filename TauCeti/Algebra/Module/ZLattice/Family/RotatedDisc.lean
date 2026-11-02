@@ -150,7 +150,7 @@ theorem isCancelSMul_torusFamilyAffineMulAction_rootsOfUnityBall_iff_addOrderOf_
 primitive `m`-th root of unity whose linear part `R ζ u₀` at the centre `u₀` of the disc is the
 identity, and let `P u₀` be injective. Write the value of the translation section at the centre as
 `b ζ u₀ = [u₀, β]` and let `m • β = P u₀ l`; for instance, if `β` is the value at `u₀` of a lift
-`β̃` of `b ζ`, the orbit sum `∑ j < m, β̃ (ζ ^ j • u₀)` is `m • β` because the centre is fixed
+`β'` of `b ζ`, the orbit sum `∑ j < m, β' (ζ ^ j • u₀)` is `m • β` because the centre is fixed
 (`Function.IsFixedPt.birkhoffSum_eq`). If multiplication by `m` is injective on `E`, as for a real
 vector space, then the affine action on the total space is free exactly when the class of `l` in
 `Λ ⧸ mΛ` has exact additive order `m`. That class does not depend on the choice of `β`
