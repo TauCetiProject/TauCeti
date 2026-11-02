@@ -159,16 +159,8 @@ theorem pointNorm_le_supSeminorm (x : MaximalSpectrum A) (a : A) :
 /-- **Perturbations of `1` by elements of supremum seminorm `< 1` are units.** In a dagger
 algebra, `1 - a` is a unit whenever `|a|sup < 1`. -/
 theorem isUnit_one_sub_of_supSeminorm_lt_one {a : A} (ha : supSeminorm K a < 1) :
-    IsUnit (1 - a) := by
-  -- Otherwise `1 - a` lies in a maximal ideal `M`, at which `a` takes the value `1`.
-  by_contra h
-  obtain ⟨M, hM, hM'⟩ := Ideal.exists_le_maximal _ (Ideal.span_singleton_ne_top h)
-  have hx : pointNorm K ⟨M, hM⟩ a = 1 := by
-    rw [← pointNorm_one (K := K) (x := ⟨M, hM⟩)]
-    refine pointNorm_eq_of_sub_mem ?_
-    rw [← neg_sub]
-    exact M.neg_mem (hM' (Ideal.mem_span_singleton_self _))
-  exact ((hx ▸ pointNorm_le_supSeminorm ⟨M, hM⟩ a).trans_lt ha).false
+    IsUnit (1 - a) :=
+  _root_.TauCeti.isUnit_one_sub_of_supSeminorm_lt_one (bddAbove_range_pointNorm a) ha
 
 end IsDaggerAlgebra
 
