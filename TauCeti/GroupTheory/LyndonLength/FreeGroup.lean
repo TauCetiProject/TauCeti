@@ -17,7 +17,7 @@ length function on `FreeGroup α`. It is the based length function of the action
 on its Cayley tree, at the vertex `1`.
 
 Its Gromov product `c(g, f)` is the length of the longest common prefix of the reduced words of
-`g` and `f` (`TauCeti.LyndonLength.gromov_freeGroupNorm`): the reduced word of `g⁻¹ * f` is
+`g` and `f` (`TauCeti.LyndonLength.gromovProduct_freeGroupNorm`): the reduced word of `g⁻¹ * f` is
 obtained by cancelling this common prefix. The axioms follow from this description. Common prefix
 lengths are ultrametric, which gives (L3); they are integers, which gives (L4); the length of the
 square of a nontrivial element exceeds its own length because its cyclically reduced core is
@@ -30,8 +30,8 @@ required length, which gives (L6).
 
 ## Main results
 
-* `TauCeti.LyndonLength.gromov_freeGroupNorm`: the Gromov product of word length is the common
-  prefix length of reduced words.
+* `TauCeti.LyndonLength.gromovProduct_freeGroupNorm`: the Gromov product of word length is the
+  common prefix length of reduced words.
 * `TauCeti.LyndonLength.isFree_freeGroupNorm`, `TauCeti.LyndonLength.isRegular_freeGroupNorm`:
   word length is a free regular Lyndon length function.
 
@@ -74,10 +74,11 @@ theorem freeGroupNorm_apply (g : FreeGroup α) : freeGroupNorm α g = g.norm :=
 
 /-- The Gromov product of word length on a free group is the length of the longest common prefix
 of the reduced words. -/
-theorem gromov_freeGroupNorm (g f : FreeGroup α) :
-    (freeGroupNorm α).gromov g f =
+@[simp]
+theorem gromovProduct_freeGroupNorm (g f : FreeGroup α) :
+    (freeGroupNorm α).gromovProduct g f =
       DivisibleHull.coe (List.commonPrefixLength g.toWord f.toWord : ℤ) := by
-  rw [eq_comm, coe_eq_gromov_iff]
+  rw [eq_comm, coe_eq_gromovProduct_iff]
   have := norm_inv_mul_add_two_mul_commonPrefixLength g f
   simp only [freeGroupNorm_apply, nsmul_eq_mul]
   push_cast
@@ -85,7 +86,7 @@ theorem gromov_freeGroupNorm (g f : FreeGroup α) :
 
 /-- Word length on a free group is a free Lyndon length function. -/
 theorem isFree_freeGroupNorm : (freeGroupNorm α).IsFree where
-  exists_coe_eq_gromov g f := ⟨_, (gromov_freeGroupNorm g f).symm⟩
+  exists_coe_eq_gromovProduct g f := ⟨_, (gromovProduct_freeGroupNorm g f).symm⟩
   lt_map_sq g hg := by
     have h₁ := norm_pow_eq g (n := 1) one_pos
     have h₂ := norm_pow_eq g (n := 2) two_pos
@@ -117,7 +118,7 @@ theorem isRegular_freeGroupNorm : (freeGroupNorm α).IsRegular := by
     rw [htake, hnorm (.inr (List.take_prefix _ _).isInfix),
       hnorm (.inr (List.drop_suffix _ _).isInfix), List.length_take, List.length_drop, norm]
     omega
-  · rw [gromov_freeGroupNorm, freeGroupNorm_apply, hnorm (.inl (List.take_prefix _ _).isInfix),
-      List.length_take, ← hk, min_eq_left hgk]
+  · rw [gromovProduct_freeGroupNorm, freeGroupNorm_apply,
+      hnorm (.inl (List.take_prefix _ _).isInfix), List.length_take, ← hk, min_eq_left hgk]
 
 end TauCeti.LyndonLength

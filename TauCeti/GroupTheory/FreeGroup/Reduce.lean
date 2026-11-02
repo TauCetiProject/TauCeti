@@ -168,7 +168,8 @@ section CommonPrefix
 
 variable [DecidableEq α]
 
-/-- For reduced words `u` and `v`, the reduced word of `(mk u)⁻¹ * mk v` is obtained from
+/-- For reduced words `u` and `v`, the reduced word of `(mk u)⁻¹ * mk v` has length
+`u.length + v.length - 2 * commonPrefixLength u v`. Intuitively, this reduced word arises from
 `invRev u ++ v` by cancelling the longest common prefix of `u` and `v`. -/
 theorem length_toWord_inv_mk_mul_mk {u v : List (α × Bool)} (hu : IsReduced u)
     (hv : IsReduced v) :
@@ -182,7 +183,7 @@ theorem length_toWord_inv_mk_mul_mk {u v : List (α × Bool)} (hu : IsReduced u)
       by_cases hab : a = b
       · subst hab
         have hmul : (mk (a :: u))⁻¹ * mk (a :: v) = (mk u)⁻¹ * mk v := by
-          rw [← List.singleton_append, ← mul_mk, ← List.singleton_append (l := v), ← mul_mk,
+          simp only [← List.singleton_append (l := u), ← List.singleton_append (l := v), ← mul_mk,
             mul_inv_rev, mul_assoc, inv_mul_cancel_left]
         have := ih (hu.infix (List.suffix_cons a u).isInfix)
           (hv.infix (List.suffix_cons a v).isInfix)
