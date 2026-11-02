@@ -67,7 +67,7 @@ x² + ny²*, Chapter 3, and F. Lemmermeyer, *Reciprocity Laws*, Chapter 6.
 public section
 
 open Polynomial
-open scoped NumberField nonZeroDivisors
+open scoped NumberField nonZeroDivisors symmDiff
 open NumberField (ramifiedPrimes)
 
 namespace TauCeti.Multiquadratic
@@ -201,10 +201,9 @@ theorem prod_classGroupMk0_eq_prod_sdiff (hmin : minpoly ℤ θ = X ^ 2 - C d)
     _ = (∏ p ∈ S, ClassGroup.mk0 (Q p)) *
         ∏ p ∈ d.natAbs.primeFactors, ClassGroup.mk0 (Q p) := by
       rw [prod_classGroupMk0_eq_one Q hmin hgen hsf hprime hover, mul_one]
-    _ = ∏ p ∈ S \ d.natAbs.primeFactors ∪ d.natAbs.primeFactors \ S,
-        ClassGroup.mk0 (Q p) :=
-      (prod_sdiff_union_sdiff _ (fun p hp ↦ hsq p (Finset.mem_inter.mp hp).1)).symm
-    _ = _ := by rw [Finset.sdiff_eq_empty_iff_subset.mpr hS, Finset.empty_union]
+    _ = ∏ p ∈ S ∆ d.natAbs.primeFactors, ClassGroup.mk0 (Q p) :=
+      (prod_symmDiff _ (fun p hp ↦ hsq p (Finset.mem_inter.mp hp).1)).symm
+    _ = _ := by rw [symmDiff_of_le hS]
 
 /-- **The classes of the ramified primes generate a subgroup of order at most
 `2 ^ (t - 1)`.** Let `s` be a finite set of ramified primes of `K = ℚ(√d)` containing every

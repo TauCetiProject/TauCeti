@@ -144,8 +144,8 @@ theorem genusCharAtLevel_apply_int (t : Finset s) (n : ℤ)
 /-- Multiplication of subset characters corresponds to symmetric difference of the subsets. -/
 @[simp] theorem genusCharAtLevel_symmDiff (t u : Finset s) :
     genusCharAtLevel s hs (t ∆ u) = genusCharAtLevel s hs t * genusCharAtLevel s hs u := by
-  rw [genusCharAtLevel_def, genusCharAtLevel_def, genusCharAtLevel_def, Finset.symmDiff_def]
-  exact TauCeti.prod_sdiff_union_sdiff _ fun P _ ↦ primeDiscriminantCharAtLevel_sq s hs P
+  rw [genusCharAtLevel_def, genusCharAtLevel_def, genusCharAtLevel_def]
+  exact TauCeti.prod_symmDiff _ fun P _ ↦ primeDiscriminantCharAtLevel_sq s hs P
 
 /-- Every subset character is quadratic. -/
 theorem isQuadratic_genusCharAtLevel (t : Finset s) : (genusCharAtLevel s hs t).IsQuadratic :=
