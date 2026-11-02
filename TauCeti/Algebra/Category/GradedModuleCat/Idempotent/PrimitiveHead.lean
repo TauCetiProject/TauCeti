@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Category.GradedModuleCat.Idempotent.Head
 public import TauCeti.Algebra.Category.GradedModuleCat.Idempotent.ProjectiveCover
 public import TauCeti.RingTheory.Idempotents.Simple
+import TauCeti.Algebra.Polynomial.Laurent.Units
 
 /-!
 # Graded heads of primitive idempotents over a semisimple degree-zero part
@@ -45,6 +46,10 @@ semisimplicity of `A₀` and nonnegativity of the grading, so the field need not
 * `TauCeti.isEmpty_linearEquiv_gradedPositiveMulQuotient`: primitive idempotents with
   nonisomorphic left ideals have nonisomorphic heads.
 * `TauCeti.smulGradedDimension_gradedPositiveMulQuotient_self`: `gdim(f • Sf) = dim_k End_A(Sf)`.
+* `TauCeti.isUnit_smulGradedDimension_gradedPositiveMulQuotient_self_iff`: `gdim(f • Sf)` is a
+  unit of `ℤ[q,q⁻¹]` exactly when `dim_k End_A(Sf) = 1`.
+* `TauCeti.pairwise_smulGradedDimension_gradedPositiveMulQuotient_eq_zero`: `gdim(eⱼ • Sᵢ) = 0`
+  for `i ≠ j` when the left ideals `A eᵢ` are pairwise nonisomorphic.
 * `TauCeti.isExhaustiveGradedSimpleFamily_gradedPositiveMulQuotient_of_isPrimitiveIdempotent`:
   the heads of a complete family of primitive idempotents exhaust the simple finite graded
   modules up to shift.
@@ -209,7 +214,29 @@ theorem smulGradedDimension_gradedPositiveMulQuotient_self {f : A} (hf : IsPrimi
     hf.isIdempotentElem (fun _ hp => gradedPositiveMulQuotient_piece_eq_bot hneg
       hf.isIdempotentElem hf₀ hp) (isProjectiveCover_gradedPositiveMulQuotientMk hneg hf hf₀)
 
+/-- The diagonal graded dimension `gdim(f • A f / A₊f) = dim_k End_A(A f / A₊f)` of a primitive
+idempotent `f` of degree zero is a unit of `ℤ[q,q⁻¹]` exactly when it is `1`. -/
+theorem isUnit_smulGradedDimension_gradedPositiveMulQuotient_self_iff {f : A}
+    (hf : IsPrimitiveIdempotent f) (hf₀ : f ∈ 𝒜 0) :
+    IsUnit ((gradedPositiveMulQuotient 𝒜 hf₀).smulGradedDimension f) ↔
+      Module.finrank k (Module.End A (gradedPositiveMulQuotient 𝒜 hf₀)) = 1 := by
+  rw [smulGradedDimension_gradedPositiveMulQuotient_self hneg hf hf₀, LaurentPolynomial.isUnit_C,
+    Int.isUnit_iff]
+  -- A natural number is `1` exactly when its integer cast is `1` or `-1`.
+  omega
+
 variable {I : Type uI} [Fintype I] {e : I → A}
+
+omit [Fintype I] in
+/-- The heads of primitive idempotents of degree zero with pairwise nonisomorphic left ideals have
+vanishing off-diagonal graded dimensions: `gdim(eᵢ • A eⱼ / A₊eⱼ) = 0` for `i ≠ j`. -/
+theorem pairwise_smulGradedDimension_gradedPositiveMulQuotient_eq_zero (he₀ : ∀ i, e i ∈ 𝒜 0)
+    (hprim : ∀ i, IsPrimitiveIdempotent (e i))
+    (hnoniso : Pairwise fun i j =>
+      IsEmpty ((Ideal.span {e i} : Ideal A) ≃ₗ[A] (Ideal.span {e j} : Ideal A))) :
+    Pairwise fun i j => (gradedPositiveMulQuotient 𝒜 (he₀ j)).smulGradedDimension (e i) = 0 :=
+  fun _ _ hij => smulGradedDimension_gradedPositiveMulQuotient_eq_zero hneg (hprim _) (he₀ _)
+    (hprim _) (hnoniso hij.symm)
 
 /-- **The heads of a complete family of primitive idempotents exhaust the simple finite graded
 modules** up to shift, over a finite-dimensional nonnegatively graded algebra with semisimple
