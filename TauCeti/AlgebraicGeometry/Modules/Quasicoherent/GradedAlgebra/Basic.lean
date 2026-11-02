@@ -213,6 +213,7 @@ protected theorem mul_hom (i j : ℕ) :
 
 /-- The unit of a graded quasicoherent algebra is a left identity for homogeneous
 multiplication, up to the identification of the degrees `0 + n` and `n`. -/
+@[reassoc (attr := simp)]
 protected theorem one_mul (n : ℕ) :
     (A.one ▷ (degree n).obj A) ≫ A.mul 0 n =
       (λ_ ((degree n).obj A)).hom ≫
@@ -225,6 +226,7 @@ protected theorem one_mul (n : ℕ) :
 
 /-- The unit of a graded quasicoherent algebra is a right identity for homogeneous
 multiplication, up to the identification of the degrees `n + 0` and `n`. -/
+@[reassoc (attr := simp)]
 protected theorem mul_one (n : ℕ) :
     ((degree n).obj A ◁ A.one) ≫ A.mul n 0 =
       (ρ_ ((degree n).obj A)).hom ≫
@@ -237,6 +239,7 @@ protected theorem mul_one (n : ℕ) :
 
 /-- Homogeneous multiplication of a graded quasicoherent algebra is associative, up to the
 identification of the degrees `i + j + k` and `i + (j + k)`. -/
+@[reassoc]
 protected theorem mul_assoc (i j k : ℕ) :
     (A.mul i j ▷ (degree k).obj A) ≫ A.mul (i + j) k =
       (α_ _ _ _).hom ≫ ((degree i).obj A ◁ A.mul j k) ≫ A.mul i (j + k) ≫
@@ -251,6 +254,7 @@ protected theorem mul_assoc (i j k : ℕ) :
 
 /-- Homogeneous multiplication of a graded quasicoherent algebra is commutative, up to the
 identification of the degrees `i + j` and `j + i`. -/
+@[reassoc]
 protected theorem mul_comm (i j : ℕ) :
     (β_ ((degree i).obj A) ((degree j).obj A)).hom ≫ A.mul j i =
       A.mul i j ≫ eqToHom (congrArg (fun n ↦ (degree n).obj A) (add_comm i j)) := by
@@ -263,10 +267,12 @@ protected theorem mul_comm (i j : ℕ) :
 variable {A} {B : GradedQuasicoherentAlgebra X}
 
 /-- A morphism of graded quasicoherent algebras preserves the unit in degree zero. -/
+@[reassoc, simp]
 protected theorem one_map (g : A ⟶ B) : A.one ≫ (degree 0).map g = B.one :=
   ObjectProperty.hom_ext _ (Mon.one_map g.hom.hom)
 
 /-- A morphism of graded quasicoherent algebras commutes with homogeneous multiplication. -/
+@[reassoc]
 protected theorem map_mul (g : A ⟶ B) (i j : ℕ) :
     ((degree i).map g ⊗ₘ (degree j).map g) ≫ B.mul i j = A.mul i j ≫ (degree (i + j)).map g :=
   ObjectProperty.hom_ext _ (Mon.map_mul g.hom.hom i j)
