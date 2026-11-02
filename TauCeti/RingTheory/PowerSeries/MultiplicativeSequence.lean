@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.FundamentalTheorem
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Elementary
+public import TauCeti.RingTheory.PowerSeries.Expand
 
 import Mathlib.Data.Multiset.Fintype
 
@@ -26,7 +27,8 @@ the Todd class of a complex bundle of rank `n`. The `L` and `Â` classes come fr
 the squares `xᵢ²`, so that the `eᵢ` are the elementary symmetric polynomials in the `xᵢ²`, that
 is, the Pontryagin classes. This file develops the algebra that such definitions rest on: the
 root description of `Kₖ` in any commutative `R`-algebra, the Whitney (product) formula for roots,
-the normalization on a single root, and stability under adjoining a zero root.
+the normalization on a single root, stability under adjoining a zero root, the root description
+for even series, and the explicit polynomials `K₁`, `K₂` and `K₃`.
 
 ## Main definitions
 
@@ -49,6 +51,13 @@ the normalization on a single root, and stability under adjoining a zero root.
   `n + 1` roots gives `Q(0)` times the polynomial for `n` roots.
 * `PowerSeries.aeval_pi_single_zero_multiplicativeSequence`: evaluating at `e₁ = x` and `eⱼ = 0`
   for `j ≥ 2` gives `Q(0) ^ n qₖ xᵏ`; when `Q(0) = 1`, the total class `1 + x` goes to `Q(x)`.
+* `PowerSeries.expand_mk_aeval_multiplicativeSequence`,
+  `PowerSeries.aeval_multiset_esymm_sq_multiplicativeSequence`: for the even series `Q(t²)`,
+  `∏_{x ∈ s} Q(x² t²)` is `∑ₖ Kₖ(e₁(s²), …, eₙ(s²)) t²ᵏ`, where `s²` is the multiset of squares.
+* `PowerSeries.multiplicativeSequence_one_right`, `PowerSeries.multiplicativeSequence_two_right`,
+  `PowerSeries.multiplicativeSequence_three_right`: for `Q(0) = 1`, `K₁ = q₁ e₁`,
+  `K₂ = q₂ e₁² + (q₁² - 2 q₂) e₂` and
+  `K₃ = q₃ e₁³ + (q₁ q₂ - 3 q₃) e₁ e₂ + (q₁³ - 3 q₁ q₂ + 3 q₃) e₃`.
 
 ## References
 
@@ -266,5 +275,112 @@ theorem aeval_pi_single_zero_multiplicativeSequence (x : S) :
     ring
 
 end Normalization
+
+section Even
+
+variable {S : Type*} [CommRing S] [Algebra R S]
+
+/-- **Multiplicative sequences of even series**: for a multiset `s` of `n` roots,
+`∏_{x ∈ s} Q(x² t²)` is obtained from `∑ₖ Kₖ(e₁(s²), …, eₙ(s²)) tᵏ`, where `Kₖ` is the
+multiplicative sequence of `Q` and `s²` is the multiset of squares of the roots, by substituting
+`t²` for `t`. An even characteristic series is of the form `Q(t²)`; for the `L` and `Â` classes the
+roots are one degree-two root per oriented real 2-plane, and the `eᵢ(s²)` are the Pontryagin
+classes. -/
+theorem expand_mk_aeval_multiplicativeSequence (s : Multiset S) (hs : s.card = n) :
+    expand 2 two_ne_zero (mk fun k => MvPolynomial.aeval
+        (fun j : Fin n => (s.map (· ^ 2)).esymm (j + 1)) (Q.multiplicativeSequence n k)) =
+      (s.map fun x => rescale x ((expand 2 two_ne_zero Q).map (algebraMap R S))).prod := by
+  rw [mk_aeval_multiplicativeSequence Q n _ (by simpa using hs), map_multiset_prod,
+    Multiset.map_map, Multiset.map_map]
+  simp [Function.comp_def, rescale_expand]
+
+/-- **Multiplicative sequences of even series**, coefficientwise: for a multiset `s` of `n` roots,
+`Kₖ(e₁(s²), …, eₙ(s²))` is the coefficient of `t²ᵏ` in `∏_{x ∈ s} Q(x² t²)`, where `Kₖ` is the
+multiplicative sequence of `Q`. -/
+theorem aeval_multiset_esymm_sq_multiplicativeSequence (s : Multiset S) (hs : s.card = n) :
+    MvPolynomial.aeval (fun j : Fin n => (s.map (· ^ 2)).esymm (j + 1))
+        (Q.multiplicativeSequence n k) =
+      coeff (2 * k)
+        (s.map fun x => rescale x ((expand 2 two_ne_zero Q).map (algebraMap R S))).prod := by
+  have h := congrArg (coeff (2 * k)) (expand_mk_aeval_multiplicativeSequence Q n s hs)
+  rwa [coeff_expand_mul, coeff_mk] at h
+
+end Even
+
+section LowDegree
+
+variable {Q} {S : Type*} [CommRing S] [Algebra R S]
+
+/-- The coefficients of `∏_{x ∈ s} Q(x t)` in degrees `0` to `3`, for `Q(0) = 1`, as polynomials in
+the elementary symmetric functions of the roots. -/
+private theorem coeff_multiset_prod_rescale_le_three (hQ : constantCoeff Q = 1)
+    (s : Multiset S) :
+    coeff 0 (s.map fun x => rescale x (Q.map (algebraMap R S))).prod = 1 ∧
+    coeff 1 (s.map fun x => rescale x (Q.map (algebraMap R S))).prod =
+      algebraMap R S (coeff 1 Q) * s.esymm 1 ∧
+    coeff 2 (s.map fun x => rescale x (Q.map (algebraMap R S))).prod =
+      algebraMap R S (coeff 2 Q) * s.esymm 1 ^ 2 +
+        algebraMap R S (coeff 1 Q ^ 2 - 2 * coeff 2 Q) * s.esymm 2 ∧
+    coeff 3 (s.map fun x => rescale x (Q.map (algebraMap R S))).prod =
+      algebraMap R S (coeff 3 Q) * s.esymm 1 ^ 3 +
+        algebraMap R S (coeff 1 Q * coeff 2 Q - 3 * coeff 3 Q) * s.esymm 1 * s.esymm 2 +
+        algebraMap R S (coeff 1 Q ^ 3 - 3 * coeff 1 Q * coeff 2 Q + 3 * coeff 3 Q) *
+          s.esymm 3 := by
+  induction s using Multiset.induction_on with
+  | empty => simp [Multiset.esymm, Multiset.powersetCard_zero_right]
+  | cons x s ih =>
+    obtain ⟨h0, h1, h2, h3⟩ := ih
+    have hq0 : algebraMap R S (coeff 0 Q) = 1 := by
+      rw [coeff_zero_eq_constantCoeff_apply, hQ, map_one]
+    simp only [Multiset.map_cons, Multiset.prod_cons, coeff_mul, Finset.Nat.sum_antidiagonal_succ,
+      Finset.Nat.antidiagonal_zero, Finset.sum_singleton, coeff_rescale, coeff_map, Nat.reduceAdd,
+      Multiset.esymm_cons, Multiset.esymm_zero, hq0, h0, h1, h2, h3, map_add, map_sub, map_mul,
+      map_pow, map_ofNat]
+    refine ⟨?_, ?_, ?_, ?_⟩ <;> ring
+
+variable {n k} in
+/-- To identify `Kₖ` in `n` variables, it suffices to compute the value of a polynomial at the
+elementary symmetric polynomials of the variables, viewed as a multiset of roots. -/
+private theorem eq_multiplicativeSequence_of_aeval {p : MvPolynomial (Fin n) R}
+    (h : MvPolynomial.aeval
+        (fun j : Fin n => (univ.val.map (MvPolynomial.X (R := R) (σ := Fin n))).esymm (j + 1)) p =
+      coeff k ((univ.val.map (MvPolynomial.X (R := R) (σ := Fin n))).map
+        fun x => rescale x (Q.map (algebraMap R _))).prod) :
+    p = Q.multiplicativeSequence n k := by
+  rw [eq_multiplicativeSequence_iff]
+  simpa [MvPolynomial.esymm_eq_multiset_esymm, Finset.prod_eq_multiset_prod, Multiset.map_map,
+    Function.comp_def] using h
+
+/-- **The linear term of a multiplicative sequence**: for `Q(0) = 1`, `K₁ = q₁ e₁`. -/
+theorem multiplicativeSequence_one_right (hQ : constantCoeff Q = 1) :
+    Q.multiplicativeSequence (n + 1) 1 = MvPolynomial.C (coeff 1 Q) * MvPolynomial.X 0 := by
+  refine (eq_multiplicativeSequence_of_aeval ?_).symm
+  rw [(coeff_multiset_prod_rescale_le_three hQ _).2.1]
+  simp [MvPolynomial.algebraMap_eq]
+
+/-- **The quadratic term of a multiplicative sequence**: for `Q(0) = 1` and at least two variables,
+`K₂ = q₂ e₁² + (q₁² - 2 q₂) e₂`. -/
+theorem multiplicativeSequence_two_right (hQ : constantCoeff Q = 1) :
+    Q.multiplicativeSequence (n + 2) 2 =
+      MvPolynomial.C (coeff 2 Q) * MvPolynomial.X 0 ^ 2 +
+        MvPolynomial.C (coeff 1 Q ^ 2 - 2 * coeff 2 Q) * MvPolynomial.X 1 := by
+  refine (eq_multiplicativeSequence_of_aeval ?_).symm
+  rw [(coeff_multiset_prod_rescale_le_three hQ _).2.2.1]
+  simp [MvPolynomial.algebraMap_eq]
+
+/-- **The cubic term of a multiplicative sequence**: for `Q(0) = 1` and at least three variables,
+`K₃ = q₃ e₁³ + (q₁ q₂ - 3 q₃) e₁ e₂ + (q₁³ - 3 q₁ q₂ + 3 q₃) e₃`. -/
+theorem multiplicativeSequence_three_right (hQ : constantCoeff Q = 1) :
+    Q.multiplicativeSequence (n + 3) 3 =
+      MvPolynomial.C (coeff 3 Q) * MvPolynomial.X 0 ^ 3 +
+        MvPolynomial.C (coeff 1 Q * coeff 2 Q - 3 * coeff 3 Q) * MvPolynomial.X 0 *
+          MvPolynomial.X 1 +
+        MvPolynomial.C (coeff 1 Q ^ 3 - 3 * coeff 1 Q * coeff 2 Q + 3 * coeff 3 Q) *
+          MvPolynomial.X 2 := by
+  refine (eq_multiplicativeSequence_of_aeval ?_).symm
+  rw [(coeff_multiset_prod_rescale_le_three hQ _).2.2.2]
+  simp [MvPolynomial.algebraMap_eq, Nat.mod_eq_of_lt (show 2 < n + 3 by omega)]
+
+end LowDegree
 
 end PowerSeries

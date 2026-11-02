@@ -24,13 +24,19 @@ index by one, and transfers the polynomial identities of
 `TauCeti/RingTheory/Polynomial/Chebyshev/Divisibility.lean` to it. Note that `[0] = 0` for every
 `δ`, so nonvanishing hypotheses on quantum integers concern the indices `n ≥ 1` only.
 
+Since Mathlib's polynomials are noncomputable, so is `qInt`; the evaluator `TauCeti.qIntAux`
+computes the same values from the three-term recurrence.
+
 ## Main definitions
 
 * `TauCeti.qInt R δ n`: the quantum integer `[n]` at the loop parameter `δ`.
+* `TauCeti.qIntAux δ n`: a computable evaluator, equal to `qInt R δ n` by `qIntAux_eq_qInt`.
 
 ## Main results
 
 * `TauCeti.qInt_add_two`: the recurrence `[n + 2] = δ [n + 1] - [n]`.
+* `TauCeti.qInt_add_two_mul_inverse`: the recurrence divided by a unit `[n + 1]`, the scalar
+  identity behind the Jones–Wenzl recursion.
 * `TauCeti.qInt_add_add_one`: `[m + n + 1] = [m + 1] [n + 1] - [m] [n]`.
 * `TauCeti.qInt_mul`: `[mn]` at `δ` is `[m]` at `δ` times `[n]` at `Cₘ(δ)`, where `Cₘ` is the
   rescaled Chebyshev polynomial of the first kind, so that `Cₘ(q + q⁻¹) = qᵐ + q⁻ᵐ`.
@@ -90,6 +96,13 @@ theorem qInt_add_two (δ : R) (n : ℕ) :
   rw [qInt_def, h, S_add_one]
   simp [qInt_def]
 
+/-- The recurrence divided by `[n + 1]`: `[n + 2] / [n + 1] = δ - [n] / [n + 1]` when `[n + 1]` is
+a unit, with division `Ring.inverse`. -/
+theorem qInt_add_two_mul_inverse (δ : R) (n : ℕ) (h : IsUnit (qInt R δ (n + 1))) :
+    qInt R δ (n + 2) * Ring.inverse (qInt R δ (n + 1)) =
+      δ - qInt R δ n * Ring.inverse (qInt R δ (n + 1)) := by
+  rw [qInt_add_two, sub_mul, mul_assoc, Ring.mul_inverse_cancel _ h, mul_one]
+
 /-- The **addition formula** for quantum integers: `[m + n + 1] = [m + 1] [n + 1] - [m] [n]`. -/
 theorem qInt_add_add_one (δ : R) (m n : ℕ) :
     qInt R δ (m + n + 1) = qInt R δ (m + 1) * qInt R δ (n + 1) - qInt R δ m * qInt R δ n := by
@@ -137,3 +150,34 @@ theorem map_qInt (f : R →+* R') (δ : R) (n : ℕ) :
   rw [qInt_def, qInt_def, ← eval_map_apply, map_S]
 
 end RingHom
+
+namespace TauCeti
+
+/-! ### A computable evaluator -/
+
+section Aux
+
+variable {R : Type*} [CommRing R]
+
+/-- A **computable evaluator for the quantum integers**: `qIntAux δ n` iterates
+`([k], [k + 1]) ↦ ([k + 1], δ [k + 1] - [k])` starting from `([0], [1]) = (0, 1)`, and so agrees
+with the noncomputable `qInt R δ n` (`qIntAux_eq_qInt`). The body is exposed so that values can
+be computed by evaluation or by `decide` in other modules. -/
+@[expose]
+def qIntAux (δ : R) (n : ℕ) : R :=
+  ((fun p : R × R ↦ (p.2, δ * p.2 - p.1))^[n] (0, 1)).1
+
+/-- The computable evaluator `qIntAux` computes the quantum integers. -/
+@[simp]
+theorem qIntAux_eq_qInt (δ : R) (n : ℕ) : qIntAux δ n = qInt R δ n := by
+  have key : ∀ n : ℕ, (fun p : R × R ↦ (p.2, δ * p.2 - p.1))^[n] (0, 1) =
+      (qInt R δ n, qInt R δ (n + 1)) := by
+    intro n
+    induction n with
+    | zero => simp
+    | succ n ih => rw [Function.iterate_succ_apply', ih, qInt_add_two]
+  rw [qIntAux, key]
+
+end Aux
+
+end TauCeti

@@ -15,8 +15,10 @@ Let `R` be a perfect ring of characteristic `p`. Every Witt vector `x : 𝕎 R` 
 Witt coordinate of `x` (`WittVector.dvd_sub_sum_teichmuller_iterateFrobeniusEquiv_coeff`). This file
 names `xₙ` the `n`-th *Teichmüller coordinate* `x.teichmullerCoeff n` and records how it behaves:
 it is determined by `x` modulo `p ^ (n + 1)`, it reads off the coefficients of a finite
-Teichmüller sum, and multiplication by `[c]` multiplies every Teichmüller coordinate by `c`.
-These coordinates are the input to the Gauss valuations on `A_inf = W(𝒪_F)`.
+Teichmüller sum, and multiplication by `[c]` multiplies every Teichmüller coordinate by `c`, while
+multiplication by `p` shifts them. The coordinates determine `x`, so divisibility by `[c]` and
+regularity of `[c]` can be read off coordinatewise. These coordinates are the input to the Gauss
+valuations on `A_inf = W(𝒪_F)`.
 
 ## Main definitions
 
@@ -34,6 +36,13 @@ These coordinates are the input to the Gauss valuations on `A_inf = W(𝒪_F)`.
 * `WittVector.teichmullerCoeff_eq_of_dvd_sub` : the first `n + 1` Teichmüller coordinates only
   depend on the residue modulo `p ^ (n + 1)`.
 * `WittVector.teichmullerCoeff_teichmuller_mul` : `[c] x` has Teichmüller coordinates `c xₙ`.
+* `WittVector.teichmullerCoeff_injective` : a Witt vector is determined by its Teichmüller
+  coordinates.
+* `WittVector.teichmullerCoeff_mul_natCast_pow_add` : `x pᵐ` has Teichmüller coordinates `xₙ` in
+  position `n + m`, and `0` below `m` (`WittVector.teichmullerCoeff_mul_natCast_pow_of_lt`).
+* `WittVector.teichmuller_dvd_iff` : `[c]` divides `x` iff `c` divides every `xₙ`; hence `[c]`
+  divides `x pᵐ` only if it divides `x` (`WittVector.teichmuller_dvd_mul_natCast_pow_iff`).
+* `WittVector.teichmuller_mem_nonZeroDivisors_iff` : `[c]` is a nonzerodivisor iff `c` is.
 
 ## References
 
@@ -44,6 +53,8 @@ These coordinates are the input to the Gauss valuations on `A_inf = W(𝒪_F)`.
 public section
 
 namespace WittVector
+
+open scoped nonZeroDivisors
 
 variable {p : ℕ} [hp : Fact p.Prime] {R : Type*} [CommRing R] [CharP R p] [PerfectRing R p]
 
@@ -163,5 +174,53 @@ theorem teichmullerCoeff_teichmuller_mul (c : R) (x : 𝕎 R) (n : ℕ) :
     simp only [mul_sub, Finset.mul_sum, map_mul, mul_assoc]
   rw [teichmullerCoeff_eq_of_dvd_sub h le_rfl,
     teichmullerCoeff_sum_teichmuller_mul_pow (fun i ↦ c * x.teichmullerCoeff i) le_rfl]
+
+/-- A Witt vector over a perfect ring is determined by its Teichmüller coordinates. -/
+theorem teichmullerCoeff_injective : Function.Injective (teichmullerCoeff : 𝕎 R → ℕ → R) :=
+  fun x y h ↦ ext fun n ↦ by rw [← teichmullerCoeff_pow, ← teichmullerCoeff_pow, congrFun h n]
+
+/-- Multiplication by `p ^ m` shifts the Teichmüller coordinates up by `m`. -/
+@[simp]
+theorem teichmullerCoeff_mul_natCast_pow_add (x : 𝕎 R) (m n : ℕ) :
+    (x * (p : 𝕎 R) ^ m).teichmullerCoeff (n + m) = x.teichmullerCoeff n := by
+  rw [teichmullerCoeff_eq_iff, mul_pow_charP_coeff_succ, ← teichmullerCoeff_pow, ← pow_mul,
+    ← pow_add]
+
+/-- The first `m` Teichmüller coordinates of `x * p ^ m` vanish. -/
+theorem teichmullerCoeff_mul_natCast_pow_of_lt (x : 𝕎 R) {m n : ℕ} (h : n < m) :
+    (x * (p : 𝕎 R) ^ m).teichmullerCoeff n = 0 := by
+  rw [teichmullerCoeff_eq_iff, mul_pow_charP_coeff_zero _ h,
+    zero_pow (pow_ne_zero n hp.out.ne_zero)]
+
+/-- The Teichmüller representative `[c]` divides `x` exactly when `c` divides every Teichmüller
+coordinate of `x`. -/
+theorem teichmuller_dvd_iff {c : R} {x : 𝕎 R} :
+    teichmuller p c ∣ x ↔ ∀ n, c ∣ x.teichmullerCoeff n := by
+  refine ⟨fun ⟨y, hy⟩ n ↦ ⟨y.teichmullerCoeff n, by rw [hy, teichmullerCoeff_teichmuller_mul]⟩,
+    fun h ↦ ?_⟩
+  choose y hy using h
+  have hmk (n : ℕ) : (mk p fun n ↦ y n ^ p ^ n).teichmullerCoeff n = y n :=
+    teichmullerCoeff_eq_iff.mpr (congrFun (coeff_mk p _) n)
+  exact ⟨_, teichmullerCoeff_injective <| funext fun n ↦ by
+    rw [teichmullerCoeff_teichmuller_mul, hmk, hy]⟩
+
+/-- Over a perfect ring, `[c]` divides `x * p ^ m` only if it divides `x`: the factor `p ^ m`
+merely shifts the Teichmüller coordinates. -/
+@[simp]
+theorem teichmuller_dvd_mul_natCast_pow_iff {c : R} {x : 𝕎 R} {m : ℕ} :
+    teichmuller p c ∣ x * (p : 𝕎 R) ^ m ↔ teichmuller p c ∣ x :=
+  ⟨fun h ↦ teichmuller_dvd_iff.mpr fun n ↦ by
+    simpa using teichmuller_dvd_iff.mp h (n + m), (Dvd.dvd.mul_right · _)⟩
+
+/-- The Teichmüller representative `[c]` is a nonzerodivisor of `𝕎 R` exactly when `c` is a
+nonzerodivisor of `R`. -/
+@[simp]
+theorem teichmuller_mem_nonZeroDivisors_iff {c : R} :
+    teichmuller p c ∈ (𝕎 R)⁰ ↔ c ∈ R⁰ := by
+  simp only [mem_nonZeroDivisors_iff_left]
+  refine ⟨fun h a ha ↦ ?_, fun h x hx ↦ teichmullerCoeff_injective <| funext fun n ↦ ?_⟩
+  · simpa using congrArg (coeff · 0) (h (teichmuller p a) (by rw [← map_mul, ha, teichmuller_zero]))
+  · rw [zero_teichmullerCoeff]
+    exact h _ (by rw [← teichmullerCoeff_teichmuller_mul, hx, zero_teichmullerCoeff])
 
 end WittVector

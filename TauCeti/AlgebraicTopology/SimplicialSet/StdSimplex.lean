@@ -28,6 +28,7 @@ an initial and a final segment.
 * `SSet.stdSimplex.isConnected`: standard simplices are connected.
 * `SSet.stdSimplex.contraction`: the homotopy from the constant map at the initial vertex of
   `Δ[n]` to its identity.
+* `SSet.horn_one_ι_eq_const`: each horn `Λ[1, i]` of `Δ[1]` is the vertex `i`.
 -/
 
 public section
@@ -99,3 +100,20 @@ noncomputable def contraction (n : ℕ) :
   rel := by ext _ ⟨⟨_, ⟨⟩⟩, _⟩
 
 end SSet.stdSimplex
+
+namespace SSet
+
+/-- The horn `Λ[1, i]` is the vertex `i` of `Δ[1]`: every simplex of it is constant at `i`. -/
+lemma horn_one_ι_eq_const (i : Fin 2) : Λ[1, i].ι = const (stdSimplex.obj₀Equiv.{u}.symm i) := by
+  ext ⟨n⟩ x
+  induction n using SimplexCategory.rec with | _ n
+  obtain ⟨σ, hσ⟩ := x
+  refine stdSimplex.ext _ _ fun k ↦ ?_
+  rw [mem_horn_iff_notMem_range] at hσ
+  obtain ⟨j, hj, hj'⟩ := hσ
+  have hk : σ k ≠ j := fun h ↦ hj' ⟨k, h⟩
+  rw [stdSimplex.obj₀Equiv_symm_apply]
+  -- The inclusion `Λ[1, i].ι` sends `⟨σ, hσ⟩` to `σ`.
+  exact (by omega : σ k = i).trans (stdSimplex.const_app_apply i _ k).symm
+
+end SSet

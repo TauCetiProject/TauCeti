@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.FreeGroup.CSA
-public import TauCeti.GroupTheory.GroupAlgGeom.Basic
+public import TauCeti.GroupTheory.GroupAlgGeom.Discrimination
 
 /-!
 # Zero divisors and domains over a group of coefficients
@@ -31,6 +31,12 @@ Hence a nonabelian free group `F` is a domain, and every CSA group containing `F
 `F`-domain. The noncommuting coefficients cannot be dropped: `Multiplicative ℤ` is CSA, but it is
 not a domain over any coefficients.
 
+In a domain any two nontrivial normal subgroups meet nontrivially, so finitely many nonidentity
+elements have a common nonidentity element in their normal closures. This is why, over a domain
+`H`, discrimination by `H` is separation by `H` plus being a domain (Baumslag–Myasnikov–
+Remeslennikov, Theorem C1): a homomorphism keeping that common element nontrivial keeps all the
+given elements nontrivial, and conversely discrimination transports zero divisors to `H`.
+
 The coefficient map need not be injective, matching `TauCeti.GroupAlgGeom.IsSeparatedBy`.
 
 ## Main definitions
@@ -48,6 +54,14 @@ The coefficient map need not be injective, matching `TauCeti.GroupAlgGeom.IsSepa
   coefficient-preserving map is a `G`-domain.
 * `TauCeti.GroupAlgGeom.IsGDomain.of_isCSA`: a CSA group with two noncommuting coefficients is a
   `G`-domain.
+* `TauCeti.GroupAlgGeom.IsGDomain.inf_ne_bot`: in a `G`-domain two nontrivial normal subgroups
+  intersect nontrivially.
+* `TauCeti.GroupAlgGeom.IsDiscriminatedBy.isGDomain`: a group discriminated by a `G`-domain is a
+  `G`-domain.
+* `TauCeti.GroupAlgGeom.IsSeparatedBy.isDiscriminatedBy`: a `G`-domain separated by `H` is
+  discriminated by `H`, provided some coefficient-preserving homomorphism to `H` exists.
+* `TauCeti.GroupAlgGeom.isDiscriminatedBy_iff_isSeparatedBy_and_isGDomain`: over a `G`-domain,
+  a nontrivial group is discriminated exactly when it is separated and a `G`-domain.
 * `IsFreeGroup.isGDomain_id`, `FreeGroup.isGDomain_id`: nonabelian free groups are domains.
 * `TauCeti.GroupAlgGeom.not_isGDomain_of_center_ne_bot`,
   `TauCeti.GroupAlgGeom.not_isGDomain_prod`: groups with nontrivial centre and products of two
@@ -56,12 +70,14 @@ The coefficient map need not be injective, matching `TauCeti.GroupAlgGeom.IsSepa
 ## References
 
 * G. Baumslag, A. Myasnikov, V. Remeslennikov, *Algebraic geometry over groups I. Algebraic sets
-  and ideal theory*, J. Algebra 219 (1999), §2.1, Definition 1, Proposition 1 and Corollary 1.
+  and ideal theory*, J. Algebra 219 (1999), Theorem C1 and §2.1, Definition 1, Proposition 1 and
+  Corollary 1.
 -/
 
 public section
 
 open Group
+open scoped commutatorElement
 
 namespace TauCeti.GroupAlgGeom
 
@@ -143,7 +159,80 @@ theorem of_isCSA_of_injective {ι : G →* H} (hH : IsCSA H) (hι : Function.Inj
     simpa [isMulCommutative_iff, commute_iff_eq] using hG
   exact of_isCSA hH fun h => hab (h.of_map hι)
 
+/-- In a domain over `G`, two nontrivial normal subgroups intersect nontrivially: a nonidentity
+element of the first has a nonidentity commutator with some coefficient conjugate of a
+nonidentity element of the second, and that commutator lies in both. -/
+theorem inf_ne_bot {ι : G →* H} (h : IsGDomain ι) {N₁ N₂ : Subgroup H} [N₁.Normal] [N₂.Normal]
+    (h₁ : N₁ ≠ ⊥) (h₂ : N₂ ≠ ⊥) : N₁ ⊓ N₂ ≠ ⊥ := by
+  obtain ⟨⟨x, hx⟩, hx1⟩ := Subgroup.ne_bot_iff_exists_ne_one.mp h₁
+  obtain ⟨⟨y, hy⟩, hy1⟩ := Subgroup.ne_bot_iff_exists_ne_one.mp h₂
+  obtain ⟨g, hg⟩ := (isGDomain_iff ι).mp h x y (by simpa using hx1) (by simpa using hy1)
+  have hmem : ⁅x, ι g * y * (ι g)⁻¹⁆ ∈ N₁ ⊓ N₂ :=
+    Subgroup.commutator_le_inf N₁ N₂
+      (Subgroup.commutator_mem_commutator hx (‹N₂.Normal›.conj_mem y hy (ι g)))
+  refine fun hbot => hg ?_
+  rw [← commutatorElement_eq_one_iff_commute]
+  simpa [hbot] using hmem
+
+/-- In a domain over `G`, finitely many (and at least one) nonidentity elements have a common
+nonidentity element in their normal closures. -/
+private theorem exists_ne_one_forall_mem_normalClosure {ι : G →* H} (h : IsGDomain ι)
+    {s : Finset H} (hs : s.Nonempty) (hs1 : ∀ k ∈ s, k ≠ 1) :
+    ∃ w : H, w ≠ 1 ∧ ∀ k ∈ s, w ∈ Subgroup.normalClosure {k} := by
+  have hncl {k : H} (hk : k ≠ 1) : Subgroup.normalClosure {k} ≠ ⊥ := by
+    simpa [Subgroup.normalClosure_eq_bot_iff] using hk
+  induction hs using Finset.Nonempty.cons_induction with
+  | singleton k =>
+    exact ⟨k, hs1 k (by simp), by simpa using Subgroup.subset_normalClosure rfl⟩
+  | cons k s hk hs ih =>
+    obtain ⟨w, hw1, hw⟩ := ih fun k' hk' => hs1 k' (by simp [hk'])
+    obtain ⟨⟨w', hw'⟩, hw'1⟩ := Subgroup.ne_bot_iff_exists_ne_one.mp
+      (h.inf_ne_bot (hncl hw1) (hncl (hs1 k (by simp))))
+    refine ⟨w', by simpa using hw'1, ?_⟩
+    simp only [Finset.mem_cons, forall_eq_or_imp]
+    refine ⟨(Subgroup.mem_inf.mp hw').2, fun k' hk' => ?_⟩
+    exact Subgroup.normalClosure_le_normal (by simpa using hw k' hk') (Subgroup.mem_inf.mp hw').1
+
 end IsGDomain
+
+/-! ### Discrimination by a domain -/
+
+/-- A group discriminated by a domain over `G` is a domain over `G`: a homomorphism keeping a
+zero divisor and its witness nontrivial makes their images a zero divisor of the target. -/
+theorem IsDiscriminatedBy.isGDomain {ιK : G →* K} {ιH : G →* H} (h : IsDiscriminatedBy ιK ιH)
+    (hH : IsGDomain ιH) : IsGDomain ιK := by
+  classical
+  rintro x ⟨hx, y, hy, hxy⟩
+  obtain ⟨φ, hφ⟩ := (isDiscriminatedBy_def _ _).1 h {x, y} (by simp [hx, hy])
+  exact hH (φ x) ⟨hφ x (by simp), φ y, hφ y (by simp), fun g => by simpa using (hxy g).map φ⟩
+
+/-- A domain over `G` that is separated by `H` is discriminated by `H`, as soon as some
+coefficient-preserving homomorphism to `H` exists: one homomorphism keeping a common nonidentity
+element of the normal closures of the given elements nontrivial keeps all of them nontrivial.
+No hypothesis on `H` is needed. The existence of a homomorphism only matters when `K` is trivial;
+otherwise it follows from separation (`IsSeparatedBy.nonempty_gHom`). -/
+theorem IsSeparatedBy.isDiscriminatedBy {ιK : G →* K} {ιH : G →* H} (h : IsSeparatedBy ιK ιH)
+    (hK : IsGDomain ιK) (hne : Nonempty (GHom ιK ιH)) : IsDiscriminatedBy ιK ιH := by
+  refine (isDiscriminatedBy_def _ _).2 fun s hs => ?_
+  obtain rfl | hsne := s.eq_empty_or_nonempty
+  · exact ⟨hne.some, by simp⟩
+  obtain ⟨w, hw1, hw⟩ := hK.exists_ne_one_forall_mem_normalClosure hsne hs
+  obtain ⟨φ, hφ⟩ := (isSeparatedBy_def _ _).1 h w hw1
+  refine ⟨φ, fun k hk hφk => hφ ?_⟩
+  have hker : Subgroup.normalClosure {k} ≤ (φ : K →* H).ker :=
+    Subgroup.normalClosure_le_normal (by simpa using hφk)
+  exact hker (hw k hk)
+
+/-- **Discrimination is separation plus being a domain** (Baumslag–Myasnikov–Remeslennikov,
+Theorem C1). Over a domain `H` over `G`, a nontrivial group is discriminated by `H` if and only
+if it is separated by `H` and is itself a domain over `G`. For a trivial group the separation
+condition is vacuous, while discrimination still asks for a coefficient-preserving homomorphism
+to `H`. -/
+theorem isDiscriminatedBy_iff_isSeparatedBy_and_isGDomain [Nontrivial K] {ιK : G →* K}
+    {ιH : G →* H} (hH : IsGDomain ιH) :
+    IsDiscriminatedBy ιK ιH ↔ IsSeparatedBy ιK ιH ∧ IsGDomain ιK :=
+  ⟨fun h => ⟨h.isSeparatedBy, h.isGDomain hH⟩,
+    fun ⟨h, hK⟩ => h.isDiscriminatedBy hK h.nonempty_gHom⟩
 
 /-- A group with a nonidentity central element is not a domain over any coefficients: the central
 element commutes with every conjugate of itself. -/

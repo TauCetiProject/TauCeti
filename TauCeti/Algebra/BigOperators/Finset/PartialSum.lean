@@ -24,6 +24,7 @@ This file contains basic facts about finite partial sums.
 
 * `TauCeti.prefixSum_succ`, `TauCeti.prefixSum_of_le`: the recurrence for prefix sums, and the
   prefix sum of full length is the total sum.
+* `TauCeti.prefixSum_eq_sum_castLE`: up to `n`, prefix sums are sums over the first indices.
 * `TauCeti.prefixSum_eq_sum_range`: prefix sums of a sequence restricted to `Fin n` are its
   partial sums over `range`, capped at `n`.
 * `TauCeti.map_prefixSum`, `TauCeti.prefixSum_smul`: additive monoid homomorphisms and
@@ -71,6 +72,17 @@ theorem prefixSum_succ {k : ℕ} (hk : k < n) (x : Fin n → M) :
 /-- A prefix sum of length at least `n` is the total sum. -/
 theorem prefixSum_of_le {k : ℕ} (hk : n ≤ k) (x : Fin n → M) : prefixSum k x = ∑ i, x i := by
   rw [prefixSum, filter_true_of_mem fun i _ ↦ i.isLt.trans_le hk]
+
+/-- For `k ≤ n`, the prefix sum of length `k` is the sum over the first `k` indices of `Fin n`. -/
+theorem prefixSum_eq_sum_castLE {k : ℕ} (hk : k ≤ n) (x : Fin n → M) :
+    prefixSum k x = ∑ j : Fin k, x (Fin.castLE hk j) := by
+  have hmap := sum_map univ (Fin.castLEEmb hk) x
+  simp only [Fin.castLEEmb_apply] at hmap
+  rw [prefixSum_def, ← hmap]
+  congr 1
+  ext i
+  simp only [mem_filter, mem_univ, true_and, mem_map, Fin.castLEEmb_apply]
+  exact ⟨fun hi ↦ ⟨⟨i, hi⟩, rfl⟩, fun ⟨j, hj⟩ ↦ hj ▸ j.isLt⟩
 
 /-- Capping the length of a prefix sum at `n` does not change it. -/
 @[simp]

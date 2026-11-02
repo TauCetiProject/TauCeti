@@ -16,8 +16,9 @@ import TauCeti.RingTheory.DedekindDomain.Ideal.Basic
 
 For the intended number-field applications, an ideal-indexed Dirichlet series should not assign an
 arithmetic coefficient to the zero ideal. Excluding it ensures that ideal convolution never
-considers factorizations through the zero ideal. This file introduces the carrier used throughout
-the arithmetic-Dirichlet-series roadmap, parameterized over an arbitrary field:
+considers factorizations through the zero ideal. This file introduces the carrier on which the
+norm regrouping, ideal convolution, Euler products, and summatory functions of
+`TauCeti/NumberTheory/ArithmeticDirichletSeries/` are built, parameterized over an arbitrary field:
 
 * `TauCeti.IdealArithmeticFunction K` is a complex-valued function on the nonzero ideals of
   `𝓞 K`;
@@ -43,20 +44,14 @@ existence-and-uniqueness API is recorded without exposing the implementation of 
 The extension respects the pointwise additive, scalar, and multiplicative operations. It does not
 preserve the pointwise unit: the constant-one function on all ideals takes value one at the zero
 ideal, and therefore cannot be a zero extension. The theorem
-`TauCeti.IdealArithmeticFunction.not_exists_zeroExtend_eq_one` is the zero-ideal rejection test
-required by Layer 0 of the roadmap.
+`TauCeti.IdealArithmeticFunction.not_exists_zeroExtend_eq_one` records this as a rejection test.
 
-## Roadmap role
-
-This is Layer **0.1** of `TauCetiRoadmap/ArithmeticDirichletSeries/README.md`, and is the common
-carrier on which its norm regrouping, ideal convolution, Euler products, and summatory functions
-are built. Later Layer 0 files add completely multiplicative and unitary subtypes; those are
-special coefficient systems on this general carrier, not replacements for it.
+The completely multiplicative and unitary weights of
+`TauCeti/NumberTheory/ArithmeticDirichletSeries/Weight.lean` are special coefficient systems on
+this general carrier, not replacements for it.
 
 ## References
 
-* `TauCetiRoadmap/ArithmeticDirichletSeries/Suggested.lean`, whose Layer 0.1 nonzero-ideal
-  carrier and zero-extension design are adapted here.
 * J. Neukirch, *Algebraic Number Theory*, Chapter VII.
 * G. Tenenbaum, *Introduction to Analytic and Probabilistic Number Theory*, Chapters II--III.
 -/
