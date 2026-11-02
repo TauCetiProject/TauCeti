@@ -74,18 +74,6 @@ theorem marchenkoPastur_def (y : ℝ≥0) :
 theorem marchenkoPastur_zero : marchenkoPastur 0 = Measure.dirac 1 := by
   simp [marchenkoPastur_def, dirac_withDensity]
 
-/-- The semicircle law with centre `1 + y` and variance `y` is carried by `(0, ∞)`. -/
-private theorem ae_pos_semicircleReal (y : ℝ≥0) : ∀ᵐ x ∂semicircleReal (1 + y) y, 0 < x := by
-  rcases eq_zero_or_pos y with rfl | hy
-  · simp [ae_dirac_eq]
-  have hac : semicircleReal (1 + y) y ≪ volume := by
-    rw [semicircleReal_eq_withDensity _ hy]
-    exact withDensity_absolutelyContinuous _ _
-  filter_upwards [ae_mem_Icc_semicircleReal (1 + y) y,
-    measure_eq_zero_iff_ae_notMem.1 (hac (measure_singleton 0))] with x hx hx0
-  have hs := sq_sqrt y.coe_nonneg
-  exact lt_of_le_of_ne (by nlinarith [hx.1, sq_nonneg (1 - √(y : ℝ))]) (Ne.symm hx0)
-
 /-- For `y > 0`, the Marchenko–Pastur law has an atom of mass `(1 - 1/y)₊` at `0` and the density
 `√((b - x)(x - a)) / (2π y x)` with `a = (1 - √y)²`, `b = (1 + √y)²`. The real square root makes
 the density zero outside `(a, b)`. -/
@@ -121,11 +109,13 @@ instance isProbabilityMeasure_marchenkoPastur (y : ℝ≥0) :
     Pi.smul_apply, measure_univ, smul_eq_mul, mul_one, withDensity_apply _ MeasurableSet.univ,
     Measure.restrict_univ]
   rw [← ofReal_integral_eq_lintegral_ofReal (integrable_inv_semicircleReal h2)
-      ((ae_pos_semicircleReal y).mono fun x hx ↦ (inv_pos.2 hx).le),
+      ((ae_pos_semicircleReal h2 (by positivity)).mono fun x hx ↦ (inv_pos.2 hx).le),
     integral_inv_semicircleReal hy h2, hsq]
   rcases le_or_gt (y : ℝ) 1 with h1 | h1
-  · simp [abs_of_nonneg (sub_nonneg.2 h1),
-      ENNReal.ofReal_of_nonpos (div_nonpos_of_nonpos_of_nonneg (sub_nonpos.2 h1) hy'.le)]
+  · rw [abs_of_nonneg (sub_nonneg.2 h1),
+      ENNReal.ofReal_of_nonpos (div_nonpos_of_nonpos_of_nonneg (sub_nonpos.2 h1) hy'.le),
+      zero_add, ← ENNReal.ofReal_one]
+    congr 1
     field_simp
     ring
   · rw [abs_of_neg (by linarith), ← ENNReal.ofReal_add (div_nonneg (by linarith) hy'.le)
@@ -191,7 +181,9 @@ theorem withDensity_ofReal_marchenkoPastur (y : ℝ≥0) :
   rw [← withDensity_mul _ (by fun_prop) (by fun_prop)]
   conv_rhs => rw [← withDensity_one (μ := semicircleReal (1 + y) y)]
   refine withDensity_congr_ae ?_
-  filter_upwards [ae_pos_semicircleReal y] with x hx
+  have h2 : 2 * √(y : ℝ) ≤ 1 + y := by
+    nlinarith [sq_nonneg (1 - √(y : ℝ)), sq_sqrt y.coe_nonneg]
+  filter_upwards [ae_pos_semicircleReal h2 (by positivity)] with x hx
   simp [← ENNReal.ofReal_mul (inv_nonneg.2 hx.le), inv_mul_cancel₀ hx.ne']
 
 /-- Integrating `x • g x` against the Marchenko–Pastur law is integrating `g` against the
@@ -217,6 +209,7 @@ theorem integral_id_marchenkoPastur (y : ℝ≥0) : ∫ x, x ∂marchenkoPastur 
   simpa using integral_pow_succ_marchenkoPastur y 0
 
 /-- The second moment of the Marchenko–Pastur law is `1 + y`. -/
+@[simp]
 theorem integral_sq_marchenkoPastur (y : ℝ≥0) : ∫ x, x ^ 2 ∂marchenkoPastur y = 1 + y := by
   simp only [integral_pow_succ_marchenkoPastur y 1, pow_one, integral_id_semicircleReal]
 
@@ -224,6 +217,6 @@ theorem integral_sq_marchenkoPastur (y : ℝ≥0) : ∫ x, x ^ 2 ∂marchenkoPas
 @[simp]
 theorem variance_id_marchenkoPastur (y : ℝ≥0) : variance id (marchenkoPastur y) = y := by
   rw [variance_eq_sub (memLp_id_marchenkoPastur y 2)]
-  simp [integral_sq_marchenkoPastur]
+  simp
 
 end TauCeti.Probability

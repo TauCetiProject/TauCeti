@@ -54,8 +54,7 @@ private theorem hasDerivAt_sqrt_mul_arcsin {c r t : ℝ} (hr : 0 < r) (hrc : r �
   have hst : 0 < √(1 - t ^ 2) := sqrt_pos.2 hs
   have hg : 1 - ((c * t + r) / (c + r * t)) ^ 2 =
       (√(c ^ 2 - r ^ 2) * √(1 - t ^ 2) / (c + r * t)) ^ 2 := by
-    rw [div_pow, div_pow, mul_pow, hd2, sq_sqrt hs.le, eq_div_iff (by positivity), sub_mul,
-      div_mul_cancel₀ _ (by positivity)]
+    rw [div_pow, div_pow, mul_pow, hd2, sq_sqrt hs.le, one_sub_div (by positivity)]
     ring
   have hg1 : 0 < 1 - ((c * t + r) / (c + r * t)) ^ 2 := by
     rw [hg]
