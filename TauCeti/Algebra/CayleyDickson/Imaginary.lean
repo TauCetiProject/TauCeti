@@ -10,6 +10,8 @@ public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 public import TauCeti.Algebra.CayleyDickson.Quaternion
 
+import Mathlib.Tactic.LinearCombination
+
 /-!
 # The imaginary octonions and their cross product
 
@@ -25,7 +27,9 @@ is the structure from which the compact real form of `G₂` is built.
   dimension `7`.
 * The bilinear form `g x y = -Re (x * y)` (`TauCeti.CayleyDickson.imaginaryForm`) is symmetric,
   and on `Im A` it is the inner product: `g v v = N v`, so over a linearly ordered ring it is
-  positive definite there.
+  positive definite there. Polarizing `v * v = -N v • 1` shows that the anticommutator of two
+  imaginary octonions is the scalar `v * w + w * v = -(2 * g v w) • 1`: the symmetric part of their
+  product is real.
 * The **cross product** `x × y = (x * y - y * x) / 2` (`TauCeti.CayleyDickson.cross`), defined when
   `2` is invertible, is antisymmetric and takes values in `Im A`. On imaginary octonions the
   product splits into its real and imaginary parts as `v * w = -g v w • 1 + v × w`.
@@ -42,11 +46,10 @@ From these, two identities of the seven-dimensional cross product follow for ima
   `(u × v) × w - u × (v × w) = associator u v w + g u v • w - g v w • u`,
   where `associator u v w = (u * v) * w - u * (v * w)` is Mathlib's `associator`.
 
-Since the octonions are not associative, even on imaginary elements
-(`TauCeti.DivisionOctonionReal.exists_mul_mul_ne`), the familiar three-dimensional expansion of
-`(u × v) × w` for three unrelated vectors does not hold in dimension seven; the associator identity
-records the correction. In the special case `u × (u × v)` the associator vanishes by the
-alternative law, and the three-dimensional form survives.
+The associator identity measures the failure of the three-dimensional double cross product
+formula: in the special case `u × (u × v)` the associator vanishes by the alternative law, and the
+three-dimensional form survives, while over `ℝ` the octonions are not associative, with imaginary
+units as witnesses (`TauCeti.DivisionOctonionReal.exists_mul_mul_ne`).
 
 ## Main definitions
 
@@ -62,6 +65,7 @@ alternative law, and the three-dimensional form survives.
   `TauCeti.CayleyDickson.imaginaryForm_self_pos`: `g v v = N v` on imaginary octonions, so `g` is
   positive definite there; `TauCeti.CayleyDickson.normSq_add_of_mem` exhibits `g` as the polar
   form of the norm.
+* `TauCeti.CayleyDickson.mul_add_mul_swap_of_mem`: `v * w + w * v = -(2 * g v w) • 1`.
 * `TauCeti.CayleyDickson.mul_eq_neg_smul_one_add_cross`: `v * w = -g v w • 1 + v × w`.
 * `TauCeti.CayleyDickson.associativeForm_swap` and `TauCeti.CayleyDickson.associativeForm_rotate`:
   `φ` is alternating.
@@ -71,12 +75,10 @@ alternative law, and the three-dimensional form survives.
 
 ## Implementation notes
 
-Only one identity is proved here in coordinates, by splitting an octonion into the eight
-coordinates of its two quaternion components and closing the resulting polynomial identity with
-`ring`: the anticommutator `v * w + w * v = -(2 * g v w) • 1` of imaginary octonions. Everything
-else is derived from it, from the invariance of the real part of a product under exchanging and
-reassociating factors (`TauCeti.CayleyDickson.re_mul_comm`, `TauCeti.CayleyDickson.re_mul_mul`),
-from the rank-two equation `TauCeti.CayleyDickson.mul_self` and from the left alternative law.
+The imaginary octonions are the kernel of the trace rather than of the real part, so that they,
+the form `g` and the anticommutator identity make sense over every commutative ring; when `2` is
+invertible the two kernels agree (`TauCeti.CayleyDickson.mem_imaginary_iff_re`). Only the cross
+product, and the identities involving it, need `⅟2`.
 
 ## References
 
@@ -139,7 +141,6 @@ def imaginaryForm : LinearMap.BilinForm R (CayleyDickson ℍ[R]) :=
     (fun r x y => by
       simp only [mul_smul_comm, smul_fst, Quaternion.re_smul, smul_eq_mul]; ring)
 
-@[simp]
 theorem imaginaryForm_apply (x y : CayleyDickson ℍ[R]) :
     imaginaryForm x y = -(x * y).fst.re := (rfl)
 
@@ -172,6 +173,17 @@ theorem normSq_add_of_mem (v : CayleyDickson ℍ[R]) {w : CayleyDickson ℍ[R]}
     (hw : w ∈ imaginary R) : normSq (v + w) = normSq v + normSq w + 2 * imaginaryForm v w := by
   rw [normSq_add, imaginaryForm_eq_re_mul_star v hw]
 
+/-- **The anticommutator of two imaginary octonions is a scalar**:
+`v * w + w * v = -(2 * g v w) • 1`. This is the polarization of `v * v = -N v • 1`. -/
+theorem mul_add_mul_swap_of_mem {v w : CayleyDickson ℍ[R]} (hv : v ∈ imaginary R)
+    (hw : w ∈ imaginary R) :
+    v * w + w * v = -(2 * imaginaryForm v w) • (1 : CayleyDickson ℍ[R]) := by
+  have hsq {x : CayleyDickson ℍ[R]} (hx : x ∈ imaginary R) : x * x = -normSq x • 1 := by
+    rw [mul_self, mem_imaginary.mp hx, zero_smul, zero_sub, neg_smul]
+  have h := hsq (add_mem hv hw)
+  rw [add_mul, mul_add, mul_add, hsq hv, hsq hw, normSq_add_of_mem v hw] at h
+  linear_combination (norm := module) h
+
 section LinearOrder
 
 variable [LinearOrder R] [IsStrictOrderedRing R] {v : CayleyDickson ℍ[R]}
@@ -201,20 +213,6 @@ theorem mem_imaginary_iff_re {x : CayleyDickson ℍ[R]} : x ∈ imaginary R ↔ 
   rw [mem_imaginary, trace_apply]
   refine ⟨fun h => ?_, fun h => by rw [h, mul_zero]⟩
   rw [← invOf_mul_cancel_left (2 : R) x.fst.re, h, mul_zero]
-
-/-- When `2` is invertible, the trace is onto: `T (r • ⅟2 • 1) = r`. -/
-theorem trace_surjective : Function.Surjective (trace : CayleyDickson ℍ[R] →ₗ[R] R) :=
-  fun r => ⟨r • ⅟(2 : R) • (1 : CayleyDickson ℍ[R]), by
-    rw [map_smul, map_smul, trace_one, smul_eq_mul, smul_eq_mul, invOf_mul_self, mul_one]⟩
-
-/-- The anticommutator of two imaginary octonions is a scalar:
-`v * w + w * v = -(2 * g v w) • 1`. -/
-theorem mul_add_mul_swap_of_mem {v w : CayleyDickson ℍ[R]} (hv : v ∈ imaginary R)
-    (hw : w ∈ imaginary R) :
-    v * w + w * v = -(2 * imaginaryForm v w) • (1 : CayleyDickson ℍ[R]) := by
-  have hv' := mem_imaginary_iff_re.mp hv
-  have hw' := mem_imaginary_iff_re.mp hw
-  ext <;> simp [hv', hw'] <;> ring
 
 /-! ### The cross product -/
 
@@ -267,7 +265,6 @@ def associativeForm :
     CayleyDickson ℍ[R] →ₗ[R] CayleyDickson ℍ[R] →ₗ[R] CayleyDickson ℍ[R] →ₗ[R] R :=
   cross.compr₂ imaginaryForm
 
-@[simp]
 theorem associativeForm_apply (u v w : CayleyDickson ℍ[R]) :
     associativeForm u v w = imaginaryForm (cross u v) w := (rfl)
 
@@ -282,68 +279,75 @@ theorem associativeForm_rotate (u v w : CayleyDickson ℍ[R]) :
     associativeForm v w u = associativeForm u v w := by
   simp only [associativeForm_apply, imaginaryForm_apply, cross_apply, smul_mul_assoc, sub_mul,
     smul_fst, sub_fst, Quaternion.re_smul, Quaternion.re_sub, smul_eq_mul, neg_inj]
+  -- `Re ((v * w) * u) = Re (u * (v * w)) = Re ((u * v) * w)`, and likewise
+  -- `Re ((w * v) * u) = Re (w * (v * u)) = Re ((v * u) * w)`.
   rw [re_mul_comm (v * w) u, ← re_mul_mul, re_mul_mul w v u, re_mul_comm w (v * u)]
 
+@[simp]
 theorem associativeForm_self_left (u w : CayleyDickson ℍ[R]) : associativeForm u u w = 0 := by
-  simp
+  simp [associativeForm_apply]
 
+@[simp]
 theorem associativeForm_self_right (u v : CayleyDickson ℍ[R]) : associativeForm u v v = 0 := by
   rw [← associativeForm_rotate, associativeForm_self_left]
 
 /-- The cross product `u × v` is orthogonal to `u`. -/
+@[simp]
 theorem imaginaryForm_cross_self_left (u v : CayleyDickson ℍ[R]) :
     imaginaryForm (cross u v) u = 0 := by
   rw [← associativeForm_apply, ← associativeForm_rotate, associativeForm_self_right]
 
 /-- The cross product `u × v` is orthogonal to `v`. -/
+@[simp]
 theorem imaginaryForm_cross_self_right (u v : CayleyDickson ℍ[R]) :
     imaginaryForm (cross u v) v = 0 := by
   rw [← associativeForm_apply, associativeForm_self_right]
 
 /-! ### Identities of the seven-dimensional cross product -/
 
-/-- **The double cross product with a repeated factor**: for imaginary `u` and `v`,
-`u × (u × v) = g u v • u - g u u • v`. Here the associator `(u * u) * v - u * (u * v)` vanishes by
-the alternative law, so the three-dimensional formula survives; for three unrelated factors it does
-not (`TauCeti.CayleyDickson.cross_cross_sub_cross_cross`). -/
-theorem cross_cross_eq_smul_sub_smul {u v : CayleyDickson ℍ[R]} (hu : u ∈ imaginary R)
-    (hv : v ∈ imaginary R) :
-    cross u (cross u v) = imaginaryForm u v • u - imaginaryForm u u • v := by
-  have huu : u * u = -imaginaryForm u u • (1 : CayleyDickson ℍ[R]) := by
-    rw [mul_self, mem_imaginary.mp hu, imaginaryForm_self_of_mem hu, zero_smul, zero_sub, neg_smul]
-  rw [cross_eq_mul_add_smul_one hu (cross_mem_imaginary u v), imaginaryForm_comm u (cross u v),
-    imaginaryForm_cross_self_left, zero_smul, add_zero, cross_eq_mul_add_smul_one hu hv, mul_add,
-    mul_smul_comm, mul_one, ← left_alternative, huu, smul_mul_assoc, one_mul]
-  module
-
-/-- **The norm of a cross product**: for imaginary `u` and `v`,
-`N (u × v) = g u u * g v v - (g u v) ^ 2`. -/
-theorem normSq_cross {u v : CayleyDickson ℍ[R]} (hu : u ∈ imaginary R) (hv : v ∈ imaginary R) :
-    normSq (cross u v) = imaginaryForm u u * imaginaryForm v v - imaginaryForm u v ^ 2 := by
-  rw [← imaginaryForm_self_of_mem (cross_mem_imaginary u v), ← associativeForm_apply,
-    associativeForm_rotate, associativeForm_apply, cross_swap u (cross u v), map_neg,
-    LinearMap.neg_apply,
-    cross_cross_eq_smul_sub_smul hu hv, map_sub, map_smul, map_smul, LinearMap.sub_apply,
-    LinearMap.smul_apply, LinearMap.smul_apply, smul_eq_mul, smul_eq_mul]
-  ring
-
 /-- **The associator identity of the seven-dimensional cross product**: for imaginary `u`, `v`
 and `w`,
 
 `(u × v) × w - u × (v × w) = associator u v w + g u v • w - g v w • u`.
 
-The cross product is therefore not associative, and its failure to satisfy the three-dimensional
-double cross product formula is measured by the octonion associator. -/
+The associator measures the failure of the three-dimensional double cross product formula; over
+`ℝ` it does not vanish identically (`TauCeti.DivisionOctonionReal.exists_mul_mul_ne`). -/
 theorem cross_cross_sub_cross_cross {u v w : CayleyDickson ℍ[R]} (hu : u ∈ imaginary R)
     (hv : v ∈ imaginary R) (hw : w ∈ imaginary R) :
     cross (cross u v) w - cross u (cross v w) =
       associator u v w + imaginaryForm u v • w - imaginaryForm v w • u := by
+  -- Split both outer cross products into product plus real correction; the two corrections
+  -- `g (u × v) w` and `g u (v × w)` are `φ u v w` and `φ v w u`, equal by cyclic symmetry.
   rw [cross_eq_mul_add_smul_one (cross_mem_imaginary u v) hw,
     cross_eq_mul_add_smul_one hu (cross_mem_imaginary v w), imaginaryForm_comm u (cross v w),
     ← associativeForm_apply, ← associativeForm_apply, associativeForm_rotate u v w,
-    cross_eq_mul_add_smul_one hu hv, cross_eq_mul_add_smul_one hv hw, add_mul, mul_add,
-    smul_mul_assoc, mul_smul_comm, one_mul, mul_one, associator_apply]
+    cross_eq_mul_add_smul_one hu hv, cross_eq_mul_add_smul_one hv hw]
+  simp only [associator_apply, add_mul, mul_add, smul_mul_assoc, mul_smul_comm, one_mul, mul_one]
   abel
+
+/-- **The double cross product with a repeated factor**: for imaginary `u` and `v`,
+`u × (u × v) = g u v • u - g u u • v`. This is the case `(u, u, v)` of the associator identity
+`TauCeti.CayleyDickson.cross_cross_sub_cross_cross`, in which the associator
+`(u * u) * v - u * (u * v)` vanishes by the alternative law, so the three-dimensional formula
+survives. -/
+theorem cross_cross_eq_smul_sub_smul {u v : CayleyDickson ℍ[R]} (hu : u ∈ imaginary R)
+    (hv : v ∈ imaginary R) :
+    cross u (cross u v) = imaginaryForm u v • u - imaginaryForm u u • v := by
+  have h := cross_cross_sub_cross_cross hu hu hv
+  rw [cross_self, map_zero, LinearMap.zero_apply, associator_apply, left_alternative,
+    sub_self] at h
+  linear_combination (norm := module) -h
+
+/-- **The norm of a cross product**: for imaginary `u` and `v`,
+`N (u × v) = g u u * g v v - (g u v) ^ 2`. -/
+theorem normSq_cross {u v : CayleyDickson ℍ[R]} (hu : u ∈ imaginary R) (hv : v ∈ imaginary R) :
+    normSq (cross u v) = imaginaryForm u u * imaginaryForm v v - imaginaryForm u v ^ 2 := by
+  -- `N (u × v) = φ u v (u × v) = φ (u × v) u v = -g (u × (u × v)) v`.
+  rw [← imaginaryForm_self_of_mem (cross_mem_imaginary u v), ← associativeForm_apply,
+    associativeForm_rotate, associativeForm_apply, cross_swap u (cross u v),
+    cross_cross_eq_smul_sub_smul hu hv]
+  simp
+  ring
 
 end Invertible
 
