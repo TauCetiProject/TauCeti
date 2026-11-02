@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Vertex.VertexOperator
+public import TauCeti.RingTheory.LaurentSeries.HahnModuleDerivative
+import TauCeti.Data.Nat.Choose.Sum
 import Mathlib.Tactic.Module
 
 /-!
@@ -37,28 +39,10 @@ namespace VertexOperator
 
 variable {R V : Type*} [CommRing R] [AddCommGroup V] [Module R V]
 
-/-- The coefficients of the formal derivative have a lower bound on every vector. -/
-private theorem bddBelow_support_derivative (A : VertexOperator R V) (v : V) :
-    BddBelow (Function.support fun n : ℤ ↦ ((n + 1) • HVertexOperator.coeff A (n + 1)) v) := by
-  refine ⟨HahnSeries.order ((HahnModule.of R).symm (A v)) - 1, fun n hn ↦ ?_⟩
-  by_contra h
-  have hz := coeff_eq_zero_of_lt_order A (n + 1) v (by omega)
-  exact hn (by simp only [LinearMap.smul_apply, hz, smul_zero])
-
 /-- Formal differentiation of fields, defined on Laurent coefficients by
 `(∂A).coeff n = (n + 1) • A.coeff (n + 1)`. -/
-def derivative : VertexOperator R V →ₗ[R] VertexOperator R V where
-  toFun A := of_coeff (fun n ↦ (n + 1) • HVertexOperator.coeff A (n + 1))
-    (bddBelow_support_derivative A)
-  map_add' A B := by
-    apply ext_ncoeff
-    intro n
-    simp only [ncoeff_of_coeff, map_add, Pi.add_apply, smul_add]
-  map_smul' r A := by
-    apply ext_ncoeff
-    intro n
-    simp only [ncoeff_of_coeff, map_smul, RingHom.id_apply, Pi.smul_apply]
-    exact smul_comm _ _ _
+def derivative : VertexOperator R V →ₗ[R] VertexOperator R V :=
+  LinearMap.compRight R (HahnModule.derivative R)
 
 -- As with Mathlib's coefficient API, this is not a simp lemma: the simp normal form
 -- uses normalized coefficients instead.
@@ -66,8 +50,9 @@ def derivative : VertexOperator R V →ₗ[R] VertexOperator R V where
 theorem coeff_derivative (A : VertexOperator R V) (n : ℤ) :
     HVertexOperator.coeff (derivative A) n = (n + 1) • HVertexOperator.coeff A (n + 1) := by
   ext v
-  simp only [derivative, LinearMap.coe_mk, AddHom.coe_mk, HVertexOperator.coeff_apply_apply,
-    of_coeff_apply_coeff, LinearMap.smul_apply]
+  simpa only [derivative, LinearMap.compRight_apply, LinearMap.comp_apply,
+    HVertexOperator.coeff_apply_apply, LinearMap.smul_apply] using
+    HahnModule.coeff_derivative (A v) n
 
 /-- The normalized modes of the derivative are `(∂A)₍ₙ₎ = -n A₍ₙ₋₁₎`. -/
 @[simp]
@@ -92,19 +77,11 @@ theorem derivative_left (h : A.IsLocalOfOrder B N) :
   have hweighted : ∑ ij ∈ antidiagonal (N + 1), (N + 1).choose ij.1 • (-1 : ℤ) ^ ij.2 •
       (ij.1 : ℤ) • (A[[m + ij.1 - 1]] * B[[n + ij.2]] -
         B[[n + ij.2]] * A[[m + ij.1 - 1]]) = 0 := by
-    rw [Nat.sum_antidiagonal_succ]
-    simp only [Nat.cast_zero, zero_smul, smul_zero, zero_add]
-    have e : ∀ ij ∈ antidiagonal N,
-        (N + 1).choose (ij.1 + 1) • (-1 : ℤ) ^ ij.2 • (↑(ij.1 + 1) : ℤ) •
-          (A[[m + ↑(ij.1 + 1) - 1]] * B[[n + ij.2]] -
-            B[[n + ij.2]] * A[[m + ↑(ij.1 + 1) - 1]]) =
-        (N + 1) • (N.choose ij.1 • (-1 : ℤ) ^ ij.2 •
-          (A[[m + ij.1]] * B[[n + ij.2]] - B[[n + ij.2]] * A[[m + ij.1]])) := by
-      intro ij _
-      have hi : m + ↑(ij.1 + 1) - 1 = m + ij.1 := by omega
-      rw [hi, natCast_zsmul, smul_comm ((-1 : ℤ) ^ ij.2) (ij.1 + 1), ← mul_smul,
-        ← Nat.add_one_mul_choose_eq, mul_smul]
-    rw [sum_congr rfl e, ← smul_sum, isLocalOfOrder_iff.mp h m n, smul_zero]
+    simp_rw [natCast_zsmul, smul_comm ((-1 : ℤ) ^ _) (_ : ℕ)]
+    rw [sum_antidiagonal_choose_mul_nsmul (fun i j ↦ (-1 : ℤ) ^ j •
+      (A[[m + i - 1]] * B[[n + j]] - B[[n + j]] * A[[m + i - 1]])) N]
+    simpa only [Nat.cast_add, Nat.cast_one, ← add_assoc, add_sub_cancel_right, smul_zero] using
+      congrArg (fun x ↦ (N + 1) • x) (isLocalOfOrder_iff.mp h m n)
   have e : ∀ ij ∈ antidiagonal (N + 1),
       (N + 1).choose ij.1 • (-1 : ℤ) ^ ij.2 •
         ((derivative A)[[m + ij.1]] * B[[n + ij.2]] -
@@ -139,8 +116,7 @@ theorem iterate_derivative_left (h : A.IsLocalOfOrder B N) (k : ℕ) :
 theorem iterate_derivative (h : A.IsLocalOfOrder B N) (k l : ℕ) :
     ((derivative (R := R) (V := V))^[k] A).IsLocalOfOrder
       ((derivative (R := R) (V := V))^[l] B) (N + k + l) := by
-  simpa [Nat.add_assoc, Nat.add_left_comm, Nat.add_comm] using
-    ((h.iterate_derivative_left k).symm.iterate_derivative_left l).symm
+  exact ((h.iterate_derivative_left k).symm.iterate_derivative_left l).symm
 
 end IsLocalOfOrder
 
