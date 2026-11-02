@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Module.ZLattice.SuccessiveMinima
 public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.MixedImage
-import Mathlib.LinearAlgebra.LinearIndependent.BaseChange
 import TauCeti.Analysis.Convex.Gauge
 import TauCeti.LinearAlgebra.Dimension.Submodule
 import TauCeti.LinearAlgebra.LinearIndependent.Extraction.Basic
@@ -19,7 +18,7 @@ Let `K` be a number field of degree `d`, let `ι` be a finite type, and let `Λ`
 `𝓞 K`-submodule of `ι → K` whose mixed image `Λ.mixedImage` is a full lattice in
 `ι → mixedSpace K` (`Submodule.isZLattice_mixedImage`). For a convex body `B` in
 `ι → mixedSpace K` with `0` in its interior, the `l`-th **successive minimum of `Λ` over `K`**,
-`NumberField.successiveMinimum Λ B l`, is the infimum of the `t > 0` for which `t • B` contains
+`Submodule.successiveMinimum Λ B l`, is the infimum of the `t > 0` for which `t • B` contains
 the images of `l + 1` vectors of `Λ` linearly independent over `K`. It is indexed from `0`, like
 `ZLattice.successiveMin`, and it vanishes for `l ≥ #ι`, where no such family exists.
 
@@ -39,24 +38,23 @@ The first inequality holds because vectors independent over `K` have images inde
 
 ## Main definitions
 
-* `NumberField.successiveMinimum Λ B l`: the `l`-th successive minimum of `Λ` over `K` with
+* `Submodule.successiveMinimum Λ B l`: the `l`-th successive minimum of `Λ` over `K` with
   respect to `B`.
 
 ## Main results
 
-* `NumberField.successiveMinimum_of_card_le`: the minima vanish from `#ι` on.
-* `NumberField.finite_setOf_gauge_le`: only finitely many vectors of `Λ` have image of bounded
+* `Submodule.successiveMinimum_of_card_le`: the minima vanish from `#ι` on.
+* `Submodule.finite_setOf_gauge_le`: only finitely many vectors of `Λ` have image of bounded
   gauge.
-* `NumberField.successiveMinimum_le_iff`: below `#ι`, `μ l ≤ t` exactly when `t • B` contains the
-  images of `l + 1` vectors of `Λ` independent over `K`; in particular each minimum is attained.
-* `NumberField.successiveMinimum_pos`, `NumberField.monotoneOn_successiveMinimum`: below `#ι` the
+* `Submodule.successiveMinimum_le_iff`: below `#ι` and for `t > 0`, `μ l ≤ t` exactly when
+  `t • B` contains the images of `l + 1` vectors of `Λ` independent over `K`; in particular each
+  minimum is attained.
+* `Submodule.successiveMinimum_pos`, `Submodule.monotoneOn_successiveMinimum`: below `#ι` the
   minima are positive and nondecreasing.
-* `NumberField.exists_linearIndependent_mem_smul_successiveMinimum`: there are `#ι` vectors of
+* `Submodule.exists_linearIndependent_mem_smul_successiveMinimum`: there are `#ι` vectors of
   `Λ`, independent over `K`, the `l`-th of them with image in `μ l • B`.
-* `NumberField.successiveMin_mixedImage_le` and
-  `NumberField.successiveMinimum_le_successiveMin_mixedImage`: `λ l ≤ μ l ≤ λ (d * l)`.
-* `NumberField.mixedEmbedding.linearIndependent_pi`: tuples independent over `ℚ` have mixed
-  embeddings independent over `ℝ`.
+* `Submodule.successiveMin_mixedImage_le` and
+  `Submodule.successiveMinimum_le_successiveMin_mixedImage`: `λ l ≤ μ l ≤ λ (d * l)`.
 
 ## Implementation notes
 
@@ -84,37 +82,7 @@ public section
 open Module NumberField NumberField.mixedEmbedding
 open scoped Pointwise
 
-namespace NumberField.mixedEmbedding
-
-variable {K : Type*} [Field K] [NumberField K] {ι : Type*}
-
-/-- The real dimension of `ι → mixedSpace K` is `[K : ℚ] * #ι`. -/
-theorem finrank_pi [Fintype ι] :
-    finrank ℝ (ι → mixedSpace K) = finrank ℚ K * Fintype.card ι := by
-  rw [Module.finrank_pi_fintype, Finset.sum_const, mixedEmbedding.finrank, Finset.card_univ,
-    smul_eq_mul, mul_comm]
-
-/-- **Tuples independent over `ℚ` have mixed embeddings independent over `ℝ`.** -/
-theorem linearIndependent_pi [Finite ι] {κ : Type*} {x : κ → ι → K}
-    (hx : LinearIndependent ℚ x) :
-    LinearIndependent ℝ fun k j ↦ mixedEmbedding K (x k j) := by
-  classical
-  cases nonempty_fintype ι
-  -- In the coordinates of `P`, the mixed embedding of a tuple has the rational coordinates of the
-  -- tuple in `Q` (`latticeBasis_repr_apply`), and rational vectors independent over `ℚ` are
-  -- independent over `ℝ`.
-  set P := Pi.basis fun _ : ι ↦ latticeBasis K
-  set Q := Pi.basis fun _ : ι ↦ integralBasis K
-  have hQ : LinearIndependent ℚ fun k ↦ Q.equivFun (x k) :=
-    hx.map' Q.equivFun.toLinearMap Q.equivFun.ker
-  refine LinearIndependent.of_comp P.equivFun.toLinearMap ?_
-  convert (linearIndependent_algebraMap_comp_iff (S := ℝ)).2 hQ using 1
-  ext k ⟨j, r⟩
-  simp [P, Q, latticeBasis_repr_apply]
-
-end NumberField.mixedEmbedding
-
-namespace NumberField
+namespace Submodule
 
 variable {K : Type*} [Field K] {ι : Type*}
 
@@ -124,9 +92,9 @@ contains the mixed embeddings of `l + 1` vectors of `Λ` linearly independent ov
 indexed from `0`, like `ZLattice.successiveMin`.
 
 From `l = #ι` on there is no such family, and the value is the junk value `sInf ∅ = 0`
-(`NumberField.successiveMinimum_of_card_le`). Below `#ι`, for a full lattice `Λ.mixedImage` and a
+(`Submodule.successiveMinimum_of_card_le`). Below `#ι`, for a full lattice `Λ.mixedImage` and a
 convex body `B` with `0` in its interior, the infimum is attained and positive
-(`NumberField.successiveMinimum_le_iff`, `NumberField.successiveMinimum_pos`). -/
+(`Submodule.successiveMinimum_le_iff`, `Submodule.successiveMinimum_pos`). -/
 noncomputable def successiveMinimum (Λ : Submodule (𝓞 K) (ι → K))
     (B : Set (ι → mixedSpace K)) (l : ℕ) : ℝ :=
   sInf {t : ℝ | 0 < t ∧ ∃ x : Fin (l + 1) → ι → K, LinearIndependent K x ∧
@@ -284,7 +252,7 @@ theorem successiveMinimum_le_iff [DiscreteTopology Λ.mixedImage]
 
 open scoped Classical in
 /-- The successive minima over `K` are nondecreasing below `#ι`. They are not monotone on all of
-`ℕ`, since they vanish from `#ι` on (`NumberField.successiveMinimum_of_card_le`). -/
+`ℕ`, since they vanish from `#ι` on (`Submodule.successiveMinimum_of_card_le`). -/
 theorem monotoneOn_successiveMinimum [DiscreteTopology Λ.mixedImage]
     [IsZLattice ℝ Λ.mixedImage] {B : ConvexBody (ι → mixedSpace K)}
     (hB : 0 ∈ interior (B : Set (ι → mixedSpace K))) :
@@ -387,4 +355,4 @@ theorem successiveMinimum_le_successiveMin_mixedImage
 
 end Lattice
 
-end NumberField
+end Submodule

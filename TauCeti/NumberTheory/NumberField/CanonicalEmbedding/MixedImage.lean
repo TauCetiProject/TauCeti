@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.CanonicalEmbedding.Basic
+import Mathlib.LinearAlgebra.LinearIndependent.BaseChange
 
 /-!
 # The mixed image of an `𝓞 K`-module
@@ -31,6 +32,9 @@ is finitely generated, and it spans over `ℝ` exactly when `Λ` spans over `K`.
 
 * `NumberField.mixedEmbedding.mem_span_pi_latticeBasis`: the `ℤ`-span of
   `Pi.basis fun _ ↦ latticeBasis K` is the coordinatewise image of `ι → 𝓞 K`.
+* `NumberField.mixedEmbedding.finrank_pi`, `NumberField.mixedEmbedding.linearIndependent_pi`:
+  `ι → mixedSpace K` has real dimension `[K : ℚ] * #ι`, and tuples independent over `ℚ` have
+  coordinatewise mixed embeddings independent over `ℝ`.
 * `Submodule.discreteTopology_mixedImage_iff`: the mixed image is discrete exactly when the
   module is finitely generated; the instance form takes `[Module.Finite (𝓞 K) Λ]`.
 * `Submodule.span_real_mixedImage_eq_top_iff`: the mixed image spans `ι → mixedSpace K` over `ℝ`
@@ -76,6 +80,30 @@ theorem mem_span_pi_latticeBasis [NumberField K] [Fintype ι] {z : ι → mixedS
   refine ⟨fun h ↦ ?_, fun ⟨x, hx⟩ i ↦ ⟨x i, by simp [← hx]⟩⟩
   choose x hx using h
   exact ⟨x, funext fun i ↦ by simpa using hx i⟩
+
+/-- The real dimension of `ι → mixedSpace K` is `[K : ℚ] * #ι`. -/
+theorem finrank_pi [NumberField K] [Fintype ι] :
+    finrank ℝ (ι → mixedSpace K) = finrank ℚ K * Fintype.card ι := by
+  rw [Module.finrank_pi_fintype, Finset.sum_const, mixedEmbedding.finrank, Finset.card_univ,
+    smul_eq_mul, mul_comm]
+
+/-- **Tuples independent over `ℚ` have mixed embeddings independent over `ℝ`.** -/
+theorem linearIndependent_pi [NumberField K] [Finite ι] {κ : Type*} {x : κ → ι → K}
+    (hx : LinearIndependent ℚ x) :
+    LinearIndependent ℝ fun k j ↦ mixedEmbedding K (x k j) := by
+  classical
+  cases nonempty_fintype ι
+  -- In the coordinates of `P`, the mixed embedding of a tuple has the rational coordinates of the
+  -- tuple in `Q` (`latticeBasis_repr_apply`), and rational vectors independent over `ℚ` are
+  -- independent over `ℝ`.
+  set P := Pi.basis fun _ : ι ↦ latticeBasis K
+  set Q := Pi.basis fun _ : ι ↦ integralBasis K
+  have hQ : LinearIndependent ℚ fun k ↦ Q.equivFun (x k) :=
+    hx.map' Q.equivFun.toLinearMap Q.equivFun.ker
+  refine LinearIndependent.of_comp P.equivFun.toLinearMap ?_
+  convert (linearIndependent_algebraMap_comp_iff (S := ℝ)).2 hQ using 1
+  ext k ⟨j, r⟩
+  simp [P, Q, latticeBasis_repr_apply]
 
 end NumberField.mixedEmbedding
 
