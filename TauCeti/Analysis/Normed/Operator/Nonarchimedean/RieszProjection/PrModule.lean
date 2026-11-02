@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.PrModule
+public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.PrModule.Basic
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.RieszProjection.Basic
 public import TauCeti.RingTheory.PowerSeries.Entire.GoodZero
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Intertwining
