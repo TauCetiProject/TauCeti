@@ -197,6 +197,7 @@ ring. -/
 theorem imaginaryForm_self_pos (hv : v ∈ imaginary R) (hv₀ : v ≠ 0) : 0 < imaginaryForm v v := by
   rwa [imaginaryForm_self_of_mem hv, normSq_pos]
 
+@[simp]
 theorem imaginaryForm_self_eq_zero_iff (hv : v ∈ imaginary R) : imaginaryForm v v = 0 ↔ v = 0 := by
   rw [imaginaryForm_self_of_mem hv, normSq_eq_zero]
 
@@ -234,10 +235,17 @@ theorem cross_swap (x y : CayleyDickson ℍ[R]) : cross y x = -cross x y := by
 theorem cross_self (x : CayleyDickson ℍ[R]) : cross x x = 0 := by
   simp [cross_apply]
 
-/-- The cross product of any two octonions is imaginary. -/
-theorem cross_mem_imaginary (x y : CayleyDickson ℍ[R]) : cross x y ∈ imaginary R := by
-  rw [mem_imaginary_iff_re, cross_apply, smul_fst, Quaternion.re_smul, sub_fst,
-    Quaternion.re_sub, re_mul_comm y x, sub_self, smul_zero]
+/-- The cross product of any two octonions has vanishing real part. -/
+@[simp]
+theorem re_cross (x y : CayleyDickson ℍ[R]) : (cross x y).fst.re = 0 := by
+  rw [cross_apply, smul_fst, Quaternion.re_smul, sub_fst, Quaternion.re_sub, re_mul_comm y x,
+    sub_self, smul_zero]
+
+/-- The cross product of any two octonions is imaginary. Not a `simp` lemma, because
+`TauCeti.CayleyDickson.mem_imaginary` already takes its left-hand side apart; `simp` proves it
+from `TauCeti.CayleyDickson.re_cross`. -/
+theorem cross_mem_imaginary (x y : CayleyDickson ℍ[R]) : cross x y ∈ imaginary R :=
+  mem_imaginary_iff_re.mpr (re_cross x y)
 
 /-- On imaginary octonions the cross product is the product corrected by its real part:
 `v × w = v * w + g v w • 1`. -/
