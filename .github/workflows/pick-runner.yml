@@ -10,6 +10,10 @@ name: pick-runner
 on:
   workflow_call:
     inputs:
+      maintenance:
+        description: Use the small priority control runner for maintenance PRs
+        type: boolean
+        default: false
       fleet-staging:
         description: Use staging preferences and eligible dedicated machines; takes precedence over fleet-pr
         type: boolean
@@ -50,9 +54,9 @@ on:
 
 jobs:
   pick:
-    # Bors selection must not wait behind the GitHub builds it is trying to
+    # Bors and maintenance selection must not wait behind the GitHub builds they are trying to
     # dispatch. Reuse the existing small, high-priority Namespace control profile.
-    runs-on: ${{ inputs.fleet-staging && fromJSON(format('["nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0","namespace-features:github.run-id={0}"]', github.run_id)) || 'ubuntu-24.04' }}
+    runs-on: ${{ (inputs.fleet-staging || inputs.maintenance) && fromJSON(format('["nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0","namespace-features:github.run-id={0}"]', github.run_id)) || 'ubuntu-24.04' }}
     timeout-minutes: 5
     continue-on-error: true
     outputs:

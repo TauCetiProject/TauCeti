@@ -69,6 +69,18 @@ theorem eq_zero_of_smul_apply_basis_eq_zero {R M N : Type*} [CommSemiring R]
 
 end LinearMap.IsAlt
 
+namespace LinearMap.BilinForm
+
+/-- Restriction to a submodule commutes with scalar multiplication of a bilinear form. -/
+@[simp]
+theorem restrict_smul {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+    (r : R) (B : LinearMap.BilinForm R M) (N : Submodule R M) :
+    (r • B).restrict N = r • B.restrict N := by
+  ext x y
+  simp
+
+end LinearMap.BilinForm
+
 namespace LinearMap.BilinForm.IsSymm
 
 /-- Polarization of a symmetric bilinear form over a commutative semiring. -/

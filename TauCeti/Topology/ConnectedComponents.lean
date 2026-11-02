@@ -123,6 +123,34 @@ end Homeomorph
 
 namespace TauCeti
 
+/-- Restricting a connected component to a set covered by preconnected pieces selects exactly
+those pieces contained in the component. The pieces need not be disjoint. -/
+theorem connectedComponentIn_inter_eq_sUnion {s U : Set X} {𝒞 : Set (Set X)}
+    (hc : ∀ t ∈ 𝒞, IsPreconnected t) (hcover : ⋃₀ 𝒞 = s ∩ U) (x : X) :
+    connectedComponentIn s x ∩ U = ⋃₀ {t ∈ 𝒞 | t ⊆ connectedComponentIn s x} := by
+  have hsub {t : Set X} (ht : t ∈ 𝒞) : t ⊆ s ∩ U :=
+    hcover ▸ subset_sUnion_of_mem ht
+  apply Subset.antisymm
+  · intro y hy
+    have hy' : y ∈ s ∩ U := ⟨connectedComponentIn_subset s x hy.1, hy.2⟩
+    obtain ⟨t, ht, hyt⟩ := mem_sUnion.1 (hcover.symm ▸ hy')
+    refine mem_sUnion.2 ⟨t, ⟨ht, ?_⟩, hyt⟩
+    rw [connectedComponentIn_eq hy.1]
+    exact (hc t ht).subset_connectedComponentIn hyt ((hsub ht).trans inter_subset_left)
+  · rintro y ⟨t, ⟨ht, htc⟩, hyt⟩
+    exact ⟨htc hyt, (hsub ht hyt).2⟩
+
+/-- A finite cover by preconnected sets meets only finitely many components of any containing
+set. No openness or disjointness of the covering sets is required. -/
+theorem _root_.Set.Finite.image_connectedComponentIn_sUnion {s : Set X} {𝒞 : Set (Set X)}
+    (h𝒞 : 𝒞.Finite) (hc : ∀ t ∈ 𝒞, IsPreconnected t) (hsub : ⋃₀ 𝒞 ⊆ s) :
+    (connectedComponentIn s '' ⋃₀ 𝒞).Finite := by
+  rw [sUnion_eq_biUnion, image_iUnion₂]
+  refine h𝒞.biUnion fun t ht ↦ Set.Subsingleton.finite ?_
+  rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩
+  have hts : t ⊆ s := (subset_sUnion_of_mem ht).trans hsub
+  exact connectedComponentIn_eq ((hc t ht).subset_connectedComponentIn hx hts hy)
+
 /-- **The frontier of a connected component of an open set misses the set.** Equivalently,
 `frontier (connectedComponentIn F x) ∩ F = ∅`: the component is clopen in `F`. -/
 theorem frontier_connectedComponentIn_subset_compl [LocallyConnectedSpace X] {F : Set X}

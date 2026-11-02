@@ -7,6 +7,7 @@ module
 
 public import Mathlib.FieldTheory.Normal.Closure
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Inertia
+import TauCeti.FieldTheory.FunctionField.Place.Extension.Tower
 
 /-!
 # Unramified places in composita and Galois closures
@@ -35,12 +36,22 @@ Galois closures of finite separable extensions. This transport through a finite 
 follows the proof of `TauCeti.Place.isSplitCompletely_sup_iff` in
 `TauCeti/FieldTheory/FunctionField/Place/Extension/Splitting/Compositum.lean`.
 
+Ramification indices multiply in a tower `F₀ ⊆ F₁ ⊆ F₂`, and residue extensions are separable for
+the whole tower exactly when they are for both steps (`TauCeti.Place.ramificationIdx_restrict_mul`
+and its companions in `TauCeti/FieldTheory/FunctionField/Place/Extension/Tower.lean`). So a place
+of `F₀` is unramified in `F₂` exactly when it is unramified in `F₁` and every place of `F₁` above
+it is unramified in `F₂`. The **branch places** of an extension are the places that are not
+unramified in it; for finite maps of curves `f : X → Y` and `g : Y → Z` the tower statement reads
+`Branch(g ∘ f) = g(Branch f) ∪ Branch g`.
+
 ## Main definitions
 
 * `TauCeti.Place.IsUnramified`: a place is unramified in an extension, with the characteristic
   property `TauCeti.Place.isUnramified_iff` and the projections
   `IsUnramified.exists_restrict_eq`, `IsUnramified.ramificationIdx_eq_one` and
   `IsUnramified.isSeparable`.
+* `TauCeti.Place.branchPlaces`: the places of the base field that are not unramified in an
+  extension.
 
 ## Main results
 
@@ -49,6 +60,10 @@ follows the proof of `TauCeti.Place.isSplitCompletely_sup_iff` in
   indices are.
 * `TauCeti.Place.isUnramified_iff_of_algEquiv`: unramifiedness is invariant under an isomorphism
   of the upstairs field over the base field.
+* `TauCeti.Place.isUnramified_tower_iff`: **a place is unramified in a tower exactly when it is
+  unramified in the lower step and every place above it is unramified in the upper step**.
+* `TauCeti.Place.branchPlaces_eq_image_union`: the branch places of a tower are the branch places
+  of the lower step together with the places below the branch places of the upper step.
 * `TauCeti.Place.isUnramified_iff_forall_le_inertiaField`: a place is unramified in `E` exactly
   when `E` lies in the inertia field of every place of `M` above it.
 * `TauCeti.Place.isUnramified_sup_iff`: **a place is unramified in a compositum of finite
@@ -59,7 +74,7 @@ follows the proof of `TauCeti.Place.isSplitCompletely_sup_iff` in
 ## References
 
 * H. Stichtenoth, *Algebraic Function Fields and Codes*, 2nd ed., GTM 254, Springer, 2009,
-  Definition 3.1.13 and Corollary 3.9.3.
+  Proposition 3.1.6, Definition 3.1.13 and Corollary 3.9.3.
 -/
 
 public section
@@ -119,6 +134,20 @@ theorem IsUnramified.isSeparable {P : Place k F}
     (hP' : P'.restrict k F = P) :
     Algebra.IsSeparable (P'.restrict k F).ResidueField P'.ResidueField :=
   (hP.2 P' hP').2
+
+variable (k' F') in
+/-- The **branch places** of `F' / k'` over `F / k`: the places of `F` that are not unramified in
+`F'`. When every place of `F` lies below a place of `F'`, as for a finite extension of function
+fields, these are the places of `F` lying below a place of `F'` with ramification index greater
+than one or with an inseparable residue extension. When moreover the residue fields have
+characteristic zero, only the ramification index matters. -/
+def branchPlaces : Set (Place k F) :=
+  {P | ¬P.IsUnramified (k' := k') (F' := F')}
+
+@[simp]
+theorem mem_branchPlaces_iff {P : Place k F} :
+    P ∈ branchPlaces k' F' ↔ ¬P.IsUnramified (k' := k') (F' := F') :=
+  Iff.rfl
 
 /-- **A rational place is not unramified in a purely inseparable extension of constants**: if `P`
 has degree one and `k'` contains `α ∉ k` with `α ^ (q ^ n) ∈ k`, then `P` is not unramified in
@@ -193,6 +222,75 @@ theorem isUnramified_iff_of_algEquiv (P : Place k F) (e : L ≃ₐ[F] L') :
   · exact (unramified_map_iff e Q).mp (h _ (by rw [restrict_map_restrictScalars, hQ]))
 
 end Equiv
+
+section Tower
+
+variable {k₀ k₁ k₂ F₀ F₁ F₂ : Type*}
+variable [Field k₀] [Field k₁] [Field k₂] [Field F₀] [Field F₁] [Field F₂]
+variable [Algebra k₀ k₁] [Algebra k₁ k₂] [Algebra k₀ k₂]
+variable [Algebra F₀ F₁] [Algebra F₁ F₂] [Algebra F₀ F₂] [IsScalarTower F₀ F₁ F₂]
+variable [Algebra k₀ F₀] [Algebra k₁ F₁] [Algebra k₂ F₂]
+variable [Algebra k₀ F₁] [Algebra k₁ F₂] [Algebra k₀ F₂]
+variable [IsScalarTower k₀ k₁ F₁] [IsScalarTower k₁ k₂ F₂]
+variable [IsScalarTower k₀ F₀ F₁] [IsScalarTower k₁ F₁ F₂]
+variable [IsScalarTower k₀ k₂ F₂] [IsScalarTower k₀ F₀ F₂]
+-- `Algebra.IsIntegral F₀ F₂` follows from the other two (`Algebra.IsIntegral.trans`), but it is not
+-- found by instance search, and restricting places of `F₂` to `F₀` needs it.
+variable [Algebra.IsIntegral F₀ F₁] [Algebra.IsIntegral F₁ F₂] [Algebra.IsIntegral F₀ F₂]
+
+/-- A place `P₂` of `F₂` is unramified over `F₀` exactly when it is unramified over `F₁` and its
+restriction `P₂ ∩ F₁` is unramified over `F₀`, both for the ramification index and for the
+separability of the residue extension. -/
+private theorem unramified_restrict_iff (P₂ : Place k₂ F₂) :
+    (ramificationIdx F₀ P₂ = 1 ∧
+        Algebra.IsSeparable (P₂.restrict k₀ F₀).ResidueField P₂.ResidueField) ↔
+      (ramificationIdx F₁ P₂ = 1 ∧
+          Algebra.IsSeparable (P₂.restrict k₁ F₁).ResidueField P₂.ResidueField) ∧
+        (ramificationIdx F₀ (P₂.restrict k₁ F₁) = 1 ∧
+          Algebra.IsSeparable ((P₂.restrict k₁ F₁).restrict k₀ F₀).ResidueField
+            (P₂.restrict k₁ F₁).ResidueField) := by
+  rw [ramificationIdx_restrict_mul (k₁ := k₁) (F₁ := F₁) P₂, mul_eq_one]
+  refine ⟨fun ⟨⟨h₂, h₁⟩, _⟩ ↦ ⟨⟨h₂, isSeparable_residueField_restrict_top k₀ F₀ P₂⟩,
+    h₁, isSeparable_residueField_restrict_bot P₂⟩, fun ⟨⟨h₂, _⟩, h₁, _⟩ ↦
+    ⟨⟨h₂, h₁⟩, isSeparable_residueField_restrict_trans (k₁ := k₁) (F₁ := F₁) P₂⟩⟩
+
+/-- **Unramifiedness in a tower** (Stichtenoth, Proposition 3.1.6 and Definition 3.1.13): for a
+tower `F₀ ⊆ F₁ ⊆ F₂`, a place `P` of `F₀` is unramified in `F₂` exactly when it is unramified in
+`F₁` and every place of `F₁` above it is unramified in `F₂`.
+
+The function-field hypothesis on `F₂` provides a place of `F₂` above every place of `F₁`. -/
+theorem isUnramified_tower_iff [Algebra.IsIntegral k₁ k₂] (hF₂ : IsFunctionField k₂ F₂)
+    (P : Place k₀ F₀) :
+    P.IsUnramified (k' := k₂) (F' := F₂) ↔
+      P.IsUnramified (k' := k₁) (F' := F₁) ∧
+        ∀ P₁ : Place k₁ F₁, P₁.restrict k₀ F₀ = P → P₁.IsUnramified (k' := k₂) (F' := F₂) := by
+  have hsurj := restrict_surjective (k := k₁) (F := F₁) (k' := k₂) (F' := F₂) hF₂
+  have hrestrict (P₂ : Place k₂ F₂) : (P₂.restrict k₁ F₁).restrict k₀ F₀ = P₂.restrict k₀ F₀ :=
+    restrict_restrict P₂
+  refine ⟨fun ⟨⟨P₂, hP₂⟩, h⟩ ↦ ⟨⟨⟨P₂.restrict k₁ F₁, (hrestrict P₂).trans hP₂⟩, fun P₁ hP₁ ↦ ?_⟩,
+    fun P₁ hP₁ ↦ ⟨hsurj P₁, fun P₂ hP₂ ↦ ?_⟩⟩, fun ⟨⟨⟨P₁, hP₁⟩, h₁⟩, h⟩ ↦ ?_⟩
+  · obtain ⟨P₂, rfl⟩ := hsurj P₁
+    exact ((unramified_restrict_iff P₂).1 (h P₂ ((hrestrict P₂).symm.trans hP₁))).2
+  · subst hP₂
+    exact ((unramified_restrict_iff P₂).1 (h P₂ ((hrestrict P₂).symm.trans hP₁))).1
+  · obtain ⟨Q, hQ⟩ := (h P₁ hP₁).exists_restrict_eq
+    refine ⟨⟨Q, (hrestrict Q).symm.trans (hQ ▸ hP₁)⟩, fun P₂ hP₂ ↦ ?_⟩
+    have hP₂' : (P₂.restrict k₁ F₁).restrict k₀ F₀ = P := (hrestrict P₂).trans hP₂
+    exact (unramified_restrict_iff P₂).2 ⟨(h _ hP₂').2 P₂ rfl, h₁ _ hP₂'⟩
+
+/-- **Branch places of a tower**: for a tower `F₀ ⊆ F₁ ⊆ F₂`, the branch places of `F₂ / F₀` are
+the branch places of `F₁ / F₀` together with the places of `F₀` below the branch places of
+`F₂ / F₁`. For finite maps of curves `f : X → Y` and `g : Y → Z` this is the formula
+`Branch(g ∘ f) = g(Branch f) ∪ Branch g`. -/
+theorem branchPlaces_eq_image_union [Algebra.IsIntegral k₁ k₂] (hF₂ : IsFunctionField k₂ F₂) :
+    branchPlaces (k := k₀) (F := F₀) k₂ F₂ =
+      (fun P₁ : Place k₁ F₁ ↦ P₁.restrict k₀ F₀) '' branchPlaces k₂ F₂ ∪ branchPlaces k₁ F₁ := by
+  ext P
+  rw [mem_branchPlaces_iff, isUnramified_tower_iff (k₁ := k₁) (F₁ := F₁) hF₂]
+  simp only [Set.mem_union, Set.mem_image, mem_branchPlaces_iff]
+  grind
+
+end Tower
 
 universe u v w
 
