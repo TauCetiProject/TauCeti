@@ -99,15 +99,20 @@ instance Scheme.Hom.isIso_residueFieldMap_of_surjectiveOnStalks {X Y : Scheme.{u
     ((TauCeti.AlgebraicGeometry.residueDegree_eq_one_iff f x).mp
       (f.residueDegree_eq_one_of_surjectiveOnStalks x))
 
-/-- If a morphism and its composite preserve the residue field at a point, the second
-morphism preserves the residue field at the image point. In particular, this cancels an
-open immersion from a composite. -/
+/-- If a composite preserves the residue field at a point, the second morphism preserves
+the residue field at the image point. In particular, this cancels an open immersion from
+a composite. -/
 theorem Scheme.Hom.isIso_residueFieldMap_of_comp {X Y Z : Scheme.{u}}
-    (f : X ⟶ Y) (g : Y ⟶ Z) (x : X) [IsIso (f.residueFieldMap x)]
+    (f : X ⟶ Y) (g : Y ⟶ Z) (x : X)
     [IsIso ((f ≫ g).residueFieldMap x)] : IsIso (g.residueFieldMap (f x)) := by
-  have h : IsIso ((f ≫ g).residueFieldMap x) := inferInstance
+  apply (ConcreteCategory.isIso_iff_bijective _).mpr
+  refine ⟨(g.residueFieldMap (f x)).hom.injective, ?_⟩
+  have h := (ConcreteCategory.bijective_of_isIso ((f ≫ g).residueFieldMap x)).surjective
   rw [Scheme.residueFieldMap_comp] at h
-  exact (isIso_comp_right_iff _ (f.residueFieldMap x)).mp h
+  -- Identify the source fields at (f ≫ g) x and g (f x), so function cancellation applies.
+  change Function.Surjective ((f.residueFieldMap x).hom ∘
+    (g.residueFieldMap (f x)).hom) at h
+  exact h.of_comp_left (f.residueFieldMap x).hom.injective
 
 namespace Scheme.Pullback
 
