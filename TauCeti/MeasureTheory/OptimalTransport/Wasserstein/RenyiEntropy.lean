@@ -290,6 +290,19 @@ theorem renyiEntropy_smul_restrict [SigmaFinite m] (hN : 0 < N) {A : Set X} (hA 
   rw [h, lintegral_indicator_const hA, ENNReal.inv_rpow, ENNReal.rpow_neg, inv_inv,
     mul_right_comm, ENNReal.inv_mul_cancel h₀ h₁, one_mul]
 
+open ProbabilityTheory in
+/-- The uniform law `m[|A]` on a measurable set has finite Rényi entropy: it is `-m(A)^{1/N}` when
+`0 < m(A) < ∞`, and `m[|A] = 0` otherwise. -/
+theorem renyiEntropy_cond_ne_bot [SigmaFinite m] (hN : 0 < N) {A : Set X} (hA : MeasurableSet A) :
+    renyiEntropy N m m[|A] ≠ ⊥ := by
+  by_cases h : m A = ∞ ∨ m A = 0
+  · rw [cond_eq_zero.2 h, renyiEntropy_zero_measure]
+    exact EReal.zero_ne_bot
+  rw [not_or] at h
+  rw [ProbabilityTheory.cond, renyiEntropy_smul_restrict hN hA h.2 h.1, Ne, EReal.neg_eq_bot_iff,
+    EReal.coe_ennreal_eq_top_iff]
+  exact ENNReal.rpow_ne_top_of_nonneg (inv_nonneg.2 hN.le) h.1
+
 /-! ### The Boltzmann entropy as the limit `N → ∞` -/
 
 /-- The integrand `U_N(r) = N (r - r · r^{-1/N})` of `N (S_N(μ | m) + μ(X))`, which is

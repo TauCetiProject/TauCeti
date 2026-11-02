@@ -159,6 +159,24 @@ theorem distortedRenyiEntropy_eq_bot_of_ae (hq : q ≠ 0)
 
 end DistortedRenyiEntropy
 
+section Coupling
+
+variable {X : Type*} [PseudoMetricSpace X] [MeasurableSpace X] {q : Measure (X × X)}
+  {μ ν : Measure X} {x y : X} {r r' D : ℝ}
+
+/-- If the marginals of a coupling `q` are carried by the balls `B(x, r)` and `B(y, r')`, whose
+centres are at distance at least `D + r + r'`, then `q`-almost every pair is at distance more
+than `D`. -/
+theorem IsCoupling.ae_lt_dist (hq : IsCoupling q μ ν) (hμ : ∀ᵐ x' ∂μ, x' ∈ ball x r)
+    (hν : ∀ᵐ y' ∂ν, y' ∈ ball y r') (hxy : D + r + r' ≤ dist x y) :
+    ∀ᵐ z ∂q, D < dist z.1 z.2 := by
+  filter_upwards [hq.measurePreserving_fst.quasiMeasurePreserving.ae hμ,
+    hq.measurePreserving_snd.quasiMeasurePreserving.ae hν] with z hz₀ hz₁
+  rw [mem_ball] at hz₀ hz₁
+  linarith [dist_triangle x z.1 y, dist_triangle z.1 z.2 y, dist_comm x z.1]
+
+end Coupling
+
 namespace MetricMeasureSpace
 
 variable {X : Type*} [MetricSpace X] [MeasurableSpace X] [CompleteSpace X]
@@ -278,39 +296,25 @@ theorem DistortedCurvatureDimension.dist_le (h : M.DistortedCurvatureDimension �
       distortedRenyiEntropy (β N) N m q 0 := by
     simpa only [hγ.source] using (hle 0 (left_mem_Icc.2 zero_le_one)).2.2 N le_rfl
   have : IsProbabilityMeasure q := hq.isProbabilityMeasure
-  -- The entropy of the uniform law on `B(x, r)` is finite.
-  have hfin : renyiEntropy N m ((μ₀ : ProbabilityMeasure X) : Measure X) ≠ ⊥ := by
-    rw [hμ₀, ProbabilityTheory.cond, renyiEntropy_smul_restrict hN measurableSet_ball hpos hm, Ne,
-      EReal.neg_eq_bot_iff, EReal.coe_ennreal_eq_top_iff]
-    exact ENNReal.rpow_ne_top_of_nonneg (inv_nonneg.2 hN.le) hm
-  -- Almost every pair of `q` lies in `B(x, r) × B(y, r)`, hence beyond the distance `D`, and has
-  -- a finite first density; there the integrand is infinite.
+  -- Almost every pair of `q` is beyond the distance `D` and has a finite first density; there the
+  -- integrand is infinite.
   have hae : ∀ᵐ z ∂q, β N (1 - 0) (dist z.1 z.2) * q.fst.rnDeriv m z.1 ^ (-N⁻¹) +
       β N 0 (dist z.1 z.2) * q.snd.rnDeriv m z.2 ^ (-N⁻¹) = ⊤ := by
+    have hD := hq.ae_lt_dist (hμ₀ ▸ ae_cond_mem measurableSet_ball)
+      (hμ₁ ▸ ae_cond_mem measurableSet_ball) (by linarith : D + r + r ≤ dist x y)
     have hρ : ∀ᵐ x' ∂((μ₀ : ProbabilityMeasure X) : Measure X),
         ((μ₀ : ProbabilityMeasure X) : Measure X).rnDeriv m x' < ∞ :=
       hac₀.ae_le (Measure.rnDeriv_lt_top _ _)
-    have hball₀ : ∀ᵐ x' ∂((μ₀ : ProbabilityMeasure X) : Measure X), x' ∈ ball x r := by
-      rw [hμ₀]
-      exact ae_cond_mem measurableSet_ball
-    have hball₁ : ∀ᵐ y' ∂((μ₁ : ProbabilityMeasure X) : Measure X), y' ∈ ball y r := by
-      rw [hμ₁]
-      exact ae_cond_mem measurableSet_ball
     rw [hq.fst_eq]
-    filter_upwards [hq.measurePreserving_fst.quasiMeasurePreserving.ae hρ,
-      hq.measurePreserving_fst.quasiMeasurePreserving.ae hball₀,
-      hq.measurePreserving_snd.quasiMeasurePreserving.ae hball₁] with z hzρ hz₀ hz₁
-    have hD : D < dist z.1 z.2 := by
-      rw [mem_ball] at hz₀ hz₁
-      linarith [dist_triangle x z.1 y, dist_triangle z.1 z.2 y, dist_comm x z.1]
+    filter_upwards [hq.measurePreserving_fst.quasiMeasurePreserving.ae hρ, hD] with z hzρ hzD
     have hne : ((μ₀ : ProbabilityMeasure X) : Measure X).rnDeriv m z.1 ^ (-N⁻¹) ≠ 0 := by
       rw [Ne, ENNReal.rpow_eq_zero_iff]
       rintro (⟨-, h⟩ | ⟨h, -⟩)
       · linarith [inv_pos.2 hN]
       · exact hzρ.ne h
-    rw [sub_zero, hβ _ hD, ENNReal.top_mul hne, top_add]
+    rw [sub_zero, hβ _ hzD, ENNReal.top_mul hne, top_add]
   rw [distortedRenyiEntropy_eq_bot_of_ae (IsProbabilityMeasure.ne_zero q) hae, le_bot_iff] at hle
-  exact hfin hle
+  exact (hμ₀ ▸ renyiEntropy_cond_ne_bot hN measurableSet_ball) hle
 
 /-- **The Bonnet–Myers diameter bound** for the coefficients `β`: if `β_N^{(1)}(θ) = ∞` for every
 distance `θ > D ≥ 0`, the space has diameter at most `D`. -/
