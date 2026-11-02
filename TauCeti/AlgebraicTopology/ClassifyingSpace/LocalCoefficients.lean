@@ -118,17 +118,21 @@ abbrev classifyingSpaceLocalSystemFunctor :
 
 -- With the concrete Milnor source and target, instance search does not recover the bundled
 -- covering from its underlying map. Delegate to the generic construction with that data fixed.
-instance : Limits.PreservesFiniteLimits (classifyingSpaceLocalSystemFunctor (G := G) k) :=
-  IsQuotientCoveringMap.associatedLocalSystemFunctorPreservesFiniteLimits
+open _root_.IsQuotientCoveringMap in
+instance : Limits.PreservesFiniteLimits (classifyingSpaceLocalSystemFunctor (G := G) k) := by
+  have := instPreservesLimitsOfSizeRepLocalCoefficientSystemAssociatedLocalSystemFunctor
     (E := TopCat.of (universalGSpace G))
     (p := TopCat.ofHom ⟨classifyingSpaceProj G, continuous_classifyingSpaceProj G⟩)
     (isQuotientCoveringMap_classifyingSpaceProj G) k
+  infer_instance
 
-instance : Limits.PreservesFiniteColimits (classifyingSpaceLocalSystemFunctor (G := G) k) :=
-  IsQuotientCoveringMap.associatedLocalSystemFunctorPreservesFiniteColimits
+open _root_.IsQuotientCoveringMap in
+instance : Limits.PreservesFiniteColimits (classifyingSpaceLocalSystemFunctor (G := G) k) := by
+  have := instPreservesColimitsOfSizeRepLocalCoefficientSystemAssociatedLocalSystemFunctor
     (E := TopCat.of (universalGSpace G))
     (p := TopCat.ofHom ⟨classifyingSpaceProj G, continuous_classifyingSpaceProj G⟩)
     (isQuotientCoveringMap_classifyingSpaceProj G) k
+  infer_instance
 
 /-- **The homology of the classifying space with local coefficients is group homology**: for
 every group `G` and every representation `A` of `G` over a commutative ring `k`, the homology

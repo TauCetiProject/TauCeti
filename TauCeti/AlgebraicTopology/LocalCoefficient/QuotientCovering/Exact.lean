@@ -44,7 +44,9 @@ namespace IsQuotientCoveringMap
 variable {E B : TopCat.{u}} {p : E ⟶ B} {G : Type u} [Group G] [MulAction G E]
   (hG : IsQuotientCoveringMap p G) (k : Type u) [CommRing k]
 
-private def fiberRepresentationIsoLeftRegular {x : B} (e : p ⁻¹' {x}) :
+/-- A choice of sheet identifies the permutation representation on a fibre with the regular
+representation. -/
+def fiberRepresentationIsoLeftRegular {x : B} (e : p ⁻¹' {x}) :
     Rep.of (hG.fiberRepresentation k x) ≅ Rep.leftRegular k G := by
   letI := hG.mulActionFiber x
   refine Rep.mkIso (.mk (Finsupp.domLCongr (hG.fiberEquivGroup e) ≪≫ₗ
@@ -55,7 +57,9 @@ private def fiberRepresentationIsoLeftRegular {x : B} (e : p ⁻¹' {x}) :
     simp only [coe_mulActionFiber_smul, mul_smul, fiberEquivGroup_smul_self]
   simp [fiberRepresentation_single, he]
 
-private lemma fiberRepresentationIsoLeftRegular_hom_single {x : B} (e e' : p ⁻¹' {x})
+/-- The chosen-sheet identification sends the basis vector at `e'` to the group element
+carrying the chosen sheet to `e'`. -/
+lemma fiberRepresentationIsoLeftRegular_hom_single {x : B} (e e' : p ⁻¹' {x})
     (r : k) :
     (fiberRepresentationIsoLeftRegular hG k e).hom.hom (Finsupp.single e' r) =
       MonoidAlgebra.single (hG.fiberEquivGroup e e') r := by
