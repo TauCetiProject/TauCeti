@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Orbit
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Regular
 import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.ClosedOrbit
+import TauCeti.RingTheory.KrullDimension.FiniteType
 
 /-!
 # Centralizers along the boundary of an adjoint orbit
@@ -17,6 +18,8 @@ a rational point in the boundary of an adjoint orbit has a strictly larger centr
 both as a Lie algebra and as an algebraic group. The orbits here are the full scheme-point
 images in the projective completion of the Lie algebra; the boundary condition concerns
 the point represented by `(y, 1)`, so it is a degeneration inside the Lie algebra.
+The scheme-theoretic centralizer comparison also holds in arbitrary characteristic when
+the group is reduced.
 
 Consequently a regular element, in the minimal-centralizer sense, cannot lie in the boundary
 of any adjoint orbit. If a regular element lies in an orbit closure, it already lies in that
@@ -42,14 +45,14 @@ namespace TauCeti
 
 universe u
 
-variable {k H : Type u} [Field k] [IsAlgClosed k] [CharZero k] [CommRing H]
+variable {k H : Type u} [Field k] [IsAlgClosed k] [CommRing H]
   [HopfAlgebra k H] [Algebra.FiniteType k H]
 
 attribute [local instance] Derivation.adjointComodule Comodule.prodTrivial
 
 /-- The Lie centralizer strictly increases in dimension at a rational boundary point of
 an adjoint orbit. The boundary is taken in the projective completion of the Lie algebra. -/
-theorem finrank_ker_ad_lt_of_mem_adjointOrbit_boundary
+theorem finrank_ker_ad_lt_of_mem_adjointOrbit_boundary [CharZero k]
     {x y : Module.Dual k (Bialgebra.CotangentSpace k H)}
     (hy : Comodule.projectiveOrbitMap (H := H) (y, (1 : k)) (Module.isUnimodular_mk_one y)
         (AlgHom.kernelPoint (Bialgebra.counitAlgHom k H)) ∈
@@ -73,8 +76,9 @@ theorem finrank_ker_ad_lt_of_mem_adjointOrbit_boundary
   omega
 
 /-- The scheme-theoretic centralizer strictly increases in dimension at a rational boundary
-point of an adjoint orbit. Dimensions are Krull dimensions of the coordinate algebras. -/
-theorem ringKrullDim_centralizer_lt_of_mem_adjointOrbit_boundary
+point of an adjoint orbit of a reduced group, in arbitrary characteristic. Dimensions are
+Krull dimensions of the coordinate algebras. -/
+theorem ringKrullDim_centralizer_lt_of_mem_adjointOrbit_boundary [IsReduced H]
     {x y : Module.Dual k (Bialgebra.CotangentSpace k H)}
     (hy : Comodule.projectiveOrbitMap (H := H) (y, (1 : k)) (Module.isUnimodular_mk_one y)
         (AlgHom.kernelPoint (Bialgebra.counitAlgHom k H)) ∈
@@ -84,13 +88,26 @@ theorem ringKrullDim_centralizer_lt_of_mem_adjointOrbit_boundary
           (x, (1 : k)) (Module.isUnimodular_mk_one x))) :
     ringKrullDim (H ⧸ (centralizerHopfIdeal H x).toIdeal) <
       ringKrullDim (H ⧸ (centralizerHopfIdeal H y).toIdeal) := by
-  rw [ringKrullDim_quotient_centralizerHopfIdeal,
-    ringKrullDim_quotient_centralizerHopfIdeal, Nat.cast_lt]
-  exact finrank_ker_ad_lt_of_mem_adjointOrbit_boundary hy
+  have horbit := Comodule.topologicalKrullDim_range_projectiveOrbitMap_lt
+    (Module.isUnimodular_mk_one x) (Module.isUnimodular_mk_one y) hy
+  have hx := topologicalKrullDim_range_projectiveOrbitMap_add_ringKrullDim_centralizerHopfIdeal x
+  have hy := topologicalKrullDim_range_projectiveOrbitMap_add_ringKrullDim_centralizerHopfIdeal y
+  have := Bialgebra.nontrivial (A := H ⧸ (centralizerHopfIdeal H x).toIdeal) k
+  have := finiteRingKrullDim_of_finiteType k (H ⧸ (centralizerHopfIdeal H x).toIdeal)
+  have htop := ringKrullDim_ne_top (R := H ⧸ (centralizerHopfIdeal H x).toIdeal)
+  lift ringKrullDim (H ⧸ (centralizerHopfIdeal H x).toIdeal) to ℕ∞
+    using ringKrullDim_ne_bot with d
+  lift d to ℕ using by simpa using htop
+  simp only [ENat.WithBot.coe_eq_natCast] at hx ⊢
+  by_contra h
+  apply horbit.not_ge
+  apply (ENat.WithBot.add_le_add_natCast_right_iff (c := d)).mp
+  rw [hx, ← hy]
+  exact add_le_add le_rfl (not_lt.mp h)
 
 /-- A minimal-centralizer regular element in the closure of an adjoint orbit already belongs
 to that orbit. In particular no adjoint orbit has a regular element in its boundary. -/
-theorem mem_adjointOrbit_of_mem_closure_of_isCentralizerRegular
+theorem mem_adjointOrbit_of_mem_closure_of_isCentralizerRegular [CharZero k]
     {x y : Module.Dual k (Bialgebra.CotangentSpace k H)}
     (hy : LieAlgebra.IsCentralizerRegular k y)
     (hyClosure : Comodule.projectiveOrbitMap (H := H)
