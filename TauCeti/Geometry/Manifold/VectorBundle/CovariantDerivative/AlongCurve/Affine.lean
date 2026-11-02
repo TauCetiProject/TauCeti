@@ -40,18 +40,10 @@ theorem alongCurveWithin_const_add_smul
     {s : Set 𝕜} {t : 𝕜} {x : M} (hs : UniqueDiffWithinAt 𝕜 s t)
     (u v : TangentSpace I x) (a : 𝕜) :
     alongCurveWithin cov (fun _ ↦ x) (fun r ↦ u + (r - a) • v) s t = v := by
-  -- Differentiate in the fixed chart, without choosing a norm on the tangent fibre.
-  let L := (trivializationAt E (TangentSpace I) x).continuousLinearMapAt 𝕜 x
-  have hcoord : TauCeti.Manifold.sectionCoord (F := E) (fun _ : 𝕜 ↦ x)
-      (fun r ↦ u + (r - a) • v) x = fun r ↦ L u + (r - a) • L v := by
-    ext r
-    simp [TauCeti.Manifold.sectionCoord_apply, L]
-  have hd : HasDerivWithinAt (fun r ↦ L u + (r - a) • L v) (L v) s t := by
-    simpa using ((((hasDerivAt_id t).sub_const a).smul_const (L v)).const_add (L u))
-      |>.hasDerivWithinAt (s := s)
-  rw [alongCurveWithin_apply, alongCurveInChartWithin_apply, hcoord, hd.derivWithin hs]
-  simp only [Function.comp_def, derivWithin_fun_const, Pi.zero_apply, map_zero, add_zero]
-  exact (trivializationAt E (TangentSpace I) x).symmL_continuousLinearMapAt (R := 𝕜)
-    (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) x) v
+  let _ : NormedAddCommGroup (TangentSpace I x) := inferInstanceAs (NormedAddCommGroup E)
+  let _ : NormedSpace 𝕜 (TangentSpace I x) := inferInstanceAs (NormedSpace 𝕜 E)
+  refine alongCurveWithin_const_of_hasDerivWithinAt cov x ?_ hs
+  simpa only [id_eq, one_smul] using! ((((hasDerivAt_id t).sub_const a).smul_const v).const_add u)
+    |>.hasDerivWithinAt (s := s)
 
 end CovariantDerivative
