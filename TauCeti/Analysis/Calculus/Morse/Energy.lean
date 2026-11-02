@@ -22,7 +22,7 @@ controls the improper integrals.
 The half-line formulas identify the energy remaining before or after any time. Mathlib's
 `MeasureTheory.tendsto_integral_Iic_zero` and `MeasureTheory.tendsto_integral_Ioi_zero` give the
 vanishing of these tails. Together with
-`TauCeti.IsIntegralCurveOn.exists_tendsto_comp_atTop` from `Morse.Convergence`, the forward
+`IsIntegralCurveOn.exists_tendsto_comp_atTop` from `Morse.Convergence`, the forward
 integrability theorem gives finite energy for a negative gradient trajectory confined to a
 compact set. The forward and backward critical-point convergence theorems in that module
 similarly supply the limits for the whole-line identity. For a connecting orbit from `p` to `q`,
@@ -30,17 +30,15 @@ the total energy is `f p - f q`; in particular it depends only on the endpoints.
 formulas apply to the trajectories themselves, without manifold structures on their stable
 and unstable sets.
 
-Apply the trajectory lemmas by their qualified names in `TauCeti.IsIntegralCurveOn` and
-`TauCeti.IsIntegralCurve`, following the organization of `Morse.GradientFlow`. The
-curve predicates themselves are Mathlib's `IsIntegralCurveOn` and `IsIntegralCurve`; the
-qualified namespaces above contain the energy lemmas, not new predicates. The
-connecting-orbit lemmas are in `TauCeti.Flow.IsNegativeGradient`. With `open TauCeti`, use
+The trajectory lemmas live in Mathlib's `IsIntegralCurveOn` and `IsIntegralCurve` namespaces,
+following the organization of `Morse.GradientFlow`, so they apply by dot notation on the curve
+hypothesis. The connecting-orbit lemmas are in `TauCeti.Flow.IsNegativeGradient`. With
+`open TauCeti`, use
 `hφ.integrable_norm_gradient_sq_of_mem_unstableSet_inter_stableSet hf hfp hfq hx` for finite
 energy, and `hφ.integral_norm_gradient_sq_eq_sub_of_mem_unstableSet_inter_stableSet hf hfp hfq hx`
 for the endpoint energy identity.
 The restricted-curve lemmas take the interval endpoints before the curve hypothesis; for example,
-`TauCeti.IsIntegralCurveOn.integrableOn_Ioi_norm_gradient_sq a hγ hf hplus` proves finite
-forward energy after time `a`.
+`hγ.integrableOn_Ioi_norm_gradient_sq a hf hplus` proves finite forward energy after time `a`.
 
 ## References
 
@@ -56,28 +54,12 @@ public section
 open Filter Function InnerProductSpace MeasureTheory Set
 open scoped Gradient Interval Topology
 
-namespace TauCeti
+section
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
   {f : E → ℝ} {γ : ℝ → E} {cMinus cPlus : ℝ}
 
 namespace IsIntegralCurveOn
-
-/-- The squared gradient along a negative gradient trajectory is integrable on every compact
-time interval, assuming only differentiability of the defining function along that interval. -/
-theorem intervalIntegrable_norm_gradient_sq
-    (a b : ℝ) (hγ : IsIntegralCurveOn γ (fun _ x ↦ -∇ f x) (uIcc a b))
-    (hf : ∀ t ∈ uIcc a b, DifferentiableAt ℝ f (γ t)) :
-    IntervalIntegrable (fun t ↦ ‖∇ f (γ t)‖ ^ 2) volume a b := by
-  have hd : ∀ t ∈ uIcc a b,
-      HasDerivWithinAt (fun t ↦ -f (γ t)) (‖∇ f (γ t)‖ ^ 2) (uIcc a b) t := by
-    intro t ht
-    simpa only [neg_neg, Function.comp_def] using
-      (hasDerivWithinAt_comp_neg_gradient hγ ht (hf t ht)).fun_neg
-  exact intervalIntegral.intervalIntegrable_deriv_of_nonneg
-    (fun t ht ↦ (hd t ht).continuousWithinAt)
-    (fun t ht ↦ (hd t ⟨ht.1.le, ht.2.le⟩).hasDerivAt (Icc_mem_nhds ht.1 ht.2))
-    (fun t _ ↦ sq_nonneg _)
 
 /-- A finite forward limiting value implies finite energy on every forward half-line. -/
 theorem integrableOn_Ioi_norm_gradient_sq
@@ -132,11 +114,9 @@ theorem integrableOn_Iic_norm_gradient_sq
   · apply (hminus.sub_const _).congr'
     filter_upwards [Iic_mem_atBot a] with t ht
     simp only [Real.norm_of_nonneg (sq_nonneg _)]
-    exact (IsIntegralCurveOn.integral_norm_gradient_sq_eq_sub
-      hγ
+    exact (hγ.integral_norm_gradient_sq_eq_sub
       (by rw [uIcc_of_le ht]; exact Icc_subset_Iic_self)
-      (fun s hs ↦ hf s (by rw [uIcc_of_le ht] at hs; exact hs.2))
-      (hinterval t ht)).symm
+      (fun s hs ↦ hf s (by rw [uIcc_of_le ht] at hs; exact hs.2))).symm
 
 /-- The energy before time `a` is the drop from the backward limiting value to the value at `a`. -/
 theorem integral_Iic_norm_gradient_sq_eq_sub
@@ -168,10 +148,9 @@ theorem integrable_norm_gradient_sq
     (hplus : Tendsto (f ∘ γ) atTop (𝓝 cPlus)) :
     Integrable (fun t ↦ ‖∇ f (γ t)‖ ^ 2) := by
   rw [← integrableOn_univ, ← Iic_union_Ioi (a := (0 : ℝ)), integrableOn_union]
-  exact ⟨IsIntegralCurveOn.integrableOn_Iic_norm_gradient_sq 0 (hγ.isIntegralCurveOn (Iic 0))
-      (fun t _ ↦ hf t) hminus,
-    IsIntegralCurveOn.integrableOn_Ioi_norm_gradient_sq 0 (hγ.isIntegralCurveOn (Ici 0))
-      (fun t _ ↦ hf t) hplus⟩
+  exact ⟨(hγ.isIntegralCurveOn (Iic 0)).integrableOn_Iic_norm_gradient_sq 0 (fun t _ ↦ hf t)
+      hminus,
+    (hγ.isIntegralCurveOn (Ici 0)).integrableOn_Ioi_norm_gradient_sq 0 (fun t _ ↦ hf t) hplus⟩
 
 /-- **Total energy identity.** The energy of a negative gradient trajectory with finite limiting
 values at both ends equals their difference. Integrability is proved from these limits. -/
@@ -189,7 +168,9 @@ theorem integral_norm_gradient_sq_eq_sub_of_tendsto
 
 end IsIntegralCurve
 
-namespace Flow
+end
+
+namespace TauCeti.Flow
 
 open _root_.Flow
 
@@ -202,7 +183,7 @@ theorem IsNegativeGradient.integrable_norm_gradient_sq_of_mem_unstableSet_inter_
     (hfp : ContinuousAt f p) (hfq : ContinuousAt f q)
     (hx : x ∈ unstableSet φ p ∩ stableSet φ q) :
     Integrable (fun t ↦ ‖∇ f (φ t x)‖ ^ 2) :=
-  IsIntegralCurve.integrable_norm_gradient_sq (hφ.isIntegralCurve x) hf
+  (hφ.isIntegralCurve x).integrable_norm_gradient_sq hf
     (hfp.tendsto.comp (mem_unstableSet.mp hx.1))
     (hfq.tendsto.comp (mem_stableSet.mp hx.2))
 
@@ -212,10 +193,8 @@ theorem IsNegativeGradient.integral_norm_gradient_sq_eq_sub_of_mem_unstableSet_i
     (hfp : ContinuousAt f p) (hfq : ContinuousAt f q)
     (hx : x ∈ unstableSet φ p ∩ stableSet φ q) :
     ∫ t, ‖∇ f (φ t x)‖ ^ 2 = f p - f q :=
-  TauCeti.IsIntegralCurve.integral_norm_gradient_sq_eq_sub_of_tendsto (hφ.isIntegralCurve x) hf
+  (hφ.isIntegralCurve x).integral_norm_gradient_sq_eq_sub_of_tendsto hf
     (hfp.tendsto.comp (mem_unstableSet.mp hx.1))
     (hfq.tendsto.comp (mem_stableSet.mp hx.2))
 
-end Flow
-
-end TauCeti
+end TauCeti.Flow

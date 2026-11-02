@@ -543,6 +543,15 @@ theorem RegularFormClass.rank_add (x y : RegularFormClass K) :
 theorem RegularFormClass.rank_zero : RegularFormClass.rank (0 : RegularFormClass K) = 0 := by
   rw [RegularFormClass.zero_def, RegularFormClass.rank_mk]
 
+-- Not `@[simp]`: `RegularFormClass K` is a semiring in downstream modules, where
+-- `nsmul_eq_mul` rewrites the left-hand side and makes this declaration fail `simpNF`.
+/-- The orthogonal sum of `n` copies of a class has `n` times its rank. -/
+theorem RegularFormClass.rank_nsmul (n : ℕ) (x : RegularFormClass K) :
+    (n • x).rank = n * x.rank := by
+  induction n with
+  | zero => rw [zero_nsmul, RegularFormClass.rank_zero, zero_mul]
+  | succ n ih => rw [succ_nsmul, RegularFormClass.rank_add, ih, add_one_mul]
+
 /-- A regular-form class has rank zero exactly when it is the zero class. -/
 @[simp]
 theorem RegularFormClass.rank_eq_zero_iff {x : RegularFormClass K} :

@@ -56,15 +56,19 @@ is exactly what rules this out, and it is carried as an explicit hypothesis thro
 * `TauCeti.one_sub_two_div_toReal_nonneg` and
   `TauCeti.W1p.integral_value_sq_le_of_eLpNorm_le`: exponent and support estimates used with a
   Sobolev inequality.
-* `TauCeti.toReal_inv_add_inv_eq_inv`: the exponent relation `1/2* + 1/n = 1/2` of `W^{1,2}`
-  read in `ℝ`. The relation forces `n ≠ 0` (`TauCeti.ne_zero_of_inv_add_inv_eq_inv`).
+* `TauCeti.toReal_inv_add_inv_eq_inv`: the exponent relation `1/p⋆ + 1/n = 1/p` of `W^{1,p}`
+  read in `ℝ`. The relation forces `n ≠ 0` (`TauCeti.ne_zero_of_inv_add_inv_eq_inv`), and
+  multiplying by `n` gives `n/p⋆ + 1 = n/p`
+  (`TauCeti.natCast_div_toReal_add_one_of_inv_add_inv_eq_inv`).
 
 * `TauCeti.W1p.eLpNorm_value_le_of_forall_testFunction`: the transfer principle, from an
   estimate on test functions to the same estimate on `W^{1,p}_0(Ω)`.
 * `TauCeti.W1p.eLpNorm_value_le_mul_enorm_gradient`: the Gagliardo--Nirenberg--Sobolev
   inequality on `W^{1,p}_0(Ω)` at the critical exponent `p⋆`.
-* `TauCeti.W1p.eLpNorm_value_le_mul_enorm_gradient_of_isBounded`: the same for every `q ≤ p⋆`
-  when `Ω` is bounded.
+* `TauCeti.norm_testFunctionLp_le_mul_norm_gradientTestFunctionLp`: the same inequality between
+  the `L^{p⋆}` class of a test function and the `Lᵖ` class of its gradient.
+* `TauCeti.W1p.eLpNorm_value_le_mul_enorm_gradient_of_isBounded`: the inequality on
+  `W^{1,p}_0(Ω)` for every `q ≤ p⋆` when `Ω` is bounded.
 * `TauCeti.W1p.memLp_value_of_mem_w1p0Submodule`: a `W^{1,p}_0(Ω)` function is `L^{p⋆}`.
 * `TauCeti.W1p0.sobolevEmbeddingL`: the embedding `W^{1,p}_0(Ω) →L[ℝ] L^{p⋆}(Ω)`, together
   with `TauCeti.W1p0.coeFn_sobolevEmbeddingL` identifying it with the function itself and
@@ -233,20 +237,33 @@ theorem one_le_of_inv_add_eq_inv {r : ENNReal} (hexp : pstar⁻¹ + r = p⁻¹) 
     _ = p⁻¹ := hexp
     _ ≤ 1 := ENNReal.inv_le_one.2 hp1
 
-/-- The exponent relation `1/2* + 1/n = 1/2` of the Sobolev embedding of `W^{1,2}` in dimension
-`n`, read in `ℝ`. No finiteness hypothesis on `2*` is needed: at `2* = ∞` the relation forces
-`n = 2`, and both sides use `ENNReal.toReal ∞ = 0`. -/
-theorem toReal_inv_add_inv_eq_inv {n : ℕ} (hexp : pstar⁻¹ + (n : ℝ≥0∞)⁻¹ = 2⁻¹) :
-    pstar.toReal⁻¹ + (n : ℝ)⁻¹ = 2⁻¹ := by
-  have hpinv : pstar⁻¹ ≠ ∞ := ne_top_of_le_ne_top (by simp) (hexp ▸ le_self_add)
-  have hninv : (n : ℝ≥0∞)⁻¹ ≠ ∞ := ne_top_of_le_ne_top (by simp) (hexp ▸ le_add_self)
+omit [Fact (1 ≤ p)] in
+/-- The exponent relation `1/p⋆ + 1/n = 1/p` of the Sobolev embedding of `W^{1,p}` in dimension
+`n`, read in `ℝ`. No finiteness hypothesis on `p⋆` is needed: at `p⋆ = ∞` the relation forces
+`n = p`, and both sides use `ENNReal.toReal ∞ = 0`. -/
+theorem toReal_inv_add_inv_eq_inv {n : ℕ} (hp : p ≠ 0) (hexp : pstar⁻¹ + (n : ℝ≥0∞)⁻¹ = p⁻¹) :
+    pstar.toReal⁻¹ + (n : ℝ)⁻¹ = p.toReal⁻¹ := by
+  have hpinv : p⁻¹ ≠ ∞ := ENNReal.inv_ne_top.2 hp
   have := congrArg ENNReal.toReal hexp
-  rwa [ENNReal.toReal_add hpinv hninv, ENNReal.toReal_inv, ENNReal.toReal_inv,
-    ENNReal.toReal_natCast, ENNReal.toReal_inv, ENNReal.toReal_ofNat] at this
+  rwa [ENNReal.toReal_add (ne_top_of_le_ne_top hpinv (hexp ▸ le_self_add))
+    (ne_top_of_le_ne_top hpinv (hexp ▸ le_add_self)), ENNReal.toReal_inv, ENNReal.toReal_inv,
+    ENNReal.toReal_natCast, ENNReal.toReal_inv] at this
 
-/-- A Sobolev exponent `2*` with `1/2* + 1/n = 1/2` exists only in positive dimension `n`. -/
-theorem ne_zero_of_inv_add_inv_eq_inv {n : ℕ} (hexp : pstar⁻¹ + (n : ℝ≥0∞)⁻¹ = 2⁻¹) : n ≠ 0 :=
-  Nat.cast_ne_zero.1 <| ENNReal.inv_ne_top.1 <| ne_top_of_le_ne_top (by simp) (hexp ▸ le_add_self)
+omit [Fact (1 ≤ p)] in
+/-- A Sobolev exponent `p⋆` with `1/p⋆ + 1/n = 1/p` exists only in positive dimension `n`. -/
+theorem ne_zero_of_inv_add_inv_eq_inv {n : ℕ} (hp : p ≠ 0)
+    (hexp : pstar⁻¹ + (n : ℝ≥0∞)⁻¹ = p⁻¹) : n ≠ 0 :=
+  Nat.cast_ne_zero.1 <| ENNReal.inv_ne_top.1 <|
+    ne_top_of_le_ne_top (ENNReal.inv_ne_top.2 hp) (hexp ▸ le_add_self)
+
+omit [Fact (1 ≤ p)] in
+/-- Multiplying the exponent relation `1/p⋆ + 1/n = 1/p` by the dimension `n` gives
+`n/p⋆ + 1 = n/p`: the Sobolev-conjugate scaling exponent `n/p⋆` is one less than `n/p`. -/
+theorem natCast_div_toReal_add_one_of_inv_add_inv_eq_inv {n : ℕ} (hp : p ≠ 0)
+    (hexp : pstar⁻¹ + (n : ℝ≥0∞)⁻¹ = p⁻¹) :
+    (n : ℝ) / pstar.toReal + 1 = n / p.toReal := by
+  rw [div_eq_mul_inv, div_eq_mul_inv, ← toReal_inv_add_inv_eq_inv hp hexp, mul_add,
+    mul_inv_cancel₀ (Nat.cast_ne_zero.2 (ne_zero_of_inv_add_inv_eq_inv hp hexp))]
 
 /-- **The Gagliardo--Nirenberg--Sobolev inequality on `W^{1,p}_0(Ω)`.** If `1 ≤ p` and the Sobolev
 conjugate `p⋆` satisfies `1/p⋆ + 1/n = 1/p`, where `n = dim E`, then every `u ∈ W^{1,p}_0(Ω)`
@@ -297,6 +314,22 @@ theorem W1p.eLpNorm_value_le_mul_enorm_gradient (hpstar : pstar ≠ ∞)
     phi.hasCompactSupport hp1' hn hreal
   rwa [ENNReal.coe_toNNReal hpstar, ENNReal.coe_toNNReal hpne,
     ENNReal.coe_toNNReal_eq_toReal] at hphi
+
+/-- **The Gagliardo--Nirenberg--Sobolev inequality between test-function classes.** If `1 ≤ p`
+and the Sobolev conjugate `p⋆ ≠ ∞` satisfies `1/p⋆ + 1/n = 1/p`, where `n = dim E`, then every test
+function `φ` on `Ω` satisfies `‖φ‖_{p⋆} ≤ C ‖∇φ‖_p` for its classes in `L^{p⋆}(Ω)` and
+`Lᵖ(Ω, E)`, with Mathlib's constant `MeasureTheory.SNormLESNormFDerivOfEqConst`. This is the
+bound along which a map defined on test functions by the gradient norm extends to its completion. -/
+theorem norm_testFunctionLp_le_mul_norm_gradientTestFunctionLp (hpstar : pstar ≠ ∞)
+    (hexp : pstar⁻¹ + (finrank ℝ E : ℝ≥0∞)⁻¹ = p⁻¹) (phi : 𝓓(Omega, ℝ)) :
+    ‖testFunctionLp (mu := mu) pstar phi‖ ≤
+      SNormLESNormFDerivOfEqConst ℝ mu p.toReal * ‖gradientTestFunctionLp (mu := mu) p phi‖ := by
+  have h := W1p.eLpNorm_value_le_mul_enorm_gradient hpstar hexp
+    (W1p.ofTestFunctionₗ_mem_w1p0Submodule (mu := mu) (p := p) phi)
+  rw [W1p.value_ofTestFunctionₗ, W1p.gradient_ofTestFunctionₗ,
+    eLpNorm_congr_ae (testFunctionLp_apply_ae p phi)] at h
+  rw [Lp.norm_def, eLpNorm_congr_ae (testFunctionLp_apply_ae pstar phi), ← toReal_enorm]
+  simpa using ENNReal.toReal_mono (by finiteness) h
 
 /-! ### Subcritical exponents on a bounded domain -/
 

@@ -20,6 +20,10 @@ It applies to modular forms for arbitrary arithmetic determinant-one subgroups w
 level-raising inclusion. This transports constant-term vectors of Eisenstein series to
 higher levels.
 
+`ModularForm.exists_constantTermAt_levelRaise` packages the reduction with the first column
+of the representative, so a formula for the constant terms of `f` in terms of the first column
+of the cusp representative transports directly to `V_t f`.
+
 The two matrix reductions also apply to functions with a transformation law, such as the
 quasimodular weight-two Eisenstein series.
 
@@ -132,5 +136,24 @@ theorem constantTermAt_levelRaise (f : ModularForm Γ k)
     simp
   linear_combination hp * (Int.gcd (γ 1 0) t : ℂ) ^ k *
     ((t : ℂ) ^ k)⁻¹ * constantTermAt δ f
+
+
+/-- **Constant-term transport under level raising, with an explicit reduced cusp.** The constant
+term of `V_t f` at `a/c` is `(gcd(c,t)/t)^k` times that of `f` at some `δ` with first column
+`(ta/g, c/g)`, where `g = gcd(c,t)`; the integer divisions are exact. -/
+theorem exists_constantTermAt_levelRaise (f : ModularForm Γ k)
+    (h : Γ' ≤ ConjAct.toConjAct (TauCeti.scaleGL t)⁻¹ • Γ) (γ : SL(2, ℤ)) :
+    ∃ δ : SL(2, ℤ), δ 0 0 = (t : ℤ) * γ 0 0 / Int.gcd (γ 1 0) t ∧
+      δ 1 0 = γ 1 0 / Int.gcd (γ 1 0) t ∧
+      constantTermAt γ (TauCeti.ModularForm.levelRaise t h f) =
+        ((Int.gcd (γ 1 0) t : ℂ) / t) ^ k * constantTermAt δ f := by
+  obtain ⟨δ, ha, hc⟩ := γ.exists_scaled_cusp_reduction (t := t)
+  have hg : (Int.gcd (γ 1 0) t : ℤ) ≠ 0 := by
+    exact_mod_cast (Int.gcd_pos_of_ne_zero_right (γ 1 0)
+      (Nat.cast_ne_zero.mpr (NeZero.ne t))).ne'
+  refine ⟨δ, ?_, ?_, constantTermAt_levelRaise f h γ δ ha hc⟩
+  · rw [ha, Int.mul_ediv_cancel _ hg]
+  · exact ((congrArg (fun c : ℤ ↦ c / Int.gcd (γ 1 0) t) hc).trans
+      (Int.mul_ediv_cancel _ hg)).symm
 
 end ModularForm

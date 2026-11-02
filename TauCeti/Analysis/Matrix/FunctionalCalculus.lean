@@ -14,10 +14,11 @@ public import TauCeti.Analysis.InnerProductSpace.PointSpectrum
 import Mathlib.LinearAlgebra.Lagrange
 import Mathlib.Topology.MetricSpace.ThickenedIndicator
 import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Continuity
+import TauCeti.Analysis.Matrix.L2OpNorm
 import TauCeti.Topology.Instances.Matrix
 
 /-!
-# Spectral projectors, continuity and measurability of the Hermitian functional calculus
+# Spectral projectors, traces, continuity and measurability of the Hermitian functional calculus
 
 For a Hermitian matrix `A` over `𝕜 = ℝ` or `ℂ` (any `RCLike` field) and a real function `f`,
 Mathlib's continuous functional calculus defines the matrix `cfc f A`. Every real function is
@@ -32,6 +33,12 @@ eigenvector of `A` with eigenvalue `μ` by `f μ`, so it is the functional calcu
 `Module.End.pointSpectralSubspace A.toEuclideanLin Ω` of the eigenspaces of `A` at eigenvalues in
 `Ω`. For `Ω = [c, ∞)` this is the fixed-threshold spectral projector `P_[c,∞)(A)`, the cluster
 object used for spectral subspaces in the presence of eigenvalue multiplicity.
+
+*Traces.* The trace of `cfc f A` is `∑ᵢ f(aᵢ)` over the eigenvalues `aᵢ` of `A`. For a second
+Hermitian matrix `B` with eigenvalues `bⱼ`, the trace of `cfc f A * cfc g B` is
+`∑ᵢ ∑ⱼ f(aᵢ) g(bⱼ) ‖⟪uᵢ, vⱼ⟫‖²`, where `uᵢ` and `vⱼ` are the orthonormal eigenvectors. This reduces
+trace inequalities for noncommuting Hermitian matrices, such as the positivity of relative entropy,
+to scalar inequalities between eigenvalues.
 
 *Continuity.* For continuous `f`, the map `A ↦ cfc f A` is continuous on the Hermitian matrices
 for the entrywise topology. This is Mathlib's continuity of the isometric functional calculus in
@@ -55,6 +62,9 @@ with a measurable random matrix `ω ↦ A ω` gives measurability of `ω ↦ cfc
 * `Matrix.IsHermitian.toEuclideanLin_cfc_indicator` — the Euclidean operator of
   `cfc (Ω.indicator 1) A` is the orthogonal projection onto the point-spectral subspace
   `Module.End.pointSpectralSubspace A.toEuclideanLin Ω`;
+* `Matrix.IsHermitian.trace_cfc`, `Matrix.IsHermitian.trace_cfc_mul_cfc` and
+  `Matrix.IsHermitian.re_trace_cfc_mul_cfc` — the traces of `cfc f A` and of `cfc f A * cfc g B`
+  in terms of eigenvalues and eigenvector overlaps;
 * `TauCeti.continuousOn_matrix_cfc` — for continuous `f`, `A ↦ cfc f A` is continuous on the
   Hermitian matrices;
 * `TauCeti.tendsto_matrix_cfc_fun` — pointwise convergence of functions gives convergence of
@@ -75,10 +85,50 @@ with a measurable random matrix `ω ↦ A ω` gives measurability of `ω ↦ cfc
 public section
 
 open Filter Polynomial Topology
+open scoped InnerProductSpace
 
 namespace Matrix
 
 variable {n 𝕜 : Type*} [RCLike 𝕜] [Fintype n] [DecidableEq n] {A : Matrix n n 𝕜}
+
+/-- Multiplying the functional calculus by its Hermitian matrix on the left multiplies the
+scalar function by the identity. -/
+theorem IsHermitian.mul_cfc (hA : A.IsHermitian) (f : ℝ → ℝ) :
+    A * cfc f A = cfc (fun x ↦ x * f x) A := by
+  rw [_root_.cfc_mul _ _ _ (A.finite_real_spectrum.continuousOn _)
+    (A.finite_real_spectrum.continuousOn _), cfc_id' ℝ A hA.isSelfAdjoint]
+
+/-- Multiplying the functional calculus by its Hermitian matrix on the right multiplies the
+scalar function by the identity. -/
+theorem IsHermitian.cfc_mul (hA : A.IsHermitian) (f : ℝ → ℝ) :
+    cfc f A * A = cfc (fun x ↦ f x * x) A := by
+  rw [_root_.cfc_mul _ _ _ (A.finite_real_spectrum.continuousOn _)
+    (A.finite_real_spectrum.continuousOn _), cfc_id' ℝ A hA.isSelfAdjoint]
+
+/-- For symmetric `C` and positive `ε`, `(C² + ε I)⁻¹ C` is the functional calculus of
+`x ↦ x / (x² + ε)` at `C`, including when `C` is singular. -/
+theorem inv_sq_add_smul_mul_eq_cfc {C : Matrix n n ℝ} (hC : C.IsHermitian)
+    {ε : ℝ} (hε : 0 < ε) :
+    (C ^ 2 + ε • 1)⁻¹ * C = cfc (fun x : ℝ ↦ x / (x ^ 2 + ε)) C := by
+  have hcont (f : ℝ → ℝ) : ContinuousOn f (spectrum ℝ C) := C.finite_real_spectrum.continuousOn f
+  have hden : ∀ x ∈ spectrum ℝ C, x ^ 2 + ε ≠ 0 := fun x _ ↦ by positivity
+  have hpoly : cfc (fun x : ℝ ↦ x ^ 2 + ε) C = C ^ 2 + ε • 1 := by
+    have hadd : cfc (fun x : ℝ ↦ x ^ 2 + ε) C =
+        cfc (fun x : ℝ ↦ x ^ 2) C + cfc (fun _ : ℝ ↦ ε) C :=
+      cfc_add C (fun x : ℝ ↦ x ^ 2) (fun _ ↦ ε) (hcont _) (hcont _)
+    simpa only [cfc_pow_id C 2 hC.isSelfAdjoint, cfc_const ε C hC.isSelfAdjoint,
+      Algebra.algebraMap_eq_smul_one] using
+      hadd
+  calc
+    (C ^ 2 + ε • 1)⁻¹ * C =
+        Ring.inverse (cfc (fun x : ℝ ↦ x ^ 2 + ε) C) * cfc (fun x : ℝ ↦ x) C := by
+      simp only [hpoly, cfc_id' ℝ C hC.isSelfAdjoint, nonsing_inv_eq_ringInverse]
+    _ = cfc (fun x : ℝ ↦ (x ^ 2 + ε)⁻¹) C * cfc (fun x : ℝ ↦ x) C := by
+      rw [cfc_inv (fun x : ℝ ↦ x ^ 2 + ε) C hden (hcont _) hC.isSelfAdjoint]
+    _ = cfc (fun x : ℝ ↦ (x ^ 2 + ε)⁻¹ * x) C :=
+      (cfc_mul _ _ _ (hcont _) (hcont _)).symm
+    _ = cfc (fun x : ℝ ↦ x / (x ^ 2 + ε)) C :=
+      cfc_congr fun x _ ↦ by simp only [div_eq_mul_inv, mul_comm]
 
 /-- The functional calculus `cfc f A` of a Hermitian matrix multiplies an eigenvector of `A`
 with eigenvalue `μ` by `f μ`. -/
@@ -121,6 +171,62 @@ theorem IsHermitian.toEuclideanLin_cfc_indicator (hA : A.IsHermitian) (Ω : Set 
       (Module.End.pointSpectralSubspace (toEuclideanLin A) Ω).starProjection := by
   rw [hA.toEuclideanLin_cfc, LinearMap.IsSymmetric.coe_starProjection_pointSpectralSubspace]
 
+/-- The trace of `cfc f A` is the sum of the values of `f` at the eigenvalues of `A`, counted with
+multiplicity. -/
+theorem IsHermitian.trace_cfc (hA : A.IsHermitian) (f : ℝ → ℝ) :
+    (cfc f A).trace = ∑ i, (f (hA.eigenvalues i) : 𝕜) := by
+  rw [hA.cfc_eq, IsHermitian.cfc, Unitary.conjStarAlgAut_apply, trace_mul_cycle,
+    Unitary.coe_star_mul_self, one_mul, trace_diagonal]
+  rfl
+
+/-- The entries of `U⋆ V`, for the eigenvector unitaries `U` of `A` and `V` of `B`, are the inner
+products of the eigenvectors of `A` with those of `B`. -/
+theorem IsHermitian.star_eigenvectorUnitary_mul_eigenvectorUnitary_apply {B : Matrix n n 𝕜}
+    (hA : A.IsHermitian) (hB : B.IsHermitian) (i j : n) :
+    (star (hA.eigenvectorUnitary : Matrix n n 𝕜) * hB.eigenvectorUnitary) i j =
+      ⟪hA.eigenvectorBasis i, hB.eigenvectorBasis j⟫_𝕜 := by
+  simp [mul_apply, EuclideanSpace.inner_eq_star_dotProduct, dotProduct, mul_comm]
+
+/-- **The trace of a product of two functional calculi.** For Hermitian `A` and `B` with
+eigenvalues `aᵢ`, `bⱼ` and orthonormal eigenvectors `uᵢ`, `vⱼ`,
+`Tr (f(A) g(B)) = ∑ᵢ ∑ⱼ f(aᵢ) g(bⱼ) ‖⟪uᵢ, vⱼ⟫‖²`. The weights `‖⟪uᵢ, vⱼ⟫‖²` form a doubly
+stochastic matrix (`OrthonormalBasis.sum_sq_norm_inner_right` and
+`OrthonormalBasis.sum_sq_norm_inner_left`); this identity reduces trace inequalities for pairs of
+noncommuting Hermitian matrices to scalar inequalities between their eigenvalues. -/
+theorem IsHermitian.trace_cfc_mul_cfc {B : Matrix n n 𝕜} (hA : A.IsHermitian)
+    (hB : B.IsHermitian) (f g : ℝ → ℝ) :
+    (cfc f A * cfc g B).trace = ∑ i, ∑ j, ((f (hA.eigenvalues i) * g (hB.eigenvalues j) *
+      ‖⟪hA.eigenvectorBasis i, hB.eigenvectorBasis j⟫_𝕜‖ ^ 2 : ℝ) : 𝕜) := by
+  set U : Matrix n n 𝕜 := ↑hA.eigenvectorUnitary with hU
+  set V : Matrix n n 𝕜 := ↑hB.eigenvectorUnitary with hV
+  set W := star U * V with hW
+  have hUU : star U * U = 1 := Unitary.coe_star_mul_self _
+  have hUU' : U * star U = 1 := Unitary.coe_mul_star_self _
+  -- Conjugating by `U` reduces the trace to `Tr (D_f W D_g W⋆)` with `W = U⋆ V`.
+  have key : U * diagonal (RCLike.ofReal ∘ f ∘ hA.eigenvalues) * star U *
+      (V * diagonal (RCLike.ofReal ∘ g ∘ hB.eigenvalues) * star V) =
+      U * (diagonal (RCLike.ofReal ∘ f ∘ hA.eigenvalues) * W *
+        diagonal (RCLike.ofReal ∘ g ∘ hB.eigenvalues) * star W) * star U := by
+    simp only [hW, star_mul, star_star, mul_assoc, hUU', mul_one]
+  rw [hA.cfc_eq, hB.cfc_eq, IsHermitian.cfc, IsHermitian.cfc, Unitary.conjStarAlgAut_apply,
+    Unitary.conjStarAlgAut_apply, key, trace_mul_cycle, hUU, one_mul, trace]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [diag_apply, mul_apply]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  simp only [mul_diagonal, diagonal_mul, star_apply, Function.comp_apply, hW]
+  rw [hU, hV, star_eigenvectorUnitary_mul_eigenvectorUnitary_apply, RCLike.star_def]
+  push_cast
+  rw [← RCLike.mul_conj]
+  ring
+
+/-- The real part of the trace formula `Matrix.IsHermitian.trace_cfc_mul_cfc`:
+`re Tr (f(A) g(B)) = ∑ᵢ ∑ⱼ f(aᵢ) g(bⱼ) ‖⟪uᵢ, vⱼ⟫‖²`, as an identity of real numbers. -/
+theorem IsHermitian.re_trace_cfc_mul_cfc {B : Matrix n n 𝕜} (hA : A.IsHermitian)
+    (hB : B.IsHermitian) (f g : ℝ → ℝ) :
+    RCLike.re (cfc f A * cfc g B).trace = ∑ i, ∑ j, f (hA.eigenvalues i) *
+      g (hB.eigenvalues j) * ‖⟪hA.eigenvectorBasis i, hB.eigenvectorBasis j⟫_𝕜‖ ^ 2 := by
+  simp only [hA.trace_cfc_mul_cfc hB, map_sum, RCLike.ofReal_re]
+
 end Matrix
 
 namespace TauCeti
@@ -136,11 +242,7 @@ theorem continuousOn_matrix_cfc {f : ℝ → ℝ} (hf : Continuous f) :
   -- The lemma is stated over `ℝ`, so it also needs `Matrix n n 𝕜` as a normed `ℝ`-algebra; we
   -- extend the existing `ℝ`-algebra structure rather than restricting scalars, to avoid a diamond.
   open scoped Matrix.Norms.L2Operator in
-  let : NormedAlgebra ℝ (Matrix n n 𝕜) :=
-    { (inferInstance : Algebra ℝ (Matrix n n 𝕜)) with
-      norm_smul_le r A := by
-        rw [RCLike.real_smul_eq_coe_smul (K := 𝕜) r A]
-        exact (norm_smul_le _ _).trans_eq (by rw [RCLike.norm_ofReal, Real.norm_eq_abs]) }
+  let := Matrix.l2OpNormedAlgebraReal (n := n) (𝕜 := 𝕜)
   exact ContinuousOn.cfc_of_mem_nhdsSet (s := Set.univ) (t := {A : Matrix n n 𝕜 | A.IsHermitian})
     f univ_mem continuousOn_id (fun _ hA ↦ Matrix.IsHermitian.isSelfAdjoint hA) hf.continuousOn
 

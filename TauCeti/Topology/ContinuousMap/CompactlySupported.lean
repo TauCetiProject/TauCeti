@@ -1,18 +1,21 @@
 /-
-Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Copyright (c) 2026 The Tau Ceti contributors and Kitware, Inc. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Jon Crall, GPT-6
 -/
 module
 
 public import Mathlib.Topology.ContinuousMap.CompactlySupported
 
 /-!
-# The map `toReal` on compactly supported continuous functions
+# Maps on compactly supported continuous functions
 
 Order and `nnrealPart` lemmas for Mathlib's `CompactlySupportedContinuousMap.toReal`, the map
 `C_c(X, ℝ≥0) → C_c(X, ℝ)`: it sends `0` to `0`, it is an order embedding, and on nonnegative
 functions it is inverse to `CompactlySupportedContinuousMap.nnrealPart`.
+
+The forgetful map from compactly supported to continuous functions preserves
+addition and constant scalar multiplication whenever those operations are defined.
 -/
 
 public section
@@ -22,6 +25,21 @@ open scoped NNReal CompactlySupported
 namespace CompactlySupportedContinuousMap
 
 variable {X : Type*} [TopologicalSpace X]
+
+/-- Forgetting compact support preserves addition. -/
+@[simp]
+theorem toContinuousMap_add {Y : Type*} [TopologicalSpace Y]
+    [AddZeroClass Y] [ContinuousAdd Y] (f g : C_c(X, Y)) :
+    (f + g).toContinuousMap = f.toContinuousMap + g.toContinuousMap :=
+  rfl
+
+/-- Forgetting compact support preserves scalar multiplication. -/
+@[simp]
+theorem toContinuousMap_smul {R Y : Type*} [TopologicalSpace Y]
+    [Zero Y] [SMulZeroClass R Y] [ContinuousConstSMul R Y]
+    (r : R) (f : C_c(X, Y)) :
+    (r • f).toContinuousMap = r • f.toContinuousMap :=
+  rfl
 
 /-- `toReal` sends the zero function to the zero function. -/
 @[simp]

@@ -56,7 +56,8 @@ extension, in particular to the completions of a number field.
   class.
 * `QuadraticForm.discr_formClass_baseChange_eq_zero`: a form acquires square discriminant over a
   field containing a square root of its discriminant.
-* `TauCeti.RegularFormClass.discr_baseChange`: the discriminant commutes with scalar extension.
+* `TauCeti.RegularFormClass.discr_baseChange`, `TauCeti.RegularFormClass.signedDiscr_baseChange`:
+  the discriminant and the signed discriminant commute with scalar extension.
 -/
 
 public section
@@ -371,14 +372,10 @@ theorem RegularFormClass.baseChange_one :
   rw [RegularFormClass.one_def, RegularFormClass.baseChange_mk, RegularFormClass.one_def,
     RegularFormPresentation.baseChange_one]
 
-/-- Base change preserves the hyperbolic class. -/
+/-- Base change preserves the hyperbolic class, for any choice of `Invertible (2 : L)`. -/
 @[simp]
-theorem RegularFormClass.baseChange_hyperbolicClass :
-    letI : Invertible (2 : L) :=
-      (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
+theorem RegularFormClass.baseChange_hyperbolicClass [Invertible (2 : L)] :
     RegularFormClass.baseChange L (hyperbolicClass K) = hyperbolicClass L := by
-  let _ : Invertible (2 : L) :=
-    (Invertible.map (algebraMap K L) 2).copy 2 (map_ofNat _ _).symm
   rw [hyperbolicClass_def, hyperbolicClass_def, RegularFormClass.baseChange_mk]
   refine congrArg _ (RegularFormPresentation.ext
     (RegularFormPresentation.fst_baseChange L _) fun i ↦ ?_)
@@ -430,7 +427,7 @@ theorem RegularFormClass.baseChangeHom_comp [Invertible (2 : M)] :
   ext x
   simp
 
-/-! ### Scalar extension of the discriminant -/
+/-! ### Scalar extension of the discriminants -/
 
 variable {V : Type w} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
 
@@ -443,6 +440,15 @@ theorem RegularFormClass.discr_baseChange (x : RegularFormClass K) :
   refine Quotient.inductionOn x fun p ↦ ?_
   rw [RegularFormClass.baseChange_mk, RegularFormClass.discr_mk, RegularFormClass.discr_mk,
     RingHom.squareClassMap_apply, RegularFormPresentation.prod_baseChange]
+
+/-- **The signed discriminant commutes with scalar extension of isometry classes**: extending an
+isometry class to `L` pushes its signed discriminant forward along the induced map of square-class
+groups. -/
+@[simp]
+theorem RegularFormClass.signedDiscr_baseChange (x : RegularFormClass K) :
+    RegularFormClass.signedDiscr (RegularFormClass.baseChange L x) =
+      (algebraMap K L).squareClassMap (RegularFormClass.signedDiscr x) := by
+  simp [RegularFormClass.signedDiscr_eq_sign_add_discr, RingHom.squareClassMap_apply]
 
 end TauCeti
 

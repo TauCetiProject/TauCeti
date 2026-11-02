@@ -5,13 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.EtaleTwoDescent
+public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.EtaleTwoDescent.NormKernel
 public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Selmer.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MordellWeil.SelmerGroup
 public import TauCeti.AlgebraicGeometry.EllipticCurve.NormalForms
 
 /-!
-# Local conditions in cohomological and explicit two-descent
+# The cohomological and explicit `2`-Selmer groups
 
 For an elliptic curve in characteristic-`≠ 2` normal form, the cohomological descent map
 
@@ -34,10 +34,18 @@ global descent image satisfies the explicit local condition `WeierstrassCurve.Af
 at every chosen extension field.
 
 Together with the norm condition `TauCeti.TwoDescent.normM_cohomologicalMap`, the second
-description sends the classes that are Selmer at the completions of `K` at the finite places of a
-Dedekind domain `R` with fraction field `K`, and at an auxiliary family `Loc` of fields, into the
-explicit `2`-Selmer group `WeierstrassCurve.Affine.selmerGroup₂ R Loc`, injectively since the
-cohomological descent map is injective.
+description shows that a class is Selmer at the completions of `K` at the finite places of a
+Dedekind domain `R` with fraction field `K`, and at an auxiliary family `Loc` of fields, exactly
+when its descent image lies in the explicit `2`-Selmer group
+`WeierstrassCurve.Affine.selmerGroup₂ R Loc`. Since every square class with square norm is a
+descent image (`TauCeti.TwoDescent.range_cohomologicalMap_eq_ker_normM`) and the descent map is
+injective, the cohomological descent map is an isomorphism from the cohomological `2`-Selmer
+group onto the explicit one.
+
+## Main definitions
+
+* `WeierstrassCurve.selmerGroupTwoMulEquivSelmerGroup₂`: the isomorphism from the cohomological
+  `2`-Selmer group onto the explicit one, given by the cohomological descent map.
 
 ## Main results
 
@@ -48,10 +56,15 @@ cohomological descent map is injective.
   cohomological descent map commutes with change of field
   (`TauCeti.TwoDescent.cohomologicalMap_torsionRes`), the same membership is the explicit local
   condition `WeierstrassCurve.Affine.localCondition` on the global descent image.
-* `WeierstrassCurve.cohomologicalMap_mem_selmerGroup₂`: with the norm condition
-  (`TauCeti.TwoDescent.normM_cohomologicalMap`), the cohomological descent map sends the classes
-  that are Selmer at the finite places of a Dedekind domain and at an auxiliary family of fields
-  into the explicit `2`-Selmer group `WeierstrassCurve.Affine.selmerGroup₂`.
+* `WeierstrassCurve.cohomologicalMap_mem_selmerGroup₂_iff`: with the norm condition
+  (`TauCeti.TwoDescent.normM_cohomologicalMap`), a class is Selmer at the finite places of a
+  Dedekind domain and at an auxiliary family of fields exactly when the cohomological descent map
+  sends it into the explicit `2`-Selmer group `WeierstrassCurve.Affine.selmerGroup₂`.
+* `WeierstrassCurve.map_selmerGroup_two_eq_selmerGroup₂`: the explicit `2`-Selmer group is the
+  image of the cohomological one.
+* `WeierstrassCurve.coe_selmerGroupTwoMulEquivSelmerGroup₂_apply` and
+  `WeierstrassCurve.cohomologicalMap_selmerGroupTwoMulEquivSelmerGroup₂_symm_apply`: the
+  isomorphism and its inverse are read through the cohomological descent map.
 
 ## References
 
@@ -104,25 +117,76 @@ theorem mem_selmerGroup_two_iff_forall_cohomologicalMap_mem_localCondition
   refine forall_congr' fun i ↦ ?_
   rw [TauCeti.TwoDescent.cohomologicalMap_torsionRes, Affine.mem_localCondition_iff]
 
-open IsDedekindDomain in
-/-- **The cohomological `2`-Selmer group maps into the explicit one.** Let `R` be a Dedekind domain
-with fraction field `K` and `Loc` a family of field extensions of `K`. A class that lies in the
-cohomological `2`-Selmer group for the completions of `K` at the finite places of `R` and in the
-cohomological `2`-Selmer group for the family `Loc` is sent by the cohomological descent map into
-the explicit `2`-Selmer group `WeierstrassCurve.Affine.selmerGroup₂ R Loc`: its image has square
-norm (`TauCeti.TwoDescent.normM_cohomologicalMap`) and satisfies the explicit local conditions. -/
-theorem cohomologicalMap_mem_selmerGroup₂ (h2 : IsUnit ((2 : ℕ) : K))
-    (R : Type*) [CommRing R] [IsDedekindDomain R] [Algebra R K] [IsFractionRing R K]
-    {ι : Type*} (Loc : ι → Type*) [(i : ι) → Field (Loc i)] [(i : ι) → Algebra K (Loc i)]
-    (tauV : (v : HeightOneSpectrum R) →
-      SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
-    (tauL : (i : ι) → SeparableClosure K →ₐ[K] SeparableClosure (Loc i))
-    {c : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff 2)} (hV : c ∈ W.selmerGroup tauV 2)
-    (hL : c ∈ W.selmerGroup tauL 2) :
-    TauCeti.TwoDescent.cohomologicalMap W h2 (.ofAdd c) ∈ W.toAffine.selmerGroup₂ R Loc :=
-  (Affine.mem_selmerGroup₂_iff _ _ _).2
-    ⟨TauCeti.TwoDescent.normM_cohomologicalMap W h2 _,
-      (W.mem_selmerGroup_two_iff_forall_cohomologicalMap_mem_localCondition _ tauV h2).1 hV,
-      (W.mem_selmerGroup_two_iff_forall_cohomologicalMap_mem_localCondition Loc tauL h2).1 hL⟩
+section SelmerGroup₂
+
+open IsDedekindDomain
+
+variable (h2 : IsUnit ((2 : ℕ) : K))
+  (R : Type*) [CommRing R] [IsDedekindDomain R] [Algebra R K] [IsFractionRing R K]
+  {ι : Type*} (Loc : ι → Type*) [(i : ι) → Field (Loc i)] [(i : ι) → Algebra K (Loc i)]
+  (tauV : (v : HeightOneSpectrum R) →
+    SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
+  (tauL : (i : ι) → SeparableClosure K →ₐ[K] SeparableClosure (Loc i))
+
+/-- **The cohomological and explicit `2`-Selmer conditions agree.** Let `R` be a Dedekind domain
+with fraction field `K` and `Loc` a family of field extensions of `K`. A class of
+`H¹(G_K, E[2])` lies in the cohomological `2`-Selmer groups for the completions of `K` at the
+finite places of `R` and for the family `Loc` exactly when the cohomological descent map sends it
+into the explicit `2`-Selmer group `WeierstrassCurve.Affine.selmerGroup₂ R Loc`. The norm
+condition holds on every image (`TauCeti.TwoDescent.normM_cohomologicalMap`). -/
+theorem cohomologicalMap_mem_selmerGroup₂_iff
+    {c : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff 2)} :
+    TauCeti.TwoDescent.cohomologicalMap W h2 (.ofAdd c) ∈ W.toAffine.selmerGroup₂ R Loc ↔
+      c ∈ W.selmerGroup tauV 2 ∧ c ∈ W.selmerGroup tauL 2 := by
+  rw [Affine.mem_selmerGroup₂_iff,
+    W.mem_selmerGroup_two_iff_forall_cohomologicalMap_mem_localCondition _ tauV h2,
+    W.mem_selmerGroup_two_iff_forall_cohomologicalMap_mem_localCondition Loc tauL h2]
+  exact and_iff_right (TauCeti.TwoDescent.normM_cohomologicalMap W h2 _)
+
+/-- **The explicit `2`-Selmer group is the image of the cohomological one** (Silverman X.1.4,
+X.4): the cohomological descent map carries the classes that are Selmer at the finite places of
+`R` and at the family `Loc` onto the explicit `2`-Selmer group
+`WeierstrassCurve.Affine.selmerGroup₂ R Loc`. -/
+theorem map_selmerGroup_two_eq_selmerGroup₂ :
+    (W.selmerGroup tauV 2 ⊓ W.selmerGroup tauL 2).toSubgroup.map
+        (TauCeti.TwoDescent.cohomologicalMap W h2) =
+      W.toAffine.selmerGroup₂ R Loc := by
+  refine le_antisymm ?_ fun m hm ↦ ?_
+  · rintro _ ⟨c, hc, rfl⟩
+    exact (W.cohomologicalMap_mem_selmerGroup₂_iff h2 R Loc tauV tauL).2 hc
+  -- an explicit Selmer element has square norm, so it is a cohomological descent image
+  obtain ⟨c, rfl⟩ : m ∈ (TauCeti.TwoDescent.cohomologicalMap W h2).range := by
+    rw [TauCeti.TwoDescent.range_cohomologicalMap_eq_ker_normM]
+    exact ((Affine.mem_selmerGroup₂_iff _ _ _).1 hm).1
+  exact ⟨c, (W.cohomologicalMap_mem_selmerGroup₂_iff h2 R Loc tauV tauL).1 hm, rfl⟩
+
+/-- **The cohomological and explicit `2`-Selmer groups are isomorphic** through the cohomological
+descent map. The cohomological side is the intersection of the `2`-Selmer groups for the
+completions of `K` at the finite places of `R` and for the family `Loc`; the explicit side is
+`WeierstrassCurve.Affine.selmerGroup₂ R Loc`. -/
+noncomputable def selmerGroupTwoMulEquivSelmerGroup₂ :
+    (W.selmerGroup tauV 2 ⊓ W.selmerGroup tauL 2).toSubgroup ≃* W.toAffine.selmerGroup₂ R Loc :=
+  ((W.selmerGroup tauV 2 ⊓ W.selmerGroup tauL 2).toSubgroup.equivMapOfInjective _
+    (TauCeti.TwoDescent.cohomologicalMap_injective W h2)).trans
+      (MulEquiv.subgroupCongr (W.map_selmerGroup_two_eq_selmerGroup₂ h2 R Loc tauV tauL))
+
+/-- `WeierstrassCurve.selmerGroupTwoMulEquivSelmerGroup₂` is the cohomological descent map. -/
+@[simp]
+theorem coe_selmerGroupTwoMulEquivSelmerGroup₂_apply
+    (c : (W.selmerGroup tauV 2 ⊓ W.selmerGroup tauL 2).toSubgroup) :
+    (W.selmerGroupTwoMulEquivSelmerGroup₂ h2 R Loc tauV tauL c : W.toAffine.M) =
+      TauCeti.TwoDescent.cohomologicalMap W h2 c :=
+  (rfl)
+
+/-- The inverse of `WeierstrassCurve.selmerGroupTwoMulEquivSelmerGroup₂` sends an explicit
+`2`-Selmer element to the cohomology class with that descent image. -/
+@[simp]
+theorem cohomologicalMap_selmerGroupTwoMulEquivSelmerGroup₂_symm_apply
+    (m : W.toAffine.selmerGroup₂ R Loc) :
+    TauCeti.TwoDescent.cohomologicalMap W h2
+        ((W.selmerGroupTwoMulEquivSelmerGroup₂ h2 R Loc tauV tauL).symm m) = m := by
+  rw [← coe_selmerGroupTwoMulEquivSelmerGroup₂_apply, MulEquiv.apply_symm_apply]
+
+end SelmerGroup₂
 
 end WeierstrassCurve

@@ -11,6 +11,8 @@ public import Mathlib.Data.Set.SymmDiff
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
 -- Proof-only: the integrability of indicators of bounded intervals.
 import TauCeti.MeasureTheory.Integral.Bochner.Set
+-- Proof-only: a subsequence of functions with vanishing integrals tends to `0` a.e.
+import TauCeti.MeasureTheory.Integral.Lebesgue.Subsequence
 
 /-!
 # Layer-cake formulas for products and distances
@@ -26,6 +28,9 @@ measure at almost every level. Averaging the same identity over the levels shows
 many functions are close in `L¹` to a nonnegative function `p`, then some superlevel set of `p` has
 small total boundary relative to its measure; for counting measure this produces Følner sets from
 almost invariant finitely supported functions.
+Thresholding a real function at a level `t` with `δ ≤ t ≤ 1 - δ`, where `δ > 0`,
+approximates a set in measure with error at most its `L¹` distance from the set's indicator
+divided by `δ`.
 It also expresses the integral of the positive part `(g - f)⁺` as the integral, over all levels
 `s`, of the measure of the set where `f ≤ s < g`: the one-sided form, which sees which of the two
 functions lies above the level. Its extended version expresses the integral of the truncated
@@ -51,6 +56,9 @@ the integral over all levels `t` of the indicators of its superlevel sets `{u > 
   functions, level by level;
 * `MeasureTheory.Measure.lintegral_enorm_sub_eq_lintegral_measure_symmDiff_setOf_lt` — the same
   identity with strict superlevel sets;
+* `MeasureTheory.Measure.measure_symmDiff_setOf_lt_indicator_le` — a uniform bound on the
+  measure error of thresholding at levels separated from `0` and `1`, in terms of the `L¹`
+  distance from a set's indicator;
 * `MeasureTheory.Measure.exists_pos_sum_measure_symmDiff_lt_mul_measure` — a superlevel set of
   `p` whose total boundary relative to finitely many `L¹`-close functions is small compared with
   its measure;
@@ -227,6 +235,29 @@ namespace MeasureTheory.Measure
 
 variable {α : Type*} [MeasurableSpace α]
 
+/-- Thresholding a real function at a level separated from `0` and `1` by `δ > 0`
+approximates a set in measure, with error at most its `L¹` distance from the indicator
+divided by `δ`. The function need not take values in `[0, 1]`. -/
+theorem measure_symmDiff_setOf_lt_indicator_le (m : Measure α) {u : α → ℝ} {s : Set α}
+    (hu : AEStronglyMeasurable u m) (hs : NullMeasurableSet s m) {δ t : ℝ}
+    (hδ : 0 < δ) (hδt : δ ≤ t) (htδ : t ≤ 1 - δ) :
+    m ({x | t < u x} ∆ s) ≤ (∫⁻ x, ‖u x - s.indicator 1 x‖ₑ ∂m) / ENNReal.ofReal δ := by
+  refine (measure_mono ?_).trans
+    (meas_ge_le_lintegral_div
+      (hu.sub ((aestronglyMeasurable_const (b := (1 : ℝ))).indicator₀ hs)).enorm
+      (ne_of_gt (ENNReal.ofReal_pos.mpr hδ)) ENNReal.ofReal_ne_top)
+  intro x hx
+  rw [mem_symmDiff] at hx
+  rw [mem_ofPred_eq, Pi.sub_apply, Real.enorm_eq_ofReal_abs]
+  apply ENNReal.ofReal_le_ofReal
+  rcases hx with ⟨hx, hxs⟩ | ⟨hxs, hx⟩
+  · rw [indicator_of_notMem hxs, sub_zero]
+    exact hδt.trans (hx.le.trans (le_abs_self _))
+  · rw [indicator_of_mem hxs]
+    simp only [mem_ofPred_eq, not_lt] at hx
+    have h : δ ≤ 1 - u x := by linarith
+    exact h.trans (by simpa only [neg_sub] using neg_le_abs (u x - 1))
+
 /-- **The area between two graphs, through superlevel sets.** The `L¹` distance of two almost
 everywhere measurable real functions is the integral, over the levels `s`, of the measure of the
 set where exactly one of the two functions exceeds `s`. -/
@@ -285,22 +316,10 @@ theorem exists_strictMono_ae_tendsto_measure_symmDiff_setOf_lt (m : Measure α) 
     (h : Tendsto (fun n ↦ ∫⁻ a, ‖f n a - g a‖ₑ ∂m) atTop (𝓝 0)) :
     ∃ ns : ℕ → ℕ, StrictMono ns ∧
       ∀ᵐ s, Tendsto (fun j ↦ m ({a | s < f (ns j) a} ∆ {a | s < g a})) atTop (𝓝 0) := by
-  -- The defect `F n s` at level `s` is measurable in `s` and integrates to `∫ |f n - g|`.
-  set F : ℕ → ℝ → ℝ≥0∞ := fun n s ↦ m ({a | s < f n a} ∆ {a | s < g a})
-  have hF (n : ℕ) : ∫⁻ s, F n s = ∫⁻ a, ‖f n a - g a‖ₑ ∂m :=
-    (lintegral_enorm_sub_eq_lintegral_measure_symmDiff_setOf_lt m (hf n) hg).symm
-  have hFm (n : ℕ) : Measurable (F n) := measurable_measure_symmDiff_setOf_lt m (hf n) hg
-  -- Along a subsequence with `∫ F (ns j) < 2⁻ʲ`, the sum `∑ⱼ F (ns j) s` is finite for almost
-  -- every `s`, so its terms tend to zero.
-  obtain ⟨ns, hns, hlt⟩ := extraction_forall_of_eventually fun j ↦
-    h.eventually (gt_mem_nhds (ENNReal.pow_pos (a := 2⁻¹) (by simp) j))
-  refine ⟨ns, hns, ?_⟩
-  have hsum : ∫⁻ s, ∑' j, F (ns j) s ≠ ∞ := by
-    rw [lintegral_tsum fun j ↦ (hFm (ns j)).aemeasurable]
-    simp_rw [hF]
-    exact ((ENNReal.tsum_le_tsum fun j ↦ (hlt j).le).trans_lt (by simp)).ne
-  filter_upwards [ae_lt_top (Measurable.tsum fun j ↦ hFm (ns j)) hsum] with s hs
-  exact ENNReal.tendsto_atTop_zero_of_tsum_ne_top hs.ne
+  -- The defect at level `s` is measurable in `s` and integrates to `∫ |f n - g|`.
+  refine TauCeti.exists_strictMono_ae_tendsto_zero_of_tendsto_lintegral
+    (fun n ↦ (measurable_measure_symmDiff_setOf_lt m (hf n) hg).aemeasurable) ?_
+  simpa only [← lintegral_enorm_sub_eq_lintegral_measure_symmDiff_setOf_lt m (hf _) hg] using h
 
 end MeasureTheory.Measure
 

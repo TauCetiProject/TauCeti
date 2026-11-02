@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Polynomial.Homogenize
 public import Mathlib.Algebra.Squarefree.Basic
 public import Mathlib.Algebra.Polynomial.Roots
+public import Mathlib.RingTheory.Polynomial.IntegralNormalization
 public import TauCeti.Algebra.Polynomial.Degree.Operations
 public import TauCeti.RingTheory.MvPolynomial.Homogeneous
 
@@ -34,11 +35,21 @@ polynomial `p` has no squared linear factor.
 This factorisation is the starting point of Liouville- and Roth-type lower bounds for binary forms
 at integer points.
 
+Homogenization also turns integral normalization into a change of variables. If `p` has degree
+`d ≥ 1` and leading coefficient `a`, and `F` and `G` are the homogenizations of `p` and of the
+monic polynomial `p.integralNormalization`, then `G(a x, y) = a ^ (d - 1) F(x, y)`. Over a domain,
+`(x, y) ↦ (a x, y)` therefore matches the solutions of the Thue equation `F(x, y) = m` with the
+solutions `(x', y)` of `G(x', y) = a ^ (d - 1) m` with `a ∣ x'`. This reduces Thue equations to
+the monic case: for `p ∈ ℤ[X]` the roots of the monic `G(X, 1)` are algebraic integers, namely the
+roots of `F(X, 1)` multiplied by `a`.
+
 ## Main results
 
 * `Polynomial.homogenize_multiset_prod_X_sub_C`: `homogenize (∏ (X - a)) (card s) = ∏ (X - a Y)`.
 * `Polynomial.eval_homogenize_natDegree_of_card_roots`: if `p` has `natDegree p` roots, then
   `F(x) = leadingCoeff p * ∏_{a ∈ roots p} (x 0 - a x 1)`.
+* `Polynomial.sub_mul_dvd_eval_homogenize`: for any root `a` of `p` and `n ≥ natDegree p`, the
+  linear form `x 0 - a x 1` divides the value at `x` of the homogenization of degree `n`.
 * `Polynomial.homogenize_eq_C_mul_X_pow_mul_prod`: if `p` has `natDegree p` roots and
   `natDegree p ≤ n`, then its homogenization of degree `n` is
   `leadingCoeff p * X₁ ^ (n - natDegree p) * ∏ (X₀ - a X₁)`.
@@ -48,6 +59,11 @@ at integer points.
   `n ≤ natDegree p + 1` and the roots of `p` are simple.
 * `Squarefree.not_sq_dvd_homogenize_natDegree`: conversely, the homogenization of degree
   `natDegree p` of a squarefree polynomial `p` has no squared linear factor.
+* `Polynomial.eval_homogenize_integralNormalization`: `G(a x, y) = a ^ (d - 1) F(x, y)` for the
+  homogenizations `F` of `p` and `G` of `p.integralNormalization`.
+* `Polynomial.bijOn_eval_homogenize_integralNormalization`: over a domain, `(x, y) ↦ (a x, y)` is
+  a bijection from the solutions of `F(x, y) = m` onto those of `G(x', y) = a ^ (d - 1) m` with
+  `a ∣ x'`.
 * `MvPolynomial.aeval_X_one_map`: the dehomogenization `F(X, 1)` commutes with mapping the
   coefficients along a ring homomorphism.
 * `MvPolynomial.IsHomogeneous.exists_linear_factors`: a nonzero binary form of degree `d` with no
@@ -56,6 +72,11 @@ at integer points.
 * `MvPolynomial.IsHomogeneous.mem_span_X_one_pow_of_aeval_eq_smul`: over a domain, a binary form
   of degree `d` that is semi-invariant under the universal substitution `x ↦ x - t y` is a
   multiple of `X₁ ^ d`.
+
+## References
+
+* [J.-H. Evertse, *Diophantine Approximation*, lecture notes, Leiden/Mastermath, 2019],
+  Chapter 5, proof of Theorem 5.13, p. 97 (the reduction of Thue equations to the monic case).
 -/
 
 public section
@@ -110,6 +131,28 @@ theorem eval_homogenize_natDegree_of_card_roots [IsDomain R] {p : R[X]}
       p.leadingCoeff * (p.roots.map fun a ↦ x 0 - a * x 1).prod := by
   rw [homogenize_eq_C_mul_X_pow_mul_prod le_rfl hroots, Nat.sub_self, pow_zero, mul_one]
   simp [map_multiset_prod, Multiset.map_map]
+
+/-- If `a` is a root of `p` and `natDegree p ≤ n`, then at every point `x` the value of the
+linear form `x 0 - a x 1` divides the value of the homogenization of `p` of degree `n`. No
+splitting of `p` is needed, and `R` is an arbitrary commutative ring. -/
+theorem sub_mul_dvd_eval_homogenize {p : R[X]} {a : R} (ha : p.IsRoot a) {n : ℕ}
+    (hn : p.natDegree ≤ n) (x : Fin 2 → R) :
+    x 0 - a * x 1 ∣ MvPolynomial.eval x (p.homogenize n) := by
+  rcases eq_or_ne p 0 with rfl | hp
+  · simp
+  have hpq := (mul_divByMonic_eq_iff_isRoot.2 ha).symm
+  set q := p /ₘ (X - C a)
+  have hq : q ≠ 0 := by
+    rintro h
+    rw [h, mul_zero] at hpq
+    exact hp hpq
+  have : Nontrivial R := nontrivial_iff.mp (nontrivial_of_ne p 0 hp)
+  have hdeg : p.natDegree = 1 + q.natDegree := by
+    rw [hpq, (monic_X_sub_C a).natDegree_mul' hq, natDegree_X_sub_C]
+  -- `p = (X - a) q` homogenizes to `(X₀ - a X₁) Q` with `Q` of degree `n - 1`.
+  obtain ⟨k, rfl⟩ : ∃ k, n = 1 + k := ⟨n - 1, by omega⟩
+  rw [hpq, homogenize_mul _ _ (natDegree_X_sub_C_le a) (by omega), map_mul]
+  exact dvd_mul_of_dvd_left (by simp [homogenize_X one_ne_zero]) _
 
 /-- If `X₁ ^ 2` does not divide the homogenization of `p` of degree `n ≥ natDegree p`, then
 `n ≤ natDegree p + 1`. -/
@@ -168,6 +211,55 @@ theorem _root_.Squarefree.not_sq_dvd_homogenize_natDegree [IsDomain R] {p : R[X]
     have hu := natDegree_eq_zero_of_isUnit (hp _ ⟨_, by rw [hd, sq]⟩)
     rw [natDegree_linear ha] at hu
     exact one_ne_zero hu
+
+section IntegralNormalization
+
+variable {S : Type*} [CommSemiring S]
+
+/-- **Homogenized integral normalization.** Let `p` have degree `d ≥ 1` and leading coefficient
+`a`, and let `F` and `G` be the homogenizations of degree `n` of `p` and of the monic polynomial
+`p.integralNormalization = a ^ (d - 1) p(X / a)`. Then `G(a x, y) = a ^ (d - 1) F(x, y)` for all
+`x, y`. This is the binary-form version of
+`Polynomial.integralNormalization_eval₂_leadingCoeff_mul`; it holds for every `n`, also below the
+degree. -/
+theorem eval_homogenize_integralNormalization {p : S[X]} (hp : 1 ≤ p.natDegree) (n : ℕ)
+    (x y : S) :
+    MvPolynomial.eval ![p.leadingCoeff * x, y] (p.integralNormalization.homogenize n) =
+      p.leadingCoeff ^ (p.natDegree - 1) * MvPolynomial.eval ![x, y] (p.homogenize n) := by
+  simp only [homogenize, map_sum, MvPolynomial.eval_monomial, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun kl _ ↦ ?_
+  simp only [Finsupp.prod_fintype _ _ fun _ ↦ pow_zero _, Fin.prod_univ_two]
+  -- The coefficients satisfy `G_k a ^ k = a ^ (d - 1) F_k`.
+  have h := integralNormalization_coeff_mul_leadingCoeff_pow kl.1 hp
+  simp only [Finsupp.update_apply, Finsupp.single_apply, Matrix.cons_val_zero,
+    Matrix.cons_val_one, Fin.isValue, ite_true, ite_false, zero_ne_one, mul_pow]
+  calc _ = p.integralNormalization.coeff kl.1 * p.leadingCoeff ^ kl.1 * (x ^ kl.1 * y ^ kl.2) := by
+        ring
+    _ = _ := by rw [h]; ring
+
+/-- **Thue equations and integral normalization** (Evertse, proof of Theorem 5.13). Over a domain,
+let `p` have degree `d ≥ 1` and leading coefficient `a`, and let `F` and `G` be the
+homogenizations of degree `n` of `p` and of `p.integralNormalization`. Then
+`(x, y) ↦ (a x, y)` is a bijection from the solutions of `F(x, y) = m` onto the solutions
+`(x', y)` of `G(x', y) = a ^ (d - 1) m` with `a ∣ x'`. -/
+theorem bijOn_eval_homogenize_integralNormalization [IsDomain S] {p : S[X]}
+    (hp : 1 ≤ p.natDegree) (n : ℕ) (m : S) :
+    Set.BijOn (fun v : S × S ↦ (p.leadingCoeff * v.1, v.2))
+      {v | MvPolynomial.eval ![v.1, v.2] (p.homogenize n) = m}
+      {v | MvPolynomial.eval ![v.1, v.2] (p.integralNormalization.homogenize n) =
+        p.leadingCoeff ^ (p.natDegree - 1) * m ∧ p.leadingCoeff ∣ v.1} := by
+  have ha : p.leadingCoeff ≠ 0 :=
+    leadingCoeff_ne_zero.2 (ne_zero_of_natDegree_gt (Nat.lt_of_lt_of_le zero_lt_one hp))
+  refine ⟨fun v hv ↦ ⟨?_, dvd_mul_right _ _⟩, fun v _ w _ h ↦ ?_, ?_⟩
+  · rw [eval_homogenize_integralNormalization hp, hv.out]
+  · obtain ⟨h1, h2⟩ := Prod.ext_iff.1 h
+    exact Prod.ext (mul_left_cancel₀ ha h1) h2
+  · rintro ⟨_, y⟩ ⟨hG, x, rfl⟩
+    refine ⟨(x, y), ?_, rfl⟩
+    rw [eval_homogenize_integralNormalization hp] at hG
+    exact mul_left_cancel₀ (pow_ne_zero _ ha) hG
+
+end IntegralNormalization
 
 end Polynomial
 

@@ -13,7 +13,6 @@ public import TauCeti.RingTheory.FiniteType.PointSeparation
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import Mathlib.LinearAlgebra.TensorProduct.Finiteness
 import Mathlib.RingTheory.Adjoin.FG
-import Mathlib.RingTheory.TensorProduct.Nontrivial
 import TauCeti.LinearAlgebra.TensorProduct.Separation
 
 /-!
@@ -35,9 +34,10 @@ Since every field extension is algebraic over a purely transcendental one, this 
 transcendental half of the comparison between the irreducible components of a scheme over `K`
 and those of its extension of scalars to a field extension of `K`.
 
-Over an algebraically closed field `K` there is no restriction at all: the tensor product of two
-`K`-algebras that are domains is a domain (`TauCeti.isDomain_tensorProduct_of_isAlgClosed`). Thus
-the spectrum of a domain over `K` stays irreducible after any extension of scalars, which is why
+Over an algebraically closed field `K`, the tensor product of a commutative domain with any domain
+`K`-algebra is a domain (`TauCeti.isDomain_tensorProduct_of_isAlgClosed`); the second factor need
+not be commutative. In particular, the spectrum of a commutative domain over `K` stays
+irreducible after any extension of scalars, which is why
 the irreducible components of a geometric fibre do not depend on the chosen algebraically closed
 field.
 
@@ -99,8 +99,8 @@ instance isDomain_fractionRing_mvPolynomial_tensorProduct {σ D : Type*} [CommRi
 /-- Over an algebraically closed field, a finitely generated domain tensored with a domain has no
 zero divisors. This is the finitely generated case of `isDomain_tensorProduct_of_isAlgClosed`. -/
 private theorem eq_zero_or_eq_zero_of_mul_eq_zero_of_finiteType [IsAlgClosed K]
-    {A B : Type*} [CommRing A] [IsDomain A] [Algebra K A] [Algebra.FiniteType K A]
-    [CommRing B] [IsDomain B] [Algebra K B] {x y : A ⊗[K] B} (h : x * y = 0) :
+    {A B : Type*} [CommRing A] [NoZeroDivisors A] [Algebra K A] [Algebra.FiniteType K A]
+    [Ring B] [NoZeroDivisors B] [Algebra K B] {x y : A ⊗[K] B} (h : x * y = 0) :
     x = 0 ∨ y = 0 := by
   -- The proof is the weak Nullstellensatz. If `x` and `y` are nonzero, linear functionals on `B`
   -- give nonzero coefficients `a` and `c` of `x` and `y` in `A`. A `K`-point `φ` of `A` with
@@ -132,13 +132,13 @@ private theorem eq_zero_or_eq_zero_of_mul_eq_zero_of_finiteType [IsAlgClosed K]
   have hy : Φ φ y ≠ 0 := fun h0 ↦ right_ne_zero_of_mul hφ (by rw [← hΦ, h0, map_zero])
   exact mul_ne_zero hx hy (by rw [← map_mul, h, map_zero])
 
-/-- **Tensor products of domains over an algebraically closed field are domains.** -/
+/-- Tensoring a commutative domain over an algebraically closed field with any domain algebra
+gives a domain. The second factor need not be commutative. -/
 instance isDomain_tensorProduct_of_isAlgClosed [IsAlgClosed K] (A B : Type*) [CommRing A]
-    [IsDomain A] [Algebra K A] [CommRing B] [IsDomain B] [Algebra K B] :
+    [IsDomain A] [Algebra K A] [Ring B] [IsDomain B] [Algebra K B] :
     IsDomain (A ⊗[K] B) := by
   have : Nontrivial (A ⊗[K] B) :=
-    Algebra.TensorProduct.nontrivial_of_algebraMap_injective_of_isDomain K A B
-      (algebraMap K A).injective (algebraMap K B).injective
+    (Algebra.TensorProduct.includeLeft_injective (S := K) (algebraMap K B).injective).nontrivial
   refine @NoZeroDivisors.to_isDomain _ _ _ ⟨fun {x y} h ↦ ?_⟩
   -- Both factors come from `A₀ ⊗[K] B` for a finitely generated subalgebra `A₀` of `A`.
   obtain ⟨M, hM, hxy⟩ :=

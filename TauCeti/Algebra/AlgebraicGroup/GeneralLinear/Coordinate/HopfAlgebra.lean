@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import Mathlib.RingTheory.Localization.Away.AdjoinRoot
 public import TauCeti.Algebra.AlgebraicGroup.FiniteType.CommHopfAlgCat
-public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Coordinate.Bialgebra
+public import TauCeti.Algebra.AlgebraicGroup.MatrixMonoid.Bialgebra
+public import TauCeti.LinearAlgebra.Matrix.NonsingularInverse
 
 /-!
 # The general linear coordinate Hopf algebra
@@ -72,14 +72,14 @@ abbrev CoordinateRing :=
 /-- The canonical algebra map from the matrix-monoid coordinate ring into its determinant
 localization. -/
 noncomputable def coordinateRingMap :
-    MatrixMonoid.CoordinateRing R n →ₐ[R] CoordinateRing R n :=
-  IsScalarTower.toAlgHom R (MatrixMonoid.CoordinateRing R n) (CoordinateRing R n)
+    MatrixMonoid.CoordinateRing R (Fin n) →ₐ[R] CoordinateRing R n :=
+  IsScalarTower.toAlgHom R (MatrixMonoid.CoordinateRing R (Fin n)) (CoordinateRing R n)
 
 /-- The canonical map into the determinant localization agrees with its algebra map. -/
 @[simp ←]
-theorem coordinateRingMap_apply (x : MatrixMonoid.CoordinateRing R n) :
+theorem coordinateRingMap_apply (x : MatrixMonoid.CoordinateRing R (Fin n)) :
     coordinateRingMap R n x =
-      algebraMap (MatrixMonoid.CoordinateRing R n) (CoordinateRing R n) x :=
+      algebraMap (MatrixMonoid.CoordinateRing R (Fin n)) (CoordinateRing R n) x :=
   (rfl)
 
 /-- Mathlib's generic matrix after applying the canonical map into the determinant localization. -/
@@ -97,10 +97,10 @@ theorem localizedGenericMatrix_apply (i j : Fin n) :
 
 /-- The matrix-monoid comultiplication followed by localization in both tensor factors. -/
 private noncomputable def comulBase :
-    MatrixMonoid.CoordinateRing R n →ₐ[R]
+    MatrixMonoid.CoordinateRing R (Fin n) →ₐ[R]
       CoordinateRing R n ⊗[R] CoordinateRing R n :=
   (Algebra.TensorProduct.map (coordinateRingMap R n) (coordinateRingMap R n)).comp
-    (MatrixMonoid.comul R n)
+    (MatrixMonoid.comul R (Fin n))
 
 /-- The determinant of the localized generic matrix is the image of the generic determinant. -/
 @[simp]
@@ -149,7 +149,7 @@ noncomputable def comul :
     (comulBase_determinant_isUnit R n)
 
 private theorem counitBase_determinant_isUnit :
-    IsUnit (MatrixMonoid.counit R n
+    IsUnit (MatrixMonoid.counit R (Fin n)
       (Matrix.det (Matrix.mvPolynomialX (Fin n) (Fin n) R))) := by
   rw [MatrixMonoid.counit_determinant]
   exact isUnit_one
@@ -163,21 +163,21 @@ noncomputable def counit : CoordinateRing R n →ₐ[R] R :=
 /-- The localized comultiplication restricts to the matrix-monoid comultiplication followed by
 the two canonical localization maps. -/
 @[simp low]
-theorem comul_coordinateRingMap (x : MatrixMonoid.CoordinateRing R n) :
+theorem comul_coordinateRingMap (x : MatrixMonoid.CoordinateRing R (Fin n)) :
     comul R n (coordinateRingMap R n x) =
       Algebra.TensorProduct.map (coordinateRingMap R n) (coordinateRingMap R n)
-        (MatrixMonoid.comul R n x) := by
+        (MatrixMonoid.comul R (Fin n) x) := by
   simp [-coordinateRingMap_apply, comul, coordinateRingMap, comulBase]
 
 /-- The localized counit restricts to the matrix-monoid counit. -/
 @[simp low]
-theorem counit_coordinateRingMap (x : MatrixMonoid.CoordinateRing R n) :
-    counit R n (coordinateRingMap R n x) = MatrixMonoid.counit R n x := by
+theorem counit_coordinateRingMap (x : MatrixMonoid.CoordinateRing R (Fin n)) :
+    counit R n (coordinateRingMap R n x) = MatrixMonoid.counit R (Fin n) x := by
   simp [-coordinateRingMap_apply, counit, coordinateRingMap]
 
 /-- Evaluation of matrix coordinates at the inverse of the localized generic matrix. -/
 private noncomputable def antipodeBase :
-    MatrixMonoid.CoordinateRing R n →ₐ[R] CoordinateRing R n :=
+    MatrixMonoid.CoordinateRing R (Fin n) →ₐ[R] CoordinateRing R n :=
   MvPolynomial.aeval fun ij : Fin n × Fin n => ((localizedGenericMatrix R n)⁻¹) ij.1 ij.2
 
 private theorem antipodeBase_determinant_isUnit :
@@ -197,7 +197,7 @@ noncomputable def antipode : CoordinateRing R n →ₐ[R] CoordinateRing R n :=
 /-- On the polynomial subalgebra, the antipode is evaluation at the nonsingular inverse of the
 localized generic matrix. -/
 @[simp low]
-theorem antipode_coordinateRingMap (x : MatrixMonoid.CoordinateRing R n) :
+theorem antipode_coordinateRingMap (x : MatrixMonoid.CoordinateRing R (Fin n)) :
     antipode R n (coordinateRingMap R n x) =
       MvPolynomial.aeval
         (fun ij : Fin n × Fin n => ((localizedGenericMatrix R n)⁻¹) ij.1 ij.2) x := by
@@ -207,15 +207,9 @@ theorem antipode_coordinateRingMap (x : MatrixMonoid.CoordinateRing R n) :
 matrix-monoid coordinate ring. -/
 theorem algHom_ext_away {T : Type*} [Semiring T] [Algebra R T]
     {f g : CoordinateRing R n →ₐ[R] T}
-    (h : f.comp (coordinateRingMap R n) = g.comp (coordinateRingMap R n)) : f = g := by
-  apply AlgHom.ext
-  have h' : f.toRingHom = g.toRingHom := by
-    apply IsLocalization.ringHom_ext
-      (Submonoid.powers
-        (Matrix.det (Matrix.mvPolynomialX (Fin n) (Fin n) R)))
-    simpa only [AlgHom.toRingHom_eq_coe, AlgHom.comp_toRingHom, coordinateRingMap,
-      IsScalarTower.coe_toAlgHom] using congrArg AlgHom.toRingHom h
-  exact RingHom.congr_fun h'
+    (h : f.comp (coordinateRingMap R n) = g.comp (coordinateRingMap R n)) : f = g :=
+  IsLocalization.algHom_ext
+    (Submonoid.powers (Matrix.det (Matrix.mvPolynomialX (Fin n) (Fin n) R))) h
 
 /-- Comultiplication sends a localized generic entry to the matrix-multiplication sum. -/
 @[simp]
@@ -233,7 +227,7 @@ theorem counit_X (i j : Fin n) :
     counit R n (coordinateRingMap R n (MvPolynomial.X (i, j))) =
       if i = j then 1 else 0 := by
   rw [counit_coordinateRingMap]
-  exact MatrixMonoid.counit_X R n i j
+  exact MatrixMonoid.counit_X R (Fin n) i j
 
 /-- The antipode sends a localized generic entry to the corresponding entry of the nonsingular
 inverse. -/
@@ -304,28 +298,6 @@ theorem antipode_det_localizedGenericMatrix :
   rw [AlgHom.map_det, AlgHom.mapMatrix_apply, map_antipode_localizedGenericMatrix,
     Matrix.det_nonsing_inv]
 
-/-- **Every element of a localization away from `r` is an image times a power of the inverse of
-`r`.** This is the surjectivity half of the localization property, written with `Ring.inverse`
-rather than as a fraction. -/
-private theorem exists_eq_mul_inverse_algebraMap_pow {A : Type*} [CommSemiring A] (r : A)
-    {B : Type*} [CommSemiring B] [Algebra A B] [IsLocalization.Away r B] (z : B) :
-    ∃ (m : ℕ) (p : A), z = algebraMap A B p * Ring.inverse (algebraMap A B r) ^ m := by
-  obtain ⟨m, p, hz⟩ := IsLocalization.Away.surj r z
-  refine ⟨m, p, ?_⟩
-  rw [Ring.inverse_pow]
-  exact (Ring.eq_mul_inverse_iff_mul_eq _ _ _
-    ((IsLocalization.Away.algebraMap_isUnit r).pow m)).mpr hz
-
-/-- Every value of an algebra map out of a multivariate polynomial ring lies in the algebra
-generated by the values it takes on the variables. -/
-private theorem mem_adjoin_range_apply_X {S : Type*} [CommSemiring S] {A : Type*} [Semiring A]
-    [Algebra S A] {σ : Type*} (f : MvPolynomial σ S →ₐ[S] A) (p : MvPolynomial σ S) :
-    f p ∈ Algebra.adjoin S (Set.range fun i : σ => f (MvPolynomial.X i)) := by
-  -- adjoining an image is the image of the adjoin, and the variables generate everything
-  rw [Set.range_comp' f MvPolynomial.X, Algebra.adjoin_image, MvPolynomial.adjoin_range_X,
-    Algebra.map_top]
-  exact ⟨p, rfl⟩
-
 private theorem adjoin_X_union_antipode_X :
     Algebra.adjoin R
         (Set.range (fun ij : Fin n × Fin n =>
@@ -339,25 +311,26 @@ private theorem adjoin_X_union_antipode_X :
         coordinateRingMap R n (MvPolynomial.X ij)) ∪
       Set.range (fun ij : Fin n × Fin n =>
         antipode R n (coordinateRingMap R n (MvPolynomial.X ij))))
-  -- each generating family sits in one side of the union, so `adjoin_mono` lifts the helper's
-  -- conclusion into `B`
-  have hpoly : ∀ p : MatrixMonoid.CoordinateRing R n, coordinateRingMap R n p ∈ B := fun p =>
-    Algebra.adjoin_mono Set.subset_union_left
-      (mem_adjoin_range_apply_X (coordinateRingMap R n) p)
-  have hantipodePoly : ∀ p : MatrixMonoid.CoordinateRing R n,
-      antipode R n (coordinateRingMap R n p) ∈ B := fun p =>
-    Algebra.adjoin_mono Set.subset_union_right
-      (mem_adjoin_range_apply_X ((antipode R n).comp (coordinateRingMap R n)) p)
+  -- The variables generate the polynomial ring, so each map's range is generated by its
+  -- corresponding family of entries.
+  have hpoly : (coordinateRingMap R n).range ≤ B := by
+    rw [MvPolynomial.aeval_unique (coordinateRingMap R n), MvPolynomial.aeval_range]
+    exact Algebra.adjoin_mono Set.subset_union_left
+  have hantipodePoly : ((antipode R n).comp (coordinateRingMap R n)).range ≤ B := by
+    rw [MvPolynomial.aeval_unique ((antipode R n).comp (coordinateRingMap R n)),
+      MvPolynomial.aeval_range]
+    exact Algebra.adjoin_mono Set.subset_union_right
   have hinv : Ring.inverse (Matrix.det (localizedGenericMatrix R n)) ∈ B := by
     rw [← antipode_det_localizedGenericMatrix, det_localizedGenericMatrix]
-    exact hantipodePoly _
+    exact hantipodePoly ⟨_, rfl⟩
   apply Algebra.eq_top_iff.mpr
   intro z
   obtain ⟨m, p, hz⟩ :=
-    exists_eq_mul_inverse_algebraMap_pow (Matrix.det (Matrix.mvPolynomialX (Fin n) (Fin n) R)) z
+    IsLocalization.Away.surj (Matrix.det (Matrix.mvPolynomialX (Fin n) (Fin n) R)) z
   simp only [← coordinateRingMap_apply, ← det_localizedGenericMatrix] at hz
-  rw [hz]
-  exact B.mul_mem (hpoly p) (B.pow_mem hinv m)
+  rw [(Ring.eq_mul_inverse_iff_mul_eq _ _ _
+    ((isUnit_det_localizedGenericMatrix R n).pow m)).mpr hz, ← Ring.inverse_pow]
+  exact B.mul_mem (hpoly ⟨p, rfl⟩) (B.pow_mem hinv m)
 
 private theorem comul_coassoc :
     (Algebra.TensorProduct.assoc R R R
@@ -511,21 +484,17 @@ localized inverse entry. -/
 theorem genericMatrix_inv_apply (i j : Fin n) :
     (genericMatrix R n)⁻¹ i j =
       coordinateHopfAlgebraAlgEquiv R n ((localizedGenericMatrix R n)⁻¹ i j) := by
-  have h : (genericMatrix R n)⁻¹ =
-      ((localizedGenericMatrix R n)⁻¹).map (coordinateHopfAlgebraAlgEquiv R n) := by
-    apply Matrix.inv_eq_left_inv
-    rw [genericMatrix, ← Matrix.map_mul,
-      Matrix.nonsing_inv_mul _ (isUnit_det_localizedGenericMatrix R n)]
-    exact Matrix.map_one _ (map_zero _) (map_one _)
-  rw [h, Matrix.map_apply]
+  simpa only [genericMatrix, AlgEquiv.coe_toAlgHom, Matrix.map_apply] using
+    (congrFun (congrFun (Matrix.map_nonsing_inv
+      (coordinateHopfAlgebraAlgEquiv R n).toAlgHom (localizedGenericMatrix R n)) i) j).symm
 
 /-- Algebra morphisms out of `O(GLₙ)` commute with inverting the generic matrix. -/
 theorem map_inv_genericMatrix {T : Type*} [CommRing T] [Algebra R T]
     (φ : coordinateHopfAlgebra R n →ₐ[R] T) :
     ((genericMatrix R n)⁻¹).map φ = ((genericMatrix R n).map φ)⁻¹ := by
-  refine (Matrix.inv_eq_left_inv ?_).symm
-  rw [← Matrix.map_mul, Matrix.nonsing_inv_mul _ (isUnit_det_genericMatrix R n)]
-  simp
+  simpa only [← Matrix.nonsing_inv_eq_ringInverse, AlgHom.mapMatrix_apply] using
+    ((genericMatrix R n).isUnit_iff_isUnit_det.mpr
+      (isUnit_det_genericMatrix R n)).map_ringInverse φ.mapMatrix
 
 /-- Mathlib has no `CommHopfAlgCat.of_comul` lemma exposing the comultiplication stored by
 `CommHopfAlgCat.of`. This bridge locally crosses the two definitional wrappers:
@@ -680,14 +649,12 @@ theorem coordinateHopfAlgebra_algHom_ext {T : Type*} [Semiring T] [Algebra R T]
     apply MvPolynomial.algHom_ext
     rintro ⟨i, j⟩
     simpa only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom] using h i j
-  apply AlgHom.ext
-  intro x
-  obtain ⟨y, rfl⟩ := (coordinateHopfAlgebraAlgEquiv R n).surjective x
-  exact DFunLike.congr_fun hcomp y
+  exact (AlgHom.cancel_right (coordinateHopfAlgebraAlgEquiv R n).surjective).mp hcomp
 
 /-- Two bialgebra homomorphisms out of the bundled coordinate Hopf algebra of `GLₙ` are equal
 if they agree on the localized generic entries. -/
-theorem coordinateHopfAlgebra_bialgHom_ext {T : Type*} [Semiring T] [Bialgebra R T]
+theorem coordinateHopfAlgebra_bialgHom_ext {T : Type*} [Semiring T] [Algebra R T]
+    [CoalgebraStruct R T]
     {f g : coordinateHopfAlgebra R n →ₐc[R] T}
     (h : ∀ i j, f (coordinateHopfAlgebraAlgEquiv R n
         (coordinateRingMap R n (MvPolynomial.X (i, j)))) =

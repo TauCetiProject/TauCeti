@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Fuchsian.TriangleOrder.Basic
-public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.Triangle
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.Convex.Triangle.Basic
 
 /-!
 # Hyperbolic triangle orders and convex polygons
@@ -16,11 +16,13 @@ polygons in the upper half-plane. A typed triple is hyperbolic exactly when a co
 realises its three associated angles. The zero-angle characterization of ideal vertices then
 identifies the cusp entries with ideal vertices.
 
-## Main result
+## Main results
 
 * `TauCeti.TriangleOrder.isHyperbolic_iff_exists_interiorAngle_eq`: a triple of elliptic orders
   and cusps is hyperbolic exactly when some convex hyperbolic triangle has the corresponding
   angles.
+* `TauCeti.UpperHalfPlane.ConvexPolygon.isRight_vertex_iff_eq_cusp`: the ideal vertices of such a
+  triangle are those at the cusp entries.
 -/
 
 public section
@@ -41,3 +43,17 @@ theorem isHyperbolic_iff_exists_interiorAngle_eq {p q r : TriangleOrder} :
   exact ⟨fun h ↦ ⟨p.angle_nonneg, q.angle_nonneg, r.angle_nonneg, h⟩, fun h ↦ h.2.2.2⟩
 
 end TauCeti.TriangleOrder
+
+namespace TauCeti.UpperHalfPlane.ConvexPolygon
+
+variable {P : ConvexPolygon 3} {p q r : TriangleOrder}
+
+/-- A vertex of a triangle with angles given by `p`, `q`, `r` is ideal exactly at the cusp
+entries. -/
+theorem isRight_vertex_iff_eq_cusp (hp : P.interiorAngle 0 = p.angle)
+    (hq : P.interiorAngle 1 = q.angle) (hr : P.interiorAngle 2 = r.angle) {i : Fin 3} :
+    (P.vertex i).isRight ↔ ![p, q, r] i = .cusp := by
+  rw [← interiorAngle_eq_zero_iff, ← TriangleOrder.angle_eq_zero_iff]
+  fin_cases i <;> simp [hp, hq, hr]
+
+end TauCeti.UpperHalfPlane.ConvexPolygon

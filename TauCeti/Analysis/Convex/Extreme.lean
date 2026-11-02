@@ -5,14 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Convex.Combination
 public import Mathlib.Analysis.Convex.Extreme
 
 /-!
-# Transporting extreme points into a face
+# Extreme subsets and convex combinations
 
 An injective linear map preserves and reflects extreme points when it identifies the source set
 with a face of the target set. The scalar assumptions allow semirings and additive monoids, so
 the result applies to measures with scalars in `ℝ≥0∞`.
+
+Over a linearly ordered field, an extreme subset `B` of `A` absorbs every convex combination with
+strictly positive weights that it meets, as long as the convex hull of the points combined lies in
+`A`: all those points then lie in `B` (`IsExtreme.mem_of_centerMass_mem`). Consequently a point of
+`B` in the convex hull of `s` is already in the convex hull of `s ∩ B`
+(`IsExtreme.convexHull_inter_subset`). This is how a triangulation of a convex set restricts to
+each of its faces.
 -/
 
 public section
@@ -51,3 +59,52 @@ theorem mem_extremePoints_iff_linearMap_mem_extremePoints
     exact ⟨a, b, ha, hb, hab, by simpa only [map_add, map_smul] using congrArg f hmix⟩
 
 end TauCeti
+
+section LinearOrderedField
+
+open Finset
+
+variable {𝕜 E ι : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] [AddCommGroup E]
+  [Module 𝕜 E] {A B : Set E}
+
+/-- If a convex combination with strictly positive weights lies in an extreme subset `B` of a set
+`A` which contains the convex hull of the points combined, then each of these points lies in
+`B`. -/
+theorem IsExtreme.mem_of_centerMass_mem (hAB : IsExtreme 𝕜 A B) {t : Finset ι} {w : ι → 𝕜}
+    {z : ι → E} (hw : ∀ i ∈ t, 0 < w i) (hzA : convexHull 𝕜 (z '' t) ⊆ A)
+    (hB : t.centerMass w z ∈ B) {i : ι} (hi : i ∈ t) : z i ∈ B := by
+  classical
+  have hwi := hw i hi
+  rcases (t.erase i).eq_empty_or_nonempty with he | he
+  · rwa [← insert_erase hi, he, insert_empty, centerMass_singleton _ _ hwi.ne'] at hB
+  have hw' : ∀ j ∈ t.erase i, 0 < w j := fun j hj => hw j (mem_of_mem_erase hj)
+  have hpos : 0 < ∑ j ∈ t.erase i, w j := sum_pos hw' he
+  have hz : ∀ j ∈ t, z j ∈ convexHull 𝕜 (z '' t) := fun j hj =>
+    subset_convexHull 𝕜 _ (Set.mem_image_of_mem z (mem_coe.2 hj))
+  rw [← insert_erase hi, centerMass_insert i (t.erase i) z (notMem_erase i t) hpos.ne'] at hB
+  refine hAB.left_mem_of_mem_openSegment (hzA (hz i hi)) (hzA ?_) hB
+    ⟨_, _, div_pos hwi (add_pos hwi hpos), div_pos hpos (add_pos hwi hpos), ?_, rfl⟩
+  · exact (convex_convexHull 𝕜 _).centerMass_mem (fun j hj => (hw' j hj).le) hpos
+      fun j hj => hz j (mem_of_mem_erase hj)
+  · rw [← add_div, div_self (add_pos hwi hpos).ne']
+
+/-- A point of an extreme subset `B` of `A` which is a convex combination of points of `s` is a
+convex combination of the points of `s` lying in `B`, provided the convex hull of `s` lies in
+`A`. -/
+theorem IsExtreme.convexHull_inter_subset (hAB : IsExtreme 𝕜 A B) {s : Set E}
+    (hsA : convexHull 𝕜 s ⊆ A) : convexHull 𝕜 s ∩ B ⊆ convexHull 𝕜 (s ∩ B) := by
+  classical
+  rintro x ⟨hx, hxB⟩
+  rw [_root_.convexHull_eq] at hx
+  obtain ⟨ι, t, w, z, hw₀, hw₁, hzs, rfl⟩ := hx
+  rw [← centerMass_filter_ne_zero] at hxB ⊢
+  have hpos : ∀ i ∈ {i ∈ t | w i ≠ 0}, 0 < w i := fun i hi =>
+    (hw₀ i (mem_filter.1 hi).1).lt_of_ne' (mem_filter.1 hi).2
+  have hzs' : ∀ i ∈ {i ∈ t | w i ≠ 0}, z i ∈ s := fun i hi => hzs i (mem_filter.1 hi).1
+  refine centerMass_mem_convexHull _ (fun i hi => (hpos i hi).le) ?_
+    fun i hi => ⟨hzs' i hi, hAB.mem_of_centerMass_mem hpos ?_ hxB hi⟩
+  · rw [sum_filter_ne_zero, hw₁]
+    exact one_pos
+  · exact (convexHull_mono (Set.image_subset_iff.2 hzs')).trans hsA
+
+end LinearOrderedField

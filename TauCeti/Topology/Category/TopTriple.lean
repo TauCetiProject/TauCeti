@@ -184,8 +184,9 @@ end
 @[simp] lemma outerPair_map_snd (φ : T ⟶ T') :
     TopPair.Hom.snd (outerPair.map φ) = Hom.snd φ := rfl
 
+-- Expose the pair maps so dependent coefficient pullback types can compute their components.
+
 /-- The map of pairs `(A, B) ⟶ (X, B)` determined by a triple `(X, A, B)`. -/
-@[no_expose]
 def innerToTotal : innerPair.{u} ⟶ totalPair.{u} where
   app T := TopPair.ofHom T.outerMap (𝟙 _)
     ((Category.id_comp _).trans T.innerMap_comp_outerMap.symm)
@@ -193,7 +194,6 @@ def innerToTotal : innerPair.{u} ⟶ totalPair.{u} where
     ((Category.comp_id _).trans (Category.id_comp _).symm) (Hom.snd_comp_outerMap φ)
 
 /-- The map of pairs `(X, B) ⟶ (X, A)` determined by a triple `(X, A, B)`. -/
-@[no_expose]
 def totalToOuter : totalPair.{u} ⟶ outerPair.{u} where
   app T := TopPair.ofHom (𝟙 _) T.innerMap
     (T.innerMap_comp_outerMap.trans (Category.comp_id _).symm)

@@ -9,17 +9,21 @@ public import Mathlib.LinearAlgebra.TensorProduct.Associator
 public import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
 
 /-!
-# Tensor-product contractions and trace identities
+# Tensor-product naturality, contractions and trace identities
 
-This file defines contraction of a tensor product against a linear functional on its right factor,
-bundled as a linear map in the functional, and records its behavior on pure tensors and under
-tensor-product maps.
+This file records how tensor reassociation interacts with tensoring composite maps. It defines
+contraction against a linear functional on the right factor, bundled as a linear map in the
+functional, and records its behavior on pure tensors and under tensor-product maps.
 Such contractions extract coordinates and test tensor identities, supporting componentwise
-arguments about coactions and weight spaces. It also proves the tensor identity that makes
+arguments about coactions and weight spaces. The file also proves the tensor identity that makes
 the Casimir element of a trace commute with multiplication.
 
 ## Main declarations
 
+* `LinearMap.assoc_rTensor_lTensor_comp`: reassociation commutes with tensoring a composite map.
+* `LinearMap.lTensor_rTensor_comm`: tensoring maps on the two factors commutes elementwise.
+* `LinearMap.injective_rTensor_congr`: injectivity of `f ⊗ 𝟙 M` is invariant under isomorphisms
+  of `M`.
 * `LinearMap.tensorComponent`: contraction against the right factor of a tensor product.
 * `LinearMap.tensorComponent_map`: naturality of contraction under `TensorProduct.map`.
 * `LinearMap.tensorComponent_assoc_symm`: contraction commutes with reassociation.
@@ -48,6 +52,36 @@ universe u v w x y
 variable {R : Type u} {M : Type v} {N : Type w}
 variable [CommSemiring R] [AddCommMonoid M] [Module R M]
 variable [AddCommMonoid N] [Module R N]
+
+section Naturality
+
+variable {P Q S T : Type*}
+variable [AddCommMonoid P] [Module R P] [AddCommMonoid Q] [Module R Q]
+variable [AddCommMonoid S] [Module R S] [AddCommMonoid T] [Module R T]
+
+/-- Reassociation commutes with tensoring a composite linear map and changing the last factor. -/
+theorem assoc_rTensor_lTensor_comp (f : N →ₗ[R] P) (g : Q →ₗ[R] S)
+    (ρ : M →ₗ[R] T ⊗[R] N) (t : M ⊗[R] Q) :
+    TensorProduct.assoc R T P S ((f.lTensor T ∘ₗ ρ).rTensor S (g.lTensor M t)) =
+      TensorProduct.map LinearMap.id (TensorProduct.map f g)
+        (TensorProduct.assoc R T N Q (ρ.rTensor Q t)) := by
+  simp only [lTensor_def, rTensor_map, comp_id]
+  rw [← map_rTensor, ← TensorProduct.map_map_assoc]
+
+/-- Tensoring maps on the two factors commutes, elementwise: `(𝟙 ⊗ g) ∘ (f ⊗ 𝟙)` and
+`(f ⊗ 𝟙) ∘ (𝟙 ⊗ g)` agree on every element. -/
+theorem lTensor_rTensor_comm (f : M →ₗ[R] P) (g : N →ₗ[R] Q) (x : M ⊗[R] N) :
+    g.lTensor P (f.rTensor N x) = f.rTensor Q (g.lTensor M x) := by
+  rw [← comp_apply, lTensor_comp_rTensor, ← rTensor_comp_lTensor, comp_apply]
+
+/-- Injectivity of `f ⊗ 𝟙 M` only depends on `M` up to isomorphism. -/
+theorem injective_rTensor_congr (f : N →ₗ[R] P) (e : M ≃ₗ[R] Q) :
+    Function.Injective (f.rTensor M) ↔ Function.Injective (f.rTensor Q) := by
+  have h : e.lTensor P ∘ f.rTensor M = f.rTensor Q ∘ e.lTensor N :=
+    funext fun x ↦ lTensor_rTensor_comm f e.toLinearMap x
+  rw [← EquivLike.comp_injective _ (e.lTensor P), h, EquivLike.injective_comp]
+
+end Naturality
 
 /-- Apply a linear functional to the right factor of a tensor, linearly in the functional. -/
 noncomputable def tensorComponent : (N →ₗ[R] R) →ₗ[R] M ⊗[R] N →ₗ[R] M :=

@@ -33,28 +33,15 @@ namespace TauCeti
 
 universe uR uRm uS uSm uK uL
 
-variable {R : Type uR} {Rₘ : Type uRm} {S : Type uS} {Sₘ : Type uSm}
-variable {K : Type uK} {L : Type uL}
+variable {R : Type uR} {Rₘ : Type uRm} {S : Type uS} {Sₘ : Type uSm} {K : Type uK} {L : Type uL}
 variable [CommRing R] [CommRing Rₘ] [CommRing S] [CommRing Sₘ] [Field K] [Field L]
-variable {M : Submonoid R}
 variable [Algebra R Rₘ] [Algebra R S] [Algebra Rₘ Sₘ] [Algebra S Sₘ]
-variable [Algebra R Sₘ] [IsScalarTower R S Sₘ]
 variable [Algebra R K] [Algebra Rₘ K] [IsScalarTower R Rₘ K]
 variable [Algebra K L] [Algebra R L] [Algebra Rₘ L] [Algebra S L] [Algebra Sₘ L]
-variable [IsScalarTower R K L] [IsScalarTower Rₘ K L]
-variable [IsScalarTower R S L] [IsScalarTower Rₘ Sₘ L] [IsScalarTower S Sₘ L]
-variable [IsScalarTower R Sₘ L]
-variable [IsLocalization M Rₘ]
-variable [IsLocalization (Algebra.algebraMapSubmonoid S M) Sₘ]
-variable [Module.Finite R S]
-variable [IsDomain R]
-variable [IsFractionRing R K]
+variable [IsScalarTower R K L] [IsScalarTower Rₘ K L] [IsScalarTower R S L]
+variable [IsScalarTower Rₘ Sₘ L] [IsScalarTower S Sₘ L]
+variable {M : Submonoid R} [IsLocalization M Rₘ] [Module.Finite R S]
 
-include M
-
-omit [Algebra R Sₘ] [IsScalarTower R S Sₘ] [IsScalarTower R Sₘ L]
-  [IsLocalization (Algebra.algebraMapSubmonoid S M) Sₘ] [IsDomain R]
-  [IsFractionRing R K] in
 private theorem exists_smul_mem_traceDual_of_mem_traceDual {x : L}
     (hx : x ∈ Submodule.traceDual Rₘ K (1 : Submodule Sₘ L)) :
     ∃ b : M, algebraMap R K b • x ∈ Submodule.traceDual R K (1 : Submodule S L) := by
@@ -105,7 +92,11 @@ private theorem exists_smul_mem_traceDual_of_mem_traceDual {x : L}
   have haN : a ∈ N := hN.symm ▸ Submodule.mem_top
   exact Submodule.mem_one.mp (Submodule.mem_comap.mp haN)
 
-omit [IsDomain R] [IsFractionRing R K] in
+variable [Algebra R Sₘ] [IsScalarTower R S Sₘ] [IsScalarTower R Sₘ L]
+variable [IsLocalization (Algebra.algebraMapSubmonoid S M) Sₘ]
+
+include M
+
 /-- The trace dual of a finite algebra commutes with localization. -/
 theorem span_traceDual_one_eq_traceDual_one :
     Submodule.span Sₘ (Submodule.traceDual R K (1 : Submodule S L) : Set L) =
@@ -161,22 +152,16 @@ theorem span_traceDual_one_eq_traceDual_one :
       ← mul_assoc, ← map_mul, IsLocalization.mk'_spec]
     simp only [map_one, one_mul]
 
-variable [IsFractionRing S L]
-variable [IsIntegrallyClosed R]
+variable [IsDomain R] [IsFractionRing R K] [IsFractionRing S L] [IsIntegrallyClosed R]
 variable [IsIntegralClosure S R L] [IsIntegralClosure Sₘ Rₘ L]
 variable [FiniteDimensional K L] [Algebra.IsSeparable K L]
-variable [IsTorsionFree R S] [IsTorsionFree Rₘ Sₘ]
 
-section
-
-variable [IsDomain S]
-
-omit [IsTorsionFree R S] [IsTorsionFree Rₘ Sₘ] in
 /-- The trace-dual fractional ideal commutes with localization. -/
-theorem extended_dual_one_eq_dual_one :
-    let _ : Nontrivial Rₘ := (algebraMap Rₘ K).domain_nontrivial
-    let hM : M ≤ R⁰ := fun m hm ↦ mem_nonZeroDivisors_iff_ne_zero.mpr fun hm0 ↦
-      (IsLocalization.map_units Rₘ ⟨m, hm⟩).ne_zero (by simp [hm0])
+theorem extended_dual_one_eq_dual_one [IsDomain S] :
+    let hM : M ≤ R⁰ :=
+      let _ : Nontrivial Rₘ := (algebraMap Rₘ K).domain_nontrivial
+      fun m hm ↦ mem_nonZeroDivisors_iff_ne_zero.mpr fun hm0 ↦
+        (IsLocalization.map_units Rₘ ⟨m, hm⟩).ne_zero (by simp [hm0])
     let _ : IsDomain Rₘ := IsLocalization.isDomain_of_le_nonZeroDivisors Rₘ hM
     let hMS : Algebra.algebraMapSubmonoid S M ≤ S⁰ :=
       map_le_nonZeroDivisors_of_injective _
@@ -194,7 +179,7 @@ theorem extended_dual_one_eq_dual_one :
           (IsLocalization.injective Sₘ hMS))
         (FractionalIdeal.dual R K (1 : FractionalIdeal S⁰ L)) =
       FractionalIdeal.dual Rₘ K (1 : FractionalIdeal Sₘ⁰ L) := by
-  intro _ hM _ hMS _ _ _ _
+  intro _ _ hMS _ _ _ _
   let h : S⁰ ≤ Submonoid.comap (algebraMap S Sₘ) Sₘ⁰ :=
     nonZeroDivisors_le_comap_nonZeroDivisors_of_injective _
       (IsLocalization.injective Sₘ hMS)
@@ -222,36 +207,36 @@ theorem extended_dual_one_eq_dual_one :
     _ = (↑(FractionalIdeal.dual Rₘ K (1 : FractionalIdeal Sₘ⁰ L)) : Submodule Sₘ L) :=
       (FractionalIdeal.coe_dual_one_of_isDomain (R := Rₘ) (S := Sₘ)).symm
 
-end
-
 variable [IsDedekindDomain S]
 
-omit [IsTorsionFree R S] [IsTorsionFree Rₘ Sₘ] in
-include K L in
 /-- The different ideal commutes with localization. -/
 theorem map_differentIdeal_eq_differentIdeal :
-    let _ : Nontrivial Rₘ := (algebraMap Rₘ K).domain_nontrivial
-    let hM : M ≤ R⁰ := fun m hm ↦ mem_nonZeroDivisors_iff_ne_zero.mpr fun hm0 ↦
-      (IsLocalization.map_units Rₘ ⟨m, hm⟩).ne_zero (by simp [hm0])
+    let hM : M ≤ R⁰ :=
+      let _ : Nontrivial Rₘ := (algebraMap Rₘ K).domain_nontrivial
+      fun m hm ↦ mem_nonZeroDivisors_iff_ne_zero.mpr fun hm0 ↦
+        (IsLocalization.map_units Rₘ ⟨m, hm⟩).ne_zero (by simp [hm0])
     let _ : IsDomain Rₘ := IsLocalization.isDomain_of_le_nonZeroDivisors Rₘ hM
     let hMS : Algebra.algebraMapSubmonoid S M ≤ S⁰ :=
       map_le_nonZeroDivisors_of_injective _
         (algebraMap_injective_of_field_isFractionRing R S K L) hM
     let _ : IsFractionRing Rₘ K :=
       IsFractionRing.isFractionRing_of_isDomain_of_isLocalization M Rₘ K
-    let _ : IsIntegrallyClosed Rₘ :=
-      isIntegrallyClosed_of_isLocalization Rₘ M hM
-    let _ : IsDomain Sₘ := IsLocalization.isDomain_of_le_nonZeroDivisors Sₘ hMS
-    let _ : IsFractionRing Sₘ L :=
-      IsFractionRing.isFractionRing_of_isDomain_of_isLocalization
-        (Algebra.algebraMapSubmonoid S M) Sₘ L
-    let _ : IsDedekindDomain Sₘ := IsLocalization.isDedekindDomain S hMS Sₘ
-    let _ : IsTorsionFree R L := .trans_faithfulSMul R K L
-    let _ : IsTorsionFree Rₘ L := .trans_faithfulSMul Rₘ K L
-    let _ : IsTorsionFree R S := IsIntegralClosure.isTorsionFree R L
-    let _ : IsTorsionFree Rₘ Sₘ := IsIntegralClosure.isTorsionFree Rₘ L
+    let _ : IsDedekindDomain Sₘ :=
+      let _ : IsDomain Sₘ := IsLocalization.isDomain_of_le_nonZeroDivisors Sₘ hMS
+      IsLocalization.isDedekindDomain S hMS Sₘ
+    let _ : IsTorsionFree R S :=
+      let _ : IsTorsionFree R L := .trans_faithfulSMul R K L
+      IsIntegralClosure.isTorsionFree R L
+    let _ : IsTorsionFree Rₘ Sₘ :=
+      let _ : IsTorsionFree Rₘ L := .trans_faithfulSMul Rₘ K L
+      IsIntegralClosure.isTorsionFree Rₘ L
     (differentIdeal R S).map (algebraMap S Sₘ) = differentIdeal Rₘ Sₘ := by
-  intro _ hM _ hMS _ _ _ _ _ _ _ _ _
+  intro hM _ hMS _ _ _ _
+  let _ : IsIntegrallyClosed Rₘ :=
+    isIntegrallyClosed_of_isLocalization Rₘ M hM
+  let _ : IsFractionRing Sₘ L :=
+    IsFractionRing.isFractionRing_of_isDomain_of_isLocalization
+      (Algebra.algebraMapSubmonoid S M) Sₘ L
   have hSSₘ : Function.Injective (algebraMap S Sₘ) := IsLocalization.injective Sₘ hMS
   let h : S⁰ ≤ Submonoid.comap (algebraMap S Sₘ) Sₘ⁰ :=
     nonZeroDivisors_le_comap_nonZeroDivisors_of_injective _ hSSₘ
@@ -260,15 +245,14 @@ theorem map_differentIdeal_eq_differentIdeal :
     ← FractionalIdeal.extendedHom'_apply]
   rw [coeIdeal_differentIdeal R K L S, coeIdeal_differentIdeal Rₘ K L Sₘ, map_inv₀,
     FractionalIdeal.extendedHom'_apply,
-    extended_dual_one_eq_dual_one (R := R) (Rₘ := Rₘ) (S := S)
-      (Sₘ := Sₘ)
+    extended_dual_one_eq_dual_one (R := R) (Rₘ := Rₘ) (S := S) (Sₘ := Sₘ)
       (K := K) (L := L) (M := M)]
 
 include K L in
 /-- **Localization preserves the coefficients of the different ideal**: at a nonzero prime `P` of
 `Sₘ`, the coefficient of `𝔇(Sₘ / Rₘ)` is the coefficient of `𝔇(S / R)` at `P ∩ S`. -/
 theorem multiplicity_differentIdeal_eq_multiplicity_under [IsDomain Rₘ] [IsDedekindDomain Sₘ]
-    {P : Ideal Sₘ} [P.IsPrime] (hP : P ≠ ⊥) :
+    [IsTorsionFree R S] [IsTorsionFree Rₘ Sₘ] {P : Ideal Sₘ} [P.IsPrime] (hP : P ≠ ⊥) :
     multiplicity P (differentIdeal Rₘ Sₘ) = multiplicity (P.under S) (differentIdeal R S) := by
   -- Extending `P ∩ S` to the localization gives back `P`, so its ramification index is one and
   -- extension preserves the coefficient; `map_differentIdeal_eq_differentIdeal` identifies the

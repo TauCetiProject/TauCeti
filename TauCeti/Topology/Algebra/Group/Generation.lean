@@ -23,7 +23,7 @@ set by any continuous homomorphism with dense range, hence in particular by a co
 surjection and so to every quotient. It is invariant under a topological group isomorphism, and
 it has the uniqueness half one expects of a notion of generation — a continuous homomorphism into
 a Hausdorff monoid is determined by its values on a topological generating set, as is a
-homomorphism with open kernel into an arbitrary group. Counting the latter over a finite target
+homomorphism with open kernel into an arbitrary monoid. Counting the latter over a finite target
 is what bounds the supply of open subgroups of a compact group.
 
 For a profinite group topological finite generation is detected by the finite quotients; that
@@ -54,7 +54,7 @@ criterion is in `TauCeti/Topology/Algebra/Group/Profinite/Generation.lean`.
   open kernel, for which the target carries no topology.
 * `TauCeti.IsTopologicallyFinitelyGenerated.finite_monoidHom_isOpen_ker`: only finitely many
   homomorphisms with open kernel go from a topologically finitely generated group to a fixed
-  finite group.
+  finite monoid.
 
 ## References
 
@@ -271,42 +271,26 @@ theorem isTopologicallyFinitelyGenerated_congr (e : G ≃ₜ* H) :
 
 section OpenKernel
 
-/-- A homomorphism from a topological group into a monoid carrying the discrete topology is
-continuous exactly when its kernel is open. -/
-theorem _root_.MonoidHom.continuous_iff_isOpen_ker {F : Type*} [MulOneClass F] [TopologicalSpace F]
-    [DiscreteTopology F] (f : G →* F) : Continuous f ↔ IsOpen (f.ker : Set G) := by
-  -- The kernel is the preimage of the open point `1`.
-  refine ⟨fun hf ↦ ?_, f.continuous_of_isOpen_ker⟩
-  rw [MonoidHom.coe_ker]
-  exact (isOpen_discrete _).preimage hf
-
 /-- A homomorphism whose kernel is open is determined by its values on a topological generating
-set: the equalizer of two such homomorphisms contains the (open) intersection of their kernels,
-hence is open, hence closed, hence contains the whole group. The target carries no topology at
-all, which is what makes the statement usable for a target such as a permutation group that has
-no topology to hand; compare `MonoidHom.eq_of_eqOn_of_topologicalClosure_closure_eq_top`, which
-asks instead for continuity into a Hausdorff target. -/
-theorem _root_.MonoidHom.eq_of_eqOn_of_isOpen_ker {F : Type*} [Group F] {s : Set G}
+set. The target monoid carries no topology, making this usable for a target such as a permutation
+group with no topology to hand; compare
+`MonoidHom.eq_of_eqOn_of_topologicalClosure_closure_eq_top`, which asks for continuity into a
+Hausdorff target. -/
+theorem _root_.MonoidHom.eq_of_eqOn_of_isOpen_ker {F : Type*} [Monoid F] {s : Set G}
     (hs : (Subgroup.closure s).topologicalClosure = ⊤) {f g : G →* F}
     (hf : IsOpen (f.ker : Set G)) (hg : IsOpen (g.ker : Set G)) (hfg : Set.EqOn f g s) :
     f = g := by
-  -- Membership in `MonoidHom.eqLocus` is the equation `f x = g x`, as in `MonoidHom.eqOn_closure`.
-  have hsub : f.ker ⊓ g.ker ≤ f.eqLocus g := fun x hx ↦ by
-    simp only [Subgroup.mem_inf, MonoidHom.mem_ker] at hx
-    exact hx.1.trans hx.2.symm
-  have hopen : IsOpen ((f.eqLocus g : Subgroup G) : Set G) :=
-    Subgroup.isOpen_mono hsub (by simpa only [Subgroup.coe_inf] using hf.inter hg)
-  have htop : f.eqLocus g = ⊤ :=
-    top_le_iff.mp <| hs ▸ Subgroup.topologicalClosure_minimal _
-      ((Subgroup.closure_le _).mpr hfg) (Subgroup.isClosed_of_isOpen _ hopen)
-  exact MonoidHom.eq_of_eqOn_top fun x _ ↦ htop.ge (Subgroup.mem_top x)
+  let _ : TopologicalSpace F := ⊥
+  let _ : DiscreteTopology F := ⟨rfl⟩
+  exact MonoidHom.eq_of_eqOn_of_topologicalClosure_closure_eq_top hs
+    (f.continuous_of_isOpen_ker hf) (g.continuous_of_isOpen_ker hg) hfg
 
-/-- **A topologically finitely generated group has few homomorphisms to a finite group.** There
+/-- **A topologically finitely generated group has few homomorphisms to a finite monoid.** There
 are only finitely many homomorphisms with open kernel from a topologically finitely generated
-topological group to a fixed finite group, because such a homomorphism is determined by its
+topological group to a fixed finite monoid, because such a homomorphism is determined by its
 values on a finite topological generating set. -/
 theorem IsTopologicallyFinitelyGenerated.finite_monoidHom_isOpen_ker
-    (hG : IsTopologicallyFinitelyGenerated G) (F : Type*) [Group F] [Finite F] :
+    (hG : IsTopologicallyFinitelyGenerated G) (F : Type*) [Monoid F] [Finite F] :
     Finite {f : G →* F // IsOpen (f.ker : Set G)} := by
   obtain ⟨s, hs⟩ := hG
   have : Finite (s : Set G) := s.finite_toSet.to_subtype

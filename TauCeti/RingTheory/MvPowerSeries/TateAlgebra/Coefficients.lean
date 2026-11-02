@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Data.Finsupp.Weight
-public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic
-public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Discrete
-import Mathlib.Topology.WithTopology
+public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Module.Coefficients
 
 /-!
 # The coefficient model of the unit-radius Tate algebra
@@ -18,6 +16,10 @@ the cofinite filter; at a constant radius `ρ`, it says that `‖aₜ‖ ρ^|t|`
 unit-radius case identifies the native restricted-series module with the model space
 `C₀(WithDiscreteTopology (σ →₀ ℕ), R)`. The identification is linear and isometric for the Gauss
 norm, and it sends a restricted monomial to the corresponding coordinate vector.
+
+The construction specializes the module-valued coefficient comparison
+`TauCeti.MvPowerSeries.IsRestrictedFamily.Gauss.coeffLinearIsometryEquiv`; the family seminorm
+agrees with the Gauss norm on the native restricted-series subring.
 
 The discrete-topology wrapper is essential when `σ` is infinite: the exponent type may carry a
 different topology from its use here as the discrete index of a null family.
@@ -63,91 +65,19 @@ open _root_.MvPowerSeries
 
 variable {σ R : Type*} [NormedCommRing R] [IsUltrametricDist R]
 
-private noncomputable def toRestrictedCoeff
-    (f : IsRestricted.subring (R := R) (fun _ : σ ↦ 1)) :
-    C₀(WithDiscreteTopology (σ →₀ ℕ), R) :=
-  ZeroAtInftyContinuousMap.mkOfDiscrete
-    (fun t ↦ coeff t.ofTopology (f : _root_.MvPowerSeries σ R)) <|
-      tendsto_zero_iff_norm_tendsto_zero.mpr <|
-        (isRestricted_one_iff.mp f.2).comp
-          (WithTopology.ofTopology_injective ⊥).tendsto_cofinite
-
-private theorem toRestrictedCoeff_apply
-    (f : IsRestricted.subring (R := R) (fun _ : σ ↦ 1)) (t : σ →₀ ℕ) :
-    toRestrictedCoeff f (WithTopology.toTopology ⊥ t) =
-      coeff t (f : _root_.MvPowerSeries σ R) := by
-  rw [toRestrictedCoeff, ZeroAtInftyContinuousMap.coe_mkOfDiscrete]
-
-private noncomputable def ofRestrictedCoeff
-    (a : C₀(WithDiscreteTopology (σ →₀ ℕ), R)) :
-    IsRestricted.subring (R := R) (fun _ : σ ↦ 1) :=
-  ⟨(fun t ↦ a (.toTopology ⊥ t) : _root_.MvPowerSeries σ R), by
-    exact isRestricted_one_iff.mpr <| tendsto_zero_iff_norm_tendsto_zero.mp <|
-      a.tendsto_cofinite.comp (WithTopology.toTopology_injective ⊥).tendsto_cofinite⟩
-
-private theorem ofRestrictedCoeff_apply
-    (a : C₀(WithDiscreteTopology (σ →₀ ℕ), R)) (t : σ →₀ ℕ) :
-    coeff t ((ofRestrictedCoeff a : IsRestricted.subring (R := R) (fun _ : σ ↦ 1)) :
-      _root_.MvPowerSeries σ R) = a (.toTopology ⊥ t) := by
-  rfl
-
-private noncomputable def restrictedCoeffLinearEquiv :
-    IsRestricted.subring (R := R) (fun _ : σ ↦ 1) ≃ₗ[R]
-      C₀(WithDiscreteTopology (σ →₀ ℕ), R) where
-  toFun := toRestrictedCoeff
-  invFun := ofRestrictedCoeff
-  left_inv f := by
-    apply Subtype.ext
-    apply _root_.MvPowerSeries.ext
-    intro t
-    rw [ofRestrictedCoeff_apply, toRestrictedCoeff_apply]
-  right_inv a := by
-    apply ZeroAtInftyContinuousMap.ext
-    intro t
-    rcases t with ⟨t⟩
-    rw [toRestrictedCoeff_apply, ofRestrictedCoeff_apply]
-  map_add' f g := by
-    apply ZeroAtInftyContinuousMap.ext
-    rintro ⟨t⟩
-    simp only [toRestrictedCoeff_apply, ZeroAtInftyContinuousMap.add_apply]
-    rfl
-  map_smul' r f := by
-    apply ZeroAtInftyContinuousMap.ext
-    rintro ⟨t⟩
-    simp [toRestrictedCoeff_apply, coe_smul_isRestrictedSubring, smul_eq_mul]
-
-private theorem restrictedCoeffLinearEquiv_apply
-    (f : IsRestricted.subring (R := R) (fun _ : σ ↦ 1)) (t : σ →₀ ℕ) :
-    restrictedCoeffLinearEquiv f (.toTopology ⊥ t) =
-      coeff t (f : _root_.MvPowerSeries σ R) := by
-  exact toRestrictedCoeff_apply f t
-
-private theorem restrictedCoeffLinearEquiv_symm_apply
-    (a : C₀(WithDiscreteTopology (σ →₀ ℕ), R)) (t : σ →₀ ℕ) :
-    coeff t ((restrictedCoeffLinearEquiv.symm a :
-      IsRestricted.subring (R := R) (fun _ : σ ↦ 1)) : _root_.MvPowerSeries σ R) =
-      a (.toTopology ⊥ t) := by
-  simpa using (restrictedCoeffLinearEquiv_apply (restrictedCoeffLinearEquiv.symm a) t).symm
-
-private theorem norm_restrictedCoeffLinearEquiv
-    (f : IsRestricted.subring (R := R) (fun _ : σ ↦ 1)) :
-    ‖restrictedCoeffLinearEquiv f‖ = ‖f‖ := by
-  apply le_antisymm
-  · exact (ZeroAtInftyContinuousMap.norm_le (norm_nonneg f)).2 fun t ↦ by
-      rw [restrictedCoeffLinearEquiv_apply]
-      simpa using _root_.MvPowerSeries.norm_coeff_mul_prod_le f t.ofTopology
-  · exact (_root_.MvPowerSeries.norm_le_iff (norm_nonneg _)).2 fun t ↦ by
-      rw [← restrictedCoeffLinearEquiv_apply]
-      simpa using ZeroAtInftyContinuousMap.norm_coe_le_norm
-        (restrictedCoeffLinearEquiv f) (.toTopology ⊥ t)
-
 /-- Taking coefficients is a linear isometric equivalence from the unit-radius restricted-series
 module to the space of coefficient families vanishing at infinity on the discrete exponent set. -/
 noncomputable def restrictedCoeffLinearIsometryEquiv :
     IsRestricted.subring (R := R) (fun _ : σ ↦ 1) ≃ₗᵢ[R]
       C₀(WithDiscreteTopology (σ →₀ ℕ), R) where
-  toLinearEquiv := restrictedCoeffLinearEquiv
-  norm_map' := norm_restrictedCoeffLinearEquiv
+  toLinearEquiv := (IsRestrictedFamily.subringLinearEquiv.restrictScalars R).trans
+    ((IsRestrictedFamily.Gauss.toAddSubgroupLinearEquiv R).symm.trans
+      (IsRestrictedFamily.Gauss.coeffLinearIsometryEquiv (σ := σ) (E := R) R).toLinearEquiv)
+  norm_map' f := by
+    simp only [LinearEquiv.trans_apply, LinearEquiv.restrictScalars_apply,
+      LinearIsometryEquiv.coe_toLinearEquiv,
+      IsRestrictedFamily.Gauss.toAddSubgroupLinearEquiv_symm_apply,
+      LinearIsometryEquiv.norm_map, IsRestrictedFamily.Gauss.norm_subringLinearEquiv]
 
 /-- The coefficient isometry evaluates a restricted series at each exponent by taking that
 coefficient. -/
@@ -156,7 +86,12 @@ theorem restrictedCoeffLinearIsometryEquiv_apply
     (f : IsRestricted.subring (R := R) (fun _ : σ ↦ 1)) (t : σ →₀ ℕ) :
     restrictedCoeffLinearIsometryEquiv f (.toTopology ⊥ t) =
       coeff t (f : _root_.MvPowerSeries σ R) := by
-  exact restrictedCoeffLinearEquiv_apply f t
+  rw [← LinearIsometryEquiv.coe_toLinearEquiv]
+  simp only [restrictedCoeffLinearIsometryEquiv, LinearEquiv.trans_apply,
+    LinearEquiv.restrictScalars_apply, LinearIsometryEquiv.coe_toLinearEquiv,
+    IsRestrictedFamily.Gauss.coeffLinearIsometryEquiv_apply,
+    IsRestrictedFamily.Gauss.toAddSubgroupLinearEquiv_symm_apply,
+    IsRestrictedFamily.coe_subringLinearEquiv]
 
 /-- The inverse coefficient isometry builds the restricted series with the prescribed null
 coefficient family. -/
@@ -166,7 +101,8 @@ theorem restrictedCoeffLinearIsometryEquiv_symm_apply
     coeff t ((restrictedCoeffLinearIsometryEquiv.symm a :
       IsRestricted.subring (R := R) (fun _ : σ ↦ 1)) : _root_.MvPowerSeries σ R) =
       a (.toTopology ⊥ t) := by
-  exact restrictedCoeffLinearEquiv_symm_apply a t
+  simpa using (restrictedCoeffLinearIsometryEquiv_apply
+    (restrictedCoeffLinearIsometryEquiv.symm a) t).symm
 
 /-- A classical equality decision procedure for the discrete exponent set, used to form
 coordinate vectors. -/

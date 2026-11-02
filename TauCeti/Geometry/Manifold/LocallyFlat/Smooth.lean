@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.Immersion.Basic
 public import TauCeti.Geometry.Manifold.LocallyFlat.Basic
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
 
@@ -61,6 +62,8 @@ read off it.
 * `TauCeti.isOpenEmbedding_of_isImmersionOfComplement_of_isEmbedding` and
   `TauCeti.isLocallyFlat_subtypeVal`: the codimension-zero end, where local flatness is openness of
   the embedding.
+* `TauCeti.IsLocallyFlat.of_isSmoothEmbedding_of_sub_eq`: for models `ℝᵏ` and `ℝᵐ` the complement is
+  `ℝᵐ⁻ᵏ`, so a smooth embedding of boundaryless manifolds is locally flat with Euclidean complement.
 
 ## Implementation notes
 
@@ -256,5 +259,25 @@ theorem isLocallyFlat_subtypeVal (I : ModelWithCorners 𝕜 E H) (n : ℕ∞ω) 
     IsLocallyFlat E PUnit (Subtype.val : s → M) :=
   IsLocallyFlat.of_isImmersionOfComplement_of_isEmbedding (I := I) (J := I) (n := n)
     (IsImmersionOfComplement.of_opens s) IsEmbedding.subtypeVal
+
+/-! ### Euclidean models -/
+
+section Euclidean
+
+variable {k m : ℕ} {I : ModelWithCorners ℝ (EuclideanSpace ℝ (Fin k)) H}
+  {J : ModelWithCorners ℝ (EuclideanSpace ℝ (Fin m)) G}
+
+/-- **A `C^n` embedding of boundaryless manifolds modelled on `ℝᵏ` and `ℝᵐ` is locally flat with
+Euclidean complement**: if `j = m - k`, it is locally flat with tangential model `ℝᵏ` and
+complementary model `ℝʲ`. -/
+theorem IsLocallyFlat.of_isSmoothEmbedding_of_sub_eq [I.Boundaryless] [J.Boundaryless]
+    (h : IsSmoothEmbedding I J n f) {j : ℕ} (hj : m - k = j) :
+    IsLocallyFlat (EuclideanSpace ℝ (Fin k)) (EuclideanSpace ℝ (Fin j)) f := by
+  rcases isEmpty_or_nonempty M with hM | hM
+  · exact isLocallyFlat_iff_isSliceEmbedding.2 ⟨h.isEmbedding, isEmptyElim⟩
+  obtain ⟨L⟩ := h.isImmersion.nonempty_complement_continuousLinearEquiv hj
+  exact (IsLocallyFlat.of_isSmoothEmbedding h).transHomeomorph L.toHomeomorph (by simp)
+
+end Euclidean
 
 end TauCeti

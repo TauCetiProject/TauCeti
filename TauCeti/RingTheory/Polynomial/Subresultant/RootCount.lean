@@ -9,20 +9,30 @@ public import TauCeti.RingTheory.Polynomial.Roots
 public import TauCeti.RingTheory.Polynomial.Subresultant.GCD
 
 /-!
-# Counting distinct roots with principal subresultant coefficients
+# Counting roots with principal subresultant coefficients
 
-For a polynomial that splits in a characteristic-zero field, this file characterizes any proposed
-number of distinct roots by the principal subresultant coefficients of the polynomial and its
-derivative.  The first nonzero principal coefficient occurs at the degree of the derivative gcd;
+This file reads root counts off the principal subresultant coefficients, through the
+principal-subresultant gcd criterion `Polynomial.natDegree_gcd_eq_iff_psc`.
+
+For two nonzero polynomials `p` and `q` with `p` split, the first nonzero principal coefficient
+of `(p, q)` occurs at the number of their common roots, each counted with the minimum of its
+multiplicities in `p` and in `q`; without a splitting hypothesis, the same holds for the common
+roots in an algebraically closed extension. For a split polynomial in characteristic zero, the
+first nonzero principal coefficient of `(p, p')` occurs at the degree of the derivative gcd;
 subtracting that index from the polynomial's degree gives the number of distinct roots.
 
-This is the root-count form of the principal-subresultant gcd criterion.  It keeps actual degrees
-in the coefficient bounds, as required by the fixed-bound subresultant convention.
+The coefficient bounds are the actual degrees, as required by the fixed-bound subresultant
+convention.
 
 ## Main results
 
+* `Polynomial.card_roots_inter_eq_iff_psc_of_splits`: the principal-coefficient characterization
+  of the number of common roots, when one input splits.
+* `Polynomial.card_aroots_inter_eq_iff_psc`: the same for the common roots in an algebraically
+  closed field of two polynomials over a field `k`, with the principal coefficients taken over
+  `k`.
 * `Polynomial.card_roots_toFinset_eq_iff_psc_of_splits`: the principal-coefficient
-  characterization for any split polynomial.
+  characterization of the number of distinct roots of any split polynomial.
 * `Polynomial.card_roots_toFinset_eq_iff_psc`: the specialization to an algebraically closed
   coefficient field.
 
@@ -38,7 +48,33 @@ namespace TauCeti
 
 open Polynomial
 
-variable {K : Type*} [Field K] [DecidableEq K] [CharZero K]
+variable {K : Type*} [Field K] [DecidableEq K]
+
+section CommonRoots
+
+/-- For nonzero `p` and `q` with `p` split, `r` is the number of common roots of `p` and `q`,
+each counted with the minimum of its two multiplicities, exactly when the principal subresultant
+coefficient at index `r` is the first nonzero one. -/
+theorem _root_.Polynomial.card_roots_inter_eq_iff_psc_of_splits {p q : K[X]} (hp : p ≠ 0)
+    (hq : q ≠ 0) (hsplit : p.Splits) (r : ℕ) :
+    Multiset.card (p.roots ∩ q.roots) = r ↔
+      psc p q p.natDegree q.natDegree r ≠ 0 ∧ ∀ i < r, psc p q p.natDegree q.natDegree i = 0 := by
+  rw [← natDegree_gcd_eq_card_roots_inter_of_splits hp hq hsplit, natDegree_gcd_eq_iff_psc]
+
+/-- For nonzero polynomials `p` and `q` over a field `k`, `r` is the number of their common roots
+in an algebraically closed field `K`, each counted with the minimum of its two multiplicities,
+exactly when the principal subresultant coefficient over `k` at index `r` is the first nonzero
+one. -/
+theorem _root_.Polynomial.card_aroots_inter_eq_iff_psc [IsAlgClosed K] {k : Type*} [Field k]
+    [Algebra k K] {p q : k[X]} (hp : p ≠ 0) (hq : q ≠ 0) (r : ℕ) :
+    Multiset.card (p.aroots K ∩ q.aroots K) = r ↔
+      psc p q p.natDegree q.natDegree r ≠ 0 ∧ ∀ i < r, psc p q p.natDegree q.natDegree i = 0 := by
+  classical
+  rw [← natDegree_gcd_eq_card_aroots_inter hp hq, natDegree_gcd_eq_iff_psc]
+
+end CommonRoots
+
+variable [CharZero K]
 
 /-- For a split polynomial, `r` is the number of distinct roots exactly when the principal
 subresultant coefficient at index `degree - r` is the first nonzero one. -/

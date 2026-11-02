@@ -7,12 +7,14 @@ module
 
 public import Mathlib.Algebra.Module.Equiv.Basic
 public import Mathlib.Algebra.Module.Submodule.Basic
+public import Mathlib.Algebra.Module.Submodule.Range
+public import Mathlib.LinearAlgebra.Span.Defs
 public import Mathlib.Algebra.Ring.GeomSum
 public import Mathlib.LinearAlgebra.Finsupp.Defs
 public import TauCeti.LinearAlgebra.Graded.LinearMap
 
 /-!
-# Inverting `1 + f` for a locally nilpotent endomorphism
+# Locally nilpotent endomorphisms and families of endomorphisms
 
 An endomorphism `f` of a module is *locally nilpotent* when every vector is annihilated by some
 power of `f`.  Then `1 + f` is invertible.  No global nilpotence bound is needed, so the statement
@@ -22,6 +24,14 @@ whole module, such as those of homological perturbation theory on bar constructi
 On a free module `ι →₀ R`, an endomorphism is locally nilpotent as soon as it strictly lowers a
 weight on the basis whose strict order is well-founded, for instance any weight on a finite basis.
 
+More generally, a family `f i` of endomorphisms is locally nilpotent when every vector is killed by
+all sufficiently long composites `f i₁ ∘ ⋯ ∘ f i_d`. The vectors killed by all composites of
+length `d` form a submodule `Module.End.wordKer f d`, and local nilpotence is the statement
+`⨆ d, Module.End.wordKer f d = ⊤`. It passes to submodules and quotients stable under the family.
+If no nonzero vector is killed by every `f i`, then `Module.End.wordKer f d = ⊥` for every `d`, so
+a locally nilpotent family with this property can only act on the zero module. Operators lowering
+a grading by `ℕ`, such as divided differences on a polynomial ring, form locally nilpotent families.
+
 ## Main results
 
 * `Module.End.isUnit_one_add_of_forall_exists_pow_apply_eq_zero`: `1 + f` is a unit when `f` is
@@ -30,6 +40,12 @@ weight on the basis whose strict order is well-founded, for instance any weight 
   when `f` is locally nilpotent of degree zero.
 * `Module.End.exists_pow_apply_eq_zero_of_forall_mem_support_lt`: an endomorphism of `ι →₀ R`
   that strictly lowers a well-founded weight on the basis is locally nilpotent.
+* `Module.End.mem_wordKer_iff`: `Module.End.wordKer f d` consists of the vectors killed by the
+  composite of every word of length `d` in the family `f`.
+* `Module.End.wordKer_eq_bot_of_iInf_ker_eq_bot`: if the family `f` has no common nonzero kernel
+  vector, then neither do its composites of any length.
+* `Module.End.iSup_wordKer_eq_top_of_surjective`, `Module.End.iSup_wordKer_eq_top_of_injective`:
+  local nilpotence of a family passes to quotients and to submodules.
 -/
 
 public section
@@ -140,3 +156,133 @@ theorem Module.End.exists_pow_apply_eq_zero_of_forall_mem_support_lt
   exact (hN x).1 hx
 
 end Finsupp
+
+section Family
+
+namespace Module.End
+
+variable {R M N ι : Type*} [Semiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid N]
+  [Module R N]
+
+/-- The submodule of vectors killed by every composite `f i₁ ∘ ⋯ ∘ f i_d` of `d` members of a
+family `f` of endomorphisms (`Module.End.mem_wordKer_iff`). Only `0` is killed by the empty
+composite, and `x` is killed by all composites of length `d + 1` exactly when every `f i x` is
+killed by all composites of length `d` (`Module.End.mem_wordKer_succ`).
+
+These submodules increase with `d` (`Module.End.monotone_wordKer`). The family is *locally
+nilpotent* when they exhaust the module, `⨆ d, wordKer f d = ⊤`: every vector is killed by all
+sufficiently long composites (`Module.End.iSup_wordKer_eq_top_iff`). -/
+def wordKer (f : ι → Module.End R M) : ℕ → Submodule R M
+  | 0 => ⊥
+  | d + 1 => ⨅ i, (wordKer f d).comap (f i)
+
+variable (f : ι → Module.End R M)
+
+/-- Only `0` is killed by the empty composite. -/
+@[simp]
+theorem wordKer_zero : wordKer f 0 = ⊥ :=
+  (rfl)
+
+/-- The recursive description of `wordKer f (d + 1)`. -/
+theorem wordKer_succ (d : ℕ) : wordKer f (d + 1) = ⨅ i, (wordKer f d).comap (f i) :=
+  (rfl)
+
+/-- A vector is killed by all composites of length `d + 1` exactly when its image under every
+member of the family is killed by all composites of length `d`. -/
+@[simp]
+theorem mem_wordKer_succ {d : ℕ} {x : M} : x ∈ wordKer f (d + 1) ↔ ∀ i, f i x ∈ wordKer f d := by
+  simp only [wordKer_succ, Submodule.mem_iInf, Submodule.mem_comap]
+
+/-- A vector lies in `wordKer f d` exactly when it is killed by the composite of every word of
+length `d` in the family `f`. -/
+theorem mem_wordKer_iff {d : ℕ} {x : M} :
+    x ∈ wordKer f d ↔ ∀ w : List ι, w.length = d → (w.map f).prod x = 0 := by
+  induction d generalizing x with
+  | zero => simp [List.length_eq_zero_iff]
+  | succ d ih =>
+    simp only [mem_wordKer_succ, ih]
+    refine ⟨fun h w hw ↦ ?_, fun h i w hw ↦ ?_⟩
+    · obtain rfl | ⟨w, i, rfl⟩ := w.eq_nil_or_concat
+      · simp at hw
+      · simp only [List.concat_eq_append, List.length_append, List.length_singleton,
+          Nat.add_right_cancel_iff] at hw
+        simpa [Module.End.mul_apply] using h i w hw
+    · simpa [Module.End.mul_apply] using h (w ++ [i]) (by simp [hw])
+
+/-- A vector killed by all composites of length `d` is killed by all longer composites. -/
+theorem monotone_wordKer : Monotone (wordKer f) := by
+  refine monotone_nat_of_le_succ fun d ↦ ?_
+  induction d with
+  | zero => exact bot_le
+  | succ d ih => exact iInf_mono fun i ↦ Submodule.comap_mono ih
+
+/-- The family `f` is locally nilpotent, `⨆ d, wordKer f d = ⊤`, exactly when every vector is
+killed by all composites of some length. -/
+theorem iSup_wordKer_eq_top_iff : ⨆ d, wordKer f d = ⊤ ↔ ∀ x, ∃ d, x ∈ wordKer f d := by
+  simp only [Submodule.eq_top_iff', Submodule.mem_iSup_of_directed _
+    (monotone_wordKer f).directed_le]
+
+/-- If no nonzero vector is killed by every member of the family, then no nonzero vector is killed
+by all composites of a given length. -/
+theorem wordKer_eq_bot_of_iInf_ker_eq_bot (hf : ⨅ i, LinearMap.ker (f i) = ⊥) (d : ℕ) :
+    wordKer f d = ⊥ := by
+  induction d with
+  | zero => exact wordKer_zero f
+  | succ d ih => simp only [wordKer_succ, ih, Submodule.comap_bot, hf]
+
+/-- For a nonempty family all of whose members equal `g`, `wordKer` is the kernel of `g ^ d`. -/
+theorem wordKer_const [Nonempty ι] (g : Module.End R M) (d : ℕ) :
+    wordKer (fun _ : ι ↦ g) d = LinearMap.ker (g ^ d) := by
+  induction d with
+  | zero => rw [wordKer_zero, pow_zero, Module.End.one_eq_id, LinearMap.ker_id]
+  | succ d ih => rw [wordKer_succ, ih, iInf_const, pow_succ, Module.End.mul_eq_comp,
+      LinearMap.ker_comp]
+
+variable {f} {f' : ι → Module.End R N} {g : M →ₗ[R] N}
+
+/-- A linear map intertwining two families of endomorphisms maps `wordKer f d` into
+`wordKer f' d`. -/
+theorem map_wordKer_le (hg : ∀ i, g ∘ₗ f i = f' i ∘ₗ g) (d : ℕ) :
+    (wordKer f d).map g ≤ wordKer f' d := by
+  induction d with
+  | zero => simp
+  | succ d ih =>
+    rintro _ ⟨x, hx, rfl⟩
+    rw [SetLike.mem_coe, mem_wordKer_succ] at hx
+    rw [mem_wordKer_succ]
+    intro i
+    rw [← LinearMap.comp_apply, ← hg i, LinearMap.comp_apply]
+    exact ih (Submodule.mem_map_of_mem (hx i))
+
+/-- An injective linear map intertwining two families of endomorphisms pulls `wordKer f' d` back to
+`wordKer f d`. -/
+theorem comap_wordKer_of_injective (hg : ∀ i, g ∘ₗ f i = f' i ∘ₗ g)
+    (hinj : Function.Injective g) (d : ℕ) : (wordKer f' d).comap g = wordKer f d := by
+  induction d with
+  | zero => simpa using LinearMap.ker_eq_bot_of_injective hinj
+  | succ d ih =>
+    ext x
+    simp only [Submodule.mem_comap, mem_wordKer_succ]
+    refine forall_congr' fun i ↦ ?_
+    rw [← ih, Submodule.mem_comap, ← LinearMap.comp_apply g, hg i, LinearMap.comp_apply]
+
+/-- Local nilpotence passes to quotients: the image of a locally nilpotent family under a
+surjective intertwining linear map is locally nilpotent. -/
+theorem iSup_wordKer_eq_top_of_surjective (hg : ∀ i, g ∘ₗ f i = f' i ∘ₗ g)
+    (hsurj : Function.Surjective g) (hf : ⨆ d, wordKer f d = ⊤) : ⨆ d, wordKer f' d = ⊤ := by
+  rw [eq_top_iff, ← LinearMap.range_eq_top.2 hsurj, LinearMap.range_eq_map, ← hf,
+    Submodule.map_iSup]
+  exact iSup_mono (map_wordKer_le hg)
+
+/-- Local nilpotence passes to submodules: a family intertwined by an injective linear map with a
+locally nilpotent family is locally nilpotent. -/
+theorem iSup_wordKer_eq_top_of_injective (hg : ∀ i, g ∘ₗ f i = f' i ∘ₗ g)
+    (hinj : Function.Injective g) (hf' : ⨆ d, wordKer f' d = ⊤) : ⨆ d, wordKer f d = ⊤ := by
+  rw [iSup_wordKer_eq_top_iff] at hf' ⊢
+  intro x
+  obtain ⟨d, hd⟩ := hf' (g x)
+  exact ⟨d, comap_wordKer_of_injective hg hinj d ▸ hd⟩
+
+end Module.End
+
+end Family

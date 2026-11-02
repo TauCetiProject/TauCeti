@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.SesquilinearForm
 public import Mathlib.LinearAlgebra.Matrix.Dual
+public import Mathlib.Algebra.Order.Star.Basic
 
 /-!
 # The standard sesquilinear form with a specified automorphism
@@ -20,6 +21,15 @@ This identification with the dual gives a nondegenerate pairing for studying ort
 in finite coordinate spaces.
 
 The API is in `RingEquiv`: use `σ.sesquilinearForm`, or `RingEquiv.sesquilinearForm σ`.
+
+For a module with a finite basis `b`, Mathlib's `Matrix.toLinearMapₛₗ₂ σ b b 1` is the
+sesquilinear form, `σ`-semilinear in its first argument, for which `b` is orthonormal. In
+coordinates it is `∑ i, σ (x i) * y i` (`Matrix.toLinearMapₛₗ₂_one_apply`). For complex
+conjugation, or any star ring, it is Hermitian (`Matrix.star_toLinearMapₛₗ₂_one_apply`), and over
+a star-ordered ring without zero divisors it is positive definite
+(`Matrix.toLinearMapₛₗ₂_one_self_nonneg`, `Matrix.toLinearMapₛₗ₂_one_self_eq_zero_iff`). This is
+the Hermitian metric making a chosen basis orthonormal, for instance the increasing wedge basis of
+an exterior algebra.
 -/
 
 public section
@@ -92,3 +102,51 @@ theorem sesquilinearForm_flip_bijective (σ : R ≃+* R) :
     simp [sesquilinearForm_apply, dotProduct, mul_comm]
 
 end RingEquiv
+
+namespace Matrix
+
+variable {R M n : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M] [Fintype n]
+  [DecidableEq n] (b : Module.Basis n R M)
+
+/-- **The sesquilinear form of the identity matrix in coordinates**: for a basis `b`,
+`toLinearMapₛₗ₂ σ b b 1 x y = ∑ i, σ (x i) * y i`, the form for which `b` is orthonormal. -/
+theorem toLinearMapₛₗ₂_one_apply (σ : R →+* R) (x y : M) :
+    toLinearMapₛₗ₂ σ b b (1 : Matrix n n R) x y = ∑ i, σ (b.repr x i) * b.repr y i := by
+  simp [toLinearMapₛₗ₂_apply, one_apply, smul_eq_mul]
+
+/-- For the form making a basis orthonormal, the functional attached to a basis vector is its
+coordinate functional. -/
+theorem toLinearMapₛₗ₂_one_basis_eq_coord (σ : R →+* R) (i : n) :
+    toLinearMapₛₗ₂ σ b b (1 : Matrix n n R) (b i) = b.coord i := by
+  refine b.ext fun j ↦ ?_
+  simp [one_apply, Finsupp.single_apply, eq_comm]
+
+variable [StarRing R]
+
+/-- **The orthonormal-basis form is Hermitian**: for complex conjugation, or the star of any star
+ring, swapping the arguments of `toLinearMapₛₗ₂ (starRingEnd R) b b 1` conjugates its value. -/
+theorem star_toLinearMapₛₗ₂_one_apply (x y : M) :
+    star (toLinearMapₛₗ₂ (starRingEnd R) b b (1 : Matrix n n R) x y) =
+      toLinearMapₛₗ₂ (starRingEnd R) b b (1 : Matrix n n R) y x := by
+  simp only [toLinearMapₛₗ₂_one_apply, star_sum, star_mul, starRingEnd_apply, star_star]
+
+/-- **The orthonormal-basis form is positive semidefinite** over a star-ordered ring. -/
+theorem toLinearMapₛₗ₂_one_self_nonneg [PartialOrder R] [StarOrderedRing R] (x : M) :
+    0 ≤ toLinearMapₛₗ₂ (starRingEnd R) b b (1 : Matrix n n R) x x := by
+  rw [toLinearMapₛₗ₂_one_apply]
+  exact Finset.sum_nonneg fun i _ ↦ star_mul_self_nonneg _
+
+/-- **The orthonormal-basis form is definite** over a star-ordered ring without zero divisors:
+`toLinearMapₛₗ₂ (starRingEnd R) b b 1 x x = 0` only for `x = 0`. -/
+theorem toLinearMapₛₗ₂_one_self_eq_zero_iff [PartialOrder R] [StarOrderedRing R]
+    [NoZeroDivisors R] {x : M} :
+    toLinearMapₛₗ₂ (starRingEnd R) b b (1 : Matrix n n R) x x = 0 ↔ x = 0 := by
+  refine ⟨fun hx ↦ ?_, fun hx ↦ by simp [hx]⟩
+  simp only [toLinearMapₛₗ₂_one_apply, starRingEnd_apply] at hx
+  rw [Finset.sum_eq_zero_iff_of_nonneg fun i _ ↦ star_mul_self_nonneg _] at hx
+  refine b.repr.injective (Finsupp.ext fun i ↦ ?_)
+  have hi := hx i (Finset.mem_univ i)
+  rw [mul_eq_zero, star_eq_zero, or_self] at hi
+  rw [hi, map_zero, Finsupp.coe_zero, Pi.zero_apply]
+
+end Matrix

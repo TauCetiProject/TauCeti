@@ -38,10 +38,16 @@ noncommutative ring are allowed.
 * `TauCeti.ModuleTower.lim`, `TauCeti.ModuleTower.limOne`: its kernel and cokernel.
 * `TauCeti.ModuleTower.mem_lim`: `lim` consists of the families compatible with the transitions.
 * `TauCeti.ModuleTower.isLimitLimCone`: `lim`, with its projections, is a limit of the tower.
+* `TauCeti.ModuleTower.limLift_bijective_of_le`: a compatible family of maps into the terms that
+  are bijective from some index on induces a bijection onto `lim`.
 * `TauCeti.ModuleTower.limπ_surjective`: if the transitions are surjective, so are the
   projections `lim A → Aₙ`.
+* `TauCeti.ModuleTower.isSplitEpi_shift`: if the transitions are split epimorphisms, so is the
+  shift map.
 * `TauCeti.ModuleTower.limMap`, `TauCeti.ModuleTower.limOneMap`: the linear maps induced by a
   morphism of towers, with their identity, composition, zero and addition laws.
+* `TauCeti.ModuleTower.limMap_inj`: a morphism out of a tower with surjective transitions is
+  determined by the map it induces on `lim`.
 * `TauCeti.ModuleTower.limMap_injective`, `TauCeti.ModuleTower.limOneMap_surjective`: levelwise
   injective (surjective) morphisms induce injective (surjective) maps on `lim` (`lim¹`).
 * `TauCeti.ModuleTower.subsingleton_limOne_iff`: `lim¹` vanishes if and only if the shift map is
@@ -187,6 +193,11 @@ def limπ (n : ℕ) : F.lim →ₗ[R] F.obj (op n) :=
 theorem limπ_apply (n : ℕ) (x : F.lim) : F.limπ n x = (x : F.Product) n :=
   (rfl)
 
+/-- Two points of `lim A` are equal when all their coordinates agree. -/
+@[ext]
+theorem lim_ext {x y : F.lim} (h : ∀ n, F.limπ n x = F.limπ n y) : x = y :=
+  Subtype.ext <| funext h
+
 /-- An element of `lim A` is compatible with the transition `Aₙ₊₁ → Aₙ`. -/
 @[simp]
 theorem transition_coe_lim_succ (x : F.lim) (n : ℕ) :
@@ -222,6 +233,14 @@ theorem limπ_comp_limLift {P : Type*} [AddCommGroup P] [Module R P]
     (f : ∀ n, P →ₗ[R] F.obj (op n)) (hf : ∀ n, F.transition n ∘ₗ f (n + 1) = f n) (n : ℕ) :
     F.limπ n ∘ₗ F.limLift f hf = f n :=
   (rfl)
+
+/-- The kernel of the map `P → lim A` induced by a compatible family of maps `fₙ : P → Aₙ` is the
+intersection of the kernels of the `fₙ`. -/
+@[simp]
+theorem ker_limLift {P : Type*} [AddCommGroup P] [Module R P]
+    (f : ∀ n, P →ₗ[R] F.obj (op n)) (hf : ∀ n, F.transition n ∘ₗ f (n + 1) = f n) :
+    LinearMap.ker (F.limLift f hf) = ⨅ n, LinearMap.ker (f n) := by
+  rw [limLift, LinearMap.ker_codRestrict, LinearMap.ker_pi]
 
 /-- The cone over a tower with vertex `lim A` and the projections `lim A → Aₙ`. -/
 @[expose]
@@ -260,6 +279,29 @@ theorem transitionOfLE_comp_limπ {n k : ℕ} (h : n ≤ k) :
     F.transitionOfLE h ∘ₗ F.limπ k = F.limπ n := by
   ext x
   exact F.transitionOfLE_coe_lim x h
+
+/-- The kernels of the projections `lim A → Aₙ` decrease as `n` grows. -/
+theorem ker_limπ_antitone : Antitone fun n ↦ LinearMap.ker (F.limπ n) := fun n k h x hx ↦ by
+  rw [LinearMap.mem_ker] at hx ⊢
+  rw [← F.transitionOfLE_comp_limπ h, LinearMap.comp_apply, hx, map_zero]
+
+/-- If a compatible family of linear maps `fₙ : P → Aₙ` consists of bijections from some index
+`N` on, then the induced map `P → lim A` is bijective. -/
+theorem limLift_bijective_of_le {P : Type*} [AddCommGroup P] [Module R P]
+    (f : ∀ n, P →ₗ[R] F.obj (op n)) (hf : ∀ n, F.transition n ∘ₗ f (n + 1) = f n) (N : ℕ)
+    (h : ∀ n, N ≤ n → Function.Bijective (f n)) : Function.Bijective (F.limLift f hf) := by
+  -- The family is compatible with every composite transition.
+  have hcomp {n k : ℕ} (hnk : n ≤ k) (p : P) : F.transitionOfLE hnk (f k p) = f n p :=
+    F.transitionOfLE_coe_lim (F.limLift f hf p) hnk
+  refine ⟨(injective_iff_map_eq_zero _).2 fun p hp ↦ (h N le_rfl).1 ?_, fun y ↦ ?_⟩
+  · rw [map_zero, ← F.coe_limLift_apply f hf p N, hp, ZeroMemClass.coe_zero, Pi.zero_apply]
+  obtain ⟨p, hp⟩ := (h N le_rfl).2 ((y : F.Product) N)
+  refine ⟨p, Subtype.ext <| funext fun n ↦ ?_⟩
+  -- At an index `m ≥ n, N`, the preimage of `yₘ` maps to `y_N` and hence equals `p`.
+  obtain ⟨q, hq⟩ := (h (max n N) (le_max_right n N)).2 ((y : F.Product) (max n N))
+  have hqp : q = p := (h N le_rfl).1 <| by
+    rw [hp, ← hcomp (le_max_right n N), hq, transitionOfLE_coe_lim]
+  rw [coe_limLift_apply, ← hcomp (le_max_left n N), ← hqp, hq, transitionOfLE_coe_lim]
 
 /-- `lim A`, with its projections, is a limit of the tower `A` in `ModuleCat R`. -/
 def isLimitLimCone : Limits.IsLimit F.limCone where
@@ -321,6 +363,25 @@ theorem limπ_surjective (h : ∀ n, Function.Surjective (F.transition n)) (n : 
     | succ j ih => rwa [← hg j, transitionOfLE_transition] at ih
   refine ⟨⟨fun k ↦ F.transitionOfLE (Nat.le_add_left k n) (g k), F.mem_lim.2 fun k ↦ ?_⟩, hgy n⟩
   rw [transition_transitionOfLE, ← hg k, transitionOfLE_transition]
+
+/-- If every transition map of a tower is a split epimorphism, then so is its shift map. -/
+theorem isSplitEpi_shift (h : ∀ n, IsSplitEpi (F.map (homOfLE (Nat.le_succ n)).op)) :
+    IsSplitEpi (ModuleCat.ofHom F.shift) := by
+  -- With sections `sₙ` of the transitions, `δ(x) = c` is solved linearly in `c` by `x₀ = 0` and
+  -- `xₙ₊₁ = sₙ(xₙ - cₙ)`.
+  let s (n : ℕ) : F.obj (op n) →ₗ[R] F.obj (op (n + 1)) :=
+    (section_ (F.map (homOfLE (Nat.le_succ n)).op)).hom
+  have hs (n : ℕ) (y : F.obj (op n)) : F.transition n (s n y) = y :=
+    congr($(IsSplitEpi.id (F.map (homOfLE (Nat.le_succ n)).op)).hom y)
+  let t : ∀ n, F.Product →ₗ[R] F.obj (op n) := fun n ↦
+    Nat.rec (motive := fun n ↦ F.Product →ₗ[R] F.obj (op n)) 0
+      (fun n tn ↦ s n ∘ₗ (tn - LinearMap.proj n)) n
+  -- The recursion step defining `t` computes definitionally.
+  have ht (n : ℕ) (c : F.Product) : t (n + 1) c = s n (t n c - c n) := rfl
+  refine IsSplitEpi.mk' ⟨ModuleCat.ofHom (LinearMap.pi t), ?_⟩
+  ext c : 2
+  funext n
+  simp [ht, hs]
 
 end Basic
 
@@ -428,6 +489,15 @@ theorem limMap_zero : limMap (0 : F ⟶ G) = 0 :=
 @[simp]
 theorem limMap_add (f g : F ⟶ G) : limMap (f + g) = limMap f + limMap g :=
   (rfl)
+
+/-- If every transition map of `A` is surjective, a morphism of towers `A ⟶ B` is determined by
+the map it induces on `lim`: every element of `Aₙ` lifts to `lim A`. -/
+theorem limMap_inj (h : ∀ n, Function.Surjective (F.transition n)) {f g : F ⟶ G} :
+    limMap f = limMap g ↔ f = g := by
+  refine ⟨fun hfg ↦ ?_, congrArg limMap⟩
+  ext ⟨n⟩ x
+  obtain ⟨y, rfl⟩ := F.limπ_surjective h n x
+  exact congr(($hfg y : G.Product) n)
 
 /-- The first map of the six-term sequence: `lim A → lim B` is injective when every `Aₙ → Bₙ`
 is. -/

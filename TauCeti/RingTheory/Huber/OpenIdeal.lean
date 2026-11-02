@@ -68,10 +68,10 @@ needs, in addition, an `I`-adically complete ring of definition.
   Wedhorn's own form, with no pair of definition: an ideal of a Huber ring is open exactly when
   its radical contains every topologically nilpotent element. For the span of a finite set this
   is Wedhorn's Remark 7.30(1).
-* `TauCeti.Huber.isOpen_iff_setOf_isTopologicallyNilpotent_subset_of_isPrime`: a prime ideal of a
-  Huber ring is open exactly when it contains every topologically nilpotent element.
-* `TauCeti.Huber.isOpen_iff_setOf_isTopologicallyNilpotent_coe_subset_of_isPrime`: the same for a
-  prime ideal of a subring of a Huber ring, with the subspace topology, and the elements of the
+* `TauCeti.Huber.isOpen_iff_setOf_isTopologicallyNilpotent_subset_of_isRadical`: a radical ideal
+  of a Huber ring is open exactly when it contains every topologically nilpotent element.
+* `TauCeti.Huber.isOpen_iff_setOf_isTopologicallyNilpotent_coe_subset_of_isRadical`: the same for a
+  radical ideal of a subring of a Huber ring, with the subspace topology, and the elements of the
   subring topologically nilpotent in the ambient ring.
 * `TauCeti.Huber.exists_finset_subset_isOpen_span`: every neighbourhood of zero of a Huber ring
   contains a finite set generating an open ideal.
@@ -415,22 +415,19 @@ theorem addSubgroupClosure_pow_mul_mem_nhds (P : PairOfDefinition A) {T U : Set 
   rw [← hwa]
   exact sum_mem fun t ht ↦ AddSubgroup.subset_closure ⟨t, hFT ht, w t, hr (hw t ht), rfl⟩
 
-section
-
-open Topology
-
-variable {B : Type*} [CommRing B] [TopologicalSpace B]
-  [IsTopologicalRing A] [IsTopologicalRing B]
-
 omit [SeparatelyContinuousAdd A] in
-omit [IsTopologicalRing A] in
 /-- For compatible rings of definition, a continuous map extending a source ideal of definition
-to an open ambient ideal makes its extension an ideal of definition in the target subring. -/
-theorem isAdic_map_idealOfDefinition (P : PairOfDefinition A) (Q : PairOfDefinition B)
+to an open ambient ideal makes its extension an ideal of definition in the target subring.
+Only separate continuity of multiplication is needed in the ambient target: the adic topology
+already makes its ring of definition a topological ring. -/
+theorem isAdic_map_idealOfDefinition {B : Type*} [CommRing B] [TopologicalSpace B]
+    [SeparatelyContinuousMul B] (P : PairOfDefinition A) (Q : PairOfDefinition B)
     (f : A →+* B) (h : ∀ a ∈ P.ringOfDefinition, f a ∈ Q.ringOfDefinition)
     (hf : Continuous f) (hopen : IsOpen (P.extendedIdealOfDefinition.map f : Set B)) :
     IsAdic (P.idealOfDefinition.map (f.restrict _ _ h)) := by
   classical
+  have : IsTopologicalRing Q.ringOfDefinition :=
+    Q.isAdic_idealOfDefinition ▸ Q.idealOfDefinition.nonarchimedean.toIsTopologicalRing
   let f₀ := f.restrict _ _ h
   have hc : Continuous f₀ := (hf.comp continuous_subtype_val).subtype_mk _
   have hrad := P.isAdic_idealOfDefinition.map_le_radical_of_continuous
@@ -468,8 +465,6 @@ theorem isAdic_map_idealOfDefinition (P : PairOfDefinition A) (Q : PairOfDefinit
   have hgI : g ∈ P.idealOfDefinition := hG ▸ Ideal.subset_span hg
   convert Ideal.mem_map_of_mem f₀ hgI using 1
   exact Subtype.ext hgt.symm
-
-end
 
 end PairOfDefinition
 
@@ -527,27 +522,26 @@ theorem isOpen_iff_span_setOf_isTopologicallyNilpotent_le_radical [IsHuberRing A
     rw [P.extendedIdealOfDefinition_def, Ideal.map_le_iff_le_comap]
     exact fun x hx ↦ Ideal.subset_span (P.isTopologicallyNilpotent_of_mem_idealOfDefinition hx)
 
-/-- **The open prime ideals of a Huber ring** are those containing every topologically nilpotent
-element: in Wedhorn's notation, the open points of `Spec A` form `V(A°°)` (the sentence after
-Lemma 6.6). -/
-theorem isOpen_iff_setOf_isTopologicallyNilpotent_subset_of_isPrime [IsHuberRing A] {p : Ideal A}
-    [p.IsPrime] : IsOpen (p : Set A) ↔ {x : A | IsTopologicallyNilpotent x} ⊆ p := by
-  rw [isOpen_iff_span_setOf_isTopologicallyNilpotent_le_radical, Ideal.IsPrime.radical ‹_›,
-    Ideal.span_le]
+/-- **A radical ideal of a Huber ring is open exactly when it contains every topologically
+nilpotent element.** In particular, the open points of `Spec A` form `V(A°°)` in Wedhorn's
+notation (the sentence after Lemma 6.6). -/
+theorem isOpen_iff_setOf_isTopologicallyNilpotent_subset_of_isRadical [IsHuberRing A] {a : Ideal A}
+    (ha : a.IsRadical) : IsOpen (a : Set A) ↔ {x : A | IsTopologicallyNilpotent x} ⊆ a := by
+  rw [isOpen_iff_span_setOf_isTopologicallyNilpotent_le_radical, ha.radical, Ideal.span_le]
 
-/-- **The open prime ideals of a subring of a Huber ring** are those containing every element that
-is topologically nilpotent in the ambient ring. The subring `B` carries the subspace topology; it
-need not be open, nor a Huber ring itself. -/
-theorem isOpen_iff_setOf_isTopologicallyNilpotent_coe_subset_of_isPrime [IsHuberRing A]
-    {B : Subring A} {q : Ideal B} [q.IsPrime] :
+/-- **A radical ideal of a subring of a Huber ring is open exactly when it contains every element
+that is topologically nilpotent in the ambient ring.** The subring `B` carries the subspace
+topology; it need not be open, nor a Huber ring itself. -/
+theorem isOpen_iff_setOf_isTopologicallyNilpotent_coe_subset_of_isRadical [IsHuberRing A]
+    {B : Subring A} {q : Ideal B} (hq : q.IsRadical) :
     IsOpen (q : Set B) ↔ {s : B | IsTopologicallyNilpotent (s : A)} ⊆ q := by
-  refine ⟨fun hq s hs ↦ ?_, fun h ↦ ?_⟩
+  refine ⟨fun hopen s hs ↦ ?_, fun h ↦ ?_⟩
   · -- the powers of `s` also tend to `0` in the subspace topology, so one of them lies in `q`
     have hs₀ : Filter.Tendsto (fun n : ℕ ↦ (s : A) ^ n) Filter.atTop (𝓝 0) := hs
     have hs' : IsTopologicallyNilpotent s :=
       IsInducing.subtypeVal.tendsto_nhds_iff.mpr (by simpa [Function.comp_def] using hs₀)
-    obtain ⟨n, hn⟩ := hs'.exists_pow_mem_of_mem_nhds (hq.mem_nhds q.zero_mem)
-    exact ‹q.IsPrime›.mem_of_pow_mem n hn
+    obtain ⟨n, hn⟩ := hs'.exists_pow_mem_of_mem_nhds (hopen.mem_nhds q.zero_mem)
+    exact hq ⟨n, hn⟩
   · -- `q` contains the trace on `B` of the open set of topologically nilpotent elements of `I`
     obtain ⟨P⟩ := IsHuberRing.nonempty_pairOfDefinition (A := A)
     refine AddSubgroup.isOpen_of_mem_nhds q.toAddSubgroup (g := 0) <|

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.SimpleGraph.Density
+public import Mathlib.Combinatorics.SimpleGraph.Maps
 public import Mathlib.Basic.Real.Basic
 public import TauCeti.Order.Partition.Finpartition
 import Mathlib.Algebra.BigOperators.Field
@@ -18,7 +19,8 @@ across a refinement of finite partitions: the edge count between two finsets is 
 times their edge density (with no nonemptiness hypothesis, since both sides vanish on an empty
 finset), edge counts are additive over disjoint unions on either side, and the edge count between
 two finsets splits along the traces of the parts of finite partitions on them. The corresponding
-`SimpleGraph` results are specializations to the adjacency relation.
+`SimpleGraph` results are specializations to the adjacency relation. Edge densities are invariant
+under relabelling the vertices along an equivalence (`SimpleGraph.edgeDensity_comap_symm`).
 
 For graphs, `SimpleGraph.patternDensity G e s t` is the edge density of `(s, t)` if `e` holds and
 the nonedge density `1 - d(s, t)` otherwise: the density factor of a pair in the predicted count
@@ -118,6 +120,30 @@ theorem card_mul_card_mul_edgeDensity (s t : Finset V) :
 theorem card_mul_card_mul_edgeDensity_real (s t : Finset V) :
     (#s * #t : ℝ) * (G.edgeDensity s t : ℝ) = #(G.interedges s t) :=
   Rel.card_mul_card_mul_edgeDensity_real G.Adj s t
+
+/-- **Edge densities are invariant under relabelling.** Relabelling the vertices along `e`, the
+graph as `G.comap e.symm` and both finsets by mapping along `e`, leaves the edge density unchanged.
+-/
+@[simp]
+theorem edgeDensity_comap_symm {W : Type*} (e : V ≃ W) (s t : Finset V) :
+    (G.comap e.symm).edgeDensity (s.map e.toEmbedding) (t.map e.toEmbedding) =
+      G.edgeDensity s t := by
+  rw [edgeDensity_def, edgeDensity_def, card_map, card_map]
+  congr 3
+  -- the related pairs correspond under `e` in each coordinate
+  refine card_bij' (fun p _ => (e.symm p.1, e.symm p.2)) (fun p _ => (e p.1, e p.2))
+    ?_ ?_ ?_ ?_
+  · rintro ⟨x, y⟩ h
+    simp only [mem_interedges_iff, mem_map, Equiv.coe_toEmbedding, comap_adj] at h ⊢
+    obtain ⟨⟨a, ha, rfl⟩, ⟨b, hb, rfl⟩, hab⟩ := h
+    simpa [ha, hb] using hab
+  · rintro ⟨x, y⟩ h
+    simp only [mem_interedges_iff, mem_map, Equiv.coe_toEmbedding, comap_adj] at h ⊢
+    exact ⟨⟨x, h.1, rfl⟩, ⟨y, h.2.1, rfl⟩, by simpa using h.2.2⟩
+  · rintro ⟨x, y⟩ _
+    simp
+  · rintro ⟨x, y⟩ _
+    simp
 
 section patternDensity
 

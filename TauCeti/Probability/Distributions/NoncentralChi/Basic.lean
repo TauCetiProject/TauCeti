@@ -79,6 +79,20 @@ theorem noncentralChiMeasure_zero_noncentrality (k s : ℝ) :
   · simp [noncentralChiMeasure_of_scale_nonpos (not_lt.mp hs),
       chiMeasure_of_scale_nonpos (not_lt.mp hs)]
 
+/-- A noncentral chi law is a Poisson mixture of central chi laws with degrees `k + 2 * j`.
+The degree-zero component is the point mass at zero. -/
+theorem noncentralChiMeasure_eq_sum (hk : 0 ≤ k) :
+    noncentralChiMeasure k δ s = Measure.sum fun j : ℕ ↦
+      poissonMeasure (δ ^ 2 / 2) {j} • chiMeasure (k + 2 * j) s := by
+  by_cases hs : 0 < s
+  · rw [noncentralChiMeasure_of_scale_pos hs, noncentralChiSquaredMeasure_eq_sum hk,
+      Measure.map_sum (by fun_prop)]
+    congr 1
+    funext j
+    rw [Measure.map_smul _ (by fun_prop), chiMeasure_of_scale_pos hs]
+  · simp [noncentralChiMeasure_of_scale_nonpos (not_lt.mp hs),
+      chiMeasure_of_scale_nonpos (not_lt.mp hs)]
+
 /-- The noncentral chi family is jointly Giry measurable in degree, noncentrality, and scale,
 including its invalid branches. -/
 @[fun_prop]

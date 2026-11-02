@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import TauCeti.Algebra.Group.Action.Pow
 public import TauCeti.Algebra.GroupAction.QuotientAddGroup
 public import TauCeti.GroupTheory.PGroup.Additive
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Basic
@@ -86,8 +87,7 @@ theorem exists_ne_zero_nsmul_eq_zero_invariant_of_isProP_of_isOpen_ker (hG : IsP
     (htors : ∀ m : M, ∃ k : ℕ, p ^ k • m = 0) :
     ∃ m : M, m ≠ 0 ∧ p • m = 0 ∧ ∀ g : G, g • m = m := by
   obtain ⟨m, hm0, hm⟩ := exists_ne_zero_invariant_of_isProP_of_isOpen_ker hG hK htors
-  obtain ⟨k, hk⟩ := htors m
-  obtain ⟨n, hn0, hn⟩ := exists_nsmul_pow_ne_zero_nsmul_nsmul_pow_eq_zero hm0 hk
+  obtain ⟨n, hn0, hn⟩ := exists_pow_smul_ne_zero_and_smul_eq_zero hm0 (htors m)
   exact ⟨p ^ n • m, hn0, hn, fun g ↦ by rw [smul_comm, hm g]⟩
 
 variable [TopologicalSpace M] [DiscreteTopology M] [ContinuousSMul G M]

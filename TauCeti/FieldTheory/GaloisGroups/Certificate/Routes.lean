@@ -148,7 +148,7 @@ theorem hasGaloisLabel_five_three_of_isSquare_discr_of_hasFactorDegrees (hf : f.
   obtain ⟨j, hj, -⟩ := existsUnique_hasGaloisLabel_five
     (PerfectField.separable_of_irreducible hirr) hirr (natDegree_map_rat_eq_five hf hdeg)
   -- The square discriminant leaves the even labels `5T1`, `5T2` and `5T4`.
-  have hpar := (hj.isSquare_discr_iff_five (hf.map _) (by simp)).mp
+  have hpar := (hj.isSquare_discr_iff_five (by simp)).mp
     (hf.isSquare_discr_map_rat_iff.mpr hdisc)
   -- An element of order three rules out `5T1` and `5T2`, of orders `5` and `10`.
   obtain ⟨σ, hσ, h3⟩ := hq.exists_orderOf_eq_three hf

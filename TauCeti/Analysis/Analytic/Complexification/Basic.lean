@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Analytic.Constructions
 public import Mathlib.Analysis.Complex.Basic
+import TauCeti.Analysis.Analytic.ConvergenceRadius
 import Mathlib.Analysis.Analytic.CPolynomial
 import Mathlib.Analysis.Analytic.IsolatedZeros
 import Mathlib.Analysis.Analytic.Uniqueness
@@ -275,29 +276,17 @@ theorem complexifyPi_smul (c : ℝ) : (c • p).complexifyPi = (c : ℂ) • p.c
 
 /-- Complexification divides the radius of convergence by at most `card ι`. -/
 theorem le_radius_complexifyPi {r : ℝ≥0} (hr : ((Fintype.card ι * r : ℝ≥0) : ℝ≥0∞) < p.radius) :
-    (r : ℝ≥0∞) ≤ p.complexifyPi.radius := by
-  obtain ⟨C, -, hC⟩ := p.norm_mul_pow_le_of_lt_radius hr
-  refine le_radius_of_bound _ C fun n ↦ ?_
-  calc ‖p.complexifyPi n‖ * (r : ℝ) ^ n
-      ≤ Fintype.card ι ^ n * ‖p n‖ * (r : ℝ) ^ n := by
-        gcongr
-        simpa using (p n).norm_complexifyPi_le
-    _ = ‖p n‖ * ((Fintype.card ι * r : ℝ≥0) : ℝ) ^ n := by push_cast; ring
-    _ ≤ C := hC n
+    (r : ℝ≥0∞) ≤ p.complexifyPi.radius :=
+  le_radius_of_norm_le_mul_pow (c := Fintype.card ι)
+    (fun n ↦ by simpa using (p n).norm_complexifyPi_le) hr
 
 /-- Every radius whose double lies below the radius of the real series is a lower bound for the
 radius of the complexified series. -/
 theorem le_radius_complexifyPi_two_mul {r : ℝ≥0}
     (hr : (((2 : ℝ≥0) * r : ℝ≥0) : ℝ≥0∞) < p.radius) :
-    (r : ℝ≥0∞) ≤ p.complexifyPi.radius := by
-  obtain ⟨C, -, hC⟩ := p.norm_mul_pow_le_of_lt_radius hr
-  refine le_radius_of_bound _ C fun n ↦ ?_
-  calc ‖p.complexifyPi n‖ * (r : ℝ) ^ n
-      ≤ 2 ^ n * ‖p n‖ * (r : ℝ) ^ n := by
-        gcongr
-        simpa using (p n).norm_complexifyPi_le_two_pow
-    _ = ‖p n‖ * (((2 : ℝ≥0) * r : ℝ≥0) : ℝ) ^ n := by push_cast; ring
-    _ ≤ C := hC n
+    (r : ℝ≥0∞) ≤ p.complexifyPi.radius :=
+  le_radius_of_norm_le_mul_pow (c := 2)
+    (fun n ↦ by simpa using (p n).norm_complexifyPi_le_two_pow) hr
 
 /-- On real arguments, the sum of the complexified series is the sum of the real series. -/
 @[simp]

@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 
 public import TauCeti.NumberTheory.LocalField.NormalizedValuation
+public import TauCeti.NumberTheory.LocalField.Uniformizer
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.Basic
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion
 
@@ -46,7 +47,9 @@ nonarchimedean local field, the steps of its unit filtration are read off from `
 * `IsDedekindDomain.HeightOneSpectrum.isNonarchimedeanLocalField_adicCompletion`: an adic
   completion with finite residue field is a nonarchimedean local field.
 * `IsDedekindDomain.HeightOneSpectrum.normalizedValuationWithZero_adicCompletion`: the
-  zero-preserving normalized valuation of such a completion is the inverse of its adic valuation.
+  zero-preserving normalized valuation of such a completion is the inverse of its adic valuation;
+  consequently a unit of `K_v` is a uniformizer exactly when its adic valuation is `exp (-1)`
+  (`isUniformizer_iff_valued_eq_exp_neg_one`).
 * `IsDedekindDomain.HeightOneSpectrum.compactSpace_adicCompletionIntegers`: the local integer ring
   of an adic completion carrying a nonarchimedean local-field structure is compact.
 * `IsDedekindDomain.HeightOneSpectrum.mem_unitFiltration_adicCompletion_iff`: the unit filtration
@@ -267,6 +270,20 @@ theorem normalizedValuationWithZero_adicCompletion [Finite (R ⧸ v.asIdeal)]
     TauCeti.normalizedValuationWithZero (v.adicCompletion K) x = (Valued.v x)⁻¹ :=
   Valuation.normalizedValuationWithZero_eq_inv_of_surjective _
     (v.valuedAdicCompletion_surjective K) x
+
+/-- A unit of the completion `K_v` is a uniformizer exactly when its adic valuation `Valued.v` is
+`exp (-1)`. -/
+theorem isUniformizer_iff_valued_eq_exp_neg_one [Finite (R ⧸ v.asIdeal)]
+    {π : (v.adicCompletion K)ˣ} :
+    TauCeti.IsUniformizer (v.adicCompletion K) π ↔
+      Valued.v (π : v.adicCompletion K) = WithZero.exp (-1) := by
+  -- The normalized valuation of `π` is the inverse of its adic valuation.
+  have hπ : (TauCeti.normalizedValuation (v.adicCompletion K) π : ℤᵐ⁰) =
+      (Valued.v (π : v.adicCompletion K))⁻¹ := by
+    rw [← TauCeti.normalizedValuationWithZero_coe, normalizedValuationWithZero_adicCompletion]
+  -- What remains is a normalization of `ℤᵐ⁰` values.
+  rw [TauCeti.isUniformizer_def, ← WithZero.coe_inj, hπ]
+  simp [inv_eq_iff_eq_inv, ← WithZero.exp_eq_coe_ofAdd]
 
 /-- The ring of integers in an adic completion that is a nonarchimedean local field is compact. -/
 instance compactSpace_adicCompletionIntegers

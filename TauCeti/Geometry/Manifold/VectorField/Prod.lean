@@ -34,6 +34,8 @@ is what makes the bracket of product fields split.
 
 ## Main results
 
+* `TauCeti.Manifold.prodVectorField_add`, `TauCeti.Manifold.prodVectorField_smul`,
+  `TauCeti.Manifold.prodVectorField_neg`: product fields are linear in the pair of their factors.
 * `TauCeti.Manifold.mdifferentiableAt_prodVectorField`,
   `TauCeti.Manifold.contMDiffAt_prodVectorField` and `TauCeti.Manifold.contMDiff_prodVectorField`:
   regularity of product fields.
@@ -88,6 +90,25 @@ theorem prodVectorField_fst (X : Π x : M, TangentSpace I x) (Y : Π y : N, Tang
 @[simp]
 theorem prodVectorField_snd (X : Π x : M, TangentSpace I x) (Y : Π y : N, TangentSpace J y)
     (p : M × N) : (prodVectorField X Y p).2 = Y p.2 :=
+  (rfl)
+
+/-- Product fields are additive in the pair of their factors. -/
+@[simp]
+theorem prodVectorField_add (X X' : Π x : M, TangentSpace I x) (Y Y' : Π y : N, TangentSpace J y) :
+    prodVectorField (X + X') (Y + Y') = prodVectorField X Y + prodVectorField X' Y' :=
+  (rfl)
+
+/-- Scaling both factors of a product field scales the field. -/
+@[simp]
+theorem prodVectorField_smul (c : 𝕜) (X : Π x : M, TangentSpace I x)
+    (Y : Π y : N, TangentSpace J y) :
+    prodVectorField (c • X) (c • Y) = c • prodVectorField X Y :=
+  (rfl)
+
+/-- Negating both factors of a product field negates the field. -/
+@[simp]
+theorem prodVectorField_neg (X : Π x : M, TangentSpace I x) (Y : Π y : N, TangentSpace J y) :
+    prodVectorField (-X) (-Y) = -prodVectorField X Y :=
   (rfl)
 
 section Regularity

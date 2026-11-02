@@ -30,6 +30,8 @@ a *free* tuple rather than as the data of a polynomial subtype.
 * `TauCeti.Polynomial.coeff_monicOfCoeff` and `TauCeti.Polynomial.monicOfCoeff_coeff`: the
   coefficients are read back off, and every monic polynomial of degree `n` arises this way, so the
   two constructions are mutually inverse.
+* `TauCeti.Polynomial.monicOfCoeff_add_single_zero`: moving the constant coefficient by `t` adds
+  the constant `t`.
 
 Mathlib writes the same polynomial in the same shape one universe up: `Polynomial.freeMonic R n`,
 in `Mathlib/RingTheory/Polynomial/UniversalFactorizationRing.lean`, is
@@ -107,6 +109,15 @@ coefficients. -/
 theorem map_monicOfCoeff {S : Type*} [CommSemiring S] (φ : R →+* S) (c : Fin n → R) :
     (monicOfCoeff c).map φ = monicOfCoeff (fun i ↦ φ (c i)) := by
   simp [monicOfCoeff, Polynomial.map_sum]
+
+/-- Adding `t` to the constant coefficient of the tuple adds the constant polynomial `t`. -/
+@[simp]
+theorem monicOfCoeff_add_single_zero (c : Fin (n + 1) → R) (t : R) :
+    monicOfCoeff (c + Pi.single 0 t) = monicOfCoeff c + C t := by
+  have h : ∑ i : Fin (n + 1), monomial (i : ℕ) ((Pi.single 0 t : Fin (n + 1) → R) i) = C t := by
+    rw [Finset.sum_eq_single 0 (fun i _ hi ↦ by simp [hi]) (by simp)]
+    simp
+  simp only [monicOfCoeff, Pi.add_apply, map_add, Finset.sum_add_distrib, h, add_assoc]
 
 variable [Nontrivial R]
 

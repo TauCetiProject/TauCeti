@@ -152,6 +152,7 @@ noncomputable def isotypicProjector (sigma : ContRepresentation k G W)
   __ := integratedOperator rho hrho (isotypicKernel sigma hsigma)
   isIntertwining' := integratedOperator_comp rho hrho (isotypicKernel_conj sigma hsigma)
 
+omit [FiniteDimensional k V] in
 /-- The continuous linear map underlying the isotypic projector is the integrated action of the
 normalized conjugate-character kernel. -/
 @[simp]
@@ -161,6 +162,7 @@ theorem toContinuousLinearMap_isotypicProjector (sigma : ContRepresentation k G 
       integratedOperator rho hrho (isotypicKernel sigma hsigma) :=
   (rfl)
 
+omit [FiniteDimensional k V] in
 /-- The defining integral formula for the isotypic projector. -/
 theorem isotypicProjector_apply (sigma : ContRepresentation k G W) (hsigma : Continuous sigma)
     (v : V) :
@@ -173,6 +175,7 @@ theorem isotypicProjector_apply (sigma : ContRepresentation k G W) (hsigma : Con
       rw [toContinuousLinearMap_isotypicProjector]
     _ = _ := integratedOperator_apply rho hrho _ v
 
+omit [FiniteDimensional k V] in
 /-- **Equivalent representations have the same isotypic projector.** The projector sees `sigma`
 only through its isomorphism type. -/
 theorem isotypicProjector_eq_of_equiv {sigma : ContRepresentation k G W}

@@ -38,7 +38,7 @@ variable [Fintype V] [DecidableEq V] [∀ x y, Fintype (Q x y)]
 
 /-- The capacity of arrows leaving a vertex set is submodular when every arrow capacity is
 nonnegative. Loops, parallel arrows, and arrows in both directions are allowed. -/
-theorem isSubmodular_outgoingArrowSum [AddCommMonoid K] [PartialOrder K]
+theorem isSubmodular_outgoingArrowSum [AddCommMonoid K] [Preorder K]
     [IsOrderedAddMonoid K] (cap : Assignment Q K) (hcap : 0 ≤ cap) :
     IsSubmodular (fun S : Finset V ↦ arrowSum cap S Sᶜ) := by
   rw [isSubmodular_def]
@@ -66,11 +66,9 @@ theorem cutBound_eq_arrowSum_sub_sum_excessAt [AddCommGroup K]
 
 /-- The signed upper cut bound is submodular whenever the lower bound is at most the upper bound.
 No feasibility assumption on the bounds is needed. -/
-theorem isSubmodular_cutBound [AddCommGroup K] [PartialOrder K] [IsOrderedAddMonoid K]
+theorem isSubmodular_cutBound [AddCommGroup K] [Preorder K] [IsOrderedAddMonoid K]
     (lo hi : Assignment Q K) (h : lo ≤ hi) : IsSubmodular (cutBound lo hi) := by
-  have hcap : 0 ≤ hi - lo := by
-    intro v w e
-    exact sub_nonneg.mpr (h v w e)
+  have hcap : 0 ≤ hi - lo := fun v w e ↦ sub_nonneg.mpr (h v w e)
   have hdir := isSubmodular_outgoingArrowSum (Q := Q) (cap := hi - lo) hcap
   have hmod := isSubmodular_finsetSum (f := fun v ↦ -excessAt lo v)
   have hadd := hdir.add hmod

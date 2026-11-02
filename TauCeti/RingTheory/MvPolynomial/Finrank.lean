@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.LinearAlgebra.InvariantBasisNumber
+public import TauCeti.RingTheory.MvPolynomial.RestrictSupport
 import Mathlib.Algebra.Order.Antidiag.FinsuppEquiv
 import Mathlib.LinearAlgebra.Dimension.Constructions
 
@@ -38,22 +39,6 @@ instance homogeneousSubmodule_moduleFree {σ R : Type*} [CommSemiring R]
   rw [homogeneousSubmodule_eq_finsupp_supported]
   exact Module.Free.of_basis (basisRestrictSupport R {d : σ →₀ ℕ | d.degree = n})
 
-/-- The restricted-support basis vector is the monomial indexed by its support element. -/
-@[simp]
-theorem coe_basisRestrictSupport_apply {σ R : Type*} [CommSemiring R]
-    (s : Set (σ →₀ ℕ)) (m : s) :
-    ((basisRestrictSupport R s m : restrictSupport R s) : MvPolynomial σ R) =
-      monomial m.1 1 := by
-  classical
-  rw [← (basisRestrictSupport R s).repr_symm_single_one m]
-  -- Mathlib defines this basis through `AddMonoidAlgebra.supportedEquivFinsupp`.
-  -- Its first equivalence wraps `Finsupp.supportedEquivFinsupp` in `ofCoeff`,
-  -- so we expose that representation before simplifying the single basis vector.
-  change (((AddMonoidAlgebra.supportedEquivFinsupp (R := R) (S := R) s).symm
-    (Finsupp.single m (1 : R)) : restrictSupport R s) : MvPolynomial σ R) = monomial m.1 1
-  simp only [AddMonoidAlgebra.supportedEquivFinsupp, LinearEquiv.symm_trans_apply]
-  simp [AddMonoidAlgebra.ofCoeff_single, single_eq_monomial]
-
 /-- The monomial basis of a homogeneous component, indexed by exponent vectors of its degree. -/
 noncomputable def homogeneousMonomialBasis {σ R : Type*} [CommSemiring R] (n : ℕ) :
     Module.Basis {s : σ →₀ ℕ // s.degree = n} R (homogeneousSubmodule σ R n) :=
@@ -67,7 +52,7 @@ theorem coe_homogeneousMonomialBasis {σ R : Type*} [CommSemiring R] (n : ℕ)
     ((homogeneousMonomialBasis (R := R) n s : homogeneousSubmodule σ R n) :
       MvPolynomial σ R) = monomial s.1 1 := by
   simp only [homogeneousMonomialBasis, Module.Basis.map_apply]
-  exact coe_basisRestrictSupport_apply {d : σ →₀ ℕ | d.degree = n} s
+  exact basisRestrictSupport_apply_coe (s := {d : σ →₀ ℕ | d.degree = n}) s
 
 /-- The coordinate of a homogeneous polynomial in the monomial basis is its corresponding
 coefficient. -/
@@ -117,6 +102,12 @@ noncomputable def finsuppDegreeFinTwoEquiv (w : ℕ) :
     · simp
     · simp; omega
   right_inv j := by ext; simp
+
+/-- The equivalence sends an exponent vector of degree `w` to its value at `0`. -/
+@[simp]
+theorem coe_finsuppDegreeFinTwoEquiv_apply (w : ℕ) (s : {s : Fin 2 →₀ ℕ // s.degree = w}) :
+    (finsuppDegreeFinTwoEquiv w s : ℕ) = s.1 0 :=
+  (rfl)
 
 @[simp]
 theorem coe_finsuppDegreeFinTwoEquiv_symm (w : ℕ) (j : Fin (w + 1)) :

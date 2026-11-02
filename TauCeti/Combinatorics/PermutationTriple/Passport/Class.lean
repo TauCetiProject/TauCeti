@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.PermutationTriple.EulerCharacteristic
 public import TauCeti.Combinatorics.PermutationTriple.GeometryType
 public import TauCeti.Combinatorics.PermutationTriple.Passport.Basic
+public import TauCeti.Combinatorics.PermutationTriple.Primitivity.Defs
 
 /-!
 # Classes in a passport
@@ -17,9 +18,10 @@ subgroup up to conjugacy and fixed ordered cycle partitions.  This file collects
 a finite set and defines the passport size to be its cardinality.
 
 The ordered cycle partitions determine the Euler characteristic, genus, order triple, and geometry
-type.  The comparison theorems below state this without choosing representatives of isomorphism
-classes.  In particular, a passport is a coarser invariant than an isomorphism class; no uniqueness
-of a class inside a passport is asserted.
+type, and the conjugacy class of the monodromy subgroup determines primitivity.  The comparison
+theorems below state this without choosing representatives of isomorphism classes.  In
+particular, a passport is a coarser invariant than an isomorphism class; no uniqueness of a class
+inside a passport is asserted.
 
 ## Main declarations
 
@@ -31,6 +33,7 @@ of a class inside a passport is asserted.
 * `TauCeti.PassportSpec.genus_eq_of_hasPassport`: a passport determines the genus.
 * `TauCeti.PassportSpec.orderTriple_eq_of_hasPassport`: a passport determines the order triple.
 * `TauCeti.PassportSpec.geometryType_eq_of_hasPassport`: a passport determines the geometry type.
+* `TauCeti.PassportSpec.isPrimitive_iff_of_hasPassport`: a passport determines primitivity.
 
 ## References
 
@@ -169,6 +172,17 @@ theorem geometryType_eq_of_hasPassport {P : PassportSpec n} {t t' : ConnectedTri
     (ht : HasPassport t P) (ht' : HasPassport t' P) : t.1.geometryType = t'.1.geometryType := by
   apply PermutationTriple.geometryType_eq_of_sum_eq
   rw [orderTriple_eq_of_hasPassport ht ht']
+
+/-- Two connected triples in the same passport are either both primitive or both imprimitive:
+their monodromy subgroups are conjugate in the ambient symmetric group. -/
+theorem isPrimitive_iff_of_hasPassport {P : PassportSpec n} {t t' : ConnectedTriple n}
+    (ht : HasPassport t P) (ht' : HasPassport t' P) : t.1.IsPrimitive ↔ t'.1.IsPrimitive := by
+  have key (s : ConnectedTriple n) (hs : HasPassport s P) :
+      s.1.IsPrimitive ↔ IsPreprimitive P.G (Fin n) := by
+    obtain ⟨⟨τ, hτ⟩, -⟩ := (hasPassport_iff s P).mp hs
+    rw [← hτ, Equiv.conj_eq_permCongrHom, Equiv.isPreprimitive_map_permCongrHom_iff,
+      PermutationTriple.isPrimitive_iff]
+  rw [key t ht, key t' ht']
 
 end PassportSpec
 

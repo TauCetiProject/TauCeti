@@ -20,13 +20,16 @@ lightweight predicate-style API: over a general commutative semiring, the map
 not registered here.
 
 Finite generation of a subcomodule is expressed by `Module.Finite R N.toSubmodule`;
-images under comodule morphisms preserve this property.
+images under comodule morphisms preserve this property. Over a commutative ring, subcomodules of
+a comodule with additive inverses are closed under negation, so their subtypes are additive
+groups.
 
 ## Main definitions
 
 * `TauCeti.Subcomodule`: a submodule stable under the coaction.
 * `TauCeti.Subcomodule.toSubmodule`: the underlying submodule.
 * `TauCeti.Subcomodule.finite`: subcomodules of noetherian modules are finite.
+* `TauCeti.Subcomodule.instModuleFinite`: the same finiteness for the subtype of a subcomodule.
 * `TauCeti.Subcomodule.rid_lTensor_coact_mem`: a subcomodule is stable under contracting the
   coaction against a linear functional on the coalgebra.
 * `⊤` and `⊥`: the full and zero subcomodules, which bound the order of subcomodules.
@@ -119,6 +122,12 @@ theorem toSubmodule_carrier (N : Subcomodule R C M) : N.toSubmodule = N.carrier 
 theorem finite (N : Subcomodule R C M) [IsNoetherian R M] :
     Module.Finite R N.toSubmodule := by
   infer_instance
+
+/-- The subtype of a subcomodule of a noetherian module is finitely generated as an `R`-module.
+This is the form needed to treat a subcomodule of a finite-dimensional comodule over a field as a
+finite-dimensional comodule in its own right. -/
+instance instModuleFinite (N : Subcomodule R C M) [IsNoetherian R M] : Module.Finite R N :=
+  Module.Finite.of_injective (SMulMemClass.subtype N) Subtype.val_injective
 
 theorem le_def {N P : Subcomodule R C M} : N ≤ P ↔ ∀ ⦃m : M⦄, m ∈ N → m ∈ P :=
   Iff.rfl
@@ -399,5 +408,16 @@ theorem range_le_iff {f : Hom R C M N} {P : Subcomodule R C N} :
 end Hom
 
 end Comodule
+
+namespace Subcomodule
+
+/-- Over a commutative ring, a subcomodule of a comodule with additive inverses is closed under
+negation, so its subtype is an additive group. -/
+instance {R : Type u} {C : Type v} {M : Type w} [CommRing R] [AddCommMonoid C] [Module R C]
+    [Coalgebra R C] [AddCommGroup M] [Module R M] [Comodule R C M] :
+    AddSubgroupClass (Subcomodule R C M) M where
+  neg_mem {N} := N.carrier.neg_mem
+
+end Subcomodule
 
 end TauCeti

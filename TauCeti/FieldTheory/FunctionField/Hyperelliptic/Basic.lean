@@ -134,19 +134,8 @@ theorem exists_transcendental_finrank_adjoin_eq_two_of_degree_eq_two
   have hBeff : 0 ≤ B := (mem_riemannRochSpace_units_iff hF).mp hzA
   have hBdeg : Divisor.degree B = 2 := by rw [hB]; simp [hA]
   have hBdim : 2 ≤ Divisor.dim B := by rwa [hBrw, Divisor.dim_sub_principal]
-  -- The constants form a line inside `L(B)`, which has dimension at least two, so `L(B)` holds a
-  -- function `x` outside the constants.
-  have hlt : (k ∙ (1 : F)) < riemannRochSpace B := by
-    refine lt_of_le_of_ne ((Submodule.span_singleton_le_iff_mem _ _).mpr
-      (one_mem_riemannRochSpace_iff.mpr hBeff)) fun hEq ↦ ?_
-    rw [Divisor.dim_def, ← hEq, finrank_span_singleton (one_ne_zero : (1 : F) ≠ 0)] at hBdim
-    omega
-  obtain ⟨x, hxB, hxspan⟩ := IsConcreteLE.exists_of_lt hlt
-  have hxconst : ∀ c : k, algebraMap k F c ≠ x := fun c hc ↦
-    hxspan (hc ▸ Submodule.mem_span_singleton.mpr ⟨c, by simp [Algebra.smul_def]⟩)
-  have hx : Transcendental k x := fun halg ↦
-    let ⟨c, hc⟩ := isIntegrallyClosedIn_iff_forall_isAlgebraic.mp hex x halg
-    hxconst c hc
+  -- `L(B)` has dimension at least two, so it holds a transcendental function `x`.
+  obtain ⟨x, hxB, hx⟩ := Divisor.exists_mem_riemannRochSpace_transcendental hF hex hBdim
   have hx0 : x ≠ 0 := fun h ↦ hx (h ▸ isAlgebraic_zero)
   -- The poles of `x` are bounded by `B`, so `[F : k(x)] = deg (x)_∞ ≤ deg B = 2`.
   have hle : Divisor.poles hF (Units.mk0 x hx0) ≤ B := by

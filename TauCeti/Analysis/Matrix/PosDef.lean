@@ -5,6 +5,7 @@ Authors: Claude
 -/
 module
 
+public import Mathlib.Analysis.Convex.Basic
 public import Mathlib.Analysis.Matrix.MeasurableSpace
 public import Mathlib.Analysis.Matrix.Normed
 public import Mathlib.LinearAlgebra.Matrix.PosDef
@@ -12,6 +13,8 @@ import Mathlib.Algebra.Order.Star.Real
 
 /-!
 # The positive-definite cone in the space of all square matrices
+
+The positive-definite cone of real or complex matrices is convex over `ℝ`.
 
 Positivity of `x ⬝ᵥ M *ᵥ x` on nonzero vectors cuts out an open set of real square matrices,
 symmetric or not.
@@ -25,6 +28,8 @@ with that open one.
 
 ## Main declarations
 
+* `TauCeti.convex_setOf_posDef` — the positive-definite real or complex matrices form a convex
+  set;
 * `TauCeti.isOpen_setOfPred_dotProduct_mulVec_pos` — positivity of the quadratic form on nonzero
   vectors is an open condition on real square matrices;
 * `Matrix.posDef_fin_one_iff` — a real `1 × 1` matrix is positive definite exactly when its
@@ -58,6 +63,15 @@ theorem posDef_fin_one_iff (M : Matrix (Fin 1) (Fin 1) ℝ) :
 end Matrix
 
 namespace TauCeti
+
+open scoped ComplexOrder
+
+/-- The positive-definite real or complex matrices form a convex set over `ℝ`. -/
+theorem convex_setOf_posDef {n 𝕜 : Type*} [RCLike 𝕜] :
+    Convex ℝ {A : Matrix n n 𝕜 | A.PosDef} := by
+  rw [convex_iff_forall_pos]
+  intro A hA B hB a b ha hb _
+  exact (hA.smul ha).add (hB.smul hb)
 
 section
 

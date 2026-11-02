@@ -18,8 +18,9 @@ Let `V` be a module over a `ℚ`-algebra `A`, let `M ≤ V` be an additive subgr
 x * y = y * x + z,   x * z = z * x + 2 • w,
 ```
 
-`w` commuting with `x`, `y` commuting with `z`, and `z` commuting with `w`. The integral
-divided-power exponentials of the four elements act on `R ⊗[ℤ] M` over every commutative ring
+`w` commuting with `x` and `y` commuting with `z`. These relations also imply that `z` commutes
+with `w`. The integral divided-power exponentials of the four elements act on `R ⊗[ℤ] M` over
+every commutative ring
 `R`, by `TauCeti.baseChangeExp`. The main result below is the **Chevalley commutator relation for
 the chain `β`, `α + β`, `2α + β`**
 
@@ -72,12 +73,12 @@ variable {S : Type*} [SetLike S V] [AddSubgroupClass S V]
 /-! ## Straightening the restricted operators -/
 
 /-- **Straightening restricted divided powers for the chain `β`, `α + β`, `2α + β`.** If
-`x * y = y * x + z` and `x * z = z * x + 2 • w`, with `w` commuting with `x`, `y` commuting
-with `z`, and `z` commuting with `w`, the integral operators obtained by restricting divided
-powers to a stable additive subgroup satisfy the coefficient-one straightening rule. -/
+`x * y = y * x + z` and `x * z = z * x + 2 • w`, with `w` commuting with `x` and `y` commuting
+with `z`, the integral operators obtained by restricting divided powers to a stable additive
+subgroup satisfy the coefficient-one straightening rule. -/
 theorem integralDividedPower_mul_integralDividedPower_of_commutator_eq_two_nsmul
     {x y z w : A} (M : S) (hxy : x * y = y * x + z) (hxz : x * z = z * x + 2 • w)
-    (hxw : Commute x w) (hyz : Commute y z) (hzw : Commute z w)
+    (hxw : Commute x w) (hyz : Commute y z)
     (hMx : ∀ n, ∀ v ∈ M, Associative.dividedPower n x • v ∈ M)
     (hMy : ∀ n, ∀ v ∈ M, Associative.dividedPower n y • v ∈ M)
     (hMz : ∀ n, ∀ v ∈ M, Associative.dividedPower n z • v ∈ M)
@@ -95,7 +96,7 @@ theorem integralDividedPower_mul_integralDividedPower_of_commutator_eq_two_nsmul
   congr 1
   simpa only [mul_assoc] using
     Associative.dividedPower_mul_dividedPower_of_commutator_eq_two_nsmul
-      hxy hxz hxw hyz hzw m n
+      hxy hxz hxw hyz m n
 
 /-! ## The generating-function form of the straightening rule -/
 
@@ -104,8 +105,8 @@ the same as summing over the slice `{(a, b, c, q) | a + b + c < N, q + b + 2c < 
 hypercube, the summand transported along `(m, n, b, c) ↦ (n - b - c, b, c, m - b - 2c)`. For `N = 0`
 both sides are empty sums.
 
-This is the four-variable analogue of `sum_range_min_diag_flip` in
-`TauCeti.RingTheory.Nilpotent.ChevalleyCommutator`, whose name it follows: the inner index set is
+This is the four-variable analogue of `Finset.sum_range_min_diag_flip` in
+`TauCeti.Algebra.BigOperators.Finset.Range`, whose name it follows: the inner index set is
 `Associative.chainLeTwoIndex m n` rather than `range (min m n + 1)`, and the image is a slice of the
 hypercube rather than of the cube. -/
 private theorem sum_chainLeTwoIndex_diag_flip {B : Type*} [AddCommMonoid B] (F : ℕ × ℕ × ℕ × ℕ → B)
@@ -147,7 +148,7 @@ private theorem sum_chainLeTwoIndex_diag_flip {B : Type*} [AddCommMonoid B] (F :
 -- extra nonzero terms. The reindexing is `(m, n, b, c) ↦ (n - b - c, b, c, m - b - 2c)`, and the
 -- monomial `t ^ m u ^ n` factors accordingly as `u ^ a (t u) ^ b (t ^ 2 u) ^ c t ^ q`. The proof
 -- is the four-factor analogue of the class-two argument in
--- `TauCeti.RingTheory.Nilpotent.ChevalleyCommutator`, and follows it step for step.
+-- `Finset.sum_smul_mul_sum_smul_of_mul_eq_sum`, and follows it step for step.
 private theorem sum_smul_mul_sum_smul_of_chainLeTwoOrder {R : Type*} [CommRing R]
     {B : Type*} [Ring B] [Algebra R B] (Dx Dy Dz Dw : ℕ → B) (N : ℕ)
     (hno : ∀ m n, Dx m * Dy n =
@@ -217,9 +218,9 @@ variable {R : Type v} [CommRing R] [Algebra ℤ R]
 attribute [local instance high] Algebra.toModule
 
 /-- **The Chevalley commutator relation for the chain `β`, `α + β`, `2α + β`.** If
-`x * y = y * x + z` and `x * z = z * x + 2 • w`, with `w` commuting with `x`, `y` commuting
-with `z`, and `z` commuting with `w`, then over every commutative ring `R` the integral
-divided-power exponentials on `R ⊗[ℤ] M` satisfy
+`x * y = y * x + z` and `x * z = z * x + 2 • w`, with `w` commuting with `x` and `y` commuting
+with `z`, then over every commutative ring `R` the integral divided-power exponentials on
+`R ⊗[ℤ] M` satisfy
 
 ```text
 E_x(t) E_y(u) = E_y(u) E_z(t * u) E_w(t ^ 2 * u) E_x(t).
@@ -228,7 +229,7 @@ E_x(t) E_y(u) = E_y(u) E_z(t * u) E_w(t ^ 2 * u) E_x(t).
 No factorial is inverted in `R`: the relation holds in every characteristic. -/
 theorem baseChangeExp_mul_baseChangeExp_of_commutator_eq_two_nsmul
     {x y z w : A} (M : S) (hxy : x * y = y * x + z) (hxz : x * z = z * x + 2 • w)
-    (hxw : Commute x w) (hyz : Commute y z) (hzw : Commute z w)
+    (hxw : Commute x w) (hyz : Commute y z)
     (hx : IsNilpotent x) (hy : IsNilpotent y) (hz : IsNilpotent z)
     (hMx : ∀ n, ∀ v ∈ M, Associative.dividedPower n x • v ∈ M)
     (hMy : ∀ n, ∀ v ∈ M, Associative.dividedPower n y • v ∈ M)
@@ -239,6 +240,9 @@ theorem baseChangeExp_mul_baseChangeExp_of_commutator_eq_two_nsmul
       baseChangeExp y M hMy u * baseChangeExp z M hMz (t * u) *
         baseChangeExp w M hMw (t ^ 2 * u) * baseChangeExp x M hMx t := by
   classical
+  have hzw := hxw.of_commutator_eq_of_commutator_eq_smul
+    (R := ℚ) (c := 2) hxy (by simpa only [← Nat.cast_smul_eq_nsmul ℚ, Nat.cast_ofNat] using hxz)
+    hyz (isUnit_iff_ne_zero.mpr (by norm_num))
   obtain ⟨kx, hkx⟩ := hx
   obtain ⟨ky, hky⟩ := hy
   obtain ⟨kz, hkz⟩ := hz
@@ -259,7 +263,7 @@ theorem baseChangeExp_mul_baseChangeExp_of_commutator_eq_two_nsmul
   · intro m n
     have h := congrArg (fun f : Module.End ℤ M => (Module.End.baseChangeHom ℤ R M) f)
       (integralDividedPower_mul_integralDividedPower_of_commutator_eq_two_nsmul
-        M hxy hxz hxw hyz hzw
+        M hxy hxz hxw hyz
         hMx hMy hMz hMw m n)
     simp only [map_mul, map_sum] at h
     exact h
@@ -286,7 +290,7 @@ conjugating the one-parameter subgroup of `y` by that of `x` multiplies it by th
 subgroups of `z` and of `w`, at the parameters `t * u` and `t ^ 2 * u`. -/
 theorem baseChangeExp_conj_of_commutator_eq_two_nsmul
     {x y z w : A} (M : S) (hxy : x * y = y * x + z) (hxz : x * z = z * x + 2 • w)
-    (hxw : Commute x w) (hyz : Commute y z) (hzw : Commute z w)
+    (hxw : Commute x w) (hyz : Commute y z)
     (hx : IsNilpotent x) (hy : IsNilpotent y) (hz : IsNilpotent z)
     (hMx : ∀ n, ∀ v ∈ M, Associative.dividedPower n x • v ∈ M)
     (hMy : ∀ n, ∀ v ∈ M, Associative.dividedPower n y • v ∈ M)
@@ -296,7 +300,7 @@ theorem baseChangeExp_conj_of_commutator_eq_two_nsmul
     baseChangeExp x M hMx t * baseChangeExp y M hMy u * baseChangeExp x M hMx (-t) =
       baseChangeExp y M hMy u * baseChangeExp z M hMz (t * u) *
         baseChangeExp w M hMw (t ^ 2 * u) := by
-  rw [baseChangeExp_mul_baseChangeExp_of_commutator_eq_two_nsmul M hxy hxz hxw hyz hzw hx hy hz
+  rw [baseChangeExp_mul_baseChangeExp_of_commutator_eq_two_nsmul M hxy hxz hxw hyz hx hy hz
       hMx hMy hMz hMw t u,
     mul_assoc, ← baseChangeExp_add x M hMx hx t (-t), add_neg_cancel,
     baseChangeExp_zero x M hMx hx, mul_one]

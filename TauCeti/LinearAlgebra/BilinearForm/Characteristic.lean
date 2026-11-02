@@ -34,10 +34,14 @@ orthogonal basis. Over `ℤ_[2]` these are the odd unimodular forms, and the inv
 
 * `LinearMap.BilinForm.IsSymm.exists_isCharacteristic`: a perfect symmetric form on a free module
   has a characteristic vector.
+* `LinearMap.BilinForm.Equivalent.forall_two_dvd_apply_self_iff`: isometric forms are even
+  together.
 * `LinearMap.BilinForm.IsCharacteristic.isCharacteristic_iff_exists_eq_add_two_smul`: the
   characteristic vectors form a single coset of twice the module.
 * `LinearMap.BilinForm.IsCharacteristic.eight_dvd_apply_self_sub_apply_self`: characteristic
   vectors have the same self-pairing modulo `8`.
+* `LinearMap.BilinForm.IsCharacteristic.eight_dvd_apply_self_of_forall_two_dvd`: for an even form
+  these self-pairings are divisible by `8`.
 * `LinearMap.BilinForm.Equivalent.eight_dvd_sum_apply_self_sub_sum_apply_self`: isometric perfect
   symmetric forms with orthogonal bases have diagonal Gram matrices with the same trace modulo `8`.
 
@@ -113,6 +117,14 @@ theorem IsometryEquiv.isCharacteristic_apply_iff {C : BilinForm R M'} (f : B.Iso
   obtain ⟨y, rfl⟩ := EquivLike.surjective f x
   simpa using h y
 
+/-- **Isometric forms are even together.** `0` is characteristic for `B` exactly when it is for
+an isometric form, so `2` divides every `B x x` exactly when it divides every `C y y`. -/
+theorem Equivalent.forall_two_dvd_apply_self_iff {C : BilinForm R M'} (h : B.Equivalent C) :
+    (∀ x, (2 : R) ∣ B x x) ↔ ∀ y, (2 : R) ∣ C y y := by
+  obtain ⟨f⟩ := h
+  have := f.isCharacteristic_apply_iff (w := 0)
+  rwa [map_zero, isCharacteristic_zero_iff, isCharacteristic_zero_iff, Iff.comm] at this
+
 /-- **Characteristic vectors are tested on a basis.** If `c ^ 2 ≡ c` modulo `2` for every `c : R`,
 then for a symmetric form it suffices to test the characteristic condition on the vectors of a
 basis. -/
@@ -187,6 +199,14 @@ theorem IsCharacteristic.eight_dvd_apply_self_sub_apply_self [Free R M] [B.IsPer
     (8 : R) ∣ B w' w' - B w w := by
   obtain ⟨v, rfl⟩ := hw.exists_eq_add_two_smul hw'
   exact hB.eight_dvd_apply_add_two_smul_sub hw v
+
+/-- **Even forms have characteristic norms divisible by `8`.** If `2` divides every `B x x`, then
+`0` is characteristic, so for a perfect symmetric form on a free module every characteristic
+vector has self-pairing divisible by `8`. -/
+theorem IsCharacteristic.eight_dvd_apply_self_of_forall_two_dvd [Free R M] [B.IsPerfPair]
+    (hB : B.IsSymm) (hw : B.IsCharacteristic w) (heven : ∀ x, (2 : R) ∣ B x x) :
+    (8 : R) ∣ B w w := by
+  simpa using (isCharacteristic_zero_iff.mpr heven).eight_dvd_apply_self_sub_apply_self hB hw
 
 section Orthogonal
 

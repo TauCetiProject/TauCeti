@@ -33,6 +33,8 @@ the polygon is the closure of its interior.
   other side inequality strictly.
 * `ConvexPolygon.carrier_inter_range_sideGeodesic`: the polygon meets the supporting line of a
   side exactly in that side.
+* `ConvexPolygon.isClosed_side`, `ConvexPolygon.eq_of_mem_side_of_mem_side`: sides are closed,
+  and two distinct sides meet only at a finite vertex.
 * `ConvexPolygon.side_nontrivial`, `ConvexPolygon.side_injective`: every side has two distinct
   points, and distinct sides are distinct sets.
 * `ConvexPolygon.exists_range_sideGeodesic_eq`: a line through two points of the polygon missing
@@ -210,6 +212,20 @@ theorem carrier_inter_range_sideGeodesic (k : Fin n) :
       (isGeodesicFromTo_inr_inr.2 ⟨hξ, hη⟩).range_geodesicLine_eq
         (isGeodesicFromTo_geodesicFromTo (Sum.inr_injective.ne hξη))]
     exact mem_range_self u
+
+/-- A side of a convex polygon is closed. -/
+theorem isClosed_side (k : Fin n) : IsClosed (P.side k) := by
+  rw [← P.carrier_inter_range_sideGeodesic]
+  exact P.isClosed_carrier.inter (isometry_geodesicLine _).isClosedEmbedding.isClosed_range
+
+/-- A point of side `i` other than its finite endpoints lies on no other side. -/
+theorem eq_of_mem_side_of_mem_side {z : ℍ} {i k : Fin n} (hi : z ∈ P.side i)
+    (hzp : P.vertex i ≠ .inl z) (hzq : P.vertex (i + 1) ≠ .inl z) (hk : z ∈ P.side k) :
+    i = k := by
+  by_contra hik
+  exact disjoint_left.1 (disjoint_leftHalfPlane_range_geodesicLine _)
+    (P.mem_leftHalfPlane_of_mem_side hi hzp hzq (Ne.symm hik))
+    (P.side_subset_range_sideGeodesic k hk)
 
 /-- A finite vertex lies on a side only as one of its two endpoints. -/
 theorem eq_or_eq_add_one_of_vertex_eq_inl_of_mem_side {j k : Fin n} {z : ℍ}

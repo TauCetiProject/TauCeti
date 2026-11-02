@@ -69,6 +69,8 @@ global reciprocity are about.
 
 * `TauCeti.ClassFieldTheory.norm_ideleClassLevelEquiv`: the norm of the layer of `E` is the norm
   map of idele classes `N_{E/K}`.
+* `TauCeti.ClassFieldTheory.levelNorm_top_ideleClassLevelEquiv`: the norm from the level of an
+  open subgroup with fixed field `E` to the ground level is `N_{E/K}`.
 * `TauCeti.ClassFieldTheory.globalGroundEquiv_mem_normSubgroup_iff`: an idele class of `K` lies
   in the norm subgroup of the layer of `E` exactly when it is a norm from `C_E`.
 * `TauCeti.ClassFieldTheory.globalGroundEquiv_mem_layerNormSubgroup_iff`: the same for the layer
@@ -153,6 +155,16 @@ theorem norm_ideleClassLevelEquiv (E : Ω) {V : OpenNormalSubgroup (AbsoluteGalo
   rw [← LinearMap.toAddMonoidHom_coe, NormalLayer.toAddMonoidHom_norm,
     NormalLayer.groundEquivOfOpenNormal_apply_coe]
   exact coe_levelNorm_ideleClassLevelEquiv E _ (NormalLayer.ground_ofOpenNormal V) hV c
+
+/-- **The norm to the ground level is the idele-class norm**: if the fixed field of the open
+subgroup `W` of `G_K` is the finite Galois subextension `E`, then under the identifications of the
+levels of `W` and `G_K` with `C_E` and `C_K`, the norm from the level of `W` to the ground level is
+the norm map of idele classes `N_{E/K} : C_E → C_K`. -/
+theorem levelNorm_top_ideleClassLevelEquiv (E : Ω) {W : OpenSubgroup (AbsoluteGaloisGroup K)}
+    (h : W ≤ ⊤) (hW : fixedField W.toSubgroup = E) (c : IdeleClassGroup (𝓞 E) E) :
+    (globalFormation K).levelNorm h (ideleClassLevelEquiv hW (.ofMul c)) =
+      globalGroundEquiv K (.ofMul (GlobalNumberFields.ideleClassNormMap K E c)) :=
+  Subtype.ext (coe_levelNorm_ideleClassLevelEquiv E h rfl hW c)
 
 /-- **The norm subgroup of the layer of `E` is `N_{E/K}(C_E)`**: an idele class of `K` lies in the
 norm subgroup of the layer `V ◁ G_K` of the idele-class formation, where `E` is the fixed field of

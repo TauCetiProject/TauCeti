@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Convex.MongeAmpere.Interpolation
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.InternalEnergy.Basic
-public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Geodesic
+public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Geodesic.Basic
 public import TauCeti.Analysis.GradientFlow.GeodesicConvex
 import TauCeti.Analysis.Convex.McCannCondition
 import TauCeti.MeasureTheory.OptimalTransport.Brenier

@@ -40,8 +40,11 @@ the constant terms of `∂⁻` over `ZMod 2`.
 
 ## Main results
 
-* `TauCeti.GridDiagram.sum_unblockedDecompositions_eq_zero`: the pairing itself, for any function
-  on decompositions whose paired terms cancel, over any coefficients.
+* `TauCeti.GridRectangleDecomposition.sum_eq_zero_of_pairing`: the pairing itself, for any
+  family of decompositions into empty rectangles closed under both pairings and any function on
+  decompositions whose paired terms cancel, over any coefficients.
+* `TauCeti.GridDiagram.sum_unblockedDecompositions_eq_zero`: the pairing for the decompositions
+  counted by the square of `∂⁻`.
 * `TauCeti.GridDiagram.unblockedDecompositionWeight_recut`: recutting a decomposition preserves
   its weight.
 * `TauCeti.GridDiagram.sum_unblockedCoefficient_mul_unblockedCoefficient_eq_zero`: every matrix
@@ -62,17 +65,59 @@ public section
 
 namespace TauCeti
 
+namespace GridRectangleDecomposition
+
+variable {n : ℕ}
+
+/-- **The juxtaposition pairing.** Let `S` be a finite family of two-step decompositions from `x`
+to a different state `z` into two empty rectangles, closed under reordering two rectangles with
+disjoint side columns and under recutting two rectangles that share one side column. A function on
+decompositions sums to zero over `S` when each term cancels its partner under both pairings.
+
+Over `𝔽₂` the partners carry equal weights; over a general coefficient ring a sign assignment makes
+them carry opposite signs. -/
+theorem sum_eq_zero_of_pairing {M : Type*} [AddCommMonoid M] {x z : GridState n} (hzx : z ≠ x)
+    {S : Finset (GridRectangleDecomposition x z)}
+    (hempty : ∀ D ∈ S, D.first.IsEmpty ∧ D.second.IsEmpty)
+    (hcommute_mem : ∀ D ∈ S, ∀ h : D.HasDisjointSides, D.commute h ∈ S)
+    (hrecut_mem : ∀ D ∈ S, ∀ (hone : D.HasOneCommonSide) (hfirst : D.first.IsEmpty)
+      (hsecond : D.second.IsEmpty), D.recut hone hfirst hsecond ∈ S)
+    (f : GridRectangleDecomposition x z → M)
+    (hcommute : ∀ D ∈ S, ∀ h : D.HasDisjointSides, f D + f (D.commute h) = 0)
+    (hrecut : ∀ D ∈ S, ∀ (hone : D.HasOneCommonSide) (hfirst : D.first.IsEmpty)
+      (hsecond : D.second.IsEmpty), f D + f (D.recut hone hfirst hsecond) = 0) :
+    ∑ D ∈ S, f D = 0 := by
+  classical
+  rw [← Finset.sum_filter_add_sum_filter_not S (fun D => D.HasDisjointSides) f]
+  have hdisjoint : ∑ D ∈ S.filter (fun D => D.HasDisjointSides), f D = 0 :=
+    Finset.sum_involution (fun D hD => D.commute (Finset.mem_filter.mp hD).2)
+      (fun D hD => hcommute D (Finset.mem_filter.mp hD).1 _) (fun D _ _ => D.commute_ne _)
+      (fun D hD => Finset.mem_filter.mpr
+        ⟨hcommute_mem D (Finset.mem_filter.mp hD).1 _, D.hasDisjointSides_commute _⟩)
+      (fun D _ => D.commute_commute _)
+  have hone : ∀ D ∈ S.filter (fun D => ¬D.HasDisjointSides), D.HasOneCommonSide := fun D hD =>
+    (D.hasDisjointSides_or_hasOneCommonSide_of_ne hzx).resolve_left (Finset.mem_filter.mp hD).2
+  have hempty' : ∀ D ∈ S.filter (fun D => ¬D.HasDisjointSides),
+      D.first.IsEmpty ∧ D.second.IsEmpty := fun D hD => hempty D (Finset.mem_filter.mp hD).1
+  have hcommon : ∑ D ∈ S.filter (fun D => ¬D.HasDisjointSides), f D = 0 :=
+    Finset.sum_involution
+      (fun D hD => D.recut (hone D hD) (hempty' D hD).1 (hempty' D hD).2)
+      (fun D hD => hrecut D (Finset.mem_filter.mp hD).1 _ _ _) (fun D _ _ => D.recut_ne _ _ _)
+      (fun D hD => Finset.mem_filter.mpr ⟨hrecut_mem D (Finset.mem_filter.mp hD).1 _ _ _,
+        not_hasDisjointSides_of_hasOneCommonSide _ (D.hasOneCommonSide_recut _ _ _)⟩)
+      (fun D _ => D.recut_recut _ _ _)
+  rw [hdisjoint, hcommon, add_zero]
+
+end GridRectangleDecomposition
+
 namespace GridDiagram
 
 variable {n : ℕ} (G : GridDiagram n)
 
-/-- The juxtaposition pairing: a function on the two-step decompositions counted by the square of
-`∂⁻` sums to zero over the decompositions from `x` to a different state `z`, provided each term
-cancels its partner under both pairings, reordering two rectangles with disjoint side columns and
-recutting two rectangles that share one side column.
-
-Over `𝔽₂` the partners carry equal weights; over a general coefficient ring a sign assignment makes
-them carry opposite signs. -/
+/-- The juxtaposition pairing for the square of `∂⁻`: a function on the two-step decompositions
+counted by the square of `∂⁻` sums to zero over the decompositions from `x` to a different state
+`z`, provided each term cancels its partner under both pairings, reordering two rectangles with
+disjoint side columns and recutting two rectangles that share one side column. -/
 theorem sum_unblockedDecompositions_eq_zero {M : Type*} [AddCommMonoid M] {x z : GridState n}
     (hzx : z ≠ x) (f : GridRectangleDecomposition x z → M)
     (hcommute : ∀ D ∈ G.unblockedDecompositions x z, ∀ h : D.HasDisjointSides,
@@ -81,51 +126,21 @@ theorem sum_unblockedDecompositions_eq_zero {M : Type*} [AddCommMonoid M] {x z :
       (hfirst : D.first.IsEmpty) (hsecond : D.second.IsEmpty),
       f D + f (D.recut hone hfirst hsecond) = 0) :
     ∑ D ∈ G.unblockedDecompositions x z, f D = 0 := by
-  classical
-  rw [← Finset.sum_filter_add_sum_filter_not (G.unblockedDecompositions x z)
-      (fun D => D.HasDisjointSides) f]
-  have hdisjoint : ∑ D ∈ (G.unblockedDecompositions x z).filter
-      (fun D => D.HasDisjointSides), f D = 0 := by
-    refine Finset.sum_involution
-      (fun D hD => D.commute (Finset.mem_filter.mp hD).2) (fun D hD => ?_) (fun D hD _ => ?_)
-      (fun D hD => ?_) (fun D hD => ?_)
-    · exact hcommute D (Finset.mem_filter.mp hD).1 _
-    · exact D.commute_ne _
-    · exact Finset.mem_filter.mpr ⟨(G.commute_mem_unblockedDecompositions_iff D _).mpr
-        (Finset.mem_filter.mp hD).1, D.hasDisjointSides_commute _⟩
-    · exact D.commute_commute _
-  have hone : ∀ D ∈ (G.unblockedDecompositions x z).filter
-      (fun D => ¬D.HasDisjointSides), D.HasOneCommonSide := fun D hD =>
-    (D.hasDisjointSides_or_hasOneCommonSide_of_ne hzx).resolve_left (Finset.mem_filter.mp hD).2
-  have hmem : ∀ D ∈ (G.unblockedDecompositions x z).filter (fun D => ¬D.HasDisjointSides),
-      D.first ∈ G.unblockedRectangles x D.middle ∧ D.second ∈ G.unblockedRectangles D.middle z :=
-    fun D hD => (G.mem_unblockedDecompositions x z D).mp (Finset.mem_filter.mp hD).1
-  have hfirst : ∀ D ∈ (G.unblockedDecompositions x z).filter
-      (fun D => ¬D.HasDisjointSides), D.first.IsEmpty := fun D hD =>
-    G.isEmpty_of_mem_unblockedRectangles (hmem D hD).1
-  have hsecond : ∀ D ∈ (G.unblockedDecompositions x z).filter
-      (fun D => ¬D.HasDisjointSides), D.second.IsEmpty := fun D hD =>
-    G.isEmpty_of_mem_unblockedRectangles (hmem D hD).2
-  have hcommon : ∑ D ∈ (G.unblockedDecompositions x z).filter
-      (fun D => ¬D.HasDisjointSides), f D = 0 := by
-    refine Finset.sum_involution
-      (fun D hD => D.recut (hone D hD) (hfirst D hD) (hsecond D hD)) (fun D hD => ?_)
-      (fun D hD _ => ?_) (fun D hD => ?_) (fun D hD => ?_)
-    · exact hrecut D (Finset.mem_filter.mp hD).1 _ _ _
-    · exact D.recut_ne _ _ _
-    · -- The recut covers the same squares, so it again avoids the `X`-markings.
-      have hrecut := D.isRecut_recut (hone D hD) (hfirst D hD) (hsecond D hD)
-      have hX₁ := G.disjoint_XSet_of_mem_unblockedRectangles (hmem D hD).1
-      have hX₂ := G.disjoint_XSet_of_mem_unblockedRectangles (hmem D hD).2
-      refine Finset.mem_filter.mpr ⟨(G.mem_unblockedDecompositions x z _).mpr ⟨?_, ?_⟩, ?_⟩
-      · exact (G.mem_unblockedRectangles _).mpr
-          ⟨hrecut.isEmpty_first, hrecut.isRepartition.disjoint_coveredSquares_first hX₁ hX₂⟩
-      · exact (G.mem_unblockedRectangles _).mpr
-          ⟨hrecut.isEmpty_second, hrecut.isRepartition.disjoint_coveredSquares_second hX₁ hX₂⟩
-      · exact GridRectangleDecomposition.not_hasDisjointSides_of_hasOneCommonSide _
-          (D.hasOneCommonSide_recut _ _ _)
-    · exact D.recut_recut _ _ _
-  rw [hdisjoint, hcommon, add_zero]
+  refine GridRectangleDecomposition.sum_eq_zero_of_pairing hzx (fun D hD => ?_)
+    (fun D hD h => (G.commute_mem_unblockedDecompositions_iff D h).mpr hD)
+    (fun D hD hone hfirst hsecond => ?_) f hcommute hrecut
+  · obtain ⟨h₁, h₂⟩ := (G.mem_unblockedDecompositions x z D).mp hD
+    exact ⟨G.isEmpty_of_mem_unblockedRectangles h₁, G.isEmpty_of_mem_unblockedRectangles h₂⟩
+  · -- The recut covers the same squares, so it again avoids the `X`-markings.
+    obtain ⟨h₁, h₂⟩ := (G.mem_unblockedDecompositions x z D).mp hD
+    have hrecut := D.isRecut_recut hone hfirst hsecond
+    have hX₁ := G.disjoint_XSet_of_mem_unblockedRectangles h₁
+    have hX₂ := G.disjoint_XSet_of_mem_unblockedRectangles h₂
+    refine (G.mem_unblockedDecompositions x z _).mpr ⟨?_, ?_⟩
+    · exact (G.mem_unblockedRectangles _).mpr
+        ⟨hrecut.isEmpty_first, hrecut.isRepartition.disjoint_coveredSquares_first hX₁ hX₂⟩
+    · exact (G.mem_unblockedRectangles _).mpr
+        ⟨hrecut.isEmpty_second, hrecut.isRepartition.disjoint_coveredSquares_second hX₁ hX₂⟩
 
 /-- Recutting a two-step decomposition by two empty rectangles sharing one side column preserves
 its weight: the two decompositions cover the same squares. -/

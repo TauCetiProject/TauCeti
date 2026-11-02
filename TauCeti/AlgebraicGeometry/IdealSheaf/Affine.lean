@@ -27,6 +27,10 @@ an ideal `J` of a ring `R` and a morphism `f : X ⟶ Spec R`, the ideal of the i
 For nested ideal sheaves `K ≤ I'`, the closed subscheme `V(I')` lies in `V(K)`, and over an affine
 open `U` of `X` the kernel of the restriction of sections from `V(K)` to `V(I')` is the image of
 `I'(U)` in `Γ(X, U) ⧸ K(U)` (`ker_inclusion_app`).
+
+On an affine open `U` containing a point `η`, the ideal of the reduced closed subscheme
+`closure {η}` is the prime ideal of `Γ(X, U)` corresponding to `η`
+(`vanishingIdeal_closure_singleton_ideal`).
 -/
 
 public section
@@ -117,5 +121,24 @@ theorem ker_inclusion_app {K I' : X.IdealSheafData} (h : K ≤ I') (U : X.affine
     rw [← ker_subschemeι_app, ← inclusion_subschemeι h, Scheme.Hom.comp_app]
     exact (RingHom.comap_ker _ _).symm
   rw [h₁, Ideal.map_comap_of_surjective _ (K.subschemeι_app_surjective U)]
+
+/-- On an affine open `U` containing a point `η`, the ideal of the closure of `η`, with its reduced
+induced structure, is the prime ideal of `Γ(X, U)` corresponding to `η`. -/
+theorem vanishingIdeal_closure_singleton_ideal (η : X) (U : X.affineOpens) (hη : η ∈ U.1) :
+    (vanishingIdeal ⟨closure {η}, isClosed_closure⟩).ideal U =
+      (U.2.primeIdealOf ⟨η, hη⟩).asIdeal := by
+  rw [vanishingIdeal_ideal, Closeds.coe_mk]
+  generalize_proofs hU
+  ext a
+  rw [PrimeSpectrum.mem_vanishingIdeal]
+  refine ⟨fun h ↦ h _ ?_, fun ha p hp ↦ ?_⟩
+  · exact (by rw [hU.fromSpec_primeIdealOf]; exact subset_closure rfl :
+      hU.fromSpec (hU.primeIdealOf ⟨η, hη⟩) ∈ closure {η})
+  -- A point of `Spec Γ(X, U)` over the closure of `η` is a specialization of the prime of `η`.
+  have hsp : hU.fromSpec (hU.primeIdealOf ⟨η, hη⟩) ⤳ hU.fromSpec p := by
+    rw [hU.fromSpec_primeIdealOf]
+    exact specializes_iff_mem_closure.mpr hp
+  exact (PrimeSpectrum.le_iff_specializes _ p).mpr
+    (hU.fromSpec.isOpenEmbedding.isInducing.specializes_iff.mp hsp) ha
 
 end AlgebraicGeometry.Scheme.IdealSheafData

@@ -53,14 +53,15 @@ theorem binaryFormAction_mk (hw : Even w) (A : TraceFormulaMatrix n) :
 noncomputable def periodAction (hw : Even w) :
     R[TraceFormulaMatrixModule n] →ₗ[R]
       Module.End R (homogeneousSubmodule (Fin 2) R w) :=
-  (Finsupp.lsum R fun x ↦ (LinearMap.id : R →ₗ[R] R).smulRight (binaryFormAction (R := R) hw x)) ∘ₗ
-    (MonoidAlgebra.coeffLinearEquiv R).toLinearMap
+  linearLift (fun A ↦ binaryFormRep R w (op A.1)) fun A ↦ by
+    rw [TraceFormulaMatrix.val_neg, binaryFormRep_op_neg_of_even hw]
 
 /-- A basis element acts by its coefficient times the matrix substitution. -/
 @[simp]
 theorem periodAction_single (hw : Even w) (x : TraceFormulaMatrixModule n) (c : R) :
     periodAction (R := R) hw (single x c) = c • binaryFormAction (R := R) hw x := by
-  simp [periodAction]
+  induction x using TraceFormulaMatrixModule.induction with
+  | h A => rw [periodAction, linearLift_single, binaryFormAction_mk]
 
 /-- Left multiplication of a determinant matrix precomposes its substitution action. -/
 @[simp]

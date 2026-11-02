@@ -24,11 +24,11 @@ square. So linear independence of the classes is the **Finset form** of square-c
 ## Main definitions and results
 
 * `TauCeti.SquareClassGroup`: the square-class group `Kˣ ⧸ (Kˣ)²`, an `𝔽₂`-vector space.
-* `TauCeti.squareClass`, `TauCeti.squareClassHom`: the class of a unit, as a function and a
-  multiplicative homomorphism, with `squareClass_eq_zero_iff` characterising the trivial class as
-  the squares, `ker_squareClassHom` identifying the kernel of the quotient map with the subgroup
-  of squares, and `squareClass_mul`, `squareClass_prod`, `squareClass_pow`, `squareClass_zpow`
-  computing it on products and powers.
+* `TauCeti.squareClass`: the additive class of a unit, with `squareClass_eq_zero_iff`
+  characterising the trivial class as the squares, and `squareClass_mul`, `squareClass_prod`,
+  `squareClass_pow`, `squareClass_zpow` computing it on products and powers.
+* The multiplicative quotient map `TauCeti.squareClassHom` is developed in
+  `TauCeti.FieldTheory.SquareClassGroup.Multiplicative`.
 * `TauCeti.squareClass_eq_iff_isSquare_mul`: equality of square classes read as a square product.
 * `TauCeti.SquareClassGroup.two_nsmul_eq_zero`: the square-class group is killed by two.
 * `TauCeti.linearIndependent_squareClass_iff`: the classes of `d : ι → Kˣ` are `ZMod 2`-linearly
@@ -68,25 +68,10 @@ theorem squareClass_toMul_out (x : SquareClassGroup K) :
   rw [squareClass_def, ofMul_toMul]
   exact Quotient.out_eq x
 
-/-- The square-class quotient map, written multiplicatively between the unit group and the
-multiplicative form of the additive square-class group. -/
-def squareClassHom : Kˣ →* Multiplicative (SquareClassGroup K) :=
-  (QuotientAddGroup.mk' (Subgroup.square Kˣ).toAddSubgroup).toMultiplicativeRight
-
-@[simp]
-theorem squareClassHom_apply (u : Kˣ) :
-    squareClassHom u = Multiplicative.ofAdd (squareClass u) := (rfl)
-
 /-- A unit has trivial square class iff it is a square. -/
 @[simp] theorem squareClass_eq_zero_iff (u : Kˣ) : squareClass u = 0 ↔ IsSquare u := by
   rw [squareClass, QuotientAddGroup.eq_zero_iff, Additive.mem_toAddSubgroup, Subgroup.mem_square]
   simp
-
-/-- The kernel of the square-class quotient map is the subgroup of squares. -/
-@[simp]
-theorem ker_squareClassHom : squareClassHom.ker = Subgroup.square Kˣ := by
-  ext
-  simp [squareClassHom_apply]
 
 /-- The unit `1` has trivial square class. -/
 @[simp]
@@ -115,8 +100,7 @@ theorem squareClass_eq_iff_isSquare_mul (u v : Kˣ) :
 /-- The square class of an integer power is the corresponding multiple of the square class. -/
 @[simp]
 theorem squareClass_zpow (u : Kˣ) (n : ℤ) : squareClass (u ^ n) = n • squareClass u := by
-  rw [← toAdd_ofAdd (squareClass _), ← squareClassHom_apply, map_zpow, squareClassHom_apply,
-    toAdd_zpow, toAdd_ofAdd]
+  simp only [squareClass_def, ofMul_zpow, QuotientAddGroup.mk_zsmul]
 
 /-- The square class of a power is the corresponding multiple of the square class. -/
 @[simp]

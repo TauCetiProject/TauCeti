@@ -12,7 +12,8 @@ public import Mathlib.FieldTheory.Galois.Abelian
 
 Commutativity of the Galois group of a Galois extension passes to every subextension. The theorem
 `TauCeti.commute_of_tower` expresses this with an explicit commutativity hypothesis, using
-Mathlib's `IsAbelianGalois.tower_bot`.
+Mathlib's `IsAbelianGalois.tower_bot`, and `TauCeti.algEquiv_commute_of_isAbelianGalois` reads an
+`IsAbelianGalois` instance as such an explicit hypothesis.
 
 The file also extends Mathlib's `IsAbelianGalois.sup` from two subextensions to an arbitrary
 family: a compositum of abelian Galois subextensions is abelian Galois.
@@ -20,6 +21,7 @@ family: a compositum of abelian Galois subextensions is abelian Galois.
 ## Main results
 
 * `TauCeti.commute_of_tower`
+* `TauCeti.algEquiv_commute_of_isAbelianGalois`
 * `IntermediateField.isAbelianGalois_iSup`
 -/
 
@@ -41,6 +43,15 @@ theorem commute_of_tower {M : Type*} [Field M] [Algebra K M] [Algebra M L]
   have : IsAbelianGalois K L := {}
   have : IsAbelianGalois K M := .tower_bot K M L
   exact Commute.all σ τ
+
+omit [IsGalois K L] in
+open scoped IsMulCommutative in
+/-- **The automorphisms of an abelian Galois extension commute.** This is the explicit
+commutativity hypothesis taken by constructions on a general Galois group, such as the
+ideal-theoretic Artin map, obtained from an `IsAbelianGalois` instance. -/
+theorem algEquiv_commute_of_isAbelianGalois [IsAbelianGalois K L] :
+    ∀ σ τ : L ≃ₐ[K] L, Commute σ τ :=
+  Commute.all
 
 section iSup
 

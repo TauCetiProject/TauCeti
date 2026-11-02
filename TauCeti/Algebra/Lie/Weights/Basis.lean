@@ -141,7 +141,7 @@ theorem formalCharacter_eq_sum_single_of_weight_basis :
   classical
   refine AddMonoidAlgebra.ext (Finsupp.ext fun χ => ?_)
   rw [TauCeti.formalCharacter_coeff,
-    b.genWeightSpace_eq_weightSpace_of_weight_basis hb, ← TauCeti.finrank_toSubmodule]
+    b.genWeightSpace_eq_weightSpace_of_weight_basis hb, ← LieSubmodule.finrank_toSubmodule]
   have hspace : (weightSpace M (χ : L → K)).toSubmodule =
       Submodule.span K (b '' {i | μ i = χ}) := by
     refine le_antisymm (fun m hm => ?_) (Submodule.span_le.mpr ?_)

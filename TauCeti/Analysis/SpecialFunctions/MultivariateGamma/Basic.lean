@@ -143,6 +143,14 @@ theorem multivariateGamma_eq_zero_iff (p : ℕ) (a : ℝ) :
     or_iff_right (rpow_pos_of_pos pi_pos _).ne', Finset.prod_eq_zero_iff]
   simp [Real.Gamma_eq_zero_iff]
 
+/-- A ratio of multivariate Gamma values of the same dimension is the product of the ratios of
+their Gamma factors, since the powers of `π` cancel. -/
+theorem multivariateGamma_div_multivariateGamma (p : ℕ) (a b : ℝ) :
+    multivariateGamma p a / multivariateGamma p b =
+      ∏ i : Fin p, Real.Gamma (a - (i.1 : ℝ) / 2) / Real.Gamma (b - (i.1 : ℝ) / 2) := by
+  rw [multivariateGamma_def, multivariateGamma_def,
+    mul_div_mul_left _ _ (rpow_pos_of_pos pi_pos _).ne', Finset.prod_div_distrib]
+
 /-- `Γ_p` is Borel measurable in its shape parameter, including at the poles of its factors. The
 Wishart laws need this to be measurable in their degree parameter. -/
 @[fun_prop]

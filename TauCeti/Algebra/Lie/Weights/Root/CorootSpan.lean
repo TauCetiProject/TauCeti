@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Weights.Killing
+public import TauCeti.Algebra.Lie.Basic
 public import TauCeti.Algebra.Lie.Weights.Sl2System
 public import TauCeti.Algebra.Lie.Weights.WeightLattice
 
@@ -172,7 +172,7 @@ omit [CharZero K] [LieModule.IsTriangularizable K H L] in
 /-- **Two coroots commute**, being elements of the abelian Cartan subalgebra. -/
 theorem lie_coroot_coroot_eq_zero (α β : Weight K H L) :
     ⁅(coroot α : L), (coroot β : L)⁆ = 0 :=
-  lie_cartan_cartan_eq_zero (coroot α) (coroot β)
+  LieSubalgebra.lie_eq_zero_of_mem (coroot α).2 (coroot β).2
 
 namespace IsSl2System
 

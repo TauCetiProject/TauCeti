@@ -16,6 +16,10 @@ zero-slice subgroup charts use it after translating an ambient chart. Continuous
 inverse on open sets also give an open partial homeomorphism on their mutual restrictions
 (`ContinuousOn.toOpenPartialHomeomorph`). Composing with an open partial homeomorphism preserves
 open embeddings whose ranges lie in its source (`OpenPartialHomeomorph.isOpenEmbedding_comp`).
+An open embedding of a nonempty open subset extends to an open partial homeomorphism with that
+source (`OpenPartialHomeomorph.exists_source_eq_of_isOpenEmbedding`).
+Finite products of open partial homeomorphisms commute with inverses and composition
+(`OpenPartialHomeomorph.pi_symm`, `OpenPartialHomeomorph.pi_trans`), as for partial equivalences.
 
 ## Main definitions
 
@@ -49,6 +53,17 @@ theorem isOpenEmbedding_comp (e : OpenPartialHomeomorph X Y) {g : Z → X}
   have hgc : IsOpenEmbedding (e.source.codRestrict g hgs') :=
     .of_isEmbedding_isOpenMap (hg.isEmbedding.codRestrict _ _) (hg.isOpenMap.codRestrict _)
   simpa only [Set.domRestrict_comp_codRestrict] using e.isOpenEmbedding_restrict.comp hgc
+
+/-- An open embedding of a nonempty open subset `U` of `X` into `Y` is the restriction of an open
+partial homeomorphism of `X` into `Y` with source `U`, obtained from
+`OpenPartialHomeomorph.lift_openEmbedding`. -/
+theorem exists_source_eq_of_isOpenEmbedding {U : Set X} (hU : IsOpen U) {g : U → Y}
+    (hg : IsOpenEmbedding g) (x : U) :
+    ∃ c : OpenPartialHomeomorph X Y, c.source = U ∧ ∀ y : U, c y = g y := by
+  have : Nonempty U := ⟨x⟩
+  have : Nonempty Y := ⟨g x⟩
+  have hi := hU.isOpenEmbedding_subtypeVal
+  exact ⟨(hg.toOpenPartialHomeomorph g).lift_openEmbedding hi, by simp, fun y ↦ by simp⟩
 
 open scoped Classical in
 /-- Restrict an open partial homeomorphism to a subtype represented by a parametrized coordinate
@@ -168,6 +183,28 @@ theorem coe_subtypeCoord_symm_apply (e : OpenPartialHomeomorph X Y) (s : Set X)
     ((e.subtypeCoord s hs ι π hι hslice hπι hιc hπc).symm z : X) = e.symm (ι z) := by
   classical
   simp [subtypeCoord, hz]
+
+section Pi
+
+variable {ι : Type*} [Finite ι] {X Y Z : ι → Type*} [∀ i, TopologicalSpace (X i)]
+  [∀ i, TopologicalSpace (Y i)] [∀ i, TopologicalSpace (Z i)]
+
+/-- The inverse of a finite product of open partial homeomorphisms is the product of the
+inverses. -/
+@[simp, mfld_simps]
+theorem pi_symm (e : ∀ i, OpenPartialHomeomorph (X i) (Y i)) :
+    (OpenPartialHomeomorph.pi e).symm = .pi fun i ↦ (e i).symm :=
+  toPartialEquiv_injective (PartialEquiv.pi_symm _)
+
+/-- The composition of two finite products of open partial homeomorphisms is the product of the
+compositions. -/
+@[simp, mfld_simps]
+theorem pi_trans (e : ∀ i, OpenPartialHomeomorph (X i) (Y i))
+    (e' : ∀ i, OpenPartialHomeomorph (Y i) (Z i)) :
+    (OpenPartialHomeomorph.pi e).trans (.pi e') = .pi fun i ↦ (e i).trans (e' i) :=
+  toPartialEquiv_injective (PartialEquiv.pi_trans _ _)
+
+end Pi
 
 end OpenPartialHomeomorph
 

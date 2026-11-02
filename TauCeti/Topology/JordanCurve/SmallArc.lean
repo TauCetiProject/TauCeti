@@ -24,17 +24,17 @@ of a Jordan curve that are close in the ambient space need not be close *along* 
 individual pair; what makes them close along the curve is that the parametrization by the circle is
 a homeomorphism of a compact space, hence uniformly continuous in both directions.
 
-## Why this is a layer-L5 prerequisite
+## Use in the Carathéodory boundary correspondence
 
-Layer **L5** of the conformal-mapping roadmap (`TauCetiRoadmap/ConformalMapping/README.md`) is
-Carathéodory's boundary correspondence for a Jordan domain. Its analytic half runs the length–area
-method on the circular crosscuts of `Conformal/Crosscut.lean`: a crosscut of the disc at a boundary
-point is mapped by the Riemann map to a crosscut of `Ω` whose *endpoints* on `∂Ω` are close, by the
-length–area estimate `TauCeti.exists_diam_image_ball_inter_sphere_le`. To convert that into the
-collar bound `TauCeti.exists_continuousOn_closedBall_eqOn` asks for, one needs the *region* the
-image crosscut cuts off to be small, and that region is bounded by the crosscut together with one of
-the two arcs into which its endpoints cut `∂Ω`. So the missing geometric input is precisely that two
-nearby points of the Jordan curve `∂Ω` cut off an arc of small diameter — which is what this file
+Carathéodory's boundary correspondence for a Jordan domain runs, in its analytic half, the
+length–area method on circular crosscuts (`TauCeti/Analysis/Complex/Conformal/Crosscut/Basic.lean`):
+a crosscut of the disc at a boundary point is mapped by the Riemann map to a crosscut of `Ω` whose
+*endpoints* on `∂Ω` are close, by the length–area estimate
+`TauCeti.exists_diam_image_ball_inter_sphere_le`. To convert that into the collar bound
+`TauCeti.exists_continuousOn_closedBall_eqOn` asks for, one needs the *region* the image crosscut
+cuts off to be small, and that region is bounded by the crosscut together with one of the two arcs
+into which its endpoints cut `∂Ω`. So the geometric input needed is precisely that two nearby
+points of the Jordan curve `∂Ω` cut off an arc of small diameter — which is what this file
 supplies, at the generality of an arbitrary Jordan curve in a metric space.
 
 ## The argument
@@ -467,15 +467,13 @@ theorem IsJordanCurve.exists_isCompact_isPreconnected_notMem_sdiff_subset_ball
     (isCompact_Icc.image Circle.exp.continuous).image hgc
   have hSpre : IsPreconnected S :=
     (isPreconnected_Icc.image _ Circle.exp.continuous.continuousOn).image _ hgc.continuousOn
-  have hab : θ₀ + η ≤ θ₀ - η + 2 * π := by linarith [Real.pi_pos]
-  have hlt : (θ₀ - η + 2 * π) - (θ₀ + η) < 2 * π := by linarith
   refine ⟨S, hSC, hScompact, hSpre, ?_, ?_⟩
   · rintro ⟨u, huK, hu⟩
     have : u = Circle.exp θ₀ := hginj (hu.trans hga.symm)
     subst this
     obtain ⟨θ, hθ, hθeq⟩ := huK
     have hnot : Circle.exp θ₀ ∈ (Circle.exp '' Icc (θ₀ + η) (θ₀ - η + 2 * π))ᶜ := by
-      rw [compl_circleExp_image_Icc hab hlt]
+      rw [compl_circleExp_image_Icc]
       refine ⟨θ₀ + 2 * π, ⟨by linarith, by linarith⟩, ?_⟩
       rw [Circle.exp_add, Circle.exp_two_pi, mul_one]
     exact hnot ⟨θ, hθ, hθeq⟩
@@ -485,7 +483,7 @@ theorem IsJordanCurve.exists_isCompact_isPreconnected_notMem_sdiff_subset_ball
     have huK : u ∉ K := fun h => hzS ⟨u, h, rfl⟩
     have hu : u ∈ Circle.exp '' Ioo (θ₀ - η + 2 * π) (θ₀ + η + 2 * π) := by
       have huK' : u ∈ (Circle.exp '' Icc (θ₀ + η) (θ₀ - η + 2 * π))ᶜ := huK
-      rwa [compl_circleExp_image_Icc hab hlt] at huK'
+      rwa [compl_circleExp_image_Icc] at huK'
     obtain ⟨θ, hθ, rfl⟩ := hu
     have hshift : Circle.exp θ = Circle.exp (θ - 2 * π) := by
       have hθ2 : θ = (θ - 2 * π) + 2 * π := by ring

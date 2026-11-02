@@ -26,7 +26,7 @@ The construction is a composition-product against a conditional kernel, so it ne
 disintegration of one of the two plans. There are two ways to obtain one. Mathlib's regular
 conditional kernel gives it under a standard Borel hypothesis on one of the two *outer* spaces,
 the middle space `Y` then carrying no hypothesis at all. Alternatively, when the *middle* space is
-countable with measurable singletons, `TauCeti.MeasureTheory.countableCondKernel` gives it with no
+countable with measurable singletons, `MeasureTheory.Measure.countableCondKernel` gives it with no
 hypothesis on either outer space — the regime the cut distance of the dense graph limit theory
 needs, since its two carriers are arbitrary probability spaces.
 
@@ -103,9 +103,11 @@ variable {X Y Z : Type*} [MeasurableSpace X] [MeasurableSpace Y] [MeasurableSpac
 /-- The gluing of a measure `π` on `X × Y` with a kernel `κ : Kernel Y Z` along the middle
 coordinate: the measure on `X × Y × Z` which draws `(x, y)` from `π` and then `z` from `κ y`.
 
-Its `(X, Y)`-marginal is `π` (`TauCeti.Measure.map_prodMap_id_fst_glue`) and its `(Y, Z)`-marginal
+For an s-finite `π` and a Markov kernel `κ` its `(X, Y)`-marginal is `π`
+(`TauCeti.Measure.map_prodMap_id_fst_glue`), and for an s-finite kernel `κ` its `(Y, Z)`-marginal
 is `π.snd ⊗ₘ κ` (`TauCeti.Measure.snd_glue`), so choosing `κ` to be a conditional kernel of a
-second plan `σ` glues `π` and `σ`. -/
+second plan `σ` glues `π` and `σ`. The definition takes any kernel: for one that is not Markov
+the first marginal need not be `π`, and the zero kernel glues every `π` to `0`. -/
 def glue (π : Measure (X × Y)) (κ : Kernel Y Z) : Measure (X × Y × Z) :=
   (π ⊗ₘ Kernel.prodMkLeft X κ).map MeasurableEquiv.prodAssoc
 
@@ -160,7 +162,7 @@ theorem snd_glue [SFinite π] [IsSFiniteKernel κ] : (glue π κ).snd = π.snd �
         rw [glue, MeasureTheory.Measure.snd, MeasureTheory.Measure.map_map measurable_snd
           MeasurableEquiv.prodAssoc.measurable, h]
         rfl
-    _ = π.snd ⊗ₘ κ := map_prodMap_compProd_comap π κ measurable_snd
+    _ = π.snd ⊗ₘ κ := π.map_prodMap_compProd_comap κ measurable_snd
 
 /-- The `X`-marginal of a gluing is the `X`-marginal of the plan it extends. -/
 @[simp]
@@ -454,8 +456,7 @@ theorem eLpNorm_map_prodMap_id_snd_le {π : Measure (X × Y)} {σ : Measure (Y �
 These live in `TauCeti.MeasureTheory` rather than alongside their standard Borel siblings in
 `TauCeti.Measure`: `scripts/lint-dot-notation.py` forbids a *new* declaration under
 `TauCeti.Measure` whose statement mentions `MeasureTheory.Measure`, because such a namespace
-blocks dot notation on Mathlib's type. `TauCeti.MeasureTheory` is the namespace of the
-conditional kernel these consume. -/
+blocks dot notation on Mathlib's type. -/
 
 variable (π : Measure (X × Y)) (σ : Measure (Y × Z))
 
@@ -463,7 +464,7 @@ variable (π : Measure (X × Y)) (σ : Measure (Y × Z))
 the `(Y, Z)`-marginal, as soon as the two plans share their middle marginal. -/
 theorem snd_glue_countableCondKernel [Countable Y] [MeasurableSingletonClass Y] [Nonempty Z]
     [IsFiniteMeasure σ] (hπσ : π.snd = σ.fst) :
-    (Measure.glue π (countableCondKernel σ)).snd = σ := by
+    (Measure.glue π σ.countableCondKernel).snd = σ := by
   let _ : IsFiniteMeasure π := ⟨by
     rw [← _root_.MeasureTheory.Measure.snd_univ, hπσ]
     exact measure_lt_top _ _⟩
@@ -478,7 +479,7 @@ neither is assumed standard Borel, so this is not a special case of either
 `TauCeti.Measure.exists_glue_of_standardBorel_right` or
 `TauCeti.Measure.exists_glue_of_standardBorel_left`, and conversely neither of those covers it.
 
-When `Z` is nonempty the explicit witness is `TauCeti.Measure.glue π (countableCondKernel σ)`; use
+When `Z` is nonempty the explicit witness is `TauCeti.Measure.glue π σ.countableCondKernel`; use
 it instead of this statement when the probability-measure or finiteness instances of the glued
 measure are needed. -/
 theorem exists_glue_of_countable_middle [Countable Y] [MeasurableSingletonClass Y]
@@ -496,7 +497,7 @@ theorem exists_glue_of_countable_middle [Countable Y] [MeasurableSingletonClass 
       simp
     exact ⟨0, by simp [hπ], by simp [hσ]⟩
   · let _ := hZ
-    exact ⟨Measure.glue π (countableCondKernel σ), Measure.map_prodMap_id_fst_glue π _,
+    exact ⟨Measure.glue π σ.countableCondKernel, Measure.map_prodMap_id_fst_glue π _,
       snd_glue_countableCondKernel π σ hπσ⟩
 
 /-- Two plans sharing a middle marginal compose to a plan with the two outer marginals, when the

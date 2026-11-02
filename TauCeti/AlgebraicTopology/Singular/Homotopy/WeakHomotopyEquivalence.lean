@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.HomotopyInva
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Compression.Retraction
 public import TauCeti.AlgebraicTopology.Singular.Cubical.LocalCoefficients.Comparison.Homotopy
 public import TauCeti.AlgebraicTopology.Singular.Cubical.LocalCoefficients.Compression
-public import TauCeti.AlgebraicTopology.Singular.Twisted.HomotopyInvariance
+public import TauCeti.AlgebraicTopology.Singular.Twisted.HomotopyInvariance.Basic
 
 /-!
 # Weak homotopy equivalences induce isomorphisms on singular homology

@@ -11,6 +11,7 @@ public import TauCeti.FieldTheory.FunctionField.Place.Basic
 public import TauCeti.FieldTheory.FunctionField.Place.Map
 public import TauCeti.RingTheory.Valuation.Discrete.Normalize
 -- Proof-only: nontriviality survives restriction along an algebraic extension.
+import Mathlib.FieldTheory.PurelyInseparable.PerfectClosure
 import TauCeti.RingTheory.Valuation.NontrivialComap
 
 /-!
@@ -94,6 +95,13 @@ to the canonical fraction fields used by Mathlib's different API.
 * `TauCeti.Place.finrank_mul_degree_eq_relativeDegree_mul_degree_restrict`:
   `[k' : k] · deg P' = f(P' ∣ P) · deg P`, the comparison of the degrees of `P'` and of the place
   it lies over.
+* `TauCeti.Place.algebraMap_residueField_algebraMap`: the two routes from `k` into `F'_{P'}`,
+  through `F_P` and through `k'`, agree.
+* `TauCeti.Place.not_isSeparable_residueField_of_degree_eq_one`: over a place of degree one, the
+  residue extension is not separable once the constants `k'` contain a purely inseparable element
+  outside `k`.
+* `TauCeti.Place.isSeparable_residueField_iff_of_degree_eq_one`: at a rational place over a
+  rational place, the residue extension is separable exactly when the constant extension is.
 * `TauCeti.Place.isFractionRing_integralClosure`,
   `TauCeti.Place.isLocalization_integralClosure`,
   `TauCeti.Place.isDedekindDomain_integralClosure`,
@@ -296,12 +304,6 @@ section Restrict
 
 variable (k F) (P' : Place k' F')
 
-/-- The order function of `P'` restricted to `F` is the order function of the restricted
-valuation. -/
-private theorem ord_comap (f : F) :
-    Valuation.ord (P'.valuation.comap (algebraMap F F')) f = P'.ord (algebraMap F F' f) := by
-  rw [Valuation.ord_def, ord_def, Valuation.comap_apply]
-
 /-- The valuation of `P'` restricted to `F` is nontrivial: an algebraic extension of a field
 contained in a valuation ring is contained in that valuation ring, so a place of `F'` trivial on
 `F` would have all of `F'` as its valuation ring. -/
@@ -364,11 +366,17 @@ private theorem valuation_restrict :
 the order function at `P'` is `e(P' ∣ P)` times the order function at `P`. -/
 theorem ord_algebraMap_restrict (f : F) :
     P'.ord (algebraMap F F' f) = ramificationIdx F P' * (P'.restrict k F).ord f := by
-  have key : (P'.restrict k F).ord f =
-      Valuation.ord (P'.valuation.comap (algebraMap F F')).normalization f := by
-    rw [ord_def, valuation_restrict, Valuation.ord_def]
-  rw [← ord_comap F P' f, ramificationIdx, key,
-    ← Valuation.ord_normalization_mul_ordIndex _ f, mul_comm]
+  simpa only [Valuation.ord_comap, ← valuation_restrict k F P', ord_valuation,
+    ramificationIdx_def, mul_comm] using
+    (Valuation.ord_normalization_mul_ordIndex (P'.valuation.comap (algebraMap F F')) f).symm
+
+/-- A function of `F` has a zero at a place of `F'` exactly when it has a zero at the restriction
+of that place, because the ramification index is a positive factor. -/
+theorem ord_algebraMap_pos_iff (f : F) :
+    0 < P'.ord (algebraMap F F' f) ↔ 0 < (P'.restrict k F).ord f := by
+  have he : (0 : ℤ) < ramificationIdx F P' := mod_cast ramificationIdx_pos F P'
+  rw [ord_algebraMap_restrict k F P' f]
+  exact mul_pos_iff_of_pos_left he
 
 /-- Restriction scales the multiplicative valuation by the ramification index. -/
 theorem valuation_algebraMap_restrict (f : F) :
@@ -594,6 +602,62 @@ theorem finrank_mul_degree_eq_relativeDegree_mul_degree_restrict :
     Module.finrank_mul_finrank k (P'.restrict k F).ResidueField P'.ResidueField]
 
 end ResidueField
+
+section ResidueConstants
+
+variable [Algebra.IsIntegral F F']
+
+/-- A constant of `k`, reduced at the place below `P'` and carried up to `F'_{P'}`, is the
+residue at `P'` of the same constant seen in `k'`. -/
+theorem algebraMap_residueField_algebraMap (P' : Place k' F') (c : k) :
+    algebraMap (P'.restrict k F).ResidueField P'.ResidueField
+        (algebraMap k (P'.restrict k F).ResidueField c) =
+      algebraMap k' P'.ResidueField (algebraMap k k' c) := by
+  rw [algebraMap_residueField (R := k), algebraMap_residueField (R := k'),
+    IsLocalRing.ResidueField.algebraMap_residue]
+  congr 1
+  apply Subtype.ext
+  rw [coe_algebraMap_integers, coe_algebraMap_constants, coe_algebraMap_constants,
+    ← IsScalarTower.algebraMap_apply, ← IsScalarTower.algebraMap_apply]
+
+/-- **A purely inseparable constant makes the residue extension at a rational place
+inseparable**: if `P'` lies over a place of degree one and `k'` contains `α ∉ k` with
+`α ^ (q ^ n) ∈ k`, where `q` is the exponential characteristic of `k`, then `F'_{P'}` is not
+separable over the residue field of the place below. -/
+theorem not_isSeparable_residueField_of_degree_eq_one (P' : Place k' F')
+    (hP : (P'.restrict k F).degree = 1) (q : ℕ) [ExpChar k q] {α : k'}
+    (hα : α ∉ (algebraMap k k').range) {n : ℕ} (hn : α ^ q ^ n ∈ (algebraMap k k').range) :
+    ¬ Algebra.IsSeparable (P'.restrict k F).ResidueField P'.ResidueField := by
+  -- The residue of `α` would lie in the perfect closure of `F_P = k`, hence in `F_P = k`.
+  intro hsep
+  set S := (P'.restrict k F).ResidueField
+  have := expChar_of_injective_algebraMap (algebraMap k S).injective q
+  obtain ⟨c, hc⟩ := hn
+  have hmem : algebraMap k' P'.ResidueField α ∈ perfectClosure S P'.ResidueField := by
+    rw [mem_perfectClosure_iff_pow_mem q]
+    exact ⟨n, algebraMap k S c, by rw [algebraMap_residueField_algebraMap, hc, map_pow]⟩
+  rw [perfectClosure.eq_bot_of_isSeparable, IntermediateField.mem_bot] at hmem
+  obtain ⟨s, hs⟩ := hmem
+  obtain ⟨d, rfl⟩ := (degree_eq_one_iff_algebraMap_surjective _).mp hP s
+  rw [algebraMap_residueField_algebraMap] at hs
+  exact hα ⟨d, (algebraMap k' P'.ResidueField).injective hs⟩
+
+/-- **At a rational place over a rational place, the residue extension is the constant
+extension**: if `P'` and the place below it have degree one, then `F'_{P'}` is separable over the
+residue field of the place below exactly when `k'` is separable over `k`, since these residue
+fields are `k'` and `k`. -/
+theorem isSeparable_residueField_iff_of_degree_eq_one (P' : Place k' F') (h' : P'.degree = 1)
+    (h : (P'.restrict k F).degree = 1) :
+    Algebra.IsSeparable (P'.restrict k F).ResidueField P'.ResidueField ↔
+      Algebra.IsSeparable k k' := by
+  refine (Algebra.IsSeparable.iff_of_equiv_equiv
+    ((P'.restrict k F).residueFieldEquivOfDegreeEqOne h).toRingEquiv
+    (P'.residueFieldEquivOfDegreeEqOne h').toRingEquiv (RingHom.ext fun c ↦ ?_)).symm
+  simp only [RingHom.coe_comp, Function.comp_apply, RingEquiv.coe_toRingHom,
+    AlgEquiv.coe_toRingEquiv, residueFieldEquivOfDegreeEqOne_apply,
+    algebraMap_residueField_algebraMap]
+
+end ResidueConstants
 
 section Independence
 
@@ -942,12 +1006,7 @@ theorem linearIndependent_pow_fin_ramificationIdx {t : F'} (ht : P'.ord t = 1) :
     have hmap : algebraMap F F' (c j) ≠ 0 := by simpa using hjc
     refine ⟨m, ?_⟩
     rw [hA, P'.ord_mul hmap (pow_ne_zero _ ht0), P'.ord_pow, ht, mul_one,
-      ← ord_comap F P' (c j), hm]
-    have hidx : Valuation.ordIndex (P'.valuation.comap (algebraMap F F')) = e :=
-      rfl.trans he.symm
-    have hidx' : (Valuation.ordIndex (P'.valuation.comap (algebraMap F F')) : ℤ) = e := by
-      exact_mod_cast hidx
-    rw [hidx']
+      ← ord_valuation, ← Valuation.ord_comap, hm, ← ramificationIdx_def, ← he]
   have hA₁ : A j₁ ≠ 0 := by simp [hA, hj₁, ht0]
   exact (sum_ne_zero_of_ord_eq_mul_add_natCast P' A hAord hA₁) hsum
 

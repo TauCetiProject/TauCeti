@@ -8,18 +8,23 @@ module
 public import Mathlib.NumberTheory.NumberField.Basic
 public import Mathlib.NumberTheory.RamificationInertia.Unramified
 public import Mathlib.RingTheory.ClassGroup.Basic
+public import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
 public import Mathlib.RingTheory.Ideal.GoingUp
 public import Mathlib.RingTheory.Ideal.Int
 import Mathlib.RingTheory.DedekindDomain.Factorization
+import Mathlib.RingTheory.KrullDimension.Basic
 import Mathlib.RingTheory.RamificationInertia.Basic
+import Mathlib.RingTheory.RamificationInertia.Inertia
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
+import TauCeti.NumberTheory.RamificationInertia.Inert
 
 /-!
 # Prime ideals of rings of integers
 
 This file records general utilities for the prime ideals of a number field above a rational
 prime: packaging them as non-zero-divisors so that their classes can be taken with
-`ClassGroup.mk0`, counting them, and factoring an unramified rational prime into them.
+`ClassGroup.mk0` or as height-one primes, counting them, and factoring an unramified rational
+prime into them.
 
 ## Main results
 
@@ -27,6 +32,14 @@ prime: packaging them as non-zero-divisors so that their classes can be taken wi
   a non-zero-divisor in the ideal monoid.
 * `NumberField.exists_primeIdealFamily`: a finite set of rational primes admits a family of prime
   ideals above it, packaged for `ClassGroup.mk0`.
+* `TauCeti.NumberField.heightOneSpectrumOfLiesOver`: a prime of `𝓞 K` above a rational prime,
+  as a height-one prime.
+* `TauCeti.NumberField.eq_heightOneSpectrumOfLiesOver_of_primesOver_eq_singleton`: if a single
+  prime lies above `p`, it is the only height-one prime containing `p`.
+* `TauCeti.NumberField.absNorm_eq_pow_finrank_of_primesOver_eq_singleton`: an unramified prime
+  that is the only prime above `p` has norm `p ^ [K : ℚ]`, so `p` is inert.
+* `TauCeti.NumberField.coprime_absNorm_of_absNorm_ne`: in a quadratic field, maximal ideals with
+  different norms have coprime norms.
 * `TauCeti.NumberField.card_primesOverFinset_le_finrank`: at most `[K : ℚ]` primes of `𝓞 K`
   lie over a nonzero prime of `ℤ`.
 * `TauCeti.NumberField.span_natCast_eq_prod_primesOverFinset`: a rational prime unramified in
@@ -86,6 +99,84 @@ end NumberField
 namespace TauCeti.NumberField
 
 variable {K : Type*} [Field K] [NumberField K]
+
+section HeightOne
+
+variable {p : ℕ} [hp : Fact p.Prime]
+
+open IsDedekindDomain
+
+variable (p) in
+/-- A prime of `𝓞 K` above the rational prime `p`, as a height-one prime. -/
+def heightOneSpectrumOfLiesOver (𝔭 : Ideal (𝓞 K)) [𝔭.IsPrime]
+    [𝔭.LiesOver (span {(p : ℤ)})] : HeightOneSpectrum (𝓞 K) :=
+  ⟨𝔭, inferInstance, ne_bot_of_liesOver_of_ne_bot (p := span {(p : ℤ)})
+    (by simpa using hp.out.ne_zero) 𝔭⟩
+
+variable (p) in
+@[simp]
+theorem heightOneSpectrumOfLiesOver_asIdeal (𝔭 : Ideal (𝓞 K)) [𝔭.IsPrime]
+    [𝔭.LiesOver (span {(p : ℤ)})] : (heightOneSpectrumOfLiesOver p 𝔭).asIdeal = 𝔭 := by
+  rw [heightOneSpectrumOfLiesOver]
+
+omit [NumberField K] in
+/-- A finite set of height-one primes containing the primes above `p` contains every height-one
+prime to which `p` belongs. -/
+theorem mem_of_natCast_mem_asIdeal {T : Finset (HeightOneSpectrum (𝓞 K))}
+    (hT : ∀ P : HeightOneSpectrum (𝓞 K),
+      P.asIdeal ∈ (span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K) → P ∈ T)
+    (P : HeightOneSpectrum (𝓞 K)) (hP : (p : 𝓞 K) ∈ P.asIdeal) : P ∈ T :=
+  hT P ⟨P.isPrime, (liesOver_span_iff P.isPrime.ne_top (Nat.prime_iff_prime_int.mp hp.out)).mpr
+    (by simpa using hP)⟩
+
+/-- If `𝔭` is the only prime above `p`, it is the only height-one prime to which `p` belongs. -/
+theorem eq_heightOneSpectrumOfLiesOver_of_primesOver_eq_singleton (𝔭 : Ideal (𝓞 K))
+    [𝔭.IsPrime] [𝔭.LiesOver (span {(p : ℤ)})]
+    (hT : (span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K) = {𝔭})
+    (P : HeightOneSpectrum (𝓞 K)) (hP : (p : 𝓞 K) ∈ P.asIdeal) :
+    P = heightOneSpectrumOfLiesOver p 𝔭 :=
+  Finset.mem_singleton.mp <| mem_of_natCast_mem_asIdeal (fun Q hQ ↦ by
+    rw [hT, Set.mem_singleton_iff] at hQ
+    exact Finset.mem_singleton.mpr (HeightOneSpectrum.ext hQ)) P hP
+
+end HeightOne
+
+/-- **An unramified prime with a single prime above it is inert.** If `𝔭` is the only prime of
+`𝓞 K` above the rational prime `p` and `e(𝔭) = 1`, the fundamental identity `∑ e f = [K : ℚ]`
+gives `f(𝔭) = [K : ℚ]`, so `N(𝔭) = p ^ [K : ℚ]`. -/
+theorem absNorm_eq_pow_finrank_of_primesOver_eq_singleton {p : ℕ} (𝔭 : Ideal (𝓞 K))
+    [𝔭.IsPrime] [𝔭.LiesOver (span {(p : ℤ)})]
+    (hT : (span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K) = {𝔭}) (he : 𝔭.ramificationIdx ℤ = 1) :
+    absNorm 𝔭 = p ^ Module.finrank ℚ K := by
+  have : (span {(p : ℤ)} : Ideal ℤ).IsPrime := over_def 𝔭 (span {(p : ℤ)}) ▸ inferInstance
+  rw [← pow_inertiaDeg p 𝔭, ← _root_.NumberField.RingOfIntegers.rank K,
+    RamificationInertia.inertiaDeg_eq_finrank_of_ncard_primesOver_eq_one (span {(p : ℤ)}) 𝔭
+      (by simp [hT]) he]
+
+/-- **Primes of a quadratic field with different norms have coprime norms.** If `[K : ℚ] = 2`,
+two maximal ideals of `𝓞 K` above the same rational prime `p` are equal or both have norm `p`:
+otherwise their product divides `p 𝓞 K`, of norm `p ^ 2`. -/
+theorem coprime_absNorm_of_absNorm_ne (hK : Module.finrank ℚ K = 2) {P₁ P₂ : Ideal (𝓞 K)}
+    [P₁.IsMaximal] [P₂.IsMaximal] (h : absNorm P₁ ≠ absNorm P₂) :
+    (absNorm P₁).Coprime (absNorm P₂) := by
+  have hne : P₁ ≠ P₂ := by
+    rintro rfl
+    exact h rfl
+  obtain ⟨p₁, n₁, hn₁, hp₁P, hp₁, hN₁⟩ := exists_prime_and_absNorm_eq_pow P₁
+  obtain ⟨p₂, n₂, hn₂, hp₂P, hp₂, hN₂⟩ := exists_prime_and_absNorm_eq_pow P₂
+  rw [hN₁, hN₂] at h ⊢
+  obtain rfl | hp := eq_or_ne p₁ p₂
+  · -- Both primes lie over `p₁`, so `p₁ 𝓞 K ≤ P₁ ⊓ P₂ = P₁ P₂` and `p₁ ^ (n₁ + n₂) ∣ p₁ ^ 2`.
+    have hle : span {(p₁ : 𝓞 K)} ≤ P₁ * P₂ := by
+      rw [mul_eq_inf_of_coprime (IsMaximal.coprime_of_ne ‹_› ‹_› hne)]
+      exact le_inf ((span_singleton_le_iff_mem _).mpr hp₁P)
+        ((span_singleton_le_iff_mem _).mpr hp₂P)
+    have hdvd := absNorm_dvd_absNorm_of_le hle
+    rw [map_mul, hN₁, hN₂, ← pow_add, absNorm_span_natCast,
+      _root_.NumberField.RingOfIntegers.rank, hK,
+      Nat.pow_dvd_pow_iff_le_right hp₁.one_lt] at hdvd
+    exact absurd (by congr 1; omega) h
+  · exact Nat.Coprime.pow _ _ ((Nat.coprime_primes hp₁ hp₂).mpr hp)
 
 /-- At most `[K : ℚ]` primes of `𝓞 K` lie over a given nonzero prime of `ℤ`, since each
 contributes a positive `ramificationIdx * inertiaDeg` to the fundamental identity. -/

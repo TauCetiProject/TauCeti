@@ -41,6 +41,8 @@ unimodular lattice has a theta series of level one.
 * `ZLattice.IsIntegral L`: the lattice `L` is integral, `L ≤ dual L`.
 * `ZLattice.IsEven L`: every vector of `L` has even integral squared norm.
 * `ZLattice.IsUnimodular L`: the lattice `L` is self-dual, `L = dual L`.
+* `ZLattice.IsIntegral.integralForm`: the inner product of an integral lattice, as an
+  integer-valued symmetric bilinear form on `L`.
 
 ## Main statements
 
@@ -134,6 +136,25 @@ theorem isIntegral_iff {L : Submodule ℤ E} :
 /-- A sublattice of an integral lattice is integral. -/
 theorem IsIntegral.mono {L M : Submodule ℤ E} (hM : IsIntegral M) (h : L ≤ M) : IsIntegral L :=
   h.trans (hM.trans (dual_anti h))
+
+/-- The integer-valued inner product on an integral lattice, as a `ℤ`-bilinear form on `L`. -/
+noncomputable def IsIntegral.integralForm {L : Submodule ℤ E} (hL : IsIntegral L) :
+    LinearMap.BilinForm ℤ L :=
+  (LinearMap.BilinForm.dualSubmoduleToDual (innerₗ E) L).comp
+    (Submodule.inclusion (hL.trans (dual_def L).le))
+
+/-- The integer-valued inner product of an integral lattice is the inner product of `E`. -/
+@[simp]
+theorem IsIntegral.integralForm_cast {L : Submodule ℤ E} (hL : IsIntegral L) (x y : L) :
+    (hL.integralForm x y : ℝ) = ⟪(x : E), (y : E)⟫ := by
+  rw [integralForm, LinearMap.comp_apply, LinearMap.BilinForm.dualSubmoduleToDual_apply_apply]
+  exact LinearMap.BilinForm.dualSubmodulePairing_spec (innerₗ E)
+    (Submodule.inclusion (hL.trans (dual_def L).le) x) y
+
+/-- The integer-valued inner product of an integral lattice is symmetric. -/
+theorem IsIntegral.isSymm_integralForm {L : Submodule ℤ E} (hL : IsIntegral L) :
+    hL.integralForm.IsSymm :=
+  ⟨fun x y ↦ Int.cast_injective (α := ℝ) <| by simp [real_inner_comm]⟩
 
 /-- For an integral lattice `L`, the squared norm `‖γ‖²` of a dual vector `γ ∈ L^∨` is well
 defined modulo `ℤ` on the coset `γ + L`: `‖γ + v‖² - ‖γ‖² ∈ ℤ` for `v ∈ L`. -/

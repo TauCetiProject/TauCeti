@@ -56,8 +56,6 @@ noncomputable section
 
 open MeasureTheory
 
-open TauCeti.MeasureTheory
-
 open Function (occCount)
 
 namespace TauCeti
@@ -197,9 +195,7 @@ theorem measurable_successorArray_apply (a : α) (k : ℕ)
     (ha : MeasurableSet ({a} : Set α)) :
     Measurable fun x : ℕ → α => successorArray x a k := by
   simp only [successorArray_def]
-  exact measurable_eval_index (g := fun x : ℕ → α => x)
-    (f := fun x : ℕ → α => visitTime x a k + 1)
-    measurable_id (Measurable.of_discrete.comp (measurable_visitTime a k ha))
+  exact measurable_id.eval_index (Measurable.of_discrete.comp (measurable_visitTime a k ha))
 
 /-- Each entry of the visited successor array is a measurable function of the path: whether the
 path visits the row is a countable union of coordinate events. -/
@@ -311,21 +307,12 @@ private theorem measurable_pathOfSuccessors_apply (n : ℕ) :
             ih i (hi.trans (Nat.lt_succ_self n))
       have hstate : Measurable fun q : α × (α → ℕ → α) =>
           q.2 (pathOfSuccessors q.1 q.2 n) :=
-        measurable_eval_index (g := fun q : α × (α → ℕ → α) => q.2)
-          (f := fun q : α × (α → ℕ → α) => pathOfSuccessors q.1 q.2 n)
-          measurable_snd hn
+        measurable_snd.eval_index hn
       have hcount : Measurable fun q : α × (α → ℕ → α) =>
           visitCount (pathOfSuccessors q.1 q.2) (pathOfSuccessors q.1 q.2 n) n :=
-        measurable_eval_index
-          (g := fun (q : α × (α → ℕ → α)) a =>
-            visitCount (pathOfSuccessors q.1 q.2) a n)
-          (f := fun q : α × (α → ℕ → α) => pathOfSuccessors q.1 q.2 n)
-          hcounts hn
+        hcounts.eval_index hn
       simp only [pathOfSuccessors_succ]
-      exact measurable_eval_index
-        (g := fun q : α × (α → ℕ → α) => q.2 (pathOfSuccessors q.1 q.2 n))
-        (f := fun q : α × (α → ℕ → α) =>
-          visitCount (pathOfSuccessors q.1 q.2) (pathOfSuccessors q.1 q.2 n) n) hstate hcount
+      exact hstate.eval_index hcount
 
 /-- **Rebuilding a path from an initial state and a successor array is measurable.** -/
 theorem measurable_pathOfSuccessors :

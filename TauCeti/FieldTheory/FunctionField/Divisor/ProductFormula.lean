@@ -29,6 +29,8 @@ strictly stronger than nonconstancy.
 
 * `TauCeti.Divisor.degree_zeros` and `TauCeti.Divisor.degree_poles` compute the two effective
   parts of the principal divisor of a function transcendental over `k`.
+  Consequently `TauCeti.Divisor.finrank_adjoin_le_degree_of_mem_riemannRochSpace` bounds
+  `[F : k(x)]` by `deg W` for a transcendental `x` in `L(W)` with `W` effective.
 * `TauCeti.Divisor.degree_principal` is the product formula, and
   `TauCeti.Divisor.degree_zeros_eq_degree_poles` restates it as equality of the degrees of the
   zero and pole divisors.
@@ -253,6 +255,16 @@ theorem degree_zeros (hF : IsFunctionField k F) (z : Fˣ)
   rw [poles_eq_zeros_inv, inv_inv, Units.val_inv_eq_inv_val,
     IntermediateField.adjoin_simple_inv] at h
   exact h
+
+/-- A function `x` transcendental over `k` in the Riemann–Roch space `L(W)` of an effective
+divisor `W` has degree `[F : k(x)] ≤ deg W`: its pole divisor lies below `W`. -/
+theorem finrank_adjoin_le_degree_of_mem_riemannRochSpace (hF : IsFunctionField k F)
+    {W : Divisor k F} (hW : 0 ≤ W) {x : F} (hxW : x ∈ riemannRochSpace W)
+    (hxt : Transcendental k x) :
+    (Module.finrank k⟮x⟯ F : ℤ) ≤ degree W := by
+  have hdeg := degree_le_of_le ((poles_le_iff_mem_riemannRochSpace hF
+    (WeilDivisor.isEffective_iff_zero_le.mpr hW) (Units.mk0 x hxt.ne_zero)).mpr hxW)
+  rwa [degree_poles hF (Units.mk0 x hxt.ne_zero) hxt, Units.val_mk0] at hdeg
 
 /-- **The product formula for an algebraic function field** (Stichtenoth, Theorem 1.4.11):
 every principal divisor has degree zero. -/

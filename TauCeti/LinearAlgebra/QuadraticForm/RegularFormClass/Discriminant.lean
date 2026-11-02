@@ -154,6 +154,13 @@ def discrHom : RegularFormClass K →+ SquareClassGroup K where
 theorem discrHom_apply (x : RegularFormClass K) : discrHom x = discr x :=
   (rfl)
 
+-- Not `@[simp]`: `RegularFormClass K` is a semiring in downstream modules, where
+-- `nsmul_eq_mul` rewrites the left-hand side and makes this declaration fail `simpNF`.
+/-- The discriminant of the orthogonal sum of `n` copies of a class is `n` times its
+discriminant. -/
+theorem discr_nsmul (n : ℕ) (x : RegularFormClass K) : discr (n • x) = n • discr x :=
+  map_nsmul discrHom n x
+
 /-- The multiplicative unit `⟨1⟩` has trivial discriminant. -/
 @[simp]
 theorem discr_one : discr (1 : RegularFormClass K) = 0 := by

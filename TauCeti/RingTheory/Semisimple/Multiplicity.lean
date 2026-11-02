@@ -67,9 +67,9 @@ reconstruction from hom-space dimensions returns to the finite-dimensional `k`-a
   finitely generated semisimple module `M` to a simple module `S` number `#End(S) ^ [M : S]`.
 * `TauCeti.natCard_linearMap_pi_eq_prod_pow`: maps from `M` into a finite product of simple
   modules `N i` number `∏ i, #End(N i) ^ [M : N i]`.
-* `TauCeti.IsSemisimpleModule.nonempty_linearEquiv_of_jordanHolderMultiplicity_eq`: over any ring,
+* `IsSemisimpleModule.nonempty_linearEquiv_of_jordanHolderMultiplicity_eq`: over any ring,
   finitely generated semisimple modules with the same Jordan-Hölder multiplicities are isomorphic.
-* `TauCeti.IsSemisimpleModule.nonempty_linearEquiv_of_natCard_linearMap_mul_eq`: over any ring,
+* `IsSemisimpleModule.nonempty_linearEquiv_of_natCard_linearMap_mul_eq`: over any ring,
   finite semisimple modules `M` and `N` with `#Hom(M, N) · #Hom(N, M) = #End(M) · #End(N)` are
   isomorphic.
 * `TauCeti.finrank_linearMap_pos_iff_exists_nonempty_linearEquiv`: the multiplicity is positive
@@ -85,7 +85,7 @@ reconstruction from hom-space dimensions returns to the finite-dimensional `k`-a
   algebraically closed field, so it lives apart from the results above.
 * `TauCeti.range_isotypicEval`: **the range of evaluation is the isotypic component**, where
   `TauCeti.isotypicEval : S ⊗[k] (S →ₗ[A] M) →ₗ[A] M` is `s ⊗ f ↦ f s`.  Evaluation and its
-  naturality in the target (`TauCeti.isotypicEval_comp`) are stated over a commutative ring, no
+  naturality in the target (`TauCeti.isotypicEval_comp`) are stated over a commutative semiring, no
   finiteness and no field operations being involved.
 
 ## The isotypic component
@@ -101,7 +101,7 @@ multiplicity computation needs.
 
 The same fact says that evaluation `S ⊗[k] (S →ₗ[A] M) →ₗ[A] M` has the isotypic component as its
 range: a map out of `S` lands there, and every submodule isomorphic to `S` is the range of such a
-map.  This half of the uncounted decomposition needs no scalars beyond a commutative ring; that
+map. This half of the uncounted decomposition needs only a commutative semiring of scalars; that
 evaluation is moreover injective, and hence an isomorphism onto the component, is proved over an
 algebraically closed field in `TauCeti/RingTheory/Semisimple/IsotypicTensor.lean`.
 
@@ -324,7 +324,7 @@ variable {R : Type u} [Ring R]
 /-- A finitely generated semisimple module is a finite product of quotients of the ring by maximal
 left ideals. This is `IsSemisimpleModule.exists_linearEquiv_fin_dfinsupp` with each simple summand
 replaced by an isomorphic cyclic module, so that all the factors live in the universe of `R`. -/
-theorem IsSemisimpleModule.exists_linearEquiv_pi_quotient (M : Type v) [AddCommGroup M]
+theorem _root_.IsSemisimpleModule.exists_linearEquiv_pi_quotient (M : Type v) [AddCommGroup M]
     [Module R M] [IsSemisimpleModule R M] [Module.Finite R M] :
     ∃ (n : ℕ) (m : Fin n → Ideal R), (∀ i, (m i).IsMaximal) ∧
       Nonempty (M ≃ₗ[R] ∀ i, R ⧸ m i) := by
@@ -396,7 +396,7 @@ module is isomorphic to a quotient of `R`.
 Over a semisimple ring this is `TauCeti.nonempty_linearEquiv_pi_of_natCard_eq`, where the simple
 modules are indexed by the simple left ideals of `R`; in general a simple module need not embed in
 `R`, and the factors are matched by isomorphism directly. -/
-theorem IsSemisimpleModule.nonempty_linearEquiv_of_jordanHolderMultiplicity_eq
+theorem _root_.IsSemisimpleModule.nonempty_linearEquiv_of_jordanHolderMultiplicity_eq
     (M : Type v) (N : Type w) [AddCommGroup M] [Module R M] [IsSemisimpleModule R M]
     [Module.Finite R M] [AddCommGroup N] [Module R N] [IsSemisimpleModule R N]
     [Module.Finite R N]
@@ -445,7 +445,7 @@ Writing `a_S` and `b_S` for the multiplicities of a simple module `S` in `M` and
 `∏ q_S ^ (a_S ^ 2)` and `∏ q_S ^ (b_S ^ 2)`, so the hypothesis says `∏ q_S ^ ((a_S - b_S) ^ 2) = 1`.
 This form of the comparison applies when only maps between `M` and `N` themselves can be counted,
 for instance when `M` and `N` are reductions of lattices whose hom modules are known. -/
-theorem IsSemisimpleModule.nonempty_linearEquiv_of_natCard_linearMap_mul_eq
+theorem _root_.IsSemisimpleModule.nonempty_linearEquiv_of_natCard_linearMap_mul_eq
     (M : Type v) (N : Type w) [AddCommGroup M] [Module R M] [IsSemisimpleModule R M]
     [Finite M] [AddCommGroup N] [Module R N] [IsSemisimpleModule R N] [Finite N]
     (h : Nat.card (M →ₗ[R] N) * Nat.card (N →ₗ[R] M) =
@@ -641,15 +641,6 @@ section IsotypicComponent
 variable {k A M S : Type*} [Field k] [Ring A] [Algebra k A]
 variable [AddCommGroup M] [Module k M] [Module A M] [IsScalarTower k A M]
 variable [AddCommGroup S] [Module k S] [Module A S] [IsScalarTower k A S] [IsSimpleModule A S]
-
-omit [Module k S] [IsScalarTower k A S] in
-/-- **The multiplicity of `S` in `M` is its multiplicity in the `S`-isotypic component**, every
-map out of `S` landing there. -/
-@[simp]
-theorem finrank_linearMap_isotypicComponent :
-    Module.finrank k (S →ₗ[A] isotypicComponent A M S) = Module.finrank k (S →ₗ[A] M) :=
-  (linearMapIsotypicComponentEquiv k).finrank_eq
-
 variable [IsAlgClosed k] [FiniteDimensional k S] [FiniteDimensional k M]
 
 /-- **The isotypic component is the power of its type with exponent the multiplicity.**  Mathlib's
@@ -688,26 +679,16 @@ section Evaluation
 
 open TensorProduct
 
-variable (k : Type*) {A S M N : Type*} [CommRing k] [Ring A] [Algebra k A]
-variable [AddCommGroup S] [Module k S] [Module A S] [IsScalarTower k A S]
-variable [AddCommGroup M] [Module k M] [Module A M] [IsScalarTower k A M]
-variable [AddCommGroup N] [Module k N] [Module A N] [IsScalarTower k A N]
-
-/-- Evaluation of a multiplicity space at a vector, curried.  It is `A`-linear in the vector
-because an `A`-linear map commutes with the action of `A`, and `k`-linear in the map because the
-`k`-action on a hom space is pointwise. -/
-private def isotypicEvalAux : S →ₗ[A] (S →ₗ[A] M) →ₗ[k] M where
-  toFun s :=
-    { toFun := fun f ↦ f s
-      map_add' := fun _ _ ↦ rfl
-      map_smul' := fun _ _ ↦ rfl }
-  map_add' s t := by ext f; exact f.map_add s t
-  map_smul' a s := by ext f; exact f.map_smul a s
+variable (k : Type*) {A S M N : Type*} [CommSemiring k] [Semiring A] [Algebra k A]
+variable [AddCommMonoid S] [Module k S] [Module A S] [IsScalarTower k A S]
+variable [AddCommMonoid M] [Module k M] [Module A M] [IsScalarTower k A M]
+variable [AddCommMonoid N] [Module k N] [Module A N] [IsScalarTower k A N]
 
 /-- **Evaluation** `S ⊗[k] (S →ₗ[A] M) →ₗ[A] M`, `s ⊗ f ↦ f s`.  Only the left factor carries an
-`A`-action, so this is a map of `A`-modules for the `TensorProduct.leftModule` structure. -/
+`A`-action, so this is a map of `A`-modules for the `TensorProduct.leftModule` structure.
+The construction works over semirings and needs no additive inverses. -/
 def isotypicEval : S ⊗[k] (S →ₗ[A] M) →ₗ[A] M :=
-  AlgebraTensorModule.lift (isotypicEvalAux k)
+  AlgebraTensorModule.lift (LinearMap.id (R := k) (M := S →ₗ[A] M)).flip
 
 @[simp]
 theorem isotypicEval_tmul (s : S) (f : S →ₗ[A] M) : isotypicEval k (s ⊗ₜ f) = f s :=
@@ -734,11 +715,20 @@ theorem isotypicEval_map_apply (g : M →ₗ[A] N) (x : S ⊗[k] (S →ₗ[A] M)
           (LinearMap.compRight (M := S) k g) x) = g (isotypicEval k x) :=
   (LinearMap.congr_fun (isotypicEval_comp k g) x).symm
 
+end Evaluation
+
+section EvaluationRange
+
+open TensorProduct
+
+variable (k : Type*) {A S M : Type*} [CommSemiring k] [Ring A] [Algebra k A]
+variable [AddCommGroup S] [Module k S] [Module A S] [IsScalarTower k A S]
+variable [AddCommGroup M] [Module k M] [Module A M] [IsScalarTower k A M]
 variable [IsSimpleModule A S]
 
 /-- **The range of evaluation is the `S`-isotypic component of `M`.**  A map out of `S` lands in
 the component, and every submodule of `M` isomorphic to `S` is the range of such a map.  This
-needs no finiteness and no field hypothesis: a commutative ring of scalars suffices. -/
+needs no finiteness and no field hypothesis: a commutative semiring of scalars suffices. -/
 @[simp]
 theorem range_isotypicEval :
     LinearMap.range (isotypicEval k (S := S) (M := M)) = isotypicComponent A M S := by
@@ -753,7 +743,7 @@ theorem range_isotypicEval :
     refine ⟨e ⟨x, hx⟩ ⊗ₜ (m.subtype ∘ₗ (e.symm : S →ₗ[A] m)), ?_⟩
     simp
 
-end Evaluation
+end EvaluationRange
 
 /-! ### Positivity for an arbitrary nonzero submodule -/
 

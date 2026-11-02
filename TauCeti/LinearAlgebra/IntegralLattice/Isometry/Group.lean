@@ -14,6 +14,7 @@ public import Mathlib.RingTheory.QuotSMulTop
 public import TauCeti.LinearAlgebra.BilinearForm.Isometry
 public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Basic
 import TauCeti.Algebra.Module.Torsion.Int
+import TauCeti.LinearAlgebra.Determinant.Basic
 
 /-!
 # The isometry group of an integral lattice
@@ -29,7 +30,9 @@ its determinant is `(-1) ^ rank L`; so `SO(L)` is a proper subgroup in odd rank.
 A self-isometry is the same as a rational isometry of the ambient form which, together with its
 inverse, preserves the carrier; `toIsometryGroup` and `ofIsometryGroup` pass between the two. The
 self-isometries acting trivially on the finite quotient `L / d L` form the principal congruence
-subgroup of level `d`, which has finite index for `d ≠ 0`.
+subgroup of level `d`, which has finite index for `d ≠ 0`. Conjugation by an isometry `L ≅ M`
+identifies `O(L)` with `O(M)`, preserving determinants. In rank at most one `SO(L)` is trivial,
+and in rank one `O(L) = {±1}`.
 
 ## Main definitions
 
@@ -48,6 +51,8 @@ subgroup of level `d`, which has finite index for `d ≠ 0`.
   `TauCeti.IntegralLattice.Isometry.ofIsometryGroup`.
 * `TauCeti.IntegralLattice.Isometry.reductionHom`: the action of `O(L)` on `L / d L`, and
   `TauCeti.IntegralLattice.Isometry.congruenceSubgroup`: its kernel.
+* `TauCeti.IntegralLattice.Isometry.conjMulEquiv`: conjugation by an isometry `L ≅ M`, as a group
+  isomorphism `O(L) ≃* O(M)`.
 
 ## Main results
 
@@ -66,6 +71,12 @@ subgroup of level `d`, which has finite index for `d ≠ 0`.
   subgroup has finite index.
 * `TauCeti.IntegralLattice.Isometry.mem_range_toIsometryGroup_iff`: a rational isometry comes from
   a self-isometry exactly when it preserves membership in the carrier.
+* `TauCeti.IntegralLattice.Isometry.natCard_isometry_eq`: isometric lattices have isometry groups
+  of the same order.
+* `TauCeti.IntegralLattice.Isometry.det_conjMulEquiv` and
+  `TauCeti.IntegralLattice.Isometry.natCard_specialOrthogonalGroup_eq`: conjugation preserves the
+  determinant, so isometric lattices have special isometry groups of the same order.
+* `TauCeti.IntegralLattice.natCard_isometry_of_finrank_eq_one`: in rank one `O(L)` has order two.
 
 ## References
 
@@ -295,6 +306,26 @@ theorem toMatrix_injective (b : Module.Basis ι ℤ L) : Function.Injective (toM
 
 end specialOrthogonalGroup
 
+/-- In rank at most one `SO(L)` is trivial, since the determinant kernel of a free module of
+rank at most one is trivial. -/
+theorem specialOrthogonalGroup_eq_bot_of_finrank_le_one (h : Module.finrank ℤ L ≤ 1) :
+    specialOrthogonalGroup L = ⊥ := by
+  refine (Subgroup.eq_bot_iff_forall _).mpr fun g hg ↦ Isometry.carrierEquivHom_injective L ?_
+  have hk : g.carrierEquiv ∈ (LinearEquiv.det (R := ℤ) (M := L)).ker := by
+    rw [MonoidHom.mem_ker, ← Isometry.det_apply]
+    exact mem_specialOrthogonalGroup_iff.mp hg
+  rw [LinearEquiv.det_ker_eq_bot_of_finrank_le_one h, Subgroup.mem_bot] at hk
+  rw [map_one, Isometry.carrierEquivHom_apply, hk]
+
+/-- In rank one the isometry group is `{±1}`, of order two. -/
+theorem natCard_isometry_of_finrank_eq_one (h : Module.finrank ℤ L = 1) :
+    Nat.card (Isometry L L) = 2 := by
+  have hi : (specialOrthogonalGroup L).index = 2 :=
+    (index_specialOrthogonalGroup_eq_two_iff L).mpr ⟨Isometry.neg L, by
+      rw [Isometry.det_neg, h, pow_one]⟩
+  rw [← (specialOrthogonalGroup L).card_mul_index, hi,
+    specialOrthogonalGroup_eq_bot_of_finrank_le_one h.le, Subgroup.card_bot, one_mul]
+
 namespace Isometry
 
 open LinearMap (BilinForm)
@@ -428,6 +459,50 @@ theorem finiteIndex_congruenceSubgroup (L : IntegralLattice V) {d : ℤ} (hd : d
   · infer_instance
   · rw [congruenceSubgroup_neg]
     infer_instance
+
+/-! ### Conjugation -/
+
+variable {W : Type*} [AddCommGroup W] [Module ℚ W] {M : IntegralLattice W}
+
+/-- Conjugation by an isometry `e : L ≅ M` identifies the isometry groups `O(L)` and `O(M)`:
+a self-isometry `g` of `L` goes to `e ∘ g ∘ e⁻¹`. -/
+def conjMulEquiv (e : Isometry L M) : Isometry L L ≃* Isometry M M where
+  toFun g := (e.symm.trans g).trans e
+  invFun g := (e.trans g).trans e.symm
+  left_inv g := Isometry.ext fun x ↦ by simp [trans_apply, symm_apply_apply]
+  right_inv g := Isometry.ext fun x ↦ by simp [trans_apply, apply_symm_apply]
+  map_mul' f g := Isometry.ext fun x ↦ by simp [mul_apply, trans_apply, symm_apply_apply]
+
+@[simp]
+theorem conjMulEquiv_apply (e : Isometry L M) (g : Isometry L L) (y : W) :
+    e.conjMulEquiv g y = e (g (e.symm y)) := by
+  simp [conjMulEquiv, trans_apply]
+
+@[simp]
+theorem conjMulEquiv_symm_apply (e : Isometry L M) (g : Isometry M M) (x : V) :
+    e.conjMulEquiv.symm g x = e.symm (g (e x)) := by
+  simp [conjMulEquiv, trans_apply]
+
+/-- Conjugation by an isometry preserves the determinant. -/
+@[simp]
+theorem det_conjMulEquiv (e : Isometry L M) (g : Isometry L L) :
+    det M (e.conjMulEquiv g) = det L g := by
+  have h : (e.conjMulEquiv g).carrierEquiv =
+      (e.carrierEquiv.symm.trans g.carrierEquiv).trans e.carrierEquiv := by
+    ext x
+    simp [coe_carrierEquiv_apply, coe_carrierEquiv_symm_apply]
+  rw [det_apply, det_apply, h, LinearEquiv.det_conj]
+
+/-- Isometric lattices have isometry groups of the same cardinality. -/
+theorem natCard_isometry_eq (e : Isometry L M) :
+    Nat.card (Isometry L L) = Nat.card (Isometry M M) :=
+  Nat.card_congr e.conjMulEquiv.toEquiv
+
+/-- Isometric lattices have special isometry groups of the same cardinality. -/
+theorem natCard_specialOrthogonalGroup_eq (e : Isometry L M) :
+    Nat.card (specialOrthogonalGroup L) = Nat.card (specialOrthogonalGroup M) :=
+  Nat.card_congr <| e.conjMulEquiv.toEquiv.subtypeEquiv fun g ↦ by
+    simp [mem_specialOrthogonalGroup_iff]
 
 end Isometry
 

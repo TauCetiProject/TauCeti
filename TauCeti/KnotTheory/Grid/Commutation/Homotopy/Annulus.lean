@@ -16,7 +16,10 @@ annulus. The horizontal alternative for returning rectangles is impossible: a he
 contains two ordered turn rows, whereas a thin horizontal annulus contains just one row.
 The vertical annulus occupies the column cut away by the hexagon. Consequently the hexagon
 carries no markings, and the returning rectangle carries neither marking of that column.
-Every such domain is counted, with weight one.
+Every such domain is counted, with weight one. For arbitrary turn rows, at most one such
+annulus leaves a given grid state on each turn side, and it exists exactly when the two turn rows
+occur in order between the rows of the state on the sides of its column; these statements serve
+the crossing change homotopy as well.
 
 The membership characterizations below apply in both composition orders and to both turn
 sides. They remove the marking tests from the diagonal hexagon terms of the commutation
@@ -74,6 +77,85 @@ theorem coveredSquares_eq_empty_of_isEmpty_and_isEmpty (P : GridHexagonBetween a
     hc, Finset.mem_singleton]
   tauto
 
+/-- An empty hexagon--rectangle pair leaving a grid state and returning to it is unique. -/
+theorem sigma_target_eq_of_isEmpty_and_isEmpty {y' : GridState n}
+    (P : GridHexagonBetween a s t x y) (r : GridRectangleBetween y x)
+    (Q : GridHexagonBetween a s t x y') (r' : GridRectangleBetween y' x)
+    (h : P.IsEmpty ∧ r.IsEmpty) (h' : Q.IsEmpty ∧ r'.IsEmpty) :
+    (⟨y, P, r⟩ : Σ m, GridHexagonBetween a s t x m × GridRectangleBetween m x) = ⟨y', Q, r'⟩ := by
+  have hP := (P.isEmpty_and_isEmpty_iff r).mp h
+  have hQ := (Q.isEmpty_and_isEmpty_iff r').mp h'
+  obtain rfl : y = y' := by
+    rw [P.target_eq_swapColumns, Q.target_eq_swapColumns, hP.2, hQ.2]
+  obtain rfl : P = Q := Subsingleton.elim _ _
+  obtain rfl : r = r' := GridRectangleBetween.left_injective (hP.1.trans hQ.1.symm)
+  rfl
+
+/-- An empty rectangle--hexagon pair leaving a grid state and returning to it is unique. -/
+theorem sigma_source_eq_of_isEmpty_and_isEmpty {y' : GridState n}
+    (P : GridHexagonBetween a s t y x) (r : GridRectangleBetween x y)
+    (Q : GridHexagonBetween a s t y' x) (r' : GridRectangleBetween x y')
+    (h : P.IsEmpty ∧ r.IsEmpty) (h' : Q.IsEmpty ∧ r'.IsEmpty) :
+    (⟨y, r, P⟩ : Σ m, GridRectangleBetween x m × GridHexagonBetween a s t m x) = ⟨y', r', Q⟩ := by
+  have hP := (P.isEmpty_and_isEmpty_iff r).mp h
+  have hQ := (Q.isEmpty_and_isEmpty_iff r').mp h'
+  obtain rfl : y = y' := by
+    rw [P.toGridRectangleBetween.source_eq_swapColumns,
+      Q.toGridRectangleBetween.source_eq_swapColumns, hP.2, hQ.2, P.right_eq, Q.right_eq]
+  obtain rfl : P = Q := Subsingleton.elim _ _
+  obtain rfl : r = r' := GridRectangleBetween.left_injective (hP.1.trans hQ.1.symm)
+  rfl
+
+/-- An empty hexagon--rectangle pair leaves `x` and returns to it exactly when `s` and `t` occur in
+this order going up from the row of `x` in column `a` to its row in the next column. It is then
+the thin annulus in column `a`. -/
+theorem exists_target_isEmpty_and_isEmpty_iff (ha : a ≠ finRotate n a) :
+    (∃ (y : GridState n) (P : GridHexagonBetween a s t x y) (r : GridRectangleBetween y x),
+        P.IsEmpty ∧ r.IsEmpty) ↔
+      s ∈ Grid.cIco (x a) (x (finRotate n a)) ∧ t ∈ Grid.cIoo s (x (finRotate n a)) := by
+  constructor
+  · rintro ⟨y, P, r, h⟩
+    have hP := ((P.isEmpty_and_isEmpty_iff r).mp h).2
+    exact ⟨by simpa only [hP, P.right_eq] using P.lower_mem,
+      by simpa only [P.right_eq] using P.upper_mem⟩
+  · rintro ⟨hs, ht⟩
+    let P := GridHexagonBetween.ofSwapColumns x a ha hs ht
+    let r := GridRectangleBetween.ofSwapColumns (x.swapColumns a (finRotate n a)) x a
+      (finRotate n a) ha (GridState.swapColumns_swapColumns _ _ _).symm
+    exact ⟨_, P, r, (P.isEmpty_and_isEmpty_iff r).mpr
+      ⟨(GridRectangleBetween.ofSwapColumns_left ..).trans (ofSwapColumns_left ..).symm,
+        ofSwapColumns_left ..⟩⟩
+
+/-- An empty rectangle--hexagon pair leaves `x` and returns to it exactly when `s` and `t` occur in
+this order going up from the row of `x` in the column after `a` to its row in column `a`. It is
+then the thin annulus in column `a`. -/
+theorem exists_source_isEmpty_and_isEmpty_iff (ha : a ≠ finRotate n a) :
+    (∃ (y : GridState n) (r : GridRectangleBetween x y) (P : GridHexagonBetween a s t y x),
+        P.IsEmpty ∧ r.IsEmpty) ↔
+      s ∈ Grid.cIco (x (finRotate n a)) (x a) ∧ t ∈ Grid.cIoo s (x a) := by
+  constructor
+  · rintro ⟨y, r, P, h⟩
+    have hP := (P.isEmpty_and_isEmpty_iff r).mp h
+    have hright : r.right = P.right :=
+      P.toGridRectangleBetween.right_eq_right_of_left_eq_left r hP.1
+    have hl : y P.left = x (finRotate n a) := by rw [← hP.1, r.map_left, hright, P.right_eq]
+    have hr : y P.right = x a := by rw [← hright, r.map_right, hP.1, hP.2]
+    exact ⟨by simpa only [hl, hr] using P.lower_mem, by simpa only [hr] using P.upper_mem⟩
+  · rintro ⟨hs, ht⟩
+    -- The hexagon occupies column `a` and reads the exchanged rows of `a` and the next column.
+    let m := x.swapColumns a (finRotate n a)
+    let r := GridRectangleBetween.ofSwapColumns x m a (finRotate n a) ha rfl
+    let P := ofSwapColumns m a ha
+      (by simpa only [m, GridState.swapColumns_apply, Equiv.swap_apply_left,
+        Equiv.swap_apply_right] using hs)
+      (by simpa only [m, GridState.swapColumns_apply, Equiv.swap_apply_right] using ht)
+    -- Transport the hexagon along the double swap together with its initial side.
+    obtain ⟨P, hP⟩ : ∃ P : GridHexagonBetween a s t m x, P.left = a := by
+      rw [← GridState.swapColumns_swapColumns a (finRotate n a) x]
+      exact ⟨P, ofSwapColumns_left ..⟩
+    exact ⟨m, r, P, (P.isEmpty_and_isEmpty_iff r).mpr
+      ⟨(GridRectangleBetween.ofSwapColumns_left ..).trans hP.symm, hP⟩⟩
+
 end GridHexagonBetween
 
 namespace GridInitialHexagonBetween
@@ -116,6 +198,98 @@ theorem coveredSquares_eq_empty_of_isEmpty_and_isEmpty
     GridRectangleBetween.toGridRectangle_left, GridRectangleBetween.toGridRectangle_right,
     hc, Finset.mem_singleton]
   tauto
+
+/-- An empty hexagon--rectangle pair with an initial-side hexagon leaving a grid state and
+returning to it is unique. -/
+theorem sigma_target_eq_of_isEmpty_and_isEmpty {y' : GridState n}
+    (P : GridInitialHexagonBetween a s t x y) (r : GridRectangleBetween y x)
+    (Q : GridInitialHexagonBetween a s t x y') (r' : GridRectangleBetween y' x)
+    (h : P.IsEmpty ∧ r.IsEmpty) (h' : Q.IsEmpty ∧ r'.IsEmpty) :
+    (⟨y, P, r⟩ : Σ m, GridInitialHexagonBetween a s t x m × GridRectangleBetween m x) =
+      ⟨y', Q, r'⟩ := by
+  have hP := (P.isEmpty_and_isEmpty_iff r).mp h
+  have hQ := (Q.isEmpty_and_isEmpty_iff r').mp h'
+  obtain rfl : y = y' := by
+    rw [P.target_eq_swapColumns, Q.target_eq_swapColumns, hP.2, hQ.2]
+  obtain rfl : P = Q := Subsingleton.elim _ _
+  obtain rfl : r = r' := GridRectangleBetween.left_injective (hP.1.trans hQ.1.symm)
+  rfl
+
+/-- An empty rectangle--hexagon pair with an initial-side hexagon leaving a grid state and
+returning to it is unique. -/
+theorem sigma_source_eq_of_isEmpty_and_isEmpty {y' : GridState n}
+    (P : GridInitialHexagonBetween a s t y x) (r : GridRectangleBetween x y)
+    (Q : GridInitialHexagonBetween a s t y' x) (r' : GridRectangleBetween x y')
+    (h : P.IsEmpty ∧ r.IsEmpty) (h' : Q.IsEmpty ∧ r'.IsEmpty) :
+    (⟨y, r, P⟩ : Σ m, GridRectangleBetween x m × GridInitialHexagonBetween a s t m x) =
+      ⟨y', r', Q⟩ := by
+  have hP := (P.isEmpty_and_isEmpty_iff r).mp h
+  have hQ := (Q.isEmpty_and_isEmpty_iff r').mp h'
+  obtain rfl : y = y' := by
+    rw [P.toGridRectangleBetween.source_eq_swapColumns,
+      Q.toGridRectangleBetween.source_eq_swapColumns, hP.2, hQ.2, P.left_eq, Q.left_eq]
+  obtain rfl : P = Q := Subsingleton.elim _ _
+  obtain rfl : r = r' := GridRectangleBetween.left_injective (hP.1.trans hQ.1.symm)
+  rfl
+
+/-- An empty hexagon--rectangle pair with an initial-side hexagon leaves `x` and returns to it
+exactly when `s` and `t` occur in this order going up from the row of `x` in the column after `a`
+to its row in the column after that. It is then the thin annulus in the column after `a`. -/
+theorem exists_target_isEmpty_and_isEmpty_iff (ha : a ≠ finRotate n a) :
+    (∃ (y : GridState n) (P : GridInitialHexagonBetween a s t x y)
+        (r : GridRectangleBetween y x), P.IsEmpty ∧ r.IsEmpty) ↔
+      s ∈ Grid.cIco (x (finRotate n a)) (x (finRotate n (finRotate n a))) ∧
+        t ∈ Grid.cIoo s (x (finRotate n (finRotate n a))) := by
+  constructor
+  · rintro ⟨y, P, r, h⟩
+    have hP := ((P.isEmpty_and_isEmpty_iff r).mp h).2
+    exact ⟨by simpa only [P.left_eq, hP] using P.lower_mem,
+      by simpa only [hP] using P.upper_mem⟩
+  · rintro ⟨hs, ht⟩
+    have hbc : finRotate n a ≠ finRotate n (finRotate n a) := (finRotate n).injective.ne ha
+    let P := ofSwapColumns x (finRotate n (finRotate n a)) hbc.symm hs ht
+    let r := GridRectangleBetween.ofSwapColumns
+      (x.swapColumns (finRotate n a) (finRotate n (finRotate n a))) x (finRotate n a)
+      (finRotate n (finRotate n a)) hbc (GridState.swapColumns_swapColumns _ _ _).symm
+    exact ⟨_, P, r, (P.isEmpty_and_isEmpty_iff r).mpr
+      ⟨(GridRectangleBetween.ofSwapColumns_left ..).trans P.left_eq.symm,
+        ofSwapColumns_right ..⟩⟩
+
+/-- An empty rectangle--hexagon pair with an initial-side hexagon leaves `x` and returns to it
+exactly when `s` and `t` occur in this order going up from the row of `x` two columns after `a`
+to its row in the column after `a`. It is then the thin annulus in the column after `a`. -/
+theorem exists_source_isEmpty_and_isEmpty_iff (ha : a ≠ finRotate n a) :
+    (∃ (y : GridState n) (r : GridRectangleBetween x y)
+        (P : GridInitialHexagonBetween a s t y x), P.IsEmpty ∧ r.IsEmpty) ↔
+      s ∈ Grid.cIco (x (finRotate n (finRotate n a))) (x (finRotate n a)) ∧
+        t ∈ Grid.cIoo s (x (finRotate n a)) := by
+  constructor
+  · rintro ⟨y, r, P, h⟩
+    have hP := (P.isEmpty_and_isEmpty_iff r).mp h
+    have hright : r.right = P.right :=
+      P.toGridRectangleBetween.right_eq_right_of_left_eq_left r hP.1
+    have hl : y P.left = x (finRotate n (finRotate n a)) := by
+      rw [← hP.1, r.map_left, hright, hP.2]
+    have hr : y P.right = x (finRotate n a) := by rw [← hright, r.map_right, hP.1, P.left_eq]
+    exact ⟨by simpa only [hl, hr] using P.lower_mem, by simpa only [hr] using P.upper_mem⟩
+  · rintro ⟨hs, ht⟩
+    have hbc : finRotate n a ≠ finRotate n (finRotate n a) := (finRotate n).injective.ne ha
+    -- The hexagon occupies the column after `a` and reads the exchanged rows of that column and
+    -- the next one.
+    let m := x.swapColumns (finRotate n a) (finRotate n (finRotate n a))
+    let r := GridRectangleBetween.ofSwapColumns x m (finRotate n a) (finRotate n (finRotate n a))
+      hbc rfl
+    let P := ofSwapColumns m (finRotate n (finRotate n a)) hbc.symm
+      (by simpa only [m, GridState.swapColumns_apply, Equiv.swap_apply_left,
+        Equiv.swap_apply_right] using hs)
+      (by simpa only [m, GridState.swapColumns_apply, Equiv.swap_apply_right] using ht)
+    -- Transport the hexagon along the double swap together with its terminal side.
+    obtain ⟨P, hP⟩ : ∃ P : GridInitialHexagonBetween a s t m x,
+        P.right = finRotate n (finRotate n a) := by
+      rw [← GridState.swapColumns_swapColumns (finRotate n a) (finRotate n (finRotate n a)) x]
+      exact ⟨P, ofSwapColumns_right ..⟩
+    exact ⟨m, r, P, (P.isEmpty_and_isEmpty_iff r).mpr
+      ⟨(GridRectangleBetween.ofSwapColumns_left ..).trans P.left_eq.symm, hP⟩⟩
 
 end GridInitialHexagonBetween
 

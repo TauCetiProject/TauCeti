@@ -27,8 +27,13 @@ quasicoherent sheaf whose underlying module is finite locally free has the left 
   locally free sheaf;
 * `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.exactPairingDual`: the exact pairing between
   `E` and its dual;
+* `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.exactPairingDualObj` and
+  `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.exactPairingObjDual`: the same pairing, and its
+  swap, between the underlying sheaves of modules;
 * `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.rigidCategory`: finite locally free sheaves
   form a rigid category;
+* `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.freeIsoDual`: the free sheaf on a finite type
+  is isomorphic to its dual;
 * `TauCeti.AlgebraicGeometry.QuasicoherentSheaf.nonempty_hasLeftDual_of_isFiniteLocallyFree`: a
   finite locally free quasicoherent sheaf is dualizable in `QuasicoherentSheaf X`.
 -/
@@ -66,11 +71,24 @@ theorem dual_obj (E : FiniteLocallyFreeSheaf X) :
     (dual E).obj = (ihom E.obj).obj (𝟙_ X.Modules) :=
   (rfl)
 
+/-- In the category of sheaves of modules, the underlying sheaf of a finite locally free sheaf
+`E` has left dual `𝓗om(E, 𝒪_X)`. The evaluation is the evaluation of the internal Hom, and the
+coevaluation is the preimage of the identity of `E` under the invertible dual-tensor comparison. -/
+abbrev exactPairingDualObj (E : FiniteLocallyFreeSheaf X) : ExactPairing (dual E).obj E.obj :=
+  exactPairingOfIsIsoDualTensorIhom (Y := E.obj)
+
+/-- In the category of sheaves of modules, the underlying sheaf of a finite locally free sheaf
+`E` is left dual to `𝓗om(E, 𝒪_X)`, through the symmetry from `exactPairingDualObj`. Tensoring with
+`𝓗om(E, 𝒪_X)` is then left adjoint to tensoring with `E`. -/
+abbrev exactPairingObjDual (E : FiniteLocallyFreeSheaf X) : ExactPairing E.obj (dual E).obj :=
+  letI := exactPairingDualObj E
+  BraidedCategory.exactPairing_swap _ _
+
 /-- A finite locally free sheaf `E` has left dual `𝓗om(E, 𝒪_X)`. The evaluation is the evaluation
 of the internal Hom, and the coevaluation is the preimage of the identity of `E` under the
 invertible dual-tensor comparison. -/
 instance exactPairingDual (E : FiniteLocallyFreeSheaf X) : ExactPairing (dual E) E :=
-  letI : ExactPairing (dual E).obj E.obj := exactPairingOfIsIsoDualTensorIhom (Y := E.obj)
+  letI := exactPairingDualObj E
   ObjectProperty.exactPairingFullSubcategory _ _
 
 /-- Finite locally free sheaves form a rigid category: the left and right duals of `E` are both
@@ -107,6 +125,23 @@ theorem coevaluation_leftDual_hom (E : FiniteLocallyFreeSheaf X) :
   change (η_ (dual E) E).hom = _
   rw [ObjectProperty.exactPairingFullSubcategory_coevaluation_hom]
   exact exactPairingOfIsIsoDualTensorIhom_coevaluation
+
+variable (X) in
+/-- The free sheaf `𝒪_X^I` on a finite type is isomorphic to its dual `𝓗om(𝒪_X^I, 𝒪_X)`: the
+inverse of `TauCeti.SheafOfModules.dualFreeIso`, which sends the basis sections of `𝒪_X^I` to the
+dual basis sections `TauCeti.SheafOfModules.dualFreeι`. -/
+def freeIsoDual (I : Type u) [Finite I] : free X I ≅ dual (free X I) :=
+  ObjectProperty.isoMk _ (eqToIso (free_obj X I) ≪≫
+    (SheafOfModules.dualFreeIso (R := X.sheaf) I).symm ≪≫ eqToIso (by rw [dual_obj, free_obj]; rfl))
+
+/-- The underlying map of `freeIsoDual X I` is the inverse of
+`TauCeti.SheafOfModules.dualFreeIso`, up to the identification `free_obj` of the underlying sheaf
+of `free X I` with the free sheaf of modules. -/
+theorem freeIsoDual_hom_hom (I : Type u) [Finite I] :
+    (freeIsoDual X I).hom.hom =
+      eqToHom (free_obj X I) ≫ (SheafOfModules.dualFreeIso (R := X.sheaf) I).inv ≫
+        eqToHom (by rw [dual_obj, free_obj]; rfl) :=
+  (rfl)
 
 end FiniteLocallyFreeSheaf
 

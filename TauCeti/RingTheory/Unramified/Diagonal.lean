@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Ideal.IdempotentFG
 public import Mathlib.RingTheory.Jacobson.Ideal
 public import Mathlib.RingTheory.Unramified.Basic
+public import TauCeti.RingTheory.TensorProduct.Maps
 
 /-!
 # The diagonal of an unramified algebra
@@ -73,23 +74,6 @@ theorem comp_eq_comp_of_isUnit_one_sub_productMap {R S T U : Type*}
   have hidem : IsIdempotentElem (h (Algebra.TensorProduct.productMap f g e)) := (he.map _).map h
   exact hu.mul_left_eq_zero.mp (by simpa only [map_sub, map_one] using hidem.mul_one_sub_self)
 
-/-- If two maps agree modulo an ideal, their product map sends the kernel of multiplication
-into that ideal. -/
-theorem productMap_mem_of_comp_eq {R S T : Type*} [CommSemiring R] [CommSemiring S] [CommRing T]
-    [Algebra R S] [Algebra R T]
-    {e : S ⊗[R] S} (he : Algebra.TensorProduct.lmul' R e = 0) (J : Ideal T)
-    {f g : S →ₐ[R] T}
-    (hfg : (Ideal.Quotient.mkₐ R J).comp f = (Ideal.Quotient.mkₐ R J).comp g) :
-    Algebra.TensorProduct.productMap f g e ∈ J := by
-  have hp : (Ideal.Quotient.mkₐ R J).comp (Algebra.TensorProduct.productMap f g) =
-      ((Ideal.Quotient.mkₐ R J).comp f).comp (Algebra.TensorProduct.lmul' R) := by
-    ext s
-    · simp
-    · simpa using DFunLike.congr_fun hfg.symm s
-  apply Ideal.Quotient.eq_zero_iff_mem.mp
-  have h := DFunLike.congr_fun hp e
-  simpa only [AlgHom.comp_apply, he, map_zero, Ideal.Quotient.mkₐ_eq_mk] using h
-
 /-- Maps out of an essentially finite type unramified algebra are determined modulo any ideal
 contained in the target's Jacobson radical. -/
 theorem ext_of_quotient_eq (R S : Type*) [CommRing R] [CommRing S] [Algebra R S]
@@ -99,7 +83,7 @@ theorem ext_of_quotient_eq (R S : Type*) [CommRing R] [CommRing S] [Algebra R S]
     (hfg : (Ideal.Quotient.mkₐ R J).comp f = (Ideal.Quotient.mkₐ R J).comp g) :
     f = g := by
   obtain ⟨e, he, hker⟩ := exists_isIdempotentElem_ker_lmul_eq_span R S
-  have hpe := productMap_mem_of_comp_eq
+  have hpe := Algebra.TensorProduct.productMap_mem_of_comp_eq
     (RingHom.mem_ker.mp (hker ▸ Ideal.mem_span_singleton_self e)) J hfg
   have hu : IsUnit (1 - Algebra.TensorProduct.productMap f g e) := by
     apply Ideal.isUnit_of_sub_one_mem_jacobson_bot

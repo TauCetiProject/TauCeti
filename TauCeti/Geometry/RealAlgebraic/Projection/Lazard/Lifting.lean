@@ -78,11 +78,13 @@ theorem nonempty_lazardDelineation_subfamily_of_lazardProjection
     rw [coeff_zero_prod]
     exact Finset.prod_ne_zero_iff.mpr hconst
   obtain ⟨D⟩ := p.nonempty_lazardDelineation_of_lazardValuation_eq hS hconn
-    (leadingCoeff_ne_zero.mpr hp) hpconst (hB.isSquarefreeBasis.discr_prod_ne_zero hAB)
+    hp (hB.isSquarefreeBasis.discr_prod_ne_zero hAB)
     (fun x hx y hy ↦ Finset.lazardValuation_leadingCoeff_prod_eq_of_lazardProjection hAB x y
       (fun q hq ↦ hproj q hq x hx y hy))
-    (fun x hx y hy ↦ Finset.lazardValuation_coeff_zero_prod_eq_of_lazardProjection hAB x y
-      (fun q hq ↦ hproj q hq x hx y hy))
+    (fun x hx y hy ↦ by
+      rw [trailingCoeff_eq_coeff_zero hpconst]
+      exact Finset.lazardValuation_coeff_zero_prod_eq_of_lazardProjection hAB x y
+        (fun q hq ↦ hproj q hq x hx y hy))
     (fun x hx y hy ↦ hB.lazardValuation_discr_prod_eq_of_lazardProjection hAB x y
       (fun q hq ↦ hproj q hq x hx y hy))
   -- The two equivalences and renaming preserve products. Restate the singleton product
@@ -118,13 +120,6 @@ theorem nonempty_lazardDelineation_basis_of_lazardProjection (hB : F.IsIrreducib
   have hAB : A ⊆ B := Finset.filter_subset _ _
   obtain ⟨D⟩ := nonempty_lazardDelineation_subfamily_of_lazardProjection hB hAB
     (fun b hb ↦ (Finset.mem_filter.1 hb).2) hS hconn hproj
-  -- Putting the distinguished variable last and moving it back into the coefficients is the
-  -- coefficient swap of the two `Option` equivalences.
-  have hswap (b : Polynomial (MvPolynomial (Fin n) ℝ)) :
-      optionEquivRight ℝ (Fin n) (rename finSuccEquivLast
-        (rename finSuccEquivLast.symm ((optionEquivLeft ℝ (Fin n)).symm b))) =
-        ((optionEquivLeft ℝ (Fin n)).symm.trans (optionEquivRight ℝ (Fin n))) b := by
-    rw [rename_rename, Equiv.self_comp_symm, rename_id_apply, AlgEquiv.trans_apply]
   refine nonempty_lazardDelineation_of_comp (f := fun b : A ↦ ⟨b.1, hAB b.2⟩) D hconn ?_ ?_
   · -- A basis member with zero constant coefficient is a nonzero multiple of the coordinate.
     rintro ⟨b, hb⟩ hbA
@@ -137,16 +132,10 @@ theorem nonempty_lazardDelineation_basis_of_lazardProjection (hB : F.IsIrreducib
       rw [← hu, ← hcu, mul_comm]
     exact ⟨a, ha.ne_zero, by simp [hbX]⟩
   · -- Constancy of the constant-coefficient valuation decides the root `0` uniformly.
-    rintro ⟨b, hbA⟩ x y hx
-    have hb0 := (Finset.mem_filter.1 hbA).2
-    have hval := hproj _ (Finset.trailingCoeff_mem_lazardProjection (hAB hbA)) x x.2 y y.2
-    rw [trailingCoeff_eq_coeff_zero hb0,
-      ← map_constantCoeff_optionEquivRight_optionEquivLeft_symm] at hval
-    have hexp := (D.lazardExponent_eq ⟨b, hbA⟩ x).trans (D.lazardExponent_eq ⟨b, hbA⟩ y).symm
-    simp only [hswap] at hx hexp ⊢
-    by_contra hy
-    rw [← lazardValuation_map_constantCoeff_eq_iff] at hy
-    exact (lazardValuation_map_constantCoeff_eq_iff _ _).1 (by rw [hval, hy, hexp]) hx
+    rintro ⟨b, hbA⟩
+    refine D.isRoot_zero_of_lazardValuation_coeff_zero_eq (k := ⟨b, hbA⟩) rfl fun x hx y hy ↦ ?_
+    rw [← trailingCoeff_eq_coeff_zero (Finset.mem_filter.1 hbA).2]
+    exact hproj _ (Finset.trailingCoeff_mem_lazardProjection (hAB hbA)) x hx y hy
 
 /-- **Lazard lifting of a family.** Over a preconnected analytic submanifold on which the Lazard
 projection of a family with respect to an irreducible basis is valuation-invariant, the family has

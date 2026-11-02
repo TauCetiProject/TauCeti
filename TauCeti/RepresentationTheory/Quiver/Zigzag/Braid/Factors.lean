@@ -206,8 +206,7 @@ def zigzagBraidTensorCornerEquiv (i j : V) :
       (zigzagBraidBimoduleRightFactorsEquiv_op_smul k G i) (leftFactors_equivariant k G j)).trans
     ((BalancedTensorProduct.outerFactors k Z (R i) (L j) (L i) (R j)).trans
       (TensorProduct.congr (spanSingletonBalancedTensorProductEquivCorner k
-        (isIdempotentElem_zigzagAlgebraBasis_inl k G i)
-        (isIdempotentElem_zigzagAlgebraBasis_inl k G j)) (LinearEquiv.refl k _))))
+        (isIdempotentElem_zigzagAlgebraBasis_inl k G i)) (LinearEquiv.refl k _))))
 
 /-- On pure vertex factors, middle-corner extraction multiplies the two inner factors. -/
 @[simp]
@@ -219,7 +218,6 @@ theorem zigzagBraidTensorCornerEquiv_tmul (i j : V) (l : L i) (r : R i)
         ((zigzagBraidBimoduleFactorsEquiv k G j).symm (l' ⊗ₜ[k] r'))) =
     spanSingletonBalancedTensorProductEquivCorner k
       (isIdempotentElem_zigzagAlgebraBasis_inl k G i)
-      (isIdempotentElem_zigzagAlgebraBasis_inl k G j)
       (BalancedTensorProduct.tmul k Z r l') ⊗ₜ[k] (l ⊗ₜ[k] r') := by
   simp only [zigzagBraidTensorCornerEquiv, LinearEquiv.trans_apply]
   rw [GradedModuleCat.bimoduleTensorUnderlyingEquiv_tmul Γ Γ Γ (U i) (U j)]
@@ -237,8 +235,7 @@ theorem zigzagBraidTensorCornerEquiv_symm_tmul (i j : V)
         ((zigzagBraidBimoduleFactorsEquiv k G i).symm
           (l ⊗ₜ[k] spanSingletonGenerator (op (e i))))
         ((zigzagBraidBimoduleFactorsEquiv k G j).symm
-          (⟨(x : Z), mem_span_singleton_of_mem_cornerSubmodule
-            (isIdempotentElem_zigzagAlgebraBasis_inl k G j) x.2⟩ ⊗ₜ[k] r)) := by
+          (⟨(x : Z), mem_span_singleton_of_mem_cornerSubmodule x.2⟩ ⊗ₜ[k] r)) := by
   apply (zigzagBraidTensorCornerEquiv k G i j).injective
   rw [LinearEquiv.apply_symm_apply, zigzagBraidTensorCornerEquiv_tmul]
   congr 1

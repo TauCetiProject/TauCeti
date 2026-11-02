@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.ModularForms.EisensteinSeries.Basic
-import Mathlib.Analysis.Complex.LocallyUniformLimit
 import Mathlib.NumberTheory.ModularForms.Identities
+import TauCeti.Analysis.Complex.UpperHalfPlane.Manifold
 
 /-!
 # Eisenstein series weighted by a function of residues
@@ -171,25 +171,11 @@ theorem weightedEisensteinSeries_tendstoLocallyUniformly (hk : 3 ≤ k) :
 
 /-- The weighted series is holomorphic on `ℍ`. -/
 theorem weightedEisensteinSeries_mdifferentiable (hk : 3 ≤ k) :
-    MDiff (weightedEisensteinSeriesSIF W k) := by
-  intro τ
-  suffices DifferentiableAt ℂ (↑ₕweightedEisensteinSeriesSIF W k) τ.1 by
-    convert!
-      MDifferentiableAt.comp τ (DifferentiableAt.mdifferentiableAt this) τ.mdifferentiable_coe
-    exact funext fun z ↦ (comp_ofComplex (weightedEisensteinSeriesSIF W k) z).symm
-  refine DifferentiableOn.differentiableAt ?_ (isOpen_upperHalfPlaneSet.mem_nhds τ.2)
-  have hloc : TendstoLocallyUniformlyOn (fun s : Finset (Fin 2 → ℤ) ↦
-      ↑ₕ(fun z : ℍ ↦ ∑ v ∈ s, W ((↑) ∘ v) * eisSummand k v z))
-        (↑ₕ(weightedEisensteinSeriesSIF W k)) atTop {z : ℂ | 0 < z.im} := by
-    rw [← upperHalfPlaneSet, ← range_coe, ← image_univ]
-    apply TendstoLocallyUniformlyOn.comp (s := ⊤) _ _ _
-      (OpenPartialHomeomorph.continuousOn_symm _)
-    · simp only [Set.top_eq_univ, tendstoLocallyUniformlyOn_univ]
-      exact weightedEisensteinSeries_tendstoLocallyUniformly W hk
-    · simp only [Topology.IsOpenEmbedding.toOpenPartialHomeomorph_target, Set.top_eq_univ,
-        mapsTo_range_iff, Set.mem_univ, forall_const]
-  exact hloc.differentiableOn (Eventually.of_forall fun s ↦ DifferentiableOn.fun_sum
-    fun v _ ↦ (eisSummand_extension_differentiableOn k v).const_mul _) isOpen_upperHalfPlaneSet
+    MDiff (weightedEisensteinSeriesSIF W k) :=
+  TauCeti.UpperHalfPlane.mdifferentiable_of_tendstoLocallyUniformly
+    (weightedEisensteinSeries_tendstoLocallyUniformly W hk) (Eventually.of_forall fun _ ↦
+      UpperHalfPlane.mdifferentiable_iff.mpr (DifferentiableOn.fun_sum
+        fun v _ ↦ (eisSummand_extension_differentiableOn k v).const_mul _))
 
 /-- Every `SL(2, ℤ)`-translate of the weighted series is bounded at `i∞`. -/
 theorem isBoundedAtImInfty_weightedEisensteinSeriesSIF (hk : 3 ≤ k) (γ : SL(2, ℤ)) :

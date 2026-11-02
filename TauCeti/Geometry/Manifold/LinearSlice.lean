@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.LocallyFlat.Basic
 public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 public import Mathlib.Topology.Algebra.Module.Complement
+public import Mathlib.Geometry.Manifold.SmoothEmbedding
 
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 import TauCeti.Topology.Algebra.Module.SubspaceExchange
@@ -18,7 +19,9 @@ import TauCeti.Topology.Algebra.Module.SubspaceExchange
 Ambient charts flattening a subset of a manifold onto a fixed linear slice induce a manifold
 structure on the subset with its original topology. If the ambient charts and their inverses are
 `C^n`, the induced atlas and the inclusion into the ambient manifold are `C^n`. A subset of a
-normed space is the case of the space modelled on itself.
+normed space is the case of the space modelled on itself. For a self-modelled ambient manifold,
+a linear identification of the product coordinates with the ambient model makes the inclusion
+a smooth embedding, with the transverse model as its immersion complement.
 
 The construction requires neither finite dimension nor completeness. It reuses
 `IsSliceChart.subtypeChart`; the smooth-atlas argument follows the preferred-chart argument
@@ -179,6 +182,60 @@ theorem contMDiff_subtypeVal_linearSliceChartedSpace
   filter_upwards [(linearSliceChart e he x).open_source.mem_nhds hxs] with y hy
   rw [linearSliceChart_source] at hy
   rw [linearSliceChart_apply, (he x).mk_fst_zero_eq hy y.2, (e x).left_inv hy]
+
+omit hsmooth hinv in
+/-- For smooth linear-slice charts, the inclusion is an immersion with the transverse model as
+complement. The linear equivalence identifies the product coordinates with the ambient model. -/
+theorem isImmersionOfComplement_subtypeVal_linearSliceChartedSpace
+    (A : s → (F × G) ≃L[𝕜] E) [ChartedSpace E M] [IsManifold 𝓘(𝕜, E) n M]
+    (hs : ∀ x, ContMDiffOn 𝓘(𝕜, E) 𝓘(𝕜, F × G) n (e x) (e x).source)
+    (hi : ∀ x, ContMDiffOn 𝓘(𝕜, F × G) 𝓘(𝕜, E) n (e x).symm (e x).target)
+    (hcover : ∀ x : s, (x : M) ∈ (e x).source) :
+    letI := linearSliceChartedSpace e he hcover
+    Manifold.IsImmersionOfComplement G 𝓘(𝕜, F) 𝓘(𝕜, E) n
+      (Subtype.val : s → M) := by
+  let := linearSliceChartedSpace e he hcover
+  have := isManifold_linearSliceChartedSpace e he
+    (fun x z hz ↦ (hs x).contMDiffAt ((e x).open_source.mem_nhds hz))
+    (fun x z hz ↦ (hi x).contMDiffAt ((e x).open_target.mem_nhds hz)) hcover
+  intro x
+  let c := (e x).transHomeomorph (A x).toHomeomorph
+  have hc : c ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M := by
+    apply OpenPartialHomeomorph.mem_maximalAtlas_of_contMDiffOn
+    · exact (A x).contDiff.contMDiff.comp_contMDiffOn (hs x)
+    · exact (hi x).comp (A x).symm.contDiff.contMDiff.contMDiffOn fun z hz ↦ hz
+  refine Manifold.IsImmersionAtOfComplement.mk_of_charts (A x)
+    (linearSliceChart e he x) c ?_ ?_ ?_ hc ?_ ?_
+  · simpa only [linearSliceChart_source, Set.mem_preimage] using hcover x
+  · exact hcover x
+  · exact IsManifold.chart_mem_maximalAtlas (I := 𝓘(𝕜, F)) x
+  · simpa only [linearSliceChart_source, c, OpenPartialHomeomorph.transHomeomorph_source] using
+      (Set.Subset.rfl : Subtype.val ⁻¹' (e x).source ⊆ Subtype.val ⁻¹' (e x).source)
+  · intro v hv
+    have hv' : (v, (0 : G)) ∈ (e x).target := by
+      simpa only [OpenPartialHomeomorph.extend_target, modelWithCornersSelf_coe,
+        modelWithCornersSelf_coe_symm, Set.preimage_id,
+        Set.range_id, Set.inter_univ, linearSliceChart_target, Set.mem_preimage] using hv
+    -- Both models are self-models; their extensions leave the ordinary chart formulas intact.
+    simp only [Function.comp_apply, OpenPartialHomeomorph.extend_coe,
+      OpenPartialHomeomorph.extend_coe_symm, modelWithCornersSelf_coe,
+      modelWithCornersSelf_coe_symm, id_eq, OpenPartialHomeomorph.transHomeomorph_apply,
+      ContinuousLinearEquiv.coe_toHomeomorph, c,
+      coe_linearSliceChart_symm_apply e he x hv', (e x).right_inv hv']
+
+omit hsmooth hinv in
+/-- The inclusion equipped with its smooth linear-slice atlas is a smooth embedding. -/
+theorem isSmoothEmbedding_subtypeVal_linearSliceChartedSpace
+    (A : s → (F × G) ≃L[𝕜] E) [ChartedSpace E M] [IsManifold 𝓘(𝕜, E) n M]
+    (hs : ∀ x, ContMDiffOn 𝓘(𝕜, E) 𝓘(𝕜, F × G) n (e x) (e x).source)
+    (hi : ∀ x, ContMDiffOn 𝓘(𝕜, F × G) 𝓘(𝕜, E) n (e x).symm (e x).target)
+    (hcover : ∀ x : s, (x : M) ∈ (e x).source) :
+    letI := linearSliceChartedSpace e he hcover
+    Manifold.IsSmoothEmbedding 𝓘(𝕜, F) 𝓘(𝕜, E) n (Subtype.val : s → M) := by
+  let := linearSliceChartedSpace e he hcover
+  exact ⟨(isImmersionOfComplement_subtypeVal_linearSliceChartedSpace
+    e he A hs hi hcover).isImmersion,
+    IsEmbedding.subtypeVal⟩
 
 omit e he hsmooth hinv in
 /-- A subset of a manifold locally flattened onto a complemented linear subspace of the model is a

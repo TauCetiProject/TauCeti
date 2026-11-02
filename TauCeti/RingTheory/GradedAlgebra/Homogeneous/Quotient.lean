@@ -19,7 +19,8 @@ The graded pieces are submodules of the quotient itself. Homogeneity lets the ad
 projections descend to the quotient, where they recover each coordinate of a finite sum. Thus the
 pieces form an internal direct sum, giving `TauCeti.GradedAlgebra.gradedAlgebraQuotientPiece`.
 This structure is a definition rather than a global instance: callers choose the grading locally
-with `letI`.
+with `letI`. For an ideal bundled as a `HomogeneousIdeal`, homogeneity is part of the data, and
+the induced grading `HomogeneousIdeal.quotientGrading` is a global instance.
 
 The construction follows Antoine Chambert-Loir's
 [Mathlib PR #36501](https://github.com/leanprover-community/mathlib4/pull/36501): the degree-`i`
@@ -90,3 +91,19 @@ noncomputable def gradedAlgebraQuotientPiece (hI : I.IsHomogeneous 𝒜) :
   DirectSum.IsInternal.gradedAlgebra (isInternal_quotientPiece 𝒜 I hI)
 
 end TauCeti.GradedAlgebra
+
+namespace HomogeneousIdeal
+
+variable {ι R A : Type*} [DecidableEq ι] [AddMonoid ι] [CommSemiring R] [CommRing A] [Algebra R A]
+  {𝒜 : ι → Submodule R A} [GradedAlgebra 𝒜]
+
+/-- The grading of the quotient `A ⧸ I` by a homogeneous ideal `I`: its degree-`i` piece is the
+image of `𝒜 i` under the quotient map. -/
+noncomputable abbrev quotientGrading (I : HomogeneousIdeal 𝒜) : ι → Submodule R (A ⧸ I.toIdeal) :=
+  TauCeti.GradedAlgebra.quotientPiece 𝒜 I.toIdeal
+
+/-- The quotient by a homogeneous ideal is graded by the images of the graded pieces. -/
+noncomputable instance (I : HomogeneousIdeal 𝒜) : GradedAlgebra I.quotientGrading :=
+  TauCeti.GradedAlgebra.gradedAlgebraQuotientPiece 𝒜 I.toIdeal I.isHomogeneous
+
+end HomogeneousIdeal

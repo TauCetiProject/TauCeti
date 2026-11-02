@@ -338,6 +338,63 @@ theorem fractionalIdeal_le_one (f : BinaryQuadraticForm ℤ) (D : ℤ)
     (QuadraticOrder.numberFieldOrder_toSubalgebra D
       (hf ▸ f.discrim_emod_four_eq_zero_or_one))).mpr (orderIdeal_le_order f D hf hzO)
 
+/-- A form whose leading coefficient is a unit has the unit ideal. -/
+theorem fractionalIdeal_eq_one_of_isUnit_a (f : BinaryQuadraticForm ℤ) (D : ℤ)
+    (hf : f.discrim = D) [Fact (¬ IsSquare D)] (ha : IsUnit f.a) :
+    f.fractionalIdeal D hf = 1 := by
+  refine le_antisymm (fractionalIdeal_le_one f D hf) (FractionalIdeal.one_le.mpr ?_)
+  refine (mem_fractionalIdeal_iff f D hf _).mpr ?_
+  rcases Int.isUnit_iff.mp ha with ha | ha
+  · exact ⟨1, 0, by simp [ha]⟩
+  · exact ⟨-1, 0, by simp [ha]⟩
+
+/-- A fractional ideal contains the form ideal exactly when it contains both generators. -/
+theorem fractionalIdeal_le_iff (f : BinaryQuadraticForm ℤ) (D : ℤ)
+    (hf : f.discrim = D) [Fact (¬ IsSquare D)]
+    {J : FractionalIdeal (nonZeroDivisors (QuadraticOrder.numberFieldOrder D
+      (hf ▸ f.discrim_emod_four_eq_zero_or_one)).toSubalgebra) (QuadraticAlgebra ℚ (D : ℚ) 0)} :
+    f.fractionalIdeal D hf ≤ J ↔
+      (f.a : QuadraticAlgebra ℚ (D : ℚ) 0) ∈ J ∧ f.idealGenerator D ∈ J := by
+  refine ⟨fun h ↦ ⟨h (a_mem_fractionalIdeal f D hf),
+    h (idealGenerator_mem_fractionalIdeal f D hf)⟩, fun ⟨ha, hβ⟩ z hz ↦ ?_⟩
+  obtain ⟨m, n, rfl⟩ := (mem_fractionalIdeal_iff f D hf z).mp hz
+  rw [← FractionalIdeal.mem_coe] at ha hβ ⊢
+  exact add_mem (zsmul_mem ha m) (zsmul_mem hβ n)
+
+/-- A fractional ideal contains the product of two form ideals of the same discriminant exactly
+when it contains the four products of their generators. -/
+theorem fractionalIdeal_mul_fractionalIdeal_le_iff (f g : BinaryQuadraticForm ℤ) (D : ℤ)
+    (hf : f.discrim = D) (hg : g.discrim = D) [Fact (¬ IsSquare D)]
+    {J : FractionalIdeal (nonZeroDivisors (QuadraticOrder.numberFieldOrder D
+      (hf ▸ f.discrim_emod_four_eq_zero_or_one)).toSubalgebra) (QuadraticAlgebra ℚ (D : ℚ) 0)} :
+    f.fractionalIdeal D hf * g.fractionalIdeal D hg ≤ J ↔
+      (f.a : QuadraticAlgebra ℚ (D : ℚ) 0) * g.a ∈ J ∧
+        (f.a : QuadraticAlgebra ℚ (D : ℚ) 0) * g.idealGenerator D ∈ J ∧
+        f.idealGenerator D * g.a ∈ J ∧ f.idealGenerator D * g.idealGenerator D ∈ J := by
+  have hα := a_mem_fractionalIdeal f D hf
+  have hβ := idealGenerator_mem_fractionalIdeal f D hf
+  have hα' := a_mem_fractionalIdeal g D hg
+  have hβ' := idealGenerator_mem_fractionalIdeal g D hg
+  refine ⟨fun h ↦ ⟨h (FractionalIdeal.mul_mem_mul hα hα'), h (FractionalIdeal.mul_mem_mul hα hβ'),
+    h (FractionalIdeal.mul_mem_mul hβ hα'), h (FractionalIdeal.mul_mem_mul hβ hβ')⟩,
+    fun ⟨h₁, h₂, h₃, h₄⟩ ↦ ?_⟩
+  rw [FractionalIdeal.mul_le]
+  intro i hi j hj
+  obtain ⟨m, n, rfl⟩ := (mem_fractionalIdeal_iff f D hf i).mp hi
+  obtain ⟨m', n', rfl⟩ := (mem_fractionalIdeal_iff g D hg j).mp hj
+  have key : (m • (f.a : QuadraticAlgebra ℚ (D : ℚ) 0) + n • f.idealGenerator D) *
+      (m' • (g.a : QuadraticAlgebra ℚ (D : ℚ) 0) + n' • g.idealGenerator D) =
+      (m * m') • ((f.a : QuadraticAlgebra ℚ (D : ℚ) 0) * g.a) +
+        (m * n') • ((f.a : QuadraticAlgebra ℚ (D : ℚ) 0) * g.idealGenerator D) +
+        (n * m') • (f.idealGenerator D * g.a) +
+        (n * n') • (f.idealGenerator D * g.idealGenerator D) := by
+    simp only [zsmul_eq_mul, Int.cast_mul]
+    ring
+  rw [key]
+  rw [← FractionalIdeal.mem_coe] at h₁ h₂ h₃ h₄ ⊢
+  exact add_mem (add_mem (add_mem (zsmul_mem h₁ _) (zsmul_mem h₂ _)) (zsmul_mem h₃ _))
+    (zsmul_mem h₄ _)
+
 /-- The form ideal is nonzero. -/
 theorem fractionalIdeal_ne_zero (f : BinaryQuadraticForm ℤ) (D : ℤ)
     (hf : f.discrim = D) [Fact (¬ IsSquare D)] :

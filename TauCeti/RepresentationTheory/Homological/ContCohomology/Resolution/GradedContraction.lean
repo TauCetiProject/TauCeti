@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Continuous.TopRep.GradedCochainComplex
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.DegreeCast
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Cochain
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Cohomology
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Graded
 
@@ -55,10 +57,18 @@ a homogeneous cocycle is its class in continuous cohomology
   `gradedCohomologyClass_smul`: the class is linear in the cocycle.
 * `TopRep.ResolutionContraction.gradedCohomologyClass_eq_of_sub_eq_d`: homogeneous cocycles
   differing by the differential of a homogeneous invariant element have the same class.
+* `TopRep.ResolutionContraction.gradedCohomologyClass_map`: a morphism of degree zero commuting
+  with the differentials and carrying one augmentation to the other preserves classes.
+* `TopRep.ResolutionContraction.gradedCohomologyClass_eq_degreeZeroClass`: in degree zero, the
+  class of a cocycle is the invariant vector given by its retraction.
 * `TopRep.ResolutionContraction.gradedCohomologyClass_eq_of_ι_eq`: over a locally compact group,
   the class depends on the contraction only through its augmentation.
+* `TopRep.ResolutionContraction.coeffMap_gradedCohomologyClass_degreeCast`: equal cocycles read
+  in equal degrees have classes related by `degreeCast`.
 * `TopRep.gradedCohomologyClass_gradedResolutionContraction`: on the total coinduced resolution,
   the class of a homogeneous cocycle is its class in continuous cohomology.
+* `TopRep.gradedCohomologyClass_eq_degreeCast_cochainClass`: the same, for a cocycle included by
+  `cochainToGradedResolution` and read in a degree equal to its own, through `degreeCast`.
 
 ## References
 
@@ -189,6 +199,37 @@ theorem gradedCohomologyClass_eq_of_sub_eq_d {n : ℕ} {z z' : M.V} (hz : z ∈ 
       rw [map_sub]
       simpa using hzy))
 
+/-- **A chain map over the identity preserves classes.** Let `F : M ⟶ M'` be a morphism of degree
+zero commuting with the differentials, between graded representations whose complexes are
+contracted onto the same `X` by `c` and `c'`, and suppose `F` carries the augmentation of `c` to
+that of `c'`. Then a homogeneous cocycle `z` of `M` fixed by `G` and its image `F z` have the same
+class in `Hⁿ(G, X)`. -/
+theorem gradedCohomologyClass_map [LocallyCompactSpace G] {M' : TopRep.{max v w} k G}
+    {ℳ' : ℤ → Submodule k M'.V} {hρ' : ∀ n g x, x ∈ ℳ' n → M'.ρ g x ∈ ℳ' n} {d' : M' ⟶ M'}
+    {hd' : TauCeti.LinearMap.IsHomogeneous d'.hom.toLinearMap ℳ' ℳ' 1} {hdd' : d' ≫ d' = 0}
+    (c' : ResolutionContraction X (M'.gradedCochainComplex ℳ' hρ' d' hd' hdd')) (F : M ⟶ M')
+    (hF : TauCeti.LinearMap.IsHomogeneous F.hom.toLinearMap ℳ ℳ' 0) (hFd : d ≫ F = F ≫ d')
+    (hι : ∀ x, F.hom (c.ι.hom x).1 = (c'.ι.hom x).1)
+    {n : ℕ} {z : M.V} (hz : z ∈ ℳ n) (hinv : ∀ g, M.ρ g z = z) (hdz : d.hom z = 0) :
+    c'.gradedCohomologyClass (F.hom z)
+        (by have h := hF.map_mem hz; rw [add_zero] at h; exact h)
+        (fun g ↦ by rw [← hom_comm_apply, hinv])
+        (by rw [← comp_apply, ← hFd, comp_apply, hdz, map_zero]) =
+      c.gradedCohomologyClass z hz hinv hdz := by
+  have hf : c.ι ≫ (gradedCochainComplexMap (hρ' := hρ') (hd' := hd') (hdd' := hdd') F hF hFd).f 0 =
+      c'.ι := by
+    refine ConcreteCategory.hom_ext _ _ fun x ↦
+      gradedCochainComplexι_injective M' ℳ' hρ' d' hd' hdd' 0 ?_
+    rw [comp_apply, gradedCochainComplexι_apply, gradedCochainComplexMap_f_apply,
+      gradedCochainComplexι_apply]
+    exact hι x
+  rw [gradedCohomologyClass_def, gradedCohomologyClass_def,
+    ← c.cohomologyClass_map c' _ hf]
+  congr 1
+  refine Subtype.ext (Subtype.ext ?_)
+  rw [ContIntertwiningMap.mapInvariants_apply, gradedCochainComplexMap_f_apply,
+    gradedCochainComplexInvariant_val, gradedCochainComplexInvariant_val]
+
 /-- The class of a sum of homogeneous cocycles is the sum of their classes. -/
 @[simp]
 theorem gradedCohomologyClass_add {n : ℕ} {z z' : M.V} (hz : z ∈ ℳ n) (hz' : z' ∈ ℳ n)
@@ -228,6 +269,17 @@ theorem gradedCohomologyClass_smul {n : ℕ} (r : k) {z : M.V} (hz : z ∈ ℳ n
   rw [Submodule.coe_smul, map_smul]
   simp
 
+/-- **The class of a degree-zero cocycle is the degree-zero class of its retraction**: a vector
+`z ∈ ℳ 0` fixed by `G` and killed by `d` has class `proj z` in `H⁰(G, X) = X^G`. -/
+theorem gradedCohomologyClass_eq_degreeZeroClass (z : M.V) (hz : z ∈ ℳ (0 : ℕ))
+    (hinv : ∀ g, M.ρ g z = z) (hdz : d.hom z = 0) :
+    c.gradedCohomologyClass z hz hinv hdz = TauCeti.ContinuousCohomology.degreeZeroClass X
+      (c.proj (M.gradedCochainComplexInvariant ℳ hρ d hd hdd 0 z hz hinv))
+      (c.ρ_proj_of_d_eq_zero (gradedCochainComplex_d_invariant M ℳ hρ d hd hdd hz hinv hdz)
+        ((ContRepresentation.mem_invariants _).1
+          (M.gradedCochainComplexInvariant ℳ hρ d hd hdd 0 z hz hinv).2)) :=
+  c.cohomologyClass_eq_degreeZeroClass _ _
+
 /-- **Independence of the contraction.** Over a locally compact group, two contractions of the
 complex of a graded representation with the same augmentation give a homogeneous cocycle the same
 class. -/
@@ -236,6 +288,19 @@ theorem gradedCohomologyClass_eq_of_ι_eq [LocallyCompactSpace G]
     {n : ℕ} (z : M.V) (hz : z ∈ ℳ n) (hinv : ∀ g, M.ρ g z = z) (hdz : d.hom z = 0) :
     c.gradedCohomologyClass z hz hinv hdz = c'.gradedCohomologyClass z hz hinv hdz :=
   c.cohomologyClass_eq_of_ι_eq c' h _ _
+
+/-- **Transport along an equality of degrees.** Equal homogeneous cocycles `z' = z`, read in equal
+degrees `n = n'`, have classes that agree after transporting the degree with `degreeCast`, also
+after a coefficient map `b`. -/
+theorem coeffMap_gradedCohomologyClass_degreeCast {Y : TopRep.{max v w} k G} (b : X ⟶ Y)
+    {n n' : ℕ} (h : n = n') {z z' : M.V} (hzz : z' = z) (hz : z ∈ ℳ n) (hz' : z' ∈ ℳ n')
+    (hinv : ∀ g, M.ρ g z = z) (hinv' : ∀ g, M.ρ g z' = z') (hdz : d.hom z = 0)
+    (hdz' : d.hom z' = 0) :
+    TauCeti.ContinuousCohomology.coeffMap b n' (c.gradedCohomologyClass z' hz' hinv' hdz') =
+      (TauCeti.ContinuousCohomology.degreeCast Y h).hom
+        (TauCeti.ContinuousCohomology.coeffMap b n (c.gradedCohomologyClass z hz hinv hdz)) := by
+  subst h hzz
+  simp
 
 end ResolutionContraction
 
@@ -415,6 +480,22 @@ theorem gradedCohomologyClass_gradedResolutionContraction {n : ℕ}
   exact gradedResolutionComponent_apply X _ _
     ((gradedCochainComplexι_apply _ _ _ _ _ _ n _).trans
       (gradedCochainComplexInvariant_val _ _ _ _ _ _ n _ _ _))
+
+/-- **The class of an included homogeneous cocycle, in an equal degree**: a vector `y` of the total
+coinduced resolution that is the inclusion of a homogeneous cocycle `z` of degree `n`, regarded as
+homogeneous of an equal degree `k`, has as class through `gradedResolutionContraction` the
+transport along `n = k` of `X.cochainClass n z`. This reads off classes of cocycles produced in a
+degree, such as `1 · n`, that equals `n` but not definitionally. -/
+theorem gradedCohomologyClass_eq_degreeCast_cochainClass {n k : ℕ} (hk : n = k)
+    (z : (homogeneousCochains X).X n) (hz : ((homogeneousCochains X).d n (n + 1)).hom z = 0)
+    (y : X.gradedResolutionTopRep.V) (hy : y = X.cochainToGradedResolution n z) (hy' hinv hdy) :
+    (gradedResolutionContraction hX).gradedCohomologyClass (n := k) y hy' hinv hdy =
+      (TauCeti.ContinuousCohomology.degreeCast X hk).hom (X.cochainClass n z hz) := by
+  subst hk
+  rw [cochainToGradedResolution_apply] at hy
+  subst hy
+  rw [TauCeti.ContinuousCohomology.degreeCast_rfl, Iso.refl_hom, ConcreteCategory.id_apply]
+  exact gradedCohomologyClass_gradedResolutionContraction hX z (congrArg Subtype.val hz)
 
 end CoinducedResolution
 

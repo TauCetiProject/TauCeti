@@ -36,6 +36,8 @@ infrastructure, in `TauCeti.MeasureTheory.Constructions.UnitInterval.CellPartiti
   and `j`.
 * `SimpleGraph.graphonPartitionEnergy_finiteGraphGraphon`: the size-weighted energy of `P` is the
   graphon partition energy over `P.cellPartition`.
+* `SimpleGraph.graphonPartitionEnergy_finiteGraphGraphon_comap_symm`: the same comparison for
+  graphs on any finite vertex type, relabelled along an equivalence with `Fin m`.
 -/
 
 public section
@@ -126,5 +128,19 @@ theorem graphonPartitionEnergy_finiteGraphGraphon (G : SimpleGraph (Fin m)) [Dec
   rw [← Set.singleton_prod_singleton, measureReal_prod_prod]
   simp [h, measureReal_def, ProbabilityTheory.uniformOn_univ]
   ring
+
+/-- **Finite partition energy as graphon partition energy, on any finite vertex type.** Relabel
+the vertices of `G` along an equivalence `e : V ≃ Fin m` with `0 < m`. The size-weighted energy
+of `P` is then the graphon partition energy of the relabelled graph over the cell partition of the
+relabelled `P`. For a nonempty finite `V`, take `e := Fintype.equivFin V`. -/
+theorem graphonPartitionEnergy_finiteGraphGraphon_comap_symm {V : Type*} [Fintype V]
+    [DecidableEq V] (G : SimpleGraph V) [DecidableRel G.Adj] (e : V ≃ Fin m)
+    (P : Finpartition (univ : Finset V)) :
+    graphonPartitionEnergy volume
+        ((P.copy (image_univ_equiv e.symm).symm).comap e.symm).cellPartition
+        (Finpartition.measurableSet_of_mem_cellPartition _)
+        (finiteGraphGraphon (G.comap e.symm)) =
+      G.weightedEnergy P := by
+  rw [graphonPartitionEnergy_finiteGraphGraphon, weightedEnergy_comap_symm]
 
 end SimpleGraph

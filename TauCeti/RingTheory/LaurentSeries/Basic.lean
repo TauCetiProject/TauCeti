@@ -58,13 +58,15 @@ by `φ.order.toNat`, and in particular preserves the residue when `φ.order = 1`
   `exp (-ord f)`; `TauCeti.LaurentSeries.valuation_coe` gives the same for a nonzero power series.
 * `TauCeti.LaurentSeries.valuation_mapRingHom`: applying a field embedding to the coefficients
   preserves the valuation.
-* `PowerSeries.order_coe` and `PowerSeries.orderTop_coe_of_ne_zero`: the order of a power series in
-  `R⸨X⸩` agrees with its power series order.
+* `PowerSeries.order_coe`, `PowerSeries.orderTop_coe` and `PowerSeries.orderTop_coe_of_ne_zero`:
+  the order of a power series in `R⸨X⸩` agrees with its power series order.
 * `LaurentSeries.derivative_mul`: the product rule for the derivative of Laurent series.
 * `PowerSeries.coe_derivative` and `PowerSeries.coe_hasseDeriv`: the derivative and the Hasse
   derivatives of Laurent series extend those of power series.
 * `LaurentSeries.valuation_derivative_sub_zsmul_single_mul_le`: if `f` vanishes to order at least
   `m`, so does `f' - m X⁻¹ f`.
+* `LaurentSeries.valuation_le_one_iff`: a Laurent series is integral exactly when it has no
+  negative exponents.
 * `PowerSeries.coeff_neg_one_coe_zpow_mul_derivative_eq_ite` and
   `PowerSeries.coeff_neg_one_coe_zpow_mul_derivative`: the residue of `φ ^ n * φ'` for a power
   series `φ` is `φ.order.toNat` if `n = -1` and `0` otherwise (in particular `1` vs `0` when
@@ -103,6 +105,16 @@ theorem orderTop_coe_of_ne_zero {R : Type*} [Semiring R] {f : R⟦X⟧} (hf : f 
         rw [← Nat.cast_le (α := ℕ∞), ← hord]
         exact order_le g.natAbs hg
       omega
+
+/-- The `WithTop ℤ`-valued order of a power series coerced to `R⸨X⸩` is its order, read in
+`WithTop ℤ`; both are `⊤` exactly for the zero series. -/
+@[simp]
+theorem orderTop_coe {R : Type*} [Semiring R] (f : R⟦X⟧) :
+    (f : R⸨X⸩).orderTop = f.order.map ((↑) : ℕ → ℤ) := by
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp
+  obtain ⟨n, hn⟩ := ENat.ne_top_iff_exists.mp (order_eq_top.not.mpr hf)
+  rw [orderTop_coe_of_ne_zero hf, ← hn, ENat.map_natCast, ENat.toNat_natCast]
 
 /-- The integer order of a power series coerced to `R⸨X⸩` is `(f.order.toNat : ℤ)`. -/
 @[simp]
@@ -322,6 +334,11 @@ theorem valuation_derivative_sub_zsmul_single_mul_le {K : Type*} [Field K] {m : 
   rcases lt_or_eq_of_le (show n + 1 ≤ m by omega) with h | h
   · rw [hf _ h, mul_zero]
   · simp [h]
+
+/-- A Laurent series lies in the valuation ring exactly when it has no negative exponents. -/
+theorem valuation_le_one_iff {K : Type*} [Field K] {f : K⸨X⸩} :
+    Valued.v f ≤ 1 ↔ ∀ n : ℤ, n < 0 → f.coeff n = 0 := by
+  simpa using valuation_le_iff_coeff_lt_eq_zero (D := 0) (f := f)
 
 end LaurentSeries
 

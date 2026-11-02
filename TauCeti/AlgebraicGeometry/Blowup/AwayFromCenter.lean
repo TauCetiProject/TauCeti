@@ -135,15 +135,8 @@ private theorem isIso_morphismRestrict_of_le_basicOpen (ha : a ∈ I) {W : (Spec
   have hle : f ⁻¹ᵁ W ≤ (affineBlowupι (Localization.Away a) ha).opensRange := by
     rw [opensRange_affineBlowupι]
     exact (f.preimage_mono hW).trans (preimage_basicOpen_le_basicOpen_monomialDegreeOne ha)
-  have : IsIso (affineBlowupι (Localization.Away a) ha ∣_ f ⁻¹ᵁ W) :=
-    (affineBlowupι (Localization.Away a) ha).isIso_morphismRestrict_of_le_opensRange hle
-  have hcomp : IsIso ((affineBlowupι (Localization.Away a) ha ≫ f) ∣_ W) := by
-    rwa [affineBlowupι_toSpecZero]
-  rw [morphismRestrict_comp] at hcomp
-  -- `hcomp` is passed explicitly: the source of the composite in its type is written
-  -- `(ι ≫ f) ⁻¹ᵁ W` rather than `ι ⁻¹ᵁ f ⁻¹ᵁ W`, which instance search does not unfold.
-  exact @IsIso.of_isIso_comp_left _ _ _ _ _ (affineBlowupι (Localization.Away a) ha ∣_ f ⁻¹ᵁ W)
-    (f ∣_ W) _ hcomp
+  refine f.isIso_morphismRestrict_of_isIso_comp _ hle ?_
+  rwa [affineBlowupι_toSpecZero]
 
 /-- **The blowup is an isomorphism away from its center.** The blowup `Proj R[It] ⟶ Spec R` of
 `Spec R` along `V(I)` restricts to an isomorphism over every open subset `U` of `Spec R` that is

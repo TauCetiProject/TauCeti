@@ -16,11 +16,10 @@ Mathlib's `IsPGroup` is stated for multiplicative groups. This file records the 
 `p`-primary *additive* group `A`, one in which every element `a` satisfies `p ^ k • a = 0` for
 some `k`, that the theory of pro-`p` actions on finite discrete coefficient modules needs, in
 additive notation: the order of a finite such group is a power of `p`, namely
-`p ^ padicValNat p (Nat.card A)`, and is divisible by `p` when the group is nontrivial; a nonzero
-element of `p`-power order has a nonzero multiple annihilated by `p`, a statement about natural
-multiples that holds in any additive monoid; a monoid additively equivalent to `ZMod p` is
-`p`-primary; a subgroup of a `p`-primary group is `p`-primary; and adjoining to a subgroup `N` an
-element `x ∉ N` with `p • x ∈ N` multiplies the order of `N` by `p`.
+`p ^ padicValNat p (Nat.card A)`, and is divisible by `p` when the group is nontrivial; a monoid
+additively equivalent to `ZMod p` is `p`-primary; a subgroup of a `p`-primary group is
+`p`-primary; and adjoining to a subgroup `N` an element `x ∉ N` with `p • x ∈ N` multiplies the
+order of `N` by `p`.
 
 ## Main results
 
@@ -28,8 +27,6 @@ element `x ∉ N` with `p • x ∈ N` multiplies the order of `N` by `p`.
   finite `p`-primary additive group `A`.
 * `TauCeti.natCard_eq_pow_padicValNat_of_forall_exists_nsmul_eq_zero`:
   `Nat.card A = p ^ padicValNat p (Nat.card A)` for a finite `p`-primary additive group `A`.
-* `TauCeti.exists_nsmul_pow_ne_zero_nsmul_nsmul_pow_eq_zero`: a nonzero `a` with `p ^ k • a = 0`
-  has a nonzero multiple `p ^ n • a` with `p • p ^ n • a = 0`.
 * `TauCeti.forall_exists_nsmul_eq_zero_of_addEquiv_zmod`: an additive monoid additively
   equivalent to `ZMod p` is `p`-primary.
 * `AddSubgroup.forall_exists_nsmul_eq_zero`: an additive subgroup of a `p`-primary additive group
@@ -49,22 +46,6 @@ variable {p : ℕ}
 section AddMonoid
 
 variable {A : Type*} [AddMonoid A]
-
-/-- A nonzero element `a` with `p ^ k • a = 0` has a nonzero multiple `p ^ n • a` annihilated by
-`p`, that is, with `p • p ^ n • a = 0`. -/
-theorem exists_nsmul_pow_ne_zero_nsmul_nsmul_pow_eq_zero {a : A} (ha : a ≠ 0) {k : ℕ}
-    (hk : p ^ k • a = 0) : ∃ n : ℕ, p ^ n • a ≠ 0 ∧ p • p ^ n • a = 0 := by
-  classical
-  have h : ∃ k, p ^ k • a = 0 := ⟨k, hk⟩
-  have hfind : p ^ Nat.find h • a = 0 := Nat.find_spec h
-  have hpos : 0 < Nat.find h := by
-    rw [Nat.pos_iff_ne_zero]
-    intro h0
-    rw [h0, pow_zero, one_smul] at hfind
-    exact ha hfind
-  refine ⟨Nat.find h - 1, Nat.find_min h (Nat.sub_lt hpos one_pos), ?_⟩
-  have hk' : Nat.find h - 1 + 1 = Nat.find h := by omega
-  rwa [smul_smul, ← pow_succ', hk']
 
 /-- An additive monoid additively equivalent to `ZMod p` is `p`-primary: `p` itself annihilates
 every element. -/

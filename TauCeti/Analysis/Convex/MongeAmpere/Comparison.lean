@@ -74,7 +74,8 @@ theorem mongeAmpereMeasure_le_of_le_of_le_frontier (μ : Measure E) {ν : Measur
   rw [mongeAmpereMeasure_ite_apply μ hΩo hv hμ hΩo.measurableSet,
     mongeAmpereMeasure_ite_apply μ hΩo hu hμ hΩo.measurableSet]
   refine measure_mono (iUnion₂_subset fun x hx p hp => ?_)
-  obtain ⟨x₁, hx₁, h⟩ := exists_forall_add_inner_add_le_of_forall_frontier_le (q := 0) hΩ huc hvc
+  obtain ⟨x₁, hx₁, h⟩ := exists_forall_add_inner_add_le_of_forall_frontier_le (q := 0)
+    hΩ.isCompact_closure huc hvc
     hfr hx.1 hp (by simpa using hle x hx.1)
   exact mem_biUnion ⟨hx₁, hx₁⟩ (by simpa using h)
 
@@ -90,7 +91,7 @@ private theorem add_mem_biUnion_of_forall_frontier_le (hu : ConvexOn ℝ Ω u) {
     (hp : ∀ x ∈ G, w y + inner ℝ (x - y) p ≤ w x) (hq : ‖q‖ * diam G ≤ w y - u y) :
     p + q ∈ ⋃ x ∈ G ∩ Ω, {z | ∀ x' ∈ Ω, u x + inner ℝ (x' - x) z ≤ u x'} := by
   obtain ⟨x₁, hx₁, h⟩ :=
-    exists_forall_add_inner_add_le_of_forall_frontier_le hGb huc hwc hfr hy hp hq
+    exists_forall_add_inner_add_le_of_forall_frontier_le hGb.isCompact_closure huc hwc hfr hy hp hq
   -- A subgradient relative to the open neighbourhood `G` of `x₁` is one relative to `Ω`.
   have h' := hu.add_le_of_eventually_add_le (hGΩ hx₁) ((innerₗ E).flip (p + q)) (by
     filter_upwards [mem_nhdsWithin_of_mem_nhds (hGo.mem_nhds hx₁)] with x' hx'

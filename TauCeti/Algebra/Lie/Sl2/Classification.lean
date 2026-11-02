@@ -119,7 +119,7 @@ from the subalgebra of the triple to the whole algebra, which generates it. -/
 theorem finrank_eq_of_hasPrimitiveVectorWith_of_eq_top (htop : t.toLieSubalgebra K = ⊤)
     [LieModule.IsIrreducible K L M] (P : t.HasPrimitiveVectorWith m (n : K)) :
     finrank K M = n + 1 :=
-  have := isIrreducible_of_eq_top (M := M) htop
+  have := (isIrreducible_iff_of_eq_top (M := M) htop).2 inferInstance
   finrank_eq_of_hasPrimitiveVectorWith P
 
 variable {M' : Type*} [AddCommGroup M'] [Module K M'] [LieRingModule L M'] [LieModule K L M']
@@ -136,8 +136,8 @@ theorem nonempty_lieModuleEquiv_of_hasPrimitiveVectorWith (htop : t.toLieSubalge
     [LieModule.IsIrreducible K L M] [LieModule.IsIrreducible K L M']
     (P : t.HasPrimitiveVectorWith m (n : K)) (P' : t.HasPrimitiveVectorWith m' (n : K)) :
     Nonempty (M ≃ₗ⁅K,L⁆ M') :=
-  have := isIrreducible_of_eq_top (M := M) htop
-  have := isIrreducible_of_eq_top (M := M') htop
+  have := (isIrreducible_iff_of_eq_top (M := M) htop).2 inferInstance
+  have := (isIrreducible_iff_of_eq_top (M := M') htop).2 inferInstance
   ⟨lieModuleEquivOfEqTop htop (lieModuleEquivOfHasPrimitiveVectorWith P P')⟩
 
 variable (M) in
@@ -220,7 +220,7 @@ theorem existsUnique_nonempty_lieModuleEquiv [FiniteDimensional K M]
   have htop := toLieSubalgebra_isSl2Triple_single_eq_top (R := K) (zero_ne_one : (0 : Fin 2) ≠ 1)
   have : Nontrivial M :=
     LieModule.nontrivial_of_isIrreducible K (SpecialLinear.sl (Fin 2) K) M
-  have := isIrreducible_of_eq_top (M := M) htop
+  have := (isIrreducible_iff_of_eq_top (M := M) htop).2 inferInstance
   obtain ⟨w, n, P⟩ := exists_hasPrimitiveVectorWith (K := K) M
     (isSl2Triple_single (R := K) (zero_ne_one : (0 : Fin 2) ≠ 1))
   refine ⟨n, ⟨lieModuleEquivOfEqTop htop (lieModuleEquiv P)⟩, fun n' ⟨ψ⟩ ↦ ?_⟩

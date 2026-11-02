@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.SingularValues
+public import Mathlib.Analysis.Matrix.Hermitian
 
 /-!
 # The Moore–Penrose inverse
@@ -307,3 +308,26 @@ theorem moorePenroseInverse_zero : (0 : E →ₗ[𝕜] F).moorePenroseInverse = 
 end Construction
 
 end LinearMap
+
+namespace Matrix
+
+/-- The four matrix Penrose equations imply the Moore–Penrose relation between the
+corresponding Euclidean linear maps. -/
+theorem isMoorePenroseInverse_toEuclideanLin_of_penrose
+    {𝕜 m n : Type*} [RCLike 𝕜] [Fintype m] [DecidableEq m] [Fintype n] [DecidableEq n]
+    {C : Matrix m n 𝕜} {D : Matrix n m 𝕜}
+    (h₁ : C * D * C = C) (h₂ : D * C * D = D)
+    (h₃ : (C * D).IsHermitian) (h₄ : (D * C).IsHermitian) :
+    C.toEuclideanLin.IsMoorePenroseInverse D.toEuclideanLin where
+  comp_comp_self := by
+    simpa only [toLpLin_mul_same, LinearMap.comp_assoc] using congrArg toEuclideanLin h₁
+  comp_comp_self' := by
+    simpa only [toLpLin_mul_same, LinearMap.comp_assoc] using congrArg toEuclideanLin h₂
+  isSymmetric_comp := by
+    rw [← toLpLin_mul_same]
+    exact isSymmetric_toEuclideanLin_iff.mpr h₃
+  isSymmetric_comp' := by
+    rw [← toLpLin_mul_same]
+    exact isSymmetric_toEuclideanLin_iff.mpr h₄
+
+end Matrix

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.D4.Tripled.Frobenius
-public import TauCeti.Algebra.Lie.D4.Tripled.Triality
+public import TauCeti.Algebra.Lie.D4.Tripled.Triality.Basic
 public import TauCeti.GroupTheory.FixedPointCandidate
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Frobenius
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.GraphTwisted
@@ -27,7 +27,7 @@ automorphism, the spin representation being faithful, but not by such a matrix).
 module `V(ϖ₁) ⊕ V(ϖ₃) ⊕ V(ϖ₄)` is a full-weight module that is stable. Its carrier is
 `TauCeti.D4Tripled.groupScheme`, inside `GL₂₄` over `ℤ`, and triality acts on it by the
 permutation of the twenty-four weight-basis vectors realized in
-`TauCeti.Algebra.Lie.D4.Tripled.Triality`.
+`TauCeti.Algebra.Lie.D4.Tripled.Triality.Basic`.
 
 For a triality-twisted index the ambient group of the branch is the `AmbientGroup` below, on the
 tripled carrier. The same index also lies in `TauCeti.TypeDDiagramLieIndex`, through

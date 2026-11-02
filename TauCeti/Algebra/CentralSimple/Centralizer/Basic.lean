@@ -64,7 +64,7 @@ dimension formulas gives the **double centralizer** `C_A(C) = B`.
 The proof is the module-theoretic one, and it reuses the bimodule of the Skolem-Noether theorem. The
 inclusion `B.val : B →ₐ[K] A` makes `A` a module over `R = B ⊗[K] Aᵐᵒᵖ`
 (`TauCeti.Bimodule`), with `b ⊗ₜ op a` acting by `x ↦ b * x * a`. Because `B` is central simple and
-`Aᵐᵒᵖ` is simple, `R` is a simple ring (`TauCeti.IsSimpleRing.tensorProduct`), finite-dimensional
+`Aᵐᵒᵖ` is simple, `R` is a simple ring (`IsSimpleRing.tensorProduct`), finite-dimensional
 over `K`. Now an `R`-linear endomorphism of `A` is in particular linear for the right action of `A`,
 hence is multiplication on the left by some `c : A`, and its linearity for the left action of `B` is
 exactly the statement that `c` commutes with `B`. So
@@ -109,7 +109,7 @@ algebra homomorphism and bijectivity proof it is assembled from are private to t
 
 Centrality is asked of `B` and not of `A`, exactly as in
 `TauCeti/Algebra/CentralSimple/SkolemNoether.lean`, and for the same reason: what the proof needs is
-that `B ⊗[K] Aᵐᵒᵖ` is simple, which `TauCeti.IsSimpleRing.tensorProduct` gets from `B` central
+that `B ⊗[K] Aᵐᵒᵖ` is simple, which `IsSimpleRing.tensorProduct` gets from `B` central
 simple and `A` simple. The roadmap's central simple form is the case `Algebra.IsCentral K A`, which
 these statements cover. Centrality of `B` cannot be dropped: for `K = ℝ`, `A = ℂ` and `B = A`, the
 centralizer is all of `ℂ`, so `finrank ℝ B * finrank ℝ C = 4 ≠ 2 = finrank ℝ A`; the worked example
@@ -358,7 +358,7 @@ This is `TauCeti.finrank_mul_finrank_centralizer` with the centrality hypothesis
 subalgebra to the ambient algebra. The shared dimension count is
 `TauCeti.finrank_mul_finrank_centralizer_of_isSimpleRing_tensorProduct_mulOpposite`, whose one
 algebraic hypothesis — that `L ⊗[K] Aᵐᵒᵖ` be simple —
-`TauCeti.IsSimpleRing.tensorProduct_of_isCentral_right` supplies here from the simplicity of the
+`IsSimpleRing.tensorProduct_of_isCentral_right` supplies here from the simplicity of the
 field `L` and the central simplicity of `Aᵐᵒᵖ`; `L` itself is not central over `K` unless it is `K`,
 so the orientation used by `TauCeti.finrank_mul_finrank_centralizer` does not apply. -/
 theorem finrank_mul_finrank_centralizer_of_isField (L : Subalgebra K A) (hL : IsField ↥L) :
@@ -417,7 +417,7 @@ simple `K`-algebra `A`, the dimensions of `B` and of its centralizer are complem
 
 This is the dimension count of
 `TauCeti.finrank_mul_finrank_centralizer_of_isSimpleRing_tensorProduct_mulOpposite`, whose one
-algebraic hypothesis — simplicity of `B ⊗[K] Aᵐᵒᵖ` — `TauCeti.IsSimpleRing.tensorProduct` supplies
+algebraic hypothesis — simplicity of `B ⊗[K] Aᵐᵒᵖ` — `IsSimpleRing.tensorProduct` supplies
 from `B` central simple and `Aᵐᵒᵖ` simple. -/
 theorem finrank_mul_finrank_centralizer :
     finrank K B * finrank K (Subalgebra.centralizer K (B : Set A)) = finrank K A :=

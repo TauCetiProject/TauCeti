@@ -145,18 +145,23 @@ generators `a` and `b`.
 The ATLAS supplies a full presentation of the abstract group, rather than the semi-presentation
 used elsewhere in the database to recognize standard generators in an already constructed group.
 No structural property of the presented group is asserted here: this definition records only the
-cited generators and relations. -/
+cited generators and relations.
+
+Generator order (starting at index zero): `a`, `b`.
+
+Source: R. A. Wilson, R. A. Parker, and J. N. Bray, ATLAS of Finite Group Representations, version
+3.
+
+Source locator: J_1 page, Presentation section, https://brauer.maths.qmul.ac.uk/Atlas/v3/spor/J1/
+
+Generator convention: The ATLAS standard generators a and b, in that order, so index 0 is a and
+index 1 is b. Products are read left to right and negative exponents denote inverses.
+
+Transcription notes: The five displayed words are stored as five relators equal to the identity.
+GAP 4.15.1 checks them on the independent ATLAS 266-point generators; enumeration of this abstract
+presentation gives order 175560 and an isomorphism to the ATLAS group. -/
 def j1Presentation : GroupPresentation where
-  generatorNames := ["a", "b"]
-  source := "R. A. Wilson, R. A. Parker, and J. N. Bray, ATLAS of Finite Group \
-    Representations, version 3"
-  sourceLocator := "J_1 page, Presentation section, https://brauer.maths.qmul.ac.uk/Atlas/v3/spor/J1/"
-  generatorConvention := "The ATLAS standard generators a and b, in that order, so index 0 is a \
-    and index 1 is b. Products are read left to right and negative exponents denote inverses."
-  transcriptionNotes := "The five displayed words are stored as five relators equal to the \
-    identity. GAP 4.15.1 checks them on the independent ATLAS 266-point generators; enumeration \
-    of this abstract presentation gives order 175560 and an isomorphism to the ATLAS group."
-  expectedGeneratorCount := 2
+  generatorCount := 2
   expectedRelatorCount := 5
   transcribed :=
     [ .pow a 2,
@@ -165,53 +170,15 @@ def j1Presentation : GroupPresentation where
       .pow fifthPowerBase 5,
       .pow squareBase 2 ]
 
-/-- The generator names recorded for `J₁`. The row's body is sealed, so this is what lets a
+/-- The number of generators in the presentation of `J₁`. The row's body is sealed, so this is
+what lets a
 consumer see that it is a two-generator presentation. -/
 @[simp]
-theorem j1Presentation_generatorNames : j1Presentation.generatorNames = ["a", "b"] := by
-  simp [j1Presentation]
-
-/-- The source recorded for `J₁`. The row's body is sealed, so this equation is what publishes the
-citation itself, rather than only the row's name, to a downstream audit. -/
-@[simp]
-theorem j1Presentation_source :
-    j1Presentation.source = "R. A. Wilson, R. A. Parker, and J. N. Bray, ATLAS of Finite Group \
-      Representations, version 3" := by
-  simp [j1Presentation]
-
-/-- The locator recorded for `J₁`, pointing at the presentation inside its source. -/
-@[simp]
-theorem j1Presentation_sourceLocator :
-    j1Presentation.sourceLocator =
-      "J_1 page, Presentation section, https://brauer.maths.qmul.ac.uk/Atlas/v3/spor/J1/" := by
-  simp [j1Presentation]
-
-/-- The generator convention recorded for `J₁`, fixing which generator each relator index names. -/
-@[simp]
-theorem j1Presentation_generatorConvention :
-    j1Presentation.generatorConvention = "The ATLAS standard generators a and b, in that order, \
-      so index 0 is a and index 1 is b. Products are read left to right and negative exponents \
-      denote inverses." := by
-  simp [j1Presentation]
-
-/-- The transcription notes recorded for `J₁`. -/
-@[simp]
-theorem j1Presentation_transcriptionNotes :
-    j1Presentation.transcriptionNotes = "The five displayed words are stored as five relators \
-      equal to the identity. GAP 4.15.1 checks them on the independent ATLAS 266-point \
-      generators; enumeration of this abstract presentation gives order 175560 and an isomorphism \
-      to the ATLAS group." := by
-  simp [j1Presentation]
-
-/-- The generator count `J₁`'s source states. With
-`TauCeti.Sporadic.j1Presentation_generatorNames` this is what makes
-`TauCeti.Sporadic.j1Presentation_matchesMetadata` an equation between two visible numbers. -/
-@[simp]
-theorem j1Presentation_expectedGeneratorCount : j1Presentation.expectedGeneratorCount = 2 := by
+theorem j1Presentation_generatorCount : j1Presentation.generatorCount = 2 := by
   simp [j1Presentation]
 
 /-- The relator count `J₁`'s source states; see
-`TauCeti.Sporadic.j1Presentation_expectedGeneratorCount`. -/
+`TauCeti.Sporadic.j1Presentation_generatorCount`. -/
 @[simp]
 theorem j1Presentation_expectedRelatorCount : j1Presentation.expectedRelatorCount = 5 := by
   simp [j1Presentation]
@@ -224,7 +191,7 @@ The row's body is sealed, so this is the equation that characterizes it: with
 `TauCeti.GroupPresentation.mem_relatorSet_iff` it determines the relations defining
 `TauCeti.GroupPresentation.Group`, so a consumer never has to unfold the row. Index `0` is the
 generator `a` and index `1` is `b`, and the bounds come from
-`TauCeti.Sporadic.j1Presentation_generatorNames`. -/
+`TauCeti.Sporadic.j1Presentation_generatorCount`. -/
 @[simp]
 theorem j1Presentation_transcribed :
     j1Presentation.transcribed =
@@ -246,7 +213,7 @@ theorem j1Presentation_transcribed :
           .pow (.gen ⟨0, by simp⟩ ⬝ .inv (.gen ⟨1, by simp⟩)) 2) 2 ] := by
   simp [j1Presentation]
 
-/-- The generator and relator counts recorded for `J₁` agree with the transcribed data. -/
+/-- The relator count recorded for `J₁` agrees with the transcribed data. -/
 theorem j1Presentation_matchesMetadata : j1Presentation.matchesMetadata := by decide
 
 /-- The lengths of the five compiled relator words for `J₁`, in the order of the source.

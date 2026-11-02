@@ -11,7 +11,7 @@ public import Mathlib.Analysis.InnerProductSpace.Trace
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
-public import TauCeti.Analysis.Normed.Module.Trace
+public import TauCeti.Topology.Algebra.Module.Trace
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita
 import TauCeti.Analysis.Calculus.Gradient
@@ -334,6 +334,49 @@ theorem divergence_smul_function (f : M → ℝ) (X : (x : M) → TangentSpace I
   rw [h_trace]
   simp only [smul_eq_mul, divergence]
 
+/-- Divergence is additive over a finite family of vector fields, at a point where every field is
+differentiable. -/
+theorem divergence_finsetSum {ι : Type*} (s : Finset ι) (X : ι → (x : M) → TangentSpace I x)
+    (x : M)
+    (hX : ∀ i ∈ s, MDifferentiableAt I I.tangent (fun y ↦ (⟨y, X i y⟩ : TangentBundle I M)) x) :
+    divergence I (fun y ↦ ∑ i ∈ s, X i y) x = ∑ i ∈ s, divergence I (X i) x := by
+  classical
+  induction s using Finset.induction_on with
+  | empty =>
+    simp only [Finset.sum_empty]
+    exact divergence_zero I x
+  | insert i s hi h =>
+    simp only [Finset.mem_insert, forall_eq_or_imp] at hX
+    simp only [Finset.sum_insert hi, ← h hX.2]
+    exact divergence_add I (X i) (fun y ↦ ∑ j ∈ s, X j y) x hX.1
+      (MDifferentiableAt.sum_section hX.2)
+
+/-- The divergence vanishes off the topological support of a vector field, since the field is zero
+near such a point. No regularity of the field is needed. -/
+theorem divergence_eq_zero_of_notMem_tsupport {X : (x : M) → TangentSpace I x} {x : M}
+    (hx : x ∉ tsupport (α := E) X) : divergence I X x = 0 := by
+  have h : (fun y ↦ (X y : E)) =ᶠ[nhds x] 0 := notMem_tsupport_iff_eventuallyEq.1 hx
+  have hT : (fun y ↦ (⟨y, X y⟩ : TangentBundle I M)) =ᶠ[nhds x]
+      fun y ↦ (⟨y, (0 : (x : M) → TangentSpace I x) y⟩ : TangentBundle I M) :=
+    h.mono fun y hy ↦ congrArg (TotalSpace.mk' E y) hy
+  have h0 : MDifferentiableAt I I.tangent
+      (fun y ↦ (⟨y, (0 : (x : M) → TangentSpace I x) y⟩ : TangentBundle I M)) x :=
+    mdifferentiableAt_zeroSection ..
+  have hcov := (CovariantDerivative.leviCivitaConnection I M).isCovariantDerivativeOnUniv
+  rw [divergence_def, hcov.congr_of_eventuallyEq (h0.congr_of_eventuallyEq hT) h0 Filter.univ_mem h,
+    hcov.zero]
+  simp
+
+/-- The divergence of a compactly supported vector field is compactly supported. -/
+protected theorem _root_.HasCompactSupport.divergence {X : (x : M) → TangentSpace I x}
+    (hX : HasCompactSupport (β := E) X) : HasCompactSupport (divergence I X) :=
+  hX.mono' fun _ hx ↦ by_contra fun h ↦ hx (divergence_eq_zero_of_notMem_tsupport I h)
+
+/-- The Laplace--Beltrami operator of a compactly supported function is compactly supported. -/
+protected theorem _root_.HasCompactSupport.laplaceBeltrami {f : M → ℝ}
+    (hf : HasCompactSupport f) : HasCompactSupport (laplaceBeltrami I f) :=
+  (hf.mgradient I).divergence I
+
 /-- The Hessian of a constant function is zero. -/
 @[simp]
 theorem hessian_const (c : ℝ) (x : M) (v w : TangentSpace I x) :
@@ -440,6 +483,18 @@ theorem laplaceBeltrami_smul (c : ℝ) {f : M → ℝ} (hf : ContMDiff I 𝓘(�
   simp only [laplaceBeltrami, mgradient_smul c (hf.mdifferentiable (by simp))]
   exact divergence_smul I c _ x
     (mdifferentiable_mgradient (I := I) hf x)
+
+/-- The Laplace–Beltrami operator commutes with negation on `C²` functions. -/
+theorem laplaceBeltrami_neg {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f) (x : M) :
+    laplaceBeltrami I (-f) x = -laplaceBeltrami I f x := by
+  rw [← neg_one_smul ℝ f, laplaceBeltrami_smul I _ hf, neg_one_mul]
+
+/-- The Laplace–Beltrami operator is additive with respect to subtraction of `C²` functions. -/
+theorem laplaceBeltrami_sub {f g : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
+    (hg : ContMDiff I 𝓘(ℝ) 2 g) (x : M) :
+    laplaceBeltrami I (f - g) x = laplaceBeltrami I f x - laplaceBeltrami I g x := by
+  rw [sub_eq_add_neg, laplaceBeltrami_add I hf (g := -g) hg.neg, laplaceBeltrami_neg I hg,
+    sub_eq_add_neg]
 
 /-- **Chain rule for the Laplace--Beltrami operator.** If `h` is `C²` on an open set of real
 numbers containing all values of a `C²` function `f`, then
@@ -651,9 +706,10 @@ theorem hessian_eq_iteratedFDeriv_model_space
         _ = _ := (iteratedFDeriv_two_apply f x
           ![NormedSpace.fromTangentSpace x v, NormedSpace.fromTangentSpace x w]).symm
 
-/-- The Laplace–Beltrami operator of the standard Riemannian metric is Mathlib's flat Laplacian.
-This fixes the sign convention as `Δ = div ∘ grad`. -/
-theorem laplaceBeltrami_eq_laplacian
+/-- At a point `x` where `∇ f` is differentiable, the Laplace–Beltrami operator of the standard
+Riemannian metric equals Mathlib's flat Laplacian `Δ f`. This fixes the sign convention as
+`Δ = div ∘ grad`. -/
+theorem laplaceBeltrami_eq_laplacian_of_differentiableAt_gradient
     {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
     {f : F → ℝ} {x : F} (hgrad : DifferentiableAt ℝ (∇ f) x) :
     laplaceBeltrami (modelWithCornersSelf ℝ F) f x = Δ f x := by
@@ -674,15 +730,40 @@ theorem laplaceBeltrami_eq_laplacian
   simpa only [b, OrthonormalBasis.map_apply, he] using
     hessian_eq_iteratedFDeriv_model_space hgrad (b i) (b i)
 
+/-- For a function `f` with `ContDiff ℝ 2 f` on a finite-dimensional real inner product space,
+the Laplace--Beltrami operator of the standard metric equals Mathlib's flat Laplacian `Δ f` at
+every point (convention `Δ = div ∘ grad`). -/
+theorem laplaceBeltrami_eq_laplacian
+    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+    {f : F → ℝ} (hf : ContDiff ℝ 2 f) (x : F) :
+    laplaceBeltrami (modelWithCornersSelf ℝ F) f x = Δ f x := by
+  apply laplaceBeltrami_eq_laplacian_of_differentiableAt_gradient
+  exact (hf.gradient_right (m := 1) (by norm_num)).differentiable (by norm_num) x
+
+/-- If the installed fibre metric is the standard one, the Laplace–Beltrami operator is Mathlib's
+flat Laplacian. This transports
+`laplaceBeltrami_eq_laplacian_of_differentiableAt_gradient` along an equality of fibre metrics,
+such as `toRiemannianMetric_ofLE`, which cannot be rewritten inside the instance-dependent
+arguments. -/
+theorem laplaceBeltrami_eq_laplacian_of_eq
+    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+    [inst : RiemannianBundle (fun x : F ↦ TangentSpace 𝓘(ℝ, F) x)]
+    [IsContMDiffRiemannianBundle 𝓘(ℝ, F) 1 F (fun x : F ↦ TangentSpace 𝓘(ℝ, F) x)]
+    (hg : RiemannianBundle.g = (riemannianMetricVectorSpace F).toRiemannianMetric)
+    {f : F → ℝ} {x : F} (hgrad : DifferentiableAt ℝ (∇ f) x) :
+    laplaceBeltrami (modelWithCornersSelf ℝ F) f x = Δ f x := by
+  obtain ⟨_⟩ := inst
+  subst hg
+  exact laplaceBeltrami_eq_laplacian_of_differentiableAt_gradient hgrad
+
 /-- The squared norm has constant flat Laplace--Beltrami operator. -/
 @[simp] theorem laplaceBeltrami_norm_sq
     {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
     [FiniteDimensional ℝ F] (x : F) :
     laplaceBeltrami (modelWithCornersSelf ℝ F) (fun y ↦ ‖y‖ ^ 2) x =
       2 * Module.finrank ℝ F := by
-  rw [laplaceBeltrami_eq_laplacian]
-  · exact TauCeti.laplacian_norm_sq x
-  · exact (((contDiff_norm_sq ℝ (E := F) (n := 2)).gradient_right (m := 1)
-      (by norm_num)).differentiable (by norm_num)) x
+  rw [laplaceBeltrami_eq_laplacian
+    (contDiff_norm_sq ℝ (E := F) (n := 2)) x]
+  exact TauCeti.laplacian_norm_sq x
 
 end TauCeti.Manifold

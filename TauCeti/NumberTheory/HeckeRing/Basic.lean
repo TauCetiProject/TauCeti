@@ -65,7 +65,8 @@ merges. The degree section is instead ported from the AINTLIB `LeanModularForms`
   `single_apply`, `sum_single_index`, `smul_single_one`, `single_add`, `induction_linear`,
   and the `Module R` instance `HeckeCosetModule.instModule`.
 * Pointwise evaluation of the coset module: `zero_apply`, `add_apply`, `smul_apply`,
-  `mem_support_iff`, `notMem_support_iff`, `sum_def`, `sum_apply` and `sum_smul_index`.
+  `mem_support_iff`, `notMem_support_iff`, `sum_def`, `sum_apply` and `sum_smul_index`, and the
+  basis expansion `eq_sum_smul_single`.
   `HeckeCosetModule` is a `def` over `Finsupp` carrying transported instances, so Mathlib's
   `Finsupp` evaluation lemmas hold *definitionally* — they can be applied in term mode — but
   `rw`, `simp` and `grind` match syntactically and so cannot see through the wrapper. These
@@ -1103,6 +1104,13 @@ variable {R : Type*} [Semiring R]
     (f : HeckeCosetModule Δ H₁ H₂ R) (F : HeckeCoset Δ H₁ H₂ → R → N) (h0 : ∀ D, F D 0 = 0) :
     (a • f).sum F = f.sum fun D c ↦ F D (a * c) :=
   Finsupp.sum_smul_index h0
+
+/-- Every element of the coset module is the sum, over its support, of its coefficients times
+the unit basis elements. -/
+lemma eq_sum_smul_single (f : HeckeCosetModule Δ H₁ H₂ R) :
+    f = ∑ D ∈ f.support, f D • single R D 1 := by
+  conv_lhs => rw [← sum_single R f, sum_def]
+  exact Finset.sum_congr rfl fun D _ ↦ (smul_single_one R D (f D)).symm
 
 end EvalSMul
 

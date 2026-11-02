@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Pi
 public import Mathlib.LinearAlgebra.Determinant
 public import TauCeti.LinearAlgebra.Matrix.Block
+import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 
 /-!
 # Supports, splittings, determinants and coordinate separation for dependent products
@@ -15,9 +16,11 @@ public import TauCeti.LinearAlgebra.Matrix.Block
 For `s : Set ι`, the submodule `Submodule.pi sᶜ (fun _ ↦ ⊥)` of `∀ i, M i` consists of the families
 vanishing outside `s`, the `Pi` analogue of `Finsupp.supported`; such submodules for disjoint
 supports meet in `⊥`. This file also records the linear splitting of a dependent product along a
-predicate on the indices, the linear splitting of a `Fin (n + 1)`-indexed product into its initial
-segment and its last coordinate, and the determinant of a coordinatewise endomorphism of a finite
-dependent product, which is used in finite-product norm calculations.
+predicate on the indices, the linear splittings of a `Fin (n + 1)`-indexed product into its initial
+segment and its last coordinate and of a `Fin (m + n)`-indexed product into its two blocks, and the
+determinant of a coordinatewise endomorphism of a finite dependent product, which is used in
+finite-product norm calculations, and rank–nullity for a surjection onto a finite dependent
+product.
 
 Finally, distinct sums and differences of standard coordinate vectors can be separated at a
 coordinate where their difference is regular. In two of these separations the critical case is
@@ -32,6 +35,11 @@ weights.
   families vanishing outside them.
 * `LinearEquiv.piFinSnoc`: the linear splitting of a tuple of length `n + 1` into its initial `n`
   coordinates and its last one, with `Fin.snoc` as its inverse.
+* `LinearEquiv.piFinAppend`: the linear splitting of a tuple of length `m + n` into its first `m`
+  and its last `n` coordinates, with `Fin.append` as its inverse.
+* `LinearEquiv.coprod_linearCombination_comp_piFinAppend`: under `LinearEquiv.piFinAppend`, the
+  linear combination with concatenated coefficients `Fin.append x y` splits as the sum of those
+  with coefficients `x` and `y`.
 * `Fin.snoc_zero_eq_single`: the tuple of length `n + 1` with vanishing initial segment is the
   one-point family `Pi.single` at the last index.
 * `LinearEquiv.piEquivPiSubtypeProd`: `Equiv.piEquivPiSubtypeProd` as a linear equivalence,
@@ -42,6 +50,9 @@ weights.
   finite dependent product is the product of the determinants of its components.
 * `TauCeti.finrank_linearMap_pi_eq_sum`: the finite rank of maps between finite dependent
   products is the sum of the ranks of the finite free component hom spaces.
+* `LinearMap.sum_finrank_add_finrank_ker_of_surjective`: rank–nullity for a surjection from a
+  finite-dimensional space onto a finite dependent product, whose factors are then finite
+  (`LinearMap.finite_of_surjective_pi`).
 * `TauCeti.exists_isRegular_single_sub_single_sub`: an ordered difference of standard coordinate
   vectors on two different coordinates and any other ordered difference differ regularly at some
   coordinate.
@@ -105,6 +116,38 @@ public theorem piFinSnoc_symm_apply (p : ((i : Fin n) → M i.castSucc) × M (Fi
 
 end FinSnoc
 
+section FinAppend
+
+variable (R M : Type*) [Semiring R] [AddCommMonoid M] [Module R M] (m n : ℕ)
+
+/-- Splits a tuple of length `m + n` into its first `m` and its last `n` coordinates, with inverse
+`Fin.append`. This is the inverse of `Fin.appendEquiv` as a `LinearEquiv`. -/
+public def piFinAppend : (Fin (m + n) → M) ≃ₗ[R] (Fin m → M) × (Fin n → M) where
+  toEquiv := (Fin.appendEquiv m n).symm
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+
+@[simp]
+public theorem piFinAppend_apply (v : Fin (m + n) → M) :
+    piFinAppend R M m n v = (fun i ↦ v (Fin.castAdd n i), fun i ↦ v (Fin.natAdd m i)) :=
+  (rfl)
+
+@[simp]
+public theorem piFinAppend_symm_apply (p : (Fin m → M) × (Fin n → M)) :
+    (piFinAppend R M m n).symm p = Fin.append p.1 p.2 :=
+  (rfl)
+
+variable {R M m n} in
+/-- Under the splitting `piFinAppend`, the linear combination with coefficients the concatenation
+`Fin.append x y` is the sum of the linear combinations with coefficients `x` and `y`. -/
+public theorem coprod_linearCombination_comp_piFinAppend (x : Fin m → M) (y : Fin n → M) :
+    (Fintype.linearCombination R x).coprod (Fintype.linearCombination R y) ∘ₗ
+        (piFinAppend R R m n).toLinearMap =
+      Fintype.linearCombination R (Fin.append x y) :=
+  LinearMap.ext fun v ↦ by simp [Fintype.linearCombination_apply, Fin.sum_univ_add]
+
+end FinAppend
+
 variable (R : Type*) {ι : Type*} [Semiring R] (p : ι → Prop) [DecidablePred p] (M : ι → Type*)
   [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
 
@@ -162,6 +205,28 @@ public theorem det_piMap {R ι : Type*} [CommRing R] [Fintype ι] {M : ι → Ty
   let b (i : ι) := Module.Free.chooseBasis R (M i)
   rw [← det_toMatrix (Pi.basis b), toMatrix_piMap b b, Matrix.det_blockDiagonal']
   exact Finset.prod_congr rfl fun i _ ↦ det_toMatrix (b i) (f i)
+
+/-- Every factor of a product that is the image of a finite module under a linear map is finite:
+it is the image of that module under the composite with the projection. -/
+public theorem finite_of_surjective_pi {R M ι : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] [Module.Finite R M] {Q : ι → Type*} [∀ i, AddCommMonoid (Q i)]
+    [∀ i, Module R (Q i)] (Φ : M →ₗ[R] (i : ι) → Q i) (hΦ : Function.Surjective Φ) (i : ι) :
+    Module.Finite R (Q i) := by
+  classical
+  exact Module.Finite.of_surjective ((proj i).comp Φ) fun y ↦
+    (hΦ (Pi.single i y)).imp fun z hz ↦ by simp [hz]
+
+/-- **Rank–nullity onto a finite product**: for a surjective linear map `Φ` from a
+finite-dimensional space onto a finite product, the dimensions of the factors add up, with the
+dimension of the kernel of `Φ`, to the dimension of the source. -/
+public theorem sum_finrank_add_finrank_ker_of_surjective {K M ι : Type*} [DivisionRing K]
+    [Fintype ι] [AddCommGroup M] [Module K M] [FiniteDimensional K M] {Q : ι → Type*}
+    [∀ i, AddCommGroup (Q i)] [∀ i, Module K (Q i)] (Φ : M →ₗ[K] (i : ι) → Q i)
+    (hΦ : Function.Surjective Φ) :
+    ∑ i, Module.finrank K (Q i) + Module.finrank K (ker Φ) = Module.finrank K M := by
+  have := finite_of_surjective_pi Φ hΦ
+  rw [← Module.finrank_pi_fintype, ← finrank_top K, ← range_eq_top.2 hΦ]
+  exact finrank_range_add_finrank_ker Φ
 
 end LinearMap
 

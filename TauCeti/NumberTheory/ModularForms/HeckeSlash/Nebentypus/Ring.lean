@@ -53,6 +53,10 @@ when its underlying function lies here.
 ## Main results
 
 * `coe_mem_functionCharSpace_iff`: the bridge to `modFormCharSpace`.
+* `TauCeti.slash_mapGL_eq_self_of_mem_functionCharSpace_of_mem_Gamma1`,
+  `TauCeti.slash_mapGL_eq_of_mem_functionCharSpace_of_dvd_sub`: a `χ`-invariant function is
+  invariant under `Γ₁(N)`, so its slash by a matrix of `SL(2, ℤ)` depends only on the lower row
+  modulo `N`.
 * `HeckeRing.GL2.twistedHeckeSlashRingLinearMap_single`: the value on a basis element is the
   scaled twisted sum of that double coset. With `map_zero`/`map_add` this determines the map.
 
@@ -114,6 +118,29 @@ records that `functionCharSpace` is not a second notion. -/
 lemma coe_mem_functionCharSpace_iff (f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k) :
     (⇑f) ∈ functionCharSpace k χ ↔ f ∈ modFormCharSpace k χ :=
   (mem_modFormCharSpace_iff_nebentypus k χ f).symm
+
+namespace TauCeti
+
+variable {k χ} in
+/-- A `χ`-invariant function for `Γ₀(N)` is invariant under `Γ₁(N)`, on which `χ(d_g)` is `1`. -/
+lemma slash_mapGL_eq_self_of_mem_functionCharSpace_of_mem_Gamma1 {f : ℍ → ℂ}
+    (hf : f ∈ functionCharSpace k χ) {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma1 N) :
+    f ∣[k] mapGL ℝ γ = f := by
+  have h := hf ⟨γ, Gamma1_in_Gamma0 N hγ⟩
+  rwa [(mem_Gamma1_iff_toHomUnits_eq_one _).mp hγ, map_one, Units.val_one, one_smul] at h
+
+variable {k χ} in
+/-- A `χ`-invariant function for `Γ₀(N)` has the same slash by two matrices of `SL(2, ℤ)` whose
+lower rows agree modulo `N`, since these lie in one right coset of `Γ₁(N)`
+(`CongruenceSubgroup.mul_inv_mem_Gamma1_iff_dvd_sub`). -/
+lemma slash_mapGL_eq_of_mem_functionCharSpace_of_dvd_sub {f : ℍ → ℂ}
+    (hf : f ∈ functionCharSpace k χ) {A B : SL(2, ℤ)} (h10 : (N : ℤ) ∣ A 1 0 - B 1 0)
+    (h11 : (N : ℤ) ∣ A 1 1 - B 1 1) : f ∣[k] mapGL ℝ A = f ∣[k] mapGL ℝ B := by
+  conv_lhs => rw [← inv_mul_cancel_right A B]
+  rw [map_mul, SlashAction.slash_mul, slash_mapGL_eq_self_of_mem_functionCharSpace_of_mem_Gamma1 hf
+    (mul_inv_mem_Gamma1_iff_dvd_sub.mpr ⟨h10, h11⟩)]
+
+end TauCeti
 
 namespace HeckeRing.GL2
 

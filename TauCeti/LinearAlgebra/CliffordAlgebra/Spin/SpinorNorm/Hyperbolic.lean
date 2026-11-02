@@ -80,8 +80,7 @@ theorem spinorNorm_hyperbolicTorus (t : Kˣ) :
 theorem hyperbolicTorus_mem_range_spinToSpecialOrthogonal_iff (t : Kˣ) :
     hyperbolicTorus K t ∈ (spinToSpecialOrthogonal (hyperbolicPlane K)).range ↔ IsSquare t := by
   rw [range_spinToSpecialOrthogonal_eq_ker_spinorNorm _ nondegenerate_hyperbolicPlane,
-    MonoidHom.mem_ker, spinorNorm_hyperbolicTorus, squareClassHom_apply, ofAdd_eq_one,
-    squareClass_eq_zero_iff]
+    MonoidHom.mem_ker, spinorNorm_hyperbolicTorus, squareClassHom_eq_one_iff]
 
 /-- The image of `Spin(H) → SO(H)` for the hyperbolic plane `H` is the diagonal torus at the square
 parameters. -/

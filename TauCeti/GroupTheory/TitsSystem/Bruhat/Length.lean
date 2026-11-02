@@ -40,6 +40,8 @@ inversion carries the cell at `w` to the cell at `w⁻¹` and preserves the leng
   multiplication**, `(B s B)(B w B) = B (s w) B ∪ B w B` when `ℓ (s w) < ℓ w`.
 * `TauCeti.TitsSystem.wordLength_simple_mul_ne` and `TauCeti.TitsSystem.wordLength_simple_mul`:
   a simple reflection changes the length by exactly one.
+* `TauCeti.TitsSystem.wordLength_simple_mul_simple_of_ne`: the product of two distinct simple
+  reflections has length two.
 * `TauCeti.TitsSystem.bruhatCell_mul_eq_iff_wordLength_lt` and
   `TauCeti.TitsSystem.bruhatCell_mul_eq_union_iff_wordLength_lt`: the two alternatives of the
   rank-one law are characterized by the length function.
@@ -167,6 +169,15 @@ theorem wordLength_simple_mul {s : T.WeylGroup} (hs : s ∈ T.simple) (w : T.Wey
   have h2 := T.wordLength_le_wordLength_simple_mul_add_one hs w
   have h3 := T.wordLength_simple_mul_ne hs w
   omega
+
+/-- The product of two distinct simple reflections has length two. -/
+theorem wordLength_simple_mul_simple_of_ne {s t : T.WeylGroup} (hs : s ∈ T.simple)
+    (ht : t ∈ T.simple) (hst : s ≠ t) : ℓ (s * t) = 2 := by
+  rcases T.wordLength_simple_mul hs t with h | h
+  · rw [h, T.wordLength_simple ht]
+  · -- Otherwise `s t = 1`, so `s = t⁻¹ = t`.
+    rw [T.wordLength_simple ht, Nat.add_eq_right, Group.Generators.wordLength_eq_zero_iff] at h
+    exact absurd ((eq_inv_of_mul_eq_one_left h).trans (T.inv_simple ht)) hst
 
 /-- The two alternatives of the rank-one law are decided by the length: `(B s B)(B w B)` is the
 single cell `B (s w) B` exactly when `s` increases the length of `w`. -/

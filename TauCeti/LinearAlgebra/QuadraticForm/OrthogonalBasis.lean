@@ -37,6 +37,8 @@ pairwise orthogonal vectors that the Clifford-algebra API asks for.
 * `QuadraticMap.nondegenerate_and_length_eq_finrank_of_pairwise_isOrtho`: conversely, a spanning
   list of pairwise orthogonal, non-isotropic vectors is a basis, so the form is nondegenerate and
   the list has the length of the dimension.
+* `QuadraticMap.nondegenerate_of_isOrthoᵢ`: the same converse for a basis: a form with an
+  orthogonal basis of non-isotropic vectors is nondegenerate, in any dimension.
 -/
 
 public section
@@ -130,5 +132,14 @@ theorem nondegenerate_and_length_eq_finrank_of_pairwise_isOrtho [NeZero (2 : F)]
   refine ⟨nondegenerate_polar_iff.mp ?_, by simpa using (finrank_eq_card_basis b).symm⟩
   exact (LinearMap.BilinForm.iIsOrtho.nondegenerate_iff_not_isOrtho_basis_self _ b
     (hb ▸ hortho)).mpr (hb ▸ hself)
+
+/-- **An orthogonal basis of non-isotropic vectors makes the form nondegenerate**, in any
+dimension. This is the basis form of
+`QuadraticMap.nondegenerate_and_length_eq_finrank_of_pairwise_isOrtho`. -/
+theorem nondegenerate_of_isOrthoᵢ [Invertible (2 : F)] {ι : Type*} {b : Basis ι F V}
+    (hb : (associated Q).IsOrthoᵢ b) (hQ : ∀ i, Q (b i) ≠ 0) : Q.Nondegenerate :=
+  nondegenerate_associated_iff.mp <| hb.nondegenerate_of_not_isOrtho_basis_self b fun i ↦ by
+    rw [associated_eq_self_apply]
+    exact hQ i
 
 end QuadraticMap
