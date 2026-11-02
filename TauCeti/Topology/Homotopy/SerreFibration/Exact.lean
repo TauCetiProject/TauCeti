@@ -91,9 +91,6 @@ private def genLoopOfProd {X : Type*} [TopologicalSpace X] {x : X} (c : C(I × I
   ⟨c.comp (piOptionEquivProdHomeomorph fun _ : Option N => I), fun _ hz =>
     hc _ (piOptionEquivProdHomeomorph_mem_prodBoundary_iff.2 hz)⟩
 
-private theorem fiberι_hom_apply (x : p.fiber b) : (p.fiberι b).hom x = x.1 :=
-  TopCat.Hom.fiberι_apply p b x
-
 private theorem genLoopOfProd_apply {X : Type*} [TopologicalSpace X] {x : X} (c : C(I × I^N, X))
     (hc : ∀ y ∈ Cube.prodBoundary N, c y = x) (z : I^(Option N)) :
     genLoopOfProd c hc z = c (piOptionEquivProdHomeomorph (fun _ => I) z) :=
@@ -145,7 +142,7 @@ theorem homotopic_map_endLoop_const (hG : IsBoundaryLift p e γ G) :
     GenLoop.Homotopic (GenLoop.map (p.fiberι b).hom (TopCat.Hom.fiberι_apply p b e) hG.endLoop)
       GenLoop.const :=
   GenLoop.homotopic_of_continuousMap (G.comp ⟨fun y => (σ y.1, y.2), by fun_prop⟩)
-    (fun t => by rw [GenLoop.map_apply, fiberι_hom_apply, endLoop_apply_coe]; simp)
+    (fun t => by rw [GenLoop.map_apply, TopCat.Hom.fiberι_apply, endLoop_apply_coe]; simp)
     (fun t => by simp [hG.apply_zero])
     fun s t ht => by simp [hG.apply_of_mem_boundary _ ht]
 
@@ -414,10 +411,10 @@ theorem mem_range_fibrationBoundary_iff (hp : serreFibrations p) [Finite N]
     have hG0 (t : I^N) : G (0, t) = e.1 := by simp [G]
     have hG1 (t : I^N) : G (1, t) = (β t).1 := by
       simp only [G, ContinuousMap.coe_mk, symm_one, K.apply_zero]
-      exact (GenLoop.map_apply _ _ β t).trans (fiberι_hom_apply _)
+      exact (GenLoop.map_apply _ _ β t).trans (TopCat.Hom.fiberι_apply p b _)
     have hGb (s : I) {t : I^N} (ht : t ∈ Cube.boundary N) : G (s, t) = e.1 := by
       simp only [G, ContinuousMap.coe_mk, K.eq_fst _ ht]
-      exact ((GenLoop.map_apply _ _ β t).trans (fiberι_hom_apply _)).trans
+      exact ((GenLoop.map_apply _ _ β t).trans (TopCat.Hom.fiberι_apply p b _)).trans
         (congrArg Subtype.val (GenLoop.boundary β t ht))
     have hpG : ∀ y ∈ Cube.prodBoundary N, p.hom.comp G y = b := by
       rintro ⟨s, t⟩ hy
@@ -448,7 +445,7 @@ theorem mem_range_homotopyGroupMap_fiberι_iff (hp : serreFibrations p) [Finite 
     rw [HomotopyGroup.map_mk, HomotopyGroup.map_mk]
     congr 1
     refine GenLoop.ext _ _ fun t => ?_
-    rw [GenLoop.map_apply, GenLoop.map_apply, fiberι_hom_apply, GenLoop.const_apply]
+    rw [GenLoop.map_apply, GenLoop.map_apply, TopCat.Hom.fiberι_apply, GenLoop.const_apply]
     exact (β t).2
   · intro h
     induction a using Quotient.inductionOn with | h α => ?_
@@ -471,7 +468,7 @@ theorem mem_range_homotopyGroupMap_fiberι_iff (hp : serreFibrations p) [Finite 
       ⟨⟨fun t => ⟨L (1, t), hL1 t⟩, by fun_prop⟩, fun t ht => Subtype.ext (hLb 1 ht)⟩
     refine ⟨⟦β⟧, (Quotient.sound ?_).symm⟩
     exact GenLoop.homotopic_of_continuousMap L hL0
-      (fun t => ((GenLoop.map_apply _ _ β t).trans (fiberι_hom_apply _)).symm)
+      (fun t => ((GenLoop.map_apply _ _ β t).trans (TopCat.Hom.fiberι_apply p b _)).symm)
       fun s t ht => hLb s ht
 
 /-- **Exactness at `π_{n+1}(B, b)`.** A class of the base comes from the total space exactly when
