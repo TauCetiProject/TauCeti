@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.LinearMap.Rat
 public import Mathlib.Analysis.InnerProductSpace.LinearMap
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
@@ -29,6 +30,12 @@ inner product space, and the two constructions are mutually inverse up to isomet
 * the real model of the rational model of an integral full lattice `L ⊆ E` is carried onto `L`
   by a linear isometry equivalence of its real model space with `E`
   (`ZLattice.realModelRatModelIsometry`).
+
+The rational embedding also identifies the dual carrier with the dual real lattice
+(`realModelDualEquiv`) and the discriminant groups (`realModelDiscriminantGroupEquiv`). The
+latter preserves the discriminant pairing and, for even lattices, the half-norm quadratic map,
+read through `ZLattice.ratModelDiscriminantGroupEquiv`. Thus discriminant-form computations on
+the rational lattice apply to the real model without introducing another discriminant form.
 
 Moreover a real linear isometry carrying one real model onto another induces an isometry of the
 rational lattices (`TauCeti.IntegralLattice.Isometry.ofRealModel`), so that facts proved about
@@ -268,6 +275,91 @@ theorem isUnimodular_realModel_iff : ZLattice.IsUnimodular (M.realModel hM) ↔ 
     isUnimodular_iff_natCard_discriminantGroup_eq_one,
     isUnimodular_iff_natCard_discriminantGroup_eq_one,
     Nat.card_congr (M.ratModelRealModelIsometry hM).discriminantGroupEquiv.toEquiv]
+
+/-! ### Duals and discriminant forms -/
+
+/-- The rational-model embedding after the round-trip isometry is the original rational
+embedding into the real model space. -/
+@[simp]
+theorem ratModelMap_ratModelRealModelIsometry (x : V) :
+    ZLattice.ratModelMap (M.realModel hM) (M.ratModelRealModelIsometry hM x) =
+      M.realModelMap hM x := by
+  let f := (ZLattice.ratModelMap (M.realModel hM)).toAddMonoidHom.toRatLinearMap
+  have he : f.comp (M.ratModelRealModelIsometry hM).toLinearEquiv.toLinearMap =
+      M.realModelMap hM := by
+    refine M.rationalBasis.ext fun i ↦ ?_
+    rw [rationalBasis_apply]
+    simp [f, AddMonoidHom.coe_toRatLinearMap, ratModelRealModelIsometry_apply_coe]
+  exact LinearMap.congr_fun he x
+
+/-- The dual carrier of a positive definite rational lattice identifies with the dual of its
+real model, by the rational embedding. -/
+noncomputable def realModelDualEquiv :
+    M.dualCarrier ≃ₗ[ℤ] ZLattice.dual (M.realModel hM) :=
+  (M.ratModelRealModelIsometry hM).dualCarrierEquiv.trans
+    (ZLattice.ratModelDualEquiv (M.isIntegral_realModel hM)).symm
+
+/-- On dual vectors, the dual identification is the rational embedding. -/
+@[simp]
+theorem coe_realModelDualEquiv (x : M.dualCarrier) :
+    (M.realModelDualEquiv hM x : M.RealModelSpace hM) = M.realModelMap hM x := by
+  simp [realModelDualEquiv]
+
+/-- A rational vector belongs to the dual of the real model exactly when it belongs to the
+rational dual carrier. -/
+theorem realModelMap_mem_dual_realModel_iff (x : V) :
+    M.realModelMap hM x ∈ ZLattice.dual (M.realModel hM) ↔ x ∈ M.dualCarrier := by
+  constructor
+  · intro hx
+    obtain ⟨y, hy⟩ := (M.realModelDualEquiv hM).surjective ⟨_, hx⟩
+    have hxy := congrArg Subtype.val hy
+    rw [coe_realModelDualEquiv] at hxy
+    exact (M.realModelMap_injective hM hxy) ▸ y.property
+  · intro hx
+    exact (coe_realModelDualEquiv M hM ⟨x, hx⟩) ▸ (M.realModelDualEquiv hM ⟨x, hx⟩).property
+
+/-- The discriminant group of a positive definite rational lattice identifies with the
+(discrete Euclidean) discriminant group of its real model. -/
+noncomputable def realModelDiscriminantGroupEquiv :
+    M.DiscriminantGroup ≃ₗ[ℤ] ZLattice.DiscriminantGroup (M.realModel hM) :=
+  (M.ratModelRealModelIsometry hM).discriminantGroupEquiv.trans
+    (ZLattice.ratModelDiscriminantGroupEquiv (M.isIntegral_realModel hM)).symm
+
+/-- The discriminant-group identification sends the class of a rational dual vector to the
+class of its real image. -/
+@[simp]
+theorem realModelDiscriminantGroupEquiv_mk (x : M.dualCarrier) :
+    M.realModelDiscriminantGroupEquiv hM (Submodule.Quotient.mk x) =
+      Submodule.Quotient.mk (M.realModelDualEquiv hM x) := by
+  apply (ZLattice.ratModelDiscriminantGroupEquiv (M.isIntegral_realModel hM)).injective
+  simp [realModelDiscriminantGroupEquiv, realModelDualEquiv]
+
+/-- The discriminant pairing transported through the real model agrees with the original
+rational discriminant pairing. The real-model pairing is read through its rational model,
+so no second discriminant form is introduced. -/
+@[simp]
+theorem discriminantPairing_realModelDiscriminantGroupEquiv (x y : M.DiscriminantGroup) :
+    (ZLattice.ratModel (M.isIntegral_realModel hM)).discriminantPairing
+      (ZLattice.ratModelDiscriminantGroupEquiv (M.isIntegral_realModel hM)
+        (M.realModelDiscriminantGroupEquiv hM x))
+      (ZLattice.ratModelDiscriminantGroupEquiv (M.isIntegral_realModel hM)
+        (M.realModelDiscriminantGroupEquiv hM y)) = M.discriminantPairing x y := by
+  have : M.IsNondegenerate := ⟨(M.isPosDef_iff_isPosSemidef_and_nondegenerate.mp hM).2⟩
+  simpa [realModelDiscriminantGroupEquiv, Isometry.discriminantBilinearIsometry_apply] using
+    (M.ratModelRealModelIsometry hM).discriminantBilinearIsometry.map_pairing x y
+
+/-- For an even lattice, the half-norm discriminant quadratic map transported through the
+real model agrees with the original quadratic map. -/
+@[simp]
+theorem discriminantQuadraticMap_realModelDiscriminantGroupEquiv (hE : M.IsEven)
+    (x : M.DiscriminantGroup) :
+    (ZLattice.ratModel (M.isIntegral_realModel hM)).discriminantQuadraticMap
+      ((ZLattice.isEven_ratModel_iff _).mpr ((M.isEven_realModel_iff hM).mpr hE))
+      (ZLattice.ratModelDiscriminantGroupEquiv (M.isIntegral_realModel hM)
+        (M.realModelDiscriminantGroupEquiv hM x)) = M.discriminantQuadraticMap hE x := by
+  have : M.IsNondegenerate := ⟨(M.isPosDef_iff_isPosSemidef_and_nondegenerate.mp hM).2⟩
+  simpa [realModelDiscriminantGroupEquiv, Isometry.discriminantQuadraticIsometry_apply] using
+    ((M.ratModelRealModelIsometry hM).discriminantQuadraticIsometry hE).map_app x
 
 namespace Isometry
 
