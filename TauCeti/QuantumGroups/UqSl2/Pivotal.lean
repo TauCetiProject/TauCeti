@@ -76,9 +76,8 @@ theorem finiteModulePivotalCategory_def :
         (pivotalElement q) (antipode_antipode_eq_pivotalElement_mul_mul_antipode q) :=
   (rfl)
 
--- Keep this as a named rewrite: the generic rule simplifies it here, but does not match through
--- the opaque pivotal structure during ordinary importing simplification.
 /-- The pivotal isomorphism evaluates a dual vector after the action of `K⁻¹`. -/
+@[simp↓]
 theorem dualEquiv_pivotalIsoApp_hom_apply (M : FiniteHopfModuleCat ℂ (UqSl2 q))
     (m : M) (φ : (Mᘁ : FiniteHopfModuleCat ℂ (UqSl2 q))) :
     letI := finiteModuleRigidCategory q
@@ -92,6 +91,7 @@ theorem dualEquiv_pivotalIsoApp_hom_apply (M : FiniteHopfModuleCat ℂ (UqSl2 q)
 
 /-- For the named pivotal structure, the right trace is the ordinary trace twisted by `K⁻¹`.
 This formula requires only `q ≠ 0`. -/
+@[simp↓]
 theorem rightTrace_apply {M : FiniteHopfModuleCat ℂ (UqSl2 q)} (f : M ⟶ M)
     (c : (𝟙_ (FiniteHopfModuleCat ℂ (UqSl2 q)) : FiniteHopfModuleCat ℂ (UqSl2 q))) :
     letI := finiteModuleRigidCategory q
@@ -109,6 +109,7 @@ theorem rightTrace_apply {M : FiniteHopfModuleCat ℂ (UqSl2 q)} (f : M ⟶ M)
 
 /-- For the named pivotal structure, the left trace is the ordinary trace twisted by `K`.
 This formula requires only `q ≠ 0`. -/
+@[simp↓]
 theorem leftTrace_apply {M : FiniteHopfModuleCat ℂ (UqSl2 q)} (f : M ⟶ M)
     (c : (𝟙_ (FiniteHopfModuleCat ℂ (UqSl2 q)) : FiniteHopfModuleCat ℂ (UqSl2 q))) :
     letI := finiteModuleRigidCategory q
