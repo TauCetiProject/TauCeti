@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Morphisms.Proper
 public import TauCeti.AlgebraicGeometry.Grassmannian.IdealLocus
 public import TauCeti.RingTheory.Grassmannian.HopfIdeal
+
+import TauCeti.AlgebraicGeometry.Grassmannian.Proper
 
 /-!
 # The closed subscheme of Hopf ideals in the Grassmannian scheme

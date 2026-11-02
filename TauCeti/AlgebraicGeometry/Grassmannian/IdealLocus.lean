@@ -7,8 +7,8 @@ module
 
 public import Mathlib.AlgebraicGeometry.IdealSheaf.Functorial
 public import TauCeti.AlgebraicGeometry.Grassmannian.Points
-public import TauCeti.AlgebraicGeometry.Grassmannian.Proper
 
+import TauCeti.AlgebraicGeometry.AffineScheme
 import TauCeti.AlgebraicGeometry.IdealSheaf.Affine
 import TauCeti.AlgebraicGeometry.IdealSheaf.Locality
 import TauCeti.AlgebraicGeometry.IdealSheaf.OfIdealTop
@@ -88,14 +88,7 @@ private theorem algebraMap_sections (U : (scheme R M k).Opens) :
 private theorem fromSpec_toSpec {U : (scheme R M k).Opens} (hU : IsAffineOpen U) :
     hU.fromSpec ≫ toSpec R M k =
       Spec.map (CommRingCat.ofHom (algebraMap R Γ(scheme R M k, U))) := by
-  calc hU.fromSpec ≫ toSpec R M k
-      -- over `U`, `toSpec` is `Spec` of its map on sections `Γ(Spec R, ⊤) → Γ(G(k, M), U)`
-      _ = Spec.map ((toSpec R M k).appLE ⊤ U fun _ _ ↦ trivial) ≫ (Spec (.of R)).isoSpec.inv := by
-        rw [← IsAffineOpen.fromSpec_top]
-        exact (IsAffineOpen.SpecMap_appLE_fromSpec _ (isAffineOpen_top _) hU _).symm
-      -- the isomorphism `Spec R ≅ Spec Γ(Spec R, ⊤)` is `Spec` of `ΓSpecIso R`
-      _ = Spec.map (CommRingCat.ofHom (algebraMap R Γ(scheme R M k, U))) := by
-        rw [Scheme.isoSpec_Spec_inv, ← Spec.map_comp, algebraMap_sections, CommRingCat.ofHom_hom]
+  rw [IsAffineOpen.fromSpec_comp_eq_SpecMap, algebraMap_sections, CommRingCat.ofHom_hom]
 
 /-- The point of the Grassmannian over the sections of an affine open `U` classifying the
 inclusion `Spec Γ(G(k, M), U) ⟶ G(k, M)`. -/
@@ -188,23 +181,6 @@ noncomputable def schemeIdealLocus : (scheme R M k).IdealSheafData where
       ((scheme R M k).basicOpen_le f), hI]
     rfl
 
-include hI in
-/-- Transporting `I` to global sections of `Spec` commutes with base change along an
-`R`-algebra map `φ : B → A`. -/
-private theorem map_appTop_map {A B : Type u} [CommRing A] [Algebra R A] [CommRing B]
-    [Algebra R B] (φ : B →ₐ[R] A) (P : G(k, B ⊗[R] M; B)) :
-    ((I P).map (Scheme.ΓSpecIso (.of B)).inv.hom).map
-        (Spec.map (CommRingCat.ofHom (φ : B →+* A))).appTop.hom =
-      (I (map φ P)).map (Scheme.ΓSpecIso (.of A)).inv.hom := by
-  calc _ = (I P).map ((Spec.map (CommRingCat.ofHom (φ : B →+* A))).appTop.hom.comp
-          (Scheme.ΓSpecIso (.of B)).inv.hom) := Ideal.map_map _ _
-      -- naturality of `ΓSpecIso`
-      _ = (I P).map ((Scheme.ΓSpecIso (.of A)).inv.hom.comp (φ : B →+* A)) := by
-        rw [← CommRingCat.hom_comp, ← Scheme.ΓSpecIso_inv_naturality]
-        rfl
-      -- the formation of `I` commutes with base change
-      _ = _ := by rw [← Ideal.map_map, Ideal.map_coe, hI]
-
 /-- The inverse image of the closed subscheme along a morphism landing in an affine open `U`,
 induced by an `R`-algebra map `φ : Γ(G(k, M), U) → A`. -/
 private theorem comap_specMap_comp_fromSpec {A : Type u} [CommRing A] [Algebra R A]
@@ -212,16 +188,9 @@ private theorem comap_specMap_comp_fromSpec {A : Type u} [CommRing A] [Algebra R
     (schemeIdealLocus I hI).comap
         (Spec.map (CommRingCat.ofHom (φ : Γ(scheme R M k, U) →+* A)) ≫ hU.fromSpec) =
       ofIdealTop ((I (map φ (affinePoint hU))).map (Scheme.ΓSpecIso (.of A)).inv.hom) := by
-  calc _ = (ofIdealTop (((schemeIdealLocus I hI).ideal ⟨U, hU⟩).map
-          (Scheme.ΓSpecIso Γ(scheme R M k, U)).inv.hom)).comap
-            (Spec.map (CommRingCat.ofHom (φ : Γ(scheme R M k, U) →+* A))) := by
-        rw [comap_comp, comap_fromSpec_eq_ofIdealTop]
-    -- the ideal of `schemeIdealLocus` over `U` is by definition `I` of the affine point
-    _ = ofIdealTop (((I (affinePoint hU)).map
-          (Scheme.ΓSpecIso Γ(scheme R M k, U)).inv.hom).map
-            (Spec.map (CommRingCat.ofHom (φ : Γ(scheme R M k, U) →+* A))).appTop.hom) :=
-        comap_ofIdealTop _ _
-    _ = _ := congrArg ofIdealTop (map_appTop_map I hI φ _)
+  rw [comap_comp, comap_fromSpec_eq_ofIdealTop, TauCeti.comap_ofIdealTop_map_ΓSpecIso_inv,
+    CommRingCat.hom_ofHom, Ideal.map_coe, hI]
+  rfl
 
 /-- The inverse image of the closed subscheme along the morphism classifying a point, when that
 morphism lands in an affine open. -/
@@ -256,8 +225,9 @@ theorem comap_toSchemeHom_schemeIdealLocus {A : Type u} [CommRing A] [Algebra R 
   change (schemeIdealLocus I hI).comap
       (Spec.map (CommRingCat.ofHom (algebraMap A (Localization.Away a.1))) ≫ toSchemeHom N) =
     (ofIdealTop _).comap (Spec.map (CommRingCat.ofHom (algebraMap A _)))
-  rw [hι, comap_toSchemeHom_of_range_subset I hI _ hU (hι ▸ hNU), comap_ofIdealTop]
-  exact congrArg ofIdealTop (map_appTop_map I hI ι N).symm
+  rw [hι, comap_toSchemeHom_of_range_subset I hI _ hU (hι ▸ hNU),
+    TauCeti.comap_ofIdealTop_map_ΓSpecIso_inv, CommRingCat.hom_ofHom, hI]
+  rfl
 
 /-- **The universal property of the closed subscheme cut out by `I`.** For an `R`-algebra `A`, the
 morphism `Spec A ⟶ G(k, M)` classifying a point `N` of `G(k, A ⊗[R] M; A)` factors through the

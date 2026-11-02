@@ -45,8 +45,9 @@ commutes with base change (`Module.Grassmannian.isotropicLocus_map`). Over an af
 * `Module.Grassmannian.schemeIsotropicLocus_le_ker_toSchemeHom_iff`: **the universal property**;
   the morphism classifying `N` factors through the isotropic Grassmannian exactly when `N` is
   isotropic for `ω_A`.
-* `Module.Grassmannian.isProper_subschemeι_schemeIsotropicLocus_toSpec`: for `M` finite over `R`,
-  the isotropic Grassmannian is proper over `Spec R`.
+
+For `M` finite over `R`, the isotropic Grassmannian is proper over `Spec R` by instance inference,
+as a closed subscheme of the proper Grassmannian scheme (`Module.Grassmannian.isProper_toSpec`).
 
 ## References
 
@@ -142,12 +143,5 @@ theorem toSchemeHom_schemeIsotropicLocusHomEquiv_symm_apply (ω : LinearMap.Bili
       h.1 ≫ (schemeIsotropicLocus k ω).subschemeι :=
   toSchemeHom_schemeIdealLocusHomEquiv_symm_apply (R := R) (M := M) (k := k)
     (fun N ↦ N.isotropicLocus ω) (fun f N ↦ isotropicLocus_map f N ω) h
-
-/-- For `M` finite over `R`, the isotropic Grassmannian is proper over `Spec R`, as a closed
-subscheme of the proper Grassmannian scheme. -/
-instance isProper_subschemeι_schemeIsotropicLocus_toSpec [Module.Finite R M]
-    (ω : LinearMap.BilinForm R M) :
-    IsProper ((schemeIsotropicLocus k ω).subschemeι ≫ toSpec R M k) :=
-  inferInstance
 
 end Module.Grassmannian
