@@ -140,8 +140,8 @@ theorem IsDistinguished.exists_isDiscPreparation [CompleteSpace K]
       IsDiscPreparation r d f P U := by
   obtain ⟨e, ω, he, hω, heω⟩ :=
     hf.exists_isUnit_isMonicOfDegree_mul_eq hf.coeff_ne_zero.isUnit hr hfr
-  -- Use the constant-one rescaling from
-  -- `IsMulDistinguished.exists_isEntirePreparation`, without entire convergence.
+  -- The constant-one rescaling `exists_normalized_factors_of_mul_eq` is shared with
+  -- `IsMulDistinguished.exists_isEntirePreparation`, without requiring entire convergence.
   obtain ⟨a, U, hP0, hd, -, hU0, hU, hPU, -⟩ :=
     exists_normalized_factors_of_mul_eq he hω heω hf0
   exact ⟨a • ω, U, ⟨hf, hP0, hd, hU0, hU, hPU⟩⟩
