@@ -37,7 +37,10 @@ globally defined replacement for a function such as `t ↦ 1/t` or `Real.log` th
 behaved on `(0, ∞)`. If `g` is `C¹` on `(0, ∞)` then the cutoff is `C¹` on `ℝ`, and if `g'` is
 bounded on `[m, ∞)` then the derivative of the cutoff is bounded on `ℝ`; these are the hypotheses
 of chain rules for Sobolev functions. Finally, rescaling the smooth transition gives a smooth
-nonincreasing step from any value `v ≥ 0` down to `0` across an interval `[a, b]`.
+nonincreasing step from any value `v ≥ 0` down to `0` across an interval `[a, b]`. Integrating a
+plateau built from two smooth transitions gives such a step with slope at most `τ` whenever
+`v < τ (b - a)`, which is the best possible bound, since the mean slope of the step is
+`v / (b - a)`.
 
 ## Main declarations
 
@@ -65,6 +68,8 @@ nonincreasing step from any value `v ≥ 0` down to `0` across an interval `[a, 
   on `[m, ∞)`.
 * `TauCeti.exists_contDiff_antitone_cutoff`: a smooth nonincreasing step from a value `v ≥ 0` on
   `(-∞, a]` down to `0` on `[b, ∞)`.
+* `TauCeti.exists_contDiff_antitone_cutoff_abs_deriv_le`: such a step whose slope is at most `τ`,
+  for every `v < τ (b - a)`.
 -/
 
 public section
@@ -352,5 +357,92 @@ theorem exists_contDiff_antitone_cutoff {a b v : ℝ} (hab : a < b) (hv : 0 ≤ 
     simp only [Real.smoothTransition.one_of_one_le h, sub_self, mul_zero]
   · have h : (r - a) / (b - a) ≤ 0 := div_nonpos_of_nonpos_of_nonneg (by linarith) hba.le
     simp only [Real.smoothTransition.zero_of_nonpos h, sub_zero, mul_one]
+
+/-- A smooth nonincreasing step down from `v ≥ 0` to `0` across `[a, b]` with **slope at most
+`τ`**: if `v < τ (b - a)`, there is a smooth antitone function `μ ≥ 0` equal to `v` on `(-∞, a]`
+and to `0` on `[b, ∞)`, with `|μ'| ≤ τ` everywhere and `μ' = 0` outside `(a, b)`. -/
+theorem exists_contDiff_antitone_cutoff_abs_deriv_le {a b v τ : ℝ} (hab : a < b) (hv : 0 ≤ v)
+    (hvτ : v < τ * (b - a)) :
+    ∃ μ : ℝ → ℝ, ContDiff ℝ ∞ μ ∧ Antitone μ ∧ (∀ r, 0 ≤ μ r) ∧ (∀ r, b ≤ r → μ r = 0) ∧
+      (∀ r ≤ a, μ r = v) ∧ (∀ r, |deriv μ r| ≤ τ) ∧ ∀ r ∉ Ioo a b, deriv μ r = 0 := by
+  have hba : 0 < b - a := sub_pos.2 hab
+  have hτ : 0 < τ := by
+    by_contra h
+    nlinarith
+  have hvτ' : v / τ < b - a := by rw [div_lt_iff₀ hτ]; linarith
+  have hvτ0 : 0 ≤ v / τ := div_nonneg hv hτ.le
+  -- The step is `v` minus a multiple of the primitive of a plateau `ψ`, which is supported in
+  -- `[a, b]` and equal to `1` on `[a + δ, b - δ]`, with `δ` small enough that the integral of `ψ`
+  -- exceeds `v / τ`.
+  set δ := (b - a - v / τ) / 4 with hδ
+  have hδpos : 0 < δ := div_pos (by linarith) (by norm_num)
+  set ψ : ℝ → ℝ := fun r ↦
+    Real.smoothTransition ((r - a) / δ) * Real.smoothTransition ((b - r) / δ) with hψ
+  have hψc : ContDiff ℝ ∞ ψ :=
+    (Real.smoothTransition.contDiff.comp (by fun_prop)).mul
+      (Real.smoothTransition.contDiff.comp (by fun_prop))
+  have hψi (c d : ℝ) : IntervalIntegrable ψ volume c d := hψc.continuous.intervalIntegrable _ _
+  have hψ0 (r : ℝ) (hr : r ∉ Ioo a b) : ψ r = 0 := by
+    rw [mem_Ioo, not_and_or, not_lt, not_lt] at hr
+    rcases hr with hr | hr
+    · have h : (r - a) / δ ≤ 0 := div_nonpos_of_nonpos_of_nonneg (by linarith) hδpos.le
+      simp only [hψ, Real.smoothTransition.zero_of_nonpos h, zero_mul]
+    · have h : (b - r) / δ ≤ 0 := div_nonpos_of_nonpos_of_nonneg (by linarith) hδpos.le
+      simp only [hψ, Real.smoothTransition.zero_of_nonpos h, mul_zero]
+  have hψnn (r : ℝ) : 0 ≤ ψ r :=
+    mul_nonneg (Real.smoothTransition.nonneg _) (Real.smoothTransition.nonneg _)
+  have hψle (r : ℝ) : ψ r ≤ 1 :=
+    (mul_le_of_le_one_left (Real.smoothTransition.nonneg _)
+      (Real.smoothTransition.le_one _)).trans (Real.smoothTransition.le_one _)
+  set J := ∫ r in a..b, ψ r
+  have hJ : b - a - 2 * δ ≤ J := by
+    calc b - a - 2 * δ = ∫ _ in (a + δ)..(b - δ), (1 : ℝ) := by
+          rw [intervalIntegral.integral_const, smul_eq_mul, mul_one]; ring
+      _ = ∫ r in (a + δ)..(b - δ), ψ r := by
+          refine intervalIntegral.integral_congr fun r hr ↦ ?_
+          rw [uIcc_of_le (by linarith)] at hr
+          have h₁ : 1 ≤ (r - a) / δ := (one_le_div hδpos).2 (by linarith [hr.1])
+          have h₂ : 1 ≤ (b - r) / δ := (one_le_div hδpos).2 (by linarith [hr.2])
+          simp only [hψ, Real.smoothTransition.one_of_one_le h₁,
+            Real.smoothTransition.one_of_one_le h₂, mul_one]
+      _ ≤ J := intervalIntegral.integral_mono_interval (by linarith) (by linarith)
+          (by linarith) (Eventually.of_forall hψnn) (hψi _ _)
+  have hJv : v / τ < J := by linarith
+  have hJ0 : 0 < J := hvτ0.trans_lt hJv
+  set c := v / J with hc
+  have hc0 : 0 ≤ c := div_nonneg hv hJ0.le
+  have hcτ : c ≤ τ := (div_le_iff₀ hJ0).2 ((div_lt_iff₀' hτ).1 hJv).le
+  set μ : ℝ → ℝ := fun r ↦ v - c * ∫ t in a..r, ψ t with hμ
+  have hd (r : ℝ) : HasDerivAt μ (-(c * ψ r)) r := by
+    simpa using ((hψc.continuous.integral_hasStrictDerivAt a r).hasDerivAt.const_mul c).const_sub v
+  have hderiv : deriv μ = fun r ↦ -(c * ψ r) := funext fun r ↦ (hd r).deriv
+  have hdiff : Differentiable ℝ μ := fun r ↦ (hd r).differentiableAt
+  have hanti : Antitone μ := antitone_of_deriv_nonpos hdiff fun r ↦ by
+    rw [hderiv]
+    exact neg_nonpos.2 (mul_nonneg hc0 (hψnn r))
+  have hhigh (r : ℝ) (hr : b ≤ r) : μ r = 0 := by
+    have h : ∫ t in a..r, ψ t = J := by
+      rw [← intervalIntegral.integral_add_adjacent_intervals (hψi a b) (hψi b r),
+        intervalIntegral.integral_congr (a := b) (b := r) (g := fun _ ↦ (0 : ℝ)) fun t ht ↦ ?_,
+        intervalIntegral.integral_zero, add_zero]
+      rw [uIcc_of_le hr] at ht
+      exact hψ0 t fun h ↦ absurd ht.1 (not_le.2 h.2)
+    simp only [hμ, h, hc, div_mul_cancel₀ v hJ0.ne', sub_self]
+  refine ⟨μ, contDiff_infty_iff_deriv.2 ⟨hdiff, ?_⟩, hanti, fun r ↦ ?_, hhigh, fun r hr ↦ ?_,
+    fun r ↦ ?_, fun r hr ↦ ?_⟩
+  · rw [hderiv]
+    exact (contDiff_const.mul hψc).neg
+  · rcases le_total r b with h | h
+    · exact (hhigh b le_rfl).symm.le.trans (hanti h)
+    · exact (hhigh r h).symm.le
+  · have h : ∫ t in a..r, ψ t = 0 := by
+      rw [intervalIntegral.integral_congr (g := fun _ ↦ (0 : ℝ)) fun t ht ↦ ?_,
+        intervalIntegral.integral_zero]
+      rw [uIcc_of_ge hr] at ht
+      exact hψ0 t fun h ↦ absurd ht.2 (not_le.2 h.1)
+    simp only [hμ, h, mul_zero, sub_zero]
+  · rw [hderiv, abs_neg, abs_of_nonneg (mul_nonneg hc0 (hψnn r))]
+    exact (mul_le_of_le_one_right hc0 (hψle r)).trans hcτ
+  · simp only [hderiv, hψ0 r hr, mul_zero, neg_zero]
 
 end TauCeti
