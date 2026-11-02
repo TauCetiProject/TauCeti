@@ -429,6 +429,18 @@ theorem comp_equiv {R M κ κ' : Type*} [Semiring R] [AddCommMonoid M] [Module R
   convert hA.iSup_fiber e.symm with k
   simp [Equiv.symm_apply_eq]
 
+/-- Prepending the zero submodule to a natural-number-indexed internal decomposition
+again gives an internal decomposition. -/
+theorem nat_cons_bot {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+    {N : ℕ → Submodule R M} (h : DirectSum.IsInternal N) :
+    DirectSum.IsInternal (fun | 0 => ⊥ | i + 1 => N i) := by
+  have hfamily : (fun j ↦ ⨆ i, ⨆ _ : Nat.succ i = j, N i) =
+      (fun | 0 => ⊥ | i + 1 => N i) := by
+    funext j
+    cases j <;> simp
+  rw [← hfamily]
+  exact h.iSup_fiber Nat.succ
+
 /-- **Restricting an internal decomposition to a component-stable subspace.** If a subspace
 contains every canonical component of each of its elements, then it is the internal sum of its
 intersections with the original summands. -/
