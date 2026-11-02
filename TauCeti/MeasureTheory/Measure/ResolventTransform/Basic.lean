@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Measure.ResolventTransform
 public import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
+import Mathlib.Analysis.Normed.Algebra.GelfandFormula
 import Mathlib.Tactic.Positivity
 
 /-!
@@ -16,8 +17,9 @@ For a finite measure on the real line, the imaginary part of its resolvent trans
 is the integral of the kernel `im z / ((x - re z)² + (im z)²)`.
 This kernel is positive in the upper half-plane, so the imaginary part of the transform
 is strictly positive there for every nonzero finite measure. We also give uniform bounds
-away from the real axis, and prove affine covariance under pushforward. No moment assumptions are
-needed.
+away from the real axis, the continuity of the kernel there, the Lipschitz bound
+`‖m_μ(z) - m_μ(w)‖ ≤ ‖z - w‖ / (|Im z| |Im w|) · μ(ℝ)` from the resolvent identity, and prove
+affine covariance under pushforward. No moment assumptions are needed.
 
 We use Mathlib's `MeasureTheory.resolventTransform`, with sign `(x - z)⁻¹`, not
 `(z - x)⁻¹`.
@@ -48,6 +50,16 @@ theorem norm_resolvent_real_le (z : ℂ) (x : ℝ) (hz : z.im ≠ 0) :
   rw [resolvent, Ring.inverse_eq_inv', norm_inv]
   apply inv_anti₀ (abs_pos.mpr hz)
   simpa using abs_im_le_norm ((x : ℂ) - z)
+
+/-- A real number lies in the real resolvent set of every complex number off the real axis. -/
+theorem mem_resolventSet_real {z : ℂ} (hz : z.im ≠ 0) (x : ℝ) : x ∈ resolventSet ℝ z := by
+  rw [spectrum.mem_resolventSet_iff, isUnit_iff_ne_zero]
+  exact fun h ↦ hz (by simpa using congrArg Complex.im h)
+
+/-- Off the real axis the real resolvent kernel is continuous. -/
+theorem continuous_resolvent_real {z : ℂ} (hz : z.im ≠ 0) : Continuous (resolvent (R := ℝ) z) :=
+  continuous_iff_continuousAt.2 fun x ↦
+    (spectrum.hasDerivAt_resolvent_const_left (mem_resolventSet_real hz x)).continuousAt
 
 end Complex
 
@@ -99,6 +111,21 @@ theorem norm_resolventTransform_le {z : ℂ} (hz : z.im ≠ 0) :
   rw [resolventTransform_apply]
   exact norm_integral_le_of_norm_le_const
     (ae_of_all _ fun x => Complex.norm_resolvent_real_le z x hz)
+
+/-- The transform of a finite measure is Lipschitz away from the real axis:
+`‖m_μ(z) - m_μ(w)‖ ≤ ‖z - w‖ / (|Im z| |Im w|) · μ(ℝ)`. -/
+theorem norm_resolventTransform_sub_le {z w : ℂ} (hz : z.im ≠ 0) (hw : w.im ≠ 0) :
+    ‖resolventTransform μ z - resolventTransform μ w‖ ≤
+      ‖z - w‖ / (|z.im| * |w.im|) * μ.real Set.univ := by
+  rw [resolventTransform_apply, resolventTransform_apply, ← integral_sub
+    (integrable_resolvent_of_im_ne_zero hz) (integrable_resolvent_of_im_ne_zero hw)]
+  refine norm_integral_le_of_norm_le_const (ae_of_all _ fun x ↦ ?_)
+  rw [spectrum.resolvent_sub_resolvent (Complex.mem_resolventSet_real hz x)
+    (Complex.mem_resolventSet_real hw x), norm_mul, norm_mul,
+    div_eq_mul_inv, mul_inv, mul_comm ‖resolvent z x‖, mul_assoc]
+  gcongr
+  · exact Complex.norm_resolvent_real_le z x hz
+  · exact Complex.norm_resolvent_real_le w x hw
 
 /-- A nonzero finite measure has strictly positive imaginary transform in the upper half-plane. -/
 theorem im_resolventTransform_pos (hμ : μ ≠ 0) {z : ℂ} (hz : 0 < z.im) :
