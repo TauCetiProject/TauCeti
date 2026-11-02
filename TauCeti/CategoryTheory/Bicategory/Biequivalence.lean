@@ -18,7 +18,7 @@ counit are pseudonatural equivalences, invertible only up to invertible modifica
 
 ## Main definitions
 
-* `CategoryTheory.Bicategory.Biequivalence`: a biequivalence between two bicategories.
+* `TauCeti.Biequivalence`: a biequivalence between two bicategories.
 
 ## References
 
@@ -28,11 +28,11 @@ counit are pseudonatural equivalences, invertible only up to invertible modifica
 
 public section
 
-namespace CategoryTheory.Bicategory
+namespace TauCeti
 
 universe w₁ v₁ u₁ w₂ v₂ u₂
 
-open Pseudofunctor.StrongTrans
+open CategoryTheory Bicategory Pseudofunctor.StrongTrans
 
 /-- A biequivalence between bicategories `B` and `C`: pseudofunctors `functor : B ⥤ᵖ C` and
 `inverse : C ⥤ᵖ B` with adjoint equivalences `Pseudofunctor.id B ≌ functor.comp inverse` and
@@ -49,4 +49,4 @@ structure Biequivalence (B : Type u₁) [Bicategory.{w₁, v₁} B] (C : Type u�
   /-- The counit: `inverse` followed by `functor` is equivalent to the identity of `C`. -/
   counitEquiv : inverse.comp functor ≌ Pseudofunctor.id C
 
-end CategoryTheory.Bicategory
+end TauCeti

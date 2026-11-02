@@ -18,7 +18,8 @@ For a bicategory `B` and a functor `f : Γ ⥤ Λ`, the pseudofunctor
 families of objects of `B` indexed by `Λ` back to `Γ`. This file shows that pulling back is
 pseudofunctorial in `f`, and deduces that an equivalence `e : Γ ≌ Λ` induces a biequivalence
 
-`precompBiequivalence B e : Biequivalence (LocallyDiscrete Γ ⥤ᵖ B) (LocallyDiscrete Λ ⥤ᵖ B)`
+`precompBiequivalence B e :
+  TauCeti.Biequivalence (LocallyDiscrete Γ ⥤ᵖ B) (LocallyDiscrete Λ ⥤ᵖ B)`
 
 whose pseudofunctors pull back along `e.inverse` and `e.functor`. For `B = Cat` this transports
 families of categories, with their transport functors and all coherence data, along an
@@ -369,7 +370,7 @@ counit is the composite of `(precompCompEquiv B e.inverse e.functor).symm`,
 -- The body is exposed so that the types of the unit and counit equivalences, which mention the
 -- two pseudofunctors, can be computed in `precompBiequivalence_unitEquiv_hom` and its siblings.
 @[expose] def precompBiequivalence (e : Γ ≌ Λ) :
-    Biequivalence (LocallyDiscrete Γ ⥤ᵖ B) (LocallyDiscrete Λ ⥤ᵖ B) where
+    TauCeti.Biequivalence (LocallyDiscrete Γ ⥤ᵖ B) (LocallyDiscrete Λ ⥤ᵖ B) where
   functor := precomp B e.inverse.toPseudofunctor
   inverse := precomp B e.functor.toPseudofunctor
   unitEquiv := (precompIdEquiv B Γ).symm.trans
