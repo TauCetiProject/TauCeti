@@ -175,6 +175,12 @@ theorem linearPart_comp (g : AInfinityRightModuleHom NN PP) (f : AInfinityRightM
   ext x
   simp only [linearPart_apply, taylor_comp, LinearMap.comp_apply, barMap_tmul_one]
 
+/-- A left inverse of module morphisms induces a left inverse of their linear parts. -/
+theorem linearPart_comp_eq_id_of_comp_eq_id {f : AInfinityRightModuleHom MM NN}
+    {g : AInfinityRightModuleHom NN MM} (h : g.comp f = AInfinityRightModuleHom.id MM) :
+    g.linearPart ∘ₗ f.linearPart = LinearMap.id := by
+  simpa only [linearPart_comp, linearPart_id] using congrArg linearPart h
+
 end AInfinityRightModuleHom
 
 end TauCeti

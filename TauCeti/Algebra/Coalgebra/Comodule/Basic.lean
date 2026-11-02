@@ -23,6 +23,7 @@ coalgebra over itself, and the basic morphism API.
 
 * `TauCeti.Comodule`: a right comodule over a coalgebra.
 * `TauCeti.Comodule.Hom`: morphisms of comodules.
+* `TauCeti.Comodule.Hom.inverse`: the inverse of a bijective comodule morphism.
 * `TauCeti.Comodule.instSelf`: the regular right comodule of a coalgebra over itself.
 * `TauCeti.Comodule.coactComponent`: the component of a coaction selected by a linear
   functional on the coalgebra.
@@ -288,6 +289,42 @@ theorem comp_assoc (h : Hom R C P Q) (g : Hom R C N P) (f : Hom R C M N) :
     comp (comp h g) f = comp h (comp g f) := by
   ext m
   rfl
+
+/-- The inverse of a linear equivalence respecting comodule coactions also respects them.
+This is the inverse-coaction argument used by `TauCeti.ComoduleCat.isoOfLinearEquiv`. -/
+theorem _root_.LinearEquiv.map_coact_symm (e : M ≃ₗ[R] N)
+    (h : TensorProduct.map e.toLinearMap LinearMap.id ∘ₗ coact (R := R) (C := C) (M := M) =
+      coact (R := R) (C := C) (M := N) ∘ₗ e.toLinearMap) :
+    TensorProduct.map e.symm.toLinearMap LinearMap.id ∘ₗ coact (R := R) (C := C) (M := N) =
+      coact (R := R) (C := C) (M := M) ∘ₗ e.symm.toLinearMap := by
+  ext n
+  have hn := LinearMap.congr_fun h (e.symm n)
+  have hn' := congrArg (TensorProduct.map e.symm.toLinearMap LinearMap.id) hn
+  simpa [TensorProduct.map_map] using hn'.symm
+
+/-- The inverse of a bijective comodule morphism, with the inverse underlying linear map. -/
+noncomputable def inverse (f : Hom R C M N) (hf : Function.Bijective f) : Hom R C N M :=
+  let e := LinearEquiv.ofBijective f.toLinearMap hf
+  { toLinearMap := e.symm.toLinearMap
+    map_coact := e.map_coact_symm f.map_coact }
+
+/-- The inverse comodule morphism has the inverse linear equivalence underneath. -/
+@[simp]
+theorem inverse_toLinearMap (f : Hom R C M N) (hf : Function.Bijective f) :
+    (f.inverse hf).toLinearMap = (LinearEquiv.ofBijective f.toLinearMap hf).symm.toLinearMap :=
+  (rfl)
+
+/-- The inverse comodule morphism is a left inverse. -/
+@[simp]
+theorem inverse_apply_apply (f : Hom R C M N) (hf : Function.Bijective f) (m : M) :
+    f.inverse hf (f m) = m :=
+  (LinearEquiv.ofBijective f.toLinearMap hf).symm_apply_apply m
+
+/-- The inverse comodule morphism is a right inverse. -/
+@[simp]
+theorem apply_inverse_apply (f : Hom R C M N) (hf : Function.Bijective f) (n : N) :
+    f (f.inverse hf n) = n :=
+  (LinearEquiv.ofBijective f.toLinearMap hf).apply_symm_apply n
 
 end Hom
 

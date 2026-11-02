@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.AInfinity.Module.Right.Basic
+public import TauCeti.LinearAlgebra.TensorCoalgebra.Coaugmented.Comodule.Inverse
 
 /-!
 # Suspension signs for right A-infinity module operations
@@ -216,10 +217,8 @@ theorem cofreeLift_tmul_of_tprod (F : (M ⊗[R] TensorWords R A) →ₗ[R] N) (n
     (Comodule.Hom.cofreeLift (C := TensorWords R A) F).toLinearMap
         (x ⊗ₜ[R] TensorWords.of R A n (PiTensorProduct.tprod R a)) =
       ∑ k ∈ Finset.range (n + 1), F (x ⊗ₜ[R] subword R a 0 k) ⊗ₜ[R] subword R a k (n - k) := by
-  rw [Comodule.Hom.cofreeLift_toLinearMap, LinearMap.comp_apply, Comodule.cofree_coact_tmul,
-    comul_eq_deconcatenation, of_tprod_eq_subword, deconcatenation_subword]
-  simp only [TensorProduct.tmul_sum, map_sum, TensorProduct.assoc_symm_tmul,
-    LinearMap.rTensor_tmul, Nat.zero_add]
+  rw [Comodule.Hom.coe_toLinearMap, of_tprod_eq_subword]
+  simpa only [Nat.zero_add] using TensorWords.cofreeLift_tmul_subword F x a 0 n
 
 /-- Applying a linear map after tensoring a module element with the algebra bar differential
 expands as the sum over all nonempty blocks collapsed by the algebra Taylor map. -/
