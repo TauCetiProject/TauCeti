@@ -111,7 +111,7 @@ dilation of the recorded gradient. -/
 theorem coe_dilate (hr : 0 < r) (u : D1p0 mu ⊤ p) :
     (dilate mu p r hr u : Lp E p (mu.restrict (⊤ : Opens E))) =
       (mu.restrict (⊤ : Opens E)).dilateLp p r hr u :=
-  (rfl)
+  coe_ofLpEquiv _ _ _ u
 
 /-- On test functions, the homogeneous Sobolev dilation is `φ ↦ r ^ (1 - n / p) • φ (r⁻¹ • ·)`. -/
 @[simp↓]
@@ -126,7 +126,7 @@ theorem dilate_ofTestFunctionₗ (hr : 0 < r) (phi : 𝓓((⊤ : Opens E), ℝ))
 /-- Dilation by `1` is the identity. -/
 @[simp↓]
 theorem dilate_one (u : D1p0 mu ⊤ p) : dilate mu p 1 one_pos u = u :=
-  Subtype.ext (Measure.dilateLp_one _)
+  Subtype.ext ((coe_dilate one_pos u).trans (Measure.dilateLp_one _))
 
 /-- Dilating by `r * s` is dilating by `s` and then by `r`. -/
 theorem dilate_mul (hr : 0 < r) (hs : 0 < s) (u : D1p0 mu ⊤ p) :
@@ -139,8 +139,8 @@ theorem dilate_mul (hr : 0 < r) (hs : 0 < s) (u : D1p0 mu ⊤ p) :
 @[simp]
 theorem dilate_symm (hr : 0 < r) :
     (dilate mu p r hr).symm = dilate mu p r⁻¹ (inv_pos.2 hr) :=
-  LinearIsometryEquiv.ext fun u ↦ Subtype.ext <|
-    DFunLike.congr_fun (Measure.dilateLp_symm hr) (u : Lp E p (mu.restrict (⊤ : Opens E)))
+  LinearIsometryEquiv.ext fun u ↦ Subtype.ext <| (coe_ofLpEquiv_symm _ _ _ u).trans <| by
+    rw [Measure.dilateLp_symm hr, coe_dilate]
 
 /-- **The Sobolev embedding intertwines the dilations**: it sends the dilation of `u` by `r` on
 the homogeneous Sobolev space to the normalized dilation by `r` of the represented function in

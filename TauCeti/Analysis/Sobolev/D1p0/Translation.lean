@@ -69,7 +69,7 @@ recorded gradient. -/
 theorem coe_translate (h : E) (u : D1p0 mu ⊤ p) :
     (translate mu p h u : Lp E p (mu.restrict (⊤ : Opens E))) =
       (mu.restrict (⊤ : Opens E)).translateLp p h u :=
-  (rfl)
+  coe_ofLpEquiv _ _ _ u
 
 /-- On test functions, the homogeneous Sobolev translation is the usual translation. -/
 @[simp↓]
@@ -105,7 +105,9 @@ theorem translate_symm (h : E) : (translate mu p h).symm = translate mu p (-h) :
 translation vector for every finite exponent. -/
 theorem continuous_translate (hp : p ≠ ∞) (u : D1p0 mu ⊤ p) :
     Continuous fun h : E ↦ translate mu p h u :=
-  (Measure.continuous_translateLp hp (u : Lp E p (mu.restrict (⊤ : Opens E)))).subtype_mk _
+  continuous_induced_rng.2 <|
+    (Measure.continuous_translateLp hp (u : Lp E p (mu.restrict (⊤ : Opens E)))).congr
+      fun h ↦ (coe_translate h u).symm
 
 /-- The Sobolev embedding intertwines translation on the homogeneous completion with
 translation of its represented function in the Sobolev-conjugate `Lᵖ` space. -/

@@ -176,7 +176,7 @@ theorem mapsTo_d1p0Submodule {T : Lp E p (mu.restrict Omega) → Lp E p (mu.rest
 
 /-- A linear isometric equivalence of `Lᵖ(Ω, E)` which, together with its inverse, preserves
 `D^{1,p}_0(Ω)` restricts to a linear isometric equivalence of `D^{1,p}_0(Ω)`. -/
-@[expose] def D1p0.ofLpEquiv (T : Lp E p (mu.restrict Omega) ≃ₗᵢ[ℝ] Lp E p (mu.restrict Omega))
+def D1p0.ofLpEquiv (T : Lp E p (mu.restrict Omega) ≃ₗᵢ[ℝ] Lp E p (mu.restrict Omega))
     (hT : MapsTo T (d1p0Submodule mu Omega p : Set _) (d1p0Submodule mu Omega p : Set _))
     (hT' : MapsTo T.symm (d1p0Submodule mu Omega p : Set _) (d1p0Submodule mu Omega p : Set _)) :
     D1p0 mu Omega p ≃ₗᵢ[ℝ] D1p0 mu Omega p where
@@ -196,6 +196,17 @@ theorem D1p0.coe_ofLpEquiv (T : Lp E p (mu.restrict Omega) ≃ₗᵢ[ℝ] Lp E p
     (hT' : MapsTo T.symm (d1p0Submodule mu Omega p : Set _) (d1p0Submodule mu Omega p : Set _))
     (u : D1p0 mu Omega p) :
     (D1p0.ofLpEquiv T hT hT' u : Lp E p (mu.restrict Omega)) = T u :=
+  (rfl)
+
+/-- The inverse of the restriction `TauCeti.D1p0.ofLpEquiv` acts on the recorded gradient by the
+inverse of the original equivalence. -/
+@[simp]
+theorem D1p0.coe_ofLpEquiv_symm
+    (T : Lp E p (mu.restrict Omega) ≃ₗᵢ[ℝ] Lp E p (mu.restrict Omega))
+    (hT : MapsTo T (d1p0Submodule mu Omega p : Set _) (d1p0Submodule mu Omega p : Set _))
+    (hT' : MapsTo T.symm (d1p0Submodule mu Omega p : Set _) (d1p0Submodule mu Omega p : Set _))
+    (u : D1p0 mu Omega p) :
+    ((D1p0.ofLpEquiv T hT hT').symm u : Lp E p (mu.restrict Omega)) = T.symm u :=
   (rfl)
 
 /-! ### The Hilbert space `D^{1,2}_0(Ω)` -/
