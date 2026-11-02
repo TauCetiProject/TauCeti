@@ -21,9 +21,11 @@ point for a coadjoint-equivariant moment map of a Lie group action
 `𝔤_c = {Z | ⁅Z, c⁆ = 0}` for its coadjoint stabilizer (`TauCeti.lieAnnihilator ℝ 𝔤 c`).
 
 The kernel `ker dμ_x` is the tangent space at `x` of the level `μ⁻¹(c)` when `c` is a regular
-value. This file describes the restriction of `σ_x` to it, which is the linear algebra behind
-Marsden–Weinstein–Meyer reduction: the reduced space `μ⁻¹(c) / G_c` is symplectic because the null
-directions of `σ` on the level are exactly the directions of the orbits of `G_c`.
+value. This file describes the restriction of `σ_x` to it. These are pointwise linear-algebra
+ingredients of Marsden–Weinstein–Meyer reduction, where the null directions of `σ` on the level are
+exactly the directions of the orbits of the stabilizer. No quotient is constructed here: that the
+reduced space `μ⁻¹(c) / G_c` is a symplectic manifold additionally needs `σ` closed, `c` a regular
+value, and the stabilizer `G_c` acting freely and properly on the level.
 
 * Since `dμ_x(Z_M x) = ⁅Z, c⁆`, the orbit directions tangent to the level are those of the
   stabilizer: `𝔤 · x ∩ ker dμ_x = 𝔤_c · x`
@@ -41,8 +43,9 @@ directions of `σ` on the level are exactly the directions of the orbits of `G_c
   the orbits are isotropic, and a locally free action of an abelian `𝔤` has
   `2 dim 𝔤 ≤ dim M` (`TauCeti.SmoothTwoForm.IsMomentMap.two_mul_finrank_le`).
 * At a point where the action is locally free, `dim ker dμ_x = dim M - dim 𝔤` and the null
-  directions have dimension `dim 𝔤_c`, so the quotient of the level tangent space by them, the
-  tangent space of the reduced space, has dimension `dim M - dim 𝔤 - dim 𝔤_c`
+  directions have dimension `dim 𝔤_c`, so the linear quotient of the level tangent space by them
+  has dimension `dim M - dim 𝔤 - dim 𝔤_c`; under the hypotheses of the reduction theorem this
+  is the dimension of the reduced space
   (`TauCeti.SmoothTwoForm.IsMomentMap.finrank_ker_differential_sub_finrank_inf_orthogonal`).
 * For a smooth map `g : N → M` whose tangent images are the kernels of `dμ`, such as the inclusion
   of a regular level, the kernel of the pulled-back form `g^* σ` at `p` is the preimage under
@@ -153,20 +156,12 @@ theorem isIsotropic_orbitTangent_iff (hc : σ.momentCocycle a μ x = 0) :
     hσ.toBilinForm_symplecticFormAt, ← h.ker_differential,
     h.orbitTangent_le_ker_differential_iff hc]
 
-omit h in
-/-- For an abelian Lie algebra, every element of the dual is annihilated by the whole algebra. -/
-private theorem lieAnnihilator_eq_top_of_isLieAbelian [IsLieAbelian 𝔤] (c : Module.Dual ℝ 𝔤) :
-    lieAnnihilator ℝ 𝔤 c = ⊤ :=
-  (lieAnnihilator_eq_top_iff ℝ 𝔤).2 fun Z ↦ by
-    ext Z'
-    simp [Module.Dual.lie_apply, trivial_lie_zero]
-
 /-- **The orbits of an abelian Lie algebra are isotropic.** For a nondegenerate form, where the
 cocycle of a moment map of an action of an abelian Lie algebra vanishes, the orbit tangent space
 is isotropic. -/
 theorem isIsotropic_orbitTangent [IsLieAbelian 𝔤] (hc : σ.momentCocycle a μ x = 0) :
     (hσ.symplecticFormAt x).IsIsotropic (a.orbitTangent x) :=
-  (h.isIsotropic_orbitTangent_iff hσ hc).2 (lieAnnihilator_eq_top_of_isLieAbelian _)
+  (h.isIsotropic_orbitTangent_iff hσ hc).2 (lieAnnihilator_eq_top ℝ 𝔤 _)
 
 /-- **The dimension bound for abelian actions.** If an abelian Lie algebra acts locally freely at
 `x` with a moment map whose cocycle vanishes there, and the form is nondegenerate at `x`, then
@@ -176,7 +171,7 @@ theorem two_mul_finrank_le [FiniteDimensional ℝ E] [IsLieAbelian 𝔤]
     (hfree : a.isotropy x = ⊥) :
     2 * finrank ℝ 𝔤 ≤ finrank ℝ E := by
   have hle := Submodule.finrank_mono
-    ((h.orbitTangent_le_ker_differential_iff hc).2 (lieAnnihilator_eq_top_of_isLieAbelian _))
+    ((h.orbitTangent_le_ker_differential_iff hc).2 (lieAnnihilator_eq_top ℝ 𝔤 _))
   have hsum := h.finrank_ker_differential_add_finrank_orbitTangent hσx
   rw [a.finrank_orbitTangent_of_isotropy_eq_bot x hfree] at hle
   rw [a.finrank_orbitTangent_of_isotropy_eq_bot x hfree, finrank_tangentSpace] at hsum
@@ -204,7 +199,8 @@ theorem finrank_ker_differential_inf_orthogonal [FiniteDimensional ℝ E]
   rw [h.ker_differential_inf_orthogonal hσx hc]
   exact (Submodule.equivMapOfInjective _ ((a.isotropy_eq_bot_iff x).1 hfree) _).finrank_eq.symm
 
-/-- **The dimension of the reduced space.** Where the form is nondegenerate, the cocycle of a
+/-- **The dimension of the linear quotient by the null directions.** Where the form is
+nondegenerate, the cocycle of a
 moment map vanishes and the action is locally free, the quotient of the level tangent space
 `ker dμ_x` by the null directions of the form has dimension `dim M - dim 𝔤 - dim 𝔤_{μ(x)}`. -/
 theorem finrank_ker_differential_sub_finrank_inf_orthogonal [FiniteDimensional ℝ E]

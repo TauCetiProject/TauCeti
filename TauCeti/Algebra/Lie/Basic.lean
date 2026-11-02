@@ -42,6 +42,8 @@ This file supplies general constructions for Lie modules that are missing from M
   of the Lie action on `v`.
 * `TauCeti.lieAnnihilator_eq_top_iff` and `TauCeti.lieAnnihilator_eq_top`: the annihilator of
   `v` is all of `L` exactly when every element annihilates `v`, in particular in a trivial module.
+* `TauCeti.instIsTrivialDual`: the dual of a trivial Lie module is trivial, so for an abelian
+  Lie algebra the annihilator of every element of the dual is the whole algebra.
 * `LieAlgebra.ad_eq_toEnd`: the adjoint action is the action `toEnd R L L` of `L` on itself.
 * `LieSubalgebra.apply_mem_of_mem`: every element of a Lie subalgebra `L` of `𝔤𝔩(V)` preserves
   each `L`-submodule of `V`.
@@ -277,6 +279,14 @@ theorem _root_.LieSubmodule.lie_iSup {ι : Type*} (I : LieIdeal R L)
     exact add_mem hy hz
 
 variable [LieModule R L M]
+
+/-- The dual of a trivial Lie module is trivial: `⁅x, f⁆ m = - f ⁅x, m⁆ = 0`. For an abelian Lie
+algebra this makes the coadjoint module `Module.Dual R L` trivial. -/
+instance instIsTrivialDual [LieModule.IsTrivial L M] :
+    LieModule.IsTrivial L (Module.Dual R M) where
+  trivial x f := by
+    ext m
+    simp [trivial_lie_zero]
 
 section Annihilator
 
