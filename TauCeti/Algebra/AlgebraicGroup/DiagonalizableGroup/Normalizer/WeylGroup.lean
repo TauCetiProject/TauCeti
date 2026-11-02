@@ -233,7 +233,8 @@ theorem conjCocharacter_cocharacter (g : normalizerPoints π hπ) (ψ : X →* M
     (ψ.comp (normalizerCharacterHom π hπ g⁻¹).toMonoidHom)) x
   simp only [comp_apply] at h₁ h₂
   exact h₁.trans ((congrArg _ hx).trans
-    ((MonoidAlgebra.mapDomainBialgHom_domCongr ψ _ (π x)).trans h₂.symm))
+    ((MonoidAlgebra.mapDomainBialgHom_mapDomainBialgHom ψ
+      (normalizerCharacterHom π hπ g⁻¹).toMonoidHom (π x)).trans h₂.symm))
 
 /-- The normalizer carries the parabolic subgroup `P(λ)` of a cocharacter `λ` of `D(X)` to the
 parabolic subgroup of its Weyl translate. -/
