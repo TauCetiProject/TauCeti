@@ -160,8 +160,8 @@ private theorem terminalInitial_disjoint_and_weight (R : Type*) [CommSemiring R]
         S ∩ T := by
     ext p
     simpa only [Finset.mem_inter] using (h p).2
-  obtain ⟨hSX, hTX, hw⟩ := G.disjoint_and_prod_OSet_eq_of_union_inter_eq R _ _ S T hu hi
-    hP ((G.disjoint_map_swapColumns_XSet_iff a b _).mpr hQ)
+  obtain ⟨hSX, hTX, hw⟩ := G.disjoint_and_prod_OSet_eq_of_union_inter_eq
+    (MvPolynomial.X (R := R)) _ _ S T hu hi hP ((G.disjoint_map_swapColumns_XSet_iff a b _).mpr hQ)
   refine ⟨hSX, hTX, ?_⟩
   rw [G.rename_pentagonWeight, swapColumns_initialPentagonWeight_withTurnRow R]
   simpa only [G.prod_ite_OSet_eq_prod_OColumnsOfSquares] using hw

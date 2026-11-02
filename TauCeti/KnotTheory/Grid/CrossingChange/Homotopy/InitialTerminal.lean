@@ -243,8 +243,8 @@ private theorem initialTerminal_counted_match {x y z : GridState n}
           (G.swapColumns a b).pentagonWeight R (C.withTurnRow t) Q := by
   obtain ⟨hp, hpX⟩ := (G.mem_initialPentagons P).mp hP
   obtain ⟨hq, hqX⟩ := ((G.swapColumns a b).mem_pentagons (C := C.withTurnRow t) Q).mp hQ
-  obtain ⟨hFX, hSX, hweight⟩ := G.disjoint_and_prod_OSet_eq_of_union_inter_eq R _ _
-    (firstCrossingSquares C t F) (secondCrossingSquares C t F) hu hi
+  obtain ⟨hFX, hSX, hweight⟩ := G.disjoint_and_prod_OSet_eq_of_union_inter_eq
+    (MvPolynomial.X (R := R)) _ _ (firstCrossingSquares C t F) (secondCrossingSquares C t F) hu hi
     hpX ((G.disjoint_map_swapColumns_XSet_iff a b _).mpr hqX)
   have hempty : F.toRectangleDecomposition.first.IsEmpty ∧
       F.toRectangleDecomposition.second.IsEmpty := by rw [hFD]; exact ⟨hp, hq⟩

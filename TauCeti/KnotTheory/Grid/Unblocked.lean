@@ -332,16 +332,17 @@ theorem prod_ite_OSet_eq_prod_OColumnsOfSquares {M : Type*} [CommMonoid M]
     Finset.prod_image fun _ _ _ _ h => congrArg Prod.fst h]
 
 /-- Preserving the union and intersection of two square sets transfers `X`-avoidance and
-preserves the product of their `O`-weights, including square multiplicities. -/
-theorem disjoint_and_prod_OSet_eq_of_union_inter_eq (R : Type*) [CommSemiring R]
-    (A B S T : Finset (Fin n × Fin n))
+preserves the product of their `O`-weights in any commutative monoid, including square
+multiplicities. -/
+theorem disjoint_and_prod_OSet_eq_of_union_inter_eq {M : Type*} [CommMonoid M]
+    (f : Fin n → M) (A B S T : Finset (Fin n × Fin n))
     (hu : A ∪ B = S ∪ T) (hi : A ∩ B = S ∩ T)
     (hA : Disjoint A G.XSet) (hB : Disjoint B G.XSet) :
     Disjoint S G.XSet ∧ Disjoint T G.XSet ∧
-      (∏ p ∈ A, if p ∈ G.OSet then MvPolynomial.X p.1 else (1 : MvPolynomial (Fin n) R)) *
-          (∏ p ∈ B, if p ∈ G.OSet then MvPolynomial.X p.1 else 1) =
-        (∏ p ∈ S, if p ∈ G.OSet then MvPolynomial.X p.1 else (1 : MvPolynomial (Fin n) R)) *
-          (∏ p ∈ T, if p ∈ G.OSet then MvPolynomial.X p.1 else 1) := by
+      (∏ p ∈ A, if p ∈ G.OSet then f p.1 else 1) *
+          (∏ p ∈ B, if p ∈ G.OSet then f p.1 else 1) =
+        (∏ p ∈ S, if p ∈ G.OSet then f p.1 else 1) *
+          (∏ p ∈ T, if p ∈ G.OSet then f p.1 else 1) := by
   have hX : Disjoint S G.XSet ∧ Disjoint T G.XSet := by
     rw [← Finset.disjoint_union_left, ← hu, Finset.disjoint_union_left]
     exact ⟨hA, hB⟩
