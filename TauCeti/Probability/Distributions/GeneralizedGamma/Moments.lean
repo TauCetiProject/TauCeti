@@ -10,11 +10,12 @@ public import TauCeti.Probability.Distributions.GeneralizedGamma.Basic
 /-!
 # Real-power moments of generalized gamma laws
 
-The `q`th real-power moment exists exactly when `a + q / c > 0`, and equals
+For `c ≠ 0`, the `q`th real-power moment exists exactly when `a + q / c > 0`, and then equals
 `s ^ q * Gamma (a + q / c) / Gamma a`. This criterion covers negative power parameters
 as well as positive ones. Natural moments, the mean, and variance follow on their
-respective exact integrability domains. The integrability criteria hold for every exponent `c`:
-for `c = 0` the law is the zero measure and the condition reduces to `0 < a`.
+respective exact integrability domains. The integrability criteria hold for every exponent `c`,
+while the moment formulas assume `c ≠ 0`: for `c = 0` the law is the zero measure, so the
+integrability condition reduces to `0 < a` and every moment is zero.
 
 These results transfer the Gamma real-power moment criterion and formula through the
 power pushforward; no new improper-integral calculation is needed.
