@@ -142,27 +142,10 @@ theorem kernelProduct_sub_negOnePow_smul_kernelProduct
   have hN'fin (q : S₁ × S₂) :
       (fun p₀ => ((d₁ q.1 * d₂ q.2).negOnePow : R) * n' q.2 q.1 p₀) ∈ NovikovModule R F₀ :=
     Submodule.smul_mem _ _ (hfin' q.2 q.1)
-  -- Potential bounds of the two composites with the homotopy kernel.
-  have hkδ (q : S₁ × S₂) (p₀ : S₀) (h : kernelComp k δ₀ q p₀ ≠ 0) :
-      F₀ p₀ ≤ F₁ q.1 + F₂ q.2 + (Ck + C₀) := by
-    linarith [potential_le_of_kernelComp_ne_zero (hk q) (hδ₀ · p₀) h]
-  have hDk (q : S₁ × S₂) (p₀ : S₀) (h : kernelComp D k q p₀ ≠ 0) :
-      F₀ p₀ ≤ F₁ q.1 + F₂ q.2 + (CD + Ck) := by
-    linarith [potential_le_of_kernelComp_ne_zero (hD q) (hk · p₀) h]
   rw [kernelProduct_eq_kernelMap_tensor hn hfin hN (fun q => hfin q.1 q.2),
-    ← kernelMap_tensor_eq_negOnePow_smul_kernelProduct hn' hfin' hN' hN'fin ha hb,
-    kernelMap_kernelMap hk hkfin hδ₀ hδ₀fin hkδ fun q => kernelComp_mem hδ₀ hδ₀fin (hkfin q),
-    kernelMap_kernelMap hD hDfin hk hkfin hDk fun q => kernelComp_mem hk hkfin (hDfin q)]
-  -- All four maps are kernel maps on the same completed module, so it suffices to compare
-  -- the kernels, which is the hypothesis.
-  ext p₀
-  simp only [Submodule.coe_sub, Submodule.coe_add, Pi.sub_apply, Pi.add_apply,
-    kernelMap_apply_val]
-  rw [← finsum_sub_distrib (finite_support_mul_kernelMap hN _ p₀)
-      (finite_support_mul_kernelMap hN' _ p₀),
-    ← finsum_add_distrib (finite_support_mul_kernelMap hkδ _ p₀)
-      (finite_support_mul_kernelMap hDk _ p₀)]
-  exact finsum_congr fun q => by rw [← mul_sub, hcomm, mul_add]
+    ← kernelMap_tensor_eq_negOnePow_smul_kernelProduct hn' hfin' hN' hN'fin ha hb]
+  exact kernelMap_sub_kernelMap_of_kernelComp hN _ hN' hN'fin hk hkfin hδ₀ hδ₀fin hD hDfin
+    hcomm _
 
 variable [DecidableEq S₁] [DecidableEq S₂] {δ₁ : S₁ → S₁ → R} {δ₂ : S₂ → S₂ → R} {E₁ E₂ : ℝ}
   (hδ₁ : ∀ p q, δ₁ p q ≠ 0 → F₁ q ≤ F₁ p + E₁) (hδ₁fin : ∀ p, δ₁ p ∈ NovikovModule R F₁)
