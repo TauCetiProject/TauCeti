@@ -156,6 +156,21 @@ theorem exists_eq_sum_teichmullerCoeff_add_pow_mul (x : 𝕎 R) (m : ℕ) :
     obtain ⟨b, hb⟩ := pow_dvd_sub_sum_teichmullerCoeff x n
     exact ⟨b, by rw [Nat.range_succ_eq_Iic, ← hb, add_sub_cancel]⟩
 
+/-- Ring homomorphisms from `𝕎 R` to a `p`-adically separated ring agree as soon as they agree on
+Teichmüller representatives. This extends Mathlib's `WittVector.eq_of_apply_teichmuller_eq`, the
+case where `p` is nilpotent in the target. -/
+theorem eq_of_apply_teichmuller_eq_of_isHausdorff {A : Type*} [CommRing A]
+    [IsHausdorff (Ideal.span {(p : A)}) A] {f g : 𝕎 R →+* A}
+    (h : ∀ a, f (teichmuller p a) = g (teichmuller p a)) : f = g := by
+  ext x
+  refine (IsHausdorff.eq_iff_smodEq (I := Ideal.span {(p : A)})).mpr fun n ↦ ?_
+  rw [smul_eq_mul, Ideal.mul_top, SModEq.sub_mem, ← Ideal.Quotient.eq]
+  have hnil : IsNilpotent (p : A ⧸ Ideal.span {(p : A)} ^ n) := ⟨n, by
+    rw [← map_natCast (Ideal.Quotient.mk _), ← map_pow, Ideal.Quotient.eq_zero_iff_mem]
+    exact Ideal.pow_mem_pow (Ideal.mem_span_singleton_self _) n⟩
+  exact RingHom.congr_fun (eq_of_apply_teichmuller_eq ((Ideal.Quotient.mk _).comp f)
+    ((Ideal.Quotient.mk _).comp g) hnil fun a ↦ by simp [h]) x
+
 /-- The first `n + 1` Teichmüller coordinates only depend on the residue modulo `p ^ (n + 1)`. -/
 theorem teichmullerCoeff_eq_of_dvd_sub {x y : 𝕎 R} {n : ℕ} (h : (p : 𝕎 R) ^ (n + 1) ∣ x - y)
     {i : ℕ} (hi : i ≤ n) : x.teichmullerCoeff i = y.teichmullerCoeff i := by

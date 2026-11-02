@@ -34,10 +34,13 @@ one; for `I = (p)` the target is Mathlib's `PreTilt B⁺ p = Perfection (ModP B�
   tilt.
 * `TauCeti.Perfectoid.uniformTilt.plusEquiv h I`: the ring isomorphism
   `B♭⁺ ≃+* Perfection (B⁺ ⧸ I) p`, `x ↦ (x⁽ⁿ⁾ mod I)ₙ`.
+* `TauCeti.Perfectoid.uniformTilt.plusMap hB hC g hg hgp`: the map `B♭⁺ → C♭⁺` of integral tilts
+  induced by a continuous ring homomorphism `g : B → C` with `g (B⁺) ⊆ C⁺`.
 
 ## Main results
 
 * `TauCeti.Perfectoid.uniformTilt.mem_plusSubring_iff_coeff_zero`: `x ∈ B♭⁺` iff `x⁽⁰⁾ ∈ B⁺`.
+* `TauCeti.Perfectoid.uniformTilt.perfectRing_plusSubring`: `B♭⁺` is perfect.
 * `TauCeti.Perfectoid.uniformTilt.coeff_plusEquiv`: `plusEquiv` reduces every coordinate modulo `I`.
 * `TauCeti.Perfectoid.uniformTilt.coeff_zero_plusEquiv_symm`: the zeroth coordinate of the inverse
   is the Teichmüller map `Perfection (B⁺ ⧸ I) p → B⁺`.
@@ -104,6 +107,62 @@ theorem mem_plusSubring_iff_coeff_zero {h : IsRingOfIntegralElements Bplus}
   have hn := coeff_pow_p_pow x 0 n
   rw [zero_add] at hn
   rwa [hn]
+
+/-- **The integral tilt is perfect**: a `p`-th root of an element of `B♭⁺` in `B♭` lies in `B♭⁺`. -/
+instance perfectRing_plusSubring (h : IsRingOfIntegralElements Bplus) :
+    PerfectRing (plusSubring p h) p where
+  bijective_frobenius := by
+    refine ⟨fun x y hxy ↦ Subtype.ext <| PerfectRing.bijective_frobenius (R := uniformTilt p B)
+      (p := p) |>.injective (congrArg Subtype.val hxy), fun x ↦ ?_⟩
+    obtain ⟨y, hy⟩ := (PerfectRing.bijective_frobenius (R := uniformTilt p B) (p := p)).surjective x
+    have hy' : y ^ p = x := hy
+    refine ⟨⟨y, mem_plusSubring_iff_coeff_zero.mpr (h.mem_of_pow_mem hp.out.pos ?_)⟩,
+      Subtype.ext hy'⟩
+    rw [← map_pow, hy']
+    exact mem_plusSubring_iff.mp x.2 0
+
+section plusMap
+
+variable {C : Type*} [CommRing C] [UniformSpace C] [IsUniformAddGroup C] [IsTopologicalRing C]
+  [IsTateRing C] [CompleteSpace C] [T2Space C] [IsUniform C]
+  [Fact (IsTopologicallyNilpotent (p : C))] {Cplus : Subring C}
+
+/-- The ring homomorphism `B♭⁺ → C♭⁺` of integral tilts induced by a continuous ring homomorphism
+`g : B → C` carrying `B⁺` into `C⁺`: the restriction of `g♭`. -/
+noncomputable def plusMap (hB : IsRingOfIntegralElements Bplus)
+    (hC : IsRingOfIntegralElements Cplus) (g : B →+* C) (hg : Continuous g)
+    (hgp : ∀ x ∈ Bplus, g x ∈ Cplus) : plusSubring p hB →+* plusSubring p hC :=
+  (map g hg).restrict _ _ fun x hx n ↦ by
+    rw [coeff_map]
+    exact hgp _ (hx n)
+
+/-- `plusMap` acts coordinatewise. -/
+@[simp]
+theorem coeff_plusMap (hB : IsRingOfIntegralElements Bplus) (hC : IsRingOfIntegralElements Cplus)
+    (g : B →+* C) (hg : Continuous g) (hgp : ∀ x ∈ Bplus, g x ∈ Cplus) (x : plusSubring p hB)
+    (n : ℕ) : coeff p C n (plusMap hB hC g hg hgp x) = g (coeff p B n x) :=
+  coeff_map g hg _ n
+
+/-- `plusMap` sends the identity to the identity. -/
+@[simp]
+theorem plusMap_id (hB : IsRingOfIntegralElements Bplus) :
+    plusMap (p := p) hB hB (RingHom.id B) continuous_id (fun _ hx ↦ hx) = RingHom.id _ :=
+  RingHom.ext fun _ ↦ Subtype.ext <| ext fun n ↦ by rw [coeff_plusMap]; rfl
+
+/-- `plusMap` is compatible with composition. -/
+theorem plusMap_comp {D : Type*} [CommRing D] [UniformSpace D] [IsUniformAddGroup D]
+    [IsTopologicalRing D] [IsTateRing D] [CompleteSpace D] [T2Space D] [IsUniform D]
+    [Fact (IsTopologicallyNilpotent (p : D))] {Dplus : Subring D}
+    (hB : IsRingOfIntegralElements Bplus) (hC : IsRingOfIntegralElements Cplus)
+    (hD : IsRingOfIntegralElements Dplus) (g₁ : B →+* C) (hg₁ : Continuous g₁)
+    (hgp₁ : ∀ x ∈ Bplus, g₁ x ∈ Cplus) (g₂ : C →+* D) (hg₂ : Continuous g₂)
+    (hgp₂ : ∀ x ∈ Cplus, g₂ x ∈ Dplus) :
+    plusMap (p := p) hB hD (g₂.comp g₁) (hg₂.comp hg₁) (fun x hx ↦ hgp₂ _ (hgp₁ x hx)) =
+      (plusMap hC hD g₂ hg₂ hgp₂).comp (plusMap hB hC g₁ hg₁ hgp₁) :=
+  RingHom.ext fun x ↦ Subtype.ext <| ext fun n ↦ by
+    simp only [coeff_plusMap, RingHom.comp_apply]
+
+end plusMap
 
 /-- The integral tilt is an open subring: membership is tested on the zeroth coordinate. -/
 theorem isOpen_plusSubring {Bplus : Subring B} (h : IsRingOfIntegralElements Bplus) :

@@ -29,6 +29,8 @@ to a root congruent to it modulo `I ^ n`, and not merely modulo `I`.
 * `IsHausdorff.pow`, `IsAdicComplete.pow`: adic Hausdorffness and completeness for `I` imply the
   same for `I ^ n` when `n ≠ 0`.
 * `IsPrecomplete.pow`: adic precompleteness for `I` implies precompleteness for every `I ^ n`.
+* `IsHausdorff.of_pow`, `IsPrecomplete.of_pow`, `IsAdicComplete.of_pow`: the converses, for
+  `n ≠ 0` in the last two.
 -/
 
 public section
@@ -80,3 +82,28 @@ theorem IsPrecomplete.pow [IsPrecomplete I M] (n : ℕ) : IsPrecomplete (I ^ n) 
 theorem IsAdicComplete.pow [IsAdicComplete I M] {n : ℕ} (hn : n ≠ 0) :
     IsAdicComplete (I ^ n) M :=
   .of_le_of_pow_le (Ideal.pow_le_self hn) le_rfl
+
+/-- An `I ^ n`-adically Hausdorff module is `I`-adically Hausdorff. -/
+theorem IsHausdorff.of_pow {n : ℕ} [IsHausdorff (I ^ n) M] : IsHausdorff I M where
+  haus' x hx := IsHausdorff.haus' (I := I ^ n) x fun m ↦ by
+    rw [← pow_mul]
+    exact hx (n * m)
+
+/-- An `I ^ n`-adically precomplete module is `I`-adically precomplete for `n ≠ 0`. -/
+theorem IsPrecomplete.of_pow {n : ℕ} (hn : n ≠ 0) [IsPrecomplete (I ^ n) M] :
+    IsPrecomplete I M := by
+  refine ⟨fun f hf ↦ ?_⟩
+  obtain ⟨L, hL⟩ := IsPrecomplete.prec' (I := I ^ n) (fun m ↦ f (n * m)) fun {m k} hmk ↦ by
+    rw [← pow_mul]
+    exact hf (Nat.mul_le_mul_left n hmk)
+  refine ⟨L, fun m ↦ (hf (Nat.le_mul_of_pos_left m (Nat.pos_of_ne_zero hn))).trans ?_⟩
+  have hm := hL m
+  rw [← pow_mul] at hm
+  exact hm.mono (Submodule.smul_mono_left
+    (Ideal.pow_le_pow_right (Nat.le_mul_of_pos_left m (Nat.pos_of_ne_zero hn))))
+
+/-- An `I ^ n`-adically complete module is `I`-adically complete for `n ≠ 0`. -/
+theorem IsAdicComplete.of_pow {n : ℕ} (hn : n ≠ 0) [IsAdicComplete (I ^ n) M] :
+    IsAdicComplete I M where
+  toIsHausdorff := .of_pow (n := n)
+  toIsPrecomplete := .of_pow hn
