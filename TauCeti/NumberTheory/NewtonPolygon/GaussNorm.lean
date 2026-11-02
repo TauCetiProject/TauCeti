@@ -75,16 +75,6 @@ open TauCeti
 
 namespace PowerSeries
 
-/-- Bounded weighted coefficient norms at `b ^ τ`, with `1 < b`, give restrictedness at
-every radius `b ^ σ` with `σ < τ`. -/
-theorem HasGaussNorm.isRestricted_rpow_of_lt {R : Type*} [NormedRing R]
-    {f : PowerSeries R} {b σ τ : ℝ}
-    (hf : f.HasGaussNorm norm (b ^ τ)) (hb : 1 < b) (hστ : σ < τ) :
-    f.IsRestricted (b ^ σ) := by
-  apply hf.isRestricted_of_abs_lt
-  rw [abs_of_pos (Real.rpow_pos_of_pos (zero_lt_one.trans hb) σ)]
-  exact (Real.rpow_lt_rpow_left_iff hb).mpr hστ
-
 variable {K : Type*} [NormedDivisionRing K] (f : PowerSeries K)
   (v : AddValuation K (WithTop ℝ)) {b : ℝ} (hb : 1 < b)
   (hv : ∀ x ≠ 0, ‖x‖ = b ^ (-(v x).untop₀))

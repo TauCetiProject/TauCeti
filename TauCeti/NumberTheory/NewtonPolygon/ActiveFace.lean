@@ -49,7 +49,9 @@ series has a finite nonempty face. -/
 theorem exists_isFiniteFace_newtonPolygon_of_hasGaussNorm
     (hf : f.HasGaussNorm norm (b ^ τ)) (hf0 : f ≠ 0) (hστ : σ < τ) :
     ∃ l u : ℕ, IsFiniteFace (f.newtonPolygon v) σ l u := by
-  have hr := hf.isRestricted_rpow_of_lt hb hστ
+  have hr := hf.isRestricted_of_abs_lt
+    ((abs_of_pos (Real.rpow_pos_of_pos (zero_lt_one.trans hb) σ)).trans_lt
+      (Real.rpow_lt_rpow_of_exponent_lt hb hστ))
   obtain ⟨d, hd⟩ := supportingValue_ne_bot_iff.mp
     ((hasGaussNorm_iff_supportingValue_ne_bot f v hb hv τ).mp hf)
   have he := f.isLowerConvexEnvelope_newtonPolygon
@@ -100,7 +102,9 @@ theorem isFiniteFace_newtonPolygon_iff (hf : f.HasGaussNorm norm (b ^ τ))
     IsFiniteFace (f.newtonPolygon v) σ l u ↔
       TauCeti.PowerSeries.IsLowestDominant (b ^ σ) l f ∧
       TauCeti.PowerSeries.IsDistinguished (b ^ σ) u f := by
-  have hr := hf.isRestricted_rpow_of_lt hb hστ
+  have hr := hf.isRestricted_of_abs_lt
+    ((abs_of_pos (Real.rpow_pos_of_pos (zero_lt_one.trans hb) σ)).trans_lt
+      (Real.rpow_lt_rpow_of_exponent_lt hb hστ))
   have hG := TauCeti.PowerSeries.hasGaussNorm_of_isRestricted hr
   have hactive {i j : ℕ} (hface : IsFiniteFace (f.newtonPolygon v) σ i j) :=
     isLowestDominant_and_isDistinguished_of_isFiniteFace_newtonPolygon f v hb hv hG hface
