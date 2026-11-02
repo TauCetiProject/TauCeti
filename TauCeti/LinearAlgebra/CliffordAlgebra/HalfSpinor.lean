@@ -360,28 +360,16 @@ theorem coe_halfSpinCliffordMulEquiv_symm_apply_of_neg_norm_sq
 
 end ChiralEquiv
 
-variable [FiniteDimensional ℂ W]
-
-/-- Clifford multiplication by a nonzero vector embeds the `ε`-eigenspace of `Γ` into the
-`-ε`-eigenspace. -/
-private theorem finrank_eigenspace_chirality_le_neg (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W)
-    (ε : ℂ) :
-    finrank ℂ (eigenspace (ρ (chirality Q o)) ε) ≤
-      finrank ℂ (eigenspace (ρ (chirality Q o)) (-ε)) := by
-  have : Nontrivial V := Module.nontrivial_of_finrank_eq_succ (Fact.out : finrank ℝ V = 4)
-  obtain ⟨v, hv⟩ := exists_ne (0 : V)
-  have hinj := map_ι_injective ρ (v := v) (by simpa [hQ] using hv)
-  exact LinearMap.finrank_le_finrank_of_injective (f := halfSpinCliffordMul o ρ ε v)
-    fun ψ φ h ↦ Subtype.ext (hinj (congrArg Subtype.val h))
-
 variable (ρ) in
 /-- The two eigenspaces of `Γ` have the same dimension: `dim W⁻ = dim W⁺`. -/
 theorem finrank_eigenspace_chirality_neg (ε : ℂ) :
     finrank ℂ (eigenspace (ρ (chirality Q o)) (-ε)) =
       finrank ℂ (eigenspace (ρ (chirality Q o)) ε) := by
-  refine le_antisymm ?_ (finrank_eigenspace_chirality_le_neg o hQ ρ ε)
-  have h := finrank_eigenspace_chirality_le_neg o hQ ρ (-ε)
-  rwa [neg_neg] at h
+  have : Nontrivial V := Module.nontrivial_of_finrank_eq_succ (Fact.out : finrank ℝ V = 4)
+  obtain ⟨v, hv⟩ := exists_ne (0 : V)
+  exact (halfSpinCliffordMulEquiv o ρ ε (v := v) (by simpa [hQ] using hv)).finrank_eq.symm
+
+variable [FiniteDimensional ℂ W]
 
 /-- **Clifford multiplication by a nonzero spinor is a real isomorphism.** For a nonzero `ψ` in
 the `ε`-eigenspace of `Γ`, when that eigenspace has complex dimension two, the real-linear map
