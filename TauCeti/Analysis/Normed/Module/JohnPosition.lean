@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import Mathlib.Topology.Algebra.Module.Determinant
 public import TauCeti.Analysis.Normed.Operator.FiniteDimensional
 public import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
