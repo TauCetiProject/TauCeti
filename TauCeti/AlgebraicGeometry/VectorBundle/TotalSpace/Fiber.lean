@@ -136,31 +136,29 @@ lemma totalSpaceFiberIso_def (E : FiniteLocallyFreeSheaf X) (x : X) :
   (rfl)
 
 /-- **The fibre of the total space of a vector bundle, without a choice of basis.** For a finite
-locally free sheaf `E` on `X` and a point `x` of an affine open `U`, the fibre
+locally free sheaf `E` on `X` and a point `x` of `X`, the fibre
 `Spec κ(x) ×_X 𝕍(E)` of the total space of `E` over `x` is isomorphic over `Spec κ(x)` to
 `Spec (Sym_{κ(x)} (κ(x) ⊗_{𝒪_{X,x}} E_x)^∨)`, the spectrum of the symmetric algebra of the dual of
 the module fibre `κ(x) ⊗_{𝒪_{X,x}} E_x`. The module fibre is identified with the global sections
 of the pullback of `E` along `Spec κ(x) ⟶ X` by `Scheme.Modules.fiberEquivΓPullback`. -/
-def totalSpaceFiberSpecIso (E : FiniteLocallyFreeSheaf X) {U : X.Opens} (hU : IsAffineOpen U)
-    (x : U) :
+def totalSpaceFiberSpecIso (E : FiniteLocallyFreeSheaf X) (x : X) :
     (baseChangeAffineSchemeOver (X.fromSpecResidueField x)).obj ((totalSpaceScheme X).obj E) ≅
       specSymmetricAlgebraOver (ModuleCat.of (X.residueField x)
         (Module.Dual (X.residueField x) ((ModuleCat.extendScalars (X.residue x).hom).obj
           (ModuleCat.of (X.presheaf.stalk x) (E.obj.presheaf.stalk x))))) :=
   totalSpaceBaseChangeSpecIso E (X.fromSpecResidueField x) ≪≫
     specSymmetricAlgebraOverIso
-      ((E.obj.fiberEquivΓPullback hU x).trans
+      ((E.obj.fiberEquivΓPullback x).trans
         (moduleSpecΓFunctor.mapIso (eqToIso (pullback_obj_obj _ E).symm)).toLinearEquiv).dualMap
 
 /-- `totalSpaceFiberSpecIso` is `totalSpaceBaseChangeSpecIso` for the morphism `Spec κ(x) ⟶ X`,
 followed by the dual of the identification `κ(x) ⊗_{𝒪_{X,x}} E_x ≅ Γ(Spec κ(x), ι^* E)` of the
 module fibre with the global sections of the pullback. -/
-lemma totalSpaceFiberSpecIso_hom (E : FiniteLocallyFreeSheaf X) {U : X.Opens}
-    (hU : IsAffineOpen U) (x : U) :
-    (totalSpaceFiberSpecIso E hU x).hom =
+lemma totalSpaceFiberSpecIso_hom (E : FiniteLocallyFreeSheaf X) (x : X) :
+    (totalSpaceFiberSpecIso E x).hom =
       (totalSpaceBaseChangeSpecIso E (X.fromSpecResidueField x)).hom ≫
         (specSymmetricAlgebraOverIso
-          ((E.obj.fiberEquivΓPullback hU x).trans
+          ((E.obj.fiberEquivΓPullback x).trans
             (moduleSpecΓFunctor.mapIso
               (eqToIso (pullback_obj_obj _ E).symm)).toLinearEquiv).dualMap).hom :=
   (rfl)

@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Localization.BaseChange
 public import TauCeti.AlgebraicGeometry.Modules.Localization
 public import TauCeti.AlgebraicGeometry.Modules.Stalk
+import TauCeti.AlgebraicGeometry.AffineScheme
 
 /-!
 # Stalks of quasi-coherent modules
@@ -61,15 +62,6 @@ private lemma germ_basicOpen_smul (f : Γ(X, U)) (x : U) (hx : (x : X) ∈ X.bas
   congr 1
   exact TopCat.Presheaf.germ_res_apply ..
 
-/-- A function on `U` whose germ at `x` is a unit lies outside the prime ideal of `x`. -/
-private lemma mem_primeCompl_of_mem_basicOpen (hU : IsAffineOpen U) (x : U) {f : Γ(X, U)}
-    (hx : (x : X) ∈ X.basicOpen f) :
-    f ∈ (hU.primeIdealOf x).asIdeal.primeCompl := by
-  have := hU.isLocalization_stalk x
-  rw [← IsLocalization.AtPrime.isUnit_to_map_iff (X.presheaf.stalk x),
-    TopCat.Presheaf.stalk_open_algebraMap]
-  exact (X.mem_basicOpen' f x).1 hx
-
 /-- **Stalks of a quasi-coherent module are localizations.** For a quasi-coherent `𝒪_X`-module
 `M`, an affine open `U` and a point `x ∈ U`, the germ map `Γ(M, U) → M_x` is the localization of
 `Γ(M, U)` at the prime ideal of `Γ(X, U)` corresponding to `x`. -/
@@ -92,7 +84,7 @@ theorem isLocalizedModule_germLinearMap [M.IsQuasicoherent] (hU : IsAffineOpen U
     have := M.isLocalizedModule_basicOpenRestrict hU f
     obtain ⟨⟨n, ⟨_, k, rfl⟩⟩, h⟩ := IsLocalizedModule.surj (Submonoid.powers f)
       (M.basicOpenRestrict f) (M.presheaf.map (homOfLE hfV).op m)
-    refine ⟨⟨n, ⟨f ^ k, pow_mem (mem_primeCompl_of_mem_basicOpen hU x hxf) k⟩⟩, ?_⟩
+    refine ⟨⟨n, ⟨f ^ k, pow_mem ((hU.mem_basicOpen_iff_notMem_primeIdealOf x.2 f).1 hxf) k⟩⟩, ?_⟩
     have h' := congrArg (M.presheaf.germ _ x hxf) h
     rw [Submonoid.smul_def, germ_basicOpen_smul, basicOpenRestrict_apply,
       TopCat.Presheaf.germ_res_apply, TopCat.Presheaf.germ_res_apply] at h'
@@ -116,7 +108,7 @@ theorem isLocalizedModule_germLinearMap [M.IsQuasicoherent] (hU : IsAffineOpen U
         ConcreteCategory.comp_apply, hW]
     have := M.isLocalizedModule_basicOpenRestrict hU f
     obtain ⟨⟨_, k, rfl⟩, hk⟩ := IsLocalizedModule.exists_of_eq (S := Submonoid.powers f) hres
-    exact ⟨⟨f ^ k, pow_mem (mem_primeCompl_of_mem_basicOpen hU x hxf) k⟩, hk⟩
+    exact ⟨⟨f ^ k, pow_mem ((hU.mem_basicOpen_iff_notMem_primeIdealOf x.2 f).1 hxf) k⟩, hk⟩
 
 /-- For a quasi-coherent `𝒪_X`-module `M`, an affine open `U` and `x ∈ U`, the germ map
 `Γ(M, U) → M_x` exhibits the stalk `M_x` as the base change `𝒪_{X,x} ⊗_{Γ(X, U)} Γ(M, U)`. -/
