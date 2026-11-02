@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
 import TauCeti.LinearAlgebra.Reflection
+import TauCeti.LinearAlgebra.RootSystem.FundamentalDomain
 public import TauCeti.LinearAlgebra.RootSystem.SimpleReflections
 
 /-!
@@ -84,29 +85,17 @@ theorem wordProd_smul_eq_self_iff_forall_coroot'_eq_zero {l : List b.support} (h
     (hl' : ∀ i, i ∈ l) {y : M} :
     wordProd P b l • y = y ↔ ∀ j, P.coroot' j y = 0 := by
   rw [wordProd_smul_eq_self_iff b hl]
-  refine ⟨fun h j ↦ ?_, fun h i _ ↦ h i⟩
-  -- The coroots lie in the span of the simple coroots, all of which vanish on `y`.
-  have hle : P.corootSpan R ≤ LinearMap.ker (P.toLinearMap y) := by
-    rw [← b.span_coroot_support, span_le]
-    rintro - ⟨i, hi, rfl⟩
-    exact h ⟨i, hi⟩ (hl' _)
-  exact hle (subset_span (Set.mem_range_self j))
+  exact ⟨fun h ↦ P.coroot'_eq_zero_of_forall_mem_support b fun i hi ↦ h ⟨i, hi⟩ (hl' _),
+    fun h i _ ↦ h i⟩
 
 /-- **A Coxeter element has the same fixed vectors as the Weyl group.** A product of all the simple
 reflections of a base, each exactly once and in any order, fixes `y` exactly when every element of
 the Weyl group fixes `y`. -/
 theorem wordProd_smul_eq_self_iff_forall_smul_eq_self {l : List b.support} (hl : l.Nodup)
     (hl' : ∀ i, i ∈ l) {y : M} :
-    wordProd P b l • y = y ↔ ∀ w : P.weylGroup, w • y = y := by
-  refine ⟨fun h ↦ ?_, fun h ↦ h _⟩
-  rw [wordProd_smul_eq_self_iff_forall_coroot'_eq_zero b hl hl'] at h
-  rintro ⟨w, hw⟩
-  induction hw using weylGroup.induction with
-  | mem i => rw [Subgroup.mk_smul, Equiv.reflection_smul, reflection_apply, h, zero_smul, sub_zero]
-  | one => exact one_smul _ y
-  | mul w₁ w₂ _ _ h₁ h₂ =>
-    rw [Subgroup.mk_smul] at h₁ h₂ ⊢
-    rw [mul_smul, h₂, h₁]
+    wordProd P b l • y = y ↔ ∀ w : P.weylGroup, w • y = y :=
+  ⟨fun h ↦ smul_eq_self_of_forall_coroot'_eq_zero b fun i hi ↦
+    (wordProd_smul_eq_self_iff b hl).mp h ⟨i, hi⟩ (hl' _), fun h ↦ h _⟩
 
 /-- **A Coxeter element of a root system fixes no nonzero vector.** For a root system, a product
 of all the simple reflections of a base, each exactly once and in any order, fixes only `0`. -/

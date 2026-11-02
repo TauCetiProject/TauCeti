@@ -92,7 +92,7 @@ variable {ι : Type*} {v : ι → M} {g : ι → Dual R M}
 
 /-- A product of reflections along the vectors `v i`, `i ∈ l`, moves every vector by an element of
 the span of those vectors. -/
-private theorem list_prod_map_preReflection_apply_sub_mem_span (l : List ι) (y : M) :
+theorem list_prod_map_preReflection_apply_sub_mem_span (l : List ι) (y : M) :
     (l.map fun i ↦ preReflection (v i) (g i)).prod y - y ∈
       Submodule.span R (v '' {i | i ∈ l}) := by
   induction l with

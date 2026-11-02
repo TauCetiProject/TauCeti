@@ -123,16 +123,19 @@ lemma wallReflections_subset_stabilizer (x : M) :
 
 variable (b) in
 /-- **A weight on every wall of the dominant chamber is fixed by the Weyl group**: if every simple
-coroot kills `x`, then every simple reflection is a wall through `x`, and the simple reflections
-generate the Weyl group. -/
-theorem smul_eq_self_of_forall_coroot'_eq_zero [Finite ι] [CharZero R] [IsDomain R]
-    [P.IsCrystallographic] [P.IsReduced] {x : M} (hx : ∀ i ∈ b.support, P.coroot' i x = 0)
+coroot kills `x`, then so does every coroot, so every reflection generating the Weyl group fixes
+`x`. -/
+theorem smul_eq_self_of_forall_coroot'_eq_zero {x : M} (hx : ∀ i ∈ b.support, P.coroot' i x = 0)
     (w : P.weylGroup) : w • x = x := by
-  have hle : (⊤ : Subgroup P.weylGroup) ≤ MulAction.stabilizer P.weylGroup x := by
-    rw [weylGroup_eq_closure_simple P b, Subgroup.closure_le]
-    rintro _ ⟨i, rfl⟩
-    exact wallReflections_subset_stabilizer x (ofIdx_mem_wallReflections i.2 (hx i i.2))
-  exact hle (Subgroup.mem_top w)
+  obtain ⟨w, hw⟩ := w
+  induction hw using _root_.RootPairing.weylGroup.induction with
+  | mem i =>
+    rw [Subgroup.mk_smul, _root_.RootPairing.Equiv.reflection_smul, P.reflection_apply,
+      P.coroot'_eq_zero_of_forall_mem_support b hx i, zero_smul, sub_zero]
+  | one => exact one_smul _ x
+  | mul w₁ w₂ _ _ h₁ h₂ =>
+    rw [Subgroup.mk_smul] at h₁ h₂ ⊢
+    rw [mul_smul, h₂, h₁]
 
 variable (P b) [LinearOrder R]
 
