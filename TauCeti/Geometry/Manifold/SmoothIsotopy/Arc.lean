@@ -9,9 +9,9 @@ public import TauCeti.Analysis.Calculus.Sard.Projection
 public import TauCeti.Geometry.Manifold.ContMDiff.Prod
 public import TauCeti.Geometry.Manifold.Immersion.Differential
 public import TauCeti.Geometry.Manifold.SmoothIsotopy.Trans
-public import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
-public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import Mathlib.Topology.Maps.Proper.CompactlyGenerated
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Normed.Module.Dual.Submodule
 
 /-!
 # Smooth arcs in dimension at least four are unknotted
@@ -69,12 +69,6 @@ open Function Module Set Topology Filter Manifold
 open scoped Manifold ContDiff
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
-
-/-- A `C^n` function on the line, `1 ≤ n`, has derivative `deriv f s` at every `s`. -/
-private theorem hasDerivAt_deriv_of_contDiff {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] {n : ℕ∞ω} (hn : 1 ≤ n) {f : ℝ → F} (hf : ContDiff ℝ n f) (s : ℝ) :
-    HasDerivAt f (deriv f s) s :=
-  (hf.differentiable (zero_lt_one.trans_le hn).ne' s).hasDerivAt
 
 /-- An injective `C^n` immersion of the line, `1 ≤ n`, which is an affine line outside a compact
 set, is a smooth embedding: it is proper, so
@@ -162,29 +156,13 @@ private theorem exists_smoothIsotopy_projection {n : ℕ∞ω} (hn : 1 ≤ n)
     rw [hAu]
     refine isSmoothEmbedding_of_eq_line hn (hAu ▸ hA.comp (contDiff_const.prodMk contDiff_id))
       (injective_sub_smul hsec _)
-      (fun s => hasDerivAt_sub_smul (hasDerivAt_deriv_of_contDiff hn hγ s) p d _)
+      (fun s => hasDerivAt_sub_smul
+        (hγ.differentiable (zero_lt_one.trans_le hn).ne' s).hasDerivAt p d _)
       (fun s h => htan s _ (sub_eq_zero.1 h)) (p := p) he (R := R) (fun s hs => ?_)
     simp only [smul_apply, hφline s hs, smul_zero, zero_smul, sub_zero]
     exact hline s hs
   exact ⟨SmoothIsotopy.ofContDiff A hA (fun s => by simp [A]) (fun s => by simp [A, hg]) hAemb,
     fun t s hs => by rw [SmoothIsotopy.ofContDiff_apply]; exact hAline _ s hs⟩
-
-/-- A smooth cutoff `k` of the identity: `k s = s` for `|s| ≤ L`, `k s = 0` for `|s| ≥ L + 1`,
-and `k` has derivative `1` on `(-L, L)`. -/
-private theorem exists_cutoff_id {L : ℝ} (hL : 0 < L) :
-    ∃ k : ℝ → ℝ, ContDiff ℝ ∞ k ∧ (∀ s, |s| ≤ L → k s = s) ∧ (∀ s, L + 1 ≤ |s| → k s = 0) ∧
-      ∀ s, |s| < L → HasDerivAt k 1 s := by
-  let χ : ContDiffBump (0 : ℝ) := ⟨L, L + 1, hL, by linarith⟩
-  have hksmall : ∀ s, |s| ≤ L → χ s * s = s := by
-    intro s hs
-    have : χ s = 1 := χ.one_of_mem_closedBall (by simpa [Real.dist_eq] using hs)
-    simp [this]
-  refine ⟨fun s => χ s * s, χ.contDiff.mul contDiff_id, hksmall, fun s hs => ?_, fun s hs => ?_⟩
-  · have : χ s = 0 := χ.zero_of_le_dist (by simpa [Real.dist_eq] using hs)
-    simp [this]
-  · refine (hasDerivAt_id s).congr_of_eventuallyEq ?_
-    filter_upwards [(isOpen_lt continuous_abs continuous_const).mem_nhds hs] with x hx
-    exact hksmall x hx.le
 
 omit [FiniteDimensional ℝ V] in
 /-- **Injectivity of the straightening motion.** Let `H` be a map into `ker φ`, with `φ d = 1`,
@@ -262,7 +240,8 @@ private theorem exists_smoothIsotopy_line_of_map_sub_eq_zero {n : ℕ∞ω} (hn�
     ∃ (F : SmoothIsotopy g ℓ) (R' : ℝ),
       ∀ (t : unitInterval) (s : ℝ), R' ≤ |s| → F (t, s) = ℓ s := by
   have hgc : ContDiff ℝ n g := contMDiff_iff_contDiff.1 g.contMDiff
-  have hgd := hasDerivAt_deriv_of_contDiff hn₁ hgc
+  have hn0 : n ≠ 0 := (zero_lt_one.trans_le hn₁).ne'
+  have hgd : ∀ s, HasDerivAt g (deriv g s) s := fun s => (hgc.differentiable hn0 s).hasDerivAt
   have hφg' : ∀ s, φ (deriv g s) = 0 := fun s =>
     (φ.hasFDerivAt.comp_hasDerivAt s ((hgd s).sub_const p)).unique
       ((hasDerivAt_const s (0 : ℝ)).congr_of_eventuallyEq (Eventually.of_forall hφg))
@@ -283,7 +262,7 @@ private theorem exists_smoothIsotopy_line_of_map_sub_eq_zero {n : ℕ∞ω} (hn�
       have := le_max_right (max R 1) (C / ‖e‖)
       linarith
     exact (div_le_iff₀ (norm_pos_iff.2 he)).1 h1
-  obtain ⟨k, hk, hksmall, hkbig, hkd⟩ := exists_cutoff_id hL0
+  obtain ⟨k, hk, hksmall, hkbig, hkd⟩ := exists_contDiff_cutoff_id hL0 (lt_add_one L)
   replace hk : ContDiff ℝ n k := hk.of_le hn
   /- The hyperplane component `H` of the motion. -/
   let H : ℝ → ℝ → V := fun u s => (1 - u) • (g s - p) + (u * s) • e
@@ -328,7 +307,7 @@ private theorem exists_smoothIsotopy_line_of_map_sub_eq_zero {n : ℕ∞ω} (hn�
         ((1 - u) • deriv g s + (u * 1) • e + (4 * u * (1 - u) * deriv k s) • d) s := fun s =>
       ((((hgd s).sub_const p).const_smul (1 - u)).add
         (((hasDerivAt_id s).const_mul u).smul_const e)).const_add p |>.add
-        (((hasDerivAt_deriv_of_contDiff hn₁ hk s).const_mul (4 * u * (1 - u))).smul_const d)
+        (((hk.differentiable hn0 s).hasDerivAt.const_mul (4 * u * (1 - u))).smul_const d)
     refine isSmoothEmbedding_of_eq_line hn₁ (hB.comp (contDiff_const.prodMk contDiff_id))
       ?_ hderB (fun s => straightening_velocity_ne_zero he hφd hφe (hφg' s) (hg' s) ?_) he
       (hBline u)
@@ -372,17 +351,8 @@ private theorem exists_forall_sub_eq_smul_and_deriv_ne {γ : ℝ → V} (hγ : C
       rintro rfl
       exact hγ' s (by simpa using h)
     refine htan s c⁻¹ ?_
-    rw [(hasDerivAt_deriv_of_contDiff (by norm_num) hγ s).hasFDerivAt.fderiv]
+    rw [← toSpanSingleton_deriv]
     simp [h, smul_smul, inv_mul_cancel₀ hc]
-
-/-- A linear form `φ` with `φ d = 1` and `φ e = 0`, for `d` off the line `ℝ ∙ e`. -/
-private theorem exists_map_eq_one_and_map_eq_zero {d e : V} (hd : d ∉ (ℝ ∙ e)) :
-    ∃ φ : V →L[ℝ] ℝ, φ d = 1 ∧ φ e = 0 := by
-  obtain ⟨f, hfd, hfe⟩ := Submodule.exists_dual_map_eq_bot_of_notMem hd inferInstance
-  have hfe' : f e = 0 := by
-    have : f e ∈ (ℝ ∙ e).map f := Submodule.mem_map_of_mem (Submodule.mem_span_singleton_self e)
-    rwa [hfe, Submodule.mem_bot] at this
-  exact ⟨(f d)⁻¹ • LinearMap.toContinuousLinearMap f, by simp [hfd], by simp [hfe']⟩
 
 /-- **Smooth arcs in dimension at least four are unknotted.** Let `V` be a real normed space of
 dimension at least four, `ℓ : s ↦ p + s • e` an affine line in `V`, and `γ : ℝ → V` an injective
@@ -396,7 +366,8 @@ theorem exists_smoothIsotopy_line_of_four_le_finrank {n : ℕ∞ω} (hn₂ : 2 �
       ∀ (t : unitInterval) (s : ℝ), R' ≤ |s| → F (t, s) = ℓ s := by
   have hγ : ContDiff ℝ n γ := contMDiff_iff_contDiff.1 γ.contMDiff
   have hn₁ : (1 : ℕ∞ω) ≤ n := le_trans (by norm_num) hn₂
-  have hγd := hasDerivAt_deriv_of_contDiff hn₁ hγ
+  have hγd : ∀ s, HasDerivAt γ (deriv γ s) s := fun s =>
+    (hγ.differentiable (zero_lt_one.trans_le hn₁).ne' s).hasDerivAt
   have hline' : ∀ s, R ≤ |s| → γ s = p + s • e := fun s hs => (hline s hs).trans (hℓ s)
   have hRs : R < |(|R| + 1)| := by
     rw [abs_of_pos (by positivity)]
@@ -408,14 +379,17 @@ theorem exists_smoothIsotopy_line_of_four_le_finrank {n : ℕ∞ω} (hn₂ : 2 �
   `φ d = 1` and `φ e = 0`; `d` is off the line `ℝ ∙ e` since `e` is a velocity of the arc. -/
   obtain ⟨d, hd0, hsec, htan⟩ :=
     exists_forall_sub_eq_smul_and_deriv_ne (hγ.of_le hn₂) hV hinj hγ'
-  obtain ⟨φ, hφd, hφe⟩ : ∃ φ : V →L[ℝ] ℝ, φ d = 1 ∧ φ e = 0 := by
-    refine exists_map_eq_one_and_map_eq_zero fun hd => ?_
+  have hde : d ∉ (ℝ ∙ e) := fun hd => by
     obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.1 hd
     have ha : a ≠ 0 := by
       rintro rfl
       exact hd0 (zero_smul ℝ e)
     refine htan (|R| + 1) a⁻¹ ?_
     rw [(hasDerivAt_of_eq_line hline' hRs).deriv, smul_smul, inv_mul_cancel₀ ha, one_smul]
+  obtain ⟨f, hfe, hfd⟩ :=
+    Submodule.exists_dual_forall_mem_eq_zero_ne_zero (Submodule.closed_of_finiteDimensional _) hde
+  obtain ⟨φ, hφd, hφe⟩ : ∃ φ : V →L[ℝ] ℝ, φ d = 1 ∧ φ e = 0 :=
+    ⟨(f d)⁻¹ • f, by simp [hfd], by simp [hfe e (Submodule.mem_span_singleton_self e)]⟩
   /- The projection `g` of the arc along `d` onto the hyperplane `p + ker φ`. -/
   have hφline : ∀ s, R ≤ |s| → φ (γ s - p) = 0 := by
     intro s hs
