@@ -54,6 +54,8 @@ zero that the centralizer has dimension `dim ker (ad x)`.
 * `TauCeti.Comodule.matrixCoefficient_sub_algebraMap_mem_stabilizerHopfIdeal` and
   `TauCeti.Comodule.stabilizerHopfIdeal_le_iff`: its defining equations, and its universal property
   among Hopf ideals.
+* `TauCeti.Comodule.basePointsRepresentation_prodTrivial`: rational points act on `M × k`
+  through `M`, fixing the trivial coordinate.
 * `TauCeti.Comodule.stabilizerHopfIdeal_basePointsRepresentation`: acting on the vector
   conjugates its scheme-theoretic stabilizer.
 * `TauCeti.Comodule.stabilizerHopfIdeal_eq_bot_iff`: it vanishes exactly when `v` is fixed.
@@ -130,6 +132,22 @@ theorem matrixCoefficient_prodTrivial (Φ : M × k →ₗ[k] k) (v : M) :
   rw [prodTrivial, matrixCoefficient_prod, matrixCoefficient_def (m := (1 : k)),
     trivial_coact_apply (R := k) (C := H)]
   simp [Algebra.algebraMap_eq_smul_one]
+
+/-- A rational point acts on `M × k` through its action on `M`, fixing the trivial
+coordinate. -/
+@[simp]
+theorem basePointsRepresentation_prodTrivial (g : WithConv (H →ₐ[k] k)) (v : M) (c : k) :
+    basePointsRepresentation (H := H) (M × k) g (v, c) =
+      (basePointsRepresentation (H := H) M g v, c) := by
+  let : Comodule k H k := trivial
+  rw [← sub_eq_zero, ← Module.forall_dual_apply_eq_zero_iff k]
+  intro Φ
+  rw [map_sub, sub_eq_zero, ← apply_matrixCoefficient, prodTrivial, matrixCoefficient_prod,
+    matrixCoefficient_def (m := c), trivial_coact_apply (R := k) (C := H)]
+  simp only [TensorProduct.map_tmul, TensorProduct.lid_tmul, LinearMap.id_apply, map_add,
+    map_smul, map_one, apply_matrixCoefficient, smul_eq_mul, mul_one, LinearMap.comp_apply,
+    LinearMap.inl_apply, LinearMap.inr_apply]
+  rw [← map_add, Prod.mk_add_mk, add_zero, zero_add]
 
 /-- Points act trivially on the trivial factor of `M × k`. -/
 private theorem baseChange_snd_endOfPoint {A : Type*} [CommRing A] [Algebra k A]
