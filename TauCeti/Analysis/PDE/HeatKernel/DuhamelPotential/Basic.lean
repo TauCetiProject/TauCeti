@@ -23,8 +23,8 @@ For a forcing term `f : ℝ → E → F` on a finite-dimensional real inner prod
 where `K_τ` is the heat kernel. By Duhamel's principle it is the candidate solution of the
 inhomogeneous heat equation `∂ₜw = Δw + f` with zero initial datum, complementing the heat
 convolution `K_t ⋆ g` of an initial datum `g`. This file proves the spatial regularity of each
-time slice `w(t, ·)`, `t > 0`, with bounds whose constants depend only on the dimension (and on
-`α` below):
+time slice `w(t, ·)`, `t > 0`, and the temporal regularity of its Hessian, with bounds whose
+constants depend only on the dimension (and on `α` below):
 
 * if `‖f‖ ≤ M` almost everywhere, then `‖w(t, x)‖ ≤ M t`;
 * if `f` is moreover jointly measurable, `w(t, ·)` is `C¹`, its derivative is computed under the
@@ -60,7 +60,8 @@ Hessians are `O(H h^(α/2))` by the bound above. Otherwise the times `s > t' - h
 `t - s` differ by `O(H h (t' - s)^((α - 4)/2))`
 (`TauCeti.norm_iteratedFDeriv_heatKernel_convolution_sub_le_of_holderWith`, one time derivative of
 the kernel at the cost of a factor `(t' - s)⁻¹`), which integrates to `O(H h^(α/2))` when
-`α < 2`. Together the two halves are the parabolic `α`-Hölder estimate of `D² w`.
+`α < 2`. For `0 < α < 1`, the two halves together give the parabolic `α`-Hölder estimate of
+`D² w`.
 
 ## Main declarations
 
@@ -397,6 +398,35 @@ theorem exists_norm_fderiv_heatDuhamelPotential_le :
   norm_num
   ring
 
+/-- Near the singular endpoint, the time integral over `[a, t]` of the Hessians of the slices is
+`O(H (t - a)^(α/2))`. -/
+private theorem exists_norm_integral_iteratedFDeriv_two_heatKernel_convolution_le {α : ℝ≥0}
+    (hα : 0 < α) :
+    ∃ C ≥ 0, ∀ {f : ℝ → E → F} {M t : ℝ} {H : ℝ≥0}, StronglyMeasurable (Function.uncurry f) →
+      (∀ᵐ s ∂volume.restrict (Ioo 0 t), ∀ᵐ y, ‖f s y‖ ≤ M) →
+      (∀ᵐ s ∂volume.restrict (Ioo 0 t), HolderWith H α (f s)) → ∀ a, 0 ≤ a → a ≤ t → ∀ x,
+        ‖∫ s in a..t, iteratedFDeriv ℝ 2 (heatKernel (t - s) ⋆ f s) x‖ ≤
+          C * H * (t - a) ^ ((α : ℝ) / 2) := by
+  obtain ⟨C, hC₀, hC⟩ :=
+    exists_ae_norm_iteratedFDeriv_heatKernel_convolution_le (E := E) (F := F) (α := α)
+      two_ne_zero
+  simp only [Nat.cast_ofNat] at hC
+  have hα' : (0 : ℝ) < α := hα
+  refine ⟨2 / α * C, by positivity, fun {f M t H} hf hfM hH a ha hat x => ?_⟩
+  rcases hat.eq_or_lt with rfl | hat
+  · rw [intervalIntegral.integral_same, norm_zero]
+    positivity
+  have ht : 0 < t := ha.trans_lt hat
+  have hae := hC hf hfM hH ht
+  rw [uIoc_of_le ht.le, ae_restrict_iff' measurableSet_Ioc] at hae
+  refine (intervalIntegral.norm_integral_le_of_norm_le hat.le
+    (hae.mono fun s hs hsI => hs (Ioc_subset_Ioc ha le_rfl hsI) x)
+    ((intervalIntegrable_sub_rpow (by linarith) a t).const_mul (C * H))).trans_eq ?_
+  rw [intervalIntegral.integral_const_mul, integral_sub_rpow (by linarith)]
+  have h : ((α : ℝ) - 2) / 2 + 1 = α / 2 := by ring
+  rw [h]
+  field_simp
+
 /-- **The Hessian bound for the Duhamel potential.** For `α > 0` there is a constant `C`,
 depending only on `α` and the dimension, such that `‖D² w(t, x)‖ ≤ C H t^(α / 2)` whenever `f` is
 jointly measurable and essentially bounded on `(0, t) × E` and `f(s, ·)` is `α`-Hölder with
@@ -407,20 +437,10 @@ theorem exists_norm_iteratedFDeriv_two_heatDuhamelPotential_le {α : ℝ≥0} (h
       (∀ᵐ s ∂volume.restrict (Ioo 0 t), HolderWith H α (f s)) → 0 < t →
       ∀ x, ‖iteratedFDeriv ℝ 2 (heatDuhamelPotential f t) x‖ ≤ C * H * t ^ ((α : ℝ) / 2) := by
   obtain ⟨C, -, hC⟩ :=
-    exists_ae_norm_iteratedFDeriv_heatKernel_convolution_le (E := E) (F := F) (α := α)
-      two_ne_zero
-  simp only [Nat.cast_ofNat] at hC
-  have hα' : (0 : ℝ) < α := hα
-  refine ⟨2 / α * C, fun {f M t H} hf hfM hH ht x => ?_⟩
-  have hae := hC hf hfM hH ht
-  rw [uIoc_of_le ht.le, ae_restrict_iff' measurableSet_Ioc] at hae
+    exists_norm_integral_iteratedFDeriv_two_heatKernel_convolution_le (E := E) (F := F) hα
+  refine ⟨C, fun {f M t H} hf hfM hH ht x => ?_⟩
   rw [iteratedFDeriv_heatDuhamelPotential_of_holderWith hf hfM hH hα ht le_rfl]
-  refine (intervalIntegral.norm_integral_le_of_norm_le ht.le (hae.mono fun s hs hsI => hs hsI x)
-    ((intervalIntegrable_sub_rpow (by linarith) 0 t).const_mul (C * H))).trans_eq ?_
-  rw [intervalIntegral.integral_const_mul, integral_sub_rpow (by linarith), sub_zero]
-  have h : ((α : ℝ) - 2) / 2 + 1 = α / 2 := by ring
-  rw [h]
-  field_simp
+  simpa using hC hf hfM hH 0 le_rfl ht.le x
 
 /-! ### The Hölder estimate of the Hessian -/
 
@@ -495,35 +515,6 @@ theorem exists_holderWith_iteratedFDeriv_two_heatDuhamelPotential {α : ℝ≥0}
 
 /-! ### The temporal Hölder estimate of the Hessian -/
 
-/-- Near the singular endpoint, the time integral over `[a, t]` of the Hessians of the slices is
-`O(H (t - a)^(α/2))`. -/
-private theorem exists_norm_integral_iteratedFDeriv_two_heatKernel_convolution_le {α : ℝ≥0}
-    (hα : 0 < α) :
-    ∃ C ≥ 0, ∀ {f : ℝ → E → F} {M t : ℝ} {H : ℝ≥0}, StronglyMeasurable (Function.uncurry f) →
-      (∀ᵐ s ∂volume.restrict (Ioo 0 t), ∀ᵐ y, ‖f s y‖ ≤ M) →
-      (∀ᵐ s ∂volume.restrict (Ioo 0 t), HolderWith H α (f s)) → ∀ a, 0 ≤ a → a ≤ t → ∀ x,
-        ‖∫ s in a..t, iteratedFDeriv ℝ 2 (heatKernel (t - s) ⋆ f s) x‖ ≤
-          C * H * (t - a) ^ ((α : ℝ) / 2) := by
-  obtain ⟨C, hC₀, hC⟩ :=
-    exists_ae_norm_iteratedFDeriv_heatKernel_convolution_le (E := E) (F := F) (α := α)
-      two_ne_zero
-  simp only [Nat.cast_ofNat] at hC
-  have hα' : (0 : ℝ) < α := hα
-  refine ⟨2 / α * C, by positivity, fun {f M t H} hf hfM hH a ha hat x => ?_⟩
-  rcases hat.eq_or_lt with rfl | hat
-  · rw [intervalIntegral.integral_same, norm_zero]
-    positivity
-  have ht : 0 < t := ha.trans_lt hat
-  have hae := hC hf hfM hH ht
-  rw [uIoc_of_le ht.le, ae_restrict_iff' measurableSet_Ioc] at hae
-  refine (intervalIntegral.norm_integral_le_of_norm_le hat.le
-    (hae.mono fun s hs hsI => hs (Ioc_subset_Ioc ha le_rfl hsI) x)
-    ((intervalIntegrable_sub_rpow (by linarith) a t).const_mul (C * H))).trans_eq ?_
-  rw [intervalIntegral.integral_const_mul, integral_sub_rpow (by linarith)]
-  have h : ((α : ℝ) - 2) / 2 + 1 = α / 2 := by ring
-  rw [h]
-  field_simp
-
 /-- Away from the diagonal, the Hessians of the slices at the times `t' < t` differ by
 `O(H (t - t') (t' - s)^((α - 4)/2))`, at almost every `0 < s ≤ t' - (t - t')`. -/
 private theorem exists_ae_norm_iteratedFDeriv_two_heatKernel_convolution_sub_time_le {α : ℝ≥0} :
@@ -554,6 +545,44 @@ private theorem exists_ae_norm_iteratedFDeriv_two_heatKernel_convolution_sub_tim
     ring
   rw [hexp, show t - s - (t' - s) = t - t' by ring] at this
   linarith
+
+/-- For `0 ≤ p ≤ 1`, a quantity at most `2 h` has `p`-th power at most `2 h^p`. -/
+private theorem rpow_le_two_mul_rpow_of_le_two_mul {r h p : ℝ} (hr : 0 ≤ r) (hrh : r ≤ 2 * h)
+    (hp₀ : 0 ≤ p) (hp₁ : p ≤ 1) : r ^ p ≤ 2 * h ^ p := by
+  have hh : 0 ≤ h := by linarith
+  calc r ^ p ≤ (2 * h) ^ p := by gcongr
+    _ = 2 ^ p * h ^ p := mul_rpow (by norm_num) hh
+    _ ≤ 2 * h ^ p := by
+        gcongr
+        exact (rpow_le_rpow_of_exponent_le (by norm_num) hp₁).trans (rpow_one 2).le
+
+/-- For `α < 2`, a function bounded by `A h (t' - s)^((α - 4)/2)` on `(0, t' - h]` has integral
+over `[0, t' - h]` of norm at most `2 / (2 - α) A h^(α/2)`. -/
+private theorem norm_integral_le_of_ae_norm_le_mul_sub_rpow {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] {g : ℝ → G} {A h t' α : ℝ} (hA : 0 ≤ A) (hh : 0 < h) (hht : h < t')
+    (hα : α < 2) (hg : ∀ᵐ s, s ∈ Ioc 0 (t' - h) → ‖g s‖ ≤ A * h * (t' - s) ^ ((α - 4) / 2)) :
+    ‖∫ s in 0..t' - h, g s‖ ≤ 2 / (2 - α) * A * h ^ (α / 2) := by
+  have h2α : 0 < 2 - α := by linarith
+  have hcont : ContinuousOn (fun s => (t' - s) ^ ((α - 4) / 2)) [[0, t' - h]] :=
+    fun s hs => by
+      rw [uIcc_of_le (by linarith)] at hs
+      have hst : s < t' := by linarith [hs.2]
+      exact ((continuousAt_const.sub continuousAt_id).rpow_const
+        (Or.inl (sub_pos.2 hst).ne')).continuousWithinAt
+  refine (intervalIntegral.norm_integral_le_of_norm_le (by linarith) hg
+    (hcont.intervalIntegrable.const_mul (A * h))).trans ?_
+  rw [intervalIntegral.integral_const_mul]
+  have hpow : h * h ^ ((α - 4) / 2 + 1) = h ^ (α / 2) := by
+    rw [mul_comm, ← rpow_add_one hh.ne']
+    congr 1
+    ring
+  calc A * h * ∫ s in 0..t' - h, (t' - s) ^ ((α - 4) / 2)
+      ≤ A * h * (h ^ ((α - 4) / 2 + 1) / -((α - 4) / 2 + 1)) := by
+        gcongr
+        exact integral_sub_rpow_le_of_lt_neg_one (by linarith) hh (by linarith)
+    _ = 2 / (2 - α) * A * h ^ (α / 2) := by
+        rw [← hpow, show -((α - 4) / 2 + 1) = (2 - α) / 2 by ring]
+        field_simp
 
 /-- The temporal increment of the Hessian of the Duhamel potential between times `t' ≤ t` is
 `O(H (t - t')^(α/2))`, for `0 < α < 2`. -/
@@ -599,13 +628,8 @@ private theorem exists_norm_iteratedFDeriv_two_heatDuhamelPotential_sub_le {α :
     hC₁ hf (hfM' hτt) (hH' hτt) a ha haτ x
   -- Times up to `2h` contribute at most twice `h^(α/2)`, since `α/2 ≤ 1`.
   have hpow {r : ℝ} (hr : 0 ≤ r) (hrh : r ≤ 2 * h) :
-      r ^ ((α : ℝ) / 2) ≤ 2 * h ^ ((α : ℝ) / 2) := by
-    calc r ^ ((α : ℝ) / 2) ≤ (2 * h) ^ ((α : ℝ) / 2) := by gcongr
-      _ = 2 ^ ((α : ℝ) / 2) * h ^ ((α : ℝ) / 2) := mul_rpow (by norm_num) hh.le
-      _ ≤ 2 * h ^ ((α : ℝ) / 2) := by
-          gcongr
-          exact (rpow_le_rpow_of_exponent_le (by norm_num) (by linarith : (α : ℝ) / 2 ≤ 1)).trans
-            (rpow_one 2).le
+      r ^ ((α : ℝ) / 2) ≤ 2 * h ^ ((α : ℝ) / 2) :=
+    rpow_le_two_mul_rpow_of_le_two_mul hr hrh (by positivity) (by linarith)
   have hfinal : 3 * C₁ * H * h ^ ((α : ℝ) / 2) + 2 / (2 - α) * K * H * h ^ ((α : ℝ) / 2) =
       (3 * C₁ + 2 / (2 - α) * K) * H * h ^ ((α : ℝ) / 2) := by ring
   rw [hrep (ht'.trans htt'.le) le_rfl, hrep ht' htt'.le]
@@ -629,43 +653,19 @@ private theorem exists_norm_iteratedFDeriv_two_heatDuhamelPotential_sub_le {α :
   have hint {τ : ℝ} (hτ : 0 < τ) (hτt : τ ≤ t) : IntervalIntegrable (Φ τ) volume 0 τ :=
     intervalIntegrable_iteratedFDeriv_heatKernel_convolution_of_holderWith hf (hfM' hτt)
       (hH' hτt) hα₀ hτ le_rfl x
+  have hmem {τ : ℝ} (hτ : s₀ ≤ τ) : s₀ ∈ [[0, τ]] := by
+    rw [uIcc_of_le (hs₀.le.trans hτ)]
+    exact ⟨hs₀.le, hτ⟩
+  have hint₀ {τ : ℝ} (hτ : s₀ ≤ τ) (hτt : τ ≤ t) : IntervalIntegrable (Φ τ) volume 0 s₀ :=
+    (hint (hs₀.trans_le hτ) hτt).mono_set (uIcc_subset_uIcc left_mem_uIcc (hmem hτ))
   have hsplit {τ : ℝ} (hτ : s₀ ≤ τ) (hτt : τ ≤ t) :
-      ∫ s in 0..τ, Φ τ s = (∫ s in 0..s₀, Φ τ s) + ∫ s in s₀..τ, Φ τ s := by
-    have hmem : s₀ ∈ [[0, τ]] := by
-      rw [uIcc_of_le (hs₀.le.trans hτ)]
-      exact ⟨hs₀.le, hτ⟩
-    have hi := hint (hs₀.trans_le hτ) hτt
-    exact (intervalIntegral.integral_add_adjacent_intervals
-      (hi.mono_set (uIcc_subset_uIcc left_mem_uIcc hmem))
-      (hi.mono_set (uIcc_subset_uIcc hmem right_mem_uIcc))).symm
-  have hint₀ {τ : ℝ} (hτ : s₀ ≤ τ) (hτt : τ ≤ t) : IntervalIntegrable (Φ τ) volume 0 s₀ := by
-    have hmem : s₀ ∈ [[0, τ]] := by
-      rw [uIcc_of_le (hs₀.le.trans hτ)]
-      exact ⟨hs₀.le, hτ⟩
-    exact (hint (hs₀.trans_le hτ) hτt).mono_set (uIcc_subset_uIcc left_mem_uIcc hmem)
+      ∫ s in 0..τ, Φ τ s = (∫ s in 0..s₀, Φ τ s) + ∫ s in s₀..τ, Φ τ s :=
+    (intervalIntegral.integral_add_adjacent_intervals (hint₀ hτ hτt)
+      ((hint (hs₀.trans_le hτ) hτt).mono_set (uIcc_subset_uIcc (hmem hτ) right_mem_uIcc))).symm
   -- Away from the diagonal, the time Lipschitz bound integrates to `O(H h^(α/2))`.
   have hfar : ‖∫ s in 0..s₀, (Φ t s - Φ t' s)‖ ≤ 2 / (2 - α) * K * H * h ^ ((α : ℝ) / 2) := by
-    have hcont : ContinuousOn (fun s => (t' - s) ^ (((α : ℝ) - 4) / 2)) [[0, s₀]] :=
-      fun s hs => by
-        rw [uIcc_of_le hs₀.le] at hs
-        have hst : s < t' := by linarith [hs.2]
-        exact ((continuousAt_const.sub continuousAt_id).rpow_const
-          (Or.inl (sub_pos.2 hst).ne')).continuousWithinAt
-    refine (intervalIntegral.norm_integral_le_of_norm_le hs₀.le
-      (hK hf hfM hH htt' |>.mono fun s hs hsI => hs hsI x)
-      (hcont.intervalIntegrable.const_mul (K * H * h))).trans ?_
-    rw [intervalIntegral.integral_const_mul]
-    have hpow' : h * h ^ (((α : ℝ) - 4) / 2 + 1) = h ^ ((α : ℝ) / 2) := by
-      rw [mul_comm, ← rpow_add_one hh.ne']
-      congr 1
-      ring
-    calc K * H * h * ∫ s in 0..s₀, (t' - s) ^ (((α : ℝ) - 4) / 2)
-        ≤ K * H * h * (h ^ (((α : ℝ) - 4) / 2 + 1) / -(((α : ℝ) - 4) / 2 + 1)) := by
-          gcongr
-          exact integral_sub_rpow_le_of_lt_neg_one (by linarith) hh (by linarith)
-      _ = 2 / (2 - α) * K * H * h ^ ((α : ℝ) / 2) := by
-          rw [← hpow', show -(((α : ℝ) - 4) / 2 + 1) = (2 - α) / 2 by ring]
-          field_simp
+    simpa only [mul_assoc] using norm_integral_le_of_ae_norm_le_mul_sub_rpow (A := K * H)
+      (by positivity) hh hbig hα₂' (hK hf hfM hH htt' |>.mono fun s hs hsI => hs hsI x)
   rw [hsplit (by linarith) le_rfl, hsplit (by linarith) htt'.le,
     show ∀ a b c d : ContinuousMultilinearMap ℝ (fun _ : Fin 2 => E) F,
       a + b - (c + d) = (a - c) + b - d from fun a b c d => by abel,
