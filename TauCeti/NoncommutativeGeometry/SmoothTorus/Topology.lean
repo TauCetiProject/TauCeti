@@ -10,6 +10,7 @@ public import Mathlib.Analysis.LocallyConvex.WithSeminorms
 public import Mathlib.Topology.Algebra.Star
 public import Mathlib.Topology.Algebra.UniformFilterBasis
 public import Mathlib.Topology.Metrizable.Uniformity
+import TauCeti.Topology.Algebra.InfiniteSum.DiscreteConvolution
 
 /-!
 # The Fréchet topology of the smooth noncommutative torus
@@ -155,31 +156,12 @@ theorem norm_coeff_mul_mul_weight_pow_le (k : ℕ) (a b : SmoothNoncommutativeTo
     _ ≤ _ := Summable.tsum_le_tsum (fun y ↦ norm_mul_coeff_mul_weight_pow_le a b x y k)
         ((summable_norm_mul_coeff a b x).mul_right _) hs
 
-/-- The convolution `∑ₓ ∑_y f y g (x - y)` of two nonnegative summable functions on `ℤ × ℤ`
-sums to `(∑ f) (∑ g)`. -/
-private theorem hasSum_tsum_mul_sub {f g : ℤ × ℤ → ℝ} (hf : Summable f) (hg : Summable g)
-    (hf0 : 0 ≤ f) (hg0 : 0 ≤ g) :
-    HasSum (fun x ↦ ∑' y, f y * g (x - y)) ((∑' y, f y) * ∑' z, g z) := by
-  -- reindex the product `∑ (y, z), f y g z` by `(x, y) = (y + z, y)`
-  let e : (ℤ × ℤ) × (ℤ × ℤ) ≃ (ℤ × ℤ) × (ℤ × ℤ) :=
-    { toFun p := (p.1 + p.2, p.1)
-      invFun q := (q.2, q.1 - q.2)
-      left_inv p := by simp
-      right_inv q := by simp }
-  have hF : HasSum (fun p : (ℤ × ℤ) × (ℤ × ℤ) ↦ f p.2 * g (p.1 - p.2))
-      ((∑' y, f y) * ∑' z, g z) := by
-    rw [← e.hasSum_iff]
-    convert hf.hasSum.mul hg.hasSum (hf.mul_of_nonneg hg hf0 hg0) using 1
-    ext p
-    simp [e]
-  exact hF.prod_fiberwise fun x ↦ (hF.summable.prod_factor x).hasSum
-
 /-- The seminorms are submultiplicative. -/
 theorem seminorm_mul_le (k : ℕ) (a b : SmoothNoncommutativeTorus θ) :
     seminorm θ k (a * b) ≤ seminorm θ k a * seminorm θ k b := by
   rw [seminorm_apply, seminorm_apply]
   exact hasSum_le (norm_coeff_mul_mul_weight_pow_le k a b) (hasSum_seminorm k (a * b))
-    (hasSum_tsum_mul_sub (a.isRapidDecay_coeff.summable_norm_mul_weight_pow k)
+    (DiscreteConvolution.hasSum_tsum_mul_sub (a.isRapidDecay_coeff.summable_norm_mul_weight_pow k)
       (b.isRapidDecay_coeff.summable_norm_mul_weight_pow k)
       (fun y ↦ norm_mul_weight_pow_nonneg _ y k) fun z ↦ norm_mul_weight_pow_nonneg _ z k)
 
