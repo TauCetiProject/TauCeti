@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.Affinoid.Restricted
 public import Mathlib.RingTheory.TensorProduct.Maps
 
+import TauCeti.RingTheory.Affinoid.QuotientNorm
 import TauCeti.Topology.Algebra.Ring.Ideal
 
 /-!
@@ -22,15 +23,16 @@ ultrametric algebra norm, and let `B = A⟨X₁, …, Xₘ⟩ ⧸ I` and `C = A�
 where `I` and `J` are carried along the inclusions of the variables, as
 `TauCeti.AffinoidPushout I J`, with its `A`-algebra maps from `B` and from `C`. It proves that
 this is the pushout of `B` and `C` over `A` for maps into affinoid algebras: two `K`-algebra maps
-`B → E` and `C → E` into a completely normed affinoid algebra `E` which agree on `A` factor
-through exactly one `K`-algebra map `A⟨X, Y⟩ ⧸ (I, J) → E`, and that map is continuous for the
-quotient topology. The algebraic tensor product `B ⊗[A] C` maps to `A⟨X, Y⟩ ⧸ (I, J)` with dense
-image.
+`B → E` and `C → E` into an affinoid algebra `E`, with no chosen norm, which agree on `A`
+factor through exactly one `K`-algebra map `A⟨X, Y⟩ ⧸ (I, J) → E`. When `E` carries a complete
+ultrametric algebra norm, that map is continuous for the quotient topology. The algebraic tensor
+product `B ⊗[A] C` maps to `A⟨X, Y⟩ ⧸ (I, J)` with dense image.
 
 No continuity is assumed on the given maps. Algebra maps out of `A⟨X⟩` into a completely normed
 affinoid algebra are automatically continuous, so the images of the variables are
 power-bounded and the universal property of restricted series over `A`,
-`TauCeti.IsAffinoidAlgebra.existsUnique_algHom_isRestricted_subring`, applies to them.
+`TauCeti.IsAffinoidAlgebra.existsUnique_algHom_isRestricted_subring`, applies to them. A target
+with no chosen norm is given its residue norm, `TauCeti.IsAffinoidAlgebra.residueNormedCommRing`.
 
 ## Main definitions
 
@@ -345,15 +347,24 @@ theorem algHom_ext {δ₁ δ₂ : AffinoidPushout I J →ₐ[K] E}
     · simpa using hl (Ideal.Quotient.mk I ⟨X i, isRestricted_X _ i⟩)
     · simpa using hr (Ideal.Quotient.mk J ⟨X j, isRestricted_X _ j⟩)
 
-include hA hE h in
-/-- **The universal property of the affinoid pushout.** Let `A` and `E` be affinoid algebras
-with complete ultrametric algebra norms. Two `K`-algebra maps `β : A⟨X⟩ ⧸ I → E` and
-`γ : A⟨Y⟩ ⧸ J → E` which agree on `A` factor through exactly one `K`-algebra map
-`A⟨X, Y⟩ ⧸ (I, J) → E`, namely `TauCeti.AffinoidPushout.lift`. -/
-theorem existsUnique_algHom :
-    ∃! δ : AffinoidPushout I J →ₐ[K] E, (∀ x, δ (inl I J x) = β x) ∧ ∀ y, δ (inr I J y) = γ y :=
-  ⟨lift hA hE β γ h, ⟨lift_inl hA hE β γ h, lift_inr hA hE β γ h⟩, fun _ ⟨hl, hr⟩ ↦
-    algHom_ext hA hE (fun x ↦ by rw [hl, lift_inl]) (fun y ↦ by rw [hr, lift_inr])⟩
+include hA in
+/-- **The universal property of the affinoid pushout.** Let `A` be an affinoid algebra with a
+complete ultrametric algebra norm and let `F` be an affinoid algebra, with no chosen norm. Two
+`K`-algebra maps `β : A⟨X⟩ ⧸ I → F` and `γ : A⟨Y⟩ ⧸ J → F` which agree on `A` factor through
+exactly one `K`-algebra map `A⟨X, Y⟩ ⧸ (I, J) → F`. When `F` carries a complete ultrametric
+algebra norm, this map is `TauCeti.AffinoidPushout.lift`. -/
+theorem existsUnique_algHom {F : Type*} [CommRing F] [Algebra K F] (hF : IsAffinoidAlgebra K F)
+    (β : IsRestricted.subring (R := A) (fun _ : Fin m ↦ 1) ⧸ I →ₐ[K] F)
+    (γ : IsRestricted.subring (R := A) (fun _ : Fin n ↦ 1) ⧸ J →ₐ[K] F)
+    (h : ∀ a, β (algebraMap A _ a) = γ (algebraMap A _ a)) :
+    ∃! δ : AffinoidPushout I J →ₐ[K] F, (∀ x, δ (inl I J x) = β x) ∧ ∀ y, δ (inr I J y) = γ y := by
+  -- Give `F` the residue norm of a Tate presentation.
+  let _ := hF.residueNormedCommRing
+  let _ := hF.residueNormedAlgebra
+  have := hF.isUltrametricDist_residueNormedCommRing
+  have := hF.completeSpace_residueNormedCommRing
+  exact ⟨lift hA hF β γ h, ⟨lift_inl hA hF β γ h, lift_inr hA hF β γ h⟩, fun _ ⟨hl, hr⟩ ↦
+    algHom_ext hA hF (fun x ↦ by rw [hl, lift_inl]) (fun y ↦ by rw [hr, lift_inr])⟩
 
 variable (I J) in
 /-- **The algebraic tensor product is dense in the affinoid pushout.** The `A`-algebra map
