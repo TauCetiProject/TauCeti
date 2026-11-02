@@ -5,7 +5,7 @@ Authors: pi
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Tangent.Exponential.Uniqueness
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.OneParameter
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Unipotent.Tangent
 
 /-!

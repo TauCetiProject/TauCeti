@@ -5,7 +5,7 @@ Authors: pi
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
+public import Mathlib.RingTheory.Bialgebra.Convolution
 public import Mathlib.Algebra.Polynomial.Roots
 
 /-!
