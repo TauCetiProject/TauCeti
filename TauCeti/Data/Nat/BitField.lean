@@ -63,6 +63,7 @@ theorem testBit_bitField (w M i k : ℕ) :
 
 /-- **Reading after writing.** Field `j` of `setBitField w M i v` is `v` if `j = i` and `v` fits
 in `w` bits, and is field `j` of `M` otherwise. -/
+@[simp]
 theorem bitField_setBitField (w M i v j : ℕ) :
     bitField w (setBitField w M i v) j = if i = j ∧ v < 2 ^ w then v else bitField w M j := by
   unfold setBitField

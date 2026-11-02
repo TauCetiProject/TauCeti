@@ -120,6 +120,7 @@ and `2 * i + 1` for its inverse. -/
 def signedLetter (a : ℕ × Bool) : ℕ :=
   2 * a.1 + if a.2 then 0 else 1
 
+@[simp]
 theorem letter_signedLetter (x : Fin n → G) (i : Fin n) (b : Bool) :
     letter x (signedLetter (i, b)) = cond b (x i) (x i)⁻¹ := by
   cases b <;> simp [signedLetter]
@@ -412,8 +413,7 @@ variable {x h parents}
 /-- Moving a power of `h` across an equation. -/
 private theorem eq_mul_zpow_sub {a b : G} {D e : ℤ} (H : a * h ^ D = b * h ^ e) :
     a = b * h ^ (e - D) := by
-  rw [sub_eq_add_neg, zpow_add, ← mul_assoc, ← H, mul_assoc, ← zpow_add, add_neg_cancel,
-    zpow_zero, mul_one]
+  rw [zpow_sub, ← mul_assoc, ← H, mul_inv_cancel_right]
 
 private theorem edge_setEdge {m : ℕ} {st : State} {t j q t' j' q' : ℕ} {e e' : ℤ}
     (H : (st.setEdge m t j q e).edge m t' j' = some (q', e')) :
@@ -498,7 +498,7 @@ private theorem Valid.identify {st : State} (hv : Valid x h parents st) {a b : �
     exact pow_gcd_eq_one.mpr ⟨hv.exponent, pow_natAbs_eq_one.mpr h0⟩
   · exact hv.setCoin key
   · refine hv.setCoin ?_
-    rw [key, mul_assoc, ← zpow_add, add_neg_cancel, zpow_zero, mul_one]
+    rw [key, zpow_neg, mul_inv_cancel_right]
 
 private theorem Valid.addOne {st : State} (hv : Valid x h parents st) {t j q : ℕ} {e : ℤ}
     (H : letter x t * pt x parents j = pt x parents q * h ^ e) :
@@ -523,8 +523,8 @@ private theorem Valid.add {st : State} (hv : Valid x h parents st) {t j q : ℕ}
       pt x parents (st.root st.n q).1 * h ^ ((st.root st.n q).2 + e) := by
     rw [H, hv.root st.n q, mul_assoc, ← zpow_add]
   refine (hv.addOne hq).addOne ?_
-  rw [letter_invLetter x ht, inv_mul_eq_iff_eq_mul, ← mul_assoc, hq, mul_assoc, ← zpow_add,
-    add_neg_cancel, zpow_zero, mul_one]
+  rw [letter_invLetter x ht, inv_mul_eq_iff_eq_mul, ← mul_assoc, hq, zpow_neg,
+    mul_inv_cancel_right]
 
 private theorem Valid.transfer {st : State} (hv : Valid x h parents st) (p : ℕ) :
     Valid x h parents (st.transfer (2 * n) p) := by
@@ -804,7 +804,7 @@ theorem _root_.TauCeti.GroupPresentation.wordValue_relatorLetters_eq_one (P : Gr
   rw [← hmk, wordValue, Function.comp_apply, List.map_map, List.map_map]
   congr 1
   refine List.map_congr_left fun a _ ↦ ?_
-  simp [letter_signedLetter]
+  simp
 
 /-- **A finiteness certificate for a presented group.** A closed replay for the relators of a
 presentation, with a positive exponent, shows that the presented group is finite. -/

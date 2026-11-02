@@ -26,8 +26,8 @@ The certificate is replayed by `TauCeti.CosetEnumeration.run` inside the kernel.
 `1454` points, `2204` steps in all, and the enumeration closes with `720` surviving points; scanning
 the relators also shows `b ^ 11 = 1`. Hence `[G : ⟨b⟩] ≤ 720` and `|⟨b⟩| ≤ 11`, so `|G| ≤ 7920`.
 Nothing here uses a permutation model of `M₁₁`: the bound is derived from the two relators alone.
-Together with a surjection onto a group of order `7920` it identifies the presented group, but
-that recognition, the order of the model and simplicity are not proved here.
+Together with a surjection onto a group of order `7920`, such as the surjection onto the
+permutation model in `TauCeti.Sporadic.exists_surjective_M11`, it identifies the presented group.
 
 The certificate was produced outside Lean by a Felsch-style enumeration with preferred
 definitions, which tracks the power of `b` attached to every edge, and was then pruned to the
@@ -255,7 +255,7 @@ private theorem run_M11 :
   decide +kernel
 
 /-- **The presented group of `M₁₁` is finite.** -/
-theorem finite_group_M11 : Finite M11.Group :=
+instance finite_group_M11 : Finite M11.Group :=
   GroupPresentation.finite_of_run _ run_M11 (by decide)
 
 /-- **The presented group of `M₁₁` has at most `7920` elements.** -/
