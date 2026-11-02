@@ -41,6 +41,7 @@ theorem ext_iff_trace_mul_right {f g : Module.End K V} :
 
 /-- An endomorphism of a finite free module is zero exactly when its products with every
 endomorphism have zero trace. -/
+@[simp]
 theorem forall_trace_mul_eq_zero_iff {f : Module.End K V} :
     (∀ g : Module.End K V, trace K V (f * g) = 0) ↔ f = 0 := by
   simp [ext_iff_trace_mul_right (g := 0)]
