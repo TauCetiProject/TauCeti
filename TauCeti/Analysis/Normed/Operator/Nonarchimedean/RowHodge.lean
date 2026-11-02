@@ -21,9 +21,12 @@ Its finite domain is `[0, m]` for the number `m` of nonzero rows, possibly infin
 coefficient of the Fredholm series of degree greater than `m` vanishes.
 
 Over a nontrivially normed field every entry of the matrix of `u` is bounded by the operator
-norm. Hence the line of slope `-logb b ‖u‖` through the origin lies below the Newton polygon of
-`det (1 - T u)`, so every finite slope is at least `-logb b ‖u‖`
-(`ContinuousLinearMap.isSupportingLine_newtonPolygon_charPowerSeries`).
+norm. Hence, for any endomorphism `u`, the line of slope `-logb b ‖u‖` through the origin lies
+below the Newton polygon of the principal-minor series `u.matrixCoeff.charPowerSeries`
+(`ContinuousLinearMap.isSupportingLine_newtonPolygon_charPowerSeries`). Its coefficients are
+unconditional sums of principal minors, which converge when `u` is row-compact; the series is
+then the Fredholm series `det (1 - T u)`, and every finite slope of its Newton polygon is at
+least `-logb b ‖u‖`.
 
 ## References
 
@@ -55,8 +58,10 @@ theorem IsRowCompact.rowHodgePolygon_rowNorm_le_newtonPolygon_charPowerSeries [N
 /-- **Slope bound by the operator norm.** Let `v` be a real additive valuation on an ultrametric
 nontrivially normed field with `‖x‖ = b ^ (-v x)` for `x ≠ 0`, where `b > 1`. For an
 endomorphism `u` of `C₀(I, K)`, the line of slope `-logb b ‖u‖` through the origin lies below
-the Newton polygon of the principal-minor series `det (1 - T u)`. Since that polygon starts at
-the origin, every finite slope is at least `-logb b ‖u‖`. -/
+the Newton polygon of the principal-minor series `u.matrixCoeff.charPowerSeries`, whose
+coefficients are unconditional sums of principal minors of the matrix of `u`. When `u` is
+row-compact these sums converge and the series is the Fredholm series `det (1 - T u)`; since its
+Newton polygon starts at the origin, every finite slope is then at least `-logb b ‖u‖`. -/
 theorem isSupportingLine_newtonPolygon_charPowerSeries [NontriviallyNormedField K]
     [IsUltrametricDist K] {v : AddValuation K (WithTop ℝ)} (u : C₀(I, K) →L[K] C₀(I, K))
     (hb : 1 < b)
