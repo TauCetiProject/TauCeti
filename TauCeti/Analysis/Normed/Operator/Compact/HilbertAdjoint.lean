@@ -9,13 +9,15 @@ public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Adjoint
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Compact
 
 /-!
-# The adjoint property of compact operators
+# Compactness of Hilbert-space adjoints
 
-The compact operators on a normed space form a two-sided ideal of the algebra of bounded
-operators (`IsCompactOperator.mul_left`, `IsCompactOperator.mul_right`). Between Hilbert spaces
-they are also closed under adjoints, so on a Hilbert space they form a two-sided `*`-ideal. These
-are the algebraic rules used to manipulate the compactness conditions in the definition of a
-Fredholm module, such as compactness of commutators `[F, a]` and of the defects `(F² - 1) a`.
+Between Hilbert spaces the compact operators are closed under adjoints. Together with the
+two-sided ideal property (`IsCompactOperator.mul_left`, `IsCompactOperator.mul_right` in
+`TauCeti.Analysis.Normed.Operator.Compact.Basic`), this makes the compact operators on a Hilbert
+space a two-sided `*`-ideal. These are the algebraic rules used to manipulate the compactness
+conditions in the definition of a Fredholm module, such as compactness of commutators `[F, a]` and
+of the defects `(F² - 1) a`. The Banach-space dual of a compact operator is treated separately in
+`TauCeti.Analysis.Normed.Operator.Compact.Adjoint`.
 
 The adjoint statement uses approximation numbers: an operator into a Hilbert space is compact
 exactly when its approximation numbers tend to zero, and an operator and its adjoint have the same
