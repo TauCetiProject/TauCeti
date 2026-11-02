@@ -33,9 +33,6 @@ every `f`-invariant submodule while scaling the `ν`-eigenvector by `(ν - μ) ^
   out by the corresponding eigenspace.
 * `Module.End.eigenspace_eq_of_iSup_eq_top`: if the summands span the whole space and the scalars
   are pairwise distinct, every summand is an eigenspace.
-* `TauCeti.iInf_eigenspace_eq_of_iSup_eq_top`, `TauCeti.iInf_eigenspace_eq_bot_of_iSup_eq_top`:
-  the same for a family of operators. If spanning summands carry pairwise distinct joint scalars,
-  every summand is a joint eigenspace, and every other joint eigenspace is zero.
 * `TauCeti.isCompl_eigenspace_one_neg_one`: the `1`- and `-1`-eigenspaces of an involution are
   complementary over a commutative ring in which `2` is a unit.
 -/
@@ -133,40 +130,3 @@ theorem Module.End.eigenspace_eq_of_iSup_eq_top [IsDomain K] [Module.IsTorsionFr
   have h := TauCeti.biSup_inf_eigenspace_eq_self A W g (s := Set.univ) (fun j _ ↦ hW j)
     (Set.mem_univ k) fun j _ hjk ↦ hg.ne hjk
   rwa [iSup_univ, htop, top_inf_eq] at h
-
-namespace TauCeti
-
-variable [IsDomain K] [Module.IsTorsionFree K V]
-
-/-- **Summands of a spanning family with distinct joint scalars are joint eigenspaces.** If the
-`W j` span `V`, every `W j` consists of joint eigenvectors of the family `f` with eigenvalues
-`g j`, and `g` is injective, then the joint eigenspace of `f` for `g k` is exactly `W k`. This is
-the joint form of `Module.End.eigenspace_eq_of_iSup_eq_top`: the scalars of a single operator
-need not separate the summands, only those of the whole family. -/
-theorem iInf_eigenspace_eq_of_iSup_eq_top {ι : Type*} {κ : Type w} (f : ι → Module.End K V)
-    {W : κ → Submodule K V} {g : κ → ι → K} (hW : ∀ j, W j ≤ ⨅ i, (f i).eigenspace (g j i))
-    (htop : ⨆ j, W j = ⊤) (hg : Function.Injective g) (k : κ) :
-    ⨅ i, (f i).eigenspace (g k i) = W k := by
-  have hE := iSupIndep.iInf (fun i ↦ (f i).eigenspace) fun i ↦ (f i).eigenspaces_iSupIndep
-  have hle : (⨆ (j) (_ : j ≠ k), W j) ≤ ⨆ (χ) (_ : χ ≠ g k), ⨅ i, (f i).eigenspace (χ i) :=
-    iSup₂_le fun j hj ↦ (hW j).trans (le_iSup₂_of_le (g j) (hg.ne hj) le_rfl)
-  have hdisj := ((hE (g k)).mono_right hle).symm
-  calc ⨅ i, (f i).eigenspace (g k i)
-      = (W k ⊔ ⨆ (j) (_ : j ≠ k), W j) ⊓ ⨅ i, (f i).eigenspace (g k i) := by
-        rw [← iSup_split_single, htop, top_inf_eq]
-    _ = W k := by rw [sup_inf_assoc_of_le _ (hW k), disjoint_iff.mp hdisj, sup_bot_eq]
-
-/-- **Joint eigenvalues outside a spanning family of joint eigenspaces do not occur.** If the
-`W j` span `V` and every `W j` consists of joint eigenvectors of the family `f` with eigenvalues
-`g j`, then the joint eigenspace of `f` for any eigenvalue function `χ` that is not some `g j`
-is zero. -/
-theorem iInf_eigenspace_eq_bot_of_iSup_eq_top {ι : Type*} {κ : Type w} (f : ι → Module.End K V)
-    {W : κ → Submodule K V} {g : κ → ι → K} (hW : ∀ j, W j ≤ ⨅ i, (f i).eigenspace (g j i))
-    (htop : ⨆ j, W j = ⊤) {χ : ι → K} (hχ : χ ∉ Set.range g) :
-    ⨅ i, (f i).eigenspace (χ i) = ⊥ := by
-  have hE := iSupIndep.iInf (fun i ↦ (f i).eigenspace) fun i ↦ (f i).eigenspaces_iSupIndep
-  have hle : ⊤ ≤ ⨆ (c) (_ : c ≠ χ), ⨅ i, (f i).eigenspace (c i) :=
-    htop ▸ iSup_le fun j ↦ (hW j).trans (le_iSup₂_of_le (g j) (fun h ↦ hχ ⟨j, h⟩) le_rfl)
-  exact disjoint_top.mp ((hE χ).mono_right hle)
-
-end TauCeti

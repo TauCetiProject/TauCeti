@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.ClassicalGroups.GelfandTsetlin.Eigenvector
-import TauCeti.LinearAlgebra.Eigenspace.Separation
+import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Basic
 import TauCeti.RepresentationTheory.ClassicalGroups.GelfandTsetlin.Eigenvalue
 
 /-!
@@ -144,8 +144,8 @@ theorem exists_iInf_eigenspace_gelfandTsetlinGenerator_eq_gtLine (l : DominantWe
   simp only [funext_iff] at hP
   refine h P ?_
   simp only [← hP]
-  exact iInf_eigenspace_eq_of_iSup_eq_top _
-    (gtLine_le_iInf_eigenspace_gelfandTsetlinGenerator l)
-    (isInternal_gtLine l).submodule_iSup_eq_top (injective_gelfandEigenvalue_gtPattern l) P
+  exact (iInf_eigenspace_gelfandTsetlinGenerator_eq_iInf_subtype l
+    fun k r ↦ gelfandEigenvalue (fun i : Fin k ↦ (P.1 i k : ℂ)) r).symm.trans
+      (iInf_eigenspace_gelfandTsetlinGenerator_eq_gtLine l P)
 
 end TauCeti
