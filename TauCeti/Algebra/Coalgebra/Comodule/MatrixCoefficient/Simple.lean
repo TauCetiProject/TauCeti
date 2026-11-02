@@ -64,7 +64,7 @@ noncomputable def matrixCoefficientTensorEquiv :
 
 /-- The coefficient-space identification is the coefficient tensor map on underlying vectors. -/
 @[simp]
-theorem coe_matrixCoefficientTensorEquiv (z : Module.Dual k M ⊗[k] M) :
+theorem coe_matrixCoefficientTensorEquiv_apply (z : Module.Dual k M ⊗[k] M) :
     (matrixCoefficientTensorEquiv (C := C) z : C) =
       matrixCoefficientTensor (C := C) z := by
   simp [matrixCoefficientTensorEquiv]
@@ -75,7 +75,7 @@ theorem matrixCoefficientTensor_matrixCoefficientTensorEquiv_symm
     (c : (matrixCoefficientSubcoalgebra (R := k) (C := C) (M := M)).toSubmodule) :
     matrixCoefficientTensor (C := C) ((matrixCoefficientTensorEquiv (C := C)).symm c) =
       (c : C) := by
-  rw [← coe_matrixCoefficientTensorEquiv, LinearEquiv.apply_symm_apply]
+  rw [← coe_matrixCoefficientTensorEquiv_apply, LinearEquiv.apply_symm_apply]
 
 /-- The coefficient subcoalgebra of a finite-dimensional simple comodule has square dimension
 over an algebraically closed field. -/

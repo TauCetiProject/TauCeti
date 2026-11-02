@@ -38,16 +38,16 @@ theorem _root_.WithConv.apply_matrixCoefficientTensor_eq_trace (f : WithConv (Mo
     f.ofConv (matrixCoefficientTensor (R := R) (C := C) z) =
       LinearMap.trace R M
         (convolutionAction (R := R) (C := C) f * dualTensorHom R M M z) := by
+  have hcomp := LinearMap.congr_fun
+    (dualTensorHom_comp_lTensor (convolutionAction (R := R) (C := C) f)) z
+  simp only [LinearMap.comp_apply, LinearMap.compRight_apply,
+    ← Module.End.mul_eq_comp] at hcomp
+  rw [← hcomp, LinearMap.trace_eq_contract_apply]
   induction z with
-  | add x y hx hy => simp only [map_add, mul_add, hx, hy]
+  | add x y hx hy => simp only [map_add, hx, hy]
   | tmul φ m =>
-    have hmul : convolutionAction (R := R) (C := C) f *
-        dualTensorHom R M M (φ ⊗ₜ[R] m) =
-          dualTensorHom R M M (φ ⊗ₜ[R] convolutionAction (R := R) (C := C) f m) := by
-      ext x
-      simp [Module.End.mul_apply]
-    rw [hmul, LinearMap.trace_eq_contract_apply, contractLeft_apply,
-      matrixCoefficientTensor_tmul, LinearMap.apply_matrixCoefficient]
+    rw [LinearMap.lTensor_tmul, contractLeft_apply, matrixCoefficientTensor_tmul,
+      LinearMap.apply_matrixCoefficient]
     simp only [coactComponent_apply, convolutionAction_apply]
 
 end TauCeti.Comodule
