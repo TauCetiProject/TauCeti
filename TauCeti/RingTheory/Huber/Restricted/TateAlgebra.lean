@@ -59,18 +59,6 @@ public section
 
 namespace TauCeti.Huber
 
-section Domain
-
-variable {R : Type*} [NormedCommRing R] [IsDomain R] [IsUltrametricDist R] [NonarchimedeanRing R]
-  [CompleteSpace R] {n : ℕ}
-
-/-- The completed Tate algebra over a complete nonarchimedean normed domain is a domain. -/
-instance isDomain_restrictedMvPowerSeriesCompletion :
-    IsDomain (restrictedMvPowerSeriesCompletion n R) :=
-  restrictedMvPowerSeriesCompletionGaussEquiv.toMulEquiv.isDomain _
-
-end Domain
-
 variable {K : Type*} [NormedField K] [IsUltrametricDist K] [NonarchimedeanRing K]
   [CompleteSpace K] {n : ℕ}
 

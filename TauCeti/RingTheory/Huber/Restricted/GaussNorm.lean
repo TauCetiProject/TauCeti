@@ -287,6 +287,11 @@ theorem restrictedMvPowerSeriesCompletionGaussEquiv_symm_comp_polynomialToRestri
   rw [← restrictedMvPowerSeriesCompletionGaussEquiv_comp_weightedPolynomialHom,
     ← RingHom.comp_assoc, RingEquiv.symm_toRingHom_comp_toRingHom, RingHom.id_comp]
 
+/-- The completed Tate algebra over a complete nonarchimedean normed domain is a domain. -/
+instance isDomain_restrictedMvPowerSeriesCompletion [IsDomain R] :
+    IsDomain (restrictedMvPowerSeriesCompletion n R) :=
+  restrictedMvPowerSeriesCompletionGaussEquiv.toMulEquiv.isDomain _
+
 end Complete
 
 section UnitWeight
