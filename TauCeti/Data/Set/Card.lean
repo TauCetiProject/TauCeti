@@ -6,9 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Set.Card
+import Mathlib.Data.Set.Card.Arithmetic
+import Mathlib.Data.Set.Finite.Lattice
+import Mathlib.Order.Interval.Finset.Nat
 
 /-!
-# Cardinalities of images, of complements, of preimages under division and of sigma fibres
+# Cardinalities of images, complements, coverings, preimages under division and sigma fibres
 
 Two maps on a common index type that identify the same pairs of indices take equally many values
 on every set of indices (`Set.encard_image_eq_encard_image_of_eq_iff`): the second map factors
@@ -24,6 +27,14 @@ Adding a fresh element to a set removes one element from its complement
 
 The points of the range of an injective map `φ` into a sigma type that lie in the fibre over `i`
 are counted by the arguments that `φ` maps into that fibre (`Set.ncard_preimage_sigmaMk_range`).
+
+A set covered by finitely many finite sets `C i` is finite, with at most `∑ i, |C i|` elements
+(`Set.finite_and_ncard_le_sum_of_subset_biUnion`).
+
+A set of naturals with at most `n` elements up to `2n`, for every `n`, leaves at least `n + 1`
+numbers up to `2n` outside it, so its complement is infinite
+(`Set.infinite_compl_of_ncard_inter_Iic_le`). Constructions of simple sets obtain
+coinfiniteness from this counting invariant.
 
 The statement `Set.ncard_preimage_div` needs no hypotheses: `Set.ncard` is `0` on infinite sets,
 and `i / 0 = 0` makes the preimage under division by zero either `∅` or all of `ℕ`, so both
@@ -71,6 +82,31 @@ theorem ncard_preimage_sigmaMk_range {κ α : Type*} {Y : κ → Type*}
       exact ⟨⟨a, rfl⟩, hi⟩
   rw [← preimage_inter_range, ncard_preimage_of_injective_subset_range sigma_mk_injective
     inter_subset_right, himage, ncard_image_of_injective _ hφ]
+
+/-- A set covered by the sets `C i`, `i ∈ t`, each finite with at most `b i` elements, is finite
+with at most `∑ i ∈ t, b i` elements. The sets `C i` may overlap. -/
+theorem finite_and_ncard_le_sum_of_subset_biUnion {ι α : Type*} {S : Set α} {t : Finset ι}
+    {C : ι → Set α} {b : ι → ℕ} (hS : S ⊆ ⋃ i ∈ t, C i)
+    (hC : ∀ i ∈ t, (C i).Finite ∧ (C i).ncard ≤ b i) : S.Finite ∧ S.ncard ≤ ∑ i ∈ t, b i := by
+  have hfin : (⋃ i ∈ t, C i).Finite := t.finite_toSet.biUnion fun i hi => (hC i hi).1
+  exact ⟨hfin.subset hS, (ncard_le_ncard hS hfin).trans <|
+    (t.set_ncard_biUnion_le C).trans (Finset.sum_le_sum fun i hi => (hC i hi).2)⟩
+
+/-- **The counting invariant gives coinfiniteness.** A set of naturals with at most `n` elements
+up to `2 * n`, for every `n`, has an infinite complement. -/
+theorem infinite_compl_of_ncard_inter_Iic_le {A : Set ℕ}
+    (hA : ∀ n, (A ∩ Set.Iic (2 * n)).ncard ≤ n) : Aᶜ.Infinite := by
+  refine Set.infinite_of_not_bddAbove fun ⟨N, hN⟩ => ?_
+  -- every number above `N` lies in `A`, which overfills the interval `[0, 2(N + 1)]`
+  have hsub : (Finset.Icc (N + 1) (2 * (N + 1)) : Set ℕ) ⊆ A ∩ Set.Iic (2 * (N + 1)) := by
+    intro x hx
+    rw [Finset.coe_Icc, Set.mem_Icc] at hx
+    refine ⟨by_contra fun hxA => ?_, hx.2⟩
+    have := hN hxA
+    omega
+  have := (Set.ncard_le_ncard hsub ((Set.finite_Iic _).inter_of_right _)).trans (hA (N + 1))
+  rw [Set.ncard_coe_finset, Nat.card_Icc] at this
+  omega
 
 /-- The preimage of a set `S ⊆ ℕ` under `i ↦ i / n` has `n` times as many elements as `S`. Both
 sides are `0` when `S` is infinite or `n = 0`. -/

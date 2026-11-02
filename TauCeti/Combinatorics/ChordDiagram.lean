@@ -55,6 +55,8 @@ noncrossing consequence of planarity in that one-vertex case. For perfect matchi
 
 * `Function.Involutive.isNoncrossingMatching_iff`: an involution is a noncrossing matching
   exactly when its orbit partition is a noncrossing partition.
+* `Equiv.Perm.IsNoncrossingMatching.apply_mem_Ioo`: the chords of a noncrossing involution are
+  nested.
 * `Equiv.Perm.orbitCount_finRotate_mul_add_orbitCount_le`: the boundary-count bound.
 * `TauCeti.orbitCount_finRotate_mul_swap_mul_swap`: two interleaved bands have one boundary
   cycle.
@@ -127,6 +129,19 @@ theorem IsNoncrossingMatching.of_forall_apply_eq_or (hσ : σ.IsNoncrossingMatch
   rcases h b with hb | hb
   · exact lt_asymm hba (hb ▸ hlt)
   exact hσ hab (ha ▸ hba) (ha ▸ hb ▸ hlt)
+
+/-- **Chords are nested.** If the point `b` lies strictly inside the chord `{a, σ a}` of a
+noncrossing involution, with `a < σ a`, then so does its partner `σ b`: a chord starting inside
+another chord ends inside it. -/
+theorem IsNoncrossingMatching.apply_mem_Ioo (hσ : σ.IsNoncrossingMatching)
+    (hinv : Function.Involutive σ) {a b : α} (hab : a < b) (hb : b < σ a) :
+    σ b ∈ Set.Ioo a (σ a) := by
+  refine ⟨?_, (not_lt.mp (hσ hab hb)).lt_of_ne fun h => hab.ne' (σ.injective h)⟩
+  by_contra! h
+  rcases h.lt_or_eq with h | h
+  · -- The chord `{σ b, b}` would interleave `{a, σ a}` from the left.
+    exact hσ h (by rwa [hinv]) (by rwa [hinv])
+  · exact hb.ne (by rw [← h, hinv])
 
 end LinearOrder
 

@@ -50,7 +50,9 @@ presented; the corresponding inclusions of full subcategories are fully faithful
   `AlgebraicGeometry.Scheme.Modules.isClosedUnderFiniteProducts_isFiniteLocallyFree`, from which
   `FiniteLocallyFreeSheaf X` has finite biproducts;
 * `FiniteLocallyFreeSheaf.toFinitelyPresented` and `InvertibleSheaf.toFiniteLocallyFree`: the
-  fully faithful inclusions.
+  fully faithful inclusions;
+* `TauCeti.AlgebraicGeometry.InvertibleSheaf.trivialIsoFree X`: the trivial invertible sheaf is the
+  free sheaf on `PUnit`.
 
 ## References
 
@@ -227,6 +229,13 @@ instance : (InvertibleSheaf.toFiniteLocallyFree X).Full :=
 
 instance : (InvertibleSheaf.toFiniteLocallyFree X).Faithful :=
   ObjectProperty.faithful_ιOfLE _
+
+/-- The trivial invertible sheaf, as a finite locally free sheaf, is the free sheaf on `PUnit`. -/
+def InvertibleSheaf.trivialIsoFree :
+    (InvertibleSheaf.toFiniteLocallyFree X).obj (InvertibleSheaf.trivial X) ≅
+      FiniteLocallyFreeSheaf.free X PUnit :=
+  ObjectProperty.isoMk _ (eqToIso ((InvertibleSheaf.trivial_obj X).trans
+    (FiniteLocallyFreeSheaf.free_obj X PUnit).symm))
 
 end
 
