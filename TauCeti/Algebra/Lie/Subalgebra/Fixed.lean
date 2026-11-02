@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Lie.Subalgebra
 public import Mathlib.LinearAlgebra.FixedSubmodule
+public import TauCeti.Algebra.Lie.Hom
 
 /-!
 # Fixed Lie subalgebras
@@ -72,13 +73,6 @@ theorem apply_mem_fixedSubalgebra (u : L →ₗ⁅R⁆ M) (h : g.comp u = u.comp
     g (u x) = u (f x) := congr_fun h x
     _ = u x := congrArg u (mem_fixedSubalgebra.mp hx)
 
-/-- Intertwining homomorphisms compose to an intertwining homomorphism. -/
-theorem comp_intertwines (u : L →ₗ⁅R⁆ M) (v : M →ₗ⁅R⁆ N)
-    (hu : g.comp u = u.comp f) (hv : k.comp v = v.comp g) :
-    k.comp (v.comp u) = (v.comp u).comp f := by
-  ext x
-  exact (congr_fun hv (u x)).trans (congrArg v (congr_fun hu x))
-
 /-- An intertwining homomorphism restricts to the fixed Lie subalgebras. -/
 def restrictFixed (u : L →ₗ⁅R⁆ M) (h : g.comp u = u.comp f) :
     f.fixedSubalgebra →ₗ⁅R⁆ g.fixedSubalgebra where
@@ -110,20 +104,6 @@ end LieHom
 namespace LieEquiv
 
 variable {f : L →ₗ⁅R⁆ L} {g : M →ₗ⁅R⁆ M} {k : N →ₗ⁅R⁆ N}
-
-/-- The inverse of an intertwining equivalence intertwines in the opposite direction. -/
-theorem symm_intertwines (e : L ≃ₗ⁅R⁆ M) (h : g.comp e.toLieHom = e.toLieHom.comp f) :
-    f.comp e.symm.toLieHom = e.symm.toLieHom.comp g := by
-  ext y
-  apply e.injective
-  simpa using (LieHom.congr_fun h (e.symm y)).symm
-
-/-- The composite of intertwining equivalences intertwines. -/
-theorem trans_intertwines (e₁ : L ≃ₗ⁅R⁆ M) (e₂ : M ≃ₗ⁅R⁆ N)
-    (h₁ : g.comp e₁.toLieHom = e₁.toLieHom.comp f)
-    (h₂ : k.comp e₂.toLieHom = e₂.toLieHom.comp g) :
-    k.comp (e₁.trans e₂).toLieHom = (e₁.trans e₂).toLieHom.comp f :=
-  LieHom.comp_intertwines e₁.toLieHom e₂.toLieHom h₁ h₂
 
 /-- An intertwining equivalence maps the fixed subalgebra onto the fixed subalgebra. -/
 theorem map_fixedSubalgebra (e : L ≃ₗ⁅R⁆ M) (h : g.comp e.toLieHom = e.toLieHom.comp f) :
