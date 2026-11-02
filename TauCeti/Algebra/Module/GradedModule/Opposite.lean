@@ -37,9 +37,6 @@ opposite DG and `A∞` objects without changing their sign convention.
 * `TauCeti.op_smul_mem_of_mem_graded`: right scalar multiplication by a homogeneous element of
   degree `e` shifts module degrees by `e`.
 * `InternalGrading.op_koszulTwist`: the Koszul twist commutes with `op`.
-* `InternalGrading.koszulTwist_ofDecomposition_mul` and
-  `InternalGrading.koszulTwist_ofDecomposition_one`: the Koszul twist of a graded algebra is
-  multiplicative and fixes the unit, so it may be applied factorwise to products in `A` and `Aᵐᵒᵖ`.
 * `InternalGrading.opLinearEquiv_comp_quadraticTwist`, `InternalGrading.op_quadraticTwist`, and
   `InternalGrading.unop_quadraticTwist`: the quadratic twist commutes with passage to and from the
   opposite.
@@ -194,42 +191,6 @@ noncomputable instance oppositeGradedAlgebra : GradedAlgebra G.opposite.piece :=
   G.opposite.isInternal.gradedAlgebra
 
 end GradedAlgebra
-
-section KoszulTwistMul
-
-variable {R : Type u} {A : Type v} [CommRing R]
-
-/-- **The Koszul twist of a graded algebra is multiplicative**: degrees add under multiplication,
-so the signs `(-1) ^ (q |a|)` multiply. -/
-theorem koszulTwist_ofDecomposition_mul [NonUnitalNonAssocSemiring A] [Module R A]
-    [IsScalarTower R A A] [SMulCommClass R A A] {𝒜 : ℤ → Submodule R A} [SetLike.GradedMul 𝒜]
-    [DirectSum.Decomposition 𝒜] (q : ℤ) (a b : A) :
-    (ofDecomposition 𝒜).koszulTwist q (a * b) =
-      (ofDecomposition 𝒜).koszulTwist q a * (ofDecomposition 𝒜).koszulTwist q b := by
-  induction a using DirectSum.Decomposition.inductionOn 𝒜 with
-  | zero => simp
-  | add a a' ha ha' => rw [add_mul, map_add, ha, ha', map_add, add_mul]
-  | homogeneous a =>
-    obtain ⟨a, hap⟩ := a
-    induction b using DirectSum.Decomposition.inductionOn 𝒜 with
-    | zero => simp
-    | add b b' hb hb' => rw [mul_add, map_add, hb, hb', map_add, mul_add]
-    | homogeneous b =>
-      obtain ⟨b, hbq⟩ := b
-      rw [koszulTwist_ofDecomposition_apply_of_mem _ (SetLike.GradedMul.mul_mem hap hbq),
-        koszulTwist_ofDecomposition_apply_of_mem _ hap,
-        koszulTwist_ofDecomposition_apply_of_mem _ hbq, smul_mul_smul_comm, mul_add,
-        Int.negOnePow_add, Units.val_mul, Int.cast_mul]
-
-/-- The Koszul twist of a graded algebra fixes the unit, which has degree zero. -/
-@[simp]
-theorem koszulTwist_ofDecomposition_one [Semiring A] [Module R A] {𝒜 : ℤ → Submodule R A}
-    [SetLike.GradedOne 𝒜] [DirectSum.Decomposition 𝒜] (q : ℤ) :
-    (ofDecomposition 𝒜).koszulTwist q 1 = 1 :=
-  koszulTwist_apply_of_mem_zero _
-    (by rw [ofDecomposition_piece]; exact SetLike.GradedOne.one_mem (A := 𝒜)) q
-
-end KoszulTwistMul
 
 end InternalGrading
 

@@ -8,7 +8,6 @@ module
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.BimoduleResolution
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.Grading
 public import TauCeti.Algebra.Homology.DG.Algebra.Envelope
-public import TauCeti.Algebra.Ring.NegOnePow
 
 /-!
 # The differentials of the small resolution of a differential graded path algebra
