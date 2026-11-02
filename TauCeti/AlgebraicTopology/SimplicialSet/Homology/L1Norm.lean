@@ -26,9 +26,10 @@ simplicial volume. This file proves the properties of the seminorm that do not d
 particular space.
 
 * It is a seminorm for the integer multiples: it vanishes at `0`, is invariant under negation,
-  subadditive, and `‖d • α‖₁ ≤ ‖d‖ * ‖α‖₁` for `d : ℤ`. With coefficients in a real normed
-  space, `‖d • α‖₁ = ‖d‖ * ‖α‖₁` for every `d : ℤ` (`SSet.homologyL1Seminorm_zsmul`): for `d ≠ 0`
-  the class `α` is represented by the chains representing `d • α`, divided by `d`.
+  subadditive, and `‖d • α‖₁ ≤ ‖d‖ * ‖α‖₁` for `d : ℤ`. With coefficients in a rational normed
+  space (for instance a real one), `‖d • α‖₁ = ‖d‖ * ‖α‖₁` for every `d : ℤ`
+  (`SSet.homologyL1Seminorm_zsmul`): for `d ≠ 0` the class `α` is represented by the chains
+  representing `d • α`, divided by `d`.
 * A chain map multiplying the `ℓ¹`-norm of `n`-chains by at most `C ≥ 0` multiplies the seminorm
   of `n`-dimensional classes by at most `C` (`SSet.homologyL1Seminorm_homologyMap_le_mul`). In
   particular the seminorm does not increase under the maps induced by maps of simplicial sets
@@ -46,8 +47,8 @@ particular space.
   seminorm.
 * `SSet.homologyL1Seminorm_add_le`, `SSet.homologyL1Seminorm_neg`: the seminorm is subadditive
   and invariant under negation.
-* `SSet.homologyL1Seminorm_zsmul`: with real coefficients, the seminorm is homogeneous for the
-  integer multiples.
+* `SSet.homologyL1Seminorm_zsmul`: with coefficients in a rational normed space, the seminorm is
+  homogeneous for the integer multiples.
 
 ## References
 
@@ -296,17 +297,18 @@ theorem homologyL1Seminorm_zsmul_le (d : ℤ)
 
 end Seminorm
 
-/-! ### Real coefficients -/
+/-! ### Rational coefficients -/
 
-section Real
+section Rat
 
-variable {V : Type u} [SeminormedAddCommGroup V] [NormedSpace ℝ V] {n : ℕ}
+variable {V : Type u} [SeminormedAddCommGroup V] [NormedSpace ℚ V] {n : ℕ}
 
-/-- Division by a nonzero integer `d`, as a coefficient endomorphism of a real normed space. -/
+/-- Division by a nonzero integer `d`, as a coefficient endomorphism of a rational normed
+space. -/
 private def divCoeff (d : ℤ) : V →ₗ[ℤ] V :=
-  ((d : ℝ)⁻¹ • LinearMap.id : V →ₗ[ℝ] V).restrictScalars ℤ
+  ((d : ℚ)⁻¹ • LinearMap.id : V →ₗ[ℚ] V).restrictScalars ℤ
 
-private theorem divCoeff_apply (d : ℤ) (v : V) : divCoeff d v = (d : ℝ)⁻¹ • v := by
+private theorem divCoeff_apply (d : ℤ) (v : V) : divCoeff d v = (d : ℚ)⁻¹ • v := by
   simp [divCoeff]
 
 /-- Dividing the coefficients of `d • c` by `d ≠ 0` gives back the chain `c`. -/
@@ -317,10 +319,10 @@ private theorem chainComplexFunctor_map_divCoeff_zsmul {d : ℤ} (hd : d ≠ 0)
   apply (X.chainsLinearEquivFinsupp V n).injective
   rw [chainsLinearEquivFinsupp_chainComplexFunctor_map, map_zsmul]
   ext σ
-  have hd' : (d : ℝ) ≠ 0 := Int.cast_ne_zero.2 hd
-  simp [divCoeff_apply, ← Int.cast_smul_eq_zsmul ℝ, smul_smul, inv_mul_cancel₀ hd']
+  have hd' : (d : ℚ) ≠ 0 := Int.cast_ne_zero.2 hd
+  simp [divCoeff_apply, ← Int.cast_smul_eq_zsmul ℚ, smul_smul, inv_mul_cancel₀ hd']
 
-/-- Dividing the coefficients of the real chains by `d ≠ 0` sends `d • α` back to `α`. -/
+/-- Dividing the coefficients of the chains by `d ≠ 0` sends `d • α` back to `α`. -/
 private theorem homologyMap_divCoeff_zsmul {d : ℤ} (hd : d ≠ 0)
     (α : (X.homology (ModuleCat.of ℤ V) n : ModuleCat.{u} ℤ)) :
     HomologicalComplex.homologyMap
@@ -342,8 +344,8 @@ private theorem homologyMap_divCoeff_zsmul {d : ℤ} (hd : d ≠ 0)
     exact X.chainComplexFunctor_map_divCoeff_zsmul hd _
   rw [← map_zsmul, hπ, hz]
 
-/-- **Homogeneity of the `ℓ¹`-seminorm with real coefficients**: for every integer `d`,
-`‖d • α‖₁ = ‖d‖ * ‖α‖₁`. -/
+/-- **Homogeneity of the `ℓ¹`-seminorm with rational normed coefficients**: for every integer
+`d`, `‖d • α‖₁ = ‖d‖ * ‖α‖₁`. -/
 theorem homologyL1Seminorm_zsmul (d : ℤ)
     (α : (X.homology (ModuleCat.of ℤ V) n : ModuleCat.{u} ℤ)) :
     X.homologyL1Seminorm (d • α) = ‖d‖ * X.homologyL1Seminorm α := by
@@ -353,11 +355,10 @@ theorem homologyL1Seminorm_zsmul (d : ℤ)
   have hd' : 0 < ‖d‖ := norm_pos_iff.2 hd
   have h := X.homologyL1Seminorm_homologyMap_chainComplexFunctor_map_le (ψ := divCoeff d)
     (C := ‖d‖⁻¹) (inv_nonneg.2 hd'.le) (fun v ↦ by
-      rw [divCoeff_apply, norm_smul, norm_inv, Real.norm_eq_abs, ← Int.cast_abs, Int.norm_eq_abs,
-        Int.cast_abs]) (d • α)
+      rw [divCoeff_apply, norm_smul, norm_inv, Int.norm_cast_rat]) (d • α)
   rw [X.homologyMap_divCoeff_zsmul hd] at h
   rwa [← le_div_iff₀' hd', div_eq_inv_mul]
 
-end Real
+end Rat
 
 end SSet
