@@ -240,7 +240,7 @@ private theorem denseRange_coe_add_mul_iff (θ ν : d → ℝ) :
       tendsto_inv_smul_intervalIntegral hν θ f
     simp only [hzero, intervalIntegral.integral_zero, smul_zero] at hlim
     have hpos : 0 < ∫ x, b x :=
-      b.continuous.integral_pos_of_hasCompactSupport_nonneg_nonzero
+      b.continuous.integral_pos_of_hasCompactSupport_nonneg_ne_zero
         (.of_compactSpace _) (fun x ↦ le_max_left _ _) (x := x₀) (by simpa [b] using hr)
     have h0 : ∫ x, f x = ((∫ x, b x : ℝ) : ℂ) := integral_ofReal
     rw [← tendsto_nhds_unique tendsto_const_nhds hlim] at h0
