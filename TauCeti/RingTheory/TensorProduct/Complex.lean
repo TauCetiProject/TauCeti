@@ -52,14 +52,14 @@ theorem exists_ne_zero_mul_eq_zero_complex_tensorProduct (A : Type*) [Ring A]
     exact (map_ne_zero (algebraMap ℂ A)).mpr (mul_ne_zero (by norm_num) Complex.I_ne_zero)
   have hminus : a - b ≠ 0 := by
     intro h
-    have := congrArg ν h
-    simp [ν, f, a, b, Complex.conjAe_coe] at this
+    have : -algebraMap ℂ A Complex.I - algebraMap ℂ A Complex.I = 0 := by
+      simpa [ν, f, a, b, Complex.conjAe_coe] using congrArg ν h
     apply htwoI
     simpa [two_mul, sub_eq_add_neg] using congrArg Neg.neg this
   have hplus : a + b ≠ 0 := by
     intro h
-    have := congrArg μ h
-    simp [μ, f, a, b] at this
+    have : algebraMap ℂ A Complex.I + algebraMap ℂ A Complex.I = 0 := by
+      simpa [μ, f, a, b] using congrArg μ h
     apply htwoI
     simpa [two_mul] using this
   refine ⟨a - b, a + b, hminus, hplus, ?_⟩
