@@ -129,6 +129,18 @@ theorem basis_inl [DecidableEq I] (i : I) : basis B (.inl i) = cartan B (Pi.sing
 theorem basis_inr (a : B.normTwoShell) : basis B (.inr a) = root B a := by
   simp [basis, root, Basis.prod_apply]
 
+/-- A Cartan vector has its original lattice coordinates in the Cartan part of the shell basis. -/
+@[simp]
+theorem basis_repr_cartan_inl (h : I → ℤ) (i : I) :
+    (basis B).repr (cartan B h) (.inl i) = h i := by
+  simp [basis, Basis.map_repr, Basis.prod_repr_inl]
+
+/-- A Cartan vector has zero root coordinates. -/
+@[simp]
+theorem basis_repr_cartan_inr (h : I → ℤ) (a : B.normTwoShell) :
+    (basis B).repr (cartan B h) (.inr a) = 0 := by
+  simp [basis, Basis.map_repr, Basis.prod_repr_inr]
+
 variable [LinearOrder I]
 
 /-- The bracket `⁅x_a, x_b⁆` of two root vectors: `ε(a, b) x_(a + b)` if `a + b` is in the norm-two
