@@ -156,15 +156,6 @@ private def realSobolev (s : ℝ) : Submodule ℝ (Lp ℝ 2 (volume : Measure �
     (((Lp.toTemperedDistributionCLM ℂ (volume : Measure ℂ) 2).restrictScalars ℝ).toLinearMap ∘ₗ
       ofRealCLM.compLpₗ (p := 2) (μ := (volume : Measure ℂ)))
 
-/-- Membership in `realSobolev s`: the complexified distribution of `u` lies in `H^s`. -/
-private theorem mem_realSobolev {s : ℝ} {u : Lp ℝ 2 (volume : Measure ℂ)} :
-    u ∈ realSobolev s ↔ MemSobolev s 2 (Lp.toTemperedDistribution (ofRealCLM.compLp u)) := by
-  rw [realSobolev, Submodule.mem_comap, LinearMap.comp_apply,
-    ContinuousLinearMap.compLpₗ_apply, ContinuousLinearMap.coe_coe,
-    ContinuousLinearMap.coe_restrictScalars', Lp.toTemperedDistributionCLM_apply,
-    Submodule.restrictScalars_mem, sobolevDistributions, Submodule.mem_mk,
-    AddSubmonoid.mem_mk, AddSubsemigroup.mem_mk, Set.mem_ofPred_eq]
-
 /-- The real Sobolev space `H^s(ℂ; ℝ⁴)` of fields: each coordinate is the value of a real `L²`
 function whose complexified tempered distribution lies in the Bessel-potential space `H^s`. -/
 def sobolevFields (s : ℝ) : Submodule ℝ (ℂ → EuclideanSpace ℝ (Fin 4)) where
@@ -193,9 +184,8 @@ def sobolevFields (s : ℝ) : Submodule ℝ (ℂ → EuclideanSpace ℝ (Fin 4))
 theorem mem_sobolevFields {s : ℝ} {y : ℂ → EuclideanSpace ℝ (Fin 4)} :
     y ∈ sobolevFields s ↔ ∀ i, ∃ u : Lp ℝ 2 (volume : Measure ℂ),
       u =ᵐ[volume] (fun z ↦ y z i) ∧
-        MemSobolev s 2 (Lp.toTemperedDistribution (ofRealCLM.compLp u)) := by
-  simp only [sobolevFields, Submodule.mem_mk, AddSubmonoid.mem_mk, AddSubsemigroup.mem_mk,
-    Set.mem_ofPred_eq, mem_realSobolev]
+        MemSobolev s 2 (Lp.toTemperedDistribution (ofRealCLM.compLp u)) :=
+  Iff.rfl
 
 /-- The Sobolev field spaces decrease as the order increases. -/
 theorem sobolevFields_mono {s s' : ℝ} (h : s' ≤ s) : sobolevFields s ≤ sobolevFields s' :=
