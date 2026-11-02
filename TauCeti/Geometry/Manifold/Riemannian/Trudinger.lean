@@ -107,11 +107,13 @@ theorem exists_mem_nhds_setLIntegral_exp_mul_abs_rpow_le [LindelofSpace M] (hn :
   have hbr : closedBall (φ c) b.rOut ⊆ ball (φ c) r := closedBall_subset_ball (half_lt_self hr)
   obtain ⟨G, hG⟩ := ((b.contDiff (n := 1)).continuous_fderiv one_ne_zero
     ).bounded_above_of_compact_support (b.hasCompactSupport.fderiv ℝ)
-  -- The constants: `Λ` bounds `∫ ‖D(b u)‖ⁿ`, so `A` bounds `‖D(b u)‖_{Lⁿ}`.
-  set Λ : ℝ≥0∞ := 2 ^ ((n : ℝ) - 1) * ENNReal.ofReal (ρ c / 2)⁻¹ *
-    (ENNReal.ofReal C₁ ^ (n : ℝ) * 1 + ENNReal.ofReal G ^ (n : ℝ) * 1)
-  have hΛ : Λ ^ (n : ℝ)⁻¹ ≠ ∞ := ENNReal.rpow_ne_top_of_nonneg (by positivity) (by finiteness)
-  set A : ℝ := (Λ ^ (n : ℝ)⁻¹).toReal + 1
+  -- The constants: `D X` bounds `‖D(b u)‖_{Lⁿ}`, so `A` bounds it when `X ≤ 1`.
+  set D : ℝ≥0∞ := 2 * ENNReal.ofReal (C₁ + G) * ENNReal.ofReal (ρ c / 2)⁻¹ ^ (n : ℝ)⁻¹
+  have hD : D ≠ ∞ := by
+    have : ENNReal.ofReal (ρ c / 2)⁻¹ ^ (n : ℝ)⁻¹ ≠ ∞ :=
+      ENNReal.rpow_ne_top_of_nonneg (by positivity) ENNReal.ofReal_ne_top
+    finiteness
+  set A : ℝ := D.toReal + 1
   have hA : 0 < A := by positivity
   set κ : ℝ := (2 * Real.exp 1) ^ (1 - (n : ℝ)⁻¹) * (n : ℝ)⁻¹ *
     μ.real (ball 0 1) ^ (-(n : ℝ)⁻¹)
@@ -132,29 +134,14 @@ theorem exists_mem_nhds_setLIntegral_exp_mul_abs_rpow_le [LindelofSpace M] (hn :
   have hw : ContDiff ℝ 1 w := b.contDiff_mul_comp_extChartAt_symm (hbr.trans hrt) hu
   have hwcs : HasCompactSupport w := b.hasCompactSupport.mul_right
   have hwsupp : tsupport w ⊆ ball (φ c) r := tsupport_mul_subset_left.trans (b.tsupport_eq ▸ hbr)
-  -- A function of unit `Lⁿ` norm has `∫ ‖f‖ ^ n ≤ 1`.
-  have hint : ∀ f : M → ℝ, eLpNorm f n (riemannianVolume I M) ≤ 1 →
-      ∫⁻ x, ‖f x‖ₑ ^ (n : ℝ) ∂riemannianVolume I M ≤ 1 := fun f hf ↦ by
-    have h := eLpNorm_nnreal_pow_eq_lintegral (p := (n : ℝ≥0)) (by simp; omega)
-      (aestronglyMeasurable_of_eLpNorm_ne_top (hf.trans_lt ENNReal.one_lt_top).ne)
-    rw [ENNReal.coe_natCast, NNReal.coe_natCast] at h
-    exact h ▸ ENNReal.rpow_le_one hf (Nat.cast_nonneg _)
-  have hgrad := hint _ (le_self_add.trans hnorm)
-  simp only [enorm_norm] at hgrad
   -- The derivative of the cut-off function has `Lⁿ` norm at most `A`.
-  have hDw : ∫⁻ y, ‖fderiv ℝ w y‖ₑ ^ (n : ℝ) ∂μ ≤ Λ :=
-    (b.lintegral_enorm_fderiv_mul_comp_extChartAt_symm_rpow_le hbr hrt hC₁.le
-      (fun y hy ↦ (hball y hy).1) (m := ρ c / 2) (by positivity)
-      (fun y hy ↦ (hball y hy).2.1.le) hG hu (by linarith)).trans (by
-        simp only [Λ]
-        gcongr
-        exact hint u (le_add_self.trans hnorm))
   have hDwA : eLpNorm (fderiv ℝ w) n μ ≤ ENNReal.ofReal A := by
-    rw [eLpNorm_eq_lintegral_rpow_enorm_toReal (by simp; omega) (ENNReal.natCast_ne_top n)
-      (hw.continuous_fderiv one_ne_zero).aestronglyMeasurable, ENNReal.toReal_natCast, one_div]
-    calc (∫⁻ y, ‖fderiv ℝ w y‖ₑ ^ (n : ℝ) ∂μ) ^ (n : ℝ)⁻¹ ≤ Λ ^ (n : ℝ)⁻¹ :=
-          ENNReal.rpow_le_rpow hDw (by positivity)
-      _ = ENNReal.ofReal (Λ ^ (n : ℝ)⁻¹).toReal := (ENNReal.ofReal_toReal hΛ).symm
+    have h := b.eLpNorm_fderiv_mul_comp_extChartAt_symm_le hbr hrt hC₁.le
+      (fun y hy ↦ (hball y hy).1) (m := ρ c / 2) (by positivity)
+      (fun y hy ↦ (hball y hy).2.1.le) hG hu (p := n) (by exact_mod_cast (by omega : 1 ≤ n))
+    rw [ENNReal.coe_natCast, NNReal.coe_natCast] at h
+    calc _ ≤ D * 1 := h.trans (by gcongr)
+      _ = ENNReal.ofReal D.toReal := by rw [mul_one, ENNReal.ofReal_toReal hD]
       _ ≤ ENNReal.ofReal A := ENNReal.ofReal_le_ofReal (le_add_of_nonneg_right zero_le_one)
   -- The flat Trudinger inequality for `w` on the ball of radius `r`, read back on `M`.
   have htr := setLIntegral_exp_norm_div_rpow_le_of_eLpNorm_fderiv_le (μ := μ) hw hwcs

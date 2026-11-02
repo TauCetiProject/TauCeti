@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.FunctionalSpaces.SobolevInequality
 public import TauCeti.Geometry.Manifold.Riemannian.ChartCutoff
-import TauCeti.MeasureTheory.Integral.Lebesgue.BiUnion
+import TauCeti.MeasureTheory.Function.LpSeminorm.AddMeasure
 
 /-!
 # The Sobolev inequality on a closed Riemannian manifold
@@ -32,7 +32,7 @@ the chart image of `c`, the chart density is comparable to its value at `c` and 
 derivative of every function is bounded by a fixed multiple of the length of its gradient. A bump
 function equal to `1` on a smaller coordinate ball cuts `u` off to a compactly supported `C¹`
 function on the model space, whose derivative has `Lᵖ` norm at most a constant times
-`‖∇u‖_{Lᵖ} + ‖u‖_{Lᵖ}` (`ContDiffBump.lintegral_enorm_fderiv_mul_comp_extChartAt_symm_rpow_le`).
+`‖∇u‖_{Lᵖ} + ‖u‖_{Lᵖ}` (`ContDiffBump.eLpNorm_fderiv_mul_comp_extChartAt_symm_le`).
 The flat inequality then bounds the `L^{p'}` norm of `u` over the chart preimage of the smaller
 ball (`TauCeti.Manifold.exists_mem_nhds_eLpNorm_restrict_le_mul_eLpNorm_mgradient_add`), and
 finitely many such neighbourhoods cover `M`.
@@ -93,14 +93,11 @@ theorem exists_mem_nhds_eLpNorm_restrict_le_mul_eLpNorm_mgradient_add [LindelofS
   set ρ := chartVolumeDensity (I := I) c
   set dV := riemannianVolume I M
   have hρc : 0 < ρ c := chartVolumeDensity_pos c (FiberBundle.mem_baseSet_trivializationAt' c)
-  have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp).ne'
-  have hpR : 0 < (p : ℝ) := NNReal.coe_pos.2 (zero_lt_one.trans_le hp)
   -- The bump function equal to `1` on the ball of radius `r / 4`, supported in radius `r / 2`.
   let b : ContDiffBump (φ c) := ⟨r / 4, r / 2, by positivity, by linarith⟩
   have hbr : closedBall (φ c) b.rOut ⊆ ball (φ c) r := closedBall_subset_ball (half_lt_self hr)
   obtain ⟨G, hG⟩ := ((b.contDiff (n := 1)).continuous_fderiv one_ne_zero
     ).bounded_above_of_compact_support (b.hasCompactSupport.fderiv ℝ)
-  have hG0 : 0 ≤ G := (norm_nonneg _).trans (hG 0)
   -- The constants: `D` bounds the derivative of the cut-off function, `K` is the flat constant.
   set D : ℝ≥0∞ := 2 * ENNReal.ofReal (C₁ + G) * ENNReal.ofReal (ρ c / 2)⁻¹ ^ (p : ℝ)⁻¹
   set K : ℝ≥0 := SNormLESNormFDerivOfEqConst ℝ μ p
@@ -119,45 +116,10 @@ theorem exists_mem_nhds_eLpNorm_restrict_le_mul_eLpNorm_mgradient_add [LindelofS
   set w : E → ℝ := fun y ↦ b y * u (φ.symm y)
   have hw : ContDiff ℝ 1 w := b.contDiff_mul_comp_extChartAt_symm (hbr.trans hrt) hu
   have hwcs : HasCompactSupport w := b.hasCompactSupport.mul_right
-  -- The `Lᵖ` integrals are bounded by the `p`-th powers of the norms, measurable or not.
-  have hle : ∀ f : M → ℝ, ∫⁻ x, ‖f x‖ₑ ^ (p : ℝ) ∂dV ≤ eLpNorm f p dV ^ (p : ℝ) := fun f ↦ by
-    by_cases hf : AEStronglyMeasurable f dV
-    · exact (eLpNorm_nnreal_pow_eq_lintegral hp0 hf).ge
-    · rw [eLpNorm_of_not_aestronglyMeasurable hf, ENNReal.top_rpow_of_pos hpR]
-      exact le_top
-  have hgrad := hle fun x ↦ ‖mgradient I u x‖
-  simp only [enorm_norm] at hgrad
   -- The derivative of the cut-off function has `Lᵖ` norm at most `D X`.
-  have hDw : eLpNorm (fderiv ℝ w) p μ ≤ D * X := by
-    rw [← ENNReal.rpow_le_rpow_iff hpR,
-      eLpNorm_nnreal_pow_eq_lintegral hp0 (hw.continuous_fderiv one_ne_zero).aestronglyMeasurable]
-    have hK : ENNReal.ofReal C₁ ≤ ENNReal.ofReal (C₁ + G) :=
-      ENNReal.ofReal_le_ofReal (le_add_of_nonneg_right hG0)
-    have hK' : ENNReal.ofReal G ≤ ENNReal.ofReal (C₁ + G) :=
-      ENNReal.ofReal_le_ofReal (le_add_of_nonneg_left hC₁.le)
-    have hX₁ : eLpNorm (fun x ↦ ‖mgradient I u x‖) p dV ≤ X := le_self_add
-    have hX₂ : eLpNorm u p dV ≤ X := le_add_self
-    calc ∫⁻ y, ‖fderiv ℝ w y‖ₑ ^ (p : ℝ) ∂μ
-        ≤ 2 ^ ((p : ℝ) - 1) * ENNReal.ofReal (ρ c / 2)⁻¹ *
-            (ENNReal.ofReal C₁ ^ (p : ℝ) * ∫⁻ x, ‖mgradient I u x‖ₑ ^ (p : ℝ) ∂dV +
-              ENNReal.ofReal G ^ (p : ℝ) * ∫⁻ x, ‖u x‖ₑ ^ (p : ℝ) ∂dV) :=
-          b.lintegral_enorm_fderiv_mul_comp_extChartAt_symm_rpow_le hbr hrt hC₁.le
-            (fun y hy ↦ (hball y hy).1) (by positivity) (fun y hy ↦ (hball y hy).2.1.le) hG hu
-            (by exact_mod_cast hp)
-      _ ≤ 2 ^ ((p : ℝ) - 1) * ENNReal.ofReal (ρ c / 2)⁻¹ *
-            (ENNReal.ofReal (C₁ + G) ^ (p : ℝ) * X ^ (p : ℝ) +
-              ENNReal.ofReal (C₁ + G) ^ (p : ℝ) * X ^ (p : ℝ)) := by
-          gcongr
-          · exact hgrad.trans (ENNReal.rpow_le_rpow hX₁ hpR.le)
-          · exact (hle u).trans (ENNReal.rpow_le_rpow hX₂ hpR.le)
-      _ = (D * X) ^ (p : ℝ) := by
-          have h2 : (2 : ℝ≥0∞) ^ ((p : ℝ) - 1) * 2 ^ (1 : ℝ) = 2 ^ (p : ℝ) := by
-            rw [← ENNReal.rpow_add _ _ two_ne_zero ENNReal.ofNat_ne_top, sub_add_cancel]
-          rw [ENNReal.rpow_one] at h2
-          rw [← two_mul, ENNReal.mul_rpow_of_nonneg _ _ hpR.le,
-            ENNReal.mul_rpow_of_nonneg _ _ hpR.le, ENNReal.mul_rpow_of_nonneg _ _ hpR.le,
-            ENNReal.rpow_inv_rpow hpR.ne', ← h2]
-          ring
+  have hDw : eLpNorm (fderiv ℝ w) p μ ≤ D * X :=
+    b.eLpNorm_fderiv_mul_comp_extChartAt_symm_le hbr hrt hC₁.le (fun y hy ↦ (hball y hy).1)
+      (by positivity) (fun y hy ↦ (hball y hy).2.1.le) hG hu hp
   -- The flat Sobolev inequality for `w`.
   have hGNS : eLpNorm w p' μ ≤ K * eLpNorm (fderiv ℝ w) p μ :=
     eLpNorm_le_eLpNorm_fderiv_of_eq μ hw hwcs hp hn hp'
@@ -198,26 +160,24 @@ theorem exists_eLpNorm_le_mul_eLpNorm_mgradient_add [CompactSpace M] {p p' : ℝ
   rcases eq_or_ne p' 0 with hp'0 | hp'0
   · refine ⟨0, fun u hu ↦ ?_⟩
     simp [hp'0, eLpNorm_exponent_zero hu.continuous.aestronglyMeasurable]
-  have hp'R : 0 < (p' : ℝ) := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hp'0)
-  -- The common constant: `C₀ ^ p' = ∑ c ∈ t, C c ^ p'`.
-  set C₀ : ℝ≥0∞ := (∑ c ∈ t, (C c : ℝ≥0∞) ^ (p' : ℝ)) ^ (p' : ℝ)⁻¹
-  have hC₀ : C₀ ≠ ∞ := ENNReal.rpow_ne_top_of_nonneg (by positivity)
-    (ENNReal.sum_ne_top.2 fun c _ ↦ ENNReal.rpow_ne_top_of_nonneg hp'R.le ENNReal.coe_ne_top)
-  refine ⟨C₀.toNNReal, fun u hu ↦ ?_⟩
-  set X := eLpNorm (fun x ↦ ‖mgradient I u x‖) p (riemannianVolume I M) +
-    eLpNorm u p (riemannianVolume I M)
-  rw [ENNReal.coe_toNNReal hC₀, ← ENNReal.rpow_le_rpow_iff hp'R,
-    eLpNorm_nnreal_pow_eq_lintegral hp'0 hu.continuous.aestronglyMeasurable,
-    ENNReal.mul_rpow_of_nonneg _ _ hp'R.le, ENNReal.rpow_inv_rpow hp'R.ne', Finset.sum_mul]
-  calc ∫⁻ x, ‖u x‖ₑ ^ (p' : ℝ) ∂riemannianVolume I M
-      ≤ ∑ c ∈ t, ∫⁻ x in V c, ‖u x‖ₑ ^ (p' : ℝ) ∂riemannianVolume I M := by
-        rw [← setLIntegral_univ]
-        exact (lintegral_mono_set ht).trans (lintegral_biUnion_finset_le _ _ _)
-    _ ≤ ∑ c ∈ t, (C c : ℝ≥0∞) ^ (p' : ℝ) * X ^ (p' : ℝ) := by
-        refine Finset.sum_le_sum fun c _ ↦ ?_
-        rw [← eLpNorm_nnreal_pow_eq_lintegral hp'0 hu.continuous.aestronglyMeasurable,
-          ← ENNReal.mul_rpow_of_nonneg _ _ hp'R.le]
-        exact ENNReal.rpow_le_rpow (hC c u hu) hp'R.le
+  -- Away from `p' = 0`, the exponent is at least `1`, since `1 / p' ≤ 1 - 1 / n < 1`.
+  have hp'1 : (1 : ℝ≥0∞) ≤ p' := by
+    have hp'R : 0 < (p' : ℝ) := NNReal.coe_pos.2 (pos_iff_ne_zero.2 hp'0)
+    have hp1 : ((p⁻¹ : ℝ≥0) : ℝ) ≤ 1 := by exact_mod_cast inv_le_one_of_one_le₀ hp
+    have hnR : 0 < (finrank ℝ E : ℝ)⁻¹ := inv_pos.2 (by exact_mod_cast hn)
+    have : (1 : ℝ) ≤ p' := by
+      rw [← inv_le_inv₀ hp'R one_pos, inv_one]
+      linarith
+    exact_mod_cast this
+  refine ⟨∑ c ∈ t, C c, fun u hu ↦ ?_⟩
+  set dV := riemannianVolume I M
+  calc eLpNorm u p' dV = eLpNorm u p' (dV.restrict univ) := by rw [Measure.restrict_univ]
+    _ ≤ eLpNorm u p' (dV.restrict (⋃ c ∈ t, V c)) :=
+        eLpNorm_mono_measure _ (Measure.restrict_mono ht le_rfl)
+    _ ≤ ∑ c ∈ t, eLpNorm u p' (dV.restrict (V c)) := eLpNorm_restrict_biUnion_finset_le u hp'1 t V
+    _ ≤ ∑ c ∈ t, C c * (eLpNorm (fun x ↦ ‖mgradient I u x‖) p dV + eLpNorm u p dV) :=
+        Finset.sum_le_sum fun c _ ↦ hC c u hu
+    _ = _ := by push_cast; rw [Finset.sum_mul]
 
 /-- **The Sobolev inequality for `H¹` on a closed Riemannian manifold.** On a compact manifold
 without boundary of dimension `n > 2` with a continuous Riemannian metric, there is a constant `C`

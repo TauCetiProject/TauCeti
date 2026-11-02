@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.ContMDiff.ChartCutoff
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
 import TauCeti.Geometry.Manifold.Riemannian.Basic
+import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 
 /-!
 # Chart cutoffs on a Riemannian manifold
@@ -26,7 +27,9 @@ needs:
 * on such a ball, `∫ ‖D(b · u)‖ ^ p` with respect to Lebesgue measure on the model space is bounded
   by a constant multiple of `C₁ ^ p ∫ |∇u| ^ p dV + G ^ p ∫ |u| ^ p dV`, where `C₁` is the
   derivative comparison constant and `G` bounds the derivative of the bump
-  (`ContDiffBump.lintegral_enorm_fderiv_mul_comp_extChartAt_symm_rpow_le`);
+  (`ContDiffBump.lintegral_enorm_fderiv_mul_comp_extChartAt_symm_rpow_le`), so its `Lᵖ` norm
+  is at most a constant times `‖∇u‖_{Lᵖ} + ‖u‖_{Lᵖ}`
+  (`ContDiffBump.eLpNorm_fderiv_mul_comp_extChartAt_symm_le`);
 * where the bump is `1` and the chart density is at most `m`, an integral of `F ∘ u` over the
   chart preimage of a ball is bounded by `m` times the integral of `F (b · u)` over the ball
   (`ContDiffBump.setLIntegral_inter_preimage_le_mul_setLIntegral_mul_comp_extChartAt_symm`).
@@ -37,7 +40,7 @@ They are used for the Trudinger and Sobolev inequalities on a closed Riemannian 
 public section
 
 open Bundle Filter MeasureTheory Metric Module Set TauCeti TauCeti.Manifold
-open scoped ENNReal Manifold Topology
+open scoped ENNReal NNReal Manifold Topology
 
 noncomputable section
 
@@ -163,6 +166,60 @@ theorem lintegral_enorm_fderiv_mul_comp_extChartAt_symm_rpow_le [LindelofSpace M
         · exact setLIntegral_comp_extChartAt_symm_le_mul_lintegral c isOpen_ball hrt hm hρ
             fun x ↦ ‖u x‖ₑ ^ p
     _ = _ := by ring
+
+/-- **The derivative of a chart cutoff in `Lᵖ`, in norm form.** Let `1 ≤ p`. On a coordinate ball
+where the chart derivative is bounded by `C₁` times the gradient and the chart density is at least
+`m`, the cut-off coordinate expression of a `C¹` function `u` has
+`‖D(b · u)‖_{Lᵖ} ≤ 2 (C₁ + G) m^{-1/p} (‖∇u‖_{Lᵖ} + ‖u‖_{Lᵖ})`, where `G` bounds the derivative of
+the bump `b`. -/
+theorem eLpNorm_fderiv_mul_comp_extChartAt_symm_le [LindelofSpace M] {c : M}
+    (b : ContDiffBump (extChartAt I c c)) {r : ℝ}
+    (hbr : closedBall (extChartAt I c c) b.rOut ⊆ ball (extChartAt I c c) r)
+    (hrt : ball (extChartAt I c c) r ⊆ (extChartAt I c).target) {C₁ : ℝ}
+    (hC₁ : 0 ≤ C₁) (hcmp : ∀ y ∈ ball (extChartAt I c c) r, ∀ f : M → ℝ,
+      ‖fderiv ℝ (f ∘ (extChartAt I c).symm) y‖ ≤ C₁ * ‖mgradient I f ((extChartAt I c).symm y)‖)
+    {m : ℝ} (hm : 0 < m) (hρ : ∀ y ∈ ball (extChartAt I c c) r,
+      m ≤ chartVolumeDensity (I := I) c ((extChartAt I c).symm y))
+    {G : ℝ} (hG : ∀ y, ‖fderiv ℝ b y‖ ≤ G) {u : M → ℝ} (hu : ContMDiff I 𝓘(ℝ) 1 u)
+    {p : ℝ≥0} (hp : 1 ≤ p) :
+    eLpNorm (fderiv ℝ (fun y ↦ b y * u ((extChartAt I c).symm y))) p
+        (Module.finBasis ℝ E).addHaar ≤
+      2 * ENNReal.ofReal (C₁ + G) * ENNReal.ofReal m⁻¹ ^ (p : ℝ)⁻¹ *
+        (eLpNorm (fun x ↦ ‖mgradient I u x‖) p (riemannianVolume I M) +
+          eLpNorm u p (riemannianVolume I M)) := by
+  set X := eLpNorm (fun x ↦ ‖mgradient I u x‖) p (riemannianVolume I M) +
+    eLpNorm u p (riemannianVolume I M)
+  have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp).ne'
+  have hpR : 0 < (p : ℝ) := NNReal.coe_pos.2 (zero_lt_one.trans_le hp)
+  have hG0 : 0 ≤ G := (norm_nonneg _).trans (hG 0)
+  have hw := b.contDiff_mul_comp_extChartAt_symm (hbr.trans hrt) hu
+  have hgrad := lintegral_rpow_enorm_le_rpow_eLpNorm (μ := riemannianVolume I M) hp0
+    fun x ↦ ‖mgradient I u x‖
+  simp only [enorm_norm] at hgrad
+  rw [← ENNReal.rpow_le_rpow_iff hpR,
+    eLpNorm_nnreal_pow_eq_lintegral hp0 (hw.continuous_fderiv one_ne_zero).aestronglyMeasurable]
+  calc _ ≤ 2 ^ ((p : ℝ) - 1) * ENNReal.ofReal m⁻¹ *
+          (ENNReal.ofReal C₁ ^ (p : ℝ) * ∫⁻ x, ‖mgradient I u x‖ₑ ^ (p : ℝ) ∂riemannianVolume I M +
+            ENNReal.ofReal G ^ (p : ℝ) * ∫⁻ x, ‖u x‖ₑ ^ (p : ℝ) ∂riemannianVolume I M) :=
+        b.lintegral_enorm_fderiv_mul_comp_extChartAt_symm_rpow_le hbr hrt hC₁ hcmp hm hρ hG hu
+          (by exact_mod_cast hp)
+    _ ≤ 2 ^ ((p : ℝ) - 1) * ENNReal.ofReal m⁻¹ *
+          (ENNReal.ofReal (C₁ + G) ^ (p : ℝ) * X ^ (p : ℝ) +
+            ENNReal.ofReal (C₁ + G) ^ (p : ℝ) * X ^ (p : ℝ)) := by
+        gcongr
+        · exact le_add_of_nonneg_right hG0
+        · exact hgrad.trans (ENNReal.rpow_le_rpow le_self_add hpR.le)
+        · exact le_add_of_nonneg_left hC₁
+        · exact (lintegral_rpow_enorm_le_rpow_eLpNorm hp0 u).trans
+            (ENNReal.rpow_le_rpow le_add_self hpR.le)
+    _ = _ := by
+        have h2 : (2 : ℝ≥0∞) ^ ((p : ℝ) - 1) * 2 ^ (1 : ℝ) = 2 ^ (p : ℝ) := by
+          rw [← ENNReal.rpow_add _ _ two_ne_zero ENNReal.ofNat_ne_top, sub_add_cancel]
+        rw [ENNReal.rpow_one] at h2
+        rw [← two_mul, ENNReal.mul_rpow_of_nonneg _ _ hpR.le,
+          ENNReal.mul_rpow_of_nonneg _ _ hpR.le, ENNReal.mul_rpow_of_nonneg _ _ hpR.le,
+          ENNReal.rpow_inv_rpow hpR.ne', ← h2]
+        ring
 
 omit [I.Boundaryless] in
 /-- **Reading a chart cutoff back on `M`.** If the chart density is at most `m` on the ball of
