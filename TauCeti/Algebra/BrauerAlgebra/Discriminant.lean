@@ -102,8 +102,8 @@ theorem aeval_discr {R : Type*} [CommRing R] (δ : R) :
   rw [discr, AlgHom.map_det]
   congr 1
   ext D D'
-  rw [AlgHom.mapMatrix_apply, Matrix.map_apply, Matrix.of_apply, BilinForm.toMatrix_apply,
-    Algebra.regularTraceForm_apply, basis_apply, basis_apply]
+  simp only [AlgHom.mapMatrix_apply, Matrix.map_apply, Matrix.of_apply, BilinForm.toMatrix_apply,
+    Algebra.regularTraceForm_apply, basis_apply]
   have hL : Algebra.lmul R (BrauerAlgebra R δ k) (of D * of D') = mulLeft R (of D * of D') :=
     LinearMap.ext fun x => by
       rw [Algebra.coe_lmul_eq_mul, mul_apply', mulLeft_apply]
