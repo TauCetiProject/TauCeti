@@ -80,13 +80,15 @@ theorem mem_rightRadical_iff (y : M) : y ∈ rightRadical b ↔ ∀ x : L, b x y
 
 /-- A sesquilinear map is left-separating exactly when its left radical is trivial. -/
 theorem separatingLeft_iff_leftRadical_eq_bot :
-    b.SeparatingLeft ↔ leftRadical b = ⊥ :=
-  LinearMap.separatingLeft_iff_ker_eq_bot
+    b.SeparatingLeft ↔ leftRadical b = ⊥ := by
+  rw [leftRadical]
+  exact LinearMap.separatingLeft_iff_ker_eq_bot
 
 /-- A sesquilinear map is right-separating exactly when its right radical is trivial. -/
 theorem separatingRight_iff_rightRadical_eq_bot :
-    b.SeparatingRight ↔ rightRadical b = ⊥ :=
-  LinearMap.separatingRight_iff_flip_ker_eq_bot
+    b.SeparatingRight ↔ rightRadical b = ⊥ := by
+  rw [rightRadical]
+  exact LinearMap.separatingRight_iff_flip_ker_eq_bot
 
 end Radicals
 
