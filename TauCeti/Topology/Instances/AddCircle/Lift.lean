@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Topology.Instances.AddCircle.Real
 
-import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 import Mathlib.Analysis.Convex.Contractible
 import Mathlib.Topology.Algebra.Module.LocallyConvex
 import Mathlib.Topology.Covering.AddCircle
