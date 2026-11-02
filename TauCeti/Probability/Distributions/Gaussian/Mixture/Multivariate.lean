@@ -54,53 +54,44 @@ variable {p : StdSimplex ℝ≥0 κ} {m : κ → EuclideanSpace ℝ ι} {S : κ 
 /-- The finite mixture of the multivariate Gaussian laws `N(m k, S k)` with weights `p`. -/
 def multivariateGaussianMixtureMeasure (p : StdSimplex ℝ≥0 κ) (m : κ → EuclideanSpace ℝ ι)
     (S : κ → Matrix ι ι ℝ) : Measure (EuclideanSpace ℝ ι) :=
-  ∑ k, (p.weights k : ℝ≥0∞) • multivariateGaussian (m k) (S k)
+  finiteMixtureMeasure p fun k ↦ multivariateGaussian (m k) (S k)
 
 /-- The multivariate Gaussian mixture as its defining weighted sum of Gaussian laws. -/
 theorem multivariateGaussianMixtureMeasure_def (p : StdSimplex ℝ≥0 κ)
     (m : κ → EuclideanSpace ℝ ι) (S : κ → Matrix ι ι ℝ) :
     multivariateGaussianMixtureMeasure p m S =
       ∑ k, (p.weights k : ℝ≥0∞) • multivariateGaussian (m k) (S k) :=
-  (rfl)
+  finiteMixtureMeasure_def p _
 
 /-- Every multivariate Gaussian mixture is a probability measure. -/
 instance isProbabilityMeasure_multivariateGaussianMixtureMeasure (p : StdSimplex ℝ≥0 κ)
     (m : κ → EuclideanSpace ℝ ι) (S : κ → Matrix ι ι ℝ) :
     IsProbabilityMeasure (multivariateGaussianMixtureMeasure p m S) := by
-  constructor
-  simp only [multivariateGaussianMixtureMeasure_def, Measure.finsetSum_apply,
-    Measure.smul_apply, measure_univ, smul_eq_mul, mul_one]
-  exact_mod_cast p.total_of_fintype
+  exact isProbabilityMeasure_finiteMixtureMeasure fun _ ↦ inferInstance
 
 /-- The multivariate Gaussian mixture is the categorical mixture of its Gaussian components. -/
 theorem multivariateGaussianMixtureMeasure_eq_bind [MeasurableSpace κ]
     [MeasurableSingletonClass κ] (p : StdSimplex ℝ≥0 κ) (m : κ → EuclideanSpace ℝ ι)
     (S : κ → Matrix ι ι ℝ) :
     multivariateGaussianMixtureMeasure p m S =
-      (categoricalMeasure p).bind fun k ↦ multivariateGaussian (m k) (S k) := by
-  ext s hs
-  rw [multivariateGaussianMixtureMeasure_def, Measure.finsetSum_apply,
-    Measure.bind_apply hs Measurable.of_discrete.aemeasurable, lintegral_fintype]
-  simp only [categoricalMeasure_singleton, Measure.smul_apply, smul_eq_mul, mul_comm]
+      (categoricalMeasure p).bind fun k ↦ multivariateGaussian (m k) (S k) :=
+  finiteMixtureMeasure_eq_bind p _
 
 /-- A mixture of identical multivariate Gaussian components is that Gaussian law. -/
 @[simp]
 theorem multivariateGaussianMixtureMeasure_const (p : StdSimplex ℝ≥0 κ)
     (μ : EuclideanSpace ℝ ι) (C : Matrix ι ι ℝ) :
-    multivariateGaussianMixtureMeasure p (fun _ ↦ μ) (fun _ ↦ C) = multivariateGaussian μ C := by
-  rw [multivariateGaussianMixtureMeasure_def, ← Finset.sum_smul]
-  have hw : ∑ k, (p.weights k : ℝ≥0∞) = 1 := by exact_mod_cast p.total_of_fintype
-  rw [hw, one_smul]
+    multivariateGaussianMixtureMeasure p (fun _ ↦ μ) (fun _ ↦ C) = multivariateGaussian μ C :=
+  finiteMixtureMeasure_const p _
 
 /-- Changing the parameters of zero-weight components leaves the mixture unchanged. -/
 theorem multivariateGaussianMixtureMeasure_congr {m' : κ → EuclideanSpace ℝ ι}
     {S' : κ → Matrix ι ι ℝ} (h : ∀ k, 0 < p.weights k → m k = m' k ∧ S k = S' k) :
     multivariateGaussianMixtureMeasure p m S = multivariateGaussianMixtureMeasure p m' S' := by
-  refine Finset.sum_congr rfl fun k _ ↦ ?_
-  by_cases hk : p.weights k = 0
-  · simp [hk]
-  · obtain ⟨hm, hS⟩ := h k (pos_iff_ne_zero.mpr hk)
-    rw [hm, hS]
+  apply finiteMixtureMeasure_congr
+  intro k hk
+  obtain ⟨hm, hS⟩ := h k hk
+  rw [hm, hS]
 
 /-- Multivariate Gaussian mixtures are measurable in their weights, means, and covariance
 parameters. -/
@@ -108,18 +99,14 @@ parameters. -/
 theorem measurable_multivariateGaussianMixtureMeasure :
     Measurable fun z : StdSimplex ℝ≥0 κ × (κ → EuclideanSpace ℝ ι) × (κ → Matrix ι ι ℝ) ↦
       multivariateGaussianMixtureMeasure z.1 z.2.1 z.2.2 := by
-  have hw (k : κ) : Measurable fun p : StdSimplex ℝ≥0 κ ↦ p.weights k :=
-    (measurable_pi_apply k).comp StdSimplex.measurable_toFun_comp_weights
-  simp only [multivariateGaussianMixtureMeasure_def]
-  refine Finset.measurable_sum _ fun k _ ↦ Measure.measurable_measure.mpr fun s hs ↦ ?_
-  simp only [Measure.smul_apply, smul_eq_mul]
-  have hg : Measurable fun z : StdSimplex ℝ≥0 κ × (κ → EuclideanSpace ℝ ι) ×
-      (κ → Matrix ι ι ℝ) ↦ multivariateGaussian (z.2.1 k) (z.2.2 k) :=
-    measurable_multivariateGaussian.comp
-      (f := fun z : StdSimplex ℝ≥0 κ × (κ → EuclideanSpace ℝ ι) × (κ → Matrix ι ι ℝ) ↦
-        (z.2.1 k, z.2.2 k)) (by fun_prop)
-  exact (measurable_coe_nnreal_ennreal.comp ((hw k).comp measurable_fst)).mul
-    ((Measure.measurable_coe hs).comp hg)
+  refine measurable_finiteMixtureMeasure
+    (p := fun z : StdSimplex ℝ≥0 κ × (κ → EuclideanSpace ℝ ι) ×
+      (κ → Matrix ι ι ℝ) ↦ z.1)
+    (K := fun z k ↦ multivariateGaussian (z.2.1 k) (z.2.2 k)) (by fun_prop) ?_
+  intro k
+  exact measurable_multivariateGaussian.comp
+    (f := fun z : StdSimplex ℝ≥0 κ × (κ → EuclideanSpace ℝ ι) ×
+      (κ → Matrix ι ι ℝ) ↦ (z.2.1 k, z.2.2 k)) (by fun_prop)
 
 /-! ### Densities -/
 
@@ -338,14 +325,8 @@ variable {E : Type*} [NormedAddCommGroup E] {f : EuclideanSpace ℝ ι → E}
 positive-weight component. -/
 theorem integrable_multivariateGaussianMixtureMeasure_iff :
     Integrable f (multivariateGaussianMixtureMeasure p m S) ↔
-      ∀ k, 0 < p.weights k → Integrable f (multivariateGaussian (m k) (S k)) := by
-  rw [multivariateGaussianMixtureMeasure_def, integrable_finsetSum_measure]
-  simp only [Finset.mem_univ, forall_const]
-  refine forall_congr' fun k ↦ ?_
-  by_cases hk : p.weights k = 0
-  · simp [hk]
-  · rw [integrable_smul_measure (by simpa using hk) ENNReal.coe_ne_top]
-    exact ⟨fun h _ ↦ h, fun h ↦ h (pos_iff_ne_zero.mpr hk)⟩
+      ∀ k, 0 < p.weights k → Integrable f (multivariateGaussian (m k) (S k)) :=
+  integrable_finiteMixtureMeasure_iff
 
 variable [NormedSpace ℝ E]
 
@@ -354,10 +335,8 @@ expectations. -/
 theorem integral_multivariateGaussianMixtureMeasure
     (hf : Integrable f (multivariateGaussianMixtureMeasure p m S)) :
     ∫ x, f x ∂multivariateGaussianMixtureMeasure p m S =
-      ∑ k, (p.weights k : ℝ) • ∫ x, f x ∂multivariateGaussian (m k) (S k) := by
-  rw [multivariateGaussianMixtureMeasure_def] at hf ⊢
-  rw [integral_finsetSum_measure (integrable_finsetSum_measure.mp hf)]
-  simp only [integral_smul_measure, ENNReal.coe_toReal]
+      ∑ k, (p.weights k : ℝ) • ∫ x, f x ∂multivariateGaussian (m k) (S k) :=
+  integral_finiteMixtureMeasure hf
 
 end Integration
 
@@ -379,14 +358,17 @@ theorem mgf_inner_multivariateGaussianMixtureMeasure
     mgf (fun x ↦ ⟪θ, x⟫) (multivariateGaussianMixtureMeasure p m S) t =
       ∑ k, (p.weights k : ℝ) *
         Real.exp (t * ⟪θ, m k⟫ + t ^ 2 / 2 * ⟪θ, (S k).toEuclideanLin θ⟫) := by
-  have hf : Integrable (fun x ↦ Real.exp (t * ⟪θ, x⟫))
-      (multivariateGaussianMixtureMeasure p m S) :=
-    integrable_of_mem_integrableExpSet (by simp)
-  rw [mgf, integral_multivariateGaussianMixtureMeasure hf]
+  let _ : MeasurableSpace κ := ⊤
+  have ht : t ∈ integrableExpSet (fun x ↦ ⟪θ, x⟫)
+      ((categoricalMeasure p).bind fun k ↦ multivariateGaussian (m k) (S k)) := by
+    rw [← multivariateGaussianMixtureMeasure_eq_bind]
+    simp
+  rw [multivariateGaussianMixtureMeasure_eq_bind, Measure.mgf_bind _
+    Measurable.of_discrete.aemeasurable _ t ht, integral_categoricalMeasure]
   refine Finset.sum_congr rfl fun k _ ↦ ?_
   by_cases hk : p.weights k = 0
   · simp [hk]
-  · rw [smul_eq_mul, ← mgf, mgf_inner_multivariateGaussian (m k) θ
+  · rw [smul_eq_mul, mgf_inner_multivariateGaussian (m k) θ
       (hS k (pos_iff_ne_zero.mpr hk)) t]
 
 /-- The cumulant-generating function of a linear observable of a multivariate Gaussian mixture is
@@ -396,7 +378,19 @@ theorem cgf_inner_multivariateGaussianMixtureMeasure
     cgf (fun x ↦ ⟪θ, x⟫) (multivariateGaussianMixtureMeasure p m S) t =
       Real.log (∑ k, (p.weights k : ℝ) *
         Real.exp (t * ⟪θ, m k⟫ + t ^ 2 / 2 * ⟪θ, (S k).toEuclideanLin θ⟫)) := by
-  rw [cgf, mgf_inner_multivariateGaussianMixtureMeasure hS]
+  let _ : MeasurableSpace κ := ⊤
+  have ht : t ∈ integrableExpSet (fun x ↦ ⟪θ, x⟫)
+      ((categoricalMeasure p).bind fun k ↦ multivariateGaussian (m k) (S k)) := by
+    rw [← multivariateGaussianMixtureMeasure_eq_bind]
+    simp
+  rw [multivariateGaussianMixtureMeasure_eq_bind, Measure.cgf_bind _
+    Measurable.of_discrete.aemeasurable _ t ht, integral_categoricalMeasure]
+  congr 1
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  by_cases hk : p.weights k = 0
+  · simp [hk]
+  · rw [smul_eq_mul, mgf_inner_multivariateGaussian (m k) θ
+      (hS k (pos_iff_ne_zero.mpr hk)) t]
 
 /-- The characteristic function of a multivariate Gaussian mixture with positive-semidefinite
 positive-weight components is the weighted sum of the Gaussian characteristic functions. -/
@@ -422,11 +416,8 @@ theorem charFun_multivariateGaussianMixtureMeasure
 theorem memLp_id_multivariateGaussianMixtureMeasure (p : StdSimplex ℝ≥0 κ)
     (m : κ → EuclideanSpace ℝ ι) (S : κ → Matrix ι ι ℝ) {q : ℝ≥0∞} (hq : q ≠ ∞) :
     MemLp id q (multivariateGaussianMixtureMeasure p m S) := by
-  rw [multivariateGaussianMixtureMeasure_def]
-  exact Finset.sum_induction _ (fun μ : Measure (EuclideanSpace ℝ ι) ↦ MemLp id q μ)
-    (fun _ _ ↦ MemLp.add_measure) memLp_measure_zero fun k _ ↦
-      (IsGaussian.memLp_id (multivariateGaussian (m k) (S k)) q hq).smul_measure
-        ENNReal.coe_ne_top
+  exact memLp_finiteMixtureMeasure fun k ↦
+    IsGaussian.memLp_id (multivariateGaussian (m k) (S k)) q hq
 
 /-- The mean of a multivariate Gaussian mixture is the weighted mean of the component means. -/
 @[simp]

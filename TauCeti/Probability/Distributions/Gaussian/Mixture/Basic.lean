@@ -46,65 +46,52 @@ variable {p : StdSimplex ℝ≥0 ι} {m : ι → ℝ} {v : ι → ℝ≥0}
 
 /-- The finite mixture of the real Gaussian laws `N(m i, v i)` with weights `p`. -/
 def gaussianMixtureMeasure (p : StdSimplex ℝ≥0 ι) (m : ι → ℝ) (v : ι → ℝ≥0) : Measure ℝ :=
-  ∑ i, (p.weights i : ℝ≥0∞) • gaussianReal (m i) (v i)
+  finiteMixtureMeasure p fun i ↦ gaussianReal (m i) (v i)
 
 /-- The Gaussian mixture as its defining weighted sum of Gaussian laws. -/
 theorem gaussianMixtureMeasure_def (p : StdSimplex ℝ≥0 ι) (m : ι → ℝ) (v : ι → ℝ≥0) :
     gaussianMixtureMeasure p m v = ∑ i, (p.weights i : ℝ≥0∞) • gaussianReal (m i) (v i) :=
-  (rfl)
+  finiteMixtureMeasure_def p _
 
 /-- Every Gaussian mixture is a probability measure, including zero-variance components. -/
 instance isProbabilityMeasure_gaussianMixtureMeasure (p : StdSimplex ℝ≥0 ι) (m : ι → ℝ)
     (v : ι → ℝ≥0) : IsProbabilityMeasure (gaussianMixtureMeasure p m v) := by
-  constructor
-  simp only [gaussianMixtureMeasure_def, Measure.finsetSum_apply, Measure.smul_apply,
-    measure_univ, smul_eq_mul, mul_one]
-  exact_mod_cast p.total_of_fintype
+  exact isProbabilityMeasure_finiteMixtureMeasure fun _ ↦ inferInstance
 
 /-- The Gaussian mixture is the categorical mixture of its Gaussian components. -/
 theorem gaussianMixtureMeasure_eq_bind [MeasurableSpace ι] [MeasurableSingletonClass ι]
     (p : StdSimplex ℝ≥0 ι) (m : ι → ℝ) (v : ι → ℝ≥0) :
     gaussianMixtureMeasure p m v =
-      (categoricalMeasure p).bind fun i ↦ gaussianReal (m i) (v i) := by
-  ext s hs
-  rw [gaussianMixtureMeasure_def, Measure.finsetSum_apply,
-    Measure.bind_apply hs Measurable.of_discrete.aemeasurable, lintegral_fintype]
-  simp only [categoricalMeasure_singleton, Measure.smul_apply, smul_eq_mul, mul_comm]
+      (categoricalMeasure p).bind fun i ↦ gaussianReal (m i) (v i) :=
+  finiteMixtureMeasure_eq_bind p _
 
 /-- A mixture of identical Gaussian components is that Gaussian law. -/
 @[simp]
 theorem gaussianMixtureMeasure_const (p : StdSimplex ℝ≥0 ι) (μ : ℝ) (σ2 : ℝ≥0) :
-    gaussianMixtureMeasure p (fun _ ↦ μ) (fun _ ↦ σ2) = gaussianReal μ σ2 := by
-  rw [gaussianMixtureMeasure_def, ← Finset.sum_smul]
-  have hw : ∑ i, (p.weights i : ℝ≥0∞) = 1 := by exact_mod_cast p.total_of_fintype
-  rw [hw, one_smul]
+    gaussianMixtureMeasure p (fun _ ↦ μ) (fun _ ↦ σ2) = gaussianReal μ σ2 :=
+  finiteMixtureMeasure_const p _
 
 /-- Changing the parameters of zero-weight components leaves the mixture unchanged. -/
 theorem gaussianMixtureMeasure_congr {m' : ι → ℝ} {v' : ι → ℝ≥0}
     (h : ∀ i, 0 < p.weights i → m i = m' i ∧ v i = v' i) :
     gaussianMixtureMeasure p m v = gaussianMixtureMeasure p m' v' := by
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  by_cases hi : p.weights i = 0
-  · simp [hi]
-  · obtain ⟨hm, hv⟩ := h i (pos_iff_ne_zero.mpr hi)
-    rw [hm, hv]
+  apply finiteMixtureMeasure_congr
+  intro i hi
+  obtain ⟨hm, hv⟩ := h i hi
+  rw [hm, hv]
 
 /-- Gaussian mixtures are measurable in their weights, means, and variances. -/
 @[fun_prop]
 theorem measurable_gaussianMixtureMeasure :
     Measurable fun z : StdSimplex ℝ≥0 ι × (ι → ℝ) × (ι → ℝ≥0) ↦
       gaussianMixtureMeasure z.1 z.2.1 z.2.2 := by
-  have hw (i : ι) : Measurable fun p : StdSimplex ℝ≥0 ι ↦ p.weights i :=
-    (measurable_pi_apply i).comp StdSimplex.measurable_toFun_comp_weights
-  simp only [gaussianMixtureMeasure_def]
-  refine Finset.measurable_sum _ fun i _ ↦ Measure.measurable_measure.mpr fun s hs ↦ ?_
-  simp only [Measure.smul_apply, smul_eq_mul]
-  have hg : Measurable fun z : StdSimplex ℝ≥0 ι × (ι → ℝ) × (ι → ℝ≥0) ↦
-      gaussianReal (z.2.1 i) (z.2.2 i) :=
-    measurable_gaussianReal.comp
-      (f := fun z : StdSimplex ℝ≥0 ι × (ι → ℝ) × (ι → ℝ≥0) ↦ (z.2.1 i, z.2.2 i)) (by fun_prop)
-  exact (measurable_coe_nnreal_ennreal.comp ((hw i).comp measurable_fst)).mul
-    ((Measure.measurable_coe hs).comp hg)
+  refine measurable_finiteMixtureMeasure
+    (p := fun z : StdSimplex ℝ≥0 ι × (ι → ℝ) × (ι → ℝ≥0) ↦ z.1)
+    (K := fun z i ↦ gaussianReal (z.2.1 i) (z.2.2 i)) (by fun_prop) ?_
+  intro i
+  exact measurable_gaussianReal.comp
+    (f := fun z : StdSimplex ℝ≥0 ι × (ι → ℝ) × (ι → ℝ≥0) ↦
+      (z.2.1 i, z.2.2 i)) (by fun_prop)
 
 /-! ### Densities -/
 
@@ -264,14 +251,8 @@ variable {E : Type*} [NormedAddCommGroup E] {f : ℝ → E}
 component. -/
 theorem integrable_gaussianMixtureMeasure_iff :
     Integrable f (gaussianMixtureMeasure p m v) ↔
-      ∀ i, 0 < p.weights i → Integrable f (gaussianReal (m i) (v i)) := by
-  rw [gaussianMixtureMeasure_def, integrable_finsetSum_measure]
-  simp only [Finset.mem_univ, forall_const]
-  refine forall_congr' fun i ↦ ?_
-  by_cases hi : p.weights i = 0
-  · simp [hi]
-  · rw [integrable_smul_measure (by simpa using hi) ENNReal.coe_ne_top]
-    exact ⟨fun h _ ↦ h, fun h ↦ h (pos_iff_ne_zero.mpr hi)⟩
+      ∀ i, 0 < p.weights i → Integrable f (gaussianReal (m i) (v i)) :=
+  integrable_finiteMixtureMeasure_iff
 
 variable [NormedSpace ℝ E]
 
@@ -279,10 +260,8 @@ variable [NormedSpace ℝ E]
 expectations. -/
 theorem integral_gaussianMixtureMeasure (hf : Integrable f (gaussianMixtureMeasure p m v)) :
     ∫ x, f x ∂gaussianMixtureMeasure p m v =
-      ∑ i, (p.weights i : ℝ) • ∫ x, f x ∂gaussianReal (m i) (v i) := by
-  rw [gaussianMixtureMeasure_def] at hf ⊢
-  rw [integral_finsetSum_measure (integrable_finsetSum_measure.mp hf)]
-  simp only [integral_smul_measure, ENNReal.coe_toReal]
+      ∑ i, (p.weights i : ℝ) • ∫ x, f x ∂gaussianReal (m i) (v i) :=
+  integral_finiteMixtureMeasure hf
 
 end Integration
 
