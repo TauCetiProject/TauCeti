@@ -11,6 +11,7 @@ public import TauCeti.MeasureTheory.OptimalTransport.MetricMeasure.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.MetricMeasure.DistortionCoefficient
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.RenyiEntropy
 import TauCeti.Analysis.Convex.McCannCondition
+import TauCeti.Data.EReal.Operations
 import TauCeti.MeasureTheory.OptimalTransport.Brenier
 import TauCeti.MeasureTheory.OptimalTransport.Cost.Quadratic
 import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.InternalEnergy.DisplacementConvexity
@@ -145,16 +146,6 @@ theorem CurvatureDimension.mono (h : M.CurvatureDimension K N) (hK : K' ≤ K) (
   · exact distortionTau_left_monotone (sub_nonneg.2 t.2.2) (sub_le_self _ t.2.1) hK
   · exact distortionTau_left_monotone t.2.1 t.2.2 hK
 
-/-- The negative of a nonnegative combination `a x + b y` in `ℝ≥0∞`, read in `EReal`, is the
-same combination of `-x` and `-y`. -/
-private theorem neg_coe_ofReal_mul_add_ofReal_mul {a b : ℝ} (ha : 0 ≤ a)
-    (hb : 0 ≤ b) (x y : ℝ≥0∞) :
-    -((ENNReal.ofReal a * x + ENNReal.ofReal b * y : ℝ≥0∞) : EReal) =
-      (a : EReal) * -(x : EReal) + (b : EReal) * -(y : EReal) := by
-  rw [EReal.coe_ennreal_add,
-    EReal.neg_add (.inl (EReal.coe_ennreal_ne_bot _)) (.inr (EReal.coe_ennreal_ne_bot _))]
-  simp [EReal.coe_ennreal_ofReal, ha, hb, sub_eq_add_neg]
-
 /-- In the flat case, the right side of the curvature-dimension inequality is the convex
 combination of the endpoint Rényi entropies. -/
 private theorem neg_lintegral_distortionTau_zero {μ₀ μ₁ : ProbabilityMeasure X}
@@ -187,7 +178,7 @@ private theorem neg_lintegral_distortionTau_zero {μ₀ μ₁ : ProbabilityMeasu
   simp only [distortionTau_zero_left]
   rw [hint, renyiEntropy_eq_neg_lintegral_rpow_neg hN' h₀,
     renyiEntropy_eq_neg_lintegral_rpow_neg hN' h₁]
-  exact neg_coe_ofReal_mul_add_ofReal_mul (sub_nonneg.2 t.2.2) t.2.1 _ _
+  exact EReal.neg_coe_ennreal_ofReal_mul_add_ofReal_mul (sub_nonneg.2 t.2.2) t.2.1 _ _
 
 /-- **The flat curvature-dimension condition.** For `N > 0`, `CD(0, N)` holds exactly when the
 reference measure has full support and any two absolutely continuous laws with bounded support
