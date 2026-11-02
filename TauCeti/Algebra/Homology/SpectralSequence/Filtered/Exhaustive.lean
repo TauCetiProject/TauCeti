@@ -30,10 +30,13 @@ statements for the spectral sequence of an exhaustive filtration.
 * If the graded pieces `F_{i+1}/F_i` have vanishing `H^m` for all `i ≥ b`, so does the quotient
   `K/F_b` (`CochainComplex.isZero_homology_cokernel_arrow_of_exhaustive`). For a first-quadrant
   spectral sequence this holds in every degree, for some `b` depending on the degree. Then
-  `F_b H^n = H^n(K)` (`CochainComplex.isIso_filtrationAbutmentFiltrationι_of_exhaustive`), each
-  object of the spectral sequence is the corresponding graded piece of `H^n(K)` from some page on
-  (`CochainComplex.filtrationSpectralSequencePageXIsoGradedOfExhaustive`), and a morphism of such
-  filtered complexes which is an isomorphism on some page induces isomorphisms in cohomology
+  `F_b H^n = H^n(K)` (`CochainComplex.isIso_filtrationAbutmentFiltrationι_of_exhaustive`). If
+  moreover `H^{n+1}(F_{q-r+2})` vanishes (for instance if `F_{q-r+2} = ⊥`), the object at `(p, q)`
+  with `p + q = n` on page `r` is the corresponding graded piece of `H^n(K)`
+  (`CochainComplex.filtrationSpectralSequencePageXIsoGradedOfExhaustive`). If the cohomology of
+  the stages `F_i` and `G_i` of two filtrations vanishes in degrees `n` and `n + 1` for all `i ≤ a`
+  (for instance if `F_a = G_a = ⊥`), a morphism of such filtered complexes which is an isomorphism
+  on some page induces an isomorphism on `H^n`
   (`CochainComplex.isIso_homologyMap_of_isIso_spectralSequence_page_of_exhaustive`).
 
 The vanishing of `H^m(F_j/F_b)` for every finite stage `j ≥ b` holds in any abelian category
@@ -133,9 +136,7 @@ lemma isZero_homology_cokernel_arrow_of_isZero_cokernel_ofLE {b m : ℤ}
     refine ⟨⟨max b q, le_max_left b q⟩,
       (cokernel.π (Subobject.ofLE (F b) (F (max b q)) (hF (le_max_left b q)))).f m
         ((Subobject.ofLE (F q) (F (max b q)) hq).f m y), ?_⟩
-    rw [← ModuleCat.comp_apply, ← HomologicalComplex.comp_f, cokernel.π_desc,
-      ← ModuleCat.comp_apply, ← HomologicalComplex.comp_f, ← Category.assoc,
-      Subobject.ofLE_arrow, HomologicalComplex.comp_f, ModuleCat.comp_apply]
+    simp [φ, ← ModuleCat.comp_apply, ← HomologicalComplex.comp_f]
   -- Hence every class of `H^m(K/F_b)` comes from some `H^m(F_j/F_b) = 0`.
   refine ModuleCat.isZero_iff_subsingleton.2 ⟨fun z z' ↦ ?_⟩
   suffices ∀ z : (cokernel (F b).arrow).homology m, z = 0 by rw [this z, this z']
@@ -189,15 +190,20 @@ noncomputable def filtrationSpectralSequencePageXIsoGradedOfExhaustive (r : ℤ)
     (spectralObject _).EInftyIsoCokernel _ _
 
 /-- **The comparison theorem for exhaustive filtrations.** Let `α` be a morphism between the
-functors of filtrations `F` of `K` and `G` of `L` with `F_a = G_a = ⊥`, and let `n` be a degree.
-Suppose that in degrees `n - 1` and `n` every element of `K` and of `L` lies in some stage of the
-filtration, and that the graded pieces of both filtrations at all indices `i ≥ b` have vanishing
-cohomology. If the morphism of spectral sequences induced by `α` is an isomorphism on every object
-of some page `r ≥ 2`, then `α.app ⊤` induces an isomorphism on `H^n`. -/
+functors of filtrations `F` of `K` and `G` of `L`, and let `n` be a degree. Suppose that the
+stages `F_i` and `G_i` at all indices `i ≤ a` have vanishing cohomology in degrees `n` and `n + 1`
+(for instance `F_a = G_a = ⊥`), that in degrees `n - 1` and `n` every element of `K` and of `L`
+lies in some stage of the filtration, and that the graded pieces of both filtrations at all
+indices `i ≥ b` have vanishing cohomology. If the morphism of spectral sequences induced by `α`
+is an isomorphism on every object of some page `r ≥ 2`, then `α.app ⊤` induces an isomorphism
+on `H^n`. -/
 theorem isIso_homologyMap_of_isIso_spectralSequence_page_of_exhaustive
     {L : CochainComplex (ModuleCat R) ℤ} (G : ℤ → Subobject L) (hG : Monotone G)
     (α : filtrationFunctor F hF ⟶ filtrationFunctor G hG) (n : ℤ) {a b : ℤ} (hab : a ≤ b)
-    (hFa : F a = ⊥) (hGa : G a = ⊥)
+    (hFa : ∀ m, n ≤ m → m ≤ n + 1 → ∀ i, i ≤ a →
+      IsZero ((F i : CochainComplex (ModuleCat R) ℤ).homology m))
+    (hGa : ∀ m, n ≤ m → m ≤ n + 1 → ∀ i, i ≤ a →
+      IsZero ((G i : CochainComplex (ModuleCat R) ℤ).homology m))
     (hFex : ∀ m, n - 1 ≤ m → m ≤ n →
       ∀ x : K.X m, ∃ q, x ∈ LinearMap.range ((F q).arrow.f m).hom)
     (hGex : ∀ m, n - 1 ≤ m → m ≤ n →
@@ -214,10 +220,8 @@ theorem isIso_homologyMap_of_isIso_spectralSequence_page_of_exhaustive
     IsIso (HomologicalComplex.homologyMap (α.app ⊤) n) :=
   isIso_homologyMap_app_top_of_isIso_abutment α n <|
     isIso_hom_app_abutment_of_isIso_page (spectralObjectMap α) hab n
-    (fun m i _ _ hi => isZero_spectralObject_H_bot F hF i m
-      ((F i).isZero_homology_of_eq_bot (le_bot_iff.mp (hFa ▸ hF hi)) m))
-    (fun m i _ _ hi => isZero_spectralObject_H_bot G hG i m
-      ((G i).isZero_homology_of_eq_bot (le_bot_iff.mp (hGa ▸ hG hi)) m))
+    (fun m i hm₀ hm₁ hi => isZero_spectralObject_H_bot F hF i m (hFa m hm₀ hm₁ i hi))
+    (fun m i hm₀ hm₁ hi => isZero_spectralObject_H_bot G hG i m (hGa m hm₀ hm₁ i hi))
     (fun m i hm₀ hm₁ hi => isZero_spectralObject_H_top F hF i m
       (isZero_homology_cokernel_arrow_of_exhaustive F hF (hFex m hm₀ hm₁)
         fun j hj ↦ hFb m hm₀ hm₁ j (hi.trans hj)))

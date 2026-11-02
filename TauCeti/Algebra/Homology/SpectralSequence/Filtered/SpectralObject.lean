@@ -181,7 +181,7 @@ lemma spectralObject_H_map_comp_spectralObjectHIso_hom {i j i' j' : ι} {f : i �
     ((spectralObject F).H n).map φ ≫ (spectralObjectHIso F g n).hom =
       (spectralObjectHIso F f n).hom ≫ HomologicalComplex.homologyMap
         (mappingCone.map (F.map f) (F.map g) (F.map (φ.app 0)) (F.map (φ.app 1))
-          (by rw [← F.map_comp, ← F.map_comp]; exact F.congr_map (naturality' φ 0 1))) n :=
+          (naturality' ((F.mapComposableArrows 1).map φ) 0 1)) n :=
   (homologyFunctorFactors C (ComplexShape.up ℤ) n).hom.naturality _
 
 variable {F} {G H : ι ⥤ CochainComplex C ℤ}
@@ -243,10 +243,9 @@ lemma spectralObject_H_map_comp_spectralObjectHIsoCokernel_hom {i j i' j' : ι} 
     ((spectralObject F).H n).map φ ≫ (spectralObjectHIsoCokernel F g n).hom =
       (spectralObjectHIsoCokernel F f n).hom ≫ HomologicalComplex.homologyMap
         (cokernel.map (F.map f) (F.map g) (F.map (φ.app 0)) (F.map (φ.app 1))
-          (by rw [← F.map_comp, ← F.map_comp]; exact F.congr_map (naturality' φ 0 1))) n := by
-  have w : F.map f ≫ F.map (φ.app 1) = F.map (φ.app 0) ≫ F.map g := by
-    rw [← F.map_comp, ← F.map_comp]
-    exact F.congr_map (naturality' φ 0 1)
+          (naturality' ((F.mapComposableArrows 1).map φ) 0 1)) n := by
+  have w : F.map f ≫ F.map (φ.app 1) = F.map (φ.app 0) ≫ F.map g :=
+    naturality' ((F.mapComposableArrows 1).map φ) 0 1
   -- The morphism of cokernel sequences induced by `φ`.
   let ψ : ShortComplex.cokernelSequence (F.map f) ⟶ ShortComplex.cokernelSequence (F.map g) :=
     { τ₁ := F.map (φ.app 0)

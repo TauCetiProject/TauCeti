@@ -80,9 +80,6 @@ noncomputable def toFiltrationAbutmentFiltration (q n : ℤ) :
 
 instance (q n : ℤ) : Epi (toFiltrationAbutmentFiltration F hF q n) := by
   have := cokernel.π_of_zero (filtrationFunctor_map_bot F hF q)
-  have : Epi ((spectralObject (filtrationFunctor F hF)).pOpcycles
-      (homOfLE (bot_le : (⊥ : EInt) ≤ q)) (homOfLE (le_top : (q : EInt) ≤ ⊤)) n) :=
-    inferInstanceAs (Epi (cokernel.π _))
   dsimp only [toFiltrationAbutmentFiltration]
   infer_instance
 
