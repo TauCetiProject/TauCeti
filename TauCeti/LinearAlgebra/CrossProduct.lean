@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.CrossProduct
+public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.LinearAlgebra.Span.Defs
 import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 
@@ -23,6 +24,14 @@ multiple of `w`; the coefficient is the triple product of `u`, `v` and `w`. Over
 triple product `x ⬝ᵥ u ⨯₃ v` is the determinant of the matrix with rows `x`, `u` and `v`, so for
 linearly independent `u` and `v` it vanishes exactly when `x` lies in the plane they span.
 
+The **hat map** `u ↦ û` (`TauCeti.crossProductMatrix`) sends `u` to the matrix of the linear map
+`v ↦ u ⨯₃ v`. The matrix `û` is skew-symmetric, and the commutator of two such matrices is the
+matrix of the cross product of their vectors: `[û, v̂] = (u ⨯₃ v)^`.
+
+## Main definitions
+
+* `TauCeti.crossProductMatrix R`: the hat map `u ↦ û`, the matrix of `v ↦ u ⨯₃ v`.
+
 ## Main results
 
 * `TauCeti.exists_eq_units_smul_of_crossProduct_eq_zero`: if `v ⨯₃ w = 0` and `v` and `w` each
@@ -30,6 +39,8 @@ linearly independent `u` and `v` it vanishes exactly when `x` lies in the plane 
 * `TauCeti.cross_cross_cross_eq_smul`: `(u ⨯₃ w) ⨯₃ (v ⨯₃ w) = (u ⬝ᵥ v ⨯₃ w) • w`.
 * `TauCeti.triple_product_eq_zero_iff_mem_span_pair`: for linearly independent `u` and `v`,
   `x ⬝ᵥ u ⨯₃ v = 0` exactly when `x` lies in the span of `u` and `v`.
+* `TauCeti.transpose_crossProductMatrix`: the matrix `û` is skew-symmetric.
+* `TauCeti.crossProductMatrix_cross`: `(u ⨯₃ v)^ = û v̂ - v̂ û`.
 
 ## Provenance
 
@@ -85,5 +96,42 @@ theorem triple_product_eq_zero_iff_mem_span_pair {K : Type*} [Field K] {u v x : 
     exact not_isUnit_zero hdet
   · obtain ⟨a, b, rfl⟩ := Submodule.mem_span_pair.1 hx
     simp [add_dotProduct, dot_self_cross, dot_cross_self]
+
+/-! ### The hat map -/
+
+variable (R) in
+/-- The **hat map** `u ↦ û`, sending `u` to the matrix of the linear map `v ↦ u ⨯₃ v`
+(`TauCeti.crossProductMatrix_mulVec`). -/
+def crossProductMatrix : (Fin 3 → R) →ₗ[R] Matrix (Fin 3) (Fin 3) R :=
+  LinearMap.toMatrix'.toLinearMap ∘ₗ crossProduct
+
+/-- The matrix `û` acts on vectors by the cross product with `u`. -/
+@[simp]
+theorem crossProductMatrix_mulVec (u v : Fin 3 → R) :
+    crossProductMatrix R u *ᵥ v = u ⨯₃ v :=
+  LinearMap.toMatrix'_mulVec _ v
+
+/-- The entries of `û`. -/
+theorem crossProductMatrix_apply (u : Fin 3 → R) :
+    crossProductMatrix R u = !![0, -u 2, u 1; u 2, 0, -u 0; -u 1, u 0, 0] := by
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [crossProductMatrix, LinearMap.toMatrix'_apply, cross_apply]
+
+/-- The matrix `û` is skew-symmetric. -/
+@[simp]
+theorem transpose_crossProductMatrix (u : Fin 3 → R) :
+    (crossProductMatrix R u)ᵀ = -crossProductMatrix R u := by
+  rw [crossProductMatrix_apply]
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp
+
+/-- **The hat map is a Lie algebra homomorphism.** The matrix of `u ⨯₃ v` is the commutator of the
+matrices of `u` and `v`; this is the Jacobi identity of the cross product. -/
+theorem crossProductMatrix_cross (u v : Fin 3 → R) :
+    crossProductMatrix R (u ⨯₃ v) = crossProductMatrix R u * crossProductMatrix R v -
+      crossProductMatrix R v * crossProductMatrix R u := by
+  refine Matrix.toLin'.injective (LinearMap.ext fun w ↦ ?_)
+  simp only [toLin'_apply, sub_mulVec, ← mulVec_mulVec, crossProductMatrix_mulVec, cross_cross]
 
 end TauCeti
