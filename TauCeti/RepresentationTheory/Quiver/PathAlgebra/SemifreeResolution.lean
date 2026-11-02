@@ -64,6 +64,9 @@ applying the injective map `δ`.
 
 ## Main results
 
+* `TauCeti.PathAlgebra.coe_vertexTensorBimoduleDifferential_apply` and
+  `TauCeti.PathAlgebra.coe_vertexTensorBimoduleDifferential`: the differential of
+  `kQ ⊗_{kQ₀} kQ` through the enveloping differential.
 * `TauCeti.PathAlgebra.arrowTensorBimoduleDifferential_smul_arrowTensorDerivation_ofArrow`: the
   twisted differential on the generators.
 * `TauCeti.PathAlgebra.vertexTensorBimoduleDifferential_vertexTensorBimoduleDifferential` and
@@ -121,23 +124,6 @@ local notation "op[" f "]" =>
   LinearMap.comp (LinearEquiv.toLinearMap (opLinearEquiv k))
     (LinearMap.comp f (LinearEquiv.toLinearMap (LinearEquiv.symm (opLinearEquiv k))))
 
-/-! ### The grading sign -/
-
-section Sign
-
-variable {wt}
-
-private theorem sign_apply_of_mem {m : ℤ} {x : 𝒜} (hx : x ∈ gradeBy k wt m) :
-    σ x = negOnePowCast k m • x := by
-  rw [InternalGrading.koszulTwist_ofDecomposition_apply_of_mem _ hx, one_mul,
-    negOnePowCast_eq_intCast]
-
-private theorem sign_vertexIdempotent (v : Q) : σ (ε v) = ε v := by
-  simpa using InternalGrading.koszulTwist_ofDecomposition_apply_of_mem _
-    (vertexIdempotent_mem_gradeBy_zero wt v) 1
-
-end Sign
-
 /-! ### Vertex idempotents -/
 
 section Idempotent
@@ -146,13 +132,13 @@ variable {wt d}
 
 private theorem map_sign_op_tmul_vertexIdempotent (v w : Q) :
     TensorProduct.map σ op[σ] (ε v ⊗ₜ[k] op (ε w)) = ε v ⊗ₜ[k] op (ε w) := by
-  simp [sign_vertexIdempotent]
+  simp
 
 private theorem map_sign_id_mul_tmul_vertexIdempotent (v w : Q) (u : 𝒜ᵉ) :
     TensorProduct.map σ LinearMap.id (u * (ε v ⊗ₜ[k] op (ε w))) =
       TensorProduct.map σ LinearMap.id u * (ε v ⊗ₜ[k] op (ε w)) := by
   induction u using TensorProduct.inductionOn with
-  | tmul x y => simp [InternalGrading.koszulTwist_ofDecomposition_mul, sign_vertexIdempotent]
+  | tmul x y => simp [InternalGrading.koszulTwist_ofDecomposition_mul]
   | add u u' hu hu' => rw [add_mul, map_add, hu, hu', map_add, add_mul]
 
 private theorem envelopeDifferential_mul_tmul_vertexIdempotent
@@ -171,7 +157,8 @@ private theorem vertexIdempotent_mul_mul_vertexIdempotent (hd : IsDGAlgebra (gra
     ε j * d (ofArrow b) * ε i = d (ofArrow b) := by
   have hl := hd.toIsNonUnitalDGAlgebra.leibniz_koszulTwist (ε j) (ofArrow b)
   have hr := hd.toIsNonUnitalDGAlgebra.leibniz_koszulTwist (ofArrow b) (ε i)
-  rw [vertexIdempotent_mul_ofArrow_self, hdε, zero_mul, zero_add, sign_vertexIdempotent] at hl
+  rw [vertexIdempotent_mul_ofArrow_self, hdε, zero_mul, zero_add,
+    koszulTwist_vertexIdempotent] at hl
   rw [ofArrow_mul_vertexIdempotent_self, hdε, mul_zero, add_zero] at hr
   rw [← hl, ← hr]
 
@@ -182,13 +169,6 @@ end Idempotent
 section Arrow
 
 variable [DecidableEq Q] [∀ i j : Q, DecidableEq (i ⟶ j)]
-
-/-- The element `u s_b` of the component of an arrow `b`, for `s_b = ∂b` its generator. -/
-private theorem of_smul_spanSingletonGenerator {i j : Q} (b : i ⟶ j) (u : 𝒜ᵉ) :
-    DirectSum.of (fun b ↦ (Ideal.span {arrowTensorIdempotent k Q b} : Ideal 𝒜ᵉ)) ⟨i, j, b⟩
-        (u • spanSingletonGenerator (arrowTensorIdempotent k Q ⟨i, j, b⟩)) =
-      u • arrowTensorDerivation k Q (ofArrow b) := by
-  rw [arrowTensorDerivation_ofArrow, ← map_smul, DirectSum.lof_eq_of]
 
 /-- The twisted differential on the component of an arrow `b`: `u ↦ D u • ∂b + σ u • ∂(d b)` for
 `D` the enveloping differential in the degree of `b` and `σ` the grading sign on the left factor. -/
@@ -231,8 +211,8 @@ theorem arrowTensorBimoduleDifferential_smul_arrowTensorDerivation_ofArrow
       arrowTensorDerivation k Q (d (ofArrow b)) := by
     rw [← arrowTensorDerivation_vertexIdempotent_mul_mul,
       vertexIdempotent_mul_mul_vertexIdempotent hd hdε]
-  rw [← of_smul_spanSingletonGenerator, ← DirectSum.lof_eq_of k, arrowTensorBimoduleDifferential,
-    DirectSum.toModule_lof]
+  rw [smul_arrowTensorDerivation_ofArrow_eq_of, ← DirectSum.lof_eq_of k,
+    arrowTensorBimoduleDifferential, DirectSum.toModule_lof]
   simp only [arrowTensorComponentDifferential, LinearMap.comp_apply, LinearMap.add_apply,
     LinearMap.restrictScalars_apply, LinearMap.toSpanSingleton_apply, Submodule.subtype_apply,
     Submodule.coe_smul, smul_eq_mul, coe_spanSingletonGenerator, arrowTensorIdempotent_def]
@@ -261,7 +241,9 @@ noncomputable def vertexTensorBimoduleDifferential :
 
 variable {wt d}
 
-private theorem coe_vertexTensorBimoduleDifferential_apply (u : vertexTensorBimodule k Q) :
+/-- The differential of `kQ ⊗_{kQ₀} kQ` is the enveloping differential in degree zero, cut down by
+the idempotent `∑ᵥ eᵥ ⊗ eᵥ`. -/
+theorem coe_vertexTensorBimoduleDifferential_apply (u : vertexTensorBimodule k Q) :
     (vertexTensorBimoduleDifferential wt d u : 𝒜ᵉ) =
       envelopeDifferential (gradeBy k wt) d 0 u * vertexTensorIdempotent k Q := (rfl)
 
@@ -312,7 +294,7 @@ private theorem map_sign_op_mul_vertexTensorIdempotent (u : 𝒜ᵉ) :
   | tmul x y =>
     obtain ⟨y, rfl⟩ := (opLinearEquiv k).surjective y
     simp [vertexTensorIdempotent_def, Finset.mul_sum, ← op_mul,
-      InternalGrading.koszulTwist_ofDecomposition_mul, sign_vertexIdempotent,
+      InternalGrading.koszulTwist_ofDecomposition_mul,
       -InternalGrading.op_koszulTwist]
   | add u u' hu hu' => rw [add_mul, map_add, hu, hu', map_add, add_mul]
 
@@ -322,8 +304,9 @@ private theorem map_sign_op_boundary {m : ℤ} {y : 𝒜} (hy : y ∈ gradeBy k 
     TensorProduct.map σ op[σ] ((y ⊗ₜ[k] 1 - 1 ⊗ₜ[k] op y) * vertexTensorIdempotent k Q) =
       negOnePowCast k m • ((y ⊗ₜ[k] 1 - 1 ⊗ₜ[k] op y) * vertexTensorIdempotent k Q) := by
   rw [map_sign_op_mul_vertexTensorIdempotent, ← smul_mul_assoc, ← op_one, map_sub,
-    TensorProduct.map_tmul, TensorProduct.map_tmul]
-  simp [sign_apply_of_mem hy, TensorProduct.smul_tmul', smul_sub]
+    TensorProduct.map_tmul, TensorProduct.map_tmul, negOnePowCast_eq_intCast]
+  simp [InternalGrading.koszulTwist_ofDecomposition_apply_of_mem _ hy, TensorProduct.smul_tmul',
+    smul_sub]
 
 /-- The enveloping differential of `y ⊗ 1 - 1 ⊗ y` is `d y ⊗ 1 - 1 ⊗ d y`. -/
 private theorem envelopeDifferential_boundary (hd : IsDGAlgebra (gradeBy k wt) d)
@@ -356,7 +339,7 @@ theorem coe_arrowTensorDifferential_arrowTensorBimoduleDifferential
     have hv : (⟨v * arrowTensorIdempotent k Q ⟨i, j, b⟩, hu⟩ : Ideal.span _) =
         v • spanSingletonGenerator (arrowTensorIdempotent k Q ⟨i, j, b⟩) :=
       Subtype.ext (by rw [SetLike.val_smul, coe_spanSingletonGenerator, smul_eq_mul])
-    rw [hv, of_smul_spanSingletonGenerator,
+    rw [hv, ← smul_arrowTensorDerivation_ofArrow_eq_of,
       arrowTensorBimoduleDifferential_smul_arrowTensorDerivation_ofArrow hd hdε]
     simp only [map_add, map_smul, Submodule.coe_add, Submodule.coe_smul, smul_eq_mul,
       coe_arrowTensorDifferential_arrowTensorDerivation]

@@ -146,17 +146,12 @@ theorem envelopeDifferential_mul_of_sign (hd : IsNonUnitalDGAlgebra 𝒜 d) (n m
 theorem envelopeDifferential_envelopeDifferential (hd : IsNonUnitalDGAlgebra 𝒜 d) (n : ℤ)
     (u : A ⊗[R] Aᵐᵒᵖ) :
     envelopeDifferential 𝒜 d n (envelopeDifferential 𝒜 d n u) = 0 := by
-  have hdσ (a : A) : σ (d a) = -d (σ a) := by
-    simpa using (LinearMap.isHomogeneous_def.mpr fun _ _ ha ↦ by
-      rw [InternalGrading.ofDecomposition_piece] at ha ⊢; exact hd.map_mem ha :
-      LinearMap.IsHomogeneous d (InternalGrading.ofDecomposition 𝒜).piece
-        (InternalGrading.ofDecomposition 𝒜).piece 1).koszulTwist_apply 1 a
   induction u using TensorProduct.inductionOn with
   | add u u' hu hu' => rw [map_add, map_add, hu, hu', add_zero]
   | tmul x y =>
     obtain ⟨y, rfl⟩ := (opLinearEquiv R).surjective y
-    simp only [coe_opLinearEquiv, envelopeDifferential_tmul, map_add, map_smul, hd.sq_zero, hdσ,
-      InternalGrading.koszulTwist_koszulTwist, op_zero, TensorProduct.tmul_zero,
+    simp only [coe_opLinearEquiv, envelopeDifferential_tmul, map_add, map_smul, hd.sq_zero,
+      hd.koszulTwist_map, InternalGrading.koszulTwist_koszulTwist, op_zero, TensorProduct.tmul_zero,
       TensorProduct.zero_tmul, smul_zero, add_zero, zero_add, TensorProduct.neg_tmul, smul_neg]
     abel
 

@@ -225,9 +225,9 @@ theorem koszulTwist_ofDecomposition_mul [NonUnitalNonAssocSemiring A] [Module R 
 @[simp]
 theorem koszulTwist_ofDecomposition_one [Semiring A] [Module R A] {𝒜 : ℤ → Submodule R A}
     [SetLike.GradedOne 𝒜] [DirectSum.Decomposition 𝒜] (q : ℤ) :
-    (ofDecomposition 𝒜).koszulTwist q 1 = 1 := by
-  rw [koszulTwist_ofDecomposition_apply_of_mem _ (SetLike.GradedOne.one_mem (A := 𝒜)) q,
-    mul_zero, Int.negOnePow_zero, Units.val_one, Int.cast_one, one_smul]
+    (ofDecomposition 𝒜).koszulTwist q 1 = 1 :=
+  koszulTwist_apply_of_mem_zero _
+    (by rw [ofDecomposition_piece]; exact SetLike.GradedOne.one_mem (A := 𝒜)) q
 
 end KoszulTwistMul
 
