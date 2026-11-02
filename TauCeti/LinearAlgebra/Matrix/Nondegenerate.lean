@@ -11,31 +11,31 @@ import Mathlib.LinearAlgebra.Dual.Lemmas
 import Mathlib.LinearAlgebra.Matrix.SesquilinearForm
 
 /-!
-# Separating two vectors by a nondegenerate form
+# Separating two vectors by a left-separating form
 
-For a nondegenerate matrix `M` over a field, the linear forms `w ↦ v ⬝ᵥ M *ᵥ w` determine `v`.
-This file records the two-vector form of that statement: if `x` is not a multiple of `u`, then
-some `w` is orthogonal to `u` but not to `x`. Otherwise the form of `x` would vanish on the kernel
-of the form of `u`, making it a multiple of that form by Mathlib's `mem_span_of_iInf_ker_le_ker`,
-and nondegeneracy would make `x` the same multiple of `u`. This complements Mathlib's
-`Matrix.Nondegenerate.exists_not_ortho_of_ne_zero`, the case `u = 0`, and is the basic tool for
-moving vectors by transvections in the classical groups.
+For a left-separating matrix `M` over a field (for example a nondegenerate one), the linear forms
+`w ↦ v ⬝ᵥ M *ᵥ w` determine `v`. This file records the two-vector form of that statement: if `x`
+is not a multiple of `u`, then some `w` is orthogonal to `u` but not to `x`. Otherwise the form of
+`x` would vanish on the kernel of the form of `u`, making it a multiple of that form by Mathlib's
+`mem_span_of_iInf_ker_le_ker`, and left separation would make `x` the same multiple of `u`. This
+complements Mathlib's `Matrix.Nondegenerate.exists_not_ortho_of_ne_zero`, the case `u = 0`, and is
+the basic tool for moving vectors by transvections in the classical groups.
 
 ## Main results
 
-* `Matrix.Nondegenerate.exists_ortho_and_not_ortho_of_notMem_span`: a vector orthogonal to `u` but
+* `Matrix.SeparatingLeft.exists_ortho_and_not_ortho_of_notMem_span`: a vector orthogonal to `u` but
   not to `x`, when `x` is not a multiple of `u`.
 -/
 
 public section
 
-namespace Matrix.Nondegenerate
+namespace Matrix.SeparatingLeft
 
 variable {m n K : Type*} [Fintype m] [Fintype n] [Field K] {M : Matrix m n K}
 
-/-- **A vector orthogonal to `u` but not to `x`**, for a nondegenerate matrix `M`, when `x` is not
-a multiple of `u`. -/
-theorem exists_ortho_and_not_ortho_of_notMem_span (hM : M.Nondegenerate) {u x : m → K}
+/-- **A vector orthogonal to `u` but not to `x`**, for a left-separating matrix `M`, when `x` is
+not a multiple of `u`. -/
+theorem exists_ortho_and_not_ortho_of_notMem_span (hM : M.SeparatingLeft) {u x : m → K}
     (hx : x ∉ K ∙ u) : ∃ w, u ⬝ᵥ M *ᵥ w = 0 ∧ x ⬝ᵥ M *ᵥ w ≠ 0 := by
   classical
   by_contra! h
@@ -48,10 +48,10 @@ theorem exists_ortho_and_not_ortho_of_notMem_span (hM : M.Nondegenerate) {u x : 
     exact h w (hw ())
   obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.mp <| by
     simpa using mem_span_of_iInf_ker_le_ker hker
-  -- Nondegeneracy turns the equality of forms into `x = c • u`.
+  -- Left separation turns the equality of forms into `x = c • u`.
   refine Submodule.mem_span_singleton.mpr ⟨c, (sub_eq_zero.mp ?_).symm⟩
-  refine hM.eq_zero_of_ortho fun w ↦ ?_
+  refine separatingLeft_def.mp hM _ fun w ↦ ?_
   simpa [F, Matrix.toLinearMap₂'_apply', sub_dotProduct, smul_dotProduct, sub_eq_zero,
     eq_comm] using congr($hc w)
 
-end Matrix.Nondegenerate
+end Matrix.SeparatingLeft

@@ -85,8 +85,10 @@ theorem exists_smul_eq_self_and_smul_eq_of_dotProduct_JFin_mulVec_eq {u x y : Fi
   -- Pass through `z = x + w` with `ω(u, w) = 0` and `w` orthogonal to neither `x` nor `y`.
   obtain ⟨w, hwu, hwx, hwy⟩ : ∃ w, u ⬝ᵥ (JFin m K *ᵥ w) = 0 ∧ x ⬝ᵥ (JFin m K *ᵥ w) ≠ 0 ∧
       y ⬝ᵥ (JFin m K *ᵥ w) ≠ 0 := by
-    obtain ⟨w₁, hw₁u, hw₁x⟩ := nondegenerate_JFin.exists_ortho_and_not_ortho_of_notMem_span hx
-    obtain ⟨w₂, hw₂u, hw₂y⟩ := nondegenerate_JFin.exists_ortho_and_not_ortho_of_notMem_span hy
+    obtain ⟨w₁, hw₁u, hw₁x⟩ :=
+      nondegenerate_JFin.separatingLeft.exists_ortho_and_not_ortho_of_notMem_span hx
+    obtain ⟨w₂, hw₂u, hw₂y⟩ :=
+      nondegenerate_JFin.separatingLeft.exists_ortho_and_not_ortho_of_notMem_span hy
     by_cases h₁ : y ⬝ᵥ (JFin m K *ᵥ w₁) = 0
     · by_cases h₂ : x ⬝ᵥ (JFin m K *ᵥ w₂) = 0
       · exact ⟨w₁ + w₂, by simp [mulVec_add, hw₁u, hw₂u], by simp [mulVec_add, h₂, hw₁x],
@@ -159,7 +161,8 @@ instance isPreprimitive : IsPreprimitive (GLSymplecticFin m K) (ℙ K (Fin (m + 
       · exact mk_mem_of_isBlock hB hu hx hyu hp hq (iff_of_true hux huy)
       -- A point `⟨s⟩` orthogonal to `⟨x⟩` but not to `⟨u⟩` lies in the block of `⟨x⟩`, which
       -- is `B`.
-      obtain ⟨s, hsx, hsu⟩ := nondegenerate_JFin.exists_ortho_and_not_ortho_of_notMem_span hu'
+      obtain ⟨s, hsx, hsu⟩ :=
+        nondegenerate_JFin.separatingLeft.exists_ortho_and_not_ortho_of_notMem_span hu'
       have hsB := mk_mem_of_isBlock hB hx₀ hu' (notMem_span_of_dotProduct_JFin_mulVec hux hsu) hq
         hp (iff_of_true (by simp [dotProduct_JFin_mulVec_eq_neg u x, hux]) hsx)
       exact mk_mem_of_isBlock hB hu
