@@ -27,10 +27,11 @@ consecutive terms.
   `r < M` of its sums over the classes `qM + r`.
 * `HasSum.sum_fin_mul_add`: a family on `ℤ` has the same sum as its sums over the blocks
   `qM + r`, `r < M`.
-* `HasProd.prod_fin_mul_add_nat`, `HasSum.sum_fin_mul_add_nat`: the same for a product or sum
-  over the natural numbers.
 * `HasSum.sum_zmod_val_sub`: the same, with the blocks `a - N y` indexed by the least
   nonnegative representatives `a` of the residues modulo `N`.
+* `HasProd.prod_fin_mul_add_nat`, `HasSum.sum_fin_mul_add_nat`: the grouping of
+  `HasSum.sum_fin_mul_add` into blocks `qM + r`, `r < M`, for a product or sum over the natural
+  numbers.
 -/
 
 public section

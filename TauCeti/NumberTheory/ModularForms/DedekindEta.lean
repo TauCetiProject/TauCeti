@@ -113,6 +113,10 @@ theorem eta_add_one_div_two {τ : ℂ} (hτ : 0 < τ.im) :
   simp only [one_sub_neg_pow_odd]
   ring
 
+/-- `S : τ ↦ -1/τ` preserves the upper half-plane: `0 < (-1/τ).im` whenever `0 < τ.im`. -/
+theorem im_neg_one_div_pos {τ : ℂ} (hτ : 0 < τ.im) : 0 < (-1 / τ).im := by
+  simpa [neg_div, inv_neg] using UpperHalfPlane.im_inv_neg_coe_pos ⟨τ, hτ⟩
+
 /-- **The square of the `S`-transformation of `η`**: `η(-1/τ)² = -i τ η(τ)²` on the upper
 half-plane. -/
 theorem eta_neg_one_div_sq {τ : ℂ} (hτ : 0 < τ.im) : η (-1 / τ) ^ 2 = -I * τ * η τ ^ 2 := by
@@ -122,24 +126,27 @@ theorem eta_neg_one_div_sq {τ : ℂ} (hτ : 0 < τ.im) : η (-1 / τ) ^ 2 = -I 
   rw [h, mul_pow, mul_pow, inv_pow, hsq, hsq, inv_I]
   ring
 
+/-- For real `c > 0`, the principal square roots satisfy `√(c z) = √c √z`, since the
+argument of `c z` is that of `z`. -/
+private theorem sqrt_ofReal_mul {c : ℝ} (hc : 0 < c) {z : ℂ} (hz : z ≠ 0) :
+    Complex.sqrt (c * z) = √c * Complex.sqrt z := by
+  rw [Complex.sqrt, Complex.sqrt, cpow_def_of_ne_zero (mul_ne_zero (ofReal_ne_zero.2 hc.ne') hz),
+    log_ofReal_mul hc hz, add_mul, Complex.exp_add, cpow_def_of_ne_zero hz, Real.sqrt_eq_rpow,
+    Real.rpow_def_of_pos hc, ofReal_exp]
+  push_cast
+  ring_nf
+
 /-- **The `S`-transformation of `η` at a positive real multiple**: for real `c > 0`,
 `η(-1/(c τ)) η(τ) = √c η(c τ) η(-1/τ)` on the upper half-plane. The branch of `√(c τ)` in
 Mathlib's `ModularForm.eta_comp_eq_csqrt_I_inv` is `√c √τ`, so no sign is lost. -/
 theorem eta_neg_one_div_ofReal_mul_mul {c : ℝ} (hc : 0 < c) {τ : ℂ} (hτ : 0 < τ.im) :
     η (-1 / (c * τ)) * η τ = √c * η (c * τ) * η (-1 / τ) := by
-  have hτ₀ : τ ≠ 0 := fun h ↦ by simp [h] at hτ
   have hcτ : 0 < (c * τ : ℂ).im := by simpa [im_ofReal_mul] using mul_pos hc hτ
   have h₁ : η (-1 / (c * τ)) = (Complex.sqrt I)⁻¹ * (Complex.sqrt (c * τ) * η (c * τ)) := by
     simpa using _root_.ModularForm.eta_comp_eq_csqrt_I_inv hcτ
   have h₂ : η (-1 / τ) = (Complex.sqrt I)⁻¹ * (Complex.sqrt τ * η τ) := by
     simpa using _root_.ModularForm.eta_comp_eq_csqrt_I_inv hτ
-  have hsq : Complex.sqrt (c * τ) = √c * Complex.sqrt τ := by
-    rw [Complex.sqrt, Complex.sqrt, cpow_def_of_ne_zero (mul_ne_zero (ofReal_ne_zero.2 hc.ne') hτ₀),
-      log_ofReal_mul hc hτ₀, add_mul, Complex.exp_add, cpow_def_of_ne_zero hτ₀,
-      Real.sqrt_eq_rpow, Real.rpow_def_of_pos hc, ofReal_exp]
-    push_cast
-    ring_nf
-  rw [h₁, h₂, hsq]
+  rw [h₁, h₂, sqrt_ofReal_mul hc (UpperHalfPlane.ne_zero ⟨τ, hτ⟩)]
   ring
 
 end TauCeti.ModularForm

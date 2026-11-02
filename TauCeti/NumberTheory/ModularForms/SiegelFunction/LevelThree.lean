@@ -197,20 +197,22 @@ theorem siegelFunction_third_two_thirds_apply_add_one {τ : ℂ} (hτ : 0 < τ.i
     rw [← Complex.exp_add, show π * I / 6 + π * I * (1 / 3) = π / 2 * I by ring,
       exp_pi_div_two_mul_I]
   rw [hr] at h
+  -- `h` now reads `g_{(1/3, 1)} = -e^{π i / 3} g_{(1/3, 0)}`.
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one, Int.cast_zero,
+    Int.cast_one, zero_mul, one_mul, zero_add, zpow_one, zero_sub, mul_neg, neg_neg, ofReal_div,
+    ofReal_one, ofReal_ofNat] at h
   rw [siegelFunction_apply_add_one]
-  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one] at h ⊢
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
   rw [h]
-  norm_num
-  linear_combination siegelFunction ![1 / 3, 0] τ * he
+  linear_combination (-siegelFunction ![1 / 3, 0] τ) * he
 
 /-! ### The transformation `τ ↦ -1/τ` -/
 
 /-- `g_{(0, 1/3)}(-1/τ) = -i g_{(1/3, 0)}(τ)` on the upper half-plane. -/
 theorem siegelFunction_zero_third_apply_neg_one_div {τ : ℂ} (hτ : 0 < τ.im) :
     siegelFunction ![0, 1 / 3] (-1 / τ) = -I * siegelFunction ![1 / 3, 0] τ := by
-  have hτ₀ : τ ≠ 0 := fun h ↦ by simp [h] at hτ
-  have him : 0 < (-1 / τ).im := by
-    simpa [neg_div, inv_neg] using UpperHalfPlane.im_inv_neg_coe_pos ⟨τ, hτ⟩
+  have hτ₀ : τ ≠ 0 := UpperHalfPlane.ne_zero ⟨τ, hτ⟩
+  have him : 0 < (-1 / τ).im := im_neg_one_div_pos hτ
   have hη : η τ ≠ 0 := _root_.ModularForm.eta_ne_zero hτ
   have hη' : η (-1 / τ) ≠ 0 := _root_.ModularForm.eta_ne_zero him
   have h := eta_neg_one_div_ofReal_mul_mul (c := 1 / 3) (by norm_num) hτ
@@ -230,8 +232,7 @@ theorem siegelFunction_zero_third_apply_neg_one_div {τ : ℂ} (hτ : 0 < τ.im)
 /-- `g_{(1/3, 0)}(-1/τ) = i g_{(0, 1/3)}(τ)` on the upper half-plane. -/
 theorem siegelFunction_third_zero_apply_neg_one_div {τ : ℂ} (hτ : 0 < τ.im) :
     siegelFunction ![1 / 3, 0] (-1 / τ) = I * siegelFunction ![0, 1 / 3] τ := by
-  have him : 0 < (-1 / τ).im := by
-    simpa [neg_div, inv_neg] using UpperHalfPlane.im_inv_neg_coe_pos ⟨τ, hτ⟩
+  have him : 0 < (-1 / τ).im := im_neg_one_div_pos hτ
   have hη : η τ ≠ 0 := _root_.ModularForm.eta_ne_zero hτ
   have hη' : η (-1 / τ) ≠ 0 := _root_.ModularForm.eta_ne_zero him
   have h := eta_neg_one_div_ofReal_mul_mul (c := 3) three_pos hτ
@@ -245,22 +246,19 @@ theorem siegelFunction_third_zero_apply_neg_one_div {τ : ℂ} (hτ : 0 < τ.im)
 theorem siegelFunction_third_third_apply_neg_one_div {τ : ℂ} (hτ : 0 < τ.im) :
     siegelFunction ![1 / 3, 1 / 3] (-1 / τ) =
       cexp (π * I / 6) * siegelFunction ![1 / 3, 2 / 3] τ := by
-  have him (z : ℂ) (hz : 0 < z.im) : 0 < (-1 / z).im := by
-    simpa [neg_div, inv_neg] using UpperHalfPlane.im_inv_neg_coe_pos ⟨z, hz⟩
-  have hne (z : ℂ) (hz : 0 < z.im) : z ≠ 0 := fun h ↦ by simp [h] at hz
   -- Follow `S T S = T⁻¹ S T⁻¹` through the points `x = -1/τ`, `x + 1 = -1/σ`, `σ + 1 = -1/(τ - 1)`.
   set x := -1 / τ
-  have hx : 0 < x.im := him τ hτ
+  have hx : 0 < x.im := im_neg_one_div_pos hτ
   have hx₁ : 0 < (x + 1).im := by simpa using hx
   set σ := -1 / (x + 1)
-  have hσ : 0 < σ.im := him _ hx₁
+  have hσ : 0 < σ.im := im_neg_one_div_pos hx₁
   have hτ₁ : 0 < (τ - 1).im := by simpa using hτ
   have hσx : -1 / σ = x + 1 := by
     simp only [σ]
-    field_simp [hne _ hx₁]
+    field_simp [UpperHalfPlane.ne_zero ⟨_, hx₁⟩]
   have hστ : σ + 1 = -1 / (τ - 1) := by
-    have hτ₀ := hne _ hτ
-    have hτ₁₀ := hne _ hτ₁
+    have hτ₀ := UpperHalfPlane.ne_zero ⟨τ, hτ⟩
+    have hτ₁₀ := UpperHalfPlane.ne_zero ⟨τ - 1, hτ₁⟩
     have h₁ : x + 1 = (τ - 1) / τ := by
       simp only [x]
       field_simp
@@ -288,14 +286,17 @@ theorem siegelFunction_third_third_apply_neg_one_div {τ : ℂ} (hτ : 0 < τ.im
 theorem siegelFunction_third_two_thirds_apply_neg_one_div {τ : ℂ} (hτ : 0 < τ.im) :
     siegelFunction ![1 / 3, 2 / 3] (-1 / τ) =
       cexp (-(π * I / 6)) * siegelFunction ![1 / 3, 1 / 3] τ := by
-  have hτ₀ : τ ≠ 0 := fun h ↦ by simp [h] at hτ
-  have him : 0 < (-1 / τ).im := by
-    simpa [neg_div, inv_neg] using UpperHalfPlane.im_inv_neg_coe_pos ⟨τ, hτ⟩
+  have hτ₀ : τ ≠ 0 := UpperHalfPlane.ne_zero ⟨τ, hτ⟩
+  have him : 0 < (-1 / τ).im := im_neg_one_div_pos hτ
   have h := siegelFunction_third_third_apply_neg_one_div him
   rw [show -1 / (-1 / τ) = τ by field_simp] at h
   rw [h, ← mul_assoc, ← Complex.exp_add, neg_add_cancel, Complex.exp_zero, one_mul]
 
 /-! ### The action of `SL₂(ℤ)` on the twelfth powers -/
+
+/-- The factor `-i` in `siegelFunction_third_two_thirds_apply_add_one` and
+`siegelFunction_zero_third_apply_neg_one_div` is a twelfth root of unity. -/
+private theorem neg_I_pow_twelve : (-I) ^ 12 = 1 := by norm_num
 
 /-- The quartic with roots the twelfth powers of the level-three Siegel functions is fixed by
 `S`. -/
@@ -309,19 +310,14 @@ private theorem prod_X_sub_C_siegelFunction_third_pow_twelve_S_smul (τ : ℍ) :
         (X - C (siegelFunction ![1 / 3, 2 / 3] τ ^ 12)) := by
   have hS : ((ModularGroup.S • τ : ℍ) : ℂ) = -1 / τ := by
     rw [modular_S_smul, coe_mk, neg_div, one_div, inv_neg]
-  have hI : I ^ 12 = 1 := by
-    rw [show 12 = 4 * 3 by norm_num, pow_mul, I_pow_four, one_pow]
-  have hnegI : (-I) ^ 12 = 1 := by rw [neg_pow, hI]; norm_num
-  have h₆ : cexp (π * I / 6) ^ 12 = 1 := by
-    rw [← Complex.exp_nat_mul, show ((12 : ℕ) : ℂ) * (π * I / 6) = 2 * π * I by push_cast; ring,
-      exp_two_pi_mul_I]
+  have hI : I ^ 12 = 1 := by norm_num
   have h₆' : cexp (-(π * I / 6)) ^ 12 = 1 := by
-    rw [Complex.exp_neg, inv_pow, h₆, inv_one]
+    rw [Complex.exp_neg, inv_pow, exp_pi_mul_I_div_six_pow_twelve, inv_one]
   rw [hS, siegelFunction_zero_third_apply_neg_one_div τ.im_pos,
     siegelFunction_third_zero_apply_neg_one_div τ.im_pos,
     siegelFunction_third_third_apply_neg_one_div τ.im_pos,
     siegelFunction_third_two_thirds_apply_neg_one_div τ.im_pos, mul_pow, mul_pow, mul_pow, mul_pow,
-    hI, hnegI, h₆, h₆']
+    hI, neg_I_pow_twelve, exp_pi_mul_I_div_six_pow_twelve, h₆']
   simp only [one_mul]
   ring
 
@@ -337,16 +333,10 @@ private theorem prod_X_sub_C_siegelFunction_third_pow_twelve_T_smul (τ : ℍ) :
         (X - C (siegelFunction ![1 / 3, 2 / 3] τ ^ 12)) := by
   have hT : ((ModularGroup.T • τ : ℍ) : ℂ) = τ + 1 := by
     rw [modular_T_smul, coe_vadd, add_comm, ofReal_one]
-  have hnegI : (-I) ^ 12 = 1 := by
-    rw [neg_pow, show 12 = 4 * 3 by norm_num, pow_mul, pow_mul, I_pow_four]
-    norm_num
-  have h₆ : cexp (π * I / 6) ^ 12 = 1 := by
-    rw [← Complex.exp_nat_mul, show ((12 : ℕ) : ℂ) * (π * I / 6) = 2 * π * I by push_cast; ring,
-      exp_two_pi_mul_I]
   rw [hT, siegelFunction_zero_third_apply_add_one, siegelFunction_third_zero_apply_add_one,
     siegelFunction_third_third_apply_add_one,
     siegelFunction_third_two_thirds_apply_add_one τ.im_pos,
-    mul_pow, mul_pow, mul_pow, mul_pow, h₆, hnegI]
+    mul_pow, mul_pow, mul_pow, mul_pow, exp_pi_mul_I_div_six_pow_twelve, neg_I_pow_twelve]
   simp only [one_mul]
   ring
 
