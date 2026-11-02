@@ -126,10 +126,13 @@ private theorem false_of_le_norm {τ : ℍ} {v : ℂ} (hj : j τ = v ^ 3) {α β
   have ha : 4096 * β * L ≤ t := le_trans (by gcongr) hlo
   have hb : t ≤ 4096 * α * U := hhi.trans (by gcongr)
   -- The convex function `(16 + t)³ - |v|³ t` is negative at both ends of `[4096 β L, 4096 α U]`.
-  have hf : ConvexOn ℝ (Set.Ici 0) fun t : ℝ ↦ (16 + t) ^ 3 - ‖v‖ ^ 3 * t :=
-    (((convexOn_pow 3).translate_right 16).subset
-      (fun t (ht : t ∈ Set.Ici 0) ↦ show (0 : ℝ) ≤ 16 + t by linarith [Set.mem_Ici.1 ht])
-      (convex_Ici 0)).sub ((LinearMap.mul ℝ ℝ (‖v‖ ^ 3)).concaveOn (convex_Ici 0))
+  have hf : ConvexOn ℝ (Set.Ici 0) fun t : ℝ ↦ (16 + t) ^ 3 - ‖v‖ ^ 3 * t := by
+    refine ((((convexOn_pow 3).translate_right 16).subset (fun t ht ↦ ?_) (convex_Ici 0)).sub
+      ((LinearMap.mul ℝ ℝ (‖v‖ ^ 3)).concaveOn (convex_Ici 0))).congr fun t _ ↦ ?_
+    · rw [Set.mem_Ici] at ht
+      rw [Set.mem_preimage, Set.mem_Ici]
+      linarith
+    · simp only [Pi.sub_apply, Function.comp_apply, LinearMap.mul_apply']
   have hmax := hf.le_max_of_mem_Icc (by positivity : (0 : ℝ) ≤ 4096 * β * L)
     (by positivity : (0 : ℝ) ≤ 4096 * α * U) ⟨ha, hb⟩
   have hlt : (16 + t) ^ 3 < ‖v‖ ^ 3 * t := by
