@@ -14,6 +14,7 @@ import TauCeti.Analysis.BoundedVariation.DerivativeMeasure
 import TauCeti.Analysis.Distribution.AELeOfIntegral
 import TauCeti.Analysis.Distribution.TestFunction.Approximation
 import TauCeti.Analysis.Distribution.TestFunction.Integral
+import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
 
 /-!
@@ -47,6 +48,8 @@ against this representation gives `|Du|(U) ≤ ∫_U ‖σ_u‖ d|Du|`, hence `�
 * `TauCeti.polarDensity μ Ω u`: the polar density `σ_u : Ω → E` of `Du` with respect to `|Du|`.
 * `TauCeti.integral_divergenceCLM_mul_eq_neg_integral_inner_polarDensity`: the representation
   `∫ u div φ dμ = -∫ ⟪φ, σ_u⟫ d|Du|`.
+* `TauCeti.integral_lineDeriv_mul_eq_neg_integral_mul_inner_polarDensity`: its directional form
+  `∫ ∂_v φ · u dμ = -∫ φ ⟪v, σ_u⟫ d|Du|` for scalar test functions.
 * `TauCeti.ae_norm_polarDensity_eq_one`: `‖σ_u‖ = 1` at `|Du|`-almost every point.
 * `TauCeti.locallyIntegrable_polarDensity`: `σ_u` is locally integrable with respect to `|Du|`.
 * `TauCeti.ae_eq_polarDensity`: a locally integrable vector field representing `Du` against `|Du|`
@@ -282,6 +285,18 @@ theorem integral_divergenceCLM_mul_eq_neg_integral_inner_polarDensity (φ : 𝓓
     ∫ x, divergenceCLM φ x * u x ∂μ =
       -∫ x, ⟪φ x, polarDensity μ Ω u x⟫ ∂variationMeasure μ Ω u :=
   (polarDensity_spec hu hfin).2 φ
+
+/-- **The directional derivative `⟪v, Du⟫ = ⟪v, σ_u⟫ |Du|`.** For `u` locally integrable on `Ω`
+with locally finite variation, `∫ ∂_v φ · u dμ = -∫ φ ⟪v, σ_u⟫ d|Du|` for every scalar test
+function `φ` on `Ω` and every vector `v`. -/
+theorem integral_lineDeriv_mul_eq_neg_integral_mul_inner_polarDensity (φ : 𝓓(Ω, ℝ)) (v : E) :
+    ∫ x, lineDeriv ℝ (φ : E → ℝ) x v * u x ∂μ =
+      -∫ x, φ x * ⟪v, polarDensity μ Ω u x⟫ ∂variationMeasure μ Ω u := by
+  -- Test the polar decomposition against the vector field `φ v`, whose divergence is `∂_v φ`.
+  have h := integral_divergenceCLM_mul_eq_neg_integral_inner_polarDensity hu hfin
+    (postcompCLM (ContinuousLinearMap.toSpanSingleton ℝ v) φ)
+  rw [divergenceCLM_postcompCLM_toSpanSingleton] at h
+  simpa [lineDerivOp_apply, real_inner_smul_left] using h
 
 /-- The polar density of a function of locally finite variation has norm one at `|Du|`-almost
 every point. -/

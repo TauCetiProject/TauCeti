@@ -193,12 +193,9 @@ variable {L' L'' : Type*} [AddCommGroup L'] [Module A L'] [Module B L'] [IsScala
 by composition with the induced isomorphism `⋀^d L ≃ ⋀^d L'` of top exterior powers. -/
 noncomputable def congr (e : L ≃ₗ[B] L') : ModuleNorm A B d L ≃ₗ[A] ModuleNorm A B d L' :=
   let e' : L ≃ₗ[A] L' := e.restrictScalars A
-  (toHom A B d L).trans <| (LinearEquiv.arrowCongr (LinearEquiv.refl A _)
-    (LinearEquiv.ofLinearMap (exteriorPower.map d (e' : L →ₗ[A] L'))
-      (exteriorPower.map d (e'.symm : L' →ₗ[A] L))
-      (by rw [← exteriorPower.map_comp, e'.comp_symm, exteriorPower.map_id])
-      (by rw [← exteriorPower.map_comp, e'.symm_comp, exteriorPower.map_id]))).trans
-    (toHom A B d L').symm
+  (toHom A B d L).trans <|
+    (LinearEquiv.arrowCongr (LinearEquiv.refl A _) (e'.exteriorPower d)).trans
+      (toHom A B d L').symm
 
 @[simp]
 theorem toHom_congr (e : L ≃ₗ[B] L') (ψ : ModuleNorm A B d L) :

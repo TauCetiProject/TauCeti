@@ -293,20 +293,24 @@ theorem d_comp_desc_succ (n : ℕ) (r : J.X (n + 1) ⟶ coind₁ Y) (hr : J.d n 
         c.desc_apply_one (n + 1) r _
     _ = r.hom v 1 := by rw [h, map_sub, hr', sub_zero]
 
-/-- **A chain map into a coinduced resolution killing the augmentation is null-homotopic**,
-by an equivariant homotopy whose components are built degree by degree with `desc`. The target
-is the coinduced resolution of any `Z`, not only of `X`. -/
-noncomputable def nullHomotopy (e : J ⟶ resolution' Z) (he : c.ι ≫ e.f 0 = 0) : Homotopy e 0 :=
-  Homotopy.mkCoinductive e (c.desc (Y := resolutionX Z 0) 0 (e.f 0))
+/-- **A chain map into a complex of coinduced representations killing the augmentation is
+null-homotopic**, by an equivariant homotopy whose components are built degree by degree with
+`desc`. The target is any complex whose terms are coinduced, `Kᵖ = C(G, Yₚ)`: the coinduced
+resolution of any `Z`, not only of `X`, and its shifts. -/
+noncomputable def nullHomotopy {Y : ℕ → TopRep.{max v w} k G}
+    {δ : ∀ p, coind₁ (Y p) ⟶ coind₁ (Y (p + 1))} {hδ : ∀ p, δ p ≫ δ (p + 1) = 0}
+    (e : J ⟶ CochainComplex.of (fun p ↦ coind₁ (Y p)) δ hδ) (he : c.ι ≫ e.f 0 = 0) :
+    Homotopy e 0 :=
+  Homotopy.mkCoinductive e (c.desc 0 (e.f 0))
     (c.d_comp_desc_zero _ he).symm
-    (c.desc (Y := resolutionX Z 1) 1 (e.f 1 - c.desc 0 (e.f 0) ≫ (resolution' Z).d 0 1))
+    (c.desc 1 (e.f 1 - c.desc 0 (e.f 0) ≫ (CochainComplex.of _ δ hδ).d 0 1))
     (by
-      rw [c.d_comp_desc_succ (Y := resolutionX Z 1) 0 _ ?_, add_sub_cancel]
-      rw [Preadditive.comp_sub, ← e.comm 0 1, ← Category.assoc,
-        c.d_comp_desc_zero (Y := resolutionX Z 0) _ he, sub_self])
-    fun n ⟨f, f', hf⟩ ↦ ⟨c.desc (Y := resolutionX Z (n + 2)) (n + 2)
-        (e.f (n + 2) - f' ≫ (resolution' Z).d (n + 1) (n + 2)), by
-      rw [c.d_comp_desc_succ (Y := resolutionX Z (n + 2)) (n + 1) _ ?_, add_sub_cancel]
+      rw [c.d_comp_desc_succ 0 _ ?_, add_sub_cancel]
+      rw [Preadditive.comp_sub, ← e.comm 0 1, ← Category.assoc, c.d_comp_desc_zero _ he,
+        sub_self])
+    fun n ⟨f, f', hf⟩ ↦ ⟨c.desc (n + 2)
+        (e.f (n + 2) - f' ≫ (CochainComplex.of _ δ hδ).d (n + 1) (n + 2)), by
+      rw [c.d_comp_desc_succ (n + 1) _ ?_, add_sub_cancel]
       rw [Preadditive.comp_sub, ← e.comm (n + 1) (n + 2), ← Category.assoc, hf,
         Preadditive.add_comp, Category.assoc, HomologicalComplex.d_comp_d, Limits.comp_zero,
         zero_add]
@@ -318,7 +322,7 @@ uniqueness of the comparison; other `Z` compare chain maps lying over a coeffici
 `X ⟶ Z`. -/
 noncomputable def homotopy (φ ψ : J ⟶ resolution' Z) (h : c.ι ≫ φ.f 0 = c.ι ≫ ψ.f 0) :
     Homotopy φ ψ :=
-  Homotopy.equivSubZero.symm <| c.nullHomotopy (φ - ψ) <| by
+  Homotopy.equivSubZero.symm <| c.nullHomotopy (Y := resolutionX Z) (φ - ψ) <| by
     rw [HomologicalComplex.sub_f_apply, Preadditive.comp_sub, h, sub_self]
 
 /-- Every chain map from `J` to the coinduced resolution of `X` over the identity of `X` is
