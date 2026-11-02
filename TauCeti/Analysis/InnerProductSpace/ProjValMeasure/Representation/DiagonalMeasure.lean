@@ -156,15 +156,16 @@ theorem representationDiagMeasure_univ (ξ : H) :
 theorem representationDiagMeasure_smul (c : ℂ) (ξ : H) :
     representationDiagMeasure π (c • ξ) = (‖c‖₊ ^ 2) • representationDiagMeasure π ξ := by
   refine ((eq_representationDiagMeasure_iff π (c • ξ) _).2 fun f => ?_).symm
-  rw [integral_smul_nnreal_measure, integral_representationDiagMeasure, map_smul,
-    inner_smul_left, inner_smul_right, ← mul_assoc, Complex.conj_mul', NNReal.smul_def,
-    Complex.real_smul]
-  norm_cast
+  rw [integral_smul_nnreal_measure, integral_representationDiagMeasure, map_smul]
+  simp only [NNReal.smul_def, Complex.real_smul, inner_smul_left, inner_smul_right,
+    NNReal.coe_pow, coe_nnnorm, Complex.ofReal_pow, ← Complex.mul_conj']
+  ring
 
 /-- Scaling the vector by a unit complex number does not change the diagonal measure. -/
 theorem representationDiagMeasure_smul_of_norm_eq_one {c : ℂ} (hc : ‖c‖ = 1) (ξ : H) :
     representationDiagMeasure π (c • ξ) = representationDiagMeasure π ξ := by
-  rw [representationDiagMeasure_smul, show ‖c‖₊ = 1 from NNReal.eq hc, one_pow, one_smul]
+  have hc' : ‖c‖₊ = 1 := NNReal.eq hc
+  rw [representationDiagMeasure_smul, hc', one_pow, one_smul]
 
 /-- Negating the vector does not change the diagonal measure. -/
 @[simp]

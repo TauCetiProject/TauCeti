@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.InnerProductSpace.OperatorIdentities
 public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Representation.DiagonalMeasure
 public import TauCeti.MeasureTheory.VectorMeasure.Uniqueness
-public import TauCeti.MeasureTheory.VectorMeasure.Variation.Regular
 public import TauCeti.MeasureTheory.VectorMeasure.WithDensity
 
 /-!
@@ -238,12 +237,12 @@ theorem variation_representationPolarizedMeasure_univ_le (ψ ξ : H) :
   have hμ : representationPolarizedMeasure π ψ ξ =
       representationPolarizedMeasure π ((t : ℂ) • ψ) (((t⁻¹ : ℝ) : ℂ) • ξ) := by
     rw [representationPolarizedMeasure_smul_left, representationPolarizedMeasure_smul_right,
-      smul_smul, Complex.star_def, Complex.conj_ofReal, ← Complex.ofReal_mul,
-      mul_inv_cancel₀ ht.ne', Complex.ofReal_one, one_smul]
+      smul_smul]
+    simp [ht.ne']
   rw [← ofReal_measureReal, hμ]
   refine ENNReal.ofReal_le_ofReal ((variation_real_univ_le_add π _ _).trans_eq ?_)
-  rw [norm_smul, norm_smul, Complex.norm_real, Complex.norm_real, Real.norm_of_nonneg ht.le,
-    Real.norm_of_nonneg (inv_pos.2 ht).le, mul_pow, mul_pow, inv_pow, ht2]
+  simp only [norm_smul, Complex.norm_real, Real.norm_eq_abs, abs_of_pos ht, abs_inv, mul_pow,
+    inv_pow, ht2]
   field_simp
   ring
 
@@ -256,11 +255,10 @@ theorem representationPolarizedMeasure_swap_apply (ψ ξ : H) (B : Set K) :
   · simp [VectorMeasure.not_measurable _ hB]
   have h1 : ψ + ξ = ξ + ψ := add_comm ψ ξ
   have h2 : ψ + Complex.I • ξ = Complex.I • (ξ - Complex.I • ψ) := by
-    rw [smul_sub, smul_smul, Complex.I_mul_I, neg_one_smul, sub_neg_eq_add, add_comm]
+    simp [smul_sub, smul_smul, add_comm]
   have h3 : ψ - ξ = -(ξ - ψ) := (neg_sub ξ ψ).symm
   have h4 : ψ - Complex.I • ξ = (-Complex.I) • (ξ + Complex.I • ψ) := by
-    rw [smul_add, smul_smul, neg_mul, Complex.I_mul_I, neg_neg, one_smul, neg_smul,
-      sub_eq_neg_add, add_comm]
+    simp [smul_add, smul_smul, sub_eq_neg_add, add_comm]
   rw [representationPolarizedMeasure_apply π _ _ hB, representationPolarizedMeasure_apply π _ _ hB,
     h1, h2, h3, h4, representationDiagMeasure_smul_of_norm_eq_one π (by simp),
     representationDiagMeasure_smul_of_norm_eq_one π (by simp), representationDiagMeasure_neg]

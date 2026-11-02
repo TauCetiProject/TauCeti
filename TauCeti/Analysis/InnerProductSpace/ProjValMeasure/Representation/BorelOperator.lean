@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Dual
 public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Representation.PolarizedMeasure
 public import TauCeti.MeasureTheory.Function.BoundedBorel
 
