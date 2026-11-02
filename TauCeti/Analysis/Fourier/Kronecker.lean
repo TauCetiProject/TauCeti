@@ -13,30 +13,31 @@ import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 
 For a finite index type `ι`, a line `t ↦ θ + t ν` in the torus `(ℝ / pℤ)^ι` is an orbit of a
 linear flow. Its velocity `ν` is *nonresonant* if no nonzero integer vector `k` satisfies
-`∑ i, k i * ν i = 0`. Kronecker's theorem (`AddCircle.denseRange_coe_add_mul_iff`) states that
-the line is dense exactly when `ν` is nonresonant. For a resonance `k`, the character
+`∑ i, k i * ν i = 0`. Kronecker's theorem (`TauCeti.AddCircle.denseRange_coe_add_mul_iff`)
+states that the line is dense exactly when `ν` is nonresonant. For a resonance `k`, the character
 `x ↦ exp (2πi ⟪k, x⟫ / p)` is constant along the line but not on the torus, so the line is not
 dense.
 
 Density of a nonresonant line follows from Weyl's equidistribution theorem for linear flows
-(`UnitAddTorus.tendsto_inv_smul_intervalIntegral`): on the unit torus, the time averages
+(`TauCeti.UnitAddTorus.tendsto_inv_smul_intervalIntegral`): on the unit torus, the time averages
 `T⁻¹ ∫₀ᵀ f (θ + t ν) dt` of a continuous function `f` tend to its integral `∫ f`. For a monomial
 `mFourier n` this is a direct computation: along the line it is a constant multiple of
-`t ↦ exp (2πi ⟪n, ν⟫ t)` (`UnitAddTorus.mFourier_coe_add_mul`), and its integral vanishes for
-`n ≠ 0` (`UnitAddTorus.integral_mFourier`). It extends to every continuous function because the
-trigonometric polynomials are uniformly dense. A continuous bump function supported in an open set
-missed by the line has positive integral but vanishing time averages, so no such open set exists.
+`t ↦ exp (2πi ⟪n, ν⟫ t)` (`TauCeti.UnitAddTorus.mFourier_coe_add_mul`), and its integral
+vanishes for `n ≠ 0` (`TauCeti.UnitAddTorus.integral_mFourier`). It extends to every continuous
+function because the trigonometric polynomials are uniformly dense. A continuous bump function
+supported in an open set missed by the line has positive integral but vanishing time averages, so
+no such open set exists.
 
 These statements decide when an orbit of a completely integrable system, which is a line on an
 invariant torus in action–angle coordinates, fills that torus densely.
 
 ## Main results
 
-* `UnitAddTorus.integral_mFourier`: `∫ mFourier n` is `1` for `n = 0` and `0` otherwise.
-* `UnitAddTorus.tendsto_inv_smul_intervalIntegral`: Weyl's theorem, time averages along a
+* `TauCeti.UnitAddTorus.integral_mFourier`: `∫ mFourier n` is `1` for `n = 0` and `0` otherwise.
+* `TauCeti.UnitAddTorus.tendsto_inv_smul_intervalIntegral`: Weyl's theorem, time averages along a
   nonresonant line tend to the space average.
-* `AddCircle.denseRange_coe_add_mul_iff`: Kronecker's theorem, a line in `(ℝ / pℤ)^ι` is dense
-  exactly when its velocity is nonresonant.
+* `TauCeti.AddCircle.denseRange_coe_add_mul_iff`: Kronecker's theorem, a line in `(ℝ / pℤ)^ι` is
+  dense exactly when its velocity is nonresonant.
 
 ## References
 
@@ -48,7 +49,7 @@ invariant torus in action–angle coordinates, fills that torus densely.
 
 public section
 
-open MeasureTheory Filter Topology Set
+open MeasureTheory Filter Topology Set UnitAddTorus
 open scoped Real
 
 noncomputable section
@@ -56,6 +57,8 @@ noncomputable section
 /-- The measure on `ℝ / ℤ` is a probability measure. -/
 local instance : IsProbabilityMeasure (volume : Measure UnitAddCircle) :=
   ⟨by simp [AddCircle.measure_univ]⟩
+
+namespace TauCeti
 
 namespace UnitAddTorus
 
@@ -116,12 +119,6 @@ private theorem tendsto_average_mFourier_of_ne_zero (n : d → ℤ) (θ ν : d �
         ‖Complex.exp (2 * π * Complex.I * c * (0 : ℝ))‖ := norm_sub_le _ _
     _ = 2 := by rw [hnorm, hnorm]; norm_num
 
-omit [Fintype d] in
-/-- The line `t ↦ θ + t ν` of the unit torus is continuous. -/
-private theorem continuous_coe_add_mul (θ ν : d → ℝ) :
-    Continuous fun t : ℝ ↦ fun i ↦ ((θ i + ν i * t : ℝ) : UnitAddCircle) :=
-  continuous_pi fun _ ↦ (AddCircle.continuous_mk' 1).comp (by fun_prop)
-
 /-- Weyl's theorem for the trigonometric polynomials, the span of the monomials `mFourier n`. -/
 private theorem tendsto_inv_smul_intervalIntegral_of_mem_span {ν : d → ℝ}
     (hν : ∀ k : d → ℤ, ∑ i, (k i : ℝ) * ν i = 0 → k = 0) (θ : d → ℝ) {g : C(UnitAddTorus d, ℂ)}
@@ -130,7 +127,7 @@ private theorem tendsto_inv_smul_intervalIntegral_of_mem_span {ν : d → ℝ}
       atTop (𝓝 (∫ x, g x)) := by
   have hint (g : C(UnitAddTorus d, ℂ)) (T : ℝ) : IntervalIntegrable
       (fun t ↦ g (fun i ↦ ((θ i + ν i * t : ℝ) : UnitAddCircle))) volume 0 T :=
-    (g.continuous.comp (continuous_coe_add_mul θ ν)).intervalIntegrable _ _
+    (g.continuous.comp (by fun_prop)).intervalIntegrable _ _
   have hgi (g : C(UnitAddTorus d, ℂ)) : Integrable g :=
     g.continuous.integrable_of_hasCompactSupport (.of_compactSpace _)
   induction hg using Submodule.span_induction with
@@ -163,7 +160,7 @@ theorem tendsto_inv_smul_intervalIntegral {ν : d → ℝ}
   set γ : ℝ → UnitAddTorus d := fun t i ↦ ((θ i + ν i * t : ℝ) : UnitAddCircle)
   have hint (g : C(UnitAddTorus d, ℂ)) (T : ℝ) :
       IntervalIntegrable (fun t ↦ g (γ t)) volume 0 T :=
-    (g.continuous.comp (continuous_coe_add_mul θ ν)).intervalIntegrable _ _
+    (g.continuous.comp (by fun_prop)).intervalIntegrable _ _
   have hgi (g : C(UnitAddTorus d, ℂ)) : Integrable g :=
     g.continuous.integrable_of_hasCompactSupport (.of_compactSpace _)
   -- Time and space averages are bounded by the sup norm.
@@ -260,11 +257,12 @@ theorem denseRange_coe_add_mul_iff {ι : Type*} [Fintype ι] {p : ℝ} (hp : p �
     DenseRange (fun t : ℝ ↦ fun i ↦ ((θ i + ν i * t : ℝ) : AddCircle p)) ↔
       ∀ k : ι → ℤ, ∑ i, (k i : ℝ) * ν i = 0 → k = 0 := by
   let H : UnitAddTorus ι ≃ₜ (ι → AddCircle p) :=
-    Homeomorph.piCongrRight fun _ ↦ homeomorphAddCircle 1 p one_ne_zero hp
+    Homeomorph.piCongrRight fun _ ↦ AddCircle.homeomorphAddCircle 1 p one_ne_zero hp
   have hH : (fun t : ℝ ↦ fun i ↦ ((θ i + ν i * t : ℝ) : AddCircle p)) =
       H ∘ fun t i ↦ ((θ i / p + ν i / p * t : ℝ) : UnitAddCircle) := by
     funext t i
-    simp only [Function.comp_apply, H, Homeomorph.piCongrRight_apply, homeomorphAddCircle_apply_mk]
+    simp only [Function.comp_apply, H, Homeomorph.piCongrRight_apply,
+      AddCircle.homeomorphAddCircle_apply_mk]
     congr 1
     field_simp
   rw [DenseRange, hH, range_comp, H.isDenseEmbedding.dense_image, ← DenseRange,
@@ -276,3 +274,5 @@ theorem denseRange_coe_add_mul_iff {ι : Type*} [Fintype ι] {p : ℝ} (hp : p �
   rw [hsum, div_eq_zero_iff, or_iff_left hp]
 
 end AddCircle
+
+end TauCeti
