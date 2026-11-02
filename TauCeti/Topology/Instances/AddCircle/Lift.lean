@@ -44,7 +44,9 @@ the circle is either strictly monotone of degree one or strictly antitone of deg
   by a constant.
 * `AddCircle.exists_int_forall_add_period_eq_of_lift`: a continuous lift has an integer degree
   `d`, and then shifts integer multiples of the period by multiples of `d * T`
-  (`AddCircle.lift_add_int_mul_of_degree`).
+  (`AddCircle.lift_add_int_mul_of_degree`, stated for any real increment per period).
+* `AddCircle.exists_lift_symm_comp_eq_add`: for a homeomorphism `φ`, a continuous lift of `φ⁻¹`
+  composed with a continuous lift of `φ` is a translation.
 * `AddCircle.strictMono_or_strictAnti_of_lift`: a continuous lift of a homeomorphism of the
   circle is strictly monotone of degree one or strictly antitone of degree `-1`.
 
@@ -65,18 +67,26 @@ namespace AddCircle
 
 variable {T : ℝ} {φ : AddCircle T → AddCircle T} {F F' : ℝ → ℝ}
 
-/-- A lift `F` of degree `d`, `F (x + T) = F x + d * T`, shifts integer multiples of the period:
-`F (x + k * T) = F x + k * (d * T)`. -/
-theorem lift_add_int_mul_of_degree {d : ℤ} (hper : ∀ x, F (x + T) = F x + d * T)
-    (x : ℝ) (k : ℤ) : F (x + k * T) = F x + k * (d * T) := by
-  have h : Function.Periodic (fun x ↦ F x - d * x) T := fun x ↦ by simp [hper]; ring
-  have h' : F (x + k * T) - d * (x + k * T) = F x - d * x := h.int_mul k x
-  linarith
+/-- A map `F` that increases by `a` over each period, `F (x + T) = F x + a`, increases by `k * a`
+over `k` periods: `F (x + k * T) = F x + k * a`. For a lift of degree `d`, `a = d * T`. -/
+theorem lift_add_int_mul_of_degree {a : ℝ} (hper : ∀ x, F (x + T) = F x + a)
+    (x : ℝ) (k : ℤ) : F (x + k * T) = F x + k * a := by
+  induction k using Int.induction_on with
+  | zero => simp
+  | succ k ih =>
+    push_cast at ih ⊢
+    rw [show x + (k + 1) * T = x + k * T + T by ring, hper, ih]
+    ring
+  | pred k ih =>
+    have h := hper (x + (-k - 1) * T)
+    push_cast at ih ⊢
+    rw [show x + (-k - 1) * T + T = x + -k * T by ring, ih] at h
+    linarith
 
 /-- A lift `F` with `F (x + T) = F x + T` shifts integer multiples of the period. -/
 theorem lift_add_int_mul (hper : ∀ x, F (x + T) = F x + T) (x : ℝ) (k : ℤ) :
-    F (x + k * T) = F x + k * T := by
-  simpa using lift_add_int_mul_of_degree (d := 1) (by simpa using hper) x k
+    F (x + k * T) = F x + k * T :=
+  lift_add_int_mul_of_degree hper x k
 
 /-- A strictly monotone lift `F` maps the fundamental interval `(0, T]` into `(F 0, F 0 + T]`. -/
 theorem image_Ioc_subset_of_lift (hF : StrictMono F) (hper : ∀ x, F (x + T) = F x + T) :
@@ -121,6 +131,16 @@ theorem exists_int_forall_add_period_eq_of_lift (hF : Continuous F) (hφ : ∀ x
       AddCircle.coe_add_period, sub_self]
   obtain ⟨d, hd⟩ := (AddCircle.coe_eq_zero_iff T).1 hc0
   exact ⟨d, fun x ↦ by simpa [← hd, zsmul_eq_mul] using hc x⟩
+
+/-- A continuous lift `G` of the inverse of a homeomorphism `φ` of the circle, composed with a
+continuous lift `F` of `φ`, lifts the identity, so it is a translation: `G (F x) = x + c`. -/
+theorem exists_lift_symm_comp_eq_add (φ : AddCircle T ≃ₜ AddCircle T) (hF : Continuous F)
+    (hφ : ∀ x : ℝ, φ x = F x) :
+    ∃ (G : ℝ → ℝ) (c : ℝ), Continuous G ∧ (∀ x : ℝ, φ.symm x = G x) ∧ ∀ x, G (F x) = x + c := by
+  obtain ⟨G, hG, hψ⟩ := exists_continuous_lift φ.symm.continuous
+  obtain ⟨c, hc⟩ := exists_forall_eq_add_of_lift (T := T) (hG.comp hF) continuous_id
+    fun x ↦ by simp [← hψ, ← hφ]
+  exact ⟨G, c, hG, hψ, hc⟩
 
 variable [hT : Fact (0 < T)]
 
@@ -193,15 +213,12 @@ theorem strictMono_or_strictAnti_of_lift {φ : AddCircle T ≃ₜ AddCircle T} (
     (hφ : ∀ x : ℝ, φ x = F x) :
     (StrictMono F ∧ ∀ x, F (x + T) = F x + T) ∨ (StrictAnti F ∧ ∀ x, F (x + T) = F x - T) := by
   obtain ⟨d, hd⟩ := exists_int_forall_add_period_eq_of_lift hF hφ
-  obtain ⟨G, hG, hψ⟩ := exists_continuous_lift φ.symm.continuous
+  obtain ⟨G, c, hG, hψ, hc⟩ := exists_lift_symm_comp_eq_add φ hF hφ
   obtain ⟨e, he⟩ := exists_int_forall_add_period_eq_of_lift hG hψ
-  -- `G ∘ F` lifts the identity, so it is a translation
-  obtain ⟨c, hc⟩ := exists_forall_eq_add_of_lift (T := T) (hG.comp hF) continuous_id
-    fun x ↦ by simp [← hψ, ← hφ]
   have hFi : Function.Injective F := fun x y hxy ↦ by
     have hx := hc x
     have hy := hc y
-    simp only [Function.comp_apply, id_eq, hxy] at hx hy
+    rw [hxy] at hx
     linarith
   -- the degrees of `φ` and of its inverse multiply to `1`
   have hde : d * e = 1 := by
