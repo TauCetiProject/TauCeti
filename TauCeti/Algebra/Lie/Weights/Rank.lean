@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Lie.Rank
 import Mathlib.Algebra.Module.Submodule.Union
+import TauCeti.Algebra.Lie.Basic
 public import Mathlib.Algebra.Lie.Weights.Killing
 
 /-!
@@ -34,6 +35,8 @@ is nonzero by construction. The zero root space is the Cartan subalgebra.
   elements.
 * `LieSubalgebra.rank_le_finrank_cartan`: the rank of `L` is at most the dimension of `H`.
 * `LieSubalgebra.engel_eq_cartan_of_isRegular`: a regular element of `H` has Engel subalgebra `H`.
+* `LieSubalgebra.engel_eq_map_of_isRegular`: if the image `e h` of `h ∈ H` under an automorphism
+  `e` is regular, then its Engel subalgebra is `e H`.
 
 It supplies only the `rank ≤ dim H` direction; the reverse inequality, which needs a separate
 minimal-centralizer or Cartan-dimension argument, is not asserted here.
@@ -131,5 +134,19 @@ theorem engel_eq_cartan_of_isRegular [Infinite K] [LieModule.LinearWeights K H L
   refine (LieSubalgebra.toSubmodule_injective (Submodule.eq_of_le_of_finrank_le hle ?_)).symm
   exact ((LieAlgebra.isRegular_iff_finrank_engel_eq_rank K _).mp hh).trans_le
     (rank_le_finrank_cartan H)
+
+/-- **Transport of Cartan subalgebras along regular elements.** If the image `e h` of an element
+`h` of a Cartan subalgebra `H` under a Lie algebra automorphism `e` is regular, then its Engel
+subalgebra is `e H`. -/
+theorem engel_eq_map_of_isRegular [Infinite K] [LieModule.LinearWeights K H L]
+    [LieModule.IsTriangularizable K H L] (e : L ≃ₗ⁅K⁆ L) {h : L} (hh : h ∈ H)
+    (hx : LieAlgebra.IsRegular K (e h)) :
+    LieSubalgebra.engel K (e h) = H.map e.toLieHom := by
+  rw [LieAlgebra.isRegular_iff_finrank_engel_eq_rank, ← e.map_engel] at hx
+  -- `h` is regular too: its Engel subalgebra is isomorphic to that of `e h`
+  have hreg : LieAlgebra.IsRegular K ((⟨h, hh⟩ : H) : L) := by
+    rw [LieAlgebra.isRegular_iff_finrank_engel_eq_rank, ← hx]
+    exact (LieSubalgebra.equivMapOfInjective _ _ e.injective).toLinearEquiv.finrank_eq
+  rw [← e.map_engel, engel_eq_cartan_of_isRegular H hreg]
 
 end LieSubalgebra

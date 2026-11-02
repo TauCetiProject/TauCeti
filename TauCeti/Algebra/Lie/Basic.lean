@@ -48,7 +48,7 @@ This file supplies general constructions for Lie modules that are missing from M
 * `LieSubalgebra.lie_eq_zero_of_mem` and `LieIdeal.lie_eq_zero_of_mem`: two elements of an
   abelian Lie subalgebra, or of an abelian Lie ideal, have zero bracket in the ambient Lie algebra.
 * `LieHom.map_ad_pow`: a Lie homomorphism carries `(ad x) ^ n y` to `(ad (f x)) ^ n (f y)`.
-* `LieEquiv.engel_apply`: a Lie algebra isomorphism carries the Engel subalgebra of `x` onto that
+* `LieEquiv.map_engel`: a Lie algebra isomorphism carries the Engel subalgebra of `x` onto that
   of its image.
 * `LieHom.isNilpotent_ad_of_surjective`: adjoint nilpotence descends along a surjective
   Lie homomorphism.
@@ -397,16 +397,16 @@ theorem _root_.LieHom.map_ad_pow (f : L →ₗ⁅R⁆ L') (x : L) (n : ℕ) (y :
     simp only [pow_succ, Module.End.mul_apply, LieAlgebra.ad_apply] at ih ⊢
     rw [ih, f.map_lie]
 
-/-- **A Lie algebra isomorphism carries Engel subalgebras to Engel subalgebras.** The Engel
-subalgebra of `e x` is the image under `e` of the Engel subalgebra of `x`. -/
-theorem _root_.LieEquiv.engel_apply (e : L ≃ₗ⁅R⁆ L') (x : L) :
-    LieSubalgebra.engel R (e x) = (LieSubalgebra.engel R x).map e.toLieHom := by
+/-- **A Lie algebra isomorphism carries Engel subalgebras to Engel subalgebras.** The image
+under `e` of the Engel subalgebra of `x` is the Engel subalgebra of `e x`. -/
+theorem _root_.LieEquiv.map_engel (e : L ≃ₗ⁅R⁆ L') (x : L) :
+    (LieSubalgebra.engel R x).map e.toLieHom = LieSubalgebra.engel R (e x) := by
   ext y
   simp only [LieSubalgebra.mem_map, LieSubalgebra.mem_engel_iff]
-  refine ⟨fun ⟨n, hn⟩ ↦ ⟨e.symm y, ⟨n, e.injective ?_⟩, by simp⟩, ?_⟩
-  · simp [hn]
+  refine ⟨?_, fun ⟨n, hn⟩ ↦ ⟨e.symm y, ⟨n, e.injective ?_⟩, by simp⟩⟩
   · rintro ⟨z, ⟨n, hn⟩, rfl⟩
     exact ⟨n, by simpa [hn] using (e.toLieHom.map_ad_pow x n z).symm⟩
+  · simp [hn]
 
 /-- Adjoint nilpotence descends along a surjective Lie homomorphism. In particular it descends
 to a quotient by any Lie ideal, without a finiteness or characteristic hypothesis. -/

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Lie.AdjointAction.RootExponential
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
-import TauCeti.Algebra.Lie.Basic
 import TauCeti.Algebra.Lie.Weights.Rank
 
 /-!
@@ -69,19 +68,6 @@ theorem _root_.LieSubalgebra.exists_ne_zero_forall_eval_ne_zero_mem_intCartan
   obtain ⟨g, hg, h, hh, hgh⟩ := hp t
   exact ⟨g, hg, h, hh, b.equivFun.injective (hgh.trans ht)⟩
 
-omit [LieAlgebra ℚ L] [LieAlgebra.IsKilling K L] in
-/-- If the image `e h` of an element `h` of a Cartan subalgebra `H` under a Lie algebra
-automorphism `e` is regular, then its Engel subalgebra is `e H`. -/
-private theorem _root_.LieSubalgebra.engel_apply_eq_map_of_isRegular (H : LieSubalgebra K L)
-    [H.IsCartanSubalgebra] (e : L ≃ₗ⁅K⁆ L) {h : L} (hh : h ∈ H) (hx : IsRegular K (e h)) :
-    LieSubalgebra.engel K (e h) = H.map e.toLieHom := by
-  rw [isRegular_iff_finrank_engel_eq_rank, e.engel_apply] at hx
-  -- `h` is regular too: its Engel subalgebra is isomorphic to that of `e h`
-  have hreg : IsRegular K ((⟨h, hh⟩ : H) : L) := by
-    rw [isRegular_iff_finrank_engel_eq_rank, ← hx]
-    exact (LieSubalgebra.equivMapOfInjective _ _ e.injective).toLinearEquiv.finrank_eq
-  rw [e.engel_apply, LieSubalgebra.engel_eq_cartan_of_isRegular H hreg]
-
 /-- **Conjugacy of Cartan subalgebras.** In a finite-dimensional Lie algebra with nondegenerate
 Killing form over an algebraically closed field of characteristic zero, any two Cartan
 subalgebras `H` and `H'` are conjugate under the group `Int(L)` of inner automorphisms. -/
@@ -110,8 +96,8 @@ theorem _root_.LieSubalgebra.exists_map_intLieAlgebraLieEquiv_eq (H H' : LieSuba
   obtain ⟨g', hg', h', hh', hgh'⟩ := hq' x hyq'
   have hH : H.map (intLieAlgebraLieEquiv ⟨g, hg⟩).toLieHom =
       H'.map (intLieAlgebraLieEquiv ⟨g', hg'⟩).toLieHom := by
-    rw [← H.engel_apply_eq_map_of_isRegular _ hh (by rwa [intLieAlgebraLieEquiv_apply, hgh]),
-      ← H'.engel_apply_eq_map_of_isRegular _ hh' (by rwa [intLieAlgebraLieEquiv_apply, hgh']),
+    rw [← H.engel_eq_map_of_isRegular _ hh (by rwa [intLieAlgebraLieEquiv_apply, hgh]),
+      ← H'.engel_eq_map_of_isRegular _ hh' (by rwa [intLieAlgebraLieEquiv_apply, hgh']),
       intLieAlgebraLieEquiv_apply, intLieAlgebraLieEquiv_apply, hgh, hgh']
   -- hence `g'⁻¹ g` carries `H` onto `H'`
   refine ⟨⟨g', hg'⟩⁻¹ * ⟨g, hg⟩, LieSubalgebra.ext _ _ fun z ↦ ?_⟩
