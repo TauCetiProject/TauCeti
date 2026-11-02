@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.ApproximatesLinearOn
+public import TauCeti.Analysis.Calculus.FDeriv.Strip
 public import TauCeti.Analysis.Calculus.Splice
 public import TauCeti.Analysis.Convex.Prod
 public import TauCeti.Geometry.Manifold.ContMDiff.Atlas
@@ -407,57 +408,6 @@ private theorem exists_hasFDerivAt_prodMap_comp {F : Circle × ℝ → M × ℝ}
 
 end Track
 
-/-- **Uniform derivative bounds on a strip.** Let `k` and `l` be smooth on the strip `|u.1| < r`,
-equal near the two ends `u.2 ≤ c₀` and `u.2 ≥ 1 - c₁`, with derivative `A` along the line
-`u.1 = 0`, and with the derivative of `l` independent of the time coordinate. Then on a thinner
-strip both derivatives are within `ε` of `A`. -/
-private theorem exists_pos_forall_norm_fderiv_sub_lt {Y : Type*} [NormedAddCommGroup Y]
-    [NormedSpace ℝ Y] {k l : ℝ × ℝ → Y} {r c₀ c₁ ε : ℝ} {A : ℝ × ℝ →L[ℝ] Y} (hr : 0 < r)
-    (hc₀ : 0 < c₀) (hc₁ : 0 < c₁) (hε : 0 < ε) (hkC : ContDiffOn ℝ ∞ k {u | |u.1| < r})
-    (hlC : ContDiffOn ℝ ∞ l {u | |u.1| < r})
-    (hkl : ∀ u : ℝ × ℝ, |u.1| < r → (u.2 ≤ c₀ ∨ 1 - c₁ ≤ u.2) → k u = l u)
-    (hlt : ∀ (u : ℝ × ℝ) (s : ℝ), fderiv ℝ l (u + (0, s)) = fderiv ℝ l u)
-    (hkA : ∀ t, fderiv ℝ k (0, t) = A) (hlA : ∀ t, fderiv ℝ l (0, t) = A) :
-    ∃ ρ > 0, ρ ≤ r ∧ ∀ u : ℝ × ℝ, |u.1| < ρ →
-      ‖fderiv ℝ k u - A‖ < ε ∧ ‖fderiv ℝ l u - A‖ < ε := by
-  set W : Set (ℝ × ℝ) := {u | |u.1| < r}
-  have hW : IsOpen W := isOpen_lt (continuous_abs.comp continuous_fst) continuous_const
-  -- Over the segment `{0} × [0, 1]` this is continuity of the derivatives.
-  obtain ⟨ρ₁, hρ₁, hρ₁O⟩ := Metric.eventually_nhds_iff.1
-    (isCompact_Icc.eventually_forall_of_forall_eventually (x₀ := (0 : ℝ))
-      (P := fun θ t => ((θ, t) : ℝ × ℝ) ∈ W ∩ (fun u => (fderiv ℝ k u, fderiv ℝ l u)) ⁻¹'
-        {q | ‖q.1 - A‖ < ε ∧ ‖q.2 - A‖ < ε}) fun t _ =>
-      IsOpen.mem_nhds (x := ((0 : ℝ), t))
-        (((hkC.continuousOn_fderiv_of_isOpen hW (by simp)).prodMk
-          (hlC.continuousOn_fderiv_of_isOpen hW (by simp))).isOpen_inter_preimage hW
-          ((isOpen_lt (continuous_norm.comp (continuous_fst.sub continuous_const))
-            continuous_const).inter
-            (isOpen_lt (continuous_norm.comp (continuous_snd.sub continuous_const))
-              continuous_const)))
-      ⟨by simpa [W] using hr, by simp [hkA t, hlA t, hε]⟩)
-  simp only [Real.dist_0_eq_abs] at hρ₁O
-  refine ⟨min ρ₁ r, lt_min hρ₁ hr, min_le_right _ _, fun u hu => ?_⟩
-  have hu₁ : |u.1| < ρ₁ := hu.trans_le (min_le_left _ _)
-  by_cases ht : u.2 ∈ Icc (0 : ℝ) 1
-  · exact (hρ₁O hu₁ u.2 ht).2
-  -- Off `[0, 1]` the two maps agree near `u`, and the derivative of `l` is read at time `0` or `1`.
-  have hev (O : Set (ℝ × ℝ)) (hO : IsOpen O) (huO : u ∈ O)
-      (hO' : ∀ v ∈ O, v.2 ≤ c₀ ∨ 1 - c₁ ≤ v.2) : fderiv ℝ k u = fderiv ℝ l u := by
-    refine Filter.EventuallyEq.fderiv_eq ?_
-    filter_upwards [(hO.inter hW).mem_nhds ⟨huO, hu.trans_le (min_le_right _ _)⟩] with v hv
-    exact hkl v hv.2 (hO' v hv.1)
-  rcases not_and_or.1 ht with h0 | h1
-  · have hlu : fderiv ℝ l u = fderiv ℝ l (u.1, 0) := by simpa using hlt (u.1, 0) u.2
-    rw [hev {v | v.2 < c₀} (isOpen_lt continuous_snd continuous_const)
-      ((not_le.1 h0).trans hc₀) (fun v hv => Or.inl hv.le), hlu]
-    have := (hρ₁O hu₁ 0 ⟨le_rfl, zero_le_one⟩).2.2
-    exact ⟨this, this⟩
-  · have hlu : fderiv ℝ l u = fderiv ℝ l (u.1, 1) := by simpa using hlt (u.1, 1) (u.2 - 1)
-    rw [hev {v | 1 - c₁ < v.2} (isOpen_lt continuous_const continuous_snd)
-      (show 1 - c₁ < u.2 by linarith [not_le.1 h1]) (fun v hv => Or.inr hv.le), hlu]
-    have := (hρ₁O hu₁ 1 ⟨zero_le_one, le_rfl⟩).2.2
-    exact ⟨this, this⟩
-
 section Strip
 
 attribute [local instance] finrank_real_complex_fact'
@@ -611,7 +561,9 @@ theorem exists_eventuallyEq_prodMap_of_mfderiv_eq
     linarith [norm_nonneg P]
   -- Step 3: on a thinner strip both derivatives stay within `ε` of `A`.
   obtain ⟨ρ₁', hρ₁'0, hρ₁'r, hbound⟩ :=
-    exists_pos_forall_norm_fderiv_sub_lt hr hc₀ hc₁ hε hkC hlC hkl hlt hkA hlA
+    exists_pos_forall_norm_fderiv_sub_lt hr zero_le_one hε (hkC.of_le (by simp))
+      (hlC.of_le (by simp)) (fun u hu ht => hkl u hu (ht.imp (fun h => (h.trans hc₀).le)
+        fun h => by linarith)) hlt (fun t _ => hkA t) fun t _ => hlA t
   have hρ₁r {u : ℝ × ℝ} (hu : |u.1| < ρ₁') : |u.1| < r := hu.trans_le hρ₁'r
   -- Step 4: the image under `F` of the complement of the arc `|angle z₀ z| < ρ` is closed, and a
   -- uniform neighbourhood of the segment `{φ p} × [0, 1]` in the chart avoids it.
