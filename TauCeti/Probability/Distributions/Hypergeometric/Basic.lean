@@ -149,13 +149,13 @@ theorem sum_hypergeometricWeight (hK : K ≤ N) (hn : n ≤ N) :
 theorem isProbabilityMeasure_hypergeometricMeasure (hK : K ≤ N) (hn : n ≤ N) :
     IsProbabilityMeasure (hypergeometricMeasure N K n) := by
   rw [isProbabilityMeasure_iff, hypergeometricMeasure_eq_sum_dirac hK hn]
-  simpa [Measure.finsetSum_apply] using sum_hypergeometricWeight hK hn
+  simpa [_root_.sum_apply] using sum_hypergeometricWeight hK hn
 
 /-- The singleton mass of a valid hypergeometric law is its defining weight. -/
 @[simp]
 theorem hypergeometricMeasure_singleton (hK : K ≤ N) (hn : n ≤ N) (k : ℕ) :
     hypergeometricMeasure N K n {k} = hypergeometricWeight N K n k := by
-  rw [hypergeometricMeasure_eq_sum_dirac hK hn, Measure.finsetSum_apply]
+  rw [hypergeometricMeasure_eq_sum_dirac hK hn, _root_.sum_apply]
   by_cases hk : k ≤ n
   · rw [Finset.sum_eq_single k]
     · simp

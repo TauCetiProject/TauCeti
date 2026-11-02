@@ -469,8 +469,12 @@ attribute [local instance] structureOfGroup
 
 /-- The multiplicative monoid `ℕ` is not a model of the group theory, however inversion is
 interpreted: the group theory is not satisfied by every monoid. -/
-theorem not_model_group_multiplicative_nat [Inv (Multiplicative ℕ)] :
-    ¬ Multiplicative ℕ ⊨ Language.Theory.group := fun h => by
+theorem not_model_group_multiplicative_nat
+    (inverse : Multiplicative ℕ → Multiplicative ℕ) :
+    letI : Inv (Multiplicative ℕ) := ⟨inverse⟩
+    ¬ Multiplicative ℕ ⊨ Language.Theory.group := by
+  let : Inv (Multiplicative ℕ) := ⟨inverse⟩
+  intro h
   have h' := (GroupAxiom.realize_toSentence_iff_toProp (G := Multiplicative ℕ) .invMulCancel).1
     (Language.Theory.realize_sentence_of_mem Language.Theory.group (Set.mem_range_self _))
   have h1 := congrArg Multiplicative.toAdd (h' (Multiplicative.ofAdd 1))

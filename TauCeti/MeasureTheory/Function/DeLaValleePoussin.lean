@@ -144,7 +144,7 @@ theorem exists_convexOn_superlinear_integrable {f : α → F} (hf : Integrable f
           max_eq_left]
         exact lintegral_tsum fun k ↦
           (hf.aestronglyMeasurable.norm.aemeasurable.sub_const _).ennreal_ofReal
-    _ ≤ ∑' k, (δ k : ℝ≥0∞) := ENNReal.tsum_le_tsum hδt
+    _ ≤ ∑' k, (δ k : ℝ≥0∞) := tsum_le_tsum hδt
     _ < ∞ := hδsum.trans ENNReal.one_lt_top
 
 end MeasureTheory.Integrable

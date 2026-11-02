@@ -129,7 +129,7 @@ private theorem hasStrictFDerivAt_plane (p : ℝ × ℝ) :
       (planeDerivEquiv hL hn hpos p : ℝ × ℝ →L[ℝ] ℝ × ℝ) p := by
   have hd : HasFDerivAt (fun p : ℝ × ℝ ↦ (p.1, L p)) (planeDeriv p) p :=
     hasFDerivAt_fst.prodMk ((hL.differentiable hn) p).hasFDerivAt
-  have hs := ((contDiff_fst.prodMk hL).contDiffAt (x := p)).hasStrictFDerivAt hn
+  have hs := ((contDiff_fst.prodMk hL).contDiffAt (x := p)).hasStrictFDerivAt_fderiv hn
   rwa [hd.fderiv, ← coe_planeDerivEquiv hL hn hpos] at hs
 
 /-- The map `(s, x) ↦ (s, L (s, x))` as a homeomorphism of the plane: a continuous bijection which
