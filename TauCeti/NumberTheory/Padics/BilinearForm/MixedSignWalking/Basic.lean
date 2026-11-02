@@ -45,7 +45,10 @@ open Matrix
 
 namespace TauCeti
 
-private theorem mixed_sign_walking_binary {a : ℤ_[2]} (ha : IsUnit a) :
+/-- The even unimodular plane with Gram matrix `a • !![2, 3; 3, 2]`, for a dyadic unit
+`a`, is isometric to `V`. This is the binary block arising in both orientations of
+mixed-type sign walking. -/
+theorem equivalent_toBilin'_binary_two_three_mul {a : ℤ_[2]} (ha : IsUnit a) :
     (toBilin' !![2 * a, 3 * a; 3 * a, 2 * a]).Equivalent
       (toBilin' (!![2, 1; 1, 2] : Matrix (Fin 2) (Fin 2) ℤ_[2])) := by
   have h3 : IsUnit (3 : ℤ_[2]) := by
@@ -105,7 +108,7 @@ private theorem mixed_sign_walking_hyperbolic {a : ℤ_[2]} (ha : IsUnit a) :
     rw [← hmatrix, ← toBilin'_comp,
       ← toLinearEquiv'_apply P (P.invertibleOfIsUnitDet hP)]
     exact ⟨(toBilin' _).isometryEquivOfCompLinearEquiv _⟩
-  obtain ⟨e⟩ := mixed_sign_walking_binary ha
+  obtain ⟨e⟩ := equivalent_toBilin'_binary_two_three_mul ha
   -- Split off the first coordinate and apply the binary isometry to the remaining two.
   let split : (Fin 3 → ℤ_[2]) ≃ₗ[ℤ_[2]] ℤ_[2] × (Fin 2 → ℤ_[2]) :=
     (LinearEquiv.piCongrLeft ℤ_[2] (fun _ ↦ ℤ_[2]) (finSuccEquiv 2)) ≪≫ₗ
