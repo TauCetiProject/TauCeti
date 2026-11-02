@@ -31,7 +31,10 @@ diffeomorphism of a compactly supported diffeotopy. The homogeneity lemma
 centre of the second by a compactly supported diffeotopy, whose final diffeomorphism preserves
 the orientation (`TauCeti.Diffeotopy.isOrientationPreservingAt_final`); the ambient disc theorem
 at a common centre (`TauCeti.SmoothEmbedding.exists_diffeotopy_eqOn_of_det_chartAt_mul_pos`) then
-finishes. This is what makes a connected sum independent of its balls.
+finishes. That argument needs a σ-compact manifold. The relative form runs it in the open
+submanifold covered by the images of the two embeddings, which is σ-compact, and extends the
+result by the identity; taking `U` to be the whole manifold removes the σ-compactness assumption.
+This is what makes a connected sum independent of its balls.
 
 ## Main results
 
@@ -101,13 +104,10 @@ theorem exists_smoothIsotopy_of_isOrientationPreservingAt
   f.exists_smoothIsotopy_of_det_chartAt_mul_pos g hcentre
     (det_mul_pos_of_isOrientationPreservingAt f g hcentre o oM hf hg)
 
-/-- **The ambient disc theorem for oriented embeddings** (Palais). Let `f` and `g` be smooth
-embeddings of `E` into a connected, Hausdorff, σ-compact boundaryless manifold `M` modelled on
-`E`, which preserve the orientations `o` of `E` and `oM` of `M` at the origin; their centres
-`f 0` and `g 0` may differ. On every compact subset `A` of `E`, `g` is `f` followed by the final
-diffeomorphism of a smooth diffeotopy of `M` fixing every point outside a compact set. -/
-theorem exists_diffeotopy_eqOn_of_isOrientationPreservingAt [T2Space M] [SigmaCompactSpace M]
-    [PreconnectedSpace M] (f g : SmoothEmbedding 𝓘(ℝ, E) 𝓘(ℝ, E) ∞ E M)
+/-- The ambient disc theorem for oriented embeddings on a σ-compact manifold. -/
+private theorem exists_diffeotopy_eqOn_of_isOrientationPreservingAt_of_sigmaCompactSpace
+    [T2Space M] [SigmaCompactSpace M] [PreconnectedSpace M]
+    (f g : SmoothEmbedding 𝓘(ℝ, E) 𝓘(ℝ, E) ∞ E M)
     (o : Manifold.Orientation 𝓘(ℝ, E) E ι) (oM : Manifold.Orientation 𝓘(ℝ, E) M ι)
     (hf : o.IsOrientationPreservingAt oM f 0) (hg : o.IsOrientationPreservingAt oM g 0)
     {A : Set E} (hA : IsCompact A) :
@@ -130,17 +130,6 @@ theorem exists_diffeotopy_eqOn_of_isOrientationPreservingAt [T2Space M] [SigmaCo
     simp [hΨL t hy.1, hΘK t y hy.2]
   · simpa [f'] using hΘ hx
 
-/-- On a connected oriented manifold, two smooth embeddings of `E` which preserve the orientations
-`o` of `E` and `oM` of `M` at the origin agree near the origin after a diffeomorphism of `M`. -/
-theorem exists_diffeomorph_comp_eventuallyEq [T2Space M] [SigmaCompactSpace M]
-    [PreconnectedSpace M] (f g : SmoothEmbedding 𝓘(ℝ, E) 𝓘(ℝ, E) ∞ E M)
-    (o : Manifold.Orientation 𝓘(ℝ, E) E ι) (oM : Manifold.Orientation 𝓘(ℝ, E) M ι)
-    (hf : o.IsOrientationPreservingAt oM f 0) (hg : o.IsOrientationPreservingAt oM g 0) :
-    ∃ φ : M ≃ₘ^∞⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ M, φ ∘ f =ᶠ[𝓝 0] g := by
-  obtain ⟨Φ, -, -, -, hΦ⟩ := f.exists_diffeotopy_eqOn_of_isOrientationPreservingAt g o oM hf hg
-    (isCompact_closedBall (0 : E) 1)
-  exact ⟨Φ.final, hΦ.eventuallyEq_of_mem (closedBall_mem_nhds 0 one_pos)⟩
-
 /-- The relative ambient disc theorem for a σ-compact open set `U`: the ambient disc theorem in
 the open submanifold `U`, extended by the identity. -/
 private theorem exists_diffeotopy_eqOn_of_range_subset_of_isSigmaCompact [T2Space M]
@@ -162,8 +151,9 @@ private theorem exists_diffeotopy_eqOn_of_range_subset_of_isSigmaCompact [T2Spac
       o.IsOrientationPreservingAt (oM.restrict V) h' 0 :=
     (Manifold.Orientation.isOrientationPreservingAt_restrict oM V (h' 0)).of_comp hh'
       (h'.contMDiff.mdifferentiableAt (by simp))
-  obtain ⟨Λ, K, hK, hΛK, hΛ⟩ := f'.exists_diffeotopy_eqOn_of_isOrientationPreservingAt g' o
-    (oM.restrict V) (hrestrict (by simpa [f'] using hf)) (hrestrict (by simpa [g'] using hg)) hA
+  obtain ⟨Λ, K, hK, hΛK, hΛ⟩ :=
+    exists_diffeotopy_eqOn_of_isOrientationPreservingAt_of_sigmaCompactSpace f' g' o
+      (oM.restrict V) (hrestrict (by simpa [f'] using hf)) (hrestrict (by simpa [g'] using hg)) hA
   obtain ⟨Φ, hΦ, hΦK⟩ := Λ.exists_extend_of_isCompact isLocalDiffeomorph_subtype_val
     V.isOpen.isOpenEmbedding_subtypeVal hK fun t z hz ↦ hΛK t z hz
   refine ⟨Φ, Subtype.val '' K, hK.image continuous_subtype_val,
@@ -219,5 +209,33 @@ theorem exists_diffeotopy_eqOn_of_isOrientationPreservingAt_of_range_subset [T2S
   · rw [mem_union, not_or] at hy
     simp [hΨL t hy.1, hΘK t y hy.2]
   · simpa [f'] using hΘ hx
+
+/-- **The ambient disc theorem for oriented embeddings** (Palais). Let `f` and `g` be smooth
+embeddings of `E` into a connected Hausdorff boundaryless manifold `M` modelled on `E`, which
+preserve the orientations `o` of `E` and `oM` of `M` at the origin; their centres `f 0` and `g 0`
+may differ. On every compact subset `A` of `E`, `g` is `f` followed by the final diffeomorphism of
+a smooth diffeotopy of `M` fixing every point outside a compact set. -/
+theorem exists_diffeotopy_eqOn_of_isOrientationPreservingAt [T2Space M] [PreconnectedSpace M]
+    (f g : SmoothEmbedding 𝓘(ℝ, E) 𝓘(ℝ, E) ∞ E M)
+    (o : Manifold.Orientation 𝓘(ℝ, E) E ι) (oM : Manifold.Orientation 𝓘(ℝ, E) M ι)
+    (hf : o.IsOrientationPreservingAt oM f 0) (hg : o.IsOrientationPreservingAt oM g 0)
+    {A : Set E} (hA : IsCompact A) :
+    ∃ Φ : Diffeotopy 𝓘(ℝ, E) ∞ M, ∃ K : Set M, IsCompact K ∧ (∀ t, ∀ y ∉ K, Φ (t, y) = y) ∧
+      EqOn (Φ.final ∘ f) g A := by
+  obtain ⟨Φ, K, hK, -, hΦK, hΦ⟩ :=
+    exists_diffeotopy_eqOn_of_isOrientationPreservingAt_of_range_subset isOpen_univ
+      isPreconnected_univ f g (subset_univ _) (subset_univ _) o oM hf hg hA
+  exact ⟨Φ, K, hK, hΦK, hΦ⟩
+
+/-- On a connected oriented manifold, two smooth embeddings of `E` which preserve the orientations
+`o` of `E` and `oM` of `M` at the origin agree near the origin after a diffeomorphism of `M`. -/
+theorem exists_diffeomorph_comp_eventuallyEq [T2Space M] [PreconnectedSpace M]
+    (f g : SmoothEmbedding 𝓘(ℝ, E) 𝓘(ℝ, E) ∞ E M)
+    (o : Manifold.Orientation 𝓘(ℝ, E) E ι) (oM : Manifold.Orientation 𝓘(ℝ, E) M ι)
+    (hf : o.IsOrientationPreservingAt oM f 0) (hg : o.IsOrientationPreservingAt oM g 0) :
+    ∃ φ : M ≃ₘ^∞⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ M, φ ∘ f =ᶠ[𝓝 0] g := by
+  obtain ⟨Φ, -, -, -, hΦ⟩ := f.exists_diffeotopy_eqOn_of_isOrientationPreservingAt g o oM hf hg
+    (isCompact_closedBall (0 : E) 1)
+  exact ⟨Φ.final, hΦ.eventuallyEq_of_mem (closedBall_mem_nhds 0 one_pos)⟩
 
 end TauCeti.SmoothEmbedding
