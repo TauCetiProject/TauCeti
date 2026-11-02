@@ -90,6 +90,15 @@ theorem map_mul_T_mul (hτ : IsMarkovTrace z τ) {n : ℕ} {a b : InfiniteTypeAH
     τ (a * T q n * b) = z * τ (b * a) := by
   rw [hτ.map_mul_comm, ← mul_assoc, hτ.map_mul_T (mul_mem hb ha)]
 
+/-- The Markov rule for the inverse of the generator adding a new last strand: since
+`(T n)⁻¹ = T n - (q - q⁻¹)`, it multiplies the trace by `z - (q - q⁻¹)`. -/
+theorem map_mul_val_inv_unitT (hτ : IsMarkovTrace z τ) {n : ℕ}
+    {x : InfiniteTypeAHeckeAlgebra R q} (hx : x ∈ stage R q (n + 1)) :
+    τ (x * ↑(unitT q n)⁻¹) = (z - ((q : R) - ↑q⁻¹)) * τ x := by
+  rw [val_inv_unitT, mul_sub, ← Algebra.commutes, ← Algebra.smul_def, map_sub, map_smul,
+    hτ.map_mul_T hx, smul_eq_mul]
+  ring
+
 /-- **Uniqueness of the Ocneanu trace.** Two Markov traces with the same parameter are equal. -/
 theorem unique {τ' : InfiniteTypeAHeckeAlgebra R q →ₗ[R] R} (hτ : IsMarkovTrace z τ)
     (hτ' : IsMarkovTrace z τ') : τ = τ' :=
