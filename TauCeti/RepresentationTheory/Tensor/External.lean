@@ -33,11 +33,7 @@ which the classification of the irreducible representations of a product of grou
 
 * the character of `ρ.externalTensor σ` at `(g, h)` is `χ_ρ(g) * χ_σ(h)`;
 * over an algebraically closed field, the external tensor product of a finite-dimensional
-  irreducible representation and an irreducible representation is irreducible. The proof is
-  Burnside's density theorem for the first factor
-  (`Representation.exists_ne_zero_forall_exists_rTensor_asAlgebraHom_eq_tmul`): a nonzero
-  subrepresentation contains some `v ⊗ m` with `m ≠ 0` for every `v`, and the vectors `m` with
-  this property form a nonzero subrepresentation of the irreducible second factor.
+  irreducible representation and an irreducible representation is irreducible.
 
 Only the first factor needs to be finite-dimensional, and neither factor needs to be a
 representation of a finite group.
@@ -58,8 +54,9 @@ representation of a finite group.
 * `Representation.externalTensor_comp_diag`: along the diagonal, the external tensor product
   restricts to the internal one.
 * `Representation.char_externalTensor`: the character is `χ_ρ(g) * χ_σ(h)`.
-* `Representation.isIrreducible_externalTensor`: the external tensor product of irreducible
-  representations over an algebraically closed field is irreducible.
+* `Representation.isIrreducible_externalTensor`: over an algebraically closed field, the external
+  tensor product of a finite-dimensional irreducible representation and an irreducible
+  representation is irreducible.
 
 ## References
 
@@ -174,6 +171,30 @@ theorem externalTensor_tmul (e₁ : Equiv ρ ρ') (e₂ : Equiv σ σ') (v : V) 
     e₁.externalTensor e₂ (v ⊗ₜ w) = e₁ v ⊗ₜ e₂ w :=
   (rfl)
 
+@[simp]
+theorem toIntertwiningMap_externalTensor (e₁ : Equiv ρ ρ') (e₂ : Equiv σ σ') :
+    (e₁.externalTensor e₂).toIntertwiningMap =
+      e₁.toIntertwiningMap.externalTensor e₂.toIntertwiningMap :=
+  (rfl)
+
+@[simp]
+theorem externalTensor_refl :
+    (Equiv.refl ρ).externalTensor (Equiv.refl σ) = Equiv.refl (ρ.externalTensor σ) :=
+  toLinearEquiv_injective (_root_.TensorProduct.congr_refl_refl ..)
+
+@[simp]
+theorem externalTensor_symm (e₁ : Equiv ρ ρ') (e₂ : Equiv σ σ') :
+    (e₁.externalTensor e₂).symm = e₁.symm.externalTensor e₂.symm :=
+  (rfl)
+
+theorem externalTensor_trans {V'' W'' : Type*} [AddCommMonoid V''] [Module k V'']
+    [AddCommMonoid W''] [Module k W''] {ρ'' : Representation k G V''}
+    {σ'' : Representation k H W''} (e₁ : Equiv ρ ρ') (e₁' : Equiv ρ' ρ'') (e₂ : Equiv σ σ')
+    (e₂' : Equiv σ' σ'') :
+    (e₁.trans e₁').externalTensor (e₂.trans e₂') =
+      (e₁.externalTensor e₂).trans (e₁'.externalTensor e₂') :=
+  toLinearEquiv_injective (_root_.TensorProduct.congr_trans ..)
+
 end Equiv
 
 /-! ### Comparisons -/
@@ -183,11 +204,16 @@ tensor product `ρ ⊠ σ` is `σ ⊠ ρ`, through the swap `V ⊗ W ≃ W ⊗ V
 noncomputable def externalTensorComm :
     Equiv ((ρ.externalTensor σ).comp (MulEquiv.prodComm (M := H) (N := G)).toMonoidHom)
       (σ.externalTensor ρ) :=
-  .mk (_root_.TensorProduct.comm k V W) fun _ ↦ TensorProduct.ext' fun _ _ ↦ by simp
+  TensorProduct.comm (ρ.comp (MonoidHom.snd H G)) (σ.comp (MonoidHom.fst H G))
 
 @[simp]
 theorem externalTensorComm_tmul (v : V) (w : W) :
     ρ.externalTensorComm σ (v ⊗ₜ w) = w ⊗ₜ v :=
+  (rfl)
+
+@[simp]
+theorem externalTensorComm_symm_tmul (v : V) (w : W) :
+    (ρ.externalTensorComm σ).symm (w ⊗ₜ v) = v ⊗ₜ w :=
   (rfl)
 
 /-- **Reassociating.** Pulled back along `(G × H) × K ≃* G × (H × K)`, the external tensor product
@@ -196,34 +222,49 @@ noncomputable def externalTensorAssoc :
     Equiv ((ρ.externalTensor σ).externalTensor τ)
       ((ρ.externalTensor (σ.externalTensor τ)).comp
         (MulEquiv.prodAssoc (M := G) (N := H) (P := K)).toMonoidHom) :=
-  .mk (_root_.TensorProduct.assoc k V W U) fun _ ↦
-    TensorProduct.ext (TensorProduct.ext' fun _ _ ↦ LinearMap.ext fun _ ↦ by simp)
+  TensorProduct.assoc (ρ.comp ((MonoidHom.fst G H).comp (MonoidHom.fst (G × H) K)))
+    (σ.comp ((MonoidHom.snd G H).comp (MonoidHom.fst (G × H) K))) (τ.comp (MonoidHom.snd (G × H) K))
 
 @[simp]
 theorem externalTensorAssoc_tmul (v : V) (w : W) (u : U) :
     ρ.externalTensorAssoc σ τ ((v ⊗ₜ w) ⊗ₜ u) = v ⊗ₜ (w ⊗ₜ u) :=
   (rfl)
 
+@[simp]
+theorem externalTensorAssoc_symm_tmul (v : V) (w : W) (u : U) :
+    (ρ.externalTensorAssoc σ τ).symm (v ⊗ₜ (w ⊗ₜ u)) = (v ⊗ₜ w) ⊗ₜ u :=
+  (rfl)
+
 /-- **A trivial line on the right.** Tensoring with the trivial representation of `H` on the
 scalars gives the pullback of `ρ` along the first projection. -/
 noncomputable def externalTensorRid :
     Equiv (ρ.externalTensor (trivial k H k)) (ρ.comp (MonoidHom.fst G H)) :=
-  .mk (_root_.TensorProduct.rid k V) fun _ ↦ TensorProduct.ext' fun _ _ ↦ by simp
+  TensorProduct.rid k (ρ.comp (MonoidHom.fst G H))
 
 @[simp]
 theorem externalTensorRid_tmul (v : V) (c : k) :
     ρ.externalTensorRid (H := H) (v ⊗ₜ c) = c • v :=
   (rfl)
 
+@[simp]
+theorem externalTensorRid_symm_apply (v : V) :
+    (ρ.externalTensorRid (H := H)).symm v = v ⊗ₜ 1 :=
+  (rfl)
+
 /-- **A trivial line on the left.** Tensoring the trivial representation of `G` on the scalars
 with `σ` gives the pullback of `σ` along the second projection. -/
 noncomputable def externalTensorLid :
     Equiv ((trivial k G k).externalTensor σ) (σ.comp (MonoidHom.snd G H)) :=
-  .mk (_root_.TensorProduct.lid k W) fun _ ↦ TensorProduct.ext' fun _ _ ↦ by simp
+  TensorProduct.lid k (σ.comp (MonoidHom.snd G H))
 
 @[simp]
 theorem externalTensorLid_tmul (c : k) (w : W) :
     σ.externalTensorLid (G := G) (c ⊗ₜ w) = c • w :=
+  (rfl)
+
+@[simp]
+theorem externalTensorLid_symm_apply (w : W) :
+    (σ.externalTensorLid (G := G)).symm w = 1 ⊗ₜ w :=
   (rfl)
 
 /-- **Direct sums on the left.** The external tensor product distributes over a direct sum in the
@@ -239,6 +280,11 @@ theorem externalTensorProdLeft_tmul (x : V × V') (w : W) :
     ρ.externalTensorProdLeft ρ' σ (x ⊗ₜ w) = (x.1 ⊗ₜ w, x.2 ⊗ₜ w) :=
   (rfl)
 
+@[simp]
+theorem externalTensorProdLeft_symm_tmul (v : V) (v' : V') (w : W) :
+    (ρ.externalTensorProdLeft ρ' σ).symm (v ⊗ₜ w, v' ⊗ₜ w) = (v, v') ⊗ₜ w :=
+  _root_.TensorProduct.prodLeft_symm_tmul k k V V' W v v' w
+
 /-- **Direct sums on the right.** The external tensor product distributes over a direct sum in
 the second factor. -/
 noncomputable def externalTensorProdRight :
@@ -251,6 +297,11 @@ noncomputable def externalTensorProdRight :
 theorem externalTensorProdRight_tmul (v : V) (y : W × W') :
     ρ.externalTensorProdRight σ σ' (v ⊗ₜ y) = (v ⊗ₜ y.1, v ⊗ₜ y.2) :=
   (rfl)
+
+@[simp]
+theorem externalTensorProdRight_symm_tmul (v : V) (w : W) (w' : W') :
+    (ρ.externalTensorProdRight σ σ').symm (v ⊗ₜ w, v ⊗ₜ w') = v ⊗ₜ (w, w') :=
+  _root_.TensorProduct.prodRight_symm_tmul k k V W W' v w w'
 
 end Monoid
 
@@ -268,6 +319,11 @@ noncomputable def externalTensorDual :
     Equiv (ρ.dual.externalTensor σ.dual) (ρ.externalTensor σ).dual :=
   .mk (_root_.TensorProduct.dualDistribEquiv k V W) fun _ ↦ TensorProduct.ext' fun _ _ ↦
     TensorProduct.ext' fun _ _ ↦ by simp [Module.Dual.transpose_apply]
+
+@[simp]
+theorem toLinearEquiv_externalTensorDual :
+    (ρ.externalTensorDual σ).toLinearEquiv = _root_.TensorProduct.dualDistribEquiv k V W :=
+  (rfl)
 
 @[simp]
 theorem externalTensorDual_tmul_apply_tmul (f : Module.Dual k V) (g : Module.Dual k W) (v : V)
@@ -289,26 +345,11 @@ theorem char_externalTensor [FiniteDimensional k V] [FiniteDimensional k W] (p :
     (ρ.externalTensor σ).character p = ρ.character p.1 * σ.character p.2 :=
   LinearMap.trace_tensorProduct' (ρ p.1) (σ p.2)
 
-open scoped MonoidAlgebra in
-/-- The action of the monoid algebra of `G` on the first tensor factor preserves every
-subrepresentation of the external tensor product. -/
-private theorem rTensor_asAlgebraHom_mem (N : Subrepresentation (ρ.externalTensor σ)) (r : k[G])
-    {z : V ⊗[k] W} (hz : z ∈ N.toSubmodule) :
-    (ρ.asAlgebraHom r).rTensor W z ∈ N.toSubmodule := by
-  induction r using MonoidAlgebra.induction_linear with
-  | zero => simp
-  | add a b ha hb =>
-    rw [map_add, LinearMap.rTensor_add, LinearMap.add_apply]
-    exact N.toSubmodule.add_mem ha hb
-  | single g c =>
-    have h := N.apply_mem_toSubmodule (g, 1) hz
-    rw [externalTensor_apply, map_one, Module.End.one_eq_id] at h
-    rw [asAlgebraHom_single, LinearMap.rTensor_smul, LinearMap.smul_apply]
-    exact N.toSubmodule.smul_mem c h
-
 /-- **External tensor products of irreducibles are irreducible.** Over an algebraically closed
 field, if `ρ` is a finite-dimensional irreducible representation of `G` and `σ` an irreducible
-representation of `H`, then `ρ.externalTensor σ` is an irreducible representation of `G × H`. -/
+representation of `H`, then `ρ.externalTensor σ` is an irreducible representation of `G × H`.
+The proof rests on Burnside's density theorem for the first factor, in the form
+`Representation.exists_ne_zero_forall_tmul_mem`. -/
 theorem isIrreducible_externalTensor [IsAlgClosed k] [FiniteDimensional k V]
     (hρ : ρ.IsIrreducible) (hσ : σ.IsIrreducible) : (ρ.externalTensor σ).IsIrreducible := by
   have := hρ.nontrivial
@@ -320,9 +361,13 @@ theorem isIrreducible_externalTensor [IsAlgClosed k] [FiniteDimensional k V]
   refine ⟨fun N ↦ (eq_or_ne N ⊥).imp_right fun hN ↦ ?_⟩
   obtain ⟨z, hzN, hz⟩ := Submodule.exists_mem_ne_zero_of_ne_bot fun h : N.toSubmodule = ⊥ ↦
     hN (Subrepresentation.toSubmodule_injective (h.trans Subrepresentation.toSubmodule_bot.symm))
-  -- By Burnside density on the first factor, `N` contains `v ⊗ m` for one `m ≠ 0` and every `v`.
-  obtain ⟨m, hm, hr⟩ := exists_ne_zero_forall_exists_rTensor_asAlgebraHom_eq_tmul ρ hρ hz
-  -- The vectors `w` with `v ⊗ w ∈ N` for every `v` form a subrepresentation of `σ`.
+  -- By Burnside density on the first factor, `N` contains `v ⊗ m` for one `m ≠ 0` and every `v`:
+  -- `G × 1` acts on `N` through the first factor alone.
+  obtain ⟨m, hm, hmN⟩ := exists_ne_zero_forall_tmul_mem ρ hρ (fun g z hz ↦ by
+    have h := N.apply_mem_toSubmodule (g, 1) hz
+    rwa [externalTensor_apply, map_one, Module.End.one_eq_id, ← LinearMap.rTensor_def] at h) hzN hz
+  -- The vectors `w` with `v ⊗ w ∈ N` for every `v` form a subrepresentation of `σ`, which
+  -- contains `m ≠ 0` and so is everything, since `σ` is irreducible.
   let M : Subrepresentation σ :=
     { toSubmodule :=
         { carrier := {w | ∀ v : V, v ⊗ₜ[k] w ∈ N.toSubmodule}
@@ -333,9 +378,7 @@ theorem isIrreducible_externalTensor [IsAlgClosed k] [FiniteDimensional k V]
             simpa [TensorProduct.tmul_smul] using N.toSubmodule.smul_mem c (hw v) }
       apply_mem_toSubmodule := fun h w hw v ↦ by
         simpa using N.apply_mem_toSubmodule (1, h) (hw v) }
-  have hmM : m ∈ M.toSubmodule := fun v ↦ by
-    obtain ⟨r, hr⟩ := hr v
-    exact hr ▸ rTensor_asAlgebraHom_mem ρ σ N r hzN
+  have hmM : m ∈ M.toSubmodule := hmN
   have hM : M = ⊤ := (hσ.eq_bot_or_eq_top M).resolve_left fun h ↦ hm <| by
     simpa [h] using hmM
   refine Subrepresentation.toSubmodule_injective (eq_top_iff.mpr ?_)
