@@ -33,8 +33,6 @@ with that open one.
 * `TauCeti.convex_setOfPred_posDef` — the positive-definite matrices form a convex set;
 * `TauCeti.isOpen_setOfPred_dotProduct_mulVec_pos` — positivity of the quadratic form on nonzero
   vectors is an open condition on real square matrices;
-* `Matrix.posDef_fin_one_iff` — a `1 × 1` matrix is positive definite exactly when its single
-  entry is positive;
 * `TauCeti.measurableSet_setOfPred_posDef` — the positive-definite real matrices form a
   measurable set.
 -/
@@ -46,24 +44,6 @@ noncomputable section
 open Topology
 
 open scoped Matrix
-
-namespace Matrix
-
-/-- A `1 × 1` matrix over a nontrivial star-ordered ring without zero divisors, such as `ℝ` or
-`ℂ`, is positive definite exactly when its single entry is positive. -/
-@[simp]
-theorem posDef_fin_one_iff {R : Type*} [Ring R] [PartialOrder R] [StarRing R]
-    [StarOrderedRing R] [NoZeroDivisors R] [Nontrivial R] (M : Matrix (Fin 1) (Fin 1) R) :
-    M.PosDef ↔ 0 < M 0 0 := by
-  have hdiag : M = Matrix.diagonal ![M 0 0] := by
-    ext i j
-    fin_cases i
-    fin_cases j
-    simp
-  rw [hdiag, Matrix.posDef_diagonal_iff]
-  simp
-
-end Matrix
 
 namespace TauCeti
 
