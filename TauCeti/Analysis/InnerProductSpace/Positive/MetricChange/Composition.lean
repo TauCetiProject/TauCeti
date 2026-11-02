@@ -10,7 +10,7 @@ public import TauCeti.Analysis.InnerProductSpace.Positive.MetricChange.Basic
 /-!
 # Composition of metric-change transports
 
-For positive inner products `h` and `k` on a finite-dimensional real inner-product space,
+For inner products `h` and `k` with strictly positive Riesz operators on a real Hilbert space,
 `h.metricChangeBetween k` is the canonical positive, `h`-self-adjoint isometry from `h` to `k`.
 It is constructed by expressing `k` in the `h`-orthonormal coordinates supplied by
 `h.metricChangeTransport`, applying the native inverse square root there, and conjugating back.
@@ -34,7 +34,7 @@ open scoped InnerProductSpace
 namespace ContinuousLinearMap
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-  [FiniteDimensional ℝ E]
+  [CompleteSpace E]
 
 local postfix:1024 "♯" => continuousLinearMapOfBilin (𝕜 := ℝ)
 
@@ -45,16 +45,17 @@ theorem isStrictlyPositive_bilinearComp_metricChangeTransport
     (hK : IsStrictlyPositive k♯) :
     IsStrictlyPositive
       (k.bilinearComp h.metricChangeTransport h.metricChangeTransport)♯ := by
-  rw [isStrictlyPositive_continuousLinearMapOfBilin_iff] at hK ⊢
-  refine ⟨fun u v ↦ ?_, fun v hv ↦ ?_⟩
-  · simpa only [bilinearComp_apply] using hK.1 (h.metricChangeTransport u)
-      (h.metricChangeTransport v)
-  · have hne : h.metricChangeTransport v ≠ 0 := by
-      intro hz
-      have heq := congr($(sqrt_mul_metricChangeTransport hH) v)
-      simp only [mul_apply_eq_comp, one_apply_eq_self, hz, map_zero] at heq
-      exact hv heq.symm
-    simpa only [bilinearComp_apply] using hK.2 (h.metricChangeTransport v) hne
+  have hT := isStrictlyPositive_metricChangeTransport hH
+  have heq : (k.bilinearComp h.metricChangeTransport h.metricChangeTransport)♯ =
+      h.metricChangeTransport * k♯ * h.metricChangeTransport := by
+    ext u
+    apply ext_inner_right ℝ
+    intro v
+    rw [continuousLinearMapOfBilin_apply, bilinearComp_apply, mul_apply_eq_comp,
+      mul_apply_eq_comp, (nonneg_iff_isPositive.mp hT.nonneg).inner_left_eq_inner_right,
+      continuousLinearMapOfBilin_apply]
+  rw [heq, IsStrictlyPositive.iff_of_unital]
+  exact ⟨conjugate_nonneg_of_nonneg hK.nonneg hT.nonneg, hT.isUnit.mul hK.isUnit |>.mul hT.isUnit⟩
 
 /-- The canonical metric transport from `h` to `k`, expressed on the original vector space.
 For positive metrics it is positive and self-adjoint with respect to `h` and preserves the
@@ -79,6 +80,15 @@ theorem sqrt_mul_metricChangeBetween (h k : E →L[ℝ] E →L[ℝ] ℝ)
         CFC.sqrt h♯ := by
   simp [metricChangeBetween_def, ← mul_assoc, sqrt_mul_metricChangeTransport hH]
 
+/-- Pointwise form of the transport equation in `h`-orthonormal coordinates. -/
+@[simp]
+theorem sqrt_apply_metricChangeBetween_apply (h k : E →L[ℝ] E →L[ℝ] ℝ)
+    (hH : IsStrictlyPositive h♯) (x : E) :
+    CFC.sqrt h♯ (h.metricChangeBetween k x) =
+      (k.bilinearComp h.metricChangeTransport h.metricChangeTransport).metricChangeTransport
+        (CFC.sqrt h♯ x) := by
+  simpa only [mul_apply_eq_comp] using congr($(sqrt_mul_metricChangeBetween h k hH) x)
+
 /-- Transport between metrics preserves their inner products. -/
 @[simp]
 theorem apply_metricChangeBetween_metricChangeBetween
@@ -93,18 +103,17 @@ theorem apply_metricChangeBetween_metricChangeBetween
 
 /-- Transport from `h` to `k` is self-adjoint for `h`, not generally for the reference
 inner product. -/
-theorem metricChangeBetween_selfAdjoint (h k : E →L[ℝ] E →L[ℝ] ℝ)
+theorem apply_metricChangeBetween_left_eq_right (h k : E →L[ℝ] E →L[ℝ] ℝ)
     (hH : IsStrictlyPositive h♯) (hK : IsStrictlyPositive k♯) (u v : E) :
     h (h.metricChangeBetween k u) v = h u (h.metricChangeBetween k v) := by
   have hP := isStrictlyPositive_bilinearComp_metricChangeTransport h k hH hK
   have hT := nonneg_iff_isPositive.mp (isStrictlyPositive_metricChangeTransport hP).nonneg
-  have heq (x : E) := congr($(sqrt_mul_metricChangeBetween h k hH) x)
-  simp only [mul_apply_eq_comp] at heq
-  simp only [← inner_sqrt_apply_sqrt_apply hH.nonneg, heq]
+  simp only [← inner_sqrt_apply_sqrt_apply hH.nonneg,
+    sqrt_apply_metricChangeBetween_apply h k hH]
   exact hT.inner_left_eq_inner_right _ _
 
 /-- Transport from `h` to `k` is strictly positive for `h`. -/
-theorem metricChangeBetween_pos (h k : E →L[ℝ] E →L[ℝ] ℝ)
+theorem apply_metricChangeBetween_pos (h k : E →L[ℝ] E →L[ℝ] ℝ)
     (hH : IsStrictlyPositive h♯) (hK : IsStrictlyPositive k♯) {x : E} (hx : x ≠ 0) :
     0 < h (h.metricChangeBetween k x) x := by
   let T := (k.bilinearComp h.metricChangeTransport h.metricChangeTransport).metricChangeTransport
@@ -120,14 +129,9 @@ theorem metricChangeBetween_pos (h k : E →L[ℝ] E →L[ℝ] ℝ)
     apply hinjH
     apply hinjT
     simpa only [map_zero] using hz
-  have heq := congr($(sqrt_mul_metricChangeBetween h k hH) x)
-  simp only [mul_apply_eq_comp] at heq
-  rw [← inner_sqrt_apply_sqrt_apply hH.nonneg, heq]
-  have hs : ∀ y, ⟪CFC.sqrt T y, CFC.sqrt T y⟫_ℝ = ⟪T y, y⟫_ℝ := by
-    intro y
-    rw [← (nonneg_iff_isPositive.mp (CFC.sqrt_nonneg T)).inner_left_eq_inner_right,
-      ← mul_apply_eq_comp, CFC.sqrt_mul_sqrt_self T hT.nonneg]
-  exact (hs _).symm ▸ real_inner_self_pos.mpr hne
+  rw [← inner_sqrt_apply_sqrt_apply hH.nonneg, sqrt_apply_metricChangeBetween_apply h k hH]
+  exact (inner_sqrt_apply_sqrt_apply_eq_inner hT.nonneg _ _).symm ▸
+    real_inner_self_pos.mpr hne
 
 /-- The transport between metrics is the unique nonnegative `h`-self-adjoint isometry
 from `h` to `k`. Nonnegative, rather than strictly positive, suffices for uniqueness. -/
@@ -138,27 +142,27 @@ theorem metricChangeBetween_eq_iff (h k : E →L[ℝ] E →L[ℝ] ℝ)
         ∀ u v, k (S u) (S v) = h u v := by
   refine ⟨fun heq ↦ ?_, fun ⟨hsym, hpos, hiso⟩ ↦ ?_⟩
   · subst S
-    refine ⟨metricChangeBetween_selfAdjoint h k hH hK, fun u ↦ ?_,
+    refine ⟨apply_metricChangeBetween_left_eq_right h k hH hK, fun u ↦ ?_,
       apply_metricChangeBetween_metricChangeBetween h k hH hK⟩
     rcases eq_or_ne u 0 with rfl | hu
     · simp
-    · exact (metricChangeBetween_pos h k hH hK hu).le
-  · -- In orthonormal coordinates, positivity and the isometry equation characterize
-    -- the existing inverse-square-root transport.
+    · exact (apply_metricChangeBetween_pos h k hH hK hu).le
+  · -- Express `S` in `h`-orthonormal coordinates as `P`.
     let P := CFC.sqrt h♯ * S * h.metricChangeTransport
-    have hinv (u : E) := congr($(metricChangeTransport_mul_sqrt hH) u)
-    simp only [mul_apply_eq_comp, one_apply_eq_self] at hinv
-    have hinv' (u : E) := congr($(sqrt_mul_metricChangeTransport hH) u)
-    simp only [mul_apply_eq_comp, one_apply_eq_self] at hinv'
-    have hsymh := (isStrictlyPositive_continuousLinearMapOfBilin_iff.mp hH).1
+    have hsymh (u v : E) : h u v = h v u := by
+      rw [← continuousLinearMapOfBilin_apply (𝕜 := ℝ) h,
+        (nonneg_iff_isPositive.mp hH.nonneg).inner_left_eq_inner_right,
+        real_inner_comm, continuousLinearMapOfBilin_apply]
     have hp (u v : E) : ⟪P u, v⟫_ℝ =
         h (S (h.metricChangeTransport u)) (h.metricChangeTransport v) := by
       rw [← inner_sqrt_apply_sqrt_apply hH.nonneg]
-      simp only [P, mul_apply_eq_comp, hinv']
+      simp only [P, mul_apply_eq_comp, sqrt_apply_metricChangeTransport_apply hH]
+    -- Source-metric symmetry and nonnegativity become ordinary positivity of `P`.
     have hP : P.IsPositive := (isPositive_iff P).mpr ⟨fun u v ↦ by
       simp only [coe_coe]
       rw [hp, hsym, hsymh, ← hp, real_inner_comm], fun u ↦ by
         simpa only [RCLike.re_to_real, ← hp] using hpos (h.metricChangeTransport u)⟩
+    -- The isometry equation identifies `P` with the existing inverse-square-root transport.
     have hnorm : metricChangeTransport
         (k.bilinearComp h.metricChangeTransport h.metricChangeTransport) = P := by
       rw [metricChangeTransport_eq_iff
@@ -169,11 +173,12 @@ theorem metricChangeBetween_eq_iff (h k : E →L[ℝ] E →L[ℝ] ℝ)
       intro v
       rw [mul_apply_eq_comp, mul_apply_eq_comp, one_apply_eq_self,
         hP.inner_left_eq_inner_right, continuousLinearMapOfBilin_apply, bilinearComp_apply]
-      simp only [P, mul_apply_eq_comp, hinv]
+      simp only [P, mul_apply_eq_comp, metricChangeTransport_apply_sqrt_apply hH]
       rw [hiso, apply_metricChangeTransport_metricChangeTransport hH]
+    -- Conjugate back to the original coordinates.
     rw [metricChangeBetween_def, hnorm]
     ext u
-    simp only [P, mul_apply_eq_comp, hinv]
+    simp only [P, mul_apply_eq_comp, metricChangeTransport_apply_sqrt_apply hH]
 
 /-- Transporting a metric to itself is the identity. -/
 @[simp]
@@ -190,27 +195,35 @@ original inverse-square-root transport. -/
 @[simp]
 theorem metricChangeBetween_innerSL (k : E →L[ℝ] E →L[ℝ] ℝ) :
     (innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ).metricChangeBetween k = k.metricChangeTransport := by
-  have hR : (innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ)♯ = 1 := by
-    ext v
-    exact ext_inner_right ℝ fun w ↦ by simp
   have hP : k.bilinearComp (1 : E →L[ℝ] E) (1 : E →L[ℝ] E) = k := by
     ext u v
     simp
-  simp [metricChangeBetween_def, hR, hP]
+  simp [metricChangeBetween_def, hP]
 
 /-- The explicit orthogonal correction comparing successive metric changes through `h`
-with direct transport to `k`. Its matrix is `sqrt K * T_h * T_(T_h* k)`. -/
+with direct transport to `k`. Its operator is
+`CFC.sqrt k♯ * h.metricChangeTransport *
+(k.bilinearComp h.metricChangeTransport h.metricChangeTransport).metricChangeTransport`,
+where `k♯` is the Riesz operator of `k`. -/
 noncomputable def metricChangeCompositionCorrection
     (h k : E →L[ℝ] E →L[ℝ] ℝ) (hH : IsStrictlyPositive h♯)
     (hK : IsStrictlyPositive k♯) : E ≃ₗᵢ[ℝ] E :=
   let T := (k.bilinearComp h.metricChangeTransport h.metricChangeTransport).metricChangeTransport
-  (LinearMap.isometryOfInner
+  LinearIsometryEquiv.ofSurjective (LinearMap.isometryOfInner
     (CFC.sqrt k♯ * h.metricChangeTransport * T).toLinearMap
     (fun u v ↦ by
       have heq := apply_metricChangeTransport_metricChangeTransport
         (isStrictlyPositive_bilinearComp_metricChangeTransport h k hH hK) u v
       simpa only [mul_apply_eq_comp, coe_coe, inner_sqrt_apply_sqrt_apply hK.nonneg,
-        bilinearComp_apply] using heq)).toLinearIsometryEquiv rfl
+        bilinearComp_apply] using heq)) (by
+    -- The three inverse transports give a preimage in every Hilbert-space dimension.
+    intro x
+    refine ⟨CFC.sqrt (k.bilinearComp h.metricChangeTransport h.metricChangeTransport)♯
+      (CFC.sqrt h♯ (k.metricChangeTransport x)), ?_⟩
+    simp only [LinearMap.coe_isometryOfInner, coe_coe, mul_apply_eq_comp, T,
+      metricChangeTransport_apply_sqrt_apply
+        (isStrictlyPositive_bilinearComp_metricChangeTransport h k hH hK),
+      metricChangeTransport_apply_sqrt_apply hH, sqrt_apply_metricChangeTransport_apply hK])
 
 /-- Evaluation of the orthogonal composition correction. -/
 @[simp]
@@ -235,14 +248,11 @@ theorem metricChangeCompositionCorrection_symm_apply
   apply (h.metricChangeCompositionCorrection k hH hK).injective
   rw [LinearIsometryEquiv.apply_symm_apply, metricChangeCompositionCorrection_apply]
   have hP := isStrictlyPositive_bilinearComp_metricChangeTransport h k hH hK
-  have hi (y : E) := congr($(metricChangeTransport_mul_sqrt hP) y)
-  have hj (y : E) := congr($(metricChangeTransport_mul_sqrt hH) y)
-  have hk (y : E) := congr($(sqrt_mul_metricChangeTransport hK) y)
-  simp only [mul_apply_eq_comp, one_apply_eq_self] at hi hj hk
-  rw [hi, hj, hk]
+  rw [metricChangeTransport_apply_sqrt_apply hP, metricChangeTransport_apply_sqrt_apply hH,
+    sqrt_apply_metricChangeTransport_apply hK]
 
-/-- Two successive canonical metric changes equal the direct change followed by the explicit
-orthogonal correction. The correction acts first, on the reference inner-product space. -/
+/-- Two successive canonical metric changes equal the explicit orthogonal correction,
+acting on the reference inner-product space, followed by the direct change to `k`. -/
 theorem metricChangeBetween_mul_metricChangeTransport
     (h k : E →L[ℝ] E →L[ℝ] ℝ) (hH : IsStrictlyPositive h♯)
     (hK : IsStrictlyPositive k♯) :
@@ -252,10 +262,7 @@ theorem metricChangeBetween_mul_metricChangeTransport
   ext x
   simp only [metricChangeBetween_def, mul_apply_eq_comp, LinearIsometryEquiv.coe_coe'',
     metricChangeCompositionCorrection_apply]
-  have hi := congr($(sqrt_mul_metricChangeTransport hH) x)
-  have hk (y : E) := congr($(metricChangeTransport_mul_sqrt hK) y)
-  simp only [mul_apply_eq_comp, one_apply_eq_self] at hi hk
-  rw [hi, hk]
+  rw [sqrt_apply_metricChangeTransport_apply hH, metricChangeTransport_apply_sqrt_apply hK]
 
 /-- The displayed composition equation determines the orthogonal correction uniquely. -/
 theorem metricChangeCompositionCorrection_eq_iff
@@ -279,5 +286,17 @@ theorem metricChangeCompositionCorrection_self
   rw [metricChangeCompositionCorrection_eq_iff]
   ext x
   simp [hH]
+
+/-- The correction is trivial when the intermediate metric is the reference inner product. -/
+@[simp]
+theorem metricChangeCompositionCorrection_innerSL
+    (k : E →L[ℝ] E →L[ℝ] ℝ)
+    (hR : IsStrictlyPositive (innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ)♯)
+    (hK : IsStrictlyPositive k♯) :
+    (innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ).metricChangeCompositionCorrection k hR hK =
+      LinearIsometryEquiv.refl ℝ E := by
+  rw [metricChangeCompositionCorrection_eq_iff]
+  ext x
+  simp
 
 end ContinuousLinearMap
