@@ -66,6 +66,22 @@ noncomputable def whitneySum (f : finiteFullRankFrame 𝕜 k a)
     (whitneySum f g).1 (Fin.natAdd k i) =
       interleaveLinearMap 𝕜 𝕜 a b (0, g.1 i) := by simp [whitneySum]
 
+/-- The concatenated frame ranges over the interleaved images of the two input frames. -/
+theorem range_whitneySum (f : finiteFullRankFrame 𝕜 k a)
+    (g : finiteFullRankFrame 𝕜 l b) :
+    range (whitneySum f g).1 = interleaveLinearMap 𝕜 𝕜 a b ''
+      (range (fun i ↦ (f.1 i, 0)) ∪ range (fun j ↦ (0, g.1 j))) := by
+  ext z
+  constructor
+  · rintro ⟨i, rfl⟩
+    obtain ⟨i, rfl⟩ := finSumFinEquiv.surjective i
+    cases i with
+    | inl i => exact ⟨(f.1 i, 0), Or.inl ⟨i, rfl⟩, by simp⟩
+    | inr i => exact ⟨(0, g.1 i), Or.inr ⟨i, rfl⟩, by simp⟩
+  · rintro ⟨_, (⟨i, rfl⟩ | ⟨i, rfl⟩), rfl⟩
+    · exact ⟨Fin.castAdd l i, by simp⟩
+    · exact ⟨Fin.natAdd k i, by simp⟩
+
 /-- Concatenation in the interleaved coordinates depends continuously on both frames. -/
 @[fun_prop] theorem continuous_whitneySum [TopologicalSpace 𝕜] :
     Continuous (fun p : finiteFullRankFrame 𝕜 k a × finiteFullRankFrame 𝕜 l b ↦
@@ -126,13 +142,8 @@ respective input planes. -/
     (g : finiteFullRankFrame 𝕜 l b) :
     frameSpan (f.whitneySum g) = whitneySum (frameSpan f) (frameSpan g) := by
   apply Subtype.ext
-  simp only [coe_frameSpan, coe_whitneySum, finiteFullRankFrame.whitneySum]
-  rw [← Function.comp_def (fun j ↦ interleaveLinearMap 𝕜 𝕜 a b
-      (Sum.elim (fun i ↦ (f.1 i, 0)) (fun i ↦ (0, g.1 i)) j)) finSumFinEquiv.symm,
-    EquivLike.range_comp, range_comp', ← Submodule.map_span]
-  congr 1
-  simpa [Sum.elim_range, ← range_comp, Function.comp_def] using
-    (LinearMap.span_inl_union_inr (R := 𝕜) (s := range f.1) (t := range g.1))
+  simp [coe_frameSpan, coe_whitneySum, finiteFullRankFrame.range_whitneySum,
+    Submodule.span_image, ← LinearMap.span_inl_union_inr, ← range_comp, Function.comp_def]
 
 /-- The finite-stage Whitney sum is continuous for the frame-quotient topologies. -/
 @[fun_prop] theorem continuous_whitneySum [TopologicalSpace 𝕜] [IsTopologicalRing 𝕜] :
