@@ -146,6 +146,7 @@ lemma eilenbergMacLane_dayStructureMap (p q : FiniteBijection) :
 
 /-- The structure map `S^p ∧ R~[S^q] ⟶ R~[S^(p+q)]` of `HR` sends `x ∧ Σ aᵢ yᵢ` to
 `Σ aᵢ (x ∧ yᵢ)`, where `x ∧ yᵢ ∈ S^(p+q)` concatenates the sphere coordinates. -/
+@[simp]
 lemma eilenbergMacLane_dayStructureMap_app_smashMk {p q : FiniteBijection}
     {n : SimplexCategoryᵒᵖ} (x : (PointedSSet.circle.smashPow (Fin p.len)).right.obj n)
     (v : ((PointedSSet.reducedFree R).obj
