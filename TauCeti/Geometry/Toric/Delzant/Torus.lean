@@ -148,8 +148,8 @@ theorem continuous_facetTorusHom [TopologicalSpace V] [IsTopologicalAddGroup V]
 variable {i u p}
 
 /-- **The kernel torus.** If the normals generate the lattice, the kernel of the homomorphism
-`(ℝ / pℤ)^ι → V / p i(N)` is the image of the kernel `𝔫` of `β_ℝ`. For `p ≠ 0` this is a
-subtorus. -/
+`(ℝ / pℤ)^ι → V / p i(N)` is the image of the kernel `𝔫` of `β_ℝ`. For `p ≠ 0` and an integral
+lattice `i` this is a subtorus. -/
 theorem coe_ker_facetTorusHom (hu : Function.Surjective (Fintype.linearCombination ℤ u)) :
     ((facetTorusHom i u p).ker : Set (ι → AddCircle p)) =
       (fun (t : ι → ℝ) j ↦ (t j : AddCircle p)) ''
