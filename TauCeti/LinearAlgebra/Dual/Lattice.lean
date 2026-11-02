@@ -1,0 +1,100 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.LinearAlgebra.Dual.Basis
+public import Mathlib.LinearAlgebra.Basis.Submodule
+public import TauCeti.Algebra.Module.Lattice
+
+/-!
+# Lattices in the linear dual
+
+The integral dual of an `R`-submodule of a `K`-module consists of the `K`-linear
+functionals taking values in `R` on that submodule. This construction requires no
+bilinear form on the ambient module. For the span of a finite basis it is the span
+of the dual basis; in particular the dual of a free full lattice is a full lattice.
+
+Precomposition carries integral duals contravariantly along lattice-preserving
+linear maps. This is the linear-algebra input to contragredient actions on
+admissible integral lattices.
+-/
+
+public section
+
+namespace Submodule
+
+variable {R K V W : Type*} [CommRing R] [CommRing K] [Algebra R K]
+  [AddCommGroup V] [Module K V] [Module R V]
+  [AddCommGroup W] [Module K W] [Module R W]
+
+/-- The linear functionals taking values in the image of `R` on `N`.
+No bilinear form or full-lattice hypothesis is required. -/
+def dualLattice (N : Submodule R V) : Submodule R (Module.Dual K V) :=
+  ⨅ x : N, (1 : Submodule R K).comap
+    ((LinearMap.applyₗ (R := K) (M₂ := K) (x : V)).restrictScalars R)
+
+/-- Membership in the integral dual is integrality of every evaluation on the original
+submodule. -/
+@[simp]
+theorem mem_dualLattice (N : Submodule R V) (φ : Module.Dual K V) :
+    φ ∈ N.dualLattice ↔ ∀ x ∈ N, φ x ∈ (1 : Submodule R K) := by
+  simp [dualLattice]
+
+/-- Taking the integral dual reverses inclusions. -/
+theorem dualLattice_antitone : Antitone (dualLattice (R := R) (K := K) (V := V)) := by
+  intro M N h φ hφ
+  exact (mem_dualLattice M φ).mpr fun x hx => (mem_dualLattice N φ).mp hφ x (h hx)
+
+/-- Precomposition with a lattice-preserving map preserves the corresponding integral duals. -/
+theorem dualMap_mem_dualLattice (M : Submodule R V) (N : Submodule R W)
+    (f : V →ₗ[K] W) (hf : ∀ x ∈ M, f x ∈ N)
+    {φ : Module.Dual K W} (hφ : φ ∈ N.dualLattice) :
+    f.dualMap φ ∈ M.dualLattice := by
+  exact (mem_dualLattice M _).mpr fun x hx => (mem_dualLattice N φ).mp hφ _ (hf x hx)
+
+end Submodule
+
+namespace Module.Basis
+
+variable {R K V ι : Type*} [CommRing R] [IsDomain R] [CommRing K] [Nontrivial K]
+  [Algebra R K] [IsTorsionFree R K]
+  [AddCommGroup V] [Module K V] [Module R V] [IsScalarTower R K V]
+  [Finite ι] [DecidableEq ι]
+
+/-- The integral dual of a basis lattice is the lattice spanned by the dual basis. -/
+@[simp]
+theorem dualLattice_span (b : Basis ι K V) :
+    (Submodule.span R (Set.range b)).dualLattice =
+      Submodule.span R (Set.range b.dualBasis) := by
+  ext φ
+  rw [b.dualBasis.mem_span_iff_repr_mem R]
+  simp only [Submodule.mem_dualLattice, dualBasis_repr]
+  refine ⟨fun h i => Submodule.mem_one.mp (h _ (Submodule.subset_span ⟨i, rfl⟩)), ?_⟩
+  intro h x hx
+  induction hx using Submodule.span_induction with
+  | mem x hx =>
+    obtain ⟨i, rfl⟩ := hx
+    exact Submodule.mem_one.mpr (h i)
+  | zero => simp
+  | add x y _ _ hx hy => simpa using (1 : Submodule R K).add_mem hx hy
+  | smul r x _ hx => simpa using (1 : Submodule R K).smul_mem r hx
+
+end Module.Basis
+
+namespace Submodule
+
+variable {R K V : Type*} [CommRing R] [IsDomain R] [Field K] [Algebra R K]
+  [IsFractionRing R K] [AddCommGroup V] [Module K V] [Module R V] [IsScalarTower R K V]
+
+/-- The integral dual of a free full lattice is again a full lattice. -/
+instance isLattice_dualLattice (N : Submodule R V) [N.IsLattice K] [Module.Free R N] :
+    (N.dualLattice (K := K)).IsLattice K := by
+  classical
+  let b := Module.Free.chooseBasis R N
+  rw [← b.span_range_extendOfIsLattice (K := K), (b.extendOfIsLattice K).dualLattice_span]
+  exact isLattice_span (Set.finite_range _) (b.extendOfIsLattice K).dualBasis.span_eq
+
+end Submodule
