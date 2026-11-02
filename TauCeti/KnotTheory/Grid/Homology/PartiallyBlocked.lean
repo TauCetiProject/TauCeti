@@ -453,24 +453,6 @@ private theorem ker_constantCoeff₂ :
     Finsupp.ext_iff]
   exact forall_congr' fun x => (mem_span_X_image_univ_iff (c x)).symm
 
-/-- The homology of the fully blocked differential, as a square-zero endomorphism, is fully
-blocked grid homology. -/
-private noncomputable def fullyBlockedHomologyEquiv :
-    G.fullyBlockedDifferential.homology G.fullyBlockedDifferential_comp_self_eq_zero ≃ₗ[F]
-      G.fullyBlockedHomology :=
-  let φ : LinearMap.ker G.fullyBlockedDifferential →ₗ[F] G.fullyBlockedHomology :=
-    G.fullyBlockedBoundariesInCycles.mkQ ∘ₗ
-      (LinearEquiv.ofEq _ _ G.fullyBlockedCycles_eq_ker.symm).toLinearMap
-  have hsurj : Function.Surjective φ := fun y => by
-    obtain ⟨c, rfl⟩ := Submodule.Quotient.mk_surjective _ y
-    exact ⟨⟨c, G.fullyBlockedCycles_eq_ker ▸ c.2⟩, rfl⟩
-  have hker : G.fullyBlockedDifferential.boundariesInKer = LinearMap.ker φ := by
-    ext z
-    rw [LinearMap.mem_ker, LinearMap.mem_boundariesInKer, ← G.fullyBlockedBoundaries_eq_range]
-    exact (G.fullyBlockedHomology_mk_eq_zero_iff
-      (LinearEquiv.ofEq _ _ G.fullyBlockedCycles_eq_ker.symm z)).symm
-  (Submodule.quotEquivOfEq _ _ hker).trans (φ.quotKerEquivOfSurjective hsurj)
-
 /-- **Blocking every column gives fully blocked grid homology.** The partially blocked homology
 of all the columns is the fully blocked grid homology `GH~`. -/
 noncomputable def partiallyBlockedHomologyUnivEquiv :
@@ -483,7 +465,7 @@ noncomputable def partiallyBlockedHomologyUnivEquiv :
       ext x
       simp [constantCoeff₂_apply]⟩) ker_constantCoeff₂
     (LinearMap.ext fun c => (G.fullyBlockedDifferential_mapRange_constantCoeff c).symm)).trans
-    G.fullyBlockedHomologyEquiv
+    G.fullyBlockedHomologyEquivLinearMapHomology.symm
 
 /-- **Fully blocked grid homology is `2 ^ (n - 1)` copies of simply blocked grid homology.** For a
 knot grid of size `n`, the dimension of `GH~` is `2 ^ (n - 1)` times the dimension of `G-hat`
