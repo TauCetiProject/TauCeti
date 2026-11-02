@@ -20,7 +20,7 @@ a simply connected Hausdorff manifold is bijective, so by Mathlib's
 `IsLocalDiffeomorph.diffeomorphOfBijective` it is a diffeomorphism, whose forward map is `f` by
 `TauCeti.coe_diffeomorphOfBijective`. This is the topological statement
 `IsLocalHomeomorph.bijective_of_compactSpace`, which applies because a manifold modelled on a real
-normed space is locally path-connected.
+normed space is locally path-connected, so a connected one is path-connected.
 
 The unit sphere `Sⁿ` is simply connected for `n ≥ 2`, so every local diffeomorphism from a compact
 connected manifold to `Sⁿ`, `n ≥ 2`, is a diffeomorphism. This is the step of the
@@ -59,8 +59,8 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCom
 /-- **A local diffeomorphism from a closed connected manifold to a simply connected manifold is
 bijective**, hence a diffeomorphism by `IsLocalDiffeomorph.diffeomorphOfBijective`. Both manifolds
 are Hausdorff, and the source is compact and connected. The source model `E` also carries a real
-normed-space structure, which makes the manifold locally path-connected; this covers real and
-complex manifolds. -/
+normed-space structure, which makes the manifold locally path-connected and hence, being
+connected, path-connected; this covers real and complex manifolds. -/
 theorem _root_.IsLocalDiffeomorph.bijective_of_compactSpace {I : ModelWithCorners 𝕜 E H}
     {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] {H' : Type*} [TopologicalSpace H']
     {J : ModelWithCorners 𝕜 E' H'} {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [T2Space N]
@@ -68,6 +68,7 @@ theorem _root_.IsLocalDiffeomorph.bijective_of_compactSpace {I : ModelWithCorner
     {f : M → N} (hf : IsLocalDiffeomorph I J k f) : Bijective f := by
   have := I.locallyPathConnectedSpace
   have := ChartedSpace.locallyPathConnectedSpace (H := H) (M := M)
+  have := pathConnectedSpace_iff_connectedSpace.mpr ‹ConnectedSpace M›
   exact hf.isLocalHomeomorph.bijective_of_compactSpace
 
 /-- **A local diffeomorphism from a closed connected manifold to the unit sphere `Sⁿ`, `n ≥ 2`, is
