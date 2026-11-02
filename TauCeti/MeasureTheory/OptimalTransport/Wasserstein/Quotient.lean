@@ -19,17 +19,17 @@ sigma-algebra, `W_p μ ν = 0` if and only if the pushforwards of `μ` and `ν` 
 quotient agree.
 
 The reverse implication uses a feature of the Borel measurable structure of a pseudometric space:
-every open set is saturated under zero distance. Since open sets generate the Borel sigma-algebra,
-pushforward along `SeparationQuotient.mk` is injective on finite Borel measures. The forward
-implication contracts Wasserstein distance along the quotient map and applies metric separation on
-the complete separable metric quotient.
+every open set is saturated under zero distance, so the Borel sigma-algebra is pulled back from
+the quotient and pushforward along `SeparationQuotient.mk` is injective on Borel measures. The
+forward implication contracts Wasserstein distance along the quotient map and applies metric
+separation on the complete separable metric quotient.
 
 ## Main statements
 
 * `MeasureTheory.Measure.separationQuotient` is pushforward along Mathlib's separation-quotient map,
   carrying the quotient's Borel measurable structure.
-* `MeasureTheory.Measure.separationQuotient_inj` says that two finite Borel measures on a
-  pseudometric space have the same quotient pushforward exactly when they agree.
+* `MeasureTheory.Measure.separationQuotient_inj` says that two Borel measures on a
+  topological space have the same quotient pushforward exactly when they agree.
 * `TauCeti.wassersteinEDist_eq_zero_iff_separationQuotient_eq` characterizes zero Wasserstein
   distance by equality after pushforward to the metric separation quotient, for every nonzero
   exponent, including `p = ∞`.
@@ -80,7 +80,7 @@ theorem wassersteinEDist_eq_zero_iff_separationQuotient_eq (hp : p ≠ 0)
       measurable_edist hmk hLip one_ne_zero μ ν
     rw [h, mul_zero] at hmap
     exact eq_of_wassersteinEDist_eq_zero hp _ _ (nonpos_iff_eq_zero.mp hmap)
-  · have hμν : μ = ν := (Measure.separationQuotient_inj μ ν).1 h
+  · have hμν : μ = ν := Measure.separationQuotient_inj.1 h
     subst ν
     exact wassersteinEDist_self_of_measurable_edist measurable_edist p μ
 

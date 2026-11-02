@@ -40,6 +40,8 @@ operation is introduced.
 * `Derivation.laurentSeriesLieRing` and `Derivation.laurentSeriesLieAlgebra`: the commutator
   Lie structures on Laurent derivations.
 * `LaurentSeries.lie_smul_laurentSeriesDerivation`: the coefficient formula for the commutator.
+* `LaurentSeries.weightDerivation_intCastAddHom`: the weight derivation of the integer cast is
+  the Euler operator `X D`.
 * `LaurentSeries.coeff_derivative_order_sub_one`: the coefficient of `X ^ (r - 1)` in `D f` is
   `r` times the leading coefficient of `f`, where `r = f.order`.
 * `LaurentSeries.orderTop_le_orderTop_derivative_add_one`: `ord f ≤ ord (D f) + 1`.
@@ -235,6 +237,12 @@ end Module
 theorem coeff_single_one_mul_derivative {R : Type*} [Ring R] (f : R⸨X⸩) (n : ℤ) :
     (single (1 : ℤ) (1 : R) * derivative R f).coeff n = n • f.coeff n := by
   rw [coeff_single_mul, one_mul, coeff_derivative_sub_one]
+
+/-- The weight derivation of the integer cast is the Euler operator `X D`. -/
+theorem weightDerivation_intCastAddHom {R : Type*} [CommRing R] (f : R⸨X⸩) :
+    weightDerivation (Int.castAddHom R) f = single (1 : ℤ) (1 : R) * derivative R f := by
+  ext n
+  rw [coeff_weightDerivation, coeff_single_one_mul_derivative, Int.coe_castAddHom, zsmul_eq_mul]
 
 /-- If `f ≠ 0` has order `r` and `r` is nonzero in a ring `R` without zero divisors, for instance
 a field in which `r` is nonzero, then `f'` has order `r - 1`. -/

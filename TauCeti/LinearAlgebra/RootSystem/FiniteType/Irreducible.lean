@@ -190,8 +190,8 @@ theorem _root_.RootPairing.isIrreducible_of_connected_diagramGraph_cartanMatrix
   -- adjacency in the diagram is exactly nonvanishing of the Cartan entry, hence of the pairing
   have propagate {u v : b.support} (hadj : (diagramGraph b.cartanMatrix).Adj u v)
       (hu : P.root u ∈ q) : P.root v ∈ q :=
-    RootPairing.root_mem_of_pairing_ne_zero (hinv v)
-      (fun hp ↦ (diagramGraph_adj.mp hadj).2.1
+    RootPairing.root_mem_of_isUnit_pairing (hinv v)
+      (Ne.isUnit fun hp ↦ (diagramGraph_adj.mp hadj).2.1
         (b.cartanMatrix_apply_eq_zero_iff_pairing.mpr hp)) hu
   have hall : ∀ j : b.support, P.root j ∈ q := by
     intro j

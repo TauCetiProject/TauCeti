@@ -9,9 +9,8 @@ public import TauCeti.Probability.Distributions.Uniform.Sphere.Basic
 public import TauCeti.Probability.Distributions.Beta.Quantile
 import TauCeti.Probability.Distributions.Uniform.Sphere.Dirichlet
 import TauCeti.Probability.Distributions.Beta.Square
-import TauCeti.Probability.Distributions.Beta.Reflection
 import TauCeti.Probability.Distributions.Affine
-import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Coordinates
 
 /-!
 # Signed coordinates of a uniform sphere point
@@ -56,11 +55,12 @@ theorem map_eval_uniformSphereMeasure (i : ι) :
     have hcard : 1 < Fintype.card ι := Fintype.one_lt_card
     dsimp [a]
     exact div_pos (sub_pos.mpr (by exact_mod_cast hcard)) two_pos
-  let _ := isProbabilityMeasureBeta ha ha
   have hneg : (uniformSphereMeasure (EuclideanSpace ℝ ι)).map (fun u ↦ -u) =
       uniformSphereMeasure (EuclideanSpace ℝ ι) :=
     (LinearIsometryEquiv.neg ℝ).map_uniformSphereMeasure
-  apply Measure.eq_of_map_sq_eq_of_map_neg_eq_self
+  apply eq_map_betaMeasure_of_map_sq_of_map_neg ha
+  · rw [Measure.map_map (by fun_prop) (by fun_prop)]
+    exact map_sq_eval_uniformSphereMeasure i
   · rw [Measure.map_map (by fun_prop) (by fun_prop)]
     calc
       _ = ((uniformSphereMeasure (EuclideanSpace ℝ ι)).map (fun u ↦ -u)).map
@@ -68,18 +68,6 @@ theorem map_eval_uniformSphereMeasure (i : ι) :
         rw [Measure.map_map (by fun_prop) (by fun_prop)]
         rfl
       _ = _ := by rw [hneg]
-  · calc
-      _ = ((betaMeasure a a).map (fun x ↦ 1 - x)).map (fun x ↦ -1 + 2 * x) := by
-        rw [Measure.map_map (by fun_prop) (by fun_prop),
-          Measure.map_map (by fun_prop) (by fun_prop)]
-        congr 1
-        ext x
-        dsimp
-        ring
-      _ = _ := by rw [betaMeasure_map_one_sub]
-  · rw [Measure.map_map (by fun_prop) (by fun_prop),
-      Measure.map_map (by fun_prop) (by fun_prop)]
-    exact (map_sq_eval_uniformSphereMeasure i).trans (betaMeasure_map_centered_sq ha).symm
 
 /-- Rescaling a sphere coordinate from `(-1, 1)` to `(0, 1)` gives the symmetric Beta law
 with shape half the dimension minus one half. -/
@@ -156,19 +144,12 @@ theorem map_inner_uniformSphereMeasure (hd : 2 ≤ Module.finrank ℝ E) (v : E)
   let d := Module.finrank ℝ E
   let i : Fin d := ⟨0, lt_of_lt_of_le (by norm_num) hd⟩
   have : Nontrivial (Fin d) := Fin.nontrivial_iff_two_le.mpr hd
-  let g := (stdOrthonormalBasis ℝ E).repr
-  let w : EuclideanSpace ℝ (Fin d) := ‖v‖ • EuclideanSpace.single i 1
-  have hnorm : ‖g v‖ = ‖w‖ := by simp [w, g, norm_smul]
-  let f := g.trans (Submodule.reflection (ℝ ∙ (g v - w))ᗮ)
+  obtain ⟨f, hcoord⟩ := TauCeti.exists_linearIsometryEquiv_inner_eq_norm_mul_eval v i
   let fs : sphere (0 : E) 1 → sphere (0 : EuclideanSpace ℝ (Fin d)) 1 :=
     Subtype.map f (fun x hx ↦ by simpa using hx)
   have hfs : Measurable fs := f.continuous.measurable.subtype_map _
   have hmap : (uniformSphereMeasure E).map fs =
       uniformSphereMeasure (EuclideanSpace ℝ (Fin d)) := f.map_uniformSphereMeasure
-  have hfv : f v = w := Submodule.reflection_sub hnorm
-  have hcoord (x : E) : ⟪v, x⟫ = ‖v‖ * (f x) i := by
-    rw [← f.inner_map_map, hfv]
-    simp [w, real_inner_smul_left, EuclideanSpace.inner_single_left]
   calc
     _ = (((uniformSphereMeasure E).map fs).map
         (fun u ↦ u.val i)).map (fun x ↦ ‖v‖ * x) := by

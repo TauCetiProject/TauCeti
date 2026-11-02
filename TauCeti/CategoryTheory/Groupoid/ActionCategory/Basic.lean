@@ -112,6 +112,12 @@ theorem totalEquiv_symm_apply_right (p : M × X) :
 theorem totalEquiv_symm_apply_hom_hom (p : M × X) :
     ((totalEquiv M X).symm p).hom.hom = p.1 := (rfl)
 
+/-- An identity arrow written as `eqToHom` is labelled by `1`. -/
+@[simp]
+theorem eqToHom_hom {a b : ActionCategory M X} (h : a = b) : (eqToHom h).hom = (1 : M) := by
+  subst h
+  rfl
+
 end Arrows
 
 variable {G : Type*} [Group G] {X : Type*} [MulAction G X]

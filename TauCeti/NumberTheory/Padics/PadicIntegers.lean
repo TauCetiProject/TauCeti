@@ -43,7 +43,9 @@ calculation for first continuous cohomology with trivial integer coefficients.
 ## Main results
 
 * `PadicInt.norm_p_lt_one`: the uniformizer `p` of `ℤ_p` has norm less than `1`, so that every
-  series `∑ₙ pⁿ aₙ` converges in `ℤ_p` (`PadicInt.summable_pow_mul`).
+  series `∑ₙ pⁿ aₙ` converges in `ℤ_p` (`PadicInt.summable_pow_mul`) and the powers `‖p‖ ^ n`
+  tend to zero along the cofinite filter (`PadicInt.tendsto_norm_p_pow_cofinite`,
+  `PadicInt.tendsto_norm_p_pow_mul_cofinite`).
 * `PadicInt.isUnit_one_add_of_dvd`: `1 + x` is a unit of `ℤ_[p]` whenever `p ∣ x`.
 * `PadicInt.isUnit_of_dvd_one_sub_sq`: `d` is a unit of `ℤ_[p]` whenever `p ∣ 1 - d ^ 2`.
 * `PadicInt.isUnit_two`: `2` is a unit of `ℤ_[p]` for odd `p`.
@@ -78,6 +80,7 @@ calculation for first continuous cohomology with trivial integer coefficients.
 ## Main definitions
 
 * `PadicInt.unitsPowCharacter p k`: the continuous character `u ↦ u ^ k` of `ℤ_[p]ˣ`.
+  It is nontrivial for `k > 0` (`PadicInt.unitsPowCharacter_ne_one`).
 -/
 
 public section
@@ -95,6 +98,22 @@ theorem summable_pow_mul (a : ℕ → ℤ_[p]) : Summable fun n ↦ (p : ℤ_[p]
   .of_norm_bounded (summable_geometric_of_lt_one (norm_nonneg _) norm_p_lt_one) fun n ↦ by
     rw [norm_mul, norm_pow]
     exact mul_le_of_le_one_right (by positivity) (norm_le_one _)
+
+/-- The powers `‖p‖ ^ n` of the norm of the uniformizer tend to zero along the cofinite filter. -/
+theorem tendsto_norm_p_pow_cofinite :
+    Filter.Tendsto (fun n : ℕ ↦ ‖(p : ℤ_[p])‖ ^ n) Filter.cofinite (nhds 0) := by
+  rw [Nat.cofinite_eq_atTop]
+  exact tendsto_pow_atTop_nhds_zero_of_lt_one (norm_nonneg _) norm_p_lt_one
+
+/-- On `ι × ℕ` with `ι` finite, the weights `‖p‖ ^ j * C` tend to zero along the cofinite
+filter. -/
+theorem tendsto_norm_p_pow_mul_cofinite {ι : Type*} [Finite ι] (C : ℝ) :
+    Filter.Tendsto (fun i : ι × ℕ ↦ ‖(p : ℤ_[p])‖ ^ i.2 * C) Filter.cofinite (nhds 0) := by
+  have hpow : Filter.Tendsto (fun n : ℕ ↦ ‖(p : ℤ_[p])‖ ^ n * C) Filter.cofinite (nhds 0) := by
+    simpa using (tendsto_norm_p_pow_cofinite (p := p)).mul_const C
+  refine hpow.comp <| Filter.Tendsto.cofinite_of_finite_preimage_singleton fun n ↦ ?_
+  rw [Set.preimage_snd_singleton_eq_range]
+  exact Set.finite_range _
 
 /-- In `ℤ_p`, `1 + x` is a unit whenever `p ∣ x`. -/
 theorem isUnit_one_add_of_dvd {x : ℤ_[p]} (hx : (p : ℤ_[p]) ∣ x) : IsUnit (1 + x) :=
@@ -208,6 +227,16 @@ noncomputable def unitsPowCharacter (k : ℕ) : ℤ_[p]ˣ →ₜ* ℤ_[p] where
 theorem unitsPowCharacter_apply (k : ℕ) (u : ℤ_[p]ˣ) :
     unitsPowCharacter p k u = (u : ℤ_[p]) ^ k :=
   (rfl)
+
+/-- For `k > 0` the power character `u ↦ u ^ k` of `ℤ_pˣ` is nontrivial: it does not send the
+unit `1 + p` to `1`. -/
+theorem unitsPowCharacter_ne_one {k : ℕ} (hk : 0 < k) : unitsPowCharacter p k ≠ 1 := by
+  intro h
+  obtain ⟨a, ha⟩ := isUnit_one_add_of_dvd (dvd_refl (p : ℤ_[p]))
+  have hpow := congrArg (fun κ : ℤ_[p]ˣ →ₜ* ℤ_[p] => κ a) h
+  simp only [unitsPowCharacter_apply, ha, ContinuousMonoidHom.coe_one, Pi.one_apply] at hpow
+  have h1 : (1 + p) ^ k = 1 := by exact_mod_cast hpow
+  exact (Nat.one_lt_pow hk.ne' (by have := (Fact.out : p.Prime).pos; omega)).ne' h1
 
 /-- **Divisibility from the norm**: in `ℤ_p`, `y` divides every `x` with `‖x‖ ≤ ‖y‖`, because `x`
 then lies in the ideal `p^{v_p(y)} ℤ_p = y ℤ_p` when `y ≠ 0`, and vanishes when `y = 0`. -/

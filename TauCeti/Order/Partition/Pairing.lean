@@ -54,6 +54,16 @@ theorem isPairing_iff_part : P.IsPairing ↔ ∀ a ∈ s, #(P.part a) = 2 := by
   rw [← P.part_eq_of_mem hB ha]
   exact h a (P.le hB ha)
 
+/-- In a pair partition, each point has a unique distinct partner in its block. -/
+theorem IsPairing.existsUnique_mem_part_ne (hP : P.IsPairing) {a : α} (ha : a ∈ s) :
+    ∃! b, b ∈ P.part a ∧ b ≠ a := by
+  obtain ⟨x, y, hxy, hpart⟩ := card_eq_two.mp (isPairing_iff.mp hP _ (P.part_mem.mpr ha))
+  have ha' := P.mem_part ha
+  rw [hpart] at ha' ⊢
+  rcases (by simpa only [mem_insert, mem_singleton] using ha' : a = x ∨ a = y) with rfl | rfl
+  · exact ⟨y, by simp [hxy.symm], by simp_all⟩
+  · exact ⟨x, by simp [hxy], by simp_all⟩
+
 /-- A pairing of `s` has half as many parts as `s` has elements. -/
 theorem IsPairing.card_eq_two_mul (hP : P.IsPairing) : #s = 2 * #P.parts := by
   rw [← P.sum_card_parts, sum_const_nat hP, mul_comm]

@@ -10,6 +10,8 @@ public import Mathlib.LinearAlgebra.Complex.Module
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.TensorProduct.Basis
 public import Mathlib.RingTheory.TensorProduct.Basic
+import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.Module
 
 /-!
 # The real points of a conjugate-linear involution
@@ -44,7 +46,9 @@ Everything is stated for an arbitrary `V`; no finite-dimensionality is used anyw
 * `TauCeti.realPointsLift`: the canonical `ℂ`-linear map `ℂ ⊗[ℝ] realPoints K →ₗ[ℂ] V`.
 * `TauCeti.realPointsEquiv`: that map as a `ℂ`-linear isomorphism, for involutive `K`.
 * `TauCeti.tmulConj`: the conjugation `c ⊗ₜ w ↦ conj c ⊗ₜ w` of a complexification `ℂ ⊗[ℝ] W`.
-* `TauCeti.realPart`: the real-linear retraction from a complexification to its real module.
+* `TauCeti.realPart` and `TauCeti.imaginaryPart`: the two real coordinates of a vector of a
+  complexification; `TauCeti.one_tmul_realPart_add_I_tmul_imaginaryPart` reassembles it, and
+  `TauCeti.complexification_ext` says the two coordinates determine the vector.
 
 ## Main statements
 
@@ -62,6 +66,9 @@ Everything is stated for an arbitrary `V`; no finite-dimensionality is used anyw
   star module have the `ℝ`-dimension that the module has over `ℂ`.
 * `TauCeti.exists_one_tmul_add_I_tmul`: every element of `ℂ ⊗[ℝ] W` is `1 ⊗ₜ w₁ + I ⊗ₜ w₂`; this
   is what makes the lift injective.
+* `LinearMap.liftBaseChange_complex_injective_of_conj`: more generally, an injective real-linear
+  map whose values a conjugate-linear map fixes induces an injective map on the complexification,
+  for any real structure compatible with the complex one.
 * `TauCeti.tmulConj_involutive`, `TauCeti.tmulConj_tmul` and `TauCeti.tmulConj_eq_self_iff`: the
   conjugation of a complexification and its real points.
 * `TauCeti.tmulConj_baseChange`: that conjugation commutes with every base-changed map, which is
@@ -94,6 +101,9 @@ consumer works from.
 
 The real scalar structure on `V` is Mathlib's `Module.complexToReal`, the one `Module ℂ V` induces,
 so `r • v` and `(r : ℂ) • v` are definitionally equal and no scalar tower hypothesis is carried.
+The injectivity argument `LinearMap.liftBaseChange_complex_injective_of_conj` is the exception: it
+takes an arbitrary real structure with `IsScalarTower ℝ ℂ E`, so that it also serves spaces such
+as `Matrix n n ℂ` whose real structure is not syntactically `Module.complexToReal`.
 
 ## References
 
@@ -216,6 +226,39 @@ theorem exists_one_tmul_add_I_tmul {W : Type*} [AddCommGroup W] [Module ℝ W] (
   rw [← hc, Finsupp.sum_fintype _ _ (by simp), Fin.sum_univ_two, Complex.coe_basisOneI]
   simp only [Matrix.cons_val_zero, Matrix.cons_val_one]
 
+/-! ### Real-linear maps into the real points -/
+
+section LiftBaseChange
+
+variable {E W : Type*} [AddCommGroup E] [Module ℂ E] [Module ℝ E] [IsScalarTower ℝ ℂ E]
+  [AddCommGroup W] [Module ℝ W]
+
+/-- **Vectors fixed by a conjugate-linear map complexify injectively.**  If a conjugate-linear
+`K` fixes every value of an injective real-linear map `f : W → E`, then the induced map
+`ℂ ⊗[ℝ] W → E`, `c ⊗ₜ w ↦ c • f w`, is injective: applying `K` to a relation
+`f w₁ + I • f w₂ = 0` flips the sign of its `I`-component, so adding the two relations kills
+`f w₂` and leaves `2 • f w₁ = 0`.
+
+The real structure on `E` is an arbitrary one compatible with the complex structure
+(`IsScalarTower ℝ ℂ E`), so this also applies to spaces such as `Matrix n n ℂ` whose real
+structure is not syntactically `Module.complexToReal`. -/
+theorem _root_.LinearMap.liftBaseChange_complex_injective_of_conj (f : W →ₗ[ℝ] E)
+    {K : E →ₛₗ[starRingEnd ℂ] E} (hf : Function.Injective f) (hK : ∀ w, K (f w) = f w) :
+    Function.Injective (f.liftBaseChange ℂ) := by
+  rw [injective_iff_map_eq_zero]
+  intro u hu
+  obtain ⟨w₁, w₂, rfl⟩ := exists_one_tmul_add_I_tmul u
+  have h : f w₁ + Complex.I • f w₂ = 0 := by simpa using hu
+  have hconj : f w₁ + (-Complex.I) • f w₂ = 0 := by simpa [hK] using congrArg K h
+  have h₁ : f w₁ = 0 := by
+    have h2 : (2 : ℂ) • f w₁ = 0 := by linear_combination (norm := module) h + hconj
+    simpa using h2
+  have h₂ : f w₂ = 0 := by simpa [h₁] using h
+  rw [hf (h₁.trans (map_zero f).symm), hf (h₂.trans (map_zero f).symm)]
+  simp
+
+end LiftBaseChange
+
 /-! ### The complexification of the real points -/
 
 variable (K) in
@@ -230,41 +273,20 @@ theorem realPointsLift_tmul (c : ℂ) (w : realPoints K) :
     realPointsLift K (c ⊗ₜ[ℝ] w) = c • (w : V) :=
   (rfl)
 
-/-- The lift is surjective once `K` is involutive: `v` is hit by
-`1 ⊗ₜ conjRealPart K v + I ⊗ₜ conjImaginaryPart K v`. -/
+/-- The lift is surjective once `K` is involutive: its image is the complex span of the real
+points, which is all of `V` (`TauCeti.span_realPoints_eq_top`). -/
 theorem realPointsLift_surjective (hK : Function.Involutive K) :
-    Function.Surjective (realPointsLift K) := fun v =>
-  ⟨1 ⊗ₜ[ℝ] ⟨conjRealPart K v, conjRealPart_mem hK v⟩ +
-      Complex.I ⊗ₜ[ℝ] ⟨conjImaginaryPart K v, conjImaginaryPart_mem hK v⟩, by
-    rw [map_add, realPointsLift_tmul, realPointsLift_tmul, one_smul]
-    exact conjRealPart_add_I_smul_conjImaginaryPart v⟩
+    Function.Surjective (realPointsLift K) := by
+  rw [← LinearMap.range_eq_top, realPointsLift, LinearMap.range_liftBaseChange,
+    Submodule.range_subtype]
+  exact span_realPoints_eq_top hK
 
 /-- The lift is injective for **any** conjugate-linear `K`: only its surjectivity uses that `K` is
-involutive. -/
-theorem realPointsLift_injective : Function.Injective (realPointsLift K) := by
-  rw [injective_iff_map_eq_zero]
-  intro u hu
-  obtain ⟨w₁, w₂, rfl⟩ := exists_one_tmul_add_I_tmul u
-  rw [map_add, realPointsLift_tmul, realPointsLift_tmul, one_smul] at hu
-  -- Applying `K` flips the sign of the `I`-component, so both components vanish.
-  have hconj : (w₁ : V) - Complex.I • (w₂ : V) = 0 := by
-    have h := congrArg K hu
-    rwa [map_add, map_smulₛₗ, Complex.conj_I, neg_smul, ← sub_eq_add_neg, w₁.2, w₂.2,
-      map_zero] at h
-  have h₁ : (w₁ : V) = 0 := by
-    have h2 : ((w₁ : V) + Complex.I • (w₂ : V)) + ((w₁ : V) - Complex.I • (w₂ : V))
-        = (2 : ℂ) • (w₁ : V) := by
-      rw [two_smul]
-      abel
-    rw [hu, hconj, add_zero] at h2
-    -- `(2 : ℂ) • w₁ = 0` forces `w₁ = 0`: `smul_eq_zero` and `2 ≠ 0`.
-    simpa using h2.symm
-  have h₂ : (w₂ : V) = 0 := by
-    have hI : Complex.I • (w₂ : V) = 0 := by rw [← hu, h₁, zero_add]
-    simpa using hI
-  rw [Submodule.coe_eq_zero] at h₁ h₂
-  rw [h₁, h₂]
-  simp
+involutive.  This is `LinearMap.liftBaseChange_complex_injective_of_conj` for the inclusion of
+the real points. -/
+theorem realPointsLift_injective : Function.Injective (realPointsLift K) :=
+  (realPoints K).subtype.liftBaseChange_complex_injective_of_conj Subtype.val_injective
+    fun w ↦ w.2
 
 /-- **A complex vector space is the complexification of the real points of any conjugation on
 it.**  The isomorphism is `c ⊗ₜ w ↦ c • w`; surjectivity is the decomposition
@@ -388,6 +410,73 @@ theorem realPart_tmul (c : ℂ) (w : W) : realPart W (c ⊗ₜ[ℝ] w) = c.re �
 /-- The real part of a real vector embedded in its complexification is that vector. -/
 theorem realPart_one_tmul (w : W) : realPart W (1 ⊗ₜ[ℝ] w) = w := by
   simp
+
+/-- The real-linear map `c ⊗ₜ w ↦ (im c) • w`, reading off the coefficient of `I` in the splitting
+`ℂ ⊗[ℝ] W ≅ W ⊕ I · W`. -/
+noncomputable def imaginaryPart (W : Type*) [AddCommGroup W] [Module ℝ W] :
+    ℂ ⊗[ℝ] W →ₗ[ℝ] W :=
+  TensorProduct.lid ℝ W ∘ₗ Complex.imLm.rTensor W
+
+/-- The imaginary part of a pure tensor is its imaginary scalar part acting on the vector. -/
+@[simp]
+theorem imaginaryPart_tmul (c : ℂ) (w : W) : imaginaryPart W (c ⊗ₜ[ℝ] w) = c.im • w := by
+  simp [imaginaryPart]
+
+/-- **Every element of `ℂ ⊗[ℝ] W` is `1 ⊗ₜ realPart W u + I ⊗ₜ imaginaryPart W u`.** -/
+@[simp]
+theorem one_tmul_realPart_add_I_tmul_imaginaryPart (u : ℂ ⊗[ℝ] W) :
+    1 ⊗ₜ[ℝ] realPart W u + Complex.I ⊗ₜ[ℝ] imaginaryPart W u = u := by
+  obtain ⟨w₁, w₂, rfl⟩ := exists_one_tmul_add_I_tmul u
+  simp
+
+variable {W} in
+/-- **Extensionality in a complexification**: a vector of `ℂ ⊗[ℝ] W` is determined by its real
+and imaginary parts. -/
+theorem complexification_ext {u v : ℂ ⊗[ℝ] W} (hre : realPart W u = realPart W v)
+    (him : imaginaryPart W u = imaginaryPart W v) : u = v := by
+  rw [← one_tmul_realPart_add_I_tmul_imaginaryPart W u,
+    ← one_tmul_realPart_add_I_tmul_imaginaryPart W v, hre, him]
+
+variable {W} in
+/-- Two vectors of `ℂ ⊗[ℝ] W` are equal exactly when their real and imaginary parts are. -/
+theorem complexification_ext_iff {u v : ℂ ⊗[ℝ] W} :
+    u = v ↔ realPart W u = realPart W v ∧ imaginaryPart W u = imaginaryPart W v :=
+  ⟨fun h ↦ h ▸ ⟨rfl, rfl⟩, fun h ↦ complexification_ext h.1 h.2⟩
+
+/-- The two real coordinates of `1 ⊗ₜ w₁ + I ⊗ₜ w₂` are `w₁` and `w₂`. -/
+@[simp]
+theorem one_tmul_add_I_tmul_inj {w₁ w₂ w₁' w₂' : W} :
+    1 ⊗ₜ[ℝ] w₁ + Complex.I ⊗ₜ[ℝ] w₂ = 1 ⊗ₜ[ℝ] w₁' + Complex.I ⊗ₜ[ℝ] w₂' ↔
+      w₁ = w₁' ∧ w₂ = w₂' := by
+  simp [complexification_ext_iff]
+
+/-- Multiplication by a complex scalar `c` in the real coordinates of a complexification:
+`c • (1 ⊗ₜ v + I ⊗ₜ w) = 1 ⊗ₜ (re c • v - im c • w) + I ⊗ₜ (re c • w + im c • v)`. -/
+theorem smul_one_tmul_add_I_tmul (c : ℂ) (v w : W) :
+    c • (1 ⊗ₜ[ℝ] v + Complex.I ⊗ₜ[ℝ] w) =
+      1 ⊗ₜ[ℝ] (c.re • v - c.im • w) + Complex.I ⊗ₜ[ℝ] (c.re • w + c.im • v) := by
+  conv_lhs => rw [← one_tmul_realPart_add_I_tmul_imaginaryPart W (c • _)]
+  simp [TensorProduct.smul_tmul', sub_eq_add_neg, add_comm]
+
+/-- `I • (1 ⊗ₜ v + I ⊗ₜ w) = 1 ⊗ₜ (-w) + I ⊗ₜ v` in a complexification. -/
+theorem I_smul_one_tmul_add_I_tmul (v w : W) :
+    Complex.I • (1 ⊗ₜ[ℝ] v + Complex.I ⊗ₜ[ℝ] w) = 1 ⊗ₜ[ℝ] (-w) + Complex.I ⊗ₜ[ℝ] v := by
+  rw [smul_one_tmul_add_I_tmul]
+  simp
+
+/-- The real part of `c • u` is `re c • realPart W u - im c • imaginaryPart W u`. -/
+@[simp]
+theorem realPart_smul (c : ℂ) (u : ℂ ⊗[ℝ] W) :
+    realPart W (c • u) = c.re • realPart W u - c.im • imaginaryPart W u := by
+  obtain ⟨v, w, rfl⟩ := exists_one_tmul_add_I_tmul u
+  simp [TensorProduct.smul_tmul', sub_eq_add_neg]
+
+/-- The imaginary part of `c • u` is `re c • imaginaryPart W u + im c • realPart W u`. -/
+@[simp]
+theorem imaginaryPart_smul (c : ℂ) (u : ℂ ⊗[ℝ] W) :
+    imaginaryPart W (c • u) = c.re • imaginaryPart W u + c.im • realPart W u := by
+  obtain ⟨v, w, rfl⟩ := exists_one_tmul_add_I_tmul u
+  simp [TensorProduct.smul_tmul', add_comm]
 
 end Complexification
 
