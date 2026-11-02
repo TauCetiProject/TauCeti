@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.RealAlgebraic.Semialgebraic.RegionBetween
 public import TauCeti.Geometry.RealAnalytic.Semianalytic.PartiallySemialgebraic.Projection
-public import TauCeti.Geometry.RealAnalytic.Semianalytic.PartiallySemialgebraic.Substitution
 public import TauCeti.Topology.Order.RegionBetween
 
 /-!
