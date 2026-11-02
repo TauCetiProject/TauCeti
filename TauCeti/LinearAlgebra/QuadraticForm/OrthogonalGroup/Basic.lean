@@ -1361,8 +1361,9 @@ theorem exists_reflectionOrthogonal_list_prod_mul_eqOn_sup_span_singleton
       (hrx : (r : V ≃ₗ[K] V) ((g : V ≃ₗ[K] V) x) = x) :
       ∀ y ∈ W ⊔ Submodule.span K {x},
         ((r * g : QuadraticMap.orthogonalGroup Q) : V ≃ₗ[K] V) y = y :=
-    ((r * g : QuadraticMap.orthogonalGroup Q).1.toLinearMap).eqOn_sup_span_singleton
-      (g := LinearMap.id) (fun w hw => by simp [hfix w hw, hr w hw]) (by simpa using hrx)
+    (LinearMap.eqOn_sup_span_singleton_iff
+      (f := (r * g : QuadraticMap.orthogonalGroup Q).1.toLinearMap) (g := LinearMap.id)).2
+      ⟨fun w hw => by simp [hfix w hw, hr w hw], by simpa using hrx⟩
   rcases QuadraticMap.isUnit_sub_or_add_of_map_eq Q _ x hmap
       (isUnit_of_invertible (Q x)).ne_zero with hsubUnit | haddUnit
   · -- One reflection, in `g x - x`.

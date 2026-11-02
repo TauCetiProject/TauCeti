@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Operator.Mul
 public import Mathlib.Analysis.Quaternion
 import Mathlib.Analysis.Calculus.Deriv.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Add
+import Mathlib.Analysis.Calculus.FDeriv.Mul
 import TauCeti.Analysis.Quaternion.PartialDeriv
 
 /-!
@@ -53,6 +54,8 @@ multiplication `h ↦ h * b` is left regular only when `b = 0`, since `fueterLef
 * `TauCeti.LeftFueterAt.mul_const`, `TauCeti.RightFueterAt.const_mul`: left regularity is
   preserved by constant multiplication on the right, and right regularity by constant
   multiplication on the left.
+* `TauCeti.RightFueterAt.sum_fderiv_mul_leftFueterAt`: the ordered field `g * eᵢ * f`
+  has zero divergence for right regular `g` and left regular `f`.
 
 ## References
 
@@ -60,7 +63,7 @@ multiplication `h ↦ h * b` is left regular only when `b = 0`, since `fueterLef
   reellen Variablen*, Comment. Math. Helv. 7 (1934), 307–330.
 * A. Sudbery, *Quaternionic analysis*, Math. Proc. Cambridge Philos. Soc. 85 (1979), 199–225.
 * Igor Frenkel and Matvei Libine, *Quaternionic analysis, representation theory and physics*,
-  Adv. Math. 218 (2008), arXiv:0711.2699v5, §2.2, Definition 1.
+  Adv. Math. 218 (2008), arXiv:0711.2699v5, §2.2, Definition 1 and Proposition 4.
 -/
 
 public section
@@ -420,6 +423,31 @@ theorem not_leftFueterAt_j_mul_coeComplex :
   simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.mul_apply', h1, hi, hj, hk]
   intro h0
   simpa using congrArg QuaternionAlgebra.imJ h0
+
+/-- The ordered field `g * eᵢ * f` has zero divergence when `g` is right Fueter regular
+and `f` is left Fueter regular. Only pointwise differentiability is required. This is the
+closedness identity for the two-sided coefficient form `g * Dq * f`. -/
+theorem RightFueterAt.sum_fderiv_mul_leftFueterAt (hg : RightFueterAt g q)
+    (hf : LeftFueterAt f q) :
+    ∑ i : Fin 4, fderiv ℝ (fun x ↦ g x *
+      QuaternionAlgebra.basisOneIJK (-1 : ℝ) 0 (-1) i * f x) q
+      (QuaternionAlgebra.basisOneIJK (-1 : ℝ) 0 (-1) i) = 0 := by
+  have hG := hg.differentiableAt.hasFDerivAt
+  have hd (a h : ℍ) :
+      fderiv ℝ (fun x ↦ g x * a * f x) q h =
+        (fderiv ℝ (fun x ↦ g x) q h * a) * f q +
+          (g q * a) * fderiv ℝ f q h := by
+    rw [((hG.mul_const' a).fun_mul' hf.differentiableAt.hasFDerivAt).fderiv]
+    simp [add_comm]
+  simp only [hd, Fin.sum_univ_four]
+  have hzero := congrArg (fun a : ℍ ↦ a * f q) hg.fueterRight_fderiv
+  have hfzero := congrArg (fun a : ℍ ↦ g q * a) hf.fueterLeft_fderiv
+  simp only [fueterLeft_apply, fueterRight_apply, add_mul, mul_add, mul_assoc,
+    zero_mul, mul_zero] at hzero hfzero
+  norm_num [QuaternionAlgebra.basisOneIJK, Module.Basis.coe_ofEquivFun]
+  have h1 : (⟨1, 0, 0, 0⟩ : ℍ) = 1 := rfl
+  rw [h1]
+  linear_combination (norm := noncomm_ring) hzero + hfzero
 
 /-! ### Regularity on a set -/
 
