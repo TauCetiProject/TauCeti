@@ -44,16 +44,6 @@ variable {Γ : Type u₁} [Category.{v₁} Γ] {H : Type u₂} [Monoid H]
   {actions : Γ → LocallyDiscrete (SingleObj H) ⥤ᵖ Cat.{v, w}}
   (N : NormalizedTransport Γ actions)
 
-private lemma toLift_jointMapId_hom_app (p : Γ) (x : fiber actions p) :
-    (N.toLift.jointMapId p).hom.app x = (N.jointId (p, SingleObj.star H)).hom.app x := by
-  rw [N.toLift.jointMapId_hom_app p x]
-  -- Write the identity arrow in the product category explicitly, so its comparison
-  -- has the same source and target types as the joint pseudofunctor's unit.
-  change (N.joint.mapId'
-    (𝟙 (⟨(p, SingleObj.star H)⟩ : LocallyDiscrete (Γ × SingleObj H)))).hom.toNatTrans.app x = _
-  rw [Pseudofunctor.mapId'_eq_mapId]
-  exact N.joint_mapId_hom_app ⟨(p, SingleObj.star H)⟩ x
-
 /-- Reconstruction followed by normalization preserves the unit comparison of transport. -/
 @[reassoc]
 lemma toLiftTransportIso_hom_app_comp_transportId (p : Γ) (x : fiber actions p) :
@@ -80,23 +70,6 @@ lemma toLiftTransportIso_hom_app_comp_transportId (p : Γ) (x : fiber actions p)
     (N.toLiftTransportIso_hom_app (𝟙 p) x)).trans
       ((key _ ((N.toLift.fiberEquivalence p).counit.app x)).trans hrhs.symm)
 
-private lemma toLift_jointMapComp_hom_app {p q r : Γ} (g : p ⟶ q) (h : q ⟶ r)
-    (gh : p ⟶ r) (hgh : g ≫ h = gh) (x : fiber actions p) :
-    (N.toLift.jointMapComp g h gh hgh).hom.app x =
-      (N.jointComp (g ×ₘ 𝟙 _) (h ×ₘ 𝟙 _) (gh ×ₘ 𝟙 _) (by simp [hgh])).hom.app x := by
-  rw [N.toLift.jointMapComp_hom_app g h gh hgh x]
-  -- Expand the flexible compositor only, retaining the opaque joint construction.
-  change (N.joint.map₂ (eqToHom (by simp [← Quiver.Hom.comp_toLoc, hgh] :
-    (gh ×ₘ 𝟙 (SingleObj.star H)).toLoc =
-      (g ×ₘ 𝟙 (SingleObj.star H)).toLoc ≫
-        (h ×ₘ 𝟙 (SingleObj.star H)).toLoc))).toNatTrans.app x ≫
-    (N.joint.mapComp (g ×ₘ 𝟙 (SingleObj.star H)).toLoc
-      (h ×ₘ 𝟙 (SingleObj.star H)).toLoc).hom.toNatTrans.app x = _
-  exact N.joint_map₂_comp_mapComp_hom_app
-    (g ×ₘ 𝟙 (SingleObj.star H)).toLoc (h ×ₘ 𝟙 (SingleObj.star H)).toLoc
-    (gh ×ₘ 𝟙 (SingleObj.star H)).toLoc
-    (eqToHom (by simp [← Quiver.Hom.comp_toLoc, hgh])) x
-
 private lemma jointComp_inv_app_comp_actId {p q r : Γ} (g : p ⟶ q) (h : q ⟶ r)
     (gh : p ⟶ r) (hgh : g ≫ h = gh) (x : fiber actions p) :
     (N.jointComp (g ×ₘ 𝟙 _) (h ×ₘ 𝟙 _) (gh ×ₘ 𝟙 _) (by simp [hgh])).inv.app x ≫
@@ -119,15 +92,45 @@ private lemma jointComp_inv_app_comp_actId {p q r : Γ} (g : p ⟶ q) (h : q ⟶
     ((N.transportCommIso g (𝟙 _)).hom.app ((act actions p (𝟙 _)).obj x)))]
   simp only [← Functor.map_comp_assoc, Category.assoc, Iso.hom_inv_id_app_assoc]
   rw [N.transportCommIso_actId_assoc]
+  -- Only the object and morphism projections of composed transport functors remain.
   rfl
 
-private lemma toLift_jointMapComp_inv_app {p q r : Γ} (g : p ⟶ q) (h : q ⟶ r)
+private lemma toLift_transportComp_hom_app {p q r : Γ} (g : p ⟶ q) (h : q ⟶ r)
     (gh : p ⟶ r) (hgh : g ≫ h = gh) (x : fiber actions p) :
-    (N.toLift.jointMapComp g h gh hgh).inv.app x =
-      (N.jointComp (g ×ₘ 𝟙 _) (h ×ₘ 𝟙 _) (gh ×ₘ 𝟙 _) (by simp [hgh])).inv.app x :=
-  congrArg Iso.inv (Iso.ext (N.toLift_jointMapComp_hom_app g h gh hgh x) :
-    (N.toLift.jointMapComp g h gh hgh).app x =
-      (N.jointComp (g ×ₘ 𝟙 _) (h ×ₘ 𝟙 _) (gh ×ₘ 𝟙 _) (by simp [hgh])).app x)
+    (N.toLift.transportComp g h gh hgh).hom.app x =
+      (N.transport h).map ((act actions q (𝟙 _)).map
+      ((N.toLift.fiberEquivalence q).counit.app
+        ((N.toLift.jointMap g).obj ((N.toLift.fiberEquivalence p).inverse.obj x)))) ≫
+      (N.jointComp (g ×ₘ 𝟙 _) (h ×ₘ 𝟙 _) (gh ×ₘ 𝟙 _) (by simp [hgh])).inv.app
+        ((N.toLift.fiberEquivalence p).inverse.obj x) := by
+  refine (N.toLift.transportComp_hom_app g h gh hgh x).trans ?_
+  have he := (N.toLift.fiberEquivalence q).counit_app_functor
+    ((N.toLift.jointMap g).obj ((N.toLift.fiberEquivalence p).inverse.obj x))
+  rw [Functor.map_comp]
+  exact congrArg₂ (fun a b => a ≫ b)
+    (congrArg (N.toLift.jointMap h).map he.symm)
+    (N.toLift_jointMapComp_inv_app g h gh hgh _)
+
+private lemma jointComp_inv_app_comp_return {p q r : Γ} (g : p ⟶ q) (h : q ⟶ r)
+    (gh : p ⟶ r) (hgh : g ≫ h = gh) (x : fiber actions p)
+    (y : fiber actions p) (ε : y ⟶ x) :
+    (N.jointComp (g ×ₘ 𝟙 _) (h ×ₘ 𝟙 _) (gh ×ₘ 𝟙 _) (by simp [hgh])).inv.app y ≫
+        (N.transport gh).map ((act actions p (𝟙 _)).map ε) ≫
+          (N.transport gh).map ((actId actions p).hom.app x) =
+      (N.transport h).map ((actId actions q).hom.app
+          ((N.transport g).obj ((act actions p (𝟙 _)).obj y))) ≫
+        (N.transport h).map ((N.transport g).map
+          ((act actions p (𝟙 _)).map ε) ≫
+            (N.transport g).map ((actId actions p).hom.app x)) ≫
+          (N.transportComp g h gh hgh).hom.app x := by
+  rw [← Functor.map_comp, (actId actions p).hom.naturality, Functor.map_comp,
+    ← Category.assoc, N.jointComp_inv_app_comp_actId g h gh hgh y]
+  simp only [Category.assoc]
+  rw [← (N.transportComp g h gh hgh).hom.naturality]
+  simp only [Functor.comp_map, ← Functor.map_comp, ← Category.assoc]
+  rw [← (actId actions p).hom.naturality]
+  -- The composite functor maps reduce by `Functor.comp_map` and `Functor.comp_obj`.
+  rfl
 
 /-- Reconstruction followed by normalization preserves composition of transport. -/
 @[reassoc]
@@ -138,109 +141,22 @@ lemma toLiftTransportIso_transportComp_hom_app {p q r : Γ} (g : p ⟶ q) (h : q
       (N.toLift.transport h).map ((N.toLiftTransportIso g).hom.app x) ≫
         (N.toLiftTransportIso h).hom.app ((N.transport g).obj x) ≫
           (N.transportComp g h gh hgh).hom.app x := by
-  have hc : (N.toLift.transportComp g h gh hgh).hom.app x =
-      (N.transport h).map ((act actions q (𝟙 _)).map
-        ((N.toLift.fiberEquivalence q).counit.app
-          ((N.toLift.jointMap g).obj ((N.toLift.fiberEquivalence p).inverse.obj x)))) ≫
-        (N.jointComp (g ×ₘ 𝟙 _) (h ×ₘ 𝟙 _) (gh ×ₘ 𝟙 _) (by simp [hgh])).inv.app
-          ((N.toLift.fiberEquivalence p).inverse.obj x) := by
-    refine (N.toLift.transportComp_hom_app g h gh hgh x).trans ?_
-    have he := (N.toLift.fiberEquivalence q).counit_app_functor
-      ((N.toLift.jointMap g).obj ((N.toLift.fiberEquivalence p).inverse.obj x))
-    rw [Functor.map_comp]
-    exact congrArg₂ (fun a b => a ≫ b)
-      (congrArg (N.toLift.jointMap h).map he.symm)
-      (N.toLift_jointMapComp_inv_app g h gh hgh _)
-  have key (y : fiber actions p) (ε : y ⟶ x) :
-      (N.jointComp (g ×ₘ 𝟙 _) (h ×ₘ 𝟙 _) (gh ×ₘ 𝟙 _) (by simp [hgh])).inv.app y ≫
-          (N.transport gh).map ((act actions p (𝟙 _)).map ε) ≫
-            (N.transport gh).map ((actId actions p).hom.app x) =
-        (N.transport h).map ((actId actions q).hom.app
-            ((N.transport g).obj ((act actions p (𝟙 _)).obj y))) ≫
-          (N.transport h).map ((N.transport g).map
-            ((act actions p (𝟙 _)).map ε) ≫
-              (N.transport g).map ((actId actions p).hom.app x)) ≫
-            (N.transportComp g h gh hgh).hom.app x := by
-    rw [← Functor.map_comp, (actId actions p).hom.naturality, Functor.map_comp,
-      ← Category.assoc, N.jointComp_inv_app_comp_actId g h gh hgh y]
-    simp only [Category.assoc]
-    rw [← (N.transportComp g h gh hgh).hom.naturality]
-    simp only [Functor.comp_map, ← Functor.map_comp, ← Category.assoc]
-    rw [← (actId actions p).hom.naturality]
-    rfl
-  rw [hc, toLiftTransportIso_hom_app]
+  rw [N.toLift_transportComp_hom_app, toLiftTransportIso_hom_app]
   -- Work in the actual prescribed fibers: the comparison functors are identities,
   -- while the counits still record their chosen inverses.
-  have hk := key ((N.toLift.fiberEquivalence p).inverse.obj x)
+  have hk := N.jointComp_inv_app_comp_return g h gh hgh x
+    ((N.toLift.fiberEquivalence p).inverse.obj x)
     ((N.toLift.fiberEquivalence p).counit.app x)
   have hn : (N.toLift.transport h).map ((N.toLiftTransportIso g).hom.app x) ≫
       (N.toLiftTransportIso h).hom.app ((N.transport g).obj x) =
     (N.toLiftTransportIso h).hom.app ((N.toLift.transport g).obj x) ≫
       (N.transport h).map ((N.toLiftTransportIso g).hom.app x) :=
     (N.toLiftTransportIso h).hom.naturality _
-  refine (Category.assoc _ _ _).trans ((congrArg (_ ≫ ·) hk).trans ?_)
   have he := N.toLiftTransportIso_hom_app h ((N.toLift.transport g).obj x)
   have hg := N.toLiftTransportIso_hom_app g x
-  exact (Category.assoc _ _ _).symm.trans
-    ((congrArg₂ (fun a b => a ≫ b ≫ (N.transportComp g h gh hgh).hom.app x)
-      he.symm (congrArg (N.transport h).map hg.symm)).trans
-        ((Category.assoc _ _ _).symm.trans
-          ((congrArg (· ≫ (N.transportComp g h gh hgh).hom.app x) hn.symm).trans
-            (Category.assoc _ _ _))))
-
-/-- The prescribed transport functors, with their given unit and composition cells,
-form a pseudofunctor on the parameter category. -/
--- Expose the object assignment so components can be typed in the prescribed fibers.
-@[expose] noncomputable def transportPseudofunctor : LocallyDiscrete Γ ⥤ᵖ Cat.{v, w} :=
-  LocallyDiscrete.mkCatPseudofunctor (obj := fun p ↦ fiber actions p) N.transport N.transportId
-    (fun g h gh hgh ↦ (N.transportComp g h gh hgh).symm)
-    (fun f g h fg gh fgh hfg hgh hfgh hfgh' X ↦ by
-      simp only [Iso.symm_hom]
-      exact LocallyDiscrete.inv_associativity_of_hom_associativity
-        (fun g h gh hgh ↦ N.transportComp g h gh hgh)
-        (fun f g h fg gh fgh hfg hgh hfgh hfgh' X ↦
-          N.transportComp_associativity f g h fg gh fgh hfg hgh hfgh hfgh' X)
-        f g h fg gh fgh hfg hgh hfgh hfgh' X)
-    (fun g hg X ↦ by
-      rw [Iso.symm_hom, ← N.transportComp_left_unitality g hg X, Iso.inv_hom_id_app])
-    (fun g hg X ↦ by
-      rw [Iso.symm_hom, ← N.transportComp_right_unitality g hg X, Iso.inv_hom_id_app])
-
-@[simp]
-lemma transportPseudofunctor_obj (b : LocallyDiscrete Γ) :
-    N.transportPseudofunctor.obj b = fiber actions b.as :=
-  LocallyDiscrete.mkCatPseudofunctor_obj ..
-
-@[simp]
-lemma transportPseudofunctor_map_toFunctor {b b' : LocallyDiscrete Γ} (g : b ⟶ b') :
-    (N.transportPseudofunctor.map g).toFunctor = N.transport g.as :=
-  LocallyDiscrete.mkCatPseudofunctor_map_toFunctor ..
-
-@[simp]
-lemma transportPseudofunctor_mapId_hom_toNatTrans_app (b : LocallyDiscrete Γ)
-    (X : fiber actions b.as) :
-    (N.transportPseudofunctor.mapId b).hom.toNatTrans.app X = (N.transportId b.as).hom.app X :=
-  LocallyDiscrete.mkCatPseudofunctor_mapId_hom_toNatTrans_app ..
-
-@[simp]
-lemma transportPseudofunctor_mapId_inv_toNatTrans_app (b : LocallyDiscrete Γ)
-    (X : fiber actions b.as) :
-    (N.transportPseudofunctor.mapId b).inv.toNatTrans.app X = (N.transportId b.as).inv.app X :=
-  LocallyDiscrete.mkCatPseudofunctor_mapId_inv_toNatTrans_app ..
-
-@[simp]
-lemma transportPseudofunctor_mapComp_hom_toNatTrans_app {b₀ b₁ b₂ : LocallyDiscrete Γ}
-    (g : b₀ ⟶ b₁) (h : b₁ ⟶ b₂) (X : fiber actions b₀.as) :
-    (N.transportPseudofunctor.mapComp g h).hom.toNatTrans.app X =
-      (N.transportComp g.as h.as (g.as ≫ h.as) rfl).inv.app X :=
-  LocallyDiscrete.mkCatPseudofunctor_mapComp_hom_toNatTrans_app ..
-
-@[simp]
-lemma transportPseudofunctor_mapComp_inv_toNatTrans_app {b₀ b₁ b₂ : LocallyDiscrete Γ}
-    (g : b₀ ⟶ b₁) (h : b₁ ⟶ b₂) (X : fiber actions b₀.as) :
-    (N.transportPseudofunctor.mapComp g h).inv.toNatTrans.app X =
-      (N.transportComp g.as h.as (g.as ≫ h.as) rfl).hom.app X :=
-  LocallyDiscrete.mkCatPseudofunctor_mapComp_inv_toNatTrans_app ..
+  -- `erw` identifies the reconstructed joint fibers with the prescribed fibers.
+  erw [Category.assoc, hk, ← Category.assoc, ← he, ← hg, ← Category.assoc, ← hn]
+  simp only [Category.assoc]
 
 /-- The canonical return comparison respects the inverse composition cells used by
 pseudofunctors. -/
@@ -265,10 +181,10 @@ transformation with identity components and canonical return naturality cells. -
     Pseudofunctor.StrongTrans N.toLift.transportPseudofunctor N.transportPseudofunctor where
   app _ := 𝟙 _
   naturality g := ρ_ _ ≪≫ Cat.Hom.isoMk (N.toLiftTransportIso g.as) ≪≫ (λ_ _).symm
-  naturality_naturality η := by
-    obtain rfl := LocallyDiscrete.eq_of_hom η
-    rw [Subsingleton.elim η (𝟙 _), PrelaxFunctor.map₂_id, PrelaxFunctor.map₂_id]
-    exact Bicategory.id_whiskerRight_comp_eq_comp_whiskerLeft_id _ _ _ _ _
+  naturality_naturality η :=
+    Pseudofunctor.naturality_naturality_of_locallyDiscrete
+      N.toLift.transportPseudofunctor N.transportPseudofunctor (fun _ ↦ 𝟙 _)
+      (fun g ↦ ρ_ _ ≪≫ Cat.Hom.isoMk (N.toLiftTransportIso g.as) ≪≫ (λ_ _).symm) η
   naturality_id b :=
     Cat.rightUnitor_trans_leftUnitor_symm_naturality_id _ _ _
       (N.toLiftTransportIso_hom_app_comp_transportId b.as)
@@ -295,7 +211,8 @@ lemma toLiftTransportHom_naturality_inv_app {p q : LocallyDiscrete Γ} (g : p �
       (N.toLiftTransportIso g.as).inv.app x :=
   Cat.rightUnitor_trans_leftUnitor_symm_inv_app _ _
 
-private lemma toLiftTransportIso_inv_app_comp_transportComp_inv_app {p q r : Γ}
+/-- The inverse canonical return comparison respects the inverse composition cells. -/
+lemma toLiftTransportIso_inv_app_comp_transportComp_inv_app {p q r : Γ}
     (g : p ⟶ q) (h : q ⟶ r) (x : fiber actions p) :
     (N.toLiftTransportIso (g ≫ h)).inv.app x ≫
         (N.toLift.transportComp g h (g ≫ h) rfl).inv.app x =
@@ -317,10 +234,10 @@ private lemma toLiftTransportIso_inv_app_comp_transportComp_inv_app {p q r : Γ}
     Pseudofunctor.StrongTrans N.transportPseudofunctor N.toLift.transportPseudofunctor where
   app _ := 𝟙 _
   naturality g := ρ_ _ ≪≫ Cat.Hom.isoMk (N.toLiftTransportIso g.as).symm ≪≫ (λ_ _).symm
-  naturality_naturality η := by
-    obtain rfl := LocallyDiscrete.eq_of_hom η
-    rw [Subsingleton.elim η (𝟙 _), PrelaxFunctor.map₂_id, PrelaxFunctor.map₂_id]
-    exact Bicategory.id_whiskerRight_comp_eq_comp_whiskerLeft_id _ _ _ _ _
+  naturality_naturality η :=
+    Pseudofunctor.naturality_naturality_of_locallyDiscrete
+      N.transportPseudofunctor N.toLift.transportPseudofunctor (fun _ ↦ 𝟙 _)
+      (fun g ↦ ρ_ _ ≪≫ Cat.Hom.isoMk (N.toLiftTransportIso g.as).symm ≪≫ (λ_ _).symm) η
   naturality_id b :=
     Cat.rightUnitor_trans_leftUnitor_symm_naturality_id _ _ _ fun x ↦
       (Iso.inv_comp_eq ((N.toLiftTransportIso (𝟙 b.as)).app x)).2
