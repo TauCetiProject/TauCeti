@@ -58,4 +58,16 @@ theorem productDensity_apply (p : ι → R) (v : (Fin n → ι) →₀ R) (w : F
       simp [mul_comm]
     · simp [h]
 
+/-- The product density of the constant weight one is the identity. -/
+@[simp]
+theorem productDensity_one : productDensity (n := n) (1 : ι → R) = 1 := by
+  refine LinearMap.ext fun v ↦ Finsupp.ext fun w ↦ ?_
+  simp
+
+/-- Composing product densities multiplies their weights. -/
+theorem productDensity_mul (p p' : ι → R) :
+    productDensity (n := n) p * productDensity p' = productDensity (p * p') := by
+  refine LinearMap.ext fun v ↦ Finsupp.ext fun w ↦ ?_
+  simp [Module.End.mul_apply, ← mul_assoc, Finset.prod_mul_distrib]
+
 end TauCeti

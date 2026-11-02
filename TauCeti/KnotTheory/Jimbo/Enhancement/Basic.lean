@@ -99,15 +99,16 @@ theorem jimboEnhancement_apply (q : Rˣ) (v : (Fin n → Fin N) →₀ R) (w : F
 /-- At `q = 1` the enhancement is the identity. -/
 @[simp]
 theorem jimboEnhancement_one : jimboEnhancement (N := N) (n := n) (1 : Rˣ) = 1 := by
-  refine LinearMap.ext fun v ↦ Finsupp.ext fun w ↦ ?_
-  simp
+  rw [jimboEnhancement, show jimboWeight (1 : Rˣ) = (1 : Fin N → R) from funext jimboWeight_one,
+    productDensity_one]
 
 /-- The tensor-power enhancement is inverted by replacing the parameter with its inverse. -/
 @[simp]
 theorem jimboEnhancement_mul_inv (q : Rˣ) :
     jimboEnhancement (N := N) (n := n) q * jimboEnhancement q⁻¹ = 1 := by
-  refine LinearMap.ext fun v ↦ Finsupp.ext fun w ↦ ?_
-  simp [Module.End.mul_apply, ← mul_assoc, ← Finset.prod_mul_distrib]
+  rw [jimboEnhancement, jimboEnhancement, productDensity_mul,
+    show jimboWeight q * jimboWeight q⁻¹ = (1 : Fin N → R) from funext (jimboWeight_mul_inv q),
+    productDensity_one]
 
 /-- The enhancement is an invertible operator. -/
 theorem isUnit_jimboEnhancement (q : Rˣ) :
