@@ -132,23 +132,6 @@ theorem restrictedAnalyticSubst_X (i : Fin k) :
     restrictedAnalyticSubst g hg ⟨X i, isRestricted_monomial r (Finsupp.single i 1) 1⟩ = g i :=
   restrictedEval₂_X _ g _ hg i
 
-/-- **Substituting zero** evaluates at the origin: `f(0)` is the constant coefficient of `f`. -/
-@[simp]
-theorem restrictedAnalyticSubst_zero_apply
-    (hh : ∀ i, ‖(0 : Fin k → IsRestricted.subring (R := R) s) i‖ ≤ r i)
-    (f : IsRestricted.subring (R := R) r) :
-    restrictedAnalyticSubst 0 hh f =
-      algebraMap R _ (constantCoeff (f : MvPowerSeries (Fin k) R)) := by
-  -- Every monomial but the constant one vanishes at zero.
-  refine (hasSum_restrictedAnalyticSubst _ _ _).unique ?_
-  convert hasSum_ite_eq (0 : Fin k →₀ ℕ)
-    (algebraMap R (IsRestricted.subring (R := R) s) (constantCoeff (f : MvPowerSeries (Fin k) R)))
-    using 2 with t
-  split_ifs with ht
-  · simp [ht]
-  · obtain ⟨i, hi⟩ := Finsupp.ne_iff.1 ht
-    rw [Finset.prod_eq_zero (Finset.mem_univ i) (by simp [zero_pow hi]), mul_zero]
-
 /-- **Coefficient maps commute with analytic substitution.** For a bounded ring homomorphism
 `φ : R →+* S` such that the mapped series `φ(gᵢ)` still satisfy `‖φ(gᵢ)‖ ≤ rᵢ`, mapping the
 coefficients of `f(g)` gives `φ(f)(φ(g))`. -/
@@ -177,6 +160,17 @@ theorem coe_restrictedAnalyticSubst_eq_subst
     ← tsum_eq_finsum (L := .unconditional _) (coeff_subst_finite hsub _ e)]
   refine tsum_congr fun t ↦ ?_
   rw [Finsupp.prod_fintype _ _ fun _ ↦ pow_zero _, smul_eq_mul]
+
+/-- **Substituting zero** evaluates at the origin: `f(0)` is the constant coefficient of `f`. -/
+@[simp]
+theorem restrictedAnalyticSubst_zero_apply
+    (hh : ∀ i, ‖(0 : Fin k → IsRestricted.subring (R := R) s) i‖ ≤ r i)
+    (f : IsRestricted.subring (R := R) r) :
+    restrictedAnalyticSubst 0 hh f =
+      algebraMap R _ (constantCoeff (f : MvPowerSeries (Fin k) R)) := by
+  refine Subtype.ext ?_
+  rw [coe_restrictedAnalyticSubst_eq_subst _ _ HasSubst.zero, coe_algebraMap_isRestrictedSubring]
+  exact subst_zero_eq_C_constantCoeff.trans (by simp)
 
 variable [∀ i, Fact (0 < r i)]
 
