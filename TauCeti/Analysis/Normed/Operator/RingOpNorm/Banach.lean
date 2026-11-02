@@ -53,6 +53,8 @@ isometries, so the inverse has operator norm one on a module with a vector of no
 
 * `TauCeti.RingOpNorm.completeSpace`: the operator space is complete when the target is.
 * `TauCeti.RingOpNorm.isUltrametricDist`: the operator norm is ultrametric when the target is.
+* `ContinuousLinearMap.lipschitzWith_comp_comp`: composition `X ↦ g ∘ X ∘ f` with fixed operators
+  is Lipschitz with constant `‖g‖ * ‖f‖`.
 * `ContinuousLinearMap.coe_oneSub_symm`: the inverse of `1 - t` is `Ring.inverse (1 - t)`,
   the sum of the Neumann series.
 * `ContinuousLinearMap.norm_oneSub_apply`, `ContinuousLinearMap.norm_oneSub_symm_apply` and
@@ -244,6 +246,27 @@ theorem seminormedAddCommGroup_eq {K E F : Type*} [NontriviallyNormedField K]
 end TauCeti.RingOpNorm
 
 namespace ContinuousLinearMap
+
+section Lipschitz
+
+variable {R E F G H : Type*} [SeminormedRing R] [TauCeti.NormedRing.IsTate R]
+  [SeminormedAddCommGroup E] [Module R E] [IsBoundedSMul R E]
+  [SeminormedAddCommGroup F] [Module R F] [IsBoundedSMul R F]
+  [SeminormedAddCommGroup G] [Module R G] [IsBoundedSMul R G]
+  [SeminormedAddCommGroup H] [Module R H] [IsBoundedSMul R H]
+
+/-- Composition with fixed operators on both sides, `X ↦ g ∘ X ∘ f`, is Lipschitz for the
+operator norm, with constant `‖g‖ * ‖f‖`. -/
+theorem lipschitzWith_comp_comp (g : G →L[R] H) (f : E →L[R] F) :
+    LipschitzWith (‖g‖₊ * ‖f‖₊) fun X : F →L[R] G ↦ g.comp (X.comp f) :=
+  LipschitzWith.of_dist_le_mul fun X Y ↦ by
+    rw [dist_eq_norm, dist_eq_norm, ← comp_sub, ← sub_comp, NNReal.coe_mul, coe_nnnorm,
+      coe_nnnorm]
+    calc ‖g.comp ((X - Y).comp f)‖ ≤ ‖g‖ * (‖X - Y‖ * ‖f‖) :=
+          (ringOpNorm_comp_le _ _).trans <| by gcongr; exact ringOpNorm_comp_le _ _
+      _ = ‖g‖ * ‖f‖ * ‖X - Y‖ := by ring
+
+end Lipschitz
 
 variable {R E : Type*} [SeminormedRing R] [TauCeti.NormedRing.IsTate R]
   [NormedAddCommGroup E] [Module R E] [IsBoundedSMul R E] [CompleteSpace E]

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Module.Bases.PotentiallyONable
 public import TauCeti.Analysis.Normed.Operator.RowCompact
+public import TauCeti.Analysis.Normed.Operator.RowCompact.Idempotent
 import Mathlib.Topology.Homeomorph.Lemmas
 import Mathlib.Topology.MetricSpace.Ultra.Pi
 
@@ -35,6 +36,11 @@ with (Pr) is row compact. The identity of `M` is row compact exactly when `M` ha
 finitely generated. Hence a row-compact endomorphism `u` of `M` with `(1 - u) ^ n = 0` forces `M`
 to be finitely generated projective.
 
+A row-compact idempotent `e` of a module with (Pr) has finitely generated projective range: through
+a retract presentation `r ∘ i = id`, the inclusion `i` identifies `range e` with the range of the
+row-compact idempotent `i ∘ e ∘ r` of the model space
+(`ContinuousLinearMap.IsRowCompact.projective_range_of_isIdempotentElem`).
+
 ## Main definitions
 
 * `ContinuousLinearMap.IsPrCompact`: row compactness of a map between modules with property (Pr),
@@ -59,6 +65,9 @@ to be finitely generated projective.
   generated modules with property (Pr).
 * `ContinuousLinearMap.IsPrCompact.projective_of_one_sub_pow_eq_zero`: a row-compact `u` with
   `(1 - u) ^ n = 0` forces the module to be finitely generated projective.
+* `ContinuousLinearMap.IsPrCompact.finite_range_of_isIdempotentElem`,
+  `ContinuousLinearMap.IsPrCompact.projective_range_of_isIdempotentElem`: a row-compact idempotent
+  has finitely generated projective range.
 
 ## References
 
@@ -404,5 +413,56 @@ theorem IsPrCompact.projective_of_one_sub_pow_eq_zero {u : M →L[R] M} (hu : u.
   hu.hasPr_source.projective
 
 end FiniteUltrametric
+
+section Idempotent
+
+variable {R : Type w} [NormedCommRing R] [IsUltrametricDist R] [TauCeti.NormedRing.IsTate R]
+  [CompleteSpace R] {M : Type u} [SeminormedAddCommGroup M] [Module R M]
+
+omit [TauCeti.NormedRing.IsTate R] [CompleteSpace R] in
+/-- For a retract presentation `r ∘ i = id` of `M`, the extension `i ∘ e ∘ r` of an idempotent
+`e` is an idempotent of the model space. -/
+private theorem isIdempotentElem_comp_comp_of_retract {e : M →L[R] M} (he : IsIdempotentElem e)
+    {J : Type*} [TopologicalSpace J] {i : M →L[R] C₀(J, R)} {r : C₀(J, R) →L[R] M}
+    (hri : r.comp i = .id R M) : IsIdempotentElem (i.comp (e.comp r)) := by
+  have hri' (x : M) : r (i x) = x := by simpa using DFunLike.congr_fun hri x
+  have hee (x : M) : e (e x) = e x := congr($he.eq x)
+  ext x : 1
+  simp [hri', hee]
+
+/-- For a retract presentation `r ∘ i = id` of `M`, the inclusion `i` identifies the range of an
+endomorphism `e` with the range of its extension `i ∘ e ∘ r`. -/
+private noncomputable def rangeEquivOfRetract (e : M →L[R] M) {J : Type*} [TopologicalSpace J]
+    {i : M →L[R] C₀(J, R)} {r : C₀(J, R) →L[R] M} (hri : r.comp i = .id R M) :
+    LinearMap.range (e : M →ₗ[R] M) ≃ₗ[R]
+      LinearMap.range ((i.comp (e.comp r) : C₀(J, R) →L[R] C₀(J, R)) :
+        C₀(J, R) →ₗ[R] C₀(J, R)) :=
+  have hri' (x : M) : r (i x) = x := by simpa using DFunLike.congr_fun hri x
+  (Submodule.equivMapOfInjective (i : M →ₗ[R] C₀(J, R))
+      (Function.LeftInverse.injective hri') _).trans
+    (LinearEquiv.ofEq _ _ (by
+      rw [toLinearMap_comp, toLinearMap_comp, LinearMap.range_comp,
+        LinearMap.range_comp_of_range_eq_top]
+      exact LinearMap.range_eq_top.2 (Function.LeftInverse.surjective hri')))
+
+/-- **A row-compact idempotent of a (Pr) module has finitely generated range.** -/
+theorem IsPrCompact.finite_range_of_isIdempotentElem {e : M →L[R] M} (hu : e.IsPrCompact)
+    (he : IsIdempotentElem e) : Module.Finite R (LinearMap.range (e : M →ₗ[R] M)) := by
+  classical
+  obtain ⟨J, _, _, i, r, hri⟩ := (hasPr_def R M).1 hu.hasPr_source
+  have hc : (i.comp (e.comp r)).IsRowCompact := hu.isRowCompact_comp i r
+  have := hc.finite_range_of_isIdempotentElem (isIdempotentElem_comp_comp_of_retract he hri)
+  exact .equiv (rangeEquivOfRetract e hri).symm
+
+/-- **A row-compact idempotent of a (Pr) module has projective range.** -/
+theorem IsPrCompact.projective_range_of_isIdempotentElem {e : M →L[R] M} (hu : e.IsPrCompact)
+    (he : IsIdempotentElem e) : Module.Projective R (LinearMap.range (e : M →ₗ[R] M)) := by
+  classical
+  obtain ⟨J, _, _, i, r, hri⟩ := (hasPr_def R M).1 hu.hasPr_source
+  have hc : (i.comp (e.comp r)).IsRowCompact := hu.isRowCompact_comp i r
+  have := hc.projective_range_of_isIdempotentElem (isIdempotentElem_comp_comp_of_retract he hri)
+  exact .of_equiv (rangeEquivOfRetract e hri).symm
+
+end Idempotent
 
 end ContinuousLinearMap
