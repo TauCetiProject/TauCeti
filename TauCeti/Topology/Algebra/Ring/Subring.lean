@@ -8,9 +8,12 @@ module
 public import Mathlib.RingTheory.Finiteness.Defs
 public import Mathlib.RingTheory.Localization.Away.Basic
 public import Mathlib.RingTheory.IntegralClosure.Algebra.Basic
+public import Mathlib.RingTheory.Noetherian.Defs
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.Algebra.Module.Submodule.Pointwise
 public import TauCeti.Topology.Algebra.TopologicallyNilpotent.Basic
+
+import Mathlib.RingTheory.Localization.Submodule
 
 /-!
 # Subrings of a topological ring
@@ -42,6 +45,8 @@ Scalar absorption is supplied by `exists_mul_pow_mem_of_isTopologicallyNilpotent
 * `Ideal.isOpen_comap_subtype_iff`: an ideal is open exactly when its trace on an open subring is.
 * `Subring.isLocalizationAway_of_isOpen`: an open subring containing a topologically nilpotent
   unit recovers the ambient ring by inverting that element.
+* `Subring.isNoetherianRing_of_isOpen`: a ring with a topologically nilpotent unit and a
+  noetherian open subring is noetherian.
 * `Subring.exists_pow_smul_mem`: a power carries an element of the ambient span into a
   submodule over the open subring.
 * `Subring.exists_pow_smul_le` and `Subring.exists_pow_smul_le_pow_smul`: the uniform and
@@ -110,6 +115,18 @@ theorem isLocalizationAway_of_isOpen (S : Subring A) (hS : IsOpen (S : Set A)) (
   · obtain ⟨n, hn⟩ := exists_mul_pow_mem_of_isTopologicallyNilpotent hs hS x
     exact ⟨n, ⟨_, hn⟩, rfl⟩
   · exact ⟨0, by simpa using Subtype.ext hab⟩
+
+/-- A ring with a topologically nilpotent unit and a noetherian open subring is noetherian.
+Only separate continuity of multiplication is needed; the unit need not lie in the subring. -/
+theorem isNoetherianRing_of_isOpen (S : Subring A) [IsNoetherianRing S]
+    (hS : IsOpen (S : Set A)) {ϖ : A} (hϖ : IsTopologicallyNilpotent ϖ)
+    (hu : IsUnit ϖ) : IsNoetherianRing A := by
+  obtain ⟨n, hn⟩ := Filter.eventually_atTop.mp
+    (hϖ.eventually_mem (hS.mem_nhds S.zero_mem))
+  let s : S := ⟨ϖ ^ (n + 1), hn (n + 1) (by omega)⟩
+  have : IsLocalization.Away s A := S.isLocalizationAway_of_isOpen hS s
+    (hϖ.pow (Nat.succ_ne_zero n)) (hu.pow (n + 1))
+  exact IsLocalization.isNoetherianRing (Submonoid.powers s) A inferInstance
 
 /-- A power of a topologically nilpotent scalar `s ∈ S` carries any element of the `A`-span
 of `M₀` into `M₀`. No spanning hypothesis on the whole module is needed. -/

@@ -427,6 +427,22 @@ theorem _root_.RootPairing.exists_intCast_eq_coroot'_of_forall_mem_support {x : 
     exact ⟨z * m, by simp [hm]⟩
 
 omit [CharZero R] in
+/-- **A weight killed by the simple coroots is killed by every coroot**, since every coroot is an
+integer combination of the simple coroots. -/
+theorem _root_.RootPairing.coroot'_eq_zero_of_forall_mem_support {x : M}
+    (hx : ∀ i ∈ b.support, P.coroot' i x = 0) (j : ι) : P.coroot' j x = 0 := by
+  suffices ∀ n ∈ Submodule.span ℤ (P.coroot '' b.support), P.toLinearMap.flip n x = 0
+    from this _ (b.coroot_mem_span_int j)
+  intro n hn
+  induction hn using Submodule.span_induction with
+  | mem n hn =>
+    obtain ⟨i, hi, rfl⟩ := hn
+    exact hx i hi
+  | zero => simp
+  | add n n' _ _ hn hn' => simp [hn, hn']
+  | smul z n _ hn => simp [hn]
+
+omit [CharZero R] in
 variable {P b} in
 /-- An element of the positive root cone is nonnegative at a point where every simple root is
 nonnegative. -/

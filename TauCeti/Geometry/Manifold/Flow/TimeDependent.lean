@@ -54,6 +54,8 @@ the initial position of the submanifold to the later ones.
   of the flow.
 * `TauCeti.timeDependentFlowOf_trans_of_mem` and `TauCeti.timeDependentFlowOf_trans`: the two-time
   composition law, where it is defined, and everywhere for a complete suspension.
+* `TauCeti.timeDependentFlowOf_symm_of_mem`: flowing back from time `t` to time `s` undoes the flow
+  from `s` to `t`.
 * `TauCeti.isCompleteVectorField_timeDependentSuspensionField`: a time-dependent field vanishing
   outside a fixed compact set has a complete suspension.
 
@@ -193,6 +195,26 @@ theorem mem_timeDependentFlowDomain_of_forall_eq_zero (hx : ∀ u, X u x = 0) (s
     (b := max s t + 1) (fun u _ ↦ hasMFDerivAt_const_of_forall_eq_zero hx u)
     ⟨by linarith [min_le_left s t], by linarith [le_max_left s t]⟩
     ⟨by linarith [min_le_right s t], by linarith [le_max_right s t]⟩
+
+/-- The times at which the flow from `(s, x)` is defined form an interval. -/
+theorem ordConnected_setOf_mem_timeDependentFlowDomain (s : ℝ) (x : M) :
+    {u | ((s, u), x) ∈ timeDependentFlowDomain X}.OrdConnected := by
+  refine ⟨fun p hp q hq u hu ↦ ?_⟩
+  simp only [mem_ofPred_eq, mem_timeDependentFlowDomain, mem_flowDomain] at hp hq ⊢
+  exact ordConnected_maximalIntegralCurveInterval.out hp hq
+    ⟨by linarith [hu.1], by linarith [hu.2]⟩
+
+/-- Two times at which the flow from `(s, x)` is defined, `s` and `t`, lie in a common open
+interval of times at which it is defined. -/
+theorem exists_Ioo_of_mem_timeDependentFlowDomain (h : ((s, t), x) ∈ timeDependentFlowDomain X) :
+    ∃ a b, s ∈ Ioo a b ∧ t ∈ Ioo a b ∧
+      ∀ u ∈ Ioo a b, ((s, u), x) ∈ timeDependentFlowDomain X := by
+  rw [mem_timeDependentFlowDomain, mem_flowDomain] at h
+  obtain ⟨γ, a, b, hγ, hγ0, h0, ht, -⟩ := exists_isMIntegralCurveOn_maximalIntegralCurve_eq h
+  refine ⟨a + s, b + s, ⟨by linarith [h0.1], by linarith [h0.2]⟩,
+    ⟨by linarith [ht.1], by linarith [ht.2]⟩, fun u hu ↦ ?_⟩
+  rw [mem_timeDependentFlowDomain, mem_flowDomain]
+  exact hγ.subset_maximalIntegralCurveInterval h0 hγ0 ⟨by linarith [hu.1], by linarith [hu.2]⟩
 
 section Flow
 
@@ -398,6 +420,16 @@ theorem isCompleteVectorField_timeDependentSuspensionField {K : Set M} (hK : IsC
     obtain ⟨τ, hτ, hτC⟩ := (Filter.Eventually.and (Ioo_mem_nhdsGT ha0)
       (eventually_notMem_nhdsGT_maximalIntegralCurve hW h0 hglb (hC (sInf _) b))).exists
     exact hτC (hmem (hsub ⟨hτ.1, by linarith [hτ.2]⟩) ⟨hτ.1.le, by linarith [hτ.2]⟩)
+
+/-- **Flowing back undoes the flow.** If the flow from time `s` to time `t` is defined at `x`, then
+the flow from `t` back to `s` is defined at its endpoint and returns it to `x`. -/
+theorem timeDependentFlowOf_symm_of_mem (h : ((s, t), x) ∈ timeDependentFlowDomain X) :
+    ((t, s), timeDependentFlowOf X s t x) ∈ timeDependentFlowDomain X ∧
+      timeDependentFlowOf X t s (timeDependentFlowOf X s t x) = x := by
+  obtain ⟨a, b, hs, ht, hab⟩ := exists_Ioo_of_mem_timeDependentFlowDomain h
+  have hγ (u : ℝ) (hu : u ∈ Ioo a b) := hasMFDerivAt_timeDependentFlowOf hX (hab u hu)
+  refine ⟨mem_timeDependentFlowDomain_of_hasMFDerivAt hγ ht hs, ?_⟩
+  rw [timeDependentFlowOf_eq_of_hasMFDerivAt hX hγ ht hs, timeDependentFlowOf_self hX]
 
 end Complete
 

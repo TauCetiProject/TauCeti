@@ -220,6 +220,12 @@ theorem cross_eq_zero_trans {p q r : Pair R} (hq : q ≠ 0) (hpq : p.cross q = 0
   · refine mul_left_cancel₀ hz ?_
     linear_combination r.z * hpq + p.z * hqr
 
+/-- Over a domain, a scalar multiple of a pair is zero exactly when the scalar or the pair is. -/
+@[simp]
+protected theorem smul_eq_zero {c : R} {p : Pair R} : c • p = 0 ↔ c = 0 ∨ p = 0 := by
+  simp only [eq_zero_iff, smul_x, smul_z, mul_eq_zero]
+  tauto
+
 end Domain
 
 section Field

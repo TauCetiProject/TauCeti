@@ -90,9 +90,10 @@ theorem isManifoldStrictlyPlurisubharmonicAt_norm_sq_sub_comp_iff
 
 /-- Squared distance along a complex `C²` map is real `C²`. -/
 theorem contMDiffAt_norm_sq_sub_comp (hi : ContMDiffAt 𝓘(ℂ, E) 𝓘(ℂ, F) 2 i x) :
-    ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 (fun y ↦ ‖i y - a‖ ^ 2) x :=
-  (contDiff_norm_sq ℂ).contDiffAt.contMDiffAt.comp x
-    ((hi.restrictScalars ℝ).sub contMDiffAt_const)
+    ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 (fun y ↦ ‖i y - a‖ ^ 2) x := by
+  have hiR : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ, F) 2 i x := by
+    simpa using hi.restrictScalars ℝ
+  exact (contDiff_norm_sq ℂ).contDiffAt.contMDiffAt.comp x (hiR.sub contMDiffAt_const)
 
 /-- The sum of the real Hessian on a complex tangent vector and its rotation by `I`
 is four times the squared norm of the tangent map. The Hessian here is computed in the

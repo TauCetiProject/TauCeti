@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
-public import TauCeti.Analysis.Contour.PiecewiseC1On
+public import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On
 public import TauCeti.Analysis.Contour.Winding.Number.Basic
 import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Basic
 import TauCeti.Analysis.Contour.AbsolutelyContinuous
@@ -43,7 +43,7 @@ uses the piecewise-`C¹` endpoint-ratio identity below for its avoiding pieces.
 ## Main results
 
 * `TauCeti.Contour.exp_two_pi_I_mul_windingNumber_of_avoidance` — the endpoint-ratio identity.
-* `TauCeti.Contour.IsPiecewiseC1On.exp_two_pi_I_mul_windingNumber` — the same for a
+* `TauCeti.IsPiecewiseC1On.exp_two_pi_I_mul_windingNumber` — the same for a
   piecewise-`C¹` curve, whose regularity supplies the raw hypotheses on its own.
 * `TauCeti.Contour.im_windingNumber_of_avoidance` and its piecewise-`C¹` form — the imaginary part
   of the winding number of an arc is the log-modulus decrement of its endpoints, over `2π`.
@@ -97,7 +97,7 @@ theorem exp_two_pi_I_mul_windingNumber_of_avoidance
 /-- **Piecewise-`C¹` form of the endpoint-ratio identity.** Piecewise-`C¹` regularity supplies the
 continuity, differentiability and integrability hypotheses of
 `exp_two_pi_I_mul_windingNumber_of_avoidance`. -/
-theorem IsPiecewiseC1On.exp_two_pi_I_mul_windingNumber (hγ : IsPiecewiseC1On γ a b)
+theorem _root_.TauCeti.IsPiecewiseC1On.exp_two_pi_I_mul_windingNumber (hγ : IsPiecewiseC1On γ a b)
     (h_avoid : ∀ t ∈ uIcc a b, γ t ≠ w) :
     Complex.exp (2 * (Real.pi : ℂ) * Complex.I * windingNumber γ a b w)
       = (γ b - w) / (γ a - w) := by
@@ -144,7 +144,7 @@ theorem im_windingNumber_of_avoidance
   linarith
 
 /-- **Piecewise-`C¹` form of the imaginary-part formula.** -/
-theorem IsPiecewiseC1On.im_windingNumber (hγ : IsPiecewiseC1On γ a b)
+theorem _root_.TauCeti.IsPiecewiseC1On.im_windingNumber (hγ : IsPiecewiseC1On γ a b)
     (h_avoid : ∀ t ∈ uIcc a b, γ t ≠ w) :
     (windingNumber γ a b w).im
       = (Real.log ‖γ a - w‖ - Real.log ‖γ b - w‖) / (2 * Real.pi) := by
@@ -184,7 +184,7 @@ theorem coe_two_pi_mul_re_windingNumber_eq_arg_sub_arg_of_avoidance
         Complex.arg_div_coe_angle hub hua
 
 /-- **Piecewise-`C¹` form of the modulo-`1` reading of the winding number.** -/
-theorem IsPiecewiseC1On.coe_two_pi_mul_re_windingNumber (hγ : IsPiecewiseC1On γ a b)
+theorem _root_.TauCeti.IsPiecewiseC1On.coe_two_pi_mul_re_windingNumber (hγ : IsPiecewiseC1On γ a b)
     (h_avoid : ∀ t ∈ uIcc a b, γ t ≠ w) :
     ((2 * Real.pi * (windingNumber γ a b w).re : ℝ) : Real.Angle)
       = (Complex.arg (γ b - w) : Real.Angle) - (Complex.arg (γ a - w) : Real.Angle) := by

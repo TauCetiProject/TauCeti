@@ -43,7 +43,9 @@ twisted by the system pulled back along `f`.
   `twistedChainComplex`, `twistedHomology` for its alternating face map complex and homology.
   Maps out of twisted chains are built summand by summand with `twistedChainsDesc`.
   The coefficient of a twisted chain on a singular simplex is `twistedChainComplexCoeff`, and by
-  `twistedChainComplex_ext_coeff` a twisted chain is determined by its coefficients.
+  `twistedChainComplex_ext_coeff` a twisted chain is determined by its coefficients. Only finitely
+  many of them are nonzero, and the chain is their sum
+  (`finsum_ιTwistedChainComplex_twistedChainComplexCoeff`).
 * `TauCeti.LocalCoefficientSystem.twistedChainsFunctor`: twisted chains as a functor of the
   coefficient system, with `twistedChainComplexCoefficientMap` and
   `twistedHomologyCoefficientMap` for the induced maps of complexes and of homology, together
@@ -559,6 +561,26 @@ lemma twistedChainComplex_ext_coeff {y y' : (twistedChainComplex L).X k}
   simpa only [twistedChainComplexCoeff_eq_component, ModuleCat.hom_comp, LinearMap.comp_apply,
     ModuleCat.hom_ofHom] using h ρ
 
+/-- A twisted chain has only finitely many nonzero coefficients. -/
+lemma finite_support_twistedChainComplexCoeff (y : (twistedChainComplex L).X k) :
+    {ρ : (TopCat.toSSet.obj X) _⦋k⦌ | (twistedChainComplexCoeff L ρ).hom y ≠ 0}.Finite := by
+  classical
+  let e := eqToIso (twistedChainComplex_X L k) ≪≫ ModuleCat.coprodIsoDirectSum
+    (fun σ : (TopCat.toSSet.obj X) _⦋k⦌ ↦ L.obj (initialVertex σ))
+  refine (e.hom.hom y).support.finite_toSet.subset fun ρ hρ ↦ ?_
+  simpa [twistedChainComplexCoeff_eq_component, e, ← DirectSum.apply_eq_component] using hρ
+
+/-- A twisted chain is the finite sum of the chains supported on single simplices given by its
+coefficients. -/
+lemma finsum_ιTwistedChainComplex_twistedChainComplexCoeff (y : (twistedChainComplex L).X k) :
+    ∑ᶠ σ, (ιTwistedChainComplex L k σ).hom ((twistedChainComplexCoeff L σ).hom y) = y := by
+  refine twistedChainComplex_ext_coeff L fun ρ ↦ ?_
+  rw [map_finsum _ ((finite_support_twistedChainComplexCoeff L y).subset fun σ hσ h ↦
+      hσ (by simp [h])),
+    finsum_eq_single _ ρ fun σ hσ ↦
+      twistedChainComplexCoeff_ιTwistedChainComplex_apply_of_ne L hσ _,
+    twistedChainComplexCoeff_ιTwistedChainComplex_apply]
+
 /-- The twisted boundary of a chain supported on `σ` is a signed sum of chains supported on the
 faces of `σ`. -/
 lemma d_ιTwistedChainComplex_apply (σ : (TopCat.toSSet.obj X) _⦋k + 1⦌)
@@ -960,6 +982,14 @@ lemma ιTwistedChainComplex_twistedChainComplexMap_f (k : ℕ)
     ιTwistedChainComplex ((pullback f.hom).obj L) k σ ≫ (twistedChainComplexMap f L).f k =
       ιTwistedChainComplex L k ((TopCat.toSSet.map f).app _ σ) :=
   ιTwistedChains_twistedChainsMap_app f L _ σ
+
+/-- In each degree, a continuous map sends a chain supported on a simplex `σ` of `X` to the chain
+with the same coefficient supported on the image simplex, evaluated at an element. -/
+lemma twistedChainComplexMap_f_ι_apply (k : ℕ) (σ : (TopCat.toSSet.obj X) _⦋k⦌)
+    (x : ((pullback f.hom).obj L).obj (initialVertex σ)) :
+    ((twistedChainComplexMap f L).f k).hom ((ιTwistedChainComplex _ k σ).hom x) =
+      (ιTwistedChainComplex L k ((TopCat.toSSet.map f).app _ σ)).hom x :=
+  congrArg (fun φ ↦ φ.hom x) (ιTwistedChainComplex_twistedChainComplexMap_f f L k σ)
 
 /-- The map on twisted homology induced by a continuous map, from the homology of `X` twisted by
 the pullback system to the homology of `Y` twisted by `L`. -/

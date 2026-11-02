@@ -16,7 +16,9 @@ For a finite holomorphic map of connected Riemann surfaces, the branch values ar
 of the points of local multiplicity greater than one. With compact source this is a finite
 closed set, and the map is a covering over its complement. Every fibre of this covering has
 cardinality equal to the analytic degree of the map. Conversely, a branch value cannot admit
-an evenly covered neighbourhood: a local homeomorphism has local multiplicity one.
+an evenly covered neighbourhood: a local homeomorphism has local multiplicity one. Local
+multiplicities multiply along composites, so the branch values of `g ∘ f` are the images under `g`
+of the branch values of `f` together with the branch values of `g`.
 
 These results supply the unbranched covering obtained by removing neighbourhoods of branch
 values, used in the topological proof of the Riemann--Hurwitz formula. The restriction is
@@ -34,12 +36,14 @@ Riemann--Hurwitz application, rather than for these covering results.
   multiplicity one at every point of the specified source set.
 * `FiniteHolomorphicMap.isCoveringMapOn_iff`: a map with compact source is a covering on
   precisely the subsets disjoint from its branch values.
-* `FiniteHolomorphicMap.isCoveringMap_restrictPreimage_branchValues_compl`: the covering
-  obtained by deleting the branch values and their preimages.
+* `FiniteHolomorphicMap.isCoveringMap_restrictPreimage_compl`: the covering obtained by
+  deleting a set containing the branch values, and its preimage.
 * `FiniteHolomorphicMap.card_fiber_eq_degree_iff`: a fibre has as many points as the degree
   exactly when its value is not a branch value.
-* `FiniteHolomorphicMap.ncard_fiber_restrictPreimage_branchValues_compl`: every fibre of
-  the restricted covering has cardinality equal to the analytic degree.
+* `FiniteHolomorphicMap.ncard_fiber_restrictPreimage_compl`: every fibre of this restricted
+  covering has cardinality equal to the analytic degree.
+* `FiniteHolomorphicMap.branchValues_comp`: the branch values of a composite `g ∘ f` are the
+  images under `g` of the branch values of `f` together with the branch values of `g`.
 
 ## References
 
@@ -139,10 +143,11 @@ theorem isCoveringMapOn_iff (f : FiniteHolomorphicMap X Y) (s : Set Y) :
     intro x hx
     exact (f.notMem_branchValues_iff (f x)).1 (h hx) x rfl
 
-/-- Deleting the branch values and their preimages gives an ordinary covering map. -/
-theorem isCoveringMap_restrictPreimage_branchValues_compl (f : FiniteHolomorphicMap X Y) :
-    IsCoveringMap (f.branchValuesᶜ.restrictPreimage f) :=
-  ((f.isCoveringMapOn_iff _).2 subset_rfl).isCoveringMap_restrictPreimage
+/-- Deleting a set containing every branch value, and its preimage, gives an ordinary covering
+map. -/
+theorem isCoveringMap_restrictPreimage_compl (f : FiniteHolomorphicMap X Y) {S : Set Y}
+    (hS : f.branchValues ⊆ S) : IsCoveringMap (Sᶜ.restrictPreimage f) :=
+  ((f.isCoveringMapOn_iff _).2 (compl_subset_compl.2 hS)).isCoveringMap_restrictPreimage
 
 variable [PreconnectedSpace Y]
 
@@ -165,15 +170,43 @@ theorem card_fiber_eq_degree_iff (f : FiniteHolomorphicMap X Y) (y : Y) :
       rw [h x ((f.finite_fiber y).mem_toFinset.1 hx), Nat.sub_self]
     omega
 
-/-- Every fibre of the covering obtained by deleting branch values has cardinality equal to
-the analytic degree of the original map. -/
-theorem ncard_fiber_restrictPreimage_branchValues_compl (f : FiniteHolomorphicMap X Y)
-    (y : ↥(f.branchValuesᶜ)) :
-    ((f.branchValuesᶜ.restrictPreimage f) ⁻¹' {y}).ncard = degree f := by
+/-- Every fibre of the covering obtained by deleting a set containing every branch value has
+cardinality equal to the analytic degree of the original map. -/
+theorem ncard_fiber_restrictPreimage_compl (f : FiniteHolomorphicMap X Y) {S : Set Y}
+    (hS : f.branchValues ⊆ S) (y : ↥Sᶜ) :
+    ((Sᶜ.restrictPreimage f) ⁻¹' {y}).ncard = degree f := by
   rw [← Set.ncard_image_of_injective _ Subtype.val_injective,
     Set.image_val_preimage_restrictPreimage, Set.image_singleton,
     Set.ncard_eq_toFinset_card _ (f.finite_fiber y)]
-  exact (f.card_fiber_eq_degree_iff y).2 y.property
+  exact (f.card_fiber_eq_degree_iff y).2 fun hy ↦ y.property (hS hy)
+
+/-- **Branch values of a composite**: for finite holomorphic maps `f : X → Y` and `g : Y → Z`,
+with `X` compact and connected and `Y` connected, the branch values of `g ∘ f` are the images
+under `g` of the branch values of `f` together with the branch values of `g`. -/
+theorem branchValues_comp {Z : Type*} [TopologicalSpace Z] [ChartedSpace ℂ Z]
+    [IsManifold 𝓘(ℂ) 1 Z] (g : FiniteHolomorphicMap Y Z) (f : FiniteHolomorphicMap X Y) :
+    (g.comp f).branchValues = g '' f.branchValues ∪ g.branchValues := by
+  -- Local multiplicities multiply along the composite, and every point of `Y` lies in the image
+  -- of `f`.
+  ext z
+  rw [mem_union, mem_branchValues_iff, mem_branchValues_iff]
+  refine ⟨fun ⟨x, hxz, hx⟩ ↦ ?_, ?_⟩
+  · rw [localMultiplicity_comp] at hx
+    rw [coe_comp, Function.comp_apply] at hxz
+    by_cases h : 1 < localMultiplicity f x
+    · exact .inl ⟨f x, (mem_branchValues_iff f _).2 ⟨x, rfl, h⟩, hxz⟩
+    · have hx1 : localMultiplicity f x = 1 := by have := localMultiplicity_pos f x; omega
+      rw [hx1, mul_one] at hx
+      exact .inr ⟨f x, hxz, hx⟩
+  · rintro (⟨y, hy, rfl⟩ | ⟨y, rfl, hy⟩)
+    · obtain ⟨x, rfl, hx⟩ := (mem_branchValues_iff f y).1 hy
+      refine ⟨x, congrFun (coe_comp g f) x, ?_⟩
+      rw [localMultiplicity_comp]
+      nlinarith [localMultiplicity_pos g (f x)]
+    · obtain ⟨x, rfl⟩ := f.surjective y
+      refine ⟨x, congrFun (coe_comp g f) x, ?_⟩
+      rw [localMultiplicity_comp]
+      nlinarith [localMultiplicity_pos f x]
 
 end TauCeti.RiemannSurface.FiniteHolomorphicMap
 

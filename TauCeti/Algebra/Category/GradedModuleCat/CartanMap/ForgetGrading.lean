@@ -252,7 +252,7 @@ variable {k' : Type uk'} [Field k'] {A' : Type uA'} [Ring A'] [Algebra k' A']
   (T : I → FGModuleCat.{uA'} A') [∀ i, IsSimpleModule A' (T i)]
   {e : I → A'} (he : ∀ i, IsIdempotentElem (e i)) (he₀ : ∀ i, e i ∈ 𝒜' 0)
   (hne : Pairwise fun i j => (S j).obj.smulGradedDimension (e i) = 0)
-  (hself : ∀ i, (S i).obj.smulGradedDimension (e i) = 1)
+  (hself : ∀ i, (S i).obj.smulGradedDimension (e i) ≠ 0)
   (hS : IsExhaustiveGradedSimpleFamily S)
   (hTnoniso : Pairwise fun i j => IsEmpty ((T i : Type uA') ≃ₗ[A'] T j))
   (hT : IsExhaustiveSimpleFamily T)
@@ -302,16 +302,17 @@ theorem isExhaustiveSimpleFamily_of_isExhaustiveGradedSimpleFamily [GradedAlgebr
   omega
 
 /-- **Forgetting grading is an isomorphism at `q = 1` when it matches simple-class bases.**
-The graded family is a Laurent basis through its degree-zero idempotent coordinates, and the
-ungraded family is a basis through Jordan--Hölder multiplicities. If forgetting sends corresponding
-members to isomorphic modules, it sends the specialized graded basis to the ungraded basis. -/
+The graded family is a Laurent basis through its degree-zero idempotent coordinates, which need
+only be nonzero on the diagonal, and the ungraded family is a basis through Jordan--Hölder
+multiplicities. If forgetting sends corresponding members to isomorphic modules, it sends the
+specialized graded basis to the ungraded basis. -/
 def gradedFiniteModulesForgetK0EquivOfSimpleFamilies
     (_hforget : ∀ i, Nonempty ((gradedFiniteModulesForget 𝒜').obj (S i) ≅ T i)) :
     LaurentSpecialization (1 : ℤˣ)
         (LaurentK0.{uA'} (gradedFiniteModulesExactStructure 𝒜')) ≃ₗ[ℤ]
       ExactK0.{uA'} (finiteModulesExactStructure A') :=
   let _ : IsArtinianRing A' := IsArtinianRing.of_finite k' A'
-  (LaurentSpecialization.basis 1 (gradedSimpleClassBasis S he he₀ hne hself hS)).repr.trans
+  (LaurentSpecialization.basis 1 (gradedSimpleClassBasisOfNeZero S he he₀ hne hself hS)).repr.trans
     (simpleClassBasis T hTnoniso hT).repr.symm
 
 /-- The simple-family comparison equivalence is the map induced by forgetting grading. -/
@@ -321,7 +322,7 @@ theorem gradedFiniteModulesForgetK0EquivOfSimpleFamilies_toLinearMap
     (gradedFiniteModulesForgetK0EquivOfSimpleFamilies (𝒜' := 𝒜') S T he he₀ hne hself hS
       hTnoniso hT hforget).toLinearMap = gradedFiniteModulesForgetK0 𝒜' := by
   let _ : IsArtinianRing A' := IsArtinianRing.of_finite k' A'
-  let b := LaurentSpecialization.basis 1 (gradedSimpleClassBasis S he he₀ hne hself hS)
+  let b := LaurentSpecialization.basis 1 (gradedSimpleClassBasisOfNeZero S he he₀ hne hself hS)
   apply b.ext
   intro i
   calc
@@ -334,7 +335,7 @@ theorem gradedFiniteModulesForgetK0EquivOfSimpleFamilies_toLinearMap
       (ExactK0.of_congr (hforget i).some).symm
     _ = gradedFiniteModulesForgetK0 𝒜' (b i) := by
       dsimp only [b]
-      rw [LaurentSpecialization.basis_apply, gradedSimpleClassBasis_apply,
+      rw [LaurentSpecialization.basis_apply, gradedSimpleClassBasisOfNeZero_apply,
         gradedFiniteModulesForgetK0_mk_of]
 
 /-- On a specialized graded module class, the simple-family equivalence returns its underlying

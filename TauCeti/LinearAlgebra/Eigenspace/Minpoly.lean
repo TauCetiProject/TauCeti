@@ -48,7 +48,7 @@ theorem minpoly_dvd_prod_X_sub_C_pow_of_iSup_maxGenEigenspace_eq_top {f : End K 
     · obtain ⟨q, hq⟩ := pow_dvd_pow_of_dvd (Finset.dvd_prod_of_mem (fun μ ↦ X - C μ)
         ((finite_hasEigenvalue f).mem_toFinset.2 hμ)) (finrank K V)
       have hX : aeval f (X - C μ) = f - μ • 1 := by simp [Algebra.algebraMap_eq_smul_one]
-      rw [hq, mul_comm, map_mul, map_pow, hX, mul_apply,
+      rw [hq, mul_comm, map_mul, map_pow, hX, _root_.mul_apply_eq_comp,
         LinearMap.mem_ker.1 (mem_genEigenspace_nat.1 hz), map_zero, LinearMap.zero_apply]
     · obtain rfl : z = 0 := by
         by_contra h

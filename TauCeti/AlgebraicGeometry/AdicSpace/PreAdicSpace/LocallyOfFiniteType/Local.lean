@@ -40,7 +40,7 @@ variable {X Y Z : PreAdicSpace.{u}}
 property. No sheaf condition on the target is needed. -/
 theorem LocallyOfFiniteType.ofRestrict_comp {f : X ⟶ Y} (hf : LocallyOfFiniteType f)
     (W : Opens X) : LocallyOfFiniteType (X.ofRestrict W.isOpenEmbedding ≫ f) := by
-  rw [locallyOfFiniteType_iff] at hf
+  rw [locallyOfFiniteType_iff, chartLocally_iff] at hf
   refine LocallyOfFiniteType.ofRestrict_comp_of_forall_exists_le W fun x ↦ ?_
   obtain ⟨U, hx, V, hUV, A, _, _, _, _, S, P, hP, B, _, _, _, _, _, _, _, T, P', hP', φ, hφ,
     hsheaf, eU, eV, hfac⟩ := hf x.1

@@ -108,6 +108,19 @@ theorem isNondegenerate_pi_iff :
       rw [Pi.single_eq_of_ne hj, FiniteBilinearModule.pairing_zero_right]) (by simp),
       Pi.single_eq_same] at hxy
 
+/-- An orthogonal sum has quadratic form with values in `½ℤ/ℤ` exactly when every summand
+does. -/
+theorem forall_quadratic_add_self_eq_zero_pi_iff :
+    (∀ x : pi A, (pi A).quadratic x + (pi A).quadratic x = 0) ↔
+      ∀ i (y : A i), (A i).quadratic y + (A i).quadratic y = 0 := by
+  classical
+  refine ⟨fun h i y ↦ ?_, fun h x ↦ ?_⟩
+  · have hy := h (Pi.single i y)
+    rwa [pi_quadratic, Finset.sum_eq_single i (fun j _ hj ↦ by
+      rw [Pi.single_eq_of_ne hj, QuadraticMap.map_zero]) (by simp), Pi.single_eq_same] at hy
+  · rw [pi_quadratic, ← Finset.sum_add_distrib]
+    exact Finset.sum_eq_zero fun i _ ↦ h i (x i)
+
 end Pi
 
 end TauCeti.FiniteQuadraticModule
