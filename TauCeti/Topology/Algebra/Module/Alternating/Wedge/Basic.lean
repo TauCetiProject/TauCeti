@@ -146,6 +146,26 @@ theorem pairedWedge_apply {k l : ℕ} (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     wedgeWithUnalternatedContinuous_apply]
   simp only [Function.comp_apply]
 
+/-- Wedge with a degree-zero form is the coefficient pairing with its value on the empty tuple. -/
+@[simp]
+theorem pairedWedge_apply_zero_right {k : ℕ} (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+    (hμ : Continuous (Function.uncurry fun x y ↦ μ x y))
+    (φ : E [⋀^Fin k]→L[ℝ] F₁) (ψ : E [⋀^Fin 0]→L[ℝ] F₂) (v : Fin k → E) :
+    pairedWedge μ hμ φ ψ v = μ (φ v) (ψ 0) := by
+  let L : F₁ →L[ℝ] F₃ :=
+    { toFun := fun a ↦ μ a (ψ 0)
+      map_add' := fun a b ↦ by simp
+      map_smul' := fun c a ↦ by simp
+      cont := hμ.comp (continuous_id.prodMk continuous_const) }
+  have h : wedgeWithUnalternatedContinuous μ hμ φ ψ =
+      (L.compContinuousAlternatingMap φ).toContinuousMultilinearMap := by
+    ext w
+    rw [wedgeWithUnalternatedContinuous_apply]
+    have hw : (fun j : Fin 0 ↦ w (Fin.natAdd k j)) = 0 := Subsingleton.elim _ _
+    simp [L, hw]
+  rw [pairedWedge, h, alternatization_toContinuousMultilinearMap]
+  simp [← Nat.cast_smul_eq_nsmul ℝ, smul_smul, Nat.factorial_ne_zero, L]
+
 /-- On one-forms, the paired wedge is the usual two-term alternating product. -/
 @[simp]
 theorem pairedWedge_apply_one_one {μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃}

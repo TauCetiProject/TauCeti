@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import Mathlib.LinearAlgebra.Unimodular
 public import Mathlib.RingTheory.LocalRing.Basic
 
@@ -18,7 +19,8 @@ projective orbit morphisms. Extending scalars preserves unimodularity, including
 noncommutative algebras. A coordinate vector `v : ι → R` with a unit coordinate is unimodular.
 Over a directly finite local semiring the converse holds for finitely many coordinates: `v` is
 unimodular exactly when one of its coordinates is a unit. In particular this applies to local
-commutative rings, where it normalizes homogeneous coordinates of points of projective schemes.
+commutative rings, where it normalizes homogeneous coordinates of points of projective schemes,
+and, since the rows of an invertible matrix are unimodular, it gives every such row a unit entry.
 
 ## Main results
 
@@ -28,6 +30,8 @@ commutative rings, where it normalizes homogeneous coordinates of points of proj
   vector agree precisely up to unit rescaling, even over rings with zero divisors.
 * `IsUnit.isUnimodular_pi`: a coordinate vector with a unit coordinate is unimodular.
 * `Module.isUnimodular_mk_one`: a vector `(v, 1)` of `M × R` is unimodular.
+* `Matrix.isUnimodular_apply_of_isUnit_det`: every row of a square matrix of unit determinant is
+  unimodular.
 * `TauCeti.Module.isUnimodular_iff_exists_isUnit`: over a directly finite local semiring, a vector
   with finitely many coordinates is unimodular if and only if one of its coordinates is a unit.
 * `TauCeti.forall_mul_eq_mul_iff_exists_units`: two coordinate families generating the unit ideal
@@ -80,6 +84,16 @@ theorem Module.isUnimodular_mk_one (v : M) : Module.IsUnimodular R ((v, 1) : M �
   Module.isUnimodular_of_apply_eq_one (f := LinearMap.snd R M R) rfl
 
 end Semiring
+
+/-- Every row of a square matrix of unit determinant is unimodular: the functional
+`w ↦ (w ᵥ* σ⁻¹) l` takes the value `1` at the row `σ l`. -/
+theorem Matrix.isUnimodular_apply_of_isUnit_det {R m : Type*} [CommRing R] [Fintype m]
+    [DecidableEq m] {σ : Matrix m m R} (hσ : IsUnit σ.det) (l : m) :
+    Module.IsUnimodular R (σ l) := by
+  refine Module.isUnimodular_of_apply_eq_one
+    (f := (LinearMap.proj l).comp (Matrix.vecMulLinear σ⁻¹)) ?_
+  have hone : (σ * σ⁻¹) l l = 1 := by rw [Matrix.mul_nonsing_inv _ hσ, Matrix.one_apply_eq]
+  simpa [Matrix.mul_apply, Matrix.vecMul, dotProduct] using hone
 
 namespace TauCeti.Module
 

@@ -476,6 +476,25 @@ theorem reconnect_reconnect_val : (D.reconnect a b).reconnect a (D.val a) = D :=
   rw [reconnect, reconnect_val_self hba, reconnect, congr_trans, Equiv.swap_comm b,
     Equiv.swap_swap, congr_refl]
 
+omit hba in
+/-- Reconnecting, read as a permutation, is the old involution after two transpositions: first `b`
+with the other end `D.val a` of the arc at `a`, then `a` with the other end `D.val b` of the arc at
+`b`. -/
+theorem reconnect_val_eq_mul_swap_mul_swap :
+    (D.reconnect a b).val = D.val * Equiv.swap a (D.val b) * Equiv.swap b (D.val a) := by
+  rw [reconnect_val, Equiv.permCongr_eq_mul, Equiv.swap_inv,
+    Equiv.mul_swap_eq_swap_mul D.val, D.apply_apply, Equiv.swap_comm b]
+
+omit hba in
+/-- A function constant along the arcs of `D` and taking the same value at `a` and `b` is
+constant along the arcs of the reconnection: each new arc runs along old arcs and the join of `a`
+with `b`. -/
+theorem apply_reconnect_val {β : Type*} {f : α → β} (hf : ∀ x, f (D.val x) = f x)
+    (hab : f a = f b) (x : α) : f ((D.reconnect a b).val x) = f x := by
+  have hσ (y : α) : f (Equiv.swap (D.val a) b y) = f y :=
+    Equiv.apply_swap_eq_self ((hf a).trans hab) y
+  rw [reconnect_val, Equiv.permCongr_apply, Equiv.symm_swap, hσ, hf, hσ]
+
 end Reconnect
 
 end PerfectMatching
@@ -629,6 +648,40 @@ theorem IsPerfectMatching.two_mul_orbitCount [Finite α] {f : Equiv.Perm α}
 
 end Parity
 
+/-! ### Four endpoints -/
+
+/-- There are exactly three perfect matchings of four labelled points, determined by the
+partner of `0`. -/
+theorem isPerfectMatching_fin_four_iff (f : Equiv.Perm (Fin 4)) :
+    IsPerfectMatching f ↔
+      f = Equiv.swap 0 1 * Equiv.swap 2 3 ∨
+      f = Equiv.swap 0 2 * Equiv.swap 1 3 ∨
+      f = Equiv.swap 0 3 * Equiv.swap 1 2 := by
+  revert f
+  decide
+
+/-- The product of two distinct perfect matchings of four points is again a perfect matching.
+This fails for larger endpoint sets. -/
+theorem IsPerfectMatching.mul_of_ne_fin_four {f g : Equiv.Perm (Fin 4)}
+    (hf : IsPerfectMatching f) (hg : IsPerfectMatching g) (hne : f ≠ g) :
+    IsPerfectMatching (f * g) := by
+  rcases (isPerfectMatching_fin_four_iff f).mp hf with rfl | rfl | rfl <;>
+    rcases (isPerfectMatching_fin_four_iff _).mp hg with rfl | rfl | rfl <;>
+    first | exact False.elim (hne rfl) | decide
+
+/-- Closing a pairing of four points by another pairing gives four directed traversal cycles
+when the pairings agree, and two otherwise. Each undirected circle has two directions. -/
+theorem IsPerfectMatching.orbitCount_mul_fin_four {f g : Equiv.Perm (Fin 4)}
+    (hf : IsPerfectMatching f) (hg : IsPerfectMatching g) :
+    orbitCount (f * g) = if f = g then 4 else 2 := by
+  split_ifs with h
+  · subst g
+    have hsq : f * f = 1 := Equiv.ext hf.apply_apply
+    simp [hsq]
+  · have hcount := (hf.mul_of_ne_fin_four hg h).two_mul_orbitCount
+    simp only [Nat.card_eq_fintype_card, Fintype.card_fin] at hcount
+    omega
+
 section CycleReversal
 
 open Equiv Equiv.Perm
@@ -702,7 +755,7 @@ theorem orbitCount_mul_reconnect (D : PerfectMatching α) {T : Perm α} {a : α}
   -- Reconnecting differs from `D` by two transpositions.
   have hval : (D.reconnect a (T a)).val =
       D.val * swap a (D.val (T a)) * swap (D.val a) (T a) := by
-    rw [reconnect_val, permCongr_eq_mul, swap_inv, mul_swap_eq_swap_mul D.val, D.apply_apply]
+    rw [reconnect_val_eq_mul_swap_mul_swap, swap_comm (T a)]
   -- Each transposition joins two consecutive points of one orbit, so each cuts that orbit.
   have hs₁ : (T * D.val).SameCycle (D.val (T a)) a := ⟨1, by simp [hT]⟩
   have hs₂ : (T * D.val * swap a (D.val (T a))).SameCycle (D.val a) (T a) :=

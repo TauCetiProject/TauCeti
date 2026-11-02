@@ -128,14 +128,14 @@ theorem Hom.map_differential (f : Hom R H M N)
 /-- The coefficient of `ε` in the action of a tangent dual-number point on `1 ⊗ m`
 is the differentiated action on `m`. The counit coefficient algebra is identified with `R`
 by its canonical algebra equivalence. -/
-theorem snd_endOfPoint_derivationToDualNumberEquivLift
+theorem snd_endOfPoint_derivationToTrivSqZeroExtEquivLift
     (d : Derivation R H (Bialgebra.CounitAlgebra R H R)) (m : M) :
     TensorProduct.lid R M
       (LinearMap.rTensor M
         ((Bialgebra.CounitAlgebra.algEquivSelf R H R).toLinearMap ∘ₗ
           (TrivSqZeroExt.sndHom (Bialgebra.CounitAlgebra R H R)
             (Bialgebra.CounitAlgebra R H R)).restrictScalars R)
-        (endOfPoint M (derivationToDualNumberEquivLift R H
+        (endOfPoint M (derivationToTrivSqZeroExtEquivLift R H
           (Bialgebra.CounitAlgebra R H R) d).val (1 ⊗ₜ[R] m))) =
       differential (R := R) (H := H) (M := M) d m := by
   rw [endOfPoint_tmul, differential_apply]
@@ -145,7 +145,7 @@ theorem snd_endOfPoint_derivationToDualNumberEquivLift
     simp only [LinearMap.lTensor_tmul, TensorProduct.comm_tmul, TensorProduct.smul_tmul',
       smul_eq_mul, one_mul, LinearMap.rTensor_tmul, LinearMap.comp_apply,
       LinearMap.restrictScalars_apply, TrivSqZeroExt.sndHom_apply,
-      AlgHom.toLinearMap_apply, derivationToDualNumberEquivLift_apply_snd,
+      AlgHom.toLinearMap_apply, derivationToTrivSqZeroExtEquivLift_apply_snd,
       Derivation.coeFn_coe, LinearEquiv.coe_coe,
       TensorProduct.lid_tmul, LinearMap.tensorComponent_tmul]
 

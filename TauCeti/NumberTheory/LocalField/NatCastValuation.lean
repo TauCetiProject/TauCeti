@@ -9,8 +9,12 @@ public import TauCeti.NumberTheory.LocalField.NormalizedValuation
 public import TauCeti.RingTheory.Valuation.ValuativeRel.Basic
 public import Mathlib.NumberTheory.Padics.PadicVal.Basic
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
+import TauCeti.Algebra.Algebra.NatCast
 import TauCeti.Algebra.CharP.LocalRing
+import TauCeti.NumberTheory.Padics.PadicValNat
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
+-- Proof-only: the valuation of a valuative extension extends that of the base.
+import TauCeti.RingTheory.Valuation.ValuativeRel.Extension
 
 /-!
 # The normalized valuation of a natural number in a local field
@@ -39,6 +43,10 @@ characteristic is the absolute ramification index of `K`.
 
 * `TauCeti.natCast_ne_zero_of_coprime_ringChar`: a natural number prime to the residue
   characteristic is nonzero in `K`.
+* `TauCeti.natCast_ne_zero_of_residueField_natCast_ne_zero`: a natural number nonzero in the
+  residue field is nonzero in every nontrivial `K`-algebra.
+* `TauCeti.valuation_natCast_eq_one_of_residueField_natCast_ne_zero`: such a natural number has
+  valuation `1` in every valuative extension of `K`.
 * `TauCeti.normalizedValuation_natCast`: the characteristic equation, which also records that
   the value is nonnegative.
 * `TauCeti.toAdd_normalizedValuation_natCast` and `TauCeti.valuation_natCast_eq_pow`: the
@@ -84,6 +92,26 @@ theorem natCast_ne_zero_of_coprime_ringChar {n : ℕ} (hn : n.Coprime (ringChar 
     (n : K) ≠ 0 :=
   natCast_ne_zero_of_isUnit <| IsLocalRing.isUnit_natCast_iff_not_dvd.2 fun h ↦
     CharP.ringChar_ne_one (hn.symm.eq_one_of_dvd h)
+
+/-- A natural number that is nonzero in the residue field is nonzero in every nontrivial algebra
+over the field, such as an algebraic closure: a prime different from the residue characteristic
+stays invertible there. -/
+theorem natCast_ne_zero_of_residueField_natCast_ne_zero {A : Type*} [Semiring A] [Nontrivial A]
+    [Algebra K A] {n : ℕ} (hn : (n : 𝓀[K]) ≠ 0) : (n : A) ≠ 0 :=
+  IsUnit.natCast_ne_zero_of_algebra (K := K) (natCast_ne_zero_of_isUnit
+    ((IsLocalRing.residue_ne_zero_iff_isUnit _).1 (by rwa [map_natCast]))).isUnit
+
+/-- A natural number that is nonzero in the residue field of `K` has valuation `1` in every
+valuative extension `L` of `K`, being a unit of `𝒪[K]`. So it lies outside the maximal ideal of
+the valuation ring of `L`. -/
+theorem valuation_natCast_eq_one_of_residueField_natCast_ne_zero {L : Type*} [Field L]
+    [ValuativeRel L] [Algebra K L] [ValuativeExtension K L] {n : ℕ} (hn : (n : 𝓀[K]) ≠ 0) :
+    valuation L (n : L) = 1 := by
+  have hu : IsUnit (n : 𝒪[K]) :=
+    (IsLocalRing.residue_ne_zero_iff_isUnit _).1 (by rwa [map_natCast])
+  rw [← map_natCast (algebraMap K L),
+    Valuation.HasExtension.val_map_eq_one_iff (vR := valuation K) (vA := valuation L)]
+  simpa using (Valuation.integer.integers (valuation K)).isUnit_iff_valuation_eq_one.mp hu
 
 variable [TopologicalSpace K] [IsNonarchimedeanLocalField K]
 
@@ -278,14 +306,8 @@ theorem natCastValuation_le_div_log_mul_log {n : ℕ} (hn : (n : K) ≠ 0)
     (natCastValuation K n hn : ℝ) ≤
       natCastValuation K (ringChar 𝓀[K]) hp / Real.log (ringChar 𝓀[K]) * Real.log n := by
   have hp' : (ringChar 𝓀[K]).Prime := CharP.char_is_prime 𝓀[K] _
-  have hn0 : n ≠ 0 := by
-    rintro rfl
-    simp at hn
   have hlogp : 0 < Real.log (ringChar 𝓀[K]) := Real.log_pos (by exact_mod_cast hp'.one_lt)
-  have hv : (padicValNat (ringChar 𝓀[K]) n : ℝ) * Real.log (ringChar 𝓀[K]) ≤ Real.log n := by
-    rw [← Real.log_pow]
-    exact Real.log_le_log (pow_pos (by exact_mod_cast hp'.pos) _)
-      (by exact_mod_cast Nat.le_of_dvd (Nat.pos_of_ne_zero hn0) pow_padicValNat_dvd)
+  have hv := padicValNat_mul_log_le_log (ringChar 𝓀[K]) n
   rw [natCastValuation_eq_padicValNat_mul K hn hp, div_mul_eq_mul_div, le_div_iff₀ hlogp]
   push_cast
   nlinarith [(Nat.cast_nonneg (natCastValuation K (ringChar 𝓀[K]) hp) : (0 : ℝ) ≤ _)]

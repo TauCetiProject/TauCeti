@@ -19,15 +19,26 @@ every finite vertex cycle satisfies the angle condition: its cycle transformatio
 cycle transformation of every ideal vertex is parabolic. Then
 
 * `Γ` is a cofinite Fuchsian group, in particular discrete;
-* `P` is a fundamental domain for `Γ`: its translates cover the upper half-plane and distinct
-  translates of its interior are disjoint;
+* `P` is a measurable fundamental domain for `Γ` in the sense of
+  `MeasureTheory.IsFundamentalDomain`: its translates cover the upper half-plane up to a null set,
+  and distinct translates overlap only in a null set;
 * `Γ` is presented by generators indexed by the sides, subject to the side relations
   `map (pair i) * map i = 1` and the cycle relations `cycleWord j ^ m = 1` at the finite
   vertices.
 
+The theorems state the angle condition as `orderOf (cycleMap j) * cycleAngleSum j = 2 * π`. This
+is equivalent to the classical form, that the angles along the cycle add up to `2π / t` for some
+positive integer `t`: such a `t` is the order of the cycle transformation
+(`ConvexPolygon.SidePairing.orderOf_cycleMap_of_cycleAngleSum`).
+
 The cycle conditions make the tiles predicted by the side pairings a local tiling of the upper
 half-plane with uniform charts, and the theorem follows from the global tessellation theorem for
-local tilings. Conversely, the cycle conditions hold for every locally finite fundamental polygon
+local tilings. The exact tessellation is proved along the way: the translates of `P` form a locally
+finite family (`ConvexPolygon.SidePairing.locallyFinite_smul_carrier_of_isParabolic`), so they
+cover the upper half-plane (`ConvexPolygon.SidePairing.iUnion_smul_carrier_eq_univ`), and distinct
+translates of its interior are disjoint
+(`ConvexPolygon.SidePairing.disjoint_smul_interior_carrier_of_isParabolic`). Conversely, the cycle
+conditions hold for every locally finite fundamental polygon
 (`ConvexPolygon.SidePairing.disjoint_smul_interior_carrier_and_locallyFinite_iff`).
 
 ## Main results

@@ -214,10 +214,15 @@ theorem koszulComplex_X (n : ℕ) : (koszulComplex φ).X n = ModuleCat.of R (⋀
   (rfl)
 
 /-- The differential of the Koszul complex is the Koszul differential. -/
-@[simp]
 theorem koszulComplex_d (n : ℕ) :
     (koszulComplex φ).d (n + 1) n = ModuleCat.ofHom (koszulDifferential φ n) := by
   simp [koszulComplex]
+
+/-- The differential of the Koszul complex is the Koszul differential, elementwise. -/
+@[simp]
+theorem koszulComplex_d_apply (n : ℕ) (x : ⋀[R]^(n + 1) M) :
+    ((koszulComplex φ).d (n + 1) n).hom x = koszulDifferential φ n x :=
+  congr($(koszulComplex_d φ n).hom x)
 
 end
 

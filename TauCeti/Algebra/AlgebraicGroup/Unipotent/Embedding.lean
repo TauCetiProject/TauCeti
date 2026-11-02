@@ -38,6 +38,8 @@ separation.
   theorem promoted from point actions to a comodule fixed vector.
 * `TauCeti.Comodule.exists_basis_coefficientMatrix_isUpperUnitriangular_of_forall_isUnipotentPoint`:
   every finite-dimensional comodule has an upper-unitriangular basis.
+* `TauCeti.Comodule.exists_coordinateBialgHom_surjective_of_forall_isUnipotentPoint`:
+  an upper-unitriangular realization with surjective coordinate map in independent universes.
 * `iff_exists_isClosedImmersion_upperUnitriangularCoordinateGroupSchemeHom` in the
   `TauCeti.geometricallyUnipotentPointsCommHopfAlgProperty` namespace: the upper-unitriangular
   embedding characterization.
@@ -132,6 +134,23 @@ theorem exists_basis_coefficientMatrix_isUpperUnitriangular_of_forall_isUnipoten
   exists_basis_coefficientMatrix_isUpperUnitriangular_of_fixed_vectors fun V _ _ _ _ _ ↦
     hasNonzeroFixedVector_of_forall_isUnipotentPoint (M := V) hH
 
+/-- A reduced finite-type affine group over an algebraically closed field with only unipotent
+rational points admits an upper-unitriangular representation with surjective coordinate map.
+The field and coordinate Hopf algebra may lie in independent universes. -/
+theorem exists_coordinateBialgHom_surjective_of_forall_isUnipotentPoint
+    [IsAlgClosed k] [Algebra.FiniteType k H] [IsReduced H]
+    (hH : ∀ g : WithConv (H →ₐ[k] k), HopfAlgebra.IsUnipotentPoint g) :
+    ∃ (M : Subcomodule k H H) (n : ℕ) (b : _root_.Module.Basis (Fin n) k M),
+      (coefficientMatrix (C := H) b).IsUpperUnitriangular ∧
+        Function.Surjective (coordinateBialgHom (H := H) b) := by
+  obtain ⟨M, n, b, hsurj⟩ := exists_coordinateBialgHom_surjective (k := k) (H := H)
+  let : AddCommGroup M := _root_.Module.addCommMonoidToAddCommGroup k
+  let : _root_.Module.Finite k M := _root_.Module.Finite.of_basis b
+  obtain ⟨m, c, hc⟩ :=
+    exists_basis_coefficientMatrix_isUpperUnitriangular_of_forall_isUnipotentPoint
+      (M := M) hH
+  exact ⟨M, m, c, hc, (coordinateBialgHom_surjective_iff_of_bases b c).mp hsurj⟩
+
 end IndependentUniverses
 
 variable {k H M : Type u}
@@ -150,17 +169,12 @@ theorem exists_isClosedImmersion_of_forall_isUnipotentPoint
       (hb : (coefficientMatrix (C := H) b).IsUpperUnitriangular),
       IsClosedImmersion
         (upperUnitriangularCoordinateGroupSchemeHom (H := H) b hb).hom.hom.left := by
-  obtain ⟨M, n, b, hb⟩ := exists_isClosedImmersion_coordinateGroupSchemeHom (k := k) (H := H)
-  let _ : AddCommGroup M := _root_.Module.addCommMonoidToAddCommGroup k
-  let _ : _root_.Module.Finite k M := _root_.Module.Finite.of_basis b
-  have hfaithful : IsFaithful (k := k) (H := H) (V := M) :=
-    (isFaithful_iff_isClosedImmersion_coordinateGroupSchemeHom b).mpr hb
-  obtain ⟨m, b', hb'⟩ :=
-    exists_basis_coefficientMatrix_isUpperUnitriangular_of_forall_isUnipotentPoint
-      (M := M) hH
-  exact ⟨M, m, b', hb',
-    (isClosedImmersion_upperUnitriangularCoordinateGroupSchemeHom_iff_isFaithful b' hb').mpr
-      hfaithful⟩
+  obtain ⟨M, n, b, hb, hsurj⟩ :=
+    exists_coordinateBialgHom_surjective_of_forall_isUnipotentPoint hH
+  exact ⟨M, n, b, hb,
+    (isClosedImmersion_upperUnitriangularCoordinateGroupSchemeHom_iff b hb).mpr
+      (upperUnitriangularCoordinateBialgHom_surjective_of_coordinateBialgHom_surjective
+        b hb hsurj)⟩
 
 end upperUnitriangularCoordinateGroupSchemeHom
 

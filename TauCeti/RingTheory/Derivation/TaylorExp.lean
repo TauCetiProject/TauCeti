@@ -43,6 +43,8 @@ polynomial ring, scaled by `r`, the Taylor exponential is the Taylor shift `p �
   homomorphism.
 * `Derivation.taylorExp_apply_eq_sum`: any iterate killing `a` gives a finite expansion of
   `taylorExp D a`.
+* `Derivation.taylorExp_apply_of_apply_eq_zero`: the Taylor exponential fixes the elements killed
+  by the derivation.
 * `Derivation.taylorExp_apply_mem`: the Taylor exponential preserves every ideal mapped into
   itself by the derivation.
 * `Derivation.map_taylorExp`: Taylor exponentials are natural for additive maps intertwining
@@ -181,6 +183,12 @@ exponential of `a` is the sum of its first `n` Taylor terms. -/
 theorem taylorExp_apply_eq_sum {a : A} {n : ℕ} (hn : D^[n] a = 0) :
     taylorExp D hD a = ∑ i ∈ range n, (i ! : ℚ)⁻¹ • D^[i] a := by
   simpa using D.aeval_taylorExpPolynomial_eq_sum hD 1 hn
+
+/-- **Constants of the derivation are fixed by its Taylor exponential**: if `D` kills `a`, then
+the Taylor exponential of `D` fixes `a`. -/
+theorem taylorExp_apply_of_apply_eq_zero {a : A} (ha : D a = 0) : taylorExp D hD a = a := by
+  rw [taylorExp_apply_eq_sum D hD (n := 1) (by simpa using ha)]
+  simp
 
 /-- The Taylor exponential of the zero derivation is the identity. -/
 @[simp]

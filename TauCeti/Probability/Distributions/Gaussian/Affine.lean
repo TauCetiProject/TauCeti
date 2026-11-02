@@ -22,6 +22,8 @@ allowed, so the result applies both to embeddings and to possibly singular proje
 * `TauCeti.Probability.map_affine_multivariateGaussian`: the affine pushforward formula for a
   multivariate
   Gaussian measure.
+* `TauCeti.Probability.map_add_smul_multivariateGaussian`: scaling by a real number followed by
+  a translation.
 * `TauCeti.Probability.map_comp_multivariateGaussian`: reindexing the coordinates along a map of
   index types.
 * `TauCeti.Probability.multivariateGaussian_one_eq_map_pi`: the identity-covariance law as a
@@ -104,6 +106,19 @@ theorem map_affine_multivariateGaussian (m : EuclideanSpace ℝ ι) {S : Matrix 
     · fun_prop
     · fun_prop
   · exact covarianceBilin_map_affine_multivariateGaussian m hS L c
+
+/-- Scaling a multivariate Gaussian vector by `c` and then translating it by `m` gives the
+multivariate Gaussian with mean `m + c • m₀` and covariance `c ^ 2 • S`. -/
+theorem map_add_smul_multivariateGaussian (m₀ : EuclideanSpace ℝ ι) {S : Matrix ι ι ℝ}
+    (hS : S.PosSemidef) (m : EuclideanSpace ℝ ι) (c : ℝ) :
+    (multivariateGaussian m₀ S).map (fun z => m + c • z) =
+      multivariateGaussian (m + c • m₀) (c ^ 2 • S) := by
+  have h := map_affine_multivariateGaussian m₀ hS (c • (1 : Matrix ι ι ℝ)) m
+  have hL (z : EuclideanSpace ℝ ι) : (c • (1 : Matrix ι ι ℝ)).toEuclideanLin z = c • z := by
+    simp
+  have hcov : c • (1 : Matrix ι ι ℝ) * S * (c • (1 : Matrix ι ι ℝ)).transpose = c ^ 2 • S := by
+    simp [sq, smul_smul]
+  simpa only [hL, hcov, add_comm] using h
 
 /-- Reading the coordinates of a multivariate Gaussian vector along a map of index types gives the
 multivariate Gaussian with the reindexed mean and covariance. The map need not be injective, so

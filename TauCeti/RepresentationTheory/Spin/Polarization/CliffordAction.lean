@@ -8,6 +8,9 @@ module
 public import TauCeti.RepresentationTheory.Spin.Polarization.Basic
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Contraction
 import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
+import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
+import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
+import TauCeti.LinearAlgebra.QuadraticForm.Isometry
 
 /-!
 # The spinor module of a polarized quadratic space
@@ -70,6 +73,8 @@ restriction to `pinGroup Q` and `spinGroup Q`, are in
 * `TauCeti.spinAction_ι_wedge`, `TauCeti.spinAction_ι_contract` and
   `TauCeti.spinAction_ι_lineOperator`: the three summands act by exterior multiplication,
   contraction, and the parity operator.
+* `TauCeti.SpinPolarizationData.spinAction_map_comp_exteriorAlgebraMap`: naturality of the Fock
+  action along an isometric embedding of an even polarization into another polarization.
 
 ## References
 
@@ -84,7 +89,7 @@ open CliffordAlgebra QuadraticMap
 
 namespace TauCeti
 
-universe u v
+universe u v v₁ v₂
 
 namespace SpinPolarizationData
 
@@ -205,7 +210,8 @@ theorem cliffordOperator_sq (v : V) :
     simp only [map_add, P.cliffordOperator_coe_W, P.cliffordOperator_coe_W',
       P.cliffordOperator_coe_line]
   rw [hc, P.quadraticForm_coe_add_coe_add_coe, ← P.lineCoordinate_sq z]
-  ext s
+  apply LinearMap.ext
+  intro s
   simp only [Module.End.mul_apply, LinearMap.add_apply, Module.algebraMap_end_apply,
     wedge_apply, contract_apply, lineOperator_apply, map_add, map_smul, mul_add,
     ← mul_assoc, ExteriorAlgebra.ι_sq_zero, zero_mul,
@@ -258,5 +264,49 @@ theorem spinAction_ι_lineOperator (z : P.line) (s : ExteriorAlgebra K P.W) :
     spinAction Q P (CliffordAlgebra.ι Q z) s =
       P.lineCoordinate z • CliffordAlgebra.involute s := by
   rw [spinAction_ι, P.cliffordOperator_coe_line, P.lineOperator_apply]
+
+namespace SpinPolarizationData
+
+/-! ### Naturality of the Fock action -/
+
+section Fock
+
+variable {K : Type u} [CommRing K] {V₁ : Type v₁} [AddCommGroup V₁] [Module K V₁]
+  {V₂ : Type v₂} [AddCommGroup V₂] [Module K V₂]
+  {Q₁ : QuadraticForm K V₁} {Q₂ : QuadraticForm K V₂}
+  (P₁ : SpinPolarizationData Q₁) (P₂ : SpinPolarizationData Q₂)
+  {f : Q₁ →qᵢ Q₂} {g : P₁.W →ₗ[K] P₂.W}
+
+/-- **The Fock action is natural along an isometric embedding of polarizations.** Let `f` be an
+isometry from the space of an even polarization `P₁` to the space of a polarization `P₂`, acting
+on `P₁.W` through a linear map `g` into `P₂.W` and carrying `P₁.W'` into `P₂.W'`. Then the
+exterior-algebra map induced by `g` intertwines the Fock action of every Clifford element `x` with
+the Fock action of its image under the Clifford algebra map induced by `f`. -/
+theorem spinAction_map_comp_exteriorAlgebraMap (hline : P₁.line = ⊥)
+    (hW : ∀ w : P₁.W, f w = g w) (hW' : ∀ y : P₁.W', f y ∈ P₂.W') (x : CliffordAlgebra Q₁) :
+    spinAction Q₂ P₂ (map f x) ∘ₗ (ExteriorAlgebra.map g).toLinearMap =
+      (ExteriorAlgebra.map g).toLinearMap ∘ₗ spinAction Q₁ P₁ x := by
+  symm
+  refine CliffordAlgebra.comp_eq_map_comp_of_forall_ι (S := K)
+    (ρ₁ := spinAction Q₁ P₁) (ρ₂ := spinAction Q₂ P₂)
+    (U := (ExteriorAlgebra.map g).toLinearMap) (fun v => ?_) x
+  symm
+  obtain ⟨⟨⟨w, y⟩, l⟩, rfl⟩ := P₁.decompositionEquiv.surjective v
+  have hl : (l : V₁) = 0 := by simpa [hline] using l.property
+  -- The isometry `f` transports the polar pairing of `P₁` to that of `P₂`.
+  have hpair : P₂.pairingEquiv ⟨f y, hW' y⟩ ∘ₗ g = P₁.pairingEquiv y :=
+    LinearMap.ext fun x => by
+      rw [LinearMap.comp_apply, P₂.pairingEquiv_apply, P₁.pairingEquiv_apply, ← hW,
+        QuadraticMap.Isometry.polar_apply]
+  have hy : f y = ((⟨f y, hW' y⟩ : P₂.W') : V₂) := (rfl)
+  refine LinearMap.ext fun s => ?_
+  simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply,
+    P₁.decompositionEquiv_apply, hl, add_zero, map_add, LinearMap.add_apply, hW]
+  rw [hy, spinAction_ι_wedge, spinAction_ι_contract, spinAction_ι_wedge, spinAction_ι_contract,
+    map_mul, ExteriorAlgebra.map_apply_ι, ExteriorAlgebra.contractLeft_map, hpair]
+
+end Fock
+
+end SpinPolarizationData
 
 end TauCeti

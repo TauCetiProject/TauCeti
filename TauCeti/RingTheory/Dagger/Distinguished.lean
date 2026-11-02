@@ -35,6 +35,9 @@ This file proves that unequal radii work. For every `g` as above there are radii
 `∑ₘ gₘ Yᵐ` is distinguished of degree `s` at radius `r` over the series restricted at `ρ`, with
 `g_s` a unit there.
 
+In one variable, distinguishedness of a fixed degree at unit radius persists to a radius
+strictly greater than one, over any ultrametric normed commutative ring.
+
 ## Main definitions
 
 * `TauCeti.Dagger.washnitzerAlgebra.triangularEquiv`: the triangular automorphism
@@ -47,6 +50,8 @@ This file proves that unequal radii work. For every `g` as above there are radii
 * `TauCeti.Dagger.washnitzerAlgebra.exists_triangularEquiv_isDistinguished_isUnit`: over a
   complete nonarchimedean field, a triangular automorphism makes every nonzero overconvergent
   series distinguished in `Y`, with a unit coefficient in the distinguished degree.
+* `TauCeti.Dagger.exists_isDistinguished_of_isDistinguished_one`: radius selection preserving a
+  one-variable distinguished degree.
 * `TauCeti.Dagger.exists_isDistinguished_isUnit_of_isDistinguished_one`: radius selection for a
   `Y`-distinguished overconvergent series.
 
@@ -146,6 +151,52 @@ theorem exists_triangularEquiv_isDistinguished_isUnit {K : Type*} [NormedField K
 end washnitzerAlgebra
 
 variable {K : Type*}
+
+section Radius
+
+open TauCeti.PowerSeries
+
+variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R]
+
+/-- A one-variable overconvergent series distinguished at radius one remains distinguished of
+the same degree at some radius greater than one, within any prescribed upper bound. -/
+theorem exists_isDistinguished_of_isDistinguished_one
+    {f : washnitzerAlgebra Unit R} {s : ℕ}
+    (hf : IsDistinguished 1 s (f : PowerSeries R)) {ρ₀ : ℝ} (hρ₀ : 1 < ρ₀) :
+    ∃ ρ > (1 : ℝ), ρ ≤ ρ₀ ∧ PowerSeries.IsRestricted ρ (f : PowerSeries R) ∧
+      IsDistinguished ρ s (f : PowerSeries R) := by
+  -- The strict bound on the tail persists at a radius greater than one.
+  obtain ⟨ρ₁, hρ₁, hfρ₁, htail⟩ := exists_isRestricted_forall_mem_norm_coeff_mul_pow_lt f.2
+    (S := {u | s < u ()}) (fun u hu ↦ by
+      rw [← PowerSeries.coeff_def (rfl : u () = u ())]
+      simpa [← hf.norm_coeff_mul_pow_eq] using hf.norm_coeff_mul_pow_lt _ hu)
+  let ρ := min ρ₁ ρ₀
+  have hρ : 1 < ρ := lt_min hρ₁ hρ₀
+  have hρ0 : 0 ≤ ρ := zero_le_one.trans hρ.le
+  have hfr : PowerSeries.IsRestricted ρ (f : PowerSeries R) :=
+    MvPowerSeries.isRestricted_of_le hfρ₁ (fun _ ↦ hρ0) (fun _ ↦ min_le_left _ _)
+  have hlt (m : ℕ) (hm : s < m) :
+      ‖PowerSeries.coeff m (f : PowerSeries R)‖ * ρ ^ m <
+        ‖PowerSeries.coeff s (f : PowerSeries R)‖ * ρ ^ s := by
+    have ht := htail (Finsupp.single () m) (by simpa using hm)
+    rw [Finsupp.degree_single, PowerSeries.coeff_coeToMvPowerSeries] at ht
+    exact (mul_le_mul_of_nonneg_left (pow_le_pow_left₀ hρ0 (min_le_left _ _) m)
+      (norm_nonneg _)).trans_lt (ht.trans_le
+        (le_mul_of_one_le_right (norm_nonneg _) (one_le_pow₀ hρ.le)))
+  -- Earlier coefficients remain dominated because the radius has increased.
+  have hle (m : ℕ) : ‖PowerSeries.coeff m (f : PowerSeries R)‖ * ρ ^ m ≤
+      ‖PowerSeries.coeff s (f : PowerSeries R)‖ * ρ ^ s := by
+    rcases le_or_gt m s with hm | hm
+    · have hc := PowerSeries.le_gaussNorm norm 1 (f : PowerSeries R) hf.hasGaussNorm m
+      rw [← hf.norm_coeff_mul_pow_eq] at hc
+      simp only [one_pow, mul_one] at hc
+      exact mul_le_mul hc (pow_le_pow_right₀ hρ.le hm) (by positivity) (norm_nonneg _)
+    · exact (hlt m hm).le
+  have heq := gaussNorm_eq_of_forall_le hle
+  exact ⟨ρ, hρ, min_le_right _ _, hfr,
+    ⟨heq.symm, fun m hm ↦ heq ▸ hlt m hm⟩⟩
+
+end Radius
 
 section Field
 

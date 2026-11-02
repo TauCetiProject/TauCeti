@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Induction.Clifford.LiesOver
-public import TauCeti.RepresentationTheory.Induction.Mackey.Irreducible
+public import TauCeti.RepresentationTheory.Induction.Mackey.Split
 public import TauCeti.RepresentationTheory.Maschke
 import TauCeti.RepresentationTheory.AsModule
 import TauCeti.RepresentationTheory.Irreducible

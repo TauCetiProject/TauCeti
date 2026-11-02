@@ -51,6 +51,7 @@ local models for the test functions of the Yamabe problem.
 * `TauCeti.Yamabe.bubble_rpow_criticalExponent`,
   `TauCeti.Yamabe.bubble_rpow_criticalExponent_eq_mul_rpow_neg_one_add_norm_sq`: the critical
   power of a bubble, and its form as a rescaled translate of a Japanese bracket power.
+* `TauCeti.Yamabe.bubble_sq`: the square of a bubble as a power of its profile.
 * `TauCeti.Yamabe.bubble_rpow_four_div_finrank_sub_two`: the conformal factor
   `U_{t,b} ^ (4 / (n - 2))` of a bubble.
 * `TauCeti.Yamabe.hasFDerivAt_bubble`: the differential of a bubble without completeness.
@@ -84,6 +85,30 @@ def criticalExponent (n : ℕ) : ℝ := 2 * n / (n - 2)
 
 /-- Unfolding lemma for `TauCeti.Yamabe.criticalExponent`. -/
 theorem criticalExponent_def (n : ℕ) : criticalExponent n = 2 * n / (n - 2) := (rfl)
+
+/-- The critical exponent is positive in every dimension `n > 2`. -/
+theorem criticalExponent_pos {n : ℕ} (hn : 2 < n) : 0 < criticalExponent n := by
+  have h : (2 : ℝ) < n := by exact_mod_cast hn
+  rw [criticalExponent_def]
+  exact div_pos (by linarith) (by linarith)
+
+/-- The critical exponent exceeds `2` in every dimension `n > 2`. -/
+theorem two_lt_criticalExponent {n : ℕ} (hn : 2 < n) : 2 < criticalExponent n := by
+  have h : (2 : ℝ) < n := by exact_mod_cast hn
+  rw [criticalExponent_def, lt_div_iff₀ (by linarith)]
+  linarith
+
+/-- The exponent `2 / pₙ` of the critical norm is `(n - 2) / n`; at `n = 0` and `n = 2` both sides
+vanish by the convention for division by zero. -/
+theorem two_div_criticalExponent (n : ℕ) : 2 / criticalExponent n = ((n : ℝ) - 2) / n := by
+  rcases eq_or_ne n 0 with rfl | h₀
+  · simp [criticalExponent_def]
+  rcases eq_or_ne n 2 with rfl | h₂
+  · norm_num [criticalExponent_def]
+  have h₀' : (n : ℝ) ≠ 0 := by exact_mod_cast h₀
+  have h₂' : (n : ℝ) - 2 ≠ 0 := sub_ne_zero.mpr (by exact_mod_cast h₂)
+  rw [criticalExponent_def]
+  field_simp
 
 /-- The coefficient `aₙ = 4 (n - 1) / (n - 2)`; for `n > 2` it is the coefficient of the
 nonnegative Laplacian in the conformal Laplacian `aₙ Δ⁺ + Scal` in dimension `n`. At `n = 2` it is
@@ -152,6 +177,15 @@ theorem bubble_rpow_criticalExponent (hn : finrank ℝ E ≠ 2) {t : ℝ} (ht : 
     ← Real.rpow_natCast _ (finrank ℝ E)]
   congr 1
   field_simp
+
+/-- In dimension `n ≥ 2`, the square of a bubble is a power of its profile:
+`U_{t,b} ^ 2 = (2 t / (t² + ‖x - b‖²)) ^ (n - 2)`. -/
+theorem bubble_sq (hn : 2 ≤ finrank ℝ E) {t : ℝ} (ht : 0 ≤ t) (b x : E) :
+    bubble t b x ^ 2 = (2 * t / (t ^ 2 + ‖x - b‖ ^ 2)) ^ (finrank ℝ E - 2) := by
+  rw [bubble_apply, ← Real.rpow_mul_natCast (by positivity), ← Real.rpow_natCast _ (_ - 2)]
+  congr 1
+  push_cast [Nat.cast_sub hn]
+  ring
 
 /-- In dimension `n ≠ 2`, the critical power of a bubble is a rescaled translate of a power of the
 Japanese bracket: `U_{t,b}(x) ^ pₙ = (2 / t) ^ n (1 + ‖t⁻¹ (x - b)‖²) ^ (-n)`. -/

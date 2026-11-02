@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.DiamondOperators
 public import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
+public import TauCeti.NumberTheory.ModularForms.QExpansion.Order
 public import TauCeti.NumberTheory.ModularForms.Norm.Cusps
 import TauCeti.NumberTheory.ModularForms.Cusps.Basic
 import TauCeti.NumberTheory.Modular.ConjugateTranslation
@@ -58,10 +59,15 @@ Eisenstein series through their constant terms.
   `q`-expansion at a cusp on the representative.
 * `ModularForm.qExpansionAt_diamondOp`: diamond operators act on the `q`-expansions at the
   cusps by left multiplication of cusp representatives.
+* `ModularForm.exists_qExpansion_translate_eq_expand_qExpansionAt`: at a strict period `N` of
+  the cusp, the expansion of `f ∣ γ` is `ModularForm.qExpansionAt γ f` in the variable `q ^ m`,
+  where `m` is `N` divided by the width of the cusp. On a group containing `Γ(N)` this compares
+  the expansions at all cusps at the one common period `N`.
 * `ModularForm.tendsto_translate_constantTermAt`: `f ∣ γ` tends to the constant term at `i∞`.
 * `ModularForm.constantTermAt_mul_left`, `ModularForm.constantTermAt_mul_T_zpow`,
   `ModularForm.constantTermAt_neg`, `ModularForm.constantTermAt_mul_of_c_eq_zero`: the
   dependence of the constant term on the representative.
+* `ModularForm.constantTermAt_mul`: the constant term at a cusp is multiplicative.
 * `ModularForm.constantTermAt_eq_zero_of_odd`: in odd weight the constant term vanishes at a cusp
   whose stabilizer in `Γ` contains a conjugate of some `-Tʲ`, such as an irregular cusp.
 * `ModularForm.constantTermAt_diamondOp`: diamond operators act on constant terms by left
@@ -75,6 +81,8 @@ Eisenstein series through their constant terms.
 * `ModularForm.ker_constantTerms`: the kernel of `constantTerms` is the cusp-form submodule.
 * `TauCeti.ModularForm.constantTermAtCuspTranslationOrbit_mk_mapGL`: identifies an integral
   coset's orbit constant term with the constant term at the cusp represented by the inverse matrix.
+* `ModularForm.constantTermAtCuspTranslationOrbit_mul`: the constant term at a cusp translation
+  orbit is multiplicative.
 * `TauCeti.ModularForm.mem_cuspFormSubmodule_iff_constantTermAtCuspTranslationOrbit_eq_zero`:
   a modular form is cuspidal if and only if all its cusp translation orbit constant terms vanish.
 * `TauCeti.mem_range_cuspToModFormCharSpace_iff_constantTermAt_eq_zero`: the same
@@ -226,6 +234,29 @@ theorem qExpansionAt_neg (γ : SL(2, ℤ)) (f : ModularForm Γ k) :
     (translate f (mapGL ℝ γ)) (Γγ.strictWidthInfty_pos_iff.mpr Fact.out)
     Γγ.strictWidthInfty_mem_strictPeriods) _
 
+/-- **The expansion at a cusp, read at a common period.** If `N` is a strict period at the cusp
+represented by `γ`, it is a multiple `m` of the width there, and the expansion of `f ∣ γ` at
+period `N` is `qExpansionAt γ f` in the variable `q ^ m`. -/
+theorem exists_qExpansion_translate_eq_expand_qExpansionAt {N : ℕ} (hN : 0 < N)
+    {γ : SL(2, ℤ)} (hNγ : (N : ℝ) ∈ (ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • Γ).strictPeriods)
+    (f : ModularForm Γ k) : ∃ (m : ℕ) (hm : 0 < m),
+      qExpansion N (translate f (mapGL ℝ γ)) = PowerSeries.expand m hm.ne' (qExpansionAt γ f) := by
+  let Γγ := ConjAct.toConjAct (mapGL ℝ γ)⁻¹ • Γ
+  have hw : 0 < Γγ.strictWidthInfty := Γγ.strictWidthInfty_pos_iff.mpr Fact.out
+  -- `N` is a multiple `a` of the integer cusp width, itself a multiple `m` of the strict width
+  obtain ⟨m, hm0, hm⟩ := TauCeti.Subgroup.exists_pos_nat_integerCuspWidth_eq_mul_strictWidthInfty
+    (𝒢 := Γγ)
+  obtain ⟨a, ha⟩ := TauCeti.Subgroup.natCast_mem_strictPeriods_iff.mp hNγ
+  have ha0 : 0 < a := Nat.pos_of_mul_pos_left (ha ▸ hN)
+  refine ⟨a * m, Nat.mul_pos ha0 hm0, ?_⟩
+  have hNw : (N : ℝ) = ((a * m : ℕ) : ℝ) * Γγ.strictWidthInfty := by
+    rw [ha, Nat.cast_mul, Nat.cast_mul, hm]
+    ring
+  rw [qExpansionAt_apply, hNw]
+  exact TauCeti.qExpansion_nat_mul hw (Nat.mul_pos ha0 hm0)
+    (SlashInvariantFormClass.periodic_comp_ofComplex _ Γγ.strictWidthInfty_mem_strictPeriods)
+    (ModularFormClass.bdd_at_infty _) (ModularFormClass.holo _)
+
 /-- The constant term of `f` at the cusp represented by `γ ∈ SL₂(ℤ)`, as a linear functional.
 
 It is the constant coefficient of the `q`-expansion at that cusp. -/
@@ -290,6 +321,14 @@ theorem constantTermAt_neg (γ : SL(2, ℤ)) (f : ModularForm Γ k) :
     constantTermAt (-γ) f = (-1) ^ k * constantTermAt γ f := by
   rw [constantTermAt_eq_coeff_zero_qExpansionAt, constantTermAt_eq_coeff_zero_qExpansionAt,
     qExpansionAt_neg, PowerSeries.coeff_smul, smul_eq_mul]
+
+/-- The constant term at a cusp is multiplicative: the constant term of a product of forms of
+weights `k₁` and `k₂` is the product of their constant terms. -/
+theorem constantTermAt_mul {k₁ k₂ : ℤ} (γ : SL(2, ℤ)) (f : ModularForm Γ k₁)
+    (g : ModularForm Γ k₂) :
+    constantTermAt γ (f.mul g) = constantTermAt γ f * constantTermAt γ g := by
+  simp only [constantTermAt_eq_coeff_zero_qExpansionAt, qExpansionAt_mul,
+    PowerSeries.coeff_zero_eq_constantCoeff_apply, map_mul]
 
 /-- Multiplying the representative on the right by an element `m` fixing `∞` (that is, with
 vanishing lower-left entry, so `m = ±Tʲ`) multiplies the constant term by `(m₀₀)ᵏ = (±1)ᵏ`. -/
@@ -562,3 +601,22 @@ theorem mem_cuspFormSubmodule_iff_constantTermAtCuspTranslationOrbit_eq_zero
         𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ)⟧ : CuspTranslationOrbit 𝒢)
 
 end TauCeti.ModularForm
+
+namespace ModularForm
+
+open TauCeti.ModularForm Matrix.SpecialLinearGroup
+open scoped MatrixGroups
+
+variable {𝒢 : Subgroup (GL (Fin 2) ℝ)} [𝒢.IsArithmetic] [𝒢.HasDetOne]
+
+/-- The constant term at a cusp translation orbit is multiplicative: the constant term of a
+product of forms of weights `k₁` and `k₂` is the product of their constant terms. -/
+@[simp]
+theorem constantTermAtCuspTranslationOrbit_mul {k₁ k₂ : ℤ} (f : ModularForm 𝒢 k₁)
+    (g : ModularForm 𝒢 k₂) (c : CuspTranslationOrbit 𝒢) :
+    constantTermAtCuspTranslationOrbit (f.mul g) c =
+      constantTermAtCuspTranslationOrbit f c * constantTermAtCuspTranslationOrbit g c := by
+  induction c using CuspTranslationOrbit.induction_on with
+  | h γ => simp only [constantTermAtCuspTranslationOrbit_mk_mapGL, constantTermAt_mul]
+
+end ModularForm

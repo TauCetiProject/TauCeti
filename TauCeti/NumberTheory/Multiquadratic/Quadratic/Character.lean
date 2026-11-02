@@ -41,6 +41,8 @@ Dedekind zeta function of `K`.
   splits.
 * `TauCeti.Multiquadratic.fundamentalDiscriminantChar_discr_eq_neg_one_iff`: `χ_D(p) = -1` iff
   `p` is inert.
+* `TauCeti.Multiquadratic.ringHomComp_fundamentalDiscriminantChar_discr_ne_one`: the complex
+  character `χ_D` is nontrivial.
 
 ## References
 
@@ -132,5 +134,16 @@ theorem fundamentalDiscriminantChar_discr_eq_neg_one_iff (hK : finrank ℚ K = 2
     simp [hram]
   · rcases fundamentalDiscriminantChar_discr_of_notMem_ramifiedPrimes hK p hram with
       ⟨h, hn⟩ | ⟨h, hn⟩ <;> simp [h, hn, hram]
+
+/-- The complex quadratic character `χ_D` of a quadratic field is nontrivial: the discriminant of
+a quadratic field is not `1`. -/
+theorem ringHomComp_fundamentalDiscriminantChar_discr_ne_one (hK : finrank ℚ K = 2) :
+    (fundamentalDiscriminantChar (NumberField.discr K) (isFundamentalDiscr_discr hK)).ringHomComp
+      (Int.castRingHom ℂ) ≠ 1 := by
+  refine (MulChar.ringHomComp_ne_one_iff Int.cast_injective).mpr
+    (fundamentalDiscriminantChar_ne_one _ fun h ↦ ?_)
+  have := NumberField.abs_discr_gt_two (K := K) (by omega)
+  rw [h] at this
+  norm_num at this
 
 end TauCeti.Multiquadratic

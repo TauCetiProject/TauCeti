@@ -8,7 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.Tensoriality
 public import TauCeti.Geometry.Manifold.VectorField.LieBracket
 public import TauCeti.Geometry.Symplectic.Complex.Complexification
-public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex
+public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Basic
 
 /-!
 # The Nijenhuis tensor of a smooth almost complex structure

@@ -29,6 +29,8 @@ constructions on Laurent series are natural.
 * `HahnSeries.map_embDomain`: coefficientwise maps commute with exponent embeddings.
 * `HahnSeries.map_ofPowerSeries`: coefficientwise maps commute with the inclusion of power
   series, `PowerSeries.map` on the source side.
+* `HahnSeries.mem_map_rangeS`: the range of a coefficientwise map consists of the series
+  with all coefficients in the range of the coefficient map.
 * `HahnSeries.support_map_of_injective`, `HahnSeries.orderTop_map_of_injective`,
   `HahnSeries.order_map_of_injective`: an injective coefficient map preserves the support and
   the order.
@@ -133,6 +135,20 @@ theorem mapRingHom_comp (f : R →+* S) (g : S →+* T) :
 theorem mapRingHom_injective {f : R →+* S} (hf : Function.Injective f) :
     Function.Injective (mapRingHom f : R⟦Γ⟧ →+* S⟦Γ⟧) := fun _ _ h ↦
   HahnSeries.ext <| funext fun g ↦ hf congr(($h).coeff g)
+
+/-- A Hahn series is in the range of a coefficientwise map exactly when all its coefficients are
+in the range of the coefficient map. Compare `Polynomial.mem_map_rangeS`. -/
+theorem mem_map_rangeS {f : R →+* S} {x : S⟦Γ⟧} :
+    x ∈ (mapRingHom f : R⟦Γ⟧ →+* S⟦Γ⟧).rangeS ↔ ∀ g, x.coeff g ∈ f.rangeS := by
+  classical
+  refine ⟨?_, fun h ↦ ?_⟩
+  · rintro ⟨y, rfl⟩ g
+    exact ⟨y.coeff g, rfl⟩
+  choose c hc using h
+  refine ⟨⟨fun g ↦ if x.coeff g = 0 then 0 else c g, x.isPWO_support.mono fun g hg hx ↦ ?_⟩, ?_⟩
+  · exact hg (ite_eq_left hx)
+  · ext g
+    by_cases hx : x.coeff g = 0 <;> simp [hx, hc]
 
 end Semiring
 

@@ -37,6 +37,8 @@ varying, possibly indefinite, metric and for its first variation.
 * `TauCeti.Manifold.ContMDiffNondegenerateMetricFamily.const` and
   `TauCeti.Manifold.ContMDiffNondegenerateMetricFamily.comp`: constant families and restriction
   along a smooth parameter map.
+* `TauCeti.Manifold.ContMDiffNondegenerateMetricFamily.contMDiffAt_comp`: a family restricted
+  along a `C^n` parameter map is jointly `C^n`.
 * `TauCeti.Manifold.ContMDiffNondegenerateMetricFamily.isLocallyConstant_signature_metric`: the
   signature is locally constant on `P × M`.
 
@@ -211,6 +213,18 @@ def comp (c : C^∞⟮IP', P'; IP, P⟯) : ContMDiffNondegenerateMetricFamily I 
 @[simp]
 theorem comp_apply (c : C^∞⟮IP', P'; IP, P⟯) (q : P' × M) : g.comp c q = g (c q.1, q.2) :=
   (rfl)
+
+/-- Restricted along a parameter map `c` which is `C^n` at `p'`, for `n ≤ ∞`, a smooth
+nondegenerate metric family is jointly `C^n` at `(p', x)`, as a map into the tangent
+bilinear-form bundle of `M`. -/
+theorem contMDiffAt_comp {n : WithTop ℕ∞} (hn : n ≤ ∞) {c : P' → P} {p' : P'}
+    (hc : ContMDiffAt IP' IP n c p') (x : M) :
+    ContMDiffAt (IP'.prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) n
+      (fun q : P' × M ↦ Bundle.TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
+        (E := fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] ℝ) q.2 (g (c q.1, q.2)))
+      (p', x) :=
+  ((g.contMDiff (c p', x)).of_le hn).comp (p', x)
+    ((hc.comp (p', x) contMDiffAt_fst).prodMk contMDiffAt_snd)
 
 /-- Freezing the parameter of a restricted family freezes the original family at the image
 parameter. -/

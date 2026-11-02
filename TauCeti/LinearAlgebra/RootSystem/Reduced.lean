@@ -10,10 +10,12 @@ public import Mathlib.LinearAlgebra.RootSystem.Reduced
 /-!
 # A symmetry criterion for reduced root pairings
 
-A finite root pairing over a characteristic-zero domain is reduced as soon as its pairing is
-symmetric on roots and coroots. Indeed, two linearly dependent roots have Coxeter weight four.
-Symmetry makes this weight the square of one pairing value, so that value is `2` or `-2`; the
-root-pairing axioms then identify the two roots up to sign.
+A root pairing over a domain in which `2 ≠ 0`, with torsion-free weight module, is reduced as
+soon as its pairing is symmetric on roots and coroots. Indeed, if the roots indexed by `i` and
+`j` are linearly dependent, then `P.pairing j i • P.root i = 2 • P.root j` and
+`P.pairing i j • P.root j = 2 • P.root i`. Symmetry makes these two pairing values equal, so
+their common value squares to `4` and is `2` or `-2`; cancelling the factor `2` then identifies
+the two roots up to sign. No finiteness of the index type is needed.
 
 This criterion is useful for root data presented in dual coordinate bases. Their roots and
 coroots need not be equal as coordinate vectors, while the pairing can still visibly be the
@@ -21,42 +23,31 @@ symmetric form of a simply-laced Cartan matrix.
 
 ## Main result
 
-* `RootPairing.isReduced_of_pairing_comm`: a finite root pairing with symmetric pairings is
-  reduced.
+* `RootPairing.isReduced_of_pairing_comm`: a root pairing with symmetric pairings is reduced.
 -/
 
 public section
 
-open Module
-
 namespace RootPairing
 
-variable {ι R M N : Type*} [CommRing R] [CharZero R] [IsDomain R]
+variable {ι R M N : Type*} [CommRing R] [IsDomain R] [NeZero (2 : R)]
   [AddCommGroup M] [Module R M] [Module.IsTorsionFree R M]
   [AddCommGroup N] [Module R N] (P : RootPairing ι R M N)
 
-/-- A finite root pairing whose root--coroot pairing is symmetric is reduced. -/
-theorem isReduced_of_pairing_comm [Finite ι]
+/-- A root pairing whose root--coroot pairing is symmetric is reduced. -/
+theorem isReduced_of_pairing_comm
     (hcomm : ∀ i j, P.pairing i j = P.pairing j i) : P.IsReduced := by
-  constructor
-  intro i j hdependent
-  have hweight : P.coxeterWeight i j = 4 :=
-    (P.coxeterWeight_eq_four_iff_not_linearIndependent).2 hdependent
-  have hsquare : P.pairing i j * P.pairing i j = 4 := by
-    simpa only [coxeterWeight, hcomm i j] using hweight
-  have hfactor : (P.pairing i j - 2) * (P.pairing i j + 2) = 0 := by
-    calc
-      (P.pairing i j - 2) * (P.pairing i j + 2) =
-          P.pairing i j * P.pairing i j - 4 := by ring
-      _ = 0 := by rw [hsquare, sub_self]
-  rcases mul_eq_zero.mp hfactor with htwo | hnegTwo
-  · left
-    have hij : P.pairing i j = 2 := sub_eq_zero.mp htwo
-    have hji : P.pairing j i = 2 := (hcomm i j).symm.trans hij
-    exact congrArg P.root ((P.pairing_two_two_iff i j).mp ⟨hij, hji⟩)
-  · right
-    have hij : P.pairing i j = -2 := eq_neg_of_add_eq_zero_left hnegTwo
-    have hji : P.pairing j i = -2 := (hcomm i j).symm.trans hij
-    exact (P.pairing_neg_two_neg_two_iff i j).mp ⟨hij, hji⟩
+  refine ⟨fun i j hdependent => ?_⟩
+  have hi := P.pairing_smul_root_eq_of_not_linearIndependent hdependent
+  have hj := P.pairing_smul_root_eq_of_not_linearIndependent
+    (by rwa [LinearIndependent.pair_symm_iff] at hdependent)
+  rw [hcomm] at hj
+  have hsquare : P.pairing j i * P.pairing j i = 2 * 2 := by
+    refine smul_left_injective R (P.ne_zero i) ?_
+    simp only [mul_smul, hi, hj, smul_comm (P.pairing j i) (2 : R)]
+  rcases mul_self_eq_mul_self_iff.mp hsquare with htwo | hnegTwo
+  · exact .inl (smul_right_injective M two_ne_zero (htwo ▸ hi))
+  · rw [hnegTwo, neg_smul, neg_eq_iff_eq_neg, ← smul_neg] at hi
+    exact .inr (smul_right_injective M two_ne_zero hi)
 
 end RootPairing

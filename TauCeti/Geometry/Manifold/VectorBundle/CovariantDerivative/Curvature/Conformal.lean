@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvatu
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Conformal
 public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Weyl
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Weyl.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Cotton
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Hessian
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum

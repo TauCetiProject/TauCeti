@@ -170,7 +170,7 @@ private theorem map_id_quotient_conjugation_componentIdempotent_eq_one
   let h : WithConv (H →ₐ[k] k) := toConv (hQ.comp q)
   have hh : AlgHom.kernelPoint h.ofConv ∈
       connectedComponent (Bialgebra.augmentationPoint k H) := by
-    exact AlgHom.kernelPoint_comp_connectedComponentQuotient_mem
+    exact PrimeSpectrum.kernelPoint_comp_mkₐ_mem_connectedComponent
       (Bialgebra.augmentationPoint k H) hQ
   have hconj := kernelPoint_conj_mem_identityComponent g h hh
   have heval := map_connectedComponentIdempotent_augmentationPoint_eq_one_of_mem

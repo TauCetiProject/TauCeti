@@ -8,6 +8,8 @@ module
 public import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Measure.OpenPos
+public import Mathlib.Topology.ContinuousMap.CompactlySupported
+public import Mathlib.Topology.UrysohnsLemma
 
 /-!
 # Integrals against `L¹` peak functions concentrating at a point
@@ -49,6 +51,8 @@ its limit at `x₀` provides.
   `x₀` integrates `φ` to its limit at `x₀`.
 * `TauCeti.exists_integral_eq_one_norm_eq_one`: peak functions of unit integral and unit
   `L¹` norm exist inside every neighbourhood of a point.
+* `TauCeti.exists_nonneg_tsupport_subset_integral_eq_one`: on a locally compact space, they can
+  be taken continuous, compactly supported and nonnegative.
 
 ## References
 
@@ -58,7 +62,7 @@ its limit at `x₀` provides.
 public section
 
 open Filter MeasureTheory Metric Set
-open scoped Topology
+open scoped CompactlySupported Topology
 
 namespace TauCeti
 
@@ -144,5 +148,28 @@ theorem exists_integral_eq_one_norm_eq_one [TopologicalSpace α] [OpensMeasurabl
   · filter_upwards [indicatorConstLp_coeFn_notMem (p := 1) (hs := isOpen_interior.measurableSet)
       (hμs := hVμ) (c := ((μ.real V)⁻¹ : 𝕜))] with x hx hxU
     exact hx fun hxV ↦ hxU (interior_subset hxV).1
+
+variable (μ) in
+/-- **Continuous peak functions exist.** On a locally compact space with a measure positive on
+nonempty open sets and finite on compact sets, every neighbourhood `U` of a point carries a
+nonnegative compactly supported continuous function of unit integral whose support closure lies
+in `U`: a Urysohn function, normalized by its integral. -/
+theorem exists_nonneg_tsupport_subset_integral_eq_one [TopologicalSpace α] [R1Space α]
+    [LocallyCompactSpace α] [OpensMeasurableSpace α] [μ.IsOpenPosMeasure]
+    [IsFiniteMeasureOnCompacts μ] {x₀ : α} {U : Set α} (hU : U ∈ 𝓝 x₀) :
+    ∃ φ : C_c(α, ℝ), 0 ≤ φ ∧ tsupport φ ⊆ U ∧ ∫ x, φ x ∂μ = 1 := by
+  obtain ⟨f, hf1, hfc, hfU, hf01⟩ := exists_continuousMap_one_of_isCompact_subset_isOpen
+    isCompact_singleton isOpen_interior (singleton_subset_iff.2 (mem_interior_iff_mem_nhds.2 hU))
+  have hf0 : 0 ≤ (f : α → ℝ) := fun x ↦ (hf01 x).1
+  have hpos : 0 < ∫ x, f x ∂μ := f.continuous.integral_pos_of_hasCompactSupport_nonneg_nonzero
+    hfc hf0 (x := x₀) (by simp [hf1 (mem_singleton x₀)])
+  set g : C_c(α, ℝ) := ⟨f, hfc⟩
+  have hg : ⇑g = f := CompactlySupportedContinuousMap.coe_mk _ _
+  refine ⟨(∫ x, f x ∂μ)⁻¹ • g, CompactlySupportedContinuousMap.le_def.2 fun x ↦ ?_, ?_, ?_⟩
+  · simpa [hg] using mul_nonneg (inv_nonneg.2 hpos.le) (hf0 x)
+  · rw [CompactlySupportedContinuousMap.coe_smul (R := ℝ), hg]
+    exact (tsupport_smul_subset_right (fun _ ↦ (∫ x, f x ∂μ)⁻¹) f).trans
+      (hfU.trans interior_subset)
+  · simp [hg, integral_const_mul, inv_mul_cancel₀ hpos.ne']
 
 end TauCeti

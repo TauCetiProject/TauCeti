@@ -6,11 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.Geometry.Manifold.MFDeriv.Defs
 public import TauCeti.Analysis.MvPolynomial.Jacobian
 public import TauCeti.Geometry.Manifold.Instances.Projectivization
 public import TauCeti.LinearAlgebra.Projectivization.ZeroLocus
 
 import Mathlib.Analysis.Calculus.FDeriv.Pow
+import TauCeti.Geometry.Manifold.RegularValue
 
 /-!
 # Differentials of homogeneous equations in projective charts
@@ -18,7 +20,8 @@ import Mathlib.Analysis.Calculus.FDeriv.Pow
 A homogeneous polynomial family defines polynomial equations in each standard ratio chart of
 native projective space. Their analytic derivative is the cone Jacobian with the normalized
 coordinate column omitted. At common zeros its surjectivity agrees with that of the cone
-Jacobian, so the full-rank condition can be tested by the actual chart equations.
+Jacobian, so the full-rank condition can be tested by the actual chart equations, also when they
+are read as functions on projective space and differentiated as maps of manifolds.
 
 On an overlap, a degree-`d` equation changes by the inverse `d`-th power of the new homogeneous
 coordinate. At a zero, differentiating this identity gives the corresponding scaling law for
@@ -35,7 +38,7 @@ here.
 public section
 
 open MvPolynomial
-open scoped ContDiff Topology
+open scoped ContDiff Manifold Topology
 
 namespace TauCeti
 
@@ -86,6 +89,40 @@ theorem surjective_fderiv_eval_dehomogenize_affineChart_iff [Finite ι]
   rw [L.mk_rep] at hchart
   rw [hchart]
   exact surjective_fderiv_eval_dehomogenize_div_iff i hp hi' hb
+
+/-- **Full rank on projective space.** At a point `L` of the native complex projective zero locus
+of a homogeneous family `p` in the standard affine open `U_i`, the manifold differential of the
+chart equations at `L` is surjective exactly when the cone Jacobian of `p` is surjective. -/
+theorem surjective_mfderiv_eval_dehomogenize_affineChart_iff [Fintype ι]
+    (i : Fin (n + 1)) {p : ι → MvPolynomial (Fin (n + 1)) ℂ} {d : ι → ℕ}
+    (hp : ∀ k, (p k).IsHomogeneous (d k))
+    {L : Projectivization ℂ (Fin (n + 1) → ℂ)} (hL : L ∈ complexProjectiveZeroLocus p)
+    (hi : L ∈ Projectivization.affineOpen i) :
+    Function.Surjective (mfderiv 𝓘(ℂ, Fin n → ℂ) 𝓘(ℂ, ι → ℂ)
+      (fun w ↦ fun k ↦ eval (Projectivization.affineChart i w) (dehomogenize i (p k))) L) ↔
+      Function.Surjective (jacobiMatrixAt p L.rep).mulVec := by
+  have hchart : MDifferentiableAt 𝓘(ℂ, Fin n → ℂ) 𝓘(ℂ, Fin n → ℂ)
+      (Projectivization.affineChart i) L :=
+    ((Projectivization.contMDiffOn_affineChart i 1).contMDiffAt
+      ((Projectivization.isOpen_affineOpen i).mem_nhds hi)).mdifferentiableAt one_ne_zero
+  -- The differential of the chart `affineChart i` itself is bijective.
+  have hbij := (mdifferentiable_of_mem_atlas (I := 𝓘(ℂ, Fin n → ℂ))
+    (Projectivization.affineOpenPartialHomeomorph_mem_atlas i)).mfderiv_bijective
+    (by simpa using hi)
+  rw [Projectivization.coe_affineOpenPartialHomeomorph] at hbij
+  -- The chain rule through the chart `affineChart i`.
+  have hcomp := mfderiv_comp L
+    (hasFDerivAt_eval_family (fun k ↦ dehomogenize i (p k)) _).differentiableAt.mdifferentiableAt
+    hchart
+  -- The chart equations are the polynomial equations composed with the chart. Surjectivity is
+  -- unchanged by the bijective chart differential, and for the polynomial equations on
+  -- `Fin n → ℂ` it is surjectivity of their Fréchet derivative.
+  change Function.Surjective (mfderiv _ _
+    ((fun z : Fin n → ℂ ↦ fun k ↦ eval z (dehomogenize i (p k))) ∘
+      Projectivization.affineChart i) L) ↔ _
+  rw [hcomp, ContinuousLinearMap.coe_comp, Function.Surjective.of_comp_iff _ hbij.surjective,
+    ← isRegularPoint_iff, isRegularPoint_iff_surjective_fderiv]
+  exact surjective_fderiv_eval_dehomogenize_affineChart_iff i hp hL hi
 
 /-- At a common zero, derivatives of homogeneous chart equations transform by the homogeneous
 transition factor, after precomposition with the derivative of the native chart transition.

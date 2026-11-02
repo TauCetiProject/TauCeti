@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
-public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.LinearAlgebra.PiTensorProduct.Basis
+public import Mathlib.LinearAlgebra.PiTensorProduct.DFinsupp
+public import Mathlib.RingTheory.Finiteness.Projective
 
 /-!
 # The tensor product of hom modules is the hom module of the tensor products
@@ -17,17 +17,19 @@ Mathlib's `PiTensorProduct.piTensorHomMap` is the canonical comparison map
 `⨂ᵢ (Mᵢ →ₗ Nᵢ) → (⨂ᵢ Mᵢ →ₗ ⨂ᵢ Nᵢ)`,  `⨂ᵢ fᵢ ↦ ⨂ᵢ mᵢ ↦ ⨂ᵢ fᵢ mᵢ`,
 
 defined for arbitrary families of modules over a commutative semiring. This file proves that it is
-**bijective** as soon as the index type is finite and every `Mᵢ` and every `Nᵢ` is finite free, and
-packages the result as the linear equivalence `PiTensorProduct.piTensorHomEquiv`.
+**bijective** as soon as the index type is finite and every `Mᵢ` is finite projective, with the
+`Nᵢ` arbitrary, and packages the result as the linear equivalence
+`PiTensorProduct.piTensorHomEquiv`. This is the `ι`-ary form of Mathlib's
+`TensorProduct.homTensorHomEquiv`, under the same hypotheses.
 
-The proof is the basis computation. If `bᵢ` is a basis of `Mᵢ` indexed by `κᵢ` and `cᵢ` a basis of
-`Nᵢ` indexed by `νᵢ`, then `Module.Basis.linearMap` gives the matrix-unit basis of `Mᵢ →ₗ Nᵢ`
-indexed by `νᵢ × κᵢ`, and `Module.Basis.piTensorProduct` turns a family of bases into a basis of a
-tensor product. The comparison map carries the tensor of the matrix-unit bases to the matrix-unit
-basis of `⨂ᵢ Mᵢ →ₗ ⨂ᵢ Nᵢ` built from the two tensored bases, along the regrouping
-`(∀ i, νᵢ × κᵢ) ≃ (∀ i, νᵢ) × (∀ i, κᵢ)`; a linear map taking a basis bijectively to a basis is an
-isomorphism. Finiteness of the index type and of each basis is what gives the two sides matching
-bases at all, and it is used nowhere else.
+For finite free `Mᵢ` the proof is a basis computation: a basis `bᵢ` of `Mᵢ` indexed by a finite
+`κᵢ` identifies `Mᵢ →ₗ Nᵢ` with the functions `κᵢ → Nᵢ`, the tensored basis identifies
+`⨂ᵢ Mᵢ →ₗ ⨂ᵢ Nᵢ` with the functions `(∀ i, κᵢ) → ⨂ᵢ Nᵢ`, and under these identifications the
+comparison map is the distributivity of the tensor product over finite direct sums,
+`PiTensorProduct.ofDFinsuppEquiv`. A finite projective module is a retract of a finite free one,
+and precomposition with the retraction data transports bijectivity. This step adapts the retract
+argument in the proof of Mathlib's `dualTensorHom_bijective`
+(`Mathlib/LinearAlgebra/Contraction.lean`).
 
 Taking `Nᵢ = Mᵢ` this identifies `End (⨂ᵢ Mᵢ)` with `⨂ᵢ End Mᵢ`, compatibly with composition
 (`PiTensorProduct.piTensorHomEquiv_tprod_comp_tprod`). That identification is the shape in which the
@@ -38,24 +40,18 @@ power of the endomorphism algebra.
 ## Main definitions
 
 * `PiTensorProduct.piTensorHomEquiv`: the comparison map as a linear equivalence, for a finite
-  index type and finite free modules.
+  index type and finite projective source modules.
 
 ## Main results
 
 * `PiTensorProduct.piTensorHomMap_bijective_of_basis`: bijectivity of the comparison map from a
-  family of finite bases, the engine of the file.
-* `PiTensorProduct.piTensorHomMap_bijective`: bijectivity in the finite free formulation.
+  family of finite bases of the source modules.
+* `PiTensorProduct.piTensorHomMap_bijective`: bijectivity for finite projective source modules.
 * `PiTensorProduct.piTensorHomEquiv_tprod_comp_tprod`: the equivalence turns the factorwise
-  composition of two pure tensors of endomorphisms into the composition of their images.
+  composition of two pure tensors of linear maps into the composition of their images.
 
 ## References
 
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 8, "The double centralizer (image-level)". The commutant of the symmetric-group image in
-  `End (V^{⊗n})` is computed by transporting it through this isomorphism to the invariants of the
-  permutation action on `(End V)^{⊗n}`; the invariants are supplied by
-  `TauCeti/RepresentationTheory/Symmetric/TensorAction/Invariants.lean`, which names this
-  isomorphism as the comparison it is missing.
 * W. Fulton and J. Harris, *Representation Theory: A First Course*, Appendix B.1.
 -/
 
@@ -67,7 +63,7 @@ open scoped TensorProduct
 
 namespace PiTensorProduct
 
-universe uι uR uM uN uκ uν
+universe uι uR uM uN uP uκ
 
 variable {ι : Type uι} {R : Type uR} {M : ι → Type uM} {N : ι → Type uN}
   [CommSemiring R] [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
@@ -75,66 +71,67 @@ variable {ι : Type uι} {R : Type uR} {M : ι → Type uM} {N : ι → Type uN}
 
 section Bijective
 
-variable {κ : ι → Type uκ} {ν : ι → Type uν}
+variable [Finite ι]
 
-/-- Regrouping a family of pairs as a pair of families. This is the reindexing along which the
-comparison map matches the matrix-unit basis of `⨂ᵢ (Mᵢ →ₗ Nᵢ)` with that of
-`⨂ᵢ Mᵢ →ₗ ⨂ᵢ Nᵢ`. -/
-private def piProdEquiv : (∀ i, ν i × κ i) ≃ (∀ i, ν i) × (∀ i, κ i) where
-  toFun p := (fun i => (p i).1, fun i => (p i).2)
-  invFun q i := (q.1 i, q.2 i)
-  left_inv _ := rfl
-  right_inv _ := rfl
-
-variable [Finite ι] [∀ i, Finite (κ i)] [∀ i, Finite (ν i)]
-
-/-- **The comparison map is bijective**, given a finite basis of every `Mᵢ` and of every `Nᵢ`.
-
-The tensor of the matrix-unit bases of the `Mᵢ →ₗ Nᵢ` is carried to the matrix-unit basis of
-`⨂ᵢ Mᵢ →ₗ ⨂ᵢ Nᵢ`, up to the regrouping `(∀ i, νᵢ × κᵢ) ≃ (∀ i, νᵢ) × (∀ i, κᵢ)`. -/
-theorem piTensorHomMap_bijective_of_basis (b : ∀ i, Basis (κ i) R (M i))
-    (c : ∀ i, Basis (ν i) R (N i)) :
+/-- **The comparison map is bijective**, given a finite basis of every `Mᵢ`; the `Nᵢ` are
+arbitrary. -/
+theorem piTensorHomMap_bijective_of_basis {κ : ι → Type uκ} [∀ i, Finite (κ i)]
+    (b : ∀ i, Basis (κ i) R (M i)) :
     Function.Bijective (piTensorHomMap (R := R) (s := M) (t := N)) := by
   classical
   have : Fintype ι := Fintype.ofFinite ι
   have : ∀ i, Fintype (κ i) := fun i => Fintype.ofFinite (κ i)
-  have : ∀ i, Fintype (ν i) := fun i => Fintype.ofFinite (ν i)
-  set B := Basis.piTensorProduct fun i => (b i).linearMap (c i) with hBdef
-  set C := (Basis.piTensorProduct b).linearMap (Basis.piTensorProduct c) with hCdef
-  -- The comparison map agrees with the basis-indexed equivalence on the basis `B`.
-  have hkey : (piTensorHomMap (R := R) (s := M) (t := N)) =
-      (B.equiv C piProdEquiv).toLinearMap := by
-    refine B.ext fun p => ?_
-    refine (Basis.piTensorProduct b).ext fun q => ?_
-    -- Both sides send `⨂ᵢ bᵢ (qᵢ)` to `⨂ᵢ cᵢ (pᵢ).1` when `q` matches the source indices of `p`,
-    -- and to zero otherwise. The matrix-unit lemma has to fire before the tensored bases are
-    -- unfolded, since it matches on a basis vector of the source.
-    rw [LinearEquiv.coe_coe, Basis.equiv_apply, hCdef, Basis.linearMap_apply_apply, hBdef]
-    simp only [Basis.piTensorProduct_apply, piTensorHomMap_tprod_tprod,
-      Basis.linearMap_apply_apply, piProdEquiv, Equiv.coe_fn_mk]
-    by_cases hpq : (fun i => (p i).2) = q
-    · subst hpq
-      simp
-    · rw [ite_eq_right hpq]
-      obtain ⟨i₀, hi₀⟩ := Function.ne_iff.mp hpq
-      refine (tprod R).map_coord_zero i₀ ?_
-      simp [hi₀]
-  rw [hkey]
-  exact (B.equiv C piProdEquiv).bijective
+  -- `Mᵢ →ₗ Nᵢ ≃ (κᵢ → Nᵢ)` through `bᵢ`, distribute the tensor product over the finite direct
+  -- sums, and `((∀ i, κᵢ) → ⨂ᵢ Nᵢ) ≃ (⨂ᵢ Mᵢ →ₗ ⨂ᵢ Nᵢ)` through the tensored basis.
+  let e : (⨂[R] i, M i →ₗ[R] N i) ≃ₗ[R] ((⨂[R] i, M i) →ₗ[R] ⨂[R] i, N i) :=
+    PiTensorProduct.congr (fun i => ((b i).constr R).symm ≪≫ₗ
+      DFinsupp.linearEquivFunOnFintype.symm) ≪≫ₗ ofDFinsuppEquiv ≪≫ₗ
+      DFinsupp.linearEquivFunOnFintype ≪≫ₗ (Basis.piTensorProduct b).constr R
+  have he : piTensorHomMap (R := R) (s := M) (t := N) = e.toLinearMap :=
+    PiTensorProduct.ext <| MultilinearMap.ext fun f =>
+      (Basis.piTensorProduct b).ext fun p => by
+        -- `Basis.constr_basis` has to fire before the tensored basis vector is unfolded.
+        simp only [LinearMap.compMultilinearMap_apply, LinearEquiv.coe_coe, e,
+          LinearEquiv.trans_apply, Basis.constr_basis]
+        simp only [Basis.piTensorProduct_apply, piTensorHomMap_tprod_tprod, congr_tprod,
+          LinearEquiv.trans_apply, DFinsupp.linearEquivFunOnFintype_apply,
+          ofDFinsuppEquiv_tprod_apply]
+        -- Evaluating a `DFinsupp` built from a function is evaluating the function.
+        simp only [← DFinsupp.linearEquivFunOnFintype_apply (R := R), LinearEquiv.apply_symm_apply,
+          Basis.constr_symm_apply]
+  rw [he]
+  exact e.bijective
 
-end Bijective
-
-section Free
-
-variable [Finite ι] [∀ i, Module.Free R (M i)] [∀ i, Module.Finite R (M i)]
-  [∀ i, Module.Free R (N i)] [∀ i, Module.Finite R (N i)]
+variable [∀ i, Module.Projective R (M i)] [∀ i, Module.Finite R (M i)]
 
 /-- **The comparison map `⨂ᵢ (Mᵢ →ₗ Nᵢ) → (⨂ᵢ Mᵢ →ₗ ⨂ᵢ Nᵢ)` is bijective** over a finite index
-type when every `Mᵢ` and every `Nᵢ` is finite free. -/
+type when every `Mᵢ` is finite projective; the `Nᵢ` are arbitrary. -/
 theorem piTensorHomMap_bijective :
-    Function.Bijective (piTensorHomMap (R := R) (s := M) (t := N)) :=
-  piTensorHomMap_bijective_of_basis (fun i => Module.Free.chooseBasis R (M i))
-    fun i => Module.Free.chooseBasis R (N i)
+    Function.Bijective (piTensorHomMap (R := R) (s := M) (t := N)) := by
+  -- Each `Mᵢ` is a retract `fᵢ ∘ₗ gᵢ = id` of a finite free module `Fᵢ`, where the comparison map
+  -- is bijective. Precomposition with the `fᵢ` and the `gᵢ` intertwines the two comparison maps.
+  -- This adapts the retract argument of Mathlib's `dualTensorHom_bijective`
+  -- (`Mathlib/LinearAlgebra/Contraction.lean`) to the `ι`-ary comparison map.
+  choose n f g _ _ hfg using fun i => Module.Finite.exists_comp_eq_id_of_projective R (M i)
+  have hF := piTensorHomMap_bijective_of_basis (N := N) fun i => Pi.basisFun R (Fin (n i))
+  have hf : piTensorHomMap ∘ₗ (map fun i => (f i).lcomp R (N i)) =
+      (map f).lcomp R _ ∘ₗ piTensorHomMap := by
+    ext φ
+    simp
+  have hg : piTensorHomMap ∘ₗ (map fun i => (g i).lcomp R (N i)) =
+      (map g).lcomp R _ ∘ₗ piTensorHomMap := by
+    ext φ
+    simp
+  refine ⟨.of_comp (f := (map f).lcomp R _) ?_, .of_comp (g := map fun i => (g i).lcomp R (N i)) ?_⟩
+  · rw [← LinearMap.coe_comp, ← hf, LinearMap.coe_comp]
+    refine hF.1.comp (LinearMap.injective_of_comp_eq_id _ (map fun i => (g i).lcomp R (N i)) ?_)
+    ext φ
+    simp [LinearMap.lcomp_apply', LinearMap.comp_assoc, hfg]
+  · rw [← LinearMap.coe_comp, hg, LinearMap.coe_comp]
+    refine (LinearMap.surjective_of_comp_eq_id ((map f).lcomp R _) _ ?_).comp hF.2
+    have hfg' (i) (x) : f i (g i x) = x := LinearMap.congr_fun (hfg i) x
+    ext φ
+    simp [hfg']
 
 variable (R M N) in
 /-- **The tensor product of the hom modules is the hom module of the tensor products.** The
@@ -170,20 +167,22 @@ theorem piTensorHomEquiv_symm_map (f : ∀ i, M i →ₗ[R] N i) :
     (piTensorHomEquiv R M N).symm (map f) = tprod R f :=
   (LinearEquiv.symm_apply_eq _).mpr (piTensorHomEquiv_tprod f).symm
 
-end Free
+section Comp
 
-section End
+variable {P : ι → Type uP} [∀ i, AddCommMonoid (P i)] [∀ i, Module R (P i)]
+  [∀ i, Module.Projective R (N i)] [∀ i, Module.Finite R (N i)]
 
-variable [Finite ι] [∀ i, Module.Free R (M i)] [∀ i, Module.Finite R (M i)]
-
-/-- **The equivalence is multiplicative on pure tensors of endomorphisms**: composing factorwise
-and then comparing is comparing and then composing. This is what makes the identification usable
-on the subalgebras of `End (⨂ᵢ Mᵢ)` that Schur-Weyl duality is about. -/
-theorem piTensorHomEquiv_tprod_comp_tprod (f g : ∀ i, M i →ₗ[R] M i) :
-    piTensorHomEquiv R M M (tprod R fun i => f i ∘ₗ g i) =
-      piTensorHomEquiv R M M (tprod R f) ∘ₗ piTensorHomEquiv R M M (tprod R g) := by
+/-- **The equivalence is functorial on pure tensors**: composing factorwise and then comparing is
+comparing and then composing. For `Nᵢ = Pᵢ = Mᵢ` this is multiplicativity on pure tensors of
+endomorphisms, which is what makes the identification usable on the subalgebras of
+`End (⨂ᵢ Mᵢ)` that Schur-Weyl duality is about. -/
+theorem piTensorHomEquiv_tprod_comp_tprod (f : ∀ i, N i →ₗ[R] P i) (g : ∀ i, M i →ₗ[R] N i) :
+    piTensorHomEquiv R M P (tprod R fun i => f i ∘ₗ g i) =
+      piTensorHomEquiv R N P (tprod R f) ∘ₗ piTensorHomEquiv R M N (tprod R g) := by
   simp [map_comp]
 
-end End
+end Comp
+
+end Bijective
 
 end PiTensorProduct

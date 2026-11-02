@@ -61,7 +61,7 @@ private noncomputable abbrev carAlgebra (K : Type*) [Field K] (N : ℕ) :=
 private theorem commute_carOccupationElement_carGenerator
     {K : Type*} [Field K] {N : ℕ} {i j k l : Fin N}
     (hforward : (k, l) ≠ (i, j)) (hreverse : (k, l) ≠ (j, i)) :
-    Commute (carOccupationElement (K := K) i j) (carGenerator (K := K) k l) := by
+    Commute (carOccupationElement (K := K) i j) (carGenerator (R := K) k l) := by
   classical
   have hfirst : ¬(j = k ∧ l = i) := by
     rintro ⟨rfl, rfl⟩
@@ -73,7 +73,7 @@ private theorem commute_carOccupationElement_carGenerator
   apply Commute.smul_left
   rw [Commute]
   calc
-    (carGenerator (K := K) i j * carGenerator j i) * carGenerator k l =
+    (carGenerator (R := K) i j * carGenerator j i) * carGenerator k l =
         carGenerator i j * (carGenerator j i * carGenerator k l) := mul_assoc _ _ _
     _ = carGenerator i j * (-(carGenerator k l * carGenerator j i)) := by
       rw [carGenerator_mul_comm_of_not_paired j i k l hsecond]
@@ -93,16 +93,16 @@ private noncomputable def carOccupationEnd
 private noncomputable def carLoweringEnd
     {K : Type*} [Field K] {N : ℕ}
     (a : ↥(carPositiveRootPairs (Fin N))) : Module.End K (carAlgebra K N) :=
-  Module.toModuleEnd K (carAlgebra K N) (carGenerator (K := K) a.1.2 a.1.1)
+  Module.toModuleEnd K (carAlgebra K N) (carGenerator (R := K) a.1.2 a.1.1)
 
 private noncomputable def carScaledRaisingEnd
     {K : Type*} [Field K] {N : ℕ}
     (a : ↥(carPositiveRootPairs (Fin N))) : Module.End K (carAlgebra K N) :=
-  Module.toModuleEnd K (carAlgebra K N) ((2 : K)⁻¹ • carGenerator (K := K) a.1.1 a.1.2)
+  Module.toModuleEnd K (carAlgebra K N) ((2 : K)⁻¹ • carGenerator (R := K) a.1.1 a.1.2)
 
 private theorem carOccupationElement_mul_carGenerator_snd
     {K : Type*} [Field K] {N : ℕ} {i j : Fin N} (hij : i ≠ j) :
-    carOccupationElement (K := K) i j * carGenerator (K := K) j i = 0 := by
+    carOccupationElement (K := K) i j * carGenerator (R := K) j i = 0 := by
   classical
   rw [carOccupationElement_def (K := K) (n := Fin N), smul_mul_assoc, mul_assoc]
   rw [carGenerator_mul_self]
@@ -110,7 +110,7 @@ private theorem carOccupationElement_mul_carGenerator_snd
 
 private theorem carOccupationElement_mul_carGenerator_fst
     {K : Type*} [Field K] [Invertible (2 : K)] {N : ℕ} {i j : Fin N} (hij : i ≠ j) :
-    carOccupationElement (K := K) i j * carGenerator (K := K) i j = carGenerator (K := K) i j := by
+    carOccupationElement (K := K) i j * carGenerator (R := K) i j = carGenerator (R := K) i j := by
   rw [carOccupationElement_swap (K := K) j i, sub_mul, one_mul,
     carOccupationElement_mul_carGenerator_snd hij.symm, sub_zero]
 

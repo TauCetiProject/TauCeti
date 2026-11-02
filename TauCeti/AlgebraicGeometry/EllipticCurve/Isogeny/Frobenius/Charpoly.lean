@@ -43,6 +43,9 @@ the domain of endomorphisms, against `π̂ ∘ π = [q]` gives `π̂ = [a_q] - �
 * `TauCeti.Isogeny.ofIsogeny_frobeniusIsogeny_add_ofIsogeny_dualFrobeniusIsogeny`: `π + π̂ = a_q`.
 * `TauCeti.Isogeny.pointMap_frobeniusIsogeny_add_pointMap_dualFrobeniusIsogeny`: on points,
   `π P + π̂ P = a_q • P`.
+* `TauCeti.Isogeny.map_frobeniusAlgHom_map_frobeniusAlgHom`: over every extension `K` of `F`, the
+  `q`-power map `Fr` on the coordinates of the points over `K` satisfies
+  `Fr (Fr P) = a_q • Fr P - q • P`.
 
 ## References
 
@@ -154,6 +157,32 @@ theorem pointMap_frobeniusIsogeny_add_pointMap_dualFrobeniusIsogeny [DecidableEq
         (Hom.ofIsogeny (dualFrobeniusIsogeny W)).pointMap P = W.frobeniusTrace • P := by
   rw [← Hom.add_pointMap, ofIsogeny_frobeniusIsogeny_add_ofIsogeny_dualFrobeniusIsogeny,
     Hom.zsmul_pointMap, Hom.id_pointMap]
+
+/-- **The `q`-power map on points is a root of `X² - a_q X + q`**: for an elliptic curve over a
+finite field `F` with `q` elements and any extension `K` of `F`, the map `Fr` raising the
+coordinates of the points over `K` to the `q`-th power satisfies `Fr (Fr P) = a_q • Fr P - q • P`,
+where `a_q` is the trace of Frobenius. -/
+theorem map_frobeniusAlgHom_map_frobeniusAlgHom [Fintype F] {K : Type*} [Field K] [Algebra F K]
+    [DecidableEq K] (P : (W⁄K).toAffine.Point) :
+    Point.map (FiniteField.frobeniusAlgHom F K) (Point.map (FiniteField.frobeniusAlgHom F K) P) =
+      W.frobeniusTrace • Point.map (FiniteField.frobeniusAlgHom F K) P - Nat.card F • P := by
+  -- base change `π ∘ π = a_q π - q` to `K`; `W⁄K` and `W.map (algebraMap F K)` are the same curve,
+  -- but `WeierstrassCurve.baseChange` is semireducible, so only `exact` sees through it
+  have h : (Hom.ofIsogeny (baseChangeFrobenius K W)).comp
+        (Hom.ofIsogeny (baseChangeFrobenius K W)) =
+      W.frobeniusTrace • Hom.ofIsogeny (baseChangeFrobenius K W) -
+        Nat.card F • Hom.id (W⁄K).toAffine := by
+    have h := congrArg (fun f ↦ Hom.map f (algebraMap F K))
+      (ofIsogeny_frobeniusIsogeny_comp_ofIsogeny_frobeniusIsogeny W)
+    simp only [Hom.map_sub, Hom.map_zsmul, Hom.map_nsmul, Hom.comp_map, Hom.id_map,
+      Hom.ofIsogeny_map] at h
+    rw [baseChangeFrobenius_def]
+    exact h
+  -- the base-changed Frobenius acts on points as `Fr`
+  have hP := congrArg (fun f ↦ Hom.pointMap f P) h
+  simp only [Hom.sub_pointMap, Hom.zsmul_pointMap, Hom.nsmul_pointMap, Hom.comp_pointMap,
+    Hom.id_pointMap, Hom.pointMap_ofIsogeny_baseChangeFrobenius] at hP
+  exact hP
 
 end TauCeti.Isogeny
 

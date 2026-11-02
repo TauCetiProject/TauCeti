@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Subgroup.Finite
 public import Mathlib.GroupTheory.GroupAction.Basic
 public import Mathlib.Topology.Algebra.ConstMulAction
 
@@ -24,7 +25,8 @@ the stabilizer of `x`.
 For the presentation `[X/G]` of an orbifold by a group action, the germ kernel at `x` is the
 ineffective part of the isotropy at `x`: the isotropy elements whose action cannot be seen near
 `x`. The effective reduction of the action discards these elements, while the orbifold keeps them.
-Transport along the action conjugates germ kernels, as it does stabilizers.
+Transport along the action conjugates germ kernels, as it does stabilizers, so the order of the
+germ kernel is a function on the orbit space.
 
 The stabilizer of `x` is the whole isotropy at `x`, and it equals the germ kernel exactly when all
 of the isotropy at `x` is ineffective. For a finite group acting continuously on a Hausdorff space,
@@ -42,6 +44,10 @@ its ineffective kernel. No smoothness or linearity is needed for this statement.
   the germ kernel contains the kernel of the action and is contained in the stabilizer.
 * `TauCeti.MulAction.germKernel_smul_eq_germKernel_map_conj`: the germ kernel at `h • x` is the
   conjugate by `h` of the germ kernel at `x`.
+* `TauCeti.MulAction.orbitCardGermKernel G`: the order of the germ kernel as a function on the
+  orbit space, well defined by `TauCeti.MulAction.card_germKernel_smul`.
+* `TauCeti.MulAction.stabilizer_eq_germKernel_iff_of_stabilizer_le`: at a point whose stabilizer
+  lies in a subgroup `H`, the stabilizer is the germ kernel for `G` exactly when it is for `H`.
 * `TauCeti.MulAction.setOf_stabilizer_eq_germKernel`: the points whose stabilizer is the germ
   kernel are those lying in no fixed set without lying in its interior.
 * `TauCeti.MulAction.isOpen_setOf_stabilizer_eq_germKernel`,
@@ -106,6 +112,42 @@ theorem germKernel_smul_eq_germKernel_map_conj [ContinuousConstSMul G X] (h : G)
     eventually_map]
   refine eventually_congr (Eventually.of_forall fun y ↦ ?_)
   rw [mul_smul, mul_smul, inv_smul_eq_iff]
+
+/-- The germ kernels along an orbit have the same order. -/
+theorem card_germKernel_smul [ContinuousConstSMul G X] (h : G) (x : X) :
+    Nat.card (germKernel G (h • x)) = Nat.card (germKernel G x) := by
+  rw [germKernel_smul_eq_germKernel_map_conj,
+    Subgroup.card_map_of_injective (MulAut.conj h).injective]
+
+variable (G) in
+/-- The order of the germ kernel as a function on the orbit space: its value at the orbit of `x` is
+the order of the germ kernel at `x`, which does not depend on the representative by
+`TauCeti.MulAction.card_germKernel_smul`. For the presentation `[X/G]` it is the order of the
+ineffective isotropy at a point of the coarse space. -/
+noncomputable def orbitCardGermKernel [ContinuousConstSMul G X] : orbitRel.Quotient G X → ℕ :=
+  Quotient.lift (fun x ↦ Nat.card (germKernel G x)) fun _ _ ⟨h, hx⟩ ↦
+    hx ▸ card_germKernel_smul h _
+
+@[simp]
+theorem orbitCardGermKernel_mk [ContinuousConstSMul G X] (x : X) :
+    orbitCardGermKernel G (⟦x⟧ : orbitRel.Quotient G X) = Nat.card (germKernel G x) :=
+  (rfl)
+
+/-- The germ kernel of the restricted action of a subgroup `H` is the germ kernel of `G` pulled
+back to `H`. -/
+@[simp]
+theorem germKernel_subgroupOf (H : Subgroup G) (x : X) :
+    (germKernel G x).subgroupOf H = germKernel H x := by
+  ext g
+  simp [Subgroup.mem_subgroupOf, Subgroup.smul_def]
+
+/-- If the stabilizer of `y` lies in a subgroup `H`, then the stabilizer of `y` is its germ kernel
+for `G` exactly when it is for `H`. This applies to the points of a slice for `H`. -/
+theorem stabilizer_eq_germKernel_iff_of_stabilizer_le {H : Subgroup G} {y : X}
+    (hy : stabilizer G y ≤ H) :
+    stabilizer H y = germKernel H y ↔ stabilizer G y = germKernel G y := by
+  rw [← stabilizer_subgroupOf, ← germKernel_subgroupOf, Subgroup.subgroupOf_inj,
+    inf_eq_left.mpr hy, inf_eq_left.mpr ((germKernel_le_stabilizer y).trans hy)]
 
 /-- A point has its germ kernel as its stabilizer exactly when it lies in no fixed set without
 lying in its interior: every element fixing the point acts as the identity near it. -/

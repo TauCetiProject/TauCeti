@@ -25,7 +25,10 @@ grids it is linear over `R[U]` and homogeneous for the Alexander grading
 
 The construction uses the concrete cycle quotient through `unblockedHomologyIso` and
 Mathlib's `Submodule.mapQ`. It supplies the homology map itself; invertibility requires
-the hexagon homotopy identities.
+the hexagon homotopy identities. In one direction this is recorded here: if the commutation map
+`Φ` of a column turn followed by a commutation map `Ψ` back at the same columns is chain homotopic
+to multiplication by a polynomial `p`, then `ΨΦ` acts on `GH⁻` as `p`
+(`GridDiagram.unblockedHomologyClass_commutationMap_withTurnRow_commutationMap`).
 
 ## References
 
@@ -83,6 +86,16 @@ private theorem commutationCyclesMap_mem_boundariesInKer
   have h := LinearMap.congr_fun (G.commutationMap_comp_unblockedDifferential C R) w
   simpa only [LinearMap.comp_apply, hw, coe_commutationCyclesMap] using h.symm
 
+/-- The commutation map of a column turn followed by the commutation map back, turning at the same
+columns in any row `t`, sends cycles of `GC⁻(G)` to cycles of `GC⁻(G)`. -/
+theorem commutationMap_withTurnRow_commutationMap_mem_ker (t : Fin n) {z : GridChainMinus R n}
+    (hz : z ∈ LinearMap.ker (G.unblockedDifferential R)) :
+    (G').commutationMap R (C.withTurnRow t) (G.commutationMap R C z) ∈
+      LinearMap.ker (G.unblockedDifferential R) := by
+  simpa only [ColumnTurn.withTurnRow_column, swapColumns_swapColumns] using
+    (G').commutationMap_mem_ker_unblockedDifferential R (C.withTurnRow t)
+      (G.commutationMap_mem_ker_unblockedDifferential R C hz)
+
 end Cycles
 
 variable [CommRing R] [CharP R 2]
@@ -122,6 +135,27 @@ theorem unblockedHomologyCommutationMap_unblockedHomologyClass
     (G').unblockedHomologyIso_hom_unblockedHomologyClass R, commutationQuotientMap,
     LinearMap.homologyπ_apply, Submodule.mapQ_apply]
   exact congrArg Submodule.Quotient.mk (Subtype.ext (G.coe_commutationCyclesMap R C z))
+
+/-- **The return composite on homology.** Let `Φ` be the commutation map of the column turn `C`
+and `Ψ` the commutation map back, turning at the same columns in row `t`. If `ΨΦ` is chain
+homotopic to multiplication by a polynomial `p`, that is `∂H + H∂ = p + ΨΦ` over a ring of
+characteristic two, then `ΨΦ` sends the class in `GH⁻(G)` of every cycle `z` to `p` times that
+class. -/
+theorem unblockedHomologyClass_commutationMap_withTurnRow_commutationMap (t : Fin n)
+    (H : GridChainMinus R n →ₗ[MvPolynomial (Fin n) R] GridChainMinus R n)
+    (p : MvPolynomial (Fin n) R)
+    (hH : ∀ c, G.unblockedDifferential R (H c) + H (G.unblockedDifferential R c) =
+      p • c + (G').commutationMap R (C.withTurnRow t) (G.commutationMap R C c))
+    (z : LinearMap.ker (G.unblockedDifferential R)) :
+    G.unblockedHomologyClass R
+        ⟨_, G.commutationMap_withTurnRow_commutationMap_mem_ker R C t z.2⟩ =
+      p • G.unblockedHomologyClass R z := by
+  rw [← map_smul, ← sub_eq_zero, ← map_sub, unblockedHomologyClass_eq_zero_iff]
+  refine ⟨H z, ?_⟩
+  have h := hH z
+  rw [LinearMap.mem_ker.mp z.2, map_zero, add_zero] at h
+  rw [h, Submodule.coe_sub, Submodule.coe_smul, sub_eq_add_neg, ← neg_smul, CharTwo.neg_eq,
+    add_comm]
 
 end GridDiagram
 

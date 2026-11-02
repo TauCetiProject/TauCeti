@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Borel
+public import TauCeti.Algebra.Group.Subgroup.Pointwise
 public import TauCeti.GroupTheory.SemidirectProduct
 
 /-!
@@ -27,15 +28,16 @@ U_S(A) ⋊ T(A) ⟶ B_S(A).
 
 No injectivity is asserted: the represented torus can meet the root-generated subgroup, so
 identifying the join with an external semidirect product on the nose would need an additional
-disjointness hypothesis. The surjection nevertheless gives the normal form `g = x * t` for every
+disjointness hypothesis. The surjection nevertheless gives the normal form `x * t = g` for every
 element of `B_S(A)`. Taking `S = Set.univ`, where `U_S(A)` is the full elementary subgroup by
 `kostantSubsystemSubgroup_univ`, this assembles the torus and the elementary subgroup pointwise;
 representability of the assembled functor and the Borel and maximal-torus properties are not treated
 here.
 
 The two group-theoretic ingredients — the range of the semidirect-product multiplication map and
-the resulting membership normal form — are proved for an arbitrary normalizing pair of subgroups in
-`TauCeti.GroupTheory.SemidirectProduct` and are instantiated here.
+the membership normal form of the join — are proved for an arbitrary normalizing pair of subgroups
+in `TauCeti.GroupTheory.SemidirectProduct` and `TauCeti.Algebra.Group.Subgroup.Pointwise`, and are
+instantiated here.
 
 ## Main declarations
 
@@ -145,7 +147,7 @@ theorem mem_kostantTorusSubsystemSubgroup_iff
     (g : LinearMap.GeneralLinearGroup A (A ⊗[ℤ] M)) :
     g ∈ kostantTorusSubsystemSubgroup e h ρ M hM hnil b wt S A ↔
       ∃ x ∈ kostantSubsystemSubgroup e h ρ M hM hnil S A,
-        ∃ t ∈ kostantTorusSubgroup M b wt A, g = x * t := by
+        ∃ t ∈ kostantTorusSubgroup M b wt A, x * t = g := by
   rw [kostantTorusSubsystemSubgroup_eq_sup, ← kostantTorusSubgroup_eq_range]
   exact Subgroup.mem_sup_of_right_le_normalizer_left
     (range_kostantTorusPoints_le_normalizer e h ρ M hM hnil b wt hwt α S hα A)

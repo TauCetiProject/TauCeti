@@ -18,7 +18,8 @@ import Mathlib.Tactic.LinearCombination
 
 A root `ω` of `X² + X + 1` labels the four elements as `0, 1, ω, ω²`.
 The explicit enumeration supports finite calculations over this alphabet without choosing
-another model of the field. Squaring exchanges the two roots in characteristic two.
+another model of the field. Such a root is a cube root of unity, a field of order four has
+characteristic two, and squaring exchanges the two roots in characteristic two.
 
 Additively, a field of four elements is the Klein four-group: `zmodTwoProdAddEquiv` sends
 `(a, b) : ZMod 2 × ZMod 2` to `a + bω`, so that the three nonzero elements `1, ω, ω²` correspond
@@ -53,6 +54,17 @@ theorem sq_sq_add_sq_add_one_eq_zero {R : Type*} [CommSemiring R] [CharP R 2]
     {ω : R} (hω : ω ^ 2 + ω + 1 = 0) : (ω ^ 2) ^ 2 + ω ^ 2 + 1 = 0 := by
   simpa only [map_add, map_pow, map_one, map_zero, frobenius_def] using
     congrArg (frobenius R 2) hω
+
+/-- A root of `X² + X + 1` is a cube root of unity. -/
+theorem pow_three_eq_one_of_sq_add_self_add_one_eq_zero {R : Type*} [CommRing R] {ω : R}
+    (hω : ω ^ 2 + ω + 1 = 0) : ω ^ 3 = 1 := by
+  linear_combination (ω - 1) * hω
+
+/-- A field of order four has characteristic two. -/
+theorem two_eq_zero_of_natCard_eq_four (hF : Nat.card F = 4) : (2 : F) = 0 := by
+  let := Fintype.ofFinite F
+  let := charP_of_card_eq_prime_pow (Nat.card_eq_fintype_card.symm.trans hF : _ = 2 ^ 2)
+  exact CharTwo.two_eq_zero
 
 /-- Every field of order four contains a root of `X² + X + 1`. -/
 theorem exists_sq_add_self_add_one_eq_zero_of_card_eq_four (hF : Nat.card F = 4) :

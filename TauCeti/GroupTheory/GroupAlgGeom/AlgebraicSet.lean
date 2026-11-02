@@ -342,18 +342,6 @@ theorem Rad_normalClosure (S : Set (GX G X)) :
 theorem Rad_empty : Rad ι (∅ : Set (GX G X)) = I ι Set.univ := by
   rw [Rad_def, V_empty]
 
-/-- The word homomorphism `σ` maps the radical of the inverse-image system into the
-radical of the original system. -/
-theorem Rad_preimage_le_comap {Y : Type*} (ι : G →* H)
-    (σ : GHom (inl : G →* GX G Y) (inl : G →* GX G X)) (S : Set (GX G X)) :
-    Rad ι (σ ⁻¹' S) ≤ (Rad ι S).comap σ.toMonoidHom := by
-  intro w hw
-  rw [Subgroup.mem_comap, mem_Rad]
-  intro v hv
-  have h := (mem_Rad).1 hw
-    (wordMap ι (fun y => σ (inr (FreeGroup.of y))) v) (wordMap_mem_V ι σ S v hv)
-  rwa [eval_wordMap] at h
-
 /-- For injective coefficients, the ideal of a point `ι ∘ g` with coordinates in the image of `G`
 is the normal closure of the equations `x (g x)⁻¹`, `x ∈ X`. -/
 theorem I_singleton_comp (hι : Function.Injective ι) (g : X → G) :
@@ -436,6 +424,12 @@ def quotientHomEquiv : GHom (quotientCoeff N) ι ≃ V ι (N : Set (GX G X)) whe
 theorem quotientHomEquiv_apply_coe (φ : GHom (quotientCoeff N) ι) (x : X) :
     (quotientHomEquiv ι N φ : X → H) x = φ (inr (FreeGroup.of x) : GX G X) := (rfl)
 
+/-- Evaluation at the point corresponding to a `G`-homomorphism `φ : G[X] ⧸ N → H` is `φ`
+composed with the quotient map. -/
+theorem eval_quotientHomEquiv (φ : GHom (quotientCoeff N) ι) (w : GX G X) :
+    eval ι (quotientHomEquiv ι N φ) w = φ (w : GX G X ⧸ N) :=
+  DFunLike.congr_fun (eval_eq_comp_mk' φ) w
+
 @[simp]
 theorem quotientHomEquiv_symm_apply (v : V ι (N : Set (GX G X))) :
     (quotientHomEquiv ι N).symm v = quotientEvalGHom v v.2 := (rfl)
@@ -456,6 +450,17 @@ theorem quotientCoeff_injective (hι : Function.Injective ι)
   ext g
   simp
 
+/-- A surjective `G`-homomorphism `π : G[X] →* K` induces a `G`-isomorphism `G[X] ⧸ N → K` from
+the quotient by its kernel `N`. -/
+theorem exists_bijective_gHom_of_eq_ker {K : Type*} [Group K] {κ : G →* K}
+    (π : GHom (inl : G →* GX G X) κ) (hπ : Function.Surjective π)
+    (hN : N = (π : GX G X →* K).ker) :
+    ∃ ψ : GHom (quotientCoeff N) κ, Function.Bijective ψ ∧
+      ∀ w : GX G X, ψ (w : GX G X ⧸ N) = π w := by
+  let e := QuotientGroup.liftEquiv N (φ := (π : GX G X →* K)) hπ hN
+  refine ⟨⟨e.toMonoidHom, fun g => ?_⟩, e.bijective, fun w => rfl⟩
+  simp [e]
+
 end GX
 
 /-! ### Coordinate groups and the group of a system -/
@@ -471,6 +476,8 @@ variable (ι) in
 /-- The coefficient homomorphism `G →* G_{R(S)}`. -/
 def coeff (S : Set (GX G X)) : G →* CoordGroup ι S :=
   GX.quotientCoeff _
+
+theorem coeff_def (S : Set (GX G X)) : coeff ι S = GX.quotientCoeff (Rad ι S) := (rfl)
 
 @[simp]
 theorem coeff_apply (S : Set (GX G X)) (g : G) :
@@ -512,7 +519,8 @@ theorem eval_homEquiv (S : Set (GX G X)) (φ : GHom (coeff ι S) ι) (w : GX G X
 
 /-- A `G`-homomorphism out of `G_{R(S)}` is determined by its values on the variables. -/
 @[ext]
-theorem gHom_ext {φ ψ : GHom (coeff ι S) ι}
+theorem gHom_ext {K : Type*} [Group K] {κ : G →* K}
+    {φ ψ : GHom (coeff ι S) κ}
     (h : ∀ x, φ (inr (FreeGroup.of x) : GX G X) = ψ (inr (FreeGroup.of x) : GX G X)) : φ = ψ :=
   GX.quotientGHom_ext h
 
@@ -532,13 +540,60 @@ variable (ι) in
 theorem toGGroup_coeff (hι : Function.Injective ι) (hS : (V ι S).Nonempty) :
     (toGGroup ι hι hS).coeff = coeff ι S := (rfl)
 
+variable {Y : Type*}
+variable (ι : G →* H) (S : Set (GX G X)) (T : Set (GX G Y))
+
+/-- A tuple of words maps the solution set of `S` into the solution set of `T`. -/
+def MapsToWordMap (w : Y → GX G X) : Prop :=
+  Set.MapsTo (wordMap ι w) (V ι S) (V ι T)
+
+/-- A tuple of words maps solutions of `S` to solutions of `T` precisely when its word map
+does so at every solution. -/
+theorem mapsToWordMap_iff (w : Y → GX G X) :
+    MapsToWordMap ι S T w ↔ ∀ v ∈ V ι S, wordMap ι w v ∈ V ι T :=
+  Iff.rfl
+
+/-- A word map between algebraic sets pulls equations vanishing on the target back to
+equations vanishing on the source. -/
+theorem Rad_le_comap_of_mapsToWordMap (w : Y → GX G X) (hw : MapsToWordMap ι S T w) :
+    Rad ι T ≤ (Rad ι S).comap (eval (inl : G →* GX G X) w) := by
+  intro t ht
+  rw [Subgroup.mem_comap, mem_Rad]
+  intro v hv
+  rw [← MonoidHom.comp_apply, eval_comp_eval]
+  exact (mem_Rad.mp ht) _ ((mapsToWordMap_iff ι S T w).mp hw v hv)
+
+/-- A word map between algebraic sets induces a coefficient-preserving homomorphism of
+coordinate groups in the opposite direction. -/
+def homOfMapsToWordMap (w : Y → GX G X) (hw : MapsToWordMap ι S T w) :
+    GHom (coeff ι T) (coeff ι S) where
+  toMonoidHom := QuotientGroup.map _ _ (eval (inl : G →* GX G X) w)
+    (Rad_le_comap_of_mapsToWordMap ι S T w hw)
+  map_coeff' g := by simp [coeff_apply]
+
+@[simp]
+theorem homOfMapsToWordMap_mk (w : Y → GX G X) (hw : MapsToWordMap ι S T w)
+    (t : GX G Y) :
+    homOfMapsToWordMap ι S T w hw (t : CoordGroup ι T) =
+      (eval (inl : G →* GX G X) w t : CoordGroup ι S) := by
+  simp [homOfMapsToWordMap]
+
+/-- Evaluating the induced coordinate-group homomorphism at a point is the original word
+map of that point. -/
+theorem homEquiv_comp_homOfMapsToWordMap (w : Y → GX G X)
+    (hw : MapsToWordMap ι S T w) (v : V ι S) :
+    (homEquiv ι T ((evalGHom v.1 v.2).comp
+      (homOfMapsToWordMap ι S T w hw)) : Y → H) = wordMap ι w v.1 := by
+  funext y
+  simp only [homEquiv_apply_coe, GHom.coe_comp, Function.comp_apply,
+    homOfMapsToWordMap_mk, evalGHom_mk, wordMap_apply, eval_inr_of]
+
 /-- A coefficient-preserving word map induces a homomorphism between coordinate groups. -/
 def homOfWordMap {Y : Type*} (ι : G →* H)
     (σ : GHom (inl : G →* GX G Y) (inl : G →* GX G X))
-    (S : Set (GX G X)) : GHom (coeff ι (σ ⁻¹' S)) (coeff ι S) where
-  toMonoidHom := QuotientGroup.map _ _ σ.toMonoidHom (Rad_preimage_le_comap ι σ S)
-  map_coeff' g := by
-    simp [coeff_apply]
+    (S : Set (GX G X)) : GHom (coeff ι (σ ⁻¹' S)) (coeff ι S) :=
+  homOfMapsToWordMap ι S (σ ⁻¹' S) (fun y => σ (inr (FreeGroup.of y)))
+    (fun v hv => wordMap_mem_V ι σ S v hv)
 
 @[simp]
 theorem homOfWordMap_mk {Y : Type*} (ι : G →* H)
@@ -546,7 +601,9 @@ theorem homOfWordMap_mk {Y : Type*} (ι : G →* H)
     (S : Set (GX G X)) (w : GX G Y) :
     homOfWordMap ι σ S (w : CoordGroup ι (σ ⁻¹' S)) =
       (σ w : CoordGroup ι S) := by
-  simp [homOfWordMap]
+  simp only [homOfWordMap, homOfMapsToWordMap]
+  exact congrArg (fun t : GX G X => (t : CoordGroup ι S))
+    (DFunLike.congr_fun (eval_eq_of_comp_inl σ.comp_coeff) w)
 
 /-- Precomposition with the coordinate-group word map corresponds to the word map on
 tuples under the point–homomorphism equivalence. -/
@@ -555,11 +612,25 @@ theorem homEquiv_comp_homOfWordMap {Y : Type*} (ι : G →* H)
     (S : Set (GX G X)) (φ : GHom (coeff ι S) ι) :
     ((homEquiv ι (σ ⁻¹' S) (φ.comp (homOfWordMap ι σ S)) : Y → H)) =
       wordMap ι (fun y => σ (inr (FreeGroup.of y))) (homEquiv ι S φ) := by
-  funext y
-  simp only [homEquiv_apply_coe, GHom.coe_comp, Function.comp_apply, wordMap_apply]
-  rw [homOfWordMap_mk, eval_homEquiv]
+  have hφ : evalGHom (homEquiv ι S φ) ((homEquiv ι S φ).property) = φ := by
+    simpa only [homEquiv_symm_apply] using (homEquiv ι S).symm_apply_apply φ
+  simpa only [homOfWordMap, hφ] using
+    (homEquiv_comp_homOfMapsToWordMap ι S (σ ⁻¹' S)
+      (fun y => σ (inr (FreeGroup.of y)))
+      (fun v hv => wordMap_mem_V ι σ S v hv) (homEquiv ι S φ))
 
 end CoordGroup
+
+/-- The word homomorphism `σ` maps the radical of the inverse-image system into the
+radical of the original system. -/
+theorem Rad_preimage_le_comap {Y : Type*} (ι : G →* H)
+    (σ : GHom (inl : G →* GX G Y) (inl : G →* GX G X)) (S : Set (GX G X)) :
+    Rad ι (σ ⁻¹' S) ≤ (Rad ι S).comap σ.toMonoidHom := by
+  have h := CoordGroup.Rad_le_comap_of_mapsToWordMap ι S (σ ⁻¹' S)
+    (fun y => σ (inr (FreeGroup.of y))) (fun v hv => wordMap_mem_V ι σ S v hv)
+  have heval : eval (inl : G →* GX G X) (fun y => σ (inr (FreeGroup.of y))) =
+      σ.toMonoidHom := eval_eq_of_comp_inl σ.comp_coeff
+  rwa [heval] at h
 
 variable (G) in
 /-- The group `G_S = G[X] ⧸ ncl(S)` presented over `G` by the system `S` of equations. -/
@@ -571,6 +642,8 @@ namespace SystemGroup
 /-- The coefficient homomorphism `G →* G_S`. -/
 def coeff (S : Set (GX G X)) : G →* SystemGroup G S :=
   GX.quotientCoeff _
+
+theorem coeff_def (S : Set (GX G X)) : coeff S = GX.quotientCoeff (normalClosure S) := (rfl)
 
 @[simp]
 theorem coeff_apply (S : Set (GX G X)) (g : G) :

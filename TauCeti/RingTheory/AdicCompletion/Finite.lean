@@ -5,12 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.AdicCompletion.Exactness
+public import Mathlib.RingTheory.AdicCompletion.AsTensorProduct
 public import Mathlib.RingTheory.AdicCompletion.Noetherian
 public import TauCeti.RingTheory.AdicCompletion.Pi
 
 /-!
-# Adic completeness of finite modules
+# Adic completion of finite modules
 
 Over an `I`-adically complete Noetherian ring, every finitely generated module is `I`-adically
 complete. Precompleteness passes along surjective linear maps, because the adic completion functor
@@ -22,12 +22,19 @@ ring.
 This is what makes a finite algebra over a complete Noetherian ring Henselian along the extended
 ideal, the input for lifting idempotents in such an algebra.
 
+Over any commutative ring, the completion of a finite module is generated over the completed ring
+by the image of the module, so linear maps over the completed ring out of it are determined by
+their restrictions to the module.
+
 ## Main results
 
 * `IsPrecomplete.of_surjective`: adic precompleteness passes along a surjective linear map.
 * `IsPrecomplete.of_finite`: a finite module over an adically precomplete ring is precomplete.
 * `IsAdicComplete.of_finite`: a finite module over an adically complete Noetherian ring is
   complete.
+* `AdicCompletion.linearMap_ext_of_finite`: a linear map over the completion out of the completion
+  of a finite module is determined on the image of the module, since
+  `AdicCompletion.ofTensorProduct` is surjective.
 
 ## References
 
@@ -62,3 +69,15 @@ theorem IsAdicComplete.of_finite [IsNoetherianRing R] [IsAdicComplete I R] [Modu
     IsAdicComplete I M where
   toIsHausdorff := IsHausdorff.of_le_jacobson I M (IsAdicComplete.le_jacobson_bot I)
   toIsPrecomplete := IsPrecomplete.of_finite I M
+
+variable {M} in
+/-- Linear maps over the completion out of the completion of a finite module are determined by
+their values on the image of the module. -/
+theorem AdicCompletion.linearMap_ext_of_finite [Module.Finite R M] {P : Type*} [AddCommGroup P]
+    [Module (AdicCompletion I R) P] {g₁ g₂ : AdicCompletion I M →ₗ[AdicCompletion I R] P}
+    (h : ∀ x, g₁ (of I M x) = g₂ (of I M x)) : g₁ = g₂ := by
+  refine LinearMap.ext fun y ↦ ?_
+  obtain ⟨t, rfl⟩ := ofTensorProduct_surjective_of_finite I M y
+  induction t using TensorProduct.inductionOn with
+  | tmul a x => simp [ofTensorProduct_tmul, h]
+  | add s t hs ht => simp [hs, ht]

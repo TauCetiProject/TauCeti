@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Commute.Hom
 public import Mathlib.LinearAlgebra.GeneralLinearGroup.Basic
 
 /-!
@@ -19,8 +20,8 @@ different modules, so the relation is not a statement inside one monoid and Math
 
 * `LinearMap.GeneralLinearGroup.commute_ofLinearEquiv_iff`: conversion from linear equivalences
   to the general linear group preserves and reflects commutation.
-* `LinearMap.GeneralLinearGroup.comp_inv_eq_of_comp_eq`: an intertwiner of two automorphisms also
-  intertwines their inverses.
+* `LinearMap.GeneralLinearGroup.comp_inv_eq_inv_comp_iff`: a linear map intertwines two
+  automorphisms if and only if it intertwines their inverses.
 -/
 
 public section
@@ -35,26 +36,18 @@ variable [Semiring K] [AddCommMonoid V] [Module K V] [AddCommMonoid W] [Module K
 /-- Two linear equivalences commute if and only if their images in the general linear group
 commute. -/
 theorem commute_ofLinearEquiv_iff (f g : V ≃ₗ[K] V) :
-    Commute (ofLinearEquiv f) (ofLinearEquiv g) ↔ Commute f g := by
-  rw [commute_iff_eq, commute_iff_eq, ← ofLinearEquiv_mul, ← ofLinearEquiv_mul]
-  exact Function.Injective.eq_iff (generalLinearEquiv K V).symm.injective
+    Commute (ofLinearEquiv f) (ofLinearEquiv g) ↔ Commute f g :=
+  commute_map_iff (generalLinearEquiv K V).symm.injective
 
-/-- **Intertwining passes to inverses.** If `f` intertwines the automorphisms `a` and `b`, then it
-intertwines `a⁻¹` and `b⁻¹`. -/
-theorem comp_inv_eq_of_comp_eq (f : V →ₗ[K] W) (a : GeneralLinearGroup K V)
-    (b : GeneralLinearGroup K W)
-    (hab : f.comp (a : Module.End K V) = (b : Module.End K W).comp f) :
-    f.comp (↑a⁻¹ : Module.End K V) = (↑b⁻¹ : Module.End K W).comp f := by
-  have hb : (↑b⁻¹ : Module.End K W).comp (b : Module.End K W) = LinearMap.id := b.inv_val
-  have ha : (a : Module.End K V).comp (↑a⁻¹ : Module.End K V) = LinearMap.id := a.val_inv
-  calc f.comp (↑a⁻¹ : Module.End K V)
-      = ((LinearMap.id : Module.End K W).comp f).comp (↑a⁻¹ : Module.End K V) := by
-        rw [LinearMap.id_comp]
-    _ = (↑b⁻¹ : Module.End K W).comp ((f.comp (a : Module.End K V)).comp
-          (↑a⁻¹ : Module.End K V)) := by
-        rw [← hb, hab]
-        simp only [LinearMap.comp_assoc]
-    _ = (↑b⁻¹ : Module.End K W).comp f := by
-        rw [LinearMap.comp_assoc, ha, LinearMap.comp_id]
+/-- **Intertwining passes to inverses.** A linear map `f` intertwines the automorphisms `a⁻¹`
+and `b⁻¹` if and only if it intertwines `a` and `b`. -/
+@[simp]
+theorem comp_inv_eq_inv_comp_iff {f : V →ₗ[K] W} {a : GeneralLinearGroup K V}
+    {b : GeneralLinearGroup K W} : f ∘ₗ ↑a⁻¹ = ↑b⁻¹ ∘ₗ f ↔ f ∘ₗ a = b ∘ₗ f := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩ <;> ext x
+  · simpa [← Module.End.mul_apply] using
+      congr((b : Module.End K W) ($h ((a : Module.End K V) x))).symm
+  · simpa [← Module.End.mul_apply] using
+      congr((↑b⁻¹ : Module.End K W) ($h ((↑a⁻¹ : Module.End K V) x))).symm
 
 end LinearMap.GeneralLinearGroup

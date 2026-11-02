@@ -85,7 +85,7 @@ theorem MemBV.add [OpensMeasurableSpace E] {u v : E → ℝ}
   rcases memBV_iff.mp hu with ⟨hu, hufinite⟩
   rcases memBV_iff.mp hv with ⟨hv, hvfinite⟩
   exact memBV_iff.mpr ⟨hu.add hv,
-    (totalVariationOn_add_le hu.locallyIntegrableOn hv.locallyIntegrableOn).trans_lt
+    (totalVariationOn_add_le hu.locallyIntegrableOn).trans_lt
       (ENNReal.add_lt_top.mpr ⟨hufinite, hvfinite⟩)⟩
 
 /-- The difference of two BV functions belongs to BV. -/
@@ -107,8 +107,8 @@ def bvSubmodule (μ : Measure E) (Ω : Opens E) : Submodule ℝ (E →₁[μ.res
     intro u v hu hv
     simp only [Set.mem_ofPred_eq] at hu hv ⊢
     rw [totalVariationOn_congr_ae (Lp.coeFn_add u v)]
-    exact (totalVariationOn_add_le (IntegrableOn.locallyIntegrableOn (L1.integrable_coeFn u))
-      (IntegrableOn.locallyIntegrableOn (L1.integrable_coeFn v))).trans_lt
+    exact (totalVariationOn_add_le
+      (IntegrableOn.locallyIntegrableOn (L1.integrable_coeFn u))).trans_lt
         (ENNReal.add_lt_top.mpr ⟨hu, hv⟩)
   smul_mem' := by
     intro c u hu
@@ -251,8 +251,7 @@ instance instNormedAddCommGroup : NormedAddCommGroup (BV μ Ω) :=
         totalVariationOn_congr_ae (Lp.coeFn_add u.toL1 v.toL1)]
       have ht := ENNReal.toReal_mono
         (ENNReal.add_ne_top.mpr ⟨u.totalVariationOn_lt_top.ne, v.totalVariationOn_lt_top.ne⟩)
-        (totalVariationOn_add_le u.integrableOn.locallyIntegrableOn
-          v.integrableOn.locallyIntegrableOn)
+        (totalVariationOn_add_le u.integrableOn.locallyIntegrableOn)
       rw [ENNReal.toReal_add u.totalVariationOn_lt_top.ne v.totalVariationOn_lt_top.ne] at ht
       linarith [norm_add_le u.toL1 v.toL1]
     norm_eq_zero_iff u := by
@@ -297,7 +296,7 @@ private theorem variation_sub_limit_le {u : ℕ → BV μ Ω} {v : E →₁[μ.r
     (hv : Tendsto (fun n => (u n).toL1) atTop (𝓝 v)) (N M : ℕ) {C : ℝ} (hC : 0 ≤ C)
     (hbound : ∀ n ≥ N, ‖u n - u M‖ ≤ C) :
     totalVariationOn μ Ω (v - (u M).toL1 : E →₁[μ.restrict Ω] ℝ) ≤ ENNReal.ofReal C := by
-  apply totalVariationOn_le_of_tendsto_L1 (hv.sub tendsto_const_nhds)
+  refine totalVariationOn_le_of_tendsto_L1 (hv.sub tendsto_const_nhds) (Eventually.frequently ?_)
   filter_upwards [eventually_ge_atTop N] with n hn
   rw [← toL1_sub]
   apply (ENNReal.le_ofReal_iff_toReal_le (u n - u M).totalVariationOn_lt_top.ne hC).mpr
@@ -317,9 +316,8 @@ instance instCompleteSpace : CompleteSpace (BV μ Ω) :=
     have hvBV : MemBV μ Ω v := by
       apply memBV_iff.mpr
       refine ⟨L1.integrable_coeFn v, ?_⟩
-      have hsum := totalVariationOn_add_le
+      have hsum := totalVariationOn_add_le (v := u N₀)
         (IntegrableOn.locallyIntegrableOn (L1.integrable_coeFn (v - (u N₀).toL1)))
-        (u N₀).integrableOn.locallyIntegrableOn
       have hae : ((v - (u N₀).toL1 : E →₁[μ.restrict Ω] ℝ) : E → ℝ) + u N₀
           =ᵐ[μ.restrict Ω] v := by
         filter_upwards [Lp.coeFn_sub v (u N₀).toL1] with x hx

@@ -137,11 +137,11 @@ private theorem tangentCoordinate_surjective :
       LaurentPolynomial.counit_T, ← CounitAlgebra.algebraMap_base R H B, map_one,
       Units.val_one]
   let d : Derivation R H C :=
-    (derivationToDualNumberEquivLift R H C).symm ⟨q, hq⟩
+    (derivationToTrivSqZeroExtEquivLift R H C).symm ⟨q, hq⟩
   refine ⟨d, ?_⟩
   rw [tangentCoordinate_apply]
   dsimp only [d]
-  rw [derivationToDualNumberEquivLift_symm_apply]
+  rw [derivationToTrivSqZeroExtEquivLift_symm_apply]
   simp only [q, laurentEval_T_one, infinitesimalUnit, IsUnit.unit_spec, snd_add, snd_inl,
     snd_inr, zero_add, c, AlgEquiv.apply_symm_apply]
 

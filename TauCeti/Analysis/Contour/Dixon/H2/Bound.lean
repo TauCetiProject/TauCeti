@@ -30,7 +30,7 @@ only interval-integrable.
 * `TauCeti.Contour.dixonH2_norm_le` / `dixonH2_tendsto_zero` — the uniform-bound norm estimate and
   its decay at infinity.
 * `TauCeti.Contour.dixonH2_norm_le_of_integrable` / `dixonH2_tendsto_zero_of_integrable` — the `L¹`
-  versions, via the shared estimate `norm_integral_inv_sub_mul_le`.
+  versions, via the shared estimate `norm_integral_inv_sub_smul_le`.
 
 The decay of `dixonH2` (hence of Dixon's glued function, which agrees with it far out) is the input
 to the Liouville step of Dixon's proof of the homology form of Cauchy's theorem
@@ -109,16 +109,16 @@ theorem dixonH2_tendsto_zero {R M : ℝ}
 `f (γ ·) * deriv γ` is interval-integrable, `dixonH2` is bounded by that weight's `L¹` norm divided
 by `‖w‖ - R`. Unlike `dixonH2_norm_le` this needs no uniform bound on the integrand, so it applies
 to raw curves whose derivative is only interval-integrable: rewrite the integrand as
-`(γ t - w)⁻¹ * (f (γ t) * deriv γ t)` and apply `norm_integral_inv_sub_mul_le`. Only the bound on
+`(γ t - w)⁻¹ • (f (γ t) * deriv γ t)` and apply `norm_integral_inv_sub_smul_le`. Only the bound on
 the half-open interval `Ι a b` is needed. -/
 theorem dixonH2_norm_le_of_integrable {R : ℝ} (hR : ∀ t ∈ Ι a b, ‖γ t‖ ≤ R)
     (hg : IntervalIntegrable (fun t ↦ f (γ t) * deriv γ t) volume a b) {w : ℂ} (hw : R < ‖w‖) :
     ‖dixonH2 f γ a b w‖ ≤ (∫ t in Ι a b, ‖f (γ t) * deriv γ t‖) / (‖w‖ - R) := by
   have hcongr : (∫ t in a..b, f (γ t) / (γ t - w) * deriv γ t)
-      = ∫ t in a..b, (γ t - w)⁻¹ * (f (γ t) * deriv γ t) :=
-    intervalIntegral.integral_congr fun t _ ↦ by ring
+      = ∫ t in a..b, (γ t - w)⁻¹ • (f (γ t) * deriv γ t) :=
+    intervalIntegral.integral_congr fun t _ ↦ by rw [smul_eq_mul]; ring
   rw [dixonH2_def, hcongr]
-  exact norm_integral_inv_sub_mul_le hg hR hw
+  exact norm_integral_inv_sub_smul_le hg hR hw
 
 /-- **`dixonH2 f γ a b` tends to `0` along `cocompact ℂ` (`L¹` form).** The `L¹` norm bound
 `dixonH2_norm_le_of_integrable` is already of the form `C / (‖w‖ - R)`, so

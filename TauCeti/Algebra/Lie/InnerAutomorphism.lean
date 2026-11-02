@@ -68,6 +68,8 @@ restricting scalars along `algebraMap ℚ K`.
 * `TauCeti.expAd_apply_of_lie_eq_zero`, `TauCeti.expAd_apply_of_lie_lie_eq_zero`,
   `TauCeti.expAd_apply_of_lie_lie_lie_eq_zero`: the resulting one-, two- and three-term formulas.
 * `TauCeti.expAd_apply_self`: `exp (ad x)` fixes `x`.
+* `TauCeti.expAd_symm`: the inverse of `exp (ad x)` is `exp (ad (-x))`.
+* `LieHom.map_expAd`: a Lie homomorphism `f` carries `exp (ad x)` to `exp (ad (f x))`.
 * `TauCeti.expAd_apply_eq_exp_mul_exp_neg`: on an associative algebra, `exp (ad x)` is
   conjugation by `exp x`.
 * `TauCeti.exp_mul_exp_eq_exp_mul_exp_mul_of_lie_eq_of_commute`: the exponential relation for a
@@ -131,6 +133,26 @@ lemma expAd_apply_of_lie_eq_zero {x y : L} (hx : IsNilpotent (ad K L x)) (hy : �
 @[simp]
 lemma expAd_apply_self (x : L) (hx : IsNilpotent (ad K L x)) : expAd x hx x = x :=
   expAd_apply_of_lie_eq_zero hx (lie_self x)
+
+/-- **The inverse of `exp (ad x)` is `exp (ad (-x))`.** -/
+@[simp]
+theorem expAd_symm (x : L) (hx : IsNilpotent (ad K L x)) :
+    (expAd x hx).symm = expAd (-x) (by simpa only [map_neg] using hx.neg) := by
+  ext y
+  rw [LieEquiv.symm_apply_eq, expAd_apply, expAd_apply, ← Module.End.mul_apply, map_neg,
+    hx.exp_mul_exp_neg_self, Module.End.one_apply]
+
+/-- **`exp (ad x)` is natural in Lie homomorphisms**: a Lie homomorphism `f` carries
+`exp (ad x) y` to `exp (ad (f x)) (f y)`. The nilpotency of `ad (f x)` is a hypothesis, since `f`
+need not be surjective; for a surjective `f` it is `LieHom.isNilpotent_ad_of_surjective`. -/
+theorem _root_.LieHom.map_expAd {L' : Type*} [LieRing L'] [LieAlgebra K L'] [LieAlgebra ℚ L']
+    (f : L →ₗ⁅K⁆ L') {x : L} (hx : IsNilpotent (ad K L x))
+    (hfx : IsNilpotent (ad K L' (f x))) (y : L) :
+    f (expAd x hx y) = expAd (f x) hfx (f y) := by
+  have h : ad K L' (f x) ∘ₗ (f : L →ₗ[K] L') = (f : L →ₗ[K] L') ∘ₗ ad K L x :=
+    LinearMap.ext fun z ↦ (f.map_lie x z).symm
+  rw [expAd_apply, expAd_apply]
+  exact (LinearMap.congr_fun (Module.End.commute_exp_left_of_commute hx hfx h) y).symm
 
 /-- The two-term truncation of `exp (ad x)`, valid on a vector killed by two brackets with `x`. -/
 lemma expAd_apply_of_lie_lie_eq_zero {x y : L} (hx : IsNilpotent (ad K L x))

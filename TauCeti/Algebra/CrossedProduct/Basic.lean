@@ -42,7 +42,7 @@ Central simplicity of the crossed product of a finite Galois extension of fields
 * `TauCeti.TwoCocycle K L`: the `2`-cocycles of `L ≃ₐ[K] L` with values in `Lˣ`, a commutative
   group under pointwise multiplication (`TauCeti.TwoCocycle.instCommGroup`).
 * `TauCeti.TwoCocycle.comap f ι hf c`: the inflation of `c` along a homomorphism
-  `f : Aut_K(M) → Aut_K(L)` and an embedding `ι : L →ₐ[K] M` intertwining it.
+  `f : Aut_R(M) → Aut_K(L)` and a ring homomorphism `ι : L →+* M` intertwining it.
 * `TauCeti.CrossedProduct c`: the crossed-product ring of a cocycle `c`, with its `K`-algebra and
   left `L`-module structures.
 * `TauCeti.CrossedProduct.basis c`: the `L`-basis `u_σ` of the crossed product.
@@ -188,14 +188,18 @@ instance : CommGroup (TwoCocycle K L) :=
 
 section Comap
 
-variable {M : Type w} [CommRing M] [Algebra K M]
+-- Keeping the coefficient homomorphism in its original bundled presentation preserves the
+-- compatibility proof's type when callers supply an algebra homomorphism.
+variable {R : Type*} [CommSemiring R] {M : Type w} [CommRing M] [Algebra R M]
+  {H : Type*} [FunLike H L M] [RingHomClass H L M]
 
 /-- The **inflation** of a `2`-cocycle `c` of `Aut_K(L)` along a compatible pair: a homomorphism
-`f : Aut_K(M) → Aut_K(L)` and an embedding `ι : L → M` intertwining it, `ι (f g x) = g (ι x)`.
+`f : Aut_R(M) → Aut_K(L)` and a ring homomorphism `ι : L →+* M` intertwining it,
+`ι (f g x) = g (ι x)`.
 Its values are `(g, g') ↦ ι (c (f g, f g'))`; the intertwining hypothesis is what makes this a
 cocycle. -/
-def comap (f : (M ≃ₐ[K] M) →* (L ≃ₐ[K] L)) (ι : L →ₐ[K] M) (hf : ∀ g x, ι (f g x) = g (ι x))
-    (c : TwoCocycle K L) : TwoCocycle K M where
+def comap (f : (M ≃ₐ[R] M) →* (L ≃ₐ[K] L)) (ι : H) (hf : ∀ g x, ι (f g x) = g (ι x))
+    (c : TwoCocycle K L) : TwoCocycle R M where
   toFun g g' := Units.map (ι : L →* M) (c.toFun (f g) (f g'))
   isMulCocycle₂ g g' g'' := by
     have hsmul (x : Lˣ) : g • Units.map (ι : L →* M) x = Units.map (ι : L →* M) (f g • x) :=
@@ -205,12 +209,12 @@ def comap (f : (M ≃ₐ[K] M) →* (L ≃ₐ[K] L)) (ι : L →ₐ[K] M) (hf : 
     rw [← map_mul f, ← map_mul f] at h
     rw [hsmul, ← map_mul, ← map_mul, h]
 
-variable (f : (M ≃ₐ[K] M) →* (L ≃ₐ[K] L)) (ι : L →ₐ[K] M) (hf : ∀ g x, ι (f g x) = g (ι x))
+variable (f : (M ≃ₐ[R] M) →* (L ≃ₐ[K] L)) (ι : H) (hf : ∀ g x, ι (f g x) = g (ι x))
 
 /-- The defining equation of the inflated cocycle, `(c.comap f ι hf)(g, g') = ι (c (f g, f g'))`,
 as units. -/
 @[simp]
-theorem comap_toFun (g g' : M ≃ₐ[K] M) :
+theorem comap_toFun (g g' : M ≃ₐ[R] M) :
     (c.comap f ι hf).toFun g g' = Units.map (ι : L →* M) (c.toFun (f g) (f g')) :=
   (rfl)
 

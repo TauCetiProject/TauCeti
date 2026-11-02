@@ -8,10 +8,12 @@ module
 public import Mathlib.Probability.Distributions.Uniform
 public import TauCeti.Probability.Distributions.Beta.Basic
 public import TauCeti.Probability.Distributions.Uniform.Sphere.Basic
+public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.MeasureTheory.Integral.OddSymmetric
 import TauCeti.Probability.ConditionalProbability
 import TauCeti.Probability.Distributions.Beta.Cdf
+import TauCeti.Probability.Distributions.Beta.Quantile
 import TauCeti.Probability.Distributions.Uniform.Basic
 import TauCeti.Probability.Moments.Covariance
 
@@ -31,8 +33,9 @@ The law is carried to a uniform law on a ball by translations, nonzero dilations
 isometries. For `r ≥ 0` its mean is the center. For `r > 0` and `d ≥ 1` the normalized radius
 `‖X - c‖ / r` has the beta law with parameters `d` and `1`, whose cumulative distribution function
 is `t ^ d` on `[0, 1]` (`TauCeti.Probability.cdf_betaMeasure_one_right`) and whose quantile is
-`u ^ d⁻¹` (`TauCeti.Probability.quantile_betaMeasure_one_right`); under the same hypotheses the
-direction `(X - c) / ‖X - c‖` is uniform on the unit sphere and independent of the radius. For
+`u ^ d⁻¹` (`TauCeti.Probability.quantile_betaMeasure_one_right`). Its square has the beta law with
+parameters `d / 2` and `1`. Under the same hypotheses the direction `(X - c) / ‖X - c‖` is uniform
+on the unit sphere and independent of the radius. For
 `r ≥ 0`, combining invariance under isometries with the second moment
 `E ‖X - c‖ ^ 2 = d r ^ 2 / (d + 2)` of the radius shows that the covariance is `r ^ 2 / (d + 2)`
 times the inner product.
@@ -45,6 +48,8 @@ times the inner product.
 
 * `TauCeti.Probability.isProbabilityMeasure_uniformBallMeasure_iff`: it is a probability
   measure exactly for nonnegative radius.
+* `TauCeti.Probability.uniformBallMeasure_absolutelyContinuous`: for nonzero radius it is
+  absolutely continuous with respect to Lebesgue measure.
 * `TauCeti.Probability.uniformBallMeasure_eq_withDensity`,
   `TauCeti.Probability.rnDeriv_uniformBallMeasure`: for nonzero radius, its density against
   Lebesgue measure.
@@ -55,6 +60,8 @@ times the inner product.
 * `TauCeti.Probability.integral_id_uniformBallMeasure`: for `r ≥ 0` the mean is the center.
 * `TauCeti.Probability.map_norm_sub_div_uniformBallMeasure`: for `r > 0` and `d ≥ 1` the
   normalized radius has the beta law with parameters `d` and `1`.
+* `TauCeti.Probability.map_sq_norm_sub_div_uniformBallMeasure`: under the same hypotheses,
+  the squared normalized radius has the beta law with parameters `d / 2` and `1`.
 * `TauCeti.Probability.map_sphereDirection_prod_uniformBallMeasure`: for `r > 0` and `d ≥ 1`
   direction and normalized radius are independent, uniform on the sphere and beta distributed.
 * `TauCeti.Probability.covarianceBilin_uniformBallMeasure`: for `r ≥ 0` the covariance is
@@ -132,7 +139,7 @@ theorem isProbabilityMeasure_uniformBallMeasure_iff :
     IsProbabilityMeasure (uniformBallMeasure c r) ↔ 0 ≤ r := by
   refine ⟨fun h ↦ not_lt.1 fun hr ↦ ?_, isProbabilityMeasure_uniformBallMeasure⟩
   rw [uniformBallMeasure_of_neg hr] at h
-  exact IsProbabilityMeasure.ne_zero (0 : Measure E) rfl
+  exact not_isProbabilityMeasure_zero h
 
 /-- For positive radius a point drawn from the uniform law on a ball lies in the open ball almost
 surely. -/
@@ -155,6 +162,13 @@ theorem memLp_id_uniformBallMeasure (c : E) (r : ℝ) (p : ℝ≥0∞) :
     MemLp id p (uniformBallMeasure c r) :=
   .of_bound aestronglyMeasurable_id (‖c‖ + r)
     ((ae_mem_closedBall_uniformBallMeasure c r).mono fun _ hx ↦ norm_le_of_mem_closedBall hx)
+
+/-- For nonzero radius the uniform law on a ball is absolutely continuous with respect to
+Lebesgue measure. -/
+theorem uniformBallMeasure_absolutelyContinuous (hr : r ≠ 0) :
+    uniformBallMeasure c r ≪ volume := by
+  rw [uniformBallMeasure_of_ne_zero hr]
+  exact cond_absolutelyContinuous
 
 end Definition
 
@@ -337,6 +351,18 @@ theorem map_norm_sub_div_uniformBallMeasure [Nontrivial E] (c : E) (hr : 0 < r) 
         (closedBall_subset_closedBall (le_mul_of_one_le_left hr.le ht₁))),
       ENNReal.div_self hV₀ hV, cdf_betaMeasure_eq hd one_pos,
       regularizedIncompleteBeta_eq_one_of_one_le hd.le one_pos ht₁, ENNReal.ofReal_one]
+
+/-- The square of the normalized radius of a uniform point of a positive-radius ball in
+positive dimension `d` has the beta law with parameters `d / 2` and `1`. -/
+@[simp]
+theorem map_sq_norm_sub_div_uniformBallMeasure [Nontrivial E] (c : E) (hr : 0 < r) :
+    (uniformBallMeasure c r).map (fun x ↦ (‖x - c‖ / r) ^ 2) =
+      betaMeasure ((finrank ℝ E : ℝ) / 2) 1 := by
+  have h := congrArg (Measure.map (fun x : ℝ ↦ x ^ 2))
+    (map_norm_sub_div_uniformBallMeasure c hr)
+  rw [Measure.map_map (by fun_prop) (by fun_prop),
+    betaMeasure_map_sq_one_right (Nat.cast_pos.2 finrank_pos)] at h
+  exact h
 
 /-- **Direction and radius of a uniform point of a ball.** For a point `X` drawn uniformly from a
 ball of center `c` and radius `r > 0`, the direction `(X - c) / ‖X - c‖` and the normalized radius

@@ -15,7 +15,8 @@ import Mathlib.Topology.MetricSpace.UniformConvergence
 Probability measures on an additive circle converge weakly exactly when all their integer
 Fourier moments converge. In particular, convergence to Haar probability is equivalent to
 vanishing of every nonconstant Fourier moment. This detects the uniform limits of wrapped
-distributions without requiring a density representation.
+distributions without requiring a density representation. Applied to a constant sequence, the
+criterion shows that a circle probability measure is determined by its Fourier moments.
 
 The proof uses Mathlib's `span_fourier_closure_eq_top`, the Stone–Weierstrass density of
 trigonometric polynomials. Integration against a probability measure is uniformly Lipschitz
@@ -104,5 +105,15 @@ theorem tendsto_haarAddCircle_iff :
     · subst n
       simpa using (tendsto_const_nhds : Tendsto (fun _ : ι ↦ (1 : ℂ)) L (𝓝 1))
     · simpa [hn] using h n hn
+
+/-- A probability measure on an additive circle is determined by its integer Fourier moments. -/
+theorem ext_of_forall_integral_fourier_eq {ν : ProbabilityMeasure (AddCircle T)}
+    (h : ∀ n : ℤ, ∫ x, fourier n x ∂(μ : Measure (AddCircle T)) =
+      ∫ x, fourier n x ∂(ν : Measure (AddCircle T))) :
+    μ = ν := by
+  have hlim : Tendsto (fun _ : ℕ ↦ μ) atTop (𝓝 ν) :=
+    tendsto_iff_forall_integral_fourier_tendsto.2 fun n ↦ by
+      simpa only [h n] using tendsto_const_nhds
+  exact tendsto_nhds_unique tendsto_const_nhds hlim
 
 end MeasureTheory.ProbabilityMeasure

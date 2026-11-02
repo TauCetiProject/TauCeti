@@ -39,6 +39,8 @@ it therefore becomes a character, which is what governs the stabilizers of a dis
   `Matrix.ProjectiveSpecialLinearGroup.smulDeriv_inv` for the inverse.
 * `Matrix.ProjectiveSpecialLinearGroup.norm_smulDeriv_of_smul_eq_self`: the derivative at a
   fixed point is unimodular, so a transformation fixing a point rotates about it.
+* `Matrix.SpecialLinearGroup.conj_denom_eq_inv_of_smul_eq_self`: at a fixed point of
+  `g ∈ SL(2, ℝ)` the automorphy factor is unimodular, so its conjugate is its inverse.
 * `Matrix.ProjectiveSpecialLinearGroup.smulDeriv_dilation`: the dilation `z ↦ exp s * z` has
   derivative `exp s`.
 
@@ -79,6 +81,15 @@ theorem normSq_denom_eq_one_of_smul_eq_self {g : SL(2, ℝ)} {z : ℍ} (hz : g �
   have hne := UpperHalfPlane.normSq_denom_ne_zero (mapGL ℝ g) z.im_ne_zero
   rw [Units.val_one, abs_one, one_mul, eq_div_iff hne] at him
   exact mul_left_cancel₀ z.im_ne_zero (by rw [him, mul_one])
+
+open scoped ComplexConjugate in
+/-- At a fixed point the automorphy factor is unimodular
+(`Matrix.SpecialLinearGroup.normSq_denom_eq_one_of_smul_eq_self`), so its conjugate is its
+inverse. -/
+theorem conj_denom_eq_inv_of_smul_eq_self {g : SL(2, ℝ)} {z : ℍ} (hz : g • z = z) :
+    conj (denom (mapGL ℝ g) (z : ℂ)) = (denom (mapGL ℝ g) (z : ℂ))⁻¹ :=
+  eq_inv_of_mul_eq_one_left <| by
+    rw [mul_comm, Complex.mul_conj, normSq_denom_eq_one_of_smul_eq_self hz, Complex.ofReal_one]
 
 end Matrix.SpecialLinearGroup
 

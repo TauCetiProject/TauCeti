@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.QInvariant
-public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.RankOne
+public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.Rank.One
 import Mathlib.Algebra.CharZero.Infinite
 import TauCeti.Topology.Algebra.Group.TopologicalAbelianization.Lift
 

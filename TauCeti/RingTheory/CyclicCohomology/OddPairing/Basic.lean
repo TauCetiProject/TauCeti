@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Equivalence
 public import TauCeti.RingTheory.CyclicCohomology.Matrix
 
 import TauCeti.Data.Fin.Basic
@@ -44,6 +45,7 @@ cochain `ψ` the alternating sum of these terms telescopes, so `(bψ)(x₀, …,
   additive on direct sums, `⟨[u ⊕ v], [φ]⟩ = ⟨[u], [φ]⟩ + ⟨[v], [φ]⟩`.
 * `TauCeti.cyclicCohomology.oddPairing_matrixExtension_of_val_eq_fromBlocks_one`: the pairing is
   unchanged by stabilization `u ↦ u ⊕ 1`.
+* `Equiv.oddPairing_reindexGL`: the pairing is unchanged by relabelling the matrix indices.
 
 ## References
 
@@ -184,3 +186,30 @@ theorem oddPairing_matrixExtension_of_val_eq_fromBlocks_one {ι κ : Type*} [Fin
 end cyclicCohomology
 
 end TauCeti
+
+namespace Equiv
+
+open TauCeti TauCeti.cyclicCohomology
+
+variable {A M : Type*} [Ring A] [Algebra ℂ A] [AddCommGroup M] [Module ℂ M]
+
+/-- **Relabelling invariance of the odd pairing**: reindexing the rows and columns of an invertible
+matrix along an equivalence of index types does not change its odd pairing. -/
+theorem oddPairing_reindexGL {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ]
+    [DecidableEq κ] (e : ι ≃ κ) (u : GL ι A) (m : ℕ) (c : cyclicCohomology ℂ A M (2 * m + 1)) :
+    cyclicCohomology.oddPairing (e.reindexGL A u) m (matrixExtension M κ (2 * m + 1) c) =
+      cyclicCohomology.oddPairing u m (matrixExtension M ι (2 * m + 1) c) := by
+  obtain ⟨φ, rfl⟩ := cyclicCohomology.mk_surjective ℂ A M (2 * m + 1) c
+  have hinv : (↑(e.reindexGL A u)⁻¹ : Matrix κ κ A) =
+      (↑u⁻¹ : Matrix ι ι A).submatrix e.symm e.symm := by
+    rw [← map_inv, coe_reindexGL]
+  have hx : (fun k : Fin (2 * m + 2) ↦ if Even (k : ℕ) then
+        (↑(e.reindexGL A u)⁻¹ - 1 : Matrix κ κ A) else ↑(e.reindexGL A u) - 1) =
+      fun k : Fin (2 * m + 2) ↦
+        (if Even (k : ℕ) then (↑u⁻¹ - 1 : Matrix ι ι A) else ↑u - 1).submatrix e.symm e.symm := by
+    funext k
+    split_ifs <;> simp [hinv, Matrix.submatrix_sub, Matrix.submatrix_one_equiv]
+  simp only [oddPairing_matrixExtension_mk, hx,
+    matrixCochainExtension_submatrix_equiv κ ι e.symm]
+
+end Equiv

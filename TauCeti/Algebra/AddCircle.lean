@@ -38,6 +38,8 @@ cyclic of order `n` with a distinguished generator, the one of invariant `1 / n`
 
 * `AddCircle.coe_eq_zero_iff_mem_one`: vanishing in `AddCircle (1 : ℚ)` is membership in
   `(1 : Submodule ℤ ℚ)`.
+* `AddCircle.coe_eq_zero_iff_den_eq_one`: vanishing in `AddCircle (1 : ℚ)` is having denominator
+  `1`.
 * `AddCircle.zsmul_coe_eq_zero`: an integer multiple of a rational number vanishes in
   `AddCircle (1 : ℚ)` once that multiple is an integer.
 * `AddCircle.coe_add_intCast`: adding an integer does not change a class in `AddCircle (1 : ℚ)`.
@@ -96,6 +98,15 @@ theorem coe_eq_zero_iff_mem_one (q : ℚ) :
   · intro h
     obtain ⟨n, hn⟩ := Submodule.mem_one.mp h
     exact (coe_eq_zero_iff (1 : ℚ)).mpr ⟨n, by simpa using hn⟩
+
+/-- A rational number reduces to zero in `ℚ/ℤ` exactly when its denominator is `1`. -/
+theorem coe_eq_zero_iff_den_eq_one (q : ℚ) : (q : AddCircle (1 : ℚ)) = 0 ↔ q.den = 1 := by
+  rw [coe_eq_zero_iff, Rat.den_eq_one_iff]
+  constructor
+  · rintro ⟨n, hn⟩
+    rw [zsmul_one] at hn
+    rw [← hn, Rat.num_intCast]
+  · exact fun h ↦ ⟨q.num, by rw [zsmul_one, h]⟩
 
 /-- The multiple `k • x` of a rational number vanishes in `ℚ/ℤ` as soon as it is the integer `c`.
 

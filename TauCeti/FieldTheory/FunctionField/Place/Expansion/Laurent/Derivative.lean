@@ -8,7 +8,7 @@ module
 public import TauCeti.FieldTheory.FunctionField.Differential.Kaehler
 public import TauCeti.FieldTheory.FunctionField.Frobenius
 public import TauCeti.FieldTheory.FunctionField.Place.Approximation
-public import TauCeti.RingTheory.LaurentSeries.Derivative
+public import TauCeti.RingTheory.LaurentSeries.KaehlerDifferential.Expansion
 public import TauCeti.FieldTheory.FunctionField.Place.Expansion.Laurent.ChangeOfUniformizer
 public import TauCeti.FieldTheory.FunctionField.Place.Expansion.Laurent.CoefficientField
 
@@ -40,8 +40,18 @@ differential at a rational place needs no choice of uniformizer at all:
 The compatibility of expansions with derivatives holds for every `k`-algebra map `F → A((X))`
 sending `t` to `X` (`TauCeti.algHom_derivativeOfSeparating`), so it also holds at a place of any
 degree whose residue field `F_P` is separable over `k`, for the expansion with coefficients in
-`F_P` (`TauCeti.Place.laurentSeriesExpansionResidueField`). It gives the order of a derivative
-there: if `z` vanishes to order at least `m` at `P`, then `dz/dt ≡ m z / t` modulo functions
+`F_P` (`TauCeti.Place.laurentSeriesExpansionResidueField`).
+
+The derivation `z ↦ (e z)'` of such an expansion `e` sends `t` to `1`, so `dt ≠ 0` in `Ω[F⁄k]`
+(`TauCeti.D_ne_zero_of_algHom_laurentSeries`). Hence at a place whose residue field is separable
+over `k` every uniformizer has a nonzero differential, over any constant field
+(`TauCeti.Place.D_ne_zero_of_ord_eq_one`). When `F / k` has a separating element, the Kähler
+differentials form a line, and so every uniformizer at such a place is separating
+(`TauCeti.Place.isSeparable_adjoin_of_ord_eq_one`). This needs no perfect constant field: over an
+imperfect field it supplies separating uniformizers wherever the residue field is separable.
+
+The compatibility of expansions with derivatives gives the order of a derivative at such a place:
+if `z` vanishes to order at least `m` at `P`, then `dz/dt ≡ m z / t` modulo functions
 vanishing to order at least `m`, and iterating, `dⁱz/dtⁱ` is congruent to
 `m (m - 1) ⋯ (m - i + 1) z / tⁱ`. In particular, for a separating uniformizer `t` at such a
 place `P`, `dz/dt` is integral at `P` whenever `z` is. This is the local input for computing
@@ -70,6 +80,10 @@ Remark 4.3.7). At a rational place the latter is the residue `TauCeti.Place.kaeh
 
 * `TauCeti.algHom_derivativeOfSeparating`: a `k`-algebra map `F → A((X))` sending `t` to `X`
   carries `dz/dt` to the formal derivative.
+* `TauCeti.Place.D_ne_zero_of_ord_eq_one`: a uniformizer at a place with separable residue field
+  has a nonzero differential.
+* `TauCeti.Place.isSeparable_adjoin_of_ord_eq_one`: **every uniformizer at a place with separable
+  residue field is separating**, when `F / k` has a separating element.
 * `TauCeti.Place.laurentSeriesExpansion_derivativeOfSeparating`: the Laurent expansion of `dz/dt`
   in `t` is the derivative of the Laurent expansion of `z`.
 * `TauCeti.Place.residue_eq_residue_mul_derivativeOfSeparating`: **the transformation formula**
@@ -116,37 +130,8 @@ theorem algHom_derivativeOfSeparating {k F A : Type*} [Field k] [Field F] [Algeb
     [CommRing A] [Algebra k A] {t : F} (htr : Transcendental k t) [Algebra.IsSeparable k⟮t⟯ F]
     {e : F →ₐ[k] LaurentSeries A} (he : e t = HahnSeries.single 1 1) (z : F) :
     e (derivativeOfSeparating htr z) = LaurentSeries.derivative A (e z) := by
-  -- Give `A((X))` the `F`-algebra structure induced by the expansion map.
-  let _ : Algebra F (LaurentSeries A) := e.toRingHom.toAlgebra
-  -- The `k`-module structure on `A((X))` found by instance search is the coefficientwise one.
-  have hek (c : k) (z : F) : e (c • z) = c • e z := by
-    rw [Algebra.smul_def, map_mul, AlgHom.commutes, laurentSeries_algebraMap_mul_eq_smul]
-  have _ : IsScalarTower k F (LaurentSeries A) := ⟨fun c z f ↦ by
-    -- The induced algebra acts by multiplication with the expansion of the scalar.
-    change e (c • z) * f = c • (e z * f)
-    rw [hek, ← laurentSeries_algebraMap_mul_eq_smul, ← laurentSeries_algebraMap_mul_eq_smul,
-      mul_assoc]⟩
-  -- The source of the Laurent derivation uses algebra scalars, while its target uses
-  -- coefficientwise scalars. Both actions factor through `A`, giving scalar compatibility.
-  have _ : @IsScalarTower k A (LaurentSeries A)
-      Algebra.toSMul Algebra.toSMul Algebra.toSMul :=
-    .of_algebraMap_eq fun c ↦ by
-      simp only [HahnSeries.algebraMap_apply', PowerSeries.algebraMap_apply,
-        Algebra.algebraMap_self, RingHom.id_apply]
-  have _ : IsScalarTower k A (LaurentSeries A) := ⟨fun c a f ↦ by
-    ext n
-    simp only [HahnSeries.coeff_smul, Algebra.smul_def, Algebra.algebraMap_self,
-      RingHom.id_apply, mul_assoc]⟩
-  let D : Derivation k F (LaurentSeries A) :=
-    ((laurentSeriesDerivation A).restrictScalars k).compAlgebraMap F
-  -- By the chain rule `D z = (dz/dt) • D t`, and `D t = (X)' = 1`. Unfolding `D` and the
-  -- induced algebra's scalar action turns the chain rule into an identity of Laurent series.
-  have h := D.apply_eq_derivativeOfSeparating_smul htr z
-  simp only [D, Derivation.compAlgebraMap_apply, Derivation.restrictScalars_apply,
-    laurentSeriesDerivation_apply, Algebra.smul_def] at h
-  change LaurentSeries.derivative A (e z) =
-    e (derivativeOfSeparating htr z) * LaurentSeries.derivative A (e t) at h
-  rw [h, he]
+  -- `dz = (dz/dt) dt`, and the expansion of `t` has derivative `(X)' = 1`.
+  rw [derivative_algHom_eq_mul_of_D_eq_smul (derivativeOfSeparating_smul_D htr z).symm, he]
   simp
 
 namespace Place
@@ -284,6 +269,36 @@ theorem iterate_derivativeOfSeparating_sub_zsmul_mem_filtration {m : ℤ} {z : F
     refine add_mem (P.filtration_antitone ?_ h1) (P.filtration_antitone ?_ h2) <;> omega
 
 end ResidueField
+
+/-! ### Separating uniformizers -/
+
+section Separating
+
+variable [Algebra.IsSeparable k P.ResidueField]
+
+include ht in
+/-- **A uniformizer has a nonzero differential.** At a place `P` whose residue field is separable
+over `k`, an element `t` of order one at `P` has `dt ≠ 0` in `Ω[F⁄k]`. Neither a perfect constant
+field nor a separating element is needed. -/
+theorem D_ne_zero_of_ord_eq_one : D k F t ≠ 0 :=
+  D_ne_zero_of_algHom_laurentSeries (P.laurentSeriesExpansionResidueField_uniformizer ht)
+
+include ht in
+/-- **Every uniformizer is separating** at a place `P` whose residue field is separable over `k`,
+provided `F / k` has some separating element `x`: an element `t` of order one at `P` makes `F`
+separable over `k(t)`. The element `t` is transcendental over `k` by
+`TauCeti.Place.transcendental_of_ord_ne_zero`.
+
+Over a perfect constant field both hypotheses hold automatically; there
+`TauCeti.Place.transcendental_and_isSeparable_adjoin_of_ord_eq_one` gives the same conclusion. -/
+theorem isSeparable_adjoin_of_ord_eq_one (hF : IsFunctionField k F) {x : F}
+    (hx : Transcendental k x) [Algebra.IsSeparable k⟮x⟯ F] : Algebra.IsSeparable k⟮t⟯ F := by
+  have := hF.essFiniteType
+  have : Algebra.Transcendental k F := ⟨⟨x, hx⟩⟩
+  exact (transcendental_and_isSeparable_adjoin_of_D_ne_zero
+    (finrank_kaehlerDifferential_eq_one_of_separating hx) (P.D_ne_zero_of_ord_eq_one ht)).2
+
+end Separating
 
 /-! ### Residues of Kähler differentials -/
 

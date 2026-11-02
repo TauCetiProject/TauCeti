@@ -47,7 +47,6 @@ theorem negativeHypergeometricMeasure_real_Iic_eq_sum (hr : r ≤ K) (hK : K ≤
           ((j + r - 1).choose j : ℝ) * ((N - r - j).choose (K - r) : ℝ) /
             (N.choose K : ℝ)
         else 0 := by
-  let _ := isProbabilityMeasure_negativeHypergeometricMeasure hr hK
   have hset : (Iic k : Set ℕ) = (Finset.range (k + 1) : Set ℕ) := by
     ext j
     simp

@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Convex.StdSimplex
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Probability.Distributions.Gamma.Pi
+public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 
 /-!
 # The Dirichlet distribution
@@ -175,8 +176,7 @@ theorem isProbabilityMeasure_dirichletMeasure_iff {a : ι → ℝ} :
   · intro h
     by_contra ha
     rw [dirichletMeasure, ite_eq_right ha] at h
-    let _ : IsProbabilityMeasure (0 : Measure (EuclideanSpace ℝ ι)) := h
-    exact (IsProbabilityMeasure.ne_zero (0 : Measure (EuclideanSpace ℝ ι))) rfl
+    exact not_isProbabilityMeasure_zero h
   · rintro ⟨hι, ha⟩
     let _ : Nonempty ι := hι
     exact isProbabilityMeasure_dirichletMeasure ha
