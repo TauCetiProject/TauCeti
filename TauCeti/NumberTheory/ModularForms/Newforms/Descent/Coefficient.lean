@@ -308,13 +308,9 @@ theorem exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_coeff_mul_of_coprime [N
   have hL0 : L ≠ 0 := by
     intro h
     exact hp.ne_one (by simpa [h] using hpL)
-  have hcop (n : ℕ) : Nat.Coprime n L₀ ↔ Nat.Coprime n L := by
-    refine ⟨fun hn ↦ Nat.coprime_of_dvd fun q hq hqn hqL ↦ ?_,
+  have hcop (n : ℕ) : Nat.Coprime n L₀ ↔ Nat.Coprime n L :=
+    ⟨fun hn ↦ (hn.pow_right L).coprime_dvd_right (Nat.dvd_radical_pow_self hL0),
       fun hn ↦ hn.coprime_dvd_right UniqueFactorizationMonoid.radical_dvd_self⟩
-    have hqL₀ : q ∣ L₀ := by
-      rw [hL₀def, Nat.radical_eq_prod_primeFactors]
-      exact Finset.dvd_prod_of_mem _ (Nat.mem_primeFactors.mpr ⟨hq, hqL, hL0⟩)
-    exact hq.ne_one (Nat.eq_one_of_dvd_coprimes hn hqn hqL₀)
   have hLN₀ : L₀.primeFactors ⊆ N.primeFactors := by
     rw [hL₀def, Nat.primeFactors_radical]
     exact hLN
