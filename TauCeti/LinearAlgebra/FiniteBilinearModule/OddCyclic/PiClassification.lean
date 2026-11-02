@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.FiniteBilinearModule.OddCyclic.Basic
 public import TauCeti.LinearAlgebra.FiniteBilinearModule.Pi
 import TauCeti.Algebra.BigOperators.Fin
 import TauCeti.Algebra.BigOperators.Finset.Filter
+import TauCeti.Data.Fintype.Fiber
 import TauCeti.GroupTheory.SpecificGroups.Cyclic.ElementaryDivisors
 import TauCeti.LinearAlgebra.FiniteBilinearModule.OddCyclic.Classification
 import TauCeti.LinearAlgebra.FiniteBilinearModule.OddCyclic.GaussSum
@@ -269,7 +270,7 @@ private theorem nonempty_isometry_pi_oddCyclic_of_prod_legendreSym_eq (hp : Odd 
 
 /-! ### Sums with different exponents -/
 
-open Finset
+open Finset Function
 
 variable {κ : Type*} [Fintype κ]
 
@@ -284,33 +285,6 @@ private noncomputable def isometryPiOddCyclicNeZero (hp : Odd p) (k : ι → ℕ
       rw [natCard_oddCyclic, not_not.mp hi, pow_zero]
     exact (Nat.card_eq_one_iff_unique.mp h).1
 
-/-- For `m ≥ 1`, the entries of `k` equal to `m` are the nonzero entries equal to `m`. -/
-private theorem card_filter_eq_card_subtype_ne_zero (k : ι → ℕ) {m : ℕ} (hm : 0 < m) :
-    #{i | k i = m} = Fintype.card {i : {i // k i ≠ 0} // k i = m} := by
-  classical
-  rw [← Fintype.card_subtype]
-  exact Fintype.card_congr <|
-    (Equiv.subtypeSubtypeEquivSubtype (p := fun i ↦ k i ≠ 0) (q := fun i ↦ k i = m)
-      (by omega)).symm
-
-omit [Fact p.Prime] in
-/-- If the exponent families `k` and `l` have the same number of entries equal to `m` for every
-`m ≥ 1`, their nonzero entries are matched by an equivalence of index types. -/
-private theorem exists_equiv_of_card_filter_eq (k : ι → ℕ) (l : κ → ℕ)
-    (h : ∀ m, 0 < m → #{i | k i = m} = #{j | l j = m}) :
-    ∃ σ : {i // k i ≠ 0} ≃ {j // l j ≠ 0}, ∀ i, l (σ i) = k i := by
-  classical
-  -- Match the summands of each order `p^m` by any bijection.
-  suffices e : ∀ m, {i : {i // k i ≠ 0} // k i = m} ≃ {j : {j // l j ≠ 0} // l j = m} from
-    ⟨Equiv.ofFiberEquiv e, Equiv.ofFiberEquiv_map e⟩
-  intro m
-  refine Fintype.equivOfCardEq ?_
-  rcases Nat.eq_zero_or_pos m with rfl | hm
-  · rw [Fintype.card_eq_zero_iff.mpr ⟨fun i ↦ i.1.2 i.2⟩,
-      Fintype.card_eq_zero_iff.mpr ⟨fun j ↦ j.1.2 j.2⟩]
-  · rw [← card_filter_eq_card_subtype_ne_zero k hm, ← card_filter_eq_card_subtype_ne_zero l hm,
-      h m hm]
-
 omit [Fact p.Prime] in
 /-- Matching the nontrivial summands of `⊕ⱼ q_{η_j}^{(p)}(p^{l_j})` with those of an exponent
 family `k` along `σ` rewrites the sum with the exponents `k`. -/
@@ -323,22 +297,11 @@ private noncomputable def isometryPiOddCyclicOfEquiv (hp : Odd p) (k : ι → �
       (fun j : {j // l j ≠ 0} ↦ (oddCyclic (p ^ l j) hp.pow (η j)).quadratic) σ).symm.trans <|
     QuadraticMap.IsometryEquiv.pi fun i ↦ Isometry.ofEq (by rw [hσ i])
 
-/-- Restricting a level product to the nontrivial summands does not change it. -/
-private theorem prod_filter_subtype_ne_zero (k : ι → ℕ) (f : ι → ℤ) {m : ℕ} (hm : 0 < m) :
-    ∏ i ∈ ({i | k i = m} : Finset {i // k i ≠ 0}), f i = ∏ i with k i = m, f i := by
-  rw [prod_filter, prod_filter, ← Fintype.prod_subtype_mul_prod_subtype (fun i ↦ k i ≠ 0)]
-  have hone : ∏ i : {i // ¬k i ≠ 0}, (if k i = m then f i else 1) = 1 :=
-    prod_eq_one fun i _ ↦ by
-      have := i.2
-      rw [ite_eq_right_iff]
-      omega
-  rw [hone, mul_one]
-
 /-- Matching the nontrivial summands along `σ` does not change the level products. -/
 private theorem prod_filter_equiv (k : ι → ℕ) (l : κ → ℕ) (f : κ → ℤ)
     (σ : {i // k i ≠ 0} ≃ {j // l j ≠ 0}) (hσ : ∀ i, l (σ i) = k i) {m : ℕ} (hm : 0 < m) :
     ∏ i ∈ ({i | k i = m} : Finset {i // k i ≠ 0}), f (σ i) = ∏ j with l j = m, f j := by
-  rw [← prod_filter_subtype_ne_zero l f hm, prod_filter, prod_filter]
+  rw [← prod_filter_subtype_ne l f hm.ne', prod_filter, prod_filter]
   exact Fintype.prod_equiv σ _ _ fun i ↦ by simp only [hσ i]
 
 /-- **Classification of orthogonal sums of odd cyclic generators at an odd prime.** For an odd
@@ -360,14 +323,17 @@ theorem nonempty_isometry_pi_oddCyclic_iff (hp : Odd p) (k : ι → ℕ) (l : κ
         (pi fun j ↦ oddCyclic (p ^ l j) hp.pow (η j))) ↔
         ∀ m, 0 < m →
           ∏ i with k i = m, legendreSym p (θ i) = ∏ j with l j = m, legendreSym p (η j) := by
-    obtain ⟨σ, hσ⟩ := exists_equiv_of_card_filter_eq k l hcard
+    obtain ⟨σ, hσ⟩ := exists_equiv_subtype_ne_of_occCount_eq (u := k) (v := l) (z := 0)
+      fun m hm ↦ by
+        rw [occCount_eq_card_filter, occCount_eq_card_filter]
+        exact hcard m (Nat.pos_of_ne_zero hm)
     let D := isometryPiOddCyclicNeZero hp k θ
     let G := isometryPiOddCyclicOfEquiv hp k l η σ hσ
     have hprod (m : ℕ) (hm : 0 < m) :
         (∏ i ∈ ({i | k i = m} : Finset {i // k i ≠ 0}), legendreSym p (θ i) =
           ∏ i ∈ ({i | k i = m} : Finset {i // k i ≠ 0}), legendreSym p (η (σ i))) ↔
           ∏ i with k i = m, legendreSym p (θ i) = ∏ j with l j = m, legendreSym p (η j) := by
-      rw [prod_filter_subtype_ne_zero k (fun i ↦ legendreSym p (θ i)) hm,
+      rw [prod_filter_subtype_ne k (fun i ↦ legendreSym p (θ i)) hm.ne',
         prod_filter_equiv k l (fun j ↦ legendreSym p (η j)) σ hσ hm]
     constructor
     · rintro ⟨f⟩ m hm
@@ -390,8 +356,9 @@ theorem nonempty_isometry_pi_oddCyclic_iff (hp : Odd p) (k : ι → ℕ) (l : κ
       ((isometryPiOddCyclicNeZero hp k θ).symm.trans
         (hf.some.trans (isometryPiOddCyclicNeZero hp l η))).toLinearEquiv.toAddEquiv
     have hcard (m : ℕ) (hm : 0 < m) : #{i | k i = m} = #{j | l j = m} := by
-      rw [card_filter_eq_card_subtype_ne_zero k hm, card_filter_eq_card_subtype_ne_zero l hm]
-      exact Fintype.card_congr (σ.subtypeEquiv fun i ↦ by rw [hσ i])
+      rw [← occCount_eq_card_filter, ← occCount_eq_card_filter, ← occCount_subtype_ne k hm.ne',
+        ← occCount_subtype_ne l hm.ne', occCount_def, occCount_def]
+      exact Nat.card_congr (σ.subtypeEquiv fun i ↦ by rw [hσ i])
     exact fun m hm ↦ ⟨hcard m hm, (key hcard).mp hf m hm⟩
   · intro h
     exact (key fun m hm ↦ (h m hm).1).mpr fun m hm ↦ (h m hm).2
