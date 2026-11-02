@@ -49,11 +49,6 @@ namespace TauCeti
 
 variable {ι : Type*} {m ν I : ι → ℝ}
 
-/-- At a fixed action `I`, the action–angle parametrization is `2π`-periodic in the angle. -/
-theorem periodic_oscillatorActionAngle (m ν I : ℝ) :
-    Function.Periodic (fun φ : ℝ ↦ oscillatorActionAngle m ν (φ, I)) (2 * π) :=
-  fun φ ↦ by simp [oscillatorActionAngle_apply, Real.sin_add_two_pi, Real.cos_add_two_pi]
-
 /-- The action–angle parametrization of the torus of actions `I`: the angle torus `(ℝ / 2πℤ)^ι`
 is sent to the point `oscillatorActionAngle (m i) (ν i) (φ i, I i)` in the `i`-th phase plane.
 For positive masses, frequencies and actions it is a closed embedding onto the invariant torus
@@ -69,9 +64,10 @@ class of `φ : ℝ` is the action–angle parametrization at `(φ, I i)`. This f
 arbitrary angle `a`; it is not a simp lemma because `φ` does not occur on the left-hand side. -/
 theorem oscillatorTorusEmbedding_apply_of_coe_eq {a : ι → AddCircle (2 * π)} {i : ι} {φ : ℝ}
     (h : (φ : AddCircle (2 * π)) = a i) :
-    oscillatorTorusEmbedding m ν I a i = oscillatorActionAngle (m i) (ν i) (φ, I i) :=
-  show (periodic_oscillatorActionAngle (m i) (ν i) (I i)).lift (a i) = _ from
-    h ▸ (periodic_oscillatorActionAngle _ _ _).lift_coe φ
+    oscillatorTorusEmbedding m ν I a i = oscillatorActionAngle (m i) (ν i) (φ, I i) := by
+  unfold oscillatorTorusEmbedding
+  rw [← h]
+  exact (periodic_oscillatorActionAngle _ _ _).lift_coe φ
 
 /-- On angles lifted from `ι → ℝ`, `oscillatorTorusEmbedding` is the action–angle
 parametrization in each coordinate. -/

@@ -103,6 +103,11 @@ theorem oscillatorActionAngle_eq_of_coe_eq {θ θ' : ℝ} (h : (θ : Real.Angle)
   have hc : Real.cos θ = Real.cos θ' := by rw [← Real.Angle.cos_coe, h, Real.Angle.cos_coe]
   simp [oscillatorActionAngle_apply, hs, hc]
 
+/-- At a fixed action `I`, the action–angle parametrization is `2π`-periodic in the angle. -/
+theorem periodic_oscillatorActionAngle (m ν I : ℝ) :
+    Function.Periodic (fun θ : ℝ ↦ oscillatorActionAngle m ν (θ, I)) (2 * π) :=
+  fun θ ↦ by simp [oscillatorActionAngle_apply, Real.sin_add_two_pi, Real.cos_add_two_pi]
+
 /-- In action–angle coordinates the energy is `ν I`. -/
 theorem oscillatorHamiltonian_oscillatorActionAngle (hm : 0 < m) (hν : 0 < ν) {y : ℝ × ℝ}
     (hI : 0 ≤ y.2) : oscillatorHamiltonian m ν (oscillatorActionAngle m ν y) = ν * y.2 := by
