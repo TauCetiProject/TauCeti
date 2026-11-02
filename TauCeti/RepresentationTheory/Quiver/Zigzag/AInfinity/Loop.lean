@@ -67,6 +67,8 @@ some are not (`TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.NonFormal`).
   word, where it is the volume class at the base of the walk.
 * `TauCeti.zigzagLoopOperation_cocycle`: the loop operation of a closed walk is a Hochschild
   cocycle.
+* `TauCeti.fst_eq_snd_of_mem_support_single`: a single coefficient on a closed walk is a valid
+  choice of coefficients.
 * `TauCeti.zigzagLoopAInfinityAlgebra_m_two_apply`,
   `TauCeti.zigzagLoopAInfinityAlgebra_m_eq_linearCombination` and
   `TauCeti.zigzagLoopAInfinityAlgebra_m_eq_zero`: the operations.
@@ -467,6 +469,16 @@ private theorem stasheffSum_loopOps (hc : ∀ w ∈ c.support, ∀ i, (w i).fst 
       (loopOps_eq_zero c (by omega) fun h ↦ by omega)
   · exact stasheffTerm_eq_zero_of_inner_eq_zero _ _ _
       (loopOps_eq_zero c hs₂ fun h ↦ by omega)
+
+omit [Finite V] in
+/-- A single coefficient on a closed walk is supported on closed walks, as the coefficients of a
+loop deformation must be. -/
+theorem fst_eq_snd_of_mem_support_single {w : Fin n → G.Dart}
+    (hw : ∀ i, (w i).fst = (w (i + 1)).snd) (r : k) :
+    ∀ w' ∈ (Finsupp.single w r).support, ∀ i, (w' i).fst = (w' (i + 1)).snd := by
+  intro w' hw'
+  rw [Finset.mem_singleton.mp (Finsupp.support_single_subset hw')]
+  exact hw
 
 /-! ### The `A∞` algebra -/
 
