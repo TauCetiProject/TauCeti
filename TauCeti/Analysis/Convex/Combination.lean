@@ -7,14 +7,16 @@ module
 
 public import Mathlib.Analysis.Convex.Combination
 import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Module
 
 /-!
 # Convex combinations: sub-convex combinations and the centroid
 
-This file collects facts on two topics about finite convex combinations in a vector space over a
-linearly ordered field: sub-convex combinations and the centroid.
+This file collects facts on three topics about finite convex combinations in a vector space over a
+linearly ordered field: sub-convex combinations, the centroid, and the closed interiors of
+simplices given in an affine chart.
 
 A convex set containing `0` also contains every combination `∑ i, w i • z i` of its points with
 nonnegative weights of total at most `1`, the missing weight being put on `0`
@@ -34,6 +36,14 @@ on the ray from `p` remains in the convex hull (`Finset.exists_lineMap_centroid_
 This is what makes a point outside a "visible" set lie off the affine span of every simplex in it,
 as used for cones of geometric simplicial complexes.
 
+The closed interior of a simplex is the convex hull of its vertices
+(`Affine.Simplex.convexHull_eq_closedInterior`). When the vertices are the images of points `x i`
+of a vector space under an injective affine map `f`, the closed interior is the image under `f` of
+the convex hull of the `x i` (`Affine.Simplex.closedInterior_eq_image_convexHull`, and
+`Affine.Triangle.closedInterior_eq_image_convexHull` for triangles), so questions about a simplex
+can be settled in coordinates. In coordinates, a bound `f x ≤ w` by a linear map `f` that holds
+at the vertices holds on the whole convex hull (`IsLinearMap.le_of_mem_convexHull`).
+
 ## References
 
 * J.-H. Evertse, *Geometry of Numbers*, §2.3, Lemma 2.10 and the lower-bound proof of
@@ -44,6 +54,18 @@ public section
 
 open Finset
 open scoped Pointwise
+
+section LinearBound
+
+variable {𝕜 E β : Type*} [Semiring 𝕜] [PartialOrder 𝕜] [AddCommMonoid E] [Module 𝕜 E]
+  [AddCommMonoid β] [PartialOrder β] [IsOrderedAddMonoid β] [Module 𝕜 β] [PosSMulMono 𝕜 β]
+
+/-- A bound `f q ≤ w` by a linear map `f` that holds on a set `s` holds on its convex hull. -/
+theorem IsLinearMap.le_of_mem_convexHull {f : E → β} (hf : IsLinearMap 𝕜 f) {s : Set E} {w : β}
+    (hs : ∀ q ∈ s, f q ≤ w) {p : E} (hp : p ∈ convexHull 𝕜 s) : f p ≤ w :=
+  convexHull_min (t := {q | f q ≤ w}) hs (convex_halfSpace_le hf w) hp
+
+end LinearBound
 
 variable {𝕜 E ι : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] [AddCommGroup E]
   [Module 𝕜 E]
@@ -153,3 +175,34 @@ theorem exists_lineMap_centroid_mem_convexHull (s : Finset E) (hs : s.Nonempty) 
   exact (convex_convexHull 𝕜 _).sum_mem (fun i _ => hμ i) hμsum fun i _ => subset_convexHull 𝕜 _ i.2
 
 end Finset
+
+namespace Affine.Simplex
+
+/-- The closed interior of a simplex whose vertices are the images of points `x i` of a vector space
+under an injective affine map `f` is the image under `f` of the convex hull of the `x i`. -/
+theorem closedInterior_eq_image_convexHull {V P : Type*} [AddCommGroup V] [Module 𝕜 V]
+    [AddTorsor V P] {n : ℕ} (s : Simplex 𝕜 P n) {f : E →ᵃ[𝕜] P} (hf : Function.Injective f)
+    {x : Fin (n + 1) → E} (hx : s.points = f ∘ x) :
+    s.closedInterior = f '' convexHull 𝕜 (Set.range x) := by
+  have hind : AffineIndependent 𝕜 x := AffineIndependent.of_comp f (hx ▸ s.independent)
+  have hmap : s = (⟨x, hind⟩ : Simplex 𝕜 E n).map f hf := Simplex.ext fun j => congrFun hx j
+  rw [hmap, closedInterior_map, ← convexHull_eq_closedInterior]
+
+end Affine.Simplex
+
+namespace Affine.Triangle
+
+/-- A triangle whose vertices are the images of `x`, `y`, `z` under an injective affine map `f`
+from a vector space has closed interior the image under `f` of the convex hull of `x`, `y`, `z`. -/
+theorem closedInterior_eq_image_convexHull {V P : Type*} [AddCommGroup V] [Module 𝕜 V]
+    [AddTorsor V P] (t : Triangle 𝕜 P) {f : E →ᵃ[𝕜] P} (hf : Function.Injective f) {x y z : E}
+    (ht : t.points = ![f x, f y, f z]) :
+    t.closedInterior = f '' convexHull 𝕜 {x, y, z} := by
+  rw [Simplex.closedInterior_eq_image_convexHull t hf (x := ![x, y, z]) (by
+      rw [ht]
+      ext j
+      fin_cases j <;> rfl),
+    Matrix.range_cons, Matrix.range_cons, Matrix.range_cons, Matrix.range_empty, Set.union_empty,
+    Set.singleton_union, Set.singleton_union]
+
+end Affine.Triangle

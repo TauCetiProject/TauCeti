@@ -10,7 +10,7 @@ public import Mathlib.LinearAlgebra.Complex.Module
 public import TauCeti.Geometry.Symplectic.AlmostComplex
 public import TauCeti.LinearAlgebra.Complex.Conjugation
 public import TauCeti.LinearAlgebra.Complex.Eigenspace
-public import TauCeti.LinearAlgebra.Eigenspace.TensorProduct
+public import TauCeti.LinearAlgebra.Eigenspace.TensorProduct.Basic
 
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module

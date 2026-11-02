@@ -139,6 +139,13 @@ to importing modules, so this equation is how they reach it. -/
 theorem SporadicName.presentation_M11 : SporadicName.M11.presentation = Sporadic.m11Presentation :=
   (rfl)
 
+/-- The presentation selected for `M₁₂` is the transcribed presentation
+`TauCeti.Sporadic.m12Presentation`. The body of `TauCeti.SporadicName.presentation` is not exposed
+to importing modules, so this equation is how they reach it. -/
+@[simp]
+theorem SporadicName.presentation_M12 : SporadicName.M12.presentation = Sporadic.m12Presentation :=
+  (rfl)
+
 /-- The sporadic group concretely defined by its selected finite presentation. -/
 abbrev SporadicName.Group (s : SporadicName) : Type := s.presentation.Group
 
@@ -153,6 +160,12 @@ theorem SporadicName.presentation_M24 : SporadicName.M24.presentation = Sporadic
 `TauCeti.Sporadic.mclPresentation`. -/
 @[simp]
 theorem SporadicName.presentation_McL : SporadicName.McL.presentation = Sporadic.mclPresentation :=
+  (rfl)
+
+/-- The presentation selected for `J₂` is Stoytchev's transcribed presentation
+`TauCeti.Sporadic.j2Presentation`. -/
+@[simp]
+theorem SporadicName.presentation_J2 : SporadicName.J2.presentation = Sporadic.j2Presentation :=
   (rfl)
 
 end TauCeti
