@@ -20,13 +20,14 @@ Steinberg, *Lectures on Chevalley Groups*, Chapter 3, Lemma 19, set
 n_α(u) = xᵢ(u) xⱼ(-u⁻¹) xᵢ(u)        for a unit u of A.
 ```
 
-At `u = 1` this is the Weyl representative `TauCeti.UniversalEnvelopingAlgebra.kostantWeylGL`.
-This file proves the relations among the `n_α(u)`, the root subgroups `xᵢ`, `xⱼ` and the split
-weight torus that hold inside one root pair, and which the Steinberg presentation of a Chevalley
-group imposes in rank one:
+This element, `TauCeti.UniversalEnvelopingAlgebra.kostantWeylParam`, its inverse
+`n_α(u)⁻¹ = n_α(-u)` and its value `n_α(1) = n` at the Weyl representative are in
+`TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Weyl.Elementary`, which needs no
+torus. This file proves the relations among the `n_α(u)`, the root subgroups `xᵢ`, `xⱼ` and the
+split weight torus that hold inside one root pair, and which the Steinberg presentation of a
+Chevalley group imposes in rank one:
 
 ```text
-n_α(u)⁻¹ = n_α(-u),
 n_α(u) n_α(v)⁻¹ = h_α(u v⁻¹),        so h_α(u) = n_α(u) n_α(1)⁻¹,
 n_α(u) n_α(v) = h_α(-u v⁻¹),         so n_α(u)² = h_α(-1),
 n_α(u) xᵢ(t) n_α(u)⁻¹ = xⱼ(-u⁻² t),
@@ -35,26 +36,18 @@ n_α(u) t(s) n_α(u)⁻¹ = t(s_α s).
 ```
 
 Here `h_α(u)` is the coordinate cocharacter at `c`, which scales a weight vector of weight `μ` by
-`u ^ μ(c)`, and `s_α` is the reflection of torus points of `TauCeti.weylReflectTorusPoint`. The
-first relation only uses that the root subgroups are homomorphisms. The others reduce, through
-Chevalley's identity `n_α(u) = h_α(u) n_α(1)` of
+`u ^ μ(c)`, and `s_α` is the reflection of torus points of `TauCeti.weylReflectTorusPoint`. They
+reduce, through Chevalley's identity `n_α(u) = h_α(u) n_α(1)` of
 `TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus.Coroot`, to the action of the
 Weyl representative and of the torus on the root subgroups. All of them hold over every value ring,
 with no factorial inverted.
 
-## Main definitions
-
-* `TauCeti.UniversalEnvelopingAlgebra.kostantWeylParam`: Steinberg's element `n_α(u)`.
-
 ## Main results
 
-* `TauCeti.UniversalEnvelopingAlgebra.kostantWeylParam_inv`: `n_α(u)⁻¹ = n_α(-u)`.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantWeylParam_mul_inv_kostantWeylParam`,
   `TauCeti.UniversalEnvelopingAlgebra.kostantWeylParam_mul_kostantWeylParam` and
   `TauCeti.UniversalEnvelopingAlgebra.kostantWeylParam_sq`: products of two Weyl elements are
   coroot values.
-* `TauCeti.UniversalEnvelopingAlgebra.kostantWeylGL_conj_kostantRootSubgroupParam_e`: the Weyl
-  representative carries `xᵢ(t)` to `xⱼ(-t)`.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantWeylParam_conj_kostantRootSubgroupParam_e` and
   `TauCeti.UniversalEnvelopingAlgebra.kostantWeylParam_conj_kostantRootSubgroupParam_f`:
   Steinberg's relations `n_α(u) x_{±α}(t) n_α(u)⁻¹ = x_{∓α}(-u^{∓2} t)`.
@@ -94,95 +87,6 @@ attribute [local instance high] Algebra.toModule
 variable {i j : ι}
 variable (hi : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
 variable (hj : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j))))
-
-/-! ## Steinberg's element `n_α(u)` -/
-
-section Param
-
-/-- **Steinberg's element** `n_α(u) = xᵢ(u) xⱼ(-u⁻¹) xᵢ(u)` of a pair of Kostant root subgroups,
-at a unit `u` of the value ring. At `u = 1` it is the Weyl representative
-`TauCeti.UniversalEnvelopingAlgebra.kostantWeylGL` (`kostantWeylParam_one`). -/
-noncomputable def kostantWeylParam (A : CommAlgCat.{w} ℤ) (u : Aˣ) :
-    LinearMap.GeneralLinearGroup A (A ⊗[ℤ] M) :=
-  kostantRootSubgroupParam e h ρ M hM i hi A (Multiplicative.ofAdd (u : A)) *
-    kostantRootSubgroupParam e h ρ M hM j hj A (Multiplicative.ofAdd (-((u⁻¹ : Aˣ) : A))) *
-    kostantRootSubgroupParam e h ρ M hM i hi A (Multiplicative.ofAdd (u : A))
-
-/-- Steinberg's element is the product `xᵢ(u) xⱼ(-u⁻¹) xᵢ(u)` of root subgroup elements. -/
-theorem kostantWeylParam_def (A : CommAlgCat.{w} ℤ) (u : Aˣ) :
-    kostantWeylParam e h ρ M hM hi hj A u =
-      kostantRootSubgroupParam e h ρ M hM i hi A (Multiplicative.ofAdd (u : A)) *
-        kostantRootSubgroupParam e h ρ M hM j hj A (Multiplicative.ofAdd (-((u⁻¹ : Aˣ) : A))) *
-        kostantRootSubgroupParam e h ρ M hM i hi A (Multiplicative.ofAdd (u : A)) :=
-  (rfl)
-
-/-- At the parameter `1`, Steinberg's element is the Weyl representative `xᵢ(1) xⱼ(-1) xᵢ(1)`. -/
-@[simp]
-theorem kostantWeylParam_one (A : CommAlgCat.{w} ℤ) :
-    kostantWeylParam e h ρ M hM hi hj A 1 = kostantWeylGL e h ρ M hM hi hj A := by
-  rw [kostantWeylParam_def, kostantWeylGL_eq_kostantRootSubgroupParam_mul, inv_one,
-    Units.val_one]
-
-/-- **The inverse of Steinberg's element** is `n_α(u)⁻¹ = n_α(-u)`: inverting the product reverses
-its palindromic order and negates each parameter. -/
-@[simp]
-theorem kostantWeylParam_inv (A : CommAlgCat.{w} ℤ) (u : Aˣ) :
-    (kostantWeylParam e h ρ M hM hi hj A u)⁻¹ = kostantWeylParam e h ρ M hM hi hj A (-u) := by
-  simp only [kostantWeylParam_def, mul_inv_rev, ← map_inv, ← ofAdd_neg, inv_neg, Units.val_neg,
-    neg_neg, mul_assoc]
-
-/-- Steinberg's element lies in the elementary group, being a product of three root subgroup
-elements. -/
-theorem kostantWeylParam_mem_kostantElementarySubgroup
-    (hnil : ∀ i, IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
-    (i j : ι) (A : CommAlgCat.{w} ℤ) (u : Aˣ) :
-    kostantWeylParam e h ρ M hM (hnil i) (hnil j) A u ∈
-      kostantElementarySubgroup e h ρ M hM hnil A := by
-  rw [kostantWeylParam_def]
-  exact mul_mem
-    (mul_mem (kostantRootSubgroupParam_mem_kostantElementarySubgroup e h ρ M hM hnil A i _)
-      (kostantRootSubgroupParam_mem_kostantElementarySubgroup e h ρ M hM hnil A j _))
-    (kostantRootSubgroupParam_mem_kostantElementarySubgroup e h ρ M hM hnil A i _)
-
-/-- **Scalar extension of Steinberg's element.** Extending scalars along a morphism `φ` of value
-rings carries `n_α(u)` over `A` to `n_α(φ u)` over `B`. -/
-theorem mapScalarExtensionAutomorphisms_kostantWeylParam {A B : CommAlgCat.{w} ℤ} (φ : A ⟶ B)
-    (u : Aˣ) :
-    GeneralLinear.mapScalarExtensionAutomorphisms (V := M) φ
-        (kostantWeylParam e h ρ M hM hi hj A u) =
-      kostantWeylParam e h ρ M hM hi hj B (Units.map (φ.hom : A →* B) u) := by
-  rw [kostantWeylParam_def, kostantWeylParam_def, map_mul, map_mul,
-    mapScalarExtensionAutomorphisms_kostantRootSubgroupParam,
-    mapScalarExtensionAutomorphisms_kostantRootSubgroupParam, toAdd_ofAdd, toAdd_ofAdd, map_neg,
-    Units.coe_map, Units.coe_map_inv, MonoidHom.coe_ofClass]
-
-end Param
-
-/-! ## The Weyl representative on the root subgroups -/
-
-section WeylGL
-
-variable {c : κ}
-variable (hT : IsSl2Triple (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (h c)))
-  (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)))
-  (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j))))
-
-include hT in
-/-- **The Weyl representative interchanges the two root subgroups**, in the general linear group
-of the points: `n xᵢ(t) n⁻¹ = xⱼ(-t)` over every value ring. -/
-theorem kostantWeylGL_conj_kostantRootSubgroupParam_e (A : CommAlgCat.{w} ℤ) (t : A) :
-    kostantWeylGL e h ρ M hM hi hj A *
-        kostantRootSubgroupParam e h ρ M hM i hi A (Multiplicative.ofAdd t) *
-        (kostantWeylGL e h ρ M hM hi hj A)⁻¹ =
-      kostantRootSubgroupParam e h ρ M hM j hj A (Multiplicative.ofAdd (-t)) := by
-  refine Units.ext ?_
-  rw [Units.val_mul, Units.val_mul, kostantWeylGL_val, kostantWeylGL_inv_val,
-    kostantRootSubgroupParam_apply, kostantRootSubgroupParam_apply, kostantRootSubgroupPoints_val,
-    kostantRootSubgroupPoints_val, MulEquiv.apply_symm_apply, MulEquiv.apply_symm_apply,
-    toAdd_ofAdd, toAdd_ofAdd]
-  exact kostantWeylPoints_conj_baseChangeExp e h ρ M hM hi hj hT t
-
-end WeylGL
 
 /-! ## The rank-one relations -/
 
