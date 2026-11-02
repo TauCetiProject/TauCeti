@@ -98,8 +98,12 @@ theorem IsNondegenerate.volumeForm_apply_reindex (h : σ.IsNondegenerate) {x : M
   have hval := ContinuousAlternatingMap.wedgePow_apply_finProdFinEquiv (σ.1 x) (m := n) b
     (fun i j ↦ by rw [hσ, hb.apply_fst_fst]) (fun i j ↦ by rw [hσ, hb.apply_snd_snd])
     (fun i j ↦ by rw [hσ, hb.apply_fst_snd])
-  rw [volumeForm_apply, ContinuousAlternatingMap.smul_apply, Basis.coe_reindex]
-  exact (congrArg _ hval).trans (inv_mul_cancel₀ (by positivity))
+  have hb' : ⇑b ∘ (finProdFinEquiv.trans (finCongr (Nat.mul_comm n 2))).symm =
+      fun r ↦ b (finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 n) r)) := by
+    funext r
+    simp only [Function.comp_apply, Equiv.symm_trans_apply, finCongr_symm, finCongr_apply]
+  rw [volumeForm_apply, ContinuousAlternatingMap.smul_apply, Basis.coe_reindex, hb', hval,
+    smul_eq_mul, inv_mul_cancel₀ (by positivity)]
 
 /-- **The symplectic volume form of a nondegenerate two-form vanishes nowhere**, on a manifold
 modelled on a space of dimension `2 * n`. -/
@@ -134,6 +138,7 @@ theorem IsNondegenerate.orientation_eq_orientationAt_orientation_iff [FiniteDime
 at every point it is the orientation `TauCeti.SymplecticForm.orientation` of the symplectic
 vector space formed by the tangent space and the value of `σ`, the orientation of its Darboux
 bases. -/
+@[simp]
 theorem IsNondegenerate.orientationAt_orientation [FiniteDimensional ℝ E]
     (h : σ.IsNondegenerate) (hn : finrank ℝ E = 2 * n) (x : M) :
     Manifold.Orientation.orientationAt (h.orientation hn) x =

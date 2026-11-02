@@ -663,7 +663,7 @@ theorem pairedWedge_apply_vecCons_of_forall [ContinuousAdd F₁] [ContinuousCons
     rw [hcons, ← curryLeftTopological_apply_apply, curryLeftTopological_pairedWedge, hzero,
       smul_zero, add_zero, pairedWedge_apply_zero_left, curryLeftTopological_apply_apply,
       Subsingleton.elim (0 : Fin 0 → E) ![]]
-    rfl
+    simp [Function.comp_def]
 
 end InteriorProduct
 

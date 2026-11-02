@@ -17,7 +17,8 @@ For a smooth real differential form `φ` of degree `k`, the wedge power
 factors. The empty power is the constant function `1`, and `φ ^ (m + 1) = φ ^ m ∧ φ`. At every
 point it is the wedge power `ContinuousAlternatingMap.wedgePow` of the value of `φ`
 (`TauCeti.SmoothForm.wedgePow_apply`), so the pointwise identities for wedge powers apply to it.
-The top power of a symplectic form is its volume form.
+The symplectic volume form `σⁿ / n!` is built from the top power of a symplectic form
+(`TauCeti.SmoothTwoForm.volumeForm`).
 
 ## Main definitions
 
