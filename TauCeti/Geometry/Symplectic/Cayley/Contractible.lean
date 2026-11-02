@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
 public import TauCeti.Geometry.Symplectic.Cayley.Smooth
 public import TauCeti.Geometry.Symplectic.ExistsCompatible
 public import Mathlib.Topology.Homotopy.Contractible
@@ -13,7 +14,8 @@ public import Mathlib.Topology.Homotopy.Contractible
 # The tame and compatible complex structures form contractible spaces
 
 Let `ω` be a symplectic form on a finite-dimensional real normed space `V`. The complex
-structures of `V` carry the operator-norm topology of their endomorphisms. For an
+structures of `V` carry the operator-norm topology of their endomorphisms
+(`TauCeti/Geometry/Symplectic/AlmostComplex/Topology.lean`). For an
 `ω`-compatible `J₀`, the Cayley transform at `J₀` identifies the `ω`-tame structures with a
 convex ball containing `0`, the coordinate of `J₀`, and the `ω`-compatible structures with a
 convex part of that ball (`TauCeti/Geometry/Symplectic/Cayley/Basic.lean`). Shrinking the
@@ -31,8 +33,6 @@ and families of them can be deformed to a given one.
 
 ## Main definitions
 
-* The instance `TopologicalSpace (TauCeti.AlmostComplexStructure V)`: the topology induced from
-  the operator norm on `V →L[ℝ] V`.
 * `TauCeti.SymplecticForm.Compatible.cayleyContraction`: for compatible `J₀`, the deformation of
   the tame structures onto `J₀`, as a homotopy relative to `{J₀}`.
 * `TauCeti.SymplecticForm.Compatible.compatibleCayleyContraction`: its restriction to the
@@ -64,28 +64,6 @@ namespace TauCeti
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 
-namespace AlmostComplexStructure
-
-/-- The topology on the complex structures of a finite-dimensional real normed space induced by
-the operator norm of their endomorphisms. Since all norms on a finite-dimensional space are
-equivalent, it does not depend on the choice of the norm of `V`. -/
-instance : TopologicalSpace (AlmostComplexStructure V) :=
-  .induced (fun J ↦ LinearMap.toContinuousLinearMap J.toLinearMap) inferInstance
-
-/-- Sending a complex structure to its endomorphism is a topological embedding into the
-continuous endomorphisms. -/
-theorem isEmbedding_toContinuousLinearMap :
-    IsEmbedding fun J : AlmostComplexStructure V ↦ LinearMap.toContinuousLinearMap J.toLinearMap :=
-  ⟨⟨rfl⟩, LinearMap.toContinuousLinearMap.injective.comp toLinearMap_injective⟩
-
-/-- A map into the complex structures is continuous exactly when its endomorphisms are
-continuous in the operator norm. -/
-theorem continuous_iff {X : Type*} [TopologicalSpace X] {f : X → AlmostComplexStructure V} :
-    Continuous f ↔ Continuous fun x ↦ LinearMap.toContinuousLinearMap (f x).toLinearMap :=
-  isEmbedding_toContinuousLinearMap.continuous_iff
-
-end AlmostComplexStructure
-
 namespace SymplecticForm
 
 variable {ω : SymplecticForm V} {J₀ : AlmostComplexStructure V}
@@ -106,23 +84,6 @@ private theorem Compatible.cayley_cayleyContractionFun (h₀ : ω.Compatible J�
   rw [Compatible.cayleyContractionFun]
   exact h
 
-private theorem Compatible.toContinuousLinearMap_cayleyContractionFun (h₀ : ω.Compatible J₀)
-    (t : I) (J : {J : AlmostComplexStructure V // ω.Tames J}) {A B : V →L[ℝ] V}
-    (hA : A.toLinearMap = J₀.toLinearMap) (hB : B.toLinearMap = J.1.toLinearMap) :
-    LinearMap.toContinuousLinearMap (h₀.cayleyContractionFun t J).1.toLinearMap =
-      cayleyPathFormula (σ t) A B := by
-  set C : V →L[ℝ] V := (σ t : ℝ) • LinearMap.toContinuousLinearMap (J₀.cayley J) with hCdef
-  have hC : C.toLinearMap ∈ ω.cayleyBall J₀ := by
-    simpa only [C, ContinuousLinearMap.toLinearMap_smul, LinearMap.coe_toContinuousLinearMap]
-      using h₀.smul_cayley_mem_cayleyBall J.2 (σ t).2
-  have hfun : h₀.cayleyContractionFun t J = h₀.cayleyEquiv.symm ⟨C.toLinearMap, hC⟩ := by
-    simp only [Compatible.cayleyContractionFun, C, ContinuousLinearMap.toLinearMap_smul,
-      LinearMap.coe_toContinuousLinearMap]
-  have hA' : LinearMap.toContinuousLinearMap J₀.toLinearMap = A :=
-    ContinuousLinearMap.coe_injective (by rw [LinearMap.coe_toContinuousLinearMap, hA])
-  rw [hfun, h₀.cayleyEquiv_symm_apply_toContinuousLinearMap _ hC, cayleyPathFormula_def, hCdef,
-    h₀.tames.toContinuousLinearMap_cayley J.2 hA hB, hA']
-
 /-- In operator-norm coordinates `Compatible.cayleyContractionFun` is continuous jointly in the
 time and the structure. -/
 private theorem Compatible.continuous_cayleyContractionFun (h₀ : ω.Compatible J₀) :
@@ -135,13 +96,9 @@ private theorem Compatible.continuous_cayleyContractionFun (h₀ : ω.Compatible
   set B := LinearMap.toContinuousLinearMap J.1.toLinearMap
   have hA : A.toLinearMap = J₀.toLinearMap := LinearMap.coe_toContinuousLinearMap _
   have hB : B.toLinearMap = J.1.toLinearMap := LinearMap.coe_toContinuousLinearMap _
-  have hunit : IsUnit (1 - (σ t : ℝ) • cayleyFormula A B) := by
-    rw [← h₀.tames.toContinuousLinearMap_cayley J.2 hA hB]
-    refine isUnit_one_sub_of_toLinearMap_mem_cayleyBall (ω := ω) (J₀ := J₀) ?_
-    simpa only [ContinuousLinearMap.toLinearMap_smul, LinearMap.coe_toContinuousLinearMap]
-      using h₀.smul_cayley_mem_cayleyBall J.2 (σ t).2
   have hcont := (contDiffAt_cayleyPathFormula (n := 0)
-    (h₀.tames.isUnit_one_sub_mul_of_toLinearMap J.2 hA hB) hunit).continuousAt
+    (h₀.tames.isUnit_one_sub_mul_of_toLinearMap J.2 hA hB)
+    (h₀.isUnit_one_sub_smul_cayleyFormula J.2 (σ t).2 hA hB)).continuousAt
   have hin : Continuous fun p : I × {J : AlmostComplexStructure V // ω.Tames J} ↦
       ((σ p.1 : ℝ), A, LinearMap.toContinuousLinearMap p.2.1.toLinearMap) :=
     (continuous_subtype_val.comp (continuous_symm.comp continuous_fst)).prodMk
@@ -151,7 +108,7 @@ private theorem Compatible.continuous_cayleyContractionFun (h₀ : ω.Compatible
   refine (hcont.comp (f := fun p : I × {J : AlmostComplexStructure V // ω.Tames J} ↦
       ((σ p.1 : ℝ), A, LinearMap.toContinuousLinearMap p.2.1.toLinearMap))
     hin.continuousAt).congr (Filter.Eventually.of_forall fun p ↦ ?_)
-  exact (h₀.toContinuousLinearMap_cayleyContractionFun p.1 p.2 hA
+  exact (h₀.toContinuousLinearMap_cayleyEquiv_symm_smul_cayley p.2.2 (σ p.1).2 hA
     (LinearMap.coe_toContinuousLinearMap _)).symm
 
 /-- For an `ω`-compatible `J₀`, the deformation of the `ω`-tame complex structures onto `J₀`:
@@ -187,7 +144,7 @@ theorem Compatible.toContinuousLinearMap_cayleyContraction (h₀ : ω.Compatible
     (hA : A.toLinearMap = J₀.toLinearMap) (hB : B.toLinearMap = J.1.toLinearMap) :
     LinearMap.toContinuousLinearMap (h₀.cayleyContraction (t, J)).1.toLinearMap =
       cayleyPathFormula (σ t) A B :=
-  h₀.toContinuousLinearMap_cayleyContractionFun t J hA hB
+  h₀.toContinuousLinearMap_cayleyEquiv_symm_smul_cayley J.2 (σ t).2 hA hB
 
 /-- The deformation `Compatible.cayleyContraction` keeps `ω`-compatible structures compatible. -/
 theorem Compatible.compatible_cayleyContraction (h₀ : ω.Compatible J₀) (t : I)
