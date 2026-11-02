@@ -138,14 +138,6 @@ private theorem siegelFunction_half_zero_pow_twelve_mul {τ : ℂ} (hτ : 0 < τ
 
 /-! ### Limits at `i∞` -/
 
-private theorem tendsto_exp_pi_I_atImInfty :
-    Tendsto (fun τ : ℍ ↦ cexp (π * I * τ)) atImInfty (𝓝[≠] 0) := by
-  refine (TauCeti.UpperHalfPlane.tendsto_qParam_atImInfty two_pos).congr fun τ ↦ ?_
-  simp only [Function.Periodic.qParam]
-  congr 1
-  push_cast
-  ring
-
 /-- `g₁¹² + g₂¹² → -48` at `i∞`. -/
 private theorem tendsto_siegelFunction_half_zero_pow_twelve_add :
     Tendsto (fun τ : ℍ ↦ siegelFunction ![1 / 2, 0] τ ^ 12 +
@@ -156,7 +148,7 @@ private theorem tendsto_siegelFunction_half_zero_pow_twelve_add :
     exact hasDerivAt_tprod_one_sub_pow_odd_pow
   have h₁ := hasDerivAt_tprod_one_sub_pow_odd_pow.tendsto_slope_zero
   have h₂ := (hΦ.comp (0 : ℂ) (hasDerivAt_neg (0 : ℂ))).tendsto_slope_zero
-  have h := (h₁.sub h₂).comp tendsto_exp_pi_I_atImInfty
+  have h := (h₁.sub h₂).comp TauCeti.UpperHalfPlane.tendsto_exp_pi_I_atImInfty
   norm_num at h
   refine h.congr fun τ ↦ ?_
   simp only [Function.comp_apply, siegelFunction_half_zero_pow_twelve τ.im_pos,

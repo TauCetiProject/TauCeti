@@ -159,6 +159,16 @@ theorem tendsto_qParam_atImInfty {w : ℝ} (hw : 0 < w) :
     Tendsto (fun z : ℍ ↦ 𝔢 w z) atImInfty (𝓝[≠] 0) :=
   (Function.Periodic.qParam_tendsto hw).comp tendsto_coe_atImInfty
 
+/-- The square root `e^{π i z}` of the q-parameter `e^{2π i z}` tends to zero through nonzero
+values as the height tends to infinity. -/
+theorem tendsto_exp_pi_I_atImInfty :
+    Tendsto (fun z : ℍ ↦ cexp (π * Complex.I * z)) atImInfty (𝓝[≠] 0) := by
+  refine (tendsto_qParam_atImInfty two_pos).congr fun z ↦ ?_
+  simp only [Function.Periodic.qParam]
+  congr 1
+  push_cast
+  ring
+
 /-- The q-parameter tends to zero through nonzero values as the height tends to infinity. -/
 theorem tendsto_qParamPuncturedUnitDisc (w : ℝ) (hw : 0 < w) :
     Tendsto (fun z : ℍ ↦ ((qParamPuncturedUnitDisc w hw z : 𝔻) : ℂ))
