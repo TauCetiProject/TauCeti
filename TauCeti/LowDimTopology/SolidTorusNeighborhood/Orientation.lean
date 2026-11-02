@@ -233,10 +233,7 @@ private theorem exists_isOrientationPreservingAtCore_conj {L : ℂ × ℝ →L[�
 
 /-- **Orientation-preserving solid torus neighbourhoods of knots in `S³`.** A `C²` embedded circle
 in the unit three-sphere of `E` has, inside any prescribed neighbourhood of its image, a solid torus
-neighbourhood preserving a given orientation of `E` at its core point. A solid torus neighbourhood
-which is differentiable at its core point with injective derivative
-(`TauCeti.exists_isSolidTorusNeighborhood_sphere`) either preserves the orientation, or does so
-after precomposition with the reflection `(u, z) ↦ (conj u, z)` of the solid torus. -/
+neighbourhood preserving a given orientation of `E` at its core point. -/
 theorem exists_isSolidTorusNeighborhood_isOrientationPreservingAtCore
     {f : Circle → sphere (0 : E) 1} (hf : ContMDiff (𝓡 1) (𝓡 3) 2 f)
     (himm : ∀ z, Injective (mfderiv (𝓡 1) (𝓡 3) f z)) (hinj : Injective f)

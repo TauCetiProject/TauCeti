@@ -147,9 +147,7 @@ theorem isWeeksManifold_congr (e : Y ≃ₜ Y') : IsWeeksManifold Y ↔ IsWeeksM
   ⟨fun hY ↦ hY.of_homeomorph e, fun hY ↦ hY.of_homeomorph e.symm⟩
 
 /-- **A Weeks manifold exists.** The surgery on the Whitehead link with coefficients `5` and
-`5 / 2` can be carried out: some compact Hausdorff space is a Weeks manifold. It is the exterior of
-the link, for disjoint solid torus neighbourhoods of its components preserving orientation at their
-core points, with two solid tori attached along gluings of the required slopes. -/
+`5 / 2` can be carried out: some compact Hausdorff space is a Weeks manifold. -/
 theorem exists_isWeeksManifold :
     ∃ (Y : Type) (_ : TopologicalSpace Y), CompactSpace Y ∧ T2Space Y ∧ IsWeeksManifold Y := by
   obtain ⟨Φ, h, hΦ⟩ :=
