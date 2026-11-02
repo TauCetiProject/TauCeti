@@ -7,7 +7,8 @@ module
 
 public import Mathlib.Algebra.Lie.InvariantForm
 public import TauCeti.Geometry.Lie.Adjoint.Derivation
-import TauCeti.Geometry.Lie.Adjoint.Representation.Basic
+public import TauCeti.Geometry.Lie.Adjoint.Representation.Basic
+public import TauCeti.RepresentationTheory.InvariantForm
 import TauCeti.Geometry.Lie.Subgroup.LieAlgebra
 import TauCeti.RepresentationTheory.Compact.Unitarizable
 
@@ -22,11 +23,11 @@ conjugacy of maximal tori.
 
 ## Main results
 
-* `TauCeti.Lie.lieInvariant_of_forall_Ad_apply`: a bilinear form invariant under `Ad` is invariant
+* `TauCeti.Lie.lieInvariant_of_isInvariantForm`: a bilinear form invariant under `Ad` is invariant
   under `ad`, in the sense of Mathlib's `LinearMap.BilinForm.lieInvariant`.
 * `TauCeti.Lie.exists_isSymm_bilinForm_Ad_invariant`: the Lie algebra of a compact Lie group has
   an `Ad`-invariant symmetric positive-definite bilinear form.
-* `LeftInvariantDerivation.exists_lie_Ad_eq_zero`: **Hunt's lemma**, for `X Y : 𝔤` in the Lie
+* `LeftInvariantDerivation.exists_Ad_lie_eq_zero`: **Hunt's lemma**, for `X Y : 𝔤` in the Lie
   algebra of a compact Lie group, some adjoint translate of `X` brackets to zero with `Y`.
 
 ## References
@@ -54,12 +55,16 @@ attribute [local instance] ContMDiffMul.boundarylessManifold
 
 /-- **A form invariant under `Ad` is invariant under `ad`**: if
 `B (Ad g X) (Ad g Y) = B X Y` for all `g`, then `B ⁅Z, X⁆ Y = -B X ⁅Z, Y⁆`. -/
-theorem lieInvariant_of_forall_Ad_apply
+theorem lieInvariant_of_isInvariantForm
     {B : LinearMap.BilinForm ℝ (LeftInvariantDerivation I G)}
-    (hB : ∀ g X Y, B (Ad (I := I) g X) (Ad (I := I) g Y) = B X Y) :
+    (hB : Representation.IsInvariantForm
+      (continuousAdjointRepresentation (I := I) (G := G)).toRepresentation B) :
     B.lieInvariant (LeftInvariantDerivation I G) := by
   let _ : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
     finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
+  have hAd : ∀ g X Y, B (Ad (I := I) g X) (Ad (I := I) g Y) = B X Y := fun g X Y ↦ by
+    rw [← continuousAdjointRepresentation_apply, ← continuousAdjointRepresentation_apply]
+    exact hB.apply g X Y
   intro Z X Y
   -- Moving `Ad (exp (s • Z))` across the form inverts it; differentiate both sides at `s = 0`.
   have hleft := (LinearMap.toContinuousLinearMap (B.flip Y)).hasFDerivAt.comp_hasDerivAt (0 : ℝ)
@@ -71,7 +76,7 @@ theorem lieInvariant_of_forall_Ad_apply
       (LinearMap.toContinuousLinearMap (B X)) ∘
         (fun s : ℝ ↦ Ad (I := I) (lieExp (I := I) (s • -Z)) Y) := by
     funext s
-    have h := hB (lieExp (I := I) (s • Z)) X (Ad (I := I) (lieExp (I := I) (s • -Z)) Y)
+    have h := hAd (lieExp (I := I) (s • Z)) X (Ad (I := I) (lieExp (I := I) (s • -Z)) Y)
     rw [smul_neg, lieExp_neg, Ad_inv, LieEquiv.apply_symm_apply] at h
     simpa [smul_neg, lieExp_neg, Ad_inv] using h
   rw [hfun] at hleft
@@ -83,22 +88,23 @@ theorem lieInvariant_of_forall_Ad_apply
 symmetric positive-definite bilinear form. -/
 theorem exists_isSymm_bilinForm_Ad_invariant [CompactSpace G] :
     ∃ B : LinearMap.BilinForm ℝ (LeftInvariantDerivation I G), B.IsSymm ∧
-      (∀ X, X ≠ 0 → 0 < B X X) ∧ ∀ g X Y, B (Ad (I := I) g X) (Ad (I := I) g Y) = B X Y := by
+      (∀ X, X ≠ 0 → 0 < B X X) ∧ Representation.IsInvariantForm
+        (continuousAdjointRepresentation (I := I) (G := G)).toRepresentation B := by
   let _ : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
     finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
   let _ : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
-  simpa using ContRepresentation.exists_isSymm_bilinForm_invariant _
+  exact ContRepresentation.exists_isSymm_bilinForm_invariant _
     (contMDiff_continuousAdjointRepresentation (I := I) (G := G)).continuous
 
 /-- **Hunt's lemma.** For `X` and `Y` in the Lie algebra of a compact Lie group, some adjoint
 translate of `X` brackets to zero with `Y`. -/
-theorem _root_.LeftInvariantDerivation.exists_lie_Ad_eq_zero [CompactSpace G]
+theorem _root_.LeftInvariantDerivation.exists_Ad_lie_eq_zero [CompactSpace G]
     (X Y : LeftInvariantDerivation I G) :
     ∃ g : G, ⁅Ad (I := I) g X, Y⁆ = 0 := by
   let _ : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
     finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
   obtain ⟨B, -, hpos, hAd⟩ := exists_isSymm_bilinForm_Ad_invariant (I := I) (G := G)
-  have hinv := lieInvariant_of_forall_Ad_apply hAd
+  have hinv := lieInvariant_of_isInvariantForm hAd
   -- Let `g` maximize `g ↦ B (Ad g X) Y` over the compact group.
   let φ := LinearMap.toContinuousLinearMap (B.flip Y)
   have hcont : Continuous fun g : G ↦ φ (Ad (I := I) g X) :=

@@ -429,7 +429,7 @@ theorem lieSubalgebraOfSubgroup_map_conj {K : Subgroup G} (g : G) :
     exact hmem
   · rintro ⟨Y, hY, rfl⟩ t
     refine ⟨lieExp (I := I) (t • Y), hY t, ?_⟩
-    rw [MulEquiv.coe_toMonoidHom, MulAut.conj_apply, conj_lieExp, map_smul]
-    rfl
+    rw [MulEquiv.coe_toMonoidHom, MulAut.conj_apply, conj_lieExp, map_smul,
+      LieEquiv.coe_toLieHom]
 
 end TauCeti.Lie

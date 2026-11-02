@@ -20,7 +20,7 @@ The proof is the classical maximization argument of Hunt, which needs no degree 
 `Ad`-invariant inner product `B` on the Lie algebra `𝔤`. Given `X Y : 𝔤`, the function
 `g ↦ B (Ad g X) Y` on the compact group `G` attains its maximum at some `g`, and differentiating
 along one-parameter subgroups at the maximum, using that each `ad Z` is skew for `B`, gives
-`⁅Ad g X, Y⁆ = 0` (`LeftInvariantDerivation.exists_lie_Ad_eq_zero`). Choose `Y` with `lieExp Y` a
+`⁅Ad g X, Y⁆ = 0` (`LeftInvariantDerivation.exists_Ad_lie_eq_zero`). Choose `Y` with `lieExp Y` a
 topological generator of a maximal torus `T`. Then the one-parameter subgroup of `Ad g X`
 centralizes `T`, so `Ad g X` lies in `Lie(T)`: every adjoint orbit in `𝔤` meets `Lie(T)`. Applying
 this to an `X` whose exponential topologically generates another torus `S` conjugates `S` into `T`.
@@ -72,7 +72,7 @@ theorem IsMaximalTorus.exists_Ad_mem_lieSubalgebraOfSubgroup {T : Subgroup G}
   obtain ⟨t, ht, hgen⟩ := hT.isTorus.exists_closedZpowers_eq I
   rw [← SetLike.mem_coe, ← hT.isTorus.image_lieExp_lieSubalgebraOfSubgroup (I := I)] at ht
   obtain ⟨Y, -, rfl⟩ := ht
-  obtain ⟨g, hg⟩ := X.exists_lie_Ad_eq_zero Y
+  obtain ⟨g, hg⟩ := X.exists_Ad_lie_eq_zero Y
   refine ⟨g, ?_⟩
   -- So its one-parameter subgroup commutes with the generator, and hence with all of `T`.
   rw [← hT.lieSubalgebraOfSubgroup_centralizer,

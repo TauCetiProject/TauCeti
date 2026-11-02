@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Compact.Averaging
 public import TauCeti.RepresentationTheory.Continuous.Unitary.Basic
+public import TauCeti.RepresentationTheory.InvariantForm
 public import Mathlib.Analysis.InnerProductSpace.Positive
 import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
@@ -271,7 +272,7 @@ theorem exists_isSymm_bilinForm_invariant {G V : Type*} [Group G] [TopologicalSp
     [IsTopologicalGroup G] [CompactSpace G] [NormedAddCommGroup V] [NormedSpace ℝ V]
     [FiniteDimensional ℝ V] (π : ContRepresentation ℝ G V) (hπ : Continuous π) :
     ∃ B : LinearMap.BilinForm ℝ V, B.IsSymm ∧ (∀ v, v ≠ 0 → 0 < B v v) ∧
-      ∀ g v w, B (π g v) (π g w) = B v w := by
+      Representation.IsInvariantForm π.toRepresentation B := by
   borelize G
   -- Average the inner product transported from Euclidean space along a linear equivalence.
   let e := toEuclidean (E := V)
@@ -279,11 +280,14 @@ theorem exists_isSymm_bilinForm_invariant {G V : Type*} [Group G] [TopologicalSp
   let S := gramOperator (e.congr π) hρ
   refine ⟨.mk₂ ℝ (fun v w ↦ ⟪e v, S (e w)⟫_ℝ) (fun _ _ _ ↦ by simp [inner_add_left])
     (fun _ _ _ ↦ by simp [inner_smul_left]) (fun _ _ _ ↦ by simp [inner_add_right])
-    (fun _ _ _ ↦ by simp [inner_smul_right]), ⟨fun v w ↦ ?_⟩, fun v hv ↦ ?_, fun g v w ↦ ?_⟩
+    (fun _ _ _ ↦ by simp [inner_smul_right]), ⟨fun v w ↦ ?_⟩, fun v hv ↦ ?_,
+      Representation.isInvariantForm_iff.mpr fun g v w ↦ ?_⟩
   · simpa [real_inner_comm] using (isSymmetric_gramOperator (e.congr π) hρ (e v) (e w)).symm
   · have h := re_inner_gramOperator_self_pos (e.congr π) hρ (e.map_ne_zero_iff.mpr hv)
     simpa [real_inner_comm] using h
-  · have h := inner_gramOperator_map_map (e.congr π) hρ g (e v) (e w)
-    simpa [ContinuousLinearEquiv.congr_apply] using h
+  · have h : ⟪e (π g v), S (e (π g w))⟫_ℝ = ⟪e v, S (e w)⟫_ℝ := by
+      simpa [ContinuousLinearEquiv.congr_apply] using
+        inner_gramOperator_map_map (e.congr π) hρ g (e v) (e w)
+    exact h
 
 end ContRepresentation
