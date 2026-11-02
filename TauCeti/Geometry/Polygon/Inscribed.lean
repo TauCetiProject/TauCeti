@@ -352,12 +352,12 @@ private theorem exists_fineFamily {Γ : ℝ → ℝ → E} (hT : 0 < T) (hΓ : C
       (t, u) ∈ Q :=
     ⟨ht, hu₀, hu₁⟩
   refine ⟨fun s ↦ ?_, hhδ, fun a ha ↦ ?_, ?_, fun a ha d hd ↦ ?_, hη⟩
-  · rw [hα, hα, hτ s, show s + T + c = s + c + T by ring, hper _ (hτI s)]
+  · rw [hα, hα, hτ s, add_right_comm s T c, hper _ (hτI s)]
   · -- The window `[a, a + 3δ]` of `α` is the window `[a + c, a + c + 3δ]` of `u ↦ Γ (τ' u) u`,
     -- with the time `τ' u = τ (u - c)`.
     obtain ⟨φ, hφ⟩ := hmono (fun u ↦ τ (u - c)) (fun u ↦ hτI _)
       (fun x y ↦ (hlip _ _).trans (by
-        rw [show x - c - (y - c) = x - y by ring]
+        rw [sub_sub_sub_cancel_right]
         exact mul_le_mul_of_nonneg_right hlam₀' (abs_nonneg _)))
       (a + c) ⟨by linarith [ha.1, hc.1], by linarith [ha.2, hc.2]⟩
     refine ⟨φ, fun x hx y hy hxy ↦ ?_⟩
@@ -368,7 +368,7 @@ private theorem exists_fineFamily {Γ : ℝ → ℝ → E} (hT : 0 < T) (hΓ : C
     rw [dist_eq_norm, hα, hα, Real.dist_eq]
     refine (hlipΓ (memQ (hτI x) (x + c) (by linarith [hx.1, hc.1]) (by linarith [hx.2, hc.2]))
       (memQ (hτI y) (y + c) (by linarith [hy.1, hc.1]) (by linarith [hy.2, hc.2]))).trans ?_
-    rw [show x + c - (y + c) = x - y by ring]
+    rw [add_sub_add_right_eq_sub]
     exact mul_le_mul_of_nonneg_left (max_le (hτ1 x y) le_rfl) hB0
   · -- The time changes by at most `ρ`, which costs at most `B ρ ≤ η₀ / 2`.
     rw [dist_eq_norm, hα, hα]
@@ -380,7 +380,7 @@ private theorem exists_fineFamily {Γ : ℝ → ℝ → E} (hT : 0 < T) (hΓ : C
       (by linarith [ha.2, hc.2]))
     rw [sub_self, abs_zero, max_eq_left (abs_nonneg _)] at h₂
     have h₃ : B * |τ (a + d) - τ a| ≤ B * ρ := mul_le_mul_of_nonneg_left (hvar _ _) hB0
-    rw [show a + d + c = a + c + d by ring]
+    rw [add_right_comm a d c]
     linarith [norm_sub_le_norm_sub_add_norm_sub (Γ (τ (a + d)) (a + c + d)) (Γ (τ a) (a + c))
       (Γ (τ (a + d)) (a + c)), norm_sub_rev (Γ (τ a) (a + c)) (Γ (τ (a + d)) (a + c))]
 
@@ -836,8 +836,8 @@ private theorem cosTime_sub_cosTime (t t' h x y : ℝ) :
 private theorem abs_cosTime_sub_le {t t' h : ℝ} (hh : 0 < h) (x y : ℝ) :
     |cosTime t t' h x - cosTime t t' h y| ≤ |t' - t| * Real.pi / h * |x - y| := by
   have hcos := Real.abs_cos_sub_cos_le (2 * Real.pi * y / h) (2 * Real.pi * x / h)
-  rw [show 2 * Real.pi * y / h - 2 * Real.pi * x / h = 2 * Real.pi / h * (y - x) by ring,
-    abs_mul, abs_of_pos (by positivity : 0 < 2 * Real.pi / h), abs_sub_comm y x] at hcos
+  have harg : 2 * Real.pi * y / h - 2 * Real.pi * x / h = 2 * Real.pi / h * (y - x) := by ring
+  rw [harg, abs_mul, abs_of_pos (by positivity : 0 < 2 * Real.pi / h), abs_sub_comm y x] at hcos
   rw [cosTime_sub_cosTime, abs_mul, abs_div, abs_two]
   calc |t' - t| / 2 * |Real.cos (2 * Real.pi * y / h) - Real.cos (2 * Real.pi * x / h)|
       ≤ |t' - t| / 2 * (2 * Real.pi / h * |x - y|) := by gcongr
@@ -910,23 +910,50 @@ private theorem FineFamily.combinatoriallyEquivalent_inscribed {Γ : ℝ → ℝ
       simp only [← hh_def, hτ_def, cosTime_natCast_mul_add_half t t' hh.ne']
   have e₇ : (inscribed (Γ t') T (2 * n)).rotate = inscribed (fun s ↦ Γ t' (s + h / 2)) T (2 * n) :=
     by rw [rotate_inscribed hFβ.periodic, h2n]
-  exact (show CombinatoriallyEquivalent ⟨n, _, hp⟩ ⟨n, _, hFα.isSimple_inscribed hT le_rfl⟩ by
-      simp only [e₁]; rfl).trans <|
-    (hFα.combinatoriallyEquivalent_inscribed hT le_rfl h2nh _
-      (hFα.isSimple_inscribed hT h2nh)).trans <|
-    (show CombinatoriallyEquivalent ⟨2 * n, _, hFα.isSimple_inscribed hT h2nh⟩
-      ⟨2 * n, _, hFα₂.isSimple_inscribed hT h2nh⟩ by
-      simp only [← e₃]; exact combinatoriallyEquivalent_rotate _).trans <|
-    (hFα₂.combinatoriallyEquivalent_inscribed hT h2nh le_rfl _
-      (hFα₂.isSimple_inscribed hT le_rfl)).trans <|
-    (show CombinatoriallyEquivalent ⟨n, _, hFα₂.isSimple_inscribed hT le_rfl⟩
-      ⟨n, _, hFβ₂.isSimple_inscribed hT le_rfl⟩ by simp only [e₅]; rfl).trans <|
-    (hFβ₂.combinatoriallyEquivalent_inscribed hT le_rfl h2nh _
-      (hFβ₂.isSimple_inscribed hT h2nh)).trans <|
-    (show CombinatoriallyEquivalent ⟨2 * n, _, hFβ.isSimple_inscribed hT h2nh⟩
-      ⟨2 * n, _, hFβ₂.isSimple_inscribed hT h2nh⟩ by
-      simp only [← e₇]; exact combinatoriallyEquivalent_rotate _).symm.trans <|
-    hFβ.combinatoriallyEquivalent_inscribed hT h2nh le_rfl _ hp'
+  -- The chain of equivalences, with explicit endpoints: `n`-gon of `Γ t` = `n`-gon of `α`,
+  -- refined to the `2n`-gon of `α`, relabelled to the `2n`-gon of `α₂`, coarsened to the `n`-gon
+  -- of `α₂` = `n`-gon of `β₂ = Γ t' (· + h / 2)`, refined to the `2n`-gon of `β₂`, relabelled back
+  -- to the `2n`-gon of `Γ t'`, and coarsened to the `n`-gon of `Γ t'`.
+  have q₁ : CombinatoriallyEquivalent ⟨n, inscribed (Γ t) T n, hp⟩
+      ⟨n, inscribed (fun s ↦ Γ (τ s) s) T n, hFα.isSimple_inscribed hT le_rfl⟩ := by
+    simp only [e₁]
+    exact .refl _
+  have q₂ : CombinatoriallyEquivalent
+      ⟨n, inscribed (fun s ↦ Γ (τ s) s) T n, hFα.isSimple_inscribed hT le_rfl⟩
+      ⟨2 * n, inscribed (fun s ↦ Γ (τ s) s) T (2 * n), hFα.isSimple_inscribed hT h2nh⟩ :=
+    hFα.combinatoriallyEquivalent_inscribed hT le_rfl h2nh _ _
+  have q₃ : CombinatoriallyEquivalent
+      ⟨2 * n, inscribed (fun s ↦ Γ (τ s) s) T (2 * n), hFα.isSimple_inscribed hT h2nh⟩
+      ⟨2 * n, inscribed (fun s ↦ Γ (τ (s + h / 2)) (s + h / 2)) T (2 * n),
+        hFα₂.isSimple_inscribed hT h2nh⟩ := by
+    simp only [← e₃]
+    exact combinatoriallyEquivalent_rotate _
+  have q₄ : CombinatoriallyEquivalent
+      ⟨2 * n, inscribed (fun s ↦ Γ (τ (s + h / 2)) (s + h / 2)) T (2 * n),
+        hFα₂.isSimple_inscribed hT h2nh⟩
+      ⟨n, inscribed (fun s ↦ Γ (τ (s + h / 2)) (s + h / 2)) T n,
+        hFα₂.isSimple_inscribed hT le_rfl⟩ :=
+    hFα₂.combinatoriallyEquivalent_inscribed hT h2nh le_rfl _ _
+  have q₅ : CombinatoriallyEquivalent
+      ⟨n, inscribed (fun s ↦ Γ (τ (s + h / 2)) (s + h / 2)) T n,
+        hFα₂.isSimple_inscribed hT le_rfl⟩
+      ⟨n, inscribed (fun s ↦ Γ t' (s + h / 2)) T n, hFβ₂.isSimple_inscribed hT le_rfl⟩ := by
+    simp only [e₅]
+    exact .refl _
+  have q₆ : CombinatoriallyEquivalent
+      ⟨n, inscribed (fun s ↦ Γ t' (s + h / 2)) T n, hFβ₂.isSimple_inscribed hT le_rfl⟩
+      ⟨2 * n, inscribed (fun s ↦ Γ t' (s + h / 2)) T (2 * n), hFβ₂.isSimple_inscribed hT h2nh⟩ :=
+    hFβ₂.combinatoriallyEquivalent_inscribed hT le_rfl h2nh _ _
+  have q₇ : CombinatoriallyEquivalent
+      ⟨2 * n, inscribed (Γ t') T (2 * n), hFβ.isSimple_inscribed hT h2nh⟩
+      ⟨2 * n, inscribed (fun s ↦ Γ t' (s + h / 2)) T (2 * n), hFβ₂.isSimple_inscribed hT h2nh⟩ := by
+    simp only [← e₇]
+    exact combinatoriallyEquivalent_rotate _
+  have q₈ : CombinatoriallyEquivalent
+      ⟨2 * n, inscribed (Γ t') T (2 * n), hFβ.isSimple_inscribed hT h2nh⟩
+      ⟨n, inscribed (Γ t') T n, hp'⟩ :=
+    hFβ.combinatoriallyEquivalent_inscribed hT h2nh le_rfl _ _
+  exact q₁.trans <| q₂.trans <| q₃.trans <| q₄.trans <| q₅.trans <| q₆.trans <| q₇.symm.trans q₈
 
 /-- **Fine inscribed polygons are invariant under isotopy.** Let `Γ : ℝ → ℝ → E` be a family of
 loops of period `T > 0` in a real normed space, jointly `C¹` in the time `t` and the loop
@@ -984,11 +1011,12 @@ theorem exists_combinatoriallyEquivalent_inscribed_of_isotopy {Γ : ℝ → ℝ 
         exact this.le
   have hF₁ := hF.fineMesh_const (t := 1) (c := 0) (fun s ↦ by rw [add_zero]) ⟨zero_le_one, le_rfl⟩
     ⟨le_rfl, hT.le⟩ (hfine le_rfl).1 (hfine le_rfl).2
-  exact (key (M + 1) le_rfl).trans <|
-    (show CombinatoriallyEquivalent ⟨n, _, hsimple _ (hmem le_rfl)⟩
-      ⟨n, _, hsimple 1 ⟨zero_le_one, le_rfl⟩⟩ by
-      simp only [Nat.cast_add_one, div_self hM₀.ne']; rfl).trans <|
-    hF₁.combinatoriallyEquivalent_inscribed hT (hN n hn) (hN m hm) _ hsm
+  -- The last step reaches time `((M + 1 : ℕ) : ℝ) / (M + 1) = 1`.
+  have hlast : (((M + 1 : ℕ) : ℝ) / (M + 1)) = 1 := by
+    rw [Nat.cast_add_one, div_self hM₀.ne']
+  have q₁ := key (M + 1) le_rfl
+  simp only [hlast] at q₁
+  exact q₁.trans (hF₁.combinatoriallyEquivalent_inscribed hT (hN n hn) (hN m hm) _ hsm)
 
 end Isotopy
 
