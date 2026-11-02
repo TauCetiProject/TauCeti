@@ -57,9 +57,7 @@ noncomputable abbrev toNormedAddCommGroupOfUniformity (N : AddGroupNorm M)
   { N.toNormedAddCommGroup with
     toMetricSpace := N.toNormedAddCommGroup.toMetricSpace.replaceUniformity h }
 
-/-- The compatible structure has the specified additive group norm. This is not a simp lemma:
-`AddGroupNorm.toNormedAddCommGroupOfUniformity` is reducible, so its left-hand side would match
-the norm of every structure built from an additive group norm. -/
+/-- The compatible structure has the specified additive group norm. -/
 theorem norm_toNormedAddCommGroupOfUniformity (N : AddGroupNorm M)
     (h : 𝓤 M = @uniformity M N.toNormedAddCommGroup.toUniformSpace) (x : M) :
     @norm M (N.toNormedAddCommGroupOfUniformity h).toNorm x = N x := (rfl)

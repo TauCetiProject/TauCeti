@@ -38,8 +38,11 @@ The two characterizations below show that the definition is intrinsic.
 * `TauCeti.mlieDerivFormWithin_add`, `TauCeti.mlieDerivFormWithin_smul`: linearity in the form.
 * `TauCeti.mlieDerivFormWithin_apply_vectorField`, `TauCeti.mlieDerivForm_apply_vectorField`:
   the bracket formula.
+* `TauCeti.mlieDerivForm_apply_one`: the bracket formula for a one-form.
 * `TauCeti.mlieDerivFormWithin_eq_interior_mextDerivWithin_add`,
   `TauCeti.mlieDerivForm_eq_interior_mextDeriv_add`: Cartan's magic formula.
+* `TauCeti.mlieDerivForm_apply_eq_mextDeriv_add`: Cartan's magic formula for a one-form,
+  evaluated on a tangent vector.
 * `TauCeti.mlieDerivFormWithin_eq_mextDerivWithin_interior`,
   `TauCeti.mlieDerivForm_eq_mextDeriv_interior`: on closed forms, `L_V φ = d (ι_V φ)`.
 * `TauCeti.mlieDerivFormWithin_eq_lieDerivFormWithin`: over the model space, the manifold Lie
@@ -219,6 +222,27 @@ theorem mlieDerivForm_apply_vectorField {φ : RoughForm I M F k}
     mlieDerivFormWithin_apply_vectorField (V := V) hφ.mdifferentiableWithinAt
       (fun i ↦ (hX i).mdifferentiableWithinAt) (uniqueMDiffWithinAt_univ I)
 
+/-- **The bracket formula** for a one-form `φ` and a differentiable vector field `W`:
+`L_V φ (W) = V (φ (W)) - φ ([V, W])`. -/
+theorem mlieDerivForm_apply_one {φ : RoughForm I M F 1} {W : (y : M) → TangentSpace I y}
+    (hφ : MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] F))
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] F) y (φ y)) x)
+    (hW : MDifferentiableAt I I.tangent (fun y ↦ (W y : TangentBundle I M)) x) :
+    mlieDerivForm V φ x ![W x] =
+      mvfderiv I (fun y ↦ φ y ![W y]) x (V x) - φ x ![mlieBracket I V W x] := by
+  have h := mlieDerivForm_apply_vectorField (V := V) (X := ![W]) hφ
+    (fun i ↦ by fin_cases i; exact hW)
+  -- Normalize the one-element tuples, which the general formula leaves as functions of `Fin 1`.
+  have htuple (y : M) : (![W] · y) = ![W y] := by
+    funext i
+    fin_cases i
+    rfl
+  have hupd : Function.update ![W x] 0 (mlieBracket I V W x) = ![mlieBracket I V W x] := by
+    funext i
+    fin_cases i
+    rfl
+  simpa only [htuple, Fin.sum_univ_one, Matrix.cons_val_zero, hupd] using h
+
 /-! ### Cartan's magic formula -/
 
 /-- **Cartan's magic formula** within a set, `L_V φ = ι_V dφ + d (ι_V φ)`, for a form and a vector
@@ -252,6 +276,28 @@ theorem mlieDerivForm_eq_interior_mextDeriv_add_apply {φ : RoughForm I M F (k +
   simpa only [mlieDerivFormWithin_univ, mextDerivWithin_univ] using
     mlieDerivFormWithin_eq_interior_mextDerivWithin_add hφ.mdifferentiableWithinAt
       hV.mdifferentiableWithinAt (uniqueMDiffWithinAt_univ I)
+
+/-- **Cartan's magic formula** for a one-form `φ`, evaluated on a tangent vector:
+`L_V φ (v) = dφ (V, v) + df (v)`, where the function `f = φ(V)` is the contraction `ι_V φ`. -/
+theorem mlieDerivForm_apply_eq_mextDeriv_add {φ : RoughForm I M F 1} {f : M → F}
+    (hf : ∀ y, φ y ![V y] = f y)
+    (hφ : MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] F))
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] F) y (φ y)) x)
+    (hV : MDifferentiableAt I I.tangent (fun y ↦ (V y : TangentBundle I M)) x)
+    (v : TangentSpace I x) :
+    mlieDerivForm V φ x ![v] = mextDeriv φ x ![V x, v] + mvfderiv I f x v := by
+  -- The contraction `ι_V φ` is the `0`-form of `f`.
+  have hι : RoughForm.interior V φ = RoughForm.ofFunction I f := by
+    rw [RoughForm.eq_ofFunction (RoughForm.interior V φ)]
+    congr 1
+    funext y
+    rw [RoughForm.interior_apply, ← hf y]
+    congr 1
+    ext i
+    fin_cases i
+    rfl
+  rw [mlieDerivForm_eq_interior_mextDeriv_add_apply hφ hV, hι]
+  simp [mextDeriv_ofFunction]
 
 /-- **Cartan's magic formula** `L_V = ι_V ∘ d + d ∘ ι_V` on differentiable forms, along a
 differentiable vector field. -/

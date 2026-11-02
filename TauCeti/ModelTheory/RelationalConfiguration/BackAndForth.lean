@@ -7,6 +7,7 @@ module
 
 public import TauCeti.ModelTheory.RelationalConfiguration.Isomorphism
 public import TauCeti.ModelTheory.BackAndForth.AllLevels
+public import TauCeti.ModelTheory.BackAndForth.ChainLimit
 
 /-!
 # Back-and-forth levels of relational configurations
@@ -39,7 +40,10 @@ counting the countable models of an infinitary sentence.
   isomorphism is equivalence at every level;
 * `TauCeti.RelationalConfiguration.measurableSet_setOf_bfEquiv` and
   `TauCeti.RelationalConfiguration.measurableSet_setOf_bfEquivSetoid` — below `ω₁`, back-and-forth
-  equivalence of tuples, and hence each level, has Borel graph.
+  equivalence of tuples, and hence each level, has Borel graph;
+* `TauCeti.RelationalConfiguration.exists_limit_of_bfEquiv_chain` — a chain of configurations on
+  `ℕ` whose consecutive members are equivalent at depth `α i + ω`, for a monotone `α`, has a limit
+  configuration equivalent to its `i`-th member at depth `α i`.
 
 ## References
 
@@ -142,5 +146,18 @@ theorem measurableSet_setOf_bfEquivSetoid [Countable V] [∀ n, Countable (L.Rel
     MeasurableSet {p : RelationalConfiguration L V × RelationalConfiguration L V |
       bfEquivSetoid L V α p.1 p.2} :=
   measurableSet_setOf_bfEquiv hα Fin.elim0 Fin.elim0
+
+/-- **The limit of a back-and-forth chain of configurations.** If `α` is monotone and
+`bfEquivSetoid (α i + ω)` relates `c i` and `c (i + 1)` for every `i`, then some configuration on
+`ℕ` is related to every `c i` by `bfEquivSetoid (α i)`. -/
+theorem exists_limit_of_bfEquiv_chain {c : ℕ → RelationalConfiguration L ℕ}
+    {α : ℕ → Ordinal.{o}} (hα : Monotone α)
+    (h : ∀ i, bfEquivSetoid L ℕ (α i + Ordinal.omega0) (c i) (c (i + 1))) :
+    ∃ d, ∀ i, bfEquivSetoid L ℕ (α i) d (c i) := by
+  obtain ⟨S, hS⟩ := exists_structure_bfEquiv_of_bfEquiv_chain (M := fun _ => ℕ)
+    (hM := fun i => (c i).toStructure) hα fun i => bfEquivSetoid_apply.mp (h i)
+  refine ⟨@ofStructure L ℕ S, fun i => bfEquivSetoid_apply.mpr ?_⟩
+  rw [toStructure_ofStructure]
+  exact hS i
 
 end TauCeti.RelationalConfiguration

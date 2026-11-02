@@ -52,6 +52,11 @@ and `TauCeti.isJordanCurve_range_union_range_of_inter_eq_pair` glues the two arc
 points. That is
 `exists_forall_isJordanCurve_closure_image_ball_inter_sphere_union_range_of_not_subsingleton`.
 
+In the Jordan-domain case of Carathéodory's boundary correspondence the boundary arcs come from
+`TauCeti.IsJordanCurve.exists_pos_forall_exists_diam_le` of
+`TauCeti/Topology/JordanCurve/SmallArc.lean`, and one of them is small because the two ends are
+close, by
+`TauCeti.exists_frontier_inter_closure_image_ball_inter_sphere_eq_pair_dist_le_of_isBounded`.
 Which arc of the boundary to take, and which of the two pieces the crosscut cuts the domain into is
 enclosed by the resulting Jordan curve, is a planar separation question and is not settled here; the
 statement below is deliberately universally quantified over the boundary arc, and asserts nothing
@@ -64,18 +69,6 @@ about the region the curve encloses.
   arc, whose two endpoints are exactly the two points of that meeting.
 * `exists_forall_isJordanCurve_closure_image_ball_inter_sphere_union_range_of_not_subsingleton` —
   that arc together with any arc of the image boundary joining its two ends is a Jordan curve.
-
-## Roadmap role
-
-This advances layer **L5** of `TauCetiRoadmap/ConformalMapping/README.md`, the Jordan-domain case of
-the Carathéodory boundary correspondence. `Conformal/Crosscut/Jordan.lean` names the remaining step
-as "treat the Jordan curve produced here when the ends coincide, and join the crosscut to one of the
-two boundary arcs when they are distinct, in order to bound the whole boundary of the cut-off image
-piece". The second half of that — the joining — is what is done here; the boundary arcs themselves
-come from `TauCeti.IsJordanCurve.exists_pos_forall_exists_diam_le` of
-`TauCeti/Topology/JordanCurve/SmallArc.lean`, and are small because the two ends are close by
-`TauCeti.exists_frontier_inter_closure_image_ball_inter_sphere_eq_pair_dist_le_of_isBounded`. What
-remains after this file is the separation argument choosing between the two boundary arcs.
 
 ## References
 

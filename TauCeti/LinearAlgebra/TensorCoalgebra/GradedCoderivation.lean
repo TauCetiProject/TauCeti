@@ -1142,6 +1142,12 @@ theorem ReducedTensorWords.gradedCoderiv_smul (G : InternalGrading R M) (c : R)
     gradedCoderiv G (c • F) q = c • gradedCoderiv G F q :=
   congrArg Subtype.val (map_smul (gradedCoderivEquivTaylor G q).symm c F)
 
+/-- The graded Taylor expansion of the zero Taylor map is zero. -/
+@[simp]
+theorem ReducedTensorWords.gradedCoderiv_zero_left (G : InternalGrading R M) (q : ℤ) :
+    gradedCoderiv G (0 : ReducedTensorWords R M →ₗ[R] M) q = 0 :=
+  congrArg Subtype.val (map_zero (gradedCoderivEquivTaylor G q).symm)
+
 end GradedCoderiv
 
 /-! ### Graded commutators of graded coderivations -/

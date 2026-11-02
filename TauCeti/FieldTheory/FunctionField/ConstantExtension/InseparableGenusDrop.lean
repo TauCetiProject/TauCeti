@@ -72,6 +72,10 @@ theorem coe_radicand : (radicand p : RatFunc (ZMod p)) = RatFunc.X ^ p := by rfl
 theorem finrank_constants : Module.finrank (constants p) (RatFunc (ZMod p)) = p :=
   TauCeti.RatFunc.finrank_adjoin_X_pow (ZMod p) p
 
+/-- `k' / k` is a finite extension. -/
+instance : FiniteDimensional (constants p) (RatFunc (ZMod p)) :=
+  Module.finite_of_finrank_pos (by rw [finrank_constants]; exact hp.out.pos)
+
 /-- `s` does not lie in `k`. -/
 theorem X_notMem_constants : (RatFunc.X : RatFunc (ZMod p)) ∉ constants p := by
   intro hX
@@ -173,11 +177,55 @@ noncomputable def genY' : curveField p :=
 @[simp]
 theorem coe_genY' : (genY' p : RatFunc (RatFunc (ZMod p))) = genY p := by rfl
 
+/-- `F' / F / k` is a scalar tower. The `k`-algebra structure of `F` is the one of `k(x)`, which
+is that of `F'` restricted along `k(x) → F'`, so both composites agree by definition. -/
+instance instIsScalarTowerCurveField :
+    IsScalarTower (constants p) (curveField p) (RatFunc (RatFunc (ZMod p))) :=
+  IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
+
+/-- `x`, as an element of `F`. -/
+noncomputable def genX' : curveField p :=
+  algebraMap (RatFunc (constants p)) (curveField p) RatFunc.X
+
+/-- The defining equation of `x ∈ F`: it is the image of `X ∈ k(X)`. -/
+theorem genX'_def : genX' p = algebraMap (RatFunc (constants p)) (curveField p) RatFunc.X :=
+  (rfl)
+
+@[simp]
+theorem coe_genX' : (genX' p : RatFunc (RatFunc (ZMod p))) = genX p :=
+  algebraMap_ratFuncAlgebraOfTranscendental_X (transcendental_genX p)
+
+/-- `x` is transcendental over `k`, as an element of `F`. -/
+theorem transcendental_genX' : Transcendental (constants p) (genX' p) :=
+  (transcendental_algebraMap_iff (algebraMap (RatFunc (constants p)) (curveField p)).injective).mpr
+    (RatFunc.transcendental_X (K := constants p))
+
 /-- `y` generates `F` over `k(x)`. -/
 theorem adjoin_genY'_eq_top : (RatFunc (constants p))⟮genY' p⟯ = ⊤ :=
   IntermediateField.lift_injective _ (by
     rw [IntermediateField.lift_adjoin_simple, IntermediateField.lift_top]
     rfl)
+
+/-- `x` and `y` generate `F` over `k`. -/
+theorem adjoin_genX'_genY'_eq_top : (constants p)⟮genX' p, genY' p⟯ = ⊤ := by
+  set E := (constants p)⟮genX' p, genY' p⟯
+  -- `k(x) ⊆ E`, as the image of `k(X) = k⟮X⟯`
+  have hX (f : RatFunc (constants p)) :
+      algebraMap (RatFunc (constants p)) (curveField p) f ∈ E := by
+    let φ := IsScalarTower.toAlgHom (constants p) (RatFunc (constants p)) (curveField p)
+    have hf : φ f ∈ ((constants p)⟮(RatFunc.X : RatFunc (constants p))⟯).map φ :=
+      (IntermediateField.map_mem_map _ _).mpr (by rw [RatFunc.adjoin_X]; trivial)
+    rw [IntermediateField.adjoin_map, Set.image_singleton] at hf
+    exact IntermediateField.adjoin.mono _ _ _ (by simp [genX', φ]) hf
+  have hle : ((RatFunc (constants p))⟮genY' p⟯).toSubfield ≤ E.toSubfield := by
+    rw [IntermediateField.adjoin_toSubfield]
+    refine Subfield.closure_le.mpr (Set.union_subset ?_ ?_)
+    · rintro _ ⟨f, rfl⟩
+      exact hX f
+    · simpa using IntermediateField.subset_adjoin (constants p) _
+        (Set.mem_insert_of_mem _ (Set.mem_singleton (genY' p)))
+  rw [adjoin_genY'_eq_top, IntermediateField.top_toSubfield] at hle
+  exact eq_top_iff.mpr fun z _ ↦ hle (Subfield.mem_top z)
 
 /-- The defining equation `y ^ 2 = x ^ p - t` of `F`, in the form `y ^ 2 = f(x)` with
 `f = X ^ p - C t`. -/

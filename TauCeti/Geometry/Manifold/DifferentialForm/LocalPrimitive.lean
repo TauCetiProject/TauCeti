@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Poincare
 public import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 public import Mathlib.Topology.Covering.Basic
 public import Mathlib.Topology.WithTopology
+import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 
 /-!
 # Local primitives of closed `1`-forms and their covering space
@@ -35,6 +36,8 @@ exactness of closed `1`-forms on simply connected manifolds and the period homom
 ## Main declarations
 
 * `TauCeti.IsPrimitiveOn φ g U`: `g` is a primitive of `φ` on the open set `U`.
+* `TauCeti.IsPrimitiveOn.mpullback`: composing with a differentiable map gives a primitive of the
+  pulled back form.
 * `TauCeti.PrimitiveSpace φ`: the space of points and values with the topology of local primitives.
 * `TauCeti.PrimitiveSpace.isCoveringMap_proj`: its projection is a covering map when `φ` is closed.
 * `TauCeti.PrimitiveSpace.exists_isPrimitiveOn_eventually_value_eq`: near each parameter, a
@@ -104,6 +107,26 @@ theorem IsPrimitiveOn.const_smul (hg : IsPrimitiveOn φ g U) (c : ℝ) :
   refine ⟨hg.isOpen, hg.mdifferentiableOn.const_smul c, fun y hy ↦ ?_⟩
   rw [RoughForm.ofFunction_smul, mextDeriv_smul, Pi.smul_apply, Pi.smul_apply, hg.mextDeriv_eq y hy]
 
+section Pullback
+
+variable {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+  {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace M'] [ChartedSpace H' M']
+
+/-- Composing a primitive `g` of `θ` on `U` with a differentiable map `f` gives a primitive of the
+pullback of `θ` along `f` on the preimage of `U`. -/
+theorem IsPrimitiveOn.mpullback {θ : RoughForm I' M' F 1} {g : M' → F} {U : Set M'}
+    (hg : IsPrimitiveOn θ g U) {f : M → M'} (hf : MDifferentiable I I' f) :
+    IsPrimitiveOn (mpullback I I' f θ) (g ∘ f) (f ⁻¹' U) := by
+  have hgf (x : M) (hx : x ∈ f ⁻¹' U) : MDifferentiableAt I' 𝓘(ℝ, F) g (f x) :=
+    (hg.mdifferentiableOn (f x) hx).mdifferentiableAt (hg.isOpen.mem_nhds hx)
+  refine ⟨hg.isOpen.preimage hf.continuous,
+    fun x hx ↦ ((hgf x hx).comp x (hf x)).mdifferentiableWithinAt, fun x hx ↦ ?_⟩
+  ext v
+  rw [← mpullback_mextDeriv_ofFunction_apply (hf x) (hgf x hx), mpullback_apply, mpullback_apply,
+    hg.mextDeriv_eq (f x) hx]
+
+end Pullback
+
 /-- The set where two primitives of the same `1`-form agree is open: their difference has zero
 differential, so it is locally constant. -/
 theorem IsPrimitiveOn.isOpen_setOf_eq [IsManifold I 1 M] (hg : IsPrimitiveOn φ g U)
@@ -127,6 +150,17 @@ theorem IsPrimitiveOn.isOpen_setOf_eq [IsManifold I 1 M] (hg : IsPrimitiveOn φ 
     hUV.mem_nhds ⟨hyU, hyV⟩] with z hz hzUV
   refine ⟨hzUV.1, hzUV.2, ?_⟩
   simpa [hy, sub_eq_zero] using hz
+
+/-- Two primitives of the same one-form differ near a common point by their difference
+at that point. No connectedness of their domains is required. -/
+theorem IsPrimitiveOn.eventuallyEq_add_const [IsManifold I 1 M]
+    (hg : IsPrimitiveOn φ g U) (hh : IsPrimitiveOn φ h V) {x : M}
+    (hxU : x ∈ U) (hxV : x ∈ V) :
+    g =ᶠ[𝓝 x] fun y ↦ h y + (g x - h x) := by
+  have hx : x ∈ {y | y ∈ U ∧ y ∈ V ∧ g y = h y + (g x - h x)} :=
+    ⟨hxU, hxV, by abel⟩
+  filter_upwards [(hg.isOpen_setOf_eq (hh.add_const (g x - h x))).mem_nhds hx]
+    with y hy using hy.2.2
 
 /-! ### The covering space of local primitives -/
 

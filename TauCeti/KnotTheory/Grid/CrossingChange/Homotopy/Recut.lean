@@ -46,6 +46,11 @@ of this file.
 
 ## Main results
 
+* `TauCeti.GridDiagram.mem_crossingChangeCommutationHexagons_iff_XSet_inter_eq`: if the annulus
+  squares carry no `X`-marking, a hexagon is counted exactly when its rectangle is empty and
+  carries only the `X`-marking of the column the hexagon cuts away; that marking always lies in
+  the rectangle
+  (`cutColumn_X_mem_toGridRectangle_coveredSquares_of_disjoint_crossingChangeAnnulusSquares`).
 * `TauCeti.GridDiagram.crossingChangeHexagonCompositeWeight_eq_of_isRepartition`: two counted
   composites repartitioning the same squares have the same weight.
 * `TauCeti.GridDiagram.injOn_toRectangleDecomposition_crossingChangeHexagonCompositeDecompositions`:
@@ -207,6 +212,79 @@ theorem XSet_inter_coveredSquares_of_mem_crossingChangeCommutationHexagons
     rw [GridCommutationHexagonBetween.toGridRectangleBetween_inr,
       GridCommutationHexagonBetween.cutColumn_inr]
     exact XSet_inter_eq_of_initialHexagon (X_next_mem_insert_cIco hst hX) hK
+
+/-- If the annulus squares carry no `X`-marking, a crossing-change hexagon cuts away the
+`X`-marking of the column it cuts away. -/
+private theorem cutColumn_X_mem_crossingCutSquares
+    (hX : Disjoint (crossingChangeAnnulusSquares C t) G.XSet) {x y : GridState n}
+    (P : GridCommutationHexagonBetween a C.turnRow t x y) :
+    (P.cutColumn, G.X P.cutColumn) ∈ P.crossingCutSquares := by
+  have hst := P.ne
+  cases P with
+  | inl P =>
+    simp only [GridCommutationHexagonBetween.crossingCutSquares, Sum.elim_inl,
+      GridCommutationHexagonBetween.cutColumn_inl, Finset.mem_product, Finset.mem_singleton,
+      true_and]
+    exact X_column_mem_insert_cIco hst hX
+  | inr P =>
+    simp only [GridCommutationHexagonBetween.crossingCutSquares, Sum.elim_inr,
+      GridCommutationHexagonBetween.cutColumn_inr, Finset.mem_product, Finset.mem_singleton,
+      true_and]
+    exact X_next_mem_insert_cIco hst hX
+
+/-- If the annulus squares carry no `X`-marking, the squares a crossing-change hexagon adds to its
+rectangle carry no `X`-marking. -/
+private theorem disjoint_crossingAddedSquares_XSet
+    (hX : Disjoint (crossingChangeAnnulusSquares C t) G.XSet) {x y : GridState n}
+    (P : GridCommutationHexagonBetween a C.turnRow t x y) :
+    Disjoint P.crossingAddedSquares G.XSet := by
+  have hst := P.ne
+  rw [Finset.disjoint_left]
+  rintro ⟨c, r⟩ hp hXp
+  rw [G.mk_mem_XSet] at hXp
+  cases P with
+  | inl P =>
+    simp only [GridCommutationHexagonBetween.crossingAddedSquares, Sum.elim_inl,
+      Finset.mem_product, Finset.mem_singleton] at hp
+    obtain ⟨rfl, hr⟩ := hp
+    rw [← hXp] at hr
+    exact (Grid.mem_insert_cIco_iff_notMem_cIoo hst).mp (X_next_mem_insert_cIco hst hX) hr
+  | inr P =>
+    simp only [GridCommutationHexagonBetween.crossingAddedSquares, Sum.elim_inr,
+      Finset.mem_product, Finset.mem_singleton] at hp
+    obtain ⟨rfl, hr⟩ := hp
+    rw [← hXp] at hr
+    exact (Grid.mem_insert_cIco_iff_notMem_cIoo hst.symm).mp (X_column_mem_insert_cIco hst hX) hr
+
+/-- If the annulus squares carry no `X`-marking, the rectangle under a crossing-change hexagon
+covers the `X`-marking of the column the hexagon cuts away. -/
+theorem cutColumn_X_mem_toGridRectangle_coveredSquares_of_disjoint_crossingChangeAnnulusSquares
+    (hX : Disjoint (crossingChangeAnnulusSquares C t) G.XSet) {x y : GridState n}
+    (P : GridCommutationHexagonBetween a C.turnRow t x y) :
+    (P.cutColumn, G.X P.cutColumn) ∈ P.toGridRectangleBetween.toGridRectangle.coveredSquares :=
+  P.crossingCutSquares_subset (cutColumn_X_mem_crossingCutSquares hX P)
+
+/-- If the annulus squares carry no `X`-marking, a crossing-change hexagon is counted exactly when
+its underlying rectangle is empty and carries exactly one `X`-marking, that of the column the
+hexagon cuts away. -/
+theorem mem_crossingChangeCommutationHexagons_iff_XSet_inter_eq
+    (hX : Disjoint (crossingChangeAnnulusSquares C t) G.XSet) {x y : GridState n}
+    (P : GridCommutationHexagonBetween a C.turnRow t x y) :
+    P ∈ G.crossingChangeCommutationHexagons C t x y ↔
+      P.toGridRectangleBetween.IsEmpty ∧
+        G.XSet ∩ P.toGridRectangleBetween.toGridRectangle.coveredSquares =
+          {(P.cutColumn, G.X P.cutColumn)} := by
+  refine ⟨fun hP => ⟨((G.mem_crossingChangeCommutationHexagons C t P).mp hP).1,
+    XSet_inter_coveredSquares_of_mem_crossingChangeCommutationHexagons hX hP⟩,
+    fun ⟨hempty, hinter⟩ => (G.mem_crossingChangeCommutationHexagons C t P).mpr ⟨hempty, ?_⟩⟩
+  -- The rectangle part of the hexagon misses the single `X`-marking, which the hexagon cuts away.
+  rw [GridCommutationHexagonBetween.crossingCoveredSquares_eq_sdiff_union,
+    Finset.disjoint_union_left]
+  refine ⟨Finset.disjoint_left.mpr fun {p} hp hXp => ?_, disjoint_crossingAddedSquares_XSet hX P⟩
+  obtain ⟨hrect, hcut⟩ := Finset.mem_sdiff.mp hp
+  have hmem := Finset.mem_inter.mpr ⟨hXp, hrect⟩
+  rw [hinter, Finset.mem_singleton] at hmem
+  exact hcut (hmem ▸ cutColumn_X_mem_crossingCutSquares hX P)
 
 end Markings
 
