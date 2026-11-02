@@ -13,7 +13,8 @@ public import Mathlib.RingTheory.TensorProduct.Basic
 In the tensor product `A ⊗[R] B` of commutative `R`-algebras, a finite product of pure tensors
 is the pure tensor of the products: `∏ i ∈ s, a i ⊗ₜ b i = (∏ i ∈ s, a i) ⊗ₜ ∏ i ∈ s, b i`.
 This is the multiplicative counterpart of `TensorProduct.sum_tmul` and `TensorProduct.tmul_sum`,
-and extends `Algebra.TensorProduct.tmul_pow` from powers to products.
+and extends `Algebra.TensorProduct.tmul_pow` from powers to products. When only the left factor
+is commutative, the same holds for the ordered product of a list of pure tensors.
 -/
 
 public section
@@ -33,5 +34,14 @@ theorem prod_tmul (s : Finset ι) (a : ι → A) (b : ι → B) :
   induction s using Finset.induction_on with
   | empty => simp [one_def]
   | insert i s hi ih => simp [Finset.prod_insert hi, ih]
+
+omit [CommSemiring B] [Algebra R B] in
+/-- The product of a list of pure tensors in `A ⊗[R] B`, with `A` commutative, is the pure tensor
+of the product of the left factors and the ordered product of the right factors. -/
+theorem list_prod_ofFn_tmul [Semiring B] [Algebra R B] {n : ℕ} (a : Fin n → A) (b : Fin n → B) :
+    (List.ofFn fun t ↦ a t ⊗ₜ[R] b t).prod = (∏ t, a t) ⊗ₜ[R] (List.ofFn b).prod := by
+  induction n with
+  | zero => simp [one_def]
+  | succ n ih => simp only [List.ofFn_succ, List.prod_cons, Fin.prod_univ_succ, ih, tmul_mul_tmul]
 
 end Algebra.TensorProduct
