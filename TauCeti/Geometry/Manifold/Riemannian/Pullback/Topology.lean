@@ -157,11 +157,11 @@ private theorem exists_mem_nhds_tendstoUniformlyOn_iteratedFDeriv_chartMetric_pu
   set L : E → (F →L[ℝ] F →L[ℝ] ℝ) →L[ℝ] E →L[ℝ] E →L[ℝ] ℝ := fun z ↦
     (fderiv ℝ τ z).pullbackBilinL
   have hDτ : ContDiffOn ℝ m (fderiv ℝ τ) W := hτ.fderiv_of_isOpen hW (by simp)
-  -- `ContinuousLinearMap.pullbackBilinL` is by definition this composite of `compL` maps.
-  have hL : ContDiffOn ℝ m L W :=
-    ((ContinuousLinearMap.compL ℝ E (F →L[ℝ] ℝ) (E →L[ℝ] ℝ)).contDiff.comp_contDiffOn
+  have hL : ContDiffOn ℝ m L W := by
+    simp only [L, ContinuousLinearMap.pullbackBilinL_eq_comp]
+    exact ((ContinuousLinearMap.compL ℝ E (F →L[ℝ] ℝ) (E →L[ℝ] ℝ)).contDiff.comp_contDiffOn
       ((ContinuousLinearMap.compL ℝ E F ℝ).flip.contDiff.comp_contDiffOn hDτ)).clm_comp
-      ((ContinuousLinearMap.compL ℝ E F (F →L[ℝ] ℝ)).flip.contDiff.comp_contDiffOn hDτ)
+        ((ContinuousLinearMap.compL ℝ E F (F →L[ℝ] ℝ)).flip.contDiff.comp_contDiffOn hDτ)
   -- On `W`, the difference of two pullbacks is `L` applied to the difference `φ g` of the chart
   -- metrics at `x`, along `τ`.
   set φ : ContMDiffRiemannianMetric J ∞ F (fun y : N ↦ TangentSpace J y) → F → _ :=
@@ -173,6 +173,7 @@ private theorem exists_mem_nhds_tendstoUniformlyOn_iteratedFDeriv_chartMetric_pu
     -- Both sides pair `u` and `w` through `Dτ_z`; `τ z` unfolds to
     -- `extChartAt J x (f ((extChartAt I x').symm z))`.
     ext u w
+    simp only [L, ContinuousLinearMap.pullbackBilinL_apply]
     rfl
   have hdiff (g : ContMDiffRiemannianMetric J ∞ F (fun y : N ↦ TangentSpace J y)) {z : E}
       (hz : z ∈ W) :

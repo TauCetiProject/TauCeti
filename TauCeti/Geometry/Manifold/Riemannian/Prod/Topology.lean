@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Prod.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Topology
 public import TauCeti.Analysis.Normed.Operator.Bilinear
+import TauCeti.Analysis.Calculus.Bilinear
 import TauCeti.Geometry.Manifold.ExtChartAt
 
 /-!
@@ -107,39 +108,6 @@ theorem chartMetric_prodTangentSpace_apply
     ← Trivialization.symmL_apply (R := ℝ) _ hbx, ← Trivialization.symmL_apply (R := ℝ) _ hby,
     tangentSpaceProdEquiv_symmL_trivializationAt hq]
 
-section PullbackBilin
-
-variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-  [NormedAddCommGroup W] [NormedSpace ℝ W]
-
--- Cache the canonical operator-space instances, as in the definition of the chart Cᵏ topology:
--- searching for the structure on nested operator spaces otherwise exhausts instance-search
--- heartbeats.
-private local instance : NormedAddCommGroup (V →L[ℝ] ℝ) :=
-  ContinuousLinearMap.toNormedAddCommGroup
-private local instance : NormedSpace ℝ (V →L[ℝ] ℝ) := ContinuousLinearMap.toNormedSpace
-private local instance : NormedAddCommGroup (W →L[ℝ] ℝ) :=
-  ContinuousLinearMap.toNormedAddCommGroup
-private local instance : NormedSpace ℝ (W →L[ℝ] ℝ) := ContinuousLinearMap.toNormedSpace
-
-/-- The coordinate derivatives of a smooth family `B` of bilinear forms, read along a continuous
-linear map `u` and pulled back along `u`: those of `B`, in the directions of the images under
-`u`, pulled back along `u`. -/
-private theorem iteratedFDeriv_pullbackBilinL_comp {B : V → V →L[ℝ] V →L[ℝ] ℝ} {U : Set V}
-    (hU : IsOpen U) (hB : ContDiffOn ℝ ∞ B U) (u : W →L[ℝ] V) {z : W} (hz : u z ∈ U) (m : ℕ) :
-    iteratedFDeriv ℝ m (pullbackBilinL u ∘ (B ∘ u)) z =
-      (pullbackBilinL u).compContinuousMultilinearMap
-        ((iteratedFDeriv ℝ m B (u z)).compContinuousLinearMap fun _ ↦ u) := by
-  have hi : ((m : ℕ∞) : WithTop ℕ∞) ≤ ∞ := by exact_mod_cast le_top
-  have hU' : IsOpen (u ⁻¹' U) := hU.preimage u.continuous
-  have hBu : ContDiffAt ℝ ∞ (B ∘ u) z :=
-    (hB.contDiffAt (hU.mem_nhds hz)).comp z u.contDiff.contDiffAt
-  rw [(pullbackBilinL u).iteratedFDeriv_comp_left hBu hi,
-    ← iteratedFDerivWithin_of_isOpen m hU' hz, ← iteratedFDerivWithin_of_isOpen m hU hz,
-    u.iteratedFDerivWithin_comp_right hB hU.uniqueDiffOn hU'.uniqueDiffOn hz hi]
-
-end PullbackBilin
-
 variable [I.Boundaryless] [J.Boundaryless]
 
 /-- The coordinate derivatives of the product metric, as continuous multilinear maps: the
@@ -167,8 +135,10 @@ private theorem iteratedFDeriv_chartMetric_prodTangentSpace
       (pullbackBilinL (.fst ℝ E F) ∘ (Bg ∘ ContinuousLinearMap.fst ℝ E F)) +
         (pullbackBilinL (.snd ℝ E F) ∘ (Bh ∘ ContinuousLinearMap.snd ℝ E F)) := by
     filter_upwards [(isOpen_extChartAt_target (I := I.prod J) (x, y)).mem_nhds hz] with w hw
-    exact ContinuousLinearMap.ext fun a ↦ ContinuousLinearMap.ext fun b ↦
-      chartMetric_prodTangentSpace_apply g h x y hw a b
+    refine ContinuousLinearMap.ext fun a ↦ ContinuousLinearMap.ext fun b ↦ ?_
+    simp only [chartMetric_prodTangentSpace_apply g h x y hw, Pi.add_apply, Function.comp_apply,
+      add_apply, pullbackBilinL_apply, ContinuousLinearMap.coe_fst',
+      ContinuousLinearMap.coe_snd', Bg, Bh]
   have hi : ((m : ℕ∞) : WithTop ℕ∞) ≤ ∞ := by exact_mod_cast le_top
   have h₁ : ContDiffAt ℝ m (pullbackBilinL (.fst ℝ E F) ∘ (Bg ∘ ContinuousLinearMap.fst ℝ E F)) z :=
     ((((g.toNondegenerateMetric.contDiffOn_chartMetric x).contDiffAt (hU.mem_nhds hz'.1)).comp z
@@ -177,10 +147,10 @@ private theorem iteratedFDeriv_chartMetric_prodTangentSpace
     ((((h.toNondegenerateMetric.contDiffOn_chartMetric y).contDiffAt (hV.mem_nhds hz'.2)).comp z
       (ContinuousLinearMap.snd ℝ E F).contDiff.contDiffAt).of_le hi).continuousLinearMap_comp _
   rw [(heq.iteratedFDeriv ℝ m).eq_of_nhds, iteratedFDeriv_add_apply h₁ h₂,
-    iteratedFDeriv_pullbackBilinL_comp hU (g.toNondegenerateMetric.contDiffOn_chartMetric x) _
-      hz'.1,
-    iteratedFDeriv_pullbackBilinL_comp hV (h.toNondegenerateMetric.contDiffOn_chartMetric y) _
-      hz'.2]
+    ContinuousLinearMap.iteratedFDeriv_pullbackBilinL_comp hU
+      (g.toNondegenerateMetric.contDiffOn_chartMetric x) _ hz'.1 hi,
+    ContinuousLinearMap.iteratedFDeriv_pullbackBilinL_comp hV
+      (h.toNondegenerateMetric.contDiffOn_chartMetric y) _ hz'.2 hi]
   -- The two sides differ only in writing `ContinuousLinearMap.fst ℝ E F z` for `z.1`, and
   -- similarly for the second coordinate.
   rfl
@@ -259,13 +229,8 @@ theorem continuous_prodTangentSpace {P : Type*} [TopologicalSpace P]
       ((continuous_snd.comp continuous_subtype_val.snd').subtype_mk fun q ↦ (hmem q).2))
   refine Continuous.congr ?_ fun q ↦
     (iteratedFDeriv_chartMetric_prodTangentSpace (g q.1) (h q.1) x y m q.2.2).symm
-  exact ((ContinuousLinearMap.compContinuousMultilinearMapL ℝ _ _ _
-      (pullbackBilinL (G := ℝ) (.fst ℝ E F))).continuous.comp
-      ((ContinuousMultilinearMap.compContinuousLinearMapL fun _ ↦ .fst ℝ E F).continuous.comp
-        h₁)).add
-    ((ContinuousLinearMap.compContinuousMultilinearMapL ℝ _ _ _
-      (pullbackBilinL (G := ℝ) (.snd ℝ E F))).continuous.comp
-      ((ContinuousMultilinearMap.compContinuousLinearMapL fun _ ↦ .snd ℝ E F).continuous.comp h₂))
+  exact (h₁.pullbackBilinL_compContinuousMultilinearMap (.fst ℝ E F)).add
+    (h₂.pullbackBilinL_compContinuousMultilinearMap (.snd ℝ E F))
 
 /-- A family of product metrics is continuous in the chart Cᵏ topology if and only if both
 factor families are continuous in that topology. Both manifolds are nonempty: otherwise the
@@ -291,9 +256,7 @@ theorem continuous_prodTangentSpace_iff [Nonempty M] [Nonempty N] {P : Type*}
       ((continuous_subtype_val.snd'.prodMk continuous_const).subtype_mk hmem))
     refine Continuous.congr ?_ fun q ↦
       (iteratedFDeriv_chartMetric_eq_of_prodTangentSpace (g q.1) (h q.1) x y₀ m (hmem q)).symm
-    exact (ContinuousLinearMap.compContinuousMultilinearMapL ℝ _ _ _
-      (pullbackBilinL (G := ℝ) (.inl ℝ E F))).continuous.comp
-      ((ContinuousMultilinearMap.compContinuousLinearMapL fun _ ↦ .inl ℝ E F).continuous.comp hc)
+    exact hc.pullbackBilinL_compContinuousMultilinearMap (.inl ℝ E F)
   · rw [continuous_chartCk_iff]
     intro y m hm
     have hmem (q : P × (extChartAt J y).target) :
@@ -304,8 +267,6 @@ theorem continuous_prodTangentSpace_iff [Nonempty M] [Nonempty N] {P : Type*}
       ((continuous_const.prodMk continuous_subtype_val.snd').subtype_mk hmem))
     refine Continuous.congr ?_ fun q ↦
       (iteratedFDeriv_chartMetric_eq_of_prodTangentSpace' (g q.1) (h q.1) x₀ y m (hmem q)).symm
-    exact (ContinuousLinearMap.compContinuousMultilinearMapL ℝ _ _ _
-      (pullbackBilinL (G := ℝ) (.inr ℝ E F))).continuous.comp
-      ((ContinuousMultilinearMap.compContinuousLinearMapL fun _ ↦ .inr ℝ E F).continuous.comp hc)
+    exact hc.pullbackBilinL_compContinuousMultilinearMap (.inr ℝ E F)
 
 end Bundle.ContMDiffRiemannianMetric
