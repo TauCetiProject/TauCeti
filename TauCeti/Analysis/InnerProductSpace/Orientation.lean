@@ -20,10 +20,7 @@ It also evaluates the volume form on an arbitrary, not necessarily orthonormal, 
 its absolute value is the square root of the Gram determinant, it vanishes exactly on linearly
 dependent families, and on a basis its sign records whether the basis is positively oriented. In
 a coordinate frame of a Riemannian manifold this is the familiar formula
-`vol = ±√(det g) dx¹ ∧ ⋯ ∧ dxⁿ`. A family to which this applies often consists of a nonzero
-vector followed by linearly independent vectors orthogonal to it, such as an outward normal
-followed by a basis of a tangent space; such a family is linearly independent
-(`LinearIndependent.finCons_of_inner_eq_zero`).
+`vol = ±√(det g) dx¹ ∧ ⋯ ∧ dxⁿ`.
 
 Finally, two oriented inner product spaces of the same positive finite dimension are related by an
 orientation-preserving linear isometric equivalence
@@ -160,21 +157,3 @@ theorem exists_linearIsometryEquiv_map_eq (hV : Module.finrank ℝ V = Fintype.c
 end LinearIsometryEquiv
 
 end Orientation
-
-section FinCons
-
-variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
-
-/-- A nonzero vector followed by a linearly independent family of vectors orthogonal to it is
-linearly independent. -/
-theorem LinearIndependent.finCons_of_inner_eq_zero {n : ℕ} {p : E} (hp : p ≠ 0) {v : Fin n → E}
-    (hv : LinearIndependent 𝕜 v) (horth : ∀ i, inner 𝕜 p (v i) = 0) :
-    LinearIndependent 𝕜 (Fin.cons p v : Fin (n + 1) → E) := by
-  refine hv.finCons fun hmem ↦ hp ?_
-  have hle : Submodule.span 𝕜 (Set.range v) ≤ (𝕜 ∙ p)ᗮ := by
-    rw [Submodule.span_le]
-    rintro _ ⟨i, rfl⟩
-    exact Submodule.mem_orthogonal_singleton_iff_inner_right.2 (horth i)
-  exact inner_self_eq_zero.1 (Submodule.mem_orthogonal_singleton_iff_inner_right.1 (hle hmem))
-
-end FinCons

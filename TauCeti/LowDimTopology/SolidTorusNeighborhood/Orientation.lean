@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Orientation
 import TauCeti.Analysis.InnerProductSpace.Orientation
+import TauCeti.Analysis.InnerProductSpace.OrthogonalFamily
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
