@@ -17,6 +17,8 @@ Additions to Mathlib's `Mathlib.ModelTheory.Basic`.
 * `FirstOrder.Language.countable_functions_of_countable_sigma`,
   `FirstOrder.Language.countable_relations_of_countable_sigma`: a language with countably many
   function or relation symbols in total has countably many of each arity.
+* `FirstOrder.Language.Countable.countable_relations`: a language with countably many symbols
+  has countably many relation symbols in total, complementing Mathlib's function-symbol instance.
 -/
 
 public section
@@ -36,6 +38,11 @@ instance countable_functions_of_countable_sigma [Countable (Σ n, L.Functions n)
 instance countable_relations_of_countable_sigma [Countable (Σ n, L.Relations n)] (n : ℕ) :
     Countable (L.Relations n) :=
   (sigma_mk_injective (i := n)).countable
+
+/-- A language with countably many symbols has countably many relation symbols in total. -/
+instance Countable.countable_relations [Countable L.Symbols] : Countable (Σ n, L.Relations n) :=
+  Function.Injective.countable
+    (f := (Sum.inr : (Σ n, L.Relations n) → L.Symbols)) Sum.inr_injective
 
 end Language
 
