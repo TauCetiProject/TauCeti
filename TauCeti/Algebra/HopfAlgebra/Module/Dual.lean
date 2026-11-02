@@ -30,6 +30,9 @@ native dual carrying this contragredient action. Ordinary contraction `dualEval`
 field, the finite-dimensional coevaluation `dualCoeval` are `H`-linear for the coproduct tensor
 product `BialgebraModule.Tensor` and the counit module `BialgebraModule.Trivial`, by the two
 antipode identities.
+On a reflexive module, `TauCeti.BialgebraModule.unitEvalEquiv` is the comparison
+`m ↦ (φ ↦ φ(g m))` with the double contragredient, as an `H`-linear equivalence, when the unit
+`g` implements `S²`.
 
 The construction uses Mathlib's `Module.Dual.transpose`, `Module.evalEquiv` and
 `LinearMap.GeneralLinearGroup.generalLinearEquiv`. The dual and double-dual conventions are those of
@@ -226,6 +229,33 @@ theorem dualEval_tmul (φ : Dual R H M) (m : M) :
   dualEvalAux_tmul R H M φ m
 
 end Evaluation
+
+section UnitEvaluation
+
+variable [Semiring H] [HopfAlgebra R H] [Module H M] [IsScalarTower R H M]
+  [Module.IsReflexive R M]
+
+/-- If the unit `g` implements the square of the antipode, `S²(a) = g a g⁻¹`, then
+`m ↦ (φ ↦ φ(g m))` is an `H`-linear equivalence of a reflexive module with its double
+contragredient. Its underlying linear equivalence is `AlgHom.unitEvalEquiv`. -/
+noncomputable def unitEvalEquiv (g : Hˣ)
+    (hg : ∀ a : H, HopfAlgebra.antipode R (HopfAlgebra.antipode R a) = g * a * ↑g⁻¹) :
+    M ≃ₗ[H] Dual R H (Dual R H M) :=
+  { ((Algebra.lsmul R R M).unitEvalEquiv g).trans
+      ((dualEquiv R H M).dualMap.trans (dualEquiv R H (Dual R H M)).symm) with
+    map_smul' a m := (dualEquiv R H (Dual R H M)).injective <| LinearMap.ext fun φ => by
+      simp [hg, mul_smul, ← Units.smul_def] }
+
+/-- The double-contragredient comparison sends `m` to the functional `φ ↦ φ(g m)`. -/
+@[simp]
+theorem dualEquiv_unitEvalEquiv_apply (g : Hˣ)
+    (hg : ∀ a : H, HopfAlgebra.antipode R (HopfAlgebra.antipode R a) = g * a * ↑g⁻¹) (m : M)
+    (φ : Dual R H M) :
+    dualEquiv R H (Dual R H M) (unitEvalEquiv R H M g hg m) φ =
+      dualEquiv R H M φ ((g : H) • m) := by
+  simp [unitEvalEquiv]
+
+end UnitEvaluation
 
 section Coevaluation
 

@@ -40,6 +40,9 @@ The relative spectrum of a symmetric algebra commutes with base change: for `f :
   `T ⟶ Spec_X (Sym F)` over `X` are module maps `F ⟶ q_* 𝒪_T`, with naturality in the scheme
   (`relativeSpecSymmetricAlgebraHomEquiv_comp`) and in the sheaf
   (`relativeSpecSymmetricAlgebraHomEquiv_comp_relativeSpec_map`);
+* `TauCeti.AlgebraicGeometry.relativeSpecHomIso_hom_app_app_eq_symmetricAlgebraLift`: the
+  algebra map `Sym F ⟶ q_* 𝒪_T` pulling back regular functions along a point extends its module
+  map;
 * `TauCeti.AlgebraicGeometry.relativeSpecSymmetricAlgebraHomIso`: the same bijection as a natural
   isomorphism of functors of points;
 * `TauCeti.AlgebraicGeometry.relativeSpecSymmetricAlgebraPullbackHomEquiv`: morphisms
@@ -89,6 +92,20 @@ lemma relativeSpecSymmetricAlgebraHomEquiv_apply (F : QuasicoherentSheaf X) (T :
         (((symmetricAlgebra X).obj F).obj.relativeSpecHomEquiv T.hom ⟨t.left, Over.w t⟩).hom.hom :=
   (symmetricAlgebraHomEquiv_apply _).trans
     (congrArg (fun f ↦ symmetricAlgebraι F ≫ f.hom.hom) (relativeSpecHomIso_hom_app_app _ _ t))
+
+/-- The algebra map `Sym F ⟶ q_* 𝒪_T` of a point `t : T ⟶ Spec_X (Sym F)` over `X`, by which
+regular functions are pulled back along `t`, is the algebra map extending the module map
+`F ⟶ q_* 𝒪_T` of `t`. -/
+lemma relativeSpecHomIso_hom_app_app_eq_symmetricAlgebraLift {F : QuasicoherentSheaf X}
+    {T : Over X} (t : T ⟶ (MorphismProperty.Over.forget _ _ X).obj
+      ((relativeSpec X).obj (op ((symmetricAlgebra X).obj F)))) :
+    ((relativeSpecHomIso X).hom.app (op ((symmetricAlgebra X).obj F))).app (op T) t =
+      symmetricAlgebraLift (B := T.hom.pushforwardStructureAlgebra)
+        (relativeSpecSymmetricAlgebraHomEquiv F T t) :=
+  -- both algebra maps restrict to the module map of `t` on `F`
+  symmetricAlgebra_hom_ext ((congrArg (fun ψ ↦ symmetricAlgebraι F ≫ ψ.hom.hom)
+    (relativeSpecHomIso_hom_app_app _ _ t)).trans ((relativeSpecSymmetricAlgebraHomEquiv_apply F T
+      t).symm.trans (symmetricAlgebraι_comp_lift (B := T.hom.pushforwardStructureAlgebra) _).symm))
 
 /-- The morphism over `X` of a module map `φ : F ⟶ q_* 𝒪_T` is the relative-spectrum lift of
 the algebra map `Sym F ⟶ q_* 𝒪_T` extending `φ`. -/
