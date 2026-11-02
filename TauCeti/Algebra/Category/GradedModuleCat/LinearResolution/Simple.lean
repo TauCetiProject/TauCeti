@@ -110,7 +110,6 @@ theorem IsMinimal.subsingleton_of_subsingleton_ext_simple (hr : r.IsMinimal)
     (hExt : ∀ N : GradedModuleCat.{v} 𝒜, Module.Finite k N → Simple N →
       Subsingleton (Ext.{w} M N n)) :
     Subsingleton (r.X n) := by
-  classical
   obtain ⟨b, hb⟩ := (r.grading n).finite_piece_ne_bot.bddBelow
   have hbelow (p : ℤ) (hp : p < b) : (r.grading n).piece p = ⊥ := by
     by_contra hne
@@ -118,13 +117,8 @@ theorem IsMinimal.subsingleton_of_subsingleton_ext_simple (hr : r.IsMinimal)
   -- Every piece lies in `A₊ Xₙ`, so graded Nakayama forces `Xₙ = 0`.
   have h (p : ℤ) := hr.piece_le_positive_smul_top_of_subsingleton_ext_simple hneg n p
     fun N hN hs _ ↦ hExt N hN hs
-  refine InternalGrading.subsingleton_of_positive_smul_top_eq_top 𝒜 b hbelow
-    (top_unique fun x hx ↦ ?_)
-  clear hx
-  induction x using DirectSum.Decomposition.inductionOn (r.grading n).piece with
-  | zero => exact zero_mem _
-  | homogeneous x => exact h _ x.property
-  | add x y hx hy => exact add_mem hx hy
+  exact InternalGrading.subsingleton_of_positive_smul_top_eq_top 𝒜 b hbelow
+    (top_unique ((r.grading n).isInternal.submodule_iSup_eq_top.symm.le.trans (iSup_le h)))
 
 /-- Equivalently, test internal shifts of finite simple modules concentrated in degree zero.
 The shift convention is `Extⁿ(M,S{p}) = 0` for `n ≠ p`. -/
