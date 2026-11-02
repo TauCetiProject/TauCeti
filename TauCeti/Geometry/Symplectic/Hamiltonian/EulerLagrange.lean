@@ -52,9 +52,11 @@ This gives the equivalence of the Lagrangian and Hamiltonian descriptions of the
 exactly when its Legendre lift `t ↦ FL(q t, v t)` is an integral curve of `X_H`
 (`TauCeti.hasDerivAt_linearLegendreMap_iff`). Conversely, the first equation of Hamilton is the
 **second-order property**: along an integral curve of `X_H` the position moves with the velocity
-`w(q, p)` (`TauCeti.hasDerivAt_fst_of_hasDerivAt_hamiltonianVectorField`). Hence every integral
-curve of `X_H` is the Legendre lift of its own position curve, which solves the Euler–Lagrange
-equations (`TauCeti.eulerLagrange_of_hasDerivAt_hamiltonianVectorField`). The energy `E_L`, which
+`w(q, p)` (`TauCeti.hasDerivAt_fst_of_hasDerivAt_hamiltonianVectorField`). Hence, if `w` solves
+the momentum for the velocity along an integral curve `γ = (q, p)` of `X_H` near a time `t`, then
+the velocity field `v = w ∘ γ` satisfies `q'(t) = v(t)`, the Legendre lift `FL(q t, v t)` is
+`γ t`, and the Euler–Lagrange equation for `q` and `v` holds at `t`
+(`TauCeti.eulerLagrange_of_hasDerivAt_hamiltonianVectorField`). The energy `E_L`, which
 is `H` along the Legendre lift, is conserved along every solution of the Euler–Lagrange equations
 with differentiable velocity (`TauCeti.energy_eq_of_eulerLagrange`); this needs neither an
 inverse `w` nor finite dimensionality.
@@ -229,11 +231,13 @@ theorem hasDerivAt_fst_of_hasDerivAt_hamiltonianVectorField {L : E × E → ℝ}
   rw [hamiltonianVectorField_legendreHamiltonian hw hL hp] at hγ
   exact hγ.fst
 
-/-- **Hamiltonian trajectories are Legendre lifts of Euler–Lagrange solutions.** Let `γ` be an
-integral curve of the Hamiltonian vector field of a Lagrangian system at time `t`, and let `w`
-solve the momentum for the velocity along `γ` near `t`. Then at `t` the position curve `q = γ.1`
-has velocity `w ∘ γ`, the curve `γ` is the Legendre lift `s ↦ FL(q s, q' s)` of `q`, and `q`
-solves the Euler–Lagrange equation `d/dt ∂_v L(q, q') = ∂_q L(q, q')`. -/
+/-- **Hamiltonian trajectories satisfy the Euler–Lagrange equation.** Let `γ` be an integral
+curve of the Hamiltonian vector field of a Lagrangian system at time `t`, and let `w` solve the
+momentum for the velocity along `γ` near `t`. Write `q = γ.1` for the position curve and
+`v = w ∘ γ` for the velocity field recovered from the momentum. Then `q'(t) = v(t)`, the Legendre
+lift `FL(q t, v t)` equals `γ t`, and the momentum `s ↦ ∂_v L(q s, v s)` has derivative
+`∂_q L(q t, v t)` at `t`: the Euler–Lagrange equation `d/dt ∂_v L(q, v) = ∂_q L(q, v)` holds
+at `t`. -/
 theorem eulerLagrange_of_hasDerivAt_hamiltonianVectorField {L : E × E → ℝ}
     {w : E × StrongDual ℝ E → E} {γ : ℝ → E × StrongDual ℝ E} {t : ℝ}
     (hγ : HasDerivAt γ ((strongDualCotangentSymplecticForm (V := E)).hamiltonianVectorField
