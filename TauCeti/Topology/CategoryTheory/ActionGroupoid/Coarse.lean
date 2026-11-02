@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.CategoryTheory.ActionGroupoid.Basic
-public import Mathlib.Topology.Homeomorph.Quotient
+public import TauCeti.Topology.Homeomorph.Quotient
 
 /-!
 # The coarse space of an action groupoid
@@ -51,14 +51,17 @@ def orbitQuotientHomeomorphIsomorphismClasses :
 theorem orbitQuotientHomeomorphIsomorphismClasses_mk (x : X) :
     orbitQuotientHomeomorphIsomorphismClasses G X (Quotient.mk _ x) =
       Quotient.mk _ (ActionCategory.objEquiv G X x) := by
-  exact congrArg (Quotient.mk _) (objectHomeomorph_symm_apply G X x)
+  simp only [orbitQuotientHomeomorphIsomorphismClasses, Homeomorph.Quotient.congr_mk,
+    objectHomeomorph_symm_apply]
 
 /-- The inverse coarse homeomorphism takes the class of an object to its point's orbit. -/
 @[simp]
 theorem orbitQuotientHomeomorphIsomorphismClasses_symm_mk (x : ActionCategory G X) :
     (orbitQuotientHomeomorphIsomorphismClasses G X).symm (Quotient.mk _ x) =
       Quotient.mk _ x.back := by
-  exact congrArg (Quotient.mk _) (objectHomeomorph_apply G X x)
+  rw [Homeomorph.symm_apply_eq, orbitQuotientHomeomorphIsomorphismClasses_mk,
+    ← objectHomeomorph_symm_apply, ← objectHomeomorph_apply G X x,
+    Homeomorph.symm_apply_apply]
 
 /-- The coarse homeomorphism has the previously constructed orbit-class equivalence as
 its underlying equivalence. -/
