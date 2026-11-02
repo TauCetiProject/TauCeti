@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Calculus.Sard.LowDimension
 public import Mathlib.Analysis.Calculus.ContDiff.Comp
-public import Mathlib.Analysis.Calculus.Deriv.Comp
 public import Mathlib.MeasureTheory.Measure.Haar.OfBasis
 
 /-!
@@ -27,7 +26,7 @@ projecting `F` linearly along such a direction `v` onto a complementary hyperpla
 an injective immersion, and so does every stage of the straight-line motion
 `f - t • φ (f) • v`, for a linear form `φ` with `φ v = 1`. Moving `f` by multiples of a direction
 `d` on none of its secant lines keeps it injective (`TauCeti.injective_sub_smul`), and the
-velocity of the moved curve is computed in `TauCeti.hasDerivAt_sub_smul`.
+velocity of the moved curve is computed in `HasDerivAt.sub_smul`.
 
 ## Main results
 
@@ -35,8 +34,8 @@ velocity of the moved curve is computed in `TauCeti.hasDerivAt_sub_smul`.
   nor a tangent vector of a `C²` map, when `2 * dim E + 1 < dim F`.
 * `ContDiff.exists_forall_sub_eq_smul_and_deriv_ne`: the curve case, for an injective `C²`
   immersion of the line in dimension at least four.
-* `TauCeti.injective_sub_smul`: `x ↦ f x - ψ (f x - p) • d` is injective when no secant of `f`
-  is a multiple of `d`.
+* `TauCeti.injective_sub_smul`: `x ↦ f x - a x • d` is injective when no secant of `f` is a
+  multiple of `d`.
 
 ## References
 
@@ -112,23 +111,16 @@ namespace TauCeti
 omit [FiniteDimensional ℝ F]
 
 /-- Moving a map by multiples of a direction `d` on none of its secant lines keeps it injective:
-`x ↦ f x - ψ (f x - p) • d` is injective for every linear form `ψ`. -/
-theorem injective_sub_smul {α : Type*} {f : α → F} {p d : F}
-    (hsec : ∀ x y (c : ℝ), f x - f y = c • d → x = y) (ψ : F →L[ℝ] ℝ) :
-    Injective fun x => f x - ψ (f x - p) • d := by
+`x ↦ f x - a x • d` is injective for every coefficient function `a`. -/
+theorem injective_sub_smul {α : Type*} {f : α → F} {d : F}
+    (hsec : ∀ x y (c : ℝ), f x - f y = c • d → x = y) (a : α → ℝ) :
+    Injective fun x => f x - a x • d := by
   intro x y h
   dsimp only at h
-  refine hsec x y (ψ (f x - p) - ψ (f y - p)) ?_
-  calc f x - f y = (f x - ψ (f x - p) • d) - (f y - ψ (f y - p) • d) +
-        (ψ (f x - p) - ψ (f y - p)) • d := by
+  refine hsec x y (a x - a y) ?_
+  calc f x - f y = (f x - a x • d) - (f y - a y • d) + (a x - a y) • d := by
         rw [sub_smul]
         abel
     _ = _ := by rw [h, sub_self, zero_add]
-
-/-- The velocity of the curve `s ↦ γ s - ψ (γ s - p) • d`, moved by multiples of `d`. -/
-theorem hasDerivAt_sub_smul {γ : ℝ → F} {γ' : F} {s : ℝ} (hγ : HasDerivAt γ γ' s)
-    (p d : F) (ψ : F →L[ℝ] ℝ) :
-    HasDerivAt (fun s => γ s - ψ (γ s - p) • d) (γ' - ψ γ' • d) s :=
-  hγ.sub ((ψ.hasFDerivAt.comp_hasDerivAt s (hγ.sub_const p)).smul_const d)
 
 end TauCeti

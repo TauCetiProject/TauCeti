@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.Sard.Projection
-public import TauCeti.Geometry.Manifold.ContMDiff.Prod
 public import TauCeti.Geometry.Manifold.SmoothIsotopy.Trans
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Calculus.Deriv.Projection
 import TauCeti.Analysis.Calculus.Deriv.EqLine
 import TauCeti.Geometry.Manifold.SmoothEmbedding.EqLine
 import TauCeti.Analysis.Normed.Module.Dual.Submodule
@@ -95,8 +95,7 @@ private theorem exists_smoothIsotopy_projection {n : ℕ∞ω} (hn : 1 ≤ n)
     rw [hAu]
     refine isSmoothEmbedding_of_eq_line hn (hAu ▸ hA.comp (contDiff_const.prodMk contDiff_id))
       (injective_sub_smul hsec _)
-      (fun s => hasDerivAt_sub_smul
-        (hγ.differentiable (zero_lt_one.trans_le hn).ne' s).hasDerivAt p d _)
+      (fun s => (hγ.differentiable (zero_lt_one.trans_le hn).ne' s).hasDerivAt.sub_smul p d _)
       (fun s h => htan s _ (sub_eq_zero.1 h)) (p := p) he (R := R) (fun s hs => ?_)
     simp only [smul_apply, hφline s hs, smul_zero, zero_smul, sub_zero]
     exact hline s hs
@@ -319,9 +318,9 @@ theorem exists_smoothIsotopy_line_of_four_le_finrank {n : ℕ∞ω} (hn₂ : 2 �
   obtain ⟨F₁, hF₁⟩ := exists_smoothIsotopy_projection hn₁ γ g he (congrFun hg) hsec htan
     hline' hφline
   obtain ⟨F₂, R', hF₂⟩ := exists_smoothIsotopy_line_of_map_sub_eq_zero hn₁ hn g ℓ hℓ he hφd hφe
-    (hg ▸ injective_sub_smul hsec φ)
+    (hg ▸ injective_sub_smul hsec fun s => φ (γ s - p))
     (fun s h => htan s (φ (deriv γ s))
-      (sub_eq_zero.1 ((hasDerivAt_sub_smul (hγd s) p d φ).deriv ▸ hg ▸ h)))
+      (sub_eq_zero.1 (((hγd s).sub_smul p d φ).deriv ▸ hg ▸ h)))
     (fun s => by
       simp only [hg]
       rw [sub_right_comm, map_sub, map_smul, hφd, smul_eq_mul, mul_one, sub_self])
