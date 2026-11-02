@@ -37,6 +37,8 @@ distributions whose derivatives all vanish.
 * `TestFunction.extDerivCLM_extDerivCLM`: `d (d ω) = 0`.
 * `TestFunction.extDerivCLM_monoCLM`: the exterior derivative commutes with extending a test form
   from `Ω'` to a larger open set `Ω`.
+* `ContinuousLinearMap.comp_monoCLM_comp_extDerivCLM`: restricting a current to an open subset
+  commutes with the boundary.
 * `TestFunction.extDerivCLM_postcompCLM_toSpanSingleton_curryLeft`: the top-degree formula
   `d (g • ι_y α) = ∂_y g • α`.
 * `TestFunction.map_postcompCLM_toSpanSingleton_lineDerivOp_eq_zero`: a functional on top-degree
@@ -167,3 +169,24 @@ theorem map_postcompCLM_toSpanSingleton_lineDerivOp_eq_zero [FiniteDimensional �
     hT, zero_apply]
 
 end TestFunction
+
+namespace ContinuousLinearMap
+
+open TestFunction TopologicalSpace
+open scoped Distributions
+
+variable {E F G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [AddCommGroup G] [Module ℝ G] [TopologicalSpace G]
+  {Ω Ω' : Opens E} {k : ℕ}
+
+/-- **Restriction commutes with the boundary**: for a current `T` on `Ω` and an open subset
+`Ω' ⊆ Ω`, the boundary of the restriction `T ∘ monoCLM` of `T` to `Ω'` is the restriction of the
+boundary `∂ T = T ∘ d`. -/
+theorem comp_monoCLM_comp_extDerivCLM (h : Ω' ≤ Ω)
+    (T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] G) :
+    (T ∘L (monoCLM ℝ : 𝓓(Ω', E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] _)) ∘L extDerivCLM =
+      (T ∘L extDerivCLM) ∘L (monoCLM ℝ : 𝓓(Ω', E [⋀^Fin k]→L[ℝ] F) →L[ℝ] _) := by
+  ext ω
+  simp [extDerivCLM_monoCLM h]
+
+end ContinuousLinearMap

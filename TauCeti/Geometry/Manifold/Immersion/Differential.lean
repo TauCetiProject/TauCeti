@@ -31,12 +31,13 @@ in the preferred extended charts is carried back to the manifolds by composing i
 preferred charts (`Manifold.IsImmersionAtOfComplement.of_writtenInExtChartAt`); on a boundaryless
 model the manifold derivative is the derivative of the map read in these charts. So, for a
 finite-dimensional target model, a smooth map with injective differential everywhere is an
-immersion (`ContMDiff.isImmersion_of_injective_mfderiv`); in particular a smooth map with a
-differentiable left inverse, such as a section of a fiber bundle, is an immersion
-(`ContMDiff.isImmersion_of_leftInverse`). A parameter-preserving map `(p, x) ↦ (p, G (p, x))` is
-then an immersion at every point where its slice `x ↦ G (p, x)` is one in the sense of
-differentials, as for the space-time track of a moving embedded submanifold. Likewise,
-postcomposing an immersion with a diffeomorphism onto a manifold with a different
+immersion (`ContMDiff.isImmersion_of_injective_mfderiv`). A `C^n` map with a left inverse near a
+point, differentiable at the image of that point, is an immersion there
+(`ContMDiffOn.isImmersionAt_of_comp_eventuallyEq_id`); for example, a smooth section of a fiber
+bundle is an immersion. A parameter-preserving map
+`(p, x) ↦ (p, G (p, x))` is then an immersion at every point where its slice `x ↦ G (p, x)` is
+one in the sense of differentials, as for the space-time track of a moving embedded submanifold.
+Likewise, postcomposing an immersion with a diffeomorphism onto a manifold with a different
 finite-dimensional model gives an immersion (`Diffeomorph.isImmersion_comp`), for example after
 exchanging the factors of a product.
 
@@ -277,19 +278,18 @@ theorem ContMDiff.isImmersion_of_injective_mfderiv [FiniteDimensional 𝕜 E']
   TauCeti.isImmersion_iff_forall_isImmersionAt.mpr fun x =>
     (hf.contMDiffOn.isImmersionAt_iff_injective_mfderiv isOpen_univ (mem_univ x) hn).mpr (hdf x)
 
-omit [CompleteSpace E] [CompleteSpace E'] in
-/-- A `C^n` map between boundaryless manifolds, with a finite-dimensional target model, is an
-immersion when it has a left inverse which is differentiable at every point of its range. For
-example, a smooth section of a fiber bundle is an immersion. -/
-theorem ContMDiff.isImmersion_of_leftInverse [FiniteDimensional 𝕜 E'] (hf : ContMDiff I J n f)
-    (hn : 1 ≤ n) {r : N → M} (hr : ∀ x, MDifferentiableAt J I r (f x))
-    (hrf : LeftInverse r f) : IsImmersion I J n f := by
+/-- A `C^n` map on an open subset of a boundaryless manifold, with values in a boundaryless
+manifold, is an immersion at any point `x` near which it has a left inverse `g` differentiable at
+`f x`: the manifold derivative of `g` at `f x` is then a continuous linear left inverse of that of
+`f` at `x`. -/
+theorem ContMDiffOn.isImmersionAt_of_comp_eventuallyEq_id {g : N → M}
+    (hf : ContMDiffOn I J n f s) (hs : IsOpen s) (hx : x ∈ s) (hn : 1 ≤ n)
+    (hg : MDifferentiableAt J I g (f x)) (hgf : g ∘ f =ᶠ[𝓝 x] id) :
+    IsImmersionAt I J n f x := by
   have hn0 : n ≠ 0 := by rintro rfl; simp at hn
-  refine hf.isImmersion_of_injective_mfderiv hn fun x => ?_
-  -- The differential of `r` at `f x` is a left inverse of the differential of `f` at `x`.
-  have hcomp := mfderiv_comp x (hr x) ((hf x).mdifferentiableAt hn0)
-  rw [hrf.comp_eq_id, mfderiv_id] at hcomp
-  exact LeftInverse.injective (g := mfderiv J I r (f x)) fun v => (DFunLike.congr_fun hcomp v).symm
+  have hcomp := mfderiv_comp x hg ((hf.contMDiffAt (hs.mem_nhds hx)).mdifferentiableAt hn0)
+  rw [hgf.mfderiv_eq, mfderiv_id] at hcomp
+  exact hf.isImmersionAt_of_hasLeftInverse_mfderiv hs hx hn ⟨_, fun u ↦ congr($hcomp u).symm⟩
 
 variable {EP HP P : Type*} [NormedAddCommGroup EP] [NormedSpace 𝕜 EP] [CompleteSpace EP]
   [TopologicalSpace HP] {IP : ModelWithCorners 𝕜 EP HP} [TopologicalSpace P] [ChartedSpace HP P]
