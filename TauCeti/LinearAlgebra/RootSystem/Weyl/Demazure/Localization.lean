@@ -170,9 +170,10 @@ theorem mapDomainRingEquiv_reflection_mapDomain_smul {S : Type*} [Semiring S] (i
     (w : P.weylGroup) (f : AddMonoidAlgebra S M) :
     mapDomainRingEquiv S (P.reflection i).toAddEquiv (mapDomain (w • ·) f) =
       mapDomain ((weylGroup.ofIdx P i * w) • ·) f := by
-  change mapDomain (P.reflection i) (mapDomain (w • ·) f) = _
-  rw [AddMonoidAlgebra.mapDomain_mapDomain]
-  congr 1
+  rw [AddMonoidAlgebra.mapDomainRingEquiv_eq_mapDomain, AddMonoidAlgebra.mapDomain_mapDomain]
+  refine congrArg (mapDomain · f) (funext fun m ↦ ?_)
+  rw [Function.comp_apply, mul_smul, weylGroup.ofIdx_smul, Equiv.reflection_smul,
+    LinearEquiv.coe_toAddEquiv, LinearEquiv.coe_addEquiv_apply]
 
 end Subword
 
