@@ -29,7 +29,10 @@ comparisons `F.mapId'` and `F.mapComp'` at `1`-morphisms that are only propositi
 or composites (`StrongTrans.naturality_id'_inv`, `StrongTrans.naturality_comp'_hom`,
 `StrongTrans.naturality_comp'_inv`). Over a strict bicategory, it deduces that a strong
 transformation is compatible with the isomorphisms `F t ≫ F r ≅ F l ≫ F b` of a commutative
-square (`StrongTrans.naturality_isoMapOfCommSq`).
+square (`StrongTrans.naturality_isoMapOfCommSq`). It also records the naturality condition of a
+strong transformation at an identity `2`-cell for arbitrary `1`-morphisms
+(`Bicategory.id_whiskerRight_comp_eq_comp_whiskerLeft_id`), which applies by unification to goals
+whose `1`-morphisms are values of composite pseudofunctors.
 -/
 
 public section
@@ -210,3 +213,13 @@ lemma naturality_isoMapOfCommSq [Strict B] (η : F ⟶ G) {X₁ X₂ Y₁ Y₂ :
 end StrongTrans
 
 end CategoryTheory.Pseudofunctor
+
+namespace CategoryTheory.Bicategory
+
+/-- The naturality condition of a strong transformation at an identity `2`-cell. -/
+lemma id_whiskerRight_comp_eq_comp_whiskerLeft_id {B : Type*} [Bicategory B] {a b b' c : B}
+    (u : a ⟶ b) (v : b ⟶ c) (u' : a ⟶ b') (v' : b' ⟶ c) (θ : u ≫ v ⟶ u' ≫ v') :
+    𝟙 u ▷ v ≫ θ = θ ≫ u' ◁ 𝟙 v' := by
+  simp
+
+end CategoryTheory.Bicategory
