@@ -10,6 +10,7 @@ public import TauCeti.RepresentationTheory.SymmetricAlgebra.Molien
 import TauCeti.LinearAlgebra.Charpoly.FixedSubmodule
 import TauCeti.LinearAlgebra.End.FiniteOrder
 import TauCeti.RingTheory.PowerSeries.CoeffProd
+import TauCeti.RingTheory.PowerSeries.Evaluation
 import TauCeti.RingTheory.PowerSeries.Order
 
 /-!
@@ -85,13 +86,6 @@ section Expansion
 private noncomputable abbrev substOneSub : Polynomial K →ₐ[K] PowerSeries K :=
   Polynomial.aeval (1 - PowerSeries.X)
 
-/-- After the substitution `t = 1 - u`, the constant coefficient is the value at `t = 1`. -/
-private theorem constantCoeff_substOneSub (p : Polynomial K) :
-    PowerSeries.constantCoeff (substOneSub p) = p.eval 1 := by
-  induction p using Polynomial.induction_on' with
-  | add p q hp hq => simp [hp, hq]
-  | monomial n a => simp [Polynomial.aeval_monomial]
-
 /-- **Clearing the denominators of the Molien series.** If
 `(∑_g det(1 - t g)⁻¹) * ∏ᵢ (1 - t ^ dᵢ) = #G` in `K⟦t⟧`, then
 `(∑_g ∏_{h ≠ g} det(1 - t h)) * ∏ᵢ (1 - t ^ dᵢ) = #G * ∏_h det(1 - t h)` in `K[t]`. -/
@@ -137,7 +131,8 @@ private theorem sum_X_pow_mul_inv_mul_prod_eq {ι : Type*} [Fintype ι] {d : ι 
     simp only [m, b, hR g, map_mul, map_pow, map_sub, map_one, Polynomial.aeval_X,
       sub_sub_cancel]
   have hb (g : G) : PowerSeries.constantCoeff (b g) ≠ 0 := by
-    simpa only [b, constantCoeff_substOneSub] using hR1 g
+    simpa only [b, PowerSeries.constantCoeff_polynomial_aeval, map_sub, map_one,
+      PowerSeries.constantCoeff_X, sub_zero] using hR1 g
   have hD : ∏ g, substOneSub (ρ g).charpoly.reverse ≠ 0 := by
     refine prod_ne_zero_iff.2 fun g _ ↦ ?_
     rw [hQ]
@@ -189,9 +184,6 @@ private theorem sum_inv_one_sub_det_mul_two
   field_simp
   ring
 
-private theorem one_sub_X_ne_zero : (1 - Polynomial.X : Polynomial K) ≠ 0 :=
-  fun h ↦ by simpa using congrArg (Polynomial.eval 0) h
-
 omit [Fintype G] in
 /-- On the kernel of the action, `det(1 - t g) = (1 - t) ^ dim M`. -/
 private theorem eq_one_of_mem_ker {g : G} (hg : g ∈ ρ.ker) {R : Polynomial K}
@@ -202,7 +194,7 @@ private theorem eq_one_of_mem_ker {g : G} (hg : g ∈ ρ.ker) {R : Polynomial K}
     simpa using Polynomial.reverse_X_sub_C_pow (1 : K) (finrank K M)
   rw [(finrank_fixedSubmodule_eq_iff_mem_ker ρ).2 hg, MonoidHom.mem_ker.1 hg,
     LinearMap.charpoly_one, hrev] at hR
-  exact (mul_left_cancel₀ (pow_ne_zero _ one_sub_X_ne_zero) ((mul_one _).trans hR)).symm
+  exact (mul_left_cancel₀ (pow_ne_zero _ Polynomial.one_sub_X_ne_zero) ((mul_one _).trans hR)).symm
 
 omit [Fintype G] in
 /-- For a pseudoreflection `s`, `det(1 - t s) = (1 - t) ^ (dim M - 1) * (1 - det(s) t)`. -/
@@ -214,7 +206,7 @@ private theorem eq_one_sub_det_mul_X {g : G} (hg : finrank K (M ⧸ (ρ g).fixed
     have := Submodule.finrank_quotient_add_finrank (ρ g).fixedSubmodule
     omega
   rw [hR] at h
-  exact mul_left_cancel₀ (pow_ne_zero _ one_sub_X_ne_zero) h
+  exact mul_left_cancel₀ (pow_ne_zero _ Polynomial.one_sub_X_ne_zero) h
 
 omit [Fintype G] in
 open scoped Classical in
@@ -247,7 +239,8 @@ private theorem coeff_one_X_pow_mul_inv {g : G} {R : Polynomial K}
   by_cases hps : finrank K (M ⧸ (ρ g).fixedSubmodule) = 1
   · rw [ite_eq_left hps, show finrank K M - finrank K (ρ g).fixedSubmodule = 0 + 1 by omega,
       pow_one, PowerSeries.coeff_succ_X_mul, PowerSeries.coeff_zero_eq_constantCoeff_apply,
-      PowerSeries.constantCoeff_inv, constantCoeff_substOneSub, eq_one_sub_det_mul_X ρ hps hR]
+      PowerSeries.constantCoeff_inv, PowerSeries.constantCoeff_polynomial_aeval, map_sub, map_one,
+      PowerSeries.constantCoeff_X, sub_zero, eq_one_sub_det_mul_X ρ hps hR]
     simp
   · rw [ite_eq_right hps]
     by_cases hg : g ∈ ρ.ker
@@ -382,8 +375,8 @@ theorem natCard_ker_mul_sum_sub_one_eq_card_of_sum_inv_reverse_charpoly_mul_prod
   exact_mod_cast (by push_cast [hsub]; exact h :
     ((Nat.card ρ.ker * ∑ i, (d i - 1) : ℕ) : K) = #{g | finrank K (M ⧸ (ρ g).fixedSubmodule) = 1})
 
-/-- The Hilbert series of the invariant subalgebra is `∏ᵢ (1 - t ^ dᵢ)⁻¹` exactly when the Molien
-series is. -/
+/-- If the Hilbert series of the invariant subalgebra is `∏ᵢ (1 - t ^ dᵢ)⁻¹`, then so is the Molien
+series. -/
 private theorem sum_inv_reverse_charpoly_mul_prod_eq_of_mk_finrank_mul_prod_eq_one
     (hH : PowerSeries.mk (fun n ↦ (finrank K ↥(Subalgebra.toSubmodule ρ.symmetricAlgebraInvariants ⊓
         TauCeti.SymmetricAlgebra.homogeneousSubmodule K M n) : K)) *

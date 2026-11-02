@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Eigenspace.Semisimple
+public import Mathlib.LinearAlgebra.Eigenspace.Zero
 
 /-!
 # Diagonalizable endomorphisms are semisimple
@@ -17,10 +18,17 @@ hypothesis on the field and no finiteness hypothesis on the space: an endomorphi
 eigenspaces span is, as a `K[X]`-module, the sum of those eigenspaces, and on each of them `X` acts
 by a scalar, so each is annihilated by the squarefree polynomial `X - C μ` and is semisimple.
 
+For a semisimple endomorphism of a finite-dimensional space, each generalized eigenspace is the
+eigenspace, so the multiplicity of `μ` as a root of the characteristic polynomial is the dimension
+of the `μ`-eigenspace.
+
 ## Main results
 
 * `TauCeti.isSemisimple_of_iSup_eigenspace_eq_top`: an endomorphism whose eigenspaces span the
   space is semisimple.
+* `Module.End.IsFinitelySemisimple.rootMultiplicity_charpoly`: for a semisimple endomorphism, the
+  multiplicity of a root `μ` of the characteristic polynomial is the dimension of the
+  `μ`-eigenspace.
 -/
 
 public section
@@ -79,3 +87,16 @@ theorem isSemisimple_of_iSup_eigenspace_eq_top (hf : ⨆ μ : K, f.eigenspace μ
   exact isSemisimpleModule_of_isSemisimpleModule_submodule' hss htop
 
 end TauCeti
+
+namespace Module.End
+
+variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+
+/-- For a semisimple endomorphism, the multiplicity of `μ` as a root of the characteristic
+polynomial is the dimension of the `μ`-eigenspace. -/
+theorem IsFinitelySemisimple.rootMultiplicity_charpoly {f : End K V}
+    (hf : f.IsFinitelySemisimple) (μ : K) :
+    f.charpoly.rootMultiplicity μ = finrank K (f.eigenspace μ) := by
+  rw [← LinearMap.finrank_maxGenEigenspace_eq, hf.maxGenEigenspace_eq_eigenspace]
+
+end Module.End

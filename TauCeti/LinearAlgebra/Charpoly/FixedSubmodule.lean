@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Charpoly.BaseChange
-public import Mathlib.LinearAlgebra.Eigenspace.Semisimple
-public import Mathlib.LinearAlgebra.Eigenspace.Zero
 public import TauCeti.Algebra.Polynomial.Reverse
+public import TauCeti.LinearAlgebra.Eigenspace.Semisimple
 public import TauCeti.LinearAlgebra.FixedSubmodule
 
 /-!
@@ -18,7 +17,8 @@ For an endomorphism `f` of a finite-dimensional vector space `V`, the fixed subm
 `f.fixedSubmodule` is the eigenspace of `f` for the eigenvalue `1`
 (`Module.End.eigenspace_one_eq_fixedSubmodule`). Its dimension is therefore at
 most the multiplicity of `1` as a root of the characteristic polynomial, with equality when `f` is
-semisimple, for example when `f` has finite order invertible in the field.
+semisimple (`Module.End.IsFinitelySemisimple.rootMultiplicity_charpoly`), for example when `f`
+has finite order invertible in the field.
 
 These multiplicities are read here on the reverse characteristic polynomial
 `det(1 - t f) = f.charpoly.reverse`, the denominator in Molien's formula. If `f` is semisimple
@@ -31,9 +31,6 @@ pseudoreflections.
 
 ## Main results
 
-* `Module.End.IsFinitelySemisimple.rootMultiplicity_charpoly`: for a semisimple endomorphism, the
-  multiplicity of a root `μ` of the characteristic polynomial is the dimension of the
-  `μ`-eigenspace.
 * `Module.End.IsFinitelySemisimple.rootMultiplicity_one_charpoly`: for a semisimple endomorphism,
   the multiplicity of the root `1` of the characteristic polynomial is the dimension of the fixed
   submodule.
@@ -61,13 +58,6 @@ as a root of its characteristic polynomial. -/
 theorem finrank_fixedSubmodule_le_rootMultiplicity_one_charpoly (f : End K V) :
     finrank K f.fixedSubmodule ≤ f.charpoly.rootMultiplicity 1 :=
   f.eigenspace_one_eq_fixedSubmodule ▸ LinearMap.finrank_eigenspace_le f 1
-
-/-- For a semisimple endomorphism, the multiplicity of `μ` as a root of the characteristic
-polynomial is the dimension of the `μ`-eigenspace. -/
-theorem IsFinitelySemisimple.rootMultiplicity_charpoly {f : End K V}
-    (hf : f.IsFinitelySemisimple) (μ : K) :
-    f.charpoly.rootMultiplicity μ = finrank K (f.eigenspace μ) := by
-  rw [← LinearMap.finrank_maxGenEigenspace_eq, hf.maxGenEigenspace_eq_eigenspace]
 
 /-- For a semisimple endomorphism, the multiplicity of `1` as a root of the characteristic
 polynomial is the dimension of the fixed submodule. -/
