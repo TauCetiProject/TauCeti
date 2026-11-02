@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.ODE.InitialCondition
-public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ContDiff
+public import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.FDeriv.OfCompLeft
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
@@ -30,8 +30,8 @@ linear functional `ℓ` with `ℓ (w a) = 1` and set
 
 The flow law gives `ψ (z + s • w a) = Φ (ψ z) s`, so differentiating in `s` shows that `dψ z`
 sends `w a` to `g (ψ z)`. At `z = 0` the derivative of `ψ` is the identity, so by the inverse
-function theorem `ψ` is a local diffeomorphism near `0`; restricted to where its derivative is
-invertible and `g = w`, its inverse is the required `φ`.
+function theorem with `C^n` inverse (`TauCeti.ContDiffOn.exists_openPartialHomeomorph`) `ψ` is a
+local diffeomorphism near `0`; restricted to where `g = w`, its inverse is the required `φ`.
 
 ## Main results
 
@@ -138,9 +138,9 @@ end Flow
 
 /-- **The inverse function theorem step of the flow-box construction.** Let `ψ` be a `C^n` map,
 `1 ≤ n`, with the identity as derivative at `0`, whose derivative at every point `z` sends `u` to
-`g (ψ z)`. Then, for an open set `S ∋ ψ 0`, the local inverse of `ψ`, restricted to where `dψ` is
-invertible and `ψ` lands in `S`, is an open partial homeomorphism `φ` with `ψ 0 ∈ φ.source ⊆ S`,
-`C^n` with `C^n` inverse, whose derivative sends `g y` to `u` at every point `y` of its source. -/
+`g (ψ z)`. Then, for an open set `S ∋ ψ 0`, a local inverse of `ψ` landing in `S` is an open
+partial homeomorphism `φ` with `ψ 0 ∈ φ.source ⊆ S`, `C^n` with `C^n` inverse, whose derivative
+sends `g y` to `u` at every point `y` of its source. -/
 private theorem exists_openPartialHomeomorph_of_fderiv_apply_eq [CompleteSpace E] {n : ℕ∞}
     (hn : 1 ≤ n) {ψ g : E → E} {u : E} {S : Set E} (hψs : ContDiff ℝ n ψ)
     (hψ0 : HasFDerivAt ψ (ContinuousLinearMap.id ℝ E) 0) (hψu : ∀ z, fderiv ℝ ψ z u = g (ψ z))
@@ -148,50 +148,32 @@ private theorem exists_openPartialHomeomorph_of_fderiv_apply_eq [CompleteSpace E
     ∃ φ : OpenPartialHomeomorph E E, ψ 0 ∈ φ.source ∧ φ.source ⊆ S ∧
       (∀ y ∈ φ.source, ContDiffAt ℝ n φ y) ∧ (∀ z ∈ φ.target, ContDiffAt ℝ n φ.symm z) ∧
       ∀ y ∈ φ.source, fderiv ℝ φ y (g y) = u := by
-  have hn0 : (n : WithTop ℕ∞) ≠ 0 := by
-    have : (1 : WithTop ℕ∞) ≤ n := by exact_mod_cast hn
-    exact (lt_of_lt_of_le zero_lt_one this).ne'
-  have hψd : Differentiable ℝ ψ := hψs.differentiable hn0
-  have hψ0' : HasFDerivAt ψ ((ContinuousLinearEquiv.refl ℝ E : E ≃L[ℝ] E) : E →L[ℝ] E) 0 := by
-    rwa [ContinuousLinearEquiv.coe_refl]
-  -- The inverse function theorem, restricted to where `dψ` is invertible and `ψ` lands in `S`.
-  let P := hψs.contDiffAt.toOpenPartialHomeomorph ψ hψ0' hn0
-  set O := (fderiv ℝ ψ ⁻¹' range ((↑) : (E ≃L[ℝ] E) → E →L[ℝ] E)) ∩ ψ ⁻¹' S
-  have hOo : IsOpen O :=
-    (ContinuousLinearEquiv.isOpen.preimage (hψs.continuous_fderiv hn0)).inter
-      (hSo.preimage hψs.continuous)
-  let Q := P.restrOpen O hOo
-  have hQ : (Q : E → E) = ψ := by
-    rw [OpenPartialHomeomorph.coe_restrOpen, ContDiffAt.toOpenPartialHomeomorph_coe]
-  have hQs (y : E) (hy : y ∈ Q.target) :
-      ∃ L : E ≃L[ℝ] E, HasFDerivAt Q (L : E →L[ℝ] E) (Q.symm y) ∧ ψ (Q.symm y) = y ∧ y ∈ S := by
-    have hmem : Q.symm y ∈ Q.source := Q.map_target hy
-    rw [OpenPartialHomeomorph.restrOpen_source] at hmem
-    have hyO : Q.symm y ∈ O := hmem.2
-    obtain ⟨L, hL⟩ := hyO.1
-    have hy' : ψ (Q.symm y) = y := by
-      rw [← hQ]
-      exact Q.right_inv hy
-    refine ⟨L, ?_, hy', hy' ▸ hyO.2⟩
-    rw [hL, hQ]
-    exact (hψd _).hasFDerivAt
-  refine ⟨Q.symm, ?_, fun y hy ↦ ?_, fun y hy ↦ ?_, fun z _ ↦ ?_, fun y hy ↦ ?_⟩
-  · -- `ψ 0` lies in the target, with `0 ∈ O`.
-    have h0 : (0 : E) ∈ Q.source := by
-      rw [OpenPartialHomeomorph.restrOpen_source]
-      exact ⟨hψs.contDiffAt.mem_toOpenPartialHomeomorph_source hψ0' hn0,
-        ⟨ContinuousLinearEquiv.refl ℝ E, hψ0'.fderiv.symm⟩, hS0⟩
-    rw [OpenPartialHomeomorph.symm_source, ← hQ]
-    exact Q.map_source h0
-  · obtain ⟨-, -, -, hyS⟩ := hQs y hy
-    exact hyS
-  · obtain ⟨L, hL, -, -⟩ := hQs y hy
-    exact Q.contDiffAt_symm hy hL (by rw [hQ]; exact hψs.contDiffAt)
-  · rw [OpenPartialHomeomorph.symm_symm, hQ]
+  have hn' : (1 : WithTop ℕ∞) ≤ n := by exact_mod_cast hn
+  have hn0 : (n : WithTop ℕ∞) ≠ 0 := (lt_of_lt_of_le zero_lt_one hn').ne'
+  -- The inverse function theorem, on the open set where `ψ` lands in `S`.
+  obtain ⟨Θ, hΘ, h0Θ, hΘS, hΘs⟩ := ContDiffOn.exists_openPartialHomeomorph
+    hψs.contDiffOn (hSo.preimage hψs.continuous) hS0 hn' (e := ContinuousLinearEquiv.refl ℝ E)
+    (by rw [ContinuousLinearEquiv.coe_refl, hψ0.fderiv])
+  refine ⟨Θ.symm, hΘ ▸ Θ.map_source h0Θ, fun y hy ↦ ?_,
+    fun y hy ↦ hΘs.contDiffAt (Θ.open_target.mem_nhds hy), fun z _ ↦ ?_, fun y hy ↦ ?_⟩
+  · rw [← Θ.right_inv hy, hΘ]
+    exact hΘS (Θ.map_target hy)
+  · rw [OpenPartialHomeomorph.symm_symm, hΘ]
     exact hψs.contDiffAt
-  · obtain ⟨L, hL, hψy, -⟩ := hQs y hy
-    rw [(Q.hasFDerivAt_symm hy hL).fderiv, ← hψy, ← hψu (Q.symm y), ← hQ, hL.fderiv]
-    simp
+  · -- Differentiate `Θ.symm ∘ ψ = id`, valid near `Θ.symm y`, at `Θ.symm y`.
+    have hz := Θ.map_target hy
+    have hψy : ψ (Θ.symm y) = y := hΘ ▸ Θ.right_inv hy
+    have hd : HasFDerivAt (Θ.symm ∘ ψ) ((fderiv ℝ Θ.symm y).comp (fderiv ℝ ψ (Θ.symm y)))
+        (Θ.symm y) := by
+      refine HasFDerivAt.comp _ ?_ (hψs.differentiable hn0 _).hasFDerivAt
+      rw [hψy]
+      exact ((hΘs.contDiffAt (Θ.open_target.mem_nhds hy)).differentiableAt hn0).hasFDerivAt
+    have hid : Θ.symm ∘ ψ =ᶠ[𝓝 (Θ.symm y)] id :=
+      eventually_of_mem (Θ.open_source.mem_nhds hz) fun x hx ↦ by
+        rw [Function.comp_apply, ← hΘ, Θ.left_inv hx, id]
+    have h := congrArg (fun L : E →L[ℝ] E ↦ L u)
+      ((hd.congr_of_eventuallyEq hid.symm).unique (hasFDerivAt_id _))
+    simpa only [ContinuousLinearMap.comp_apply, hψu, hψy, ContinuousLinearMap.id_apply] using h
 
 variable [FiniteDimensional ℝ E]
 

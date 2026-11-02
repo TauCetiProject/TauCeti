@@ -96,24 +96,18 @@ theorem exists_chart_mfderiv_eq_const {m : ℕ∞} {n : ℕ∞ω} (hm : 1 ≤ m)
       ((contDiffGroupoid m 𝓘(ℝ, E)).id_mem_maximalAtlas) hφ hφs
     rwa [OpenPartialHomeomorph.refl_trans] at h
   set e := (((chartAt H x).transHomeomorph I.toHomeomorph).trans φ).transHomeomorph
-    I.toHomeomorph.symm with he
+    I.toHomeomorph.symm
   have hes (y : M) : y ∈ e.source ↔ y ∈ e₀.source ∧ e₀ y ∈ φ.source := by
-    simp [he, he₀, extChartAt]
-  have heq : EqOn (I ∘ e) (φ ∘ e₀) e.source := fun y _ ↦ by
-    simp only [he, he₀, extChartAt, Function.comp_apply,
-      OpenPartialHomeomorph.transHomeomorph_apply, OpenPartialHomeomorph.trans_apply,
-      OpenPartialHomeomorph.extend_coe, ModelWithCorners.toHomeomorph_apply,
-      ModelWithCorners.toHomeomorph_symm_apply]
-    exact I.right_inv (I.range_eq_univ ▸ mem_univ _)
+    rw [conj_chartAt_source, mem_inter_iff, mem_preimage]
+  have heq : I ∘ e = φ ∘ e₀ := comp_conj_chartAt x φ
   refine ⟨e, w (e₀ x), conj_chartAt_mem_maximalAtlas x hφA, (hes x).2
     ⟨mem_extChartAt_source x, hxφ⟩, hwx, fun y hy ↦ ?_⟩
   obtain ⟨hy₀, hyφ⟩ := (hes y).1 hy
   have hφd : DifferentiableAt ℝ φ (e₀ y) :=
     (hφ _ hyφ).differentiableAt (lt_of_lt_of_le zero_lt_one hm1).ne'
-  -- The differential of `I ∘ e = φ ∘ e₀` near `y`, by the chain rule.
+  -- The differential of `I ∘ e = φ ∘ e₀` at `y`, by the chain rule.
   have hd : mfderiv I 𝓘(ℝ, E) (I ∘ e) y = (fderiv ℝ φ (e₀ y)).comp (mfderiv I 𝓘(ℝ, E) e₀ y) := by
-    rw [(heq.eventuallyEq_of_mem (e.open_source.mem_nhds hy)).mfderiv_eq,
-      mfderiv_comp y hφd.mdifferentiableAt
+    rw [heq, mfderiv_comp y hφd.mdifferentiableAt
         (mdifferentiableAt_extChartAt (by rwa [← extChartAt_source (I := I)])),
       mfderiv_eq_fderiv]
     -- The tangent spaces of `E` are `E` by definition, so the remaining casts are identities.
