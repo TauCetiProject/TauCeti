@@ -89,36 +89,15 @@ theorem sum_fueterRight_mul_star_orthonormalBasisOneIJK {B : ℍ →L[ℝ] ℍ �
     hB ⟨0, 0, 0, 1⟩ ⟨0, 1, 0, 0⟩, hB ⟨0, 0, 0, 1⟩ ⟨0, 0, 1, 0⟩]
   ext <;> simp <;> ring
 
-/-- If the left Fueter operator vanishes on the derivative of `f` near `q`, and that derivative
-is differentiable at `q`, then the left Fueter operator vanishes on every directional derivative
-of it at `q`. -/
-private theorem fueterLeft_fderiv_fderiv_eq_zero (hF : ∀ᶠ x in 𝓝 q, fueterLeft (fderiv ℝ f x) = 0)
-    (h : DifferentiableAt ℝ (fderiv ℝ f) q) (w : ℍ) :
-    fueterLeft (fderiv ℝ (fderiv ℝ f) q w) = 0 := by
-  have hd (v : ℍ) :
-      HasFDerivAt (fun x ↦ fderiv ℝ f x v) ((fderiv ℝ (fderiv ℝ f) q).flip v) q := by
-    simpa using h.hasFDerivAt.clm_apply (hasFDerivAt_const v q)
-  simp only [fueterLeft_apply] at hF ⊢
-  have h₁ := (((hd 1).add ((hd ⟨0, 1, 0, 0⟩).const_mul ⟨0, 1, 0, 0⟩)).add
-    ((hd ⟨0, 0, 1, 0⟩).const_mul ⟨0, 0, 1, 0⟩)).add ((hd ⟨0, 0, 0, 1⟩).const_mul ⟨0, 0, 0, 1⟩)
-  have h₂ := (hasFDerivAt_const (𝕜 := ℝ) (0 : ℍ) q).congr_of_eventuallyEq hF
-  simpa using congrArg (· w) (h₁.unique h₂)
-
-/-- If the right Fueter operator vanishes on the derivative of `f` near `q`, and that derivative
-is differentiable at `q`, then the right Fueter operator vanishes on every directional derivative
-of it at `q`. -/
-private theorem fueterRight_fderiv_fderiv_eq_zero
-    (hF : ∀ᶠ x in 𝓝 q, fueterRight (fderiv ℝ f x) = 0)
-    (h : DifferentiableAt ℝ (fderiv ℝ f) q) (w : ℍ) :
-    fueterRight (fderiv ℝ (fderiv ℝ f) q w) = 0 := by
-  have hd (v : ℍ) :
-      HasFDerivAt (fun x ↦ fderiv ℝ f x v) ((fderiv ℝ (fderiv ℝ f) q).flip v) q := by
-    simpa using h.hasFDerivAt.clm_apply (hasFDerivAt_const v q)
-  simp only [fueterRight_apply] at hF ⊢
-  have h₁ := (((hd 1).add ((hd ⟨0, 1, 0, 0⟩).mul_const' ⟨0, 1, 0, 0⟩)).add
-    ((hd ⟨0, 0, 1, 0⟩).mul_const' ⟨0, 0, 1, 0⟩)).add ((hd ⟨0, 0, 0, 1⟩).mul_const' ⟨0, 0, 0, 1⟩)
-  have h₂ := (hasFDerivAt_const (𝕜 := ℝ) (0 : ℍ) q).congr_of_eventuallyEq hF
-  simpa using congrArg (· w) (h₁.unique h₂)
+/-- If a linear map `L` on a finite-dimensional space vanishes on `g` near `x`, and `g` is
+differentiable at `x`, then `L` vanishes on every directional derivative of `g` at `x`. Applied
+with `g = fderiv ℝ f` and `L` a Fueter operator. -/
+private theorem linearMap_fderiv_eq_zero {E F G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F] [NormedAddCommGroup G]
+    [NormedSpace ℝ G] {g : E → F} {x : E} (L : F →ₗ[ℝ] G) (hL : ∀ᶠ y in 𝓝 x, L (g y) = 0)
+    (h : DifferentiableAt ℝ g x) (w : E) : L (fderiv ℝ g x w) = 0 := by
+  have hc := (LinearMap.toContinuousLinearMap L).hasFDerivAt.comp x h.hasFDerivAt
+  simpa using congrArg (· w) (hc.unique ((hasFDerivAt_const 0 x).congr_of_eventuallyEq hL))
 
 /-- A function that is left Fueter regular on a neighbourhood of `q`, and whose derivative is
 differentiable at `q`, has vanishing Laplacian at `q`. -/
@@ -130,7 +109,8 @@ theorem LeftFueterOn.laplacian_eq_zero (hf : LeftFueterOn f s) (hs : s ∈ 𝓝 
   rw [InnerProductSpace.laplacian_eq_iteratedFDeriv_orthonormalBasis f orthonormalBasisOneIJK]
   simp only [iteratedFDeriv_two_apply, Matrix.cons_val_zero, Matrix.cons_val_one]
   rw [← sum_star_orthonormalBasisOneIJK_mul_fueterLeft hB]
-  simp [fueterLeft_fderiv_fderiv_eq_zero (hev.mono fun _ hx ↦ hx.fueterLeft_fderiv) h]
+  simp [linearMap_fderiv_eq_zero (g := fderiv ℝ f) fueterLeft
+    (hev.mono fun _ hx ↦ hx.fueterLeft_fderiv) h]
 
 /-- A function that is right Fueter regular on a neighbourhood of `q`, and whose derivative is
 differentiable at `q`, has vanishing Laplacian at `q`. -/
@@ -142,7 +122,8 @@ theorem RightFueterOn.laplacian_eq_zero (hf : RightFueterOn f s) (hs : s ∈ �
   rw [InnerProductSpace.laplacian_eq_iteratedFDeriv_orthonormalBasis f orthonormalBasisOneIJK]
   simp only [iteratedFDeriv_two_apply, Matrix.cons_val_zero, Matrix.cons_val_one]
   rw [← sum_fueterRight_mul_star_orthonormalBasisOneIJK hB]
-  simp [fueterRight_fderiv_fderiv_eq_zero (hev.mono fun _ hx ↦ hx.fueterRight_fderiv) h]
+  simp [linearMap_fderiv_eq_zero (g := fderiv ℝ f) fueterRight
+    (hev.mono fun _ hx ↦ hx.fueterRight_fderiv) h]
 
 /-- A left Fueter regular function of class `C²` on an open set is harmonic there. -/
 theorem LeftFueterOn.laplacian_eq_zero_of_contDiffOn (hf : LeftFueterOn f s) (hs : IsOpen s)
