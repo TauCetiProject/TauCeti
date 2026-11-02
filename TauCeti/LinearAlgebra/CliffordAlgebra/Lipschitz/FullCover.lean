@@ -9,7 +9,6 @@ public import TauCeti.Algebra.Group.Subgroup.ZPowers
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.ReverseNorm
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Pin.Action
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Kernel
-import TauCeti.Algebra.Group.Units.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.CartanDieudonne
 import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Kernel
 
@@ -189,8 +188,8 @@ theorem cliffordFullCoverToOrthogonal_surjective (hQ : Q.Nondegenerate)
   obtain ⟨x, rfl⟩ := lipschitzToOrthogonal_surjective Q hQ g
   obtain ⟨a, ha⟩ :=
     (exists_scalarUnits_mul_mem_cliffordFullCover_iff hQ.exists_isUnit x).2 <|
-      (hK (cliffordNorm Q x : K)).imp isSquare_units_val_iff.mp
-        fun h ↦ isSquare_units_val_iff.mp (by rwa [Units.val_neg])
+      (hK (cliffordNorm Q x : K)).imp Units.isSquare_coe_iff.mp
+        fun h ↦ Units.isSquare_coe_iff.mp (by rwa [Units.val_neg])
   exact ⟨⟨_, ha⟩, by simp⟩
 
 /-- **The kernel of the full-cover action is `{±1}`** for a positive-dimensional
