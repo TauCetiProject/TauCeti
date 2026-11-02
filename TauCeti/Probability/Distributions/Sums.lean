@@ -71,10 +71,10 @@ variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
 Laplace law of scale `b`. This is the equal-rate case of
 `ProbabilityTheory.IndepFun.hasLaw_asymmetricLaplaceMeasure`. -/
 theorem IndepFun.hasLaw_sub_expMeasure {X Y : Ω → ℝ} {b : ℝ} (hindep : IndepFun X Y P)
-    (hb : 0 < b) (hX : HasLaw X (expMeasure b⁻¹) P)
+    (hX : HasLaw X (expMeasure b⁻¹) P)
     (hY : HasLaw Y (expMeasure b⁻¹) P) :
     HasLaw (fun ω => X ω - Y ω) (laplaceMeasure 0 b) P := by
-  simpa using hindep.hasLaw_asymmetricLaplaceMeasure (inv_pos.2 hb) (inv_pos.2 hb) hX hY 0
+  simpa using hindep.hasLaw_asymmetricLaplaceMeasure hX hY 0
 
 /-! ### A difference of geometric variables -/
 
@@ -190,11 +190,11 @@ theorem iIndepFun.hasLaw_sum_expMeasure {ι : Type*} [Fintype ι] [Nonempty ι]
 
 /-- Pushing the product of two exponential laws with common rate `b⁻¹` forward by the difference
 of the coordinates gives the centered Laplace law of scale `b`. This is the equal-rate case of
-`TauCeti.Probability.asymmetricLaplaceMeasure_of_pos`. -/
-theorem map_sub_prod_expMeasure {b : ℝ} (hb : 0 < b) :
+`TauCeti.Probability.asymmetricLaplaceMeasure_eq_map`. -/
+theorem map_sub_prod_expMeasure {b : ℝ} :
     ((expMeasure b⁻¹).prod (expMeasure b⁻¹)).map (fun z : ℝ × ℝ ↦ z.1 - z.2) =
       laplaceMeasure 0 b := by
-  simpa using (asymmetricLaplaceMeasure_of_pos (inv_pos.2 hb) (inv_pos.2 hb) 0).symm
+  simpa using (asymmetricLaplaceMeasure_eq_map 0 b⁻¹ b⁻¹).symm
 
 /-- Pushing a finite product of geometric laws with success probability `p ≠ 0` forward by the sum
 of the coordinates gives the negative-binomial law whose shape is the number of factors. For an
