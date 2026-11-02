@@ -38,9 +38,10 @@ theorem list_prod_ofFn_single_kronecker {n : ℕ} (a b : Fin (n + 1) → l)
   induction n with
   | zero => simp
   | succ n ih =>
+    have h0 : b 0 = a (Fin.succ 0) := h 0
     rw [List.ofFn_succ, List.prod_cons, ih (fun i ↦ a i.succ) (fun i ↦ b i.succ)
       (fun i ↦ X i.succ) (fun i ↦ h i.succ), List.ofFn_succ (f := X), List.prod_cons,
-      ← mul_kronecker_mul, show b 0 = a (Fin.succ 0) from h 0, single_mul_single_same,
+      ← mul_kronecker_mul, h0, single_mul_single_same,
       mul_one, Fin.succ_last]
 
 end Matrix

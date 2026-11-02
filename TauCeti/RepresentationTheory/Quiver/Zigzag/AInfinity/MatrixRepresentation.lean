@@ -17,16 +17,16 @@ public import TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.WordPairing
 Let `Z` be the zigzag algebra of a finite simple graph `G` with no isolated vertex, graded by path
 length and regarded as an `A∞` algebra whose only operation is the product
 (`TauCeti.zigzagStrictAInfinityAlgebra`). This file turns a matrix representation of the signless
-preprojective algebra of a bipartite subgraph of `G`, the quadratic dual of `Z`, into Hochschild
-classes of `Z`: a closed walk whose matrix product has nonzero trace has a loop operation which is
-not a Hochschild coboundary.
+preprojective algebra of a bipartite subgraph of `G` into Hochschild classes of `Z`: a closed walk
+whose matrix product has nonzero trace has a loop operation which is not a Hochschild coboundary.
 
 Let `f` be a copy of a bipartite graph `H` in `G`, not necessarily induced, and let `β x y` be
 matrices on the arrows of `H` satisfying the signless relations `∑_{y ∼ x} β y x * β x y = 0`.
 Extend `β` by zero to `G` (`SimpleGraph.Copy.extendByZero`) and send each dart `d` of `G` to the
 block matrix `E_{d.snd, d.fst} ⊗ β d.fst d.snd`, indexed by pairs of a vertex of `G` and a matrix
-index. These block matrices satisfy the signless relations of `G`. Twist the trace by the diagonal
-matrix `D` with the sign `±1` of the bipartition of `H` along the copy, and `1` elsewhere:
+index. These block matrices satisfy the signless relations of `G`, which are the local relations of
+the quadratic dual of `Z`. Twist the trace by the diagonal matrix `D` with the sign `±1` of the
+bipartition of `H` along the copy, and `1` elsewhere:
 
 ```text
 F(Y) = tr(D Y).
@@ -178,8 +178,10 @@ theorem not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlge
     have hC := C.valid h
     have h01 : ∀ a b : Fin 2, a ≠ b → a = 0 ∨ b = 0 := by decide
     rcases h01 _ _ hC with h0 | h0
-    · simp [s, h0, show C y ≠ 0 from h0 ▸ hC.symm]
-    · simp [s, h0, show C x ≠ 0 from h0 ▸ hC]
+    · have hCy : C y ≠ 0 := h0 ▸ hC.symm
+      simp [s, h0, hCy]
+    · have hCx : C x ≠ 0 := h0 ▸ hC
+      simp [s, h0, hCx]
   let ε : V → k := Function.extend f s 1
   have hεf (x : W) : ε (f x) = s x := f.injective.extend_apply s 1 x
   refine not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_of_anticyclic
