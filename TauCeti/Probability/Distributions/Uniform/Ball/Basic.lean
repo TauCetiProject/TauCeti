@@ -48,6 +48,8 @@ times the inner product.
 
 * `TauCeti.Probability.isProbabilityMeasure_uniformBallMeasure_iff`: it is a probability
   measure exactly for nonnegative radius.
+* `TauCeti.Probability.uniformBallMeasure_absolutelyContinuous`: for nonzero radius it is
+  absolutely continuous with respect to Lebesgue measure.
 * `TauCeti.Probability.uniformBallMeasure_eq_withDensity`,
   `TauCeti.Probability.rnDeriv_uniformBallMeasure`: for nonzero radius, its density against
   Lebesgue measure.
@@ -160,6 +162,13 @@ theorem memLp_id_uniformBallMeasure (c : E) (r : ℝ) (p : ℝ≥0∞) :
     MemLp id p (uniformBallMeasure c r) :=
   .of_bound aestronglyMeasurable_id (‖c‖ + r)
     ((ae_mem_closedBall_uniformBallMeasure c r).mono fun _ hx ↦ norm_le_of_mem_closedBall hx)
+
+/-- For nonzero radius the uniform law on a ball is absolutely continuous with respect to
+Lebesgue measure. -/
+theorem uniformBallMeasure_absolutelyContinuous (hr : r ≠ 0) :
+    uniformBallMeasure c r ≪ volume := by
+  rw [uniformBallMeasure_of_ne_zero hr]
+  exact cond_absolutelyContinuous
 
 end Definition
 
