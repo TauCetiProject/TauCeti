@@ -144,7 +144,8 @@ theorem single_mem_faceIdeal_iff (a : M) (r : R) :
     · rintro (rfl | h)
       · simp
       · exact (h ha).elim
-  · simp [ha, show ∀ b : F, a ≠ (b : M) from fun b h ↦ ha (h ▸ b.property)]
+  · have hab : ∀ b : F, a ≠ (b : M) := fun b h ↦ ha (h ▸ b.property)
+    simp [ha, hab]
 
 /-- Inclusion of faces reverses inclusion of their monomial ideals. -/
 theorem faceIdeal_le_faceIdeal_iff [Nontrivial R] (G : AddSubmonoid M)
