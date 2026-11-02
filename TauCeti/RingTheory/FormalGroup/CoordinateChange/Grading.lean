@@ -26,7 +26,8 @@ The ring of composable pairs carries the analogous grading, with both families o
 variables in degree `2i`. Its mapping criterion tests the first factor and the variables of
 the second coordinate. This supplies the graded coefficient rings for strict formal-group
 isomorphisms and their composition. The counit is graded here; the coproduct is graded in
-`CoordinateChange.Coproduct`. Gradedness of the right unit and conjugation is not asserted.
+`CoordinateChange.Coproduct`. The right unit and conjugation are graded in
+`CoordinateChange.Homogeneous`.
 
 ## References
 
