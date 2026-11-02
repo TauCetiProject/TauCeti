@@ -228,6 +228,7 @@ theorem homotopic_of_comp_homotopic (hf : f.IsWeakHomotopyEquivalence) {g₀ g�
 /-- **Composition with a weak homotopy equivalence is injective on homotopy classes** of maps
 out of a space of CW type (Hatcher, Proposition 4.22): `f ∘ g₀ ≃ f ∘ g₁` exactly when
 `g₀ ≃ g₁`. Surjectivity is `ContinuousMap.IsWeakHomotopyEquivalence.exists_comp_homotopic`. -/
+@[simp]
 theorem comp_homotopic_comp_iff (hf : f.IsWeakHomotopyEquivalence) {g₀ g₁ : C(K, X)} :
     (f.comp g₀).Homotopic (f.comp g₁) ↔ g₀.Homotopic g₁ :=
   ⟨hf.homotopic_of_comp_homotopic, (ContinuousMap.Homotopic.refl f).comp⟩
@@ -329,6 +330,7 @@ theorem lift_comp_homotopic [TauCeti.CWType B] {b : C(B, Y)} {d : C(D, Z)}
 
 /-- **The lift of `φ` is a weak homotopy equivalence exactly when `φ` is**, when `a` is also a
 weak homotopy equivalence. -/
+@[simp]
 theorem isWeakHomotopyEquivalence_lift_iff {a : C(A, X)} {b : C(B, Y)}
     (ha : a.IsWeakHomotopyEquivalence) (hb : b.IsWeakHomotopyEquivalence) {φ : C(X, Y)} :
     (hb.lift a φ).IsWeakHomotopyEquivalence ↔ φ.IsWeakHomotopyEquivalence := by

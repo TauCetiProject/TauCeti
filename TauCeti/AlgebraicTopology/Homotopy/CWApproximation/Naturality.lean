@@ -121,6 +121,7 @@ theorem cwApproximationLift_comp_homotopic [PathConnectedSpace Y] [PathConnected
 /-- **`Γφ` is a weak homotopy equivalence exactly when `φ` is**, for path-connected `X` and `Y`.
 Since the CW approximations have CW type, `Γφ` is then a homotopy equivalence by Whitehead's
 theorem (`ContinuousMap.IsWeakHomotopyEquivalence.homotopyEquiv`). -/
+@[simp]
 theorem isWeakHomotopyEquivalence_cwApproximationLift_iff [PathConnectedSpace X]
     [PathConnectedSpace Y] {φ : C(X, Y)} :
     (cwApproximationLift x y φ).IsWeakHomotopyEquivalence ↔ φ.IsWeakHomotopyEquivalence :=
