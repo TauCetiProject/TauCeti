@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Normed.Module.TensorProduct.Series
 public import TauCeti.Analysis.OperatorIdeal.Carrier
 public import Mathlib.Analysis.Normed.Group.Quotient
 import Mathlib.Topology.Algebra.InfiniteSum.Module
+import TauCeti.Analysis.Normed.Group.InfiniteSum
 import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
@@ -325,23 +326,6 @@ private theorem exists_toContinuousLinearMap_eq_of_hasSum {ι : Type*} {T : E �
     ContinuousLinearMap.apply_apply, ContinuousLinearMap.smulRight_apply] at hx
   exact hx.unique (hT x)
 
-/-- The cost of a series representation, as an extended real, is the real cost `∑ i, ‖f i‖ * ‖y i‖`
-whenever the latter series is summable. -/
-private theorem tsum_enorm_mul_enorm_eq_ofReal {ι G H : Type*} [SeminormedAddCommGroup G]
-    [SeminormedAddCommGroup H] {f : ι → G} {y : ι → H}
-    (hfy : Summable fun i ↦ ‖f i‖ * ‖y i‖) :
-    ∑' i, ‖f i‖ₑ * ‖y i‖ₑ = ENNReal.ofReal (∑' i, ‖f i‖ * ‖y i‖) := by
-  rw [ENNReal.ofReal_tsum_of_nonneg (fun _ ↦ by positivity) hfy]
-  simp [ENNReal.ofReal_mul]
-
-omit [CompleteSpace F] in
-/-- A series of rank-one operators converging in operator norm to `T` converges pointwise. -/
-private theorem hasSum_apply_of_hasSum_smulRight {ι : Type*} {T : E →L[𝕜] F}
-    {f : ι → StrongDual 𝕜 E} {y : ι → F} (hT : HasSum (fun i ↦ (f i).smulRight (y i)) T) (x : E) :
-    HasSum (fun i ↦ f i x • y i) (T x) := by
-  simpa only [ContinuousLinearMap.apply_apply, ContinuousLinearMap.smulRight_apply] using
-    (ContinuousLinearMap.apply 𝕜 F x).hasSum hT
-
 /-- The nuclear norm of `T` is at most the cost `∑ i, ‖f i‖ * ‖y i‖` of any series representation
 `T x = ∑ i, f i x • y i`. -/
 theorem nuclearGauge_le_tsum_of_hasSum {ι : Type*} {T : E →L[𝕜] F} {f : ι → StrongDual 𝕜 E}
@@ -386,8 +370,8 @@ theorem nuclearGauge_eq_iInf_tsum (T : E →L[𝕜] F) :
     (le_of_forall_gt fun c hc ↦ ?_)
   obtain ⟨f, y, hT, -, hlt⟩ := exists_hasSum_smulRight_of_nuclearGauge_lt hc
   calc
-    _ ≤ ∑' n, ‖f n‖ₑ * ‖y n‖ₑ :=
-      iInf₂_le_of_le f y (iInf_le_of_le (hasSum_apply_of_hasSum_smulRight hT) le_rfl)
+    _ ≤ ∑' n, ‖f n‖ₑ * ‖y n‖ₑ := iInf₂_le_of_le f y <|
+      iInf_le_of_le (ContinuousLinearMap.hasSum_apply_of_hasSum_smulRight hT) le_rfl
     _ < c := hlt
 
 /-- An operator `T` is nuclear iff it has a series representation `T x = ∑ n, f n x • y n` with
@@ -398,7 +382,7 @@ theorem mem_nuclearOperators_iff_exists_hasSum {T : E →L[𝕜] F} :
   refine ⟨fun hT ↦ ?_, fun ⟨f, y, hfy, hT⟩ ↦ ?_⟩
   · obtain ⟨f, y, hT, hfy, -⟩ :=
       exists_hasSum_smulRight_of_nuclearGauge_lt (nuclearGauge_lt_top_iff.2 hT)
-    exact ⟨f, y, hfy, hasSum_apply_of_hasSum_smulRight hT⟩
+    exact ⟨f, y, hfy, ContinuousLinearMap.hasSum_apply_of_hasSum_smulRight hT⟩
   · obtain ⟨u, hu, -⟩ := exists_toContinuousLinearMap_eq_of_hasSum hfy hT
     exact ⟨u, hu⟩
 
