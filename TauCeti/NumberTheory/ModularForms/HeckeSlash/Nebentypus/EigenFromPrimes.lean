@@ -62,7 +62,7 @@ private theorem exists_smul_mul {F : cuspFormCharSpace k χ}
     ∃ c : ℂ, heckeRingHomCuspCharSpace k χ (x * y) F = c • F := by
   obtain ⟨a, ha⟩ := hx
   obtain ⟨b, hb⟩ := hy
-  exact ⟨a * b, by rw [map_mul, Module.End.mul_apply, hb, map_smul, ha, smul_smul, mul_comm]⟩
+  exact ⟨a * b, by rw [map_mul, mul_apply_eq_comp, hb, map_smul, ha, smul_smul, mul_comm]⟩
 
 /-- A power of a Hecke-ring element acting on `F` by a scalar again acts by a scalar. -/
 private theorem exists_smul_pow {F : cuspFormCharSpace k χ}
@@ -70,7 +70,7 @@ private theorem exists_smul_pow {F : cuspFormCharSpace k χ}
     (hx : ∃ c : ℂ, heckeRingHomCuspCharSpace k χ x F = c • F) (v : ℕ) :
     ∃ c : ℂ, heckeRingHomCuspCharSpace k χ (x ^ v) F = c • F := by
   induction v with
-  | zero => exact ⟨1, by rw [pow_zero, map_one, Module.End.one_apply, one_smul]⟩
+  | zero => exact ⟨1, by rw [pow_zero, map_one, one_apply_eq_self, one_smul]⟩
   | succ v ih =>
       rw [pow_succ]
       exact exists_smul_mul ih hx
@@ -85,7 +85,7 @@ private theorem exists_smul_heckeTGeneratorRecGamma0 {F : cuspFormCharSpace k χ
   induction v using Nat.strong_induction_on with
   | _ v ih =>
     match v with
-    | 0 => exact ⟨1, by rw [heckeTGeneratorRecGamma0_zero, map_one, Module.End.one_apply, one_smul]⟩
+    | 0 => exact ⟨1, by rw [heckeTGeneratorRecGamma0_zero, map_one, one_apply_eq_self, one_smul]⟩
     | 1 => rwa [heckeTGeneratorRecGamma0_one]
     | (r + 2) =>
       obtain ⟨a, ha⟩ := ih (r + 1) (by omega)
@@ -93,7 +93,7 @@ private theorem exists_smul_heckeTGeneratorRecGamma0 {F : cuspFormCharSpace k χ
       obtain ⟨c, hc⟩ := h
       refine ⟨c * a - (χ (ZMod.unitOfCoprime p hpN) : ℂ) * (p : ℂ) ^ (k - 1) * b, ?_⟩
       rw [heckeRingHomCuspCharSpace_heckeTGeneratorRecGamma0_succ_succ k χ hp.pos hpN r]
-      simp only [LinearMap.sub_apply, Module.End.mul_apply, LinearMap.smul_apply, ha, hb,
+      simp only [LinearMap.sub_apply, mul_apply_eq_comp, LinearMap.smul_apply, ha, hb,
         map_smul, hc, smul_smul, sub_smul]
       ring_nf
 
@@ -115,8 +115,8 @@ theorem exists_smul_heckeTCompositeGamma0_of_forall_prime_of_coprime
     have hpN : Nat.Coprime p N := hnN.coprime_dvd_left (dvd_pow_self p hv.ne')
     rw [heckeTCompositeGamma0_prime_pow N hp]
     exact exists_smul_heckeTGeneratorRecGamma0 hp hpN (h p hp hpN) v
-  | zero => exact ⟨1, by rw [heckeTCompositeGamma0_zero, map_one, Module.End.one_apply, one_smul]⟩
-  | one => exact ⟨1, by rw [heckeTCompositeGamma0_one, map_one, Module.End.one_apply, one_smul]⟩
+  | zero => exact ⟨1, by rw [heckeTCompositeGamma0_zero, map_one, one_apply_eq_self, one_smul]⟩
+  | one => exact ⟨1, by rw [heckeTCompositeGamma0_one, map_one, one_apply_eq_self, one_smul]⟩
   | coprime a b _ _ hab iha ihb =>
     rw [heckeTCompositeGamma0_mul_of_coprime N hab]
     rw [Nat.coprime_mul_iff_left] at hnN
@@ -143,7 +143,7 @@ theorem exists_smul_heckeTCompositeGamma0_of_forall_prime {F : cuspFormCharSpace
       · rw [heckeTGeneratorRecGamma0_eq_generator_pow_of_not_coprime N hpN]
         exact exists_smul_pow (h p hp) v
   | zero => exact (hn rfl).elim
-  | one => exact ⟨1, by rw [heckeTCompositeGamma0_one, map_one, Module.End.one_apply, one_smul]⟩
+  | one => exact ⟨1, by rw [heckeTCompositeGamma0_one, map_one, one_apply_eq_self, one_smul]⟩
   | coprime a b ha hb hab iha ihb =>
       rw [heckeTCompositeGamma0_mul_of_coprime N hab]
       exact exists_smul_mul (iha (by omega)) (ihb (by omega))

@@ -70,7 +70,7 @@ instance (priority := 90) instContinuousConstSMul
 @[simp, norm_cast]
 theorem coe_sum [TopologicalSpace β] [AddCommMonoid β] [ContinuousAdd β] {ι : Type*}
     (s : Finset ι) (f : ι → C₀(α, β)) : ⇑(∑ i ∈ s, f i) = ∑ i ∈ s, ⇑(f i) :=
-  map_sum (⟨⟨DFunLike.coe, coe_zero⟩, coe_add⟩ : C₀(α, β) →+ α → β) f s
+  map_sum (⟨⟨DFunLike.coe, FunLike.coe_zero⟩, FunLike.coe_add⟩ : C₀(α, β) →+ α → β) f s
 
 section Normed
 
