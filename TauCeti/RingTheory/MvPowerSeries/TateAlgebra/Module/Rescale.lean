@@ -44,13 +44,13 @@ defined whenever the radii are norms of multiplicative units.
 
 ## Main results
 
-* `TauCeti.MvPowerSeries.norm_prod_pow_smul_mul_prod`: the weighted norm identity
-  `‖uᵗ • e‖ * sᵗ = ‖e‖ * rᵗ`.
 * `TauCeti.MvPowerSeries.isRestrictedFamily_prod_pow_smul_iff`: rescaling converts restrictedness
-  at `r` into restrictedness at `s`.
-* `TauCeti.MvPowerSeries.IsRestrictedFamily.Gauss.rescaleLinearIsometryEquiv_one` and
-  `TauCeti.MvPowerSeries.IsRestrictedFamily.Gauss.rescaleLinearIsometryEquiv_trans`: the identity
-  and composition laws.
+  at `r` into restrictedness at `s`, by the weighted norm identity
+  `TauCeti.MvPowerSeries.norm_prod_pow_smul_mul_prod`.
+* `TauCeti.MvPowerSeries.IsRestrictedFamily.Gauss.rescaleLinearIsometryEquiv_one`,
+  `TauCeti.MvPowerSeries.IsRestrictedFamily.Gauss.rescaleLinearIsometryEquiv_trans` and
+  `TauCeti.MvPowerSeries.IsRestrictedFamily.Gauss.rescaleLinearIsometryEquiv_symm`: the identity,
+  composition and inverse laws.
 * `TauCeti.MvPowerSeries.ofAddSubgroup_subringLinearEquiv_restrictedRescaleEquiv`: for
   ring-valued coefficients the rescaling is the substitution `X i ↦ u i * X i`.
 
@@ -72,37 +72,6 @@ section Family
 variable {σ R E : Type*} [SeminormedCommRing R] [SeminormedAddCommGroup E] [Module R E]
   {r s : σ → ℝ}
 
-/-- If each `u i` scales norms in `E` by `r i / s i`, then the monomial `uᵗ` scales the weighted
-coefficient norms: `‖uᵗ • e‖ * sᵗ = ‖e‖ * rᵗ`. -/
-theorem norm_prod_pow_smul_mul_prod (u : σ → R)
-    (hu : ∀ i (e : E), ‖u i • e‖ * s i = ‖e‖ * r i) (t : σ →₀ ℕ) (e : E) :
-    ‖(t.prod fun i m ↦ u i ^ m) • e‖ * t.prod (s · ^ ·) = ‖e‖ * t.prod (r · ^ ·) := by
-  classical
-  have hpow (i : σ) (m : ℕ) (e : E) : ‖u i ^ m • e‖ * s i ^ m = ‖e‖ * r i ^ m := by
-    induction m generalizing e with
-    | zero => simp
-    | succ m ih =>
-      calc ‖u i ^ (m + 1) • e‖ * s i ^ (m + 1) = ‖u i • u i ^ m • e‖ * s i * s i ^ m := by
-            rw [pow_succ', mul_smul, pow_succ']
-            ring
-        _ = ‖e‖ * r i ^ (m + 1) := by
-            rw [hu, mul_right_comm, ih, pow_succ, mul_assoc]
-  simp only [Finsupp.prod]
-  induction t.support using Finset.induction_on generalizing e with
-  | empty => simp
-  | insert i S hi ih =>
-    simp only [Finset.prod_insert hi]
-    calc ‖(u i ^ t i * ∏ j ∈ S, u j ^ t j) • e‖ * (s i ^ t i * ∏ j ∈ S, s j ^ t j)
-        = ‖u i ^ t i • (∏ j ∈ S, u j ^ t j) • e‖ * s i ^ t i * ∏ j ∈ S, s j ^ t j := by
-          rw [mul_smul]
-          ring
-      _ = ‖(∏ j ∈ S, u j ^ t j) • e‖ * (∏ j ∈ S, s j ^ t j) * r i ^ t i := by
-          rw [hpow]
-          ring
-      _ = ‖e‖ * (r i ^ t i * ∏ j ∈ S, r j ^ t j) := by
-          rw [ih]
-          ring
-
 /-- Multiplying the coefficient at `t` by `uᵗ` converts restrictedness at `r` into restrictedness
 at `s`, when each `u i` scales norms in `E` by `r i / s i`. -/
 theorem isRestrictedFamily_prod_pow_smul_iff (u : σ → R)
@@ -112,7 +81,7 @@ theorem isRestrictedFamily_prod_pow_smul_iff (u : σ → R)
   exact Filter.tendsto_congr fun t ↦ norm_prod_pow_smul_mul_prod u hu t (a t)
 
 /-- If `u i` scales norms in `E` by `r i / s i`, then its inverse scales them by `s i / r i`. -/
-private theorem norm_units_inv_smul_mul (u : σ → Rˣ)
+theorem norm_units_inv_smul_mul (u : σ → Rˣ)
     (hu : ∀ i (e : E), ‖(u i : R) • e‖ * s i = ‖e‖ * r i) (i : σ) (e : E) :
     ‖(((u i)⁻¹ : Rˣ) : R) • e‖ * r i = ‖e‖ * s i := by
   simpa [smul_smul] using (hu i ((((u i)⁻¹ : Rˣ) : R) • e)).symm
@@ -145,6 +114,11 @@ private def rescaleLinearEquiv (u : σ → Rˣ)
     ext t
     simp [smul_comm c]
 
+/-- The rescaling equivalence multiplies the coefficient at `t` by `uᵗ`. -/
+private theorem rescaleLinearEquiv_apply (u : σ → Rˣ)
+    (hu : ∀ i (e : E), ‖(u i : R) • e‖ * s i = ‖e‖ * r i) (a : Gauss r E) (t : σ →₀ ℕ) :
+    rescaleLinearEquiv u hu a t = (t.prod fun i m ↦ (u i : R) ^ m) • a t := (rfl)
+
 variable [∀ i, Fact (0 < r i)] [∀ i, Fact (0 < s i)]
 
 /-- Rescaling coefficients by `uᵗ` is a linear isometry from restricted families at `r` onto
@@ -157,6 +131,7 @@ def rescaleLinearIsometryEquiv (u : σ → Rˣ)
     simp only [norm_eq_iSup]
     congr 1
     funext t
+    rw [rescaleLinearEquiv_apply]
     exact norm_prod_pow_smul_mul_prod _ hu t (a t)
 
 /-- The rescaling isometry multiplies the coefficient at `t` by `uᵗ`. -/
@@ -177,6 +152,14 @@ theorem rescaleLinearIsometryEquiv_symm_apply (u : σ → Rˣ)
 theorem rescaleLinearIsometryEquiv_one :
     rescaleLinearIsometryEquiv (1 : σ → Rˣ) (fun _ _ ↦ by simp) =
       LinearIsometryEquiv.refl R (Gauss r E) := by
+  ext a t
+  simp
+
+/-- The inverse of rescaling by `u` is rescaling by the inverse units `(u i)⁻¹`. -/
+theorem rescaleLinearIsometryEquiv_symm (u : σ → Rˣ)
+    (hu : ∀ i (e : E), ‖(u i : R) • e‖ * s i = ‖e‖ * r i) :
+    (rescaleLinearIsometryEquiv u hu).symm =
+      rescaleLinearIsometryEquiv u⁻¹ (norm_units_inv_smul_mul u hu) := by
   ext a t
   simp
 
@@ -288,14 +271,12 @@ theorem restrictedRescaleCoeffLinearIsometryEquiv_apply (u : σ → Rˣ)
     (f : IsRestricted.subring (R := R) r) (t : σ →₀ ℕ) :
     restrictedRescaleCoeffLinearIsometryEquiv u hu hr f (.toTopology ⊥ t) =
       (t.prod fun i m ↦ (u i : R) ^ m) * coeff t (f : _root_.MvPowerSeries σ R) := by
-  rw [restrictedRescaleCoeffLinearIsometryEquiv, LinearIsometryEquiv.trans_apply,
-    restrictedCoeffLinearIsometryEquiv_apply, LinearIsometryEquiv.coe_mk,
-    AlgEquiv.toLinearEquiv_apply, coe_restrictedRescaleEquiv, coeff_rescale]
+  simp [restrictedRescaleCoeffLinearIsometryEquiv, coeff_rescale]
 
 /-- The inverse unweighted coefficient model builds the restricted series whose coefficient at `t`
 is `u⁻ᵗ` times the coordinate at `t`. -/
 @[simp]
-theorem coeff_restrictedRescaleCoeffLinearIsometryEquiv_symm_apply (u : σ → Rˣ)
+theorem restrictedRescaleCoeffLinearIsometryEquiv_symm_apply (u : σ → Rˣ)
     (hu : ∀ i, IsNormMulUnit (u i : R)) (hr : ∀ i, ‖(u i : R)‖ = r i)
     (a : C₀(WithDiscreteTopology (σ →₀ ℕ), R)) (t : σ →₀ ℕ) :
     coeff t (((restrictedRescaleCoeffLinearIsometryEquiv u hu hr).symm a :
