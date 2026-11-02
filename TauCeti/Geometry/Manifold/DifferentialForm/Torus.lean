@@ -282,6 +282,7 @@ theorem torusVolumeForm_apply_ne_zero (x : ∀ i, AddCircle (p i)) : (torusVolum
 /-- **The permutation sign law.** Reordering the factors of the torus by a permutation `σ`,
 `x ↦ (j ↦ x (σ j))`, pulls the volume form of the reordered torus back to `sign σ` times the
 volume form. -/
+@[simp]
 theorem mpullback_reindex_torusVolumeForm (σ : Equiv.Perm (Fin n)) :
     SmoothForm.mpullback (fun (x : ∀ i, AddCircle (p i)) (j : Fin n) ↦ x (σ j))
         (contMDiff_pi_iff.2 fun _ ↦ contMDiff_apply) (torusVolumeForm fun j ↦ p (σ j)) =
@@ -293,6 +294,7 @@ theorem mpullback_reindex_torusVolumeForm (σ : Equiv.Perm (Fin n)) :
 /-- The diagonal rescaling of the periods, by the rescaling diffeomorphisms
 `AddCircle (p i) ≃ AddCircle (q i)` of all coordinates, pulls the volume form of periods `q` back
 to `∏ i, (p i)⁻¹ * q i` times that of periods `p`. -/
+@[simp]
 theorem mpullback_piMap_diffeomorphAddCircle_torusVolumeForm (q : Fin n → ℝ)
     [∀ i, Fact (0 < q i)] :
     SmoothForm.mpullback (Pi.map fun j ↦ AddCircle.diffeomorphAddCircle (p j) (q j) ∞)
