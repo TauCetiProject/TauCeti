@@ -61,6 +61,7 @@ theorem classNumber_eq_one_iff_of_neg_fifty_one_lt_discr (hK : finrank ℚ K = 2
   -- reduced forms of discriminant `-n`.
   have key : ∀ n : ℕ, n < 51 → Int.IsFundamentalDiscr (-n) →
       (#(primitiveReducedForms n) = 1 ↔ n ∈ heegnerDiscriminants) := by
+    simp only [mem_heegnerDiscriminants]
     decide +kernel
   exact key n (by omega) (hn ▸ Multiquadratic.isFundamentalDiscr_discr hK)
 

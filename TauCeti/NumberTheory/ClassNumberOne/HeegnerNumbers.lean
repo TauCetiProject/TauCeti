@@ -83,9 +83,8 @@ theorem squarefree_of_mem_heegnerNumbers {d : ℕ} (hd : d ∈ heegnerNumbers) :
 /-- The absolute values `3, 4, 7, 8, 11, 19, 43, 67, 163` of the discriminants of the nine
 imaginary quadratic fields of class number one: these fields have discriminant `-n` for `n` in this
 set. That each `ℚ(√(-n))` has class number one is
-`TauCeti.classNumber_neg_eq_one_of_mem_heegnerDiscriminants`. The body is exposed so that the
-kernel can decide membership in importing modules. -/
-@[expose] def heegnerDiscriminants : Finset ℕ := {3, 4, 7, 8, 11, 19, 43, 67, 163}
+`TauCeti.classNumber_neg_eq_one_of_mem_heegnerDiscriminants`. -/
+def heegnerDiscriminants : Finset ℕ := {3, 4, 7, 8, 11, 19, 43, 67, 163}
 
 /-- Membership in `heegnerDiscriminants`, spelled out. -/
 @[simp] theorem mem_heegnerDiscriminants {n : ℕ} :
