@@ -27,7 +27,8 @@ they need not be distinct, since in characteristic `p` the identity, taken `p` t
 set of sections of `μ_p`. The Drinfeld level structures on elliptic curves are of this form: a
 `[Γ(N)]`-structure on `E` is a `(ℤ/N)²`-generator of `E[N]`.
 
-The second half of the file assumes that `H` is free over `R` and constructs the scheme of
+The rank and product results also assume that the coordinate algebras are free over `R`.
+The second half of the file likewise assumes that `H` is free over `R` and constructs the scheme of
 `A`-generators of `G`. The scheme of homomorphisms `A_R → G` from the constant monoid
 `A_R = Spec (coordinateRing R A)` is
 `Spec (HomAlgebra R H (coordinateRing R A))`. On it the universal homomorphism provides a universal
@@ -50,13 +51,13 @@ the functor `T ↦ {φ : A →* G(T) // IsAGenerator φ}`.
 
 ## Main results
 
-* `TauCeti.IsAGenerator.card_eq_finrank`: over a nontrivial ring, the order of `A` is the rank
-  of `G`.
+* `TauCeti.IsAGenerator.card_eq_finrank`: over a nontrivial ring, if a finite free `G` has an
+  `A`-generator, the order of `A` is the rank of `G`.
 * `TauCeti.IsAGenerator.baseChange`, `TauCeti.IsAGenerator.of_baseChange` and
   `TauCeti.isAGenerator_baseChange_iff`: `A`-generators are stable under arbitrary base change and
   descend along injective ring maps, in particular along faithfully flat ones.
-* `TauCeti.IsAGenerator.prodMap`: an `A₁`-generator of `G₁` and an `A₂`-generator of `G₂` together
-  give an `A₁ × A₂`-generator of the product `G₁ × G₂`.
+* `TauCeti.IsAGenerator.prodMap`: for finite free `G₁`, `G₂`, an `A₁`-generator of `G₁` and an
+  `A₂`-generator of `G₂` together give an `A₁ × A₂`-generator of the product `G₁ × G₂`.
 * `TauCeti.ConstantGroup.isAGenerator_toPoints`: the tautological homomorphism from `A` to the
   points of the constant monoid `A_R` is an `A`-generator.
 * `TauCeti.isAGenerator_pointsOfBialgHom_homEquiv_iff` and
@@ -100,7 +101,8 @@ theorem isAGenerator_iff : IsAGenerator φ ↔ IsFullSetOfSections fun a ↦ (φ
 
 variable [Module.Finite R H]
 
-/-- Over a nontrivial ring, if `G` has an `A`-generator then the order of `A` is the rank of `G`. -/
+/-- Over a nontrivial ring, if a finite free `G` has an `A`-generator then the order of `A` is
+the rank of `G`. -/
 theorem IsAGenerator.card_eq_finrank [Module.Free R H] [Nontrivial R] (h : IsAGenerator φ) :
     Fintype.card A = Module.finrank R H :=
   IsFullSetOfSections.card_eq_finrank h
@@ -138,9 +140,10 @@ variable {R : Type u} {H₁ H₂ : Type*} [CommRing R] [CommRing H₁] [CommRing
   [Module.Finite R H₂] {A₁ A₂ : Type*} [Monoid A₁] [Fintype A₁] [Monoid A₂] [Fintype A₂]
   {φ₁ : A₁ →* WithConv (H₁ →ₐ[R] R)} {φ₂ : A₂ →* WithConv (H₂ →ₐ[R] R)}
 
-/-- **Products of generators.** If `φ₁` is an `A₁`-generator of `G₁ = Spec H₁` and `φ₂` is an
-`A₂`-generator of `G₂ = Spec H₂`, then `(a₁, a₂) ↦ (φ₁ a₁, φ₂ a₂)` is an `A₁ × A₂`-generator of
-the product `G₁ × G₂ = Spec (H₁ ⊗[R] H₂)`. -/
+/-- **Products of generators.** For finite free `G₁ = Spec H₁`, `G₂ = Spec H₂`, if `φ₁` is an
+`A₁`-generator of `G₁` and `φ₂` is an `A₂`-generator of `G₂`, then
+`(a₁, a₂) ↦ (φ₁ a₁, φ₂ a₂)` is an `A₁ × A₂`-generator of the product
+`G₁ × G₂ = Spec (H₁ ⊗[R] H₂)`. -/
 theorem IsAGenerator.prodMap (h₁ : IsAGenerator φ₁) (h₂ : IsAGenerator φ₂) :
     IsAGenerator ((AffineGroup.Product.pointsMulEquiv (R := R) (H₁ := H₁) (H₂ := H₂)
       (A := R)).symm.toMonoidHom.comp (φ₁.prodMap φ₂)) := by
