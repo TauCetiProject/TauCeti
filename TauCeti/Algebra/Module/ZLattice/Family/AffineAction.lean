@@ -263,8 +263,8 @@ theorem torusFamilyAffineMap_iterate_mk_of_translation (k : ℕ) (y : Y) (v : E)
   induction k with
   | zero => simp
   | succ k ih =>
-    rw [Function.iterate_succ_apply', ih, torusFamilyAffineMap_mk_of_eq R P ρ hP b hb (hβ _), hR,
-      pow_succ', mul_smul, birkhoffSum_succ_apply, smul_iterate_apply, add_assoc]
+    rw [Function.iterate_succ_apply', ih, torusFamilyAffineMap_mk_of_eq R P ρ hP b hb (hβ _), hR]
+    simp [pow_succ', mul_smul, birkhoffSum_succ_apply, add_assoc]
 
 include ρ hP hb hone hmul hbone hbmul in
 /-- **The orbit sum of a translation is a period.** Let `g` act on the family of tori by an affine
@@ -277,7 +277,8 @@ theorem birkhoffSum_translation_mem_range_of_pow_eq_one {m : ℕ} (hg : g ^ m = 
   let _ := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbone hbmul
   have h := torusFamilyAffineMap_iterate_mk_of_translation R P ρ hP b hb hR hβ m y 0
   rw [← funext (torusFamilyAffineMulAction_smul R hone hmul P ρ hP b hb hbone hbmul g),
-    smul_iterate_apply, hg, one_smul, one_smul, zero_add] at h
+    smul_iterate_apply, hg] at h
+  simp only [one_smul, zero_add] at h
   simpa using ((mem_orbit_periodAddAction_iff P).1 (Quotient.exact h.symm)).2
 
 end Translation
