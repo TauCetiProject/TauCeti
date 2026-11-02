@@ -8,12 +8,16 @@ module
 public import Mathlib.Algebra.Ring.Parity
 
 /-!
-# Parity of exponents of `-1` and of negated elements
+# Parity of exponents of `-1`, of negated elements, and of nonzero elements
 
 This file records the identity `1 - (-x)^{2n+1} = 1 + x^{2n+1}` in a ring, which turns a product
 of factors `1 - (-q)^{2n+1}` into a product of factors `1 + q^{2n+1}`, and two sign cancellations
 for powers of `-1` in a monoid with a distributive negation: an even summand of the exponent can be
 dropped, and two equal powers of `-1` cancel.
+
+It also records that a nonzero even element keeps `2` nonzero: `Even.two_ne_zero_of_ne_zero`.
+Combined with `Even.intCast`, a hypothesis `(n : R) ≠ 0` on an even integer `n` yields
+`(2 : R) ≠ 0`.
 -/
 
 public section
@@ -43,5 +47,12 @@ theorem neg_one_pow_mul_neg_one_pow_mul (a : ℕ) (x : α) :
 end NegOnePow
 
 end TauCeti
+
+/-- **A nonzero even element forces `2` to be nonzero**: it is `2` times something, so a vanishing
+`2` would make it vanish too. -/
+theorem Even.two_ne_zero_of_ne_zero {R : Type*} [NonAssocSemiring R] {x : R} (hx : Even x)
+    (h : x ≠ 0) : (2 : R) ≠ 0 := by
+  obtain ⟨y, rfl⟩ := hx
+  exact fun h₂ ↦ h (by rw [← two_mul, h₂, zero_mul])
 
 end
