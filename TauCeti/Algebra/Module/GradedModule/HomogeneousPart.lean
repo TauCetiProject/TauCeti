@@ -330,8 +330,8 @@ theorem exists_isHomogeneous_comp_eq_of_injective {f : M →ₗ[A] N} (hf : Func
   have hax : a x = homogeneousPartAddHom I G a.toAddMonoidHom r x := hf <| by
     rw [comp_homogeneousPartAddHom_apply_of_mem I G H a.toAddMonoidHom r hf₀ hx, add_zero,
       homogeneousPartAddHom_apply_of_mem I H _ r hx]
-    change f (a x) = (DirectSum.decompose H.piece (f (a x)) (p + r) : N)
-    rw [← _root_.LinearMap.comp_apply, ha]
+    rw [AddMonoidHom.comp_apply, _root_.LinearMap.toAddMonoidHom_coe,
+      _root_.LinearMap.toAddMonoidHom_coe, ← _root_.LinearMap.comp_apply, ha]
     exact (DirectSum.decompose_of_mem_same H.piece (hχ.map_mem hx)).symm
   rw [hax, homogeneousPartAddHom_apply_of_mem I G _ r hx]
   exact (DirectSum.decompose G.piece (a x) (p + r)).property

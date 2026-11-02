@@ -250,8 +250,9 @@ private theorem quotient_map_eq_zero_of_comp_coneDesc
       have := hk x
       simp only [closedHom_comp, closedHom_coneDesc, LinearMap.comp_apply, closedHom_zero,
         LinearMap.zero_apply, sub_zero] at this
+      rw [LinearMap.snd_apply] at this
       rw [hψ, map_sub, map_add, ← differential_closedHom, hk', hk', ← this]
-      exact sub_eq_zero.2 rfl)
+      exact sub_self _)
   -- The closedness of `φ`, componentwise.
   have hφd (x : P) : closedHom f (closedHom φ x).1 =
       (closedHom φ (P.differential x)).2 - L.differential (closedHom φ x).2 := by
