@@ -24,12 +24,14 @@ of `ℤⁿ`, which commute with each other and with every element of `C_G(u)`; a
 extension `⟨G, t | [c, t] = 1, c ∈ C_G(u)⟩`.
 
 Iterated extensions of centralizers are the basic examples of fully residually free groups: over a
-nonabelian CSA group `G` with the big powers property and `u` not a proper power, the retractions
-`t ↦ u ^ k` of `G(u, ℤ)` onto `G` discriminate it by `G` (see Kharlampovich–Myasnikov,
-*Implicit function theorem over free groups*, §2.5). This file sets up the construction for
-arbitrary `u` and `n`, its universal property and these retractions, and compares it with `G` for
-`n = 0`, with `G × ℤⁿ` for central `u`, and with Mathlib's HNN extension for `n = 1`. The
-construction always uses the full centralizer and imposes no condition on `u` or `n`;
+CSA group `G` with the big powers property and `u ≠ 1`, the retractions `t ↦ u ^ k` of `G(u, ℤ)`
+onto `G` discriminate it by `G` (see Kharlampovich–Myasnikov, *Implicit function theorem over free
+groups*, §2.5); this is proved as `CentralizerExt.eventually_retraction_ne_one` and
+`CentralizerExt.isDiscriminatedBy` in
+`TauCeti.GroupTheory.LimitGroup.CentralizerExtension.Discrimination`. This file sets up the
+construction for arbitrary `u` and `n`, its universal property and these retractions, and compares
+it with `G` for `n = 0`, with `G × ℤⁿ` for central `u`, and with Mathlib's HNN extension for
+`n = 1`. The construction always uses the full centralizer and imposes no condition on `u` or `n`;
 `IsAdmissibleCentralizerStep u n` records the conditions imposed on a step of an iterated extension
 of centralizers. The extension depends only on the centralizer: if `C_G(u) = C_G(v)` then
 `G(u, ℤⁿ) ≃* G(v, ℤⁿ)` over `G` (`CentralizerExt.congr`). In particular, when `u = r ^ d` has the
@@ -128,6 +130,17 @@ def of : G →* CentralizerExt u n :=
 def t (i : Fin n) : CentralizerExt u n :=
   Monoid.PushoutI.of (φ := centralizerExtMap u n) true (1, Pi.mulSingle i (.ofAdd 1))
 
+/-- The inclusion of `G` is the inclusion of the first factor of the amalgam. -/
+theorem of_def :
+    (of : G →* CentralizerExt u n) = Monoid.PushoutI.of (φ := centralizerExtMap u n) false :=
+  (rfl)
+
+/-- The new letter `tᵢ` is the image of the `i`-th standard generator of the second factor. -/
+theorem t_def (i : Fin n) :
+    (t i : CentralizerExt u n) =
+      Monoid.PushoutI.of (φ := centralizerExtMap u n) true (1, Pi.mulSingle i (.ofAdd 1)) :=
+  (rfl)
+
 /-- `G` embeds in `G(u, ℤⁿ)`. -/
 theorem of_injective : Function.Injective (of : G →* CentralizerExt u n) :=
   Monoid.PushoutI.of_injective (centralizerExtMap_injective u n) false
@@ -135,25 +148,35 @@ theorem of_injective : Function.Injective (of : G →* CentralizerExt u n) :=
 @[simp] theorem of_inj {g h : G} : (of g : CentralizerExt u n) = of h ↔ g = h :=
   of_injective.eq_iff
 
-/-- An element of `C_G(u)` is also the image of `(c, 1)` from the second factor. -/
-private theorem of_true_inl (c : centralizer {u}) :
-    Monoid.PushoutI.of (φ := centralizerExtMap u n) true (c, 1) = of (c : G) := by
+/-- The new letters commute with each other. -/
+theorem commute_t_t (i j : Fin n) : Commute (t i : CentralizerExt u n) (t j) :=
+  ((Commute.one_right 1).prod (Commute.all _ _)).map _
+
+/-- A letter `(c, v)` of the factor `C_G(u) × ℤⁿ` is `c * ∏ i, tᵢ ^ vᵢ`, the product written with
+`zpowersPiHom` since the `tᵢ` live in a noncommutative group. -/
+theorem pushoutI_of_true (c : centralizer {u}) (v : Fin n → Multiplicative ℤ) :
+    Monoid.PushoutI.of (φ := centralizerExtMap u n) true (c, v) =
+      of (c : G) * zpowersPiHom t commute_t_t v := by
+  have hcv : ((c, v) : centralizer {u} × (Fin n → Multiplicative ℤ)) = (c, 1) * (1, v) := by
+    simp
   have h₁ := of_apply_eq_base (centralizerExtMap u n) true c
   have h₂ := of_apply_eq_base (centralizerExtMap u n) false c
   simp only [centralizerExtMap_true, centralizerExtMap_false, Subgroup.coe_subtype] at h₁ h₂
+  have hv : (Monoid.PushoutI.of (φ := centralizerExtMap u n) true).comp (MonoidHom.inr _ _) =
+      zpowersPiHom t commute_t_t :=
+    MonoidHom.pi_ext_mint fun i => by rw [zpowersPiHom_mulSingle]; rfl
+  rw [hcv, map_mul]
   -- `MonoidHom.inl _ _ c` is `(c, 1)` by definition, and `of` is the inclusion at `false`; `simp`
   -- cannot see the former through the instance on the `Bool`-indexed factor.
-  exact h₁.trans h₂.symm
+  exact congrArg₂ (· * ·) (h₁.trans h₂.symm) (DFunLike.congr_fun hv v)
 
 /-- The new letters commute with every element of `C_G(u)`. -/
 theorem commute_of_t {c : G} (hc : c ∈ centralizer {u}) (i : Fin n) :
     Commute (of c : CentralizerExt u n) (t i) := by
-  rw [← of_true_inl ⟨c, hc⟩, t]
+  have h := pushoutI_of_true (n := n) ⟨c, hc⟩ 1
+  rw [map_one, mul_one] at h
+  rw [← h, t]
   exact ((Commute.one_right _).prod (Commute.one_left _)).map _
-
-/-- The new letters commute with each other. -/
-theorem commute_t_t (i j : Fin n) : Commute (t i : CentralizerExt u n) (t j) :=
-  ((Commute.one_right 1).prod (Commute.all _ _)).map _
 
 /-- Homomorphisms out of `G(u, ℤⁿ)` agree when they agree on `G` and on the new letters. -/
 @[ext high]
@@ -165,7 +188,7 @@ theorem hom_ext [Monoid K] {f g : CentralizerExt u n →* K} (hof : f.comp of = 
   · -- On `C_G(u) × ℤⁿ`, agree separately on `C_G(u) × 1` and on `1 × ℤⁿ`.
     have hl : ∀ c : centralizer {u}, f (Monoid.PushoutI.of (φ := centralizerExtMap u n) true
         (c, 1)) = g (Monoid.PushoutI.of (φ := centralizerExtMap u n) true (c, 1)) := fun c => by
-      simpa [of_true_inl] using DFunLike.congr_fun hof (c : G)
+      simpa [pushoutI_of_true] using DFunLike.congr_fun hof (c : G)
     have hr : (f.comp (Monoid.PushoutI.of (φ := centralizerExtMap u n) true)).comp
         (MonoidHom.inr _ _) =
         (g.comp (Monoid.PushoutI.of (φ := centralizerExtMap u n) true)).comp
@@ -313,7 +336,10 @@ private theorem ofPi_mulSingle (i : Fin n) :
 
 private theorem commute_of_ofPi (hu : u ∈ center G) (g : G) (v : Fin n → Multiplicative ℤ) :
     Commute (of g) (ofPi v : CentralizerExt u n) := by
-  rw [← of_true_inl ⟨g, mem_centralizer_singleton_iff.mpr (mem_center_iff.mp hu g)⟩]
+  have h := pushoutI_of_true (n := n)
+    ⟨g, mem_centralizer_singleton_iff.mpr (mem_center_iff.mp hu g)⟩ 1
+  rw [map_one, mul_one] at h
+  rw [← h]
   exact (MonoidHom.commute_inl_inr _ _).map _
 
 /-- The homomorphism `G(u, ℤⁿ) →* G × ℤⁿ` sending `g` to `(g, 1)` and `tᵢ` to the `i`-th
