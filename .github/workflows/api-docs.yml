@@ -47,7 +47,7 @@ jobs:
   build-docs:
     # Keep hourly docs builds independent of the hosted-runner backlog.
     runs-on:
-      - nscloud-ubuntu-24.04-amd64-8x16-with-features
+      - nscloud-ubuntu-24.04-amd64-16x32-with-features
       - namespace-features:github.run-id=${{ github.run_id }}
     # A full rebuild (after a pin bump) analyzes all of TauCeti; everything else is far quicker.
     timeout-minutes: 300
@@ -189,6 +189,8 @@ jobs:
       # so does the previous facts file, which describes the previous marker's commit.
       - name: Build the API documentation (doc-gen4)
         env:
+          # Give doc-gen4 more memory without doubling Lake's runtime worker count.
+          LEAN_NUM_THREADS: "8"
           DOCGEN_LOCAL_MODULE_ROOTS: TauCeti
           DOCGEN_DEPS_DOCS_URL: https://leanprover-community.github.io/mathlib4_docs
           # The restore above placed what this needs, so do not reach for a remote cache.
