@@ -15,8 +15,9 @@ public import TauCeti.Topology.Homotopy.Extension.Basic
 
 An `n + 1`-simplex of the nerve of a category, a string `x₀ ⟶ x₁ ⟶ ⋯ ⟶ xₙ₊₁` of composable
 arrows, lies in the image of the `i`-th degeneracy exactly when its `i`-th arrow `xᵢ ⟶ xᵢ₊₁` is
-an identity arrow (`CategoryTheory.nerve.mem_range_σ_iff`). This generalizes, and adapts the proof
-of, Mathlib's `PartialOrder.mem_range_nerve_σ_iff` from partial orders to arbitrary categories.
+an identity arrow (`CategoryTheory.nerve.mem_range_σ_iff`, in `Set.range` form
+`CategoryTheory.nerve.range_σ_eq_preimage`). This generalizes, and adapts the proof of, Mathlib's
+`PartialOrder.mem_range_nerve_σ_iff` from partial orders to arbitrary categories.
 The degenerate simplices, the union of these images, form the latching object of the nerve in
 each degree.
 
@@ -120,6 +121,14 @@ theorem mem_range_σ_iff {n : ℕ} (s : ComposableArrows C (n + 1)) (i : Fin (n 
     exact ⟨_, σ_δ_castSucc_eq_self s (h := hr)
       (by simpa [comp_eqToHom_iff] using ((conj_eqToHom_iff_heq _ _ rfl hr).2 hh).symm)⟩
 
+/-- The image of the `i`-th degeneracy is the set of strings whose `i`-th arrow is an identity
+arrow: the `Set.range` form of `mem_range_σ_iff`. -/
+theorem range_σ_eq_preimage {n : ℕ} (i : Fin (n + 1)) :
+    Set.range ((nerve C).σ i) =
+      (fun s : ComposableArrows C (n + 1) ↦ s.totalArrow i.castSucc i.succ i.castSucc_le_succ) ⁻¹'
+        Set.range fun x : C ↦ (⟨x, x, 𝟙 x⟩ : Quiver.Total C) :=
+  Set.ext fun s ↦ mem_range_σ_iff s i
+
 end CategoryTheory.nerve
 
 namespace CategoryTheory.SimplicialObject
@@ -138,14 +147,6 @@ namespace TauCeti
 
 variable {C : Type u} [Category.{v} C]
 
-/-- The image of the `i`-th degeneracy is the set of strings whose `i`-th arrow is an identity
-arrow. -/
-private theorem range_nerve_σ_eq_preimage {n : ℕ} (i : Fin (n + 1)) :
-    Set.range ((nerve C).σ i) =
-      (fun s : ComposableArrows C (n + 1) ↦ s.totalArrow i.castSucc i.succ i.castSucc_le_succ) ⁻¹'
-        Set.range fun x : C ↦ (⟨x, x, 𝟙 x⟩ : Quiver.Total C) :=
-  Set.ext fun s ↦ nerve.mem_range_σ_iff s i
-
 variable [TopologicalSpace (Quiver.Total C)]
 
 /-- If the identity arrows form a closed set, each degeneracy of the topological nerve is a
@@ -154,7 +155,7 @@ theorem isClosedEmbedding_topologicalNerve_σ
     (h : IsClosed (Set.range fun x : C ↦ (⟨x, x, 𝟙 x⟩ : Quiver.Total C))) {n : ℕ}
     (i : Fin (n + 1)) :
     IsClosedEmbedding (SimplicialObject.σ (topologicalNerve C) i) :=
-  ⟨SimplicialObject.isEmbedding_σ (topologicalNerve C) i, range_nerve_σ_eq_preimage (C := C) i ▸
+  ⟨SimplicialObject.isEmbedding_σ (topologicalNerve C) i, nerve.range_σ_eq_preimage (C := C) i ▸
     h.preimage (ComposableArrows.continuous_totalArrow _ _ _)⟩
 
 /-- If the identity arrows form an open set, each degeneracy of the topological nerve is an open
@@ -163,7 +164,7 @@ theorem isOpenEmbedding_topologicalNerve_σ
     (h : IsOpen (Set.range fun x : C ↦ (⟨x, x, 𝟙 x⟩ : Quiver.Total C))) {n : ℕ}
     (i : Fin (n + 1)) :
     IsOpenEmbedding (SimplicialObject.σ (topologicalNerve C) i) :=
-  ⟨SimplicialObject.isEmbedding_σ (topologicalNerve C) i, range_nerve_σ_eq_preimage (C := C) i ▸
+  ⟨SimplicialObject.isEmbedding_σ (topologicalNerve C) i, nerve.range_σ_eq_preimage (C := C) i ▸
     h.preimage (ComposableArrows.continuous_totalArrow _ _ _)⟩
 
 /-- If the identity arrows form a closed set, the degenerate simplices of the topological nerve
