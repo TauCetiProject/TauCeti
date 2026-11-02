@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Analysis.Calculus.Deriv.Mul
+import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
@@ -102,12 +103,10 @@ theorem ContinuousLinearMap.isInvertible_of_norm_sub_le_half [CompleteSpace E]
 Neither space needs to be complete. -/
 theorem ContinuousLinearMap.isInvertible_of_surjective_of_norm_le {L : E →L[𝕜] F} {C : ℝ}
     (hL : Function.Surjective L) (hC : ∀ x, ‖x‖ ≤ C * ‖L x‖) : L.IsInvertible := by
-  have hinj : Function.Injective L := fun x y hxy ↦ by
-    have := hC (x - y)
-    rw [map_sub, hxy, sub_self, norm_zero, mul_zero, norm_le_zero_iff] at this
-    exact sub_eq_zero.1 this
-  let e := LinearEquiv.ofBijective (L : E →ₗ[𝕜] F) ⟨hinj, hL⟩
-  refine ⟨e.toContinuousLinearEquivOfBounds ‖L‖ C L.le_opNorm fun y ↦ ?_, rfl⟩
+  let e := LinearEquiv.ofBijective (L : E →ₗ[𝕜] F) ⟨injective_of_forall_norm_le hC, hL⟩
+  have he : ∀ x, e x = L x := fun x ↦ LinearEquiv.ofBijective_apply _ x
+  -- `toContinuousLinearEquivOfBounds` has no coercion lemma; it applies as `e` by definition.
+  refine ⟨e.toContinuousLinearEquivOfBounds ‖L‖ C L.le_opNorm fun y ↦ ?_, ext he⟩
   calc ‖e.symm y‖ ≤ C * ‖e (e.symm y)‖ := hC (e.symm y)
     _ = C * ‖y‖ := by rw [e.apply_symm_apply]
 
@@ -137,7 +136,8 @@ theorem ContinuousLinearMap.isInvertible_of_mul_norm_sub_lt [CompleteSpace E]
   have hsymm0 : 0 < ‖(e.symm : F →L[𝕜] E)‖ :=
     norm_pos_iff.2 fun h ↦ hx (by simpa using congr($h (e x)))
   refine isInvertible_of_norm_sub_lt e ?_
-  rw [← NNReal.coe_lt_coe, coe_nnnorm, NNReal.coe_inv, coe_nnnorm]
+  rw [← NNReal.coe_lt_coe]
+  push_cast
   calc ‖M - e‖ < C⁻¹ := by simpa using (lt_inv_mul_iff₀ hC0).2 hM
     _ ≤ ‖(e.symm : F →L[𝕜] E)‖⁻¹ := inv_anti₀ hsymm0 hsymm
 
