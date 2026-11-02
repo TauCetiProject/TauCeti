@@ -187,7 +187,7 @@ theorem continuousMatrixCochainExtension_hochschildCoboundary {n : ℕ}
     matrixCochainExtension_hochschildCoboundary ι n φ.toMultilinearMap
 
 /-- Matrix extension commutes with the cyclic Hochschild differential. -/
-theorem continuousMatrixCyclicCochainExtension_coboundary {n : ℕ}
+theorem continuousMatrixCyclicCochainExtension_cyclicHochschildCoboundary {n : ℕ}
     (φ : continuousCyclicCochains 𝕜 A M n) :
     continuousMatrixCyclicCochainExtension ι (n + 1)
         (continuousCyclicHochschildCoboundary 𝕜 A M n φ) =
@@ -210,15 +210,16 @@ variable {𝕜 A M : Type*} [NormedField 𝕜] [NonUnitalRing A] [Module 𝕜 A]
   (ι : Type*) [Fintype ι]
 
 /-- Continuous cyclic cocycles extend to continuous cyclic cocycles on matrices. -/
-theorem continuousMatrixCyclicCochainExtension_mem_cocycles {n : ℕ}
+theorem continuousMatrixCyclicCochainExtension_mem_continuousCyclicCocycles {n : ℕ}
     {φ : continuousCyclicCochains 𝕜 A M n} (hφ : φ ∈ continuousCyclicCocycles 𝕜 A M n) :
     continuousMatrixCyclicCochainExtension ι n φ ∈
       continuousCyclicCocycles 𝕜 (Matrix ι ι A) M n := by
-  rw [mem_continuousCyclicCocycles_iff, ← continuousMatrixCyclicCochainExtension_coboundary,
+  rw [mem_continuousCyclicCocycles_iff,
+    ← continuousMatrixCyclicCochainExtension_cyclicHochschildCoboundary,
     (mem_continuousCyclicCocycles_iff 𝕜 A M).1 hφ, map_zero]
 
 /-- Actual continuous coboundaries, not merely their closures, extend to coboundaries. -/
-theorem continuousMatrixCyclicCochainExtension_mem_coboundaries {n : ℕ}
+theorem continuousMatrixCyclicCochainExtension_mem_continuousCyclicCoboundaries {n : ℕ}
     {φ : continuousCyclicCochains 𝕜 A M n}
     (hφ : φ ∈ continuousCyclicCoboundaries 𝕜 A M n) :
     continuousMatrixCyclicCochainExtension ι n φ ∈
@@ -231,7 +232,7 @@ theorem continuousMatrixCyclicCochainExtension_mem_coboundaries {n : ℕ}
     obtain ⟨ψ, rfl⟩ := (mem_continuousCyclicCoboundaries_succ_iff 𝕜 A M).1 hφ
     exact (mem_continuousCyclicCoboundaries_succ_iff 𝕜 (Matrix ι ι A) M).2
       ⟨continuousMatrixCyclicCochainExtension ι n ψ,
-        (continuousMatrixCyclicCochainExtension_coboundary ι ψ).symm⟩
+        (continuousMatrixCyclicCochainExtension_cyclicHochschildCoboundary ι ψ).symm⟩
 
 end Cocycles
 
@@ -253,16 +254,16 @@ def matrixExtension (n : ℕ) :
   desc ((mk 𝕜 (Matrix ι ι A) M n).comp
     (((continuousMatrixCyclicCochainExtension ι n).comp
       (continuousCyclicCocycles 𝕜 A M n).subtypeL).codRestrict _
-        (fun φ ↦ continuousMatrixCyclicCochainExtension_mem_cocycles ι φ.2)))
+        (fun φ ↦ continuousMatrixCyclicCochainExtension_mem_continuousCyclicCocycles ι φ.2)))
     (fun _ hφ ↦ (mk_eq_zero_iff 𝕜 (Matrix ι ι A) M _).2
-      (continuousMatrixCyclicCochainExtension_mem_coboundaries ι hφ))
+      (continuousMatrixCyclicCochainExtension_mem_continuousCyclicCoboundaries ι hφ))
 
 /-- Matrix extension sends a class to the class of its generalized trace. -/
 @[simp]
 theorem matrixExtension_mk {n : ℕ} (φ : continuousCyclicCocycles 𝕜 A M n) :
     matrixExtension 𝕜 A M ι n (mk 𝕜 A M n φ) = mk 𝕜 (Matrix ι ι A) M n
       ⟨continuousMatrixCyclicCochainExtension ι n φ.1,
-        continuousMatrixCyclicCochainExtension_mem_cocycles ι φ.2⟩ :=
+        continuousMatrixCyclicCochainExtension_mem_continuousCyclicCocycles ι φ.2⟩ :=
   desc_mk _ _ φ
 
 /-- Matrix extension is compatible with the comparison to algebraic cyclic cohomology. -/
