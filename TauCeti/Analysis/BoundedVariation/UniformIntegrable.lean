@@ -22,7 +22,7 @@ weak derivatives. The reference measure need only be outer regular. Lower semico
 bounds variation on small open sets; outer regularity then covers reference-null sets by such
 open sets.
 
-For an integrable limit and a uniformly integrable, uniformly `L¹`-bounded family of weak
+For a locally integrable limit and a uniformly integrable, uniformly `L¹`-bounded family of weak
 derivatives, `exists_hasWeakFDerivOn_integrableOn_of_uniformIntegrable` supplies an integrable
 weak gradient and the lower semicontinuity bound on its norm. In particular no singular
 variation survives. A superlinear integral bound is an alternative sufficient hypothesis,
@@ -110,12 +110,13 @@ theorem LocallyIntegrableOn.variationMeasure_absolutelyContinuous_of_superlinear
     (unifIntegrable_of_lintegral_ofReal_le hΦ
       (fun i => (hv i).locallyIntegrableOn_deriv.aestronglyMeasurable) hC hbound) hconv
 
-/-- An integrable local `L¹` limit of weakly differentiable functions whose derivatives are
+/-- A locally integrable local `L¹` limit of weakly differentiable functions whose derivatives are
 uniformly integrable and uniformly `L¹`-bounded has an integrable weak gradient. Its gradient
 norm integral is bounded by the lower limit of those of the approximants. In contrast to weak
 closedness with a specified gradient, no convergence of the derivatives is assumed. -/
-theorem IntegrableOn.exists_hasWeakFDerivOn_integrableOn_of_uniformIntegrable [μ.IsAddHaarMeasure]
-    (hu : IntegrableOn u Ω μ) (hv : ∀ i, HasWeakFDerivOn μ Ω (v i) (U i))
+theorem LocallyIntegrableOn.exists_hasWeakFDerivOn_integrableOn_of_uniformIntegrable
+    [μ.IsAddHaarMeasure] (hu : LocallyIntegrableOn u Ω μ)
+    (hv : ∀ i, HasWeakFDerivOn μ Ω (v i) (U i))
     (hUI : UniformIntegrable U 1 (μ.restrict Ω))
     (hconv : ∀ K, IsCompact K → K ⊆ Ω →
       Tendsto (fun i => ∫⁻ x in K, ‖v i x - u x‖ₑ ∂μ) l (𝓝 0)) :
@@ -123,7 +124,7 @@ theorem IntegrableOn.exists_hasWeakFDerivOn_integrableOn_of_uniformIntegrable [�
       IntegrableOn g Ω μ ∧
       (∫⁻ x in Ω, ‖g x‖ₑ ∂μ) ≤ liminf (fun i => ∫⁻ x in Ω, ‖U i x‖ₑ ∂μ) l := by
   have hlsc := totalVariationOn_le_liminf
-    (.of_forall fun i => (hv i).locallyIntegrableOn) hu.locallyIntegrableOn hconv
+    (.of_forall fun i => (hv i).locallyIntegrableOn) hu hconv
   obtain ⟨C, hC⟩ := hUI.2
   have hnorm (i : ι) : (∫⁻ x in Ω, ‖U i x‖ₑ ∂μ) ≤ C := by
     simpa only [eLpNorm_one_eq_lintegral_enorm
@@ -131,19 +132,19 @@ theorem IntegrableOn.exists_hasWeakFDerivOn_integrableOn_of_uniformIntegrable [�
   have htv : totalVariationOn μ Ω u ≤ C := hlsc.trans
     (liminf_le_of_frequently_le' (.of_forall fun i =>
       (hv i).totalVariationOn_le_setLIntegral_enorm.trans (hnorm i)))
-  have hBV : MemBV μ Ω u := memBV_iff.2
-    ⟨hu, htv.trans_lt ENNReal.coe_lt_top⟩
   have hfin : ∀ K, IsCompact K → K ⊆ Ω →
       ∃ V : Opens E, K ⊆ (V : Set E) ∧ totalVariationOn μ V u ≠ ∞ :=
     fun _ _ hK => ⟨Ω, hK, (htv.trans_lt ENNReal.coe_lt_top).ne⟩
-  obtain ⟨g, hg, hgi⟩ := hBV.exists_hasWeakFDerivOn_integrableOn
-    (hu.locallyIntegrableOn.variationMeasure_absolutelyContinuous_of_unifIntegrable
-      hfin hv hUI.1 hconv)
-  refine ⟨g, hg, hgi, ?_⟩
+  obtain ⟨g, hg⟩ : ∃ g : E → E, HasWeakFDerivOn μ Ω u (fun x => innerSL ℝ (g x)) :=
+    ⟨_, hasWeakFDerivOn_of_absolutelyContinuous hu hfin
+      (hu.variationMeasure_absolutelyContinuous_of_unifIntegrable hfin hv hUI.1 hconv)⟩
   have hnormg : totalVariationOn μ Ω u = ∫⁻ x in Ω, ‖g x‖ₑ ∂μ := by
     simpa only [← ofReal_norm, innerSL_apply_norm] using hg.totalVariationOn_eq_setLIntegral_enorm
-  rw [← hnormg]
-  exact hlsc.trans (liminf_le_liminf (.of_forall fun i =>
-    (hv i).totalVariationOn_le_setLIntegral_enorm))
+  refine ⟨g, hg, ⟨hg.locallyIntegrableOn_gradient.aestronglyMeasurable, ?_⟩, ?_⟩
+  · rw [HasFiniteIntegral, ← hnormg]
+    exact htv.trans_lt ENNReal.coe_lt_top
+  · rw [← hnormg]
+    exact hlsc.trans (liminf_le_liminf (.of_forall fun i =>
+      (hv i).totalVariationOn_le_setLIntegral_enorm))
 
 end MeasureTheory
