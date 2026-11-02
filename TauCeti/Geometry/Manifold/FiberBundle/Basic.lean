@@ -197,6 +197,40 @@ def homeomorph : TotalSpace F E ≃ₜ ManifoldTotalSpace F E where
   continuous_toFun := continuous_id
   continuous_invFun := continuous_id
 
+section FiberwiseMap
+
+omit [TopologicalSpace B] [∀ b, TopologicalSpace (E b)] [TopologicalSpace F] [FiberBundle F E]
+
+variable {E' : B → Type*} [TopologicalSpace (TotalSpace F E')]
+
+/-- The map on charted total spaces induced by a family of maps between fibres over the same
+base. No continuity or smoothness of the family is assumed. -/
+def fiberwiseMap (φ : ∀ b, E b → E' b) (x : ManifoldTotalSpace F E) :
+    ManifoldTotalSpace F E' :=
+  homeomorph F E' ⟨((homeomorph F E).symm x).proj, φ _ ((homeomorph F E).symm x).2⟩
+
+/-- Evaluation of a fibrewise map at an arbitrary point of the charted total space. -/
+theorem fiberwiseMap_apply (φ : ∀ b, E b → E' b) (x : ManifoldTotalSpace F E) :
+    fiberwiseMap φ x =
+      homeomorph F E' ⟨((homeomorph F E).symm x).proj, φ _ ((homeomorph F E).symm x).2⟩ := by
+  rfl
+
+/-- A fibrewise map evaluated on a point transported from the original total space. -/
+@[simp]
+theorem fiberwiseMap_homeomorph (φ : ∀ b, E b → E' b) (p : TotalSpace F E) :
+    fiberwiseMap φ (homeomorph F E p) = homeomorph F E' ⟨p.proj, φ _ p.2⟩ := by
+  unfold fiberwiseMap
+  rw [Homeomorph.symm_apply_apply]
+
+/-- Reading a fibrewise map back in the original total space evaluates the map on its fibre. -/
+@[simp]
+theorem homeomorph_symm_fiberwiseMap (φ : ∀ b, E b → E' b) (x : ManifoldTotalSpace F E) :
+    (homeomorph F E').symm (fiberwiseMap φ x) =
+      ⟨((homeomorph F E).symm x).proj, φ _ ((homeomorph F E).symm x).2⟩ := by
+  simp [fiberwiseMap]
+
+end FiberwiseMap
+
 /-- The copy is charted by the trivializations of the atlas followed by the charts of the product
 manifold `B × F`. -/
 instance : ChartedSpace (ModelProd HB HF) (ManifoldTotalSpace F E) :=
@@ -310,23 +344,34 @@ theorem contMDiffAt_trivializationAt_snd (x : ManifoldTotalSpace F E) :
   (ManifoldTotalSpace.contMDiffAt_iff.1 (contMDiffAt_id (x := x).congr_of_eventuallyEq
     (.of_forall (homeomorph F E).apply_symm_apply))).2
 
-/-! #### Descent along the projection -/
-
-/-- The local section `b ↦ e⁻¹ (b, (e x).2)` through `x` of the trivialization `e` at the base point
-of `x` is `C^n` at that base point: its fibre coordinate in `e` is constant. -/
-private theorem contMDiffAt_trivializationAt_symm (x : TotalSpace F E) :
+/-- The local section of the preferred trivialization with constant fibre coordinate `v` is
+`C^n` at its centre. Smoothness of the bundle's coordinate changes is not needed. -/
+theorem contMDiffAt_trivializationAt_symm (b₀ : B) (v : F) :
     ContMDiffAt IB (IB.prod IF) n
-      (fun b ↦ homeomorph F E ((trivializationAt F E x.proj).toOpenPartialHomeomorph.symm
-        (b, (trivializationAt F E x.proj x).2))) x.proj := by
-  set e := trivializationAt F E x.proj
-  have hx : x.proj ∈ e.baseSet := mem_baseSet_trivializationAt F E x.proj
+      (fun b ↦ homeomorph F E ((trivializationAt F E b₀).toOpenPartialHomeomorph.symm (b, v)))
+      b₀ := by
+  set e := trivializationAt F E b₀
+  have hx : b₀ ∈ e.baseSet := mem_baseSet_trivializationAt F E b₀
+  have hb : (e.toOpenPartialHomeomorph.symm (b₀, v)).proj = b₀ := e.proj_symm_apply' hx
   refine ManifoldTotalSpace.contMDiffAt_iff.2 ⟨contMDiffAt_id.congr_of_eventuallyEq ?_, ?_⟩
   · filter_upwards [e.open_baseSet.mem_nhds hx] with b hb
     exact e.proj_symm_apply' hb
-  · rw [e.symm_apply_mk_proj (e.mem_source.2 hx)]
-    refine (contMDiffAt_const (c := (e x).2)).congr_of_eventuallyEq ?_
+  · rw [hb]
+    refine (contMDiffAt_const (c := v)).congr_of_eventuallyEq ?_
     filter_upwards [e.open_baseSet.mem_nhds hx] with b hb
-    rw [e.apply_symm_apply' hb]
+    exact congrArg Prod.snd (e.apply_symm_apply' hb)
+
+/-- The fibre-valued inverse of the preferred trivialization with constant coordinate `v`
+defines a `C^n` local section at its centre. -/
+theorem contMDiffAt_trivializationAt_symm_const [∀ b, Nonempty (E b)] (b₀ : B) (v : F) :
+    ContMDiffAt IB (IB.prod IF) n
+      (fun b ↦ homeomorph F E ⟨b, (trivializationAt F E b₀).symm b v⟩) b₀ := by
+  refine (contMDiffAt_trivializationAt_symm b₀ v).congr_of_eventuallyEq ?_
+  filter_upwards [(trivializationAt F E b₀).open_baseSet.mem_nhds
+    (mem_baseSet_trivializationAt F E b₀)] with b hb
+  exact congrArg (homeomorph F E) ((trivializationAt F E b₀).mk_symm hb v)
+
+/-! #### Descent along the projection -/
 
 /-- A map `h` out of the base is `C^n` within `s` at the base point of `x` exactly when its
 composite with the projection is `C^n` within the preimage of `s` at `x`. -/
@@ -344,7 +389,7 @@ theorem contMDiffWithinAt_comp_proj_iff {h : B → M} {s : Set B} {x : TotalSpac
   -- Near the base point of `x`, the map `h` is the composite of `h ∘ π` with the local section of
   -- `e` through `x`.
   rw [← contMDiffWithinAt_inter (e.open_baseSet.mem_nhds hx)]
-  refine (hh.comp_of_eq (contMDiffAt_trivializationAt_symm x).contMDiffWithinAt
+  refine (hh.comp_of_eq (contMDiffAt_trivializationAt_symm x.proj (e x).2).contMDiffWithinAt
     (fun b hb ↦ ?_) (by simp [e, hsx])).congr (fun b hb ↦ ?_) (by simp [e, hsx])
   · simpa [(trivializationAt F E x.proj).proj_symm_apply' hb.2] using hb.1
   · simp [(trivializationAt F E x.proj).proj_symm_apply' hb.2]

@@ -31,6 +31,7 @@ target bundle: `q ↦ σ(π(q)) · division(f(σ(π(q))), q)`.
 public section
 
 open Bundle Filter MulOpposite Set
+open TauCeti.ManifoldTotalSpace
 open scoped Manifold ContDiff Topology
 
 namespace TauCeti.PrincipalBundle
@@ -53,54 +54,34 @@ variable {n : ℕ∞ω} {𝕜 B G : Type*} [NontriviallyNormedField 𝕜]
 theorem contMDiff_symm_of_equivariant [LieGroup IG n G]
     (e : ∀ b, P b ≃ Q b)
     (he : ∀ b (g : G) (p : P b), e b (op g • p) = op g • e b p)
-    (hf : ContMDiff (IB.prod IG) (IB.prod IG) n fun p : ManifoldTotalSpace G P ↦
-      ManifoldTotalSpace.homeomorph G Q
-        ⟨((ManifoldTotalSpace.homeomorph G P).symm p).proj,
-          e _ ((ManifoldTotalSpace.homeomorph G P).symm p).2⟩) :
-    ContMDiff (IB.prod IG) (IB.prod IG) n fun q : ManifoldTotalSpace G Q ↦
-      ManifoldTotalSpace.homeomorph G P
-        ⟨((ManifoldTotalSpace.homeomorph G Q).symm q).proj,
-          (e _).symm ((ManifoldTotalSpace.homeomorph G Q).symm q).2⟩ := by
+    (hf : ContMDiff (IB.prod IG) (IB.prod IG) n (fiberwiseMap (F := G) fun b ↦ e b)) :
+    ContMDiff (IB.prod IG) (IB.prod IG) n (fiberwiseMap (F := G) fun b ↦ (e b).symm) := by
   classical
-  have (b : B) : Nonempty (P b) := by
-    obtain ⟨p, hp⟩ := FiberBundle.surjective_proj G P b
-    subst b
-    exact ⟨p.2⟩
+  have (b : B) : Nonempty (P b) := ⟨(FiberBundle.homeomorphAt G P b).symm 1⟩
   intro q
   let b₀ := ((ManifoldTotalSpace.homeomorph G Q).symm q).proj
   let t := trivializationAt G P b₀
   let σ : ∀ b, P b := fun b ↦ t.symm b 1
-  have hb₀ : b₀ ∈ t.baseSet := mem_baseSet_trivializationAt G P b₀
   have hσ : ContMDiffAt IB (IB.prod IG) n
-      (fun b ↦ ManifoldTotalSpace.homeomorph G P ⟨b, σ b⟩) b₀ := by
-    rw [ManifoldTotalSpace.contMDiffAt_iff]
-    refine ⟨contMDiffAt_id, ?_⟩
-    refine (contMDiffAt_const (c := (1 : G))).congr_of_eventuallyEq ?_
-    filter_upwards [t.open_baseSet.mem_nhds hb₀] with b hb
-    exact congrArg Prod.snd (t.apply_mk_symm hb 1)
+      (fun b ↦ ManifoldTotalSpace.homeomorph G P ⟨b, σ b⟩) b₀ :=
+    contMDiffAt_trivializationAt_symm_const b₀ 1
   have hπ := ManifoldTotalSpace.contMDiff_proj n G Q IB IG q
   have hs := hσ.comp q hπ
   have hfs : ContMDiffAt (IB.prod IG) (IB.prod IG) n
       (fun y : ManifoldTotalSpace G Q ↦ ManifoldTotalSpace.homeomorph G Q
         ⟨((ManifoldTotalSpace.homeomorph G Q).symm y).proj,
           e _ (σ ((ManifoldTotalSpace.homeomorph G Q).symm y).proj)⟩) q := by
-    refine (hf.contMDiffAt.comp q hs).congr_of_eventuallyEq (.of_forall fun y ↦ ?_)
-    simpa only [Function.comp_apply] using
-      (congrArg (fun p : TotalSpace G P ↦
-        ManifoldTotalSpace.homeomorph G Q ⟨p.proj, e _ p.2⟩)
-        ((ManifoldTotalSpace.homeomorph G P).symm_apply_apply
-          ⟨((ManifoldTotalSpace.homeomorph G Q).symm y).proj,
-            σ ((ManifoldTotalSpace.homeomorph G Q).symm y).proj⟩)).symm
+    simpa only [Function.comp_def, fiberwiseMap_homeomorph] using hf.contMDiffAt.comp q hs
   have hq : ContMDiffAt (IB.prod IG) (IB.prod IG) n
       (fun y : ManifoldTotalSpace G Q ↦ ManifoldTotalSpace.homeomorph G Q
         ⟨((ManifoldTotalSpace.homeomorph G Q).symm y).proj,
           ((ManifoldTotalSpace.homeomorph G Q).symm y).2⟩) q := by
-    convert (contMDiffAt_id (I := IB.prod IG) (n := n) (x := q)) using 1
-    funext y
-    exact (ManifoldTotalSpace.homeomorph G Q).apply_symm_apply y
+    exact contMDiffAt_id.congr_of_eventuallyEq (.of_forall fun y ↦ by
+      simp only [TotalSpace.eta, Homeomorph.apply_symm_apply, id_eq])
   have hd := hfs.division hq
   refine (hs.totalSpaceMk_smul hd).congr_of_eventuallyEq (Filter.Eventually.of_forall ?_)
   intro y
+  rw [fiberwiseMap_apply]
   apply congrArg (ManifoldTotalSpace.homeomorph G P)
   apply congrArg (TotalSpace.mk _)
   apply (e _).injective
@@ -112,33 +93,16 @@ No separate smoothness hypothesis on the inverse is required. -/
 def diffeomorphOfEquivariant [LieGroup IG n G]
     (e : ∀ b, P b ≃ Q b)
     (he : ∀ b (g : G) (p : P b), e b (op g • p) = op g • e b p)
-    (hf : ContMDiff (IB.prod IG) (IB.prod IG) n fun p : ManifoldTotalSpace G P ↦
-      ManifoldTotalSpace.homeomorph G Q
-        ⟨((ManifoldTotalSpace.homeomorph G P).symm p).proj,
-          e _ ((ManifoldTotalSpace.homeomorph G P).symm p).2⟩) :
+    (hf : ContMDiff (IB.prod IG) (IB.prod IG) n (fiberwiseMap (F := G) fun b ↦ e b)) :
     Diffeomorph (IB.prod IG) (IB.prod IG) (ManifoldTotalSpace G P) (ManifoldTotalSpace G Q) n where
-  toFun p := ManifoldTotalSpace.homeomorph G Q
-    ⟨((ManifoldTotalSpace.homeomorph G P).symm p).proj,
-      e _ ((ManifoldTotalSpace.homeomorph G P).symm p).2⟩
-  invFun q := ManifoldTotalSpace.homeomorph G P
-    ⟨((ManifoldTotalSpace.homeomorph G Q).symm q).proj,
-      (e _).symm ((ManifoldTotalSpace.homeomorph G Q).symm q).2⟩
+  toFun := fiberwiseMap fun b ↦ e b
+  invFun := fiberwiseMap fun b ↦ (e b).symm
   left_inv p := by
-    have h := congrArg (fun q : TotalSpace G Q ↦
-      ManifoldTotalSpace.homeomorph G P ⟨q.proj, (e _).symm q.2⟩)
-      ((ManifoldTotalSpace.homeomorph G Q).symm_apply_apply
-        ⟨((ManifoldTotalSpace.homeomorph G P).symm p).proj,
-          e _ ((ManifoldTotalSpace.homeomorph G P).symm p).2⟩)
-    exact h.trans (by simp only [Equiv.symm_apply_apply, TotalSpace.eta,
-      Homeomorph.apply_symm_apply])
+    obtain ⟨p, rfl⟩ := (ManifoldTotalSpace.homeomorph G P).surjective p
+    simp
   right_inv q := by
-    have h := congrArg (fun p : TotalSpace G P ↦
-      ManifoldTotalSpace.homeomorph G Q ⟨p.proj, e _ p.2⟩)
-      ((ManifoldTotalSpace.homeomorph G P).symm_apply_apply
-        ⟨((ManifoldTotalSpace.homeomorph G Q).symm q).proj,
-          (e _).symm ((ManifoldTotalSpace.homeomorph G Q).symm q).2⟩)
-    exact h.trans (by simp only [Equiv.apply_symm_apply, TotalSpace.eta,
-      Homeomorph.apply_symm_apply])
+    obtain ⟨q, rfl⟩ := (ManifoldTotalSpace.homeomorph G Q).surjective q
+    simp
   contMDiff_toFun := hf
   contMDiff_invFun := contMDiff_symm_of_equivariant e he hf
 
@@ -146,28 +110,51 @@ section
 
 variable [LieGroup IG n G] (e : ∀ b, P b ≃ Q b)
   (he : ∀ b (g : G) (p : P b), e b (op g • p) = op g • e b p)
-  (hf : ContMDiff (IB.prod IG) (IB.prod IG) n fun p : ManifoldTotalSpace G P ↦
-    ManifoldTotalSpace.homeomorph G Q
-      ⟨((ManifoldTotalSpace.homeomorph G P).symm p).proj,
-        e _ ((ManifoldTotalSpace.homeomorph G P).symm p).2⟩)
+  (hf : ContMDiff (IB.prod IG) (IB.prod IG) n (fiberwiseMap (F := G) fun b ↦ e b))
 
 /-- On each fibre the induced diffeomorphism is the given equivalence. -/
 @[simp]
 theorem diffeomorphOfEquivariant_apply (p : TotalSpace G P) :
     diffeomorphOfEquivariant G e he hf (ManifoldTotalSpace.homeomorph G P p) =
       ManifoldTotalSpace.homeomorph G Q ⟨p.proj, e _ p.2⟩ := by
-  exact congrArg (fun p : TotalSpace G P ↦
-    ManifoldTotalSpace.homeomorph G Q ⟨p.proj, e _ p.2⟩)
-    ((ManifoldTotalSpace.homeomorph G P).symm_apply_apply p)
+  exact fiberwiseMap_homeomorph (fun b ↦ e b) p
 
 /-- On each fibre the inverse diffeomorphism is the inverse equivalence. -/
 @[simp]
 theorem diffeomorphOfEquivariant_symm_apply (q : TotalSpace G Q) :
     (diffeomorphOfEquivariant G e he hf).symm (ManifoldTotalSpace.homeomorph G Q q) =
       ManifoldTotalSpace.homeomorph G P ⟨q.proj, (e _).symm q.2⟩ := by
-  exact congrArg (fun q : TotalSpace G Q ↦
-    ManifoldTotalSpace.homeomorph G P ⟨q.proj, (e _).symm q.2⟩)
-    ((ManifoldTotalSpace.homeomorph G Q).symm_apply_apply q)
+  exact fiberwiseMap_homeomorph (fun b ↦ (e b).symm) q
+
+/-- Reading the induced diffeomorphism in the original total space gives the fibre equivalence
+at any point of the charted total space. -/
+theorem homeomorph_symm_diffeomorphOfEquivariant_apply (x : ManifoldTotalSpace G P) :
+    (ManifoldTotalSpace.homeomorph G Q).symm (diffeomorphOfEquivariant G e he hf x) =
+      ⟨((ManifoldTotalSpace.homeomorph G P).symm x).proj,
+        e _ ((ManifoldTotalSpace.homeomorph G P).symm x).2⟩ :=
+  homeomorph_symm_fiberwiseMap (fun b ↦ e b) x
+
+/-- Reading the inverse diffeomorphism in the original total space gives the inverse fibre
+equivalence at any point of the charted total space. -/
+theorem homeomorph_symm_diffeomorphOfEquivariant_symm_apply (y : ManifoldTotalSpace G Q) :
+    (ManifoldTotalSpace.homeomorph G P).symm ((diffeomorphOfEquivariant G e he hf).symm y) =
+      ⟨((ManifoldTotalSpace.homeomorph G Q).symm y).proj,
+        (e _).symm ((ManifoldTotalSpace.homeomorph G Q).symm y).2⟩ :=
+  homeomorph_symm_fiberwiseMap (fun b ↦ (e b).symm) y
+
+/-- The induced diffeomorphism lies over the identity on the base. -/
+@[simp]
+theorem diffeomorphOfEquivariant_proj (x : ManifoldTotalSpace G P) :
+    ((ManifoldTotalSpace.homeomorph G Q).symm (diffeomorphOfEquivariant G e he hf x)).proj =
+      ((ManifoldTotalSpace.homeomorph G P).symm x).proj := by
+  rw [homeomorph_symm_diffeomorphOfEquivariant_apply]
+
+/-- The inverse diffeomorphism lies over the identity on the base. -/
+@[simp]
+theorem diffeomorphOfEquivariant_symm_proj (y : ManifoldTotalSpace G Q) :
+    ((ManifoldTotalSpace.homeomorph G P).symm ((diffeomorphOfEquivariant G e he hf).symm y)).proj =
+      ((ManifoldTotalSpace.homeomorph G Q).symm y).proj := by
+  rw [homeomorph_symm_diffeomorphOfEquivariant_symm_apply]
 
 end
 
