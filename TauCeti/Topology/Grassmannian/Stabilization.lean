@@ -146,7 +146,8 @@ theorem mem_ambientStabilization (V : finiteGrassmannian 𝕜 r N) (v : Fin (N +
     refine ⟨Fin.init v, hv, funext fun i ↦ ?_⟩
     cases i using Fin.lastCases with
     | last => rw [Function.ExtendByZero.linearMap_castSucc_last, hlast]
-    | cast i => simp [Fin.init, (Fin.castSucc_injective N).extend_apply]
+    | cast i =>
+      rw [Function.ExtendByZero.linearMap_apply_of_injective (Fin.castSucc_injective N), Fin.init]
 
 /-- Rank and ambient stabilization commute as actual maps, with no intervening
 coordinate permutation or homotopy. -/
@@ -201,7 +202,8 @@ theorem mem_range_rankStabilization (W : finiteGrassmannian 𝕜 (r + 1) (N + 1)
     let t := LinearMap.funLeft 𝕜 𝕜 (Fin.succ : Fin N → Fin (N + 1))
     have hker : LinearMap.ker t ≤ W.1 := by
       intro v hv
-      have htail : Fin.tail v = 0 := LinearMap.mem_ker.1 hv
+      have htail : Fin.tail v = 0 :=
+        funext fun i ↦ by simpa [t, Fin.tail] using congrFun (LinearMap.mem_ker.1 hv) i
       rw [Function.ExtendByZero.eq_smul_single_zero_add_linearMap_succ_tail v, htail, map_zero,
         add_zero]
       exact W.1.smul_mem _ hW

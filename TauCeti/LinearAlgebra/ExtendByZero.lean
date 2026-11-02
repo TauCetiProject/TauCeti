@@ -28,6 +28,12 @@ theorem linearMap_injective {ι κ : Type*} {e : ι → κ} (he : Injective e) :
     Injective (linearMap R R e) :=
   extend_injective he (0 : κ → R)
 
+/-- Extension by zero along an injective index map evaluates at `e i` to the `i`-th
+coordinate. -/
+theorem linearMap_apply_of_injective {ι κ : Type*} {e : ι → κ} (he : Injective e)
+    (v : ι → R) (i : ι) : linearMap R R e v (e i) = v i :=
+  he.extend_apply v 0 i
+
 variable {N : ℕ}
 
 /-- Taking the initial segment undoes the extension by zero along `Fin.castSucc`. -/
@@ -35,7 +41,7 @@ variable {N : ℕ}
 theorem init_linearMap_castSucc (v : Fin N → R) :
     Fin.init (linearMap R R Fin.castSucc v) = v := by
   funext i
-  simp [Fin.init, (Fin.castSucc_injective N).extend_apply]
+  rw [Fin.init, linearMap_apply_of_injective (Fin.castSucc_injective N)]
 
 /-- The extension by zero along `Fin.castSucc` vanishes at the last coordinate. -/
 theorem linearMap_castSucc_last (v : Fin N → R) :
@@ -48,6 +54,8 @@ theorem eq_smul_single_zero_add_linearMap_succ_tail (w : Fin (N + 1) → R) :
   funext i
   cases i using Fin.cases with
   | zero => simp
-  | succ i => simp [(Fin.succ_injective N).extend_apply, Fin.tail]
+  | succ i =>
+    rw [Pi.add_apply, linearMap_apply_of_injective (Fin.succ_injective N)]
+    simp [Fin.tail]
 
 end Function.ExtendByZero
