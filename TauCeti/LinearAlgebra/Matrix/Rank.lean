@@ -52,8 +52,9 @@ self-adjoint for the Hermitian form making the basis orthonormal.
 * `Matrix.rank_conjAct_smul` and `Matrix.rank_neg`: conjugation by an invertible matrix and
   negation preserve the rank.
 * `Matrix.rank_add_le`: over a field, the rank of a sum is at most the sum of the ranks.
-* `Matrix.rank_mul_conjTranspose_self_sub_mul_conjTranspose_self_le`: over a star-ordered field,
-  `rank (X Xᴴ - Y Yᴴ) ≤ 2 * rank (X - Y)`.
+* `Matrix.rank_conjTranspose_of_field` and
+  `Matrix.rank_mul_conjTranspose_self_sub_mul_conjTranspose_self_le`: over a field with a star ring
+  structure, the conjugate transpose preserves the rank and `rank (X Xᴴ - Y Yᴴ) ≤ 2 * rank (X - Y)`.
 * `Matrix.exists_eq_mul_fin_rank`: a rectangular matrix factors through `Fin A.rank`.
 * `Matrix.exists_eq_mul_of_rank_le` and `Matrix.rank_le_iff_exists_eq_mul`: a matrix has rank at
   most `r` exactly when it factors through `Fin r`.
@@ -399,6 +400,19 @@ theorem isCompl_iInf_ker_mulVecLin_iSup_range_mulVecLin_conjTranspose {ι : Type
   rw [← hker, ← hrange]
   exact B.isCompl_ker_mulVecLin_range_mulVecLin_conjTranspose
 
+end StarOrderedField
+
+/-- The conjugate transpose of a matrix over a field with a star ring structure has the same
+rank. -/
+theorem rank_conjTranspose_of_field {R : Type*} [Field R] [StarRing R] {m n : Type*} [Fintype m]
+    [Fintype n] (A : Matrix m n R) : Aᴴ.rank = A.rank := by
+  have h : Aᴴ = (A.map (starRingEnd R))ᵀ := rfl
+  rw [h, rank_transpose, rank_map]
+
+section StarField
+
+variable {R : Type*} [Field R] [StarRing R] {m n : Type*} [Fintype m] [Fintype n]
+
 /-- The rank of the difference of two Gram matrices `X * Xᴴ` and `Y * Yᴴ` is at most twice the
 rank of the difference of the factors. -/
 theorem rank_mul_conjTranspose_self_sub_mul_conjTranspose_self_le (X Y : Matrix m n R) :
@@ -408,10 +422,9 @@ theorem rank_mul_conjTranspose_self_sub_mul_conjTranspose_self_le (X Y : Matrix 
     abel
   rw [h, two_mul]
   refine (rank_add_le _ _).trans (add_le_add (rank_mul_le_left _ _) ?_)
-  exact (rank_mul_le_right _ _).trans (rank_conjTranspose _).le
+  exact (rank_mul_le_right _ _).trans (rank_conjTranspose_of_field _).le
 
-end StarOrderedField
-
+end StarField
 end Matrix
 
 open Matrix in
