@@ -68,12 +68,6 @@ theorem quotientPiece_eq_span_image {i : ι} {s : Set A} (hs : 𝒜 i = Submodul
   rw [quotientPiece_def, hs, Submodule.map_span]
   simp only [AlgHom.coe_toLinearMap, Ideal.Quotient.mkₐ_eq_mk]
 
-/-- A descended piece lies in a submodule `N` of the quotient exactly when the classes of all
-elements of the original piece lie in `N`. -/
-theorem quotientPiece_le_iff {i : ι} {N : Submodule R (A ⧸ I)} :
-    quotientPiece 𝒜 I i ≤ N ↔ ∀ y ∈ 𝒜 i, Ideal.Quotient.mk I y ∈ N :=
-  Submodule.map_le_iff_le_comap
-
 /-- If `s` spans `𝒜 i`, the descended piece lies in a submodule `N` of the quotient exactly when
 the classes of the elements of `s` lie in `N`. -/
 theorem quotientPiece_le_iff_of_eq_span {i : ι} {s : Set A} (hs : 𝒜 i = Submodule.span R s)
@@ -83,7 +77,7 @@ theorem quotientPiece_le_iff_of_eq_span {i : ι} {s : Set A} (hs : 𝒜 i = Subm
 
 /-- A piece vanishes in the quotient exactly when it is contained in `I`. -/
 theorem quotientPiece_eq_bot_iff {i : ι} : quotientPiece 𝒜 I i = ⊥ ↔ ∀ y ∈ 𝒜 i, y ∈ I := by
-  simp [← le_bot_iff, quotientPiece_le_iff, Ideal.Quotient.eq_zero_iff_mem]
+  simp [← le_bot_iff, quotientPiece_def, IsConcreteLE.le_iff, Ideal.Quotient.eq_zero_iff_mem]
 
 /-- Multiplication adds degrees, as an inclusion of products of pieces. -/
 theorem quotientPiece_mul_quotientPiece_le [Add ι] [SetLike.GradedMul 𝒜] (m n : ι) :
