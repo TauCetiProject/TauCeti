@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.Congruence.Basic
 public import Mathlib.GroupTheory.GroupAction.Defs
+public import Mathlib.Algebra.Group.Subgroup.Map
 public import Mathlib.Algebra.Ring.Units
 public import Mathlib.Algebra.GroupWithZero.Units.Basic
 
@@ -51,6 +52,20 @@ def signedMonomialSubgroup (m : G →* Aˣ) : Subgroup Aˣ where
 theorem mem_signedMonomialSubgroup (m : G →* Aˣ) (u : Aˣ) :
     u ∈ signedMonomialSubgroup m ↔ ∃ g, u = m g ∨ u = -m g := Iff.rfl
 
+/-- A coefficient map respecting deck monomials maps the ambiguity subgroup onto the
+corresponding ambiguity subgroup. -/
+theorem map_signedMonomialSubgroup {B : Type*} [CommRing B] {m : G →* Aˣ}
+    {n : G →* Bˣ} (f : A →+* B) (hf : ∀ g, Units.map f (m g) = n g) :
+    (signedMonomialSubgroup m).map (Units.map f.toMonoidHom) = signedMonomialSubgroup n := by
+  ext u
+  constructor
+  · rintro ⟨v, ⟨g, rfl | rfl⟩, rfl⟩
+    · exact ⟨g, Or.inl (hf g)⟩
+    · exact ⟨g, Or.inr (by simp [hf])⟩
+  · rintro ⟨g, rfl | rfl⟩
+    · exact ⟨m g, ⟨g, Or.inl rfl⟩, hf g⟩
+    · exact ⟨-m g, ⟨g, Or.inr rfl⟩, by simp [hf]⟩
+
 /-- The signed-monomial orbit relation is a multiplicative congruence. -/
 def torsionCon (m : G →* Aˣ) : Con A where
   toSetoid := MulAction.orbitRel (signedMonomialSubgroup m) A
@@ -73,22 +88,56 @@ def mk : A →* TorsionClass m := (torsionCon m).mk'
 /-- Every torsion class has a scalar representative. -/
 theorem mk_surjective : Function.Surjective (mk m) := Con.mk'_surjective
 
+/-- To prove a property of torsion classes, it suffices to prove it on scalar representatives. -/
+@[elab_as_elim]
+theorem induction_on {P : TorsionClass m → Prop} (a : TorsionClass m)
+    (h : ∀ a, P (mk m a)) : P a := by
+  obtain ⟨a, rfl⟩ := mk_surjective m a
+  exact h a
+
+/-- Multiplicative maps out of torsion classes are determined on scalar representatives. -/
+@[ext]
+theorem hom_ext {M : Type*} [Monoid M] {f g : TorsionClass m →* M}
+    (h : ∀ a, f (mk m a) = g (mk m a)) : f = g :=
+  MonoidHom.ext ((mk_surjective m).forall.2 h)
+
+/-- Two representatives agree exactly when a unit in the ambiguity subgroup relates them. -/
+theorem mk_eq_mk_iff_exists_unit {a b : A} : mk m a = mk m b ↔
+    ∃ u ∈ signedMonomialSubgroup m, a = (u : A) * b := by
+  rw [mk, Con.coe_mk', (torsionCon m).eq]
+  constructor
+  · rintro ⟨⟨u, hu⟩, h⟩
+    exact ⟨u, hu, by simpa [MulAction.subgroup_smul_def, Units.smul_def] using h.symm⟩
+  · rintro ⟨u, hu, h⟩
+    exact ⟨⟨u, hu⟩, by simpa [MulAction.subgroup_smul_def, Units.smul_def] using h.symm⟩
+
 /-- Two scalars represent the same torsion class exactly when they differ by a signed
 monomial. This includes zero and zero divisors. -/
 theorem mk_eq_mk_iff {a b : A} : mk m a = mk m b ↔
     ∃ g, a = (m g : A) * b ∨ a = -(m g : A) * b := by
-  rw [mk, Con.coe_mk', (torsionCon m).eq]
+  rw [mk_eq_mk_iff_exists_unit]
   constructor
-  · rintro ⟨⟨u, g, hu | hu⟩, h⟩
-    · exact ⟨g, Or.inl (by simpa [MulAction.subgroup_smul_def, Units.smul_def, hu]
-        using h.symm)⟩
-    · exact ⟨g, Or.inr (by simpa [MulAction.subgroup_smul_def, Units.smul_def, hu]
-        using h.symm)⟩
+  · rintro ⟨u, ⟨g, rfl | rfl⟩, h⟩
+    · exact ⟨g, Or.inl h⟩
+    · exact ⟨g, Or.inr (by simpa using h)⟩
   · rintro ⟨g, h | h⟩
-    · exact ⟨⟨m g, g, Or.inl rfl⟩,
-        by simpa [MulAction.subgroup_smul_def, Units.smul_def] using h.symm⟩
-    · exact ⟨⟨-m g, g, Or.inr rfl⟩,
-        by simpa [MulAction.subgroup_smul_def, Units.smul_def] using h.symm⟩
+    · exact ⟨m g, ⟨g, Or.inl rfl⟩, h⟩
+    · exact ⟨-m g, ⟨g, Or.inr rfl⟩, by simpa using h⟩
+
+/-- An invariant multiplicative map factors through torsion classes. The two hypotheses express
+invariance under signs and multiplication by deck monomials, respectively. -/
+def lift {M : Type*} [Monoid M] (f : A →* M) (hneg : ∀ a, f (-a) = f a)
+    (hmon : ∀ g a, f ((m g : A) * a) = f a) : TorsionClass m →* M :=
+  (torsionCon m).lift f <| by
+    intro a b hab
+    obtain ⟨g, rfl | rfl⟩ := (mk_eq_mk_iff m).1 ((torsionCon m).eq.2 hab)
+    · exact hmon g b
+    · rw [Con.ker_rel, neg_mul, hneg, hmon]
+
+@[simp]
+theorem lift_mk {M : Type*} [Monoid M] (f : A →* M) (hneg : ∀ a, f (-a) = f a)
+    (hmon : ∀ g a, f ((m g : A) * a) = f a) (a : A) :
+    lift m f hneg hmon (mk m a) = f a := (rfl)
 
 instance : Zero (TorsionClass m) := ⟨mk m 0⟩
 
@@ -97,10 +146,20 @@ theorem mk_zero : mk m 0 = 0 := (rfl)
 
 instance : CommMonoidWithZero (TorsionClass m) where
   toCommMonoid := inferInstance
-  zero_mul a := Quotient.inductionOn a fun a => by
-    exact (map_mul (mk m) 0 a).symm.trans (by simp)
-  mul_zero a := Quotient.inductionOn a fun a => by
-    exact (map_mul (mk m) a 0).symm.trans (by simp)
+  zero_mul a := by
+    obtain ⟨a, rfl⟩ := mk_surjective m a
+    rw [← mk_zero, ← map_mul]
+    simp
+  mul_zero a := by
+    obtain ⟨a, rfl⟩ := mk_surjective m a
+    rw [← mk_zero, ← map_mul]
+    simp
+
+/-- Zero-preserving multiplicative maps are determined on scalar representatives. -/
+@[ext]
+theorem hom_ext₀ {M : Type*} [MulZeroOneClass M] {f g : TorsionClass m →*₀ M}
+    (h : ∀ a, f (mk m a) = g (mk m a)) : f = g :=
+  MonoidWithZeroHom.ext ((mk_surjective m).forall.2 h)
 
 /-- The zero class has only the zero representative. -/
 @[simp]
@@ -123,6 +182,11 @@ theorem mk_neg (a : A) : mk m (-a) = mk m a :=
 theorem mk_monomial_mul (g : G) (a : A) : mk m ((m g : A) * a) = mk m a :=
   (mk_eq_mk_iff m).2 ⟨g, Or.inl rfl⟩
 
+/-- Right multiplication by a deck monomial does not change the torsion class. -/
+@[simp]
+theorem mk_mul_monomial (g : G) (a : A) : mk m (a * (m g : A)) = mk m a := by
+  rw [mul_comm, mk_monomial_mul]
+
 /-- In particular every deck monomial has class one. -/
 @[simp]
 theorem mk_monomial (g : G) : mk m (m g) = 1 := by
@@ -132,24 +196,19 @@ theorem mk_monomial (g : G) : mk m (m g) = 1 := by
 in each field component of a total quotient ring. -/
 theorem map_eq_zero_iff_of_mk_eq_mk {B : Type*} [Ring B] (f : A →+* B) {a b : A}
     (h : mk m a = mk m b) : f a = 0 ↔ f b = 0 := by
-  obtain ⟨g, h | h⟩ := (mk_eq_mk_iff m).1 h
-  · rw [h, map_mul]
-    exact (Units.map f.toMonoidHom (m g)).mul_right_eq_zero
-  · rw [h, map_mul, map_neg, neg_mul, neg_eq_zero]
-    exact (Units.map f.toMonoidHom (m g)).mul_right_eq_zero
+  obtain ⟨u, _, rfl⟩ := (mk_eq_mk_iff_exists_unit m).1 h
+  rw [map_mul]
+  exact (Units.map f.toMonoidHom u).mul_right_eq_zero
 
 variable {B : Type*} [CommRing B] {m} {n : G →* Bˣ} (f : A →+* B)
   (hf : ∀ g, Units.map f (m g) = n g)
 
 /-- A coefficient map respecting the specified deck monomials descends to torsion classes. -/
 def map : TorsionClass m →*₀ TorsionClass n where
-  __ := (torsionCon m).lift ((mk n).comp f.toMonoidHom) <| by
-    intro a b hab
-    obtain ⟨g, h | h⟩ := (mk_eq_mk_iff m).1 ((torsionCon m).eq.2 hab)
-    · apply (mk_eq_mk_iff n).2
-      exact ⟨g, Or.inl (by simpa [← hf g] using congrArg f h)⟩
-    · apply (mk_eq_mk_iff n).2
-      exact ⟨g, Or.inr (by simpa [← hf g] using congrArg f h)⟩
+  __ := lift m ((mk n).comp f.toMonoidHom) (by simp) (by
+    intro g a
+    have hg : f (m g : A) = (n g : B) := congrArg Units.val (hf g)
+    simp [hg])
   map_zero' := congrArg (mk n) f.map_zero
 
 @[simp]
@@ -157,20 +216,23 @@ theorem map_mk (a : A) : map f hf (mk m a) = mk n (f a) := (rfl)
 
 /-- No new ambiguity is introduced by an injective coefficient map with the same deck group. -/
 theorem map_injective (hinj : Function.Injective f) : Function.Injective (map f hf) := by
-  intro a b
-  refine Quotient.inductionOn₂ a b fun a b h => ?_
-  obtain ⟨g, h | h⟩ := (mk_eq_mk_iff n).1 h
-  · apply (mk_eq_mk_iff m).2
-    exact ⟨g, Or.inl (hinj (by simpa [← hf g] using h))⟩
-  · apply (mk_eq_mk_iff m).2
-    exact ⟨g, Or.inr (hinj (by simpa [← hf g] using h))⟩
+  intro a b h
+  obtain ⟨a, rfl⟩ := mk_surjective m a
+  obtain ⟨b, rfl⟩ := mk_surjective m b
+  rw [map_mk, map_mk, mk_eq_mk_iff_exists_unit] at h
+  obtain ⟨u, hu, h⟩ := h
+  rw [← map_signedMonomialSubgroup f hf] at hu
+  obtain ⟨v, hv, rfl⟩ := hu
+  exact (mk_eq_mk_iff_exists_unit m).2 ⟨v, hv, hinj (by simpa using h)⟩
 
 /-- The identity coefficient map induces the identity on torsion classes. -/
 @[simp]
-theorem map_id : map (RingHom.id A) (fun _ => rfl : ∀ g, Units.map (RingHom.id A) (m g) = m g) =
+theorem map_id : map (m := m) (n := m) (RingHom.id A) (fun g => by ext; simp) =
     MonoidWithZeroHom.id (TorsionClass m) := by
-  ext a
-  exact Quotient.inductionOn a fun _ => rfl
+  apply hom_ext₀
+  intro a
+  rw [map_mk]
+  simp
 
 /-- Transporting torsion classes commutes with composition of coefficient maps. -/
 theorem map_comp {C : Type*} [CommRing C] {p : G →* Cˣ} (g : B →+* C)
@@ -179,8 +241,9 @@ theorem map_comp {C : Type*} [CommRing C] {p : G →* Cˣ} (g : B →+* C)
       map (g.comp f) (fun h => by
         apply Units.ext
         simp [← hf h, ← hg h]) := by
-  ext a
-  exact Quotient.inductionOn a fun _ => rfl
+  apply hom_ext₀
+  intro a
+  simp
 
 end TorsionClass
 
