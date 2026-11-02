@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecialFunctions.EllipticIntegral.ModulusDerivative
-import Mathlib.Analysis.SpecialFunctions.Log.NegMulLog
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
@@ -20,8 +19,9 @@ The complete integral of the first kind has a logarithmic singularity at `k = 1`
 
 `K(k) - log (4 / k') → 0` as `k → 1⁻`.
 
-Consequently `(1 - k²) K(k) → 0`, since `k'² log k' → 0`. Separately, the integral of the
-second kind stays bounded: `E(k) → E(1) = 1`. These are the boundary values from which
+The integral of the second kind stays bounded: `E(k) → E(1) = 1`. The product
+`(1 - k²) K(k)` tends to zero; for this the elementary bound `K(k) ≤ π / (2 k')` already
+suffices, without the logarithmic expansion. These are the boundary values from which
 Legendre's relation `E K' + E' K - K K' = π / 2` is evaluated, in the limit `k → 0⁺` of its
 complementary modulus.
 
@@ -39,7 +39,8 @@ to `cos θ / (1 + sin θ)`, whose integral over `[0, π/2]` is `log 2`.
 
 ## References
 
-* NIST *Digital Library of Mathematical Functions*, §19.12, <https://dlmf.nist.gov/19.12>.
+* NIST *Digital Library of Mathematical Functions*, §§19.7 and 19.12,
+  <https://dlmf.nist.gov/19.12>.
 -/
 
 public section
@@ -185,27 +186,26 @@ theorem tendsto_legendreK_sub_log_nhdsLT_one :
 theorem tendsto_legendreEc_nhds_one : Tendsto legendreEc (𝓝 1) (𝓝 1) := by
   simpa [legendreEc_one] using continuous_legendreEc.tendsto 1
 
-/-- As `k → 1⁻`, `(1 - k²) K(k) → 0`: the singularity of `K` at modulus one is only
-logarithmic. -/
+/-- The singularity of `K` at modulus one is killed by the factor `1 - k²`.
+This is the vanishing boundary term used in Legendre's relation. -/
 theorem tendsto_one_sub_sq_mul_legendreK_nhdsLT_one :
-    Tendsto (fun k ↦ (1 - k ^ 2) * legendreK k) (𝓝[<] 1) (𝓝 0) := by
-  have hmem : Ioo (0 : ℝ) 1 ∈ 𝓝[<] 1 := Ioo_mem_nhdsLT one_pos
-  -- `x = 1 - k² → 0`, and `x * log (4 / √x) = x * log 4 - (x * log x) / 2 → 0`
-  have hx : Tendsto (fun k : ℝ ↦ 1 - k ^ 2) (𝓝[<] 1) (𝓝 0) := by
-    have h := ((by fun_prop : Continuous fun k : ℝ ↦ 1 - k ^ 2).tendsto 1).mono_left
-      (nhdsWithin_le_nhds (s := Iio 1))
-    simpa using h
-  have hg : Tendsto (fun k : ℝ ↦ (1 - k ^ 2) * log 4 - (1 - k ^ 2) * log (1 - k ^ 2) / 2)
-      (𝓝[<] 1) (𝓝 0) := by
-    have hc : Continuous fun x : ℝ ↦ x * log 4 - x * log x / 2 :=
-      (continuous_id.mul continuous_const).sub (continuous_mul_log.div_const 2)
-    simpa [Function.comp_def] using (hc.tendsto 0).comp hx
-  have h := (hx.mul tendsto_legendreK_sub_log_nhdsLT_one).add hg
-  rw [mul_zero, zero_add] at h
-  refine h.congr' ?_
-  filter_upwards [hmem] with k hk
-  have hx0 : 0 < 1 - k ^ 2 := by nlinarith [hk.1, hk.2]
-  rw [log_div (by norm_num) (sqrt_pos.2 hx0).ne', log_sqrt hx0.le]
-  ring
+    Tendsto (fun k : ℝ ↦ (1 - k ^ 2) * legendreK k) (𝓝[<] 1) (𝓝 0) := by
+  have hupper : Tendsto (fun k : ℝ ↦ π / 2 * √(1 - k ^ 2)) (𝓝[<] 1) (𝓝 0) := by
+    have h := (by fun_prop : Continuous fun k : ℝ ↦ π / 2 * √(1 - k ^ 2)).tendsto 1
+    simpa using h.mono_left nhdsWithin_le_nhds
+  have hmem : ∀ᶠ k : ℝ in 𝓝[<] 1, k ∈ Ioo 0 1 := Ioo_mem_nhdsLT one_pos
+  refine tendsto_const_nhds.squeeze' hupper ?_ ?_
+  · filter_upwards [hmem] with k hk
+    have hk' : k ^ 2 < 1 := by nlinarith [hk.1, hk.2]
+    exact mul_nonneg (by linarith) (legendreK_pos hk').le
+  · filter_upwards [hmem] with k hk
+    have hk' : k ^ 2 < 1 := by nlinarith [hk.1, hk.2]
+    have hs : 0 < √(1 - k ^ 2) := sqrt_pos.2 (by linarith)
+    calc
+      (1 - k ^ 2) * legendreK k ≤ (1 - k ^ 2) * (π / 2 / √(1 - k ^ 2)) :=
+        mul_le_mul_of_nonneg_left (legendreK_le_pi_div_two_div_sqrt hk') (by linarith)
+      _ = π / 2 * √(1 - k ^ 2) := by
+        field_simp [hs.ne']
+        nlinarith [sq_sqrt (by linarith : 0 ≤ 1 - k ^ 2)]
 
 end TauCeti.Real

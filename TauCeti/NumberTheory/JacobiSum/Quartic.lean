@@ -35,6 +35,8 @@ So `J(χ, χ) ≡ χ (-1) + q - 3`, and `q ≡ 1 (mod 4)` with `4 ∈ ((1 + ι) 
 
 * `TauCeti.one_add_pow_three_dvd_apply_neg_one_mul_jacobiSum_add_one`:
   `(1 + ι) ^ 3 ∣ χ (-1) J(χ, χ) + 1`.
+* `TauCeti.gaussSum_pow_four_eq_card_mul_jacobiSum_sq`: `g(χ, ψ) ^ 4 = q * J(χ, χ) ^ 2` for a
+  character `χ` of order `4` and a primitive additive character `ψ` of `F`.
 
 ## References
 
@@ -137,5 +139,25 @@ theorem one_add_pow_three_dvd_apply_neg_one_mul_jacobiSum_add_one {χ : MulChar 
   rcases mul_self_eq_one_iff.mp hneg with h | h <;> rw [h]
   · exact ⟨c + d * (k + 1), by linear_combination ((k : R) + 1) * hd⟩
   · exact ⟨-c - d * k, by linear_combination -(k : R) * hd⟩
+
+/-- **The fourth power of a quartic Gauss sum.** If `χ` is a multiplicative character of order `4`
+on a finite field `F` and `ψ` is a primitive additive character of `F`, then
+`g(χ, ψ) ^ 4 = #F * J(χ, χ) ^ 2`. -/
+theorem gaussSum_pow_four_eq_card_mul_jacobiSum_sq {χ : MulChar F R} (hχ : orderOf χ = 4)
+    {ψ : AddChar F R} (hψ : ψ.IsPrimitive) :
+    gaussSum χ ψ ^ 4 = Fintype.card F * jacobiSum χ χ ^ 2 := by
+  -- `χ ^ 2` is a nontrivial quadratic character with `χ ^ 2 (-1) = χ (1) = 1`.
+  have h1 : χ ^ 2 ≠ 1 := fun h ↦ by
+    have := Nat.le_of_dvd two_pos (hχ ▸ orderOf_dvd_of_pow_eq_one h)
+    omega
+  have hquad : (χ ^ 2).IsQuadratic := by
+    rw [MulChar.isQuadratic_iff_sq_eq_one, ← pow_mul, show 2 * 2 = orderOf χ by omega,
+      pow_orderOf_eq_one]
+  have hneg : (χ ^ 2) (-1) = 1 := by
+    rw [MulChar.pow_apply' χ two_ne_zero, ← map_pow, neg_one_sq, map_one]
+  -- `g(χ) ^ 2 = J(χ, χ) g(χ ^ 2)` and `g(χ ^ 2) ^ 2 = #F`.
+  have hJ := jacobiSum_mul_nontrivial (by rwa [← sq]) ψ
+  rw [← sq, ← sq] at hJ
+  rw [show 4 = 2 * 2 by rfl, pow_mul, ← hJ, mul_pow, gaussSum_sq h1 hquad hψ, hneg, one_mul]
 
 end TauCeti
