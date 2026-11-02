@@ -75,17 +75,22 @@ theorem extendedHamiltonian_apply (H : ℝ → V → ℝ) (y : V × (ℝ × ℝ)
 variable [NormedAddCommGroup V] [NormedSpace ℝ V]
 
 /-- The derivative of the extended Hamiltonian:
+`dK(x, t, e) = de + ∂_t H(t, x) dt + d(H t)(x) dx`. -/
+theorem hasFDerivAt_extendedHamiltonian {H : ℝ → V → ℝ} {t : ℝ} {x : V}
+    (hH : DifferentiableAt ℝ (uncurry H) (t, x)) (e : ℝ) :
+    HasFDerivAt (extendedHamiltonian H)
+      ((snd ℝ ℝ ℝ).comp (snd ℝ V (ℝ × ℝ)) +
+        (timeFDeriv (uncurry H) t x • (fst ℝ ℝ ℝ).comp (snd ℝ V (ℝ × ℝ)) +
+          (fderiv ℝ (H t) x).comp (fst ℝ V (ℝ × ℝ)))) (x, (t, e)) :=
+  ((snd ℝ ℝ ℝ).comp (snd ℝ V (ℝ × ℝ))).hasFDerivAt.add (hasFDerivAt_apply_snd_fst hH e)
+
+/-- The derivative of the extended Hamiltonian, evaluated on a tangent vector:
 `dK(x, t, e)(δx, δt, δe) = δe + ∂_t H(t, x) δt + d(H t)(x) δx`. -/
 theorem fderiv_extendedHamiltonian_apply {H : ℝ → V → ℝ} {t : ℝ} {x : V}
     (hH : DifferentiableAt ℝ (uncurry H) (t, x)) (e : ℝ) (w : V × (ℝ × ℝ)) :
     fderiv ℝ (extendedHamiltonian H) (x, (t, e)) w =
       w.2.2 + timeFDeriv (uncurry H) t x * w.2.1 + fderiv ℝ (H t) x w.1 := by
-  have h : HasFDerivAt (extendedHamiltonian H)
-      ((snd ℝ ℝ ℝ).comp (snd ℝ V (ℝ × ℝ)) +
-        (timeFDeriv (uncurry H) t x • (fst ℝ ℝ ℝ).comp (snd ℝ V (ℝ × ℝ)) +
-          (fderiv ℝ (H t) x).comp (fst ℝ V (ℝ × ℝ)))) (x, (t, e)) :=
-    ((snd ℝ ℝ ℝ).comp (snd ℝ V (ℝ × ℝ))).hasFDerivAt.add (hasFDerivAt_apply_snd_fst hH e)
-  rw [h.fderiv]
+  rw [(hasFDerivAt_extendedHamiltonian hH e).fderiv]
   simp [add_assoc]
 
 namespace SymplecticForm
