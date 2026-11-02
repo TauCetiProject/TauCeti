@@ -37,7 +37,7 @@ surjectivity of `Φ` has to be checked (`TauCeti.Perfectoid.IsPerfectoidTateRing
 Since `R°` is `ϖ`-adically complete, surjectivity of `Φ` is equivalent to surjectivity of
 Frobenius on `R° ⧸ (p)` once some `ϖ` with `ϖ ^ p ∣ p` in `R°` is given
 (`TauCeti.tfae_forall_exists_dvd_sub_pow`). Consequently the perfectoid condition can be tested
-modulo `p`, and `Φ` is bijective for every pseudouniformiser `ϖ ∈ R°` with `ϖ ^ p ∣ p` in `R°`.
+modulo `p`.
 
 ## Main definitions
 
