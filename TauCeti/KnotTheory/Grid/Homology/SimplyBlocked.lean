@@ -72,8 +72,8 @@ noncomputable def oneVariableSpecializationHomologyClass (i : Fin n) :
     ((G.simplyBlockedComplex R i).sc' () () ()).homologyπ ≫
       ((G.simplyBlockedComplex R i).homologyIsoSc' () () () rfl rfl).inv).hom
 
-/-- Compute the specialization class map through the native short-complex quotient, preserving
-its actual categorical carrier without unfolding the homology construction. -/
+/-- The class of a cycle `c` is the image of its quotient class `Submodule.Quotient.mk c`
+under the inverses of `moduleCatHomologyIso` and `homologyIsoSc'`. -/
 theorem oneVariableSpecializationHomologyClass_apply (i : Fin n)
     (c : LinearMap.ker ((G.simplyBlockedComplex R i).d () ()).hom) :
     G.oneVariableSpecializationHomologyClass R i c =
@@ -168,20 +168,10 @@ noncomputable def simplyBlockedHomologyIsoQuotient (hG : G.IsKnot) (i : Fin n) :
     ((G.simplyBlockedComplex R i).sc' () () ()).moduleCatHomologyIso
 
 /-- The linear map sending a simply blocked cycle to its homology class. -/
-noncomputable def simplyBlockedHomologyClass (hG : G.IsKnot) (i : Fin n)
+noncomputable abbrev simplyBlockedHomologyClass (hG : G.IsKnot) (i : Fin n)
     : hG.simplyBlockedCycles R i
       →ₗ[MvPolynomial {c : Fin n // c ≠ i} R] hG.simplyBlockedHomology R i :=
-  (hG.simplyBlockedHomologyIsoQuotient R i).inv.hom.comp
-    (hG.simplyBlockedBoundaries R i).mkQ
-
-/-- On a knot grid, the general one-variable specialization class map agrees with the
-simply blocked class map. -/
-theorem oneVariableSpecializationHomologyClass_eq_simplyBlockedHomologyClass
-    (hG : G.IsKnot) (i : Fin n) (c : hG.simplyBlockedCycles R i) :
-    G.oneVariableSpecializationHomologyClass R i c =
-      hG.simplyBlockedHomologyClass R i c := by
-  rw [G.oneVariableSpecializationHomologyClass_apply]
-  rfl
+  (fun _ : G.IsKnot => G.oneVariableSpecializationHomologyClass R i) hG
 
 /-- Under the concrete cycles-modulo-boundaries identification, the class of a cycle is its
 quotient class. -/
@@ -190,7 +180,16 @@ theorem simplyBlockedHomologyIsoQuotient_hom_class (hG : G.IsKnot) (i : Fin n)
     (c : hG.simplyBlockedCycles R i) :
     (hG.simplyBlockedHomologyIsoQuotient R i).hom (hG.simplyBlockedHomologyClass R i c) =
       Submodule.Quotient.mk c := by
-  simp [simplyBlockedHomologyClass]
+  rw [simplyBlockedHomologyClass, G.oneVariableSpecializationHomologyClass_apply]
+  -- Expose the two components of the composite quotient isomorphism so the categorical
+  -- inverse laws match their actual module carriers.
+  change ((G.simplyBlockedComplex R i).sc' () () ()).moduleCatHomologyIso.hom
+      (((G.simplyBlockedComplex R i).homologyIsoSc' () () () rfl rfl).hom
+        (((G.simplyBlockedComplex R i).homologyIsoSc' () () () rfl rfl).inv
+          (((G.simplyBlockedComplex R i).sc' () () ()).moduleCatHomologyIso.inv
+            (Submodule.Quotient.mk c)))) = _
+  rw [ModuleCat.hom_inv_apply]
+  exact ModuleCat.hom_inv_apply _ _
 
 /-- Every simply blocked homology class has a cycle representative. -/
 theorem simplyBlockedHomologyClass_surjective (hG : G.IsKnot) (i : Fin n) :
@@ -202,7 +201,8 @@ theorem simplyBlockedHomologyClass_surjective (hG : G.IsKnot) (i : Fin n) :
   refine ⟨c, ?_⟩
   apply (ModuleCat.mono_iff_injective (hG.simplyBlockedHomologyIsoQuotient R i).hom).1
     inferInstance
-  simpa [simplyBlockedHomologyClass] using hc
+  rw [simplyBlockedHomologyIsoQuotient_hom_class]
+  exact hc
 
 /-- Two cycles represent the same simply blocked homology class exactly when their difference is
 a boundary. -/
@@ -213,22 +213,27 @@ theorem simplyBlockedHomologyClass_eq_iff (hG : G.IsKnot) (i : Fin n)
   constructor
   · intro h
     rw [← Submodule.Quotient.eq]
-    simpa [simplyBlockedHomologyClass] using congrArg
-      (fun x => (hG.simplyBlockedHomologyIsoQuotient R i).hom x) h
+    have h' := congrArg (fun x => (hG.simplyBlockedHomologyIsoQuotient R i).hom x) h
+    rw [simplyBlockedHomologyIsoQuotient_hom_class,
+      simplyBlockedHomologyIsoQuotient_hom_class] at h'
+    exact h'
   · intro h
     have h' : (Submodule.Quotient.mk c : hG.simplyBlockedHomologyQuotient R i) =
         Submodule.Quotient.mk c' := by
       rw [Submodule.Quotient.eq]
       exact h
-    simpa [simplyBlockedHomologyClass] using congrArg
-      (fun x => (hG.simplyBlockedHomologyIsoQuotient R i).inv x) h'
+    apply (ModuleCat.mono_iff_injective (hG.simplyBlockedHomologyIsoQuotient R i).hom).1
+      inferInstance
+    rw [simplyBlockedHomologyIsoQuotient_hom_class,
+      simplyBlockedHomologyIsoQuotient_hom_class]
+    exact h'
 
 /-- A cycle represents zero in simply blocked homology exactly when it is a boundary. -/
 @[simp]
 theorem simplyBlockedHomologyClass_eq_zero_iff (hG : G.IsKnot) (i : Fin n)
     (c : hG.simplyBlockedCycles R i) :
     hG.simplyBlockedHomologyClass R i c = 0 ↔ c ∈ hG.simplyBlockedBoundaries R i := by
-  simpa [simplyBlockedHomologyClass] using
+  simpa only [map_zero, sub_zero] using
     simplyBlockedHomologyClass_eq_iff (G := G) R hG i c 0
 
 /-- The kernel of the cycle-class map is exactly the submodule of boundaries. -/

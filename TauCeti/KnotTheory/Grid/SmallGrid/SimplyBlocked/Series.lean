@@ -15,12 +15,10 @@ The standard two-by-two toroidal grid has simply blocked homology equal to the c
 field in bidegree `(O-Maslov, Alexander) = (0, 0)`. This file computes its Poincaré series and
 Alexander-graded Euler characteristic as `1` over any field of characteristic two.
 
-We use `GridDiagram.twoByTwoSimplyBlockedHomologyEquiv`, the existing constant-coefficient
-equivalence. It sends the class of the named surviving transposition-state cycle
-`GridDiagram.twoByTwoSimplyBlockedCycle` to `1`; the surviving variable acts by zero.
-Restricting this equivalence along `MvPolynomial.C` preserves the actual coefficient action
-used by categorical homology and its bigrading. The homogeneous-boundary theorem and generic
-internal decomposition identify its sole nonzero homogeneous piece.
+The equivalence `GridDiagram.twoByTwoSimplyBlockedHomologyEquiv` identifies homology with
+the coefficient field. It sends the class of the cycle `GridDiagram.twoByTwoSimplyBlockedCycle`
+to `1`, and the surviving variable acts by zero. The homogeneous piece at `(0, 0)` is
+one-dimensional, and all other pieces vanish.
 
 ## References
 

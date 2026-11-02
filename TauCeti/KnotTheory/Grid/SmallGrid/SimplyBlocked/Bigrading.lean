@@ -13,8 +13,9 @@ public import TauCeti.KnotTheory.Grid.SmallGrid.SimplyBlocked.Homology
 
 Over any characteristic-two commutative coefficient ring, simply blocked homology of the
 standard two-by-two unknot is concentrated in `(O-Maslov, Alexander)` bidegree `(0, 0)`.
-The existing homogeneous-boundary computation and the internal direct sum establish these
-piece equations without a field hypothesis.
+The piece at `(0, 0)` is the whole homology, as stated by
+`GridDiagram.twoByTwo_bigradedHatHomologyPiece_zero_eq_top`; all other pieces vanish by
+`GridDiagram.twoByTwo_bigradedHatHomologyPiece_eq_bot`.
 
 ## References
 
@@ -29,14 +30,15 @@ variable (R : Type*) [CommRing R] [CharP R 2]
 
 local notation "P" => twoByTwo.isKnot_of_two.toOddComponentGridDiagram.bigradedHatHomologyPiece R 0
 
-/-- Every nonzero bidegree piece of simply blocked homology of the standard two-by-two
-unknot vanishes. -/
+/-- For every bidegree other than `(0, 0)`, the corresponding piece of simply blocked homology
+of the standard two-by-two unknot is zero. -/
 theorem twoByTwo_bigradedHatHomologyPiece_eq_bot {g : ℤ × ℤ} (hg : g ≠ (0, 0)) :
     P g = ⊥ := by
   apply le_antisymm _ bot_le
   intro y hy
   rw [Submodule.mem_bot]
-  obtain ⟨z, hz, rfl⟩ := (twoByTwo.isKnot_of_two.mem_bigradedHatHomologyPiece_iff R 0).mp hy
+  obtain ⟨z, hz, rfl⟩ :=
+    (twoByTwo.isKnot_of_two.toOddComponentGridDiagram.mem_bigradedHatHomologyPiece_iff R 0).mp hy
   exact twoByTwo_simplyBlockedHomologyClass_eq_zero_of_bidegree_ne R z hg hz
 
 /-- All simply blocked homology of the standard two-by-two unknot has bidegree `(0, 0)`. -/

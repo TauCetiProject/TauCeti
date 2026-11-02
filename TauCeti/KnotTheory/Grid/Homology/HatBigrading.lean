@@ -67,7 +67,7 @@ private theorem mem_hatComplexGrading_piece {g : ℤ × ℤ} {c : (C).X ()} :
     c ∈ (hatComplexGrading G R i).piece g ↔
       G.1.simplyBlockedChainEquiv R i c ∈ G.bigradedChainHatPiece R i g := by
   rw [hatComplexGrading, InternalGrading.mem_map_piece_iff]
-  rfl
+  simp only [LinearEquiv.restrictScalars_symm_apply, LinearEquiv.symm_symm]
 
 private theorem hatDifferential_homogeneous :
     LinearMap.IsHomogeneous d (hatComplexGrading G R i).piece
@@ -192,33 +192,3 @@ theorem X_smul_mem_bigradedHatHomologyPiece (j : {c : Fin n // c ≠ i})
   simpa only [sub_eq_add_neg] using G.X_smul_mem_bigradedChainHatPiece j hc
 
 end TauCeti.OddComponentGridDiagram
-
-namespace TauCeti.GridDiagram.IsKnot
-
-variable {n : ℕ} {G : GridDiagram n} (hG : G.IsKnot) (R : Type*)
-  [CommRing R] [CharP R 2] (i : Fin n)
-
-/-- A simply blocked homology class has bidegree `g` exactly when it is represented by a
-cycle whose actual specialized chain has bidegree `g`. The grading is the same odd-component
-construction, evaluated on the knot grid. -/
-theorem mem_bigradedHatHomologyPiece_iff {g : ℤ × ℤ}
-    {y : (ModuleCat.restrictScalars (MvPolynomial.C :
-      R →+* MvPolynomial {c : Fin n // c ≠ i} R)).obj (hG.simplyBlockedHomology R i)} :
-    y ∈ hG.toOddComponentGridDiagram.bigradedHatHomologyPiece R i g ↔
-      ∃ z : hG.simplyBlockedCycles R i,
-        G.simplyBlockedChainEquiv R i z ∈
-          hG.toOddComponentGridDiagram.bigradedChainHatPiece R i g ∧
-        hG.simplyBlockedHomologyClass R i z = y := by
-  simpa only [hG.oneVariableSpecializationHomologyClass_eq_simplyBlockedHomologyClass R i] using
-      hG.toOddComponentGridDiagram.mem_bigradedHatHomologyPiece_iff R i (g := g) (y := y)
-
-/-- The existing simply blocked cycle-class map preserves the bidegree of a homogeneous cycle. -/
-theorem simplyBlockedHomologyClass_mem_bigradedHatHomologyPiece {g : ℤ × ℤ}
-    {z : hG.simplyBlockedCycles R i}
-    (hz : G.simplyBlockedChainEquiv R i z ∈
-      hG.toOddComponentGridDiagram.bigradedChainHatPiece R i g) :
-    hG.simplyBlockedHomologyClass R i z ∈
-      hG.toOddComponentGridDiagram.bigradedHatHomologyPiece R i g :=
-  (hG.mem_bigradedHatHomologyPiece_iff R i).mpr ⟨z, hz, rfl⟩
-
-end TauCeti.GridDiagram.IsKnot
