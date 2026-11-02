@@ -110,9 +110,9 @@ theorem exists_mem_nhds_eLpNorm_restrict_le_mul_eLpNorm_mgradient_add [LindelofS
     have : ENNReal.ofReal (ρ c / 2)⁻¹ ^ (p : ℝ)⁻¹ ≠ ∞ :=
       ENNReal.rpow_ne_top_of_nonneg (by positivity) ENNReal.ofReal_ne_top
     finiteness
-  refine ⟨φ.source ∩ φ ⁻¹' ball (φ c) (r / 4),
+  refine ⟨φ.source ∩ φ ⁻¹' ball (φ c) b.rIn,
     inter_mem (extChartAt_source_mem_nhds c)
-      ((continuousAt_extChartAt c).preimage_mem_nhds (ball_mem_nhds _ (by positivity))),
+      ((continuousAt_extChartAt c).preimage_mem_nhds (ball_mem_nhds _ b.rIn_pos)),
     (A * K * D).toNNReal, fun u hu ↦ ?_⟩
   set X := eLpNorm (fun x ↦ ‖mgradient I u x‖) p dV + eLpNorm u p dV
   -- Cut `u` off in the chart.
@@ -162,7 +162,7 @@ theorem exists_mem_nhds_eLpNorm_restrict_le_mul_eLpNorm_mgradient_add [LindelofS
   have hGNS : eLpNorm w p' μ ≤ K * eLpNorm (fderiv ℝ w) p μ :=
     eLpNorm_le_eLpNorm_fderiv_of_eq μ hw hwcs hp hn hp'
   -- Read the `L^{p'}` norm of `u` over the chart preimage of the small ball in the chart.
-  have hloc : eLpNorm u p' (dV.restrict (φ.source ∩ φ ⁻¹' ball (φ c) (r / 4))) ≤
+  have hloc : eLpNorm u p' (dV.restrict (φ.source ∩ φ ⁻¹' ball (φ c) b.rIn)) ≤
       A * eLpNorm w p' μ := by
     rcases eq_or_ne p' 0 with hp'0 | hp'0
     · simp [hp'0, eLpNorm_exponent_zero hu.continuous.aestronglyMeasurable]
@@ -171,11 +171,12 @@ theorem exists_mem_nhds_eLpNorm_restrict_le_mul_eLpNorm_mgradient_add [LindelofS
       eLpNorm_nnreal_pow_eq_lintegral hp'0 hu.continuous.aestronglyMeasurable,
       ENNReal.mul_rpow_of_nonneg _ _ hp'R.le, ENNReal.rpow_inv_rpow hp'R.ne',
       eLpNorm_nnreal_pow_eq_lintegral hp'0 hw.continuous.aestronglyMeasurable]
-    have hb : ball (φ c) b.rIn ⊆ ball (φ c) r := ball_subset_ball (by change r / 4 ≤ r; linarith)
+    have hb : ball (φ c) b.rIn ⊆ ball (φ c) r :=
+      ball_subset_closedBall.trans ((closedBall_subset_closedBall b.rIn_lt_rOut.le).trans hbr)
     exact (b.setLIntegral_inter_preimage_le_mul_setLIntegral_mul_comp_extChartAt_symm
       (hb.trans hrt) (fun y hy ↦ (hball y (hb hy)).2.2.le) u fun t ↦ ‖t‖ₑ ^ (p' : ℝ)).trans
       (by gcongr; exact Measure.restrict_le_self)
-  calc eLpNorm u p' (dV.restrict (φ.source ∩ φ ⁻¹' ball (φ c) (r / 4)))
+  calc eLpNorm u p' (dV.restrict (φ.source ∩ φ ⁻¹' ball (φ c) b.rIn))
       ≤ A * (K * (D * X)) := hloc.trans (by gcongr; exact hGNS.trans (by gcongr))
     _ = (A * K * D).toNNReal * X := by
         rw [ENNReal.coe_toNNReal (by finiteness)]

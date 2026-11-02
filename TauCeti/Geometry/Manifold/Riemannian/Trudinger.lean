@@ -123,9 +123,9 @@ theorem exists_mem_nhds_setLIntegral_exp_mul_abs_rpow_le [LindelofSpace M] (hn :
     (ENNReal.ofReal (Real.exp 1 * (n ^ n + 5)) * μ (ball (φ c) r))
   have hC : C ≠ ∞ := ENNReal.mul_ne_top ENNReal.ofReal_ne_top
     (ENNReal.mul_ne_top ENNReal.ofReal_ne_top measure_ball_lt_top.ne)
-  refine ⟨φ.source ∩ φ ⁻¹' ball (φ c) (r / 4),
+  refine ⟨φ.source ∩ φ ⁻¹' ball (φ c) b.rIn,
     inter_mem (extChartAt_source_mem_nhds c)
-      ((continuousAt_extChartAt c).preimage_mem_nhds (ball_mem_nhds _ (by positivity))),
+      ((continuousAt_extChartAt c).preimage_mem_nhds (ball_mem_nhds _ b.rIn_pos)),
     ((κ * A) ^ q)⁻¹, by positivity, C.toNNReal, fun u hu hnorm ↦ ?_⟩
   -- Cut `u` off in the chart.
   set w : E → ℝ := fun y ↦ b y * u (φ.symm y)
@@ -159,12 +159,13 @@ theorem exists_mem_nhds_setLIntegral_exp_mul_abs_rpow_le [LindelofSpace M] (hn :
   -- The flat Trudinger inequality for `w` on the ball of radius `r`, read back on `M`.
   have htr := setLIntegral_exp_norm_div_rpow_le_of_eLpNorm_fderiv_le (μ := μ) hw hwcs
     measurableSet_ball hwsupp hn hA hDwA
-  have hb : ball (φ c) b.rIn ⊆ ball (φ c) r := ball_subset_ball (by change r / 4 ≤ r; linarith)
+  have hb : ball (φ c) b.rIn ⊆ ball (φ c) r :=
+    ball_subset_closedBall.trans ((closedBall_subset_closedBall b.rIn_lt_rOut.le).trans hbr)
   have hF (t : ℝ) : ((κ * A) ^ q)⁻¹ * |t| ^ q = (‖t‖ / (κ * A)) ^ q := by
     rw [Real.div_rpow (norm_nonneg _) (by positivity), Real.norm_eq_abs, div_eq_inv_mul]
   rw [ENNReal.coe_toNNReal hC]
   simp only [hF]
-  calc _ ≤ ENNReal.ofReal (2 * ρ c) * ∫⁻ y in ball (φ c) (r / 4),
+  calc _ ≤ ENNReal.ofReal (2 * ρ c) * ∫⁻ y in ball (φ c) b.rIn,
           ENNReal.ofReal (Real.exp ((‖w y‖ / (κ * A)) ^ q)) ∂μ :=
         b.setLIntegral_inter_preimage_le_mul_setLIntegral_mul_comp_extChartAt_symm (hb.trans hrt)
           (fun y hy ↦ (hball y (hb hy)).2.2.le) u
