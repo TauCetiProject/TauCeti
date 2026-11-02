@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Convex.Continuous
 public import Mathlib.Analysis.Convex.Integral
 public import Mathlib.Probability.IdentDistribIndep
-public import Mathlib.Probability.Independence.Basic
 public import TauCeti.Probability.Distributions.Rademacher
 public import TauCeti.Probability.Independence.DisjointBlocks
 
@@ -60,13 +59,12 @@ omit [IsProbabilityMeasure μ] in
 for the indices `i` with `s i = -1`, does not change the law of the family `X ⊕ X'`, hence
 the vector `(sᵢ (Xᵢ - X'ᵢ))ᵢ` has the same law as `(Xᵢ - X'ᵢ)ᵢ` for a fixed sign pattern
 `s : ι → ℝ` with values in `{1, -1}`. -/
-theorem iIndepFun.map_fun_mul_sub_eq_of_identDistrib [Finite ι]
+theorem iIndepFun.map_fun_mul_sub_eq_of_identDistrib [Countable ι]
     (hind : iIndepFun (Sum.elim X X') μ) (hid : ∀ i, IdentDistrib (X i) (X' i) μ μ)
     (hX : ∀ i, Measurable (X i)) (hX' : ∀ i, Measurable (X' i))
     (s : ι → ℝ) (hs : ∀ i, s i = 1 ∨ s i = -1) :
     μ.map (fun ω i ↦ s i * (X i ω - X' i ω)) = μ.map (fun ω i ↦ X i ω - X' i ω) := by
   classical
-  have := Fintype.ofFinite ι
   let σ : ι ⊕ ι → ι ⊕ ι := Sum.elim (fun i ↦ if s i = -1 then Sum.inr i else Sum.inl i)
     (fun i ↦ if s i = -1 then Sum.inl i else Sum.inr i)
   have hσ : σ.Involutive := by
@@ -98,9 +96,10 @@ theorem iIndepFun.map_fun_mul_sub_eq_of_identDistrib [Finite ι]
   rw [key, ← Measure.map_map hH hZ'm, hperm, Measure.map_map hH hZm]
   rfl
 
-/-- If the signs `εᵢ` are independent of the differences `Xᵢ - X'ᵢ` as vectors and almost surely
-equal to `±1`, then the vector `(εᵢ (Xᵢ - X'ᵢ))ᵢ` has the same law as `(Xᵢ - X'ᵢ)ᵢ`. -/
-theorem IndepFun.map_fun_mul_sub_eq_of_identDistrib [Finite ι] {ε : ι → Ω → ℝ}
+/-- If `Sum.elim X X'` is independent, `Xᵢ` and `X'ᵢ` are identically distributed, and the signs
+`εᵢ` are independent of the differences `Xᵢ - X'ᵢ` as vectors and almost surely equal to `±1`,
+then the vector `(εᵢ (Xᵢ - X'ᵢ))ᵢ` has the same law as `(Xᵢ - X'ᵢ)ᵢ`. -/
+theorem IndepFun.map_fun_mul_sub_eq_of_identDistrib [Countable ι] {ε : ι → Ω → ℝ}
     (hindep : IndepFun (fun ω i ↦ ε i ω) (fun ω i ↦ X i ω - X' i ω) μ)
     (hind : iIndepFun (Sum.elim X X') μ) (hid : ∀ i, IdentDistrib (X i) (X' i) μ μ)
     (hX : ∀ i, Measurable (X i)) (hX' : ∀ i, Measurable (X' i)) (hε : ∀ i, Measurable (ε i))
@@ -137,9 +136,9 @@ theorem IndepFun.map_fun_mul_sub_eq_of_identDistrib [Finite ι] {ε : ι → Ω 
   exact ((measurePreserving_snd (μ := μ.map fun ω i ↦ ε i ω)
     (ν := μ.map fun ω i ↦ X i ω - X' i ω)).comp hmp).map_eq
 
-/-- For measurable `Φ`, signs independent of the differences `Xᵢ - X'ᵢ` and almost surely equal to
-`±1` do not change the expectation of `Φ (∑ (Xᵢ - X'ᵢ))`:
-`E Φ(∑ εᵢ (Xᵢ - X'ᵢ)) = E Φ(∑ (Xᵢ - X'ᵢ))`. -/
+/-- For measurable `Φ`, if `Sum.elim X X'` is independent, `Xᵢ` and `X'ᵢ` are identically
+distributed, and the signs `εᵢ` are independent of the differences `Xᵢ - X'ᵢ` and almost surely
+equal to `±1`, then `E Φ(∑ εᵢ (Xᵢ - X'ᵢ)) = E Φ(∑ (Xᵢ - X'ᵢ))`. -/
 theorem IndepFun.integral_comp_sum_mul_sub_eq [Fintype ι] {ε : ι → Ω → ℝ} {Φ : ℝ → ℝ}
     (hindep : IndepFun (fun ω i ↦ ε i ω) (fun ω i ↦ X i ω - X' i ω) μ)
     (hind : iIndepFun (Sum.elim X X') μ) (hid : ∀ i, IdentDistrib (X i) (X' i) μ μ)

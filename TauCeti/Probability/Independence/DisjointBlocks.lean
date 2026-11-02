@@ -142,21 +142,14 @@ theorem iIndepFun.indepFun_fun_sumElim (hind : iIndepFun (Sum.elim X X') μ)
   have hZ : ∀ j, Measurable (Sum.elim X X' j) := by
     rintro (i | i)
     exacts [hX i, hX' i]
-  have hS : Set.range (Sum.inl : ι → ι ⊕ ι) ∪ Set.range Sum.inr = Set.univ := by
-    ext (i | i) <;> simp
-  refine TauCeti.Probability.indepFun_of_measurable_blockSigma (Z := fun j ↦ Sum.elim X X' j)
-    (S := Set.range Sum.inl) (T := Set.range Sum.inr) ?_ (fun j _ ↦ hZ j) ?_ ?_ ?_
-  · exact hind.precomp Subtype.val_injective
-  · rw [Set.disjoint_left]
+  have hdisj : Disjoint (Set.range (Sum.inl : ι → ι ⊕ ι)) (Set.range Sum.inr) := by
+    rw [Set.disjoint_left]
     rintro _ ⟨i, rfl⟩ ⟨j, hj⟩
     cases hj
-  · let _ := TauCeti.Probability.blockSigma (fun j ↦ Sum.elim X X' j) (Set.range Sum.inl)
-    exact measurable_pi_iff.2 fun i ↦
-      TauCeti.Probability.measurable_blockSigma_of_mem (Z := fun j ↦ Sum.elim X X' j)
-        (S := Set.range Sum.inl) (i := Sum.inl i) (Set.mem_range_self i)
-  · let _ := TauCeti.Probability.blockSigma (fun j ↦ Sum.elim X X' j) (Set.range Sum.inr)
-    exact measurable_pi_iff.2 fun i ↦
-      TauCeti.Probability.measurable_blockSigma_of_mem (Z := fun j ↦ Sum.elim X X' j)
-        (S := Set.range Sum.inr) (i := Sum.inr i) (Set.mem_range_self i)
+  have h := hind.indepFun_set _ _ hdisj hZ
+  exact h.comp
+    (φ := fun z i ↦ z ⟨Sum.inl i, Set.mem_range_self i⟩)
+    (ψ := fun z i ↦ z ⟨Sum.inr i, Set.mem_range_self i⟩)
+    (by fun_prop) (by fun_prop)
 
 end ProbabilityTheory
