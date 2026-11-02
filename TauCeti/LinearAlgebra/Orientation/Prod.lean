@@ -9,7 +9,6 @@ public import TauCeti.LinearAlgebra.Orientation.Basis
 public import TauCeti.LinearAlgebra.Prod
 import Mathlib.LinearAlgebra.Dimension.Finrank
 import TauCeti.GroupTheory.Perm.Inversion
-import TauCeti.LinearAlgebra.Orientation.Basic
 import TauCeti.LinearAlgebra.Ray
 
 /-!
@@ -161,10 +160,15 @@ theorem map_prodComm_prod (o : Orientation R E (Fin m)) (p : Orientation R F (Fi
       (prod b.orientation c.orientation hm hn) =
       (-1 : Rˣ) ^ (m * n) • Orientation.reindex R (F × E) (finCongr (add_comm n m))
         (prod c.orientation b.orientation hn hm) := by
-    rw [prod_basis_orientation, prod_basis_orientation, ← Basis.orientation_map, he,
-      Basis.orientation_reindex, Basis.orientation_reindex, reindex_perm, Equiv.Perm.sign_symm,
-      TauCeti.sign_finAddFlip_trans_finCongr]
-    simp
+    -- The sign of the block swap, in the form `simp` produces from the reindexing in `he`.
+    have hsign : Equiv.Perm.sign
+        ((finCongr (add_comm m n)).trans (finAddFlip : Fin (m + n) ≃ Fin (n + m)).symm) =
+        (-1) ^ (m * n) := by
+      rw [← Equiv.Perm.sign_symm]
+      simpa using TauCeti.sign_finAddFlip_trans_finCongr m n
+    -- Convert both products to basis orientations, then read off the sign of the block swap.
+    rw [prod_basis_orientation, prod_basis_orientation, ← Basis.orientation_map, he]
+    simp [Basis.orientation_reindex, reindex_perm, hsign]
   rcases b.orientation_eq_or_eq_neg o with ho | ho <;>
     rcases c.orientation_eq_or_eq_neg p with hp | hp <;> subst o <;> subst p <;>
     simp only [prod_neg_left, prod_neg_right, Orientation.map_neg, Orientation.reindex_neg,

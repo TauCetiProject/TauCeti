@@ -98,6 +98,7 @@ theorem mfderiv_swap (p : M × N) :
     mfderiv (I.prod J) (J.prod I) Prod.swap p =
       (ContinuousLinearMap.snd 𝕜 (TangentSpace I p.1) (TangentSpace J p.2)).prod
         (ContinuousLinearMap.fst 𝕜 (TangentSpace I p.1) (TangentSpace J p.2)) := by
+  -- `mfderiv_prodMk` applies to a pair of maps, so unfold `Prod.swap` to its pair expression.
   rw [show (Prod.swap : M × N → N × M) = fun q ↦ (q.2, q.1) from rfl,
     mfderiv_prodMk mdifferentiableAt_snd mdifferentiableAt_fst, mfderiv_snd, mfderiv_fst]
   -- The sides differ only in the target tangent-space index, `(p.2, p.1)` or `Prod.swap p`.
