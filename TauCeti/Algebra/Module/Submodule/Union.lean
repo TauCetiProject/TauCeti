@@ -64,8 +64,8 @@ theorem exists_forall_notMem_of_forall_ne_top_of_isLocalRing (p : ι → Submodu
     rw [hqi, restrictScalars_top, span_image, span_eq] at hspan
     have hle : ⊤ ≤ (p i).comap L.subtype ⊔ I • ⊤ := by
       rw [sup_comm, ← comap_map_mkQ, ← hspan, comap_top]
-    have hjac : I ≤ Ideal.jacobson ⊥ := (jacobson_eq_maximalIdeal ⊥ bot_ne_top).ge
-    exact (hy i).2 (le_of_le_smul_of_le_jacobson_bot hL hjac hle
+    have hjac : I ≤ Ring.jacobson R := (ringJacobson_eq_maximalIdeal R).ge
+    exact (hy i).2 (Submodule.le_of_le_smul_of_le_jacobson hL hjac hle
       (mem_top : (⟨y i, subset_span ⟨i, rfl⟩⟩ : L) ∈ ⊤))
   obtain ⟨x, hx⟩ := exists_forall_notMem_of_forall_ne_top q hq
   obtain ⟨x, rfl⟩ := N.mkQ_surjective x

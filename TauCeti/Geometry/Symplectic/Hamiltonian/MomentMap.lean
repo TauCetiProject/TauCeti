@@ -656,7 +656,7 @@ theorem poissonBracket_linearMomentMap (A B : skewAdjointLieSubalgebra ω.toBili
   simp only [InfinitesimalAction.comp_apply, LieSubalgebra.coe_incl,
     InfinitesimalAction.linear_apply, constSmooth_apply, linearMomentMap_apply,
     LieSubalgebra.coe_bracket, LieRing.of_associative_ring_bracket, LinearMap.sub_apply,
-    Module.End.mul_apply, map_sub]
+    mul_apply_eq_comp, map_sub]
   rw [skewAdjointLieSubalgebra.apply_left A ((B : Module.End ℝ V) x) x,
     skewAdjointLieSubalgebra.apply_left B ((A : Module.End ℝ V) x) x,
     ← ω.isAlt.neg_eq ((A : Module.End ℝ V) x) ((B : Module.End ℝ V) x)]

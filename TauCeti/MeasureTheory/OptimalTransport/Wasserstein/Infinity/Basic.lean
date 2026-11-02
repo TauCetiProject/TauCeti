@@ -151,7 +151,7 @@ theorem exists_isCoupling_eLpNorm_top_eq_wassersteinEDist (μ ν : Measure X) [I
   rcases eq_zero_or_neZero μ with rfl | _
   · -- The only coupling of zero measures is zero, whose objective vanishes.
     have hπ₀0 : π₀ = 0 := by
-      rw [← Measure.measure_univ_eq_zero, ← Measure.fst_univ, hπ₀.fst_eq, Measure.coe_zero,
+      rw [← Measure.measure_univ_eq_zero, ← Measure.fst_univ, hπ₀.fst_eq, FunLike.coe_zero,
         Pi.zero_apply]
     subst hπ₀0
     exact ⟨0, hπ₀, le_antisymm (by simp) (wassersteinEDist_le hπ₀ ∞)⟩
@@ -160,9 +160,9 @@ theorem exists_isCoupling_eLpNorm_top_eq_wassersteinEDist (μ ν : Measure X) [I
   have hm0 : m ≠ 0 := hm ▸ by simp [NeZero.ne μ]
   have hmtop : m ≠ ∞ := hm ▸ measure_ne_top μ _
   have : IsProbabilityMeasure (m⁻¹ • μ) := ⟨by
-    rw [Measure.smul_apply, smul_eq_mul, hm, ENNReal.inv_mul_cancel hm0 hmtop]⟩
+    rw [_root_.smul_apply, smul_eq_mul, hm, ENNReal.inv_mul_cancel hm0 hmtop]⟩
   have : IsProbabilityMeasure (m⁻¹ • ν) := ⟨by
-    rw [Measure.smul_apply, smul_eq_mul, ← hπ₀.measure_univ_eq, hm,
+    rw [_root_.smul_apply, smul_eq_mul, ← hπ₀.measure_univ_eq, hm,
       ENNReal.inv_mul_cancel hm0 hmtop]⟩
   obtain ⟨π, hπ, hle⟩ := exists_isCoupling_eLpNorm_top_le_iSup (m⁻¹ • μ) (m⁻¹ • ν)
   have hscale : wassersteinEDist ∞ (m⁻¹ • μ) (m⁻¹ • ν) = wassersteinEDist ∞ μ ν := by

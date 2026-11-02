@@ -295,7 +295,7 @@ theorem exists_mul_measure_sq_le_mul_ofReal_pow :
     intro s hs
     rw [mongeAmpereMeasure_ite_comp_symm_apply μ T G v hs]
     refine le_trans ?_ (mul_le_mul' le_rfl (Measure.le_iff'.1 hMA (T.symm '' s)))
-    rw [Measure.smul_apply, Measure.restrict_apply hs, smul_eq_mul, Measure.smul_apply,
+    rw [_root_.smul_apply, Measure.restrict_apply hs, smul_eq_mul, _root_.smul_apply,
       smul_eq_mul, Measure.restrict_apply' hGo.measurableSet, ← image_inter_preimage,
       addHaar_image_affineEquiv μ T.symm, ENNReal.ofReal_mul (by positivity),
       ENNReal.ofReal_pow (abs_nonneg _), ENNReal.ofReal_coe_nnreal]

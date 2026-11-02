@@ -10,11 +10,13 @@ public import Mathlib.LinearAlgebra.Projection
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Complex
 public import TauCeti.RingTheory.Idempotents.SquareRootOne
 -- Private: the following are used only inside proofs: the dimension `2 ^ (n / 2)` of a spinor
--- module, the eigenspace splitting and anticommutation lemmas for endomorphisms, and the Morita
--- evaluation of eigenspaces.
+-- module, Clifford functoriality, the eigenspace splitting, anticommutation and transport lemmas
+-- for endomorphisms, and the Morita evaluation of eigenspaces.
 import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
+import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
 import TauCeti.LinearAlgebra.Eigenspace.Anticommute
 import TauCeti.LinearAlgebra.Eigenspace.Separation
+import TauCeti.LinearAlgebra.Eigenspace.Transport
 import TauCeti.RingTheory.Morita.Eigenspace
 
 /-!
@@ -49,6 +51,12 @@ spaces `S⁺` and `S⁻` both have dimension `2 ^ (n / 2 - 1)`, and by Morita ev
 
 so that `dim E^± = 2 ^ (n / 2 - 1) · dim Hom_Cℓ(S, E)`.
 
+The decomposition is natural: since `Γ` is carried to `Γ` by orientation-preserving isometries of
+the quadratic forms that also preserve the norms (`CliffordAlgebra.map_complexVolume`), a map of
+Clifford modules intertwining the vectors along such an isometry maps `E^±` into the corresponding
+eigenspace of the target, and an equivalence restricts to equivalences of the half-spinors. An
+orientation-reversing isometry exchanges the labels.
+
 ## Main results
 
 * `CliffordAlgebra.isCompl_eigenspace_complexVolume`: `E = E⁺ ⊕ E⁻`.
@@ -62,6 +70,12 @@ so that `dim E^± = 2 ^ (n / 2 - 1) · dim Hom_Cℓ(S, E)`.
   vectors exchange the eigenspaces.
 * `CliffordAlgebra.smul_mem_eigenspace_complexVolume_of_odd`: in odd dimension, the whole
   Clifford algebra preserves the eigenspaces.
+* `CliffordAlgebra.comp_lsmul_complexVolume_eq_lsmul_complexVolume_comp`,
+  `CliffordAlgebra.apply_mem_eigenspace_complexVolume` and
+  `CliffordAlgebra.map_eigenspace_complexVolume`: a map of Clifford modules intertwining the
+  vectors along an orientation-preserving isometry of the quadratic forms that also preserves the
+  norms intertwines `Γ`, so it maps each eigenspace into, and for an equivalence onto, the
+  corresponding eigenspace.
 * `CliffordAlgebra.finrank_eigenspace_complexVolume_neg`: in even positive dimension,
   `dim E⁻ = dim E⁺`.
 * `CliffordAlgebra.finrank_eigenspace_complexVolume_of_bijective_lsmul`: in even positive
@@ -128,6 +142,70 @@ theorem smul_mem_eigenspace_complexVolume_of_mem_even
     rw [← mul_smul, (commute_complexVolume_of_mem_even o hn hx).eq, mul_smul, hψ, smul_comm]
   · exact smul_mem_eigenspace_complexVolume_of_odd o hn x hψ
 
+/-! ### Naturality under isometries -/
+
+section Naturality
+
+variable {V' : Type*} [NormedAddCommGroup V'] [InnerProductSpace ℝ V'] [FiniteDimensional ℝ V']
+  [Fact (finrank ℝ V' = n)] {Q' : QuadraticForm ℝ V'} {o' : Orientation ℝ V' (Fin n)}
+  {F : Type*} [AddCommGroup F] [Module ℂ F] [Module (CliffordAlgebra (Q'.baseChange ℂ)) F]
+  [IsScalarTower ℂ (CliffordAlgebra (Q'.baseChange ℂ)) F]
+  {e : Q.IsometryEquiv Q'} {U : E →ₗ[ℂ] F}
+
+variable {o}
+
+/-- **Naturality of the chirality action**: a complex-linear map `U` of Clifford modules that
+intertwines the real vectors along an isometric equivalence `e` of the quadratic forms,
+`U (c(v) ψ) = c(e v) (U ψ)`, where `e` also preserves the norms and carries `o` to `o'`, intertwines
+`Γ` for `o` with `Γ` for `o'`. -/
+theorem comp_lsmul_complexVolume_eq_lsmul_complexVolume_comp (he : ∀ v, ‖e v‖ = ‖v‖)
+    (ho : o.map (Fin n) e.toLinearEquiv = o')
+    (hU : ∀ (v : V) (ψ : E),
+      U (ι (Q.baseChange ℂ) (1 ⊗ₜ v) • ψ) = ι (Q'.baseChange ℂ) (1 ⊗ₜ e v) • U ψ) :
+    U ∘ₗ Algebra.lsmul ℂ ℂ E (complexVolume Q o) =
+      Algebra.lsmul ℂ ℂ F (complexVolume Q' o') ∘ₗ U := by
+  -- Let the real Clifford algebras act through `ofBaseChangeAux`, so that `U` intertwines the
+  -- real volume elements; `Γ` is a scalar multiple of the image of the real volume element.
+  have h := comp_eq_map_comp_of_forall_ι
+    (ρ₁ := ((Algebra.lsmul ℂ ℂ E).restrictScalars ℝ).comp (ofBaseChangeAux ℂ Q))
+    (ρ₂ := ((Algebra.lsmul ℂ ℂ F).restrictScalars ℝ).comp (ofBaseChangeAux ℂ Q'))
+    (f := e.toIsometry) (fun v ↦ LinearMap.ext fun ψ ↦ by simpa using hU v ψ) (volumeElement Q o)
+  rw [map_volumeElement o e he, ho] at h
+  rw [complexVolume_def, complexVolume_def, map_smul, map_smul, LinearMap.comp_smul,
+    LinearMap.smul_comp]
+  exact congrArg (Complex.I ^ ((n + 1) / 2) • ·) h
+
+/-- An intertwiner as in `CliffordAlgebra.comp_lsmul_complexVolume_eq_lsmul_complexVolume_comp`
+maps each eigenspace of `Γ` for `o` into the eigenspace of `Γ` for `o'` with the same eigenvalue.
+For an orientation-reversing isometry, take `o' = -o''`: the `μ`-eigenspace of `Γ` for `o'` is the
+`-μ`-eigenspace of `Γ` for `o''`, by `CliffordAlgebra.complexVolume_neg_orientation`. -/
+theorem apply_mem_eigenspace_complexVolume (he : ∀ v, ‖e v‖ = ‖v‖)
+    (ho : o.map (Fin n) e.toLinearEquiv = o')
+    (hU : ∀ (v : V) (ψ : E),
+      U (ι (Q.baseChange ℂ) (1 ⊗ₜ v) • ψ) = ι (Q'.baseChange ℂ) (1 ⊗ₜ e v) • U ψ)
+    {μ : ℂ} {ψ : E} (hψ : ψ ∈ (Algebra.lsmul ℂ ℂ E (complexVolume Q o)).eigenspace μ) :
+    U ψ ∈ (Algebra.lsmul ℂ ℂ F (complexVolume Q' o')).eigenspace μ :=
+  mapsTo_genEigenspace_of_comp U
+    (comp_lsmul_complexVolume_eq_lsmul_complexVolume_comp he ho hU).symm μ 1 hψ
+
+/-- An equivalence of Clifford modules that intertwines the real vectors along an isometric
+equivalence `e` as in `CliffordAlgebra.comp_lsmul_complexVolume_eq_lsmul_complexVolume_comp`
+carries each eigenspace of `Γ` for `o` onto the eigenspace of `Γ` for `o'` with the same
+eigenvalue. For `Q v = -‖v‖²`, `Q' v = -‖v‖²`, even `n` and `μ = ±1` these are the half-spinors,
+which are therefore identified by `LinearEquiv.ofSubmodules`. -/
+theorem map_eigenspace_complexVolume (he : ∀ v, ‖e v‖ = ‖v‖)
+    (ho : o.map (Fin n) e.toLinearEquiv = o') {U : E ≃ₗ[ℂ] F}
+    (hU : ∀ (v : V) (ψ : E),
+      U (ι (Q.baseChange ℂ) (1 ⊗ₜ v) • ψ) = ι (Q'.baseChange ℂ) (1 ⊗ₜ e v) • U ψ) (μ : ℂ) :
+    ((Algebra.lsmul ℂ ℂ E (complexVolume Q o)).eigenspace μ).map U.toLinearMap =
+      (Algebra.lsmul ℂ ℂ F (complexVolume Q' o')).eigenspace μ := by
+  have h := comp_lsmul_complexVolume_eq_lsmul_complexVolume_comp he ho hU
+  rw [eigenspace_eq_comap_of_intertwine (e := U) (g := Algebra.lsmul ℂ ℂ F (complexVolume Q' o'))
+    (LinearMap.congr_fun h) μ]
+  exact Submodule.map_comap_eq_of_surjective U.surjective _
+
+end Naturality
+
 /-! ### The decomposition `E = E⁺ ⊕ E⁻` -/
 
 section Form
@@ -140,9 +218,7 @@ direct sum of the `1`- and `-1`-eigenspaces of `Γ`. -/
 theorem isCompl_eigenspace_complexVolume :
     IsCompl ((Algebra.lsmul ℂ ℂ E (complexVolume Q o)).eigenspace 1)
       ((Algebra.lsmul ℂ ℂ E (complexVolume Q o)).eigenspace (-1)) :=
-  isCompl_eigenspace_one_neg_one two_ne_zero.isUnit fun ψ ↦ by
-    simp only [Algebra.lsmul_coe]
-    rw [← mul_smul, complexVolume_mul_self o hQ, one_smul]
+  isCompl_eigenspace_one_neg_one two_ne_zero.isUnit (lsmul_complexVolume_involutive o hQ)
 
 /-- `½ (1 + Γ)` maps every vector into the `1`-eigenspace of `Γ`. -/
 theorem halfOneAdd_smul_mem_eigenspace_complexVolume (ψ : E) :
