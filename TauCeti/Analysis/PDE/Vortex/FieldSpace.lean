@@ -19,18 +19,21 @@ import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 
 Framed degree-`m` plane vortex fields form the affine space
 
-  `A_m^s = (a_m, α_m) + H^s(ℂ; iT*ℂ ⊕ ℂ)`,
+  `A_m^s = (a_m, α_m) + (L² ∩ H^s)(ℂ; iT*ℂ ⊕ ℂ)`,
 
-centered at a smooth reference pair equal to `(-i m dθ, exp (i m θ))` outside a disc. This file
-builds it in the real coordinates `x = (b₁, b₂, p, q)` of `TauCeti.Vortex.equation`, which
+centered at a smooth reference pair equal to `(-i m dθ, exp (i m θ))` outside a disc. Every
+coordinate of a field in the direction is an `L²` function, so for `s ≥ 0` the direction is the
+full Sobolev space `H^s`, while for `s < 0` it is only the subspace `L² ∩ H^s`. This file builds
+the space in the real coordinates `x = (b₁, b₂, p, q)` of `TauCeti.Vortex.equation`, which
 represent `a = i (b₁ ds + b₂ dt)` and `α = 2 (p + i q)`.
 
 * `referenceField f m` is the reference pair `(referenceConnection f m, referenceSection f m)` in
   these coordinates.
-* `sobolevFields s` is the real space `H^s` of fields: each coordinate is a real `L²` function
-  whose complexified tempered distribution lies in Mathlib's Bessel-potential space `H^s`
-  (`TemperedDistribution.MemSobolev s 2`). This is the componentwise complexification on which the
-  tempered vacuum operator `TauCeti.Vortex.temperedVacuumOperator` acts.
+* `sobolevFields s` is the real space of pointwise representatives of `L² ∩ H^s` fields (all of
+  `H^s` when `s ≥ 0`): each coordinate is a real `L²` function whose complexified tempered
+  distribution lies in Mathlib's Bessel-potential space `H^s`
+  (`TemperedDistribution.realSobolevSubmodule`). This is the componentwise complexification on
+  which the tempered vacuum operator `TauCeti.Vortex.temperedVacuumOperator` acts.
 * `framedFieldSpace f m s` is `A_m^s`, the affine subspace through `referenceField f m` with
   direction `sobolevFields s`.
 
@@ -143,24 +146,12 @@ theorem hasCompactSupport_referenceField_zero_sub_vacuumField (f : ContDiffBump 
 
 /-! ### Sobolev fields -/
 
-/-- The tempered distributions in the Bessel-potential space `H^s`, as a complex submodule. -/
-private def sobolevDistributions (s : ℝ) : Submodule ℂ 𝓢'(ℂ, ℂ) where
-  carrier := {T | MemSobolev s 2 T}
-  add_mem' := MemSobolev.add
-  zero_mem' := memSobolev_fun_zero ℂ ℂ s 2
-  smul_mem' c _ h := h.smul c
-
-/-- The real `L²` functions whose complexified tempered distribution lies in `H^s`. -/
-private def realSobolev (s : ℝ) : Submodule ℝ (Lp ℝ 2 (volume : Measure ℂ)) :=
-  ((sobolevDistributions s).restrictScalars ℝ).comap
-    (((Lp.toTemperedDistributionCLM ℂ (volume : Measure ℂ) 2).restrictScalars ℝ).toLinearMap ∘ₗ
-      ofRealCLM.compLpₗ (p := 2) (μ := (volume : Measure ℂ)))
-
-/-- The real Sobolev space `H^s(ℂ; ℝ⁴)` of fields: each coordinate is the value of a real `L²`
-function whose complexified tempered distribution lies in the Bessel-potential space `H^s`. -/
+/-- The real space of pointwise representatives of `(L² ∩ H^s)(ℂ; ℝ⁴)` fields, which is the
+Sobolev space `H^s(ℂ; ℝ⁴)` when `s ≥ 0`: each coordinate is the value of a real `L²` function
+whose complexified tempered distribution lies in the Bessel-potential space `H^s`. -/
 def sobolevFields (s : ℝ) : Submodule ℝ (ℂ → EuclideanSpace ℝ (Fin 4)) where
   carrier := {y | ∀ i, ∃ u : Lp ℝ 2 (volume : Measure ℂ), u =ᵐ[volume] (fun z ↦ y z i) ∧
-    u ∈ realSobolev s}
+    u ∈ realSobolevSubmodule ℂ s 2}
   add_mem' := by
     rintro y₁ y₂ h₁ h₂ i
     obtain ⟨u₁, hu₁, hs₁⟩ := h₁ i
@@ -180,12 +171,12 @@ def sobolevFields (s : ℝ) : Submodule ℝ (ℂ → EuclideanSpace ℝ (Fin 4))
     filter_upwards [Lp.coeFn_smul c u, hu] with z h h'
     rw [h, Pi.smul_apply, h', Pi.smul_apply, PiLp.smul_apply]
 
-/-- Membership in `H^s`, coordinate by coordinate. -/
+/-- Membership in `sobolevFields s` (`L² ∩ H^s`), coordinate by coordinate. -/
 theorem mem_sobolevFields {s : ℝ} {y : ℂ → EuclideanSpace ℝ (Fin 4)} :
     y ∈ sobolevFields s ↔ ∀ i, ∃ u : Lp ℝ 2 (volume : Measure ℂ),
       u =ᵐ[volume] (fun z ↦ y z i) ∧
         MemSobolev s 2 (Lp.toTemperedDistribution (ofRealCLM.compLp u)) :=
-  Iff.rfl
+  forall_congr' fun _ ↦ exists_congr fun _ ↦ and_congr_right' mem_realSobolevSubmodule
 
 /-- The Sobolev field spaces decrease as the order increases. -/
 theorem sobolevFields_mono {s s' : ℝ} (h : s' ≤ s) : sobolevFields s ≤ sobolevFields s' :=
@@ -206,8 +197,8 @@ theorem mem_sobolevFields_of_hasCompactSupport {y : ℂ → EuclideanSpace ℝ (
   filter_upwards [ofRealCLM.coeFn_compLp (hm.toLp _), hm.coeFn_toLp] with z h₁ h₂
   simp [h₁, h₂]
 
-/-- **Decay of continuous Sobolev fields.** For `s > 1`, a continuous field in `H^s` tends to
-zero at infinity: by Sobolev embedding each coordinate agrees almost everywhere with a
+/-- **Decay of continuous Sobolev fields.** For `s > 1`, a continuous field in `sobolevFields s`
+tends to zero at infinity: by Sobolev embedding each coordinate agrees almost everywhere with a
 continuous function vanishing at infinity, hence everywhere. -/
 theorem tendsto_cocompact_of_mem_sobolevFields {s : ℝ} (hs : 1 < s)
     {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : y ∈ sobolevFields s) (hcont : Continuous y) :
@@ -234,19 +225,21 @@ theorem tendsto_cocompact_of_mem_sobolevFields {s : ℝ} (hs : 1 < s)
 
 /-! ### The affine field space -/
 
-/-- The affine space `A_m^s = referenceField f m + H^s` of framed degree-`m` plane vortex
-fields. It does not depend on the cutoff `f` (`framedFieldSpace_eq`). -/
+/-- The affine space `A_m^s = referenceField f m + sobolevFields s` of framed degree-`m` plane
+vortex fields, whose direction is `L² ∩ H^s` (all of `H^s` when `s ≥ 0`). It does not depend on
+the cutoff `f` (`framedFieldSpace_eq`). -/
 def framedFieldSpace (f : ContDiffBump (0 : ℝ)) (m : ℕ) (s : ℝ) :
     AffineSubspace ℝ (ℂ → EuclideanSpace ℝ (Fin 4)) :=
   AffineSubspace.mk' (referenceField f m) (sobolevFields s)
 
-/-- A field lies in `A_m^s` exactly when its difference from the reference field lies in `H^s`. -/
+/-- A field lies in `A_m^s` exactly when its difference from the reference field lies in
+`sobolevFields s`. -/
 theorem mem_framedFieldSpace {f : ContDiffBump (0 : ℝ)} {m : ℕ} {s : ℝ}
     {x : ℂ → EuclideanSpace ℝ (Fin 4)} :
     x ∈ framedFieldSpace f m s ↔ x - referenceField f m ∈ sobolevFields s :=
   AffineSubspace.mem_mk'
 
-/-- The space `A_m^s` is modeled on `H^s`. -/
+/-- The space `A_m^s` is modeled on `sobolevFields s`. -/
 @[simp]
 theorem direction_framedFieldSpace (f : ContDiffBump (0 : ℝ)) (m : ℕ) (s : ℝ) :
     (framedFieldSpace f m s).direction = sobolevFields s :=
