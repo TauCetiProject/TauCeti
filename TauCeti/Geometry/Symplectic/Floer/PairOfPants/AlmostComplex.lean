@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Basic
 public import TauCeti.Geometry.Symplectic.Cayley.Smooth
-public import Mathlib.Topology.Algebra.Module.FiniteDimension
 import Mathlib.Geometry.Manifold.Algebra.SMul
 
 /-!
@@ -120,6 +119,7 @@ theorem tames_pairOfPantsAlmostComplex (h₀ : ω.Compatible J₀) (w : ℂ) (x 
 /-- The Cayley transform of the pair-of-pants structure, relative to `J₀`, is the cutoff-weighted
 sum `∑ q, β(±s_q(w) - 1) • cayley (J q (t_q(w)) x)`. This characterizes the structure, since the
 Cayley transform is injective on tame structures. -/
+@[simp]
 theorem cayley_pairOfPantsAlmostComplex (h₀ : ω.Compatible J₀) (w : ℂ) (x : M) :
     J₀.cayley (pairOfPantsAlmostComplex h₀ J hJ w x) =
       ∑ q, smoothTransition (q.endSign * (q.endCoord w).re - 1) •

@@ -103,6 +103,7 @@ theorem exists_cylindricalEndLift_of_pairOfPantsPerturbation_ne_zero {w : ℂ} {
 
 /-- On the part `±s > 0` of the end `q`, the cutoff of every other end `r` vanishes, since the
 parts `±s > 0` of distinct ends are disjoint. -/
+@[simp]
 theorem smoothTransition_endCoord_cylindricalEndLift_eq_zero {q r : Puncture} (hrq : r ≠ q)
     {z : ℂ} (hz : 0 < q.endSign * z.re) :
     smoothTransition (r.endSign * (r.endCoord (q.cylindricalEndLift z)).re - 1) = 0 := by
