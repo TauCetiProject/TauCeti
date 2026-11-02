@@ -23,7 +23,7 @@ algebras.
 
 Over a nontrivial base ring with projective augmentation cotangent module, each signed
 simple-root character is a nontrivial adjoint weight. In particular these statements apply
-over every field in `Type`, including characteristics two and three. The weight labels are
+over every field, including characteristics two and three. The weight labels are
 integral characters, not Lie eigenvalues reduced modulo the characteristic.
 
 These vectors give the differential and weight normalization of the numbered root subgroups.
@@ -89,10 +89,8 @@ private theorem map_genericMatrix_generatedCoordinateLift (k : Fin 6 ⊕ Fin 6) 
   let q : HopfAlgebra.points (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R) A :=
     toConv (AlgHom.id R (AdditiveGroup.coordinateHopfAlgebra R))
   have hu : AdditiveGroup.gaPointsMulEquiv (R := R) q =
-      Multiplicative.ofAdd (SymmetricAlgebra.ι R R 1) := by
-    rw [← ofAdd_toAdd (AdditiveGroup.gaPointsMulEquiv (R := R) q),
-      AdditiveGroup.toAdd_gaPointsMulEquiv]
-    simp [q]
+      Multiplicative.ofAdd (SymmetricAlgebra.ι R R 1) :=
+    AdditiveGroup.gaPointsMulEquiv_toConv_id
   have h := congrArg (fun g : Matrix.GeneralLinearGroup (Fin 54) A =>
     (g : Matrix (Fin 54) (Fin 54) A))
     (pointToGeneralLinear_mapDomain_generatedCoordinateLift_inl_eq_rootSubgroupPoints R k A q)
@@ -179,8 +177,7 @@ end Differential
 
 section Weights
 
--- The generic weight-space criterion uses the universe of the finite torus index.
-variable (R : Type) [CommRing R]
+variable (R : Type u) [CommRing R]
 variable [Module.Projective R
   (Bialgebra.CotangentSpace R (generatedCoordinateHopfAlgebra R))]
 
@@ -194,11 +191,25 @@ theorem mem_adjointWeightSpace_generatedWeightTorusCoordinateMap_iff
         GeneralLinear.tangentMatrix 54
           (derivationComp (B := R) (generatedCoordinateMap R).hom
             (Derivation.cotangentLinearEquiv (B := R) x)) a b = 0 := by
+  have hG := generatedCoordinateHopfAlgebra_def R
+  have hq := generatedCoordinateMap_comp_eqToIso_hom R
   have hπ := generatedCoordinateMap_comp_generatedWeightTorusCoordinateMap R
-  rw [GeneralLinear.weightTorusBaseChangeCoordinateMap_eq] at hπ
-  exact HopfIdeal.mem_adjointWeightSpace_iff_of_weightTorus_of_eq
-    (generatedDefiningIdeal R) matrixWeight (generatedCoordinateHopfAlgebra_def R)
-    (generatedCoordinateMap R) (generatedCoordinateMap_comp_eqToIso_hom R) _ hπ α x
+  -- Abstract the named presentation and its finiteness proof before transporting to the quotient.
+  generalize_proofs at *
+  generalize generatedCoordinateMap R = q at *
+  generalize generatedWeightTorusCoordinateMap R = π at *
+  generalize generatedCoordinateHopfAlgebra R = G at *
+  subst G
+  simp only [eqToIso_refl, Iso.refl_hom, Category.comp_id] at hq
+  rw [hq] at hπ ⊢
+  rw [CommHopfAlgCat.hom_mkQuotient]
+  have hπ' : π.hom.comp (Bialgebra.Quotient.mkBialgHom (generatedDefiningIdeal R).toIdeal) =
+      GeneralLinear.weightTorusCoordinateBialgHom (S := R) matrixWeight := by
+    rw [← CommHopfAlgCat.hom_mkQuotient, ← _root_.CommHopfAlgCat.hom_comp, hπ,
+      GeneralLinear.hom_weightTorusBaseChangeCoordinateMap]
+  simpa only [HopfIdeal.quotientLieHom_apply] using
+    HopfIdeal.mem_adjointWeightSpace_iff_of_weightTorusCoordinateBialgHom
+      (generatedDefiningIdeal R) matrixWeight π.hom hπ' α x
 
 /-- Each normalized numbered root vector has its signed simple-root character for the
 weight torus of the generated subgroup. -/
