@@ -157,9 +157,8 @@ theorem isGaussReduced_iff_abs_sqrt_sub_lt {f : BinaryQuadraticForm ℤ} :
     have key₁ : ((f.b : ℝ)) ^ 2 < D := by nlinarith
     have key₂ : (2 * |(f.a : ℝ)| - f.b) ^ 2 < D := by nlinarith
     have key₃ : (D : ℝ) < (2 * |(f.a : ℝ)| + f.b) ^ 2 := by nlinarith
-    refine ⟨by exact_mod_cast hb, by exact_mod_cast key₁, ?_, ?_⟩
-    · exact_mod_cast (show ((2 * |f.a| - f.b : ℤ) : ℝ) ^ 2 < D by push_cast; exact key₂)
-    · exact_mod_cast (show (D : ℝ) < ((2 * |f.a| + f.b : ℤ) : ℝ) ^ 2 by push_cast; exact key₃)
+    exact ⟨by exact_mod_cast hb, by exact_mod_cast key₁, by exact_mod_cast key₂,
+      by exact_mod_cast key₃⟩
 
 /-- For a nonsquare discriminant `D`, the form `a x² + b x y + c y²` is Gauss reduced exactly when
 `b ≤ s`, `s < b + 2 |a|` and `2 |a| ≤ s + b`, where `s = Int.sqrt D = ⌊√D⌋`. -/
