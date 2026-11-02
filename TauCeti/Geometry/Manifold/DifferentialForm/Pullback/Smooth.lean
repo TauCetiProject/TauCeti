@@ -305,14 +305,15 @@ theorem mpullback_symm_eq_of_mpullback_eq {φ : M ≃ₘ⟮I, I'⟯ M'} {α : Sm
   have hid : ⇑φ ∘ ⇑φ.symm = id := funext φ.apply_symm_apply
   simp only [hid, mpullback_id, LinearMap.id_apply]
 
-/-- The pullback of a form along a diffeomorphism `φ` is nonzero at `x` exactly when the form is
-nonzero at `φ x`. -/
-theorem mpullback_apply_ne_zero_iff (φ : M ≃ₘ⟮I, I'⟯ M') (β : SmoothForm I' M' F k) (x : M) :
-    (mpullback φ φ.contMDiff β).1 x ≠ 0 ↔ β.1 (φ x) ≠ 0 := by
-  have h := TauCeti.mpullback_apply_eq_mpullback_apply_iff (F := F) (k := k) («ω» := β.1)
-    (η := 0) (φ.isInvertible_mfderiv (n := ∞) (by simp) (x := x)).surjective
-  rw [coe_mpullback]
-  simpa only [TauCeti.mpullback_zero, Pi.zero_apply, ne_eq] using h.not
+/-- Pullback along a diffeomorphism `φ` transports pointwise proportionality: at `x`, the
+pullback of `α` is `c` times the pullback of `β` exactly when `α` is `c` times `β` at `φ x`. -/
+theorem mpullback_apply_eq_smul_iff (φ : M ≃ₘ⟮I, I'⟯ M') (α β : SmoothForm I' M' F k) (c : ℝ)
+    (x : M) :
+    (mpullback φ φ.contMDiff α).1 x = c • (mpullback φ φ.contMDiff β).1 x ↔
+      α.1 (φ x) = c • β.1 (φ x) := by
+  rw [coe_mpullback, coe_mpullback, ← Pi.smul_apply, ← TauCeti.mpullback_smul]
+  exact TauCeti.mpullback_apply_eq_mpullback_apply_iff
+    (φ.isInvertible_mfderiv (n := ∞) (by simp) (x := x)).surjective
 
 /-- A smooth form preserved by a diffeomorphism `φ` is preserved by every integer power of `φ`. -/
 theorem mpullback_zpow_eq_self {φ : M ≃ₘ⟮I, I⟯ M} {σ : SmoothForm I M F k}

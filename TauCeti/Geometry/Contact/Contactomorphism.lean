@@ -26,16 +26,15 @@ Geiges' book:
   `e^* β = α`.
 
 Each notion is closed under identities, composition and inverses, and each implies the previous
-one. For nowhere vanishing forms the first two are expressed by a smooth multiplier: `e` is a
+one. When `α` vanishes nowhere the first two are expressed by a smooth multiplier: `e` is a
 contactomorphism exactly when `e^* β = f α` for a unique nowhere vanishing smooth function `f`
 (`Diffeomorph.isContactomorphism_iff_existsUnique_fun_smul`), and it preserves the coorientation
 exactly when moreover `f > 0` (`Diffeomorph.preservesCoorientation_iff_exists_fun_smul`). On a
 connected manifold the multiplier has constant sign, so a contactomorphism preserves either the
 coorientation given by `β` or the opposite one given by `-β`
-(`Diffeomorph.IsContactomorphism.preservesCoorientation_or_neg`). A contactomorphism between
-nowhere vanishing forms preserves and reflects contactness
-(`Diffeomorph.IsContactomorphism.isContactForm_iff`), and a strict contactomorphism carries the
-Reeb vector field of `α` to that of `β`
+(`Diffeomorph.IsContactomorphism.preservesCoorientation_or_neg`). A contactomorphism preserves
+and reflects contactness (`Diffeomorph.IsContactomorphism.isContactForm_iff`), and a strict
+contactomorphism carries the Reeb vector field of `α` to that of `β`
 (`Diffeomorph.IsStrictContactomorphism.mfderiv_reebVectorField`).
 
 The three notions are distinct. On the standard contact space `V × V × ℝ` with the form
@@ -113,13 +112,25 @@ def IsStrictContactomorphism : Prop :=
 
 variable {e α β}
 
-/-! ### Contactomorphisms -/
+/-- A contactomorphism is a diffeomorphism under which `e^* β` and `α` have the same kernels. -/
+theorem isContactomorphism_def :
+    e.IsContactomorphism α β ↔
+      (SmoothForm.mpullback e e.contMDiff β).kerDistribution = α.kerDistribution :=
+  Iff.rfl
 
-omit [IsManifold I ∞ M] [IsManifold J ∞ N] in
-/-- The differential of a diffeomorphism is invertible at every point. -/
-private theorem isInvertible_mfderiv_top (e : M ≃ₘ⟮I, J⟯ N) (x : M) :
-    (mfderiv I J e x).IsInvertible :=
-  e.isInvertible_mfderiv (by simp)
+/-- A diffeomorphism preserves the coorientation when `e^* β` is a positive multiple of `α` at
+every point. -/
+theorem preservesCoorientation_def :
+    e.PreservesCoorientation α β ↔
+      ∀ x, ∃ c : ℝ, 0 < c ∧ (SmoothForm.mpullback e e.contMDiff β).1 x = c • α.1 x :=
+  Iff.rfl
+
+/-- A strict contactomorphism is a diffeomorphism pulling `β` back to `α`. -/
+theorem isStrictContactomorphism_def :
+    e.IsStrictContactomorphism α β ↔ SmoothForm.mpullback e e.contMDiff β = α :=
+  Iff.rfl
+
+/-! ### Contactomorphisms -/
 
 /-- A diffeomorphism is a contactomorphism exactly when its differential at each point carries a
 tangent vector into the hyperplane of `β` precisely when the vector lies in the hyperplane of
@@ -136,7 +147,7 @@ theorem isContactomorphism_iff_map_kerDistribution :
     e.IsContactomorphism α β ↔ ∀ x,
       (α.kerDistribution x).map (mfderiv I J e x : TangentSpace I x →ₗ[ℝ] TangentSpace J (e x)) =
         β.kerDistribution (e x) := by
-  have hbij (x : M) := (isInvertible_mfderiv_top e x).bijective
+  have hbij (x : M) := (e.isInvertible_mfderiv (by simp) (x := x)).bijective
   simp only [IsContactomorphism, funext_iff, SmoothForm.kerDistribution_mpullback]
   refine forall_congr' fun x ↦ ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · rw [← h]
@@ -177,27 +188,28 @@ theorem IsContactomorphism.symm (h : e.IsContactomorphism α β) :
   funext y
   rw [SmoothForm.kerDistribution_mpullback, SmoothForm.kerDistribution_mpullback, h]
 
-/-- Two nowhere vanishing forms: a diffeomorphism is a contactomorphism exactly when it pulls `β`
-back to `f α` for a unique nowhere vanishing smooth function `f`. -/
-theorem isContactomorphism_iff_existsUnique_fun_smul (hα : ∀ x, α.1 x ≠ 0)
-    (hβ : ∀ y, β.1 y ≠ 0) :
+/-- For a nowhere vanishing form `α`: a diffeomorphism is a contactomorphism exactly when it pulls
+`β` back to `f α` for a unique nowhere vanishing smooth function `f`. -/
+theorem isContactomorphism_iff_existsUnique_fun_smul (hα : ∀ x, α.1 x ≠ 0) :
     e.IsContactomorphism α β ↔
       ∃! f : M → ℝ, ContMDiff I 𝓘(ℝ) ∞ f ∧ (∀ x, f x ≠ 0) ∧
         ∀ x, (SmoothForm.mpullback e e.contMDiff β).1 x = f x • α.1 x :=
-  SmoothForm.kerDistribution_eq_iff_existsUnique_fun_smul hα
-    fun x ↦ (SmoothForm.mpullback_apply_ne_zero_iff e β x).mpr (hβ (e x))
+  ⟨fun h ↦ (SmoothForm.kerDistribution_eq_iff_existsUnique_fun_smul hα
+      fun x ↦ (SmoothForm.apply_eq_zero_iff_of_kerDistribution_eq h x).not.mpr (hα x)).mp h,
+    fun ⟨_, ⟨_, hf₀, hmul⟩, _⟩ ↦ SmoothForm.kerDistribution_of_eq_smul hf₀ hmul⟩
 
-/-- A contactomorphism between nowhere vanishing forms preserves and reflects contactness. -/
-theorem IsContactomorphism.isContactForm_iff (h : e.IsContactomorphism α β)
-    (hα : ∀ x, α.1 x ≠ 0) (hβ : ∀ y, β.1 y ≠ 0) :
+/-- A contactomorphism preserves and reflects contactness. -/
+theorem IsContactomorphism.isContactForm_iff (h : e.IsContactomorphism α β) :
     α.IsContactForm ↔ β.IsContactForm := by
+  have hzero := SmoothForm.apply_eq_zero_iff_of_kerDistribution_eq h
   rw [← e.isContactForm_mpullback_iff β]
   constructor
-  · intro hα'
-    exact (hα'.isContactForm_iff_of_kerDistribution_eq h).mpr
-      fun x ↦ (SmoothForm.mpullback_apply_ne_zero_iff e β x).mpr (hβ (e x))
-  · intro hβ'
-    exact (hβ'.isContactForm_iff_of_kerDistribution_eq (Eq.symm h)).mpr hα
+  · intro hα
+    exact (hα.isContactForm_iff_of_kerDistribution_eq h).mpr
+      fun x ↦ (hzero x).not.mpr (hα.apply_ne_zero x)
+  · intro hβ
+    exact (hβ.isContactForm_iff_of_kerDistribution_eq (Eq.symm h)).mpr
+      fun x ↦ (hzero x).not.mp (hβ.apply_ne_zero x)
 
 /-! ### Coorientation-preserving contactomorphisms -/
 
@@ -218,14 +230,9 @@ theorem PreservesCoorientation.trans {γ : SmoothForm K P ℝ 1} {e' : N ≃ₘ�
   intro x
   obtain ⟨c, hc, hx⟩ := h x
   obtain ⟨c', hc', hx'⟩ := h' (e x)
-  -- The pullback at `x` only sees the value of the pulled-back form at `e x`.
-  have hpt := (TauCeti.mpullback_apply_eq_mpullback_apply_iff (x := x)
-    («ω» := (SmoothForm.mpullback e' e'.contMDiff γ).1) (η := c' • β.1)
-    (isInvertible_mfderiv_top e x).surjective).mpr hx'
   refine ⟨c' * c, mul_pos hc' hc, ?_⟩
   simp only [coe_trans, hcomp, LinearMap.comp_apply]
-  rw [SmoothForm.coe_mpullback e e.contMDiff, hpt, TauCeti.mpullback_smul, Pi.smul_apply,
-    ← SmoothForm.coe_mpullback e e.contMDiff, hx, smul_smul]
+  rw [(SmoothForm.mpullback_apply_eq_smul_iff e _ _ c' x).mpr hx', hx, smul_smul]
 
 /-- The inverse of a coorientation-preserving diffeomorphism preserves the coorientation. -/
 theorem PreservesCoorientation.symm (h : e.PreservesCoorientation α β) :
@@ -236,36 +243,31 @@ theorem PreservesCoorientation.symm (h : e.PreservesCoorientation α β) :
   intro y
   obtain ⟨x, rfl⟩ := e.surjective y
   obtain ⟨c, hc, hx⟩ := h x
-  refine ⟨c⁻¹, inv_pos.mpr hc, ?_⟩
   -- Both sides pull back along `e` to `α`, and pullback at `x` is injective.
-  refine (TauCeti.mpullback_apply_eq_mpullback_apply_iff (x := x)
-    («ω» := (SmoothForm.mpullback e.symm e.symm.contMDiff α).1) (η := c⁻¹ • β.1)
-    (isInvertible_mfderiv_top e x).surjective).mp ?_
-  rw [← SmoothForm.coe_mpullback e e.contMDiff, hα, TauCeti.mpullback_smul, Pi.smul_apply,
-    ← SmoothForm.coe_mpullback e e.contMDiff, hx, smul_smul, inv_mul_cancel₀ hc.ne', one_smul]
+  refine ⟨c⁻¹, inv_pos.mpr hc, (SmoothForm.mpullback_apply_eq_smul_iff e _ _ _ x).mp ?_⟩
+  rw [hα, hx, smul_smul, inv_mul_cancel₀ hc.ne', one_smul]
 
-/-- Two nowhere vanishing forms: a diffeomorphism preserves the coorientation exactly when it
-pulls `β` back to `f α` for a positive smooth function `f`. -/
-theorem preservesCoorientation_iff_exists_fun_smul (hα : ∀ x, α.1 x ≠ 0)
-    (hβ : ∀ y, β.1 y ≠ 0) :
+/-- For a nowhere vanishing form `α`: a diffeomorphism preserves the coorientation exactly when
+it pulls `β` back to `f α` for a positive smooth function `f`. -/
+theorem preservesCoorientation_iff_exists_fun_smul (hα : ∀ x, α.1 x ≠ 0) :
     e.PreservesCoorientation α β ↔
       ∃ f : M → ℝ, ContMDiff I 𝓘(ℝ) ∞ f ∧ (∀ x, 0 < f x) ∧
         ∀ x, (SmoothForm.mpullback e e.contMDiff β).1 x = f x • α.1 x := by
   refine ⟨fun h ↦ ?_, fun ⟨f, _, hf, hmul⟩ x ↦ ⟨f x, hf x, hmul x⟩⟩
   obtain ⟨f, ⟨hf, -, hmul⟩, -⟩ :=
-    (isContactomorphism_iff_existsUnique_fun_smul hα hβ).mp h.isContactomorphism
+    (isContactomorphism_iff_existsUnique_fun_smul hα).mp h.isContactomorphism
   refine ⟨f, hf, fun x ↦ ?_, hmul⟩
   obtain ⟨c, hc, hx⟩ := h x
   have hcf : c = f x := smul_left_injective ℝ (hα x) (hx.symm.trans (hmul x))
   exact hcf ▸ hc
 
-/-- On a connected manifold, a contactomorphism between nowhere vanishing forms either preserves
+/-- On a connected manifold, a contactomorphism from a nowhere vanishing form either preserves
 the coorientation given by `β` or the opposite coorientation given by `-β`: its multiplier is a
 continuous nowhere vanishing function, so it has constant sign. -/
 theorem IsContactomorphism.preservesCoorientation_or_neg [PreconnectedSpace M]
-    (h : e.IsContactomorphism α β) (hα : ∀ x, α.1 x ≠ 0) (hβ : ∀ y, β.1 y ≠ 0) :
+    (h : e.IsContactomorphism α β) (hα : ∀ x, α.1 x ≠ 0) :
     e.PreservesCoorientation α β ∨ e.PreservesCoorientation α (-β) := by
-  obtain ⟨f, ⟨hf, hf₀, hmul⟩, -⟩ := (isContactomorphism_iff_existsUnique_fun_smul hα hβ).mp h
+  obtain ⟨f, ⟨hf, hf₀, hmul⟩, -⟩ := (isContactomorphism_iff_existsUnique_fun_smul hα).mp h
   by_cases hpos : ∀ x, 0 < f x
   · exact .inl fun x ↦ ⟨f x, hpos x, hmul x⟩
   · right
@@ -322,7 +324,7 @@ theorem IsStrictContactomorphism.mfderiv_reebVectorField [FiniteDimensional ℝ 
     mfderiv I J e x (α.reebVectorField x) = β.reebVectorField (e x) := by
   subst h
   exact hβ.mfderiv_reebVectorField_mpullback e e.contMDiff
-    (fun y ↦ (isInvertible_mfderiv_top e y).bijective) x
+    (fun _ ↦ (e.isInvertible_mfderiv (by simp)).bijective) x
 
 end Diffeomorph
 
@@ -355,7 +357,8 @@ theorem preservesCoorientation_innerProductContactForm_iff_of_coe_eq {c : ℝ}
   rw [Diffeomorph.PreservesCoorientation, mpullback_innerProductContactForm_of_coe_eq he]
   refine ⟨fun h ↦ ?_, fun hc x ↦ ⟨c, hc, by rw [SmoothForm.smul_toRoughForm, Pi.smul_apply]⟩⟩
   obtain ⟨d, hd, h₀⟩ := h 0
-  have hcd : c = d := smul_left_injective ℝ (innerProductContactForm_apply_ne_zero V 0) h₀
+  have hcd : c = d :=
+    smul_left_injective ℝ ((isContactForm_innerProductContactForm V).apply_ne_zero 0) h₀
   exact hcd ▸ hd
 
 /-- A diffeomorphism `(q, p, z) ↦ (q, c p, c z)` of the standard contact space is a strict
@@ -368,7 +371,7 @@ theorem isStrictContactomorphism_innerProductContactForm_iff_of_coe_eq {c : ℝ}
   refine ⟨fun h ↦ ?_, fun hc ↦ by rw [hc, one_smul]⟩
   have h₀ := congrArg (fun β : SmoothForm 𝓘(ℝ, V × V × ℝ) (V × V × ℝ) ℝ 1 ↦ β.1 0) h
   rw [SmoothForm.smul_toRoughForm, Pi.smul_apply] at h₀
-  exact smul_left_injective ℝ (innerProductContactForm_apply_ne_zero V 0)
+  exact smul_left_injective ℝ ((isContactForm_innerProductContactForm V).apply_ne_zero 0)
     (h₀.trans (one_smul ℝ _).symm)
 
 /-- For every `c ≠ 0` the map `(q, p, z) ↦ (q, c p, c z)` is a diffeomorphism. -/

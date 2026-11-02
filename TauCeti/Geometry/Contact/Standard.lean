@@ -360,12 +360,6 @@ theorem isContactForm_innerProductContactForm : (innerProductContactForm V).IsCo
   -- The zero tangent vector is by definition the zero of `V × V × ℝ`.
   exact Prod.ext h₁ (Prod.ext h₂ hv)
 
-/-- The standard contact form vanishes nowhere. -/
-theorem innerProductContactForm_apply_ne_zero (x : V × V × ℝ) :
-    (innerProductContactForm V).1 x ≠ 0 := fun h ↦
-  let ⟨_, hv⟩ := (isContactForm_innerProductContactForm V).exists_ne_zero x
-  hv (by simp [h])
-
 /-- On `ℝ^(2n+1) = ℝⁿ × ℝⁿ × ℝ`, the standard contact form is `dz - Σᵢ pᵢ dqᵢ`. -/
 theorem innerProductContactForm_euclideanSpace_apply {n : ℕ}
     (x : EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ)

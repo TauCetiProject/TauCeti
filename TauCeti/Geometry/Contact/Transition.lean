@@ -61,14 +61,12 @@ kernel. -/
 theorem IsContactForm.isContactForm_iff_of_kerDistribution_eq (hα : α.IsContactForm)
     (hker : β.kerDistribution = α.kerDistribution) :
     β.IsContactForm ↔ ∀ x, β.1 x ≠ 0 := by
-  have hα₀ (x : M) : α.1 x ≠ 0 :=
-    (isContactForm_iff_forall_isContactFormAt.mp hα x).ne_zero
   constructor
   · intro hβ x
-    exact (isContactForm_iff_forall_isContactFormAt.mp hβ x).ne_zero
+    exact hβ.apply_ne_zero x
   · intro hβ₀
     obtain ⟨f, ⟨hf, hf₀, hmul⟩, _⟩ :=
-      (kerDistribution_eq_iff_existsUnique_fun_smul hα₀ hβ₀).mp hker
+      (kerDistribution_eq_iff_existsUnique_fun_smul hα.apply_ne_zero hβ₀).mp hker
     exact (isContactForm_iff_of_eq_smul (hf.of_le (by simp)) hf₀ hmul).mpr hα
 
 end TauCeti.SmoothForm
