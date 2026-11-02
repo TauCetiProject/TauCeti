@@ -20,9 +20,9 @@ The degree-two **Wirtinger inequality** says that `ω` calibrates `g`:
 `ω(v, w) ≤ |v ∧ w|_g`, with equality for linearly independent `v` and `w` exactly when
 `w = a v + b J v` with `b > 0`, that is, when the oriented plane `(v, w)` is a `J`-complex line
 carrying its complex orientation. The proof is a Cauchy--Schwarz argument: `ω(v, w) = g(J v, w)`,
-the vector `J v` is `g`-orthogonal to `v` and has the same length, and the component of `w`
-orthogonal to the plane spanned by `v` and `J v` contributes to neither side. In fact
-`g(v, w)² + ω(v, w)² ≤ g(v, v) g(w, w)`.
+the vector `J v` is `g`-orthogonal to `v` and has the same length, and the component `w⊥` of `w`
+orthogonal to the plane spanned by `v` and `J v` contributes nothing to `ω(v, w)` but increases
+`|v ∧ w|_g²` by `g(v, v) g(w⊥, w⊥)`. In fact `g(v, w)² + ω(v, w)² ≤ g(v, v) g(w, w)`.
 
 The arithmetic-geometric mean inequality gives the second link of the chain
 `ω(v, w) ≤ |v ∧ w|_g ≤ (g(v, v) + g(w, w)) / 2`; the second inequality is an equality exactly

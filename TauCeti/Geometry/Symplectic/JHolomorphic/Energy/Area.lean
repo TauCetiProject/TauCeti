@@ -18,9 +18,10 @@ a real-linear map `F` out of the standard complex line is the wedge norm
 
 `ω(F ∂s, F ∂t) ≤ |F ∂s ∧ F ∂t|_g ≤ (g(F ∂s, F ∂s) + g(F ∂t, F ∂t)) / 2`.
 
-The first inequality is the Wirtinger inequality, an equality exactly when the image plane is a
-`J`-complex line with its complex orientation; the second is an equality exactly when `F` is
-conformal for `g`. Both are equalities exactly when `F` is complex linear.
+The first inequality is the Wirtinger inequality. It is an equality `0 = 0` when `F ∂s` and `F ∂t`
+are linearly dependent (`F` has rank at most one); when `F` has rank two it is an equality exactly
+when the image plane is a `J`-complex line with its complex orientation. The second is an equality
+exactly when `F` is conformal for `g`. Both are equalities exactly when `F` is complex linear.
 
 Integrating over a measure on the source gives the chain `E(u) ≥ Area_g(u) ≥ ∫ u^*ω` for the
 energy `TauCeti.SymplecticForm.stdComplexLineEnergy` and the metric area
@@ -92,8 +93,9 @@ variable {μ ν : Measure X} {du dv : X → (ℝ × ℝ) →ₗ[ℝ] V}
 
 /-- The metric area of a field of real-linear maps out of the standard complex line: the lower
 Lebesgue integral of the wedge norm `|du ∂s ∧ du ∂t|_g` for the associated form
-`g = ω(·, J ·)`. For a compatible pair and the differential of an immersion this is the area of
-the image surface counted with multiplicity, measured in `g`. -/
+`g = ω(·, J ·)`. The source measure `μ` is arbitrary. For a compatible pair, Lebesgue measure on a
+planar domain `X`, and the differential `du` of a `C¹` immersion `u`, the area formula identifies
+this with the area of the image surface counted with multiplicity, measured in `g`. -/
 noncomputable def stdComplexLineArea
     (ω : SymplecticForm V) (J : AlmostComplexStructure V)
     (du : X → ((ℝ × ℝ) →ₗ[ℝ] V)) (μ : Measure X) : ℝ≥0∞ :=
