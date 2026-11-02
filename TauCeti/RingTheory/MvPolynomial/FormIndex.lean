@@ -216,6 +216,20 @@ theorem mem_formIdeal_of_lt_formIndex (ht : t < formIndex d M P) : P ∈ formIde
 theorem formIndex_zero : formIndex d M 0 = ⊤ :=
   top_unique (le_formIndex_of_mem (Ideal.zero_mem _))
 
+/-- The constant `1` has index `0`. -/
+@[simp]
+theorem formIndex_one [Nontrivial R] : formIndex d M (1 : MvPolynomial (κ × ι) R) = 0 := by
+  refine le_antisymm (iSup₂_le fun t ht ↦ ?_) zero_le
+  by_contra! ht0
+  have hker : formIdeal t d M ≤ RingHom.ker (constantCoeff (σ := κ × ι) (R := R)) := by
+    rw [formIdeal, Ideal.span_le]
+    rintro _ ⟨j, hj, rfl⟩
+    obtain ⟨h, hh⟩ : ∃ h, j h ≠ 0 := by
+      by_contra! hj0
+      simpa [hj0] using ht0.trans_le hj
+    simpa using Finset.prod_eq_zero (f := fun h ↦ (0 : R) ^ j h) (mem_univ h) (zero_pow hh)
+  simpa using RingHom.mem_ker.mp (hker ht)
+
 /-- The index of a sum is at least the smaller index of the summands. -/
 theorem min_formIndex_le_add (P Q : MvPolynomial (κ × ι) R) :
     min (formIndex d M P) (formIndex d M Q) ≤ formIndex d M (P + Q) :=
@@ -332,11 +346,6 @@ theorem formIndex_prod_pow (hM : ∀ h, M h ≠ 0) (j : κ → ℕ) :
     substFormInv_substForm hi₀]
   simp [support_monomial, blockExp_apply]
 
-/-- The constant `1` has index `0` along nonzero forms. -/
-@[simp]
-theorem formIndex_one (hM : ∀ h, M h ≠ 0) : formIndex d M (1 : MvPolynomial (κ × ι) K) = 0 := by
-  simpa using formIndex_prod_pow (d := d) hM 0
-
 /-- With positive degrees, only `0` has infinite index. -/
 @[simp]
 theorem formIndex_eq_top_iff (hM : ∀ h, M h ≠ 0) (hd : ∀ h, d h ≠ 0)
@@ -364,7 +373,7 @@ theorem formIndex_mul (hM : ∀ h, M h ≠ 0) (P Q : MvPolynomial (κ × ι) K) 
 theorem formIndex_pow (hM : ∀ h, M h ≠ 0) (P : MvPolynomial (κ × ι) K) (n : ℕ) :
     formIndex d M (P ^ n) = n • formIndex d M P := by
   induction n with
-  | zero => simp [formIndex_one hM]
+  | zero => simp
   | succ n ih => rw [pow_succ, formIndex_mul hM, ih, succ_nsmul]
 
 end Field
