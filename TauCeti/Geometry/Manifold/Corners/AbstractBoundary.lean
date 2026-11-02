@@ -100,25 +100,6 @@ namespace ModelWithCorners
 variable {ι : Type*} [Fintype ι] {H : Type*} [TopologicalSpace H]
   {J : ModelWithCorners ℝ (EuclideanSpace ℝ ι) H} {S : Set ι} {M : Type*} [TopologicalSpace M]
 
-/-! ### Face coordinates -/
-
-/-- For a region `{z | ∀ i ∈ S, 0 ≤ z i}`, the coordinates which are nonnegative on the whole
-region are exactly those of `S`. -/
-theorem forall_mem_range_nonneg_iff (hJ : range J = {z | ∀ i ∈ S, 0 ≤ z i}) {i : ι} :
-    (∀ z ∈ range J, 0 ≤ z i) ↔ i ∈ S := by
-  classical
-  refine ⟨fun h ↦ ?_, fun hi z hz ↦ by rw [hJ] at hz; exact hz i hi⟩
-  by_contra hiS
-  -- The point with `i`-th coordinate `-1` and all others `0` lies in the region.
-  set z : EuclideanSpace ℝ ι := WithLp.toLp 2 fun j ↦ if j = i then -1 else 0
-  have hz : z ∈ range J := by
-    rw [hJ]
-    intro k hk
-    have hki : k ≠ i := fun h ↦ hiS (h ▸ hk)
-    simp [z, hki]
-  have := h z hz
-  norm_num [z] at this
-
 /-! ### Face germs -/
 
 variable (J) in
@@ -490,20 +471,15 @@ section HalfSpace
 variable {m : ℕ} {M : Type*} [TopologicalSpace M]
   [ChartedSpace (EuclideanHalfSpace (m + 1)) M] {n : WithTop ℕ∞} [IsManifold (𝓡∂ (m + 1)) n M]
 
-/-- The half-space is the region of `EuclideanSpace ℝ (Fin (m + 1))` cut out by the
-nonnegativity of the coordinate `0`. -/
-private theorem range_modelWithCornersEuclideanHalfSpace_eq :
-    range (𝓡∂ (m + 1)) = {z | ∀ i ∈ ({0} : Set (Fin (m + 1))), 0 ≤ z i} := by
-  simp [range_modelWithCornersEuclideanHalfSpace]
-
 /-- **On a manifold with boundary every point has at most one local face.** -/
 theorem subsingleton_localFaces_modelWithCornersEuclideanHalfSpace (hn : n ≠ 0) (x : M) :
     ((𝓡∂ (m + 1)).localFaces x).Subsingleton := by
   have : Subsingleton
       {i // i ∈ ({0} : Set (Fin (m + 1))) ∧ (chartAt _ x).extend (𝓡∂ (m + 1)) x i = 0} :=
     ⟨fun a b ↦ Subtype.ext (a.2.1.trans b.2.1.symm)⟩
-  exact Set.subsingleton_coe _ |>.1 <| (faceGermEquiv range_modelWithCornersEuclideanHalfSpace_eq
-    hn (IsManifold.chart_mem_maximalAtlas x) (mem_chart_source _ x)).symm.injective.subsingleton
+  exact Set.subsingleton_coe _ |>.1 <| (faceGermEquiv
+    (range_modelWithCornersEuclideanHalfSpace_eq _) hn (IsManifold.chart_mem_maximalAtlas x)
+    (mem_chart_source _ x)).symm.injective.subsingleton
 
 namespace AbstractBoundary
 
@@ -515,40 +491,43 @@ theorem point_injective_modelWithCornersEuclideanHalfSpace (hn : n ≠ 0) :
   obtain rfl := subsingleton_localFaces_modelWithCornersEuclideanHalfSpace hn x hF hF'
   rfl
 
+/-- On a manifold with boundary, the map from the abstract boundary to the boundary of `M` is
+open. -/
+theorem isOpenMap_codRestrict_point_modelWithCornersEuclideanHalfSpace (hn : n ≠ 0) :
+    IsOpenMap (codRestrict (point : (𝓡∂ (m + 1)).AbstractBoundary M → M) _
+      (point_mem_boundary (range_modelWithCornersEuclideanHalfSpace_eq _) hn)) := by
+  have hJ := range_modelWithCornersEuclideanHalfSpace_eq (m + 1)
+  intro U hU
+  refine isOpen_iff_mem_nhds.2 ?_
+  rintro _ ⟨b, hbU, rfl⟩
+  obtain ⟨e, he, i, hi, p, rfl⟩ := exists_faceSection_eq b
+  -- The only face coordinate of the half-space is `0`.
+  obtain rfl : i = 0 := (forall_mem_range_nonneg_iff hJ).1 hi
+  obtain ⟨O, hO, hOU⟩ := isOpen_induced_iff.1 (hU.preimage (continuous_faceSection (he := he)
+    (hi := hi)))
+  -- Near `p`, every boundary point in the chart and in `O` is the image of a point of `U`.
+  refine mem_of_superset ((hO.inter e.open_source).preimage continuous_subtype_val
+    |>.mem_nhds ⟨(hOU ▸ hbU : p ∈ Subtype.val ⁻¹' O), p.2.1⟩) ?_
+  rintro ⟨y, hy⟩ ⟨hyO, hye⟩
+  have hy0 : e.extend (𝓡∂ (m + 1)) y 0 = 0 := by
+    simpa [OpenPartialHomeomorph.extend_coe] using
+      (TauCeti.ModelWithCorners.mem_boundary_euclideanHalfSpace_iff_of_mem_atlas hn he hye).1 hy
+  refine ⟨faceSection he hi ⟨y, hye, hy0⟩, ?_, rfl⟩
+  rw [← mem_preimage, ← hOU]
+  exact hyO
+
 /-- **The abstract boundary of a manifold with boundary is its boundary.** For a manifold
 modelled on the half-space, the map from the abstract boundary to `M` is a homeomorphism onto
 the boundary `(𝓡∂ (m + 1)).boundary M`. -/
 def homeomorphBoundary (hn : n ≠ 0) :
-    (𝓡∂ (m + 1)).AbstractBoundary M ≃ₜ (𝓡∂ (m + 1)).boundary M := by
-  have hJ := range_modelWithCornersEuclideanHalfSpace_eq (m := m)
-  refine Equiv.toHomeomorphOfContinuousOpen (.ofBijective
-    (fun b ↦ ⟨b.point, point_mem_boundary hJ hn b⟩)
-    ⟨fun b b' h ↦ point_injective_modelWithCornersEuclideanHalfSpace (M := M) hn
-      (congrArg Subtype.val h),
-      fun x ↦ ?_⟩) (continuous_point.subtype_mk _) ?_
-  · have hx : (x : M) ∈ range (point : (𝓡∂ (m + 1)).AbstractBoundary M → M) := by
-      rw [range_point hJ hn]
-      exact x.2
-    obtain ⟨b, hb⟩ := hx
-    exact ⟨b, Subtype.ext hb⟩
-  · intro U hU
-    refine isOpen_iff_mem_nhds.2 ?_
-    rintro _ ⟨b, hbU, rfl⟩
-    obtain ⟨e, he, i, hi, p, rfl⟩ := exists_faceSection_eq b
-    -- The only face coordinate of the half-space is `0`.
-    obtain rfl : i = 0 := (forall_mem_range_nonneg_iff hJ).1 hi
-    obtain ⟨O, hO, hOU⟩ := isOpen_induced_iff.1 (hU.preimage (continuous_faceSection (he := he)
-      (hi := hi)))
-    -- Near `p`, every boundary point in the chart and in `O` is the image of a point of `U`.
-    refine mem_of_superset ((hO.inter e.open_source).preimage continuous_subtype_val
-      |>.mem_nhds ⟨(hOU ▸ hbU : p ∈ Subtype.val ⁻¹' O), p.2.1⟩) ?_
-    rintro ⟨y, hy⟩ ⟨hyO, hye⟩
-    have hy0 : e.extend (𝓡∂ (m + 1)) y 0 = 0 := by
-      simpa [OpenPartialHomeomorph.extend_coe] using
-        (TauCeti.ModelWithCorners.mem_boundary_euclideanHalfSpace_iff_of_mem_atlas hn he hye).1 hy
-    refine ⟨faceSection he hi ⟨y, hye, hy0⟩, ?_, rfl⟩
-    rw [← mem_preimage, ← hOU]
-    exact hyO
+    (𝓡∂ (m + 1)).AbstractBoundary M ≃ₜ (𝓡∂ (m + 1)).boundary M :=
+  Equiv.toHomeomorphOfContinuousOpen
+    (.ofBijective _
+      ⟨(injective_codRestrict _).2 (point_injective_modelWithCornersEuclideanHalfSpace hn),
+        (surjective_codRestrict _).2
+          (range_point (range_modelWithCornersEuclideanHalfSpace_eq _) hn)⟩)
+    (continuous_point.codRestrict _)
+    (isOpenMap_codRestrict_point_modelWithCornersEuclideanHalfSpace hn)
 
 @[simp]
 theorem coe_homeomorphBoundary_apply (hn : n ≠ 0) (b : (𝓡∂ (m + 1)).AbstractBoundary M) :
