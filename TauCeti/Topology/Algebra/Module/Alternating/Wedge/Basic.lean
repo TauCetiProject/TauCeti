@@ -24,9 +24,11 @@ import TauCeti.LinearAlgebra.Alternating.Alternatization
 This file constructs the paired wedge of continuous alternating maps on real modules with a
 topology. Its determinant normalization is the signed-permutation sum divided by the two input
 factorials. It provides bilinearity and pullback compatibility for general topological coefficient
-spaces, including the flip law. A pairing that turns multiplication by one scalar into
-multiplication by another, such as a complex-bilinear pairing, makes the paired wedge semilinear
-in the same way, and the paired wedge is natural for coefficient maps intertwining two pairings.
+spaces, including the flip law, and transports a degree equality in the first factor through the
+wedge (`ContinuousAlternatingMap.pairedWedge_apply_of_left_eq_smul_cast`). A pairing that turns
+multiplication by one scalar into multiplication by another, such as a complex-bilinear pairing,
+makes the paired wedge semilinear in the same way, and the paired wedge is natural for coefficient
+maps intertwining two pairings.
 The paired wedge of two alternatizations is the alternatization of the paired product of the
 underlying multilinear maps.
 Joint continuity of each pairing is supplied explicitly; no norm is required on the domain or
@@ -313,6 +315,22 @@ theorem pairedWedge_smul_right [ContinuousConstSMul ℝ F₂] {k l : ℕ} (μ : 
     (φ : E [⋀^Fin k]→L[ℝ] F₁) (ψ : E [⋀^Fin l]→L[ℝ] F₂) :
     pairedWedge μ hμ φ (c • ψ) = c • pairedWedge μ hμ φ ψ :=
   pairedWedge_smul_right_of_map_smul μ hμ (fun a b ↦ by simp) φ ψ
+
+/-- Degree transport in the first factor of a paired wedge: if `A`, of degree `b`, agrees with
+`c • B` after reindexing its arguments along `Fin.cast h : Fin b → Fin a`, then the wedge of `A`
+and `ψ` is `c •` the wedge of `B` and `ψ`, evaluated on the correspondingly transported tuple. -/
+theorem pairedWedge_apply_of_left_eq_smul_cast [ContinuousConstSMul ℝ F₁] {a b l : ℕ}
+    (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃) (hμ : Continuous (Function.uncurry fun x y ↦ μ x y)) (h : a = b)
+    {A : E [⋀^Fin b]→L[ℝ] F₁} {B : E [⋀^Fin a]→L[ℝ] F₁} (c : ℝ)
+    (hAB : ∀ w, A w = c • B (w ∘ Fin.cast h)) (ψ : E [⋀^Fin l]→L[ℝ] F₂) (x : Fin (b + l) → E) :
+    pairedWedge μ hμ A ψ x = c • pairedWedge μ hμ B ψ (x ∘ Fin.cast (by omega)) := by
+  subst h
+  obtain rfl : A = c • B := by
+    ext w
+    simpa using hAB w
+  rw [pairedWedge_smul_left, smul_apply]
+  -- After `subst`, the transport `Fin.cast` is the identity on values, so both tuples agree.
+  rfl
 
 /-- The paired wedge is natural in the coefficients: if continuous linear maps `L₁`, `L₂`, `L`
 of the coefficient spaces intertwine the pairings `μ` and `μ'`, then applying `L` to the paired

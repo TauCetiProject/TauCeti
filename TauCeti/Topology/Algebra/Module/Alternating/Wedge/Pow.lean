@@ -92,22 +92,6 @@ theorem wedgePow_compContinuousLinearMap {E' : Type*} [AddCommGroup E'] [Module 
 
 /-! ### The power rule for two-forms -/
 
-/-- Rewrite a wedge whose left factor agrees, after a degree transport, with a multiple of another
-form. -/
-private theorem pairedWedge_mul_left_congr {a b l : ℕ} (h : a = b) {A : E [⋀^Fin b]→L[ℝ] ℝ}
-    {B : E [⋀^Fin a]→L[ℝ] ℝ} (c : ℝ) (hAB : ∀ w, A w = c * B (w ∘ Fin.cast h))
-    (ψ : E [⋀^Fin l]→L[ℝ] ℝ) (x : Fin (b + l) → E) :
-    pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂ A ψ x =
-      c * pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂
-        B ψ (x ∘ Fin.cast (by omega)) := by
-  subst h
-  obtain rfl : A = c • B := by
-    ext w
-    simpa using hAB w
-  rw [pairedWedge_smul_left, smul_apply, smul_eq_mul]
-  -- After `subst`, the transport `Fin.cast` is the identity on values, so both tuples agree.
-  rfl
-
 /-- **The power rule for interior products.** Inserting a vector `v` into the `(m + 1)`-th wedge
 power of a two-form `ω` gives `(m + 1) • (ι_v ω ∧ ω ^ m)`:
 `ω ^ (m + 1) (v, w) = (m + 1) * (ι_v ω ∧ ω ^ m) (w)`. -/
@@ -127,8 +111,8 @@ theorem wedgePow_succ_apply_vecCons (ω : E [⋀^Fin 2]→L[ℝ] ℝ) (m : ℕ) 
   | succ m ih =>
     rw [wedgePow_succ, ← curryLeftTopological_apply_apply (n := 2 * m + 1 + 1 + 1),
       curryLeftTopological_pairedWedge (k := 2 * m + 1) (l := 1),
-      pairedWedge_mul_left_congr (Nat.add_comm 1 (2 * m)) ((m : ℝ) + 1)
-        (fun w ↦ by rw [curryLeftTopological_apply_apply, ih]),
+      pairedWedge_apply_of_left_eq_smul_cast _ _ (Nat.add_comm 1 (2 * m)) ((m : ℝ) + 1)
+        (fun w ↦ by rw [curryLeftTopological_apply_apply, ih, smul_eq_mul]),
       pairedWedge_assoc (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ)
         (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ)
         (ContinuousLinearMap.mul ℝ ℝ).continuous₂ (ContinuousLinearMap.mul ℝ ℝ).continuous₂
