@@ -52,8 +52,12 @@ scoped instance : ContinuousConstVAdd ℤ ℂ where
     fun_prop
 
 scoped instance : IsCancelVAdd ℤ ℂ where
-  left_cancel' _ _ _ h := add_left_cancel h
-  right_cancel' _ _ _ h := Int.cast_injective (add_right_cancel h)
+  left_cancel' _ _ _ h := by
+    simp only [vadd_eq] at h
+    exact add_left_cancel h
+  right_cancel' _ _ _ h := by
+    simp only [vadd_eq] at h
+    exact Int.cast_injective (add_right_cancel h)
 
 /-- Integer translations on the complex plane act properly discontinuously. -/
 scoped instance properlyDiscontinuousVAdd : ProperlyDiscontinuousVAdd ℤ ℂ where
