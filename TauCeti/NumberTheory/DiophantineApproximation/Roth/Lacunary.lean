@@ -53,7 +53,10 @@ private theorem summable_inv_pow_pow (hb : 2 ≤ b) (hc : 2 ≤ c) :
     fun k ↦ pow_le_pow_of_le_one hr0 hr1.le ?_
   exact (Nat.lt_pow_self (by omega : 1 < c)).le.trans (Nat.pow_le_pow_right (by omega) k.le_succ)
 
-/-- The tail of the lacunary series after `K` terms is at most twice its first term. -/
+/-- The tail of the lacunary series after `K` terms is at most twice its first term.
+
+This follows the proof of `LiouvilleNumber.remainder_lt'` and `LiouvilleNumber.aux_calc` in
+Mathlib (comparison with a geometric series). -/
 private theorem tsum_inv_pow_pow_add_le (hb : 2 ≤ b) (hc : 2 ≤ c) (K : ℕ) :
     ∑' k : ℕ, ((b : ℝ)⁻¹) ^ c ^ (k + K + 1) ≤ 2 * ((b : ℝ)⁻¹) ^ c ^ (K + 1) := by
   set r : ℝ := (b : ℝ)⁻¹
@@ -93,8 +96,9 @@ private theorem sum_range_inv_pow_pow_eq (hb : 2 ≤ b) (hc : 1 ≤ c) (K : ℕ)
   field_simp
 
 /-- **Lacunary series are Liouville numbers.** For integers `b ≥ 2` and `c`, the number
-`∑_{k ≥ 1} b ^ (-c ^ k)` is a Liouville number with exponent `c`: its partial sums with
-denominator `n = b ^ (c ^ K)` approximate it within `3 / n ^ c`. -/
+`∑_{k ≥ 1} b ^ (-c ^ k)` is a Liouville number with exponent `c`. When `c ≥ 2`, its partial
+sums with denominator `n = b ^ (c ^ K)` approximate it within `3 / n ^ c`. When `c ≤ 1` the
+statement holds trivially, since every real number is a Liouville number with exponent `1`. -/
 theorem liouvilleWith_tsum_inv_pow_pow (hb : 2 ≤ b) (c : ℕ) :
     LiouvilleWith c (∑' k : ℕ, ((b : ℝ)⁻¹) ^ c ^ (k + 1)) := by
   rcases lt_or_ge c 2 with hc | hc
@@ -102,22 +106,21 @@ theorem liouvilleWith_tsum_inv_pow_pow (hb : 2 ≤ b) (c : ℕ) :
   refine ⟨3, frequently_atTop.2 fun N ↦ ⟨b ^ c ^ N, ?_, ?_⟩⟩
   · exact (Nat.lt_pow_self (by omega)).le.trans (Nat.lt_pow_self (by omega)).le
   have hsum := summable_inv_pow_pow hb hc
-  set n : ℕ := b ^ c ^ N
-  have hn : (0 : ℝ) < n := by positivity
-  -- Split off the first `N` terms; the tail is positive and at most `2 / n ^ c`.
+  -- Split off the first `N` terms; the tail is positive and at most `2 / n ^ c`, where
+  -- `n = b ^ c ^ N` is the denominator of the partial sum.
   refine ⟨(∑ k ∈ range N, b ^ (c ^ N - c ^ (k + 1)) : ℕ), ?_⟩
   rw [Int.cast_natCast, ← sum_range_inv_pow_pow_eq hb (by omega), ← hsum.sum_add_tsum_nat_add N,
     add_sub_cancel_left]
   have htail : 0 < ∑' k : ℕ, ((b : ℝ)⁻¹) ^ c ^ (k + N + 1) :=
     ((summable_nat_add_iff N).2 hsum).tsum_pos (fun _ ↦ by positivity) 0 (by positivity)
-  have hpow : ((b : ℝ)⁻¹) ^ c ^ (N + 1) = 1 / (n : ℝ) ^ (c : ℝ) := by
-    rw [Real.rpow_natCast, Nat.cast_pow, ← pow_mul, ← pow_succ, inv_pow, one_div]
+  have hpow : ((b : ℝ)⁻¹) ^ c ^ (N + 1) = 1 / ((b ^ c ^ N : ℕ) : ℝ) ^ (c : ℝ) := by
+    simp [← pow_mul, ← pow_succ]
   refine ⟨add_ne_left.2 htail.ne', ?_⟩
   rw [abs_of_pos htail]
   calc _ ≤ 2 * ((b : ℝ)⁻¹) ^ c ^ (N + 1) := tsum_inv_pow_pow_add_le hb hc N
-    _ < 3 / (n : ℝ) ^ (c : ℝ) := by
+    _ < 3 / ((b ^ c ^ N : ℕ) : ℝ) ^ (c : ℝ) := by
         rw [hpow]
-        have : (0 : ℝ) < (n : ℝ) ^ (c : ℝ) := by positivity
+        have : (0 : ℝ) < ((b ^ c ^ N : ℕ) : ℝ) ^ (c : ℝ) := by positivity
         rw [mul_one_div]
         gcongr
         norm_num
