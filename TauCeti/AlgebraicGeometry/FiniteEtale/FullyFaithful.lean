@@ -12,6 +12,7 @@ import TauCeti.AlgebraicGeometry.AffineScheme
 import TauCeti.AlgebraicGeometry.FiniteEtale.MorphismProperty
 import TauCeti.AlgebraicGeometry.FiniteEtale.ZariskiLocal
 import TauCeti.AlgebraicGeometry.Scheme.Depth
+import TauCeti.AlgebraicGeometry.Scheme.Opens
 import TauCeti.RingTheory.Depth.Finite
 import TauCeti.RingTheory.Spectrum.Prime.Topology
 
@@ -149,15 +150,6 @@ noncomputable def fullyFaithfulPullbackιOfTwoLeDepthOfIsLocalRing [IsLocalRing 
 
 variable {X : Scheme.{u}}
 
-/-- Let `𝒰` be an open cover of `X`. An open subset `U` of `X` is dense if its preimage in every
-chart of `𝒰` contains a dense subset. -/
-private theorem dense_of_openCover {U : X.Opens} (𝒰 : X.OpenCover) {s : ∀ i, Set (𝒰.X i)}
-    (hs : ∀ i, Dense (s i)) (hsU : ∀ i, s i ⊆ 𝒰.f i ⁻¹ᵁ U) : Dense (U : Set X) := by
-  refine dense_iff_inter_open.mpr fun V hV ⟨x, hxV⟩ ↦ ?_
-  obtain ⟨i, y, rfl⟩ := 𝒰.exists_eq x
-  obtain ⟨z, hzV, hzs⟩ := (hs i).inter_open_nonempty _ (hV.preimage (𝒰.f i).continuous) ⟨y, hxV⟩
-  exact ⟨_, hzV, hsU i hzs⟩
-
 /-- Let `X` be a locally Noetherian scheme and `U` an open subscheme such that the local ring
 `𝒪_{X,x}` has depth at least two at every point `x ∉ U`. Then restriction of finite étale schemes
 over `X` to `U` is fully faithful. -/
@@ -176,7 +168,7 @@ noncomputable def fullyFaithfulPullbackιOfTwoLeDepthStalk [IsLocallyNoetherian 
         (M := 𝒰.X i) (𝒰.f i ⁻¹ᵁ U) fun p hp ↦ p.asIdeal.depth_localizedModule_self.trans_ge <|
           (𝒰.f i).depth_stalk_eq_depth_localization p ▸ h _ hp
     -- `U` is dense: on each chart its preimage contains `D(a)` for a nonzerodivisor `a`.
-    have hdense : Dense (U : Set X) := dense_of_openCover 𝒰.openCover
+    have hdense : Dense (U : Set X) := 𝒰.openCover.dense_of_forall_dense_subset
       (fun i ↦ PrimeSpectrum.dense_basicOpen_of_mem_nonZeroDivisors <|
         isRegular_iff_mem_nonZeroDivisors.mp <| isLeftRegular_iff_isRegular.mp <|
           (isWeaklyRegular_cons_iff ..).mp (hab i) |>.1) ha
