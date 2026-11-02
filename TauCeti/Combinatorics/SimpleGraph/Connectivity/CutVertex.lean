@@ -189,29 +189,6 @@ namespace Graph
 
 variable {α : Type*} {β : Type*} {G : Graph α β}
 
-/-- Two actual vertices are reachable after deleting `S` exactly when some walk between them in
-the underlying simple graph avoids `S`. -/
-theorem toSimpleGraph_reachable_deleteVerts_iff_exists_walk {S : Set α} {x y : V(G)} :
-    (G.deleteVerts S).Reachable x y ↔ ∃ p : G.toSimpleGraph.Walk x y, ∀ z ∈ p.support, ↑z ∉ S := by
-  constructor
-  · intro h
-    obtain ⟨p⟩ := (toSimpleGraph_reachable_iff (G := G.deleteVerts S) (u := ⟨x, h.left_mem⟩)
-      (v := ⟨y, h.right_mem⟩)).mpr h
-    refine ⟨(p.map (toSimpleGraphHomOfLE deleteVerts_le)).copy
-      (Subtype.ext (coe_toSimpleGraphHomOfLE_apply _ _))
-      (Subtype.ext (coe_toSimpleGraphHomOfLE_apply _ _)), fun z hz ↦ ?_⟩
-    rw [SimpleGraph.Walk.support_copy, SimpleGraph.Walk.support_map] at hz
-    obtain ⟨z, -, rfl⟩ := List.mem_map.mp hz
-    have hz : (z : α) ∈ V(G) ∧ (z : α) ∉ S := by
-      simpa only [vertexSet_deleteVerts, mem_sdiff] using z.property
-    rw [coe_toSimpleGraphHomOfLE_apply]
-    exact hz.2
-  · rintro ⟨p, hp⟩
-    refine reachable_deleteVerts_iff_exists_walk.mpr ⟨p.liftToGraph, x.property, fun z hz ↦ ?_⟩
-    rw [SimpleGraph.Walk.support_liftToGraph] at hz
-    obtain ⟨z, hz', rfl⟩ := List.mem_map.mp hz
-    exact hp z hz'
-
 /-- A native multigraph cut vertex is a cut vertex of the underlying simple graph on the actual
 vertices. -/
 theorem isCutVertex_iff_toSimpleGraph_isCutVertex {v : α} (hv : v ∈ V(G)) :

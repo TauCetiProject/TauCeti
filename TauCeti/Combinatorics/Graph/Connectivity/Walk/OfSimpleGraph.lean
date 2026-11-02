@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Combinatorics.Graph.Simple
 public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Connected
-public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Basic
+public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Maps
 
 /-!
 # Walks in graphs constructed from simple graphs
@@ -314,7 +314,18 @@ end SimpleGraph.Walk
 
 namespace Graph
 
-variable {α β : Type*} {G : Graph α β}
+variable {α β : Type*} {G H : Graph α β}
+
+/-- A subgraph inclusion `H ≤ G` induces a homomorphism of underlying simple graphs, sending each
+actual vertex of `H` to itself. -/
+def toSimpleGraphHomOfLE (hHG : H ≤ G) : H.toSimpleGraph →g G.toSimpleGraph where
+  toFun z := ⟨z, hHG.vertexSet_mono z.2⟩
+  map_rel' hzw :=
+    ⟨fun h ↦ hzw.1 (Subtype.ext (Subtype.mk.inj h)), hzw.2.mono hHG⟩
+
+@[simp]
+theorem coe_toSimpleGraphHomOfLE_apply (hHG : H ≤ G) (z : V(H)) :
+    (toSimpleGraphHomOfLE hHG z : α) = z := (rfl)
 
 /-- Reachability by an edge-labelled walk gives reachability in the underlying simple graph. -/
 theorem Reachable.toSimpleGraph_reachable {x y : α} (h : G.Reachable x y) :
@@ -338,5 +349,28 @@ theorem toSimpleGraph_reachable_iff {u v : V(G)} :
   refine ⟨?_, fun h ↦ h.toSimpleGraph_reachable⟩
   rintro ⟨p⟩
   exact p.liftToGraph.reachable u.property
+
+/-- Two actual vertices are reachable after deleting `S` exactly when some walk between them in
+the underlying simple graph avoids `S`. -/
+theorem toSimpleGraph_reachable_deleteVerts_iff_exists_walk {S : Set α} {x y : V(G)} :
+    (G.deleteVerts S).Reachable x y ↔ ∃ p : G.toSimpleGraph.Walk x y, ∀ z ∈ p.support, ↑z ∉ S := by
+  constructor
+  · intro h
+    obtain ⟨p⟩ := (toSimpleGraph_reachable_iff (G := G.deleteVerts S) (u := ⟨x, h.left_mem⟩)
+      (v := ⟨y, h.right_mem⟩)).mpr h
+    refine ⟨(p.map (toSimpleGraphHomOfLE deleteVerts_le)).copy
+      (Subtype.ext (coe_toSimpleGraphHomOfLE_apply _ _))
+      (Subtype.ext (coe_toSimpleGraphHomOfLE_apply _ _)), fun z hz ↦ ?_⟩
+    rw [SimpleGraph.Walk.support_copy, SimpleGraph.Walk.support_map] at hz
+    obtain ⟨z, -, rfl⟩ := List.mem_map.mp hz
+    have hz : (z : α) ∈ V(G) ∧ (z : α) ∉ S := by
+      simpa only [vertexSet_deleteVerts, Set.mem_sdiff] using z.property
+    rw [coe_toSimpleGraphHomOfLE_apply]
+    exact hz.2
+  · rintro ⟨p, hp⟩
+    refine reachable_deleteVerts_iff_exists_walk.mpr ⟨p.liftToGraph, x.property, fun z hz ↦ ?_⟩
+    rw [SimpleGraph.Walk.support_liftToGraph] at hz
+    obtain ⟨z, hz', rfl⟩ := List.mem_map.mp hz
+    exact hp z hz'
 
 end Graph
