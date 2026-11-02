@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Formation.FieldArtinMap
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.Reciprocity
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.Restriction
 public import TauCeti.NumberTheory.ClassFieldTheory.LocalExistence.NormSubgroup
+import TauCeti.FieldTheory.Galois.Abelian.Basic
 import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.ConjugateSubgroups
 import TauCeti.GroupTheory.Abelianization.Basic
 import TauCeti.Topology.Algebra.ValuativeRel.ContinuousRingHom
@@ -205,9 +206,7 @@ theorem mem_normGroup_fixedField_iff (H : Subgroup Gal(M/K)) {u : Kˣ} {σ : Gal
   rw [← localArtinMap_eq_zero_iff K _ (ι.comp (IntermediateField.fixedField H).val),
     artinMap_restrict K _ _ u τ hτ, ← AlgHom.restrictNormalHom_restrictNormalHom, ← hστ,
     IntermediateField.restrictNormalHom_val, ofMul_eq_zero,
-    ← map_one (Abelianization.of (G := Gal(IntermediateField.fixedField H/K))),
-    Abelianization.of_injective.eq_iff, ← MonoidHom.mem_ker,
-    IntermediateField.restrictNormalHom_ker, IntermediateField.fixingSubgroup_fixedField]
+    abelianization_of_restrictNormalHom_fixedField_eq_one_iff]
 
 /-- **The absolute local Artin map has dense image**: it reaches every finite quotient of
 `G_K^ab`, because every finite local Artin map is surjective. -/

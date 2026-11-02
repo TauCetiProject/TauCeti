@@ -6,12 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.AdmissibleModulus.Ramification
-public import TauCeti.NumberTheory.LocalField.Herbrand.ArtinConductor
 public import TauCeti.RingTheory.DedekindDomain.Discriminant.Basic
-import TauCeti.GroupTheory.Abelianization.Basic
 import TauCeti.GroupTheory.FiniteAbelian.Duality
-import TauCeti.NumberTheory.ClassFieldTheory.Local.ArtinMap
-import TauCeti.NumberTheory.ClassFieldTheory.Local.Conductor.UpperNumbering
 import TauCeti.NumberTheory.LocalField.Discriminant.Conductor
 import TauCeti.NumberTheory.NumberField.LocalGlobal.Discriminant
 import TauCeti.RingTheory.DedekindDomain.PrimesAbove
@@ -31,16 +27,9 @@ the finite parts of these conductors (`relDiscr_eq_finprod_finitePart_abelianCon
 The proof reads both sides at a finite place `v` of `K`, through a place `w` of `L` above it, with
 decomposition group `D_w ≅ Gal(L_w/K_v)`.
 
-* **The character dictionary.** The class of the idele concentrated at `v` with component
-  `u ∈ K_vˣ` is a norm from the fixed field of `H ≤ G` exactly when the global Artin symbol of `u`,
-  which is its local Artin symbol in `D_w` (`globalArtinMap_local`), lies in `H`. By local
-  reciprocity this happens exactly when `u` is a norm from the fixed field of `H ∩ D_w` in `L_w`
-  (`mem_normGroup_fixedField_iff`). Hence the exponent of `v` in the conductor of the fixed field
-  of `H` is the local conductor exponent of the fixed field of `H ∩ D_w`
-  (`exponent_abelianConductor_fixedField`). For `H = ker χ` the local conductor exponent of the
-  fixed field of `ker χ|_{D_w}` is the Artin conductor exponent `f(χ|_{D_w})`
-  (`conductorExponent_fixedField_ker`), so the exponent of `v` in `𝔣(χ)` is `f(χ|_{D_w})`
-  (`exponent_abelianConductor_fixedField_ker`).
+* **The character dictionary.** The exponent of `v` in `𝔣(χ)` is the Artin conductor exponent
+  `f(χ|_{D_w})` (`exponent_abelianConductor_fixedField_ker`, from local reciprocity and local–global
+  compatibility of the Artin map).
 * **Counting characters.** Every character of `D_w` extends to `[G : D_w]` characters of `G`
   (`CommGroup.finsum_domRestrictHom`), so `∑_χ f(χ|_{D_w}) = [G : D_w] · ∑_ψ f(ψ)`, the second sum
   running over the characters of `Gal(L_w/K_v)`.
@@ -54,12 +43,6 @@ This gives the formula at every finite place
 
 ## Main results
 
-* `TauCeti.ClassFieldTheory.exponent_abelianConductor_fixedField`: the exponent of `v` in the
-  conductor of the fixed field of `H ≤ Gal(L/K)` is the local conductor exponent of the fixed
-  field of the corresponding subgroup of `Gal(L_w/K_v)`.
-* `TauCeti.ClassFieldTheory.exponent_abelianConductor_fixedField_ker`: the exponent of `v` in the
-  conductor of a character `χ` of `Gal(L/K)` is the Artin conductor exponent of the restriction of
-  `χ` to `Gal(L_w/K_v)`.
 * `TauCeti.ClassFieldTheory.multiplicity_relDiscr_eq_finsum_exponent_abelianConductor`: the
   conductor–discriminant formula at a finite place.
 * `TauCeti.ClassFieldTheory.relDiscr_eq_finprod_finitePart_abelianConductor`: the
@@ -83,71 +66,6 @@ open scoped AdicCompletionExtension Pointwise
 
 variable {K L : Type} [Field K] [NumberField K] [Field L] [NumberField L] [Algebra K L]
   [IsAbelianGalois K L]
-
-/-! ### The character dictionary at a finite place -/
-
-section Place
-
-variable (v : HeightOneSpectrum (𝓞 K)) (w : HeightOneSpectrum (𝓞 L))
-  [w.asIdeal.LiesOver v.asIdeal]
-
-/-- **Idele classes concentrated at one place that are norms from a subextension.** Let `L/K` be
-abelian, `H` a subgroup of `Gal(L/K)`, `v` a finite place of `K` and `w` a place of `L` above it.
-The class of the idele concentrated at `v` with component `u` is a norm from the fixed field of
-`H` exactly when `u` is a norm from the fixed field in `L_w` of the subgroup of `Gal(L_w/K_v)`
-corresponding to `H` under the decomposition group of `w`. -/
-theorem ofAdicCompletion_mem_range_ideleClassNormMap_fixedField_iff (H : Subgroup Gal(L/K))
-    (u : (v.adicCompletion K)ˣ) :
-    (IdeleGroup.ofAdicCompletion (𝓞 K) K v u : IdeleClassGroup (𝓞 K) K) ∈
-        (ideleClassNormMap K (fixedField H) :
-          IdeleClassGroup (𝓞 (fixedField H)) (fixedField H) →* IdeleClassGroup (𝓞 K) K).range ↔
-      u ∈ normGroup (v.adicCompletion K) (fixedField (H.comap
-        ((MulAction.stabilizer Gal(L/K) w.asIdeal).subtype.comp
-          (HeightOneSpectrum.decompositionEquiv v w).symm.toMonoidHom))) := by
-  have := IsAbelianGalois.tower_bot K (fixedField H) L
-  have := HeightOneSpectrum.isAbelianGalois_adicCompletion v w
-  obtain ⟨ρ, hρ⟩ : ∃ ρ, Abelianization.of ρ =
-      normResidue (v.adicCompletion K) (w.adicCompletion L) u :=
-    QuotientGroup.mk_surjective _
-  -- Both sides say that the local Artin symbol of `u`, an element of the decomposition group of
-  -- `w`, lies in `H`.
-  rw [mem_normGroup_fixedField_iff _ hρ, ← globalArtinMap_eq_zero_iff K _ IsSepClosed.lift,
-    globalArtinMap_local, ofMul_eq_zero, ← localArtinAt_comp v (fixedField H).val,
-    MonoidHom.comp_apply, localArtinAt_eq_map_normResidue v w, ← hρ, Abelianization.map_of,
-    Abelianization.map_of, IntermediateField.restrictNormalHom_val,
-    ← map_one (Abelianization.of (G := Gal(fixedField H/K))), Abelianization.of_injective.eq_iff,
-    ← MonoidHom.mem_ker, IntermediateField.restrictNormalHom_ker,
-    IntermediateField.fixingSubgroup_fixedField, Subgroup.mem_comap]
-
-/-- **The conductor of a subextension at a finite place.** Let `L/K` be abelian, `H` a subgroup
-of `Gal(L/K)`, `v` a finite place of `K` and `w` a place of `L` above it. The exponent of `v` in
-the conductor of the fixed field of `H` is the conductor exponent of the fixed field in `L_w` of
-the subgroup of `Gal(L_w/K_v)` corresponding to `H` under the decomposition group of `w`. -/
-theorem exponent_abelianConductor_fixedField (H : Subgroup Gal(L/K)) :
-    (abelianConductor K (fixedField H)).exponent v =
-      conductorExponent (v.adicCompletion K) (fixedField (H.comap
-        ((MulAction.stabilizer Gal(L/K) w.asIdeal).subtype.comp
-          (HeightOneSpectrum.decompositionEquiv v w).symm.toMonoidHom))) :=
-  eq_of_forall_ge_iff fun n ↦ by
-    rw [exponent_abelianConductor_le_iff, conductorExponent_le_iff]
-    exact forall₂_congr fun u _ ↦
-      ofAdicCompletion_mem_range_ideleClassNormMap_fixedField_iff v w H u
-
-/-- **The conductor of a character at a finite place is a local Artin conductor.** Let `L/K` be
-abelian, `χ` a homomorphism on `Gal(L/K)`, `v` a finite place of `K` and `w` a place of `L` above
-it. The exponent of `v` in the conductor of the fixed field of `ker χ` is the Artin conductor
-exponent of `χ` restricted to `Gal(L_w/K_v)`, the decomposition group of `w`. -/
-theorem exponent_abelianConductor_fixedField_ker {A : Type*} [MulOneClass A]
-    (χ : Gal(L/K) →* A) :
-    (abelianConductor K (fixedField χ.ker)).exponent v =
-      artinConductorExponent (v.adicCompletion K) (w.adicCompletion L)
-        (χ.comp ((MulAction.stabilizer Gal(L/K) w.asIdeal).subtype.comp
-          (HeightOneSpectrum.decompositionEquiv v w).symm.toMonoidHom)) := by
-  have := HeightOneSpectrum.isAbelianGalois_adicCompletion v w
-  rw [exponent_abelianConductor_fixedField v w, MonoidHom.comap_ker,
-    conductorExponent_fixedField_ker]
-
-end Place
 
 /-! ### The conductor–discriminant formula -/
 
@@ -197,14 +115,14 @@ theorem relDiscr_eq_finprod_finitePart_abelianConductor (M : Type*) [CommMonoid 
     ← Ideal.finprod_heightOneSpectrum_pow_multiplicity (relDiscr_ne_bot (A := 𝓞 K)),
     ← Ideal.finprod_heightOneSpectrum_pow_multiplicity (h𝔣 Finset.univ)]
   refine finprod_congr fun v ↦ congrArg _ ?_
+  -- The multiplicity of a prime in a product is the sum of its multiplicities in the factors.
+  have hfin {I : Ideal (𝓞 K)} (hI : I ≠ 0) : FiniteMultiplicity v.asIdeal I :=
+    .of_prime_left v.prime hI
   rw [multiplicity_relDiscr_eq_finsum_exponent_abelianConductor M v, finsum_eq_sum_of_fintype,
-    ← v.count_normalizedFactors_eq_multiplicity (h𝔣 Finset.univ)]
-  induction (Finset.univ : Finset (Gal(L/K) →* Mˣ)) using Finset.induction_on with
-  | empty => simp
-  | insert χ s hχ ih =>
-    rw [Finset.prod_insert hχ, Finset.sum_insert hχ, UniqueFactorizationMonoid.normalizedFactors_mul
-      (Modulus.finitePart_ne_zero _) (h𝔣 s), Multiset.count_add, ih,
-      v.count_normalizedFactors_eq_multiplicity (Modulus.finitePart_ne_zero _),
-      Modulus.exponent_eq_multiplicity]
+    ← Nat.cast_inj (R := ℕ∞), ← (hfin (h𝔣 Finset.univ)).emultiplicity_eq_multiplicity,
+    Finset.emultiplicity_prod v.prime, Nat.cast_sum]
+  exact Finset.sum_congr rfl fun χ _ ↦ by
+    rw [Modulus.exponent_eq_multiplicity,
+      (hfin (Modulus.finitePart_ne_zero _)).emultiplicity_eq_multiplicity]
 
 end TauCeti.ClassFieldTheory

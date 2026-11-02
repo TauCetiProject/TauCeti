@@ -8,7 +8,11 @@ module
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.AdmissibleModulus.Basic
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.LocalArtin.Compatibility
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.Conductor.Basic
+public import TauCeti.NumberTheory.LocalField.Herbrand.ArtinConductor
 public import TauCeti.NumberTheory.NumberField.Discriminant.RamifiedSupport.Basic
+import TauCeti.FieldTheory.Galois.Abelian.Basic
+import TauCeti.NumberTheory.ClassFieldTheory.Local.ArtinMap
+import TauCeti.NumberTheory.ClassFieldTheory.Local.Conductor.UpperNumbering
 
 /-!
 # Admissible moduli and ramification
@@ -30,6 +34,16 @@ exponent of `v` in the conductor is read off from these classes
 `L_w/K_v` is at most the exponent of `v` in `𝔪`
 (`IsAdmissibleModulus.conductorExponent_le_exponent`).
 
+The same argument applies to the fixed field of a subgroup `H ≤ Gal(L/K)`. Its idele class at
+`v` is a norm exactly when the local Artin symbol of `u`, an element of the decomposition group
+`D_w ≅ Gal(L_w/K_v)`, lies in `H`. By local reciprocity this happens exactly when `u` is a norm
+from the fixed field of `H ∩ D_w` in `L_w` (`mem_normGroup_fixedField_iff`,
+`ofAdicCompletion_mem_range_ideleClassNormMap_fixedField_iff`). Hence the exponent of `v` in the
+conductor of the fixed field of `H` is the local conductor exponent of the fixed field of
+`H ∩ D_w` (`exponent_abelianConductor_fixedField`). For `H = ker χ` this is the Artin conductor
+exponent `f(χ|_{D_w})` (`conductorExponent_fixedField_ker`,
+`exponent_abelianConductor_fixedField_ker`).
+
 If `v` is not in the support of `𝔪`, then its exponent in `𝔪` is `0`, so every unit of `K_v` is a
 norm from `L_w`. By the unramified criterion of local class field theory
 (`conductorExponent_eq_zero_iff`), `L_w/K_v` is unramified, and since the local ramification
@@ -50,6 +64,12 @@ whole idele class group, so the trivial modulus is admissible for it, although `
   idele concentrated at `v` is a norm from `L` exactly when its component is a norm from `L_w`.
 * `TauCeti.ClassFieldTheory.exponent_abelianConductor`: the exponent of `v` in the conductor of
   `L/K` is the conductor exponent of `L_w/K_v`.
+* `TauCeti.ClassFieldTheory.exponent_abelianConductor_fixedField`: the exponent of `v` in the
+  conductor of the fixed field of `H ≤ Gal(L/K)` is the local conductor exponent of the fixed
+  field of the corresponding subgroup of `Gal(L_w/K_v)`.
+* `TauCeti.ClassFieldTheory.exponent_abelianConductor_fixedField_ker`: the exponent of `v` in the
+  conductor of a character `χ` of `Gal(L/K)` is the Artin conductor exponent of the restriction of
+  `χ` to `Gal(L_w/K_v)`.
 * `TauCeti.ClassFieldTheory.IsAdmissibleModulus.conductorExponent_le_exponent`: the conductor
   exponent of `L_w/K_v` is at most the exponent of `v` in an admissible modulus.
 * `TauCeti.ClassFieldTheory.IsAdmissibleModulus.isUnramifiedAt_of_notMem_support`: a prime of `L`
@@ -64,7 +84,8 @@ whole idele class group, so the trivial modulus is admissible for it, although `
 ## References
 
 * J. S. Milne, *Class Field Theory*, v4.03, Chapter V (the conductor of an abelian extension).
-* J. Neukirch, *Algebraic Number Theory*, Chapter VI, §6.
+* J. Neukirch, *Algebraic Number Theory*, Chapter VI, §6, and Chapter VII, §11.
+* [J.-P. Serre, *Corps Locaux*][serre1968], Chapter VI, §3.
 -/
 
 public section
@@ -102,6 +123,63 @@ theorem exponent_abelianConductor :
   eq_of_forall_ge_iff fun n ↦ by
     rw [exponent_abelianConductor_le_iff, conductorExponent_le_iff]
     exact forall₂_congr fun u _ ↦ ofAdicCompletion_mem_range_ideleClassNormMap_iff v w u
+
+open _root_.IntermediateField TauCeti.LocalFieldsRamification
+open scoped Pointwise
+
+/-- **Idele classes concentrated at one place that are norms from a subextension.** Let `L/K` be
+abelian, `H` a subgroup of `Gal(L/K)`, `v` a finite place of `K` and `w` a place of `L` above it.
+The class of the idele concentrated at `v` with component `u` is a norm from the fixed field of
+`H` exactly when `u` is a norm from the fixed field in `L_w` of the subgroup of `Gal(L_w/K_v)`
+corresponding to `H` under the decomposition group of `w`. -/
+theorem ofAdicCompletion_mem_range_ideleClassNormMap_fixedField_iff (H : Subgroup Gal(L/K))
+    (u : (v.adicCompletion K)ˣ) :
+    (IdeleGroup.ofAdicCompletion (𝓞 K) K v u : IdeleClassGroup (𝓞 K) K) ∈
+        (ideleClassNormMap K (fixedField H) :
+          IdeleClassGroup (𝓞 (fixedField H)) (fixedField H) →* IdeleClassGroup (𝓞 K) K).range ↔
+      u ∈ normGroup (v.adicCompletion K) (fixedField (H.comap
+        ((MulAction.stabilizer Gal(L/K) w.asIdeal).subtype.comp
+          (HeightOneSpectrum.decompositionEquiv v w).symm.toMonoidHom))) := by
+  have := IsAbelianGalois.tower_bot K (fixedField H) L
+  have := HeightOneSpectrum.isAbelianGalois_adicCompletion v w
+  obtain ⟨ρ, hρ⟩ : ∃ ρ, Abelianization.of ρ =
+      normResidue (v.adicCompletion K) (w.adicCompletion L) u :=
+    QuotientGroup.mk_surjective _
+  -- Both sides say that the local Artin symbol of `u`, an element of the decomposition group of
+  -- `w`, lies in `H`.
+  rw [mem_normGroup_fixedField_iff _ hρ, ← globalArtinMap_eq_zero_iff K _ IsSepClosed.lift,
+    globalArtinMap_local, ofMul_eq_zero, ← localArtinAt_comp v (fixedField H).val,
+    MonoidHom.comp_apply, localArtinAt_eq_map_normResidue v w, ← hρ, Abelianization.map_of,
+    Abelianization.map_of, IntermediateField.restrictNormalHom_val,
+    abelianization_of_restrictNormalHom_fixedField_eq_one_iff, Subgroup.mem_comap]
+
+/-- **The conductor of a subextension at a finite place.** Let `L/K` be abelian, `H` a subgroup
+of `Gal(L/K)`, `v` a finite place of `K` and `w` a place of `L` above it. The exponent of `v` in
+the conductor of the fixed field of `H` is the conductor exponent of the fixed field in `L_w` of
+the subgroup of `Gal(L_w/K_v)` corresponding to `H` under the decomposition group of `w`. -/
+theorem exponent_abelianConductor_fixedField (H : Subgroup Gal(L/K)) :
+    (abelianConductor K (fixedField H)).exponent v =
+      conductorExponent (v.adicCompletion K) (fixedField (H.comap
+        ((MulAction.stabilizer Gal(L/K) w.asIdeal).subtype.comp
+          (HeightOneSpectrum.decompositionEquiv v w).symm.toMonoidHom))) :=
+  eq_of_forall_ge_iff fun n ↦ by
+    rw [exponent_abelianConductor_le_iff, conductorExponent_le_iff]
+    exact forall₂_congr fun u _ ↦
+      ofAdicCompletion_mem_range_ideleClassNormMap_fixedField_iff v w H u
+
+/-- **The conductor of a character at a finite place is a local Artin conductor.** Let `L/K` be
+abelian, `χ` a homomorphism on `Gal(L/K)`, `v` a finite place of `K` and `w` a place of `L` above
+it. The exponent of `v` in the conductor of the fixed field of `ker χ` is the Artin conductor
+exponent of `χ` restricted to `Gal(L_w/K_v)`, the decomposition group of `w`. -/
+theorem exponent_abelianConductor_fixedField_ker {A : Type*} [MulOneClass A]
+    (χ : Gal(L/K) →* A) :
+    (abelianConductor K (fixedField χ.ker)).exponent v =
+      artinConductorExponent (v.adicCompletion K) (w.adicCompletion L)
+        (χ.comp ((MulAction.stabilizer Gal(L/K) w.asIdeal).subtype.comp
+          (HeightOneSpectrum.decompositionEquiv v w).symm.toMonoidHom)) := by
+  have := HeightOneSpectrum.isAbelianGalois_adicCompletion v w
+  rw [exponent_abelianConductor_fixedField v w, MonoidHom.comap_ker,
+    conductorExponent_fixedField_ker]
 
 end LocalConductor
 

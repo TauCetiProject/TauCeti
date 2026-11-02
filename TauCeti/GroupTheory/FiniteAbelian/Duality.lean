@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.Abelianization.Finite
 public import Mathlib.GroupTheory.FiniteAbelian.Duality
+import TauCeti.GroupTheory.Coset.Fiber
 
 /-!
 # The character group of a finite group is the dual of its abelianization
@@ -90,22 +91,13 @@ theorem finsum_domRestrictHom {N : Type*} [AddCommMonoid N] (H : Subgroup G)
     (g : (H →* Mˣ) → N) :
     ∑ᶠ χ : G →* Mˣ, g (MonoidHom.domRestrictHom H Mˣ χ) =
       Nat.card (G ⧸ H) • ∑ᶠ ψ : H →* Mˣ, g ψ := by
-  classical
   have : HasEnoughRootsOfUnity M (Monoid.exponent H) :=
     HasEnoughRootsOfUnity.of_dvd M (Monoid.exponent_submonoid_dvd H.toSubmonoid)
   have := Fintype.ofFinite (G →* Mˣ)
   have := Fintype.ofFinite (H →* Mˣ)
-  set r := MonoidHom.domRestrictHom H Mˣ
   -- Restriction is surjective, so each fibre is a coset of its kernel, of order `#(G ⧸ H)`.
-  have hr := MonoidHom.domRestrict_surjective M H
-  rw [finsum_eq_sum_of_fintype, finsum_eq_sum_of_fintype, Finset.smul_sum,
-    ← Finset.sum_fiberwise Finset.univ r]
-  refine Finset.sum_congr rfl fun ψ _ ↦ ?_
-  rw [Finset.sum_congr rfl fun χ hχ ↦ by rw [(Finset.mem_filter.1 hχ).2], Finset.sum_const,
-    ← card_domRestrictHom_ker M H, ← Nat.card_congr (r.fiberEquivKerOfSurjective hr ψ),
-    Nat.card_eq_card_toFinset]
-  congr 2
-  ext χ
-  simp
+  rw [finsum_eq_sum_of_fintype, finsum_eq_sum_of_fintype, ← card_domRestrictHom_ker M H]
+  exact congrArg Multiplicative.toAdd <| MonoidHom.prod_comp_of_surjective _
+    (MonoidHom.domRestrict_surjective M H) (Multiplicative.ofAdd ∘ g)
 
 end CommGroup
