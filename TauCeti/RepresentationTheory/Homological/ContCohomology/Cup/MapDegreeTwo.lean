@@ -76,10 +76,11 @@ theorem homogeneousCocyclesMap2_cup11 (a : Z1 G M) (b : Z1 G N) :
         (cocycleEquiv1 H N' (cocyclesMap1 G N H N' φ fN continuous_of_discreteTopology hfN b)) := by
   rw [← cocycleEquiv2_cup11, homogeneousCocyclesMap2_cocycleEquiv2,
     ← cocycleEquiv2_cup11]
-  apply congrArg (cocycleEquiv2 H P')
-  apply Subtype.ext
-  ext ⟨h, k⟩
-  simp [cocyclesMap1_coe, cocyclesMap2_coe, hpair, hfN]
+  exact congrArg (cocycleEquiv2 H P')
+    (cocyclesMap2_cup11 G M N P μ continuous_of_discreteTopology hequiv
+      H M' N' P' μ' continuous_of_discreteTopology hequiv' φ fM fN fP
+      continuous_of_discreteTopology continuous_of_discreteTopology continuous_of_discreteTopology
+      hfM hfN hfP hpair a b)
 
 include hpair in
 /-- The cross-universe compatible-pair map on canonical second cohomology preserves the
