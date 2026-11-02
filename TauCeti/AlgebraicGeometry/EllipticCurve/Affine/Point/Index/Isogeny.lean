@@ -137,7 +137,7 @@ theorem index_range_div_card_ker_of_degree_notMem (hf : (f.degree : A) ∉ u.asI
     rintro rfl
     exact hf (by simp [degree_zero])
   have := f.finite_ker_pointMapHom hf0
-  have := W₁.finite_primaryComponent u hf
+  have := W₁.finite_primaryComponent u fun h ↦ hf (h ▸ u.asIdeal.zero_mem)
   have hT : (Nat.card (AddCommGroup.primaryComponent W₁.toAffine.Point f.degree) : ℚ) ≠ 0 :=
     Nat.cast_ne_zero.mpr Nat.card_pos.ne'
   have hK : (Nat.card f.pointMapHom.ker : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'

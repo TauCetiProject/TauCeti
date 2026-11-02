@@ -52,8 +52,8 @@ in it. Passing to a finite-index subgroup does not change the ratio of the index
 `#G[n]` (`AddSubgroup.index_range_nsmul_add_card_ker`).
 
 When `n` is prime to `u`, the level is `E₁(F_u)` itself, on which multiplication by `n` is then
-bijective. So the points of `E(F_u)` killed by a power of `n` form a finite group, since they meet
-`E₁(F_u)` trivially.
+bijective. For every `n` nonzero in `A`, the points of `E(F_u)` killed by a power of `n` form a
+finite group, since they meet the level trivially.
 
 ## Main results
 
@@ -139,22 +139,26 @@ private local instance isLinearTopology_adicCompletionIntegers_dividingN :
 private local instance fact_isAdic_maximalIdeal_dividingN : Fact (IsAdic m_u) :=
   ⟨u.isAdic_maximalIdeal_adicCompletionIntegers (K := F)⟩
 
+omit [Finite (A ⧸ u.asIdeal)] in
+/-- An integer `n` nonzero in `A` generates a power `𝔪_u ^ e` of the maximal ideal of `O_u`. -/
+private theorem exists_span_natCast_eq_maximalIdeal_pow {n : ℕ} (hn : (n : A) ≠ 0) :
+    ∃ e : ℕ, Ideal.span {(n : O_u)} = m_u ^ e := by
+  refine exists_maximalIdeal_pow_eq_of_principal O_u (IsPrincipalIdealRing.principal _) _ ?_
+  rw [Ne, Ideal.span_singleton_eq_bot, ← map_natCast (algebraMap A O_u),
+    map_eq_zero_iff _ (FaithfulSMul.algebraMap_injective A O_u)]
+  exact hn
+
 open scoped Classical in
 /-- On a minimal integral model `C`, the image of `Ê(𝔪_u ^ (e + 1))` in `E₁(F_u)`, where
 `(n) = 𝔪_u ^ e`, has finite index, has no nonzero `n`-torsion, and contains `n` times itself with
 index `#(O_u ⧸ n O_u)`. -/
 private theorem exists_finiteIndex_injective_nsmul_of_isMinimal
-    {n : ℕ} (C : WeierstrassCurve O_u) [(C.baseChange F_u).IsElliptic]
+    {n e : ℕ} (C : WeierstrassCurve O_u) [(C.baseChange F_u).IsElliptic]
     [IsMinimal O_u (C.baseChange F_u)]
-    (hn : (n : O_u) ≠ 0) :
+    (hne : Ideal.span {(n : O_u)} = m_u ^ e) :
     ∃ U : AddSubgroup (C.baseChange F_u).toAffine.Point, U.FiniteIndex ∧
       Function.Injective (fun P : U ↦ n • P) ∧
       (nsmulAddMonoidHom (α := U) n).range.index = Nat.card (O_u ⧸ Ideal.span {(n : O_u)}) := by
-  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible O_u
-  obtain ⟨e, he⟩ := IsDiscreteValuationRing.ideal_eq_span_pow_irreducible
-    (s := Ideal.span {(n : O_u)}) (mt Ideal.span_singleton_eq_bot.mp hn) hϖ
-  have hne : Ideal.span {(n : O_u)} = m_u ^ e := by
-    rw [he, hϖ.maximalIdeal_eq, Ideal.span_singleton_pow]
   let V := FormalGroupPoint.filtration C m_u (e + 1)
   let ι := C.formalPointHomAdicCompletion u
   have hι : Function.Injective ι := C.formalPointHomAdicCompletion_injective u
@@ -191,9 +195,7 @@ theorem exists_finiteIndex_injective_nsmul (hn : (n : A) ≠ 0) :
   -- The minimal-model results fix classical equality decisions; equality decisions are unique.
   cases Subsingleton.elim ‹DecidableEq F_u› (fun a b ↦ Classical.propDecidable (a = b))
   classical
-  have hn' : (n : O_u) ≠ 0 := by
-    rw [← map_natCast (algebraMap A O_u)]
-    exact (map_ne_zero_iff _ (FaithfulSMul.algebraMap_injective A O_u)).mpr hn
+  obtain ⟨e, hne⟩ := exists_span_natCast_eq_maximalIdeal_pow u (F := F) hn
   -- on a minimal model `C.baseChange F_u`, take a level of the formal group
   have key : ∀ (W' : WeierstrassCurve F_u) [W'.IsElliptic] [IsMinimal O_u W'],
       ∃ U : AddSubgroup W'.toAffine.Point, U.FiniteIndex ∧
@@ -202,7 +204,7 @@ theorem exists_finiteIndex_injective_nsmul (hn : (n : A) ≠ 0) :
           Nat.card (O_u ⧸ Ideal.span {(n : O_u)}) := by
     intro W' _ _
     obtain ⟨C, rfl⟩ := (inferInstance : IsIntegral O_u W').integral
-    exact exists_finiteIndex_injective_nsmul_of_isMinimal u C hn'
+    exact exists_finiteIndex_injective_nsmul_of_isMinimal u C hne
   obtain ⟨V, hV⟩ := W.exists_isMinimal O_u
   obtain ⟨U, hU, hinj, hidx⟩ := key (V • W)
   -- and transport it along the change of variables
@@ -260,14 +262,8 @@ theorem finiteIndex_range_nsmul (hn : (n : A) ≠ 0) :
   obtain ⟨U, hU, -, hidx⟩ := W.exists_finiteIndex_injective_nsmul u hn
   -- `O_u ⧸ n O_u` is finite, as `n O_u` contains a power of the maximal ideal
   have hfin : Finite (O_u ⧸ Ideal.span {(n : O_u)}) := by
-    obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible O_u
-    have hn' : Ideal.span {(n : O_u)} ≠ ⊥ := by
-      rw [Ne, Ideal.span_singleton_eq_bot, ← map_natCast (algebraMap A O_u),
-        map_eq_zero_iff _ (FaithfulSMul.algebraMap_injective A O_u)]
-      exact hn
-    obtain ⟨e, he⟩ := IsDiscreteValuationRing.ideal_eq_span_pow_irreducible hn' hϖ
-    exact finite_quotient_iff.mpr
-      ⟨e, by rw [he, hϖ.maximalIdeal_eq, Ideal.span_singleton_pow]⟩
+    obtain ⟨e, hne⟩ := exists_span_natCast_eq_maximalIdeal_pow u (F := F) hn
+    exact finite_quotient_iff.mpr ⟨e, hne.ge⟩
   have hnU : ((nsmulAddMonoidHom (α := U) n).range.map U.subtype).FiniteIndex := by
     refine ⟨?_⟩
     rw [AddSubgroup.index_map_subtype, hidx]
@@ -275,7 +271,7 @@ theorem finiteIndex_range_nsmul (hn : (n : A) ≠ 0) :
   refine AddSubgroup.finiteIndex_of_le
     (H := (nsmulAddMonoidHom (α := U) n).range.map U.subtype) ?_
   rintro _ ⟨_, ⟨Q, rfl⟩, rfl⟩
-  exact ⟨Q, rfl⟩
+  exact ⟨Q, (AddSubgroup.coe_nsmul _ _ _).symm⟩
 
 /-- **The local Kummer index at a place prime to `n`**: for an elliptic curve over the completion
 at a height-one prime `u` with finite residue field, and an integer `n` prime to `u`,
@@ -290,11 +286,12 @@ theorem index_range_nsmul_eq_natCard_torsionBy (hn : (n : A) ∉ u.asIdeal) :
     ← map_natCast (algebraMap A O_u),
     u.natCard_quotient_span_algebraMap_adicCompletionIntegers hn, mul_one]
 
-/-- **The `n`-primary component of `E(F_u)` is finite** for `n` prime to `u`: the points killed by
-a power of `n` meet the uniquely `n`-divisible kernel of reduction trivially. -/
-theorem finite_primaryComponent (hn : (n : A) ∉ u.asIdeal) :
+/-- **The `n`-primary component of `E(F_u)` is finite** for `n` nonzero in `A`: the points killed
+by a power of `n` meet the subgroup of `WeierstrassCurve.exists_finiteIndex_injective_nsmul`, which
+has finite index and no nonzero `n`-torsion, trivially. -/
+theorem finite_primaryComponent (hn : (n : A) ≠ 0) :
     Finite (AddCommGroup.primaryComponent W.toAffine.Point n) := by
-  obtain ⟨U, _, hbij⟩ := W.exists_finiteIndex_bijective_nsmul u hn
-  exact U.finite_primaryComponent_of_injective hbij.1
+  obtain ⟨U, _, hinj, -⟩ := W.exists_finiteIndex_injective_nsmul u hn
+  exact U.finite_primaryComponent_of_injective hinj
 
 end WeierstrassCurve

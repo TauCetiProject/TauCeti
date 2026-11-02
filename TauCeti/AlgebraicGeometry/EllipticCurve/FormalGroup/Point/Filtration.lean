@@ -180,13 +180,6 @@ private theorem exists_coe_nsmul_eq (n : ℕ) {c : O} (hc : (n : O) ∣ c) :
   rw [hfg, map_mul, aeval_C] at h
   simpa [hf1, coe_nsmul, coe_aeval, ← hP] using h.symm
 
-/-- The value of a series without constant term at a parameter in `𝔪` lies in `𝔪`. -/
-private theorem aeval_mem {s : O} (hs : s ∈ maximalIdeal O) {g : O⟦X⟧}
-    (hg : constantCoeff g = 0) : aeval (hasEval_of_mem hs) g ∈ maximalIdeal O := by
-  obtain ⟨b, hb⟩ := exists_aeval_eq_mul_of_constantCoeff_eq_zero (hasEval_of_mem hs) hg
-  rw [hb]
-  exact Ideal.mul_mem_right b _ hs
-
 /-- The setup shared by `map_nsmul_filtration` and `nsmul_filtration_injective`: if `(n) = 𝔪 ^ e`
 with `e < k`, take for `c` the `(k - 1)`-st power of a uniformizer, which `n` divides. Then
 `𝔪 ^ k = c 𝔪`, `𝔪 ^ (k + e) = n c 𝔪`, and `[n](c s) = n c g(s)` for `s ∈ 𝔪` and a series
@@ -228,7 +221,8 @@ theorem map_nsmul_filtration {n e k : ℕ} (hn : Ideal.span {(n : O)} = maximalI
     rw [SetLike.mem_coe, mem_filtration, hk, Ideal.mem_span_singleton_mul] at hP
     obtain ⟨s, hs, hPs⟩ := hP
     rw [mem_filtration, nsmulAddMonoidHom_apply, hng P hs hPs.symm, hke]
-    exact Ideal.mul_mem_mul (Ideal.mem_span_singleton_self _) (aeval_mem hs hg0)
+    exact Ideal.mul_mem_mul (Ideal.mem_span_singleton_self _)
+      (aeval_mem_of_constantCoeff_eq_zero _ hg0 hs)
   · intro hQ
     rw [mem_filtration, hke, Ideal.mem_span_singleton_mul] at hQ
     obtain ⟨s', hs', hQs⟩ := hQ
@@ -236,7 +230,7 @@ theorem map_nsmul_filtration {n e k : ℕ} (hn : Ideal.span {(n : O)} = maximalI
     set ginv := g.substInvOfIsUnit hg1
     have hginv0 : constantCoeff ginv = 0 := constantCoeff_substInvOfIsUnit _ _
     set s := aeval (hasEval_of_mem hs') ginv
-    have hs : s ∈ maximalIdeal O := aeval_mem hs' hginv0
+    have hs : s ∈ maximalIdeal O := aeval_mem_of_constantCoeff_eq_zero _ hginv0 hs'
     have hgs : aeval (hasEval_of_mem hs) g = s' := by
       have h := congrArg (aeval (R := O) (hasEval_of_mem hs'))
         (subst_substInvOfIsUnit_right g hg0 hg1)
@@ -277,7 +271,8 @@ theorem nsmul_filtration_injective {n e k : ℕ} (hn : Ideal.span {(n : O)} = ma
     exact (mul_eq_zero.mp h).resolve_left hnc0
   -- and `s` is the value of the compositional inverse of `g` at `g(s) = 0`
   have hs0 : s = 0 := by
-    have hgs' : HasEval (aeval (hasEval_of_mem hs) g) := hasEval_of_mem (aeval_mem hs hg0)
+    have hgs' : HasEval (aeval (hasEval_of_mem hs) g) :=
+      hasEval_of_mem (aeval_mem_of_constantCoeff_eq_zero _ hg0 hs)
     have h := congrArg (aeval (R := O) (hasEval_of_mem hs))
       (subst_substInvOfIsUnit_left g hg0 hg1)
     rw [aeval_subst (HasSubst.of_constantCoeff_zero hg0) (continuous_aeval _) hgs',
@@ -294,16 +289,8 @@ theorem index_range_nsmul_filtration {n e k : ℕ}
     (hn : Ideal.span {(n : O)} = maximalIdeal O ^ e) (hek : e < k) :
     (nsmulAddMonoidHom (α := filtration W (maximalIdeal O) k) n).range.index =
       Nat.card (ResidueField O) ^ e := by
-  have hrange : (nsmulAddMonoidHom (α := filtration W (maximalIdeal O) k) n).range =
-      (filtration W (maximalIdeal O) (k + e)).addSubgroupOf (filtration W (maximalIdeal O) k) := by
-    ext P
-    rw [AddSubgroup.mem_addSubgroupOf, ← map_nsmul_filtration hn hek]
-    constructor
-    · rintro ⟨Q, rfl⟩
-      exact ⟨Q, Q.2, rfl⟩
-    · rintro ⟨Q, hQ, hQP⟩
-      exact ⟨⟨Q, hQ⟩, Subtype.ext hQP⟩
-  rw [hrange, ← AddSubgroup.relIndex, relIndex_filtration (by omega) (by omega),
+  rw [← AddSubgroup.addSubgroupOf_map_nsmulAddMonoidHom_eq_range, map_nsmul_filtration hn hek,
+    ← AddSubgroup.relIndex, relIndex_filtration (by omega) (by omega),
     TauCeti.IsDiscreteValuationRing.relIndex_maximalIdeal_pow_add]
 
 end NSMul

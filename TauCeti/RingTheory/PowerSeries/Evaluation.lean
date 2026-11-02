@@ -50,6 +50,8 @@ topologically nilpotent only in the zero ring.
 * `PowerSeries.exists_aeval_eq_mul_of_constantCoeff_eq_zero`,
   `PowerSeries.isTopologicallyNilpotent_aeval_of_constantCoeff_eq_zero`: a series without
   constant term evaluates at `a` to a multiple of `a`, hence to a topologically nilpotent element.
+* `PowerSeries.aeval_mem_of_constantCoeff_eq_zero`: a series without constant term evaluates at a
+  point of an ideal to an element of that ideal.
 * `PowerSeries.aeval_rescale`: the rescaled series `f(r X)` evaluates at `a` to `f(r • a)`.
 * `PowerSeries.divXSubC`: the quotient of a power series on division by `X - C c`, with its
   coefficients `PowerSeries.coeff_divXSubC` and their series expansion
@@ -112,6 +114,13 @@ theorem exists_aeval_eq_mul_of_constantCoeff_eq_zero (ha : HasEval a) {f : R⟦X
     (hf : constantCoeff f = 0) : ∃ c : S, aeval ha f = a * c := by
   obtain ⟨g, rfl⟩ := X_dvd_iff.2 hf
   exact ⟨_, by rw [map_mul, aeval_X]⟩
+
+/-- A power series without constant term evaluates at a point `a` of an ideal `I` to an element
+of `I`. -/
+theorem aeval_mem_of_constantCoeff_eq_zero (ha : HasEval a) {f : R⟦X⟧}
+    (hf : constantCoeff f = 0) {I : Ideal S} (haI : a ∈ I) : aeval ha f ∈ I := by
+  obtain ⟨c, hc⟩ := exists_aeval_eq_mul_of_constantCoeff_eq_zero ha hf
+  exact hc ▸ I.mul_mem_right c haI
 
 /-- A power series without constant term evaluates at a topologically nilpotent `a` to a
 topologically nilpotent element. -/
