@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.AdjoinRoot
+public import TauCeti.RingTheory.AdjoinRoot.Basic
 
 /-!
 # Quadratic AdjoinRoot reduction
