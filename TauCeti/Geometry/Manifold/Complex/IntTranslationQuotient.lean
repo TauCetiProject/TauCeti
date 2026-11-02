@@ -8,8 +8,7 @@ module
 public import Mathlib.Algebra.Ring.Periodic
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Topology.Maps.Proper.Basic
-public import TauCeti.Geometry.Manifold.Instances.Quotient
-public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
+public import TauCeti.Geometry.Manifold.Quotient.Descent
 
 /-!
 # The complex plane modulo integer translations
@@ -47,17 +46,17 @@ scoped instance action : AddAction ℤ ℂ :=
 theorem vadd_eq {n : ℤ} {z : ℂ} : n +ᵥ z = (n : ℂ) + z :=
   (rfl)
 
-instance : ContinuousConstVAdd ℤ ℂ where
+scoped instance : ContinuousConstVAdd ℤ ℂ where
   continuous_const_vadd n := by
     simp only [vadd_eq]
     fun_prop
 
-instance : IsCancelVAdd ℤ ℂ where
+scoped instance : IsCancelVAdd ℤ ℂ where
   left_cancel' _ _ _ h := add_left_cancel h
   right_cancel' _ _ _ h := Int.cast_injective (add_right_cancel h)
 
 /-- Integer translations on the complex plane act properly discontinuously. -/
-instance properlyDiscontinuousVAdd : ProperlyDiscontinuousVAdd ℤ ℂ where
+scoped instance properlyDiscontinuousVAdd : ProperlyDiscontinuousVAdd ℤ ℂ where
   finite_disjoint_inter_image {K L} hK hL := by
     -- The translating integers lie in the compact preimage of `L - K` under the closed
     -- embedding `ℤ → ℂ`. A compact subset of the discrete space `ℤ` is finite.
@@ -68,7 +67,7 @@ instance properlyDiscontinuousVAdd : ProperlyDiscontinuousVAdd ℤ ℂ where
     exact ⟨((n : ℂ) + z, z), ⟨hw, hz⟩, by simp⟩
 
 /-- Integer translations are complex analytic, not merely real smooth. -/
-instance contMDiffConstVAdd (n : ℕ∞ω) : ContMDiffConstVAdd 𝓘(ℂ) n ℤ ℂ where
+scoped instance contMDiffConstVAdd (n : ℕ∞ω) : ContMDiffConstVAdd 𝓘(ℂ) n ℤ ℂ where
   contMDiff_const_vadd m := by
     simpa only [vadd_eq, id_eq] using (contDiff_const.add contDiff_id).contMDiff
 
@@ -87,35 +86,53 @@ theorem isLocalDiffeomorph_quotientMk (n : ℕ∞ω) :
     IsLocalDiffeomorph 𝓘(ℂ) 𝓘(ℂ) n (Quotient.mk (AddAction.orbitRel ℤ ℂ)) :=
   TauCeti.isLocalDiffeomorph_addQuotientMk
 
+end TauCeti.ComplexIntTranslation
+
+open scoped TauCeti.ComplexIntTranslation
+
+namespace Function.Periodic
+
+variable {N : Type*} {f : ℂ → N}
+
+/-- The descent of a period-one map to the complex integer-translation quotient. -/
+def liftIntTranslationQuotient (hf : Periodic f 1) : AddAction.orbitRel.Quotient ℤ ℂ → N :=
+  TauCeti.AddAction.orbitRelQuotientLift f fun m z ↦ by
+    simpa [TauCeti.ComplexIntTranslation.vadd_eq, add_comm] using hf.int_mul m z
+
+/-- The descent takes the orbit of `z` to `f z`. -/
+@[simp]
+theorem liftIntTranslationQuotient_mk (hf : Periodic f 1) (z : ℂ) :
+    hf.liftIntTranslationQuotient (Quotient.mk _ z) = f z :=
+  TauCeti.AddAction.orbitRelQuotientLift_mk z
+
+/-- A map on the quotient equals the period-one descent exactly when its pullback is `f`. -/
+theorem eq_liftIntTranslationQuotient_iff (hf : Periodic f 1)
+    {g : AddAction.orbitRel.Quotient ℤ ℂ → N} :
+    g = hf.liftIntTranslationQuotient ↔ g ∘ Quotient.mk (AddAction.orbitRel ℤ ℂ) = f :=
+  TauCeti.AddAction.eq_orbitRelQuotientLift_iff
+
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℂ E H} [TopologicalSpace N] [ChartedSpace H N] {n : ℕ∞ω}
+
+/-- The period-one descent is `C^n` exactly when the original map is `C^n`. -/
+theorem contMDiff_liftIntTranslationQuotient_iff (hf : Periodic f 1) :
+    ContMDiff 𝓘(ℂ) I n hf.liftIntTranslationQuotient ↔ ContMDiff 𝓘(ℂ) I n f :=
+  TauCeti.contMDiff_addOrbitRelQuotientLift_iff (n := n) le_rfl
+
 /-- A period-one map on the complex plane descends uniquely to a `C^n` map on the
 integer-translation quotient exactly when it is `C^n` over `ℂ`. At `n = ∞` this is the
 holomorphic descent property. No separation or manifold hypothesis on the codomain is needed. -/
-theorem _root_.Function.Periodic.existsUnique_contMDiff_intTranslationQuotient_iff
-    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
-    {N : Type*} [TopologicalSpace N] [ChartedSpace E N]
-    {n : ℕ∞ω} {f : ℂ → N} (hf : Function.Periodic f 1) :
+theorem existsUnique_contMDiff_intTranslationQuotient_iff (hf : Periodic f 1) :
     (∃! g : AddAction.orbitRel.Quotient ℤ ℂ → N,
-      ContMDiff 𝓘(ℂ) 𝓘(ℂ, E) n g ∧ ∀ z, g (Quotient.mk _ z) = f z) ↔
-      ContMDiff 𝓘(ℂ) 𝓘(ℂ, E) n f := by
+      ContMDiff 𝓘(ℂ) I n g ∧ ∀ z, g (Quotient.mk _ z) = f z) ↔
+      ContMDiff 𝓘(ℂ) I n f := by
   constructor
   · rintro ⟨g, ⟨hg, hgf⟩, _⟩
-    have hcomp := hg.comp (isLocalDiffeomorph_quotientMk n).contMDiff
-    simpa only [Function.comp_def, hgf] using hcomp
-  intro hf'
-  have hinv : ∀ (m : ℤ) (z : ℂ), f (m +ᵥ z) = f z := by
-    intro m z
-    simpa [add_comm] using hf.int_mul m z
-  let g : AddAction.orbitRel.Quotient ℤ ℂ → N := Quotient.lift f <| by
-    rintro _ z ⟨m, rfl⟩
-    exact hinv m z
-  have hg (z : ℂ) : g (Quotient.mk _ z) = f z := rfl
-  refine ⟨g, ⟨?_, hg⟩, ?_⟩
-  · apply ((isLocalDiffeomorph_quotientMk n).contMDiff_comp_iff
-      Quotient.mk_surjective le_rfl).1
-    simpa only [Function.comp_def, hg] using hf'
-  · intro g' hg'
-    funext q
-    obtain ⟨z, rfl⟩ := Quotient.mk_surjective q
-    exact (hg'.2 z).trans (hg z).symm
+    rw [← hf.contMDiff_liftIntTranslationQuotient_iff]
+    rwa [← hf.eq_liftIntTranslationQuotient_iff.mpr (funext hgf)]
+  · intro h
+    exact ⟨hf.liftIntTranslationQuotient,
+      ⟨hf.contMDiff_liftIntTranslationQuotient_iff.mpr h, hf.liftIntTranslationQuotient_mk⟩,
+      fun g hg ↦ hf.eq_liftIntTranslationQuotient_iff.mpr (funext hg.2)⟩
 
-end TauCeti.ComplexIntTranslation
+end Function.Periodic
