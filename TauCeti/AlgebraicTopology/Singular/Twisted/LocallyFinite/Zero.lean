@@ -33,7 +33,7 @@ ray gives a coefficient `m i k` in the fibre at `z i k`. The singular `1`-simple
 carrying `-m i k` has boundary `[z i k] m i k - [z i (k + 1)] m i (k + 1)`
 (`TauCeti.LocalCoefficientSystem.d_ιTwistedChainComplex_simplex₁_apply`). These chains lie on the
 locally finite family of path images, so their sum is locally finite, and its boundary is the sum
-of their boundaries (`locallyFiniteBoundaryFun_locallyFiniteSumFun`), which telescopes along each
+of their boundaries (`locallyFiniteBoundary_locallyFiniteSum`), which telescopes along each
 ray to `[p i] c i`.
 
 ## Main results
@@ -71,6 +71,23 @@ private def rayTransport {z : ℕ → X} (q : ∀ k, Path (z k) (z (k + 1))) (k 
   | 0 => 𝟙 _
   | k + 1 => rayTransport q k ≫ Path.Homotopic.Quotient.mk (q k)
 
+/-- A finitely supported family indexed by rays `S × ℕ` telescopes along each ray to its value at
+the start of the ray. -/
+private lemma finsum_sub_add_one_prod {S M : Type*} [AddCommGroup M] {f : S × ℕ → M}
+    (hf : (Function.support f).Finite) :
+    ∑ᶠ ik, (f ik - f (ik.1, ik.2 + 1)) = ∑ᶠ i, f (i, 0) := by
+  have hf' : (Function.support fun ik : S × ℕ ↦ f (ik.1, ik.2 + 1)).Finite :=
+    hf.preimage (f := fun ik : S × ℕ ↦ (ik.1, ik.2 + 1)) fun a _ b _ h ↦ by
+      simpa [Prod.ext_iff] using h
+  rw [finsum_curry _ ((hf.union hf').subset (Function.support_sub _ _))]
+  exact finsum_congr fun i ↦ finsum_sub_add_one (hf.preimage (Prod.mk_right_injective i).injOn)
+
+/-- A chain supported on a single simplex `τ` only has a nonzero coefficient on `τ`. -/
+private lemma eq_of_twistedChainComplexCoeff_ιTwistedChainComplex_ne_zero {k : ℕ}
+    {σ τ : (TopCat.toSSet.obj X) _⦋k⦌} {m : L.obj (initialVertex τ)}
+    (h : (twistedChainComplexCoeff L σ).hom ((ιTwistedChainComplex L k τ).hom m) ≠ 0) : τ = σ :=
+  by_contra fun hne ↦ h (twistedChainComplexCoeff_ιTwistedChainComplex_apply_of_ne L hne _)
+
 variable [T2Space X] [WeaklyLocallyCompactSpace X] [LocallyPathConnectedSpace X]
   [SigmaCompactSpace X]
 
@@ -104,54 +121,32 @@ theorem locallyFiniteBoundary_zero_surjective
   let y : S × ℕ → (twistedChainComplex L).X 1 := fun ik ↦
     (ιTwistedChainComplex L 1 (simplex₁ (q ik.1 ik.2).toContinuousMap)).hom
       ((L.map (eqToHom (initialVertex_simplex₁ (q ik.1 ik.2)).symm)).hom (-m ik.1 ik.2))
+  have hm (i : S) (k : ℕ) :
+      m i (k + 1) = (L.map (Path.Homotopic.Quotient.mk (q i k))).hom (m i k) := by
+    simp only [m, rayTransport, Functor.map_comp, ModuleCat.hom_comp, LinearMap.comp_apply]
   have hdy (ik : S × ℕ) :
       ((twistedChainComplex L).d 1 0).hom (y ik) = e ik - e (ik.1, ik.2 + 1) := by
-    simp only [y, e, map_neg, d_ιTwistedChainComplex_simplex₁_apply, neg_sub]
-    congr 2
-    simp [m, rayTransport]
-    -- Both sides are the same transport; they differ only in how the intermediate fibre objects
-    -- of the composite are written.
-    rfl
+    simp only [y, e, map_neg, d_ιTwistedChainComplex_simplex₁_apply, neg_sub, hm]
   have hy (ik : S × ℕ) σ (hσ : (twistedChainComplexCoeff L σ).hom (y ik) ≠ 0) :
       Set.range (simplexMap σ) ⊆ Set.range (q ik.1 ik.2) := by
-    obtain rfl : _ = σ := by_contra fun hne ↦
-      hσ (twistedChainComplexCoeff_ιTwistedChainComplex_apply_of_ne L hne _)
+    obtain rfl := eq_of_twistedChainComplexCoeff_ιTwistedChainComplex_ne_zero L hσ
     rintro _ ⟨p, rfl⟩
     -- `simplexMap` evaluates the singular simplex at the unlifted point.
     exact ⟨_, (congr($(toSSetObjEquiv_simplex₁ _) p.down)).symm⟩
   have he (ik : S × ℕ) σ (hσ : (twistedChainComplexCoeff L σ).hom (e ik) ≠ 0) :
       Set.range (simplexMap σ) ⊆ Set.range (q ik.1 ik.2) := by
-    obtain rfl : _ = σ := by_contra fun hne ↦
-      hσ (twistedChainComplexCoeff_ιTwistedChainComplex_apply_of_ne L hne _)
+    obtain rfl := eq_of_twistedChainComplexCoeff_ιTwistedChainComplex_ne_zero L hσ
     rintro _ ⟨_, rfl⟩
     exact ⟨0, (q ik.1 ik.2).source⟩
-  have he' (ik : S × ℕ) σ (hσ : (twistedChainComplexCoeff L σ).hom (e (ik.1, ik.2 + 1)) ≠ 0) :
-      Set.range (simplexMap σ) ⊆ Set.range (q ik.1 ik.2) := by
-    obtain rfl : _ = σ := by_contra fun hne ↦
-      hσ (twistedChainComplexCoeff_ιTwistedChainComplex_apply_of_ne L hne _)
-    rintro _ ⟨_, rfl⟩
-    exact ⟨1, (q ik.1 ik.2).target⟩
-  refine ⟨⟨locallyFiniteSumFun y,
-    mem_locallyFiniteChains.2 (isLocallyFiniteChain_locallyFiniteSumFun hq hy)⟩,
-    Subtype.ext (funext fun ρ ↦ ?_)⟩
-  rw [coe_locallyFiniteBoundary, locallyFiniteBoundaryFun_locallyFiniteSumFun hq hy,
-    locallyFiniteSumFun_apply]
-  -- Along each ray the coefficients on `ρ` of the boundaries telescope to that of its start.
-  set f : S × ℕ → L.obj (initialVertex ρ) := fun ik ↦ (twistedChainComplexCoeff L ρ).hom (e ik)
-  have hf := finite_setOf_twistedChainComplexCoeff_ne_zero hq he ρ
-  have hf' := finite_setOf_twistedChainComplexCoeff_ne_zero hq he' ρ
-  have hS0 (i : S) : f (i, 0) = (twistedChainComplexCoeff L ρ).hom
-      ((ιTwistedChainComplex L 0 i.1).hom (c i.1)) := by
-    simp only [f, e, m, rayTransport, Category.comp_id]
+  have he0 (i : S) : e (i, 0) = (ιTwistedChainComplex L 0 i.1).hom (c i.1) := by
+    simp only [e, m, rayTransport, Category.comp_id]
     rw [ιTwistedChainComplex_zero_apply_eq_toSSetObj₀Equiv_symm L i.1 (hz0 i).symm]
+  refine ⟨locallyFiniteSum hq hy, Subtype.ext (funext fun ρ ↦ ?_)⟩
+  -- Along each ray the coefficients on `ρ` of the boundaries telescope to that of its start.
+  rw [locallyFiniteBoundary_locallyFiniteSum, coe_locallyFiniteSum, locallyFiniteSumFun_apply]
   simp_rw [hdy, map_sub]
-  rw [finsum_curry _ ((hf.union hf').subset fun ik hik ↦ by
-      by_contra h
-      simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_not] at h
-      exact hik (by simp [h.1, h.2]))]
-  rw [finsum_congr fun i ↦ finsum_sub_add_one (f := fun k ↦ f (i, k))
-    (hf.preimage (Prod.mk_right_injective i).injOn)]
-  simp_rw [hS0]
+  rw [finsum_sub_add_one_prod (finite_setOf_twistedChainComplexCoeff_ne_zero hq he ρ)]
+  simp_rw [he0]
   by_cases hρ : c ρ = 0
   · rw [hρ, finsum_eq_zero_of_forall_eq_zero fun i ↦
       twistedChainComplexCoeff_ιTwistedChainComplex_apply_of_ne L

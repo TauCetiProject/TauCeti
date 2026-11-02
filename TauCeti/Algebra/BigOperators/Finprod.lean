@@ -17,8 +17,8 @@ import Mathlib.Algebra.Order.BigOperators.GroupWithZero.Finset
 both index types to be finite.  This file records the `finprod` analogue, which only needs the two
 restricted families to have finite multiplicative support. Regrouping by the fibers of an
 arbitrary map is also available, without finiteness assumptions on the fibers, as is cancelling a
-finitely supported factor whose product is `1`. A finitely supported telescoping product over `ℕ`
-collapses to its first factor. Shifting the index of an alternating product over
+finitely supported factor whose product is `1`. A finitely supported telescoping product
+`∏ᶠ i : ℕ, f i / f (i + 1)` equals `f 0`. Shifting the index of an alternating product over
 `ℤ` by one inverts it, so multiplying each factor `f j` by `δ (j + 1) * δ j` does not change the
 product; this is how changes of boundary bases cancel in Reidemeister torsion.
 A sum weighted by a finitely supported family of scalars, such as the translates of a cutoff
@@ -160,10 +160,10 @@ theorem finprod_mem_eq_prod_filter_of_mulSupport_subset (f : α → M) (s : Set 
     simp only [mem_inter_iff, Finset.coe_filter, mem_ofPred_eq]
     exact ⟨fun h ↦ ⟨⟨ht h.2, h.1⟩, h.2⟩, fun h ↦ ⟨h.1.2, h.2⟩⟩
 
-/-- A finitely supported telescoping product over `ℕ` is its first factor: the factors
+/-- A finitely supported telescoping product over `ℕ` equals `f 0`: the factors
 `f i / f (i + 1)` multiply to `f 0`. This is the `finprod` analogue of `Finset.prod_range_div'`. -/
-@[to_additive finsum_sub_add_one /-- A finitely supported telescoping sum over `ℕ` is its first
-term: the terms `f i - f (i + 1)` add up to `f 0`. This is the `finsum` analogue of
+@[to_additive finsum_sub_add_one /-- A finitely supported telescoping sum over `ℕ` equals
+`f 0`: the terms `f i - f (i + 1)` add up to `f 0`. This is the `finsum` analogue of
 `Finset.sum_range_sub'`. -/]
 theorem finprod_div_add_one {G : Type*} [CommGroup G] {f : ℕ → G} (hf : HasFiniteMulSupport f) :
     ∏ᶠ i, f i / f (i + 1) = f 0 := by

@@ -63,6 +63,15 @@ theorem ιTwistedHomology₀_def (x : X) :
         (twistedChainComplex L).pOpcycles 0 ≫ (twistedChainComplex L).isoHomologyι₀.inv :=
   (rfl)
 
+/-- The class of a coefficient `v` in the fibre at `x` is the image in zeroth homology of the
+chain `v` on the zero-simplex `TopCat.toSSetObj₀Equiv.symm x`, which is the point simplex at `x`
+used to define `ιTwistedHomology₀`. -/
+private lemma ιTwistedHomology₀_apply (x : X) (v : L.obj (FundamentalGroupoid.mk x)) :
+    (ιTwistedHomology₀ L x).hom v = (twistedChainComplex L).isoHomologyι₀.inv.hom
+      (((twistedChainComplex L).pOpcycles 0).hom
+        ((ιTwistedChainComplex L 0 (TopCat.toSSetObj₀Equiv.symm x)).hom v)) :=
+  (rfl)
+
 /-- A zero-simplex represents the class of its coefficient in the fibre at its vertex. -/
 @[reassoc]
 lemma ιTwistedChainComplex_pOpcycles_zero (σ : (TopCat.toSSet.obj X) _⦋0⦌) :
@@ -224,7 +233,7 @@ lemma d_ιTwistedChainComplex_simplex₁_apply {x y : X} (γ : Path x y)
         eqToHom (congrArg FundamentalGroupoid.mk h₁) = 𝟙 _ := by
     rw [edgeTransport_one]
     simp
-  simp only [edgeTransport, Category.assoc] at he₀ he₁
+  simp only [edgeTransport, SimplicialObject.δ, Category.assoc] at he₀ he₁
   have hmap {a b c : FundamentalGroupoid X} (f : a ⟶ b) (g : b ⟶ c) (v : L.obj a) :
       (L.map g).hom ((L.map f).hom v) = (L.map (f ≫ g)).hom v := by
     simp
@@ -232,10 +241,8 @@ lemma d_ιTwistedChainComplex_simplex₁_apply {x y : X} (γ : Path x y)
     ιTwistedChainComplex_zero_apply_eq_toSSetObj₀Equiv_symm L _ h₀,
     ιTwistedChainComplex_zero_apply_eq_toSSetObj₀Equiv_symm L _ h₁, hmap, hmap, hmap, hmap,
     ← eqToHom_trans (initialVertex_zero _) (congrArg FundamentalGroupoid.mk h₀),
-    ← eqToHom_trans (initialVertex_zero _) (congrArg FundamentalGroupoid.mk h₁)]
-  -- The face objects in `he₀` and `he₁` are written with `SimplicialObject.δ`, which unfolds to
-  -- the reindexing `map (δ i).op` appearing in the boundary formula.
-  erw [he₀, he₁, L.map_id]
+    ← eqToHom_trans (initialVertex_zero _) (congrArg FundamentalGroupoid.mk h₁), he₀, he₁,
+    L.map_id]
   simp [sub_eq_add_neg]
 
 /-- Parallel transport along a path identifies the corresponding fibre classes in zeroth
@@ -253,9 +260,9 @@ lemma map_ιTwistedHomology₀ {x y : FundamentalGroupoid X} (p : x ⟶ y) :
       simp
     rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp, hd, map_sub, ModuleCat.hom_zero,
       LinearMap.zero_apply, eq_comm, sub_eq_zero] at h
-    -- `ιTwistedHomology₀` is the class of the point simplex, which is `toSSetObj₀Equiv.symm`
-    -- of the point by definition.
-    exact h
+    rw [ModuleCat.hom_comp, LinearMap.comp_apply, ιTwistedHomology₀_apply,
+      ιTwistedHomology₀_apply]
+    simpa only [ModuleCat.hom_comp, LinearMap.comp_apply] using h
 
 /-- On a path-connected space, every twisted zeroth-homology class comes from any chosen fibre. -/
 instance epi_ιTwistedHomology₀ [PathConnectedSpace X] (x : X) :
