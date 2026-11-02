@@ -220,9 +220,7 @@ instance instIsTriangularizableCartan : IsTriangularizable K H M where
   maxGenEigenspace_eq_top x := by
     let f : H.root → End K M := fun α ↦ toEnd K H M (IsKilling.coroot α)
     have hdiag (α : H.root) : ⨆ μ : K, (f α).eigenspace μ = ⊤ := by
-      have hα : (α : Weight K H L).IsNonZero := by
-        simpa only [LieSubalgebra.root, Finset.mem_filter, Finset.mem_univ, true_and] using α.2
-      exact iSup_eigenspace_toEnd_coroot_eq_top hα
+      exact iSup_eigenspace_toEnd_coroot_eq_top (H.isNonZero_coe_root α)
     have hss (α : H.root) := (isSemisimple_toEnd_coroot (M := M) α.1).isFinitelySemisimple
     have hcomm : Pairwise fun α β ↦ Commute (f α) (f β) := fun α β _ ↦
       commute_toEnd_cartan _ _
