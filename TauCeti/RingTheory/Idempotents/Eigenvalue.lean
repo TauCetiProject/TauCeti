@@ -20,8 +20,9 @@ requiring finite-dimensionality or a simultaneous eigenspace decomposition.
 
 ## Main results
 
-* `Finset.sum_smul_smul_eq_smul_smul`: each member of a pairwise commuting family maps an
-  eigenvector of the family's sum to another eigenvector with the same eigenvalue.
+* `Finset.sum_smul_smul_eq_smul_smul`: each member of a pairwise commuting family preserves the
+  eigenvalue equation of the family's sum: if the sum scales `x` by `μ`, it scales `p a • x` by
+  `μ`. The vector `p a • x` may be zero.
 * `Finset.exists_eq_natCast_of_sum_smul_eq_smul`: an eigenvalue of a finite sum of
   commuting idempotents is a bounded natural-number cast.
 * `Finset.sum_smul_eq_card_smul_iff`: in characteristic zero, that sum acts on a vector by the
@@ -66,8 +67,8 @@ theorem exists_eq_natCast_of_sum_smul_eq_smul
     have hpa := hp a (mem_insert_self a s)
     have hp_s : ∀ i ∈ s, IsIdempotentElem (p i) := fun i hi => hp i (mem_insert_of_mem hi)
     have hcomm_s : (s : Set ι).Pairwise fun i j => Commute (p i) (p j) := hcomm.mono (by simp)
-    -- `p a • x` is an eigenvector of the whole sum with eigenvalue `μ`. The idempotent `p a` fixes
-    -- it, so the sum over `s` scales it by `μ - 1`.
+    -- The whole sum scales `p a • x` by `μ`. The idempotent `p a` fixes `p a • x`, so the sum
+    -- over `s` scales it by `μ - 1`.
     have hpx_eigen := sum_smul_smul_eq_smul_smul _ p hcomm (mem_insert_self a s) heigen
     rw [sum_insert ha, add_smul, smul_smul (p a) (p a), hpa.eq] at hpx_eigen
     rw [sum_insert ha, add_smul] at heigen
