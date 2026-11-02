@@ -130,6 +130,14 @@ theorem freeCumulant_update_add {i : α} (hi : i ∈ s) (x y : A) :
       freeCumulant φ (update a i x) s + freeCumulant φ (update a i y) s := by
   simp only [freeCumulant_def, partitionCumulant_update_add φ a _ hi]
 
+/-- A free cumulant for an additive map vanishes if one of its letters is zero. -/
+theorem freeCumulant_eq_zero_of_apply_eq_zero {i : α} (hai : a i = 0) (hi : i ∈ s) :
+    freeCumulant φ a s = 0 := by
+  classical
+  have he : update a i 0 = a := update_eq_self_iff.2 hai.symm
+  have h := freeCumulant_update_add φ a hi 0 0
+  exact add_eq_left.mp (by simpa only [add_zero, he] using h.symm)
+
 end Additive
 
 section Homogeneous
@@ -149,14 +157,6 @@ theorem partitionCumulant_update_smul (π : NoncrossingPartition s) {i : α} (hi
 theorem freeCumulant_update_smul {i : α} (hi : i ∈ s) (c : R) (x : A) :
     freeCumulant φ (update a i (c • x)) s = c * freeCumulant φ (update a i x) s := by
   simp only [freeCumulant_def, partitionCumulant_update_smul φ a _ hi]
-
-/-- A free cumulant vanishes if one of its letters is zero. -/
-theorem freeCumulant_eq_zero_of_apply_eq_zero {i : α} (hai : a i = 0) (hi : i ∈ s) :
-    freeCumulant φ a s = 0 := by
-  classical
-  have he : update a i 0 = a := update_eq_self_iff.2 hai.symm
-  simpa only [zero_smul, he, update_eq_self, zero_mul] using
-    freeCumulant_update_smul φ a hi (0 : R) (a i)
 
 /-- For a normalised `φ`, a free cumulant of order at least two is unchanged by adding scalar
 multiples of `1` to its arguments: `κ_s(a + c • 1) = κ_s(a)` when `φ 1 = 1` and `#s ≥ 2`. In
