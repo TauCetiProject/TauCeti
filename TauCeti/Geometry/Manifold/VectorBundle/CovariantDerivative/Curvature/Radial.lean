@@ -19,8 +19,10 @@ import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Vect
 Let `F` be a finite-dimensional real inner product space of dimension `N`. In polar coordinates
 `y = e^s u`, the Euclidean metric is `e^(2 s) (ds² + g_(S^(N - 1)))`, so the metric
 `e^(2 w(s)) (ds² + g_(S^(N - 1)))` is the Euclidean metric multiplied by `e^(2 φ)` with the radial
-exponent `φ(z) = w(log ‖z‖) - log ‖z‖`. This file computes the Laplacian and the gradient of that
-exponent, and from them, by the conformal change of scalar curvature, the scalar curvature
+exponent `φ(z) = w(log ‖z‖) - log ‖z‖`. From the Laplacian and the gradient of that exponent
+(`TauCeti.laplacian_comp_log_norm_sub_log_norm` and
+`TauCeti.norm_gradient_comp_log_norm_sub_log_norm`), the conformal change of scalar curvature gives
+the scalar curvature
 
 `(N - 1) e^(-2 w(s)) ((N - 2) (1 - w'(s)²) - 2 w''(s))`
 
@@ -28,9 +30,6 @@ away from the origin.
 
 ## Main results
 
-* `TauCeti.laplacian_comp_log_norm_sub_log_norm`: the Laplacian of `w(log ‖z‖) - log ‖z‖`.
-* `TauCeti.norm_gradient_comp_log_norm_sub_log_norm`: the norm of the gradient of
-  `w(log ‖z‖) - log ‖z‖`.
 * `TauCeti.scalarCurvature_rescale_exp_radial`: the scalar curvature of the Euclidean metric
   multiplied by `e^(2 (w(log ‖y‖) - log ‖y‖))`, away from the origin.
 -/
@@ -45,42 +44,6 @@ open scoped ContDiff Manifold Topology Gradient
 namespace TauCeti
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
-
-/-- The Laplacian of the radial function `w(log ‖z‖) - log ‖z‖` on a real inner product space of
-dimension `N`, at a point `y ≠ 0` with `s = log ‖y‖` where `w` is `C²`, is
-`(w''(s) + (w'(s) - 1) (N - 2)) / ‖y‖²`. -/
-theorem laplacian_comp_log_norm_sub_log_norm {w : ℝ → ℝ} {y : F} (hy : y ≠ 0)
-    (hw : ContDiffAt ℝ 2 w (log ‖y‖)) :
-    Δ (fun z : F ↦ w (log ‖z‖) - log ‖z‖) y =
-      (deriv (deriv w) (log ‖y‖) + (deriv w (log ‖y‖) - 1) * (finrank ℝ F - 2)) / ‖y‖ ^ 2 := by
-  have hlog : ContDiffAt ℝ 2 (fun z : F ↦ log ‖z‖) y :=
-    (contDiffAt_log.2 (norm_ne_zero_iff.2 hy)).comp y (contDiffAt_norm ℝ hy)
-  have hψ : ContDiffAt ℝ 2 (fun s ↦ w s - s) (log ‖y‖) := hw.sub contDiffAt_id
-  have hderiv : deriv (fun s ↦ w s - s) =ᶠ[𝓝 (log ‖y‖)] fun s ↦ deriv w s - 1 := by
-    filter_upwards [hw.eventually (by simp)] with s hs
-    exact ((hs.differentiableAt (by simp)).hasDerivAt.sub (hasDerivAt_id s)).deriv
-  -- The function is the composition `ψ ∘ log ‖·‖` with `ψ s = w s - s`, the form matched by the
-  -- chain rule `ContDiffAt.laplacian_comp`.
-  change Δ ((fun s ↦ w s - s) ∘ fun z : F ↦ log ‖z‖) y = _
-  rw [ContDiffAt.laplacian_comp (q := fun z : F ↦ log ‖z‖) hψ hlog, hderiv.deriv_eq,
-    hderiv.eq_of_nhds, deriv_sub_const, laplacian_log_norm_of_ne hy, norm_gradient_eq_norm_fderiv,
-    norm_fderiv_log_norm_of_ne hy]
-  field_simp
-
-/-- The norm of the gradient of the radial function `w(log ‖z‖) - log ‖z‖` at a point `y ≠ 0` where
-`w` is differentiable at `s = log ‖y‖` is `|w'(s) - 1| / ‖y‖`. -/
-theorem norm_gradient_comp_log_norm_sub_log_norm {w : ℝ → ℝ} {y : F} (hy : y ≠ 0)
-    (hw : DifferentiableAt ℝ w (log ‖y‖)) :
-    ‖∇ (fun z : F ↦ w (log ‖z‖) - log ‖z‖) y‖ = |deriv w (log ‖y‖) - 1| * ‖y‖⁻¹ := by
-  have hd : HasFDerivAt ((fun s ↦ w s - s) ∘ fun z : F ↦ log ‖z‖)
-      ((deriv w (log ‖y‖) - 1) • fderiv ℝ (fun z : F ↦ log ‖z‖) y) y :=
-    (hw.hasDerivAt.sub (hasDerivAt_id _)).comp_hasFDerivAt y
-      (hasFDerivAt_log_norm_of_ne hy).differentiableAt.hasFDerivAt
-  -- As in `TauCeti.laplacian_comp_log_norm_sub_log_norm`, the function is the composition
-  -- `ψ ∘ log ‖·‖` with `ψ s = w s - s`.
-  rw [show (fun z : F ↦ w (log ‖z‖) - log ‖z‖) = (fun s ↦ w s - s) ∘ fun z : F ↦ log ‖z‖ from rfl,
-    norm_gradient_eq_norm_fderiv, hd.fderiv, norm_smul, norm_fderiv_log_norm_of_ne hy,
-    Real.norm_eq_abs]
 
 /-- **Scalar curvature of a radial conformal metric.** Let `φ` be a smooth function on a real inner
 product space of dimension `N` which, near a point `y ≠ 0`, is `w(log ‖z‖) - log ‖z‖` for a

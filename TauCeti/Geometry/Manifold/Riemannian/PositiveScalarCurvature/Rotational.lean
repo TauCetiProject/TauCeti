@@ -10,7 +10,8 @@ public import TauCeti.Geometry.Manifold.Riemannian.PositiveScalarCurvature.Conco
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Conformal
 import Mathlib.Analysis.InnerProductSpace.Calculus
-import Mathlib.Analysis.SpecialFunctions.SmoothTransition
+import TauCeti.Analysis.InnerProductSpace.NormPow
+import TauCeti.Geometry.Manifold.MFDeriv.Prod
 import TauCeti.Geometry.Manifold.Riemannian.Isometry.Pullback
 import TauCeti.Geometry.Manifold.Riemannian.Isometry.Restriction
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Radial
@@ -119,35 +120,6 @@ theorem rotationalMetric_inner {w : ℝ → ℝ} (hw : ContDiff ℝ ∞ w) (p : 
       exp (2 * w p.2) * ((sphereRoundMetric (E := V)).ofLE le_top).cylinder.inner p v v' := by
   rw [rotationalMetric, ContMDiffRiemannianMetric.rescale_inner]
 
-omit [Fact (finrank ℝ V = n + 1)] in
-/-- For a smooth `w` and every `c`, there is a smooth function on `V` equal to the radial
-conformal exponent `w(log ‖z‖) - log ‖z‖` of `e^(2 w(t)) (g_(Sⁿ) + dt²)` where `‖z‖ > e^c`. The
-exponent itself is singular at the origin; it is cut off below `log ‖z‖ = c - 1`. -/
-private theorem exists_contDiff_eq_radial {w : ℝ → ℝ} (hw : ContDiff ℝ ∞ w) (c : ℝ) :
-    ∃ φ : V → ℝ, ContDiff ℝ ∞ φ ∧ ∀ z : V, exp c < ‖z‖ → φ z = w (log ‖z‖) - log ‖z‖ := by
-  classical
-  set ψ : ℝ → ℝ := fun s ↦ smoothTransition (s - c + 1) * (w s - s)
-  have hψ : ContDiff ℝ ∞ ψ := (smoothTransition.contDiff.comp
-    ((contDiff_id.sub contDiff_const).add contDiff_const)).mul (hw.sub contDiff_id)
-  refine ⟨fun z ↦ if z = 0 then 0 else ψ (log ‖z‖), ?_, fun z hz ↦ ?_⟩
-  · refine contDiff_iff_contDiffAt.2 fun z ↦ ?_
-    rcases eq_or_ne z 0 with rfl | hz
-    · -- Near the origin `log ‖x‖ < c - 1`, where the cutoff vanishes.
-      refine contDiffAt_const (c := (0 : ℝ)).congr_of_eventuallyEq ?_
-      filter_upwards [ball_mem_nhds (0 : V) (exp_pos (c - 1))] with x hx
-      rcases eq_or_ne x 0 with rfl | hx₀
-      · simp
-      have hlog : log ‖x‖ ≤ c - 1 :=
-        ((log_lt_iff_lt_exp (norm_pos_iff.2 hx₀)).2 (mem_ball_zero_iff.1 hx)).le
-      simp [hx₀, ψ, smoothTransition.zero_of_nonpos (by linarith : log ‖x‖ - c + 1 ≤ 0)]
-    · refine (hψ.contDiffAt.comp z ((contDiffAt_log.2 (norm_ne_zero_iff.2 hz)).comp z
-        (contDiffAt_norm ℝ hz))).congr_of_eventuallyEq ?_
-      filter_upwards [isOpen_ne.mem_nhds hz] with x hx
-      simp [hx]
-  · have hz₀ : z ≠ 0 := norm_pos_iff.1 ((exp_pos _).trans hz)
-    have hlog : c < log ‖z‖ := (lt_log_iff_exp_lt (norm_pos_iff.2 hz₀)).2 hz
-    simp [hz₀, ψ, smoothTransition.one_of_one_le (by linarith : 1 ≤ log ‖z‖ - c + 1)]
-
 /-- **Scalar curvature of a rotationally symmetric metric.** The metric
 `e^(2 w(t)) (g_(Sⁿ) + dt²)` on `Sⁿ × ℝ` has scalar curvature
 `n e^(-2 w(t)) ((n - 1) (1 - w'(t)²) - 2 w''(t))` at `(u, t)`. -/
@@ -158,7 +130,7 @@ theorem scalarCurvature_rotationalMetric {w : ℝ → ℝ} (hw : ContDiff ℝ �
   have : FiniteDimensional ℝ V := .of_fact_finrank_eq_succ n
   -- Near `p`, the metric is the pullback along polar coordinates `P` of the Euclidean metric
   -- multiplied by `e^(2 φ)`, with `φ` the radial exponent of `w`, cut off near the origin.
-  obtain ⟨φ, hφ, hφw⟩ := exists_contDiff_eq_radial (V := V) hw (p.2 - 1)
+  obtain ⟨φ, hφ, hφw⟩ := exists_contDiff_eq_comp_log_norm_sub_log_norm (E := V) hw (p.2 - 1)
   set G := ((riemannianMetricVectorSpace V).ofLE le_top).rescale (fun z ↦ exp (2 * φ z))
     (contDiff_const.mul hφ).exp.contMDiff fun _ ↦ exp_pos _
   set P : sphere (0 : V) 1 × ℝ → V := fun q ↦ exp q.2 • (q.1 : V)
@@ -222,9 +194,12 @@ theorem inner_mvfderiv_smul_coe_sphere_add_mul_mvfderiv {r h θ : ℝ → ℝ} (
       (rotationalMetric (n := n) V (hr.log fun t ↦ (hr_pos t).ne')).inner p v v' := by
   have hexp : exp (2 * log (r p.2)) = r p.2 ^ 2 := by
     rw [mul_comm, exp_mul, exp_log (hr_pos p.2), rpow_two]
-  rw [inner_mvfderiv_smul_coe_sphere p hr'.differentiableAt,
-    mvfderiv_comp_snd_sphere_apply p hh'.differentiableAt,
-    mvfderiv_comp_snd_sphere_apply p hh'.differentiableAt, rotationalMetric_inner,
+  have hh (x : TangentSpace ((𝓡 n).prod 𝓘(ℝ)) p) :
+      mvfderiv ((𝓡 n).prod 𝓘(ℝ)) (fun q : sphere (0 : V) 1 × ℝ ↦ h q.2) p x =
+        NormedSpace.fromTangentSpace p.2 (tangentSpaceProdEquiv p x).2 * deriv h p.2 := by
+    rw [Manifold.tangentSpaceProdEquiv_apply]
+    exact mvfderiv_comp_snd_apply_eq_smul_deriv h p x
+  rw [inner_mvfderiv_smul_coe_sphere p hr'.differentiableAt, hh, hh, rotationalMetric_inner,
     ContMDiffRiemannianMetric.cylinder_inner, ContMDiffRiemannianMetric.ofLE_inner,
     sphereRoundMetric_inner, hexp, hr'.deriv, hh'.deriv]
   linear_combination (r p.2 ^ 2 * NormedSpace.fromTangentSpace p.2 (tangentSpaceProdEquiv p v).2 *

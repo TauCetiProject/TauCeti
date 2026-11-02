@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Tangent
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import TauCeti.Geometry.Manifold.MFDeriv.IsInvertible
+import TauCeti.Geometry.Manifold.MFDeriv.Prod
 import TauCeti.Geometry.Manifold.Riemannian.Sphere.Basic
 
 /-!
@@ -38,8 +39,6 @@ charts of the sphere directly.
 ## Main results
 
 * `TauCeti.contMDiff_exp_smul_coe_sphere`: polar coordinates `(u, t) ↦ exp t • u` are smooth.
-* `TauCeti.mvfderiv_comp_snd_sphere_apply`: the differential of `(u, t) ↦ f(t)` sends `(v, a)` at
-  `(u, t)` to `a f'(t)`.
 * `TauCeti.mvfderiv_smul_coe_sphere_apply`: the differential of `(u, t) ↦ f(t) u` sends `(v, a)`
   at `(u, t)` to `f(t) v + a f'(t) u`.
 * `TauCeti.inner_mvfderiv_smul_coe_sphere`: the map `(u, t) ↦ f(t) u` pulls the inner product of
@@ -132,21 +131,6 @@ theorem sphereProdRealDiffeomorph_symm_apply_snd (v : puncturedSpace V) :
     (sphereProdRealDiffeomorph (n := n) |>.symm v).2 = Real.log ‖(v : V)‖ :=
   (rfl)
 
-/-- The differential of the map `(u, t) ↦ f(t)` from `Sⁿ × ℝ` to `ℝ`: a tangent vector `(v, a)` at
-`(u, t)` is sent to `a f'(t)`. -/
-theorem mvfderiv_comp_snd_sphere_apply {f : ℝ → ℝ} (p : sphere (0 : V) 1 × ℝ)
-    (hf : DifferentiableAt ℝ f p.2) (v : TangentSpace ((𝓡 n).prod 𝓘(ℝ)) p) :
-    mvfderiv ((𝓡 n).prod 𝓘(ℝ)) (fun q : sphere (0 : V) 1 × ℝ ↦ f q.2) p v =
-      deriv f p.2 * NormedSpace.fromTangentSpace p.2 (Manifold.tangentSpaceProdEquiv p v).2 := by
-  -- The chain rule `mvfderiv_comp_apply` matches a composition `f ∘ g` syntactically.
-  rw [show (fun q : sphere (0 : V) 1 × ℝ ↦ f q.2) = f ∘ Prod.snd from rfl,
-    mvfderiv_comp_apply _ hf.mdifferentiableAt mdifferentiableAt_snd, mfderiv_snd,
-    mvfderiv_eq_fderiv]
-  simp only [ContinuousLinearMap.comp_apply, fderiv_eq_smul_deriv, smul_eq_mul,
-    Manifold.tangentSpaceProdEquiv_apply]
-  -- `ContinuousLinearMap.snd` is the projection of the product.
-  exact mul_comm _ _
-
 /-- The differential of the map `(u, t) ↦ f(t) u` from `Sⁿ × ℝ` to `V`: a tangent vector `(v, a)` at
 `(u, t)` is sent to `f(t) v + a f'(t) u`, where `v` is read in `V`. -/
 theorem mvfderiv_smul_coe_sphere_apply {f : ℝ → ℝ} (p : sphere (0 : V) 1 × ℝ)
@@ -157,22 +141,23 @@ theorem mvfderiv_smul_coe_sphere_apply {f : ℝ → ℝ} (p : sphere (0 : V) 1 �
         (deriv f p.2 * NormedSpace.fromTangentSpace p.2 (Manifold.tangentSpaceProdEquiv p v).2) •
           (p.1 : V) := by
   have hι := (contMDiff_coe_sphere (E := V) (n := n) (m := 1) p.1).mdifferentiableAt one_ne_zero
+  -- The factors are the compositions `(↑) ∘ Prod.fst` and `f ∘ Prod.snd`, and the components of
+  -- `Manifold.tangentSpaceProdEquiv p v` are those of `v` by definition.
   have h₁ : mvfderiv ((𝓡 n).prod 𝓘(ℝ)) (fun q : sphere (0 : V) 1 × ℝ ↦ (q.1 : V)) p v =
       mvfderiv (𝓡 n) ((↑) : sphere (0 : V) 1 → V) p.1 (Manifold.tangentSpaceProdEquiv p v).1 := by
-    -- The chain rule `mvfderiv_comp_apply` matches a composition `f ∘ g` syntactically.
-    rw [show (fun q : sphere (0 : V) 1 × ℝ ↦ (q.1 : V)) = (↑) ∘ Prod.fst from rfl,
-      mvfderiv_comp_apply _ hι mdifferentiableAt_fst, mfderiv_fst]
-    simp only [Manifold.tangentSpaceProdEquiv_apply]
-    -- `ContinuousLinearMap.fst` is the projection of the product.
-    rfl
+    rw [Manifold.tangentSpaceProdEquiv_apply]
+    exact mvfderiv_comp_fst_apply _ p v
+  have h₂ : mvfderiv ((𝓡 n).prod 𝓘(ℝ)) (fun q : sphere (0 : V) 1 × ℝ ↦ f q.2) p v =
+      deriv f p.2 * NormedSpace.fromTangentSpace p.2 (Manifold.tangentSpaceProdEquiv p v).2 := by
+    rw [Manifold.tangentSpaceProdEquiv_apply, mul_comm]
+    exact mvfderiv_comp_snd_apply_eq_smul_deriv f p v
   have hd₁ : MDifferentiableAt ((𝓡 n).prod 𝓘(ℝ)) 𝓘(ℝ, V)
       (fun q : sphere (0 : V) 1 × ℝ ↦ (q.1 : V)) p := hι.comp p mdifferentiableAt_fst
   have hd₂ : MDifferentiableAt ((𝓡 n).prod 𝓘(ℝ)) 𝓘(ℝ)
       (fun q : sphere (0 : V) 1 × ℝ ↦ f q.2) p :=
     hf.mdifferentiableAt.comp p mdifferentiableAt_snd
   rw [mvfderiv_fun_smul hd₂ hd₁]
-  simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, h₁,
-    mvfderiv_comp_snd_sphere_apply p hf]
+  simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, h₁, h₂]
 
 /-- The map `(u, t) ↦ f(t) u` from `Sⁿ × ℝ` to `V` pulls the inner product of `V` back to
 `f(t)² g_(Sⁿ) + f'(t)² dt²`: tangent vectors `(v, a)` and `(v', a')` at `(u, t)` are paired to
