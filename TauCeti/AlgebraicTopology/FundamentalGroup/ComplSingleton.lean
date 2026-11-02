@@ -14,6 +14,7 @@ import TauCeti.AlgebraicTopology.FundamentalGroup.PuncturedStarConvex
 import TauCeti.Analysis.Convex.SimplyConnected
 import TauCeti.Analysis.Normed.Module.Connected
 import TauCeti.Geometry.Manifold.Connected
+import TauCeti.Topology.Closure
 
 /-!
 # Deleting a point from a manifold of dimension at least three
@@ -70,17 +71,6 @@ open Metric Set Topology
 namespace TauCeti
 
 variable {X : Type*} [TopologicalSpace X]
-
-/-- The complement of a closed point `p` and a neighbourhood of `p` have interiors covering the
-space. -/
-private theorem interior_compl_singleton_union_interior_eq_univ {p : X}
-    (hp : IsClosed ({p} : Set X)) {B : Set X} (hB : B ∈ 𝓝 p) :
-    interior {p}ᶜ ∪ interior B = univ := by
-  refine eq_univ_of_forall fun y ↦ ?_
-  rw [hp.isOpen_compl.interior_eq]
-  by_cases hy : y = p
-  · exact Or.inr (hy ▸ mem_interior_iff_mem_nhds.2 hB)
-  · exact Or.inl hy
 
 /-- **Deleting a point with a simply connected punctured neighbourhood.** Let `p` be a closed
 point of `X` whose complement is path connected, and let `B` be a neighbourhood of `p` such that
@@ -209,15 +199,12 @@ theorem simplyConnectedSpace_compl_singleton_iff (h : 2 < Module.rank ℝ E) (p 
     SimplyConnectedSpace ({p}ᶜ : Set X) ↔ SimplyConnectedSpace X := by
   refine ⟨fun hA ↦ simplyConnectedSpace_of_isSimplyConnected_compl_singleton
     (Cardinal.one_lt_two.trans h) hA, fun hX ↦ ?_⟩
-  -- Every loop in `X \ {p}` is null-homotopic in `X`, hence in `X \ {p}` by injectivity.
+  -- `π₁(X \ {p})` injects into the trivial group `π₁(X)`.
   have : PathConnectedSpace ({p}ᶜ : Set X) := isPathConnected_iff_pathConnectedSpace.1 <|
     isPathConnected_compl_of_finite_of_one_lt_rank (Cardinal.one_lt_two.trans h)
       (finite_singleton p)
-  refine simply_connected_iff_loops_nullhomotopic.2 ⟨this, fun x γ ↦ ?_⟩
-  have hinj := (fundamentalGroup_map_subtypeVal_compl_singleton_bijective h p x).1
-  exact Quotient.eq.mp (congrArg CategoryTheory.End.asHom (hinj (Subsingleton.elim
-    (FundamentalGroup.map _ x (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ)))
-    (FundamentalGroup.map _ x
-      (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk (Path.refl x)))))))
+  let x : ({p}ᶜ : Set X) := Classical.arbitrary _
+  have := (fundamentalGroup_map_subtypeVal_compl_singleton_bijective h p x).1.subsingleton
+  exact simplyConnectedSpace_of_subsingleton_fundamentalGroup x
 
 end TauCeti
