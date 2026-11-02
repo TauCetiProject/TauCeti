@@ -19,6 +19,7 @@ import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.BasicOpen
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Quasicoherent
 import TauCeti.CategoryTheory.Limits.Lattice
 import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.MayerVietoris
+import TauCeti.Data.Fin.Basic
 import TauCeti.LinearAlgebra.Finsupp.Supported
 import TauCeti.LinearAlgebra.SymmetricAlgebra.BasisComparison
 
@@ -991,12 +992,6 @@ private lemma sum_negPart_cechπ {z : (laurentCech (R := R) (κ := κ) m).X (n +
   simp only [val_cechπ_d, map_sum, map_zsmul] at h
   exact h.trans (by rw [map_zero]; rfl)
 
-omit [Fintype κ] [DecidableEq κ] in
-private lemma val_succAbove {N : ℕ} (p : Fin (N + 1)) (j : Fin N) :
-    (p.succAbove j : ℕ) = if (j : ℕ) < p then (j : ℕ) else (j : ℕ) + 1 := by
-  unfold Fin.succAbove
-  split_ifs <;> simp_all [Fin.lt_def]
-
 include e in
 /-- The coefficients of a cocycle of top degree at the monomials with all exponents negative
 change sign when two adjacent entries of the tuple are swapped: this is the cocycle condition at
@@ -1014,12 +1009,12 @@ private lemma negPart_cechπ_comp_swap {z : (laurentCech (R := R) (κ := κ) m).
     refine congrArg c (Fin.ext ?_)
     have hc : (i.castSucc : ℕ) = i := rfl
     have hs : (i.succ : ℕ) = i + 1 := rfl
-    simp only [s, p₀, Function.comp_apply, val_succAbove, Equiv.swap_apply_def, Fin.ext_iff]
+    simp only [s, p₀, Function.comp_apply, Fin.val_succAbove, Equiv.swap_apply_def, Fin.ext_iff]
     split_ifs <;> omega
   have h₂ : c ∘ s ∘ p₂.succAbove = c := by
     funext j
     refine congrArg c (Fin.ext ?_)
-    simp only [s, p₂, Function.comp_apply, val_succAbove]
+    simp only [s, p₂, Function.comp_apply, Fin.val_succAbove]
     split_ifs <;> omega
   have hzero (p : Fin (n + 3)) (hp : p ≠ p₀ ∧ p ≠ p₂) :
       (-1 : ℤ) ^ (p : ℕ) • negPart m (cechπ m ((c ∘ s) ∘ p.succAbove) z).1 = 0 := by
