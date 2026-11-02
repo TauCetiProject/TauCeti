@@ -43,6 +43,7 @@ theorem _root_.WithConv.apply_matrixCoefficientTensor_eq_trace (f : WithConv (Mo
   simp only [LinearMap.comp_apply, LinearMap.compRight_apply,
     ← Module.End.mul_eq_comp] at hcomp
   rw [← hcomp, LinearMap.trace_eq_contract_apply]
+  clear hcomp
   induction z with
   | add x y hx hy => simp only [map_add, hx, hy]
   | tmul φ m =>
