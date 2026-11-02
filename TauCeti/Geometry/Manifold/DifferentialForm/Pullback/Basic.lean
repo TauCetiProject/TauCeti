@@ -18,7 +18,8 @@ bundle. Both within-set and unrestricted pullbacks are total; their chain rules 
 the differentiability and unique-derivative hypotheses of Mathlib's `mfderivWithin`.
 For a trivial value bundle, `mpullbackWithin` and `mpullback` retain the fixed coefficient
 space. On model spaces they agree with precomposition by the Fréchet derivative.
-Pullback at `x` only depends on the germ of `f` at `x`, and when the derivative of `f` at `x`
+Pullback at `x` only depends on the germ of `f` at `x`, within-set pullback at `x` only on the
+value at `x` and the germ within the set, and when the derivative of `f` at `x`
 is surjective it determines the form at `f x`.
 
 This construction follows Lee, *Introduction to Smooth Manifolds*, second edition,
@@ -261,15 +262,28 @@ theorem mpullbackWithin_eq_mpullback {f : M → M'} {s : Set M} {x : M}
     (ω : RoughForm I' M' F k) : mpullbackWithin I I' f s ω x = mpullback I I' f ω x :=
   bundleMpullbackWithin_eq_bundleMpullback hs hf ω
 
+/-- Maps that agree near `x` within `s`, and at `x`, pull a form back within `s` to the same value
+at `x`. -/
+theorem _root_.Filter.EventuallyEq.mpullbackWithin_eq {f g : M → M'} {s : Set M} {x : M}
+    (h : f =ᶠ[𝓝[s] x] g) (hx : f x = g x) (ω : RoughForm I' M' F k) :
+    mpullbackWithin I I' f s ω x = mpullbackWithin I I' g s ω x := by
+  refine ContinuousAlternatingMap.ext fun v ↦ ?_
+  rw [mpullbackWithin_apply, mpullbackWithin_apply, h.mfderivWithin_eq hx]
+  -- `tangentSpaceCast` is the identity of the model space, so only the base point differs.
+  change ω (f x) (fun i ↦ mfderivWithin I I' g s x (v i)) =
+    ω (g x) (fun i ↦ mfderivWithin I I' g s x (v i))
+  rw [hx]
+
+/-- Maps that agree on `s` pull a form back within `s` to the same value at each point of `s`. -/
+theorem mpullbackWithin_congr {f g : M → M'} {s : Set M} {x : M} (h : EqOn f g s) (hx : x ∈ s)
+    (ω : RoughForm I' M' F k) : mpullbackWithin I I' f s ω x = mpullbackWithin I I' g s ω x :=
+  (Filter.eventuallyEq_of_mem self_mem_nhdsWithin h).mpullbackWithin_eq (h hx) ω
+
 /-- Maps that agree near `x` pull a form back to the same value at `x`. -/
 theorem _root_.Filter.EventuallyEq.mpullback_eq {f g : M → M'} {x : M} (h : f =ᶠ[𝓝 x] g)
     (ω : RoughForm I' M' F k) : mpullback I I' f ω x = mpullback I I' g ω x := by
-  have hx : f x = g x := h.eq_of_nhds
-  refine ContinuousAlternatingMap.ext fun v ↦ ?_
-  rw [mpullback_apply, mpullback_apply, h.mfderiv_eq]
-  -- `tangentSpaceCast` is the identity of the model space, so only the base point differs.
-  change ω (f x) (fun i ↦ mfderiv I I' g x (v i)) = ω (g x) (fun i ↦ mfderiv I I' g x (v i))
-  rw [hx]
+  rw [← mpullbackWithin_univ, ← mpullbackWithin_univ]
+  exact (h.filter_mono nhdsWithin_le_nhds).mpullbackWithin_eq h.eq_of_nhds ω
 
 /-- If the derivative of `f` at `x` is surjective, two forms have the same pullback along `f` at
 `x` exactly when they agree at `f x`. -/
