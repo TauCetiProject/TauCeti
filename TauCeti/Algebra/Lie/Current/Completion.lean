@@ -248,8 +248,9 @@ theorem smul_eq_toCompletedEnveloping_mul (b : UK) (x : CompletedEnveloping Φ h
 /-- On a smooth module, the image in `Û` of an element of `U` acts as that element. -/
 theorem limSmul_toCompletedEnveloping {M : ModuleCat UK}
     (hM : smoothModules (fun n : ℕ ↦ orderLeftIdeal Φ hΦ hΦs a n) M) (b : UK) (m : M) :
-    ModuleTower.limSmul hM (toCompletedEnveloping Φ hΦ hΦs a b) m = b • m :=
-  ModuleTower.limSmul_toLimQuotients hM b m
+    ModuleTower.limSmul hM (toCompletedEnveloping Φ hΦ hΦs a b) m = b • m := by
+  rw [coe_toCompletedEnveloping]
+  exact ModuleTower.limSmul_toLimQuotients hM b m
 
 /-- The unit of the completed enveloping algebra acts trivially on a smooth module. -/
 @[simp]
@@ -398,7 +399,10 @@ theorem eq_completedEnvelopingMap
     {φ : CompletedEnveloping Ψ hΨ hΨs b →ₐ[R] CompletedEnveloping Φ hΦ hΦs a} (hφ : Continuous φ)
     (h : ∀ x, φ (toCompletedEnveloping Ψ hΨ hΨs b x) = toCompletedEnveloping Φ hΦ hΦs a (g x)) :
     φ = completedEnvelopingMap g hg :=
-  DFunLike.coe_injective (ModuleTower.eq_limQuotientsMap _ _ _ _ hφ h)
+  DFunLike.coe_injective (ModuleTower.eq_limQuotientsMap _ _ _ _ hφ fun x ↦ by
+    have hx := h x
+    rw [coe_toCompletedEnveloping, coe_toCompletedEnveloping] at hx
+    exact hx)
 
 /-- The identity extends to the identity. -/
 @[simp]
