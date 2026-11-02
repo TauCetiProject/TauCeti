@@ -37,7 +37,8 @@ So each degeneracy is an open and closed embedding
 (`TauCeti.isClosedEmbedding_topologicalNerve_σ`, `TauCeti.isOpenEmbedding_topologicalNerve_σ`),
 the degenerate locus in each degree is clopen
 (`TauCeti.isClopen_nerve_degenerate`), and its inclusion has the homotopy extension property
-(`TauCeti.hasHomotopyExtensionProperty_nerve_degenerate`). These facts about the latching
+(`TauCeti.hasHomotopyExtensionProperty_nerve_degenerate`). Its complement, the nondegenerate
+locus, is clopen too (`TauCeti.isClopen_nerve_nonDegenerate`). These facts about the latching
 inclusions are the input for treating the topological nerve of an étale groupoid as a proper
 simplicial space, whose thin realization is built from its skeleta by closed attachments.
 
@@ -106,6 +107,9 @@ theorem mem_range_σ_iff {n : ℕ} (s : ComposableArrows C (n + 1)) (i : Fin (n 
   · -- The `i`-th degeneracy repeats the `i`-th object, so its `i`-th arrow is an identity.
     rintro ⟨t, rfl⟩
     refine ⟨t.obj i, ((t.totalArrow_whiskerLeft _ _ _ _).trans ?_).symm⟩
+    -- The degeneracy reindexes along `SimplexCategory.toCat.map (SimplexCategory.σ i)`, whose
+    -- object map is `i.predAbove` by definition (as in Mathlib's `nerve.σ_obj`). Simp only unfolds
+    -- that functor into a chain of forgetful functors, so `change` states the reduced positions.
     change t.totalArrow (i.predAbove i.castSucc) (i.predAbove i.succ) _ = _
     simp only [Fin.predAbove_castSucc_self, Fin.predAbove_succ_self]
     exact ComposableArrows.totalArrow_self (n := n) t i
@@ -218,6 +222,13 @@ theorem isClopen_nerve_degenerate (n : ℕ) :
     IsClopen (X := ComposableArrows C n) ((nerve C).degenerate n) :=
   ⟨isClosed_nerve_degenerate (isClopen_range_unit hu hs).isClosed n,
     isOpen_nerve_degenerate (isClopen_range_unit hu hs).isOpen n⟩
+
+/-- In a topological category with continuous units, locally homeomorphic source and Hausdorff
+arrow space, the nondegenerate simplices of the topological nerve form a clopen set in each
+degree. -/
+theorem isClopen_nerve_nonDegenerate (n : ℕ) :
+    IsClopen (X := ComposableArrows C n) ((nerve C).nonDegenerate n) :=
+  (isClopen_nerve_degenerate hu hs n).compl
 
 /-- In a topological category with continuous units, locally homeomorphic source and Hausdorff
 arrow space, the inclusion of the degenerate simplices of the topological nerve has the homotopy
