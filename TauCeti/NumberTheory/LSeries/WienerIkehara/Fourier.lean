@@ -35,7 +35,7 @@ The proofs are adapted from `PrimeNumberTheoremAnd/Wiener.lean` in the Apache-2.
 `second_fourier`, and `limiting_fourier_aux`. The statements here use Mathlib's
 `LSeriesSummable` directly, remove the source project's local `nterm` wrapper, and rely on
 Mathlib's APIs together with the local vertical-line continuity theorem
-`TauCeti.LSeries.continuous_LSeries_vertical`.
+`LSeriesSummable.continuous_LSeries_vertical`.
 
 ## References
 
@@ -288,7 +288,7 @@ theorem tsum_term_mul_fourier_sub_pole_eq_integral {G : ℂ → ℂ} {A : ℂ}
   have hseriesI : Integrable fun t : ℝ ↦
       LSeries a (sigma + t * I) * psi t * x ^ (t * I) := by
     exact (hpsi.bdd_mul (f := fun t : ℝ ↦ LSeries a ((sigma : ℂ) + t * I) * (x : ℂ) ^ (t * I))
-      ((continuous_LSeries_vertical hsigmaSum).mul hxpow).aestronglyMeasurable
+      (hsigmaSum.continuous_LSeries_vertical.mul hxpow).aestronglyMeasurable
       (.of_forall hLbound)).congr (.of_forall fun t ↦ by ring)
   have hpoleI : Integrable fun t : ℝ ↦
       A * (x ^ (1 - sigma) : ℝ) *
