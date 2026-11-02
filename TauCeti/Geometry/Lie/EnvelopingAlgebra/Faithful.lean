@@ -75,7 +75,8 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 
-local instance : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
+local instance finiteDimensionalLeftInvariantDerivationOfBoundaryless :
+    FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
   finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
 
 namespace LeftInvariantDerivation
