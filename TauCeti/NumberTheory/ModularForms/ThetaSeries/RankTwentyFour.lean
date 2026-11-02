@@ -77,7 +77,7 @@ theorem thetaForm_eq_add_smul_discriminant (hL : IsEven L) (hU : IsUnimodular L)
         ((representationNumber L 2 : ℂ) - (qExpansion 1 f).coeff 1) •
           qExpansion 1 ModularForm.discriminant) := by
     rw [FunLike.coe_sub, ModularForm.qExpansion_sub one_pos one_mem_strictPeriods_SL,
-      TauCeti.ModularForm.qExpansion_add_smul_discriminant,
+      ModularForm.qExpansion_add_smul_discriminant,
       ZLattice.coe_thetaForm (k := 12) hL hU hr]
   apply sub_eq_zero.mp
   apply ModularForm.sturm_bound_levelOne_nat (k := 12)
@@ -187,7 +187,7 @@ theorem representationNumber_two_mul_of_finrank_eq_twenty_four (hL : IsEven L)
         (qExpansion 1 ModularForm.discriminant).coeff m := by
   have h := congrArg (fun f : ModularForm 𝒮ℒ 12 ↦ (qExpansion 1 f).coeff m)
     (hL.thetaForm_eq_E_twelve_add_smul_discriminant hU hr)
-  rw [TauCeti.ModularForm.qExpansion_add_smul_discriminant,
+  rw [ModularForm.qExpansion_add_smul_discriminant,
     ZLattice.coe_thetaForm (k := 12) hL hU hr, hL.qExpansion_thetaSeries_coeff, map_add,
     PowerSeries.coeff_smul, TauCeti.ModularForm.E_twelve_qExpansion_coeff, ite_eq_right hm,
     smul_eq_mul] at h

@@ -30,7 +30,7 @@ The Eisenstein coefficients are `240 σ₃(n)` and `-504 σ₅(n)` (Mathlib's
 ## Main results
 
 * `TauCeti.ModularForm.E_twelve_qExpansion_coeff`: `E₁₂ = 1 + (65520/691) ∑ σ₁₁(m) qᵐ`.
-* `TauCeti.ModularForm.qExpansion_add_smul_discriminant`: the `q`-expansion of `f + c Δ` in
+* `ModularForm.qExpansion_add_smul_discriminant`: the `q`-expansion of `f + c Δ` in
   weight `12`.
 * `TauCeti.ModularForm.qExpansion_E_mem_range_map`: the `q`-expansion of a normalised Eisenstein
   series has rational coefficients.
@@ -108,6 +108,10 @@ theorem E_twelve_qExpansion_coeff (m : ℕ) :
   rw [E_qExpansion_coeff _ ⟨6, rfl⟩, bernoulli_twelve]
   norm_num
 
+end TauCeti.ModularForm
+
+namespace ModularForm
+
 /-- The `q`-expansion of a weight-`12` level-one form plus a multiple of `Δ` is the
 corresponding linear combination of power series. -/
 theorem qExpansion_add_smul_discriminant (f : ModularForm 𝒮ℒ 12) (c : ℂ) :
@@ -118,6 +122,10 @@ theorem qExpansion_add_smul_discriminant (f : ModularForm 𝒮ℒ 12) (c : ℂ) 
         CuspForm.coe_discriminant
   rw [FunLike.coe_add, ModularForm.qExpansion_add one_pos one_mem_strictPeriods_SL,
     FunLike.coe_smul, ModularForm.qExpansion_smul one_pos one_mem_strictPeriods_SL, hΔ]
+
+end ModularForm
+
+namespace TauCeti.ModularForm
 
 /-- The `q`-expansion of the weight-`12` form `E₄³ + c Δ` is the corresponding linear
 combination of power series. -/
