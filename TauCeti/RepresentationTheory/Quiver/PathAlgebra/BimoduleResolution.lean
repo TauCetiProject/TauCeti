@@ -81,6 +81,8 @@ by `∂ (d b)`, up to sign.
 * `TauCeti.PathAlgebra.arrowTensorDerivation_mul`, `arrowTensorDerivation_vertexIdempotent` and
   `arrowTensorDerivation_ofArrow`: `∂` is a derivation killing the vertex idempotents, with
   `∂ b = eⱼ ⊗ eᵢ`.
+* `TauCeti.PathAlgebra.arrowTensorDerivation_vertexIdempotent_mul_mul`: `∂` of an element of a
+  corner `eⱼ (kQ) eᵢ` is cut down by `eⱼ ⊗ eᵢ`.
 * `TauCeti.PathAlgebra.coe_arrowTensorDifferential_arrowTensorDerivation`: the boundary of `∂ y`
   is `y ⊗ 1 - 1 ⊗ y`.
 * `TauCeti.PathAlgebra.arrowTensorLift_arrowTensorDerivation` and
@@ -716,6 +718,16 @@ theorem arrowTensorDerivation_mul (x y : 𝒜) :
 theorem arrowTensorDerivation_one : arrowTensorDerivation k Q (1 : 𝒜) = 0 := by
   have := Fintype.ofFinite Q
   simp [one_def]
+
+/-- The universal derivation of an element of a corner `eⱼ (kQ) eᵢ` is cut down by `eⱼ ⊗ eᵢ`. -/
+theorem arrowTensorDerivation_vertexIdempotent_mul_mul (i j : Q) (z : 𝒜) :
+    arrowTensorDerivation k Q (ε j * z * ε i) =
+      (ε j ⊗ₜ[k] op (ε i) : 𝒜ᵉ) • arrowTensorDerivation k Q z := by
+  rw [arrowTensorDerivation_mul, arrowTensorDerivation_mul, arrowTensorDerivation_vertexIdempotent,
+    arrowTensorDerivation_vertexIdempotent, smul_zero, smul_zero, add_zero, zero_add]
+  -- `rw [← mul_smul]` does not find the action on the direct sum syntactically.
+  refine (mul_smul (_ : 𝒜ᵉ) _ (_ : arrowTensorBimodule k Q)).symm.trans ?_
+  rw [Algebra.TensorProduct.tmul_mul_tmul, mul_one, one_mul]
 
 variable {M : Type*} [AddCommGroup M] [Module (pathAlgebra k Q ⊗[k] (pathAlgebra k Q)ᵐᵒᵖ) M]
   [Module k M] [IsScalarTower k (pathAlgebra k Q ⊗[k] (pathAlgebra k Q)ᵐᵒᵖ) M]

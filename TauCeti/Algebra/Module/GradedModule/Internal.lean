@@ -494,6 +494,13 @@ theorem InternalGrading.koszulTwist_mem_ofDecomposition (ℳ : ℤ → Submodule
   have := koszulTwist_mem_piece _ hx' q
   rwa [InternalGrading.ofDecomposition_piece] at this
 
+/-- On an element of degree `e` of a decomposition `ℳ`, the Koszul twist of parameter `q` of the
+grading of `ℳ` acts as the scalar `(-1)^(q * e)`. -/
+theorem InternalGrading.koszulTwist_ofDecomposition_apply_of_mem (ℳ : ℤ → Submodule R M)
+    [DirectSum.Decomposition ℳ] {x : M} {e : ℤ} (hx : x ∈ ℳ e) (q : ℤ) :
+    koszulTwist (InternalGrading.ofDecomposition ℳ) q x = (((q * e).negOnePow : ℤ) : R) • x :=
+  koszulTwist_apply_of_mem _ hx q
+
 /-- The Koszul twist of parameter zero is the identity. -/
 @[simp]
 theorem InternalGrading.koszulTwist_zero (G : InternalGrading R M) :
