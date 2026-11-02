@@ -533,8 +533,7 @@ private theorem isImmersionAt_capMap (w : ℂ) :
 
 /-- **The cap of a smooth concordance from a great circle is a smooth embedding of the plane.**
 If `F` is a smooth concordance from the great circle `ι S¹` to a knot `K` in `Sⁿ`, there is a
-smooth embedding `c : ℂ → E`, namely the track of `F` read in exponential polar coordinates
-`(u, t) ↦ exp (t - 1) • u` on both sides and filled in by `0` at the origin, such that
+smooth embedding `c : ℂ → E` such that
 
 * near the origin, on the closed disc of radius `exp (-1)`, `c` is the linear isometry `ι`;
 * for some `r < 1` and all radii `s ≥ r`, `c (s • u) = s • K u`: near the unit circle and beyond,
@@ -542,7 +541,10 @@ smooth embedding `c : ℂ → E`, namely the track of `F` read in exponential po
 * `c` meets the closed unit ball exactly over the closed unit disc, and the unit sphere exactly
   over the unit circle.
 
-Restricted to the closed unit disc, `c` caps the concordance annulus with the flat disc `ι D²`. -/
+The witness is constructed from the track of `F` read in exponential polar coordinates
+`(u, t) ↦ exp (t - 1) • u` (see the module docstring), but the statement only records the
+properties above: on the closed unit disc, `c` is `ι` on the disc of radius `exp (-1)` and the cone
+over `K` on the annulus `r ≤ ‖z‖ ≤ 1`. -/
 theorem SmoothEmbedding.Concordance.exists_isSmoothEmbedding_cap
     (F : SmoothEmbedding.Concordance (SmoothCircleEmbedding.greatCircle (n := n) ι) K) :
     ∃ c : ℂ → E, IsSmoothEmbedding 𝓘(ℝ, ℂ) 𝓘(ℝ, E) ∞ c ∧
