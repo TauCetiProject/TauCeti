@@ -23,7 +23,10 @@ condition is placed on the plus rings.
 
 The open affinoids of noetherian type are the opens `U` for which the restriction of `X` to `U` is
 isomorphic to `Spa(A, A⁺)` for a complete Hausdorff Huber pair `(A, A⁺)` with `A` of noetherian
-type (`TauCeti.PreAdicSpace.noetherianAffinoidOpens`). Rational localisation preserves noetherian
+type (`TauCeti.PreAdicSpace.noetherianAffinoidOpens`). These are the opens
+`TauCeti.PreAdicSpace.propOpens` for the isomorphism-closed property of being an affinoid of
+noetherian type, so the transport, restriction and basis lemmas for `propOpens` apply to them as
+they do to the open affinoid subspaces. Rational localisation preserves noetherian
 type (`TauCeti.Huber.PairOfDefinition.isNoetherianType_completion_locTopology_of_isNoetherianType`)
 and the restriction of `Spa(A, A⁺)` to a rational subset `R(T/s)` is `Spa(A⟨T/s⟩, A_U⁺)`, so every
 rational open of `Spa(A, A⁺)` is an open affinoid of noetherian type when `A` is of noetherian
@@ -127,51 +130,15 @@ variable (X : PreAdicSpace.{u})
 
 /-- The *open affinoids of noetherian type* of an object `X` of `𝒱^pre`: the opens `U` such that
 `X` restricted to `U` is an affinoid of noetherian type. -/
-def noetherianAffinoidOpens : Set (Opens X) :=
-  {U | isNoetherianAffinoid (X.restrict U.isOpenEmbedding)}
+abbrev noetherianAffinoidOpens : Set (Opens X) :=
+  X.propOpens isNoetherianAffinoid
 
 variable {X}
-
-/-- Unfolding lemma for `TauCeti.PreAdicSpace.noetherianAffinoidOpens`. -/
-theorem mem_noetherianAffinoidOpens_iff {U : Opens X} :
-    U ∈ X.noetherianAffinoidOpens ↔ isNoetherianAffinoid (X.restrict U.isOpenEmbedding) :=
-  Iff.rfl
 
 /-- An open affinoid of noetherian type is an open affinoid subspace. -/
 theorem noetherianAffinoidOpens_subset_affinoidOpens :
     X.noetherianAffinoidOpens ⊆ X.affinoidOpens :=
   fun _ hU ↦ isNoetherianAffinoid.isAffinoid hU
-
-variable (X) in
-/-- The whole space is an open affinoid of noetherian type exactly when `X` is an affinoid of
-noetherian type. -/
-@[simp]
-theorem top_mem_noetherianAffinoidOpens_iff :
-    ⊤ ∈ X.noetherianAffinoidOpens ↔ isNoetherianAffinoid X :=
-  ObjectProperty.prop_iff_of_iso isNoetherianAffinoid X.restrictTopIso
-
-/-- An open `U` of `Y` is an open affinoid of noetherian type of `Y` exactly when its preimage under
-an isomorphism `e : X ≅ Y` is one of `X`. -/
-@[simp]
-theorem map_hom_base_mem_noetherianAffinoidOpens_iff {Y : PreAdicSpace.{u}} (e : X ≅ Y)
-    {U : Opens Y} :
-    (Opens.map e.hom.base).obj U ∈ X.noetherianAffinoidOpens ↔ U ∈ Y.noetherianAffinoidOpens := by
-  -- `restrictIso e` lands in `Y` restricted to the image of `e⁻¹(U)` under `e`, which is `U`
-  have key := Opens.map_inv_obj_map_hom_obj (forgetToTop.mapIso e) U
-  simp only [Functor.mapIso_hom, Functor.mapIso_inv, forgetToTop_map] at key
-  refine ⟨fun hU ↦ key ▸ ObjectProperty.prop_of_iso isNoetherianAffinoid (restrictIso e _) hU,
-    fun hU ↦ ?_⟩
-  -- `e.symm.inv` is `e.hom`
-  exact ObjectProperty.prop_of_iso isNoetherianAffinoid (restrictIso e.symm U) hU
-
-variable (X) in
-/-- An open `V` of the restriction of `X` along an open embedding is an open affinoid of noetherian
-type of the restriction exactly when its image in `X` is one of `X`. -/
-theorem mem_noetherianAffinoidOpens_restrict_iff {U : TopCat.{u}} {f : U ⟶ X.toTopCat}
-    (h : IsOpenEmbedding f) (V : Opens (X.restrict h)) :
-    V ∈ (X.restrict h).noetherianAffinoidOpens ↔
-      h.isOpenMap.functor.obj V ∈ X.noetherianAffinoidOpens :=
-  ObjectProperty.prop_iff_of_iso isNoetherianAffinoid (restrictRestrictIso X h V)
 
 end PreAdicSpace
 
@@ -185,7 +152,7 @@ variable {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [I
 
 /-- **Rational subsets of a noetherian-type `Spa(A, A⁺)` are open affinoids of noetherian type.**
 For `T` spanning an open ideal, the restriction of `Spa(A, A⁺)` to `R(T/s)` is `Spa(A⟨T/s⟩, A_U⁺)`
-(`presentationLimitPreAdicSpaceLocIso`), and `A⟨T/s⟩` is a complete Hausdorff Huber ring of
+(`restrictSpaBasicOpenIso`), and `A⟨T/s⟩` is a complete Hausdorff Huber ring of
 noetherian type. The ring `A` itself need not be complete. -/
 theorem spaBasicOpen_mem_noetherianAffinoidOpens {T : Finset A} {s : A}
     (hT : IsOpen (Ideal.span (T : Set A) : Set A)) :
@@ -197,16 +164,11 @@ theorem spaBasicOpen_mem_noetherianAffinoidOpens {T : Finset A} {s : A}
   have _ := isTopologicalRing_locUniformSpace P T s _ hden
   have _ := isHuberRing_completion_locTopology P T s _ hden
   have _ := isNoetherianType_completion_locTopology_of_isNoetherianType P hT s _ hden
-  have hrange : Set.range (Opens.inclusion' (spaBasicOpen Aplus T s)) =
-      Set.range (spaComapLocHom P Aplus T s _ hden) := by
-    rw [Opens.set_range_inclusion', coe_spaComapLocHom, range_spaComapLoc P Aplus hP T s _ hden]
   let S' : Pair (UniformSpace.Completion (Localization.Away s)) :=
     ⟨completedPlusSubring P Aplus T s _ hden, isRingOfIntegralElements_completedPlusSubring P
       Aplus (fun j _ ↦ hP j.2) hAplus T s _ hden⟩
   exact ObjectProperty.prop_of_iso PreAdicSpace.isNoetherianAffinoid
-    ((presentationLimitPreAdicSpace P Aplus hAplus hP).restrictIsoOfRangeEq _
-      (isOpenEmbedding_spaComapLocHom P Aplus hP T s _ hden) hrange ≪≫
-      presentationLimitPreAdicSpaceLocIso P Aplus T s _ hden hAplus hP hT).symm
+    (restrictSpaBasicOpenIso P Aplus T s _ hden hAplus hP hT).symm
     (PreAdicSpace.isNoetherianAffinoid_presentationLimitPreAdicSpace S'
       (completionLocalization P T s _ hden)
       (completionLocalization_ringOfDefinition_le_completedPlusSubring P Aplus hP T s _ hden))
@@ -226,18 +188,11 @@ namespace PreAdicSpace
 
 /-- **On an affinoid of noetherian type the open affinoids of noetherian type form a basis.** -/
 theorem isNoetherianAffinoid.isBasis_noetherianAffinoidOpens {X : PreAdicSpace.{u}}
-    (hX : isNoetherianAffinoid X) : Opens.IsBasis X.noetherianAffinoidOpens := by
-  obtain ⟨A, _, _, _, _, _, _, _, _, S, P, hP, ⟨e⟩⟩ := hX
-  refine Opens.isBasis_iff_nbhd.mpr fun {W x} hxW ↦ ?_
-  -- move `x ∈ W` along `e`, and use the basis of `Spa(A, A⁺)`
-  have hW := Opens.map_hom_obj_map_inv_obj (forgetToTop.mapIso e) W
-  rw [← hW] at hxW
-  obtain ⟨V, hV, hxV, hVW⟩ := Opens.isBasis_iff_nbhd.mp
+    (hX : isNoetherianAffinoid X) : Opens.IsBasis X.noetherianAffinoidOpens :=
+  let ⟨_, _, _, _, _, _, _, _, _, S, P, hP, ⟨e⟩⟩ := hX
+  isBasis_propOpens_of_iso isNoetherianAffinoid e
     (isBasis_noetherianAffinoidOpens_presentationLimitPreAdicSpace P S.plus
       S.isRingOfIntegralElements.isPowerBounded_of_mem hP)
-    (U := (Opens.map e.inv.base).obj W) (x := e.hom.base x) hxW
-  exact ⟨(Opens.map e.hom.base).obj V, (map_hom_base_mem_noetherianAffinoidOpens_iff e).mpr hV,
-    hxV, ((Opens.map e.hom.base).monotone hVW).trans hW.le⟩
 
 end PreAdicSpace
 
@@ -268,26 +223,15 @@ topology.** Every point `x` of an open `W` lies in an open affinoid of noetheria
 (`TauCeti.PreAdicSpace.isNoetherianAffinoid.isBasis_noetherianAffinoidOpens`); one of them between
 `x` and `W ∩ U` is carried to an open affinoid of noetherian type of `X`. -/
 theorem IsLocallyNoetherian.isBasis_noetherianAffinoidOpens (hX : X.IsLocallyNoetherian) :
-    Opens.IsBasis X.obj.noetherianAffinoidOpens := by
-  refine Opens.isBasis_iff_nbhd.mpr fun {W x} hxW ↦ ?_
-  obtain ⟨U, hU, hxU⟩ := hX x
-  -- `x` lies in `W ∩ U`, read as an open of `X|_U`
-  obtain ⟨V, hV, hxV, hVW⟩ := Opens.isBasis_iff_nbhd.mp
-    (isNoetherianAffinoid.isBasis_noetherianAffinoidOpens hU)
-    (U := (Opens.map (X.obj.ofRestrict U.isOpenEmbedding).base).obj W) (x := ⟨x, hxU⟩) hxW
-  refine ⟨U.isOpenEmbedding.isOpenMap.functor.obj V,
-    (mem_noetherianAffinoidOpens_restrict_iff X.obj U.isOpenEmbedding V).mp hV,
-    ⟨⟨x, hxU⟩, hxV, rfl⟩, ?_⟩
-  rintro _ ⟨z, hz, rfl⟩
-  exact hVW hz
+    Opens.IsBasis X.obj.noetherianAffinoidOpens :=
+  isBasis_propOpens isNoetherianAffinoid
+    (fun _ ↦ isNoetherianAffinoid.isBasis_noetherianAffinoidOpens) hX
 
 /-- An adic space is locally noetherian exactly when its open affinoids of noetherian type form a
 basis of its topology. -/
 theorem isLocallyNoetherian_iff_isBasis_noetherianAffinoidOpens :
-    X.IsLocallyNoetherian ↔ Opens.IsBasis X.obj.noetherianAffinoidOpens := by
-  refine ⟨IsLocallyNoetherian.isBasis_noetherianAffinoidOpens, fun h x ↦ ?_⟩
-  obtain ⟨U, hU, hxU, -⟩ := Opens.isBasis_iff_nbhd.mp h (U := ⊤) (x := x) trivial
-  exact ⟨U, hU, hxU⟩
+    X.IsLocallyNoetherian ↔ Opens.IsBasis X.obj.noetherianAffinoidOpens :=
+  ⟨IsLocallyNoetherian.isBasis_noetherianAffinoidOpens, exists_mem_propOpens_of_isBasis⟩
 
 /-- **Open subspaces of locally noetherian adic spaces are locally noetherian**: the source of an
 open immersion into a locally noetherian adic space is locally noetherian. A point `y` of `Y` has
@@ -295,22 +239,10 @@ an open affinoid neighbourhood of noetherian type in `X` inside the image of `f`
 identifies with an open affinoid of noetherian type of `Y`. Isomorphisms are open immersions, so
 being locally noetherian is invariant under isomorphism. -/
 theorem IsLocallyNoetherian.of_isOpenImmersion (f : Y ⟶ X) [IsOpenImmersion f.hom]
-    (hX : X.IsLocallyNoetherian) : Y.IsLocallyNoetherian := by
-  intro y
-  obtain ⟨V, hV, hyV, hVf⟩ := Opens.isBasis_iff_nbhd.mp hX.isBasis_noetherianAffinoidOpens
-    (U := f.hom.isOpenEmbedding.isOpenMap.functor.obj ⊤) (x := f.hom.base y) ⟨y, trivial, rfl⟩
-  -- `V` is the image of its preimage in `Y`, an open affinoid of noetherian type of the
-  -- restriction of `X` along `f`, which is isomorphic to `Y`
-  have hV' : (Opens.map f.hom.base).obj V ∈
-      (X.obj.restrict f.hom.isOpenEmbedding).noetherianAffinoidOpens := by
-    refine (mem_noetherianAffinoidOpens_restrict_iff X.obj f.hom.isOpenEmbedding _).mpr ?_
-    rw [Opens.functor_obj_map_obj, inf_eq_right.mpr hVf]
-    exact hV
-  refine ⟨_, (map_hom_base_mem_noetherianAffinoidOpens_iff
-    (IsOpenImmersion.isoRestrict f.hom)).mpr hV', ?_⟩
-  -- the isomorphism onto the restriction followed by its inclusion is `f`
-  rwa [← IsOpenImmersion.isoRestrict_hom_ofRestrict f.hom, comp_base, ConcreteCategory.comp_apply,
-    ofRestrict_base] at hyV
+    (hX : X.IsLocallyNoetherian) : Y.IsLocallyNoetherian :=
+  exists_mem_propOpens_of_iso isNoetherianAffinoid (IsOpenImmersion.isoRestrict f.hom)
+    (exists_mem_propOpens_restrict f.hom.isOpenEmbedding isNoetherianAffinoid
+      hX.isBasis_noetherianAffinoidOpens)
 
 variable {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
   [IsNoetherianType A] (P : PairOfDefinition A) (Aplus : Subring A)

@@ -63,6 +63,8 @@ rings determined by `j(y)` and by `y` (`comap_presentationLimitLocIso_rationalLo
   pair, the form in which it is composed with other morphisms of Huber pairs.
 * `TauCeti.ValuationSpectrum.isAffinoid_restrict_spaComapLocHom`: the restriction of `Spa(A, A⁺)`
   along `j` is an affinoid pre-adic space.
+* `TauCeti.ValuationSpectrum.restrictSpaBasicOpenIso`: the restriction of `Spa(A, A⁺)` to the
+  rational subset `R(T/s)` is isomorphic to `Spa(A⟨T/s⟩, A_U⁺)`.
 * `TauCeti.ValuationSpectrum.spaBasicOpen_mem_affinoidOpens`,
   `TauCeti.ValuationSpectrum.spaRationalOpens_subset_affinoidOpens`: rational subsets are open
   affinoid subspaces.
@@ -425,9 +427,36 @@ theorem isAffinoid_restrict_spaComapLocHom :
     (PreAdicSpace.isAffinoid_presentationLimitPreAdicSpace S' (completionLocalization P T s S hden)
       (completionLocalization_ringOfDefinition_le_completedPlusSubring P Aplus hP T s S hden))
 
+/-- **The restriction of `Spa(A, A⁺)` to a rational subset `R(T/s)` is `Spa(A⟨T/s⟩, A_U⁺)`**, for
+`T` spanning an open ideal: `R(T/s)` is the image of `j : Spa(A⟨T/s⟩, A_U⁺) → Spa(A, A⁺)`, and the
+restriction along `j` is `Spa(A⟨T/s⟩, A_U⁺)` by `presentationLimitPreAdicSpaceLocIso`. -/
+noncomputable def restrictSpaBasicOpenIso :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    (presentationLimitPreAdicSpace P Aplus hAplus hP).restrict (Opens.isOpenEmbedding
+        (X := (presentationLimitPreAdicSpace P Aplus hAplus hP).toTopCat)
+        (spaBasicOpen Aplus T s)) ≅
+      presentationLimitPreAdicSpace (completionLocalization P T s S hden)
+        (completedPlusSubring P Aplus T s S hden)
+        (isPowerBounded_of_mem_completedPlusSubring P Aplus hAplus T s S hden)
+        (completionLocalization_ringOfDefinition_le_completedPlusSubring P Aplus hP T s S hden) :=
+  letI := locUniformSpace P T s S hden
+  letI := isUniformAddGroup_locUniformSpace P T s S hden
+  letI := isTopologicalRing_locUniformSpace P T s S hden
+  (presentationLimitPreAdicSpace P Aplus hAplus hP).restrictIsoOfRangeEq (Opens.isOpenEmbedding
+      (X := (presentationLimitPreAdicSpace P Aplus hAplus hP).toTopCat) (spaBasicOpen Aplus T s))
+      (isOpenEmbedding_spaComapLocHom P Aplus hP T s S hden)
+      (show Set.range (Opens.inclusion' (spaBasicOpen Aplus T s)) =
+          Set.range (spaComapLocHom P Aplus T s S hden) by
+        rw [Opens.set_range_inclusion', coe_spaComapLocHom,
+          range_spaComapLoc P Aplus hP T s S hden]) ≪≫
+    presentationLimitPreAdicSpaceLocIso P Aplus T s S hden hAplus hP hT
+
 /-- **Rational subsets are open affinoid subspaces.** For `T` spanning an open ideal, the rational
 subset `R(T/s)` of the presentation-limit pre-adic space `Spa(A, A⁺)` is an open affinoid subspace:
-the restriction to it is isomorphic in `𝒱^pre` to `Spa(A⟨T/s⟩, A_U⁺)`. -/
+the restriction to it is isomorphic in `𝒱^pre` to `Spa(A⟨T/s⟩, A_U⁺)`
+(`restrictSpaBasicOpenIso`). -/
 theorem spaBasicOpen_mem_affinoidOpens {T : Finset A} {s : A}
     (hT : IsOpen (Ideal.span (T : Set A) : Set A)) :
     spaBasicOpen Aplus T s ∈ (presentationLimitPreAdicSpace P Aplus hAplus hP).affinoidOpens := by
@@ -435,13 +464,14 @@ theorem spaBasicOpen_mem_affinoidOpens {T : Finset A} {s : A}
   let _ := locUniformSpace P T s _ hden
   have _ := isUniformAddGroup_locUniformSpace P T s _ hden
   have _ := isTopologicalRing_locUniformSpace P T s _ hden
-  have hrange : Set.range (Opens.inclusion' (spaBasicOpen Aplus T s)) =
-      Set.range (spaComapLocHom P Aplus T s _ hden) := by
-    rw [Opens.set_range_inclusion', coe_spaComapLocHom, range_spaComapLoc P Aplus hP T s _ hden]
+  have _ := isHuberRing_completion_locTopology P T s _ hden
+  let S' : Pair (UniformSpace.Completion (Localization.Away s)) :=
+    ⟨completedPlusSubring P Aplus T s _ hden, isRingOfIntegralElements_completedPlusSubring P Aplus
+      (fun j _ ↦ hP j.2) hAplus T s _ hden⟩
   exact ObjectProperty.prop_of_iso PreAdicSpace.isAffinoid
-    ((presentationLimitPreAdicSpace P Aplus hAplus hP).restrictIsoOfRangeEq _
-      (isOpenEmbedding_spaComapLocHom P Aplus hP T s _ hden) hrange).symm
-    (isAffinoid_restrict_spaComapLocHom P Aplus T s _ hden hAplus hP hT)
+    (restrictSpaBasicOpenIso P Aplus T s _ hden hAplus hP hT).symm
+    (PreAdicSpace.isAffinoid_presentationLimitPreAdicSpace S' (completionLocalization P T s _ hden)
+      (completionLocalization_ringOfDefinition_le_completedPlusSubring P Aplus hP T s _ hden))
 
 /-- **Every rational open is an open affinoid subspace** of the presentation-limit pre-adic space
 `Spa(A, A⁺)`. -/
