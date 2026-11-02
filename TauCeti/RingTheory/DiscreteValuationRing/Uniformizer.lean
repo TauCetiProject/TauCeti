@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
+public import TauCeti.RingTheory.DiscreteValuationRing.Basic
 
 /-!
 # Uniformizer coordinates on maximal-ideal graded pieces
@@ -77,34 +78,33 @@ theorem uniformizerChangeUnit_mul (π₁ π₂ π₃ : R) (h₁ : Irreducible π
   rw [Units.val_mul, ← mul_assoc, mul_uniformizerChangeUnit, mul_uniformizerChangeUnit,
     mul_uniformizerChangeUnit]
 
-/-- `x * π ^ m` lies in `𝔪 ^ m` for a uniformizer `π`. -/
-private theorem mul_pow_mem_maximalIdeal_pow {π : R} (hπ : Irreducible π) (m : ℕ) (x : R) :
-    x * π ^ m ∈ maximalIdeal R ^ m :=
-  (maximalIdeal R ^ m).mul_mem_left x
-    (Ideal.pow_mem_pow ((mem_maximalIdeal π).2 hπ.not_isUnit) m)
-
 private noncomputable def uniformizerPowToMaximalIdealGraded (π : R)
     (hπ : Irreducible π) (m : ℕ) :
     R →ₗ[R] (maximalIdeal R ^ m : Ideal R) ⧸
       (maximalIdeal R • ⊤ : Submodule R (maximalIdeal R ^ m : Ideal R)) :=
   (Submodule.mkQ _).comp <|
-    (LinearMap.mulRight R (π ^ m)).codRestrict _ (mul_pow_mem_maximalIdeal_pow hπ m)
+    (LinearMap.mulRight R (π ^ m)).codRestrict _
+      (IsDiscreteValuationRing.mul_pow_mem_maximalIdeal_pow hπ m)
 
 private theorem uniformizerPowToMaximalIdealGraded_apply (π : R)
     (hπ : Irreducible π) (m : ℕ) (x : R) :
     uniformizerPowToMaximalIdealGraded π hπ m x =
-      Submodule.Quotient.mk ⟨x * π ^ m, mul_pow_mem_maximalIdeal_pow hπ m x⟩ :=
+      Submodule.Quotient.mk
+        ⟨x * π ^ m, IsDiscreteValuationRing.mul_pow_mem_maximalIdeal_pow hπ m x⟩ :=
   rfl
 
 private theorem ker_uniformizerPowToMaximalIdealGraded (π : R)
     (hπ : Irreducible π) (m : ℕ) :
     LinearMap.ker (uniformizerPowToMaximalIdealGraded π hπ m) = maximalIdeal R := by
   ext x
-  rw [LinearMap.mem_ker, uniformizerPowToMaximalIdealGraded_apply,
-    Submodule.Quotient.mk_eq_zero, Submodule.mem_smul_top_iff, Submodule.coe_mk, smul_eq_mul,
-    ← pow_succ', hπ.maximalIdeal_eq, Ideal.span_singleton_pow, Ideal.mem_span_singleton,
-    Ideal.mem_span_singleton, pow_succ, mul_comm x,
-    mul_dvd_mul_iff_left (pow_ne_zero m hπ.ne_zero)]
+  -- The class of `x * π ^ m` vanishes iff `x * π ^ m ∈ 𝔪 * 𝔪 ^ m`.
+  simp only [LinearMap.mem_ker, uniformizerPowToMaximalIdealGraded_apply,
+    Submodule.Quotient.mk_eq_zero, Submodule.mem_smul_top_iff, smul_eq_mul]
+  -- Cancel the uniformizer power `π ^ m`.
+  refine ⟨fun h ↦ ?_, fun hx ↦ Ideal.mul_mem_mul hx <|
+    Ideal.pow_mem_pow ((mem_maximalIdeal π).2 hπ.not_isUnit) m⟩
+  rw [← pow_succ'] at h
+  exact IsDiscreteValuationRing.mem_maximalIdeal_of_mul_pow_mem_maximalIdeal_pow_succ hπ h
 
 private theorem uniformizerPowToMaximalIdealGraded_surjective (π : R)
     (hπ : Irreducible π) (m : ℕ) :
@@ -131,11 +131,15 @@ theorem residueFieldEquivMaximalIdealGradedOfUniformizer_mk (π : R)
     (hπ : Irreducible π) (m : ℕ) (x : R) :
     residueFieldEquivMaximalIdealGradedOfUniformizer π hπ m (residue R x) =
       Submodule.Quotient.mk
-        (⟨x * π ^ m, (maximalIdeal R ^ m).mul_mem_left x
-          (Ideal.pow_mem_pow ((mem_maximalIdeal π).2 hπ.not_isUnit) m)⟩ :
-          (maximalIdeal R ^ m : Ideal R)) :=
-  -- `residue R x` is the quotient class of `x`, on which both quotient equivalences compute.
-  (rfl)
+        ⟨x * π ^ m, IsDiscreteValuationRing.mul_pow_mem_maximalIdeal_pow hπ m x⟩ := by
+  -- `residue R x` is the class of `x` in `R ⧸ 𝔪`.
+  rw [residue_def, ← Ideal.Quotient.mk_eq_mk]
+  -- The equivalence is a composite out of `R ⧸ 𝔪`, while its stated domain is the definition
+  -- `ResidueField R`; `rw [LinearEquiv.trans_apply]` cannot see through that definition, so the
+  -- composite is split by unification and each factor is computed by its `_mk` lemma.
+  exact (LinearEquiv.trans_apply ..).trans <| (congrArg _ (Submodule.quotEquivOfEq_mk ..)).trans <|
+    (LinearMap.quotKerEquivOfSurjective_apply_mk ..).trans
+      (uniformizerPowToMaximalIdealGraded_apply π hπ m x)
 
 /-- Replacing `π` by `π' = π * a` in the principal-power equivalence is the same as first
 multiplying the residue coordinate by `a ^ m`. -/
