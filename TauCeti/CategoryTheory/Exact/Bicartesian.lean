@@ -46,9 +46,10 @@ the pullback property.  The statement for deflations follows by passing to the o
 category.
 
 Conversely, a morphism of conflations `φ : S ⟶ T` which is invertible on the cokernels has a
-pushout as its left square.  The cocone property is checked on the pullback of `S` along
-`T.g ≫ (φ.τ₃)⁻¹`, which is again a conflation with kernel `S.X₁` by E2op.  With the pushout of
-an isomorphism being an isomorphism, this gives the short five lemma for conflations.
+pushout as its left square; dually, one which is invertible on the kernels has a pullback as its
+right square.  Since a pushout of an isomorphism is an isomorphism, this yields the short five
+lemma for conflations: a morphism of conflations invertible on the kernels and the cokernels is
+invertible in the middle.
 
 ## Main results
 
