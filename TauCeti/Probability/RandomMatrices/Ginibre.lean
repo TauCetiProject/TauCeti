@@ -10,22 +10,28 @@ public import Mathlib.Analysis.Matrix.MeasurableSpace
 public import Mathlib.Analysis.Matrix.Order
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.Probability.Distributions.Gaussian.Real
-public import Mathlib.Probability.Moments.Variance
+public import TauCeti.Analysis.Matrix.MeasurableSpace
+public import TauCeti.MeasureTheory.Constructions.Pi
+public import TauCeti.Probability.Distributions.Gaussian.ProperComplex.Modulus
+public import TauCeti.Probability.Distributions.Gaussian.ProperComplex.Moments
 public import TauCeti.Probability.Distributions.Wishart.Moments
 
 /-!
 # Ginibre matrices and Gaussian Gram matrices
 
 The real Ginibre law on `m × n` matrices has independent standard Gaussian entries. The complex
-Ginibre law has independent entries `(a + i b) / √2` with `a` and `b` independent standard
-Gaussians, so that each entry has `E |z| ^ 2 = 1`. The Gaussian Gram laws are the images of these
-laws under `X ↦ X * Xᴴ`, without normalization. In the real case this is the Wishart law
-`wishartGramMeasure n 1`, which we reuse instead of redefining.
+Ginibre law has independent standard proper complex Gaussian entries, that is, independent
+entries `(a + i b) / √2` with `a` and `b` independent standard Gaussians, so that each entry has
+`E |z| ^ 2 = 1`. The complex Gaussian Gram law is the image of the complex Ginibre law under
+`X ↦ X * Xᴴ`, without normalization. The real Gaussian Gram law is defined as the Wishart law
+`wishartGramMeasure n 1`, the law of the Gram sum of `n` independent standard Gaussian vectors,
+which we reuse instead of redefining.
 
 ## Main definitions
 
 * `TauCeti.Probability.ginibreReal`: the real Ginibre law.
-* `TauCeti.Probability.ginibreComplex`: the complex Ginibre law.
+* `TauCeti.Probability.ginibreComplex`: the complex Ginibre law, the image of
+  `properComplexGaussianMeasure 0 1` under reshaping into a matrix.
 * `TauCeti.Probability.gaussianGramReal` and `TauCeti.Probability.gaussianGramComplex`: the
   Gaussian Gram laws.
 
@@ -49,6 +55,7 @@ public section
 noncomputable section
 
 open MeasureTheory Matrix ProbabilityTheory
+open scoped ComplexOrder
 
 namespace TauCeti
 
@@ -58,15 +65,11 @@ namespace Probability
 def ginibreReal (m n : ℕ) : Measure (Matrix (Fin m) (Fin n) ℝ) :=
   Measure.pi fun _ ↦ Measure.pi fun _ ↦ gaussianReal 0 1
 
-/-- The complex matrix with entries `(a + I * b) / √2` built from an array `G` of pairs `(a, b)`. -/
-def complexEntries {m n : ℕ} (G : Fin m → Fin n → ℝ × ℝ) : Matrix (Fin m) (Fin n) ℂ :=
-  Matrix.of fun i j ↦ (((G i j).1 : ℂ) + Complex.I * (G i j).2) / (Real.sqrt 2 : ℝ)
-
-/-- The complex Ginibre law on `m × n` matrices: the entries are independent, and each is
-`(a + I * b) / √2` for independent standard Gaussians `a` and `b`. -/
+/-- The complex Ginibre law on `m × n` matrices: the standard proper complex Gaussian law on the
+entries `(i, j)`, arranged as a matrix. -/
 def ginibreComplex (m n : ℕ) : Measure (Matrix (Fin m) (Fin n) ℂ) :=
-  (Measure.pi fun (_ : Fin m) ↦ Measure.pi fun (_ : Fin n) ↦
-    (gaussianReal 0 1).prod (gaussianReal 0 1)).map complexEntries
+  (properComplexGaussianMeasure (0 : Fin m × Fin n → ℂ) 1).map
+    fun z ↦ Matrix.of fun i j ↦ z (i, j)
 
 /-- The real Gaussian Gram law: the Wishart law `wishartGramMeasure n 1`, the law of the Gram sum
 of `n` independent standard Gaussian vectors in `ℝ ^ m`, viewed on `Matrix (Fin m) (Fin m) ℝ`. -/
@@ -82,99 +85,45 @@ instance (m n : ℕ) : IsProbabilityMeasure (ginibreReal m n) := by
   exact Measure.pi.instIsProbabilityMeasure fun _ : Fin m ↦
     Measure.pi fun _ : Fin n ↦ gaussianReal 0 1
 
-private lemma measurable_complexEntries {m n : ℕ} :
-    Measurable (complexEntries (m := m) (n := n)) := by
-  refine measurable_pi_iff.2 fun i ↦ measurable_pi_iff.2 fun j ↦ ?_
-  unfold complexEntries
-  fun_prop
+private lemma measurable_ginibreComplexEntries {m n : ℕ} :
+    Measurable fun z : Fin m × Fin n → ℂ ↦ Matrix.of fun i j ↦ z (i, j) :=
+  Measurable.of_eval_matrix _ fun _ _ ↦ measurable_pi_apply _
 
-instance (m n : ℕ) : IsProbabilityMeasure (ginibreComplex m n) := by
-  unfold ginibreComplex
-  exact (Measure.isProbabilityMeasure_map_iff measurable_complexEntries.aemeasurable).2
+instance (m n : ℕ) : IsProbabilityMeasure (ginibreComplex m n) :=
+  (Measure.isProbabilityMeasure_map_iff measurable_ginibreComplexEntries.aemeasurable).2
     inferInstance
-
-private lemma measurable_mul_conjTranspose {𝕜 : Type*} [RCLike 𝕜] {m n : ℕ} :
-    Measurable fun X : Matrix (Fin m) (Fin n) 𝕜 ↦ X * Xᴴ := by
-  refine measurable_pi_iff.2 fun i ↦ measurable_pi_iff.2 fun j ↦ ?_
-  simp only [mul_apply, conjTranspose_apply]
-  fun_prop
 
 instance (m n : ℕ) : IsProbabilityMeasure (gaussianGramReal m n) :=
   (Measure.isProbabilityMeasure_map_iff measurable_subtype_coe.aemeasurable).2 inferInstance
 
 instance (m n : ℕ) : IsProbabilityMeasure (gaussianGramComplex m n) :=
-  (Measure.isProbabilityMeasure_map_iff measurable_mul_conjTranspose.aemeasurable).2
+  (Measure.isProbabilityMeasure_map_iff measurable_matrix_mul_conjTranspose.aemeasurable).2
     inferInstance
-
-private lemma map_apply_pi_pi {α : Type*} {mα : MeasurableSpace α} (μ : Measure α)
-    [IsProbabilityMeasure μ] (m n : ℕ) (i : Fin m) (j : Fin n) :
-    (Measure.pi fun (_ : Fin m) ↦ Measure.pi fun (_ : Fin n) ↦ μ).map (fun X ↦ X i j) = μ :=
-  ((measurePreserving_eval (fun _ : Fin n ↦ μ) j).comp
-    (measurePreserving_eval (fun _ : Fin m ↦ Measure.pi fun _ : Fin n ↦ μ) i)).map_eq
 
 /-- Each entry of a real Ginibre matrix is a standard Gaussian. -/
 theorem map_apply_ginibreReal (m n : ℕ) (i : Fin m) (j : Fin n) :
     (ginibreReal m n).map (fun X ↦ X i j) = gaussianReal 0 1 :=
-  map_apply_pi_pi (gaussianReal 0 1) m n i j
-
-private lemma map_inv_sqrt_two_mul_comp (k : ℝ × ℝ → ℝ)
-    (hk : MeasurePreserving k ((gaussianReal 0 1).prod (gaussianReal 0 1)) (gaussianReal 0 1))
-    (m n : ℕ) (i : Fin m) (j : Fin n) :
-    (Measure.pi fun (_ : Fin m) ↦ Measure.pi fun (_ : Fin n) ↦
-      (gaussianReal 0 1).prod (gaussianReal 0 1)).map
-      (fun G ↦ (Real.sqrt 2)⁻¹ * k (G i j)) = gaussianReal 0 (1 / 2) := by
-  have h : (fun G : Fin m → Fin n → ℝ × ℝ ↦ (Real.sqrt 2)⁻¹ * k (G i j)) =
-      (fun x : ℝ ↦ (Real.sqrt 2)⁻¹ * x) ∘ k ∘ (fun G ↦ G i j) := rfl
-  rw [h, ← Measure.map_map (by fun_prop) (hk.measurable.comp (by fun_prop)),
-    ← Measure.map_map hk.measurable (by fun_prop), map_apply_pi_pi, hk.map_eq,
-    gaussianReal_map_const_mul]
-  congr 1
-  · simp
-  · refine NNReal.eq ?_
-    simp [Real.sq_sqrt]
-
-private lemma complexEntries_apply_re {m n : ℕ} (G : Fin m → Fin n → ℝ × ℝ) (i : Fin m)
-    (j : Fin n) : (complexEntries G i j).re = (Real.sqrt 2)⁻¹ * (G i j).1 := by
-  rw [complexEntries, of_apply, Complex.div_ofReal_re, div_eq_inv_mul]
-  simp
-
-private lemma complexEntries_apply_im {m n : ℕ} (G : Fin m → Fin n → ℝ × ℝ) (i : Fin m)
-    (j : Fin n) : (complexEntries G i j).im = (Real.sqrt 2)⁻¹ * (G i j).2 := by
-  rw [complexEntries, of_apply, Complex.div_ofReal_im, div_eq_inv_mul]
-  simp
+  (measurePreserving_eval_eval (gaussianReal 0 1) i j).map_eq
 
 /-- The real part of an entry of a complex Ginibre matrix is `N(0, 1/2)`. -/
 theorem map_re_apply_ginibreComplex (m n : ℕ) (i : Fin m) (j : Fin n) :
     (ginibreComplex m n).map (fun X ↦ (X i j).re) = gaussianReal 0 (1 / 2) := by
-  have h := map_inv_sqrt_two_mul_comp Prod.fst measurePreserving_fst m n i j
-  rw [ginibreComplex, Measure.map_map (by fun_prop) measurable_complexEntries]
-  convert h using 2
-  funext G
-  exact complexEntries_apply_re G i j
+  have h := congrArg (Measure.map Prod.fst)
+    (map_re_im_sub_eval_properComplexGaussianMeasure (0 : Fin m × Fin n → ℂ)
+      Matrix.PosSemidef.one (i, j))
+  rw [Measure.map_map measurable_fst (by fun_prop), Measure.map_fst_prod] at h
+  rw [ginibreComplex, Measure.map_map (by fun_prop) measurable_ginibreComplexEntries]
+  simpa [Function.comp_def, Real.toNNReal_inv] using h
 
 /-- The imaginary part of an entry of a complex Ginibre matrix is `N(0, 1/2)`. -/
 theorem map_im_apply_ginibreComplex (m n : ℕ) (i : Fin m) (j : Fin n) :
     (ginibreComplex m n).map (fun X ↦ (X i j).im) = gaussianReal 0 (1 / 2) := by
-  have h := map_inv_sqrt_two_mul_comp Prod.snd measurePreserving_snd m n i j
-  rw [ginibreComplex, Measure.map_map (by fun_prop) measurable_complexEntries]
-  convert h using 2
-  funext G
-  exact complexEntries_apply_im G i j
-
-private lemma integral_sq_of_map_eq_gaussianReal {Ω : Type*} {mΩ : MeasurableSpace Ω}
-    {μ : Measure Ω} {Y : Ω → ℝ} (hY : Measurable Y) {v : NNReal}
-    (h : μ.map Y = gaussianReal 0 v) :
-    Integrable (fun ω ↦ Y ω * Y ω) μ ∧ ∫ ω, Y ω * Y ω ∂μ = v := by
-  have hsq : Integrable (fun x : ℝ ↦ x * x) (gaussianReal 0 v) := by
-    simpa [sq] using (memLp_id_gaussianReal (μ := 0) (v := v) 2).integrable_sq
-  have hmap : ∫ ω, Y ω * Y ω ∂μ = ∫ x, x * x ∂(gaussianReal 0 v) := by
-    rw [← h, integral_map hY.aemeasurable (by fun_prop)]
-  refine ⟨?_, hmap.trans ?_⟩
-  · rw [← h] at hsq
-    exact (integrable_map_measure (by fun_prop) hY.aemeasurable).1 hsq
-  · have hv := variance_id_gaussianReal (μ := 0) (v := v)
-    rw [variance_of_integral_eq_zero aemeasurable_id (by simp [integral_id_gaussianReal])] at hv
-    simpa [sq] using hv
+  have h := congrArg (Measure.map Prod.snd)
+    (map_re_im_sub_eval_properComplexGaussianMeasure (0 : Fin m × Fin n → ℂ)
+      Matrix.PosSemidef.one (i, j))
+  rw [Measure.map_map measurable_snd (by fun_prop), Measure.map_snd_prod] at h
+  rw [ginibreComplex, Measure.map_map (by fun_prop) measurable_ginibreComplexEntries]
+  simpa [Function.comp_def, Real.toNNReal_inv] using h
 
 /-- The expected trace of the Gaussian Gram matrix of an `m × n` real Ginibre matrix is `m * n`. -/
 theorem integral_trace_gaussianGramReal (m n : ℕ) :
@@ -192,33 +141,26 @@ theorem integral_trace_gaussianGramReal (m n : ℕ) :
 `m * n`; the trace is real, so we take its real part. -/
 theorem integral_trace_re_gaussianGramComplex (m n : ℕ) :
     ∫ A, A.trace.re ∂(gaussianGramComplex m n) = m * n := by
-  have hre : ∀ i j, Integrable (fun X : Matrix (Fin m) (Fin n) ℂ ↦ (X i j).re * (X i j).re)
-      (ginibreComplex m n) ∧
-      ∫ X, (X i j).re * (X i j).re ∂(ginibreComplex m n) = 1 / 2 := fun i j ↦ by
-    simpa using integral_sq_of_map_eq_gaussianReal (μ := ginibreComplex m n)
-      (Y := fun X ↦ (X i j).re) (by fun_prop) (v := 1 / 2)
-      (by simpa using map_re_apply_ginibreComplex m n i j)
-  have him : ∀ i j, Integrable (fun X : Matrix (Fin m) (Fin n) ℂ ↦ (X i j).im * (X i j).im)
-      (ginibreComplex m n) ∧
-      ∫ X, (X i j).im * (X i j).im ∂(ginibreComplex m n) = 1 / 2 := fun i j ↦ by
-    simpa using integral_sq_of_map_eq_gaussianReal (μ := ginibreComplex m n)
-      (Y := fun X ↦ (X i j).im) (by fun_prop) (v := 1 / 2)
-      (by simpa using map_im_apply_ginibreComplex m n i j)
-  have hent : ∀ i j, Integrable (fun X : Matrix (Fin m) (Fin n) ℂ ↦
-      (X i j).re * (X i j).re + (X i j).im * (X i j).im) (ginibreComplex m n) ∧
-      ∫ X, ((X i j).re * (X i j).re + (X i j).im * (X i j).im) ∂(ginibreComplex m n) = 1 :=
-    fun i j ↦ ⟨(hre i j).1.add (him i j).1, by
-      rw [integral_add (hre i j).1 (him i j).1, (hre i j).2, (him i j).2]
-      norm_num⟩
-  rw [gaussianGramComplex, integral_map measurable_mul_conjTranspose.aemeasurable
-    (by exact (Continuous.aestronglyMeasurable (by fun_prop)))]
-  have e : ∀ X : Matrix (Fin m) (Fin n) ℂ, (X * Xᴴ).trace.re =
-      ∑ i, ∑ j, ((X i j).re * (X i j).re + (X i j).im * (X i j).im) := by
-    intro X
-    simp [trace, mul_apply, Complex.re_sum]
-  simp_rw [e]
-  rw [integral_finsetSum _ fun i _ ↦ integrable_finsetSum _ fun j _ ↦ (hent i j).1]
-  simp_rw [integral_finsetSum _ fun j _ ↦ (hent _ j).1, (hent _ _).2]
+  have hint : ∀ i j, Integrable (fun z : Fin m × Fin n → ℂ ↦ ‖z (i, j)‖ ^ 2)
+      (properComplexGaussianMeasure 0 1) := fun i j ↦ by
+    simpa using integrable_norm_sq_sub_eval_properComplexGaussianMeasure
+      (0 : Fin m × Fin n → ℂ) 1 (i, j)
+  have hval : ∀ i j, ∫ z : Fin m × Fin n → ℂ, ‖z (i, j)‖ ^ 2
+      ∂properComplexGaussianMeasure 0 1 = 1 := fun i j ↦ by
+    simpa using integral_norm_sq_sub_eval_properComplexGaussianMeasure
+      (0 : Fin m × Fin n → ℂ) Matrix.PosSemidef.one (i, j)
+  have e : ∀ X : Matrix (Fin m) (Fin n) ℂ,
+      (X * Xᴴ).trace.re = ∑ i, ∑ j, ‖X i j‖ ^ 2 := fun X ↦ by
+    simp only [trace, diag_apply, mul_apply, conjTranspose_apply, Complex.star_def,
+      Complex.re_sum, Complex.mul_conj, Complex.normSq_eq_norm_sq,       Complex.ofReal_pow]
+    norm_cast
+  rw [gaussianGramComplex, integral_map measurable_matrix_mul_conjTranspose.aemeasurable
+    (Continuous.aestronglyMeasurable (by fun_prop)), ginibreComplex,
+    integral_map measurable_ginibreComplexEntries.aemeasurable
+      (Continuous.aestronglyMeasurable (by simp_rw [e]; fun_prop))]
+  simp_rw [e, of_apply]
+  rw [integral_finsetSum _ fun i _ ↦ integrable_finsetSum _ fun j _ ↦ hint i j]
+  simp_rw [integral_finsetSum _ fun j _ ↦ hint _ j, hval]
   simp
 
 /-- The real Gaussian Gram law is supported on positive semidefinite matrices. -/
@@ -232,7 +174,7 @@ open scoped ComplexOrder in
 /-- The complex Gaussian Gram law is supported on positive semidefinite matrices. -/
 theorem ae_posSemidef_gaussianGramComplex (m n : ℕ) :
     ∀ᵐ A ∂(gaussianGramComplex m n), A.PosSemidef := by
-  rw [gaussianGramComplex, ae_map_iff measurable_mul_conjTranspose.aemeasurable
+  rw [gaussianGramComplex, ae_map_iff measurable_matrix_mul_conjTranspose.aemeasurable
     (Matrix.posSemidef_is_closed (n := Fin m) (𝕜 := ℂ)).measurableSet]
   exact Filter.Eventually.of_forall fun X ↦ posSemidef_self_mul_conjTranspose X
 
