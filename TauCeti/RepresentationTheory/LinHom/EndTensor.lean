@@ -66,20 +66,14 @@ variable (R A V E : Type*) [CommRing R] [CommRing A] [Algebra R A]
   [AddCommGroup E] [Module A E] [Module.Finite A E] [Module.Projective A E]
   [Module R E] [IsScalarTower R A E]
 
-/-- The contraction `(A ⊗[R] V)* ⊗ (E* ⊗ E) ≃ Hom_A(A ⊗[R] V, End_A E)`, applying the two
-finite Hom/tensor identifications `dualTensorHomEquiv`. -/
-private def dualTensorEndEquiv :
-    Module.Dual A (A ⊗[R] V) ⊗[A] (Module.Dual A E ⊗[A] E) ≃ₗ[A]
-      (A ⊗[R] V →ₗ[A] Module.End A E) :=
-  (TensorProduct.congr (LinearEquiv.refl A _) (dualTensorHomEquiv A E E)).trans
-    (dualTensorHomEquiv A (A ⊗[R] V) (Module.End A E))
-
 /-- **An endomorphism-valued linear map as a tensor.** An `R`-linear map `c : V → End_A E`
 corresponds to its `A`-linear extension `A ⊗[R] V → End_A E`, and hence, `A ⊗[R] V` and `E`
 being finitely generated and projective, to a tensor in `(A ⊗[R] V)* ⊗[A] (E* ⊗[A] E)`. -/
 def endValuedTensorEquiv :
     (V →ₗ[R] Module.End A E) ≃ₗ[A] Module.Dual A (A ⊗[R] V) ⊗[A] (Module.Dual A E ⊗[A] E) :=
-  (LinearMap.liftBaseChangeEquiv A).trans (dualTensorEndEquiv R A V E).symm
+  (LinearMap.liftBaseChangeEquiv A).trans
+    ((TensorProduct.congr (LinearEquiv.refl A _) (dualTensorHomEquiv A E E)).trans
+      (dualTensorHomEquiv A (A ⊗[R] V) (Module.End A E))).symm
 
 variable {R A V E}
 
@@ -89,18 +83,18 @@ rank-one endomorphism `x ↦ φ (1 ⊗ v) • ψ x • e`. -/
 theorem endValuedTensorEquiv_symm_tmul_apply_apply (φ : Module.Dual A (A ⊗[R] V))
     (ψ : Module.Dual A E) (e : E) (v : V) (x : E) :
     (endValuedTensorEquiv R A V E).symm (φ ⊗ₜ (ψ ⊗ₜ e)) v x = φ (1 ⊗ₜ v) • ψ x • e := by
-  simp [endValuedTensorEquiv, dualTensorEndEquiv]
+  simp [endValuedTensorEquiv]
 
 variable {G : Type*} [Group G] (ρ : Representation R G V) (μ : Representation A G E)
 
 /-- The contraction `(A ⊗[R] V)* ⊗ (E* ⊗ E) ≃ Hom_A(A ⊗[R] V, End_A E)` intertwines the tensor
-product representation `(ρ_A)* ⊗ (μ* ⊗ μ)` with the conjugation representation. -/
+product representation `(ρ_A)* ⊗ (μ* ⊗ μ)` with the conjugation representation: it contracts
+`E* ⊗ E` and then `(A ⊗[R] V)* ⊗ End_A E`. -/
 private def dualTensorEndRepEquiv :
     ((ρ.baseChange A).dual.tprod (μ.dual.tprod μ)).Equiv
       (Representation.linHom (ρ.baseChange A) (Representation.linHom μ μ)) :=
-  .mk (dualTensorEndEquiv R A V E) fun g ↦ by
-    ext φ ψ e v x
-    simp [dualTensorEndEquiv, Module.Dual.transpose_apply]
+  ((Representation.Equiv.refl _).tprod (Representation.Equiv.dualTensorHomOfProjective μ μ)).trans
+    (Representation.Equiv.dualTensorHomOfProjective (ρ.baseChange A) (Representation.linHom μ μ))
 
 /-- **Equivariance of `c` is invariance of its tensor.** The tensor of an `R`-linear map
 `c : V → End_A E` is fixed by the tensor product representation `(ρ_A)* ⊗ (μ* ⊗ μ)`, where `ρ_A`
@@ -110,10 +104,15 @@ theorem endValuedTensorEquiv_mem_invariants_iff (c : V →ₗ[R] Module.End A E)
     endValuedTensorEquiv R A V E c ∈ ((ρ.baseChange A).dual.tprod (μ.dual.tprod μ)).invariants ↔
       ∀ g v, c (ρ g v) = μ g ∘ₗ c v ∘ₗ μ g⁻¹ := by
   rw [← (dualTensorEndRepEquiv ρ μ).apply_mem_invariants_iff]
-  -- `liftBaseChange` abbreviates `liftBaseChangeEquiv`, so the last goal closes by `rfl`.
+  -- Both sides contract a pure tensor `φ ⊗ (ψ ⊗ e)` to the same map.
+  have he : (dualTensorEndRepEquiv ρ μ).toLinearEquiv.toLinearMap =
+      (LinearMap.liftBaseChangeEquiv A).toLinearMap ∘ₗ
+        (endValuedTensorEquiv R A V E).symm.toLinearMap := by
+    ext φ ψ e v x
+    simp [dualTensorEndRepEquiv]
+  -- `liftBaseChange` abbreviates `liftBaseChangeEquiv`, so `simpa` closes this goal.
   have hc : dualTensorEndRepEquiv ρ μ (endValuedTensorEquiv R A V E c) = c.liftBaseChange A := by
-    rw [dualTensorEndRepEquiv, Representation.Equiv.mk_apply, endValuedTensorEquiv,
-      LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply]
+    simpa using LinearMap.congr_fun he (endValuedTensorEquiv R A V E c)
   rw [hc, Representation.mem_invariants]
   simp only [Representation.linHom_apply]
   rw [Representation.mem_linHom_invariants_iff_isIntertwining,
