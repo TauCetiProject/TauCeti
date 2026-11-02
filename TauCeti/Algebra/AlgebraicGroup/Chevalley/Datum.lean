@@ -127,8 +127,11 @@ instance : CoeSort (ChevalleyDatum t ht) Type := ⟨carrier⟩
 /-! ## The weight lattice and the coordinate weights -/
 
 /-- The **weight lattice** `Λ(D)` of a Chevalley datum: the sublattice of `Fin t.rank → ℤ` spanned
-by the weights of its weight basis. -/
-def weightLattice : Submodule ℤ (Fin t.rank → ℤ) :=
+by the weights of its weight basis.
+
+This is an abbreviation so that the chosen basis `D.weightLatticeBasis` is a basis of
+`D.weightLattice` without transport. -/
+abbrev weightLattice : Submodule ℤ (Fin t.rank → ℤ) :=
   Submodule.span ℤ (Set.range D.weight)
 
 /-- The weight lattice is the integral span of the weights. -/
@@ -233,8 +236,28 @@ noncomputable def points (A : Type v) [CommRing A] :
     (t.lieBasis ht).h D.representation D.lattice D.representation_mem_lattice
     D.isNilpotent_representation_rootGenerator D.basis D.coordinateWeight A
 
+/-- The points of a Chevalley datum are the points of the Kostant toral closure it specializes,
+so the generic API of those points applies to them. -/
+theorem points_eq_kostantToralPointsSubgroup (A : Type v) [CommRing A] :
+    D.points A =
+      UniversalEnvelopingAlgebra.kostantToralPointsSubgroup (t.lieBasis ht).rootGenerator
+        (t.lieBasis ht).h D.representation D.lattice D.representation_mem_lattice
+        D.isNilpotent_representation_rootGenerator D.basis D.coordinateWeight A :=
+  (rfl)
+
+/-- The points of a Chevalley datum are the invertible matrices cut out by the defining Hopf ideal
+of its group scheme. -/
+theorem points_def (A : Type v) [CommRing A] :
+    D.points A =
+      GeneralLinear.hopfIdealPointsSubgroup D.dim
+        (UniversalEnvelopingAlgebra.kostantToralDefiningIdeal (t.lieBasis ht).rootGenerator
+          (t.lieBasis ht).h D.representation D.lattice D.representation_mem_lattice
+          D.isNilpotent_representation_rootGenerator D.basis D.coordinateWeight) A :=
+  UniversalEnvelopingAlgebra.kostantToralPointsSubgroup_def _ _ _ _ _ _ _ _ A
+
 /-- Membership in the points of a Chevalley datum is vanishing on the defining Hopf ideal of its
 group scheme. -/
+@[simp]
 theorem mem_points_iff (A : Type v) [CommRing A] (g : Matrix.GeneralLinearGroup (Fin D.dim) A) :
     g ∈ D.points A ↔
       ∀ x ∈ UniversalEnvelopingAlgebra.kostantToralDefiningIdeal (t.lieBasis ht).rootGenerator
@@ -242,6 +265,25 @@ theorem mem_points_iff (A : Type v) [CommRing A] (g : Matrix.GeneralLinearGroup 
           D.isNilpotent_representation_rootGenerator D.basis D.coordinateWeight,
         ((GeneralLinear.pointsMulEquiv (R := ℤ) D.dim).symm g).ofConv x = 0 :=
   UniversalEnvelopingAlgebra.mem_kostantToralPointsSubgroup_iff _ _ _ _ _ _ _ _ A g
+
+/-- Every matrix in a numbered root subgroup of a Chevalley datum is a point of it. -/
+theorem kostantRootSubgroupMatrix_mem_points (A : Type v) [CommRing A]
+    (i : Fin t.rank ⊕ Fin t.rank)
+    (q : HopfAlgebra.points (R := ℤ) (H := AdditiveGroup.coordinateHopfAlgebra ℤ)
+      (CommAlgCat.of ℤ A)) :
+    UniversalEnvelopingAlgebra.kostantRootSubgroupMatrix (t.lieBasis ht).rootGenerator
+        (t.lieBasis ht).h D.representation D.lattice D.representation_mem_lattice i
+        (D.isNilpotent_representation_rootGenerator i) D.basis q ∈ D.points A :=
+  UniversalEnvelopingAlgebra.kostantGeneratedPointsSubgroup_le_toralPoints _ _ _ _ _ _ _ _ A
+    (UniversalEnvelopingAlgebra.kostantRootSubgroupMatrix_mem_generatedPoints
+      _ _ _ _ _ _ _ A i q)
+
+/-- Every matrix of the torus of a Chevalley datum, acting on each weight basis vector through its
+coordinate weight, is a point of it. -/
+theorem kostantTorusMatrix_mem_points (A : Type v) [CommRing A] (s : Fin t.rank → Aˣ) :
+    UniversalEnvelopingAlgebra.kostantTorusMatrix D.lattice D.basis D.coordinateWeight s ∈
+      D.points A :=
+  UniversalEnvelopingAlgebra.kostantTorusMatrix_mem_toralPoints _ _ _ _ _ _ _ _ A s
 
 /-! ## The torus -/
 
