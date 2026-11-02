@@ -10,6 +10,7 @@ public import TauCeti.Analysis.BoundedVariation.ReducedBoundary
 public import Mathlib.Geometry.Euclidean.Volume.Measure
 public import Mathlib.MeasureTheory.Measure.Hausdorff
 import TauCeti.Analysis.Calculus.BumpFunction.LipschitzCutoff
+import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.Analysis.Distribution.TestFunction.Divergence
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import Mathlib.Analysis.Calculus.Monotone
@@ -65,17 +66,21 @@ By the upper density comparison for Hausdorff measure
 perimeter measure by Hausdorff measure on the reduced boundary:
 `|Dχ_s| (A) ≤ n μ(ball 0 1) μH[n - 1] (A)` for every `A ⊆ ∂*s`
 (`TauCeti.variationMeasure_preimage_le_mul_hausdorffMeasure`). Since `|Dχ_s|` is concentrated on
-`∂*s`, it vanishes on `Hⁿ⁻¹`-null sets
-(`TauCeti.map_variationMeasure_absolutelyContinuous_euclideanHausdorffMeasure`). This
-absolute continuity `|Dχ_s| ≪ Hⁿ⁻¹⌊∂*s` is one ingredient of the identification
+`∂*s`, it vanishes on `Hⁿ⁻¹`-null sets: `|Dχ_s| ≪ Hⁿ⁻¹`
+(`TauCeti.map_variationMeasure_absolutelyContinuous_euclideanHausdorffMeasure`). As `|Dχ_s|` is
+concentrated on `∂*s`, this amounts to `|Dχ_s| ≪ Hⁿ⁻¹⌊∂*s`, one ingredient of the identification
 `|Dχ_s| = Hⁿ⁻¹⌊∂*s` in De Giorgi's structure theorem.
 
 ## References
 
 * F. Maggi, *Sets of Finite Perimeter and Geometric Variational Problems*, Chapter 15 (the
-  density estimates at points of the reduced boundary).
+  density estimates at points of the reduced boundary) and Theorem 15.9 (De Giorgi's structure
+  theorem, whose proof compares `|Dχ_s|` with `Hⁿ⁻¹` on `∂*s`, as in
+  `TauCeti.variationMeasure_preimage_le_mul_hausdorffMeasure`).
 * L. C. Evans, R. F. Gariepy, *Measure Theory and Fine Properties of Functions*, revised edition,
-  §5.7 (the density estimates at points of the reduced boundary).
+  §5.7 (the density estimates at points of the reduced boundary) and §5.8 (the structure theorem
+  for `∂*E`, whose proof gives the comparison with `Hⁿ⁻¹` and the absolute continuity
+  `|Dχ_s| ≪ Hⁿ⁻¹`).
 -/
 
 public section
@@ -350,8 +355,7 @@ theorem variationMeasure_preimage_le_mul_hausdorffMeasure [μ.IsAddHaarMeasure] 
     rw [← Subtype.preimage_closedBall]
     refine hr.trans_eq ?_
     have h2r : ENNReal.ofReal (2 * r) ^ d = 2 ^ d * ENNReal.ofReal r ^ (n - 1) := by
-      rw [ENNReal.ofReal_mul zero_le_two, ENNReal.ofReal_ofNat,
-        ENNReal.mul_rpow_of_ne_top ENNReal.ofNat_ne_top ENNReal.ofReal_ne_top,
+      rw [ENNReal.ofReal_mul_rpow zero_le_two, ENNReal.ofReal_ofNat,
         ENNReal.rpow_natCast (ENNReal.ofReal r)]
     rw [h2r, ← mul_assoc, ENNReal.div_mul_cancel h2 h2top, ENNReal.ofReal_mul (by positivity),
       ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_pow hr0.le, hK]

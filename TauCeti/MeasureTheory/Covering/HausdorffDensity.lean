@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Measure.Hausdorff
 public import Mathlib.MeasureTheory.Measure.Regular
 import Mathlib.MeasureTheory.Covering.Vitali
+import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.MeasureTheory.Measure.Hausdorff
 
 /-!
@@ -42,8 +43,9 @@ place of `(2 r) ^ k`, are in `TauCeti.Geometry.Euclidean.Volume.Measure`.
 * `MeasureTheory.Measure.mul_hausdorffMeasure_le_measure_of_isOpen` and
   `MeasureTheory.Measure.mul_hausdorffMeasure_le_measure`: a measure whose upper density is at
   least `c` on `A` dominates `c • μH[d]` on `A`.
-* `MeasureTheory.Measure.measure_le_mul_hausdorffMeasure`: a measure whose upper density is at
-  most `c` on `A` is at most `2 ^ d c • μH[d]` on `A`.
+* `MeasureTheory.Measure.measure_le_mul_hausdorffMeasure`: a measure with
+  `μ (closedBall x r) ≤ c (2 r) ^ d` for all small `r` at every point `x` of `A`, where
+  `c ≠ 0, ∞`, is at most `2 ^ d c • μH[d]` on `A`.
 * `TauCeti.ae_tendsto_hausdorffMeasure_inter_closedBall_div`: zero density outside a
   null-measurable set of finite Hausdorff measure.
 
@@ -108,13 +110,12 @@ private lemma countable_and_tsum_le_of_pairwiseDisjoint (μ : Measure X) {d : �
 `∑ (2 ρ i) ^ d` by `3 ^ d`, so the new sum is at most `∑ (2 ρ i) ^ d + 3 ^ d ∑_{i ∉ F} (2 ρ i) ^ d`.
 -/
 private lemma tsum_ofReal_two_mul_ite_le {ι : Type*} [DecidableEq ι] (F : Finset ι) (ρ : ι → ℝ)
-    {d : ℝ} (hd : 0 ≤ d) :
+    (d : ℝ) :
     ∑' i, ENNReal.ofReal (2 * if i ∈ F then ρ i else 3 * ρ i) ^ d ≤
       ∑' i, ENNReal.ofReal (2 * ρ i) ^ d +
         3 ^ d * ∑' i : {i // i ∉ F}, ENNReal.ofReal (2 * ρ i) ^ d := by
   have h3 (i : ι) : ENNReal.ofReal (2 * (3 * ρ i)) ^ d = 3 ^ d * ENNReal.ofReal (2 * ρ i) ^ d := by
-    rw [mul_left_comm, ENNReal.ofReal_mul zero_le_three, ENNReal.mul_rpow_of_nonneg _ _ hd,
-      ENNReal.ofReal_ofNat]
+    rw [mul_left_comm, ENNReal.ofReal_mul_rpow zero_le_three, ENNReal.ofReal_ofNat]
   calc _ ≤ ∑' i, (ENNReal.ofReal (2 * ρ i) ^ d +
         {i | i ∉ F}.indicator (fun i => 3 ^ d * ENNReal.ofReal (2 * ρ i) ^ d) i) :=
         ENNReal.tsum_le_tsum fun i => by
@@ -126,6 +127,61 @@ private lemma tsum_ofReal_two_mul_ite_le {ι : Type*} [DecidableEq ι] (F : Fins
         rw [ENNReal.tsum_add, ← tsum_subtype, ENNReal.tsum_mul_left]
         -- `↥{i | i ∉ F}` is notation for the subtype `{i // i ∉ F}`.
         rfl
+
+omit [BorelSpace X] in
+/-- If `μ (closedBall x r) ≤ c (2 r) ^ d` for every radius `r ∈ (0, ε)`, where `c ≠ ∞`, then the
+same bound holds for every radius `ρ ∈ [0, ε)`, by monotonicity of `μ` and continuity of the
+bound. -/
+private lemma measure_closedBall_le_of_forall_mem_Ioo (μ : Measure X) {d : ℝ} {c : ℝ≥0∞}
+    (hc : c ≠ ∞) {x : X} {ε : ℝ}
+    (h : ∀ r ∈ Ioo (0 : ℝ) ε, μ (closedBall x r) ≤ c * ENNReal.ofReal (2 * r) ^ d) {ρ : ℝ}
+    (hρ : 0 ≤ ρ) (hρε : ρ < ε) : μ (closedBall x ρ) ≤ c * ENNReal.ofReal (2 * ρ) ^ d := by
+  have hlim : Tendsto (fun r : ℝ => c * ENNReal.ofReal (2 * r) ^ d) (𝓝[>] ρ)
+      (𝓝 (c * ENNReal.ofReal (2 * ρ) ^ d)) :=
+    ENNReal.Tendsto.const_mul (((ENNReal.continuous_rpow_const.comp
+      (ENNReal.continuous_ofReal.comp (continuous_const.mul continuous_id))).tendsto ρ).mono_left
+        nhdsWithin_le_nhds) (Or.inr hc)
+  refine ge_of_tendsto hlim (mem_of_superset (Ioo_mem_nhdsGT hρε) fun r hr => ?_)
+  exact (measure_mono (closedBall_subset_closedBall hr.1.le)).trans (h r ⟨hρ.trans_lt hr.1, hr.2⟩)
+
+/-- If `μ (closedBall x ρ) ≤ c (2 ρ) ^ d` for every `x ∈ B` and every radius `ρ ∈ [0, ε)`, where
+`c ≠ 0, ∞`, then `μ B ≤ 2 ^ d * c * μH[d] B`: a set of diameter `ρ` meeting `B` at `x` lies in
+`closedBall x ρ`. -/
+private lemma measure_le_mul_hausdorffMeasure_of_forall_closedBall_le (μ : Measure X) {d : ℝ}
+    {c : ℝ≥0∞} (hc0 : c ≠ 0) (hc : c ≠ ∞) {B : Set X} {ε : ℝ} (hε : 0 < ε)
+    (h : ∀ x ∈ B, ∀ ρ : ℝ, 0 ≤ ρ → ρ < ε →
+      μ (closedBall x ρ) ≤ c * ENNReal.ofReal (2 * ρ) ^ d) :
+    μ B ≤ 2 ^ d * c * μH[d] B := by
+  have h2 : (2 : ℝ≥0∞) ^ d * c ≠ 0 :=
+    mul_ne_zero (ENNReal.rpow_pos two_pos ENNReal.ofNat_ne_top).ne' hc0
+  have h2top : (2 : ℝ≥0∞) ^ d * c ≠ ∞ :=
+    ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_ne_zero two_ne_zero ENNReal.ofNat_ne_top) hc
+  -- Every set of diameter at most `ε / 2` meets `B` in measure at most `2 ^ d c diam ^ d`.
+  have hle : μ.toOuterMeasure.restrict B ≤ OuterMeasure.mkMetric fun r => 2 ^ d * c * r ^ d := by
+    refine OuterMeasure.le_mkMetric _ _ (ENNReal.ofReal (ε / 2)) (by simpa using hε) fun s hs => ?_
+    rw [OuterMeasure.restrict_apply]
+    rcases (s ∩ B).eq_empty_or_nonempty with he | ⟨x, hxs, hxB⟩
+    · simp [he]
+    have hstop : ediam s ≠ ∞ := ne_top_of_le_ne_top ENNReal.ofReal_ne_top hs
+    have hsub : s ⊆ closedBall x (ediam s).toReal := fun y hy => by
+      rw [mem_closedBall, dist_edist]
+      exact ENNReal.toReal_mono hstop (edist_le_ediam_of_mem hy hxs)
+    have hρε : (ediam s).toReal < ε :=
+      (ENNReal.toReal_le_of_le_ofReal (by positivity) hs).trans_lt (half_lt_self hε)
+    calc μ (s ∩ B) ≤ μ (closedBall x (ediam s).toReal) :=
+          measure_mono (inter_subset_left.trans hsub)
+      _ ≤ c * ENNReal.ofReal (2 * (ediam s).toReal) ^ d := h x hxB _ ENNReal.toReal_nonneg hρε
+      _ = 2 ^ d * c * ediam s ^ d := by
+        rw [ENNReal.ofReal_mul_rpow zero_le_two, ENNReal.ofReal_toReal hstop, ENNReal.ofReal_ofNat]
+        ring
+  calc μ B = μ.toOuterMeasure.restrict B B := by
+        rw [OuterMeasure.restrict_apply, inter_self, toOuterMeasure_apply]
+    _ ≤ OuterMeasure.mkMetric (fun r => 2 ^ d * c * r ^ d) B := hle _
+    _ = Measure.mkMetric (fun r => 2 ^ d * c * r ^ d) B := by
+        rw [← Measure.mkMetric_toOuterMeasure, toOuterMeasure_apply]
+    _ ≤ ((2 ^ d * c) • μH[d]) B :=
+        Measure.mkMetric_mono_smul h2top h2 (Eventually.of_forall fun _ => le_rfl) _
+    _ = 2 ^ d * c * μH[d] B := by rw [Measure.smul_apply, smul_eq_mul]
 
 end TauCeti
 
@@ -186,7 +242,7 @@ theorem mul_hausdorffMeasure_le_measure_of_isOpen (μ : Measure X) {d : ℝ} (hd
     refine mem_iUnion.2 ⟨⟨b, hbu⟩, ?_⟩
     simp only [hbF, ↓reduceIte, mem_closedBall]
     linarith [dist_triangle x y b.1, mem_closedBall'.1 hyx, mem_closedBall.1 hyb]
-  · calc _ ≤ _ := TauCeti.tsum_ofReal_two_mul_ite_le F (fun p : u => p.1.2) hd
+  · calc _ ≤ _ := TauCeti.tsum_ofReal_two_mul_ite_le F (fun p : u => p.1.2) d
       _ ≤ μ U / c + 3 ^ d * (ε / 3 ^ d) := by gcongr
       _ ≤ μ U / c + ε := by gcongr; exact ENNReal.mul_div_le
 
@@ -217,54 +273,12 @@ theorem measure_le_mul_hausdorffMeasure (μ : Measure X) {d : ℝ} {c : ℝ≥0�
     obtain ⟨ε, hε, hεA⟩ := (mem_nhdsGT_iff_exists_Ioo_subset' one_pos).1 (h x hx)
     obtain ⟨j, hj⟩ := exists_nat_one_div_lt hε
     exact mem_iUnion.2 ⟨j, hx, fun r hr => hεA ⟨hr.1, hr.2.trans hj⟩⟩
-  have h2 : (2 : ℝ≥0∞) ^ d * c ≠ 0 :=
-    mul_ne_zero (ENNReal.rpow_pos two_pos ENNReal.ofNat_ne_top).ne' hc0
-  have h2top : (2 : ℝ≥0∞) ^ d * c ≠ ∞ :=
-    ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_ne_zero two_ne_zero ENNReal.ofNat_ne_top) hc
   refine (measure_mono hAB).trans ((hBmono.measure_iUnion (μ := μ)).trans_le (iSup_le fun j => ?_))
-  set ε : ℝ := 1 / (j + 1)
-  have hε : 0 < ε := by positivity
-  -- At a point of `B j` the bound extends to closed balls of every radius `ρ ∈ [0, ε)`.
-  have hball : ∀ x ∈ B j, ∀ ρ : ℝ, 0 ≤ ρ → ρ < ε →
-      μ (closedBall x ρ) ≤ c * ENNReal.ofReal (2 * ρ) ^ d := by
-    intro x hx ρ hρ hρε
-    have hlim : Tendsto (fun r : ℝ => c * ENNReal.ofReal (2 * r) ^ d) (𝓝[>] ρ)
-        (𝓝 (c * ENNReal.ofReal (2 * ρ) ^ d)) :=
-      ENNReal.Tendsto.const_mul (((ENNReal.continuous_rpow_const.comp
-        (ENNReal.continuous_ofReal.comp (continuous_const.mul continuous_id))).tendsto ρ).mono_left
-          nhdsWithin_le_nhds) (Or.inr hc)
-    refine ge_of_tendsto hlim (mem_of_superset (Ioo_mem_nhdsGT hρε) fun r hr => ?_)
-    exact (measure_mono (closedBall_subset_closedBall hr.1.le)).trans
-      (hx.2 r ⟨hρ.trans_lt hr.1, hr.2⟩)
-  -- Every set of diameter at most `ε / 2` meets `B j` in measure at most `2 ^ d c diam ^ d`.
-  have hle : μ.toOuterMeasure.restrict (B j) ≤
-      OuterMeasure.mkMetric fun r => 2 ^ d * c * r ^ d := by
-    refine OuterMeasure.le_mkMetric _ _ (ENNReal.ofReal (ε / 2)) (by simpa using hε) fun s hs => ?_
-    rw [OuterMeasure.restrict_apply]
-    rcases (s ∩ B j).eq_empty_or_nonempty with he | ⟨x, hxs, hxB⟩
-    · simp [he]
-    have hstop : ediam s ≠ ∞ := ne_top_of_le_ne_top ENNReal.ofReal_ne_top hs
-    have hsub : s ⊆ closedBall x (ediam s).toReal := fun y hy => by
-      rw [mem_closedBall, dist_edist]
-      exact ENNReal.toReal_mono hstop (edist_le_ediam_of_mem hy hxs)
-    have hρε : (ediam s).toReal < ε :=
-      (ENNReal.toReal_le_of_le_ofReal (by positivity) hs).trans_lt (half_lt_self hε)
-    calc μ (s ∩ B j) ≤ μ (closedBall x (ediam s).toReal) :=
-          measure_mono (inter_subset_left.trans hsub)
-      _ ≤ c * ENNReal.ofReal (2 * (ediam s).toReal) ^ d := hball x hxB _ ENNReal.toReal_nonneg hρε
-      _ = 2 ^ d * c * ediam s ^ d := by
-        rw [ENNReal.ofReal_mul zero_le_two, ENNReal.ofReal_toReal hstop, ENNReal.ofReal_ofNat,
-          ENNReal.mul_rpow_of_ne_top ENNReal.ofNat_ne_top hstop]
-        ring
-  calc μ (B j) = μ.toOuterMeasure.restrict (B j) (B j) := by
-        rw [OuterMeasure.restrict_apply, inter_self, toOuterMeasure_apply]
-    _ ≤ OuterMeasure.mkMetric (fun r => 2 ^ d * c * r ^ d) (B j) := hle _
-    _ ≤ ((2 ^ d * c) • OuterMeasure.mkMetric fun r : ℝ≥0∞ => r ^ d) (B j) :=
-        OuterMeasure.mkMetric_mono_smul h2top h2 (Eventually.of_forall fun _ => le_rfl) _
-    _ = 2 ^ d * c * μH[d] (B j) := by
-        rw [FunLike.coe_smul, Pi.smul_apply, smul_eq_mul, hausdorffMeasure,
-          ← mkMetric_toOuterMeasure, toOuterMeasure_apply]
-    _ ≤ 2 ^ d * c * μH[d] A := by gcongr; exact fun x hx => hx.1
+  refine (TauCeti.measure_le_mul_hausdorffMeasure_of_forall_closedBall_le μ hc0 hc
+    (B := B j) (ε := 1 / (j + 1)) (by positivity) fun x hx ρ hρ hρε =>
+      TauCeti.measure_closedBall_le_of_forall_mem_Ioo μ hc hx.2 hρ hρε).trans ?_
+  gcongr
+  exact fun x hx => hx.1
 
 end MeasureTheory.Measure
 
