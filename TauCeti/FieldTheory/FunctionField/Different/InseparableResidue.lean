@@ -5,11 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Polynomial.SpecificDegree
 public import Mathlib.FieldTheory.KummerPolynomial
 public import TauCeti.FieldTheory.FunctionField.Different.Derivative
 public import TauCeti.FieldTheory.FunctionField.Different.Tame
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Fibre
+import Mathlib.Algebra.Polynomial.Eval.Irreducible
+import TauCeti.FieldTheory.FunctionField.Place.Extension.Kummer
 
 /-!
 # A quadratic extension with inseparable residue field extension
@@ -33,19 +34,20 @@ exponent is then positive, while the derivative of the equation, `2 y + t = t`, 
 *fiercely ramified*, with positive different and ramification index one in a separable
 quadratic extension.
 
-Two such steps, `y ^ 2 + t y = s` and then `z ^ 2 + t z = u`, with `s(P), u(P)` independent over
-the squares of `F_P`, build the classical fiercely ramified extension of degree four in
-characteristic two. Its different exponent `2` differs from the sum `3` of
-`|G_i(P')| - 1` over the lower ramification groups: Hilbert's different formula
-`TauCeti.Place.differentExponent_eq_finsum_card_ramificationGroup_sub_one` needs a separable
-residue extension.
+Two such steps, `y ^ 2 + t y = s` and then `z ^ 2 + t z = u`, with `t` a uniformizer at `P`
+(`ord_P t = 1`) and `s(P), u(P)` independent over the squares of `F_P`, build the classical
+fiercely ramified extension of degree four in characteristic two. Its different exponent `2`
+differs from the sum `3` of `|G_i(P')| - 1` over the lower ramification groups: Hilbert's
+different formula `TauCeti.Place.differentExponent_eq_finsum_card_ramificationGroup_sub_one`
+needs a separable residue extension.
 
 ## Main results
 
 * `TauCeti.Place.minpoly_eq_of_sq_add_mul_eq` and `TauCeti.Place.finrank_eq_two_of_sq_add_mul_eq`:
   `X ^ 2 + t X - s` is the minimal polynomial of `y`, and `[F' : F] = 2`.
 * `TauCeti.Place.isSeparable_of_sq_add_mul_eq`: `F' / F` is separable.
-* `TauCeti.Place.mem_integers_of_sq_add_mul_eq`: `y` is regular at every place above `P`.
+* `TauCeti.Place.mem_integers_of_sq_add_mul_eq`: `y` is regular at every place above `P` when `t`
+  is regular at `P`.
 * `TauCeti.Place.ramificationIdx_eq_one_of_sq_add_mul_eq` and
   `TauCeti.Place.relativeDegree_eq_two_of_sq_add_mul_eq`: every place above `P` has `e = 1` and
   `f = 2`.
@@ -84,57 +86,43 @@ section Field
 variable {P : Place k F} {t : F} {s : P.integers}
 
 /-- The equation `X ^ 2 + t X - s`, with coefficients in the valuation ring of `P`. -/
-private noncomputable def integralEquation (ht : 0 < P.ord t) (s : P.integers) :
+private noncomputable def integralEquation (ht : 0 ≤ P.ord t) (s : P.integers) :
     P.integers[X] :=
-  X ^ 2 + C ⟨t, P.mem_integers_iff_ord_nonneg.mpr ht.le⟩ * X - C s
+  X ^ 2 + C ⟨t, P.mem_integers_iff_ord_nonneg.mpr ht⟩ * X - C s
 
-private theorem monic_integralEquation (ht : 0 < P.ord t) : (integralEquation ht s).Monic := by
+private theorem monic_integralEquation (ht : 0 ≤ P.ord t) : (integralEquation ht s).Monic := by
   unfold integralEquation
   monicity!
 
-private theorem map_integralEquation (ht : 0 < P.ord t) :
+private theorem map_integralEquation (ht : 0 ≤ P.ord t) :
     (integralEquation ht s).map (algebraMap P.integers F) = X ^ 2 + C t * X - C (s : F) := by
   simp [integralEquation, ValuationSubring.algebraMap_apply]
 
 /-- The reduction of `X ^ 2 + t X - s` at `P` is `X ^ 2 - s(P)`, since `t` vanishes at `P`. -/
 private theorem map_residue_integralEquation (ht : 0 < P.ord t) :
-    (integralEquation ht s).map (IsLocalRing.residue P.integers) =
+    (integralEquation ht.le s).map (IsLocalRing.residue P.integers) =
       X ^ 2 - C (IsLocalRing.residue P.integers s) := by
   have ht0 : t ≠ 0 := fun h ↦ by simp [h] at ht
   have hres : IsLocalRing.residue P.integers ⟨t, P.mem_integers_iff_ord_nonneg.mpr ht.le⟩ = 0 :=
     (P.residue_eq_zero_iff_ord_pos (f := ⟨t, _⟩) ht0).mpr ht
   simp [integralEquation, hres]
 
-/-- If `s(P)` is not a square, then `X ^ 2 + t X - s` has no root in `F`: a root would be
-integral at `P`, and its residue would be a square root of `s(P)`. -/
+/-- If `s(P)` is not a square, then `X ^ 2 + t X - s` is irreducible over `F`: it is monic over
+`𝒪_P` with irreducible reduction `X ^ 2 - s(P)`. -/
 private theorem irreducible_X_pow_two_add_C_mul_X_sub_C (ht : 0 < P.ord t)
     (hs : ∀ a : P.ResidueField, a ^ 2 ≠ IsLocalRing.residue P.integers s) :
     Irreducible (X ^ 2 + C t * X - C (s : F)) := by
-  have hdeg : (X ^ 2 + C t * X - C (s : F)).natDegree = 2 := by compute_degree!
-  refine irreducible_of_degree_le_three_of_not_isRoot (by simp [hdeg]) fun c hc ↦ ?_
-  have hroot : aeval c (integralEquation ht s) = 0 := by
-    rw [← aeval_map_algebraMap F, map_integralEquation ht]
-    simpa using hc
-  have hc' : c ∈ P.integers := P.mem_integers_of_isIntegral (R := P.integers) (fun r ↦ r.2)
-    ⟨_, monic_integralEquation ht, by rwa [← aeval_def]⟩
-  apply hs (IsLocalRing.residue P.integers ⟨c, hc'⟩)
-  have h0 : aeval (⟨c, hc'⟩ : P.integers) (integralEquation ht s) = 0 := by
-    apply Subtype.ext
-    rw [← ValuationSubring.algebraMap_apply, ← aeval_algebraMap_apply,
-      ValuationSubring.algebraMap_apply]
-    exact hroot
-  have h1 : aeval (IsLocalRing.residue P.integers ⟨c, hc'⟩) (integralEquation ht s) = 0 := by
-    rw [← IsLocalRing.ResidueField.algebraMap_eq, aeval_algebraMap_apply, h0, map_zero]
-  rw [aeval_def, eval₂_eq_eval_map, IsLocalRing.ResidueField.algebraMap_eq,
-    map_residue_integralEquation ht] at h1
-  simpa [sub_eq_zero] using h1
+  rw [← map_integralEquation ht.le,
+    ← (monic_integralEquation ht.le).irreducible_iff_irreducible_map_fraction_map]
+  refine Monic.irreducible_of_irreducible_map (IsLocalRing.residue P.integers) _
+    (monic_integralEquation ht.le) ?_
+  rw [map_residue_integralEquation ht]
+  exact X_pow_sub_C_irreducible_of_prime Nat.prime_two hs
 
 /-- A root of `X ^ 2 + t X - s` is integral over `F`. -/
-private theorem isIntegral_of_sq_add_mul_eq {y : F'} (ht : 0 < P.ord t)
-    (hy : y ^ 2 + algebraMap F F' t * y = algebraMap F F' s) : IsIntegral F y := by
-  refine ⟨X ^ 2 + C t * X - C (s : F), ?_, by simp [hy]⟩
-  rw [← map_integralEquation ht]
-  exact (monic_integralEquation ht).map _
+private theorem isIntegral_of_sq_add_mul_eq {y : F'}
+    (hy : y ^ 2 + algebraMap F F' t * y = algebraMap F F' s) : IsIntegral F y :=
+  ⟨X ^ 2 + C t * X - C (s : F), by monicity!, by simp [hy]⟩
 
 end Field
 
@@ -152,8 +140,7 @@ theorem minpoly_eq_of_sq_add_mul_eq (ht : 0 < P.ord t)
   refine (minpoly.eq_of_irreducible_of_monic (irreducible_X_pow_two_add_C_mul_X_sub_C ht hs)
     ?_ ?_).symm
   · simp [hy]
-  · rw [← map_integralEquation ht]
-    exact (monic_integralEquation ht).map _
+  · monicity!
 
 /-- **The degree of the quadratic extension**: if `F' = F(y)` with `y ^ 2 + t y = s`, where `t`
 vanishes at `P` and the residue of `s` at `P` is not a square, then `[F' : F] = 2`. -/
@@ -162,7 +149,7 @@ theorem finrank_eq_two_of_sq_add_mul_eq (hgen : F⟮y⟯ = ⊤) (ht : 0 < P.ord 
     (hy : y ^ 2 + algebraMap F F' t * y = algebraMap F F' s) :
     Module.finrank F F' = 2 := by
   rw [← IntermediateField.finrank_top', ← hgen,
-    IntermediateField.adjoin.finrank (isIntegral_of_sq_add_mul_eq ht hy),
+    IntermediateField.adjoin.finrank (isIntegral_of_sq_add_mul_eq hy),
     minpoly_eq_of_sq_add_mul_eq ht hs hy]
   compute_degree!
 
@@ -194,9 +181,9 @@ attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExte
 
 variable {y : F'} {t : F} {P : Place k F} {s : P.integers} {P' : Place k' F'}
 
-/-- **`y` is regular above `P`**: a root of `y ^ 2 + t y = s`, where `t` vanishes at `P` and `s`
-is regular at `P`, is regular at every place `P'` of `F'` above `P`. -/
-theorem mem_integers_of_sq_add_mul_eq (ht : 0 < P.ord t)
+/-- **`y` is regular above `P`**: a root of `y ^ 2 + t y = s`, where `t` and `s` are regular at
+`P`, is regular at every place `P'` of `F'` above `P`. -/
+theorem mem_integers_of_sq_add_mul_eq (ht : 0 ≤ P.ord t)
     (hy : y ^ 2 + algebraMap F F' t * y = algebraMap F F' s) (hP' : P'.restrict k F = P) :
     y ∈ P'.integers := by
   subst hP'
@@ -215,24 +202,13 @@ private theorem minpoly_residue_of_sq_add_mul_eq (ht : 0 < (P'.restrict k F).ord
       a ^ 2 ≠ IsLocalRing.residue (P'.restrict k F).integers s)
     (hy : y ^ 2 + algebraMap F F' t * y = algebraMap F F' s) :
     minpoly (P'.restrict k F).ResidueField
-        (IsLocalRing.residue P'.integers ⟨y, mem_integers_of_sq_add_mul_eq ht hy rfl⟩) =
+        (IsLocalRing.residue P'.integers ⟨y, mem_integers_of_sq_add_mul_eq ht.le hy rfl⟩) =
       X ^ 2 - C (IsLocalRing.residue (P'.restrict k F).integers s) := by
-  let yP : P'.integers := ⟨y, mem_integers_of_sq_add_mul_eq ht hy rfl⟩
-  let tP : (P'.restrict k F).integers :=
-    ⟨t, (P'.restrict k F).mem_integers_iff_ord_nonneg.mpr ht.le⟩
-  have ht0 : t ≠ 0 := fun h ↦ by simp [h] at ht
-  have htP : IsLocalRing.residue (P'.restrict k F).integers tP = 0 :=
-    ((P'.restrict k F).residue_eq_zero_iff_ord_pos (f := tP) ht0).mpr ht
-  have heq : yP ^ 2 + algebraMap (P'.restrict k F).integers P'.integers tP * yP =
-      algebraMap (P'.restrict k F).integers P'.integers s :=
-    Subtype.ext (by simpa [yP, tP] using hy)
-  have hroot := congrArg (IsLocalRing.residue P'.integers) heq
-  rw [map_add, map_mul, map_pow, ← IsLocalRing.ResidueField.algebraMap_residue, htP, map_zero,
-    zero_mul, add_zero, ← IsLocalRing.ResidueField.algebraMap_residue] at hroot
-  refine (minpoly.eq_of_irreducible_of_monic (X_pow_sub_C_irreducible_of_prime Nat.prime_two hs)
-    ?_ ?_).symm
-  · rw [map_sub, map_pow, aeval_X, aeval_C, hroot, sub_self]
-  · monicity!
+  rw [minpoly_residue_eq k F P' _ (monic_integralEquation ht.le) (by
+      rw [map_residue_integralEquation ht]
+      exact X_pow_sub_C_irreducible_of_prime Nat.prime_two hs) (by
+      simp [integersEval_eq_aeval_map, map_integralEquation, hy]),
+    map_residue_integralEquation ht]
 
 /-- The residue extension at a place above `P` has degree at least two. -/
 private theorem two_le_relativeDegree_of_sq_add_mul_eq (ht : 0 < P.ord t)
@@ -242,7 +218,7 @@ private theorem two_le_relativeDegree_of_sq_add_mul_eq (ht : 0 < P.ord t)
   subst hP'
   rw [relativeDegree_def]
   have h := minpoly.natDegree_le (A := (P'.restrict k F).ResidueField)
-    (IsLocalRing.residue P'.integers ⟨y, mem_integers_of_sq_add_mul_eq ht hy rfl⟩)
+    (IsLocalRing.residue P'.integers ⟨y, mem_integers_of_sq_add_mul_eq ht.le hy rfl⟩)
   rwa [minpoly_residue_of_sq_add_mul_eq ht hs hy, natDegree_sub_C, natDegree_X_pow] at h
 
 /-- **The quadratic step is unramified**: if `F' = F(y)` with `y ^ 2 + t y = s`, where `t`
@@ -308,12 +284,11 @@ theorem not_isSeparable_residueField_of_sq_add_mul_eq (ht : 0 < P.ord t)
   have : CharP k 2 := (Algebra.charP_iff k F 2).mpr inferInstance
   have : CharP (P'.restrict k F).ResidueField 2 := (Algebra.charP_iff k _ 2).mp inferInstance
   have h := Algebra.IsSeparable.isSeparable (P'.restrict k F).ResidueField
-    (IsLocalRing.residue P'.integers ⟨y, mem_integers_of_sq_add_mul_eq ht hy rfl⟩)
+    (IsLocalRing.residue P'.integers ⟨y, mem_integers_of_sq_add_mul_eq ht.le hy rfl⟩)
   rw [IsSeparable, minpoly_residue_of_sq_add_mul_eq ht hs hy,
     separable_iff_derivative_ne_zero (X_pow_sub_C_irreducible_of_prime Nat.prime_two hs)] at h
   apply h
-  rw [derivative_sub, derivative_C, sub_zero, derivative_X_pow, Nat.cast_ofNat,
-    CharTwo.two_eq_zero, map_zero, zero_mul]
+  simp [CharTwo.add_self_eq_zero]
 
 variable [Algebra.IsSeparable F F']
 
@@ -340,9 +315,9 @@ theorem differentExponent_le_ord_of_sq_add_mul_eq (hgen : F⟮y⟯ = ⊤) (ht : 
   have : CharP F' 2 := charP_of_injective_algebraMap (algebraMap F F').injective 2
   subst hP'
   have hord : P'.ord (algebraMap F F' t) = (P'.restrict k F).ord t := by
-    rw [ord_algebraMap_restrict k F P', he, Nat.cast_one, one_mul]
+    simp [ord_algebraMap_restrict k F P', he]
   have h2 : (2 : F') * y + algebraMap F F' t = algebraMap F F' t := by
-    rw [CharTwo.two_eq_zero, zero_mul, zero_add]
+    simp [CharTwo.two_eq_zero]
   have hup := differentExponent_le_ord_two_mul_add k F (P' := P') (u := t) (v := s)
     (P'.mem_integers_iff_ord_nonneg.mpr (by omega))
     ((mem_integers_restrict_iff k F P' (s : F)).mp s.2) hgen (by rw [← hy]; ring)

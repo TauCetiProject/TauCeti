@@ -66,6 +66,9 @@ degree the degree of its factor.
   to monic polynomials over `𝒪_P`.
 * `TauCeti.Place.exists_restrict_eq_of_irreducible_map_residue`: **Kummer's theorem** for a single
   irreducible factor (Stichtenoth, Theorem 3.3.7).
+* `TauCeti.Place.minpoly_residue_eq`: a monic polynomial over `𝒪_P` with irreducible reduction
+  `γ`, vanishing at `y` modulo a place over `P`, has `γ` as the minimal polynomial of the residue
+  of `y`.
 * `TauCeti.Place.map_residue_eq_of_valuation_lt_one`: a place over `P` sees at most one
   irreducible factor, which is what makes the places of distinct factors distinct.
 * `TauCeti.Place.exists_injective_restrict_eq`: **Kummer's theorem**, packaged: an injective
@@ -214,7 +217,7 @@ variable [FiniteDimensional F F']
 irreducible reduction `γ` over the residue field `F_P`, and `g (y)` vanishes at a place `P'` of
 `F' / k'` over `P` at which `y` is integral, then `γ` is the minimal polynomial over `F_P` of the
 residue of `y` at `P'`. -/
-private theorem minpoly_residue_eq (P' : Place k' F') {y : F'} (hy : y ∈ P'.integers)
+theorem minpoly_residue_eq (P' : Place k' F') {y : F'} (hy : y ∈ P'.integers)
     {g : (P'.restrict k F).integers[X]} (hg : g.Monic)
     (hirr : Irreducible (g.map (IsLocalRing.residue (P'.restrict k F).integers)))
     (hv : P'.valuation ((P'.restrict k F).integersEval y g) < 1) :
