@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Algebra.Category.FGModuleCat.Basic
 public import Mathlib.Algebra.Category.ModuleCat.Ext.HasExt
-public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.RingTheory.HopkinsLevitzki
+public import TauCeti.Algebra.Category.ModuleCat.FiniteLength
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Basic
 
 /-!
@@ -26,9 +26,9 @@ pointwise eventual vanishing, and requires no finiteness of the Ext groups thems
 
 public section
 
-namespace TauCeti
+namespace ModuleCat
 
-open CategoryTheory CategoryTheory.Abelian
+open TauCeti CategoryTheory CategoryTheory.Abelian
 open scoped ModuleCat
 
 universe u
@@ -40,44 +40,32 @@ without increasing the bound. -/
 theorem isExtBoundedBy_of_isFiniteLength (Y : ModuleCat.{u} R) (N : ℕ)
     (h : ∀ S : ModuleCat.{u} R, IsSimpleModule R S → IsExtBoundedBy.{u} S Y N)
     (X : ModuleCat.{u} R) (hX : IsFiniteLength R X) : IsExtBoundedBy.{u} X Y N := by
-  suffices key : ∀ (M : Type u) [AddCommGroup M] [Module R M], IsFiniteLength R M →
-      IsExtBoundedBy.{u} (ModuleCat.of R M) Y N from key X hX
-  intro M _ _ hM
-  induction hM with
-  | of_subsingleton =>
-    exact ⟨fun n _ ↦ subsingleton_ext_of_isZero_left (ModuleCat.isZero_of_subsingleton _) Y n⟩
-  | @of_simple_quotient M _ _ L _ _ ih =>
-    let T : ShortComplex (ModuleCat.{u} R) :=
-      ShortComplex.mk (ModuleCat.ofHom L.subtype) (ModuleCat.ofHom L.mkQ) (by
-        ext x
-        exact (LinearMap.exact_subtype_mkQ L).apply_apply_eq_zero x)
-    have hT : T.ShortExact := ModuleCat.shortComplex_shortExact T
-      (LinearMap.exact_subtype_mkQ L) L.injective_subtype L.mkQ_surjective
-    simpa only [max_self] using
-      ih.of_shortExact₂' hT (h (ModuleCat.of R (M ⧸ L)) inferInstance)
+  refine X.prop_of_isFiniteLength hX (fun M ↦ IsExtBoundedBy.{u} M Y N)
+    (fun M hM ↦ ⟨fun n _ ↦ subsingleton_ext_of_isZero_left hM Y n⟩) h ?_
+  intro S hS h₁ h₃
+  simpa only [max_self] using h₁.of_shortExact₂' hS h₃
 
 /-- A common bound against all simple targets bounds Ext into any finite-length target,
 without increasing the bound. -/
 theorem isExtBoundedBy_of_isFiniteLength_right (X : ModuleCat.{u} R) (N : ℕ)
     (h : ∀ T : ModuleCat.{u} R, IsSimpleModule R T → IsExtBoundedBy.{u} X T N)
     (Y : ModuleCat.{u} R) (hY : IsFiniteLength R Y) : IsExtBoundedBy.{u} X Y N := by
-  suffices key : ∀ (M : Type u) [AddCommGroup M] [Module R M], IsFiniteLength R M →
-      IsExtBoundedBy.{u} X (ModuleCat.of R M) N from key Y hY
-  intro M _ _ hM
-  induction hM with
-  | of_subsingleton =>
-    exact ⟨fun n _ ↦ subsingleton_ext_of_isZero_right X (ModuleCat.isZero_of_subsingleton _) n⟩
-  | @of_simple_quotient M _ _ L _ _ ih =>
-    let T : ShortComplex (ModuleCat.{u} R) :=
-      ShortComplex.mk (ModuleCat.ofHom L.subtype) (ModuleCat.ofHom L.mkQ) (by
-        ext x
-        exact (LinearMap.exact_subtype_mkQ L).apply_apply_eq_zero x)
-    have hT : T.ShortExact := ModuleCat.shortComplex_shortExact T
-      (LinearMap.exact_subtype_mkQ L) L.injective_subtype L.mkQ_surjective
-    simpa only [max_self] using
-      ih.of_shortExact₂ hT (h (ModuleCat.of R (M ⧸ L)) inferInstance)
+  refine Y.prop_of_isFiniteLength hY (fun M ↦ IsExtBoundedBy.{u} X M N)
+    (fun M hM ↦ ⟨fun n _ ↦ subsingleton_ext_of_isZero_right X hM n⟩) h ?_
+  intro S hS h₁ h₃
+  simpa only [max_self] using h₁.of_shortExact₂ hS h₃
 
-variable [IsArtinianRing R]
+end ModuleCat
+
+namespace TauCeti
+
+open CategoryTheory
+
+open scoped ModuleCat
+
+universe u
+
+variable {R : Type u} [Ring R] [IsArtinianRing R]
 
 /-- Over an Artinian ring, a uniform Ext bound on finitely generated modules is detected on
 simple pairs. No finite-dimensionality of Ext is assumed or concluded. -/
@@ -96,7 +84,7 @@ theorem isExtBoundedOn_isFG_iff_forall_isSimpleModule (N : ℕ) :
       isFiniteLength_iff_isNoetherian_isArtinian.2 ⟨inferInstance, inferInstance⟩
     have hlenY : IsFiniteLength R Y :=
       isFiniteLength_iff_isNoetherian_isArtinian.2 ⟨inferInstance, inferInstance⟩
-    exact isExtBoundedBy_of_isFiniteLength Y N (fun S hS ↦
-      isExtBoundedBy_of_isFiniteLength_right S N (fun T hT ↦ h S T hS hT) Y hlenY) X hlenX
+    exact Y.isExtBoundedBy_of_isFiniteLength N (fun S hS ↦
+      S.isExtBoundedBy_of_isFiniteLength_right N (fun T hT ↦ h S T hS hT) Y hlenY) X hlenX
 
 end TauCeti
