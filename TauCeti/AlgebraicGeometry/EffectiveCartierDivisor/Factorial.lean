@@ -213,7 +213,6 @@ section Principal
 open IsLocalRing
 open TauCeti.AlgebraicGeometry.Scheme (ord_algebraMap_stalk_nonneg
   ord_algebraMap_stalk_eq_zero_iff ord_algebraMap_stalk_eq_one
-  comap_germ_comap_stalkSpecializes_maximalIdeal
   exists_comap_stalkSpecializes_maximalIdeal_eq_span_singleton
   specializes_of_comap_stalkSpecializes_maximalIdeal_le)
 
@@ -246,24 +245,10 @@ of `𝒪_{X,x}` of `η` when `η` is a generization of `x`, and the unit ideal o
 private lemma map_ideal_vanishingIdeal_closure_singleton (hxU : x ∈ U.1) (η : X) :
     ((vanishingIdeal ⟨closure {η}, isClosed_closure⟩).ideal U).map
       (X.presheaf.germ U.1 x hxU).hom = stalkIdeal x η := by
-  let := X.presheaf.algebra_section_stalk ⟨x, hxU⟩
-  have := U.2.isLocalization_stalk ⟨x, hxU⟩
   by_cases h : η ⤳ x
-  · rw [vanishingIdeal_closure_singleton_ideal η U (h.mem_open U.1.isOpen hxU),
-      ← comap_germ_comap_stalkSpecializes_maximalIdeal U.2 hxU h, ← stalkIdeal_of_specializes h]
-    exact IsLocalization.map_under (U.2.primeIdealOf ⟨x, hxU⟩).asIdeal.primeCompl _ _
-  · rw [stalkIdeal_of_not_specializes h]
-    refine IsLocalization.AtPrime.map_eq_top_of_not_le (X.presheaf.stalk x)
-      (p := (U.2.primeIdealOf ⟨x, hxU⟩).asIdeal) fun hle ↦ h ?_
-    -- The ideal of `closure {η}` lies in the prime of `x` only if `x` lies in `closure {η}`.
-    rw [vanishingIdeal_ideal, Closeds.coe_mk] at hle
-    have hU : IsAffineOpen U.1 := U.2
-    have h1 := (PrimeSpectrum.zeroLocus_vanishingIdeal_eq_closure
-      (hU.fromSpec ⁻¹' closure {η})).subset ((PrimeSpectrum.mem_zeroLocus _ _).mpr hle)
-    have h2 : hU.fromSpec (hU.primeIdealOf ⟨x, hxU⟩) ∈ closure {η} :=
-      (isClosed_closure.preimage hU.fromSpec.continuous).closure_subset h1
-    rw [hU.fromSpec_primeIdealOf] at h2
-    exact specializes_iff_mem_closure.mpr h2
+  · rw [stalkIdeal_of_specializes h, map_ideal_vanishingIdeal_closure_singleton_of_specializes]
+  · rw [stalkIdeal_of_not_specializes h,
+      map_ideal_vanishingIdeal_closure_singleton_of_not_specializes hxU h]
 
 variable [IsIntegral X] [IsLocallyNoetherian X]
 

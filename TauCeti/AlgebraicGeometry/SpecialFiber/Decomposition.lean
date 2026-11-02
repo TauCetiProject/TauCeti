@@ -32,8 +32,10 @@ where `𝒪_X(-Cᵢ)` is the ideal sheaf of `Cᵢ` with its reduced induced stru
 Cartier divisor because `X` is locally factorial. It is the special case `f = π` of the
 decomposition of principal divisors on locally factorial schemes,
 `AlgebraicGeometry.Scheme.IdealSheafData.ofIdealTop_span_singleton_eq_prod_vanishingIdeal`.
-Since `𝒪_X(-X_s)` is trivial for `X` flat over `R`, this is the relation `Σⱼ mⱼ Cⱼ ∼ 0` from
-which the intersection numbers `(Cᵢ · Cⱼ)` of the components satisfy `Σⱼ mⱼ (Cᵢ · Cⱼ) = 0`.
+Since `𝒪_X(-X_s)` is trivial for `X` flat over `R`, this is the linear equivalence
+`Σⱼ mⱼ Cⱼ ∼ 0`. When the components are proper curves over the residue field, for instance for a
+proper regular model of a curve, taking degrees on each `Cᵢ` gives the relation
+`Σⱼ mⱼ (Cᵢ · Cⱼ) = 0` between their intersection numbers.
 
 ## Main results
 
