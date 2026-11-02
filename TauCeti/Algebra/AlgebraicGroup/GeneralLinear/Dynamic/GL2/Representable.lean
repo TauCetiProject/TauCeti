@@ -151,12 +151,19 @@ noncomputable def splitTorusPointsIsoLeviFunctor :
         (H := MonoidAlgebra R (Multiplicative (ULift.{u} (Fin 2) →₀ ℤ))) A)
       apply Subtype.ext
       -- Both component maps are restrictions of the corresponding ambient point maps.
-      rw [HopfAlgebra.pointsFunctor_map]
-      erw [GrpCat.hom_comp, MonoidHom.comp_apply, HopfAlgebra.mapPoints_apply,
-        MulEquiv.toGrpIso_hom, coe_splitTorusLeviMulEquiv_apply,
-        Cocharacter.coe_mapLevi_apply, coe_splitTorusLeviMulEquiv_apply]
-      simpa only [← AlgHom.mapValue_apply] using
-        (mapValue_diagonalTorusPoints φ.hom f).symm)
+      unfold HopfAlgebra.pointsFunctor
+      change ((splitTorusLeviMulEquiv B
+          (HopfAlgebra.mapPoints
+            (H := MonoidAlgebra R (Multiplicative (ULift.{u} (Fin 2) →₀ ℤ))) φ f) :
+              Cocharacter.levi B (dynamicCocharacter (R := R))) :
+            WithConv (coordinateHopfAlgebra R 2 →ₐ[R] B)) =
+        ((Cocharacter.mapLevi (dynamicCocharacter (R := R)) φ
+            (splitTorusLeviMulEquiv A f) :
+              Cocharacter.levi B (dynamicCocharacter (R := R))) :
+            WithConv (coordinateHopfAlgebra R 2 →ₐ[R] B))
+      rw [coe_splitTorusLeviMulEquiv_apply, Cocharacter.coe_mapLevi_apply,
+        coe_splitTorusLeviMulEquiv_apply]
+      exact (mapValue_diagonalTorusPoints φ.hom f).symm)
 
 /-- The forward component of `splitTorusPointsIsoLeviFunctor` is the pointwise split-torus
 equivalence. -/
@@ -229,12 +236,18 @@ noncomputable def additivePointsIsoUnipotentFunctor :
         (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R) A)
       apply Subtype.ext
       -- Both component maps are restrictions of the corresponding ambient point maps.
-      rw [HopfAlgebra.pointsFunctor_map]
-      erw [GrpCat.hom_comp, MonoidHom.comp_apply, HopfAlgebra.mapPoints_apply,
-        MulEquiv.toGrpIso_hom, coe_additiveUnipotentMulEquiv_apply,
-        Cocharacter.coe_mapUnipotent_apply, coe_additiveUnipotentMulEquiv_apply]
-      simpa only [← AlgHom.mapValue_apply] using
-        (mapValue_rootSubgroupPoints φ.hom (by decide) f).symm)
+      unfold HopfAlgebra.pointsFunctor
+      change ((additiveUnipotentMulEquiv B
+          (HopfAlgebra.mapPoints (H := AdditiveGroup.coordinateHopfAlgebra R) φ f) :
+            Cocharacter.unipotent B (dynamicCocharacter (R := R))) :
+          WithConv (coordinateHopfAlgebra R 2 →ₐ[R] B)) =
+        ((Cocharacter.mapUnipotent (dynamicCocharacter (R := R)) φ
+            (additiveUnipotentMulEquiv A f) :
+              Cocharacter.unipotent B (dynamicCocharacter (R := R))) :
+            WithConv (coordinateHopfAlgebra R 2 →ₐ[R] B))
+      rw [coe_additiveUnipotentMulEquiv_apply, Cocharacter.coe_mapUnipotent_apply,
+        coe_additiveUnipotentMulEquiv_apply]
+      exact (mapValue_rootSubgroupPoints φ.hom (by decide) f).symm)
 
 /-- The forward component of `additivePointsIsoUnipotentFunctor` is the pointwise additive
 equivalence. -/

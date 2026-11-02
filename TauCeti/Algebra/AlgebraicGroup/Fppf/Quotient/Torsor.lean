@@ -273,9 +273,21 @@ noncomputable def fppfQuotientTorsorProductIso
       (presheafToSheaf (CommAlgCat.fppfTopology R) (Type (u + 1)))
       (pointsPresheafGrp H).X (pointsPresheafGrp (quotient H I)).X).symm
 
+private theorem fppfQuotientTorsorProductIso_hom_eq
+    (H : CommHopfAlgCat.{u} R) (I : HopfIdeal R H) :
+    let F := presheafToSheaf (CommAlgCat.fppfTopology R) (Type (u + 1))
+    let _ : F.Monoidal := Functor.Monoidal.ofChosenFiniteProducts F
+    (fppfQuotientTorsorProductIso H I).hom =
+      ((pointsFppfGroupObjectCarrierIso H).inv ⊗ₘ
+          (pointsFppfGroupObjectCarrierIso (quotient H I)).inv) ≫
+        Functor.LaxMonoidal.μ F (pointsPresheafGrp H).X
+          (pointsPresheafGrp (quotient H I)).X := by
+  let F := presheafToSheaf (CommAlgCat.fppfTopology R) (Type (u + 1))
+  simp [fppfQuotientTorsorProductIso, Functor.Monoidal.μ_of_cartesianMonoidalCategory]
+
 /-- The inclusion of the closed subgroup represented by `H / I` into the ambient fppf group. -/
 noncomputable def quotientSubgroupPointsFppfGrpInclusion
-    (H : _root_.CommHopfAlgCat.{u} R) (I : HopfIdeal R H) :
+    (H : CommHopfAlgCat.{u} R) (I : HopfIdeal R H) :
     pointsFppfGroupObject (quotient H I) ⟶ pointsFppfGroupObject H := by
   let _ : (presheafToSheaf
       (CommAlgCat.fppfTopology R) (Type (u + 1))).Monoidal :=
@@ -322,14 +334,8 @@ theorem sheafify_pointwiseQuotientTorsorFst
             (pointsPresheafGrp H).X (pointsPresheafGrp (quotient H I)).X) ≫
       eqToHom (pointsFppfGroupObject_X_eq H).symm =
         CartesianMonoidalCategory.fst _ _ := by
-  let F := presheafToSheaf (CommAlgCat.fppfTopology R) (Type (u + 1))
-  let _ : F.Monoidal := Functor.Monoidal.ofChosenFiniteProducts _
-  -- Unfold the product and carrier comparison isomorphisms so that the stable monoidal
-  -- comparison lemmas below apply; there is no lemma for their packaged composite.
-  simp_rw [fppfQuotientTorsorProductIso, Iso.trans_hom, tensorIso_hom, Iso.symm_hom,
-    ← pointsFppfGroupObjectCarrierIso_hom, Category.assoc,
-    ← Functor.Monoidal.μ_of_cartesianMonoidalCategory, Functor.Monoidal.μ_fst_assoc,
-    CartesianMonoidalCategory.tensorHom_fst_assoc, Iso.inv_hom_id, Category.comp_id]
+  rw [fppfQuotientTorsorProductIso_hom_eq, ← pointsFppfGroupObjectCarrierIso_hom]
+  simp
 
 /-- Sheafification identifies multiplication by subgroup points with the action
 on the product of fppf point sheaves. -/
@@ -343,8 +349,8 @@ theorem sheafify_pointwiseQuotientTorsorAction
         fppfQuotientTorsorAction H I := by
   let F := presheafToSheaf (CommAlgCat.fppfTopology R) (Type (u + 1))
   let _ : F.Monoidal := Functor.Monoidal.ofChosenFiniteProducts _
-  let _ : IsMonHom (pointsFppfGroupObjectCarrierIso H).hom := by
-    exact (inferInstance : IsMonHom (pointsFppfGroupObjectMapIso H).hom.hom.hom)
+  let _ : IsMonHom (pointsFppfGroupObjectCarrierIso H).hom :=
+    (inferInstance : IsMonHom (pointsFppfGroupObjectMapIso H).hom.hom.hom)
   -- Expose the two action definitions; the subsequent group-object lemmas reason about their
   -- multiplication composites, not the named wrappers themselves.
   rw [fppfQuotientTorsorAction_def, pointwiseQuotientTorsorAction,
@@ -352,11 +358,8 @@ theorem sheafify_pointwiseQuotientTorsorAction
   rw [Functor.map_mul, MonObj.mul_comp, MonObj.comp_mul]
   congr 1
   · exact sheafify_pointwiseQuotientTorsorFst H I
-  · -- Unfold the product comparison and sheafified subgroup inclusion to expose the
-    -- second projection; no public lemma identifies this entire composite at once.
-    simp_rw [fppfQuotientTorsorProductIso, Iso.trans_hom, tensorIso_hom, Iso.symm_hom,
-      ← Functor.Monoidal.μ_of_cartesianMonoidalCategory, Functor.map_comp, Category.assoc,
-      Functor.Monoidal.μ_snd_assoc, CartesianMonoidalCategory.tensorHom_snd_assoc]
+  · rw [fppfQuotientTorsorProductIso_hom_eq]
+    simp [CartesianMonoidalCategory.tensorHom_snd_assoc]
     rfl
 
 end CommHopfAlgCat
