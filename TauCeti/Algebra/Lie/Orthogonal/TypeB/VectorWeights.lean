@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Orthogonal.TypeB.Root.Space
-public import TauCeti.Algebra.Lie.Weights.TensorProduct
 import TauCeti.Algebra.Lie.Weights.Basis
 
 /-!
@@ -22,7 +21,9 @@ of the standard module. In coordinates it consists of the weights with integer c
 the root lattice of type `B`, whose short roots are the `±εᵢ`. Having only vector weights is
 preserved by the constructions that add weights or forget them: a tensor product of two
 finite-dimensional triangularizable modules whose weights are vector weights again has only vector
-weights, and so does every module that embeds in one of them. Starting from the standard module,
+weights (`TauCeti.exists_mem_weight_tensorProduct`), and so does every module that embeds in one of
+them (`TauCeti.exists_mem_weight_of_injective`). Both hold for any additively closed set of linear
+forms in place of the vector weights. Starting from the standard module,
 this covers every tensor power of the standard module and every module that embeds in a tensor
 power, such as the exterior and symmetric powers in characteristic zero.
 
@@ -43,10 +44,8 @@ module are not vector weights, so the spin module occurs in no such construction
 * `TauCeti.genWeightSpace_typeBStandard_ne_bot_iff`: the weights of the standard module are `0`
   and the `±εᵢ`.
 * `TauCeti.typeBCoordinateWeight_mem_typeBVectorWeightLattice`: they are vector weights.
-* `TauCeti.exists_mem_typeBVectorWeightLattice_tensorProduct`: a tensor product of two modules
-  whose weights are vector weights has only vector weights.
-* `TauCeti.exists_mem_typeBVectorWeightLattice_of_injective`: a module embedding in one whose
-  weights are vector weights has only vector weights.
+* `TauCeti.exists_mem_typeBVectorWeightLattice_standard`: every weight of the standard module is
+  a vector weight.
 
 ## References
 
@@ -58,13 +57,11 @@ public section
 
 open LieModule Module
 
-open scoped TensorProduct
-
 namespace TauCeti
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-universe u v w w₁
+universe u v
 
 section CommRing
 
@@ -89,6 +86,7 @@ theorem typeBWeightEquiv_intCast (m : ι → ℤ) :
   simp [typeBEpsilon_apply, typeBWeightEquiv_apply, Finset.sum_apply, zsmul_eq_mul]
 
 /-- The coordinate functional `εᵢ` is a vector weight. -/
+@[simp]
 theorem typeBEpsilon_mem_typeBVectorWeightLattice (i : ι) :
     typeBEpsilon i ∈ typeBVectorWeightLattice K ι :=
   Submodule.subset_span ⟨i, rfl⟩
@@ -114,9 +112,10 @@ theorem lie_typeBDiagonalCartan_single (A : typeBDiagonalCartan K ι) (j : Unit 
   rw [← smul_eq_mul, Pi.single_smul']
 
 /-- The weights of the standard basis vectors of the standard module are vector weights. -/
+@[simp]
 theorem typeBCoordinateWeight_mem_typeBVectorWeightLattice (j : Unit ⊕ ι ⊕ ι) :
     typeBCoordinateWeight (K := K) j ∈ typeBVectorWeightLattice K ι := by
-  rcases j with j | j | j <;> simp [typeBEpsilon_mem_typeBVectorWeightLattice]
+  rcases j with j | j | j <;> simp
 
 end CommRing
 
@@ -148,53 +147,6 @@ theorem exists_mem_typeBVectorWeightLattice_standard
   obtain ⟨j, hj⟩ := (genWeightSpace_typeBStandard_ne_bot_iff (χ : _ → K)).mp
     (Weight.genWeightSpace_ne_bot _ χ)
   exact ⟨_, typeBCoordinateWeight_mem_typeBVectorWeightLattice j, hj⟩
-
-/-! ### Constructions preserving vector weights -/
-
-section Constructions
-
-variable {M : Type w} {N : Type w₁}
-  [AddCommGroup M] [Module K M] [LieRingModule (typeBDiagonalCartan K ι) M]
-  [LieModule K (typeBDiagonalCartan K ι) M]
-  [AddCommGroup N] [Module K N] [LieRingModule (typeBDiagonalCartan K ι) N]
-  [LieModule K (typeBDiagonalCartan K ι) N]
-
-/-- **A tensor product of modules with vector weights has vector weights.** If `M` and `N` are
-finite-dimensional and triangularizable and every weight of each of them is a vector weight, then
-so is every weight of `M ⊗ N`, a weight of the tensor product being the sum of a weight of each
-factor. -/
-theorem exists_mem_typeBVectorWeightLattice_tensorProduct
-    [FiniteDimensional K M] [FiniteDimensional K N]
-    [IsTriangularizable K (typeBDiagonalCartan K ι) M]
-    [IsTriangularizable K (typeBDiagonalCartan K ι) N]
-    (hM : ∀ χ : Weight K (typeBDiagonalCartan K ι) M,
-      ∃ φ ∈ typeBVectorWeightLattice K ι, ⇑φ = ⇑χ)
-    (hN : ∀ χ : Weight K (typeBDiagonalCartan K ι) N,
-      ∃ φ ∈ typeBVectorWeightLattice K ι, ⇑φ = ⇑χ)
-    (χ : Weight K (typeBDiagonalCartan K ι) (M ⊗[K] N)) :
-    ∃ φ ∈ typeBVectorWeightLattice K ι, ⇑φ = ⇑χ := by
-  obtain ⟨μ, ν, hμν⟩ := exists_weight_add_eq χ
-  obtain ⟨φ, hφ, hφμ⟩ := hM μ
-  obtain ⟨ψ, hψ, hψν⟩ := hN ν
-  exact ⟨φ + ψ, add_mem hφ hψ, by rw [LinearMap.coe_add, hφμ, hψν, hμν]⟩
-
-/-- **A module embedding in one with vector weights has vector weights.** Every weight of `M` is a
-weight of `N` when `M` maps injectively and equivariantly to `N`; in particular this applies to the
-Lie submodules of `N`. -/
-theorem exists_mem_typeBVectorWeightLattice_of_injective
-    (f : M →ₗ⁅K,typeBDiagonalCartan K ι⁆ N) (hf : Function.Injective f)
-    (hN : ∀ χ : Weight K (typeBDiagonalCartan K ι) N,
-      ∃ φ ∈ typeBVectorWeightLattice K ι, ⇑φ = ⇑χ)
-    (χ : Weight K (typeBDiagonalCartan K ι) M) :
-    ∃ φ ∈ typeBVectorWeightLattice K ι, ⇑φ = ⇑χ := by
-  obtain ⟨m, hm, hm₀⟩ := χ.exists_ne_zero
-  refine hN ⟨χ, fun h ↦ hm₀ (hf ?_)⟩
-  have hfm : f m ∈ genWeightSpace N (χ : typeBDiagonalCartan K ι → K) :=
-    map_genWeightSpace_le f (LieSubmodule.mem_map_of_mem hm)
-  rw [h, LieSubmodule.mem_bot] at hfm
-  rw [hfm, map_zero]
-
-end Constructions
 
 end Field
 

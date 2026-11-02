@@ -20,11 +20,11 @@ vectors, so **the spin module has no nonzero map to any module whose weights are
 The modules whose weights are vector weights include the standard module and are closed under
 tensor products and under passing to Lie submodules
 (`TauCeti.exists_mem_typeBVectorWeightLattice_standard`,
-`TauCeti.exists_mem_typeBVectorWeightLattice_tensorProduct` and
-`TauCeti.exists_mem_typeBVectorWeightLattice_of_injective`). So the spin module embeds in no tensor
-power of the standard module and in no module embedding in one, such as its exterior powers in
-characteristic zero. This is the classical reason the spin representations are not found among the
-tensor constructions on the vector representation of `so(2l + 1)`.
+`TauCeti.exists_mem_weight_tensorProduct` and `TauCeti.exists_mem_weight_of_injective`). So the
+spin module embeds in no tensor power of the standard module and in no module embedding in one,
+such as its exterior powers in characteristic zero. This is the classical reason the spin
+representations are not found among the tensor constructions on the vector representation of
+`so(2l + 1)`.
 
 ## Main results
 
@@ -54,6 +54,7 @@ universe u v w t
 
 /-- **No spin weight is a vector weight**, in characteristic zero and positive rank: each
 coordinate `±½` of a half-integral sign vector fails to be an integer. -/
+@[simp]
 theorem typeBWeightEquiv_spinWeight_notMem_typeBVectorWeightLattice {K : Type u} [Field K]
     [CharZero K] [Invertible (2 : K)] {ι : Type v} [Fintype ι] [DecidableEq ι] [Nonempty ι]
     (s : Finset ι) :
