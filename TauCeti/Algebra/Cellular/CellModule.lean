@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Cellular.Basic
+public import Mathlib.LinearAlgebra.Matrix.Action
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.RingTheory.SimpleModule.Basic
 
@@ -54,7 +55,7 @@ instance (priority := 1100) (μ : Λ) : Module R (c.CellModule μ) :=
   inferInstanceAs (Module R (M μ → R))
 
 noncomputable instance (μ : Λ) : Module A (c.CellModule μ) :=
-  Module.compHom (M μ → R) ((Matrix.toLinAlgEquiv').toAlgHom.comp (c.cellRep μ)).toRingHom
+  Module.compHom (M μ → R) (c.cellRep μ).toRingHom
 
 /-- Coordinates of a vector in the cell module. -/
 def cellModuleEquiv (μ : Λ) : c.CellModule μ ≃ₗ[R] (M μ → R) :=
@@ -63,7 +64,8 @@ def cellModuleEquiv (μ : Λ) : c.CellModule μ ≃ₗ[R] (M μ → R) :=
 /-- The defining algebra action on the cell module is matrix multiplication by `cellRep`. -/
 @[simp]
 theorem cellModuleEquiv_smul (μ : Λ) (a : A) (x : c.CellModule μ) :
-    c.cellModuleEquiv μ (a • x) = c.cellRep μ a *ᵥ c.cellModuleEquiv μ x := (rfl)
+    c.cellModuleEquiv μ (a • x) = c.cellRep μ a *ᵥ c.cellModuleEquiv μ x :=
+  Matrix.smul_eq_mulVec _ _
 
 instance (μ : Λ) : IsScalarTower R A (c.CellModule μ) where
   smul_assoc r a x := by
@@ -84,6 +86,13 @@ noncomputable def cellBasis (μ : Λ) : Basis (M μ) R (c.CellModule μ) :=
 theorem cellModuleEquiv_cellBasis (μ : Λ) (s : M μ) :
     c.cellModuleEquiv μ (c.cellBasis μ s) = Pi.single s 1 := by
   simp [cellBasis, Pi.basisFun_apply]
+
+omit [∀ μ, DecidableEq (M μ)] in
+/-- Coordinates in the standard cell basis are the cell-module coordinates. -/
+@[simp]
+theorem cellBasis_repr_apply (μ : Λ) (x : c.CellModule μ) (s : M μ) :
+    (c.cellBasis μ).repr x s = c.cellModuleEquiv μ x s := by
+  simp [cellBasis]
 
 /-- The canonical bilinear form of the cell module, whose matrix is `gramMatrix`. -/
 noncomputable def cellForm (μ : Λ) : LinearMap.BilinForm R (c.CellModule μ) :=
@@ -112,10 +121,9 @@ theorem cellForm_smul (μ : Λ) (a : A) (x y : c.CellModule μ) :
   have h : (c.cellRep μ a)ᵀ * c.gramMatrix μ =
       c.gramMatrix μ * c.cellRep μ (c.antiInvolution a).unop := by
     simpa using c.cellRep_transpose_mul_gramMatrix (c.antiInvolution a).unop μ
-  rw [cellForm_apply, cellForm_apply, cellModuleEquiv_smul, cellModuleEquiv_smul,
-    dotProduct_comm (c.cellRep μ a *ᵥ _),
-    ← Matrix.dotProduct_transpose_mulVec (c.cellRep μ a), Matrix.mulVec_mulVec,
-    h, ← Matrix.mulVec_mulVec]
+  -- In coordinates, invariance is the identity xᵀ aᵀ G y = xᵀ G a* y.
+  simp only [cellForm_apply, cellModuleEquiv_smul, Matrix.dotProduct_mulVec,
+    Matrix.vecMul_mulVec, h, Matrix.vecMul_vecMul]
 
 /-- A cellular basis vector acts as a rank-one operator given by the cell form. -/
 theorem basis_smul (μ : Λ) (s t : M μ) (x : c.CellModule μ) :
@@ -151,7 +159,7 @@ theorem mem_cellRadical_iff_cellBasis (μ : Λ) (x : c.CellModule μ) :
     exact LinearMap.congr_fun hz y
 
 /-- The scalar restriction of the cell radical is the kernel of the cell form. -/
-theorem cellRadical_restrictScalars (μ : Λ) :
+theorem restrictScalars_cellRadical (μ : Λ) :
     (c.cellRadical μ).restrictScalars R = LinearMap.ker (c.cellForm μ) := by
   ext x
   simp [LinearMap.ext_iff]
@@ -181,9 +189,7 @@ theorem eq_top_of_not_le_cellRadical (N : Submodule B (d.CellModule μ))
     apply top_unique
     rw [← (d.cellBasis μ).span_eq]
     exact Submodule.span_le.mpr (by rintro _ ⟨s, rfl⟩; exact hb s)
-  exact Submodule.eq_top_iff'.mpr fun x => by
-    have : x ∈ (⊤ : Submodule K (d.CellModule μ)) := Submodule.mem_top
-    rwa [← htop] at this
+  exact (Submodule.restrictScalars_eq_top_iff K B (d.CellModule μ)).mp htop
 
 /-- Every proper submodule of a cell module over a field lies in the cell radical. -/
 theorem le_cellRadical_of_ne_top (N : Submodule B (d.CellModule μ)) (hN : N ≠ ⊤) :
@@ -191,7 +197,8 @@ theorem le_cellRadical_of_ne_top (N : Submodule B (d.CellModule μ)) (hN : N ≠
   by_contra h
   exact hN (d.eq_top_of_not_le_cellRadical μ N h)
 
-/-- A cell with nonzero form has a unique maximal submodule, its radical. -/
+/-- Over a field, a cell with nonzero form has a maximal submodule given by its radical.
+By `le_cellRadical_of_ne_top`, it is the unique maximal submodule. -/
 theorem isCoatom_cellRadical (h : d.cellForm μ ≠ 0) : IsCoatom (d.cellRadical μ) := by
   refine ⟨by simpa using h, fun N hN => ?_⟩
   by_contra htop
