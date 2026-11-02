@@ -17,19 +17,20 @@ public import TauCeti.Topology.Homotopy.Equivariant
 
 Let a topological monoid `G` act on spaces `X` and `Y`. A continuous map `f : X → Y` that is
 equivariant induces the functor `CategoryTheory.ActionCategory.map (MonoidHom.id G) f` of action
-groupoids, which is continuous on total arrows (`TauCeti.ActionGroupoid.continuous_mapTotal_map`,
-and jointly in a parameter `TauCeti.ActionGroupoid.continuous_uncurry_mapTotal_map`),
-and hence a map `B(G ⋉ X) → B(G ⋉ Y)` of fat classifying spaces. This file proves that these maps
-are invariant under equivariant homotopy: a homotopy `H` from `f₀` to `f₁` through equivariant
-maps induces a homotopy between the maps of classifying spaces
-(`TauCeti.ActionGroupoid.fatClassifyingSpaceHomotopy`).
+categories, which is continuous on total arrows (`TauCeti.ActionGroupoid.continuous_mapTotal_map`,
+and jointly in a parameter `TauCeti.ActionGroupoid.continuous_uncurry_mapTotal_map`, both in
+`TauCeti.Topology.CategoryTheory.ActionGroupoid.Basic`), and hence a map `B(G ⋉ X) → B(G ⋉ Y)` of
+fat classifying spaces. This file proves that these maps are invariant under equivariant homotopy:
+a homotopy `H` from `f₀` to `f₁` through equivariant maps induces a homotopy between the maps of
+classifying spaces (`TauCeti.ActionGroupoid.fatClassifyingSpaceHomotopy`).
 
 The main application is the local model of an orbifold chart. Suppose that `X` contracts onto a
 point `x` through equivariant maps, so that `x` is a fixed point of `G`
 (`ContinuousMap.Homotopy.mem_fixedPoints_of_map_smul`). Then the projection
 `X → *` and the inclusion of `x` induce mutually inverse homotopy equivalences
 `B(G ⋉ X) ≃ₕ B(G ⋉ *)` (`TauCeti.ActionGroupoid.fatClassifyingSpaceHomotopyEquivOfContraction`),
-where `G ⋉ *` is the point presentation `[*/G]`. Since `x` is fixed, the isotropy group of `x` in
+where `G ⋉ *` is the point presentation `[*/G]`. These results hold for any monoid `G`. When `G`
+is moreover a group, so that `G ⋉ X` is a groupoid, the isotropy group of the fixed point `x` in
 `G ⋉ X` is all of `G` (`CategoryTheory.ActionCategory.autMulEquivOfMemFixedPoints`), so this
 identifies the classifying space of the chart with that of the isotropy group at its centre. Every
 label is retained, including labels acting trivially, so the equivalence keeps ineffective
@@ -55,35 +56,6 @@ open MulActionHom (coe_constOfMemFixedPoints coe_toPUnit constOfMemFixedPoints
 universe u
 
 namespace TauCeti.ActionGroupoid
-
-section Map
-
-variable {M N X Y : Type*} [Monoid M] [Monoid N] [MulAction M X] [MulAction N Y]
-  [TopologicalSpace M] [TopologicalSpace N] [TopologicalSpace X] [TopologicalSpace Y]
-
-/-- The functors of action groupoids induced by a family of equivariant maps along a continuous
-monoid homomorphism, depending continuously on a parameter and the point, are jointly continuous
-in the parameter and the total arrow. -/
-theorem continuous_uncurry_mapTotal_map {T : Type*} [TopologicalSpace T] {φ : M →* N}
-    (hφ : Continuous φ) {f : T → X →ₑ[φ] Y} (hf : Continuous fun p : T × X ↦ f p.1 p.2) :
-    Continuous fun p : T × Quiver.Total (ActionCategory M X) ↦
-      (ActionCategory.map φ (f p.1)).toPrefunctor.mapTotal p.2 :=
-  (arrowHomeomorph N Y).isInducing.continuous_iff.2 <| by
-    -- In label-source coordinates, the arrow `(g, x)` at parameter `s` goes to `(φ g, f s x)`.
-    have : Continuous fun p : T × M × X ↦ (φ p.2.1, f p.1 p.2.2) :=
-      (hφ.comp (continuous_fst.comp continuous_snd)).prodMk
-        (hf.comp (continuous_fst.prodMk (continuous_snd.comp continuous_snd)))
-    exact (this.comp (continuous_id.prodMap (arrowHomeomorph M X).continuous)).congr
-      fun _ ↦ by simp
-
-/-- The functor of action groupoids induced by a continuous equivariant map along a continuous
-monoid homomorphism is continuous on total arrows. -/
-theorem continuous_mapTotal_map {φ : M →* N} (hφ : Continuous φ) {f : X →ₑ[φ] Y}
-    (hf : Continuous f) : Continuous (ActionCategory.map φ f).toPrefunctor.mapTotal :=
-  (continuous_uncurry_mapTotal_map hφ (f := fun _ : Unit ↦ f) (hf.comp continuous_snd)).comp
-    (.prodMk_right ())
-
-end Map
 
 variable {G X Y : Type u} [Monoid G] [MulAction G X] [MulAction G Y] [TopologicalSpace G]
   [TopologicalSpace X] [TopologicalSpace Y]
