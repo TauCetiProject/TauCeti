@@ -117,9 +117,9 @@ namespace TauCeti.HahnModule
 
 open _root_.HahnModule HahnSeries
 
-section CommSemiring
+section Semiring
 
-variable {R V : Type*} [CommSemiring R] [AddCommMonoid V] [Module R V]
+variable {R V : Type*} [Semiring R] [AddCommMonoid V] [Module R V]
 
 /-- Laurent-monomial multiplication identifies any two shifted power-series lattices. -/
 noncomputable def powerSeriesLatticeShift (a k : ℤ) :
@@ -135,7 +135,10 @@ noncomputable def powerSeriesLatticeShift (a k : ℤ) :
   map_add' f g := Subtype.ext (_root_.smul_add _ _ _)
   map_smul' p f := Subtype.ext (by
     simp only [Submodule.coe_smul_of_tower, _root_.HahnModule.powerSeries_smul]
-    exact smul_comm _ _ _)
+    rw [← mul_smul, ← mul_smul]
+    congr 1
+    ext n
+    simp only [coeff_single_mul, coeff_mul_single, one_mul, mul_one, RingHom.id_apply])
 
 /-- The lattice-shift equivalence acts by the specified Laurent monomial. -/
 @[simp]
@@ -151,6 +154,12 @@ theorem powerSeriesLatticeShift_symm_apply (a k : ℤ)
     ((powerSeriesLatticeShift a k).symm f : HahnModule ℤ R V) =
       single (-k) (1 : R) • (f : HahnModule ℤ R V) :=
   (rfl)
+
+end Semiring
+
+section CommSemiring
+
+variable {R V : Type*} [CommSemiring R] [AddCommMonoid V] [Module R V]
 
 /-- Multiplication by `X^n` carries a lattice onto the lattice shifted by `n`. -/
 theorem X_pow_smul_powerSeriesLattice (a : ℤ) (n : ℕ) :
