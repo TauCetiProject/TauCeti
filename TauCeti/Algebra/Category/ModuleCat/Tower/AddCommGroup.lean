@@ -409,12 +409,12 @@ theorem Hom.exact_toNatTrans_app (f : Hom A B) (g : Hom B C)
 
 /-- The homomorphism `∏ₙ Aₙ → ∏ₙ Bₙ` induced levelwise by a morphism of towers. -/
 def Hom.onProduct (f : Hom A B) : (∀ n, A.obj n) →+ ∀ n, B.obj n :=
-  AddMonoidHom.pi fun n ↦ (f.app n).comp (Pi.evalAddMonoidHom A.obj n)
+  AddMonoidHom.piMap f.app
 
 @[simp]
 theorem Hom.onProduct_apply (f : Hom A B) (a : ∀ n, A.obj n) (n : ℕ) :
     f.onProduct a n = f.app n (a n) :=
-  (rfl)
+  AddMonoidHom.piMap_apply f.app a n
 
 /-- The identity morphism of a tower acts identically on the product. -/
 @[simp]
