@@ -15,13 +15,16 @@ Fix a smooth weight `f : M → [0, 1]`, and write `(1 - f) g + f h` for the inte
 `Bundle.ContMDiffRiemannianMetric.convexCombinationFun` of two metrics `g` and `h`. Even when `g`
 and `h` have positive scalar curvature, the interpolation need not: its scalar curvature involves
 the first and second derivatives of `f` and of both metrics, not only the scalar curvatures of `g`
-and `h`. It does have positive scalar curvature when `g` and `h` are both close, in the chart C²
-topology, to a single metric `g₀` of positive scalar curvature. Indeed, for the fixed weight `f`,
-interpolation is continuous in the chart C² topology
-(`Bundle.ContMDiffRiemannianMetric.continuous_convexCombinationFun`), it fixes `g₀` when both
-metrics equal `g₀`, and positive scalar curvature is a C²-open condition. On a compact set of
-points the margin is uniform: the scalar curvature of the interpolation is bounded below by one
-positive constant for all such `g` and `h`.
+and `h`. Suppose instead that `g` and `h` are both close, in the chart C² topology, to a single
+metric `g₀` whose scalar curvature is positive on a compact set `L` of points. For the fixed
+weight `f`, interpolation is continuous in the chart C² topology
+(`Bundle.ContMDiffRiemannianMetric.continuous_convexCombinationFun`) and fixes `g₀` when both
+metrics equal `g₀`, and scalar curvature depends continuously on the metric in that topology.
+Hence the scalar curvature of the interpolation on `L` is bounded below by one positive constant
+for all such `g` and `h`; this holds on an arbitrary manifold `M`. When `M` itself is
+compact, positive scalar curvature is a C²-open condition
+(`Bundle.ContMDiffRiemannianMetric.isOpen_setOf_hasPositiveScalarCurvature_chartC2`), so if `g₀`
+has positive scalar curvature, then so has the interpolation, at every point of `M`.
 
 This is how a metric of positive scalar curvature is joined across a collar to a C²-close model
 metric, such as a product metric near the boundary of a surgery region, with a uniform positive
