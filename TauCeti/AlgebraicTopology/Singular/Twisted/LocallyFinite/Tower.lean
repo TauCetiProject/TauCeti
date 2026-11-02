@@ -533,7 +533,7 @@ def borelMooreHomologyToLim (j : ℕ) :
 /-- The map from Borel–Moore homology to the limit of relative homology is the map of the tower
 of complexes to the limit of its homology, after identifying locally finite chains with the limit
 complex. -/
-lemma borelMooreHomologyToLim_eq (j : ℕ) :
+lemma borelMooreHomologyToLim_def (j : ℕ) :
     borelMooreHomologyToLim L K j = (relativeChainComplexTower L K).homologyToLim j ∘ₗ
       (HomologicalComplex.homologyMap (locallyFiniteChainComplexIsoLimComplex L K).hom j).hom :=
   (rfl)
@@ -563,7 +563,7 @@ def limOneToBorelMooreHomology (j : ℕ) :
 
 /-- The connecting map of the Milnor sequence of Borel–Moore homology is the connecting map of the
 tower of complexes, after identifying the limit complex with locally finite chains. -/
-lemma limOneToBorelMooreHomology_eq (j : ℕ) :
+lemma limOneToBorelMooreHomology_def (j : ℕ) :
     limOneToBorelMooreHomology L K j =
       (HomologicalComplex.homologyMap (locallyFiniteChainComplexIsoLimComplex L K).inv j).hom ∘ₗ
         (relativeChainComplexTower L K).limOneToHomology
@@ -575,7 +575,7 @@ theorem limOneToBorelMooreHomology_injective (j : ℕ) :
     Function.Injective (limOneToBorelMooreHomology L K j) := by
   let e := (HomologicalComplex.homologyMapIso
     (locallyFiniteChainComplexIsoLimComplex L K) j).toLinearEquiv
-  rw [limOneToBorelMooreHomology_eq, LinearMap.coe_comp]
+  rw [limOneToBorelMooreHomology_def, LinearMap.coe_comp]
   exact e.symm.injective.comp (ComplexTower.limOneToHomology_injective _ _)
 
 /-- **The Milnor sequence of Borel–Moore homology** is exact in the middle: the image of `lim¹`
@@ -586,17 +586,13 @@ theorem exact_limOneToBorelMooreHomology_borelMooreHomologyToLim (j : ℕ) :
     (locallyFiniteChainComplexIsoLimComplex L K) j).toLinearEquiv
   have hexact := ComplexTower.exact_limOneToHomology_homologyToLim
     (relativeChainComplexTower_shift_surjective L K) (ComplexShape.down_mk (j + 1) j rfl)
-  intro y
-  rw [borelMooreHomologyToLim_eq, LinearMap.comp_apply, hexact]
-  constructor
-  · rintro ⟨z, hz⟩
-    refine ⟨z, ?_⟩
-    rw [limOneToBorelMooreHomology_eq, LinearMap.comp_apply, hz]
-    exact e.symm_apply_apply y
-  · rintro ⟨z, rfl⟩
-    refine ⟨z, ?_⟩
-    rw [limOneToBorelMooreHomology_eq, LinearMap.comp_apply]
-    exact (e.apply_symm_apply _).symm
+  refine Function.Exact.of_ladder_linearEquiv_of_exact (e₁ := LinearEquiv.refl R _)
+    (e₂ := e.symm) (e₃ := LinearEquiv.refl R _) ?_ ?_ hexact
+  · rw [limOneToBorelMooreHomology_def]
+    rfl
+  · rw [borelMooreHomologyToLim_def]
+    exact LinearMap.ext fun x ↦
+      congrArg ((relativeChainComplexTower L K).homologyToLim j) (e.apply_symm_apply x)
 
 /-- The map from Borel–Moore homology to the limit of the relative twisted homology modules of a
 compact exhaustion is surjective. -/
@@ -604,7 +600,7 @@ theorem borelMooreHomologyToLim_surjective (j : ℕ) :
     Function.Surjective (borelMooreHomologyToLim L K j) := by
   let e := (HomologicalComplex.homologyMapIso
     (locallyFiniteChainComplexIsoLimComplex L K) j).toLinearEquiv
-  rw [borelMooreHomologyToLim_eq, LinearMap.coe_comp]
+  rw [borelMooreHomologyToLim_def, LinearMap.coe_comp]
   exact (ComplexTower.homologyToLim_surjective (relativeChainComplexTower_shift_surjective L K)
     j).comp e.surjective
 
