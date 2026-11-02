@@ -68,10 +68,10 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@c342d9c002dcd42003f9ab8f68f2c3656ef40fbf
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@422751ed4ca60d28f4ec80f149505236fd1db408
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: c342d9c002dcd42003f9ab8f68f2c3656ef40fbf
+          tools-ref: 422751ed4ca60d28f4ec80f149505236fd1db408
           project-directory: .
       - uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
         id: app-token
