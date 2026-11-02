@@ -111,6 +111,13 @@ theorem card_eq (hG : G.IsKnot) (c₀ : Fin n) :
   rw [Fintype.card_congr (equivProd hG c₀), Fintype.card_prod, Fintype.card_coe,
     Fintype.card_bool, mul_comm]
 
+/-- Summing over the visits counts every crossing twice. -/
+theorem sum_crossing {M : Type*} [AddCommMonoid M] (f : Fin n × Fin n → M) :
+    ∑ v : CrossingVisit hG c₀, f v.crossing.1 = 2 • ∑ p ∈ G.crossings, f p := by
+  rw [← (equivProd hG c₀).symm.sum_comp, Fintype.sum_prod_type, ← Finset.sum_coe_sort G.crossings,
+    Finset.smul_sum]
+  simp [equivProd]
+
 /-- The **position** of a visit along the traversal from `c₀`: the index of the segment it runs
 along, followed by the distance travelled along that segment. The vertical segment of the column
 reached at step `t` of the traversal has index `2 t` and starts at the `X` marking of that column;
@@ -268,18 +275,11 @@ theorem gaussCode_writhe :
   -- Sum the signs over all visits in two ways: every crossing label (`sum_sign_visit`), and every
   -- crossing of the grid, is visited exactly twice.
   have hgrid : ∑ i, ((gaussCode hG c₀).sign ((gaussCode hG c₀).visit i) : ℤ) =
-      2 * ∑ p ∈ G.crossings, (G.crossingSign p.1 p.2 : ℤ) := by
+      2 • ∑ p ∈ G.crossings, (G.crossingSign p.1 p.2 : ℤ) := by
     simp only [gaussCode_sign_visit]
-    rw [Fintype.sum_equiv (visitOrderIso hG c₀).toEquiv
-        (fun i ↦ (G.crossingSign (visitOrderIso hG c₀ i).crossing.1.1
-          (visitOrderIso hG c₀ i).crossing.1.2 : ℤ))
-        (fun v : CrossingVisit hG c₀ ↦ (G.crossingSign v.crossing.1.1 v.crossing.1.2 : ℤ))
-        fun _ ↦ rfl,
-      Fintype.sum_equiv (CrossingVisit.equivProd hG c₀)
-        (fun v : CrossingVisit hG c₀ ↦ (G.crossingSign v.crossing.1.1 v.crossing.1.2 : ℤ))
-        (fun q : G.crossings × Bool ↦ (G.crossingSign q.1.1.1 q.1.1.2 : ℤ)) fun _ ↦ rfl,
-      Fintype.sum_prod_type, ← Finset.sum_coe_sort G.crossings, Finset.mul_sum]
-    simp [two_mul]
+    exact ((visitOrderIso hG c₀).toEquiv.sum_comp _).trans
+      (CrossingVisit.sum_crossing fun p ↦ (G.crossingSign p.1 p.2 : ℤ))
+  rw [nsmul_eq_mul, Nat.cast_ofNat] at hgrid
   exact mul_left_cancel₀ two_ne_zero ((gaussCode hG c₀).sum_sign_visit.symm.trans hgrid)
 
 end GridDiagram
