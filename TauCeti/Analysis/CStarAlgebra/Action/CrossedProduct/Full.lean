@@ -386,6 +386,11 @@ def lift : FullCrossedProduct α μ →⋆ₙₐ[ℂ] D where
 theorem lift_of (f : ConvolutionAlgebra α μ) : lift ρ hρ (of α μ f) = ρ f :=
   fromCompletion_liftCLM_of ρ hρ f
 
+/-- Composing the extension with the canonical map recovers the original ⋆-homomorphism. -/
+@[simp]
+theorem lift_comp_of : (lift ρ hρ).comp (of α μ) = ρ :=
+  NonUnitalStarAlgHom.ext (lift_of ρ hρ)
+
 end FullCrossedProduct
 
 namespace CovariantRepresentation
