@@ -80,12 +80,15 @@ private theorem directSum_isDGBimodule :
       (M i).isDGLeftModule.isHomogeneous.map_mem ((mem_sum_grading M _ _).mp hx i)
   sq_zero x := by
     ext i
+    simp only [DirectSum.lmap_apply, DirectSum.zero_apply]
     exact (M i).isDGLeftModule.sq_zero (x i)
   leibniz ha x := by
     ext i
+    simp only [DirectSum.lmap_apply, DirectSum.add_apply, DirectSum.smul_apply]
     exact (M i).isDGLeftModule.leibniz ha (x i)
   leibniz_right hx b := by
     ext i
+    simp only [DirectSum.lmap_apply, DirectSum.add_apply, DirectSum.smul_apply]
     exact (M i).isDGRightModule.leibniz ((mem_sum_grading M _ _).mp hx i) b
 
 /-- The direct sum of DG bimodules, with componentwise actions and differential and
