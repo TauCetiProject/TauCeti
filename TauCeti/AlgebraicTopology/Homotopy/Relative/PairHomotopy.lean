@@ -167,7 +167,7 @@ private theorem exists_bottomHomotopy
     rcases Cube.mem_prodBoundary_iff.1 hx with (rfl | rfl) | hz
     · exact hk₀ u z ▸ RelGenLoop.mapsTo_prodBoundary p.2 (Cube.mk_zero_mem_prodBoundary z)
     · exact hk₁ u z ▸ RelGenLoop.mapsTo_prodBoundary q.2 (Cube.mk_zero_mem_prodBoundary z)
-    · exact hk hz ▸ hH t (openBoxContraction_mem (z := ((0 : I), z)) (.inr hz) u)
+    · exact hk hz ▸ hH t (openBoxContraction_mem_prodBoundary (z := ((0 : I), z)) (.inr hz) u)
   -- Extend the deformation over the face, keeping its values in the subspace.
   have hbd := hasHomotopyExtensionProperty_prodBoundary (N := N)
   obtain ⟨L, hL₀, hL⟩ := hbd.exists_extension_of_isClosed hbd.isClosed
@@ -318,17 +318,16 @@ theorem exists_homotopyAlong_of_homotopicWith
   -- The loop `γ` in the subspace traced by the image of the centre of the top face.
   have hc (t : I) : H (t, (1, cubeCenter)) ∈ range X.pair.map :=
     H.prop t (Cube.mk_mem_prodBoundary (.inl rfl))
-  let g : I → X.pair.snd := fun t ↦ (hc t).choose
-  have hg (t : I) : X.pair.map (g t) = H (t, (1, cubeCenter)) := (hc t).choose_spec
+  let g : C(I, X.pair.snd) := X.pair.liftSnd ⟨fun t ↦ H (t, (1, cubeCenter)), by fun_prop⟩ hc
+  have hg (t : I) : X.pair.map (g t) = H (t, (1, cubeCenter)) := TopPair.map_liftSnd _ hc t
   let γ : Path X.basepoint X.basepoint :=
-    { toFun := g
-      continuous_toFun := X.pair.isEmbedding_map.continuous_iff.2 <| by
-        simp only [Function.comp_def, hg]
-        fun_prop
+    { toContinuousMap := g
       source' := X.pair.isEmbedding_map.injective <| by
-        rw [hg, H.apply_zero, coe_coe, apply_eq_of_openBox p (.inl rfl)]
+        rw [ContinuousMap.toFun_eq_coe, hg, H.apply_zero, coe_coe,
+          apply_eq_of_openBox p (.inl rfl)]
       target' := X.pair.isEmbedding_map.injective <| by
-        rw [hg, H.apply_one, coe_coe, apply_eq_of_openBox q (.inl rfl)] }
+        rw [ContinuousMap.toFun_eq_coe, hg, H.apply_one, coe_coe,
+          apply_eq_of_openBox q (.inl rfl)] }
   exact ⟨γ, ⟨{
     toHomotopy := F
     apply_zero_mem_range := hF₀

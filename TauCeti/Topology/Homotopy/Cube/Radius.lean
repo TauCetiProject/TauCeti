@@ -147,7 +147,7 @@ theorem openBoxContraction_mem_openBox {z : I × I^N} (hz : z.1 = 1 ∨ z.2 ∈ 
   · exact .inl (projIcc_eq_one.2 (by linarith [z.1.2.1]))
 
 /-- The contraction keeps the open box `{1} × I^N ∪ I × ∂I^N` inside the boundary of the cube. -/
-theorem openBoxContraction_mem {z : I × I^N} (hz : z.1 = 1 ∨ z.2 ∈ Cube.boundary N)
+theorem openBoxContraction_mem_prodBoundary {z : I × I^N} (hz : z.1 = 1 ∨ z.2 ∈ Cube.boundary N)
     (t : I) : openBoxContraction t z ∈ Cube.prodBoundary N :=
   Cube.mk_mem_prodBoundary (openBoxContraction_mem_openBox hz t)
 

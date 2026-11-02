@@ -88,7 +88,8 @@ private theorem exists_boundaryHomotopy (g : C(I × I^N, Y))
   have hbd := hasHomotopyExtensionProperty_cubeBoundary (N := N)
   obtain ⟨K, hK₀, hK⟩ := hbd.exists_extension_of_isClosed hbd.isClosed
     (⟨fun y ↦ ⟨g (0, y), hg (Cube.mk_zero_mem_prodBoundary y)⟩, by fun_prop⟩ : C(I^N, B))
-    ⟨fun q ↦ ⟨g (openBoxContraction q.1 (0, q.2)), hg (openBoxContraction_mem (.inr q.2.2) _)⟩,
+    ⟨fun q ↦ ⟨g (openBoxContraction q.1 (0, q.2)),
+        hg (openBoxContraction_mem_prodBoundary (.inr q.2.2) _)⟩,
       (g.continuous.comp (continuous_openBoxContraction.comp
         (continuous_fst.prodMk (continuous_const.prodMk
           (continuous_subtype_val.comp continuous_snd))))).subtype_mk _⟩
@@ -129,7 +130,7 @@ private theorem exists_boundaryHomotopy (g : C(I × I^N, Y))
     · simp only [ContinuousMap.coe_mk, h, hs, ite_true]
       exact (K (t, (z : I × I^N).2)).2
     · rw [ContinuousMap.coe_mk, hS (show (t, (z : I × I^N)) ∈ S from hS' z.2 hs)]
-      exact hg (openBoxContraction_mem (hS' z.2 hs) t)
+      exact hg (openBoxContraction_mem_prodBoundary (hS' z.2 hs) t)
   · exact (hS (show ((1 : I), (z : I × I^N)) ∈ S from hz)).trans
       (congrArg g (openBoxContraction_one _))
 
