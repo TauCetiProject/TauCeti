@@ -37,6 +37,7 @@ our two chosen indices, because the first base is at least the second. -/
 private theorem exists_close_normalized_powers {A b C : ℕ} (hb : 2 ≤ b) (hAb : b ≤ A)
     (hC : 1 ≤ C) :
     ∃ x y : ℕ, x < y ∧ Nat.log b (A ^ x) < Nat.log b (A ^ y) ∧
+      1 ≤ (A ^ x : ℚ) / b ^ Nat.log b (A ^ x) ∧
       (C : ℚ) * |(A ^ y : ℚ) / b ^ Nat.log b (A ^ y) -
         (A ^ x : ℚ) / b ^ Nat.log b (A ^ x)| < 1 := by
   have hb0 : 0 < b := by omega
@@ -78,24 +79,20 @@ private theorem exists_close_normalized_powers {A b C : ℕ} (hb : 2 ≤ b) (hAb
       _ ≤ A ^ y := Nat.pow_le_pow_right (by omega) hxy
   have hij' : (i : ℕ) ≠ j := fun h ↦ hij (Fin.ext h)
   rcases lt_or_gt_of_ne hij' with h | h
-  · exact ⟨i, j, h, he h, hnear⟩
-  · exact ⟨j, i, h, he h, by simpa [abs_sub_comm] using hnear⟩
+  · exact ⟨i, j, h, he h, (hr i).1, hnear⟩
+  · exact ⟨j, i, h, he h, (hr j).1, by simpa [abs_sub_comm] using hnear⟩
 
 /-- Converting a close pair of normalized powers back to positive powers. -/
 private theorem exists_close_powers_of_le {A b C : ℕ} (hb : 2 ≤ b) (hAb : b ≤ A)
     (hC : 1 ≤ C) :
     ∃ m n : ℕ, 0 < m ∧ 0 < n ∧
       (C : ℚ) * |(A : ℚ) ^ m - (b : ℚ) ^ n| < (b : ℚ) ^ n := by
-  obtain ⟨x, y, hxy, he, hnear⟩ := exists_close_normalized_powers hb hAb hC
+  obtain ⟨x, y, hxy, he, hrx, hnear⟩ := exists_close_normalized_powers hb hAb hC
   let ex := Nat.log b (A ^ x)
   let ey := Nat.log b (A ^ y)
   let rx : ℚ := (A ^ x : ℚ) / b ^ ex
   let ry : ℚ := (A ^ y : ℚ) / b ^ ey
   have hb0 : (0 : ℚ) < b := by exact_mod_cast (show 0 < b by omega)
-  have hrx : 1 ≤ rx := by
-    apply (le_div_iff₀ (pow_pos hb0 _)).2
-    simp only [one_mul]
-    exact_mod_cast Nat.pow_log_le_self b (x := A ^ x) (pow_ne_zero x (by omega : A ≠ 0))
   have hid : ry * (b : ℚ) ^ (ey - ex) = rx * (A : ℚ) ^ (y - x) := by
     have hpowA : (A : ℚ) ^ y = (A : ℚ) ^ x * (A : ℚ) ^ (y - x) := by
       rw [← pow_add, Nat.add_sub_of_le hxy.le]
@@ -112,12 +109,17 @@ private theorem exists_close_powers_of_le {A b C : ℕ} (hb : 2 ≤ b) (hAb : b 
     calc
       _ = |rx * ((A : ℚ) ^ (y - x) - (b : ℚ) ^ (ey - ex))| := by
         rw [abs_mul, abs_of_nonneg (by linarith : 0 ≤ rx)]
-      _ = |(ry - rx) * (b : ℚ) ^ (ey - ex)| := congrArg abs (by nlinarith [hid])
+      _ = |(ry - rx) * (b : ℚ) ^ (ey - ex)| := congrArg abs (by rw [mul_sub, ← hid, sub_mul])
       _ = _ := by rw [abs_mul, abs_of_nonneg (pow_nonneg hb0.le _)]
   have hmul := mul_lt_mul_of_pos_right hnear' (pow_pos hb0 (ey - ex))
   have hC0 : (0 : ℚ) ≤ C := Nat.cast_nonneg _
   have habs : (0 : ℚ) ≤ |(A : ℚ) ^ (y - x) - (b : ℚ) ^ (ey - ex)| := abs_nonneg _
-  nlinarith [mul_nonneg hC0 habs]
+  calc
+    (C : ℚ) * |(A : ℚ) ^ (y - x) - (b : ℚ) ^ (ey - ex)|
+        ≤ C * (rx * |(A : ℚ) ^ (y - x) - (b : ℚ) ^ (ey - ex)|) :=
+      mul_le_mul_of_nonneg_left (le_mul_of_one_le_left habs hrx) hC0
+    _ = C * |ry - rx| * (b : ℚ) ^ (ey - ex) := by rw [hscale, mul_assoc]
+    _ < (b : ℚ) ^ (ey - ex) := by simpa using hmul
 
 end TauCeti
 
@@ -128,10 +130,11 @@ namespace Nat
 /-- Positive powers of any two bases at least two can be made arbitrarily close relative to
 one of the powers. The difference is taken in the integers, not by truncated subtraction.
 The two powers may coincide; multiplicative independence is not required. -/
-theorem exists_pos_pow_sub_pow_mul_le (a b C : ℕ) (ha : 2 ≤ a) (hb : 2 ≤ b)
-    (hC : 1 ≤ C) :
+theorem exists_pos_mul_abs_pow_sub_pow_le (a b C : ℕ) (ha : 2 ≤ a) (hb : 2 ≤ b) :
     ∃ m n : ℕ, 0 < m ∧ 0 < n ∧ (C : ℤ) * |(a : ℤ) ^ m - (b : ℤ) ^ n| ≤
       (b : ℤ) ^ n := by
+  rcases Nat.eq_zero_or_pos C with rfl | hC
+  · exact ⟨1, 1, by simp, by simp, by simp [Nat.cast_nonneg]⟩
   have hAb : b ≤ a ^ b := (Nat.lt_two_pow_self (n := b)).le.trans (Nat.pow_le_pow_left ha b)
   obtain ⟨m, n, hm, hn, h⟩ := TauCeti.exists_close_powers_of_le hb hAb hC
   refine ⟨b * m, n, Nat.mul_pos (by omega) hm, hn, ?_⟩
