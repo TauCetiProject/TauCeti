@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.Padics.Distribution.Amice.Basis
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Triangular
-import TauCeti.Analysis.Normed.Ring.PseudoUniformizer
 
 /-!
 # Amice's theorem on the analytic stages
@@ -113,16 +112,12 @@ coefficient, at the coordinate in position `i`, of the expansion of `e_{h,n}` wi
 private noncomputable def amiceMatrix (h : ℕ) : Matrix ℕ ℕ ℤ_[p] := fun i k ↦
   (amicePolynomial p h (rev p h k) ((coordEquiv p h i).1.val : ℤ_[p])).coeff (coordEquiv p h i).2
 
-/-- The columns of `amiceMatrix` are finite: the expansion of `e_{h,n}` has degree at most `n`. -/
+/-- The columns of `amiceMatrix` tend to zero: they are the coefficients of Amice's vectors. -/
 private theorem tendsto_amiceMatrix (h k : ℕ) :
     Tendsto (fun i ↦ amiceMatrix p h i k) cofinite (𝓝 0) := by
-  have hfin : {i | (coordEquiv p h i).2 ≤ rev p h k}.Finite :=
-    ((Set.finite_univ.prod (Set.finite_Iic _)).preimage (coordEquiv p h).injective.injOn).subset
-      fun i hi ↦ by simpa using hi
-  refine tendsto_nhds_of_eventually_eq ?_
-  filter_upwards [hfin.compl_mem_cofinite] with i hi
-  simp only [Set.mem_compl_iff, Set.mem_ofPred_eq, not_le] at hi
-  exact coeff_amicePolynomial_eq_zero _ hi
+  have := (amiceTerm p h (rev p h k) (1 : ℤ_[p])).tendsto_cofinite.comp
+    (coordEquiv p h).injective.tendsto_cofinite
+  simpa [Function.comp_def, amiceMatrix] using this
 
 /-- The diagonal entries of `amiceMatrix` are units. -/
 private theorem isUnit_amiceMatrix (h i : ℕ) : IsUnit (amiceMatrix p h i i) := by
@@ -154,14 +149,6 @@ variable {h : ℕ} {E : Type*} [NormedAddCommGroup E] [Module ℤ_[p] E] [IsBoun
   [IsUltrametricDist E] [CompleteSpace E]
   (S : Type*) [Semiring S] [Module S E] [ContinuousConstSMul S E] [SMulCommClass ℤ_[p] S E]
 
-omit [IsUltrametricDist E] [CompleteSpace E] in
-/-- A unit of `ℤ_p` acts isometrically on `E`. -/
-private theorem norm_smul_of_isUnit {u : ℤ_[p]} (hu : IsUnit u) (e : E) : ‖u • e‖ = ‖e‖ := by
-  obtain ⟨u, rfl⟩ := hu
-  have hu1 : ‖(u : ℤ_[p])‖ = 1 := PadicInt.isUnit_iff.1 u.isUnit
-  rw [NormedRing.norm_units_smul_of_norm_mul (by rw [hu1]; exact one_pos) (norm_mul _), hu1,
-    one_mul]
-
 variable (p h) in
 /-- **Amice's theorem.** Amice's map `(cₙ) ↦ ∑ₙ e_{h,n} • cₙ`, where
 `e_{h,n}(x) = ⌊n / pʰ⌋! (x choose n)`, is an isometric isomorphism from the null sequences in `E`
@@ -170,7 +157,7 @@ noncomputable def amiceEquiv : C₀(ℕ, E) ≃ₗᵢ[S] AnalyticStage p h E :=
   (congrLeft S E (revPerm p h).toHomeomorphOfDiscrete).trans <|
     ((amiceMatrix p h).toZeroAtInftySMulLinearIsometryEquiv S (tendsto_amiceMatrix h)
       (fun _ _ ↦ PadicInt.norm_le_one _) (isUnit_amiceMatrix h)
-      (fun i ↦ norm_smul_of_isUnit (isUnit_amiceMatrix h i))
+      (fun i ↦ PadicInt.norm_smul_of_isUnit (isUnit_amiceMatrix h i))
       (c := (p : ℝ)⁻¹) (inv_lt_one_of_one_lt₀ (by exact_mod_cast hp.out.one_lt)) fun i k hki ↦ by
         obtain ⟨x, hx⟩ := dvd_amiceMatrix (p := p) h hki
         rw [hx, norm_mul, PadicInt.norm_p]
