@@ -9,6 +9,7 @@ public import Mathlib.GroupTheory.Commutator.Basic
 public import Mathlib.Topology.Algebra.Group.Subgroup
 public import Mathlib.Topology.Algebra.IsUniformGroup.DiscreteSubgroup
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
+public import TauCeti.Topology.Algebra.Group.Basic
 public import TauCeti.Topology.Algebra.Group.Neighborhood
 import Mathlib.Algebra.Ring.Int.Parity
 
@@ -157,9 +158,8 @@ theorem subgroupOfContinuousMulEquivOfLe_smul {M : Type*} [SMul G M]
 
 /-- The center of a Hausdorff group with separately continuous multiplication is closed. -/
 instance isClosed_center [SeparatelyContinuousMul G] [T2Space G] :
-    IsClosed (center G : Set G) := by
-  simpa only [coe_center, Set.centralizer_univ] using
-    Set.isClosed_centralizer (Set.univ : Set G)
+    IsClosed (center G : Set G) :=
+  Set.isClosed_center G
 
 /-- A closed subgroup `H`, read inside another subgroup `K` as `H.subgroupOf K`, is closed in `K`.
 As an instance, it lets instance search find the separation and compactness properties of
