@@ -115,7 +115,7 @@ uniformly integrable and uniformly `L¹`-bounded has an integrable weak gradient
 norm integral is bounded by the lower limit of those of the approximants. In contrast to weak
 closedness with a specified gradient, no convergence of the derivatives is assumed. -/
 theorem LocallyIntegrableOn.exists_hasWeakFDerivOn_integrableOn_of_uniformIntegrable
-    [μ.IsAddHaarMeasure] (hu : LocallyIntegrableOn u Ω μ)
+    [IsFiniteMeasureOnCompacts μ] (hu : LocallyIntegrableOn u Ω μ)
     (hv : ∀ i, HasWeakFDerivOn μ Ω (v i) (U i))
     (hUI : UniformIntegrable U 1 (μ.restrict Ω))
     (hconv : ∀ K, IsCompact K → K ⊆ Ω →
@@ -135,16 +135,19 @@ theorem LocallyIntegrableOn.exists_hasWeakFDerivOn_integrableOn_of_uniformIntegr
   have hfin : ∀ K, IsCompact K → K ⊆ Ω →
       ∃ V : Opens E, K ⊆ (V : Set E) ∧ totalVariationOn μ V u ≠ ∞ :=
     fun _ _ hK => ⟨Ω, hK, (htv.trans_lt ENNReal.coe_lt_top).ne⟩
-  obtain ⟨g, hg⟩ : ∃ g : E → E, HasWeakFDerivOn μ Ω u (fun x => innerSL ℝ (g x)) :=
-    ⟨_, hasWeakFDerivOn_of_absolutelyContinuous hu hfin
-      (hu.variationMeasure_absolutelyContinuous_of_unifIntegrable hfin hv hUI.1 hconv)⟩
-  have hnormg : totalVariationOn μ Ω u = ∫⁻ x in Ω, ‖g x‖ₑ ∂μ := by
-    simpa only [← ofReal_norm, innerSL_apply_norm] using hg.totalVariationOn_eq_setLIntegral_enorm
-  refine ⟨g, hg, ⟨hg.locallyIntegrableOn_gradient.aestronglyMeasurable, ?_⟩, ?_⟩
-  · rw [HasFiniteIntegral, ← hnormg]
-    exact htv.trans_lt ENNReal.coe_lt_top
-  · rw [← hnormg]
-    exact hlsc.trans (liminf_le_liminf (.of_forall fun i =>
-      (hv i).totalVariationOn_le_setLIntegral_enorm))
+  have hac := hu.variationMeasure_absolutelyContinuous_of_unifIntegrable hfin hv hUI.1 hconv
+  have hg := hasWeakFDerivOn_of_absolutelyContinuous hu hfin hac
+  have hnormg : (∫⁻ x in Ω, ‖Function.extend ((↑) : Ω → E)
+      (fun x => ((variationMeasure μ Ω u).rnDeriv (μ.comap (↑)) x).toReal •
+        polarDensity μ Ω u x) 0 x‖ₑ ∂μ) ≤ totalVariationOn μ Ω u := by
+    rw [← Subtype.range_coe (s := (Ω : Set E)), ← image_univ,
+      ← setLIntegral_subtype Ω.isOpen.measurableSet]
+    simp only [Subtype.val_injective.extend_apply]
+    exact (setLIntegral_enorm_rnDeriv_smul_polarDensity_le hu hfin hac
+      MeasurableSet.univ).trans_eq (variationMeasure_univ hu hfin)
+  refine ⟨_, hg, ⟨hg.locallyIntegrableOn_gradient.aestronglyMeasurable, ?_⟩, ?_⟩
+  · exact hnormg.trans_lt (htv.trans_lt ENNReal.coe_lt_top)
+  · exact hnormg.trans (hlsc.trans (liminf_le_liminf (.of_forall fun i =>
+      (hv i).totalVariationOn_le_setLIntegral_enorm)))
 
 end MeasureTheory
