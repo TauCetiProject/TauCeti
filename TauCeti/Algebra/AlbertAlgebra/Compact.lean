@@ -57,7 +57,8 @@ in which the norm of an octonion can vanish.
 * `TauCeti.CompactAlbertAlgebra.traceZero`: the trace-zero subspace, the kernel of the trace.
 * `TauCeti.CompactAlbertAlgebra.diagIdempotent`: the three diagonal idempotents `E₀`, `E₁`, `E₂`.
 * `TauCeti.CompactAlbertAlgebra.offDiagSingle`: the three off-diagonal slots `Fⱼ(a)`, the Hermitian
-  matrix whose only nonzero entry is the octonion `a` in position `(j + 1, j + 2)`.
+  matrix whose only nonzero entries are the octonion `a` in position `(j + 1, j + 2)` and its
+  conjugate `star a` in position `(j + 2, j + 1)`.
 
 ## Main results
 
@@ -513,9 +514,11 @@ theorem trace_diagIdempotent (i : Fin 3) : trace (diagIdempotent R i) = 1 := by
 
 /-! ### The off-diagonal slots -/
 
-/-- The Hermitian octonion matrix whose only nonzero entry is the octonion `a`, in position
-`(j + 1, j + 2)`: the `j`-th **off-diagonal slot** `Fⱼ(a)`. Together with the diagonal frame
-`TauCeti.CompactAlbertAlgebra.diagIdempotent` these span the algebra. -/
+/-- The Hermitian octonion matrix whose only nonzero entries are the octonion `a`, in position
+`(j + 1, j + 2)`, and its conjugate `star a`, in position `(j + 2, j + 1)`: the `j`-th
+**off-diagonal slot** `Fⱼ(a)`. It stores `a` as the coordinate `offDiag j`, every other coordinate
+being zero. Together with the diagonal frame `TauCeti.CompactAlbertAlgebra.diagIdempotent` these
+span the algebra. -/
 def offDiagSingle (j : Fin 3) (a : CayleyDickson ℍ[R]) : CompactAlbertAlgebra R :=
   ⟨0, Pi.single j a⟩
 
