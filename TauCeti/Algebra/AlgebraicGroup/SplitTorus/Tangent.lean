@@ -24,7 +24,7 @@ The coordinate vectors are the differentials of its coordinate cocharacters.
 * `tangentBasis_apply`: the basis vectors are the coordinate-cocharacter differentials.
 * `tangentLinearEquiv_symm_apply`: the finite coordinate decomposition.
 * `range_derivationCompLieHom`: the tangent image is spanned by the cocharacter differentials.
-* `linearIndependent_derivationComp_cocharacter`: independence under injective differentials.
+* `linearIndependent_derivationCompLieHom_cocharacter`: independence under injective differentials.
 -/
 
 public section
@@ -212,7 +212,7 @@ theorem range_derivationCompLieHom [Finite I] (π : H →ₐc[R] A) :
 
 /-- An injective split-torus differential sends the coordinate-cocharacter differentials
 to a linearly independent family over any coefficient algebra. -/
-theorem linearIndependent_derivationComp_cocharacter [Finite I] (π : H →ₐc[R] A)
+theorem linearIndependent_derivationCompLieHom_cocharacter [Finite I] (π : H →ₐc[R] A)
     (hπ : Function.Injective (derivationCompLieHom (B := B) π)) :
     LinearIndependent B fun i : I ↦
       derivationCompLieHom (π.cocharacter (Finsupp.applyAddHom i).toMultiplicative)

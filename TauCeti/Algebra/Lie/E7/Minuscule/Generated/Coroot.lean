@@ -187,7 +187,7 @@ theorem derivationCompLieHom_generatedWeightTorusCoordinateMap_injective
 /-- The numbered Cartan vectors are independent, including in characteristic two. -/
 theorem linearIndependent_generatedCartanVector :
     LinearIndependent R (generatedCartanVector R) := by
-  have h := SplitTorus.linearIndependent_derivationComp_cocharacter
+  have h := SplitTorus.linearIndependent_derivationCompLieHom_cocharacter
     (generatedWeightTorusCoordinateMap R).hom
     (derivationCompLieHom_generatedWeightTorusCoordinateMap_injective R R)
   convert h using 1
