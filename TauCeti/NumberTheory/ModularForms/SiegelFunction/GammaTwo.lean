@@ -181,12 +181,6 @@ theorem gammaTwo_eq_siegelFunction_zero_half (τ : ℍ) :
     gammaTwo τ = (siegelFunction ![0, 1 / 2] τ ^ 12 + 16) / siegelFunction ![0, 1 / 2] τ ^ 4 :=
   (rfl)
 
-/-- `(a³ + 16) / a = (b³ + 16) / b` when `a + b + c = 0` and `a b c = -16`. -/
-private theorem pow_three_add_sixteen_div_eq {a b c : ℂ} (ha : a ≠ 0) (hb : b ≠ 0)
-    (h₁ : a + b + c = 0) (h₂ : a * b * c = -16) : (a ^ 3 + 16) / a = (b ^ 3 + 16) / b := by
-  rw [div_eq_div_iff ha hb]
-  linear_combination (a - b) * a * b * h₁ - (a - b) * h₂
-
 /-- The fourth powers of `g₀, g₁, g₂` do not vanish, since their product is `-16`. -/
 private theorem siegelFunction_pow_four_ne_zero (τ : ℍ) :
     siegelFunction ![0, 1 / 2] τ ^ 4 ≠ 0 ∧ siegelFunction ![1 / 2, 0] τ ^ 4 ≠ 0 ∧
@@ -201,22 +195,23 @@ private theorem siegelFunction_pow_four_ne_zero (τ : ℍ) :
 /-- `γ₂ = (g₁¹² + 16) / g₁⁴` for `g₁ = g_{(1/2, 0)}`. -/
 theorem gammaTwo_eq_siegelFunction_half_zero (τ : ℍ) :
     gammaTwo τ = (siegelFunction ![1 / 2, 0] τ ^ 12 + 16) / siegelFunction ![1 / 2, 0] τ ^ 4 := by
-  have h := pow_three_add_sixteen_div_eq (siegelFunction_pow_four_ne_zero τ).1
-    (siegelFunction_pow_four_ne_zero τ).2.1 (siegelFunction_pow_four_add_add τ)
-    (siegelFunction_pow_four_mul_mul τ)
-  rw [gammaTwo_eq_siegelFunction_zero_half]
-  simpa only [← pow_mul, Nat.reduceMul] using h
+  have h₁ := siegelFunction_pow_four_add_add τ
+  have h₂ := siegelFunction_pow_four_mul_mul τ
+  rw [gammaTwo_eq_siegelFunction_zero_half,
+    div_eq_div_iff (siegelFunction_pow_four_ne_zero τ).1 (siegelFunction_pow_four_ne_zero τ).2.1]
+  generalize siegelFunction ![0, 1 / 2] τ = g₀, siegelFunction ![1 / 2, 0] τ = g₁ at h₁ h₂ ⊢
+  linear_combination (g₀ ^ 4 - g₁ ^ 4) * g₀ ^ 4 * g₁ ^ 4 * h₁ - (g₀ ^ 4 - g₁ ^ 4) * h₂
 
 /-- `γ₂ = (g₂¹² + 16) / g₂⁴` for `g₂ = g_{(1/2, 1/2)}`. -/
 theorem gammaTwo_eq_siegelFunction_half_half (τ : ℍ) :
     gammaTwo τ =
       (siegelFunction ![1 / 2, 1 / 2] τ ^ 12 + 16) / siegelFunction ![1 / 2, 1 / 2] τ ^ 4 := by
-  have h := pow_three_add_sixteen_div_eq (c := siegelFunction ![1 / 2, 0] τ ^ 4)
-    (siegelFunction_pow_four_ne_zero τ).1 (siegelFunction_pow_four_ne_zero τ).2.2
-    (by linear_combination siegelFunction_pow_four_add_add τ)
-    (by linear_combination siegelFunction_pow_four_mul_mul τ)
-  rw [gammaTwo_eq_siegelFunction_zero_half]
-  simpa only [← pow_mul, Nat.reduceMul] using h
+  have h₁ := siegelFunction_pow_four_add_add τ
+  have h₂ := siegelFunction_pow_four_mul_mul τ
+  rw [gammaTwo_eq_siegelFunction_zero_half,
+    div_eq_div_iff (siegelFunction_pow_four_ne_zero τ).1 (siegelFunction_pow_four_ne_zero τ).2.2]
+  generalize siegelFunction ![0, 1 / 2] τ = g₀, siegelFunction ![1 / 2, 1 / 2] τ = g₂ at h₁ h₂ ⊢
+  linear_combination (g₀ ^ 4 - g₂ ^ 4) * g₀ ^ 4 * g₂ ^ 4 * h₁ - (g₀ ^ 4 - g₂ ^ 4) * h₂
 
 /-- **`γ₂` is a cube root of `j`**: `γ₂³ = j`. -/
 @[simp]
