@@ -96,6 +96,42 @@ theorem crossProductCoefficient_inr_inl_inr (k i j : Fin 27) :
     crossProductCoefficient (.inr k) (.inl i) (.inr j) = E6Minuscule.cubicForm k j i :=
   (rfl)
 
+/-- Two vectors of `V(ϖ₁)` have no component in `V(ϖ₁)`. -/
+@[simp]
+theorem crossProductCoefficient_inl_inl_inl (k i j : Fin 27) :
+    crossProductCoefficient (.inl k) (.inl i) (.inl j) = 0 :=
+  (rfl)
+
+/-- A vector of `V(ϖ₁)` times a vector of `V(ϖ₆)` has no component in `V(ϖ₁)`. -/
+@[simp]
+theorem crossProductCoefficient_inl_inl_inr (k i j : Fin 27) :
+    crossProductCoefficient (.inl k) (.inl i) (.inr j) = 0 :=
+  (rfl)
+
+/-- A vector of `V(ϖ₁)` times a vector of `V(ϖ₆)` has no component in `V(ϖ₆)`. -/
+@[simp]
+theorem crossProductCoefficient_inl_inr_inr (k i j : Fin 27) :
+    crossProductCoefficient (.inl k) (.inr i) (.inr j) = 0 :=
+  (rfl)
+
+/-- A vector of `V(ϖ₆)` times a vector of `V(ϖ₁)` has no component in `V(ϖ₁)`. -/
+@[simp]
+theorem crossProductCoefficient_inr_inl_inl (k i j : Fin 27) :
+    crossProductCoefficient (.inr k) (.inl i) (.inl j) = 0 :=
+  (rfl)
+
+/-- A vector of `V(ϖ₆)` times a vector of `V(ϖ₁)` has no component in `V(ϖ₆)`. -/
+@[simp]
+theorem crossProductCoefficient_inr_inr_inl (k i j : Fin 27) :
+    crossProductCoefficient (.inr k) (.inr i) (.inl j) = 0 :=
+  (rfl)
+
+/-- Two vectors of `V(ϖ₆)` have no component in `V(ϖ₆)`. -/
+@[simp]
+theorem crossProductCoefficient_inr_inr_inr (k i j : Fin 27) :
+    crossProductCoefficient (.inr k) (.inr i) (.inr j) = 0 :=
+  (rfl)
+
 /-- **The structure matrices of the cross product** in the fifty-four matrix coordinates of the
 doubled carrier. The entry `(i, j)` of the matrix at `k` is the coefficient of `eᵢ` in
 `e_k * e_j`. -/
