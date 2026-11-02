@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Lie.Basis.Cartan
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Weight.Basis
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Basis
 public import TauCeti.Algebra.Lie.Weights.Basis
+import TauCeti.Algebra.Lie.Weights.Basic
 import TauCeti.Algebra.Module.Submodule.Finite
 import TauCeti.Algebra.Lie.UniversalEnveloping.Module
 
@@ -49,6 +50,7 @@ theorem jointWeightSpace_eq_weightSpace (χ : Dual ℚ H) (μ : ι → ℤ)
   rw [mem_jointWeightSpace_iff, isCartanWeightVector_iff, LieSubmodule.mem_toSubmodule,
     b.cartanBasis.mem_weightSpace_iff_forall_basis]
   simp only [representation_ι_apply, cartanBasis_apply, hχ]
+  -- The restricted H-action is the ambient L-action, and `b.h' j` is `b.h j` bundled in H.
   rfl
 
 variable [LieRing.IsNilpotent H] (N : Submodule ℤ V) [N.IsLattice ℚ]
@@ -87,7 +89,7 @@ theorem span_weightSublattice_eq_genWeightSpace (χ : Dual ℚ H) (μ : ι → �
         (weightSublattice b.h (representation ℚ L V) N.toAddSubgroup μ : Set N.toAddSubgroup)) =
       (genWeightSpace V (χ : H → ℚ)).toSubmodule := by
   rw [b.genWeightSpace_eq_weightSpace_of_isLattice N hN hV]
-  exact (span_weightSublattice b.h (representation ℚ L V) N
+  exact (span_weightSublattice_eq_jointWeightSpace b.h (representation ℚ L V) N
     Submodule.IsLattice.span_eq_top μ).trans (b.jointWeightSpace_eq_weightSpace χ μ hχ)
 
 include hN hV in

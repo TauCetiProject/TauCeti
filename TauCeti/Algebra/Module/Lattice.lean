@@ -53,6 +53,8 @@ space over the fraction field.
   of a free full lattice submodule to its ambient vector space.
 * `Submodule.IsLattice.isLocalizedModule_subtype`: the inclusion of a free full lattice
   submodule is a localization at the nonzero divisors.
+* `Submodule.exists_ne_zero_smul_mem_of_span_eq_top`: some nonzero multiple of every ambient
+  vector lies in a submodule spanning the ambient space over the fraction field.
 * `Submodule.IsLattice.exists_ne_zero_smul_mem`: some nonzero multiple of every ambient
   vector lies in a free full lattice submodule.
 * `Submodule.IsLattice.exists_ne_zero_forall_smul_mem`: a single nonzero scalar multiplies a
@@ -99,6 +101,18 @@ theorem _root_.Module.Basis.toAddSubgroup_eq_closure_range_extendOfIsLattice
   apply AddSubgroup.toIntSubmodule.injective
   rw [AddSubgroup.toIntSubmodule_closure, Module.Basis.span_range_extendOfIsLattice,
     Submodule.toIntSubmodule_toAddSubgroup, Submodule.restrictScalars_self]
+
+/-- Some nonzero multiple of every ambient vector lies in a submodule spanning the ambient
+space over the fraction field. No finite-generation or freeness assumption is needed. -/
+theorem _root_.Submodule.exists_ne_zero_smul_mem_of_span_eq_top (S : Submodule R V)
+    (hS : Submodule.span K (S : Set V) = ⊤) (v : V) :
+    ∃ r : R, r ≠ 0 ∧ r • v ∈ S := by
+  have : Nontrivial R := (algebraMap R K).domain_nontrivial
+  have hv : v ∈ Submodule.span K (S : Set V) := hS.symm ▸ Submodule.mem_top
+  obtain ⟨y, hy, z, rfl⟩ := (IsLocalization.mem_span_iff (nonZeroDivisors R)).mp hv
+  refine ⟨z, nonZeroDivisors.coe_ne_zero z, ?_⟩
+  rw [← algebraMap_smul K (z : R), smul_smul, IsLocalization.mk'_spec', map_one, one_smul]
+  simpa using hy
 
 /-- The `R`-finrank of a free full lattice in `V` equals the `K`-finrank of the ambient space. -/
 theorem _root_.Submodule.finrank_eq_finrank
@@ -438,14 +452,8 @@ theorem exists_ne_zero_forall_smul_mem (S : Submodule R V') [S.IsLattice K]
     {M : Submodule R V'} (hM : M.FG) : ∃ r : R, r ≠ 0 ∧ ∀ x ∈ M, r • x ∈ S := by
   classical
   obtain ⟨t, rfl⟩ := hM
-  -- Every vector is `z⁻¹ • y` with `y ∈ S`, since `S` spans over `K`; so `z • v ∈ S`.
-  have h (v : V') : ∃ r : R, r ≠ 0 ∧ r • v ∈ S := by
-    have hv : v ∈ span K (S : Set V') := (IsLattice.span_eq_top (A := K) (M := S)).symm ▸ mem_top
-    obtain ⟨y, hy, z, rfl⟩ := (IsLocalization.mem_span_iff (nonZeroDivisors R)).mp hv
-    refine ⟨z, nonZeroDivisors.coe_ne_zero z, ?_⟩
-    rw [← algebraMap_smul K (z : R), smul_smul, IsLocalization.mk'_spec', map_one, one_smul]
-    simpa using hy
-  choose r hr0 hr using h
+  choose r hr0 hr using S.exists_ne_zero_smul_mem_of_span_eq_top
+    (IsLattice.span_eq_top (A := K) (M := S))
   -- The product of these scalars over the generators clears the denominators of their span.
   have hle : span R (t : Set V') ≤ S.comap ((∏ v ∈ t, r v) • LinearMap.id) :=
     span_le.mpr fun v hv ↦ by

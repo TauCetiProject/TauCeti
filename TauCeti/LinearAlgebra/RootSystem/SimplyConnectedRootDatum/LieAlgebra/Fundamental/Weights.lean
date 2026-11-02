@@ -32,7 +32,7 @@ variable (t : DynkinType) (ht : t.Valid)
 
 /-- The generalized weight space of a rational fundamental module is spanned by the integral
 weight slice of its fundamental lattice. -/
-theorem span_weightSublattice_fundamentalLattice (i : Fin t.rank)
+theorem span_weightSublattice_fundamentalLattice_eq_genWeightSpace (i : Fin t.rank)
     (χ : Dual ℚ (t.cartanSubalgebra ht)) (μ : Fin t.rank → ℤ)
     (hχ : ∀ j, χ ((t.lieBasis ht).h' j) = (μ j : ℚ)) :
     Submodule.span ℚ
