@@ -201,7 +201,8 @@ lemma isEquivalence_mk'_δ_one [Quasicategory X] (s : X _⦋2⦌)
   rw [isEquivalence_iff_of_edge_eq (e' := e₀₂) (by rw [mk'_edge, h.d₁])]
   exact h.isEquivalence₀₂ h₂ h₀
 
-/-- An edge `f` of a simplex whose two endpoints coincide is degenerate, hence an equivalence. -/
+/-- The edge of a simplex `s` along a map `f : ⦋1⦌ ⟶ n` selecting the same vertex index twice is
+degenerate, hence an equivalence. -/
 lemma isEquivalence_mk'_map_of_eq {n : SimplexCategoryᵒᵖ} (s : X.obj n) (f : ⦋1⦌ ⟶ n.unop)
     (hf : f.toOrderHom 0 = f.toOrderHom 1) : (mk' (X.map f.op s)).IsEquivalence := by
   obtain ⟨i, hi⟩ : ∃ i, f.toOrderHom 0 = i := ⟨_, rfl⟩
@@ -240,13 +241,9 @@ lemma mem_core_obj_zero (x : X _⦋0⦌) : x ∈ X.core.obj (op ⦋0⦌) :=
 lemma Edge.edge_mem_core_iff {x₀ x₁ : X _⦋0⦌} (e : Edge x₀ x₁) :
     e.edge ∈ X.core.obj (op ⦋1⦌) ↔ e.IsEquivalence := by
   refine ⟨fun h ↦ (isEquivalence_iff_of_edge_eq (by simp)).1 (h (𝟙 _)), fun h f ↦ ?_⟩
-  by_cases hf : f.toOrderHom 0 = f.toOrderHom 1
-  · exact isEquivalence_mk'_map_of_eq _ _ hf
-  · obtain rfl : f = 𝟙 _ := by
-      ext i
-      have := f.toOrderHom.monotone (Fin.zero_le 1)
-      fin_cases i <;> simp <;> lia
-    exact (isEquivalence_iff_of_edge_eq (by simp)).2 h
+  obtain ⟨a, rfl⟩ | rfl := SimplexCategory.eq_of_one_to_one f
+  · exact isEquivalence_mk'_map_of_eq _ _ rfl
+  · exact (isEquivalence_iff_of_edge_eq (by simp)).2 h
 
 /-- A subcomplex of `X` lies in the core exactly when all its edges are equivalences. -/
 lemma le_core_iff (A : X.Subcomplex) :
@@ -297,20 +294,16 @@ private lemma isEquivalence_of_horn₂₁ [Quasicategory X] {a : (Λ[2, 1] : SSe
     rw [← edge_mem_core_iff, mk'_edge, ← yonedaEquiv.apply_symm_apply (X.δ j s), h,
       yonedaEquiv_comp]
     exact (a.app _ _).2
-  -- The only edge of `Δ[2]` outside `Λ[2, 1]` is the long edge `δ 1`.
+  -- The only edge of `Δ[2]` outside `Λ[2, 1]` is the long edge `δ 1`; constant edges are
+  -- degenerate.
   obtain ⟨f, rfl⟩ : ∃ f : ⦋1⦌ ⟶ ⦋2⦌, stdSimplex.objEquiv.symm f = y :=
     stdSimplex.objEquiv.symm.surjective y
-  obtain rfl : f = SimplexCategory.δ 1 := by
-    simp only [mem_horn_iff_notMem_range, not_exists, not_not] at hy
-    obtain ⟨k₀, hk₀⟩ := hy 0 (by decide)
-    obtain ⟨k₂, hk₂⟩ := hy 2 (by decide)
-    rw [stdSimplex.objEquiv_symm_apply] at hk₀ hk₂
-    have h₀ := f.toOrderHom.monotone (Fin.zero_le k₀)
-    have h₂ : f.toOrderHom k₂ ≤ f.toOrderHom 1 := f.toOrderHom.monotone (Fin.le_last k₂)
-    ext k
-    fin_cases k <;> simp [SimplexCategory.δ, Fin.succAbove] <;> grind
   rw [yonedaEquiv_symm_app_objEquiv_symm]
-  exact isEquivalence_mk'_δ_one s (hface 2 (by decide)) (hface 0 (by decide))
+  obtain rfl | rfl | rfl | ⟨k, rfl⟩ := SimplexCategory.eq_of_one_to_two' f
+  · exact absurd ((objEquiv_symm_δ_notMem_horn_iff _ _).1 hy) (by decide)
+  · exact isEquivalence_mk'_δ_one s (hface 2 (by decide)) (hface 0 (by decide))
+  · exact absurd ((objEquiv_symm_δ_notMem_horn_iff _ _).1 hy) (by decide)
+  · exact isEquivalence_mk'_map_of_eq _ _ rfl
 
 /-- The inclusion of the core of a quasicategory has the right lifting property against inner horn
 inclusions. A filler in `X` of an inner horn in the core has all its edges in the horn, except for
@@ -403,7 +396,9 @@ noncomputable def nerveIso : nerve (Core C) ≅ ((nerve C).core : SSet) where
     exact (ComposableArrows.hom y).iso.isIso_hom
   inv :=
     { app _ := ↾fun s ↦ functorToCoreOfIsIso s.1 ((nerve.mem_core_iff s.1).1 s.2)
-      naturality _ _ _ := rfl }
+      naturality _ _ g := by
+        ext s
+        exact functorToCoreOfIsIso_comp_left (SimplexCategory.toCat.map g.unop).toFunctor s.1 _ }
   hom_inv_id := by
     ext n y
     exact functorToCoreOfIsIso_comp_inclusion_self y
