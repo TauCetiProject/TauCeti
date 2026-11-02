@@ -44,9 +44,8 @@ For a complete Hausdorff nonarchimedean topological `A`-module `M` with continuo
 `A ⊗̂_A M ≃ M` (`TauCeti.Huber.BanachModule.CompletedTensor.lid`), and for a finite projective
 `A`-module `P` with its natural topology no completion is needed: the canonical map
 `P ⊗[A] M → P ⊗̂_A M` is an isomorphism
-(`TauCeti.Huber.BanachModule.CompletedTensor.finiteProjectiveEquiv`). The proof writes `P` as a
-retract of `Aⁿ`; the coordinates of the retraction are continuous for the natural topology, and
-they give an inverse that is continuous on the completion.
+(`TauCeti.Huber.BanachModule.CompletedTensor.finiteProjectiveEquiv`), so completed tensor
+products with a finite projective factor can be computed with the algebraic tensor product.
 
 ## Main definitions
 
