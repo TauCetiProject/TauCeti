@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.FieldTheory.PurelyInseparable.Tower
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Unramified
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Fibre
 
@@ -31,17 +30,19 @@ every algebraic `k' / k`, separable or not.
 The heart of the matter is a purely inseparable `k' / k` of finite degree. A `k`-basis of `F_P`
 consists of separable elements, so it stays linearly independent over the purely inseparable
 `k'` inside `F'_{P'}` (Mathlib's `LinearIndependent.map_of_isPurelyInseparable_of_isSeparable`).
-Hence `deg P ≤ deg P'`, and the tower identity `[k' : k] · deg P' = f(P' ∣ P) · deg P` gives
-`[k' : k] ≤ f(P' ∣ P)`. Since `e(P' ∣ P) · f(P' ∣ P) ≤ [F' : F] ≤ [k' : k]`, all of these are
-equal: `e(P' ∣ P) = 1`, `f(P' ∣ P) = [k' : k]`, and `[F · k' : F] = [k' : k]`, so `F` and `k'` are
-linearly disjoint over `k`.
+Hence `deg P ≤ deg P'` (`TauCeti.Place.degree_restrict_le_degree_of_isPurelyInseparable`), and
+the tower identity `[k' : k] · deg P' = f(P' ∣ P) · deg P` gives `[k' : k] ≤ f(P' ∣ P)`. Since
+`e(P' ∣ P) · f(P' ∣ P) ≤ [F' : F] ≤ [k' : k]`, all of these are equal: `e(P' ∣ P) = 1`,
+`f(P' ∣ P) = [k' : k]`, and `[F · k' : F] = [k' : k]`, so `F` and `k'` are linearly disjoint
+over `k`.
 
 For a general finite `k' / k`, let `k_s` be the separable closure of `k` in `k'`. The finite
 separable step `F · k_s / F` is unramified in the full sense, with separable residue extensions
 (`TauCeti.Place.isUnramifiedAt_of_constantCompositum_eq_top`), so the residue field of the place
-below `P'` in `F · k_s` is separable over `k_s`, and the purely inseparable step `F' / F · k_s`
-applies. An infinite `k' / k` reduces to a finite one, because a uniformizer of `P'` already lies
-in `F · L` for a finite subextension `L / k`.
+below `P'` in `F · k_s` is separable over `k_s`
+(`TauCeti.Place.isSeparable_residueField_of_isSeparable_restrict`), and the purely inseparable
+step `F' / F · k_s` applies. An infinite `k' / k` reduces to a finite one, because a uniformizer
+of `P'` already lies in `F · L` for a finite subextension `L / k`.
 
 The hypothesis is on the residue field, not on the constant extension: at a rational place it
 always holds, and over a perfect `k` it holds at every place. It does not make the residue
@@ -51,17 +52,11 @@ extension `F'_{P'} / F_P` separable: at a rational place, a purely inseparable c
 
 ## Main results
 
-* `TauCeti.Place.degree_restrict_le_degree_of_isPurelyInseparable`: for purely inseparable
-  `k' / k`, a place with residue field separable over `k` has degree at most that of any place
-  above it.
 * `TauCeti.Place.relativeDegree_eq_finrank_of_isPurelyInseparable`: for finite purely
   inseparable `k' / k`, `f(P' ∣ P) = [k' : k]`.
 * `TauCeti.finrank_eq_finrank_of_isPurelyInseparable_of_isSeparable_residueField`: for finite
   purely inseparable `k' / k`, a place with residue field separable over `k` forces
   `[F · k' : F] = [k' : k]`.
-* `TauCeti.Place.isSeparable_residueField_of_isSeparable_restrict`: residue fields separable over
-  the constants stay separable over the enlarged constants when the residue extension is
-  separable.
 * `TauCeti.Place.ramificationIdx_eq_one_of_isSeparable_residueField`: **for any algebraic
   `k' / k`, a place with residue field separable over `k` has ramification index one at every
   place above it.**
@@ -91,47 +86,7 @@ namespace Place
 
 variable [Algebra.IsIntegral F F']
 
-/-- **Separable residue fields stay separable over the enlarged constants**: if the residue field
-of the place below `P'` is separable over `k` and `F'_{P'}` is separable over it, then `F'_{P'}` is
-separable over `k'`. -/
-theorem isSeparable_residueField_of_isSeparable_restrict (P' : Place k' F')
-    [Algebra.IsSeparable k (P'.restrict k F).ResidueField]
-    [Algebra.IsSeparable (P'.restrict k F).ResidueField P'.ResidueField] :
-    Algebra.IsSeparable k' P'.ResidueField := by
-  let _ := integersAlgebraBase k P'
-  have := isScalarTower_integersAlgebraBase k P'
-  have := isScalarTower_integers_restrict k F P'
-  have := Algebra.IsSeparable.trans k (P'.restrict k F).ResidueField P'.ResidueField
-  exact Algebra.isSeparable_tower_top_of_isSeparable k k' P'.ResidueField
-
 section PurelyInseparable
-
-variable (k F) in
-/-- **Purely inseparable constants keep separable residue degrees**: if `k' / k` is purely
-inseparable and the residue field `F_P` of the place `P` below `P'` is separable over `k`, then
-`deg P ≤ deg P'`. A `k`-basis of `F_P` stays linearly independent over `k'` in `F'_{P'}`. -/
-theorem degree_restrict_le_degree_of_isPurelyInseparable [IsPurelyInseparable k k']
-    (P' : Place k' F') [FiniteDimensional k' P'.ResidueField]
-    [Algebra.IsSeparable k (P'.restrict k F).ResidueField] :
-    (P'.restrict k F).degree ≤ P'.degree := by
-  set R := (P'.restrict k F).ResidueField
-  by_cases hR : FiniteDimensional k R
-  swap
-  · rw [degree_eq_finrank, finrank_of_not_finite hR]
-    exact Nat.zero_le _
-  -- The residue field of `P'` is a `k`-algebra through the constants `k'`, compatibly with the
-  -- residue field of the place below.
-  let _ := integersAlgebraBase k P'
-  have := isScalarTower_integersAlgebraBase k P'
-  have := isScalarTower_integers_restrict k F P'
-  let ι := IsScalarTower.toAlgHom k R P'.ResidueField
-  let b := finBasis k R
-  have hli : LinearIndependent k (ι ∘ b) :=
-    b.linearIndependent.map' ι.toLinearMap (LinearMap.ker_eq_bot.mpr ι.injective)
-  have hli' : LinearIndependent k' (ι ∘ b) :=
-    LinearIndependent.map_of_isPurelyInseparable_of_isSeparable k'
-      (fun i ↦ (Algebra.IsSeparable.isSeparable k (b i)).map ι ι.injective) hli
-  simpa [degree_eq_finrank] using hli'.fintype_card_le_finrank
 
 variable [FiniteDimensional k k'] [IsPurelyInseparable k k']
 
@@ -203,7 +158,7 @@ private theorem ramificationIdx_eq_one_of_isSeparable_residueField_of_finiteDime
   have : Algebra.IsSeparable k (Q.restrict k F).ResidueField := by
     rw [restrict_restrict]
     infer_instance
-  have := isSeparable_residueField_of_isSeparable_restrict (k := k) (F := F) Q
+  have := isSeparable_residueField_of_isSeparable_restrict k F Q
   -- The purely inseparable step `F' / F · k_s` does not ramify `Q`.
   have he : ramificationIdx E P' = 1 :=
     ramificationIdx_eq_one_of_isPurelyInseparable (k := S)
