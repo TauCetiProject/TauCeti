@@ -132,7 +132,7 @@ variable [CommRing R] [CharP R 2]
 local notation "Gᵣ" => (Subtype.mk (GridDiagram.relabelRows (finRotate n) (Subtype.val G))
   (Eq.mpr (congrArg Odd (GridDiagram.componentCount_relabelRows (Subtype.val G) (finRotate n)))
     (Subtype.property G)) : OddComponentGridDiagram n)
-local notation "G𝚌" => (Subtype.mk (GridDiagram.relabelColumns (finRotate n) (Subtype.val G))
+local notation "Gc" => (Subtype.mk (GridDiagram.relabelColumns (finRotate n) (Subtype.val G))
   (Eq.mpr (congrArg Odd (GridDiagram.componentCount_relabelColumns (Subtype.val G) (finRotate n)))
     (Subtype.property G)) : OddComponentGridDiagram n)
 
@@ -158,14 +158,14 @@ theorem unblockedHomologyRelabelRowsFinRotateEquiv_mem_bigradedPiece_iff
 theorem unblockedHomologyRelabelColumnsFinRotateEquiv_mem_bigradedPiece_iff
     {g : ℤ × ℤ} {y : G.1.unblockedHomology R} :
     G.1.unblockedHomologyRelabelColumnsFinRotateEquiv R y ∈
-        bigradedUnblockedHomologyPiece G𝚌 R g ↔
+        bigradedUnblockedHomologyPiece Gc R g ↔
       y ∈ G.bigradedUnblockedHomologyPiece R g := by
-  refine G.unblockedHomologyEquiv_mem_bigradedPiece_iff R G𝚌
+  refine G.unblockedHomologyEquiv_mem_bigradedPiece_iff R Gc
     (GridChain.relabelColumnsRenameEquiv R (finRotate n))
     (G.1.unblockedDifferential_relabelColumns_finRotate_apply R)
     (G.1.unblockedHomologyRelabelColumnsFinRotateEquiv R)
     (G.1.unblockedHomologyRelabelColumnsFinRotateEquiv_unblockedHomologyClass R) ?_
-  have hG : G.relabelColumns (finRotate n) = G𝚌 := Subtype.ext (G.val_relabelColumns _)
+  have hG : G.relabelColumns (finRotate n) = Gc := Subtype.ext (G.val_relabelColumns _)
   intro g c
   rw [← hG]
   exact G.relabelColumnsRenameEquiv_mem_bigradedChainMinusPiece_iff R
@@ -201,7 +201,7 @@ theorem coe_bigradedUnblockedHomologyRelabelRowsFinRotateEquiv_symm (g : ℤ × 
 The underlying map still renames the polynomial variables by `finRotate n`. -/
 noncomputable def bigradedUnblockedHomologyRelabelColumnsFinRotateEquiv (g : ℤ × ℤ) :
     G.bigradedUnblockedHomologyPiece R g ≃ₗ[R]
-      bigradedUnblockedHomologyPiece G𝚌 R g where
+      bigradedUnblockedHomologyPiece Gc R g where
   toEquiv := (G.1.unblockedHomologyRelabelColumnsFinRotateEquiv R).toEquiv.subtypeEquiv
     (fun _ => (G.unblockedHomologyRelabelColumnsFinRotateEquiv_mem_bigradedPiece_iff R).symm)
   map_add' x y := Subtype.ext
@@ -228,7 +228,7 @@ theorem coe_bigradedUnblockedHomologyRelabelColumnsFinRotateEquiv (g : ℤ × �
 /-- The inverse column-piece equivalence is the inverse of the specified column comparison. -/
 @[simp]
 theorem coe_bigradedUnblockedHomologyRelabelColumnsFinRotateEquiv_symm (g : ℤ × ℤ)
-    (y : bigradedUnblockedHomologyPiece G𝚌 R g) :
+    (y : bigradedUnblockedHomologyPiece Gc R g) :
     ((G.bigradedUnblockedHomologyRelabelColumnsFinRotateEquiv R g).symm y :
       G.1.unblockedHomology R) =
         (G.1.unblockedHomologyRelabelColumnsFinRotateEquiv R).symm y := (rfl)
