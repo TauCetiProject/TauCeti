@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.PlaneRotation
-public import TauCeti.Analysis.InnerProductSpace.Sphere.Cap
-public import TauCeti.Analysis.SpecialFunctions.Complex.CircleInner
+public import TauCeti.Analysis.SpecialFunctions.Complex.Circle.Inner
 public import TauCeti.KnotTheory.ConnectedSum.BoostConcordance
 
 /-!

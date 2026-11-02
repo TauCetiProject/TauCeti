@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
-public import Mathlib.Analysis.InnerProductSpace.Basic
 public import TauCeti.Analysis.Complex.Inner
 public import TauCeti.Analysis.InnerProductSpace.Sphere.Cap
 
@@ -37,6 +36,7 @@ open scoped RealInnerProductSpace
 namespace Circle
 
 /-- The exponential of the circle sends `π` to `-1`. -/
+@[simp]
 theorem exp_pi : Circle.exp π = -1 := by
   apply Subtype.ext
   simp [Circle.coe_exp, Complex.exp_pi_mul_I]

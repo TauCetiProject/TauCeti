@@ -150,6 +150,7 @@ theorem planeRotation_apply_map (c : Circle) (w : ℂ) :
   ring
 
 /-- **The rotation fixes the orthogonal complement of the plane `ι ℂ`.** -/
+@[simp]
 theorem planeRotation_apply_of_mem_orthogonal (c : Circle) {x : E} (hx : x ∈ ι.rangeᗮ) :
     ι.planeRotation c x = x := by
   have h0 : planeCoord ι x = 0 := by
