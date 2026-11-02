@@ -8,24 +8,24 @@ module
 public import Mathlib.Analysis.Normed.Module.Ball.RadialEquiv
 
 /-!
-# Radial extension of a homeomorphism of the unit sphere
+# Radial extension of a homeomorphism between unit spheres
 
-A homeomorphism `h` of the unit sphere of a real normed space `E` extends radially to a
-homeomorphism of `E`, the cone on `h`:
+A homeomorphism `h` from the unit sphere of a real normed space `E` to the unit sphere of a real
+normed space `F` extends radially to a homeomorphism `E ≃ₜ F`, the cone on `h`:
 
 `x ↦ ‖x‖ • h (‖x‖⁻¹ • x)` for `x ≠ 0`, and `0 ↦ 0`.
 
-It preserves norms, so it restricts to a homeomorphism of every closed ball about the origin which
-is `h` on the unit sphere. This is how a gluing of two closed discs along a homeomorphism of their
-boundary spheres is compared with the standard sphere, and more generally how a homeomorphism of
-the boundary sphere of a disc is extended over the disc.
+It preserves norms, so it restricts to a homeomorphism between the closed balls of each radius
+about the origin which is `h` on the unit sphere. This is how a gluing of two closed discs along a
+homeomorphism of their boundary spheres is compared with the standard sphere, and more generally
+how a homeomorphism of the boundary sphere of a disc is extended over the disc.
 
 Away from the origin the extension is `h × id` in the polar coordinates
 `homeomorphUnitSphereProd`; continuity at the origin follows from the preservation of norms.
 
 ## Main definitions
 
-* `Homeomorph.radialExtension`: the radial extension of a homeomorphism of the unit sphere.
+* `Homeomorph.radialExtension`: the radial extension of a homeomorphism between unit spheres.
 
 ## Main results
 
@@ -43,52 +43,53 @@ open Metric Set Filter Topology
 
 namespace Homeomorph
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
+  [NormedSpace ℝ F]
 
 /-- The homeomorphism `h × id` of the complement of the origin, in the polar coordinates
 `homeomorphUnitSphereProd`. -/
-private def polarCongr (h : sphere (0 : E) 1 ≃ₜ sphere (0 : E) 1) :
-    ({0}ᶜ : Set E) ≃ₜ ({0}ᶜ : Set E) :=
+private def polarCongr (h : sphere (0 : E) 1 ≃ₜ sphere (0 : F) 1) :
+    ({0}ᶜ : Set E) ≃ₜ ({0}ᶜ : Set F) :=
   (homeomorphUnitSphereProd E).trans
-    ((h.prodCongr (Homeomorph.refl _)).trans (homeomorphUnitSphereProd E).symm)
+    ((h.prodCongr (Homeomorph.refl _)).trans (homeomorphUnitSphereProd F).symm)
 
 /-- In polar coordinates, `polarCongr h` is `h × id`. -/
-private theorem polarCongr_symm_apply (h : sphere (0 : E) 1 ≃ₜ sphere (0 : E) 1)
+private theorem polarCongr_symm_apply (h : sphere (0 : E) 1 ≃ₜ sphere (0 : F) 1)
     (q : sphere (0 : E) 1 × Ioi (0 : ℝ)) :
     polarCongr h ((homeomorphUnitSphereProd E).symm q) =
-      (homeomorphUnitSphereProd E).symm (h q.1, q.2) := by
+      (homeomorphUnitSphereProd F).symm (h q.1, q.2) := by
   simp only [polarCongr, trans_apply, apply_symm_apply]
   rfl
 
-private theorem polarCongr_symm_apply_polarCongr (h : sphere (0 : E) 1 ≃ₜ sphere (0 : E) 1)
+private theorem polarCongr_symm_apply_polarCongr (h : sphere (0 : E) 1 ≃ₜ sphere (0 : F) 1)
     (x : ({0}ᶜ : Set E)) : polarCongr h.symm (polarCongr h x) = x := by
   obtain ⟨q, rfl⟩ := (homeomorphUnitSphereProd E).symm.surjective x
   simp [polarCongr_symm_apply]
 
 open scoped Classical in
 /-- The underlying function of the radial extension. -/
-private def radialExtensionFun (h : sphere (0 : E) 1 ≃ₜ sphere (0 : E) 1) (x : E) : E :=
+private def radialExtensionFun (h : sphere (0 : E) 1 ≃ₜ sphere (0 : F) 1) (x : E) : F :=
   if hx : x = 0 then 0 else polarCongr h ⟨x, hx⟩
 
-private theorem radialExtensionFun_of_ne_zero (h : sphere (0 : E) 1 ≃ₜ sphere (0 : E) 1)
+private theorem radialExtensionFun_of_ne_zero (h : sphere (0 : E) 1 ≃ₜ sphere (0 : F) 1)
     (x : ({0}ᶜ : Set E)) : radialExtensionFun h x = polarCongr h x := by
   unfold radialExtensionFun
   split_ifs with hx
   · exact absurd hx x.2
   · rfl
 
-private theorem radialExtensionFun_zero (h : sphere (0 : E) 1 ≃ₜ sphere (0 : E) 1) :
+private theorem radialExtensionFun_zero (h : sphere (0 : E) 1 ≃ₜ sphere (0 : F) 1) :
     radialExtensionFun h 0 = 0 := by
   simp [radialExtensionFun]
 
-private theorem norm_radialExtensionFun (h : sphere (0 : E) 1 ≃ₜ sphere (0 : E) 1) (x : E) :
+private theorem norm_radialExtensionFun (h : sphere (0 : E) 1 ≃ₜ sphere (0 : F) 1) (x : E) :
     ‖radialExtensionFun h x‖ = ‖x‖ := by
   by_cases hx : x = 0
   · simp [hx, radialExtensionFun_zero]
   · rw [radialExtensionFun_of_ne_zero h ⟨x, hx⟩]
     simp [polarCongr, norm_smul, norm_eq_of_mem_sphere]
 
-private theorem radialExtensionFun_symm_apply (h : sphere (0 : E) 1 ≃ₜ sphere (0 : E) 1)
+private theorem radialExtensionFun_symm_apply (h : sphere (0 : E) 1 ≃ₜ sphere (0 : F) 1)
     (x : E) : radialExtensionFun h.symm (radialExtensionFun h x) = x := by
   by_cases hx : x = 0
   · simp [hx, radialExtensionFun_zero]
@@ -96,7 +97,7 @@ private theorem radialExtensionFun_symm_apply (h : sphere (0 : E) 1 ≃ₜ spher
       radialExtensionFun_of_ne_zero h.symm (polarCongr h ⟨x, hx⟩),
       polarCongr_symm_apply_polarCongr]
 
-private theorem continuous_radialExtensionFun (h : sphere (0 : E) 1 ≃ₜ sphere (0 : E) 1) :
+private theorem continuous_radialExtensionFun (h : sphere (0 : E) 1 ≃ₜ sphere (0 : F) 1) :
     Continuous (radialExtensionFun h) := by
   refine continuous_iff_continuousAt.2 fun x ↦ ?_
   by_cases hx : x = 0
@@ -113,11 +114,12 @@ private theorem continuous_radialExtensionFun (h : sphere (0 : E) 1 ≃ₜ spher
       exact continuous_subtype_val.comp (polarCongr h).continuous
     exact hon.continuousAt (isOpen_compl_singleton.mem_nhds hx)
 
-/-- The **radial extension** of a homeomorphism `h` of the unit sphere of a real normed space `E`:
-the homeomorphism of `E` sending `t • u` to `t • h u` for `t ≥ 0` and `u` on the unit sphere
-(`Homeomorph.radialExtension_smul`). It preserves norms (`Homeomorph.norm_radialExtension`) and
-its inverse is the radial extension of `h.symm` (`Homeomorph.radialExtension_symm`). -/
-def radialExtension (h : sphere (0 : E) 1 ≃ₜ sphere (0 : E) 1) : E ≃ₜ E where
+/-- The **radial extension** of a homeomorphism `h` from the unit sphere of a real normed space `E`
+to the unit sphere of a real normed space `F`: the homeomorphism `E ≃ₜ F` sending `t • u` to
+`t • h u` for `t ≥ 0` and `u` on the unit sphere (`Homeomorph.radialExtension_smul`). It preserves
+norms (`Homeomorph.norm_radialExtension`) and its inverse is the radial extension of `h.symm`
+(`Homeomorph.radialExtension_symm`). -/
+def radialExtension (h : sphere (0 : E) 1 ≃ₜ sphere (0 : F) 1) : E ≃ₜ F where
   toFun := radialExtensionFun h
   invFun := radialExtensionFun h.symm
   left_inv := radialExtensionFun_symm_apply h
@@ -125,7 +127,7 @@ def radialExtension (h : sphere (0 : E) 1 ≃ₜ sphere (0 : E) 1) : E ≃ₜ E 
   continuous_toFun := continuous_radialExtensionFun h
   continuous_invFun := continuous_radialExtensionFun h.symm
 
-variable (h : sphere (0 : E) 1 ≃ₜ sphere (0 : E) 1)
+variable (h : sphere (0 : E) 1 ≃ₜ sphere (0 : F) 1)
 
 private theorem coe_radialExtension : ⇑(radialExtension h) = radialExtensionFun h :=
   (rfl)
@@ -148,7 +150,7 @@ theorem radialExtension_zero : radialExtension h 0 = 0 :=
 /-- **The radial extension in polar coordinates.** For `t ≥ 0` and `u` on the unit sphere, the
 radial extension of `h` sends `t • u` to `t • h u`. -/
 theorem radialExtension_smul (u : sphere (0 : E) 1) {t : ℝ} (ht : 0 ≤ t) :
-    radialExtension h (t • (u : E)) = t • (h u : E) := by
+    radialExtension h (t • (u : E)) = t • (h u : F) := by
   rcases ht.eq_or_lt with rfl | ht
   · simp
   -- `t • u` has polar coordinates `(u, t)`.
