@@ -43,110 +43,90 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteS
   (hfp : ContinuousAt f p) (hfq : ContinuousAt f q)
   {c : ℝ} (hc : f q < c ∧ c < f p)
 
-/-- The time needed for a connecting point to reach the intermediate level `c`. -/
-def levelCrossingTime (x : ↥(unstableSet φ p ∩ stableSet φ q)) : ℝ :=
-  Classical.choose (hφ.exists_continuous_levelCrossingTime hf hfp hfq hc) x
+/-- Identify the zero fibre of the negative crossing time with the potential level slice. -/
+private def zeroCrossingTimeHomeomorphLevelSlice :
+    {x : ↥(unstableSet φ p ∩ stableSet φ q) |
+      -hφ.levelCrossingTime hf hfp hfq hc x = 0} ≃ₜ
+      ↥((unstableSet φ p ∩ stableSet φ q) ∩ {x | f x = c}) where
+  toFun x := ⟨x.1.1, x.1.2,
+    (hφ.levelCrossingTime_eq_zero_iff hf hfp hfq hc x.1).mp (neg_eq_zero.mp x.2)⟩
+  invFun x := ⟨⟨x.1, x.2.1⟩,
+    neg_eq_zero.mpr ((hφ.levelCrossingTime_eq_zero_iff hf hfp hfq hc _).mpr x.2.2)⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  continuous_toFun := (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
+  continuous_invFun := (continuous_subtype_val.subtype_mk _).subtype_mk _
 
-/-- The crossing time depends continuously on the connecting point. -/
-theorem continuous_levelCrossingTime :
-    Continuous (hφ.levelCrossingTime hf hfp hfq hc) :=
-  (Classical.choose_spec (hφ.exists_continuous_levelCrossingTime hf hfp hfq hc)).1
+private theorem zeroCrossingTimeHomeomorphLevelSlice_apply_coe
+    (x : {x : ↥(unstableSet φ p ∩ stableSet φ q) |
+      -hφ.levelCrossingTime hf hfp hfq hc x = 0}) :
+    (hφ.zeroCrossingTimeHomeomorphLevelSlice hf hfp hfq hc x : E) = x.1.1 := (rfl)
 
-theorem apply_flow_levelCrossingTime (x : ↥(unstableSet φ p ∩ stableSet φ q)) :
-    f (φ (hφ.levelCrossingTime hf hfp hfq hc x) x.1) = c :=
-  (Classical.choose_spec (hφ.exists_continuous_levelCrossingTime hf hfp hfq hc)).2 x
-
-/-- A time reaches the chosen level exactly when it is the crossing time. -/
-theorem eq_levelCrossingTime_iff (x : ↥(unstableSet φ p ∩ stableSet φ q)) (t : ℝ) :
-    t = hφ.levelCrossingTime hf hfp hfq hc x ↔ f (φ t x.1) = c := by
-  have huniq := hφ.existsUnique_time_value_of_mem_unstableSet_inter_stableSet
-    (fun s ↦ hf _ ⟨isInvariant_unstableSet φ p s x.2.1,
-      isInvariant_stableSet φ q s x.2.2⟩) hfp hfq x.2 hc
-  constructor
-  · rintro rfl
-    exact hφ.apply_flow_levelCrossingTime hf hfp hfq hc x
-  · intro ht
-    exact huniq.unique ht (hφ.apply_flow_levelCrossingTime hf hfp hfq hc x)
-
-/-- A point lies on the selected level exactly when its crossing time is zero. -/
-@[simp]
-theorem levelCrossingTime_eq_zero_iff (x : ↥(unstableSet φ p ∩ stableSet φ q)) :
-    hφ.levelCrossingTime hf hfp hfq hc x = 0 ↔ f x.1 = c := by
-  simpa only [eq_comm, Flow.map_zero_apply] using
-    hφ.eq_levelCrossingTime_iff hf hfp hfq hc x 0
-
-/-- Translating a trajectory by `t` subtracts `t` from the time still needed to reach
-an intermediate level. -/
-theorem levelCrossingTime_flow (t : ℝ) (x : ↥(unstableSet φ p ∩ stableSet φ q)) :
-    hφ.levelCrossingTime hf hfp hfq hc
-      ((φ.restrict (isInvariant_unstableSet_inter_stableSet φ p q)) t x) =
-      hφ.levelCrossingTime hf hfp hfq hc x - t := by
-  apply Eq.symm
-  rw [hφ.eq_levelCrossingTime_iff hf hfp hfq hc, Flow.coe_restrict_apply,
-    ← φ.map_add, sub_add_cancel]
-  exact hφ.apply_flow_levelCrossingTime hf hfp hfq hc x
+private theorem zeroCrossingTimeHomeomorphLevelSlice_symm_apply_coe
+    (x : ↥((unstableSet φ p ∩ stableSet φ q) ∩ {x | f x = c})) :
+    ((hφ.zeroCrossingTimeHomeomorphLevelSlice hf hfp hfq hc).symm x).1.1 = x.1 := (rfl)
 
 /-- The connecting locus is the product of flow time with an intermediate level slice.
 The inverse is the flow itself, restricted to the slice. -/
 def connectingHomeomorphProdLevelSlice :
     ↥(unstableSet φ p ∩ stableSet φ q) ≃ₜ
-      ℝ × ↥((unstableSet φ p ∩ stableSet φ q) ∩ {x | f x = c}) := by
-  let ψ := φ.restrict (isInvariant_unstableSet_inter_stableSet φ p q)
-  let a := hφ.levelCrossingTime hf hfp hfq hc
-  have ha : Continuous (fun x ↦ -a x) :=
+      ℝ × ↥((unstableSet φ p ∩ stableSet φ q) ∩ {x | f x = c}) :=
+  ((φ.restrict (isInvariant_unstableSet_inter_stableSet φ p q)).timeSliceHomeomorph
+    (fun x ↦ -hφ.levelCrossingTime hf hfp hfq hc x)
     (hφ.continuous_levelCrossingTime hf hfp hfq hc).neg
-  have hshift (t : ℝ) (x : ↥(unstableSet φ p ∩ stableSet φ q)) :
-      -a (ψ t x) = t + -a x := by
-    have ht := hφ.levelCrossingTime_flow hf hfp hfq hc t x
-    dsimp only [ψ, a]
-    rw [ht]
-    ring
-  let e : {x : ↥(unstableSet φ p ∩ stableSet φ q) | -a x = 0} ≃ₜ
-      ↥((unstableSet φ p ∩ stableSet φ q) ∩ {x | f x = c}) :=
-    { toFun := fun x ↦ ⟨x.1.1, x.1.2,
-        (hφ.levelCrossingTime_eq_zero_iff hf hfp hfq hc x.1).mp (neg_eq_zero.mp x.2)⟩
-      invFun := fun x ↦ ⟨⟨x.1, x.2.1⟩,
-        neg_eq_zero.mpr ((hφ.levelCrossingTime_eq_zero_iff hf hfp hfq hc _).mpr x.2.2)⟩
-      left_inv := fun _ ↦ rfl
-      right_inv := fun _ ↦ rfl
-      continuous_toFun := (continuous_subtype_val.comp continuous_subtype_val).subtype_mk _
-      continuous_invFun := (continuous_subtype_val.subtype_mk _).subtype_mk _ }
-  exact (ψ.timeSliceHomeomorph (fun x ↦ -a x) ha hshift).trans
-    ((Homeomorph.refl ℝ).prodCongr e)
+    (hφ.neg_levelCrossingTime_flow hf hfp hfq hc)).trans
+    ((Homeomorph.refl ℝ).prodCongr (hφ.zeroCrossingTimeHomeomorphLevelSlice hf hfp hfq hc))
 
 @[simp]
 theorem connectingHomeomorphProdLevelSlice_symm_apply
     (tx : ℝ × ↥((unstableSet φ p ∩ stableSet φ q) ∩ {x | f x = c})) :
     ((hφ.connectingHomeomorphProdLevelSlice hf hfp hfq hc).symm tx : E) =
       φ tx.1 tx.2.1 := by
-  simp [connectingHomeomorphProdLevelSlice]
+  simp only [connectingHomeomorphProdLevelSlice, Homeomorph.symm_trans_apply,
+    Homeomorph.prodCongr_symm, Homeomorph.coe_prodCongr, Prod.map_fst, Prod.map_snd,
+    Homeomorph.refl_symm, Homeomorph.refl_apply, id_eq, Flow.timeSliceHomeomorph_symm_apply,
+    Flow.coe_restrict_apply, zeroCrossingTimeHomeomorphLevelSlice_symm_apply_coe]
 
 @[simp]
 theorem connectingHomeomorphProdLevelSlice_fst
     (x : ↥(unstableSet φ p ∩ stableSet φ q)) :
     (hφ.connectingHomeomorphProdLevelSlice hf hfp hfq hc x).1 =
       -hφ.levelCrossingTime hf hfp hfq hc x := by
-  simp [connectingHomeomorphProdLevelSlice]
+  simp only [connectingHomeomorphProdLevelSlice, Homeomorph.trans_apply,
+    Homeomorph.coe_prodCongr, Prod.map_fst, Homeomorph.refl_apply,
+    Flow.timeSliceHomeomorph_fst, id_eq]
 
 @[simp]
 theorem connectingHomeomorphProdLevelSlice_snd_coe
     (x : ↥(unstableSet φ p ∩ stableSet φ q)) :
     ((hφ.connectingHomeomorphProdLevelSlice hf hfp hfq hc x).2 : E) =
       φ (hφ.levelCrossingTime hf hfp hfq hc x) x.1 := by
-  simp [connectingHomeomorphProdLevelSlice]
+  simp only [connectingHomeomorphProdLevelSlice, Homeomorph.trans_apply,
+    Homeomorph.coe_prodCongr, Prod.map_snd, zeroCrossingTimeHomeomorphLevelSlice_apply_coe,
+    Flow.timeSliceHomeomorph_snd_coe, Flow.coe_restrict_apply, neg_neg]
+
+/-- In product coordinates time translation changes only the real coordinate. -/
+@[simp]
+theorem connectingHomeomorphProdLevelSlice_flow (t : ℝ)
+    (x : ↥(unstableSet φ p ∩ stableSet φ q)) :
+    hφ.connectingHomeomorphProdLevelSlice hf hfp hfq hc
+      ((φ.restrict (isInvariant_unstableSet_inter_stableSet φ p q)) t x) =
+      (t + (hφ.connectingHomeomorphProdLevelSlice hf hfp hfq hc x).1,
+        (hφ.connectingHomeomorphProdLevelSlice hf hfp hfq hc x).2) := by
+  simp only [connectingHomeomorphProdLevelSlice, Homeomorph.trans_apply,
+    Flow.timeSliceHomeomorph_flow, Homeomorph.coe_prodCongr, Prod.map_apply,
+    Prod.map_fst, Prod.map_snd, Homeomorph.refl_apply, id_eq]
 
 include hφ hf hfp hfq hc in
 /-- Time translation on the connecting set is proper for its subspace topology. This is
 properness of the action map, not properness of an individual trajectory in the ambient space. -/
-theorem isProperMap_connecting_pair :
+theorem isProperMap_restrict_pair :
     IsProperMap (fun tx : ℝ × ↥(unstableSet φ p ∩ stableSet φ q) ↦
-      ((φ.restrict (isInvariant_unstableSet_inter_stableSet φ p q)) tx.1 tx.2, tx.2)) := by
-  apply Flow.isProperMap_pair_of_timeCoordinate
+      ((φ.restrict (isInvariant_unstableSet_inter_stableSet φ p q)) tx.1 tx.2, tx.2)) :=
+  Flow.isProperMap_flow_pair_of_timeCoordinate
     (φ.restrict (isInvariant_unstableSet_inter_stableSet φ p q))
     (fun x ↦ -hφ.levelCrossingTime hf hfp hfq hc x)
     (hφ.continuous_levelCrossingTime hf hfp hfq hc).neg
-  intro t x
-  rw [hφ.levelCrossingTime_flow hf hfp hfq hc]
-  ring
+    (hφ.neg_levelCrossingTime_flow hf hfp hfq hc)
 
 end Flow.IsNegativeGradient

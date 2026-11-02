@@ -77,7 +77,7 @@ theorem timeSliceHomeomorph_flow (t : ℝ) (x : X) :
 include c hc hshift in
 /-- A real flow with a continuous global time coordinate acts properly. No local
 compactness of the phase space or compactness of the zero slice is needed. -/
-theorem isProperMap_pair_of_timeCoordinate [T2Space X] :
+theorem isProperMap_flow_pair_of_timeCoordinate [T2Space X] :
     IsProperMap (fun tx : ℝ × X ↦ (φ tx.1 tx.2, tx.2)) := by
   let r : X × X → ℝ × X := fun xy ↦ (c xy.1 - c xy.2, xy.2)
   have hr : Continuous r := ((hc.comp continuous_fst).sub
