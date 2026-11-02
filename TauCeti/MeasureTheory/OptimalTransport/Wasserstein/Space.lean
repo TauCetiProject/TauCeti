@@ -442,7 +442,7 @@ theorem exists_coe_eq_cond [OpensMeasurableSpace X] {m : Measure X} {s : Set X}
   have hprob : IsProbabilityMeasure m[|s] := cond_isProbabilityMeasure_of_finite h₀ hfin
   have hae : ∀ᵐ y ∂m[|s], y ∈ Metric.closedBall x r :=
     (ae_cond_mem hs).mono fun _ hy ↦ hr hy
-  -- The law is carried by `B̄(x, r)`, so its distance from `x` is bounded by `r`.
+  -- The law is carried by `Metric.closedBall x r`, so its distance from `x` is bounded by `r`.
   have hmom : HasFiniteMoment p m[|s] :=
     hasFiniteMoment_def.2 ⟨x, MemLp.of_enorm_bound (C := ENNReal.ofReal r)
       measurable_edist_right.aestronglyMeasurable ENNReal.ofReal_ne_top
