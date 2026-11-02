@@ -29,8 +29,8 @@ namespace MeasureTheory
 
 variable {α ι : Type*} {m : MeasurableSpace α} {μ : Measure α}
 
-/-- If `X i ≤ C Y i` for all indices `i` with `p i`, and `C ≥ 0`, then a finite Lebesgue integral
-of `sup_{p i} ENNReal.ofReal (Y i)` bounds that of `sup_{p i} ENNReal.ofReal (X i)`. -/
+/-- If `X i ≤ C Y i` for all indices `i` with `p i`, and `C ≥ 0`, then the Lebesgue integral of
+`sup_{p i} ENNReal.ofReal (X i)` is finite whenever that of `sup_{p i} ENNReal.ofReal (Y i)` is. -/
 theorem lintegral_iSup_ofReal_lt_top_of_le_mul {p : ι → Prop} {X Y : ι → α → ℝ} {C : ℝ}
     (hC : 0 ≤ C) (hXY : ∀ x i, p i → X i x ≤ C * Y i x)
     (hY : ∫⁻ x, ⨆ (i) (_ : p i), ENNReal.ofReal (Y i x) ∂μ < ∞) :
