@@ -212,16 +212,16 @@ hypersurface swept out by the curve
 (`TauCeti.inner_mvfderiv_smul_coe_sphere_add_mul_mvfderiv`), has scalar curvature
 `n (n - 1) sin² θ / r² - 2 n k sin θ / r`, where `k = θ' / r` is the curvature of the curve. With
 `n = q - 1` this is the bending term of the Gromov–Lawson surgery construction in codimension `q`.
--/
+At `(u, t)` the equation `r' = -r cos θ` is only needed near `t`. -/
 theorem scalarCurvature_rotationalMetric_log {r θ : ℝ → ℝ} (hr : ContDiff ℝ ∞ r)
-    (hr_pos : ∀ t, 0 < r t) (hr' : ∀ t, HasDerivAt r (-(r t * cos (θ t))) t)
-    (p : sphere (0 : V) 1 × ℝ) (hθ : DifferentiableAt ℝ θ p.2) :
+    (hr_pos : ∀ t, 0 < r t) (p : sphere (0 : V) 1 × ℝ)
+    (hr' : ∀ᶠ t in 𝓝 p.2, HasDerivAt r (-(r t * cos (θ t))) t) (hθ : DifferentiableAt ℝ θ p.2) :
     (rotationalMetric (n := n) V (hr.log fun t ↦ (hr_pos t).ne')).scalarCurvature p =
       n * (n - 1) * sin (θ p.2) ^ 2 / r p.2 ^ 2 -
         2 * n * (deriv θ p.2 / r p.2) * sin (θ p.2) / r p.2 := by
-  have hw : deriv (fun t ↦ log (r t)) = fun t ↦ -cos (θ t) := by
-    funext t
-    rw [((hr' t).log (hr_pos t).ne').deriv]
+  have hw : deriv (fun t ↦ log (r t)) =ᶠ[𝓝 p.2] fun t ↦ -cos (θ t) := by
+    filter_upwards [hr'] with t ht
+    rw [(ht.log (hr_pos t).ne').deriv]
     field_simp [(hr_pos t).ne']
   have hw' : deriv (fun t ↦ -cos (θ t)) p.2 = sin (θ p.2) * deriv θ p.2 := by
     have hd : HasDerivAt (fun t ↦ -cos (θ t)) (-(-sin (θ p.2) * deriv θ p.2)) p.2 :=
@@ -230,7 +230,7 @@ theorem scalarCurvature_rotationalMetric_log {r θ : ℝ → ℝ} (hr : ContDiff
     ring
   have hexp : exp (-2 * log (r p.2)) = (r p.2 ^ 2)⁻¹ := by
     rw [mul_comm, exp_mul, exp_log (hr_pos p.2), rpow_neg (hr_pos p.2).le, rpow_two]
-  rw [scalarCurvature_rotationalMetric, hw, hw', hexp]
+  rw [scalarCurvature_rotationalMetric, hw.eq_of_nhds, hw.deriv_eq, hw', hexp]
   have hr₀ := (hr_pos p.2).ne'
   field_simp
   linear_combination (-(n * (n - 1) : ℝ)) * sin_sq_add_cos_sq (θ p.2)
