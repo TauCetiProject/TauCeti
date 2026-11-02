@@ -33,8 +33,7 @@ namespace TauCeti
 /-- For two finite-valued colourings, every sufficiently late `B`-colour has two distinct
 representatives below a common positive bound that agree under `A`.
 
-The representatives need not be close to the queried `x`. The cutoff discards all finite
-`B`-fibres, not merely colours that never occur. -/
+The representatives need not be close to the queried `x`. -/
 theorem exists_uniform_repeated_representatives {α β : Type*} [Finite α] [Finite β]
     (A : ℕ → α) (B : ℕ → β) :
     ∃ N ξ : ℕ, 1 ≤ ξ ∧ ∀ x ≥ N, ∃ u < ξ, ∃ v < ξ,
