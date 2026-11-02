@@ -48,16 +48,11 @@ theorem legendreEc_two_mul_sqrt_div_one_add {k : ℝ} (hk₀ : 0 ≤ k) (hk₁ :
   · simp only [sqrt_zero, mul_zero, zero_div, add_zero, legendreEc_zero, legendreK_zero]
     ring
   have hp : 0 < 1 + k := by linarith
-  have hm : 0 < 1 - k := by linarith
   have hk : k ^ 2 < 1 := by nlinarith
   have hs : 0 < √k := sqrt_pos.2 hk₀
   have ht : 0 < 2 * √k / (1 + k) := by positivity
-  have hsq : 1 - (2 * √k / (1 + k)) ^ 2 = ((1 - k) / (1 + k)) ^ 2 := by
-    field_simp
-    rw [sq_sqrt hk₀.le]
-    ring
-  have hlt : (2 * √k / (1 + k)) ^ 2 < 1 := by
-    nlinarith [sq_pos_of_pos (div_pos hm hp)]
+  have hsq := one_sub_sq_two_mul_sqrt_div_one_add hk₀.le
+  have hlt := sq_two_mul_sqrt_div_one_add_lt_one hk₀.le hk₁.ne
   have hd : HasDerivAt (fun x : ℝ ↦ 2 * √x / (1 + x))
       ((1 - k) / (√k * (1 + k) ^ 2)) k := by
     apply HasDerivAt.congr_deriv (((hasDerivAt_sqrt hk₀.ne').const_mul 2).div
@@ -92,23 +87,17 @@ theorem legendreEc_eq_one_add_mul_legendreEc {k : ℝ} (hk : k ^ 2 < 1) :
   set c := √(1 - k ^ 2)
   have hc : 0 < c := sqrt_pos.2 (by linarith)
   have hc₁ : c ≤ 1 := sqrt_le_one.2 (by nlinarith)
-  have hcsq : c ^ 2 = 1 - k ^ 2 := sq_sqrt (by linarith)
   have hp : 0 < 1 + c := by linarith
   have hq₀ : 0 ≤ (1 - c) / (1 + c) := div_nonneg (by linarith) hp.le
   have hq₁ : (1 - c) / (1 + c) < 1 := (div_lt_one hp).2 (by linarith)
-  have hsq : (2 * √((1 - c) / (1 + c)) / (1 + (1 - c) / (1 + c))) ^ 2 = k ^ 2 := by
-    rw [div_pow, mul_pow, sq_sqrt hq₀]
-    field_simp
-    linear_combination -4 * hcsq
   have hE := legendreEc_two_mul_sqrt_div_one_add hq₀ hq₁
   have hK : legendreK k = (1 + (1 - c) / (1 + c)) *
       legendreK ((1 - c) / (1 + c)) := by
     simpa only [c] using legendreK_eq_one_add_mul_legendreK hk
   have harg : legendreEc (2 * √((1 - c) / (1 + c)) /
       (1 + (1 - c) / (1 + c))) = legendreEc k := by
-    rcases (sq_eq_sq_iff_eq_or_eq_neg).1 hsq with h | h
-    · rw [h]
-    · rw [h, legendreEc_neg]
+    rw [two_mul_sqrt_div_one_add_eq_abs hk.le]
+    rcases abs_choice k with h | h <;> simp only [h, legendreEc_neg]
   rw [harg] at hE
   field_simp at hE hK ⊢
   -- The ascending identities at (1 - c) / (1 + c) have denominator 1 + c.
