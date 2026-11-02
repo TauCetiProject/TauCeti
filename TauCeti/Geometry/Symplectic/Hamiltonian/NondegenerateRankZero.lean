@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Lie.EngelSubalgebra
 public import Mathlib.LinearAlgebra.Center
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Quadratic
+import TauCeti.Algebra.Lie.OfAssociative
+import TauCeti.LinearAlgebra.End.SquareZero
 
 /-!
 # Nondegenerate rank-zero points of integrable systems
@@ -177,12 +179,6 @@ private theorem exists_mul_self_eq_smul_one (hV : finrank ℝ V = 2)
   beta_reduce at h₁ h₂ ⊢
   rw [h₁, h₂, neg_neg]
 
-omit [FiniteDimensional ℝ V] in
-/-- Elements of `sp(V, ω)` with vanishing bracket commute as endomorphisms. -/
-private theorem commute_of_lie_eq_zero {A B : skewAdjointLieSubalgebra ω.toBilinForm}
-    (h : ⁅A, B⁆ = 0) : Commute (A : Module.End ℝ V) B :=
-  commute_iff_lie_eq.2 (by rw [← LieSubalgebra.coe_bracket, h, ZeroMemClass.coe_zero])
-
 /-- In dimension two, an element of `sp(V, ω)` commuting with a nonzero element `A` of `sp(V, ω)`
 is a multiple of `A`. -/
 private theorem exists_eq_smul_of_commute (hV : finrank ℝ V = 2)
@@ -229,7 +225,7 @@ private theorem lie_eq_zero_of_lie_lie_eq_zero (hV : finrank ℝ V = 2)
   have : Nontrivial V := Module.nontrivial_of_finrank_pos (R := ℝ) (by omega)
   -- `C = ⁅A, B⁆` commutes with `A`, so `C = t A`; and `A C + C A = A² B - B A² = 0` while
   -- `A C + C A = 2 t c`.
-  obtain ⟨t, ht⟩ := exists_eq_smul_of_commute hV hA0 (commute_of_lie_eq_zero hB)
+  obtain ⟨t, ht⟩ := exists_eq_smul_of_commute hV hA0 (commute_coe_iff.2 hB)
   have hsum : (A : Module.End ℝ V) * (⁅A, B⁆ : skewAdjointLieSubalgebra ω.toBilinForm) +
       ((⁅A, B⁆ : skewAdjointLieSubalgebra ω.toBilinForm) : Module.End ℝ V) * A = 0 := by
     rw [LieSubalgebra.coe_bracket, Ring.lie_def]
@@ -266,38 +262,17 @@ private theorem engel_le_lieSpan_singleton (hV : finrank ℝ V = 2)
   cases n with
   | zero => simp only [pow_zero, Module.End.one_apply] at hn; simp [hn]
   | succ n =>
-    obtain ⟨t, rfl⟩ := exists_eq_smul_of_commute hV hA0 (commute_of_lie_eq_zero (hpow n B hn))
+    obtain ⟨t, rfl⟩ := exists_eq_smul_of_commute hV hA0 (commute_coe_iff.2 (hpow n B hn))
     exact Submodule.smul_mem _ t (Submodule.subset_span rfl)
 
-/-- In dimension two, an endomorphism `A` with `A² = 0` has a basis `v, u` with `A u = 0` and
-`A v` a multiple of `u`. -/
-private theorem exists_linearIndependent_of_mul_self_eq_zero (hV : finrank ℝ V = 2)
-    {A : Module.End ℝ V} (hA : A * A = 0) :
-    ∃ v u : V, LinearIndependent ℝ ![v, u] ∧ A u = 0 ∧ ∃ s : ℝ, A v = s • u := by
-  by_cases h : A = 0
-  · let b := Module.finBasisOfFinrankEq ℝ V hV
-    refine ⟨b 0, b 1, ?_, by simp [h], 0, by simp [h]⟩
-    convert b.linearIndependent using 1
-    ext i
-    fin_cases i <;> rfl
-  · obtain ⟨v, hv⟩ : ∃ v, A v ≠ 0 := by
-      by_contra! h'
-      exact h (LinearMap.ext h')
-    refine ⟨v, A v, LinearIndependent.pair_iff.2 fun s t hst ↦ ?_, ?_, 1, (one_smul _ _).symm⟩
-    · have hs : s • A v = 0 := by
-        simpa [← Module.End.mul_apply, hA] using congrArg A hst
-      have hs0 : s = 0 := (smul_eq_zero.1 hs).resolve_right hv
-      subst hs0
-      exact ⟨rfl, (smul_eq_zero.1 (by simpa using hst)).resolve_right hv⟩
-    · rw [← Module.End.mul_apply, hA, LinearMap.zero_apply]
-
+omit [FiniteDimensional ℝ V] in
 /-- In dimension two, the line spanned by an element `A ∈ sp(V, ω)` with `A² = 0` is not a Cartan
 subalgebra: it is properly contained in its normalizer. -/
 private theorem not_isCartanSubalgebra_lieSpan_singleton (hV : finrank ℝ V = 2)
     {A : skewAdjointLieSubalgebra ω.toBilinForm} (hA : (A : Module.End ℝ V) * A = 0) :
     ¬(lieSpan ℝ (skewAdjointLieSubalgebra ω.toBilinForm) {A}).IsCartanSubalgebra := by
   intro hcartan
-  obtain ⟨v, u, hli, hu, s, hv⟩ := exists_linearIndependent_of_mul_self_eq_zero hV hA
+  obtain ⟨v, u, hli, hu, s, hv⟩ := Module.End.exists_linearIndependent_of_mul_self_eq_zero _ hV hA
   let b := basisOfLinearIndependentOfCardEqFinrank hli (by simp [hV])
   have hb0 : b 0 = v := by simp [b]
   have hb1 : b 1 = u := by simp [b]
@@ -406,69 +381,25 @@ theorem IsNondegenerateRankZeroPoint.congr_of_eventuallyEq {F' : E → G}
   convert h.isNondegenerateQuadraticFamily using 2 with ℓ
   exact hessianQuadraticForm_congr_of_eventuallyEq (hF.fun_comp ℓ).symm
 
-omit [FiniteDimensional ℝ E] in
-/-- For a map into `ι → ℝ`, the Hessians of the functionals of `F` span the same space as the
-Hessians of its components. -/
-private theorem span_range_hessianQuadraticForm_pi {ι : Type*} [Fintype ι] {F : E → ι → ℝ}
-    (hF : ContDiffAt ℝ 2 F x) :
-    Submodule.span ℝ (Set.range fun ℓ : (ι → ℝ) →L[ℝ] ℝ ↦ hessianQuadraticForm (ℓ ∘ F) x) =
-      Submodule.span ℝ (Set.range fun i ↦ hessianQuadraticForm (fun y ↦ F y i) x) := by
-  -- The component `y ↦ F y i` is, by definition, the composite of `F` with the projection.
-  have hcomp : ∀ i, hessianQuadraticForm (fun y ↦ F y i) x =
-      hessianQuadraticForm (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℝ) i ∘ F) x :=
-    fun _ ↦ rfl
-  classical
-  refine le_antisymm (Submodule.span_le.2 ?_) (Submodule.span_le.2 ?_)
-  · rintro _ ⟨ℓ, rfl⟩
-    have : hessianQuadraticForm (ℓ ∘ F) x =
-        ∑ i, ℓ (fun j ↦ if i = j then 1 else 0) • hessianQuadraticForm (fun y ↦ F y i) x := by
-      ext v
-      rw [ContinuousLinearMap.hessianQuadraticForm_comp_left_apply ℓ hF, ← ℓ.coe_coe,
-        LinearMap.pi_apply_eq_sum_univ]
-      simp [hcomp, ContinuousLinearMap.hessianQuadraticForm_comp_left_apply _ hF, mul_comm]
-    dsimp only
-    rw [this]
-    exact Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, rfl⟩)
-  · rintro _ ⟨i, rfl⟩
-    exact Submodule.subset_span ⟨_, (hcomp i).symm⟩
+/-- A nondegenerate rank-zero point may be tested on any family of quadratic forms that, at a `C²`
+critical point, spans the same space as the Hessians of the functions `ℓ ∘ F`. -/
+theorem isNondegenerateRankZeroPoint_iff_of_span_eq {κ : Type*} {Q : κ → QuadraticForm ℝ E}
+    (h : ContDiffAt ℝ 2 F x → fderiv ℝ F x = 0 →
+      Submodule.span ℝ (Set.range fun ℓ : G →L[ℝ] ℝ ↦ hessianQuadraticForm (ℓ ∘ F) x) =
+        Submodule.span ℝ (Set.range Q)) :
+    ω.IsNondegenerateRankZeroPoint F x ↔
+      ContDiffAt ℝ 2 F x ∧ fderiv ℝ F x = 0 ∧ ω.IsNondegenerateQuadraticFamily Q :=
+  ⟨fun hx ↦ ⟨hx.contDiffAt, hx.fderiv_eq_zero, (isNondegenerateQuadraticFamily_iff_of_span_eq
+      (h hx.contDiffAt hx.fderiv_eq_zero)).1 hx.isNondegenerateQuadraticFamily⟩,
+    fun ⟨hF, h0, hQ⟩ ↦ ⟨hF, h0, (isNondegenerateQuadraticFamily_iff_of_span_eq (h hF h0)).2 hQ⟩⟩
 
 /-- **Nondegenerate rank-zero points in coordinates.** For `F = (F₁, …, Fₙ) : E → ℝⁿ`, a point is a
 nondegenerate rank-zero point exactly when it is a `C²` critical point of `F` at which the Hessians
 of the components `Fᵢ` form a nondegenerate family. -/
 theorem isNondegenerateRankZeroPoint_pi_iff {ι : Type*} [Fintype ι] {F : E → ι → ℝ} :
     ω.IsNondegenerateRankZeroPoint F x ↔ ContDiffAt ℝ 2 F x ∧ fderiv ℝ F x = 0 ∧
-      ω.IsNondegenerateQuadraticFamily fun i ↦ hessianQuadraticForm (fun y ↦ F y i) x := by
-  refine ⟨fun h ↦ ⟨h.contDiffAt, h.fderiv_eq_zero, ?_⟩, fun ⟨hF, h0, h⟩ ↦ ⟨hF, h0, ?_⟩⟩
-  · exact (isNondegenerateQuadraticFamily_iff_of_span_eq
-      (span_range_hessianQuadraticForm_pi h.contDiffAt)).1 h.isNondegenerateQuadraticFamily
-  · exact (isNondegenerateQuadraticFamily_iff_of_span_eq
-      (span_range_hessianQuadraticForm_pi hF)).2 h
-
-omit [FiniteDimensional ℝ E] in
-/-- At a critical point of `F`, the Hessians of the functionals of `g ∘ F` are the Hessians of the
-functionals of `F`, provided the differential of `g` is injective. -/
-private theorem range_hessianQuadraticForm_comp [FiniteDimensional ℝ G'] {g : G → G'}
-    (hg : ContDiffAt ℝ 2 g (F x)) (hinj : Function.Injective (fderiv ℝ g (F x)))
-    (hF : ContDiffAt ℝ 2 F x) (hc : fderiv ℝ F x = 0) :
-    Set.range (fun ℓ : G' →L[ℝ] ℝ ↦ hessianQuadraticForm (ℓ ∘ g ∘ F) x) =
-      Set.range fun ℓ : G →L[ℝ] ℝ ↦ hessianQuadraticForm (ℓ ∘ F) x := by
-  -- The Hessian of `ℓ ∘ g ∘ F` is that of `(ℓ ∘ Dg) ∘ F`, and every functional on `G` is of the
-  -- form `ℓ ∘ Dg`.
-  have hℓ : ∀ ℓ : G' →L[ℝ] ℝ, hessianQuadraticForm (ℓ ∘ g ∘ F) x =
-      hessianQuadraticForm ((ℓ.comp (fderiv ℝ g (F x))) ∘ F) x := by
-    intro ℓ
-    rw [← Function.comp_assoc, hessianQuadraticForm_comp_eq_fderiv_comp
-      (ℓ.contDiff.contDiffAt.comp _ hg) hF hc, fderiv_comp _ ℓ.differentiableAt
-      (hg.differentiableAt (by norm_num)), ℓ.fderiv]
-  simp only [hℓ]
-  refine le_antisymm (by rintro _ ⟨ℓ, rfl⟩; exact ⟨_, rfl⟩) ?_
-  rintro _ ⟨ℓ, rfl⟩
-  obtain ⟨h, hh⟩ := (fderiv ℝ g (F x) : G →ₗ[ℝ] G').exists_leftInverse_of_injective
-    (LinearMap.ker_eq_bot.2 hinj)
-  have hℓ' : (ℓ.comp (LinearMap.toContinuousLinearMap h)).comp (fderiv ℝ g (F x)) = ℓ := by
-    ext w
-    simpa using congr(ℓ ($hh w))
-  exact ⟨ℓ.comp (LinearMap.toContinuousLinearMap h), by beta_reduce; rw [hℓ']⟩
+      ω.IsNondegenerateQuadraticFamily fun i ↦ hessianQuadraticForm (fun y ↦ F y i) x :=
+  isNondegenerateRankZeroPoint_iff_of_span_eq fun hF _ ↦ span_range_hessianQuadraticForm_pi hF
 
 /-- **Invariance under reparametrization of the values.** Composing `F` with a `C²` map `g` whose
 differential at `F x` is injective preserves and reflects nondegenerate rank-zero points. -/
@@ -483,14 +414,10 @@ theorem isNondegenerateRankZeroPoint_comp_iff [FiniteDimensional ℝ G'] {g : G 
     refine ⟨fun h ↦ ContinuousLinearMap.ext fun v ↦ hinj ?_,
       fun h ↦ by rw [h, ContinuousLinearMap.comp_zero]⟩
     simpa using congr($h v)
-  refine ⟨fun h ↦ ⟨hF, h0.1 h.fderiv_eq_zero, ?_⟩,
-    fun h ↦ ⟨hg.comp x hF, h0.2 h.fderiv_eq_zero, ?_⟩⟩
-  · exact (isNondegenerateQuadraticFamily_iff_of_span_eq (congrArg _
-      (range_hessianQuadraticForm_comp hg hinj hF (h0.1 h.fderiv_eq_zero)))).1
-      h.isNondegenerateQuadraticFamily
-  · exact (isNondegenerateQuadraticFamily_iff_of_span_eq (congrArg _
-      (range_hessianQuadraticForm_comp hg hinj hF h.fderiv_eq_zero))).2
-      h.isNondegenerateQuadraticFamily
+  rw [isNondegenerateRankZeroPoint_iff_of_span_eq fun _ h ↦
+    congrArg (Submodule.span ℝ) (range_hessianQuadraticForm_comp hg hinj hF (h0.1 h))]
+  exact ⟨fun ⟨_, h, hQ⟩ ↦ ⟨hF, h0.1 h, hQ⟩,
+    fun h ↦ ⟨hg.comp x hF, h0.2 h.fderiv_eq_zero, h.isNondegenerateQuadraticFamily⟩⟩
 
 /-- **Nondegenerate rank-zero points of one Hamiltonian on a symplectic plane.** On a
 two-dimensional symplectic vector space, a point is a nondegenerate rank-zero point of a function
@@ -499,29 +426,12 @@ theorem isNondegenerateRankZeroPoint_iff_isNondegenerateCriticalPoint (hE : finr
     {H : E → ℝ} : ω.IsNondegenerateRankZeroPoint H x ↔ IsNondegenerateCriticalPoint H x := by
   rw [isNondegenerateCriticalPoint_iff_hessianQuadraticForm_nondegenerate,
     ← isNondegenerateQuadraticFamily_const_iff (ι := Unit) (ω := ω) hE]
-  -- The Hessian of `ℓ ∘ H` is `ℓ 1` times the Hessian of `H`.
-  have hspan : ∀ hH : ContDiffAt ℝ 2 H x,
-      Submodule.span ℝ (Set.range fun ℓ : ℝ →L[ℝ] ℝ ↦ hessianQuadraticForm (ℓ ∘ H) x) =
-        Submodule.span ℝ (Set.range fun _ : Unit ↦ hessianQuadraticForm H x) := by
-    intro hH
-    have hℓ : ∀ ℓ : ℝ →L[ℝ] ℝ,
-        hessianQuadraticForm (ℓ ∘ H) x = ℓ 1 • hessianQuadraticForm H x := by
-      intro ℓ
-      ext v
-      rw [ContinuousLinearMap.hessianQuadraticForm_comp_left_apply ℓ hH, smul_apply,
-        hessianQuadraticForm_apply, smul_eq_mul, mul_comm, ← smul_eq_mul, ← ℓ.map_smul,
-        smul_eq_mul, mul_one]
-    refine le_antisymm (Submodule.span_le.2 ?_) (Submodule.span_le.2 ?_)
-    · rintro _ ⟨ℓ, rfl⟩
-      dsimp only
-      rw [hℓ]
-      exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨(), rfl⟩)
-    · rintro _ ⟨-, rfl⟩
-      exact Submodule.subset_span ⟨ContinuousLinearMap.id ℝ ℝ, rfl⟩
-  refine ⟨fun h ↦ ⟨h.contDiffAt, h.fderiv_eq_zero, ?_⟩, fun ⟨hH, h0, h⟩ ↦ ⟨hH, h0, ?_⟩⟩
-  · exact (isNondegenerateQuadraticFamily_iff_of_span_eq (hspan h.contDiffAt)).1
-      h.isNondegenerateQuadraticFamily
-  · exact (isNondegenerateQuadraticFamily_iff_of_span_eq (hspan hH)).2 h
+  -- Every functional on `ℝ` is a multiple of the identity.
+  have hL : Submodule.span ℝ (Set.range fun _ : Unit ↦ ContinuousLinearMap.id ℝ ℝ) = ⊤ := by
+    rw [Set.range_const, eq_top_iff]
+    exact fun ℓ _ ↦ Submodule.mem_span_singleton.2 ⟨ℓ 1, ContinuousLinearMap.ext_ring (by simp)⟩
+  exact isNondegenerateRankZeroPoint_iff_of_span_eq fun hH _ ↦
+    span_range_hessianQuadraticForm_comp_left hH hL
 
 end Function
 

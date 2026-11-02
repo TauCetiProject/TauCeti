@@ -45,6 +45,11 @@ by the Morse complex in Lane M of the analytic Heegaard Floer roadmap.
 * `TauCeti.hessianQuadraticForm`: the quadratic form defined by the Hessian at a point.
 * `TauCeti.morseIndex`: the negative index of inertia of the Hessian quadratic form.
 * `TauCeti.morseIndex_comp`: invariance under a change of coordinates.
+* `TauCeti.span_range_hessianQuadraticForm_comp_left`, `TauCeti.span_range_hessianQuadraticForm_pi`,
+  `TauCeti.range_hessianQuadraticForm_comp`: the space spanned by the Hessians of the functions
+  `ℓ ∘ φ`, for `ℓ` a continuous linear functional, computed from a spanning family of functionals,
+  from the components of `φ`, and after composing `φ` at a critical point with a map whose
+  differential is injective.
 * `TauCeti.IsNondegenerateCriticalPoint.hessianQuadraticForm_nondegenerate`: the Hessian
   quadratic form at a nondegenerate critical point is nondegenerate.
 * `TauCeti.isNondegenerateCriticalPoint_iff_hessianQuadraticForm_nondegenerate`: in finite
@@ -175,6 +180,74 @@ theorem hessianQuadraticForm_comp_eq_fderiv_comp {h : F → ℝ} {φ : E → F}
   rw [ContinuousLinearMap.hessianQuadraticForm_comp_left_apply _ hφ, hessianQuadraticForm_apply,
     fderiv_fderiv_comp_apply hh hφ, hc]
   simp
+
+/-- At a `C²` point of `φ`, the Hessians of all the functions `ℓ ∘ φ`, for `ℓ` a continuous linear
+functional, span the same space as the Hessians of the `L i ∘ φ`, for any family `L` spanning the
+functionals. -/
+theorem span_range_hessianQuadraticForm_comp_left {ι : Type*} {φ : E → F}
+    (hφ : ContDiffAt ℝ 2 φ x) {L : ι → F →L[ℝ] ℝ} (hL : Submodule.span ℝ (range L) = ⊤) :
+    Submodule.span ℝ (range fun ℓ : F →L[ℝ] ℝ ↦ hessianQuadraticForm (ℓ ∘ φ) x) =
+      Submodule.span ℝ (range fun i ↦ hessianQuadraticForm (L i ∘ φ) x) := by
+  -- `ℓ ↦ Hess (ℓ ∘ φ)` is linear, so it maps the span of `L` onto its range.
+  let Λ : (F →L[ℝ] ℝ) →ₗ[ℝ] QuadraticForm ℝ E :=
+    { toFun ℓ := hessianQuadraticForm (ℓ ∘ φ) x
+      map_add' ℓ₁ ℓ₂ := by
+        ext v
+        rw [add_apply]
+        simp only [ContinuousLinearMap.hessianQuadraticForm_comp_left_apply _ hφ,
+          add_apply]
+      map_smul' c ℓ := by
+        ext v
+        rw [smul_apply]
+        simp only [ContinuousLinearMap.hessianQuadraticForm_comp_left_apply _ hφ,
+          smul_apply, RingHom.id_apply] }
+  have hΛ : range Λ = range fun ℓ : F →L[ℝ] ℝ ↦ hessianQuadraticForm (ℓ ∘ φ) x := rfl
+  rw [← hΛ, ← LinearMap.coe_range, Submodule.span_eq, LinearMap.range_eq_map, ← hL,
+    Submodule.map_span, ← range_comp]
+  rfl
+
+/-- For a `C²` map into `ι → ℝ`, the Hessians of the functions `ℓ ∘ φ` span the same space as the
+Hessians of the components of `φ`. -/
+theorem span_range_hessianQuadraticForm_pi {ι : Type*} [Fintype ι] {φ : E → ι → ℝ}
+    (hφ : ContDiffAt ℝ 2 φ x) :
+    Submodule.span ℝ (range fun ℓ : (ι → ℝ) →L[ℝ] ℝ ↦ hessianQuadraticForm (ℓ ∘ φ) x) =
+      Submodule.span ℝ (range fun i ↦ hessianQuadraticForm (fun y ↦ φ y i) x) := by
+  classical
+  refine span_range_hessianQuadraticForm_comp_left hφ
+    (L := fun i ↦ ContinuousLinearMap.proj i) (eq_top_iff.2 fun ℓ _ ↦ ?_)
+  -- Every functional on `ι → ℝ` is a combination of the coordinate projections.
+  have hℓ : ℓ = ∑ i, ℓ (fun j ↦ if i = j then 1 else 0) • ContinuousLinearMap.proj i := by
+    ext v
+    rw [← ℓ.coe_coe, LinearMap.pi_apply_eq_sum_univ]
+    simp [mul_comm]
+  rw [hℓ]
+  exact Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, rfl⟩)
+
+/-- At a critical point of `φ`, the Hessians of the functions `ℓ ∘ g ∘ φ` are the Hessians of the
+functions `ℓ ∘ φ`, provided the differential of `g` at `φ x` is injective. -/
+theorem range_hessianQuadraticForm_comp {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    [FiniteDimensional ℝ G] {g : F → G} {φ : E → F} (hg : ContDiffAt ℝ 2 g (φ x))
+    (hinj : Function.Injective (fderiv ℝ g (φ x))) (hφ : ContDiffAt ℝ 2 φ x)
+    (hc : fderiv ℝ φ x = 0) :
+    range (fun ℓ : G →L[ℝ] ℝ ↦ hessianQuadraticForm (ℓ ∘ g ∘ φ) x) =
+      range fun ℓ : F →L[ℝ] ℝ ↦ hessianQuadraticForm (ℓ ∘ φ) x := by
+  -- The Hessian of `ℓ ∘ g ∘ φ` is that of `(ℓ ∘ Dg) ∘ φ`, and every functional on `F` is of the
+  -- form `ℓ ∘ Dg`.
+  have hℓ : ∀ ℓ : G →L[ℝ] ℝ, hessianQuadraticForm (ℓ ∘ g ∘ φ) x =
+      hessianQuadraticForm ((ℓ.comp (fderiv ℝ g (φ x))) ∘ φ) x := by
+    intro ℓ
+    rw [← Function.comp_assoc, hessianQuadraticForm_comp_eq_fderiv_comp
+      (ℓ.contDiff.contDiffAt.comp _ hg) hφ hc, fderiv_comp _ ℓ.differentiableAt
+      (hg.differentiableAt (by norm_num)), ℓ.fderiv]
+  simp only [hℓ]
+  refine le_antisymm (by rintro _ ⟨ℓ, rfl⟩; exact ⟨_, rfl⟩) ?_
+  rintro _ ⟨ℓ, rfl⟩
+  obtain ⟨h, hh⟩ := (fderiv ℝ g (φ x) : F →ₗ[ℝ] G).exists_leftInverse_of_injective
+    (LinearMap.ker_eq_bot.2 hinj)
+  have hℓ' : (ℓ.comp (LinearMap.toContinuousLinearMap h)).comp (fderiv ℝ g (φ x)) = ℓ := by
+    ext w
+    simpa using congr(ℓ ($hh w))
+  exact ⟨ℓ.comp (LinearMap.toContinuousLinearMap h), by beta_reduce; rw [hℓ']⟩
 
 /-- The **Morse index** of `f` at `x` is the negative index of inertia of its Hessian quadratic
 form.  In finite dimensions it is equivalently the maximal dimension of a subspace on which the

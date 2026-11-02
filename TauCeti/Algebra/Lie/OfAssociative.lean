@@ -45,6 +45,8 @@ instance: a consumer installs the associated `LieRingModule` where it wants it, 
 * `LieHom.leftRegularRep_mem_of_mem`: every left ideal of `A` is invariant.
 * `LieHom.ad_apply_eq_leftRegularRep_sub_mulRight`: the inner derivation action is the difference
   of the left-regular action and right multiplication.
+* `LieSubalgebra.commute_coe_iff`: two elements of a Lie subalgebra of `A` commute in `A` exactly
+  when their bracket vanishes.
 
 ## References
 
@@ -130,3 +132,16 @@ theorem ad_apply_eq_leftRegularRep_sub_mulRight (q : L →ₗ⁅R⁆ A) (x : L) 
   rw [leftRegularRep_eq_mulLeft, LieAlgebra.ad_eq_lmul_left_sub_lmul_right, Pi.sub_apply]
 
 end LieHom
+
+namespace LieSubalgebra
+
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+variable {R : Type u} {A : Type w} [CommRing R] [Ring A] [Algebra R A]
+
+/-- Two elements of a Lie subalgebra of an associative algebra commute in the algebra exactly when
+their bracket vanishes. -/
+theorem commute_coe_iff {K : LieSubalgebra R A} {x y : K} : Commute (x : A) y ↔ ⁅x, y⁆ = 0 := by
+  rw [commute_iff_lie_eq, ← coe_bracket, ZeroMemClass.coe_eq_zero]
+
+end LieSubalgebra
