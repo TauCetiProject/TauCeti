@@ -26,15 +26,13 @@ which is zero at noninvertible maps. In the same generality, invertibility of th
 maps is an open condition along a continuous Hom-bundle section, and composition of
 continuous Hom-bundle sections is continuous.
 
-A fibre-preserving map of total spaces is bijective exactly when each fibre map is
-(`TauCeti.bijective_totalSpace_map_iff`).
-
 For two vector bundle cores, a section of Mathlib's Hom bundle between them is continuous
 exactly when it is continuous in every pair of a source chart and a target chart, on their
 common domain, with chart expressions `VectorBundleCore.inChartCoordinates`
 (`VectorBundleCore.continuous_hom_bundle_iff_forall_continuousOn`). Both directions read the
 section through the local trivializations of the two charts
-(`VectorBundleCore.inChartCoordinates_eq_localTriv_comp`).
+(`VectorBundleCore.inChartCoordinates_eq_localTriv_comp` in
+`TauCeti.Topology.VectorBundle.Coordinates`).
 
 The coordinate argument uses `ContinuousLinearMap.inCoordinates_inverse` and parallels
 the smooth inverse argument in `TauCeti.Geometry.Manifold.VectorBundle.Hom`.
@@ -46,25 +44,6 @@ public section
 
 open Bundle FiberBundle Set
 open scoped Topology
-
-namespace TauCeti
-
-/-- A fibre-preserving map of total spaces is bijective exactly when each of its fibre maps is. -/
-theorem bijective_totalSpace_map_iff {B F₁ F₂ : Type*} {E₁ E₂ : B → Type*}
-    {ϕ : ∀ x, E₁ x → E₂ x} :
-    Function.Bijective (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ p.proj (ϕ p.proj p.2)) ↔
-      ∀ x, Function.Bijective (ϕ x) := by
-  refine ⟨fun h x ↦ ⟨fun v w hvw ↦ TotalSpace.mk_inj.1 (h.1 (by simp [hvw])), fun w ↦ ?_⟩,
-    fun h ↦ ⟨fun ⟨x, v⟩ ⟨y, w⟩ hvw ↦ ?_, fun ⟨x, w⟩ ↦ ⟨⟨x, (h x).2 w |>.choose⟩, ?_⟩⟩⟩
-  · obtain ⟨⟨y, v⟩, hp⟩ := h.2 ⟨x, w⟩
-    obtain rfl : y = x := congrArg TotalSpace.proj hp
-    exact ⟨v, TotalSpace.mk_inj.1 hp⟩
-  · obtain rfl : x = y := congrArg TotalSpace.proj hvw
-    simp only [TotalSpace.mk_inj] at hvw
-    rw [(h x).1 hvw]
-  · simp [((h x).2 w).choose_spec]
-
-end TauCeti
 
 section
 
@@ -358,17 +337,6 @@ variable {𝕜 B F G ι κ : Type*} [NontriviallyNormedField 𝕜] [TopologicalS
 section inChartCoordinates
 
 variable {Z : VectorBundleCore 𝕜 B F ι} {W : VectorBundleCore 𝕜 B G κ}
-
-/-- On the common domain of a source chart and a target chart, reading a fibre map through the
-local trivializations of those charts gives its chart expression. -/
-theorem inChartCoordinates_eq_localTriv_comp {i : ι} {j : κ} {x : B} (hi : x ∈ Z.baseSet i)
-    (hj : x ∈ W.baseSet j) (f : F →L[𝕜] G) :
-    Z.inChartCoordinates W i j x f =
-      ((W.localTriv j).continuousLinearMapAt 𝕜 x).comp (f.comp ((Z.localTriv i).symmL 𝕜 x)) := by
-  ext v
-  simp only [localTriv_continuousLinearMapAt _ hj, localTriv_symmL _ hi, inChartCoordinates_apply]
-  -- The remaining composite is stated between the core fibres, which are `F` and `G`.
-  rfl
 
 /-- A section of the Hom bundle between two cores that is continuous on the common domain of
 a source chart and a target chart is continuous in those charts there. -/

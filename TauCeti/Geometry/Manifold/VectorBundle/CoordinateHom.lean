@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Hom
 public import TauCeti.Topology.VectorBundle.Descent
+import TauCeti.Data.Bundle
 
 /-!
 # `C^n` cocycle morphisms and `C^n` bundle equivalences

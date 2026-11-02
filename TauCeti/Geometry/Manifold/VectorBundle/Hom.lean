@@ -11,6 +11,7 @@ public import Mathlib.Geometry.Manifold.Diffeomorph
 import Mathlib.Geometry.Manifold.BumpFunction
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import TauCeti.Topology.VectorBundle.Coordinates
+import TauCeti.Data.Bundle
 import TauCeti.Geometry.Manifold.ContMDiff.FiniteDimension
 
 /-!
