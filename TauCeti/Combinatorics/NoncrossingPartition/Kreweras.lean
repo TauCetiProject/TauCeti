@@ -453,47 +453,6 @@ theorem exists_lt_forall_mem_Ioc_of_lt_kreweras (hQ : Q.IsNoncrossing)
   obtain ⟨c, hc, c', hc', hcc', hC⟩ := exists_lt_forall_mem_part_kreweras hle hx heC hEne hEint
   exact ⟨c, hCs hc, c', hCs hc', hcc', forall_mem_Ioc_of_mem_part_kreweras hle hx hc hc' hcc' hC⟩
 
-/-- Let `P ≤ Q` be noncrossing partitions, let `m` and `M` be the first and the last position of
-the part of `P` through `m`, and let `t` be the first position after `M` of the part of `Q` through
-`m`. Then `[m, t)` is a union of parts of `P`: a part of `P` leaving it would cross the part of `P`
-through `m` or the part of `Q` through `m`. -/
-private theorem IsNoncrossing.le_and_lt_of_mem_part (hP : P.IsNoncrossing) (hQ : Q.IsNoncrossing)
-    (hPQ : P ≤ Q) {m M t : α} (hm : m ∈ s) (hM : M ∈ P.part m) (hmin : ∀ z ∈ P.part m, m ≤ z)
-    (hmax : ∀ z ∈ P.part m, z ≤ M) (ht : t ∈ Q.part m) (hMt : M < t)
-    (htmin : ∀ z ∈ Q.part m, M < z → t ≤ z) {a b : α} (hb : b ∈ P.part a) (hma : m ≤ a)
-    (hat : a < t) : m ≤ b ∧ b < t := by
-  have has : a ∈ s := P.part_nonempty.1 ⟨b, hb⟩
-  have hbs : b ∈ s := P.part_subset a hb
-  have hMs : M ∈ s := P.part_subset m hM
-  have hts : t ∈ s := Q.part_subset m ht
-  have hba : P.part b = P.part a := (P.mem_part_iff_part_eq_part hbs has).1 hb
-  have hMm : P.part M = P.part m := (P.mem_part_iff_part_eq_part hMs hm).1 hM
-  by_cases haB : P.part a = P.part m
-  · have hbB : b ∈ P.part m := (P.mem_part_iff_part_eq_part hbs hm).2 (hba.trans haB)
-    exact ⟨hmin b hbB, (hmax b hbB).trans_lt hMt⟩
-  by_cases haM : a ≤ M
-  · -- `m < a < M`, so the part of `P` through `a` stays in `(m, M)`.
-    have hma' : m < a := lt_of_le_of_ne hma fun h => haB (h ▸ rfl)
-    have haM' : a < M := lt_of_le_of_ne haM fun h => haB (h ▸ hMm)
-    refine ⟨le_of_not_gt fun hbm => haB ?_, lt_of_le_of_lt (le_of_not_gt fun hMb => haB ?_) hMt⟩
-    · rw [← hba, hP.part_eq_part hbs hm hba hMm.symm hbm hma' haM']
-    · exact (hP.part_eq_part hm has hMm.symm hba.symm hma' haM' hMb).symm
-  · -- `M < a < t`, so `a` lies outside the part of `Q` through `m`, and the part of `Q` through `a`
-    -- stays in `(M, t)`.
-    replace haM := lt_of_not_ge haM
-    have hQa : Q.part a ≠ Q.part m := fun h =>
-      (htmin a ((Q.mem_part_iff_part_eq_part has hm).2 h) haM).not_gt hat
-    have hba' : Q.part b = Q.part a := (Q.mem_part_iff_part_eq_part hbs has).1 (part_mono hPQ a hb)
-    have hQM : Q.part M = Q.part m := (Q.mem_part_iff_part_eq_part hMs hm).1 (part_mono hPQ m hM)
-    have hQt : Q.part t = Q.part m := (Q.mem_part_iff_part_eq_part hts hm).1 ht
-    refine ⟨(hmin M hM).trans (lt_of_not_ge fun hbM => hQa ?_).le, lt_of_not_ge fun htb => hQa ?_⟩
-    · rcases hbM.lt_or_eq with hbM | rfl
-      · rw [← hba', hQ.part_eq_part hbs hMs hba' (hQM.trans hQt.symm) hbM haM hat, hQM]
-      · rw [← hba', hQM]
-    · rcases htb.lt_or_eq with htb | rfl
-      · rw [← hQ.part_eq_part hMs has (hQM.trans hQt.symm) hba'.symm haM hat htb, hQM]
-      · rw [← hba', hQt]
-
 end Finpartition
 
 namespace TauCeti.NoncrossingPartition
