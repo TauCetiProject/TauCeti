@@ -52,7 +52,8 @@ induces a homomorphism of algebraic `K₁`, functorially.
   commutator subgroup of `GL_∞(A)`.
 * `TauCeti.AlgebraicK1.mk_eq_one_iff`: an invertible matrix has trivial class in `K₁(A)` exactly
   when some stabilization of it is elementary.
-* `TauCeti.AlgebraicK1.map_id`, `TauCeti.AlgebraicK1.map_comp`: functoriality of algebraic `K₁`.
+* `TauCeti.AlgebraicK1.map_id`, `TauCeti.AlgebraicK1.map_comp`, `TauCeti.AlgebraicK1.map_map`:
+  functoriality of algebraic `K₁`.
 
 ## References
 
@@ -441,6 +442,13 @@ theorem map_comp (f : A →+* B) (g : B →+* C) :
   simp only [MonoidHom.comp_apply, map_mk]
   refine congrArg _ (Units.ext ?_)
   simp [Matrix.map_map]
+
+/-- Applying the homomorphisms of algebraic `K₁` induced by `f` and then `g` is applying the one
+induced by `g.comp f`. -/
+@[simp]
+theorem map_map (f : A →+* B) (g : B →+* C) (x : AlgebraicK1 A) :
+    AlgebraicK1.map g (AlgebraicK1.map f x) = AlgebraicK1.map (g.comp f) x := by
+  rw [map_comp, MonoidHom.comp_apply]
 
 end AlgebraicK1
 

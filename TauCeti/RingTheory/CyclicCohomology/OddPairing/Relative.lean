@@ -132,7 +132,7 @@ theorem oddPairing_projection (m : ℕ) (x : AlgebraicK1 (Unitization ℂ A))
     (oddPairing A M m (projection ℂ A x)).toAdd c =
       (AlgebraicK1.oddPairing (Unitization ℂ A) M m x).toAdd
         (relativeCyclicCohomology.toUnitization ℂ A M (2 * m + 1) c) := by
-  conv_rhs => rw [← coe_projection_mul_map_algebraMap x]
+  conv_rhs => rw [← coe_projection_mul_map_algebraMap x, ← AlgebraicK1.map_map]
   rw [map_mul, toAdd_mul, LinearMap.add_apply,
     AlgebraicK1.oddPairing_map_algebraMap_toUnitization_eq_zero, add_zero, oddPairing_apply]
 

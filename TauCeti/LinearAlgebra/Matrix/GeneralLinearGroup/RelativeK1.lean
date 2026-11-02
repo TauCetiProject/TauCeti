@@ -88,17 +88,16 @@ theorem AlgebraicK1.mk_mem_relativeAlgebraicK1 {n : ℕ} {u : GL (Fin n) (Unitiz
   convert map_one (AlgebraicK1.mk R n)
   exact Units.ext hu
 
-namespace relativeAlgebraicK1
-
 /-- The augmentation is a left inverse of the scalar inclusion on algebraic `K₁`. -/
-@[simp]
-theorem map_fstHom_map_algebraMap (x : AlgebraicK1 R) :
+theorem AlgebraicK1.map_fstHom_map_algebraMap (x : AlgebraicK1 R) :
     AlgebraicK1.map (Unitization.fstHom R A : Unitization R A →+* R)
       (AlgebraicK1.map (algebraMap R (Unitization R A)) x) = x := by
-  rw [← MonoidHom.comp_apply, ← AlgebraicK1.map_comp]
+  rw [AlgebraicK1.map_map]
   convert DFunLike.congr_fun AlgebraicK1.map_id x
   ext r
   simp
+
+namespace relativeAlgebraicK1
 
 variable (R A) in
 /-- The projection of `K₁(A⁺)` onto relative `K₁` along the classes of scalar matrices,
@@ -106,7 +105,7 @@ variable (R A) in
 def projection : AlgebraicK1 (Unitization R A) →* relativeAlgebraicK1 R A :=
   (MonoidHom.id _ / (AlgebraicK1.map (algebraMap R (Unitization R A))).comp
     (AlgebraicK1.map (Unitization.fstHom R A : Unitization R A →+* R))).codRestrict _
-    fun x ↦ by simp
+    fun x ↦ by simp [← RingHom.comp_assoc]
 
 /-- The relative part of a class `x` of `A⁺` is `x · s(ε(x))⁻¹`. -/
 theorem coe_projection_apply (x : AlgebraicK1 (Unitization R A)) :
@@ -128,13 +127,14 @@ theorem projection_map_algebraMap (y : AlgebraicK1 R) :
   ext
   simp [coe_projection_apply]
 
-/-- Every class of `A⁺` is the product of its relative part and the class of a scalar matrix. -/
+/-- Every class of `A⁺` is the product of its relative part and the class of a scalar matrix,
+the image of `x` under the map induced by `s ∘ ε`. -/
 @[simp]
 theorem coe_projection_mul_map_algebraMap (x : AlgebraicK1 (Unitization R A)) :
     (projection R A x : AlgebraicK1 (Unitization R A)) *
-        AlgebraicK1.map (algebraMap R (Unitization R A))
-          (AlgebraicK1.map (Unitization.fstHom R A : Unitization R A →+* R) x) = x := by
-  rw [coe_projection_apply, inv_mul_cancel_right]
+        AlgebraicK1.map ((algebraMap R (Unitization R A)).comp
+          (Unitization.fstHom R A : Unitization R A →+* R)) x = x := by
+  rw [← AlgebraicK1.map_map, coe_projection_apply, inv_mul_cancel_right]
 
 section Map
 
@@ -146,8 +146,8 @@ induced map of forced unitizations. -/
 def map (f : A →ₙₐ[R] B) : relativeAlgebraicK1 R A →* relativeAlgebraicK1 R B :=
   ((AlgebraicK1.map (Unitization.map f : Unitization R A →+* Unitization R B)).comp
     (relativeAlgebraicK1 R A).subtype).codRestrict _ fun x ↦ by
-      rw [mem_relativeAlgebraicK1_iff, MonoidHom.comp_apply, ← MonoidHom.comp_apply,
-        ← AlgebraicK1.map_comp, ← AlgHom.comp_toRingHom, Unitization.fstHom_comp_map]
+      rw [mem_relativeAlgebraicK1_iff, MonoidHom.comp_apply, AlgebraicK1.map_map,
+        ← AlgHom.comp_toRingHom, Unitization.fstHom_comp_map]
       exact mem_relativeAlgebraicK1_iff.1 x.2
 
 /-- The induced homomorphism of relative `K₁` is the induced homomorphism of `K₁(A⁺)`. -/
@@ -165,8 +165,7 @@ theorem map_projection (f : A →ₙₐ[R] B) (x : AlgebraicK1 (Unitization R A)
   ext
   simp only [coe_map_apply, coe_projection_apply, map_mul, map_inv]
   congr 2
-  simp only [← MonoidHom.comp_apply, ← AlgebraicK1.map_comp, ← AlgHom.comp_toRingHom,
-    Unitization.fstHom_comp_map]
+  simp only [AlgebraicK1.map_map, ← AlgHom.comp_toRingHom, Unitization.fstHom_comp_map]
   rw [← RingHom.comp_assoc, AlgHom.comp_algebraMap]
 
 /-- The identity homomorphism induces the identity of relative `K₁`. -/
