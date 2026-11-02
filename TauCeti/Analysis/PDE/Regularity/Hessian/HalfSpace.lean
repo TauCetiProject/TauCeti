@@ -36,14 +36,14 @@ a half-space. The zero boundary condition enters through the odd reflection of `
 
 ## The argument
 
-The odd reflection `ũ` of `u` across the boundary hyperplane lies in `W^{2,p}(ℝ × E)`, with weak
+The odd reflection `v` of `u` across the boundary hyperplane lies in `W^{2,p}(ℝ × E)`, with weak
 Hessian `D²u` on `H` and `-R ∘ D²u(ρ x) ∘ R` on the other side, where `ρ` is the reflection in the
 hyperplane and `R` its linear part
 (`TauCeti.Wkp.exists_value_ae_eq_sub_comp_normalReflection`). Since `R` is an involution, the
-trace of `R ∘ M ∘ R` is the trace of `M`, so `Δũ` is the odd reflection of `f`, whose `Lᵖ` norm is
+trace of `R ∘ M ∘ R` is the trace of `M`, so `Δv` is the odd reflection of `f`, whose `Lᵖ` norm is
 at most `2 ‖f‖_{Lᵖ(H)}` because `ρ` preserves volume. The whole-space estimate
-(`TauCeti.exists_norm_iteratedGradient_le_mul_norm_of_traceCLM_compLpL_eq`) bounds `D²ũ` by
-`Δũ`, and `D²ũ` restricts to `D²u` on `H`.
+(`TauCeti.exists_norm_iteratedGradient_le_mul_norm_of_traceCLM_compLpL_eq`) bounds `D²v` by
+`Δv`, and `D²v` restricts to `D²u` on `H`.
 
 ## References
 
