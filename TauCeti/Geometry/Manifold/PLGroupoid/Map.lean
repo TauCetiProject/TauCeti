@@ -29,6 +29,10 @@ identity and constant maps, PL maps compose (`TauCeti.IsPLMapAt.comp`), and betw
 spaces with their trivial charts the PL maps are exactly the maps piecewise linear on the whole
 space (`TauCeti.isPLMap_iff_isPLOn_univ`).
 
+The construction and the proof of `TauCeti.plWithinAtProp_localInvariantProp` follow Mathlib's
+`ContDiffWithinAtProp` and `contDiffWithinAt_localInvariantProp`
+(`Mathlib/Geometry/Manifold/ContMDiff/Defs.lean`), by Sébastien Gouëzel and Floris van Doorn.
+
 ## Main definitions
 
 * `TauCeti.PLWithinAtProp I I' f s x`: the map `f : H → H'` of model spaces is piecewise linear
