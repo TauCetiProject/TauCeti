@@ -77,6 +77,16 @@ theorem toCechCohomology_opens (V : PointOpenCover X) :
       TauCeti.CategoryTheory.cechCohomologyι PointOpenCover.toFormalCoproduct (fun _ _ h ↦ h) n V :=
   TauCeti.CategoryTheory.toCechCohomology_self A _ _ n V _
 
+/-- Compute the structure map of any small cover using any point-neighborhood cover
+refining it, independently of the refinement chosen in its definition. -/
+theorem toCechCohomology_eq {ι : Type u} (U : ι → Opens X) (hU : IsOpenCover U)
+    (V : PointOpenCover X) (φ : V.toFormalCoproduct ⟶ FormalCoproduct.mk ι U) :
+    toCechCohomology A n U hU =
+      TauCeti.CategoryTheory.cechComplexHomologyMap A n φ ≫
+        TauCeti.CategoryTheory.cechCohomologyι PointOpenCover.toFormalCoproduct
+          (fun _ _ h ↦ h) n V :=
+  TauCeti.CategoryTheory.toCechCohomology_eq A _ _ n _ V φ
+
 /-- **`toCechCohomology` is natural with respect to refinements.** If the open cover `V` refines
 the open cover `U` through `φ`, the map from the Čech cohomology of `U` to the Čech cohomology on
 `X` factors through the map induced by `φ`. -/
