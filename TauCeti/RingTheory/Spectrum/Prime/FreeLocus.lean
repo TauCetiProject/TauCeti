@@ -12,6 +12,7 @@ public import Mathlib.RingTheory.Flat.Localization
 public import TauCeti.LinearAlgebra.FreeModule.Filtration
 
 import Mathlib.RingTheory.Flat.Rank
+import Mathlib.RingTheory.Ideal.Pure
 import Mathlib.RingTheory.Localization.Away.Lemmas
 import TauCeti.RingTheory.Flat.Pi
 
@@ -41,6 +42,8 @@ At a maximal ideal `P`, the rank of a finite flat module is the dimension of its
 
 ## Main declarations
 
+* `IsIdempotentElem.one_sub_mem_iff_notMem`: a prime ideal contains exactly one of an idempotent
+  `e` and `1 - e`.
 * `Module.mem_freeLocus_of_mem_minimalPrimes`: over a reduced ring, every module is free at the
   minimal primes.
 * `Module.iInter_freeLocus_subquotient_subset_freeLocus`: a filtered module is free wherever all
@@ -69,6 +72,15 @@ At a maximal ideal `P`, the rank of a finite flat module is the dimension of its
 -/
 
 public section
+
+/-- A prime ideal contains exactly one of an idempotent `e` and `1 - e`. -/
+theorem IsIdempotentElem.one_sub_mem_iff_notMem {R : Type*} [CommRing R] {e : R}
+    (he : IsIdempotentElem e) {p : Ideal R} [p.IsPrime] : 1 - e ∈ p ↔ e ∉ p := by
+  refine ⟨fun h he' ↦ Ideal.IsPrime.ne_top' ((Ideal.eq_top_iff_one _).mpr
+    (by simpa using p.add_mem he' h)), fun h ↦ ?_⟩
+  refine (Ideal.IsPrime.mem_or_mem ‹_› ?_).resolve_left h
+  rw [mul_sub, mul_one, he.eq, sub_self]
+  exact p.zero_mem
 
 namespace Module
 
@@ -152,11 +164,8 @@ theorem exists_isIdempotentElem_basicOpen_eq_rankAtStalk_preimage {R : Type*} (M
     (s : Set ℕ) : ∃ e : R, IsIdempotentElem e ∧
       (PrimeSpectrum.basicOpen e : Set (PrimeSpectrum R)) = rankAtStalk (R := R) M ⁻¹' s := by
   have hloc := isLocallyConstant_rankAtStalk (R := R) (M := M)
-  let U : TopologicalSpace.Clopens (PrimeSpectrum R) :=
-    ⟨rankAtStalk (R := R) M ⁻¹' s, isOpen_compl_iff.mp (hloc sᶜ), hloc s⟩
-  let e := PrimeSpectrum.isIdempotentElemEquivClopens.symm U
-  exact ⟨e.1, e.2,
-    congrArg SetLike.coe (PrimeSpectrum.basicOpen_isIdempotentElemEquivClopens_symm U)⟩
+  exact (PrimeSpectrum.exists_idempotent_basicOpen_eq_of_isClopen
+    ⟨isOpen_compl_iff.mp (hloc sᶜ), hloc s⟩).imp fun e h ↦ ⟨h.1, h.2.symm⟩
 
 /-- The support of a finitely presented flat module is cut out by an idempotent: it is the locus
 where the locally constant rank function is positive, hence clopen. -/
@@ -168,13 +177,12 @@ theorem exists_isIdempotentElem_basicOpen_eq_support {R : Type*} (M : Type*) [Co
     {n | 0 < n}
   exact ⟨e, he, hU.trans (Set.ext fun p ↦ rankAtStalk_pos_iff_mem_support p)⟩
 
-/-- For an idempotent `e`, the quotient `R ⧸ (e)` is flat: it is the localization away from
-`1 - e`. -/
+/-- For an idempotent `e`, the quotient `R ⧸ (e)` is flat: the ideal `(e)` is a finitely
+generated idempotent ideal. -/
 theorem Flat.quotient_span_singleton_of_isIdempotentElem {R : Type*} [CommRing R] {e : R}
-    (he : IsIdempotentElem e) : Module.Flat R (R ⧸ Ideal.span {e}) := by
-  have := IsLocalization.Away.quotient_of_isIdempotentElem he.one_sub
-  rw [sub_sub_cancel] at this
-  exact IsLocalization.flat _ (Submonoid.powers (1 - e))
+    (he : IsIdempotentElem e) : Module.Flat R (R ⧸ Ideal.span {e}) :=
+  Ideal.Pure.of_isIdempotentElem (Submodule.fg_span_singleton _)
+    (by rw [IsIdempotentElem, Ideal.span_singleton_mul_span_singleton, he.eq])
 
 open scoped Classical in
 /-- For an idempotent `e`, the quotient `R ⧸ (1 - e)`, the localization away from `e`, has rank `1`
@@ -189,7 +197,7 @@ theorem rankAtStalk_quotient_span_one_sub {R : Type*} [CommRing R] {e : R}
     -- `R ⧸ (1 - e)` sees exactly the primes of `V(1 - e) = D(e)`.
     simpa [PrimeSpectrum.rankAtStalk_pos_iff_mem_range_comap,
       range_comap_of_surjective _ _ Ideal.Quotient.mk_surjective] using
-      (Set.ext_iff.mp (PrimeSpectrum.basicOpen_eq_zeroLocus_of_isIdempotentElem e he) p).symm
+      he.one_sub_mem_iff_notMem (p := p.asIdeal)
   split_ifs with hp
   · exact Nat.eq_zero_of_not_pos (h₀.not.mpr (not_not.mpr hp))
   · have := h₀.mpr hp
@@ -242,9 +250,7 @@ theorem exists_rankAtStalk_prod_quotient_eq_max {R : Type*} (M : Type*) [CommRin
   rw [sub_sub_cancel] at hU
   have hM : 0 < rankAtStalk (R := R) M p ↔ e ∉ p.asIdeal := by
     rw [rankAtStalk_pos_iff_mem_support, ← hsupp, SetLike.mem_coe, PrimeSpectrum.mem_basicOpen]
-  have h1e : 1 - e ∈ p.asIdeal ↔ e ∉ p.asIdeal := by
-    simpa using
-      (Set.ext_iff.mp (PrimeSpectrum.basicOpen_eq_zeroLocus_of_isIdempotentElem e he) p).symm
+  have h1e := he.one_sub_mem_iff_notMem (p := p.asIdeal)
   rw [rankAtStalk_prod, Pi.add_apply, hU]
   split_ifs with hp
   · have := hM.mpr (h1e.mp hp)
