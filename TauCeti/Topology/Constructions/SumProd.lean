@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.Constructions.SumProd
 public import Mathlib.Topology.ClusterPt
+public import Mathlib.Topology.Homeomorph.Lemmas
 
 /-!
 # Interiors and fibres in product spaces
@@ -22,6 +23,12 @@ public section
 open Filter Set Topology
 
 namespace TauCeti
+
+/-- The sum-to-product homeomorphism has the same underlying function as the corresponding
+coordinate equivalence. -/
+theorem coe_sumArrowHomeomorphProdArrow {X ι ι' : Type*} [TopologicalSpace X] :
+    ⇑(Homeomorph.sumArrowHomeomorphProdArrow (X := X) (ι := ι) (ι' := ι')) =
+      ⇑(Equiv.sumArrowEquivProdArrow ι ι' X) := (rfl)
 
 /-- A subset of a product has empty interior if every vertical fibre has empty interior. -/
 theorem interior_eq_empty_of_forall_interior_preimage_prodMk_eq_empty {X Y : Type*}

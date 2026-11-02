@@ -58,26 +58,22 @@ env:
   MATHLIB_CACHE_DEBUG_USE_LEGACY: ${{ vars.MATHLIB_CACHE_DEBUG_USE_LEGACY }}
 
 jobs:
-  # Runs once a night, so `github.token` has ample API budget and the App's secrets stay out of
-  # this workflow entirely.
-  pick-runner:
-    if: github.repository == 'TauCetiProject/TauCeti'
-    uses: ./.github/workflows/pick-runner.yml
-    permissions:
-      actions: read
-      contents: read
-
   # The hard signal runs independently of cache verification, without secrets.
   verify:
-    needs: pick-runner
-    if: ${{ !cancelled() && github.repository == 'TauCetiProject/TauCeti' }}
-    # Use only this attempt's capacity decision; a missing picker answer queues
-    # on GitHub and cannot bypass the shared Namespace build cap.
-    runs-on: ${{ fromJSON(needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && needs.pick-runner.outputs.runner || '"ubuntu-24.04"') }}
-    # The growing library has exceeded four hours on GitHub-hosted runners. Six hours is
-    # their platform maximum, not a scaling solution; the source build still needs measurement
-    # and eventual partitioning. The reference build gets its own job and timeout below.
-    timeout-minutes: 360
+    if: github.repository == 'TauCetiProject/TauCeti'
+    # A clean build alone now exceeds GitHub-hosted runners' six-hour platform limit.
+    # Like dependency warming and performance profiling, this singleton maintenance job
+    # uses the already provisioned sixteen-core Namespace build profile directly. Do not route it
+    # through the ordinary picker: its GitHub fallback cannot finish this workload.
+    # Workflow concurrency above bounds this exception to one source verification at a time;
+    # the reference job still selects ordinary shared build capacity below.
+    runs-on:
+      # Match the current build priority so old default-priority queues cannot starve it.
+      # A run-specific label prevents another queued job taking its ephemeral runner.
+      - nscloud-ubuntu-24.04-amd64-16x32-with-features;job.priority=1
+      - namespace-features:container.privileged=true;github.run-id=${{ github.run_id }}
+    # Namespace runners support longer jobs; allow headroom for source growth and audits.
+    timeout-minutes: 720
     outputs:
       sha: ${{ steps.rev.outputs.sha }}
       build: ${{ steps.fresh_build.outcome }}
@@ -158,7 +154,13 @@ jobs:
           LAKE_RESTORE_ARTIFACTS: "false"
           LAKE_NO_CACHE: "true"
           LAKE_CACHE_DIR: ${{ github.workspace }}/fresh/.lake/cache
-        run: ( cd fresh && lake build )
+        run: |
+          set -euo pipefail
+          cd fresh
+          echo "Clean build resources: $(nproc) CPUs"
+          free -h
+          df -h .
+          /usr/bin/time -v lake build
 
       # Snapshot before the audits add their own artifacts. Transfer only the digest manifest;
       # the cache-verification job must never import outputs from the clean build.

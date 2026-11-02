@@ -310,7 +310,8 @@ theorem convolutionUCB_mono {h : Lp ℝ 1 μ} (hh : 0 ≤ h) {φ ψ : Lp ℝ ∞
   simpa using convolutionUCB_nonneg hh (sub_nonneg.2 hφψ)
 
 /-- Convolution with the constant one is the constant `∫ h dμ`. -/
-@[simp]
+-- Evaluate convolution before simplifying its measure-Lp representatives.
+@[simp↓]
 theorem convolutionUCB_linftyOne (h : Lp ℝ 1 μ) :
     convolutionUCB h linftyOne = (∫ y, h y ∂μ) • 1 := by
   refine UCB.ext fun x => ?_
