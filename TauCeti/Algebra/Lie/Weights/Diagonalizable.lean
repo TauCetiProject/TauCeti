@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.Weights.RootSystem
+public import TauCeti.Algebra.Lie.Basic
 public import TauCeti.Algebra.Lie.Sl2.Spectrum
 public import TauCeti.Algebra.Lie.Weights.Semisimple
 public import TauCeti.LinearAlgebra.Eigenspace.Semisimple
@@ -182,11 +183,6 @@ theorem isSemisimple_toEnd_coroot (α : Weight K H L) :
   · rw [IsKilling.coroot_eq_zero_iff.2 (not_not.1 hα)]
     simp
 
-omit [CharZero K] [IsTriangularizable K H L] [FiniteDimensional K M] in
-private lemma commute_toEnd_cartan (y z : H) : Commute (toEnd K H M y) (toEnd K H M z) :=
-  LieModule.commute_toEnd_of_mem_center_left M
-    (by rw [(LieAlgebra.isLieAbelian_iff_center_eq_top K H).1 inferInstance]; trivial) z
-
 private lemma mem_span_coroot_cartan (x : H) :
     x ∈ Submodule.span K (Set.range (IsKilling.rootSystem H).coroot) := by
   rw [RootPairing.IsRootSystem.span_coroot_eq_top]
@@ -209,7 +205,7 @@ theorem isSemisimple_toEnd_cartan (x : H) : (toEnd K H M x).IsSemisimple := by
   | zero => simp
   | add y z _ _ hy hz =>
     rw [map_add]
-    exact Module.End.IsSemisimple.add_of_commute (commute_toEnd_cartan y z) hy hz
+    exact Module.End.IsSemisimple.add_of_commute (commute_toEnd_of_isLieAbelian y z) hy hz
   | smul c y _ hy =>
     rw [map_smul]
     exact hy.of_mem_adjoin_singleton
@@ -223,7 +219,7 @@ instance instIsTriangularizableCartan : IsTriangularizable K H M where
       exact iSup_eigenspace_toEnd_coroot_eq_top (H.isNonZero_coe_root α)
     have hss (α : H.root) := (isSemisimple_toEnd_coroot (M := M) α.1).isFinitelySemisimple
     have hcomm : Pairwise fun α β ↦ Commute (f α) (f β) := fun α β _ ↦
-      commute_toEnd_cartan _ _
+      commute_toEnd_of_isLieAbelian _ _
     -- First decompose into simultaneous eigenspaces of the coroots.
     have hsim :=
       End.iSup_iInf_maxGenEigenspace_eq_top_of_iSup_maxGenEigenspace_eq_top_of_commute
