@@ -81,8 +81,10 @@ four-manifold a one-form `a` with `(da)⁺ = 0` is closed.
 * `TauCeti.SmoothForm.integralTopForm_inner_self_eq_add`: `∫_M |β|² vol = ∫_M |β⁺|² vol +
   ∫_M |β⁻|² vol` for a compactly supported `β`; for an exact one this is `2 ∫_M |β^±|² vol`
   (`TauCeti.SmoothForm.integralTopForm_inner_self_eq_two_mul_selfDualPart`).
-* `TauCeti.SmoothForm.integralTopForm_inner_selfDualPart_eq_zero`: the self-dual part of an exact
-  form is `L²`-orthogonal to the compactly supported closed self-dual forms.
+* `TauCeti.SmoothForm.integralTopForm_inner_selfDualPart_eq_zero`,
+  `TauCeti.SmoothForm.integralTopForm_inner_antiSelfDualPart_eq_zero`: the self-dual, or
+  anti-self-dual, part of an exact form is `L²`-orthogonal to the compactly supported closed
+  self-dual, or anti-self-dual, forms.
 * `TauCeti.SmoothForm.eq_zero_of_selfDualPart_eq_zero`,
   `TauCeti.SmoothForm.eq_zero_of_antiSelfDualPart_eq_zero`: a compactly supported exact form with
   vanishing self-dual, or anti-self-dual, part is zero.
@@ -749,6 +751,37 @@ theorem integralTopForm_inner_selfDualPart_eq_zero (hk : Even k) {β : SmoothFor
   rw [h, ← coe_wedge]
   exact integralTopForm_eq_zero_of_mem_exactCompactlySupportedForms o
     (wedge_mem_exactCompactlySupportedForms_of_left_mem hβ hγ)
+
+/-- **The anti-self-dual part of an exact form is orthogonal to the closed anti-self-dual forms**:
+on an oriented boundaryless Riemannian manifold of dimension `k + k` with `k` even, for an exact
+`k`-form `β` and a compactly supported closed anti-self-dual `k`-form `γ`,
+`∫_M ⟨β⁻, γ⟩ vol = 0`. -/
+theorem integralTopForm_inner_antiSelfDualPart_eq_zero (hk : Even k) {β : SmoothForm I M ℝ k}
+    (hβ : β ∈ exactForms I M k) {γ : SmoothForm I M ℝ k}
+    (hγ : γ ∈ compactlySupportedClosedForms I M k) (hγ' : γ ∈ antiSelfDualForms o) :
+    integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k
+      ((antiSelfDualPart o β).1 x) (γ.1 x) • riemannianVolumeForm o x) = 0 := by
+  -- Pointwise `⟨β⁻, γ⟩ = ⟨β, γ⟩`, since `β⁺` is orthogonal to the anti-self-dual `γ`, and
+  -- `⟨β, γ⟩ vol = β ∧ ⋆γ = β ∧ -γ`.
+  have h : (fun x ↦ alternatingFormInner (TangentSpace I x) k
+      ((antiSelfDualPart o β).1 x) (γ.1 x) • riemannianVolumeForm o x) =
+      RoughForm.wedge β.1 (-γ).1 := by
+    funext x
+    ext v
+    have hself := RoughForm.alternatingFormInner_eq_zero_of_mem_selfDualForms o
+      ((RoughForm.isProj_selfDualPart o hk).map_mem β.1) (coe_mem_antiSelfDualForms_iff.2 hγ') x
+    have hinner : alternatingFormInner (TangentSpace I x) k ((antiSelfDualPart o β).1 x) (γ.1 x) =
+        alternatingFormInner (TangentSpace I x) k (β.1 x) (γ.1 x) := by
+      conv_rhs => rw [← selfDualPart_add_antiSelfDualPart o β]
+      rw [Submodule.coe_add, Pi.add_apply, map_add, LinearMap.add_apply, coe_selfDualPart, hself,
+        zero_add]
+    have hd := congrFun (inner_smul_riemannianVolumeForm_eq_wedge_hodgeStar o rfl β γ) x
+    rw [mem_antiSelfDualForms.1 hγ'] at hd
+    rw [hinner, hd, cast_apply, coe_wedge]
+    simp only [Function.comp_def, Fin.cast_eq_self]
+  rw [h, ← coe_wedge]
+  exact integralTopForm_eq_zero_of_mem_exactCompactlySupportedForms o
+    (wedge_mem_exactCompactlySupportedForms_of_left_mem hβ (neg_mem hγ))
 
 end Exact
 
