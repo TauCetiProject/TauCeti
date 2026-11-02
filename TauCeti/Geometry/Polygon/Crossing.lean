@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Polygon.DoublePoint
-public import Mathlib.Topology.Instances.Matrix
+public import TauCeti.Topology.Instances.Matrix
 public import Mathlib.Topology.Instances.Sign
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import Mathlib.Topology.Algebra.Group.Torsor
@@ -164,11 +164,7 @@ theorem continuousAt_crossingCoordinates
     (h : ((P x).crossingMatrix b (d x) i j).det ≠ 0) :
     ContinuousAt (fun y ↦ (P y).crossingCoordinates b (d y) i j) x := by
   have hm := continuousAt_crossingMatrix b hi hi' hj hj' hd
-  have hdetinv : ContinuousAt Ring.inverse ((P x).crossingMatrix b (d x) i j).det := by
-    rw [Ring.inverse_eq_inv']
-    exact continuousAt_inv₀ h
-  have hinv := (continuousAt_matrix_inv _ hdetinv).comp
-    (f := fun y ↦ (P y).crossingMatrix b (d y) i j) hm
+  have hinv := hm.matrix_inv h
   exact (continuous_fst.matrix_mulVec continuous_snd).continuousAt.comp
     (hinv.prodMk ((continuous_equivFun_basis b).continuousAt.comp (hj.vsub hi)))
 
