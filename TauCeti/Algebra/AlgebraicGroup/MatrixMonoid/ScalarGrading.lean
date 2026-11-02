@@ -8,8 +8,10 @@ module
 public import Mathlib.RingTheory.Bialgebra.MonoidAlgebra
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Weight
 public import TauCeti.Algebra.AlgebraicGroup.MatrixMonoid.Homogeneous
+public import TauCeti.Algebra.DirectSum.Internal
 public import TauCeti.Algebra.Coalgebra.Comodule.MonoidAlgebra.Basic
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Basic
+public import TauCeti.Algebra.TensorProduct.MapLinear
 
 /-!
 # Homogeneous degree and the scalar matrices
@@ -152,14 +154,6 @@ private theorem map_map_coordinateBialgebraAlgEquiv {A : Type*} [Semiring A] [Al
         (g.comp (coordinateBialgebraAlgEquiv R ι).toAlgHom) y := by
   rw [Algebra.TensorProduct.map_comp, AlgHom.comp_apply]
 
-/-- An algebra map on both tensor factors is the tensor product of the underlying linear maps. -/
-private theorem algebraTensorProductMap_apply {A B C D : Type*} [Semiring A] [Algebra R A]
-    [Semiring B] [Algebra R B] [Semiring C] [Algebra R C] [Semiring D] [Algebra R D]
-    (f : A →ₐ[R] C) (g : B →ₐ[R] D) (y : A ⊗[R] B) :
-    Algebra.TensorProduct.map f g y = TensorProduct.map f.toLinearMap g.toLinearMap y := by
-  rw [← AlgHom.toLinearMap_apply, Algebra.TensorProduct.toLinearMap_map,
-    TensorProduct.AlgebraTensorModule.map_eq]
-
 /-! ### The scalar matrices -/
 
 /-- The coordinate map of the scalar matrices `s ↦ s • 1`, the inclusion of the multiplicative
@@ -248,9 +242,10 @@ private theorem tensorComponent_comp_comul (d : ℕ) :
   obtain ⟨x, rfl⟩ := (coordinateBialgebraAlgEquiv R ι).surjective c
   rw [LinearMap.comp_apply, coordinateBialgebra_comul_apply, homogeneousProj_apply,
     ← tensorComponent_grading, ← map_scalarAlgHomAux_comp_comul, AlgHom.comp_apply]
-  simp only [algebraTensorProductMap_apply, LinearMap.tensorComponent_map, AlgHom.toLinearMap_id,
-    LinearMap.id_apply, LinearMap.comp_assoc, scalarBialgHom_comp_coordinateBialgebraAlgEquiv,
-    AlgHom.toLinearMap_apply, AlgEquiv.coe_toAlgHom]
+  simp only [Algebra.TensorProduct.map_apply_eq_map, LinearMap.tensorComponent_map,
+    AlgHom.toLinearMap_id, LinearMap.id_apply, LinearMap.comp_assoc,
+    scalarBialgHom_comp_coordinateBialgebraAlgEquiv, AlgHom.toLinearMap_apply,
+    AlgEquiv.coe_toAlgHom]
 
 /-- The coefficient of `tᵈ` in `(π ⊗ id) ∘ Δ`, where `π` is the scalar map, is the projection
 onto the homogeneous coordinates of degree `d`. -/
@@ -277,17 +272,11 @@ component of degree `d`. -/
 private theorem monoidCoeff_comp_scalarBialgHom (d : ℕ) :
     Comodule.monoidCoeff R (Multiplicative ℕ) (.ofAdd d) ∘ₗ (scalarBialgHom R ι).toLinearMap =
       Coalgebra.counit ∘ₗ homogeneousProj R ι d := by
-  rw [← lid_rTensor_comp_comul]
+  rw [← lid_rTensor_comp_comul, ← LinearMap.comp_assoc, ← LinearMap.comp_assoc,
+    LinearMap.comp_assoc _ _ Coalgebra.counit, ← LinearMap.comp_tensorComponent]
   refine LinearMap.ext fun c ↦ ?_
-  have key (φ : coordinateBialgebra R ι →ₗ[R] R)
-      (y : coordinateBialgebra R ι ⊗[R] coordinateBialgebra R ι) :
-      Coalgebra.counit (TensorProduct.lid R _ (φ.rTensor _ y)) =
-        φ (TensorProduct.rid R _ (Coalgebra.counit.lTensor _ y)) := by
-    induction y using TensorProduct.inductionOn with
-    | tmul a b => simp [mul_comm]
-    | add y z hy hz => simp only [map_add, hy, hz]
-  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, key, Coalgebra.lTensor_counit_comul,
-    TensorProduct.rid_tmul, one_smul]
+  simp only [LinearMap.comp_apply, LinearMap.tensorComponent_def, LinearEquiv.coe_coe,
+    Coalgebra.lTensor_counit_comul, TensorProduct.rid_tmul, one_smul]
 
 /-! ### Homogeneous components of comodules -/
 
@@ -427,34 +416,12 @@ theorem homogeneousSubcomodule_zero_eq_top [IsEmpty ι] : homogeneousSubcomodule
     LinearMap.lTensor_comp_apply, Comodule.lTensor_counit_coact]
   simp
 
-/-- An internal direct sum of submodules can be reindexed along an equivalence. -/
-private theorem isInternal_comp_equiv {κ κ' N : Type*} [DecidableEq κ] [DecidableEq κ']
-    [AddCommMonoid N] [Module R N] {A : κ' → Submodule R N} (hA : DirectSum.IsInternal A)
-    (e : κ ≃ κ') : DirectSum.IsInternal (A ∘ e) := by
-  -- `e.symm.symm` is `e` by definition, so this reindexes `⨁ k', A k'` as `⨁ k, A (e k)`.
-  let ψ : (⨁ k', A k') ≃+ ⨁ k, (A ∘ e) k := DirectSum.equivCongrLeft e.symm
-  have h : (DirectSum.coeAddMonoidHom (A ∘ e)).comp ψ.toAddMonoidHom =
-      DirectSum.coeAddMonoidHom A := by
-    refine DirectSum.addHom_ext fun k' x ↦ ?_
-    obtain ⟨k, rfl⟩ := e.surjective k'
-    change DirectSum.coeAddMonoidHom (A ∘ e)
-        (DirectSum.equivCongrLeft e.symm (DirectSum.of (fun k' ↦ A k') (e.symm.symm k) x)) =
-      DirectSum.coeAddMonoidHom A (DirectSum.of (fun k' ↦ A k') (e k) x)
-    rw [DirectSum.equivCongrLeft_of, DirectSum.coeAddMonoidHom_of]
-    exact DirectSum.coeAddMonoidHom_of (A ∘ e) k x
-  have h' : ⇑(DirectSum.coeAddMonoidHom (A ∘ e)) = DirectSum.coeAddMonoidHom A ∘ ψ.symm := by
-    rw [← h]
-    ext y
-    simp
-  rw [DirectSum.IsInternal, h']
-  exact Function.Bijective.comp hA ψ.symm.bijective
-
 /-- **A comodule over the matrix-coordinate bialgebra is the internal direct sum of its
 homogeneous components.** -/
 theorem isInternal_homogeneousSubcomodule :
     DirectSum.IsInternal fun d ↦ (homogeneousSubcomodule R ι M d).toSubmodule := by
   simp_rw [toSubmodule_homogeneousSubcomodule]
-  refine isInternal_comp_equiv R ?_ Multiplicative.ofAdd
+  refine DirectSum.IsInternal.comp_equiv ?_ Multiplicative.ofAdd
   -- The weight decomposition is stated with classical decidable equality on the characters.
   convert DiagonalizableGroup.isInternal_weightSpace M (scalarBialgHom R ι).toCoalgHom
 
