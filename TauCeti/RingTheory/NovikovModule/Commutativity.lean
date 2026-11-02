@@ -180,27 +180,9 @@ theorem kernelProduct_sub_negOnePow_smul_kernelProduct
       (fun p₀ => ((d₁ q.1 * d₂ q.2).negOnePow : R) * n' q.2 q.1 p₀) ∈ NovikovModule R F₀ := by
     simpa only [Pi.smul_def, smul_eq_mul] using
       Submodule.smul_mem _ ((d₁ q.1 * d₂ q.2).negOnePow : R) (hfin' q.2 q.1)
-  -- Potential bounds of the two composites with the homotopy kernel.
-  have hkδ (q : S₁ × S₂) (p₀ : S₀) (h : kernelComp k δ₀ q p₀ ≠ 0) :
-      F₀ p₀ ≤ F₁ q.1 + F₂ q.2 + (Ck + C₀) := by
-    linarith [potential_le_of_kernelComp_ne_zero (hk q) (hδ₀ · p₀) h]
-  have hDk (q : S₁ × S₂) (p₀ : S₀) (h : kernelComp D k q p₀ ≠ 0) :
-      F₀ p₀ ≤ F₁ q.1 + F₂ q.2 + (CD + Ck) := by
-    linarith [potential_le_of_kernelComp_ne_zero (hD q) (hk · p₀) h]
   rw [kernelProduct_eq_kernelMap_tensor hn hfin hN (fun q => hfin q.1 q.2),
-    negOnePow_smul_kernelProduct_eq_kernelMap_tensor hn' hfin' hS hSfin ha hb,
-    kernelMap_kernelMap hk hkfin hδ₀ hδ₀fin hkδ fun q => kernelComp_mem hδ₀ hδ₀fin (hkfin q),
-    kernelMap_kernelMap hD hDfin hk hkfin hDk fun q => kernelComp_mem hk hkfin (hDfin q)]
-  -- All four maps are kernel maps on the same completed module, so it suffices to compare
-  -- the kernels, which is the hypothesis.
-  ext p₀
-  simp only [Submodule.coe_sub, Submodule.coe_add, Pi.sub_apply, Pi.add_apply,
-    kernelMap_apply_val]
-  rw [← finsum_sub_distrib (finite_support_mul_kernelMap hN _ p₀)
-      (finite_support_mul_kernelMap hS _ p₀),
-    ← finsum_add_distrib (finite_support_mul_kernelMap hkδ _ p₀)
-      (finite_support_mul_kernelMap hDk _ p₀)]
-  exact finsum_congr fun q => by rw [← mul_sub, hcomm, mul_add]
+    negOnePow_smul_kernelProduct_eq_kernelMap_tensor hn' hfin' hS hSfin ha hb]
+  exact kernelMap_sub_kernelMap_eq_of_kernelComp hN _ hS hSfin hk hkfin hδ₀ hδ₀fin hD hDfin hcomm _
 
 /-- **Graded commutativity up to homotopy, with the Koszul signs.** Let `δ₁`, `δ₂` be kernels
 on the two input generators and let `D = δ₁ ⊗ 1 + (-1)^(d₁) ⊗ δ₂` be the tensor differential. If

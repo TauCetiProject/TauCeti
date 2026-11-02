@@ -53,6 +53,8 @@ the periods is assumed.
 * `TauCeti.NovikovModule.potential_le_of_kernelComp_ne_zero`,
   `TauCeti.NovikovModule.kernelComp_mem`: the composite kernel is supported.
 * `TauCeti.NovikovModule.kernelMap_kernelMap`: composition of maps is composition of kernels.
+* `TauCeti.NovikovModule.kernelMap_sub_kernelMap_eq_of_kernelComp`: a kernel homotopy gives a
+  chain homotopy of kernel maps.
 * `TauCeti.NovikovModule.kernelMap_add`, `TauCeti.NovikovModule.kernelMap_zero`: the map is
   additive in the kernel.
 * `TauCeti.NovikovModule.kernelMap_eq_id`: the identity kernel gives the identity map, as the
@@ -362,6 +364,46 @@ theorem kernelMap_comp {C'' : ℝ}
   LinearMap.ext (kernelMap_kernelMap hm hmfin hm' hmfin' hmm' hmmfin')
 
 end Comp
+
+section Homotopy
+
+variable {R S₁ S₀ : Type*} [Ring R] {F₁ : S₁ → ℝ} {F₀ : S₀ → ℝ}
+
+/-- **Chain homotopies from kernel homotopies.** Let `n`, `n'` and `k` be kernels from `S₁` to
+`S₀`, let `δ₀` be a kernel on `S₀` and `D` a kernel on `S₁`. If
+`n(p₁, p₀) - n'(p₁, p₀) = (k δ₀ + D k)(p₁, p₀)`, then the kernel map `K` of `k` is a homotopy
+between the maps of `n` and `n'`: `n a - n' a = δ₀ (K a) + K (D a)`. -/
+theorem kernelMap_sub_kernelMap_eq_of_kernelComp {C C' Ck C₀ CD : ℝ} {n n' k : S₁ → S₀ → R}
+    {δ₀ : S₀ → S₀ → R} {D : S₁ → S₁ → R}
+    (hn : ∀ p₁ p₀, n p₁ p₀ ≠ 0 → F₀ p₀ ≤ F₁ p₁ + C) (hnfin : ∀ p₁, n p₁ ∈ NovikovModule R F₀)
+    (hn' : ∀ p₁ p₀, n' p₁ p₀ ≠ 0 → F₀ p₀ ≤ F₁ p₁ + C')
+    (hnfin' : ∀ p₁, n' p₁ ∈ NovikovModule R F₀)
+    (hk : ∀ p₁ p₀, k p₁ p₀ ≠ 0 → F₀ p₀ ≤ F₁ p₁ + Ck) (hkfin : ∀ p₁, k p₁ ∈ NovikovModule R F₀)
+    (hδ₀ : ∀ p p₀, δ₀ p p₀ ≠ 0 → F₀ p₀ ≤ F₀ p + C₀) (hδ₀fin : ∀ p, δ₀ p ∈ NovikovModule R F₀)
+    (hD : ∀ p q, D p q ≠ 0 → F₁ q ≤ F₁ p + CD) (hDfin : ∀ p, D p ∈ NovikovModule R F₁)
+    (hhom : ∀ p₁ p₀, n p₁ p₀ - n' p₁ p₀ = kernelComp k δ₀ p₁ p₀ + kernelComp D k p₁ p₀)
+    (a : NovikovModule R F₁) :
+    kernelMap hn hnfin a - kernelMap hn' hnfin' a =
+      kernelMap hδ₀ hδ₀fin (kernelMap hk hkfin a) + kernelMap hk hkfin (kernelMap hD hDfin a) := by
+  -- Potential bounds of the two composites with the homotopy kernel.
+  have hkδ (p₁ : S₁) (p₀ : S₀) (h : kernelComp k δ₀ p₁ p₀ ≠ 0) : F₀ p₀ ≤ F₁ p₁ + (Ck + C₀) := by
+    linarith [potential_le_of_kernelComp_ne_zero (hk p₁) (hδ₀ · p₀) h]
+  have hDk (p₁ : S₁) (p₀ : S₀) (h : kernelComp D k p₁ p₀ ≠ 0) : F₀ p₀ ≤ F₁ p₁ + (CD + Ck) := by
+    linarith [potential_le_of_kernelComp_ne_zero (hD p₁) (hk · p₀) h]
+  rw [kernelMap_kernelMap hk hkfin hδ₀ hδ₀fin hkδ fun p₁ => kernelComp_mem hδ₀ hδ₀fin (hkfin p₁),
+    kernelMap_kernelMap hD hDfin hk hkfin hDk fun p₁ => kernelComp_mem hk hkfin (hDfin p₁)]
+  -- All four maps are kernel maps on the same completed module, so it suffices to compare
+  -- the kernels, which is the hypothesis.
+  ext p₀
+  simp only [Submodule.coe_sub, Submodule.coe_add, Pi.sub_apply, Pi.add_apply,
+    kernelMap_apply_val]
+  rw [← finsum_sub_distrib (finite_support_mul_kernelMap hn _ p₀)
+      (finite_support_mul_kernelMap hn' _ p₀),
+    ← finsum_add_distrib (finite_support_mul_kernelMap hkδ _ p₀)
+      (finite_support_mul_kernelMap hDk _ p₀)]
+  exact finsum_congr fun p₁ => by rw [← mul_sub, hhom, mul_add]
+
+end Homotopy
 
 section Torsor
 
