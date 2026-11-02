@@ -93,7 +93,7 @@ theorem cliffordFormsEquivEnd_tmul
   rw [← h, ← map_smul, TensorProduct.smul_tmul', smul_eq_mul, mul_one]
 
 /-- The increasing orthogonal wedge maps to the represented ordered Clifford monomial. -/
-theorem cliffordFormsEquivEnd_basis
+theorem cliffordFormsEquivEnd_one_tmul_exteriorAlgebra_eq_prod_map_sort
     (ρ : CliffordAlgebra (Q.baseChange A) ≃ₐ[A] Module.End A S)
     {I : Type*} [LinearOrder I] (b : Basis I R V)
     (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (s : Finset I) :
