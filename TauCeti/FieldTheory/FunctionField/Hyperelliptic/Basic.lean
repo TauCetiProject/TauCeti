@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Consequences.GenusZero
-public import TauCeti.FieldTheory.Separable.Quadratic
+public import TauCeti.FieldTheory.Separable.PrimeDegree
 
 /-!
 # Hyperelliptic function fields
