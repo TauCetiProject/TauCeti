@@ -11,12 +11,15 @@ public import Mathlib.MeasureTheory.Measure.Haar.Unique
 /-!
 # Completeness of the Fourier sine system on an interval
 
-On an interval `[a, b]` the functions `x ↦ sin (k π (x - a) / (b - a))`, `k = 1, 2, …`, are the
-eigenfunctions of `-d²/dx²` with zero boundary values at both ends. This file proves that they
-form a **complete** system in `L²(a, b)`: a square integrable function orthogonal to all of them
-vanishes almost everywhere (`TauCeti.ae_eq_zero_of_forall_integral_mul_sin_eq_zero`).
+On an interval `[a, b]` with `a < b`, the functions `x ↦ sin (k π (x - a) / (b - a))`,
+`k = 1, 2, …`, are the eigenfunctions of `-d²/dx²` with zero boundary values at both ends. This
+file proves that they form a **complete** system in `L²(a, b)`: a square integrable function
+orthogonal to all of them vanishes almost everywhere
+(`TauCeti.ae_eq_zero_of_forall_integral_mul_sin_eq_zero`). The theorem does not assume `a < b`:
+when `b ≤ a` the interval `(a, b]` is empty, so the restricted measure is zero and the conclusion
+holds trivially.
 
-The proof reduces to Mathlib's completeness of the exponentials on a circle. Extend `g` oddly
+For `a < b`, the proof reduces to Mathlib's completeness of the exponentials on a circle. Extend `g` oddly
 about `a` to `[2a - b, b]`. On this interval of length `2(b - a)`, the `n`-th Fourier coefficient
 of the odd extension is a nonzero multiple of `∫ g(x) sin (n π (x - a) / (b - a)) dx`, so all of
 them vanish, and Parseval's identity (`hasSum_sq_fourierCoeffOn`) forces the extension, hence `g`,
@@ -212,8 +215,10 @@ private theorem fourierCoeffOn_oddExtension_eq_zero (hab : a < b) {g : ℝ → �
 
 `∫ x in a..b, g x * sin (k π (x - a) / (b - a)) = 0` for every `k ≥ 1`
 
-vanishes almost everywhere on `(a, b]`. These sines are the Dirichlet eigenfunctions of
-`-d²/dx²` on `(a, b)`, so this is the completeness half of the Fourier sine expansion. -/
+vanishes almost everywhere on `(a, b]`. For `a < b` these sines are the Dirichlet eigenfunctions
+of `-d²/dx²` on `(a, b)`, so this is the completeness half of the Fourier sine expansion. For
+`b ≤ a` the interval `(a, b]` is empty, the restricted measure is zero, and the conclusion holds
+trivially. -/
 theorem ae_eq_zero_of_forall_integral_mul_sin_eq_zero {g : ℝ → ℝ}
     (hg : MemLp g 2 (volume.restrict (Ioc a b)))
     (h : ∀ k : ℕ, 0 < k → ∫ x in a..b, g x * Real.sin (k * π * (x - a) / (b - a)) = 0) :
