@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.Category
 public import TauCeti.AlgebraicGeometry.IdealSheaf.VanishingIdeal
-public import TauCeti.AlgebraicGeometry.Noetherian
 
 /-!
 # Étale paths and connected components
@@ -106,9 +105,10 @@ theorem nonempty_fiber_iso_iff_mem_connectedComponent_of_isOpen {x : Spec (.of �
       mem_connectedComponent hy).false e,
     nonempty_fiber_iso_of_mem_connectedComponent⟩
 
-/-- Over a locally connected base, for instance a locally Noetherian one, two geometric points are
-joined by an étale path if and only if they lie in the same connected component. In particular,
-geometric points of different connected components admit no étale path. -/
+/-- Over a locally connected base, for instance a locally Noetherian one
+(`TauCeti.AlgebraicGeometry.locallyConnectedSpace_of_isLocallyNoetherian`), two geometric points
+are joined by an étale path if and only if they lie in the same connected component. In
+particular, geometric points of different connected components admit no étale path. -/
 theorem nonempty_fiber_iso_iff_mem_connectedComponent [LocallyConnectedSpace S]
     {x : Spec (.of Ω) ⟶ S} {y : Spec (.of Ω') ⟶ S} :
     Nonempty (fiber x ≅ fiber y) ↔ y default ∈ connectedComponent (x default) :=
