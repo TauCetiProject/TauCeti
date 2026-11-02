@@ -54,6 +54,7 @@ theorem LinearMap.trace_eq_sum_apply_single_apply [DecidableEq n]
 namespace Matrix
 
 /-- The trace of the operator `Z ↦ A * Z * B` on square matrices is `trace A * trace B`. -/
+@[simp]
 theorem trace_mulLeft_comp_mulRight (A B : Matrix n n R) :
     LinearMap.trace R (Matrix n n R) (LinearMap.mulLeft R A ∘ₗ LinearMap.mulRight R B) =
       A.trace * B.trace := by
@@ -62,12 +63,14 @@ theorem trace_mulLeft_comp_mulRight (A B : Matrix n n R) :
   simp [Matrix.trace, mul_apply, single, Finset.sum_mul_sum, ite_and]
 
 /-- The trace of left multiplication by `A` on square matrices is `card n * trace A`. -/
+@[simp]
 theorem trace_mulLeft (A : Matrix n n R) :
     LinearMap.trace R (Matrix n n R) (LinearMap.mulLeft R A) = Fintype.card n * A.trace := by
   classical
   simpa [mul_comm] using trace_mulLeft_comp_mulRight A 1
 
 /-- The trace of right multiplication by `B` on square matrices is `card n * trace B`. -/
+@[simp]
 theorem trace_mulRight (B : Matrix n n R) :
     LinearMap.trace R (Matrix n n R) (LinearMap.mulRight R B) = Fintype.card n * B.trace := by
   classical
@@ -75,6 +78,7 @@ theorem trace_mulRight (B : Matrix n n R) :
 
 /-- The trace of the operator `Z ↦ A * Zᵀ * B` on square matrices is `trace (A * Bᵀ)`, the sum
 of the products `A i j * B i j` of corresponding entries. -/
+@[simp]
 theorem trace_mulLeft_comp_mulRight_comp_transpose (A B : Matrix n n R) :
     LinearMap.trace R (Matrix n n R) (LinearMap.mulLeft R A ∘ₗ LinearMap.mulRight R B ∘ₗ
       (transposeLinearEquiv n n R R).toLinearMap) = (A * Bᵀ).trace := by

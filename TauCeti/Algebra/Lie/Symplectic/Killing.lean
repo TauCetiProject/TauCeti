@@ -189,21 +189,6 @@ section CommRing
 
 variable {R : Type*} [CommRing R]
 
-/-- A matrix lies in `sp l R` exactly when it is fixed by `Z ↦ J Zᵀ J`. -/
-private theorem mem_sp_iff_J_mul_transpose_mul_J_eq (A : Matrix (l ⊕ l) (l ⊕ l) R) :
-    A ∈ sp l R ↔ J l R * Aᵀ * J l R = A := by
-  rw [mem_sp_iff_transpose_eq_J_conj_neg, J_inv]
-  constructor
-  · intro h
-    rw [h]
-    calc J l R * (J l R * -A * -J l R) * J l R = (J l R * J l R) * A * (J l R * J l R) := by
-          noncomm_ring
-      _ = A := by simp [J_squared]
-  · intro h
-    calc Aᵀ = -(J l R * J l R) * Aᵀ * -(J l R * J l R) := by simp [J_squared]
-      _ = J l R * -(J l R * Aᵀ * J l R) * -J l R := by noncomm_ring
-      _ = J l R * -A * -J l R := by rw [h]
-
 /-- The linear involution `Z ↦ J Zᵀ J` of the matrices, whose fixed points form `sp l R`. -/
 private noncomputable def jConj : Matrix (l ⊕ l) (l ⊕ l) R →ₗ[R] Matrix (l ⊕ l) (l ⊕ l) R :=
   LinearMap.mulLeft R (J l R) ∘ₗ LinearMap.mulRight R (J l R) ∘ₗ
@@ -213,10 +198,9 @@ private theorem jConj_apply (Z : Matrix (l ⊕ l) (l ⊕ l) R) : jConj Z = J l R
   simp [jConj, mul_assoc]
 
 private theorem jConj_jConj (Z : Matrix (l ⊕ l) (l ⊕ l) R) : jConj (jConj Z) = Z := by
-  simp only [jConj_apply, transpose_mul, J_transpose, transpose_transpose]
-  calc J l R * (-J l R * (Z * -J l R)) * J l R = (J l R * J l R) * Z * (J l R * J l R) := by
-        noncomm_ring
-    _ = Z := by simp [J_squared]
+  simp only [jConj_apply, transpose_mul, J_transpose, transpose_transpose, neg_mul, mul_neg,
+    neg_neg, ← mul_assoc]
+  simpa only [mul_assoc] using J_mul_mul_J_mul_J Z
 
 /-- The map `Z ↦ Z + J Zᵀ J` onto `sp l R`, which is multiplication by two on `sp l R`. -/
 private noncomputable def symmetrize : Matrix (l ⊕ l) (l ⊕ l) R →ₗ[R] sp l R where
@@ -224,6 +208,10 @@ private noncomputable def symmetrize : Matrix (l ⊕ l) (l ⊕ l) R →ₗ[R] sp
     rw [mem_sp_iff_J_mul_transpose_mul_J_eq, ← jConj_apply, map_add, jConj_jConj, add_comm]⟩
   map_add' Z W := by ext1; simp only [map_add, AddMemClass.coe_add]; abel
   map_smul' c Z := by ext1; simp
+
+private theorem coe_symmetrize_apply (Z : Matrix (l ⊕ l) (l ⊕ l) R) :
+    (symmetrize Z : Matrix (l ⊕ l) (l ⊕ l) R) = Z + jConj Z :=
+  rfl
 
 /-- The trace of `Z ↦ J (A Z B)ᵀ J` on the matrices. -/
 private theorem trace_jConj_comp (A B : Matrix (l ⊕ l) (l ⊕ l) R) :
@@ -281,11 +269,11 @@ private theorem two_mul_killingForm_apply (X Y : sp l K) :
       rw [jConj_apply, ← mem_sp_iff_J_mul_transpose_mul_J_eq]
       exact (sp l K).lie_mem X.2 ((sp l K).lie_mem Y.2 W.2)
     apply Subtype.ext
-    simp only [LinearMap.comp_apply, symmetrize, LinearMap.coe_mk, AddHom.coe_mk,
-      LinearMap.smul_apply, LieHom.coe_toLinearMap, LieSubalgebra.coe_incl, hW]
+    simp only [LinearMap.comp_apply, coe_symmetrize_apply, LinearMap.smul_apply,
+      LieHom.coe_toLinearMap, LieSubalgebra.coe_incl, hW]
     simp [hL, two_smul]
   have h2 : (sp l K).incl.toLinearMap ∘ₗ symmetrize = LinearMap.id + jConj := by
-    ext1 Z; simp [symmetrize]
+    ext1 Z; simp [coe_symmetrize_apply]
   -- Cycling the trace moves the computation to the matrices.
   have htrace : LinearMap.trace K _ (symmetrize ∘ₗ L ∘ₗ (sp l K).incl.toLinearMap) =
       LinearMap.trace K _ L + LinearMap.trace K _ (jConj ∘ₗ L) := by
