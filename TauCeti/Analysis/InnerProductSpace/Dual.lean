@@ -23,6 +23,8 @@ inverse undoes `innerSL` on either side.
 * `InnerProductSpace.apply_toDual_symm_self`: `q(q♯) = ‖q‖²`.
 * `InnerProductSpace.toDualSymmL`: over `ℝ`, the inverse Riesz map `q ↦ q♯` as a continuous
   linear map.
+* `InnerProductSpace.isInvertible_of_apply_apply_eq_mul_inner`: over `ℝ`, a bilinear form that is
+  a nonzero multiple of the inner product is invertible as a map to the dual.
 -/
 
 public section
@@ -65,6 +67,15 @@ noncomputable def toDualSymmL : StrongDual ℝ F →L[ℝ] F :=
 @[simp]
 theorem toDualSymmL_apply (q : StrongDual ℝ F) : toDualSymmL q = (toDual ℝ F).symm q :=
   (rfl)
+
+/-- On a real Hilbert space, a bounded bilinear form `B(b, a) = c ⟪b, a⟫` with `c ≠ 0`, viewed as
+a map to the dual, is invertible: it is `c` times the Riesz isomorphism. -/
+theorem isInvertible_of_apply_apply_eq_mul_inner {c : ℝ} (hc : c ≠ 0)
+    {B : F →L[ℝ] StrongDual ℝ F} (hB : ∀ b a, B b a = c * inner ℝ b a) : B.IsInvertible := by
+  let e : F ≃L[ℝ] StrongDual ℝ F := (toDual ℝ F).toContinuousLinearEquiv
+  refine ⟨(Units.mk0 c hc) • e,
+    ContinuousLinearMap.ext fun b ↦ ContinuousLinearMap.ext fun a ↦ ?_⟩
+  simpa [e] using (hB b a).symm
 
 end Real
 

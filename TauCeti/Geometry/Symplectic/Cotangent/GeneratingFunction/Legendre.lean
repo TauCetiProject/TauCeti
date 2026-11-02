@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Cotangent.GeneratingFunction.Basic
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
+import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 
 /-!
 # The second-kind partial Legendre transform
@@ -152,14 +153,6 @@ theorem cotangentSecondKindRelated_iff_fderiv {F : V × StrongDual ℝ W → ℝ
     have hu : u = (u.1, 0) + (0, u.2) := by simp
     rw [hu, map_add, hq, hP]
     simp
-
-/-- The derivative of the pairing `(q, P) ↦ P(q)` at `(q, P)` is `(δq, δP) ↦ P(δq) + δP(q)`. -/
-theorem hasFDerivAt_pairing (z : V × StrongDual ℝ V) :
-    HasFDerivAt (fun z : V × StrongDual ℝ V ↦ z.2 z.1)
-      (z.2.comp (fst ℝ V (StrongDual ℝ V)) +
-        (ContinuousLinearMap.apply ℝ ℝ z.1).comp (snd ℝ V (StrongDual ℝ V))) z :=
-  (hasFDerivAt_snd.clm_apply hasFDerivAt_fst).congr_fderiv
-    (ContinuousLinearMap.ext fun u ↦ by simp)
 
 /-- **The pairing generates the identity.** The function `F(q, P) = P(q)` relates `(q, p)` to
 `(Q, P)` exactly when `(Q, P) = (q, p)`. -/

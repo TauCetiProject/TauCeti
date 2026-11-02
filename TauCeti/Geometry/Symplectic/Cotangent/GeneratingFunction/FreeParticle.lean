@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Cotangent.GeneratingFunction.Legendre
 public import TauCeti.Geometry.Symplectic.Hamiltonian.FreeParticle
+import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 
 /-!
 # Generating functions of free motion
@@ -146,15 +147,6 @@ theorem cotangentGeneratingTarget_freeParticleGeneratingFunction_apply (m t : �
     ring
 
 variable {m t : ℝ}
-
-/-- A bilinear form `B(b, a) = c ⟪b, a⟫` with `c ≠ 0` is invertible: it is `c` times the Riesz
-isomorphism. -/
-private theorem isInvertible_of_apply_apply_eq_mul_inner {c : ℝ} (hc : c ≠ 0)
-    {B : E →L[ℝ] StrongDual ℝ E} (hB : ∀ b a, B b a = c * ⟪b, a⟫) : B.IsInvertible := by
-  let e : E ≃L[ℝ] StrongDual ℝ E := (toDual ℝ E).toContinuousLinearEquiv
-  refine ⟨(Units.mk0 c hc) • e,
-    ContinuousLinearMap.ext fun b ↦ ContinuousLinearMap.ext fun a ↦ ?_⟩
-  simpa [e] using (hB b a).symm
 
 /-- For `m ≠ 0` and `t ≠ 0` the mixed Hessian of the free-particle generating function is
 invertible: it is `m / t` times the Riesz isomorphism. -/
