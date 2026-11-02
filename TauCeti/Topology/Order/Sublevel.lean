@@ -85,6 +85,13 @@ theorem coe_sublevelInclusion_apply {X β : Type*} [TopologicalSpace X] [Preorde
     {a b : β} (hab : a ≤ b) (x : {x | f x ≤ a}) : (sublevelInclusion f a b hab x : X) = x :=
   (rfl)
 
+/-- The inclusion `{f ≤ a} → {f ≤ b}` of sublevels is the inclusion of sets. -/
+theorem sublevelInclusion_eq_inclusion {X β : Type*} [TopologicalSpace X] [Preorder β]
+    (f : X → β) {a b : β} (hab : a ≤ b) :
+    sublevelInclusion f a b hab =
+      ContinuousMap.inclusion (ofPred_subset_ofPred.2 fun _ hx ↦ hx.trans hab) :=
+  (rfl)
+
 /-- For continuous `f`, the inclusion `{f ≤ a} → {f ≤ b}` of sublevels is a closed embedding. -/
 theorem isClosedEmbedding_sublevelInclusion {X β : Type*} [TopologicalSpace X] [Preorder β]
     [TopologicalSpace β] [ClosedIicTopology β] {f : X → β} (hf : Continuous f) {a b : β}

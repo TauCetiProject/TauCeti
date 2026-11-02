@@ -84,16 +84,7 @@ theorem exists_sublevelDeformation_of_isOpenEmbedding (hj : IsOpenEmbedding j) (
   obtain ⟨r, -, ⟨G⟩⟩ :=
     exists_sublevelDeformation hFj hab (isCompact_preimage_Icc hj hA hcompact) hreg
   -- Both sublevel inclusions are inclusions of sets.
-  have hM : sublevelInclusion (F ∘ j) a b hab =
-      ContinuousMap.inclusion (ofPred_subset_ofPred.2 fun _ hx ↦ hx.trans hab) := by
-    ext
-    simp
-  have hX : sublevelInclusion F a b hab =
-      ContinuousMap.inclusion (ofPred_subset_ofPred.2 fun _ hx ↦ hx.trans hab) := by
-    ext
-    simp
-  rw [hM] at G
-  rw [hX]
+  rw [sublevelInclusion_eq_inclusion] at G ⊢
   exact hj.exists_deformation_of_preimage _ _ rfl rfl (isOpen_lt hF continuous_const)
     (fun x hx ↦ hA x hx.2) (inter_subset_right.trans (ofPred_subset_ofPred.2 fun _ hx ↦ hx.le)) r G
 
