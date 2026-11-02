@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Chow.Basic
 import TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion.Basic
-import TauCeti.Topology.LocallyFinite
+import TauCeti.Topology.LocallyFinite.Basic
 
 /-!
 # Pushforward of Chow groups along closed immersions
