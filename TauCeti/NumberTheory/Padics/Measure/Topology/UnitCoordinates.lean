@@ -5,18 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.Padics.Measure.CompletedGroupAlgebra
-public import TauCeti.NumberTheory.Padics.Measure.UnitCoordinates
+public import TauCeti.NumberTheory.Padics.Measure.TowerCoordinates
 public import TauCeti.NumberTheory.Padics.Measure.JointFiniteProjection
 
 /-!
 # The weak topology in finite unit coordinates
 
 Integral measures on the p-adic units embed as a closed subspace of the product of their
-finite unit coordinates. Their image is exactly the compatible families, and reconstruction
-from such families is continuous. Reducing each coordinate modulo every power of the prime
-gives another closed embedding, into a product of finite discrete rings. Consequently weak
-convergence is equivalent to eventual equality of each joint finite projection.
+finite unit coordinates. The existing `AbstractMeasure.towerCoordinatesEquiv` identifies
+measures with compatible families, and its inverse is continuous. Reducing each coordinate
+modulo every power of the prime gives another closed embedding, into a product of finite
+discrete rings. Consequently weak convergence is equivalent to eventual equality of each
+joint finite projection.
 
 Compactness is supplied by the existing comparison with the completed group algebra,
 `AbstractMeasure.compactSpace_integralMeasures_weak`. No topology instance is installed on
@@ -33,90 +33,54 @@ public noncomputable section
 open ContinuousMap Topology Filter
 open scoped AbstractMeasure
 
-namespace TauCeti
-
-variable {p : ℕ} [Fact p.Prime]
-
-/-- Integral unit-coordinate families compatible under pushforward between finite unit groups. -/
-def compatibleUnitCoordinates (p : ℕ) [Fact p.Prime] :
-    Set (∀ n : ℕ, (ZMod (p ^ n))ˣ → ℤ_[p]) :=
-  {c | ∀ (m n : ℕ) (h : m ≤ n),
-    (Finsupp.equivFunOnFinite.symm (c n)).mapDomain
-      (ZMod.unitsMap (pow_dvd_pow p h)) = Finsupp.equivFunOnFinite.symm (c m)}
-
-/-- Membership in the compatible families is compatibility at every pair of depths. -/
-@[simp]
-theorem mem_compatibleUnitCoordinates_iff (c : ∀ n : ℕ, (ZMod (p ^ n))ˣ → ℤ_[p]) :
-    c ∈ compatibleUnitCoordinates p ↔ ∀ (m n : ℕ) (h : m ≤ n),
-      (Finsupp.equivFunOnFinite.symm (c n)).mapDomain
-        (ZMod.unitsMap (pow_dvd_pow p h)) = Finsupp.equivFunOnFinite.symm (c m) := (Iff.rfl)
-
-end TauCeti
-
 namespace AbstractMeasure
 
+open TauCeti
+
 variable {p : ℕ} [Fact p.Prime]
 
-/-- The finite unit coordinates of a measure, with coefficient functions rather than finitely
-supported functions so that the target carries its usual product topology. -/
-def unitCoordinates {R : Type*} [CommRing R] [TopologicalSpace R] [IsTopologicalRing R] :
-    D(ℤ_[p]ˣ, R) →ₗ[R] ∀ n : ℕ, (ZMod (p ^ n))ˣ → R :=
-  LinearMap.pi fun n ↦ (Finsupp.linearEquivFunOnFinite R R _).toLinearMap.comp
-    (finiteProjection (↑(PadicInt.unitsToZModPow (p := p) n)))
-
-@[simp]
-theorem unitCoordinates_apply {R : Type*} [CommRing R] [TopologicalSpace R]
-    [IsTopologicalRing R] (μ : D(ℤ_[p]ˣ, R)) (n : ℕ) (a : (ZMod (p ^ n))ˣ) :
-    unitCoordinates μ n a = finiteProjection (↑(PadicInt.unitsToZModPow (p := p) n)) μ a := (rfl)
-
-/-- Finite unit coordinates determine a measure. -/
-theorem unitCoordinates_injective {R : Type*} [NormedCommRing R] :
-    Function.Injective (unitCoordinates (p := p) (R := R)) := by
-  intro μ ν h
-  apply finiteProjection_unitsToZModPow_ext μ ν
-  intro n
-  ext a
-  exact congrArg (fun c ↦ c n a) h
-
-/-- Taking finite unit coordinates is weakly continuous. -/
+/-- Taking tower coordinates of unit measures, viewed as coefficient functions with their
+product topology, is weakly continuous. -/
 theorem continuous_unitCoordinates_weak {R : Type*} [NormedCommRing R] :
     @Continuous _ _ (WeakTopology (X := ℤ_[p]ˣ) (R := R) (E := R)) inferInstance
-      (unitCoordinates (p := p) (R := R)) := by
+      (fun μ : D(ℤ_[p]ˣ, R) ↦ fun n a ↦
+        (towerCoordinates (FiniteQuotientTower.unitTower p) μ).val n a) := by
   let : TopologicalSpace D(ℤ_[p]ˣ, R) := WeakTopology
   refine continuous_pi fun n ↦ ?_
-  exact (continuous_finiteProjection (R := R)
-    (↑(PadicInt.unitsToZModPow (p := p) n))).congr fun μ ↦ by
-      funext a
-      exact (unitCoordinates_apply μ n a).symm
+  simpa only [towerCoordinates_apply, FiniteQuotientTower.unitTower_q] using
+    continuous_finiteProjection (R := R)
+      (PadicInt.unitsToZModPow (p := p) n : C(ℤ_[p]ˣ, (ZMod (p ^ n))ˣ))
 
 /-- Integral unit coordinates give a closed embedding for the weak topology. In particular,
 they induce exactly that topology, not the continuous-dual operator-norm topology. -/
 theorem isClosedEmbedding_unitCoordinates_weak :
     @IsClosedEmbedding _ _ (WeakTopology (X := ℤ_[p]ˣ) (R := ℤ_[p]) (E := ℤ_[p]))
-      inferInstance (unitCoordinates (p := p) (R := ℤ_[p])) := by
+      inferInstance (fun μ : D(ℤ_[p]ˣ, ℤ_[p]) ↦ fun n a ↦
+        (towerCoordinates (FiniteQuotientTower.unitTower p) μ).val n a) := by
   let : TopologicalSpace D(ℤ_[p]ˣ, ℤ_[p]) := WeakTopology
   let : CompactSpace D(ℤ_[p]ˣ, ℤ_[p]) := compactSpace_integralMeasures_weak
-  exact continuous_unitCoordinates_weak.isClosedEmbedding unitCoordinates_injective
+  refine continuous_unitCoordinates_weak.isClosedEmbedding fun μ ν h ↦ ?_
+  apply towerCoordinates_injective (FiniteQuotientTower.unitTower p)
+  exact Subtype.ext (funext fun n ↦ Finsupp.ext fun a ↦ congrArg (fun c ↦ c n a) h)
 
-/-- The image of integral unit coordinates consists precisely of the families compatible
-under the pushforwards between finite unit groups. The finite-support conversion does not
-impose an extra condition, since each unit quotient is finite. -/
-theorem range_unitCoordinates :
-    Set.range (unitCoordinates (p := p) (R := ℤ_[p])) =
-      TauCeti.compatibleUnitCoordinates p := by
-  ext c
-  rw [TauCeti.mem_compatibleUnitCoordinates_iff]
-  constructor
-  · rintro ⟨μ, rfl⟩ m n h
-    have hc (k : ℕ) : Finsupp.equivFunOnFinite.symm (unitCoordinates μ k) =
-        finiteProjection (↑(PadicInt.unitsToZModPow (p := p) k)) μ := by
-      ext a
-      simp
-    simpa only [hc] using mapDomain_finiteProjection_unitsToZModPow μ m n h
-  · intro hc
-    refine ⟨TauCeti.ofUnitCoordinates (fun n ↦ Finsupp.equivFunOnFinite.symm (c n)) hc, ?_⟩
-    funext n a
-    simp [TauCeti.finiteProjection_ofUnitCoordinates]
+/-- The inverse of the integral unit-tower coordinate equivalence is continuous from the
+product topology on compatible coefficients to the weak topology on measures. -/
+theorem continuous_unitTowerCoordinatesEquiv_symm_weak :
+    @Continuous _ _
+      (TopologicalSpace.induced
+        (fun c : (FiniteQuotientTower.unitTower p).compatibleFamilies ℤ_[p] ↦
+          fun n a ↦ c.val n a) inferInstance)
+      (WeakTopology (X := ℤ_[p]ˣ) (R := ℤ_[p]) (E := ℤ_[p]))
+      (towerCoordinatesEquiv (FiniteQuotientTower.unitTower p)).symm := by
+  let : TopologicalSpace D(ℤ_[p]ˣ, ℤ_[p]) := WeakTopology
+  let : TopologicalSpace ((FiniteQuotientTower.unitTower p).compatibleFamilies ℤ_[p]) :=
+    TopologicalSpace.induced (fun c ↦ fun n a ↦ c.val n a) inferInstance
+  apply isClosedEmbedding_unitCoordinates_weak.isEmbedding.continuous_iff.mpr
+  simpa only [Function.comp_def, ← towerCoordinatesEquiv_apply,
+    LinearEquiv.apply_symm_apply] using
+    (continuous_induced_dom : Continuous
+      (fun c : (FiniteQuotientTower.unitTower p).compatibleFamilies ℤ_[p] ↦
+        fun n a ↦ c.val n a))
 
 /-- Joint coordinates record finite unit coefficients at independent coefficient precision
 `r` and group depth `n`. Each target ring has its discrete topology. -/
@@ -135,18 +99,23 @@ theorem jointUnitCoordinates_apply_eq_jointFiniteProjection (μ : D(ℤ_[p]ˣ, �
 @[simp]
 theorem jointUnitCoordinates_apply (μ : D(ℤ_[p]ˣ, ℤ_[p])) (r n : ℕ)
     (a : (ZMod (p ^ n))ˣ) :
-    jointUnitCoordinates μ r n a = PadicInt.toZModPow r (unitCoordinates μ n a) := by
+    jointUnitCoordinates μ r n a = PadicInt.toZModPow r
+      (finiteProjection (↑(PadicInt.unitsToZModPow (p := p) n)) μ a) := by
   simp [jointUnitCoordinates_apply_eq_jointFiniteProjection, finiteProjection_apply]
 
 /-- Joint finite unit coordinates separate integral measures. -/
 theorem jointUnitCoordinates_injective :
     Function.Injective (jointUnitCoordinates (p := p)) := by
   intro μ ν h
-  apply unitCoordinates_injective
-  funext n a
+  apply towerCoordinates_injective (FiniteQuotientTower.unitTower p)
+  apply Subtype.ext
+  funext n
+  apply Finsupp.ext
+  intro a
   apply PadicInt.ext_of_toZModPow.mp
   intro r
-  simpa only [jointUnitCoordinates_apply] using congrArg (fun c ↦ c r n a) h
+  simpa only [jointUnitCoordinates_apply, towerCoordinates_apply,
+    FiniteQuotientTower.unitTower_q] using congrArg (fun c ↦ c r n a) h
 
 /-- Joint finite unit coordinates vary continuously in the weak topology. -/
 theorem continuous_jointUnitCoordinates_weak :
@@ -155,8 +124,9 @@ theorem continuous_jointUnitCoordinates_weak :
   let : TopologicalSpace D(ℤ_[p]ˣ, ℤ_[p]) := WeakTopology
   refine continuous_pi fun r ↦ continuous_pi fun n ↦ continuous_pi fun a ↦ ?_
   exact ((PadicInt.continuous_toZModPow r).comp
-    ((continuous_apply a).comp ((continuous_apply n).comp
-      continuous_unitCoordinates_weak))).congr fun μ ↦ (jointUnitCoordinates_apply μ r n a).symm
+    ((continuous_apply a).comp (continuous_finiteProjection
+      (PadicInt.unitsToZModPow (p := p) n : C(ℤ_[p]ˣ, (ZMod (p ^ n))ˣ))))).congr
+        fun μ ↦ (jointUnitCoordinates_apply μ r n a).symm
 
 /-- Joint finite unit coordinates give a closed embedding into a product of finite discrete
 rings. Both coefficient precision and unit-group depth are allowed to vary independently. -/
@@ -194,23 +164,3 @@ theorem tendsto_weak_iff_jointFiniteProjection {ι : Type*} {l : Filter ι}
       congrArg (fun c ↦ c a) hi
 
 end AbstractMeasure
-
-namespace TauCeti
-
-variable {p : ℕ} [Fact p.Prime]
-
-/-- Reconstruction of a measure from compatible integral unit coordinates is continuous for
-the product topology on coordinates and the weak topology on measures. -/
-theorem continuous_ofUnitCoordinates_weak :
-    @Continuous _ _ inferInstance
-      (AbstractMeasure.WeakTopology (X := ℤ_[p]ˣ) (R := ℤ_[p]) (E := ℤ_[p]))
-      (fun c : compatibleUnitCoordinates p ↦
-        ofUnitCoordinates (fun n ↦ Finsupp.equivFunOnFinite.symm (c.val n))
-          ((mem_compatibleUnitCoordinates_iff c.val).mp c.property)) := by
-  let : TopologicalSpace D(ℤ_[p]ˣ, ℤ_[p]) := AbstractMeasure.WeakTopology
-  apply AbstractMeasure.isClosedEmbedding_unitCoordinates_weak.isEmbedding.continuous_iff.mpr
-  convert continuous_subtype_val using 1
-  funext c n a
-  simp [finiteProjection_ofUnitCoordinates]
-
-end TauCeti
