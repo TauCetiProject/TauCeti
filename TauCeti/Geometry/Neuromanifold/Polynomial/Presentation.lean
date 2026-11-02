@@ -17,10 +17,11 @@ with an evaluation `E : V → X → Y` satisfying `E (c w) = f w`; the compariso
 them to jointly polynomial models.
 
 For a jointly polynomial tuple `P`, the coefficient map `polynomialCoefficientMap P` and the
-evaluation `MvPolynomial.boundedEvaluation` form a presentation of `polynomialRealization P`,
-so the realized functions are the evaluations of the coefficient image. Over an infinite integral
-domain this evaluation is injective, so two parameters realize the same function exactly when
-they have the same input coefficients, and realization fibres are coefficient fibres.
+evaluation `MvPolynomial.tupleEvaluation` of bounded-degree polynomial tuples form a presentation
+of `polynomialRealization P`, so the realized functions are the evaluations of the coefficient
+image. Over an infinite integral domain this evaluation is injective, so two parameters realize
+the same function exactly when they have the same input coefficients, and realization fibres are
+coefficient fibres.
 
 Over a finite field evaluation can fail to be faithful, since distinct polynomials of large
 degree can define the same function. A presentation by sampled outputs is not automatically
@@ -45,8 +46,8 @@ image. -/
 theorem realizedFunctions_polynomialRealization {K : Type*} [CommSemiring K]
     (P : J → MvPolynomial (W ⊕ X) K) :
     realizedFunctions (polynomialRealization P) =
-      boundedEvaluation X K J _ '' Set.range (polynomialCoefficientMap P) :=
-  realizedFunctions_eq_image_range (congrFun (boundedEvaluation_comp_polynomialCoefficientMap P))
+      tupleEvaluation J (restrictTotalDegree X K _) '' Set.range (polynomialCoefficientMap P) :=
+  realizedFunctions_eq_image_range (congrFun (tupleEvaluation_comp_polynomialCoefficientMap P))
 
 section Faithful
 
@@ -57,17 +58,17 @@ function exactly when they have the same input coefficients. -/
 theorem polynomialCoefficientMap_eq_iff (P : J → MvPolynomial (W ⊕ X) K) {w v : W → K} :
     polynomialCoefficientMap P w = polynomialCoefficientMap P v ↔
       polynomialRealization P w = polynomialRealization P v :=
-  apply_eq_apply_iff_of_injective (boundedEvaluation_injective _)
-    (congrFun (boundedEvaluation_comp_polynomialCoefficientMap P))
+  apply_eq_apply_iff_of_injective (tupleEvaluation_injective _)
+    (congrFun (tupleEvaluation_comp_polynomialCoefficientMap P))
 
 /-- Over an infinite integral domain, the realization fibre of a jointly polynomial tuple over
 the evaluation of `q` is the coefficient fibre over `q`. -/
-theorem fiber_polynomialRealization_boundedEvaluation (P : J → MvPolynomial (W ⊕ X) K)
+theorem fiber_polynomialRealization_tupleEvaluation (P : J → MvPolynomial (W ⊕ X) K)
     (q : J → restrictTotalDegree X K (polynomialInputDegree P)) :
-    fiber (polynomialRealization P) (boundedEvaluation X K J _ q) =
+    fiber (polynomialRealization P) (tupleEvaluation J (restrictTotalDegree X K _) q) =
       polynomialCoefficientMap P ⁻¹' {q} :=
-  fiber_apply_eq_preimage (boundedEvaluation_injective _)
-    (congrFun (boundedEvaluation_comp_polynomialCoefficientMap P)) q
+  fiber_apply_eq_preimage (tupleEvaluation_injective _)
+    (congrFun (tupleEvaluation_comp_polynomialCoefficientMap P)) q
 
 end Faithful
 

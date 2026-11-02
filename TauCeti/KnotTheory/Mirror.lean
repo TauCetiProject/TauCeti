@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Diffeomorphism.Sphere
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Concordance
+public import TauCeti.Geometry.Manifold.SmoothEmbedding.SmoothAmbientIsotopy.Sphere
 public import TauCeti.KnotTheory.Cobordism
 public import TauCeti.KnotTheory.Slice.TopologicalGenus
 
@@ -37,8 +38,9 @@ the elementary properties of mirroring that this rests on:
   unchanged by mirroring both knots, since the reflection is an ambient diffeomorphism.
 
 Any two orientation-reversing linear isometries of `ℝⁿ⁺¹` differ by a rotation, which is isotopic to
-the identity, so mathematically the choice of hyperplane only matters up to ambient isotopy; that
-independence is not formalized here.
+the identity, so the choice of hyperplane only matters up to ambient isotopy: moving a knot by any
+linear isometry of determinant `-1` gives a knot smoothly ambient isotopic to its mirror image
+(`TauCeti.SmoothCircleEmbedding.smoothAmbientIsotopic_mirror_of_det_eq_neg_one`).
 
 ## Main definitions
 
@@ -51,6 +53,8 @@ independence is not formalized here.
   mirroring commutes with reversal and rotation.
 * `TauCeti.mirror_reflection_complexProdToEuclideanFour`: in the complex coordinates of
   `ℝ⁴ = ℂ²`, the reflection conjugates the second coordinate.
+* `TauCeti.SmoothCircleEmbedding.smoothAmbientIsotopic_mirror_of_det_eq_neg_one`: the mirror image
+  along any orientation-reversing linear isometry is smoothly ambient isotopic to the mirror image.
 * `TauCeti.SmoothCircleEmbedding.mirror_unknot`: the unknot is its own mirror image.
 * `TauCeti.isSmoothlySlice_mirror_iff`, `TauCeti.isTopologicallySlice_mirror_iff`,
   `TauCeti.sliceGenus_mirror`, `TauCeti.topologicalSliceGenus_mirror`: sliceness and the slice
@@ -142,6 +146,17 @@ theorem range_mirror :
       (ℝ ∙ EuclideanSpace.single (Fin.last n) (1 : ℝ))ᗮ.reflection.unitSphereDiffeomorph
         (n := n) (k := n) ∞ '' range K :=
   SmoothEmbedding.range_transDiffeomorph _ _
+
+/-- **The mirror image does not depend on the reflection.** Moving a knot by any linear isometry of
+`ℝⁿ⁺¹` of determinant `-1`, such as the reflection in any hyperplane, gives a knot smoothly ambient
+isotopic to its mirror image. -/
+theorem smoothAmbientIsotopic_mirror_of_det_eq_neg_one
+    {e : EuclideanSpace ℝ (Fin (n + 1)) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin (n + 1))}
+    (he : (LinearEquiv.det e.toLinearEquiv : ℝ) = -1) :
+    (K.transDiffeomorph (e.unitSphereDiffeomorph ∞)).SmoothAmbientIsotopic K.mirror := by
+  rw [mirror_def]
+  refine SmoothEmbedding.smoothAmbientIsotopic_transDiffeomorph_unitSphereDiffeomorph K ?_
+  rw [he, linearEquiv_det_reflection_orthogonal_singleton (by simp)]
 
 end SmoothCircleEmbedding
 

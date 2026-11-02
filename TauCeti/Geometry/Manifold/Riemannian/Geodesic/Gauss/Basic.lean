@@ -26,7 +26,7 @@ derivatives turn the derivative in `t` of `<∂_u F, ∂_t F>` into `<v,w>`.  In
 The statement is made on the full natural domain of the exponential map.  In particular, every
 normal domain inherits it without choosing a smaller ball.
 
-## Main results
+## Main result
 
 * `TauCeti.Manifold.inner_mfderiv_riemannianExp_radial`: the differential of the exponential map
   preserves inner products with the radial direction.
@@ -72,12 +72,13 @@ The Gauss lemma is proved by differentiating the radial variation
 
 `F (u, t) = exp_p (t • (v + u • w))`
 
-of the geodesic `t ↦ exp_p (t • v)`.  Its smoothness, the fact that nearby radial curves are still
-defined at each time of the central one, and the vanishing acceleration of its radial curves are
-proved in `TauCeti.Geometry.Manifold.Riemannian.Geodesic.Exponential`.  The facts below add what
-the variational argument also consumes: the transverse covariant derivative of the radial velocity
-field is determined by the constant speed of the radial geodesics.  As in that file, each
-statement takes the variation as a function `F` together with its defining equation. -/
+of the geodesic `t ↦ exp_p (t • v)`.  Each radial curve of the variation is a maximal geodesic
+and the variation is smooth wherever the exponential map is
+(`TauCeti.Manifold.radialVariation_eq_maximalGeodesic`,
+`TauCeti.Manifold.contMDiffAt_radialVariation`).  The facts below add what the variational
+argument consumes beyond these: the transverse covariant derivative of the radial velocity field is
+determined by the constant speed of those geodesics.  As in the shared API, the variation is a
+function `F` together with its defining equation. -/
 
 /-- A radial curve of the variation has the squared speed of its initial velocity. -/
 private theorem inner_curveVelocity_radialVariation_self
@@ -85,7 +86,7 @@ private theorem inner_curveVelocity_radialVariation_self
     (ht : t ∈ geodesicInterval I M p (v + u • w)) :
     inner ℝ (curveVelocity I (F u) t) (curveVelocity I (F u) t) =
       inner ℝ (v + u • w) (v + u • w) := by
-  rw [riemannianExp_smul_add_smul_eq_maximalGeodesic hF u]
+  rw [radialVariation_eq_maximalGeodesic hF u]
   exact inner_curveVelocity_maximalGeodesic_self ht
 
 /-- **Metric compatibility along the radial variation.**  At a parameter of the central geodesic,
@@ -103,7 +104,7 @@ private theorem inner_alongCurve_variationField_radialVariation
   have htExp : t • v ∈ expDomain I M p :=
     mem_geodesicInterval_iff_smul_mem_expDomain.mp ht
   have hsurface : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I ∞ (fun z : ℝ × ℝ ↦ F z.1 z.2) (0, t) :=
-    contMDiffAt_riemannianExp_smul_add_smul hF (u := 0) (t := t) (by simpa using htExp)
+    contMDiffAt_radialVariation hF (u := 0) (t := t) (by simpa using htExp)
   have hleft := hasDerivAt_norm_sq_curveVelocity (hsurface.of_le (by simp))
   -- Near `u = 0` the radial curve of the variation still reaches `t`, so its squared speed there
   -- is the squared norm `⟪v + u • w, v + u • w⟫` of its initial velocity.
@@ -150,9 +151,9 @@ theorem inner_mfderiv_riemannianExp_radial [I.Boundaryless]
     have htExp : t • v ∈ expDomain I M p :=
       mem_geodesicInterval_iff_smul_mem_expDomain.mp htJ
     have hsurface : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I ∞ (fun z : ℝ × ℝ ↦ F z.1 z.2) (0, t) :=
-      contMDiffAt_riemannianExp_smul_add_smul hF (u := 0) (t := t) (by simpa using htExp)
+      contMDiffAt_radialVariation hF (u := 0) (t := t) (by simpa using htExp)
     have haccel : acceleration cov (F 0) t = 0 :=
-      acceleration_riemannianExp_smul_add_smul_eq_zero hF (u := 0) (by simpa using htJ)
+      acceleration_radialVariation_eq_zero hF (u := 0) (by simpa using htJ)
     have hDtV_inner : inner ℝ (alongCurve cov (F 0) (variationField I F) t) (P 0 t) =
         inner ℝ v w :=
       inner_alongCurve_variationField_radialVariation hF htJ
@@ -161,11 +162,8 @@ theorem inner_mfderiv_riemannianExp_radial [I.Boundaryless]
     simpa only [P, Q] using hprod
   have hzero : inner ℝ (Q 0 0) (P 0 0) = 0 := by
     have hQzero : Q 0 0 = 0 := by
-      have hfun : (fun q : ℝ ↦ F q 0) = fun _ ↦ p := by
-        funext q
-        simp only [F, zero_smul, riemannianExp_zero]
-      have hbase : F 0 0 = p := by
-        simp only [F, zero_smul, riemannianExp_zero]
+      have hfun : (fun q : ℝ ↦ F q 0) = fun _ ↦ p := funext (radialVariation_apply_zero hF)
+      have hbase : F 0 0 = p := radialVariation_apply_zero hF 0
       dsimp only [Q]
       rw [hbase]
       rw [hfun, curveVelocity_const]
@@ -202,9 +200,7 @@ theorem inner_mfderiv_riemannianExp_radial [I.Boundaryless]
   have hone := hconst 1 (by simp)
   have hPone : P 0 1 =
       mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v v := by
-    have hfun : F 0 = fun t : ℝ ↦ riemannianExp I M p (t • v) := by
-      funext t
-      simp only [F, zero_smul, add_zero]
+    have hfun : F 0 = fun t : ℝ ↦ riemannianExp I M p (t • v) := radialVariation_zero hF
     have h := curveVelocity_riemannianExp_smul (I := I) (M := M) (v := v) (t := 1)
       (by simpa using hv)
     rw [one_smul] at h
@@ -213,8 +209,15 @@ theorem inner_mfderiv_riemannianExp_radial [I.Boundaryless]
     exact h
   have hQone : Q 1 0 =
       mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) v w := by
-    have h := variationField_riemannianExp_smul_add_smul hF (mem_expDomain_iff.mp hv)
-    rw [one_smul, one_smul, variationField_apply] at h
+    have hfun : (fun q : ℝ ↦ F q 1) =
+        fun q : ℝ ↦ riemannianExp I M p (v + q • w) := by
+      funext q
+      simp only [F, one_smul]
+    have h := curveVelocity_riemannianExp_add_smul (I := I) (M := M) (v := v) (w := w) (u := 0)
+      (by simpa using hv)
+    rw [zero_smul, add_zero] at h
+    dsimp only [Q]
+    rw [hfun]
     exact h
   rw [one_mul, sub_eq_zero, hPone, hQone] at hone
   have hbaseeq : F 0 1 = riemannianExp I M p v := by

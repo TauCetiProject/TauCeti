@@ -24,11 +24,10 @@ each of its two ends**, so its closure is the crosscut together with two points.
 
 That this can be had at all, and without circularity, is the point. The end of an image crosscut is
 a boundary cluster set, and the boundary cluster sets of the map on the *disc* degenerating to
-points is exactly the layer-**L5** milestone of `TauCetiRoadmap/ConformalMapping/README.md` still
-open. The ends here degenerate for a different and much cheaper reason: the arc `ball c r ∩ sphere
-ζ ρ` is one-dimensional, and the length of its image is a *finite* number, so the images of its
-angles satisfy a Cauchy criterion as the angle runs to an end of the arc. No boundary behaviour of
-the map on the disc is used, and none is proved.
+points is exactly the content of Carathéodory's theorem. The ends here degenerate for a different
+and much cheaper reason: the arc `ball c r ∩ sphere ζ ρ` is one-dimensional, and the length of its
+image is a *finite* number, so the images of its angles satisfy a Cauchy criterion as the angle runs
+to an end of the arc. No boundary behaviour of the map on the disc is used, and none is proved.
 
 ## The estimate
 
@@ -78,9 +77,9 @@ the hypothesis costs a consumer nothing it has not already paid for.
 
 The conclusion, `TauCeti.exists_closure_image_ball_inter_sphere_eq_insert`, is that the closure of
 the image crosscut is the image crosscut together with two points. Which two points, and whether
-they are distinct, is not addressed: an image crosscut may well close up. What the L5 argument needs
-is only that the two ends are points on `∂Ω`, so that the small arc of a locally connected `∂Ω`
-joining them can be named.
+they are distinct, is not addressed: an image crosscut may well close up. What Carathéodory's
+argument needs is only that the two ends are points on `∂Ω`, so that the small arc of a locally
+connected `∂Ω` joining them can be named.
 
 ## Main results
 
@@ -108,14 +107,13 @@ joining them can be named.
 
 ## Generality
 
-In accordance with the generality bar of `ConformalMapping/README.md`, which fixes scalar `ℂ` for
-every theorem added in layers L0–L6, everything below is stated for maps of `ℂ`. The arc statements
-ask nothing of the ambient disc — only that `f` be holomorphic on an open set containing the arc —
-so they apply to any circle in any domain, the crosscut being one instance; neither injectivity of
-`f` nor any hypothesis on its image is used anywhere in the file. They ask nothing of the sign of
-the radius either, a negative `ρ` tracing the same circle in the other sense and `ρ = 0` collapsing
-the arc to the point `ζ`, where the estimates are trivial. The crosscut statements do ask
-`0 < ρ < 2 * r`, which is what makes `ball c r ∩ sphere ζ ρ` a genuine crosscut.
+Everything below is stated for maps of `ℂ`. The arc statements ask nothing of the ambient disc —
+only that `f` be holomorphic on an open set containing the arc — so they apply to any circle in any
+domain, the crosscut being one instance; neither injectivity of `f` nor any hypothesis on its image
+is used anywhere in the file. They ask nothing of the sign of the radius either, a negative `ρ`
+tracing the same circle in the other sense and `ρ = 0` collapsing the arc to the point `ζ`, where
+the estimates are trivial. The crosscut statements do ask `0 < ρ < 2 * r`, which is what makes
+`ball c r ∩ sphere ζ ρ` a genuine crosscut.
 
 ## References
 

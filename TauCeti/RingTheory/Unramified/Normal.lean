@@ -11,7 +11,10 @@ public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
 import Mathlib.RingTheory.Unramified.LocalStructure
 import TauCeti.RingTheory.Etale.Normal
+import TauCeti.RingTheory.Ideal.Height
+import TauCeti.RingTheory.IntegralClosure.GoingDown
 import TauCeti.RingTheory.KrullDimension.Basic
+import TauCeti.RingTheory.KrullDimension.Integral
 import TauCeti.RingTheory.QuasiFinite.Height
 
 /-!
@@ -25,6 +28,12 @@ the unramified points of a dominant morphism of integral schemes, locally of fin
 locally Noetherian normal scheme, are étale, without purity of the branch locus. Since
 unramifiedness at `q` already forces `ht q ≤ ht p` (`Ideal.height_le_height_of_quasiFiniteAt`),
 the height condition says that the two heights agree.
+
+Over a Noetherian integrally closed domain `R` which is not a field, an integral torsion-free
+algebra of essentially finite type that is unramified at its primes of height one is also
+unramified at its primes of height zero. Height-zero primes are the generic points of `Spec S`;
+each is a generization of a height-one prime, so the hypothesis of purity of the branch locus
+(Stacks, Lemma 58.21.4 (0BMB)), which only constrains codimension-one points, extends to them.
 
 ## Proof
 
@@ -41,12 +50,17 @@ the same dimension is injective (`RingHom.injective_of_surjective_of_ringKrullDi
 
 * `Algebra.IsEtaleAt.of_isUnramifiedAt_of_height_le`: an algebra of finite type over a Noetherian
   ring, unramified at `q` over `p` with `R_p` a normal domain and `ht p ≤ ht q`, is étale at `q`.
+* `Algebra.IsUnramifiedAt.of_forall_height_eq_one`: over a Noetherian integrally closed domain
+  which is not a field, an integral torsion-free algebra unramified at every prime of height one
+  is unramified at every prime of height at most one.
 
 ## References
 
 * A. Grothendieck, *Revêtements étales et groupe fondamental* (SGA 1), Exposé I, Théorème 9.5.
 * [Stacks Project, Lemma 10.163.9](https://stacks.math.columbia.edu/tag/033C), normality of
   étale algebras over a normal ring.
+* [Stacks Project, Lemma 58.21.4](https://stacks.math.columbia.edu/tag/0BMB), purity of the branch
+  locus, whose unramifiedness hypothesis is at the points of codimension one.
 -/
 
 public section
@@ -107,5 +121,29 @@ theorem IsEtaleAt.of_isUnramifiedAt_of_height_le [IsNoetherianRing R] [FiniteTyp
   have hinj : Function.Injective θ :=
     θ.toRingHom.injective_of_surjective_of_ringKrullDim_le hsurj hD
   exact FormallyEtale.of_equiv (AlgEquiv.ofBijective θ ⟨hinj, hsurj⟩)
+
+/-- Let `S` be an integral, torsion-free algebra of essentially finite type over a Noetherian
+integrally closed domain `R` which is not a field. If `S` is unramified over `R` at every prime of
+height one, then it is unramified over `R` at every prime of height at most one. -/
+theorem IsUnramifiedAt.of_forall_height_eq_one [IsDomain R] [IsIntegrallyClosed R]
+    [IsNoetherianRing R] [Algebra.IsIntegral R S] [Module.IsTorsionFree R S] [EssFiniteType R S]
+    (hR : ¬IsField R) (h : ∀ (Q : Ideal S) [Q.IsPrime], Q.height = 1 → IsUnramifiedAt R Q)
+    (q : Ideal S) [q.IsPrime] (hq : q.height ≤ 1) : IsUnramifiedAt R q := by
+  rcases hq.lt_or_eq with hq | hq
+  swap
+  · exact h q hq
+  -- `q` has height zero, so by going down it lies over the zero ideal of `R`.
+  have hq0 : q.under R = ⊥ := by
+    rw [← Ideal.height_eq_zero_iff_eq_bot, ← q.height_eq_height_under_of_isIntegral_of_hasGoingDown]
+    exact Order.lt_one_iff.mp hq
+  obtain ⟨p, _, hp1⟩ := Ideal.exists_isPrime_height_eq_one_of_not_isField hR
+  -- By going up, `q` lies below a prime `Q` over `p`, which has height one by going down. The
+  -- unramified locus is open, hence stable under generization, so it contains `q`.
+  obtain ⟨Q, hqQ, hQ, hQp⟩ :=
+    Ideal.exists_ideal_over_prime_of_isIntegral_of_isPrime p q (hq0 ▸ bot_le)
+  have hQ1 : Q.height = 1 := by
+    rw [Q.height_eq_height_under_of_isIntegral_of_hasGoingDown (R := R), hQp, hp1]
+  exact (isOpen_unramifiedLocus (R := R) (A := S)).stableUnderGeneralization
+    ((PrimeSpectrum.le_iff_specializes ⟨q, ‹_›⟩ ⟨Q, hQ⟩).mp hqQ) (h Q hQ1)
 
 end Algebra

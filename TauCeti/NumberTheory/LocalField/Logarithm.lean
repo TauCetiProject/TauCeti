@@ -12,6 +12,7 @@ import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 import TauCeti.NumberTheory.Padics.PadicValNat
 import TauCeti.RingTheory.Valuation.PowSubPow
 import TauCeti.Topology.Algebra.ValuativeRel.HasSum
+import TauCeti.Topology.Algebra.ValuativeRel.Nonarchimedean
 
 /-!
 # The logarithm on the principal units of a finite extension of `ℚ_[p]`
@@ -105,9 +106,6 @@ theorem hasSum_log_of_mem_unitFiltration_one (p : ℕ) [Fact p.Prime]
   have hxγ : valuation K ((u : K) - 1) ≤ valuation K (π : K) := by
     simpa using ((mem_unitFiltration_iff_valuation_le hπ).mp hu).2
   have hsum : Summable (fun n : ℕ => (-1) ^ (n + 1) / n * ((u : K) - 1) ^ n) := by
-    let _ : NonarchimedeanRing K := by
-      rw [(valuation K).toTopologicalSpace_eq]
-      exact ValuativeRel.nonarchimedeanRing K
     let _ := IsTopologicalAddGroup.rightUniformSpace K
     let _ := isUniformAddGroup_of_addCommGroup (G := K)
     rw [NonarchimedeanAddGroup.summable_iff_tendsto_cofinite_zero, Nat.cofinite_eq_atTop]

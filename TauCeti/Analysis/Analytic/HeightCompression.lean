@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import TauCeti.Analysis.SpecialFunctions.Arsinh
+import Mathlib.Topology.MetricSpace.Contracting
+import TauCeti.Analysis.Analytic.Approximation
 
 /-!
 # Analytic compressions of the height coordinate
@@ -30,6 +32,38 @@ the inverse `β` of the normalized hyperbolic sine `t ↦ sinh t / sinh 1`, whic
   This is how the composite pushes the complement of a neighbourhood of the vertical axis, which
   contains the tube `‖u‖ ≤ γ t`, into a bounded strip.
 
+The second group of results controls the slopes of graphs under these automorphisms. Say that a
+set has *Lipschitz constant* `A` if any two of its points satisfy
+`dist p.2 q.2 ≤ A * dist p.1 q.1`, so that the set is the graph of an `A`-Lipschitz function over
+its projection to the base.
+
+* `TauCeti.dist_snd_le_mul_dist_fst_of_mem_image_baseScaling`: let a set have base points of norm
+  at most `a`, heights in `D` and Lipschitz constant `k`, and let `h` be `L`-Lipschitz on `D` with
+  `c ≤ ‖h‖` there. If `L * a * k < c`, its image under `g₁` has Lipschitz constant
+  `k / (c - L * a * k)`. This rests on the distance estimate
+  `TauCeti.mul_dist_fst_le_dist_baseScaling_fst`.
+* `TauCeti.closedBall_subset_fst_image_baseScaling_image_graphOn`: under the same hypotheses, the
+  image under `g₁` of the graph of a `k`-Lipschitz function over `closedBall 0 a` lies over the
+  whole ball `closedBall 0 (a * c)`.
+* `TauCeti.dist_heightCompression_snd_le`: compressed heights differ by at most
+  `2 * dist p.2 q.2 + dist p.1 q.1`, so `g₂` turns Lipschitz constant `A` into `2 * A + 1`
+  (`TauCeti.dist_snd_le_mul_dist_fst_of_mem_image_heightCompression`).
+* `TauCeti.dist_snd_le_three_mul_dist_fst_of_mem_image_heightCompression_comp_baseScaling`: if
+  `2 * k ≤ |h|` on `D` and `L * a ≤ 1`, then `g₁` produces Lipschitz constant at most `1` and
+  `g₂ ∘ g₁` produces Lipschitz constant at most `3`, a bound independent of the graph.
+
+The scaling function `h` itself is chosen analytic and positive, with
+`√(t² - 1) < h t * γ t` for every `t` and, on each height interval `D` of a locally finite family
+of disjoint compact intervals, a prescribed strict lower bound and a prescribed Lipschitz constant
+(`TauCeti.exists_analyticOnNhd_sqrt_sq_sub_one_lt_mul`). Here `γ` is any function locally bounded
+below by positive constants. These are the hypotheses on `h` of the results above.
+
+Since `g₂` does not move base points, the projection of the image of a graph under `g₂ ∘ g₁` is
+the projection of its image under `g₁`. In Łojasiewicz's lemma the graphs are pieces of a
+locally finite family, with constants `k`, `a` and height intervals `D` depending on the piece:
+the last result gives the uniform Lipschitz bound for the straightened family, and the ball
+covering result shows that the projections of its members contain balls of radius `a * c`.
+
 ## References
 
 * S. Łojasiewicz, *Triangulation of semi-analytic sets*, Annali della Scuola Normale Superiore di
@@ -38,7 +72,8 @@ the inverse `β` of the normalized hyperbolic sine `t ↦ sinh t / sinh 1`, whic
 
 public section
 
-open Real Set
+open Real Set Metric
+open scoped NNReal
 
 namespace TauCeti
 
@@ -82,6 +117,94 @@ theorem analyticAt_baseScaling_symm {p : E × 𝕜} (hp : AnalyticAt 𝕜 h p.2)
   rw [funext (baseScaling_symm_apply hh)]
   have : AnalyticAt 𝕜 (fun q : E × 𝕜 ↦ (h q.2)⁻¹) p := (hp.comp analyticAt_snd).inv (hh p.2)
   exact (this.smul analyticAt_fst).prod analyticAt_snd
+
+/-- **Base scaling of Lipschitz graphs.** Let `p = (u, t)` and `q = (u', t')` be points with
+`‖u'‖ ≤ a` whose heights satisfy `dist t t' ≤ k * dist u u'`, and suppose that `c ≤ ‖h t‖` and
+`dist (h t) (h t') ≤ L * dist t t'`. Then rescaling the base by `h` maps `u` and `u'` to points at
+distance at least `(c - L * a * k) * dist u u'`. -/
+theorem mul_dist_fst_le_dist_baseScaling_fst {p q : E × 𝕜} {a c : ℝ} {k L : ℝ≥0}
+    (hq : ‖q.1‖ ≤ a) (hc : c ≤ ‖h p.2‖) (hL : dist (h p.2) (h q.2) ≤ L * dist p.2 q.2)
+    (hk : dist p.2 q.2 ≤ k * dist p.1 q.1) :
+    (c - L * a * k) * dist p.1 q.1 ≤ dist (baseScaling hh p).1 (baseScaling hh q).1 := by
+  rw [baseScaling_apply, baseScaling_apply]
+  rw [dist_eq_norm, dist_eq_norm] at hL hk ⊢
+  have hΔ : h p.2 • p.1 - h q.2 • q.1 = h p.2 • (p.1 - q.1) + (h p.2 - h q.2) • q.1 := by
+    rw [smul_sub, sub_smul]
+    abel
+  have htri := norm_sub_le (h p.2 • (p.1 - q.1) + (h p.2 - h q.2) • q.1) ((h p.2 - h q.2) • q.1)
+  rw [add_sub_cancel_right, norm_smul, norm_smul, ← hΔ] at htri
+  have hh' : ‖h p.2 - h q.2‖ * ‖q.1‖ ≤ L * a * k * ‖p.1 - q.1‖ :=
+    calc ‖h p.2 - h q.2‖ * ‖q.1‖ ≤ L * (k * ‖p.1 - q.1‖) * a :=
+          mul_le_mul (hL.trans (mul_le_mul_of_nonneg_left hk L.2)) hq (norm_nonneg _)
+            (by positivity)
+      _ = L * a * k * ‖p.1 - q.1‖ := by ring
+  nlinarith [mul_le_mul_of_nonneg_right hc (norm_nonneg (p.1 - q.1))]
+
+/-- **Base scaling of Lipschitz graphs.** Let `s ⊆ E × 𝕜` consist of points with base points of norm
+at most `a` and heights in `D`, whose heights satisfy `dist p.2 q.2 ≤ k * dist p.1 q.1`. If `h` is
+`L`-Lipschitz on `D`, with `c ≤ ‖h t‖` for `t ∈ D`, and `L * a * k < c`, then the points of
+`baseScaling hh '' s` satisfy the same inequality with the constant `k / (c - L * a * k)`. -/
+theorem dist_snd_le_mul_dist_fst_of_mem_image_baseScaling {s : Set (E × 𝕜)} {D : Set 𝕜}
+    {a c : ℝ} {k L : ℝ≥0} (hsa : ∀ p ∈ s, ‖p.1‖ ≤ a) (hsD : ∀ p ∈ s, p.2 ∈ D)
+    (hk : ∀ p ∈ s, ∀ q ∈ s, dist p.2 q.2 ≤ k * dist p.1 q.1) (hL : LipschitzOnWith L h D)
+    (hc : ∀ t ∈ D, c ≤ ‖h t‖) (hlt : L * a * k < c) :
+    ∀ p ∈ baseScaling hh '' s, ∀ q ∈ baseScaling hh '' s,
+      dist p.2 q.2 ≤ k / (c - L * a * k) * dist p.1 q.1 := by
+  rintro _ ⟨p, hp, rfl⟩ _ ⟨q, hq, rfl⟩
+  have hpos : 0 < c - L * a * k := sub_pos.2 hlt
+  have key := mul_dist_fst_le_dist_baseScaling_fst (hh := hh) (hsa q hq) (hc _ (hsD p hp))
+    (hL.dist_le_mul p.2 (hsD p hp) q.2 (hsD q hq)) (hk p hp q hq)
+  rw [div_mul_eq_mul_div, le_div_iff₀ hpos]
+  calc dist (baseScaling hh p).2 (baseScaling hh q).2 * (c - L * a * k)
+      = dist p.2 q.2 * (c - L * a * k) := by simp
+    _ ≤ k * dist p.1 q.1 * (c - L * a * k) := mul_le_mul_of_nonneg_right (hk p hp q hq) hpos.le
+    _ = k * ((c - L * a * k) * dist p.1 q.1) := by ring
+    _ ≤ k * dist (baseScaling hh p).1 (baseScaling hh q).1 := mul_le_mul_of_nonneg_left key k.2
+
+/-- **The rescaled graph lies over a large ball.** Let `φ : E → 𝕜` be `k`-Lipschitz on
+`closedBall 0 a`, with values in `D` there. If `h` is `L`-Lipschitz on `D`, with `c ≤ ‖h t‖` for
+`t ∈ D` and some `c > 0`, and `L * a * k < c`, then the image of the graph of `φ` over
+`closedBall 0 a` under the base scaling lies over every point of `closedBall 0 (a * c)`.
+
+A point `u` lies over `w` exactly when it is a fixed point of `u ↦ (h (φ u))⁻¹ • w`, which maps
+`closedBall 0 a` into itself and is a contraction there with constant `L * a * k / c`. -/
+theorem closedBall_subset_fst_image_baseScaling_image_graphOn [CompleteSpace E] {φ : E → 𝕜}
+    {D : Set 𝕜} {a c : ℝ} {k L : ℝ≥0} (hφ : LipschitzOnWith k φ (closedBall 0 a))
+    (hφD : MapsTo φ (closedBall 0 a) D) (hL : LipschitzOnWith L h D) (hc : ∀ t ∈ D, c ≤ ‖h t‖)
+    (hc0 : 0 < c) (hlt : L * a * k < c) :
+    closedBall 0 (a * c) ⊆ Prod.fst '' (baseScaling hh '' (closedBall 0 a).graphOn φ) := by
+  intro w hw
+  rw [mem_closedBall_zero_iff] at hw
+  have ha : 0 ≤ a := by nlinarith [norm_nonneg w]
+  have hhc {u : E} (hu : u ∈ closedBall (0 : E) a) : c ≤ ‖h (φ u)‖ := hc _ (hφD hu)
+  have hT : MapsTo (fun u ↦ (h (φ u))⁻¹ • w) (closedBall 0 a) (closedBall 0 a) := by
+    intro u hu
+    rw [mem_closedBall_zero_iff, norm_smul, norm_inv, inv_mul_le_iff₀ (hc0.trans_le (hhc hu))]
+    nlinarith [hhc hu]
+  let K : ℝ≥0 := ⟨L * a * k / c, div_nonneg (mul_nonneg (mul_nonneg L.2 ha) k.2) hc0.le⟩
+  have hK : (K : ℝ) = L * a * k / c := rfl
+  have hTL : LipschitzOnWith K (fun u ↦ (h (φ u))⁻¹ • w) (closedBall 0 a) := by
+    refine LipschitzOnWith.of_dist_le_mul fun u hu v hv ↦ ?_
+    have hu0 : h (φ u) ≠ 0 := hh _
+    have hv0 : h (φ v) ≠ 0 := hh _
+    have hhuv : ‖h (φ v) - h (φ u)‖ ≤ L * (k * dist u v) := by
+      rw [← dist_eq_norm, dist_comm u v]
+      exact (hL.dist_le_mul _ (hφD hv) _ (hφD hu)).trans
+        (mul_le_mul_of_nonneg_left (hφ.dist_le_mul v hv u hu) L.2)
+    have hcc : c * c ≤ ‖h (φ u)‖ * ‖h (φ v)‖ := mul_le_mul (hhc hu) (hhc hv) hc0.le (norm_nonneg _)
+    rw [dist_eq_norm, ← sub_smul, norm_smul, inv_sub_inv hu0 hv0, norm_div, norm_mul, hK]
+    calc ‖h (φ v) - h (φ u)‖ / (‖h (φ u)‖ * ‖h (φ v)‖) * ‖w‖
+        ≤ L * (k * dist u v) / (c * c) * (a * c) := by
+          gcongr
+      _ = L * a * k / c * dist u v := by field_simp
+  have hcontr : ContractingWith K (hT.restrict _ _ _) :=
+    ⟨by rw [← NNReal.coe_lt_coe, hK, NNReal.coe_one]; exact (div_lt_one hc0).2 hlt,
+      hTL.mapsToRestrict hT⟩
+  obtain ⟨u, hu, hfix, -⟩ := hcontr.exists_fixedPoint' isClosed_closedBall.isComplete hT
+    (mem_closedBall_self ha) (edist_ne_top _ _)
+  have hu' : (h (φ u))⁻¹ • w = u := hfix
+  refine ⟨(h (φ u) • u, φ u), ⟨(u, φ u), ⟨u, hu, rfl⟩, by rw [baseScaling_apply]⟩, ?_⟩
+  rw [← smul_inv_smul₀ (hh (φ u)) w, hu']
 
 end baseScaling
 
@@ -147,6 +270,101 @@ theorem mapsTo_heightCompression_comp_baseScaling [NormedSpace ℝ E] {h γ : �
     rw [mul_pow] at h2
     linarith
 
+/-- **Lipschitz control of the compressed height.** The compressed heights of two points differ by
+at most twice the difference of their heights plus the distance of their base points. -/
+theorem dist_heightCompression_snd_le (p q : E × ℝ) :
+    dist (heightCompression E p).2 (heightCompression E q).2 ≤ 2 * dist p.2 q.2 + dist p.1 q.1 := by
+  have hone (x : ℝ) : 1 ≤ √(1 + x ^ 2) := one_le_sqrt.2 (le_add_of_nonneg_right (sq_nonneg _))
+  -- `x ↦ √(1 + x²)` is `1`-Lipschitz
+  have hsqrt (x y : ℝ) : √(1 + x ^ 2) ≤ √(1 + y ^ 2) + |x - y| := by
+    have hy : |y| ≤ √(1 + y ^ 2) := abs_le_sqrt (le_add_of_nonneg_left zero_le_one)
+    have hsq : √(1 + y ^ 2) ^ 2 = 1 + y ^ 2 := sq_sqrt (by positivity)
+    refine sqrt_le_iff.2 ⟨by positivity, ?_⟩
+    nlinarith [le_abs_self (y * (x - y)), abs_mul y (x - y), sq_abs (x - y),
+      mul_le_mul_of_nonneg_right hy (abs_nonneg (x - y))]
+  -- `log` is `1`-Lipschitz on `[1, ∞)`
+  have hlog (x y : ℝ) (hx : 1 ≤ x) (hy : 1 ≤ y) : log x - log y ≤ |x - y| := by
+    rw [← log_div (by positivity) (by positivity)]
+    refine (log_le_sub_one_of_pos (by positivity)).trans ?_
+    rw [div_sub_one (by positivity)]
+    exact (div_le_div_of_nonneg_right (le_abs_self _) (by positivity)).trans
+      (div_le_self (abs_nonneg _) hy)
+  set ρ := √(1 + ‖p.1‖ ^ 2)
+  set ρ' := √(1 + ‖q.1‖ ^ 2)
+  have hρ : 1 ≤ ρ := hone _
+  have hρ' : 1 ≤ ρ' := hone _
+  have hρρ' : |ρ - ρ'| ≤ dist p.1 q.1 := by
+    refine (abs_sub_le_iff.2 ⟨?_, ?_⟩).trans ((abs_norm_sub_norm_le p.1 q.1).trans_eq
+      (dist_eq_norm _ _).symm)
+    · linarith [hsqrt ‖p.1‖ ‖q.1‖]
+    · linarith [hsqrt ‖q.1‖ ‖p.1‖, abs_sub_comm ‖p.1‖ ‖q.1‖]
+  have h₁ : |normalizedArsinh (p.2 / ρ) - normalizedArsinh (q.2 / ρ)| ≤ 2 * |p.2 - q.2| := by
+    have := lipschitzWith_normalizedArsinh.dist_le_mul (p.2 / ρ) (q.2 / ρ)
+    rw [Real.dist_eq, Real.dist_eq, ← sub_div, abs_div, abs_of_pos (zero_lt_one.trans_le hρ)]
+      at this
+    push_cast at this
+    exact this.trans (mul_le_mul_of_nonneg_left (div_le_self (abs_nonneg _) hρ) zero_le_two)
+  have h₂ : |normalizedArsinh (q.2 / ρ) - normalizedArsinh (q.2 / ρ')| ≤ |ρ - ρ'| := by
+    have := abs_normalizedArsinh_mul_sub_normalizedArsinh_mul_le
+      (inv_pos.2 (zero_lt_one.trans_le hρ)) (inv_pos.2 (zero_lt_one.trans_le hρ')) q.2
+    rw [log_inv, log_inv, neg_sub_neg] at this
+    simp only [div_eq_inv_mul]
+    refine this.trans (abs_sub_le_iff.2 ⟨?_, ?_⟩)
+    · linarith [hlog ρ' ρ hρ' hρ, abs_sub_comm ρ ρ']
+    · linarith [hlog ρ ρ' hρ hρ']
+  rw [heightCompression_apply, heightCompression_apply, Real.dist_eq, Real.dist_eq]
+  calc |normalizedArsinh (p.2 / ρ) - normalizedArsinh (q.2 / ρ')|
+      ≤ |normalizedArsinh (p.2 / ρ) - normalizedArsinh (q.2 / ρ)| +
+          |normalizedArsinh (q.2 / ρ) - normalizedArsinh (q.2 / ρ')| := abs_sub_le _ _ _
+    _ ≤ 2 * |p.2 - q.2| + dist p.1 q.1 := by linarith
+
+/-- **Height compression of Lipschitz graphs.** If the heights of the points of `s` satisfy
+`dist p.2 q.2 ≤ A * dist p.1 q.1`, then the points of `heightCompression E '' s` satisfy the same
+inequality with the constant `2 * A + 1`. -/
+theorem dist_snd_le_mul_dist_fst_of_mem_image_heightCompression {s : Set (E × ℝ)} {A : ℝ≥0}
+    (h : ∀ p ∈ s, ∀ q ∈ s, dist p.2 q.2 ≤ A * dist p.1 q.1) :
+    ∀ p ∈ heightCompression E '' s, ∀ q ∈ heightCompression E '' s,
+      dist p.2 q.2 ≤ (2 * A + 1 : ℝ≥0) * dist p.1 q.1 := by
+  rintro _ ⟨p, hp, rfl⟩ _ ⟨q, hq, rfl⟩
+  have h₁ := dist_heightCompression_snd_le p q
+  have h₂ := h p hp q hq
+  simp only [heightCompression_apply] at h₁ ⊢
+  push_cast
+  linarith
+
+/-- **Lipschitz control of the composite automorphism.** Let `s ⊆ E × ℝ` consist of points with
+base points of norm at most `a` and heights in `D`, whose heights satisfy
+`dist p.2 q.2 ≤ k * dist p.1 q.1`. If `2 * k ≤ |h t|` for `t ∈ D` and `h` is `L`-Lipschitz on `D`
+with `L * a ≤ 1`, then the base scaling yields a set satisfying the inequality with the constant
+`1`, and so the points of `(heightCompression E ∘ baseScaling hh) '' s` satisfy it with the
+constant `3`, independently of `k`, `a` and `h`. -/
+theorem dist_snd_le_three_mul_dist_fst_of_mem_image_heightCompression_comp_baseScaling
+    [NormedSpace ℝ E] {h : ℝ → ℝ} (hh : ∀ t, h t ≠ 0) {s : Set (E × ℝ)} {D : Set ℝ} {a : ℝ}
+    {k L : ℝ≥0} (hsa : ∀ p ∈ s, ‖p.1‖ ≤ a) (hsD : ∀ p ∈ s, p.2 ∈ D)
+    (hk : ∀ p ∈ s, ∀ q ∈ s, dist p.2 q.2 ≤ k * dist p.1 q.1) (hL : LipschitzOnWith L h D)
+    (hc : ∀ t ∈ D, 2 * k ≤ |h t|) (hLa : L * a ≤ 1) :
+    ∀ p ∈ (heightCompression E ∘ baseScaling hh) '' s,
+      ∀ q ∈ (heightCompression E ∘ baseScaling hh) '' s, dist p.2 q.2 ≤ 3 * dist p.1 q.1 := by
+  have h₁ : ∀ p ∈ baseScaling hh '' s, ∀ q ∈ baseScaling hh '' s,
+      dist p.2 q.2 ≤ (1 : ℝ≥0) * dist p.1 q.1 := by
+    rintro _ ⟨p, hp, rfl⟩ _ ⟨q, hq, rfl⟩
+    have key := mul_dist_fst_le_dist_baseScaling_fst (hh := hh) (hsa q hq)
+      ((hc _ (hsD p hp)).trans_eq (norm_eq_abs _).symm)
+      (hL.dist_le_mul p.2 (hsD p hp) q.2 (hsD q hq)) (hk p hp q hq)
+    have hLak : (L : ℝ) * a * k ≤ k := by
+      simpa using mul_le_mul_of_nonneg_right hLa k.2
+    have hkd : (k : ℝ) * dist p.1 q.1 ≤ (2 * k - L * a * k) * dist p.1 q.1 :=
+      mul_le_mul_of_nonneg_right (by linarith) dist_nonneg
+    have := hk p hp q hq
+    rw [baseScaling_apply, baseScaling_apply] at key ⊢
+    rw [NNReal.coe_one, one_mul]
+    linarith
+  rw [image_comp]
+  intro p hp q hq
+  have := dist_snd_le_mul_dist_fst_of_mem_image_heightCompression h₁ p hp q hq
+  norm_num at this
+  exact this
+
 variable [InnerProductSpace ℝ E]
 
 /-- On a real inner product space, the height compression is `C^n` for every `n`, including
@@ -185,5 +403,51 @@ theorem analyticAt_heightCompression_symm (p : E × ℝ) :
   contDiff_heightCompression_symm.contDiffAt.analyticAt
 
 end heightCompression
+
+/-! ### Choosing the scaling function -/
+
+section scalingFunction
+
+open Filter Topology Function
+
+/-- **The scaling function of the straightening.** Let `Δ i` be pairwise disjoint compact intervals
+forming a locally finite family, and let `γ : ℝ → ℝ` be locally bounded below by positive
+constants. For any constants `M i` and positive Lipschitz constants `L i` there is a positive real
+analytic `h` with `√(t² - 1) < h t * γ t` for every `t` and, on each `Δ i`, `M i < h` and `h`
+`L i`-Lipschitz.
+
+These are the requirements on `h` of `TauCeti.mapsTo_heightCompression_comp_baseScaling` and
+of the Lipschitz estimates for `TauCeti.baseScaling`, in Łojasiewicz's choice of `h` with
+`h(t) > γ(t)⁻¹ √(t² - 1)`, `h > 2 kν` and `|h'| < aν⁻¹` on `Δν`. -/
+theorem exists_analyticOnNhd_sqrt_sq_sub_one_lt_mul {ι : Type*} {Δ : ι → Set ℝ}
+    (hΔ : ∀ i, IsCompact (Δ i)) (hΔc : ∀ i, Convex ℝ (Δ i)) (hdisj : Pairwise (Disjoint on Δ))
+    (hlf : LocallyFinite Δ) {γ : ℝ → ℝ} (hγ : ∀ x, ∃ c > 0, ∀ᶠ y in 𝓝 x, c ≤ γ y) (M : ι → ℝ)
+    {L : ι → ℝ≥0} (hL : ∀ i, 0 < L i) :
+    ∃ h : ℝ → ℝ, AnalyticOnNhd ℝ h univ ∧ (∀ t, 0 < h t) ∧ (∀ t, √(t ^ 2 - 1) < h t * γ t) ∧
+      ∀ i, (∀ t ∈ Δ i, M i < h t) ∧ LipschitzOnWith (L i) h (Δ i) := by
+  have hγ0 (t : ℝ) : 0 < γ t := by
+    obtain ⟨c, hc, hcγ⟩ := hγ t
+    exact hc.trans_le hcγ.self_of_nhds
+  -- The required lower bound `max 0 (√(t² - 1) / γ t)` is locally bounded above.
+  have hbd (x : ℝ) : ∃ C, ∀ᶠ y in 𝓝 x, max 0 (√(y ^ 2 - 1) / γ y) ≤ C := by
+    obtain ⟨c, hc, hcγ⟩ := hγ x
+    refine ⟨(|x| + 1) / c, ?_⟩
+    filter_upwards [hcγ, continuous_abs.continuousAt.eventually_lt continuousAt_const
+      (lt_add_one |x|)] with y hy hyx
+    have hs : √(y ^ 2 - 1) ≤ |x| + 1 :=
+      (sqrt_le_sqrt (by linarith)).trans ((sqrt_sq_eq_abs y).trans_le hyx.le)
+    refine max_le (by positivity) ?_
+    exact div_le_div₀ (by positivity) hs hc hy
+  obtain ⟨h, hha, hh, hΔh⟩ := exists_analyticOnNhd_lt_and_abs_deriv_lt hΔ hdisj hlf hbd M
+    (ε := fun i ↦ L i) hL
+  have hpos (t : ℝ) : 0 < h t := (le_max_left _ _).trans_lt (hh t)
+  refine ⟨h, hha, hpos, fun t ↦ ?_, fun i ↦ ⟨fun t ht ↦ (hΔh i t ht).1, ?_⟩⟩
+  · exact (div_lt_iff₀ (hγ0 t)).1 ((le_max_right _ _).trans_lt (hh t))
+  · refine (hΔc i).lipschitzOnWith_of_nnnorm_deriv_le
+      (fun t _ ↦ (hha t (mem_univ t)).differentiableAt) fun t ht ↦ ?_
+    rw [← NNReal.coe_le_coe, coe_nnnorm, Real.norm_eq_abs]
+    exact (hΔh i t ht).2.le
+
+end scalingFunction
 
 end TauCeti
