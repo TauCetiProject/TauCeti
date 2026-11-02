@@ -15,7 +15,7 @@ import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 import all Mathlib.Geometry.Manifold.Submersion
 
 /-!
-# Submersions: pointwise characterization and derivative
+# Submersions: pointwise characterization, derivative and local sections
 
 A map is a submersion with a fixed complement `F` exactly when it is a submersion with
 complement `F` at every point (`Manifold.isSubmersionOfComplement_iff`). Mathlib states only the
@@ -31,6 +31,14 @@ derivative of `f` read through the derivative of `ψ` is `(L (dφ v)).1`
 surjective and its kernel is the preimage under `dφ` of the fixed subspace `L⁻¹ (0 × F)` of the
 model space.
 
+The same normal form gives right inverses. At every point the derivative of a submersion has a
+continuous linear right inverse
+(`Manifold.IsSubmersionAtOfComplement.exists_rightInverse_mfderiv`), and when the model of the
+source has no boundary the map `y ↦ φ⁻¹ (L⁻¹ (ψ y, v₀))` is a `C^n` local section of `f` through
+`x`, defined on an open neighbourhood of `f x`
+(`Manifold.IsSubmersionAtOfComplement.exists_localSection`). Local sections are what let
+objects defined on the source descend along a surjective submersion.
+
 ## Main results
 
 * `Manifold.isSubmersionOfComplement_iff`: a submersion with complement `F` is one at every point.
@@ -41,11 +49,15 @@ model space.
   derivative of a submersion is surjective. Mathlib lists this as a TODO.
 * `Manifold.IsSubmersionAtOfComplement.mfderiv_eq_zero_iff`: the kernel of the derivative on the
   source of the normal-form chart.
+* `Manifold.IsSubmersionAt.exists_rightInverse_mfderiv`: the derivative of a submersion has a
+  continuous linear right inverse.
+* `Manifold.IsSubmersionAt.exists_localSection`: a submersion out of a manifold without boundary
+  has smooth local sections.
 
 ## References
 
 * J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Springer GTM 218 (2013),
-  Theorem 4.12 (local form of a submersion).
+  Theorems 4.12 (local form of a submersion) and 4.26 (local sections of submersions).
 -/
 
 public section
@@ -70,7 +82,7 @@ end Pointwise
 
 section Derivative
 
-open Function Filter
+open Function Filter Set
 open scoped Manifold Topology ContDiff
 
 universe u
@@ -165,7 +177,79 @@ theorem mfderiv_eq_zero_iff (hn : n ≠ 0) {y : M} (hy : y ∈ h.domChart.source
   rw [← (h.isInvertible_mfderiv_codChart_extend hn hy).injective.eq_iff, map_zero, hv]
   exact iff_of_eq (congrArg (· = 0) (h.projection_apply _))
 
+include h in
+/-- **The derivative of a submersion has a continuous linear right inverse.** In the normal-form
+charts `φ` and `ψ` it is `w ↦ (dφ)⁻¹ (L⁻¹ (dψ w, 0))`. No boundarylessness is needed. -/
+theorem exists_rightInverse_mfderiv (hn : n ≠ 0) :
+    ∃ R : TangentSpace J (f x) →L[𝕜] TangentSpace I x,
+      RightInverse R (mfderiv I J f x) := by
+  have hx := h.mem_domChart_source
+  have hψ := h.isInvertible_mfderiv_codChart_extend hn hx
+  have hφ := h.isInvertible_mfderiv_domChart_extend hn hx
+  refine ⟨(mfderiv I 𝓘(𝕜, E) (h.domChart.extend I) x).inverse ∘L
+    (h.equiv.symm : E'' × F →L[𝕜] E) ∘L ContinuousLinearMap.inl 𝕜 E'' F ∘L
+      mfderiv J 𝓘(𝕜, E'') (h.codChart.extend J) (f x), fun w ↦ hψ.injective ?_⟩
+  -- Read through `dψ`, the derivative of `f` is the projection of the normal form after `dφ`.
+  exact (ContinuousLinearMap.ext_iff.mp (h.mfderiv_extend_comp_mfderiv hn hx) _).trans
+    ((congrArg h.projection (hφ.self_apply_inverse _)).trans
+      (congrArg Prod.fst (h.equiv.apply_symm_apply _)))
+
+include h in
+/-- **Local sections of a submersion** (Lee, Theorem 4.26). If `f` is a `C^n` submersion at `x`
+and the model of `M` has no boundary, there is a map `s`, `C^n` on an open neighbourhood `U` of
+`f x`, with `s (f x) = x` and `f (s y) = y` for `y ∈ U`. In the normal-form charts `φ` and `ψ` it
+is `y ↦ φ⁻¹ (L⁻¹ (ψ y, v₀))`, where `v₀` is the second normal-form coordinate of `x`. -/
+theorem exists_localSection [I.Boundaryless] :
+    ∃ (s : N → M) (U : Set N), IsOpen U ∧ f x ∈ U ∧ s (f x) = x ∧ ContMDiffOn J I n s U ∧
+      EqOn (f ∘ s) id U := by
+  -- The normal-form inclusion `u ↦ L⁻¹ (u, v₀)` of the model of `N` into the model of `M`.
+  obtain ⟨g, hg⟩ : ∃ g : E'' → E,
+      g = fun u ↦ h.equiv.symm (u, (h.equiv (h.domChart.extend I x)).2) := ⟨_, rfl⟩
+  have hgc : ContDiff 𝕜 n g := hg ▸ h.equiv.symm.contDiff.comp (contDiff_id.prodMk contDiff_const)
+  have hx := h.mem_domChart_source
+  -- The normal form sends `f x` back to `x`.
+  have hgψ : g (h.codChart.extend J (f x)) = h.domChart.extend I x := by
+    rw [hg, h.codChart_extend_apply hx, projection_apply]
+    exact h.equiv.symm_apply_apply _
+  have hsy {y : N} (hy : g (h.codChart.extend J y) ∈ (h.domChart.extend I).target) :
+      (h.domChart.extend I).symm (g (h.codChart.extend J y)) ∈ h.domChart.source :=
+    h.domChart.extend_source (I := I) ▸ (h.domChart.extend I).map_target hy
+  refine ⟨(h.domChart.extend I).symm ∘ g ∘ h.codChart.extend J,
+    h.codChart.source ∩ h.codChart.extend J ⁻¹' (g ⁻¹' (h.domChart.extend I).target),
+    ?_, ⟨h.mem_codChart_source, ?_⟩, ?_, ?_, fun y hy ↦ ?_⟩
+  · exact (h.codChart.extend_source (I := J) ▸ h.codChart.continuousOn_extend).isOpen_inter_preimage
+      h.codChart.open_source (h.domChart.isOpen_extend_target.preimage hgc.continuous)
+  · rw [mem_preimage, mem_preimage, hgψ]
+    exact (h.domChart.extend I).map_source (h.domChart.extend_source (I := I) ▸ hx)
+  · rw [comp_apply, comp_apply, hgψ]
+    exact h.domChart.extend_left_inv hx
+  · refine (contMDiffOn_extend_symm h.domChart_mem_maximalAtlas).comp
+      (hgc.contMDiff.comp_contMDiffOn ((h.codChart.contMDiffOn_extend
+        h.codChart_mem_maximalAtlas).mono inter_subset_left)) fun y hy ↦ ?_
+    rw [mem_preimage, ← h.domChart.extend_target']
+    exact hy.2
+  -- Read through `ψ`, the map `f` sends the section point to `(L (L⁻¹ (ψ y, v₀))).1 = ψ y`.
+  have hinj := (h.codChart.extend J).injOn
+  rw [h.codChart.extend_source] at hinj
+  refine hinj (h.source_subset_preimage_source (hsy hy.2)) hy.1
+    ((h.codChart_extend_apply (hsy hy.2)).trans ?_)
+  rw [projection_apply, (h.domChart.extend I).right_inv hy.2, hg]
+  exact congrArg Prod.fst (h.equiv.apply_symm_apply _)
+
 end IsSubmersionAtOfComplement
+
+/-- **The derivative of a submersion has a continuous linear right inverse.** -/
+theorem IsSubmersionAt.exists_rightInverse_mfderiv (h : IsSubmersionAt I J n f x) (hn : n ≠ 0) :
+    ∃ R : TangentSpace J (f x) →L[𝕜] TangentSpace I x, RightInverse R (mfderiv I J f x) :=
+  h.isSubmersionAtOfComplement_complement.exists_rightInverse_mfderiv hn
+
+/-- **Local sections of a submersion** (Lee, Theorem 4.26). A `C^n` submersion at `x` out of a
+manifold whose model has no boundary has a `C^n` local section through `x`, defined on an open
+neighbourhood of `f x`. -/
+theorem IsSubmersionAt.exists_localSection [I.Boundaryless] (h : IsSubmersionAt I J n f x) :
+    ∃ (s : N → M) (U : Set N), IsOpen U ∧ f x ∈ U ∧ s (f x) = x ∧ ContMDiffOn J I n s U ∧
+      EqOn (f ∘ s) id U :=
+  h.isSubmersionAtOfComplement_complement.exists_localSection
 
 /-- **The derivative of a submersion is surjective.** -/
 theorem IsSubmersionAt.surjective_mfderiv (h : IsSubmersionAt I J n f x) (hn : n ≠ 0) :

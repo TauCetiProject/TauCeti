@@ -95,6 +95,13 @@ lemma isNondegenerate_iff_separatingLeft :
     intro w
     simpa only [SmoothForm.bilinFormAt_apply] using hv w
 
+/-- Fiberwise nondegeneracy says that the null space `{v | ∀ w, form x v w = 0}` of the form is
+zero at every point. -/
+lemma isNondegenerate_iff_forall_ker_bilinFormAt_eq_bot :
+    form.IsNondegenerate ↔ ∀ x, LinearMap.ker (form.bilinFormAt x) = ⊥ := by
+  simp only [isNondegenerate_iff_separatingLeft, LinearMap.ker_eq_bot', LinearMap.ext_iff,
+    SmoothForm.bilinFormAt_apply, LinearMap.zero_apply]
+
 /-- On a manifold of positive dimension, a fiberwise nondegenerate smooth two-form vanishes
 nowhere. -/
 theorem IsNondegenerate.apply_ne_zero [Nontrivial E] (h : form.IsNondegenerate) (x : M) :
