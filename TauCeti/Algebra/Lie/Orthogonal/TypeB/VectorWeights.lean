@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Orthogonal.TypeB.DiagonalCartan
+public import TauCeti.Algebra.Lie.Orthogonal.TypeB.Root.Space
 public import TauCeti.Algebra.Lie.Weights.TensorProduct
 import TauCeti.Algebra.Lie.Weights.Basis
 
@@ -33,17 +33,16 @@ module are not vector weights, so the spin module occurs in no such construction
 
 * `TauCeti.typeBVectorWeightLattice`: the lattice of vector weights, the `ℤ`-span of the
   coordinate functionals `εᵢ`.
-* `TauCeti.typeBStandardWeight`: the weight of each standard basis vector of the standard module.
 
 ## Main results
 
 * `TauCeti.mem_typeBVectorWeightLattice_iff`: the vector weights are the weights with integer
   coordinates.
 * `TauCeti.lie_typeBDiagonalCartan_single`: the diagonal Cartan acts on each standard basis vector
-  by its weight.
+  by its coordinate weight `TauCeti.typeBCoordinateWeight`.
 * `TauCeti.genWeightSpace_typeBStandard_ne_bot_iff`: the weights of the standard module are `0`
   and the `±εᵢ`.
-* `TauCeti.typeBStandardWeight_mem_typeBVectorWeightLattice`: they are vector weights.
+* `TauCeti.typeBCoordinateWeight_mem_typeBVectorWeightLattice`: they are vector weights.
 * `TauCeti.exists_mem_typeBVectorWeightLattice_tensorProduct`: a tensor product of two modules
   whose weights are vector weights has only vector weights.
 * `TauCeti.exists_mem_typeBVectorWeightLattice_of_injective`: a module embedding in one whose
@@ -103,45 +102,21 @@ theorem mem_typeBVectorWeightLattice_iff {φ : Module.Dual K (typeBDiagonalCarta
 
 /-! ### The weights of the standard module -/
 
-variable (K ι) in
-/-- The weight of the standard basis vector `Pi.single j 1` of the standard module
-`Unit ⊕ ι ⊕ ι → K`: `0` at the middle coordinate, `εᵢ` on the first copy of `ι` and `-εᵢ` on the
-second. -/
-noncomputable def typeBStandardWeight : Unit ⊕ ι ⊕ ι → Module.Dual K (typeBDiagonalCartan K ι) :=
-  Sum.elim 0 (Sum.elim typeBEpsilon (-typeBEpsilon))
-
-@[simp]
-theorem typeBStandardWeight_inl (j : Unit) : typeBStandardWeight K ι (.inl j) = 0 :=
-  (rfl)
-
-@[simp]
-theorem typeBStandardWeight_inr_inl (i : ι) :
-    typeBStandardWeight K ι (.inr (.inl i)) = typeBEpsilon i :=
-  (rfl)
-
-@[simp]
-theorem typeBStandardWeight_inr_inr (i : ι) :
-    typeBStandardWeight K ι (.inr (.inr i)) = -typeBEpsilon i :=
-  (rfl)
-
-/-- **The diagonal Cartan acts on each standard basis vector by its weight.** -/
+/-- **The diagonal Cartan acts on each standard basis vector by its coordinate weight.** -/
 theorem lie_typeBDiagonalCartan_single (A : typeBDiagonalCartan K ι) (j : Unit ⊕ ι ⊕ ι) :
-    ⁅A, Pi.single j (1 : K)⁆ = typeBStandardWeight K ι j A • Pi.single j (1 : K) := by
+    ⁅A, Pi.single j (1 : K)⁆ = typeBCoordinateWeight j A • Pi.single j (1 : K) := by
   obtain ⟨d, rfl⟩ := (typeBDiagonalEquiv (K := K) (ι := ι)).surjective A
-  rw [LieSubalgebra.coe_bracket_of_module, LieSubalgebra.coe_bracket_of_module,
-    coe_typeBDiagonalEquiv_apply, Matrix.lie_apply, Matrix.mulVec_single_one]
-  ext k
-  -- Only the two diagonal blocks leave a coordinate comparison after simplification.
-  rcases j with j | j | j <;> rcases k with k | k | k <;> simp [Pi.single_apply, eq_comm] <;>
-    split_ifs with h <;> simp [h]
+  have hd : typeBDiagonalMatrix d = Matrix.diagonal (typeBDiagonalValue d) :=
+    Matrix.ext fun a b ↦ by rw [typeBDiagonalMatrix_apply, Matrix.diagonal_apply]
+  rw [typeBCoordinateWeight_apply, LieSubalgebra.coe_bracket_of_module,
+    LieSubalgebra.coe_bracket_of_module, coe_typeBDiagonalEquiv_apply, Matrix.lie_apply]
+  simp only [hd, Matrix.diagonal_mulVec_single, Matrix.diagonal_apply_eq]
+  rw [← smul_eq_mul, Pi.single_smul']
 
 /-- The weights of the standard basis vectors of the standard module are vector weights. -/
-theorem typeBStandardWeight_mem_typeBVectorWeightLattice (j : Unit ⊕ ι ⊕ ι) :
-    typeBStandardWeight K ι j ∈ typeBVectorWeightLattice K ι := by
-  rcases j with j | j | j
-  · exact zero_mem _
-  · exact typeBEpsilon_mem_typeBVectorWeightLattice j
-  · exact neg_mem (typeBEpsilon_mem_typeBVectorWeightLattice j)
+theorem typeBCoordinateWeight_mem_typeBVectorWeightLattice (j : Unit ⊕ ι ⊕ ι) :
+    typeBCoordinateWeight (K := K) j ∈ typeBVectorWeightLattice K ι := by
+  rcases j with j | j | j <;> simp [typeBEpsilon_mem_typeBVectorWeightLattice]
 
 end CommRing
 
@@ -153,9 +128,9 @@ variable {K : Type u} [Field K] {ι : Type v} [Fintype ι] [DecidableEq ι]
 basis vectors. -/
 @[simp]
 theorem genWeightSpace_typeBStandard_ne_bot_iff (χ : typeBDiagonalCartan K ι → K) :
-    genWeightSpace (Unit ⊕ ι ⊕ ι → K) χ ≠ ⊥ ↔ ∃ j, (typeBStandardWeight K ι j : _ → K) = χ := by
+    genWeightSpace (Unit ⊕ ι ⊕ ι → K) χ ≠ ⊥ ↔ ∃ j, (typeBCoordinateWeight j : _ → K) = χ := by
   refine (Pi.basisFun K (Unit ⊕ ι ⊕ ι)).genWeightSpace_ne_bot_iff_of_weight_basis
-    (μ := typeBStandardWeight K ι) (fun j A ↦ ?_) χ
+    (μ := typeBCoordinateWeight) (fun j A ↦ ?_) χ
   simpa only [Pi.basisFun_apply] using lie_typeBDiagonalCartan_single A j
 
 /-- The diagonal Cartan acts triangularizably on the standard module: the standard basis
@@ -163,7 +138,7 @@ diagonalizes it. -/
 instance instIsTriangularizableTypeBStandard :
     IsTriangularizable K (typeBDiagonalCartan K ι) (Unit ⊕ ι ⊕ ι → K) :=
   (Pi.basisFun K (Unit ⊕ ι ⊕ ι)).isTriangularizable_of_weight_basis
-    (μ := typeBStandardWeight K ι) fun j A ↦ by
+    (μ := typeBCoordinateWeight) fun j A ↦ by
       simpa only [Pi.basisFun_apply] using lie_typeBDiagonalCartan_single A j
 
 /-- Every weight of the standard module is a vector weight. -/
@@ -172,7 +147,7 @@ theorem exists_mem_typeBVectorWeightLattice_standard
     ∃ φ ∈ typeBVectorWeightLattice K ι, ⇑φ = ⇑χ := by
   obtain ⟨j, hj⟩ := (genWeightSpace_typeBStandard_ne_bot_iff (χ : _ → K)).mp
     (Weight.genWeightSpace_ne_bot _ χ)
-  exact ⟨_, typeBStandardWeight_mem_typeBVectorWeightLattice j, hj⟩
+  exact ⟨_, typeBCoordinateWeight_mem_typeBVectorWeightLattice j, hj⟩
 
 /-! ### Constructions preserving vector weights -/
 
