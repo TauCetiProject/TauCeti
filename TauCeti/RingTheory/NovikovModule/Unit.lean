@@ -105,8 +105,8 @@ theorem kernelProduct_sub_kernelMap_right (e : NovikovModule R F₁)
     kernelProduct hn hfin e b - kernelMap hφ hφfin b =
       kernelMap hδ₀ hδ₀fin (kernelMap hk hkfin b) +
         kernelMap hk hkfin (kernelMap hδ₂ hδ₂fin b) := by
-  obtain ⟨D, hm⟩ := exists_potential_le_right hn e
-  rw [kernelProduct_eq_kernelMap_right hn hfin e hm (finsum_mul_mem_right hn hfin e)]
+  obtain ⟨D, hm⟩ := kernelProduct_exists_potential_le_right hn e
+  rw [kernelProduct_eq_kernelMap_right hn hfin e hm (kernelProduct_finsum_mul_mem_right hn hfin e)]
   exact kernelMap_sub_kernelMap hm _ hφ hφfin hk hkfin hδ₂ hδ₂fin hδ₀ hδ₀fin hunit b
 
 include hk hkfin in
@@ -155,8 +155,8 @@ theorem kernelProduct_sub_kernelMap_left (e : NovikovModule R F₂)
     kernelProduct hn hfin a e - kernelMap hφ hφfin a =
       kernelMap hδ₀ hδ₀fin (kernelMap hk hkfin a) +
         kernelMap hk hkfin (kernelMap hδ₁ hδ₁fin a) := by
-  obtain ⟨D, hm⟩ := exists_potential_le_left hn e
-  rw [kernelProduct_eq_kernelMap_left hn hfin e hm (finsum_mul_mem_left hn hfin e)]
+  obtain ⟨D, hm⟩ := kernelProduct_exists_potential_le_left hn e
+  rw [kernelProduct_eq_kernelMap_left hn hfin e hm (kernelProduct_finsum_mul_mem_left hn hfin e)]
   exact kernelMap_sub_kernelMap hm _ hφ hφfin hk hkfin hδ₁ hδ₁fin hδ₀ hδ₀fin hunit a
 
 include hk hkfin in
