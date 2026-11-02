@@ -69,12 +69,26 @@ def _root_.AlgebraicGeometry.Scheme.Modules.cohomologyBiproductLinearEquiv (i : 
     (LinearMap.pi fun j ↦ cohomologyMapBaseLinear R X (biproduct.π F j) i)
     (∑ j, (cohomologyMapBaseLinear R X (biproduct.ι F j) i).comp (LinearMap.proj j))
     (LinearMap.ext fun v ↦ funext fun j ↦ by
-      simp [-cohomologyMapBaseLinear_apply, map_sum, ← LinearMap.comp_apply,
-        ← cohomologyMapBaseLinear_comp, biproduct.ι_π, apply_dite (cohomologyMapBaseLinear R X · i),
-        DFunLike.dite_apply])
+      -- A projection of the inclusion sum keeps exactly its matching summand.
+      simp only [LinearMap.comp_apply, LinearMap.pi_apply, LinearMap.sum_apply,
+        LinearMap.proj_apply, LinearMap.id_apply]
+      change cohomologyMapBaseLinear R X (biproduct.π F j) i
+        (∑ k, cohomologyMapBaseLinear R X (biproduct.ι F k) i (v k)) = v j
+      rw [map_sum, Finset.sum_eq_single j]
+      · rw [← LinearMap.comp_apply, ← cohomologyMapBaseLinear_comp,
+          biproduct.ι_π_self, cohomologyMapBaseLinear_id, LinearMap.id_apply]
+      · intro k _ hkj
+        rw [← LinearMap.comp_apply, ← cohomologyMapBaseLinear_comp,
+          biproduct.ι_π_ne F hkj, cohomologyMapBaseLinear_zero, LinearMap.zero_apply]
+      · simp)
     (LinearMap.ext fun x ↦ by
-      simp [-cohomologyMapBaseLinear_apply, ← LinearMap.comp_apply,
-        ← cohomologyMapBaseLinear_comp, ← LinearMap.sum_apply, ← cohomologyMapBaseLinear_sum])
+      -- The sum of inclusion/projection composites is the identity of the biproduct.
+      have htotal : (∑ j, (cohomologyMapBaseLinear R X (biproduct.ι F j) i).comp
+          (cohomologyMapBaseLinear R X (biproduct.π F j) i)) = LinearMap.id := by
+        simp only [← cohomologyMapBaseLinear_comp, ← cohomologyMapBaseLinear_sum,
+          biproduct.total, cohomologyMapBaseLinear_id]
+      simpa only [LinearMap.comp_apply, LinearMap.pi_apply, LinearMap.sum_apply,
+        LinearMap.proj_apply, LinearMap.id_apply] using LinearMap.congr_fun htotal x)
 
 /-- The `j`-th component of `cohomologyBiproductLinearEquiv` is the map on cohomology induced by
 the `j`-th projection of the biproduct. -/
@@ -92,7 +106,9 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyBiproductLinearEquiv_sym
     (cohomologyBiproductLinearEquiv R F i).symm v =
       ∑ j, cohomologyMapBaseLinear R X (biproduct.ι F j) i (v j) := by
   classical
-  simp [cohomologyBiproductLinearEquiv, LinearEquiv.ofLinearMap]
+  change (∑ j, (cohomologyMapBaseLinear R X (biproduct.ι F j) i).comp
+    (LinearMap.proj j)) v = _
+  simp only [LinearMap.sum_apply, LinearMap.comp_apply, LinearMap.proj_apply]
 
 /-- **Dimension of the cohomology of a finite direct sum of copies of a sheaf.** Over a field
 `k`, `dim Hⁱ(X, ⨁_{I} M) = |I| · dim Hⁱ(X, M)` for every finite type `I`. No finiteness of
