@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.StrictHenselization.Henselian
+public import TauCeti.RingTheory.StrictHenselization.Local
 public import TauCeti.FieldTheory.IsSepClosed
 import Mathlib.RingTheory.Etale.StandardEtale
 import TauCeti.RingTheory.StrictHenselization.Etale
