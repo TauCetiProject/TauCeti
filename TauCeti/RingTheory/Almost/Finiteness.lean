@@ -172,6 +172,7 @@ theorem almostFP_of_finitePresentation [Module.FinitePresentation V N] : S.Almos
 /-! ### Almost zero modules -/
 
 /-- The uniform bound `0` characterises the almost zero modules. -/
+@[simp]
 theorem uniformlyAlmostFG_bound_zero_iff : S.UniformlyAlmostFG N 0 ↔ S.IsAlmostZero N := by
   refine ⟨fun h ↦ isAlmostZero_iff.mpr fun ε hε x ↦ ?_, fun h m₀ hm _ ↦
     ⟨0, by rw [h.smul_top_eq_bot hm]; exact bot_le⟩⟩
@@ -192,6 +193,7 @@ theorem almostFP_zero : (zero V).AlmostFP N :=
 /-! ### The classical setup -/
 
 /-- For the classical setup, the uniform bound `n` means generation by `n` elements. -/
+@[simp]
 theorem uniformlyAlmostFG_classical_iff {n : ℕ} :
     (classical V).UniformlyAlmostFG N n ↔
       ∃ φ : (Fin n → V) →ₗ[V] N, Function.Surjective φ := by
@@ -200,12 +202,14 @@ theorem uniformlyAlmostFG_classical_iff {n : ℕ} :
   exact ⟨φ, range_eq_top.mp (top_le_iff.mp (by simpa using hφ))⟩
 
 /-- For the classical setup, almost finite generation is finite generation. -/
+@[simp]
 theorem almostFG_classical_iff : (classical V).AlmostFG N ↔ Module.Finite V N := by
   refine ⟨fun h ↦ ?_, fun _ ↦ almostFG_of_finite _⟩
   obtain ⟨n, φ, hφ⟩ := h ⊤ (by simp) (Module.Finite.fg_top (R := V) (M := V))
   exact Module.Finite.of_surjective φ (range_eq_top.mp (top_le_iff.mp (by simpa using hφ)))
 
 /-- For the classical setup, almost finite presentation is finite presentation. -/
+@[simp]
 theorem almostFP_classical_iff :
     (classical V).AlmostFP N ↔ Module.FinitePresentation V N := by
   refine ⟨fun h ↦ ?_, fun _ ↦ almostFP_of_finitePresentation _⟩
