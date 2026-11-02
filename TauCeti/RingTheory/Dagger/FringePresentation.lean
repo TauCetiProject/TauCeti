@@ -45,7 +45,8 @@ radii are arbitrarily close to `1`.
 * `TauCeti.Dagger.FringePresentation K A`: a fringe presentation of the `K`-algebra `A`.
 * `TauCeti.Dagger.FringePresentation.stage`: the stage `A_ρ`, for `ρ ∈ (1, ρ₀]`.
 * `TauCeti.Dagger.FringePresentation.stageMap`: the transition map `A_ρ' → A_ρ` for `ρ ≤ ρ'`.
-* `TauCeti.Dagger.FringePresentation.ofStage`: the map `A_ρ → A`.
+* `TauCeti.Dagger.FringePresentation.ofStage`: the map `A_ρ → A`, which makes `A` an
+  `A_ρ`-algebra.
 * `TauCeti.Dagger.FringePresentation.fringeAlgebra`: the fringe algebra `B_ρ`, the image of
   `A_ρ` in `A`.
 * `TauCeti.Dagger.FringePresentation.lift`: the map out of `A` induced by a compatible family of
@@ -54,7 +55,8 @@ radii are arbitrarily close to `1`.
 ## Main results
 
 * `TauCeti.Dagger.FringePresentation.exists_mem_fringeAlgebra`: `A` is the union of its fringe
-  algebras, which decrease with the radius (`fringeAlgebra_antitone`).
+  algebras, which decrease with the radius (`fringeAlgebra_antitone`), so every element of `A`
+  lies in the fringe algebras of all radii close enough to `1` (`eventually_mem_fringeAlgebra`).
 * `TauCeti.Dagger.FringePresentation.exists_stageMap_eq_zero`: the kernel of `A_ρ → A` is the
   union of the kernels of the transition maps to smaller stages.
 * `TauCeti.Dagger.FringePresentation.lift_ofStage` and
@@ -229,6 +231,22 @@ theorem ofStage_comp_stageMap {ρ ρ' : Set.Ioc (1 : ℝ) P.radius} (h : ρ ≤ 
     (P.ofStage ρ).comp (P.stageMap h) = P.ofStage ρ' :=
   AlgHom.ext (P.ofStage_stageMap h)
 
+/-- `A` is an algebra over each stage `A_ρ` of a fringe presentation, through the map
+`A_ρ → A`. -/
+noncomputable instance (ρ : Set.Ioc (1 : ℝ) P.radius) : Algebra (P.stage ρ) A :=
+  (P.ofStage ρ).toRingHom.toAlgebra
+
+/-- The `K`-algebra structure of `A` factors through each stage `A_ρ`, since `A_ρ → A` is
+`K`-linear. -/
+instance (ρ : Set.Ioc (1 : ℝ) P.radius) : IsScalarTower K (P.stage ρ) A :=
+  IsScalarTower.of_algebraMap_eq fun r ↦ ((P.ofStage ρ).commutes r).symm
+
+/-- The structure map of `A` as an `A_ρ`-algebra is the stage map `A_ρ → A`. -/
+@[simp]
+theorem algebraMap_stage_apply (ρ : Set.Ioc (1 : ℝ) P.radius) (x : P.stage ρ) :
+    algebraMap (P.stage ρ) A x = P.ofStage ρ x :=
+  (rfl)
+
 /-- The **fringe algebra** `B_ρ ⊆ A` of a fringe presentation: the image of the stage `A_ρ`. -/
 noncomputable def fringeAlgebra (ρ : Set.Ioc (1 : ℝ) P.radius) : Subalgebra K A :=
   (P.ofStage ρ).range
@@ -242,6 +260,11 @@ theorem fringeAlgebra_antitone : Antitone P.fringeAlgebra := by
   intro ρ ρ' h a ha
   obtain ⟨x, rfl⟩ := P.mem_fringeAlgebra.mp ha
   exact P.mem_fringeAlgebra.mpr ⟨P.stageMap h x, P.ofStage_stageMap h x⟩
+
+/-- The radii `ρ ∈ (1, ρ₀]` of a fringe presentation form a nonempty set, so that statements
+holding for all radii close enough to `1` (`∀ᶠ ρ in atBot`) hold for some radius. -/
+instance : Nonempty (Set.Ioc (1 : ℝ) P.radius) :=
+  ⟨⟨P.radius, P.one_lt_radius, le_rfl⟩⟩
 
 /-- An overconvergent series is restricted at some radius in `(1, ρ₀]`. -/
 private theorem exists_isRestricted (f : washnitzerAlgebra (Fin P.n) K) :
@@ -258,6 +281,11 @@ theorem exists_mem_fringeAlgebra (a : A) : ∃ ρ, a ∈ P.fringeAlgebra ρ := b
   refine ⟨ρ, P.mem_fringeAlgebra.mpr ⟨Ideal.Quotient.mk _ ⟨f, hρ⟩, ?_⟩⟩
   rw [ofStage_mk]
   exact congrArg P.proj (Subtype.ext (washnitzerAlgebra.coe_ofRestricted _ _ _))
+
+/-- Every element of `A` lies in the fringe algebras of all radii close enough to `1`. -/
+theorem eventually_mem_fringeAlgebra (a : A) : ∀ᶠ ρ in atBot, a ∈ P.fringeAlgebra ρ := by
+  obtain ⟨ρ, hρ⟩ := P.exists_mem_fringeAlgebra a
+  exact eventually_atBot.mpr ⟨ρ, fun _ h ↦ P.fringeAlgebra_antitone h hρ⟩
 
 /-- A series in the ideal of the relations lies in the ideal of the relations at every radius
 `ρ > 1` close enough to `1`: its finitely many coefficients with respect to the relations are

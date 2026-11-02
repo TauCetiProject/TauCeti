@@ -8,7 +8,9 @@ module
 public import Mathlib.FieldTheory.Galois.IsGaloisGroup
 public import Mathlib.RingTheory.Spectrum.Prime.FreeLocus
 public import TauCeti.RingTheory.Invariant.Free
+public import Mathlib.RingTheory.IsTensorProduct
 import Mathlib.RingTheory.TensorProduct.IncludeLeftSubRight
+public import TauCeti.RingTheory.Invariant.Basic
 
 /-!
 # Finite étale torsors under a finite group
@@ -26,6 +28,12 @@ part of the definition; it excludes the zero algebra over a nonzero ring, which 
 Galois map for every `G`. Over a field, the torsors are the nonzero finite étale algebras with
 bijective Galois map, and those that are fields are exactly the finite Galois extensions with
 Galois group `G`.
+
+Torsors are stable under base change, so a torsor over `A` gives a torsor over every
+`A`-algebra `A'`, for instance over a localization, a residue field or a completion of `A`. A
+torsor `B'` under `G'` mapping equivariantly from a torsor `B` under a quotient `G` of `G'` is a
+torsor over `B` under the kernel. This splits a torsor along a quotient of its group into two
+stages, `A → B` under `G` and `B → B'` under the kernel, as for a tower of Galois extensions.
 
 Finite étale torsors are the levels of the towers of finite étale covers used to split every
 finite étale algebra over a ring and to build its universal cover, as in Scholze's construction of
@@ -46,6 +54,11 @@ the perfectoid cover of an analytic adic space by a tower of finite étale torso
 * `TauCeti.Algebra.IsFiniteEtaleTorsor.rankAtStalk_eq_card`: a torsor has constant rank `|G|`.
 * `TauCeti.Algebra.IsFiniteEtaleTorsor.baseChange`: for every ring map `A → A'`, `A' ⊗[A] B` is a
   `G`-torsor over `A'`, with `G` acting on the right factor.
+* `TauCeti.Algebra.IsFiniteEtaleTorsor.of_isPushout`: the same for any base change `B'` of `B`
+  along `A → A'` (`Algebra.IsPushout A A' B B'`) with a compatible action of `G`.
+* `TauCeti.Algebra.IsFiniteEtaleTorsor.of_surjective`: if `B` is a `G`-torsor and `B'` a
+  `G'`-torsor over `A`, an `A`-algebra map `B → B'` equivariant along a surjection `π : G' → G`
+  makes `B'` a torsor over `B` under the kernel of `π`.
 * `TauCeti.Algebra.IsFiniteEtaleTorsor.iff_field`: over a field, a torsor is a nonzero finite
   étale algebra with bijective Galois map.
 * `TauCeti.Algebra.IsFiniteEtaleTorsor.iff_isGaloisGroup`,
@@ -151,38 +164,130 @@ theorem rankAtStalk_eq_card [h : IsFiniteEtaleTorsor G A B] (p : PrimeSpectrum A
     Module.rankAtStalk_eq_finrank_of_free]
   simp [Nat.card_eq_fintype_card]
 
-attribute [local instance] Algebra.TensorProduct.rightMulSemiringAction in
+section BaseChange
+
+variable {A' B' : Type*} [CommRing A'] [CommRing B'] [Algebra A A'] [Algebra A B'] [Algebra A' B']
+  [Algebra B B'] [IsScalarTower A A' B'] [IsScalarTower A B B'] [Algebra.IsPushout A A' B B']
+  [MulSemiringAction G B'] [SMulCommClass G A' B']
+
+/-- **Base change of a finite étale torsor along a pushout.** Let `B` be a finite étale
+`G`-torsor over `A`, and let `B'` be a base change of `B` along `A → A'`
+(`Algebra.IsPushout A A' B B'`), on which `G` acts by `A'`-algebra automorphisms compatibly with
+its action on `B`. Then `B'` is a finite étale `G`-torsor over `A'`. -/
+theorem of_isPushout [h : IsFiniteEtaleTorsor G A B]
+    (hG : ∀ (g : G) (b : B), g • algebraMap B B' b = algebraMap B B' (g • b)) :
+    IsFiniteEtaleTorsor G A' B' := by
+  have := Fintype.ofFinite G
+  have := h.faithfullyFlat
+  obtain ⟨-, hinv, hfree⟩ := isFiniteEtaleTorsor_iff.mp h
+  refine isFiniteEtaleTorsor_iff.mpr ⟨?_, ?_, fun g hg ↦ ?_⟩
+  · -- `A' → B' ≃ A' ⊗[A] B` is injective, since `A' ⊗[A] B` is faithfully flat over `A'`.
+    refine (faithfulSMul_iff_algebraMap_injective A' B').mpr fun x y hxy ↦
+      FaithfulSMul.algebraMap_injective A' (A' ⊗[A] B)
+        ((Algebra.IsPushout.equiv A A' B B').injective ?_)
+    simpa only [AlgEquiv.commutes] using hxy
+  · -- An element of trace `1` in `B` has trace `1` in `B'`, and every trace in `B'` comes from
+    -- `A'`, because `B'` is spanned over `A'` by the image of `B`, whose traces come from `A`.
+    obtain ⟨c, hc⟩ := MulSemiringAction.exists_sum_smul_eq_one hfree
+    refine Algebra.IsInvariant.of_sum_smul_eq_one (c := algebraMap B B' c)
+      (by simp [hG, ← map_sum, hc]) fun y ↦ ?_
+    induction y using (Algebra.IsPushout.out (R := A) (S := A') (R' := B) (S' := B')).inductionOn
+      with
+    | tmul b =>
+      obtain ⟨a, ha⟩ := hinv.isInvariant _ (smul_sum_smul (G := G) · b)
+      refine ⟨algebraMap A A' a, ?_⟩
+      simp [hG, ← map_sum, ← ha, ← IsScalarTower.algebraMap_apply]
+    | smul s y hy =>
+      obtain ⟨a, ha⟩ := hy
+      exact ⟨s * a, by simp [Algebra.smul_def, ha, Finset.mul_sum]⟩
+    | add y z hy hz =>
+      obtain ⟨a, ha⟩ := hy
+      obtain ⟨b, hb⟩ := hz
+      exact ⟨a + b, by simp [smul_add, Finset.sum_add_distrib, ha, hb]⟩
+  · -- The elements `g • b - b` of `B` generate the unit ideal, hence so do their images.
+    rw [eq_top_iff, ← Ideal.map_top (algebraMap B B'), ← hfree g hg, Ideal.map_span,
+      Ideal.span_le]
+    rintro _ ⟨_, ⟨b, rfl⟩, rfl⟩
+    exact Ideal.subset_span ⟨algebraMap B B' b, by simp [hG]⟩
+
+end BaseChange
+
+attribute [local instance] Algebra.TensorProduct.rightAlgebra
+  Algebra.TensorProduct.rightMulSemiringAction in
 /-- **Base change of a torsor.** For every ring map `A → A'`, the base change `A' ⊗[A] B` of a
 finite étale `G`-torsor is a finite étale `G`-torsor over `A'`, with `G` acting on the right
 factor (`Algebra.TensorProduct.rightMulSemiringAction`). Geometrically, the pullback of a
 `G`-torsor `Spec B → Spec A` along `Spec A' → Spec A` is a `G`-torsor. -/
-instance baseChange (A' : Type*) [CommRing A'] [Algebra A A'] [h : IsFiniteEtaleTorsor G A B] :
-    IsFiniteEtaleTorsor G A' (A' ⊗[A] B) := by
-  have := h.etale
-  have := h.finite
-  have := h.faithfullyFlat
-  classical
-  have := Fintype.ofFinite G
-  refine ⟨inferInstance, inferInstance, inferInstance, ?_⟩
-  -- The Galois map of `A' ⊗[A] B` is the base change of the Galois map of `B`, read through
-  -- `A' ⊗[A] (B ⊗[A] B) ≃ (A' ⊗[A] B) ⊗[A'] (A' ⊗[A] B)` and
-  -- `A' ⊗[A] (G → B) ≃ (G → A' ⊗[A] B)`.
-  let eB : B ⊗[A] B ≃ₐ[A] (G → B) :=
-    (AlgEquiv.ofBijective _ h.bijective_tensorToPi).restrictScalars A
-  let e : A' ⊗[A] (B ⊗[A] B) ≃ₐ[A'] (G → A' ⊗[A] B) :=
-    (Algebra.TensorProduct.congr AlgEquiv.refl eB).trans
-      (Algebra.TensorProduct.piRight A A' A' fun _ ↦ B)
-  have hcomp : ⇑(MulSemiringAction.tensorToPi A' (A' ⊗[A] B) G) =
-      e ∘ (TensorProduct.baseChangeTensorAlgEquiv A A' B B).symm := by
-    funext x
-    rw [Function.comp_apply, ← (TensorProduct.baseChangeTensorAlgEquiv A A' B B).apply_symm_apply x,
-      MulSemiringAction.tensorToPi_baseChange, AlgEquiv.symm_apply_apply]
-    -- `e` is `id ⊗ tensorToPi A B G` followed by `piRight`, whose underlying map is `piRightHom`.
-    rfl
-  rw [hcomp]
-  exact e.bijective.comp (AlgEquiv.bijective _)
+instance baseChange (A' : Type*) [CommRing A'] [Algebra A A'] [IsFiniteEtaleTorsor G A B] :
+    IsFiniteEtaleTorsor G A' (A' ⊗[A] B) :=
+  of_isPushout (A := A) (B := B) fun _ _ ↦ rfl
 
 end IsFiniteEtaleTorsor
+
+section Surjective
+
+variable {G' B' : Type*} [Group G'] [CommRing B'] [Algebra A B'] [Algebra B B']
+  [IsScalarTower A B B'] [MulSemiringAction G' B'] [SMulCommClass G' A B']
+
+/-- **A torsor over a torsor along a surjection of groups.** Let `B` be a finite étale `G`-torsor
+and `B'` a finite étale `G'`-torsor over `A`, let `π : G' → G` be surjective, and let `B → B'` be an
+`A`-algebra map equivariant along `π`. Then `B'` is a finite étale torsor over `B` under the kernel
+of `π`. In particular `B → B'` is injective and faithfully flat. -/
+theorem IsFiniteEtaleTorsor.of_surjective [Finite G'] [hB : IsFiniteEtaleTorsor G A B]
+    [hB' : IsFiniteEtaleTorsor G' A B'] {π : G' →* G} (hπs : Function.Surjective π)
+    (hπ : ∀ (g : G') (b : B), g • algebraMap B B' b = algebraMap B B' (π g • b)) :
+    haveI := smulCommClass_ker hπ
+    IsFiniteEtaleTorsor π.ker B B' := by
+  classical
+  have := smulCommClass_ker hπ
+  have := Fintype.ofFinite G
+  have := Fintype.ofFinite G'
+  have := hB'.faithfullyFlat
+  obtain ⟨-, hinv, -⟩ := isFiniteEtaleTorsor_iff.mp hB
+  obtain ⟨-, hinv', hfree'⟩ := isFiniteEtaleTorsor_iff.mp hB'
+  -- A dual basis `(xᵢ, yᵢ)` of `B`: `∑ i, xᵢ * g • yᵢ` is `1` at `g = 1` and `0` elsewhere.
+  obtain ⟨u, hu⟩ := hB.bijective_tensorToPi.2 (Pi.single 1 1)
+  obtain ⟨S, rfl⟩ := TensorProduct.exists_finset u
+  have hS (g : G) : ∑ p ∈ S, p.1 * g • p.2 = (Pi.single 1 1 : G → B) g := by
+    simpa using congr_fun hu g
+  have hfreeK (k : π.ker) (hk : k ≠ 1) :
+      Ideal.span (Set.range fun y : B' ↦ k • y - y) = ⊤ :=
+    hfree' k (by simpa using hk)
+  -- Summing over the elements of `G'` with trivial image is summing over the kernel.
+  have hker (c : B') : (∑ g : G', if π g = 1 then g • c else 0) = ∑ k : π.ker, k • c := by
+    rw [← Finset.sum_filter]
+    exact Finset.sum_subtype _ (by simp) _
+  refine isFiniteEtaleTorsor_iff.mpr ⟨?_, ?_, hfreeK⟩
+  · -- If `b ↦ 0` then all translates of `b` map to `0`, so its dual-basis coordinates, which
+    -- lie in `A`, map to `0` in `B'`; as `A → B'` is injective they vanish.
+    refine (faithfulSMul_iff_algebraMap_injective B B').mpr <|
+      (injective_iff_map_eq_zero _).mpr fun b hb ↦ ?_
+    have hcoord (p : B × B) : ∑ g : G, g • (p.2 * b) = 0 := by
+      obtain ⟨a, ha⟩ := hinv.isInvariant _ (smul_sum_smul (G := G) · (p.2 * b))
+      rw [← ha, ← map_zero (algebraMap A B)]
+      congr 1
+      refine FaithfulSMul.algebraMap_injective A B' ?_
+      rw [IsScalarTower.algebraMap_apply A B B', ha, map_sum, map_zero]
+      refine Finset.sum_eq_zero fun g _ ↦ ?_
+      obtain ⟨g', rfl⟩ := hπs g
+      rw [smul_mul', map_mul, ← hπ, ← hπ, hb, smul_zero, mul_zero]
+    have :=
+      (RingHom.id B).sum_mul_sum_smul (MonoidHom.id G) (fun _ _ ↦ rfl) hS b
+    simp only [RingHom.id_apply, MonoidHom.id_apply, Finset.sum_ite_eq', Finset.mem_univ,
+      ite_true, one_smul, hcoord, mul_zero, Finset.sum_const_zero] at this
+    exact this.symm
+  · -- The trace `∑ k, k • y` over the kernel is `∑ i, xᵢ * ∑ g, g • (yᵢ * y)`, whose
+    -- dual-basis coordinates are invariant under `G'` and hence come from `A`.
+    obtain ⟨c, hc⟩ := MulSemiringAction.exists_sum_smul_eq_one hfreeK
+    refine Algebra.IsInvariant.of_sum_smul_eq_one hc fun y ↦ ?_
+    choose a ha using fun p : B × B ↦
+      hinv'.isInvariant _ (smul_sum_smul (G := G') · (algebraMap B B' p.2 * y))
+    refine ⟨∑ p ∈ S, p.1 * algebraMap A B (a p), ?_⟩
+    rw [← hker, ← (algebraMap B B').sum_mul_sum_smul π hπ hS, map_sum]
+    refine Finset.sum_congr rfl fun p _ ↦ ?_
+    rw [map_mul, ← IsScalarTower.algebraMap_apply, ha]
+
+end Surjective
 
 section Field
 

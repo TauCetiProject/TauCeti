@@ -287,6 +287,14 @@ theorem neg_apply (s : Γ(twistingSheaf 𝒜 n, U)) (x : U) : (-s).1 x = -s.1 x 
 theorem sub_apply (s t : Γ(twistingSheaf 𝒜 n, U)) (x : U) : (s - t).1 x = s.1 x - t.1 x :=
   (rfl)
 
+@[simp]
+theorem sum_apply {ι : Type*} (s : Finset ι) (t : ι → Γ(twistingSheaf 𝒜 n, U)) (x : U) :
+    (∑ i ∈ s, t i).1 x = ∑ i ∈ s, (t i).1 x := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert a s ha ih => simp [Finset.sum_insert ha, ih]
+
 /-- Sections of the structure sheaf act on sections of `𝒪(n)` pointwise, through the inclusions
 `A_{(x)} → A_x` of the homogeneous localizations. -/
 @[simp]
