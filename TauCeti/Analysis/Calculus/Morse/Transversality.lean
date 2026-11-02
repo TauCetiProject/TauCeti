@@ -98,7 +98,8 @@ theorem finrank_span_tangentConeAt_unstableSet (hp : IsNondegenerateCriticalPoin
     Module.finrank ℝ
         (Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p) y)) =
       morseIndex f p := by
-  obtain ⟨e, hye, he, hes, hS⟩ := hp.exists_unstableSet_chart hfs hf hy
+  obtain ⟨e, hye, he, hes, hS⟩ :=
+    hp.exists_unstableSet_chart le_rfl (by simpa [one_add_one_eq_two] using hfs) hf hy
   obtain ⟨A, hA⟩ := e.exists_hasFDerivAt_of_chart hye
     ((he _ hye).differentiableAt one_ne_zero)
     ((hes _ (e.map_source hye)).differentiableAt one_ne_zero)
@@ -114,7 +115,8 @@ theorem finrank_span_tangentConeAt_stableSet_add_morseIndex (hq : IsNondegenerat
     Module.finrank ℝ
         (Submodule.span ℝ (tangentConeAt ℝ (Flow.stableSet (negativeGradientFlow f hf) q) y)) +
       morseIndex f q = Module.finrank ℝ E := by
-  obtain ⟨e, hye, he, hes, hS⟩ := hq.exists_stableSet_chart hfs hf hy
+  obtain ⟨e, hye, he, hes, hS⟩ :=
+    hq.exists_stableSet_chart le_rfl (by simpa [one_add_one_eq_two] using hfs) hf hy
   obtain ⟨A, hA⟩ := e.exists_hasFDerivAt_of_chart hye
     ((he _ hye).differentiableAt one_ne_zero)
     ((hes _ (e.map_source hye)).differentiableAt one_ne_zero)
@@ -142,8 +144,10 @@ theorem exists_unstableSet_inter_stableSet_chart (hp : IsNondegenerateCriticalPo
             Submodule.span ℝ
               (tangentConeAt ℝ (Flow.stableSet (negativeGradientFlow f hf) q) y) := by
   have : CompleteSpace E := FiniteDimensional.complete ℝ E
-  obtain ⟨e₁, hy₁, he₁, hes₁, hS₁⟩ := hp.exists_unstableSet_chart hfs hf hyu
-  obtain ⟨e₂, hy₂, he₂, hes₂, hS₂⟩ := hq.exists_stableSet_chart hfs hf hys
+  obtain ⟨e₁, hy₁, he₁, hes₁, hS₁⟩ :=
+    hp.exists_unstableSet_chart le_rfl (by simpa [one_add_one_eq_two] using hfs) hf hyu
+  obtain ⟨e₂, hy₂, he₂, hes₂, hS₂⟩ :=
+    hq.exists_stableSet_chart le_rfl (by simpa [one_add_one_eq_two] using hfs) hf hys
   obtain ⟨e, hye, he, hes, hS⟩ := exists_isSliceChart_inter_of_span_tangentConeAt_sup_eq_top
     one_ne_zero (isSliceChart_iff.2 hS₁) (isSliceChart_iff.2 hS₂) hy₁ hy₂ hyu hys he₁ he₂
     ((hes₁ _ (e₁.map_source hy₁)).differentiableAt one_ne_zero)
@@ -170,8 +174,10 @@ theorem span_tangentConeAt_unstableSet_inter_stableSet (hp : IsNondegenerateCrit
       Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p) y) ⊓
         Submodule.span ℝ (tangentConeAt ℝ (Flow.stableSet (negativeGradientFlow f hf) q) y) := by
   have : CompleteSpace E := FiniteDimensional.complete ℝ E
-  obtain ⟨e₁, hy₁, he₁, hes₁, hS₁⟩ := hp.exists_unstableSet_chart hfs hf hyu
-  obtain ⟨e₂, hy₂, he₂, hes₂, hS₂⟩ := hq.exists_stableSet_chart hfs hf hys
+  obtain ⟨e₁, hy₁, he₁, hes₁, hS₁⟩ :=
+    hp.exists_unstableSet_chart le_rfl (by simpa [one_add_one_eq_two] using hfs) hf hyu
+  obtain ⟨e₂, hy₂, he₂, hes₂, hS₂⟩ :=
+    hq.exists_stableSet_chart le_rfl (by simpa [one_add_one_eq_two] using hfs) hf hys
   exact span_tangentConeAt_inter_of_span_tangentConeAt_sup_eq_top one_ne_zero
     (isSliceChart_iff.2 hS₁) (isSliceChart_iff.2 hS₂) hy₁ hy₂ hyu hys he₁ he₂
     ((hes₁ _ (e₁.map_source hy₁)).differentiableAt one_ne_zero)

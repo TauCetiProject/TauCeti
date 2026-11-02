@@ -47,13 +47,11 @@ flow could otherwise break embeddedness. For a gradient flow they cannot.
 * `IsNondegenerateCriticalPoint.eventually_forall_dist_le_of_mem_stableSet` and
   `IsNondegenerateCriticalPoint.eventually_forall_dist_le_of_mem_unstableSet`: near a
   nondegenerate critical point, stable and unstable trajectories stay in a given ball.
-* `IsNondegenerateCriticalPoint.exists_stableSet_chart_of_contDiff`: for a globally `C^(n+1)`
+* `IsNondegenerateCriticalPoint.exists_stableSet_chart`: for a globally `C^(n+1)`
   function, every point of the global stable set has a `C^n` straightening chart onto the stable
   Hessian subspace.
-* `IsNondegenerateCriticalPoint.exists_unstableSet_chart_of_contDiff`: the same for the unstable
+* `IsNondegenerateCriticalPoint.exists_unstableSet_chart`: the same for the unstable
   set and the unstable Hessian subspace.
-* `IsNondegenerateCriticalPoint.exists_stableSet_chart` and
-  `IsNondegenerateCriticalPoint.exists_unstableSet_chart`: the `C²`/`C¹` case `n = 1`.
 
 ## References
 
@@ -164,11 +162,11 @@ private theorem exists_chart_of_isInvariant {n : ℕ} (hn : 1 ≤ n) (hfs : Cont
   · rw [hesource] at hz
     rw [he]
     exact (hqC _ hz.2).comp z
-      (((contDiff_negativeGradientFlow_apply_of_contDiff f hf hn hfs T).sub
+      (((contDiff_negativeGradientFlow_apply f hf hn hfs T).sub
         contDiff_const).contDiffAt)
   · rw [OpenPartialHomeomorph.trans_target] at hz
     rw [hes]
-    exact ((contDiff_negativeGradientFlow_apply_of_contDiff f hf hn hfs (-T)).comp
+    exact ((contDiff_negativeGradientFlow_apply f hf hn hfs (-T)).comp
       (contDiff_id.add contDiff_const)).contDiffAt.comp z (hqCs z hz.1)
   · rw [hesource] at hz
     rw [he]
@@ -183,7 +181,7 @@ private theorem exists_chart_of_isInvariant {n : ℕ} (hn : 1 ≤ n) (hfs : Cont
 nondegenerate critical point `x` under the negative-gradient flow has a `C^n` ambient chart,
 with `C^n` inverse, carrying the stable set onto the stable Hessian subspace, whose dimension is
 `finrank E - morseIndex f x`. -/
-theorem exists_stableSet_chart_of_contDiff (h : IsNondegenerateCriticalPoint f x) {n : ℕ}
+theorem exists_stableSet_chart (h : IsNondegenerateCriticalPoint f x) {n : ℕ}
     (hn : 1 ≤ n) (hfs : ContDiff ℝ (n + 1) f) (hf : LipschitzWith K (∇ f)) {y : E}
     (hy : y ∈ Flow.stableSet (negativeGradientFlow f hf) x) :
     ∃ e : OpenPartialHomeomorph E E, y ∈ e.source ∧
@@ -212,29 +210,11 @@ theorem exists_stableSet_chart_of_contDiff (h : IsNondegenerateCriticalPoint f x
       ⟨w - x, (mem_localInvariantSet_Ici_iff_negativeGradientFlow hf _).2 (by rwa [hxw]), rfl⟩
     simpa only [hxw] using this
 
-/-- **The stable set of a Morse critical point is an embedded `C¹` submanifold.** For a globally
-`C²` function with globally Lipschitz gradient, every point `y` of the stable set of a
-nondegenerate critical point `x` under the negative-gradient flow has a `C¹` ambient chart,
-with `C¹` inverse, carrying the stable set onto the stable Hessian subspace, whose dimension is
-`finrank E - morseIndex f x`. -/
-theorem exists_stableSet_chart (h : IsNondegenerateCriticalPoint f x) (hfs : ContDiff ℝ 2 f)
-    (hf : LipschitzWith K (∇ f)) {y : E}
-    (hy : y ∈ Flow.stableSet (negativeGradientFlow f hf) x) :
-    ∃ e : OpenPartialHomeomorph E E, y ∈ e.source ∧
-      (∀ z ∈ e.source, ContDiffAt ℝ 1 e z) ∧
-      (∀ z ∈ e.target, ContDiffAt ℝ 1 e.symm z) ∧
-      ∀ z ∈ e.source, z ∈ Flow.stableSet (negativeGradientFlow f hf) x ↔
-        e z ∈ h.contDiffAt.stableLinearSubspace := by
-  obtain ⟨e, hye, he, hes, hmem⟩ := h.exists_stableSet_chart_of_contDiff le_rfl
-    (by simpa [one_add_one_eq_two] using hfs) hf hy
-  exact ⟨e, hye, by simpa only [Nat.cast_one] using he, by simpa only [Nat.cast_one] using hes,
-    hmem⟩
-
 /-- **The unstable set of a Morse critical point is an embedded `C^n` submanifold.** The
-backward-time counterpart of `IsNondegenerateCriticalPoint.exists_stableSet_chart_of_contDiff`:
+backward-time counterpart of `IsNondegenerateCriticalPoint.exists_stableSet_chart`:
 every point of the unstable set has a `C^n` ambient chart, with `C^n` inverse, carrying the
 unstable set onto the unstable Hessian subspace, whose dimension is the Morse index. -/
-theorem exists_unstableSet_chart_of_contDiff (h : IsNondegenerateCriticalPoint f x) {n : ℕ}
+theorem exists_unstableSet_chart (h : IsNondegenerateCriticalPoint f x) {n : ℕ}
     (hn : 1 ≤ n) (hfs : ContDiff ℝ (n + 1) f) (hf : LipschitzWith K (∇ f)) {y : E}
     (hy : y ∈ Flow.unstableSet (negativeGradientFlow f hf) x) :
     ∃ e : OpenPartialHomeomorph E E, y ∈ e.source ∧
@@ -262,23 +242,6 @@ theorem exists_unstableSet_chart_of_contDiff (h : IsNondegenerateCriticalPoint f
   · have := image_add_localInvariantSet_Iic_subset_unstableSet hf h.unstableProjection hconv
       ⟨w - x, (mem_localInvariantSet_Iic_iff_negativeGradientFlow hf _).2 (by rwa [hxw]), rfl⟩
     simpa only [hxw] using this
-
-/-- **The unstable set of a Morse critical point is an embedded `C¹` submanifold.** The
-backward-time counterpart of `IsNondegenerateCriticalPoint.exists_stableSet_chart`: every point
-of the unstable set has a `C¹` ambient chart, with `C¹` inverse, carrying the unstable set onto
-the unstable Hessian subspace, whose dimension is the Morse index. -/
-theorem exists_unstableSet_chart (h : IsNondegenerateCriticalPoint f x) (hfs : ContDiff ℝ 2 f)
-    (hf : LipschitzWith K (∇ f)) {y : E}
-    (hy : y ∈ Flow.unstableSet (negativeGradientFlow f hf) x) :
-    ∃ e : OpenPartialHomeomorph E E, y ∈ e.source ∧
-      (∀ z ∈ e.source, ContDiffAt ℝ 1 e z) ∧
-      (∀ z ∈ e.target, ContDiffAt ℝ 1 e.symm z) ∧
-      ∀ z ∈ e.source, z ∈ Flow.unstableSet (negativeGradientFlow f hf) x ↔
-        e z ∈ h.contDiffAt.unstableLinearSubspace := by
-  obtain ⟨e, hye, he, hes, hmem⟩ := h.exists_unstableSet_chart_of_contDiff le_rfl
-    (by simpa [one_add_one_eq_two] using hfs) hf hy
-  exact ⟨e, hye, by simpa only [Nat.cast_one] using he, by simpa only [Nat.cast_one] using hes,
-    hmem⟩
 
 end IsNondegenerateCriticalPoint
 
