@@ -17,7 +17,7 @@ import TauCeti.NumberTheory.LocalField.QuadraticForm.Ramification.Dictionary
 
 Let `K` be a nonarchimedean local field with `2 ≠ 0`, put `e = v_K(2)`, and let `q` be the
 cardinality of the residue field. The subgroup `U(K, 2e) · (𝒪[K]ˣ)²` has index `q^e` in `𝒪[K]ˣ`
-(`TauCeti.relIndex_unitFiltration_sup_square`). Here `𝒪[K]ˣ` is `U(K, 0)`, and
+(`TauCeti.relIndex_unitFiltration_two_mul_dyadicLevel_sup_square`). Here `𝒪[K]ˣ` is `U(K, 0)`, and
 `U(K, 2e) · (𝒪[K]ˣ)²` is `(U(K, 2e) · (Kˣ)²) ∩ U(K, 0)`, because a unit that is a square in `K` is
 the square of a unit.
 
@@ -59,15 +59,10 @@ theorem unitFiltration_sup_square_le_quadraticNormSubgroup (h2 : (2 : K) ≠ 0) 
     (ha : valuation K (a : K) = 1) (hd : defectExponent a = 1) :
     unitFiltration K (2 * dyadicLevel K h2) ⊔ Subgroup.square Kˣ ≤
       quadraticNormSubgroup (a : K) := by
-  -- A unit of odd defect exponent `1` forces `v_K(2) ≥ 1`.
-  have he : 1 ≤ 2 * dyadicLevel K h2 := by
-    have h := defectExponent_le_two_mul_natCastValuation h2 ha
-      (not_isSquare_of_defectExponent_eq hd)
-    rw [hd, ← dyadicLevel_def] at h
-    exact_mod_cast h
+  have he := dyadicLevel_ne_zero_of_defectExponent_eq h2 ha (d := 1) (by exact_mod_cast hd) one_pos
   have hle := unitFiltration_le_quadraticNormSubgroup_of_defectExponent_eq h2 ha (d := 1)
     (by exact_mod_cast hd)
-  rw [Nat.sub_add_cancel he] at hle
+  rw [Nat.sub_add_cancel (show 1 ≤ 2 * dyadicLevel K h2 by omega)] at hle
   exact sup_le hle (square_le_quadraticNormSubgroup (a : K))
 
 /-- **The unit norms of a defect-one radicand equal `U(K, 2e) · (𝒪[K]ˣ)²` exactly when
@@ -86,7 +81,7 @@ theorem unitFiltration_sup_square_inf_eq_quadraticNormSubgroup_inf_iff (h2 : (2 
       index_subgroupOf_unitFiltration_eq_quadraticNormSubgroup_index_of_odd_defectExponent hd
         odd_one, quadraticNormSubgroup_index_eq_two_of_not_isSquare h2
         (not_isSquare_of_defectExponent_eq hd)]
-  have hT := relIndex_unitFiltration_sup_square h2
+  have hT := relIndex_unitFiltration_two_mul_dyadicLevel_sup_square h2
   constructor
   · intro h
     have hidx := congrArg (fun H : Subgroup Kˣ ↦ H.relIndex (unitFiltration K 0)) h
@@ -106,12 +101,7 @@ theorem unitFiltration_sup_square_inf_lt_quadraticNormSubgroup_inf_iff (h2 : (2 
     (unitFiltration K (2 * dyadicLevel K h2) ⊔ Subgroup.square Kˣ) ⊓ unitFiltration K 0 <
         quadraticNormSubgroup (a : K) ⊓ unitFiltration K 0 ↔
       2 < Nat.card 𝓀[K] ^ dyadicLevel K h2 := by
-  -- A unit of odd defect exponent `1` forces `v_K(2) ≥ 1`.
-  have he : 1 ≤ 2 * dyadicLevel K h2 := by
-    have h := defectExponent_le_two_mul_natCastValuation h2 ha
-      (not_isSquare_of_defectExponent_eq hd)
-    rw [hd, ← dyadicLevel_def] at h
-    exact_mod_cast h
+  have he := dyadicLevel_ne_zero_of_defectExponent_eq h2 ha (d := 1) (by exact_mod_cast hd) one_pos
   have h1 : 1 < Nat.card 𝓀[K] := Finite.one_lt_card
   have hq : Nat.card 𝓀[K] ≤ Nat.card 𝓀[K] ^ dyadicLevel K h2 := Nat.le_self_pow (by omega) _
   rw [lt_iff_le_and_ne, and_iff_right (inf_le_inf_right (unitFiltration K 0)

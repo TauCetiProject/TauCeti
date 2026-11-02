@@ -14,7 +14,7 @@ import TauCeti.NumberTheory.LocalField.QuadraticForm.Ramification.Dictionary
 # Deep units and unit norms over `ℚ₂(√2)`
 
 In `K = ℚ₂(√2)` the residue field has two elements and `v_K(2) = 2`. So `U(K, 4) · (𝒪[K]ˣ)²` has
-index `2 ^ 2 = 4` in `𝒪[K]ˣ` (`TauCeti.relIndex_unitFiltration_sup_square`).
+index `2 ^ 2 = 4` in `𝒪[K]ˣ` (`TauCeti.relIndex_unitFiltration_two_mul_dyadicLevel_sup_square`).
 
 For the radicand `1 + √2`, of defect exponent `1`, every element of `U(K, 4)` is a norm from
 `K(√(1 + √2))`, as is every square, but the unit norms have index two in `𝒪[K]ˣ`. So they strictly
@@ -44,7 +44,7 @@ namespace TauCeti.DyadicSqrtTwo
 theorem relIndex_unitFiltration_four_sup_square :
     (unitFiltration DyadicSqrtTwo 4 ⊔ Subgroup.square DyadicSqrtTwoˣ).relIndex
         (unitFiltration DyadicSqrtTwo 0) = 4 := by
-  have h := relIndex_unitFiltration_sup_square (K := DyadicSqrtTwo) two_ne_zero
+  have h := relIndex_unitFiltration_two_mul_dyadicLevel_sup_square (K := DyadicSqrtTwo) two_ne_zero
   rwa [dyadicLevel_eq_two, natCard_residueField] at h
 
 /-- **The unit norms from `ℚ₂(√2)(√(1 + √2))` strictly contain `U(K, 4) · (𝒪[K]ˣ)²`.** The radicand

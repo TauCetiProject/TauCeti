@@ -39,11 +39,12 @@ the residue field, the subgroup `U(K, 2e) · (𝒪[K]ˣ)²` has index `q^e` in `
   exponent is, up to squares, a unit of defect exponent `2 v_K(2)`.
 * `TauCeti.isSquare_mul_of_even_defectExponent`: the nonsquares of even defect exponent form a
   single square class.
-* `TauCeti.isSquare_mul_of_mem_unitFiltration`: two nonsquares of `U(K, 2e)` differ by a square.
+* `TauCeti.isSquare_mul_of_mem_unitFiltration_two_mul_dyadicLevel`: two nonsquares of `U(K, 2e)`
+  differ by a square.
 * `TauCeti.relIndex_square_unitFiltration_two_mul_dyadicLevel`: `U(K, 2e)` meets exactly two
   square classes.
-* `TauCeti.relIndex_unitFiltration_sup_square`: `U(K, 2e) · (𝒪[K]ˣ)²` has index `q^e` in
-  `𝒪[K]ˣ`.
+* `TauCeti.relIndex_unitFiltration_two_mul_dyadicLevel_sup_square`: `U(K, 2e) · (𝒪[K]ˣ)²` has
+  index `q^e` in `𝒪[K]ˣ`.
 * `TauCeti.unramified_class_iff_even_defectExponent`: the ramification dictionary, `a` is an
   unramified class exactly when `δ(a)` is even.
 * `TauCeti.unramified_class_unique`: the unramified class is unique up to squares.
@@ -147,9 +148,18 @@ theorem isSquare_mul_of_defectExponent_eq_two_mul (h2 : (2 : K) ≠ 0) {u w : K�
       (by rw [map_add, map_add, map_mul, map_mul, h4]; simpa using hsum)
     simpa using h.mul (IsSquare.sq (ξ * η))
 
+/-- **A unit of positive defect exponent forces `v_K(2) ≠ 0`.** Its defect exponent is at most
+`2 v_K(2)`; in odd residue characteristic every nonsquare unit has defect exponent `0`. -/
+theorem dyadicLevel_ne_zero_of_defectExponent_eq (h2 : (2 : K) ≠ 0) {a : Kˣ}
+    (ha : valuation K (a : K) = 1) {d : ℤ} (hd : defectExponent a = d) (hd0 : 0 < d) :
+    dyadicLevel K h2 ≠ 0 := by
+  have h := defectExponent_le_two_mul_natCastValuation h2 ha (not_isSquare_of_defectExponent_eq hd)
+  rw [hd, ← dyadicLevel_def, WithTop.coe_le_coe] at h
+  omega
+
 /-- **The nonsquares of `U(K, 2 v_K(2))` form one square class.** Both have the maximal defect
 exponent `2 v_K(2)`, so they differ by a square. -/
-theorem isSquare_mul_of_mem_unitFiltration (h2 : (2 : K) ≠ 0) {u w : Kˣ}
+theorem isSquare_mul_of_mem_unitFiltration_two_mul_dyadicLevel (h2 : (2 : K) ≠ 0) {u w : Kˣ}
     (hu : u ∈ unitFiltration K (2 * dyadicLevel K h2))
     (hw : w ∈ unitFiltration K (2 * dyadicLevel K h2)) (hu' : ¬IsSquare u) (hw' : ¬IsSquare w) :
     IsSquare (u * w) := by
@@ -172,12 +182,12 @@ theorem relIndex_square_unitFiltration_two_mul_dyadicLevel (h2 : (2 : K) ≠ 0) 
   intro h
   by_cases hb' : IsSquare b
   · exact hnsq (by simpa using (h.2 hb').mul hb'.inv)
-  · exact hb' (h.1 (isSquare_mul_of_mem_unitFiltration h2 hb hu hb' hnsq))
+  · exact hb' (h.1 (isSquare_mul_of_mem_unitFiltration_two_mul_dyadicLevel h2 hb hu hb' hnsq))
 
 /-- **`U(K, 2 v_K(2)) · (𝒪[K]ˣ)²` has index `q ^ v_K(2)` in `𝒪[K]ˣ`**, where `q` is the
 cardinality of the residue field. The subgroup is written as `U(K, 2 v_K(2)) · (Kˣ)²` intersected
 with `U(K, 0) = 𝒪[K]ˣ`, as `Subgroup.relIndex` does. -/
-theorem relIndex_unitFiltration_sup_square (h2 : (2 : K) ≠ 0) :
+theorem relIndex_unitFiltration_two_mul_dyadicLevel_sup_square (h2 : (2 : K) ≠ 0) :
     (unitFiltration K (2 * dyadicLevel K h2) ⊔ Subgroup.square Kˣ).relIndex
         (unitFiltration K 0) = Nat.card 𝓀[K] ^ dyadicLevel K h2 := by
   set U := unitFiltration K (2 * dyadicLevel K h2)
