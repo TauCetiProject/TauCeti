@@ -51,6 +51,7 @@ the torsion submodule of `M × N` is the product of the torsion submodules.
 * `TauCeti.Submodule.comap_torsion_le_of_comp_eq_smul`: a linear map with a left inverse up to a
   nonzerodivisor reflects torsion.
 * `TauCeti.Submodule.le_comap_torsion`: a linear map sends torsion elements to torsion elements.
+* `TauCeti.Submodule.prodMk_mem_torsion`: a pair of torsion elements is torsion.
 * `Module.IsTorsion.of_injective`, `Module.IsTorsion.of_surjective`, `Module.IsTorsion.prod`:
   submodules, linear images and products of torsion modules are torsion.
 * `Submodule.exists_smul_mem_of_forall_exists_smul_mem`: finitely many elements with nonzero
@@ -240,6 +241,16 @@ theorem le_comap_torsion (f : M →ₗ[R] N) :
   exact (_root_.Submodule.mem_torsion_iff _).mpr
     ⟨a, by rw [← LinearMap.map_smul_of_tower, ha, map_zero]⟩
 
+/-- A pair of torsion elements is torsion: if `a • x = 0` and `b • y = 0`, then `(a * b)`
+annihilates `(x, y)`. -/
+theorem prodMk_mem_torsion {x : M} {y : N} (hx : x ∈ _root_.Submodule.torsion R M)
+    (hy : y ∈ _root_.Submodule.torsion R N) : (x, y) ∈ _root_.Submodule.torsion R (M × N) := by
+  obtain ⟨a, ha⟩ := (_root_.Submodule.mem_torsion_iff _).mp hx
+  obtain ⟨b, hb⟩ := (_root_.Submodule.mem_torsion_iff _).mp hy
+  refine (_root_.Submodule.mem_torsion_iff _).mpr ⟨a * b, Prod.ext ?_ ?_⟩
+  · rw [Prod.smul_fst, mul_comm, mul_smul, ha, smul_zero, Prod.fst_zero]
+  · rw [Prod.smul_snd, mul_smul, hb, smul_zero, Prod.snd_zero]
+
 variable (R M N) in
 /-- The torsion submodule of a product is the product of the torsion submodules. -/
 def torsionProdEquiv :
@@ -247,12 +258,7 @@ def torsionProdEquiv :
       _root_.Submodule.torsion R M × _root_.Submodule.torsion R N where
   toFun x := (⟨x.1.1, le_comap_torsion (LinearMap.fst R M N) x.2⟩,
     ⟨x.1.2, le_comap_torsion (LinearMap.snd R M N) x.2⟩)
-  invFun x := ⟨(x.1, x.2), by
-    obtain ⟨a, ha⟩ := (_root_.Submodule.mem_torsion_iff _).mp x.1.2
-    obtain ⟨b, hb⟩ := (_root_.Submodule.mem_torsion_iff _).mp x.2.2
-    refine (_root_.Submodule.mem_torsion_iff _).mpr ⟨a * b, Prod.ext ?_ ?_⟩
-    · rw [Prod.smul_fst, mul_comm, mul_smul, ha, smul_zero, Prod.fst_zero]
-    · rw [Prod.smul_snd, mul_smul, hb, smul_zero, Prod.snd_zero]⟩
+  invFun x := ⟨(x.1, x.2), prodMk_mem_torsion x.1.2 x.2.2⟩
   left_inv _ := rfl
   right_inv _ := rfl
   map_add' _ _ := rfl
@@ -302,9 +308,9 @@ theorem of_surjective (hM : Module.IsTorsion R M) {f : M →ₗ[R] N} (hf : Func
 /-- A product of two torsion modules is torsion. -/
 theorem prod (hM : Module.IsTorsion R M) (hN : Module.IsTorsion R N) :
     Module.IsTorsion R (M × N) := fun x ↦
-  (_root_.Submodule.mem_torsion_iff _).mp ((TauCeti.Submodule.torsionProdEquiv R M N).symm
-    (⟨x.1, (_root_.Submodule.mem_torsion_iff _).mpr (@hM x.1)⟩,
-      ⟨x.2, (_root_.Submodule.mem_torsion_iff _).mpr (@hN x.2)⟩)).2
+  (_root_.Submodule.mem_torsion_iff _).mp (TauCeti.Submodule.prodMk_mem_torsion
+    ((_root_.Submodule.mem_torsion_iff _).mpr (@hM x.1))
+    ((_root_.Submodule.mem_torsion_iff _).mpr (@hN x.2)))
 
 end Module.IsTorsion
 
