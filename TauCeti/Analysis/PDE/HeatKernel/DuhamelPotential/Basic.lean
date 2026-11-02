@@ -10,6 +10,7 @@ import TauCeti.Analysis.Calculus.ParametricIntegral
 import TauCeti.Analysis.PDE.HeatKernel.ApproximateIdentity
 import TauCeti.Analysis.PDE.HeatKernel.Derivatives
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -545,44 +546,6 @@ private theorem exists_ae_norm_iteratedFDeriv_two_heatKernel_convolution_sub_tim
     ring
   rw [hexp, show t - s - (t' - s) = t - t' by ring] at this
   linarith
-
-/-- For `0 ≤ p ≤ 1`, a quantity at most `2 h` has `p`-th power at most `2 h^p`. -/
-private theorem rpow_le_two_mul_rpow_of_le_two_mul {r h p : ℝ} (hr : 0 ≤ r) (hrh : r ≤ 2 * h)
-    (hp₀ : 0 ≤ p) (hp₁ : p ≤ 1) : r ^ p ≤ 2 * h ^ p := by
-  have hh : 0 ≤ h := by linarith
-  calc r ^ p ≤ (2 * h) ^ p := by gcongr
-    _ = 2 ^ p * h ^ p := mul_rpow (by norm_num) hh
-    _ ≤ 2 * h ^ p := by
-        gcongr
-        exact (rpow_le_rpow_of_exponent_le (by norm_num) hp₁).trans (rpow_one 2).le
-
-/-- For `α < 2`, a function bounded by `A h (t' - s)^((α - 4)/2)` on `(0, t' - h]` has integral
-over `[0, t' - h]` of norm at most `2 / (2 - α) A h^(α/2)`. -/
-private theorem norm_integral_le_of_ae_norm_le_mul_sub_rpow {G : Type*} [NormedAddCommGroup G]
-    [NormedSpace ℝ G] {g : ℝ → G} {A h t' α : ℝ} (hA : 0 ≤ A) (hh : 0 < h) (hht : h < t')
-    (hα : α < 2) (hg : ∀ᵐ s, s ∈ Ioc 0 (t' - h) → ‖g s‖ ≤ A * h * (t' - s) ^ ((α - 4) / 2)) :
-    ‖∫ s in 0..t' - h, g s‖ ≤ 2 / (2 - α) * A * h ^ (α / 2) := by
-  have h2α : 0 < 2 - α := by linarith
-  have hcont : ContinuousOn (fun s => (t' - s) ^ ((α - 4) / 2)) [[0, t' - h]] :=
-    fun s hs => by
-      rw [uIcc_of_le (by linarith)] at hs
-      have hst : s < t' := by linarith [hs.2]
-      exact ((continuousAt_const.sub continuousAt_id).rpow_const
-        (Or.inl (sub_pos.2 hst).ne')).continuousWithinAt
-  refine (intervalIntegral.norm_integral_le_of_norm_le (by linarith) hg
-    (hcont.intervalIntegrable.const_mul (A * h))).trans ?_
-  rw [intervalIntegral.integral_const_mul]
-  have hpow : h * h ^ ((α - 4) / 2 + 1) = h ^ (α / 2) := by
-    rw [mul_comm, ← rpow_add_one hh.ne']
-    congr 1
-    ring
-  calc A * h * ∫ s in 0..t' - h, (t' - s) ^ ((α - 4) / 2)
-      ≤ A * h * (h ^ ((α - 4) / 2 + 1) / -((α - 4) / 2 + 1)) := by
-        gcongr
-        exact integral_sub_rpow_le_of_lt_neg_one (by linarith) hh (by linarith)
-    _ = 2 / (2 - α) * A * h ^ (α / 2) := by
-        rw [← hpow, show -((α - 4) / 2 + 1) = (2 - α) / 2 by ring]
-        field_simp
 
 /-- The temporal increment of the Hessian of the Duhamel potential between times `t' ≤ t` is
 `O(H (t - t')^(α/2))`, for `0 < α < 2`. -/
