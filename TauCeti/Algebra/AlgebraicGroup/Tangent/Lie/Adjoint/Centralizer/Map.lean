@@ -57,9 +57,8 @@ theorem map_centralizerHopfIdeal_le (φ : H →ₐc[k] K)
   intro A g hg
   apply (CommHopfAlgCat.mem_quotientPointsSubgroup_map_iff
     (_root_.CommHopfAlgCat.ofHom φ) _ A g).mpr
-  -- Express the functorial pullback as `mapDomain` to apply differential equivariance.
-  change mapDomain φ g ∈ CommHopfAlgCat.quotientPointsSubgroup (_root_.CommHopfAlgCat.of k H)
-    (centralizerHopfIdeal H (dualCotangentMap φ x)) A
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, ← BialgHom.mapDomain_apply,
+    _root_.CommHopfAlgCat.hom_ofHom]
   rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff] at hg ⊢
   have hfix := (centralizerHopfIdeal_le_ker_iff_adjointAction x A g).mp hg
   apply (centralizerHopfIdeal_le_ker_iff_adjointAction _ A _).mpr
@@ -91,10 +90,8 @@ theorem map_centralizerHopfIdeal_eq_of_injective (φ : H →ₐc[k] K)
   ext g
   refine (CommHopfAlgCat.mem_quotientPointsSubgroup_map_iff
     (_root_.CommHopfAlgCat.ofHom φ) _ A g).trans ?_
-  -- Express the functorial pullback as `mapDomain` to use the point criterion below.
-  change mapDomain φ g ∈ CommHopfAlgCat.quotientPointsSubgroup (_root_.CommHopfAlgCat.of k H)
-    (centralizerHopfIdeal H (dualCotangentMap φ x)) A ↔ _
-  rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff,
+  rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, ← BialgHom.mapDomain_apply,
+    _root_.CommHopfAlgCat.hom_ofHom, CommHopfAlgCat.mem_quotientPointsSubgroup_iff,
     CommHopfAlgCat.mem_quotientPointsSubgroup_iff]
   exact φ.centralizerHopfIdeal_le_ker_mapDomain_iff hφ x A g
 
