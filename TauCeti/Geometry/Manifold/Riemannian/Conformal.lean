@@ -189,9 +189,8 @@ theorem chartInvGramMatrix_rescale (α x : M) :
       (f x)⁻¹ • chartInvGramMatrix (I := I) (toWithMetric g α) (toWithMetric g x) := by
   rw [chartInvGramMatrix_def, chartInvGramMatrix_def, chartGramMatrix_rescale]
   by_cases h : IsUnit (chartGramMatrix (I := I) (toWithMetric g α) (toWithMetric g x)).det
-  · apply Matrix.inv_eq_left_inv
-    rw [smul_mul_smul_comm, inv_mul_cancel₀ (hf_pos x).ne', one_smul,
-      Matrix.nonsing_inv_mul _ h]
+  · simpa only [Units.smul_def, Units.val_inv_eq_inv_val, Units.val_mk0] using
+      Matrix.inv_smul' _ (Units.mk0 (f x) (hf_pos x).ne') h
   · rw [Matrix.nonsing_inv_apply_not_isUnit _ ?_,
       Matrix.nonsing_inv_apply_not_isUnit _ h, smul_zero]
     rw [Matrix.det_smul, IsUnit.mul_iff]
