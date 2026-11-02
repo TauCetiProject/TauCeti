@@ -13,7 +13,6 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Ba
 import Mathlib.Topology.Homeomorph.Quotient
 import TauCeti.Algebra.Group.Subgroup.Map
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.QR
-import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Unitary
 import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.UpperTriangular
 import TauCeti.Topology.Algebra.UnitaryGroup
 
@@ -57,8 +56,6 @@ bijection between them is a homeomorphism.
 
 ## Main results
 
-* `TauCeti.comap_toUnits_upperTriangularGroup_eq_unitaryTorus`: over `ℂ`, the unitary upper
-  triangular matrices are the maximal torus of `U(n)`.
 * `TauCeti.unitaryQuotientHomeomorph_smul` and `TauCeti.unitaryTorusQuotientHomeomorph_smul`:
   the homeomorphisms are `U(n)`-equivariant.
 * The instance `CompactSpace (GL ι 𝕜 ⧸ upperTriangularGroup ι 𝕜)`: the flag manifold is compact.
@@ -78,13 +75,6 @@ noncomputable section
 open Matrix
 
 namespace TauCeti
-
-/-- Over `ℂ`, **the unitary upper triangular matrices are the maximal torus** of `U(n)`: the
-diagonal unitary matrices. -/
-theorem comap_toUnits_upperTriangularGroup_eq_unitaryTorus (ι : Type*) [Fintype ι]
-    [LinearOrder ι] : (upperTriangularGroup ι ℂ).comap Unitary.toUnits = unitaryTorus ι := by
-  ext U
-  rw [mem_comap_toUnits_upperTriangularGroup_iff, mem_unitaryTorus_iff]
 
 section RCLike
 
