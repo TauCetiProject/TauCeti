@@ -20,7 +20,11 @@ norm on `A` or completeness is assumed, so this covers functionals on algebras o
 star polynomials, where Mathlib's `PositiveLinearMap` API for star-ordered rings does not apply.
 The sesquilinear form `(x, y) ↦ φ (star x * y)` is then positive semidefinite, so `φ` is hermitian
 on products, `star (φ (star x * y)) = φ (star y * x)`, and satisfies the Cauchy–Schwarz inequality
-`‖φ (star x * y)‖ ^ 2 ≤ ‖φ (star x * x)‖ * ‖φ (star y * y)‖`.
+`‖φ (star x * y)‖ ^ 2 ≤ ‖φ (star x * x)‖ * ‖φ (star y * y)‖`. The form `LinearMap.starMulCore`
+and the inequality `LinearMap.norm_map_star_mul_sq_le` adapt Mathlib's
+`PositiveLinearMap.preGNSpreInnerProdSpace` and `PositiveLinearMap.norm_map_star_mul_sq_le`
+(in `Mathlib.Analysis.CStarAlgebra.GelfandNaimarkSegal`) from positive maps on star-ordered rings
+to algebraically positive functionals without a star order.
 
 Iterating Cauchy–Schwarz turns growth bounds on moments into operator-type bounds. If `y` is
 selfadjoint and `‖φ (star p * y ^ m * p)‖ ≤ C * r ^ m` for all `m`, then
