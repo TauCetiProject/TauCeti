@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.StrictHenselization.Local
 public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
+public import Mathlib.FieldTheory.Separable
 import Mathlib.RingTheory.Etale.StandardEtale
 import TauCeti.RingTheory.Unramified.Diagonal
 
@@ -21,10 +22,6 @@ Let `algebra R Ω` be the colimit of the pointed étale neighbourhoods of `(R, �
 holds for every essentially finite type unramified `A`, because the kernel of `toTarget` lies in
 the Jacobson radical of the colimit (`toTarget_comp_injective`).
 
-Applied to the standard étale algebra `R[X]_{f'} ⧸ (f)` of a monic polynomial `f` over `R`, this
-says that a simple root `ω ∈ Ω` of `f` is a value of `toTarget`: the point `X ↦ ω` lifts, so `ω`
-is the image of `X` (`exists_toTarget_eq_of_aeval_eq_zero`).
-
 For a local ring `R` and a separable closure `Ω` of its residue field, this is the statement of
 Stacks, Tag 04GT, with `S = R`, about the strict henselization. In the form given there
 (`existsUnique_algHom_of_etale`), a point of `A` is a prime `𝔮` of `A` with an `R`-embedding
@@ -36,14 +33,15 @@ Stacks, Tag 04GT, with `S = R`, about the strict henselization. In the form give
   unramified algebra to the colimit are determined by their composites with `toTarget`.
 * `TauCeti.StrictHenselization.toTarget_comp_bijective`: for an étale algebra, composition with
   `toTarget` is bijective.
-* `TauCeti.StrictHenselization.exists_toTarget_eq_of_aeval_eq_zero`: a simple root in `Ω` of a
-  monic polynomial over `R` is in the image of `toTarget`.
 * `TauCeti.StrictHenselization.existsUnique_algHom_of_etale`: the form of Stacks, Tag 04GT, for
   a field `Ω`.
+* `TauCeti.StrictHenselization.toTarget_surjective`: for a local ring `R` and a separable
+  algebraic extension `Ω` of its residue field, `toTarget` is surjective. Each element of `Ω`
+  is the point of a standard étale algebra, built from a monic lift of its minimal polynomial.
 
 ## References
 
-* Stacks Project, Tag 04GT.
+* Stacks Project, Tags 04GP and 04GT.
 -/
 
 public section
@@ -99,25 +97,6 @@ theorem toTarget_comp_bijective (A : Type w) [CommRing A] [Algebra R A] [Algebra
 
 end Pointed
 
-section Root
-
-open Polynomial
-
-variable {R Ω : Type u} [CommRing R] [CommRing Ω] [Algebra R Ω]
-
-/-- A simple root `ω ∈ Ω` of a monic polynomial `f` over `R` is the image under `toTarget` of an
-element of the colimit of pointed étale neighbourhoods. -/
-theorem exists_toTarget_eq_of_aeval_eq_zero {f : R[X]} (hf : f.Monic) {ω : Ω}
-    (hω : aeval ω f = 0) (hunit : IsUnit (aeval ω (derivative f))) :
-    ∃ x : algebra R Ω, toTarget R Ω x = ω := by
-  let P : StandardEtalePair R :=
-    { f := f, monic_f := hf, g := derivative f, cond := ⟨1, 0, 1, by simp⟩ }
-  have hP : P.HasMap ω := ⟨hω, hunit⟩
-  obtain ⟨g, hg⟩ := (toTarget_comp_bijective R Ω P.Ring).2 (P.lift ω hP)
-  exact ⟨g P.X, by rw [← AlgHom.comp_apply, hg, StandardEtalePair.lift_X]⟩
-
-end Root
-
 section Field
 
 variable (R : Type u) {Ω : Type u} [CommRing R] [Field Ω] [Algebra R Ω]
@@ -143,5 +122,39 @@ theorem existsUnique_algHom_of_etale (A : Type w) [CommRing A] [Algebra R A] [Al
     IsScalarTower.coe_toAlgHom', Ideal.algebraMap_residueField_eq_zero]
 
 end Field
+
+section SeparableExtension
+
+variable (R Ω : Type u) [CommRing R] [IsLocalRing R] [Field Ω] [Algebra R Ω]
+  [Algebra (ResidueField R) Ω] [IsScalarTower R (ResidueField R) Ω]
+  [Algebra.IsSeparable (ResidueField R) Ω]
+
+open Polynomial in
+/-- **The residue field of the strict henselization.** If `Ω` is a separable algebraic extension
+of the residue field of the local ring `R`, for instance a separable closure, then every element
+of `Ω` is the point of an element of the colimit. With `ker_toTarget_eq_maximalIdeal`, this
+identifies the residue field of the strict henselization with `Ω`. -/
+@[stacks 04GP "(5), surjectivity"]
+theorem toTarget_surjective : Function.Surjective (toTarget R Ω) := by
+  intro α
+  -- Lift the minimal polynomial of `α` to a monic polynomial `p` over `R`. Its root `α` is
+  -- simple, so the standard étale algebra of `p` has a point sending its root to `α`.
+  have hsep := Algebra.IsSeparable.isSeparable (ResidueField R) α
+  obtain ⟨p, hp, -, hmonic⟩ := lifts_and_natDegree_eq_and_monic
+    ((lifts_iff_coeff_lifts (f := algebraMap R (ResidueField R))
+      (minpoly (ResidueField R) α)).mpr fun _ ↦ Ideal.Quotient.mk_surjective _)
+    (minpoly.monic (Algebra.IsSeparable.isIntegral (ResidueField R) α))
+  have hroot : aeval α p = 0 := by
+    rw [← aeval_map_algebraMap (ResidueField R), hp, minpoly.aeval]
+  have hderiv : aeval α (derivative p) ≠ 0 := by
+    rw [← aeval_map_algebraMap (ResidueField R), ← derivative_map, hp]
+    exact hsep.aeval_derivative_ne_zero (minpoly.aeval _ _)
+  let P : StandardEtalePair R :=
+    { f := p, monic_f := hmonic, g := derivative p, cond := ⟨1, 0, 1, by simp⟩ }
+  have hP : P.HasMap α := ⟨hroot, isUnit_iff_ne_zero.mpr hderiv⟩
+  obtain ⟨f, hf⟩ := (toTarget_comp_bijective R Ω P.Ring).2 (P.lift α hP)
+  exact ⟨f P.X, by rw [← AlgHom.comp_apply, hf, P.lift_X]⟩
+
+end SeparableExtension
 
 end TauCeti.StrictHenselization

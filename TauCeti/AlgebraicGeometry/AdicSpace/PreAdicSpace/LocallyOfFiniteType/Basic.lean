@@ -50,9 +50,9 @@ presheaf of `Spa(B, B⁺)` to be a sheaf, which is part of the data of the defin
 
 ## Implementation notes
 
-The definition through presentations by adic spectra, and the isomorphism-invariance results
-`iso_hom_comp`, `comp_iso_hom` and `respectsIso`, are modelled on
-`TauCeti.PreAdicSpace.IsClosedImmersion`.
+The definition through presentations by adic spectra is modelled on
+`TauCeti.PreAdicSpace.IsClosedImmersion`. Isomorphism invariance holds for every chart-local
+property (`TauCeti.PreAdicSpace.chartLocally_respectsIso`).
 
 ## References
 
@@ -90,49 +90,11 @@ theorem locallyOfFiniteType_iff (f : X ⟶ Y) :
     LocallyOfFiniteType f ↔ chartLocally (fun φ ↦ φ.IsTopologicallyFiniteType) f :=
   Iff.rfl
 
-/-- Precomposing a morphism locally of finite type with an isomorphism gives one locally of finite
-type: over the same opens of the target, `e` identifies the restrictions of the two sources. -/
-private theorem LocallyOfFiniteType.iso_hom_comp {X' : PreAdicSpace.{u}} (e : X' ≅ X)
-    {f : X ⟶ Y} (hf : LocallyOfFiniteType f) : LocallyOfFiniteType (e.hom ≫ f) := by
-  refine (chartLocally_iff _).mpr fun x ↦ ?_
-  obtain ⟨U, hx, V, hUV, A, _, _, _, _, S, P, hP, B, _, _, _, _, _, _, _, T, P', hP', φ, hφ,
-    hsheaf, eU, eV, hfac⟩ := (chartLocally_iff _).mp hf (e.hom.base x)
-  refine ⟨(Opens.map e.hom.base).obj U, hx, V, fun y hy ↦ hUV hy, A, inferInstance,
-    inferInstance, inferInstance, inferInstance, S, P, hP, B, inferInstance, inferInstance,
-    inferInstance, inferInstance, inferInstance, inferInstance, inferInstance, T, P', hP', φ, hφ,
-    hsheaf, (restrictIso e.symm U).symm ≪≫ eU, eV, ?_⟩
-  rw [Iso.trans_hom, Iso.symm_hom, Category.assoc, ← hfac, restrictIso_inv_ofRestrict_assoc]
-  -- `e.symm.inv` is `e.hom` (`Iso.symm_inv`, a `rfl`-lemma); it also occurs in the open restricted
-  -- to, so `rw` cannot rewrite it on one side only
-  rfl
-
-/-- Postcomposing a morphism locally of finite type with an isomorphism `e : Y ≅ Y'` gives one
-locally of finite type: `e` carries the opens of the definition to opens of `Y'`, identifying the
-restrictions of `Y` and `Y'` to them. -/
-private theorem LocallyOfFiniteType.comp_iso_hom {Y' : PreAdicSpace.{u}} (e : Y ≅ Y')
-    {f : X ⟶ Y} (hf : LocallyOfFiniteType f) : LocallyOfFiniteType (f ≫ e.hom) := by
-  refine (chartLocally_iff _).mpr fun x ↦ ?_
-  obtain ⟨U, hx, V, hUV, A, _, _, _, _, S, P, hP, B, _, _, _, _, _, _, _, T, P', hP', φ, hφ,
-    hsheaf, eU, eV, hfac⟩ := (chartLocally_iff _).mp hf x
-  -- `e⁻¹(e(V)) = V`
-  have key := Opens.map_hom_obj_map_inv_obj (forgetToTop.mapIso e) V
-  simp only [Functor.mapIso_hom, Functor.mapIso_inv, forgetToTop_map] at key
-  refine ⟨U, hx, (Opens.map e.inv.base).obj V, fun y hy ↦ ?_, A, inferInstance, inferInstance,
-    inferInstance, inferInstance, S, P, hP, B, inferInstance, inferInstance, inferInstance,
-    inferInstance, inferInstance, inferInstance, inferInstance, T, P', hP', φ, hφ, hsheaf, eU,
-    (restrictIso e V).symm ≪≫ eV, ?_⟩
-  · have hy' : f.base y ∈ ((Opens.map e.hom.base).obj ((Opens.map e.inv.base).obj V)) :=
-      key.symm ▸ hUV hy
-    exact hy'
-  · rw [reassoc_of% hfac]
-    simp
-
 /-- **Being locally of finite type is invariant under isomorphisms** of the source and of the
 target. -/
 instance LocallyOfFiniteType.respectsIso :
     MorphismProperty.RespectsIso (@LocallyOfFiniteType.{u}) :=
-  MorphismProperty.RespectsIso.mk _ (fun e _ hf ↦ hf.iso_hom_comp e)
-    (fun e _ hf ↦ hf.comp_iso_hom e)
+  chartLocally_respectsIso
 
 /-- **Being locally of finite type can be checked on an open cover of the source**: if `X` is
 covered by opens `Uᵢ` such that every restriction `Uᵢ → X → Y` of `f` is locally of finite type,
@@ -239,12 +201,8 @@ theorem locallyOfFiniteType_presentationLimitPreAdicSpaceComap (φ : Pair.Hom S 
     LocallyOfFiniteType (presentationLimitPreAdicSpaceComap φ.toRingHom φ.continuous_toRingHom
       φ.map_mem_plus
       S.isRingOfIntegralElements.isPowerBounded_of_mem
-      T.isRingOfIntegralElements.isPowerBounded_of_mem hP hP' hsheaf) := by
-  refine (chartLocally_iff _).mpr fun _ ↦ ⟨⊤, trivial, ⊤, le_top, A, inferInstance,
-    inferInstance, inferInstance, inferInstance, S, P, hP, B, inferInstance, inferInstance,
-    inferInstance, inferInstance, inferInstance, inferInstance, inferInstance, T, P', hP', φ, hφ,
-    hsheaf, restrictTopIso _, restrictTopIso _, ?_⟩
-  rw [← restrictTopIso_hom, ← restrictTopIso_hom, Iso.inv_hom_id, Category.comp_id]
+      T.isRingOfIntegralElements.isPowerBounded_of_mem hP hP' hsheaf) :=
+  chartLocally_presentationLimitPreAdicSpaceComap P P' hP hP' hsheaf φ hφ
 
 include hsheaf in
 /-- **The identity of the adic spectrum of a complete Hausdorff Huber pair with sheafy structure

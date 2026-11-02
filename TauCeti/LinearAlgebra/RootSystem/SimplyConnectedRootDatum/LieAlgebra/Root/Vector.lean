@@ -49,6 +49,9 @@ Kostant `ℤ`-form and the root subgroups of non-simple roots require.
 * `TauCeti.DynkinType.chevalleySystem_mem_rootSpace` and
   `TauCeti.DynkinType.lie_chevalleySystem_reflectionPerm_self`: each root vector lies in its root
   space, and the root vectors of `γ` and `-γ` bracket to the coroot of `γ`.
+* `TauCeti.DynkinType.isSl2Triple_chevalleySystem` and
+  `TauCeti.DynkinType.isNilpotent_ad_chevalleySystem`: the root vectors of `γ` and `-γ` span an
+  `sl₂` triple with the coroot of `γ`, and act nilpotently.
 
 ## References
 
@@ -444,6 +447,20 @@ theorem lie_chevalleySystem_reflectionPerm_self (γ : Fin t.numRoots) :
         t.cartanSubalgebra ht) : t.lieAlgebra ht) :=
   ((isSl2System_extendRootFamily_iff _).1
     (t.isChevalleySystem_chevalleySystem ht).toIsSl2System).2 γ
+
+/-- The coroot of `γ` and the named root vectors of `γ` and `-γ` form an `sl₂` triple. -/
+theorem isSl2Triple_chevalleySystem (γ : Fin t.numRoots) :
+    IsSl2Triple ((coroot (t.rootEquiv ht γ : Weight ℚ (t.cartanSubalgebra ht) (t.lieAlgebra ht)) :
+        t.cartanSubalgebra ht) : t.lieAlgebra ht) (t.chevalleySystem ht γ)
+      (t.chevalleySystem ht ((t.simplyConnectedRootDatum ht).reflectionPerm γ γ)) := by
+  simpa using (t.isChevalleySystem_chevalleySystem ht).toIsSl2System.isSl2Triple
+    (t.rootEquiv ht γ) (LieSubalgebra.isNonZero_coe_root _)
+
+/-- Each named root vector acts nilpotently in the adjoint representation. -/
+theorem isNilpotent_ad_chevalleySystem (γ : Fin t.numRoots) :
+    IsNilpotent (ad ℚ (t.lieAlgebra ht) (t.chevalleySystem ht γ)) := by
+  simpa using (t.isChevalleySystem_chevalleySystem ht).toIsSl2System.isNilpotent_ad_rootVector
+    (t.rootEquiv ht γ)
 
 end
 

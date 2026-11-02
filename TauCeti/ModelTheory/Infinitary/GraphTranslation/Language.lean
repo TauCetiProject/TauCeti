@@ -184,6 +184,18 @@ theorem mk_graph_mem_relSym {F : Set (Σ n, L.Functions n)} {R : Set (Σ n, L.Re
     (⟨n + 1, GraphRelation.graph f⟩ : Σ n, L.GraphRelation n) ∈ relSym F R ↔ ⟨n, f⟩ ∈ F :=
   graphRelSym_mem_relSym (f := ⟨n, f⟩)
 
+/-- The relation symbols of `L` whose base symbol comes from `F` and `R` are those of `R`. -/
+@[simp]
+theorem preimage_baseRelSym_relSym (F : Set (Σ n, L.Functions n))
+    (R : Set (Σ n, L.Relations n)) : baseRelSym ⁻¹' relSym F R = R :=
+  Set.ext fun _ => baseRelSym_mem_relSym
+
+/-- The function symbols of `L` whose graph symbol comes from `F` and `R` are those of `F`. -/
+@[simp]
+theorem preimage_graphRelSym_relSym (F : Set (Σ n, L.Functions n))
+    (R : Set (Σ n, L.Relations n)) : graphRelSym ⁻¹' relSym F R = F :=
+  Set.ext fun _ => graphRelSym_mem_relSym
+
 @[simp]
 theorem relSym_empty :
     relSym (∅ : Set (Σ n, L.Functions n)) (∅ : Set (Σ n, L.Relations n)) = ∅ := by
