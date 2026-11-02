@@ -153,6 +153,23 @@ theorem mem_crossingChangeCommutationHexagons {x y : GridState n}
 
 variable (R : Type*) [CommSemiring R]
 
+/-- Preserving the union and intersection of two square sets transfers `X`-avoidance and
+preserves the product of their `O`-weights, including square multiplicities. -/
+theorem disjoint_and_prod_OSet_eq_of_union_inter_eq
+    (A B S T : Finset (Fin n × Fin n))
+    (hu : A ∪ B = S ∪ T) (hi : A ∩ B = S ∩ T)
+    (hA : Disjoint A G.XSet) (hB : Disjoint B G.XSet) :
+    Disjoint S G.XSet ∧ Disjoint T G.XSet ∧
+      (∏ p ∈ A, if p ∈ G.OSet then MvPolynomial.X p.1 else (1 : MvPolynomial (Fin n) R)) *
+          (∏ p ∈ B, if p ∈ G.OSet then MvPolynomial.X p.1 else 1) =
+        (∏ p ∈ S, if p ∈ G.OSet then MvPolynomial.X p.1 else (1 : MvPolynomial (Fin n) R)) *
+          (∏ p ∈ T, if p ∈ G.OSet then MvPolynomial.X p.1 else 1) := by
+  have hX : Disjoint S G.XSet ∧ Disjoint T G.XSet := by
+    rw [← Finset.disjoint_union_left, ← hu, Finset.disjoint_union_left]
+    exact ⟨hA, hB⟩
+  refine ⟨hX.1, hX.2, ?_⟩
+  rw [← Finset.prod_union_inter (s₁ := A), ← Finset.prod_union_inter (s₁ := S), hu, hi]
+
 /-- The weight of a crossing-change hexagon of either shape: the product of the variables of the
 `O`-markings it carries. -/
 noncomputable def crossingChangeCommutationHexagonWeight {x y : GridState n}
