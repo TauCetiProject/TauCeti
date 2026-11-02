@@ -81,6 +81,15 @@ theorem continuous_inl_prod [Zero A] [TopologicalSpace R] [TopologicalSpace A] :
     Continuous (inl : R → Unitization R A) :=
   continuous_iff.2 ⟨continuous_id, continuous_const⟩
 
+/-- The scalar algebra map into the product-topologized unitization is continuous,
+even without continuity of the scalar action on the algebra. -/
+@[fun_prop]
+theorem continuous_algebraMap_prod [CommSemiring R] [NonUnitalSemiring A] [Module R A]
+    [IsScalarTower R A A] [SMulCommClass R A A] [TopologicalSpace R] [TopologicalSpace A] :
+    Continuous (algebraMap R (Unitization R A)) := by
+  rw [algebraMap_eq_inl]
+  exact continuous_inl_prod
+
 @[fun_prop]
 theorem continuous_inr_prod [Zero R] [TopologicalSpace R] [TopologicalSpace A] :
     Continuous (inr : A → Unitization R A) :=

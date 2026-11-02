@@ -51,9 +51,7 @@ def continuousUnitizationScalarRestriction (n : ℕ) :
       continuousCyclicCochains 𝕜 𝕜 M n :=
   ⟨continuousCyclicCochainsMap M
     ⟨(Algebra.ofId 𝕜 (Unitization 𝕜 A)).toLinearMap,
-      by
-        apply (continuous_congr (fun r ↦ ?_)).2 Unitization.continuous_inl_prod
-        exact congrFun (Unitization.algebraMap_eq_inl (R := 𝕜) (A := A)) r⟩ n,
+      Unitization.continuous_algebraMap_prod⟩ n,
     continuous_continuousCyclicCochainsMap _ n⟩
 
 /-- Continuous pullback of scalar cochains along the augmentation of the forced unitization. -/
@@ -71,7 +69,8 @@ theorem continuousUnitizationScalarRestriction_apply (n : ℕ)
       φ.1 (fun i ↦ algebraMap 𝕜 (Unitization 𝕜 A) (a i)) := by
   simp only [continuousUnitizationScalarRestriction, ContinuousLinearMap.coe_mk',
     coe_continuousCyclicCochainsMap_apply, ContinuousMultilinearMap.compContinuousLinearMap_apply]
-  rfl
+  -- The bundled continuous map evaluates by its underlying algebra homomorphism.
+  congr 1
 
 @[simp]
 theorem continuousUnitizationAugmentationPullback_apply (n : ℕ)
@@ -80,11 +79,13 @@ theorem continuousUnitizationAugmentationPullback_apply (n : ℕ)
       φ.1 (fun i ↦ (a i).fst) := by
   simp only [continuousUnitizationAugmentationPullback, ContinuousLinearMap.coe_mk',
     coe_continuousCyclicCochainsMap_apply, ContinuousMultilinearMap.compContinuousLinearMap_apply]
-  rfl
+  -- The bundled continuous map evaluates by its underlying augmentation homomorphism.
+  congr 1
 
 /-- The augmentation pullback is a continuous right inverse to scalar restriction. -/
 @[simp]
-theorem continuousUnitizationScalarRestriction_comp_augmentation (n : ℕ) :
+theorem continuousUnitizationScalarRestriction_comp_continuousUnitizationAugmentationPullback
+    (n : ℕ) :
     (continuousUnitizationScalarRestriction 𝕜 A M n).comp
       (continuousUnitizationAugmentationPullback 𝕜 A M n) = ContinuousLinearMap.id 𝕜 _ := by
   apply ContinuousLinearMap.ext
@@ -98,7 +99,8 @@ private theorem continuousUnitization_rightInverse (n : ℕ) :
     Function.RightInverse (continuousUnitizationAugmentationPullback 𝕜 A M n)
       (continuousUnitizationScalarRestriction 𝕜 A M n) :=
   fun φ ↦ DFunLike.congr_fun
-    (continuousUnitizationScalarRestriction_comp_augmentation 𝕜 A M n) φ
+    (continuousUnitizationScalarRestriction_comp_continuousUnitizationAugmentationPullback
+      𝕜 A M n) φ
 
 /-- Continuous cyclic cochains on the forced unitization vanishing on scalar tuples. -/
 def continuousRelativeCyclicCochains (n : ℕ) :
@@ -181,8 +183,10 @@ theorem coe_continuousRelativeCyclicProjection {n : ℕ}
       φ - continuousUnitizationAugmentationPullback 𝕜 A M n
         (continuousUnitizationScalarRestriction 𝕜 A M n φ) := by
   rw [continuousRelativeCyclicProjection, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.coe_snd', continuousUnitizationCyclicCochainsEquiv]
-  rfl
+    ContinuousLinearMap.coe_snd', ContinuousLinearEquiv.coe_coe,
+    continuousUnitizationCyclicCochainsEquiv]
+  -- Relative cochains carry the submodule topology on the restriction kernel.
+  erw [ContinuousLinearEquiv.snd_equivOfRightInverse]
 
 @[simp]
 theorem continuousRelativeCyclicProjection_coe {n : ℕ}
@@ -196,7 +200,7 @@ theorem continuousRelativeCyclicProjection_coe {n : ℕ}
 variable [IsTopologicalAddGroup A] [ContinuousMul A] [ContinuousSMul 𝕜 A]
 
 /-- Scalar restriction commutes with the continuous Hochschild differential. -/
-theorem continuousUnitizationScalarRestriction_coboundary {n : ℕ}
+theorem continuousUnitizationScalarRestriction_continuousCyclicHochschildCoboundary {n : ℕ}
     (φ : continuousCyclicCochains 𝕜 (Unitization 𝕜 A) M n) :
     continuousUnitizationScalarRestriction 𝕜 A M (n + 1)
         (continuousCyclicHochschildCoboundary 𝕜 (Unitization 𝕜 A) M n φ) =
@@ -204,12 +208,10 @@ theorem continuousUnitizationScalarRestriction_coboundary {n : ℕ}
         (continuousUnitizationScalarRestriction 𝕜 A M n φ) :=
   (continuousCyclicHochschildCoboundary_continuousCyclicCochainsMap
     (Algebra.ofId 𝕜 (Unitization 𝕜 A)).toNonUnitalAlgHom
-    (by
-      apply (continuous_congr (fun r ↦ ?_)).2 Unitization.continuous_inl_prod
-      exact congrFun (Unitization.algebraMap_eq_inl (R := 𝕜) (A := A)) r) φ).symm
+    (continuous_algebraMap 𝕜 (Unitization 𝕜 A)) φ).symm
 
 /-- The augmentation pullback commutes with the continuous Hochschild differential. -/
-theorem continuousUnitizationAugmentationPullback_coboundary {n : ℕ}
+theorem continuousUnitizationAugmentationPullback_continuousCyclicHochschildCoboundary {n : ℕ}
     (φ : continuousCyclicCochains 𝕜 𝕜 M n) :
     continuousUnitizationAugmentationPullback 𝕜 A M (n + 1)
         (continuousCyclicHochschildCoboundary 𝕜 𝕜 M n φ) =
@@ -228,7 +230,7 @@ def continuousRelativeCyclicHochschildCoboundary (n : ℕ) :
       continuousCyclicCochains 𝕜 (Unitization 𝕜 A) M (n + 1)).restrict fun φ hφ ↦ by
         simp only [ContinuousLinearMap.coe_mk']
         rw [mem_continuousRelativeCyclicCochains_iff,
-          continuousUnitizationScalarRestriction_coboundary,
+          continuousUnitizationScalarRestriction_continuousCyclicHochschildCoboundary,
           (mem_continuousRelativeCyclicCochains_iff 𝕜 A M).1 hφ, map_zero]
 
 @[simp]
@@ -239,7 +241,7 @@ theorem coe_continuousRelativeCyclicHochschildCoboundary {n : ℕ}
       continuousCyclicHochschildCoboundary 𝕜 (Unitization 𝕜 A) M n φ := (rfl)
 
 /-- The relative projection is a cochain projection. -/
-theorem continuousRelativeCyclicProjection_coboundary {n : ℕ}
+theorem continuousRelativeCyclicProjection_continuousCyclicHochschildCoboundary {n : ℕ}
     (φ : continuousCyclicCochains 𝕜 (Unitization 𝕜 A) M n) :
     continuousRelativeCyclicProjection 𝕜 A M (n + 1)
         (continuousCyclicHochschildCoboundary 𝕜 (Unitization 𝕜 A) M n φ) =
@@ -248,12 +250,13 @@ theorem continuousRelativeCyclicProjection_coboundary {n : ℕ}
   apply Subtype.ext
   simp only [coe_continuousRelativeCyclicProjection,
     coe_continuousRelativeCyclicHochschildCoboundary,
-    continuousUnitizationScalarRestriction_coboundary,
-    continuousUnitizationAugmentationPullback_coboundary]
+    continuousUnitizationScalarRestriction_continuousCyclicHochschildCoboundary,
+    continuousUnitizationAugmentationPullback_continuousCyclicHochschildCoboundary]
   exact (map_sub (continuousCyclicHochschildCoboundary 𝕜 (Unitization 𝕜 A) M n) _ _).symm
 
 @[simp]
-theorem continuousRelativeCyclicHochschildCoboundary_sq {n : ℕ}
+theorem continuousRelativeCyclicHochschildCoboundary_continuousRelativeCyclicHochschildCoboundary
+    {n : ℕ}
     (φ : continuousRelativeCyclicCochains 𝕜 A M n) :
     continuousRelativeCyclicHochschildCoboundary 𝕜 A M (n + 1)
       (continuousRelativeCyclicHochschildCoboundary 𝕜 A M n φ) = 0 := by
@@ -265,7 +268,8 @@ def continuousRelativeCyclicCochainComplex : CochainComplex (ModuleCat 𝕜) ℕ
   CochainComplex.of (fun n ↦ ModuleCat.of 𝕜 (continuousRelativeCyclicCochains 𝕜 A M n))
     (fun n ↦ ModuleCat.ofHom (continuousRelativeCyclicHochschildCoboundary 𝕜 A M n).toLinearMap)
     (fun _n ↦ ModuleCat.hom_ext (LinearMap.ext fun φ ↦
-      continuousRelativeCyclicHochschildCoboundary_sq 𝕜 A M φ))
+      continuousRelativeCyclicHochschildCoboundary_continuousRelativeCyclicHochschildCoboundary
+        𝕜 A M φ))
 
 /-- Identify each term of the relative continuous complex with its cochains. -/
 def continuousRelativeCyclicCochainComplexXIso (n : ℕ) :
@@ -340,7 +344,7 @@ theorem mem_continuousRelativeCyclicCoboundaries_succ_iff {n : ℕ}
       ∃ ψ, continuousRelativeCyclicHochschildCoboundary 𝕜 A M n ψ = φ := LinearMap.mem_range
 
 /-- Relative continuous coboundaries are cocycles. -/
-theorem continuousRelativeCyclicCoboundaries_le_cocycles (n : ℕ) :
+theorem continuousRelativeCyclicCoboundaries_le_continuousRelativeCyclicCocycles (n : ℕ) :
     continuousRelativeCyclicCoboundaries 𝕜 A M n ≤ continuousRelativeCyclicCocycles 𝕜 A M n := by
   cases n with
   | zero => exact bot_le
@@ -367,7 +371,7 @@ theorem mem_continuousRelativeCyclicCoboundaries_iff {n : ℕ}
       exact ⟨ψ.1, (coe_continuousRelativeCyclicHochschildCoboundary 𝕜 A M ψ).symm⟩
     · rintro ⟨ψ, hψ⟩
       exact ⟨continuousRelativeCyclicProjection 𝕜 A M n ψ, by
-        rw [← continuousRelativeCyclicProjection_coboundary, hψ,
+        rw [← continuousRelativeCyclicProjection_continuousCyclicHochschildCoboundary, hψ,
           continuousRelativeCyclicProjection_coe]⟩
 
 /-- Relative continuous cyclic cohomology with the quotient topology on relative cocycles
