@@ -10,15 +10,14 @@ import Mathlib.LinearAlgebra.Matrix.Notation
 import Mathlib.Analysis.Real.Sqrt
 
 /-!
-# Exact two-point Sinkhorn scaling
+# Exact two-point diagonal scaling
 
 For a strictly positive two-by-two kernel, its scaling to uniform probability marginals has
 an algebraic formula: its diagonal and off-diagonal entries are proportional to the square
-roots of the diagonal and off-diagonal products of the kernel. The projective diameter is the
-absolute logarithm of the cross ratio. These formulas make both the limit and the constants
-in the Sinkhorn error estimates explicit.
+roots of the diagonal and off-diagonal products of the kernel. This formula makes the limit
+of the Sinkhorn iteration explicit.
 
-The scaling and contraction conventions are those of Peyré and Cuturi, *Computational Optimal
+The scaling conventions are those of Peyré and Cuturi, *Computational Optimal
 Transport*, Chapter 4. The matrices here have row and column sums `1/2`, hence total mass one.
 -/
 
@@ -27,32 +26,6 @@ public section
 open Real
 
 namespace Matrix
-
-/-- The projective diameter of a positive two-by-two kernel is the absolute logarithm of its
-cross ratio. -/
-theorem projectiveDiameter_fin_two {K : Matrix (Fin 2) (Fin 2) ℝ}
-    (hK : ∀ i j, 0 < K i j) :
-    K.projectiveDiameter = |log (K 0 0 * K 1 1 / (K 0 1 * K 1 0))| := by
-  have hlog (i i' j j' : Fin 2) :
-      log (K i j * K i' j' / (K i j' * K i' j)) =
-        log (K i j) + log (K i' j') - (log (K i j') + log (K i' j)) := by
-    rw [log_div (mul_pos (hK i j) (hK i' j')).ne'
-      (mul_pos (hK i j') (hK i' j)).ne', log_mul (hK i j).ne' (hK i' j').ne',
-      log_mul (hK i j').ne' (hK i' j).ne']
-  rw [hlog]
-  apply le_antisymm
-  · apply projectiveDiameter_le _ (abs_nonneg _)
-    intro i i' j j'
-    rw [hlog]
-    fin_cases i <;> fin_cases i' <;> fin_cases j <;> fin_cases j' <;>
-      dsimp <;> linarith [le_abs_self (log (K 0 0) + log (K 1 1) -
-        (log (K 0 1) + log (K 1 0))), neg_le_abs (log (K 0 0) + log (K 1 1) -
-        (log (K 0 1) + log (K 1 0)))]
-  · rw [abs_le]
-    have h₁ := log_le_projectiveDiameter K 0 1 1 0
-    have h₂ := log_le_projectiveDiameter K 0 1 0 1
-    rw [hlog] at h₁ h₂
-    constructor <;> linarith
 
 /-- A positive diagonal scaling of a positive two-by-two kernel to uniform probability
 marginals has diagonal entries proportional to `√(K₀₀ K₁₁)` and off-diagonal entries

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Data.Matrix.Sinkhorn.Rate
-public import TauCeti.Data.Matrix.Sinkhorn.TwoByTwo
+public import TauCeti.Data.Matrix.Scaling.TwoByTwo
 
 /-!
 # A rational Sinkhorn iteration with certified errors
@@ -85,7 +85,7 @@ theorem optimalPlan_hasMarginals :
 
 /-- Every nonnegative plan with uniform marginals has entropy at least that of the explicit
 algebraic solution. The reference is `kernel`, not the product of the marginals. -/
-theorem optimalPlan_relEntropy_le {P : Matrix (Fin 2) (Fin 2) ℝ}
+theorem relEntropy_optimalPlan_le {P : Matrix (Fin 2) (Fin 2) ℝ}
     (hP : ∀ i j, 0 ≤ P i j) (hm : HasMarginals P (fun _ ↦ 1 / 2) (fun _ ↦ 1 / 2)) :
     relEntropy optimalPlan kernel ≤ relEntropy P kernel :=
   scaling.relEntropy_le kernel_pos row_pos col_pos optimalPlan_hasMarginals hP hm
@@ -126,7 +126,7 @@ theorem tanh_projectiveDiameter_kernel : tanh (kernel.projectiveDiameter / 4) = 
       mulVec_apply, kernel_def, Fin.sum_univ_two, vecHead, vecTail]
 
 /-- Every iterate has its row marginal exactly, even before convergence. -/
-theorem sum_iterate_row (n : ℕ) (i : Fin 2) : ∑ j, iterate n i j = 1 / 2 := by
+theorem sum_iterate_apply (n : ℕ) (i : Fin 2) : ∑ j, iterate n i j = 1 / 2 := by
   rw [iterate_def]
   exact sum_sinkhornPlan_apply kernel_pos _ (fun _ ↦ by norm_num)
     (sinkhornStep_iterate_pos kernel_pos (fun _ ↦ by norm_num) (fun _ ↦ by norm_num)
