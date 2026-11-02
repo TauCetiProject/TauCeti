@@ -32,8 +32,8 @@ here holds for every adic `A → B` with `B` complete and Hausdorff.
 
 ## Main definitions
 
-* `TauCeti.Huber.CompletedTensor.mulRingHom`: the multiplication map `B ⊗̂_A B → B`.
-* `TauCeti.Huber.ContinuousKaehlerDifferential.ideal`: its kernel, the completed diagonal ideal.
+* `TauCeti.Huber.ContinuousKaehlerDifferential.ideal`: the kernel of the multiplication map
+  `TauCeti.Huber.CompletedTensor.mulRingHom : B ⊗̂_A B → B`, the completed diagonal ideal.
 * `TauCeti.Huber.ContinuousKaehlerDifferential A B`: the continuous differentials `Ωᶜ[B⁄A]`.
 * `TauCeti.Huber.ContinuousKaehlerDifferential.D`: the derivation `d : B → Ωᶜ[B⁄A]`.
 * `TauCeti.Huber.ContinuousKaehlerDifferential.fromKaehler`: the `B`-linear comparison
@@ -67,64 +67,23 @@ variable (A B : Type*) [CommRing A] [CommRing B] [Algebra A B] [TopologicalSpace
   [IsTopologicalRing A] [UniformSpace B] [IsUniformAddGroup B] [NonarchimedeanRing B]
   [CompleteSpace B] [T0Space B] [IsAdicHom (algebraMap A B)]
 
-namespace CompletedTensor
-
-/-- The multiplication map `B ⊗̂_A B → B` of a complete Hausdorff algebra: the continuous extension
-of `b ⊗ b' ↦ b * b'` to the completed tensor ring. -/
-noncomputable def mulRingHom : CompletedTensor A B B →+* B :=
-  lift (RingHom.id B) (RingHom.id B) rfl continuous_id continuous_id
-
-/-- Multiplication is continuous. -/
-@[fun_prop] theorem continuous_mulRingHom : Continuous (mulRingHom A B) :=
-  continuous_lift ..
-
-/-- Multiplication is the identity on the left factor. -/
-@[simp] theorem mulRingHom_inl (b : B) : mulRingHom A B (inl A B B b) = b :=
-  lift_inl ..
-
-/-- Multiplication is the identity on the right factor. -/
-@[simp] theorem mulRingHom_inr (b : B) : mulRingHom A B (inr A B B b) = b :=
-  lift_inr ..
-
-/-- On algebraic tensors, multiplication is Mathlib's multiplication map
-`Algebra.TensorProduct.lmul'`. -/
-@[simp] theorem mulRingHom_toCompletion (x : B ⊗[A] B) :
-    mulRingHom A B (toCompletion A B B x) = Algebra.TensorProduct.lmul' A x := by
-  induction x using TensorProduct.inductionOn with
-  | tmul b c => simp
-  | add x y hx hy => simp [hx, hy]
-
-/-- Multiplication preserves the base algebra map. -/
-@[simp] theorem mulRingHom_algebraMap (a : A) :
-    mulRingHom A B (algebraMap A (CompletedTensor A B B) a) = algebraMap A B a := by
-  rw [← inl_algebraMap, mulRingHom_inl]
-
-variable {A B} in
-/-- If `A → B` is surjective, the left coprojection `B → B ⊗̂_A B` is inverse to multiplication:
-both coprojections agree, since every element of `B` comes from `A`. -/
-theorem inl_mulRingHom_of_surjective (h : Function.Surjective (algebraMap A B))
-    (x : CompletedTensor A B B) : inl A B B (mulRingHom A B x) = x := by
-  have : (inl A B B).comp (mulRingHom A B) = RingHom.id _ := by
-    refine hom_ext ((continuous_inl A B B).comp (continuous_mulRingHom A B)) continuous_id
-      (by ext; simp) ?_
-    ext b
-    obtain ⟨a, rfl⟩ := h b
-    simp
-  exact RingHom.congr_fun this x
-
-end CompletedTensor
-
 open CompletedTensor
 
 namespace ContinuousKaehlerDifferential
 
 /-- The **completed diagonal ideal**: the kernel of multiplication `B ⊗̂_A B → B`. -/
-noncomputable abbrev ideal : Ideal (CompletedTensor A B B) :=
+noncomputable def ideal : Ideal (CompletedTensor A B B) :=
   RingHom.ker (mulRingHom A B)
+
+variable {A B} in
+/-- An element lies in the completed diagonal ideal exactly when its product is zero. -/
+@[simp] theorem mem_ideal_iff {x : CompletedTensor A B B} :
+    x ∈ ideal A B ↔ mulRingHom A B x = 0 :=
+  RingHom.mem_ker
 
 /-- `1 ⊗ b − b ⊗ 1` lies in the completed diagonal ideal. -/
 theorem inr_sub_inl_mem_ideal (b : B) : inr A B B b - inl A B B b ∈ ideal A B := by
-  simp [RingHom.mem_ker]
+  simp
 
 end ContinuousKaehlerDifferential
 
@@ -195,7 +154,7 @@ theorem smul_eq_mulRingHom_smul (x : CompletedTensor A B B)
     (ω : ContinuousKaehlerDifferential A B) : x • ω = mulRingHom A B x • ω := by
   rw [← inl_smul, ← sub_eq_zero, ← sub_smul]
   refine Ideal.Cotangent.smul_eq_zero_of_mem (I := ideal A B) ?_ ω
-  simp [RingHom.mem_ker]
+  simp
 
 /-- The right coprojection induces the same `B`-action on `Ωᶜ[B⁄A]` as the left one. -/
 @[simp] theorem inr_smul (b : B) (ω : ContinuousKaehlerDifferential A B) :
@@ -254,7 +213,7 @@ noncomputable def fromKaehler : Ω[B⁄A] →ₗ[B] ContinuousKaehlerDifferentia
 the completed diagonal ideal. -/
 private theorem toCompletion_sub_inl_mem_ideal (x : B ⊗[A] B) :
     toCompletion A B B x - inl A B B (Algebra.TensorProduct.lmul' A x) ∈ ideal A B := by
-  simp [RingHom.mem_ker]
+  simp
 
 /-- The `B ⊗[A] B`-linear map attached to `d` sends `x` to the class of
 `x − (product of x) ⊗ 1` in `B ⊗̂_A B`. -/
@@ -281,7 +240,7 @@ completed one. -/
 theorem fromKaehler_fromIdeal (x : KaehlerDifferential.ideal A B) :
     fromKaehler A B (KaehlerDifferential.fromIdeal A B x) =
       fromIdeal A B ⟨toCompletion A B B x, by
-        simpa [RingHom.mem_ker] using RingHom.mem_ker.mp x.2⟩ := by
+        simpa using RingHom.mem_ker.mp x.2⟩ := by
   refine ((D A B).liftKaehlerDifferential_apply x).trans ?_
   rw [tensorProductTo_D]
   congr 1
@@ -297,7 +256,7 @@ theorem subsingleton_of_surjective (h : Function.Surjective (algebraMap A B)) :
   refine subsingleton_of_forall_eq 0 fun ω ↦ ?_
   obtain ⟨⟨x, hx⟩, rfl⟩ := fromIdeal_surjective A B ω
   have hx0 : x = 0 := by
-    rw [← inl_mulRingHom_of_surjective h x, RingHom.mem_ker.mp hx, map_zero]
+    rw [← inl_mulRingHom_of_surjective h x, mem_ideal_iff.mp hx, map_zero]
   subst hx0
   exact (fromIdeal A B).map_zero
 

@@ -62,6 +62,7 @@ example (b : B) :
 -- Elements of the completed diagonal ideal act by zero on `Ωᶜ[B⁄A]`.
 example (x : CompletedTensor A B B) (hx : x ∈ ContinuousKaehlerDifferential.ideal A B)
     (ω : ContinuousKaehlerDifferential A B) : x • ω = 0 := by
-  rw [ContinuousKaehlerDifferential.smul_eq_mulRingHom_smul, RingHom.mem_ker.mp hx, zero_smul]
+  rw [ContinuousKaehlerDifferential.smul_eq_mulRingHom_smul,
+    ContinuousKaehlerDifferential.mem_ideal_iff.mp hx, zero_smul]
 
 end Generic
