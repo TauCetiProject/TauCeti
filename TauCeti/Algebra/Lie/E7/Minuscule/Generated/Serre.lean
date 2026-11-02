@@ -156,25 +156,9 @@ theorem generatedTangentMatrixLieHom_comp_generatedSerreLift :
 /-- Over the integers, the tangent composite recovers the existing minuscule representation. -/
 theorem generatedTangentMatrixLieHom_comp_generatedSerreLift_int :
     (generatedTangentMatrixLieHom ℤ).comp (generatedSerreLift ℤ) = serreRepresentation := by
-  apply serre_hom_ext
-  · intro i
-    rw [LieHom.comp_apply, generatedSerreLift_serreH,
-      generatedTangentMatrixLieHom_generatedCartanVector]
-    calc
-      _ = cartanMatrix i := Matrix.ext fun _ _ ↦ Int.cast_id
-      _ = _ := (serreRepresentation_serreH i).symm
-  · intro i
-    rw [LieHom.comp_apply, generatedSerreLift_serreE,
-      generatedTangentMatrixLieHom_generatedRootVector, Sum.elim_inl]
-    calc
-      _ = raisingMatrix i := Matrix.ext fun _ _ ↦ Int.cast_id
-      _ = _ := (serreRepresentation_serreE i).symm
-  · intro i
-    rw [LieHom.comp_apply, generatedSerreLift_serreF,
-      generatedTangentMatrixLieHom_generatedRootVector, Sum.elim_inr]
-    calc
-      _ = loweringMatrix i := Matrix.ext fun _ _ ↦ Int.cast_id
-      _ = _ := (serreRepresentation_serreF i).symm
+  rw [generatedTangentMatrixLieHom_comp_generatedSerreLift, serreLift_intCast isSerreSystem]
+  exact (eq_serreLift serreRepresentation_serreH serreRepresentation_serreE
+    serreRepresentation_serreF).symm
 
 end
 
