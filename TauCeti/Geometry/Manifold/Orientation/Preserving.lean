@@ -482,11 +482,10 @@ theorem isOrientationReversingAt_of_det_neg (o : Manifold.Orientation 𝓘(ℝ, 
 real normed space with negative derivative determinant at `v` reverses every orientation there. -/
 theorem isOrientationReversingAt_of_det_fderiv_neg (o : Manifold.Orientation 𝓘(ℝ, E) E ι)
     {f : E → E} {v : E} (hdet : (fderiv ℝ f v).det < 0) : IsOrientationReversingAt o o f v := by
-  let D : E ≃L[ℝ] E := (LinearMap.equivOfDetNeZero _ hdet.ne).toContinuousLinearEquiv
+  let D : E ≃L[ℝ] E := (fderiv ℝ f v).toContinuousLinearEquivOfDetNeZero hdet.ne
   refine (isOrientationReversingAt_iff_of_coe_eq o o _ v D ?_).mpr ?_
-  · ext w
-    simp only [D, mfderiv_eq_fderiv]
-    rfl
+  · rw [mfderiv_eq_fderiv]
+    exact (fderiv ℝ f v).coe_toContinuousLinearEquivOfDetNeZero hdet.ne
   · rw [orientationAt_eq_orientationAt o (f v) v]
     exact (_root_.Orientation.map_eq_neg_iff_det_neg _ _ o.card_eq).mpr hdet
 
