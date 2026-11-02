@@ -94,6 +94,9 @@ maps from a fixed commutative ring into completions.
   by a topological ring isomorphism is continuous in both directions.
 * `UniformSpace.Completion.mapAlgEquiv_coe` and `UniformSpace.Completion.continuous_mapAlgEquiv`:
   the algebra isomorphism of completions extends the given isomorphism and is continuous.
+* `UniformSpace.Completion.mapAlgEquiv_symm` and
+  `UniformSpace.Completion.continuous_mapAlgEquiv_symm`: its inverse is the algebra isomorphism
+  induced by the inverse, and is continuous.
 * `UniformSpace.Completion.coe_completeRingEquivSelf` and
   `UniformSpace.Completion.coe_completeRingEquivSelf_symm`: the isomorphism is
   `UniformCompletion.completeEquivSelf` and its inverse is the coercion into the completion.
@@ -181,22 +184,35 @@ directions, lifts to an `R`-algebra isomorphism between their completions. Its u
 isomorphism is `UniformSpace.Completion.mapRingEquiv`. -/
 noncomputable def mapAlgEquiv (f : α ≃ₐ[R] β) (hf : Continuous f) (hf' : Continuous f.symm) :
     Completion α ≃ₐ[R] Completion β :=
-  .ofRingEquiv (f := mapRingEquiv f.toRingEquiv hf (by simpa using hf')) fun r ↦ by
-    rw [mapRingEquiv_apply, algebraMap_def, algebraMap_def]
-    exact (mapRingHom_coe (f := f.toRingHom) hf _).trans (congrArg _ (f.commutes r))
+  .ofRingEquiv (f := mapRingEquiv f.toRingEquiv (by rwa [AlgEquiv.coe_toRingEquiv])
+      (by rwa [AlgEquiv.toRingEquiv_symm, AlgEquiv.coe_toRingEquiv])) fun r ↦ by
+    rw [mapRingEquiv_apply, AlgEquiv.coe_toRingEquiv, algebraMap_def, algebraMap_def,
+      map_coe (uniformContinuous_addMonoidHom_of_continuous hf), f.commutes]
 
 /-- The algebra isomorphism of completions induced by `f` is `UniformSpace.Completion.map f`. -/
 theorem mapAlgEquiv_apply (f : α ≃ₐ[R] β) (hf : Continuous f) (hf' : Continuous f.symm)
     (x : Completion α) : mapAlgEquiv f hf hf' x = Completion.map f x := by
-  rw [mapAlgEquiv, AlgEquiv.ofRingEquiv_apply, mapRingEquiv_apply]
-  rfl
+  rw [mapAlgEquiv, AlgEquiv.ofRingEquiv_apply, mapRingEquiv_apply, AlgEquiv.coe_toRingEquiv]
+
+/-- The inverse of the algebra isomorphism of completions induced by `f` is
+`UniformSpace.Completion.map f.symm`. -/
+theorem mapAlgEquiv_symm_apply (f : α ≃ₐ[R] β) (hf : Continuous f) (hf' : Continuous f.symm)
+    (y : Completion β) : (mapAlgEquiv f hf hf').symm y = Completion.map f.symm y := by
+  rw [mapAlgEquiv, AlgEquiv.ofRingEquiv_symm_apply, mapRingEquiv_symm_apply,
+    AlgEquiv.toRingEquiv_symm, AlgEquiv.coe_toRingEquiv]
+
+/-- The inverse of the algebra isomorphism of completions induced by `f` is the one induced by
+`f.symm`. -/
+@[simp]
+theorem mapAlgEquiv_symm (f : α ≃ₐ[R] β) (hf : Continuous f) (hf' : Continuous f.symm) :
+    (mapAlgEquiv f hf hf').symm = mapAlgEquiv f.symm hf' (by rwa [AlgEquiv.symm_symm]) :=
+  AlgEquiv.ext fun y ↦ by rw [mapAlgEquiv_symm_apply, mapAlgEquiv_apply]
 
 /-- The algebra isomorphism of completions induced by `f` extends `f`. -/
 @[simp]
 theorem mapAlgEquiv_coe (f : α ≃ₐ[R] β) (hf : Continuous f) (hf' : Continuous f.symm) (a : α) :
-    mapAlgEquiv f hf hf' a = (f a : Completion β) :=
-  (mapAlgEquiv_apply f hf hf' a).trans
-    (map_coe (uniformContinuous_addMonoidHom_of_continuous (f := f.toAddMonoidHom) hf) a)
+    mapAlgEquiv f hf hf' a = (f a : Completion β) := by
+  rw [mapAlgEquiv_apply, map_coe (uniformContinuous_addMonoidHom_of_continuous hf)]
 
 /-- The algebra isomorphism of completions induced by a topological algebra isomorphism is
 continuous. -/
@@ -204,6 +220,13 @@ continuous. -/
 theorem continuous_mapAlgEquiv (f : α ≃ₐ[R] β) (hf : Continuous f) (hf' : Continuous f.symm) :
     Continuous (mapAlgEquiv f hf hf') :=
   continuous_map.congr fun x ↦ (mapAlgEquiv_apply f hf hf' x).symm
+
+/-- The inverse of the algebra isomorphism of completions induced by a topological algebra
+isomorphism is continuous. -/
+@[fun_prop, continuity]
+theorem continuous_mapAlgEquiv_symm (f : α ≃ₐ[R] β) (hf : Continuous f)
+    (hf' : Continuous f.symm) : Continuous (mapAlgEquiv f hf hf').symm :=
+  continuous_map.congr fun y ↦ (mapAlgEquiv_symm_apply f hf hf' y).symm
 
 end MapAlgEquiv
 
