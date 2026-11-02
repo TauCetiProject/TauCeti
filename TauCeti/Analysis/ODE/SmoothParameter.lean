@@ -23,7 +23,7 @@ norm therefore suffices: no globally smooth extension or smooth bump function is
 ## Main results
 
 * `ODE.exists_contDiffOn_picard_solution`: a `C^(n+1)` family of solutions on an open parameter
-  neighbourhood, for `n` finite or infinite, for a field smooth on an open neighbourhood of the
+  neighbourhood, for `n` finite or infinite, for a `C^(n+1)` field on an open neighbourhood of the
   base parameter and state. Each path stays in that domain and satisfies the Picard equation,
   the ODE at interior times, and its right-hand version at the initial endpoint.
 * `ODE.exists_contDiffAt_picard_solution`: the finite-order germ version.
@@ -57,6 +57,16 @@ private def picardInput : E × C(Icc (0 : ℝ) 1, F) →L[ℝ] C(Icc (0 : ℝ) 1
 private theorem picardInput_apply (p : E × C(Icc (0 : ℝ) 1, F)) :
     picardInput p = (ContinuousMap.const _ p.1).prodMk p.2 := by
   ext t <;> simp [picardInput]
+
+/-- The parameter-path pairs staying in the field domain form an open set. -/
+private theorem isOpen_picardDomain {s : Set (E × F)} (hs : IsOpen s) :
+    IsOpen {p : E × C(Icc (0 : ℝ) 1, F) | ∀ t, (p.1, p.2 t) ∈ s} := by
+  rw [isOpen_iff_mem_nhds]
+  intro p hp
+  have hnear := (picardInput (E := E) (F := F)).continuous.continuousAt.eventually
+    (ContinuousMap.eventually_mapsTo isCompact_univ hs (fun t _ ↦ by simpa using hp t))
+  filter_upwards [hnear] with q hq t
+  simpa using hq (mem_univ t)
 
 /-- The locally defined Picard residual, totalized by `ContinuousMap.mkD`. -/
 private def picardResidual (f : E × F → F) (x₀ : F)
@@ -101,17 +111,61 @@ private theorem hasStrictFDerivAt_picardResidual_path (f : E × F → F) (p₀ :
     filter_upwards [ContinuousMap.eventually_mapsTo isCompact_univ hUopen
       (fun _ _ ↦ hx₀U)] with q hq
     have hcomp : ContinuousMap.mkD (fun t ↦ f (picardInput (p₀, q) t)) 0 = 0 := by
-      have heq : (fun t ↦ f (picardInput (p₀, q) t)) = (0 : Icc (0 : ℝ) 1 → F) := by
+      have hzero_comp : (fun t ↦ f (picardInput (p₀, q) t)) =
+          (0 : Icc (0 : ℝ) 1 → F) := by
         funext t
         simpa using hUsub (hq (mem_univ t))
-      rw [heq]
-      exact ContinuousMap.mkD_eq_self (f := (0 : C(Icc (0 : ℝ) 1, F)))
+      rw [hzero_comp, ← ContinuousMap.coe_zero, ContinuousMap.mkD_eq_self]
     rw [picardResidual, hcomp, map_zero, sub_zero]
   exact (hasStrictFDerivAt_sub_const (ContinuousMap.const _ x₀)).congr_of_eventuallyEq heq
 
-/-- A field smooth on an open neighbourhood of a parameter and state, and locally zero in the
-state at that parameter, admits a smooth parameter family of solutions on `[0,1]`. The paths
-stay in the smoothness domain. The equation holds at interior times and from the right at zero.
+/-- Local vanishing makes the full residual derivative invertible in the path direction. -/
+private theorem isInvertible_fderiv_picardResidual_path (f : E × F → F) (p₀ : E) (x₀ : F)
+    (hR : DifferentiableAt ℝ (picardResidual f x₀) (p₀, ContinuousMap.const _ x₀))
+    (hzero : ∀ᶠ y in 𝓝 x₀, f (p₀, y) = 0) :
+    (fderiv ℝ (picardResidual f x₀) (p₀, ContinuousMap.const _ x₀) ∘L
+      ContinuousLinearMap.inr ℝ E C(Icc (0 : ℝ) 1, F)).IsInvertible := by
+  have hpartial := hasStrictFDerivAt_picardResidual_path f p₀ x₀ hzero
+  have heq := (hR.hasFDerivAt.comp (ContinuousMap.const _ x₀)
+    (hasFDerivAt_prodMk_right (𝕜 := ℝ) p₀ (ContinuousMap.const _ x₀))).unique
+      hpartial.hasFDerivAt
+  rw [heq]
+  exact ⟨ContinuousLinearEquiv.refl ℝ _, rfl⟩
+
+omit [NormedSpace ℝ E] in
+/-- The Picard equation gives the ODE at interior times and from the right at zero. -/
+private theorem picard_solution_derivatives [CompleteSpace F] (f : E × F → F)
+    {s : Set (E × F)} (hf : ContinuousOn f s) (x₀ : F) (p : E)
+    (q : C(Icc (0 : ℝ) 1, F)) (hpath : ∀ t, (p, q t) ∈ s)
+    (hpicard : ∀ t : Icc (0 : ℝ) 1,
+      q t = x₀ + ∫ r in (0 : ℝ)..t, f (p, q (projIcc 0 1 zero_le_one r))) :
+    (∀ t ∈ Ioo (0 : ℝ) 1, HasDerivAt (fun r ↦ q (projIcc 0 1 zero_le_one r))
+      (f (p, q (projIcc 0 1 zero_le_one t))) t) ∧
+    ∀ t ∈ Ico (0 : ℝ) 1, HasDerivWithinAt (fun r ↦ q (projIcc 0 1 zero_le_one r))
+      (f (p, q (projIcc 0 1 zero_le_one t))) (Ici t) t := by
+  -- Constant extension beyond [0,1] supplies a continuous integrand; equality with the
+  -- path is used only within the interval.
+  have hcont : Continuous (fun r : ℝ ↦ f (p, q (projIcc 0 1 zero_le_one r))) :=
+    hf.comp_continuous (by fun_prop) (fun r ↦ hpath _)
+  have heq : EqOn (fun r ↦ q (projIcc 0 1 zero_le_one r))
+      (fun r ↦ x₀ + ∫ v in (0 : ℝ)..r, f (p, q (projIcc 0 1 zero_le_one v)))
+      (Icc 0 1) := fun r hr ↦ by
+    simp only [projIcc_of_mem zero_le_one hr]
+    exact hpicard ⟨r, hr⟩
+  have hderiv (t : ℝ) : HasDerivAt
+      (fun r ↦ x₀ + ∫ v in (0 : ℝ)..r, f (p, q (projIcc 0 1 zero_le_one v)))
+      (f (p, q (projIcc 0 1 zero_le_one t))) t :=
+    (hcont.integral_hasStrictDerivAt 0 t).hasDerivAt.const_add x₀
+  exact ⟨fun t ht ↦ (hderiv t).congr_of_eventuallyEq
+    (heq.eventuallyEq_of_mem (Icc_mem_nhds ht.1 ht.2)),
+    fun t ht ↦ (hderiv t).hasDerivWithinAt.congr_of_eventuallyEq
+      ((heq.mono (Icc_subset_Icc_left ht.1)).eventuallyEq_of_mem (Icc_mem_nhdsGE ht.2))
+      (heq ⟨ht.1, ht.2.le⟩)⟩
+
+/-- A field that is `C^(n+1)` on an open neighbourhood of a parameter and state, and locally zero
+in the state at that parameter, admits a `C^(n+1)` parameter family of solutions on `[0,1]`.
+The paths stay in the smoothness domain. The equation holds at interior times and from the right
+at zero.
 Both parameter and state spaces may be arbitrary Banach spaces. -/
 theorem exists_contDiffOn_picard_solution [CompleteSpace E] [CompleteSpace F]
     {n : ℕ∞} (f : E × F → F) (p₀ : E) (x₀ : F) {s : Set (E × F)}
@@ -133,27 +187,14 @@ theorem exists_contDiffOn_picard_solution [CompleteSpace E] [CompleteSpace F]
   let R := picardResidual f x₀
   let u : E × C(Icc (0 : ℝ) 1, F) := (p₀, ContinuousMap.const _ x₀)
   let S := {p : E × C(Icc (0 : ℝ) 1, F) | ∀ t, (p.1, p.2 t) ∈ s}
-  have hS : IsOpen S := by
-    rw [isOpen_iff_mem_nhds]
-    intro p hp
-    have hnear := (picardInput (E := E) (F := F)).continuous.continuousAt.eventually
-      (ContinuousMap.eventually_mapsTo isCompact_univ hs (fun t _ ↦ by simpa using hp t))
-    filter_upwards [hnear] with q hq t
-    simpa using hq (mem_univ t)
+  have hS : IsOpen S := isOpen_picardDomain hs
   have hu : u ∈ S := fun _ ↦ hbase
   have hRglobal : ContDiffOn ℝ (n + 1) R S := fun p hp ↦
     (contDiffAt_picardResidual (n + 1) f hs (by exact_mod_cast hf) x₀ p hp).contDiffWithinAt
   have hR : ContDiffAt ℝ (n + 1) R u := hRglobal.contDiffAt (hS.mem_nhds hu)
   have hn : (n : ℕ∞ω) + 1 ≠ 0 := by simp
-  -- Restrict the full derivative to the path direction and identify it using the local
-  -- vanishing of the field. This is the invertible derivative needed by the implicit theorem.
-  have hinvertible : (fderiv ℝ R u ∘L
-      ContinuousLinearMap.inr ℝ E C(Icc (0 : ℝ) 1, F)).IsInvertible := by
-    have hpartial := hasStrictFDerivAt_picardResidual_path f p₀ x₀ hzero
-    have heq := ((hR.differentiableAt hn).hasFDerivAt.comp u.2
-      (hasFDerivAt_prodMk_right (𝕜 := ℝ) p₀ u.2)).unique hpartial.hasFDerivAt
-    rw [heq]
-    exact ⟨ContinuousLinearEquiv.refl ℝ _, rfl⟩
+  have hinvertible := isInvertible_fderiv_picardResidual_path f p₀ x₀
+    (hR.differentiableAt hn) hzero
   -- The implicit solution is smooth on one open neighbourhood, even at infinite regularity.
   -- Shrink it so the residual vanishes and all paths remain in the original field domain.
   let γ : E → C(Icc (0 : ℝ) 1, F) := hR.implicitFunction hn hinvertible
@@ -180,24 +221,8 @@ theorem exists_contDiffOn_picard_solution [CompleteSpace E] [CompleteSpace F]
   have hpath := (hVsub hp.2).2
   have hpicard := (picardResidual_eq_zero_iff f hf.continuousOn x₀ p (γ p) hpath).mp
     (hVsub hp.2).1
-  -- The integral equation gives the ODE by the FTC. Constant extension beyond [0,1] supplies
-  -- a continuous integrand; equality with the path is used only within the interval.
-  have hcont : Continuous (fun r : ℝ ↦ f (p, γ p (projIcc 0 1 zero_le_one r))) :=
-    hf.continuousOn.comp_continuous (by fun_prop) (fun r ↦ hpath _)
-  have heq : EqOn (fun r ↦ γ p (projIcc 0 1 zero_le_one r))
-      (fun r ↦ x₀ + ∫ v in (0 : ℝ)..r, f (p, γ p (projIcc 0 1 zero_le_one v)))
-      (Icc 0 1) := fun r hr ↦ by
-    simp only [projIcc_of_mem zero_le_one hr]
-    exact hpicard ⟨r, hr⟩
-  have hderiv (t : ℝ) : HasDerivAt
-      (fun r ↦ x₀ + ∫ v in (0 : ℝ)..r, f (p, γ p (projIcc 0 1 zero_le_one v)))
-      (f (p, γ p (projIcc 0 1 zero_le_one t))) t :=
-    (hcont.integral_hasStrictDerivAt 0 t).hasDerivAt.const_add x₀
-  exact ⟨hpath, hpicard, fun t ht ↦ (hderiv t).congr_of_eventuallyEq
-    (heq.eventuallyEq_of_mem (Icc_mem_nhds ht.1 ht.2)),
-    fun t ht ↦ (hderiv t).hasDerivWithinAt.congr_of_eventuallyEq
-      ((heq.mono (Icc_subset_Icc_left ht.1)).eventuallyEq_of_mem (Icc_mem_nhdsGE ht.2))
-      (heq ⟨ht.1, ht.2.le⟩)⟩
+  exact ⟨hpath, hpicard,
+    picard_solution_derivatives f hf.continuousOn x₀ p (γ p) hpath hpicard⟩
 
 /-- A field that is `C^(n+1)` at the base parameter and state of Banach spaces, and locally zero
 in the state at that parameter, admits a `C^(n+1)` germ of a family of solutions on `[0,1]`. -/

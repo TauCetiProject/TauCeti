@@ -51,10 +51,11 @@ connected Lie subgroup.
 
 ## Implementation notes
 
-Existence is proved in finite dimension, where a smooth germ has a globally Lipschitz smooth
-representative, so that the parameterized Picard theorem
-`ODE.exists_contDiffOn_picard_solution` applies. The solution through `(x₀, y₀)` is
-built along rays: for a small parameter `z`, the ordinary differential equation
+The parameterized Picard theorem `ODE.exists_contDiffOn_picard_solution` applies to fields
+that are only locally smooth, including on Banach spaces. The present existence proof still
+uses finite dimension to choose a globally Lipschitz smooth representative for the subsequent
+uniqueness argument. The solution through `(x₀, y₀)` is built along rays: for a small parameter
+`z`, the ordinary differential equation
 `b' = f (x₀ + t • z, b) z` with `b 0 = y₀` is solved on `[0, 1]`, smoothly in `z`, and
 `u (x₀ + z) = b 1`. Translating the state by a variable initial value makes the Picard solution
 smooth jointly in `z` and that initial value. Rescaling time shows that

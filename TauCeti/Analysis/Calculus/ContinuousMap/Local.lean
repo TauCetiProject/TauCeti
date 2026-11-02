@@ -42,8 +42,10 @@ universe u v
 variable {K : Type*} [TopologicalSpace K] [CompactSpace K]
   {𝕜 : Type*} [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜]
   {E : Type u} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  -- The finite-order induction replaces the codomain by its space of linear maps.
-  {F : Type (max u v)} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+section FirstOrder
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
 /-- An operator given locally by pointwise composition is continuous if the outer map is
 continuous at every point of the compact input range. -/
@@ -106,6 +108,11 @@ theorem hasFDerivAt_of_eventually_apply_eq {f : E → F} {s : Set E} (hs : IsOpe
     hbound (left_mem_segment ℝ _ _) (right_mem_segment ℝ _ _)).trans
       (mul_le_mul_of_nonneg_left (norm_coe_le_norm (h - g) t) hc.le)
 
+end FirstOrder
+
+-- The finite-order induction replaces the codomain by its space of linear maps.
+variable {F : Type (max u v)} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
 private theorem contDiffAt_of_eventually_apply_eq_nat (n : ℕ) {f : E → F} {s : Set E}
     (hs : IsOpen s) (hf : ContDiffOn 𝕜 n f s) {g : C(K, E)} (hg : ∀ t, g t ∈ s)
     {Θ : C(K, E) → C(K, F)} (hΘ : ∀ᶠ h in 𝓝 g, ∀ t, Θ h t = f (h t)) :
@@ -145,7 +152,10 @@ private theorem contDiffAt_of_eventually_apply_eq_nat (n : ℕ) {f : E → F} {s
 
 /-- A superposition operator on compact-domain continuous maps is `C^n` at an input whose range
 lies in an open set where the outer map is `C^n`. The operator need only agree with pointwise
-composition near that input. No global regularity or completeness is assumed. -/
+composition near that input. No global regularity or completeness is assumed.
+
+The codomain universe must be at least the domain universe, as required by the induction
+through spaces of continuous linear maps. -/
 theorem contDiffAt_of_eventually_apply_eq (n : ℕ∞) {f : E → F} {s : Set E}
     (hs : IsOpen s) (hf : ContDiffOn 𝕜 (n : ℕ∞ω) f s) {g : C(K, E)} (hg : ∀ t, g t ∈ s)
     {Θ : C(K, E) → C(K, F)} (hΘ : ∀ᶠ h in 𝓝 g, ∀ t, Θ h t = f (h t)) :
@@ -157,8 +167,10 @@ theorem contDiffAt_of_eventually_apply_eq (n : ℕ∞) {f : E → F} {s : Set E}
       (hf.of_le (by simp)) hg hΘ
   | coe n => exact contDiffAt_of_eventually_apply_eq_nat n hs hf hg hΘ
 
-/-- Composition with a map that is smooth on an open set is smooth at every continuous map
-whose range lies in that set. -/
+/-- If `f` is `C^n` on an open set, the totalized composition operator
+`h ↦ mkD (f ∘ h) default` is `C^n` at every continuous map whose range lies in that set.
+The codomain universe must be at least the domain universe, as in
+`contDiffAt_of_eventually_apply_eq`. -/
 theorem contDiffAt_mkD_comp (n : ℕ∞) {f : E → F} {s : Set E} (hs : IsOpen s)
     (hf : ContDiffOn 𝕜 (n : ℕ∞ω) f s) {g : C(K, E)} (hg : ∀ t, g t ∈ s)
     (default : C(K, F)) :
@@ -174,11 +186,14 @@ theorem hasFDerivAt_postcomp (f : C(E, F)) (hf : ContDiff 𝕜 1 f) (g : C(K, E)
     HasFDerivAt (fun h : C(K, E) ↦ f.comp h)
       (applyContinuousLinearMap
         ((⟨fderiv 𝕜 f, hf.continuous_fderiv one_ne_zero⟩ : C(E, E →L[𝕜] F)).comp g)) g := by
+  -- `ContinuousMap.comp` unfolds to pointwise composition, so its derivative map is the
+  -- bundled map along `g` supplied by the local superposition theorem.
   exact hasFDerivAt_of_eventually_apply_eq isOpen_univ hf.contDiffOn
     (fun _ ↦ mem_univ _) (.of_forall fun _ _ ↦ rfl)
 
 /-- Pointwise postcomposition by a `C^n` map is `C^n` on a compact-domain continuous-map space,
-for every finite or infinite differentiability order `n`. -/
+for every finite or infinite differentiability order `n`. The codomain universe must be at
+least the domain universe, as in `contDiffAt_of_eventually_apply_eq`. -/
 theorem contDiff_postcomp (n : ℕ∞) (f : C(E, F)) (hf : ContDiff 𝕜 (n : ℕ∞ω) f) :
     ContDiff 𝕜 (n : ℕ∞ω) (fun g : C(K, E) ↦ f.comp g) := by
   exact contDiff_iff_contDiffAt.2 fun _ ↦ contDiffAt_of_eventually_apply_eq n
