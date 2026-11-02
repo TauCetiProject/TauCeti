@@ -17,6 +17,10 @@ adjacent diagonal differences over every commutative ring. Its coordinates are
 nonempty initial sums of the diagonal entries. Diagonal elements act on matrix units by the
 difference of the corresponding diagonal entries. The construction includes rank zero
 and uses the existing partial-sum linear equivalence.
+
+The same matrices form the Lie subalgebra `TauCeti.specialLinearDiagonalCartan`, which is abelian
+and, once multiplication by `2` is injective, self-normalizing: it is the standard Cartan
+subalgebra of `sl (Fin (r + 1))`, the one against which weights of `sl` are read.
 -/
 
 public section
@@ -210,5 +214,74 @@ theorem specialLinearCorootEquiv_symm_val (c : Fin r → A) :
     ((specialLinearCorootBasis r A).sum_repr ((specialLinearCorootEquiv r A).symm c))
   simpa only [Submodule.coe_sum, Submodule.coe_smul, hc, specialLinearCorootBasis_apply]
     using h.symm
+
+/-! ### The diagonal Cartan subalgebra -/
+
+/-- The trace-zero diagonal matrices, as a Lie subalgebra of the special linear Lie algebra
+`sl (Fin (r + 1)) A`: the diagonal matrices of `gl` pulled back along the inclusion. Its
+underlying submodule is `TauCeti.specialLinearDiagonal`
+(`TauCeti.specialLinearDiagonalCartan_toSubmodule`). It is the standard Cartan subalgebra of
+`sl (Fin (r + 1)) A` once `2` is regular
+(`TauCeti.instIsCartanSubalgebraSpecialLinearDiagonalCartan`). -/
+def specialLinearDiagonalCartan : LieSubalgebra A (sl (Fin (r + 1)) A) :=
+  (diagonalCartan A (Fin (r + 1))).comap (sl (Fin (r + 1)) A).incl
+
+/-- Membership in the diagonal Cartan subalgebra of `sl` is diagonality of the matrix. -/
+@[simp]
+theorem mem_specialLinearDiagonalCartan_iff (X : sl (Fin (r + 1)) A) :
+    X ∈ specialLinearDiagonalCartan r A ↔ (X : Matrix (Fin (r + 1)) (Fin (r + 1)) A).IsDiag :=
+  mem_diagonalCartan_iff_isDiag
+
+/-- The diagonal Cartan subalgebra has the trace-zero diagonal matrices as underlying submodule. -/
+theorem specialLinearDiagonalCartan_toSubmodule :
+    (specialLinearDiagonalCartan r A).toSubmodule = specialLinearDiagonal r A :=
+  (rfl)
+
+instance : IsLieAbelian (specialLinearDiagonalCartan r A) where
+  trivial X Y := Subtype.ext <| Subtype.ext <| by
+    simpa using lie_eq_zero_of_isDiag
+      ((mem_specialLinearDiagonalCartan_iff r A X).mp X.2)
+      ((mem_specialLinearDiagonalCartan_iff r A Y).mp Y.2)
+
+/-- The diagonal Cartan subalgebra of `sl` is self-normalizing when multiplication by `2` is
+injective: bracketing a normalizing matrix with `E_aa - E_bb` scales its `(a, b)` entry by `-2`,
+and the result must be diagonal. -/
+@[simp]
+theorem specialLinearDiagonalCartan_normalizer_eq_self (h2 : IsRegular (2 : A)) :
+    (specialLinearDiagonalCartan r A).normalizer = specialLinearDiagonalCartan r A := by
+  refine le_antisymm (fun X hX => ?_) (specialLinearDiagonalCartan r A).le_normalizer
+  rw [mem_specialLinearDiagonalCartan_iff]
+  intro a b hab
+  have hmem := ((specialLinearDiagonalCartan r A).mem_normalizer_iff X).mp hX
+    (singleSubSingle a b 1)
+    (singleSubSingle_mem_specialLinearDiagonal r A a b 1)
+  have hdiag : (singleSubSingle a b (1 : A) : Matrix (Fin (r + 1)) (Fin (r + 1)) A).IsDiag :=
+    (mem_specialLinearDiagonal_iff r A _).mp (singleSubSingle_mem_specialLinearDiagonal r A a b 1)
+  have hentry : ⁅(singleSubSingle a b (1 : A) : Matrix (Fin (r + 1)) (Fin (r + 1)) A),
+      (X : Matrix (Fin (r + 1)) (Fin (r + 1)) A)⁆ a b = 0 := by
+    have h := (mem_specialLinearDiagonalCartan_iff r A _).mp hmem hab
+    rw [LieSubalgebra.coe_bracket, ← lie_skew, Matrix.neg_apply, neg_eq_zero] at h
+    exact h
+  rw [lie_apply_of_mem_diagonalCartan (mem_diagonalCartan_iff_isDiag.mpr hdiag)] at hentry
+  have h2' : (singleSubSingle a b (1 : A) : Matrix (Fin (r + 1)) (Fin (r + 1)) A) a a -
+      (singleSubSingle a b (1 : A) : Matrix (Fin (r + 1)) (Fin (r + 1)) A) b b = 2 := by
+    simp [val_singleSubSingle, hab, Ne.symm hab]
+    norm_num
+  rw [h2'] at hentry
+  exact h2.left (by simpa using hentry)
+
+/-- The trace-zero diagonal matrices form a Cartan subalgebra of `sl (Fin (r + 1)) A` when
+multiplication by `2` is injective: they are abelian, hence nilpotent, and self-normalizing. -/
+instance instIsCartanSubalgebraSpecialLinearDiagonalCartan [h2 : Fact (IsRegular (2 : A))] :
+    (specialLinearDiagonalCartan r A).IsCartanSubalgebra where
+  nilpotent := inferInstance
+  self_normalizing := specialLinearDiagonalCartan_normalizer_eq_self r A h2.out
+
+/-- Over a domain, nonvanishing of `2` supplies the regularity needed by the Cartan instance. -/
+instance (priority := low) instIsCartanSubalgebraSpecialLinearDiagonalCartanOfNoZeroDivisors
+    [NoZeroDivisors A] [NeZero (2 : A)] :
+    (specialLinearDiagonalCartan r A).IsCartanSubalgebra := by
+  let _ : Fact (IsRegular (2 : A)) := ⟨IsRegular.of_ne_zero' (NeZero.ne (2 : A))⟩
+  infer_instance
 
 end TauCeti
