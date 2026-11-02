@@ -107,29 +107,6 @@ theorem apply_contract_ιMulti (f : Fin n → Dual R M) (θ : ⋀[R]^(n + 1) M) 
       pairingDual R M (n + 1) (ιMulti R (n + 1) (Fin.snoc f ξ)) θ := by
   rw [apply_contract, oneEquiv_symm_apply, wedge_ιMulti, Fin.append_right_eq_snoc]
 
-/-- Contracting `v₀ ∧ ⋯ ∧ vₙ` by the exterior product of a dual family with its `p`-th member
-removed recovers `vₚ`, up to the sign `(-1) ^ (p + n)`. -/
-theorem contract_ιMulti_comp_succAbove_ιMulti {g : Fin (n + 1) → Dual R M}
-    {v : Fin (n + 1) → M} (hgv : ∀ i j, g i (v j) = if i = j then 1 else 0) (p : Fin (n + 1)) :
-    contract R M n (ιMulti R n (g ∘ p.succAbove)) (ιMulti R (n + 1) v) =
-      (-1 : R) ^ (p + n : ℕ) • v p := by
-  apply (evalEquiv R M).injective
-  ext ξ
-  simp only [evalEquiv_apply, Dual.eval_apply, map_smul]
-  rw [apply_contract_ιMulti, pairingDual_ιMulti_ιMulti, Matrix.det_succ_column _ (Fin.last n),
-    Finset.sum_eq_single p]
-  · have h1 : (Matrix.of fun i j ↦ Fin.snoc (α := fun _ ↦ Dual R M) (g ∘ p.succAbove) ξ j
-        (v i)).submatrix p.succAbove (Fin.last n).succAbove = 1 := by
-      ext i j
-      simp [Fin.succAbove_last, hgv, Matrix.one_apply, eq_comm]
-    rw [h1, Matrix.det_one]
-    simp
-  · intro i _ hip
-    obtain ⟨k, hk⟩ := Fin.exists_succAbove_eq (Ne.symm hip)
-    rw [Matrix.det_eq_zero_of_row_eq_zero k fun j ↦ by
-      simp [Fin.succAbove_last, hk, hgv, Fin.succAbove_ne], mul_zero]
-  · simp
-
 /-- **Expansion of a contraction of a decomposable vector**:
 `ι_η (v₀ ∧ ⋯ ∧ vₙ) = ∑ⱼ (-1) ^ (j + n) ⟨η, v₀ ∧ ⋯ ∧ v̂ⱼ ∧ ⋯ ∧ vₙ⟩ vⱼ`. -/
 theorem contract_ιMulti (η : ⋀[R]^n (Dual R M)) (v : Fin (n + 1) → M) :
@@ -145,9 +122,9 @@ theorem contract_ιMulti (η : ⋀[R]^n (Dual R M)) (v : Fin (n + 1) → M) :
       ∑ j : Fin (n + 1), ((-1 : R) ^ (j + n : ℕ) * ξ (v j)) •
         (pairingDual R M n).flip (ιMulti R n (v ∘ j.succAbove)) := by
     refine linearMap_ext (AlternatingMap.ext fun f ↦ ?_)
-    rw [LinearMap.compAlternatingMap_apply, LinearMap.comp_apply, LinearMap.flip_apply,
-      apply_contract_ιMulti, pairingDual_ιMulti_ιMulti, Matrix.det_succ_column _ (Fin.last n),
-      LinearMap.compAlternatingMap_apply, LinearMap.sum_apply]
+    simp only [LinearMap.compAlternatingMap_apply, LinearMap.comp_apply, LinearMap.flip_apply,
+      LinearMap.sum_apply, apply_contract_ιMulti, pairingDual_ιMulti_ιMulti]
+    rw [Matrix.det_succ_column _ (Fin.last n)]
     refine Finset.sum_congr rfl fun j _ ↦ ?_
     rw [LinearMap.smul_apply, LinearMap.flip_apply, pairingDual_ιMulti_ιMulti, smul_eq_mul]
     simp [Fin.succAbove_last, Matrix.submatrix]
@@ -156,6 +133,23 @@ theorem contract_ιMulti (η : ⋀[R]^n (Dual R M)) (v : Fin (n + 1) → M) :
   simp only [LinearMap.comp_apply, LinearMap.flip_apply, LinearMap.smul_apply, smul_eq_mul] at hη
   rw [hη]
   exact Finset.sum_congr rfl fun j _ ↦ by ring
+
+/-- Contracting `v₀ ∧ ⋯ ∧ vₙ` by the exterior product of a dual family with its `p`-th member
+removed recovers `vₚ`, up to the sign `(-1) ^ (p + n)`. -/
+theorem contract_ιMulti_comp_succAbove_ιMulti {g : Fin (n + 1) → Dual R M}
+    {v : Fin (n + 1) → M} (hgv : ∀ i j, g i (v j) = if i = j then 1 else 0) (p : Fin (n + 1)) :
+    contract R M n (ιMulti R n (g ∘ p.succAbove)) (ιMulti R (n + 1) v) =
+      (-1 : R) ^ (p + n : ℕ) • v p := by
+  rw [contract_ιMulti, Finset.sum_eq_single p]
+  · have h1 : (Matrix.of fun i j ↦ (g ∘ p.succAbove) j ((v ∘ p.succAbove) i)) = 1 := by
+      ext i j
+      simp [hgv, Matrix.one_apply, eq_comm]
+    rw [pairingDual_ιMulti_ιMulti, h1, Matrix.det_one, mul_one]
+  · intro j _ hjp
+    obtain ⟨k, hk⟩ := Fin.exists_succAbove_eq (Ne.symm hjp)
+    rw [pairingDual_ιMulti_ιMulti, Matrix.det_eq_zero_of_row_eq_zero k fun i ↦ by
+      simp [hk, hgv, Fin.succAbove_ne], mul_zero, zero_smul]
+  · simp
 
 /-- The contractions of `v₀ ∧ ⋯ ∧ vₙ` lie in the span of the `vᵢ`. -/
 theorem contract_ιMulti_mem_span (η : ⋀[R]^n (Dual R M)) (v : Fin (n + 1) → M) :
