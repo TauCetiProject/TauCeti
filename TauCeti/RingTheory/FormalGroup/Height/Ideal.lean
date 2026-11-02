@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.FormalGroup.CoordinateChange.Lazard
 public import TauCeti.RingTheory.FormalGroup.Height.Basic
 import TauCeti.RingTheory.FormalGroup.NSMul.BaseChange
 
@@ -34,9 +33,10 @@ height ideals (`TauCeti.FormalGroupIso.heightIdeal_eq`), and the height ideals c
 change (`FormalGroup.map_heightIdeal`). For the universal formal group law over the Lazard ring `L`
 and the universal strict coordinate change over `L[b₁, b₂, …]`, this says that the height ideals of
 `L` are invariant ideals of the Hopf algebroid `(L, L[b₁, b₂, …])`: their extensions along the left
-and right units agree (`TauCeti.LazardRing.map_rightUnit_heightIdeal`). Through Quillen's
-identification of `L` with `MU_*`, these are the ideals `I_(p,n)` in the hypothesis of Landweber's
-exact functor theorem.
+and right units agree (`TauCeti.LazardRing.map_rightUnit_heightIdeal`, stated with the rest
+of the Hopf algebroid in `TauCeti.RingTheory.FormalGroup.CoordinateChange.HopfAlgebroid`).
+Through Quillen's identification of `L` with `MU_*`, these are the ideals `I_(p,n)` in the
+hypothesis of Landweber's exact functor theorem.
 
 ## Main definitions
 
@@ -54,8 +54,6 @@ exact functor theorem.
 * `FormalGroup.heightIdeal_eq_span`: `I_n = (v₀, …, v_(n-1))` for commutative `F`.
 * `FormalGroup.heightIdeal_eq_bot_iff_le_height`: over a field of characteristic `p`, `I_n = 0`
   exactly when `F` has height at least `n`.
-* `TauCeti.LazardRing.map_rightUnit_heightIdeal`: the height ideals of the Lazard ring are
-  invariant under strict coordinate changes.
 
 ## References
 
@@ -232,16 +230,3 @@ theorem heightIdeal_eq_top_iff_height_lt {n : ℕ} : F.heightIdeal p n = ⊤ ↔
   exact ⟨fun h hb ↦ bot_ne_top (hb.symm.trans h), (Ideal.eq_bot_or_top _).resolve_left⟩
 
 end FormalGroup
-
-namespace TauCeti.LazardRing
-
-/-- **The height ideals of the Lazard ring are invariant.** Their extensions to the ring
-`L[b₁, b₂, …]` of strict coordinate changes along the left unit `η_L = C` and the right unit
-`η_R` agree. -/
-theorem map_rightUnit_heightIdeal (p n : ℕ) :
-    (formalGroup.heightIdeal p n).map rightUnit =
-      (formalGroup.heightIdeal p n).map MvPolynomial.C := by
-  rw [FormalGroup.map_heightIdeal, FormalGroup.map_heightIdeal, map_rightUnit,
-    FormalGroup.heightIdeal_smul]
-
-end TauCeti.LazardRing
