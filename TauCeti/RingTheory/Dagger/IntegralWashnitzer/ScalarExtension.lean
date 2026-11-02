@@ -63,7 +63,7 @@ theorem isLocalizationAway (π : K°) (hπ0 : (π : K) ≠ 0) (hπ1 : ‖(π : K
   · obtain ⟨n, hn⟩ :=
       (mem_washnitzerAlgebra_iff_exists_C_pow_mul_mem hπ0 hπ1).mp f.2
     refine ⟨n, ⟨_, hn⟩, Subtype.ext ?_⟩
-    simp [mul_comm]
+    simp [mul_comm, MvPowerSeries.algebraMap_apply]
   · refine ⟨0, ?_⟩
     apply Subtype.ext
     simpa using congrArg (fun f : W ↦ (f : MvPowerSeries σ K)) hab

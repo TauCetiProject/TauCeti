@@ -15,7 +15,7 @@ name: Merge sweep
 
 on:
   schedule:
-    - cron: "40 * * * *"   # hourly, offset from housekeeping (:20) and the daily bump
+    - cron: "37 * * * *"   # hourly, offset from housekeeping (:20) and the daily bump
   repository_dispatch:
     types: [tauceti-merge-reconcile]
   workflow_dispatch:
