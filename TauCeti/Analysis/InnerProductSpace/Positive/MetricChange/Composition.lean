@@ -104,10 +104,13 @@ theorem apply_metricChangeBetween_metricChangeBetween
 /-- Transport from `h` to `k` is self-adjoint for `h`, not generally for the reference
 inner product. -/
 theorem apply_metricChangeBetween_left_eq_right (h k : E →L[ℝ] E →L[ℝ] ℝ)
-    (hH : IsStrictlyPositive h♯) (hK : IsStrictlyPositive k♯) (u v : E) :
+    (hH : IsStrictlyPositive h♯) (u v : E) :
     h (h.metricChangeBetween k u) v = h u (h.metricChangeBetween k v) := by
-  have hP := isStrictlyPositive_bilinearComp_metricChangeTransport h k hH hK
-  have hT := nonneg_iff_isPositive.mp (isStrictlyPositive_metricChangeTransport hP).nonneg
+  have hT : (metricChangeTransport
+      (k.bilinearComp h.metricChangeTransport h.metricChangeTransport)).IsPositive := by
+    apply nonneg_iff_isPositive.mp
+    rw [metricChangeTransport_def]
+    exact CFC.rpow_nonneg
   simp only [← inner_sqrt_apply_sqrt_apply hH.nonneg,
     sqrt_apply_metricChangeBetween_apply h k hH]
   exact hT.inner_left_eq_inner_right _ _
@@ -142,7 +145,7 @@ theorem metricChangeBetween_eq_iff (h k : E →L[ℝ] E →L[ℝ] ℝ)
         ∀ u v, k (S u) (S v) = h u v := by
   refine ⟨fun heq ↦ ?_, fun ⟨hsym, hpos, hiso⟩ ↦ ?_⟩
   · subst S
-    refine ⟨apply_metricChangeBetween_left_eq_right h k hH hK, fun u ↦ ?_,
+    refine ⟨apply_metricChangeBetween_left_eq_right h k hH, fun u ↦ ?_,
       apply_metricChangeBetween_metricChangeBetween h k hH hK⟩
     rcases eq_or_ne u 0 with rfl | hu
     · simp
