@@ -234,7 +234,10 @@ def cohomologyEquivHomology (MM : AInfinityRightModule AA M) :
     ext z
     simp only [Submodule.mem_map, LinearMap.mem_boundariesInKer, mem_boundariesInCycles,
       boundaries_def]
-    exact ⟨fun ⟨w, hw, hwz⟩ ↦ hwz ▸ hw, fun hz ↦ ⟨⟨z, by rw [cycles_def]; exact z.2⟩, hz, rfl⟩⟩
+    refine ⟨fun ⟨w, hw, hwz⟩ ↦ ?_, fun hz ↦ ⟨⟨z, by rw [cycles_def]; exact z.2⟩, hz, ?_⟩⟩
+    · rw [← hwz]
+      simpa only [LinearEquiv.coe_coe, LinearEquiv.coe_ofEq_apply] using hw
+    · exact Subtype.ext (LinearEquiv.coe_ofEq_apply _ _)
 
 /-- The comparison sends the cohomology class of a cycle to its homology class. -/
 @[simp]
@@ -244,7 +247,15 @@ theorem cohomologyEquivHomology_cohomologyClass (MM : AInfinityRightModule AA M)
       MM.differential.homologyπ MM.differential_comp_self_eq_zero ⟨x, by rwa [← cycles_def]⟩ := by
   simp only [cohomologyEquivHomology, cohomologyClass_eq_mk, Submodule.Quotient.equiv_apply,
     Submodule.mapQ_apply, LinearMap.homologyπ_apply]
-  congr 1
+  exact congrArg _ (Subtype.ext (LinearEquiv.coe_ofEq_apply _ _))
+
+/-- The inverse comparison sends the homology class of a cycle of `m₁` to its cohomology class. -/
+theorem cohomologyEquivHomology_symm_homologyπ (MM : AInfinityRightModule AA M)
+    (z : LinearMap.ker MM.differential) :
+    MM.cohomologyEquivHomology.symm
+        (MM.differential.homologyπ MM.differential_comp_self_eq_zero z) =
+      MM.cohomologyClass (show (z : M) ∈ MM.cycles by rw [cycles_def]; exact z.2) := by
+  rw [LinearEquiv.symm_apply_eq, cohomologyEquivHomology_cohomologyClass]
 
 end AInfinityRightModule
 
