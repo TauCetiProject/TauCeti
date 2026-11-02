@@ -359,8 +359,7 @@ noncomputable def discreteQuotientMonoidalLeftAction :
 scalars of a discrete `A ⧸ I`-module along the quotient map commutes with the twisting actions of
 `H` on `A ⧸ I` and on `A`. Both twists of a module `M` are restriction of scalars along
 `Ideal.Quotient.mk I ∘ (a h)⁻¹`, and the lineators are identity maps of `M`. -/
--- Exposed so that the lineators compute to identity maps of the underlying modules.
-@[expose, instance_reducible]
+@[instance_reducible]
 noncomputable def leftLinearDiscreteQuotientEquivalenceFunctor :
     letI := I.discreteQuotientMonoidalLeftAction.{v} a hI ha
     letI := I.discreteAnnihilatedMonoidalLeftAction.{v} a hI ha
@@ -383,7 +382,8 @@ lemma leftLinearDiscreteQuotientEquivalenceFunctor_μₗ_hom_apply (c : Discrete
     letI := I.discreteAnnihilatedMonoidalLeftAction.{v} a hI ha
     letI := I.leftLinearDiscreteQuotientEquivalenceFunctor.{v} a hI ha
     (μₗ (discreteQuotientEquivalence.{v} I).functor c M).hom x = x :=
-  (rfl)
+  (Ideal.Quotient.mk I).leftLinearRestrictScalars_μₗ_apply (a := a) (b := a.quotientRingAut I hI)
+    (fun h x => (a.quotientRingAut_apply_mk I hI h x).symm) c M.obj x
 
 /-- The inverse lineators of the quotient presentation are identity maps of the underlying
 modules. -/
@@ -393,7 +393,8 @@ lemma leftLinearDiscreteQuotientEquivalenceFunctor_δₗ_hom_apply (c : Discrete
     letI := I.discreteAnnihilatedMonoidalLeftAction.{v} a hI ha
     letI := I.leftLinearDiscreteQuotientEquivalenceFunctor.{v} a hI ha
     (δₗ (discreteQuotientEquivalence.{v} I).functor c M).hom x = x :=
-  (rfl)
+  (Ideal.Quotient.mk I).leftLinearRestrictScalars_δₗ_apply (a := a) (b := a.quotientRingAut I hI)
+    (fun h x => (a.quotientRingAut_apply_mk I hI h x).symm) c M.obj x
 
 /-- Descent of discrete modules annihilated by `I` to `A ⧸ I`-modules is equivariant for the
 twisting actions, as the inverse of the equivariant equivalence `discreteQuotientEquivalence I`.

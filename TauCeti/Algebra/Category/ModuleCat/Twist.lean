@@ -259,8 +259,7 @@ automorphisms, then restriction of scalars along `f` is equivariant for the twis
 Twisting the restriction of a `B`-module by `h` and restricting its twist are both restriction
 of scalars along `f ∘ (a h)⁻¹ = (b h)⁻¹ ∘ f`, and the lineators are the identity maps of the
 underlying abelian group. -/
--- Exposed so that the lineators of functors built from this one compute to identity maps.
-@[expose, instance_reducible]
+@[instance_reducible]
 noncomputable def leftLinearRestrictScalars :
     letI := a.restrictScalarsMonoidalLeftAction.{v}
     letI := b.restrictScalarsMonoidalLeftAction.{v}

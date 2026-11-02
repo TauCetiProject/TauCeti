@@ -138,8 +138,7 @@ variable {H : Type*} [Monoid H] {R : Type*} [CommRing R] {A : Type u} [Ring A] [
 carries the twisting action through the automorphisms of the closed central quotient induced by
 `a`, the target carries `discreteCentralCharacterMonoidalLeftAction`, and the lineators are the
 identity maps of `discreteQuotientEquivalence`. -/
--- Exposed so that the lineators compute to identity maps of the underlying modules.
-@[expose, instance_reducible]
+@[instance_reducible]
 noncomputable def leftLinearDiscreteCentralCharacterQuotientEquivalenceFunctor :
     letI := (closedCentralIdeal (RingHom.ker χ)).asIdeal.discreteQuotientMonoidalLeftAction.{v}
       _ (a.map_closedCentralIdeal_ker χ ha ha' hχ) ha
@@ -167,7 +166,9 @@ lemma leftLinearDiscreteCentralCharacterQuotientEquivalenceFunctor_μₗ_hom_app
     letI := a.discreteCentralCharacterMonoidalLeftAction.{v} χ ha hχ
     letI := a.leftLinearDiscreteCentralCharacterQuotientEquivalenceFunctor.{v} χ ha ha' hχ
     (μₗ χ.discreteCentralCharacterQuotientEquivalence.functor c M).hom x = x :=
-  (rfl)
+  leftLinearDiscreteQuotientEquivalenceFunctor_μₗ_hom_apply
+    (closedCentralIdeal (RingHom.ker χ)).asIdeal _ (a.map_closedCentralIdeal_ker χ ha ha' hχ) ha
+    c M x
 
 open Functor.LaxLeftLinear Functor.OplaxLeftLinear in
 /-- The inverse lineators of the quotient presentation of a strict discrete character fiber are
@@ -180,7 +181,9 @@ lemma leftLinearDiscreteCentralCharacterQuotientEquivalenceFunctor_δₗ_hom_app
     letI := a.discreteCentralCharacterMonoidalLeftAction.{v} χ ha hχ
     letI := a.leftLinearDiscreteCentralCharacterQuotientEquivalenceFunctor.{v} χ ha ha' hχ
     (δₗ χ.discreteCentralCharacterQuotientEquivalence.functor c M).hom x = x :=
-  (rfl)
+  leftLinearDiscreteQuotientEquivalenceFunctor_δₗ_hom_apply
+    (closedCentralIdeal (RingHom.ker χ)).asIdeal _ (a.map_closedCentralIdeal_ker χ ha ha' hχ) ha
+    c M x
 
 /-- The inverse of the quotient presentation of a strict discrete character fiber is equivariant,
 as the inverse of an equivariant equivalence. -/
