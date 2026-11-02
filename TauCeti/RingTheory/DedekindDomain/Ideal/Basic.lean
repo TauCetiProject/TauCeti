@@ -318,10 +318,11 @@ theorem ofIrreducible_asIdeal {q : R} (hq : Irreducible q) :
 /-- Two irreducible elements generate the same height-one prime exactly when they are
 associated. -/
 @[simp]
-theorem ofIrreducible_eq_ofIrreducible_iff [IsDomain R] {q r : R} (hq : Irreducible q)
+theorem ofIrreducible_eq_ofIrreducible_iff {q r : R} (hq : Irreducible q)
     (hr : Irreducible r) : ofIrreducible hq = ofIrreducible hr ↔ Associated q r := by
-  rw [HeightOneSpectrum.ext_iff, ofIrreducible_asIdeal, ofIrreducible_asIdeal,
-    Ideal.span_singleton_eq_span_singleton]
+  rw [HeightOneSpectrum.ext_iff, ofIrreducible_asIdeal, ofIrreducible_asIdeal, le_antisymm_iff,
+    Ideal.span_singleton_le_span_singleton, Ideal.span_singleton_le_span_singleton]
+  exact ⟨fun h => hq.associated_of_dvd hr h.2, fun h => ⟨h.symm.dvd, h.dvd⟩⟩
 
 end OfIrreducible
 
