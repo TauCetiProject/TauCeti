@@ -7,7 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 import Mathlib.Algebra.Group.Submonoid.Finsupp
-import TauCeti.MeasureTheory.Measure.FiniteMeasureExt
+import TauCeti.MeasureTheory.Measure.FiniteMeasure.Ext
 
 /-!
 # Multivariate moment determinacy on a compact set

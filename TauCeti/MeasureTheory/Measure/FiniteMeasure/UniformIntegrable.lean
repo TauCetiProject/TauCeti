@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.FiniteMeasure
+import TauCeti.MeasureTheory.Integral.Lebesgue.DominatedConvergence
+import TauCeti.MeasureTheory.Integral.Lebesgue.Truncation
 
 /-!
 # Integrals of unbounded functions along weakly convergent finite measures
@@ -50,23 +52,8 @@ open scoped ENNReal NNReal Topology
 
 namespace TauCeti
 
-variable {Ω : Type*} [MeasurableSpace Ω] {g : Ω → ℝ≥0}
-
-/-- The truncations `min g n` increase to `g`, so their integrals converge to that of `g`, by
-monotone convergence. -/
-private theorem tendsto_lintegral_min_natCast (hg : Measurable g) (ν : Measure Ω) :
-    Tendsto (fun n : ℕ ↦ ∫⁻ x, min (g x : ℝ≥0∞) ((n : ℝ≥0) : ℝ≥0∞) ∂ν) atTop
-      (𝓝 (∫⁻ x, g x ∂ν)) := by
-  refine lintegral_tendsto_of_tendsto_of_monotone (fun n ↦ ?_)
-    (.of_forall fun x m n hmn ↦ ?_) (.of_forall fun x ↦ ?_)
-  · exact (hg.coe_nnreal_ennreal.min measurable_const).aemeasurable
-  · exact min_le_min_left _ (by exact_mod_cast hmn)
-  · refine tendsto_const_nhds.congr' ?_
-    filter_upwards [tendsto_natCast_atTop_atTop.eventually_ge_atTop (g x)] with n hn
-    exact (min_eq_left (by exact_mod_cast hn)).symm
-
-variable [TopologicalSpace Ω] [OpensMeasurableSpace Ω]
-  {γ : Type*} {L : Filter γ} {μs : γ → FiniteMeasure Ω} {μ : FiniteMeasure Ω}
+variable {Ω : Type*} [MeasurableSpace Ω] [TopologicalSpace Ω] [OpensMeasurableSpace Ω]
+  {g : Ω → ℝ≥0} {γ : Type*} {L : Filter γ} {μs : γ → FiniteMeasure Ω} {μ : FiniteMeasure Ω}
 
 /-- The truncations `min g R` of a continuous function are bounded continuous, so their integrals
 converge along a weakly convergent family. -/
@@ -85,9 +72,9 @@ family the integral of a continuous function can only drop in the limit. -/
 private theorem eventually_lt_lintegral (hg : Continuous g) (h : Tendsto μs L (𝓝 μ))
     {a : ℝ≥0∞} (ha : a < ∫⁻ x, g x ∂(μ : Measure Ω)) :
     ∀ᶠ i in L, a < ∫⁻ x, g x ∂(μs i : Measure Ω) := by
-  obtain ⟨n, hn⟩ :=
-    ((tendsto_lintegral_min_natCast hg.measurable μ).eventually (lt_mem_nhds ha)).exists
-  filter_upwards [(tendsto_lintegral_min hg h n).eventually (lt_mem_nhds hn)] with i hi
+  obtain ⟨R, hR⟩ := ((tendsto_lintegral_min_atTop
+    hg.measurable.coe_nnreal_ennreal.aemeasurable).eventually (lt_mem_nhds ha)).exists
+  filter_upwards [(tendsto_lintegral_min hg h R).eventually (lt_mem_nhds hR)] with i hi
   exact hi.trans_le (lintegral_mono fun x ↦ min_le_left _ _)
 
 /-- **Uniformly integrable tails give convergence of integrals.** Along a weakly convergent family
@@ -130,8 +117,10 @@ theorem exists_setLIntegral_le_of_tendsto_lintegral (hg : Continuous g) (h : Ten
     (hlim : Tendsto (fun i ↦ ∫⁻ x, g x ∂(μs i : Measure Ω)) L (𝓝 (∫⁻ x, g x ∂(μ : Measure Ω))))
     {ε : ℝ≥0∞} (hε : 0 < ε) :
     ∃ R : ℝ≥0, ∀ᶠ i in L, ∫⁻ x in {x | R ≤ g x}, g x ∂(μs i : Measure Ω) ≤ ε := by
-  -- The excess integral is the difference of the integral of `g` and of its truncation. Against
-  -- the limit it therefore vanishes as the level grows, and along the family it converges.
+  -- Against the limit, the excess integral vanishes as the level grows. Along the family, it is
+  -- the difference of the integral of `g` and of its truncation, so it converges.
+  obtain ⟨R, hR⟩ := ((tendsto_lintegral_tsub_atTop hg.measurable.coe_nnreal_ennreal.aemeasurable
+    hμ).eventually (gt_mem_nhds (ENNReal.half_pos hε.ne'))).exists
   have hsub (ν : FiniteMeasure Ω) (R : ℝ≥0) :
       ∫⁻ x, g x ∂(ν : Measure Ω) - ∫⁻ x, min (g x : ℝ≥0∞) R ∂(ν : Measure Ω) =
         ∫⁻ x, (g x : ℝ≥0∞) - R ∂(ν : Measure Ω) := by
@@ -139,18 +128,11 @@ theorem exists_setLIntegral_le_of_tendsto_lintegral (hg : Continuous g) (h : Ten
       (ne_top_of_le_ne_top (lintegral_const_lt_top ENNReal.coe_ne_top).ne
         (lintegral_mono fun x ↦ min_le_right _ _)) (.of_forall fun x ↦ min_le_left _ _)]
     simp_rw [tsub_min]
-  have hexc : Tendsto (fun n : ℕ ↦ ∫⁻ x, (g x : ℝ≥0∞) - ((n : ℝ≥0) : ℝ≥0∞) ∂(μ : Measure Ω))
-      atTop (𝓝 0) := by
-    simpa only [hsub, tsub_self] using
-      ENNReal.Tendsto.sub tendsto_const_nhds (tendsto_lintegral_min_natCast hg.measurable μ)
-        (Or.inl hμ)
-  obtain ⟨n, hn⟩ := (hexc.eventually (gt_mem_nhds (ENNReal.half_pos hε.ne'))).exists
-  set R : ℝ≥0 := (n : ℝ≥0)
   have hexc_i : Tendsto (fun i ↦ ∫⁻ x, (g x : ℝ≥0∞) - R ∂(μs i : Measure Ω)) L
       (𝓝 (∫⁻ x, (g x : ℝ≥0∞) - R ∂(μ : Measure Ω))) := by
     simpa only [hsub] using ENNReal.Tendsto.sub hlim (tendsto_lintegral_min hg h R) (Or.inl hμ)
   refine ⟨2 * R, ?_⟩
-  filter_upwards [hexc_i.eventually (gt_mem_nhds hn)] with i hi
+  filter_upwards [hexc_i.eventually (gt_mem_nhds hR)] with i hi
   -- Beyond the level `2 R`, the function is at most twice its excess over `R`.
   calc ∫⁻ x in {x | 2 * R ≤ g x}, g x ∂(μs i : Measure Ω)
       = ∫⁻ x, {x | 2 * R ≤ g x}.indicator (fun x ↦ (g x : ℝ≥0∞)) x ∂(μs i : Measure Ω) :=
@@ -158,8 +140,8 @@ theorem exists_setLIntegral_le_of_tendsto_lintegral (hg : Continuous g) (h : Ten
     _ ≤ ∫⁻ x, 2 * ((g x : ℝ≥0∞) - R) ∂(μs i : Measure Ω) := by
         refine lintegral_mono fun x ↦ ?_
         by_cases hx : 2 * R ≤ g x
-        · rw [indicator_of_mem (show x ∈ {x | 2 * R ≤ g x} from hx),
-            ENNReal.mul_sub fun _ _ ↦ ENNReal.ofNat_ne_top, two_mul (g x : ℝ≥0∞)]
+        · simp only [mem_ofPred_eq, hx, indicator_of_mem]
+          rw [ENNReal.mul_sub fun _ _ ↦ ENNReal.ofNat_ne_top, two_mul (g x : ℝ≥0∞)]
           refine ENNReal.le_sub_of_add_le_left (by finiteness) ?_
           gcongr
           simpa using ENNReal.coe_le_coe.2 hx
