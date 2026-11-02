@@ -25,7 +25,7 @@ standard repair (Livingston) replaces `σ_ω` by the mean of its two one-sided l
 circle, the **averaged Tristram--Levine signature**
 (`TauCeti.KnotTheory.averagedTristramLevineSignature`):
 
-`σ̄_ω(V) = (lim_{t → 0⁻} σ_{ω e^{it}}(V) + lim_{t → 0⁺} σ_{ω e^{it}}(V)) / 2`,
+`σ_ω^avg(V) = (lim_{t → 0⁻} σ_{ω e^{it}}(V) + lim_{t → 0⁺} σ_{ω e^{it}}(V)) / 2`,
 
 with the one-sided limits taken by Mathlib's `Function.leftLim` and `Function.rightLim`. It takes
 values in `ℚ`, in fact in `½ ℤ`.
@@ -51,7 +51,7 @@ and:
   (`TauCeti.KnotTheory.averagedTristramLevineSignature_eq_zero_of_congr_zero_block`).
 
 Combining the last three: if `V ⊕ (-W)` is metabolic, that is `V` and `W` are algebraically
-concordant, then `σ̄_ω(V) = σ̄_ω(W)` for every `ω` on the circle
+concordant, then `σ_ω^avg(V) = σ_ω^avg(W)` for every `ω` on the circle
 (`TauCeti.KnotTheory.averagedTristramLevineSignature_eq_of_congr_zero_block`). This is the
 algebraic half of the statement that the averaged signature function is a homomorphism on the knot
 concordance group at every point of the circle, connected sum going to the block sum of Seifert
@@ -370,7 +370,7 @@ theorem averagedTristramLevineSignature_fromBlocks_zero {κ : Type*} [Fintype κ
 
 /-- **The averaged signature of a metabolic Seifert matrix vanishes at every parameter** of the
 circle at which the singular parameters do not accumulate, including the singular ones: if a
-change of basis puts `B` in block form with a half-size zero block, then `σ̄_ω(B) = 0`. -/
+change of basis puts `B` in block form with a half-size zero block, then `σ_ω^avg(B) = 0`. -/
 theorem averagedTristramLevineSignature_eq_zero_of_congr_zero_block
     {B P : Matrix (ι ⊕ ι) (ι ⊕ ι) ℝ} (hP : IsUnit P.det) (hzero : (P * B * Pᵀ).toBlocks₁₁ = 0)
     (hdet : ∀ᶠ z : Circle in 𝓝[≠] ω, (tristramLevineForm B z).det ≠ 0) :
@@ -384,9 +384,9 @@ theorem averagedTristramLevineSignature_eq_zero_of_congr_zero_block
 
 /-- **Algebraically concordant Seifert matrices have the same averaged signature function.** If
 the block sum `V ⊕ (-W)`, reindexed along `e`, becomes metabolic after a change of basis, then
-`σ̄_ω(V) = σ̄_ω(W)` at every parameter `ω` at which the singular parameters of neither `V` nor `W`
-accumulate; by `TauCeti.KnotTheory.eventually_det_tristramLevineForm_ne_zero` this is every `ω`
-when both Alexander polynomials are nonzero. -/
+`σ_ω^avg(V) = σ_ω^avg(W)` at every parameter `ω` at which the singular parameters of neither `V`
+nor `W` accumulate; by `TauCeti.KnotTheory.eventually_det_tristramLevineForm_ne_zero` this is
+every `ω` when both Alexander polynomials are nonzero. -/
 theorem averagedTristramLevineSignature_eq_of_congr_zero_block {κ κ' : Type*} [Fintype κ]
     [DecidableEq κ] [Fintype κ'] [DecidableEq κ'] {V : Matrix κ κ ℝ} {W : Matrix κ' κ' ℝ}
     (e : κ ⊕ κ' ≃ ι ⊕ ι) {P : Matrix (ι ⊕ ι) (ι ⊕ ι) ℝ} (hP : IsUnit P.det)
