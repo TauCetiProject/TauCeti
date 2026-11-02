@@ -55,7 +55,10 @@ variable {F : Type*} [Field F] [Finite F] (hF : Nat.card F = 4) {ω : F} (hω : 
 /-! ### Triality-scaled permutations of the components -/
 
 /-- The triality-scaled permutation `u, σ` of the six `D₄` components acts on glue words, read in
-`F₄`, by multiplying the label in position `a` by `u a` and moving it to position `σ a`. -/
+`F₄`, by multiplying the label in position `a` by `u a` and moving it to position `σ a`.
+
+The proof follows the pattern of `gluedLatticeSignedPermIsometry` in
+https://github.com/TauCetiProject/TauCeti/pull/24752. -/
 private theorem discriminantQuadraticIsometry_d4SixMonomial_glueWordIsometry (u : Fin 6 → Fˣ)
     (σ : Equiv.Perm (Fin 6)) (w : d4SixGlueModule) :
     ((Isometry.pi fun a ↦ typeD4ScalarIsometry (isSimplyLaced_D 4) hF hω (u a)).trans
@@ -119,24 +122,11 @@ theorem d4SixMonomialIsometry_apply (u : Fin 6 → Fˣ) (σ : Equiv.Perm (Fin 6)
     d4SixMonomialIsometry hF hω u σ hσ x j =
       typeD4ScalarIsometry (isSimplyLaced_D 4) hF hω (u (σ.symm j)) (x (σ.symm j)) := by
   obtain ⟨k, rfl⟩ := σ.surjective j
-  rw [d4SixMonomialIsometry, Isometry.trans_apply, Isometry.trans_apply, Isometry.ofEq_apply,
-    Isometry.ofEq_apply, gluedLatticeIsometry_apply, Isometry.trans_apply,
-    Isometry.piCongrLeft_apply_apply, Isometry.pi_apply, Equiv.symm_apply_apply]
+  simp only [d4SixMonomialIsometry, Isometry.trans_apply, Isometry.ofEq_apply,
+    gluedLatticeIsometry_apply, Isometry.piCongrLeft_apply_apply, Isometry.pi_apply,
+    Equiv.symm_apply_apply]
 
 /-! ### Monomial automorphisms of the hexacode -/
-
-omit [Finite F] in
-/-- The hexacode coordinate scalings `[ω, ω, 1, ω², ω², 1]` of `d4SixHexacodeIsometry`, as units
-of `F`. -/
-noncomputable def d4SixHexacodeScaling (j : Fin 6) : Fˣ :=
-  Units.mk0 (![ω, ω, 1, ω ^ 2, ω ^ 2, 1] j) (d4SixScaling_ne_zero hω j)
-
-omit [Finite F] in
-/-- The hexacode coordinate scalings are `[ω, ω, 1, ω², ω², 1]`. -/
-@[simp]
-theorem coe_d4SixHexacodeScaling (j : Fin 6) :
-    (d4SixHexacodeScaling hω j : F) = ![ω, ω, 1, ω ^ 2, ω ^ 2, 1] j :=
-  (rfl)
 
 /-- **A monomial automorphism of the hexacode, read in the label coordinates of `D₄⁶`.** If
 `monomialEquiv u σ` multiplies hexacode coordinate `a` by `u a` and moves it to `σ a`, then the
@@ -151,11 +141,13 @@ theorem d4SixHexacodeIsometry_conj_monomialEquiv (u : Fin 6 → Fˣ) (σ : Equiv
           typeD4GlueAlphabetQuaternaryIsometry hF hω (w (σ.symm j)))) =
       monomialEquiv u σ (d4SixHexacodeIsometry hF hω w) := by
   funext j
-  rw [d4SixHexacodeIsometry_apply, d4SixQuaternaryIsometry_apply,
-    QuadraticMap.IsometryEquiv.apply_symm_apply, monomialEquiv_apply,
-    d4SixHexacodeIsometry_apply, d4SixQuaternaryIsometry_apply, Equiv.apply_symm_apply]
   have hc := (d4SixHexacodeScaling hω j).mul_inv
-  simp only [Units.val_mul, coe_d4SixHexacodeScaling] at hc ⊢
+  -- `simp` does not rewrite these evaluations: the carrier of the codomain of the isometries is
+  -- not syntactically a function type.
+  rw [d4SixHexacodeIsometry_apply, d4SixQuaternaryIsometry_apply, monomialEquiv_apply,
+    d4SixHexacodeIsometry_apply, d4SixQuaternaryIsometry_apply]
+  simp only [QuadraticMap.IsometryEquiv.apply_symm_apply, Equiv.apply_symm_apply, Units.val_mul,
+    coe_d4SixHexacodeScaling] at hc ⊢
   linear_combination (u (σ.symm j) * ![ω, ω, 1, ω ^ 2, ω ^ 2, 1] (σ.symm j) *
     typeD4GlueAlphabetQuaternaryIsometry hF hω (w (σ.symm j)) : F) * hc
 
