@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.RegularValue.ManifoldLevel
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 
 /-!
 # Open restrictions of regular fibres
@@ -35,28 +34,6 @@ open scoped ContDiff Manifold
 
 namespace TauCeti
 
-section Regularity
-
-variable {𝕜 E H M F G N : Type*} [NontriviallyNormedField 𝕜]
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [TopologicalSpace H]
-  {I : ModelWithCorners 𝕜 E H} [TopologicalSpace M] [ChartedSpace H M]
-  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace G]
-  {J : ModelWithCorners 𝕜 F G} [TopologicalSpace N] [ChartedSpace G N]
-  {f : M → N} {c : N}
-
-/-- Restricting the source to an open subset preserves regular values. -/
-theorem IsRegularValue.restrict (hreg : IsRegularValue I J f c)
-    (hf : MDifferentiable I J f) (U : Opens M) :
-    IsRegularValue I J (fun x : U ↦ f x) c := by
-  rw [isRegularValue_iff]
-  intro x hx
-  have hi := isLocalDiffeomorph_subtype_val (I := I) (n := 1) (U := U) x
-  exact (hreg.isRegularPoint hx).comp
-    (isRegularPoint_iff.2 (hi.isInvertible_mfderiv one_ne_zero).surjective)
-    (hf x) (hi.mdifferentiableAt one_ne_zero)
-
-end Regularity
-
 variable {E H M F G N : Type*}
   [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [I.Boundaryless]
@@ -74,12 +51,13 @@ noncomputable def regularFiberRestrictDiffeomorph (hm : 1 ≤ m) (hf : ContMDiff
     letI := regularFiberChartedSpace hm hf hc hreg
     letI := regularFiberChartedSpace (f := fun x : U ↦ f x) hm
       (hf.comp contMDiff_subtype_val) hc
-      (hreg.restrict (hf.mdifferentiable (ENat.one_le_iff_ne_zero_withTop.mp hm)) U)
+      (hreg.restrict (fun x _ ↦ hf.mdifferentiable (ENat.one_le_iff_ne_zero_withTop.mp hm) x) U)
     {x : U // f x = c} ≃ₘ^m⟮𝓘(ℝ, Fin (finrank ℝ E - finrank ℝ F) → ℝ),
       𝓘(ℝ, Fin (finrank ℝ E - finrank ℝ F) → ℝ)⟯
       (Opens.comap ⟨(Subtype.val : {x : M // f x = c} → M), continuous_subtype_val⟩ U) := by
   let hfU : ContMDiff I J m (fun x : U ↦ f x) := hf.comp contMDiff_subtype_val
-  let hrU := hreg.restrict (hf.mdifferentiable (ENat.one_le_iff_ne_zero_withTop.mp hm)) U
+  let hrU := hreg.restrict
+    (fun x _ ↦ hf.mdifferentiable (ENat.one_le_iff_ne_zero_withTop.mp hm) x) U
   letI := regularFiberChartedSpace hm hf hc hreg
   letI := regularFiberChartedSpace hm hfU hc hrU
   haveI := isManifold_regularFiber hm hf hc hreg
@@ -122,7 +100,7 @@ theorem regularFiberRestrictDiffeomorph_symm_apply (hm : 1 ≤ m) (hf : ContMDif
     letI := regularFiberChartedSpace hm hf hc hreg
     letI := regularFiberChartedSpace (f := fun x : U ↦ f x) hm
       (hf.comp contMDiff_subtype_val) hc
-      (hreg.restrict (hf.mdifferentiable (ENat.one_le_iff_ne_zero_withTop.mp hm)) U)
+      (hreg.restrict (fun x _ ↦ hf.mdifferentiable (ENat.one_le_iff_ne_zero_withTop.mp hm) x) U)
     (regularFiberRestrictDiffeomorph hm hf hc hreg U).symm x = ⟨⟨x.1.1, x.2⟩, x.1.2⟩ :=
   (rfl)
 
