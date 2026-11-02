@@ -136,7 +136,8 @@ theorem projectiveTrace_eq_trace [Module.Free R M] :
 @[simp]
 theorem projectiveTrace_self_apply (f : R →ₗ[R] R) : projectiveTrace R R f = f 1 := by
   have : f = (LinearMap.id : Dual R R).smulRight (f 1) := by ext; simp
-  rw [this, projectiveTrace_smulRight, id_apply, smulRight_apply, id_apply, one_smul]
+  rw [this]
+  simp
 
 /-- The trace on the zero module vanishes. -/
 @[simp]
@@ -151,8 +152,8 @@ theorem projectiveTrace_prodMap {N : Type*} [AddCommMonoid N] [Module R N] [Modu
     projectiveTrace R (M × N) (f.prodMap g) = projectiveTrace R M f + projectiveTrace R N g := by
   have : f.prodMap g = inl R M N ∘ₗ (f ∘ₗ fst R M N) + inr R M N ∘ₗ (g ∘ₗ snd R M N) := by
     ext <;> simp
-  rw [this, map_add, ← projectiveTrace_cyclic (inl R M N), ← projectiveTrace_cyclic (inr R M N),
-    comp_assoc, comp_assoc, fst_comp_inl, snd_comp_inr, comp_id, comp_id]
+  rw [this, map_add, ← projectiveTrace_cyclic (inl R M N), ← projectiveTrace_cyclic (inr R M N)]
+  simp [comp_assoc]
 
 /-- **Base change of the trace**: extending scalars along `R → A` carries the trace of `f` to the
 trace of `A ⊗ f`. -/
