@@ -42,8 +42,8 @@ weight support come from `TauCeti.Algebra.Lie.D4.Tripled.Root.Differential`.
 * `TauCeti.D4Tripled.range_derivationCompLieHom_generatedCoordinateLift_eq_span`: the exact
   root-line image.
 * `TauCeti.D4Tripled.generatedRootVector_mem_adjointWeightSpace`: the signed simple-root weight.
-* `TauCeti.D4Tripled.rootGeneratorWeight_mem_generatedNontrivialAdjointWeights`: occurrence of
-  all eight signed simple-root characters.
+* `TauCeti.D4Tripled.weightCharacter_rootGeneratorWeight_mem_nontrivialAdjointWeights`:
+  occurrence of all eight signed simple-root characters.
 
 ## References
 
@@ -71,15 +71,13 @@ variable (R : Type u) [CommRing R]
 /-- Each numbered root-subgroup coordinate map of the generated subgroup is surjective. -/
 theorem generatedCoordinateLift_inl_surjective (k : Fin 4 ⊕ Fin 4) :
     Function.Surjective (generatedCoordinateLift R (.inl k)).hom := by
-  have h : Function.Surjective
-      (generatedCoordinateMap R ≫ generatedCoordinateLift R (.inl k)).hom := by
-    rw [generatedCoordinateMap_comp_generatedCoordinateLift, generatorCoordinateMap_inl,
-      ← coordinateMap_comp_rootSubgroupToBaseChangeCoordinateMap,
-      _root_.CommHopfAlgCat.hom_comp, BialgHom.coe_comp]
-    exact (rootSubgroupToBaseChangeCoordinateMap_surjective R k).comp
-      (coordinateMap_surjective R)
-  rw [_root_.CommHopfAlgCat.hom_comp, BialgHom.coe_comp] at h
-  exact Function.Surjective.of_comp h
+  apply Function.Surjective.of_comp (g := (generatedCoordinateMap R).hom)
+  rw [← BialgHom.coe_comp, ← _root_.CommHopfAlgCat.hom_comp,
+    generatedCoordinateMap_comp_generatedCoordinateLift, generatorCoordinateMap_inl,
+    ← coordinateMap_comp_rootSubgroupToBaseChangeCoordinateMap,
+    _root_.CommHopfAlgCat.hom_comp, BialgHom.coe_comp]
+  exact (rootSubgroupToBaseChangeCoordinateMap_surjective R k).comp
+    (coordinateMap_surjective R)
 
 private theorem map_genericMatrix_generatedCoordinateLift (k : Fin 4 ⊕ Fin 4) :
     (GeneralLinear.genericMatrix R 24).map
@@ -87,24 +85,16 @@ private theorem map_genericMatrix_generatedCoordinateLift (k : Fin 4 ⊕ Fin 4) 
           (generatedCoordinateMap R).hom.toAlgHom) =
       1 + SymmetricAlgebra.ι R R 1 •
         (rootMatrix k).map (Int.cast : ℤ → AdditiveGroup.coordinateHopfAlgebra R) := by
-  let A := CommAlgCat.of R (AdditiveGroup.coordinateHopfAlgebra R)
-  let q : HopfAlgebra.points (R := R) (H := AdditiveGroup.coordinateHopfAlgebra R) A :=
-    toConv (AlgHom.id R (AdditiveGroup.coordinateHopfAlgebra R))
-  have hu : AdditiveGroup.gaPointsMulEquiv (R := R) q =
-      Multiplicative.ofAdd (SymmetricAlgebra.ι R R 1) := by
-    rw [← ofAdd_toAdd (AdditiveGroup.gaPointsMulEquiv (R := R) q),
-      AdditiveGroup.toAdd_gaPointsMulEquiv]
-    simp [q]
-  have h := congrArg (fun g : Matrix.GeneralLinearGroup (Fin 24) A =>
-    (g : Matrix (Fin 24) (Fin 24) A))
-    (pointToGeneralLinear_mapDomain_generatedCoordinateLift_inl_eq_rootSubgroupPoints R k A q)
-  rw [← GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear,
-    BialgHom.mapDomain_apply] at h
-  simp only [q, AlgHom.id_comp] at h
-  rw [h, hu]
+  apply GeneralLinear.map_genericMatrix_eq_of_pointToGeneralLinear
+    ((generatedCoordinateLift R (.inl k)).hom.comp (generatedCoordinateMap R).hom)
+  rw [BialgHom.mapDomain_comp, MonoidHom.comp_apply,
+    BialgHom.mapDomain_apply (generatedCoordinateLift R (.inl k)).hom,
+    pointToGeneralLinear_mapDomain_generatedCoordinateLift_inl_eq_rootSubgroupPoints R k
+      (CommAlgCat.of R (AdditiveGroup.coordinateHopfAlgebra R))
+      (toConv (AlgHom.id R (AdditiveGroup.coordinateHopfAlgebra R)))]
   rcases k with i | i
-  · rw [coe_rootSubgroupPoints_inl, toAdd_ofAdd, rootMatrix_inl]
-  · rw [coe_rootSubgroupPoints_inr, toAdd_ofAdd, rootMatrix_inr]
+  · rw [coe_rootSubgroupPoints_inl, rootMatrix_inl]
+  · rw [coe_rootSubgroupPoints_inr, rootMatrix_inr]
 
 variable {B : Type v} [CommRing B] [Algebra R B]
 
@@ -219,18 +209,12 @@ theorem generatedRootVector_mem_adjointWeightSpace (k : Fin 4 ⊕ Fin 4) :
 
 /-- All eight signed simple-root characters are nontrivial adjoint weights of the generated
 tripled subgroup over every nontrivial ring with projective augmentation cotangent module. -/
-theorem rootGeneratorWeight_mem_generatedNontrivialAdjointWeights [Nontrivial R]
+theorem weightCharacter_rootGeneratorWeight_mem_nontrivialAdjointWeights [Nontrivial R]
     (k : Fin 4 ⊕ Fin 4) :
     SplitTorus.weightCharacter (TypeDStd.rootGeneratorWeight 4 k) ∈
       Derivation.nontrivialAdjointWeights (generatedWeightTorusCoordinateMap R).hom := by
   apply Derivation.mem_nontrivialAdjointWeights.mpr
-  refine ⟨?_, ?_⟩
-  · intro h
-    have hdiag := congrArg
-      (fun c : Multiplicative (Fin 4 →₀ ℤ) ↦ Multiplicative.toAdd c (Sum.elim id id k)) h
-    simp only [SplitTorus.toAdd_weightCharacter, toAdd_one, Finsupp.zero_apply] at hdiag
-    cases k <;> simp [TypeDStd.rootGeneratorWeight_inl, TypeDStd.rootGeneratorWeight_inr,
-      CartanMatrix.D_diag] at hdiag
+  refine ⟨SplitTorus.weightCharacter_eq_one_iff.not.2 (rootGeneratorWeight_ne_zero k), ?_⟩
   · intro hbot
     have hv := generatedRootVector_mem_adjointWeightSpace R k
     rw [hbot, Submodule.mem_bot] at hv

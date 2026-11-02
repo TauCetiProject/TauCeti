@@ -44,6 +44,24 @@ universe u v
 variable {R : Type u} [CommRing R] {B : Type v} [CommRing B] [Algebra R B]
 variable {n : ℕ} {i j : Fin n}
 
+/-- A one-parameter subgroup whose matrix at the universal additive point is `1 + tX`
+sends the generic matrix to `1 + tX` in the additive coordinate algebra. -/
+theorem map_genericMatrix_eq_of_pointToGeneralLinear
+    (φ : coordinateHopfAlgebra R n →ₐc[R] AdditiveGroup.coordinateHopfAlgebra R)
+    (X : Matrix (Fin n) (Fin n) ℤ)
+    (hφ : (pointToGeneralLinear n (φ.mapDomain
+        (toConv (AlgHom.id R (AdditiveGroup.coordinateHopfAlgebra R)))) :
+        Matrix (Fin n) (Fin n) (AdditiveGroup.coordinateHopfAlgebra R)) =
+      1 + (AdditiveGroup.gaPointsMulEquiv (R := R)
+        (toConv (AlgHom.id R (AdditiveGroup.coordinateHopfAlgebra R)))).toAdd •
+          X.map (Int.cast : ℤ → AdditiveGroup.coordinateHopfAlgebra R)) :
+    (genericMatrix R n).map φ.toAlgHom =
+      1 + SymmetricAlgebra.ι R R 1 •
+        X.map (Int.cast : ℤ → AdditiveGroup.coordinateHopfAlgebra R) := by
+  rw [← map_genericMatrix_eq_coe_pointToGeneralLinear, BialgHom.mapDomain_apply] at hφ
+  simpa only [WithConv.ofConv_toConv, AlgHom.id_comp,
+    AdditiveGroup.toAdd_gaPointsMulEquiv, AlgHom.id_apply] using hφ
+
 /-- The differential of the matrix root subgroup sends an additive tangent vector `c` to
 `c Eᵢⱼ`. This holds over every commutative base ring and coefficient algebra. -/
 @[simp]

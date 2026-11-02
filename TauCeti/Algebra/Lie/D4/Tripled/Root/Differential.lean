@@ -64,6 +64,14 @@ attribute [local instance high] Algebra.toModule
 
 /-! ## The integral root matrices -/
 
+/-- Each numbered signed simple-root weight is nonzero as an integral character. -/
+theorem rootGeneratorWeight_ne_zero (k : Fin 4 ⊕ Fin 4) :
+    TypeDStd.rootGeneratorWeight 4 k ≠ 0 := by
+  intro h
+  have hdiag := congrFun h (Sum.elim id id k)
+  cases k <;> simp [TypeDStd.rootGeneratorWeight_inl, TypeDStd.rootGeneratorWeight_inr,
+    CartanMatrix.D_diag] at hdiag
+
 /-- The Kostant integral matrix of a represented numbered root generator in the tripled lattice
 basis is its raising or lowering matrix. -/
 theorem kostantRootGeneratorIntMatrix_eq_rootMatrix (k : Fin 4 ⊕ Fin 4) :
