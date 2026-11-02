@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Matrix.UnitaryGroup.Torus
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Basic
 
 import Mathlib.Topology.Homeomorph.Quotient
+import TauCeti.Algebra.Group.Subgroup.Map
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.QR
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Unitary
 import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.UpperTriangular
@@ -89,38 +90,16 @@ section RCLike
 
 variable {ι 𝕜 : Type*} [Fintype ι] [LinearOrder ι] [RCLike 𝕜]
 
-/-- The inclusion `U(n) → GL n 𝕜` maps cosets of the unitary upper triangular subgroup into cosets
-of the upper triangular subgroup. -/
-private theorem toUnits_leftRel {U V : unitaryGroup ι 𝕜}
-    (h : QuotientGroup.leftRel ((upperTriangularGroup ι 𝕜).comap Unitary.toUnits) U V) :
-    QuotientGroup.leftRel (upperTriangularGroup ι 𝕜) (Unitary.toUnits U) (Unitary.toUnits V) := by
-  rw [QuotientGroup.leftRel_apply] at h ⊢
-  simpa using h
-
-/-- The map `U(n) ⧸ (B ∩ U(n)) → GL n 𝕜 ⧸ B` induced by the inclusion. -/
-private def unitaryQuotientMap :
-    unitaryGroup ι 𝕜 ⧸ (upperTriangularGroup ι 𝕜).comap Unitary.toUnits →
-      GL ι 𝕜 ⧸ upperTriangularGroup ι 𝕜 :=
-  Quotient.map' Unitary.toUnits fun _ _ => toUnits_leftRel
-
-private theorem unitaryQuotientMap_mk (U : unitaryGroup ι 𝕜) :
-    unitaryQuotientMap (U : unitaryGroup ι 𝕜 ⧸ (upperTriangularGroup ι 𝕜).comap Unitary.toUnits) =
-      (Unitary.toUnits U : GL ι 𝕜 ⧸ upperTriangularGroup ι 𝕜) :=
-  (rfl)
-
-private theorem unitaryQuotientMap_bijective :
-    Function.Bijective (unitaryQuotientMap (ι := ι) (𝕜 := 𝕜)) := by
-  refine ⟨fun x y hxy => ?_, fun y => ?_⟩
-  · induction x using QuotientGroup.induction_on
-    induction y using QuotientGroup.induction_on
-    rw [unitaryQuotientMap_mk, unitaryQuotientMap_mk, QuotientGroup.eq] at hxy
-    rw [QuotientGroup.eq, Subgroup.mem_comap]
-    simpa using hxy
-  · induction y using QuotientGroup.induction_on with | H g => ?_
-    obtain ⟨U, b, hb, rfl⟩ := g.exists_mem_upperTriangularGroup_toUnits_mul_eq
-    refine ⟨U, ?_⟩
-    rw [unitaryQuotientMap_mk, QuotientGroup.eq]
-    simpa using hb
+variable (ι 𝕜) in
+/-- **`U(n)` acts transitively on the flag manifold:** every coset of the upper triangular
+subgroup of `GL n 𝕜` has a unitary representative, by the `QR` factorization. -/
+private theorem toUnits_mk_surjective :
+    Function.Surjective fun U : unitaryGroup ι 𝕜 =>
+      (Unitary.toUnits U : GL ι 𝕜 ⧸ upperTriangularGroup ι 𝕜) := by
+  intro y
+  induction y using QuotientGroup.induction_on with | H g => ?_
+  obtain ⟨U, b, hb, rfl⟩ := GeneralLinearGroup.exists_mem_upperTriangularGroup_toUnits_mul_eq g
+  exact ⟨U, QuotientGroup.eq.2 (by simpa using hb)⟩
 
 variable (ι 𝕜) in
 /-- **The flag manifold of `GL n 𝕜` is `U(n) / T`**: the inclusion `U(n) → GL n 𝕜` induces a
@@ -129,16 +108,19 @@ matrices onto the quotient of `GL n 𝕜` by its upper triangular subgroup, for 
 def unitaryQuotientHomeomorph :
     unitaryGroup ι 𝕜 ⧸ (upperTriangularGroup ι 𝕜).comap Unitary.toUnits ≃ₜ
       GL ι 𝕜 ⧸ upperTriangularGroup ι 𝕜 :=
-  Continuous.homeoOfEquivCompactToT2 (f := Equiv.ofBijective _ unitaryQuotientMap_bijective) <|
-    (Units.continuous_iff.2 ⟨continuous_subtype_val, continuous_subtype_val.star⟩).quotient_map'
-      fun _ _ => toUnits_leftRel
+  Continuous.homeoOfEquivCompactToT2 (f := QuotientGroup.congrComapOfSurjectiveMk Unitary.toUnits
+      (upperTriangularGroup ι 𝕜) (toUnits_mk_surjective ι 𝕜)) <| by
+    rw [(QuotientGroup.isQuotientMap_mk _).continuous_iff]
+    exact (continuous_quotient_mk'.comp <| Units.continuous_iff.2
+      ⟨continuous_subtype_val, continuous_subtype_val.star⟩).congr fun U =>
+        (QuotientGroup.congrComapOfSurjectiveMk_mk _ _ _ U).symm
 
 @[simp]
 theorem unitaryQuotientHomeomorph_mk (U : unitaryGroup ι 𝕜) :
     unitaryQuotientHomeomorph ι 𝕜
         (U : unitaryGroup ι 𝕜 ⧸ (upperTriangularGroup ι 𝕜).comap Unitary.toUnits) =
       (Unitary.toUnits U : GL ι 𝕜 ⧸ upperTriangularGroup ι 𝕜) :=
-  (rfl)
+  QuotientGroup.congrComapOfSurjectiveMk_mk _ _ _ U
 
 /-- The homeomorphism `U(n) ⧸ T ≃ₜ GL n 𝕜 ⧸ B` is equivariant for the left actions of `U(n)`. -/
 @[simp]
@@ -170,7 +152,7 @@ def unitaryTorusQuotientHomeomorph :
 theorem unitaryTorusQuotientHomeomorph_mk (U : unitaryGroup ι ℂ) :
     unitaryTorusQuotientHomeomorph ι (U : unitaryGroup ι ℂ ⧸ unitaryTorus ι) =
       (Unitary.toUnits U : GL ι ℂ ⧸ upperTriangularGroup ι ℂ) :=
-  (rfl)
+  unitaryQuotientHomeomorph_mk U
 
 /-- The homeomorphism `U(n) ⧸ T ≃ₜ GL n ℂ ⧸ B` is equivariant for the left actions of `U(n)`. -/
 @[simp]
