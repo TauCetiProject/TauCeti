@@ -17,7 +17,7 @@ public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.HaradaNorton
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Held
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.HigmanSims
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Janko.Four
-public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Janko.One
+public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Janko.One.Presentation
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Janko.Three
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Janko.Two
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Lyons
