@@ -39,10 +39,12 @@ This is the input for the cube root `γ₂ = (g¹² + 16) / g⁴` of `j`.
 
 ## Main results
 
-* `TauCeti.ModularForm.siegelFunction_half_zero_pow_four`,
+* `TauCeti.ModularForm.siegelFunction_zero_half_pow_four`,
+  `TauCeti.ModularForm.siegelFunction_half_zero_pow_four`,
   `TauCeti.ModularForm.siegelFunction_half_half_pow_four`: the product expansions
-  `g₁⁴ = s^{-1/3} P(s)⁸` and `g₂⁴ = -s^{-1/3} P(-s)⁸` for `s = e^{π i τ}` and
-  `P(s) = ∏_{n ≥ 0} (1 - s^{2n+1})`.
+  `g₀⁴ = 16 q^{1/3} / P(q)⁸`, `g₁⁴ = s^{-1/3} P(s)⁸` and `g₂⁴ = -s^{-1/3} P(-s)⁸` for
+  `s = e^{π i τ}`, `q = s²` and `P(s) = ∏_{n ≥ 0} (1 - s^{2n+1})`.
+* `TauCeti.ModularForm.tendsto_tprod_one_sub_qParam_pow_odd_pow`: `P(q)ᵏ → 1` at `i∞`.
 * `TauCeti.ModularForm.siegelFunction_pow_four_mul_mul`: `g₀⁴ g₁⁴ g₂⁴ = -16`.
 * `TauCeti.ModularForm.prod_X_sub_C_siegelFunction_pow_twelve`: Weber's cubic
   `(X - g₀¹²)(X - g₁¹²)(X - g₂¹²) = (X + 16)³ - j X`.
@@ -101,6 +103,29 @@ private theorem exp_neg_pi_I_mul_div_three_pow_three (τ : ℂ) :
   congr 1
   push_cast
   ring
+
+/-- `g₀⁴ = 16 q^{1/3} / (∏_{n ≥ 0} (1 - q^{2n+1}))⁸` for `q = e^{2π i τ}`, where
+`q^{1/3} = e^{2π i τ / 3}`. -/
+theorem siegelFunction_zero_half_pow_four {τ : ℂ} (hτ : 0 < τ.im) :
+    siegelFunction ![0, 1 / 2] τ ^ 4 =
+      16 * 𝕢 3 τ / (∏' n : ℕ, (1 - 𝕢 1 τ ^ (2 * n + 1))) ^ 8 := by
+  have hq : 𝕢 1 τ = cexp (2 * π * I * τ) := by simp [Function.Periodic.qParam]
+  have heuler :=
+    tprod_one_add_pow_mul_tprod_one_sub_pow_odd (norm_exp_two_pi_I_lt_one ⟨τ, hτ⟩)
+  have he : cexp (π * I * τ / 6) ^ 4 = 𝕢 3 τ := by
+    rw [Function.Periodic.qParam, ← Complex.exp_nat_mul]
+    congr 1
+    push_cast
+    ring
+  rw [eq_div_iff (pow_ne_zero 8
+      (tprod_one_sub_pow_odd_ne_zero (Function.Periodic.norm_qParam_lt_one one_pos hτ))), hq,
+    siegelFunction_zero_half hτ, ← he]
+  calc (2 * I * cexp (π * I * τ / 6) * (∏' n : ℕ, (1 + cexp (2 * π * I * τ) ^ (n + 1))) ^ 2) ^ 4 *
+        (∏' n : ℕ, (1 - cexp (2 * π * I * τ) ^ (2 * n + 1))) ^ 8
+      = 16 * I ^ 4 * cexp (π * I * τ / 6) ^ 4 *
+          ((∏' n : ℕ, (1 + cexp (2 * π * I * τ) ^ (n + 1))) *
+            ∏' n : ℕ, (1 - cexp (2 * π * I * τ) ^ (2 * n + 1))) ^ 8 := by ring
+    _ = 16 * cexp (π * I * τ / 6) ^ 4 := by rw [heuler, I_pow_four]; ring
 
 /-- `g₁⁴ = s^{-1/3} (∏_{n ≥ 0} (1 - s^{2n+1}))⁸` for `s = e^{π i τ}`, where
 `s^{-1/3} = e^{-π i τ / 3}`. -/
@@ -183,6 +208,12 @@ private theorem siegelFunction_half_zero_pow_twelve_mul {τ : ℂ} (hτ : 0 < τ
 
 /-! ### Limits at `i∞` -/
 
+/-- `(∏_{n ≥ 0} (1 - q^{2n+1}))ᵏ → 1` at `i∞`, for `q = e^{2π i τ}`. -/
+theorem tendsto_tprod_one_sub_qParam_pow_odd_pow (k : ℕ) :
+    Tendsto (fun τ : ℍ ↦ (∏' n : ℕ, (1 - 𝕢 1 τ ^ (2 * n + 1))) ^ k) atImInfty (𝓝 1) := by
+  simpa using ((hasDerivAt_tprod_one_sub_pow_odd (𝕜 := ℂ)).continuousAt.tendsto.comp
+    (UpperHalfPlane.qParam_tendsto_atImInfty one_pos)).pow k
+
 /-- `g₁¹² + g₂¹² → -48` at `i∞`. -/
 private theorem tendsto_siegelFunction_half_zero_pow_twelve_add :
     Tendsto (fun τ : ℍ ↦ siegelFunction ![1 / 2, 0] τ ^ 12 +
@@ -210,24 +241,18 @@ private theorem tendsto_siegelFunction_zero_half_pow_twelve :
     Tendsto (fun τ : ℍ ↦ siegelFunction ![0, 1 / 2] τ ^ 12) atImInfty (𝓝 0) := by
   have hq := (TauCeti.UpperHalfPlane.tendsto_qParam_atImInfty one_pos).mono_right
     nhdsWithin_le_nhds
-  have hΦ : Tendsto (fun τ : ℍ ↦ (∏' n : ℕ, (1 - 𝕢 1 τ ^ (2 * n + 1))) ^ 24) atImInfty
-      (𝓝 1) := by
-    have h0 : (∏' n : ℕ, (1 - (0 : ℂ) ^ (2 * n + 1))) ^ 24 = 1 := by simp
-    have h := hasDerivAt_tprod_one_sub_pow_odd_pow.continuousAt.tendsto.comp hq
-    rwa [h0] at h
   have h : Tendsto (fun τ : ℍ ↦ 4096 * 𝕢 1 τ / (∏' n : ℕ, (1 - 𝕢 1 τ ^ (2 * n + 1))) ^ 24)
       atImInfty (𝓝 0) := by
-    have h := (hq.const_mul 4096).div hΦ one_ne_zero
+    have h := (hq.const_mul 4096).div (tendsto_tprod_one_sub_qParam_pow_odd_pow 24) one_ne_zero
     rwa [mul_zero, zero_div] at h
   refine h.congr fun τ ↦ ?_
   -- `g₀¹² = -4096 / (g₁¹² g₂¹²)`.
   have h₃ := siegelFunction_pow_twelve_mul_mul τ
   rw [mul_assoc, siegelFunction_half_zero_pow_twelve_mul τ.im_pos] at h₃
   have hq₀ : 𝕢 1 (τ : ℂ) ≠ 0 := Function.Periodic.qParam_ne_zero _
-  have hΦ₀ : (∏' n : ℕ, (1 - 𝕢 1 (τ : ℂ) ^ (2 * n + 1))) ^ 24 ≠ 0 := by
-    intro h0
-    rw [h0, mul_zero, neg_zero, mul_zero] at h₃
-    norm_num at h₃
+  have hΦ₀ : (∏' n : ℕ, (1 - 𝕢 1 (τ : ℂ) ^ (2 * n + 1))) ^ 24 ≠ 0 :=
+    pow_ne_zero 24 (tprod_one_sub_pow_odd_ne_zero (Function.Periodic.norm_qParam_lt_one one_pos
+      τ.im_pos))
   rw [div_eq_iff hΦ₀]
   field_simp at h₃
   linear_combination h₃

@@ -7,8 +7,8 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.DedekindEta
 public import TauCeti.NumberTheory.ModularForms.SiegelFunction.Basic
-import Mathlib.LinearAlgebra.Matrix.FixedDetMatrices
 import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ModularGroup
 
 /-!
 # The level-two Siegel functions as eta quotients
@@ -201,16 +201,10 @@ theorem prod_X_sub_C_siegelFunction_pow_twelve_smul (γ : SL(2, ℤ)) (τ : ℍ)
         (X - C (siegelFunction ![1 / 2, 0] ↑(γ • τ) ^ 12)) *
         (X - C (siegelFunction ![1 / 2, 1 / 2] ↑(γ • τ) ^ 12)) =
       (X - C (siegelFunction ![0, 1 / 2] τ ^ 12)) * (X - C (siegelFunction ![1 / 2, 0] τ ^ 12)) *
-        (X - C (siegelFunction ![1 / 2, 1 / 2] τ ^ 12)) := by
-  have hγ : γ ∈ Subgroup.closure {ModularGroup.S, ModularGroup.T} := by
-    simp [SpecialLinearGroup.SL2Z_generators]
-  induction hγ using Subgroup.closure_induction generalizing τ with
-  | one => rw [one_smul]
-  | mem g hg =>
-    rcases hg with rfl | rfl
-    · exact prod_X_sub_C_siegelFunction_pow_twelve_S_smul τ
-    · exact prod_X_sub_C_siegelFunction_pow_twelve_T_smul τ
-  | mul g h _ _ hg hh => rw [mul_smul, hg, hh]
-  | inv g _ hg => rw [← hg, smul_inv_smul]
+        (X - C (siegelFunction ![1 / 2, 1 / 2] τ ^ 12)) :=
+  TauCeti.Matrix.SpecialLinearGroup.apply_smul_eq_of_S_smul_of_T_smul
+    (f := fun τ : ℍ ↦ (X - C (siegelFunction ![0, 1 / 2] τ ^ 12)) *
+      (X - C (siegelFunction ![1 / 2, 0] τ ^ 12)) * (X - C (siegelFunction ![1 / 2, 1 / 2] τ ^ 12)))
+    prod_X_sub_C_siegelFunction_pow_twelve_S_smul prod_X_sub_C_siegelFunction_pow_twelve_T_smul γ τ
 
 end TauCeti.ModularForm
