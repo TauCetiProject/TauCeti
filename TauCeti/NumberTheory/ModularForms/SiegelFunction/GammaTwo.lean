@@ -74,37 +74,46 @@ local notation "𝕢" => Function.Periodic.qParam
 
 /-! ### The fourth powers under `S` and `T` -/
 
-/-- The sum `g₀⁴ + g₁⁴ + g₂⁴` of the fourth powers of the level-two Siegel functions is multiplied
-by `e^{2π i / 3}` under `τ ↦ τ + 1`. -/
-private theorem siegelFunction_pow_four_add_add_apply_add_one (τ : ℂ) :
-    siegelFunction ![0, 1 / 2] (τ + 1) ^ 4 + siegelFunction ![1 / 2, 0] (τ + 1) ^ 4 +
-        siegelFunction ![1 / 2, 1 / 2] (τ + 1) ^ 4 =
-      cexp (2 * π * I / 3) * (siegelFunction ![0, 1 / 2] τ ^ 4 +
-        siegelFunction ![1 / 2, 0] τ ^ 4 + siegelFunction ![1 / 2, 1 / 2] τ ^ 4) := by
-  have h₆ : cexp (π * I / 6) ^ 4 = cexp (2 * π * I / 3) := by
-    rw [← Complex.exp_nat_mul]
-    congr 1
-    push_cast
-    ring
+/-- `e^{π i / 6}⁴ = e^{2π i / 3}`. -/
+private theorem exp_pi_I_div_six_pow_four : cexp (π * I / 6) ^ 4 = cexp (2 * π * I / 3) := by
+  rw [← Complex.exp_nat_mul]
+  congr 1
+  push_cast
+  ring
+
+/-- `g₀⁴(τ + 1) = e^{2π i / 3} g₀⁴(τ)`. -/
+private theorem siegelFunction_zero_half_apply_add_one_pow_four (τ : ℂ) :
+    siegelFunction ![0, 1 / 2] (τ + 1) ^ 4 =
+      cexp (2 * π * I / 3) * siegelFunction ![0, 1 / 2] τ ^ 4 := by
+  rw [siegelFunction_zero_half_apply_add_one, mul_pow, exp_pi_I_div_six_pow_four]
+
+/-- `g₁⁴(τ + 1) = e^{2π i / 3} g₂⁴(τ)`. -/
+private theorem siegelFunction_half_zero_apply_add_one_pow_four (τ : ℂ) :
+    siegelFunction ![1 / 2, 0] (τ + 1) ^ 4 =
+      cexp (2 * π * I / 3) * siegelFunction ![1 / 2, 1 / 2] τ ^ 4 := by
+  rw [siegelFunction_half_zero_apply_add_one, mul_pow, exp_pi_I_div_six_pow_four]
+
+/-- `g₂⁴(τ + 1) = e^{2π i / 3} g₁⁴(τ)`. -/
+private theorem siegelFunction_half_half_apply_add_one_pow_four (τ : ℂ) :
+    siegelFunction ![1 / 2, 1 / 2] (τ + 1) ^ 4 =
+      cexp (2 * π * I / 3) * siegelFunction ![1 / 2, 0] τ ^ 4 := by
   have h₃ : cexp (-(π * I / 3)) ^ 4 = cexp (2 * π * I / 3) := by
     have harg : ((4 : ℕ) : ℂ) * -(π * I / 3) = 2 * π * I / 3 + ((-1 : ℤ) : ℂ) * (2 * π * I) := by
       push_cast
       ring
     rw [← Complex.exp_nat_mul, harg, Complex.exp_add, exp_int_mul_two_pi_mul_I, mul_one]
-  rw [siegelFunction_zero_half_apply_add_one, siegelFunction_half_zero_apply_add_one,
-    siegelFunction_half_half_apply_add_one, mul_pow, mul_pow, mul_pow, h₆, h₃]
-  ring
+  rw [siegelFunction_half_half_apply_add_one, mul_pow, h₃]
 
-/-- The sum `g₀⁴ + g₁⁴ + g₂⁴` is invariant under `τ ↦ -1/τ`. -/
-private theorem siegelFunction_pow_four_add_add_apply_neg_one_div {τ : ℂ} (hτ : 0 < τ.im) :
-    siegelFunction ![0, 1 / 2] (-1 / τ) ^ 4 + siegelFunction ![1 / 2, 0] (-1 / τ) ^ 4 +
-        siegelFunction ![1 / 2, 1 / 2] (-1 / τ) ^ 4 =
-      siegelFunction ![0, 1 / 2] τ ^ 4 + siegelFunction ![1 / 2, 0] τ ^ 4 +
-        siegelFunction ![1 / 2, 1 / 2] τ ^ 4 := by
-  rw [siegelFunction_zero_half_apply_neg_one_div hτ, siegelFunction_half_zero_apply_neg_one_div hτ,
-    siegelFunction_half_half_apply_neg_one_div hτ]
-  rw [mul_pow, mul_pow, neg_pow, I_pow_four]
-  ring
+/-- `g₀⁴(-1/τ) = g₁⁴(τ)`. -/
+private theorem siegelFunction_zero_half_apply_neg_one_div_pow_four {τ : ℂ} (hτ : 0 < τ.im) :
+    siegelFunction ![0, 1 / 2] (-1 / τ) ^ 4 = siegelFunction ![1 / 2, 0] τ ^ 4 := by
+  rw [siegelFunction_zero_half_apply_neg_one_div hτ, mul_pow, neg_pow, I_pow_four]
+  norm_num
+
+/-- `g₁⁴(-1/τ) = g₀⁴(τ)`. -/
+private theorem siegelFunction_half_zero_apply_neg_one_div_pow_four {τ : ℂ} (hτ : 0 < τ.im) :
+    siegelFunction ![1 / 2, 0] (-1 / τ) ^ 4 = siegelFunction ![0, 1 / 2] τ ^ 4 := by
+  rw [siegelFunction_half_zero_apply_neg_one_div hτ, mul_pow, I_pow_four, one_mul]
 
 /-- The cube of `g₀⁴ + g₁⁴ + g₂⁴` is invariant under `SL₂(ℤ)`. -/
 private theorem siegelFunction_pow_four_add_add_pow_three_smul (γ : SL(2, ℤ)) (τ : ℍ) :
@@ -120,7 +129,10 @@ private theorem siegelFunction_pow_four_add_add_pow_three_smul (γ : SL(2, ℤ))
     rcases hg with rfl | rfl
     · have hS : ((ModularGroup.S • τ : ℍ) : ℂ) = -1 / τ := by
         rw [modular_S_smul, coe_mk, neg_div, one_div, inv_neg]
-      rw [hS, siegelFunction_pow_four_add_add_apply_neg_one_div τ.im_pos]
+      rw [hS, siegelFunction_zero_half_apply_neg_one_div_pow_four τ.im_pos,
+        siegelFunction_half_zero_apply_neg_one_div_pow_four τ.im_pos,
+        siegelFunction_half_half_apply_neg_one_div τ.im_pos]
+      ring
     · have hT : ((ModularGroup.T • τ : ℍ) : ℂ) = τ + 1 := by
         rw [modular_T_smul, coe_vadd, add_comm, ofReal_one]
       have h₃ : cexp (2 * π * I / 3) ^ 3 = 1 := by
@@ -128,71 +140,13 @@ private theorem siegelFunction_pow_four_add_add_pow_three_smul (γ : SL(2, ℤ))
         congr 1
         push_cast
         ring
-      rw [hT, siegelFunction_pow_four_add_add_apply_add_one, mul_pow, h₃, one_mul]
+      rw [hT, siegelFunction_zero_half_apply_add_one_pow_four,
+        siegelFunction_half_zero_apply_add_one_pow_four,
+        siegelFunction_half_half_apply_add_one_pow_four]
+      linear_combination (siegelFunction ![0, 1 / 2] τ ^ 4 + siegelFunction ![1 / 2, 0] τ ^ 4 +
+        siegelFunction ![1 / 2, 1 / 2] τ ^ 4) ^ 3 * h₃
   | mul g h _ _ hg hh => rw [mul_smul, hg, hh]
   | inv g _ hg => rw [← hg, smul_inv_smul]
-
-/-! ### The fourth powers as products in `s = e^{π i τ}` -/
-
-/-- `e^{-π i τ / 12}⁴ = e^{-π i τ / 3}`. -/
-private theorem exp_neg_pi_I_mul_div_twelve_pow_four (τ : ℂ) :
-    cexp (-(π * I * τ / 12)) ^ 4 = cexp (-(π * I * τ / 3)) := by
-  rw [← Complex.exp_nat_mul]
-  congr 1
-  push_cast
-  ring
-
-/-- `g₁⁴ = e^{-π i τ / 3} (∏_{n ≥ 0} (1 - s^{2n+1}))⁸` for `s = e^{π i τ}`. -/
-private theorem siegelFunction_half_zero_pow_four {τ : ℂ} (hτ : 0 < τ.im) :
-    siegelFunction ![1 / 2, 0] τ ^ 4 =
-      cexp (-(π * I * τ / 3)) * (∏' n : ℕ, (1 - cexp (π * I * τ) ^ (2 * n + 1))) ^ 8 := by
-  rw [siegelFunction_half_zero hτ, mul_pow, neg_pow, exp_neg_pi_I_mul_div_twelve_pow_four,
-    ← pow_mul]
-  norm_num
-
-/-- `g₂⁴ = -e^{-π i τ / 3} (∏_{n ≥ 0} (1 - (-s)^{2n+1}))⁸` for `s = e^{π i τ}`. -/
-private theorem siegelFunction_half_half_pow_four {τ : ℂ} (hτ : 0 < τ.im) :
-    siegelFunction ![1 / 2, 1 / 2] τ ^ 4 =
-      -(cexp (-(π * I * τ / 3)) * (∏' n : ℕ, (1 - (-cexp (π * I * τ)) ^ (2 * n + 1))) ^ 8) := by
-  have h₄ : cexp (-(π * I / 4)) ^ 4 = -1 := by
-    rw [← Complex.exp_nat_mul, show ((4 : ℕ) : ℂ) * -(π * I / 4) = -(π * I) by push_cast; ring,
-      Complex.exp_neg, exp_pi_mul_I]
-    norm_num
-  have hodd : ∏' n : ℕ, (1 + cexp (π * I * τ) ^ (2 * n + 1)) =
-      ∏' n : ℕ, (1 - (-cexp (π * I * τ)) ^ (2 * n + 1)) :=
-    tprod_congr fun n ↦ (one_sub_neg_pow_odd _ n).symm
-  rw [siegelFunction_half_half hτ, hodd, mul_pow, mul_pow, neg_pow, h₄,
-    exp_neg_pi_I_mul_div_twelve_pow_four, ← pow_mul]
-  norm_num
-
-/-- `g₀⁴ g₁⁴ g₂⁴ = -16`, the fourth power of `g₀ g₁ g₂ = 2 ζ₈`. -/
-private theorem siegelFunction_pow_four_mul_mul {τ : ℂ} (hτ : 0 < τ.im) :
-    siegelFunction ![0, 1 / 2] τ ^ 4 * siegelFunction ![1 / 2, 0] τ ^ 4 *
-      siegelFunction ![1 / 2, 1 / 2] τ ^ 4 = -16 := by
-  have h₈ : cexp (2 * π * I / 8) ^ 4 = -1 := by
-    rw [← Complex.exp_nat_mul, show ((4 : ℕ) : ℂ) * (2 * π * I / 8) = π * I by push_cast; ring,
-      exp_pi_mul_I]
-  rw [← mul_pow, ← mul_pow, siegelFunction_zero_half_mul_half_zero_mul_half_half hτ, mul_pow, h₈]
-  norm_num
-
-/-- `g₁⁴ g₂⁴ = -q^{-1/3} (∏_{n ≥ 0} (1 - q^{2n+1}))⁸` for `q = e^{2π i τ}`, where
-`q^{1/3} = e^{2π i τ / 3}`. -/
-private theorem siegelFunction_half_zero_pow_four_mul {τ : ℂ} (hτ : 0 < τ.im) :
-    siegelFunction ![1 / 2, 0] τ ^ 4 * siegelFunction ![1 / 2, 1 / 2] τ ^ 4 * 𝕢 3 τ =
-      -(∏' n : ℕ, (1 - 𝕢 1 τ ^ (2 * n + 1))) ^ 8 := by
-  have hq : 𝕢 1 τ = cexp (π * I * τ) ^ 2 := by
-    rw [Function.Periodic.qParam, ← UpperHalfPlane.exp_two_pi_I_eq_exp_pi_I_sq, ofReal_one,
-      div_one]
-  have he : cexp (-(π * I * τ / 3)) ^ 2 * 𝕢 3 τ = 1 := by
-    rw [Function.Periodic.qParam, ← Complex.exp_nat_mul, ← Complex.exp_add, ← Complex.exp_zero]
-    congr 1
-    push_cast
-    ring
-  rw [siegelFunction_half_zero_pow_four hτ, siegelFunction_half_half_pow_four hτ, hq,
-    ← tprod_one_sub_pow_odd_mul_tprod_one_add_pow_odd (UpperHalfPlane.norm_exp_pi_I_lt_one hτ)]
-  simp only [one_sub_neg_pow_odd]
-  linear_combination (-(∏' n : ℕ, (1 - cexp (π * I * τ) ^ (2 * n + 1))) ^ 8 *
-    (∏' n : ℕ, (1 + cexp (π * I * τ) ^ (2 * n + 1))) ^ 8) * he
 
 /-! ### Limits at `i∞` -/
 
@@ -360,10 +314,10 @@ theorem mdifferentiable_gammaTwo : MDiff gammaTwo := by
 theorem gammaTwo_S_smul (τ : ℍ) : gammaTwo (ModularGroup.S • τ) = gammaTwo τ := by
   have hS : ((ModularGroup.S • τ : ℍ) : ℂ) = -1 / τ := by
     rw [modular_S_smul, coe_mk, neg_div, one_div, inv_neg]
-  rw [gammaTwo_apply, gammaTwo_apply, hS, siegelFunction_zero_half_apply_neg_one_div τ.im_pos,
-    siegelFunction_half_zero_apply_neg_one_div τ.im_pos,
+  rw [gammaTwo_apply, gammaTwo_apply, hS,
+    siegelFunction_zero_half_apply_neg_one_div_pow_four τ.im_pos,
+    siegelFunction_half_zero_apply_neg_one_div_pow_four τ.im_pos,
     siegelFunction_half_half_apply_neg_one_div τ.im_pos]
-  rw [mul_pow, mul_pow, neg_pow, I_pow_four]
   ring
 
 /-- `γ₂(τ + 1) = e^{-2π i / 3} γ₂(τ)`. -/
@@ -371,27 +325,17 @@ theorem gammaTwo_T_smul (τ : ℍ) :
     gammaTwo (ModularGroup.T • τ) = cexp (-(2 * π * I / 3)) * gammaTwo τ := by
   have hT : ((ModularGroup.T • τ : ℍ) : ℂ) = τ + 1 := by
     rw [modular_T_smul, coe_vadd, add_comm, ofReal_one]
-  -- The fourth powers pick up `e^{2π i / 3}` from `e^{π i / 6}` and from `e^{-π i / 3}`.
-  have h₆ : cexp (π * I / 6) ^ 4 * cexp (π * I / 6) ^ 4 = cexp (-(2 * π * I / 3)) := by
-    have harg : ((4 : ℕ) : ℂ) * (π * I / 6) + ((4 : ℕ) : ℂ) * (π * I / 6) =
+  -- Each product of two fourth powers picks up `e^{2π i / 3}² = e^{-2π i / 3}`.
+  have h₃ : cexp (2 * π * I / 3) ^ 2 = cexp (-(2 * π * I / 3)) := by
+    have harg : ((2 : ℕ) : ℂ) * (2 * π * I / 3) =
         -(2 * π * I / 3) + ((1 : ℤ) : ℂ) * (2 * π * I) := by
       push_cast
       ring
-    rw [← Complex.exp_nat_mul, ← Complex.exp_add, harg, Complex.exp_add,
-      exp_int_mul_two_pi_mul_I, mul_one]
-  have h₃ : cexp (π * I / 6) ^ 4 * cexp (-(π * I / 3)) ^ 4 = cexp (-(2 * π * I / 3)) := by
-    have harg : ((4 : ℕ) : ℂ) * (π * I / 6) + ((4 : ℕ) : ℂ) * -(π * I / 3) =
-        -(2 * π * I / 3) := by
-      push_cast
-      ring
-    rw [← Complex.exp_nat_mul, ← Complex.exp_nat_mul, ← Complex.exp_add, harg]
-  rw [gammaTwo_apply, gammaTwo_apply, hT, siegelFunction_zero_half_apply_add_one,
-    siegelFunction_half_zero_apply_add_one, siegelFunction_half_half_apply_add_one]
-  simp only [mul_pow]
-  linear_combination
-    (-(siegelFunction ![0, 1 / 2] τ ^ 4 * siegelFunction ![1 / 2, 1 / 2] τ ^ 4)) * h₆ +
-    (-(siegelFunction ![0, 1 / 2] τ ^ 4 * siegelFunction ![1 / 2, 0] τ ^ 4 +
-      siegelFunction ![1 / 2, 1 / 2] τ ^ 4 * siegelFunction ![1 / 2, 0] τ ^ 4)) * h₃
+    rw [← Complex.exp_nat_mul, harg, Complex.exp_add, exp_int_mul_two_pi_mul_I, mul_one]
+  rw [gammaTwo_apply, gammaTwo_apply, hT, siegelFunction_zero_half_apply_add_one_pow_four,
+    siegelFunction_half_zero_apply_add_one_pow_four,
+    siegelFunction_half_half_apply_add_one_pow_four, ← h₃]
+  ring
 
 /-- **The leading Fourier term of `γ₂` is `q^{-1/3}`**: `γ₂(τ) e^{2π i τ / 3} → 1` at `i∞`. -/
 theorem tendsto_gammaTwo_mul_qParam_atImInfty :
