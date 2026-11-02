@@ -86,8 +86,8 @@ theorem map_simpleWeylPoint {A : Type v} {B : Type w} [CommRing A] [CommRing B]
     map_rootSubgroupPoints, map_rootSubgroupPoints]
   simp only [toAdd_ofAdd, map_one, map_neg]
 
-/-- Conjugation by the pinned representative exchanges the matching positive and negative
-simple-root subgroups and negates the parameter. -/
+/-- Conjugation by the pinned representative sends a positive simple-root point to the
+matching negative simple-root point with negated parameter. -/
 @[simp]
 theorem simpleWeylPoint_conj_rootSubgroupPoints (i : Fin 6) (A : Type v) [CommRing A]
     (u : A) :
