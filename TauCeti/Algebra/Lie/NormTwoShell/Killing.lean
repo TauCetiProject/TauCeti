@@ -47,8 +47,8 @@ the scalar extension of `κ`; over a field this makes the scalar extension semis
 ## Main results
 
 * `Matrix.ShellLieAlgebra.killingForm_cartan_cartan`: `κ(H_h, H_k) = ∑_(a ∈ Φ) ⟪h, a⟫ ⟪k, a⟫`.
-* `Matrix.ShellLieAlgebra.killingForm_cartan_root`: `κ(H_h, x_a) = 0`.
-* `Matrix.ShellLieAlgebra.killingForm_root_root_of_add_ne_zero`: `κ(x_a, x_b) = 0` for
+* `Matrix.ShellLieAlgebra.killingForm_cartan_root_eq_zero`: `κ(H_h, x_a) = 0`.
+* `Matrix.ShellLieAlgebra.killingForm_root_root_eq_zero_of_add_ne_zero`: `κ(x_a, x_b) = 0` for
   `a + b ≠ 0`.
 * `Matrix.ShellLieAlgebra.two_mul_killingForm_root_root_of_add_eq_zero`: the opposite pairing
   `2 κ(x_a, x_b) = ε(a, b) κ(H_a, H_a)` for `a + b = 0`.
@@ -91,7 +91,7 @@ theorem killingForm_cartan_cartan [Fintype B.normTwoShell] (hB : B.PosDef)
   simp [LinearMap.toMatrix_apply, hr, mul_comm]
 
 /-- **Cartan vectors are Killing orthogonal to root vectors**: `κ(H_h, x_a) = 0`. -/
-theorem killingForm_cartan_root (hB : B.PosDef)
+theorem killingForm_cartan_root_eq_zero (hB : B.PosDef)
     (hev : ∀ i, Even (B i i)) (h : I → ℤ) (a : B.normTwoShell) :
     letI := lieRing hB hev
     killingForm ℤ (ShellLieAlgebra B) (cartan B h) (root B a) = 0 := by
@@ -105,16 +105,16 @@ theorem killingForm_cartan_root (hB : B.PosDef)
   omega
 
 /-- **Root vectors are Killing orthogonal to Cartan vectors**: `κ(x_a, H_h) = 0`. -/
-theorem killingForm_root_cartan (hB : B.PosDef)
+theorem killingForm_root_cartan_eq_zero (hB : B.PosDef)
     (hev : ∀ i, Even (B i i)) (a : B.normTwoShell) (h : I → ℤ) :
     letI := lieRing hB hev
     killingForm ℤ (ShellLieAlgebra B) (root B a) (cartan B h) = 0 := by
   let _ := lieRing hB hev
-  rw [LieModule.traceForm_comm, killingForm_cartan_root]
+  rw [LieModule.traceForm_comm, killingForm_cartan_root_eq_zero]
 
 /-- **Root vectors of non-opposite roots are Killing orthogonal**: `κ(x_a, x_b) = 0` for
 `a + b ≠ 0`. -/
-theorem killingForm_root_root_of_add_ne_zero (hB : B.PosDef)
+theorem killingForm_root_root_eq_zero_of_add_ne_zero (hB : B.PosDef)
     (hev : ∀ i, Even (B i i)) {a b : B.normTwoShell} (hab : (a : I → ℤ) + b ≠ 0) :
     letI := lieRing hB hev
     killingForm ℤ (ShellLieAlgebra B) (root B a) (root B b) = 0 := by
@@ -227,13 +227,13 @@ theorem isKilling (hB : B.PosDef) (hev : ∀ i, Even (B i i))
     have hne := killingForm_root_root_ne_zero_of_add_eq_zero hB hev (b := a')
       (add_neg_cancel (a : I → ℤ))
     have key := hx' (root B a')
-    rw [hsum, map_add, LinearMap.add_apply, killingForm_cartan_root hB hev, zero_add, map_sum,
-      LinearMap.sum_apply, Finset.sum_eq_single a] at key
+    rw [hsum, map_add, LinearMap.add_apply, killingForm_cartan_root_eq_zero hB hev, zero_add,
+      map_sum, LinearMap.sum_apply, Finset.sum_eq_single a] at key
     · rw [map_smul, LinearMap.smul_apply, smul_eq_mul] at key
       exact (mul_eq_zero.mp key).resolve_right hne
     · intro b _ hb
       rw [map_smul, LinearMap.smul_apply, smul_eq_mul,
-        killingForm_root_root_of_add_ne_zero hB hev, mul_zero]
+        killingForm_root_root_eq_zero_of_add_ne_zero hB hev, mul_zero]
       exact fun hba ↦ hb (Subtype.ext (add_neg_eq_zero.mp hba))
     · simp
   have hcart : x = cartan B h := by
