@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Euclidean.Space
-public import TauCeti.LinearAlgebra.Matrix.Realify
+public import TauCeti.Analysis.Complex.Euclidean.Matrix
+public import TauCeti.Analysis.Normed.Module.Complexification
 public import TauCeti.Topology.Algebra.Module.Equiv.Fin
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Normed.Operator.NormedSpace
@@ -22,15 +22,17 @@ real parts of the coordinates first and their imaginary parts second. It is the 
 For a complex-linear operator `g` between complex coordinate spaces, `g.realifyCoords` is the
 same map read in these real coordinates; its matrix is the realification `Matrix.realify` of the
 complex matrix of `g` (`ContinuousLinearMap.toMatrix'_realifyCoords`). For a real-linear operator
-`g` between real coordinate spaces, `g.complexifyCoords` is its complex-linear extension, acting by
-`g` on the real and on the imaginary parts of the coordinates
-(`ContinuousLinearMap.complexifyCoords_apply`); its matrix is the matrix of `g` with entries
-regarded as complex numbers (`ContinuousLinearMap.toMatrix'_complexifyCoords`). Both constructions
-preserve identities, composition and addition, and both depend continuously on the operator, so
-they can be applied to continuous families of transition matrices.
+`g` between real coordinate spaces, `g.complexifyCoords` is its complex-linear extension: the
+complexification `ContinuousLinearMap.complexify` read in the coordinates
+`TauCeti.Complexification.equivPi`. It acts by `g` on the real and on the imaginary parts of the
+coordinates (`ContinuousLinearMap.complexifyCoords_apply`); its matrix is the matrix of `g` with
+entries regarded as complex numbers (`ContinuousLinearMap.toMatrix'_complexifyCoords`). Both
+constructions preserve identities, composition and addition, and both depend continuously on the
+operator, so they can be applied to continuous families of transition matrices.
 
 In real coordinates, the realification of a complexification is block diagonal with two copies
-of the original operator (`ContinuousLinearMap.realifyCoords_complexifyCoords`), the operator
+of the original operator (`ContinuousLinearMap.splitCoords_realifyCoords_complexifyCoords`,
+`ContinuousLinearMap.realifyCoords_complexifyCoords`), the operator
 form of `Matrix.realify_map_ofReal`. This is the coordinate form of the isomorphism between the
 realification of the complexification of a real vector space and two copies of that space.
 -/
@@ -68,6 +70,12 @@ theorem splitCoords_realCoords (n : ℕ) (v : Fin n → ℂ) :
     splitCoords (𝕜 := ℝ) n n (realCoords n v) = (fun i => (v i).re, fun i => (v i).im) := by
   ext i <;> simp only [splitCoords_apply, Fin.natAdd_eq_addNat, realCoords_apply_castAdd,
     realCoords_apply_addNat]
+
+/-- Concatenating the two blocks of `TauCeti.complexToRealPi` gives `realCoords`. -/
+theorem realCoords_comp_finSumFinEquiv (n : ℕ) (v : Fin n → ℂ) :
+    realCoords n v ∘ finSumFinEquiv = complexToRealPi (Fin n) v := by
+  funext k
+  cases k <;> simp
 
 theorem realCoords_apply (n : ℕ) (v : Fin n → ℂ) :
     realCoords n v = (splitCoords (𝕜 := ℝ) n n).symm (fun i => (v i).re, fun i => (v i).im) := by
@@ -131,20 +139,20 @@ theorem toMatrix'_realifyCoords (g : (Fin m → ℂ) →L[ℂ] (Fin n → ℂ)) 
   congr 1
   refine LinearMap.ext fun w => ?_
   obtain ⟨z, rfl⟩ := (realCoords m).surjective w
-  have hz : (realCoords m z) ∘ finSumFinEquiv = complexToRealPi (Fin m) z := by
-    funext k
-    cases k <;> simp
   funext k
   obtain ⟨k, rfl⟩ := finSumFinEquiv.surjective k
-  have hg : g z = LinearMap.toMatrix' (g : (Fin m → ℂ) →ₗ[ℂ] (Fin n → ℂ)) *ᵥ z :=
-    (LinearMap.toMatrix'_mulVec _ z).symm
+  -- On the left, the reindexed matrix acts on the unconcatenated blocks `complexToRealPi z`.
   rw [Matrix.toLin'_apply, Matrix.reindex_apply, Matrix.submatrix_mulVec_equiv, Equiv.symm_symm,
-    hz, coe_coe, realifyCoords_realCoords, Function.comp_apply, Equiv.symm_apply_apply, hg]
-  -- The remaining identity holds for every complex matrix.
-  generalize LinearMap.toMatrix' (g : (Fin m → ℂ) →ₗ[ℂ] (Fin n → ℂ)) = M
-  cases k <;>
-    simp [Matrix.mulVec, dotProduct, Fintype.sum_sum_type, Complex.mul_re, Complex.mul_im,
-      Finset.sum_add_distrib, sub_eq_add_neg, add_comm]
+    realCoords_comp_finSumFinEquiv, Function.comp_apply, Equiv.symm_apply_apply]
+  -- On the right, the real coordinates of `g z` are read in the same blocks.
+  rw [coe_coe, realifyCoords_realCoords, ← Function.comp_apply (f := realCoords n _),
+    realCoords_comp_finSumFinEquiv]
+  have hz : complexToRealPi (Fin m) z = (complexToRealEuclidean (Fin m) z).ofLp := by
+    funext j
+    simp
+  rw [hz]
+  simpa using congrArg (fun x => x k)
+    (complexToRealEuclidean_mulVec (LinearMap.toMatrix' (g : (Fin m → ℂ) →ₗ[ℂ] (Fin n → ℂ))) z)
 
 /-- Realification depends continuously on the complex operator. -/
 theorem continuous_realifyCoords :
@@ -153,42 +161,19 @@ theorem continuous_realifyCoords :
 
 /-! ### Complexification -/
 
-/-- The complex-linear extension of a real-linear operator between real coordinate spaces. It
-acts by the original operator on the real parts and on the imaginary parts of the coordinates. -/
+/-- The complex-linear extension of a real-linear operator between real coordinate spaces: the
+complexification `ContinuousLinearMap.complexify` read in the coordinates
+`TauCeti.Complexification.equivPi`. It acts by the original operator on the real parts and on the
+imaginary parts of the coordinates. -/
 noncomputable def complexifyCoords (g : (Fin m → ℝ) →L[ℝ] (Fin n → ℝ)) :
     (Fin m → ℂ) →L[ℂ] (Fin n → ℂ) :=
-  LinearMap.toContinuousLinearMap
-    { toFun v i := ⟨g (fun k => (v k).re) i, g (fun k => (v k).im) i⟩
-      map_add' v w := by
-        have hre : (fun k => ((v + w) k).re) = (fun k => (v k).re) + fun k => (w k).re := rfl
-        have him : (fun k => ((v + w) k).im) = (fun k => (v k).im) + fun k => (w k).im := rfl
-        funext i
-        apply Complex.ext
-        · dsimp only
-          rw [hre, map_add]
-          rfl
-        · dsimp only
-          rw [him, map_add]
-          rfl
-      map_smul' c v := by
-        have hre : (fun k => ((c • v) k).re) =
-            c.re • (fun k => (v k).re) - c.im • fun k => (v k).im :=
-          funext fun k => by simp
-        have him : (fun k => ((c • v) k).im) =
-            c.re • (fun k => (v k).im) + c.im • fun k => (v k).re :=
-          funext fun k => by simp
-        funext i
-        apply Complex.ext
-        · dsimp only
-          rw [hre, map_sub, map_smul, map_smul]
-          simp
-        · dsimp only
-          rw [him, map_add, map_smul, map_smul]
-          simp }
+  (Complexification.equivPi (Fin n)).toContinuousLinearMap.comp
+    (g.complexify.comp (Complexification.equivPi (Fin m)).symm.toContinuousLinearMap)
 
 @[simp] theorem complexifyCoords_apply (g : (Fin m → ℝ) →L[ℝ] (Fin n → ℝ)) (v : Fin m → ℂ)
     (i : Fin n) :
-    g.complexifyCoords v i = ⟨g (fun k => (v k).re) i, g (fun k => (v k).im) i⟩ := (rfl)
+    g.complexifyCoords v i = ⟨g (fun k => (v k).re) i, g (fun k => (v k).im) i⟩ := by
+  simp [complexifyCoords]
 
 @[simp] theorem complexifyCoords_ofReal (g : (Fin m → ℝ) →L[ℝ] (Fin n → ℝ)) (v : Fin m → ℝ) :
     g.complexifyCoords (fun k => (v k : ℂ)) = fun i => (g v i : ℂ) := by
@@ -202,19 +187,18 @@ noncomputable def complexifyCoords (g : (Fin m → ℝ) →L[ℝ] (Fin n → ℝ
 @[simp] theorem complexifyCoords_id :
     (ContinuousLinearMap.id ℝ (Fin n → ℝ)).complexifyCoords =
       ContinuousLinearMap.id ℂ (Fin n → ℂ) := by
-  ext v i : 2
-  apply Complex.ext <;> simp
+  ext v : 1
+  simp [complexifyCoords]
 
 @[simp] theorem complexifyCoords_comp (g : (Fin m → ℝ) →L[ℝ] (Fin n → ℝ))
     (f : (Fin l → ℝ) →L[ℝ] (Fin m → ℝ)) :
     (g.comp f).complexifyCoords = g.complexifyCoords.comp f.complexifyCoords := by
-  ext v i : 2
-  apply Complex.ext <;> rfl
+  ext v : 1
+  simp [complexifyCoords]
 
 @[simp] theorem complexifyCoords_add (f g : (Fin m → ℝ) →L[ℝ] (Fin n → ℝ)) :
     (f + g).complexifyCoords = f.complexifyCoords + g.complexifyCoords := by
-  ext v i : 2
-  apply Complex.ext <;> simp
+  simp only [complexifyCoords, ← complexifyₗᵢ_apply, map_add, add_comp, comp_add]
 
 /-- The matrix of a complexified operator is the original real matrix with its entries regarded
 as complex numbers. -/
@@ -227,20 +211,23 @@ theorem toMatrix'_complexifyCoords (g : (Fin m → ℝ) →L[ℝ] (Fin n → ℝ
     by_cases hk : k = j <;> simp [hk]
   simp only [LinearMap.toMatrix'_apply, Matrix.map_apply, coe_coe, hj, complexifyCoords_ofReal]
 
-variable (m n) in
-/-- Complexification of real coordinate operators, as a real-linear map. -/
-noncomputable def complexifyCoordsₗ :
-    ((Fin m → ℝ) →L[ℝ] (Fin n → ℝ)) →ₗ[ℝ] ((Fin m → ℂ) →L[ℂ] (Fin n → ℂ)) where
-  toFun := complexifyCoords
-  map_add' := complexifyCoords_add
-  map_smul' c g := by
-    ext v i : 2
-    apply Complex.ext <;> simp
-
 /-- Complexification depends continuously on the real operator. -/
 theorem continuous_complexifyCoords :
     Continuous (complexifyCoords : ((Fin m → ℝ) →L[ℝ] (Fin n → ℝ)) → _) :=
-  (complexifyCoordsₗ m n).continuous_of_finiteDimensional
+  ((((complexifyₗᵢ (Fin m → ℝ) (Fin n → ℝ)).continuous.clm_comp_const
+    (Complexification.equivPi (Fin m)).symm.toContinuousLinearMap).const_clm_comp
+      (Complexification.equivPi (Fin n)).toContinuousLinearMap).congr
+        fun g => by rw [complexifyₗᵢ_apply, complexifyCoords])
+
+/-- In real coordinates, the realification of the complexification of `g` acts by `g` on the
+block of real parts and on the block of imaginary parts. -/
+theorem splitCoords_realifyCoords_complexifyCoords (g : (Fin m → ℝ) →L[ℝ] (Fin n → ℝ))
+    (w : Fin (m + m) → ℝ) :
+    splitCoords (𝕜 := ℝ) n n (g.complexifyCoords.realifyCoords w) =
+      (g (splitCoords (𝕜 := ℝ) m m w).1, g (splitCoords (𝕜 := ℝ) m m w).2) := by
+  obtain ⟨v, rfl⟩ := (realCoords m).surjective w
+  rw [realifyCoords_realCoords, splitCoords_realCoords, splitCoords_realCoords]
+  ext i <;> simp
 
 /-- In real coordinates, the realification of the complexification of `g` acts by `g` on the
 real parts and on the imaginary parts separately. -/
@@ -250,10 +237,7 @@ theorem realifyCoords_complexifyCoords (g : (Fin m → ℝ) →L[ℝ] (Fin n →
         ((g.prodMap g).comp (splitCoords m m).toContinuousLinearMap) := by
   ext w : 1
   apply (splitCoords (𝕜 := ℝ) n n).injective
-  rw [realifyCoords_apply, splitCoords_realCoords]
-  simp only [complexifyCoords_apply, realCoords_symm_apply, comp_apply, add_re, ofReal_re,
-    mul_re, I_re, mul_zero, ofReal_im, I_im, mul_one, sub_self, add_zero, add_im, mul_im,
-    zero_add, ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply, coe_prodMap']
-  rfl
+  rw [splitCoords_realifyCoords_complexifyCoords]
+  simp
 
 end ContinuousLinearMap

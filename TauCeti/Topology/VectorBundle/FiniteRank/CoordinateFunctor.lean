@@ -126,6 +126,8 @@ def mapHom (f : A ⟶ D) : Φ.mapCore A ⟶ Φ.mapCore D where
 @[simp] theorem fiberMap_mapHom (f : A ⟶ D) (x : B) :
     (Φ.mapHom f).fiberMap x = Φ.map (f.fiberMap x) := by
   rw [CoordinateHom.fiberMap_def, CoordinateHom.fiberMap_def]
+  -- `mapCore` keeps the charts of `A` and `D`, so both sides evaluate the chart operators in the
+  -- same preferred charts, and `mapHom` applies `Φ.map` to those operators.
   rfl
 
 variable (B) in
@@ -144,6 +146,7 @@ def functor : FiniteRankBundleCore 𝕜 B ⥤ FiniteRankBundleCore 𝕜' B where
   map_comp f g := FiniteRankBundleCore.hom_ext fun x => by
     rw [fiberMap_mapHom, FiniteRankBundleCore.fiberMap_comp, FiniteRankBundleCore.fiberMap_comp,
       fiberMap_mapHom, fiberMap_mapHom, map_comp]
+    -- The two composites are stated on the same coordinate spaces `Fin (Φ.rank _) → 𝕜'`.
     rfl
 
 @[simp] theorem functor_obj (A : FiniteRankBundleCore 𝕜 B) :
@@ -160,6 +163,7 @@ theorem functor_additive (h : ∀ {m n : ℕ} (f g : (Fin m → 𝕜) →L[𝕜]
     change (Φ.mapHom (f + g)).fiberMap x = (Φ.mapHom f + Φ.mapHom g).fiberMap x
     rw [fiberMap_mapHom, FiniteRankBundleCore.fiberMap_add, h, FiniteRankBundleCore.fiberMap_add,
       fiberMap_mapHom, fiberMap_mapHom]
+    -- The two sums are stated on the same coordinate spaces `Fin (Φ.rank _) → 𝕜'`.
     rfl
 
 variable (B) in

@@ -177,21 +177,12 @@ theorem realifyComplexifyIso_naturality_fst {A D : FiniteRankBundleCore ℝ B} (
     (realify B).map ((complexify B).map f) ≫ (realifyComplexifyIso D).hom ≫ whitneyFst D D =
       (realifyComplexifyIso A).hom ≫ whitneyFst A A ≫ f := by
   refine hom_ext fun x => ?_
-  -- Work in the standard model so simplification does not unfold dependent fibre instances.
-  have h : (((ContinuousLinearMap.fst ℝ (Fin D.rank → ℝ) (Fin D.rank → ℝ)).comp
-        (splitCoords (𝕜 := ℝ) D.rank D.rank).toContinuousLinearMap).comp
-          (ContinuousLinearMap.id ℝ (Fin (D.rank + D.rank) → ℝ))).comp
-        (f.fiberMap x).complexifyCoords.realifyCoords =
-      ((f.fiberMap x).comp ((ContinuousLinearMap.fst ℝ (Fin A.rank → ℝ) (Fin A.rank → ℝ)).comp
-        (splitCoords (𝕜 := ℝ) A.rank A.rank).toContinuousLinearMap)).comp
-          (ContinuousLinearMap.id ℝ (Fin (A.rank + A.rank) → ℝ)) := by
-    rw [ContinuousLinearMap.realifyCoords_complexifyCoords]
-    ext v : 1
-    simp
   rw [fiberMap_comp, fiberMap_comp, fiberMap_comp, fiberMap_comp, fiberMap_realify_map,
     fiberMap_complexify_map, fiberMap_realifyComplexifyIso_hom, fiberMap_realifyComplexifyIso_hom,
     fiberMap_whitneyFst, fiberMap_whitneyFst]
-  exact h
+  -- At each coordinate vector, both sides are the first block of the doubled transition.
+  exact ContinuousLinearMap.ext fun v => congrArg Prod.fst
+    (ContinuousLinearMap.splitCoords_realifyCoords_complexifyCoords (f.fiberMap x) v)
 
 /-- Naturality of `realifyComplexifyIso`, on the second Whitney summand. -/
 @[reassoc]
@@ -199,21 +190,12 @@ theorem realifyComplexifyIso_naturality_snd {A D : FiniteRankBundleCore ℝ B} (
     (realify B).map ((complexify B).map f) ≫ (realifyComplexifyIso D).hom ≫ whitneySnd D D =
       (realifyComplexifyIso A).hom ≫ whitneySnd A A ≫ f := by
   refine hom_ext fun x => ?_
-  -- Work in the standard model so simplification does not unfold dependent fibre instances.
-  have h : (((ContinuousLinearMap.snd ℝ (Fin D.rank → ℝ) (Fin D.rank → ℝ)).comp
-        (splitCoords (𝕜 := ℝ) D.rank D.rank).toContinuousLinearMap).comp
-          (ContinuousLinearMap.id ℝ (Fin (D.rank + D.rank) → ℝ))).comp
-        (f.fiberMap x).complexifyCoords.realifyCoords =
-      ((f.fiberMap x).comp ((ContinuousLinearMap.snd ℝ (Fin A.rank → ℝ) (Fin A.rank → ℝ)).comp
-        (splitCoords (𝕜 := ℝ) A.rank A.rank).toContinuousLinearMap)).comp
-          (ContinuousLinearMap.id ℝ (Fin (A.rank + A.rank) → ℝ)) := by
-    rw [ContinuousLinearMap.realifyCoords_complexifyCoords]
-    ext v : 1
-    simp
   rw [fiberMap_comp, fiberMap_comp, fiberMap_comp, fiberMap_comp, fiberMap_realify_map,
     fiberMap_complexify_map, fiberMap_realifyComplexifyIso_hom, fiberMap_realifyComplexifyIso_hom,
     fiberMap_whitneySnd, fiberMap_whitneySnd]
-  exact h
+  -- At each coordinate vector, both sides are the second block of the doubled transition.
+  exact ContinuousLinearMap.ext fun v => congrArg Prod.snd
+    (ContinuousLinearMap.splitCoords_realifyCoords_complexifyCoords (f.fiberMap x) v)
 
 end FiniteRankBundleCore
 end TauCeti
