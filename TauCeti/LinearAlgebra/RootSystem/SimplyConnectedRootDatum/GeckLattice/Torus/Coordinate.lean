@@ -164,20 +164,9 @@ theorem geckBaseChangePointsMulEquiv_mapPointsFunctor_weightTorus
     (t.mkQuotient_comp_geckWeightTorusToBaseChangeCoordinateMap ht R) A q
   refine (t.coe_geckBaseChangePointsMulEquiv_apply ht R A _).trans
     ((congrArg (GeneralLinear.pointsMulEquiv (t.geckDim ht)) he.symm).trans ?_)
-  have hp := CommHopfAlgCat.Hom.mapPointsFunctor_app_apply
-    (t.geckWeightTorusBaseChangeCoordinateMap ht R) A q
-  refine (congrArg (GeneralLinear.pointsMulEquiv (t.geckDim ht)) hp).trans ?_
   rw [geckWeightTorusBaseChangeCoordinateMap_def,
-    GeneralLinear.hom_weightTorusBaseChangeCoordinateMap]
-  apply Units.ext
-  rw [GeneralLinear.pointsMulEquiv_apply,
-    GeneralLinear.weightTorusCoordinateBialgHom_def,
-    DiagonalizableGroup.pointToGeneralLinear_comp_diagonalCoordinateMap,
-    UniversalEnvelopingAlgebra.kostantTorusMatrix_apply, diagGL_coe]
-  congr 1
-  funext i
-  exact congrArg (fun s : Aˣ ↦ (s : A))
-    (SplitTorus.charOfPoint_weightCharacter q (t.geckWeightFin ht i))
+    GeneralLinear.pointsMulEquiv_mapPointsFunctor_weightTorusBaseChangeCoordinateMap,
+    UniversalEnvelopingAlgebra.kostantTorusMatrix_apply]
 
 /-- The intrinsic torus ideal cuts out exactly the named Geck weight-torus points, including
 points over nonreduced value algebras. -/
