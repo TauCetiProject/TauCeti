@@ -136,34 +136,6 @@ theorem geckGeneratedRootVector_ne_zero [Nontrivial B] (i : Fin t.rank ⊕ Fin t
   AdditiveGroup.derivationComp_gaTangentLinearEquiv_symm_one_ne_zero _
     (t.derivationComp_geckGeneratedCoordinateLift_injective ht R i)
 
-private theorem tangentMatrix_geckGeneratedRootVector_self (i : Fin t.rank ⊕ Fin t.rank) :
-    GeneralLinear.tangentMatrix (t.geckDim ht)
-        (derivationComp (B := R) (t.geckGeneratedCoordinateMap ht R).hom
-          (t.geckGeneratedRootVector ht R (B := R) i)) =
-      (t.geckRootIntMatrix ht i).map (Int.cast : ℤ → R) := by
-  rw [geckGeneratedRootVector_def, ← LinearMap.comp_apply, ← derivationComp_comp,
-    ← _root_.CommHopfAlgCat.hom_comp,
-    geckGeneratedCoordinateMap_comp_geckGeneratedCoordinateLift,
-    geckGeneratorCoordinateMap_inl,
-    tangentMatrix_derivationComp_geckRootSubgroupBaseChangeCoordinateMap,
-    LinearEquiv.apply_symm_apply, one_smul]
-
-/-- The matrix of a normalized root vector is the integral Geck root matrix, over every
-commutative value algebra. -/
-@[simp]
-theorem tangentMatrix_geckGeneratedRootVector (i : Fin t.rank ⊕ Fin t.rank) :
-    GeneralLinear.tangentMatrix (t.geckDim ht)
-        (derivationComp (B := B) (t.geckGeneratedCoordinateMap ht R).hom
-          (t.geckGeneratedRootVector ht R (B := B) i)) =
-      (t.geckRootIntMatrix ht i).map (Int.cast : ℤ → B) := by
-  rw [geckGeneratedRootVector_def, ← LinearMap.comp_apply, ← derivationComp_comp,
-    ← AdditiveGroup.mapValue_derivationComp_gaTangentLinearEquiv_symm_one
-      (Algebra.ofId R B), GeneralLinear.tangentMatrix_mapValue]
-  rw [derivationComp_comp, LinearMap.comp_apply, ← geckGeneratedRootVector_def,
-    tangentMatrix_geckGeneratedRootVector_self]
-  ext a b
-  simp
-
 /-- The matrix of a numbered root differential is its tangent parameter times the integral
 Geck root matrix. -/
 theorem tangentMatrix_derivationComp_geckGeneratedCoordinateLift (i : Fin t.rank ⊕ Fin t.rank)
@@ -174,9 +146,21 @@ theorem tangentMatrix_derivationComp_geckGeneratedCoordinateLift (i : Fin t.rank
           (derivationComp (B := B) (t.geckGeneratedCoordinateLift ht R (.inl i)).hom d)) =
       AdditiveGroup.gaTangentLinearEquiv d •
         (t.geckRootIntMatrix ht i).map (Int.cast : ℤ → B) := by
-  rw [derivationComp_geckGeneratedCoordinateLift_eq_smul_geckGeneratedRootVector,
-    ← derivationCompLieHom_apply, map_smul, derivationCompLieHom_apply,
-    map_smul, tangentMatrix_geckGeneratedRootVector]
+  rw [← LinearMap.comp_apply, ← derivationComp_comp, ← _root_.CommHopfAlgCat.hom_comp,
+    geckGeneratedCoordinateMap_comp_geckGeneratedCoordinateLift,
+    geckGeneratorCoordinateMap_inl,
+    tangentMatrix_derivationComp_geckRootSubgroupBaseChangeCoordinateMap]
+
+/-- The matrix of a normalized root vector is the integral Geck root matrix, over every
+commutative value algebra. -/
+@[simp]
+theorem tangentMatrix_geckGeneratedRootVector (i : Fin t.rank ⊕ Fin t.rank) :
+    GeneralLinear.tangentMatrix (t.geckDim ht)
+        (derivationComp (B := B) (t.geckGeneratedCoordinateMap ht R).hom
+          (t.geckGeneratedRootVector ht R (B := B) i)) =
+      (t.geckRootIntMatrix ht i).map (Int.cast : ℤ → B) := by
+  rw [geckGeneratedRootVector_def, tangentMatrix_derivationComp_geckGeneratedCoordinateLift,
+    LinearEquiv.apply_symm_apply, one_smul]
 
 end Differential
 

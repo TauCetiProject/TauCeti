@@ -66,7 +66,7 @@ open TauCeti.UniversalEnvelopingAlgebra
 
 namespace TauCeti.DynkinType
 
-universe v
+universe u v
 
 noncomputable section
 
@@ -224,30 +224,18 @@ theorem geckRootVector_ne_zero [Nontrivial B] (i : Fin t.rank ⊕ Fin t.rank) :
   kostantToralRootVector_ne_zero _ _ _ _ _ _ _ _ i (t.geckRootSubgroupCoordinateMap_surjective ht i)
 
 /-- The differential of a transported Geck root subgroup over an arbitrary base ring is the
-additive tangent parameter times its integral root matrix. -/
+additive tangent parameter times its integral root matrix, over every commutative value algebra. -/
 theorem tangentMatrix_derivationComp_geckRootSubgroupBaseChangeCoordinateMap
-    (R : Type v) [CommRing R] (i : Fin t.rank ⊕ Fin t.rank)
+    (R : Type u) [CommRing R] [Algebra R B] (i : Fin t.rank ⊕ Fin t.rank)
     (d : Derivation R (AdditiveGroup.coordinateHopfAlgebra R)
-      (Bialgebra.CounitAlgebra R (AdditiveGroup.coordinateHopfAlgebra R) R)) :
+      (Bialgebra.CounitAlgebra R (AdditiveGroup.coordinateHopfAlgebra R) B)) :
     GeneralLinear.tangentMatrix (t.geckDim ht)
-      (derivationComp (B := R) (t.geckRootSubgroupBaseChangeCoordinateMap ht R i).hom d) =
+      (derivationComp (B := B) (t.geckRootSubgroupBaseChangeCoordinateMap ht R i).hom d) =
       AdditiveGroup.gaTangentLinearEquiv d •
-        (t.geckRootIntMatrix ht i).map (Int.cast : ℤ → R) := by
-  rw [geckRootSubgroupBaseChangeCoordinateMap_def,
-    kostantRootSubgroupBaseChangePresentationCoordinateMap_def,
-    GeneralLinear.tangentMatrix_derivationComp_transportedBaseChange]
-  rw [tangentMatrix_derivationComp_kostantRootSubgroupCoordinateMap,
-    ← geckRootIntMatrix_eq_toMatrix]
-  congr 1
-  rw [AdditiveGroup.gaTangentLinearEquiv_apply,
-    tangentBaseChangeLieEquiv_symm_apply, AlgEquiv.apply_symm_apply,
-    algEquivSelf_derivationComp_apply]
-  -- The categorical additive base-change isomorphism is the symmetric-algebra equivalence.
-  change (Bialgebra.CounitAlgebra.algEquivSelf R (AdditiveGroup.coordinateHopfAlgebra R) R)
-    (d (AdditiveGroup.gaScalarTensorBialgEquiv
-      ((1 : R) ⊗ₜ[ℤ] SymmetricAlgebra.ι ℤ ℤ 1))) = _
-  rw [AdditiveGroup.gaScalarTensorBialgEquiv_tmul_ι, map_one, one_smul,
-    AdditiveGroup.gaTangentLinearEquiv_apply]
+        (t.geckRootIntMatrix ht i).map (Int.cast : ℤ → B) := by
+  rw [geckRootSubgroupBaseChangeCoordinateMap_def, geckRootIntMatrix_eq_toMatrix]
+  exact tangentMatrix_derivationComp_kostantRootSubgroupBaseChangePresentationCoordinateMap
+    _ _ _ _ _ _ _ R i d
 
 end
 
