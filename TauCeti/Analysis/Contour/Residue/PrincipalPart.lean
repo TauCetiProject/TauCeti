@@ -22,12 +22,6 @@ of `f` (`coeff_principalPart_one_eq_residue`), and by the residue theorem it is
 `(2πi)⁻¹ ∮_{|z - a| = ρ} (z - a)^k f(z) dz` for every sufficiently small `ρ > 0`
 (`coeff_principalPart_succ_eq_circleIntegral`).
 
-Both sides are Taylor coefficients: writing `f(z) = h(z) / (z - a)^(N + k + 1)` with `h` analytic
-at `a`, the principal part is computed by `TauCeti.meromorphicGerms.principalPart_eq_sum_coeff`
-and the residue by `TauCeti.Contour.residue_eq_of_eventuallyEq_zpow_smul`, and both equal the
-Taylor coefficient of `h` of order `N`, the coefficient `iteratedDeriv N h a / N!` of the power
-series of `h` given by `AnalyticAt.hasFPowerSeriesAt`.
-
 ## References
 
 * Lars V. Ahlfors, *Complex Analysis*, 3rd edition, McGraw-Hill, 1979, Chapter 4, §§3.2–3.3 and
@@ -50,7 +44,10 @@ theorem coeff_principalPart_succ_eq_residue {φ : meromorphicGerms ℂ a} {f : �
     (principalPart φ).coeff (k + 1) = Contour.residue (fun z ↦ (z - a) ^ k * f z) a := by
   obtain ⟨N, hN⟩ := coe_mem_meromorphicGerms.1 (hφ ▸ φ.2)
   -- Write `f` as `h(z) / (z - a)^(N + k + 1)` with `h` analytic at `a`; both sides are then the
-  -- Taylor coefficient of `h` of order `N`.
+  -- Taylor coefficient of `h` of order `N`. The principal part is computed by
+  -- `principalPart_eq_sum_coeff` and the residue by `Contour.residue_eq_of_eventuallyEq_zpow_smul`,
+  -- and both equal the coefficient `iteratedDeriv N h a / N!` of the power series of `h` given by
+  -- `AnalyticAt.hasFPowerSeriesAt`.
   have hh : AnalyticAt ℂ (fun z ↦ (z - a) ^ (k + 1) * ((z - a) ^ N • f z)) a :=
     ((analyticAt_id.sub analyticAt_const).pow _).mul hN
   have hφh : (φ : Germ (𝓝[≠] a) ℂ) = ↑(fun z ↦
