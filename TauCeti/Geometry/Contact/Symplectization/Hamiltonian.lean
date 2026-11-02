@@ -111,12 +111,10 @@ theorem IsContactHamiltonianVectorField.eval₂_mextDerivₗ_symplectization
           ((NormedSpace.fromTangentSpace p.1).symm (mvfderiv I f p.2 (α.reebVectorField p.2)),
             -X p.2)) w =
       mvfderiv (𝓘(ℝ).prod I) (fun q : ℝ × M ↦ Real.exp q.1 * f q.2) p w := by
-  have hneg : α.1 p.2 ![-X p.2] = -f p.2 := by
-    rw [← degreeOneEquiv_apply_apply_vec, map_neg, degreeOneEquiv_apply_apply_vec, hX.apply_eq]
   rw [SmoothForm.eval₂_mextDerivₗ_symplectization, mvfderiv_exp_mul_apply hf,
     ContinuousLinearEquiv.apply_symm_apply, SmoothBundleForm.eval₂_neg_left,
     SmoothBundleForm.eval₂_apply, mextDerivₗ_apply, hX.mextDeriv_apply_eq]
-  simp only [ContinuousLinearEquiv.apply_symm_apply, hneg]
+  simp only [ContinuousLinearEquiv.apply_symm_apply, apply_neg_vec, hX.apply_eq]
   ring
 
 /-- **Hamiltonian vector fields of homogeneous functions on the symplectization.** If `X` is a
@@ -183,16 +181,11 @@ theorem poissonBracket_symplectization_exp_mul {p : ℝ × M} (hf : MDifferentia
           α.contactHamiltonianVectorField g p.2] +
         f p.2 * mvfderiv I g p.2 (α.reebVectorField p.2) -
         g p.2 * mvfderiv I f p.2 (α.reebVectorField p.2)) := by
-  have hneg (k : M → ℝ) : α.1 p.2 ![-α.contactHamiltonianVectorField k p.2] = -k p.2 := by
-    rw [← degreeOneEquiv_apply_apply_vec, map_neg, degreeOneEquiv_apply_apply_vec,
-      hα.apply_contactHamiltonianVectorField]
-  have hdneg (v w : TangentSpace I p.2) :
-      (mextDerivₗ I 1 α).eval₂ p.2 (-v) (-w) = (mextDerivₗ I 1 α).eval₂ p.2 v w := by
-    rw [SmoothBundleForm.eval₂_neg_left, ← neg_one_smul ℝ w, SmoothBundleForm.eval₂_smul_right,
-      neg_one_smul, neg_neg]
   rw [SmoothTwoForm.poissonBracket_def, hα.hamiltonianVectorField_symplectization_exp_mul hf,
     hα.hamiltonianVectorField_symplectization_exp_mul hg, eval₂_mextDerivₗ_symplectization]
-  simp only [ContinuousLinearEquiv.apply_symm_apply, hneg, hdneg]
+  simp only [ContinuousLinearEquiv.apply_symm_apply, apply_neg_vec,
+    hα.apply_contactHamiltonianVectorField, SmoothBundleForm.eval₂_neg_left,
+    SmoothBundleForm.eval₂_neg_right, neg_neg]
   rw [SmoothBundleForm.eval₂_apply, mextDerivₗ_apply]
   ring
 
