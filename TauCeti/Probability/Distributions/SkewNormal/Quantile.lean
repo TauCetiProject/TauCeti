@@ -48,15 +48,12 @@ theorem continuousOn_quantile_skewNormalMeasure (hs : 0 < s) (m α : ℝ) :
 theorem tendsto_quantile_skewNormalMeasure_nhdsGT_zero (hs : 0 < s) (m α : ℝ) :
     Tendsto (fun u ↦ ((skewNormalMeasure m s α).quantile u : EReal))
       (𝓝[>] 0) (𝓝 ⊥) :=
-  Measure.tendsto_quantile_nhdsGT_zero_of_cdf_pos _ fun x ↦
-    (cdf_nonneg _ (x - 1)).trans_lt (strictMono_cdf_skewNormalMeasure hs m α (by linarith))
+  Measure.tendsto_quantile_nhdsGT_zero_of_strictMono_cdf _ (strictMono_cdf_skewNormalMeasure hs m α)
 
 /-- Skew-normal quantiles tend to plus infinity as the level tends to one from below. -/
 theorem tendsto_quantile_skewNormalMeasure_nhdsLT_one (hs : 0 < s) (m α : ℝ) :
     Tendsto (fun u ↦ ((skewNormalMeasure m s α).quantile u : EReal))
       (𝓝[<] 1) (𝓝 ⊤) :=
-  Measure.tendsto_quantile_nhdsLT_one_of_cdf_lt_one _ fun x ↦
-    (strictMono_cdf_skewNormalMeasure hs m α (by linarith : x < x + 1)).trans_le
-      (cdf_le_one _ (x + 1))
+  Measure.tendsto_quantile_nhdsLT_one_of_strictMono_cdf _ (strictMono_cdf_skewNormalMeasure hs m α)
 
 end TauCeti.Probability
