@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.IsomorphismClasses
+public import TauCeti.CategoryTheory.ComposableArrows.Basic
 public import TauCeti.Topology.CategoryTheory.Nerve
 
 /-!
@@ -35,21 +35,6 @@ and fat realization constructed in `TauCeti.Topology.CategoryTheory.Nerve`.
 public noncomputable section
 
 open CategoryTheory Opposite Topology
-
-namespace CategoryTheory.ComposableArrows
-
-variable {C : Type*} [Category C] [IsGroupoid C] {n : ℕ}
-
-/-- All vertices of a composable string in a groupoid represent the same isomorphism class. -/
-@[simp]
-theorem quotient_mk_obj (F : ComposableArrows C n) (i : Fin (n + 1)) :
-    Quotient.mk (isIsomorphicSetoid C) (F.obj i) =
-      Quotient.mk (isIsomorphicSetoid C) (F.obj 0) := by
-  symm
-  exact Quotient.sound (s := isIsomorphicSetoid C)
-    ⟨asIso (F.map (homOfLE (Fin.zero_le i)))⟩
-
-end CategoryTheory.ComposableArrows
 
 namespace TauCeti.fatClassifyingSpace
 
