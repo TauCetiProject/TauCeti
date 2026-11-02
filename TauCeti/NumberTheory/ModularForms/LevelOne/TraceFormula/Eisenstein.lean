@@ -113,15 +113,9 @@ private noncomputable def infinityEval (hn : n ≠ 0) (A : TraceFormulaMatrix n)
     homogeneousSubmodule (Fin 2) R w →ₗ[R] R :=
   evalCusp R w (toGL hn A • ∞) ∘ₗ binaryFormAdjugateRep R w A.1
 
-/-- The cusp `M∞` only depends on the class of `M` modulo sign. -/
-private theorem toGL_neg_smul_infty (hn : n ≠ 0) (A : TraceFormulaMatrix n) :
-    toGL hn (-A) • (∞ : OnePoint ℚ) = toGL hn A • ∞ := by
-  rw [smul_infty_eq_ite, smul_infty_eq_ite]
-  simp [FixedDetMatrices.coe_toGL, neg_div_neg_eq]
-
 private theorem infinityEval_neg (hn : n ≠ 0) (hw : Even w) (A : TraceFormulaMatrix n) :
     infinityEval (R := R) (w := w) hn (-A) = infinityEval hn A := by
-  rw [infinityEval, infinityEval, toGL_neg_smul_infty, TraceFormulaMatrix.val_neg,
+  rw [infinityEval, infinityEval, toGL_neg_smul, TraceFormulaMatrix.val_neg,
     binaryFormAdjugateRep_neg_of_even hw]
 
 /-- The functional `infinityEval` is invariant under left multiplication by `SL(2, ℤ)`. -/
