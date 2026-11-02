@@ -343,15 +343,14 @@ theorem setLIntegral_exp_norm_div_rpow_le (hu : ContDiff ℝ 1 u) (h2u : HasComp
 
 omit [Nontrivial E] in
 /-- **Trudinger's inequality with a bound on the derivative.** Let `n ≥ 2` be the dimension. If
-`u` is `C¹` with compact support inside a measurable set `Ω` and `‖Du‖_{Lⁿ} ≤ A` for some
-`A > 0`, then
+`u` is `C¹` with compact support inside a set `Ω` and `‖Du‖_{Lⁿ} ≤ A` for some `A > 0`, then
 
 `∫_Ω exp ((‖u‖ / (c A)) ^ (n / (n - 1))) ≤ e (nⁿ + 5) μ(Ω)`,
 
 with `c` as in `TauCeti.setLIntegral_exp_norm_div_rpow_le`. Since the bound `A` need not be the
 norm of `Du` itself, a single exponent serves a whole family of functions. -/
 theorem setLIntegral_exp_norm_div_rpow_le_of_eLpNorm_fderiv_le (hu : ContDiff ℝ 1 u)
-    (h2u : HasCompactSupport u) (hΩ : MeasurableSet Ω) (hsupp : tsupport u ⊆ Ω)
+    (h2u : HasCompactSupport u) (hsupp : tsupport u ⊆ Ω)
     (hn : 2 ≤ finrank ℝ E) {A : ℝ} (hA : 0 < A)
     (hDu : eLpNorm (fderiv ℝ u) (finrank ℝ E) μ ≤ ENNReal.ofReal A) :
     ∫⁻ x in Ω, ENNReal.ofReal (Real.exp ((‖u x‖ /
@@ -370,7 +369,7 @@ theorem setLIntegral_exp_norm_div_rpow_le_of_eLpNorm_fderiv_le (hu : ContDiff �
   have hq : 0 ≤ (finrank ℝ E : ℝ) / (finrank ℝ E - 1) := div_nonneg (by linarith) (by linarith)
   have hSA : (eLpNorm (fderiv ℝ u) (finrank ℝ E) μ).toReal ≤ A :=
     ENNReal.toReal_le_of_le_ofReal hA.le hDu
-  refine (setLIntegral_mono' hΩ fun x _ ↦ ?_).trans
+  refine (lintegral_mono fun x ↦ ?_).trans
     (setLIntegral_exp_norm_div_rpow_le hu h2u hsupp hn)
   gcongr ENNReal.ofReal (Real.exp ?_)
   rcases ENNReal.toReal_nonneg.eq_or_lt with hS0 | hSpos
