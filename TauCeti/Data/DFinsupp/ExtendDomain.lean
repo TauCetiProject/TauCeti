@@ -106,9 +106,7 @@ def extendDomainLinearMap [Semiring γ] [∀ i, AddCommMonoid (β i)] [∀ i, Mo
     (Π₀ i : Subtype p, β i) →ₗ[γ] Π₀ i, β i where
   toFun f := extendDomain (β := β) f
   map_add' f g := extendDomain_add f g
-  map_smul' c f := by
-    ext i
-    by_cases h : p i <;> simp [extendDomain_apply, h]
+  map_smul' c f := extendDomain_smul (β := β) c f
 
 /-- The linear extension by zero is `DFinsupp.extendDomain`. -/
 @[simp]

@@ -64,8 +64,6 @@ is `M`, and the odd one vanishes.
 * `TauCeti.normalizedMixedDifferential_single_of_mem_cyclicCochains`,
   `TauCeti.normalizedPeriodicDifferential_single_of_mem_cyclicCochains`: on a cyclic
   normalized cochain the differential is `b`.
-* `TauCeti.normalizedHochschildCochains_self_succ`: normalized cochains of positive degree on
-  the ground ring vanish.
 * `TauCeti.isZero_normalizedPeriodicCohomology_self_one`: the odd periodic cohomology of the
   ground ring vanishes.
 
@@ -156,14 +154,6 @@ theorem normalizedMixedDifferential_apply_succ (φ : Π₀ n, normalizedHochschi
       · simp [show n + 1 + 1 ≠ n by omega]
       simp [h₂, Ne.symm h₁]
 
-omit [IsScalarTower R A A] [SMulCommClass R A A] in
-/-- A cyclic normalized cochain of positive degree is killed by `B`. -/
-private theorem normalizedConnesB_eq_zero_of_mem_cyclicCochains {n : ℕ}
-    {ψ : normalizedHochschildCochains R A M (n + 1)}
-    (hψ : (ψ : MultilinearMap R (fun _ : Fin (n + 2) ↦ A) M) ∈ cyclicCochains R A M (n + 1)) :
-    normalizedConnesB R A M n ψ = 0 :=
-  Subtype.ext ((coe_normalizedConnesB ψ).trans (connesB_eq_zero_of_mem_cyclicCochains hψ))
-
 /-- On a cyclic normalized cochain, placed in its own degree, the differential `b + B` is `b`:
 the `B` term vanishes because `B` kills cyclic cochains. -/
 theorem normalizedMixedDifferential_single_of_mem_cyclicCochains {n : ℕ}
@@ -182,8 +172,7 @@ theorem normalizedMixedDifferential_single_eq_zero_of_mem_cyclicCochains {n : �
     (hb : hochschildCoboundary R A M n ψ = 0) :
     normalizedMixedDifferential R A M (DFinsupp.single n ψ) = 0 := by
   rw [normalizedMixedDifferential_single_of_mem_cyclicCochains hψ,
-    show normalizedHochschildCoboundary R A M n ψ = 0 from
-      Subtype.ext ((coe_normalizedHochschildCoboundary ψ).trans hb), DFinsupp.single_zero]
+    normalizedHochschildCoboundary_eq_zero_iff.2 hb, DFinsupp.single_zero]
 
 end Differential
 
@@ -376,27 +365,11 @@ section GroundRing
 
 variable (R M : Type*) [CommSemiring R] [AddCommMonoid M] [Module R M]
 
-/-- On the ground ring every normalized cochain of positive degree vanishes: it is the product
-cochain of its value on `(1, …, 1)`, and that value is zero. -/
-theorem normalizedHochschildCochains_self_succ (n : ℕ) :
-    normalizedHochschildCochains R R M (n + 1) = ⊥ := by
-  refine eq_bot_iff.2 fun φ hφ ↦ ?_
-  rw [Submodule.mem_bot, ← MultilinearMap.mkPiRing_apply_one_eq_self φ,
-    mem_normalizedHochschildCochains_iff.1 hφ (fun _ ↦ 1) (0 : Fin (n + 1)).succ
-      (Fin.succ_ne_zero _) rfl, MultilinearMap.mkPiRing_zero]
-
-variable {R M} in
-private theorem eq_zero_of_normalizedHochschildCochains_self_succ {n : ℕ}
-    (φ : normalizedHochschildCochains R R M (n + 1)) : φ = 0 :=
-  Subtype.ext ((Submodule.mem_bot R).1 (normalizedHochschildCochains_self_succ R M n ▸ φ.2))
-
 /-- On the ground ring there are no nonzero periodic cochains of odd parity. -/
 instance : Subsingleton (normalizedPeriodicCochains R R M 1) where
   allEq φ ψ := DFinsupp.ext fun
     | ⟨0, h⟩ => absurd h (by decide)
-    | ⟨n + 1, h⟩ => by
-      rw [eq_zero_of_normalizedHochschildCochains_self_succ (n := n) (φ ⟨n + 1, h⟩),
-        eq_zero_of_normalizedHochschildCochains_self_succ (n := n) (ψ ⟨n + 1, h⟩)]
+    | ⟨_ + 1, _⟩ => Subsingleton.elim _ _
 
 /-- On the ground ring a periodic cochain of even parity is its degree-zero cochain, which is
 the product cochain of its value at `1`. -/
@@ -410,10 +383,7 @@ noncomputable def normalizedPeriodicCochainsSelfZeroEquiv :
   left_inv φ := by
     ext ⟨_ | n, hn⟩ : 1
     · exact Subtype.ext (MultilinearMap.mkPiRing_apply_one_eq_self _)
-    · rw [eq_zero_of_normalizedHochschildCochains_self_succ (n := n) (φ ⟨n + 1, hn⟩),
-        eq_zero_of_normalizedHochschildCochains_self_succ (n := n)
-          ((DFinsupp.single ⟨0, Nat.cast_zero⟩ _ : normalizedPeriodicCochains R R M 0)
-            ⟨n + 1, hn⟩)]
+    · exact Subsingleton.elim _ _
   right_inv m := by simp
 
 /-- The isomorphism with `M` evaluates the degree-zero cochain at `1`. -/
