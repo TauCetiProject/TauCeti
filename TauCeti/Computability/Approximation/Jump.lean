@@ -62,10 +62,8 @@ theorem jumpApproximation_eq_zero_iff (Z : Set ℕ) (s e : ℕ) :
 /-- The jump guesses are computable in `Z`, uniformly in the stage and argument. -/
 theorem computableIn₂_jumpApproximation (Z : Set ℕ) :
     ComputableIn₂ {Z.oracle} Z.jumpApproximation := by
-  have hZ : ComputableIn {Z.oracle} (Z.indicator 1 : ℕ → ℕ) :=
-    RecursiveIn.of_eq (RecursiveIn.oracle Z.oracle rfl) fun n => Z.oracle_apply n
   have hσ : ComputableIn₂ {Z.oracle} (fun (_ : ℕ) z => Z.indicator 1 z) :=
-    hZ.comp ComputableIn.snd
+    Z.computableIn_indicator.comp ComputableIn.snd
   have hargs : ComputableIn {Z.oracle} (fun p : ℕ × ℕ =>
       (0, p.1, Denumerable.ofNat Code p.2, p.2)) :=
     ComputableIn.const 0 |>.pair (ComputableIn.fst.pair
@@ -146,8 +144,6 @@ uniformly `Z`-computable approximation to the characteristic function. -/
 theorem turingReducible_jump_iff_exists_converges {Z A : Set ℕ} :
     TuringReducible A.oracle Z.jump.oracle ↔
       ∃ f : ℕ → ℕ → ℕ, ComputableIn₂ {Z.oracle} f ∧ Converges f (A.indicator 1) := by
-  have hA : A.oracle = (fun n => Part.some (A.indicator 1 n)) :=
-    funext (A.oracle_apply)
-  rw [TuringReducible, hA, ← ComputableIn, computableIn_jump_iff_exists_converges]
+  rw [A.turingReducible_iff_computableIn_indicator, computableIn_jump_iff_exists_converges]
 
 end TauCeti.Approximation
