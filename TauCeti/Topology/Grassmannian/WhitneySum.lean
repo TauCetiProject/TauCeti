@@ -71,16 +71,10 @@ theorem range_whitneySum (f : finiteFullRankFrame 𝕜 k a)
     (g : finiteFullRankFrame 𝕜 l b) :
     range (whitneySum f g).1 = interleaveLinearMap 𝕜 𝕜 a b ''
       (range (fun i ↦ (f.1 i, 0)) ∪ range (fun j ↦ (0, g.1 j))) := by
-  ext z
-  constructor
-  · rintro ⟨i, rfl⟩
-    obtain ⟨i, rfl⟩ := finSumFinEquiv.surjective i
-    cases i with
-    | inl i => exact ⟨(f.1 i, 0), Or.inl ⟨i, rfl⟩, by simp⟩
-    | inr i => exact ⟨(0, g.1 i), Or.inr ⟨i, rfl⟩, by simp⟩
-  · rintro ⟨_, (⟨i, rfl⟩ | ⟨i, rfl⟩), rfl⟩
-    · exact ⟨Fin.castAdd l i, by simp⟩
-    · exact ⟨Fin.natAdd k i, by simp⟩
+  dsimp only [whitneySum]
+  rw [← Function.comp_def, range_comp]
+  exact congrArg _ ((finSumFinEquiv.symm.surjective.range_comp _).trans
+    (Set.Sum.elim_range _ _))
 
 /-- Concatenation in the interleaved coordinates depends continuously on both frames. -/
 @[fun_prop] theorem continuous_whitneySum [TopologicalSpace 𝕜] :

@@ -73,26 +73,25 @@ theorem interleaveLinearMap_apply_of_notMem_range (v : (Fin a → M) × (Fin b �
   Function.extend_apply' _ _ _ hi
 
 /-- Both input vectors can be recovered from the interleaved vector. -/
-theorem interleaveLinearMap_injective : Function.Injective (interleaveLinearMap R M a b) := by
-  intro v w h
-  apply Prod.ext
-  · funext i
-    simpa using congrFun h (interleaveIndex a b (.inl i))
-  · funext i
-    simpa using congrFun h (interleaveIndex a b (.inr i))
+theorem interleaveLinearMap_injective : Function.Injective (interleaveLinearMap R M a b) :=
+  (Function.extend_injective (interleaveIndex a b).injective 0).comp
+    (LinearEquiv.sumArrowLequivProdArrow (Fin a) (Fin b) R M).symm.injective
 
 /-- Interleaving is continuous for the coordinate topologies, without assumptions on addition
 or scalar multiplication. -/
 @[fun_prop]
-theorem continuous_interleaveLinearMap [TopologicalSpace R] :
-    Continuous (interleaveLinearMap R R a b) := by
-  have hc : Continuous (fun v : (Fin a → R) × (Fin b → R) ↦ Sum.elim v.1 v.2) :=
-    continuous_pi fun i ↦ by
-      cases i <;> simp only [Sum.elim_inl, Sum.elim_inr] <;> fun_prop
-  apply ((Function.ExtendByZero.continuousLinearMap R
-    (interleaveIndex a b)).continuous.comp hc).congr
-  intro v
-  simp only [Function.comp_apply, Function.ExtendByZero.continuousLinearMap_apply,
-    interleaveLinearMap_apply]
+theorem continuous_interleaveLinearMap [TopologicalSpace M] :
+    Continuous (interleaveLinearMap R M a b) := by
+  classical
+  have hc : Continuous (fun v : (Fin a → M) × (Fin b → M) ↦ Sum.elim v.1 v.2) :=
+    Homeomorph.sumArrowHomeomorphProdArrow.symm.continuous
+  apply continuous_pi
+  intro i
+  by_cases hi : i ∈ Set.range (interleaveIndex a b)
+  · obtain ⟨j, rfl⟩ := hi
+    simpa only [interleaveLinearMap_apply, (interleaveIndex a b).injective.extend_apply]
+      using (continuous_apply j).comp' hc
+  · simpa only [interleaveLinearMap_apply_of_notMem_range _ hi] using
+      (continuous_const : Continuous fun _ : (Fin a → M) × (Fin b → M) ↦ (0 : M))
 
 end TauCeti
