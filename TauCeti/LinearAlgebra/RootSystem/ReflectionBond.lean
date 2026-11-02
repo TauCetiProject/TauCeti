@@ -152,6 +152,26 @@ theorem abs_reflectionBond_smul_smul [LinearOrder R] [P.IsReduced] {β : ι}
     rw [reflectionBond_eq_coroot' hneg (by rwa [reflection_indexNeg_neg]) hne', indexNeg_neg,
       ← coroot'_reflection, coroot'_reflection_self, coroot'_weylGroupToPerm_smul, abs_neg]
 
+/-- Scaling both weights scales their reflection bond. The zero scalar is allowed. -/
+theorem reflectionBond_smul [IsDomain R] [P.IsReduced] (c : R) (x y : M) :
+    P.reflectionBond b (c • x) (c • y) = c * P.reflectionBond b x y := by
+  have : Module.IsReflexive R M := .of_isPerfPair P.toLinearMap
+  rcases eq_or_ne c 0 with rfl | hc
+  · simp
+  rcases eq_or_ne y x with rfl | hyx
+  · simp
+  have hinj := smul_right_injective (M := M) hc
+  by_cases h : ∃ β, b.IsPos β ∧ P.reflection β x = y
+  · obtain ⟨β, hβ, hxy⟩ := h
+    have hscaled : P.reflection β (c • x) = c • y := by
+      rw [map_smul, hxy]
+    rw [reflectionBond_eq_coroot' hβ hscaled (fun h ↦ hyx (hinj h)),
+      reflectionBond_eq_coroot' hβ hxy hyx, map_smul, smul_eq_mul]
+  · rw [reflectionBond_eq_zero_of_not_exists h, mul_zero,
+      reflectionBond_eq_zero_of_not_exists]
+    rintro ⟨β, hβ, hxy⟩
+    exact h ⟨β, hβ, hinj (by simpa only [map_smul] using hxy)⟩
+
 /-- **Translating by a weight on every wall leaves bonds unchanged.** If every coroot vanishes on
 `χ`, as for a central weight, every reflection fixes `χ`, so `s_β (x + χ) = y + χ` exactly when
 `s_β x = y`, with the same pairing `⟨y + χ, β^∨⟩ = ⟨y, β^∨⟩`. -/
