@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.PDE.HeatKernel.DuhamelPotential.Basic
 import TauCeti.Analysis.PDE.HeatKernel.Derivatives
-import TauCeti.Analysis.PDE.HeatKernel.HeatEquation
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Topology.MetricSpace.Holder
@@ -18,10 +17,12 @@ import TauCeti.Topology.MetricSpace.Holder
 For a forcing term `f : ℝ → E → F` on a finite-dimensional real inner product space `E`, the
 Duhamel potential `w(t, x) = ∫₀ᵗ (K_{t-s} ⋆ f(s, ·))(x) ds` (`TauCeti.heatDuhamelPotential`) has
 a Hessian `D² w(t, ·)` that is `α`-Hölder in space with constant `C H`
-(`TauCeti.exists_holderWith_iteratedFDeriv_two_heatDuhamelPotential`) whenever the time slices
-`f(s, ·)` are `α`-Hölder with constant `H`, `0 < α < 1`. This file proves the matching estimate in
-time: for every `x`, the map `t ↦ D² w(t, x)` is `α/2`-Hölder on `[0, T]` with constant `C H`,
-where `C` depends only on `α` and the dimension. Neither `T` nor the bound on `f` enters the
+(`TauCeti.exists_holderWith_iteratedFDeriv_two_heatDuhamelPotential`) whenever `f` is jointly
+strongly measurable and essentially bounded on `(0, t) × E` and the time slices `f(s, ·)` are
+`α`-Hölder with constant `H` for almost every `s`, `0 < α < 1`. This file proves the matching
+estimate in time: under the same hypotheses on `(0, T) × E`, for every `x`, the map
+`t ↦ D² w(t, x)` is `α/2`-Hölder on `[0, T]` with constant `C H`, where `C` depends only on `α`
+and the dimension. Neither `T` nor the bound on `f` enters the
 constant. Together, the two estimates say that `D² w` is parabolically `α`-Hölder.
 
 ## The argument
@@ -43,7 +44,7 @@ distance) bounds it by `O(H (√d)^α) = O(H d^(α/2))`; this step uses `α < 1`
 ## Main declarations
 
 * `TauCeti.exists_holderOnWith_iteratedFDeriv_two_heatDuhamelPotential_Icc`: for `0 < α < 1`,
-  `t ↦ D² w(t, x)` is `α/2`-Hölder on `[0, T]` with constant `C H`.
+  `t ↦ D² w(t, x)` is `α/2`-Hölder on `[0, T]` with constant `C H` under the hypotheses above.
 
 ## References
 
