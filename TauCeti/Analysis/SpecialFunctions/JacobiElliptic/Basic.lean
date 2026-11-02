@@ -362,7 +362,8 @@ theorem jacobiSn_eq_one_iff {k : ℝ} (hk : k ^ 2 < 1) {u : ℝ} :
   refine exists_congr fun n ↦ ?_
   have h := legendreF_add_int_mul_pi hk (π / 2) (2 * n)
   push_cast at h
-  rw [eq_comm, jacobiAm_eq_iff hk, show π / 2 + n * (2 * π) = π / 2 + 2 * n * π by ring, h,
+  have hn : π / 2 + n * (2 * π) = π / 2 + 2 * n * π := by ring
+  rw [eq_comm, jacobiAm_eq_iff hk, hn, h,
     ← legendreK_def]
   constructor <;> rintro rfl <;> ring
 

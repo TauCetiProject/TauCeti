@@ -43,9 +43,9 @@ public section
 
 noncomputable section
 
-namespace TauCeti.Real
+namespace Real
 
-open _root_.Real Filter Set Topology
+open Filter Set Topology TauCeti TauCeti.Real
 
 /-! ### The solution and its period -/
 
@@ -67,10 +67,6 @@ theorem pendulumAngle_def (ω θ₀ t : ℝ) :
 theorem pendulumPeriod_def (ω θ₀ : ℝ) : pendulumPeriod ω θ₀ = 4 * legendreK (sin (θ₀ / 2)) / ω :=
   (rfl)
 
-/-- For `|θ₀| < π` the modulus `sin (θ₀ / 2)` of the pendulum satisfies `k ^ 2 < 1`. -/
-private theorem sin_half_sq_lt_one {θ₀ : ℝ} (hθ₀ : |θ₀| < π) : sin (θ₀ / 2) ^ 2 < 1 :=
-  sin_sq_lt_one_of_abs_lt (by rw [abs_div, abs_two]; linarith)
-
 /-- The classical form of the solution (DLMF 22.19.2): `sin (θ(t) / 2) = k sn(ωt + K, k)`. -/
 theorem sin_half_pendulumAngle (ω θ₀ t : ℝ) :
     sin (pendulumAngle ω θ₀ t / 2) =
@@ -83,7 +79,7 @@ theorem sin_half_pendulumAngle (ω θ₀ t : ℝ) :
     sin_arcsin (neg_le_of_abs_le h) (le_of_abs_le h)]
 
 theorem pendulumPeriod_pos {ω θ₀ : ℝ} (hω : 0 < ω) (hθ₀ : |θ₀| < π) : 0 < pendulumPeriod ω θ₀ := by
-  have := legendreK_pos (sin_half_sq_lt_one hθ₀)
+  have := legendreK_pos (sin_half_sq_lt_one_of_abs_lt hθ₀)
   rw [pendulumPeriod_def]
   positivity
 
@@ -112,10 +108,8 @@ private theorem hasDerivAt_two_mul_arcsin_mul_jacobiSn {k : ℝ} (hk : k ^ 2 < 1
 theorem hasDerivAt_pendulumAngle {θ₀ : ℝ} (hθ₀ : |θ₀| < π) (ω t : ℝ) :
     HasDerivAt (pendulumAngle ω θ₀)
       (2 * sin (θ₀ / 2) * ω * jacobiCn (sin (θ₀ / 2)) (ω * t + legendreK (sin (θ₀ / 2)))) t := by
-  rw [show pendulumAngle ω θ₀ = fun t ↦ 2 * arcsin
-      (sin (θ₀ / 2) * jacobiSn (sin (θ₀ / 2)) (ω * t + legendreK (sin (θ₀ / 2)))) from
-    funext (pendulumAngle_def ω θ₀)]
-  exact hasDerivAt_two_mul_arcsin_mul_jacobiSn (sin_half_sq_lt_one hθ₀) ω t
+  exact (hasDerivAt_two_mul_arcsin_mul_jacobiSn (sin_half_sq_lt_one_of_abs_lt hθ₀) ω t
+    ).congr_of_eventuallyEq (.of_forall (pendulumAngle_def ω θ₀))
 
 theorem deriv_pendulumAngle {θ₀ : ℝ} (hθ₀ : |θ₀| < π) (ω : ℝ) :
     deriv (pendulumAngle ω θ₀) = fun t ↦
@@ -125,7 +119,7 @@ theorem deriv_pendulumAngle {θ₀ : ℝ} (hθ₀ : |θ₀| < π) (ω : ℝ) :
 /-- **The pendulum equation** `θ'' = -ω² sin θ`, in the form `HasDerivAt θ′ (-ω² sin θ(t)) t`. -/
 theorem hasDerivAt_deriv_pendulumAngle {θ₀ : ℝ} (hθ₀ : |θ₀| < π) (ω t : ℝ) :
     HasDerivAt (deriv (pendulumAngle ω θ₀)) (-ω ^ 2 * sin (pendulumAngle ω θ₀ t)) t := by
-  have hk := sin_half_sq_lt_one hθ₀
+  have hk := sin_half_sq_lt_one_of_abs_lt hθ₀
   have hu : HasDerivAt (fun t ↦ ω * t + legendreK (sin (θ₀ / 2))) ω t := by
     simpa using ((hasDerivAt_id t).const_mul ω).add_const (legendreK (sin (θ₀ / 2)))
   rw [deriv_pendulumAngle hθ₀]
@@ -157,7 +151,8 @@ theorem contDiff_pendulumAngle {θ₀ : ℝ} (hθ₀ : |θ₀| < π) (ω : ℝ) 
 @[simp]
 theorem pendulumAngle_zero {θ₀ : ℝ} (hθ₀ : |θ₀| < π) (ω : ℝ) : pendulumAngle ω θ₀ 0 = θ₀ := by
   have h := abs_lt.1 hθ₀
-  rw [pendulumAngle_def, mul_zero, zero_add, jacobiSn_legendreK (sin_half_sq_lt_one hθ₀), mul_one,
+  rw [pendulumAngle_def, mul_zero, zero_add,
+    jacobiSn_legendreK (sin_half_sq_lt_one_of_abs_lt hθ₀), mul_one,
     arcsin_sin (by linarith) (by linarith)]
   ring
 
@@ -166,7 +161,7 @@ theorem pendulumAngle_zero {θ₀ : ℝ} (hθ₀ : |θ₀| < π) (ω : ℝ) : pe
 theorem deriv_pendulumAngle_zero {θ₀ : ℝ} (hθ₀ : |θ₀| < π) (ω : ℝ) :
     deriv (pendulumAngle ω θ₀) 0 = 0 := by
   simp only [deriv_pendulumAngle hθ₀, mul_zero, zero_add,
-    jacobiCn_legendreK (sin_half_sq_lt_one hθ₀)]
+    jacobiCn_legendreK (sin_half_sq_lt_one_of_abs_lt hθ₀)]
 
 /-- **Uniqueness of the pendulum motion**: every solution `(θ, ψ)` of the first-order system
 `θ′ = ψ`, `ψ′ = -ω² sin θ` with `θ(0) = θ₀` and `ψ(0) = 0` has `θ = pendulumAngle ω θ₀`. -/
@@ -194,12 +189,12 @@ theorem eq_pendulumAngle_of_hasDerivAt {ω θ₀ : ℝ} (hθ₀ : |θ₀| < π) 
 theorem pendulumAngle_periodic {ω θ₀ : ℝ} (hω : ω ≠ 0) (hθ₀ : |θ₀| < π) :
     Function.Periodic (pendulumAngle ω θ₀) (pendulumPeriod ω θ₀) := fun t ↦ by
   rw [pendulumAngle_def, pendulumAngle_def, pendulumPeriod_def, mul_add,
-    mul_div_cancel₀ _ hω, add_right_comm, jacobiSn_periodic (sin_half_sq_lt_one hθ₀)]
+    mul_div_cancel₀ _ hω, add_right_comm, jacobiSn_periodic (sin_half_sq_lt_one_of_abs_lt hθ₀)]
 
 /-- For `θ₀ ≠ 0` the least positive period of the pendulum is `4 K(sin (θ₀ / 2)) / ω`. -/
 theorem isLeast_pendulumPeriod {ω θ₀ : ℝ} (hω : 0 < ω) (hθ₀ : |θ₀| < π) (hθ₀' : θ₀ ≠ 0) :
     IsLeast {p | 0 < p ∧ Function.Periodic (pendulumAngle ω θ₀) p} (pendulumPeriod ω θ₀) := by
-  have hk := sin_half_sq_lt_one hθ₀
+  have hk := sin_half_sq_lt_one_of_abs_lt hθ₀
   have hk0 : sin (θ₀ / 2) ≠ 0 := by
     have h := abs_lt.1 hθ₀
     rw [Ne, sin_eq_zero_iff_of_lt_of_lt (by linarith) (by linarith)]
@@ -224,7 +219,8 @@ theorem tendsto_pendulumPeriod_nhds_zero (ω : ℝ) :
     continuousOn_legendreK.continuousAt
       (isOpen_lt (continuous_pow 2) continuous_const |>.mem_nhds (by norm_num))
   have h := ((hK.tendsto.comp hk).const_mul 4).div_const ω
-  rw [legendreK_zero, show 4 * (π / 2) = 2 * π by ring] at h
+  have h4 : 4 * (π / 2) = 2 * π := by ring
+  rw [legendreK_zero, h4] at h
   exact Tendsto.congr (fun θ₀ ↦ (pendulumPeriod_def ω θ₀).symm) h
 
 /-- As the amplitude tends to `π`, the pendulum approaches its unstable upright equilibrium and
@@ -242,4 +238,4 @@ theorem tendsto_pendulumPeriod_nhdsLT_pi {ω : ℝ} (hω : 0 < ω) :
   exact Tendsto.congr (fun θ₀ ↦ (pendulumPeriod_def ω θ₀).symm)
     (((tendsto_legendreK_nhdsLT_one.comp hk).const_mul_atTop four_pos).atTop_div_const hω)
 
-end TauCeti.Real
+end Real
