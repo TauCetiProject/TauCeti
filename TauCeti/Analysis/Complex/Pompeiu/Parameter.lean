@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Pompeiu.Basic
 public import TauCeti.Analysis.Complex.Wirtinger.Holomorphic
 import Mathlib.MeasureTheory.Measure.Haar.Unique
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Complex.CauchyKernel
 
 /-!
@@ -15,36 +16,30 @@ import TauCeti.Analysis.Complex.CauchyKernel
 
 For a compactly supported `C¹` map `f : ℂ → F` into a complex Banach space, the Cauchy transform
 `T f w = π⁻¹ ∫ (w - z)⁻¹ • f z` solves the inhomogeneous Cauchy–Riemann equation
-`\bar∂ (T f) = f` on the whole plane (`TauCeti.Analysis.Complex.Pompeiu.Basic`). This file states
-that equation with the conjugate Wirtinger derivative and studies the transform when `f` depends
+`\bar∂ (T f) = f` on the whole plane and is holomorphic off the support of `f`
+(`TauCeti.Analysis.Complex.Pompeiu.Basic`). This file studies the transform when `f` depends
 on parameters, as needed to solve `\bar∂ u = f` with smooth or holomorphic dependence on
-parameters. Normalizing constants play no role in regularity, so most statements are about the
+parameters. Normalizing constants play no role in regularity, so the statements are about the
 unnormalized integral `∫ (w - z)⁻¹ • f z`.
 
-* `\bar∂_w ∫ (w - z)⁻¹ • f z = π f w`. Consequently the transform is complex differentiable at
-  every point where `f` vanishes, and holomorphic off the support of `f`.
 * Let `g : P → ℂ → F` be jointly `C^n` on `s ×ˢ univ`, for an open set `s` of a real normed space
   `P`, with `g p z = 0` for `p ∈ s` and `z` outside a fixed compact set `k`. The transform
   `(p, w) ↦ ∫ (w - z)⁻¹ • g p z` is jointly `C^n` on `s ×ˢ univ`: this is smoothness of the
   convolution of the locally integrable Cauchy kernel with a compactly supported family, after the
   substitution `ζ = w - z`. Its derivative in `p` is the transform of the derivative of `g` in `p`,
-  so every parameter derivative commutes with the transform. For every `p ∈ s`, the transform
-  of `g p` is holomorphic off `k`, a region that does not depend on `p`.
+  so every parameter derivative commutes with the transform. By
+  `TauCeti.differentiableOn_integral_sub_inv_smul_compl`, for every `p ∈ s` the transform of
+  `g p` is holomorphic off `k`, a region that does not depend on `p`.
 * When the parameter space `Q` is complex, the conjugate Wirtinger derivative in `q` commutes with
   the transform. In particular, if `g q z` is holomorphic in `q` for every `z`, so is the
   transform of `g q` at every point `w`.
 
 ## Main results
 
-* `TauCeti.conjWirtingerDeriv_integral_sub_inv_smul_apply_one`: `\bar∂ (∫ (w - z)⁻¹ • f z) = π f`.
-* `TauCeti.differentiableAt_integral_sub_inv_smul_of_eq_zero` and
-  `TauCeti.differentiableOn_integral_sub_inv_smul_compl_tsupport`: holomorphy where `f` vanishes.
 * `TauCeti.contDiffOn_integral_sub_inv_smul_with_param`: joint smoothness in the parameter and the
   point.
 * `TauCeti.hasFDerivAt_integral_sub_inv_smul_with_param`: parameter derivatives commute with the
   transform.
-* `TauCeti.differentiableOn_integral_sub_inv_smul_compl_with_param`: holomorphy off the common
-  support `k`.
 * `TauCeti.conjWirtingerDeriv_integral_sub_inv_smul_with_param` and
   `TauCeti.differentiableAt_integral_sub_inv_smul_with_param`: the conjugate Wirtinger derivative
   in a complex parameter commutes with the transform, which preserves holomorphy in parameters.
@@ -66,46 +61,6 @@ open scoped Real Topology Convolution
 namespace TauCeti
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
-
-/-! ### The inhomogeneous Cauchy–Riemann equation -/
-
-section Equation
-
-variable [CompleteSpace F] {f : ℂ → F}
-
-/-- **The Cauchy transform solves `\bar∂ u = f`.** For a compactly supported `C¹` map `f`, the
-conjugate Wirtinger derivative of `w ↦ ∫ (w - z)⁻¹ • f z` is `π • f`, so the Cauchy transform
-`π⁻¹ ∫ (w - z)⁻¹ • f z` satisfies `\bar∂ u = f`. -/
-theorem conjWirtingerDeriv_integral_sub_inv_smul_apply_one (hc : HasCompactSupport f)
-    (hf : ContDiff ℝ 1 f) (w : ℂ) :
-    conjWirtingerDeriv (fun w ↦ ∫ z, (w - z)⁻¹ • f z) w 1 = (π : ℂ) • f w := by
-  have hT := hc.hasFDerivAt_integral_sub_inv_smul hf w
-  have h := hc.fderiv_apply_one_add_I_smul_apply_I_two_pi_inv_smul_integral_sub_inv_smul hf w
-  have hT' : HasFDerivAt (fun w ↦ (2 * π : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • f z)
-      ((2 * π : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • fderiv ℝ f z) w := hT.const_smul _
-  rw [hT'.fderiv] at h
-  rw [conjWirtingerDeriv_apply, hT.fderiv, smul_eq_mul, mul_one, ← h]
-  simp only [FunLike.coe_smul, Pi.smul_apply]
-  match_scalars <;> field_simp
-
-/-- The Cauchy transform of a compactly supported `C¹` map `f` is complex differentiable at every
-point where `f` vanishes. -/
-theorem differentiableAt_integral_sub_inv_smul_of_eq_zero (hc : HasCompactSupport f)
-    (hf : ContDiff ℝ 1 f) {w : ℂ} (hw : f w = 0) :
-    DifferentiableAt ℂ (fun w ↦ ∫ z, (w - z)⁻¹ • f z) w := by
-  rw [differentiableAt_iff_conjWirtingerDeriv_apply_one_eq_zero
-    (hc.hasFDerivAt_integral_sub_inv_smul hf w).differentiableAt,
-    conjWirtingerDeriv_integral_sub_inv_smul_apply_one hc hf, hw, smul_zero]
-
-/-- The Cauchy transform of a compactly supported `C¹` map `f` is holomorphic off the support
-of `f`. -/
-theorem differentiableOn_integral_sub_inv_smul_compl_tsupport (hc : HasCompactSupport f)
-    (hf : ContDiff ℝ 1 f) :
-    DifferentiableOn ℂ (fun w ↦ ∫ z, (w - z)⁻¹ • f z) (tsupport f)ᶜ := fun _ hw ↦
-  (differentiableAt_integral_sub_inv_smul_of_eq_zero hc hf
-    (image_eq_zero_of_notMem_tsupport hw)).differentiableWithinAt
-
-end Equation
 
 /-! ### Smooth dependence on parameters -/
 
@@ -141,27 +96,21 @@ private theorem integrable_sub_inv_smul_fderiv_uncurry (hs : IsOpen s) (hk : IsC
     filter_upwards [(hs.prod hk.isClosed.isOpen_compl).mem_nhds (mk_mem_prod hp hz)] with q hq
     exact hgs q.1 q.2 hq.1 hq.2
 
-/-- The derivative of the slice `p ↦ g p z` is the derivative of `g` restricted to `P × {0}`. -/
-private theorem fderiv_slice_eq (hs : IsOpen s) (hg : ContDiffOn ℝ 1 ↿g (s ×ˢ univ)) {p : P}
-    (hp : p ∈ s) (z : ℂ) :
-    fderiv ℝ (fun p ↦ g p z) p = (fderiv ℝ ↿g (p, z)).comp (ContinuousLinearMap.inl ℝ P ℂ) := by
-  have h := ((hg.differentiableOn one_ne_zero).differentiableAt
-    ((hs.prod isOpen_univ).mem_nhds (mk_mem_prod hp (mem_univ z)))).hasFDerivAt.comp p
-      (hasFDerivAt_prodMk_left (𝕜 := ℝ) p z)
-  -- `h` is about `↿g ∘ fun p ↦ (p, z)`, which unfolds to `fun p ↦ g p z`.
-  exact h.fderiv
-
 /-- The derivative of `g` in the parameter, multiplied by the Cauchy kernel at `w`, is integrable
 in the space variable, for `p ∈ s`. -/
 private theorem integrable_sub_inv_smul_fderiv_slice (hs : IsOpen s) (hk : IsCompact k)
     (hgs : ∀ p x, p ∈ s → x ∉ k → g p x = 0) (hg : ContDiffOn ℝ 1 ↿g (s ×ˢ univ)) {p : P}
     (hp : p ∈ s) (w : ℂ) :
     Integrable fun z ↦ (w - z)⁻¹ • fderiv ℝ (fun p ↦ g p z) p := by
+  have hslice (z : ℂ) : fderiv ℝ (fun p ↦ g p z) p =
+      (fderiv ℝ ↿g (p, z)).comp (ContinuousLinearMap.inl ℝ P ℂ) :=
+    fderiv_slice_left ((hg.differentiableOn one_ne_zero).differentiableAt
+      ((hs.prod isOpen_univ).mem_nhds (mk_mem_prod hp (mem_univ z))))
   have h := ((ContinuousLinearMap.compL ℝ P (P × ℂ) F).flip
     (ContinuousLinearMap.inl ℝ P ℂ)).integrable_comp
       (integrable_sub_inv_smul_fderiv_uncurry hs hk hgs hg hp w)
   simpa only [ContinuousLinearMap.flip_apply, ContinuousLinearMap.compL_apply,
-    ContinuousLinearMap.smul_comp, ← fderiv_slice_eq hs hg hp] using h
+    ContinuousLinearMap.smul_comp, ← hslice] using h
 
 /-- **Parameter derivatives commute with the Cauchy transform.** Under the hypotheses of
 `TauCeti.contDiffOn_integral_sub_inv_smul_with_param` with `n = 1`, the derivative in `p ∈ s` of
@@ -186,19 +135,11 @@ theorem hasFDerivAt_integral_sub_inv_smul_with_param [CompleteSpace F] (hs : IsO
   have hL (t : ℂ) : ContinuousLinearMap.precompR (P × ℂ) (ContinuousLinearMap.lsmul ℝ ℂ)
       (w - t)⁻¹ (fderiv ℝ ↿g (p, t)) = (w - t)⁻¹ • fderiv ℝ ↿g (p, t) := by
     ext v <;> simp
-  simp only [convolution_eq_swap, hL, ← hR, fderiv_slice_eq hs hg hp, ContinuousLinearMap.smul_comp]
-
-/-- **Holomorphy off the common support.** Under the hypotheses of
-`TauCeti.contDiffOn_integral_sub_inv_smul_with_param` with `n = 1`, for every `p ∈ s` the Cauchy
-transform of `g p` is holomorphic on the complement of `k`, a region independent of `p`. -/
-theorem differentiableOn_integral_sub_inv_smul_compl_with_param [CompleteSpace F]
-    (hk : IsCompact k) (hgs : ∀ p x, p ∈ s → x ∉ k → g p x = 0)
-    (hg : ContDiffOn ℝ 1 ↿g (s ×ˢ univ)) {p : P} (hp : p ∈ s) :
-    DifferentiableOn ℂ (fun w ↦ ∫ z, (w - z)⁻¹ • g p z) kᶜ := fun w hw ↦
-  (differentiableAt_integral_sub_inv_smul_of_eq_zero
-    (HasCompactSupport.intro hk fun z hz ↦ hgs p z hp hz)
-    (contDiffOn_univ.1 (hg.comp (contDiff_const.prodMk contDiff_id).contDiffOn
-      fun z _ ↦ ⟨hp, mem_univ z⟩)) (hgs p w hp hw)).differentiableWithinAt
+  have hslice (z : ℂ) : fderiv ℝ (fun p ↦ g p z) p =
+      (fderiv ℝ ↿g (p, z)).comp (ContinuousLinearMap.inl ℝ P ℂ) :=
+    fderiv_slice_left ((hg.differentiableOn one_ne_zero).differentiableAt
+      ((hs.prod isOpen_univ).mem_nhds (mk_mem_prod hp (mem_univ z))))
+  simp only [convolution_eq_swap, hL, ← hR, hslice, ContinuousLinearMap.smul_comp]
 
 end Parameter
 
