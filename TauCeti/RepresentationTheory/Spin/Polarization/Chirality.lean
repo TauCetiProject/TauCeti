@@ -8,7 +8,7 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Chirality
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Complex
 public import TauCeti.RepresentationTheory.Spin.HalfSpin.Basic
-public import TauCeti.RepresentationTheory.Spin.Polarization.Fock
+public import TauCeti.RepresentationTheory.Spin.Polarization.Fock.Basic
 -- Private: the involution eigenspaces, orthonormal-basis orthogonality, the parity of the
 -- dimension, list products of endomorphisms and the half-spin dimensions are used only inside
 -- proofs.

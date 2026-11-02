@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
+public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import Mathlib.Algebra.Polynomial.Degree.Defs
 public import Mathlib.Algebra.Polynomial.Reverse
 import Mathlib.Tactic.ComputeDegree
@@ -26,6 +27,9 @@ reciprocal variable `X ^ (∑ j, e j) * det A (1 / X)`, gives the determinant of
 `j`-th column is reflected at `e j` (`Matrix.reflect_det_sum_eq_of_natDegree_le`). For instance,
 when all entries have degree at most one, `det (X • Bᵀ + B)` is its own reflection at the
 dimension, being the determinant of the transpose (`Matrix.reflect_det_X_smul_transpose_add`).
+
+Evaluating a polynomial in a matrix commutes with applying a ring homomorphism to the coefficients
+and to the entries (`Matrix.aeval_map`).
 -/
 
 public section
@@ -34,7 +38,20 @@ namespace Matrix
 
 open Polynomial
 
-variable {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R]
+variable {n R : Type*} [Fintype n] [DecidableEq n]
+
+/-- Evaluating a polynomial in a matrix commutes with applying a ring homomorphism to the
+coefficients of the polynomial and to the entries of the matrix. -/
+@[simp]
+theorem aeval_map {R S : Type*} [CommSemiring R] [CommSemiring S] (A : Matrix n n R)
+    (φ : R →+* S) (f : R[X]) :
+    aeval (A.map φ) (f.map φ) = (aeval A f).map φ := by
+  refine (map_aeval_eq_aeval_map (S := Matrix n n R) (U := Matrix n n S) (φ := φ)
+    (ψ := φ.mapMatrix) (RingHom.ext fun r ↦ ?_) f A).symm
+  ext i j
+  by_cases h : i = j <;> simp [algebraMap_matrix_apply, h]
+
+variable [CommRing R]
 
 /-- If the `j`-th column of a polynomial matrix `A` has degree at most `e j`, then the coefficient
 of `det A` in degree `∑ j, e j` is the determinant of the matrix of coefficients of the entries

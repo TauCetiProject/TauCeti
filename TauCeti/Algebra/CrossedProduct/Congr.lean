@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.CrossedProduct.Basic
+public import TauCeti.Algebra.CrossedProduct.RingCongr
 
 /-!
 # Transport of crossed products along an algebra equivalence
@@ -19,8 +19,8 @@ In particular, this transports a crossed-product presentation to an isomorphic s
 The coefficient and basis formulas retain the specified algebra equivalence, rather than merely
 asserting the existence of an isomorphism of algebras.
 
-The construction uses Mathlib's `AlgEquiv.autCongr` and `Finsupp.lcongr`, and Tau Ceti's
-crossed-product universal property `CrossedProduct.lift` and basis.
+The construction specializes `CrossedProduct.comapRingEquiv` using Mathlib's
+`AlgEquiv.autCongr` and the scalar compatibility of the coefficient algebra equivalence.
 
 ## References
 
@@ -40,65 +40,72 @@ variable {K : Type u} [CommSemiring K] {L : Type v} [CommRing L] [Algebra K L]
   {M : Type w} [CommRing M] [Algebra K M]
   (c : TauCeti.TwoCocycle K L) (d : TauCeti.TwoCocycle K M) (e : L ≃ₐ[K] M)
 
-private def congrLinearEquiv : CrossedProduct c ≃ₗ[K] CrossedProduct d :=
-  ((basis c).repr.restrictScalars K).trans
-    ((Finsupp.lcongr e.autCongr.toEquiv e.toLinearEquiv).trans
-      ((basis d).repr.symm.restrictScalars K))
-
-private theorem congrLinearEquiv_smul_basis (σ : L ≃ₐ[K] L) (x : L) :
-    congrLinearEquiv c d e (x • basis c σ) = e x • basis d (e.autCongr σ) := by
-  simp [congrLinearEquiv, Finsupp.smul_single, smul_eq_mul]
-
 variable (hc : ∀ σ τ, Units.map e.toMonoidHom (c.toFun σ τ) =
   d.toFun (e.autCongr σ) (e.autCongr τ))
 
-private def congrHom : CrossedProduct c →ₐ[K] CrossedProduct d :=
-  lift ((inc d).comp e.toAlgHom) (fun σ ↦ basis d (e.autCongr σ))
-    (fun σ x ↦ by
-      simp only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, basis_mul_inc,
-        AlgEquiv.autCongr_apply, AlgEquiv.trans_apply, AlgEquiv.symm_apply_apply])
-    (fun σ τ ↦ by
-      have h : e (c.toFun σ τ : L) = (d.toFun (e.autCongr σ) (e.autCongr τ) : M) :=
-        congrArg Units.val (hc σ τ)
-      simp only [basis_mul_basis, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, h, map_mul])
-    (by
-      have h : e (c.toFun 1 1 : L) = (d.toFun 1 1 : M) := by
-        have h : e (c.toFun 1 1 : L) = (d.toFun (e.autCongr 1) (e.autCongr 1) : M) :=
-          congrArg Units.val (hc 1 1)
-        simpa only [map_one] using h
-      simp only [map_one, basis_one, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, h])
+private theorem autCongr_symm_compat (g : M ≃ₐ[K] M) (x : L) :
+    e (e.autCongr.symm g x) = g (e x) := by
+  simp [AlgEquiv.autCongr_symm, AlgEquiv.autCongr_apply]
 
-private theorem coe_congrHom : ⇑(congrHom c d e hc) = congrLinearEquiv c d e := by
-  funext a
-  induction a using induction_on with
-  | zero => simp
-  | add a b ha hb => simp only [map_add, ha, hb]
-  | smul_basis σ x =>
-    rw [congrHom, lift_smul_basis, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
-      congrLinearEquiv_smul_basis, smul_def]
+include hc in
+private theorem congr_cocycle_eq : d = c.comap e.autCongr.symm e.toRingEquiv
+    (autCongr_symm_compat e) := by
+  ext g h
+  have hgh := hc (e.autCongr.symm g) (e.autCongr.symm h)
+  rw [MulEquiv.apply_symm_apply, MulEquiv.apply_symm_apply] at hgh
+  simpa [TwoCocycle.comap_toFun, AlgEquiv.toMulEquiv, AlgEquiv.toEquiv_eq_coe] using
+    (congrArg Units.val hgh).symm
+
+-- Isolate equality transport and its computations: after equality elimination the map is
+-- the identity, so basis vectors, embedded coefficients and coordinates are unchanged.
+private def cocycleEqEquiv {c d : TwoCocycle K M} (h : c = d) :
+    CrossedProduct c ≃ₐ[K] CrossedProduct d :=
+  h ▸ AlgEquiv.refl
+
+@[simp]
+private theorem cocycleEqEquiv_basis {c d : TwoCocycle K M} (h : c = d)
+    (σ : M ≃ₐ[K] M) : cocycleEqEquiv h (basis c σ) = basis d σ := by
+  subst d
+  rfl
+
+@[simp]
+private theorem cocycleEqEquiv_inc {c d : TwoCocycle K M} (h : c = d) (x : M) :
+    cocycleEqEquiv h (inc c x) = inc d x := by
+  subst d
+  rfl
+
+@[simp]
+private theorem repr_cocycleEqEquiv {c d : TwoCocycle K M} (h : c = d)
+    (a : CrossedProduct c) (σ : M ≃ₐ[K] M) :
+    (basis d).repr (cocycleEqEquiv h a) σ = (basis c).repr a σ := by
+  subst d
+  rfl
 
 /-- Transport a crossed product along an equivalence of its coefficient algebras and the
 corresponding equality of cocycles. The coefficient of `u_σ` is mapped by `e`, and its index is
 conjugated by `e`. -/
 def congr : CrossedProduct c ≃ₐ[K] CrossedProduct d :=
-  AlgEquiv.ofBijective (congrHom c d e hc) (by
-    rw [coe_congrHom]
-    exact (congrLinearEquiv c d e).bijective)
-
-private theorem coe_congr : ⇑(congr c d e hc) = congrLinearEquiv c d e := by
-  rw [congr, AlgEquiv.coe_ofBijective, coe_congrHom]
+  let f := comapRingEquiv c e.toRingEquiv e.autCongr.symm (autCongr_symm_compat e)
+  (AlgEquiv.ofRingEquiv (f := f.symm) (by
+    intro k
+    apply f.injective
+    simpa only [RingEquiv.apply_symm_apply, RingHom.id_apply] using
+      (comapRingEquiv_algebraMap c e.toRingEquiv e.autCongr.symm
+        (autCongr_symm_compat e) (RingHom.id K) e.commutes k).symm)).trans
+    (cocycleEqEquiv (congr_cocycle_eq c d e hc).symm)
 
 /-- The transport conjugates the index of a basis element. -/
 @[simp]
 theorem congr_basis (σ : L ≃ₐ[K] L) :
     congr c d e hc (basis c σ) = basis d (e.autCongr σ) := by
-  simp only [congr, AlgEquiv.ofBijective_apply, congrHom, lift_basis]
+  simp only [congr, AlgEquiv.trans_apply, AlgEquiv.ofRingEquiv_apply,
+    comapRingEquiv_symm_basis, MulEquiv.symm_symm, cocycleEqEquiv_basis]
 
 /-- The transport maps the embedded coefficient algebra by the specified equivalence. -/
 @[simp]
 theorem congr_inc (x : L) : congr c d e hc (inc c x) = inc d (e x) := by
-  simp only [congr, AlgEquiv.ofBijective_apply, congrHom, lift_inc, AlgHom.comp_apply,
-    AlgEquiv.coe_toAlgHom]
+  simp only [congr, AlgEquiv.trans_apply, AlgEquiv.ofRingEquiv_apply,
+    comapRingEquiv_symm_inc, cocycleEqEquiv_inc, AlgEquiv.coe_toRingEquiv]
 
 /-- Transport is semilinear for left multiplication by the coefficient algebra. -/
 @[simp]
@@ -110,13 +117,7 @@ theorem congr_smul (x : L) (a : CrossedProduct c) :
 @[simp]
 theorem repr_congr (a : CrossedProduct c) (σ : M ≃ₐ[K] M) :
     (basis d).repr (congr c d e hc a) σ = e ((basis c).repr a (e.autCongr.symm σ)) := by
-  calc
-    _ = (basis d).repr ((basis d).repr.symm
-        (Finsupp.lcongr e.autCongr.toEquiv e.toLinearEquiv ((basis c).repr a))) σ := by
-      rw [coe_congr, congrLinearEquiv, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
-        LinearEquiv.restrictScalars_apply, LinearEquiv.restrictScalars_apply]
-    _ = Finsupp.lcongr e.autCongr.toEquiv e.toLinearEquiv ((basis c).repr a) σ :=
-      congrArg (fun f => f σ) ((basis d).repr.apply_symm_apply _)
-    _ = _ := Finsupp.lcongr_apply_apply _ _ _ _
+  simp only [congr, AlgEquiv.trans_apply, AlgEquiv.ofRingEquiv_apply,
+    repr_cocycleEqEquiv, repr_comapRingEquiv_symm, AlgEquiv.coe_toRingEquiv]
 
 end TauCeti.CrossedProduct

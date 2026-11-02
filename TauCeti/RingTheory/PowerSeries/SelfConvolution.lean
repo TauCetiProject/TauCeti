@@ -59,7 +59,10 @@ Changes from the source. The source states its two convolution-coefficient lemma
 `formalW`, although neither proof uses anything about that series; they are stated here for an
 arbitrary series. The truncation lemmas likewise assumed `formalW`, and are stated here for any
 `f` vanishing at `0`, as consequences of the sharper congruence lemmas. The source works
-throughout over a `CommRing`; nothing here needs more than a `Semiring`.
+throughout over a `CommRing`; the coefficient lemmas need only a `Semiring`. The convolutions,
+their defining formulas and the lemmas needing no vanishing hypothesis need only an additive
+commutative monoid with a multiplication; the lemmas that use `f 0 = 0` or vanishing below `d`
+need `0` to absorb multiplication, so take a `NonUnitalNonAssocSemiring`.
 -/
 
 public section
@@ -68,7 +71,9 @@ open Finset
 
 namespace PowerSeries
 
-variable {R : Type*} [Semiring R]
+section Convolution
+
+variable {R : Type*} [AddCommMonoid R] [Mul R]
 
 /-- The `n`-th coefficient of the square of the series with coefficients `f`. -/
 def selfConvTwo (f : ℕ → R) (n : ℕ) : R :=
@@ -87,137 +92,124 @@ theorem selfConvThree_def (f : ℕ → R) (n : ℕ) :
     selfConvThree f n = ∑ i ∈ range (n + 1), ∑ j ∈ range (n - i + 1), f i * f j * f (n - i - j) :=
   (rfl)
 
-/-- Multiplying by a series with vanishing constant coefficient makes the `n`-th coefficient of
-the product depend only on the coefficients of the other factor strictly below `n`: the term that
-would use the `n`-th one carries the vanishing constant coefficient. -/
-theorem coeff_mul_congr {q v v' : PowerSeries R} (hq : constantCoeff q = 0) {n : ℕ}
-    (h : ∀ m, m < n → coeff m v = coeff m v') : coeff n (q * v) = coeff n (q * v') := by
-  have hq0 : coeff 0 q = 0 := by
-    rwa [coeff_zero_eq_constantCoeff_apply]
-  rw [coeff_mul, coeff_mul]
-  refine Finset.sum_congr rfl fun p hp => ?_
-  rw [Finset.mem_antidiagonal] at hp
-  rcases Nat.eq_zero_or_pos p.1 with h1 | h1
-  · rw [h1, hq0, zero_mul, zero_mul]
-  · rw [h p.2 (by omega)]
-
-/-- `selfConvTwo` computes the coefficients of a square. -/
-theorem coeff_pow_two_eq_selfConvTwo (w : PowerSeries R) (n : ℕ) :
-    coeff n (w ^ 2) = selfConvTwo (fun k => coeff k w) n := by
-  rw [sq, coeff_mul,
-    Finset.Nat.sum_antidiagonal_eq_sum_range_succ
-      (M := R) (fun i j => coeff i w * coeff j w) n]
-  rfl
-
-/-- `selfConvThree` computes the coefficients of a cube. -/
-theorem coeff_pow_three_eq_selfConvThree (w : PowerSeries R) (n : ℕ) :
-    coeff n (w ^ 3) = selfConvThree (fun k => coeff k w) n := by
-  rw [pow_succ' w 2, coeff_mul,
-    Finset.Nat.sum_antidiagonal_eq_sum_range_succ
-      (M := R) (fun i j => coeff i w * coeff j (w ^ 2)) n]
-  simp only [coeff_pow_two_eq_selfConvTwo, selfConvThree, selfConvTwo, Finset.mul_sum]
-  exact Finset.sum_congr rfl fun i _ =>
-    Finset.sum_congr rfl fun j _ => (mul_assoc _ _ _).symm
-
-/-- `selfConvTwo f n` depends only on the values of `f` strictly below `n`, provided `f`
-vanishes at `0`: the two extreme terms of the convolution each carry a factor `f 0`. -/
-theorem selfConvTwo_congr {f g : ℕ → R} (hf : f 0 = 0) (hg : g 0 = 0) {n : ℕ}
-    (h : ∀ m, m < n → f m = g m) : selfConvTwo f n = selfConvTwo g n := by
-  simp only [selfConvTwo]
-  refine Finset.sum_congr rfl fun i hi => ?_
-  simp only [Finset.mem_range, Nat.lt_succ_iff] at hi
-  by_cases hi' : i < n
-  · by_cases hk : n - i < n
-    · rw [h i hi', h _ hk]
-    · have : i = 0 := by omega
-      subst this
-      simp [hf, hg]
-  · have : i = n := by omega
-    subst this
-    simp [hf, hg]
-
-/-- The cube analogue of `selfConvTwo_congr`. -/
-theorem selfConvThree_congr {f g : ℕ → R} (hf : f 0 = 0) (hg : g 0 = 0) {n : ℕ}
-    (h : ∀ m, m < n → f m = g m) : selfConvThree f n = selfConvThree g n := by
-  simp only [selfConvThree]
-  refine Finset.sum_congr rfl fun i hi => ?_
-  refine Finset.sum_congr rfl fun j hj => ?_
-  simp only [Finset.mem_range, Nat.lt_succ_iff] at hi hj
-  by_cases hi' : i < n
-  · by_cases hj' : j < n
-    · by_cases hk : n - i - j < n
-      · rw [h i hi', h j hj', h _ hk]
-      · have : i = 0 := by omega
-        subst this
-        simp [hf, hg]
-    · have : i = 0 := by omega
-      subst this
-      simp [hf, hg]
-  · have : i = n := by omega
-    subst this
-    simp [hf, hg]
-
 /-- `selfConvTwo f m` depends only on the values of `f` on `[0, m]`. Unlike `selfConvTwo_congr`
 this needs no hypothesis on `f`, because every index occurring in the sum is at most `m`; the
 vanishing hypothesis there buys the strict bound `< m` instead. -/
 theorem selfConvTwo_congr_le {f g : ℕ → R} {m : ℕ} (h : ∀ k, k ≤ m → f k = g k) :
     selfConvTwo f m = selfConvTwo g m := by
-  simp only [selfConvTwo]
-  refine Finset.sum_congr rfl fun i hi => ?_
-  simp only [Finset.mem_range, Nat.lt_succ_iff] at hi
-  rw [h i hi, h _ (by omega)]
+  rw [selfConvTwo_def, selfConvTwo_def]
+  refine sum_congr rfl fun i hi => ?_
+  rw [mem_range] at hi
+  rw [h i (by omega), h _ (by omega)]
 
 /-- The cube analogue of `selfConvTwo_congr_le`. -/
 theorem selfConvThree_congr_le {f g : ℕ → R} {m : ℕ} (h : ∀ k, k ≤ m → f k = g k) :
     selfConvThree f m = selfConvThree g m := by
-  simp only [selfConvThree]
-  refine Finset.sum_congr rfl fun i hi => ?_
-  refine Finset.sum_congr rfl fun j hj => ?_
-  simp only [Finset.mem_range, Nat.lt_succ_iff] at hi hj
+  rw [selfConvThree_def, selfConvThree_def]
+  refine sum_congr rfl fun i hi => sum_congr rfl fun j hj => ?_
+  simp only [mem_range] at hi hj
   rw [h i (by omega), h j (by omega), h _ (by omega)]
-
-/-- Truncating `f` above `n` does not change `selfConvTwo f n`, when `f 0 = 0`. -/
-theorem selfConvTwo_truncate (f : ℕ → R) (hf : f 0 = 0) (n : ℕ) :
-    selfConvTwo (fun m => if m < n then f m else 0) n = selfConvTwo f n :=
-  selfConvTwo_congr (by by_cases h : 0 < n <;> simp [h, hf]) hf fun m hm => by simp [hm]
 
 /-- Below the truncation index no hypothesis on `f` is needed. -/
 theorem selfConvTwo_truncate_of_lt (f : ℕ → R) {k n : ℕ} (h : k < n) :
     selfConvTwo (fun m => if m < n then f m else 0) k = selfConvTwo f k :=
   selfConvTwo_congr_le fun j hj => by simp [show j < n by omega]
 
-/-- Truncating `f` above `n` does not change `selfConvThree f n`, when `f 0 = 0`. -/
-theorem selfConvThree_truncate (f : ℕ → R) (hf : f 0 = 0) (n : ℕ) :
-    selfConvThree (fun m => if m < n then f m else 0) n = selfConvThree f n :=
-  selfConvThree_congr (by by_cases h : 0 < n <;> simp [h, hf]) hf fun m hm => by simp [hm]
-
 /-- The cube analogue of `selfConvTwo_truncate_of_lt`. -/
 theorem selfConvThree_truncate_of_lt (f : ℕ → R) {k n : ℕ} (h : k < n) :
     selfConvThree (fun m => if m < n then f m else 0) k = selfConvThree f k :=
   selfConvThree_congr_le fun j hj => by simp [show j < n by omega]
 
+end Convolution
+
+section ConvolutionZero
+
+variable {R : Type*} [NonUnitalNonAssocSemiring R]
+
+/-- `selfConvTwo f n` depends only on the values of `f` strictly below `n`, provided `f`
+vanishes at `0`: the two extreme terms of the convolution each carry a factor `f 0`. -/
+theorem selfConvTwo_congr {f g : ℕ → R} (hf : f 0 = 0) (hg : g 0 = 0) {n : ℕ}
+    (h : ∀ m, m < n → f m = g m) : selfConvTwo f n = selfConvTwo g n := by
+  rw [selfConvTwo_def, selfConvTwo_def]
+  refine sum_congr rfl fun i hi => ?_
+  rw [mem_range] at hi
+  obtain rfl | rfl | ⟨hi0, hin⟩ : i = 0 ∨ i = n ∨ 0 < i ∧ i < n := by omega
+  · simp [hf, hg]
+  · simp [hf, hg]
+  · rw [h i hin, h _ (by omega)]
+
+/-- The cube analogue of `selfConvTwo_congr`. -/
+theorem selfConvThree_congr {f g : ℕ → R} (hf : f 0 = 0) (hg : g 0 = 0) {n : ℕ}
+    (h : ∀ m, m < n → f m = g m) : selfConvThree f n = selfConvThree g n := by
+  rw [selfConvThree_def, selfConvThree_def]
+  refine sum_congr rfl fun i hi => sum_congr rfl fun j hj => ?_
+  simp only [mem_range] at hi hj
+  obtain rfl | rfl | ⟨hi0, hin⟩ : i = 0 ∨ i = n ∨ 0 < i ∧ i < n := by omega
+  · simp [hf, hg]
+  · simp [hf, hg]
+  · rw [h i hin, h j (by omega), h _ (by omega)]
+
+/-- Truncating `f` above `n` does not change `selfConvTwo f n`, when `f 0 = 0`. -/
+theorem selfConvTwo_truncate (f : ℕ → R) (hf : f 0 = 0) (n : ℕ) :
+    selfConvTwo (fun m => if m < n then f m else 0) n = selfConvTwo f n :=
+  selfConvTwo_congr (by simp [hf]) hf fun m hm => by simp [hm]
+
+/-- Truncating `f` above `n` does not change `selfConvThree f n`, when `f 0 = 0`. -/
+theorem selfConvThree_truncate (f : ℕ → R) (hf : f 0 = 0) (n : ℕ) :
+    selfConvThree (fun m => if m < n then f m else 0) n = selfConvThree f n :=
+  selfConvThree_congr (by simp [hf]) hf fun m hm => by simp [hm]
+
 /-- A series vanishing below degree `d` has square vanishing below degree `2 * d`: in every term
 of the convolution one of the two factors sits at an index below `d`. -/
 theorem selfConvTwo_eq_zero {f : ℕ → R} {d : ℕ} (hf : ∀ k, k < d → f k = 0) {n : ℕ}
     (hn : n < 2 * d) : selfConvTwo f n = 0 := by
-  simp only [selfConvTwo]
-  refine Finset.sum_eq_zero fun i hi => ?_
-  simp only [Finset.mem_range, Nat.lt_succ_iff] at hi
-  by_cases h : i < d
-  · rw [hf i h, zero_mul]
-  · rw [hf (n - i) (by omega), mul_zero]
+  rw [selfConvTwo_def]
+  refine sum_eq_zero fun i hi => ?_
+  rw [mem_range] at hi
+  obtain h | h : i < d ∨ n - i < d := by omega
+  · simp [hf i h]
+  · simp [hf _ h]
 
 /-- A series vanishing below degree `d` has cube vanishing below degree `3 * d`. -/
 theorem selfConvThree_eq_zero {f : ℕ → R} {d : ℕ} (hf : ∀ k, k < d → f k = 0) {n : ℕ}
     (hn : n < 3 * d) : selfConvThree f n = 0 := by
-  simp only [selfConvThree]
-  refine Finset.sum_eq_zero fun i hi => ?_
-  refine Finset.sum_eq_zero fun j hj => ?_
-  simp only [Finset.mem_range, Nat.lt_succ_iff] at hi hj
-  by_cases h : i < d
-  · rw [hf i h, zero_mul, zero_mul]
-  · by_cases h' : j < d
-    · rw [hf j h', mul_zero, zero_mul]
-    · rw [hf (n - i - j) (by omega), mul_zero]
+  rw [selfConvThree_def]
+  refine sum_eq_zero fun i hi => sum_eq_zero fun j hj => ?_
+  simp only [mem_range] at hi hj
+  obtain h | h | h : i < d ∨ j < d ∨ n - i - j < d := by omega
+  · simp [hf i h]
+  · simp [hf j h]
+  · simp [hf _ h]
+
+end ConvolutionZero
+
+section Coeff
+
+variable {R : Type*} [Semiring R]
+
+/-- Multiplying by a series with vanishing constant coefficient makes the `n`-th coefficient of
+the product depend only on the coefficients of the other factor strictly below `n`: the term that
+would use the `n`-th one carries the vanishing constant coefficient. -/
+theorem coeff_mul_congr {q v v' : PowerSeries R} (hq : constantCoeff q = 0) {n : ℕ}
+    (h : ∀ m, m < n → coeff m v = coeff m v') : coeff n (q * v) = coeff n (q * v') := by
+  rw [coeff_mul, coeff_mul]
+  refine sum_congr rfl fun p hp => ?_
+  rw [mem_antidiagonal] at hp
+  rcases Nat.eq_zero_or_pos p.1 with h1 | h1
+  · simp [h1, hq]
+  · rw [h p.2 (by omega)]
+
+/-- `selfConvTwo` computes the coefficients of a square. -/
+theorem coeff_pow_two_eq_selfConvTwo (w : PowerSeries R) (n : ℕ) :
+    coeff n (w ^ 2) = selfConvTwo (fun k => coeff k w) n := by
+  rw [sq, coeff_mul, Nat.sum_antidiagonal_eq_sum_range_succ_mk, selfConvTwo_def]
+
+/-- `selfConvThree` computes the coefficients of a cube. -/
+theorem coeff_pow_three_eq_selfConvThree (w : PowerSeries R) (n : ℕ) :
+    coeff n (w ^ 3) = selfConvThree (fun k => coeff k w) n := by
+  rw [pow_succ', coeff_mul, Nat.sum_antidiagonal_eq_sum_range_succ_mk, selfConvThree_def]
+  simp [coeff_pow_two_eq_selfConvTwo, selfConvTwo_def, mul_sum, mul_assoc]
+
+end Coeff
 
 end PowerSeries

@@ -92,7 +92,7 @@ variable {K : Type u} [Field K] (L : Type w) [Field L] [Algebra K L]
 That `L ⊗[K] A` really is a finite-dimensional central simple `L`-algebra is
 `TauCeti/Algebra/CentralSimple/BaseChange.lean`: centrality is
 `TauCeti.Algebra.IsCentral.baseChange` and simplicity is
-`TauCeti.IsSimpleRing.tensorProduct_of_isCentral_right` with `L` as the simple factor, both
+`IsSimpleRing.tensorProduct_of_isCentral_right` with `L` as the simple factor, both
 instances, so there is no glue here.
 
 The three universes are independent: the base field, the algebra and the extension field are

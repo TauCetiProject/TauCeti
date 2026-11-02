@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
-public import TauCeti.Geometry.Manifold.Riemannian.Pullback
+public import TauCeti.Geometry.Manifold.Riemannian.Pullback.Basic
 
 /-!
 # Riemannian metrics induced by immersions into inner product spaces

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Nat.Factorization.Defs
 public import Mathlib.GroupTheory.Index
+import Mathlib.Data.Nat.Prime.Infinite
 public import Mathlib.NumberTheory.ModularForms.CongruenceSubgroups
 public import TauCeti.GroupTheory.Index.Basic
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
@@ -72,6 +73,8 @@ infrastructure independent of the diamond operators.
   `mem_Gamma0_iff_dvd`.
 * `CongruenceSubgroup.mul_inv_mem_Gamma1_iff_dvd_sub`: two matrices of `SL(2, ℤ)` lie in one
   right coset of `Γ₁(N)` exactly when their lower rows agree modulo `N`.
+* `CongruenceSubgroup.mem_Gamma1_of_mul_eq`: a matrix of `SL(2, ℤ)` carrying an integral matrix
+  that is `!![1, *; 0, *]` modulo `N` to another such matrix lies in `Γ₁(N)`.
 * `CongruenceSubgroup.isUnit_intCast_apply_zero_zero_of_mem_Gamma0`: a `Γ₀(N)` matrix has
   unit upper-left entry modulo `N`.
 * `CongruenceSubgroup.intCast_apply_zero_zero_mul_apply_one_one_of_mem_Gamma0`: modulo its
@@ -272,6 +275,26 @@ theorem mul_inv_mem_Gamma1_iff_dvd_sub {A B : SL(2, ℤ)} :
     refine ⟨⟨x * B 1 1 - y * B 1 0, ?_⟩, ⟨y * B 0 0 - x * B 0 1, ?_⟩⟩
     · linear_combination B 1 1 * hx - B 1 0 * hy
     · linear_combination B 0 0 * hy - B 0 1 * hx + hB
+
+/-- If `σ ∈ SL₂(ℤ)` carries an integral matrix that is `!![1, *; 0, *]` modulo `N` to another
+such matrix, then `σ ∈ Γ₁(N)`: the first column of `σ B = B'` gives `σ₀₀ ≡ 1` and `σ₁₀ ≡ 0`,
+and the determinant then gives `σ₁₁ ≡ 1`. -/
+theorem mem_Gamma1_of_mul_eq {σ : SL(2, ℤ)} {B B' : Matrix (Fin 2) (Fin 2) ℤ}
+    (hσB : (σ : Matrix (Fin 2) (Fin 2) ℤ) * B = B')
+    (hB00 : ((B 0 0 : ℤ) : ZMod N) = 1) (hB10 : ((B 1 0 : ℤ) : ZMod N) = 0)
+    (hB'00 : ((B' 0 0 : ℤ) : ZMod N) = 1) (hB'10 : ((B' 1 0 : ℤ) : ZMod N) = 0) :
+    σ ∈ Gamma1 N := by
+  have e00 := congrArg (fun M : Matrix (Fin 2) (Fin 2) ℤ ↦ ((M 0 0 : ℤ) : ZMod N)) hσB
+  have e10 := congrArg (fun M : Matrix (Fin 2) (Fin 2) ℤ ↦ ((M 1 0 : ℤ) : ZMod N)) hσB
+  simp only [Matrix.mul_apply, Fin.sum_univ_two] at e00 e10
+  push_cast at e00 e10
+  rw [hB00, hB10, hB'00] at e00
+  rw [hB00, hB10, hB'10] at e10
+  have hσdet := congrArg (Int.cast : ℤ → ZMod N) σ.fin_two_mul_sub_mul_eq_one
+  push_cast at hσdet
+  have hσ00 : ((σ 0 0 : ℤ) : ZMod N) = 1 := by simpa using e00
+  have hσ10 : ((σ 1 0 : ℤ) : ZMod N) = 0 := by simpa using e10
+  exact (Gamma1_mem N σ).mpr ⟨hσ00, by simpa [hσ00, hσ10] using hσdet, hσ10⟩
 
 /-- **The diagonal entries of a `Γ₀(M)` matrix are mutually inverse modulo `M`**: the determinant
 identity `ad - bc = 1` with the `bc` term killed by `M ∣ c`. It refines
@@ -648,6 +671,16 @@ theorem Gamma0_prime_index : (Gamma0 p).index = p + 1 :=
     ⟨Gamma0_prime_index_inj p hp, Gamma0_prime_index_surj p hp⟩).symm
 
 end BaseCase
+
+/-- The upper-triangular subgroup `Γ₀(0)` has infinite index, represented by zero in `ℕ`. -/
+@[simp]
+theorem Gamma0_zero_index : (Gamma0 0).index = 0 := by
+  by_contra h
+  obtain ⟨p, hle, hp⟩ := Nat.exists_infinite_primes (Gamma0 0).index
+  have hdvd := Subgroup.index_dvd_of_le (Gamma0_le_Gamma0_of_dvd (dvd_zero p))
+  rw [Gamma0_prime_index p hp] at hdvd
+  have := Nat.le_of_dvd (Nat.pos_of_ne_zero h) hdvd
+  omega
 
 section InductiveStep
 
@@ -1038,9 +1071,12 @@ theorem Gamma0_index_eq_prod_factorization {N : ℕ} (hN : N ≠ 0) :
 /-- **Dedekind's formula for the index of `Γ₀(N)`**:
 `[SL₂(ℤ) : Γ₀(N)] = N ∏_{p ∣ N} (1 + 1/p)`, with the denominators cleared.
 
+At level zero both sides vanish, since `Γ₀(0)` has infinite index.
 The proof is adapted from Mathlib's `Nat.totient_mul_prod_primeFactors`. -/
-theorem Gamma0_index_mul_prod_primeFactors {N : ℕ} (hN : N ≠ 0) :
+theorem Gamma0_index_mul_prod_primeFactors {N : ℕ} :
     (Gamma0 N).index * ∏ p ∈ N.primeFactors, p = N * ∏ p ∈ N.primeFactors, (p + 1) := by
+  by_cases hN : N = 0
+  · simp [hN]
   rw [Gamma0_index_eq_prod_factorization hN]
   conv_rhs => arg 1; rw [← Nat.prod_factorization_pow_eq_self hN]
   simp only [Nat.prod_primeFactors_prod_factorization, ← Finsupp.prod_mul]

@@ -8,6 +8,8 @@ module
 public import TauCeti.Data.Fintype.Fiber
 public import Mathlib.Data.Fintype.CardEmbedding
 public import Mathlib.Data.Fintype.BigOperators
+public import Mathlib.Data.Finset.Sort
+import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Data.Finset.Pairwise
 
 /-! # Counting embeddings
@@ -25,6 +27,12 @@ over the cells: a cell `A` hosting `m` indices contributes the falling factorial
 contribute just their sizes, and in general the count is at most the product of the sizes of the
 cells.
 
+Finally, we bound the embeddings with prescribed values on part of the domain. An embedding
+`f : β ↪ V` with `f ∘ e = x` along an embedding `e : α ↪ β` is determined by its values off the
+range of `e`, so there are at most `card V ^ (card β - card α)` of them. When `β` is a linear
+order, summing over the `(card β).choose m` increasing tuples `g : Fin m ↪o β` bounds the
+embeddings sending some increasing `m`-tuple into a prescribed set `T` of `m`-tuples.
+
 ## Main results
 
 * `Fintype.card_subtype_injective`: there are `(card β).descFactorial (card α)` injective maps
@@ -36,6 +44,11 @@ cells.
 * `Nat.card_embedding_mem_eq_prod_of_injective`: for distinct disjoint cells, the count is the
   product of the cell sizes.
 * `Nat.card_embedding_mem_le_prod`: the count never exceeds the product of the cell sizes.
+* `Function.Embedding.natCard_embedding_comp_eq_le`: at most `card V ^ (card β - card α)`
+  embeddings `f : β ↪ V` satisfy `f ∘ e = x`.
+* `Finset.natCard_embedding_exists_comp_mem_le`: at most
+  `(card β).choose m * #T * card V ^ (card β - m)` embeddings send some increasing `m`-tuple
+  into `T`.
 -/
 
 public section
@@ -151,3 +164,65 @@ theorem card_embedding_mem_le_prod [Fintype ι] (c : ι → Finset V) :
     Subtype.ext (Embedding.ext (congrFun (congrArg Subtype.val h)))
 
 end Nat
+
+namespace Function.Embedding
+
+variable {V : Type*}
+
+/-- An embedding `f : β ↪ V` with prescribed values `f ∘ e = x` along an embedding `e : α ↪ β` is
+determined by its values off the range of `e`, so there are at most
+`card V ^ (card β - card α)` of them. -/
+theorem natCard_embedding_comp_eq_le {α β : Type*} [Fintype α] [Fintype β] [Fintype V]
+    (e : α ↪ β) (x : α → V) :
+    Nat.card {f : β ↪ V // ⇑f ∘ e = x} ≤ Fintype.card V ^ (Fintype.card β - Fintype.card α) := by
+  classical
+  let s : Finset β := univ.map e
+  have hcode : Injective fun (f : {f : β ↪ V // ⇑f ∘ e = x}) (b : ↥sᶜ) ↦ f.1 b := by
+    intro f g h
+    refine Subtype.ext (Embedding.ext fun b ↦ ?_)
+    by_cases hb : b ∈ s
+    · obtain ⟨a, -, rfl⟩ := mem_map.1 hb
+      exact (congrFun f.2 a).trans (congrFun g.2 a).symm
+    · exact congrFun h ⟨b, mem_compl.2 hb⟩
+  refine (Nat.card_le_card_of_injective _ hcode).trans_eq ?_
+  rw [Nat.card_eq_fintype_card, Fintype.card_fun, Fintype.card_coe, card_compl, card_map,
+    Finset.card_univ]
+
+end Function.Embedding
+
+namespace Finset
+
+variable {V : Type*}
+
+/-- At most `(card β).choose m * #T * card V ^ (card β - m)` embeddings `f : β ↪ V` of a finite
+linear order send some increasing `m`-tuple of `β` into a prescribed set `T` of `m`-tuples: there
+are `(card β).choose m` increasing tuples `g`, and for each of them and each `x ∈ T` at most
+`card V ^ (card β - m)` embeddings satisfy `f ∘ g = x`. -/
+theorem natCard_embedding_exists_comp_mem_le {β : Type*} [Fintype β] [LinearOrder β]
+    [Fintype V] {m : ℕ} (T : Finset (Fin m → V)) :
+    Nat.card {f : β ↪ V // ∃ g : Fin m ↪o β, ⇑f ∘ g ∈ T} ≤
+      (Fintype.card β).choose m * #T * Fintype.card V ^ (Fintype.card β - m) := by
+  classical
+  -- Every increasing `m`-tuple is the increasing enumeration of its range, an `m`-subset.
+  let U : Finset (β ↪ V) := (univ.powersetCard m).attach.biUnion fun s ↦ T.biUnion fun x ↦
+    {f | ⇑f ∘ s.1.orderEmbOfFin (mem_powersetCard.1 s.2).2 = x}
+  have hU (f : β ↪ V) (hf : ∃ g : Fin m ↪o β, ⇑f ∘ g ∈ T) : f ∈ U := by
+    obtain ⟨g, hg⟩ := hf
+    have hcard : #(univ.map g.toEmbedding) = m := by simp
+    simp only [U, mem_biUnion, mem_attach, mem_filter, mem_univ, true_and]
+    refine ⟨⟨_, mem_powersetCard.2 ⟨subset_univ _, hcard⟩⟩, _, hg, ?_⟩
+    rw [← orderEmbOfFin_unique' hcard fun i ↦ mem_map_of_mem _ (mem_univ i)]
+  rw [Nat.card_eq_fintype_card, Fintype.card_subtype]
+  calc #{f : β ↪ V | ∃ g : Fin m ↪o β, ⇑f ∘ g ∈ T}
+      ≤ #U := card_le_card fun f hf ↦ hU f (mem_filter.1 hf).2
+    _ ≤ ∑ _s ∈ (univ.powersetCard m).attach, ∑ _x ∈ T,
+          Fintype.card V ^ (Fintype.card β - m) := by
+      refine card_biUnion_le.trans <| sum_le_sum fun s _ ↦ card_biUnion_le.trans <|
+        sum_le_sum fun x _ ↦ ?_
+      rw [← Fintype.card_subtype, ← Nat.card_eq_fintype_card]
+      simpa using
+        (s.1.orderEmbOfFin (mem_powersetCard.1 s.2).2).toEmbedding.natCard_embedding_comp_eq_le x
+    _ = (Fintype.card β).choose m * #T * Fintype.card V ^ (Fintype.card β - m) := by
+      simp [card_powersetCard, mul_assoc]
+
+end Finset

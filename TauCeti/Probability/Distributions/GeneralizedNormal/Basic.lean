@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Density
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 import TauCeti.Analysis.SpecialFunctions.Gamma
 import TauCeti.MeasureTheory.Integral.Gamma
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
@@ -243,7 +244,7 @@ theorem isProbabilityMeasure_generalizedNormalMeasure_iff :
   refine ⟨fun h => ?_, fun h => isProbabilityMeasure_generalizedNormalMeasure h.1 h.2 m⟩
   by_contra hsp
   rw [generalizedNormalMeasure_of_not_pos hsp] at h
-  exact IsProbabilityMeasure.ne_zero (0 : Measure ℝ) rfl
+  exact not_isProbabilityMeasure_zero h
 
 /-- The generalized normal law is a finite measure at every parameter. -/
 instance (m s p : ℝ) : IsFiniteMeasure (generalizedNormalMeasure m s p) := by

@@ -219,7 +219,7 @@ variable {C : Type u} [Category.{v} C] [Abelian C]
 
 /-- A componentwise direct sum of short exact sequences is short exact. -/
 lemma ShortExact.biprod {S T : ShortComplex C} (hS : S.ShortExact) (hT : T.ShortExact) :
-    (TauCeti.shortComplexBiprod S T).ShortExact :=
+    (S.biprod T).ShortExact :=
   ((TauCeti.IsKernelCokernelPair.of_shortExact hS).biprod
     (TauCeti.IsKernelCokernelPair.of_shortExact hT)).shortExact
 

@@ -14,7 +14,9 @@ public import Mathlib.Algebra.Polynomial.Reverse
 `Polynomial.divX p` drops the constant coefficient of `p` and lowers the remaining degrees by
 one. Its `m`-th iterate `divX^[m] p` drops the `m` lowest coefficients and lowers the remaining
 degrees by `m`, so that `(divX^[m] p).coeff n = p.coeff (n + m)`. This file records how the
-iterate interacts with sums, scalars, multiplication by powers of `X` and reflection.
+iterate interacts with sums, scalars, multiplication by powers of `X` and reflection, and the
+Horner recursion `divX^[m] p = divX^[m + 1] p * X + C (p.coeff m)`, whose values at a point are
+the partial Horner sums of `p`.
 
 In terms of Laurent polynomials, `divX^[m] (Xᵐ * p)` is `p`, while the reflection
 `reflect m q = Xᵐ q(X⁻¹)` of a polynomial `q` of degree at most `m` keeps only its constant
@@ -71,6 +73,23 @@ theorem iterate_divX_eq_zero_of_natDegree_lt {m : ℕ} {p : R[X]} (h : p.natDegr
   ext n
   rw [coeff_iterate_divX, coeff_zero]
   exact coeff_eq_zero_of_natDegree_lt (by omega)
+
+/-- The `m`-th iterate of `divX` of a polynomial of degree at most `m` is its constant polynomial
+with value the coefficient of `Xᵐ`. -/
+theorem iterate_divX_eq_C_of_natDegree_le {m : ℕ} {p : R[X]} (h : p.natDegree ≤ m) :
+    divX^[m] p = C (p.coeff m) := by
+  ext n
+  rw [coeff_iterate_divX, coeff_C]
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · simp
+  · simp [hn.ne', coeff_eq_zero_of_natDegree_lt (show p.natDegree < n + m by omega)]
+
+/-- One Horner step for the iterates of `divX`: the `m`-th iterate is recovered from the next
+one and the coefficient of `Xᵐ`. -/
+theorem iterate_divX_succ_mul_X_add_C (m : ℕ) (p : R[X]) :
+    divX^[m + 1] p * X + C (p.coeff m) = divX^[m] p := by
+  have h := divX_mul_X_add (divX^[m] p)
+  rwa [coeff_iterate_divX, zero_add, ← Function.iterate_succ_apply' divX] at h
 
 /-- The `m`-th iterate of `divX` keeps only the constant coefficient of a polynomial of degree at
 most `m` from its reflection `Xᵐ q(X⁻¹)`. -/

@@ -9,7 +9,7 @@ public import Mathlib.LinearAlgebra.Determinant
 public import TauCeti.LinearAlgebra.BilinearForm.Basic
 public import Mathlib.RingTheory.Ideal.Span
 public import TauCeti.LinearAlgebra.Multilinear.Span
-import TauCeti.LinearAlgebra.BilinearForm.Multilinear
+import TauCeti.LinearAlgebra.BilinearMap.Multilinear
 import Mathlib.LinearAlgebra.SpecialLinearGroup
 import Mathlib.LinearAlgebra.Matrix.Adjugate
 import Mathlib.LinearAlgebra.Matrix.SchurComplement
@@ -76,6 +76,8 @@ linear maps `X` and `Y` between two free modules of finite rank, possibly of dif
   the two factors is the product of the two determinants.
 * `Module.Basis.exists_prod_det_eq_sign_smul_mul`: the same up to sign for a family with exactly
   as many members in the first factor as the rank of the first factor.
+* `Module.Basis.det_equivFun_symm_trans_equivFun`: the coordinate change from a basis `b` to a
+  basis `b'` has determinant `b'.det b`.
 * `LinearMap.det_smul_mem_range`: Cramer's rule, `det φ • x ∈ range φ`.
 
 ## Implementation notes
@@ -193,6 +195,17 @@ theorem exists_prod_det_eq_sign_smul_mul (b : Basis ι R M) (b' : Basis ι' R M'
   have h := (b.prod b').det.map_perm w σ
   rw [hσ, prod_det_sumElim] at h
   rw [h, smul_smul, Int.units_mul_self, one_smul]
+
+/-- The coordinate change from the basis `b` to the basis `b'`, which sends the coordinates `x` of
+`∑ i, x i • b i` in `b` to its coordinates in `b'`, has determinant `b'.det b`. -/
+theorem det_equivFun_symm_trans_equivFun (b b' : Basis ι R M) :
+    (LinearEquiv.det (b.equivFun.symm.trans b'.equivFun) : R) = b'.det b := by
+  -- The coordinate change is the change of basis `b' i ↦ b i`, written in the coordinates of `b'`.
+  have h : b.equivFun.symm.trans b'.equivFun =
+      (b'.equivFun.symm.trans (b'.equiv b (Equiv.refl ι))).trans b'.equivFun := by
+    ext x : 1
+    simp [map_sum, map_smul]
+  rw [h, LinearEquiv.det_conj, LinearEquiv.coe_det, det_basis]
 
 end Module.Basis
 

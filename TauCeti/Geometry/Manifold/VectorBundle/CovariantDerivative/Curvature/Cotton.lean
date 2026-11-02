@@ -6,8 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.BilinearTensor
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.ContractedBianchi
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Schouten
 import TauCeti.Geometry.Manifold.IsManifold.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 
 /-!
 # The Cotton tensor of a smooth connection
@@ -42,6 +45,8 @@ vanishes near it.
 
 * `CovariantDerivative.derivSchoutenTensor`: the covariant derivative `∇P` of the Schouten tensor,
   with `CovariantDerivative.derivSchoutenTensor_apply` its value on differentiable vector fields.
+* `CovariantDerivative.IsMetricCompatible.derivSchoutenTensor_eq`:
+  `∇P = (∇Ric - d Scal ⊗ g / (2 (n - 1))) / (n - 2)`.
 * `CovariantDerivative.cottonTensor`: the Cotton tensor, with
   `CovariantDerivative.cottonTensor_apply_of_mdifferentiableAt` its value on differentiable
   vector fields.
@@ -160,6 +165,44 @@ theorem cottonTensor_apply_of_mdifferentiableAt {σ τ ρ : Π x : M, TangentSpa
         cov.schoutenTensor x (σ x) (cov ρ x (τ x)) := by
   rw [cottonTensor_apply, cov.derivSchoutenTensor_apply hσ hτ,
     cov.derivSchoutenTensor_apply hσ hρ]
+  ring
+
+variable {cov} in
+/-- For a metric-compatible connection in dimension `n`, the covariant derivative of the Schouten
+tensor is `(∇_w P)(u, v) = ((∇_w Ric)(u, v) - d Scal(w) ⟨u, v⟩ / (2 (n - 1))) / (n - 2)`. -/
+theorem IsMetricCompatible.derivSchoutenTensor_eq
+    (hcov : CovariantDerivative.IsMetricCompatible
+      (V := fun y : M ↦ TangentSpace I y) cov)
+    (x : M) (u v w : TangentSpace I x) :
+    cov.derivSchoutenTensor x u v w =
+      ((Module.finrank ℝ E : ℝ) - 2)⁻¹ *
+        (cov.derivRicciTensor x u v w - mvfderiv I cov.scalarCurvature x w /
+          (2 * ((Module.finrank ℝ E : ℝ) - 1)) * inner ℝ u v) := by
+  obtain ⟨σ, hσ, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E u
+  obtain ⟨τ, hτ, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E v
+  have hσx : MDiffAt (T% σ) x := hσ.mdifferentiableAt (by simp)
+  have hτx : MDiffAt (T% τ) x := hτ.mdifferentiableAt (by simp)
+  have hg := hcov.mvfderiv_inner_eq (FiberBundle.extend E w) hσx hτx
+  simp only [FiberBundle.extend_apply_self] at hg
+  have hS : MDiffAt cov.scalarCurvature x :=
+    cov.contMDiff_scalarCurvature.mdifferentiableAt (by simp)
+  have hRic := cov.mdifferentiableAt_ricciTensor_apply hσx hτx
+  have hin := TauCeti.Manifold.mdifferentiableAt_inner hσx hτx
+  have hfun : (fun y ↦ cov.schoutenTensor y (σ y) (τ y)) =
+      (fun _ ↦ ((Module.finrank ℝ E : ℝ) - 2)⁻¹) *
+        ((fun y ↦ cov.ricciTensor y (σ y) (τ y)) -
+          (cov.scalarCurvature * fun _ ↦ (2 * ((Module.finrank ℝ E : ℝ) - 1))⁻¹) *
+            fun y ↦ inner ℝ (σ y) (τ y)) := by
+    funext y
+    simp only [schoutenTensor_apply, TauCeti.finrank_tangentSpace, div_eq_mul_inv, Pi.mul_apply,
+      Pi.sub_apply]
+  rw [cov.derivSchoutenTensor_apply hσx hτx, cov.derivRicciTensor_apply hσx hτx, hfun,
+    mvfderiv_mul mdifferentiableAt_const (hRic.sub ((hS.mul mdifferentiableAt_const).mul hin)),
+    mvfderiv_sub hRic ((hS.mul mdifferentiableAt_const).mul hin),
+    mvfderiv_mul (hS.mul mdifferentiableAt_const) hin, mvfderiv_mul hS mdifferentiableAt_const]
+  simp only [mvfderiv_const, _root_.add_apply, _root_.sub_apply,
+    _root_.smul_apply, smul_eq_mul, _root_.zero_apply, hg,
+    schoutenTensor_apply, TauCeti.finrank_tangentSpace, div_eq_mul_inv, Pi.mul_apply]
   ring
 
 /-- The covariant derivative of the Schouten tensor vanishes at a point near which the curvature

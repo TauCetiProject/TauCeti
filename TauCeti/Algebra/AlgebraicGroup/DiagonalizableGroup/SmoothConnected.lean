@@ -9,9 +9,9 @@ public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.Connected.CommHopfAlgCat
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.FiniteType
 public import TauCeti.Algebra.AlgebraicGroup.GeometricallyReduced.CommHopfAlgCat
-public import TauCeti.RingTheory.Idempotents.Connected.Spectrum
 import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.BaseChange
 import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
+import TauCeti.RingTheory.Spectrum.Prime.Topology
 
 /-!
 # Geometric connectedness and reducedness of diagonalizable groups
@@ -68,7 +68,7 @@ theorem connectedSpace_primeSpectrum_baseChange_coordinateRing
       (CommHopfAlgCat.baseChange (K := K) (coordinateRing k G).obj)) := by
   let e := (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv k K (G := G)).toAlgEquiv
   have := connectedSpace_primeSpectrum_coordinateRing K G
-  exact connectedSpace_primeSpectrum_of_injective e.toRingHom e.injective
+  exact e.toRingHom.connectedSpace_primeSpectrum_of_injective e.injective
 
 /-- Scalar extension identifies a diagonalizable-group coordinate ring with the corresponding
 group algebra over the extension field. -/

@@ -966,12 +966,12 @@ the form of irreducibility that the classification of
 `TauCeti/Algebra/Lie/Sl2/WeightString.lean` asks for; here the two forms agree, since the standard
 triple generates all of `sl (Fin 2) K`
 (`TauCeti.toLieSubalgebra_isSl2Triple_single_eq_top`), so
-`TauCeti.isIrreducible_of_eq_top` carries the one to the other. -/
+`TauCeti.isIrreducible_iff_of_eq_top` carries the one to the other. -/
 instance isIrreducible_toLieSubalgebra :
     LieModule.IsIrreducible K
       ((isSl2Triple_single (R := K) (zero_ne_one : (0 : Fin 2) ≠ 1)).toLieSubalgebra K)
       (Sl2Std K n) :=
-  isIrreducible_of_eq_top (toLieSubalgebra_isSl2Triple_single_eq_top _)
+  (isIrreducible_iff_of_eq_top (toLieSubalgebra_isSl2Triple_single_eq_top _)).2 inferInstance
 
 /-- **The classification of the finite-dimensional irreducible `sl₂`-modules.** A Noetherian
 module over `sl (Fin 2) K` which is irreducible over the subalgebra of the standard triple and

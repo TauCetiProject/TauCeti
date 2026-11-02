@@ -22,9 +22,8 @@ homomorphism `deg : 𝕋 Δ H R →+* R` of the Hecke ring (Proposition 3.3 of
 Ported from the AINTLIB `LeanModularForms` project
 (`HeckeRIngs/AbstractHeckeRing/Degree.lean` and the compatibility law of
 `HeckeRIngs/AbstractHeckeRing/Associativity.lean`,
-<https://github.com/CBirkbeck/AINTLIB/tree/main/projects/LeanModularForms>), per the
-ModularForms roadmap's dependency policy. The compatibility law is proved as a private
-lemma and exposed through the public `Module (𝕋 Δ H R)ᵐᵒᵖ` instance, rather than through
+<https://github.com/CBirkbeck/AINTLIB/tree/main/projects/LeanModularForms>). The
+compatibility law is exposed through the `Module (𝕋 Δ H R)ᵐᵒᵖ` instance, rather than through
 AINTLIB's reversed scalar action.
 
 ## Main definitions
@@ -35,9 +34,9 @@ AINTLIB's reversed scalar action.
 
 ## Main results
 
-* `LeftCosetModule.degree_single_smul_single`, `LeftCosetModule.degree_smul`: the
-  coefficient sum against the scalar operations — the bridge to the degree.
-* `LeftCosetModule.degree_smul_eq_deg`: the same law with the named degree on the right.
+* `LeftCosetModule.degree_single_smul_single`: the coefficient sum of a basis element acting
+  on a basis element is the degree of the double coset times the product of coefficients.
+* `LeftCosetModule.degree_smul`: acting by `t` multiplies the coefficient sum by `deg t`.
 * `LeftCosetModule.deg_single`, `RingHom` laws of `deg`: Proposition 3.3.
 -/
 
@@ -78,8 +77,9 @@ end NonUnital
 variable [Semiring R]
 
 /-- The coefficient sum is multiplicative against the action: the orbit-sum coefficient is
-independent of the acted-on coset, so the action factors through the degree. -/
-lemma degree_smul (t : 𝕋 Δ H R) (m : LeftCosetModule Δ H R) :
+independent of the acted-on coset, so the action factors through its value on the identity
+coset. Stated before `deg` exists; `degree_smul` is the public form. -/
+private lemma degree_smul_eq_degree_mul (t : 𝕋 Δ H R) (m : LeftCosetModule Δ H R) :
     Finsupp.degree (MulOpposite.op t • m) =
       Finsupp.degree m *
         Finsupp.degree (MulOpposite.op t • (Finsupp.single 1 1 : LeftCosetModule Δ H R)) := by
@@ -93,16 +93,14 @@ lemma degree_smul (t : 𝕋 Δ H R) (m : LeftCosetModule Δ H R) :
     | add m₁ m₂ h₁ h₂ => rw [smul_add, map_add, map_add, h₁, h₂, add_mul]
     | single q c =>
       rw [degree_single_smul_single, degree_single_smul_single, Finsupp.degree_single,
-        nsmul_eq_mul, nsmul_eq_mul]
-      -- only the degree, a natural-number cast, has to move past the coefficient
-      simp only [one_mul, ← mul_assoc]
-      rw [(Nat.cast_commute _ c).eq]
+        one_mul, mul_smul_comm]
 
 variable (Δ H R) in
 /-- **The degree homomorphism** (Shimura, Proposition 3.3): the coefficient sum of the
 action on the identity coset, as a ring homomorphism `𝕋 Δ H R →+* R`. On a basis element
 it is the degree of the double coset — the number of left cosets in its decomposition —
-scaled by the coefficient; multiplicativity is the compatibility law `mul_smul'`. -/
+scaled by the coefficient; multiplicativity is the compatibility law `mul_smul` of the
+`Module (𝕋 Δ H R)ᵐᵒᵖ` instance. -/
 noncomputable def deg : 𝕋 Δ H R →+* R where
   toFun t := Finsupp.degree (MulOpposite.op t •
     (Finsupp.single 1 1 : LeftCosetModule Δ H R))
@@ -110,7 +108,7 @@ noncomputable def deg : 𝕋 Δ H R →+* R where
     rw [HeckeCosetModule.one_def, degree_single_smul_single, HeckeCoset.degree_one]
     simp
   map_mul' f g := by
-    rw [MulOpposite.op_mul, mul_smul, degree_smul]
+    rw [MulOpposite.op_mul, mul_smul, degree_smul_eq_degree_mul]
   map_zero' := by
     rw [MulOpposite.op_zero, zero_smul, map_zero]
   map_add' f g := by rw [MulOpposite.op_add, add_smul, map_add]
@@ -121,12 +119,11 @@ lemma deg_apply (t : 𝕋 Δ H R) :
       Finsupp.degree (MulOpposite.op t •
         (Finsupp.single 1 1 : LeftCosetModule Δ H R)) := (rfl)
 
-/-- `degree_smul` in terms of `deg`: acting by `t` multiplies the coefficient sum by
-`deg t`. This is the form consumers want — `degree_smul` leaves the right-hand factor as the
-unfolded action on the identity coset. -/
-lemma degree_smul_eq_deg (t : 𝕋 Δ H R) (m : LeftCosetModule Δ H R) :
+/-- The coefficient sum is multiplicative against the action: acting by `t` multiplies the
+coefficient sum by `deg t`. -/
+lemma degree_smul (t : 𝕋 Δ H R) (m : LeftCosetModule Δ H R) :
     Finsupp.degree (MulOpposite.op t • m) = Finsupp.degree m * deg Δ H R t :=
-  degree_smul t m
+  degree_smul_eq_degree_mul t m
 
 /-- The degree of a basis element: the degree of its double coset, scaled by the
 coefficient. -/

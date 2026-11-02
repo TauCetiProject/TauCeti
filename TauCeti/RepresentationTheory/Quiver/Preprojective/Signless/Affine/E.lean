@@ -22,10 +22,11 @@ preprojective algebra of any orientation of `G`
 Together with the affine `Dₙ` case
 (`TauCeti.exists_mem_signlessPreprojectiveGrade_four_notMem_commutatorSubmodule`), this covers
 every finite tree which is not a Dynkin diagram, since such a tree contains a copy of an affine
-`Dₙ`, `E₆`, `E₇` or `E₈`; that classical graph-theoretic fact is not formalized here. For a quiver
-whose underlying graph is a tree, Liu and Wang identify the degree-`(q + 2)` piece of this cyclic
-quotient with the second Hochschild cohomology `HH^{2,q}` of the two-dimensional Ginzburg algebra
-`Π₂(Q)`, which controls the `A∞` deformations of the zigzag algebra of the tree.
+`Dₙ`, `E₆`, `E₇` or `E₈`
+(`SimpleGraph.IsTree.exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule`). For a
+quiver whose underlying graph is a tree, Liu and Wang identify the degree-`(q + 2)` piece of this
+cyclic quotient with the second Hochschild cohomology `HH^{2,q}` of the two-dimensional Ginzburg
+algebra `Π₂(Q)`, which controls the `A∞` deformations of the zigzag algebra of the tree.
 
 ## The representations
 

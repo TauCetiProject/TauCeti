@@ -41,6 +41,8 @@ pairing with cyclic cohomology, descend to `K₁`.
 
 * `TauCeti.commutator_elementarySubgroup_self`: `⁅E n A, E n A⁆ = E n A` when `3 ≤ card n`.
 * `TauCeti.elementarySubgroup_le_commutator`: `E n A ≤ ⁅GL n A, GL n A⁆` when `3 ≤ card n`.
+* `Equiv.map_reindexGL_elementarySubgroup`: relabelling the indices preserves the elementary
+  subgroup.
 * `Matrix.upperBlockGL_mem_elementarySubgroup`, `Matrix.lowerBlockGL_mem_elementarySubgroup`:
   block unipotent matrices are elementary.
 * `TauCeti.fromBlocksGL_inv_mem_elementarySubgroup`: Whitehead's lemma, `u ⊕ u⁻¹ ∈ E`.
@@ -299,3 +301,27 @@ theorem fromBlocksGL_conj_mem_elementarySubgroup (g : GL m A) {e : GL m A}
     (inv_mem (fromBlocksGL_inv_mem_elementarySubgroup g))
 
 end TauCeti
+
+namespace Equiv
+
+open TauCeti
+
+variable {n m : Type*} [DecidableEq n] [Fintype n] [DecidableEq m] [Fintype m] {A : Type*} [Ring A]
+
+/-- Relabelling the indices along an equivalence maps the elementary subgroup onto the elementary
+subgroup. -/
+theorem map_reindexGL_elementarySubgroup (e : n ≃ m) :
+    (elementarySubgroup n A).map (e.reindexGL A).toMonoidHom = elementarySubgroup m A := by
+  rw [elementarySubgroup_def, elementarySubgroup_def, MonoidHom.map_closure]
+  congr 1
+  ext g
+  simp only [Set.mem_image, Set.mem_ofPred_eq, MulEquiv.coe_toMonoidHom]
+  constructor
+  · rintro ⟨_, ⟨i, j, hij, a, rfl⟩, rfl⟩
+    exact ⟨e i, e j, e.injective.ne hij, a, (e.reindexGL_transvectionUnit hij a).symm⟩
+  · rintro ⟨i, j, hij, a, rfl⟩
+    refine ⟨_, ⟨e.symm i, e.symm j, e.symm.injective.ne hij, a, rfl⟩, ?_⟩
+    rw [reindexGL_transvectionUnit]
+    simp_rw [Equiv.apply_symm_apply]
+
+end Equiv

@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.NormTwoShell.Basic
-public import TauCeti.LinearAlgebra.Matrix.OrderedSignCover.Reindex
+public import TauCeti.Algebra.Lie.NormTwoShell.CoverLift
 import TauCeti.LinearAlgebra.Matrix.DotProduct
 
 /-!
@@ -21,15 +20,17 @@ vectors are rescaled accordingly: the linear equivalence `Matrix.ShellLieAlgebra
 
 `H_h ↦ H_(h ∘ e.symm)`, `x_a ↦ σ(a) x_(a ∘ e.symm)`,
 
-from `ShellLieAlgebra B` to `ShellLieAlgebra B'` preserves the bracket as soon as `B` is symmetric
-(`Matrix.ShellLieAlgebra.reindex_lie`). It is therefore an isomorphism of Lie rings for positive
-definite `B` with even diagonal (`Matrix.ShellLieAlgebra.reindexLieEquiv`). Since a coordinate
-vector has inversion sign `1`, it sends `x_(αᵢ)` and `x_(-αᵢ)` to `x_(α_(e i))` and
-`x_(-α_(e i))` whenever these coordinate vectors lie in the shells. When `B` is a simply laced
-Cartan matrix they do, and together with `H_(αᵢ) ↦ H_(α_(e i))` the relabelling sends the
-Chevalley generators of `B` to those of `B'` at the vertex `e i`, so it respects the simple
-positive pinning. The relabellings are functorial (`Matrix.ShellLieAlgebra.reindex_refl`,
-`Matrix.ShellLieAlgebra.reindex_trans`).
+from `ShellLieAlgebra B` to `ShellLieAlgebra B'` is the action
+`Matrix.ShellLieAlgebra.coverEquiv` of the relabelled ordered sign cover `Matrix.SignCover.reindex`
+lying over `a ↦ a ∘ e.symm` (`Matrix.ShellLieAlgebra.reindex_eq_coverEquiv`), so it preserves the
+bracket as soon as `B` is symmetric (`Matrix.ShellLieAlgebra.reindex_lie`). It is therefore an
+isomorphism of Lie rings for positive definite `B` with even diagonal
+(`Matrix.ShellLieAlgebra.reindexLieEquiv`). Since a coordinate vector has inversion sign `1`, it
+sends `x_(αᵢ)` and `x_(-αᵢ)` to `x_(α_(e i))` and `x_(-α_(e i))` whenever these coordinate
+vectors lie in the shells. When `B` is a simply laced Cartan matrix they do, and together with
+`H_(αᵢ) ↦ H_(α_(e i))` the relabelling sends the Chevalley generators of `B` to those of `B'` at
+the vertex `e i`, so it respects the simple positive pinning. The relabellings are functorial
+(`Matrix.ShellLieAlgebra.reindex_refl`, `Matrix.ShellLieAlgebra.reindex_trans`).
 
 ## Main definitions
 
@@ -44,6 +45,8 @@ positive pinning. The relabellings are functorial (`Matrix.ShellLieAlgebra.reind
   Cartan and root vectors.
 * `Matrix.ShellLieAlgebra.reindex_root_single`, `Matrix.ShellLieAlgebra.reindex_root_neg_single`:
   the relabelling preserves the simple root vectors.
+* `Matrix.ShellLieAlgebra.reindex_eq_coverEquiv`: the relabelling is the action of the relabelled
+  sign cover.
 * `Matrix.ShellLieAlgebra.reindex_rootBracket`: the relabelling of a root bracket.
 * `Matrix.ShellLieAlgebra.reindex_lie`: the relabelling preserves the bracket, for symmetric `B`.
 * `Matrix.ShellLieAlgebra.reindex_refl`, `Matrix.ShellLieAlgebra.reindex_trans`: functoriality.
@@ -58,7 +61,9 @@ public section
 
 namespace Matrix.ShellLieAlgebra
 
-open Module
+open TauCeti Module
+
+attribute [local instance] trivialMulDistribMulAction
 
 variable {I J K : Type*} [Fintype I] [LinearOrder I] [Fintype J] [LinearOrder J] [Fintype K]
   [LinearOrder K] {B : Matrix I I ℤ} {B' : Matrix J J ℤ} (e : I ≃ J) (he : B.reindex e e = B')
@@ -114,6 +119,23 @@ theorem reindex_root_neg_single [DecidableEq I] [DecidableEq J] (i : I)
   exact Subtype.ext <| by
     rw [coe_normTwoShellCongr_apply, Pi.neg_comp, Pi.single_comp_equiv, Equiv.symm_symm]
 
+/-- **Relabelling is the action of the relabelled sign cover.** For a symmetric `B` and a
+relabelling `e : I ≃ J` of its vertices with `B.reindex e e = B'`, the relabelling
+`Matrix.ShellLieAlgebra.reindex e he` is the action `Matrix.ShellLieAlgebra.coverEquiv` of the
+compatible pair formed by the relabelling `Matrix.SignCover.reindex` of the ordered sign covers and
+the isometry `a ↦ a ∘ e.symm`. -/
+theorem reindex_eq_coverEquiv (hB : B.IsSymm) :
+    reindex e he = coverEquiv (SignCover.reindex e hB he : SignCover B →* SignCover B')
+      (LinearEquiv.funCongrLeft ℤ ℤ e.symm)
+      (fun a b => by subst he; exact comp_equiv_symm_dotProduct_reindex_mulVec e B a b) := by
+  refine (basis B).ext' fun k => ?_
+  rcases k with i | a
+  · classical
+    rw [basis_inl, reindex_cartan, coverEquiv_cartan]
+    exact congrArg (cartan B') (funext fun j => by simp [LinearMap.funLeft_apply])
+  · rw [basis_inr, reindex_root, coverEquiv_root, SignCover.sectionSign_reindex,
+      normTwoShellEquivOfIsometry_funCongrLeft he]
+
 /-- **The relabelling of a root bracket**, for symmetric `B`: the ordered signs of the two
 labellings differ by the coboundary of the inversion sign `σ`, so
 `⁅x_a, x_b⁆ ↦ σ(a) σ(b) ⁅x_(a ∘ e.symm), x_(b ∘ e.symm)⁆`. -/
@@ -121,62 +143,18 @@ theorem reindex_rootBracket (hB : B.IsSymm) (a b : B.normTwoShell) :
     reindex e he (rootBracket B a b) =
       (inversionSign B e a * inversionSign B e b) •
         rootBracket B' (normTwoShellCongr he a) (normTwoShellCongr he b) := by
-  have hsum : (normTwoShellCongr he a : J → ℤ) + (normTwoShellCongr he b : J → ℤ) =
-      ((a : I → ℤ) + (b : I → ℤ)) ∘ e.symm := by
-    funext j
-    simp
-  have hmem : (normTwoShellCongr he a : J → ℤ) + normTwoShellCongr he b ∈ B'.normTwoShell ↔
-      (a : I → ℤ) + b ∈ B.normTwoShell := by
-    rw [hsum, ← he, comp_equiv_symm_mem_normTwoShell_reindex_iff]
-  have key := negOnePow_orderedSignForm_mul_inversionSign_add B e hB a b
-  rw [he] at key
-  by_cases hm : (a : I → ℤ) + b ∈ B.normTwoShell
-  · have hm' := hmem.2 hm
-    have hroot : normTwoShellCongr he ⟨_, hm⟩ = ⟨_, hm'⟩ :=
-      Subtype.ext <| by rw [coe_normTwoShellCongr_apply]; exact hsum.symm
-    rw [rootBracket_of_mem hm, rootBracket_of_mem hm', map_zsmul_unit, reindex_root, hroot,
-      smul_smul, smul_smul]
-    congr 1
-    rw [coe_normTwoShellCongr_apply, coe_normTwoShellCongr_apply,
-      mul_comm _ (orderedSignForm _ _ _).negOnePow]
-    exact key
-  by_cases hz : (a : I → ℤ) + b = 0
-  · have hz' : (normTwoShellCongr he a : J → ℤ) + normTwoShellCongr he b = 0 := by
-      rw [hsum, hz, Pi.zero_comp]
-    rw [hz, inversionSign_zero, mul_one] at key
-    rw [rootBracket_of_add_eq_zero hz, rootBracket_of_add_eq_zero hz', map_zsmul_unit,
-      reindex_cartan, smul_smul]
-    simp only [coe_normTwoShellCongr_apply]
-    rw [key, mul_comm]
-  · have hz' : (normTwoShellCongr he a : J → ℤ) + normTwoShellCongr he b ≠ 0 := by
-      rw [hsum]
-      exact fun h => hz (by simpa [Function.comp_assoc] using congr($h ∘ e))
-    rw [rootBracket_of_notMem_of_add_ne_zero hm hz,
-      rootBracket_of_notMem_of_add_ne_zero (mt hmem.1 hm) hz', map_zero, smul_zero]
+  rw [reindex_eq_coverEquiv e he hB,
+    coverEquiv_rootBracket _ _ (fun u => by simp)
+      (fun x => by simp [funext_iff, LinearMap.funLeft_apply]),
+    SignCover.sectionSign_reindex, SignCover.sectionSign_reindex,
+    normTwoShellEquivOfIsometry_funCongrLeft he, normTwoShellEquivOfIsometry_funCongrLeft he]
 
 /-- **The relabelling preserves the bracket**, for symmetric `B`. -/
 theorem reindex_lie (hB : B.IsSymm) (x y : ShellLieAlgebra B) :
     reindex e he ⁅x, y⁆ = ⁅reindex e he x, reindex e he y⁆ := by
-  have hpair (h : I → ℤ) (b : B.normTwoShell) :
-      h ∘ e.symm ⬝ᵥ B' *ᵥ (normTwoShellCongr he b : J → ℤ) = h ⬝ᵥ B *ᵥ (b : I → ℤ) := by
-    rw [coe_normTwoShellCongr_apply, ← he, comp_equiv_symm_dotProduct_reindex_mulVec]
-  have key : (bracketBilin B).compr₂ (reindex e he).toLinearMap =
-      (bracketBilin B').compl₁₂ (reindex e he).toLinearMap (reindex e he).toLinearMap :=
-    (basis B).ext fun i => (basis B).ext fun j => by
-      classical
-      simp only [LinearMap.compr₂_apply, LinearMap.compl₁₂_apply, LinearEquiv.coe_coe,
-        bracketBilin_apply_apply]
-      rcases i with i | a <;> rcases j with j | b
-      · simp
-      · simp only [basis_inl, basis_inr, cartan_lie_root, map_zsmul, reindex_cartan, reindex_root,
-          ShellLieAlgebra.lie_units_smul, hpair]
-        exact smul_comm _ _ _
-      · simp only [basis_inl, basis_inr, root_lie_cartan, map_neg, map_zsmul, reindex_cartan,
-          reindex_root, ShellLieAlgebra.units_smul_lie, hpair, smul_neg]
-        rw [smul_comm]
-      · simp only [basis_inr, root_lie_root, reindex_root, ShellLieAlgebra.units_smul_lie,
-          ShellLieAlgebra.lie_units_smul, reindex_rootBracket e he hB, smul_smul, mul_comm]
-  simpa using congr($key x y)
+  rw [reindex_eq_coverEquiv e he hB]
+  exact coverEquiv_lie _ _ (fun u => by simp)
+    (fun x => by simp [funext_iff, LinearMap.funLeft_apply]) x y
 
 /-- **The identity relabels the signed shell Lie algebra by the identity.** -/
 @[simp]

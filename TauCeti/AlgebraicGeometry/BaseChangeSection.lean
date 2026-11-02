@@ -18,6 +18,9 @@ projection `T ×_S X ⟶ T` (`graphSection`). Graphs commute with base change al
 `T' ×_S X ⟶ T ×_S X` (`isPullback_graphSection`). A section `x₀` of `f` induces a section
 `baseChangeSection` on each base change `T ×_S X`: the graph of the `T`-point `T ⟶ S ⟶ X`
 (`basePoint`), so its projection formulas and naturality in `T` follow from those of graphs.
+For a base change `X' = S' ×_S X` along `g : S' ⟶ S`, the base-changed sections of `x₀` and of
+its base change `x₀'` agree under `T ×_S X ≅ T ×_{S'} X'`
+(`baseChangeSection_comp_pullbackRightPullbackFstIso_inv`).
 -/
 
 public section
@@ -128,6 +131,27 @@ lemma isPullback_baseChangeSection {T' T : Over S} (φ : T' ⟶ T) :
   IsPullback.of_right
     (by simpa only [baseChangeSection_fst] using IsPullback.id_horiz φ.left)
     (baseChangeSection_comp_pullback_map f x₀ hx₀ φ) (Over.isPullback_pullback_map_left f φ).flip
+
+variable {S' : Scheme.{u}} (g : S' ⟶ S)
+
+/-- The base-changed sections are compatible with `T ×_S X ≅ T ×_{S'} (S' ×_S X)`. -/
+@[reassoc]
+lemma baseChangeSection_comp_pullbackRightPullbackFstIso_inv (T : Over S') :
+    baseChangeSection f x₀ hx₀ ((Over.map g).obj T) ≫ (pullbackRightPullbackFstIso g f T.hom).inv =
+      𝟙 T.left ≫ baseChangeSection (pullback.fst g f) (baseChangeSection f x₀ hx₀ (Over.mk g))
+        (baseChangeSection_fst f x₀ hx₀ (Over.mk g)) T := by
+  -- The lemmas for the base-changed sections are stated for `T.hom`, which `simp` does not match
+  -- against `((Over.map g).obj T).hom = T.hom ≫ g` and `(Over.mk g).hom = g`.
+  have h₁ := baseChangeSection_fst f x₀ hx₀ ((Over.map g).obj T)
+  have h₂ := baseChangeSection_snd f x₀ hx₀ ((Over.map g).obj T)
+  have h₃ := baseChangeSection_fst f x₀ hx₀ (Over.mk g)
+  have h₄ := baseChangeSection_snd f x₀ hx₀ (Over.mk g)
+  simp only [Over.map_obj_hom, Over.mk_hom] at h₁ h₂ h₃ h₄
+  apply pullback.hom_ext
+  · simpa using h₁
+  · apply pullback.hom_ext
+    · simp [reassoc_of% h₁, h₃]
+    · simp [h₂, h₄]
 
 end
 

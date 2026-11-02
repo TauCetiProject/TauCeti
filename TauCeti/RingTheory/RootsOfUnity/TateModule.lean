@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
+public import Mathlib.RingTheory.RootsOfUnity.EnoughRootsOfUnity
 public import Mathlib.Topology.Algebra.Group.Subgroup
 public import Mathlib.Topology.LocallyConstant.Basic
+public import TauCeti.Topology.Algebra.Group.ContinuousAut.ZHat
+public import TauCeti.Topology.Algebra.Group.Profinite.ZHat.ZMod
 
 import TauCeti.Data.Rat.NumDenDvd
 
@@ -29,6 +31,12 @@ When `E` is a separably closed field of exponential characteristic `p`, this is 
 of automorphisms of `E` on it. For a local field `K` with residue characteristic `p`, the inertia
 group of `K` maps to it through the tame character.
 
+For `p = 1` and a domain containing a compatible family `ζ` of primitive roots of unity of every
+order, the profinite power map `a ↦ ζ ^ a` identifies the Tate module with the profinite integers
+`ℤ̂`. Two such families differ by a unique unit of the ring `ℤ̂`: `ζ' = ζ ^ u`. The compatible
+families of primitive roots of unity therefore form a torsor under `ℤ̂ˣ`, and replacing `ζ` by `ζ'`
+divides the coordinates in `ℤ̂` by `u`.
+
 ## Main definitions
 
 * `TauCeti.primeToPTateModuleSubgroup p E`: the subgroup of compatible families in the product
@@ -45,6 +53,11 @@ group of `K` maps to it through the tame character.
 * `TauCeti.PrimeToPTateModule.ratChar E`: for `p = 1`, where the levels are all the `μ_n(E)`, the
   character `ℚ → Eˣ`, `k / n ↦ ζ_n ^ k`, attached to a point `(ζ_n)_n`. Twisting rational
   exponents by it gives the Galois action on Puiseux series.
+* `TauCeti.PrimeToPTateModule.continuousMulEquivZHat ζ hζ`: for `p = 1` and a domain `R`, the
+  isomorphism of topological groups `lim_n μ_n(R) ≃ₜ* ℤ̂` attached to a point `ζ = (ζ_n)_n` whose
+  components are all primitive, inverse to `zHat.lift ζ`.
+* `TauCeti.PrimeToPTateModule.zHatUnit hζ hζ'`: for two points `ζ`, `ζ'` whose components are all
+  primitive, the unit `u` of the ring `ℤ̂` with `ζ ^ᶻ u = ζ'`.
 
 ## Main results
 
@@ -60,6 +73,11 @@ group of `K` maps to it through the tame character.
   level, takes a value whose components are all primitive roots of unity.
 * `TauCeti.PrimeToPTateModule.topologicalClosure_zpowers_eq_top`: over a domain, a point whose
   components are all primitive roots of unity topologically generates the Tate module.
+* `TauCeti.PrimeToPTateModule.exists_forall_isPrimitiveRoot`: a domain with primitive roots of
+  unity of every order prime to `p` has a compatible system of them, that is, a point of the Tate
+  module whose components are all primitive.
+* `TauCeti.PrimeToPTateModule.proj_surjective`: over such a domain, every root of unity of order
+  prime to `p` is the component of a point of the Tate module.
 * `TauCeti.PrimeToPTateModule.proj_map`, `TauCeti.PrimeToPTateModule.coe_proj_smul`: `map` and
   the action are computed componentwise.
 * `TauCeti.PrimeToPTateModule.ratChar_ofAdd_eq_zpow`: the character of `(ζ_n)_n` sends `q` to
@@ -67,6 +85,21 @@ group of `K` maps to it through the tame character.
   (`TauCeti.PrimeToPTateModule.ratChar_injective`).
 * `TauCeti.PrimeToPTateModule.ratChar_ofAdd_eq_one_iff`: if every `ζ_n` is primitive, the
   character vanishes exactly on `ℤ`.
+* `TauCeti.PrimeToPTateModule.coe_proj_zHatLift`: the level-`n` component of `zHat.lift ζ a` is
+  `ζ_n` raised to the residue of `a` modulo `n`; `TauCeti.PrimeToPTateModule.coe_proj_zpowHat`
+  restates this for `ζ ^ᶻ a` at an arbitrary level.
+* `TauCeti.PrimeToPTateModule.hasEnoughRootsOfUnity_of_isPrimitiveRoot_proj`: a point whose
+  components are all primitive supplies all `n`-th roots of unity, for every `n ≠ 0`.
+* `TauCeti.PrimeToPTateModule.zHatLift_injective`, `TauCeti.PrimeToPTateModule.zHatLift_surjective`:
+  if every component of `ζ` is primitive, `zHat.lift ζ : ℤ̂ → lim_n μ_n(R)` is bijective.
+* `TauCeti.PrimeToPTateModule.zpowHat_eq_iff_eq_zHatUnit`,
+  `TauCeti.PrimeToPTateModule.eq_zHatUnit_iff`: `zHatUnit hζ hζ'` is the unique profinite integer
+  `a` with `ζ ^ᶻ a = ζ'`, equivalently with `ζ'_n = ζ_n ^ (a mod n)` for every `n`.
+* `TauCeti.PrimeToPTateModule.isPrimitiveRoot_proj_zpowHat`,
+  `TauCeti.PrimeToPTateModule.zHatUnit_zpowHat`: conversely every unit `u` gives a family `ζ ^ᶻ u`
+  of primitive roots of unity, with `zHatUnit` equal to `u`.
+* `TauCeti.PrimeToPTateModule.continuousMulEquivZHat_apply_eq_zpowHat`: the coordinate in `ℤ̂`
+  relative to `ζ'` is the coordinate relative to `ζ` multiplied by `(zHatUnit hζ hζ')⁻¹`.
 * The instances `IsTopologicalGroup`, `T2Space`, `TotallyDisconnectedSpace`,
   `ContinuousConstSMul`, and, for a domain, `CompactSpace`.
 -/
@@ -341,6 +374,86 @@ theorem topologicalClosure_zpowers_eq_top {R : Type*} [CommRing R] [IsDomain R]
     obtain ⟨c, rfl⟩ := hsurj x
     exact c.2
 
+/-! ### Compatible systems of primitive roots of unity -/
+
+section Primitive
+
+variable {R : Type*} [CommRing R] [IsDomain R]
+
+/-- **Compatible primitive roots of unity exist.** If a domain `R` has a primitive `m`-th root of
+unity for every nonzero `m` prime to `p`, then the prime-to-`p` Tate module of `R` has a point
+whose level-`m` component is a primitive `m`-th root of unity for every `m`. Equivalently, there
+are primitive `m`-th roots of unity `ζ_m ∈ R` with `ζ_m ^ (m / n) = ζ_n` whenever `n ∣ m`. -/
+theorem exists_forall_isPrimitiveRoot
+    (hR : ∀ m : {m : ℕ // m ≠ 0 ∧ m.Coprime p}, ∃ ζ : R, IsPrimitiveRoot ζ m) :
+    ∃ ζ : PrimeToPTateModule p R, ∀ m : {m : ℕ // m ≠ 0 ∧ m.Coprime p},
+      IsPrimitiveRoot (proj m ζ : Rˣ) m := by
+  let (m : {m : ℕ // m ≠ 0 ∧ m.Coprime p}) : TopologicalSpace (rootsOfUnity m R) := ⊥
+  have (m : {m : ℕ // m ≠ 0 ∧ m.Coprime p}) : DiscreteTopology (rootsOfUnity m R) := ⟨rfl⟩
+  have (m : {m : ℕ // m ≠ 0 ∧ m.Coprime p}) : NeZero (m : ℕ) := ⟨m.2.1⟩
+  -- In the compact product of the finite discrete levels, the families whose level-`N` component
+  -- is primitive and determines the components at all divisors of `N` form a directed family of
+  -- nonempty closed sets. A point in their intersection is a compatible primitive family.
+  set t : {m : ℕ // m ≠ 0 ∧ m.Coprime p} →
+      Set (∀ m : {m : ℕ // m ≠ 0 ∧ m.Coprime p}, rootsOfUnity m R) := fun N ↦
+    {x | IsPrimitiveRoot (x N : Rˣ) N ∧
+      ∀ n : {m : ℕ // m ≠ 0 ∧ m.Coprime p}, (n : ℕ) ∣ N → (x N : Rˣ) ^ ((N : ℕ) / n) = x n}
+  have hsub {M N : {m : ℕ // m ≠ 0 ∧ m.Coprime p}} (hMN : (M : ℕ) ∣ N) : t N ⊆ t M := by
+    rintro x ⟨hx, hc⟩
+    refine ⟨?_, fun n hn ↦ ?_⟩
+    · have h' := hx.pow_of_dvd (Nat.div_ne_zero_iff_of_dvd hMN |>.2 ⟨N.2.1, M.2.1⟩)
+        (Nat.div_dvd_of_dvd hMN)
+      rwa [hc M hMN, Nat.div_div_self hMN N.2.1] at h'
+    · rw [← hc M hMN, ← hc n (hn.trans hMN), ← pow_mul, Nat.div_mul_div hMN hn]
+  have hne (N : {m : ℕ // m ≠ 0 ∧ m.Coprime p}) : (t N).Nonempty := by
+    obtain ⟨ζ, hζ⟩ := hR N
+    -- The family `n ↦ ζ ^ (N / gcd(N, n))`: an `n`-th root of unity for every `n`, which is
+    -- `ζ ^ (N / n)` when `n ∣ N`.
+    have hmem (n : {m : ℕ // m ≠ 0 ∧ m.Coprime p}) :
+        hζ.toRootsOfUnity.1 ^ ((N : ℕ) / Nat.gcd N n) ∈ rootsOfUnity n R := by
+      rw [mem_rootsOfUnity, ← pow_mul, Nat.div_mul_right_comm (Nat.gcd_dvd_left _ _),
+        Nat.mul_div_assoc _ (Nat.gcd_dvd_right _ _), pow_mul,
+        (mem_rootsOfUnity _ _).1 hζ.toRootsOfUnity.2, one_pow]
+    refine ⟨fun n ↦ ⟨_, hmem n⟩, ?_, fun n hn ↦ ?_⟩
+    · simp only [Nat.gcd_self, Nat.div_self (Nat.pos_of_ne_zero N.2.1), pow_one]
+      rwa [← IsPrimitiveRoot.coe_units_iff, IsPrimitiveRoot.val_toRootsOfUnity_coe]
+    · simp [Nat.gcd_self, Nat.div_self (Nat.pos_of_ne_zero N.2.1), Nat.gcd_eq_right hn]
+  have hclosed (N : {m : ℕ // m ≠ 0 ∧ m.Coprime p}) : IsClosed (t N) := by
+    have hN : Continuous fun x : (∀ m : {m : ℕ // m ≠ 0 ∧ m.Coprime p}, rootsOfUnity m R) ↦
+        x N := continuous_apply N
+    simp only [t, Set.ofPred_and, Set.ofPred_forall]
+    refine IsClosed.inter ?_ (isClosed_iInter fun n ↦ isClosed_iInter fun _ ↦ ?_)
+    · exact (isClosed_discrete {ζ : rootsOfUnity N R | IsPrimitiveRoot (ζ : Rˣ) N}).preimage hN
+    · have hNn : Continuous fun x : (∀ m : {m : ℕ // m ≠ 0 ∧ m.Coprime p}, rootsOfUnity m R) ↦
+          (x N, x n) := hN.prodMk (continuous_apply n)
+      exact (isClosed_discrete {y : rootsOfUnity N R × rootsOfUnity n R |
+        (y.1 : Rˣ) ^ ((N : ℕ) / n) = y.2}).preimage hNn
+  have : Nonempty {m : ℕ // m ≠ 0 ∧ m.Coprime p} := ⟨⟨1, one_ne_zero, Nat.coprime_one_left p⟩⟩
+  obtain ⟨x, hx⟩ := IsCompact.nonempty_iInter_of_directed_nonempty_isCompact_isClosed t
+    (fun m n ↦ ⟨⟨m * n, mul_ne_zero m.2.1 n.2.1, Nat.Coprime.mul_left m.2.2 n.2.2⟩,
+      hsub (dvd_mul_right _ _), hsub (dvd_mul_left _ _)⟩)
+    hne (fun N ↦ (hclosed N).isCompact) hclosed
+  rw [Set.mem_iInter] at hx
+  exact ⟨mk x (mem_primeToPTateModuleSubgroup_iff.2 fun m n h ↦ (hx m).2 n h),
+    fun m ↦ (hx m).1⟩
+
+/-- **Every root of unity extends to a compatible family.** If a domain `R` has a primitive `m`-th
+root of unity for every nonzero `m` prime to `p`, then each projection of the prime-to-`p` Tate
+module of `R` onto its level `μ_m(R)` is surjective. -/
+theorem proj_surjective
+    (hR : ∀ m : {m : ℕ // m ≠ 0 ∧ m.Coprime p}, ∃ ζ : R, IsPrimitiveRoot ζ m)
+    (m : {m : ℕ // m ≠ 0 ∧ m.Coprime p}) :
+    Function.Surjective (proj m : PrimeToPTateModule p R → rootsOfUnity m R) := by
+  have : NeZero (m : ℕ) := ⟨m.2.1⟩
+  obtain ⟨ζ, hζ⟩ := exists_forall_isPrimitiveRoot hR
+  intro y
+  obtain ⟨k, hk⟩ : ∃ k : ℤ, (proj m ζ : Rˣ) ^ k = y := by
+    rw [← Subgroup.mem_zpowers_iff, (hζ m).zpowers_eq]
+    exact y.2
+  exact ⟨ζ ^ k, Subtype.ext (by simp [hk])⟩
+
+end Primitive
+
 /-! ### Functoriality and the action of automorphisms -/
 
 section Map
@@ -520,6 +633,235 @@ theorem ratChar_ofAdd_eq_one_iff {x : PrimeToPTateModule 1 E}
   simp [h]
 
 end RatChar
+
+/-! ### The profinite integers -/
+
+section ZHat
+
+universe u
+
+variable {R : Type*} [CommRing R] [IsDomain R]
+
+/-- **The level components of a profinite power.** The level-`n` component of the image of `a ∈ ℤ̂`
+under `zHat.lift ζ` is the natural power of `ζ_n` by the residue of `a` modulo `n`. -/
+theorem coe_proj_zHatLift (ζ : PrimeToPTateModule 1 R) (n : ℕ+) (a : zHat.{u}) :
+    (proj ⟨n, n.ne_zero, Nat.coprime_one_right _⟩ (zHat.lift ζ a) : Rˣ) =
+      (proj ⟨n, n.ne_zero, Nat.coprime_one_right _⟩ ζ : Rˣ) ^
+        (zHat.toZMod n (Additive.ofMul a)).val := by
+  let : TopologicalSpace (rootsOfUnity n R) := ⊥
+  have : DiscreteTopology (rootsOfUnity n R) := ⟨rfl⟩
+  -- The projection to the finite discrete level `μ_n(R)` is a continuous homomorphism, so it
+  -- carries the lift of `ζ` to the lift of `ζ_n`, which is a power of `ζ_n` as `ζ_n ^ n = 1`.
+  let q : PrimeToPTateModule 1 R →ₜ* rootsOfUnity n R :=
+    ⟨proj ⟨n, n.ne_zero, Nat.coprime_one_right _⟩,
+      (isLocallyConstant_proj ⟨n, n.ne_zero, Nat.coprime_one_right _⟩).continuous⟩
+  have hq : (q ζ) ^ (n : ℕ) = 1 := Subtype.ext <| by
+    rw [Subgroup.coe_pow, OneMemClass.coe_one]
+    exact (mem_rootsOfUnity _ _).1 (q ζ).2
+  have h := zpowHat_eq_pow_val_toZMod hq (Additive.ofMul a)
+  rw [zpowHat_def, toMul_ofMul, ← zHat.map_lift] at h
+  exact congrArg ((↑) : rootsOfUnity n R → Rˣ) h |>.trans (by simp [q])
+
+variable {ζ : PrimeToPTateModule 1 R}
+  (hζ : ∀ m : {m : ℕ // m ≠ 0 ∧ m.Coprime 1}, IsPrimitiveRoot (proj m ζ : Rˣ) m)
+include hζ
+
+/-- A point of the Tate module whose components are all primitive supplies a primitive `n`-th root
+of unity in `R`, hence all `n`-th roots of unity, for every `n ≠ 0`. -/
+theorem hasEnoughRootsOfUnity_of_isPrimitiveRoot_proj (n : ℕ) [NeZero n] :
+    HasEnoughRootsOfUnity R n :=
+  ⟨⟨_, IsPrimitiveRoot.coe_units_iff.2 (hζ ⟨n, NeZero.ne n, Nat.coprime_one_right _⟩)⟩,
+    rootsOfUnity.isCyclic R n⟩
+
+/-- If every component of `ζ` is primitive, then `zHat.lift ζ` is injective: the level-`n`
+component of `zHat.lift ζ a` is `ζ_n` raised to the residue of `a` modulo `n`, which determines
+that residue, and a profinite integer is determined by its residues. -/
+theorem zHatLift_injective : Function.Injective (zHat.lift.{u} ζ) := fun a b h ↦ by
+  refine Additive.ofMul.injective (zHat.ext_of_toZMod fun n ↦ ZMod.val_injective _ ?_)
+  have h' : (proj ⟨n, n.ne_zero, Nat.coprime_one_right _⟩ ζ : Rˣ) ^
+        (zHat.toZMod n (Additive.ofMul a)).val =
+      (proj ⟨n, n.ne_zero, Nat.coprime_one_right _⟩ ζ : Rˣ) ^
+        (zHat.toZMod n (Additive.ofMul b)).val := by
+    rw [← coe_proj_zHatLift, ← coe_proj_zHatLift, h]
+  exact (hζ ⟨n, n.ne_zero, Nat.coprime_one_right _⟩).pow_inj (ZMod.val_lt _) (ZMod.val_lt _) h'
+
+/-- If every component of `ζ` is primitive, then `zHat.lift ζ` is surjective, since `ζ` is a
+topological generator of the Tate module. -/
+theorem zHatLift_surjective : Function.Surjective (zHat.lift.{u} ζ) :=
+  zHat.lift_surjective ζ (topologicalClosure_zpowers_eq_top hζ)
+
+variable (ζ) in
+/-- **The Tate module of a domain with compatible primitive roots of unity is `ℤ̂`.** If `ζ` is a
+point of `lim_n μ_n(R)` whose level-`n` component is a primitive `n`-th root of unity for every
+`n`, then `zHat.lift ζ` is an isomorphism of topological groups `ℤ̂ ≃ₜ* lim_n μ_n(R)`; this is its
+inverse, sending `ζ` to the canonical generator `zHat.gen`. -/
+noncomputable def continuousMulEquivZHat : PrimeToPTateModule 1 R ≃ₜ* zHat.{u} :=
+  -- The construction follows `TauCeti.maximalUnramifiedGaloisGroupEquivZHat`: a bijective
+  -- `zHat.lift`, whose inverse is continuous because `ℤ̂` is compact and the target is Hausdorff.
+  let e : zHat.{u} ≃* PrimeToPTateModule 1 R :=
+    MulEquiv.ofBijective (zHat.lift ζ).toMonoidHom
+      ⟨zHatLift_injective hζ, zHatLift_surjective hζ⟩
+  ContinuousMulEquiv.symm
+    { e with
+      continuous_toFun := (zHat.lift ζ).continuous
+      continuous_invFun := (zHat.lift ζ).continuous.continuous_symm_of_equiv_compact_to_t2
+        (f := e.toEquiv) }
+
+/-- The inverse of `continuousMulEquivZHat ζ hζ` is `zHat.lift ζ`. -/
+@[simp]
+theorem continuousMulEquivZHat_symm_apply (a : zHat.{u}) :
+    (continuousMulEquivZHat ζ hζ).symm a = zHat.lift ζ a :=
+  (rfl)
+
+/-- The isomorphism `continuousMulEquivZHat ζ hζ` sends `ζ` to the canonical generator of `ℤ̂`. -/
+@[simp]
+theorem continuousMulEquivZHat_self : continuousMulEquivZHat.{u} ζ hζ ζ = zHat.gen :=
+  (continuousMulEquivZHat ζ hζ).symm.injective <| by
+    rw [ContinuousMulEquiv.symm_apply_apply, continuousMulEquivZHat_symm_apply, zHat.lift_gen]
+
+/-- **The coordinates of the isomorphism with `ℤ̂`.** The residue modulo `n` of the image of `x`
+under `continuousMulEquivZHat ζ hζ` is the exponent by which `ζ_n` gives the level-`n` component
+of `x`. -/
+theorem coe_proj_pow_toZMod_continuousMulEquivZHat (x : PrimeToPTateModule 1 R) (n : ℕ+) :
+    (proj ⟨n, n.ne_zero, Nat.coprime_one_right _⟩ ζ : Rˣ) ^
+        (zHat.toZMod n (Additive.ofMul (continuousMulEquivZHat.{u} ζ hζ x))).val =
+      proj ⟨n, n.ne_zero, Nat.coprime_one_right _⟩ x := by
+  rw [← coe_proj_zHatLift, ← continuousMulEquivZHat_symm_apply hζ,
+    ContinuousMulEquiv.symm_apply_apply]
+
+end ZHat
+
+/-! ### Changing the compatible family of primitive roots of unity -/
+
+section ZHatUnit
+
+universe u
+
+open Additive
+open scoped zHat
+
+variable {R : Type*} [CommRing R] [IsDomain R] {ζ ζ' ζ'' : PrimeToPTateModule 1 R}
+  (hζ : ∀ m : {m : ℕ // m ≠ 0 ∧ m.Coprime 1}, IsPrimitiveRoot (proj m ζ : Rˣ) m)
+  (hζ' : ∀ m : {m : ℕ // m ≠ 0 ∧ m.Coprime 1}, IsPrimitiveRoot (proj m ζ' : Rˣ) m)
+  (hζ'' : ∀ m : {m : ℕ // m ≠ 0 ∧ m.Coprime 1}, IsPrimitiveRoot (proj m ζ'' : Rˣ) m)
+
+/-- The level-`m` component of `ζ ^ᶻ a` is the power of that of `ζ` by the residue of `a` modulo
+`m`. This is `coe_proj_zHatLift` indexed by an arbitrary level `m` instead of a positive natural. -/
+theorem coe_proj_zpowHat (ζ : PrimeToPTateModule 1 R) (a : Additive zHat.{u})
+    (m : {m : ℕ // m ≠ 0 ∧ m.Coprime 1}) :
+    (proj m (ζ ^ᶻ a) : Rˣ) =
+      (proj m ζ : Rˣ) ^ (zHat.toZMod (⟨m, Nat.pos_of_ne_zero m.2.1⟩ : ℕ+) a).val := by
+  obtain ⟨m, hm, -⟩ := m
+  rw [zpowHat_def]
+  -- The level `⟨m, hm, _⟩` is the one `coe_proj_zHatLift` attaches to `⟨m, _⟩ : ℕ+`.
+  exact coe_proj_zHatLift ζ ⟨m, Nat.pos_of_ne_zero hm⟩ (toMul a)
+
+include hζ in
+/-- If every component of `ζ` is primitive, the profinite power map `a ↦ ζ ^ᶻ a` is injective. -/
+theorem zpowHat_right_injective :
+    Function.Injective fun a : Additive zHat.{u} ↦ ζ ^ᶻ a := fun a b h ↦
+  Additive.toMul.injective <| zHatLift_injective hζ <| by simpa only [zpowHat_def] using h
+
+/-- `ζ` raised to its own coordinate of `x` in `ℤ̂` is `x`. -/
+@[simp]
+theorem zpowHat_ofMul_continuousMulEquivZHat (x : PrimeToPTateModule 1 R) :
+    ζ ^ᶻ Additive.ofMul (continuousMulEquivZHat.{u} ζ hζ x) = x := by
+  rw [zpowHat_def, toMul_ofMul, ← continuousMulEquivZHat_symm_apply hζ,
+    ContinuousMulEquiv.symm_apply_apply]
+
+/-- **The unit relating two compatible families of primitive roots of unity.** If every component
+of `ζ` and of `ζ'` is primitive, `zHatUnit hζ hζ'` is the unit `u` of the profinite integers with
+`ζ ^ᶻ u = ζ'` (`TauCeti.PrimeToPTateModule.zpowHat_zHatUnit`); it is the unique such profinite
+integer (`TauCeti.PrimeToPTateModule.zpowHat_eq_iff_eq_zHatUnit`). It is the unit that
+`TauCeti.zHat.continuousAutEquivUnits` attaches to the coordinate change from `ζ'` to `ζ`, so its
+value is the coordinate of `ζ'` relative to `ζ`. -/
+noncomputable def zHatUnit : (Additive zHat.{u})ˣ :=
+  zHat.continuousAutEquivUnits
+    ((continuousMulEquivZHat ζ' hζ').symm.trans (continuousMulEquivZHat ζ hζ))
+
+/-- The unit `zHatUnit hζ hζ'` is the coordinate of `ζ'` relative to `ζ`. -/
+theorem coe_zHatUnit :
+    (zHatUnit.{u} hζ hζ' : Additive zHat.{u}) =
+      Additive.ofMul (continuousMulEquivZHat ζ hζ ζ') := by
+  rw [zHatUnit, zHat.coe_continuousAutEquivUnits_apply, ContinuousMulEquiv.trans_apply,
+    continuousMulEquivZHat_symm_apply, zHat.lift_gen]
+
+/-- `ζ` raised to the unit `zHatUnit hζ hζ'` is `ζ'`. -/
+@[simp]
+theorem zpowHat_zHatUnit : ζ ^ᶻ (zHatUnit.{u} hζ hζ' : Additive zHat.{u}) = ζ' := by
+  rw [coe_zHatUnit, zpowHat_ofMul_continuousMulEquivZHat]
+
+/-- **Uniqueness.** The unit `zHatUnit hζ hζ'` is the only profinite integer `a` with
+`ζ ^ᶻ a = ζ'`. -/
+theorem zpowHat_eq_iff_eq_zHatUnit {a : Additive zHat.{u}} :
+    ζ ^ᶻ a = ζ' ↔ a = zHatUnit hζ hζ' :=
+  ⟨fun h ↦ zpowHat_right_injective hζ (h.trans (zpowHat_zHatUnit hζ hζ').symm),
+    fun h ↦ h ▸ zpowHat_zHatUnit hζ hζ'⟩
+
+/-- The level-`n` component of `ζ'` is the power of that of `ζ` by the residue of
+`zHatUnit hζ hζ'` modulo `n`. -/
+theorem coe_proj_eq_pow_val_toZMod_zHatUnit (n : ℕ+) :
+    (proj ⟨n, n.ne_zero, Nat.coprime_one_right _⟩ ζ' : Rˣ) =
+      (proj ⟨n, n.ne_zero, Nat.coprime_one_right _⟩ ζ : Rˣ) ^
+        (zHat.toZMod n (zHatUnit.{u} hζ hζ' : Additive zHat.{u})).val := by
+  rw [coe_zHatUnit, coe_proj_pow_toZMod_continuousMulEquivZHat]
+
+/-- **The finite-level characterization.** A profinite integer `a` is `zHatUnit hζ hζ'` exactly
+when, for every `n`, the level-`n` component of `ζ'` is the power of that of `ζ` by the residue of
+`a` modulo `n`. -/
+theorem eq_zHatUnit_iff {a : Additive zHat.{u}} :
+    a = zHatUnit hζ hζ' ↔ ∀ n : ℕ+, (proj ⟨n, n.ne_zero, Nat.coprime_one_right _⟩ ζ' : Rˣ) =
+      (proj ⟨n, n.ne_zero, Nat.coprime_one_right _⟩ ζ : Rˣ) ^ (zHat.toZMod n a).val := by
+  refine ⟨fun h n ↦ h ▸ coe_proj_eq_pow_val_toZMod_zHatUnit hζ hζ' n, fun h ↦ ?_⟩
+  refine (zpowHat_eq_iff_eq_zHatUnit hζ hζ').1 (ext fun m ↦ Subtype.ext ?_)
+  rw [coe_proj_zpowHat]
+  exact (h _).symm
+
+/-- The unit relating `ζ` to itself is `1`. -/
+@[simp]
+theorem zHatUnit_self : zHatUnit.{u} hζ hζ = 1 :=
+  Units.ext ((zpowHat_eq_iff_eq_zHatUnit hζ hζ).1 (zpowHat_one ζ)).symm
+
+/-- **The cocycle relation.** Passing from `ζ` to `ζ'` and then from `ζ'` to `ζ''` multiplies the
+units. -/
+theorem zHatUnit_mul_zHatUnit :
+    zHatUnit.{u} hζ hζ' * zHatUnit hζ' hζ'' = zHatUnit hζ hζ'' :=
+  Units.ext <| (zpowHat_eq_iff_eq_zHatUnit hζ hζ'').1 <| by
+    rw [Units.val_mul, zpowHat_mul, zpowHat_zHatUnit, zpowHat_zHatUnit]
+
+/-- The unit relating `ζ'` to `ζ` is the inverse of the unit relating `ζ` to `ζ'`. -/
+@[simp]
+theorem inv_zHatUnit : (zHatUnit.{u} hζ hζ')⁻¹ = zHatUnit hζ' hζ := by
+  rw [inv_eq_iff_mul_eq_one, zHatUnit_mul_zHatUnit hζ hζ' hζ, zHatUnit_self]
+
+include hζ in
+/-- **Every unit gives a compatible family of primitive roots of unity.** If every component of
+`ζ` is primitive, so is every component of `ζ ^ᶻ u` for a unit `u` of the profinite integers. -/
+theorem isPrimitiveRoot_proj_zpowHat (v : (Additive zHat.{u})ˣ)
+    (m : {m : ℕ // m ≠ 0 ∧ m.Coprime 1}) :
+    IsPrimitiveRoot (proj m (ζ ^ᶻ (v : Additive zHat.{u})) : Rˣ) m := by
+  rw [coe_proj_zpowHat]
+  exact (hζ m).pow_of_coprime _
+    (ZMod.val_coe_unit_coprime (Units.map (zHat.toZMod _).toMonoidHom v))
+
+/-- The unit relating `ζ` to `ζ ^ᶻ u` is `u`. Together with `zpowHat_zHatUnit`, this makes the
+compatible families of primitive roots of unity a torsor under the units of `ℤ̂`. -/
+@[simp]
+theorem zHatUnit_zpowHat (v : (Additive zHat.{u})ˣ) :
+    zHatUnit hζ (isPrimitiveRoot_proj_zpowHat hζ v) = v :=
+  Units.ext ((zpowHat_eq_iff_eq_zHatUnit hζ _).1 rfl).symm
+
+/-- **The change of coordinates.** The coordinate in `ℤ̂` of `x` relative to `ζ'` is its
+coordinate relative to `ζ` raised to the inverse of `zHatUnit hζ hζ'`. -/
+theorem continuousMulEquivZHat_apply_eq_zpowHat (x : PrimeToPTateModule 1 R) :
+    continuousMulEquivZHat.{u} ζ' hζ' x =
+      continuousMulEquivZHat.{u} ζ hζ x ^ᶻ ((zHatUnit.{u} hζ hζ')⁻¹ : (Additive zHat.{u})ˣ) := by
+  -- The coordinate change from `ζ` to `ζ'` is powering by the unit `zHatUnit hζ' hζ` it defines.
+  rw [inv_zHatUnit, ← zHat.continuousAutOfUnit_apply, ← zHat.continuousAutEquivUnits_symm_apply,
+    zHatUnit, MulEquiv.symm_apply_apply, ContinuousMulEquiv.trans_apply,
+    ContinuousMulEquiv.symm_apply_apply]
+
+end ZHatUnit
 
 end PrimeToPTateModule
 

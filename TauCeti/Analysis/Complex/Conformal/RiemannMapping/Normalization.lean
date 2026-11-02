@@ -57,14 +57,6 @@ domain, since the size of `deriv f z₀` is not free once the image is required 
 * `TauCeti.eqOn_id_of_isNormalizedRiemannMapOn_ball` — the normalized Riemann map of the disc at
   the origin is the identity.
 
-## Coordination with upstream Mathlib
-
-The Riemann mapping theorem is being formalized upstream at
-[mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505), which proves the
-L0–L3 prerequisites internally as private lemmas. As with the rest of this development's L0–L3
-material, the declarations here are an explicitly **temporary shim**: delete them and refactor
-downstream consumers onto the exported Mathlib versions once those land.
-
 ## References
 
 * L. Ahlfors, *Complex Analysis*, Ch. 6 §1.

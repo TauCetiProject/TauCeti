@@ -44,6 +44,8 @@ holomorphic, and that a homeomorphism from an open subset of a complex curve ont
 * `TauCeti.analyticAt_chart_comp_comp_symm`: a map holomorphic near `x` has an analytic
   representative in any charts of the maximal atlases at `x` and `f x`;
   `TauCeti.analyticAt_chartAt_comp_comp_chartAt_symm` is the case of the preferred charts.
+* `TauCeti.analyticAt_comp_chartAt_symm`: a function to a complete complex normed space that is
+  holomorphic near `x` has an analytic representative in the preferred chart at `x`.
 * `IsHomeomorph.mdifferentiable_symm`: the inverse of a holomorphic homeomorphism between complex
   curves is holomorphic.
 * `TauCeti.mdifferentiableAt_of_continuousAt_of_eventually_nhdsNE`: Riemann's removable singularity
@@ -130,6 +132,18 @@ theorem analyticAt_chartAt_comp_comp_chartAt_symm
     AnalyticAt ℂ (fun z ↦ chartAt ℂ (f x) (f ((chartAt ℂ x).symm z))) (chartAt ℂ x x) :=
   analyticAt_chart_comp_comp_symm (chart_mem_maximalAtlas x) (chart_mem_maximalAtlas (f x))
     (mem_chart_source ℂ x) (mem_chart_source ℂ (f x)) hf
+
+/-- A function to a complete complex normed space that is holomorphic near `x` has an analytic
+representative in the preferred chart at `x`. -/
+theorem analyticAt_comp_chartAt_symm {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    [CompleteSpace E] {g : X → E} (hg : ∀ᶠ y in 𝓝 x, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ, E) g y) :
+    AnalyticAt ℂ (g ∘ (chartAt ℂ x).symm) (chartAt ℂ x x) := by
+  have hcx := mem_chart_source ℂ x
+  rw [Complex.analyticAt_iff_eventually_differentiableAt]
+  filter_upwards [(chartAt ℂ x).open_target.mem_nhds ((chartAt ℂ x).map_source hcx),
+    ((chartAt ℂ x).tendsto_symm hcx).eventually hg] with z hz hgz
+  exact mdifferentiableAt_iff_differentiableAt.1
+    (hgz.comp z (mdifferentiableAt_atlas_symm (chart_mem_atlas ℂ x) hz))
 
 end PreferredCharts
 

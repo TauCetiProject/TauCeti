@@ -28,6 +28,8 @@ is a model of the image of a theory exactly when it is a model of the theory.
 * `FirstOrder.Language.Theoryω.Model`: a structure satisfies every sentence of a theory.
 * `FirstOrder.Language.Theoryω.conjunction`: the countable conjunction of a countable theory.
 * `FirstOrder.Language.LHom.onTheoryω`: the image of a theory under a language homomorphism.
+* `FirstOrder.Language.OmitsType`: a structure omits a partial type when no tuple realizes all of
+  it.
 
 ## Main results
 
@@ -148,6 +150,18 @@ theorem realize_conjunction_iff (hT : T.Countable) :
   simp only [Subtype.forall, SentenceInf.realize_def, FormulaInf.realize_def]
 
 end Theoryω
+
+/-! ### Omitting types -/
+
+/-- A structure **omits** a set `p` of `L_{ω₁ω}` formulas in `n` bound variables, a partial type,
+when no `n`-tuple of the structure realizes every member of `p`. -/
+def OmitsType (M : Type w) [L.Structure M] {n : ℕ} (p : Set (L.BoundedFormulaω Empty n)) : Prop :=
+  ∀ a : Fin n → M, ∃ φ ∈ p, ¬ φ.Realize Empty.elim a
+
+/-- Unfolding lemma for `OmitsType`. -/
+theorem omitsType_iff {M : Type w} [L.Structure M] {n : ℕ} {p : Set (L.BoundedFormulaω Empty n)} :
+    OmitsType M p ↔ ∀ a : Fin n → M, ∃ φ ∈ p, ¬ φ.Realize Empty.elim a :=
+  Iff.rfl
 
 namespace LHom
 

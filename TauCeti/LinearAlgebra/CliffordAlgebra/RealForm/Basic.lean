@@ -82,6 +82,7 @@ unfolding.
 * `TauCeti.equivalent_realSignatureForm_realCliffordForm`: the orthogonal-sum and coordinate
   presentations of the real normal form are isometric.
 * `TauCeti.nondegenerate_realCliffordForm`: the signature forms are nondegenerate.
+* `TauCeti.isOrtho_realCliffordForm_single`: distinct coordinate lines are orthogonal.
 * `TauCeti.realCliffordForm_zero_eq_weightedSumSquares_one`: the compact signature form is the
   standard real sum-of-squares form.
 * `TauCeti.finrank_cliffordAlgebra_realCliffordForm`:
@@ -188,6 +189,20 @@ weight of its coordinate: `1` at the first `p` coordinates and `-1` at the last 
 theorem realCliffordForm_apply_single (p q : ℕ) (i : Fin (p + q)) (x : ℝ) :
     realCliffordForm p q (Pi.single i x) = realCliffordWeight p q i * x ^ 2 := by
   simp [realCliffordForm, Pi.single_apply, _root_.sq]
+
+/-- Distinct coordinate lines are orthogonal for the signature form. -/
+theorem isOrtho_realCliffordForm_single {p q : ℕ} {i j : Fin (p + q)} (hij : i ≠ j) (x y : ℝ) :
+    (realCliffordForm p q).IsOrtho (Pi.single i x) (Pi.single j y) := by
+  rw [QuadraticMap.isOrtho_def]
+  simp only [realCliffordForm_apply, ← Finset.sum_add_distrib, Pi.add_apply]
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  by_cases hki : k = i
+  · subst hki
+    simp [hij]
+  · by_cases hkj : k = j
+    · subst hkj
+      simp [hki]
+    · simp [hki, hkj]
 
 /-- Every coordinate unit vector has value one for the compact real Clifford form. -/
 @[simp]

@@ -31,6 +31,8 @@ parallel notion of Hölder continuity.
 * `TauCeti.HolderSpace.constL`, `TauCeti.HolderSpace.evalCLM`, and
   `TauCeti.HolderSpace.toBoundedContinuousFunctionCLM`: continuous linear maps for constants,
   evaluation, and inclusion, with operator-norm bounds.
+* `TauCeti.HolderSpace.compLipschitzL`: precomposition with a `K`-Lipschitz map, of operator norm
+  at most `max 1 (K ^ α)`.
 
 ## References
 
@@ -158,7 +160,13 @@ theorem zero_apply (x : X) : (0 : HolderSpace α X Y) x = 0 := (rfl)
 theorem add_apply (f g : HolderSpace α X Y) (x : X) : (f + g) x = f x + g x := (rfl)
 
 @[simp]
+theorem sub_apply (f g : HolderSpace α X Y) (x : X) : (f - g) x = f x - g x := (rfl)
+
+@[simp]
 theorem smul_apply (c : ℝ) (f : HolderSpace α X Y) (x : X) : (c • f) x = c • f x := (rfl)
+
+@[simp]
+theorem neg_apply (f : HolderSpace α X Y) (x : X) : (-f) x = -f x := (rfl)
 
 /-- The underlying bounded continuous function determines a Hölder-space element. -/
 theorem toBoundedContinuousFunction_injective :
@@ -267,12 +275,19 @@ theorem evalCLM_def (x : X) : evalCLM (α := α) (Y := Y) x =
 theorem evalCLM_apply (x : X) (f : HolderSpace α X Y) : evalCLM x f = f x := by
   simp [evalCLM_def]
 
-/-- Evaluation has operator norm at most one. -/
-theorem norm_evalCLM_le_one (x : X) : ‖evalCLM (α := α) (Y := Y) x‖ ≤ 1 := by
-  apply ContinuousLinearMap.opNorm_le_bound _ zero_le_one
-  intro f
+@[simp]
+theorem sum_apply {ι : Type*} (s : Finset ι) (f : ι → HolderSpace α X Y) (x : X) :
+    (∑ i ∈ s, f i) x = ∑ i ∈ s, f i x := by
+  simpa only [evalCLM_apply] using map_sum (evalCLM (α := α) (Y := Y) x) f s
+
+/-- Every value is bounded by the supremum-plus-Hölder norm. -/
+theorem norm_apply_le (f : HolderSpace α X Y) (x : X) : ‖f x‖ ≤ ‖f‖ := by
   simpa using (f.toBoundedContinuousFunction.norm_coe_le_norm x).trans
     f.norm_toBoundedContinuousFunction_le
+
+/-- Evaluation has operator norm at most one. -/
+theorem norm_evalCLM_le_one (x : X) : ‖evalCLM (α := α) (Y := Y) x‖ ≤ 1 :=
+  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun f ↦ by simpa using f.norm_apply_le x
 
 private theorem holderWith_sub_of_tendsto_of_norm_sub_le {u : ℕ → HolderSpace α X Y}
     {F : X →ᵇ Y} (hF : Tendsto (fun n ↦ (u n).toBoundedContinuousFunction) atTop (𝓝 F))
@@ -472,6 +487,70 @@ theorem evalCLM_comp_constL (x : X) :
     (evalCLM (α := α) (Y := Y) x).comp constL = ContinuousLinearMap.id ℝ Y := by
   ext y
   simp
+
+section compLipschitz
+
+variable {X' : Type*} [MetricSpace X'] {K : ℝ≥0}
+
+/-- Precomposition with a `K`-Lipschitz map preserves bounded `α`-Hölder functions: the global
+Hölder seminorm grows by at most the factor `K ^ α`. -/
+theorem nnHolderNorm_comp_le {g : X' → X} (hg : LipschitzWith K g) (f : HolderSpace α X Y) :
+    nnHolderNorm α ((f : X → Y) ∘ g) ≤ nnHolderNorm α (f : X → Y) * K ^ (α : ℝ) := by
+  have h := f.memHolder.holderWith.comp (holderWith_one.2 hg)
+  rw [mul_one, coe_toBoundedContinuousFunction] at h
+  exact h.nnholderNorm_le
+
+/-- Precomposition with a `K`-Lipschitz map, as a continuous linear map between bounded Hölder
+spaces of the same exponent. -/
+def compLipschitzL (g : X' → X) (hg : LipschitzWith K g) :
+    HolderSpace α X Y →L[ℝ] HolderSpace α X' Y :=
+  LinearMap.mkContinuous
+    { toFun f := ofBoundedContinuousFunction
+        (f.toBoundedContinuousFunction.compContinuous ⟨g, hg.continuous⟩) (by
+          have h := f.memHolder.holderWith.comp (holderWith_one.2 hg)
+          rw [mul_one] at h
+          simpa only [BoundedContinuousFunction.coe_compContinuous, ContinuousMap.coe_mk] using
+            h.memHolder)
+      map_add' f₁ f₂ := by ext; rfl
+      map_smul' c f := by ext; rfl }
+    (max 1 ((K : ℝ) ^ (α : ℝ))) fun f ↦ by
+      have h₁ := BoundedContinuousFunction.norm_compContinuous_le
+        f.toBoundedContinuousFunction ⟨g, hg.continuous⟩
+      have h₂ : (nnHolderNorm α ((f : X → Y) ∘ g) : ℝ) ≤
+          nnHolderNorm α (f : X → Y) * (K : ℝ) ^ (α : ℝ) := by
+        exact_mod_cast nnHolderNorm_comp_le hg f
+      have hM₁ : (1 : ℝ) ≤ max 1 ((K : ℝ) ^ (α : ℝ)) := le_max_left _ _
+      have hMK : (K : ℝ) ^ (α : ℝ) ≤ max 1 ((K : ℝ) ^ (α : ℝ)) := le_max_right _ _
+      have hH : (0 : ℝ) ≤ nnHolderNorm α (f : X → Y) := NNReal.coe_nonneg _
+      rw [LinearMap.coe_mk, AddHom.coe_mk, norm_def, norm_def f,
+        toBoundedContinuousFunction_ofBoundedContinuousFunction,
+        BoundedContinuousFunction.coe_compContinuous, ContinuousMap.coe_mk,
+        coe_toBoundedContinuousFunction]
+      nlinarith [norm_nonneg f.toBoundedContinuousFunction]
+
+variable {g : X' → X}
+
+@[simp]
+theorem compLipschitzL_apply (hg : LipschitzWith K g) (f : HolderSpace α X Y) (x : X') :
+    compLipschitzL g hg f x = f (g x) := (rfl)
+
+@[simp]
+theorem toBoundedContinuousFunction_compLipschitzL (hg : LipschitzWith K g)
+    (f : HolderSpace α X Y) : (compLipschitzL g hg f).toBoundedContinuousFunction =
+      f.toBoundedContinuousFunction.compContinuous ⟨g, hg.continuous⟩ := (rfl)
+
+/-- Precomposition with a `K`-Lipschitz map has operator norm at most `max 1 (K ^ α)`. -/
+theorem norm_compLipschitzL_le (hg : LipschitzWith K g) :
+    ‖compLipschitzL (α := α) (Y := Y) g hg‖ ≤ max 1 ((K : ℝ) ^ (α : ℝ)) :=
+  LinearMap.mkContinuous_norm_le _ (le_max_of_le_left zero_le_one) _
+
+/-- Precomposition with a `1`-Lipschitz map, for instance an isometry or the inclusion of a
+subspace, does not increase the Hölder-space norm. -/
+theorem norm_compLipschitzL_le_one (hg : LipschitzWith 1 g) :
+    ‖compLipschitzL (α := α) (Y := Y) g hg‖ ≤ 1 := by
+  simpa using norm_compLipschitzL_le (α := α) (Y := Y) hg
+
+end compLipschitz
 
 end HolderSpace
 

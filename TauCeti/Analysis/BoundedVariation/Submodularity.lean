@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.BoundedVariation.Perimeter
 import TauCeti.Algebra.Order.Ring.Abs
 import TauCeti.Analysis.BoundedVariation.Convolution
-import TauCeti.Analysis.Convolution
+import TauCeti.Analysis.Convolution.Basic
 import TauCeti.Analysis.Normed.Module.RCLike.Real
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity

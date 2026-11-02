@@ -38,6 +38,7 @@ on:
   workflow_dispatch:
     inputs:
       pr: { description: "PR number to build", required: true, type: string }
+      maintenance: { description: "Prioritized maintenance recovery build", type: boolean, default: false }
 
 permissions:
   contents: read
@@ -74,6 +75,7 @@ jobs:
   pick-runner:
     uses: ./.github/workflows/pick-runner.yml
     with:
+      maintenance: ${{ inputs.maintenance || (github.event.pull_request.user.type == 'Bot' && github.event.pull_request.head.repo.full_name == github.repository && (startsWith(github.event.pull_request.head.ref, 'bump-mathlib/') || startsWith(github.event.pull_request.head.ref, 'lint-repair/'))) }}
       fleet-staging: ${{ github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' }}
       fleet-pr: ${{ github.event_name == 'pull_request_target' || (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-pr-approved') }}
       pr-head: ${{ github.event.pull_request.head.sha || github.event.client_payload.head_sha || '' }}
@@ -92,7 +94,10 @@ jobs:
     # Exact fleet labels bind placement to one machine and guest. A failed picker
     # or failed-jobs-only rerun queues on GitHub: stale picker output must never
     # send another attempt to an ephemeral guest that has already retired.
-    runs-on: ${{ fromJSON(needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && needs.pick-runner.outputs.runner || '"ubuntu-24.04"') }}
+    # Maintenance repairs must not wait behind the ordinary PR backlog. These
+    # use the same vetted Namespace sandbox shape as ordinary overflow, with
+    # the existing staging priority. This changes scheduling, never merge gates.
+    runs-on: ${{ (inputs.maintenance || (github.event.pull_request.user.type == 'Bot' && github.event.pull_request.head.repo.full_name == github.repository && (startsWith(github.event.pull_request.head.ref, 'bump-mathlib/') || startsWith(github.event.pull_request.head.ref, 'lint-repair/')))) && fromJSON(format('["nscloud-ubuntu-24.04-amd64-8x16-with-features;job.priority=1","namespace-features:container.privileged=true;github.run-id={0}"]', github.run_id)) || fromJSON(needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && needs.pick-runner.outputs.runner || '"ubuntu-24.04"') }}
     outputs:
       status-sha: ${{ steps.pr.outputs.status_sha }}
       build-state: ${{ steps.report.outputs.build-state }}
@@ -1202,16 +1207,31 @@ jobs:
           echo "SHIM_EXPIRY_RC=$rc" >> "$GITHUB_ENV"
           exit "$rc"
 
+      # Installation tokens issued before compilation can expire during a full build.
+      # Mint fresh read and status credentials only after candidate execution has ended.
+      - name: Refresh CI reporting credentials after the build
+        id: report-ci-api
+        if: always()
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@a8b16c3dd0c0730a1963052cb520808e161222ef
+        with:
+          owner: ${{ github.repository_owner }}
+          repository: ${{ github.event.repository.name }}
+          workflow-token: ${{ github.token }}
+          read-app-id: ${{ secrets.CI_READ_APP_ID }}
+          read-app-private-key: ${{ secrets.CI_READ_APP_PRIVATE_KEY }}
+          status-app-id: ${{ secrets.CI_STATUS_APP_ID }}
+          status-app-private-key: ${{ secrets.CI_STATUS_APP_PRIVATE_KEY }}
+
       - name: Report build and bump-guard statuses to the PR head commit
         id: report
         if: always()
         env:
           CI_STATUS_APP_ID: ${{ secrets.CI_STATUS_APP_ID }}
           CI_STATUS_APP_PRIVATE_KEY: ${{ secrets.CI_STATUS_APP_PRIVATE_KEY }}
-          GH_TOKEN: ${{ steps.ci-api.outputs.status-token }}
-          GH_READ_TOKEN: ${{ steps.ci-api.outputs.read-token }}
-          TAUCETI_GITHUB_READ_ROLE: ${{ steps.ci-api.outputs.read-role }}
-          TAUCETI_GITHUB_WRITE_ROLE: ${{ steps.ci-api.outputs.status-role }}
+          GH_TOKEN: ${{ steps.report-ci-api.outputs.status-token || steps.ci-api.outputs.status-token }}
+          GH_READ_TOKEN: ${{ steps.report-ci-api.outputs.read-token || steps.ci-api.outputs.read-token }}
+          TAUCETI_GITHUB_READ_ROLE: ${{ steps.report-ci-api.outputs.read-role || steps.ci-api.outputs.read-role }}
+          TAUCETI_GITHUB_WRITE_ROLE: ${{ steps.report-ci-api.outputs.status-role || steps.ci-api.outputs.status-role }}
           RAW_HEAD: ${{ steps.pr.outputs.sha }}
           CAPTURED_BASE: ${{ steps.pr.outputs.base_sha }}
           CANDIDATE_MODE: ${{ env.IS_BATCH == 'true' && 'frozen-candidate' || 'pr-integration' }}

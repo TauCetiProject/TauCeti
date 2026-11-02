@@ -38,7 +38,11 @@ two. This is the form used for nodal curves.
 ## Main results
 
 * `TauCeti.finrank_residueField_tensor_kaehlerDifferential_eq_two`: `dim_κ κ ⊗[A] Ω[A⁄K] = 2`.
+* `TauCeti.formallyEtale_residueField_of_fittingIdeal_ne_top`: the residue field is formally étale
+  over `K`.
 * `TauCeti.finrank_cotangentSpace_eq_two`: `dim_κ 𝔪/𝔪² = 2`.
+* `TauCeti.formallyUnramified_localization_quotient_fittingIdeal`: the unramified singular locus
+  localizes.
 * `TauCeti.finrank_tensor_kaehlerDifferential_eq_two`: for `A` not necessarily local, the fibre of
   `Ω[A⁄K]` at every point of `V(I)` has dimension two.
 
@@ -93,20 +97,26 @@ theorem finrank_residueField_tensor_kaehlerDifferential_eq_two
   have : μ = 0 := finrank_zero_of_subsingleton
   omega
 
-/-- **The tangent space at a node is a plane.** If the first Fitting ideal of `Ω[A⁄K]` is a
-proper ideal of the local `K`-algebra `A` with unramified quotient, the Zariski cotangent space
-`𝔪/𝔪²` has dimension two. -/
-theorem finrank_cotangentSpace_eq_two (h : fittingIdeal A Ω[A⁄K] 1 ≠ ⊤) :
-    finrank (ResidueField A) (CotangentSpace A) = 2 := by
+/-- **The residue field at a node is étale.** If the first Fitting ideal of `Ω[A⁄K]` is a proper
+ideal of the local `K`-algebra `A` with unramified quotient, then the residue field of `A`, a
+quotient of `A ⧸ Fitt₁(Ω[A⁄K])`, is separable and hence formally étale over `K`. -/
+theorem formallyEtale_residueField_of_fittingIdeal_ne_top (h : fittingIdeal A Ω[A⁄K] 1 ≠ ⊤) :
+    Algebra.FormallyEtale K (ResidueField A) := by
   have hI := Ideal.eq_maximalIdeal_of_formallyUnramified_quotient K h
-  -- The residue field is a quotient of the unramified `A ⧸ Fitt₁(Ω[A⁄K])`, so it is étale over `K`.
   have : Algebra.FormallyUnramified K (ResidueField A) :=
     .of_surjective (Ideal.Quotient.liftₐ _ (IsScalarTower.toAlgHom K A (ResidueField A))
       fun a ha ↦ (residue_eq_zero_iff a).2 (hI ▸ ha))
       (Ideal.Quotient.lift_surjective_of_surjective _ _ residue_surjective)
   have : Algebra.EssFiniteType K (ResidueField A) := .comp K A (ResidueField A)
   have : Algebra.IsSeparable K (ResidueField A) := Algebra.FormallyUnramified.isSeparable K _
-  have : Algebra.FormallyEtale K (ResidueField A) := .of_isSeparable K _
+  exact .of_isSeparable K _
+
+/-- **The tangent space at a node is a plane.** If the first Fitting ideal of `Ω[A⁄K]` is a
+proper ideal of the local `K`-algebra `A` with unramified quotient, the Zariski cotangent space
+`𝔪/𝔪²` has dimension two. -/
+theorem finrank_cotangentSpace_eq_two (h : fittingIdeal A Ω[A⁄K] 1 ≠ ⊤) :
+    finrank (ResidueField A) (CotangentSpace A) = 2 := by
+  have := formallyEtale_residueField_of_fittingIdeal_ne_top h
   -- The conormal map `𝔪/𝔪² → κ ⊗[A] Ω[A⁄K]` is then a bijection.
   have hbij := KaehlerDifferential.kerCotangentToTensor_bijective_of_formallyEtale
     (R := K) (P := A) (S := ResidueField A) residue_surjective
@@ -119,6 +129,29 @@ theorem finrank_cotangentSpace_eq_two (h : fittingIdeal A Ω[A⁄K] 1 ≠ ⊤) :
 
 end LocalRing
 
+section Localization
+
+variable {K A : Type*} [CommRing K] [CommRing A] [Algebra K A] [Algebra.EssFiniteType K A]
+  [Algebra.FormallyUnramified K (A ⧸ fittingIdeal A Ω[A⁄K] 1)]
+
+/-- **The unramified singular locus localizes.** Let `A` be essentially of finite type over a ring
+`K`, with `A ⧸ Fitt₁(Ω[A⁄K])` unramified over `K`. Then the same holds for every localization of
+`A`: its singular locus is the localization of that of `A`. -/
+theorem formallyUnramified_localization_quotient_fittingIdeal (M : Submonoid A) :
+    Algebra.FormallyUnramified K (Localization M ⧸
+      fittingIdeal (Localization M) Ω[Localization M⁄K] 1) := by
+  set I := fittingIdeal A Ω[A⁄K] 1
+  let Aₘ := Localization M
+  have : Algebra.FormallyUnramified (A ⧸ I) (Aₘ ⧸ I.map (algebraMap A Aₘ)) :=
+    .of_isLocalization (Algebra.algebraMapSubmonoid (A ⧸ I) M)
+  have : IsScalarTower K (A ⧸ I) (Aₘ ⧸ I.map (algebraMap A Aₘ)) :=
+    .of_algebraMap_eq fun _ ↦ rfl
+  have : Algebra.FormallyUnramified K (Aₘ ⧸ I.map (algebraMap A Aₘ)) := .comp K (A ⧸ I) _
+  exact .of_equiv (Ideal.quotientEquivAlgOfEq K
+    ((KaehlerDifferential.isBaseChange_of_formallyEtale K A Aₘ).fittingIdeal_eq_map 1).symm)
+
+end Localization
+
 variable {K A : Type*} [Field K] [CommRing A] [Algebra K A] [Algebra.EssFiniteType K A]
   [Algebra.FormallyUnramified K (A ⧸ fittingIdeal A Ω[A⁄K] 1)]
 
@@ -130,21 +163,12 @@ theorem finrank_tensor_kaehlerDifferential_eq_two {L : Type*} [Field L] [Algebra
     (h : fittingIdeal A Ω[A⁄K] 1 ≤ RingHom.ker (algebraMap A L)) :
     finrank L (L ⊗[A] Ω[A⁄K]) = 2 := by
   set p := RingHom.ker (algebraMap A L)
-  set I := fittingIdeal A Ω[A⁄K] 1
   have : p.IsPrime := RingHom.ker_isPrime _
   let Aₚ := Localization.AtPrime p
   -- The differentials and their Fitting ideals localize.
-  have hΩ := KaehlerDifferential.isBaseChange_of_formallyEtale K A Aₚ
   have hfit (k : ℕ) : fittingIdeal Aₚ Ω[Aₚ⁄K] k = (fittingIdeal A Ω[A⁄K] k).map (algebraMap A Aₚ) :=
-    hΩ.fittingIdeal_eq_map k
-  -- The singular locus of `Aₚ` is the localization of that of `A`, hence unramified over `K`.
-  have : Algebra.FormallyUnramified (A ⧸ I) (Aₚ ⧸ I.map (algebraMap A Aₚ)) :=
-    .of_isLocalization (Algebra.algebraMapSubmonoid (A ⧸ I) p.primeCompl)
-  have : IsScalarTower K (A ⧸ I) (Aₚ ⧸ I.map (algebraMap A Aₚ)) :=
-    .of_algebraMap_eq fun _ ↦ rfl
-  have : Algebra.FormallyUnramified K (Aₚ ⧸ I.map (algebraMap A Aₚ)) := .comp K (A ⧸ I) _
-  have : Algebra.FormallyUnramified K (Aₚ ⧸ fittingIdeal Aₚ Ω[Aₚ⁄K] 1) :=
-    .of_equiv (Ideal.quotientEquivAlgOfEq K (hfit 1).symm)
+    (KaehlerDifferential.isBaseChange_of_formallyEtale K A Aₚ).fittingIdeal_eq_map k
+  have := formallyUnramified_localization_quotient_fittingIdeal (K := K) p.primeCompl
   have hne : fittingIdeal Aₚ Ω[Aₚ⁄K] 1 ≠ ⊤ := by
     rw [hfit 1]
     exact ne_top_of_le_ne_top (maximalIdeal.isMaximal Aₚ).ne_top

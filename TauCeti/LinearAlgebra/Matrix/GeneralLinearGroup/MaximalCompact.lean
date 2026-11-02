@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Matrix.PosDef
 public import Mathlib.Topology.Algebra.Group.Units
+public import TauCeti.Analysis.Matrix.Compact
 public import TauCeti.Analysis.Matrix.EuclideanLin
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
+public import TauCeti.Analysis.Matrix.Polar
 public import TauCeti.RepresentationTheory.Compact.UnitaryModel
 public import TauCeti.Topology.Algebra.Group.Subgroup
 public import TauCeti.Topology.Algebra.UnitaryGroup
@@ -32,11 +32,12 @@ decompositions.
 
 The two proofs are the classical ones.
 
-For maximality, take `g` in a compact subgroup `K ⊇ U`. Diagonalize the positive-definite matrix
-`gᴴ g = V D Vᴴ` by a unitary `V`, with `D` the diagonal of eigenvalues. With `S = √D`, the matrix
-`W = g V S⁻¹` is unitary, so `S = W⁻¹ g V` lies in `K`. All integer powers of the positive diagonal
-matrix `S` then lie in the compact set `K`, so their diagonal entries are bounded; this forces
-`S = 1`, hence `gᴴ g = 1` and `g` is unitary.
+For maximality, take `g` in a compact subgroup `K ⊇ U` and use its polar decomposition
+`g = P V`. The unitary factor `V` belongs to `K`, so the positive factor `P = g V⁻¹` belongs to
+`K` too. The real trace is bounded on `K`, whereas powers of any eigenvalue greater than one
+would force the traces of powers of `P` to be unbounded. Applying this to `P` and `P⁻¹` forces
+`P = 1`, hence `g` is unitary. The trace-growth argument is
+`Matrix.PosSemidef.eq_one_of_mem_isCompact_subgroup`.
 
 For conjugacy, Weyl's unitarian trick (`ContRepresentation.exists_isUnitary_congr`) applies to the
 tautological representation of the compact group `K` on `EuclideanSpace 𝕜 ι`: averaging the inner
@@ -68,82 +69,24 @@ variable {𝕜 : Type*} [RCLike 𝕜] {ι : Type*} [Fintype ι] [DecidableEq ι]
 
 namespace Matrix.GeneralLinearGroup
 
-/-- A positive diagonal matrix in a compact subgroup of `GL ι 𝕜` is the identity: its integer
-powers are again in the subgroup, so their diagonal entries are bounded. -/
-private theorem eq_one_of_diagGL_mem {K : Subgroup (GL ι 𝕜)} (hK : IsCompact (K : Set (GL ι 𝕜)))
-    {s : ι → ℝ} (hs : ∀ i, 0 < s i)
-    (hmem : TauCeti.diagGL (fun i ↦ Units.mk0 (s i : 𝕜) (by simpa using (hs i).ne')) ∈ K)
-    (i : ι) : s i = 1 := by
-  obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn
-    (f := fun g : GL ι 𝕜 ↦ (g : Matrix ι ι 𝕜) i i)
-    ((continuous_apply_apply i i).comp (Units.continuous_val (M := Matrix ι ι 𝕜))).continuousOn
-  have hbound (k : ℤ) : s i ^ k ≤ C := by
-    simpa only [← map_zpow, TauCeti.diagGL_apply, ↓reduceIte, Pi.pow_apply,
-      Units.val_zpow_eq_zpow_val, Units.val_mk0, norm_zpow, RCLike.norm_ofReal,
-      abs_of_pos (hs i)] using hC _ (zpow_mem hmem k)
-  -- A positive real number other than `1` has integer powers tending to infinity.
-  rcases lt_trichotomy (s i) 1 with hlt | heq | hgt
-  · obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt C (one_lt_inv₀ (hs i) |>.mpr hlt)
-    have := hbound (-(n : ℤ))
-    rw [_root_.zpow_neg, zpow_natCast, ← _root_.inv_pow] at this
-    linarith
-  · exact heq
-  · obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt C hgt
-    have := hbound n
-    rw [zpow_natCast] at this
-    linarith
-
+open scoped MatrixOrder in
 /-- **The unitary subgroup is a maximal compact subgroup of `GL ι 𝕜`**, in the elementwise form:
 an element of a compact subgroup containing every unitary matrix is unitary. -/
 theorem mem_unitarySubgroup_of_isCompact_of_le {K : Subgroup (GL ι 𝕜)}
     (hK : IsCompact (K : Set (GL ι 𝕜))) (hUK : unitarySubgroup (GL ι 𝕜) ≤ K) {g : GL ι 𝕜}
     (hg : g ∈ K) : g ∈ unitarySubgroup (GL ι 𝕜) := by
-  -- Diagonalize the positive-definite matrix `gᴴ g = V D Vᴴ`.
-  obtain ⟨A, hAdef⟩ : ∃ A, A = (g : Matrix ι ι 𝕜)ᴴ * g := ⟨_, rfl⟩
-  have hpos : A.PosDef :=
-    hAdef ▸ PosDef.conjTranspose_mul_self _ (mulVec_injective_iff_isUnit.mpr g.isUnit)
-  have hA : A.IsHermitian := hpos.1
-  set V := hA.eigenvectorUnitary
-  set s : ι → ℝ := fun i ↦ √(hA.eigenvalues i) with hsdef
-  have hs (i : ι) : 0 < s i := Real.sqrt_pos.mpr (PosDef.eigenvalues_pos hpos i)
-  set S : GL ι 𝕜 := TauCeti.diagGL fun i ↦ Units.mk0 (s i : 𝕜) (by simpa using (hs i).ne')
-  have hVU : Unitary.toUnits V ∈ unitarySubgroup (GL ι 𝕜) := by simp
-  -- The matrix `W = g V S⁻¹` is unitary.
-  have hW : g * Unitary.toUnits V * S⁻¹ ∈ unitarySubgroup (GL ι 𝕜) := by
-    rw [mem_unitarySubgroup_iff, TauCeti.mem_unitary_units_iff, mem_unitaryGroup_iff']
-    have hSinv : ((S⁻¹ : GL ι 𝕜) : Matrix ι ι 𝕜) = diagonal fun i ↦ ((s i)⁻¹ : 𝕜) := by
-      rw [← map_inv, TauCeti.diagGL_coe]
-      simp
-    have hD : star (V : Matrix ι ι 𝕜) * A * (V : Matrix ι ι 𝕜) =
-        diagonal (RCLike.ofReal ∘ hA.eigenvalues) := by
-      simpa [Unitary.conjStarAlgAut_apply] using hA.conjStarAlgAut_star_eigenvectorUnitary
-    have hsq (i : ι) : (s i : 𝕜)⁻¹ * (hA.eigenvalues i : 𝕜) * (s i : 𝕜)⁻¹ = 1 := by
-      have hsi : (s i : 𝕜) ≠ 0 := by simpa using (hs i).ne'
-      rw [← Real.sq_sqrt (PosDef.eigenvalues_pos hpos i).le]
-      field_simp
-      simp [hsdef]
-    simp only [Units.val_mul, Unitary.val_toUnits_apply, hSinv, star_mul, star_eq_conjTranspose,
-      diagonal_conjTranspose]
-    calc _ = diagonal (fun i ↦ ((s i)⁻¹ : 𝕜)) *
-          (star (V : Matrix ι ι 𝕜) * A * (V : Matrix ι ι 𝕜)) *
-          diagonal (fun i ↦ ((s i)⁻¹ : 𝕜)) := by
-            simp only [hAdef, star_eq_conjTranspose, Pi.star_def, star_inv₀, RCLike.star_def,
-              RCLike.conj_ofReal, Matrix.mul_assoc]
-      _ = 1 := by
-        rw [hD, diagonal_mul_diagonal, diagonal_mul_diagonal, ← diagonal_one]
-        exact congrArg diagonal (funext fun i ↦ by simpa using hsq i)
-  -- Hence `S = W⁻¹ g V` lies in `K`, which forces `S = 1`.
-  have hSK : S ∈ K := by
-    have : S = (g * Unitary.toUnits V * S⁻¹)⁻¹ * g * Unitary.toUnits V := by group
-    rw [this]
-    exact mul_mem (mul_mem (inv_mem (hUK hW)) hg) (hUK hVU)
-  have hs1 : ∀ i, hA.eigenvalues i = 1 := fun i ↦ by
-    have := eq_one_of_diagGL_mem hK hs hSK i
-    rwa [hsdef, Real.sqrt_eq_one] at this
-  -- So `gᴴ g = V Vᴴ = 1`.
-  rw [mem_unitarySubgroup_iff, TauCeti.mem_unitary_units_iff, mem_unitaryGroup_iff',
-    star_eq_conjTranspose, ← hAdef, hA.spectral_theorem]
-  simp [hs1, Function.comp_def]
+  let V := Units.polarUnitary g
+  let P := g * (Unitary.toUnits V)⁻¹
+  have hV : Unitary.toUnits V ∈ unitarySubgroup (GL ι 𝕜) := by simp
+  have hP : (P : Matrix ι ι 𝕜) = CFC.sqrt ((g : Matrix ι ι 𝕜) * star (g : Matrix ι ι 𝕜)) := by
+    apply (Unitary.mul_left_inj V).mp
+    rw [Units.sqrt_mul_star_mul_polarUnitary]
+    exact congrArg Units.val (inv_mul_cancel_right g (Unitary.toUnits V))
+  have hPone : P = 1 :=
+    (hP.symm ▸ (posDef_sqrt_mul_star g).posSemidef).eq_one_of_mem_isCompact_subgroup
+      hK (K.mul_mem hg (K.inv_mem (hUK hV)))
+  have hgV : g = Unitary.toUnits V := (mul_inv_eq_one.mp hPone)
+  exact hgV ▸ hV
 
 /-- **The unitary subgroup is a maximal compact subgroup of `GL ι 𝕜`.** A compact subgroup that
 contains every unitary matrix is the unitary subgroup. Over `ℝ` this is the orthogonal group

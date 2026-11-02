@@ -10,6 +10,8 @@ public import TauCeti.Analysis.Calculus.SecondDerivative
 public import TauCeti.Geometry.Manifold.MFDeriv.Chart
 public import TauCeti.Geometry.Manifold.Morse.Index
 import TauCeti.Geometry.Manifold.IsManifold.Basic
+import TauCeti.Geometry.Manifold.Morse.CriticalPoints
+import TauCeti.Geometry.Manifold.VectorField.Regularity
 import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
@@ -36,11 +38,15 @@ Morse index is the negative index of inertia of the critical Hessian.
 * `TauCeti.criticalHessian_apply_eq_of_mem_maximalAtlas`: at a critical point the critical Hessian
   is the Hessian in an arbitrary chart of the maximal atlas, composed with the chart derivative.
 * `TauCeti.criticalHessian_apply_swap`: the critical Hessian of a `C²` function is symmetric.
+* `TauCeti.criticalHessian_apply_eq_mvfderiv`: at a critical point, differentiating `df(Y)`
+  computes the Hessian against the value of the vector field `Y`.
 * `TauCeti.isManifoldNondegenerateCriticalPoint_iff_criticalHessian`: an intrinsic
   characterization of nondegenerate critical points.
 * `TauCeti.isManifoldNondegenerateCriticalPoint_iff_of_mem_maximalAtlas` and
   `TauCeti.manifoldMorseIndex_eq_morseIndex_of_mem_maximalAtlas`: nondegeneracy and the Morse index
   in an arbitrary chart.
+* `TauCeti.isMorseOn_iff_of_mem_maximalAtlas`: being Morse on a subset of a chart source, read in
+  that chart.
 * `TauCeti.IsManifoldNondegenerateCriticalPoint.manifoldMorseIndex_eq_zero_iff` and
   `TauCeti.IsManifoldNondegenerateCriticalPoint.manifoldMorseIndex_eq_finrank_iff`: definiteness
   tests for the extreme indices.
@@ -431,6 +437,46 @@ theorem IsManifoldNondegenerateCriticalPoint.mvfderiv_eq_zero
     (h : IsManifoldNondegenerateCriticalPoint I f x) : mvfderiv I f x = 0 :=
   (isManifoldNondegenerateCriticalPoint_iff_criticalHessian.mp h).2.1
 
+/-- At a critical point, differentiating `df(Y)` in a tangent direction computes the critical
+Hessian against `Y x`. The derivative of the vector field contributes nothing because `df = 0`.
+In particular this expression depends only on the value of `Y` at the point. -/
+theorem criticalHessian_apply_eq_mvfderiv [IsManifold I 2 M]
+    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) (hcrit : mvfderiv I f x = 0)
+    {Y : (y : M) → TangentSpace I y}
+    (hY : MDifferentiableAt I I.tangent (fun y ↦ (Y y : TangentBundle I M)) x)
+    (v : TangentSpace I x) :
+    criticalHessian I f x v (Y x) = mvfderiv I (fun y ↦ mvfderiv I f y (Y y)) x v := by
+  -- In the preferred chart, the field is a differentiable map into the model vector space.
+  let ψ := extChartAt I x
+  let g := f ∘ ψ.symm
+  let V : E → E := VectorField.mpullbackWithin 𝓘(ℝ, E) I ψ.symm Y (range I)
+  have hg : ContDiffAt ℝ 2 g (ψ x) := hf.contDiffAt_comp_extChartAt_symm
+  have hDg : DifferentiableAt ℝ (fderiv ℝ g) (ψ x) :=
+    (hg.fderiv_right (by norm_num : (1 : ℕ∞ω) + 1 ≤ 2)).differentiableAt one_ne_zero
+  have hV : DifferentiableAt ℝ V (ψ x) := by
+    have h := MDifferentiableWithinAt.differentiableWithinAt_mpullbackWithin_extChartAt_symm
+      (hY.mdifferentiableWithinAt (s := univ))
+    have h' : DifferentiableWithinAt ℝ V univ (ψ x) := by
+      simpa only [V, preimage_univ, univ_inter,
+        ModelWithCorners.Boundaryless.range_eq_univ] using h
+    exact h'.differentiableAt univ_mem
+  -- The first-order chain rule identifies the coordinate directional derivative with `df(Y)`.
+  have heq : (fun z ↦ fderiv ℝ g z (V z)) =ᶠ[𝓝 (ψ x)]
+      (fun y ↦ mvfderiv I f y (Y y)) ∘ ψ.symm := by
+    simpa only [g, V, ψ, ModelWithCorners.Boundaryless.range_eq_univ, nhdsWithin_univ,
+      fderivWithin_univ] using
+      eventuallyEq_fderivWithin_chart_apply_mpullbackWithin (U := Y) hf (by norm_num)
+  -- Differentiating once more leaves only `D²g`: the term involving `DV` is multiplied by `Dg=0`.
+  have hmd : MDifferentiableAt I 𝓘(ℝ) (fun y ↦ mvfderiv I f y (Y y)) x :=
+    ((hf.contMDiffAt_mvfderiv_apply (m := 1) (by norm_num)).mdifferentiableAt one_ne_zero).comp x hY
+  have hzero : fderiv ℝ g (ψ x) = 0 := by
+    rwa [← (hf.mdifferentiableAt two_ne_zero).mvfderiv_eq_fderiv_comp_extChartAt_symm]
+  rw [criticalHessian_def, hmd.mvfderiv_eq_fderiv_comp_extChartAt_symm, ← heq.fderiv_eq,
+    fderiv_clm_apply hDg hV]
+  have hVx : V (ψ x) = Y x := VectorField.mpullbackWithin_extChartAt_symm_self Y x
+  simp only [hzero, ContinuousLinearMap.zero_comp, zero_add, hVx]
+  exact (ContinuousLinearMap.flip_apply (fderiv ℝ (fderiv ℝ g) (ψ x)) v (Y x)).symm
+
 section Chart
 
 variable {e : OpenPartialHomeomorph M H} (he : e ∈ IsManifold.maximalAtlas I 2 M)
@@ -538,6 +584,29 @@ theorem manifoldMorseIndex_symm_eq_morseIndex_of_mem_maximalAtlas
   have hnd := isManifoldNondegenerateCriticalPoint_symm_of_mem_maximalAtlas he hv h
   rw [manifoldMorseIndex_eq_morseIndex_of_mem_maximalAtlas he hs hnd.contMDiffAt
     hnd.mvfderiv_eq_zero, (e.extend I).right_inv hv]
+
+omit hx in
+/-- **Morse in a chart.** On a boundaryless manifold, a function `f` smooth at every point of a
+subset `s` of the source of a chart `e` of the `C²` maximal atlas is Morse on `s` exactly when its
+coordinate expression `f ∘ (e.extend I).symm` has only nondegenerate critical points on
+`e.extend I '' s`. -/
+theorem isMorseOn_iff_of_mem_maximalAtlas {s : Set M} (hf : ∀ x ∈ s, ContMDiffAt I 𝓘(ℝ) ∞ f x)
+    (hs : s ⊆ e.source) :
+    IsMorseOn I f s ↔
+      HasNondegenerateCriticalPointsOn (f ∘ (e.extend I).symm) (e.extend I '' s) := by
+  have he₁ : e ∈ IsManifold.maximalAtlas I 1 M := IsManifold.maximalAtlas_subset_of_le (by simp) he
+  -- Criticality and nondegeneracy at a point of `s` may be read in the chart `e`.
+  have hcrit {x : M} (hx : x ∈ s) :
+      x ∈ criticalPoints I f ↔ fderiv ℝ (f ∘ (e.extend I).symm) (e.extend I x) = 0 :=
+    mem_criticalPoints.trans (mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero he₁ (hs hx)
+      ((hf x hx).mdifferentiableAt (by simp)))
+  rw [isMorseOn_iff_criticalPoints, hasNondegenerateCriticalPointsOn_iff]
+  refine ⟨fun h ↦ ?_, fun h ↦ ⟨fun x hx ↦ (hf x hx).contMDiffWithinAt, fun x hx hx₀ ↦ ?_⟩⟩
+  · rintro _ ⟨x, hx, rfl⟩ hx₀
+    exact (isManifoldNondegenerateCriticalPoint_iff_of_mem_maximalAtlas he (hs hx)).1
+      (h.2 x hx ((hcrit hx).2 hx₀))
+  · exact (isManifoldNondegenerateCriticalPoint_iff_of_mem_maximalAtlas he (hs hx)).2
+      (h (mem_image_of_mem _ hx) ((hcrit hx).1 hx₀))
 
 end Chart
 

@@ -15,11 +15,12 @@ public import TauCeti.Topology.Homotopy.TubeNeighborhood
 This file characterizes the based pointwise predicate `SemilocallySimplyConnectedAt x` from
 `TauCeti.AlgebraicTopology.SemilocallySimplyConnected.Basic` by open neighbourhoods, by the
 triviality of the map on fundamental groups induced by the inclusion of a neighbourhood, and by
-homotopy of paths with a common endpoint. It introduces `SemilocallySimplyConnectedOn`, and
-shows that on a locally path-connected space the based condition yields open, path-connected,
-`IsPathHomotopyTrivial` neighbourhoods, in which *all* loops, at every basepoint, are
-null-homotopic in the ambient space (the unbased form, Brazas, Definition 2.2), which is what the
-universal-cover construction consumes.
+homotopy of paths with a common endpoint, and shows that it pulls back along any map injective on
+fundamental groups (`SemilocallySimplyConnectedAt.of_map_injective`). It introduces
+`SemilocallySimplyConnectedOn`, and shows that on a locally path-connected space the based
+condition yields open, path-connected, `IsPathHomotopyTrivial` neighbourhoods, in which *all*
+loops, at every basepoint, are null-homotopic in the ambient space (the unbased form, Brazas,
+Definition 2.2), which is what the universal-cover construction consumes.
 
 Combined with the tube neighbourhoods of `TauCeti.Topology.Homotopy.TubeNeighborhood`, this shows
 that path-homotopy classes are open in the compact-open topology
@@ -76,6 +77,40 @@ public theorem semilocallySimplyConnectedAt_iff_range_eq_bot {x : X} :
     have h := (TauCeti.FundamentalGroup.map_range_eq_bot_iff ⟨Subtype.val, continuous_subtype_val⟩
       (⟨x, mem_of_mem_nhds hU⟩ : U)).mp (hU_triv _) (γ.codRestrict hmem)
     rwa [Path.map_codRestrict] at h
+
+/-- **Semilocal simple connectivity pulls back along a map that is injective on fundamental
+groups.** If `f : C(X, Y)` induces an injective map `π₁(X, x) → π₁(Y, f x)` and `Y` is
+semilocally simply connected at `f x`, then `X` is semilocally simply connected at `x`: the
+preimage of a witnessing neighbourhood of `f x` witnesses the condition at `x`. -/
+public theorem SemilocallySimplyConnectedAt.of_map_injective {Y : Type*} [TopologicalSpace Y]
+    (f : C(X, Y)) {x : X} (hf : Function.Injective (FundamentalGroup.map f x))
+    (h : SemilocallySimplyConnectedAt (f x)) : SemilocallySimplyConnectedAt x := by
+  obtain ⟨U, hU, hU_loops⟩ := semilocallySimplyConnectedAt_def.mp h
+  refine semilocallySimplyConnectedAt_def.mpr
+    ⟨f ⁻¹' U, f.continuous.continuousAt.preimage_mem_nhds hU, fun γ hγ ↦ ?_⟩
+  have hnull := hU_loops (γ.map f.continuous) <| by
+    rintro _ ⟨t, rfl⟩
+    exact hγ ⟨t, rfl⟩
+  -- The image of the class of `γ` is trivial, so the class of `γ` is trivial by injectivity.
+  have key : FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ) =
+      FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk (Path.refl x)) := by
+    refine hf ?_
+    rw [TauCeti.FundamentalGroup.map_fromPath, TauCeti.FundamentalGroup.map_fromPath,
+      Path.map_refl, Path.Homotopic.Quotient.eq.mpr hnull]
+  exact (FundamentalGroupoid.fromPath_eq_iff_homotopic _ _).mp
+    (congrArg CategoryTheory.End.asHom key)
+
+/-- **A space with a map to a semilocally simply connected space that is injective on all
+fundamental groups is semilocally simply connected.** This covers the total space of a covering
+map (`IsCoveringMap.semilocallySimplyConnectedSpace`) and a space homotopy equivalent to a
+semilocally simply connected one (`ContinuousMap.HomotopyEquiv.semilocallySimplyConnectedSpace`).
+-/
+public theorem TauCeti.SemilocallySimplyConnectedSpace.of_map_injective {Y : Type*}
+    [TopologicalSpace Y] [SemilocallySimplyConnectedSpace Y] (f : C(X, Y))
+    (hf : ∀ x, Function.Injective (FundamentalGroup.map f x)) :
+    SemilocallySimplyConnectedSpace X :=
+  ⟨fun x ↦ (SemilocallySimplyConnectedSpace.semilocallySimplyConnectedAt (f x)).of_map_injective
+    f (hf x)⟩
 
 /-- Characterization of `SemilocallySimplyConnectedAt x` by paths: some open neighbourhood `U`
 of `x` has any two paths in `U` from `x` to a common endpoint homotopic in the ambient space. -/

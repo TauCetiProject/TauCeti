@@ -212,6 +212,18 @@ theorem quantile_of_one_lt (μ : Measure ℝ) (ht : 1 < t) : μ.quantile t = 0 :
     eq_empty_of_forall_notMem fun x hx ↦ absurd (hx.trans (cdf_le_one μ x)) (not_le.2 ht)
   rw [quantile_def, hset, Real.sInf_empty]
 
+/-- The zero measure has quantile zero at every level, including the endpoint levels. -/
+@[simp]
+theorem quantile_zero (t : ℝ) : (0 : Measure ℝ).quantile t = 0 := by
+  rcases le_or_gt t 0 with h0 | h0
+  · exact quantile_of_nonpos 0 h0
+  rcases le_or_gt t 1 with h1 | h1
+  · have hset : {x : ℝ | t ≤ cdf (0 : Measure ℝ) x} = Ici 0 := by
+      ext x
+      by_cases hx : 0 ≤ x <;> simp [cdf_zero, hx, h0, h1]
+    rw [quantile_def, hset, csInf_Ici]
+  · exact quantile_of_one_lt 0 h1
+
 /-- The cumulative distribution function at the quantile reaches every level strictly below
 `1`. -/
 theorem le_cdf_quantile (μ : Measure ℝ) (h1 : t < 1) : t ≤ cdf μ (μ.quantile t) := by
@@ -563,6 +575,20 @@ theorem upperQuantile_mem {μ : Measure ℝ} {s : Set ℝ} {t : ℝ} [IsProbabil
 end Set.OrdConnected
 
 namespace MeasureTheory.Measure
+
+/-- For a law with continuous cdf, strictly increasing on an interval of full mass, the
+quantile is the unique point of that interval at the requested interior cdf level. -/
+theorem quantile_eq_iff_of_ae_mem_of_strictMonoOn (μ : Measure ℝ) [IsProbabilityMeasure μ]
+    {s : Set ℝ} {u x : ℝ} (hs : s.OrdConnected) (hμs : ∀ᵐ y ∂μ, y ∈ s)
+    (hμ : Continuous (cdf μ)) (hmono : StrictMonoOn (cdf μ) s) (hu : u ∈ Ioo 0 1) :
+    μ.quantile u = x ↔ x ∈ s ∧ cdf μ x = u := by
+  have hq := hs.quantile_mem hμs hu.1 hu.2
+  have hroot := cdf_quantile μ hμ hu.1 hu.2
+  constructor
+  · rintro rfl
+    exact ⟨hq, hroot⟩
+  · rintro ⟨hx, hxu⟩
+    exact hmono.injOn hq hx (hroot.trans hxu.symm)
 
 /-- For a law carried by `[c, ∞)` whose cdf is positive above `c`, quantiles tend to `c` as
 the level decreases to zero. An atom at `c` is allowed. -/

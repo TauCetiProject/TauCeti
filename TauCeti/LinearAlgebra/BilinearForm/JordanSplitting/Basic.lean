@@ -92,6 +92,8 @@ constituent of type II between constituents of type II
 * `LinearMap.BilinForm.IsJordanSplitting.equivalent_restrict_of_forall_unimodular`: through these
   congruences, the isometry of two constituents of isometric forms reduces to that of their
   unimodular rescalings.
+* `LinearMap.BilinForm.IsJordanSplitting.isCompl_biSup_Iic_biSup_Ici`: the constituents of index
+  at most `j` and those of index above `j` span complementary submodules.
 
 ## References
 
@@ -760,6 +762,15 @@ theorem IsJordanSplitting.equivalent_restrict_of_forall_unimodular [IsDomain R] 
     fun hprev hnext x ↦ hsub (k := 2) (hf₂ hprev hnext _ (hdvd x))
   rw [← hC, ← hC']
   exact (equivalent_smul_iff hπj).mpr ⟨u⟩
+
+/-- The sums of the constituents of a Jordan splitting of index at most `j` and at least `j + 1`
+are complementary. -/
+theorem IsJordanSplitting.isCompl_biSup_Iic_biSup_Ici (h : B.IsJordanSplitting π N)
+    (j : ℕ) : IsCompl (⨆ i ∈ Set.Iic j, N i) (⨆ i ∈ Set.Ici (j + 1), N i) := by
+  refine ⟨h.isInternal.submodule_iSupIndep.disjoint_biSup_biSup
+    (Set.disjoint_left.mpr fun i hi hi' ↦ by simp_all; omega), codisjoint_iff.mpr ?_⟩
+  rw [← iSup_union, show Set.Iic j ∪ Set.Ici (j + 1) = Set.univ by ext; simp; omega]
+  simpa using h.isInternal.submodule_iSup_eq_top
 
 end Constituents
 

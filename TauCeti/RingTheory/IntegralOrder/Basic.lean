@@ -38,6 +38,8 @@ whose regular trace form vanishes, although the conclusion holds there via the r
 
 * `TauCeti.IntegralOrder.isOrder_iff`: `Λ` is an order iff it is finite over `R` and spans `E`.
 * `TauCeti.IntegralOrder.IsOrder.isIntegral`: every element of an order is integral over `R`.
+* `TauCeti.IntegralOrder.IsOrder.le_integralClosure`: in a commutative algebra, every order lies in
+  the integral closure of `R`.
 * `TauCeti.IntegralOrder.isOrder_of_isIntegral`: a spanning subalgebra of integral elements is an
   order when `R` is integrally closed and noetherian and the regular trace form is nondegenerate.
 * `TauCeti.IntegralOrder.mem_groupRingSubalgebra`: `x ∈ F[G]` lies in `R[G]` iff all its
@@ -119,6 +121,18 @@ theorem isOrder_bot : IsOrder F (⊥ : Subalgebra R F) := by
     (subset_span (one_mem (⊥ : Subalgebra R F)))
 
 end Basic
+
+section Commutative
+
+variable {R F E : Type*} [CommRing R] [CommRing F] [CommRing E]
+  [Algebra R F] [Algebra F E] [Algebra R E] [IsScalarTower R F E]
+
+/-- In a commutative algebra, every `R`-order lies in the integral closure of `R`. -/
+theorem IsOrder.le_integralClosure {Λ : Subalgebra R E} (h : IsOrder F Λ) :
+    Λ ≤ integralClosure R E :=
+  fun _ hx => h.isIntegral hx
+
+end Commutative
 
 section Integral
 

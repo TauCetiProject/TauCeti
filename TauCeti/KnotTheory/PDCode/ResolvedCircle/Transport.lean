@@ -39,6 +39,12 @@ smoothed diagram:
 * reading a crossing from another slot (`TauCeti.PDCode.rotateCrossing`);
 * permuting the labels of the crossing-free circles.
 
+A `TauCeti.PDCode.ResolutionEquiv D D'` identifies all smoothings of `D` with those of `D'` at
+once, along a bijection of crossings, by one half-edge bijection and one bijection of crossing-free
+labels. It gives a smoothing equivalence for every state, and so transports the whole cube of
+resolutions. Relabelling, reading a crossing from another slot and permuting the crossing-free
+labels are such identifications.
+
 Finally, the circles of a disjoint union (`TauCeti.PDCode.disjointUnion`) are the circles of the
 two summands, smoothed by the two restrictions of the state
 (`TauCeti.PDCode.disjointUnionResolvedCircleEquiv`).
@@ -52,6 +58,10 @@ two summands, smoothed by the two restrictions of the state
   `TauCeti.PDCode.SmoothingEquiv.rotateCrossing`,
   `TauCeti.PDCode.SmoothingEquiv.crossinglessPerm`: the smoothing equivalences of the native
   operations.
+* `TauCeti.PDCode.ResolutionEquiv`: an identification of all smoothings of two codes, with its
+  smoothing equivalences `TauCeti.PDCode.ResolutionEquiv.smoothingEquiv` and the instances
+  `TauCeti.PDCode.ResolutionEquiv.relabel`, `TauCeti.PDCode.ResolutionEquiv.rotateCrossing` and
+  `TauCeti.PDCode.ResolutionEquiv.crossinglessPerm`.
 * `TauCeti.PDCode.disjointUnionResolvedCircleEquiv`: the circles of a disjoint union.
 
 ## Main results
@@ -197,6 +207,13 @@ theorem trans_assoc {r' : ℕ} {D₃ : PDCode r'} {s₃ : Fin r' → Bool}
   ext <;> simp
 
 /-! ### The induced bijection of circles -/
+
+/-- A smoothing equivalence transports the native arc matching by conjugation. -/
+theorem edgePair_val_eq_permCongr (e : D.SmoothingEquiv s D' s') :
+    D'.edgePair.val = e.halfEdgeEquiv.permCongr D.edgePair.val := by
+  ext x
+  obtain ⟨x, rfl⟩ := e.halfEdgeEquiv.surjective x
+  rw [e.edgePair_apply, permCongr_apply, symm_apply_apply]
 
 /-- A smoothing equivalence transports the smoothed traversal. -/
 theorem statePerm_eq_permCongr (e : D.SmoothingEquiv s D' s') :
@@ -434,6 +451,327 @@ theorem crossinglessPerm_crossinglessEquiv (D : PDCode n) (s : Fin n → Bool)
   (rfl)
 
 end SmoothingEquiv
+
+/-! ### Transport of all smoothings at once -/
+
+/-- An identification of all the smoothings of `D` with those of `D'` along a bijection of
+crossings: a bijection of half-edges carrying the arcs of `D` to those of `D'` and the slots of
+each crossing `c` to those of `crossingEquiv c`, such that for every state `t` of `D'` it carries
+the traversal of `D` smoothed by `t ∘ crossingEquiv` to the traversal of `D'` smoothed by `t`,
+together with a bijection between the labels of the crossing-free circles. Each state then gives a
+smoothing equivalence (`TauCeti.PDCode.ResolutionEquiv.smoothingEquiv`), all with the same
+half-edge and isolated-circle bijections, so these transports commute with every saddle of the
+cube of resolutions.
+
+Relabelling (`TauCeti.PDCode.ResolutionEquiv.relabel`), reading a crossing from another slot
+(`TauCeti.PDCode.ResolutionEquiv.rotateCrossing`) and permuting the crossing-free labels
+(`TauCeti.PDCode.ResolutionEquiv.crossinglessPerm`) are such identifications. Mirroring is not:
+it exchanges the `A`- and `B`-smoothings. -/
+@[ext]
+structure ResolutionEquiv (D : PDCode n) (D' : PDCode m) where
+  /-- The bijection of crossings. -/
+  crossingEquiv : Fin n ≃ Fin m
+  /-- The bijection of half-edges. -/
+  halfEdgeEquiv : Fin (4 * n) ≃ Fin (4 * m)
+  /-- The bijection between the labels of the crossing-free circles. -/
+  crossinglessEquiv : Fin D.crossinglessComponentCount ≃ Fin D'.crossinglessComponentCount
+  /-- The half-edge bijection carries the arc matching of `D` to that of `D'`. -/
+  edgePair_apply (x : Fin (4 * n)) :
+    D'.edgePair.val (halfEdgeEquiv x) = halfEdgeEquiv (D.edgePair.val x)
+  /-- The half-edge bijection carries the traversal of `D` smoothed by `t ∘ crossingEquiv` to the
+  traversal of `D'` smoothed by `t`. -/
+  statePerm_apply (t : Fin m → Bool) (x : Fin (4 * n)) :
+    D'.statePerm t (halfEdgeEquiv x) = halfEdgeEquiv (D.statePerm (t ∘ crossingEquiv) x)
+  /-- The half-edge bijection carries the slots of `c` bijectively to those of
+  `crossingEquiv c`. -/
+  exists_slots (c : Fin n) :
+    ∃ slots : Fin 4 ≃ Fin 4, ∀ k, halfEdgeEquiv (D.crossing c k) = D'.crossing (crossingEquiv c)
+      (slots k)
+
+namespace ResolutionEquiv
+
+variable {D : PDCode n} {D' : PDCode m} {D'' : PDCode r}
+
+/-- The smoothing equivalence of an identification of all smoothings, from `D` smoothed by `s` to
+`D'` smoothed by a state `t` which agrees with `s` along the crossing bijection. -/
+def smoothingEquiv (E : D.ResolutionEquiv D') {s : Fin n → Bool} {t : Fin m → Bool}
+    (h : ∀ i, t (E.crossingEquiv i) = s i) : D.SmoothingEquiv s D' t where
+  halfEdgeEquiv := E.halfEdgeEquiv
+  crossinglessEquiv := E.crossinglessEquiv
+  edgePair_apply := E.edgePair_apply
+  statePerm_apply x := by
+    rw [E.statePerm_apply, show t ∘ E.crossingEquiv = s from funext h]
+
+/-- The smoothing equivalences of an identification of all smoothings share its half-edge
+bijection. -/
+@[simp]
+theorem smoothingEquiv_halfEdgeEquiv (E : D.ResolutionEquiv D') {s : Fin n → Bool}
+    {t : Fin m → Bool} (h : ∀ i, t (E.crossingEquiv i) = s i) :
+    (E.smoothingEquiv h).halfEdgeEquiv = E.halfEdgeEquiv :=
+  (rfl)
+
+/-- The smoothing equivalences of an identification of all smoothings share its bijection of
+crossing-free labels. -/
+@[simp]
+theorem smoothingEquiv_crossinglessEquiv (E : D.ResolutionEquiv D') {s : Fin n → Bool}
+    {t : Fin m → Bool} (h : ∀ i, t (E.crossingEquiv i) = s i) :
+    (E.smoothingEquiv h).crossinglessEquiv = E.crossinglessEquiv :=
+  (rfl)
+
+/-- The identity identification of the smoothings of `D`. -/
+def refl (D : PDCode n) : D.ResolutionEquiv D where
+  crossingEquiv := Equiv.refl _
+  halfEdgeEquiv := Equiv.refl _
+  crossinglessEquiv := Equiv.refl _
+  edgePair_apply _ := rfl
+  statePerm_apply _ _ := rfl
+  exists_slots _ := ⟨Equiv.refl _, fun _ ↦ rfl⟩
+
+/-- The identity identification is the identity on crossings. -/
+@[simp]
+theorem refl_crossingEquiv (D : PDCode n) : (refl D).crossingEquiv = Equiv.refl _ :=
+  (rfl)
+
+/-- The identity identification is the identity on half-edges. -/
+@[simp]
+theorem refl_halfEdgeEquiv (D : PDCode n) : (refl D).halfEdgeEquiv = Equiv.refl _ :=
+  (rfl)
+
+/-- The identity identification is the identity on crossing-free labels. -/
+@[simp]
+theorem refl_crossinglessEquiv (D : PDCode n) : (refl D).crossinglessEquiv = Equiv.refl _ :=
+  (rfl)
+
+/-- The identity identification gives the identity smoothing equivalences. -/
+@[simp]
+theorem refl_smoothingEquiv (D : PDCode n) {s : Fin n → Bool}
+    (h : ∀ i, s ((refl D).crossingEquiv i) = s i) :
+    (refl D).smoothingEquiv h = SmoothingEquiv.refl D s :=
+  (rfl)
+
+/-- The inverse of an identification of all smoothings. -/
+def symm (E : D.ResolutionEquiv D') : D'.ResolutionEquiv D where
+  crossingEquiv := E.crossingEquiv.symm
+  halfEdgeEquiv := E.halfEdgeEquiv.symm
+  crossinglessEquiv := E.crossinglessEquiv.symm
+  edgePair_apply x := E.halfEdgeEquiv.injective <| by
+    rw [← E.edgePair_apply, apply_symm_apply, apply_symm_apply]
+  statePerm_apply t x := E.halfEdgeEquiv.injective <| by
+    simpa [Function.comp_assoc] using
+      (E.statePerm_apply (t ∘ E.crossingEquiv.symm) (E.halfEdgeEquiv.symm x)).symm
+  exists_slots c := by
+    obtain ⟨σ, hσ⟩ := E.exists_slots (E.crossingEquiv.symm c)
+    refine ⟨σ.symm, fun k ↦ E.halfEdgeEquiv.injective ?_⟩
+    rw [hσ, apply_symm_apply, apply_symm_apply, apply_symm_apply]
+
+/-- The inverse identification inverts the crossing bijection. -/
+@[simp]
+theorem symm_crossingEquiv (E : D.ResolutionEquiv D') :
+    E.symm.crossingEquiv = E.crossingEquiv.symm :=
+  (rfl)
+
+/-- The inverse identification inverts the half-edge bijection. -/
+@[simp]
+theorem symm_halfEdgeEquiv (E : D.ResolutionEquiv D') :
+    E.symm.halfEdgeEquiv = E.halfEdgeEquiv.symm :=
+  (rfl)
+
+/-- The inverse identification inverts the bijection of crossing-free labels. -/
+@[simp]
+theorem symm_crossinglessEquiv (E : D.ResolutionEquiv D') :
+    E.symm.crossinglessEquiv = E.crossinglessEquiv.symm :=
+  (rfl)
+
+/-- The smoothing equivalences of the inverse identification are the inverses of the smoothing
+equivalences. -/
+@[simp]
+theorem smoothingEquiv_symm (E : D.ResolutionEquiv D') {s : Fin n → Bool} {t : Fin m → Bool}
+    (h : ∀ i, t (E.crossingEquiv i) = s i) :
+    (E.smoothingEquiv h).symm =
+      E.symm.smoothingEquiv fun i ↦ by simpa using (h (E.crossingEquiv.symm i)).symm :=
+  (rfl)
+
+/-- The composite of two identifications of all smoothings. -/
+def trans (E : D.ResolutionEquiv D') (F : D'.ResolutionEquiv D'') : D.ResolutionEquiv D'' where
+  crossingEquiv := E.crossingEquiv.trans F.crossingEquiv
+  halfEdgeEquiv := E.halfEdgeEquiv.trans F.halfEdgeEquiv
+  crossinglessEquiv := E.crossinglessEquiv.trans F.crossinglessEquiv
+  edgePair_apply x := by simp [F.edgePair_apply, E.edgePair_apply]
+  statePerm_apply t x := by simp [F.statePerm_apply, E.statePerm_apply, Function.comp_assoc]
+  exists_slots c := by
+    obtain ⟨σ, hσ⟩ := E.exists_slots c
+    obtain ⟨τ, hτ⟩ := F.exists_slots (E.crossingEquiv c)
+    exact ⟨σ.trans τ, fun k ↦ by simp only [Equiv.trans_apply]; rw [hσ, hτ]⟩
+
+/-- The crossing bijection of a composite is the composite of the crossing bijections. -/
+@[simp]
+theorem trans_crossingEquiv (E : D.ResolutionEquiv D') (F : D'.ResolutionEquiv D'') :
+    (E.trans F).crossingEquiv = E.crossingEquiv.trans F.crossingEquiv :=
+  (rfl)
+
+/-- The half-edge bijection of a composite is the composite of the half-edge bijections. -/
+@[simp]
+theorem trans_halfEdgeEquiv (E : D.ResolutionEquiv D') (F : D'.ResolutionEquiv D'') :
+    (E.trans F).halfEdgeEquiv = E.halfEdgeEquiv.trans F.halfEdgeEquiv :=
+  (rfl)
+
+/-- The bijection of crossing-free labels of a composite is the composite of these
+bijections. -/
+@[simp]
+theorem trans_crossinglessEquiv (E : D.ResolutionEquiv D') (F : D'.ResolutionEquiv D'') :
+    (E.trans F).crossinglessEquiv = E.crossinglessEquiv.trans F.crossinglessEquiv :=
+  (rfl)
+
+/-- The smoothing equivalences of a composite are the composites of the smoothing
+equivalences. -/
+@[simp]
+theorem smoothingEquiv_trans_smoothingEquiv (E : D.ResolutionEquiv D')
+    (F : D'.ResolutionEquiv D'') {s : Fin n → Bool} {t : Fin m → Bool} {u : Fin r → Bool}
+    (h₁ : ∀ i, t (E.crossingEquiv i) = s i) (h₂ : ∀ i, u (F.crossingEquiv i) = t i) :
+    (E.smoothingEquiv h₁).trans (F.smoothingEquiv h₂) =
+      (E.trans F).smoothingEquiv fun i ↦ by simpa using (h₂ _).trans (h₁ i) :=
+  (rfl)
+
+/-- Inverting an identification of all smoothings twice gives it back. -/
+@[simp]
+theorem symm_symm (E : D.ResolutionEquiv D') : E.symm.symm = E := by
+  ext <;> simp
+
+/-- An identification of all smoothings followed by its inverse is the identity. -/
+@[simp]
+theorem self_trans_symm (E : D.ResolutionEquiv D') : E.trans E.symm = refl D := by
+  ext <;> simp
+
+/-- The inverse of an identification of all smoothings followed by it is the identity. -/
+@[simp]
+theorem symm_trans_self (E : D.ResolutionEquiv D') : E.symm.trans E = refl D' := by
+  ext <;> simp
+
+/-- **Relabelling** the half-edges along `half` and the crossings along `cross` identifies the
+smoothings of `D` with those of the relabelled code. The crossing-free circles keep their
+labels. -/
+def relabel (D : PDCode n) (half : Fin (4 * n) ≃ Fin (4 * m)) (cross : Fin n ≃ Fin m) :
+    D.ResolutionEquiv (D.relabel half cross) where
+  crossingEquiv := cross
+  halfEdgeEquiv := half
+  crossinglessEquiv := finCongr (D.relabel_crossinglessComponentCount half cross).symm
+  edgePair_apply x := by rw [relabel_edgePair, PerfectMatching.congr_val_apply_apply]
+  statePerm_apply t := (SmoothingEquiv.relabel D half cross t).statePerm_apply
+  exists_slots c := ⟨Equiv.refl _, fun k ↦ by rw [crossing_relabel, symm_apply_apply, refl_apply]⟩
+
+/-- Relabelling acts on crossings by `cross`. -/
+@[simp]
+theorem relabel_crossingEquiv (D : PDCode n) (half : Fin (4 * n) ≃ Fin (4 * m))
+    (cross : Fin n ≃ Fin m) : (relabel D half cross).crossingEquiv = cross :=
+  (rfl)
+
+/-- Relabelling acts on half-edges by `half`. -/
+@[simp]
+theorem relabel_halfEdgeEquiv (D : PDCode n) (half : Fin (4 * n) ≃ Fin (4 * m))
+    (cross : Fin n ≃ Fin m) : (relabel D half cross).halfEdgeEquiv = half :=
+  (rfl)
+
+/-- Relabelling keeps the labels of the crossing-free circles. -/
+@[simp]
+theorem relabel_crossinglessEquiv (D : PDCode n) (half : Fin (4 * n) ≃ Fin (4 * m))
+    (cross : Fin n ≃ Fin m) :
+    (relabel D half cross).crossinglessEquiv =
+      finCongr (D.relabel_crossinglessComponentCount half cross).symm :=
+  (rfl)
+
+/-- Relabelling is a smoothing equivalence of every state; it is
+`TauCeti.PDCode.SmoothingEquiv.relabel`. -/
+@[simp]
+theorem relabel_smoothingEquiv (D : PDCode n) (half : Fin (4 * n) ≃ Fin (4 * m))
+    (cross : Fin n ≃ Fin m) (t : Fin m → Bool)
+    (h : ∀ i, t ((relabel D half cross).crossingEquiv i) = (t ∘ cross) i) :
+    (relabel D half cross).smoothingEquiv h = SmoothingEquiv.relabel D half cross t :=
+  (rfl)
+
+/-- **Reading a crossing from another slot** keeps every smoothing: it identifies the smoothings
+of `D` with those of the rotated code, by the identity on crossings and half-edges. -/
+def rotateCrossing (D : PDCode n) (i : Fin n) : D.ResolutionEquiv (D.rotateCrossing i) where
+  crossingEquiv := Equiv.refl _
+  halfEdgeEquiv := Equiv.refl _
+  crossinglessEquiv := finCongr (D.rotateCrossing_crossinglessComponentCount i).symm
+  edgePair_apply x := by rw [rotateCrossing_edgePair, refl_apply, refl_apply]
+  statePerm_apply t := (SmoothingEquiv.rotateCrossing D i t).statePerm_apply
+  exists_slots c := by
+    by_cases hc : c = i
+    · subst hc
+      -- Slot `k` of the rotated crossing is slot `k + 1` of the old one.
+      exact ⟨Equiv.subRight 1, fun k ↦ by simp⟩
+    · exact ⟨Equiv.refl _, fun k ↦ by simp [hc]⟩
+
+/-- Reading a crossing from another slot is the identity on crossings. -/
+@[simp]
+theorem rotateCrossing_crossingEquiv (D : PDCode n) (i : Fin n) :
+    (rotateCrossing D i).crossingEquiv = Equiv.refl _ :=
+  (rfl)
+
+/-- Reading a crossing from another slot is the identity on half-edges. -/
+@[simp]
+theorem rotateCrossing_halfEdgeEquiv (D : PDCode n) (i : Fin n) :
+    (rotateCrossing D i).halfEdgeEquiv = Equiv.refl _ :=
+  (rfl)
+
+/-- Reading a crossing from another slot keeps the labels of the crossing-free circles. -/
+@[simp]
+theorem rotateCrossing_crossinglessEquiv (D : PDCode n) (i : Fin n) :
+    (rotateCrossing D i).crossinglessEquiv =
+      finCongr (D.rotateCrossing_crossinglessComponentCount i).symm :=
+  (rfl)
+
+/-- Reading a crossing from another slot is a smoothing equivalence of every state; it is
+`TauCeti.PDCode.SmoothingEquiv.rotateCrossing`. -/
+@[simp]
+theorem rotateCrossing_smoothingEquiv (D : PDCode n) (i : Fin n) (s : Fin n → Bool)
+    (h : ∀ j, s ((rotateCrossing D i).crossingEquiv j) = s j) :
+    (rotateCrossing D i).smoothingEquiv h = SmoothingEquiv.rotateCrossing D i s :=
+  (rfl)
+
+/-- **Permuting the labels of the crossing-free circles** identifies the smoothings of `D` with
+themselves, by the identity on crossings and half-edges. -/
+def crossinglessPerm (D : PDCode n) (σ : Perm (Fin D.crossinglessComponentCount)) :
+    D.ResolutionEquiv D where
+  crossingEquiv := Equiv.refl _
+  halfEdgeEquiv := Equiv.refl _
+  crossinglessEquiv := σ
+  edgePair_apply _ := rfl
+  statePerm_apply _ _ := rfl
+  exists_slots _ := ⟨Equiv.refl _, fun _ ↦ rfl⟩
+
+/-- Permuting the crossing-free labels is the identity on crossings. -/
+@[simp]
+theorem crossinglessPerm_crossingEquiv (D : PDCode n)
+    (σ : Perm (Fin D.crossinglessComponentCount)) :
+    (crossinglessPerm D σ).crossingEquiv = Equiv.refl _ :=
+  (rfl)
+
+/-- Permuting the crossing-free labels is the identity on half-edges. -/
+@[simp]
+theorem crossinglessPerm_halfEdgeEquiv (D : PDCode n)
+    (σ : Perm (Fin D.crossinglessComponentCount)) :
+    (crossinglessPerm D σ).halfEdgeEquiv = Equiv.refl _ :=
+  (rfl)
+
+/-- Permuting the crossing-free labels acts on them by `σ`. -/
+@[simp]
+theorem crossinglessPerm_crossinglessEquiv (D : PDCode n)
+    (σ : Perm (Fin D.crossinglessComponentCount)) :
+    (crossinglessPerm D σ).crossinglessEquiv = σ :=
+  (rfl)
+
+/-- Permuting the crossing-free labels is a smoothing equivalence of every state; it is
+`TauCeti.PDCode.SmoothingEquiv.crossinglessPerm`. -/
+@[simp]
+theorem crossinglessPerm_smoothingEquiv (D : PDCode n)
+    (σ : Perm (Fin D.crossinglessComponentCount)) (s : Fin n → Bool)
+    (h : ∀ i, s ((crossinglessPerm D σ).crossingEquiv i) = s i) :
+    (crossinglessPerm D σ).smoothingEquiv h = SmoothingEquiv.crossinglessPerm D s σ :=
+  (rfl)
+
+end ResolutionEquiv
 
 /-! ### The circles of a disjoint union -/
 

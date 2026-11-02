@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Log.Base
 public import TauCeti.Analysis.Convex.Sequence.Face
-public import TauCeti.NumberTheory.NewtonPolygon.Basic
+public import TauCeti.NumberTheory.NewtonPolygon.Slopes
 public import TauCeti.RingTheory.PowerSeries.GaussNorm
 
 /-!
@@ -33,7 +33,10 @@ This identifies the analytic Gauss norm with the convex supporting-line descript
 
 Neither attainment nor restrictedness at the given radius is assumed: at the boundary of
 convergence the Gauss norm is still the supporting value, while it need not be attained.
-For polynomials the identities hold at every radius. The norm and valuation are compared by
+For polynomials the identities hold at every radius, and the purity criterion
+`Polynomial.forall_mem_newtonSlopes_eq_iff` becomes a statement about weighted norms: every
+finite slope equals `m` exactly when, at the radius `b ^ m`, the weighted leading and trailing
+terms have equal norms and bound all other weighted terms. The norm and valuation are compared by
 an explicit hypothesis, so no normalisation is hidden in a typeclass instance.
 
 ## Main results
@@ -47,11 +50,15 @@ an explicit hypothesis, so no normalisation is hidden in a typeclass instance.
 * `PowerSeries.supportingValue_newtonPolygon_eq_neg_logb_gaussNorm`: the supporting value of
   the Newton polygon is the negative logarithm of the Gauss norm, with the polynomial case
   `Polynomial.supportingValue_newtonPolygon_eq_neg_logb_gaussNorm` at every radius.
+* `Polynomial.forall_mem_newtonSlopes_eq_iff_norm_coeff_mul_rpow_pow_le`: the purity criterion
+  in terms of weighted coefficient norms at the radius `b ^ m`.
 * `PowerSeries.mem_supportingFace_addValuation_coeff_iff`: the contact indices of the
   supporting line are the indices attaining the Gauss norm.
 * `PowerSeries.isDistinguished_iff_isGreatest_supportingFace` and
   `PowerSeries.isLowestDominant_iff_isLeast_supportingFace`: the last and the first coefficient
   attaining the Gauss norm are the greatest and least contact indices.
+* `PowerSeries.exists_isSupportingLine_mem_supportingFace_of_isRestricted`: the coefficient
+  heights of a nonzero series restricted at `b ^ σ` touch a supporting line of slope `σ`.
 
 ## References
 
@@ -231,9 +238,32 @@ theorem isLowestDominant_iff_isLeast_supportingFace {σ : ℝ}
       hf hf0
   · exact (le_gaussNorm norm _ f hf m).lt_of_ne fun hm => (hs.2 m hm).not_gt hms
 
+/-- The coefficient heights of a nonzero series restricted at the radius `b ^ σ` touch a
+supporting line of slope `σ`. -/
+theorem exists_isSupportingLine_mem_supportingFace_of_isRestricted {σ : ℝ}
+    (hf : f.IsRestricted (b ^ σ)) (hf0 : f ≠ 0) :
+    ∃ (c : ℝ) (i : ℕ), IsSupportingLine (fun n => v (coeff n f)) σ c ∧
+      i ∈ supportingFace (fun n => v (coeff n f)) σ c := by
+  have hfn := TauCeti.PowerSeries.hasGaussNorm_of_isRestricted hf
+  obtain ⟨s, hs⟩ := TauCeti.PowerSeries.exists_isDistinguished
+    (Real.rpow_pos_of_pos (zero_lt_one.trans hb) σ) hf hf0
+  exact ⟨_, s, isSupportingLine_iff.mpr
+    (supportingValue_addValuation_coeff_eq_neg_logb_gaussNorm f v hb hv hfn hf0).ge,
+    ((isDistinguished_iff_isGreatest_supportingFace f v hb hv hfn hf0 s).mp hs).1⟩
+
+/-- A series restricted at the radius `b ^ σ` has a Newton polygon whose supporting value at `σ`
+is above `⊥`. -/
+theorem supportingValue_newtonPolygon_ne_bot_of_isRestricted {σ : ℝ}
+    (hf : f.IsRestricted (b ^ σ)) : supportingValue (f.newtonPolygon v) σ ≠ ⊥ := by
+  have h := (hasGaussNorm_iff_supportingValue_ne_bot f v hb hv σ).mp
+    (TauCeti.PowerSeries.hasGaussNorm_of_isRestricted hf)
+  rwa [supportingValue_newtonPolygon (isAdmissible_iff_exists_supportingValue_ne_bot.mpr ⟨σ, h⟩)]
+
 end PowerSeries
 
 namespace Polynomial
+
+section SupportingValue
 
 variable {K : Type*} [NormedDivisionRing K] (p : Polynomial K)
   (v : AddValuation K (WithTop ℝ)) {b : ℝ} (hb : 1 < b)
@@ -251,5 +281,41 @@ theorem supportingValue_newtonPolygon_eq_neg_logb_gaussNorm (hp : p ≠ 0) (σ :
     (TauCeti.PowerSeries.hasGaussNorm_of_isRestricted
       (TauCeti.PowerSeries.isRestricted_polynomial p))
     (Polynomial.coe_eq_zero_iff.not.mpr hp)
+
+end SupportingValue
+
+section Pure
+
+variable {K : Type*} [NormedDivisionRing K] {v : AddValuation K (WithTop ℝ)} {b : ℝ}
+
+/-- **Purity criterion, Gauss form.** Let the norm be `‖x‖ = b ^ (-v x)` for `x ≠ 0`, with
+`1 < b`. Every finite slope of `f` equals `m` exactly when, at the radius `b ^ m`, the weighted
+leading and trailing terms have the same norm and every weighted term has norm at most that of
+the trailing term. -/
+theorem forall_mem_newtonSlopes_eq_iff_norm_coeff_mul_rpow_pow_le (hb : 1 < b)
+    (hv : ∀ x ≠ 0, ‖x‖ = b ^ (-(v x).untop₀)) {f : K[X]} {m : ℝ} :
+    (∀ s ∈ f.newtonSlopes v, s = m) ↔
+      ‖f.leadingCoeff‖ * (b ^ m) ^ f.natDegree =
+          ‖f.trailingCoeff‖ * (b ^ m) ^ f.natTrailingDegree ∧
+        ∀ n, ‖f.coeff n‖ * (b ^ m) ^ n ≤ ‖f.trailingCoeff‖ * (b ^ m) ^ f.natTrailingDegree := by
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp
+  have hnorm {n : ℕ} (hn : f.coeff n ≠ 0) :
+      ‖f.coeff n‖ * (b ^ m) ^ n = b ^ (-((v (f.coeff n)).untop₀ - m * n)) := by
+    simpa using (f : PowerSeries K).norm_coeff_mul_rpow_pow_eq v hb hv (by simpa using hn) m
+  rw [forall_mem_newtonSlopes_eq_iff (mt v.top_iff.mp (trailingCoeff_nonzero_iff_nonzero.mpr hf))
+    (mt v.top_iff.mp (leadingCoeff_ne_zero.mpr hf)), ← coeff_natDegree, trailingCoeff,
+    hnorm (coeff_natTrailingDegree_ne_zero.mpr hf),
+    hnorm (by rw [coeff_natDegree]; exact leadingCoeff_ne_zero.mpr hf),
+    Real.rpow_right_inj (zero_lt_one.trans hb) hb.ne']
+  refine and_congr ⟨fun h => by rw [h]; ring, fun h => by linarith⟩ (forall_congr' fun n => ?_)
+  have hle := PowerSeries.norm_coeff_mul_rpow_pow_le_iff (f : PowerSeries K) v hb hv n m
+    ((v (f.coeff f.natTrailingDegree)).untop₀ - m * f.natTrailingDegree)
+  rw [coeff_coe] at hle
+  rw [hle]
+  convert Iff.rfl using 3
+  ring
+
+end Pure
 
 end Polynomial

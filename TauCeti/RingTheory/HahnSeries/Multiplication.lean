@@ -45,7 +45,12 @@ through `HahnModule.of`, for the action instance underlying the `R`-module struc
 `HahnModule.ofLinearEquiv` bundles this coefficient-preserving comparison as an `R`-linear
 equivalence. The lemmas `HahnModule.coeff_smul_single_zero` and
 `HahnModule.single_smul_single_zero` describe the convolution action of a scalar series on a
-constant module-valued series, coefficientwise and on monomials.
+constant module-valued series, coefficientwise and on monomials, and
+`HahnModule.single_neg_smul_single_smul` records that the monomials `t ^ a` and `t ^ (-a)` act
+inversely.
+
+`HahnSeries.coeff_mul_add_of_forall_le` computes the coefficient of a product at the sum of lower
+bounds for the supports of the factors: it is the product of the coefficients at those bounds.
 -/
 
 public section
@@ -140,6 +145,13 @@ theorem coeff_smul_single_zero [Zero R] [AddCommMonoid V] [SMulWithZero R V]
       · exact (h ((Finset.mem_vaddAntidiagonal _ _).mpr ⟨hf, rfl, by simp⟩)).elim
   · simp
 
+/-- Multiplying by the monomials `t ^ a` and then `t ^ (-a)` is the identity. -/
+@[simp]
+theorem single_neg_smul_single_smul {Γ : Type*} [AddCommGroup Γ] [PartialOrder Γ]
+    [IsOrderedAddMonoid Γ] [Semiring R] [AddCommMonoid V] [Module R V] (a : Γ)
+    (x : HahnModule Γ R V) : single (-a) (1 : R) • single a (1 : R) • x = x := by
+  rw [← mul_smul, single_mul_single, neg_add_cancel, one_mul, single_zero_one, one_smul]
+
 /-- A scalar monomial times a constant vector series is a vector-valued monomial. -/
 @[simp]
 theorem single_smul_single_zero [Zero R] [AddCommMonoid V] [SMulWithZero R V]
@@ -150,3 +162,26 @@ theorem single_smul_single_zero [Zero R] [AddCommMonoid V] [SMulWithZero R V]
   by_cases hh : h = g <;> simp [hh]
 
 end HahnModule
+
+namespace HahnSeries
+
+variable {Γ R : Type*} [AddCommMonoid Γ] [PartialOrder Γ] [IsOrderedCancelAddMonoid Γ]
+
+/-- If `x` is supported at exponents at least `a` and `y` at exponents at least `b`, then the
+coefficient of `x * y` at `a + b` is the product of the coefficients at `a` and `b`. -/
+theorem coeff_mul_add_of_forall_le [NonUnitalNonAssocSemiring R] {x y : HahnSeries Γ R}
+    {a b : Γ} (hx : ∀ i ∈ x.support, a ≤ i) (hy : ∀ j ∈ y.support, b ≤ j) :
+    (x * y).coeff (a + b) = x.coeff a * y.coeff b := by
+  rw [coeff_mul]
+  refine Finset.sum_eq_single (a, b) (fun ij hij hne => (hne ?_).elim) fun hab => ?_
+  · obtain ⟨hi, hj, hsum⟩ := Finset.mem_antidiagonal.mp hij
+    have hai := hx _ hi
+    have hbj := hy _ hj
+    refine Prod.ext (le_antisymm ?_ hai) (le_antisymm ?_ hbj)
+    · exact le_of_add_le_add_right (hsum ▸ add_le_add_right hbj ij.1 : ij.1 + b ≤ a + b)
+    · exact le_of_add_le_add_left (hsum ▸ add_le_add_left hai ij.2 : a + ij.2 ≤ a + b)
+  · by_contra h
+    exact hab (Finset.mem_antidiagonal.mpr
+      ⟨left_ne_zero_of_mul h, right_ne_zero_of_mul h, rfl⟩)
+
+end HahnSeries

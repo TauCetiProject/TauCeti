@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Sites.DenseSubsite.SheafEquiv
 public import TauCeti.Topology.GTopology.ContinuousMap
 
 /-!
@@ -29,6 +30,14 @@ is refined by a `G`-cover. We prove that it satisfies (G0)–(G2)
 slightly finer than `G` is coarser than `G.finestSlightlyFiner`
 (`GTopology.SlightlyFiner.exists_continuousMap_finestSlightlyFiner`).
 
+Sheaves extend uniquely along a slightly finer G-topology [BGR, 9.2.3/1]. If `G'` is slightly
+finer than `G`, the preimage functor of the identity of `X` exhibits the site of `G` as a dense
+subsite of the site of `G'` (`GTopology.SlightlyFiner.isDenseSubsite`), so Mathlib's
+`Functor.IsDenseSubsite.sheafEquiv` gives an equivalence between the two categories of sheaves,
+whose inverse is restriction of sheaves (`GTopology.SlightlyFiner.sheafEquiv`). In particular
+every sheaf on `G` extends uniquely to `G.finestSlightlyFiner`
+(`GTopology.sheafEquivFinestSlightlyFiner`).
+
 ## References
 
 * Bosch, Güntzer, Remmert, *Non-Archimedean Analysis*, §§9.1.2, 9.1.4 and 9.2.3.
@@ -38,9 +47,9 @@ public section
 
 namespace TauCeti
 
-open TopologicalSpace Topology
+open CategoryTheory TopologicalSpace Topology
 
-universe u v v'
+universe u v v' w w'
 
 namespace GTopology
 
@@ -205,10 +214,7 @@ theorem SlightlyFiner.exists_continuousMap_finestSlightlyFiner {G : GTopology ι
     {G' : GTopology ι'} (h : G'.SlightlyFiner G) :
     ∃ f : G.finestSlightlyFiner.ContinuousMap G', ∀ x, f x = x := by
   obtain ⟨g, hg⟩ := h.exists_continuousMap
-  have hgU (U : B) : ι' (g.comap U) = ι U := by
-    rw [g.coe_comap]
-    ext x
-    simp [hg]
+  have hgU (U : B) : ι' (g.comap U) = ι U := ContinuousMap.coe_comap_of_forall_eq hg U
   -- Every admissible open of `G'` is a union of admissible opens of `G`.
   have hopen (V : B') : IsOpen[generateFrom (Set.range ι)] (ι' V) := by
     rw [G.isOpen_generateFrom_range_iff]
@@ -229,6 +235,79 @@ theorem SlightlyFiner.exists_continuousMap_finestSlightlyFiner {G : GTopology ι
     refine ⟨R, hR, fun W hW ↦ ?_⟩
     obtain ⟨_, ⟨W', hW', rfl⟩, hWW'⟩ := hRS W hW
     exact ⟨φ W', ⟨W', hW', rfl⟩, (hφ W').symm ▸ hWW'.trans (ι'.monotone inf_le_left)⟩
+
+namespace SlightlyFiner
+
+variable {G : GTopology ι} {G' : GTopology ι'} (h : G'.SlightlyFiner G)
+  {f : G'.ContinuousMap G} (hf : ∀ x, f x = x)
+
+include h hf in
+/-- If `G'` is slightly finer than `G`, the site of `G` is a dense subsite of the site of `G'`
+along the preimage functor of the identity of `X` [BGR, 9.2.3/1]. -/
+theorem isDenseSubsite :
+    f.comapFunctor.IsDenseSubsite G.grothendieckTopology G'.grothendieckTopology := by
+  have hcomap (U : B) := ContinuousMap.coe_comap_of_forall_eq hf U
+  have : f.comapFunctor.Full :=
+    ⟨fun {U U'} g ↦ ⟨homOfLE ((ContinuousMap.comap_le_comap_iff_of_forall_eq hf).mp (by
+      simpa only [ContinuousMap.comapFunctor_obj] using leOfHom g)), Subsingleton.elim _ _⟩⟩
+  have : f.comapFunctor.Faithful := ⟨fun _ ↦ Subsingleton.elim _ _⟩
+  have : f.comapFunctor.IsCoverDense G'.grothendieckTopology := by
+    refine ⟨fun V ↦ ?_⟩
+    obtain ⟨S, hS, hSG⟩ := h.exists_covers V
+    refine (mem_grothendieckTopology_iff G').mpr ⟨S, hS, fun W g hW ↦ ?_⟩
+    obtain ⟨U, hU⟩ := hSG W ((coverPresieve_apply _ _).mp hW)
+    obtain rfl : f.comap U = W := ι'.injective ((hcomap U).trans hU)
+    exact ⟨⟨U, homOfLE (ContinuousMap.comapFunctor_obj f U).ge,
+      homOfLE ((ContinuousMap.comapFunctor_obj f U).trans_le (leOfHom g)), Subsingleton.elim _ _⟩⟩
+  refine { functorPushforward_mem_iff := fun {U R} ↦ ⟨fun hR ↦ ?_, fun hR ↦
+    f.coverPreserving_comapFunctor.cover_preserve hR⟩ }
+  obtain ⟨S, hS, hSR⟩ := (mem_grothendieckTopology_iff G').mp hR
+  have hS' : G'.Covers (f.comap U) S := by rwa [ContinuousMap.comapFunctor_obj] at hS
+  obtain ⟨T, hT, hTS⟩ := h.exists_refinement (hcomap U) hS'
+  refine (mem_grothendieckTopology_iff G).mpr ⟨T, hT, fun W g hW ↦ ?_⟩
+  obtain ⟨W', hW', hWW'⟩ := hTS W ((coverPresieve_apply _ _).mp hW)
+  obtain ⟨Y, a, b, ha, -⟩ :=
+    hSR W' (homOfLE (G'.subset hS W' hW')) ((coverPresieve_apply _ _).mpr hW')
+  have hWY : W ≤ Y := by
+    rw [← ι.le_iff_le, ← hcomap Y, ← ContinuousMap.comapFunctor_obj]
+    exact hWW'.trans (ι'.monotone (leOfHom b))
+  simpa only [Subsingleton.elim g (homOfLE hWY ≫ a)] using R.downward_closed ha (homOfLE hWY)
+
+variable (A : Type w) [Category.{w'} A]
+  [∀ V, Limits.HasLimitsOfShape (StructuredArrow V f.comapFunctor.op) A]
+
+/-- Sheaves extend uniquely along a slightly finer G-topology [BGR, 9.2.3/1]: if `G'` is slightly
+finer than `G`, sheaves on `G` are equivalent to sheaves on `G'`. The inverse equivalence is
+restriction of sheaves along the preimage functor of the identity of `X`. -/
+noncomputable def sheafEquiv :
+    Sheaf G.grothendieckTopology A ≌ Sheaf G'.grothendieckTopology A :=
+  haveI := h.isDenseSubsite hf
+  Functor.IsDenseSubsite.sheafEquiv _ _ f.comapFunctor A
+
+@[simp]
+theorem sheafEquiv_inverse :
+    (h.sheafEquiv hf A).inverse =
+      f.comapFunctor.sheafPushforwardContinuous A G.grothendieckTopology
+        G'.grothendieckTopology :=
+  (rfl)
+
+end SlightlyFiner
+
+variable (G : GTopology ι) (A : Type w) [Category.{w'} A]
+  [∀ V, Limits.HasLimitsOfShape (StructuredArrow V G.finestSlightlyFinerId.comapFunctor.op) A]
+
+/-- Every sheaf on a G-topology extends uniquely to the finest slightly finer G-topology
+[BGR, 9.1.2/2 and 9.2.3/1]. -/
+noncomputable def sheafEquivFinestSlightlyFiner :
+    Sheaf G.grothendieckTopology A ≌ Sheaf G.finestSlightlyFiner.grothendieckTopology A :=
+  G.slightlyFiner_finestSlightlyFiner.sheafEquiv (fun x ↦ by rw [coe_finestSlightlyFinerId, id]) A
+
+@[simp]
+theorem sheafEquivFinestSlightlyFiner_inverse :
+    (G.sheafEquivFinestSlightlyFiner A).inverse =
+      G.finestSlightlyFinerId.comapFunctor.sheafPushforwardContinuous A G.grothendieckTopology
+        G.finestSlightlyFiner.grothendieckTopology :=
+  (rfl)
 
 end GTopology
 

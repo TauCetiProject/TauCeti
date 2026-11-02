@@ -258,12 +258,12 @@ private theorem exists_degree_le_degree_of_mem_degreeSpan
     · exact absurd hf' hf0
     exact ih d' hd' hf' hf0
 
-/-- The S-polynomials of two members of a Gröbner basis whose nonzero members have unit leading
-coefficients have remainder `0` on division by that basis. -/
+/-- The S-polynomials of two members of a Gröbner basis have remainder `0` on division by that
+basis. -/
 theorem IsGroebnerBasis.isRemainder_sPolynomial_zero (h : m.IsGroebnerBasis G I)
-    (hG : ∀ g ∈ G, g ≠ 0 → IsUnit (m.leadingCoeff g)) {g₁ g₂ : MvPolynomial σ R} (hg₁ : g₁ ∈ G)
-    (hg₂ : g₂ ∈ G) : m.IsRemainder (m.sPolynomial g₁ g₂) G 0 :=
-  (h.isRemainder_zero_iff_mem hG).2 (sPolynomial_mem_ideal (h.subset hg₁) (h.subset hg₂))
+    {g₁ g₂ : MvPolynomial σ R} (hg₁ : g₁ ∈ G) (hg₂ : g₂ ∈ G) :
+    m.IsRemainder (m.sPolynomial g₁ g₂) G 0 :=
+  h.isRemainder_zero_iff_mem.2 (sPolynomial_mem_ideal (h.subset hg₁) (h.subset hg₂))
 
 /-- **Buchberger's criterion.** If the nonzero members of `G` have unit leading coefficients and
 the S-polynomial of any two members of `G` has remainder `0` on division by `G`, then `G` is a
@@ -284,8 +284,8 @@ theorem isGroebnerBasis_iff_span_eq_and_isRemainder_sPolynomial_zero
     (hG : ∀ g ∈ G, g ≠ 0 → IsUnit (m.leadingCoeff g)) :
     m.IsGroebnerBasis G I ↔
       Ideal.span G = I ∧ ∀ g₁ ∈ G, ∀ g₂ ∈ G, m.IsRemainder (m.sPolynomial g₁ g₂) G 0 := by
-  refine ⟨fun h ↦ ⟨(h.ideal_eq_span hG).symm, fun _ hg₁ _ hg₂ ↦
-    h.isRemainder_sPolynomial_zero hG hg₁ hg₂⟩, ?_⟩
+  refine ⟨fun h ↦ ⟨h.ideal_eq_span.symm, fun _ hg₁ _ hg₂ ↦
+    h.isRemainder_sPolynomial_zero hg₁ hg₂⟩, ?_⟩
   rintro ⟨rfl, hS⟩
   exact isGroebnerBasis_span_of_isRemainder_sPolynomial_zero hG hS
 

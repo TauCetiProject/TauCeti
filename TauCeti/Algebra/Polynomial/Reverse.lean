@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Polynomial.Reverse
 public import Mathlib.Algebra.Polynomial.RingDivision
 import Mathlib.Algebra.Polynomial.BigOperators
+import TauCeti.Algebra.Polynomial.Taylor
 
 /-!
 # Root multiplicities in reciprocal coordinates
@@ -43,6 +44,10 @@ factors into such binomials, and that reflection at a sum of degree bounds is mu
 finite products (`Polynomial.reflect_prod`), which computes the reflection of a determinant of
 polynomials term by term. Reflection at a degree bound stays within that bound, also after a
 coefficient map, and its coefficient at the bound is the constant coefficient.
+
+Finally, reflecting the difference `p(X) - p(X - a)` at a bound on the degree of `p`, its first
+coefficient past the degree drop is `natDegree p * a * leadingCoeff p`: the top terms cancel and
+the subleading term is read off from the Taylor expansion of `p` at `-a`.
 -/
 
 public section
@@ -297,5 +302,22 @@ theorem eval_reverse_of_ne_zero [Field R] (p : R[X]) {w : R} (hw : w ≠ 0) :
   have h := eval₂_reverse_mul_pow (RingHom.id R) w⁻¹ p
   rw [invOf_eq_inv, inv_inv, eval₂_id, eval₂_id, inv_pow] at h
   rw [← h, mul_comm, inv_mul_cancel_right₀ (pow_ne_zero _ hw)]
+
+/-- Reflected at a bound `N` on the degree of `p`, the difference `p(X) - p(X - a)` has
+coefficient `natDegree p * a * leadingCoeff p` in degree `N - natDegree p + 1`. -/
+theorem coeff_reflect_sub_comp_X_sub_C [CommRing R] (p : R[X]) {N : ℕ} (hp : p.natDegree ≤ N)
+    (a : R) :
+    (reflect N (p - p.comp (X - C a))).coeff (N - p.natDegree + 1) =
+      p.natDegree * a * p.leadingCoeff := by
+  rcases Nat.eq_zero_or_pos p.natDegree with h0 | hpos
+  · rw [eq_C_of_natDegree_eq_zero h0]
+    simp
+  -- Passing from `p` to `p(X - a)` lowers the subleading coefficient by that amount.
+  have h := nextCoeff_taylor p (-a)
+  rw [nextCoeff_of_natDegree_pos (by rwa [natDegree_taylor]), natDegree_taylor,
+    nextCoeff_of_natDegree_pos hpos, taylor_apply, map_neg, ← sub_eq_add_neg] at h
+  rw [coeff_reflect, revAt_le (by omega), show N - (N - p.natDegree + 1) = p.natDegree - 1 by
+    omega, coeff_sub, h]
+  ring
 
 end Polynomial

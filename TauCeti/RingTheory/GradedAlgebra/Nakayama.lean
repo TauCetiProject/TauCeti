@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.MvPolynomial.Eval
 public import Mathlib.RingTheory.Adjoin.Basic
 public import Mathlib.RingTheory.GradedAlgebra.Homogeneous.Ideal
 
@@ -30,6 +31,12 @@ homogeneous elements to a computation of the indecomposables.
 * `TauCeti.GradedAlgebra.adjoin_eq_top_of_irrelevant_le`: homogeneous elements of positive degree
   generating the irrelevant ideal modulo its square generate the graded ring over its degree-zero
   part.
+* `TauCeti.GradedAlgebra.subalgebra_eq_top_of_irrelevant_le`: for a graded `R`-algebra, a
+  subalgebra containing the degree-zero part and such generators is everything.
+* `TauCeti.GradedAlgebra.adjoin_eq_top_of_irrelevant_le_of_mem_bot`: when the degree-zero part
+  consists of scalars, such generators generate the graded algebra as an `R`-algebra.
+* `TauCeti.GradedAlgebra.surjective_aeval_of_irrelevant_le`: in that case, evaluation of
+  polynomials at such a family of generators is surjective.
 
 ## References
 
@@ -41,6 +48,8 @@ public section
 open DirectSum Pointwise
 
 namespace TauCeti.GradedAlgebra
+
+section GradedRing
 
 variable {A σ : Type*} [CommSemiring A] [SetLike σ A] [AddSubmonoidClass σ A]
   (𝒜 : ℕ → σ) [GradedRing 𝒜]
@@ -89,5 +98,51 @@ theorem adjoin_eq_top_of_irrelevant_le {s : Set A} (hs : ∀ x ∈ s, ∃ i, 0 <
   refine top_unique fun x _ ↦ ?_
   rw [← sum_support_decompose 𝒜 x]
   exact S.sum_mem fun n _ ↦ key n _ (SetLike.coe_mem _)
+
+end GradedRing
+
+section GradedAlgebra
+
+open HomogeneousIdeal
+
+variable {R A : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
+  (𝒜 : ℕ → Submodule R A) [GradedAlgebra 𝒜]
+
+/-- **Graded Nakayama for algebras.** Let `s` consist of homogeneous elements of positive degree
+which generate the irrelevant ideal `A₊` modulo `A₊ ^ 2`. Then every subalgebra containing the
+degree-zero part and `s` is the whole algebra. -/
+theorem subalgebra_eq_top_of_irrelevant_le (B : Subalgebra R A) (hB : ∀ x ∈ 𝒜 0, x ∈ B)
+    {s : Set A} (hsB : s ⊆ B) (hs : ∀ x ∈ s, ∃ n, 0 < n ∧ x ∈ 𝒜 n)
+    (h : (irrelevant 𝒜).toIdeal ≤ Ideal.span s ⊔ (irrelevant 𝒜).toIdeal ^ 2) : B = ⊤ := by
+  rw [_root_.eq_top_iff]
+  rintro x -
+  have hx : x ∈ Algebra.adjoin (𝒜 0) s := adjoin_eq_top_of_irrelevant_le 𝒜 hs h ▸ trivial
+  induction hx using Algebra.adjoin_induction with
+  | mem x hx => exact hsB hx
+  | algebraMap r => exact hB _ r.2
+  | add x y _ _ hx hy => exact B.add_mem hx hy
+  | mul x y _ _ hx hy => exact B.mul_mem hx hy
+
+/-- **Graded Nakayama for connected graded algebras.** If the degree-zero part of `A` consists of
+scalars, homogeneous elements of positive degree which generate the irrelevant ideal `A₊` modulo
+`A₊ ^ 2` generate `A` as an `R`-algebra. -/
+theorem adjoin_eq_top_of_irrelevant_le_of_mem_bot (h𝒜 : ∀ x ∈ 𝒜 0, x ∈ (⊥ : Subalgebra R A))
+    {s : Set A} (hs : ∀ x ∈ s, ∃ n, 0 < n ∧ x ∈ 𝒜 n)
+    (h : (irrelevant 𝒜).toIdeal ≤ Ideal.span s ⊔ (irrelevant 𝒜).toIdeal ^ 2) :
+    Algebra.adjoin R s = ⊤ :=
+  subalgebra_eq_top_of_irrelevant_le 𝒜 _ (fun x hx ↦ bot_le (a := Algebra.adjoin R s) (h𝒜 x hx))
+    Algebra.subset_adjoin hs h
+
+/-- If the degree-zero part of `A` consists of scalars, evaluation of polynomials at a family of
+homogeneous elements of positive degree which generate the irrelevant ideal modulo its square is
+surjective. -/
+theorem surjective_aeval_of_irrelevant_le (h𝒜 : ∀ x ∈ 𝒜 0, x ∈ (⊥ : Subalgebra R A)) {ι : Type*}
+    {f : ι → A} (hf : ∀ i, ∃ n, 0 < n ∧ f i ∈ 𝒜 n)
+    (h : (irrelevant 𝒜).toIdeal ≤ Ideal.span (Set.range f) ⊔ (irrelevant 𝒜).toIdeal ^ 2) :
+    Function.Surjective (MvPolynomial.aeval (R := R) f) := by
+  rw [← AlgHom.range_eq_top, ← Algebra.adjoin_range_eq_range_aeval]
+  exact adjoin_eq_top_of_irrelevant_le_of_mem_bot 𝒜 h𝒜 (Set.forall_mem_range.2 hf) h
+
+end GradedAlgebra
 
 end TauCeti.GradedAlgebra

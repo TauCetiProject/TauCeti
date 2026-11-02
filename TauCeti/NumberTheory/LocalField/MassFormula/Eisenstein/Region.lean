@@ -60,6 +60,8 @@ product structure on the measure is used.
 * `TauCeti.measurableSet_eisensteinSet`: the Eisenstein region is measurable.
 * `TauCeti.measure_eisensteinSet`: for `0 < n`, the Eisenstein region has volume
   `q ^ (-n) (1 - q⁻¹)`.
+* `TauCeti.measure_eisensteinSet_pos`, `TauCeti.measure_eisensteinSet_lt_top`: the Eisenstein
+  region has positive finite volume for every additive Haar measure.
 
 ## Implementation notes
 
@@ -234,6 +236,38 @@ theorem measure_eisensteinSet {n : ℕ} (hn : 0 < n) [MeasurableSpace (Fin n →
   rw [ENNReal.mul_sub fun _ _ ↦ ENNReal.inv_ne_top.2 (pow_ne_zero _ hq), mul_one, pow_succ,
     ENNReal.mul_inv (.inl (pow_ne_zero _ hq))
       (.inl (ENNReal.pow_ne_top (ENNReal.natCast_ne_top _)))]
+
+/-- The Eisenstein region has finite volume for every measure that is finite on compact sets,
+since it lies in the compact integer box. -/
+theorem measure_eisensteinSet_lt_top {n : ℕ} [MeasurableSpace (Fin n → K)]
+    (μ : Measure (Fin n → K)) [IsFiniteMeasureOnCompacts μ] : μ (eisensteinSet K n) < ∞ :=
+  (measure_mono (eisensteinSet_subset_integerBox n)).trans_lt isCompact_integerBox.measure_lt_top
+
+/-- The Eisenstein region has positive volume for every additive Haar measure, not only for the
+one normalized on the integer box. -/
+theorem measure_eisensteinSet_pos {n : ℕ} [MeasurableSpace (Fin n → K)]
+    [BorelSpace (Fin n → K)] (μ : Measure (Fin n → K)) [μ.IsAddHaarMeasure] :
+    0 < μ (eisensteinSet K n) := by
+  rcases n.eq_zero_or_pos with rfl | hn
+  · -- For `n = 0` the region is the whole one-point space.
+    have h0 : (0 : Fin 0 → K) ∈ eisensteinSet K 0 :=
+      ⟨fun i ↦ i.elim0, fun y hy ↦ by
+        rw [coeff_monicOfCoeff_self (n := 0), map_one]
+        exact hy.le⟩
+    rw [Set.Nonempty.eq_univ ⟨0, h0⟩]
+    exact isOpen_univ.measure_pos μ Set.univ_nonempty
+  -- Rescale `μ` to the Haar measure normalized on the integer box.
+  set c := μ (integerBox K (Fin n))
+  have hc0 : c ≠ 0 := isOpen_integerBox.measure_ne_zero μ ⟨0, mem_integerBox.2 fun _ ↦ zero_mem _⟩
+  have hctop : c ≠ ∞ := isCompact_integerBox.measure_lt_top.ne
+  have h := measure_eisensteinSet hn (c⁻¹ • μ) (by
+    rw [Measure.smul_apply, smul_eq_mul, ENNReal.inv_mul_cancel hc0 hctop])
+  have hq : 1 < (Nat.card 𝓀[K] : ℝ≥0∞) := by
+    exact_mod_cast Finite.one_lt_card_iff_nontrivial.2 inferInstance
+  have hpos : 0 < 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ n * (1 - 1 / (Nat.card 𝓀[K] : ℝ≥0∞)) :=
+    ENNReal.mul_pos (by simp) (tsub_pos_of_lt (ENNReal.div_lt_of_lt_mul (by simpa using hq))).ne'
+  rw [← h, Measure.smul_apply, smul_eq_mul] at hpos
+  exact pos_of_ne_zero fun h0 ↦ by simp [h0] at hpos
 
 end Measure
 

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.HopfAlgebra.Star
 public import TauCeti.QuantumGroups.UqSl2.Antipode
 
 /-!
@@ -20,9 +21,9 @@ These assignments respect the defining relations because the relations have real
 relations, and `K F E K⁻¹ = F E` turns the starred commutator back into `E F - F E`.
 
 For a real nonzero `q`, the star structure is compatible with the Hopf structure: the coproduct
-and the counit are star homomorphisms, `Δ(x*) = Δ(x)*` and `ε(x*) = conj (ε x)`, and the antipode
-satisfies `S(S(x*)*) = x`. Consequently the inverse of the antipode is `x ↦ S(x*)*`. Thus
-`UqSl2 q` is a Hopf star algebra. This is the structure with respect to which invariant inner
+is a star homomorphism, `Δ(x*) = Δ(x)*`, so `UqSl2 q` is a Hopf star algebra. The general theory
+of Hopf star algebras then gives `ε(x*) = conj (ε x)` and `S(S(x*)*) = x`; consequently the
+inverse of the antipode is `x ↦ S(x*)*`. This is the structure with respect to which invariant inner
 products on its modules are defined, and through which its finite-dimensional modules are compared
 with the unitary corepresentations of the compact quantum group `SU_q(2)`.
 
@@ -30,13 +31,12 @@ with the unitary corepresentations of the compact quantum group `SU_q(2)`.
 
 * `TauCeti.UqSl2.instStarRing`: for a real parameter `q`, the star structure with `K* = K`,
   `E* = K F` and `F* = E K⁻¹`; it is conjugate-linear (`TauCeti.UqSl2.instStarModule`).
+* `TauCeti.UqSl2.instStarCoalgebra`: for a real nonzero parameter `q`, the coproduct is a star
+  homomorphism, making `UqSl2 q` a Hopf star algebra.
 
 ## Main results
 
 * `TauCeti.UqSl2.star_e`, `star_f`, `star_k`, `star_kInv`: the star of the generators.
-* `TauCeti.UqSl2.comul_star`: the coproduct is a star homomorphism.
-* `TauCeti.UqSl2.counit_star`: the counit is a star homomorphism.
-* `TauCeti.UqSl2.antipode_star_antipode_star`: `S(S(x*)*) = x`.
 * `TauCeti.UqSl2.star_antipode_star`: the inverse of the antipode is `x ↦ S(x*)*`.
 
 ## Implementation notes
@@ -197,44 +197,22 @@ theorem star_kInv : star (kInv q) = kInv q := by
 
 variable [Fact (q ≠ 0)]
 
-/-- The coproduct is a star homomorphism: `Δ(x*) = Δ(x)*`. -/
-@[simp]
-theorem comul_star (x : UqSl2 q) :
-    Coalgebra.comul (R := ℂ) (star x) = star (Coalgebra.comul (R := ℂ) x) := by
-  induction x using UqSl2.induction with
-  | generator g =>
-    cases g <;>
-      simp [Algebra.TensorProduct.tmul_mul_tmul, mul_add, add_mul]
-  | algebraMap c => simp [← algebraMap_star_comm]
-  | add a b ha hb => simp only [star_add, map_add, ha, hb]
-  | mul a b ha hb => simp only [star_mul, Bialgebra.comul_mul, ha, hb]
-
-/-- The counit is a star homomorphism: `ε(x*) = conj (ε x)`. -/
-@[simp]
-theorem counit_star (x : UqSl2 q) :
-    Coalgebra.counit (R := ℂ) (star x) = star (Coalgebra.counit (R := ℂ) x) := by
-  induction x using UqSl2.induction with
-  | generator g => cases g <;> simp
-  | algebraMap c => simp [← algebraMap_star_comm]
-  | add a b ha hb => simp only [star_add, map_add, ha, hb]
-  | mul a b ha hb => simp only [star_mul, Bialgebra.counit_mul, ha, hb]
-
-/-- The antipode and the star structure satisfy `S(S(x*)*) = x`. -/
-@[simp]
-theorem antipode_star_antipode_star (x : UqSl2 q) :
-    antipode ℂ (star (antipode ℂ (star x))) = x := by
-  induction x using UqSl2.induction with
-  | generator g =>
-    cases g <;>
-      simp [antipode_mul_antidistrib, mul_assoc]
-  | algebraMap c =>
-    simp [Algebra.algebraMap_eq_smul_one]
-  | add a b ha hb => simp only [star_add, map_add, ha, hb]
-  | mul a b ha hb => simp only [star_mul, antipode_mul_antidistrib, ha, hb]
+/-- For a real nonzero `q`, the coproduct is a star homomorphism, `Δ(x*) = Δ(x)*`, so `UqSl2 q`
+is a Hopf star algebra. -/
+instance instStarCoalgebra : StarCoalgebra ℂ (UqSl2 q) where
+  comul_star x := by
+    induction x using UqSl2.induction with
+    | generator g =>
+      cases g <;>
+        simp [Algebra.TensorProduct.tmul_mul_tmul, mul_add, add_mul]
+    | algebraMap c => simp [← algebraMap_star_comm]
+    | add a b ha hb => simp only [star_add, map_add, ha, hb]
+    | mul a b ha hb => simp only [star_mul, Bialgebra.comul_mul, ha, hb]
 
 /-- The inverse of the antipode is `x ↦ S(x*)*`. -/
 theorem star_antipode_star (x : UqSl2 q) :
     star (antipode ℂ (star x)) = (antipodeEquiv q).symm (MulOpposite.op x) := by
-  rw [eq_comm, AlgEquiv.symm_apply_eq, antipodeEquiv_apply, antipode_star_antipode_star]
+  rw [eq_comm, AlgEquiv.symm_apply_eq, antipodeEquiv_apply,
+    HopfAlgebra.antipode_star_antipode_star]
 
 end TauCeti.UqSl2

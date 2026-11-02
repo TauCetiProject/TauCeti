@@ -43,7 +43,9 @@ dimension two with finite residue field.
   every prime of its support has height at least two.
 * `TauCeti.Iwasawa.isPseudoNull_iff_annihilator`: the annihilator criterion, every prime
   containing `ann_A M` has height at least two; for a quotient `A ⧸ I` this is
-  `TauCeti.Iwasawa.isPseudoNull_quotient_iff`.
+  `TauCeti.Iwasawa.isPseudoNull_quotient_iff`. A variant relative to another module `N`,
+  `TauCeti.Iwasawa.isPseudoNull_of_mem_annihilator`, needs only one annihilating element lying in
+  no prime of height at most one in the support of `N`.
 * `TauCeti.Iwasawa.IsPseudoNull.isTorsion`: over a domain, pseudo-null modules are torsion.
 * `TauCeti.Iwasawa.isPseudoNull_iff_subsingleton`: over a ring of dimension at most one, such as a
   Dedekind domain, only the zero module is pseudo-null.
@@ -109,6 +111,16 @@ theorem isPseudoNull_quotient_iff (I : Ideal A) :
     IsPseudoNull A (A ⧸ I) ↔ ∀ 𝔭 : PrimeSpectrum A, I ≤ 𝔭.asIdeal → 1 < 𝔭.asIdeal.height := by
   rw [isPseudoNull_iff_annihilator, Ideal.annihilator_quotient]
 
+/-- A finitely generated module `M` killed by `a`, with support inside the support of `N`, is
+pseudo-null, provided `a` lies in no prime of height at most one in the support of `N`. -/
+theorem isPseudoNull_of_mem_annihilator {N : Type*} [AddCommGroup N] [Module A N]
+    [Module.Finite A M] {a : A}
+    (ha : ∀ 𝔭 ∈ Module.support A N, 𝔭.asIdeal.height ≤ 1 → a ∉ 𝔭.asIdeal)
+    (haM : a ∈ Module.annihilator A M) (hM : Module.support A M ⊆ Module.support A N) :
+    IsPseudoNull A M :=
+  isPseudoNull_iff_support.mpr ⟨‹_›, fun 𝔭 h𝔭 ↦ not_le.mp fun hht ↦
+    ha 𝔭 (hM h𝔭) hht (Module.annihilator_le_of_mem_support h𝔭 haM)⟩
+
 /-- The zero module is pseudo-null. -/
 theorem IsPseudoNull.of_subsingleton [Subsingleton M] : IsPseudoNull A M :=
   isPseudoNull_iff_support.mpr ⟨inferInstance, by simp [Module.support_eq_empty]⟩
@@ -159,6 +171,11 @@ theorem IsPseudoNull.of_exact {N P : Type*} [AddCommGroup N] [Module A N] [AddCo
   refine isPseudoNull_iff_support.mpr ⟨.of_exact hfg hg, fun 𝔭 h𝔭 ↦ ?_⟩
   rw [Module.support_of_exact hfg hf hg] at h𝔭
   exact h𝔭.elim hM.one_lt_height hP.one_lt_height
+
+/-- A product of two pseudo-null modules is pseudo-null. -/
+theorem IsPseudoNull.prod {N : Type*} [AddCommGroup N] [Module A N] (hM : IsPseudoNull A M)
+    (hN : IsPseudoNull A N) : IsPseudoNull A (M × N) :=
+  hM.of_exact .inl_snd LinearMap.inl_injective LinearMap.snd_surjective hN
 
 /-- In a short exact sequence over a noetherian ring, the middle term is pseudo-null iff both
 outer terms are. -/

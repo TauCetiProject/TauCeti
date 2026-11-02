@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import Mathlib.RingTheory.MvPowerSeries.Order
 public import Mathlib.RingTheory.MvPowerSeries.Substitution
 
@@ -20,7 +21,10 @@ constant coefficient, the degree-`p` component of `f(a)` only depends on the deg
 of `f` and on the linear parts of the `a i`, into which it is substituted
 (`MvPowerSeries.homogeneousComponent_subst_of_le_order`). This is how the lowest-degree term of an
 expression such as `f(F(X, Y), Z)`, for a formal group law `F(X, Y) = X + Y + ⋯`, is read off as
-the polynomial `f_p(X + Y, Z)`.
+the polynomial `f_p(X + Y, Z)`. In finitely many variables the degree-`p` component is a
+polynomial (`MvPowerSeries.homogeneousComponentPolynomial`), and the lowest-degree component of
+`f(a)` is that polynomial evaluated at the linear parts of the `a i`
+(`MvPowerSeries.homogeneousComponent_subst_eq_coe_aeval`).
 
 A common lower bound on the orders of two series bounds the orders of their sum and difference
 (`MvPowerSeries.le_order_add`, `MvPowerSeries.le_order_sub`).
@@ -66,6 +70,21 @@ theorem homogeneousComponent_one_X (i : σ) :
   ext d
   rw [coeff_homogeneousComponent, coeff_X]
   split_ifs with h₁ h₂ h₂ <;> simp_all
+
+/-- In one variable, the degree-one homogeneous component of `f` is `c X`, where `c` is the
+coefficient of `X` in `f`. -/
+theorem homogeneousComponent_one_eq_C_mul_X (f : MvPowerSeries Unit R) :
+    homogeneousComponent 1 f = C (coeff (Finsupp.single () 1) f) * X () := by
+  classical
+  ext d
+  rw [coeff_homogeneousComponent, coeff_C_mul, coeff_X]
+  by_cases h : d = Finsupp.single () 1
+  · subst h
+    simp
+  · have hd : d.degree ≠ 1 := fun hd ↦ h <| by
+      ext
+      simpa [Finsupp.degree_eq_sum] using hd
+    simp [h, hd]
 
 /-- A homogeneous component of positive degree has no constant coefficient. -/
 @[simp]
@@ -210,6 +229,49 @@ theorem homogeneousComponent_subst_of_le_order {f : MvPowerSeries σ R} {p : ℕ
     · rw [zero_smul]
 
 end Subst
+
+section Polynomial
+
+variable {σ τ R : Type*} [Finite σ]
+
+/-- The degree-`n` homogeneous component of a power series in finitely many variables, as a
+polynomial. -/
+noncomputable def homogeneousComponentPolynomial [CommSemiring R] (n : ℕ)
+    (f : MvPowerSeries σ R) :
+    MvPolynomial σ R :=
+  MvPolynomial.homogeneousComponent n (truncTotal (n + 1) f)
+
+@[simp]
+theorem coe_homogeneousComponentPolynomial [CommSemiring R] (n : ℕ) (f : MvPowerSeries σ R) :
+    (homogeneousComponentPolynomial n f : MvPowerSeries σ R) = homogeneousComponent n f := by
+  ext d
+  rw [MvPolynomial.coeff_coe, homogeneousComponentPolynomial,
+    MvPolynomial.coeff_homogeneousComponent, coeff_homogeneousComponent]
+  split_ifs with hd
+  · exact coeff_truncTotal _ (by omega)
+  · rfl
+
+theorem isHomogeneous_homogeneousComponentPolynomial [CommSemiring R] (n : ℕ)
+    (f : MvPowerSeries σ R) :
+    (homogeneousComponentPolynomial n f).IsHomogeneous n :=
+  MvPolynomial.homogeneousComponent_isHomogeneous _ _
+
+/-- If `f` vanishes below degree `n` and the series `a i` have no constant term, the degree-`n`
+part of `f(a)` is the polynomial degree-`n` part of `f` evaluated at polynomials `l i` equal to the
+linear parts of the `a i`. -/
+theorem homogeneousComponent_subst_eq_coe_aeval [CommRing R] {n : ℕ} {f : MvPowerSeries σ R}
+    (hn : n ≤ f.order) {a : σ → MvPowerSeries τ R} (ha : HasSubst a)
+    (ha₀ : ∀ i, constantCoeff (a i) = 0) {l : σ → MvPolynomial τ R}
+    (hl : ∀ i, homogeneousComponent 1 (a i) = l i) :
+    homogeneousComponent n (f.subst a) =
+      (MvPolynomial.aeval l (homogeneousComponentPolynomial n f) : MvPowerSeries τ R) := by
+  rw [homogeneousComponent_subst_of_le_order hn ha ha₀, ← coe_homogeneousComponentPolynomial,
+    subst_coe]
+  simp_rw [hl]
+  simpa using (MvPolynomial.comp_aeval_apply (MvPolynomial.coeToMvPowerSeries.algHom R)
+    (homogeneousComponentPolynomial n f) (f := l)).symm
+
+end Polynomial
 
 open Finsupp
 

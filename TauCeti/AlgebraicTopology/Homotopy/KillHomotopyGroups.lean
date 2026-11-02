@@ -7,7 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Functor.OfSequence
 public import TauCeti.AlgebraicTopology.EilenbergMacLane.Basic
-public import TauCeti.AlgebraicTopology.FundamentalGroup.Homeomorph
+public import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
 public import TauCeti.AlgebraicTopology.Homotopy.CellAttachment
 public import TauCeti.Topology.CWComplex.Abstract.Trans
 public import TauCeti.Topology.CWComplex.Classical.CWType
@@ -487,8 +487,8 @@ theorem exists_mapOfEq_comp_killHomotopyGroupsFundamentalGroupMulEquiv [T2Space 
     rw [← ConcreteCategory.comp_apply, hF]
   refine ⟨F, hFx, MonoidHom.ext fun g ↦ ?_⟩
   rw [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    killHomotopyGroupsFundamentalGroupMulEquiv_apply, TauCeti.FundamentalGroup.mapOfEq_comp]
-  exact TauCeti.FundamentalGroup.mapOfEq_congr (congrArg TopCat.Hom.hom hF) _ _ g
+    killHomotopyGroupsFundamentalGroupMulEquiv_apply, FundamentalGroup.mapOfEq_comp]
+  exact FundamentalGroup.mapOfEq_congr (congrArg TopCat.Hom.hom hF) _ _ g
 
 end Extension
 

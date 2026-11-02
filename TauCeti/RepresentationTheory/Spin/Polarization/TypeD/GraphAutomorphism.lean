@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Lie.Orthogonal.TypeD.GraphAutomorphism
 public import TauCeti.RepresentationTheory.Spin.Polarization.TypeD.KostantLattice
+import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
+import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Basic
 
 /-!
 # The graph automorphism of the type-`D` spin representation
@@ -43,8 +46,22 @@ Nothing here builds a group, a group scheme, or an automorphism of one. What the
 machinery of
 `TauCeti/Algebra/Lie/UniversalEnveloping/Kostant/RootSubgroup/Scheme/NumberedSymmetry.lean`
 consumes is a lattice-preserving linear automorphism of the representation intertwining the
-numbered generators along a permutation of their index, and the last section supplies exactly that
-datum for the type-`D` spin representation and the permutation `TauCeti.graphPermD`.
+numbered generators along a permutation of their index, and the section on the rational Serre
+representation supplies exactly that datum for the type-`D` spin representation and the
+permutation `TauCeti.graphPermD`.
+
+Over a field in which `2` is invertible, the final section extends the intertwining from the
+numbered generators to the whole split matrix Lie algebra `LieAlgebra.Orthogonal.typeD (Fin n) K`,
+whose fork exchange is the native involution `TauCeti.typeDGraphLieEquiv` at the last hyperbolic
+pair. The reflection in `v` is the swap matrix of that pair in the hyperbolic basis, and moving
+`ι v` past a Clifford element applies the grade involution and then that reflection. Quadratic
+elements are even, so `ι v` carries the quadratic element of a matrix `A` to that of its fork
+conjugate. Since `ι v` reverses exterior parity, the graph operator carries the even half-spin
+summand `S⁺` onto the odd one `S⁻` and intertwines the half-spin action of `A` on `S⁺` with the
+action of the fork conjugate of `A` on `S⁻`. In other words `S⁻` is the twist of `S⁺` by the fork
+automorphism. Since the graph operator also sends the all-coordinate exterior vector to a multiple
+of the vector with its last coordinate erased (`typeDGraphOperator_basis_of_mem`), this is the
+exchange of the two fork highest weights.
 
 ## Main definitions
 
@@ -52,6 +69,10 @@ datum for the type-`D` spin representation and the permutation `TauCeti.graphPer
   exchanges the two fork nodes of `Dₙ`.
 * `TauCeti.SpinPolarizationData.typeDGraphOperator`: its spin action on the spinor module, as a
   linear equivalence.
+* `TauCeti.SpinPolarizationData.typeDGraphHalfSpinEquiv`: the graph operator restricted to a
+  linear equivalence `S⁺ ≃ S⁻` between the two half-spin summands.
+* `TauCeti.SpinPolarizationData.typeDGraphHalfSpinLieModuleEquiv`: the same map, as an
+  equivalence of Lie modules from the fork twist of `S⁺` to `S⁻`.
 
 ## Main results
 
@@ -76,6 +97,16 @@ datum for the type-`D` spin representation and the permutation `TauCeti.graphPer
   coordinate integral lattice, in both directions.
 * `TauCeti.SpinPolarizationData.typeDGraphOperator_typeDSpinRep_rootGenerator`: the intertwining
   relation for the numbered generators of the rational type-`D` Serre representation.
+* `TauCeti.SpinPolarizationData.map_typeDGraphOperator_spinPlus`: the graph operator carries `S⁺`
+  onto `S⁻`.
+* `TauCeti.SpinPolarizationData.ι_typeDGraphVector_mul_typeDQuadraticEquiv`: conjugation by the
+  graph generator is the fork involution `TauCeti.typeDGraphLieEquiv` on the quadratic elements
+  of every split type-`D` matrix.
+* `TauCeti.SpinPolarizationData.typeDGraphOperator_typeDSpinLieRep`: the graph operator
+  intertwines the spin representation of the split type-`D` Lie algebra with its fork twist.
+* `TauCeti.SpinPolarizationData.typeDGraphHalfSpinEquiv_typeDSpinPlusLieRep` and
+  `TauCeti.SpinPolarizationData.typeDGraphHalfSpinEquiv_symm_typeDSpinMinusLieRep`: the fork
+  exchange intertwines the two half-spin representations.
 
 ## References
 
@@ -542,6 +573,45 @@ theorem typeDGraphOperator_spinAction_typeDSimpleCorootBivector (hn : 2 ≤ n) (
     ← Module.End.mul_apply, ← map_mul, ← map_mul,
     P.ι_typeDGraphVector_mul_typeDSimpleCorootBivector b hn i]
 
+/-! ### The graph operator exchanges the two half-spin summands -/
+
+/-- **The graph operator carries the even half-spin summand onto the odd one.** -/
+theorem map_typeDGraphOperator_spinPlus (hn : 2 ≤ n) (hline : P.line = ⊥) :
+    (spinPlus Q P).map (P.typeDGraphOperator b hn : ExteriorAlgebra K P.W →ₗ[K] _) =
+      spinMinus Q P := by
+  have hT : (P.typeDGraphOperator b hn : ExteriorAlgebra K P.W →ₗ[K] _) =
+      spinAction Q P (ι Q (P.typeDGraphVector b hn)) :=
+    LinearMap.ext (P.typeDGraphOperator_apply b hn)
+  have hodd := ι_mem_evenOdd_one Q (P.typeDGraphVector b hn)
+  refine le_antisymm (hT ▸ map_spinAction_spinPlus_le_spinMinus P hline hodd) fun t ht => ?_
+  refine ⟨-P.typeDGraphOperator b hn t, ?_, by simp⟩
+  refine neg_mem (map_spinAction_spinMinus_le_spinPlus P hline hodd ⟨t, ht, ?_⟩)
+  exact (P.typeDGraphOperator_apply b hn t).symm
+
+/-- **The fork exchange of the half-spin summands**: the graph operator, restricted to a linear
+equivalence from the even half-spin summand `S⁺` onto the odd one `S⁻`. It intertwines the
+half-spin representations along the fork exchange `typeDGraphLieEquiv` of the split type-`D`
+Lie algebra (`typeDGraphHalfSpinEquiv_typeDSpinPlusLieRep`). -/
+noncomputable def typeDGraphHalfSpinEquiv (hn : 2 ≤ n) (hline : P.line = ⊥) :
+    spinPlus Q P ≃ₗ[K] spinMinus Q P :=
+  (P.typeDGraphOperator b hn).ofSubmodules _ _ (P.map_typeDGraphOperator_spinPlus b hn hline)
+
+/-- The fork exchange of the half-spin summands is the graph operator. -/
+@[simp]
+theorem coe_typeDGraphHalfSpinEquiv_apply (hn : 2 ≤ n) (hline : P.line = ⊥)
+    (s : spinPlus Q P) :
+    (P.typeDGraphHalfSpinEquiv b hn hline s : ExteriorAlgebra K P.W) =
+      P.typeDGraphOperator b hn s :=
+  LinearEquiv.ofSubmodules_apply _ _ _
+
+/-- The inverse of the fork exchange of the half-spin summands is minus the graph operator. -/
+@[simp]
+theorem coe_typeDGraphHalfSpinEquiv_symm_apply (hn : 2 ≤ n) (hline : P.line = ⊥)
+    (t : spinMinus Q P) :
+    ((P.typeDGraphHalfSpinEquiv b hn hline).symm t : ExteriorAlgebra K P.W) =
+      -P.typeDGraphOperator b hn t := by
+  rw [typeDGraphHalfSpinEquiv, LinearEquiv.ofSubmodules_symm_apply, typeDGraphOperator_symm_apply]
+
 end CommRing
 
 /-! ## Integrality and the rational Serre representation -/
@@ -645,6 +715,185 @@ theorem typeDGraphOperator_typeDSpinRep_rootGenerator (hn : 4 ≤ n) (k : Fin n 
       exact P.typeDGraphOperator_typeDSpinRep_serreF b hn i x
 
 end Rat
+
+/-! ## The fork exchange on the whole split Lie algebra -/
+
+section Field
+
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+variable {K : Type u} [Field K]
+variable {V : Type v} [AddCommGroup V] [Module K V]
+variable {Q : QuadraticForm K V} (P : SpinPolarizationData Q)
+variable {n : ℕ} (b : Module.Basis (Fin n) K P.W)
+
+/-- The reflection in the graph vector, as a quadratic isometry. Its norm `-1` is invertible, so
+this is `TauCeti.QuadraticMap.reflection`, which sends `x` to `x + polar Q v x • v`. -/
+private noncomputable def typeDGraphIsometry (hn : 2 ≤ n) : Q →qᵢ Q :=
+  letI : Invertible (Q (P.typeDGraphVector b hn)) :=
+    invertibleOfNonzero (by simp)
+  { (TauCeti.QuadraticMap.reflection Q (P.typeDGraphVector b hn)).toLinearMap with
+    map_app' := TauCeti.QuadraticMap.mem_orthogonalGroup_iff.mp
+      (TauCeti.QuadraticMap.reflection_mem_orthogonalGroup Q _) }
+
+private theorem typeDGraphIsometry_apply (hn : 2 ≤ n) (x : V) :
+    P.typeDGraphIsometry b hn x =
+      x + polar Q (P.typeDGraphVector b hn) x • P.typeDGraphVector b hn := by
+  let _ : Invertible (Q (P.typeDGraphVector b hn)) :=
+    invertibleOfNonzero (by simp)
+  have hinv : ⅟(Q (P.typeDGraphVector b hn)) = -1 :=
+    invOf_eq_right_inv (by rw [quadraticForm_typeDGraphVector]; norm_num)
+  -- The isometry is the reflection, whose coefficient is `⅟(Q v) = -1`.
+  change TauCeti.QuadraticMap.reflection Q (P.typeDGraphVector b hn) x = _
+  rw [TauCeti.QuadraticMap.reflection_apply, hinv]
+  module
+
+/-- The reflection in the graph vector is an involution. -/
+private theorem typeDGraphIsometry_apply_apply (hn : 2 ≤ n) (x : V) :
+    P.typeDGraphIsometry b hn (P.typeDGraphIsometry b hn x) = x :=
+  letI : Invertible (Q (P.typeDGraphVector b hn)) :=
+    invertibleOfNonzero (by simp)
+  LinearEquiv.congr_fun (TauCeti.QuadraticMap.reflection_mul_self Q _) x
+
+/-- In the hyperbolic basis, the reflection in the graph vector is the swap matrix of the last
+hyperbolic pair. -/
+private theorem toLinAlgEquiv_typeDGraphMatrix (hn : 2 ≤ n) (hline : P.line = ⊥) :
+    Matrix.toLinAlgEquiv (P.typeDBasis b hline)
+        (typeDGraphMatrix (⟨n - 1, by omega⟩ : Fin n) K) =
+      (P.typeDGraphIsometry b hn).toLinearMap := by
+  apply (P.typeDBasis b hline).ext
+  intro s
+  rw [Matrix.toLinAlgEquiv_self, QuadraticMap.Isometry.coe_toLinearMap, typeDGraphIsometry_apply]
+  simp only [typeDGraphMatrix_apply, ite_smul, one_smul, zero_smul,
+    ← Equiv.eq_symm_apply, typeDGraphIndex_symm, Finset.sum_ite_eq', Finset.mem_univ, ite_true]
+  -- Only the last hyperbolic pair moves; every other basis vector is orthogonal to `v`.
+  rcases s with j | j <;> by_cases hj : j = ⟨n - 1, by omega⟩
+  · subst hj
+    rw [typeDGraphIndex_inl_self, typeDBasis_inr, typeDBasis_inl,
+      polar_typeDGraphVector_basis_last, typeDGraphVector_def]
+    module
+  · have hj' : (j : ℕ) ≠ n - 1 := fun h => hj (Fin.ext h)
+    rw [typeDGraphIndex_inl_of_ne _ hj, typeDBasis_inl,
+      (P.isOrtho_typeDGraphVector_basis_of_ne b hn hj').polar_eq_zero, zero_smul, add_zero]
+  · subst hj
+    rw [typeDGraphIndex_inr_self, typeDBasis_inr, typeDBasis_inl,
+      polar_typeDGraphVector_dualVector_last, typeDGraphVector_def]
+    module
+  · have hj' : (j : ℕ) ≠ n - 1 := fun h => hj (Fin.ext h)
+    rw [typeDGraphIndex_inr_of_ne _ hj, typeDBasis_inr,
+      (P.isOrtho_typeDGraphVector_dualVector_of_ne b hn hj').polar_eq_zero, zero_smul, add_zero]
+
+variable [Invertible (2 : K)]
+
+/-- **Conjugation by the graph generator realizes the fork exchange on the whole split type-`D`
+Lie algebra.** Moving the Clifford generator of the graph vector past the quadratic element of a
+matrix `A` replaces it by the quadratic element of `typeDGraphLieEquiv A`, the conjugate of `A` by
+the swap of the last hyperbolic pair. -/
+theorem ι_typeDGraphVector_mul_typeDQuadraticEquiv (hn : 2 ≤ n) (hline : P.line = ⊥)
+    (A : LieAlgebra.Orthogonal.typeD (Fin n) K) :
+    ι Q (P.typeDGraphVector b hn) * (P.typeDQuadraticEquiv b hline A : CliffordAlgebra Q) =
+      (P.typeDQuadraticEquiv b hline
+          (typeDGraphLieEquiv (⟨n - 1, by omega⟩ : Fin n) K A) : CliffordAlgebra Q) *
+        ι Q (P.typeDGraphVector b hn) := by
+  let _ : Module.Finite K V := Module.Finite.of_basis (P.typeDBasis b hline)
+  have hq := (P.typeDQuadraticEquiv b hline A).property
+  rw [mul_eq_map_involute_mul_of_forall_ι (P.typeDGraphIsometry b hn) (fun x => by
+      rw [typeDGraphIsometry_apply]; exact P.ι_typeDGraphVector_mul_ι b hn x),
+    involute_eq_of_mem_even (quadraticLieSubalgebra_le_evenOdd_zero Q hq)]
+  congr 1
+  -- Both sides are quadratic, so it suffices to compare their commutators with generators.
+  refine congrArg Subtype.val (quadraticLieSubalgebra_ext Q (P.nondegenerate_of_line_eq_bot hline)
+    (a := ⟨_, map_mem_quadraticLieSubalgebra _ hq⟩) fun x => ?_)
+  rw [P.typeDQuadraticEquiv_lie_ι b hline, typeDGraphLieEquiv_apply_val, map_mul, map_mul,
+    P.toLinAlgEquiv_typeDGraphMatrix b hn hline, Module.End.mul_apply, Module.End.mul_apply,
+    QuadraticMap.Isometry.coe_toLinearMap]
+  conv_lhs => rw [← P.typeDGraphIsometry_apply_apply b hn x, ← map_apply_ι]
+  rw [Subtype.coe_mk, Ring.lie_def, ← map_mul, ← map_mul, ← map_sub, ← Ring.lie_def,
+    P.typeDQuadraticEquiv_lie_ι b hline, map_apply_ι]
+
+/-- **The graph operator intertwines the spin representation with its fork twist.** For every
+matrix `A` of the split type-`D` Lie algebra, the graph operator carries the action of `A` to the
+action of `typeDGraphLieEquiv A`, so the spin representation twisted by the fork exchange is
+isomorphic to itself through the graph operator. -/
+theorem typeDGraphOperator_typeDSpinLieRep (hn : 2 ≤ n) (hline : P.line = ⊥)
+    (A : LieAlgebra.Orthogonal.typeD (Fin n) K) (s : ExteriorAlgebra K P.W) :
+    P.typeDGraphOperator b hn (P.typeDSpinLieRep b hline A s) =
+      P.typeDSpinLieRep b hline (typeDGraphLieEquiv (⟨n - 1, by omega⟩ : Fin n) K A)
+        (P.typeDGraphOperator b hn s) := by
+  rw [typeDGraphOperator_apply, typeDGraphOperator_apply, typeDSpinLieRep_apply,
+    typeDSpinLieRep_apply, ← Module.End.mul_apply, ← Module.End.mul_apply, ← map_mul, ← map_mul,
+    P.ι_typeDGraphVector_mul_typeDQuadraticEquiv b hn hline]
+
+/-- **The fork exchange intertwines the two half-spin representations.** The graph operator
+carries the action of `A` on `S⁺` to the action of `typeDGraphLieEquiv A` on `S⁻`. -/
+theorem typeDGraphHalfSpinEquiv_typeDSpinPlusLieRep (hn : 2 ≤ n) (hline : P.line = ⊥)
+    (A : LieAlgebra.Orthogonal.typeD (Fin n) K) (s : spinPlus Q P) :
+    P.typeDGraphHalfSpinEquiv b hn hline (P.typeDSpinPlusLieRep b hline A s) =
+      P.typeDSpinMinusLieRep b hline (typeDGraphLieEquiv (⟨n - 1, by omega⟩ : Fin n) K A)
+        (P.typeDGraphHalfSpinEquiv b hn hline s) := by
+  apply Subtype.ext
+  rw [coe_typeDGraphHalfSpinEquiv_apply, coe_typeDSpinPlusLieRep_apply,
+    coe_typeDSpinMinusLieRep_apply, coe_typeDGraphHalfSpinEquiv_apply]
+  exact P.typeDGraphOperator_typeDSpinLieRep b hn hline A s
+
+/-- The inverse fork exchange carries the action of `A` on `S⁻` to the action of
+`typeDGraphLieEquiv A` on `S⁺`. -/
+theorem typeDGraphHalfSpinEquiv_symm_typeDSpinMinusLieRep (hn : 2 ≤ n) (hline : P.line = ⊥)
+    (A : LieAlgebra.Orthogonal.typeD (Fin n) K) (t : spinMinus Q P) :
+    (P.typeDGraphHalfSpinEquiv b hn hline).symm (P.typeDSpinMinusLieRep b hline A t) =
+      P.typeDSpinPlusLieRep b hline (typeDGraphLieEquiv (⟨n - 1, by omega⟩ : Fin n) K A)
+        ((P.typeDGraphHalfSpinEquiv b hn hline).symm t) := by
+  apply (P.typeDGraphHalfSpinEquiv b hn hline).injective
+  rw [LinearEquiv.apply_symm_apply, typeDGraphHalfSpinEquiv_typeDSpinPlusLieRep,
+    typeDGraphLieEquiv_typeDGraphLieEquiv, LinearEquiv.apply_symm_apply]
+
+/-- **The odd half-spin module is the fork twist of the even one.** Make `S⁺` a module over the
+split type-`D` Lie algebra through the half-spin action precomposed with the fork exchange
+`typeDGraphLieEquiv`, and `S⁻` through its own half-spin action. Then the graph operator is an
+equivalence of Lie modules between them. -/
+noncomputable def typeDGraphHalfSpinLieModuleEquiv (hn : 2 ≤ n) (hline : P.line = ⊥) :
+    letI : LieRingModule (LieAlgebra.Orthogonal.typeD (Fin n) K) (spinPlus Q P) :=
+      LieRingModule.compLieHom _ ((P.typeDSpinPlusLieRep b hline).comp
+        (typeDGraphLieEquiv (⟨n - 1, by omega⟩ : Fin n) K).toLieHom)
+    letI : LieModule K (LieAlgebra.Orthogonal.typeD (Fin n) K) (spinPlus Q P) :=
+      LieModule.compLieHom _ ((P.typeDSpinPlusLieRep b hline).comp
+        (typeDGraphLieEquiv (⟨n - 1, by omega⟩ : Fin n) K).toLieHom)
+    letI : LieRingModule (LieAlgebra.Orthogonal.typeD (Fin n) K) (spinMinus Q P) :=
+      LieRingModule.compLieHom _ (P.typeDSpinMinusLieRep b hline)
+    letI : LieModule K (LieAlgebra.Orthogonal.typeD (Fin n) K) (spinMinus Q P) :=
+      LieModule.compLieHom _ (P.typeDSpinMinusLieRep b hline)
+    spinPlus Q P ≃ₗ⁅K, LieAlgebra.Orthogonal.typeD (Fin n) K⁆ spinMinus Q P :=
+  letI : LieRingModule (LieAlgebra.Orthogonal.typeD (Fin n) K) (spinPlus Q P) :=
+    LieRingModule.compLieHom _ ((P.typeDSpinPlusLieRep b hline).comp
+      (typeDGraphLieEquiv (⟨n - 1, by omega⟩ : Fin n) K).toLieHom)
+  letI : LieRingModule (LieAlgebra.Orthogonal.typeD (Fin n) K) (spinMinus Q P) :=
+    LieRingModule.compLieHom _ (P.typeDSpinMinusLieRep b hline)
+  { P.typeDGraphHalfSpinEquiv b hn hline with
+    map_lie' := fun {A s} => by
+      simp only [LieRingModule.compLieHom_apply, LieHom.coe_comp, Function.comp_apply,
+        LieEquiv.coe_toLieHom, Module.End.lie_apply, AddHom.toFun_eq_coe,
+        LinearMap.coe_toAddHom, LinearEquiv.coe_coe]
+      rw [typeDGraphHalfSpinEquiv_typeDSpinPlusLieRep, typeDGraphLieEquiv_typeDGraphLieEquiv] }
+
+/-- The Lie module form of the fork exchange is the linear fork exchange of the half-spin
+summands. -/
+@[simp]
+theorem typeDGraphHalfSpinLieModuleEquiv_apply (hn : 2 ≤ n) (hline : P.line = ⊥)
+    (s : spinPlus Q P) :
+    letI : LieRingModule (LieAlgebra.Orthogonal.typeD (Fin n) K) (spinPlus Q P) :=
+      LieRingModule.compLieHom _ ((P.typeDSpinPlusLieRep b hline).comp
+        (typeDGraphLieEquiv (⟨n - 1, by omega⟩ : Fin n) K).toLieHom)
+    letI : LieModule K (LieAlgebra.Orthogonal.typeD (Fin n) K) (spinPlus Q P) :=
+      LieModule.compLieHom _ ((P.typeDSpinPlusLieRep b hline).comp
+        (typeDGraphLieEquiv (⟨n - 1, by omega⟩ : Fin n) K).toLieHom)
+    letI : LieRingModule (LieAlgebra.Orthogonal.typeD (Fin n) K) (spinMinus Q P) :=
+      LieRingModule.compLieHom _ (P.typeDSpinMinusLieRep b hline)
+    letI : LieModule K (LieAlgebra.Orthogonal.typeD (Fin n) K) (spinMinus Q P) :=
+      LieModule.compLieHom _ (P.typeDSpinMinusLieRep b hline)
+    P.typeDGraphHalfSpinLieModuleEquiv b hn hline s = P.typeDGraphHalfSpinEquiv b hn hline s :=
+  (rfl)
+
+end Field
 
 end TauCeti.SpinPolarizationData
 

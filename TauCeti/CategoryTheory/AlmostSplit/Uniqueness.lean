@@ -11,35 +11,21 @@ public import TauCeti.CategoryTheory.AlmostSplit.Sequence
 /-!
 # Uniqueness of the almost-split sequence at a given end
 
-An almost-split sequence `0 ⟶ A ⟶ B ⟶ C ⟶ 0` whose left-hand end has **local** endomorphism ring
-is determined by its right-hand end `C`: two such almost-split sequences with isomorphic
-right-hand ends are isomorphic as short complexes, so in particular their left-hand ends and their
-middle terms are isomorphic.  This file proves that, the uniqueness half of the Auslander-Reiten
-theorem, and proves it in the sharper form that *every* morphism between two such almost-split
-sequences that is invertible at the right-hand end is invertible.  Concretely, every uniqueness
-statement comparing two sequences carries `[IsLocalRing (End S.X₁)]` together with
-`[IsLocalRing (End S'.X₁)]` for
-the second sequence, in a preadditive and balanced ambient category; none of these conclusions is
-claimed for an arbitrary almost-split sequence in an arbitrary preadditive category.  Only the
-comparison morphism `CategoryTheory.ShortComplex.IsAlmostSplit.exists_hom_τ₃_eq`, which produces a
-morphism and asserts nothing about its invertibility, is free of the locality hypotheses.
+An almost-split sequence `0 ⟶ A ⟶ B ⟶ C ⟶ 0` is determined by its right-hand end `C`:
+every almost-split sequence with an isomorphic right-hand end is isomorphic to it. No
+locality or finiteness hypothesis is needed. The left-hand end of an almost-split sequence
+automatically has a local endomorphism ring (`TauCeti.IsLeftAlmostSplit.isLocalRing_end`),
+because its endomorphisms that are not split monomorphisms are exactly those factoring through
+the left almost split map, and so are closed under addition.
 
-Two inputs beyond the definition are therefore needed, and both are hypotheses rather than ambient
-assumptions.  The category is asked to be preadditive and balanced, which is what makes the
-left-hand end of a short exact sequence a kernel of its second map (`ShortComplex.Exact.lift'`
-is stated only for a balanced category) and lets a morphism that is both monic and epic be
-inverted.  And the endomorphism ring of each left-hand end is asked to be **local**, the
-Krull-Schmidt input.  An almost-split sequence does have an indecomposable left-hand end
-(`TauCeti.IsLeftAlmostSplit.indecomposable`), but indecomposability in a general preadditive
-category does not give locality.  What it gives, once idempotents split — over an
-idempotent-complete category with binary biproducts, for instance any abelian one — is that the
-object is nonzero and has no idempotent endomorphism other than `0` and the identity
-(`TauCeti.indecomposable_iff_idempotent_eq_zero_or_id`), and that is strictly weaker: a ring whose
-only idempotents are `0` and `1` need not be local.  Indecomposability becomes *equivalent* to
-locality of the endomorphism ring for a module of **finite length** — in particular for a
-finite-dimensional module over a finite-dimensional algebra — which is Fitting's lemma, available
-here for objects of `ModuleCat A` as `TauCeti.indecomposable_iff_isLocalRing_end`; that is how a use
-site over such an algebra discharges the hypothesis.
+More sharply, every morphism of almost-split sequences that is invertible at the right-hand
+end is invertible. A comparison in the reverse direction makes the composite invertible at the
+first sequence's left-hand end by locality. This makes the original map on left-hand ends a
+split monomorphism; the left almost-split lifting property of the second sequence then makes it
+an isomorphism (`TauCeti.IsLeftAlmostSplit.isIso_of_isSplitMono_of_comm`).
+
+The ambient category is preadditive and balanced, so exactness supplies the kernel lifts
+used to construct comparison maps and the short five lemma applies.
 
 The rigidity input only needs non-splitness, not either lifting property. It is developed in
 `TauCeti.Algebra.Homology.ShortComplex.LocalEnd`, for exact short complexes with a local
@@ -55,12 +41,11 @@ supply the minimality criteria used to construct almost-split sequences.
   `CategoryTheory.ShortComplex.IsAlmostSplit.exists_hom_τ₃_eq` is the case of an isomorphism
   between the right-hand ends of two almost-split sequences.
 * `CategoryTheory.ShortComplex.IsAlmostSplit.isIso_of_isIso_τ₃`: **a morphism between two
-  almost-split sequences with local left-hand endomorphism rings that is invertible at the
-  right-hand end is invertible**, the sharp form of uniqueness.
+  almost-split sequences that is invertible at the right-hand end is invertible**, the sharp form
+  of uniqueness.
 * `CategoryTheory.ShortComplex.IsAlmostSplit.exists_iso_τ₃_eq`: **uniqueness.** An isomorphism
-  between the right-hand ends of two almost-split sequences with local left-hand endomorphism rings
-  is realized by an isomorphism of the sequences, so such a sequence is unique *under* its
-  right-hand end; the plainer statement is
+  between the right-hand ends of two almost-split sequences is realized by an isomorphism of the
+  sequences. Such a sequence is unique *under* its right-hand end; the plainer statement is
   `CategoryTheory.ShortComplex.IsAlmostSplit.nonempty_iso`, with
   `CategoryTheory.ShortComplex.IsAlmostSplit.nonempty_iso_X₁` and `.nonempty_iso_X₂` the
   statements about the left-hand ends and the middle terms that the Auslander-Reiten theorem is
@@ -121,27 +106,19 @@ theorem exists_hom_τ₃_eq (hS : S.IsAlmostSplit) (hS' : S'.IsAlmostSplit) (e :
 /-- **A morphism of almost-split sequences that is invertible at the right-hand end is
 invertible**, the sharp form of uniqueness. -/
 theorem isIso_of_isIso_τ₃ (hS : S.IsAlmostSplit) (hS' : S'.IsAlmostSplit)
-    [IsLocalRing (End S.X₁)] [IsLocalRing (End S'.X₁)] (φ : S ⟶ S') [IsIso φ.τ₃] : IsIso φ := by
-  -- Compose `φ` with a comparison morphism running the other way; both composites are the
-  -- identity on the right-hand end, hence isomorphisms on the left-hand ends.
+    (φ : S ⟶ S') [IsIso φ.τ₃] : IsIso φ := by
+  have := hS.isLeftAlmostSplit_f.isLocalRing_end
+  -- A reverse comparison makes the composite invertible at the first sequence's left end.
   obtain ⟨ψ, hψ⟩ := hS'.exists_hom_τ₃_eq hS (asIso φ.τ₃).symm
   have hmono := hS.shortExact.mono_f
-  have hmono' := hS'.shortExact.mono_f
   have hcomp : IsIso ((φ ≫ ψ).τ₁) :=
     hS.shortExact.exact.isIso_τ₁_of_τ₃_eq_id hS.isLeftAlmostSplit_f.not_isSplitMono
       (φ ≫ ψ) (by simp [hψ])
-  have hcomp' : IsIso ((ψ ≫ φ).τ₁) :=
-    hS'.shortExact.exact.isIso_τ₁_of_τ₃_eq_id hS'.isLeftAlmostSplit_f.not_isSplitMono
-      (ψ ≫ φ) (by simp [hψ])
-  rw [comp_τ₁] at hcomp hcomp'
-  -- So `φ.τ₁` has a left and a right inverse, hence is monic and epic, hence invertible.
-  have hmf : φ.τ₁ ≫ ψ.τ₁ ≫ inv (φ.τ₁ ≫ ψ.τ₁) = 𝟙 S.X₁ := by
-    rw [← Category.assoc, IsIso.hom_inv_id]
-  have hef : (inv (ψ.τ₁ ≫ φ.τ₁) ≫ ψ.τ₁) ≫ φ.τ₁ = 𝟙 S'.X₁ := by
-    rw [Category.assoc, IsIso.inv_hom_id]
-  have : Mono φ.τ₁ := mono_of_mono_fac hmf
-  have : Epi φ.τ₁ := epi_of_epi_fac hef
-  have : IsIso φ.τ₁ := isIso_of_mono_of_epi φ.τ₁
+  rw [comp_τ₁] at hcomp
+  have : IsSplitMono φ.τ₁ := TauCeti.isSplitMono_of_isSplitMono_comp φ.τ₁ ψ.τ₁
+  -- The second sequence's lifting property upgrades the split comparison to an isomorphism.
+  have : IsIso φ.τ₁ := hS'.isLeftAlmostSplit_f.isIso_of_isSplitMono_of_comm
+    hS.isLeftAlmostSplit_f.not_isSplitMono φ.τ₁ φ.τ₂ φ.comm₁₂.symm
   have : IsIso φ.τ₂ := isIso₂_of_shortExact_of_isIso₁₃ φ hS.shortExact hS'.shortExact
   exact isIso_of_isIso φ
 
@@ -149,8 +126,8 @@ theorem isIso_of_isIso_τ₃ (hS : S.IsAlmostSplit) (hS' : S'.IsAlmostSplit)
 isomorphism between the right-hand ends of two almost-split sequences is realized by an
 isomorphism of the sequences themselves.  The sequence ending at an object is therefore determined
 up to isomorphism *under* that object, not merely up to abstract isomorphism. -/
-theorem exists_iso_τ₃_eq (hS : S.IsAlmostSplit) (hS' : S'.IsAlmostSplit) [IsLocalRing (End S.X₁)]
-    [IsLocalRing (End S'.X₁)] (e : S.X₃ ≅ S'.X₃) : ∃ f : S ≅ S', f.hom.τ₃ = e.hom := by
+theorem exists_iso_τ₃_eq (hS : S.IsAlmostSplit) (hS' : S'.IsAlmostSplit)
+    (e : S.X₃ ≅ S'.X₃) : ∃ f : S ≅ S', f.hom.τ₃ = e.hom := by
   obtain ⟨φ, hφ⟩ := hS.exists_hom_τ₃_eq hS' e
   have : IsIso φ.τ₃ := hφ ▸ inferInstanceAs (IsIso e.hom)
   have := hS.isIso_of_isIso_τ₃ hS' φ
@@ -158,22 +135,22 @@ theorem exists_iso_τ₃_eq (hS : S.IsAlmostSplit) (hS' : S'.IsAlmostSplit) [IsL
 
 /-- **Uniqueness of the almost-split sequence at a given right-hand end**: two almost-split
 sequences whose right-hand ends are isomorphic are isomorphic as short complexes. -/
-theorem nonempty_iso (hS : S.IsAlmostSplit) (hS' : S'.IsAlmostSplit) [IsLocalRing (End S.X₁)]
-    [IsLocalRing (End S'.X₁)] (e : S.X₃ ≅ S'.X₃) : Nonempty (S ≅ S') :=
+theorem nonempty_iso (hS : S.IsAlmostSplit) (hS' : S'.IsAlmostSplit)
+    (e : S.X₃ ≅ S'.X₃) : Nonempty (S ≅ S') :=
   (hS.exists_iso_τ₃_eq hS' e).elim fun f _ => ⟨f⟩
 
 /-- **The left-hand ends of two almost-split sequences with isomorphic right-hand ends are
 isomorphic**: the object `τ M` of the Auslander-Reiten theorem is determined by `M` up to
 isomorphism. -/
-theorem nonempty_iso_X₁ (hS : S.IsAlmostSplit) (hS' : S'.IsAlmostSplit) [IsLocalRing (End S.X₁)]
-    [IsLocalRing (End S'.X₁)] (e : S.X₃ ≅ S'.X₃) : Nonempty (S.X₁ ≅ S'.X₁) :=
+theorem nonempty_iso_X₁ (hS : S.IsAlmostSplit) (hS' : S'.IsAlmostSplit)
+    (e : S.X₃ ≅ S'.X₃) : Nonempty (S.X₁ ≅ S'.X₁) :=
   (hS.nonempty_iso hS' e).map fun f => π₁.mapIso f
 
 /-- **The middle terms of two almost-split sequences with isomorphic right-hand ends are
 isomorphic**: the middle term of the Auslander-Reiten sequence ending at `M`, which carries the
 irreducible morphisms into `M`, is determined by `M` up to isomorphism. -/
-theorem nonempty_iso_X₂ (hS : S.IsAlmostSplit) (hS' : S'.IsAlmostSplit) [IsLocalRing (End S.X₁)]
-    [IsLocalRing (End S'.X₁)] (e : S.X₃ ≅ S'.X₃) : Nonempty (S.X₂ ≅ S'.X₂) :=
+theorem nonempty_iso_X₂ (hS : S.IsAlmostSplit) (hS' : S'.IsAlmostSplit)
+    (e : S.X₃ ≅ S'.X₃) : Nonempty (S.X₂ ≅ S'.X₂) :=
   (hS.nonempty_iso hS' e).map fun f => π₂.mapIso f
 
 end IsAlmostSplit

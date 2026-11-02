@@ -31,6 +31,8 @@ These constructions are algebraic; no completeness or norm is required.
 
 * `TauCeti.mem_nonUnitalJacobson_iff_isQuasiregular_smul_add_mul`: radical membership by
   quasiregularity.
+* `TauCeti.jacobson_unitization_eq_bot_iff`: over a base ring with zero radical, the unitization
+  is semisimple exactly when the algebra is.
 * `NonUnitalSubalgebra.coe_mem_nonUnitalJacobson_iff`: an element of a two-sided ideal `J` lies
   in `rad A` exactly when it lies in `rad J`.
 * `NonUnitalSubalgebra.image_coe_nonUnitalJacobson`: `rad J = J ∩ rad A`, as subsets of `A`.
@@ -98,6 +100,25 @@ theorem mem_nonUnitalJacobson_iff_isQuasiregular_smul_add_mul {a : A} :
     have hx := (h x.fst x.snd).isUnit' R
     convert hx using 1
     ext <;> simp [Unitization.snd_mul]
+
+variable {R A} in
+/-- Over a base ring with zero Jacobson radical, the external unitization of a nonunital algebra
+has zero Jacobson radical exactly when the algebra does. The radical of the unitization lies in
+the kernel of the augmentation `Unitization.fst`, because its image under the augmentation lies
+in the radical of the base ring. -/
+theorem jacobson_unitization_eq_bot_iff (hR : Ring.jacobson R = ⊥) :
+    Ring.jacobson (Unitization R A) = ⊥ ↔ nonUnitalJacobson R A = ⊥ := by
+  refine ⟨fun h ↦ ?_, fun h ↦ eq_bot_iff.2 fun x hx ↦ ?_⟩
+  · ext a
+    simpa [h] using (Unitization.inr_injective (R := R)).eq_iff' (Unitization.inr_zero R)
+  have : RingHomSurjective (Unitization.fstHom R A).toRingHom :=
+    ⟨fun r ↦ ⟨Unitization.inl r, Unitization.fst_inl A r⟩⟩
+  have hfst : x.fst = 0 := by
+    simpa [hR] using Ring.le_comap_jacobson (Unitization.fstHom R A).toRingHom hx
+  have hx' : x = x.snd := Unitization.ext (by simp [hfst]) rfl
+  have hsnd : x.snd ∈ nonUnitalJacobson R A := (mem_nonUnitalJacobson R A).2 (hx' ▸ hx)
+  rw [h, TwoSidedIdeal.mem_bot] at hsnd
+  rw [Submodule.mem_bot, hx', hsnd, Unitization.inr_zero]
 
 section Unital
 

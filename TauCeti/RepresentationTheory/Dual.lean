@@ -30,8 +30,8 @@ For a one-dimensional representation the dual is the inverse character: `Dual V 
 line.
 
 If `g` fixes pointwise the hyperplane `ker ℓ` cut out by a linear form `ℓ`, then `ρ.dual g` moves
-every linear form by a multiple of `ℓ`. This is the divisibility behind the divided-difference
-operator of a pseudoreflection.
+every linear form by a multiple of `ℓ`, and conversely. This is the divisibility behind the
+divided-difference operator of a pseudoreflection.
 
 Applied to `Dual X ⊗ Y`, whose invariants are the intertwiners `X → Y` and whose dual is
 `Dual Y ⊗ X`, this counts intertwiners in both directions alike.
@@ -44,7 +44,12 @@ Applied to `Dual X ⊗ Y`, whose invariants are the intertwiners `X → Y` and w
 * `TauCeti.Representation.finrank_invariants_dual`: **the dual of a representation has as many
   invariants as the representation** whenever `|G|` is invertible in `k`.
 * `Representation.sub_dual_apply_mem_span_singleton`: if `g` fixes the hyperplane `ker ℓ`
-  pointwise, then `ρ.dual g` moves every linear form by a multiple of `ℓ`.
+  pointwise, then `ρ.dual g` moves every linear form by a multiple of `ℓ`; by
+  `Representation.forall_sub_dual_apply_mem_span_singleton_iff`, this characterizes the elements
+  fixing `ker ℓ` pointwise.
+* `Representation.dual_apply_eq_one_iff`: over a field, `g` acts trivially on the dual exactly
+  when it acts trivially on the space, so `Representation.dual_injective_iff`: the dual is
+  faithful exactly when the representation is.
 * `Representation.dualTprodEquivDualDualTprod`: `Dual W ⊗ V` is the dual of `Dual V ⊗ W` as
   representations.
 * `Representation.dualTprodEquivTrivialOfFinrankEqOne`: for a line `V`, the contraction
@@ -93,8 +98,42 @@ theorem sub_dual_apply_mem_span_singleton (hℓ : LinearMap.ker ℓ ≤ LinearMa
   intro v hv
   have hgv : ρ g v = v := by
     simpa [sub_eq_zero] using hℓ hv
-  have hginv : ρ g⁻¹ v = v := (congrArg (ρ g⁻¹) hgv).symm.trans (ρ.inv_self_apply g v)
+  have hginv : ρ g⁻¹ v = v := ρ.inv_apply_eq_iff.2 hgv.symm
   simp [Module.Dual.transpose_apply, hginv]
+
+variable {ρ} in
+/-- Under the contragredient action, `g` moves every linear form by a multiple of `ℓ` exactly
+when `g` fixes pointwise the hyperplane `ker ℓ`. -/
+theorem forall_sub_dual_apply_mem_span_singleton_iff :
+    (∀ φ : Module.Dual K V, φ - ρ.dual g φ ∈ K ∙ ℓ) ↔
+      LinearMap.ker ℓ ≤ LinearMap.ker (ρ g - 1) := by
+  refine ⟨fun h v hv ↦ ?_, fun hℓ ↦ ρ.sub_dual_apply_mem_span_singleton hℓ⟩
+  -- Every linear form takes the same value at `ρ g⁻¹ v` as at `v`, since `ℓ v = 0`.
+  have hginv : ρ g⁻¹ v = v := by
+    rw [← sub_eq_zero, ← Module.forall_dual_apply_eq_zero_iff K]
+    intro φ
+    obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.1 (h φ)
+    have hcv := LinearMap.congr_fun hc v
+    simp only [LinearMap.smul_apply, LinearMap.mem_ker.1 hv, smul_zero, LinearMap.sub_apply,
+      dual_apply, Module.Dual.transpose_apply, LinearMap.comp_apply] at hcv
+    rw [map_sub, ← neg_sub, ← hcv, neg_zero]
+  rw [LinearMap.mem_ker, LinearMap.sub_apply, Module.End.one_apply, sub_eq_zero]
+  exact (ρ.inv_apply_eq_iff.1 hginv).symm
+
+variable {ρ} in
+/-- Over a field, `g` acts trivially on the dual exactly when it acts trivially on `V`, since
+linear forms separate the points of `V`. This is the case `ℓ = 0` of
+`Representation.forall_sub_dual_apply_mem_span_singleton_iff`. -/
+theorem dual_apply_eq_one_iff : ρ.dual g = 1 ↔ ρ g = 1 := by
+  have h := forall_sub_dual_apply_mem_span_singleton_iff (ρ := ρ) (g := g) (ℓ := 0)
+  rw [LinearMap.ker_zero, top_le_iff, LinearMap.ker_eq_top, sub_eq_zero] at h
+  simp only [Submodule.span_singleton_eq_bot.2 rfl, Submodule.mem_bot, sub_eq_zero] at h
+  rw [← h, LinearMap.ext_iff]
+  exact forall_congr' fun φ ↦ eq_comm
+
+/-- Over a field, the dual representation is faithful exactly when the representation is. -/
+theorem dual_injective_iff : Function.Injective ρ.dual ↔ Function.Injective ρ := by
+  simp only [injective_iff_map_eq_one, dual_apply_eq_one_iff]
 
 end Field
 

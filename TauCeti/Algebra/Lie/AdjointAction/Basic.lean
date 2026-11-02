@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Algebra.Subalgebra.Basic
 public import Mathlib.Algebra.Lie.AdjointAction.Basic
 public import Mathlib.Algebra.Lie.OfAssociative
 public import Mathlib.Data.Nat.Choose.Sum
+public import Mathlib.LinearAlgebra.Semisimple
 
 /-!
 # The iterated adjoint action of an associative algebra
@@ -30,6 +31,9 @@ in particular a scalar plus a nilpotent element has nilpotent adjoint action.
 Over an algebra of exponential characteristic `p` the expansion collapses at `n = p ^ e`, which is
 the subject of `TauCeti.Algebra.Lie.AdjointAction.Frobenius`.
 
+Adjoint semisimplicity, like adjoint nilpotence, passes from a Lie algebra to its Lie subalgebras
+(`LieSubalgebra.isSemisimple_ad_of_isSemisimple_ad`, over any commutative ring).
+
 ## Main statements
 
 * `TauCeti.LieAlgebra.ad_pow_eq_sum` and `TauCeti.LieAlgebra.ad_pow_apply`: the
@@ -37,6 +41,8 @@ the subject of `TauCeti.Algebra.Lie.AdjointAction.Frobenius`.
 * `TauCeti.LieAlgebra.ad_eq_zero_iff_mem_center`: `ad R A a` vanishes exactly on the centre.
 * `TauCeti.LieAlgebra.isNilpotent_ad_of_isNilpotent_sub_algebraMap`: a scalar plus a nilpotent
   element has nilpotent adjoint action.
+* `LieSubalgebra.isSemisimple_ad_of_isSemisimple_ad`: an element of a Lie subalgebra that is
+  ad-semisimple in the ambient Lie algebra is ad-semisimple in the subalgebra.
 
 ## References
 
@@ -99,3 +105,19 @@ theorem isNilpotent_ad_of_isNilpotent_sub_algebraMap {a : A} {c : R}
   simpa [hc] using LieAlgebra.ad_nilpotent_of_nilpotent (R := R) h
 
 end TauCeti.LieAlgebra
+
+namespace LieSubalgebra
+
+open LieAlgebra Module.End
+
+/-- An element of a Lie subalgebra whose adjoint action on the ambient Lie algebra is semisimple
+also has semisimple adjoint action on the subalgebra. This is the semisimple analogue of
+`LieSubalgebra.isNilpotent_ad_of_isNilpotent_ad`. -/
+theorem isSemisimple_ad_of_isSemisimple_ad {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+    (L' : LieSubalgebra R L) {x : L'} (h : (ad R L x).IsSemisimple) : (ad R L' x).IsSemisimple := by
+  have hp : L'.toSubmodule ∈ (ad R L x).invtSubmodule :=
+    (mem_invtSubmodule_iff_forall_mem_of_mem _).2 fun y hy ↦ L'.lie_mem x.2 hy
+  -- The restriction of `ad x` to `L'` is, elementwise by definition, the adjoint action on `L'`.
+  exact (LinearEquiv.isSemisimple_iff _ _ (LinearEquiv.refl R L') (by ext; rfl)).1 (h.restrict hp)
+
+end LieSubalgebra

@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Calculus.ImplicitFunctionTheorem
 public import TauCeti.Geometry.Manifold.LinearSlice
 public import TauCeti.Geometry.Manifold.Projectivization.Polynomial
+public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Level
 
 import Mathlib.Analysis.Analytic.Polynomial
 
@@ -42,6 +43,14 @@ charts induce through `TauCeti.linearSliceChartedSpace`, using at each point the
 `HasStrictFDerivAt.exists_isSliceChart_preimage_zero`, which flattens a regular zero set in a
 normed space, here composed with the affine chart and read in product coordinates.
 
+The chart equations, read as a function `ℂℙⁿ → (ι → ℂ)` on `U_i`, also give the tangent/normal
+sequence of `X`. At a point `z` of `X` in `U_i` the sequence
+`0 → T_z X → T_z ℂℙⁿ → (ι → ℂ) → 0` formed by the differentials of the inclusion and of the chart
+equations is exact, so the normal space of `X` at `z` is identified with the space `ι → ℂ` of
+equation values. This is the general statement
+`TauCeti.SmoothEmbedding.tangentRange_eq_ker_mfderiv` for embeddings cut out by equations,
+applied to the inclusion bundled as `TauCeti.complexProjectiveZeroLocusEmbedding`.
+
 ## Main declarations
 
 * `TauCeti.card_le_of_surjective_jacobiMatrixAt`: surjectivity of the cone Jacobian at a point of
@@ -57,6 +66,12 @@ normed space, here composed with the affine chart and read in product coordinate
 * `TauCeti.isImmersionOfComplement_subtypeVal_complexProjectiveZeroLocus` and
   `TauCeti.isSmoothEmbedding_subtypeVal_complexProjectiveZeroLocus`: its inclusion into `ℂℙⁿ` is
   an analytic immersion with complement `ι → ℂ` and an analytic embedding.
+* `TauCeti.complexProjectiveZeroLocusEmbedding`: the inclusion as a bundled smooth embedding.
+* `TauCeti.tangentRange_complexProjectiveZeroLocusEmbedding` and
+  `TauCeti.exact_mfderiv_subtypeVal_complexProjectiveZeroLocus`: the tangent space of the zero
+  locus is the kernel of the differential of the chart equations.
+* `TauCeti.complexProjectiveZeroLocusNormalSpaceEquiv`: the normal space of the zero locus is
+  identified with `ι → ℂ` by the differential of the chart equations.
 
 ## References
 
@@ -406,5 +421,133 @@ theorem isSmoothEmbedding_subtypeVal_complexProjectiveZeroLocus (r : ℕ∞ω) :
     (fun z ↦ contMDiffOn_complexProjectiveZeroLocusSliceChart_symm hp z.2 _ (hrank z z.2) r) _
 
 end Submanifold
+
+/-! ### The tangent and normal spaces -/
+
+section TangentNormal
+
+variable (hp : ∀ k, (p k).IsHomogeneous (d k))
+  (hrank : ∀ L ∈ complexProjectiveZeroLocus p, Function.Surjective (jacobiMatrixAt p L.rep).mulVec)
+  (r : ℕ∞ω)
+
+/-- **The smooth projective zero locus as a bundled embedding.** The inclusion of the zero locus,
+with the atlas `TauCeti.complexProjectiveZeroLocusChartedSpace`, into `ℂℙⁿ` as a `C^r` embedding.
+It is built as a structure rather than through `TauCeti.SmoothEmbedding.ofIsSmoothEmbedding`
+so that its coercion is `Subtype.val` by definition, which lets the statements below use the
+points of the zero locus rather than their images under the embedding. -/
+noncomputable def complexProjectiveZeroLocusEmbedding :
+    letI := complexProjectiveZeroLocusChartedSpace hp hrank
+    SmoothEmbedding 𝓘(ℂ, Fin (n - Fintype.card ι) → ℂ) 𝓘(ℂ, Fin n → ℂ) r
+      (complexProjectiveZeroLocus p) (ℙ ℂ (Fin (n + 1) → ℂ)) :=
+  letI := complexProjectiveZeroLocusChartedSpace hp hrank
+  { toContMDiffMap :=
+      ⟨Subtype.val, (isSmoothEmbedding_subtypeVal_complexProjectiveZeroLocus hp hrank r).contMDiff⟩
+    isSmoothEmbedding_toFun := isSmoothEmbedding_subtypeVal_complexProjectiveZeroLocus hp hrank r }
+
+/-- The bundled embedding of a smooth projective zero locus is the inclusion. -/
+@[simp]
+theorem coe_complexProjectiveZeroLocusEmbedding :
+    letI := complexProjectiveZeroLocusChartedSpace hp hrank
+    ⇑(complexProjectiveZeroLocusEmbedding hp hrank r) = Subtype.val :=
+  (rfl)
+
+variable {r}
+
+omit [Fintype ι] in
+/-- The chart equations of the zero locus vanish on it near each of its points in `U_i`. -/
+private theorem eventually_eval_dehomogenize_affineChart_eq_zero
+    (hp : ∀ k, (p k).IsHomogeneous (d k)) (z : complexProjectiveZeroLocus p)
+    (hi : (z : ℙ ℂ (Fin (n + 1) → ℂ)) ∈ affineOpen i) :
+    ∀ᶠ w : complexProjectiveZeroLocus p in nhds z, (fun k ↦ eval (affineChart i w.1)
+      (dehomogenize i (p k))) = 0 := by
+  filter_upwards [continuous_subtype_val.continuousAt.preimage_mem_nhds
+    ((isOpen_affineOpen i).mem_nhds hi)] with w hw
+  exact funext ((mem_complexProjectiveZeroLocus_iff_eval_affineChart hp hw).1 w.2)
+
+/-- The dimensions of the zero locus and of the space of equation values add up to `n`. -/
+private theorem finrank_add_finrank_eq (hp : ∀ k, (p k).IsHomogeneous (d k))
+    (hrank : ∀ L ∈ complexProjectiveZeroLocus p,
+      Function.Surjective (jacobiMatrixAt p L.rep).mulVec)
+    (z : complexProjectiveZeroLocus p) :
+    Module.finrank ℂ (Fin (n - Fintype.card ι) → ℂ) + Module.finrank ℂ (ι → ℂ) =
+      Module.finrank ℂ (Fin n → ℂ) := by
+  have := card_le_of_surjective_jacobiMatrixAt hp z.2 (hrank z z.2)
+  simp only [Module.finrank_fintype_fun_eq_card, Fintype.card_fin]
+  omega
+
+/-- The chart equations of the zero locus are regular at each of its points in `U_i`. -/
+private theorem isRegularPoint_eval_dehomogenize_affineChart (hp : ∀ k, (p k).IsHomogeneous (d k))
+    (hrank : ∀ L ∈ complexProjectiveZeroLocus p,
+      Function.Surjective (jacobiMatrixAt p L.rep).mulVec)
+    (z : complexProjectiveZeroLocus p) (hi : (z : ℙ ℂ (Fin (n + 1) → ℂ)) ∈ affineOpen i) :
+    IsRegularPoint 𝓘(ℂ, Fin n → ℂ) 𝓘(ℂ, ι → ℂ)
+      (fun w ↦ fun k ↦ eval (affineChart i w) (dehomogenize i (p k)))
+      (z : ℙ ℂ (Fin (n + 1) → ℂ)) :=
+  isRegularPoint_iff.2
+    ((surjective_mfderiv_eval_dehomogenize_affineChart_iff i hp z.2 hi).2 (hrank z z.2))
+
+/-- **The tangent space of a smooth projective zero locus.** At a point `z` of the zero locus in
+the standard affine open `U_i`, the image of the differential of the inclusion into `ℂℙⁿ` is the
+kernel of the differential of the chart equations
+`eval (affineChart i ·) (dehomogenize i (p k))`. -/
+theorem tangentRange_complexProjectiveZeroLocusEmbedding (hr : r ≠ 0)
+    (z : complexProjectiveZeroLocus p) (hi : (z : ℙ ℂ (Fin (n + 1) → ℂ)) ∈ affineOpen i) :
+    letI := complexProjectiveZeroLocusChartedSpace hp hrank
+    (complexProjectiveZeroLocusEmbedding hp hrank r).tangentRange z hr =
+      (mfderiv 𝓘(ℂ, Fin n → ℂ) 𝓘(ℂ, ι → ℂ)
+        (fun w ↦ fun k ↦ eval (affineChart i w) (dehomogenize i (p k))) z).ker :=
+  letI := complexProjectiveZeroLocusChartedSpace hp hrank
+  SmoothEmbedding.tangentRange_eq_ker_mfderiv _ z hr
+    (eventually_eval_dehomogenize_affineChart_eq_zero hp z hi)
+    (isRegularPoint_eval_dehomogenize_affineChart hp hrank z hi)
+    (finrank_add_finrank_eq hp hrank z)
+
+/-- **The tangent sequence of a smooth projective zero locus is exact.** At a point `z` of the zero
+locus in the standard affine open `U_i`, the differentials of the inclusion into `ℂℙⁿ` and of the
+chart equations form an exact sequence
+`0 → T_z X → T_z ℂℙⁿ → ι → ℂ → 0`; the differential of the inclusion is injective since it is an
+immersion (`TauCeti.isImmersionOfComplement_subtypeVal_complexProjectiveZeroLocus`), and that of
+the chart equations is surjective by
+`TauCeti.surjective_mfderiv_eval_dehomogenize_affineChart_iff`. -/
+theorem exact_mfderiv_subtypeVal_complexProjectiveZeroLocus
+    (z : complexProjectiveZeroLocus p) (hi : (z : ℙ ℂ (Fin (n + 1) → ℂ)) ∈ affineOpen i) :
+    letI := complexProjectiveZeroLocusChartedSpace hp hrank
+    Function.Exact
+      (mfderiv 𝓘(ℂ, Fin (n - Fintype.card ι) → ℂ) 𝓘(ℂ, Fin n → ℂ) Subtype.val z)
+      (mfderiv 𝓘(ℂ, Fin n → ℂ) 𝓘(ℂ, ι → ℂ)
+        (fun w ↦ fun k ↦ eval (affineChart i w) (dehomogenize i (p k))) z) :=
+  letI := complexProjectiveZeroLocusChartedSpace hp hrank
+  LinearMap.exact_iff.2
+    (tangentRange_complexProjectiveZeroLocusEmbedding hp hrank (r := 1) one_ne_zero z hi).symm
+
+/-- **The normal space of a smooth projective zero locus.** At a point `z` of the zero locus in
+the standard affine open `U_i`, the differential of the chart equations induces a continuous
+linear equivalence from the normal space of the zero locus in `ℂℙⁿ` onto the space `ι → ℂ` of
+equation values (`TauCeti.complexProjectiveZeroLocusNormalSpaceEquiv_normalClass`). -/
+noncomputable def complexProjectiveZeroLocusNormalSpaceEquiv (hr : r ≠ 0)
+    (z : complexProjectiveZeroLocus p) (hi : (z : ℙ ℂ (Fin (n + 1) → ℂ)) ∈ affineOpen i) :
+    letI := complexProjectiveZeroLocusChartedSpace hp hrank
+    (complexProjectiveZeroLocusEmbedding hp hrank r).NormalSpace z hr ≃L[ℂ] (ι → ℂ) :=
+  letI := complexProjectiveZeroLocusChartedSpace hp hrank
+  SmoothEmbedding.normalSpaceEquivOfLevel _ z hr
+    (eventually_eval_dehomogenize_affineChart_eq_zero hp z hi)
+    (isRegularPoint_eval_dehomogenize_affineChart hp hrank z hi)
+    (finrank_add_finrank_eq hp hrank z)
+
+/-- The normal-space equivalence of a smooth projective zero locus sends the normal class of an
+ambient tangent vector `v` to the differential of the chart equations applied to `v`. -/
+@[simp]
+theorem complexProjectiveZeroLocusNormalSpaceEquiv_normalClass (hr : r ≠ 0)
+    (z : complexProjectiveZeroLocus p) (hi : (z : ℙ ℂ (Fin (n + 1) → ℂ)) ∈ affineOpen i)
+    (v : TangentSpace 𝓘(ℂ, Fin n → ℂ) (z : ℙ ℂ (Fin (n + 1) → ℂ))) :
+    letI := complexProjectiveZeroLocusChartedSpace hp hrank
+    complexProjectiveZeroLocusNormalSpaceEquiv hp hrank hr z hi
+        ((complexProjectiveZeroLocusEmbedding hp hrank r).normalClass z hr v) =
+      mfderiv 𝓘(ℂ, Fin n → ℂ) 𝓘(ℂ, ι → ℂ)
+        (fun w ↦ fun k ↦ eval (affineChart i w) (dehomogenize i (p k))) z v :=
+  letI := complexProjectiveZeroLocusChartedSpace hp hrank
+  SmoothEmbedding.normalSpaceEquivOfLevel_normalClass _ _ _ _ _ _ v
+
+end TangentNormal
 
 end TauCeti

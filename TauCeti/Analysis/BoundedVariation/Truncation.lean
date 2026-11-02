@@ -170,11 +170,8 @@ theorem tendsto_totalVariationOn_sub_max_min_const (hu : LocallyIntegrableOn u �
   have hlo : LocallyIntegrableOn (fun x => min (u x) (-a) - (-a)) Ω μ := by
     simpa only [Pi.inf_def, Pi.sub_def] using
       (hu.inf (locallyIntegrableOn_const (-a))).sub (locallyIntegrableOn_const (-a))
-  have hhi : LocallyIntegrableOn (fun x => max (u x) a - a) Ω μ := by
-    simpa only [Pi.sup_def, Pi.sub_def] using
-      (hu.sup (locallyIntegrableOn_const a)).sub (locallyIntegrableOn_const a)
   rw [hdecomp]
   simpa only [sub_eq_add_neg, totalVariationOn_add_const, Function.comp_apply] using
-    totalVariationOn_add_le hlo hhi
+    totalVariationOn_add_le (v := fun x => max (u x) a - a) hlo
 
 end TauCeti

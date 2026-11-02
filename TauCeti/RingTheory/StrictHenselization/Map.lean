@@ -82,8 +82,8 @@ private theorem toTarget_stageMap (φ : Ω →ₐ[R] Ψ) (B : Neighbourhood R Ω
     (b : B.obj.left) :
     toTarget S Ψ (stageMap φ B b) = φ (toTarget R Ω (stage R Ω B b)) := by
   dsimp only [stageMap, AlgHom.comp_apply, AlgHom.restrictScalars_apply]
-  rw [toTarget_stage_apply]
-  simp [baseChange, Algebra.TensorProduct.includeRight_apply]
+  rw [toTarget_stage_apply, Neighbourhood.point_apply]
+  simp [baseChange, Algebra.TensorProduct.includeRight_apply, Neighbourhood.point_apply]
 
 private noncomputable def mapAlgHom (φ : Ω →ₐ[R] Ψ) :
     algebra R Ω →ₐ[R] algebra S Ψ :=
@@ -186,17 +186,10 @@ theorem map_unique (f : R →+* S) (φ : Ω →+* Ψ)
   let m : algebra R Ω →ₐ[R] algebra S Ψ :=
     { map f φ hφ with commutes' := map_algebraMap f φ hφ }
   suffices g' = m from congrArg AlgHom.toRingHom this
-  let J := RingHom.ker (toTarget S Ψ).toRingHom
-  have hJ : J ≤ Ideal.jacobson ⊥ := by
-    intro x hx
-    have hx0 : toTarget S Ψ x = 0 := RingHom.mem_ker.mp hx
-    apply Ideal.mem_jacobson_bot.mpr
-    intro y
-    apply (isUnit_iff_isUnit_toTarget S Ψ _).mpr
-    simp [hx0]
   apply hom_ext R Ω
   intro B
-  apply TauCeti.Algebra.FormallyUnramified.ext_of_quotient_eq R B.obj.left J hJ
+  apply TauCeti.Algebra.FormallyUnramified.ext_of_quotient_eq R B.obj.left _
+    (ker_toTarget_le_jacobson S Ψ)
   ext b
   apply Ideal.Quotient.eq.mpr
   apply RingHom.mem_ker.mpr

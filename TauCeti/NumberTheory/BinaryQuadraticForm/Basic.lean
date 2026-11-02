@@ -445,6 +445,14 @@ theorem discrim_smul (γ : SL(2, R)) (f : BinaryQuadraticForm R) : (γ • f).di
   simp only [discrim_def, discrim, smul_a', smul_b', smul_c', smul_eq_mul]
   ring
 
+/-- A form `g • f` has discriminant `-D` exactly when `f` has discriminant `-D / g²`. -/
+theorem discrim_natCast_smul_eq_neg_iff {D g : ℕ} (hg : g ^ 2 ∣ D) (hg0 : g ≠ 0)
+    (f : BinaryQuadraticForm ℤ) :
+    ((g : ℤ) • f).discrim = -D ↔ f.discrim = -(D / g ^ 2 : ℕ) := by
+  obtain ⟨m, rfl⟩ := hg
+  rw [Nat.mul_div_cancel_left _ (by positivity), discrim_smul', Nat.cast_mul, Nat.cast_pow,
+    ← mul_neg, mul_right_inj' (by positivity)]
+
 /-- The positive definite integral binary quadratic forms of discriminant `-D`, for `D ≠ 0`, as a
 sub-action of `SL(2, ℤ)`: the forms of discriminant `-D` whose leading coefficient is positive. -/
 def posDef (D : ℕ) [NeZero D] : SubMulAction SL(2, ℤ) (BinaryQuadraticForm ℤ) where

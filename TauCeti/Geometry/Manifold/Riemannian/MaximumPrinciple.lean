@@ -5,12 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
-public import TauCeti.Geometry.Manifold.Morse.Hessian
+public import TauCeti.Geometry.Manifold.Riemannian.CriticalHessian
 import TauCeti.Analysis.Calculus.DerivativeTest
 import TauCeti.Geometry.Manifold.Morse.CriticalPoints
-import TauCeti.Geometry.Manifold.MFDeriv.Chart
-import TauCeti.Geometry.Manifold.VectorBundle.Tangent
 
 /-!
 # The maximum principle for the Laplace–Beltrami operator
@@ -32,8 +29,6 @@ uniqueness mechanism for the curvature equation of conformal metrics on closed s
 
 ## Main results
 
-* `TauCeti.Manifold.hessian_eq_criticalHessian`: at a critical point, the Hessian is the critical
-  Hessian, the second derivative of the coordinate expression in the preferred chart.
 * `TauCeti.Manifold.hessian_self_nonpos_of_isLocalMax`,
   `TauCeti.Manifold.hessian_self_nonneg_of_isLocalMin`: the second-derivative test.
 * `TauCeti.Manifold.laplaceBeltrami_nonpos_of_isLocalMax`,
@@ -63,38 +58,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
   {f : M → ℝ} {x : M}
-
-/-- At a critical point `x` of a `C²` function `f` on a boundaryless Riemannian manifold, the
-Riemannian Hessian of `f` is the critical Hessian `TauCeti.criticalHessian`, the second Fréchet
-derivative of the coordinate expression `f ∘ (extChartAt I x).symm` at the chart image of `x`. -/
-theorem hessian_eq_criticalHessian (hf : ContMDiffAt I 𝓘(ℝ) 2 f x)
-    (hcrit : mvfderiv I f x = 0) (v w : TangentSpace I x) :
-    hessian I f x v w = criticalHessian I f x v w := by
-  -- At a critical point, the Hessian is the derivative of `df` along an extension of `w`.
-  have h := hessian_apply_eq_mvfderiv_sub x hf (FiberBundle.extend E v) (FiberBundle.extend E w)
-    (FiberBundle.mdifferentiableAt_extend I E w)
-  simp only [FiberBundle.extend_apply_self, hcrit, zero_apply, sub_zero] at h
-  rw [h, criticalHessian_def]
-  set φ := extChartAt I x
-  set F := f ∘ φ.symm
-  -- Regard `w` as a vector of the model space `E`, so the chart computations typecheck in `E`.
-  obtain ⟨e, rfl⟩ : ∃ e : E, e = w := ⟨w, rfl⟩
-  -- Read through the chart, that derivative is the derivative of `z ↦ dF(z) w` at `φ x`.
-  have hdF : DifferentiableAt ℝ (fderiv ℝ F) (φ x) :=
-    (hf.contDiffAt_comp_extChartAt_symm.fderiv_right (m := 1) (by norm_num)).differentiableAt
-      (by norm_num)
-  have hH : DifferentiableAt ℝ (fun z ↦ fderiv ℝ F z e) (φ x) :=
-    hdF.clm_apply (differentiableAt_const e)
-  have hφ : HasMFDerivAt I 𝓘(ℝ, E) φ x (mfderiv I 𝓘(ℝ, E) φ x) :=
-    (mdifferentiableAt_extChartAt (mem_chart_source H x)).hasMFDerivAt
-  have hcomp := (hH.hasFDerivAt.hasMFDerivAt.comp x hφ).congr_of_eventuallyEq
-    (mvfderiv_extend_eventuallyEq (hf.of_le (by norm_num)) e)
-  rw [mvfderiv_apply_eq_mfderiv_apply, hcomp.mfderiv, mfderiv_extChartAt_self]
-  -- The remaining tangent-space casts of the chain rule are identities.
-  change fderiv ℝ (fun z ↦ fderiv ℝ F z e) (φ x) v = _
-  rw [fderiv_clm_apply hdF (differentiableAt_const e)]
-  simp only [fderiv_fun_const, Pi.zero_apply, ContinuousLinearMap.comp_zero, zero_add]
-  exact ContinuousLinearMap.flip_apply _ _ _
 
 /-- At a local maximum of a `C²` function on a boundaryless Riemannian manifold, the Hessian is
 negative semidefinite. -/

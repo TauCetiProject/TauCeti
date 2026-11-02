@@ -85,6 +85,24 @@ theorem signBasis_mul_det_mul_pos (o : Orientation R E ι)
     rw [hs, mul_right_comm (signBasis o b : R) (b.det b') _, hsign, one_mul]
     exact hpos
 
+/-- A top-degree alternating form evaluated on a basis and weighted by that basis's sign relative
+to the orientation of a reference basis is its value on the reference basis times the absolute
+change-of-basis determinant. In particular, a form that is nonnegative (positive) on the bases of
+one orientation has nonnegative (positive) signed value on every basis. -/
+theorem _root_.AlternatingMap.signBasis_mul_apply_eq_abs_det_mul (f : E [⋀^ι]→ₗ[R] R)
+    (b₀ b : Module.Basis ι R E) :
+    (signBasis b₀.orientation b : R) * f b = |b₀.det b| * f b₀ := by
+  have hpos := signBasis_mul_det_mul_pos b₀.orientation b₀ b
+  rw [signBasis_orientation, Units.val_one, Int.cast_one, one_mul] at hpos
+  have hf : f b = f b₀ * b₀.det b := by
+    simpa only [_root_.smul_apply, smul_eq_mul] using
+      congrArg (fun g : E [⋀^ι]→ₗ[R] R ↦ g b) (f.eq_smul_basis_det b₀)
+  have habs : |b₀.det b| = b₀.det b * (signBasis b₀.orientation b : R) := by
+    rw [← abs_of_pos hpos, abs_mul]
+    rcases Int.units_eq_one_or (signBasis b₀.orientation b) with h | h <;> simp [h]
+  rw [habs, hf]
+  ring
+
 end CommRing
 
 section Field

@@ -18,9 +18,9 @@ the circle `sphere ζ ρ`, leaving the *crosscut neighbourhood* `U ∩ ball ζ �
 `Conformal/Crosscut/Basic.lean` turns an oscillation bound on that neighbourhood into a boundary
 limit for a *disc* `U`, by the maximum modulus principle. This file carries that criterion to an
 arbitrary open `U`, and supplies the oscillation bound for a *conformal* map, in the geometric form
-that layer **L5** of `TauCetiRoadmap/ConformalMapping/README.md` — the Carathéodory boundary
-correspondence — produces it: the image of the crosscut neighbourhood is no wider than the image of
-the crosscut arc together with the piece of `∂Ω` that arc cuts off.
+in which the Carathéodory boundary correspondence produces it: the image of the crosscut
+neighbourhood is no wider than the image of the crosscut arc together with the piece of `∂Ω` that
+arc cuts off.
 
 ## The boundary of the image of a crosscut neighbourhood
 
@@ -68,13 +68,12 @@ at every point of `frontier U`, the continuous extension to `closure U`,
 This is the **geometric** counterpart of the analytic criterion
 `TauCeti.exists_continuousOn_closedBall_eqOn` of `Conformal/Crosscut/Basic.lean`. That one asks for
 a bound on the values of `f` along the crosscut arc *and along a collar* of the boundary circle, and
-runs on the maximum modulus principle; this one replaces the collar bound by a hypothesis about
-the *image*, namely that the boundary points of `Ω` clinging to the cut-off piece can be enclosed in
-a small set `E`. That is the shape in which the two remaining L5 inputs arrive: the length–area
-method makes the image crosscut short, and local connectedness of `∂Ω` supplies the small
-connected `E`
-joining its two ends. Neither is proved here; what is proved here is that those two data suffice,
-with no maximum principle and no estimate on `f` inside the domain.
+runs on the maximum modulus principle; this one replaces the collar bound by a hypothesis about the
+*image*, namely that the boundary points of `Ω` clinging to the cut-off piece can be enclosed in a
+small set `E`. That is the shape in which the two other inputs of Carathéodory's argument arrive:
+the length–area method makes the image crosscut short, and local connectedness of `∂Ω` supplies the
+small connected `E` joining its two ends. Neither is proved here; what is proved here is that those
+two data suffice, with no maximum principle and no estimate on `f` inside the domain.
 
 Nothing below assumes that `ζ` lies on `frontier U`, or that `Ω` is anything but bounded, so the
 hypotheses stay checkable; only the final two theorems, which produce a limit, ask `ζ` to be
@@ -89,15 +88,14 @@ both a Jordan domain and the disc it is mapped from, so both directions of it ar
 the general form. The cut itself is still a circle `sphere ζ ρ`, which is what makes the crosscut
 neighbourhoods a neighbourhood basis of `ζ`.
 
-In accordance with the generality bar of `ConformalMapping/README.md`, which fixes scalar `ℂ` for
-every theorem added in layers L0–L6, everything below is stated for maps of `ℂ`. The three steps
-that never mention a holomorphic map are stated at their own generality elsewhere, and consumed
-here: `TauCeti.frontier_image_subset_image_union_frontier_image` for maps between arbitrary
-topological spaces, `TauCeti.diam_le_diam_of_frontier_subset` — through `TauCeti.diam_frontier`
-and `IsPreconnected.inter_frontier_nonempty` — for an arbitrary real normed space, and
-`TauCeti.subsingleton_clusterSetOn_of_forall_exists` for a map between metric spaces. What
-remains here is exactly the conformal content: the open mapping theorem, and the reading of a
-circular cut as a crosscut.
+Everything below is stated for maps of `ℂ`. The three steps that never mention a holomorphic map are
+stated at their own generality elsewhere, and consumed here:
+`TauCeti.frontier_image_subset_image_union_frontier_image` for maps between arbitrary topological
+spaces, `TauCeti.diam_le_diam_of_frontier_subset` — through `TauCeti.diam_frontier` and
+`IsPreconnected.inter_frontier_nonempty` — for an arbitrary real normed space, and
+`TauCeti.subsingleton_clusterSetOn_of_forall_exists` for a map between metric spaces. What remains
+here is exactly the conformal content: the open mapping theorem, and the reading of a circular cut
+as a crosscut.
 
 ## Main results
 
@@ -111,16 +109,6 @@ circular cut as a crosscut.
 * `TauCeti.exists_tendsto_nhdsWithin_of_forall_exists_diam_union_le` and
   `TauCeti.exists_continuousOn_closure_eqOn_of_forall_exists_diam_union_le` — the resulting
   boundary limit and continuous extension to the closure.
-
-## Coordination with upstream Mathlib
-
-Layer L5 is absent from
-[mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505), the in-progress
-human-curated Riemann-mapping-theorem effort, which stops at the mapping theorem itself, and Mathlib
-has no boundary correspondence for conformal maps. So this file is new Lean formalization rather
-than a temporary shim. It consumes the L0–L3 shim
-`TauCeti.isOpen_image_of_differentiableOn_of_injOn`, to be refactored onto Mathlib's open mapping
-API once the upstream work lands.
 
 ## References
 
