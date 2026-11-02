@@ -44,20 +44,13 @@ variable {A : Type*} [AddMonoid A] [TopologicalSpace A] [MeasurableSpace A]
 in the support of the compound Poisson law, including the zeroth power. -/
 theorem support_convolutionPower_subset_compoundPoissonMeasure (hr : r ≠ 0) (n : ℕ) :
     (μ.convolutionPower n).support ⊆ (compoundPoissonMeasure r μ).support := by
-  intro x hx
-  rw [Measure.support_eq_forall_isOpen]
-  intro U hxU hU
-  have hc : 0 < ENNReal.ofReal (Real.exp (-(r : ℝ)) * (r : ℝ) ^ n / n.factorial) := by
-    apply ENNReal.ofReal_pos.mpr
-    have hrpos : 0 < (r : ℝ) := NNReal.coe_pos.mpr (pos_iff_ne_zero.mpr hr)
-    exact div_pos (mul_pos (Real.exp_pos _) (pow_pos hrpos n)) (by positivity)
-  have hle := Measure.le_sum (fun k : ℕ ↦
-    ENNReal.ofReal (Real.exp (-(r : ℝ)) * (r : ℝ) ^ k / k.factorial) •
-      μ.convolutionPower k) n
-  rw [← compoundPoissonMeasure_eq_sum] at hle
-  exact (ENNReal.mul_pos hc.ne'
-    ((Measure.mem_support_iff_forall x).mp hx U (hU.mem_nhds hxU)).ne').trans_le
-    (by simpa only [Measure.smul_apply, smul_eq_mul] using hle U)
+  rw [compoundPoissonMeasure_eq_sum]
+  refine ((Measure.absolutelyContinuous_smul ?_).trans
+    (Measure.le_sum _ n).absolutelyContinuous).support_mono
+  apply ne_of_gt
+  apply ENNReal.ofReal_pos.mpr
+  have hrpos : 0 < (r : ℝ) := NNReal.coe_pos.mpr (pos_iff_ne_zero.mpr hr)
+  exact div_pos (mul_pos (Real.exp_pos _) (pow_pos hrpos n)) (by positivity)
 
 variable [ContinuousAdd A] [OpensMeasurableSpace A] [MeasurableAdd₂ A]
   [SFinite μ]
@@ -84,19 +77,15 @@ theorem support_compoundPoissonMeasure_of_support_mem_ae (hr : r ≠ 0)
       rw [Measure.convolutionPower_zero]
       exact (ae_dirac_iff hC.measurableSet).2 C.zero_mem
     | succ n ih =>
-      rw [Measure.convolutionPower_succ, Measure.conv]
-      apply (ae_map_iff (p := fun z ↦ z ∈ C)
-        measurable_add.aemeasurable hC.measurableSet).2
-      apply (Measure.ae_prod_iff_ae_ae (hC.measurableSet.preimage measurable_add)).2
-      filter_upwards [ih] with x hx
-      exact (Filter.eventually_mem_set.mpr hμ).mono fun y hy ↦
-        C.add_mem hx (subset_closure (AddSubmonoid.subset_closure hy))
+      rw [Measure.convolutionPower_succ]
+      refine Measure.ae_mem_conv_of_ae_mem hC.measurableSet ?_ ih
+        (Filter.eventually_mem_set.mpr hμ)
+      rintro _ ⟨x, hx, y, hy, rfl⟩
+      exact C.add_mem hx (subset_closure (AddSubmonoid.subset_closure hy))
   apply Subset.antisymm
   · apply Measure.support_subset_of_isClosed isClosed_closure
     rw [compoundPoissonMeasure_eq_sum]
-    apply (Measure.ae_sum_iff (μ := fun n : ℕ ↦
-      ENNReal.ofReal (Real.exp (-(r : ℝ)) * (r : ℝ) ^ n / n.factorial) •
-        μ.convolutionPower n)).2
+    apply Measure.ae_sum_iff.2
     intro n
     exact Measure.ae_smul_measure (hp n) _
   · apply closure_minimal _ Measure.isClosed_support

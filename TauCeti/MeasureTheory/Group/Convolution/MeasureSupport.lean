@@ -11,10 +11,11 @@ public import TauCeti.MeasureTheory.Measure.Dirac
 /-!
 # Topological support of measure convolution
 
-The support of a convolution is the closure of the pointwise sum of the two supports,
-provided those supports have full measure. In particular, every sum of two support points
-has positive mass in each neighbourhood. This permits support arguments for sums of
-independent jumps without moment or density assumptions.
+The support of a multiplicative convolution is the closure of the pointwise product of the
+two supports, provided those supports have full measure. The additive versions give the
+corresponding statements for sums. A concentration lemma transports almost-everywhere
+membership through convolution. This permits support arguments for sums of independent jumps
+without moment or density assumptions.
 -/
 
 public section
@@ -24,41 +25,54 @@ open scoped Pointwise
 
 namespace MeasureTheory.Measure
 
-variable {A : Type*} [AddMonoid A] [TopologicalSpace A] [ContinuousAdd A]
-  [MeasurableSpace A] [OpensMeasurableSpace A] [MeasurableAdd₂ A]
-  {μ ν : Measure A} [SFinite ν]
+variable {M : Type*} [Monoid M] [MeasurableSpace M] [MeasurableMul₂ M]
+  {μ ν : Measure M} [SFinite ν]
 
-/-- A sum of support points belongs to the support of the convolution. -/
-theorem add_mem_support_conv {x y : A} (hx : x ∈ μ.support) (hy : y ∈ ν.support) :
-    x + y ∈ (μ ∗ ν).support := by
+/-- Multiplicative convolution concentrates on any measurable set containing the pointwise
+product of sets on which its factors concentrate. -/
+@[to_additive /-- Additive convolution concentrates on any measurable set containing the
+pointwise sum of sets on which its factors concentrate. -/]
+theorem ae_mem_mconv_of_ae_mem {S T C : Set M} (hC : MeasurableSet C) (hST : S * T ⊆ C)
+    (hS : ∀ᵐ x ∂μ, x ∈ S) (hT : ∀ᵐ y ∂ν, y ∈ T) : ∀ᵐ z ∂μ ∗ₘ ν, z ∈ C := by
+  rw [mconv]
+  apply (ae_map_iff measurable_mul.aemeasurable hC).2
+  apply (ae_prod_iff_ae_ae (hC.preimage measurable_mul)).2
+  filter_upwards [hS] with x hx
+  exact hT.mono fun y hy ↦ hST (Set.mul_mem_mul hx hy)
+
+variable [TopologicalSpace M] [ContinuousMul M] [OpensMeasurableSpace M]
+
+/-- A product of support points belongs to the support of the multiplicative convolution. -/
+@[to_additive /-- A sum of support points belongs to the support of the convolution. -/]
+theorem mul_mem_support_mconv {x y : M} (hx : x ∈ μ.support) (hy : y ∈ ν.support) :
+    x * y ∈ (μ ∗ₘ ν).support := by
   rw [support_eq_forall_isOpen]
   intro U hxy hU
-  have hpre : (fun p : A × A ↦ p.1 + p.2) ⁻¹' U ∈ 𝓝 (x, y) :=
-    continuous_add.continuousAt.preimage_mem_nhds (hU.mem_nhds hxy)
+  have hpre : (fun p : M × M ↦ p.1 * p.2) ⁻¹' U ∈ 𝓝 (x, y) :=
+    continuous_mul.continuousAt.preimage_mem_nhds (hU.mem_nhds hxy)
   obtain ⟨s, hs, t, ht, hst⟩ := mem_nhds_prod_iff.mp hpre
-  rw [conv, map_apply measurable_add hU.measurableSet]
+  rw [mconv, map_apply measurable_mul hU.measurableSet]
   have hp : 0 < (μ.prod ν) (s ×ˢ t) := by
     rw [prod_prod]
     exact ENNReal.mul_pos ((mem_support_iff_forall x).mp hx s hs).ne'
       ((mem_support_iff_forall y).mp hy t ht).ne'
   exact hp.trans_le (measure_mono hst)
 
-/-- When the factor supports are conull, the convolution support is the closure of their
-pointwise sum. The closure is necessary even for finite measures on the real line. -/
-theorem support_conv (hμ : μ.support ∈ ae μ) (hν : ν.support ∈ ae ν) :
-    (μ ∗ ν).support = closure (μ.support + ν.support) := by
+/-- When the factor supports are conull, the multiplicative convolution support is the closure
+of their pointwise product. -/
+@[to_additive /-- When the factor supports are conull, the convolution support is the closure
+of their pointwise sum. The closure is necessary even for finite measures on the real line. -/]
+theorem support_mconv (hμ : μ.support ∈ ae μ) (hν : ν.support ∈ ae ν) :
+    (μ ∗ₘ ν).support = closure (μ.support * ν.support) := by
   apply Subset.antisymm
   · apply support_subset_of_isClosed isClosed_closure
-    rw [conv]
-    apply (ae_map_iff (p := fun z ↦ z ∈ closure (μ.support + ν.support))
-      measurable_add.aemeasurable isClosed_closure.measurableSet).2
-    apply (ae_prod_iff_ae_ae (isClosed_closure.measurableSet.preimage measurable_add)).2
-    filter_upwards [Filter.eventually_mem_set.mpr hμ] with x hx
-    exact (Filter.eventually_mem_set.mpr hν).mono fun y hy ↦
-      subset_closure (Set.add_mem_add hx hy)
+    exact ae_mem_mconv_of_ae_mem isClosed_closure.measurableSet subset_closure hμ hν
   · apply closure_minimal _ isClosed_support
     rintro _ ⟨x, hx, y, hy, rfl⟩
-    exact add_mem_support_conv hx hy
+    exact mul_mem_support_mconv hx hy
+
+variable {A : Type*} [AddMonoid A] [TopologicalSpace A] [ContinuousAdd A]
+  [MeasurableSpace A] [OpensMeasurableSpace A] [MeasurableAdd₂ A]
 
 /-- A finite sum of jump-support points belongs to the support of the corresponding
 convolution power, with the empty list giving the zeroth power. -/
