@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.Preparation
+public import TauCeti.RingTheory.PowerSeries.Weierstrass.Basis
 public import Mathlib.RingTheory.AdjoinRoot
 import Mathlib.RingTheory.Ideal.GoingUp
 import TauCeti.Algebra.GroupWithZero.Irreducible
@@ -179,28 +180,6 @@ theorem IsDistinguished.exists_polynomialQuotientEquiv
   exact ⟨p, hm, ⟨(hp.polynomialQuotientEquiv hc hm).trans
     (Ideal.quotientEquivAlgOfEq R hI)⟩⟩
 
-/-- The quotient by a distinguished restricted series with a unit dominant coefficient is
-a finite module over the coefficient ring. -/
-theorem IsDistinguished.finite_quotient
-    {f : PowerSeries.IsRestricted.subring (R := R) c}
-    (hf : IsDistinguished c s (f : PowerSeries R)) (hc : 0 < c)
-    (hu : IsUnit ((f : PowerSeries R).coeff s)) :
-    Module.Finite R (PowerSeries.IsRestricted.subring (R := R) c ⧸ Ideal.span {f}) := by
-  obtain ⟨p, hm, ⟨e⟩⟩ := hf.exists_polynomialQuotientEquiv hc hu
-  have := hm.monic.finite_quotient
-  exact Module.Finite.of_surjective e.toLinearMap e.surjective
-
-/-- The quotient by a distinguished restricted series with a unit dominant coefficient is
-free over the coefficient ring. -/
-theorem IsDistinguished.free_quotient
-    {f : PowerSeries.IsRestricted.subring (R := R) c}
-    (hf : IsDistinguished c s (f : PowerSeries R)) (hc : 0 < c)
-    (hu : IsUnit ((f : PowerSeries R).coeff s)) :
-    Module.Free R (PowerSeries.IsRestricted.subring (R := R) c ⧸ Ideal.span {f}) := by
-  obtain ⟨p, hm, ⟨e⟩⟩ := hf.exists_polynomialQuotientEquiv hc hu
-  have := hm.monic.free_quotient
-  exact Module.Free.of_equiv e.toLinearEquiv
-
 /-- A maximal ideal of restricted power series containing a distinguished series `f` with a unit
 dominant coefficient contracts to a maximal ideal of the coefficient ring. -/
 theorem IsDistinguished.isMaximal_comap_algebraMap
@@ -212,7 +191,7 @@ theorem IsDistinguished.isMaximal_comap_algebraMap
   -- The image of `N` in the quotient by `f`, which is finite over `R`, is maximal.
   let S := PowerSeries.IsRestricted.subring (R := R) c
   let B := S ⧸ Ideal.span {f}
-  have := hf.finite_quotient hc hu
+  have := (isMulDistinguished_iff_isUnit.mpr ⟨hf, hu⟩).finite_quotient hc
   have : Algebra.IsIntegral R B := Algebra.IsIntegral.of_finite R B
   have hfN' : Ideal.span {f} ≤ N := Ideal.span_singleton_le_iff_mem _ |>.mpr hfN
   let Nb : Ideal B := N.map (Ideal.Quotient.mk _)

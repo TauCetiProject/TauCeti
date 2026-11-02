@@ -43,6 +43,16 @@ variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] [CompleteSpace R]
 local notation "S" => PowerSeries.IsRestricted.subring (R := R) c
 local notation "Q" => S ⧸ Ideal.span (singleton g : Set S)
 
+/-- A restricted series and its Weierstrass remainder represent the same quotient class. -/
+@[simp]
+theorem mk_polynomialToRestricted_weierstrassMod
+    (hg : IsMulDistinguished c s (g : PowerSeries R)) (hc : 0 < c) (f : S) :
+    Ideal.Quotient.mk (Ideal.span {g}) (polynomialToRestricted c (hg.weierstrassMod hc f)) =
+      Ideal.Quotient.mk _ f := by
+  have h := congrArg (Ideal.Quotient.mk (Ideal.span {g}))
+    (hg.mul_weierstrassDiv_add_weierstrassMod hc f)
+  simpa using h
+
 /-- Taking the Weierstrass remainder identifies the quotient by a multiplicatively distinguished
 series with the coefficient module of polynomials of degree less than its distinguished degree. -/
 def quotientRemainderEquiv (hg : IsMulDistinguished c s (g : PowerSeries R)) (hc : 0 < c) :
@@ -63,9 +73,7 @@ def quotientRemainderEquiv (hg : IsMulDistinguished c s (g : PowerSeries R)) (hc
     obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective x
     refine ⟨⟨hg.weierstrassMod hc f,
       Polynomial.mem_degreeLT.mpr (hg.degree_weierstrassMod_lt hc f)⟩, ?_⟩
-    have h := congrArg (Ideal.Quotient.mk (Ideal.span {g}))
-      (hg.mul_weierstrassDiv_add_weierstrassMod hc f)
-    simpa [F] using h
+    exact hg.mk_polynomialToRestricted_weierstrassMod hc f
 
 /-- The inverse remainder equivalence includes the polynomial representative in the quotient. -/
 @[simp]
@@ -80,12 +88,10 @@ theorem quotientRemainderEquiv_symm_apply
 theorem quotientRemainderEquiv_mk
     (hg : IsMulDistinguished c s (g : PowerSeries R)) (hc : 0 < c) (f : S) :
     (hg.quotientRemainderEquiv hc (Ideal.Quotient.mk _ f)).val = hg.weierstrassMod hc f := by
-  have h := congrArg (Ideal.Quotient.mk (Ideal.span {g}))
-    (hg.mul_weierstrassDiv_add_weierstrassMod hc f)
   have heq : (hg.quotientRemainderEquiv hc).symm
       ⟨hg.weierstrassMod hc f, Polynomial.mem_degreeLT.mpr
-        (hg.degree_weierstrassMod_lt hc f)⟩ = Ideal.Quotient.mk _ f := by
-    simpa using h
+        (hg.degree_weierstrassMod_lt hc f)⟩ = Ideal.Quotient.mk _ f :=
+    hg.mk_polynomialToRestricted_weierstrassMod hc f
   exact congrArg Subtype.val ((hg.quotientRemainderEquiv hc).symm_apply_eq.mp heq).symm
 
 /-- The polynomial selected from a quotient class represents that class. -/
@@ -111,6 +117,18 @@ multiplicatively distinguished series of degree `s`. At degree zero this is the 
 def quotientBasis (hg : IsMulDistinguished c s (g : PowerSeries R)) (hc : 0 < c) :
     Module.Basis (Fin s) R Q :=
   (Polynomial.degreeLT.basis R s).map (hg.quotientRemainderEquiv hc).symm
+
+/-- The quotient by a multiplicatively distinguished restricted series is finite over the
+coefficient ring, without requiring a multiplicative coefficient norm. -/
+theorem finite_quotient (hg : IsMulDistinguished c s (g : PowerSeries R)) (hc : 0 < c) :
+    Module.Finite R Q :=
+  .of_basis (hg.quotientBasis hc)
+
+/-- The quotient by a multiplicatively distinguished restricted series is free over the
+coefficient ring, without requiring a multiplicative coefficient norm. -/
+theorem free_quotient (hg : IsMulDistinguished c s (g : PowerSeries R)) (hc : 0 < c) :
+    Module.Free R Q :=
+  .of_basis (hg.quotientBasis hc)
 
 /-- The `i`-th basis vector is the class of `X^i`. -/
 @[simp]
