@@ -24,9 +24,8 @@ Both directions pass through the additive circle `AddCircle (b - a)`, the parame
 its two endpoints identified. A closed curve injective on `[a, b)` factors through it as a
 continuous injection, `AddCircle.liftIco`, which carries the circle onto the trace; conversely a
 homeomorphism of a Jordan curve with the circle, composed with the quotient map `ℝ → AddCircle
-(b - a)`, is a parametrization. This complements
-`TauCeti.isJordanCurve_range_of_eq_or_eq_endpoints`, which states the first direction for paths
-parametrized by the unit interval.
+(b - a)`, is a parametrization. The first direction specializes to closed paths parametrized by
+the unit interval as `TauCeti.isJordanCurve_range_of_eq_or_eq_endpoints`.
 
 ## Main results
 
@@ -53,7 +52,14 @@ theorem isJordanCurve_image_Icc [T2Space X] (hab : a < b) (hγ : ContinuousOn γ
   have : Fact (0 < b - a) := ⟨sub_pos.2 hab⟩
   have hb : a + (b - a) = b := add_sub_cancel a b
   set f := AddCircle.liftIco (b - a) a γ
-  have hf (t : ℝ) (ht : t ∈ Ico a b) : f t = γ t := AddCircle.liftIco_coe_apply (by rwa [hb])
+  have hf (t : ℝ) (ht : t ∈ Icc a b) : f t = γ t := by
+    rcases ht.2.lt_or_eq with htb | htb
+    · exact AddCircle.liftIco_coe_apply (by rw [hb]; exact ⟨ht.1, htb⟩)
+    -- The endpoint `t = b` is identified with `a`, where `γ` takes the same value.
+    · have hba := AddCircle.coe_add_period (b - a) a
+      rw [hb] at hba
+      rw [htb, hba, ← hclosed]
+      exact AddCircle.liftIco_coe_apply (by rw [hb]; exact left_mem_Ico.2 hab)
   have hfc : Continuous f := AddCircle.liftIco_continuous (by rwa [hb]) (by rwa [hb])
   -- Every point of `AddCircle (b - a)` is the class of a parameter in `[a, b)`.
   have hrep (x : AddCircle (b - a)) : ∃ t ∈ Ico a b, (t : AddCircle (b - a)) = x :=
@@ -63,13 +69,10 @@ theorem isJordanCurve_image_Icc [T2Space X] (hab : a < b) (hγ : ContinuousOn γ
     intro x y hxy
     obtain ⟨s, hs, rfl⟩ := hrep x
     obtain ⟨t, ht, rfl⟩ := hrep y
-    rw [hf s hs, hf t ht] at hxy
+    rw [hf s (Ico_subset_Icc_self hs), hf t (Ico_subset_Icc_self ht)] at hxy
     rw [hinj hs ht hxy]
-  -- The endpoint `b` repeats the value at `a`, so the trace is already the image of `[a, b)`.
   have hrange : f '' univ = γ '' Icc a b := by
-    rw [← AddCircle.coe_image_Ico_eq (p := b - a) a, hb, image_image, image_congr hf,
-      ← Ico_insert_right hab.le, image_insert_eq, hclosed.symm,
-      insert_eq_of_mem (mem_image_of_mem γ (left_mem_Ico.2 hab))]
+    rw [← AddCircle.coe_image_Icc_eq (p := b - a) a, hb, image_image, image_congr hf]
   have huniv : IsJordanCurve (univ : Set (AddCircle (b - a))) :=
     isJordanCurve_iff.mpr ⟨(Homeomorph.Set.univ _).trans
       (AddCircle.homeomorphCircle (sub_pos.2 hab).ne')⟩
