@@ -384,7 +384,7 @@ theorem integral_trace_re_gaussianGramComplex (m n : ℕ) :
 theorem ae_posSemidef_gaussianGramReal (m n : ℕ) :
     ∀ᵐ A ∂(gaussianGramReal m n), A.PosSemidef := by
   rw [gaussianGramReal, ae_map_iff measurable_subtype_coe.aemeasurable
-    (Matrix.posSemidef_is_closed (n := Fin m) (𝕜 := ℝ)).measurableSet]
+    isClosed_setOfPred_posSemidef.measurableSet]
   exact ae_posSemidef_wishartGramMeasure n 1
 
 open scoped ComplexOrder in
@@ -392,7 +392,7 @@ open scoped ComplexOrder in
 theorem ae_posSemidef_gaussianGramComplex (m n : ℕ) :
     ∀ᵐ A ∂(gaussianGramComplex m n), A.PosSemidef := by
   rw [gaussianGramComplex, ae_map_iff measurable_matrix_mul_conjTranspose.aemeasurable
-    (Matrix.posSemidef_is_closed (n := Fin m) (𝕜 := ℂ)).measurableSet]
+    isClosed_setOfPred_posSemidef.measurableSet]
   exact Filter.Eventually.of_forall fun X ↦ posSemidef_self_mul_conjTranspose X
 
 end Probability
