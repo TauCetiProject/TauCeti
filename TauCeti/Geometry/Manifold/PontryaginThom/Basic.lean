@@ -204,11 +204,12 @@ theorem pontryaginThomCollapseMap_comp_prodUnitsHomeomorph_homotopic [CompactSpa
     ((Homeomorph.prodAssoc unitInterval S V).symm.trans (prodUnitsHomeomorph A hA)).trans
       (Homeomorph.prodAssoc unitInterval S V)
   refine pontryaginThomCollapseMap_homotopic _ _
-    (τ := fun q ↦ τ (q.2.1, (A (q.1, q.2.1) : V →L[𝕜] V) q.2.2)) ?_ (fun _ ↦ rfl) fun _ ↦ rfl
+    (τ := fun q ↦ τ (q.2.1, (A (q.1, q.2.1) : V →L[𝕜] V) q.2.2)) ?_ (fun _ ↦ by simp)
+    fun _ ↦ by simp
   convert (IsOpenEmbedding.id.prodMap hτ).comp Φ.isOpenEmbedding using 1
-  -- `Homeomorph.prodAssoc` has no `apply` simp lemmas; both reassociations are the identity on
-  -- underlying triples, so the two maps agree definitionally.
-  ext q <;> rfl
+  -- `Homeomorph.prodAssoc` has no `apply` simp lemmas; after the reframing is rewritten, the
+  -- reassociations are the identity on underlying triples.
+  ext ⟨t, x, v⟩ <;> simp [Φ, Homeomorph.trans_apply] <;> rfl
 
 /-- For `V = ℝᵏ`, the Pontryagin–Thom collapse onto the sphere `Sᵏ ⊆ ℝᵏ⁺¹`: the collapse followed
 by a homeomorphism `OnePoint ℝᵏ ≃ₜ Sᵏ` sending `∞` to the basepoint `s₀`. -/

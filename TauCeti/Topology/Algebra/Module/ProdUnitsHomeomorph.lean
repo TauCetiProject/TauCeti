@@ -25,7 +25,7 @@ variable {𝕜 V B : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup V
 
 /-- The homeomorphism `(x, v) ↦ (x, A x v)` of `B × V` defined by a continuous family `A` of
 invertible continuous linear maps of `V`; it changes the framing of a trivial bundle by `A`. -/
-@[expose] noncomputable def prodUnitsHomeomorph (A : B → (V →L[𝕜] V)ˣ) (hA : Continuous A) :
+noncomputable def prodUnitsHomeomorph (A : B → (V →L[𝕜] V)ˣ) (hA : Continuous A) :
     B × V ≃ₜ B × V where
   toFun p := (p.1, (A p.1 : V →L[𝕜] V) p.2)
   invFun p := (p.1, (↑(A p.1)⁻¹ : V →L[𝕜] V) p.2)
