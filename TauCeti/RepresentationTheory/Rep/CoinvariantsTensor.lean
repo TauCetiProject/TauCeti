@@ -10,7 +10,6 @@ public import Mathlib.RepresentationTheory.Rep.Iso
 public import TauCeti.RepresentationTheory.Rep.Ihom
 import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 import TauCeti.CategoryTheory.Exact.KernelCokernelPair
-import TauCeti.LinearAlgebra.Finsupp.Exact
 
 /-!
 # Change of groups, maps out of tensor coinvariants, and coefficient exactness
@@ -294,7 +293,8 @@ theorem map_coinvariantsTensor_free {S : ShortComplex (Rep.{u} k G)}
   classical
   have hinj := (Rep.mono_iff_injective S.f).mp hS.mono_f
   have hsurj := (Rep.epi_iff_surjective S.g).mp hS.epi_g
-  have hex := (hS.exact.map (forget₂ (Rep k G) (ModuleCat k))).moduleCat_range_eq_ker
+  have hex : LinearMap.range S.f.hom.toLinearMap = LinearMap.ker S.g.hom.toLinearMap :=
+    (hS.exact.map (forget₂ (Rep k G) (ModuleCat k))).moduleCat_range_eq_ker
   let T : ShortComplex (ModuleCat k) := ShortComplex.mk
     (ModuleCat.ofHom (Finsupp.mapRange.linearMap (α := α) S.f.hom.toLinearMap))
     (ModuleCat.ofHom (Finsupp.mapRange.linearMap (α := α) S.g.hom.toLinearMap)) (by
@@ -306,9 +306,8 @@ theorem map_coinvariantsTensor_free {S : ShortComplex (Rep.{u} k G)}
       exact congrArg (fun f : S.X₁ ⟶ S.X₃ ↦ f.hom (x i)) S.zero)
   have hT : T.ShortExact := by
     refine ShortComplex.ShortExact.mk' ?_ ?_ ?_
-    · rw [ShortComplex.moduleCat_exact_iff_range_eq_ker]
-      exact (LinearMap.exact_iff.mp
-        (LinearMap.exact_iff.mpr hex.symm).finsupp_mapRange).symm
+    · simp [T, ShortComplex.moduleCat_exact_iff_range_eq_ker, Finsupp.ker_mapRange,
+        Finsupp.range_mapRange_linearMap _ (LinearMap.ker_eq_bot.mpr hinj), hex]
     · exact (ModuleCat.mono_iff_injective _).mpr
         (Finsupp.mapRange_injective _ (map_zero _) hinj)
     · exact (ModuleCat.epi_iff_surjective _).mpr
