@@ -27,6 +27,8 @@ The identity `dr(Z) = r` is the infinitesimal form of `r(ψ_s x) = e^s r(x)`.
 
 ## Main results
 
+* `TauCeti.IsLiouvilleCompletion.contMDiffAt_log_liouvilleRadialCoordinate`: the logarithm of the
+  radial coordinate, the exit time from the boundary of `W`, is smooth outside the Liouville domain.
 * `TauCeti.IsLiouvilleCompletion.contMDiffAt_liouvilleRadialCoordinate`,
   `TauCeti.IsLiouvilleCompletion.contMDiffOn_liouvilleRadialCoordinate`: the radial coordinate is
   smooth outside the Liouville domain.
@@ -56,17 +58,18 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   {ω : SmoothTwoForm I M} {α : SmoothForm I M ℝ 1} {W : Set M} {Z : (x : M) → TangentSpace I x}
   {x : M}
 
-/-- **The radial coordinate is smooth on the cylindrical end.** On a completion of the Liouville
-domain `W`, the radial coordinate is smooth at every point outside `W`. -/
-theorem contMDiffAt_liouvilleRadialCoordinate (h : IsLiouvilleCompletion ω α W)
+/-- On a completion of the Liouville domain `W`, the logarithm of the radial coordinate, the time
+`log r(x)` at which the trajectory through `x` leaves the boundary of `W`, is smooth at every point
+outside `W`. -/
+theorem contMDiffAt_log_liouvilleRadialCoordinate (h : IsLiouvilleCompletion ω α W)
     (hZ : RoughForm.interior Z ω.1 = α.1) (hx : x ∉ W) :
-    ContMDiffAt I 𝓘(ℝ) (⊤ : ℕ∞) (liouvilleRadialCoordinate Z W) x := by
+    ContMDiffAt I 𝓘(ℝ) (⊤ : ℕ∞) (fun x' ↦ Real.log (liouvilleRadialCoordinate Z W x')) x := by
   -- Smoothness comes from the implicit function theorem. Write `W = {f ≤ c}` with `df(Z) > 0`
   -- along the boundary `f⁻¹(c)`. Near `x ∉ W`, the time `τ = log r(x')` is the solution of
   -- `f(ψ_{-τ}(x')) = c`, and the derivative of the left side in `τ` is `-df(Z) ≠ 0` at the
   -- boundary point `ψ_{-τ}(x)`. Since the flow is jointly smooth, the implicit function theorem
   -- (`ContDiffAt.implicitFunction`), applied in a chart at `x`, gives a smooth solution `τ(x')`
-  -- near `x`, and `r = e^τ` there.
+  -- near `x`, and `log r = τ` there.
   have hZs := h.contMDiff_of_interior_eq hZ
   have hc := h.isCompleteVectorField hZ
   have hflow := hc.contMDiff_flowOf le_top hZs
@@ -112,7 +115,7 @@ theorem contMDiffAt_liouvilleRadialCoordinate (h : IsLiouvilleCompletion ω α W
     rw [hpartial.unique hderiv.hasFDerivAt]
     exact ⟨ContinuousLinearEquiv.unitsEquivAut ℝ (Units.mk0 _ (neg_ne_zero.2 (hfc _ hy₀).2.ne')),
       by ext; simp⟩
-  -- The implicit function `T` solves `G(u, T u) = c` near `φ x`, and `r = e^T ∘ φ` there.
+  -- The implicit function `T` solves `G(u, T u) = c` near `φ x`, and `log r = T ∘ φ` there.
   have hn : ((⊤ : ℕ∞) : WithTop ℕ∞) ≠ 0 := by simp
   set T := hG.implicitFunction hn hinv
   have hT : ContDiffAt ℝ (⊤ : ℕ∞) T (φ x) := hG.contDiffAt_implicitFunction hn hinv
@@ -120,7 +123,7 @@ theorem contMDiffAt_liouvilleRadialCoordinate (h : IsLiouvilleCompletion ω α W
     simpa [hG0] using hG.eventually_apply_implicitFunction hn hinv
   have hT₀ : T (φ x) = τ₀ := hG.implicitFunction_apply_self hn hinv
   have hTpos : ∀ᶠ u in 𝓝 (φ x), 0 < T u := hT.continuousAt.eventually (lt_mem_nhds (hT₀ ▸ hτ₀))
-  have heq : liouvilleRadialCoordinate Z W =ᶠ[𝓝 x] fun x' ↦ Real.exp (T (φ x')) := by
+  have heq : (fun x' ↦ Real.log (liouvilleRadialCoordinate Z W x')) =ᶠ[𝓝 x] T ∘ φ := by
     have hφ : Tendsto φ (𝓝 x) (𝓝 (φ x)) := continuousAt_extChartAt (I := I) x
     filter_upwards [hφ.eventually hTeq, hφ.eventually hTpos,
       extChartAt_source_mem_nhds (I := I) x] with x' h₁ h₂ h₃
@@ -128,9 +131,19 @@ theorem contMDiffAt_liouvilleRadialCoordinate (h : IsLiouvilleCompletion ω α W
       simp only [G, φ.left_inv h₃] at h₁
       rwa [hfront]
     have := h.liouvilleRadialCoordinate_flowOf hZ hfr h₂.le
-    rwa [h.flowOf_flowOf hZ, add_neg_cancel, h.flowOf_zero hZ] at this
-  exact (Real.contDiff_exp.contMDiff.contMDiffAt.comp x
-    (hT.contMDiffAt.comp x contMDiffAt_extChartAt)).congr_of_eventuallyEq heq
+    rw [h.flowOf_flowOf hZ, add_neg_cancel, h.flowOf_zero hZ] at this
+    rw [Function.comp_apply, this, Real.log_exp]
+  exact (hT.contMDiffAt.comp x contMDiffAt_extChartAt).congr_of_eventuallyEq heq
+
+/-- **The radial coordinate is smooth on the cylindrical end.** On a completion of the Liouville
+domain `W`, the radial coordinate is smooth at every point outside `W`. -/
+theorem contMDiffAt_liouvilleRadialCoordinate (h : IsLiouvilleCompletion ω α W)
+    (hZ : RoughForm.interior Z ω.1 = α.1) (hx : x ∉ W) :
+    ContMDiffAt I 𝓘(ℝ) (⊤ : ℕ∞) (liouvilleRadialCoordinate Z W) x :=
+  (Real.contDiff_exp.contMDiff.contMDiffAt.comp x
+    (h.contMDiffAt_log_liouvilleRadialCoordinate hZ hx)).congr_of_eventuallyEq
+    (Eventually.of_forall fun x' ↦ (Real.exp_log
+      (zero_lt_one.trans_le (one_le_liouvilleRadialCoordinate Z W x'))).symm)
 
 /-- The radial coordinate of a completion is smooth outside the Liouville domain. -/
 theorem contMDiffOn_liouvilleRadialCoordinate (h : IsLiouvilleCompletion ω α W)
