@@ -88,7 +88,8 @@ private theorem exists_mul_mem_integralClosure (hO' : O'.comap (algebraMap K L) 
   obtain ⟨i₀, hc₀, hmax⟩ := exists_valuation_div_le_one (O := O) p.support
     (fun n ↦ notMem_support_iff.mp) (mem_support_iff.mp hn₀)
   have hlift : C (p.coeff i₀)⁻¹ * p ∈ lifts (algebraMap O K) := by
-    refine (lifts_iff_coeff_lifts _).mpr fun n ↦ ⟨⟨(C (p.coeff i₀)⁻¹ * p).coeff n, ?_⟩, rfl⟩
+    refine (lifts_iff_coeff_lifts _).mpr fun n ↦
+      ⟨⟨(C (p.coeff i₀)⁻¹ * p).coeff n, ?_⟩, algebraMap_apply _ _⟩
     rw [coeff_C_mul, ← valuation_le_one_iff, ← div_eq_inv_mul]
     exact hmax n
   obtain ⟨q, hq⟩ := hlift
@@ -98,7 +99,7 @@ private theorem exists_mul_mem_integralClosure (hO' : O'.comap (algebraMap K L) 
   have hq₀ : IsUnit (q.coeff i₀) := by
     have h := congrArg (·.coeff i₀) hq
     simp only [coeff_map, coeff_C_mul, inv_mul_cancel₀ hc₀] at h
-    exact (Subtype.ext h : q.coeff i₀ = 1) ▸ isUnit_one
+    exact (IsFractionRing.injective O K (h.trans (map_one _).symm)) ▸ isUnit_one
   -- `j` is the last index whose coefficient is a unit of `O`
   set U := q.support.filter fun i ↦ IsUnit (q.coeff i)
   have hU : U.Nonempty := ⟨i₀, Finset.mem_filter.mpr ⟨mem_support_iff.mpr hq₀.ne_zero, hq₀⟩⟩
