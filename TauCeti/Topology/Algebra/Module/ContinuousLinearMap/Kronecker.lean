@@ -123,10 +123,12 @@ theorem kronecker_comp_kronecker (f : (Fin m' → R) →L[R] (Fin m'' → R))
     (g' : (Fin n → R) →L[R] (Fin n' → R)) :
     (f.kronecker g).comp (f'.kronecker g') = (f.comp f').kronecker (g.comp g') := by
   refine coe_injective <| LinearMap.toMatrix'.injective ?_
-  rw [toLinearMap_comp, LinearMap.toMatrix'_comp, toMatrix'_kronecker, toMatrix'_kronecker,
-    toMatrix'_kronecker, toLinearMap_comp, toLinearMap_comp, LinearMap.toMatrix'_comp,
-    LinearMap.toMatrix'_comp, Matrix.reindex_apply, Matrix.reindex_apply, Matrix.reindex_apply,
-    Matrix.submatrix_mul_equiv, Matrix.mul_kronecker_mul]
+  -- Pass to the reindexed Kronecker products of the matrices of the operators.
+  simp only [toLinearMap_comp, LinearMap.toMatrix'_comp, toMatrix'_kronecker]
+  -- Reindexing along the shared middle index commutes with matrix multiplication.
+  simp only [Matrix.reindex_apply, Matrix.submatrix_mul_equiv]
+  -- What remains is the mixed-product law for matrices.
+  rw [Matrix.mul_kronecker_mul]
 
 @[simp] theorem zero_kronecker (g : (Fin n → R) →L[R] (Fin n' → R)) :
     (0 : (Fin m → R) →L[R] (Fin m' → R)).kronecker g = 0 := by
