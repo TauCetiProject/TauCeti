@@ -413,17 +413,6 @@ theorem coe_inv_weylUnit (hE : IsNilpotent E) (hF : IsNilpotent F) :
 
 variable {K : Type*} [CommRing K] [Algebra K A]
 
-/-- **The Weyl automorphism is conjugation by the Weyl element.** Each of the three exponentials
-of `TauCeti.weylAut` over `K` acts by conjugation on an associative `ℚ`-algebra, so their
-composite does too. -/
-theorem weylAut_apply_eq_weylUnit_conj (t : IsSl2Triple H E F) (hE : IsNilpotent E)
-    (hF : IsNilpotent F) (y : A) :
-    weylAut (K := K) t (LieAlgebra.ad_nilpotent_of_nilpotent (R := K) hE)
-        (LieAlgebra.ad_nilpotent_of_nilpotent (R := K) hF) y =
-      ((weylUnit hE hF : Aˣ) : A) * y * (((weylUnit hE hF)⁻¹ : Aˣ) : A) := by
-  simp [weylAut_apply, expAd_apply_eq_exp_mul_exp_neg (K := K) hE,
-    expAd_apply_eq_exp_mul_exp_neg (K := K) hF.neg, mul_assoc]
-
 /-- **A Lie homomorphism into an associative algebra carries the Weyl automorphism to conjugation
 by the Weyl element.** If `φ : L → A` maps the raising and lowering elements of an `sl₂` triple of
 `L` to nilpotent elements `φ e`, `φ f`, then `φ (weylAut t he hf y) = n (φ y) n⁻¹` for the unit
@@ -446,6 +435,18 @@ theorem _root_.LieHom.map_weylAut_eq_weylUnit_conj {L : Type*} [LieRing L] [LieA
   simp only [map_neg] at hφf' ⊢
   simp [expAd_apply_eq_exp_mul_exp_neg (K := K) hφe,
     expAd_apply_eq_exp_mul_exp_neg (K := K) hφf', mul_assoc]
+
+/-- **The Weyl automorphism is conjugation by the Weyl element.** Each of the three exponentials
+of `TauCeti.weylAut` over `K` acts by conjugation on an associative `ℚ`-algebra, so their
+composite does too. -/
+theorem weylAut_apply_eq_weylUnit_conj (t : IsSl2Triple H E F) (hE : IsNilpotent E)
+    (hF : IsNilpotent F) (y : A) :
+    weylAut (K := K) t (LieAlgebra.ad_nilpotent_of_nilpotent (R := K) hE)
+        (LieAlgebra.ad_nilpotent_of_nilpotent (R := K) hF) y =
+      ((weylUnit hE hF : Aˣ) : A) * y * (((weylUnit hE hF)⁻¹ : Aˣ) : A) :=
+  (LieHom.id : A →ₗ⁅K⁆ A).map_weylAut_eq_weylUnit_conj t
+    (LieAlgebra.ad_nilpotent_of_nilpotent (R := K) hE)
+    (LieAlgebra.ad_nilpotent_of_nilpotent (R := K) hF) hE hF y
 
 /-- The Weyl element negates the Cartan element of the triple. -/
 @[simp]

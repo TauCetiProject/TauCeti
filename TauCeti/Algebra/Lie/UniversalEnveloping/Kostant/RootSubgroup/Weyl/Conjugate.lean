@@ -20,9 +20,10 @@ raising and lowering elements act nilpotently, both on `L` and on `V`. Its Weyl 
 ρ(w x) = n ρ(x) n⁻¹.
 ```
 
-Since `n` and `n⁻¹` preserve `M`, the divided powers `ρ(w x)⁽ᵏ⁾ = n ρ(x)⁽ᵏ⁾ n⁻¹` preserve `M`
-whenever those of `ρ(x)` do. Over every commutative ring of points the one-parameter subgroups
-`x ↦ ∑ₖ uᵏ ρ(x)⁽ᵏ⁾` of the two elements are therefore conjugate:
+Since `n` and `n⁻¹` preserve `M`, the divided power `ρ(w x)⁽ᵏ⁾ = n ρ(x)⁽ᵏ⁾ n⁻¹` preserves `M`
+whenever `ρ(x)⁽ᵏ⁾` does. If moreover `ρ(x)` is nilpotent, so that the exponential sum is finite,
+then over every commutative ring of points the one-parameter subgroups `u ↦ ∑ₖ uᵏ ρ(x)⁽ᵏ⁾` of the
+two elements are conjugate:
 
 ```text
 n x_x(u) n⁻¹ = x_{w x}(u).
@@ -46,10 +47,11 @@ over every ring of points, in particular in characteristics two and three.
 
 * `TauCeti.UniversalEnvelopingAlgebra.apply_ι_weylAut_eq_weylUnit_conj`: the action of `w x` is
   the conjugate of the action of `x` by the Weyl element.
-* `TauCeti.UniversalEnvelopingAlgebra.dividedPower_weylAut_smul_mem`: the divided powers of `w x`
-  preserve `M` whenever those of `x` do.
+* `TauCeti.UniversalEnvelopingAlgebra.dividedPower_weylAut_smul_mem`: a divided power of `w x`
+  preserves `M` whenever the same divided power of `x` does.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantWeylPoints_conj_baseChangeExp_weylAut`: on points,
-  conjugating the one-parameter subgroup of `x` by the Weyl element gives that of `w x`.
+  conjugating the one-parameter subgroup of a nilpotently acting `x` by the Weyl element gives
+  that of `w x`.
 
 ## References
 
@@ -96,20 +98,19 @@ theorem apply_ι_weylAut_eq_weylUnit_conj (x : L) :
 
 include hM hi hj
 
-/-- **Weyl transforms of integrally acting elements act integrally.** If every divided power of
-`ρ(x)` preserves the Kostant-stable subgroup `M`, then so does every divided power of `ρ(w x)`, for
-the Weyl automorphism `w` of an `sl₂` triple `(h₀, eᵢ, eⱼ)` of `L`: they are the conjugates of
-those of `ρ(x)` by the Weyl element, which preserves `M` together with its inverse. -/
-theorem dividedPower_weylAut_smul_mem {x : L}
-    (hx : ∀ n, ∀ v ∈ M,
-      Associative.dividedPower n (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ x)) • v ∈ M)
-    (n : ℕ) :
+/-- **Weyl transforms of integrally acting elements act integrally.** If the `n`-th divided power
+of `ρ(x)` preserves the Kostant-stable subgroup `M`, then so does the `n`-th divided power of
+`ρ(w x)`, for the Weyl automorphism `w` of an `sl₂` triple `(h₀, eᵢ, eⱼ)` of `L`: it is the
+conjugate of that of `ρ(x)` by the Weyl element, which preserves `M` together with its inverse. -/
+theorem dividedPower_weylAut_smul_mem {x : L} (n : ℕ)
+    (hx : ∀ v ∈ M,
+      Associative.dividedPower n (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ x)) • v ∈ M) :
     ∀ v ∈ M, Associative.dividedPower n
       (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (weylAut t hai haj x))) • v ∈ M := by
   rw [apply_ι_weylAut_eq_weylUnit_conj e ρ hi hj t hai haj x]
   exact Associative.dividedPower_conj_smul_mem _ (M : Set V) _
     (fun _ hv => weylUnit_smul_mem e h ρ M hM hi hj hv)
-    (fun _ hv => inv_weylUnit_smul_mem e h ρ M hM hi hj hv) n (hx n)
+    (fun _ hv => inv_weylUnit_smul_mem e h ρ M hM hi hj hv) n hx
 
 variable {A : Type*} [CommRing A] [Algebra ℤ A]
 
@@ -128,7 +129,7 @@ theorem kostantWeylPoints_conj_baseChangeExp_weylAut {x : L}
           baseChangeExp (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ x)) M hx u *
         (kostantWeylPoints e h ρ M hM hi hj A).symm.toLinearMap =
       baseChangeExp (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (weylAut t hai haj x))) M
-        (dividedPower_weylAut_smul_mem e h ρ M hM hi hj t hai haj hx) u := by
+        (fun n => dividedPower_weylAut_smul_mem e h ρ M hM hi hj t hai haj n (hx n)) u := by
   have hrestrict : kostantWeylRestrict e h ρ M hM hi hj =
       integralUnitRestrict (weylUnit hi hj) M
         (fun _ hv => weylUnit_smul_mem e h ρ M hM hi hj hv)
