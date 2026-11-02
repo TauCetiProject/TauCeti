@@ -366,23 +366,6 @@ open TauCeti.PowerSeries
 
 variable {R : Type*} [NormedCommRing R] [NormOneClass R] [IsUltrametricDist R]
 
-omit [NormOneClass R] in
-/-- In the Gauss norm at a radius `r > 0`, the linear polynomial `a + d Y` has weighted norm at
-most `M` once both `‖a‖` and `‖d‖ r` do. -/
-private theorem norm_polynomialToRestricted_C_add_X_mul_C_mul_le {r : ℝ} [Fact (0 < r)] {a d : R}
-    {w M : ℝ} (hw : 0 ≤ w) (ha : ‖a‖ * w ≤ M) (hd : ‖d‖ * r * w ≤ M) :
-    ‖polynomialToRestricted r (C a + X * C d)‖ * w ≤ M := by
-  have hM : 0 ≤ M := (mul_nonneg (norm_nonneg _) hw).trans ha
-  rcases hw.eq_or_lt with rfl | hw
-  · simpa using hM
-  rw [← le_div_iff₀ hw, norm_le_iff (div_nonneg hM hw.le)]
-  intro i
-  rw [le_div_iff₀ hw]
-  rcases i with _ | _ | i
-  · simpa using ha
-  · simpa [mul_right_comm] using hd
-  · simpa [coeff_C, coeff_X_mul] using hM
-
 /-- **Coleman's perturbation bound.** Let `ρ` be a nonnegative antitone sequence and `r ≥ 1`. If
 `P₁` has Newton majorant `ρ` up to degree `n`, the perturbation `P₂ - P₁` satisfies the same
 bound after multiplication by `r`, and the coefficients of positive degree of `B₁` and of
