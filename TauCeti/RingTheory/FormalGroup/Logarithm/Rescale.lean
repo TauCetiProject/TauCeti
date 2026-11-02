@@ -73,9 +73,10 @@ theorem smul_log_rescale [Algebra ℚ R] :
   ext n
   rcases n with _ | n
   · simp [PowerSeries.coeff_zero_eq_constantCoeff_apply]
-  · rw [PowerSeries.coeff_smul, PowerSeries.coeff_rescale, coeff_log, coeff_log,
-      invariantDifferential_rescale, PowerSeries.coeff_rescale, smul_eq_mul, mul_smul_comm,
-      mul_smul_comm, Nat.add_sub_cancel, ← mul_assoc, pow_succ']
+  · simp only [PowerSeries.coeff_smul, PowerSeries.coeff_rescale, coeff_log,
+      invariantDifferential_rescale, Nat.add_sub_cancel, smul_eq_mul]
+    simp only [Algebra.smul_def]
+    ring
 
 variable {s}
 

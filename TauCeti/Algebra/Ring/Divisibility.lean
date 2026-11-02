@@ -52,7 +52,7 @@ namespace TauCeti
 
 /-- **`n + 1` divides `sⁿ` for every `n`**, if `p ∣ s ^ (p - 1)` for a prime `p` and every natural
 number prime to `p` is a unit. -/
-theorem natCast_add_one_dvd_pow {p : ℕ} (hp : p.Prime) {s : R}
+theorem natCast_add_one_dvd_pow {R : Type*} [CommSemiring R] {p : ℕ} (hp : p.Prime) {s : R}
     (hs : (p : R) ∣ s ^ (p - 1)) (hR : ∀ m : ℕ, p.Coprime m → IsUnit (m : R)) (n : ℕ) :
     (n + 1 : R) ∣ s ^ n := by
   -- Write `n + 1 = pᵏ m` with `m` prime to `p`: then `pᵏ` divides `s ^ (k (p - 1))`, and
@@ -61,7 +61,8 @@ theorem natCast_add_one_dvd_pow {p : ℕ} (hp : p.Prime) {s : R}
   have hm₀ : m ≠ 0 := by rintro rfl; simp at hm
   -- Bernoulli's inequality `1 + k (p - 1) ≤ pᵏ`, so `k (p - 1) ≤ n`
   have hk : k * (p - 1) ≤ n := by
-    have h := one_add_mul_le_pow (show (-2 : ℤ) ≤ (p - 1 : ℕ) by omega) k
+    have h₂ : (-2 : ℤ) ≤ (p - 1 : ℕ) := by omega
+    have h := one_add_mul_le_pow h₂ k
     have hp₁ : ((p - 1 : ℕ) : ℤ) + 1 = p := by rw [Nat.cast_sub hp.one_le]; ring
     rw [add_comm (1 : ℤ) ((p - 1 : ℕ) : ℤ), hp₁] at h
     have : p ^ k ≤ n + 1 := by
