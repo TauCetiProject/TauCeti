@@ -10,13 +10,13 @@ public import Mathlib.Probability.Martingale.Basic
 /-!
 # Martingales frozen at a date, and bounded positions taken at a date
 
-Two closure properties of real martingales indexed by a linear order, the building blocks of the
+Two closure properties of martingales indexed by a linear order, the building blocks of the
 elementary stochastic integral:
 
-* a martingale frozen at a fixed date `w`, `t ↦ X (min w t)`, is a martingale
-  (`MeasureTheory.Martingale.const_min`);
-* if a martingale `Y` vanishes up to a date `r`, then multiplying it by a bounded random variable
-  known at time `r` gives a martingale (`MeasureTheory.Martingale.mul_left_of_eq_zero`).
+* a martingale `X` with values in a Banach space, frozen at a fixed date `w`, `t ↦ X (min w t)`,
+  is a martingale (`MeasureTheory.Martingale.const_min`);
+* if a real martingale `Y` vanishes up to a date `r`, then multiplying it by a bounded random
+  variable known at time `r` gives a martingale (`MeasureTheory.Martingale.mul_left_of_eq_zero`).
 
 Together they show that a bounded position chosen at `r`, times the change of a martingale over
 `(r, r']`, is a martingale.
@@ -30,8 +30,9 @@ open Filter
 
 namespace MeasureTheory
 
-variable {Ω ι : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω} [LinearOrder ι]
-  {ℱ : Filtration ι mΩ} {X Y : ι → Ω → ℝ}
+variable {Ω ι E : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω} [LinearOrder ι]
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+  {ℱ : Filtration ι mΩ} {X : ι → Ω → E} {Y : ι → Ω → ℝ}
 
 /-- A martingale frozen at a fixed date `w`, `t ↦ X (min w t)`, is a martingale. -/
 theorem Martingale.const_min [SigmaFiniteFiltration μ ℱ] (hX : Martingale X ℱ μ) (w : ι) :
