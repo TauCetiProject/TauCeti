@@ -12,7 +12,7 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
-import Mathlib.Topology.Order.ProjIcc
+import TauCeti.Topology.Order.ProjIcc
 import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.Topology.Order.Interval
 
@@ -91,11 +91,7 @@ theorem exists_continuous_primitive_Icc (hab : a ≤ b) (hf : ContinuousOn f (Ic
     ∃ F : ℝ → E, Continuous F ∧ (∀ x ∈ Icc a b, HasDerivAt F (f x) x) ∧
       ∀ x ∈ Icc a b, ∀ y ∈ Icc a b, F y - F x = ∫ z in x..y, f z := by
   -- Holding endpoint values constant gives a continuous integrand on the whole line.
-  let g : ℝ → E := fun x ↦ f (projIcc a b hab x)
-  have hg : Continuous g := hf.domRestrict.comp continuous_projIcc
-  have hgf : EqOn g f (Icc a b) := by
-    intro x hx
-    simp only [g, projIcc_of_mem hab hx]
+  obtain ⟨g, hg, hgf⟩ := hf.exists_continuous_eqOn_Icc hab
   let F : ℝ → E := fun t ↦ ∫ x in a..t, g x
   refine ⟨F, (_root_.intervalIntegral.differentiable_integral_of_continuous hg).continuous,
     ?_, ?_⟩

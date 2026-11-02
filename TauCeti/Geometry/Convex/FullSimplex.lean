@@ -9,6 +9,9 @@ public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Ball
 import Mathlib.Logic.Equiv.Fin.Rotate
 public import TauCeti.Geometry.Convex.ConvexSpace.Topology
 public import Mathlib.Analysis.Calculus.AddTorsor.AffineMap
+public import Mathlib.Analysis.Calculus.TangentCone.Real
+import Mathlib.LinearAlgebra.Finsupp.Pi
+import TauCeti.Geometry.Convex.ConvexSpace.Defs
 
 /-!
 # The full-dimensional standard simplex
@@ -19,7 +22,12 @@ zeroth weight, equal to one minus the sum of the coordinates. The face inclusion
 from Mathlib's maps of barycentric simplices. The bridge reuses
 `AbstractSimplicialComplex.realizationTopHomeomorphCoordinateSimplex` and
 `AbstractSimplicialComplex.realizationTopHomeomorphStdSimplex`; `finRotate` moves the omitted
-last coordinate to the zeroth position.
+last coordinate to the zeroth position. Every map of barycentric simplices induced by a map of
+vertices, read on full-dimensional simplices, is the restriction of the continuous affine map
+`simplexMapAmbient` of the ambient Euclidean spaces; the face inclusions are the case of the
+coface vertex maps `Fin.succAbove`. The simplex is a compact convex set with nonempty interior, so
+derivatives within it are unique at every point (`TauCeti.uniqueDiffOn_fullSimplex`); this is what
+makes it a domain for derivatives and integrals of forms.
 
 This is the full-dimensional simplex convention used in Lee, *Introduction to Smooth Manifolds*,
 Chapter 18. The barycentric simplex, its topology, and its maps are those of Mathlib.
@@ -41,6 +49,37 @@ noncomputable def fullSimplex (p : ℕ) : Set (EuclideanSpace ℝ (Fin p)) :=
 theorem mem_fullSimplex_iff {p : ℕ} {x : EuclideanSpace ℝ (Fin p)} :
     x ∈ fullSimplex p ↔ (∀ i, 0 ≤ x i) ∧ ∑ i, x i ≤ 1 := by
   exact mem_coordinateSimplex _ _
+
+/-- The origin is the zeroth vertex of the full-dimensional simplex. -/
+theorem zero_mem_fullSimplex (p : ℕ) : 0 ∈ fullSimplex p := by
+  simp
+
+/-- The full-dimensional simplex is convex. -/
+theorem convex_fullSimplex (p : ℕ) : Convex ℝ (fullSimplex p) :=
+  (convex_coordinateSimplex (Fin p)).linear_preimage (EuclideanSpace.equiv (Fin p) ℝ).toLinearMap
+
+/-- The full-dimensional simplex is closed. -/
+theorem isClosed_fullSimplex (p : ℕ) : IsClosed (fullSimplex p) :=
+  (isClosed_coordinateSimplex (Fin p)).preimage (EuclideanSpace.equiv (Fin p) ℝ).continuous
+
+/-- The full-dimensional simplex is compact. -/
+theorem isCompact_fullSimplex (p : ℕ) : IsCompact (fullSimplex p) :=
+  (EuclideanSpace.equiv (Fin p) ℝ).toHomeomorph.isCompact_preimage.2
+    (isCompact_coordinateSimplex (Fin p))
+
+/-- The full-dimensional simplex has nonempty interior in its Euclidean space. -/
+theorem nonempty_interior_fullSimplex (p : ℕ) : (interior (fullSimplex p)).Nonempty := by
+  have h :=
+    (EuclideanSpace.equiv (Fin p) ℝ).toHomeomorph.preimage_interior (coordinateSimplex (Fin p))
+  rw [ContinuousLinearEquiv.coe_toHomeomorph] at h
+  rw [fullSimplex, ← h]
+  exact (nonempty_interior_coordinateSimplex (Fin p)).preimage
+    (EuclideanSpace.equiv (Fin p) ℝ).surjective
+
+/-- Derivatives within the full-dimensional simplex are unique at each of its points, including
+the points of its faces and corners. -/
+theorem uniqueDiffOn_fullSimplex (p : ℕ) : UniqueDiffOn ℝ (fullSimplex p) :=
+  uniqueDiffOn_convex (convex_fullSimplex p) (nonempty_interior_fullSimplex p)
 
 /-- Adding the missing zeroth weight identifies the full-dimensional and barycentric simplices. -/
 noncomputable def fullSimplexEquivStdSimplex (p : ℕ) :
@@ -122,62 +161,52 @@ theorem continuous_simplexFace (p : ℕ) (i : Fin (p + 2)) : Continuous (simplex
     ((StdSimplex.continuous_map ℝ i.succAbove).comp
       (fullSimplexEquivStdSimplex p).continuous)
 
-/-- The affine extension of a face inclusion to the whole Euclidean ambient space.
-It inserts a zero into the barycentric coordinates and then drops the zeroth coordinate. -/
-noncomputable def simplexFaceAmbient (p : ℕ) (i : Fin (p + 2)) :
-    EuclideanSpace ℝ (Fin p) →ᴬ[ℝ] EuclideanSpace ℝ (Fin (p + 1)) := by
-  let coordinates : Fin p → EuclideanSpace ℝ (Fin p) →ᴬ[ℝ] ℝ :=
-    fun k ↦ (EuclideanSpace.proj k).toContinuousAffineMap
-  let weights : Fin (p + 1) → EuclideanSpace ℝ (Fin p) →ᴬ[ℝ] ℝ :=
+/-- The affine extension to the whole Euclidean ambient space of the map of full-dimensional
+simplices induced by a map of vertices `f`. It extends the barycentric weights affinely, pushes them
+forward along `f` with `FunOnFinite.linearMap`, and then drops the zeroth coordinate. -/
+noncomputable def simplexMapAmbient {m n : ℕ} (f : Fin (m + 1) → Fin (n + 1)) :
+    EuclideanSpace ℝ (Fin m) →ᴬ[ℝ] EuclideanSpace ℝ (Fin n) := by
+  let weights : Fin (m + 1) → EuclideanSpace ℝ (Fin m) →ᴬ[ℝ] ℝ :=
     Fin.cons (ContinuousAffineMap.const ℝ _ 1 -
       (∑ k, (EuclideanSpace.proj k :
-        EuclideanSpace ℝ (Fin p) →L[ℝ] ℝ)).toContinuousAffineMap)
-      coordinates
-  let face : EuclideanSpace ℝ (Fin p) →ᴬ[ℝ] (Fin (p + 1) → ℝ) := {
-    toAffineMap := AffineMap.pi fun j ↦
-      (Fin.insertNth (α := fun _ ↦ EuclideanSpace ℝ (Fin p) →ᴬ[ℝ] ℝ) i
-        (ContinuousAffineMap.const ℝ _ (0 : ℝ)) weights j.succ).toAffineMap
-    cont := continuous_pi fun j ↦
-      (Fin.insertNth (α := fun _ ↦ EuclideanSpace ℝ (Fin p) →ᴬ[ℝ] ℝ) i
-        (ContinuousAffineMap.const ℝ _ (0 : ℝ)) weights j.succ).continuous }
-  exact ContinuousAffineMap.comp
-    (EuclideanSpace.equiv (Fin (p + 1)) ℝ).symm.toContinuousLinearMap.toContinuousAffineMap face
+        EuclideanSpace ℝ (Fin m) →L[ℝ] ℝ)).toContinuousAffineMap)
+      fun k ↦ (EuclideanSpace.proj k).toContinuousAffineMap
+  let barycentric : EuclideanSpace ℝ (Fin m) →ᴬ[ℝ] (Fin (m + 1) → ℝ) := {
+    toAffineMap := AffineMap.pi fun i ↦ (weights i).toAffineMap
+    cont := continuous_pi fun i ↦ (weights i).continuous }
+  let push : (Fin (m + 1) → ℝ) →L[ℝ] (Fin (n + 1) → ℝ) :=
+    LinearMap.toContinuousLinearMap (FunOnFinite.linearMap ℝ ℝ f)
+  let drop : (Fin (n + 1) → ℝ) →L[ℝ] EuclideanSpace ℝ (Fin n) :=
+    (EuclideanSpace.equiv (Fin n) ℝ).symm.toContinuousLinearMap.comp
+      (ContinuousLinearMap.pi fun j ↦ ContinuousLinearMap.proj j.succ)
+  exact (drop.comp push).toContinuousAffineMap.comp barycentric
 
-/-- The ambient extension has the explicit coordinate formula obtained by inserting a zero. -/
-theorem simplexFaceAmbient_apply (p : ℕ) (i : Fin (p + 2))
-    (x : EuclideanSpace ℝ (Fin p)) (j : Fin (p + 1)) :
-    simplexFaceAmbient p i x j =
-      Fin.insertNth (α := fun _ ↦ ℝ) i 0
-        (Fin.cons (1 - ∑ k, x k) (fun k ↦ x k)) j.succ := by
-  have h (k : Fin (p + 2)) :
-      (Fin.insertNth (α := fun _ ↦ EuclideanSpace ℝ (Fin p) →ᴬ[ℝ] ℝ) i
-        (ContinuousAffineMap.const ℝ _ (0 : ℝ))
-        (Fin.cons (ContinuousAffineMap.const ℝ _ 1 -
-          (∑ k, (EuclideanSpace.proj k :
-            EuclideanSpace ℝ (Fin p) →L[ℝ] ℝ)).toContinuousAffineMap)
-          (fun k ↦ (EuclideanSpace.proj k).toContinuousAffineMap)) k) x =
-        Fin.insertNth (α := fun _ ↦ ℝ) i 0
-          (Fin.cons (1 - ∑ k, x k) (fun k ↦ x k)) k := by
-    induction k using i.succAboveCases with
-    | x => simp
-    | p k =>
-      simp only [Fin.insertNth_apply_succAbove]
-      cases k using Fin.cases with
-      | zero => simp
-      | succ k => simp
-  convert h j.succ using 1
+/-- Each coordinate of the ambient extension is the sum of the affinely extended barycentric
+weights over the vertices sent to the corresponding vertex. -/
+theorem simplexMapAmbient_apply {m n : ℕ} (f : Fin (m + 1) → Fin (n + 1))
+    (x : EuclideanSpace ℝ (Fin m)) (j : Fin n) :
+    simplexMapAmbient f x j =
+      ∑ i with f i = j.succ, Fin.cons (α := fun _ ↦ ℝ) (1 - ∑ k, x k) (fun k ↦ x k) i := by
   -- The ambient construction conjugates this coordinate map by the Euclidean/Pi equivalence.
-  rfl
+  change FunOnFinite.linearMap ℝ ℝ f _ j.succ = _
+  rw [FunOnFinite.linearMap_apply_apply]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  cases i using Fin.cases <;> simp
 
-/-- The affine ambient extension restricts to the face map on the simplex. -/
-theorem simplexFaceAmbient_coe {p : ℕ} (i : Fin (p + 2)) (x : fullSimplex p) :
-    simplexFaceAmbient p i x.val = (simplexFace p i x).val := by
+/-- The affine ambient extension restricts to the map of full-dimensional simplices induced by
+`f`. -/
+theorem simplexMapAmbient_coe {m n : ℕ} (f : Fin (m + 1) → Fin (n + 1)) (x : fullSimplex m) :
+    simplexMapAmbient f x.val =
+      ((fullSimplexEquivStdSimplex n).symm ((fullSimplexEquivStdSimplex m x).map f)).val := by
   ext j
-  rw [simplexFaceAmbient_apply, ← fullSimplexEquivStdSimplex_weights_succ]
-  induction j.succ using i.succAboveCases with
-  | x => simp
-  | p j =>
-    rw [fullSimplexEquivStdSimplex_simplexFace_succAbove, Fin.insertNth_apply_succAbove]
-    cases j using Fin.cases <;> simp
+  rw [simplexMapAmbient_apply, fullSimplexEquivStdSimplex_symm_apply,
+    StdSimplex.weights_map_apply]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  cases i using Fin.cases <;> simp
+
+/-- The ambient extension of the `i`-th coface vertex map restricts to the face inclusion. -/
+theorem simplexMapAmbient_succAbove_coe {p : ℕ} (i : Fin (p + 2)) (x : fullSimplex p) :
+    simplexMapAmbient i.succAbove x.val = (simplexFace p i x).val :=
+  simplexMapAmbient_coe _ x
 
 end TauCeti

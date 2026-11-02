@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
-public import TauCeti.Algebra.Homology.HomologicalComplex.ProjectiveDimension
+public import TauCeti.Algebra.Homology.HomologicalComplex.Projective.Dimension
 public import Mathlib.Algebra.Category.ModuleCat.Projective
 public import Mathlib.Algebra.Homology.HomologySequenceLemmas
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Braiding

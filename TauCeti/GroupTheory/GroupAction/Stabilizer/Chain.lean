@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.GroupAction.FixingSubgroup
+public import Mathlib.GroupTheory.GroupAction.MultipleTransitivity
 public import Mathlib.GroupTheory.Index
 
 /-!
@@ -30,6 +30,10 @@ These are the two basic facts that make a stabilizer chain a description of `H`:
   ends in the `k`-th member when `g ∈ H`, so a single sift decides membership; over a base the
   final condition reads `g = r 0 * ⋯ * r (k - 1)`.
 
+For a `k`-transitive action and points `b 0, …, b (k - 1)` that are distinct, the basic orbits
+are as large as possible: the `i`-th one is the complement of `{b 0, …, b (i - 1)}`, of size
+`Nat.card α - i`.
+
 Applied to a subgroup of `Equiv.Perm (Fin n)`, these reduce the order of a permutation group and
 membership in it to computations of orbits of explicit permutations.
 
@@ -41,6 +45,8 @@ membership in it to computations of orbits of explicit permutations.
 * `Subgroup.mem_iff_inv_mul_mem_stabilizerChain`: any sift decides membership.
 * `Subgroup.mem_iff_exists_inv_mul_mem_stabilizerChain`: the membership criterion.
 * `Subgroup.mem_iff_exists_prod_eq`: the membership criterion along a base.
+* `Subgroup.orbit_stabilizerChain_eq_compl`, `Subgroup.ncard_orbit_stabilizerChain`: the basic
+  orbits of distinct points under a multiply transitive subgroup.
 
 ## References
 
@@ -205,5 +211,55 @@ theorem mem_iff_exists_prod_eq {k : ℕ} (hk : H.stabilizerChain b k = ⊥) {R :
       (∀ i < k, r i ∈ R i ∧ r i • b i = ((List.range i).map r).prod⁻¹ • g • b i) ∧
         ((List.range k).map r).prod = g := by
   simp_rw [mem_iff_exists_inv_mul_mem_stabilizerChain hRle hRorbit, hk, mem_bot, inv_mul_eq_one]
+
+/-! ### Basic orbits of a multiply transitive subgroup -/
+
+/-- For a `k`-transitive subgroup `H` and points `b 0, …, b (k - 1)` that are distinct, the
+`i`-th basic orbit, for `i < k`, is the complement of the set of earlier points. -/
+theorem orbit_stabilizerChain_eq_compl {k : ℕ} [IsMultiplyPretransitive H α k]
+    (hb : Set.InjOn b (Set.Iio k)) {i : ℕ} (hi : i < k) :
+    orbit (H.stabilizerChain b i) (b i) = (b '' Set.Iio i)ᶜ := by
+  set s := b '' Set.Iio i with hs
+  have hbi : b i ∉ s := fun ⟨j, hj, hji⟩ ↦
+    (Set.mem_Iio.mp hj).ne (hb ((Set.mem_Iio.mp hj).trans hi) hi hji)
+  ext y
+  constructor
+  · intro hy ⟨j, hj, hjy⟩
+    obtain ⟨g, rfl⟩ := mem_orbit_iff.mp hy
+    have hgj : (g : G) • b j = b j := ((mem_stabilizerChain_iff H b).mp g.2).2 j hj
+    rw [Subgroup.smul_def] at hjy
+    exact hbi ⟨j, hj, smul_left_cancel _ (hgj.trans hjy)⟩
+  · intro hy
+    have hsk : s.ncard + 1 ≤ k := by
+      rw [hs, (hb.mono (Set.Iio_subset_Iio hi.le)).ncard_image,
+        Set.ncard_eq_toFinset_card', Set.toFinset_Iio, Nat.card_Iio]
+      exact hi
+    have hkα : (k : ℕ∞) ≤ ENat.card α := by
+      simpa using ENat.card_le_card_of_injective (f := fun j : Fin k ↦ b j)
+        fun j j' h ↦ Fin.ext (hb j.2 j'.2 h)
+    have : IsPretransitive (fixingSubgroup H s) (SubMulAction.ofFixingSubgroup H s) :=
+      is_one_pretransitive_iff.mp
+        (SubMulAction.ofFixingSubgroup.isMultiplyPretransitive' s hsk hkα)
+    obtain ⟨g, hg⟩ := exists_smul_eq (fixingSubgroup H s)
+      (⟨b i, hbi⟩ : SubMulAction.ofFixingSubgroup H s) ⟨y, hy⟩
+    have hgi : ((g : H) : G) ∈ H.stabilizerChain b i :=
+      (mem_stabilizerChain_iff H b).mpr ⟨(g : H).2, fun j hj ↦
+        (mem_fixingSubgroup_iff H).mp g.2 (b j) ⟨j, hj, rfl⟩⟩
+    -- unfold the actions of `fixingSubgroup H s` on `SubMulAction.ofFixingSubgroup H s` and of
+    -- `H` on `α` to see that `g` sends `b i` to `y` in `α`
+    have hgy : ((g : H) : G) • b i = y := by
+      have h := congrArg Subtype.val hg
+      rwa [SubMulAction.val_smul_of_tower, Subgroup.smul_def, Subgroup.smul_def] at h
+    exact mem_orbit_iff.mpr ⟨⟨_, hgi⟩, by rw [Subgroup.smul_def]; exact hgy⟩
+
+/-- For a `k`-transitive subgroup `H` and points `b 0, …, b (k - 1)` that are distinct, the
+`i`-th basic orbit, for `i < k`, has `Nat.card α - i` points, so the first `k` basic orbits have
+lengths `n, n - 1, …, n - k + 1` where `n = Nat.card α`. -/
+theorem ncard_orbit_stabilizerChain {k : ℕ} [IsMultiplyPretransitive H α k]
+    (hb : Set.InjOn b (Set.Iio k)) {i : ℕ} (hi : i < k) :
+    (orbit (H.stabilizerChain b i) (b i)).ncard = Nat.card α - i := by
+  rw [orbit_stabilizerChain_eq_compl hb hi, Set.ncard_compl _ (Set.toFinite _),
+    (hb.mono (Set.Iio_subset_Iio hi.le)).ncard_image, Set.ncard_eq_toFinset_card',
+    Set.toFinset_Iio, Nat.card_Iio]
 
 end Subgroup

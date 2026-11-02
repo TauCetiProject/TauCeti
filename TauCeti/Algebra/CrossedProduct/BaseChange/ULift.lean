@@ -41,12 +41,21 @@ The scalar extension of the crossed product of `c` is the lifted crossed product
 to `F` (`TauCeti.CrossedProduct.congr`); and transport of explicit cohomology sends the inflation
 of `c` to the inflation of that transported cocycle (`TauCeti.TwoCocycle.unitsH2Congr_inflateH2`).
 
+The same square holds for `brauerCohomologyEquiv`, valued in Mathlib's `continuousCohomology`,
+with right-hand vertical map the canonical transport `RingEquiv.unitsContinuousH2Congr` of the
+same compatible pair of group and coefficient maps. It follows from the explicit square, because
+the comparison of the explicit `H²` with `continuousCohomology` carries one transport to the other
+(`RingEquiv.explicitH2AddEquivContinuousCohomology_unitsH2Congr`).
+
 ## Main results
 
 * `TauCeti.brauerExplicitH2Equiv_uliftEquiv`: the comparison commutes with universe lifting, for
   every Brauer class.
 * `TauCeti.brauerExplicitH2Equiv_symm_unitsH2Congr`: the same square for the inverse
   comparison.
+* `TauCeti.brauerCohomologyEquiv_uliftEquiv`,
+  `TauCeti.brauerCohomologyEquiv_symm_unitsContinuousH2Congr`: the two squares for the
+  comparison with Mathlib's continuous cohomology.
 
 ## References
 
@@ -210,6 +219,29 @@ theorem brauerExplicitH2Equiv_symm_unitsH2Congr (y : H2 (AbsoluteGaloisGroup K) 
       Additive.ofMul
         (BrauerGroup.uliftEquiv.{u, w} K ((brauerExplicitH2Equiv K).symm y).toMul) := by
   rw [AddEquiv.symm_apply_eq, brauerExplicitH2Equiv_uliftEquiv, ofMul_toMul,
+    AddEquiv.apply_symm_apply]
+
+/-- **The comparison with continuous cohomology commutes with universe lifting.** Scalar extension
+of Brauer classes from `K` to `ULift K` corresponds, under `brauerCohomologyEquiv`, to transport of
+Mathlib's continuous second Galois cohomology along `K ≃+* ULift K`. -/
+@[simp]
+theorem brauerCohomologyEquiv_uliftEquiv (x : BrauerGroup K) :
+    brauerCohomologyEquiv (ULift.{w} K) (Additive.ofMul (BrauerGroup.uliftEquiv.{u, w} K x)) =
+      (ULift.ringEquiv.symm : K ≃+* ULift.{w} K).unitsContinuousH2Congr
+        (brauerCohomologyEquiv K (Additive.ofMul x)) := by
+  rw [brauerCohomologyEquiv_apply, brauerCohomologyEquiv_apply, brauerExplicitH2Equiv_uliftEquiv,
+    RingEquiv.explicitH2AddEquivContinuousCohomology_unitsH2Congr]
+
+/-- **The inverse continuous comparison commutes with universe lifting.** The transported class of
+`y ∈ H²_cont(G_K, (Kˢ)ˣ)` corresponds to the scalar extension of the Brauer class of `y`. -/
+@[simp]
+theorem brauerCohomologyEquiv_symm_unitsContinuousH2Congr
+    (y : continuousCohomology 2 (ofDiscreteModule ℤ (AbsoluteGaloisGroup K) (UnitsCoeff K))) :
+    (brauerCohomologyEquiv (ULift.{w} K)).symm
+        ((ULift.ringEquiv.symm : K ≃+* ULift.{w} K).unitsContinuousH2Congr y) =
+      Additive.ofMul
+        (BrauerGroup.uliftEquiv.{u, w} K ((brauerCohomologyEquiv K).symm y).toMul) := by
+  rw [AddEquiv.symm_apply_eq, brauerCohomologyEquiv_uliftEquiv, ofMul_toMul,
     AddEquiv.apply_symm_apply]
 
 end TauCeti

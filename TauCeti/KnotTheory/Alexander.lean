@@ -137,6 +137,13 @@ theorem _root_.Matrix.alexanderMatrix_submatrix {κ : Type*} (V : Matrix ι ι R
   ext i j
   simp
 
+/-- The Alexander matrix of a block diagonal matrix is block diagonal. -/
+@[simp]
+theorem alexanderMatrix_fromBlocks_zero {κ : Type*} (V : Matrix ι ι R) (W : Matrix κ κ R) :
+    alexanderMatrix (fromBlocks V 0 0 W) =
+      fromBlocks (alexanderMatrix V) 0 0 (alexanderMatrix W) := by
+  ext (i | i) (j | j) <;> simp
+
 /-- The two extra columns of an enlargement: a chosen vector `ξ` in the first, zero in the
 second. -/
 def enlargeBlock (ξ : ι → R) : Matrix ι (Fin 2) R :=
@@ -451,6 +458,19 @@ theorem alexander_eq_of_card {g : ℕ} (V : Matrix ι ι R) (h : Fintype.card ι
   rw [alexander_def, h]
   norm_num
 
+/-- **The Alexander polynomial is multiplicative along a block diagonal** whose first block has
+even size, as for the Seifert matrix of a connected sum. -/
+theorem alexander_fromBlocks_zero {κ : Type*} [Fintype κ] [DecidableEq κ] {g : ℕ}
+    (V : Matrix ι ι R) (W : Matrix κ κ R) (hV : Fintype.card ι = 2 * g) :
+    alexander (fromBlocks V 0 0 W) = alexander V * alexander W := by
+  have hcard : Fintype.card (ι ⊕ κ) / 2 = g + Fintype.card κ / 2 := by
+    rw [Fintype.card_sum, hV]
+    omega
+  rw [alexander_eq_of_card V hV]
+  simp only [alexander_def, hcard, alexanderMatrix_fromBlocks_zero, det_fromBlocks_zero₂₁,
+    Nat.cast_add, neg_add, T_add]
+  ring
+
 /-- **The Alexander polynomial is symmetric**: `Δ(t⁻¹) = Δ(t)`. This is exactly what the
 normalisation `T ^ (-g)` buys, and it needs the size of the Seifert matrix to be even. -/
 theorem invert_alexander {g : ℕ} (V : Matrix ι ι R) (h : Fintype.card ι = 2 * g) :
@@ -485,6 +505,18 @@ Alexander polynomial unchanged. -/
 @[simp]
 theorem alexander_transpose (V : Matrix ι ι R) : alexander Vᵀ = alexander V := by
   rw [alexander, alexander, det_alexanderMatrix_transpose]
+
+/-- Negating a matrix of even size leaves its Alexander polynomial unchanged. With
+`TauCeti.KnotTheory.alexander_transpose`, the Seifert matrix `-Vᵀ` of the mirror image has the
+same Alexander polynomial as `V`. -/
+theorem alexander_neg {g : ℕ} (V : Matrix ι ι R) (h : Fintype.card ι = 2 * g) :
+    alexander (-V) = alexander V := by
+  have hneg : alexanderMatrix (-V) = -alexanderMatrix V := by
+    refine Matrix.ext fun i j => ?_
+    simp only [alexanderMatrix_apply, Matrix.neg_apply, map_neg]
+    ring
+  rw [alexander_eq_of_card _ h, alexander_eq_of_card V h, hneg]
+  simp [det_neg, h, pow_mul]
 
 /-- `Δ(1)` is the determinant of the intersection form `V - Vᵀ` of the Seifert surface. For a
 knot that form is unimodular, so `Δ(1) = ±1`. -/

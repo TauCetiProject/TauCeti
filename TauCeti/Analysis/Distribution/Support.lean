@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Distribution.Support
 public import TauCeti.Analysis.Distribution.TestFunction.ExtDeriv
+public import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
 import TauCeti.Analysis.Calculus.DifferentialForm.Const
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 
@@ -40,6 +41,8 @@ the exterior derivative of a cutoff equal to one vanishes near the support.
 * `Distribution.map_eq_map_of_eventuallyEq`: tests that agree near the support have equal values.
 * `Distribution.dsupport_eq_empty_iff`: an additive map on test functions vanishes exactly when its
   support is empty.
+* `Distribution.dsupport_comp_smulLeftCLM_subset`: a smooth multiple `T ∘ (g ·)` is supported in
+  the supports of both `g` and `T`.
 * `Distribution.augmentation`: the pairing `T (χ • c)` with a cutoff `χ` equal to one near the
   support; `Distribution.augmentation_eq` is its independence of the cutoff.
 * `Distribution.augmentation_comp_extDerivCLM`: the augmentation of a boundary is zero.
@@ -60,6 +63,14 @@ namespace Distribution
 
 variable {E F V 𝓕 : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {Ω : Opens E} {n : ℕ∞}
+
+/-- The support of a point evaluation followed by an additive map lies in that singleton. -/
+theorem dsupport_apply_apply_subset [AddZeroClass V] {x : E} (ℓ : F →+ V) :
+    dsupport (fun φ : 𝓓^{n}(Ω, F) ↦ ℓ (φ x)) ⊆ {x} := by
+  refine compl_subset_compl.1 fun y hy ↦ ?_
+  rw [mem_compl_iff, notMem_dsupport_iff]
+  refine ⟨{x}ᶜ, fun φ hφ ↦ ?_, isOpen_compl_singleton, hy⟩
+  simp [image_eq_zero_of_notMem_tsupport fun h ↦ hφ h rfl]
 
 section Localization
 
@@ -136,6 +147,31 @@ theorem map_eq_map_of_eventuallyEq {φ ψ : 𝓓^{n}(Ω, F)}
   simp [hx']
 
 end Group
+
+section SmoothMultiple
+
+variable [Zero V] [FunLike 𝓕 𝓓^{n}(Ω, F) V] [ZeroHomClass 𝓕 𝓓^{n}(Ω, F) V] (T : 𝓕)
+
+/-- The support of a smooth multiple `T ∘ (g ·)` of a map on test functions lies both in the
+support of `g` and in the support of `T`. In particular, multiplying by a test function `g`
+produces a compactly supported map. -/
+theorem dsupport_comp_smulLeftCLM_subset {g : E → ℝ} (hg : ContDiff ℝ n g) :
+    dsupport (T ∘ TestFunction.smulLeftCLM hg) ⊆ tsupport g ∩ dsupport T := by
+  refine subset_inter (compl_subset_compl.1 fun x hx ↦ ?_) (compl_subset_compl.1 fun x hx ↦ ?_)
+  · -- Off the support of `g`, every product `g • φ` vanishes identically.
+    refine (notMem_dsupport_iff x).2
+      ⟨(tsupport g)ᶜ, fun φ hφ ↦ ?_, (isClosed_tsupport g).isOpen_compl, hx⟩
+    have hgφ : TestFunction.smulLeftCLM hg φ = 0 := TestFunction.ext fun y ↦ by
+      by_cases hy : y ∈ tsupport φ
+      · simp [image_eq_zero_of_notMem_tsupport (hφ hy)]
+      · simp [image_eq_zero_of_notMem_tsupport hy]
+    simp [hgφ]
+  · obtain ⟨s, hT, hs, hxs⟩ := (notMem_dsupport_iff x).1 hx
+    exact (notMem_dsupport_iff x).2 ⟨s, fun φ hφ ↦ hT _
+      (((TestFunction.tsupport_smulLeftCLM_subset hg φ).trans inter_subset_right).trans hφ),
+      hs, hxs⟩
+
+end SmoothMultiple
 
 section Augmentation
 
@@ -268,11 +304,7 @@ theorem augmentation_apply_apply {x : E} (hx : x ∈ Ω) (ℓ : F →+ V) (c : F
     augmentation (fun φ : 𝓓^{n}(Ω, F) ↦ ℓ (φ x)) c = ℓ c := by
   let A : 𝓓^{n}(Ω, F) →+ V :=
     { toFun φ := ℓ (φ x), map_zero' := by simp, map_add' φ ψ := by simp }
-  have hA : dsupport A ⊆ {x} := by
-    refine compl_subset_compl.1 fun y hy ↦ ?_
-    rw [mem_compl_iff, notMem_dsupport_iff]
-    refine ⟨{x}ᶜ, fun φ hφ ↦ ?_, isOpen_compl_singleton, hy⟩
-    simp [A, image_eq_zero_of_notMem_tsupport fun h ↦ hφ h rfl]
+  have hA : dsupport A ⊆ {x} := dsupport_apply_apply_subset ℓ
   obtain ⟨χ, hχ, -⟩ := TestFunction.exists_eventually_eq_one (n := n) isCompact_singleton
     (singleton_subset_iff.2 hx)
   have hχx : χ x = 1 := hχ.self_of_nhdsSet x rfl

@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Category.GradedModuleCat.Idempotent.Head
 public import TauCeti.Algebra.Category.GradedModuleCat.Idempotent.ProjectiveCover
 public import TauCeti.RingTheory.Idempotents.Simple
+import TauCeti.Algebra.Polynomial.Laurent.Units
 
 /-!
 # Graded heads of primitive idempotents over a semisimple degree-zero part
@@ -25,7 +26,8 @@ degree-zero corner `f A₀ f` need not be the line `k f`: it is isomorphic to th
 division algebra `End_A(Sf)`, so its dimension is `dim_k End_A(Sf)`, the constant graded dimension
 of `f • Sf`. A second primitive idempotent
 `f'` whose ungraded left ideal `A f'` is not isomorphic to `A f` kills `Sf`: otherwise `A f'`
-would cover `Sf` as well, and projective covers are unique.
+would cover `Sf` as well, and projective covers are unique. In particular the heads of such `f`
+and `f'` are not isomorphic, even as ungraded modules.
 
 For a complete family of orthogonal primitive idempotents `eᵢ` of degree zero with pairwise
 nonisomorphic left ideals `A eᵢ`, the heads `Sᵢ` therefore satisfy the hypotheses of the general
@@ -41,7 +43,13 @@ semisimplicity of `A₀` and nonnegativity of the grading, so the field need not
   cover.
 * `TauCeti.smul_gradedPositiveMulQuotient_eq_zero`: a primitive idempotent with nonisomorphic left
   ideal kills `A f / A₊f`.
+* `TauCeti.isEmpty_linearEquiv_gradedPositiveMulQuotient`: primitive idempotents with
+  nonisomorphic left ideals have nonisomorphic heads.
 * `TauCeti.smulGradedDimension_gradedPositiveMulQuotient_self`: `gdim(f • Sf) = dim_k End_A(Sf)`.
+* `TauCeti.isUnit_smulGradedDimension_gradedPositiveMulQuotient_self_iff`: `gdim(f • Sf)` is a
+  unit of `ℤ[q,q⁻¹]` exactly when `dim_k End_A(Sf) = 1`.
+* `TauCeti.pairwise_smulGradedDimension_gradedPositiveMulQuotient_eq_zero`: `gdim(eⱼ • Sᵢ) = 0`
+  for `i ≠ j` when the left ideals `A eᵢ` are pairwise nonisomorphic.
 * `TauCeti.isExhaustiveGradedSimpleFamily_gradedPositiveMulQuotient_of_isPrimitiveIdempotent`:
   the heads of a complete family of primitive idempotents exhaust the simple finite graded
   modules up to shift.
@@ -178,6 +186,21 @@ theorem smulGradedDimension_gradedPositiveMulQuotient_eq_zero {f f' : A}
   ext p
   simp [GradedModuleCat.coeff_smulGradedDimension, hbot]
 
+/-- **Heads of primitive idempotents with nonisomorphic left ideals are nonisomorphic**, even as
+ungraded modules: `f'` fixes the nonzero class of `f'` in `A f' / A₊f'`, but kills `A f / A₊f`. -/
+theorem isEmpty_linearEquiv_gradedPositiveMulQuotient {f f' : A} (hf : IsPrimitiveIdempotent f)
+    (hf₀ : f ∈ 𝒜 0) (hf' : IsPrimitiveIdempotent f') (hf'₀ : f' ∈ 𝒜 0)
+    (hnoniso : IsEmpty ((Ideal.span {f} : Ideal A) ≃ₗ[A] (Ideal.span {f'} : Ideal A))) :
+    IsEmpty (gradedPositiveMulQuotient 𝒜 hf₀ ≃ₗ[A] gradedPositiveMulQuotient 𝒜 hf'₀) := by
+  refine ⟨fun φ => gradedPositiveMulQuotientMk_spanSingletonGenerator_ne_zero hneg hf'₀
+    hf'.ne_zero ?_⟩
+  have hgen : f' • spanSingletonGenerator f' = spanSingletonGenerator f' :=
+    Subtype.ext (by simp [hf'.isIdempotentElem.eq])
+  set y := gradedPositiveMulQuotientMk hf'₀ (spanSingletonGenerator f')
+  calc y = f' • y := by rw [← map_smul, hgen]
+    _ = φ (f' • φ.symm y) := by rw [map_smul, LinearEquiv.apply_symm_apply]
+    _ = 0 := by rw [smul_gradedPositiveMulQuotient_eq_zero hneg hf hf₀ hf' hnoniso, map_zero]
+
 /-- **The graded dimension of `f • (A f / A₊f)` is the constant `dim_k End_A(A f / A₊f)`**, the
 dimension of a division algebra by Schur, which need not be one over a field that does not split
 the simple modules. -/
@@ -191,7 +214,29 @@ theorem smulGradedDimension_gradedPositiveMulQuotient_self {f : A} (hf : IsPrimi
     hf.isIdempotentElem (fun _ hp => gradedPositiveMulQuotient_piece_eq_bot hneg
       hf.isIdempotentElem hf₀ hp) (isProjectiveCover_gradedPositiveMulQuotientMk hneg hf hf₀)
 
+/-- The diagonal graded dimension `gdim(f • A f / A₊f) = dim_k End_A(A f / A₊f)` of a primitive
+idempotent `f` of degree zero is a unit of `ℤ[q,q⁻¹]` exactly when it is `1`. -/
+theorem isUnit_smulGradedDimension_gradedPositiveMulQuotient_self_iff {f : A}
+    (hf : IsPrimitiveIdempotent f) (hf₀ : f ∈ 𝒜 0) :
+    IsUnit ((gradedPositiveMulQuotient 𝒜 hf₀).smulGradedDimension f) ↔
+      Module.finrank k (Module.End A (gradedPositiveMulQuotient 𝒜 hf₀)) = 1 := by
+  rw [smulGradedDimension_gradedPositiveMulQuotient_self hneg hf hf₀, LaurentPolynomial.isUnit_C,
+    Int.isUnit_iff]
+  -- A natural number is `1` exactly when its integer cast is `1` or `-1`.
+  omega
+
 variable {I : Type uI} [Fintype I] {e : I → A}
+
+omit [Fintype I] in
+/-- The heads of primitive idempotents of degree zero with pairwise nonisomorphic left ideals have
+vanishing off-diagonal graded dimensions: `gdim(eᵢ • A eⱼ / A₊eⱼ) = 0` for `i ≠ j`. -/
+theorem pairwise_smulGradedDimension_gradedPositiveMulQuotient_eq_zero (he₀ : ∀ i, e i ∈ 𝒜 0)
+    (hprim : ∀ i, IsPrimitiveIdempotent (e i))
+    (hnoniso : Pairwise fun i j =>
+      IsEmpty ((Ideal.span {e i} : Ideal A) ≃ₗ[A] (Ideal.span {e j} : Ideal A))) :
+    Pairwise fun i j => (gradedPositiveMulQuotient 𝒜 (he₀ j)).smulGradedDimension (e i) = 0 :=
+  fun _ _ hij => smulGradedDimension_gradedPositiveMulQuotient_eq_zero hneg (hprim _) (he₀ _)
+    (hprim _) (hnoniso hij.symm)
 
 /-- **The heads of a complete family of primitive idempotents exhaust the simple finite graded
 modules** up to shift, over a finite-dimensional nonnegatively graded algebra with semisimple

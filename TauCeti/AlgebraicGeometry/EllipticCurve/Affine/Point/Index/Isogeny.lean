@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.NSmul
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.PrimaryReduction
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Cokernel
 
 import TauCeti.GroupTheory.Index.PrimaryComponent
@@ -50,6 +51,8 @@ of a minimal model), so every point of `E₂(F_u)` is divisible by `n`, hence li
 * `TauCeti.Isogeny.Hom.index_range_mul_card_primaryComponent_of_degree_notMem` and
   `TauCeti.Isogeny.Hom.index_range_div_card_ker_of_degree_notMem`: the local cokernel/kernel ratio
   of `f` is the ratio of the orders of the `deg f`-primary components.
+* `TauCeti.Isogeny.Hom.index_range_div_card_ker_eq_reduction`: at good reduction, compute
+  this ratio using only the primary components of the finite reduced point groups.
 
 ## References
 
@@ -138,5 +141,37 @@ theorem index_range_div_card_ker_of_degree_notMem (hf : (f.degree : A) ∉ u.asI
   have hK : (Nat.card f.pointMapHom.ker : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
   rw [div_eq_div_iff hK hT]
   exact_mod_cast index_range_mul_card_primaryComponent_of_degree_notMem u hf
+
+section GoodReduction
+
+open IsLocalRing
+
+variable {u}
+  [DecidableEq (ResidueField
+    (Valued.v : Valuation (u.adicCompletion F) (WithZero (Multiplicative ℤ))).valuationSubring)]
+  {C₁ C₂ : WeierstrassCurve (u.adicCompletionIntegers F)} [C₁.IsElliptic] [C₂.IsElliptic]
+
+local notation "R_u" => Valuation.valuationSubring
+  (Valued.v : Valuation (u.adicCompletion F) (WithZero (Multiplicative ℤ)))
+
+/-- At good reduction and away from the degree, the local isogeny ratio is computed by the
+primary components of the finite reduced point groups. The numerator belongs to the target
+curve and the denominator to the source curve. -/
+theorem index_range_div_card_ker_eq_reduction
+    (f : Hom (C₁.baseChange (u.adicCompletion F)).toAffine
+      (C₂.baseChange (u.adicCompletion F)).toAffine)
+    (hf : (f.degree : A) ∉ u.asIdeal) :
+    (f.pointMapHom.range.index : ℚ) / Nat.card f.pointMapHom.ker =
+      Nat.card (AddCommGroup.primaryComponent
+        ((WeierstrassCurve.integralModel R_u (C₂.baseChange (u.adicCompletion F))).map
+          (residue R_u)).toAffine.Point f.degree) /
+      Nat.card (AddCommGroup.primaryComponent
+        ((WeierstrassCurve.integralModel R_u (C₁.baseChange (u.adicCompletion F))).map
+          (residue R_u)).toAffine.Point f.degree) := by
+  rw [index_range_div_card_ker_of_degree_notMem u hf,
+    Nat.card_congr (C₁.primaryReductionAddEquiv hf).toEquiv,
+    Nat.card_congr (C₂.primaryReductionAddEquiv hf).toEquiv]
+
+end GoodReduction
 
 end TauCeti.Isogeny.Hom
