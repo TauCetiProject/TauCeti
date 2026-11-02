@@ -39,6 +39,9 @@ extension used in the Alexander trick.
 * `TauCeti.norm_sphereCone`: the cone over a map into the unit sphere preserves norms.
 * `TauCeti.sphereCone_sphereCone`, `Homeomorph.sphereCone_trans`: the cone over a composite is the
   composite of the cones.
+* `Homeomorph.bijOn_sphereCone_closedBall`, `Homeomorph.tendsto_sphereCone_cobounded`: the cone
+  over a homeomorphism of unit spheres maps each closed ball about the origin onto itself and tends
+  to infinity at infinity.
 -/
 
 public section
@@ -199,7 +202,7 @@ theorem sphereCone_trans (τ : sphere (0 : F) 1 ≃ₜ sphere (0 : G) 1) :
     (σ.trans τ).sphereCone = σ.sphereCone.trans τ.sphereCone := by
   ext x
   simp only [coe_sphereCone, trans_apply, TauCeti.sphereCone_sphereCone]
-  rfl
+  simp only [Function.comp_def, trans_apply]
 
 @[simp]
 theorem sphereCone_apply_zero : σ.sphereCone 0 = 0 :=
@@ -214,5 +217,18 @@ theorem sphereCone_apply_coe (u : sphere (0 : E) 1) : σ.sphereCone u = σ u :=
 @[simp]
 theorem norm_sphereCone_apply (x : E) : ‖σ.sphereCone x‖ = ‖x‖ :=
   norm_sphereCone (fun u => norm_eq_of_mem_sphere (σ u)) x
+
+/-- The cone over a homeomorphism of unit spheres maps each closed ball about the origin
+bijectively onto itself. -/
+theorem bijOn_sphereCone_closedBall (r : ℝ) :
+    BijOn σ.sphereCone (closedBall 0 r) (closedBall 0 r) := by
+  refine ⟨fun x hx => by simpa using hx, σ.sphereCone.injective.injOn, fun y hy => ?_⟩
+  exact ⟨σ.sphereCone.symm y, by simpa using hy, σ.sphereCone.apply_symm_apply y⟩
+
+/-- The cone over a homeomorphism of unit spheres tends to infinity at infinity. -/
+theorem tendsto_sphereCone_cobounded :
+    Tendsto σ.sphereCone (Bornology.cobounded E) (Bornology.cobounded F) := by
+  rw [← tendsto_norm_atTop_iff_cobounded]
+  simpa using tendsto_norm_cobounded_atTop
 
 end Homeomorph
