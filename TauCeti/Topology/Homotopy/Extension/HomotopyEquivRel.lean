@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Homotopy.Extension.DeformationRetract
+public import TauCeti.Topology.Homotopy.Extension.Basic
 public import TauCeti.Topology.Homotopy.Homotopic.Rel
 public import Mathlib.Topology.Homotopy.Equiv
 
