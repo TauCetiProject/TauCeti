@@ -285,6 +285,20 @@ theorem cofreeLift_lTensor_apply {D : Type*} [AddCommMonoid D] [Module R D] (g :
     | add s t hs ht => simp only [tmul_add, map_add, hs, ht]
     | tmul a b => simp
 
+/-- Following the cofree lift of `g` by `cofreeMap a` gives the cofree lift of `a ∘ g`. -/
+theorem cofreeMap_comp_cofreeLift [Comodule R C P] (a : M →ₗ[R] N) (g : P →ₗ[R] M) :
+    comp (cofreeMap (C := C) a) (cofreeLift (C := C) g) = cofreeLift (C := C) (a ∘ₗ g) :=
+  Comodule.Hom.ext fun p ↦ by simp [LinearMap.rTensor_comp]
+
+/-- Precomposing the cofree lift of `L` with a comodule morphism `ψ` gives the cofree lift of
+`L ∘ ψ`. -/
+theorem cofreeLift_comp {Q : Type*} [AddCommMonoid Q] [Module R Q] [Comodule R C P]
+    [Comodule R C Q] (L : Q →ₗ[R] M) (ψ : Hom R C P Q) :
+    comp (cofreeLift (C := C) L) ψ = cofreeLift (C := C) (L ∘ₗ ψ.toLinearMap) :=
+  Comodule.Hom.ext fun p ↦ by
+    rw [comp_apply, cofreeLift_apply, cofreeLift_apply, ← map_coact_apply, ← rTensor_def,
+      LinearMap.rTensor_comp_apply]
+
 /-- Comodule morphisms `P → M ⊗[R] C` into the cofree comodule on `M` are exactly `R`-linear
 maps `P → M`, by an `R`-linear equivalence: this is the universal property of the cofree
 comodule (the cofree functor is right adjoint to the forgetful functor). -/

@@ -109,6 +109,8 @@ private theorem mem_induced_iff_cofreeLift {t : M ⊗[R] C} :
     t ∈ induced f M ↔
       (coact (R := R) (C := D) (M := M)).rTensor C t =
         Hom.cofreeLift (C := C) ((f : C →ₗ[R] D).lTensor M) t := by
+  -- `sub_eq_zero` needs a group; this is the instance `Hom.sub_apply` uses for the difference
+  -- in `induced`, extending the existing `AddCommMonoid` by negation `-1 • x`.
   let _ : AddCommGroup ((M ⊗[R] D) ⊗[R] C) := Module.addCommMonoidToAddCommGroup R
   rw [induced, Hom.mem_ker, Hom.sub_apply, sub_eq_zero, Hom.cofreeMap_apply]
 
@@ -155,8 +157,7 @@ noncomputable def inducedEval :
           = TensorProduct.map (counitEval (C := C) M) (f : C →ₗ[R] D)
               ((SMulMemClass.subtype (induced f M)).rTensor C
                 (coact (R := R) (C := C) (M := induced f M) t)) := by
-            rw [TensorProduct.map_map, LinearMap.rTensor_def, TensorProduct.map_map,
-              LinearMap.comp_id, LinearMap.id_comp, LinearMap.comp_id]
+            simp [LinearMap.rTensor_def, TensorProduct.map_map]
         _ = (f : C →ₗ[R] D).lTensor M ((counitEval (C := C) M).rTensor C
               (cofreeCoact R C M (t : M ⊗[R] C))) := by
             rw [hsub, ← LinearMap.comp_apply ((f : C →ₗ[R] D).lTensor M),
@@ -184,28 +185,14 @@ private theorem cofreeLift_mem_induced :
     ∀ (g : Hom R D N M) (n : N), Hom.cofreeLift (C := C) g.toLinearMap n ∈ induced f M := by
   let _ := Corestrict (M := N) f
   intro g n
-  rw [mem_induced_iff_cofreeLift, ← Hom.cofreeMap_apply, ← Hom.comp_apply, ← Hom.comp_apply]
-  congr 1
-  -- Both morphisms land in a cofree comodule, so they are the cofree lifts of their counit
-  -- components; these are `ρ ∘ g` and `(id ⊗ f) ∘ (g ⊗ id) ∘ ρ_N`.
-  have hρ : Hom.comp (Hom.cofreeMap (C := C) (coact (R := R) (C := D) (M := M)))
-      (Hom.cofreeLift (C := C) g.toLinearMap) =
-        Hom.cofreeLift (C := C) (coact (R := R) (C := D) (M := M) ∘ₗ g.toLinearMap) := by
-    rw [Hom.cofreeLift, Hom.cofreeLift, ← Hom.comp_assoc, ← Hom.cofreeMap_comp]
-  have hf : Hom.comp (Hom.cofreeLift (C := C) ((f : C →ₗ[R] D).lTensor M))
-      (Hom.cofreeLift (C := C) g.toLinearMap) =
-        Hom.cofreeLift (C := C) ((f : C →ₗ[R] D).lTensor M ∘ₗ
-          (Hom.cofreeLift (C := C) g.toLinearMap).toLinearMap) := by
-    rw [← Hom.cofreeLift_rid_comp_lTensor_counit_comp (Hom.comp _ _)]
-    congr 1
-    refine LinearMap.ext fun n ↦ ?_
-    exact LinearMap.congr_fun (Hom.rid_comp_lTensor_counit_comp_cofreeLift (C := C) _)
-      (Hom.cofreeLift (C := C) g.toLinearMap n)
-  rw [hρ, hf, Hom.cofreeLift_toLinearMap, ← LinearMap.comp_assoc,
-    LinearMap.lTensor_comp_rTensor, ← LinearMap.rTensor_comp_lTensor, LinearMap.comp_assoc,
-    ← g.map_coact_eq]
-  rw [corestrict_coact, corestrictCoact_eq_lTensor, LinearMap.rTensor_def,
-    CoalgHom.toLinearMap_eq_ofClass]
+  -- Both sides are cofree lifts, of `ρ ∘ g` and of `(id ⊗ f) ∘ (g ⊗ id) ∘ ρ_N`.
+  rw [mem_induced_iff_cofreeLift, ← Hom.cofreeMap_apply, ← Hom.comp_apply, ← Hom.comp_apply,
+    Hom.cofreeMap_comp_cofreeLift, Hom.cofreeLift_comp]
+  congr 2
+  -- `g` commutes with the corestricted coaction `(id ⊗ f) ∘ ρ_N`.
+  rw [← g.map_coact_eq, corestrict_coact, corestrictCoact_eq_lTensor]
+  simp only [Hom.cofreeLift_toLinearMap, ← rTensor_def, ← LinearMap.comp_assoc,
+    LinearMap.rTensor_comp_lTensor, LinearMap.lTensor_comp_rTensor, CoalgHom.toLinearMap_eq_ofClass]
 
 /-- The morphism into the induced comodule attached to a morphism of `D`-comodules
 `g : N → M`, namely `(g ⊗ id) ∘ ρ_N`. This is the inverse direction of Frobenius reciprocity. -/
@@ -287,7 +274,8 @@ theorem coe_inducedMap_apply (h : Hom R D M M') (t : induced f M) :
   exact congrArg (h.toLinearMap.rTensor C) hev
 
 /-- Induction preserves identities. -/
--- Not `@[simp]`: `ComoduleCat.ofHom_id` rewrites `Hom.id R D M` on the left-hand side.
+-- Simplify before `ComoduleCat.ofHom_id` rewrites the identity in categorical form.
+@[simp↓]
 theorem inducedMap_id : inducedMap f (Hom.id R D M) = Hom.id R C (induced f M) :=
   Hom.ext fun t ↦ Subtype.ext <| by
     rw [coe_inducedMap_apply, Hom.id_toLinearMap, LinearMap.rTensor_id_apply, Hom.id_apply]
