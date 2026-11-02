@@ -89,6 +89,7 @@ theorem pontryaginThomCollapse_apply (hτ : Injective τ) (x : S) (v : V) :
     pontryaginThomCollapse τ (τ (x, v)) = v :=
   onePointCollapse_apply hτ _ (x, v)
 
+@[simp]
 theorem pontryaginThomCollapse_of_notMem_range {m : M} (hm : m ∉ range τ) :
     pontryaginThomCollapse τ m = ∞ :=
   onePointCollapse_of_notMem_range hm
@@ -228,6 +229,7 @@ theorem pontryaginThomSphereMap_apply {k : ℕ} [CompactSpace S] [T2Space M]
   simp [pontryaginThomSphereMap, hτ.injective]
 
 /-- The collapse onto the sphere sends every point outside the tube to the basepoint. -/
+@[simp]
 theorem pontryaginThomSphereMap_of_notMem_range {k : ℕ} [CompactSpace S] [T2Space M]
     {τ : S × (Fin k → ℝ) → M} (hτ : IsOpenEmbedding τ)
     (s₀ : Metric.sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) {m : M} (hm : m ∉ range τ) :

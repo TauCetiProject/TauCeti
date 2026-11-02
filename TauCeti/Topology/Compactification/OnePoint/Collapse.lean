@@ -62,6 +62,7 @@ theorem onePointCollapse_apply (he : Injective e) (g : X → V) (x : X) :
     onePointCollapse e g (e x) = g x :=
   he.extend_apply _ _ x
 
+@[simp]
 theorem onePointCollapse_of_notMem_range {m : M} (hm : m ∉ range e) :
     onePointCollapse e g m = ∞ :=
   extend_apply' _ _ m hm
