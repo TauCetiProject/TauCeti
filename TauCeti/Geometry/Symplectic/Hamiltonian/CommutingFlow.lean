@@ -58,6 +58,10 @@ identifies a compact connected regular fibre with a torus.
   `TauCeti.SmoothTwoForm.IsSymplectic.eq_hamiltonianFlowAction`,
   `TauCeti.SmoothTwoForm.IsSymplectic.mpullback_hamiltonianFlowAction` and
   `TauCeti.SmoothTwoForm.IsSymplectic.apply_hamiltonianFlowAction`.
+* `TauCeti.SmoothTwoForm.IsSymplectic.contMDiff_hamiltonianFlowAction_uncurry`: the action is
+  jointly smooth.
+* `TauCeti.SmoothTwoForm.IsSymplectic.hasMFDerivAt_hamiltonianFlowAction_apply_zero`: the orbit
+  map `v ↦ φ_v(x)` has derivative `v ↦ ∑ᵢ vᵢ X_{Fᵢ}(x)` at the origin.
 
 ## References
 
@@ -299,6 +303,92 @@ theorem apply_hamiltonianFlowAction (v : ι → ℝ) (x : M) :
     exact (isFirstIntegral_iff.2 fun x ↦ hcomm j i x).apply_globalFlow hσ.isNondegenerate
       ((contMDiff_pi_module_iff.1 hF i).of_le (by simp))
       ((contMDiff_pi_module_iff.1 hF j).mdifferentiable (by simp)) _ (hc i) t y
+
+/-- The vector `v + w` acts on a point by `w` and then by `v`. -/
+theorem hamiltonianFlowAction_add_apply (v w : ι → ℝ) (y : M) :
+    (hσ.hamiltonianFlowAction hF hcomm hc (v + w)).toMul y =
+      (hσ.hamiltonianFlowAction hF hcomm hc v).toMul
+        ((hσ.hamiltonianFlowAction hF hcomm hc w).toMul y) := by
+  rw [map_add, toMul_add, Diffeomorph.mul_apply]
+
+/-- The vector `-v` undoes the action of `v`. -/
+theorem hamiltonianFlowAction_neg_apply_apply (v : ι → ℝ) (y : M) :
+    (hσ.hamiltonianFlowAction hF hcomm hc (-v)).toMul
+        ((hσ.hamiltonianFlowAction hF hcomm hc v).toMul y) = y := by
+  rw [← hamiltonianFlowAction_add_apply, neg_add_cancel, map_zero, toMul_zero,
+    Diffeomorph.one_apply]
+
+/-! ### Smoothness and derivative of the action -/
+
+/-- **The Hamiltonian flow action is jointly smooth.** The map `(v, y) ↦ φ_v(y)` from
+`(ι → ℝ) × M` to `M` is smooth. -/
+theorem contMDiff_hamiltonianFlowAction_uncurry :
+    ContMDiff (𝓘(ℝ, ι → ℝ).prod I) I ∞
+      (fun p : (ι → ℝ) × M ↦ (hσ.hamiltonianFlowAction hF hcomm hc p.1).toMul p.2) := by
+  classical
+  -- Write `v = ∑ᵢ vᵢ eᵢ` and compose the coordinate flows one at a time.
+  suffices h : ∀ s : Finset ι, ContMDiff (𝓘(ℝ, ι → ℝ).prod I) I ∞
+      (fun p : (ι → ℝ) × M ↦
+        (hσ.hamiltonianFlowAction hF hcomm hc (∑ i ∈ s, Pi.single i (p.1 i))).toMul p.2) by
+    simpa only [Finset.univ_sum_single] using h Finset.univ
+  intro s
+  induction s using Finset.induction_on with
+  | empty => simpa using contMDiff_snd
+  | insert a s ha ih =>
+    have hv := hσ.contMDiff_hamiltonianVectorField_apply hF a
+    have happ : ContMDiff 𝓘(ℝ, ι → ℝ) 𝓘(ℝ) ∞ (fun v : ι → ℝ ↦ v a) :=
+      (contDiff_apply ℝ (fun _ : ι ↦ ℝ) a).contMDiff
+    simp only [Finset.sum_insert ha, hσ.hamiltonianFlowAction_add_apply hF hcomm hc,
+      hσ.hamiltonianFlowAction_single_apply hF hcomm hc a _ (hv.of_le (by simp))]
+    exact (contMDiff_globalFlow_uncurry (hc a) le_top hv).comp
+      ((happ.comp contMDiff_fst).prodMk ih)
+
+/-- The derivative at the origin of the orbit map `v ↦ φ_v(x)` of the Hamiltonian flow action:
+it sends `v` to `∑ᵢ vᵢ X_{Fᵢ}(x)`. -/
+theorem hasMFDerivAt_hamiltonianFlowAction_apply_zero (x : M) :
+    HasMFDerivAt 𝓘(ℝ, ι → ℝ) I (fun v ↦ (hσ.hamiltonianFlowAction hF hcomm hc v).toMul x) 0
+      (∑ i, (ContinuousLinearMap.proj i : (ι → ℝ) →L[ℝ] ℝ).smulRight
+        (σ.hamiltonianVectorField (F · i) x)) := by
+  classical
+  set a := fun v ↦ (hσ.hamiltonianFlowAction hF hcomm hc v).toMul x
+  have ha : MDifferentiableAt 𝓘(ℝ, ι → ℝ) I a 0 :=
+    (((hσ.contMDiff_hamiltonianFlowAction_uncurry hF hcomm hc).comp
+      (contMDiff_id.prodMk contMDiff_const)).mdifferentiableAt (by simp))
+  -- Along the `i`-th axis the orbit map is the flow line of `X_{Fᵢ}` through `x`, so the
+  -- derivative sends `eᵢ` to `X_{Fᵢ}(x)`. The equalities are stated in `ℝ →L[ℝ] E` so that the
+  -- base point of the tangent space can be rewritten.
+  have key (i : ι) : ((mfderiv 𝓘(ℝ, ι → ℝ) I a 0).comp
+      (ContinuousLinearMap.single ℝ (fun _ : ι ↦ ℝ) i) : ℝ →L[ℝ] E) =
+        (1 : ℝ →L[ℝ] ℝ).smulRight (σ.hamiltonianVectorField (F · i) x) := by
+    have hv := hσ.contMDiff_hamiltonianVectorField_apply hF i
+    have hcurve := isMIntegralCurve_globalFlow (hv.of_le (by simp)) (hc i) x 0
+    have ha' : HasMFDerivAt 𝓘(ℝ, ι → ℝ) I a
+        (ContinuousLinearMap.single ℝ (fun _ : ι ↦ ℝ) i 0) (mfderiv 𝓘(ℝ, ι → ℝ) I a 0) := by
+      rw [map_zero]
+      exact ha.hasMFDerivAt
+    have hcomp := ha'.comp 0 (ContinuousLinearMap.single ℝ (fun _ : ι ↦ ℝ) i).hasMFDerivAt
+    have hcongr : a ∘ (ContinuousLinearMap.single ℝ (fun _ : ι ↦ ℝ) i) =
+        fun t ↦ globalFlow _ (hv.of_le (by simp)) (hc i) t x := funext fun t ↦ by
+      simp [a, hσ.hamiltonianFlowAction_single_apply hF hcomm hc i t (hv.of_le (by simp))]
+    rw [hcongr, map_zero] at hcomp
+    have h1 : ((mfderiv 𝓘(ℝ, ι → ℝ) I a 0).comp
+        (ContinuousLinearMap.single ℝ (fun _ : ι ↦ ℝ) i) : ℝ →L[ℝ] E) =
+          (1 : ℝ →L[ℝ] ℝ).smulRight (σ.hamiltonianVectorField (F · i)
+            (globalFlow _ (hv.of_le (by simp)) (hc i) 0 x)) :=
+      hcomp.mfderiv.symm.trans hcurve.mfderiv
+    rwa [Flow.map_zero_apply] at h1
+  have hD : (mfderiv 𝓘(ℝ, ι → ℝ) I a 0 : (ι → ℝ) →L[ℝ] E) =
+      ∑ i, (ContinuousLinearMap.proj i : (ι → ℝ) →L[ℝ] ℝ).smulRight
+        (σ.hamiltonianVectorField (F · i) x) := by
+    refine ContinuousLinearMap.coe_inj.1 (LinearMap.pi_ext' fun i ↦ ?_)
+    have h2 : (∑ j, (ContinuousLinearMap.proj j : (ι → ℝ) →L[ℝ] ℝ).smulRight
+        (σ.hamiltonianVectorField (F · j) x)).comp
+          (ContinuousLinearMap.single ℝ (fun _ : ι ↦ ℝ) i) =
+        (1 : ℝ →L[ℝ] ℝ).smulRight (σ.hamiltonianVectorField (F · i) x) := by
+      ext
+      simp [Pi.single_apply]
+    exact congrArg ContinuousLinearMap.toLinearMap ((key i).trans h2.symm)
+  exact hD ▸ ha.hasMFDerivAt
 
 end IsSymplectic
 

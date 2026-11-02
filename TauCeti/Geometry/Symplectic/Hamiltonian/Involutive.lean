@@ -31,8 +31,9 @@ parametrization satisfying the hypotheses described below:
   Poisson-commute at `x` as well
   (`TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_eq_zero_of_ker_le`);
 * at a regular point of `F` (the differentials `dF_i` are independent) the `X_{F_i}(x)` are
-  linearly independent, so `k` independent Poisson-commuting functions on a `2n`-dimensional
-  manifold satisfy `k ≤ n`
+  linearly independent, that is, `v ↦ ∑ᵢ vᵢ X_{F_i}(x)` is injective
+  (`TauCeti.SmoothTwoForm.IsNondegenerate.injective_sum_smulRight_hamiltonianVectorField`), so
+  `k` independent Poisson-commuting functions on a `2n`-dimensional manifold satisfy `k ≤ n`
   (`TauCeti.SmoothTwoForm.IsNondegenerate.two_mul_card_le_finrank`);
 * the kernel is then Lagrangian exactly when `k = n`, and in that case the Hamiltonian vectors
   span `ker dF_x`
@@ -149,6 +150,16 @@ theorem linearIndependent_hamiltonianVectorField (hreg : IsRegularPoint I 𝓘(�
   have hσc := congrArg (fun u ↦ SmoothForm.bilinFormAt σ x u v) hc
   simpa [SmoothForm.bilinFormAt_apply, hσ.apply_hamiltonianVectorField,
     mvfderiv_apply hreg.mdifferentiableAt, hv, Pi.single_apply] using hσc
+
+/-- At a regular point of `F` the linear map `v ↦ ∑ᵢ vᵢ X_{F_i}(x)` is injective. -/
+theorem injective_sum_smulRight_hamiltonianVectorField
+    (hreg : IsRegularPoint I 𝓘(ℝ, ι → ℝ) F x) :
+    Function.Injective (∑ i, (ContinuousLinearMap.proj i : (ι → ℝ) →L[ℝ] ℝ).smulRight
+      (σ.hamiltonianVectorField (F · i) x) : (ι → ℝ) →L[ℝ] TangentSpace I x) := by
+  refine (injective_iff_map_eq_zero _).2 fun v hv ↦ funext fun i ↦ ?_
+  simp only [_root_.sum_apply, ContinuousLinearMap.smulRight_apply,
+    ContinuousLinearMap.proj_apply] at hv
+  exact Fintype.linearIndependent_iff.1 (hσ.linearIndependent_hamiltonianVectorField hreg) v hv i
 
 /-- The span of the Hamiltonian vectors `X_{F_i}(x)` at a regular point of `F` has dimension the
 number of functions. -/

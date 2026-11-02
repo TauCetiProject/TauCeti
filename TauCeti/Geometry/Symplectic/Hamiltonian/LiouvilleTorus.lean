@@ -24,9 +24,11 @@ part of the Liouville–Arnold theorem: a compact connected component of a level
 regular points of `F`, is an orbit of this action and is homeomorphic to the torus `(ℝ / ℤ)ⁿ`.
 
 The action is jointly smooth, and the orbit map `v ↦ φ_v(x)` has derivative
-`v ↦ ∑ᵢ vᵢ X_{Fᵢ}(x)` at the origin. At a regular point the vectors `X_{Fᵢ}(x)` are linearly
-independent and span the kernel of `dF_x`, so the orbit map is an immersion whose image is open in
-the common level. Hence:
+`v ↦ ∑ᵢ vᵢ X_{Fᵢ}(x)` at the origin
+(`TauCeti.SmoothTwoForm.IsSymplectic.contMDiff_hamiltonianFlowAction_uncurry` and
+`TauCeti.SmoothTwoForm.IsSymplectic.hasMFDerivAt_hamiltonianFlowAction_apply_zero`). At a regular
+point the vectors `X_{Fᵢ}(x)` are linearly independent and span the kernel of `dF_x`, so the orbit
+map is an immersion whose image is open in the common level. Hence:
 
 * the stabilizer of a regular point is a discrete subgroup of `ι → ℝ`;
 * if every point of the connected component `L` of `x` in `F⁻¹(F x)` is regular, the orbit of `x`
@@ -47,10 +49,6 @@ and the action-angle coordinates near `L` are not treated here.
 
 ## Main results
 
-* `TauCeti.SmoothTwoForm.IsSymplectic.contMDiff_hamiltonianFlowAction_uncurry`: the action is
-  jointly smooth.
-* `TauCeti.SmoothTwoForm.IsSymplectic.hasMFDerivAt_hamiltonianFlowAction_apply_zero`: the
-  derivative of the orbit map at the origin.
 * `TauCeti.SmoothTwoForm.IsSymplectic.discreteTopology_hamiltonianFlowStabilizer`: the stabilizer
   of a regular point is discrete.
 * `TauCeti.SmoothTwoForm.IsSymplectic.image_mem_nhdsWithin_hamiltonianFlowAction`: at a regular
@@ -91,78 +89,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   (hc : ∀ i, IsCompleteVectorField (σ.hamiltonianVectorField (F · i)))
   {x : M}
 
-/-! ### Smoothness and derivative of the action -/
-
-/-- **The Hamiltonian flow action is jointly smooth.** The map `(v, y) ↦ φ_v(y)` from
-`(ι → ℝ) × M` to `M` is smooth. -/
-theorem contMDiff_hamiltonianFlowAction_uncurry :
-    ContMDiff (𝓘(ℝ, ι → ℝ).prod I) I ∞
-      (fun p : (ι → ℝ) × M ↦ (hσ.hamiltonianFlowAction hF hcomm hc p.1).toMul p.2) := by
-  classical
-  -- Write `v = ∑ᵢ vᵢ eᵢ` and compose the coordinate flows one at a time.
-  suffices h : ∀ s : Finset ι, ContMDiff (𝓘(ℝ, ι → ℝ).prod I) I ∞
-      (fun p : (ι → ℝ) × M ↦
-        (hσ.hamiltonianFlowAction hF hcomm hc (∑ i ∈ s, Pi.single i (p.1 i))).toMul p.2) by
-    simpa only [Finset.univ_sum_single] using h Finset.univ
-  intro s
-  induction s using Finset.induction_on with
-  | empty => simpa using contMDiff_snd
-  | insert a s ha ih =>
-    have hv := hσ.contMDiff_hamiltonianVectorField_apply hF a
-    have happ : ContMDiff 𝓘(ℝ, ι → ℝ) 𝓘(ℝ) ∞ (fun v : ι → ℝ ↦ v a) :=
-      (contDiff_apply ℝ (fun _ : ι ↦ ℝ) a).contMDiff
-    simp only [Finset.sum_insert ha, map_add, toMul_add, Diffeomorph.mul_apply,
-      hσ.hamiltonianFlowAction_single_apply hF hcomm hc a _ (hv.of_le (by simp))]
-    exact (contMDiff_globalFlow_uncurry (hc a) le_top hv).comp
-      ((happ.comp contMDiff_fst).prodMk ih)
-
-/-- The derivative at the origin of the orbit map `v ↦ φ_v(x)` of the Hamiltonian flow action:
-it sends `v` to `∑ᵢ vᵢ X_{Fᵢ}(x)`. -/
-theorem hasMFDerivAt_hamiltonianFlowAction_apply_zero (x : M) :
-    HasMFDerivAt 𝓘(ℝ, ι → ℝ) I (fun v ↦ (hσ.hamiltonianFlowAction hF hcomm hc v).toMul x) 0
-      (∑ i, (ContinuousLinearMap.proj i : (ι → ℝ) →L[ℝ] ℝ).smulRight
-        (σ.hamiltonianVectorField (F · i) x)) := by
-  classical
-  set a := fun v ↦ (hσ.hamiltonianFlowAction hF hcomm hc v).toMul x
-  have ha : MDifferentiableAt 𝓘(ℝ, ι → ℝ) I a 0 :=
-    (((hσ.contMDiff_hamiltonianFlowAction_uncurry hF hcomm hc).comp
-      (contMDiff_id.prodMk contMDiff_const)).mdifferentiableAt (by simp))
-  -- Along the `i`-th axis the orbit map is the flow line of `X_{Fᵢ}` through `x`, so the
-  -- derivative sends `eᵢ` to `X_{Fᵢ}(x)`. The equalities are stated in `ℝ →L[ℝ] E` so that the
-  -- base point of the tangent space can be rewritten.
-  have key (i : ι) : ((mfderiv 𝓘(ℝ, ι → ℝ) I a 0).comp
-      (ContinuousLinearMap.single ℝ (fun _ : ι ↦ ℝ) i) : ℝ →L[ℝ] E) =
-        (1 : ℝ →L[ℝ] ℝ).smulRight (σ.hamiltonianVectorField (F · i) x) := by
-    have hv := hσ.contMDiff_hamiltonianVectorField_apply hF i
-    have hcurve := isMIntegralCurve_globalFlow (hv.of_le (by simp)) (hc i) x 0
-    have ha' : HasMFDerivAt 𝓘(ℝ, ι → ℝ) I a
-        (ContinuousLinearMap.single ℝ (fun _ : ι ↦ ℝ) i 0) (mfderiv 𝓘(ℝ, ι → ℝ) I a 0) := by
-      rw [map_zero]
-      exact ha.hasMFDerivAt
-    have hcomp := ha'.comp 0 (ContinuousLinearMap.single ℝ (fun _ : ι ↦ ℝ) i).hasMFDerivAt
-    have hcongr : a ∘ (ContinuousLinearMap.single ℝ (fun _ : ι ↦ ℝ) i) =
-        fun t ↦ globalFlow _ (hv.of_le (by simp)) (hc i) t x := funext fun t ↦ by
-      simp [a, hσ.hamiltonianFlowAction_single_apply hF hcomm hc i t (hv.of_le (by simp))]
-    rw [hcongr, map_zero] at hcomp
-    have h1 : ((mfderiv 𝓘(ℝ, ι → ℝ) I a 0).comp
-        (ContinuousLinearMap.single ℝ (fun _ : ι ↦ ℝ) i) : ℝ →L[ℝ] E) =
-          (1 : ℝ →L[ℝ] ℝ).smulRight (σ.hamiltonianVectorField (F · i)
-            (globalFlow _ (hv.of_le (by simp)) (hc i) 0 x)) :=
-      hcomp.mfderiv.symm.trans hcurve.mfderiv
-    rwa [Flow.map_zero_apply] at h1
-  have hD : (mfderiv 𝓘(ℝ, ι → ℝ) I a 0 : (ι → ℝ) →L[ℝ] E) =
-      ∑ i, (ContinuousLinearMap.proj i : (ι → ℝ) →L[ℝ] ℝ).smulRight
-        (σ.hamiltonianVectorField (F · i) x) := by
-    refine ContinuousLinearMap.coe_inj.1 (LinearMap.pi_ext' fun i ↦ ?_)
-    have h2 : (∑ j, (ContinuousLinearMap.proj j : (ι → ℝ) →L[ℝ] ℝ).smulRight
-        (σ.hamiltonianVectorField (F · j) x)).comp
-          (ContinuousLinearMap.single ℝ (fun _ : ι ↦ ℝ) i) =
-        (1 : ℝ →L[ℝ] ℝ).smulRight (σ.hamiltonianVectorField (F · i) x) := by
-      ext
-      simp [Pi.single_apply]
-    exact congrArg ContinuousLinearMap.toLinearMap ((key i).trans h2.symm)
-  exact hD ▸ ha.hasMFDerivAt
-
 /-! ### The stabilizer of a point -/
 
 /-- The **stabilizer** of `x` under the Hamiltonian flow action: the vectors `v : ι → ℝ` with
@@ -171,14 +97,13 @@ the period lattice of that component. -/
 def hamiltonianFlowStabilizer (x : M) : AddSubgroup (ι → ℝ) where
   carrier := {v | (hσ.hamiltonianFlowAction hF hcomm hc v).toMul x = x}
   add_mem' {v w} hv hw := by
-    simp only [mem_ofPred_eq, map_add, toMul_add, Diffeomorph.mul_apply] at hv hw ⊢
+    simp only [mem_ofPred_eq, hσ.hamiltonianFlowAction_add_apply hF hcomm hc] at hv hw ⊢
     rw [hw, hv]
   zero_mem' := by simp
   neg_mem' {v} hv := by
     simp only [mem_ofPred_eq] at hv ⊢
     conv_lhs => rw [← hv]
-    rw [← Diffeomorph.mul_apply, ← toMul_add, ← map_add, neg_add_cancel, map_zero, toMul_zero,
-      Diffeomorph.one_apply]
+    exact hσ.hamiltonianFlowAction_neg_apply_apply hF hcomm hc v x
 
 /-- A vector lies in the stabilizer of `x` exactly when it fixes `x`. -/
 @[simp]
@@ -195,21 +120,9 @@ theorem hamiltonianFlowAction_apply_eq_apply_iff {v w : ι → ℝ} :
   have h : (hσ.hamiltonianFlowAction hF hcomm hc v).toMul x =
       (hσ.hamiltonianFlowAction hF hcomm hc w).toMul
         ((hσ.hamiltonianFlowAction hF hcomm hc (v - w)).toMul x) := by
-    rw [← Diffeomorph.mul_apply, ← toMul_add, ← map_add, add_sub_cancel]
+    rw [← hσ.hamiltonianFlowAction_add_apply hF hcomm hc, add_sub_cancel]
   rw [h, mem_hamiltonianFlowStabilizer]
   exact (hσ.hamiltonianFlowAction hF hcomm hc w).toMul.injective.eq_iff
-
-omit [T2Space M] [BoundarylessManifold I M] [I.Boundaryless] in
-include hσ in
-/-- At a regular point of `F` the map `v ↦ ∑ᵢ vᵢ X_{Fᵢ}(x)` is injective. -/
-private theorem injective_sum_smulRight_hamiltonianVectorField
-    (hx : IsRegularPoint I 𝓘(ℝ, ι → ℝ) F x) :
-    Injective (∑ i, (ContinuousLinearMap.proj i : (ι → ℝ) →L[ℝ] ℝ).smulRight
-      (σ.hamiltonianVectorField (F · i) x) : (ι → ℝ) →L[ℝ] TangentSpace I x) := by
-  refine (injective_iff_map_eq_zero _).2 fun v hv ↦ funext fun i ↦ ?_
-  simp only [sum_apply, ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.proj_apply] at hv
-  exact Fintype.linearIndependent_iff.1
-    (hσ.isNondegenerate.linearIndependent_hamiltonianVectorField hx) v hv i
 
 /-- **The stabilizer of a regular point is discrete.** At a regular point `x` of `F` the vectors
 `X_{Fᵢ}(x)` are linearly independent, so the orbit map `v ↦ φ_v(x)` is an immersion at the
@@ -220,7 +133,7 @@ theorem discreteTopology_hamiltonianFlowStabilizer
   set a := fun v ↦ (hσ.hamiltonianFlowAction hF hcomm hc v).toMul x with ha_def
   have hinj : Injective (mfderiv 𝓘(ℝ, ι → ℝ) I a 0) := by
     rw [(hσ.hasMFDerivAt_hamiltonianFlowAction_apply_zero hF hcomm hc x).mfderiv]
-    exact injective_sum_smulRight_hamiltonianVectorField hσ hx
+    exact hσ.isNondegenerate.injective_sum_smulRight_hamiltonianVectorField hx
   have hca : ContMDiffAt 𝓘(ℝ, ι → ℝ) I ∞ a 0 :=
     ((hσ.contMDiff_hamiltonianFlowAction_uncurry hF hcomm hc).comp
       (contMDiff_id.prodMk contMDiff_const)).contMDiffAt
@@ -341,7 +254,7 @@ private theorem image_mem_nhdsWithin_zero (hx : IsRegularPoint I 𝓘(ℝ, ι �
     (σ.hamiltonianVectorField (F · i) x) with hD
   have hDe : HasFDerivAt (fun v ↦ e (Φ v x)) D 0 :=
     hσ.hasFDerivAt_extChartAt_hamiltonianFlowAction hF hcomm hc x
-  have hDinj : Injective D := injective_sum_smulRight_hamiltonianVectorField hσ hx
+  have hDinj : Injective D := hσ.isNondegenerate.injective_sum_smulRight_hamiltonianVectorField hx
   have hDFD (v : ι → ℝ) : DF (D v) = 0 := by
     have hG : HasFDerivAt (F ∘ e.symm) DF (e (Φ 0 x)) := by rw [hΦ0x]; exact hFd
     have hev : ∀ᶠ v in 𝓝 (0 : ι → ℝ), Φ v x ∈ e.source :=
@@ -439,7 +352,7 @@ theorem image_mem_nhdsWithin_hamiltonianFlowAction (hx : IsRegularPoint I 𝓘(�
     (hdim : 2 * Fintype.card ι = finrank ℝ E) {v₀ : ι → ℝ} {V : Set (ι → ℝ)} (hV : V ∈ 𝓝 v₀) :
     (fun v ↦ (hσ.hamiltonianFlowAction hF hcomm hc v).toMul x) '' V ∈
       𝓝[F ⁻¹' {F x}] ((hσ.hamiltonianFlowAction hF hcomm hc v₀).toMul x) := by
-  set φ := (hσ.hamiltonianFlowAction hF hcomm hc v₀).toMul with hφ
+  set φ := (hσ.hamiltonianFlowAction hF hcomm hc v₀).toMul
   have hFφ (y : M) : F (φ y) = F y := hσ.apply_hamiltonianFlowAction hF hcomm hc v₀ y
   -- Translate the statement at the origin by the homeomorphism `φ_{v₀}`, which preserves `F`.
   have hV' : (v₀ + ·) ⁻¹' V ∈ 𝓝 (0 : ι → ℝ) :=
@@ -453,7 +366,7 @@ theorem image_mem_nhdsWithin_hamiltonianFlowAction (hx : IsRegularPoint I 𝓘(�
   refine mem_of_superset (nhdsWithin_mono _ hsub hmap) ?_
   rintro _ ⟨_, ⟨u, hu, rfl⟩, rfl⟩
   refine ⟨v₀ + u, hu, ?_⟩
-  simp only [hφ, map_add, toMul_add, Diffeomorph.mul_apply]
+  exact hσ.hamiltonianFlowAction_add_apply hF hcomm hc v₀ u x
 
 /-- A point lies on the orbit of `x` exactly when its image under any element of the action
 does. -/
@@ -464,11 +377,10 @@ private theorem apply_mem_range_iff (u : ι → ℝ) (y : M) :
   constructor
   · rintro ⟨v, hv⟩
     refine ⟨-u + v, ?_⟩
-    simp only [map_add, toMul_add, Diffeomorph.mul_apply, hv]
-    rw [← Diffeomorph.mul_apply, ← toMul_add, ← map_add, neg_add_cancel, map_zero, toMul_zero,
-      Diffeomorph.one_apply]
+    simp only [hσ.hamiltonianFlowAction_add_apply hF hcomm hc, hv,
+      hσ.hamiltonianFlowAction_neg_apply_apply hF hcomm hc]
   · rintro ⟨v, rfl⟩
-    exact ⟨u + v, by simp only [map_add, toMul_add, Diffeomorph.mul_apply]⟩
+    exact ⟨u + v, hσ.hamiltonianFlowAction_add_apply hF hcomm hc u v x⟩
 
 /-- **The orbit through a regular point is the connected component of its common level.** If every
 point of the connected component of `x` in the common level `F⁻¹(F x)` is a regular point of a
@@ -605,14 +517,8 @@ theorem nonempty_homeomorph_unitAddTorus
   have : DiscreteTopology Λ.toIntSubmodule := ‹DiscreteTopology Λ›
   have : IsZLattice ℝ Λ.toIntSubmodule :=
     ⟨hσ.span_hamiltonianFlowStabilizer_eq_top hF hcomm hc hreg hdim hK⟩
-  -- A `ℤ`-basis of the lattice, indexed by `ι`.
-  have hcard : Fintype.card (Module.Free.ChooseBasisIndex ℤ Λ.toIntSubmodule) =
-      Fintype.card ι := by
-    rw [← Module.finrank_eq_card_chooseBasisIndex, ZLattice.rank ℝ,
-      Module.finrank_fintype_fun_eq_card]
-  let b := (Module.Free.chooseBasis ℤ Λ.toIntSubmodule).reindex (Fintype.equivOfCardEq hcard)
   exact ⟨(hσ.hamiltonianFlowQuotientHomeomorph hF hcomm hc hreg hdim).symm.trans
-    b.quotientLatticeEquiv.toHomeomorph⟩
+    (IsZLattice.basis Λ.toIntSubmodule).quotientLatticeEquiv.toHomeomorph⟩
 
 end IsSymplectic
 
