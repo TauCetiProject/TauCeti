@@ -33,7 +33,8 @@ of `k` containing a root `α` of `X ^ p - a`. Embed `k(t)` in `K(t)` by `t ↦ t
   `TauCeti.Place.conorm_ofPoint_adicOfIrreducible_X_sub_C`), and `deg Q₀ = deg P₀ = 1`
   (`TauCeti.Place.degree_adicOfIrreducible_X_sub_C`). Yet the residue extension is `K / k`, which
   contains the purely inseparable `α`, so **`P₀` is not unramified**
-  (`TauCeti.Place.not_isUnramified_of_degree_eq_one`).
+  (`TauCeti.Place.not_isUnramified_of_degree_eq_one`). In general `P₀` is unramified exactly when
+  `K / k` is separable (`TauCeti.Place.isUnramified_adicOfIrreducible_X_sub_C_iff`).
 
 The two places separate the two ways a constant extension can fail to be unramified: a
 ramification index above one, and an inseparable residue extension with index one. The underlying
