@@ -9,8 +9,8 @@ public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Differential
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Cocharacter
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Tangent
 public import TauCeti.Algebra.Lie.E6.Minuscule.Generated.Serre
-public import TauCeti.Algebra.Lie.E6.Minuscule.Root.Coordinates
 public import TauCeti.Algebra.Lie.E6.Minuscule.WeightTorus
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Assembly
 
 /-!
 # Simple-coroot differentials in the generated E₆ group
@@ -96,7 +96,9 @@ theorem generatedTangentMatrixLieHom_derivationComp_generatedCorootCocharacter (
     GeneralLinear.tangentMatrix_derivationComp_cocharacter_of_weightTorus _ _ _ hπ]
   congr 1
   ext a
-  rw [coroot'_simpleIndex_apply]
+  -- Supply the rank-indexed arguments explicitly: `Fin E6.rank` is definitionally `Fin 6`.
+  rw [DynkinType.E6.coroot'_simpleIndex_apply DynkinType.valid_E6 i
+    (DynkinType.e6MinusculeWeight a)]
   simp
 
 /-- The opposite-root bracket is the differential of the actual simple-coroot cocharacter. -/
@@ -111,7 +113,9 @@ theorem generatedCartanVector_eq_derivationComp_generatedCorootCocharacter (i : 
   simp only [Matrix.map_apply, cartanGeneratorMatrix_apply, Matrix.diagonal_apply]
   split_ifs with hab
   · subst b
-    rw [coroot'_simpleIndex_apply]
+    -- As above, supply the arguments to specialize from `Fin E6.rank` to `Fin 6`.
+    rw [DynkinType.E6.coroot'_simpleIndex_apply DynkinType.valid_E6 i
+      (DynkinType.e6MinusculeWeight a)]
   · simp
 
 /-- The Serre comparison sends its Cartan generators to the simple-coroot differentials. -/
