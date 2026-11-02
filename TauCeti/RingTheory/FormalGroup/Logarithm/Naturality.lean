@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.FormalGroup.CoordinateChange.Basic
 public import TauCeti.RingTheory.FormalGroup.Logarithm.Basic
+public import TauCeti.RingTheory.FormalGroup.ZSMul
 
 /-!
 # Naturality of the formal logarithm
@@ -15,26 +16,32 @@ Over a `ℚ`-algebra `R`, every formal group law `F` has a logarithm `log_F`, th
 `X + ⋯` that is additive along `F`, with compositional inverse `exp_F` (see
 `TauCeti.RingTheory.FormalGroup.Logarithm.Basic`, which also proves the base-change laws
 `FormalGroup.map_log` and `FormalGroup.map_exp`). This file compares the logarithms of formal group
-laws related by homomorphisms and by changes of coordinate.
+laws related by homomorphisms and by changes of coordinate, and linearises multiplication series.
 
 * **Homomorphisms.** If `f : F → G` is a homomorphism of formal group laws, then `log_G ∘ f` is
   additive along `F` with linear coefficient `f'(0)`, so `log_G(f(X)) = f'(0) · log_F(X)` and
   `f(X) = exp_G(f'(0) · log_F(X))`. Consequently a homomorphism is determined by its linear
   coefficient, and every `c : R` is the linear coefficient of exactly one homomorphism `F → G`:
   over a `ℚ`-algebra, `Hom(F, G) ≃ R`. A strict isomorphism followed by `log_G` is `log_F`.
+  Dually `f(exp_F(X)) = exp_G(f'(0) · X)`.
 * **Coordinate change.** For a formal coordinate `φ = u X + ⋯`, the formal group law `φ • F`
   has logarithm `u · log_F(φ⁻¹(X))` and exponential `φ(exp_F(u⁻¹ X))`.
+* **Multiplication series.** `log_F([n]_F(X)) = n · log_F(X)` and `[n]_F(X) = exp_F(n · log_F(X))`
+  for every integer `n`, without commutativity of `F`.
 
 ## Main results
 
 * `TauCeti.FormalGroupHom.subst_log`: `log_G(f(X)) = f'(0) · log_F(X)`.
 * `TauCeti.FormalGroupHom.toPowerSeries_eq_subst_exp`: `f(X) = exp_G(f'(0) · log_F(X))`.
+* `TauCeti.FormalGroupHom.subst_exp_toPowerSeries`: `f(exp_F(X)) = exp_G(f'(0) · X)`.
 * `TauCeti.FormalGroupHom.coeffOneEquiv`: homomorphisms `F → G` correspond to their linear
   coefficients.
 * `TauCeti.FormalGroupIso.trans_logIso`: for a strict isomorphism `f : F ≅ G`,
   `log_G ∘ f = log_F` as strict isomorphisms to the additive formal group law.
 * `FormalGroup.log_smul` and `FormalGroup.exp_smul`: the logarithm and exponential after a change
   of coordinate.
+* `FormalGroup.subst_zsmulSeries_log`, `FormalGroup.zsmulSeries_eq_subst_exp`: the logarithm
+  linearises integer multiplication, `[n]_F(X) = exp_F(n · log_F(X))`.
 
 ## References
 
@@ -63,9 +70,18 @@ theorem subst_log (f : FormalGroupHom F G) :
 theorem toPowerSeries_eq_subst_exp (f : FormalGroupHom F G) :
     f.toPowerSeries =
       PowerSeries.subst (PowerSeries.coeff 1 f.toPowerSeries • F.log) G.exp := by
-  rw [← f.subst_log, ← PowerSeries.subst_comp_subst_apply
-    (.of_constantCoeff_zero' G.constantCoeff_log) f.hasSubst, G.subst_log_exp,
-    PowerSeries.subst_X f.hasSubst]
+  rw [← f.subst_log, G.subst_subst_log_exp f.hasSubst]
+
+/-- **Naturality of the exponential**: a homomorphism `f : F → G` of formal group laws over a
+`ℚ`-algebra satisfies `f(exp_F(X)) = exp_G(f'(0) · X)`. -/
+theorem subst_exp_toPowerSeries (f : FormalGroupHom F G) :
+    PowerSeries.subst F.exp f.toPowerSeries =
+      PowerSeries.subst (PowerSeries.coeff 1 f.toPowerSeries • PowerSeries.X) G.exp := by
+  have hexp := PowerSeries.HasSubst.of_constantCoeff_zero' F.constantCoeff_exp
+  conv_lhs => rw [f.toPowerSeries_eq_subst_exp]
+  rw [PowerSeries.subst_comp_subst_apply
+      (.smul' _ (.of_constantCoeff_zero' F.constantCoeff_log)) hexp,
+    PowerSeries.subst_smul hexp, FormalGroup.subst_exp_log]
 
 /-- Over a `ℚ`-algebra, a homomorphism of formal group laws is determined by its linear
 coefficient. -/
@@ -157,5 +173,35 @@ theorem exp_smul (φ : FormalCoordinate R) :
     φ.subst_inv_subst hE, PowerSeries.rescale_eq_subst,
     ← PowerSeries.subst_comp_subst_apply (.of_constantCoeff_zero' F.constantCoeff_exp) hv,
     subst_exp_log, PowerSeries.subst_X hv, smul_smul, Units.mul_inv, one_smul]
+
+/-! ### Multiplication series -/
+
+/-- **The logarithm linearises integer multiplication**: `log_F([n]_F(X)) = n · log_F(X)`. -/
+@[simp]
+theorem subst_zsmulSeries_log (n : ℤ) :
+    PowerSeries.subst (F.zsmulSeries n) F.log = n • F.log := by
+  have h := F.logHom.subst_zsmulSeries n
+  rw [logHom_toPowerSeries] at h
+  have hlog := PowerSeries.HasSubst.of_constantCoeff_zero' F.constantCoeff_log
+  rw [h, zsmulSeries_𝔾ₐ, ← zsmul_eq_mul, ← PowerSeries.coe_substAlgHom hlog, map_zsmul,
+    PowerSeries.coe_substAlgHom, PowerSeries.subst_X hlog]
+
+/-- **The logarithm linearises multiplication by `n`**: `log_F([n]_F(X)) = n · log_F(X)`. -/
+@[simp]
+theorem subst_nsmulSeries_log (n : ℕ) :
+    PowerSeries.subst (F.nsmulSeries n) F.log = n • F.log := by
+  simpa using F.subst_zsmulSeries_log n
+
+/-- Integer multiplication on a formal group law over a `ℚ`-algebra is
+`[n]_F(X) = exp_F(n · log_F(X))`. -/
+theorem zsmulSeries_eq_subst_exp (n : ℤ) :
+    F.zsmulSeries n = PowerSeries.subst (n • F.log) F.exp := by
+  rw [← F.subst_zsmulSeries_log, F.subst_subst_log_exp (F.hasSubst_zsmulSeries n)]
+
+/-- Multiplication by `n` on a formal group law over a `ℚ`-algebra is
+`[n]_F(X) = exp_F(n · log_F(X))`. -/
+theorem nsmulSeries_eq_subst_exp (n : ℕ) :
+    F.nsmulSeries n = PowerSeries.subst (n • F.log) F.exp := by
+  simpa using F.zsmulSeries_eq_subst_exp n
 
 end FormalGroup

@@ -57,24 +57,24 @@ first item above, the boundary cluster set of a conformal map of the disc onto a
 a nonempty compact connected subset of the frontier of the image, and Carathéodory's theorem is
 exactly the assertion that this continuum degenerates to a point.
 
-Together with the extension criterion these are the two halves of the vocabulary that layer **L5**
-of the conformal-mapping roadmap — Carathéodory's boundary correspondence — is stated in.
-Carathéodory's theorem asserts that for a Riemann map of a Jordan domain every boundary cluster set
-is a singleton; feeding that into `TauCeti.exists_continuousOn_closure_eqOn` gives a continuous
-extension to `closure U`, and upgrading it to a homeomorphism of closures needs one further input,
-namely injectivity of the extension on `frontier U`, which `TauCeti.injOn_closure_of_injOn_frontier`
-then propagates to `closure U` for `TauCeti.closureHomeomorph`. Boundary injectivity is not proved
-here, and neither is the singleton property — but the last section reduces it.
+Together with the extension criterion these are the two halves of the vocabulary that Carathéodory's
+boundary correspondence is stated in. Carathéodory's theorem asserts that for a Riemann map of a
+Jordan domain every boundary cluster set is a singleton; feeding that into
+`TauCeti.exists_continuousOn_closure_eqOn` gives a continuous extension to `closure U`, and
+upgrading it to a homeomorphism of closures needs one further input, namely injectivity of the
+extension on `frontier U`, which `TauCeti.injOn_closure_of_injOn_frontier` then propagates to
+`closure U` for `TauCeti.closureHomeomorph`. Boundary injectivity is not proved here, and neither is
+the singleton property — but the last section reduces it.
 
 The relative form is what connects that vocabulary to the *geometric* criterion of
 `Conformal/CutDiameter.lean`. There,
 `TauCeti.exists_continuousOn_closure_eqOn_of_forall_exists_diam_union_le` produces the continuous
 extension from a bound on the diameter of `f '' (U ∩ sphere w ρ)` together with a bounded set
 enclosing `frontier (f '' U) ∩ frontier (f '' (U ∩ ball w ρ))`. The first of those two data is what
-the length–area method of `Conformal/LengthArea.lean` supplies; the second is the input still
-missing at layer L5, and what the relative form does is *name* it — as a union of cluster sets over
-the boundary points of `U` inside the closed disc — and show that these sets are precisely what the
-cluster set at `w` is the limit of. No estimate on them is claimed here.
+the length–area method of `Conformal/LengthArea.lean` supplies; what the relative form does with the
+second is *name* it — as a union of cluster sets over the boundary points of `U` inside the closed
+disc — and show that these sets are precisely what the cluster set at `w` is the limit of. No
+estimate on them is claimed here.
 
 ## The singleton property on a Jordan image boundary
 
@@ -96,16 +96,14 @@ interior in that boundary curve, extends continuously to the closure.** The hypo
 property of the curve on its own: `clusterSetOn f U w` depends on the map, the domain and the
 boundary point, and what is asked of it is *relative nowhere density* — each of those cluster sets,
 one for every `w ∈ frontier U`, is to be nowhere dense in the curve. What the criterion does is
-trade the analytic content of the milestone for that purely topological condition on where the
-cluster sets sit; what it does not do is *verify* the condition for a Riemann map, which the
-crosscut and length–area files are aimed at. For Jordan domains,
-`Conformal/Jordan/Approach.lean` reaches boundary injectivity by a different route, through
-preconnected approach regions (`IsJordanDomain.isPreconnectedApproachAt`) and the inverse
-cluster set, without verifying this condition.
+trade the analytic content of Carathéodory's theorem for that purely topological condition on where
+the cluster sets sit; what it does not do is *verify* the condition for a Riemann map, which the
+crosscut and length–area files are aimed at. For Jordan domains, `Conformal/Jordan/Approach.lean`
+reaches boundary injectivity by a different route, through preconnected approach regions
+(`IsJordanDomain.isPreconnectedApproachAt`) and the inverse cluster set, without verifying this
+condition.
 
-In accordance with the generality bar of `ConformalMapping/README.md`, which fixes scalar `ℂ` for
-every theorem added in layers L0–L6, the results below are stated for maps of `ℂ`, as in
-`Conformal/BoundaryCorrespondence.lean`.
+The results below are stated for maps of `ℂ`, as in `Conformal/BoundaryCorrespondence.lean`.
 
 ## Main results
 
@@ -231,11 +229,11 @@ and the boundary value `v` is an adherent value of the image that is not attaine
 
 This is the converse of `TauCeti.clusterSetOn_subset_frontier_image`, and the two together say that
 the boundary correspondence `w ↦ clusterSetOn f U w` is onto `frontier (f '' U)`. Carathéodory's
-theorem — layer **L5** of the conformal-mapping roadmap — refines this for a Riemann map of a Jordan
-domain by showing each of these cluster sets to be a singleton, which turns the correspondence into
-a continuous *map* of `frontier U` onto `frontier (f '' U)`; that this map is moreover *injective*
-is a further assertion of Carathéodory's theorem, and does not follow from the singleton property.
-The surjectivity below holds with no hypothesis on `frontier U` whatever. -/
+theorem refines this for a Riemann map of a Jordan domain by showing each of these cluster sets to
+be a singleton, which turns the correspondence into a continuous *map* of `frontier U` onto
+`frontier (f '' U)`; that this map is moreover *injective* is a further assertion of Carathéodory's
+theorem, and does not follow from the singleton property. The surjectivity below holds with no
+hypothesis on `frontier U` whatever. -/
 theorem exists_mem_frontier_mem_clusterSetOn (hUo : IsOpen U) (hUb : Bornology.IsBounded U)
     (hfd : DifferentiableOn ℂ f U) (hfi : InjOn f U) (hv : v ∈ frontier (f '' U)) :
     ∃ w ∈ frontier U, v ∈ clusterSetOn f U w := by
@@ -264,8 +262,8 @@ cluster set along `V` at a point of `frontier U` sits inside `clusterSetOn f U e
 `frontier (f '' U)` by `TauCeti.clusterSetOn_subset_frontier_image`, and inside `closure (f '' V)`
 by construction.
 
-Neither `V` nor `U` is asked to be connected, and `V` need not be open. What layer **L5** of
-`TauCetiRoadmap/ConformalMapping/README.md` consumes are the two sides a circle cuts `U` into:
+Neither `V` nor `U` is asked to be connected, and `V` need not be open. What the Carathéodory
+boundary correspondence consumes are the two sides a circle cuts `U` into:
 `V = U ∩ ball ζ ρ`, whose closure is compact for every `U`, lying as it does in `closedBall ζ ρ`,
 and `V = U \ closedBall ζ ρ`, for which the compactness hypothesis is a real restriction — it
 holds when `U` is bounded, but for unbounded `U` that side has unbounded closure. -/
@@ -352,7 +350,7 @@ below is the boundary piece it cuts off.
 It is not the middle piece `frontier (f '' U) ∩ closure (f '' (U ∩ sphere w ρ))` of
 `Conformal/Crosscut/Image.lean`, which is indexed by the boundary points *on the circle* and is
 small as soon as the image of that circle is. The piece here is indexed by the boundary points
-*inside* the closed disc, and making it small is the step layer **L5** still lacks. -/
+*inside* the closed disc, and making it small is a separate step, not taken here. -/
 theorem frontier_inter_frontier_image_inter_ball_eq_biUnion_clusterSetOn (hUo : IsOpen U)
     (hfd : DifferentiableOn ℂ f U) (hfi : InjOn f U) (w : ℂ) (ρ : ℝ) :
     frontier (f '' U) ∩ frontier (f '' (U ∩ ball w ρ)) =
@@ -369,10 +367,10 @@ point `w` of `U`,
 The pieces decrease as `ρ` does — the ball neighbourhoods are nested, so by
 `TauCeti.frontier_inter_closure_eq_frontier_inter_frontier` and monotonicity of `closure` so are the
 pieces — and what they decrease to is precisely the set of values `f` approaches at `w`. So
-Carathéodory's assertion that a boundary cluster set is a singleton is
-equivalent to the boundary pieces at `w` shrinking to a point, which is the form the
-crosscut estimates of layer **L5** of `TauCetiRoadmap/ConformalMapping/README.md` aim at: they bound
-the *diameter* of a piece at a well-chosen radius rather than describe the pieces individually.
+Carathéodory's assertion that a boundary cluster set is a singleton is equivalent to the boundary
+pieces at `w` shrinking to a point, which is the form the crosscut estimates of the Carathéodory
+boundary correspondence aim at: they bound the *diameter* of a piece at a well-chosen radius rather
+than describe the pieces individually.
 
 The inclusion `⊇` is `TauCeti.clusterSetOn_subset_frontier_image` together with
 `TauCeti.clusterSetOn_inter_of_mem_nhds`, which says a cluster set may be computed inside any ball
@@ -413,9 +411,8 @@ This is `TauCeti.IsJordanCurve.subsingleton_or_exists_injective_path` applied to
 which `TauCeti.isCompact_clusterSetOn_of_isBounded`,
 `Convex.isConnected_clusterSetOn_of_isBounded` and
 `TauCeti.clusterSetOn_subset_frontier_image` together exhibit as a compact connected subset of the
-curve. Carathéodory's theorem — layer **L5** of the conformal-mapping
-roadmap — is the assertion that for a Riemann map of a Jordan domain the first case always
-holds. -/
+curve. Carathéodory's theorem is the assertion that for a Riemann map of a Jordan domain the first
+case always holds. -/
 theorem subsingleton_or_exists_injective_path_clusterSetOn (hUo : IsOpen U) (hUc : Convex ℝ U)
     (hfd : DifferentiableOn ℂ f U) (hfi : InjOn f U) (hfb : Bornology.IsBounded (f '' U))
     (hJ : IsJordanCurve (frontier (f '' U))) (hw : w ∈ frontier U)
@@ -452,8 +449,8 @@ convex open set onto a bounded region whose frontier is a Jordan curve extends c
 closure of the domain, provided no boundary cluster set occupies a relatively open piece of that
 frontier. Boundedness is asked of the image `f '' U`, not of the domain.
 
-This is the sufficient condition for the layer-**L5** milestone that the classification of
-subcontinua supplies: the extension criterion
+This is the sufficient condition for Carathéodory's continuous extension that the classification
+of subcontinua supplies: the extension criterion
 `TauCeti.exists_continuousOn_closure_eqOn_of_isBounded` asks exactly that every boundary cluster set
 be a subsingleton, and `TauCeti.subsingleton_clusterSetOn_of_subset_closure_sdiff` weakens that to
 relative nowhere density of each of those sets in the curve. The hypothesis `hnwd` remains a

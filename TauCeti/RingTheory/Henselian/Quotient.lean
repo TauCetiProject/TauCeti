@@ -13,6 +13,8 @@ public import TauCeti.RingTheory.Henselian.Basic
 If `(R, I)` is henselian and `φ : R →+* S` is surjective, then `(S, I.map φ)` is
 henselian. In particular, one can quotient by any ideal, not only an ideal contained
 in `I`. This permanence result is used when changing the ambient ring of a henselian pair.
+The local form `RingHom.henselianLocalRing_of_surjective` passes from a henselian local ring
+to any nontrivial quotient.
 
 ## References
 
@@ -70,6 +72,17 @@ theorem henselianRing_of_surjective (φ : R →+* S) (hφ : Function.Surjective 
   · rw [IsRoot.def]
     exact (IsUnit.of_mul_eq_one _ hder).mul_right_eq_zero.mp hroot
   · simpa only [map_sub] using Ideal.mem_map_of_mem φ hxa
+
+/-- A surjective ring map from a henselian local ring to a nontrivial ring has a henselian
+local target. In particular, the quotient of a henselian local ring by a proper ideal is
+henselian local. -/
+theorem henselianLocalRing_of_surjective [HenselianLocalRing R] [Nontrivial S] (φ : R →+* S)
+    (hφ : Function.Surjective φ) : HenselianLocalRing S := by
+  have := IsLocalRing.of_surjective' φ hφ
+  have : HenselianRing S (IsLocalRing.maximalIdeal S) :=
+    IsLocalRing.map_maximalIdeal_of_surjective φ hφ ▸
+      φ.henselianRing_of_surjective hφ (IsLocalRing.maximalIdeal R)
+  exact TauCeti.HenselianRing.henselianLocalRing S
 
 end RingHom
 

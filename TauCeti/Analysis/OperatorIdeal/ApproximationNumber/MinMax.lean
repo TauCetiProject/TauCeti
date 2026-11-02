@@ -74,6 +74,8 @@ make it computable from the geometry of `T`, in the spirit of the Courant–Fisc
 * `TauCeti.HasMinMaxLowerBound.exists_singularValue_le_compression`: on a pair with the property,
   the first `k` approximation numbers of `T` are those of a compression of `T` to
   finite-dimensional subspaces, up to any `δ > 0`.
+* `TauCeti.HasMinMaxLowerBound.exists_singularValue_le_compression_endomorphism`: the same for an
+  endomorphism, compressed to a single finite-dimensional subspace.
 
 ## References
 
@@ -500,6 +502,47 @@ theorem HasMinMaxLowerBound.exists_singularValue_le_compression (h : HasMinMaxLo
       W.norm_orthogonalProjectionOnto_apply hW]
     exact hvs x hx'
   · exact (le_of_not_gt hδn).trans (le_add_of_nonneg_left (NNReal.coe_nonneg _))
+
+/-- **Finite-dimensional compressions of endomorphisms.** On a space with the converse min–max
+localization property towards itself, for every `k` and `δ > 0` there is a finite-dimensional
+subspace `U` such that the compression `P_U T|_U : U → U` of an endomorphism `T` lowers none of the
+first `k` approximation numbers of `T` by more than `δ`. Unlike
+`TauCeti.HasMinMaxLowerBound.exists_singularValue_le_compression`, the same subspace is used for
+the source and the target, so that the compression of a positive operator is positive. -/
+theorem HasMinMaxLowerBound.exists_singularValue_le_compression_endomorphism
+    {E : Type*} [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] (h : HasMinMaxLowerBound 𝕜 E E)
+    (T : E →L[𝕜] E) (k : ℕ) {δ : ℝ} (hδ : 0 < δ) :
+    ∃ (U : Submodule 𝕜 E) (_ : FiniteDimensional 𝕜 U), ∀ n < k,
+      (T.singularValue n : ℝ) ≤
+        (U.orthogonalProjectionOnto.comp (T.comp U.subtypeL)).singularValue n + δ := by
+  obtain ⟨V, _, hV⟩ := h.exists_singularValue_le_compression T k hδ
+  set W := V.map (T : E →ₗ[𝕜] E)
+  -- Enlarge `V` to `U = V ⊔ T V`; the compression `V → T V` factors through `P_U T|_U`.
+  set U := V ⊔ W
+  set C := U.orthogonalProjectionOnto.comp (T.comp U.subtypeL)
+  have hfac : W.orthogonalProjectionOnto.comp (T.comp V.subtypeL) =
+      (W.orthogonalProjectionOnto.comp U.subtypeL).comp
+        (C.comp (U.orthogonalProjectionOnto.comp V.subtypeL)) := by
+    ext x
+    have hx : U.starProjection (x : E) = x :=
+      Submodule.starProjection_eq_self_iff.2 (Submodule.mem_sup_left x.2)
+    simp only [C, ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply,
+      Submodule.coe_orthogonalProjectionOnto_apply, hx]
+    exact (congrArg (· (T x))
+      (Submodule.starProjection_comp_starProjection_of_le (le_sup_right : W ≤ U))).symm
+  -- Both outer factors have norm at most one.
+  have h₁ : ‖W.orthogonalProjectionOnto.comp U.subtypeL‖₊ ≤ 1 :=
+    (ContinuousLinearMap.opNNNorm_comp_le _ _).trans
+      (mul_le_one' (Submodule.orthogonalProjectionOnto_norm_le W) U.norm_subtypeL_le)
+  have h₂ : ‖U.orthogonalProjectionOnto.comp V.subtypeL‖₊ ≤ 1 :=
+    (ContinuousLinearMap.opNNNorm_comp_le _ _).trans
+      (mul_le_one' (Submodule.orthogonalProjectionOnto_norm_le U) V.norm_subtypeL_le)
+  refine ⟨U, inferInstance, fun n hn ↦ (hV n hn).trans ?_⟩
+  gcongr
+  rw [hfac]
+  calc _ ≤ _ := ContinuousLinearMap.singularValue_comp_comp_le _ _ _ n
+    _ ≤ 1 * C.singularValue n * 1 := by gcongr
+    _ = C.singularValue n := by rw [one_mul, mul_one]
 
 end Compression
 

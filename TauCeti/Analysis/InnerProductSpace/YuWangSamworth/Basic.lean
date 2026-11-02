@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.CourantFischer
-public import TauCeti.Analysis.InnerProductSpace.HoffmanWielandt
+public import TauCeti.Analysis.InnerProductSpace.HoffmanWielandt.Basic
 
 /-!
 # Population-gap residual bounds for corresponding eigenblocks
