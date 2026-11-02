@@ -10,6 +10,7 @@ public import TauCeti.Algebra.MonoidAlgebra.Grading
 public import TauCeti.RingTheory.MvPolynomial.Groebner.Homogeneous
 public import TauCeti.RingTheory.MvPolynomial.ToricIdeal.Basic
 public import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
+import TauCeti.Data.Finsupp.Weight
 
 /-!
 # Hilbert functions of semigroup algebras and of their binomial presentations
@@ -26,7 +27,8 @@ The rank of that component, the Hilbert function of `R[S]` in degree `n`, is the
 elements of `S` of degree `n` (`AddMonoidAlgebra.finrank_gradeBy`). Over a field it is also the
 number of standard monomials of weight `n` of the toric ideal for any monomial order, and the
 corresponding rank for its ideal of leading terms. For finitely many generators of positive degree
-in `ℕ`, only finitely many elements of `S` have a given degree, so these are finite counts.
+in `ℕ`, only finitely many elements of `S` have a given degree, so these are finite counts
+(`TauCeti.finite_closure_range_deg_eq`).
 
 ## Main results
 
@@ -39,10 +41,8 @@ in `ℕ`, only finitely many elements of `S` have a given degree, so these are f
   degree `n`.
 * `TauCeti.finrank_map_weightedHomogeneousSubmodule_toricIdeal`: its rank is the number of
   elements of `S` of degree `n`.
-* `TauCeti.card_standardMonomials_toricIdeal`: over a field, so is the number of standard
+* `MonomialOrder.card_standardMonomials_toricIdeal`: over a field, so is the number of standard
   monomials of weight `n` of the toric ideal, for every monomial order.
-* `TauCeti.finite_closure_range_deg_eq`: for finitely many generators of positive degree, only
-  finitely many elements of `S` have degree `n`.
 
 ## References
 
@@ -59,11 +59,6 @@ namespace TauCeti
 attribute [local instance] MvPolynomial.weightedGradedAlgebra
 
 variable {ι M D : Type*} [AddCommMonoid M] [AddCommMonoid D]
-
-/-- The weight of `u` for the weights `deg (a i)` is the degree of `∑ i, u i • a i`. -/
-private theorem weight_comp_eq_apply_linearCombination (deg : M →+ D) (a : ι → M) (u : ι →₀ ℕ) :
-    Finsupp.weight (deg ∘ a) u = deg (Finsupp.linearCombination ℕ a u) := by
-  simp [Finsupp.weight_apply, Finsupp.linearCombination_apply, map_finsuppSum]
 
 section CommSemiring
 
@@ -89,7 +84,7 @@ theorem map_aeval_single_weightedHomogeneousSubmodule {a : ι → M}
   obtain ⟨u, rfl⟩ := AddSubmonoid.mem_closure_range_iff.1 (ha ▸ AddSubmonoid.mem_top s)
   refine ⟨monomial u 1, ?_, ?_⟩
   · exact isWeightedHomogeneous_monomial _ _ _
-      ((weight_comp_eq_apply_linearCombination deg a u).trans hs)
+      ((Finsupp.weight_comp_eq_apply_linearCombination deg a u).trans hs)
   · simp [Finsupp.linearCombination_apply]
 
 end CommSemiring
@@ -107,8 +102,8 @@ theorem isHomogeneous_toricIdeal [DecidableEq D] (a : ι → M) (deg : M →+ D)
   rintro _ ⟨u, v, h, rfl⟩
   refine ⟨deg (Finsupp.linearCombination ℕ a u), sub_mem ?_ ?_⟩ <;>
     rw [mem_weightedHomogeneousSubmodule] <;> refine isWeightedHomogeneous_monomial _ _ _ ?_
-  · exact weight_comp_eq_apply_linearCombination deg a u
-  · exact (weight_comp_eq_apply_linearCombination deg a v).trans (congrArg deg h.symm)
+  · exact Finsupp.weight_comp_eq_apply_linearCombination deg a u
+  · exact (Finsupp.weight_comp_eq_apply_linearCombination deg a v).trans (congrArg deg h.symm)
 
 /-- The image of `quotientToricIdealAlgEquivClosure` of the polynomials of weight `n`, for the
 weights `deg (a i)`, is the homogeneous component of degree `n` of the semigroup algebra of the
@@ -124,8 +119,8 @@ private theorem map_quotientToricIdealAlgEquivClosure (a : ι → M) (deg : M �
         AddSubmonoid.closure (Set.range a)) (1 : R)).toLinearMap :=
     LinearMap.ext fun p ↦ quotientToricIdealAlgEquivClosure_mk R a p
   rw [← Submodule.map_comp, h]
-  exact map_aeval_single_weightedHomogeneousSubmodule R (closure_range_mk_eq_top a)
-    (deg.comp (AddSubmonoid.closure (Set.range a)).subtype) n
+  simpa [Function.comp_def] using map_aeval_single_weightedHomogeneousSubmodule R
+    (closure_range_mk_eq_top a) (deg.comp (AddSubmonoid.closure (Set.range a)).subtype) n
 
 /-- The image in `MvPolynomial ι R ⧸ toricIdeal R a` of the polynomials of weight `n`, for the
 weights `deg (a i)`, is identified by the binomial presentation `quotientToricIdealAlgEquivClosure`
@@ -162,6 +157,16 @@ theorem finrank_map_weightedHomogeneousSubmodule_toricIdeal [Nontrivial R] (a : 
 
 end CommRing
 
+end TauCeti
+
+namespace MonomialOrder
+
+open TauCeti
+
+attribute [local instance] MvPolynomial.weightedGradedAlgebra
+
+variable {ι M D : Type*} [AddCommMonoid M] [AddCommMonoid D]
+
 section Field
 
 variable {k : Type*} [Field k]
@@ -191,22 +196,4 @@ theorem finrank_map_weightedHomogeneousSubmodule_span_leadingTerm_toricIdeal
 
 end Field
 
-/-- For finitely many generators `a i` of positive degree in `ℕ`, only finitely many elements of
-the submonoid they generate have degree `n`: each is `∑ i, u i • a i` for an exponent `u` of
-weight `n`. -/
-theorem finite_closure_range_deg_eq [Finite ι] (a : ι → M) (deg : M →+ ℕ)
-    (hdeg : ∀ i, deg (a i) ≠ 0) (n : ℕ) :
-    Finite {s : AddSubmonoid.closure (Set.range a) // deg s = n} := by
-  have hmem (u : ι →₀ ℕ) : Finsupp.linearCombination ℕ a u ∈ AddSubmonoid.closure (Set.range a) :=
-    AddSubmonoid.mem_closure_range_iff.2 ⟨u, Finsupp.linearCombination_apply ℕ u⟩
-  have hfin : {s : AddSubmonoid.closure (Set.range a) | deg s = n}.Finite := by
-    refine ((Finsupp.finite_of_nat_weight_eq (deg ∘ a) hdeg n).image
-      fun u ↦ (⟨_, hmem u⟩ : AddSubmonoid.closure (Set.range a))).subset ?_
-    rintro ⟨s, hs⟩ (rfl : deg s = n)
-    obtain ⟨u, rfl⟩ := AddSubmonoid.mem_closure_range_iff.1 hs
-    refine ⟨u, ?_, ?_⟩
-    · exact weight_comp_eq_apply_linearCombination deg a u
-    · simp [Finsupp.linearCombination_apply]
-  exact hfin.to_subtype
-
-end TauCeti
+end MonomialOrder
