@@ -204,6 +204,7 @@ theorem π_baerSumMk (p : fiberProduct E F) : (baerSum E F).π (baerSumMk E F p)
   π'_mk' p
 
 /-- The class of a pair `(ι_E m, ι_F n)` of kernel elements is the kernel element `m + n`. -/
+@[simp]
 theorem baerSumMk_ι_ι (m n : M) :
     baerSumMk E F ⟨(E.ι m, F.ι n), by simp⟩ = (baerSum E F).ι (m + n) :=
   mk'_ιι m n
@@ -322,6 +323,10 @@ def negMap (e : E ⟶ F) : neg E ⟶ neg F where
   π_toAlgHom := e.π_toAlgHom
   toAlgHom_ι m := by simp
 
+@[simp]
+theorem negMap_toAlgHom (e : E ⟶ F) : (negMap e).toAlgHom = e.toAlgHom :=
+  (rfl)
+
 /-- The Baer sum of an extension with its negative is split by the diagonal `x ↦ (x, x)`. -/
 noncomputable def baerSumNegSplitting (E : SquareZeroExtension.{w} A B M) :
     (baerSum E (neg E)).Splitting where
@@ -336,6 +341,12 @@ noncomputable def baerSumNegSplitting (E : SquareZeroExtension.{w} A B M) :
     obtain ⟨x, rfl⟩ := E.π_surjective b
     rw [AlgHom.liftOfSurjective_apply]
     simp
+
+@[simp]
+theorem baerSumNegSplitting_toAlgHom_π (E : SquareZeroExtension.{w} A B M) (x : E.Ring) :
+    (baerSumNegSplitting E).toAlgHom (E.π x) =
+      baerSumMk E (neg E) ⟨(x, x), mem_fiberProduct.2 rfl⟩ :=
+  AlgHom.liftOfSurjective_apply _ _ _ _ _
 
 /-- The morphism `x ↦ (x, s (π x))` from an extension to its Baer sum with an extension split
 by `s`. -/
@@ -485,6 +496,7 @@ noncomputable def baerSumAssoc : baerSum (baerSum E F) G ⟶ baerSum E (baerSum 
       rw [hr, assocAux_tripleToLeft, tripleToRight_eq_ι (a := m) (b := 0) (c := n) rfl
         (map_zero F.ι).symm rfl, zero_add])
 
+@[simp]
 theorem baerSumAssoc_toAlgHom_baerSumMk (x : E.Ring) (y : F.Ring) (z : G.Ring)
     (hxy : E.π x = F.π y) (hyz : F.π y = G.π z) :
     (baerSumAssoc E F G).toAlgHom
