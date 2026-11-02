@@ -10,7 +10,9 @@ public import Mathlib.RingTheory.Noetherian.Defs
 import Mathlib.Algebra.Polynomial.Lifts
 import Mathlib.RingTheory.Polynomial.Basic
 import TauCeti.Analysis.Normed.Ring.UnitBall
-import TauCeti.RingTheory.Dagger.Noetherian
+import TauCeti.RingTheory.Dagger.Weierstrass
+import TauCeti.RingTheory.Ideal.Colon
+import TauCeti.RingTheory.Ideal.Quotient.Finite
 
 /-!
 # The integral Monsky–Washnitzer algebra is noetherian
@@ -60,7 +62,7 @@ public section
 namespace TauCeti.Dagger.intWashnitzerAlgebra
 
 open _root_.MvPowerSeries
-open washnitzerAlgebra (optionSeries toTate optionC polynomialToOption)
+open washnitzerAlgebra (toTate optionC polynomialToOption)
 
 variable {K : Type*} [NormedField K] [IsUltrametricDist K]
 
@@ -78,29 +80,6 @@ theorem isNoetherianRing_unitClosedBall (σ : Type*)
 
 variable {σ τ : Type*}
 
-/-- A Gauss-norm-preserving ring isomorphism of Monsky–Washnitzer algebras restricts to their
-integral subrings. -/
-private noncomputable def restrictRingEquiv (e : washnitzerAlgebra σ K ≃+* washnitzerAlgebra τ K)
-    (he : ∀ f, ‖e f‖ = ‖f‖) : intWashnitzerAlgebra σ K ≃+* intWashnitzerAlgebra τ K where
-  toFun f := ⟨e (toWashnitzerAlgebra σ K f),
-    mem_intWashnitzerAlgebra_iff_norm_le_one.2
-      ((he _).trans_le (norm_toWashnitzerAlgebra_le_one f))⟩
-  invFun f := ⟨e.symm (toWashnitzerAlgebra τ K f),
-    mem_intWashnitzerAlgebra_iff_norm_le_one.2 <| by
-      rw [← he, e.apply_symm_apply]
-      exact norm_toWashnitzerAlgebra_le_one f⟩
-  left_inv f := Subtype.ext (by simp [toWashnitzerAlgebra_mk])
-  right_inv f := Subtype.ext (by simp [toWashnitzerAlgebra_mk])
-  map_mul' f g := Subtype.ext (by simp)
-  map_add' f g := Subtype.ext (by simp)
-
-/-- The restricted isomorphism acts as the given one on the underlying overconvergent series. -/
-private theorem toWashnitzerAlgebra_restrictRingEquiv
-    (e : washnitzerAlgebra σ K ≃+* washnitzerAlgebra τ K) (he : ∀ f, ‖e f‖ = ‖f‖)
-    (f : intWashnitzerAlgebra σ K) :
-    toWashnitzerAlgebra τ K (restrictRingEquiv e he f) = e (toWashnitzerAlgebra σ K f) :=
-  toWashnitzerAlgebra_mk _ _
-
 /-- With no variables, `K°⟨⟩† = K°` is noetherian when `K°` is. -/
 private theorem isNoetherianRing_of_isEmpty [IsEmpty σ]
     [IsNoetherianRing (Subring.unitClosedBall K)] :
@@ -115,33 +94,16 @@ private theorem isNoetherianRing_of_isEmpty [IsEmpty σ]
 /-- Renaming the variables along an equivalence preserves noetherianity of `K°⟨X⟩†`. -/
 private theorem isNoetherianRing_of_equiv (e : σ ≃ τ)
     [IsNoetherianRing (intWashnitzerAlgebra σ K)] :
-    IsNoetherianRing (intWashnitzerAlgebra τ K) := by
-  refine isNoetherianRing_of_ringEquiv _ (restrictRingEquiv
-    (washnitzerAlgebra.renameAlgEquiv (R := K) e).toRingEquiv fun f ↦ ?_)
-  rw [← washnitzerAlgebra.norm_toTate, ← washnitzerAlgebra.norm_toTate]
-  have h : toTate τ K (washnitzerAlgebra.renameAlgEquiv e f) =
-      IsRestricted.renameAlgEquiv e (fun _ ↦ (1 : ℝ)) (toTate σ K f) :=
-    Subtype.ext (by simp)
-  rw [AlgEquiv.coe_toRingEquiv, h, IsRestricted.norm_renameAlgEquiv]
+    IsNoetherianRing (intWashnitzerAlgebra τ K) :=
+  isNoetherianRing_of_ringEquiv _ (restrictRingEquiv
+    (washnitzerAlgebra.renameAlgEquiv (R := K) e).toRingEquiv
+    (washnitzerAlgebra.norm_renameAlgEquiv e))
 
 section Division
 
 local notation "W" => washnitzerAlgebra σ K
 local notation "W'" => washnitzerAlgebra (Option σ) K
 local notation "Tate" => IsRestricted.subring (R := K) (fun _ : σ ↦ (1 : ℝ))
-
-/-- The Gauss norm of a series in `K⟨X, Y⟩†` is the Gauss norm at unit radius of its separated
-series in `Y`, with coefficients in the Tate algebra in the variables `X`. -/
-private theorem norm_eq_gaussNorm_map_optionSeries (f : W') :
-    ‖f‖ = (PowerSeries.map (toTate σ K : W →+* Tate) (optionSeries f)).gaussNorm norm 1 := by
-  rw [washnitzerAlgebra.map_toTate_optionSeries, ← TauCeti.PowerSeries.norm_eq_gaussNorm,
-    norm_restrictedOptionEquiv, washnitzerAlgebra.norm_toTate]
-
-/-- Adjoining the variable `Y` preserves Gauss norms. -/
-private theorem norm_optionC (f : W) : ‖optionC f‖ = ‖f‖ := by
-  rw [norm_eq_gaussNorm_map_optionSeries, washnitzerAlgebra.optionSeries_optionC,
-    PowerSeries.map_C, ← washnitzerAlgebra.norm_toTate]
-  exact TauCeti.PowerSeries.norm_C (c := 1) _
 
 local notation "Wint" => intWashnitzerAlgebra σ K
 local notation "Wint'" => intWashnitzerAlgebra (Option σ) K
@@ -151,7 +113,7 @@ private noncomputable def intOptionC : Wint →+* Wint' :=
   ((washnitzerAlgebra (Option σ) K).val.toRingHom.comp
     ((optionC (σ := σ) (R := K)).toRingHom.comp (toWashnitzerAlgebra σ K))).codRestrict _ fun f ↦
     mem_intWashnitzerAlgebra_iff_norm_le_one.2
-      ((norm_optionC _).trans_le (norm_toWashnitzerAlgebra_le_one f))
+      ((washnitzerAlgebra.norm_optionC _).trans_le (norm_toWashnitzerAlgebra_le_one f))
 
 /-- `intOptionC` adjoins `Y` to the underlying overconvergent series. -/
 private theorem toWashnitzerAlgebra_intOptionC (f : Wint) :
@@ -177,45 +139,6 @@ private theorem toWashnitzerAlgebra_eval₂ (p : Polynomial Wint) :
 
 variable [CompleteSpace K]
 
-/-- **Integral Weierstrass division.** If `g ∈ K⟨X, Y⟩†` has Gauss norm one and is distinguished of
-degree `s` in `Y` with a unit distinguished coefficient, then every series `f` of Gauss norm at
-most one is `q * g + r` with `‖q‖ ≤ 1` and `r` a polynomial in `Y` of degree less than `s` whose
-coefficients have Gauss norm at most one. -/
-private theorem exists_mul_add_eq_of_norm_le_one {g : W'} {s : ℕ}
-    (hg : PowerSeries.IsDistinguished 1 s
-      (restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))
-    (hu : IsUnit (PowerSeries.coeff s
-      (restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate)))
-    (hg1 : ‖g‖ = 1) {f : W'} (hf : ‖f‖ ≤ 1) :
-    ∃ (q : W') (r : Polynomial W), ‖q‖ ≤ 1 ∧ (∀ i, ‖r.coeff i‖ ≤ 1) ∧
-      r.degree < s ∧ f = q * g + polynomialToOption r := by
-  obtain ⟨q, r, hr, hqr⟩ := exists_mul_add_eq_of_isDistinguished hg hu f
-  have hf' : f = q * g + polynomialToOption r :=
-    washnitzerAlgebra.optionSeries_injective (by simpa using hqr.symm)
-  -- Map the division into the Tate algebra and apply the norm identity there.
-  set φ := (toTate σ K : W →+* Tate)
-  have hrφ : ∀ m, s ≤ m → ((r.map φ : Polynomial Tate) : PowerSeries Tate).coeff m = 0 :=
-    fun m hm ↦ by
-      rw [Polynomial.coeff_coe, Polynomial.coeff_map,
-        Polynomial.coeff_eq_zero_of_degree_lt (hr.trans_le (by exact_mod_cast hm)), map_zero]
-  have hmap : PowerSeries.map φ (optionSeries f) =
-      PowerSeries.map φ (optionSeries q) * PowerSeries.map φ (optionSeries g) + r.map φ := by
-    rw [hf']
-    simp [Polynomial.polynomial_map_coe]
-  have hnorm := hg.gaussNorm_mul_add_eq_max one_pos (fun x ↦ norm_mul _ _)
-    (restrictedOptionEquiv (toTate _ K q)).2 hrφ
-  rw [← washnitzerAlgebra.map_toTate_optionSeries, ← washnitzerAlgebra.map_toTate_optionSeries,
-    ← hmap, ← norm_eq_gaussNorm_map_optionSeries, ← norm_eq_gaussNorm_map_optionSeries,
-    ← norm_eq_gaussNorm_map_optionSeries, hg1, mul_one] at hnorm
-  refine ⟨q, r, ?_, fun i ↦ ?_, hr, hf'⟩
-  · exact (le_max_left _ _).trans (hnorm ▸ hf)
-  · have hle := PowerSeries.le_gaussNorm norm 1 _
-      (TauCeti.PowerSeries.hasGaussNorm_of_isRestricted
-        (TauCeti.PowerSeries.isRestricted_of_forall_coeff_eq_zero hrφ)) i
-    rw [one_pow, mul_one, Polynomial.coeff_coe, Polynomial.coeff_map] at hle
-    exact (washnitzerAlgebra.norm_toTate (r.coeff i)).symm.trans_le
-      (hle.trans ((le_max_right _ _).trans (hnorm ▸ hf)))
-
 /-- An ideal of `K°⟨X, Y⟩†` containing a series of Gauss norm one which is distinguished in `Y`,
 with a unit distinguished coefficient, is finitely generated as soon as `K°⟨X⟩†` is noetherian:
 by integral Weierstrass division, the quotient by that series is a finite `K°⟨X⟩†`-module. -/
@@ -235,26 +158,25 @@ private theorem fg_of_isDistinguished_mem [IsNoetherianRing Wint] {I : Ideal Win
     have h : (Ideal.Quotient.mk J).comp (Polynomial.eval₂RingHom intOptionC intY) =
         (ev : Polynomial Wint →+* Wint' ⧸ J) :=
       Polynomial.ringHom_ext (fun a ↦ by
-        simp only [RingHom.comp_apply, Polynomial.coe_eval₂RingHom, Polynomial.eval₂_C,
-          AlgHom.coe_toRingHom, ev, Polynomial.aeval_C]
-        rw [IsScalarTower.algebraMap_apply Wint Wint' (Wint' ⧸ J), Ideal.Quotient.algebraMap_eq,
-          RingHom.algebraMap_toAlgebra])
-        (by simp [ev])
+        simp [ev, IsScalarTower.algebraMap_apply Wint Wint' (Wint' ⧸ J),
+          RingHom.algebraMap_toAlgebra]) (by simp [ev])
     exact RingHom.congr_fun h p
   have hφ : Function.Surjective φ := by
     intro z
     obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective z
-    obtain ⟨q, r, hq, hr1, hr, hf⟩ :=
-      exists_mul_add_eq_of_norm_le_one hg hu hg1 (norm_toWashnitzerAlgebra_le_one f)
+    obtain ⟨q, r, hr, hf, hq, hr1⟩ :=
+      exists_mul_add_eq_and_norm_le_of_isDistinguished hg hu (toWashnitzerAlgebra _ K f)
+    have hf1 := norm_toWashnitzerAlgebra_le_one f
+    rw [hg1, mul_one] at hq
     -- Lift the quotient and the remainder to the integral algebras.
     obtain ⟨p, hp⟩ : r ∈ Polynomial.lifts (toWashnitzerAlgebra σ K) :=
       Polynomial.lifts_iff_coeff_lifts _ |>.2 fun n ↦
-        ⟨⟨r.coeff n, mem_intWashnitzerAlgebra_iff_norm_le_one.2 (hr1 n)⟩,
+        ⟨⟨r.coeff n, mem_intWashnitzerAlgebra_iff_norm_le_one.2 ((hr1 n).trans hf1)⟩,
           toWashnitzerAlgebra_mk _ _⟩
     rw [Polynomial.coe_mapRingHom] at hp
     have hpdeg : p.degree < s := by
       rwa [← Polynomial.degree_map_eq_of_injective toWashnitzerAlgebra_injective, hp]
-    let q' : Wint' := ⟨q, mem_intWashnitzerAlgebra_iff_norm_le_one.2 hq⟩
+    let q' : Wint' := ⟨q, mem_intWashnitzerAlgebra_iff_norm_le_one.2 (hq.trans hf1)⟩
     have hf' : f = q' * g + p.eval₂ intOptionC intY := toWashnitzerAlgebra_injective (by
       rw [map_add, map_mul, toWashnitzerAlgebra_eval₂, hp, toWashnitzerAlgebra_mk]
       exact hf)
@@ -265,11 +187,8 @@ private theorem fg_of_isDistinguished_mem [IsNoetherianRing Wint] {I : Ideal Win
   have : Module.Finite Wint (Polynomial.degreeLT Wint s) :=
     Module.Finite.equiv (Polynomial.degreeLTEquiv Wint s).symm
   have : Module.Finite Wint (Wint' ⧸ J) := Module.Finite.of_surjective φ hφ
-  have : IsNoetherian Wint' (Wint' ⧸ J) :=
-    isNoetherian_of_tower Wint (isNoetherian_of_isNoetherianRing_of_finite Wint (Wint' ⧸ J))
-  refine Submodule.fg_of_fg_map_of_fg_inf_ker J.mkQ (IsNoetherian.noetherian _) ?_
-  rw [Submodule.ker_mkQ, inf_eq_right.mpr (Ideal.span_le.mpr (Set.singleton_subset_iff.mpr hgI))]
-  exact ⟨{g}, by simp [Ideal.span]⟩
+  exact Ideal.fg_of_le_of_finite_quotient (A := Wint) (Submodule.fg_span_singleton g)
+    (Ideal.span_le.mpr (Set.singleton_subset_iff.mpr hgI))
 
 /-- An ideal of `K°⟨X, Y⟩†` containing a series of Gauss norm one is finitely generated as soon as
 `K°⟨X⟩†` is noetherian: a triangular change of variables makes that series distinguished in `Y`
@@ -279,9 +198,7 @@ private theorem fg_of_norm_eq_one_mem [Finite σ] [IsNoetherianRing Wint] {I : I
   have hf0 : toWashnitzerAlgebra _ K f ≠ 0 := fun h ↦ by simp [h] at hf1
   obtain ⟨α, hα, s, hd, hu⟩ :=
     washnitzerAlgebra.exists_triangularEquiv_isDistinguished_isUnit _ hf0
-  have he (h : W') : ‖washnitzerAlgebra.triangularEquiv α hα h‖ = ‖h‖ := by
-    rw [← washnitzerAlgebra.norm_toTate, washnitzerAlgebra.toTate_triangularEquiv,
-      MvPowerSeries.norm_restrictedTriangularEquiv, washnitzerAlgebra.norm_toTate]
+  have he := washnitzerAlgebra.norm_triangularEquiv (R := K) α hα
   let e : Wint' ≃+* Wint' :=
     restrictRingEquiv (washnitzerAlgebra.triangularEquiv α hα).toRingEquiv he
   have hef : toWashnitzerAlgebra _ K ((e : Wint' →+* Wint') f) =
@@ -295,27 +212,6 @@ private theorem fg_of_norm_eq_one_mem [Finite σ] [IsNoetherianRing Wint] {I : I
 
 end Division
 
-/-- In a noetherian closed unit ball, the norms less than one have a largest element. -/
-private theorem exists_forall_norm_le [IsNoetherianRing (Subring.unitClosedBall K)] :
-    ∃ π : K, ‖π‖ < 1 ∧ ∀ a : K, ‖a‖ < 1 → ‖a‖ ≤ ‖π‖ := by
-  classical
-  obtain ⟨S, hS⟩ := IsNoetherian.noetherian (unitBallIdeal K)
-  obtain ⟨π, hπ, hπS⟩ : ∃ π ∈ unitBallIdeal K, ∀ b ∈ S, ‖(b : K)‖ ≤ ‖(π : K)‖ := by
-    rcases S.eq_empty_or_nonempty with rfl | hne
-    · exact ⟨0, zero_mem _, by simp⟩
-    · obtain ⟨π, hπ, hmax⟩ := S.exists_max_image (fun b ↦ ‖(b : K)‖) hne
-      exact ⟨π, hS ▸ Ideal.subset_span hπ, hmax⟩
-  refine ⟨π, mem_unitBallIdeal.1 hπ, fun a ha ↦ ?_⟩
-  have haS : (⟨a, Subring.mem_unitClosedBall.2 ha.le⟩ : Subring.unitClosedBall K) ∈
-      Submodule.span (Subring.unitClosedBall K) (S : Set (Subring.unitClosedBall K)) :=
-    hS ▸ mem_unitBallIdeal.2 ha
-  refine Submodule.span_induction
-    (p := fun (x : Subring.unitClosedBall K) _ ↦ ‖(x : K)‖ ≤ ‖(π : K)‖) hπS (by simp)
-    (fun x y _ _ hx hy ↦ ?_) (fun b x _ hx ↦ ?_) haS
-  · simpa using (IsUltrametricDist.norm_add_le_max _ _).trans (max_le hx hy)
-  · simpa using (norm_mul_le _ _).trans
-      ((mul_le_of_le_one_left (norm_nonneg _) (Subring.mem_unitClosedBall.1 b.2)).trans hx)
-
 /-- If every ideal of `K°⟨X⟩†` containing a series of Gauss norm one is finitely generated, and
 some `π` with `‖π‖ < 1` has the largest norm less than one, then `K°⟨X⟩†` is noetherian: a nonzero
 ideal is `πᵏ I'` for an ideal `I'` containing a series of Gauss norm one. -/
@@ -324,69 +220,31 @@ private theorem isNoetherianRing_of_forall_fg {π : K} (hπ1 : ‖π‖ < 1)
     (h : ∀ (I : Ideal (intWashnitzerAlgebra τ K)) (f : intWashnitzerAlgebra τ K), f ∈ I →
       ‖toWashnitzerAlgebra τ K f‖ = 1 → I.FG) :
     IsNoetherianRing (intWashnitzerAlgebra τ K) := by
-  classical
   set ι := toWashnitzerAlgebra τ K
-  let c : intWashnitzerAlgebra τ K :=
-    algebraMap (Subring.unitClosedBall K) _ ⟨π, Subring.mem_unitClosedBall.2 hπ1.le⟩
-  have hc : ι c = algebraMap K (washnitzerAlgebra τ K) π :=
-    Subtype.ext (by simp [ι, c, MvPowerSeries.algebraMap_apply])
-  -- Multiples of `cᵐ` have Gauss norm at most `‖π‖ ^ m`.
-  have hmem (m : ℕ) {x} (hx : x ∈ Ideal.span {c ^ m}) : ‖ι x‖ ≤ ‖π‖ ^ m := by
-    obtain ⟨b, rfl⟩ := Ideal.mem_span_singleton'.1 hx
-    rw [map_mul, map_pow, hc, norm_mul, norm_pow, washnitzerAlgebra.norm_algebraMap]
-    exact mul_le_of_le_one_left (by positivity) (norm_toWashnitzerAlgebra_le_one b)
-  -- A series of Gauss norm less than one is a multiple of `c`.
-  have hdvd {x} (hx : ‖ι x‖ < 1) : x ∈ Ideal.span {c} := by
-    have hxπ : ‖ι x‖ ≤ ‖π‖ := (washnitzerAlgebra.norm_le_iff (norm_nonneg _)).2 fun t ↦
-      hπ _ ((washnitzerAlgebra.norm_coeff_le _ t).trans_lt hx)
-    rcases eq_or_ne π 0 with rfl | hπ0
-    · have : ι x = 0 := norm_le_zero_iff.1 (by simpa using hxπ)
-      rw [toWashnitzerAlgebra_injective (this.trans (map_zero ι).symm)]
-      exact zero_mem _
-    refine Ideal.mem_span_singleton'.2
-      ⟨⟨((algebraMap K (washnitzerAlgebra τ K) π⁻¹ * ι x : washnitzerAlgebra τ K) :
-        MvPowerSeries τ K), mem_intWashnitzerAlgebra_iff_norm_le_one.2 ?_⟩,
-        toWashnitzerAlgebra_injective ?_⟩
-    · rw [norm_mul, washnitzerAlgebra.norm_algebraMap, norm_inv]
-      exact inv_mul_le_one_of_le₀ hxπ (norm_nonneg _)
-    · rw [map_mul, toWashnitzerAlgebra_mk, hc, mul_comm, ← mul_assoc, ← map_mul,
-        mul_inv_cancel₀ hπ0, map_one, one_mul]
+  let a : Subring.unitClosedBall K := ⟨π, Subring.mem_unitClosedBall.2 hπ1.le⟩
+  let c : intWashnitzerAlgebra τ K := algebraMap (Subring.unitClosedBall K) _ a
   refine (isNoetherianRing_iff_ideal_fg _).2 fun I ↦ ?_
   by_cases hI : I = ⊥
   · exact hI ▸ Submodule.fg_bot
   obtain ⟨x₀, hx₀I, hx₀⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hI
   have hx₀pos : 0 < ‖ι x₀‖ :=
     norm_pos_iff.2 fun h ↦ hx₀ (toWashnitzerAlgebra_injective (h.trans (map_zero ι).symm))
-  -- Choose the least `k` such that `I` is not contained in `(cᵏ⁺¹)`.
-  have hex : ∃ k, ¬ I ≤ Ideal.span {c ^ (k + 1)} := by
+  -- Since `‖π‖ ^ n < ‖x₀‖` for some `n`, `I = cᵏ I'` with `I'` not contained in `(c)`.
+  have hex : ∃ n, ¬ I ≤ Ideal.span {c ^ n} := by
     obtain ⟨n, hn⟩ := exists_pow_lt_of_lt_one hx₀pos hπ1
-    refine ⟨n, fun hle ↦ (hn.trans_le' ?_).not_ge (hmem (n + 1) (hle hx₀I))⟩
-    exact pow_le_pow_of_le_one (norm_nonneg _) hπ1.le n.le_succ
-  obtain ⟨k, hk, hmin⟩ : ∃ k, ¬ I ≤ Ideal.span {c ^ (k + 1)} ∧
-      ∀ j < k, I ≤ Ideal.span {c ^ (j + 1)} :=
-    ⟨Nat.find hex, Nat.find_spec hex, fun j hj ↦ not_not.1 (Nat.find_min hex hj)⟩
-  have hIk : I ≤ Ideal.span {c ^ k} := by
-    cases k with
-    | zero => simp
-    | succ j => exact hmin j j.lt_succ_self
-  let I' : Ideal (intWashnitzerAlgebra τ K) :=
-    Submodule.comap (LinearMap.mulLeft (intWashnitzerAlgebra τ K) (c ^ k)) I
-  have hII' : I = Submodule.map (LinearMap.mulLeft (intWashnitzerAlgebra τ K) (c ^ k)) I' := by
-    rw [Submodule.map_comap_eq, eq_comm, inf_eq_right]
-    intro x hx
-    obtain ⟨b, hb⟩ := Ideal.mem_span_singleton'.1 (hIk hx)
-    exact ⟨b, by rw [LinearMap.mulLeft_apply, mul_comm, hb]⟩
-  obtain ⟨x, hxI, hx⟩ := Set.not_subset.1 hk
-  obtain ⟨b, rfl⟩ := Ideal.mem_span_singleton'.1 (hIk hxI)
-  have hbI' : b ∈ I' := by
-    rw [Submodule.mem_comap, LinearMap.mulLeft_apply, mul_comm]
-    exact hxI
+    refine ⟨n, fun hle ↦ hn.not_ge ?_⟩
+    have := norm_toWashnitzerAlgebra_le_of_mem_span (a := a ^ n) (f := x₀)
+      (by rw [map_pow]; exact hle hx₀I)
+    simpa [a] using this
+  obtain ⟨k, hIk, hk⟩ := Ideal.exists_eq_span_pow_mul_colon_not_le hex
+  -- An element of `I'` outside `(c)` has Gauss norm one.
+  obtain ⟨b, hbI', hb⟩ := Set.not_subset.1 hk
   have hb1 : ‖ι b‖ = 1 := by
-    refine (norm_toWashnitzerAlgebra_le_one b).antisymm (not_lt.1 fun hb ↦ hx ?_)
-    obtain ⟨d, rfl⟩ := Ideal.mem_span_singleton'.1 (hdvd hb)
-    exact Ideal.mem_span_singleton'.2 ⟨d, by ring⟩
-  rw [hII']
-  exact Submodule.FG.map _ (h I' b hbI' hb1)
+    refine (norm_toWashnitzerAlgebra_le_one b).antisymm (not_lt.1 fun hlt ↦ hb ?_)
+    exact mem_span_algebraMap_iff_norm_le.2 ((washnitzerAlgebra.norm_le_iff (norm_nonneg _)).2
+      fun t ↦ hπ _ ((washnitzerAlgebra.norm_coeff_le _ t).trans_lt hlt))
+  rw [hIk]
+  exact (Submodule.fg_span_singleton _).mul (h _ b hbI' hb1)
 
 section Main
 
@@ -396,7 +254,8 @@ variable [CompleteSpace K]
 private theorem isNoetherianRing_option [Finite σ] [IsNoetherianRing (Subring.unitClosedBall K)]
     [IsNoetherianRing (intWashnitzerAlgebra σ K)] :
     IsNoetherianRing (intWashnitzerAlgebra (Option σ) K) := by
-  obtain ⟨π, hπ1, hπ⟩ := exists_forall_norm_le (K := K)
+  obtain ⟨π, hπ1, hπ⟩ := exists_norm_lt_one_forall_norm_le_of_fg
+    (IsNoetherian.noetherian (unitBallIdeal K))
   exact isNoetherianRing_of_forall_fg hπ1 hπ fun _ _ hfI hf1 ↦ fg_of_norm_eq_one_mem hfI hf1
 
 /-- **The integral Monsky–Washnitzer algebra is noetherian.** Over a complete ultrametric normed
