@@ -28,6 +28,8 @@ form domination and Weyl's perturbation bound.
 * `LinearMap.IsSymmetric.exists_unit_vector_re_inner_le_eigenvalue` and
   `LinearMap.IsSymmetric.exists_submodule_forall_unit_eigenvalue_le_re_inner`:
   the two min–max directions.
+* `LinearMap.IsSymmetric.exists_unit_vector_re_inner_le_eigenvalue_of_le_finrank`:
+  the upper direction for subspaces of dimension at least `k + 1`.
 * `LinearMap.IsSymmetric.eigenvalues_eq_iSup_iInf_re_inner`:
   the Courant–Fischer equality.
 * `LinearMap.IsSymmetric.eigenvalue_mono`:
@@ -215,6 +217,21 @@ theorem exists_unit_vector_re_inner_le_eigenvalue
         hT.re_inner_apply_self_le_of_mem_spanIndices hn
           (fun _ hik => hT.eigenvalues_antitone hn (by simpa using hik)) hxW
     _ = hT.eigenvalues hn k := by rw [hnx]; ring
+
+/-- **Courant–Fischer, upper direction, for large subspaces.** On any subspace `V` of dimension
+at least `k + 1` there is a unit vector `x` with `re ⟪T x, x⟫ ≤ λₖ(T)`. -/
+theorem exists_unit_vector_re_inner_le_eigenvalue_of_le_finrank
+    (hT : T.IsSymmetric) (hn : finrank 𝕜 E = n) (k : Fin n)
+    (V : Submodule 𝕜 E) (hV : (k : ℕ) + 1 ≤ finrank 𝕜 V) :
+    ∃ x ∈ V, ‖x‖ = 1 ∧ RCLike.re ⟪T x, x⟫_𝕜 ≤ hT.eigenvalues hn k := by
+  obtain ⟨v, hv⟩ := exists_linearIndependent_of_le_finrank hV
+  have hv' := hv.map' V.subtype (Submodule.ker_subtype _)
+  have hsub : Submodule.span 𝕜 (Set.range (V.subtype ∘ v)) ≤ V :=
+    Submodule.span_le.mpr (by rintro _ ⟨j, rfl⟩; exact (v j).2)
+  obtain ⟨x, hxW, hx1, hxle⟩ := hT.exists_unit_vector_re_inner_le_eigenvalue hn k
+    (Submodule.span 𝕜 (Set.range (V.subtype ∘ v)))
+    (by rw [finrank_span_eq_card hv']; simp)
+  exact ⟨x, hsub hxW, hx1, hxle⟩
 
 /-- **Courant–Fischer, lower direction.** There is a subspace `V` of dimension
 `k + 1` on which every unit vector `x` satisfies `λₖ(T) ≤ re ⟪T x, x⟫`, where
