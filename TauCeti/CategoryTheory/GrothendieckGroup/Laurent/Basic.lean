@@ -62,6 +62,8 @@ graded objects with isomorphic images.
 * `TauCeti.LaurentK0.of_conflation`: the defining relation `[M₂] = [M₁] + [M₃]` of a conflation.
 * `TauCeti.LaurentK0.hom_ext`: a `ℤ[q,q⁻¹]`-linear map out of `LaurentK0 E` is determined by its
   values on object classes.
+* `TauCeti.LaurentK0.map_surjective`: an essentially surjective graded conflation-exact functor
+  induces a surjection of graded Grothendieck groups.
 * `TauCeti.LaurentK0.mk_ofExactK0_shiftZPow`: the shift/sign formula `[M{n}] = εⁿ[M]` after
   specializing at `q = ε`; at `q = -1` a shift changes the sign of a class, at `q = 1` it does not
   change the class.
@@ -338,6 +340,24 @@ lemma map_of (h : GradedConflationExact E E' F) (X : C) :
     map h (of E X) = of E' (F.obj X) := by
   rw [map, liftAux_of, AddMonoidHom.comp_apply, ExactK0.map_of, AddEquiv.coe_toAddMonoidHom,
     ofExactK0_exactK0_of]
+
+/-- On the underlying exact Grothendieck groups, the map induced by a graded conflation-exact
+functor is the map induced by the underlying conflation-exact functor. -/
+@[simp]
+theorem map_ofExactK0 (h : GradedConflationExact E E' F) (x : ExactK0 E.toExactStructure) :
+    map h (ofExactK0 E x) = ofExactK0 E' (ExactK0.map F h.isConflationExact x) := by
+  simp only [map, liftAux, AddEquiv.toAddMonoidHom_eq_coe, AddMonoidHom.coe_comp,
+    AddMonoidHom.coe_ofClass, Function.comp_apply, LinearMap.coe_mk, AddHom.coe_mk,
+    AddEquiv.symm_apply_apply]
+
+/-- An essentially surjective graded conflation-exact functor induces a surjection of graded
+Grothendieck groups. -/
+theorem map_surjective [F.EssSurj] (h : GradedConflationExact E E' F) :
+    Function.Surjective (map h) := by
+  intro y
+  obtain ⟨z, rfl⟩ := (ofExactK0 E').surjective y
+  obtain ⟨x, rfl⟩ := ExactK0.map_surjective F h.isConflationExact z
+  exact ⟨ofExactK0 E x, map_ofExactK0 h x⟩
 
 /-- **The identity functor induces the identity map** of graded Grothendieck groups. -/
 @[simp]
