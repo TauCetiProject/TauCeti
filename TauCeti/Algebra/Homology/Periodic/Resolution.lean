@@ -50,6 +50,10 @@ resolution of its cokernel (Eisenbud, Section 5).
 * `TauCeti.PeriodicComplex.truncateIterateResolutionComplexIso`: dropping `m` terms shifts `j`
   down by `m`.
 * `TauCeti.PeriodicComplex.resolutionComplexPeriodIso`: the complex is periodic of period `n`.
+* `TauCeti.PeriodicComplex.resolutionComplex_exactAt_succ`,
+  `TauCeti.PeriodicComplex.resolutionComplex_d_one_zero_comp_exact`: the complex is exact in
+  positive degrees when `Q` is acyclic, and its augmentation by a cokernel `ε` is exact in
+  degree `0`.
 * `TauCeti.PeriodicComplex.projectiveResolution_π_f_zero`: the augmentation is `ε`.
 * `ChainComplex.HasPeriodicTail.mono`, `ChainComplex.HasPeriodicTail.of_iso`: a periodic tail
   persists after longer preperiods and along isomorphisms.
@@ -110,8 +114,8 @@ theorem resolutionComplex_d (k : ℕ) :
 modulo `n`. -/
 def resolutionComplexIsoOfEq {j j' : ℤ} (h : (j : ZMod n) = (j' : ZMod n)) :
     resolutionComplex Q j ≅ resolutionComplex Q j' :=
-  Hom.isoOfComponents (fun k ↦ Q.XIsoOfEq (show ((j - k : ℤ) : ZMod n) = ((j' - k : ℤ) : ZMod n)
-      by push_cast; rw [h]))
+  Hom.isoOfComponents (fun k ↦ Q.XIsoOfEq (p := ((j - k : ℤ) : ZMod n))
+      (q := ((j' - k : ℤ) : ZMod n)) (by push_cast; rw [h]))
     (by
       rintro _ k rfl
       rw [resolutionComplex_d, resolutionComplex_d]
@@ -125,7 +129,8 @@ theorem resolutionComplexIsoOfEq_hom_f {j j' : ℤ} (h : (j : ZMod n) = (j' : ZM
       (Q.XIsoOfEq (show ((j - k : ℤ) : ZMod n) = ((j' - k : ℤ) : ZMod n) by
         push_cast; rw [h])).hom := by
   rw [resolutionComplexIsoOfEq]
-  rfl
+  -- The terms of `resolutionComplex Q j` are the terms `Q.X _` (`resolutionComplex_X`).
+  exact Hom.isoOfComponents_hom_f _ _ _
 
 /-- The components of the inverse of `TauCeti.PeriodicComplex.resolutionComplexIsoOfEq` are
 the inverses of the canonical isomorphisms `Q.XIsoOfEq`. -/
@@ -135,15 +140,15 @@ theorem resolutionComplexIsoOfEq_inv_f {j j' : ℤ} (h : (j : ZMod n) = (j' : ZM
       (Q.XIsoOfEq (show ((j - k : ℤ) : ZMod n) = ((j' - k : ℤ) : ZMod n) by
         push_cast; rw [h])).inv := by
   rw [resolutionComplexIsoOfEq]
-  rfl
+  -- The terms of `resolutionComplex Q j` are the terms `Q.X _` (`resolutionComplex_X`).
+  exact Hom.isoOfComponents_inv_f _ _ _
 
 /-- Dropping the first term of `TauCeti.PeriodicComplex.resolutionComplex Q j` gives the
 complex attached to `j - 1`. -/
 def truncateResolutionComplexIso :
     ChainComplex.truncate.obj (resolutionComplex Q j) ≅ resolutionComplex Q (j - 1) :=
-  Hom.isoOfComponents (fun k ↦ Q.XIsoOfEq
-      (show ((j - (k + 1 : ℕ) : ℤ) : ZMod n) = ((j - 1 - k : ℤ) : ZMod n) from
-        congrArg _ (by omega)))
+  Hom.isoOfComponents (fun k ↦ Q.XIsoOfEq (p := ((j - (k + 1 : ℕ) : ℤ) : ZMod n))
+      (q := ((j - 1 - k : ℤ) : ZMod n)) (congrArg _ (by omega)))
     (by
       rintro _ k rfl
       rw [ChainComplex.truncate_obj_d, resolutionComplex_d, resolutionComplex_d]
@@ -157,7 +162,8 @@ theorem truncateResolutionComplexIso_hom_f (k : ℕ) :
       (Q.XIsoOfEq (show ((j - (k + 1 : ℕ) : ℤ) : ZMod n) = ((j - 1 - k : ℤ) : ZMod n) from
         congrArg _ (by omega))).hom := by
   rw [truncateResolutionComplexIso]
-  rfl
+  -- The terms of `resolutionComplex Q j` are the terms `Q.X _` (`resolutionComplex_X`).
+  exact Hom.isoOfComponents_hom_f _ _ _
 
 /-- The components of the inverse of `TauCeti.PeriodicComplex.truncateResolutionComplexIso`
 are the inverses of the canonical isomorphisms `Q.XIsoOfEq`. -/
@@ -167,7 +173,8 @@ theorem truncateResolutionComplexIso_inv_f (k : ℕ) :
       (Q.XIsoOfEq (show ((j - (k + 1 : ℕ) : ℤ) : ZMod n) = ((j - 1 - k : ℤ) : ZMod n) from
         congrArg _ (by omega))).inv := by
   rw [truncateResolutionComplexIso]
-  rfl
+  -- The terms of `resolutionComplex Q j` are the terms `Q.X _` (`resolutionComplex_X`).
+  exact Hom.isoOfComponents_inv_f _ _ _
 
 /-- Dropping the first `m` terms of `TauCeti.PeriodicComplex.resolutionComplex Q j` gives the
 complex attached to `j - m`. -/
@@ -195,6 +202,8 @@ theorem truncateIterateResolutionComplexIso_hom_f (m k : ℕ) :
   induction m generalizing k with
   | zero =>
     rw [truncateIterateResolutionComplexIso, resolutionComplexIsoOfEq_hom_f]
+    -- `Q.XIsoOfEq` is an `eqToIso`, and `truncate.obj^[0]` is the identity by definition
+    -- (`Function.iterate_zero`), so both sides are the same `eqToHom`.
     rfl
   | succ m ih =>
     rw [truncateIterateResolutionComplexIso]
@@ -251,7 +260,7 @@ variable {j} {i i' : ZMod n}
 the residue `i'` of `j`. -/
 def resolutionComplexXZeroIso (hj : (j : ZMod n) = i') :
     (resolutionComplex Q j).X 0 ≅ Q.X i' :=
-  Q.XIsoOfEq (by simpa using hj)
+  Q.XIsoOfEq (p := ((j - (0 : ℕ) : ℤ) : ZMod n)) (by simpa using hj)
 
 /-- `TauCeti.PeriodicComplex.resolutionComplexXZeroIso` is the canonical isomorphism
 `Q.XIsoOfEq`. -/
@@ -259,7 +268,6 @@ theorem resolutionComplexXZeroIso_eq (hj : (j : ZMod n) = i') :
     resolutionComplexXZeroIso Q hj =
       Q.XIsoOfEq (show ((j - (0 : ℕ) : ℤ) : ZMod n) = i' by simpa using hj) := by
   rw [resolutionComplexXZeroIso]
-  rfl
 
 /-- The term in degree `1` of `TauCeti.PeriodicComplex.resolutionComplex Q j` is `Q^i`, for the
 residue `i' = i + 1` of `j`. -/
@@ -288,6 +296,42 @@ theorem resolutionComplex_d_one_zero_comp (hj : (j : ZMod n) = i') (hi : i + 1 =
 
 end HasZeroMorphisms
 
+section Abelian
+
+variable [Abelian C] (Q : HomologicalComplex C (ComplexShape.up (ZMod n))) (j : ℤ)
+
+/-- If `Q` is acyclic, `TauCeti.PeriodicComplex.resolutionComplex Q j` is exact in every positive
+degree. -/
+theorem resolutionComplex_exactAt_succ (hQ : Q.Acyclic) (k : ℕ) :
+    (resolutionComplex Q j).ExactAt (k + 1) := by
+  rw [exactAt_iff' _ (k + 2) (k + 1) k (by simp) (by simp)]
+  have hp : (ComplexShape.up ℤ).prev (j - (k + 1 : ℕ)) = j - (k + 2 : ℕ) :=
+    (ComplexShape.up ℤ).prev_eq' (by simp; omega)
+  have hn : (ComplexShape.up ℤ).next (j - (k + 1 : ℕ)) = j - k :=
+    (ComplexShape.up ℤ).next_eq' (by simp; omega)
+  refine (ShortComplex.exact_iff_of_iso (restriction.sc'Iso ((unfoldFunctor C n).obj Q)
+    (ComplexShape.embeddingUpIntLE j) (k + 2) (k + 1) k rfl rfl rfl hp hn)).2 ?_
+  exact (exactAt_iff' _ _ _ _ hp hn).1 ((unfoldFunctor_exactAt_iff C n Q _).2 (hQ _))
+
+variable {j} {i i' : ZMod n} (hj : (j : ZMod n) = i') (hi : i + 1 = i') {M : C}
+  (ε : Q.X i' ⟶ M) (hε : Q.d i i' ≫ ε = 0)
+
+/-- Let `ε : Q^i' ⟶ M` be a cokernel of the cyclic differential `Q^i ⟶ Q^i'`, for the residue
+`i' = i + 1` of `j`. Then the differential into degree `0` of
+`TauCeti.PeriodicComplex.resolutionComplex Q j`, followed by the augmentation
+`(resolutionComplexXZeroIso Q hj).hom ≫ ε`, is exact. -/
+theorem resolutionComplex_d_one_zero_comp_exact (hε' : IsColimit (CokernelCofork.ofπ ε hε)) :
+    (ShortComplex.mk _ _ (resolutionComplex_d_one_zero_comp Q hj hi ε hε)).Exact :=
+  ShortComplex.exact_of_iso
+    (ShortComplex.isoMk (resolutionComplexXOneIso Q hj hi).symm
+      (resolutionComplexXZeroIso Q hj).symm (Iso.refl M)
+      (by dsimp; rw [Iso.inv_comp_eq, ← resolutionComplex_d_one_zero_comp_xZeroIso_hom_assoc,
+        Iso.hom_inv_id, Category.comp_id])
+      (by simp))
+    ((ShortComplex.mk _ _ hε).exact_of_g_is_cokernel hε')
+
+end Abelian
+
 section ProjectiveResolution
 
 variable [Abelian C] (Q : HomologicalComplex C (ComplexShape.up (ZMod n))) [∀ i, Projective (Q.X i)]
@@ -311,31 +355,15 @@ def projectiveResolution : ProjectiveResolution M where
     constructor
     rintro (_ | k)
     · have : Epi ε := epi_of_isColimit_cofork hε'
-      rw [ChainComplex.quasiIsoAt₀_iff]
-      refine (ShortComplex.quasiIso_iff_of_zeros' _ ?_ ?_ ?_).2 ⟨?_, ?_⟩
-      · exact (resolutionComplex Q j).shape _ _ (by simp)
-      · rfl
-      · rfl
-      · refine ShortComplex.exact_of_iso
-          (ShortComplex.isoMk (resolutionComplexXOneIso Q hj hi).symm
-            (resolutionComplexXZeroIso Q hj).symm (Iso.refl M) ?_ ?_)
-          ((ShortComplex.mk _ _ hε).exact_of_g_is_cokernel hε')
-        · dsimp
-          rw [Iso.inv_comp_eq, ← resolutionComplex_d_one_zero_comp_xZeroIso_hom_assoc,
-            Iso.hom_inv_id, Category.comp_id]
-        · simp [ChainComplex.toSingle₀Equiv_symm_apply_f_zero]
-      · dsimp
-        rw [ChainComplex.toSingle₀Equiv_symm_apply_f_zero]
-        infer_instance
-    · rw [quasiIsoAt_iff_exactAt' (hL := ChainComplex.exactAt_succ_single_obj ..),
-        exactAt_iff' _ (k + 2) (k + 1) k (by simp) (by simp)]
-      have hp : (ComplexShape.up ℤ).prev (j - (k + 1 : ℕ)) = j - (k + 2 : ℕ) :=
-        (ComplexShape.up ℤ).prev_eq' (by simp; omega)
-      have hn : (ComplexShape.up ℤ).next (j - (k + 1 : ℕ)) = j - k :=
-        (ComplexShape.up ℤ).next_eq' (by simp; omega)
-      refine (ShortComplex.exact_iff_of_iso (restriction.sc'Iso ((unfoldFunctor C n).obj Q)
-        (ComplexShape.embeddingUpIntLE j) (k + 2) (k + 1) k rfl rfl rfl hp hn)).2 ?_
-      exact (exactAt_iff' _ _ _ _ hp hn).1 ((unfoldFunctor_exactAt_iff C n Q _).2 (hQ _))
+      -- The differentials of `single₀ M` vanish (`HomologicalComplex.single_obj_d`).
+      rw [ChainComplex.quasiIsoAt₀_iff, ShortComplex.quasiIso_iff_of_zeros' _
+        ((resolutionComplex Q j).shape _ _ (by simp)) (single_obj_d (c := .down ℕ) ..)
+        (single_obj_d (c := .down ℕ) ..)]
+      dsimp
+      simp only [ChainComplex.toSingle₀Equiv_symm_apply_f_zero]
+      exact ⟨resolutionComplex_d_one_zero_comp_exact Q hj hi ε hε hε', inferInstance⟩
+    · rw [quasiIsoAt_iff_exactAt' (hL := ChainComplex.exactAt_succ_single_obj ..)]
+      exact resolutionComplex_exactAt_succ Q j hQ k
 
 /-- The complex of `TauCeti.PeriodicComplex.projectiveResolution` is
 `TauCeti.PeriodicComplex.resolutionComplex Q j`. -/

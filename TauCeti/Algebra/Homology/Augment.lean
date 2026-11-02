@@ -63,9 +63,14 @@ theorem truncateIterateMapIso_hom_f (m k : ℕ) :
   induction m generalizing K L with
   | zero =>
     rw [truncateIterateMapIso_zero]
+    -- `truncate.obj^[0] K` is `K` and `k + 0` is `k` by definition, so both `eqToHom`s are
+    -- identities.
     exact ((Category.id_comp _).trans (Category.comp_id _)).symm
   | succ m ih =>
-    rw [truncateIterateMapIso_succ, ih]
+    rw [truncateIterateMapIso_succ, ih, Functor.mapIso_hom, truncate_map_f]
+    -- `truncate.obj^[m + 1] K` is `truncate.obj^[m] (truncate.obj K)`, the term of
+    -- `truncate.obj K` in degree `k + m` is the term of `K` in degree `k + m + 1`, and
+    -- `k + m + 1` is `k + (m + 1)`, all by definition, so both sides are equal.
     rfl
 
 /-- The component in degree `k` of the inverse of `ChainComplex.truncateIterateMapIso e m` is
@@ -77,9 +82,14 @@ theorem truncateIterateMapIso_inv_f (m k : ℕ) :
   induction m generalizing K L with
   | zero =>
     rw [truncateIterateMapIso_zero]
+    -- `truncate.obj^[0] K` is `K` and `k + 0` is `k` by definition, so both `eqToHom`s are
+    -- identities.
     exact ((Category.id_comp _).trans (Category.comp_id _)).symm
   | succ m ih =>
-    rw [truncateIterateMapIso_succ, ih]
+    rw [truncateIterateMapIso_succ, ih, Functor.mapIso_inv, truncate_map_f]
+    -- `truncate.obj^[m + 1] K` is `truncate.obj^[m] (truncate.obj K)`, the term of
+    -- `truncate.obj K` in degree `k + m` is the term of `K` in degree `k + m + 1`, and
+    -- `k + m + 1` is `k + (m + 1)`, all by definition, so both sides are equal.
     rfl
 
 end ChainComplex
