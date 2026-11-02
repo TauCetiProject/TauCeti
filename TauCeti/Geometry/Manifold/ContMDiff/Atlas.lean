@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.ContMDiff.Atlas
+public import Mathlib.Geometry.Manifold.ContMDiff.Constructions
 import Mathlib.Geometry.Manifold.ContMDiff.Basic
+import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 
 /-!
 # Charts of the model vector space read through a preferred chart
@@ -18,10 +20,17 @@ neighbourhood of that point with an open subset of the model vector space `E`. A
 This carries normal forms found in the model vector space, such as those produced by an inverse
 function theorem in coordinates, back to the manifold.
 
+A chart `φ` of the maximal atlas of a manifold modelled on `E`, times the identity of a normed
+space `F`, is smooth on its source as a map `M × F → E × F`, and so is its inverse on its target;
+here `E × F` carries the model `𝓘(𝕜, E × F)` of the vector space rather than the product model.
+
 ## Main results
 
 * `TauCeti.conj_chartAt_mem_maximalAtlas`: a chart of the model vector space, read through the
   preferred chart at a point, is a chart of the manifold's maximal atlas.
+* `TauCeti.contMDiffAt_prodMap_id_of_mem_maximalAtlas`,
+  `TauCeti.contMDiffAt_prodMap_symm_id_of_mem_maximalAtlas`: a chart times the identity, and its
+  inverse, are smooth.
 -/
 
 public section
@@ -67,5 +76,27 @@ theorem conj_chartAt_mem_maximalAtlas [I.Boundaryless] [IsManifold I n M] (x : M
       simpa [extChartAt, I.range_eq_univ] using hy'.2
     · intro y _
       simp [extChartAt]
+
+section ProdMap
+
+variable {F M' : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace M']
+  [ChartedSpace E M'] {φ : OpenPartialHomeomorph M' E}
+
+/-- A chart of the maximal atlas times the identity of a normed space `F` is smooth on its source,
+as a map into the vector space `E × F`. -/
+theorem contMDiffAt_prodMap_id_of_mem_maximalAtlas
+    (hφ : φ ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M') {y : M' × F} (hy : y.1 ∈ φ.source) :
+    ContMDiffAt (𝓘(𝕜, E).prod 𝓘(𝕜, F)) 𝓘(𝕜, E × F) n (Prod.map φ id) y :=
+  ((contMDiffAt_of_mem_maximalAtlas hφ hy).comp y contMDiffAt_fst).prodMk_space contMDiffAt_snd
+
+/-- The inverse of a chart of the maximal atlas, times the identity of a normed space `F`, is
+smooth on its target, as a map out of the vector space `E × F`. -/
+theorem contMDiffAt_prodMap_symm_id_of_mem_maximalAtlas
+    (hφ : φ ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M') {y : E × F} (hy : y.1 ∈ φ.target) :
+    ContMDiffAt 𝓘(𝕜, E × F) (𝓘(𝕜, E).prod 𝓘(𝕜, F)) n (Prod.map φ.symm id) y :=
+  ((contMDiffAt_symm_of_mem_maximalAtlas hφ hy).comp y
+    contDiff_fst.contMDiff.contMDiffAt).prodMk contDiff_snd.contMDiff.contMDiffAt
+
+end ProdMap
 
 end TauCeti

@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
-public import Mathlib.Analysis.Calculus.MeanValue
+public import TauCeti.Analysis.Calculus.ApproximatesLinearOn
+public import TauCeti.Analysis.Calculus.Splice
+public import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Concordance
 public import TauCeti.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Manifold.Immersion.Differential
@@ -38,13 +39,14 @@ time line, as two maps `k` and `l` of a strip `|θ| < r` into `E × ℝ`. They a
 `θ = 0`, have there the same injective derivative `A` (which does not depend on `t`), and agree
 outright near the two ends `t ≤ 0` and `t ≥ 1`, where `F` is `f × id` or `g × id`. With a smooth
 cutoff `χ` which is `1` on `[-1, 1]` and vanishes off `(-2, 2)`, the spliced map
-`k + χ (θ / δ) (l - k)` is `l` for `|θ| ≤ δ` and `k` for `|θ| ≥ 2δ`.
+`k + χ (θ / δ) (l - k)` (`TauCeti.spliceAlong`) is `l` for `|θ| ≤ δ` and `k` for `|θ| ≥ 2δ`.
 
 * Since `l - k` vanishes on the line, it is `o(θ)` uniformly in `t`, so the term coming from the
   derivative of the cutoff is small, and on a fixed strip the derivative of every spliced map stays
   close to `A`, uniformly in `δ`. A left inverse `P` of `A` then makes `P` of the spliced map
   approximate the identity on the convex strip, so the spliced map is injective there, with
-  injective derivative (Mathlib's `ApproximatesLinearOn.injOn`).
+  injective derivative (`Convex.injOn_and_injective_of_norm_hasFDerivAt_sub_le`, via Mathlib's
+  `ApproximatesLinearOn.injOn`).
 * The image under `F` of the complement of the arc is closed, since `F` is a closed embedding, and
   misses the compact segment `F ({z₀} × [0, 1])`; for small `δ` the modified stretch stays in a
   uniform neighbourhood of that segment avoiding it.
@@ -77,174 +79,11 @@ open scoped Manifold ContDiff
 
 namespace TauCeti
 
-/-! ### Splicing two maps of the plane with a cutoff in the first coordinate -/
-
-section Splice
-
-/-- A fixed smooth cutoff on the line: it is `1` on `[-1, 1]` and vanishes off `(-2, 2)`. -/
-private def bump : ContDiffBump (0 : ℝ) := ⟨1, 2, one_pos, one_lt_two⟩
-
-/-- The derivative of the cutoff is bounded, since it is continuous with compact support. -/
-private theorem exists_abs_deriv_bump_le : ∃ B, ∀ x, |deriv bump x| ≤ B :=
-  ((bump.contDiff (n := ⊤)).continuous_deriv (by simp)).bounded_above_of_compact_support
-    bump.hasCompactSupport.deriv
-
 /-- A strip `|u.1| < a` of the plane is convex. -/
 private theorem convex_setOf_abs_fst_lt (a : ℝ) : Convex ℝ {u : ℝ × ℝ | |u.1| < a} := by
   have : {u : ℝ × ℝ | |u.1| < a} = LinearMap.fst ℝ ℝ ℝ ⁻¹' Ioo (-a) a := by
     ext v; simp [abs_lt]
   exact this ▸ (convex_Ioo (-a) a).linear_preimage _
-
-variable {Y : Type*} [NormedAddCommGroup Y] [NormedSpace ℝ Y]
-
-/-- The map `k` with its values near the line `{0} × ℝ` replaced by those of `l`: the convex
-combination of `k u` and `l u` with weight the cutoff at scale `δ` in the first coordinate. It is
-`l` where `|u.1| ≤ δ` and `k` where `2 δ ≤ |u.1|`. -/
-private def splice (k l : ℝ × ℝ → Y) (δ : ℝ) (u : ℝ × ℝ) : Y :=
-  k u + bump (δ⁻¹ * u.1) • (l u - k u)
-
-private theorem splice_of_le_abs {k l : ℝ × ℝ → Y} {δ : ℝ} (hδ : 0 < δ) {u : ℝ × ℝ}
-    (hu : 2 * δ ≤ |u.1|) : splice k l δ u = k u := by
-  rw [splice, bump.zero_of_le_dist, zero_smul, add_zero]
-  rwa [Real.dist_eq, sub_zero, abs_mul, abs_inv, abs_of_pos hδ, le_inv_mul_iff₀ hδ, mul_comm]
-
-private theorem splice_of_abs_le {k l : ℝ × ℝ → Y} {δ : ℝ} (hδ : 0 < δ) {u : ℝ × ℝ}
-    (hu : |u.1| ≤ δ) : splice k l δ u = l u := by
-  rw [splice, bump.one_of_mem_closedBall, one_smul, add_sub_cancel]
-  rwa [Metric.mem_closedBall, Real.dist_eq, sub_zero, abs_mul, abs_inv, abs_of_pos hδ,
-    inv_mul_le_iff₀ hδ, show bump.rIn = 1 from rfl, mul_one]
-
-private theorem splice_of_eq {k l : ℝ × ℝ → Y} {δ : ℝ} {u : ℝ × ℝ} (hu : k u = l u) :
-    splice k l δ u = k u := by
-  rw [splice, hu, sub_self, smul_zero, add_zero]
-
-/-- The spliced map is a convex combination of the two maps, so it stays in any convex set
-containing both values. -/
-private theorem splice_mem {k l : ℝ × ℝ → Y} {S : Set Y} (hS : Convex ℝ S) (δ : ℝ) {u : ℝ × ℝ}
-    (hk : k u ∈ S) (hl : l u ∈ S) : splice k l δ u ∈ S :=
-  hS.add_smul_sub_mem hk hl ⟨bump.nonneg, bump.le_one⟩
-
-private theorem contDiffOn_splice {k l : ℝ × ℝ → Y} {W : Set (ℝ × ℝ)}
-    (hk : ContDiffOn ℝ ∞ k W) (hl : ContDiffOn ℝ ∞ l W) (δ : ℝ) :
-    ContDiffOn ℝ ∞ (splice k l δ) W := by
-  have hc : ContDiff ℝ ∞ fun u : ℝ × ℝ => bump (δ⁻¹ * u.1) :=
-    (bump.contDiff (n := ⊤)).comp (contDiff_const.mul contDiff_fst)
-  exact hk.add (hc.contDiffOn.smul (hl.sub hk))
-
-/-- **The derivative of a spliced map.** Let `k` and `l` be differentiable on the strip
-`|u.1| < ρ`, with derivatives within `ε` of a fixed linear map `A`, and equal on the line
-`u.1 = 0`. If `B` bounds the derivative of the cutoff, then at every scale `δ > 0` the spliced map
-has derivative within `(3 + 4 B) ε` of `A` on the strip. The point is that `l - k` vanishes on the
-line, so it is at most `2 ε |u.1|`, and the derivative `δ⁻¹ χ' (δ⁻¹ u.1)` of the cutoff only
-meets it where `|u.1| ≤ 2 δ`. -/
-private theorem exists_hasFDerivAt_splice {k l : ℝ × ℝ → Y} {k' l' : ℝ × ℝ → ℝ × ℝ →L[ℝ] Y}
-    {A : ℝ × ℝ →L[ℝ] Y} {ρ ε B δ : ℝ} (hδ : 0 < δ) (hB : ∀ x, |deriv bump x| ≤ B)
-    (hk : ∀ u : ℝ × ℝ, |u.1| < ρ → HasFDerivAt k (k' u) u)
-    (hl : ∀ u : ℝ × ℝ, |u.1| < ρ → HasFDerivAt l (l' u) u)
-    (hk' : ∀ u : ℝ × ℝ, |u.1| < ρ → ‖k' u - A‖ ≤ ε)
-    (hl' : ∀ u : ℝ × ℝ, |u.1| < ρ → ‖l' u - A‖ ≤ ε) (h0 : ∀ t, k (0, t) = l (0, t))
-    {u : ℝ × ℝ} (hu : |u.1| < ρ) :
-    ∃ h' : ℝ × ℝ →L[ℝ] Y, HasFDerivAt (splice k l δ) h' u ∧ ‖h' - A‖ ≤ (3 + 4 * B) * ε := by
-  have hε : 0 ≤ ε := (norm_nonneg _).trans (hk' u hu)
-  have hB0 : 0 ≤ B := (abs_nonneg _).trans (hB 0)
-  set S : Set (ℝ × ℝ) := {u | |u.1| < ρ}
-  have hS : Convex ℝ S := convex_setOf_abs_fst_lt ρ
-  -- `l - k` vanishes on the line `u.1 = 0`, so it is at most `2 ε |u.1|` on the strip.
-  have hlk : ‖l u - k u‖ ≤ 2 * ε * |u.1| := by
-    have h := hS.norm_image_sub_le_of_norm_hasFDerivWithin_le (f := fun v => l v - k v)
-      (f' := fun v => l' v - k' v) (C := 2 * ε)
-      (fun v hv => ((hl v hv).sub (hk v hv)).hasFDerivWithinAt)
-      (fun v hv => by
-        calc ‖l' v - k' v‖ = ‖(l' v - A) - (k' v - A)‖ := by congr 1; abel
-          _ ≤ ‖l' v - A‖ + ‖k' v - A‖ := norm_sub_le _ _
-          _ ≤ 2 * ε := by linarith [hl' v hv, hk' v hv])
-      (show ((0 : ℝ), u.2) ∈ S by simpa [S] using (abs_nonneg u.1).trans_lt hu) hu
-    have hn : ‖u - ((0 : ℝ), u.2)‖ = |u.1| := by
-      simp [Prod.norm_def, Real.norm_eq_abs]
-    rw [h0, sub_self, sub_zero, hn] at h
-    exact h
-  -- The cutoff weight and its derivative.
-  set c : ℝ × ℝ → ℝ := fun v => bump (δ⁻¹ * v.1)
-  set c' : ℝ × ℝ →L[ℝ] ℝ :=
-    (deriv bump (δ⁻¹ * u.1) * δ⁻¹) • ContinuousLinearMap.fst ℝ ℝ ℝ with hc'_def
-  have hc : HasFDerivAt c c' u := by
-    have h1 : HasFDerivAt (fun v : ℝ × ℝ => δ⁻¹ * v.1) (δ⁻¹ • ContinuousLinearMap.fst ℝ ℝ ℝ) u :=
-      (hasFDerivAt_fst.const_mul δ⁻¹)
-    have h2 := (((bump.contDiff (n := 1)).differentiable (by simp)) (δ⁻¹ * u.1)).hasDerivAt
-    have h3 := h2.comp_hasFDerivAt u h1
-    rw [smul_smul] at h3
-    exact h3
-  refine ⟨k' u + (c u • (l' u - k' u) + c'.smulRight (l u - k u)), ?_, ?_⟩
-  · exact (hk u hu).add (hc.smul ((hl u hu).sub (hk u hu)))
-  -- The term from the derivative of the cutoff is at most `4 B ε`.
-  have hcorr : ‖c'.smulRight (l u - k u)‖ ≤ 4 * B * ε := by
-    rw [ContinuousLinearMap.norm_smulRight_apply]
-    have hc'n : ‖c'‖ ≤ |deriv bump (δ⁻¹ * u.1)| * δ⁻¹ := by
-      rw [hc'_def, norm_smul, Real.norm_eq_abs, abs_mul, abs_inv, abs_of_pos hδ]
-      exact mul_le_of_le_one_right (by positivity) (ContinuousLinearMap.norm_fst_le ℝ ℝ ℝ)
-    by_cases h2 : 2 < |δ⁻¹ * u.1|
-    · -- The derivative of the cutoff vanishes off its support `[-2, 2]`.
-      have h0 : deriv bump (δ⁻¹ * u.1) = 0 := image_eq_zero_of_notMem_tsupport fun h =>
-        (not_le.2 h2) (by
-          have := tsupport_deriv_subset h
-          rwa [bump.tsupport_eq, Metric.mem_closedBall, Real.dist_eq, sub_zero] at this)
-      rw [h0, abs_zero, zero_mul] at hc'n
-      have : ‖c'‖ = 0 := le_antisymm hc'n (norm_nonneg _)
-      rw [this, zero_mul]; positivity
-    · rw [not_lt, abs_mul, abs_inv, abs_of_pos hδ, inv_mul_le_iff₀ hδ] at h2
-      calc ‖c'‖ * ‖l u - k u‖ ≤ (B * δ⁻¹) * (2 * ε * (δ * 2)) := by
-            gcongr
-            · exact hc'n.trans (by gcongr; exact hB _)
-            · exact hlk.trans (by gcongr)
-        _ = 4 * B * ε := by field_simp; ring
-  have hmid : ‖c u • (l' u - k' u)‖ ≤ 2 * ε := by
-    rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg bump.nonneg]
-    calc c u * ‖l' u - k' u‖ ≤ 1 * (ε + ε) := by
-          gcongr
-          · exact bump.le_one
-          · calc ‖l' u - k' u‖ = ‖(l' u - A) - (k' u - A)‖ := by congr 1; abel
-              _ ≤ ‖l' u - A‖ + ‖k' u - A‖ := norm_sub_le _ _
-              _ ≤ ε + ε := add_le_add (hl' u hu) (hk' u hu)
-      _ = 2 * ε := by ring
-  calc ‖k' u + (c u • (l' u - k' u) + c'.smulRight (l u - k u)) - A‖
-      = ‖(k' u - A) + (c u • (l' u - k' u) + c'.smulRight (l u - k u))‖ := by congr 1; abel
-    _ ≤ ‖k' u - A‖ + (‖c u • (l' u - k' u)‖ + ‖c'.smulRight (l u - k u)‖) :=
-        (norm_add_le _ _).trans (by gcongr; exact norm_add_le _ _)
-    _ ≤ ε + (2 * ε + 4 * B * ε) := by gcongr; exact hk' u hu
-    _ = (3 + 4 * B) * ε := by ring
-
-/-- **A map whose derivative is close to an injective linear map is injective on a convex set.**
-If `P` is a left inverse of `A` and the derivative of `h` stays within `1 / (2 ‖P‖)` of `A` on a
-convex set `S`, then `h` is injective on `S`, and its derivative is injective there. -/
-private theorem injOn_of_norm_sub_le {h : ℝ × ℝ → Y} {h' : ℝ × ℝ → ℝ × ℝ →L[ℝ] Y}
-    {A : ℝ × ℝ →L[ℝ] Y} {P : Y →L[ℝ] ℝ × ℝ} (hPA : LeftInverse P A) {S : Set (ℝ × ℝ)}
-    (hS : Convex ℝ S) (hh : ∀ u ∈ S, HasFDerivAt h (h' u) u)
-    (hh' : ∀ u ∈ S, ‖P‖ * ‖h' u - A‖ ≤ 1 / 2) :
-    InjOn h S ∧ ∀ u ∈ S, Injective (h' u) := by
-  have hPA' : P.comp A = ContinuousLinearMap.id ℝ (ℝ × ℝ) := ContinuousLinearMap.ext hPA
-  -- `P ∘ h'` is within `1 / 2` of the identity.
-  have hclose (u) (hu : u ∈ S) :
-      ‖P.comp (h' u) - ContinuousLinearMap.id ℝ (ℝ × ℝ)‖ ≤ 1 / 2 := by
-    rw [← hPA', ← ContinuousLinearMap.comp_sub]
-    exact (ContinuousLinearMap.opNorm_comp_le _ _).trans (hh' u hu)
-  refine ⟨?_, fun u hu => (injective_iff_map_eq_zero _).2 fun w hw => ?_⟩
-  · -- `P ∘ h` approximates the identity with constant `1 / 2`, so it is injective on `S`.
-    have happ : ApproximatesLinearOn (fun v => P (h v))
-        (ContinuousLinearEquiv.refl ℝ (ℝ × ℝ) : ℝ × ℝ →L[ℝ] ℝ × ℝ) S (1 / 2) := by
-      intro x hx y hy
-      simpa using hS.norm_image_sub_le_of_norm_hasFDerivWithin_le' (f := fun v => P (h v))
-        (fun v hv => (P.hasFDerivAt.comp v (hh v hv)).hasFDerivWithinAt)
-        (fun v hv => (hclose v hv).trans_eq (by simp)) hy hx
-    refine InjOn.of_comp (g := ⇑P) (happ.injOn (Or.inr ?_))
-    simpa [ContinuousLinearMap.nnnorm_id] using NNReal.half_lt_self one_ne_zero
-  · have h1 := ((P.comp (h' u) - ContinuousLinearMap.id ℝ _).le_opNorm w).trans
-      (mul_le_mul_of_nonneg_right (hclose u hu) (norm_nonneg w))
-    have hw' : (P.comp (h' u) - ContinuousLinearMap.id ℝ (ℝ × ℝ)) w = -w := by simp [hw]
-    rw [hw', norm_neg] at h1
-    have : ‖w‖ = 0 := by linarith [norm_nonneg w]
-    exact norm_eq_zero.1 this
-
-end Splice
 
 /-! ### Coordinates along the line `{z₀} × ℝ` of `S¹ × ℝ` -/
 
@@ -357,6 +196,46 @@ private theorem spliceTrack_of_eq (hFφ : ∀ u : ℝ × ℝ, |u.1| < ρ → (F 
     ext <;> simp [φ.left_inv this]
   · rfl
 
+/-- **The spliced track is immersive over the arc.** Where it is read through the chart, the spliced
+track is `h` in the coordinates of the strip, so its derivative is injective wherever that of `h`
+is. -/
+private theorem injective_mfderiv_spliceTrack (hφ : φ ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M)
+    (hρπ : ρ ≤ Real.pi) (hhφ : ∀ u : ℝ × ℝ, |u.1| < ρ → (h u).1 ∈ φ.target)
+    (hC : ContDiffOn ℝ ∞ h {u | |u.1| < ρ})
+    (hdh : ∀ u : ℝ × ℝ, |u.1| < ρ → Injective (fderiv ℝ h u)) {x : Circle × ℝ}
+    (hG : MDifferentiableAt ((𝓡 1).prod 𝓘(ℝ)) (𝓘(ℝ, E).prod 𝓘(ℝ)) (spliceTrack F φ z₀ ρ h) x)
+    (hx : |angle z₀ x.1| < ρ) :
+    Injective (mfderiv ((𝓡 1).prod 𝓘(ℝ)) (𝓘(ℝ, E).prod 𝓘(ℝ)) (spliceTrack F φ z₀ ρ h) x) := by
+  have hπ : |angle z₀ x.1| < Real.pi := hx.trans_le hρπ
+  have hGx : (spliceTrack F φ z₀ ρ h x).1 ∈ φ.source := by
+    rw [spliceTrack_of_abs_lt hx]
+    exact φ.map_target (hhφ _ hx)
+  have hΦ : MDifferentiableAt (𝓘(ℝ, E).prod 𝓘(ℝ)) 𝓘(ℝ, E × ℝ) (Prod.map φ id)
+      (spliceTrack F φ z₀ ρ h x) :=
+    (contMDiffAt_prodMap_id_of_mem_maximalAtlas hφ hGx).mdifferentiableAt (by simp)
+  have hcomp : Prod.map φ id ∘ spliceTrack F φ z₀ ρ h =ᶠ[𝓝 x] h ∘ ofCyl z₀ := by
+    filter_upwards [((isOpen_setOf_abs_angle_lt z₀ hρπ).preimage continuous_fst).mem_nhds hx]
+      with x' hx'
+    rw [comp_apply, spliceTrack_of_abs_lt hx']
+    ext <;> simp [φ.right_inv (hhφ (ofCyl z₀ x') hx')]
+  have hD := mfderiv_comp x hΦ hG
+  rw [hcomp.mfderiv_eq] at hD
+  have hinjD : Injective (mfderiv ((𝓡 1).prod 𝓘(ℝ)) 𝓘(ℝ, E × ℝ) (h ∘ ofCyl z₀) x) := by
+    have hS : IsOpen {u : ℝ × ℝ | |u.1| < ρ} :=
+      isOpen_lt (continuous_abs.comp continuous_fst) continuous_const
+    have hhd : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, E × ℝ) h (ofCyl z₀ x) :=
+      ((hC.contDiffAt (hS.mem_nhds hx)).contMDiffAt).mdifferentiableAt (by simp)
+    rw [mfderiv_comp x hhd ((contMDiffAt_ofCyl hπ).mdifferentiableAt (by simp)),
+      mfderiv_eq_fderiv]
+    exact (((NormedSpace.fromTangentSpace _).symm.injective.comp (hdh _ hx)).comp
+      (NormedSpace.fromTangentSpace _).injective).comp (injective_mfderiv_ofCyl hπ)
+  have hinjD' : Injective ((mfderiv (𝓘(ℝ, E).prod 𝓘(ℝ)) 𝓘(ℝ, E × ℝ) (Prod.map φ id)
+      (spliceTrack F φ z₀ ρ h x)).comp
+      (mfderiv ((𝓡 1).prod 𝓘(ℝ)) (𝓘(ℝ, E).prod 𝓘(ℝ)) (spliceTrack F φ z₀ ρ h) x)) := by
+    rw [← hD]
+    exact (tangentSpaceCast 𝓘(ℝ, E × ℝ) _ _).injective.comp hinjD
+  exact Injective.of_comp hinjD'
+
 variable [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [T2Space M]
 
 /-- **The spliced track is a smooth embedding and a collared track.** Let `F` be a smooth
@@ -409,17 +288,14 @@ private theorem isSmoothEmbedding_spliceTrack {f g : Circle → M}
     exact hGF_far (le_of_lt hx')
   have hπ {x : Circle × ℝ} (hx : |angle z₀ x.1| < ρ) : |angle z₀ x.1| < Real.pi :=
     hx.trans_le hρπ
-  have hsymm {y : E × ℝ} (hy : y.1 ∈ φ.target) :
-      ContMDiffAt 𝓘(ℝ, E × ℝ) (𝓘(ℝ, E).prod 𝓘(ℝ)) ∞ (Prod.map φ.symm id) y :=
-    ((contMDiffAt_symm_of_mem_maximalAtlas hφ hy).comp y
-      contDiff_fst.contMDiff.contMDiffAt).prodMk contDiff_snd.contMDiff.contMDiffAt
   have hhC {x : Circle × ℝ} (hx : |angle z₀ x.1| < ρ) :
       ContMDiffAt ((𝓡 1).prod 𝓘(ℝ)) 𝓘(ℝ, E × ℝ) ∞ (h ∘ ofCyl z₀) x :=
     ((hC.contDiffAt (hS.mem_nhds hx)).contMDiffAt).comp x (contMDiffAt_ofCyl (hπ hx))
   have hsmooth : ContMDiff ((𝓡 1).prod 𝓘(ℝ)) (𝓘(ℝ, E).prod 𝓘(ℝ)) ∞ G := by
     intro x
     by_cases hx : |angle z₀ x.1| < ρ
-    · exact ((hsymm (hhφ _ hx)).comp x (hhC hx)).congr_of_eventuallyEq (hev hx)
+    · exact ((contMDiffAt_prodMap_symm_id_of_mem_maximalAtlas hφ (hhφ _ hx)).comp x
+        (hhC hx)).congr_of_eventuallyEq (hev hx)
     · exact (hF.contMDiff x).congr_of_eventuallyEq (hevF (not_lt.1 hx))
   -- Injectivity.
   have hinner {x y : Circle × ℝ} (hx : |angle z₀ x.1| < ρ) (hy : |angle z₀ y.1| < ρ)
@@ -470,49 +346,12 @@ private theorem isSmoothEmbedding_spliceTrack {f g : Circle → M}
   -- Immersion.
   have himm (x : Circle × ℝ) : IsImmersionAt ((𝓡 1).prod 𝓘(ℝ)) (𝓘(ℝ, E).prod 𝓘(ℝ)) ∞ G x := by
     by_cases hx : |angle z₀ x.1| < ρ
-    · refine ((hsmooth.contMDiffOn (s := univ)).isImmersionAt_iff_injective_mfderiv isOpen_univ
-        (mem_univ x) (by simp)).2 ?_
-      -- Read in the chart, `G` is `h` in the coordinates of the strip.
-      have hGx : (G x).1 ∈ φ.source := by
-        rw [hGa hx]
-        exact φ.map_target (hhφ _ hx)
-      have hΦ : MDifferentiableAt (𝓘(ℝ, E).prod 𝓘(ℝ)) 𝓘(ℝ, E × ℝ) (Prod.map φ id) (G x) :=
-        (((contMDiffAt_of_mem_maximalAtlas hφ hGx).comp (G x) contMDiffAt_fst).prodMk_space
-          contMDiffAt_snd).mdifferentiableAt (by simp)
-      have hcomp : Prod.map φ id ∘ G =ᶠ[𝓝 x] h ∘ ofCyl z₀ := by
-        filter_upwards [hA.mem_nhds hx] with x' hx'
-        rw [comp_apply, hGa hx']
-        ext <;> simp [φ.right_inv (hhφ (ofCyl z₀ x') hx')]
-      have hD := mfderiv_comp x hΦ (hsmooth.mdifferentiableAt (by simp) (x := x))
-      rw [hcomp.mfderiv_eq] at hD
-      have hinjD : Injective (mfderiv ((𝓡 1).prod 𝓘(ℝ)) 𝓘(ℝ, E × ℝ) (h ∘ ofCyl z₀) x) := by
-        have hhd : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, E × ℝ) h (ofCyl z₀ x) :=
-          ((hC.contDiffAt (hS.mem_nhds hx)).contMDiffAt).mdifferentiableAt (by simp)
-        rw [mfderiv_comp x hhd ((contMDiffAt_ofCyl (hπ hx)).mdifferentiableAt (by simp)),
-          mfderiv_eq_fderiv]
-        exact (((NormedSpace.fromTangentSpace _).symm.injective.comp (hdh _ hx)).comp
-          (NormedSpace.fromTangentSpace _).injective).comp (injective_mfderiv_ofCyl (hπ hx))
-      have hinjD' : Injective ((mfderiv (𝓘(ℝ, E).prod 𝓘(ℝ)) 𝓘(ℝ, E × ℝ) (Prod.map φ id) (G x)).comp
-          (mfderiv ((𝓡 1).prod 𝓘(ℝ)) (𝓘(ℝ, E).prod 𝓘(ℝ)) G x)) := by
-        rw [← hD]
-        exact (tangentSpaceCast 𝓘(ℝ, E × ℝ) _ _).injective.comp hinjD
-      exact Injective.of_comp hinjD'
+    · exact ((hsmooth.contMDiffOn (s := univ)).isImmersionAt_iff_injective_mfderiv isOpen_univ
+        (mem_univ x) (by simp)).2
+        (injective_mfderiv_spliceTrack hφ hρπ hhφ hC hdh (hsmooth.mdifferentiableAt (by simp)) hx)
     · exact (hF.isImmersion.isImmersionAt x).congr_of_eventuallyEq (hevF (not_lt.1 hx)).symm
   exact ⟨⟨isImmersion_iff_forall_isImmersionAt.2 himm,
     (hGc.isClosedEmbedding hsmooth.continuous hGinj).isEmbedding⟩, hGc⟩
-
-omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [T2Space M] in
-private theorem contMDiffAt_prodMap_symm_id (hφ : φ ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M)
-    {y : E × ℝ} (hy : y.1 ∈ φ.target) :
-    ContMDiffAt 𝓘(ℝ, E × ℝ) (𝓘(ℝ, E).prod 𝓘(ℝ)) ∞ (Prod.map φ.symm id) y :=
-  ((contMDiffAt_symm_of_mem_maximalAtlas hφ hy).comp y
-    contDiff_fst.contMDiff.contMDiffAt).prodMk contDiff_snd.contMDiff.contMDiffAt
-
-omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [T2Space M] in
-private theorem contMDiffAt_prodMap_id (hφ : φ ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M)
-    {y : M × ℝ} (hy : y.1 ∈ φ.source) :
-    ContMDiffAt (𝓘(ℝ, E).prod 𝓘(ℝ)) 𝓘(ℝ, E × ℝ) ∞ (Prod.map φ id) y :=
-  ((contMDiffAt_of_mem_maximalAtlas hφ hy).comp y contMDiffAt_fst).prodMk_space contMDiffAt_snd
 
 omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [T2Space M] in
 /-- **The derivatives along the line, read in coordinates.** If `F` and `L × id` agree to first
@@ -541,7 +380,8 @@ private theorem exists_hasFDerivAt_prodMap_comp {F : Circle × ℝ → M × ℝ}
     ((contMDiff_toCyl z₀).mdifferentiableAt (by simp)).hasMFDerivAt
   have hΦ : ∀ y, y = F x → HasMFDerivAt (𝓘(ℝ, E).prod 𝓘(ℝ)) 𝓘(ℝ, E × ℝ) (Prod.map φ id) y DΦ := by
     rintro y rfl
-    exact ((contMDiffAt_prodMap_id hφ hFx).mdifferentiableAt (by simp)).hasMFDerivAt
+    exact ((contMDiffAt_prodMap_id_of_mem_maximalAtlas hφ hFx).mdifferentiableAt
+      (by simp)).hasMFDerivAt
   have hFd : HasMFDerivAt ((𝓡 1).prod 𝓘(ℝ)) (𝓘(ℝ, E).prod 𝓘(ℝ)) F x DF :=
     (hF.contMDiff.mdifferentiableAt (by simp)).hasMFDerivAt
   have hLd : HasMFDerivAt ((𝓡 1).prod 𝓘(ℝ)) (𝓘(ℝ, E).prod 𝓘(ℝ)) (Prod.map L id) x DF := by
@@ -554,8 +394,8 @@ private theorem exists_hasFDerivAt_prodMap_comp {F : Circle × ℝ → M × ℝ}
   -- Each factor has a left inverse near its point.
   have hΦi : Injective DΦ := by
     refine injective_mfderiv_of_comp_eventuallyEq_id (g := Prod.map φ.symm id)
-      ((contMDiffAt_prodMap_id hφ hFx).mdifferentiableAt (by simp)) ?_ ?_
-    · exact (contMDiffAt_prodMap_symm_id hφ (y := Prod.map φ id (F x))
+      ((contMDiffAt_prodMap_id_of_mem_maximalAtlas hφ hFx).mdifferentiableAt (by simp)) ?_ ?_
+    · exact (contMDiffAt_prodMap_symm_id_of_mem_maximalAtlas hφ (y := Prod.map φ id (F x))
         (φ.map_source hFx)).mdifferentiableAt (by simp)
     · filter_upwards [(φ.open_source.preimage continuous_fst).mem_nhds hFx] with y hy
       ext <;> simp [φ.left_inv hy]
@@ -681,9 +521,9 @@ private theorem exists_pos_strip {f g L : Circle → M} {F : Circle × ℝ → M
       F (toCyl z₀ u) = Prod.map L id (toCyl z₀ u) := by
     obtain ⟨hfθ, hgθ, -, -⟩ := hball' (hr₁' hu)
     rcases ht with ht | ht
-    · rw [show toCyl z₀ u = (z₀ * Circle.exp u.1, u.2) from rfl, hF₀ _ _ ht]
+    · rw [toCyl, hF₀ _ _ ht]
       simp [hfθ]
-    · rw [show toCyl z₀ u = (z₀ * Circle.exp u.1, u.2) from rfl, hF₁ _ _ ht]
+    · rw [toCyl, hF₁ _ _ ht]
       simp [hgθ]
   refine ⟨r, lt_min (lt_min hr₁ hr₂) Real.pi_pos, min_le_right _ _, c₀, hc₀, c₁, hc₁,
     fun u hu => ?_, fun u hu => (hball' (hr₁' hu)).2.2.1, hends, fun z hz => ?_⟩
@@ -741,10 +581,10 @@ theorem exists_eventuallyEq_prodMap_of_mfderiv_eq
   set W : Set (ℝ × ℝ) := {u | |u.1| < r}
   have hW : IsOpen W := isOpen_lt (continuous_abs.comp continuous_fst) continuous_const
   have hkC : ContDiffOn ℝ ∞ k W := contMDiffOn_iff_contDiffOn.1 fun u hu =>
-    ((contMDiffAt_prodMap_id hφ (hFφ u hu)).comp u
+    ((contMDiffAt_prodMap_id_of_mem_maximalAtlas hφ (hFφ u hu)).comp u
       ((hF.contMDiff.comp (contMDiff_toCyl z₀)) u)).contMDiffWithinAt
   have hlC : ContDiffOn ℝ ∞ l W := contMDiffOn_iff_contDiffOn.1 fun u hu =>
-    ((contMDiffAt_prodMap_id hφ (hLφ u hu)).comp u
+    ((contMDiffAt_prodMap_id_of_mem_maximalAtlas hφ (hLφ u hu)).comp u
       (((hL.prodMap (contMDiff_id (I := 𝓘(ℝ, ℝ)) (M := ℝ))).comp
         (contMDiff_toCyl z₀)) u)).contMDiffWithinAt
   have hkl (u : ℝ × ℝ) (hu : |u.1| < r) (ht : u.2 ≤ c₀ ∨ 1 - c₁ ≤ u.2) : k u = l u := by
@@ -770,7 +610,7 @@ theorem exists_eventuallyEq_prodMap_of_mfderiv_eq
       _ = fderiv ℝ l (0, t) := (hDl t).fderiv.symm
       _ = A := hlA t
   obtain ⟨P, hP⟩ := ContinuousLinearMap.HasLeftInverse.of_injective_of_finiteDimensional hA
-  obtain ⟨B, hB⟩ := exists_abs_deriv_bump_le
+  obtain ⟨B, hB⟩ := exists_abs_deriv_spliceCutoff_le
   have hB0 : 0 ≤ B := (abs_nonneg _).trans (hB 0)
   set ε : ℝ := 1 / (2 * ((‖P‖ + 1) * (3 + 4 * B)))
   have hε : 0 < ε := by positivity
@@ -835,12 +675,12 @@ theorem exists_eventuallyEq_prodMap_of_mfderiv_eq
   have hm : 0 < min ρ ρ₂ := lt_min hρ hρ₂
   have hδρ : 2 * δ < ρ := by simp only [δ]; linarith [min_le_left ρ ρ₂]
   have hδρ₂ : 2 * δ < ρ₂ := by simp only [δ]; linarith [min_le_right ρ ρ₂]
-  set h := splice k l δ
+  set h := spliceAlong (ContinuousLinearMap.fst ℝ ℝ ℝ) k l δ
   have hhk (u : ℝ × ℝ) (hu : |u.1| < r) (h' : 2 * δ ≤ |u.1| ∨ u.2 ≤ c₀ ∨ 1 - c₁ ≤ u.2) :
       h u = k u := by
     rcases h' with h' | h'
-    · exact splice_of_le_abs hδ h'
-    · exact splice_of_eq (hkl u hu h')
+    · exact spliceAlong_of_le_abs hδ h'
+    · exact spliceAlong_of_eq (hkl u hu h')
   -- Where `h` differs from `k`, it lies in `O'`.
   have hhO' (u : ℝ × ℝ) (hu : |u.1| < r) (hne : h u ≠ k u) : h u ∈ O' := by
     have hu₁ : |u.1| < 2 * δ := not_le.1 fun h' => hne (hhk u hu (Or.inl h'))
@@ -849,20 +689,27 @@ theorem exists_eventuallyEq_prodMap_of_mfderiv_eq
       · by_contra h'; exact hne (hhk u hu (Or.inr (Or.inl (by linarith [not_le.1 h']))))
       · by_contra h'; exact hne (hhk u hu (Or.inr (Or.inr (by linarith [not_le.1 h']))))
     have hmem := (hρ₂O u (hu₁.trans hδρ₂) ht).2
-    exact hballO' ht (splice_mem (convex_ball (φ p, u.2) ε') δ (Metric.mem_ball.2 hmem.1)
+    exact hballO' ht (spliceAlong_mem (convex_ball (φ p, u.2) ε') (Metric.mem_ball.2 hmem.1)
       (Metric.mem_ball.2 hmem.2))
   -- The derivative of the splice stays close to `A`.
+  have hdk (v : ℝ × ℝ) (hv : |v.1| < ρ₁') : HasFDerivAt k (fderiv ℝ k v) v :=
+    ((hkC.contDiffAt (hW.mem_nhds (hρ₁r hv))).differentiableAt (by simp)).hasFDerivAt
+  have hdl (v : ℝ × ℝ) (hv : |v.1| < ρ₁') : HasFDerivAt l (fderiv ℝ l v) v :=
+    ((hlC.contDiffAt (hW.mem_nhds (hρ₁r hv))).differentiableAt (by simp)).hasFDerivAt
   have hderiv (u : ℝ × ℝ) (hu : |u.1| < ρ₁') :
-      ∃ h' : ℝ × ℝ →L[ℝ] E × ℝ, HasFDerivAt h h' u ∧ ‖h' - A‖ ≤ (3 + 4 * B) * ε :=
-    exists_hasFDerivAt_splice hδ hB
-      (fun v hv => ((hkC.contDiffAt (hW.mem_nhds (hρ₁r hv))).differentiableAt
-        (by simp)).hasFDerivAt)
-      (fun v hv => ((hlC.contDiffAt (hW.mem_nhds (hρ₁r hv))).differentiableAt
-        (by simp)).hasFDerivAt)
-      (fun v hv => (hbound v hv).1.le) (fun v hv => (hbound v hv).2.le) hkl0 hu
+      ∃ h' : ℝ × ℝ →L[ℝ] E × ℝ, HasFDerivAt h h' u ∧ ‖h' - A‖ ≤ (3 + 4 * B) * ε := by
+    -- `l - k` vanishes on the line `u.1 = 0`, so it is at most `2 ε |u.1|` on the strip.
+    have hlk := (convex_setOf_abs_fst_lt ρ₁').norm_sub_le_of_norm_hasFDerivWithin_sub_le
+      (fun v hv => (hdk v hv).hasFDerivWithinAt) (fun v hv => (hdl v hv).hasFDerivWithinAt)
+      (fun v hv => (hbound v hv).1.le) (fun v hv => (hbound v hv).2.le) hu
+      (show ((0 : ℝ), u.2) ∈ {v : ℝ × ℝ | |v.1| < ρ₁'} by simpa using hρ₁'0) (hkl0 u.2)
+    rw [show ‖u - ((0 : ℝ), u.2)‖ = |u.1| by simp [Prod.norm_def, Real.norm_eq_abs]] at hlk
+    exact exists_hasFDerivAt_spliceAlong_sub_le hδ (ContinuousLinearMap.norm_fst_le ℝ ℝ ℝ) hB
+      (hdk u hu) (hdl u hu) (hbound u hu).1.le (hbound u hu).2.le hlk
   choose! h' hh' hh'A using hderiv
-  obtain ⟨hinj, hinj'⟩ := injOn_of_norm_sub_le hP (convex_setOf_abs_fst_lt ρ₁') hh' fun u hu =>
-    (mul_le_mul_of_nonneg_left (hh'A u hu) (norm_nonneg P)).trans hPε
+  obtain ⟨hinj, hinj'⟩ :=
+    (convex_setOf_abs_fst_lt ρ₁').injOn_and_injective_of_norm_hasFDerivAt_sub_le hP hh'
+      fun u hu => (mul_le_mul_of_nonneg_left (hh'A u hu) (norm_nonneg P)).trans hPε
   have hstrip {u : ℝ × ℝ} (hu : |u.1| < ρ) : |u.1| < ρ₁' := hu.trans hρρ₁
   obtain ⟨hemb, hcol⟩ := isSmoothEmbedding_spliceTrack (h := h) (a := 2 * δ) hF hFc hφ hδρ hρπ
     (fun u hu => hFφ u (hρ₁r (hstrip hu))) (fun u hu h'' => hhk u (hρ₁r (hstrip hu)) h'') hc₀ hc₁
@@ -874,8 +721,8 @@ theorem exists_eventuallyEq_prodMap_of_mfderiv_eq
     (fun u hu ht => by
       have hS : Convex ℝ {y : E × ℝ | y.2 ∈ Ioo (0 : ℝ) 1} :=
         (convex_Ioo (0 : ℝ) 1).linear_preimage (LinearMap.snd ℝ E ℝ)
-      exact splice_mem hS δ (hFc.snd_apply_mem_Ioo _ _ ht) ht)
-    ((contDiffOn_splice hkC hlC δ).mono fun u hu => hρ₁r (hstrip hu))
+      exact spliceAlong_mem hS (hFc.snd_apply_mem_Ioo _ _ ht) ht)
+    ((contDiffOn_spliceAlong hkC hlC _ δ).mono fun u hu => hρ₁r (hstrip hu))
     (hinj.mono fun u hu => hstrip hu)
     (fun u hu => (hh' u (hstrip hu)).fderiv ▸ hinj' u (hstrip hu))
   let G : Concordance f g := ⟨SmoothEmbedding.ofIsSmoothEmbedding _ hemb, by simpa using hcol⟩
@@ -888,7 +735,7 @@ theorem exists_eventuallyEq_prodMap_of_mfderiv_eq
       (show |angle z₀ z₀| < δ by simpa [angle_self] using hδ)] with z hz t
     have hzρ : |angle z₀ (z, t).1| < ρ := (le_of_lt hz).trans_lt (by linarith)
     rw [hG, spliceTrack_of_abs_lt hzρ, show h (ofCyl z₀ (z, t)) = l (ofCyl z₀ (z, t)) from
-      splice_of_abs_le hδ (le_of_lt hz)]
+      spliceAlong_of_abs_le hδ (le_of_lt hz)]
     have hL' := hLφ (ofCyl z₀ (z, t)) (hρ₁r (hstrip hzρ))
     simp only [hl_def, toCyl_ofCyl] at hL' ⊢
     simp [φ.left_inv hL']
