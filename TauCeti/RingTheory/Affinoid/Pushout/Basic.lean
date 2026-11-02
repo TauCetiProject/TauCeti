@@ -21,18 +21,24 @@ ultrametric algebra norm, and let `B = A⟨X₁, …, Xₘ⟩ ⧸ I` and `C = A�
 `A⟨X, Y⟩ ⧸ (I, J) = A⟨X₁, …, Xₘ, Y₁, …, Yₙ⟩ ⧸ (I, J)`,
 
 where `I` and `J` are carried along the inclusions of the variables, as
-`TauCeti.AffinoidPushout I J`, with its `A`-algebra maps from `B` and from `C`. It proves that
-this is the pushout of `B` and `C` over `A` for maps into affinoid algebras: two `K`-algebra maps
-`B → E` and `C → E` into an affinoid algebra `E`, with no chosen norm, which agree on `A`
-factor through exactly one `K`-algebra map `A⟨X, Y⟩ ⧸ (I, J) → E`. When `E` carries a complete
-ultrametric algebra norm, that map is continuous for the quotient topology. The algebraic tensor
-product `B ⊗[A] C` maps to `A⟨X, Y⟩ ⧸ (I, J)` with dense image.
+`TauCeti.AffinoidPushout I J`, with its `A`-algebra maps from `B` and from `C`. It proves two
+universal properties of this pushout of `B` and `C` over `A`.
 
-No continuity is assumed on the given maps. Algebra maps out of `A⟨X⟩` into a completely normed
-affinoid algebra are automatically continuous, so the images of the variables are
-power-bounded and the universal property of restricted series over `A`,
-`TauCeti.IsAffinoidAlgebra.existsUnique_algHom_isRestricted_subring`, applies to them. A target
-with no chosen norm is given its residue norm, `TauCeti.IsAffinoidAlgebra.residueNormedCommRing`.
+* For continuous maps: two continuous ring homomorphisms `B → S` and `C → S` into a complete
+  Hausdorff nonarchimedean ring `S` which agree on `A` and send the variables to power-bounded
+  elements factor through exactly one continuous ring homomorphism `A⟨X, Y⟩ ⧸ (I, J) → S`,
+  `TauCeti.AffinoidPushout.liftRingHom`. It is built from the universal property of restricted
+  series, `TauCeti.MvPowerSeries.restrictedLift`.
+* For maps into affinoid algebras: two `K`-algebra maps `B → E` and `C → E` into an affinoid
+  algebra `E`, with no chosen norm, which agree on `A` factor through exactly one `K`-algebra
+  map `A⟨X, Y⟩ ⧸ (I, J) → E`. No continuity is assumed on the given maps. When `E` carries a
+  complete ultrametric algebra norm, `K`-algebra maps into `E` out of quotients of `A⟨X⟩` are
+  automatically continuous and send the variables to power-bounded elements, so the factoring
+  map is `TauCeti.AffinoidPushout.lift`, the `K`-algebra map underlying `liftRingHom`, and it
+  is continuous for the quotient topology. A target with no chosen norm is given its residue
+  norm, `TauCeti.IsAffinoidAlgebra.residueNormedCommRing`.
+
+The algebraic tensor product `B ⊗[A] C` maps to `A⟨X, Y⟩ ⧸ (I, J)` with dense image.
 
 ## Main definitions
 
