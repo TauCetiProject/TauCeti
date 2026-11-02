@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CommutativeAlgebra.MatrixFactorization.Cokernel.GorensteinProjective
+public import TauCeti.CommutativeAlgebra.MatrixFactorization.Cokernel.BaseChange
 
 /-!
 # The cokernel functor on matrix factorizations is fully faithful

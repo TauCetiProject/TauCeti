@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CommutativeAlgebra.MatrixFactorization.Cokernel.GorensteinProjective
+public import TauCeti.CommutativeAlgebra.MatrixFactorization.Cokernel.BaseChange
 public import TauCeti.Algebra.Category.ModuleCat.Projective.Dimension
 public import Mathlib.Algebra.Module.FinitePresentation
 public import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
@@ -21,19 +22,22 @@ turns a projective resolution of length one over `S`
 of an `R`-module `M` into a matrix factorization of `w`. Since `w` kills `M`, multiplication by
 `w` on `Q` lands in the image of the injective map `f`, so it factors uniquely as `f ∘ d₁`; then
 `(P --f--> Q --d₁--> P)` is a matrix factorization of `w`
-(`TauCeti.MatrixFactorization.ofInjective`), and the cokernel of its reduction modulo `w` is `M`
-(`TauCeti.MatrixFactorization.quotientCokernelIsoOfExact`).
+(`TauCeti.MatrixFactorization.ofInjective`, in
+`TauCeti.CommutativeAlgebra.MatrixFactorization.Basic`), and the cokernel of its reduction
+modulo `w` is `M` (`TauCeti.MatrixFactorization.quotientCokernelIsoOfExact`).
 
 Conversely, the cokernel of the reduction modulo `w` of any finite-projective matrix factorization
 `X` is the quotient of the odd component `X₁` by the image of `d₀`
-(`TauCeti.MatrixFactorization.exact_d₀_quotientCokernelπ`), and `d₀` is injective when `w` is a
-non-zero-divisor. So for a non-zero-divisor `w`, the `R`-modules arising as such cokernels are
-exactly those with a resolution of length one by finitely generated projective `S`-modules
-(`TauCeti.MatrixFactorization.exists_quotientCokernel_iso_iff`). Among the `R`-modules finitely
-presented over `S`, these are exactly those of projective dimension at most one over `S`
-(`TauCeti.MatrixFactorization.exists_quotientCokernel_iso_iff_hasProjectiveDimensionLE`); over a
-Noetherian ring `S`, this covers every finitely generated `R`-module. In
-particular every such module is Gorenstein-projective over `R`
+(`TauCeti.MatrixFactorization.exact_d₀_quotientCokernelπ`, in
+`TauCeti.CommutativeAlgebra.MatrixFactorization.Cokernel.BaseChange`), and `d₀` is injective
+when `w` is a non-zero-divisor. So for a non-zero-divisor `w`, the `R`-modules arising as such
+cokernels are exactly those with a resolution of length one by finitely generated projective
+`S`-modules (`TauCeti.MatrixFactorization.exists_quotientCokernel_iso_iff`). Among the
+`R`-modules finitely presented over `S`, these are exactly those of projective dimension at most
+one over `S`
+(`TauCeti.MatrixFactorization.exists_quotientCokernel_iso_iff_hasProjectiveDimensionLE`);
+over a Noetherian ring `S`, this covers every finitely generated `R`-module. In particular every
+such module is Gorenstein-projective over `R`
 (`TauCeti.MatrixFactorization.isGorensteinProjective_of_exact`).
 
 No regularity hypothesis is used. When `S` has finite global dimension, every
@@ -43,8 +47,6 @@ category of Gorenstein-projective `R`-modules, is not made here.
 
 ## Main definitions
 
-* `TauCeti.MatrixFactorization.ofInjective`: the matrix factorization `P --f--> Q --d₁--> P` of an
-  injective map `f` between finitely generated projective modules whose cokernel is killed by `w`.
 * `TauCeti.MatrixFactorization.quotientCokernelIsoOfExact`: the cokernel of the reduction of the
   matrix factorization of a resolution `0 → P → Q → M → 0` is `M`.
 
@@ -83,57 +85,6 @@ open CategoryTheory Limits
 open scoped TensorProduct ChangeOfRings
 
 variable {S : Type u} [CommRing S] {w : S}
-
-/-! ### The matrix factorization of an injective map -/
-
-section OfInjective
-
-variable {P Q : FGModuleCat.{u} S} [Module.Projective S P] [Module.Projective S Q]
-  (f : P ⟶ Q) (hf : Function.Injective f.hom.hom)
-  (hw : ∀ y : Q, w • y ∈ LinearMap.range f.hom.hom)
-
-/-- **Eisenbud's matrix factorization.** An injective map `f : P → Q` of finitely generated
-projective modules whose cokernel is killed by `w` is the even-to-odd differential of a unique
-matrix factorization `P --f--> Q --d₁--> P` of `w`: multiplication by `w` on `Q` lands in the
-image of `f`, and `d₁` is its quotient by `f`
-(`TauCeti.MatrixFactorization.ofInjective_obj_d₁_eq_iff`). -/
-@[expose] def ofInjective : MatrixFactorization S w :=
-  let d₁ : Q ⟶ P := ObjectProperty.homMk <| ModuleCat.ofHom <|
-    (LinearEquiv.ofInjective f.hom.hom hf).symm.toLinearMap ∘ₗ
-      (w • LinearMap.id : Q →ₗ[S] Q).codRestrict _ hw
-  have hd₁ (y : Q) : f.hom.hom (d₁.hom.hom y) = w • y := by
-    simp [d₁]
-  ofCurvedDuplex
-    { X₀ := P
-      X₁ := Q
-      d₀ := f
-      d₁ := d₁
-      d₀_comp_d₁ := by
-        ext x
-        apply hf
-        simp [hd₁]
-      d₁_comp_d₀ := by
-        ext y
-        simp [hd₁] }
-    ‹_› ‹_›
-
-@[simp] theorem ofInjective_obj_X₀ : (ofInjective f hf hw).obj.X₀ = P := rfl
-
-@[simp] theorem ofInjective_obj_X₁ : (ofInjective f hf hw).obj.X₁ = Q := rfl
-
-@[simp] theorem ofInjective_obj_d₀ : (ofInjective f hf hw).obj.d₀ = f := rfl
-
-/-- The odd-to-even differential of `ofInjective` is characterized by `f ∘ d₁ = w`. -/
-theorem ofInjective_obj_d₁_eq_iff (d : Q ⟶ P) :
-    (ofInjective f hf hw).obj.d₁ = d ↔ d ≫ f = w • 𝟙 Q := by
-  refine ⟨fun h ↦ h ▸ (ofInjective f hf hw).obj.d₁_comp_d₀, fun h ↦ ?_⟩
-  have hd (y : Q) : f.hom.hom (d.hom.hom y) = w • y := by
-    simpa using LinearMap.congr_fun (congrArg (·.hom.hom) h) y
-  ext y
-  apply hf
-  exact (d₁_comp_d₀_apply (ofInjective f hf hw) y).trans (hd y).symm
-
-end OfInjective
 
 /-! ### The cokernel of a resolution of length one -/
 
