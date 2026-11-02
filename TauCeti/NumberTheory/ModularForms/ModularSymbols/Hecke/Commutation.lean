@@ -90,10 +90,10 @@ attribute [local instance] Fintype.ofFinite in
 `D₁`, `D₂` of `Γ₁(N)` in `Δ₀(N)`, both composites are `∑_D m • T_D` with the same coefficients,
 by the symmetry of the multiplicity under the Atkin–Lehner anti-involution. -/
 theorem commute_heckeSymbol_heckeSymbol
-    (D₁ D₂ : HeckeCoset (Delta0 N) ((Gamma1 N).map (mapGL ℚ)) ((Gamma1 N).map (mapGL ℚ)))
-    (hD₁ : (D₁.out : GL (Fin 2) ℚ) ∈ intEntries 2) (hD₂ : (D₂.out : GL (Fin 2) ℚ) ∈ intEntries 2) :
-    Commute (heckeSymbol (R := R) (w := w) (Gamma1 N) (Gamma1 N) D₁ hD₁)
-      (heckeSymbol (Gamma1 N) (Gamma1 N) D₂ hD₂) := by
+    (D₁ D₂ : HeckeCoset (Delta0 N) ((Gamma1 N).map (mapGL ℚ)) ((Gamma1 N).map (mapGL ℚ))) :
+    Commute (heckeSymbol (R := R) (w := w) (Gamma1 N) (Gamma1 N) D₁
+        (Delta0_le_intEntries N D₁.out.2))
+      (heckeSymbol (Gamma1 N) (Gamma1 N) D₂ (Delta0_le_intEntries N D₂.out.2)) := by
   classical
   -- the term of the double coset `D` in the composite `T_{E₁} ∘ T_{E₂}`
   let f (E₁ E₂ D : HeckeCoset (Delta0 N) ((Gamma1 N).map (mapGL ℚ))
@@ -118,8 +118,8 @@ theorem commute_heckeSymbol_heckeSymbol
     rw [← card_pairs_pairCoset_rightCoset_eq_multiplicity (mem_doubleCoset_self _ _ _),
       Nat.card_of_isEmpty, zero_smul]
   rw [commute_iff_eq,
-    hcomp D₁ D₂ hD₁ hD₂ _ (Finset.subset_union_left (s₂ := Finset.univ.image (pairCoset D₂ D₁))),
-    hcomp D₂ D₁ hD₂ hD₁ _ Finset.subset_union_right]
+    hcomp D₁ D₂ _ _ _ (Finset.subset_union_left (s₂ := Finset.univ.image (pairCoset D₂ D₁))),
+    hcomp D₂ D₁ _ _ _ Finset.subset_union_right]
   refine Finset.sum_congr rfl fun D _ ↦ ?_
   simp only [f]
   rw [multiplicity_inv_comm_Gamma1 N D₁.out.2 D₂.out.2 D.out.2]
@@ -129,7 +129,7 @@ theorem commute_heckeSymbol_heckeSymbol
 theorem commute_heckeTSymbol (m n : ℕ) [NeZero m] [NeZero n] :
     Commute (heckeTSymbol R w N m) (heckeTSymbol R w N n) := by
   rw [heckeTSymbol_def, heckeTSymbol_def]
-  exact commute_heckeSymbol_heckeSymbol _ _ _ _
+  exact commute_heckeSymbol_heckeSymbol _ _
 
 /-- **Every Hecke operator `T_n` commutes with every diamond on modular symbols**, at every index
 `n`, whether or not it is prime to the level. In particular this relation holds over `ℤ`. -/
@@ -137,6 +137,6 @@ theorem commute_heckeTSymbol_diamondSymbol (n : ℕ) [NeZero n] (d : (ZMod N)ˣ)
     Commute (heckeTSymbol R w N n) (diamondSymbol R w N d) := by
   obtain ⟨g, hg⟩ := Gamma0Map_toHomUnits_surjective d
   rw [heckeTSymbol_def, diamondSymbol_eq_heckeSymbol g hg]
-  exact commute_heckeSymbol_heckeSymbol _ _ _ _
+  exact commute_heckeSymbol_heckeSymbol _ _
 
 end TauCeti.ModularSymbols

@@ -8,7 +8,6 @@ module
 public import TauCeti.NumberTheory.HeckeRing.GL2.Gamma0.AtkinLehner
 public import TauCeti.NumberTheory.HeckeRing.GL2.Gamma1.Basic
 import TauCeti.Data.ZMod.Units
-import TauCeti.NumberTheory.HeckeRing.GL2.Gamma0.Diagonal.Coset
 import TauCeti.NumberTheory.HeckeRing.GL2.Gamma0.ElementaryDivisors
 import TauCeti.NumberTheory.HeckeRing.GL2.Gamma1.CoprimeMul
 import TauCeti.NumberTheory.HeckeRing.Multiplicity.Equiv
@@ -33,7 +32,8 @@ upper-left entry `a`, choose `σ ∈ Γ₀(N)` with upper-left entry `a⁻¹` mo
 `σ ι(x)` both lie in `Γ₀(N) · diag(1, m) · Γ₀(N)` with upper-left entry `1` modulo `N`, hence in
 `Γ₁(N) · diag(1, m) · Γ₁(N)` (`HeckeRing.GL2.mem_doubleCoset_Gamma1_of_mem_doubleCoset_Gamma0`).
 As `σ` normalizes `Γ₁(N)`, this puts `ι(x)` in the `Γ₁(N)` double coset of `x`. A general
-element of `Δ₀(N)` is a scalar multiple of a primitive one, and `ι` fixes scalars.
+element of `Δ₀(N)` is a scalar multiple of a primitive one, and `ι` fixes scalars
+(`HeckeRing.GL2.bar_mem_doubleCoset_of_forall_primitive`).
 
 Since `g ↦ ι(g⁻¹)` is an automorphism of `GL₂(ℚ)` preserving `Γ₁(N)`, the symmetry of Shimura's
 multiplicity also holds at inverted arguments, which is the form in which it arises for Hecke
@@ -73,12 +73,6 @@ namespace HeckeRing.GL2
 
 variable (N : ℕ) [NeZero N]
 
-/-- The entrywise cast of an integral special linear matrix. -/
-private lemma coe_mapGL_eq_map (μ : SL(2, ℤ)) :
-    ((mapGL ℚ μ : GL (Fin 2) ℚ) : Matrix (Fin 2) (Fin 2) ℚ) =
-      (μ : Matrix (Fin 2) (Fin 2) ℤ).map (Int.cast : ℤ → ℚ) := by
-  simp [mapGL_coe_matrix, algebraMap_int_eq, RingHom.mapMatrix_apply]
-
 /-- `ι` preserves the image of `Γ₁(N)`: the image of a `Γ₁(N)` matrix lies in `Γ₀(N)`, and its
 lower-right entry is that of the original matrix. -/
 private lemma atkinLehnerAntiInvolution_bar_mem_Gamma1 {x : GL (Fin 2) ℚ} (hx : x ∈ Delta0 N)
@@ -88,11 +82,10 @@ private lemma atkinLehnerAntiInvolution_bar_mem_Gamma1 {x : GL (Fin 2) ℚ} (hx 
   obtain ⟨τ, hτ, hτeq⟩ := (atkinLehnerAntiInvolution N).bar_mem_H hx
     (Subgroup.mem_map_of_mem _ (Gamma1_in_Gamma0 N hγ))
   obtain ⟨c, hc⟩ := mem_Gamma0_iff_dvd.mp (Gamma1_in_Gamma0 N hγ)
-  have hmat : (τ : Matrix (Fin 2) (Fin 2) ℤ) = !![γ 0 0, c; (N : ℤ) * γ 0 1, γ 1 1] := by
-    refine Matrix.map_injective (Int.cast_injective (α := ℚ)) ?_
-    change (τ : Matrix (Fin 2) (Fin 2) ℤ).map (Int.cast : ℤ → ℚ) = _
-    rw [← coe_mapGL_eq_map, hτeq]
-    exact atkinLehnerAntiInvolution_bar_val N hx _ (coe_mapGL_eq_map γ) c hc
+  have hmat : (τ : Matrix (Fin 2) (Fin 2) ℤ) = !![γ 0 0, c; (N : ℤ) * γ 0 1, γ 1 1] :=
+    Matrix.map_injective (Int.cast_injective (α := ℚ)) <|
+      (coe_mapGL_int τ).symm.trans <| (congrArg Units.val hτeq).trans <|
+        atkinLehnerAntiInvolution_bar_val N hx _ (coe_mapGL_int γ) c hc
   refine ⟨τ, mem_Gamma1_iff.mpr ⟨hτ, ?_⟩, hτeq⟩
   rw [hmat]
   simpa using (mem_Gamma1_iff.mp hγ).2
@@ -109,7 +102,7 @@ private noncomputable def atkinLehnerOpHom : GL (Fin 2) ℚ →* (GL (Fin 2) ℚ
 private lemma atkinLehnerOpHom_unop {x : GL (Fin 2) ℚ} (hx : x ∈ Delta0 N) :
     (atkinLehnerOpHom N x).unop = (atkinLehnerAntiInvolution N).bar x hx := by
   rw [← atkinLehnerAutomorphism_inv_apply N hx, map_inv]
-  rfl
+  simp only [atkinLehnerOpHom, MonoidHom.coe_mk, OneHom.coe_mk, MulOpposite.unop_op]
 
 /-- **The Atkin–Lehner anti-involution of the `Γ₁(N)` Hecke pair**: `g ↦ w · gᵀ · w⁻¹` with
 `w = diag(1, N)`, the map of `HeckeRing.GL2.atkinLehnerAntiInvolution`, which also preserves the
@@ -210,60 +203,17 @@ private lemma atkinLehnerAntiInvolutionGamma1_bar_mem_doubleCoset_of_primitive
             (mapGL ℚ (σ : SL(2, ℤ)) * (atkinLehnerAntiInvolution N).bar x hx) := by group
       _ = _ := by rw [heq]; group
 
-/-- **The Atkin–Lehner anti-involution fixes every `Γ₁(N)` double coset in `Δ₀(N)`.** Dividing an
-integral witness by the gcd `d` of its entries leaves a primitive one, and the scalar `d` is
-central and fixed by the anti-involution. -/
+/-- **The Atkin–Lehner anti-involution fixes every `Γ₁(N)` double coset in `Δ₀(N)`.** It fixes
+the scalars, as at level `Γ₀(N)`, so `HeckeRing.GL2.bar_mem_doubleCoset_of_forall_primitive`
+reduces to a primitive witness. -/
 theorem atkinLehnerAntiInvolutionGamma1_bar_mem_doubleCoset (x : GL (Fin 2) ℚ)
     (hx : x ∈ Delta0 N) : (atkinLehnerAntiInvolutionGamma1 N).bar x hx ∈
-      doubleCoset x ((Gamma1 N).map (mapGL ℚ)) ((Gamma1 N).map (mapGL ℚ)) := by
-  obtain ⟨A, hA, hxdet, hAN, hAunit⟩ := (mem_Delta0_iff N).mp hx
-  have hAco : Int.gcd (A 0 0) N = 1 := Int.isUnit_intCast_iff_gcd_eq_one.mp hAunit
-  have hA_det_pos : 0 < A.det := by
-    rw [← Int.cast_pos (R := ℚ), Int.cast_det, ← hA]
-    exact hxdet
-  -- divide the witness by the gcd `d` of its four entries
-  set d : ℕ := Nat.gcd (Nat.gcd (A 0 0).natAbs (A 0 1).natAbs)
-    (Nat.gcd (A 1 0).natAbs (A 1 1).natAbs) with hd_def
-  obtain ⟨A₀, hA₀_eq, hA₀_det_pos, hA₀N, hA₀co, hA₀_prim⟩ :=
-    exists_primitive_content_quotient N A hA_det_pos hAN hAco d hd_def
-  have hd : 0 < d := Nat.pos_of_ne_zero fun h ↦ by
-    have hA0 : A = 0 := Matrix.ext fun i j ↦ by simpa [h] using hA₀_eq i j
-    simp [hA0] at hA_det_pos
-  have hdN : Nat.Coprime d N :=
-    Nat.Coprime.coprime_dvd_left ((Nat.gcd_dvd_left _ _).trans (Nat.gcd_dvd_left _ _)) hAco
-  have hA₀_det_ne : (A₀.map (Int.cast : ℤ → ℚ)).det ≠ 0 := by
-    rw [← Int.cast_det]
-    exact_mod_cast hA₀_det_pos.ne'
-  set x₀ : GL (Fin 2) ℚ := Matrix.GeneralLinearGroup.mkOfDetNeZero _ hA₀_det_ne
-  have hx₀_val : (x₀ : Matrix (Fin 2) (Fin 2) ℚ) = A₀.map (Int.cast : ℤ → ℚ) := by simp [x₀]
-  have hx₀ : x₀ ∈ Delta0 N := (mem_Delta0_iff N).mpr ⟨A₀, hx₀_val,
-    by rw [hx₀_val, ← Int.cast_det]; exact_mod_cast hA₀_det_pos, hA₀N,
-    Int.isUnit_intCast_iff_gcd_eq_one.mpr hA₀co⟩
-  -- the scalar `d` lies in `Δ₀(N)`, is central and is fixed
-  let s : GL (Fin 2) ℚ := natDiagGL 2 (fun _ ↦ d)
-  have hs : s ∈ Delta0 N := natDiagGL_mem_Delta0_of_coprime N _ fun _ ↦ hdN
-  have hs_wit : (s : Matrix (Fin 2) (Fin 2) ℚ) =
-      (Matrix.diagonal (fun _ ↦ (d : ℤ))).map (Int.cast : ℤ → ℚ) :=
-    natDiagGL_coe_eq_map_intCast 2 _ fun _ ↦ hd
-  have hs_central : s ∈ Subgroup.center (GL (Fin 2) ℚ) :=
-    Subgroup.mem_center_iff.mpr fun g ↦ (natDiagGL_const_comm 2 d g).symm
-  have hbar : (atkinLehnerAntiInvolutionGamma1 N).bar s hs = s := by
-    apply Units.ext
-    rw [atkinLehnerAntiInvolutionGamma1_bar_eq,
-      atkinLehnerAntiInvolution_bar_val N hs _ hs_wit 0 (by simp), hs_wit]
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp [Matrix.diagonal]
-  have hxeq : x = s * x₀ := by
-    apply Units.ext
-    rw [Units.val_mul, hA, hs_wit, hx₀_val]
-    ext i j
-    fin_cases i <;> fin_cases j <;>
-      simp [Matrix.mul_apply, Matrix.diagonal, hA₀_eq]
-  subst hxeq
-  exact (atkinLehnerAntiInvolutionGamma1 N).bar_mem_doubleCoset_self_mul_of_mem_centralizer hs
-    hx₀ (Subgroup.center_le_centralizer _ hs_central) hbar
-    (atkinLehnerAntiInvolutionGamma1_bar_mem_doubleCoset_of_primitive N x₀ hx₀ A₀ hx₀_val
-      hA₀_prim)
+      doubleCoset x ((Gamma1 N).map (mapGL ℚ)) ((Gamma1 N).map (mapGL ℚ)) :=
+  bar_mem_doubleCoset_of_forall_primitive N (atkinLehnerAntiInvolutionGamma1 N)
+    (fun _ hd hs ↦ by
+      rw [atkinLehnerAntiInvolutionGamma1_bar_eq]
+      exact atkinLehnerAntiInvolution_bar_natDiagGL_const N hd hs)
+    (atkinLehnerAntiInvolutionGamma1_bar_mem_doubleCoset_of_primitive N) x hx
 
 /-- **The Atkin–Lehner anti-involution acts trivially on `Γ₁(N) \ Δ₀(N) / Γ₁(N)`.** -/
 @[simp] lemma atkinLehnerAntiInvolutionGamma1_onHeckeCoset_eq_self
