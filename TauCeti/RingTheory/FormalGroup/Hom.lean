@@ -23,6 +23,7 @@ points, including points with nilpotent, not necessarily zero, constant coeffici
 The homomorphism defect `f(F(X, Y)) - G(f(X), f(Y))` (`FormalGroup.homDefect`) of a power series
 `f` measures how far `f` is from a homomorphism: it vanishes exactly for homomorphisms
 (`TauCeti.FormalGroupHom.homDefect_toPowerSeries`, `TauCeti.FormalGroupHom.ofHomDefectEqZero`).
+The defect of `X` is the difference `F - G` (`FormalGroup.homDefect_X`).
 Towards the additive formal group law the defect is additive in `f`
 (`FormalGroup.homDefect_𝔾ₐ_sub`), vanishes to the order of `f`
 (`FormalGroup.le_order_homDefect_𝔾ₐ`), and for `f = c Xⁿ` has leading term
@@ -67,6 +68,12 @@ theorem homDefect_eq_zero_iff {f : PowerSeries R} :
     F.homDefect G f = 0 ↔
       PowerSeries.subst F.toPowerSeries f = subst (fun i ↦ f.toMvPowerSeries i) G.toPowerSeries :=
   sub_eq_zero
+
+/-- The homomorphism defect of `X` is the difference `F - G` of the formal group laws. -/
+@[simp]
+theorem homDefect_X : F.homDefect G PowerSeries.X = F.toPowerSeries - G.toPowerSeries := by
+  simp [homDefect_def, PowerSeries.subst_X (.of_constantCoeff_zero F.zero_constantCoeff),
+    PowerSeries.toMvPowerSeries_X, subst_self]
 
 /-- The homomorphism defect towards the additive formal group law is the additivity defect
 `f(F(X, Y)) - f(X) - f(Y)`. -/

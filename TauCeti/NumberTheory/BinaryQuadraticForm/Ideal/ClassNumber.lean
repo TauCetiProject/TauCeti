@@ -47,10 +47,8 @@ domain.
   number, is twice the order of that Picard group divided by the number of units of the order.
 * `TauCeti.BinaryQuadraticForm.classNumber_eq_card_primitiveReducedForms`: for fundamental `-n`,
   the class number of `ℚ(√(-n))` is `#(primitiveReducedForms n)`.
-* `TauCeti.BinaryQuadraticForm.classNumber_neg_four_eq_one` and
-  `TauCeti.BinaryQuadraticForm.classNumber_neg_twenty_eq_two`: the class numbers of `ℚ(√(-4))` and
-  `ℚ(√(-20))` are `1` and `2`; `not_uniqueFactorizationMonoid_neg_twenty` records the failure of
-  unique factorization in the latter.
+* `TauCeti.BinaryQuadraticForm.classNumber_neg_twenty_eq_two`: the class number of `ℚ(√(-20))` is
+  `2`; `not_uniqueFactorizationMonoid_neg_twenty` records the failure of unique factorization there.
 
 ## References
 
@@ -127,16 +125,6 @@ theorem classNumber_eq_card_primitiveReducedForms (hfund : Int.IsFundamentalDisc
 end Fundamental
 
 section Examples
-
-/-- **`ℚ(i)` has class number one**, certified by its single primitive reduced form `x² + y²` of
-discriminant `-4`. -/
-theorem classNumber_neg_four_eq_one :
-    NumberField.classNumber (QuadraticAlgebra ℚ ((-(4 : ℕ) : ℤ) : ℚ) 0) = 1 := by
-  have hfund : Int.IsFundamentalDiscr (-(4 : ℕ) : ℤ) := by
-    simpa using (Int.isFundamentalDiscr_four_mul (m := -1)).mpr
-      ⟨isUnit_neg_one.squarefree, by decide⟩
-  rw [classNumber_eq_card_primitiveReducedForms 4 hfund]
-  decide +kernel
 
 /-- **`ℚ(√(-5))` has class number two**, certified by its two primitive reduced forms
 `x² + 5 y²` and `2 x² + 2 x y + 3 y²` of discriminant `-20`. -/

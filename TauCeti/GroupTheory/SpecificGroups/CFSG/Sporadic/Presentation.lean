@@ -91,6 +91,11 @@ def SporadicName.presentation : SporadicName → GroupPresentation
   | .B => Sporadic.BabyMonster.presentation
   | .M => Sporadic.Monster.presentation
 
+/-- The selected Higman--Sims presentation is the transcribed ATLAS presentation `HSG1-P1`. -/
+@[simp]
+theorem SporadicName.presentation_HS : SporadicName.HS.presentation = Sporadic.hsPresentation := by
+  rfl
+
 /-- Every sporadic presentation has the relator count stated in its metadata.
 
 This is deliberately not `@[simp]`: `GroupPresentation.matchesMetadata_iff` is itself a `simp`
@@ -134,6 +139,13 @@ to importing modules, so this equation is how they reach it. -/
 theorem SporadicName.presentation_M11 : SporadicName.M11.presentation = Sporadic.m11Presentation :=
   (rfl)
 
+/-- The presentation selected for `M₁₂` is the transcribed presentation
+`TauCeti.Sporadic.m12Presentation`. The body of `TauCeti.SporadicName.presentation` is not exposed
+to importing modules, so this equation is how they reach it. -/
+@[simp]
+theorem SporadicName.presentation_M12 : SporadicName.M12.presentation = Sporadic.m12Presentation :=
+  (rfl)
+
 /-- The sporadic group concretely defined by its selected finite presentation. -/
 abbrev SporadicName.Group (s : SporadicName) : Type := s.presentation.Group
 
@@ -142,6 +154,18 @@ abbrev SporadicName.Group (s : SporadicName) : Type := s.presentation.Group
 to importing modules, so this equation is how they reach it. -/
 @[simp]
 theorem SporadicName.presentation_M24 : SporadicName.M24.presentation = Sporadic.m24Presentation :=
+  (rfl)
+
+/-- The presentation selected for `McL` is the transcribed ATLAS presentation
+`TauCeti.Sporadic.mclPresentation`. -/
+@[simp]
+theorem SporadicName.presentation_McL : SporadicName.McL.presentation = Sporadic.mclPresentation :=
+  (rfl)
+
+/-- The presentation selected for `J₂` is Stoytchev's transcribed presentation
+`TauCeti.Sporadic.j2Presentation`. -/
+@[simp]
+theorem SporadicName.presentation_J2 : SporadicName.J2.presentation = Sporadic.j2Presentation :=
   (rfl)
 
 end TauCeti
