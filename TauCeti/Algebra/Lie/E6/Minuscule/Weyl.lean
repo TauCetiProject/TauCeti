@@ -123,6 +123,8 @@ theorem simpleWeylPoint_conj_weightTorusPoints (i : Fin 6) (A : Type v) [CommRin
       weightTorusPoints A (E6.geckSimpleReflectionTorusPoint valid_E6 i A s) := by
   rw [E6.geckSimpleReflectionTorusPoint_def valid_E6 i A,
     E6.root_simpleIndex valid_E6 i]
+  -- Unfold E6.rank to 6, including in instance arguments, so the root-datum indices
+  -- match the Kostant conjugation theorem's Fin 6 arguments.
   dsimp (config := { instances := true }) only [rank]
   simp only [cartanMatrix_E6]
   have h := kostantToralWeylPoint_conj_weightTorusPoints
