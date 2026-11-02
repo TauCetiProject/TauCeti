@@ -316,7 +316,7 @@ theorem killingForm_cartanInvolution_self_neg {K : Type*} [Field K] [LinearOrder
     by_contra! h
     exact hX (Subtype.ext (Matrix.ext h))
   have htrace : 0 < ((X : Matrix (l ⊕ l) (l ⊕ l) K) * (X : Matrix (l ⊕ l) (l ⊕ l) K)ᵀ).trace := by
-    simp only [Matrix.trace, diag_apply, mul_apply, transpose_apply]
+    simp only [Matrix.trace, diag_apply, Matrix.mul_apply, Matrix.transpose_apply]
     exact Finset.sum_pos' (fun _ _ ↦ Finset.sum_nonneg fun _ _ ↦ mul_self_nonneg _)
       ⟨i, Finset.mem_univ _, Finset.sum_pos' (fun _ _ ↦ mul_self_nonneg _)
         ⟨j, Finset.mem_univ _, mul_self_pos.mpr hij⟩⟩

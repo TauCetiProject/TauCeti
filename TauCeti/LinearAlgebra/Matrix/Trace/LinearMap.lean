@@ -60,7 +60,7 @@ theorem trace_mulLeft_comp_mulRight (A B : Matrix n n R) :
       A.trace * B.trace := by
   classical
   rw [LinearMap.trace_eq_sum_apply_single_apply]
-  simp [Matrix.trace, mul_apply, single, Finset.sum_mul_sum, ite_and]
+  simp [Matrix.trace, Matrix.mul_apply, single, Finset.sum_mul_sum, ite_and]
 
 /-- The trace of left multiplication by `A` on square matrices is `card n * trace A`. -/
 @[simp]
@@ -84,6 +84,6 @@ theorem trace_mulLeft_comp_mulRight_comp_transpose (A B : Matrix n n R) :
       (transposeLinearEquiv n n R R).toLinearMap) = (A * Bᵀ).trace := by
   classical
   rw [LinearMap.trace_eq_sum_apply_single_apply]
-  simp [Matrix.trace, mul_apply, single, ite_and]
+  simp [Matrix.trace, Matrix.mul_apply, single, ite_and]
 
 end Matrix
