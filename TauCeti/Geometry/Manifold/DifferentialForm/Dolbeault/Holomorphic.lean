@@ -181,7 +181,9 @@ def kerDelBarZeroEquiv :
   toFun φ := ⟨fun y ↦ φ.1.1 y 0,
     ((delBar_ofComplexManifold_eq_zero_iff φ.1).1 (LinearMap.mem_ker.1 φ.2)).contMDiff⟩
   invFun g := ⟨⟨RoughForm.ofFunction 𝓘(ℝ, E) g,
-      (isSmoothForm_ofFunction_iff.2 (g.contMDiff.restrictScalars ℝ)).mem_smoothBundleForms⟩,
+      (isSmoothForm_ofFunction_iff.2 <| by
+        simpa only [modelWithCornersSelf_restrictScalars] using
+          g.contMDiff.restrictScalars ℝ).mem_smoothBundleForms⟩,
     LinearMap.mem_ker.2 <| (delBar_ofComplexManifold_eq_zero_iff _).2 <| by
       simpa only [RoughForm.ofFunction_apply] using g.contMDiff.mdifferentiable (by simp)⟩
   map_add' _ _ := rfl
