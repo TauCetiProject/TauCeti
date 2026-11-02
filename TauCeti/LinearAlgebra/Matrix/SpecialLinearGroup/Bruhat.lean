@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Borel
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ModularGroup
 
 /-!
@@ -115,7 +116,7 @@ chosen Weyl representative `S` is preserved. -/
 theorem map_bruhat (φ : R →+* A) (x : R) (b : SL2Borel R) :
     Matrix.SpecialLinearGroup.map φ (bruhat x b) = bruhat (φ x) (map φ b) := by
   simp only [bruhat_def, map_mul, ← coe_map, map_mk, map_one,
-    TauCeti.Matrix.SpecialLinearGroup.map_modularGroup_S]
+    Matrix.SpecialLinearGroup.map_intCast_coe]
 
 /-- Two normalized Bruhat products are equal exactly when both coordinates agree. -/
 @[simp]
