@@ -11,7 +11,7 @@ public import TauCeti.RingTheory.FormalGroup.LazardRing.Indecomposable
 -- dual numbers, weighted homogeneity and leading monomials.
 import Mathlib.Algebra.MvPolynomial.Coeff
 import Mathlib.RingTheory.AlgebraicIndependent.Basic
-import TauCeti.RingTheory.FormalGroup.Rescale
+import TauCeti.RingTheory.FormalGroup.Rescale.Basic
 import TauCeti.RingTheory.MvPolynomial.DualNumber
 import TauCeti.RingTheory.MvPolynomial.MonomialOrder
 import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
