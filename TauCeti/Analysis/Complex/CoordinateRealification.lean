@@ -77,6 +77,15 @@ theorem realCoords_comp_finSumFinEquiv (n : ℕ) (v : Fin n → ℂ) :
   funext k
   cases k <;> simp
 
+/-- In real coordinates, a complex matrix acts by its realification, with the two coordinate
+blocks concatenated by `finSumFinEquiv`. -/
+theorem realCoords_mulVec {m n : ℕ} (M : Matrix (Fin n) (Fin m) ℂ) (z : Fin m → ℂ) :
+    realCoords n (M *ᵥ z) =
+      Matrix.reindex finSumFinEquiv finSumFinEquiv M.realify *ᵥ realCoords m z := by
+  apply finSumFinEquiv.surjective.injective_comp_right
+  simp [Matrix.submatrix_mulVec_equiv, realCoords_comp_finSumFinEquiv, complexToRealPi_mulVec,
+    Function.comp_assoc]
+
 theorem realCoords_apply (n : ℕ) (v : Fin n → ℂ) :
     realCoords n v = (splitCoords (𝕜 := ℝ) n n).symm (fun i => (v i).re, fun i => (v i).im) := by
   rw [← splitCoords_realCoords, ContinuousLinearEquiv.symm_apply_apply]
@@ -139,20 +148,8 @@ theorem toMatrix'_realifyCoords (g : (Fin m → ℂ) →L[ℂ] (Fin n → ℂ)) 
   congr 1
   refine LinearMap.ext fun w => ?_
   obtain ⟨z, rfl⟩ := (realCoords m).surjective w
-  funext k
-  obtain ⟨k, rfl⟩ := finSumFinEquiv.surjective k
-  -- On the left, the reindexed matrix acts on the unconcatenated blocks `complexToRealPi z`.
-  rw [Matrix.toLin'_apply, Matrix.reindex_apply, Matrix.submatrix_mulVec_equiv, Equiv.symm_symm,
-    realCoords_comp_finSumFinEquiv, Function.comp_apply, Equiv.symm_apply_apply]
-  -- On the right, the real coordinates of `g z` are read in the same blocks.
-  rw [coe_coe, realifyCoords_realCoords, ← Function.comp_apply (f := realCoords n _),
-    realCoords_comp_finSumFinEquiv]
-  have hz : complexToRealPi (Fin m) z = (complexToRealEuclidean (Fin m) z).ofLp := by
-    funext j
-    simp
-  rw [hz]
-  simpa using congrArg (fun x => x k)
-    (complexToRealEuclidean_mulVec (LinearMap.toMatrix' (g : (Fin m → ℂ) →ₗ[ℂ] (Fin n → ℂ))) z)
+  rw [Matrix.toLin'_apply, ← realCoords_mulVec]
+  simp
 
 /-- Realification depends continuously on the complex operator. -/
 theorem continuous_realifyCoords :

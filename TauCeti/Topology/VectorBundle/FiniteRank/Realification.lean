@@ -177,9 +177,8 @@ theorem realifyComplexifyIso_naturality_fst {A D : FiniteRankBundleCore ℝ B} (
     (realify B).map ((complexify B).map f) ≫ (realifyComplexifyIso D).hom ≫ whitneyFst D D =
       (realifyComplexifyIso A).hom ≫ whitneyFst A A ≫ f := by
   refine hom_ext fun x => ?_
-  rw [fiberMap_comp, fiberMap_comp, fiberMap_comp, fiberMap_comp, fiberMap_realify_map,
-    fiberMap_complexify_map, fiberMap_realifyComplexifyIso_hom, fiberMap_realifyComplexifyIso_hom,
-    fiberMap_whitneyFst, fiberMap_whitneyFst]
+  simp only [fiberMap_comp, fiberMap_realify_map, fiberMap_complexify_map,
+    fiberMap_realifyComplexifyIso_hom, fiberMap_whitneyFst]
   -- At each coordinate vector, both sides are the first block of the doubled transition.
   exact ContinuousLinearMap.ext fun v => congrArg Prod.fst
     (ContinuousLinearMap.splitCoords_realifyCoords_complexifyCoords (f.fiberMap x) v)
@@ -190,9 +189,8 @@ theorem realifyComplexifyIso_naturality_snd {A D : FiniteRankBundleCore ℝ B} (
     (realify B).map ((complexify B).map f) ≫ (realifyComplexifyIso D).hom ≫ whitneySnd D D =
       (realifyComplexifyIso A).hom ≫ whitneySnd A A ≫ f := by
   refine hom_ext fun x => ?_
-  rw [fiberMap_comp, fiberMap_comp, fiberMap_comp, fiberMap_comp, fiberMap_realify_map,
-    fiberMap_complexify_map, fiberMap_realifyComplexifyIso_hom, fiberMap_realifyComplexifyIso_hom,
-    fiberMap_whitneySnd, fiberMap_whitneySnd]
+  simp only [fiberMap_comp, fiberMap_realify_map, fiberMap_complexify_map,
+    fiberMap_realifyComplexifyIso_hom, fiberMap_whitneySnd]
   -- At each coordinate vector, both sides are the second block of the doubled transition.
   exact ContinuousLinearMap.ext fun v => congrArg Prod.snd
     (ContinuousLinearMap.splitCoords_realifyCoords_complexifyCoords (f.fiberMap x) v)
