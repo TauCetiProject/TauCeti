@@ -153,28 +153,21 @@ theorem eq_zero_of_hasApproximationProperty_left (hE : HasApproximationProperty 
     fun g f ↦ (hcomm f g).trans (hu f g)
   rwa [LinearIsometryEquiv.map_eq_zero_iff] at h
 
-/-- An elementary functional `x ⊗ₜ y ↦ f x * g y` vanishes on every element of `E ⊗̂π F` that
-the contraction to `E ⊗̂ε F` sends to zero. -/
-private theorem liftIsometry_smulRight_eq_zero {u : CompletedProjectiveTensor 𝕜 E F}
-    (hu : toCompletedInjectiveTensor 𝕜 E F u = 0) (f : StrongDual 𝕜 E) (g : StrongDual 𝕜 F) :
-    liftIsometry 𝕜 E F 𝕜 (f.smulRight g) u = 0 := by
-  rw [← IntegralBilinearForm.toContinuousLinearMap_smulRight,
-    ← IntegralBilinearForm.liftIsometry_fromCompletion_comp_toCompletedInjectiveTensor,
-    ContinuousLinearMap.comp_apply, hu, map_zero]
-
 /-- If `F` has the approximation property, the contraction `E ⊗̂π F → E ⊗̂ε F` is injective. -/
 theorem injective_toCompletedInjectiveTensor_of_hasApproximationProperty_right
     (hF : HasApproximationProperty 𝕜 F) :
     Function.Injective (toCompletedInjectiveTensor 𝕜 E F) :=
   (injective_iff_map_eq_zero _).2 fun _ hu ↦
-    eq_zero_of_hasApproximationProperty_right hF (liftIsometry_smulRight_eq_zero hu)
+    eq_zero_of_hasApproximationProperty_right hF
+      (liftIsometry_smulRight_eq_zero_of_toCompletedInjectiveTensor_eq_zero hu)
 
 /-- If `E` has the approximation property, the contraction `E ⊗̂π F → E ⊗̂ε F` is injective. -/
 theorem injective_toCompletedInjectiveTensor_of_hasApproximationProperty_left
     (hE : HasApproximationProperty 𝕜 E) :
     Function.Injective (toCompletedInjectiveTensor 𝕜 E F) :=
   (injective_iff_map_eq_zero _).2 fun _ hu ↦
-    eq_zero_of_hasApproximationProperty_left hE (liftIsometry_smulRight_eq_zero hu)
+    eq_zero_of_hasApproximationProperty_left hE
+      (liftIsometry_smulRight_eq_zero_of_toCompletedInjectiveTensor_eq_zero hu)
 
 section Operator
 

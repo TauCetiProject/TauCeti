@@ -35,7 +35,8 @@ The forgetful map to bounded bilinear forms is the contraction
 injective tensor product shows that the carrier is a Banach space when `𝕜` is complete.
 Restricting a functional on the injective tensor product along the contraction from the projective
 tensor product recovers the functional induced by the underlying bounded bilinear form, and
-likewise for the completed tensor products.
+likewise for the completed tensor products. In particular, the elementary functionals
+`x ⊗ₜ y ↦ f x * g y` vanish on the kernel of the contraction `E ⊗̂π F → E ⊗̂ε F`.
 
 ## Main declarations
 
@@ -417,5 +418,22 @@ theorem norm_smulRight (f : StrongDual 𝕜 E) (g : StrongDual 𝕜 F) :
     ENNReal.toReal_mul, toReal_enorm, toReal_enorm]
 
 end IntegralBilinearForm
+
+namespace CompletedProjectiveTensor
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- An elementary functional `x ⊗ₜ y ↦ f x * g y` vanishes on every element of `E ⊗̂π F` that
+the contraction to `E ⊗̂ε F` sends to zero. -/
+theorem liftIsometry_smulRight_eq_zero_of_toCompletedInjectiveTensor_eq_zero
+    {u : CompletedProjectiveTensor 𝕜 E F} (hu : toCompletedInjectiveTensor 𝕜 E F u = 0)
+    (f : StrongDual 𝕜 E) (g : StrongDual 𝕜 F) :
+    liftIsometry 𝕜 E F 𝕜 (f.smulRight g) u = 0 := by
+  rw [← IntegralBilinearForm.toContinuousLinearMap_smulRight,
+    ← IntegralBilinearForm.liftIsometry_fromCompletion_comp_toCompletedInjectiveTensor,
+    ContinuousLinearMap.comp_apply, hu, map_zero]
+
+end CompletedProjectiveTensor
 
 end TauCeti
