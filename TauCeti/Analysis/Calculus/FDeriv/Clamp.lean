@@ -12,12 +12,14 @@ import Mathlib.Topology.Order.OrderClosed
 /-!
 # The derivative of a clamped function
 
-For a continuous real function `w` and `η > 0`, the clamped function `max 0 (min w η)` has
-derivative equal to that of `w` on the open band `{0 < w < η}` and zero everywhere else, including
-on the two levels `0` and `η`, where it attains a local extremum
+For a continuous real function `w` and `η > 0`, Lean's totalized `fderiv` of the clamped function
+`max 0 (min w η)` equals `fderiv w` on the open band `{0 < w < η}` and zero everywhere else
 (`TauCeti.fderiv_max_min_eq_indicator`). No differentiability of `w` is assumed: on the band the
-clamped function agrees with `w` nearby, and off it the clamped function is locally constant or
-has a local extremum.
+clamped function agrees with `w` nearby, and off the closed band it is locally constant. On the two
+levels `0` and `η` the clamped function attains a local extremum, so its `fderiv` is zero there
+either because it is differentiable with zero derivative or because `fderiv` is zero by
+convention at a point of non-differentiability; the identity does not assert differentiability
+there, and the clamped function is in general not differentiable at those levels.
 
 Clamped functions of this form are the standard test functions for integration by parts against
 the indicator of a superlevel set. The clamped function differs from `η` times the indicator of
@@ -53,8 +55,9 @@ theorem abs_mul_indicator_sub_max_min_le {X : Type*} {w : X → ℝ} {η : ℝ} 
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-/-- The derivative of the clamped function `max 0 (min w η)` is the derivative of `w` on
-`{0 < w < η}` and vanishes elsewhere, including at both levels `0` and `η`. -/
+/-- Lean's totalized `fderiv` of the clamped function `max 0 (min w η)` is `fderiv w` on
+`{0 < w < η}` and zero elsewhere. At the levels `0` and `η` this is an identity for `fderiv` only:
+it does not assert that the clamped function is differentiable there, and in general it is not. -/
 theorem fderiv_max_min_eq_indicator {w : E → ℝ} (hw : Continuous w) {η : ℝ} (hη : 0 < η)
     (x : E) :
     fderiv ℝ (fun y => max 0 (min (w y) η)) x = (w ⁻¹' Ioo 0 η).indicator (fderiv ℝ w) x := by

@@ -217,10 +217,10 @@ section Shell
 open Metric Module
 
 /-- **Brunn–Minkowski for a shell.** If the `r`-neighbourhood `G + ball 0 r` of a nonempty
-measurable set `G` lies in a set `F` of finite volume, then in dimension `n ≥ 1`
+null-measurable set `G` lies in a set `F` of finite volume, then in dimension `n ≥ 1`
 `volume F - volume G ≥ n (volume G ^ (1 / n)) ^ (n - 1) r ω_n ^ (1 / n)`. -/
 theorem finrank_mul_rpow_pow_mul_le_volume_real_sub (hn : finrank ℝ E ≠ 0) {G F : Set E}
-    (hG : MeasurableSet G) (hG0 : G.Nonempty) (hF : volume F ≠ ∞) {r : ℝ} (hr : 0 < r)
+    (hG : NullMeasurableSet G volume) (hG0 : G.Nonempty) (hF : volume F ≠ ∞) {r : ℝ} (hr : 0 < r)
     (hsub : G + ball (0 : E) r ⊆ F) :
     finrank ℝ E * (volume.real G ^ (finrank ℝ E : ℝ)⁻¹) ^ (finrank ℝ E - 1) *
         (r * volume.real (ball (0 : E) 1) ^ (finrank ℝ E : ℝ)⁻¹) ≤
@@ -231,7 +231,7 @@ theorem finrank_mul_rpow_pow_mul_le_volume_real_sub (hn : finrank ℝ E ≠ 0) {
   have hball : volume.real (ball (0 : E) r) ^ (n : ℝ)⁻¹ = b := by
     rw [volume.addHaar_real_ball_of_pos 0 hr, Real.mul_rpow (by positivity) measureReal_nonneg,
       Real.pow_rpow_inv_natCast hr.le hn]
-  have hBM := volume_real_rpow_add_volume_real_rpow_le hn hG0 hG.nullMeasurableSet
+  have hBM := volume_real_rpow_add_volume_real_rpow_le hn hG0 hG
     (nonempty_ball.2 hr) measurableSet_ball.nullMeasurableSet
     (ne_top_of_le_ne_top hF (measure_mono hsub))
   rw [hball] at hBM
