@@ -136,28 +136,36 @@ theorem spec_obj_obj (A : (CommAlgCat.FiniteEtale.{u} R)ᵒᵖ) :
     ((spec R).obj A).obj = (algSpec R).obj (op A.unop.obj) :=
   (rfl)
 
+/-- A finite étale scheme over `Spec R` is, over `Spec R`, the spectrum of a finite étale
+`R`-algebra, namely of its global sections. This is the essential surjectivity of `spec`,
+stated without the categorical wrappers. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.exists_overIso_spec_of_isFinite_of_etale
+    {R : CommRingCat.{u}} {Y : Scheme.{u}} (g : Y ⟶ Spec R) [IsFinite g] [Etale g] :
+    ∃ (A : Type u) (_ : CommRing A) (_ : Algebra R A) (_ : Module.Finite R A)
+      (_ : Algebra.Etale R A),
+      Nonempty (Over.mk g ≅ Over.mk (Spec.map (CommRingCat.ofHom (algebraMap R A)))) := by
+  have : IsAffine Y := isAffine_of_isAffineHom g
+  let _ : Algebra R Γ(Y, ⊤) := (Spec.preimage (Y.isoSpec.inv ≫ g)).hom.toAlgebra
+  have hφ : Spec.map (CommRingCat.ofHom (algebraMap R Γ(Y, ⊤))) = Y.isoSpec.inv ≫ g :=
+    Spec.map_preimage _
+  have hfinite : IsFinite (Spec.map (CommRingCat.ofHom (algebraMap R Γ(Y, ⊤)))) := by
+    rw [hφ]
+    infer_instance
+  have hetale : Etale (Spec.map (CommRingCat.ofHom (algebraMap R Γ(Y, ⊤)))) := by
+    rw [hφ]
+    infer_instance
+  have : Module.Finite R Γ(Y, ⊤) :=
+    RingHom.finite_algebraMap.mp ((IsFinite.SpecMap_iff _).mp hfinite)
+  have : Algebra.Etale R Γ(Y, ⊤) :=
+    RingHom.etale_algebraMap.mp ((HasRingHomProperty.Spec_iff (P := @Etale)).mp hetale)
+  exact ⟨Γ(Y, ⊤), inferInstance, inferInstance, inferInstance, inferInstance,
+    ⟨Over.isoMk Y.isoSpec (by simp [hφ])⟩⟩
+
 private theorem exists_spec_iso (X : FiniteEtaleScheme (Spec R)) :
     ∃ A : (CommAlgCat.FiniteEtale.{u} R)ᵒᵖ, Nonempty ((spec R).obj A ≅ X) := by
-  have : IsAffine X.obj.left := isAffine_of_isAffineHom X.obj.hom
-  let φ := (Spec.preimage (X.obj.left.isoSpec.inv ≫ X.obj.hom)).hom
-  let _ : Algebra R Γ(X.obj.left, ⊤) := φ.toAlgebra
-  have hφ : Spec.map (CommRingCat.ofHom (algebraMap R Γ(X.obj.left, ⊤))) =
-      X.obj.left.isoSpec.inv ≫ X.obj.hom := Spec.map_preimage _
-  have hfinite : IsFinite (Spec.map (CommRingCat.ofHom
-      (algebraMap R Γ(X.obj.left, ⊤)))) := by
-    rw [hφ]
-    infer_instance
-  have hetale : Etale (Spec.map (CommRingCat.ofHom
-      (algebraMap R Γ(X.obj.left, ⊤)))) := by
-    rw [hφ]
-    infer_instance
-  have : Module.Finite R Γ(X.obj.left, ⊤) :=
-    RingHom.finite_algebraMap.mp ((IsFinite.SpecMap_iff _).mp hfinite)
-  have : Algebra.Etale R Γ(X.obj.left, ⊤) :=
-    RingHom.etale_algebraMap.mp ((HasRingHomProperty.Spec_iff (P := @Etale)).mp hetale)
-  refine ⟨op (CommAlgCat.FiniteEtale.of R Γ(X.obj.left, ⊤)),
-    ⟨ObjectProperty.isoMk _ (Over.isoMk X.obj.left.isoSpec.symm ?_)⟩⟩
-  exact hφ.symm
+  obtain ⟨A, _, _, _, _, ⟨e⟩⟩ := X.obj.hom.exists_overIso_spec_of_isFinite_of_etale
+  exact ⟨op (CommAlgCat.FiniteEtale.of R A),
+    ⟨ObjectProperty.isoMk _ (Over.isoMk ((Over.forget _).mapIso e.symm) (Over.w e.inv))⟩⟩
 
 instance : (spec R).EssSurj where
   mem_essImage X := exists_spec_iso R X
