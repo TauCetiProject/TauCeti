@@ -443,14 +443,15 @@ private theorem rayFamily_smul_apply_one {g : E × F → E →L[ℝ] F} {K : ℝ
 /-- **The Frobenius condition for a second-order system.** Let `f` describe a second-order
 equation `D²φ(y) = B(y, φ y, Dφ y)` as the first-order system `D(φ, α) = f(y, φ, α)` for the value
 and the differential, so that `(f p u).1 = α u` and `(f p u).2 v = B(p)(u, v)` is symmetric. Let
-`φ` be `C²` at `y` with value `c`, differential `α` and second derivative `B(y, c, α)` at `y`.
-If, along `φ`, the derivatives at `y` of `z ↦ B(z, φ z, Dφ z)(u, v)` are symmetric in the direction
-of differentiation and the second slot, then `f` satisfies the Frobenius integrability condition
-at `(y, c, α)`. -/
+`φ` be `C²` at `y` with value `c`, differential `α` and second derivative `B(y, c, α)` at `y`, and
+let `f` be differentiable at `(y, c, α)`. If, along `φ`, the derivatives at `y` of
+`z ↦ B(z, φ z, Dφ z)(u, v)` are symmetric in the direction of differentiation and the second slot,
+then `f` satisfies the Frobenius integrability condition at `(y, c, α)`. -/
 theorem isFrobeniusIntegrableAt_of_fderiv_apply_snd_comm
-    {f : E × F × (E →L[ℝ] F) → E →L[ℝ] F × (E →L[ℝ] F)} (hf : Differentiable ℝ f)
+    {f : E × F × (E →L[ℝ] F) → E →L[ℝ] F × (E →L[ℝ] F)}
     (hfst : ∀ p u, (f p u).1 = p.2.2 u) (hsnd : ∀ p u v, (f p u).2 v = (f p v).2 u)
-    {y : E} {q : F × (E →L[ℝ] F)} {φ : E → F} (hφ : ContDiffAt ℝ 2 φ y) (hφy : φ y = q.1)
+    {y : E} {q : F × (E →L[ℝ] F)} (hf : DifferentiableAt ℝ f (y, q)) {φ : E → F}
+    (hφ : ContDiffAt ℝ 2 φ y) (hφy : φ y = q.1)
     (hDφ : fderiv ℝ φ y = q.2) (hD2φ : ∀ u v, fderiv ℝ (fderiv ℝ φ) y u v = (f (y, q) u).2 v)
     (h : ∀ u v w, fderiv ℝ (fun z ↦ (f (z, φ z, fderiv ℝ φ z) u).2 v) y w =
       fderiv ℝ (fun z ↦ (f (z, φ z, fderiv ℝ φ z) u).2 w) y v) :
@@ -459,11 +460,11 @@ theorem isFrobeniusIntegrableAt_of_fderiv_apply_snd_comm
   -- The components of the derivative of `f` are the derivatives of the components of `f`.
   have hevfst (d : E × F × (E →L[ℝ] F)) (a : E) :
       fderiv ℝ (fun p' ↦ (f p' a).1) p d = (fderiv ℝ f p d a).1 := by
-    rw [(((hf p).hasFDerivAt.clm_apply (hasFDerivAt_const a p)).fst).fderiv]
+    rw [((hf.hasFDerivAt.clm_apply (hasFDerivAt_const a p)).fst).fderiv]
     simp
   have hevsnd (d : E × F × (E →L[ℝ] F)) (a b : E) :
       fderiv ℝ (fun p' ↦ (f p' a).2 b) p d = (fderiv ℝ f p d a).2 b := by
-    rw [((((hf p).hasFDerivAt.clm_apply (hasFDerivAt_const a p)).snd).clm_apply
+    rw [(((hf.hasFDerivAt.clm_apply (hasFDerivAt_const a p)).snd).clm_apply
       (hasFDerivAt_const b p)).fderiv]
     simp
   -- The first component of `f` is linear in `p`, so its derivative is read off directly.
@@ -491,7 +492,7 @@ theorem isFrobeniusIntegrableAt_of_fderiv_apply_snd_comm
       (fderiv ℝ f p (w, f p w) u).2 v := by
     have hfp : HasFDerivAt f (fderiv ℝ f p) (y, φ y, fderiv ℝ φ y) := by
       rw [hjy]
-      exact (hf p).hasFDerivAt
+      exact hf.hasFDerivAt
     have hcomp : HasFDerivAt (fun z ↦ f (z, φ z, fderiv ℝ φ z))
         (fderiv ℝ f p ∘L (ContinuousLinearMap.id ℝ E).prod (f p)) y :=
       hfp.comp y hjet

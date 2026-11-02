@@ -241,9 +241,9 @@ private theorem isFrobeniusIntegrableAt_flatteningField {y : E} (hW : (lc).weylT
     exists_contDiff_apply_eq_fderiv_eq_fderiv_fderiv_eq y q.1 q.2 B
       (flatteningField_apply_snd_comm p)
   have hφ2 (z : E) : ContDiffAt ℝ 2 φ z := hφ.contDiffAt.of_le (by simp)
-  refine isFrobeniusIntegrableAt_of_fderiv_apply_snd_comm
-    (contDiff_flatteningField.differentiable (by simp)) flatteningField_apply_fst
-    flatteningField_apply_snd_comm (hφ2 y) hφy hDφ (fun u v ↦ by simp [hD2φ, B, p]) fun u v w ↦ ?_
+  refine isFrobeniusIntegrableAt_of_fderiv_apply_snd_comm flatteningField_apply_fst
+    flatteningField_apply_snd_comm (contDiff_flatteningField.differentiable (by simp) p) (hφ2 y)
+    hφy hDφ (fun u v ↦ by simp [hD2φ, B, p]) fun u v w ↦ ?_
   -- Along `φ`, the coordinate system is `B` minus the defect of the equation.
   let C (a : E) (z : E) : TangentSpace 𝓘(ℝ, E) z := (tangentSpaceCastModel 𝓘(ℝ, E) z).symm a
   have hCs (a : E) : CMDiff ∞ (T% (C a)) :=

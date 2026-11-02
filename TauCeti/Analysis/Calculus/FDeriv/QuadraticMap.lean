@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Analysis.Calculus.FDeriv.Bilinear
 public import Mathlib.LinearAlgebra.QuadraticForm.Basis
 public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
+import TauCeti.Analysis.Calculus.Bilinear
 
 /-!
 # Fréchet derivatives of quadratic maps
@@ -84,12 +85,10 @@ theorem exists_contDiff_apply_eq_fderiv_eq_fderiv_fderiv_eq (y : E) (c : F) (α 
   have hφ (z : E) : HasFDerivAt (fun z ↦ c + α (z - y) + (1 / 2 : ℝ) • B (z - y) (z - y))
       (α + B (z - y)) z := by
     have h := ((hasFDerivAt_const c z).add (α.hasFDerivAt.comp z (hsub z))).add
-      ((B.hasFDerivAt_of_bilinear (hsub z) (hsub z)).const_smul (1 / 2 : ℝ))
+      (((B.hasFDerivAt_apply_self (z - y)).comp z (hsub z)).const_smul (1 / 2 : ℝ))
     refine h.congr_fderiv (ContinuousLinearMap.ext fun h ↦ ?_)
-    simp only [_root_.add_apply, _root_.smul_apply,
-      ContinuousLinearMap.coe_comp, Function.comp_apply, ContinuousLinearMap.id_apply,
-      ContinuousLinearMap.precompR_apply, ContinuousLinearMap.precompL_apply,
-      ContinuousLinearMap.compL_apply, zero_add]
+    simp only [_root_.add_apply, _root_.smul_apply, ContinuousLinearMap.coe_comp,
+      Function.comp_apply, ContinuousLinearMap.id_apply, ContinuousLinearMap.flip_apply, zero_add]
     rw [hB h (z - y), ← two_smul ℝ (B (z - y) h), smul_smul]
     norm_num
   have hD : fderiv ℝ (fun z ↦ c + α (z - y) + (1 / 2 : ℝ) • B (z - y) (z - y)) =
@@ -98,8 +97,7 @@ theorem exists_contDiff_apply_eq_fderiv_eq_fderiv_fderiv_eq (y : E) (c : F) (α 
   refine ⟨fun z ↦ c + α (z - y) + (1 / 2 : ℝ) • B (z - y) (z - y), ?_, by simp,
     by rw [hD]; simp, fun z ↦ ?_⟩
   · exact (contDiff_const.add (α.contDiff.comp (contDiff_id.sub contDiff_const))).add
-      (((B.contDiff.comp (contDiff_id.sub contDiff_const)).clm_apply
-        (contDiff_id.sub contDiff_const)).const_smul _)
+      ((B.contDiff_apply_self.comp (contDiff_id.sub contDiff_const)).const_smul _)
   · rw [hD]
     exact ((B.hasFDerivAt.comp z (hsub z)).const_add α).fderiv
 
