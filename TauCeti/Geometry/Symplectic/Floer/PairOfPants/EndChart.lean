@@ -38,8 +38,8 @@ perturbation pulls back to its components in the end coordinates.
   coordinate greater than `1/2` on some end.
 * `TauCeti.Floer.perturbationPullback_endChart`: the pullback of the pair-of-pants perturbation
   along the end chart is its component in the end coordinates.
-* `TauCeti.Floer.contDiffAt_pairOfPantsPerturbation_prod`: for a vector space target, the
-  perturbation is `C¹` jointly in the domain and target points.
+* `TauCeti.Floer.contDiffAt_pairOfPantsPerturbation_prod`: for a vector space target and `Cⁿ`
+  Hamiltonians, the perturbation is `Cⁿ` jointly in the domain and target points.
 
 ## References
 
@@ -82,16 +82,17 @@ theorem endSign_mul_pos_of_mem_endStrip {q : Puncture} {z : ℝ × ℝ}
   have h : 1 / 2 < q.endSign * z.1 := hz.1
   linarith
 
-/-- The perturbation is `C¹` jointly in the domain point of `S` and the target point. -/
-theorem contDiffAt_pairOfPantsPerturbation_prod (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) {w : ℂ} (hw : w ≠ 0 ∧ w ≠ 1) (x : V) :
-    ContDiffAt ℝ 1 (fun p : ℂ × V => pairOfPantsPerturbation H p.1 p.2) (w, x) := by
-  have hHs' : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ, ℝ) 1 (uncurry (H q)) := fun q => by
+/-- The perturbation is `Cⁿ` jointly in the domain point of `S` and the target point, for
+`Cⁿ` Hamiltonians. -/
+theorem contDiffAt_pairOfPantsPerturbation_prod {n : ℕ∞} (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContDiff ℝ n (uncurry (H q))) {w : ℂ} (hw : w ≠ 0 ∧ w ≠ 1) (x : V) :
+    ContDiffAt ℝ n (fun p : ℂ × V => pairOfPantsPerturbation H p.1 p.2) (w, x) := by
+  have hHs' : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ, ℝ) n (uncurry (H q)) := fun q => by
     have h := (hHs q).contMDiff
     rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod] at h
     exact h
-  have h := contMDiffAt_pairOfPantsPerturbation (n := 1) hH hHs' ⟨w, hw⟩ x
-  have h' : ContMDiffAt 𝓘(ℝ, ℂ × V) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1
+  have h := contMDiffAt_pairOfPantsPerturbation (n := n) hH hHs' ⟨w, hw⟩ x
+  have h' : ContMDiffAt 𝓘(ℝ, ℂ × V) 𝓘(ℝ, ℂ →L[ℝ] ℝ) n
       (fun p : ℂ × V => pairOfPantsPerturbation H p.1 p.2) (w, x) := by
     rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
     exact h
@@ -118,9 +119,9 @@ theorem fderiv_endChart_apply (q : Puncture) (z v : ℝ × ℝ) :
   rw [(hasFDerivAt_endChart q z).fderiv]
   simp [mul_comm]
 
-theorem contDiff_endChart (q : Puncture) : ContDiff ℝ 2 (endChart q) := by
+theorem contDiff_endChart (q : Puncture) (n : WithTop ℕ∞) : ContDiff ℝ n (endChart q) := by
   exact Complex.equivRealProdCLM.contDiff.comp
-    (((q.contDiff_cylindricalEndLift 2).restrict_scalars ℝ).comp
+    (((q.contDiff_cylindricalEndLift n).restrict_scalars ℝ).comp
       Complex.equivRealProdCLM.symm.contDiff)
 
 omit [NormedAddCommGroup V] [NormedSpace ℝ V] in

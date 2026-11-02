@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Action
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.EndChart
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
+import TauCeti.LinearAlgebra.Determinant.Prod
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.Calculus.Deriv.Prod
 
@@ -25,8 +27,10 @@ where `E(u)` is the integral of the Floer energy density, `R_K` is the curvature
 `A_q` is the limit of the actions `A_{H_q}` of the loops `t ↦ u(φ_q(s, t))` of the end `q`
 (`TauCeti.SymplecticForm.hamiltonianAction`) as the signed longitudinal coordinate `±s` tends to
 infinity. The two positive ends at `0` and `1` are the inputs and the negative end at `∞` is the
-output. In a vector space every cap is a cone, so the class `A` of a product coefficient
-contributes no area term `ω(A)`.
+output. The actions cap each loop by the cone over it, which fixes the area convention. Two caps
+of a loop differ by a sphere, and every sphere in `V` has area zero because the symplectic form of
+a vector space is exact, `ω = dλ`. So the actions do not depend on the caps, and the spherical
+correction `ω(A)` of a product coefficient vanishes.
 
 The proof does not need Stokes' theorem on the non-rectangular core of `S`. Pointwise, the energy
 density plus the curvature is the exterior derivative of the one-form `α = K(u) + λ(u)`, where
@@ -269,15 +273,6 @@ private noncomputable def primitiveT (ω : SymplecticForm V) (H : Puncture → �
   pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) (u z) Complex.I +
     1 / 2 * ω (u z) (fderiv ℝ u z stdComplexLineImag)
 
-/-- A product with a continuous compactly supported function whose support avoids the punctures
-is integrable, when the other factor is continuous on the thrice-punctured sphere. -/
-private theorem integrable_mul_of_continuousOn {f F : ℝ × ℝ → ℝ} (hf : Continuous f)
-    (hc : HasCompactSupport f) (hfS : tsupport f ⊆ puncturedPlane)
-    (hF : ContinuousOn F puncturedPlane) :
-    Integrable fun z ↦ f z * F z :=
-  ((hf.continuousOn.mul hF).continuous_of_tsupport_subset isOpen_puncturedPlane
-    (tsupport_mul_subset_left.trans hfS)).integrable_of_hasCompactSupport hc.mul_right
-
 omit [FiniteDimensional ℝ V] in
 /-- The perturbation evaluated along a `C¹` map is `C¹` on the thrice-punctured sphere. -/
 private theorem contDiffAt_pairOfPantsPerturbation_comp (hH : ∀ q, Periodic (H q) 1)
@@ -352,17 +347,18 @@ private theorem floerEnergyDensity_add_hamiltonianCurvature_eq_primitive (ω : S
 by the cutoff. -/
 private theorem integrable_truncation_mul (T : ℝ) {F : ℝ × ℝ → ℝ}
     (hF : ContinuousOn F puncturedPlane) : Integrable fun z ↦ truncation T z * F z :=
-  integrable_mul_of_continuousOn (contDiff_truncation T).continuous
-    (hasCompactSupport_truncation T) (fun _ hz ↦ mem_tsupport_truncation hz) hF
+  (contDiff_truncation T).continuous.integrable_mul_of_continuousOn
+    (hasCompactSupport_truncation T) isOpen_puncturedPlane (fun _ hz ↦ mem_tsupport_truncation hz)
+    hF
 
 /-- A function continuous on the thrice-punctured sphere becomes integrable after multiplication
 by a derivative of the cutoff. -/
 private theorem integrable_fderiv_truncation_mul (T : ℝ) (v : ℝ × ℝ) {F : ℝ × ℝ → ℝ}
     (hF : ContinuousOn F puncturedPlane) :
     Integrable fun z ↦ fderiv ℝ (truncation T) z v * F z :=
-  integrable_mul_of_continuousOn
-    (((contDiff_truncation T).continuous_fderiv one_ne_zero).clm_apply continuous_const)
-    ((hasCompactSupport_truncation T).fderiv_apply (𝕜 := ℝ) v)
+  (((contDiff_truncation T).continuous_fderiv one_ne_zero).clm_apply
+    continuous_const).integrable_mul_of_continuousOn
+    ((hasCompactSupport_truncation T).fderiv_apply (𝕜 := ℝ) v) isOpen_puncturedPlane
     (fun _ hz ↦ mem_tsupport_truncation (tsupport_fderiv_apply_subset ℝ v hz)) hF
 
 /-- The two-form `dχ ∧ α` for the cutoff `χ` at height `T` and the one-form `α = K(u) + λ(u)`,
@@ -431,20 +427,6 @@ section Ends
 
 variable {H : Puncture → ℝ → V → ℝ} {u : ℝ × ℝ → V}
 
-/-- The wedge product `κ ∧ α` of two covectors on `ℝ × ℝ`, with `α = a ds + b dt`, pulls back
-along a linear map `L` to `det L` times itself. -/
-private theorem det_mul_wedge (L : ℝ × ℝ →L[ℝ] ℝ × ℝ) (κ : ℝ × ℝ →L[ℝ] ℝ) (a b : ℝ) :
-    L.det * (κ stdComplexLineReal * b - κ stdComplexLineImag * a) =
-      κ (L stdComplexLineReal) * ((L stdComplexLineImag).1 * a + (L stdComplexLineImag).2 * b) -
-        κ (L stdComplexLineImag) *
-          ((L stdComplexLineReal).1 * a + (L stdComplexLineReal).2 * b) := by
-  have hκ (e : ℝ × ℝ) : κ e = e.1 * κ stdComplexLineReal + e.2 * κ stdComplexLineImag := by
-    simpa using (κ : ℝ × ℝ →ₗ[ℝ] ℝ).apply_stdComplexLine e
-  rw [hκ (L stdComplexLineReal), hκ (L stdComplexLineImag)]
-  simp only [ContinuousLinearMap.det, LinearMap.det_finTwoProd, ContinuousLinearMap.coe_coe,
-    stdComplexLineReal_eq, stdComplexLineImag_eq]
-  ring
-
 /-- Points of the end `q` with positive signed longitudinal coordinate lie in the
 thrice-punctured sphere. -/
 private theorem endChart_mem_puncturedPlane {q : Puncture} {ζ : ℝ × ℝ}
@@ -509,7 +491,20 @@ private theorem abs_det_mul_wedge_endChart (ω : SymplecticForm V) (hH : ∀ q, 
     rw [fderiv_comp ζ hu₁ hφ, ContinuousLinearMap.comp_apply, hdu, ← hK]
     simp only [primitiveS, primitiveT, map_add, map_smul, smul_eq_mul]
     ring
-  rw [abs_of_nonneg (det_fderiv_endChart_nonneg q ζ), det_mul_wedge, hκ, hκ, hα]
+  -- The Jacobian times `dχ ∧ α` is the wedge of the pullbacks of `dχ` and `α` along `dφ`.
+  set a := primitiveS ω H u (endChart q ζ)
+  set b := primitiveT ω H u (endChart q ζ)
+  have hwedge : L.det * (κ stdComplexLineReal * b - κ stdComplexLineImag * a) =
+      κ (L stdComplexLineReal) * ((L stdComplexLineImag).1 * a + (L stdComplexLineImag).2 * b) -
+        κ (L stdComplexLineImag) *
+          ((L stdComplexLineReal).1 * a + (L stdComplexLineReal).2 * b) := by
+    have h := LinearMap.det_mul_wedge_finTwoProd (L : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ) (κ : ℝ × ℝ →ₗ[ℝ] ℝ)
+      (a • LinearMap.fst ℝ ℝ ℝ + b • LinearMap.snd ℝ ℝ ℝ)
+    simp only [LinearMap.add_apply, LinearMap.smul_apply, LinearMap.fst_apply,
+      LinearMap.snd_apply, smul_eq_mul, ContinuousLinearMap.coe_coe] at h
+    rw [ContinuousLinearMap.det, stdComplexLineReal_eq, stdComplexLineImag_eq]
+    linear_combination h
+  rw [abs_of_nonneg (det_fderiv_endChart_nonneg q ζ), hwedge, hκ, hκ, hα]
   simp only [stdComplexLineReal_fst, stdComplexLineImag_fst, mul_zero, zero_mul, sub_zero,
     mul_one]
   -- Where `β'(±s - T) ≠ 0`, the end coordinate satisfies `±s ≥ T ≥ 2`, so `K = H_q dt` there.
@@ -532,7 +527,7 @@ private theorem integral_Ico_eq_hamiltonianAction (ω : SymplecticForm V)
   have huq (t : ℝ) : ContDiffAt ℝ 2 (u ∘ endChart q) (s, t) :=
     (hu.contDiffAt (isOpen_puncturedPlane.mem_nhds
       (endChart_mem_puncturedPlane (ζ := (s, t)) hs))).comp (s, t)
-      (contDiff_endChart q).contDiffAt
+      (contDiff_endChart q 2).contDiffAt
   have hline (t : ℝ) : HasDerivAt (fun t : ℝ ↦ (s, t)) stdComplexLineImag t := by
     simpa [stdComplexLineImag_eq] using HasDerivAt.prodMk (hasDerivAt_const t s) (hasDerivAt_id t)
   have hderiv (t : ℝ) : deriv x t = fderiv ℝ (u ∘ endChart q) (s, t) stdComplexLineImag :=

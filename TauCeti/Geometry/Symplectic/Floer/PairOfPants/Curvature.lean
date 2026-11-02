@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.EndChart
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
-import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy
+import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Basic
 
 /-!
 # The integrated curvature of the pair-of-pants perturbation
@@ -188,7 +188,7 @@ private theorem setLIntegral_image_endChart_le (ω : SymplecticForm V)
         have key := ω.hamiltonianCurvature_perturbationPullback (φ := endChart q) (w := z)
           (Ks := fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
           (Kt := fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-          (x := u (endChart q z)) ((contDiff_endChart q).contDiffAt)
+          (x := u (endChart q z)) ((contDiff_endChart q 2).contDiffAt)
           (differentiableAt_pairOfPantsPerturbation_domain hH hHs hS _ 1)
           (differentiableAt_pairOfPantsPerturbation_domain hH hHs hS _ Complex.I)
           (differentiableAt_pairOfPantsPerturbation_target hH hHs hS _ 1)
