@@ -12,7 +12,7 @@ public import TauCeti.LinearAlgebra.Matrix.OneSubVecMulVec
 /-!
 # Unitary transvections
 
-Let `σ` be a ring endomorphism of a commutative ring `R` and `Q` a square matrix over `R`, and
+Let `σ` be a ring endomorphism of a commutative semiring `R` and `Q` a square matrix over `R`, and
 write `B(x, y) = σ(x)ᵀ Q y` for the `σ`-sesquilinear form with Gram matrix `Q`, semilinear in its
 first argument. A matrix `g` preserves `B` exactly when `σ(g)ᵀ Q g = Q`. For a vector `v` and a
 scalar `a`, the **unitary transvection**
@@ -21,13 +21,13 @@ scalar `a`, the **unitary transvection**
 τ_{v,a} : x ↦ x + a B(v, x) v,        τ_{v,a} = 1 + a v (σ(v)ᵀ Q)
 ```
 
-is `Matrix.unitaryTransvection Q σ v a`. When `v` is isotropic, `B(v, v) = 0`, it has determinant
-one and `a ↦ τ_{v,a}` turns addition into multiplication. When moreover `σ` is an involution, the
-Gram matrix satisfies `σ(Q)ᵀ = ε Q`, so that `B` is `ε`-Hermitian, and `a + ε σ(a) = 0`, the
-transvection preserves `B`. A matrix `g` preserving `B` conjugates `τ_{v,a}` to `τ_{g v,a}`.
-That such a `g` preserves the values of `B`, and that `B` is then `ε`-Hermitian, are
-`Matrix.comp_mulVec_dotProduct_mulVec_mulVec` and `Matrix.apply_comp_dotProduct_mulVec` in
-`TauCeti/LinearAlgebra/Matrix/SesquilinearForm.lean`.
+is `Matrix.unitaryTransvection Q σ v a`. When `v` is isotropic, `B(v, v) = 0`, the map
+`a ↦ τ_{v,a}` turns addition into multiplication, and over a commutative ring `τ_{v,a}` has
+determinant one. When moreover `σ` is an involution, the Gram matrix satisfies `σ(Q)ᵀ = ε Q`, so
+that `B` is `ε`-Hermitian, and `a + ε σ(a) = 0`, the transvection preserves `B`. A matrix `g`
+preserving `B` conjugates `τ_{v,a}` to `τ_{g v,a}`. That such a `g` preserves the values of `B`,
+and that `B` is then `ε`-Hermitian, are `Matrix.comp_mulVec_dotProduct_mulVec_mulVec` and
+`Matrix.apply_comp_dotProduct_mulVec` in `TauCeti/LinearAlgebra/Matrix/SesquilinearForm.lean`.
 
 For `σ` the involution `x ↦ x ^ q` of the field with `q²` elements and `B` Hermitian, these are
 the transvections of the finite special unitary group `SU_n(q)`. The transvections along a fixed
@@ -63,7 +63,7 @@ public section
 
 namespace Matrix
 
-variable {R n : Type*} [CommRing R] [Fintype n] [DecidableEq n]
+variable {R n : Type*} [CommSemiring R] [Fintype n] [DecidableEq n]
 
 /-- **The unitary transvection** `τ_{v,a} = 1 + a v (σ(v)ᵀ Q)` along the vector `v`, for the
 `σ`-sesquilinear form `B(x, y) = σ(x)ᵀ Q y`. It acts by `x ↦ x + a B(v, x) v`
@@ -106,13 +106,6 @@ theorem unitaryTransvection_mul_unitaryTransvection (hv : (σ ∘ v) ⬝ᵥ (Q *
       rw [LinearMap.smul_apply, toBilin'_apply', hv, smul_zero]),
     ← add_smul, toLin'_unitaryTransvection]
 
-/-- **An isotropic transvection has determinant one.** -/
-theorem det_unitaryTransvection (hv : (σ ∘ v) ⬝ᵥ (Q *ᵥ v) = 0) (a : R) :
-    (Q.unitaryTransvection σ v a).det = 1 := by
-  rw [unitaryTransvection_def, ← sub_neg_eq_add, ← neg_smul, ← smul_vecMulVec,
-    TauCeti.det_one_sub_vecMulVec, dotProduct_smul, ← dotProduct_mulVec, hv, smul_zero,
-    sub_zero]
-
 /-- Rescaling the vector of a unitary transvection rescales its parameter by the norm of the
 scalar: `τ_{c v,a} = τ_{v, a c σ(c)}`. -/
 theorem unitaryTransvection_smul (c a : R) :
@@ -133,7 +126,7 @@ theorem mul_unitaryTransvection {g : Matrix n n R} (hg : (g.map σ)ᵀ * Q * g =
     hw]
 
 /-- **Unitary transvections are isometries.** Let `σ` be an involution, let the Gram matrix
-satisfy `σ(Q)ᵀ = ε Q`, so that `B(y, x) = ε σ(B(x, y))`, and let `v` be isotropic. If
+satisfy `σ(Q)ᵀ = ε Q`, so that `σ(B(x, y)) = ε B(y, x)`, and let `v` be isotropic. If
 `a + ε σ(a) = 0`, then `τ_{v,a}` preserves the form: `σ(τ_{v,a})ᵀ Q τ_{v,a} = Q`. -/
 theorem transpose_map_unitaryTransvection_mul_mul_self (hσ : Function.Involutive σ) {ε : R}
     (hQ : (Q.map σ)ᵀ = ε • Q) (hv : (σ ∘ v) ⬝ᵥ (Q *ᵥ v) = 0) {a : R} (ha : a + ε * σ a = 0) :
@@ -159,6 +152,19 @@ theorem transpose_map_unitaryTransvection_mul_mul_self (hσ : Function.Involutiv
   simp only [Matrix.add_mul, Matrix.mul_add, Matrix.one_mul, Matrix.mul_one, smul_mul_assoc,
     mul_smul_comm, h₁, h₂, h₃, smul_zero, add_zero, smul_smul]
   rw [add_assoc, ← add_smul, mul_comm (σ a), add_comm (ε * σ a), ha, zero_smul, add_zero]
+
+section CommRing
+
+variable {R : Type*} [CommRing R] {Q : Matrix n n R} {σ : R →+* R} {v : n → R}
+
+/-- **An isotropic transvection has determinant one.** -/
+theorem det_unitaryTransvection (hv : (σ ∘ v) ⬝ᵥ (Q *ᵥ v) = 0) (a : R) :
+    (Q.unitaryTransvection σ v a).det = 1 := by
+  rw [unitaryTransvection_def, ← sub_neg_eq_add, ← neg_smul, ← smul_vecMulVec,
+    TauCeti.det_one_sub_vecMulVec, dotProduct_smul, ← dotProduct_mulVec, hv, smul_zero,
+    sub_zero]
+
+end CommRing
 
 end Matrix
 
