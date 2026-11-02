@@ -104,8 +104,8 @@ theorem exists_isRegularWeight_rootForm_eq_zero {x : M}
         rw [div_eq_inv_mul, mul_smul, hu0, smul_smul, inv_mul_cancel₀ hαx, one_smul]
   refine ⟨v, (isRegularWeight_iff P v).mpr fun i hi ↦ hvroot i ?_, hv⟩
   -- A coroot functional vanishing at `v` makes `v` orthogonal to the corresponding root.
-  have h := P.two_mul_rootForm_root v i
-  rw [hi, zero_mul, mul_eq_zero, hsymm] at h
+  have h := P.toInvariantForm.two_mul_apply_root v i
+  rw [toInvariantForm_form, hi, zero_mul, mul_eq_zero, hsymm] at h
   exact h.resolve_left two_ne_zero
 
 end RootForm
@@ -129,18 +129,19 @@ theorem exists_weylGroup_repr_smul_pos_and_neg {x : M} (hx₀ : x ≠ 0)
     mem_openDominantChamber_of_isRegularWeight P b hw ((isRegularWeight_smul P w v).mpr hreg)
   -- Every simple root then pairs positively with `w • v`.
   have hpos (i : b.support) : 0 < P.RootForm (P.root i) (w • v) := by
-    have h := P.two_mul_rootForm_root (w • v) i
+    have h := P.toInvariantForm.two_mul_apply_root (w • v) i
     have hαα : 0 < P.RootForm (P.root i) (P.root i) :=
       (P.zero_le_rootForm _).lt_of_ne fun h' ↦ P.ne_zero i (P.rootForm_anisotropic _ h'.symm)
-    rw [hsymm] at h
+    rw [toInvariantForm_form, hsymm] at h
     nlinarith [(mem_openDominantChamber P b _).mp hwv i i.2]
   -- Expanding `w • x` in the simple roots, `B(w • x, w • v) = 0` is a vanishing positive-weighted
   -- sum of its coefficients.
   set c := b.toWeightBasis.repr (w • x)
   have hsum : ∑ i, c i * P.RootForm (P.root i) (w • v) = 0 := by
     have hexp := b.toWeightBasis.sum_repr (w • x)
-    rw [← P.rootForm_weylGroup_smul w x v] at hxv
-    rw [← hexp, map_sum] at hxv
+    have hinv := InvariantForm.apply_weylGroup_smul P (B := P.toInvariantForm) w x v
+    rw [toInvariantForm_form] at hinv
+    rw [← hinv, ← hexp, map_sum] at hxv
     simpa [c] using hxv
   have hne : c ≠ 0 := by
     simpa [c] using (smul_ne_zero_iff_ne w).mpr hx₀

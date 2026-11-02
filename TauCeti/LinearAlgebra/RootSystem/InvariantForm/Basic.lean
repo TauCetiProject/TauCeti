@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.RootSystem.Finite.CanonicalBilinear
 public import Mathlib.LinearAlgebra.RootSystem.RootPositive
-public import Mathlib.LinearAlgebra.RootSystem.WeylGroup
 
 /-!
 # The normalisation of an invariant form against the coroots
@@ -29,12 +27,6 @@ roots: expanding `⟨y - x, y - x⟩` for `⟨x, x⟩ = ⟨y, y⟩` shows that s
 `y - x` has negative coroot value on `x`. For minuscule weights this is the existence of a raising
 step towards a higher weight.
 
-The file also records two facts about Mathlib's canonical form `RootPairing.RootForm` of a finite
-root pairing, over any commutative ring: it is invariant under the whole Weyl group, and it obeys
-the same normalisation `2 ⟨x, α⟩ = ⟨x, α^∨⟩ ⟨α, α⟩`. Over a general ring `RootPairing.RootForm`
-need not be an `RootPairing.InvariantForm`, whose roots must have nonzero length, so these are
-proved from its reflection invariance directly.
-
 ## Main results
 
 * `RootPairing.InvariantForm.two_mul_apply_root`: `2 ⟨x, α⟩ = ⟨x, α^∨⟩ ⟨α, α⟩` for every `x`.
@@ -46,8 +38,6 @@ proved from its reflection invariance directly.
 * `RootPairing.InvariantForm.reflTransGen_of_sub_eq_sum`: iterating such raising steps joins two
   vectors of an injective family of equal length whose difference is a natural combination of
   roots.
-* `RootPairing.rootForm_weylGroup_smul`: the canonical form is Weyl-invariant.
-* `RootPairing.two_mul_rootForm_root`: `2 ⟨x, α⟩ = ⟨x, α^∨⟩ ⟨α, α⟩` for the canonical form.
 -/
 
 public section
@@ -160,35 +150,3 @@ theorem reflTransGen_of_sub_eq_sum [LinearOrder R] [IsStrictOrderedRing R]
   rw [hμa', sub_add_eq_sub_sub, h, hsum, add_sub_cancel_right]
 
 end RootPairing.InvariantForm
-
-namespace RootPairing
-
-variable {ι R M N : Type*} [Fintype ι] [CommRing R] [AddCommGroup M] [Module R M]
-  [AddCommGroup N] [Module R N] (P : RootPairing ι R M N)
-
-/-- **The canonical form is Weyl-invariant.** This extends Mathlib's
-`RootPairing.rootForm_reflection_reflection_apply` from the reflections to the whole Weyl group. -/
-@[simp]
-theorem rootForm_weylGroup_smul (w : P.weylGroup) (x y : M) :
-    P.RootForm (w • x) (w • y) = P.RootForm x y := by
-  revert x y
-  obtain ⟨w, hw⟩ := w
-  induction hw using weylGroup.induction with
-  | mem i => simp
-  | one => simp
-  | mul w₁ w₂ hw₁ hw₂ hw₁' hw₂' =>
-    intro x y
-    rw [← Submonoid.mk_mul_mk _ _ _ hw₁ hw₂, mul_smul, mul_smul, hw₁', hw₂']
-
-/-- **The normalisation of the canonical form against a coroot**: `2 ⟨x, α⟩ = ⟨x, α^∨⟩ ⟨α, α⟩`
-for every vector `x` of the weight space. This is the analogue of
-`RootPairing.InvariantForm.two_mul_apply_root` for `RootPairing.RootForm`. -/
-theorem two_mul_rootForm_root (x : M) (i : ι) :
-    2 * P.RootForm x (P.root i) = P.coroot' i x * P.RootForm (P.root i) (P.root i) := by
-  -- The reflection in `α := P.root i` sends `x` to `x - ⟨x, α^∨⟩ α` and `α` to `-α`.
-  have h := P.rootForm_reflection_reflection_apply i x (P.root i)
-  rw [reflection_apply_self, reflection_apply, LinearMap.map_sub₂, LinearMap.map_smul₂, map_neg,
-    map_neg, smul_eq_mul] at h
-  linear_combination -h
-
-end RootPairing
