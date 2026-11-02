@@ -561,7 +561,7 @@ variable {p : ℕ}
 
 /-- Congruence by the `i`-th row of the identity matrix, read as a real number, is the diagonal
 entry `(i, i)`. -/
-theorem symmetricFinOneEquiv_symmetricCongruenceLinearMap_row (i : Fin p) :
+theorem symmetricFinOneEquiv_comp_symmetricCongruenceLinearMap_row (i : Fin p) :
     symmetricFinOneEquiv ∘ Matrix.symmetricCongruenceLinearMap
         ((1 : Matrix (Fin p) (Fin p) ℝ).submatrix (fun _ : Fin 1 ↦ i) id) =
       fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
@@ -583,7 +583,7 @@ theorem map_symmetricFinOneEquiv_symmetricCongruenceLinearMap_row (i : Fin p)
         (A : Matrix (Fin p) (Fin p) ℝ) i i := by
   rw [Measure.map_map symmetricFinOneEquiv.continuous.measurable
     (LinearMap.continuous_of_finiteDimensional _).measurable,
-    symmetricFinOneEquiv_symmetricCongruenceLinearMap_row]
+    symmetricFinOneEquiv_comp_symmetricCongruenceLinearMap_row]
 
 end TauCeti
 
