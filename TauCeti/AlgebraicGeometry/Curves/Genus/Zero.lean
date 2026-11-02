@@ -25,7 +25,7 @@ import TauCeti.FieldTheory.FunctionField.Consequences.SeparablePlace
 import TauCeti.FieldTheory.RatFunc.Automorphism
 
 /-!
-# Curves of genus zero with a divisor of degree one
+# Curves of genus zero and the projective line
 
 Let `X` be a regular proper curve over a field `k`, that is, a curve over `k` whose local rings at
 its codimension-one points are discrete valuation rings, and suppose that `k` is integrally closed
