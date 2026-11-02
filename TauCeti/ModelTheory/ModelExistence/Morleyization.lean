@@ -21,9 +21,9 @@ interpreting `R_φ(a)` as `φ(a)`; nothing is chosen, so the construction commut
 isomorphisms and with embeddings that preserve the members of `Φ`.
 
 This is how infinitary information is made atomic. The canonical expansion is the unique model,
-among expansions, of the *defining theory* `∀x̄ (R_φ(x̄) ↔ φ(x̄))`
+among expansions, of the *defining theory* `∀ xs, (R_φ(xs) ↔ φ(xs))`
 (`eq_morleyExpansion_of_model_definingTheory`), and every formula of the Morleyization has a
-back-translation into `L`, replacing each atom `R_φ(t̄)` by `φ` at the terms `t̄`, that it is
+back-translation into `L`, replacing each atom `R_φ(ts)` by `φ` at the terms `ts`, that it is
 equivalent to in the canonical expansion (`BoundedFormulaInf.realize_unMorleyize`). For a fragment
 `A`, the `A`-elementary embeddings are exactly the embeddings of canonical expansions
 (`exists_morleyEmbedding_iff_aElementary`). The first-order presentation of a countable fragment
@@ -35,7 +35,7 @@ by a theory and omitted types of the Morleyization rests on this material.
   symbol of a member.
 * `FirstOrder.Language.lhomMorleyize`: the inclusion of `L` into its Morleyization.
 * `FirstOrder.Language.morleyExpansion`: the canonical expansion of an `L`-structure.
-* `FirstOrder.Language.definingTheory`: the sentences `∀x̄ (R_φ(x̄) ↔ φ(x̄))`.
+* `FirstOrder.Language.definingTheory`: the sentences `∀ xs, (R_φ(xs) ↔ φ(xs))`.
 * `FirstOrder.Language.BoundedFormulaInf.unMorleyize`: the back-translation into `L`.
 * `FirstOrder.Language.Equiv.morleyEquiv`: the lift of an isomorphism to the canonical expansions.
 
@@ -177,7 +177,7 @@ end Expansion
 /-! ### The defining theory -/
 
 variable (Φ) in
-/-- The **defining axiom** `∀x̄ (R_φ(x̄) ↔ φ(x̄))` of the relation symbol of a member `⟨n, φ⟩`,
+/-- The **defining axiom** `∀ xs, (R_φ(xs) ↔ φ(xs))` of the relation symbol of a member `⟨n, φ⟩`,
 where `φ` is read in the Morleyization. -/
 def definingAxiom {n : ℕ} (φ : L.BoundedFormulaω Empty n) (hφ : ⟨n, φ⟩ ∈ Φ) :
     (morleyize L Φ).Sentenceω :=
@@ -302,8 +302,8 @@ namespace BoundedFormulaInf
 
 variable {α : Type uα} {n : ℕ}
 
-/-- The **back-translation** of a formula of the Morleyization into `L`: an atom `R_φ(t̄)` of the
-relation symbol of a member becomes `φ` with the back-translated terms `t̄` substituted for its
+/-- The **back-translation** of a formula of the Morleyization into `L`: an atom `R_φ(ts)` of the
+relation symbol of a member becomes `φ` with the back-translated terms `ts` substituted for its
 bound positions; atoms of `L` and equations keep their symbols, and connectives and quantifiers
 are translated structurally. -/
 def unMorleyize : ∀ {n : ℕ}, (morleyize L Φ).BoundedFormulaω α n → L.BoundedFormulaω α n
@@ -333,7 +333,7 @@ theorem unMorleyize_rel_inl {l : ℕ} (R : L.Relations l)
     (rel (Sum.inl R) ts : (morleyize L Φ).BoundedFormulaω α n).unMorleyize =
       rel R fun i => (ts i).unMorleyize := (rfl)
 
-/-- An atom `R_φ(t̄)` back-translates to `φ` with the terms `t̄` substituted for its bound
+/-- An atom `R_φ(ts)` back-translates to `φ` with the terms `ts` substituted for its bound
 positions. -/
 @[simp]
 theorem unMorleyize_rel_morleyRel {l : ℕ} {φ : L.BoundedFormulaω Empty l} (hφ : ⟨l, φ⟩ ∈ Φ)
