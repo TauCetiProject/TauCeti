@@ -34,32 +34,7 @@ public section
 
 namespace MvPolynomial
 
-open scoped BigOperators
-
-variable {σ 𝕜 : Type*} [Fintype σ] [RCLike 𝕜]
-
-/-- The Fréchet derivative of polynomial evaluation on Euclidean space, applied to a direction,
-is the evaluated formal gradient paired with that direction. -/
-theorem fderiv_eval_euclidean_apply (p : MvPolynomial σ 𝕜)
-    (x v : EuclideanSpace 𝕜 σ) :
-    fderiv 𝕜 (fun y : EuclideanSpace 𝕜 σ ↦ eval y p) x v =
-      ∑ i, eval x (pderiv i p) * v i := by
-  have h := (p.hasFDerivAt_eval (EuclideanSpace.equiv σ 𝕜 x)).comp x
-    (EuclideanSpace.equiv σ 𝕜).hasFDerivAt
-  simpa [PiLp.coe_continuousLinearEquiv, Function.comp_def] using
-    congrArg (fun L ↦ L v) h.fderiv
-
-omit [Fintype σ] in
-/-- Differentiating polynomial evaluation in a standard coordinate direction gives evaluation
-of the corresponding formal partial derivative. This also simplifies derivatives along
-`EuclideanSpace.basisFun`, whose simp normal form is `EuclideanSpace.single i 1`. -/
-@[simp]
-theorem fderiv_eval_euclidean_single [Finite σ] [DecidableEq σ] (p : MvPolynomial σ 𝕜)
-    (x : EuclideanSpace 𝕜 σ) (i : σ) :
-    fderiv 𝕜 (fun y : EuclideanSpace 𝕜 σ ↦ eval y p) x
-      (EuclideanSpace.single i 1) = eval x (pderiv i p) := by
-  let := Fintype.ofFinite σ
-  simp [fderiv_eval_euclidean_apply, PiLp.single_apply]
+variable {σ : Type*} [Fintype σ]
 
 /-- Evaluation intertwines the formal polynomial Laplacian and the ordinary Euclidean
 differential Laplacian. -/
