@@ -107,7 +107,7 @@ theorem disjoint_ker_one_add_S_ker_one_add_T_mul_S_add_sq {k X : Type*} [Ring k]
   -- the coefficients of `(1 + S) ξ = 0` at `x` and of `(1 + U + U²) ξ = 0` at `S x`
   have e₁ := congrArg (fun η ↦ η.coeff x) (LinearMap.mem_ker.mp h₁)
   have e₂ := congrArg (fun η ↦ η.coeff ((S : PSL(2, ℤ)) • x)) (LinearMap.mem_ker.mp h₂)
-  simp only [LinearMap.add_apply, Module.End.one_apply, coeff_add, Finsupp.coe_add, Pi.add_apply,
+  simp only [LinearMap.add_apply, one_apply_eq_self, coeff_add, Finsupp.coe_add, Pi.add_apply,
     Representation.coeff_ofMulAction, coeff_zero, Finsupp.coe_zero, Pi.zero_apply, ← map_pow,
     coe_S_inv, coe_T_mul_coe_S_inv, coe_T_mul_coe_S_sq_inv] at e₁ e₂
   rw [smul_smul, smul_smul, Matrix.ProjectiveSpecialLinearGroup.mul_coe_S_mul_coe_S,

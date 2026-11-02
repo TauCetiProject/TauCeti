@@ -56,7 +56,7 @@ theorem hilbertSymbol_normUnits_eq_one {b : Fˣ} (hb : IsSquare (algebraMap F M 
   by_cases hbF : IsSquare b
   · exact hilbertSymbol_eq_one_of_isSquare_left hbF _
   obtain ⟨s, hs⟩ := hb
-  have : Fact (¬IsSquare (b : F)) := ⟨by rwa [isSquare_units_val_iff]⟩
+  have : Fact (¬IsSquare (b : F)) := ⟨by rwa [Units.isSquare_coe_iff]⟩
   -- The quadratic algebra `F[√b]` is the field `F(√b)`, and `√b ↦ s` makes `M` an algebra over it.
   let φ : QuadraticAlgebra F (b : F) 0 →ₐ[F] M :=
     QuadraticAlgebra.lift ⟨s, by rw [← hs, zero_smul, add_zero, Algebra.algebraMap_eq_smul_one]⟩
