@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.AnodyneExtensions.Inner.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.Join.Basic
+public import TauCeti.AlgebraicTopology.SimplicialSet.Subcomplex
 
 /-!
 # Joins of standard simplices
@@ -97,25 +98,6 @@ private def splitData (n m : ℕ) : JoinData Δ[n + m + 1] Δ[n] Δ[m] where
   left := (joinFiber _ 0).ι ≫ stdSimplex.map (leftHom n m)
   right := (joinFiber _ 1).ι ≫ stdSimplex.map (rightHom n m)
 
-/-- A map to `Δ[k]` from the part of `Δ[d]` over a vertex `c` of `Δ[1]` is monotone on the vertices
-over `c`. -/
-private lemma joinFiber_hom_vertex_le {k : ℕ} {q : Δ[d] ⟶ Δ[1]} {c : Fin 2}
-    (g : (joinFiber q c : SSet) ⟶ Δ[k]) {j l : Fin (d + 1)} (hjl : j ≤ l)
-    (hj : yonedaEquiv q j = c) (hl : yonedaEquiv q l = c) :
-    g.app _ ⟨stdSimplex.obj₀Equiv.symm j, (obj₀Equiv_symm_mem_joinFiber_iff _ _ _).2 hj⟩ 0 ≤
-      g.app _ ⟨stdSimplex.obj₀Equiv.symm l, (obj₀Equiv_symm_mem_joinFiber_iff _ _ _).2 hl⟩ 0 := by
-  have hy : stdSimplex.edge d j l hjl ∈ (joinFiber q c).obj _ := by
-    rw [mem_joinFiber_iff]
-    intro t
-    fin_cases t <;> simpa [stdSimplex.hom_app_apply]
-  -- The edge from `j` to `l` goes to an edge of `Δ[k]` from the image of `j` to that of `l`.
-  have h : g.app _ ⟨_, hy⟩ 0 ≤ g.app _ ⟨_, hy⟩ 1 := stdSimplex.monotone_apply _ (Fin.zero_le 1)
-  rw [stdSimplex.subcomplex_hom_app_apply g _ hy 0
-      ((obj₀Equiv_symm_mem_joinFiber_iff _ _ _).2 (by simpa using hj)),
-    stdSimplex.subcomplex_hom_app_apply g _ hy 1
-      ((obj₀Equiv_symm_mem_joinFiber_iff _ _ _).2 (by simpa using hl))] at h
-  simpa only [stdSimplex.edge_apply_zero, stdSimplex.edge_apply_one] using h
-
 section vertex
 
 variable (e : JoinData Δ[d] Δ[n] Δ[m])
@@ -172,20 +154,10 @@ private lemma monotone_vertex : Monotone (vertex e) := by
     rw [Fin.le_def] at this
     omega
 
-private lemma yonedaEquiv_precomp_p_apply {d' : ℕ} (g : Δ[d'] ⟶ Δ[d]) (j : Fin (d' + 1)) :
-    yonedaEquiv (e.precomp g).p j = yonedaEquiv e.p (yonedaEquiv g j) := by
-  rw [JoinData.precomp_p, yonedaEquiv_comp, stdSimplex.hom_app_apply]
-
-private lemma app_obj₀Equiv_symm {d' : ℕ} (g : Δ[d'] ⟶ Δ[d]) (j : Fin (d' + 1)) :
-    g.app _ (stdSimplex.obj₀Equiv.symm j) = stdSimplex.obj₀Equiv.symm (yonedaEquiv g j) :=
-  stdSimplex.ext _ _ fun t ↦ by
-    rw [stdSimplex.hom_app_apply, stdSimplex.obj₀Equiv_symm_apply, stdSimplex.const_apply,
-      stdSimplex.obj₀Equiv_symm_apply, stdSimplex.const_apply]
-
 private lemma vertex_precomp {d' : ℕ} (g : Δ[d'] ⟶ Δ[d]) (j : Fin (d' + 1)) :
     vertex (e.precomp g) j = vertex e (yonedaEquiv g j) := by
-  have hp := yonedaEquiv_precomp_p_apply e g j
-  have hv := app_obj₀Equiv_symm g j
+  have hp := e.yonedaEquiv_precomp_p_apply g j
+  have hv := stdSimplex.hom_app_obj₀Equiv_symm g j
   apply Fin.ext
   by_cases hj : yonedaEquiv e.p (yonedaEquiv g j) = 0
   · rw [vertex_of_eq_zero _ (hp.trans hj), vertex_of_eq_zero _ hj, leftVertex, leftVertex,
@@ -226,15 +198,9 @@ private lemma toStdSimplex_app_apply (s : (join Δ[n] Δ[m]) _⦋d⦌) (j : Fin 
     (toStdSimplex n m).app _ s j = vertex (objEquiv s) j :=
   (rfl)
 
-private lemma yonedaEquiv_apply_of_mem {e : JoinData Δ[d] Δ[n] Δ[m]} {c : Fin 2} {a : ℕ}
-    {y : Δ[d] _⦋a⦌} (hy : y ∈ (joinFiber e.p c).obj _) (t : Fin (a + 1)) :
-    yonedaEquiv e.p (y t) = c := by
-  rw [← stdSimplex.hom_app_apply]
-  exact (mem_joinFiber_iff _ _ _).1 hy t
-
 private lemma yonedaEquiv_splitData_p (k : Fin (n + m + 2)) :
     yonedaEquiv (splitData n m).p k = if (k : ℕ) ≤ n then 0 else 1 := by
-  rw [splitData, ← Category.id_comp (stdSimplex.map _), yonedaEquiv_comp, map_splitHom_app_apply,
+  rw [splitData, stdSimplex.yonedaEquiv_eq_app_id, map_splitHom_app_apply,
     stdSimplex.yonedaEquiv_id_apply]
 
 private lemma splitData_left_app_apply {a : ℕ} (y : (joinFiber (splitData n m).p 0).obj (op ⦋a⦌))
@@ -282,7 +248,7 @@ private lemma toStdSimplex_comp_homEquiv_symm :
     induction k using Opposite.rec with | op k
     induction k using SimplexCategory.rec with | _ k
     refine stdSimplex.ext _ _ fun t ↦ Fin.ext ?_
-    have ht := yonedaEquiv_apply_of_mem hy' t
+    have ht := yonedaEquiv_apply_of_mem_joinFiber hy' t
     rw [JoinData.precomp_left_app, splitData_left_app_apply, stdSimplex.hom_app_apply,
       Equiv.apply_symm_apply, hx, vertex_of_eq_zero _ ht, left_app_apply _ _ _ _ ht]
     omega
@@ -291,7 +257,7 @@ private lemma toStdSimplex_comp_homEquiv_symm :
     induction k using SimplexCategory.rec with | _ k
     refine stdSimplex.ext _ _ fun t ↦ Fin.ext ?_
     have ht : ¬ yonedaEquiv (objEquiv s).p (y t) = 0 := by
-      rw [yonedaEquiv_apply_of_mem hy' t]
+      rw [yonedaEquiv_apply_of_mem_joinFiber hy' t]
       decide
     rw [JoinData.precomp_right_app, splitData_right_app_apply, stdSimplex.hom_app_apply,
       Equiv.apply_symm_apply, hx, vertex_of_ne_zero _ ht, right_app_apply _ _ _ _ ht]
@@ -329,8 +295,8 @@ when `j ≤ n`. -/
 @[simp]
 lemma yonedaEquiv_stdSimplexIso_inv_comp_π (j : Fin (n + m + 2)) :
     yonedaEquiv ((stdSimplexIso n m).inv ≫ π Δ[n] Δ[m]) j = if (j : ℕ) ≤ n then 0 else 1 := by
-  rw [yonedaEquiv_comp, π_app, ← Category.id_comp (stdSimplexIso n m).inv, yonedaEquiv_comp,
-    objEquiv_stdSimplexIso_inv_app, yonedaEquiv_precomp_p_apply, Equiv.apply_symm_apply,
+  rw [yonedaEquiv_comp, π_app, stdSimplex.yonedaEquiv_eq_app_id (stdSimplexIso n m).inv,
+    objEquiv_stdSimplexIso_inv_app, JoinData.yonedaEquiv_precomp_p_apply, Equiv.apply_symm_apply,
     yonedaEquiv_splitData_p, stdSimplex.yonedaEquiv_id_apply]
 
 /-- Under `Δ[n] ⋆ Δ[m] ≅ Δ[n + m + 1]`, `Δ[n]` is the face on the first `n + 1` vertices. -/
@@ -340,7 +306,7 @@ lemma yonedaEquiv_inl_comp_stdSimplexIso_hom (j : Fin (n + 1)) :
   have he : objEquiv (yonedaEquiv (inl Δ[n] Δ[m])) = (univ Δ[n] Δ[m]).precomp (inl Δ[n] Δ[m]) := by
     rw [← univ_precomp_yonedaEquiv_symm, Equiv.symm_apply_apply]
   have hp : yonedaEquiv (objEquiv (yonedaEquiv (inl Δ[n] Δ[m]))).p j = 0 := by
-    rw [he, JoinData.precomp_p, univ_p, inl_π, ← Category.id_comp (const _), yonedaEquiv_comp,
+    rw [he, JoinData.precomp_p, univ_p, inl_π, stdSimplex.yonedaEquiv_eq_app_id,
       stdSimplex.const_app_apply]
   apply Fin.ext
   rw [yonedaEquiv_comp, stdSimplexIso_hom_app_apply, vertex_of_eq_zero _ hp, Fin.val_castLE,
@@ -356,7 +322,7 @@ lemma yonedaEquiv_inr_comp_stdSimplexIso_hom (j : Fin (m + 1)) :
   have he : objEquiv (yonedaEquiv (inr Δ[n] Δ[m])) = (univ Δ[n] Δ[m]).precomp (inr Δ[n] Δ[m]) := by
     rw [← univ_precomp_yonedaEquiv_symm, Equiv.symm_apply_apply]
   have hp : ¬ yonedaEquiv (objEquiv (yonedaEquiv (inr Δ[n] Δ[m]))).p j = 0 := by
-    rw [he, JoinData.precomp_p, univ_p, inr_π, ← Category.id_comp (const _), yonedaEquiv_comp,
+    rw [he, JoinData.precomp_p, univ_p, inr_π, stdSimplex.yonedaEquiv_eq_app_id,
       stdSimplex.const_app_apply]
     decide
   apply Fin.ext
@@ -375,12 +341,12 @@ variable (x : Δ[n + m + 1] _⦋d⦌)
 private lemma yonedaEquiv_splitData_precomp_p (t : Fin (d + 1)) :
     yonedaEquiv ((splitData n m).precomp (yonedaEquiv.symm x)).p t =
       if (x t : ℕ) ≤ n then 0 else 1 := by
-  rw [yonedaEquiv_precomp_p_apply, Equiv.apply_symm_apply, yonedaEquiv_splitData_p]
+  rw [JoinData.yonedaEquiv_precomp_p_apply, Equiv.apply_symm_apply, yonedaEquiv_splitData_p]
 
 private lemma le_of_mem_joinFiber_zero {a : ℕ} {y : Δ[d] _⦋a⦌}
     (hy : y ∈ (joinFiber ((splitData n m).precomp (yonedaEquiv.symm x)).p 0).obj _)
     (t : Fin (a + 1)) : (x (y t) : ℕ) ≤ n := by
-  have h := yonedaEquiv_apply_of_mem hy t
+  have h := yonedaEquiv_apply_of_mem_joinFiber hy t
   rw [yonedaEquiv_splitData_precomp_p] at h
   by_contra h'
   rw [ite_eq_right h'] at h
@@ -389,7 +355,7 @@ private lemma le_of_mem_joinFiber_zero {a : ℕ} {y : Δ[d] _⦋a⦌}
 private lemma lt_of_mem_joinFiber_one {a : ℕ} {y : Δ[d] _⦋a⦌}
     (hy : y ∈ (joinFiber ((splitData n m).precomp (yonedaEquiv.symm x)).p 1).obj _)
     (t : Fin (a + 1)) : n < x (y t) := by
-  have h := yonedaEquiv_apply_of_mem hy t
+  have h := yonedaEquiv_apply_of_mem_joinFiber hy t
   rw [yonedaEquiv_splitData_precomp_p] at h
   by_contra h'
   rw [ite_eq_left (by omega)] at h
@@ -637,25 +603,6 @@ theorem preimage_unionJoin_boundary_horn (hm : m ≠ 0) (j : Fin (m + 1)) :
   induction k using SimplexCategory.rec with | _ d
   rw [Subcomplex.preimage_obj, Set.mem_preimage, mem_horn_natAdd_iff x hm j]
 
-/-- A subcomplex of `Δ[n] ⋆ Δ[m]` whose inclusion is isomorphic, under `Δ[n] ⋆ Δ[m] ≅ Δ[n + m + 1]`,
-to an inner anodyne extension is inner anodyne. -/
-private lemma innerAnodyneExtensions_ι_of_preimage_eq {A : (join Δ[n] Δ[m]).Subcomplex}
-    {B : (Δ[n + m + 1] : SSet.{u}).Subcomplex} (hAB : A.preimage (stdSimplexIso n m).inv = B)
-    (hB : innerAnodyneExtensions B.ι) : innerAnodyneExtensions A.ι := by
-  subst hAB
-  have : Mono ((A.preimage (stdSimplexIso n m).inv).toImage (stdSimplexIso n m).inv) :=
-    mono_of_mono_fac (Subcomplex.toImage_ι _ _)
-  have : IsIso ((A.preimage (stdSimplexIso n m).inv).toImage (stdSimplexIso n m).inv) :=
-    isIso_of_mono_of_epi _
-  have hA := Subcomplex.preimage_image_of_isIso (stdSimplexIso n m).inv A
-  have hw : ((A.preimage (stdSimplexIso n m).inv).toImage (stdSimplexIso n m).inv ≫
-      Subcomplex.homOfLE hA.le) ≫ A.ι =
-        (A.preimage (stdSimplexIso n m).inv).ι ≫ (stdSimplexIso n m).inv := by
-    rw [Category.assoc, Subcomplex.homOfLE_ι, Subcomplex.toImage_ι]
-  exact (innerAnodyneExtensions.arrow_mk_iso_iff (Arrow.isoMk (asIso
-    ((A.preimage (stdSimplexIso n m).inv).toImage (stdSimplexIso n m).inv) ≪≫
-      Subcomplex.eqToIso hA) (stdSimplexIso n m).symm hw)).1 hB
-
 variable (m) in
 /-- **The pushout-join of a horn `Λ[n, i]` with `0 < i` and a boundary is inner anodyne**: the
 inclusion of `(Λ[n, i] ⋆ Δ[m]) ∪ (Δ[n] ⋆ ∂Δ[m])` into `Δ[n] ⋆ Δ[m]` is isomorphic to the inner horn
@@ -663,9 +610,10 @@ inclusion `Λ[n + m + 1, i] ⟶ Δ[n + m + 1]`. -/
 theorem innerAnodyneExtensions_unionJoin_horn_boundary {i : Fin (n + 1)} (hi : 0 < i) :
     innerAnodyneExtensions (Subcomplex.unionJoin Λ[n, i] ∂Δ[m]).ι := by
   have hi' : 0 < (i : ℕ) := Fin.lt_def.1 hi
-  exact innerAnodyneExtensions_ι_of_preimage_eq (preimage_unionJoin_horn_boundary m (by omega) i)
-    (innerAnodyneExtensions.horn_ι (Fin.lt_def.2 (by rw [Fin.val_castLE]; exact hi'))
-      (Fin.lt_def.2 (by rw [Fin.val_castLE, Fin.val_last]; omega)))
+  refine (Subcomplex.morphismProperty_ι_iff_of_preimage_eq _ (stdSimplexIso n m)
+    (preimage_unionJoin_horn_boundary m (by omega) i)).2 ?_
+  exact innerAnodyneExtensions.horn_ι (Fin.lt_def.2 (by rw [Fin.val_castLE]; exact hi'))
+    (Fin.lt_def.2 (by rw [Fin.val_castLE, Fin.val_last]; omega))
 
 variable (n) in
 /-- **The pushout-join of a boundary and a horn `Λ[m, j]` with `j < m` is inner anodyne**: the
@@ -674,10 +622,11 @@ inclusion `Λ[n + m + 1, n + 1 + j] ⟶ Δ[n + m + 1]`. -/
 theorem innerAnodyneExtensions_unionJoin_boundary_horn {j : Fin (m + 1)} (hj : j < Fin.last m) :
     innerAnodyneExtensions (Subcomplex.unionJoin ∂Δ[n] Λ[m, j]).ι := by
   have hj' : (j : ℕ) < m := by rwa [Fin.lt_def, Fin.val_last] at hj
-  exact innerAnodyneExtensions_ι_of_preimage_eq (preimage_unionJoin_boundary_horn n (by omega) j)
-    (innerAnodyneExtensions.horn_ι
-      (Fin.lt_def.2 (by rw [Fin.val_cast, Fin.val_natAdd, Fin.val_zero]; omega))
-      (Fin.lt_def.2 (by rw [Fin.val_cast, Fin.val_natAdd, Fin.val_last]; omega)))
+  refine (Subcomplex.morphismProperty_ι_iff_of_preimage_eq _ (stdSimplexIso n m)
+    (preimage_unionJoin_boundary_horn n (by omega) j)).2 ?_
+  exact innerAnodyneExtensions.horn_ι
+    (Fin.lt_def.2 (by rw [Fin.val_cast, Fin.val_natAdd, Fin.val_zero]; omega))
+    (Fin.lt_def.2 (by rw [Fin.val_cast, Fin.val_natAdd, Fin.val_last]; omega))
 
 end join
 

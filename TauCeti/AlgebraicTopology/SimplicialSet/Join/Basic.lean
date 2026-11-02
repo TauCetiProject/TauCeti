@@ -128,6 +128,33 @@ lemma obj₀Equiv_symm_mem_joinFiber_iff {m : ℕ} (q : Δ[m] ⟶ Δ[1]) (e : Fi
     stdSimplex.obj₀Equiv.symm j ∈ (joinFiber q e).obj (op ⦋0⦌) ↔ yonedaEquiv q j = e := by
   simp [stdSimplex.hom_app_apply]
 
+/-- Every vertex of a simplex of `Δ[d]` over the vertex `c` of `Δ[1]` along `q` is sent to `c` by
+`q`. -/
+lemma yonedaEquiv_apply_of_mem_joinFiber {d : ℕ} {q : Δ[d] ⟶ Δ[1]} {c : Fin 2} {a : ℕ}
+    {y : Δ[d] _⦋a⦌} (hy : y ∈ (joinFiber q c).obj _) (t : Fin (a + 1)) :
+    yonedaEquiv q (y t) = c := by
+  rw [← stdSimplex.hom_app_apply]
+  exact (mem_joinFiber_iff _ _ _).1 hy t
+
+/-- A map to `Δ[k]` from the part of `Δ[d]` over a vertex `c` of `Δ[1]` is monotone on the vertices
+over `c`. -/
+lemma joinFiber_hom_vertex_le {d k : ℕ} {q : Δ[d] ⟶ Δ[1]} {c : Fin 2}
+    (g : (joinFiber q c : SSet) ⟶ Δ[k]) {j l : Fin (d + 1)} (hjl : j ≤ l)
+    (hj : yonedaEquiv q j = c) (hl : yonedaEquiv q l = c) :
+    g.app _ ⟨stdSimplex.obj₀Equiv.symm j, (obj₀Equiv_symm_mem_joinFiber_iff _ _ _).2 hj⟩ 0 ≤
+      g.app _ ⟨stdSimplex.obj₀Equiv.symm l, (obj₀Equiv_symm_mem_joinFiber_iff _ _ _).2 hl⟩ 0 := by
+  have hy : stdSimplex.edge d j l hjl ∈ (joinFiber q c).obj _ := by
+    rw [mem_joinFiber_iff]
+    intro t
+    fin_cases t <;> simpa [stdSimplex.hom_app_apply]
+  -- The edge from `j` to `l` goes to an edge of `Δ[k]` from the image of `j` to that of `l`.
+  have h : g.app _ ⟨_, hy⟩ 0 ≤ g.app _ ⟨_, hy⟩ 1 := stdSimplex.monotone_apply _ (Fin.zero_le 1)
+  rw [stdSimplex.subcomplex_hom_app_apply g _ hy 0
+      ((obj₀Equiv_symm_mem_joinFiber_iff _ _ _).2 (by simpa using hj)),
+    stdSimplex.subcomplex_hom_app_apply g _ hy 1
+      ((obj₀Equiv_symm_mem_joinFiber_iff _ _ _).2 (by simpa using hl))] at h
+  simpa only [stdSimplex.edge_apply_zero, stdSimplex.edge_apply_one] using h
+
 section retraction
 
 variable {m : ℕ} (q : Δ[m] ⟶ Δ[1]) (h : yonedaEquiv q 0 = 0)
@@ -259,6 +286,12 @@ lemma precomp_right_app (d : JoinData X K L) (g : Y ⟶ X) {n : SimplexCategory�
     (hy : y ∈ (joinFiber (d.precomp g).p 1).obj n) :
     dsimp% (d.precomp g).right.app n ⟨y, hy⟩ = d.right.app n ⟨g.app n y, hy⟩ :=
   (rfl)
+
+/-- Along join data on `Δ[k]` restricted by `g : Δ[k'] ⟶ Δ[k]`, the vertex `j` of `Δ[k']` lies over
+the vertex of `Δ[1]` over which `yonedaEquiv g j` lies. -/
+lemma yonedaEquiv_precomp_p_apply {k k' : ℕ} (d : JoinData Δ[k] K L) (g : Δ[k'] ⟶ Δ[k])
+    (j : Fin (k' + 1)) : yonedaEquiv (d.precomp g).p j = yonedaEquiv d.p (yonedaEquiv g j) := by
+  rw [precomp_p, yonedaEquiv_comp, stdSimplex.hom_app_apply]
 
 @[simp]
 lemma precomp_id (d : JoinData X K L) : d.precomp (𝟙 X) = d :=
@@ -843,6 +876,8 @@ lemma mem_range_map_ι_id_iff (A : K.Subcomplex) {n : SimplexCategory} (s : (joi
   · rintro k _ ⟨y, rfl⟩
     exact h k y.1 y.2
   · rw [objEquiv_map_app, Equiv.apply_symm_apply]
+    -- `Subcomplex.lift (objEquiv s).left _ ≫ A.ι` is `(objEquiv s).left` by definition, since
+    -- `Subcomplex.lift` only restricts the codomain.
     exact JoinData.ext rfl (fun _ _ _ _ ↦ rfl) (fun _ _ _ _ ↦ rfl)
 
 /-- A simplex of `K ⋆ L` lies in the image of `K ⋆ B` for a subcomplex `B` of `L` exactly when its
@@ -863,6 +898,8 @@ lemma mem_range_map_id_ι_iff (B : L.Subcomplex) {n : SimplexCategory} (s : (joi
   · rintro k _ ⟨y, rfl⟩
     exact h k y.1 y.2
   · rw [objEquiv_map_app, Equiv.apply_symm_apply]
+    -- `Subcomplex.lift (objEquiv s).right _ ≫ B.ι` is `(objEquiv s).right` by definition, since
+    -- `Subcomplex.lift` only restricts the codomain.
     exact JoinData.ext rfl (fun _ _ _ _ ↦ rfl) (fun _ _ _ _ ↦ rfl)
 
 end join

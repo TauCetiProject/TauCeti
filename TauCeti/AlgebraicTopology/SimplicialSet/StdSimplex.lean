@@ -24,6 +24,8 @@ an initial and a final segment.
   to the constant simplex at that vertex.
 * `SSet.stdSimplex.subcomplex_hom_app_apply`: the vertices of the image of a simplex under a map
   from a subcomplex of a standard simplex to a standard simplex.
+* `SSet.stdSimplex.hom_app_obj₀Equiv_symm`: a map `g` of standard simplices sends the vertex `j`
+  to the vertex `yonedaEquiv g j`.
 * `SSet.stdSimplex.quasicategory`: standard simplices are quasicategories.
 -/
 
@@ -88,6 +90,19 @@ lemma subcomplex_hom_app_apply {d n a : ℕ} {S : (Δ[d] : SSet.{u}).Subcomplex}
     Subtype.ext (stdSimplex.ext _ _ fun _ ↦ by simp)
   rw [h, NatTrans.naturality_apply, obj_map_apply]
   simp
+
+/-- The simplex of `X` corresponding to a map `f : Δ[n] ⟶ X` is the image under `f` of the top
+simplex of `Δ[n]`. -/
+lemma yonedaEquiv_eq_app_id {X : SSet.{u}} {n : ℕ} (f : Δ[n] ⟶ X) :
+    yonedaEquiv f = f.app _ (yonedaEquiv (𝟙 Δ[n])) := by
+  rw [← yonedaEquiv_comp, Category.id_comp]
+
+/-- A map of standard simplices `g : Δ[d'] ⟶ Δ[d]` sends the vertex `j` of `Δ[d']` to the vertex
+`yonedaEquiv g j` of `Δ[d]`. -/
+lemma hom_app_obj₀Equiv_symm {d d' : ℕ} (g : (Δ[d'] : SSet.{u}) ⟶ Δ[d]) (j : Fin (d' + 1)) :
+    g.app _ (obj₀Equiv.symm j) = obj₀Equiv.symm (yonedaEquiv g j) :=
+  stdSimplex.ext _ _ fun t ↦ by
+    rw [hom_app_apply, obj₀Equiv_symm_apply, const_apply, obj₀Equiv_symm_apply, const_apply]
 
 /-- Standard simplices are quasicategories, being isomorphic to nerves of linear orders. -/
 instance quasicategory (n : ℕ) : Quasicategory (Δ[n] : SSet.{u}) where
