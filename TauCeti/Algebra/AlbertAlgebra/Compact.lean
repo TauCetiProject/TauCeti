@@ -442,7 +442,9 @@ theorem trace_mul_self_nonneg (A : CompactAlbertAlgebra R) : 0 ≤ trace (A * A)
     (mul_nonneg zero_le_two (Finset.sum_nonneg fun _ _ => CayleyDickson.normSq_nonneg))
 
 /-- **The trace form is definite**: `T(A ∘ A) = 0` only for `A = 0`, because the octonion norm
-is definite. -/
+is definite. A pre-order `simp` lemma, so that it fires before
+`TauCeti.CompactAlbertAlgebra.trace_apply` expands the trace into coordinates. -/
+@[simp↓]
 theorem trace_mul_self_eq_zero_iff {A : CompactAlbertAlgebra R} : trace (A * A) = 0 ↔ A = 0 := by
   refine ⟨fun h => ?_, fun h => by simp [h]⟩
   rw [trace_mul_self] at h
