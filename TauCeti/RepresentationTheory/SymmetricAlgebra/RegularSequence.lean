@@ -77,11 +77,8 @@ theorem isRegular_symmetricAlgebraInvariants_of_flat
       obtain ⟨i, rfl⟩ := List.mem_ofFn.1 hp
       obtain ⟨d, hd, hfd⟩ := hf i
       exact HomogeneousIdeal.mem_irrelevant_of_mem _ hd hfd
-    intro h
-    have h1 := hle (h ▸ (Submodule.mem_top :
-      (1 : SymmetricAlgebra K M) ∈ (⊤ : Ideal (SymmetricAlgebra K M))))
-    rw [toIdeal_irrelevant_eq_ker_algebraMapInv, RingHom.mem_ker, map_one] at h1
-    exact one_ne_zero h1
+    rw [toIdeal_irrelevant_eq_ker_algebraMapInv] at hle
+    exact (ne_top_of_le_ne_top (RingHom.ker_ne_top _) hle).symm
 
 end CommRing
 

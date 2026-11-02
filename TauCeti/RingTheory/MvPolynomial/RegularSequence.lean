@@ -64,15 +64,12 @@ theorem isRegular_map_X [Nontrivial R] (l : List σ) (hl : l.Nodup) :
     RingTheory.Sequence.IsRegular (MvPolynomial σ R) (l.map (X (R := R))) := by
   refine ⟨isWeaklyRegular_map_X l hl, ?_⟩
   rw [Ideal.smul_eq_mul, Ideal.mul_top]
-  intro h
   have hle : Ideal.ofList (l.map (X : σ → MvPolynomial σ R)) ≤
       RingHom.ker (constantCoeff : MvPolynomial σ R →+* R) := by
     rw [Ideal.ofList, Ideal.span_le]
     intro p hp
     obtain ⟨i, _, rfl⟩ := List.mem_map.1 hp
     simp
-  have : (1 : MvPolynomial σ R) ∈ RingHom.ker (constantCoeff : MvPolynomial σ R →+* R) :=
-    hle (h ▸ Submodule.mem_top)
-  simp at this
+  exact (ne_top_of_le_ne_top (RingHom.ker_ne_top constantCoeff) hle).symm
 
 end MvPolynomial
