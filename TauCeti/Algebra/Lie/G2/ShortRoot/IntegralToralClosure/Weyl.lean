@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Group.Subgroup.Normalizer
 public import TauCeti.Algebra.Lie.G2.ShortRoot.IntegralToralClosure.RootDatum
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Weyl
 
@@ -65,6 +66,7 @@ theorem simpleWeylPoint_def (i : Fin 2) (A : Type v) [CommRing A] :
 
 /-- The simple representative exchanges the positive and negative root subgroups at its node,
 negating the root parameter. -/
+@[simp]
 theorem simpleWeylPoint_conj_rootSubgroupPoints (i : Fin 2) (A : Type v) [CommRing A]
     (u : A) :
     simpleWeylPoint i A * rootSubgroupPoints (.inl i) A (Multiplicative.ofAdd u) *
@@ -82,6 +84,7 @@ theorem simpleWeylPoint_conj_rootSubgroupPoints (i : Fin 2) (A : Type v) [CommRi
 
 /-- Conjugation by the simple representative acts on the weight torus by the reflection at the
 named simple root and its simple-coroot coordinate. -/
+@[simp]
 theorem simpleWeylPoint_conj_weightTorusPoints (i : Fin 2) (A : Type v) [CommRing A]
     (s : Fin 2 → Aˣ) :
     simpleWeylPoint i A * weightTorusPoints A s * (simpleWeylPoint i A)⁻¹ =
@@ -95,18 +98,8 @@ theorem simpleWeylPoint_conj_weightTorusPoints (i : Fin 2) (A : Type v) [CommRin
     rootGen cartanGen rep lattice.toAddSubgroup rep_kostantForm_mem_lattice
     isNilpotent_rep_serreRootGenerator latticeBasis weight
     (isSl2Triple_rep_serreRootGenerator i)
-    (fun j ↦ (lie_cartanGenerator_rootGenerator (.inl i) j).trans
-      (congrArg (fun z : ℤ ↦ (z : ℚ) • rootGen (.inl i))
-        (congrFun (G2.rootGeneratorWeight_inl_eq_root_simpleIndex valid_G2 i) j)))
-    (fun j ↦ by
-      -- State the character equation at a coordinate before casting: its function domain is
-      -- `Fin G2.rank`, whereas the represented Cartan generators are indexed by `Fin 2`.
-      have hneg : G2.rootGeneratorWeight valid_G2 (.inr i) j =
-          -((G2.simplyConnectedRootDatum valid_G2).root (node i) j) :=
-        congrFun (G2.rootGeneratorWeight_inr_eq_neg_root_simpleIndex valid_G2 i) j
-      exact (lie_cartanGenerator_rootGenerator (.inr i) j).trans
-        ((congrArg (fun z : ℤ ↦ (z : ℚ) • rootGen (.inr i)) hneg).trans
-          (by rw [Int.cast_neg, neg_smul])))
+    (lie_cartanGenerator_rootGenerator_inl_eq_root_simpleIndex i)
+    (lie_cartanGenerator_rootGenerator_inr_eq_neg_root_simpleIndex i)
     isCartanWeightVector_latticeBasis A s
   apply Subtype.ext
   rw [Subgroup.coe_mul, Subgroup.coe_mul, coe_weightTorusPoints,
@@ -116,6 +109,25 @@ theorem simpleWeylPoint_conj_weightTorusPoints (i : Fin 2) (A : Type v) [CommRin
     Subgroup.coe_inv, coe_rootSubgroupPoints_eq_kostantRootSubgroupMatrix,
     coe_kostantToralRootSubgroupPoints, coe_kostantToralWeightTorusPoints] using
       congrArg Subtype.val h
+
+/-- Reflection of torus parameters at a named simple root is an involution. -/
+theorem weylReflectTorusPoint_root_simpleIndex_involutive (i : Fin 2) (A : Type v)
+    [CommRing A] :
+    Function.Involutive (weylReflectTorusPoint (κ := Fin 2)
+      ((G2.simplyConnectedRootDatum valid_G2).root (node i)) i : (Fin 2 → Aˣ) → _) := by
+  intro s
+  apply weylReflectTorusPoint_weylReflectTorusPoint
+  exact (congrFun (G2.root_simpleIndex valid_G2 i) i).trans
+    (G2.cartanMatrix_apply_same i)
+
+/-- Every simple Weyl representative normalizes the integral carrier's weight torus. -/
+theorem simpleWeylPoint_mem_normalizer_weightTorusPoints (i : Fin 2) (A : Type v)
+    [CommRing A] :
+    simpleWeylPoint i A ∈ Subgroup.normalizer (weightTorusPoints A).range := by
+  -- Conjugation maps the torus onto itself because the reflection is an involution.
+  exact (weightTorusPoints A).mem_normalizer_range_of_surjective
+    (weylReflectTorusPoint_root_simpleIndex_involutive i A).surjective
+    (simpleWeylPoint_conj_weightTorusPoints i A)
 
 end
 

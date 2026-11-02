@@ -78,6 +78,7 @@ theorem pointsMap_simpleWeylPoint {A : Type v} {B : Type w} [CommRing A] [CommRi
 
 /-- The simple representative carries its positive simple root subgroup to the negative one,
 with parameter negated, over every commutative `𝔽₃`-algebra. -/
+@[simp]
 theorem simpleWeylPoint_conj_rootSubgroupPoints (i : Fin 2) (A : Type v) [CommRing A]
     [Algebra (ZMod 3) A] (u : A) :
     simpleWeylPoint i A * rootSubgroupPoints (.inl i) A (Multiplicative.ofAdd u) *
@@ -91,6 +92,7 @@ theorem simpleWeylPoint_conj_rootSubgroupPoints (i : Fin 2) (A : Type v) [CommRi
 
 /-- Conjugation by the simple representative reflects the weight-torus parameter at the named
 simple root and its simple-coroot coordinate. -/
+@[simp]
 theorem simpleWeylPoint_conj_weightTorusPoints (i : Fin 2) (A : Type v) [CommRing A]
     [Algebra (ZMod 3) A] (s : Fin 2 → Aˣ) :
     simpleWeylPoint i A * weightTorusPoints A s * (simpleWeylPoint i A)⁻¹ =
@@ -108,22 +110,10 @@ characteristic-three carrier, with no field or reducedness hypothesis on the val
 theorem simpleWeylPoint_mem_normalizer_weightTorusPoints (i : Fin 2) (A : Type v)
     [CommRing A] [Algebra (ZMod 3) A] :
     simpleWeylPoint i A ∈ Subgroup.normalizer (weightTorusPoints A).range := by
-  have hinv (s : Fin 2 → Aˣ) :
-      weylReflectTorusPoint (κ := Fin 2) ((G2.simplyConnectedRootDatum valid_G2).root (node i)) i
-          (weylReflectTorusPoint (κ := Fin 2)
-            ((G2.simplyConnectedRootDatum valid_G2).root (node i)) i s) = s := by
-    apply weylReflectTorusPoint_weylReflectTorusPoint
-    exact (congrFun (G2.root_simpleIndex valid_G2 i) i).trans
-      (G2.cartanMatrix_apply_same i)
-  refine Subgroup.mem_normalizer_iff.2 fun x ↦ ⟨?_, ?_⟩
-  · rintro ⟨s, rfl⟩
-    exact ⟨_, (simpleWeylPoint_conj_weightTorusPoints i A s).symm⟩
-  · rintro ⟨s, hs⟩
-    have h := simpleWeylPoint_conj_weightTorusPoints i A
-      (weylReflectTorusPoint (κ := Fin 2)
-        ((G2.simplyConnectedRootDatum valid_G2).root (node i)) i s)
-    rw [hinv, hs] at h
-    exact ⟨_, mul_left_cancel (mul_right_cancel h)⟩
+  -- Conjugation maps the torus onto itself because the reflection is an involution.
+  exact (weightTorusPoints A).mem_normalizer_range_of_surjective
+    (IntegralToralClosure.weylReflectTorusPoint_root_simpleIndex_involutive i A).surjective
+    (simpleWeylPoint_conj_weightTorusPoints i A)
 
 end
 
