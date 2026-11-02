@@ -29,19 +29,11 @@ specializations of this one.
 
 ## Main results
 
-* `AddChar.pow_char_eq_one`: every additive character on a ring of characteristic `p`, such as
-  `ZMod p`, takes values in the `p`-th roots of unity.
 * `MulEquiv.zmodCoordChar_injective`: the character attached to a *primitive* `m`-th root of unity
   is faithful.
 -/
 
 public section
-
-/-- An additive character on a ring of characteristic `p` takes values in the `p`-th roots of
-unity; for instance every additive character on `ZMod p` does. -/
-theorem AddChar.pow_char_eq_one {R M : Type*} [NonAssocSemiring R] (p : ℕ) [CharP R p]
-    [Monoid M] (ψ : AddChar R M) (x : R) : ψ x ^ p = 1 := by
-  simp [← AddChar.map_nsmul_eq_pow]
 
 namespace MulEquiv
 
