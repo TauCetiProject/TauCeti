@@ -40,11 +40,9 @@ A time-dependent function `F(t, x)` becomes an autonomous function on the extend
 and its Poisson bracket with `K` there is `∂_t F + {F, H}`
 (`TauCeti.SymplecticForm.extended_poissonBracket_extendedHamiltonian`). This is also the derivative
 of `F` along any solution of the nonautonomous equation
-(`TauCeti.SymplecticForm.hasDerivAt_apply_of_hasDerivAt_hamiltonianVectorField`). In particular the
-energy `H(t, x(t))` changes at the rate `∂_t H`
-(`TauCeti.SymplecticForm.hasDerivAt_apply_of_hasDerivAt_hamiltonianVectorField_self`),
-and, for the global evolution of a Hamiltonian with Lipschitz suspended field, a differentiable
-`F` is a conserved quantity exactly when `∂_t F + {F, H} = 0`
+(`TauCeti.SymplecticForm.hasDerivAt_apply_of_hasDerivAt_hamiltonianVectorField`, in
+`TauCeti.Geometry.Symplectic.Hamiltonian.TimeDependent`), which characterises the conserved
+quantities of the time-dependent evolution
 (`TauCeti.SymplecticForm.forall_apply_timeDependentHamiltonianFlow_eq_iff`).
 
 ## References
@@ -60,7 +58,6 @@ public section
 namespace TauCeti
 
 open Function ContinuousLinearMap
-open scoped NNReal
 
 variable {V : Type*}
 
@@ -76,26 +73,6 @@ theorem extendedHamiltonian_apply (H : ℝ → V → ℝ) (y : V × (ℝ × ℝ)
   (rfl)
 
 variable [NormedAddCommGroup V] [NormedSpace ℝ V]
-
-/-- A time-dependent function `F(t, x)`, viewed as a function on the extended phase space, has
-derivative `(δx, δt, δe) ↦ ∂_t F(t, x) δt + d(F t)(x) δx` where it is differentiable. -/
-theorem hasFDerivAt_apply_snd_fst {F : ℝ → V → ℝ} {t : ℝ} {x : V}
-    (hF : DifferentiableAt ℝ (uncurry F) (t, x)) (e : ℝ) :
-    HasFDerivAt (fun y : V × (ℝ × ℝ) ↦ F y.2.1 y.1)
-      (timeFDeriv (uncurry F) t x • (fst ℝ ℝ ℝ).comp (snd ℝ V (ℝ × ℝ)) +
-        (fderiv ℝ (F t) x).comp (fst ℝ V (ℝ × ℝ))) (x, (t, e)) := by
-  have hpair : HasFDerivAt (fun y : V × (ℝ × ℝ) ↦ (y.2.1, y.1))
-      (((fst ℝ ℝ ℝ).comp (snd ℝ V (ℝ × ℝ))).prod (fst ℝ V (ℝ × ℝ))) (x, (t, e)) :=
-    hasFDerivAt_snd.fst.prodMk hasFDerivAt_fst
-  have hspatial : spatialFDeriv (uncurry F) x t = fderiv ℝ (F t) x := (fderiv_timeSlice hF).symm
-  refine (hF.hasFDerivAt.comp (x, (t, e)) hpair).congr_fderiv
-    (ContinuousLinearMap.ext fun w ↦ ?_)
-  -- Split `(δt, δx)` into its time and space components.
-  have hsplit : ((w.2.1, w.1) : ℝ × V) = w.2.1 • ((1 : ℝ), (0 : V)) + (0, w.1) := by simp
-  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.prod_apply,
-    ContinuousLinearMap.coe_fst', ContinuousLinearMap.coe_snd']
-  rw [hsplit, map_add, map_smul, ← timeFDeriv_apply, ← spatialFDeriv_apply, hspatial]
-  simp [mul_comm]
 
 /-- The derivative of the extended Hamiltonian:
 `dK(x, t, e)(δx, δt, δe) = δe + ∂_t H(t, x) δt + d(H t)(x) δx`. -/
@@ -146,7 +123,8 @@ theorem hasDerivAt_timeDependentHamiltonianSuspension_of_hasDerivAt_extended
     (hy : HasDerivAt y (ω.extended.hamiltonianVectorField (extendedHamiltonian H) (y s)) s) :
     HasDerivAt (fun u ↦ ((y u).2.1, (y u).1))
       (ω.timeDependentHamiltonianSuspension H ((y s).2.1, (y s).1)) s := by
-  rw [show y s = ((y s).1, ((y s).2.1, (y s).2.2)) from rfl,
+  -- Expose the coordinates `(x, (t, e))` of `y s`, so that the vector field formula applies.
+  rw [← Prod.mk.eta (p := y s), ← Prod.mk.eta (p := (y s).2),
     hamiltonianVectorField_extendedHamiltonian ω hH] at hy
   rw [timeDependentHamiltonianSuspension_apply]
   exact ((hasFDerivAt_fst.comp_hasDerivAt s (hasFDerivAt_snd.comp_hasDerivAt s hy))).prodMk
@@ -181,55 +159,6 @@ theorem extended_poissonBracket_extendedHamiltonian (ω : SymplecticForm V) {F H
   rw [poissonBracket_eq_fderiv, hamiltonianVectorField_extendedHamiltonian ω hH,
     (hasFDerivAt_apply_snd_fst hF e).fderiv, poissonBracket_eq_fderiv]
   simp
-
-/-- **The derivative of a time-dependent function along a solution.** If `x` solves the
-nonautonomous equation `x' = X_{H_t}(x)` at `t` and `F` is differentiable at `(t, x t)`, then
-`d/dt F(t, x(t)) = ∂_t F(t, x(t)) + {F_t, H_t}(x(t))`. -/
-theorem hasDerivAt_apply_of_hasDerivAt_hamiltonianVectorField (ω : SymplecticForm V)
-    {F H : ℝ → V → ℝ} {x : ℝ → V} {t : ℝ} (hF : DifferentiableAt ℝ (uncurry F) (t, x t))
-    (hx : HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) :
-    HasDerivAt (fun s ↦ F s (x s))
-      (timeFDeriv (uncurry F) t (x t) + ω.poissonBracket (F t) (H t) (x t)) t := by
-  have hspatial : spatialFDeriv (uncurry F) (x t) t = fderiv ℝ (F t) (x t) :=
-    (fderiv_timeSlice hF).symm
-  rw [poissonBracket_eq_fderiv, ← hspatial]
-  exact hasDerivAt_comp_prodMk (F := uncurry F) hF hx
-
-/-- **The energy changes at the rate `∂_t H`.** Along a solution `x` of the nonautonomous
-equation `x' = X_{H_t}(x)`, `d/dt H(t, x(t)) = ∂_t H(t, x(t))`. -/
-theorem hasDerivAt_apply_of_hasDerivAt_hamiltonianVectorField_self (ω : SymplecticForm V)
-    {H : ℝ → V → ℝ} {x : ℝ → V} {t : ℝ}
-    (hH : DifferentiableAt ℝ (uncurry H) (t, x t))
-    (hx : HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) :
-    HasDerivAt (fun s ↦ H s (x s)) (timeFDeriv (uncurry H) t (x t)) t := by
-  simpa using ω.hasDerivAt_apply_of_hasDerivAt_hamiltonianVectorField hH hx
-
-/-- **Conserved quantities of a time-dependent Hamiltonian.** For a time-dependent Hamiltonian
-whose suspended vector field is Lipschitz, a differentiable time-dependent function `F` is constant
-along its evolution, `F(t, Φ_{s,t} x) = F(s, x)`, exactly when `∂_t F + {F_t, H_t} = 0`. -/
-theorem forall_apply_timeDependentHamiltonianFlow_eq_iff (ω : SymplecticForm V) {F H : ℝ → V → ℝ}
-    {K : ℝ≥0} (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H))
-    (hF : Differentiable ℝ (uncurry F)) :
-    (∀ s t x, F t (ω.timeDependentHamiltonianFlow H hX s t x) = F s x) ↔
-      ∀ t x, timeFDeriv (uncurry F) t x + ω.poissonBracket (F t) (H t) x = 0 := by
-  have hderiv : ∀ s t x, HasDerivAt (fun u ↦ F u (ω.timeDependentHamiltonianFlow H hX s u x))
-      (timeFDeriv (uncurry F) t (ω.timeDependentHamiltonianFlow H hX s t x) +
-        ω.poissonBracket (F t) (H t) (ω.timeDependentHamiltonianFlow H hX s t x)) t :=
-    fun s t x ↦ ω.hasDerivAt_apply_of_hasDerivAt_hamiltonianVectorField (hF _)
-      (ω.hasDerivAt_timeDependentHamiltonianFlow H hX s t x)
-  constructor
-  · intro h t x
-    -- The function `u ↦ F(u, Φ_{t,u} x)` is constant, so its derivative at `u = t` vanishes.
-    have hconst : (fun u ↦ F u (ω.timeDependentHamiltonianFlow H hX t u x)) = fun _ ↦ F t x :=
-      funext fun u ↦ h t u x
-    have h0 := hderiv t t x
-    rw [hconst, timeDependentHamiltonianFlow_self] at h0
-    exact h0.unique (hasDerivAt_const t (F t x))
-  · intro h s t x
-    have hzero : ∀ u, HasDerivAt (fun u ↦ F u (ω.timeDependentHamiltonianFlow H hX s u x)) 0 u :=
-      fun u ↦ (h u _) ▸ hderiv s u x
-    rw [is_const_of_deriv_eq_zero (fun u ↦ (hzero u).differentiableAt)
-      (fun u ↦ (hzero u).deriv) t s, timeDependentHamiltonianFlow_self]
 
 end SymplecticForm
 
