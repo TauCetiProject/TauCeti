@@ -29,6 +29,8 @@ fields on a product manifold.
   vector-valued functions, applied to a tangent vector.
 * `TauCeti.mvfderiv_comp_snd_apply_eq_smul_deriv`: for a scalar second factor, the same in terms of
   the one-variable derivative `deriv`.
+* `HasDerivAt.mvfderiv_comp_fst_apply`: the derivative of a function of the scalar coordinate of
+  `𝕜 × N`.
 * `MDifferentiableAt.hasLeftInverse_mfderiv_fst_prod_iff`: the differential of a
   parameter-preserving map splits exactly when the differential of its slice splits.
 -/
@@ -115,6 +117,17 @@ theorem mvfderiv_comp_snd_apply_eq_smul_deriv (g : 𝕜 → F) (p : M × 𝕜)
   rw [mvfderiv_comp_snd_apply, mvfderiv_eq_fderiv]
   -- `NormedSpace.fromTangentSpace` is the identity of `𝕜`.
   exact fderiv_eq_smul_deriv (f := g) (x := p.2) (v.2 : 𝕜)
+
+/-- The derivative of a function of the scalar coordinate of `𝕜 × N`, with derivative `g'` at
+`p.1`, sends a tangent vector `(s, v)` at `p` to `s • g'`. -/
+theorem _root_.HasDerivAt.mvfderiv_comp_fst_apply {g : 𝕜 → F} {g' : F} {p : 𝕜 × N}
+    (hg : HasDerivAt g g' p.1) (v : TangentSpace (𝓘(𝕜).prod J) p) :
+    mvfderiv (𝓘(𝕜).prod J) (g ∘ Prod.fst) p v =
+      NormedSpace.fromTangentSpace (𝕜 := 𝕜) p.1 v.1 • g' := by
+  rw [TauCeti.mvfderiv_comp_fst_apply, mvfderiv_eq_fderiv, hg.hasFDerivAt.fderiv]
+  -- `ContinuousLinearMap.toSpanSingleton 𝕜 g'` sends `s` to `s • g'`, read through
+  -- `NormedSpace.fromTangentSpace`.
+  rfl
 
 end TauCeti
 
