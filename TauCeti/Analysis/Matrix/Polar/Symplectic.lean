@@ -96,15 +96,6 @@ private theorem inverseTranspose_eq {A : GL (l ⊕ l) 𝕜}
   refine Units.ext ?_
   simp [TauCeti.GLSymplectic.coe_symJ, coe_unitaryJ, coe_units_inv, J_inv, star_J]
 
-/-- A matrix `X` with left inverse `Y` is symplectic when `J X J⁻¹ = Yᵀ`, that is, when
-`(X⁻¹)ᵀ = J X J⁻¹`. -/
-private theorem mem_of_J_conj_eq_transpose {X Y : Matrix (l ⊕ l) (l ⊕ l) 𝕜} (hYX : Y * X = 1)
-    (h : J l 𝕜 * X * star (J l 𝕜) = Yᵀ) : X ∈ symplecticGroup l 𝕜 := by
-  have hJ : Yᵀ * J l 𝕜 = J l 𝕜 * X :=
-    (eq_J_conj_iff_mul_J_eq _ _).1 (by rw [← h, star_J, J_inv])
-  rw [mem_iff', Matrix.mul_assoc, ← hJ, ← Matrix.mul_assoc, ← transpose_mul, hYX, transpose_one,
-    Matrix.one_mul]
-
 /-- **The unitary polar factor of a symplectic matrix is symplectic.** If `A = P U` is the polar
 decomposition of an invertible symplectic matrix over `ℝ` or `ℂ`, then `U` is symplectic as well as
 unitary. -/
@@ -120,7 +111,7 @@ theorem polarUnitary_mem {A : GL (l ⊕ l) 𝕜}
     rw [star_eq_conjTranspose (U : Matrix (l ⊕ l) (l ⊕ l) 𝕜), conjTranspose_transpose,
       ← UnitaryGroup.map_star_coe, ← h]
     simp [coe_unitaryJ]
-  exact mem_of_J_conj_eq_transpose (Unitary.star_mul_self_of_mem U.2) hJU
+  exact mem_of_J_conj_eq_transpose (Unitary.star_mul_self_of_mem U.2) (by rwa [J_inv, ← star_J])
 
 /-- **The positive polar factor of a symplectic matrix is symplectic.** If `A` is symplectic over
 `ℝ` or `ℂ`, then so is `√(A Aᴴ)`. -/
@@ -133,7 +124,7 @@ theorem sqrt_mul_star_mem {A : Matrix (l ⊕ l) (l ⊕ l) 𝕜} (hA : A ∈ symp
   rw [inverseTranspose_eq hA, Units.sqrt_unitary_mul_mul_unitary, coe_unitaryJ] at h
   have hP : IsUnit P.det :=
     (isUnit_iff_isUnit_det P).1 (GeneralLinearGroup.posDef_sqrt_mul_star A).isUnit
-  exact mem_of_J_conj_eq_transpose (nonsing_inv_mul P hP) h
+  exact mem_of_J_conj_eq_transpose (nonsing_inv_mul P hP) (by rwa [J_inv, ← star_J])
 
 end RCLike
 
