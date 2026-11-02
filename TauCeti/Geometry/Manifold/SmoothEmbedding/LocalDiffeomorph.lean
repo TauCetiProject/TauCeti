@@ -7,8 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
-public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
-public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
 
 /-!
@@ -127,20 +125,8 @@ theorem transChart_apply [IsManifold J n G] (f : SmoothEmbedding I J n M N)
 submanifold `U`. -/
 theorem _root_.Manifold.IsSmoothEmbedding.codRestrict [IsManifold J n N] {f : M → N}
     (hf : Manifold.IsSmoothEmbedding I J n f) (U : Opens N) (h : ∀ x, f x ∈ U) :
-    Manifold.IsSmoothEmbedding I J n fun x ↦ (⟨f x, h x⟩ : U) := by
-  refine ⟨?_, hf.isEmbedding.codRestrict U h⟩
-  rcases isEmpty_or_nonempty M with hM | hM
-  · exact IsImmersionOfComplement.isImmersion (F := E') fun x ↦ isEmptyElim x
-  have : Nonempty U := ⟨⟨f hM.some, h _⟩⟩
-  -- Read `f` through the inverse of the inclusion `U → N`, a partial diffeomorphism with
-  -- target `U`.
-  let Φ := ((isLocalDiffeomorph_subtype_val (I := J) (n := n) (U := U)).isLocalDiffeomorphOn
-    univ).partialDiffeomorphOfInjOn isOpen_univ Subtype.val_injective.injOn
-  have hk (x : M) : IsLocalDiffeomorphAt J J n Φ.symm (f x) :=
-    Φ.symm.isLocalDiffeomorphAt J J n (by simpa [Φ] using h x)
-  have hcomp : Φ.symm ∘ f = fun x ↦ (⟨f x, h x⟩ : U) := funext fun x ↦
-    (congrArg Φ.symm (by simp [Φ] : f x = Φ ⟨f x, h x⟩)).trans (Φ.left_inv (by simp [Φ]))
-  exact hcomp ▸ isImmersion_isLocalDiffeomorphAt_comp hk hf.isImmersion
+    Manifold.IsSmoothEmbedding I J n fun x ↦ (⟨f x, h x⟩ : U) :=
+  ⟨hf.isImmersion.codRestrict U h, hf.isEmbedding.codRestrict U h⟩
 
 /-- A smooth embedding whose image lies in the open subset `U`, as a smooth embedding into the
 open submanifold `U`. -/
@@ -172,14 +158,8 @@ variable {𝕂 : Type*} [RCLike 𝕂] {F : Type*} [NormedAddCommGroup F] [Normed
 finite dimension is a local diffeomorphism. -/
 theorem isLocalDiffeomorph (f : SmoothEmbedding K K' n X Y)
     (hd : Module.finrank 𝕂 F = Module.finrank 𝕂 F') (hn : 1 ≤ n) :
-    IsLocalDiffeomorph K K' n f := by
-  have := FiniteDimensional.complete 𝕂 F
-  refine isLocalDiffeomorph_of_mfderiv_eq f.contMDiff hn fun y ↦ ?_
-  let L := (mfderiv K K' f y : TangentSpace K y →ₗ[𝕂] TangentSpace K' (f y))
-  have hinj : Function.Injective L :=
-    (f.isImmersion.isDiffImmersionAt (by rintro rfl; simp at hn) y).mfderiv_injective
-  exact ⟨(LinearEquiv.ofInjectiveOfFinrankEq L hinj hd).toContinuousLinearEquiv,
-    ContinuousLinearMap.ext fun _ ↦ rfl⟩
+    IsLocalDiffeomorph K K' n f :=
+  f.isImmersion.isLocalDiffeomorph hd hn
 
 end InverseFunctionTheorem
 

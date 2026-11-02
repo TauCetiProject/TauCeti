@@ -94,16 +94,16 @@ theorem transRadialContraction_apply (f : SmoothEmbedding I 𝓘(ℝ, E) n M E)
 
 section Orientation
 
-variable {X : Type*} [TopologicalSpace X] [ChartedSpace E X] [IsManifold 𝓘(ℝ, E) ∞ X]
+variable {X : Type*} [TopologicalSpace X] [ChartedSpace E X] [IsManifold 𝓘(ℝ, E) 1 X]
   {ι : Type*} [Fintype ι]
 
 /-- Precomposing an embedding of `E` with a radial contraction about the origin keeps it
 orientation-preserving at the origin. -/
 theorem isOrientationPreservingAt_compRadialContraction
-    (f : SmoothEmbedding 𝓘(ℝ, E) 𝓘(ℝ, E) ∞ E X) {κ : ℝ} (hκ : 0 ≤ κ)
+    (f : SmoothEmbedding 𝓘(ℝ, E) 𝓘(ℝ, E) n E X) (hn : n ≤ ∞) {κ : ℝ} (hκ : 0 ≤ κ)
     {o : Manifold.Orientation 𝓘(ℝ, E) E ι} {oM : Manifold.Orientation 𝓘(ℝ, E) X ι}
     (hf : o.IsOrientationPreservingAt oM f 0) :
-    o.IsOrientationPreservingAt oM (f.compRadialContraction le_rfl hκ) 0 := by
+    o.IsOrientationPreservingAt oM (f.compRadialContraction hn hκ) 0 := by
   rw [coe_compRadialContraction]
   rw [← radialContraction_self (0 : E) κ] at hf
   exact hf.comp (isOrientationPreservingAt_radialContraction_self o 0 κ)

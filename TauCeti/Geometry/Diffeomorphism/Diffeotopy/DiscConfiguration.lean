@@ -94,7 +94,7 @@ private theorem exists_diffeotopy_eqOn_compRadialContraction [T2Space M] [Finite
       (a := fun i ↦ f i) (b := fun i ↦ (f i).compRadialContraction le_rfl (hκ i))
       (fun i _ x _ ↦ mem_range_self x) (fun i _ x _ ↦ hshrink i (mem_range_self x)) fun i _ ↦
         exists_diffeotopy_eqOn_of_range_subset_range (f i) (f i) _ subset_rfl (hshrink i) o oM
-          (hfo i) (isOrientationPreservingAt_compRadialContraction _ _ (hfo i)) hA
+          (hfo i) (isOrientationPreservingAt_compRadialContraction _ le_rfl _ (hfo i)) hA
   exact ⟨Φ, K, hK, by simpa using hKf, hΦK, fun i ↦ hΦ i (Finset.mem_univ i)⟩
 
 /-- **Moving ordered configurations of discs.** Let `U` be a preconnected open subset of a
@@ -160,8 +160,8 @@ theorem exists_diffeotopy_eqOn_of_pairwise_disjoint [T2Space M] [Finite ι]
       (a := fun i ↦ shrink (f' i) i) (b := fun i ↦ shrink (g i) i)
       (fun i _ x _ ↦ hf'g i (mem_range_self x)) (fun i _ x _ ↦ hgg i (mem_range_self x)) fun i _ ↦
         exists_diffeotopy_eqOn_of_range_subset_range (g i) _ _ (hf'g i) (hgg i) o oM
-          (isOrientationPreservingAt_compRadialContraction _ _ (hf'o i))
-          (isOrientationPreservingAt_compRadialContraction _ _ (hgo i)) hA
+          (isOrientationPreservingAt_compRadialContraction _ le_rfl _ (hf'o i))
+          (isOrientationPreservingAt_compRadialContraction _ le_rfl _ (hgo i)) hA
   -- Compose: shrink the `f i`, move the centres, match the shrinks, and undo the shrink of `g i`.
   have hKLU' : KL ⊆ U := hKLU.trans (iUnion₂_subset fun i _ ↦ hgU i)
   refine ⟨Sf.trans (Φ₀.trans (L.trans Sg.symm)), Kf ∪ K₀ ∪ KL ∪ Kg,
