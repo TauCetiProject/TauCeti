@@ -91,6 +91,19 @@ theorem unitSMul_mem_idealLattice_iff (u : (𝓞 K)ˣ)
   have hx' := h u⁻¹ hx
   rwa [inv_smul_smul] at hx'
 
+open scoped nonZeroDivisors in
+/-- Multiplication by a unit permutes the points of every fractional-ideal lattice. -/
+noncomputable def unitSMulIdealLatticeEquiv (u : (𝓞 K)ˣ) (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
+    mixedEmbedding.idealLattice K I ≃ mixedEmbedding.idealLattice K I :=
+  Equiv.subtypeEquiv (MulAction.toPerm u) fun x ↦ (u.unitSMul_mem_idealLattice_iff I x).symm
+
+open scoped nonZeroDivisors in
+@[simp]
+theorem unitSMulIdealLatticeEquiv_apply (u : (𝓞 K)ˣ) (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ)
+    (x : mixedEmbedding.idealLattice K I) :
+    (u.unitSMulIdealLatticeEquiv I x : mixedEmbedding.mixedSpace K) =
+      u • (x : mixedEmbedding.mixedSpace K) := (rfl)
+
 end Units
 
 open NumberField.mixedEmbedding

@@ -78,35 +78,25 @@ open scoped Classical in
 its Euclidean Gaussian is the Gaussian at the parameter `y`. -/
 def archGaussianDilation (y : realSpace K) (hy : ∀ w, 0 < y w) :
     mixedSpace K ≃L[ℝ] mixedSpace K :=
-  LinearEquiv.toContinuousLinearEquiv <| LinearEquiv.prodCongr
-    (LinearEquiv.piCongrRight fun w : {w : InfinitePlace K // w.IsReal} ↦
-      LinearEquiv.smulOfNeZero ℝ ℝ (Real.sqrt (y w)) (Real.sqrt_pos.mpr (hy w)).ne')
-    (LinearEquiv.piCongrRight fun w : {w : InfinitePlace K // w.IsComplex} ↦
-      LinearEquiv.smulOfNeZero ℝ ℂ (Real.sqrt (y w)) (Real.sqrt_pos.mpr (hy w)).ne')
+  let a := mixedSpaceOfRealSpace (fun w ↦ √(y w))
+  have ha : IsUnit a := isUnit_iff_norm_ne_zero.mpr <|
+    mixedEmbedding.norm_ne_zero_iff.mpr fun w ↦ by
+      rw [normAtPlace_mixedSpaceOfRealSpace (Real.sqrt_nonneg _)]
+      exact (Real.sqrt_pos.mpr (hy w)).ne'
+  LinearEquiv.toContinuousLinearEquiv (ha.unit.mulLeftLinearEquiv ℝ (mixedSpace K))
 
 @[simp]
-theorem archGaussianDilation_real (y : realSpace K) (hy : ∀ w, 0 < y w)
-    (x : mixedSpace K) (w : {w : InfinitePlace K // w.IsReal}) :
-    (archGaussianDilation y hy x).1 w = Real.sqrt (y w) * x.1 w := (rfl)
-
-@[simp]
-theorem archGaussianDilation_complex (y : realSpace K) (hy : ∀ w, 0 < y w)
-    (x : mixedSpace K) (w : {w : InfinitePlace K // w.IsComplex}) :
-    (archGaussianDilation y hy x).2 w = Real.sqrt (y w) • x.2 w := (rfl)
+theorem archGaussianDilation_apply (y : realSpace K) (hy : ∀ w, 0 < y w)
+    (x : mixedSpace K) :
+    archGaussianDilation y hy x = mixedSpaceOfRealSpace (fun w ↦ √(y w)) * x := by
+  simp [archGaussianDilation]
 
 /-- The dilation multiplies the squared absolute value at `w` by `y w`. -/
 theorem normAtPlace_archGaussianDilation_sq (y : realSpace K) (hy : ∀ w, 0 < y w)
     (x : mixedSpace K) (w : InfinitePlace K) :
     normAtPlace w (archGaussianDilation y hy x) ^ 2 = y w * normAtPlace w x ^ 2 := by
-  classical
-  by_cases hw : w.IsReal
-  · rw [normAtPlace_apply_of_isReal hw, archGaussianDilation_real,
-      normAtPlace_apply_of_isReal hw, norm_mul, mul_pow,
-      Real.norm_of_nonneg (Real.sqrt_nonneg _), Real.sq_sqrt (hy w).le]
-  · rw [normAtPlace_apply_of_isComplex (not_isReal_iff_isComplex.mp hw),
-      archGaussianDilation_complex,
-      normAtPlace_apply_of_isComplex (not_isReal_iff_isComplex.mp hw), _root_.norm_smul,
-      mul_pow, Real.norm_of_nonneg (Real.sqrt_nonneg _), Real.sq_sqrt (hy w).le]
+  rw [archGaussianDilation_apply, map_mul,
+    normAtPlace_mixedSpaceOfRealSpace (Real.sqrt_nonneg _), mul_pow, Real.sq_sqrt (hy w).le]
 
 /-- At the constant parameter `1`, the Gaussian uses the Euclidean mixed-space pairing. -/
 theorem archGaussian_one (x : mixedSpace K) :
@@ -177,13 +167,9 @@ by the unit action. No restriction on the unit rank is needed. -/
 theorem latticeTheta_unitScale (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) (u : (𝓞 K)ˣ)
     (y : realSpace K) :
     latticeTheta (idealLattice K I) (unitScale u y) = latticeTheta (idealLattice K I) y := by
-  let e : idealLattice K I ≃ idealLattice K I :=
-    { toFun x := ⟨u • (x : mixedSpace K), (u.unitSMul_mem_idealLattice_iff I x).mpr x.prop⟩
-      invFun x := ⟨u⁻¹ • (x : mixedSpace K), ((u⁻¹).unitSMul_mem_idealLattice_iff I x).mpr x.prop⟩
-      left_inv x := Subtype.ext (inv_smul_smul u (x : mixedSpace K))
-      right_inv x := Subtype.ext (smul_inv_smul u (x : mixedSpace K)) }
   simp only [latticeTheta_def]
-  conv_rhs => rw [← e.tsum_eq]
-  exact tsum_congr fun x ↦ (archGaussian_unit_smul u y x).symm
+  conv_rhs => rw [← (u.unitSMulIdealLatticeEquiv I).tsum_eq]
+  exact tsum_congr fun x ↦ by
+    rw [Units.unitSMulIdealLatticeEquiv_apply, archGaussian_unit_smul]
 
 end TauCeti.LFunctions
