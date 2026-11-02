@@ -30,6 +30,8 @@ the number of nondegenerate simplices, such as cardinal filteredness.
 * `SSet.kanComplex_const`: discrete simplicial sets are Kan complexes.
 * `SSet.toπ₀`: the map from a simplicial set to the discrete simplicial set on its connected
   components.
+* `SSet.homConstEquiv`: maps from `X` to the discrete simplicial set on `ι` are functions
+  `π₀ X → ι`; they factor uniquely through `SSet.toπ₀`.
 -/
 
 public section
@@ -136,5 +138,49 @@ component. -/
 lemma toπ₀_app_zero (x : X _⦋0⦌) : dsimp% (toπ₀ X).app _ x = π₀.mk x := by
   rw [toπ₀_app, Subsingleton.elim (⦋0⦌.const ⦋0⦌ 0) (𝟙 _)]
   simp
+
+variable (X) in
+/-- Maps from a simplicial set `X` to the discrete simplicial set on `ι` are functions on the
+connected components of `X`: such a map is constant on each component, and the map attached to
+a function `π₀ X → ι` factors through `toπ₀ X`. -/
+noncomputable def homConstEquiv :
+    (X ⟶ (Functor.const SimplexCategoryᵒᵖ).obj ι) ≃ (π₀ X → ι) where
+  toFun f := π₀.lift (f.app (op ⦋0⦌)) fun x₀ x₁ e ↦
+    -- The faces of a discrete simplicial set are identities, so both ends of `e` are sent to
+    -- the image of `e` itself.
+    calc f.app _ x₀ = f.app _ (X.δ 1 e.edge) := by rw [e.src_eq]
+      _ = f.app _ (X.δ 0 e.edge) :=
+          (NatTrans.naturality_apply f (SimplexCategory.δ 1).op e.edge).trans
+            (NatTrans.naturality_apply f (SimplexCategory.δ 0).op e.edge).symm
+      _ = f.app _ x₁ := by rw [e.tgt_eq]
+  invFun g := toπ₀ X ≫ (Functor.const _).map (↾g)
+  left_inv f := by
+    ext n σ
+    exact NatTrans.naturality_apply f (⦋0⦌.const n.unop 0).op σ
+  right_inv g := funext (π₀.rec fun x ↦ by simp)
+
+/-- The function on connected components attached to a map to a discrete simplicial set takes the
+component of a vertex to the image of that vertex. -/
+@[simp]
+lemma homConstEquiv_apply_mk (f : X ⟶ (Functor.const SimplexCategoryᵒᵖ).obj ι) (x : X _⦋0⦌) :
+    homConstEquiv ι X f (π₀.mk x) = f.app _ x :=
+  (rfl)
+
+/-- The map attached to a function on connected components is its composite with `toπ₀ X`. -/
+lemma homConstEquiv_symm_apply (g : π₀ X → ι) :
+    (homConstEquiv ι X).symm g = toπ₀ X ≫ (Functor.const _).map (↾g) :=
+  (rfl)
+
+/-- Every map from `X` to a discrete simplicial set factors through `toπ₀ X`. -/
+@[reassoc (attr := simp)]
+lemma toπ₀_comp_homConstEquiv (f : X ⟶ (Functor.const SimplexCategoryᵒᵖ).obj ι) :
+    toπ₀ X ≫ (Functor.const _).map (↾(homConstEquiv ι X f)) = f := by
+  rw [← homConstEquiv_symm_apply, Equiv.symm_apply_apply]
+
+/-- Factorizations through `toπ₀ X` are unique. -/
+lemma eq_of_toπ₀_comp_eq {g g' : π₀ X → ι}
+    (h : toπ₀ X ≫ (Functor.const _).map (↾g) = toπ₀ X ≫ (Functor.const _).map (↾g')) :
+    g = g' :=
+  (homConstEquiv ι X).symm.injective (by rwa [homConstEquiv_symm_apply, homConstEquiv_symm_apply])
 
 end SSet

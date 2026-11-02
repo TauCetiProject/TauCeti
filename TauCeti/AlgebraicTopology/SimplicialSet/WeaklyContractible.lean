@@ -35,7 +35,8 @@ of the Kan–Quillen model structure and is not proved here.
 ## Main declarations
 
 * `SSet.constMaps K Z`: the constant maps `Z ⟶ Fun(K, Z)`, and `SSet.evalAt x Z`, evaluation at a
-  vertex `x`, which is a retraction of it (`SSet.constMaps_evalAt`).
+  vertex `x`, which is a retraction of it (`SSet.constMaps_evalAt`); `SSet.curry_evalAt`
+  evaluates curried maps.
 * `SSet.IsWeaklyContractible`: weakly contractible simplicial sets.
 * `SSet.IsWeaklyContractible.of_homotopy`: contractible simplicial sets are weakly contractible;
   in particular every standard simplex `Δ[n]` is.
@@ -72,12 +73,23 @@ variable {K} in
 noncomputable def evalAt (x : K _⦋0⦌) (Z : SSet.{u}) : (ihom K).obj Z ⟶ Z :=
   lift (const x) (𝟙 _) ≫ (ihom.ev K).app Z
 
+variable {K} in
+/-- Composing with the evaluation map `Fun(K, Z) ⟶ Z` undoes currying. -/
+private lemma lift_curry_ihom_ev_app {W Y Z : SSet.{u}} (a : W ⟶ K) (b : W ⟶ Y) (f : K ⊗ Y ⟶ Z) :
+    lift a (b ≫ curry f) ≫ (ihom.ev K).app Z = lift a b ≫ f := by
+  rw [← lift_whiskerLeft, Category.assoc, whiskerLeft_curry_ihom_ev_app]
+
+variable {K} in
+/-- Evaluating a curried map at a vertex `x` of `K` restricts it to `x` on the first factor. -/
+@[reassoc (attr := simp)]
+lemma curry_evalAt {Y Z : SSet.{u}} (x : K _⦋0⦌) (f : K ⊗ Y ⟶ Z) :
+    curry f ≫ evalAt x Z = lift (const x) (𝟙 Y) ≫ f := by
+  simpa [evalAt, comp_lift_assoc] using lift_curry_ihom_ev_app (const x) (𝟙 Y) f
+
 /-- Evaluating a constant map at a vertex returns its value. -/
 @[reassoc (attr := simp)]
 lemma constMaps_evalAt (x : K _⦋0⦌) (Z : SSet.{u}) : constMaps K Z ≫ evalAt x Z = 𝟙 Z := by
-  rw [constMaps, evalAt, comp_lift_assoc, comp_const, Category.comp_id,
-    ← Category.id_comp (curry _), ← lift_whiskerLeft, Category.assoc, whiskerLeft_curry_ihom_ev_app,
-    lift_snd]
+  simp [constMaps]
 
 /-- Precomposition with a map `f : K ⟶ L` sends constant maps out of `L` to constant maps out
 of `K`. -/
@@ -109,29 +121,25 @@ variable (h : K ⊗ Δ[1] ⟶ K) (Z : SSet.{u})
 private noncomputable def contractingMap : (ihom K).obj Z ⊗ Δ[1] ⟶ (ihom K).obj Z :=
   curry (lift (lift (fst _ _) (snd _ _ ≫ snd _ _) ≫ h) (snd _ _ ≫ fst _ _) ≫ (ihom.ev K).app Z)
 
+/-- Over a vertex `i` of `Δ[1]`, `contractingMap h Z` precomposes with the restriction of `h`
+to `i`. -/
+private lemma lift_const_contractingMap (i : Δ[1] _⦋0⦌) :
+    lift (𝟙 _) (const i) ≫ contractingMap h Z =
+      curry (lift (fst _ _ ≫ lift (𝟙 K) (const i) ≫ h) (snd _ _) ≫ (ihom.ev K).app Z) := by
+  have hi : K ◁ lift (𝟙 ((ihom K).obj Z)) (const i) ≫ lift (fst _ _) (snd _ _ ≫ snd _ _) =
+      fst _ _ ≫ lift (𝟙 K) (const i) := by
+    ext : 1 <;> simp
+  rw [contractingMap, ← curry_natural_left]
+  simp [comp_lift_assoc, reassoc_of% hi]
+
 private lemma ι₀_contractingMap {x : K _⦋0⦌} (h₀ : ι₀ ≫ h = const x) :
     ι₀ ≫ contractingMap h Z = evalAt x Z ≫ constMaps K Z := by
-  rw [evalAt_constMaps, contractingMap, ← curry_natural_left, ← Category.assoc, evalAt,
-    ← Category.assoc]
-  congr 2
-  have hι₀ :
-      lift (K ◁ ι₀ ≫ fst _ _) (K ◁ ι₀ ≫ snd _ _ ≫ snd _ _) = fst K ((ihom K).obj Z) ≫ ι₀ := by
-    ext : 1 <;> simp
-  ext : 1
-  · rw [Category.assoc, lift_fst, comp_lift_assoc, hι₀, Category.assoc, h₀]
-    simp
-  · simp
+  rw [ι₀, lift_const_contractingMap, ← ι₀, h₀, evalAt_constMaps, evalAt, comp_lift_assoc]
+  simp
 
 private lemma ι₁_contractingMap (h₁ : ι₁ ≫ h = 𝟙 K) : ι₁ ≫ contractingMap h Z = 𝟙 _ := by
-  rw [contractingMap, ← curry_natural_left, curry_eq_iff, uncurry_id_eq_ev, ← Category.assoc]
-  convert Category.id_comp _
-  have hι₁ :
-      lift (K ◁ ι₁ ≫ fst _ _) (K ◁ ι₁ ≫ snd _ _ ≫ snd _ _) = fst K ((ihom K).obj Z) ≫ ι₁ := by
-    ext : 1 <;> simp
-  ext : 1
-  · rw [Category.assoc, lift_fst, comp_lift_assoc, hι₁, Category.assoc, h₁]
-    simp
-  · simp
+  rw [ι₁, lift_const_contractingMap, ← ι₁, h₁]
+  simp [← uncurry_id_eq_ev]
 
 end
 
@@ -199,9 +207,9 @@ lemma exists_homotopy_const {Z : SSet.{u}} [KanComplex Z] (f : K ⟶ Z) :
   let φ : Δ[0] ⟶ (ihom K).obj Z := curry (fst K _ ≫ f)
   -- The edge of `Fun(K, Z)` traced by the homotopy `h` at the vertex `f`.
   let e : Δ[1] ⟶ (ihom K).obj Z := lift (const v) (𝟙 _) ≫ φ ▷ Δ[1] ≫ h
-  have he₀ :
-      const (X := K) (stdSimplex.obj₀Equiv.symm 0) ≫ e = const v ≫ φ ≫ g ≫ constMaps K Z := by
-    rw [← h₀, ← ι₀_comp_assoc]
+  have he₀ : const (X := K) (stdSimplex.obj₀Equiv.symm 0) ≫ e =
+      const ((φ ≫ g).app _ v) ≫ constMaps K Z := by
+    rw [← const_comp, Category.assoc, Category.assoc, ← h₀, ← ι₀_comp_assoc]
     simp only [e, ← Category.assoc]
     congr 2
   have he₁ : const (X := K) (stdSimplex.obj₀Equiv.symm 1) ≫ e = const v ≫ φ := by
@@ -210,19 +218,13 @@ lemma exists_homotopy_const {Z : SSet.{u}} [KanComplex Z] (f : K ⟶ Z) :
     congr 2
   -- Through `uncurry`, the edge `e` is a homotopy `K ⊗ Δ[1] ⟶ Z`, whose ends are the values of
   -- `e` at the vertices of `Δ[1]`, both curried.
-  have hι₀ : ι₀ ≫ K ◁ e = lift (𝟙 K) (const (stdSimplex.obj₀Equiv.symm 0) ≫ e) := by
-    ext : 1 <;> simp
-  have hι₁ : ι₁ ≫ K ◁ e = lift (𝟙 K) (const (stdSimplex.obj₀Equiv.symm 1) ≫ e) := by
-    ext : 1 <;> simp
   refine ⟨(φ ≫ g).app _ v, ⟨{ h := uncurry e, h₀ := ?_, h₁ := ?_, rel := ?_ }⟩⟩
   · -- `change` unfolds `RelativeMorphism.botEquiv.symm` in the types of the fields.
     change ι₀ ≫ uncurry e = const _
-    rw [uncurry_eq, reassoc_of% hι₀, he₀, ← Category.assoc, ← Category.assoc, constMaps,
-      ← lift_whiskerLeft, Category.assoc, whiskerLeft_curry_ihom_ev_app, lift_snd, Category.assoc,
-      const_comp]
+    rw [ι₀, uncurry_eq, lift_whiskerLeft_assoc, he₀, constMaps, lift_curry_ihom_ev_app, lift_snd]
   · change ι₁ ≫ uncurry e = f
-    rw [uncurry_eq, reassoc_of% hι₁, he₁, ← lift_whiskerLeft, Category.assoc,
-      whiskerLeft_curry_ihom_ev_app, ← Category.assoc, lift_fst, Category.id_comp]
+    rw [ι₁, uncurry_eq, lift_whiskerLeft_assoc, he₁, lift_curry_ihom_ev_app, lift_fst_assoc,
+      Category.id_comp]
   · ext _ ⟨⟨_, ⟨⟩⟩, _⟩
 
 /-- A weakly contractible simplicial set is connected. -/
