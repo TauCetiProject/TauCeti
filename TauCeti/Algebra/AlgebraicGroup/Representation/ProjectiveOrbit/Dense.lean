@@ -38,8 +38,6 @@ nilpositive element has full dimension because its tangent space is the whole gr
 
 ## Main results
 
-* `TauCeti.Comodule.topologicalKrullDim_range_projectiveOrbitMap_add_one_le_finrank`: every orbit
-  of a line has dimension at most `dim M - 1`.
 * `TauCeti.Comodule.closure_range_projectiveOrbitMap_eq_univ`: an orbit of dimension `dim M - 1` is
   dense.
 * `TauCeti.Comodule.isOpen_range_projectiveOrbitMap`: an orbit of dimension `dim M - 1` is open.
@@ -61,23 +59,6 @@ namespace TauCeti.Comodule
 
 universe u
 
-section Bound
-
-variable {k H M : Type u} [Field k] [CommRing H] [HopfAlgebra k H]
-  [AddCommGroup M] [Module k M] [Comodule k H M] [Module.Finite k M]
-
-/-- **Orbits have dimension at most that of the projective space.** The orbit of a line in `M`
-has Krull dimension at most `dim M - 1`. -/
-theorem topologicalKrullDim_range_projectiveOrbitMap_add_one_le_finrank
-    (m : M) (hm : Module.IsUnimodular k m) :
-    topologicalKrullDim (Set.range (projectiveOrbitMap (H := H) m hm)) + 1 ≤
-      Module.finrank k M := by
-  grw [topologicalKrullDim_subspace_le]
-  exact (SymmetricAlgebra.topologicalKrullDim_proj_add_one_le_finrank (Module.Dual k M) k).trans_eq
-    (by rw [Subspace.dual_finrank_eq])
-
-end Bound
-
 variable {k H M : Type u} [Field k] [IsAlgClosed k] [CommRing H] [HopfAlgebra k H]
   [Algebra.FiniteType k H] [AddCommGroup M] [Module k M] [Comodule k H M]
   [Module.Finite k M]
@@ -97,23 +78,11 @@ theorem closure_range_projectiveOrbitMap_eq_univ (m : M) (hm : Module.IsUnimodul
   rw [topologicalKrullDim_closure_range_projectiveOrbitMap] at hlt
   have hP := SymmetricAlgebra.topologicalKrullDim_proj_add_one_le_finrank (Module.Dual k M) k
   rw [Subspace.dual_finrank_eq] at hP
-  have hfin := topologicalKrullDim_range_projectiveOrbitMap_ne_top (H := H) m hm
-  generalize topologicalKrullDim (Set.range (projectiveOrbitMap (H := H) m hm)) = d
-    at hdim hlt hfin
-  generalize topologicalKrullDim (Proj (TauCeti.SymmetricAlgebra.homogeneousSubmodule k
-    (Module.Dual k M))) = p at hlt hP
-  induction d using WithBot.recBotCoe with
-  | bot => simp at hdim
-  | coe d =>
-    induction d using ENat.recTopCoe with
-    | top => exact hfin rfl
-    | coe d =>
-      induction p using WithBot.recBotCoe with
-      | bot => simp at hlt
-      | coe p =>
-        induction p using ENat.recTopCoe with
-        | top => norm_cast at hP
-        | coe p => norm_cast at hdim hlt hP; omega
+  obtain ⟨d, hd⟩ := exists_topologicalKrullDim_range_projectiveOrbitMap_eq_natCast (H := H) m hm
+  rw [hd] at hdim hlt
+  have h := (add_le_add_left hlt 1).trans (hP.trans hdim)
+  norm_cast at h
+  omega
 
 /-- **An orbit of maximal dimension is open.** If the orbit of a line in `M` has dimension
 `dim M - 1`, it is an open subset of the projective space of lines in `M`. -/
@@ -143,23 +112,13 @@ theorem exists_span_basePointsRepresentation_eq (m : M) (hm : Module.IsUnimodula
     have hlt := topologicalKrullDim_range_projectiveOrbitMap_lt hm hn
       ⟨closure_range_projectiveOrbitMap_eq_univ m hm hmdim ▸ Set.mem_univ y, hy⟩
     have hle := topologicalKrullDim_range_projectiveOrbitMap_add_one_le_finrank (H := H) m hm
-    have hfin := topologicalKrullDim_range_projectiveOrbitMap_ne_top (H := H) n hn
-    generalize topologicalKrullDim (Set.range (projectiveOrbitMap (H := H) m hm)) = a
-      at hle hlt
-    generalize topologicalKrullDim (Set.range (projectiveOrbitMap (H := H) n hn)) = b
-      at hndim hlt hfin
-    induction b using WithBot.recBotCoe with
-    | bot => simp at hndim
-    | coe b =>
-      induction b using ENat.recTopCoe with
-      | top => exact hfin rfl
-      | coe b =>
-        induction a using WithBot.recBotCoe with
-        | bot => simp at hlt
-        | coe a =>
-          induction a using ENat.recTopCoe with
-          | top => norm_cast at hle
-          | coe a => norm_cast at hndim hlt hle; omega
+    obtain ⟨a, ha⟩ := exists_topologicalKrullDim_range_projectiveOrbitMap_eq_natCast (H := H) m hm
+    obtain ⟨b, hb⟩ := exists_topologicalKrullDim_range_projectiveOrbitMap_eq_natCast (H := H) n hn
+    rw [ha, hb] at hlt
+    rw [ha] at hle
+    rw [hb] at hndim
+    norm_cast at hlt hle hndim
+    omega
   -- As a closed point of the orbit of `[m]`, the line `[n]` is a rational translate of `[m]`.
   obtain ⟨g, hg⟩ : y ∈ Set.range (fun g : WithConv (H →ₐ[k] k) ↦
       projectiveOrbitMap (H := H) m hm (AlgHom.kernelPoint g.ofConv)) := by

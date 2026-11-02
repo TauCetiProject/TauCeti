@@ -32,9 +32,9 @@ also requires `IsNoetherianRing R`. The chart formula describes this morphism on
 standard affine charts, and the standard opens of a spanning family of linear forms cover
 the projective spectrum. Its source is Jacobson whenever `Spec R` is Jacobson.
 
-Over a field `k`, the projective space of a nonzero vector space `M` is irreducible, and it has
-Krull dimension at most `dim M - 1`. These are the ambient facts needed to recognize a dense
-subset of a projective space by its dimension.
+For a nonzero free module `M` over a domain, `Proj(Sym M)` is integral. Over a field `k` it is
+the projective space of lines in `M∨`, of Krull dimension at most `dim M - 1`. These are the
+ambient facts needed to recognize a dense subset of a projective space by its dimension.
 
 ## References
 
