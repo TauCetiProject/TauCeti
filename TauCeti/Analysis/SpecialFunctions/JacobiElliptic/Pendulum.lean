@@ -78,6 +78,13 @@ theorem sin_half_pendulumAngle (ω θ₀ t : ℝ) :
   rw [pendulumAngle_def, mul_div_cancel_left₀ _ two_ne_zero,
     sin_arcsin (neg_le_of_abs_le h) (le_of_abs_le h)]
 
+/-- The companion of `sin_half_pendulumAngle`: `cos (θ(t) / 2) = dn(ωt + K, k)`. -/
+theorem cos_half_pendulumAngle (ω θ₀ t : ℝ) :
+    cos (pendulumAngle ω θ₀ t / 2) =
+      jacobiDn (sin (θ₀ / 2)) (ω * t + legendreK (sin (θ₀ / 2))) := by
+  rw [pendulumAngle_def, mul_div_cancel_left₀ _ two_ne_zero, cos_arcsin, mul_pow,
+    ← jacobiDn_def]
+
 theorem pendulumPeriod_pos {ω θ₀ : ℝ} (hω : 0 < ω) (hθ₀ : |θ₀| < π) : 0 < pendulumPeriod ω θ₀ := by
   have := legendreK_pos (sin_half_sq_lt_one_of_abs_lt hθ₀)
   rw [pendulumPeriod_def]
@@ -125,15 +132,10 @@ theorem hasDerivAt_deriv_pendulumAngle {θ₀ : ℝ} (hθ₀ : |θ₀| < π) (ω
   rw [deriv_pendulumAngle hθ₀]
   refine (((hasDerivAt_jacobiCn hk _).comp t hu).const_mul (2 * sin (θ₀ / 2) * ω)).congr_deriv ?_
   -- `sin θ = 2 sin (θ / 2) cos (θ / 2)`, where `sin (θ / 2) = k sn` and `cos (θ / 2) = dn`
-  have hcos : cos (pendulumAngle ω θ₀ t / 2) =
-      jacobiDn (sin (θ₀ / 2)) (ω * t + legendreK (sin (θ₀ / 2))) := by
-    rw [pendulumAngle_def, mul_div_cancel_left₀ _ two_ne_zero, cos_arcsin, mul_pow,
-      ← jacobiDn_def]
   have hsin : sin (pendulumAngle ω θ₀ t) =
       2 * sin (pendulumAngle ω θ₀ t / 2) * cos (pendulumAngle ω θ₀ t / 2) := by
-    rw [← sin_two_mul]
-    ring_nf
-  rw [hsin, sin_half_pendulumAngle, hcos]
+    rw [← sin_two_mul, mul_div_cancel₀ _ two_ne_zero]
+  rw [hsin, sin_half_pendulumAngle, cos_half_pendulumAngle]
   ring
 
 /-- The pendulum angle is twice continuously differentiable. -/
