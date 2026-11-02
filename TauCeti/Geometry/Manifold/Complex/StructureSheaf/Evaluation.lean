@@ -95,6 +95,14 @@ theorem evaluationToSkyscraper_app_of_mem (U : Opens X) (hp : p ∈ U) :
     ← Category.assoc, germ_stalkEval]
   exact dite_eq_left hp
 
+private theorem evaluationToSkyscraper_app_eq_of_not_mem (U : Opens X) (hp : p ∉ U)
+    (f : (holomorphicStructureSheafModules I X).obj.obj (op U))
+    (c : (skyscraperSheaf (X := TopCat.of X) p (ModuleCat.of ℂ ℂ)).obj.obj (op U)) :
+    (evaluationToSkyscraper I X p).hom.app (op U) f = c :=
+  (ModuleCat.isZero_iff_subsingleton.mp
+    (isTerminalSkyscraperSheafObjObjOfNotMem
+      (X := TopCat.of X) (p₀ := p) (U := op U) (A := ModuleCat.of ℂ ℂ) hp).isZero).elim _ _
+
 /-- Evaluation onto the skyscraper is surjective on every open set. -/
 theorem evaluationToSkyscraper_app_surjective (U : Opens X) :
     Function.Surjective ((evaluationToSkyscraper I X p).hom.app (op U)) := by
@@ -105,10 +113,8 @@ theorem evaluationToSkyscraper_app_surjective (U : Opens X) :
     intro c
     refine ⟨holomorphicStructureSheafModules.ofContMDiff (fun _ : U ↦ c) contMDiff_const, ?_⟩
     exact holomorphicStructureSheafModules.ofContMDiff_apply _ _ _
-  · have hz := (isTerminalSkyscraperSheafObjObjOfNotMem
-      (X := TopCat.of X) (p₀ := p) (U := op U) (A := ModuleCat.of ℂ ℂ) hp).isZero
-    intro c
-    exact ⟨0, (ModuleCat.isZero_iff_subsingleton.mp hz).elim _ _⟩
+  · intro c
+    exact ⟨0, evaluationToSkyscraper_app_eq_of_not_mem I X p U hp 0 c⟩
 
 /-- A section maps to zero under skyscraper evaluation precisely when it vanishes at `p`
 if `p` belongs to its domain. -/
@@ -122,9 +128,8 @@ theorem evaluationToSkyscraper_app_eq_zero_iff (U : Opens X)
     rw [ConcreteCategory.comp_apply]
     rw [LinearMap.map_eq_zero_iff _ (ConcreteCategory.bijective_of_isIso _).1]
     exact ⟨fun h _ ↦ h, fun h ↦ h hp⟩
-  · have hz := (isTerminalSkyscraperSheafObjObjOfNotMem
-      (X := TopCat.of X) (p₀ := p) (U := op U) (A := ModuleCat.of ℂ ℂ) hp).isZero
-    exact iff_of_true ((ModuleCat.isZero_iff_subsingleton.mp hz).elim _ _) (fun h ↦ (hp h).elim)
+  · exact iff_of_true (evaluationToSkyscraper_app_eq_of_not_mem I X p U hp f 0)
+      (fun h ↦ (hp h).elim)
 
 /-- On every open set, the functions vanishing at `p` are exactly the kernel of evaluation. -/
 theorem exact_vanishingSheafι_evaluationToSkyscraper_app (U : Opens X) :
