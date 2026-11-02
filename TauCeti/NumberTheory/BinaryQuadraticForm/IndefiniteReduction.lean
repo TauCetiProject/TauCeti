@@ -92,7 +92,8 @@ namespace TauCeti.BinaryQuadraticForm
 Gauss: `a c < 0` and `|a + c| < b`.
 
 Such a form has positive discriminant `D`, and the condition is equivalent to the classical
-`|√D - 2 |a|| < b < √D` (`isGaussReduced_iff_abs_sqrt_sub_lt`). It is symmetric in `a` and `c`. -/
+`|√D - 2 |a|| < b < √D` (`isGaussReduced_iff_abs_sqrt_sub_lt`). It is symmetric in `a` and `c`
+(`isGaussReduced_swap`). -/
 def IsGaussReduced (f : BinaryQuadraticForm ℤ) : Prop :=
   f.a * f.c < 0 ∧ |f.a + f.c| < f.b
 deriving Decidable
@@ -101,6 +102,11 @@ deriving Decidable
 theorem isGaussReduced_iff {f : BinaryQuadraticForm ℤ} :
     f.IsGaussReduced ↔ f.a * f.c < 0 ∧ |f.a + f.c| < f.b :=
   Iff.rfl
+
+/-- Exchanging the outer coefficients preserves Gauss reducedness. -/
+theorem isGaussReduced_swap {f : BinaryQuadraticForm ℤ} :
+    (⟨f.c, f.b, f.a⟩ : BinaryQuadraticForm ℤ).IsGaussReduced ↔ f.IsGaussReduced := by
+  simp only [isGaussReduced_iff, mul_comm f.c, add_comm f.c]
 
 /-- Reducedness through squares: `a x² + b x y + c y²` of discriminant `D` is Gauss reduced
 exactly when `0 < b`, `b² < D` and `(2 |a| - b)² < D < (2 |a| + b)²`. -/
@@ -211,11 +217,6 @@ theorem sq_abs_add_abs_lt (hf : f.IsGaussReduced) : (|f.a| + |f.c|) ^ 2 < f.disc
     nlinarith
 
 end IsGaussReduced
-
-/-- Exchanging the outer coefficients preserves Gauss reducedness. -/
-private theorem isGaussReduced_swap {f : BinaryQuadraticForm ℤ} :
-    (⟨f.c, f.b, f.a⟩ : BinaryQuadraticForm ℤ).IsGaussReduced ↔ f.IsGaussReduced := by
-  simp only [isGaussReduced_iff, mul_comm f.c, add_comm f.c]
 
 /-- The variant of `isGaussReduced_iff_le_sqrt` with `|c|` in place of `|a|`: for a nonsquare
 discriminant, `f` is Gauss reduced exactly when `b ≤ s`, `s < b + 2 |c|` and `2 |c| ≤ s + b`. -/
