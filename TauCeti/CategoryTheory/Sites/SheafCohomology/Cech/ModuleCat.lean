@@ -51,7 +51,12 @@ theorem isZero_cechCohomology_obj_of_forall_exists_homologyMap_eq_zero {R : Type
   rw [Category.comp_id, comp_zero]
   ext z
   obtain ⟨k, hjk, φ, hz⟩ := h j z
-  -- the structure map at `j` factors through the map to the finer family `E k`
+  -- the structure map at `j` factors through the map to the finer family `E k`; the source of
+  -- `(cechCohomologyι E hE n k).app P` is `((cechCohomologyDiagram _ E hE n).obj k).obj P`, which
+  -- is the homology of the Čech complex only after unfolding `cechCohomologyDiagram_obj` and
+  -- `FormalCoproduct.cech`, so the composites below are type-correct only up to that unfolding:
+  -- `rw [ConcreteCategory.comp_apply]` and `simp` fail with an application type mismatch, and the
+  -- steps are written as terms (`NatTrans.comp_app`, `congrArg`) that are checked up to it
   have hι : HomologicalComplex.homologyMap (cechComplexMap P φ) n ≫
       (cechCohomologyι E hE n k).app P = (cechCohomologyι E hE n j).app P := by
     rw [← cechComplexHomologyMap_app]

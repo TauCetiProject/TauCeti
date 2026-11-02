@@ -91,7 +91,12 @@ theorem exists_cechComplexMap_f_eq_zero_of_locally_eq_zero (h₀ : IsZero (P.obj
   let φ : W.toFormalCoproduct ⟶ FormalCoproduct.mk _ U :=
     ⟨fun x ↦ r x, fun x ↦ homOfLE (hWU x).1⟩
   refine ⟨W, φ, ?_⟩
-  -- it suffices to show that the component at every tuple `b` of points vanishes
+  -- it suffices to show that the component at every tuple `b` of points vanishes; this goal is
+  -- phrased through `Fan.mk`, whose projection at `⟨b⟩` is `Pi.π _ b` only up to unfolding the
+  -- index type `(FormalCoproduct.cech _).I` to `Fin (n + 1) → X`, so `rw [cechComplexMap_f_π]`
+  -- fails with an application type mismatch at `b` (and with `Concrete.limit_ext` instead,
+  -- `rw [← ConcreteCategory.comp_apply]` finds no match), while `congr_hom` accepts the lemma up
+  -- to definitional unfolding
   refine Concrete.isLimit_ext _ (productIsProduct
     fun b : Fin (n + 1) → X ↦ P.obj (op (∏ᶜ fun j ↦ W.opens (b j)))) _ _ fun ⟨b⟩ ↦ ?_
   refine (ConcreteCategory.congr_hom (TauCeti.CategoryTheory.cechComplexMap_f_π P φ n b) c).trans
