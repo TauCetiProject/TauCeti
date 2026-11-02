@@ -251,10 +251,8 @@ theorem cross_mem_imaginary (x y : CayleyDickson ℍ[R]) : cross x y ∈ imagina
 `v × w = v * w + g v w • 1`. -/
 theorem cross_eq_mul_add_smul_one {v w : CayleyDickson ℍ[R]} (hv : v ∈ imaginary R)
     (hw : w ∈ imaginary R) : cross v w = v * w + imaginaryForm v w • 1 := by
-  rw [cross_apply, eq_sub_of_add_eq' (mul_add_mul_swap_of_mem hv hw),
-    show v * w - (-(2 * imaginaryForm v w) • (1 : CayleyDickson ℍ[R]) - v * w) =
-      (2 : R) • (v * w + imaginaryForm v w • 1) by module,
-    smul_smul, invOf_mul_self, one_smul]
+  rw [cross_apply, invOf_smul_eq_iff, eq_sub_of_add_eq' (mul_add_mul_swap_of_mem hv hw)]
+  module
 
 /-- **The product of two imaginary octonions** splits into its real and imaginary parts as
 `v * w = -g v w • 1 + v × w`. -/
