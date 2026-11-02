@@ -21,6 +21,9 @@ instance to the multiplicative monoid of an algebraically closed field of any ch
 
 * `Perfection.coeffMonoidHom_surjective`: if `x ↦ x ^ p` is surjective on `M`, so is every
   coordinate map `Perfection.coeffMonoidHom M p n`.
+* `Perfection.coeff_eq_zero_iff`: in the perfection of a reduced ring of characteristic `p`, an
+  element vanishes as soon as one of its coordinates does.
+* `PreTilt.coeff_eq_zero_iff`: the same for the tilt `PreTilt O p` when `O ⧸ p` is reduced.
 * `TauCeti.dvd_of_compatible_roots`: in a compatible root sequence, later roots divide earlier ones.
 -/
 
@@ -45,7 +48,40 @@ theorem coeffMonoidHom_surjective (h : Function.Surjective fun x : M ↦ x ^ p) 
   rw [zero_add] at hf
   exact hf.trans (coeffMonoidHom_mk _ _ 0)
 
+section Reduced
+
+variable {R : Type*} [CommSemiring R] [Fact p.Prime] [CharP R p] [IsReduced R]
+
+/-- **In the perfection of a reduced ring, each coordinate detects zero.** For `f` in the
+perfection of a reduced ring of characteristic `p`, `coeff n f = 0` if and only if `f = 0`. -/
+@[simp]
+theorem coeff_eq_zero_iff (n : ℕ) {f : Perfection R p} : coeff R p n f = 0 ↔ f = 0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ map_zero _⟩
+  have hlater (m : ℕ) : coeff R p (n + m) f = 0 := by
+    induction m with
+    | zero => exact h
+    | succ m ih => exact IsNilpotent.eq_zero ⟨p, by rw [← add_assoc, coeff_pow_p', ih]⟩
+  ext k
+  rw [map_zero]
+  exact not_not.mp fun hk ↦ coeff_ne_zero_of_le hk (Nat.le_add_left k n) (hlater k)
+
+end Reduced
+
 end Perfection
+
+namespace PreTilt
+
+variable {O : Type*} [CommRing O] {p : ℕ} [Fact p.Prime] [Fact ¬IsUnit (p : O)]
+  [IsReduced (ModP O p)]
+
+/-- **If `O ⧸ p` is reduced, each coordinate of the tilt detects zero.** For `f` in
+`PreTilt O p`, `coeff n f = 0` if and only if `f = 0`. -/
+@[simp]
+theorem coeff_eq_zero_iff (n : ℕ) {f : PreTilt O p} : coeff n f = 0 ↔ f = 0 :=
+  -- `PreTilt O p` is by definition `Perfection (ModP O p) p`, with `coeff` its coordinate maps
+  Perfection.coeff_eq_zero_iff (R := ModP O p) n
+
+end PreTilt
 
 namespace TauCeti
 
