@@ -39,6 +39,8 @@ statements are transported to the matrix group `Matrix.specialOrthogonalGroup (F
   from compact `Spin(n)` to the universal cover of compact `SO(n)`, for `n ≥ 3`.
 * `CliffordAlgebra.realSpecialOrthogonalFundamentalGroupMulEquiv`: `π₁(SO(n), 1) ≃* ℤ/2` for
   `n ≥ 3`.
+* `TauCeti.specialOrthogonalGroupFundamentalGroupMulEquiv`: the same isomorphism for the matrix
+  group `Matrix.specialOrthogonalGroup (Fin n) ℝ`.
 
 ## Main statements
 
@@ -46,7 +48,7 @@ statements are transported to the matrix group `Matrix.specialOrthogonalGroup (F
   element of `π₁(SO(n), 1)` is the projection of a path from `1` to `-1` in `Spin(n)`.
 * `CliffordAlgebra.not_simplyConnectedSpace_realSpecialOrthogonal`: `SO(n)` is not simply
   connected for `n ≥ 2`.
-* `TauCeti.nonempty_fundamentalGroup_specialOrthogonalGroup_mulEquiv_zmod_two` and
+* `TauCeti.specialOrthogonalGroupFundamentalGroupMulEquiv_symm_ofAdd_one` and
   `TauCeti.not_simplyConnectedSpace_specialOrthogonalGroup`: the same two facts for the matrix group
   `Matrix.specialOrthogonalGroup (Fin n) ℝ`.
 
@@ -171,13 +173,6 @@ theorem spinToSpecialOrthogonal_realCliffordSpinUniversalCoverEquivZero_symm_app
 
 /-! ### The fundamental group of `SO(n)` -/
 
-/-- The compact Spin projection sends the element `-1` of `Spin(n)` to the identity of `SO(n)`. -/
-theorem realCliffordSpinProjectionZero_negOne (n : ℕ) [NeZero n] :
-    realCliffordSpinProjectionZero n
-        (spinGroup.negOne (realCliffordForm n 0) (nondegenerate_realCliffordForm n 0).ne_zero) =
-      1 := by
-  simp
-
 /-- **The fundamental group of `SO(n)` is `ℤ/2` for `n ≥ 3`.** The compact Spin group is a simply
 connected covering group of the positive-definite special orthogonal group with kernel `{±1}`, so
 `π₁(SO(n), 1)` is that kernel. The generator is the projection of a path from `1` to `-1` in
@@ -236,15 +231,33 @@ namespace TauCeti
 
 /-- **The fundamental group of the matrix group `SO(n)` is `ℤ/2` for `n ≥ 3`.** The real
 special-orthogonal matrices form a topological group isomorphic to the special orthogonal group of
-the standard sum of squares, whose fundamental group is computed by
-`CliffordAlgebra.realSpecialOrthogonalFundamentalGroupMulEquiv`. -/
-theorem nonempty_fundamentalGroup_specialOrthogonalGroup_mulEquiv_zmod_two (n : ℕ) (hn : 3 ≤ n) :
-    Nonempty (FundamentalGroup (Matrix.specialOrthogonalGroup (Fin n) ℝ) 1 ≃*
-      Multiplicative (ZMod 2)) := by
-  have e := _root_.CliffordAlgebra.realSpecialOrthogonalFundamentalGroupMulEquiv n hn
-  rw [realCliffordForm_zero_eq_weightedSumSquares_one] at e
-  let f := QuadraticMap.matrixSpecialOrthogonalContinuousMulEquivWeightedSumSquaresOne (Fin n)
-  exact ⟨(FundamentalGroup.homeomorphMulEquivOfEq f.toHomeomorph (map_one f)).trans e⟩
+`realCliffordForm n 0`, whose fundamental group is computed by
+`CliffordAlgebra.realSpecialOrthogonalFundamentalGroupMulEquiv`. The generator is described by
+`TauCeti.specialOrthogonalGroupFundamentalGroupMulEquiv_symm_ofAdd_one`. -/
+noncomputable def specialOrthogonalGroupFundamentalGroupMulEquiv (n : ℕ) (hn : 3 ≤ n) :
+    FundamentalGroup (Matrix.specialOrthogonalGroup (Fin n) ℝ) 1 ≃* Multiplicative (ZMod 2) :=
+  (FundamentalGroup.homeomorphMulEquivOfEq
+    (QuadraticMap.matrixSpecialOrthogonalContinuousMulEquivRealCliffordForm n).toHomeomorph
+    (map_one (QuadraticMap.matrixSpecialOrthogonalContinuousMulEquivRealCliffordForm n))).trans
+    (_root_.CliffordAlgebra.realSpecialOrthogonalFundamentalGroupMulEquiv n hn)
+
+/-- The nontrivial element of `π₁(SO(n), 1)` for the matrix group, `n ≥ 3`, is the class of the
+loop of matrices obtained from any path from `1` to `-1` in the compact Spin group by projecting
+to the special orthogonal group of `realCliffordForm n 0` and passing to matrices. -/
+theorem specialOrthogonalGroupFundamentalGroupMulEquiv_symm_ofAdd_one (n : ℕ) [NeZero n]
+    (hn : 3 ≤ n) (γ : Path 1 (_root_.CliffordAlgebra.spinGroup.negOne (realCliffordForm n 0)
+      (nondegenerate_realCliffordForm n 0).ne_zero)) :
+    (specialOrthogonalGroupFundamentalGroupMulEquiv n hn).symm (Multiplicative.ofAdd 1) =
+      FundamentalGroup.fromPath (.mk ((γ.map
+        ((QuadraticMap.matrixSpecialOrthogonalContinuousMulEquivRealCliffordForm n).symm.continuous
+          |>.comp (_root_.CliffordAlgebra.realCliffordSpinProjectionZero n).continuous)).cast
+        (by simp) (by simp))) := by
+  rw [specialOrthogonalGroupFundamentalGroupMulEquiv, MulEquiv.symm_trans_apply,
+    _root_.CliffordAlgebra.realSpecialOrthogonalFundamentalGroupMulEquiv_symm_ofAdd_one n hn γ,
+    FundamentalGroup.homeomorphMulEquivOfEq_symm_apply, FundamentalGroup.mapOfEq_apply]
+  -- Both sides are the class of the loop `t ↦ g⁻¹ (π (γ t))`, for `g` the matrix comparison and
+  -- `π` the Spin projection; the endpoint casts differ only in their proofs.
+  rfl
 
 /-- **The matrix group `SO(n)` is not simply connected for `n ≥ 2`.** -/
 theorem not_simplyConnectedSpace_specialOrthogonalGroup (n : ℕ) (hn : 2 ≤ n) :

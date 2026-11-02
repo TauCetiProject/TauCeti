@@ -30,6 +30,8 @@ transpose, so the resulting map is continuous for the induced topology.
 * `TauCeti.QuadraticMap.matrixSpecialOrthogonalContinuousMulEquivWeightedSumSquaresOne`: real
   special-orthogonal matrices and the determinant-one isometries of the standard sum-of-squares
   form are isomorphic topological groups.
+* `TauCeti.QuadraticMap.matrixSpecialOrthogonalContinuousMulEquivRealCliffordForm`: the same
+  isomorphism with target the special orthogonal group of `realCliffordForm n 0`.
 * `TauCeti.QuadraticMap.instCompactSpaceRealSpecialOrthogonalGroupWeightedSumSquaresOne`: the
   special orthogonal group of the standard sum-of-squares form on any finite coordinate type is
   compact.
@@ -128,6 +130,15 @@ theorem coe_matrixSpecialOrthogonalContinuousMulEquivWeightedSumSquaresOne_symm
     ⇑(matrixSpecialOrthogonalContinuousMulEquivWeightedSumSquaresOne ι).symm =
       (matrixSpecialOrthogonalEquivWeightedSumSquaresOne ι).symm :=
   (rfl)
+
+/-- Real special-orthogonal matrices and the determinant-one isometries of the positive-definite
+form `realCliffordForm n 0` are isomorphic as topological groups, a matrix acting by its linear
+map. This is `matrixSpecialOrthogonalContinuousMulEquivWeightedSumSquaresOne` transported along
+`realCliffordForm_zero_eq_weightedSumSquares_one`. -/
+def matrixSpecialOrthogonalContinuousMulEquivRealCliffordForm (n : ℕ) :
+    Matrix.specialOrthogonalGroup (Fin n) ℝ ≃ₜ* specialOrthogonalGroup (realCliffordForm n 0) :=
+  (realCliffordForm_zero_eq_weightedSumSquares_one n).symm ▸
+    matrixSpecialOrthogonalContinuousMulEquivWeightedSumSquaresOne (Fin n)
 
 /-- Membership in the positive-definite `realCliffordForm n 0` special-orthogonal carrier is matrix
 special-orthogonal membership. -/

@@ -9,6 +9,7 @@ public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import TauCeti.AlgebraicTopology.FundamentalGroup.TopologicalMonoid
 public import TauCeti.AlgebraicTopology.UniversalCover.Classification.Pointed
 public import TauCeti.AlgebraicTopology.UniversalCover.Covering
+import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 
 /-!
 # The universal covering group of a topological group
@@ -418,10 +419,9 @@ the kernel of the universal-cover projection. -/
 theorem map_ker_continuousMulEquivUniversalCover (hp : IsCoveringMap p) :
     (p : E →* G).ker.map (hp.continuousMulEquivUniversalCover : E ≃* UniversalCover (1 : G)) =
       (UniversalCover.projHom (G := G) : UniversalCover (1 : G) →* G).ker := by
-  have hcoe : ⇑(hp.continuousMulEquivUniversalCover : E ≃* UniversalCover (1 : G)) =
-      hp.continuousMulEquivUniversalCover := (rfl)
   ext y
-  simp only [Subgroup.mem_map, MonoidHom.mem_ker, MonoidHom.coe_ofClass, hcoe]
+  simp only [Subgroup.mem_map, MonoidHom.mem_ker, MonoidHom.coe_ofClass,
+    ContinuousMulEquiv.coe_toMulEquiv]
   constructor
   · rintro ⟨x, hx, rfl⟩
     simpa using hx
@@ -446,8 +446,6 @@ theorem kerMulEquivFundamentalGroup_apply (hp : IsCoveringMap p) (x : (p : E →
     hp.kerMulEquivFundamentalGroup x = FundamentalGroup.fromPath
       (.mk ((γ.map p.continuous).cast (map_one p).symm (MonoidHom.mem_ker.mp x.2).symm)) := by
   apply UniversalCover.kerProjHomEquivFundamentalGroup.symm.injective
-  have hcoe : ⇑(hp.continuousMulEquivUniversalCover : E ≃* UniversalCover (1 : G)) =
-      hp.continuousMulEquivUniversalCover := (rfl)
   -- The comparison sends `x` to the endpoint of the lift of `p ∘ γ` starting at `1`.
   have hlift : hp.continuousMulEquivUniversalCover x =
       UniversalCover.ofBasedPath 1 (.ofPath ((γ.map p.continuous).cast (map_one p).symm rfl)) := by
@@ -460,7 +458,8 @@ theorem kerMulEquivFundamentalGroup_apply (hp : IsCoveringMap p) (x : (p : E →
   refine Subtype.ext ?_
   simp only [kerMulEquivFundamentalGroup, MulEquiv.trans_apply, MulEquiv.symm_apply_apply,
     MulEquiv.subgroupCongr_apply, MulEquiv.coe_subgroupMap_apply,
-    UniversalCover.coe_kerProjHomEquivFundamentalGroup_symm_apply, hcoe]
+    UniversalCover.coe_kerProjHomEquivFundamentalGroup_symm_apply,
+    ContinuousMulEquiv.coe_toMulEquiv]
   rw [hlift, UniversalCover.ofBasedPath_ofPath]
   exact UniversalCover.ext (by simpa using MonoidHom.mem_ker.mp x.2)
     ((Path.Homotopic.Quotient.cast_heq (map_one p).symm rfl (γ := .mk (γ.map p.continuous))).trans
