@@ -221,8 +221,8 @@ theorem heckeRightMatrix_mul_self [DecidableEq W] (i : B) :
       ((q : LaurentPolynomial R) - ↑q⁻¹) •
         cs.heckeRightMul ((q : LaurentPolynomial R) - ↑q⁻¹) i + 1 := by
     refine Finsupp.lhom_ext fun w r ↦ ?_
-    simp only [Module.End.mul_apply, LinearMap.add_apply, LinearMap.smul_apply,
-      Module.End.one_apply]
+    simp only [mul_apply_eq_comp, LinearMap.add_apply, LinearMap.smul_apply,
+      one_apply_eq_self]
     by_cases h : cs.IsRightDescent w i
     · have h' := cs.isRightDescent_iff_not_isRightDescent_mul.mp h
       simp [h, h', map_add]
@@ -331,7 +331,7 @@ theorem heckeRightMatrix_braid {i j : Fin (n - 1)}
   simp only [heckeRightMatrix_eq_toMatrix, ← LinearMap.toMatrix_mul]
   congr 1
   ext x
-  simp only [Module.End.mul_apply, LinearMap.mulRight_apply]
+  simp only [mul_apply_eq_comp, LinearMap.mulRight_apply]
   have hb : ((q : LaurentPolynomial R) • T q i) * ((q : LaurentPolynomial R) • T q j) *
       ((q : LaurentPolynomial R) • T q i) =
       ((q : LaurentPolynomial R) • T q j) * ((q : LaurentPolynomial R) • T q i) *
