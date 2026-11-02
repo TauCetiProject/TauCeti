@@ -20,7 +20,12 @@ Filtered colimits of weakly étale algebras are weakly étale. In particular, an
 algebra has flat multiplication map `S ⊗[R] S → S`, as well as being flat over `R`.
 This provides the diagonal-flatness condition used in the pro-étale topology.
 
-The proof tests flatness of the surjective multiplication map on its kernel. Every
+In an algebra tower `R → S → T` with `S` weakly étale over `R`, flatness of `T`
+over `R` implies flatness over `S`. This permits faithfully flat descent from a
+Noetherian complete algebra to a henselization.
+
+For the filtered-colimit statement, the proof tests flatness of the surjective multiplication
+map on its kernel. Every
 kernel element comes from a self-tensor product at one stage, and its product
 vanishes at a later stage. The elementwise pure-ideal criterion then passes from that
 stage to the colimit. No finite generation, Noetherianity or reducedness is required.
@@ -39,6 +44,24 @@ open scoped TensorProduct
 universe u
 
 namespace Algebra.WeaklyEtale
+
+/-- An algebra over a weakly étale algebra is flat over the intermediate algebra exactly
+when it is flat over the original base. No finiteness hypothesis is needed. -/
+theorem flat_iff {R S T : Type u} [CommRing R] [CommRing S] [CommRing T]
+    [Algebra R S] [Algebra R T] [Algebra S T] [IsScalarTower R S T]
+    [WeaklyEtale R S] : Module.Flat S T ↔ Module.Flat R T := by
+  refine ⟨fun _ ↦ Module.Flat.trans R S T, fun _ ↦ ?_⟩
+  have h₁ : (Algebra.TensorProduct.includeLeft : S →ₐ[R] S ⊗[R] T).Flat := by
+    exact RingHom.flat_algebraMap_iff.mpr inferInstance
+  have h₂ := (flat_lmul' R S).mapOfCompatibleSMul S T
+  have h₃ := RingHom.Flat.of_bijective (Algebra.TensorProduct.lid S T).bijective
+  have heq : (Algebra.TensorProduct.lid S T).toRingHom.comp
+      ((Algebra.TensorProduct.mapOfCompatibleSMul S R S S T).toRingHom.comp
+        (Algebra.TensorProduct.includeLeft : S →ₐ[R] S ⊗[R] T).toRingHom) =
+      algebraMap S T := by
+    ext s
+    simp [Algebra.smul_def]
+  exact RingHom.flat_algebraMap_iff.mp (heq ▸ (h₁.comp h₂).comp h₃)
 
 /-- A filtered colimit of weakly étale algebras is weakly étale. -/
 theorem of_isColimit {R : Type u} [CommRing R] {J : Type u} [SmallCategory J]
