@@ -14,11 +14,12 @@ public import TauCeti.AlgebraicTopology.SimplicialSet.Subcomplex
 
 The join `Δ[n] ⋆ Δ[m]` is the standard simplex `Δ[n + m + 1]`, with `Δ[n]` and `Δ[m]` as the
 faces spanned by the first `n + 1` and the last `m + 1` vertices. Under this isomorphism the joins
-of horns and boundaries are horns: the subcomplex `(Λ[n, i] ⋆ Δ[m]) ∪ (Δ[n] ⋆ ∂Δ[m])` of
-`Δ[n] ⋆ Δ[m]` is the horn `Λ[n + m + 1, i]`, and `(∂Δ[n] ⋆ Δ[m]) ∪ (Δ[n] ⋆ Λ[m, j])` is the horn
-`Λ[n + m + 1, n + 1 + j]`. Hence the pushout-join of a horn inclusion `Λ[n, i] ⟶ Δ[n]` with `0 < i`
-and a boundary inclusion `∂Δ[m] ⟶ Δ[m]` is an inner anodyne extension, and so is the pushout-join of
-`∂Δ[n] ⟶ Δ[n]` and `Λ[m, j] ⟶ Δ[m]` with `j < m`. These are the generating cases of the lifting
+of horns and boundaries are horns: for `n ≠ 0`, the subcomplex
+`(Λ[n, i] ⋆ Δ[m]) ∪ (Δ[n] ⋆ ∂Δ[m])` of `Δ[n] ⋆ Δ[m]` is the horn `Λ[n + m + 1, i]`, and for
+`m ≠ 0`, `(∂Δ[n] ⋆ Δ[m]) ∪ (Δ[n] ⋆ Λ[m, j])` is the horn `Λ[n + m + 1, n + 1 + j]`. Hence the
+pushout-join of a horn inclusion `Λ[n, i] ⟶ Δ[n]` with `0 < i` and a boundary inclusion
+`∂Δ[m] ⟶ Δ[m]` is an inner anodyne extension, and so is the pushout-join of `∂Δ[n] ⟶ Δ[n]` and
+`Λ[m, j] ⟶ Δ[m]` with `j < m`. These are the generating cases of the lifting
 properties showing that slices and coslices of quasicategories are quasicategories, whose
 projections are right and left fibrations.
 
