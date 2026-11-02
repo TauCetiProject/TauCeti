@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Pi
 public import Mathlib.Topology.Homeomorph.Lemmas
+public import TauCeti.Topology.Algebra.Module.ExtendByZero
 
 /-!
 # Interleaving finite coordinate spaces
@@ -18,7 +18,8 @@ coordinate injection used for block sums of finite Grassmannians; see the refere
 `TauCeti.Topology.Grassmannian.WhitneySum` for the classical disjoint-coordinate construction.
 
 The linear construction uses Mathlib's `Function.ExtendByZero.linearMap` and
-`LinearEquiv.sumArrowLequivProdArrow`.
+`LinearEquiv.sumArrowLequivProdArrow`. Continuity uses
+`Function.ExtendByZero.continuousLinearMap`.
 -/
 
 public section
@@ -82,16 +83,12 @@ or scalar multiplication. -/
 @[fun_prop]
 theorem continuous_interleaveLinearMap [TopologicalSpace M] :
     Continuous (interleaveLinearMap R M a b) := by
-  classical
-  have hc : Continuous (fun v : (Fin a → M) × (Fin b → M) ↦ Sum.elim v.1 v.2) :=
-    Homeomorph.sumArrowHomeomorphProdArrow.symm.continuous
-  apply continuous_pi
-  intro i
-  by_cases hi : i ∈ Set.range (interleaveIndex a b)
-  · obtain ⟨j, rfl⟩ := hi
-    simpa only [interleaveLinearMap_apply, (interleaveIndex a b).injective.extend_apply]
-      using (continuous_apply j).comp' hc
-  · simpa only [interleaveLinearMap_apply_of_notMem_range _ hi] using
-      (continuous_const : Continuous fun _ : (Fin a → M) × (Fin b → M) ↦ (0 : M))
+  convert
+    (Function.ExtendByZero.continuousLinearMap R M (interleaveIndex a b)).continuous.comp
+      Homeomorph.sumArrowHomeomorphProdArrow.symm.continuous using 1
+  ext v i
+  simp only [interleaveLinearMap_apply, Function.comp_apply,
+    Function.ExtendByZero.continuousLinearMap_apply,
+    funext (Homeomorph.sumArrowHomeomorphProdArrow_symm_apply v)]
 
 end TauCeti
