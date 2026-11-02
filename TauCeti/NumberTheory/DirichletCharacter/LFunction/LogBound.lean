@@ -83,8 +83,7 @@ private lemma norm_block_le (hχ : χ ≠ 1) {k : ℕ} (hk : 0 < k) :
           ((k * N + n : ℕ) : ℝ)⁻¹ - (((k + 1) * N : ℕ) : ℝ)⁻¹ := by
         have hcast : (((k * N + n : ℕ) : ℂ)⁻¹ - (((k + 1) * N : ℕ) : ℂ)⁻¹) =
             ((((k * N + n : ℕ) : ℝ)⁻¹ - (((k + 1) * N : ℕ) : ℝ)⁻¹) : ℝ) := by
-          push_cast
-          rfl
+          simp only [Complex.ofReal_sub, Complex.ofReal_inv, Complex.ofReal_natCast]
         rw [hcast, Complex.norm_real, Real.norm_of_nonneg (sub_nonneg.mpr hleft)]
       rw [norm_mul, hnorm]
       exact (mul_le_of_le_one_left (sub_nonneg.mpr hleft) (χ.norm_le_one n)).trans
