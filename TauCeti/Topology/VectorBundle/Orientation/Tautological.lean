@@ -34,11 +34,6 @@ variable {B : Type*} [TopologicalSpace B]
   [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)]
   [FiberBundle F E] [VectorBundle ℝ F E] {ι : Type*}
 
-/-- The orientation-cover projection as a continuous map. It is an abbreviation so that
-fibres of its pullback are definitionally the original fibres. -/
-abbrev projection : C(VectorBundleOrientationCover F E ι, B) :=
-  ⟨proj, continuous_proj⟩
-
 /-- Pulling a vector bundle back to its orientation cover canonically orients it, by using
 the orientation recorded at each point of the cover. -/
 def tautologicalOrientation :
@@ -46,29 +41,16 @@ def tautologicalOrientation :
       ((projection : VectorBundleOrientationCover F E ι → B) *ᵖ E) ι where
   toFun p := p.orientation
   eventually_mapOrientation_eq' p := by
-    let e' := trivializationAt F
-      ((projection : VectorBundleOrientationCover F E ι → B) *ᵖ E) p
     let e := trivializationAt F E p.proj
     have hp : p.proj ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' p.proj
     have hs : p ∈ sheet e (e.mapOrientation ι hp p.orientation) :=
       mem_sheet_iff.2 ⟨hp, rfl⟩
     filter_upwards [(isOpen_sheet_trivializationAt p.proj
       (e.mapOrientation ι hp p.orientation)).mem_nhds hs] with q hq hq'
-    -- The preferred pullback chart has the original chart's linear map on every fibre.
-    have hlin (x : VectorBundleOrientationCover F E ι)
-        (hx : x ∈ e'.baseSet) :
-        e'.linearEquivAt ℝ x hx = e.linearEquivAt ℝ x.proj hx := by
-      apply LinearEquiv.ext
-      intro v
-      rfl
-    have hread (x : VectorBundleOrientationCover F E ι)
-        (hx : x ∈ e'.baseSet) :
-        e'.mapOrientation ι hx x.orientation = e.mapOrientation ι hx x.orientation :=
-      (Trivialization.mapOrientation_apply _ hx x.orientation).trans
-        ((congrArg (fun L ↦ Orientation.map ι L x.orientation) (hlin x hx)).trans
-          (Trivialization.mapOrientation_apply e hx x.orientation).symm)
-    exact (hread q hq').trans ((mem_sheet_iff.1 hq).choose_spec.trans
-      (hread p (FiberBundle.mem_baseSet_trivializationAt' p)).symm)
+    -- The preferred pullback chart is the pullback of the preferred original chart.
+    -- `erw` identifies the inherited module instances on the pullback fibre type synonym.
+    erw [Trivialization.mapOrientation_pullback, Trivialization.mapOrientation_pullback]
+    exact (mem_sheet_iff.1 hq).choose_spec
 
 -- Keep this for explicit rewriting: simplifying the bundled projection's coercion changes
 -- the implicit pullback bundle in the left-hand side, so this is not in simp normal form.

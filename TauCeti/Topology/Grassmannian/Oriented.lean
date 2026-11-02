@@ -21,8 +21,9 @@ original finite Grassmannian and its original tautological bundle.
 
 The forgetting map is a proper two-sheeted covering, so this carrier is compact. When the
 rank equals the ambient dimension it still has two points, corresponding to the two
-orientations of the whole space. Rank zero is excluded: its canonically oriented carrier
-is a point, with an orientation sign recorded separately.
+orientations of the whole space. Rank zero is excluded: its orientation cover has two points
+over the one-point Grassmannian, whereas the canonically oriented rank-zero Grassmannian is
+conventionally a point. This carrier is therefore defined only for positive rank.
 
 ## References
 
@@ -58,10 +59,7 @@ theorem forget_apply (p : finiteOrientedGrassmannian r N) : forget p = p.proj :=
 
 /-- Finite oriented Grassmannians are compact. -/
 instance : CompactSpace (finiteOrientedGrassmannian r N) :=
-  isCompact_univ_iff.mp (by
-    simpa using (VectorBundleOrientationCover.isProperMap_proj (F := Fin r → ℝ)
-      (E := finiteGrassmannian.Tautological ℝ r N) (ι := Fin r) (by simp)).isCompact_preimage
-        isCompact_univ)
+  VectorBundleOrientationCover.compactSpace (by simp)
 
 /-- The oriented tautological bundle is the pullback of the original tautological bundle along
 orientation forgetting. Its fibre over an oriented plane is that same plane. -/

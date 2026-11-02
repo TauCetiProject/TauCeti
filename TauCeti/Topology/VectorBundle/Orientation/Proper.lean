@@ -56,4 +56,10 @@ theorem isProperMap_proj (hι : Fintype.card ι = finrank ℝ F) :
   refine (isCoveringMap_proj hι).isProperMap fun b ↦ ?_
   exact (finite_of_encard_eq_coe (encard_preimage_proj_singleton hι b)).to_subtype
 
+/-- The orientation cover of a finite-rank bundle over a compact base is compact. -/
+theorem compactSpace [CompactSpace B] (hι : Fintype.card ι = finrank ℝ F) :
+    CompactSpace (VectorBundleOrientationCover F E ι) :=
+  isCompact_univ_iff.mp (by
+    simpa using (isProperMap_proj (E := E) hι).isCompact_preimage isCompact_univ)
+
 end TauCeti.VectorBundleOrientationCover
