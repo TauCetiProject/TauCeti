@@ -103,6 +103,30 @@ protected theorem isClosed (N : NDRPair A) : IsClosed A := by
   ext x
   exact (N.control_eq_zero_iff x).symm
 
+/-- The time `t * min 1 (v / u)` at which the cylinder and product deformations run a deformation
+with control value `u`: in the cylinder `v` is the height, and in the product it is the control
+value of the other factor. -/
+private noncomputable def prodTime (t u v : I) : I :=
+  t * projIcc 0 1 zero_le_one ((v : ℝ) / u)
+
+/-- Where `v` vanishes, the deformation does not run. -/
+private theorem prodTime_zero_right (t u : I) : prodTime t u 0 = 0 := by
+  rw [prodTime, Icc.coe_zero, zero_div, projIcc_left]
+  exact mul_zero t
+
+/-- Where the control value `u` is positive and at most `v`, the deformation runs at full speed. -/
+private theorem prodTime_of_le {t u v : I} (hu : (u : ℝ) ≠ 0) (huv : u ≤ v) :
+    prodTime t u v = t := by
+  rw [prodTime, projIcc_eq_one.2 ((one_le_div (lt_of_le_of_ne u.2.1 hu.symm)).2 huv), mul_one]
+
+/-- The time of the deformation with control `u`, read off at the point `q`, is continuous where
+`q` lies off the zero set of `u`. -/
+private theorem continuousAt_prodTime {Z : Type*} [TopologicalSpace Z] (u : C(X, I))
+    (hu : ∀ x, u x = 0 ↔ x ∈ A) {t v : Z → I} {q : Z → X} (ht : Continuous t) (hv : Continuous v)
+    (hq : Continuous q) {z : Z} (hz : q z ∉ A) :
+    ContinuousAt (fun z ↦ prodTime (t z) (u (q z)) (v z)) z :=
+  ht.continuousAt.mul (u.continuousAt_projIcc_div_of_notMem hu hv hq hz)
+
 variable (N : NDRPair A)
 
 /-- The control function `(t, x) ↦ t * u x` of the bottom-and-sides subspace
@@ -119,15 +143,6 @@ theorem cylinderControl_eq_zero_iff (z : I × X) :
   rw [cylinderControl_apply, mem_cylinderExtensionDomain_iff, ← N.control_eq_zero_iff]
   exact mul_eq_zero
 
-/-- The time `min 1 (t / u x)` at which the cylinder deformation reads off `H`, scaled by `s`. -/
-private noncomputable def cylinderTime (w : I × I × X) : I :=
-  w.1 * projIcc 0 1 zero_le_one ((w.2.1 : ℝ) / N.control w.2.2)
-
-private theorem continuousAt_cylinderTime {w : I × I × X} (hw : w.2.2 ∉ A) :
-    ContinuousAt N.cylinderTime w :=
-  continuous_fst.continuousAt.mul (N.control.continuousAt_projIcc_div_of_notMem
-    N.control_eq_zero_iff (by fun_prop) (by fun_prop) hw)
-
 private theorem cylinderHeight_mem (w : I × I × X) :
     (w.2.1 : ℝ) - w.1 * min (w.2.1 : ℝ) (N.control w.2.2) ∈ I := by
   have h₁ : (w.1 : ℝ) * min (w.2.1 : ℝ) (N.control w.2.2) ≤ min (w.2.1 : ℝ) (N.control w.2.2) :=
@@ -140,11 +155,13 @@ private theorem cylinderHeight_mem (w : I × I × X) :
 `(t, x)` to `(t - s * min t (u x), H (s * min 1 (t / u x), x))`. For `t > 0` the height is
 `t * (1 - s * min 1 (u x / t))`. -/
 noncomputable def cylinderDeformation : C(I × (I × X), I × X) where
-  toFun w := (⟨_, N.cylinderHeight_mem w⟩, N.deformation (N.cylinderTime w, w.2.2))
+  toFun w :=
+    (⟨_, N.cylinderHeight_mem w⟩, N.deformation (prodTime w.1 (N.control w.2.2) w.2.1, w.2.2))
   continuous_toFun :=
     (Continuous.subtype_mk (by fun_prop) _).prodMk
       (N.deformation.continuous_apply_prodMk_of_fixed (fun t _ hx ↦ N.deformation_of_mem t hx)
-        (by fun_prop) fun _ hw ↦ N.continuousAt_cylinderTime hw)
+        (by fun_prop) fun _ hw ↦ continuousAt_prodTime N.control N.control_eq_zero_iff
+          continuous_fst (by fun_prop) (by fun_prop) hw)
 
 @[simp]
 theorem coe_cylinderDeformation_fst (s t : I) (x : X) :
@@ -470,30 +487,6 @@ end OfHomotopyRel
 section Prod
 
 variable {Y : Type v} [TopologicalSpace Y] {B : Set Y} (M : NDRPair B)
-
-/-- The time `t * min 1 (v / u)` at which the product deformation runs a deformation with control
-value `u`, when the other factor has control value `v`. -/
-private noncomputable def prodTime (t u v : I) : I :=
-  t * projIcc 0 1 zero_le_one ((v : ℝ) / u)
-
-/-- Where the control value of the other factor vanishes, the product deformation does not run. -/
-private theorem prodTime_zero_right (t u : I) : prodTime t u 0 = 0 := by
-  rw [prodTime, Icc.coe_zero, zero_div, projIcc_left]
-  exact mul_zero t
-
-/-- Where the control value `u` is positive and at most `v`, the product deformation runs at full
-speed. -/
-private theorem prodTime_of_le {t u v : I} (hu : (u : ℝ) ≠ 0) (huv : u ≤ v) :
-    prodTime t u v = t := by
-  rw [prodTime, projIcc_eq_one.2 ((one_le_div (lt_of_le_of_ne u.2.1 hu.symm)).2 huv), mul_one]
-
-/-- The time of the product deformation in the factor with control `u`, read off at the point
-`q`, is continuous where `q` lies off the zero set of `u`. -/
-private theorem continuousAt_prodTime {Z : Type*} [TopologicalSpace Z] (u : C(X, I))
-    (hu : ∀ x, u x = 0 ↔ x ∈ A) {t v : Z → I} {q : Z → X} (ht : Continuous t) (hv : Continuous v)
-    (hq : Continuous q) {z : Z} (hz : q z ∉ A) :
-    ContinuousAt (fun z ↦ prodTime (t z) (u (q z)) (v z)) z :=
-  ht.continuousAt.mul (u.continuousAt_projIcc_div_of_notMem hu hv hq hz)
 
 /-- **The product of NDR pairs.** If `(X, A)` and `(Y, B)` are NDR pairs with controls `u`, `v`
 and deformations `H`, `K`, then so is `(X × Y, A × Y ∪ X × B)`, with control
