@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Algebra.Prod
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
+public import Mathlib.RingTheory.LocalRing.Pullback
 public import TauCeti.RingTheory.Extension.SquareZero
 
 /-!
@@ -27,8 +27,6 @@ compares both iterated sums with the triple fibre product. This is the group str
 
 ## Main definitions
 
-* `TauCeti.SquareZeroExtension.fiberProduct`: the fibre product `E ×_B F` of the rings of two
-  extensions, as a subalgebra of `E × F`.
 * `TauCeti.SquareZeroExtension.baerSum`: the Baer sum of two square-zero extensions.
 * `TauCeti.SquareZeroExtension.toBaerSum`: the quotient map from the fibre product onto the ring of
   the Baer sum.
@@ -72,25 +70,9 @@ section FiberProduct
 
 variable (E F : SquareZeroExtension.{w} A B M)
 
-/-- The fibre product `E ×_B F` of the rings of two square-zero extensions of `B`: the pairs
-`(e, f)` with `π e = π f`, as an `A`-subalgebra of `E × F`. -/
-def fiberProduct : Subalgebra A (E.Ring × F.Ring) :=
-  AlgHom.equalizer (E.π.comp (AlgHom.fst A E.Ring F.Ring)) (F.π.comp (AlgHom.snd A E.Ring F.Ring))
-
-variable {E F}
-
-@[simp]
-theorem mem_fiberProduct {x : E.Ring × F.Ring} : x ∈ E.fiberProduct F ↔ E.π x.1 = F.π x.2 :=
-  Iff.rfl
-
-theorem π_fst_eq_π_snd (x : E.fiberProduct F) : E.π (x : E.Ring × F.Ring).1 = F.π x.1.2 :=
-  x.2
-
-variable (E F)
-
 /-- The antidiagonal `{(ι m, -ι m)}` of the fibre product, an ideal since `E` and `F` induce the
 same `B`-module structure on `M`. -/
-private def antidiagonal : Ideal (E.fiberProduct F) where
+private def antidiagonal : Ideal (E.π.pullback F.π) where
   carrier := {x | ∃ m, (x : E.Ring × F.Ring) = (E.ι m, -F.ι m)}
   add_mem' := by
     rintro _ _ ⟨m, hm⟩ ⟨n, hn⟩
@@ -98,23 +80,23 @@ private def antidiagonal : Ideal (E.fiberProduct F) where
   zero_mem' := ⟨0, by simp only [map_zero, neg_zero]; rfl⟩
   smul_mem' := by
     rintro ⟨⟨c, d⟩, hcd⟩ _ ⟨m, hm⟩
-    rw [mem_fiberProduct] at hcd
+    replace hcd : E.π c = F.π d := hcd
     exact ⟨E.π c • m, by simp [hm, hcd]⟩
 
-private theorem mem_antidiagonal {x : E.fiberProduct F} :
+private theorem mem_antidiagonal {x : E.π.pullback F.π} :
     x ∈ antidiagonal E F ↔ ∃ m, (x : E.Ring × F.Ring) = (E.ι m, -F.ι m) :=
   Iff.rfl
 
 /-- The projection `(e, f) ↦ π e` of the fibre product to `B`. -/
-private def fiberProductπ : E.fiberProduct F →ₐ[A] B :=
-  E.π.comp ((AlgHom.fst A E.Ring F.Ring).comp (E.fiberProduct F).val)
+private def fiberProductπ : E.π.pullback F.π →ₐ[A] B :=
+  E.π.comp (AlgHom.pullbackFst E.π F.π)
 
-private theorem fiberProductπ_apply (x : E.fiberProduct F) :
+private theorem fiberProductπ_apply (x : E.π.pullback F.π) :
     fiberProductπ E F x = E.π (x : E.Ring × F.Ring).1 :=
   rfl
 
 /-- The inclusion `m ↦ (ι m, 0)` of `M` into the fibre product. -/
-private def fiberProductι : M →+ E.fiberProduct F :=
+private def fiberProductι : M →+ E.π.pullback F.π :=
   AddMonoidHom.mk' (fun m ↦ ⟨(E.ι m, 0), by simp⟩) fun m n ↦ by ext <;> simp
 
 private theorem coe_fiberProductι (m : M) :
@@ -122,18 +104,18 @@ private theorem coe_fiberProductι (m : M) :
   rfl
 
 /-- The projection `(e, f) ↦ π e` of the quotient of the fibre product by the antidiagonal. -/
-private noncomputable def baerSumπ : (E.fiberProduct F ⧸ antidiagonal E F) →ₐ[A] B :=
+private noncomputable def baerSumπ : (E.π.pullback F.π ⧸ antidiagonal E F) →ₐ[A] B :=
   Ideal.Quotient.liftₐ _ (fiberProductπ E F) <| by
     rintro x ⟨m, hm⟩
     simp [fiberProductπ_apply, hm]
 
-private theorem baerSumπ_mk (x : E.fiberProduct F) :
+private theorem baerSumπ_mk (x : E.π.pullback F.π) :
     baerSumπ E F (Ideal.Quotient.mk _ x) = E.π (x : E.Ring × F.Ring).1 :=
   rfl
 
 /-- The inclusion `m ↦ (ι m, 0)` of `M` into the quotient of the fibre product by the
 antidiagonal. -/
-private def baerSumι : M →+ E.fiberProduct F ⧸ antidiagonal E F :=
+private def baerSumι : M →+ E.π.pullback F.π ⧸ antidiagonal E F :=
   (Ideal.Quotient.mk (antidiagonal E F)).toAddMonoidHom.comp (fiberProductι E F)
 
 private theorem baerSumι_apply (m : M) :
@@ -150,7 +132,7 @@ variable (E F : SquareZeroExtension.{w} A B M)
 fibre product `E ×_B F` by the antidiagonal `{(ι m, -ι m)}`, projecting to `B` by
 `(e, f) ↦ π e`, with `M` included by `m ↦ (ι m, 0)`. -/
 noncomputable def baerSum : SquareZeroExtension.{w} A B M where
-  Ring := E.fiberProduct F ⧸ antidiagonal E F
+  Ring := E.π.pullback F.π ⧸ antidiagonal E F
   π := baerSumπ E F
   π_surjective b := by
     obtain ⟨e, rfl⟩ := E.π_surjective b
@@ -166,7 +148,7 @@ noncomputable def baerSum : SquareZeroExtension.{w} A B M where
     simpa using hk.1
   exact y := by
     obtain ⟨⟨⟨e, f⟩, hef⟩, rfl⟩ := Ideal.Quotient.mk_surjective y
-    rw [mem_fiberProduct] at hef
+    replace hef : E.π e = F.π f := hef
     refine ⟨fun h ↦ ?_, ?_⟩
     · rw [baerSumπ_mk] at h
       obtain ⟨m, rfl⟩ := (E.exact e).1 h
@@ -182,7 +164,7 @@ noncomputable def baerSum : SquareZeroExtension.{w} A B M where
     ext <;> simp [coe_fiberProductι]
 
 /-- The quotient map from the fibre product `E ×_B F` onto the ring of the Baer sum. -/
-noncomputable def toBaerSum : E.fiberProduct F →ₐ[A] (E.baerSum F).Ring :=
+noncomputable def toBaerSum : E.π.pullback F.π →ₐ[A] (E.baerSum F).Ring :=
   Ideal.Quotient.mkₐ A (antidiagonal E F)
 
 variable {E F}
@@ -191,36 +173,36 @@ theorem toBaerSum_surjective : Function.Surjective (E.toBaerSum F) :=
   Ideal.Quotient.mkₐ_surjective A _
 
 @[simp]
-theorem π_toBaerSum (x : E.fiberProduct F) :
+theorem π_toBaerSum (x : E.π.pullback F.π) :
     (E.baerSum F).π (E.toBaerSum F x) = E.π (x : E.Ring × F.Ring).1 :=
   (rfl)
 
 /-- The class of `(ι m, ι n)` in the Baer sum is the kernel element `m + n`. -/
 @[simp]
-theorem toBaerSum_ι_ι (m n : M) (h : (E.ι m, F.ι n) ∈ E.fiberProduct F) :
+theorem toBaerSum_ι_ι (m n : M) (h : (E.ι m, F.ι n) ∈ E.π.pullback F.π) :
     E.toBaerSum F ⟨(E.ι m, F.ι n), h⟩ = (E.baerSum F).ι (m + n) :=
   Ideal.Quotient.eq.2 ⟨-n, by simp [coe_fiberProductι]⟩
 
 @[simp]
-theorem toBaerSum_ι_zero (m : M) (h : (E.ι m, (0 : F.Ring)) ∈ E.fiberProduct F) :
+theorem toBaerSum_ι_zero (m : M) (h : (E.ι m, (0 : F.Ring)) ∈ E.π.pullback F.π) :
     E.toBaerSum F ⟨(E.ι m, 0), h⟩ = (E.baerSum F).ι m := by
   simpa using toBaerSum_ι_ι (E := E) (F := F) m 0 (by simp)
 
 @[simp]
-theorem toBaerSum_zero_ι (n : M) (h : ((0 : E.Ring), F.ι n) ∈ E.fiberProduct F) :
+theorem toBaerSum_zero_ι (n : M) (h : ((0 : E.Ring), F.ι n) ∈ E.π.pullback F.π) :
     E.toBaerSum F ⟨(0, F.ι n), h⟩ = (E.baerSum F).ι n := by
   simpa using toBaerSum_ι_ι (E := E) (F := F) 0 n (by simp)
 
 /-- An element `(e, f)` of the fibre product maps to the kernel element `ι k` of the Baer sum
 exactly when `e = ι m` and `f = ι n` with `m + n = k`. -/
-theorem toBaerSum_eq_ι_iff {x : E.fiberProduct F} {k : M} :
+theorem toBaerSum_eq_ι_iff {x : E.π.pullback F.π} {k : M} :
     E.toBaerSum F x = (E.baerSum F).ι k ↔
       ∃ m n, (x : E.Ring × F.Ring) = (E.ι m, F.ι n) ∧ m + n = k := by
   obtain ⟨⟨e, f⟩, hef⟩ := x
   refine ⟨fun h ↦ ?_, ?_⟩
   · have he : E.π e = 0 := by simpa using congr((E.baerSum F).π $h)
     obtain ⟨m, rfl⟩ := (E.exact e).1 he
-    obtain ⟨n, rfl⟩ := (F.exact f).1 (by rw [← (mem_fiberProduct.1 hef), he])
+    obtain ⟨n, rfl⟩ := (F.exact f).1 (by rw [← show E.π (E.ι m) = F.π f from hef, he])
     rw [toBaerSum_ι_ι] at h
     exact ⟨m, n, rfl, (E.baerSum F).ι_injective h⟩
   · rintro ⟨m, n, h, rfl⟩
@@ -230,7 +212,7 @@ theorem toBaerSum_eq_ι_iff {x : E.fiberProduct F} {k : M} :
 
 /-- An element `(e, f)` of the fibre product vanishes in the Baer sum exactly when it lies in the
 antidiagonal: `e = ι m` and `f = -ι m`. -/
-theorem toBaerSum_eq_zero_iff {x : E.fiberProduct F} :
+theorem toBaerSum_eq_zero_iff {x : E.π.pullback F.π} :
     E.toBaerSum F x = 0 ↔ ∃ m, (x : E.Ring × F.Ring) = (E.ι m, -F.ι m) :=
   Ideal.Quotient.eq_zero_iff_mem
 
@@ -274,7 +256,7 @@ variable {G : SquareZeroExtension.{w} A B M}
 /-- The universal property of the Baer sum: an algebra map `φ` from the fibre product `E ×_B F`
 to an extension `G` that kills the antidiagonal, lies over `B` and restricts to the identity of
 `M` on `m ↦ (ι m, 0)` induces a morphism of extensions `E + F ⟶ G`. -/
-noncomputable def baerSumDesc (φ : E.fiberProduct F →ₐ[A] G.Ring)
+noncomputable def baerSumDesc (φ : E.π.pullback F.π →ₐ[A] G.Ring)
     (hφ : ∀ m, φ ⟨(E.ι m, -F.ι m), by simp⟩ = 0)
     (hπ : ∀ x, G.π (φ x) = E.π (x : E.Ring × F.Ring).1)
     (hι : ∀ m, φ ⟨(E.ι m, 0), by simp⟩ = G.ι m) : E.baerSum F ⟶ G :=
@@ -287,10 +269,10 @@ noncomputable def baerSumDesc (φ : E.fiberProduct F →ₐ[A] G.Ring)
     (fun m ↦ ⟨⟨(E.ι m, 0), by simp⟩, by simp, hι m⟩)
 
 @[simp]
-theorem baerSumDesc_toAlgHom_toBaerSum (φ : E.fiberProduct F →ₐ[A] G.Ring)
+theorem baerSumDesc_toAlgHom_toBaerSum (φ : E.π.pullback F.π →ₐ[A] G.Ring)
     (hφ : ∀ m, φ ⟨(E.ι m, -F.ι m), by simp⟩ = 0)
     (hπ : ∀ x, G.π (φ x) = E.π (x : E.Ring × F.Ring).1)
-    (hι : ∀ m, φ ⟨(E.ι m, 0), by simp⟩ = G.ι m) (x : E.fiberProduct F) :
+    (hι : ∀ m, φ ⟨(E.ι m, 0), by simp⟩ = G.ι m) (x : E.π.pullback F.π) :
     (baerSumDesc φ hφ hπ hι).toAlgHom (E.toBaerSum F x) = φ x :=
   homOfSurjective_toAlgHom_apply _ _ _ _ _ _ x
 
@@ -302,12 +284,12 @@ variable {E E' F F' : SquareZeroExtension.{w} A B M}
 
 /-- The map of fibre products `E ×_B F → E' ×_B F'` induced by morphisms of extensions. -/
 private noncomputable def fiberProductMap (f : E ⟶ E') (g : F ⟶ F') :
-    E.fiberProduct F →ₐ[A] E'.fiberProduct F' :=
-  ((f.toAlgHom.comp ((AlgHom.fst A _ _).comp (E.fiberProduct F).val)).prod
-    (g.toAlgHom.comp ((AlgHom.snd A _ _).comp (E.fiberProduct F).val))).codRestrict _ fun x ↦ by
-    simpa using π_fst_eq_π_snd x
+    E.π.pullback F.π →ₐ[A] E'.π.pullback F'.π :=
+  ((f.toAlgHom.comp ((AlgHom.fst A _ _).comp (E.π.pullback F.π).val)).prod
+    (g.toAlgHom.comp ((AlgHom.snd A _ _).comp (E.π.pullback F.π).val))).codRestrict _ fun x ↦ by
+    simpa using (AlgHom.mem_equalizer _ _ _).1 x.prop
 
-private theorem coe_fiberProductMap (f : E ⟶ E') (g : F ⟶ F') (x : E.fiberProduct F) :
+private theorem coe_fiberProductMap (f : E ⟶ E') (g : F ⟶ F') (x : E.π.pullback F.π) :
     (fiberProductMap f g x : E'.Ring × F'.Ring) = (f.toAlgHom x.1.1, g.toAlgHom x.1.2) :=
   rfl
 
@@ -323,9 +305,10 @@ noncomputable def baerSumMap (f : E ⟶ E') (g : F ⟶ F') : E.baerSum F ⟶ E'.
       exact ⟨m, 0, by simp [coe_fiberProductMap], add_zero m⟩)
 
 @[simp]
-theorem baerSumMap_toAlgHom_toBaerSum (f : E ⟶ E') (g : F ⟶ F') (x : E.fiberProduct F) :
+theorem baerSumMap_toAlgHom_toBaerSum (f : E ⟶ E') (g : F ⟶ F') (x : E.π.pullback F.π) :
     (baerSumMap f g).toAlgHom (E.toBaerSum F x) =
-      E'.toBaerSum F' ⟨(f.toAlgHom x.1.1, g.toAlgHom x.1.2), by simpa using π_fst_eq_π_snd x⟩ :=
+      E'.toBaerSum F' ⟨(f.toAlgHom x.1.1, g.toAlgHom x.1.2),
+        by simpa using (AlgHom.mem_equalizer _ _ _).1 x.prop⟩ :=
   baerSumDesc_toAlgHom_toBaerSum _ _ _ _ x
 
 end Map
@@ -335,12 +318,12 @@ section GroupLaws
 variable {E F G : SquareZeroExtension.{w} A B M}
 
 /-- The swap `(e, f) ↦ (f, e)` of fibre products. -/
-private def fiberProductSwap : E.fiberProduct F →ₐ[A] F.fiberProduct E :=
-  (((AlgHom.snd A _ _).prod (AlgHom.fst A _ _)).comp (E.fiberProduct F).val).codRestrict _
-    fun x ↦ by simpa using (π_fst_eq_π_snd x).symm
+private def fiberProductSwap : E.π.pullback F.π →ₐ[A] F.π.pullback E.π :=
+  (((AlgHom.snd A _ _).prod (AlgHom.fst A _ _)).comp (E.π.pullback F.π).val).codRestrict _
+    fun x ↦ by simpa using x.prop.symm
 
-private theorem fiberProductSwap_apply (x : E.fiberProduct F) :
-    fiberProductSwap x = ⟨(x.1.2, x.1.1), by simpa using (π_fst_eq_π_snd x).symm⟩ :=
+private theorem fiberProductSwap_apply (x : E.π.pullback F.π) :
+    fiberProductSwap x = ⟨(x.1.2, x.1.1), by simpa using x.prop.symm⟩ :=
   rfl
 
 /-- The symmetry `(e, f) ↦ (f, e)` of the Baer sum. -/
@@ -349,7 +332,7 @@ private noncomputable def baerSumComm : E.baerSum F ⟶ F.baerSum E :=
     (fun m ↦ by
       rw [AlgHom.comp_apply, toBaerSum_eq_zero_iff]
       exact ⟨-m, by simp [fiberProductSwap_apply]⟩)
-    (fun x ↦ by simpa [fiberProductSwap_apply] using (π_fst_eq_π_snd x).symm)
+    (fun x ↦ by simpa [fiberProductSwap_apply] using x.prop.symm)
     (fun m ↦ by simp [fiberProductSwap_apply])
 
 /-- The triple fibre product `E ×_B F ×_B G`. -/
@@ -365,12 +348,12 @@ private theorem mem_tripleFiberProduct {x : E.Ring × F.Ring × G.Ring} :
   Iff.rfl
 
 /-- The projection `(e, f, g) ↦ (e, f)` of the triple fibre product. -/
-private def tripleFst : tripleFiberProduct E F G →ₐ[A] E.fiberProduct F :=
+private def tripleFst : tripleFiberProduct E F G →ₐ[A] E.π.pullback F.π :=
   (((AlgHom.fst _ _ _).prod ((AlgHom.fst _ _ _).comp (AlgHom.snd _ _ _))).comp
     (tripleFiberProduct E F G).val).codRestrict _ fun x ↦ (mem_tripleFiberProduct.1 x.2).1
 
 /-- The projection `(e, f, g) ↦ (f, g)` of the triple fibre product. -/
-private def tripleSnd : tripleFiberProduct E F G →ₐ[A] F.fiberProduct G :=
+private def tripleSnd : tripleFiberProduct E F G →ₐ[A] F.π.pullback G.π :=
   ((AlgHom.snd _ _ _).comp (tripleFiberProduct E F G).val).codRestrict _ fun x ↦
     (mem_tripleFiberProduct.1 x.2).2
 
@@ -410,8 +393,8 @@ private noncomputable def baerSumAssoc : (E.baerSum F).baerSum G ⟶ E.baerSum (
     (fun y ↦ by
       obtain ⟨⟨⟨u, g⟩, hug⟩, rfl⟩ := toBaerSum_surjective y
       obtain ⟨⟨⟨e, f⟩, hef⟩, rfl⟩ := toBaerSum_surjective u
-      rw [mem_fiberProduct, π_toBaerSum] at hug
-      rw [mem_fiberProduct] at hef
+      replace hug : E.π e = G.π g := hug
+      replace hef : E.π e = F.π f := hef
       exact ⟨⟨(e, f, g), mem_tripleFiberProduct.2 ⟨hef, hef.symm.trans hug⟩⟩, rfl⟩)
     tripleToBaerSumRight
     (fun ⟨⟨e, f, g⟩, hx⟩ h ↦ by
@@ -442,7 +425,7 @@ split by `s`. -/
 private noncomputable def toBaerSumOfSplitting (s : F.Splitting) : E ⟶ E.baerSum F where
   toAlgHom := (E.toBaerSum F).comp <|
     ((AlgHom.id A E.Ring).prod (s.toAlgHom.comp E.π)).codRestrict _ fun x ↦
-      mem_fiberProduct.2 (s.π_toAlgHom (E.π x)).symm
+      (AlgHom.mem_equalizer _ _ _).2 (s.π_toAlgHom (E.π x)).symm
   π_toAlgHom x := by simp
   toAlgHom_ι m := by
     rw [AlgHom.comp_apply, toBaerSum_eq_ι_iff]

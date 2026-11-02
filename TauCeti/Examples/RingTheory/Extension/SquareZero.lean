@@ -62,7 +62,7 @@ theorem two_eq_zero_baerSum_zmodFour : (2 : (zmodFour.baerSum zmodFour).Ring) = 
   -- The ring of `zmodFour` is `ZMod 4` by its exposed definition, where `ι 1 = 2`.
   have hι : (2 : zmodFour.Ring) = zmodFour.ι 1 :=
     (by decide : (2 : ZMod 4) = 2 * ((1 : ZMod 2).val : ZMod 4))
-  have h : (2 : zmodFour.fiberProduct zmodFour) = ⟨(zmodFour.ι 1, zmodFour.ι 1), by simp⟩ :=
+  have h : (2 : zmodFour.π.pullback zmodFour.π) = ⟨(zmodFour.ι 1, zmodFour.ι 1), by simp⟩ :=
     Subtype.ext (Prod.ext hι hι)
   rw [← map_ofNat (zmodFour.toBaerSum zmodFour) 2, h, toBaerSum_ι_ι,
     (by decide : (1 + 1 : ZMod 2) = 0), map_zero]
