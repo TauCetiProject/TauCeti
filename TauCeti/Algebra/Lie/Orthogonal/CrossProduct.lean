@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.CrossProduct
 public import Mathlib.LinearAlgebra.Matrix.Dual
 public import TauCeti.Algebra.Lie.Coadjoint
 public import TauCeti.LinearAlgebra.CrossProduct
+public import TauCeti.LinearAlgebra.Matrix.CrossProduct
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 import Mathlib.Tactic.FinCases
@@ -19,9 +20,9 @@ import Mathlib.Tactic.LinearCombination
 # The orthogonal Lie algebra `so(3)` and the cross product
 
 The skew-symmetric `3 × 3` matrices are the matrices of the maps `v ↦ u ⨯₃ v`. The **hat map**
-`u ↦ û` (`TauCeti.crossProductMatrix`, in `TauCeti.LinearAlgebra.CrossProduct`) sends `u` to the
-matrix of this map; `û` is skew-symmetric, and the commutator of two such matrices is the matrix of
-the cross product of their vectors:
+`u ↦ û` (`TauCeti.crossProductMatrix`, in `TauCeti.LinearAlgebra.Matrix.CrossProduct`) sends `u`
+to the matrix of this map; `û` is skew-symmetric, and the commutator of two such matrices is the
+matrix of the cross product of their vectors:
 
 `[û, v̂] = (u ⨯₃ v)^`.
 
