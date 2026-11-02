@@ -20,6 +20,16 @@ positive Haar measure exactly when its interior is nonempty, equivalently when i
 the whole space
 (`Convex.addHaar_pos_iff_interior_nonempty`, `Convex.addHaar_pos_iff_affineSpan_eq_top`).
 
+For the same reason, convex sets with disjoint interiors are almost everywhere disjoint
+(`Convex.aedisjoint_of_disjoint_interior`), and so are unions of countably many of them
+(`TauCeti.aedisjoint_iUnion_of_convex`). Hence Haar measure is additive over countable families of
+convex sets with pairwise disjoint interiors (`TauCeti.addHaar_iUnion_of_convex`), and finitely
+many interior-disjoint translates of a convex set `K` have total measure `card ι * μ K`
+(`Convex.addHaar_iUnion_vadd`). These are the volume computations for packings of lattice
+translates of a convex body in the proof of the upper half of Minkowski's second theorem by
+M. Henk, *Successive minima and lattice points*, Rend. Circ. Mat. Palermo (2) Suppl. 70 (2002),
+377–384, §3, arXiv:math/0204158.
+
 A convex set containing a ball of radius `r > 0` and a point at distance `L` from its centre has
 measure at least `2 ^ (-(n + 1)) * μ (ball 0 1) * L * r ^ (n - 1)`, which is the order of the
 volume of the cone spanned by the ball and the point
@@ -163,6 +173,53 @@ theorem Convex.ofReal_dist_mul_pow_mul_addHaar_ball_le [Nontrivial E] (hs : Conv
     _ ≤ 2 ^ (n + 1) * μ s := by
         gcongr
         exact iUnion₂_subset hsub
+
+open Function
+open scoped Pointwise
+
+/-- Two convex sets in a finite-dimensional real normed space whose interiors are disjoint meet in
+a null set for every additive Haar measure, since each differs from its interior by a subset of
+its null frontier. The sets need not be closed, bounded or full-dimensional. -/
+theorem Convex.aedisjoint_of_disjoint_interior (hs : Convex ℝ s) {t : Set E} (ht : Convex ℝ t)
+    (h : Disjoint (interior s) (interior t)) : AEDisjoint μ s t :=
+  h.aedisjoint.congr (interior_ae_eq_of_null_frontier (hs.addHaar_frontier μ)).symm
+    (interior_ae_eq_of_null_frontier (ht.addHaar_frontier μ)).symm
+
+namespace TauCeti
+
+/-- **Unions of convex sets with disjoint interiors.** If every interior of a member of the
+countable family `A` is disjoint from every interior of a member of the countable family `B`, and
+all members are convex, then the unions `⋃ i, A i` and `⋃ j, B j` meet in a null set for every
+additive Haar measure. The unions need not be convex, and the members need not be closed or
+bounded. -/
+theorem aedisjoint_iUnion_of_convex {ι κ : Sort*} [Countable ι] [Countable κ] {A : ι → Set E}
+    {B : κ → Set E} (hA : ∀ i, Convex ℝ (A i)) (hB : ∀ j, Convex ℝ (B j))
+    (h : ∀ i j, Disjoint (interior (A i)) (interior (B j))) :
+    AEDisjoint μ (⋃ i, A i) (⋃ j, B j) :=
+  AEDisjoint.iUnion_left_iff.2 fun i ↦ AEDisjoint.iUnion_right_iff.2 fun j ↦
+    (hA i).aedisjoint_of_disjoint_interior (hB j) (h i j)
+
+/-- **Additivity over convex sets with disjoint interiors.** For a countable family of convex
+sets whose interiors are pairwise disjoint, the additive Haar measure of the union is the sum of
+the measures of the members, although the members may share boundary points. -/
+theorem addHaar_iUnion_of_convex {ι : Type*} [Countable ι] {A : ι → Set E}
+    (hA : ∀ i, Convex ℝ (A i)) (h : Pairwise (Disjoint on fun i ↦ interior (A i))) :
+    μ (⋃ i, A i) = ∑' i, μ (A i) :=
+  measure_iUnion₀ (fun _ _ hij ↦ (hA _).aedisjoint_of_disjoint_interior (hA _) (h hij))
+    fun i ↦ (hA i).nullMeasurableSet μ
+
+end TauCeti
+
+/-- **Volume of interior-disjoint translates.** If the translates `v i +ᵥ interior K` of the
+interior of a convex set `K` are pairwise disjoint, then the union of the finitely many translates
+`v i +ᵥ K` has `card ι` times the additive Haar measure of `K`. The translates may share boundary
+points, and `K` need not be closed, bounded or full-dimensional. -/
+theorem Convex.addHaar_iUnion_vadd {K : Set E} (hK : Convex ℝ K) {ι : Type*} [Fintype ι]
+    {v : ι → E} (h : Pairwise (Disjoint on fun i ↦ v i +ᵥ interior K)) :
+    μ (⋃ i, v i +ᵥ K) = Fintype.card ι * μ K := by
+  rw [TauCeti.addHaar_iUnion_of_convex (fun i ↦ hK.vadd (v i))
+    (by simpa only [interior_vadd] using h)]
+  simp
 
 open Bornology
 open scoped ENNReal

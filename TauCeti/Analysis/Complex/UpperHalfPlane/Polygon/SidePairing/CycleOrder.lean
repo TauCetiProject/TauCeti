@@ -14,9 +14,10 @@ import TauCeti.Analysis.Complex.UpperHalfPlane.Stabilizer
 
 The derivative of a side-pairing cycle transformation at its finite vertex is
 `exp (i * cycleAngleSum)`. Thus a cycle with angle sum `2π / t` has transformation of exact
-order `t`, including `t = 1`. This supplies the finite-cycle relations used in polygon
-presentations. Neither discreteness nor a fundamental-domain assumption is needed: the angle
-condition alone determines this order. The converse angle condition for a fundamental polygon
+order `t`, including `t = 1`, and a cycle with angle sum less than `2π` has a nonidentity
+transformation. This supplies the finite-cycle relations used in polygon presentations.
+Neither discreteness nor a fundamental-domain assumption is needed: the angle condition alone
+determines this order. The converse angle condition for a fundamental polygon
 requires no-overlap and is proved in
 `TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.Vertex.Stabilizer`.
 
@@ -78,5 +79,22 @@ theorem orderOf_cycleMap_of_cycleAngleSum {j : Fin n} {z : ℍ}
     ring
   rw [he]
   exact (Complex.isPrimitiveRoot_exp t ht).eq_orderOf.symm
+
+/-- A finite vertex cycle whose angle sum is less than `2π` has a nonidentity cycle
+transformation: its derivative at the vertex is the rotation by that angle sum, which lies
+strictly between `0` and `2π`. -/
+theorem cycleMap_ne_one_of_cycleAngleSum_lt {j : Fin n} (hj : (P.vertex j).isLeft)
+    (hangle : σ.cycleAngleSum j < 2 * π) : σ.cycleMap j ≠ 1 := by
+  intro h
+  have hpos := σ.cycleAngleSum_pos_of_isLeft_vertex hj
+  obtain ⟨z, hz⟩ := Sum.isLeft_iff.1 hj
+  have hexp := σ.smulDeriv_cycleMap hz
+  rw [h, smulDeriv_one, eq_comm, Complex.exp_eq_one_iff] at hexp
+  obtain ⟨k, hk⟩ := hexp
+  -- the angle sum is a multiple `2πk` lying strictly between `0` and `2π`
+  have hk' : σ.cycleAngleSum j = k * (2 * π) := by simpa using congrArg Complex.im hk
+  have h0 : (0 : ℤ) < k := by exact_mod_cast (by nlinarith [Real.pi_pos] : (0 : ℝ) < k)
+  have h1 : k < 1 := by exact_mod_cast (by nlinarith [Real.pi_pos] : (k : ℝ) < 1)
+  omega
 
 end TauCeti.UpperHalfPlane.ConvexPolygon.SidePairing

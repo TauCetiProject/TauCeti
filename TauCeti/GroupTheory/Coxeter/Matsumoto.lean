@@ -23,6 +23,10 @@ groups and infinite Coxeter-matrix entries. `TauCeti.existsUnique_reducedWordLif
 result as a universal property: there is a unique function on the group agreeing with evaluation
 of every reduced word.
 
+The two sides of a braid move are themselves reduced words
+(`CoxeterSystem.isReduced_braidWord`); more generally an alternating word is reduced as long as
+its length is at most the Coxeter-matrix entry (`CoxeterSystem.isReduced_alternatingWord`).
+
 ## Implementation notes
 
 Induction on length cancels a common first letter. For different first letters, Tits' rank-two
@@ -112,15 +116,9 @@ theorem braidEquivalent_of_isReduced_wordProd_eq {ω ω' : List B}
         intro h; simp [h] at hlen')
       by_cases hij : i = j
       · subst j; exact sameHead i u v hlen hred hred' hp
-      have descent : ∀ a : B, ∀ σ : List B, cs.IsReduced (a :: σ) →
-          cs.IsLeftDescent (cs.wordProd (a :: σ)) a := by
-        intro a σ hσ
-        have ht : cs.IsReduced σ := by simpa using hσ.drop 1
-        rw [cs.isLeftDescent_iff, cs.wordProd_cons, cs.simple_mul_simple_cancel_left,
-          ← cs.wordProd_cons, hσ.eq, ht.eq, List.length_cons]
       obtain ⟨u', v', hu', hv', hpu', hpv', hbraid⟩ :=
-        exists_braidEquivalent_cons_of_isLeftDescent_pair cs hij (descent i u hred)
-          (hp.symm ▸ descent j v hred')
+        exists_braidEquivalent_cons_of_isLeftDescent_pair cs hij hred.isLeftDescent_wordProd_cons
+          (hp.symm ▸ hred'.isLeftDescent_wordProd_cons)
       have h₁ := sameHead i u u' hlen hred hu' hpu'.symm
       have h₂ := sameHead j v v' hlen' hred' hv' (hp.symm.trans hpv'.symm)
       exact h₁.trans (hbraid.trans h₂.symm)
@@ -140,6 +138,57 @@ theorem matsumoto {G : Type*} [Monoid G] (f : B → G)
     {ω ω' : List B} (hω : cs.IsReduced ω) (hω' : cs.IsReduced ω')
     (hprod : cs.wordProd ω = cs.wordProd ω') : (ω.map f).prod = (ω'.map f).prod :=
   (braidEquivalent_of_isReduced_wordProd_eq cs hω hω' hprod).prod_map_eq f hbraid
+
+/-- **Alternating words are reduced up to the Coxeter-matrix entry**: the word
+`alternatingWord i i' m` is reduced whenever `m ≤ M i i'`, and for every `m` when `M i i' = 0`
+(read as `∞`). This is the converse of Mathlib's `CoxeterSystem.not_isReduced_alternatingWord`. -/
+theorem _root_.CoxeterSystem.isReduced_alternatingWord {i i' : B} {m : ℕ}
+    (hm : m ≤ M i i' ∨ M i i' = 0) : cs.IsReduced (alternatingWord i i' m) := by
+  induction m with
+  | zero => simp [CoxeterSystem.IsReduced, alternatingWord]
+  | succ m ih =>
+    have hred := ih (hm.imp_left (by omega))
+    have hlen : cs.length (cs.wordProd (alternatingWord i i' m)) = m := by
+      rw [hred.eq, length_alternatingWord]
+    rw [alternatingWord_succ']
+    suffices hd : ¬cs.IsLeftDescent (cs.wordProd (alternatingWord i i' m))
+        (if Even m then i' else i) by
+      rw [CoxeterSystem.IsReduced, cs.wordProd_cons, cs.not_isLeftDescent_iff.mp hd, hred.eq,
+        List.length_cons]
+    -- Otherwise the new letter and the first letter are two distinct left descents of the shorter
+    -- alternating word, whose length is then the order `M i i'` of `s i * s i'`.
+    intro hd
+    rcases m with _ | k
+    · rw [CoxeterSystem.IsLeftDescent, hlen] at hd
+      omega
+    have hne : i ≠ i' := by
+      rintro rfl
+      rcases hm with hm | hm <;> simp at hm
+    -- The first letter of the word is also a left descent, because the word is reduced.
+    have hhead := alternatingWord_succ' i i' k
+    have hd' := (hhead ▸ hred).isLeftDescent_wordProd_cons
+    rw [← hhead] at hd'
+    have hmem : cs.wordProd (alternatingWord i i' (k + 1)) ∈ cs.parabolic {i, i'} := by
+      have hi := cs.simple_mem_parabolic (J := {i, i'}) (i := i) (by simp)
+      have hi' := cs.simple_mem_parabolic (J := {i, i'}) (i := i') (by simp)
+      rw [cs.prod_alternatingWord_eq_mul_pow]
+      exact mul_mem (by split_ifs <;> simp [hi']) (pow_mem (mul_mem hi hi') _)
+    have horder := cs.orderOf_simple_mul_simple i i'
+    by_cases hk : Even k
+    · have hk' : ¬Even (k + 1) := by simpa [Nat.even_add_one] using hk
+      simp only [hk, hk', ↓reduceIte] at hd hd'
+      have := cs.length_eq_orderOf_of_isLeftDescent_pair hne hmem hd hd'
+      omega
+    · have hk' : Even (k + 1) := by simpa [Nat.even_add_one] using hk
+      simp only [hk, hk', ↓reduceIte] at hd hd'
+      have := cs.length_eq_orderOf_of_isLeftDescent_pair hne hmem hd' hd
+      omega
+
+/-- **Braid words are reduced**: the two sides of the braid relation at `(i, i')` are reduced
+words. -/
+theorem _root_.CoxeterSystem.isReduced_braidWord (i i' : B) :
+    cs.IsReduced (braidWord M i i') :=
+  cs.isReduced_alternatingWord (.inl le_rfl)
 
 /-- Generators satisfying the braid relations extend uniquely to a function on the Coxeter
 group whose value on every reduced expression is the product of those generators. -/

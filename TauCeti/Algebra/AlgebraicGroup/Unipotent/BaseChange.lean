@@ -127,7 +127,7 @@ theorem of_baseChange_of_surjective (H : FiniteTypeCommHopfAlgCat.{u, u} k)
       (_root_.CommHopfAlgCat.isoMk (_root_.Bialgebra.TensorProduct.lid k H.obj))
   let i : FiniteTypeCommHopfAlgCat.baseChange (K := k)
       (FiniteTypeCommHopfAlgCat.baseChange (K := K) H) ≅ H :=
-    ObjectProperty.isoMk _ (CommHopfAlgCat.baseChangeTowerIso k k H.obj) ≪≫ j
+    FiniteTypeCommHopfAlgCat.baseChangeTowerIso (E := K) k k H ≪≫ j
   exact (smoothUnipotentCommHopfAlgProperty k).prop_of_iso i
     (hH.baseChange (FiniteTypeCommHopfAlgCat.baseChange (K := K) H))
 

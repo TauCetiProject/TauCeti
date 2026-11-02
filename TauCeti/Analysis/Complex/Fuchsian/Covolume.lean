@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Complex.UpperHalfPlane.Measure
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Stabilizer
 public import TauCeti.MeasureTheory.Group.FundamentalDomain
 public import TauCeti.MeasureTheory.Group.ProperlyDiscontinuous
+import TauCeti.MeasureTheory.Group.Action
 
 /-!
 # Fundamental domains, covolume, and cofinite Fuchsian groups
@@ -35,6 +36,8 @@ form a countable set.
 * `Subgroup.freeLocus_nonempty`: some point of `ℍ` has trivial stabilizer in a countable `Γ`.
 * `Subgroup.exists_isFundamentalDomain`: a discrete `Γ` has a measurable fundamental domain
   whose translates are pairwise disjoint.
+* `Subgroup.card_mul_volume_ball_le_covolume`: balls in `ℍ` with pairwise disjoint
+  `Γ`-translates have total area at most the covolume.
 * `Subgroup.IsCofinite`: a discrete subgroup of finite covolume.
 * `Subgroup.IsCofinite.volume_ne_top`,
   `MeasureTheory.IsFundamentalDomain.isCofinite_of_volume_ne_top`: a discrete subgroup is
@@ -143,6 +146,39 @@ theorem IsCofinite.volume_ne_top (hΓ : Γ.IsCofinite) {s : Set ℍ}
   have := hΓ.discreteTopology
   rw [← hs.covolume_eq_volume]
   exact hΓ.covolume_ne_top
+
+/-- **Packing balls in a fundamental domain.** Let `Γ ≤ PSL(2, ℝ)` be discrete, and let `y i`,
+for `i` in a finite set `s`, be centres of balls of radius `r` such that the ball about `y j`
+meets the `k`-translate of the ball about `y i`, for `k ∈ Γ`, only when `k = 1` and `i = j`. Then
+the balls have pairwise disjoint translates, so their total area is at most the covolume. -/
+theorem card_mul_volume_ball_le_covolume [DiscreteTopology Γ] {ι : Type*} (s : Finset ι)
+    {y : ι → ℍ} {r : ℝ}
+    (h : ∀ k ∈ Γ, ∀ i ∈ s, ∀ j ∈ s, ∀ z : ℍ, dist z (k • y i) < r → dist z (y j) < r →
+      k = 1 ∧ i = j) :
+    s.card * volume (Metric.ball I r) ≤ covolume Γ ℍ := by
+  set t := ⋃ i ∈ s, Metric.ball (y i) r
+  obtain ⟨F, -, -, hF⟩ := exists_isFundamentalDomain Γ
+  have hvol : volume t = s.card * volume (Metric.ball I r) := by
+    rw [measure_biUnion_finset (fun i hi j hj hne ↦ ?_) fun i _ ↦ measurableSet_ball]
+    · rw [Finset.sum_congr rfl fun i _ ↦
+        measure_ball_eq_measure_ball (G := PSL(2, ℝ)) volume (y i) I r]
+      simp
+    · rw [Function.onFun, Set.disjoint_left]
+      intro z hz₁ hz₂
+      exact hne (h 1 Γ.one_mem i hi j hj z (by rwa [one_smul]) hz₂).2
+  rw [← hvol, hF.covolume_eq_volume]
+  refine hF.measure_le_of_disjoint_smul
+    (s.measurableSet_biUnion fun i _ ↦ measurableSet_ball).nullMeasurableSet
+    fun k hk ↦ ?_
+  simp only [t, smul_set_iUnion₂, disjoint_iUnion₂_left, disjoint_iUnion₂_right]
+  intro i hi j hj
+  rw [Set.disjoint_left]
+  intro z hz₁ hz₂
+  rw [mem_smul_set_iff_inv_smul_mem, Subgroup.smul_def, Metric.mem_ball] at hz₁
+  push_cast at hz₁
+  -- translating back by `k`, the ball about `y i` meets the `k`-translate of that about `y j`
+  exact hk (Subtype.ext (h k k.2 j hj i hi z
+    (by rwa [← dist_smul (k : PSL(2, ℝ))⁻¹, inv_smul_smul]) hz₂).1)
 
 /-- **Cofiniteness and finite index**: a subgroup `Δ` of a discrete subgroup `Γ ≤ PSL(2, ℝ)`
 is cofinite exactly when `Γ` is cofinite and `Δ` has finite index in `Γ`. -/

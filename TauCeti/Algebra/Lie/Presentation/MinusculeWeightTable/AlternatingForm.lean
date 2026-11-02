@@ -31,6 +31,7 @@ satisfy `X J + J Xᵀ = 0` for this matrix `J`, so their unipotents `1 + t X` pr
   negated weight.
 * `TauCeti.MinusculeWeightTable.SignedNegation.form_transpose` and `form_mul_self`: the form is
   skew and squares to `-1`.
+* `TauCeti.MinusculeWeightTable.SignedNegation.isUnit_form`: the form is a unit.
 * `TauCeti.MinusculeWeightTable.SignedNegation.dotProduct_form_mulVec_self`: the form is
   alternating.
 * `TauCeti.MinusculeWeightTable.SignedNegation.one_add_smul_raisingMatrix_preserves_form` and
@@ -198,6 +199,10 @@ theorem form_mul_self : s.form R * s.form R = -1 := by
       rw [s.indexNeg_indexNeg]
       exact h
     rw [ite_eq_right h', ite_eq_right (Ne.symm h), mul_zero, neg_zero]
+
+/-- The signed form is a unit, with inverse its negative. -/
+theorem isUnit_form : IsUnit (s.form R) :=
+  Matrix.isUnit_of_mul_self_eq_neg_one (s.form_mul_self R)
 
 /-- The form sends a vector to the signed vector of its negated coordinates. -/
 theorem form_mulVec_apply (x : ι → R) (a : ι) :

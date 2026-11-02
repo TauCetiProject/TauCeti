@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Circle
-public import TauCeti.Analysis.Complex.EuclideanFour
+public import TauCeti.Analysis.Complex.Euclidean.Four
 public import TauCeti.Analysis.Normed.Lp.ProdLp.Sphere
 public import TauCeti.Geometry.Sphere.LinearIsometry
 public import TauCeti.KnotTheory.SmoothCircle
@@ -175,7 +175,7 @@ homeomorphic to `D² × S¹` through `(z, w) ↦ (z / ‖w‖, w / ‖w‖)`. -/
 def unknotExteriorHomeomorph : knotExterior (Φ := unknotSolidTorus) ≃ₜ SolidTorus :=
   ((toComplexProd.subtype fun _ ↦ mem_knotExterior_unknotSolidTorus_iff).trans
     (sphereProdFstLeHomeomorph ℂ ℂ)).trans
-    ((Homeomorph.refl _).prodCongr Circle.homeomorphSphere.symm)
+    SolidTorus.homeomorphBallSphere.symm
 
 /- In the next three proofs `mem_ofPred_eq` is excluded: it rewrites the set-builder subtype of
 `TauCeti.sphereProdFstLeHomeomorph`, after which its coordinate simp lemmas no longer match. -/
@@ -215,6 +215,19 @@ theorem unknotExteriorHomeomorph_symm_boundaryInclusion (q : Circle × Circle) :
       unknotSolidTorus (SolidTorus.boundaryInclusion q.swap) := by
   ext1
   simp
+
+/-- On the boundary torus, `TauCeti.unknotExteriorHomeomorph` sends the exterior boundary point
+`r` to `SolidTorus.boundaryInclusion r.swap`, exchanging the two circle factors. This is the
+forward counterpart of `TauCeti.unknotExteriorHomeomorph_symm_boundaryInclusion`. -/
+@[simp]
+theorem unknotExteriorHomeomorph_exteriorBoundaryInclusion (r : Circle × Circle) :
+    unknotExteriorHomeomorph
+        (isSolidTorusNeighborhood_unknotSolidTorus.exteriorBoundaryInclusion r) =
+      SolidTorus.boundaryInclusion r.swap := by
+  rw [← unknotExteriorHomeomorph.apply_symm_apply (SolidTorus.boundaryInclusion r.swap)]
+  refine congrArg _ (Subtype.ext ?_)
+  rw [unknotExteriorHomeomorph_symm_boundaryInclusion, Prod.swap_swap,
+    IsSolidTorusNeighborhood.coe_exteriorBoundaryInclusion_apply]
 
 /-- The exterior of the unknot misses the unknot. -/
 theorem unknotExteriorHomeomorph_symm_notMem_range (p : SolidTorus) :

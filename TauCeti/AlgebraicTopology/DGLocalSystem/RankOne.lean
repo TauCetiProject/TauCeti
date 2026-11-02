@@ -45,7 +45,10 @@ the homology of the restriction of `𝓕` along `Φ^L` with that of `𝓕`. Equi
 representation on `H(𝓕 ⊗ L)` is the one on `H(𝓕)` rescaled by the monodromy
 (`TauCeti.RankOneLocalSystem.cohomologyRepresentationEquivCharTwist`). The point is that the class
 of the point chain of `γ` in `H(C_*(Ω_b B))` is scaled by `ρ γ` under `Φ^L`. These statements
-concern the total homology `H(𝓕)`, the direct sum of the `H_q(𝓕)`.
+concern the total homology `H(𝓕)`, the direct sum of the `H_q(𝓕)`. The identification preserves
+degrees, so they restrict to each degree: `H_q(𝓕 ⊗ L) ≅ H_q(𝓕) ⊗ L`
+(`TauCeti.RankOneLocalSystem.cohomologyGradingRepresentationEquivTprod`), stated in the
+cohomological degree `p = -q`.
 
 ## Main definitions
 
@@ -57,6 +60,10 @@ concern the total homology `H(𝓕)`, the direct sum of the `H_q(𝓕)`.
 * `TauCeti.RankOneLocalSystem.cohomologyRepresentationEquivTprod`: `H(𝓕 ⊗ L) ≅ H(𝓕) ⊗ L`.
 * `TauCeti.RankOneLocalSystem.cohomologyRepresentationEquivCharTwist`: the same, with `L` absorbed
   into the twist of the representation on `H(𝓕)` by the monodromy.
+* `TauCeti.RankOneLocalSystem.cohomologyGradingRepresentationEquivTprod`: `H_q(𝓕 ⊗ L) ≅ H_q(𝓕) ⊗ L`
+  in each degree.
+* `TauCeti.RankOneLocalSystem.cohomologyGradingRepresentationEquivCharTwist`: the same, with `L`
+  absorbed into the twist.
 
 ## Main results
 
@@ -393,11 +400,82 @@ theorem cohomologyRepresentationEquivTprod_apply
     (hM : IsDGRightModule (loopChain_isDGAlgebra B b R) ℳ dM)
     (x : (hM.restrictScalars L.twist).Cohomology) :
     L.cohomologyRepresentationEquivTprod hM x =
-      hM.restrictScalarsCohomologyEquiv L.twist x ⊗ₜ[R] (1 : R) := by
-  have h := (Representation.tprodOfLinearCharacterEquivCharTwist L.monodromy
-    hM.cohomologyRepresentation).symm_apply_apply (hM.restrictScalarsCohomologyEquiv L.twist x ⊗ₜ 1)
-  rw [Representation.tprodOfLinearCharacterEquivCharTwist_tmul, one_smul] at h
-  exact h
+      hM.restrictScalarsCohomologyEquiv L.twist x ⊗ₜ[R] (1 : R) :=
+  Representation.tprodOfLinearCharacterEquivCharTwist_symm_apply L.monodromy
+    hM.cohomologyRepresentation _
+
+/-- On a class of degree `p`, a class `g` of the fundamental group acts on `H^p(𝓕 ⊗ L)` as
+`L.monodromy g` times its action on `H^p(𝓕)`. -/
+private theorem coe_restrictScalarsCohomologyGradingEquiv_cohomologyGradingRepresentation
+    (hM : IsDGRightModule (loopChain_isDGAlgebra B b R) ℳ dM) (p : ℤ) (g : FundamentalGroup B b)
+    (x : (hM.restrictScalars L.twist).cohomologyGrading p) :
+    (hM.restrictScalarsCohomologyGradingEquiv L.twist p
+        ((hM.restrictScalars L.twist).cohomologyGradingRepresentation p g x) : hM.Cohomology) =
+      (L.monodromy g : R) • (hM.cohomologyGradingRepresentation p g
+        (hM.restrictScalarsCohomologyGradingEquiv L.twist p x) : hM.Cohomology) :=
+  calc (hM.restrictScalarsCohomologyGradingEquiv L.twist p
+        ((hM.restrictScalars L.twist).cohomologyGradingRepresentation p g x) : hM.Cohomology)
+      = hM.restrictScalarsCohomologyEquiv L.twist
+          ((hM.restrictScalars L.twist).cohomologyRepresentation g x) :=
+        (hM.coe_restrictScalarsCohomologyGradingEquiv_apply L.twist p _).trans
+          (congrArg (hM.restrictScalarsCohomologyEquiv L.twist)
+            ((hM.restrictScalars L.twist).coe_cohomologyGradingRepresentation_apply p g x))
+    _ = (L.monodromy g : R) • hM.cohomologyRepresentation g
+          (hM.restrictScalarsCohomologyEquiv L.twist x) :=
+        (Representation.IntertwiningMap.isIntertwining _ _
+          (L.cohomologyRepresentationEquivCharTwist hM).toIntertwiningMap g x).trans
+          (Representation.charTwist_apply_apply _ _ _ _)
+    _ = _ := congrArg ((L.monodromy g : R) • ·)
+          ((congrArg (hM.cohomologyRepresentation g)
+            (hM.coe_restrictScalarsCohomologyGradingEquiv_apply L.twist p x).symm).trans
+          (hM.coe_cohomologyGradingRepresentation_apply p g _).symm)
+
+/-- **The homology of `𝓕 ⊗ L` in a single degree is that of `𝓕` twisted by the monodromy of `L`**:
+`cohomologyRepresentationEquivCharTwist` restricts to an equivalence from the representation on
+the classes of `H(𝓕 ⊗ L)` of cohomological degree `p` to the representation on those of `H(𝓕)`,
+rescaled by the monodromy of `L`. -/
+noncomputable def cohomologyGradingRepresentationEquivCharTwist
+    (hM : IsDGRightModule (loopChain_isDGAlgebra B b R) ℳ dM) (p : ℤ) :
+    ((hM.restrictScalars L.twist).cohomologyGradingRepresentation p).Equiv
+      ((hM.cohomologyGradingRepresentation p).charTwist L.monodromy) :=
+  .mk (hM.restrictScalarsCohomologyGradingEquiv L.twist p) fun g ↦
+    LinearMap.ext fun x ↦ Subtype.ext <|
+      (L.coe_restrictScalarsCohomologyGradingEquiv_cohomologyGradingRepresentation hM p g x).trans
+        ((Submodule.coe_smul _ _).symm.trans (congrArg Subtype.val
+          (Representation.charTwist_apply_apply L.monodromy (hM.cohomologyGradingRepresentation p)
+            g _).symm))
+
+/-- The equivalence `H^p(𝓕 ⊗ L) ≅ H^p(𝓕)` sends a class to the class of the same cycle. -/
+@[simp]
+theorem cohomologyGradingRepresentationEquivCharTwist_apply
+    (hM : IsDGRightModule (loopChain_isDGAlgebra B b R) ℳ dM) (p : ℤ)
+    (x : (hM.restrictScalars L.twist).cohomologyGrading p) :
+    L.cohomologyGradingRepresentationEquivCharTwist hM p x =
+      hM.restrictScalarsCohomologyGradingEquiv L.twist p x :=
+  (rfl)
+
+/-- **The homology of `𝓕 ⊗ L` in a single degree is the homology of `𝓕` in that degree tensored
+with `L`**: `H_q(𝓕 ⊗ L) ≅ H_q(𝓕) ⊗ L` as representations of the fundamental group (the source's
+§2.3), stated in the cohomological degree `p = -q`. A class is sent to the class of the same cycle,
+tensored with `1` (`TauCeti.RankOneLocalSystem.cohomologyGradingRepresentationEquivTprod_apply`). -/
+noncomputable def cohomologyGradingRepresentationEquivTprod
+    (hM : IsDGRightModule (loopChain_isDGAlgebra B b R) ℳ dM) (p : ℤ) :
+    ((hM.restrictScalars L.twist).cohomologyGradingRepresentation p).Equiv
+      ((hM.cohomologyGradingRepresentation p).tprod
+        (Representation.ofLinearCharacter L.monodromy)) :=
+  (L.cohomologyGradingRepresentationEquivCharTwist hM p).trans
+    (Representation.tprodOfLinearCharacterEquivCharTwist _ _).symm
+
+/-- The equivalence `H^p(𝓕 ⊗ L) ≅ H^p(𝓕) ⊗ L` sends a class to the class of the same cycle,
+tensored with `1`. -/
+@[simp]
+theorem cohomologyGradingRepresentationEquivTprod_apply
+    (hM : IsDGRightModule (loopChain_isDGAlgebra B b R) ℳ dM) (p : ℤ)
+    (x : (hM.restrictScalars L.twist).cohomologyGrading p) :
+    L.cohomologyGradingRepresentationEquivTprod hM p x =
+      L.cohomologyGradingRepresentationEquivCharTwist hM p x ⊗ₜ[R] (1 : R) :=
+  Representation.tprodOfLinearCharacterEquivCharTwist_symm_apply L.monodromy
+    (hM.cohomologyGradingRepresentation p) _
 
 end RankOneLocalSystem
 

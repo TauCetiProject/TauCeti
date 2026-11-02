@@ -27,6 +27,8 @@ This file collects facts used to compare power series to a finite order `m`:
 
 * `PowerSeries.trunc_eq_zero_iff_le_order`: `trunc m φ = 0 ↔ m ≤ order φ`.
 * `PowerSeries.trunc_eq_trunc_iff`: `trunc m φ = trunc m ψ ↔ ∀ n < m, coeff n φ = coeff n ψ`.
+* `PowerSeries.coe_trunc_eq_self_of_coeff_eq_zero`: a series vanishing from degree `m` on is its
+  `m`-truncation.
 * `PowerSeries.trunc_inv_aux_eq_of_trunc_eq`, `PowerSeries.trunc_invOfUnit_eq_of_trunc_eq`,
   `PowerSeries.trunc_inv_eq_of_trunc_eq`, `PowerSeries.trunc_val_inv_eq_of_trunc_eq`: the `m`-th
   truncation of an inverse power series depends only on `trunc m`.
@@ -71,6 +73,14 @@ theorem trunc_eq_trunc_iff {m : ℕ} {φ ψ : R⟦X⟧} :
   rw [coeff_trunc, coeff_trunc]
   split_ifs with hn
   exacts [h n hn, rfl]
+
+/-- A power series whose coefficients vanish from degree `m` on is its `m`-truncation. -/
+theorem coe_trunc_eq_self_of_coeff_eq_zero {m : ℕ} {φ : R⟦X⟧} (h : ∀ n, m ≤ n → coeff n φ = 0) :
+    (trunc m φ : R⟦X⟧) = φ := by
+  ext n
+  rw [Polynomial.coeff_coe, coeff_trunc]
+  split_ifs with hn
+  exacts [rfl, (h n (not_lt.mp hn)).symm]
 
 /-- Equality of truncations at `m` implies equality of truncations at any `n ≤ m`. -/
 theorem trunc_eq_of_trunc_eq_of_le {n m : ℕ} {φ ψ : R⟦X⟧} (h : trunc m φ = trunc m ψ)
@@ -126,7 +136,7 @@ variable {R : Type*} [Ring R]
 /-- For `n < m`, the `n`-th coefficient of `PowerSeries.inv.aux a φ` depends only on `trunc m φ`. -/
 theorem coeff_inv_aux_eq_of_trunc_eq {n m : ℕ} (a : R) {φ ψ : R⟦X⟧} (h : trunc m φ = trunc m ψ)
     (hn : n < m) : coeff n (PowerSeries.inv.aux a φ) = coeff n (PowerSeries.inv.aux a ψ) := by
-  induction n using Nat.strong_induction_on with | h n ih =>
+  induction n using Nat.strong_induction_on with | ind n ih =>
   rw [coeff_inv_aux, coeff_inv_aux]
   split_ifs with hn0
   · rfl

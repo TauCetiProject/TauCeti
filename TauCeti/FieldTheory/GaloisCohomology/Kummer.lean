@@ -642,6 +642,17 @@ theorem units_map_separableClosureRingEquiv_symm_pow
   ext
   simp [← IsScalarTower.algebraMap_apply]
 
+variable {K n L} in
+/-- **Transporting an `n`th root of a conjugate to `Lˢ`**: if `α ∈ Kˢ` is an `n`th root of `σ b`
+for `b ∈ Lˣ`, its image under the inverse of the identification
+`separableClosureRingEquiv K L σ : Lˢ ≃+* Kˢ` is an `n`th root of `b`. -/
+theorem units_map_separableClosureRingEquiv_symm_pow_eq {b : Lˣ}
+    (hα : (α : SeparableClosure K) ^ n = σ b) :
+    Units.map (separableClosureRingEquiv K L σ).symm.toMonoidHom α ^ n =
+      Units.map (algebraMap L (SeparableClosure L)).toMonoidHom b := by
+  ext
+  simp [← map_pow, hα]
+
 /-- **Restriction of a Kummer cocycle class**: restricting the class of `g ↦ g α / α` to `G_L`
 gives the class of `h ↦ h β / β`, where `β ∈ Lˢ`, the image of the root `α` under the
 identification of separable closures, is an `n`th root of the image of `a` in `Lˣ`. The form for

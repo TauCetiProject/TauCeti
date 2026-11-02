@@ -113,6 +113,8 @@ universe u v w
 
 namespace Algebra.Etale
 
+section CommRing
+
 variable (K Ω A : Type*) [Field K] [Field Ω] [Algebra K Ω] [CommRing A] [Algebra K A]
 
 /-- **An étale algebra splits over a separably closed field.** For an étale algebra `A` over a
@@ -180,6 +182,10 @@ theorem mem_range_pi_id_iff [IsSepClosed Ω] [IsGalois K Ω] [Algebra.Etale K A]
         fun σ ↦ (tensorProductEquivPi K Ω A).injective <| funext fun φ ↦ by
           rw [tensorProductEquivPi_map, hh, AlgEquiv.aut_inv, AlgEquiv.apply_symm_apply]
     exact ⟨a, funext fun φ ↦ by simp⟩
+
+end CommRing
+
+variable {K Ω A : Type*} [Field K] [Field Ω] [Algebra K Ω] [Semiring A] [Algebra K A]
 
 variable (Ω) in
 /-- **Algebra maps into an étale algebra are equivariant maps of points.** For a separable

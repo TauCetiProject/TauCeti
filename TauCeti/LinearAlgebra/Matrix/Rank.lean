@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Matrix.Hermitian
 public import Mathlib.LinearAlgebra.Matrix.Rank
 import Mathlib.Data.Matrix.ColumnRowPartitioned
+import Mathlib.FieldTheory.Finiteness
 import Mathlib.LinearAlgebra.LinearIndependent.BaseChange
 
 /-!
@@ -31,6 +32,8 @@ self-adjoint for the Hermitian form making the basis orthonormal.
   `Matrix.rank_le_iff_forall_det_submatrix_eq_zero`: over a field, the rank is at least `p`
   exactly when some `p × p` minor is nonzero, and at most `p` exactly when every
   `(p + 1) × (p + 1)` minor vanishes.
+* `Matrix.finrank_ker_mulVecLin_of_linearIndependent_rows`: the kernel dimension of a matrix
+  over a field with independent rows.
 * `Matrix.rank_map`: the rank is unchanged by a homomorphism of fields applied to the entries.
 * `Matrix.linearIndependent_map_algebraMap_row_iff`: row independence is unchanged by a faithful
   scalar extension to a domain.
@@ -43,7 +46,11 @@ self-adjoint for the Hermitian form making the basis orthonormal.
   factorization gives a full-column-rank left factor with the same column range.
 * `Matrix.rank_add_rank_le_rank_mul_add_card`: Sylvester's rank inequality
   `rank A + rank B ≤ rank (A * B) + n` for an `m × n` matrix `A` and an `n × o` matrix `B`.
-* `Matrix.rank_conjAct_smul`: conjugation by an invertible matrix preserves the rank.
+* `LinearMap.rank_toMatrix`: the rank of the matrix of a linear map is the dimension of its range.
+* `Matrix.natCard_range_mulVec_eq_pow_rank`: the column space of a matrix over a field `K` has
+  `|K| ^ rank` elements.
+* `Matrix.rank_conjAct_smul` and `Matrix.rank_neg`: conjugation by an invertible matrix and
+  negation preserve the rank.
 * `Matrix.exists_eq_mul_fin_rank`: a rectangular matrix factors through `Fin A.rank`.
 * `Matrix.exists_eq_mul_of_rank_le` and `Matrix.rank_le_iff_exists_eq_mul`: a matrix has rank at
   most `r` exactly when it factors through `Fin r`.
@@ -158,6 +165,19 @@ theorem linearIndependent_rat_row_iff {A : Matrix m n ℤ} :
 
 end LinearIndependent
 
+section KernelDimension
+
+/-- The kernel of a matrix over a field with independent rows has dimension equal to its
+number of columns minus its number of rows. -/
+theorem finrank_ker_mulVecLin_of_linearIndependent_rows {K m ι : Type*} [Field K]
+    [Fintype m] [Fintype ι] {A : Matrix m ι K} (hA : LinearIndependent K A.row) :
+    Module.finrank K (LinearMap.ker A.mulVecLin) = Fintype.card ι - Fintype.card m := by
+  have h := A.mulVecLin.finrank_range_add_finrank_ker
+  rw [← Matrix.rank, hA.rank_matrix, Module.finrank_fintype_fun_eq_card] at h
+  omega
+
+end KernelDimension
+
 section FullColumnRank
 
 variable {R m n : Type*} [CommSemiring R] [OrzechProperty R] [Nontrivial R] [Fintype n]
@@ -207,6 +227,17 @@ theorem range_left_factor_eq {ι : Type*} [Fintype ι]
 
 end ExactRankFactorRange
 
+section ToMatrix
+
+/-- The rank of the matrix of a linear map in any pair of bases is the dimension of its range. -/
+theorem _root_.LinearMap.rank_toMatrix {R M₁ M₂ : Type*} [CommSemiring R] [AddCommMonoid M₁]
+    [Module R M₁] [AddCommMonoid M₂] [Module R M₂] {m n : Type*} [Fintype m] [DecidableEq m]
+    [Finite n] (f : M₁ →ₗ[R] M₂) (v₁ : Module.Basis m R M₁) (v₂ : Module.Basis n R M₂) :
+    (LinearMap.toMatrix v₁ v₂ f).rank = Module.finrank R (LinearMap.range f) := by
+  rw [rank_eq_finrank_range_toLin _ v₂ v₁, toLin_toMatrix]
+
+end ToMatrix
+
 section Conjugation
 
 /-- Conjugation by an invertible matrix preserves the rank. -/
@@ -215,6 +246,12 @@ theorem rank_conjAct_smul {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R]
     (g : ConjAct (GL n R)) (A : Matrix n n R) : (g • A).rank = A.rank := by
   rw [ConjAct.units_smul_def, rank_mul_eq_left_of_isUnit_det _ _ (isUnits_det_units _),
     rank_mul_eq_right_of_isUnit_det _ _ (isUnits_det_units _)]
+
+/-- Negation preserves the rank. -/
+@[simp]
+theorem rank_neg {m n R : Type*} [Fintype n] [CommRing R] (A : Matrix m n R) :
+    (-A).rank = A.rank := by
+  simpa using rank_smul_of_mem_nonZeroDivisors A (isUnit_one (M := R)).neg.mem_nonZeroDivisors
 
 end Conjugation
 
@@ -231,6 +268,13 @@ theorem rank_eq_card_iff_vecMul_injective (B : Matrix m n K) :
     linearIndependent_iff_card_eq_finrank_span, Set.finrank, eq_comm]
 
 end
+
+/-- The column space of a matrix over a field `K` has `|K| ^ rank` elements. Over an infinite
+field both sides are `0` unless the rank is `0`. -/
+theorem natCard_range_mulVec_eq_pow_rank (A : Matrix m n K) :
+    Nat.card (Set.range A.mulVec) = Nat.card K ^ A.rank := by
+  rw [rank, ← Module.natCard_eq_pow_finrank, ← coe_mulVecLin, ← LinearMap.coe_range,
+    SetLike.coe_sort_coe]
 
 /-- Every matrix with finitely many columns over a field factors through a space whose dimension
 is its rank. The factorization also applies to a rank-zero matrix, with inner index type `Fin 0`. -/

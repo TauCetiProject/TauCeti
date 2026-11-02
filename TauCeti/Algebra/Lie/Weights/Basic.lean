@@ -164,7 +164,7 @@ theorem finrank_inf_weightSpace {K : Type*} [CommRing K] [LieAlgebra K L]
     (N : LieSubmodule K L M) (χ : H → K) :
     finrank K ((weightSpace M χ).toSubmodule ⊓ N.toSubmodule : Submodule K M)
       = finrank K (weightSpace ↥N χ) := by
-  rw [← N.toSubmodule_map_weightSpace_incl χ, TauCeti.finrank_toSubmodule]
+  rw [← N.toSubmodule_map_weightSpace_incl χ, LieSubmodule.finrank_toSubmodule]
   exact (LieSubmodule.equivMapOfInjective (weightSpace ↥N χ)
     (f := N.incl.restrictLie H) (injective_incl N)).toLinearEquiv.finrank_eq.symm
 
@@ -188,7 +188,7 @@ theorem finrank_inf_genWeightSpace {K : Type*} [CommRing K] [LieAlgebra K L]
     (N : LieSubmodule K L M) (χ : H → K) :
     finrank K ((genWeightSpace M χ).toSubmodule ⊓ N.toSubmodule : Submodule K M)
       = finrank K (genWeightSpace ↥N χ) := by
-  rw [← N.toSubmodule_map_genWeightSpace_incl χ, TauCeti.finrank_toSubmodule]
+  rw [← N.toSubmodule_map_genWeightSpace_incl χ, LieSubmodule.finrank_toSubmodule]
   exact (LieSubmodule.equivMapOfInjective (genWeightSpace ↥N χ)
     (f := N.incl.restrictLie H) (injective_incl N)).toLinearEquiv.finrank_eq.symm
 

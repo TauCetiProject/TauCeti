@@ -261,6 +261,19 @@ theorem fusionMatrix_apply {C : Type u} [Category.{v} C] [Preadditive C] [Linear
     [MonoidalCategory C] (S T U : SimpleClasses C) : fusionMatrix k S T U = fusionCoeff k S T U :=
   (rfl)
 
+/-- When the tensor unit is simple, its fusion matrix is the identity matrix:
+`N_{𝟙 T}^U = 1` if `T = U` and `0` otherwise. -/
+@[simp]
+theorem fusionMatrix_classOf_unit [IsAlgClosed k] {C : Type u} [Category.{v} C] [Preadditive C]
+    [HasKernels C] [Linear k C] [∀ X Y : C, FiniteDimensional k (X ⟶ Y)] [MonoidalCategory C]
+    [Simple (𝟙_ C)] [DecidableEq (SimpleClasses C)] :
+    fusionMatrix k (SimpleClasses.classOf (𝟙_ C)) = 1 := by
+  ext T U
+  rw [fusionMatrix_apply, fusionCoeff_def,
+    (Linear.homCongr k (whiskerRightIso (SimpleClasses.classOfReprIso (𝟙_ C)) T.repr ≪≫ λ_ T.repr)
+      (Iso.refl U.repr)).finrank_eq, finrank_hom_simple_simple, Matrix.one_apply]
+  simp only [← SimpleClasses.eq_iff_nonempty_iso]
+
 variable [IsAlgClosed k] {C : Type u} [Category.{v} C] [Abelian C] [Linear k C]
   [IsFiniteSemisimpleCategory C] [∀ X Y : C, FiniteDimensional k (X ⟶ Y)] [MonoidalCategory C]
 
@@ -275,21 +288,6 @@ theorem fusionCoeff_eq_finrank_hom (S T U : SimpleClasses C) :
     fusionCoeff k S T U = Module.finrank k (U.repr ⟶ S.repr ⊗ T.repr) := by
   rw [fusionCoeff_eq_simpleMultiplicities, finrank_hom_simple_eq_simpleMultiplicities,
     SimpleClasses.classOf_repr]
-
-omit [IsFiniteSemisimpleCategory C] in
-/-- When the tensor unit is simple, its fusion matrix is the identity matrix:
-`N_{𝟙 T}^U = 1` if `T = U` and `0` otherwise. -/
-@[simp]
-theorem fusionMatrix_classOf_unit [Simple (𝟙_ C)] [DecidableEq (SimpleClasses C)] :
-    fusionMatrix k (SimpleClasses.classOf (𝟙_ C)) = 1 := by
-  ext T U
-  rw [fusionMatrix_apply, fusionCoeff_def,
-    (Linear.homCongr k (whiskerRightIso (SimpleClasses.classOfReprIso (𝟙_ C)) T.repr ≪≫ λ_ T.repr)
-      (Iso.refl U.repr)).finrank_eq, finrank_hom_simple_simple, Matrix.one_apply]
-  by_cases h : T = U
-  · subst h
-    rw [ite_eq_left ⟨Iso.refl _⟩, ite_eq_left rfl]
-  · rw [ite_eq_right (mt (SimpleClasses.eq_iff_nonempty_iso T U).2 h), ite_eq_right h]
 
 namespace SplitK0
 
@@ -322,8 +320,8 @@ open Matrix in
 /-- The values of a ring homomorphism `ψ` on the basis of simple classes form an eigenvector of
 each fusion matrix, with eigenvalue the value of `ψ` on that class:
 `∑ U, N_{ST}^U ψ [U] = ψ [S] ψ [T]` for all simple classes `S` and `T`. -/
-theorem fusionMatrix_map_mulVec_ringHom [Fintype (SimpleClasses C)] {R : Type*} [Ring R]
-    (ψ : SplitK0 C →+* R) (S : SimpleClasses C) :
+theorem fusionMatrix_map_mulVec_ringHom [Fintype (SimpleClasses C)] {R : Type*}
+    [NonAssocSemiring R] (ψ : SplitK0 C →+* R) (S : SimpleClasses C) :
     (fusionMatrix k S).map (Nat.cast : ℕ → R) *ᵥ (fun T ↦ ψ (simpleBasis C T)) =
       ψ (simpleBasis C S) • fun T ↦ ψ (simpleBasis C T) := by
   ext T

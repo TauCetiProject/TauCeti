@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.LinearMap.Index
+public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.RestrictScalars
 public import Mathlib.Topology.Algebra.Module.Equiv.Basic
 
 /-!
@@ -36,6 +38,9 @@ operations that need them.
   kernels and cokernels.
 * `ContinuousLinearMap.index_of_surjective` and `index_of_injective`: the index in the one-sided
   cases.
+* `ContinuousLinearMap.index_restrictScalars`: restricting scalars along a tower of division rings
+  `K → L` multiplies the index by `finrank K L`; `index_restrictScalars_real` specializes this
+  to the realification of a complex-linear map, whose index is twice the complex index.
 * `ContinuousLinearMap.finrank_ker_eq_iff_index_eq` and
   `bijective_of_surjective_of_index_eq_zero`: index zero detects bijectivity for a surjective map
   with finite-dimensional kernel.
@@ -208,5 +213,33 @@ lemma index_smul (T : E →L[𝕜] F) {c : 𝕜} (hc : c ≠ 0) :
     ContinuousLinearMap.toLinearMap_smul, LinearMap.index_smul _ hc]
 
 end Field
+
+section RestrictScalars
+
+variable (K : Type*) {L E F : Type*} [DivisionRing K] [DivisionRing L] [Module K L]
+  [AddCommGroup E] [Module K E] [Module L E] [IsScalarTower K L E] [TopologicalSpace E]
+  [AddCommGroup F] [Module K F] [Module L F] [IsScalarTower K L F] [TopologicalSpace F]
+
+/-- Restricting scalars along a tower of division rings `K → L` multiplies the index by
+`finrank K L`. -/
+@[simp]
+lemma index_restrictScalars (T : E →L[L] F) :
+    (T.restrictScalars K).index = finrank K L * T.index := by
+  rw [index_def, index_def, coe_restrictScalars, LinearMap.index_restrictScalars]
+
+end RestrictScalars
+
+section Complex
+
+variable {E F : Type*}
+  [AddCommGroup E] [Module ℝ E] [Module ℂ E] [IsScalarTower ℝ ℂ E] [TopologicalSpace E]
+  [AddCommGroup F] [Module ℝ F] [Module ℂ F] [IsScalarTower ℝ ℂ F] [TopologicalSpace F]
+
+/-- The realification of a complex-linear operator has twice its complex index. -/
+lemma index_restrictScalars_real (T : E →L[ℂ] F) :
+    (T.restrictScalars ℝ).index = 2 * T.index := by
+  simp
+
+end Complex
 
 end ContinuousLinearMap

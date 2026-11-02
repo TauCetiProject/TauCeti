@@ -417,7 +417,7 @@ and is `restrictedMvPowerSeriesBaseChange_injective_of_presentation`.
 strictly stronger: `M` carries `ContinuousAdd` rather than `IsTopologicalAddGroup`, so without
 translation invariance global openness does not follow from openness at `0`. A caller holding
 `IsOpenMap p` passes `map_zero p ▸ hopen.nhds_le 0`; over a complete Tate ring that open map is
-`TauCeti.Huber.IsTateRing.isOpenMap`. -/
+`LinearMap.isOpenMap_of_isTateRing`. -/
 theorem restrictedMvPowerSeriesBaseChange_surjective_of_presentation {m : ℕ} {M : Type*}
     [AddCommMonoid M] [TopologicalSpace M] [Module A M] [ContinuousAdd M]
     [ContinuousSMul A M] [(nhds (0 : Fin m → A)).IsCountablyGenerated]

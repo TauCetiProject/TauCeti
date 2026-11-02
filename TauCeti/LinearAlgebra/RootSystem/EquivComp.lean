@@ -42,6 +42,8 @@ instance, so they are not restated here.
   `RootPairing.Equiv.coweightEquiv_autCongr_apply` and
   `RootPairing.Equiv.indexEquiv_autCongr_apply`: the weight-space map, the coweight-space map and
   the index permutation of a conjugated automorphism are the conjugates of the originals.
+* `RootPairing.Equiv.smul_index_eq_indexEquiv`: an automorphism acts on root indices through its
+  index permutation.
 * `RootPairing.Equiv.autCongr_smul` and `RootPairing.Equiv.autCongr_smul_index`: conjugation
   transports the actions on weight vectors and on root indices.
 * `RootPairing.Equiv.autCongr_id` and `RootPairing.Equiv.autCongr_comp`: conjugation is
@@ -100,6 +102,14 @@ theorem _root_.RootPairing.Equiv.symm_comp (e : P.Equiv Q) (f : Q.Equiv S) :
     RootPairing.Equiv.symm P S (RootPairing.Equiv.comp f e) =
       RootPairing.Equiv.comp (RootPairing.Equiv.symm P Q e) (RootPairing.Equiv.symm Q S f) := by
   ext x <;> simp
+
+/-- The action of the automorphism group on root indices is through `indexEquiv`.
+
+Not a `simp` lemma: it would rewrite the left-hand side of the `simp` lemma
+`RootPairing.Equiv.autCongr_smul_index`, which is stated for the action. -/
+theorem _root_.RootPairing.Equiv.smul_index_eq_indexEquiv (g : Aut P) (i : ι) :
+    g • i = g.indexEquiv i :=
+  (rfl)
 
 noncomputable section Conjugation
 
@@ -162,9 +172,8 @@ theorem _root_.RootPairing.Equiv.autCongr_smul (e : P.Equiv Q) (g : Aut P) (x : 
 @[simp]
 theorem _root_.RootPairing.Equiv.autCongr_smul_index (e : P.Equiv Q) (g : Aut P) (i : ι) :
     e.autCongr g • e.indexEquiv i = e.indexEquiv (g • i) := by
-  have h : e.autCongr g • e.indexEquiv i = (e.autCongr g).indexEquiv (e.indexEquiv i) := (rfl)
-  have h' : g • i = g.indexEquiv i := (rfl)
-  rw [h, h', RootPairing.Equiv.indexEquiv_autCongr_apply, Equiv.symm_apply_apply]
+  rw [RootPairing.Equiv.smul_index_eq_indexEquiv, RootPairing.Equiv.smul_index_eq_indexEquiv,
+    RootPairing.Equiv.indexEquiv_autCongr_apply, Equiv.symm_apply_apply]
 
 /-- Conjugation by the identity equivalence is the identity. -/
 @[simp]

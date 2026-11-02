@@ -20,7 +20,9 @@ for the middle map: `φ.τ₂` is a quasi-isomorphism when `φ.τ₁` and `φ.τ
 transfer a quasi-isomorphism to the middle terms of short exact sequences after comparing their
 outer terms, as for the short exact sequences associated with maps of mapping cones. It also proves
 the degreewise statements for the left map `φ.τ₁`, which are the dimension-shifting steps that
-compare the homology of a kernel with that of a cokernel one degree lower.
+compare the homology of a kernel with that of a cokernel one degree lower. For a single short
+exact sequence, it characterizes when either of its maps is a quasi-isomorphism by acyclicity of
+the opposite outer term.
 
 It also proves that the connecting maps of a `3 × 3` diagram of complexes with short exact rows
 and columns anticommute: the two composites of connecting maps from the homology of one corner to
@@ -44,6 +46,10 @@ variable, such as for the cup product in Tate cohomology.
   to induce a mono, epi or iso in a given degree.
 * `HomologicalComplex.HomologySequence.quasiIso_τ₁`: if `φ.τ₂` and `φ.τ₃` are
   quasi-isomorphisms, so is `φ.τ₁`.
+* `CategoryTheory.ShortComplex.ShortExact.quasiIso_f_iff`,
+  `CategoryTheory.ShortComplex.ShortExact.quasiIso_g_iff`: in a short exact sequence of
+  complexes, the first map is a quasi-isomorphism if and only if the third term is acyclic, and
+  the second map is one if and only if the first term is acyclic.
 * `HomologicalComplex.HomologySequence.δ_comp_δ_eq_neg`: the connecting maps of a `3 × 3` diagram
   with short exact rows and columns anticommute.
 -/
@@ -203,6 +209,47 @@ lemma quasiIso_τ₁ (h₂ : QuasiIso φ.τ₂) (h₃ : QuasiIso φ.τ₃) :
 end HomologySequence
 
 end HomologicalComplex
+
+/-! ### Short exact sequences with an acyclic outer term -/
+
+namespace CategoryTheory.ShortComplex.ShortExact
+
+open HomologicalComplex
+
+variable {S : ShortComplex (HomologicalComplex C c)} (hS : S.ShortExact)
+include hS
+
+/-- In a short exact sequence of complexes, the first map is a quasi-isomorphism if and only if
+the third term is acyclic. -/
+lemma quasiIso_f_iff : _root_.QuasiIso S.f ↔ S.X₃.Acyclic := by
+  refine ⟨hS.acyclic_X₃, fun h ↦ (_root_.quasiIso_iff _).2 fun j ↦ ?_⟩
+  rw [quasiIsoAt_iff_isIso_homologyMap]
+  have : Epi (HomologicalComplex.homologyMap S.f j) :=
+    (hS.homology_exact₂ j).epi_f ((h j).isZero_homology.eq_of_tgt _ _)
+  have : Mono (HomologicalComplex.homologyMap S.f j) := by
+    by_cases! hj : ∃ i, c.Rel i j
+    · obtain ⟨i, hij⟩ := hj
+      exact (hS.homology_exact₁ i j hij).mono_g ((h i).isZero_homology.eq_of_src _ _)
+    · have := hS.mono_f
+      exact mono_homologyMap_of_mono_of_not_rel S.f j hj
+  exact isIso_of_mono_of_epi _
+
+/-- In a short exact sequence of complexes, the second map is a quasi-isomorphism if and only if
+the first term is acyclic. -/
+lemma quasiIso_g_iff : _root_.QuasiIso S.g ↔ S.X₁.Acyclic := by
+  refine ⟨hS.acyclic_X₁, fun h ↦ (_root_.quasiIso_iff _).2 fun i ↦ ?_⟩
+  rw [quasiIsoAt_iff_isIso_homologyMap]
+  have : Mono (HomologicalComplex.homologyMap S.g i) :=
+    (hS.homology_exact₂ i).mono_g ((h i).isZero_homology.eq_of_src _ _)
+  have : Epi (HomologicalComplex.homologyMap S.g i) := by
+    by_cases! hi : ∃ j, c.Rel i j
+    · obtain ⟨j, hij⟩ := hi
+      exact (hS.homology_exact₃ i j hij).epi_f ((h j).isZero_homology.eq_of_tgt _ _)
+    · have := hS.epi_g
+      exact epi_homologyMap_of_epi_of_not_rel S.g i hi
+  exact isIso_of_mono_of_epi _
+
+end CategoryTheory.ShortComplex.ShortExact
 
 
 /-! ### Anticommutativity of the connecting maps of a `3 × 3` diagram -/

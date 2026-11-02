@@ -11,8 +11,9 @@ public import Mathlib.MeasureTheory.Constructions.BorelSpace.Complex
 /-!
 # Real spectral sets of partial linear maps
 
-The real points of the spectrum of a partial operator on a complex Banach space
-form a closed subset of `ℝ`, and hence a Borel measurable set. This permits
+The real points of the spectrum of a partial operator on a complex normed space form a closed
+subset of `ℝ`, and hence a Borel measurable set, when the continuous endomorphism algebra has
+summable geometric series. In particular, this holds on complex Banach spaces. This permits
 real spectral sets to be used in measure-theoretic constructions without
 assuming that the operator is bounded or self-adjoint.
 
@@ -29,16 +30,17 @@ public section
 
 namespace LinearPMap
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+  [HasSummableGeomSeries (E →L[ℂ] E)]
 
-/-- The real points of the spectrum of a partial operator on a complex Banach
-space form a closed set. -/
+/-- The real points of the spectrum form a closed set when the continuous endomorphism
+algebra has summable geometric series. -/
 theorem isClosed_preimage_ofReal_spectrum (A : E →ₗ.[ℂ] E) :
     IsClosed (Complex.ofReal ⁻¹' A.spectrum) :=
   A.isClosed_spectrum.preimage Complex.continuous_ofReal
 
-/-- The real points of the spectrum of a partial operator on a complex Banach
-space form a Borel measurable subset of `ℝ`. -/
+/-- The real points of the spectrum form a Borel measurable subset of `ℝ` when the
+continuous endomorphism algebra has summable geometric series. -/
 theorem measurableSet_preimage_ofReal_spectrum (A : E →ₗ.[ℂ] E) :
     MeasurableSet (Complex.ofReal ⁻¹' A.spectrum) :=
   (A.isClosed_preimage_ofReal_spectrum).measurableSet

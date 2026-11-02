@@ -141,7 +141,7 @@ private theorem map_adjacent_chainMeasure_of_map_eval
           (Prod.map last id) := by rw [htraj]
     _ = ((chainMeasure pi).map (frestrictLe n)).map last ⊗ₘ (pi n).condKernel := by
           simpa only [chainKernel, last] using
-            map_prodMap_compProd_comap ((chainMeasure pi).map (frestrictLe n))
+            Measure.map_prodMap_compProd_comap ((chainMeasure pi).map (frestrictLe n))
               (pi n).condKernel hlast
     _ = (pi n).fst ⊗ₘ (pi n).condKernel := by rw [hmarginal]
     _ = pi n := MeasureTheory.Measure.disintegrate _ _

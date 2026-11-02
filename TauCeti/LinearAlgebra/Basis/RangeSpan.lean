@@ -12,7 +12,9 @@ public import Mathlib.LinearAlgebra.Matrix.Basis
 
 A semilinear map has the same scalar-extended image span when evaluated on a basis as when evaluated
 on its entire domain. Over a coefficient algebra `A` of the scalars, the `A`-span of one basis lies
-in that of another when the change-of-basis matrix has entries in the image of `A`.
+in that of another when the change-of-basis matrix has entries in the image of `A`. Through a
+linear equivalence `L : M ≃ₗ[R] M₁ × M₂`, the vectors `L⁻¹ (0, bᵢ)` for a basis `b` of `M₂` span
+the kernel of `u ↦ (L u).1`.
 -/
 
 public section
@@ -54,5 +56,22 @@ theorem span_range_le_span_range_of_forall_toMatrix_mem
   dsimp only
   rw [← ha, IsScalarTower.algebraMap_smul]
   exact Submodule.smul_mem _ a (Submodule.subset_span (Set.mem_range_self i))
+
+/-- Through a linear equivalence `L : M ≃ₗ[R] M₁ × M₂`, the vectors `L⁻¹ (0, bᵢ)` for a basis `b`
+of `M₂` span the kernel of the first component `u ↦ (L u).1`. -/
+theorem span_range_symm_inr_eq_ker {R M M₁ M₂ ι : Type*} [Semiring R]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid M₁] [Module R M₁]
+    [AddCommMonoid M₂] [Module R M₂] (b : Module.Basis ι R M₂) (L : M ≃ₗ[R] M₁ × M₂) :
+    Submodule.span R (Set.range fun i ↦ L.symm (0, b i)) =
+      LinearMap.ker (LinearMap.fst R M₁ M₂ ∘ₗ L.toLinearMap) := by
+  -- The vectors are the values of `L.symm ∘ inr` on the basis `b`, so they span its range.
+  have hspan : Submodule.span R (Set.range fun i ↦ L.symm (0, b i)) =
+      LinearMap.range (L.symm.toLinearMap ∘ₗ LinearMap.inr R M₁ M₂) := by
+    rw [← Submodule.span_eq (LinearMap.range _), LinearMap.coe_range,
+      span_range_eq_span_range_basis b]
+    rfl
+  -- The range of `L.symm ∘ inr` is the image under `L.symm` of `{0} × M₂ = ker (fst)`.
+  rw [hspan, LinearMap.range_comp, LinearMap.range_inr, LinearMap.ker_comp,
+    Submodule.map_equiv_eq_comap_symm, L.symm_symm]
 
 end Module.Basis

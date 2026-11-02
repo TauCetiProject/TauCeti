@@ -22,10 +22,9 @@ The coefficient matrix has the expected block form. Its diagonal blocks are the 
 matrices of `N` and `M ⧸ N`, its lower-left block is zero because `N` is stable, and its
 upper-right block records the extension class.
 
-This is the extension step needed by the Kolchin inductions in Layer 5, "Unipotent groups", of the
-ReductiveGroups roadmap. A weight line supplies the first diagonal block; applying the induction
-hypothesis to the quotient and this file to the resulting extension constructs the complete
-invariant flag.
+This is the extension step needed by the Kolchin inductions on unipotent groups. A weight line
+supplies the first diagonal block; applying the induction hypothesis to the quotient and this file
+to the resulting extension constructs the complete invariant flag.
 
 ## Main declarations
 

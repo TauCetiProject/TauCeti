@@ -76,7 +76,7 @@ theorem IsProP.exists_isOpen_trace_eq_zero_of_mem_H0 (hG : IsProP p G) (M : Type
   have : U.toSubgroup.FiniteIndex := Subgroup.finiteIndex_of_finite_quotient
   have : V.toSubgroup.FiniteIndex := Subgroup.finiteIndex_of_finite_quotient
   refine ⟨V.toSubgroup, inferInstance, V.isOpen, fun f hf ↦ ?_⟩
-  refine DiscreteCoind.trace_eq_zero_of_forall_smul_eq hVU (fun u hu m ↦ hU u hu m) (fun m ↦ ?_)
+  refine DiscreteCoind.trace_eq_zero_of_forall_smul_eq hVU (fun u hu ↦ hU u hu (f 1)) (fun m ↦ ?_)
     ((FixedPoints.mem_addSubgroup _ _ f).1 hf)
   obtain ⟨c, hc⟩ := hdvd
   rw [hc, mul_nsmul, hk, nsmul_zero]

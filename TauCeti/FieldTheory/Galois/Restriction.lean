@@ -32,6 +32,8 @@ of restriction of scalars.
   intermediate field intertwines restriction with the action on units.
 * `AlgHom.restrictNormalHom_comp`: precomposing the embedding with an automorphism conjugates
   restriction.
+* `AlgHom.restrictNormalHom_restrictNormalHom`: restriction along a composite of embeddings is
+  the composite of the restrictions.
 * `IntermediateField.normalClosure_eq_fieldRange` and `AlgHom.exists_comp_eq_of_normal`: the
   embeddings of a normal extension all have the same image and differ by automorphisms.
 * `AlgHom.restrictNormalHom_surjective` and `AlgHom.ker_restrictNormalHom`: for a normal `K/F`
@@ -137,6 +139,16 @@ theorem _root_.AlgHom.restrictNormalHom_comp (f : M →ₐ[F] K) [Normal F M] (�
   rw [AlgEquiv.mul_apply, AlgEquiv.mul_apply, AlgEquiv.aut_inv, AlgHom.comp_apply,
     AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, AlgEquiv.apply_symm_apply,
     AlgHom.restrictNormalHom_commutes]
+
+/-- **Restriction is transitive along composed embeddings**: restricting `σ` along `f : M → K`
+and then along `h : N → M` is restricting `σ` along `f ∘ h`. -/
+@[simp]
+theorem _root_.AlgHom.restrictNormalHom_restrictNormalHom {N : Type*} [Field N] [Algebra F N]
+    (f : M →ₐ[F] K) (h : N →ₐ[F] M) [Normal F M] [Normal F N] (σ : Gal(K/F)) :
+    h.restrictNormalHom (f.restrictNormalHom σ) = (f.comp h).restrictNormalHom σ :=
+  ((f.comp h).restrictNormalHom_eq_iff.2 fun x ↦ by
+    rw [AlgHom.comp_apply, AlgHom.comp_apply, h.restrictNormalHom_commutes,
+      f.restrictNormalHom_commutes]).symm
 
 /-- **The normal closure of a normal extension is its image**: every `F`-embedding of a normal
 extension `M/F` into `K` has image the normal closure of `M` in `K`, so all of them have the

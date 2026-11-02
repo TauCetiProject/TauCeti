@@ -35,8 +35,9 @@ The comparison is the connecting map of the long exact sequence for
 direct summand of `M` over `ℤ_p`. Surjectivity needs only projectivity of `P₀`, since
 `ℚ_p / ℤ_p` is injective over `ℤ_p` and every character of the torsion extends to `M`.
 
-The modules may carry an action of a ring `A`, compatible with that of `ℤ_p`, for which the maps
-are `A`-linear; the connecting map is then compatible with the contragredient actions of `A`:
+The construction and surjectivity allow an action of a semiring `A`, compatible with that of
+`ℤ_p`, for which the maps are `A`-linear. The kernel and cokernel statements assume `A` is a ring.
+The connecting map is compatible with the contragredient actions of `A`:
 precomposing a functional on `P₁` with the action of `a ∈ A` corresponds to precomposing a character
 of `M[p^∞]` with the action of `a`. Applied to the group algebra `A = ℤ_p[G]` of a finite group,
 this identifies `E¹(M) = Ext¹_{ℤ_p[G]}(M, ℤ_p[G])` of a module of projective dimension one with the
@@ -71,7 +72,9 @@ open Module
 
 namespace TauCeti
 
-variable {p : ℕ} [Fact p.Prime] {A : Type*} [Ring A] [SMul ℤ_[p] A]
+section
+
+variable {p : ℕ} [Fact p.Prime] {A : Type*} [Semiring A] [SMul ℤ_[p] A]
   {P₁ P₀ M : Type*} [AddCommGroup P₁] [Module A P₁] [Module ℤ_[p] P₁] [IsScalarTower ℤ_[p] A P₁]
   [AddCommGroup P₀] [Module A P₀] [Module ℤ_[p] P₀] [IsScalarTower ℤ_[p] A P₀]
   [AddCommGroup M] [Module A M] {f : P₁ →ₗ[A] P₀} {π : P₀ →ₗ[A] M}
@@ -179,8 +182,11 @@ private theorem torsionDualFun_eq (ψ : Dual ℤ_[p] P₁) (y : (pPowerTorsion p
   set y' := (exists_lift hπ ⟨π y, y.2⟩).choose
   -- Two lifts differ by an element of the range of `f`, on which the extension is integral.
   obtain ⟨j, hj⟩ := (hf ((y' : P₀) - y)).mp (by rw [map_sub, hy, sub_self])
-  rw [torsionDualFun, Submodule.Quotient.eq, ← map_sub,
-    extendDual_eq_of_eq hf hfi ψ (y' - y) (k := j) (by rw [Submodule.coe_sub, hj])]
+  have hy' : y' = y + ⟨f j, by simp [hf.apply_apply_eq_zero]⟩ :=
+    Subtype.ext (by simp [hj])
+  dsimp only [y'] at hy'
+  rw [torsionDualFun, Submodule.Quotient.eq, hy', map_add, add_sub_cancel_left,
+    extendDual_eq_of_eq hf hfi ψ _ (k := j) rfl]
   exact Submodule.mem_one.mpr ⟨ψ j, rfl⟩
 
 variable [Module ℤ_[p] M] [IsScalarTower ℤ_[p] A M]
@@ -283,8 +289,10 @@ on `M`. -/
 theorem torsionDualMap_surjective [Module.Projective ℤ_[p] P₀] :
     Function.Surjective (torsionDualMap p hf hfi hπ) := by
   intro χ
+  -- Restrict the torsion submodule to `ℤ_p` so it inherits an additive group structure.
   obtain ⟨χ', hχ'⟩ := Module.Injective.extension_property ℤ_[p] _ _ _
-    ((pPowerTorsion p A M).subtype.restrictScalars ℤ_[p]) (Submodule.subtype_injective _) χ
+    ((pPowerTorsion p A M).restrictScalars ℤ_[p]).subtype (Submodule.subtype_injective _)
+    (χ ∘ₗ ((pPowerTorsion p A M).restrictScalarsEquiv ℤ_[p] A M).restrictScalars ℤ_[p])
   obtain ⟨Φ, hΦ⟩ := projective_lifting_property (1 : Submodule ℤ_[p] ℚ_[p]).mkQ
     (χ' ∘ₗ π.restrictScalars ℤ_[p]) (Submodule.mkQ_surjective _)
   have hΦx (x : P₀) : Submodule.Quotient.mk (Φ x) = χ' (π x) := LinearMap.congr_fun hΦ x
@@ -299,6 +307,8 @@ theorem torsionDualMap_surjective [Module.Projective ℤ_[p] P₀] :
 
 end TorsionDual
 
+end
+
 section Bijective
 
 /-!
@@ -310,7 +320,11 @@ projective, the connecting map induces the cokernel equivalence. Finite generati
 implies the common quotient-projectivity hypothesis.
 -/
 
-variable [Module ℤ_[p] M] [IsScalarTower ℤ_[p] A M]
+variable {p : ℕ} [Fact p.Prime] {A : Type*} [Ring A] [SMul ℤ_[p] A]
+  {P₁ P₀ M : Type*} [AddCommGroup P₁] [Module A P₁] [Module ℤ_[p] P₁] [IsScalarTower ℤ_[p] A P₁]
+  [AddCommGroup P₀] [Module A P₀] [Module ℤ_[p] P₀] [IsScalarTower ℤ_[p] A P₀]
+  [AddCommGroup M] [Module A M] [Module ℤ_[p] M] [IsScalarTower ℤ_[p] A M]
+  {f : P₁ →ₗ[A] P₀} {π : P₀ →ₗ[A] M}
 
 variable [Module.Projective ℤ_[p] (M ⧸ pPowerTorsion p A M)]
   (hf : Function.Exact f π) (hfi : Function.Injective f) (hπ : Function.Surjective π)

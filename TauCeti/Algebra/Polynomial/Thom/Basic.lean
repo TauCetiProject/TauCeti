@@ -411,6 +411,15 @@ theorem eval_ne_zero_of_derivativeSign_eq (p : R[X]) (hrolle : PolynomialRolle R
   have hy := (hsign hy).trans (hsign hx).symm
   rwa [hx0, sign_zero, sign_eq_zero_iff] at hy
 
+/-- If all derivative signs of `p` agree at two distinct points, then every nonzero derivative
+of `p` has a nonzero sign there. -/
+theorem derivativeSign_ne_zero_of_derivativeSign_eq (p : R[X]) (hrolle : PolynomialRolle R)
+    {a b : R} (hab : a ≠ b) (h : derivativeSign p a = derivativeSign p b) {k : ℕ}
+    (hk : derivative^[k] p ≠ 0) : derivativeSign p a k ≠ 0 := by
+  rw [derivativeSign_ne_zero]
+  refine eval_ne_zero_of_derivativeSign_eq _ hrolle hk hab (fun j ↦ ?_) left_mem_uIcc
+  simp only [derivativeSign_iterate_derivative, h]
+
 /-- Roots with equal signs of every positive-order derivative are equal.
 The polynomial need not be squarefree. -/
 theorem eq_of_derivativeSign_eq (p : R[X]) (hrolle : PolynomialRolle R) (hp : p ≠ 0) {a b : R}

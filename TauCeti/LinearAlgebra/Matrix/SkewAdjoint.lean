@@ -29,6 +29,8 @@ inverse; and a scalar matrix `c • 1` can only preserve an invertible `J` when 
 
 ## Main results
 
+* `Matrix.isUnit_of_mul_self_eq_neg_one`: a form matrix whose square is minus the identity
+  is a unit over any ring.
 * `Matrix.IsSkewAdjoint.trace_eq_zero`: a matrix skew-adjoint for an invertible matrix has trace
   zero when `2` is invertible.
 * `Matrix.isSkewAdjoint_vecMulVec_sub_vecMulVec`: for symmetric `J`, the matrix
@@ -49,7 +51,14 @@ public section
 
 namespace Matrix
 
-variable {n R : Type*} [Fintype n] [CommRing R]
+variable {n R : Type*} [Fintype n]
+
+/-- A matrix whose square is minus the identity is a unit, with inverse its negative. -/
+theorem isUnit_of_mul_self_eq_neg_one [Ring R] [DecidableEq n] {J : Matrix n n R}
+    (hJ : J * J = -1) : IsUnit J :=
+  isUnit_iff_exists.2 ⟨-J, by rw [mul_neg, hJ, neg_neg], by rw [neg_mul, hJ, neg_neg]⟩
+
+variable [CommRing R]
 
 /-- **A matrix skew-adjoint for an invertible matrix has trace zero** when `2` is invertible:
 skew-adjointness makes `Aᵀ` conjugate to `-A`. -/

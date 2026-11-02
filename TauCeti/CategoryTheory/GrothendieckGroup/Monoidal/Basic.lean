@@ -195,7 +195,7 @@ noncomputable instance instRing : Ring (SplitK0 C) where
 
 /-- Two ring homomorphisms out of split `K₀` agreeing on the classes of objects are equal. -/
 @[ext]
-theorem ringHom_ext {R : Type*} [NonAssocRing R] {f g : SplitK0 C →+* R}
+theorem ringHom_ext {R : Type*} [NonAssocSemiring R] {f g : SplitK0 C →+* R}
     (h : ∀ X : C, f (of X) = g (of X)) : f = g :=
   RingHom.toAddMonoidHom_injective (hom_ext h)
 

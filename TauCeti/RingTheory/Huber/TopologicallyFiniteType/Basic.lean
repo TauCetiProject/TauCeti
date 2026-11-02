@@ -16,6 +16,7 @@ import TauCeti.RingTheory.Huber.WeightedEval.Completion
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.FirstCountable
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition
 import TauCeti.Topology.Algebra.GroupCompletion
+import Mathlib.Topology.Baire.CompleteMetrizable
 
 /-!
 # Homomorphisms topologically of finite type
@@ -431,7 +432,7 @@ theorem isStrictlyTopologicallyFiniteType_of_surjective {k : ℕ}
     IsUniformAddGroup.uniformity_countably_generated
   exact isStrictlyTopologicallyFiniteType_iff.mpr
     ⟨k, π.toRingHom, ⟨hs, continuous_of_continuousAt_zero π.toLinearMap hπ,
-      IsTateRing.isOpenMap π.toLinearMap hs hπ⟩, π.comp_algebraMap⟩
+      π.toLinearMap.isOpenMap_of_isTateRing hs hπ⟩, π.comp_algebraMap⟩
 
 end OpenMappingPresentation
 

@@ -55,7 +55,7 @@ theorem exists_split_singularLocus {K : Type u} [Field K]
     X.isFinite_singularLocus_subschemeι_comp hnodal
   have : Etale ((X.singularLocus K).subschemeι ≫ (X ↘ Spec (.of K))) :=
     X.etale_singularLocus_subschemeι_comp hnodal
-  obtain ⟨L, _, _, _, _, n, ⟨e⟩⟩ :=
+  obtain ⟨L, _, _, _, _, n, -, ⟨e⟩⟩ :=
     ((X.singularLocus K).subschemeι ≫ (X ↘ Spec (.of K))).exists_split_of_isFinite_of_etale
   refine ⟨L, inferInstance, inferInstance, inferInstance, inferInstance, n, ?_⟩
   intro X' _ g H

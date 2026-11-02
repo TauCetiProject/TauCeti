@@ -55,8 +55,7 @@ theorem IsNegativeGradient.orbit_strictAnti_of_nonconstant
     exact hanti ht.2.le
   have hgrad : ∀ t ∈ Ioo a b, ∇ f (φ t x) = 0 := by
     intro t ht
-    apply TauCeti.IsIntegralCurve.gradient_eq_zero_of_eventually_const_value
-      (hφ.isIntegralCurve x) (hf t)
+    apply (hφ.isIntegralCurve x).gradient_eq_zero_of_eventually_const_value (hf t)
     exact Filter.Eventually.mono (isOpen_Ioo.mem_nhds ht) fun u hu ↦ hval u hu
   have hderiv : ∀ t ∈ Ioo a b, deriv (fun u ↦ φ u x) t = 0 := by
     intro t ht
@@ -79,8 +78,8 @@ theorem IsNegativeGradient.orbit_strictAnti_of_nonconstant
       simpa only [← φ.map_add, neg_add_cancel, φ.map_zero_apply,
         sub_eq_add_neg, add_comm v (-u)] using heq'.symm
     simp only [φ.map_add, hfix]
-  have hconst := TauCeti.IsIntegralCurve.eq_of_periodic_neg_gradient
-    (hφ.isIntegralCurve x) hf (sub_pos.mpr huv) hperiod
+  have hconst :=
+    (hφ.isIntegralCurve x).eq_of_periodic_neg_gradient hf (sub_pos.mpr huv) hperiod
   obtain ⟨t, ht⟩ := hnonconst
   exact ht (by simpa only [φ.map_zero_apply] using hconst t 0)
 

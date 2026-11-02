@@ -7,18 +7,20 @@ module
 
 public import TauCeti.GroupTheory.GroupAlgGeom.EquationallyNoetherian
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
+public import TauCeti.GroupTheory.FreeGroup.Linear
 import Mathlib.RingTheory.Ideal.Quotient.Noetherian
 import Mathlib.RingTheory.Polynomial.Basic
 
 /-!
-# Linear groups are equationally Noetherian
+# Linear groups and free groups are equationally Noetherian
 
 Let `R` be a commutative Noetherian ring. Every subgroup of `GL n R`, and more generally every
 group `H` with an injective homomorphism into `GL n R`, is equationally Noetherian over any
 coefficients `ι : G →* H`: every system of equations in finitely many variables over `G` has a
 finite subsystem with the same solutions in `H`. This is Theorem B1 of Baumslag, Myasnikov and
-Remeslennikov, going back to Bryant and to Guba. Since free groups of finite rank embed in
-`SL 2 ℤ`, it is the route to the equational Noetherianity of free groups of finite rank.
+Remeslennikov, going back to Bryant and to Guba. Free groups of countable rank embed in
+`SL(2, ℤ)` (Sanov), so they are equationally Noetherian over any coefficients; for free groups of
+finite rank this is Guba's theorem.
 
 ## Main results
 
@@ -28,6 +30,9 @@ Remeslennikov, going back to Bryant and to Guba. Since free groups of finite ran
   group with an injective homomorphism into `GL n R`.
 * `TauCeti.GroupAlgGeom.isEquationallyNoetherian_specialLinearGroup`: in particular so is
   `SL n R`.
+* `TauCeti.GroupAlgGeom.isEquationallyNoetherian_of_freeGroupBasis`,
+  `TauCeti.GroupAlgGeom.isEquationallyNoetherian_freeGroup`: free groups of countable rank are
+  equationally Noetherian over any coefficients.
 
 ## Implementation notes
 
@@ -202,5 +207,23 @@ theorem isEquationallyNoetherian_specialLinearGroup (ι : G →* SpecialLinearGr
     IsEquationallyNoetherian ι :=
   isEquationallyNoetherian_of_injective_generalLinearGroup ι SpecialLinearGroup.toGL
     SpecialLinearGroup.toGL_injective
+
+/-! ### Free groups -/
+
+/-- **Free groups of countable rank are equationally Noetherian.** A group with a countable
+free basis is equationally Noetherian over any coefficients; for free groups of finite rank this
+is Guba's theorem. -/
+theorem isEquationallyNoetherian_of_freeGroupBasis {κ : Type*} [Countable κ] (ι : G →* H)
+    (b : FreeGroupBasis κ H) : IsEquationallyNoetherian ι := by
+  obtain ⟨f, hf⟩ := exists_injective_freeGroup_SL κ
+  exact isEquationallyNoetherian_of_injective_generalLinearGroup ι
+    (SpecialLinearGroup.toGL.comp (f.comp b.repr.toMonoidHom))
+    (SpecialLinearGroup.toGL_injective.comp (hf.comp b.repr.injective))
+
+/-- The free group on a countable type is equationally Noetherian over any coefficients. In
+particular, so is every free group `FreeGroup (Fin n)` of finite rank. -/
+theorem isEquationallyNoetherian_freeGroup {α : Type*} [Countable α] (ι : G →* FreeGroup α) :
+    IsEquationallyNoetherian ι :=
+  isEquationallyNoetherian_of_freeGroupBasis ι (FreeGroupBasis.ofFreeGroup α)
 
 end TauCeti.GroupAlgGeom

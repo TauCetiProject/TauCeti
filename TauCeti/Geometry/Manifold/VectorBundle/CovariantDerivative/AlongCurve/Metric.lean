@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Pullback
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric
+import Mathlib.Analysis.Calculus.MeanValue
 
 /-!
 # Metric compatibility along a curve
@@ -40,6 +41,8 @@ the same theorem.
 * `CovariantDerivative.IsMetricCompatible.hasDerivAt_inner_alongCurve`: the unrestricted form,
   with `CovariantDerivative.IsMetricCompatible.differentiableAt_inner` and
   `CovariantDerivative.IsMetricCompatible.deriv_inner_alongCurve` as consequences.
+* `CovariantDerivative.IsMetricCompatible.inner_eq_of_alongCurveWithin_eq_zero`: parallel fields
+  along a curve have constant inner product.
 
 ## References
 
@@ -465,6 +468,28 @@ theorem IsMetricCompatible.deriv_inner_alongCurve
       inner ℝ (alongCurve cov γ V t) (W t) +
         inner ℝ (V t) (alongCurve cov γ W t) :=
   (hcov.hasDerivAt_inner_alongCurve hγ hV hW).deriv
+
+/-- **Parallel transport preserves the inner product.** On a preconnected parameter set with unique
+derivatives, two tangent fields along a differentiable curve that have differentiable coordinate
+readings and are parallel, `D V / dt = D W / dt = 0` on `s`, have the same inner product at every
+two parameters of `s`. -/
+theorem IsMetricCompatible.inner_eq_of_alongCurveWithin_eq_zero
+    (hcov : CovariantDerivative.IsMetricCompatible
+      (V := fun x : M ↦ TangentSpace I x) cov)
+    (hs : UniqueDiffOn ℝ s) (hconn : IsPreconnected s)
+    (hγ : MDifferentiableOn 𝓘(ℝ, ℝ) I γ s) {V W : ∀ r, TangentSpace I (γ r)}
+    (hV : ∀ t ∈ s, DifferentiableWithinAt ℝ (sectionCoord (F := E) γ V (γ t)) s t)
+    (hW : ∀ t ∈ s, DifferentiableWithinAt ℝ (sectionCoord (F := E) γ W (γ t)) s t)
+    (hV₀ : ∀ t ∈ s, alongCurveWithin cov γ V s t = 0)
+    (hW₀ : ∀ t ∈ s, alongCurveWithin cov γ W s t = 0) {a b : ℝ} (ha : a ∈ s) (hb : b ∈ s) :
+    inner ℝ (V a) (W a) = inner ℝ (V b) (W b) := by
+  have hderiv (t : ℝ) (ht : t ∈ s) : HasDerivWithinAt (fun r ↦ inner ℝ (V r) (W r)) 0 s t := by
+    simpa only [hV₀ t ht, hW₀ t ht, inner_zero_left, inner_zero_right, add_zero] using
+      hcov.hasDerivWithinAt_inner_alongCurveWithin (hs t ht) (hγ t ht) (hV t ht) (hW t ht)
+  refine hconn.ordConnected.convex.is_const_of_fderivWithin_eq_zero
+    (𝕜 := ℝ) (f := fun r ↦ inner ℝ (V r) (W r))
+    (fun t ht ↦ (hderiv t ht).differentiableWithinAt) (fun t ht ↦ ?_) ha hb
+  simpa using (hderiv t ht).hasFDerivWithinAt.fderivWithin (hs t ht)
 
 end Riemannian
 

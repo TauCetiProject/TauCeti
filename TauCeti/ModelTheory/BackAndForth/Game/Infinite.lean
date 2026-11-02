@@ -27,7 +27,9 @@ response before knowing how many further moves will be made. The former conditio
 supply the latter: a response that works for every finite continuation must be chosen once,
 not separately for each length. `EFStrategy.nonempty_family_iff_bfEquiv_omega0` states precisely
 what the unrelated family expresses, while `potentialIso_iff_nonempty_coherentEFStrategy`
-characterizes the coherent object.
+characterizes the coherent object. The orders `ℤ` and `ℤ ⊕ₗ ℤ` separate the two notions: see
+`TauCeti.isEmpty_coherentEFStrategy_int_sumLex_int` in
+`TauCeti.ModelTheory.BackAndForth.DiscreteOrder`.
 
 See Wilfrid Hodges, *Model Theory* (1993), for back-and-forth games, and Carol Karp,
 *Finite-quantifier equivalence* (1965), for back-and-forth systems. This construction uses the

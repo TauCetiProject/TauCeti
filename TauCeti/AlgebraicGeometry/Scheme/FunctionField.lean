@@ -101,11 +101,7 @@ instance essFiniteType_functionField : Algebra.EssFiniteType k X.functionField :
 theorem topologicalKrullDim_eq_toNat_trdeg_functionField :
     topologicalKrullDim X = (Algebra.trdeg k X.functionField).toNat := by
   obtain ⟨A, _, _, _, _, _, _, _, hdim⟩ := exists_finiteType_isFractionRing_functionField k (X := X)
-  have : FaithfulSMul A X.functionField :=
-    (faithfulSMul_iff_algebraMap_injective _ _).2 (IsFractionRing.injective A _)
-  have := IsLocalization.isAlgebraic X.functionField (nonZeroDivisors A)
-  rw [hdim, ringKrullDim_eq_toNat_trdeg k A, ← trdeg_add_eq k A (A := X.functionField),
-    trdeg_eq_zero (R := A), add_zero]
+  rw [hdim, ringKrullDim_eq_toNat_trdeg_of_isFractionRing k A X.functionField]
 
 /-- **Curves have algebraic function fields.** An integral scheme locally of finite type over a
 field `k` has dimension one exactly when its function field is an algebraic function field of one

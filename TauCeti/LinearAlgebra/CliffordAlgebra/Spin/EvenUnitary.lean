@@ -39,6 +39,8 @@ functoriality API.
 * `CliffordAlgebra.evenUnitaryGroup.reverse_mul_self` and
   `CliffordAlgebra.evenUnitaryGroup.self_mul_reverse` give its two norm equations.
 * `CliffordAlgebra.evenUnitaryGroup.reverse_eq_inv` identifies reversal with the unit inverse.
+* `CliffordAlgebra.evenUnitaryGroup.neg_one_mem`: the scalar `-1` is even unitary, and
+  `CliffordAlgebra.evenUnitaryGroup.negOne` is the corresponding element.
 * `QuadraticMap.Isometry.evenUnitaryGroupMap` is the homomorphism induced by a quadratic isometry,
   and `QuadraticMap.IsometryEquiv.evenUnitaryGroupEquiv` the equivalence induced by an isometry
   equivalence; `QuadraticMap.IsometryEquiv.coe_evenUnitaryGroupEquiv_apply` computes it by
@@ -147,6 +149,20 @@ theorem reverse_eq_inv (x : evenUnitaryGroup Q) :
     reverse ((x : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) =
       (((x : (CliffordAlgebra Q)ˣ)⁻¹ : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q) := by
   exact Units.eq_inv_of_mul_eq_one_right (reverse_mul_self Q x)
+
+/-- The scalar unit `-1` is even and unitary. -/
+theorem neg_one_mem : (-1 : (CliffordAlgebra Q)ˣ) ∈ evenUnitaryGroup Q := by
+  rw [mem_iff, Units.val_neg, Units.val_one]
+  exact ⟨(even Q).neg_mem (even Q).one_mem, by simp [Unitary.mem_iff]⟩
+
+/-- The canonical scalar `-1` in the even unitary group. -/
+def negOne : evenUnitaryGroup Q :=
+  ⟨-1, neg_one_mem Q⟩
+
+/-- The underlying Clifford unit of `evenUnitaryGroup.negOne` is the scalar `-1`. -/
+@[simp]
+theorem coe_negOne : (negOne Q : (CliffordAlgebra Q)ˣ) = -1 :=
+  (rfl)
 
 end evenUnitaryGroup
 

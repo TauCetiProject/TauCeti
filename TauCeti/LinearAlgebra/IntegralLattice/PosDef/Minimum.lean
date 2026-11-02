@@ -48,6 +48,8 @@ as it has a root, a vector of norm `2`. Minimum and kissing number are isometry 
   lattice vanishes exactly in rank zero.
 * `TauCeti.IntegralLattice.IsPosSemidef.vectorsOfNorm_eq_empty_of_lt_minimum`: no nonzero norm
   below the minimum is represented.
+* `TauCeti.IntegralLattice.IsPosSemidef.minimum_ne_of_vectorsOfNorm_eq_empty`: the minimum of a
+  nontrivial lattice is not a number whose shell is empty.
 * `TauCeti.IntegralLattice.IsPosDef.two_le_minimum` and
   `TauCeti.IntegralLattice.IsPosDef.minimum_eq_two`: the minimum of an even positive definite
   lattice is at least `2`, and equals `2` when the lattice has a root.
@@ -131,6 +133,13 @@ theorem IsPosSemidef.nonempty_vectorsOfNorm_minimum (hL : L.IsPosSemidef) [Nontr
     (L.vectorsOfNorm L.minimum).Nonempty := by
   obtain ⟨x, -, hmin⟩ := hL.exists_ne_zero_integralNorm_eq_minimum
   exact ⟨x, (L.mem_vectorsOfNorm_natCast).mpr hmin⟩
+
+/-- A nontrivial positive semidefinite lattice has minimum different from every natural number
+whose shell is empty. -/
+theorem IsPosSemidef.minimum_ne_of_vectorsOfNorm_eq_empty (hL : L.IsPosSemidef) [Nontrivial L]
+    {n : ℕ} (h : L.vectorsOfNorm n = ∅) : L.minimum ≠ n := by
+  rintro rfl
+  exact Set.not_nonempty_empty (h ▸ hL.nonempty_vectorsOfNorm_minimum)
 
 /-- A positive semidefinite lattice represents no nonzero number below its minimum. -/
 theorem IsPosSemidef.vectorsOfNorm_eq_empty_of_lt_minimum (hL : L.IsPosSemidef) {n : ℚ}

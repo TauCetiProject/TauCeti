@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.EnergyForm.Sobolev
 public import TauCeti.Analysis.Sobolev.W1p.Extension
 public import TauCeti.Analysis.Sobolev.W1p.Restriction
+import TauCeti.Analysis.Distribution.TestFunction.Integral
 
 /-!
 # The energy form under restriction to a smaller domain

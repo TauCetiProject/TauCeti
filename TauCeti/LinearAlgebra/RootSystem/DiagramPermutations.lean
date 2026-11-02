@@ -51,6 +51,7 @@ The conventions follow Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, p
 * `TauCeti.lengthPermRankTwo_lengthPermRankTwo` and `TauCeti.lengthPermF4_lengthPermF4`: the length
   permutations are involutions, and `TauCeti.lengthPermRankTwo_apply`,
   `TauCeti.graphPermA_apply` and `TauCeti.lengthPermF4_apply` evaluate them as reversals.
+* `TauCeti.DynkinType.diagramSymmetry_E8_eq_bot`: the diagram of `E₈` has no nontrivial symmetry.
 -/
 
 public section
@@ -386,6 +387,29 @@ theorem mem_diagramSymmetry_iff :
     σ ∈ t.diagramSymmetry ↔ ∀ i j, t.cartanMatrix (σ i) (σ j) = t.cartanMatrix i j :=
   mem_diagramSymmetry_iff_submatrix.trans
     ⟨fun h i j => congrFun₂ h i j, fun h => by ext i j; exact h i j⟩
+
+open _root_.Matrix in
+/-- A permutation of the nodes of `E₈` preserving the Cartan matrix is the identity. -/
+private theorem eq_one_of_submatrix_cartanMatrix_E8 {σ : Equiv.Perm (Fin 8)}
+    (hσ : (CartanMatrix.E 8).submatrix σ σ = CartanMatrix.E 8) : σ = 1 := by
+  -- `σ` fixes every vector obtained from the constant vector `1` by repeated multiplication by the
+  -- Cartan matrix, and four multiplications already give pairwise distinct entries.
+  have hinv (v : Fin 8 → ℤ) (hv : v ∘ σ = v) :
+      (CartanMatrix.E 8 *ᵥ v) ∘ σ = CartanMatrix.E 8 *ᵥ v := by
+    conv_rhs => rw [← hσ, ← hv]
+    rw [Matrix.submatrix_mulVec_equiv, Function.comp_assoc, Equiv.self_comp_symm,
+      Function.comp_id]
+  have hfix := hinv _ (hinv _ (hinv _ (hinv (fun _ ↦ 1) rfl)))
+  have hinj : Function.Injective (CartanMatrix.E 8 *ᵥ (CartanMatrix.E 8 *ᵥ
+      (CartanMatrix.E 8 *ᵥ (CartanMatrix.E 8 *ᵥ fun _ ↦ (1 : ℤ))))) := by
+    decide +kernel
+  ext i
+  exact congrArg Fin.val (hinj (congrFun hfix i))
+
+/-- **The Dynkin diagram of `E₈` has no nontrivial symmetry.** -/
+theorem diagramSymmetry_E8_eq_bot : E8.diagramSymmetry = ⊥ :=
+  (Subgroup.eq_bot_iff_forall _).mpr fun _ hσ ↦
+    eq_one_of_submatrix_cartanMatrix_E8 (cartanMatrix_E8 ▸ mem_diagramSymmetry_iff_submatrix.mp hσ)
 
 end DynkinType
 

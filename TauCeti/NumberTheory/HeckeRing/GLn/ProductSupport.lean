@@ -27,7 +27,8 @@ leading partial sums `∑_{j < k} g j` at least those of `e + f`. This is the su
 triangular expansion of a product of diagonal prime-power cosets with respect to the leading
 diagonal `T(p ^ (e + f))`, on which the presentation of the `p`-local Hecke ring as a polynomial
 ring rests (Shimura, Theorem 3.20). The other half, that `T(p ^ (e + f))` occurs with
-coefficient one, is not proved here.
+coefficient one, is `HeckeRing.GLn.diagElem_primePowDiag_mul_apply_diagCoset_add`, in
+`GLn/LeadingCoefficient.lean`.
 
 ## Main results
 

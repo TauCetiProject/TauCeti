@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.Discrete
+public import Mathlib.RepresentationTheory.FiniteIndex
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Coinduced.Functor
 import TauCeti.GroupTheory.Coset.Basic
+import TauCeti.RepresentationTheory.FiniteIndex
 
 /-!
 # Coinduction along a subgroup of finite index
@@ -27,6 +29,9 @@ of left cosets. This is the permutation module `A[G ⧸ U]`, of order `|A| ^ [G 
 
 ## Main results
 
+* `TauCeti.discreteCoindAddEquivAlgebraic_trace`: for a discrete group `G` and a finite-index
+  subgroup `U`, the counit of `Rep.coindResAdjunction` on `Rep.ofDistribMulAction ℤ G M`,
+  composed with `discreteCoindAddEquivAlgebraic`, equals `DiscreteCoind.trace`.
 * `TauCeti.DiscreteCoind.instFinite`: `Coind_U^G A` is finite for finite `A` and finite-index
   `U`, since restriction to a right transversal is injective.
 * `TauCeti.DiscreteCoind.sum_single`: for an open finite-index `U`, a coinduced function is the
@@ -41,8 +46,9 @@ of left cosets. This is the permutation module `A[G ⧸ U]`, of order `|A| ^ [G 
   trace `Coind_U^G M → M` is surjective.
 * `TauCeti.DiscreteCoind.trace_eq_relIndex_nsmul_of_forall_smul_eq`,
   `TauCeti.DiscreteCoind.trace_eq_zero_of_forall_smul_eq`: on the `G`-invariants of `Coind_V^G M`,
-  for `V ≤ U` with `U` acting trivially on `M`, the trace is `[U : V]` times the norm along `G ⧸ U`;
-  in particular it vanishes when `[U : V]` kills `M`. This is the co-effaceability of `H⁰` that
+  for `V ≤ U` with `U` fixing the constant value of a `G`-invariant function, its trace is
+  `[U : V]` times the norm along `G ⧸ U`; in particular it vanishes when `[U : V]` kills `M`.
+  This is the co-effaceability of `H⁰` that
   Tate's duality argument for the cohomological dimension of a Demushkin group uses (Serre,
   *Structure de certains pro-p-groupes*, §9.1).
 -/
@@ -90,7 +96,7 @@ end Transversal
 
 section Single
 
-variable {G : Type u} [Group G] [TopologicalSpace G] [ContinuousMul G] {U : Subgroup G}
+variable {G : Type u} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G] {U : Subgroup G}
   [U.FiniteIndex] {A : Type v} [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A]
   [DistribMulAction U A] [ContinuousSMul U A] (hU : IsOpen (U : Set G))
 
@@ -118,7 +124,7 @@ end Single
 
 section Trivial
 
-variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] {U : Subgroup G}
+variable {G : Type u} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G] {U : Subgroup G}
   {A : Type v} [AddCommGroup A] [DistribMulAction U A]
 
 variable (G U A) in
@@ -135,9 +141,15 @@ def quotientPiAddEquiv (hU : IsOpen (U : Set G)) (htriv : ∀ (u : U) (a : A), u
     rw [hb, apply_mul, htriv]
   invFun φ := mk G U A (fun g => φ (QuotientGroup.mk g⁻¹))
     (by
-      have := QuotientGroup.discreteTopology hU
-      exact ((IsLocallyConstant.iff_continuous fun g : G => (QuotientGroup.mk g⁻¹ : G ⧸ U)).2
-        (continuous_quot_mk.comp continuous_inv)).comp φ)
+      have hlc : IsLocallyConstant fun g : G => (QuotientGroup.mk g⁻¹ : G ⧸ U) := by
+        rw [IsLocallyConstant.iff_eventually_eq]
+        intro g
+        -- The inverse-coset map is constant on the open right coset `U * g`.
+        have hg : ∀ᶠ x in nhds g, x * g⁻¹ ∈ U :=
+          (hU.preimage (continuous_mul_const g⁻¹)).mem_nhds (by simp)
+        filter_upwards [hg] with x hx
+        exact QuotientGroup.eq.mpr (by simpa only [inv_inv] using hx)
+      exact hlc.comp φ)
     (fun u g => by rw [mul_inv_rev, QuotientGroup.mk_mul_of_mem _ (U.inv_mem u.2), htriv])
   left_inv f := ext fun g => by
     rw [mk_apply]
@@ -185,7 +197,7 @@ end Trivial
 
 section Trace
 
-variable {G : Type u} [Group G] [TopologicalSpace G] [ContinuousMul G] {U : Subgroup G}
+variable {G : Type u} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G] {U : Subgroup G}
   [U.FiniteIndex] {M : Type v} [AddCommGroup M] [DistribMulAction G M]
 
 attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
@@ -210,7 +222,7 @@ theorem trace_eq_inv_smul_apply (f : DiscreteCoind G U M) (g : G)
     rw [hf _ hmem, smul_zero]
   · exact fun h => (h (Finset.mem_univ _)).elim
 
-variable [TopologicalSpace M] [DiscreteTopology M] [ContinuousSMul G M]
+variable [TopologicalSpace M] [DiscreteTopology M] [ContinuousSMul U M]
 
 /-- **The trace of a single**: `tr (single g m) = g⁻¹ • m`, since `single g m` is supported on
 the right coset `U * g` with value `m` at `g`. Not a `simp` lemma, because
@@ -228,32 +240,62 @@ end Trace
 
 section TraceInvariants
 
-variable {G : Type u} [Group G] [TopologicalSpace G] [ContinuousMul G] {V U : Subgroup G}
+variable {G : Type u} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G] {V U : Subgroup G}
   [V.FiniteIndex] [U.FiniteIndex] {M : Type v} [AddCommGroup M] [DistribMulAction G M]
 
 attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
 
-/-- **The trace on invariants is a multiple of the norm.** For finite-index subgroups `V ≤ U` with
-`U` acting trivially on `M`, the trace of a `G`-invariant element `f` of `Coind_V^G M` is
-`[U : V]` times the norm `∑_{q ∈ G ⧸ U} q.out • f 1` of its constant value. -/
-theorem trace_eq_relIndex_nsmul_of_forall_smul_eq (hVU : V ≤ U)
-    (htriv : ∀ u ∈ U, ∀ m : M, u • m = m) {f : DiscreteCoind G V M} (hf : ∀ g : G, g • f = f) :
+/-- **The trace on invariants is a multiple of the norm.** For finite-index subgroups `V ≤ U` and
+a `G`-invariant element `f` of `Coind_V^G M` whose constant value `f 1` is fixed by `U`, the trace
+is `[U : V]` times the norm `∑_{q ∈ G ⧸ U} q.out • f 1`. -/
+theorem trace_eq_relIndex_nsmul_of_forall_smul_eq (hVU : V ≤ U) {f : DiscreteCoind G V M}
+    (hfix : ∀ u ∈ U, u • f 1 = f 1) (hf : ∀ g : G, g • f = f) :
     trace G V M f = V.relIndex U • ∑ q : G ⧸ U, q.out • f 1 := by
   rw [trace_apply]
   simp only [apply_eq_apply_one_of_forall_smul_eq hf]
-  exact Subgroup.sum_out_smul_eq_relIndex_nsmul hVU fun u hu ↦ htriv u hu _
+  exact Subgroup.sum_out_smul_eq_relIndex_nsmul hVU hfix
 
-/-- **The trace kills the invariants once the relative index kills the module.** For finite-index
-subgroups `V ≤ U` with `U` acting trivially on `M` and `[U : V] • m = 0` for every `m`, the trace
-`Coind_V^G M → M` vanishes on the `G`-invariants: the map `H⁰(G, Coind_V^G M) → H⁰(G, M)` induced
-by `trace` is zero. -/
-theorem trace_eq_zero_of_forall_smul_eq (hVU : V ≤ U) (htriv : ∀ u ∈ U, ∀ m : M, u • m = m)
-    (hkill : ∀ m : M, V.relIndex U • m = 0) {f : DiscreteCoind G V M} (hf : ∀ g : G, g • f = f) :
+/-- **The trace of an invariant vanishes once the relative index kills the module.** For
+finite-index subgroups `V ≤ U`, a `G`-invariant element `f` of `Coind_V^G M` whose constant value
+`f 1` is fixed by `U` has zero trace if `[U : V] • m = 0` for every `m : M`. -/
+theorem trace_eq_zero_of_forall_smul_eq (hVU : V ≤ U) {f : DiscreteCoind G V M}
+    (hfix : ∀ u ∈ U, u • f 1 = f 1) (hkill : ∀ m : M, V.relIndex U • m = 0)
+    (hf : ∀ g : G, g • f = f) :
     trace G V M f = 0 := by
-  rw [trace_eq_relIndex_nsmul_of_forall_smul_eq hVU htriv hf, hkill]
+  rw [trace_eq_relIndex_nsmul_of_forall_smul_eq hVU hfix hf, hkill]
 
 end TraceInvariants
 
 end DiscreteCoind
+
+section DiscreteAlgebraicComparison
+
+variable (G : Type u) (M : Type (max u v)) [Group G] [TopologicalSpace G] [DiscreteTopology G]
+  [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
+  (U : Subgroup G) [U.FiniteIndex] [DistribMulAction G M] [ContinuousSMul G M]
+
+open Classical in
+/-- For a discrete group `G` and a finite-index subgroup `U`, the counit of
+`Rep.coindResAdjunction` on `Rep.ofDistribMulAction ℤ G M`, composed with
+`discreteCoindAddEquivAlgebraic`, equals `DiscreteCoind.trace`. The coefficient universe contains
+the group universe, as required by the coinduction–restriction adjunction. -/
+theorem discreteCoindAddEquivAlgebraic_trace (f : DiscreteCoind G U M) :
+    ((Rep.coindResAdjunction ℤ U).counit.app (Rep.ofDistribMulAction ℤ G M)).hom
+        (discreteCoindAddEquivAlgebraic G M U f) = DiscreteCoind.trace G U M f := by
+  let e := QuotientGroup.quotientRightRelEquivQuotientLeftRel U
+  let t : G ⧸ U → G := fun q ↦ ((e.symm q).out)⁻¹
+  have ht (q : G ⧸ U) : (QuotientGroup.mk (t q) : G ⧸ U) = q :=
+    (congrArg e (Quotient.out_eq (e.symm q))).trans (e.apply_symm_apply q)
+  refine (Subgroup.coindResAdjunction_counit_app_hom_apply U
+    (Rep.ofDistribMulAction ℤ G M) (discreteCoindAddEquivAlgebraic G M U f)).trans ?_
+  rw [DiscreteCoind.trace_eq_sum_transversal t ht]
+  let : Fintype (G ⧸ U) := Subgroup.fintypeQuotientOfFiniteIndex
+  exact Fintype.sum_equiv e _ _ fun q ↦ by
+    simp only [t, e.symm_apply_apply, inv_inv]
+    exact (congrArg (fun m : M ↦ (Rep.ofDistribMulAction ℤ G M).ρ q.out⁻¹ m)
+      (discreteCoindAddEquivAlgebraic_apply G M U f q.out)).trans
+        (Rep.ofDistribMulAction_ρ_apply_apply ℤ G M q.out⁻¹ (f q.out))
+
+end DiscreteAlgebraicComparison
 
 end TauCeti

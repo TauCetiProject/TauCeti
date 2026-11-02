@@ -38,6 +38,7 @@ point `c • 1` has `c ^ 2 = 1`. Nothing here identifies the carrier with the sy
 
 * `TauCeti.E7Minuscule.alternatingForm_transpose`, `alternatingForm_mul_self` and
   `dotProduct_alternatingForm_mulVec_self`: `J` is skew, squares to `-1` and is alternating.
+* `TauCeti.E7Minuscule.isUnit_alternatingForm`: the minuscule form is a unit.
 * `TauCeti.E7Minuscule.alternatingFormDefiningHopfIdeal_le_definingIdeal`: the form relations
   lie in the defining ideal of the carrier.
 * `TauCeti.E7Minuscule.mul_alternatingForm_mul_transpose_of_mem_points` and
@@ -130,6 +131,11 @@ theorem alternatingForm_transpose : (alternatingForm R)ᵀ = -alternatingForm R 
 @[simp]
 theorem alternatingForm_mul_self : alternatingForm R * alternatingForm R = -1 :=
   signedNegation.form_mul_self R
+
+/-- The minuscule form is a unit, with inverse its negative. -/
+theorem isUnit_alternatingForm : IsUnit (alternatingForm R) := by
+  rw [alternatingForm_def]
+  exact signedNegation.isUnit_form R
 
 /-- The minuscule form is alternating, including in characteristic two. -/
 theorem dotProduct_alternatingForm_mulVec_self (x : Fin 56 → R) :
@@ -245,11 +251,8 @@ theorem scalar_sq_eq_one_of_mem_points {g : Matrix.GeneralLinearGroup (Fin 56) R
     (hc : (g : Matrix (Fin 56) (Fin 56) R) = c • 1) : c ^ 2 = 1 := by
   have h := mul_alternatingForm_mul_transpose_of_mem_points R hg
   rw [hc] at h
-  have hJ : IsUnit (alternatingForm R) :=
-    isUnit_iff_exists.2 ⟨-alternatingForm R, by rw [mul_neg, alternatingForm_mul_self, neg_neg],
-      by rw [neg_mul, alternatingForm_mul_self, neg_neg]⟩
   have : Nonempty (Fin 56) := ⟨0⟩
-  exact Matrix.sq_eq_one_of_smul_one_mul_mul_transpose_eq hJ h
+  exact Matrix.sq_eq_one_of_smul_one_mul_mul_transpose_eq (isUnit_alternatingForm R) h
 
 /-- The carrier maps to the subgroup scheme of `GL₅₆` preserving the minuscule form. -/
 noncomputable def toConstantForm :

@@ -19,6 +19,11 @@ the underlying types.
 
 ## Main results
 
+* `MulAction.orbitRel.Quotient.card_orbit_ne_zero`: an orbit in a finite action has nonzero
+  natural cardinality.
+* `MulAction.orbitRel.Quotient.card_filter_quotient_mk`: the fiber of the orbit quotient
+  map has the cardinality of the corresponding orbit.
+
 * `Equiv.map_card_orbit_eq_of_image_orbit_eq`: a bijection carrying the orbits of one action onto
   the orbits of another preserves the multiset of orbit sizes.
 * `Equiv.map_card_orbit_eq_of_map_smul`: an equivariant bijection preserves the multiset of orbit
@@ -30,6 +35,28 @@ the underlying types.
 public section
 
 open MulAction
+
+namespace MulAction.orbitRel.Quotient
+
+/-- Every orbit in an action on a finite type has nonzero natural cardinality. -/
+theorem card_orbit_ne_zero {G X : Type*} [Group G] [MulAction G X] [Finite X]
+    (O : orbitRel.Quotient G X) : Nat.card O.orbit ≠ 0 := by
+  have : Nonempty O.orbit := O.nonempty_orbit.to_subtype
+  exact Nat.card_pos.ne'
+
+open Classical in
+/-- The fiber of the orbit quotient map has the natural cardinality of that orbit. -/
+theorem card_filter_quotient_mk {G X : Type*} [Group G] [MulAction G X] [Fintype X]
+    (O : orbitRel.Quotient G X) :
+    (Finset.univ.filter (fun x ↦ Quotient.mk (orbitRel G X) x = O)).card =
+      Nat.card O.orbit := by
+  classical
+  rw [Nat.card_eq_fintype_card, Fintype.card_subtype]
+  congr 1
+  ext x
+  simp [orbitRel.Quotient.mem_orbit]
+
+end MulAction.orbitRel.Quotient
 
 namespace Equiv
 

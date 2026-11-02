@@ -284,11 +284,8 @@ theorem le_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_le_frontier
   set w : EuclideanSpace ℝ ι → ℝ := fun y ↦ Real.exp ((β / lam + 1) * ⟪e, y⟫)
   have hwpos (y : EuclideanSpace ℝ ι) : 0 < w y := Real.exp_pos _
   have hwcd : ContDiff ℝ 2 w := (contDiff_exp_inner _ e).of_le (by norm_cast)
-  obtain ⟨C, hC⟩ := hK.bddAbove_image hwcd.continuous.continuousOn
-  have hC0 : 0 ≤ C := (hwpos x).le.trans (hC (Set.mem_image_of_mem w hxK))
-  -- It suffices to show `f x ≤ m + ε C` for every `ε > 0`.
-  apply le_of_forall_pos_mul_le hC0
-  intro ε hε
+  refine BddAbove.le_of_forall_pos_exists_add_mul_le
+    (hK.bddAbove_image hwcd.continuous.continuousOn) fun ε hε => ?_
   obtain ⟨z, hzK, hzmax⟩ := hK.exists_isMaxOn ⟨x, hxK⟩
     (hcont.add (hwcd.continuous.continuousOn.const_smul ε))
   -- A maximizer `z` of `f + ε w` over `K` satisfies `f z ≤ m`.
@@ -307,11 +304,8 @@ theorem le_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_le_frontier
       rw [sum_mul_fderiv_fderiv_add_fderiv_add_smul (hcd hzint) hwcd.contDiffAt]
       nlinarith [mul_nonneg (hc hzint) hfzpos, hsub hzint, mul_pos hε hLw]
     · exact hbdry ⟨subset_closure hzK, hzint⟩
-  have hxle : f x + ε * w x ≤ f z + ε * w z := by
-    simpa [smul_eq_mul] using hzmax hxK
-  have hwzC : ε * w z ≤ ε * C :=
-    mul_le_mul_of_nonneg_left (hC (Set.mem_image_of_mem w hzK)) hε.le
-  nlinarith [mul_nonneg hε.le (hwpos x).le]
+  refine ⟨z, hzK, ?_, hfz⟩
+  simpa only [Pi.add_apply, Pi.smul_apply, smul_eq_mul] using isMaxOn_iff.mp hzmax x hxK
 
 /-- **The weak minimum principle for elliptic operators in non-divergence form.** Under the
 hypotheses of `le_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_le_frontier`, a supersolution

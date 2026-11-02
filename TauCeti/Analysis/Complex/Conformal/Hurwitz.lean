@@ -8,7 +8,7 @@ module
 public import Mathlib.Topology.UniformSpace.LocallyUniformConvergence
 public import TauCeti.Analysis.Complex.Conformal.Rouche
 public import TauCeti.Analysis.Complex.IsolatedZero
-public import TauCeti.Analysis.Complex.ZeroCount
+public import TauCeti.Analysis.Analytic.ZeroCount
 import Mathlib.Analysis.Complex.LocallyUniformLimit
 import Mathlib.Topology.Algebra.IsUniformGroup.Basic
 
@@ -18,8 +18,7 @@ import Mathlib.Topology.Algebra.IsUniformGroup.Basic
 Hurwitz's theorem describes how the zeros of a locally uniform limit of holomorphic functions
 relate to the zeros of the approximants, and it does so in both directions. The limit acquires no
 new zeros — a limit of nowhere-vanishing functions is nowhere vanishing or identically zero — and
-it loses none either: every zero of the limit is approached by zeros of the approximants. This is
-the second target of layer **L0 (the local-mapping engine)** of the conformal-mapping roadmap, and
+it loses none either: every zero of the limit is approached by zeros of the approximants. It is
 the perturbation backbone for the injectivity step of the Riemann mapping theorem.
 
 Both directions come from one Rouché estimate, isolated here as
@@ -44,19 +43,22 @@ Everything is stated for an arbitrary value `v`, not only for `v = 0`: applying 
 `F i` is omitted by the limit unless the limit is constantly that value. Specialising to `v = 0`
 recovers the classical phrasing `TauCeti.hurwitz`.
 
-Throughout, every hypothesis on the family — holomorphy, omitting a value, injectivity — is
-assumed only *eventually along `l`*: it holds on some index set belonging to `l`, not on every
-index. Along a sequence that reads "for all sufficiently large `i`", the phrasing the docstrings
-below use; for a general filter it says only that the indices where the hypothesis fails are
-excluded by a member of `l`, whose complement need not be finite. That is the form limit arguments
-produce and consume, and it costs nothing: the conclusions are eventual along `l` as well, so
-indices outside a set of `l` never enter.
+Throughout, holomorphy of the family is assumed only *eventually along `l`*: it holds on some
+index set belonging to `l`, not on every index. Along a sequence that reads "for all sufficiently
+large `i`", the phrasing the docstrings below use; for a general filter it says only that the
+indices where the hypothesis fails are excluded by a member of `l`. That is the form limit
+arguments produce and consume, and it costs nothing: the conclusions are eventual along `l` as
+well, so indices outside a set of `l` never enter. The hypotheses the limit inherits — omitting a
+value, injectivity — are needed only *frequently along `l`* (along a sequence: for infinitely many
+`i`), since a single such index already contradicts the eventual conclusion.
 
 The corollary usually quoted alongside is the injectivity form: a locally uniform limit of
 *injective* holomorphic functions is injective or constant. That is the version the Riemann mapping
-theorem consumes. It is proved from the value form rather than by applying `TauCeti.hurwitz` to the
-differences `F i - F i b` on the punctured domain `Ω \ {b}`, since that route needs the punctured
-set to be connected — a fact Mathlib does not currently supply for an open connected subset of `ℂ`.
+theorem consumes. It is proved from the value form: if `g a = g b` for `a ≠ b` and `g` is not
+constant, then for all sufficiently large `i` the function `F i` takes the value `g a` in each of
+two disjoint balls about `a` and `b`, contradicting injectivity. This avoids applying
+`TauCeti.hurwitz` to the differences `F i - F i b` on the punctured domain `Ω \ {b}`, which would
+need that set to be connected.
 
 ## Main results
 
@@ -75,20 +77,10 @@ set to be connected — a fact Mathlib does not currently supply for an open con
 * `TauCeti.hurwitz_injOn` — a locally uniform limit of injective holomorphic functions is injective
   or constant.
 
-## Coordination with upstream Mathlib
-
-Mathlib has no Hurwitz theorem. However, per the *Coordination with upstream Mathlib* section of
-`ConformalMapping/README.md`, this layer overlaps
-[mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505), the in-progress
-human-curated Riemann-mapping-theorem effort, which proves this material internally as the private
-lemmas `eqOn_zero_or_forall_ne_zero_of_tendstoLocallyUniformlyOn` and
-`eqOn_const_or_injOn_of_tendstoLocallyUniformlyOn`. **This file is therefore a temporary shim**:
-once the corresponding Mathlib lemmas land, these statements should be backed by them — or deleted
-and their consumers refactored — rather than maintained as independent re-proofs. What Tau Ceti
-adds at L0 is named, discoverable API, not first proof.
-
 ## References
 
+* [Mathlib PR #33505](https://github.com/leanprover-community/mathlib4/pull/33505), the preceding
+  human-curated Riemann-mapping development and its local analytic prerequisites.
 * L. Ahlfors, *Complex Analysis*, Ch. 5.
 * J. B. Conway, *Functions of One Complex Variable I* (GTM 11), Ch. VII.
 -/
@@ -101,48 +93,14 @@ namespace TauCeti
 
 variable {ι : Type*} {l : Filter ι} {Ω : Set ℂ} {F : ι → ℂ → ℂ} {g : ℂ → ℂ}
 
-/-- **A small disc on which `v` is attained only at the centre.** If `g` avoids `v` on some
-punctured neighbourhood of `z₀ ∈ Ω` with `Ω` open — the value at `z₀` itself is unconstrained —
-then there are arbitrarily small radii whose *closed* ball lies in `Ω` and on which `v` is taken
-nowhere but possibly at `z₀`. Rouché's theorem is applied to the bounding circle of such a
-ball. -/
-private lemma exists_radius_forall_ne (hΩ : IsOpen Ω) {v z₀ : ℂ} (hz₀ : z₀ ∈ Ω)
-    (hpunct : ∀ᶠ z in 𝓝[≠] z₀, g z ≠ v) {ε : ℝ} (hε : 0 < ε) :
-    ∃ r > 0, r ≤ ε ∧ closedBall z₀ r ⊆ Ω ∧ ∀ z ∈ closedBall z₀ r, z ≠ z₀ → g z ≠ v := by
-  have hev : ∀ᶠ z in 𝓝 z₀, z ∈ Ω ∧ (z ≠ z₀ → g z ≠ v) :=
-    (hΩ.eventually_mem hz₀).and (eventually_nhdsWithin_iff.mp hpunct)
-  obtain ⟨r, hr, hball⟩ := Metric.nhds_basis_closedBall.eventually_iff.1 hev
-  have hmono : closedBall z₀ (min r ε) ⊆ closedBall z₀ r :=
-    closedBall_subset_closedBall (min_le_left _ _)
-  exact ⟨min r ε, lt_min hr hε, min_le_right _ _, fun z hz => (hball (hmono hz)).1,
-    fun z hz => (hball (hmono hz)).2⟩
-
-/-- **An analytic function on a preconnected set attains a value it does not attain identically
-only in isolation.** If `g` is analytic on `Ω` and is not constantly `v` there, then `g z ≠ v` on
-a punctured neighbourhood of any `x ∈ Ω`. -/
-private theorem eventually_ne_of_not_forall_eq (hconn : IsPreconnected Ω)
-    (hgA : AnalyticOnNhd ℂ g Ω) {v : ℂ} (hnc : ¬ ∀ z ∈ Ω, g z = v)
-    {x : ℂ} (hx : x ∈ Ω) : ∀ᶠ z in 𝓝[≠] x, g z ≠ v := by
-  rcases (hgA x hx).eventually_eq_or_eventually_ne (analyticAt_const (v := v)) with h | h
-  · exact absurd (fun z hz =>
-      hgA.eqOn_of_preconnected_of_eventuallyEq analyticOnNhd_const hconn hx h hz) hnc
-  · exact h
-
 /-- **Hurwitz's theorem, counting form.** Let `g` and — for all sufficiently large `i` — the `F i`
 be analytic on a closed disc `closedBall c r` of positive radius, let `F i → g` uniformly on the
 bounding circle `sphere c r`, and let `g` not vanish on that circle. Then for all sufficiently
 large `i`, `F i` has exactly as many zeros in `ball c r` as `g` does, counted with multiplicity.
 
-This is Rouché's theorem `TauCeti.rouche` applied along the filter: the bound `δ ≤ ‖g‖` on the
-compact circle, from `TauCeti.exists_pos_le_norm_of_mem_sphere`, is eventually beaten by the
-uniform error `‖g - F i‖` there. Nothing about an ambient domain enters, so a locally uniform
-limit on an open `Ω` feeds this lemma through
-`tendstoLocallyUniformlyOn_iff_tendstoUniformlyOn_of_compact` on any disc with
-`closedBall c r ⊆ Ω`, which is how both halves of Hurwitz's theorem below use it.
-
-Those two halves are readings of this one equality, so the hypothesis on the circle is the only
-genuine constraint: some circle must separate the zero being tracked from the rest of the zero
-set, and that is exactly what the identity theorem provides when `g` is not locally constant. -/
+No ambient domain enters: a locally uniform limit on an open `Ω` supplies the uniform convergence
+on any circle with `closedBall c r ⊆ Ω`, via
+`tendstoLocallyUniformlyOn_iff_tendstoUniformlyOn_of_compact`. -/
 theorem eventually_finsum_analyticOrderNatAt_ball_eq {c : ℂ} {r : ℝ} (hr : 0 < r)
     (hg : AnalyticOnNhd ℂ g (closedBall c r))
     (hF : ∀ᶠ i in l, AnalyticOnNhd ℂ (F i) (closedBall c r))
@@ -165,8 +123,8 @@ The hypothesis that `g` is not identically zero cannot be dropped: for `ι = ℕ
 the constant functions `F n z = 1 / (n + 1 : ℂ)` are holomorphic and nowhere zero and converge
 locally uniformly to `g = 0`, which vanishes at every `z₀`, yet no `F n` has a zero anywhere.
 
-Note that the ball is *not* assumed to lie in `Ω`; the zero produced is located in `Ω ∩ ball z₀ ε`,
-which the proof reaches by shrinking `ε` first. -/
+Note that the ball is *not* assumed to lie in `Ω`; the zero produced is located in
+`Ω ∩ ball z₀ ε`. -/
 theorem hurwitz_eventually_exists_eq_zero [l.NeBot] (hΩ : IsOpen Ω) (hconn : IsPreconnected Ω)
     (hF : ∀ᶠ i in l, DifferentiableOn ℂ (F i) Ω)
     (hconv : TendstoLocallyUniformlyOn F g l Ω)
@@ -175,10 +133,17 @@ theorem hurwitz_eventually_exists_eq_zero [l.NeBot] (hΩ : IsOpen Ω) (hconn : I
     ∀ᶠ i in l, ∃ z ∈ Ω ∩ ball z₀ ε, F i z = 0 := by
   have hgA : AnalyticOnNhd ℂ g Ω :=
     (_root_.TendstoLocallyUniformlyOn.differentiableOn hconv hF hΩ).analyticOnNhd hΩ
-  obtain ⟨r, hr, hrε, hball, hzf⟩ :=
-    exists_radius_forall_ne hΩ hz₀ (eventually_ne_of_not_forall_eq hconn hgA hnc hz₀) hε
+  -- by the identity theorem, `z₀` is an isolated zero of `g`; pick a closed disc about `z₀`
+  -- inside `Ω ∩ ball z₀ ε` on which `g` vanishes only at the centre
+  have hpunct : ∀ᶠ z in 𝓝[≠] z₀, g z ≠ 0 := not_frequently.mp fun h => hnc fun z hz =>
+    hgA.eqOn_of_preconnected_of_frequently_eq analyticOnNhd_const hconn hz₀ h hz
+  obtain ⟨r, hr, hzf⟩ := nhds_basis_closedBall.eventually_iff.mp
+    (((hΩ.inter isOpen_ball).eventually_mem ⟨hz₀, mem_ball_self hε⟩).and
+      (eventually_nhdsWithin_iff.mp hpunct))
+  have hsub : closedBall z₀ r ⊆ Ω ∩ ball z₀ ε := fun z hz => (hzf hz).1
+  have hball : closedBall z₀ r ⊆ Ω := hsub.trans Set.inter_subset_left
   have hsphne : ∀ z ∈ sphere z₀ r, g z ≠ 0 := fun z hz =>
-    hzf z (sphere_subset_closedBall hz) (Metric.ne_of_mem_sphere hz hr.ne')
+    (hzf (sphere_subset_closedBall hz)).2 (ne_of_mem_sphere hz hr.ne')
   have hFA : ∀ᶠ i in l, AnalyticOnNhd ℂ (F i) (closedBall z₀ r) :=
     hF.mono fun i hi => (hi.analyticOnNhd hΩ).mono hball
   have hconvS : TendstoUniformlyOn F g l (sphere z₀ r) :=
@@ -186,26 +151,22 @@ theorem hurwitz_eventually_exists_eq_zero [l.NeBot] (hΩ : IsOpen Ω) (hconn : I
       (hconv.mono (sphere_subset_closedBall.trans hball))
   -- `g` vanishes at the centre but not on the bounding circle, so its count is nonzero
   have hcount : (∑ᶠ z ∈ ball z₀ r, analyticOrderNatAt g z) ≠ 0 := fun h =>
-    (finsum_analyticOrderNatAt_ball_eq_zero_iff (hgA.mono hball)
+    ((hgA.mono hball).finsum_analyticOrderNatAt_ball_eq_zero_iff
         (exists_mem_closedBall_ne_zero_of_forall_mem_sphere_ne_zero hr.le hsphne)).mp h z₀
       (mem_ball_self hr) hgz₀
   filter_upwards [eventually_finsum_analyticOrderNatAt_ball_eq hr (hgA.mono hball) hFA hconvS
-    hsphne, hF] with i hi hFi
-  by_contra hcon
-  push Not at hcon
-  refine hcount (hi ▸ finsum_analyticOrderNatAt_ball_eq_zero_of_forall_ne_zero
-    ((hFi.analyticOnNhd hΩ).mono (ball_subset_closedBall.trans hball)) fun z hz => ?_)
-  exact hcon z ⟨hball (ball_subset_closedBall hz), ball_subset_ball hrε hz⟩
+    hsphne] with i hi
+  by_contra! hcon
+  exact hcount (hi ▸ finsum_mem_analyticOrderNatAt_eq_zero_of_forall_ne_zero fun z hz =>
+    hcon z (hsub (ball_subset_closedBall hz)))
 
 /-- **Hurwitz's theorem: values of the limit are limits of values.** If `g` is the locally uniform
 limit on a connected open `Ω` of functions `F i` that are holomorphic for all sufficiently large
 `i`, is not constantly `v`, and takes the value `v` at `z₀ ∈ Ω`, then every ball about `z₀`
 contains a point where `F i` takes the value `v`, again for all sufficiently large `i`.
 
-This is `TauCeti.hurwitz_eventually_exists_eq_zero` applied to the translated family `F i - v`,
-which converges locally uniformly to `g - v`. It is the form the injectivity corollary consumes:
-two disjoint balls about two points where `g` takes the same value eventually both contain points
-where `F i` takes that value, contradicting injectivity of `F i`. -/
+This is `TauCeti.hurwitz_eventually_exists_eq_zero` for the translated family `F i - v`, and the
+form the injectivity corollary `TauCeti.hurwitz_injOn` consumes. -/
 theorem hurwitz_eventually_exists_eq [l.NeBot] (hΩ : IsOpen Ω) (hconn : IsPreconnected Ω)
     (hF : ∀ᶠ i in l, DifferentiableOn ℂ (F i) Ω)
     (hconv : TendstoLocallyUniformlyOn F g l Ω)
@@ -217,89 +178,75 @@ theorem hurwitz_eventually_exists_eq [l.NeBot] (hΩ : IsOpen Ω) (hconn : IsPrec
   have hzero := hurwitz_eventually_exists_eq_zero (F := fun i z => F i z - v)
     (g := fun z => g z - v) hΩ hconn (hF.mono fun i hi => hi.sub_const v) (hconv.sub hconst)
     hz₀ (by simp [hgz₀]) (fun h => hnc fun z hz => sub_eq_zero.mp (h z hz)) hε
-  filter_upwards [hzero] with i hi
-  obtain ⟨z, hz, hz0⟩ := hi
-  exact ⟨z, hz, sub_eq_zero.mp hz0⟩
+  exact hzero.mono fun i ⟨z, hz, hz0⟩ => ⟨z, hz, sub_eq_zero.mp hz0⟩
 
-/-- **Hurwitz's theorem for an omitted value.** If `F i` is holomorphic on `Ω` and avoids the value
-`v` there for all sufficiently large `i`, and the locally uniform limit `g` is not constantly `v`,
-then `g` avoids `v` as well.
+/-- **Hurwitz's theorem for an omitted value.** If `F i` is holomorphic on `Ω` for all sufficiently
+large `i` and avoids the value `v` there for infinitely many `i` (frequently along `l`), and the
+locally uniform limit `g` is not constantly `v`, then `g` avoids `v` as well.
 
 Contrapositive of `TauCeti.hurwitz_eventually_exists_eq`: a point where `g` took the value `v`
 would force `F i` to take it too. -/
-theorem hurwitz_forall_ne [l.NeBot] (hΩ : IsOpen Ω) (hconn : IsPreconnected Ω)
+theorem hurwitz_forall_ne (hΩ : IsOpen Ω) (hconn : IsPreconnected Ω)
     (hF : ∀ᶠ i in l, DifferentiableOn ℂ (F i) Ω)
     (hconv : TendstoLocallyUniformlyOn F g l Ω) {v : ℂ}
-    (hne : ∀ᶠ i in l, ∀ z ∈ Ω, F i z ≠ v) (hnc : ¬ ∀ z ∈ Ω, g z = v) :
+    (hne : ∃ᶠ i in l, ∀ z ∈ Ω, F i z ≠ v) (hnc : ¬ ∀ z ∈ Ω, g z = v) :
     ∀ z ∈ Ω, g z ≠ v := by
+  have : l.NeBot := (frequently_iff_neBot.mp hne).mono inf_le_left
   intro z₀ hz₀ hgz₀
   obtain ⟨i, ⟨z, hz, hzv⟩, hnei⟩ :=
-    ((hurwitz_eventually_exists_eq hΩ hconn hF hconv hz₀ hgz₀ hnc one_pos).and hne).exists
+    ((hurwitz_eventually_exists_eq hΩ hconn hF hconv hz₀ hgz₀ hnc one_pos).and_frequently
+      hne).exists
   exact hnei z hz.1 hzv
 
 /-- **Hurwitz's theorem for an omitted value**, dichotomy form. On a connected open set, a locally
-uniform limit of functions that are holomorphic and avoid the value `v` for all sufficiently large
-`i` either avoids `v` everywhere or is constantly `v`.
+uniform limit of functions that are holomorphic for all sufficiently large `i` and avoid the value
+`v` for infinitely many `i` either avoids `v` everywhere or is constantly `v`.
 
 The dichotomy is genuine: for `ι = ℕ` and `l = atTop`, the functions `F n z = v + 1 / (n + 1 : ℂ)`
 avoid `v` on any `Ω` and converge locally uniformly to the constant `v`. -/
-theorem hurwitz_forall_ne_or_forall_eq [l.NeBot] (hΩ : IsOpen Ω) (hconn : IsPreconnected Ω)
+theorem hurwitz_forall_ne_or_forall_eq (hΩ : IsOpen Ω) (hconn : IsPreconnected Ω)
     (hF : ∀ᶠ i in l, DifferentiableOn ℂ (F i) Ω)
     (hconv : TendstoLocallyUniformlyOn F g l Ω) {v : ℂ}
-    (hne : ∀ᶠ i in l, ∀ z ∈ Ω, F i z ≠ v) :
-    (∀ z ∈ Ω, g z ≠ v) ∨ (∀ z ∈ Ω, g z = v) := by
-  by_cases hnc : ∀ z ∈ Ω, g z = v
-  · exact Or.inr hnc
-  · exact Or.inl (hurwitz_forall_ne hΩ hconn hF hconv hne hnc)
+    (hne : ∃ᶠ i in l, ∀ z ∈ Ω, F i z ≠ v) :
+    (∀ z ∈ Ω, g z ≠ v) ∨ (∀ z ∈ Ω, g z = v) :=
+  or_iff_not_imp_right.mpr (hurwitz_forall_ne hΩ hconn hF hconv hne)
 
 /-- **Hurwitz's theorem.** On a connected open set, a locally uniform limit of functions that are
-holomorphic and nowhere zero for all sufficiently large `i` is itself either nowhere zero or
-identically zero.
+holomorphic for all sufficiently large `i` and nowhere zero for infinitely many `i` is itself
+either nowhere zero or identically zero.
 
 This is the value `v = 0` of `TauCeti.hurwitz_forall_ne_or_forall_eq`. The dichotomy is genuine:
 for `ι = ℕ` and `l = atTop`, the constant functions `F n z = 1 / (n + 1 : ℂ)` on any `Ω` converge
 locally uniformly to `0`, so the second alternative cannot be dropped. -/
-theorem hurwitz [l.NeBot] (hΩ : IsOpen Ω) (hconn : IsPreconnected Ω)
+theorem hurwitz (hΩ : IsOpen Ω) (hconn : IsPreconnected Ω)
     (hF : ∀ᶠ i in l, DifferentiableOn ℂ (F i) Ω)
     (hconv : TendstoLocallyUniformlyOn F g l Ω)
-    (hne : ∀ᶠ i in l, ∀ z ∈ Ω, F i z ≠ 0) :
+    (hne : ∃ᶠ i in l, ∀ z ∈ Ω, F i z ≠ 0) :
     (∀ z ∈ Ω, g z ≠ 0) ∨ (∀ z ∈ Ω, g z = 0) :=
   hurwitz_forall_ne_or_forall_eq hΩ hconn hF hconv hne
 
 /-- **Hurwitz's theorem for injectivity.** On a connected open set, a locally uniform limit of
-functions that are holomorphic and *injective* for all sufficiently large `i` is either injective
-or constant.
+functions that are holomorphic for all sufficiently large `i` and *injective* for infinitely many
+`i` is either injective or constant.
 
 This is the form the Riemann mapping theorem consumes: it is what keeps the extremal map injective
 in the limit. Both alternatives genuinely occur — for `ι = ℕ` and `l = atTop`, the injective maps
-`F n z = z / (n + 1 : ℂ)` converge locally uniformly to the constant `0`.
-
-The proof does not route through `TauCeti.hurwitz` on the punctured domain `Ω \ {b}`, which would
-need that set to be connected — a fact Mathlib does not currently provide for an open connected
-subset of `ℂ`. Instead, if `g` were non-constant with `g a = g b` for `a ≠ b`, then
-`TauCeti.hurwitz_eventually_exists_eq` places a point where `F i` takes the single value `g a`
-within `dist a b / 3` of each of `a` and `b`; the triangle inequality separates those two points,
-contradicting injectivity of `F i`. -/
-theorem hurwitz_injOn [l.NeBot] (hΩ : IsOpen Ω) (hconn : IsPreconnected Ω)
+`F n z = z / (n + 1 : ℂ)` converge locally uniformly to the constant `0`. -/
+theorem hurwitz_injOn (hΩ : IsOpen Ω) (hconn : IsPreconnected Ω)
     (hF : ∀ᶠ i in l, DifferentiableOn ℂ (F i) Ω)
     (hconv : TendstoLocallyUniformlyOn F g l Ω)
-    (hinj : ∀ᶠ i in l, Set.InjOn (F i) Ω) :
+    (hinj : ∃ᶠ i in l, Set.InjOn (F i) Ω) :
     Set.InjOn g Ω ∨ ∃ v, ∀ z ∈ Ω, g z = v := by
-  by_cases hconst : ∃ v, ∀ z ∈ Ω, g z = v
-  · exact Or.inr hconst
-  refine Or.inl fun a ha b hb hab => ?_
+  have : l.NeBot := (frequently_iff_neBot.mp hinj).mono inf_le_left
+  refine or_iff_not_imp_right.mpr fun hconst a ha b hb hab => ?_
   by_contra hne
-  have hd : 0 < dist a b / 3 := by have := dist_pos.mpr hne; linarith
+  have hd : 0 < dist a b / 2 := half_pos (dist_pos.mpr hne)
   have hnc : ¬ ∀ z ∈ Ω, g z = g a := fun h => hconst ⟨g a, h⟩
   obtain ⟨i, ⟨⟨z₁, hz₁, hFz₁⟩, ⟨z₂, hz₂, hFz₂⟩⟩, hinji⟩ :=
     (((hurwitz_eventually_exists_eq hΩ hconn hF hconv ha rfl hnc hd).and
-      (hurwitz_eventually_exists_eq hΩ hconn hF hconv hb hab.symm hnc hd)).and hinj).exists
-  have hz₁₂ : z₁ ≠ z₂ := by
-    rintro rfl
-    have h1 : dist a z₁ < dist a b / 3 := by rw [dist_comm]; exact mem_ball.mp hz₁.2
-    have h2 : dist z₁ b < dist a b / 3 := mem_ball.mp hz₂.2
-    have h3 := dist_triangle a z₁ b
-    linarith
-  exact hz₁₂ (hinji hz₁.1 hz₂.1 (hFz₁.trans hFz₂.symm))
+      (hurwitz_eventually_exists_eq hΩ hconn hF hconv hb hab.symm hnc hd)).and_frequently
+        hinj).exists
+  exact (ball_disjoint_ball (add_halves _).le).ne_of_mem hz₁.2 hz₂.2
+    (hinji hz₁.1 hz₂.1 (hFz₁.trans hFz₂.symm))
 
 end TauCeti

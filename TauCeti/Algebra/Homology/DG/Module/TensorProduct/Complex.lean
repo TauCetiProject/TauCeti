@@ -53,6 +53,37 @@ local instance tensorGradedLeft :
   rw [InternalGrading.ofDecomposition_piece]
   infer_instance
 
+omit [IsScalarTower R Aᵐᵒᵖ M] [IsScalarTower R A N] in
+open MulOpposite in
+/-- The tensor differential built from two graded Leibniz rules has cohomological degree one
+when both factor differentials raise degree by one. -/
+theorem isHomogeneous_leibnizDifferential
+    (hM : ∀ {q : ℤ} {x : M}, x ∈ ℳ q → ∀ a : A,
+      dM (op a • x) = op a • dM x + q.negOnePow • (op (dA a) • x))
+    (hN : ∀ {p : ℤ} {a : A}, a ∈ 𝒜 p → ∀ x : N,
+      dN (a • x) = dA a • x + p.negOnePow • (a • dN x))
+    (hMd : LinearMap.IsHomogeneous dM ℳ ℳ 1) (hNd : LinearMap.IsHomogeneous dN 𝒩 𝒩 1) :
+    LinearMap.IsHomogeneous (leibnizDifferential hM hN)
+      (grading (𝒜 := 𝒜) (InternalGrading.ofDecomposition ℳ)
+        (InternalGrading.ofDecomposition 𝒩)).piece
+      (grading (𝒜 := 𝒜) (InternalGrading.ofDecomposition ℳ)
+        (InternalGrading.ofDecomposition 𝒩)).piece
+      1 := by
+  refine isHomogeneous_of_tmul (𝒜 := 𝒜) _ _ _ _ 1 fun {q p} {m n} hm hn ↦ ?_
+  rw [InternalGrading.ofDecomposition_piece] at hm hn
+  rw [leibnizDifferential_tmul_of_mem hM hN hm]
+  refine Submodule.add_mem _ ?_ (Submodule.smul_mem _ _ ?_)
+  · have hmem := tmul_mem_grading (𝒜 := 𝒜) (InternalGrading.ofDecomposition ℳ)
+      (InternalGrading.ofDecomposition 𝒩)
+      (by simpa only [InternalGrading.ofDecomposition_piece] using hMd.map_mem hm)
+      (by simpa only [InternalGrading.ofDecomposition_piece] using hn)
+    simpa only [add_right_comm] using hmem
+  · have hmem := tmul_mem_grading (𝒜 := 𝒜) (InternalGrading.ofDecomposition ℳ)
+      (InternalGrading.ofDecomposition 𝒩)
+      (by simpa only [InternalGrading.ofDecomposition_piece] using hm)
+      (by simpa only [InternalGrading.ofDecomposition_piece] using hNd.map_mem hn)
+    simpa only [add_assoc] using hmem
+
 /-- The differential of the balanced tensor product has cohomological degree one. -/
 theorem isHomogeneous_differential (hM : IsDGRightModule hA ℳ dM)
     (hN : IsDGLeftModule hA 𝒩 dN) :
@@ -62,26 +93,8 @@ theorem isHomogeneous_differential (hM : IsDGRightModule hA ℳ dM)
       (grading (𝒜 := 𝒜) (InternalGrading.ofDecomposition ℳ)
         (InternalGrading.ofDecomposition 𝒩)).piece
       1 := by
-  rw [LinearMap.isHomogeneous_def]
-  intro p z hz
-  rw [grading_piece_eq_iSup (𝒜 := 𝒜)] at hz
-  refine (iSup_le fun q ↦ Submodule.map₂_le.mpr fun m hm n hn ↦ ?_ :
-    _ ≤ ((grading (𝒜 := 𝒜) (InternalGrading.ofDecomposition ℳ)
-      (InternalGrading.ofDecomposition 𝒩)).piece (p + 1)).comap (differential hM hN)) hz
-  rw [InternalGrading.ofDecomposition_piece] at hm hn
-  rw [Submodule.mem_comap, mk_apply, differential_tmul_of_mem hM hN hm]
-  apply Submodule.add_mem
-  · have hmem := tmul_mem_grading (𝒜 := 𝒜) (InternalGrading.ofDecomposition ℳ)
-      (InternalGrading.ofDecomposition 𝒩)
-      (by simpa only [InternalGrading.ofDecomposition_piece] using hM.isHomogeneous.map_mem hm)
-      (by simpa only [InternalGrading.ofDecomposition_piece] using hn)
-    simpa only [show q + 1 + (p - q) = p + 1 by omega] using hmem
-  · apply Submodule.smul_mem
-    have hmem := tmul_mem_grading (𝒜 := 𝒜) (InternalGrading.ofDecomposition ℳ)
-      (InternalGrading.ofDecomposition 𝒩)
-      (by simpa only [InternalGrading.ofDecomposition_piece] using hm)
-      (by simpa only [InternalGrading.ofDecomposition_piece] using hN.isHomogeneous.map_mem hn)
-    simpa only [show q + (p - q + 1) = p + 1 by omega] using hmem
+  rw [differential_eq_leibnizDifferential]
+  exact isHomogeneous_leibnizDifferential hM.leibniz hN.leibniz hM.isHomogeneous hN.isHomogeneous
 
 /-- The ordinary balanced tensor product of a right and a left DG module, as a cochain
 complex of ground-ring modules. -/

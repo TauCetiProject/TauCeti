@@ -27,7 +27,7 @@ endomorphism `φ` of `ℚ[Sₙ]` whose range is exactly the left ideal `ℚ[Sₙ
 its trace is `κ · dim (ℚ[Sₙ] c_t)` (`TauCeti.LinearMap.trace_eq_mul_finrank_range`). On the other
 hand the matrix of `φ` in the basis of permutations has every diagonal entry equal to the
 coefficient of `c_t` at the identity, which is `1`, so the trace is `n!`
-(`TauCeti.MonoidAlgebra.trace_mulRight`). Comparing gives `κ · dim = n!`, and the dimension is
+(`MonoidAlgebra.trace_mulRight`). Comparing gives `κ · dim = n!`, and the dimension is
 positive.
 
 The scalar can equally be written `n! / f^μ`, with `f^μ` the number of standard Young tableaux of

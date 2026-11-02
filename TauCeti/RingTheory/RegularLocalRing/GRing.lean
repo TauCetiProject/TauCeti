@@ -13,7 +13,6 @@ public import Mathlib.RingTheory.HopkinsLevitzki
 public import Mathlib.RingTheory.KrullDimension.PID
 public import Mathlib.RingTheory.Localization.LocalizationLocalization
 public import Mathlib.RingTheory.PowerSeries.Inverse
-public import TauCeti.RingTheory.AdicCompletion.AlgHom
 public import TauCeti.RingTheory.RegularLocalRing.RegularAlgebraMap
 
 /-!
@@ -30,10 +29,6 @@ G-ring is the first half of quasi-excellence; the second is the J-2 condition on
 * `TauCeti.Excellence.IsGRing R`: `R` is a G-ring.
 * `TauCeti.Excellence.isGRing_iff`: a Noetherian ring is a G-ring if and only if all its formal
   fibres are geometrically regular; flatness of the completions is automatic.
-* `TauCeti.Excellence.regularAlgebraMap_adicCompletion_of_ringEquiv`: regularity of the completion
-  map of a local ring only depends on the local ring up to isomorphism.
-* `TauCeti.Excellence.regularAlgebraMap_adicCompletion_of_isAdicComplete`: the completion map of a
-  complete local ring is regular.
 * `TauCeti.Excellence.IsGRing.of_ringEquiv`: being a G-ring is invariant under ring isomorphisms.
 * `TauCeti.Excellence.IsGRing.of_isLocalization`: a localization of a G-ring is a G-ring.
 * `TauCeti.Excellence.IsGRing.of_isArtinianRing`: an Artinian ring is a G-ring, as each of its
@@ -82,24 +77,6 @@ theorem isGRing_iff {R : Type u} [CommRing R] :
   ⟨fun _ ↦ ⟨inferInstance, fun _ _ _ _ ↦ inferInstance⟩,
     fun ⟨_, h⟩ ↦ ⟨inferInstance, fun p _ ↦ ⟨inferInstance, h p⟩⟩⟩
 
-/-- Regularity of the completion map `A → Â` of a local ring along its maximal ideal is invariant
-under isomorphisms of local rings. -/
-theorem regularAlgebraMap_adicCompletion_of_ringEquiv {A A' : Type u} [CommRing A] [CommRing A']
-    [IsLocalRing A] [IsLocalRing A'] (e : A ≃+* A')
-    [RegularAlgebraMap A (AdicCompletion (maximalIdeal A) A)] :
-    RegularAlgebraMap A' (AdicCompletion (maximalIdeal A') A') := by
-  let : Algebra A A' := e.toRingHom.toAlgebra
-  let e' : A ≃ₐ[A] A' := AlgEquiv.ofRingEquiv (f := e) fun _ ↦ rfl
-  have := (AdicCompletion.congrₐ e' (map_ringEquiv_maximalIdeal e)).regularAlgebraMap
-  exact .of_bijective_algebraMap e.bijective
-
-/-- The completion map `A → Â` of a local ring that is complete along its maximal ideal is
-regular. -/
-theorem regularAlgebraMap_adicCompletion_of_isAdicComplete (A : Type u) [CommRing A]
-    [IsLocalRing A] [IsAdicComplete (maximalIdeal A) A] :
-    RegularAlgebraMap A (AdicCompletion (maximalIdeal A) A) :=
-  (AdicCompletion.ofAlgEquiv (maximalIdeal A)).regularAlgebraMap
-
 namespace IsGRing
 
 variable {R S : Type u} [CommRing R] [CommRing S]
@@ -108,8 +85,8 @@ variable {R S : Type u} [CommRing R] [CommRing S]
 theorem of_ringEquiv [IsGRing R] (e : R ≃+* S) : IsGRing S where
   isNoetherianRing := isNoetherianRing_of_ringEquiv R e
   regularAlgebraMap_adicCompletion q _ :=
-    regularAlgebraMap_adicCompletion_of_ringEquiv
-      (Localization.localRingEquiv (q.comap e) q e rfl)
+    (Localization.localRingEquiv (q.comap e) q e rfl).regularAlgebraMap_adicCompletion
+      (map_ringEquiv_maximalIdeal _)
 
 /-- A localization of a G-ring is a G-ring. -/
 theorem of_isLocalization [Algebra R S] [IsGRing R] (M : Submonoid R) [IsLocalization M S] :
@@ -118,9 +95,9 @@ theorem of_isLocalization [Algebra R S] [IsGRing R] (M : Submonoid R) [IsLocaliz
   regularAlgebraMap_adicCompletion q _ := by
     have := IsLocalization.isLocalization_isLocalization_atPrime_isLocalization M
       (Localization.AtPrime q) q
-    exact regularAlgebraMap_adicCompletion_of_ringEquiv
-      (IsLocalization.algEquiv (q.comap (algebraMap R S)).primeCompl
+    exact (IsLocalization.algEquiv (q.comap (algebraMap R S)).primeCompl
         (Localization.AtPrime (q.comap (algebraMap R S))) (Localization.AtPrime q)).toRingEquiv
+      |>.regularAlgebraMap_adicCompletion (map_ringEquiv_maximalIdeal _)
 
 /-- The localization `Localization M` of a G-ring is a G-ring. -/
 instance localization [IsGRing R] (M : Submonoid R) : IsGRing (Localization M) :=
@@ -130,7 +107,7 @@ instance localization [IsGRing R] (M : Submonoid R) : IsGRing (Localization M) :
 instance (priority := 100) of_isArtinianRing [IsArtinianRing R] : IsGRing R where
   isNoetherianRing := inferInstance
   regularAlgebraMap_adicCompletion p _ :=
-    regularAlgebraMap_adicCompletion_of_isAdicComplete (Localization.AtPrime p)
+    (maximalIdeal (Localization.AtPrime p)).regularAlgebraMap_adicCompletion_of_isAdicComplete
 
 /-- A Noetherian local ring of dimension at most one that is complete along its maximal ideal is a
 G-ring. This covers complete discrete valuation rings such as `k⟦X⟧` and `ℤ_[p]`. -/
@@ -143,13 +120,13 @@ theorem of_isAdicComplete [IsLocalRing R] [IsNoetherianRing R] [Ring.KrullDimLE 
     · have : Ring.KrullDimLE 0 (Localization.AtPrime p) := .of_isLocalization p hp _
       have : IsArtinianRing (Localization.AtPrime p) :=
         IsNoetherianRing.isArtinianRing_of_krullDimLE_zero
-      exact regularAlgebraMap_adicCompletion_of_isAdicComplete _
+      exact (maximalIdeal _).regularAlgebraMap_adicCompletion_of_isAdicComplete
     · obtain rfl := IsLocalRing.eq_maximalIdeal hp
-      have := regularAlgebraMap_adicCompletion_of_isAdicComplete R
-      exact regularAlgebraMap_adicCompletion_of_ringEquiv
-        (IsLocalization.atUnits R (maximalIdeal R).primeCompl
+      have := (maximalIdeal R).regularAlgebraMap_adicCompletion_of_isAdicComplete
+      exact (IsLocalization.atUnits R (maximalIdeal R).primeCompl
           (S := Localization.AtPrime (maximalIdeal R))
           fun _ hx ↦ IsLocalRing.notMem_maximalIdeal.mp hx).toRingEquiv
+        |>.regularAlgebraMap_adicCompletion (map_ringEquiv_maximalIdeal _)
 
 end IsGRing
 

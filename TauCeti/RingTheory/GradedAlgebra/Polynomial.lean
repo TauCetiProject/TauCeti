@@ -1,0 +1,159 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Algebra.Polynomial.Coeff
+public import Mathlib.RingTheory.GradedAlgebra.RingHom
+public import Mathlib.RingTheory.PowerSeries.Basic
+
+/-!
+# The homogeneous components of an `ℕ`-graded ring as a polynomial
+
+Let `A` be a ring graded by `𝒜 : ℕ → σ`. Recording the homogeneous components `aₙ` of `a ∈ A` as
+the coefficients of a polynomial gives a ring homomorphism
+
+  `A →+* A[X]`, `a ↦ ∑ₙ aₙ Xⁿ`.
+
+An element `a` is homogeneous of degree `n` exactly when it is sent to the monomial `a Xⁿ`. This
+turns homogeneity into an equation in a ring, so that it can be transported along constructions
+which commute with ring homomorphisms. Under it, a family of elements `a_d` with `a_d ∈ 𝒜 (w d)`
+becomes the family `a_d X^(w d)`: the grading is the action of a polynomial variable.
+
+## Main definitions
+
+* `TauCeti.GradedAlgebra.toPolynomial`: the ring homomorphism `a ↦ ∑ₙ aₙ Xⁿ`.
+
+## Main results
+
+* `TauCeti.GradedAlgebra.coeff_toPolynomial`: the coefficient of `Xⁿ` is the component of
+  degree `n`.
+* `TauCeti.GradedAlgebra.toPolynomial_eq_monomial_iff`: `a` is sent to `a Xⁿ` exactly when `a` is
+  homogeneous of degree `n`.
+* `RingHom.map_toPolynomial_eq_iff`: a ring homomorphism preserves the grading exactly when it
+  intertwines these polynomial-valued maps.
+* `PowerSeries.map_toPolynomial_eq_mk_iff`: a power series has its coefficient of `Yⁿ` in degree
+  `n - 1` exactly when its base change along `a ↦ ∑ₙ aₙ Xⁿ` is `∑ₙ Xⁿ⁻¹ aₙ Yⁿ`.
+-/
+
+public section
+
+noncomputable section
+
+namespace TauCeti.GradedAlgebra
+
+open DirectSum Polynomial
+
+variable {A σ : Type*} [Semiring A] [SetLike σ A] [AddSubmonoidClass σ A] (𝒜 : ℕ → σ)
+  [GradedRing 𝒜]
+
+/-- The ring homomorphism `A →+* A[X]` sending an element `a` of an `ℕ`-graded ring to the
+polynomial `∑ₙ aₙ Xⁿ` whose coefficients are its homogeneous components. -/
+def toPolynomial : A →+* A[X] where
+  toFun a := toSemiring (fun n ↦ (monomial n).toAddMonoidHom.comp (AddSubmonoidClass.subtype (𝒜 n)))
+    (by simp) (fun ai aj ↦ by simp [monomial_mul_monomial]) (decompose 𝒜 a)
+  map_one' := by simp
+  map_mul' := by simp
+  map_zero' := by simp
+  map_add' := by simp
+
+variable {𝒜}
+
+/-- A homogeneous element `a` of degree `n` is sent to the monomial `a Xⁿ`. -/
+theorem toPolynomial_of_mem {a : A} {n : ℕ} (ha : a ∈ 𝒜 n) : toPolynomial 𝒜 a = monomial n a := by
+  simp only [toPolynomial, RingHom.coe_mk, MonoidHom.coe_mk, OneHom.coe_mk, decompose_of_mem 𝒜 ha]
+  exact toSemiring_of (A := fun i ↦ 𝒜 i) _ _ _ n ⟨a, ha⟩
+
+variable (𝒜)
+
+/-- The coefficient of `Xⁿ` in the image of `a` is the homogeneous component of `a` of degree
+`n`. -/
+@[simp]
+theorem coeff_toPolynomial (a : A) (n : ℕ) : (toPolynomial 𝒜 a).coeff n = decompose 𝒜 a n := by
+  induction a using Decomposition.inductionOn 𝒜 with
+  | zero => simp
+  | @homogeneous i a =>
+    obtain ⟨a, ha⟩ := a
+    rw [toPolynomial_of_mem ha, coeff_monomial]
+    split_ifs with h
+    · subst h
+      rw [decompose_of_mem_same 𝒜 ha]
+    · rw [decompose_of_mem_ne 𝒜 ha h]
+  | add a b ha hb => simp [ha, hb]
+
+variable {𝒜}
+
+/-- **Homogeneity as an equation**: `a` is sent to the monomial `a Xⁿ` exactly when it is
+homogeneous of degree `n`. -/
+theorem toPolynomial_eq_monomial_iff {a : A} {n : ℕ} :
+    toPolynomial 𝒜 a = monomial n a ↔ a ∈ 𝒜 n := by
+  refine ⟨fun h ↦ ?_, toPolynomial_of_mem⟩
+  have := congrArg (coeff · n) h
+  simp only [coeff_toPolynomial, coeff_monomial_same] at this
+  exact this ▸ SetLike.coe_mem _
+
+end TauCeti.GradedAlgebra
+
+namespace GradedRingHom
+
+open TauCeti.GradedAlgebra
+
+variable {A B σ τ : Type*} [Semiring A] [Semiring B]
+  [SetLike σ A] [AddSubmonoidClass σ A] [SetLike τ B] [AddSubmonoidClass τ B]
+  {𝒜 : ℕ → σ} {ℬ : ℕ → τ} [GradedRing 𝒜] [GradedRing ℬ]
+
+/-- A graded ring homomorphism commutes with recording homogeneous components as polynomial
+coefficients. -/
+@[simp]
+theorem map_toPolynomial (f : 𝒜 →+*ᵍ ℬ) (a : A) :
+    Polynomial.map f.toRingHom (toPolynomial 𝒜 a) = toPolynomial ℬ (f a) := by
+  ext n
+  simpa only [Polynomial.coeff_map, coeff_toPolynomial, GradedRingHom.coe_toRingHom] using
+    (f.map_directSumDecompose (x := a) (i := n))
+
+end GradedRingHom
+
+namespace RingHom
+
+open TauCeti.GradedAlgebra
+
+variable {A B σ τ : Type*} [Semiring A] [Semiring B]
+  [SetLike σ A] [AddSubmonoidClass σ A] [SetLike τ B] [AddSubmonoidClass τ B]
+  {𝒜 : ℕ → σ} {ℬ : ℕ → τ} [GradedRing 𝒜] [GradedRing ℬ]
+
+/-- A ring homomorphism preserves the grading exactly when it intertwines the universal scalar
+actions recorded by `toPolynomial`. The scalar is an indeterminate, not just an element of the
+coefficient ring. -/
+theorem map_toPolynomial_eq_iff (f : A →+* B) :
+    (∀ a, Polynomial.map f (toPolynomial 𝒜 a) = toPolynomial ℬ (f a)) ↔
+      ∀ (n : ℕ) (a : A), a ∈ 𝒜 n → f a ∈ ℬ n := by
+  constructor
+  · intro h n a ha
+    apply toPolynomial_eq_monomial_iff.mp
+    rw [← h, toPolynomial_of_mem ha, Polynomial.map_monomial]
+  · intro h
+    let g : 𝒜 →+*ᵍ ℬ := { __ := f, map_mem := fun ha ↦ h _ _ ha }
+    exact g.map_toPolynomial
+
+end RingHom
+
+namespace PowerSeries
+
+open TauCeti.GradedAlgebra
+
+variable {A σ : Type*} [Semiring A] [SetLike σ A] [AddSubmonoidClass σ A] {𝒜 : ℕ → σ}
+  [GradedRing 𝒜]
+
+/-- A power series has its coefficient of `Yⁿ` in degree `n - 1` exactly when its base change
+along `a ↦ ∑ₙ aₙ Xⁿ` is the series `∑ₙ Xⁿ⁻¹ aₙ Yⁿ`. -/
+theorem map_toPolynomial_eq_mk_iff (g : PowerSeries A) :
+    g.map (toPolynomial 𝒜) =
+        mk (fun n ↦ Polynomial.X ^ (n - 1) * coeff n (g.map Polynomial.C)) ↔
+      ∀ n, coeff n g ∈ 𝒜 (n - 1) := by
+  refine PowerSeries.ext_iff.trans (forall_congr' fun n ↦ ?_)
+  rw [coeff_mk, coeff_map, coeff_map, Polynomial.X_pow_mul,
+    Polynomial.C_mul_X_pow_eq_monomial, toPolynomial_eq_monomial_iff]
+
+end PowerSeries

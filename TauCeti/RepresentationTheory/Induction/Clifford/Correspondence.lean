@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Induction.Clifford.LiesOver
-public import TauCeti.RepresentationTheory.Induction.Mackey.Irreducible
+public import TauCeti.RepresentationTheory.Induction.Mackey.Split
 public import TauCeti.RepresentationTheory.Maschke
 import TauCeti.RepresentationTheory.AsModule
 import TauCeti.RepresentationTheory.Irreducible
@@ -92,7 +92,7 @@ theorem iSup_range_intertwiningMap_inertia_eq_top (V : FDRep k N) (U : FDRep k (
         (U.ρ t ∘ₗ g.toLinearMap ∘ₗ ε.toLinearMap) fun n v => by
           simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, IntertwiningMap.coe_toLinearMap,
             hε, IntertwiningMap.isIntertwining, MonoidHom.coe_comp, Function.comp_apply]
-          rw [← Module.End.mul_apply, ← Module.End.mul_apply, ← map_mul, ← map_mul]
+          rw [← mul_apply_eq_comp, ← mul_apply_eq_comp, ← map_mul, ← map_mul]
           congr 2
           exact Subtype.ext (by simp [mul_assoc])
     refine Submodule.iSup_induction _ (motive := fun x => U.ρ t x ∈ J) hx ?_ ?_ ?_

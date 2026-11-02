@@ -30,6 +30,10 @@ cusps of `Γ'`, so one needs to know that `Γ` has no further cusps, which
 (`Subgroup.IsArithmetic.isCusp_of_isCusp`: both have the cusps of `SL(2, ℤ)`). Under it the two
 constructions are mutually inverse: the image of `M_k(Γ) → M_k(Γ')` is exactly the
 `Γ`-invariant part of `M_k(Γ')` (`ModularForm.mem_range_restrictₗ_iff`).
+Mathlib's trace enlarges the group by summing translates over coset representatives. When every
+element of `Γ` is a product of an element of `Γ' ≤ Γ` and one of `𝒢`, the cosets of `𝒢` in `Γ`
+and in `Γ'` correspond, so the trace from `𝒢` to `Γ`, restricted to `Γ'`, is the trace from `𝒢`
+to `Γ'` (`CuspForm.restrict_trace`). This is how forms for two non-nested groups are compared.
 
 Translation by a positive-determinant matrix is packaged as the linear map
 `ModularForm.translateₗ`. General `GL₂(ℝ)` translation is only semilinear because a
@@ -67,6 +71,9 @@ AINTLIB `LeanModularForms` project
 * `ModularForm.mem_range_restrictₗ_iff`, `CuspForm.mem_range_restrictₗ_iff`: for `Γ' ≤ Γ` with every
   cusp of `Γ` a cusp of `Γ'`, a form for `Γ'` extends to `Γ` exactly when it is `Γ`-slash
   invariant.
+* `SlashInvariantForm.restrict_trace`, `ModularForm.restrict_trace`, `CuspForm.restrict_trace`:
+  when every element of `Γ` factors as an element of `Γ' ≤ Γ` times an element of `𝒢`, the trace
+  from `𝒢` to `Γ` restricts to the trace from `𝒢` to `Γ'`.
 -/
 
 public section
@@ -159,24 +166,6 @@ analogue of Mathlib's `ModularForm.mcast_apply`, which Mathlib does not yet prov
 lemma _root_.CuspForm.mcast_apply {a b : ℤ} {Γ Γ' : Subgroup (GL (Fin 2) ℝ)} (h : a = b)
     (f : CuspForm Γ a) (hΓ : Γ' = Γ := by rfl) (z : ℍ) : CuspForm.mcast h f hΓ z = f z := (rfl)
 
-/-- The weight-`k` slash action of `-I` is multiplication by `(-1) ^ k`: `-I` acts trivially
-on `ℍ` and has determinant `1`, so the only surviving factor is its automorphy factor
-`denom (-I) z ^ (-k) = (-1) ^ (-k) = (-1) ^ k`.
-
-This is the source of every parity constraint on weights and nebentypus characters. -/
-@[simp]
-theorem _root_.ModularForm.slash_neg_one (k : ℤ) (f : ℍ → ℂ) :
-    f ∣[k] (-1 : GL (Fin 2) ℝ) = (-1 : ℂ) ^ k • f := by
-  have hzpow : (-1 : ℂ) ^ (-k) = (-1 : ℂ) ^ k := by
-    rw [zpow_neg, ← inv_zpow]
-    norm_num
-  have hdet : (-1 : GL (Fin 2) ℝ).det = 1 := by
-    ext
-    simp [Matrix.det_neg]
-  funext z
-  rw [ModularForm.slash_apply, σ_eq_refl_of_det_pos (by simp [Matrix.det_neg])]
-  simp [hzpow, hdet, mul_comm]
-
 /-- **The weight-`k` slash formula at a positive-determinant matrix**, free of the `σ` twist:
 
 `f ∣[k] g = fun τ ↦ f (g • τ) * |det g| ^ (k - 1) * denom g τ ^ (-k)`.
@@ -231,7 +220,7 @@ theorem _root_.ModularForm.slash_scalar (k : ℤ) (u : ℝˣ) (f : ℍ → ℂ) 
   rw [ModularForm.slash_apply_of_det_pos k hdetpos, UpperHalfPlane.glScalar_smul,
     UpperHalfPlane.denom_scalar, hdet, abs_of_nonneg (sq_nonneg (u : ℝ))]
   push_cast
-  rw [← zpow_natCast (((u : ℝ) : ℂ)) 2, ← zpow_mul]
+  rw [← zpow_natCast (((u : ℝ) : ℂ)) 2, ← _root_.zpow_mul]
   simp only [Pi.smul_apply, smul_eq_mul]
   rw [mul_assoc, ← zpow_add₀ (by exact_mod_cast u.ne_zero), mul_comm]
   congr 1
@@ -264,7 +253,7 @@ theorem _root_.SlashInvariantForm.slash_action_eqn_of_det_pos {F : Type*} [FunLi
   have hden : denom γ (τ : ℂ) ^ (-k) ≠ 0 := zpow_ne_zero _ (denom_ne_zero γ τ)
   have hpow : ((|(γ.det : ℝ)| : ℝ) : ℂ) ^ (k - 1) ≠ 0 := zpow_ne_zero _ hdet_ne
   rw [(eq_mul_inv_iff_mul_eq₀ hpow).mpr ((eq_mul_inv_iff_mul_eq₀ hden).mpr h),
-    ← zpow_neg, ← zpow_neg, neg_neg, neg_sub]
+    ← _root_.zpow_neg, ← _root_.zpow_neg, neg_neg, neg_sub]
   ring
 
 /-! ### Translation by positive-determinant matrices -/
@@ -435,6 +424,59 @@ lemma mem_range_restrictₗ_iff {R : Type*} [Semiring R] [SMul R ℂ]
 
 end CuspForm
 
+/-! ### Restricting a trace along a factorization -/
+
+section RestrictTrace
+
+variable {𝒢 : Subgroup (GL (Fin 2) ℝ)} [𝒢.IsFiniteRelIndex Γ] [𝒢.IsFiniteRelIndex Γ']
+
+/-- **Restricting a trace along a factorization.** Let `Γ' ≤ Γ` be such that every element of `Γ`
+is a product `x * g` with `x ∈ Γ'` and `g ∈ 𝒢`. Then the trace from `𝒢` to `Γ`, restricted to
+`Γ'`, is the trace from `𝒢` to `Γ'`.
+
+For congruence subgroups, with `𝒢 = Γ₁(b)`, `Γ = Γ₁(gcd a b)` and `Γ' = Γ₁(a)`
+(`CongruenceSubgroup.exists_mul_eq_of_mem_Gamma1_gcd`), it says that the trace from `Γ₁(lcm a b)`
+to `Γ₁(a)` of a form of level `Γ₁(b)` is its trace from `Γ₁(b)` to `Γ₁(gcd a b)`, restricted to
+`Γ₁(a)`. -/
+lemma SlashInvariantForm.restrict_trace (hΓ' : Γ' ≤ Γ)
+    (hmul : ∀ h ∈ Γ, ∃ x ∈ Γ', ∃ g ∈ 𝒢, x * g = h) (f : SlashInvariantForm 𝒢 k) :
+    restrict hΓ' (SlashInvariantForm.trace Γ f) = SlashInvariantForm.trace Γ' f := by
+  let := Fintype.ofFinite (Γ ⧸ 𝒢.subgroupOf Γ)
+  let := Fintype.ofFinite (Γ' ⧸ 𝒢.subgroupOf Γ')
+  -- the two traces sum over `Γ' ⧸ (𝒢 ⊓ Γ')` and `Γ ⧸ (𝒢 ⊓ Γ)`; the coset map induced by the
+  -- inclusion `Γ' → Γ` is injective, and the factorization hypothesis makes it surjective
+  let e := Subgroup.quotientSubgroupOfEmbeddingOfLE 𝒢 hΓ'
+  have he : Function.Bijective e := by
+    refine ⟨e.injective, fun q ↦ ?_⟩
+    induction q using QuotientGroup.induction_on with | H h => ?_
+    obtain ⟨x, hx, g, hg, hxg⟩ := hmul h h.2
+    refine ⟨QuotientGroup.mk ⟨x, hx⟩, Quotient.sound' ?_⟩
+    rw [QuotientGroup.leftRel_apply, Subgroup.mem_subgroupOf]
+    simpa [← hxg] using hg
+  ext τ
+  rw [coe_restrict, coe_trace, coe_trace, Finset.sum_apply, Finset.sum_apply]
+  refine (Fintype.sum_bijective e he _ _ fun q ↦ ?_).symm
+  induction q using QuotientGroup.induction_on with
+  | H x => simp [e, Subgroup.quotientSubgroupOfEmbeddingOfLE_apply_mk, quotientFunc_mk]
+
+/-- **Restricting a trace along a factorization**, for modular forms: see
+`SlashInvariantForm.restrict_trace`. -/
+lemma ModularForm.restrict_trace (hΓ' : Γ' ≤ Γ)
+    (hmul : ∀ h ∈ Γ, ∃ x ∈ Γ', ∃ g ∈ 𝒢, x * g = h) (f : ModularForm 𝒢 k) :
+    restrict hΓ' (ModularForm.trace Γ f) = ModularForm.trace Γ' f :=
+  ModularForm.ext fun τ ↦ congrFun (congrArg DFunLike.coe
+    (SlashInvariantForm.restrict_trace hΓ' hmul f.toSlashInvariantForm)) τ
+
+/-- **Restricting a trace along a factorization**, for cusp forms: see
+`SlashInvariantForm.restrict_trace`. -/
+lemma CuspForm.restrict_trace (hΓ' : Γ' ≤ Γ)
+    (hmul : ∀ h ∈ Γ, ∃ x ∈ Γ', ∃ g ∈ 𝒢, x * g = h) (f : CuspForm 𝒢 k) :
+    restrict hΓ' (CuspForm.trace Γ f) = CuspForm.trace Γ' f :=
+  CuspForm.ext fun τ ↦ congrFun (congrArg DFunLike.coe
+    (SlashInvariantForm.restrict_trace hΓ' hmul f.toSlashInvariantForm)) τ
+
+end RestrictTrace
+
 end ChangeGroup
 
 /-! ### Constant forms at nonzero weight -/
@@ -463,12 +505,12 @@ theorem eq_zero_of_eq_const_of_weight_ne_zero
   have hdetpos : 0 < γ.val.det := by
     simp [← GeneralLinearGroup.val_det_apply, hdet]
   have h := SlashInvariantForm.slash_action_eqn_of_det_pos f hγ hdetpos z
-  simp only [hdet, Units.val_one, abs_one, Complex.ofReal_one, one_zpow, one_mul] at h
+  simp only [hdet, Units.val_one, abs_one, Complex.ofReal_one, _root_.one_zpow, one_mul] at h
   rw [hf, Function.const_apply, Function.const_apply] at h
   have hd : denom γ z ^ k = 1 := mul_right_cancel₀ hc0 (by simpa using h.symm)
   have hnorm : ‖denom γ z‖ = 1 := by
     apply (zpow_left_inj₀ (norm_nonneg _) zero_le_one hk).mp
-    simpa only [norm_zpow, norm_one, one_zpow] using congrArg norm hd
+    simpa only [norm_zpow, norm_one, _root_.one_zpow] using congrArg norm hd
   have him : |(denom γ z).im| = 2 := by
     simp [denom, z, Complex.mul_im, abs_mul, abs_div, abs_abs]
     field_simp

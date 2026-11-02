@@ -21,11 +21,10 @@ the open image crosscut together with those ends. This file packages the same cu
 `Path`: its range is exactly that closure, it follows the usual angular parametrisation in its
 interior, and that interior is injective when the holomorphic map is injective on the disc.
 
-This is a topological input to layer **L5** of the conformal-mapping roadmap
-(`TauCetiRoadmap/ConformalMapping/README.md`), the Carathéodory boundary correspondence. The next
-separation step joins a closed image crosscut to one of the two arcs that its endpoints cut from
-the Jordan boundary. The set-level description of the closure does not by itself supply the
-continuous parametrisation that such an argument needs; the path below does.
+This is a topological input to the Carathéodory boundary correspondence. Its separation step joins a
+closed image crosscut to one of the two arcs that its endpoints cut from the Jordan boundary. The
+set-level description of the closure does not by itself supply the continuous parametrisation that
+such an argument needs; the path below does.
 
 ## Construction
 
@@ -59,16 +58,6 @@ endpoint values there can repeat only between its endpoints, is
   crosscut is the interior of a path whose range is its closure.
 * `TauCeti.exists_path_range_eq_closure_image_ball_inter_sphere_of_injOn` — for a holomorphic
   injection, the path endpoints lie on the image frontier and no other values repeat.
-
-## Coordination with upstream Mathlib
-
-Layer L5 is absent from
-[mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505), the in-progress
-human-curated Riemann-mapping-theorem effort, which stops at the mapping theorem itself. Mathlib
-supplies `Path` and the injectivity of `circleMap` on an interval shorter than a full turn; the
-extension of a curve across the two ends of an open interval is packaged as a path in
-`TauCeti/Topology/Path/Extend/Ioo.lean`. Mathlib has no boundary-crosscut or endpoint-limit result.
-No Mathlib source is vendored.
 
 ## References
 

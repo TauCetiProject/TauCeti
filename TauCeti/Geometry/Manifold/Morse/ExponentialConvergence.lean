@@ -39,7 +39,7 @@ and converging to `p`. The energy `f (γ t) - f p` is nonnegative
 the energy once `γ` stays near `p`, so by Grönwall's inequality the energy decays like
 `exp (-lam * t)` (`TauCeti.exists_sub_le_mul_exp_maximalIntegralCurve_neg_mgradient`). This is the
 manifold counterpart, for an arbitrary `C¹` metric, of the vector-space theorem
-`TauCeti.IsIntegralCurveOn.exists_sub_le_mul_exp_atTop`.
+`IsIntegralCurveOn.exists_sub_le_mul_exp_atTop`.
 
 Energy decay alone does not bound the distance from `γ t` to `p`, since the Hessian at a saddle
 has null directions. The distance is recovered from the Riemannian length of `γ`. The length over
@@ -51,7 +51,7 @@ so summing a geometric series bounds the tail length of `γ` after time `t`, and
 Riemannian distance from `γ t` to `p`, by a multiple of `sqrt (f (γ t) - f p)`. Hence that distance
 decays exponentially
 (`TauCeti.exists_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient`), as in
-`TauCeti.IsIntegralCurveOn.exists_norm_sub_le_mul_exp_atTop`. The distance is
+`IsIntegralCurveOn.exists_norm_sub_le_mul_exp_atTop`. The distance is
 `Manifold.riemannianEDist`, the infimum of lengths of `C¹` paths; on a Riemannian manifold in the
 sense of `IsRiemannianManifold` it is the ambient extended distance.
 
@@ -105,7 +105,7 @@ theorem IsManifoldNondegenerateCriticalPoint.exists_mul_abs_sub_le_norm_mgradien
   obtain ⟨lam, hlam, hloj⟩ :=
     ((isManifoldNondegenerateCriticalPoint_iff I).1 hp).exists_mul_abs_sub_le_norm_fderiv_sq
   obtain ⟨C, hC, hbd⟩ :=
-    eventually_norm_fderiv_comp_extChartAt_symm_le_mul_norm_mgradient (I := I) f p
+    eventually_norm_fderiv_comp_extChartAt_symm_le_mul_norm_mgradient (I := I) p
   refine ⟨lam / C ^ 2, by positivity, ?_⟩
   filter_upwards [(continuousAt_extChartAt (I := I) p).eventually hloj, hbd,
     extChartAt_source_mem_nhds (I := I) p] with y hy hyb hys
@@ -113,7 +113,7 @@ theorem IsManifoldNondegenerateCriticalPoint.exists_mul_abs_sub_le_norm_mgradien
     (extChartAt I p).left_inv (mem_extChartAt_source p)] at hy
   calc lam / C ^ 2 * |f y - f p| = lam * |f y - f p| / C ^ 2 := by ring
     _ ≤ ‖fderiv ℝ (f ∘ (extChartAt I p).symm) (extChartAt I p y)‖ ^ 2 / C ^ 2 := by gcongr
-    _ ≤ (C * ‖mgradient I f y‖) ^ 2 / C ^ 2 := by gcongr
+    _ ≤ (C * ‖mgradient I f y‖) ^ 2 / C ^ 2 := by gcongr; exact hyb f
     _ = ‖mgradient I f y‖ ^ 2 := by field_simp
 
 end Lojasiewicz
@@ -299,7 +299,7 @@ the Riemannian distance.** If the maximal integral curve `γ` of `-grad f` throu
 all positive time and converges to a nondegenerate critical point `p`, then the Riemannian
 distance from `γ t` to `p` is at most `C * exp (-μ * t)` for some `μ, C > 0` and all large `t`.
 This is the manifold counterpart, for an arbitrary `C¹` metric, of the vector-space theorem
-`TauCeti.IsIntegralCurveOn.exists_norm_sub_le_mul_exp_atTop`. -/
+`IsIntegralCurveOn.exists_norm_sub_le_mul_exp_atTop`. -/
 theorem exists_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient
     (hf : ContMDiff I 𝓘(ℝ) 2 f) :
     ∃ μ > 0, ∃ C > 0, ∀ᶠ t in atTop,

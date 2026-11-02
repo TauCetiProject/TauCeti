@@ -139,6 +139,15 @@ theorem summatory_const_mul (c : ℝ) (w : ι → ℝ) (x : ℝ) :
     summatory N (fun i ↦ c * w i) x = c * summatory N w x := by
   simp [summatory, Finset.mul_sum]
 
+/-- At a uniform lower-bound cutoff, twisting a weight by a function of its `N`-value multiplies
+the summatory function by the value of the twist at that cutoff. -/
+theorem summatory_mul_eq_mul_summatory_of_le {R : Type*} [NonUnitalNonAssocCommSemiring R]
+    {a : ℝ} (ha : ∀ i, a ≤ N i) (w : ι → R) (g : ℝ → R) :
+    summatory N (fun i ↦ w i * g (N i)) a = g a * summatory N w a := by
+  rw [summatory_apply, summatory_apply, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun i hi ↦ ?_
+  rw [le_antisymm ((mem_normLE N).mp hi) (ha i), mul_comm]
+
 /-- Below a uniform lower bound for the `N`-values every summatory function vanishes. -/
 theorem summatory_eq_zero_of_lt {M : Type*} [AddCommMonoid M] {b x : ℝ}
     (hb : ∀ i, b ≤ (N i : ℝ)) (hx : x < b) (w : ι → M) : summatory N w x = 0 := by

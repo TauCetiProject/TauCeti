@@ -32,7 +32,7 @@ namespace TauCeti
 
 open TrivSqZeroExt
 
-variable {R A A' B : Type*} [CommRing R] [CommRing A] [Bialgebra R A]
+variable {R A A' B : Type*} [CommSemiring R] [CommRing A] [Bialgebra R A]
   [CommRing A'] [Bialgebra R A'] [CommRing B] [Algebra R B]
 
 /-- A formally smooth coordinate morphism induces a surjection on counit-valued derivations.
@@ -42,7 +42,7 @@ theorem derivationComp_surjective_of_formallySmooth (φ : A' →ₐc[R] A)
     Function.Surjective (derivationComp (B := B) φ) := by
   intro d
   -- Give the dual numbers the source-coordinate action defined by the tangent vector.
-  let ψ : A' →ₐ[R] DualNumber B := (derivationToDualNumberEquivLift R A'
+  let ψ : A' →ₐ[R] DualNumber B := (derivationToTrivSqZeroExtEquivLift R A'
     (Bialgebra.CounitAlgebra R A' B) d).val
   let : Algebra A' A := φ.toAlgHom.toRingHom.toAlgebra
   let : IsScalarTower R A' A := IsScalarTower.of_algHom φ.toAlgHom
@@ -60,7 +60,8 @@ theorem derivationComp_surjective_of_formallySmooth (φ : A' →ₐc[R] A)
   let g : DualNumber B →ₐ[A'] B :=
     { fstHom R B B with
       commutes' a := by
-        exact derivationToDualNumberEquivLift_apply_fst d a }
+        exact
+          derivationToTrivSqZeroExtEquivLift_apply_fst (B := Bialgebra.CounitAlgebra R A' B) d a }
   have hg : Function.Surjective g := fun b => ⟨inl b, rfl⟩
   have hnil : IsNilpotent (RingHom.ker g.toRingHom) :=
     ⟨2, kerIdeal_sq B B⟩
@@ -72,14 +73,16 @@ theorem derivationComp_surjective_of_formallySmooth (φ : A' →ₐc[R] A)
     ext a
     exact Algebra.FormallySmooth.liftOfSurjective_apply f g hg hnil a
   -- Taking the infinitesimal part returns a tangent vector above the prescribed one.
-  let e := (derivationToDualNumberEquivLift R A (Bialgebra.CounitAlgebra R A B)).symm ⟨lR, hl⟩
+  let e := (derivationToTrivSqZeroExtEquivLift R A (Bialgebra.CounitAlgebra R A B)
+    (M := Bialgebra.CounitAlgebra R A B)).symm ⟨lR, hl⟩
   refine ⟨e, ?_⟩
   ext a
   rw [derivationComp_apply]
-  rw [derivationToDualNumberEquivLift_symm_apply]
+  rw [derivationToTrivSqZeroExtEquivLift_symm_apply]
   have hla : lR (φ a) = ψ a := by
     simpa only [lR, AlgHom.restrictScalars_apply, RingHom.algebraMap_toAlgebra,
       AlgHom.toRingHom_eq_coe, RingHom.coe_coe, BialgHom.coe_toAlgHom] using l.commutes a
-  exact (congrArg snd hla).trans (derivationToDualNumberEquivLift_apply_snd d a)
+  exact (congrArg snd hla).trans
+    (derivationToTrivSqZeroExtEquivLift_apply_snd (B := Bialgebra.CounitAlgebra R A' B) d a)
 
 end TauCeti

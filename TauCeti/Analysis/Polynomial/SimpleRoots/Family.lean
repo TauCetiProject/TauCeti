@@ -31,9 +31,9 @@ is `TauCeti.Sym.analyticOnNhd_coeffEquiv_map_eval_coeffEquiv_symm` in
 general holomorphic coordinate changes, is proved separately in
 `TauCeti/Analysis/Polynomial/RootSum/Family.lean`.
 
-This is the multiplicity-free assembly step in Lane F4.1 of the analytic Heegaard Floer roadmap,
-whose first target is the smooth complex structure on `Sym^g(Σ)` from elementary symmetric
-functions. The organization follows Ozsváth--Szabó,
+The statements hold over any complete nontrivially normed algebraically closed field. For complex
+symmetric powers, this is the multiplicity-free assembly step for the complex structure from
+elementary symmetric functions. The organization follows Ozsváth--Szabó,
 [arXiv:math/0101206](https://arxiv.org/abs/math/0101206), Section 2.1.
 -/
 
@@ -45,7 +45,7 @@ namespace TauCeti
 
 namespace Sym
 
-variable {𝕜 : Type*} [RCLike 𝕜] [IsAlgClosed 𝕜]
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [IsAlgClosed 𝕜]
 variable {ι : Type*} [Finite ι] {m : ι → ℕ} {n : ℕ}
 
 attribute [local instance] Fintype.ofFinite
@@ -85,28 +85,12 @@ theorem analyticAt_piSigmaConstHomeomorph_coeffEquiv_map_coeffEquiv_symm
         coeffEquiv 𝕜 (m i) (_root_.Sym.map (φ i)
           ((coeffEquiv 𝕜 (m i)).symm ((piSigmaConstHomeomorph 𝕜 e).symm c i)))))
       (piSigmaConstHomeomorph 𝕜 e c₀) := by
-  have hin := analyticAt_piSigmaConstHomeomorph_symm (𝕜 := 𝕜) e
-    (piSigmaConstHomeomorph 𝕜 e c₀)
   have hblocks := analyticAt_pi_coeffEquiv_map_coeffEquiv_symm hz hc₀ hφ
-  have hblocks' : AnalyticAt 𝕜
-      (fun c => fun i => coeffEquiv 𝕜 (m i) (_root_.Sym.map (φ i)
-        ((coeffEquiv 𝕜 (m i)).symm (c i))))
-      ((piSigmaConstHomeomorph 𝕜 e).symm (piSigmaConstHomeomorph 𝕜 e c₀)) := by
-    rw [Homeomorph.symm_apply_apply]
-    exact hblocks
-  have hmiddle := AnalyticAt.comp
-    (f := (piSigmaConstHomeomorph 𝕜 e).symm) hblocks' hin
-  have hmiddle' : AnalyticAt 𝕜
-      (fun c => fun i => coeffEquiv 𝕜 (m i) (_root_.Sym.map (φ i)
-        ((coeffEquiv 𝕜 (m i)).symm ((piSigmaConstHomeomorph 𝕜 e).symm c i))))
-      (piSigmaConstHomeomorph 𝕜 e c₀) := by
-    convert hmiddle using 1
-    all_goals rfl
-  convert AnalyticAt.comp
-    (f := fun c => fun i => coeffEquiv 𝕜 (m i) (_root_.Sym.map (φ i)
-      ((coeffEquiv 𝕜 (m i)).symm ((piSigmaConstHomeomorph 𝕜 e).symm c i))))
-    (analyticAt_piSigmaConstHomeomorph (𝕜 := 𝕜) e' _) hmiddle' using 1
-  all_goals rfl
+  have hmiddle := hblocks.comp_of_eq
+    (analyticAt_piSigmaConstHomeomorph_symm (𝕜 := 𝕜) e
+      (piSigmaConstHomeomorph 𝕜 e c₀))
+    ((piSigmaConstHomeomorph 𝕜 e).symm_apply_apply c₀)
+  exact (analyticAt_piSigmaConstHomeomorph (𝕜 := 𝕜) e' _).comp hmiddle
 
 end Sym
 

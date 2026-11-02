@@ -6,13 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.LinearMap.Index
+public import Mathlib.LinearAlgebra.Dimension.Free
 public import TauCeti.LinearAlgebra.Quotient.Prod
 
 /-!
 # Index of linear maps
 
 This file extends Mathlib's algebraic `LinearMap.index` API with its invariance under composing
-with a linear equivalence and its additivity under products with finite free kernels and cokernels.
+with a linear equivalence, its additivity under products with finite free kernels and cokernels,
+and its behaviour under restriction of scalars along a tower of division rings `K → L`: the index
+gets multiplied by `finrank K L`. For instance, the realification of a complex-linear map has
+twice its complex index.
 
 These lemmas are absent from `Mathlib.Algebra.Module.LinearMap.Index` and support the
 continuous-linear-map results in `TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index`.
@@ -62,5 +66,30 @@ lemma index_prodMap {Q : Type*} [AddCommGroup Q] [Module R Q] [StrongRankConditi
   simp only [(Submodule.prodEquiv _ _).finrank_eq, Submodule.finrank_quotient_prod,
     Module.finrank_prod]
   omega
+
+section RestrictScalars
+
+open Module
+
+variable (K : Type*) {L M N : Type*} [DivisionRing K] [DivisionRing L] [Module K L]
+  [AddCommGroup M] [Module K M] [Module L M] [IsScalarTower K L M]
+  [AddCommGroup N] [Module K N] [Module L N] [IsScalarTower K L N]
+
+/-- Restricting scalars along a tower of division rings `K → L` multiplies the index by
+`finrank K L`. No finiteness hypothesis is needed: an infinite-dimensional kernel or cokernel
+has `finrank` zero over both `K` and `L`. -/
+@[simp]
+lemma index_restrictScalars (f : M →ₗ[L] N) :
+    (f.restrictScalars K).index = finrank K L * f.index := by
+  -- `(ker f).restrictScalars K` carries the `K`-module structure that `ker f` inherits from `M`.
+  have hker : finrank K ((ker f).restrictScalars K) = finrank K L * finrank L (ker f) :=
+    (finrank_mul_finrank K L (ker f)).symm
+  rw [index_eq_finrank_sub, index_eq_finrank_sub, ker_restrictScalars, range_restrictScalars,
+    (Submodule.Quotient.restrictScalarsEquiv K (range f)).finrank_eq, hker,
+    ← finrank_mul_finrank K L (N ⧸ range f)]
+  push_cast
+  ring
+
+end RestrictScalars
 
 end LinearMap

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.Coxeter.Parabolic
 public import TauCeti.GroupTheory.Coxeter.StrongExchange
+public import Mathlib.Order.RelSeries
 import Mathlib.Data.List.GetD
 import Mathlib.Tactic.Group
 
@@ -40,6 +41,8 @@ comparisons change when both endpoints are multiplied by the same simple reflect
 * `CoxeterSystem.bruhatPartialOrder`: the Bruhat order as a `PartialOrder` on `W`.
 * `CoxeterSystem.MinimalCosetRepCovBy`: the covering relation of the Bruhat order of a parabolic
   quotient `W / W_J`, on minimal coset representatives.
+* `CoxeterSystem.MinimalCosetRepChain`: the saturated chains of `W / W_J`, descending through
+  covers, as Mathlib `RelSeries`.
 
 ## Main results
 
@@ -62,11 +65,17 @@ comparisons change when both endpoints are multiplied by the same simple reflect
   Bruhat order.
 * `CoxeterSystem.BruhatLE.bruhatLE_mul_simple`: the lifting property in the form `u ≤ w * s` when
   `u ≤ w` and `s` lengthens `u`.
+* `CoxeterSystem.BruhatLE.simple_mul_of_isLeftDescent`,
+  `CoxeterSystem.BruhatLE.simple_mul_of_not_isLeftDescent` and
+  `CoxeterSystem.BruhatLE.bruhatLE_simple_mul`: the left-multiplication forms of the lifting
+  property.
 * `CoxeterSystem.IsMinimalCosetRep.bruhatLE_mul` and
   `CoxeterSystem.isMinimalCosetRep_iff_forall_bruhatLE_mul`: a minimal representative of a left
   coset of a standard parabolic subgroup is the Bruhat-least element of that coset.
 * `CoxeterSystem.IsMinimalCosetRep.bruhatLE_of_bruhatLE_mul`: the projection to minimal coset
   representatives is monotone.
+* `CoxeterSystem.MinimalCosetRepChain.bruhatLE_of_le`: a saturated chain of `W / W_J` descends in
+  the Bruhat order.
 * `CoxeterSystem.MinimalCosetRepCovBy.exists_isReflection`: a cover of a parabolic quotient is the
   projection of a Bruhat edge `t * x < x`; `CoxeterSystem.minimalCosetRepCovBy_one_simple` is the
   cover of the identity by a simple reflection.
@@ -496,6 +505,30 @@ theorem BruhatLE.bruhatLE_mul_simple (h : cs.BruhatLE u w) {i : B}
     rw [List.length_append, List.length_singleton] at hσlen
     omega
 
+/-! The left-multiplication forms of the lifting property follow by inversion. -/
+
+/-- At a left descent of the upper endpoint, left multiplication of the lower endpoint by the
+same simple reflection remains below the original upper endpoint. -/
+theorem BruhatLE.simple_mul_of_isLeftDescent (h : cs.BruhatLE u w) (i : B)
+    (hw : cs.IsLeftDescent w i) : cs.BruhatLE (cs.simple i * u) w := by
+  simpa only [mul_inv_rev, cs.inv_simple, inv_inv] using
+    (h.inv.mul_simple_of_isRightDescent i (cs.isRightDescent_inv_iff.mpr hw)).inv
+
+/-- At a left ascent of the upper endpoint, left multiplication of both endpoints by the same
+simple reflection preserves Bruhat order. -/
+theorem BruhatLE.simple_mul_of_not_isLeftDescent (h : cs.BruhatLE u w) (i : B)
+    (hw : ¬cs.IsLeftDescent w i) : cs.BruhatLE (cs.simple i * u) (cs.simple i * w) := by
+  simpa only [mul_inv_rev, cs.inv_simple, inv_inv] using
+    (h.inv.mul_simple_of_not_isRightDescent i
+      (cs.isRightDescent_inv_iff.not.mpr hw)).inv
+
+/-- **Lifting property, lower left form.** If `u ≤ w` and the simple reflection `s i` lengthens
+`u` on the left, then `u ≤ s i * w`. -/
+theorem BruhatLE.bruhatLE_simple_mul (h : cs.BruhatLE u w) {i : B}
+    (hu : ¬cs.IsLeftDescent u i) : cs.BruhatLE u (cs.simple i * w) := by
+  simpa only [mul_inv_rev, cs.inv_simple, inv_inv] using
+    (h.inv.bruhatLE_mul_simple (cs.isRightDescent_inv_iff.not.mpr hu)).inv
+
 end
 
 /-! ### Minimal coset representatives -/
@@ -559,7 +592,7 @@ structure MinimalCosetRepCovBy (J : Set B) (y x : W) : Prop where
 order of the parabolic quotient. -/
 theorem minimalCosetRepCovBy_one_simple {J : Set B} {i : B} (hi : cs.simple i ∉ cs.parabolic J) :
     cs.MinimalCosetRepCovBy J 1 (cs.simple i) where
-  isMinimalCosetRep_left := cs.isMinimalCosetRep_iff.mpr fun j _ ↦ cs.not_isRightDescent_one j
+  isMinimalCosetRep_left := cs.isMinimalCosetRep_one J
   isMinimalCosetRep_right := cs.isMinimalCosetRep_iff.mpr fun j hj hdesc ↦ hi <| by
     -- A right descent `s j` of `s i` satisfies `s i * s j = 1`, so `s i = s j` is parabolic.
     have hlen := cs.isRightDescent_iff.mp hdesc
@@ -599,5 +632,38 @@ theorem MinimalCosetRepCovBy.exists_isReflection {J : Set B} {y x : W}
     exact ⟨t, ht, rfl, hlt⟩
   · rw [htc, ← hvy, mul_inv_rev, inv_mul_cancel_right]
     exact inv_mem hp
+
+/-- A **saturated chain** of the parabolic quotient `W / W_J`, descending through covers: a
+`RelSeries` `x₀, x₁, …, x_l` of minimal coset representatives, as elements of the subtype
+`{w // cs.IsMinimalCosetRep J w}`, in which each `x_{i+1}` is covered by `x_i`
+(`CoxeterSystem.MinimalCosetRepChain.minimalCosetRepCovBy`). Its length `l` is the number of
+covers, and the chain of length `0` at `x` is `RelSeries.singleton _ x`. -/
+abbrev MinimalCosetRepChain (J : Set B) : Type _ :=
+  RelSeries {p : {w : W // cs.IsMinimalCosetRep J w} × {w : W // cs.IsMinimalCosetRep J w} |
+    cs.MinimalCosetRepCovBy J p.2 p.1}
+
+/-- Each step `x_{i+1} ⋖ x_i` of a saturated chain of `W / W_J` is a cover. -/
+theorem MinimalCosetRepChain.minimalCosetRepCovBy {cs : CoxeterSystem M W} {J : Set B}
+    (C : cs.MinimalCosetRepChain J) (i : Fin C.length) :
+    cs.MinimalCosetRepCovBy J (C i.succ) (C i.castSucc) :=
+  C.step i
+
+/-- In a saturated chain `x₀ ⋗ x₁ ⋗ ⋯ ⋗ x_l` of `W / W_J`, a later element lies below an earlier
+one in the Bruhat order. -/
+theorem MinimalCosetRepChain.bruhatLE_of_le {cs : CoxeterSystem M W} {J : Set B}
+    (C : cs.MinimalCosetRepChain J) {i j : Fin (C.length + 1)} (hij : i ≤ j) :
+    cs.BruhatLE (C j) (C i) := by
+  induction j using Fin.induction with
+  | zero => obtain rfl := Fin.le_zero_iff.mp hij; exact cs.bruhatLE_refl _
+  | succ j ih =>
+    rcases hij.lt_or_eq with hij | rfl
+    · exact (C.minimalCosetRepCovBy j).bruhatLE.trans (ih (Fin.le_castSucc_iff.mpr hij))
+    · exact cs.bruhatLE_refl _
+
+/-- The last element of a saturated chain of `W / W_J` lies below its first element in the Bruhat
+order. -/
+theorem MinimalCosetRepChain.bruhatLE_last_head {cs : CoxeterSystem M W} {J : Set B}
+    (C : cs.MinimalCosetRepChain J) : cs.BruhatLE C.last C.head :=
+  C.bruhatLE_of_le (Fin.zero_le _)
 
 end CoxeterSystem

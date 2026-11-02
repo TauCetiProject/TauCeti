@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.IntegralCurve.Regularity
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
 
 /-!
-# Smoothness of the geodesic spray
+# Smoothness of the geodesic spray and of geodesics
 
 The geodesic spray of a smooth Riemannian manifold is a smooth vector field on its tangent
 bundle. In tangent-bundle coordinates it is
@@ -20,6 +20,13 @@ bundle. In tangent-bundle coordinates it is
 so this follows from smoothness of the Christoffel map of the Levi-Civita connection. This is the
 regularity input needed to apply existence and uniqueness theorems for integral curves to the
 geodesic equation.
+
+A geodesic `TauCeti.Manifold.IsGeodesicCurveOn` is only required to be `C²`. Its velocity lift is
+an integral curve of the spray, so it gains one derivative over the spray, and the curve gains one
+derivative over its velocity lift. Bootstrapping, a geodesic of a `C^(n + 1)` metric on a
+`C^(n + 2)` manifold is `C^(n + 2)`, and a geodesic of a smooth metric is smooth. These hold on
+any parameter set with unique derivatives, including a nondegenerate closed interval up to its
+endpoints, so no extension of the geodesic beyond its interval is needed.
 
 ## Main result
 
@@ -31,6 +38,15 @@ geodesic equation.
   on a set with unique derivatives projects to a geodesic.
 * `IsMIntegralCurveOn.isGeodesicCurveOnFrom_proj`: its initial data are encoded by its value
   at zero, including for nondegenerate closed parameter intervals.
+* `TauCeti.Manifold.IsGeodesicCurveOn.contMDiffOn_of_le`: a geodesic of a `C^(n + 1)` metric on a
+  `C^(n + 2)` manifold is `C^(n + 2)` on its parameter set, with
+  `TauCeti.Manifold.IsGeodesicCurveOn.contMDiffOn_curveVelocityLiftWithin_of_le` the
+  `C^(n + 1)` regularity of its velocity lift.
+* `TauCeti.Manifold.IsGeodesicCurveOn.contMDiffOn_infty`: **geodesics of a smooth metric are
+  smooth**, with the pointwise form `TauCeti.Manifold.IsGeodesicCurveOn.contMDiffAt_infty` at
+  interior parameters, the all-time form `TauCeti.Manifold.IsGeodesicCurve.contMDiff_infty` and
+  the velocity-lift form
+  `TauCeti.Manifold.IsGeodesicCurveOn.contMDiffOn_curveVelocityLiftWithin_infty`.
 
 ## References
 
@@ -182,6 +198,78 @@ theorem isGeodesicCurveOn_proj_of_isMIntegralCurveOn [I.Boundaryless] [IsManifol
       (IB := I) (n := (2 : ℕ∞ω))).comp_contMDiffOn hz2
   exact (isMIntegralCurveOn_curveVelocityLiftWithin_iff hs hbase).1
     (hz.congr fun t ht ↦ (eq_curveVelocityLiftWithin_of_isMIntegralCurveOn (hs t ht) hz ht).symm)
+
+/-! ### Regularity of geodesics -/
+
+/-- **The velocity lift of a geodesic is `C^(n + 1)`** on its parameter set, for a `C^k` metric
+on a `C^m` manifold with `n + 1 ≤ k` and `n + 2 ≤ m`. The parameter set only needs unique
+derivatives, so this includes the endpoints of a nondegenerate closed interval. -/
+theorem IsGeodesicCurveOn.contMDiffOn_curveVelocityLiftWithin_of_le [I.Boundaryless]
+    [IsManifold I 2 M] [IsManifold I m M]
+    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I k E (fun x : M ↦ TangentSpace I x)]
+    {γ : ℝ → M} {s : Set ℝ} (h : IsGeodesicCurveOn I γ s) (n : ℕ)
+    (hm : n + 2 ≤ m) (hk : n + 1 ≤ k) :
+    ContMDiffOn 𝓘(ℝ, ℝ) I.tangent (n + 1) (curveVelocityLiftWithin I γ s) s := by
+  let _ : IsManifold I ((n + 1 : ℕ) + 1) M := IsManifold.of_le (n := m) (by exact_mod_cast hm)
+  let _ : IsManifold I (n + 1 : ℕ) M :=
+    IsManifold.of_le (n := m) ((by norm_cast; omega : ((n + 1 : ℕ) : ℕ∞ω) ≤ n + 2).trans hm)
+  let _ : ContMDiffVectorBundle (n + 1 : ℕ) E (TangentSpace I : M → Type _) I :=
+    TangentBundle.contMDiffVectorBundle
+  -- the velocity lift is an integral curve of the `C^n` geodesic spray
+  have hlift : IsMIntegralCurveOn (curveVelocityLiftWithin I γ s) (geodesicSpray I M) s :=
+    (isMIntegralCurveOn_curveVelocityLiftWithin_iff h.uniqueDiffOn h.contMDiffOn).2 h
+  exact_mod_cast contMDiffOn_succ_of_isMIntegralCurveOn n h.uniqueDiffOn hlift
+    (fun _ _ ↦ BoundarylessManifold.isInteriorPoint)
+    (fun _ _ ↦ (contMDiff_geodesicSpray (I := I) (M := M) hm hk).contMDiffAt)
+
+/-- **A geodesic is `C^(n + 2)`** on its parameter set, for a `C^k` metric on a `C^m` manifold
+with `n + 1 ≤ k` and `n + 2 ≤ m`. -/
+theorem IsGeodesicCurveOn.contMDiffOn_of_le [I.Boundaryless]
+    [IsManifold I 2 M] [IsManifold I m M]
+    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I k E (fun x : M ↦ TangentSpace I x)]
+    {γ : ℝ → M} {s : Set ℝ} (h : IsGeodesicCurveOn I γ s) (n : ℕ)
+    (hm : n + 2 ≤ m) (hk : n + 1 ≤ k) :
+    ContMDiffOn 𝓘(ℝ, ℝ) I (n + 2) γ s := by
+  let _ : IsManifold I ((n + 1 : ℕ) + 1) M := IsManifold.of_le (n := m) (by exact_mod_cast hm)
+  have := contMDiffOn_succ_of_contMDiffOn_curveVelocityLiftWithin h.uniqueDiffOn
+    h.mdifferentiableOn (by exact_mod_cast h.contMDiffOn_curveVelocityLiftWithin_of_le n hm hk)
+  exact_mod_cast this
+
+/-- **The velocity lift of a geodesic of a smooth metric is smooth** on its parameter set. -/
+theorem IsGeodesicCurveOn.contMDiffOn_curveVelocityLiftWithin_infty [I.Boundaryless]
+    [IsManifold I ∞ M] [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+    {γ : ℝ → M} {s : Set ℝ} (h : IsGeodesicCurveOn I γ s) :
+    ContMDiffOn 𝓘(ℝ, ℝ) I.tangent ∞ (curveVelocityLiftWithin I γ s) s :=
+  contMDiffOn_infty.2 fun n ↦
+    (h.contMDiffOn_curveVelocityLiftWithin_of_le (m := ∞) (k := ∞) n (by simp) (by simp)).of_le
+      (by exact_mod_cast Nat.le_succ n)
+
+/-- **Geodesics of a smooth metric are smooth.** A geodesic, which is required only to be `C²`,
+is `C^∞` on its parameter set. The parameter set only needs unique derivatives, so this includes
+the endpoints of a nondegenerate closed interval. -/
+theorem IsGeodesicCurveOn.contMDiffOn_infty [I.Boundaryless]
+    [IsManifold I ∞ M] [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+    {γ : ℝ → M} {s : Set ℝ} (h : IsGeodesicCurveOn I γ s) :
+    ContMDiffOn 𝓘(ℝ, ℝ) I ∞ γ s :=
+  _root_.contMDiffOn_infty.2 fun n ↦
+    (h.contMDiffOn_of_le (m := ∞) (k := ∞) n (by simp) (by simp)).of_le
+      (by exact_mod_cast Nat.le_add_right n 2)
+
+/-- A geodesic of a smooth metric is smooth at every interior point of its parameter set. -/
+theorem IsGeodesicCurveOn.contMDiffAt_infty [I.Boundaryless]
+    [IsManifold I ∞ M] [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+    {γ : ℝ → M} {s : Set ℝ} {t : ℝ} (h : IsGeodesicCurveOn I γ s) (ht : s ∈ 𝓝 t) :
+    ContMDiffAt 𝓘(ℝ, ℝ) I ∞ γ t :=
+  h.contMDiffOn_infty.contMDiffAt ht
+
+/-- An all-time geodesic of a smooth metric is smooth. -/
+theorem IsGeodesicCurve.contMDiff_infty [I.Boundaryless]
+    [IsManifold I ∞ M] [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+    {γ : ℝ → M} (h : IsGeodesicCurve I γ) :
+    ContMDiff 𝓘(ℝ, ℝ) I ∞ γ :=
+  contMDiffOn_univ.1 (isGeodesicCurveOn_univ.2 h).contMDiffOn_infty
 
 end TauCeti.Manifold
 

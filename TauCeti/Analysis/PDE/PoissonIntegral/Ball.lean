@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.GreenFunction.BoundaryConcentration
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Ball
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Isometry
 import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue.Basic
+import TauCeti.Analysis.InnerProductSpace.Laplacian.Comparison
 import TauCeti.Analysis.InnerProductSpace.Laplacian.ParametricIntegral
 
 /-!
@@ -38,7 +39,9 @@ harmonic away from `y` and smooth jointly in `(x, y)` off the diagonal, so the L
 taken under the integral sign (`TauCeti.harmonicOnNhd_integral_smul_of_contDiffOn`).  Together with
 boundary attainment this solves the Dirichlet problem `Δu = 0` in the ball, `u = g` on the sphere,
 for continuous data.  Since harmonicity is invariant under isometries and homotheties, the same
-holds on every ball of a finite-dimensional real inner product space.
+holds on every ball of a finite-dimensional real inner product space.  By the maximum principle
+the solution is unique, so every function harmonic in the ball and continuous on its closure is
+the Poisson integral of its boundary values.
 
 ## Main declarations
 
@@ -51,7 +54,9 @@ holds on every ball of a finite-dimensional real inner product space.
   the boundary values.
 * `TauCeti.harmonicOnNhd_ballPoissonIntegral`: the Poisson integral is harmonic off the sphere.
 * `TauCeti.exists_harmonicOnNhd_ball_continuousOn_closedBall_eq`: existence of a solution of the
-  Dirichlet problem on the unit ball for continuous boundary data.
+  Dirichlet problem on the unit ball for continuous boundary data, given by the Poisson integral.
+* `TauCeti.eqOn_ballPoissonIntegral_of_harmonicOnNhd`: the Poisson representation of a function
+  harmonic in the unit ball and continuous on its closure.
 * `TauCeti.exists_harmonicOnNhd_ball_continuousOn_closedBall_eqOn_sphere`: the same on every ball
   of a finite-dimensional real inner product space, by an isometry and a homothety.
 
@@ -319,7 +324,8 @@ theorem exists_harmonicOnNhd_ball_continuousOn_closedBall_eq
     {g : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 → ℝ} (hg : Continuous g) :
     ∃ u : EuclideanSpace ℝ (Fin n) → ℝ, HarmonicOnNhd u (ball 0 1) ∧
       ContinuousOn u (closedBall 0 1) ∧
-        ∀ z : sphere (0 : EuclideanSpace ℝ (Fin n)) 1, u z = g z := by
+        (∀ z : sphere (0 : EuclideanSpace ℝ (Fin n)) 1, u z = g z) ∧
+          EqOn u (ballPoissonIntegral g) (ball 0 1) := by
   classical
   have hgi : Integrable g volume.toSphere :=
     hg.integrable_of_hasCompactSupport (.of_compactSpace g)
@@ -333,7 +339,7 @@ theorem exists_harmonicOnNhd_ball_continuousOn_closedBall_eq
   have huP : ∀ x ∈ ball (0 : EuclideanSpace ℝ (Fin n)) 1, u =ᶠ[𝓝 x] ballPoissonIntegral g :=
     fun x hx ↦ Filter.eventually_of_mem (isOpen_ball.mem_nhds hx) hu
   refine ⟨u, fun x hx ↦ (harmonicAt_congr_nhds (huP x hx)).2 (hP x hx), ?_,
-    fun z ↦ dite_eq_left z.2⟩
+    fun z ↦ dite_eq_left z.2, hu⟩
   rw [← ball_union_sphere]
   intro x hx
   rcases hx with hx | hx
@@ -347,6 +353,25 @@ theorem exists_harmonicOnNhd_ball_continuousOn_closedBall_eq
     · have hres : (sphere (0 : EuclideanSpace ℝ (Fin n)) 1).domRestrict u = g :=
         funext fun z ↦ dite_eq_left z.2
       exact (continuousOn_iff_continuous_domRestrict.2 (hres ▸ hg)) x hx
+
+/-- **Poisson representation of harmonic functions on the unit ball.**  A function continuous on
+the closed unit ball of `ℝⁿ`, `n ≠ 0`, and harmonic in the open ball is the Poisson integral of its
+boundary values there. -/
+theorem eqOn_ballPoissonIntegral_of_harmonicOnNhd (hn : n ≠ 0)
+    {u : EuclideanSpace ℝ (Fin n) → ℝ} (hc : ContinuousOn u (closedBall 0 1))
+    (hu : HarmonicOnNhd u (ball 0 1)) :
+    EqOn u (ballPoissonIntegral fun y : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 ↦ u y)
+      (ball 0 1) := by
+  have : Nonempty (Fin n) := ⟨⟨0, Nat.pos_of_ne_zero hn⟩⟩
+  obtain ⟨v, hv, hvc, hvu, hvP⟩ := exists_harmonicOnNhd_ball_continuousOn_closedBall_eq
+    (hc.comp_continuous continuous_subtype_val fun y ↦ sphere_subset_closedBall y.2)
+  -- By the maximum principle, `u` agrees with the Poisson solution `v` of its boundary values.
+  have huv := eqOn_of_harmonicOnNhd_of_eqOn_frontier (isCompact_closedBall 0 1) hc hvc
+    (by rwa [interior_closedBall _ one_ne_zero]) (by rwa [interior_closedBall _ one_ne_zero])
+    fun x hx ↦ by
+      rw [frontier_closedBall _ one_ne_zero] at hx
+      exact (hvu ⟨x, hx⟩).symm
+  exact fun x hx ↦ (huv (ball_subset_closedBall hx)).trans (hvP hx)
 
 section Ball
 
@@ -380,7 +405,8 @@ theorem exists_harmonicOnNhd_ball_continuousOn_closedBall_eqOn_sphere {c : E} {r
   have hφc : Continuous φ := continuous_const.add (continuous_const.smul e.symm.continuous)
   have hgφ : Continuous fun y : sphere (0 : EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) 1 ↦
       g (φ y) := hg.comp_continuous (hφc.comp continuous_subtype_val) hφs
-  obtain ⟨u₀, hu₀, hu₀c, hu₀g⟩ := exists_harmonicOnNhd_ball_continuousOn_closedBall_eq hgφ
+  obtain ⟨u₀, hu₀, hu₀c, hu₀g, -⟩ :=
+    exists_harmonicOnNhd_ball_continuousOn_closedBall_eq hgφ
   have hψc : Continuous ψ :=
     e.continuous.comp (continuous_const.smul (continuous_id.sub continuous_const))
   refine ⟨u₀ ∘ ψ, ?_, hu₀c.comp hψc.continuousOn fun x hx ↦ ?_, fun x hx ↦ ?_⟩

@@ -5,15 +5,25 @@ Authors: Chris Birkbeck
 -/
 module
 
+public import Mathlib.RingTheory.AdicCompletion.Basic
 public import Mathlib.RingTheory.MvPowerSeries.Evaluation
 public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology
+import Mathlib.RingTheory.AdicCompletion.Completeness
+import Mathlib.RingTheory.AdicCompletion.Functoriality
+import Mathlib.RingTheory.AdicCompletion.Topology
 import TauCeti.Data.Finsupp.Weight
 
 /-!
-# Evaluating a multivariate power series at arguments from an adic ideal
+# Congruences, continuity and adic bounds for multivariate power-series evaluation
 
-Let `S` carry the `I`-adic topology for an ideal `I`, and let `f` be a multivariate power series
-evaluated at a family `a : σ → S` through a continuous coefficient map `φ`. This file bounds the
+Evaluation preserves congruences of admissible arguments modulo any closed ideal
+(`eval₂_sub_eval₂_mem`). Consequently, under a linear topology, a fixed series is continuous
+in finitely many continuously varying admissible arguments (`continuous_eval₂_of_continuous`).
+These results require no adic topology or common ideal of definition for the arguments.
+
+For the adic bounds, let `S` carry the `I`-adic topology for an ideal `I`, and let `f` be a
+multivariate power series evaluated at a family `a : σ → S` through a continuous coefficient
+map `φ`. This file bounds the
 value `eval₂ φ a f` by a power of `I`, in the three forms the estimate is used in: the value is
 confined to `I ^ k` as soon as the arguments are and `φ` sends the constant term there, and the
 confinement improves when its coefficient images vanish in low total degree or when `φ` sends every
@@ -47,13 +57,23 @@ type need not be finite, because the summation argument uses only the `Tendsto a
 already carried by `HasEval`. Taking `I` to be `IsLocalRing.maximalIdeal S` and `φ` to be
 `RingHom.id S` recovers the source statements.
 
-Finiteness of `σ` survives in `hasEval_of_finite_of_isTopologicallyNilpotent`, where it is what
-makes the decay condition of
-`HasEval` vacuous; that is the one place the hypothesis does work, and `hasEval_of_mem` inherits
-it from there.
+Finally, evaluation reaches every element of a complete ring once the arguments generate `I` and
+the coefficients reach every class modulo `I`. Through the discrete topology on the coefficients and
+the `I`-adic topology on the target, this gives surjective ring homomorphisms from power series
+rings onto `I`-adically complete rings, stated without any topology. This is how a complete local
+ring containing a field becomes a quotient of a power series ring over a coefficient field.
+
+Finiteness of `σ` makes the decay condition of `HasEval` vacuous in
+`hasEval_of_finite_of_isTopologicallyNilpotent`, and `hasEval_of_mem` inherits it from there.
+In `continuous_eval₂_of_continuous` it instead permits choosing a common neighbourhood for
+all arguments.
 
 ## Main results
 
+* `MvPowerSeries.eval₂_sub_eval₂_mem` : congruent evaluation points have congruent values modulo
+  any closed ideal.
+* `MvPowerSeries.continuous_eval₂_of_continuous` : evaluation of a fixed series is continuous
+  in any finite continuous family of admissible arguments.
 * `MvPowerSeries.eval₂_mem_pow` : arguments in `I ^ k`, and a constant term whose image under
   `φ` lies in `I ^ k`, confine the value to `I ^ k`.
 * `MvPowerSeries.eval₂_mem_pow_mul` : if the coefficient images vanish below total degree `c`,
@@ -72,6 +92,11 @@ it from there.
 * `MvPowerSeries.eval₂_zero` : evaluation sends `0` to `0`, with no hypothesis.
 * `MvPowerSeries.isTopologicallyNilpotent_eval₂_iff` : the value is topologically nilpotent
   exactly when the image of the constant term is.
+* `MvPowerSeries.eval₂_surjective` : evaluation at finitely many generators of `I` is surjective
+  onto a complete ring when the coefficients reach every class modulo `I`.
+* `MvPowerSeries.exists_surjective_ringHom_of_isAdicComplete` : the same as a statement about
+  `I`-adically complete rings: a ring homomorphism `A →+* R` reaching every class modulo `I` and
+  finitely many generators of `I` extend to a surjection `MvPowerSeries σ A →+* R`.
 
 ## Provenance
 
@@ -88,6 +113,11 @@ monomial estimates and the closed-ideal summation argument are the source's, as 
 `HasEval` construction. The congruence modulo `I` is not: the source proves it from the
 `hasSum` expansion directly, whereas here it is the `k = 1` case of `eval₂_mem_pow` applied to
 `f - C (constantCoeff f)`, which is shorter and needs no finiteness of `σ`.
+
+The surjectivity results are not from that source. Their proof is the successive approximation
+argument of Mathlib's `surjective_of_mk_map_comp_surjective`, applied to the power series ring,
+which is complete for the ideal of its variables; compare the proof of the Cohen structure theorem
+in [Stacks Project, Tag 032A](https://stacks.math.columbia.edu/tag/032A).
 -/
 
 public section
@@ -109,6 +139,45 @@ variable {R : Type*} [CommRing R] [UniformSpace R] [IsTopologicalSemiring R] [Is
 variable {S : Type*} [CommRing S] [UniformSpace S] [IsUniformAddGroup S] [CompleteSpace S]
     [T2Space S] [IsTopologicalRing S] [IsLinearTopology S S]
 variable {φ : R →+* S} {a : σ → S} {I : Ideal S}
+
+/-- Evaluation preserves congruences between admissible arguments modulo a closed ideal.
+The variable type need not be finite. -/
+theorem eval₂_sub_eval₂_mem (hφ : Continuous φ) (ha : HasEval a) {b : σ → S}
+    (hb : HasEval b) (hI : IsClosed (I : Set S)) (hab : ∀ i, a i - b i ∈ I)
+    (f : MvPowerSeries σ R) : eval₂ φ a f - eval₂ φ b f ∈ I := by
+  classical
+  have hs := (hasSum_eval₂ hφ ha f).sub (hasSum_eval₂ hφ hb f)
+  rw [← hs.tsum_eq]
+  apply tsum_mem hI
+  intro d
+  apply Ideal.Quotient.eq_zero_iff_mem.mp
+  rw [map_sub, sub_eq_zero]
+  simp only [map_mul, Finsupp.prod, map_prod, map_pow]
+  congr 1
+  apply Finset.prod_congr rfl
+  intro i _
+  rw [Ideal.Quotient.eq.mpr (hab i)]
+
+/-- A fixed power series is continuous in finitely many continuously varying admissible
+arguments. No common ideal of definition for these arguments is required. -/
+theorem continuous_eval₂_of_continuous [Finite σ] {X : Type*} [TopologicalSpace X]
+    (hφ : Continuous φ) {a : X → σ → S} (ha : ∀ i, Continuous (fun x ↦ a x i))
+    (heval : ∀ x, HasEval (a x)) (f : MvPowerSeries σ R) :
+    Continuous (fun x ↦ eval₂ φ (a x) f) := by
+  rw [continuous_iff_continuousAt]
+  intro x
+  apply tendsto_sub_nhds_zero_iff.mp
+  apply (IsLinearTopology.hasBasis_open_ideal (R := S)).tendsto_right_iff.mpr
+  intro I hI
+  have hargs : ∀ᶠ y in nhds x, ∀ i, a y i - a x i ∈ I := by
+    apply Filter.eventually_all.mpr
+    intro i
+    have hzero : Filter.Tendsto (fun y ↦ a y i - a x i) (nhds x) (nhds 0) := by
+      simpa only [sub_self] using ((ha i).continuousAt (x := x)).sub_const (a x i)
+    exact hzero.eventually (hI.mem_nhds I.zero_mem)
+  filter_upwards [hargs] with y hy
+  exact eval₂_sub_eval₂_mem hφ (heval y) (heval x)
+    (I.toAddSubgroup.isClosed_of_isOpen hI) hy f
 
 /-- **The value lies in `I ^ k` when the arguments do and `φ` sends the constant term there.**
 Every monomial of positive degree already carries an argument, hence a factor from `I ^ k`; the
@@ -225,5 +294,63 @@ theorem hasEval_of_mem [Finite σ] (hI : IsAdic I) (hmem : ∀ i, a i ∈ I) : H
   hasEval_of_finite_of_isTopologicallyNilpotent fun s ↦ hI.isTopologicallyNilpotent_of_mem (hmem s)
 
 end HasEval
+
+section Surjective
+
+variable {σ : Type*}
+variable {R : Type*} [CommRing R] [UniformSpace R] [IsTopologicalSemiring R] [IsUniformAddGroup R]
+variable {S : Type*} [CommRing S] [UniformSpace S] [IsUniformAddGroup S] [CompleteSpace S]
+    [T2Space S] [IsTopologicalRing S] [IsLinearTopology S S]
+variable {φ : R →+* S} {a : σ → S} {I : Ideal S}
+
+/-- **Evaluation onto an adically complete ring.** Let `S` carry the `I`-adic topology, for which
+it is complete and Hausdorff. If finitely many arguments generate `I` and every class of `S ⧸ I`
+is the image of a coefficient, then every element of `S` is the value of a power series. -/
+theorem eval₂_surjective [Finite σ] (hφ : Continuous φ) (hI : IsAdic I)
+    (hspan : Ideal.span (Set.range a) = I)
+    (hres : Function.Surjective ((Ideal.Quotient.mk I).comp φ)) :
+    Function.Surjective (eval₂ φ a : MvPowerSeries σ R → S) := by
+  have ha : HasEval a := hasEval_of_mem hI fun i ↦ hspan ▸ Ideal.subset_span ⟨i, rfl⟩
+  -- The ideal of the variables, for which the power series ring is complete, maps onto `I`.
+  have hmap : (Ideal.span (Set.range X)).map (eval₂Hom hφ ha) = I := by
+    rw [Ideal.map_span, ← Set.range_comp, ← hspan]
+    congr 2
+    ext i
+    simp [coe_eval₂Hom, eval₂_X]
+  have : IsHausdorff ((Ideal.span (Set.range X)).map (eval₂Hom hφ ha)) S :=
+    hmap ▸ hI.isHausdorff_iff.mpr ‹_›
+  rw [← coe_eval₂Hom hφ ha]
+  refine surjective_of_mk_map_comp_surjective (I := Ideal.span (Set.range X)) (eval₂Hom hφ ha) ?_
+  rw [hmap]
+  intro y
+  obtain ⟨y, rfl⟩ := Ideal.Quotient.mk_surjective y
+  obtain ⟨r, hr⟩ := hres (Ideal.Quotient.mk I y)
+  exact ⟨C r, by simpa [coe_eval₂Hom, eval₂_C] using hr⟩
+
+end Surjective
+
+/-- **Power series rings map onto adically complete rings.** Let `R` be `I`-adically complete, let
+`s : A →+* R` reach every class of `R ⧸ I`, and let a finite family `x` generate `I`. Then there
+is a surjective ring homomorphism `MvPowerSeries σ A →+* R` that restricts to `s` on constants and
+sends each variable `X i` to `x i`. -/
+theorem exists_surjective_ringHom_of_isAdicComplete {σ A R : Type*} [Finite σ] [CommRing A]
+    [CommRing R] {I : Ideal R} [IsAdicComplete I R] (s : A →+* R)
+    (hs : Function.Surjective ((Ideal.Quotient.mk I).comp s)) (x : σ → R)
+    (hx : Ideal.span (Set.range x) = I) :
+    ∃ φ : MvPowerSeries σ A →+* R, Function.Surjective φ ∧ φ.comp C = s ∧ ∀ i, φ (X i) = x i := by
+  -- Evaluate with the `I`-adic topology on `R` and the discrete topology on `A`.
+  let : WithIdeal R := ⟨I⟩
+  let : UniformSpace A := ⊥
+  -- The topology that `WithIdeal` puts on `R` is by definition `I.adicTopology`.
+  have hI : IsAdic I := rfl
+  obtain ⟨_, _⟩ := hI.isAdicComplete_iff.mp ‹_›
+  have hs' : Continuous s := continuous_of_discreteTopology
+  have ha : HasEval x := hasEval_of_mem hI fun i ↦ hx ▸ Ideal.subset_span ⟨i, rfl⟩
+  refine ⟨eval₂Hom hs' ha, ?_, ?_, fun i ↦ ?_⟩
+  · rw [coe_eval₂Hom]
+    exact eval₂_surjective hs' hI hx hs
+  · ext a
+    simp [coe_eval₂Hom, eval₂_C]
+  · simp [coe_eval₂Hom, eval₂_X]
 
 end MvPowerSeries

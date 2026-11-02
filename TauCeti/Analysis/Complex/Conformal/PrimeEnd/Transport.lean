@@ -99,21 +99,12 @@ theorem IsNullChain.image (hC : IsNullChain U C) (hUb : IsBounded U) (hUo : IsOp
   eventually_chordal_lt ε hε := by
     -- Small chordal diameter in the bounded set `closure U` forces small Euclidean diameter, which
     -- uniform continuity of `f` on the compact set `closure U` carries to the image.
-    obtain ⟨R, -, hR⟩ := hUb.closure.exists_pos_norm_le
     obtain ⟨δ, hδ, hfδ⟩ := Metric.uniformContinuousOn_iff.mp
       (hUb.isCompact_closure.uniformContinuousOn_of_continuous hfc) ε hε
-    filter_upwards [hC.eventually_chordal_lt (δ / (1 + R ^ 2)) (by positivity)] with n hn
+    filter_upwards [hC.eventually_norm_sub_lt hUb hδ] with n hn
     rintro _ ⟨z, hz, rfl⟩ _ ⟨w, hw, rfl⟩
-    have hzU := hC.subset_closure n hz
-    have hwU := hC.subset_closure n hw
-    have hzw : dist z w < δ := by
-      rw [dist_eq_norm]
-      calc ‖z - w‖ ≤ (1 + R ^ 2) * (‖z - w‖ / √((1 + ‖z‖ ^ 2) * (1 + ‖w‖ ^ 2))) :=
-            norm_sub_le_mul_chordal (hR z hzU) (hR w hwU)
-        _ < (1 + R ^ 2) * (δ / (1 + R ^ 2)) :=
-            mul_lt_mul_of_pos_left (hn z hz w hw) (by positivity)
-        _ = δ := mul_div_cancel₀ _ (by positivity)
-    have hfzw := hfδ z hzU w hwU hzw
+    have hzw : dist z w < δ := by simpa only [dist_eq_norm] using hn z hz w hw
+    have hfzw := hfδ z (hC.subset_closure n hz) w (hC.subset_closure n hw) hzw
     rw [dist_eq_norm] at hfzw
     exact (chordal_le_norm_sub _ _).trans_lt hfzw
 
@@ -125,7 +116,7 @@ theorem nullChainEquivalent_image_iff (hUb : IsBounded U) (hfc : ContinuousOn f 
     NullChainEquivalent (f '' U) (fun n => f '' C n) (fun n => f '' C' n) ↔
       NullChainEquivalent U C C' := by
   have hD (C : ℕ → Set ℂ) (n : ℕ) : nullChainDomain U C n ⊆ closure U :=
-    nullChainDomain_subset.trans (sdiff_subset.trans subset_closure)
+    nullChainDomain_subset_self.trans subset_closure
   have himage {C : ℕ → Set ℂ} (hC : ∀ n, C n ⊆ closure U) (n : ℕ) :
       nullChainDomain (f '' U) (fun k => f '' C k) n = f '' nullChainDomain U C n :=
     nullChainDomain_image hUb hfc hfi (hC n) (hC (n + 1))

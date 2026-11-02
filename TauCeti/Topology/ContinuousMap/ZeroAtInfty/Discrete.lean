@@ -13,6 +13,7 @@ public import Mathlib.Analysis.Normed.Operator.ContinuousLinearMap
 public import TauCeti.Algebra.Module.LinearMap.FiniteRank
 public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 public import Mathlib.LinearAlgebra.StdBasis
+public import Mathlib.Topology.Algebra.Module.Spaces.WeakDual
 
 /-!
 # The model space `C₀(I, E)` on a discrete index
@@ -33,6 +34,12 @@ This file develops the coordinate structure of `C₀(I, E)`:
   (`ZeroAtInftyContinuousMap.not_tendsto_single_cofinite`); a finite sum of coordinate vectors at
   distinct coordinates has the maximum of their norms
   (`ZeroAtInftyContinuousMap.nnnorm_sum_single`);
+* `ZeroAtInftyContinuousMap.singleCLM R i`: the isometry `x ↦ single i x` as a continuous linear
+  map;
+* `ZeroAtInftyContinuousMap.tendsto_toWeakDual_evalCLM_cofinite`: the coordinate functionals
+  `evalCLM R i` of `C₀(I, R)` are weak-star null along the cofinite filter;
+* `ZeroAtInftyContinuousMap.cons`: prepend one entry to a null sequence, with norm
+  `max ‖b‖ ‖f‖` (`ZeroAtInftyContinuousMap.norm_cons`);
 * `ZeroAtInftyContinuousMap.exists_norm_coe_eq_norm`: the sup norm is attained at some
   coordinate when `I` is nonempty;
 * `ZeroAtInftyContinuousMap.hasSum_single`: every `f` is the unconditional sum of its coordinate
@@ -48,8 +55,11 @@ This file develops the coordinate structure of `C₀(I, E)`:
 * `ZeroAtInftyContinuousMap.continuousLinearMap_ext`: continuous linear maps out of `C₀(I, E)`
   are determined by their values on coordinate vectors;
 * `ZeroAtInftyContinuousMap.indicatorCLM R S`: the coordinate projection `f ↦ S.indicator f`
-  onto a set `S` of indices, of norm at most one; on `C₀(I, R)` it has finite rank when `S` is
-  finite (`ZeroAtInftyContinuousMap.isFiniteRank_indicatorCLM`).
+  onto a set `S` of indices, of norm at most one; it has finite rank when `S` is finite and the
+  coefficients form a finitely generated module, as on `C₀(I, R)`
+  (`ZeroAtInftyContinuousMap.isFiniteRank_indicatorCLM`); these projections converge
+  to the original family when every coordinate is retained eventually
+  (`ZeroAtInftyContinuousMap.tendsto_indicatorCLM`).
 
 It also compares the model spaces over different discrete index types. These isometries send
 coordinate vectors to coordinate vectors and commute with the coordinatewise action
@@ -151,6 +161,57 @@ theorem single_eq_zero_iff {i : I} {b : β} : single i b = 0 ↔ b = 0 :=
 
 end Zero
 
+/-! ### Prepending a coordinate to a null sequence -/
+
+section Cons
+
+variable [TopologicalSpace β] [Zero β]
+
+/-- Prepend one entry to a sequence vanishing at infinity. -/
+def cons (b : β) (f : C₀(ℕ, β)) : C₀(ℕ, β) :=
+  mkOfDiscrete (Nat.rec b (fun n _ ↦ f n)) <| by
+    rw [Nat.cofinite_eq_atTop]
+    apply (tendsto_add_atTop_iff_nat 1).mp
+    simpa using (cocompact_eq_atTop (α := ℕ) ▸ zero_at_infty f)
+
+@[simp]
+theorem cons_apply_zero (b : β) (f : C₀(ℕ, β)) : cons b f 0 = b := (rfl)
+
+@[simp]
+theorem cons_apply_succ (b : β) (f : C₀(ℕ, β)) (n : ℕ) : cons b f (n + 1) = f n := (rfl)
+
+end Cons
+
+variable [TopologicalSpace β] in
+/-- Prepending entries commutes with addition. -/
+theorem cons_add [AddZeroClass β] [ContinuousAdd β] (b c : β) (f g : C₀(ℕ, β)) :
+    cons (b + c) (f + g) = cons b f + cons c g := by
+  ext n
+  cases n <;> simp
+
+variable [TopologicalSpace β] [Zero β] in
+/-- Prepending entries commutes with scalar multiplication. -/
+theorem cons_smul {R : Type*} [SMulZeroClass R β] [ContinuousConstSMul R β]
+    (r : R) (b : β) (f : C₀(ℕ, β)) : cons (r • b) (r • f) = r • cons b f := by
+  ext n
+  cases n <;> simp
+
+/-- The norm of a sequence with a prepended entry is the maximum of the two norms. -/
+@[simp]
+theorem norm_cons [SeminormedAddCommGroup β] (b : β) (f : C₀(ℕ, β)) :
+    ‖cons b f‖ = max ‖b‖ ‖f‖ := by
+  apply le_antisymm
+  · apply (norm_le (le_max_of_le_left (norm_nonneg b))).mpr
+    intro n
+    cases n with
+    | zero => simp
+    | succ n => simpa only [cons_apply_succ] using
+        (norm_coe_le_norm f n).trans (le_max_right ‖b‖ _)
+  · apply max_le
+    · simpa using norm_coe_le_norm (cons b f) 0
+    · exact (norm_le (norm_nonneg _)).mpr fun n ↦ by
+        simpa using norm_coe_le_norm (cons b f) (n + 1)
+
 section Algebra
 
 variable [DecidableEq I] [TopologicalSpace β]
@@ -186,11 +247,11 @@ theorem smul_single_one {R : Type*} [TopologicalSpace R] [MulZeroOneClass R]
 vanishes outside it. -/
 theorem sum_single_apply [AddCommMonoid β] [ContinuousAdd β] (b : I → β) (s : Finset I) (j : I) :
     (∑ i ∈ s, single i (b i)) j = if j ∈ s then b j else 0 := by
-  simp [Finset.sum_apply, Pi.single_apply]
+  simp [Pi.single_apply]
 
 end Algebra
 
-section Normed
+section Single
 
 variable [SeminormedAddCommGroup β]
 
@@ -201,111 +262,26 @@ theorem norm_single [DecidableEq I] (i : I) (b : β) : ‖single i b‖ = ‖b�
   · by_cases h : j = i <;> simp [h]
   · simpa using norm_coe_le_norm (single i b) i
 
-/-- A finite sum of coordinate vectors at distinct coordinates has the maximum of their norms as
-its norm; the empty sum has norm zero. -/
-theorem nnnorm_sum_single [DecidableEq I] (s : Finset I) (b : I → β) :
-    ‖∑ i ∈ s, single i (b i)‖₊ = s.sup fun i ↦ ‖b i‖₊ := by
-  refine le_antisymm ?_ (Finset.sup_le fun i hi ↦ ?_)
-  · rw [← NNReal.coe_le_coe, coe_nnnorm, norm_le (NNReal.coe_nonneg _)]
-    intro j
-    rw [sum_single_apply]
-    split_ifs with hj
-    · exact NNReal.coe_le_coe.2 (Finset.le_sup (f := fun i ↦ ‖b i‖₊) hj)
-    · simp
-  · rw [← NNReal.coe_le_coe, coe_nnnorm, coe_nnnorm]
-    simpa [sum_single_apply, hi] using norm_coe_le_norm (∑ i ∈ s, single i (b i)) i
+variable (R : Type*) [Semiring R] [Module R β] [ContinuousConstSMul R β] [DecidableEq I]
 
-/-- **The sup norm is attained**: on a nonempty discrete index, some coordinate of `f ∈ C₀(I, β)`
-has norm `‖f‖`. This covers every nonzero `f`, whose index type is necessarily nonempty. -/
-theorem exists_norm_coe_eq_norm [Nonempty I] (f : C₀(I, β)) : ∃ i, ‖f i‖ = ‖f‖ := by
-  obtain ⟨i, hi⟩ := f.tendsto_cofinite.exists_forall_norm_le
-  exact ⟨i, le_antisymm (norm_coe_le_norm f i) ((norm_le (norm_nonneg _)).2 hi)⟩
+/-- The **coordinate vector** map `b ↦ single i b`, as a continuous linear map
+`β →L[R] C₀(I, β)`. It is an isometry by `norm_single`. -/
+noncomputable def singleCLM (i : I) : β →L[R] C₀(I, β) :=
+  -- LinearMap.mkContinuous requires ring scalars, so attach continuity directly for semirings.
+  let L : β →ₗ[R] C₀(I, β) :=
+    { toFun := single i
+      map_add' := single_add i
+      map_smul' := single_smul i }
+  { L with
+    cont := AddMonoidHomClass.continuous_of_bound L 1 fun b ↦ by simp [L] }
 
-section
+variable {R}
 
-variable [DecidableEq I]
+@[simp]
+theorem singleCLM_apply (i : I) (b : β) : singleCLM R i b = single i b :=
+  (rfl)
 
-/-- **Coordinate expansion**: every `f ∈ C₀(I, β)` is the unconditional sum of its coordinate
-vectors `single i (f i)`. -/
-theorem hasSum_single (f : C₀(I, β)) : HasSum (fun i ↦ single i (f i)) f := by
-  refine Metric.tendsto_atTop.2 fun ε hε ↦ ?_
-  have hfin : {j | ¬‖f j‖ < ε / 2}.Finite := eventually_cofinite.1 <|
-    (by simpa using f.tendsto_cofinite.norm : Tendsto (fun j ↦ ‖f j‖) cofinite (𝓝 0))
-      |>.eventually_lt_const (half_pos hε)
-  refine ⟨hfin.toFinset, fun s hs ↦ ?_⟩
-  rw [dist_eq_norm]
-  refine ((norm_le (half_pos hε).le).2 fun j ↦ ?_).trans_lt (half_lt_self hε)
-  by_cases hj : j ∈ s
-  · simpa [sum_single_apply, hj] using (half_pos hε).le
-  · have : ‖f j‖ < ε / 2 := not_not.1 fun h ↦ hj (hs (by simpa using h))
-    simpa [sum_single_apply, hj] using this.le
-
-/-- Continuous linear maps out of `C₀(I, β)` agreeing on all coordinate vectors are equal. -/
-theorem continuousLinearMap_ext {R M : Type*} [Semiring R] [Module R β] [ContinuousConstSMul R β]
-    [AddCommMonoid M] [Module R M] [TopologicalSpace M] [T2Space M]
-    {φ ψ : C₀(I, β) →L[R] M} (h : ∀ i b, φ (single i b) = ψ (single i b)) : φ = ψ := by
-  ext f
-  exact ((hasSum_single f).mapL φ).unique (by simpa only [h] using (hasSum_single f).mapL ψ)
-
-end
-
-/-- **Finite-support density**: the finitely supported families are dense in `C₀(I, β)`. -/
-theorem dense_setOf_finite_support : Dense {f : C₀(I, β) | (Function.support f).Finite} := by
-  classical
-  exact fun f ↦ mem_closure_of_tendsto (hasSum_single f) <| Eventually.of_forall fun s ↦
-    s.finite_toSet.subset fun j hj ↦ by
-      by_contra h
-      exact hj (by simp only [sum_single_apply]; simp [Finset.mem_coe.not.1 h])
-
-end Normed
-
-/-- On an infinite index type, the coordinate vectors `single i b` with a fixed nonzero value `b`
-do not tend to zero in norm along the cofinite filter. In particular the unit coordinate vectors
-of `c₀` are not norm null. -/
-theorem not_tendsto_single_cofinite [NormedAddCommGroup β] [DecidableEq I] [Infinite I] {b : β}
-    (hb : b ≠ 0) : ¬ Tendsto (fun i : I ↦ single i b) cofinite (𝓝 0) := fun h ↦ by
-  have h1 := h.norm
-  simp only [norm_single, norm_zero] at h1
-  exact hb (norm_eq_zero.1 (tendsto_const_nhds_iff.1 h1))
-
-section Ring
-
-variable {R : Type*} [SeminormedRing R] [DecidableEq I]
-
-/-- **Coordinate expansion in the unit vectors**: every `f ∈ C₀(I, R)` is the unconditional sum
-`∑ i, f i • single i 1`. -/
-theorem hasSum_smul_single_one (f : C₀(I, R)) : HasSum (fun i ↦ f i • single i (1 : R)) f := by
-  simpa only [smul_single_one] using hasSum_single f
-
-/-- The unit vectors `single i 1` span a dense submodule of `C₀(I, R)`. -/
-theorem dense_span_single_one :
-    Dense (Submodule.span R (Set.range fun i : I ↦ single i (1 : R)) : Set C₀(I, R)) :=
-  fun f ↦ mem_closure_of_tendsto (hasSum_smul_single_one f) <| Eventually.of_forall fun _ ↦
-    Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, rfl⟩)
-
-/-- The unit vectors `single i 1` of `C₀(I, R)` are linearly independent. -/
-theorem linearIndependent_single_one : LinearIndependent R fun i : I ↦ single i (1 : R) := by
-  let f : C₀(I, R) →ₗ[R] I → R := { toFun := (⇑), map_add' := coe_add, map_smul' := coe_smul }
-  exact .of_comp f (by simpa [f, Function.comp_def] using Pi.linearIndependent_single_one I R)
-
-/-- Over a ring with the strong rank condition, a finitely generated submodule of `C₀(I, R)`
-contains only finitely many of the unit vectors `single i 1`. -/
-theorem finite_setOf_single_one_mem [StrongRankCondition R] {Q : Submodule R C₀(I, R)}
-    (hQ : Q.FG) : {i | single i (1 : R) ∈ Q}.Finite := by
-  obtain ⟨s, rfl⟩ := hQ
-  have := (linearIndependent_single_one.comp _ Subtype.val_injective).finite_of_le_span_finite _
-    (s : Set C₀(I, R)) <| Set.range_subset_iff.2
-      fun i : {i | single i (1 : R) ∈ Submodule.span R s} ↦ i.2
-  exact Set.toFinite _
-
-/-- Continuous linear maps out of `C₀(I, R)` agreeing on the unit vectors `single i 1` are
-equal. -/
-theorem continuousLinearMap_ext_single_one {M : Type*} [AddCommMonoid M] [Module R M]
-    [TopologicalSpace M] [T2Space M] {φ ψ : C₀(I, R) →L[R] M}
-    (h : ∀ i, φ (single i 1) = ψ (single i 1)) : φ = ψ :=
-  continuousLinearMap_ext fun i r ↦ by rw [← smul_single_one, map_smul, map_smul, h]
-
-end Ring
+end Single
 
 section Indicator
 
@@ -342,6 +318,23 @@ variable {R}
 theorem coe_indicatorCLM (S : Set I) (f : C₀(I, β)) : ⇑(indicatorCLM R S f) = S.indicator f :=
   (rfl)
 
+variable (R) in
+/-- Coordinate projections converge to a family vanishing at infinity if every coordinate is
+retained eventually. The sets need not be finite or increasing. -/
+theorem tendsto_indicatorCLM {ι : Type*} {s : ι → Set I} {l : Filter ι}
+    (hs : ∀ i, ∀ᶠ k in l, i ∈ s k) (f : C₀(I, β)) :
+    Tendsto (fun k ↦ indicatorCLM R (s k) f) l (𝓝 f) := by
+  refine Metric.tendsto_nhds.2 fun ε hε ↦ ?_
+  have hfin : {i | ¬‖f i‖ < ε / 2}.Finite :=
+    eventually_cofinite.1 (NormedAddGroup.tendsto_nhds_zero.1 f.tendsto_cofinite _ (half_pos hε))
+  filter_upwards [hfin.eventually_all.2 (fun i _ ↦ hs i)] with k hk
+  rw [dist_eq_norm]
+  refine ((norm_le (half_pos hε).le).2 fun i ↦ ?_).trans_lt (half_lt_self hε)
+  by_cases hi : i ∈ s k
+  · simpa [coe_indicatorCLM, hi] using (half_pos hε).le
+  · have hsmall : ‖f i‖ < ε / 2 := not_not.1 fun hbad ↦ hi (hk i hbad)
+    simpa [coe_indicatorCLM, hi] using hsmall.le
+
 /-- The coordinate projections have norm at most one. -/
 theorem norm_indicatorCLM_apply_le (S : Set I) (f : C₀(I, β)) : ‖indicatorCLM R S f‖ ≤ ‖f‖ :=
   norm_mkOfDiscrete_indicator_le S f
@@ -367,21 +360,143 @@ expansion over `s`. -/
 theorem indicatorCLM_finset_apply [DecidableEq I] (s : Finset I) (f : C₀(I, β)) :
     indicatorCLM R (s : Set I) f = ∑ i ∈ s, single i (f i) := by
   ext j
-  simp [sum_single_apply, Set.indicator_apply]
+  simp [Set.indicator_apply]
 
-/-- The coordinate projection of `C₀(I, R)` onto a finite set of indices has finite rank: its
-range lies in the span of the corresponding unit vectors. -/
-theorem isFiniteRank_indicatorCLM {R : Type*} [SeminormedRing R] (s : Finset I) :
-    ((indicatorCLM R (s : Set I) : C₀(I, R) →L[R] C₀(I, R)) :
-      C₀(I, R) →ₗ[R] C₀(I, R)).IsFiniteRank := by
+/-- The coordinate projection of `C₀(I, β)` onto a finite set of indices has finite rank when `β`
+is a finitely generated module, for instance on `C₀(I, R)`: its range lies in the span of the
+coordinate vectors at these indices with values in a finite generating set of `β`. -/
+theorem isFiniteRank_indicatorCLM [Module.Finite R β] (s : Finset I) :
+    ((indicatorCLM R (s : Set I) : C₀(I, β) →L[R] C₀(I, β)) :
+      C₀(I, β) →ₗ[R] C₀(I, β)).IsFiniteRank := by
   classical
-  refine LinearMap.isFiniteRank_iff_forall_mem.2 ⟨Submodule.span R ((single · (1 : R)) '' s),
-    Submodule.fg_span (s.finite_toSet.image _), fun f ↦ ?_⟩
+  obtain ⟨t, ht⟩ := Module.Finite.fg_top (R := R) (M := β)
+  refine LinearMap.isFiniteRank_iff_forall_mem.2
+    ⟨Submodule.span R ((fun x : I × β ↦ single x.1 x.2) '' (s ×ˢ t : Finset (I × β))),
+      Submodule.fg_span ((s ×ˢ t).finite_toSet.image _), fun f ↦ ?_⟩
   rw [ContinuousLinearMap.coe_coe, indicatorCLM_finset_apply]
-  exact Submodule.sum_mem _ fun i hi ↦ smul_single_one i (f i) ▸
-    Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, hi, rfl⟩)
+  refine Submodule.sum_mem _ fun i hi ↦ ?_
+  rw [← singleCLM_apply (R := R), ← ContinuousLinearMap.coe_coe]
+  refine (Submodule.map_span_le _ (t : Set β) _).2 (fun b hb ↦ ?_)
+    (Submodule.mem_map_of_mem (ht ▸ Submodule.mem_top))
+  exact Submodule.subset_span ⟨(i, b), Finset.mem_product.2 ⟨hi, hb⟩, rfl⟩
 
 end Indicator
+
+section Normed
+
+variable [SeminormedAddCommGroup β]
+
+/-- A finite sum of coordinate vectors at distinct coordinates has the maximum of their norms as
+its norm; the empty sum has norm zero. -/
+theorem nnnorm_sum_single [DecidableEq I] (s : Finset I) (b : I → β) :
+    ‖∑ i ∈ s, single i (b i)‖₊ = s.sup fun i ↦ ‖b i‖₊ := by
+  refine le_antisymm ?_ (Finset.sup_le fun i hi ↦ ?_)
+  · rw [← NNReal.coe_le_coe, coe_nnnorm, norm_le (NNReal.coe_nonneg _)]
+    intro j
+    rw [sum_single_apply]
+    split_ifs with hj
+    · exact NNReal.coe_le_coe.2 (Finset.le_sup (f := fun i ↦ ‖b i‖₊) hj)
+    · simp
+  · rw [← NNReal.coe_le_coe, coe_nnnorm, coe_nnnorm]
+    simpa [sum_single_apply, hi] using norm_coe_le_norm (∑ i ∈ s, single i (b i)) i
+
+/-- **The sup norm is attained**: on a nonempty discrete index, some coordinate of `f ∈ C₀(I, β)`
+has norm `‖f‖`. This covers every nonzero `f`, whose index type is necessarily nonempty. -/
+theorem exists_norm_coe_eq_norm [Nonempty I] (f : C₀(I, β)) : ∃ i, ‖f i‖ = ‖f‖ := by
+  obtain ⟨i, hi⟩ := f.tendsto_cofinite.exists_forall_norm_le
+  exact ⟨i, le_antisymm (norm_coe_le_norm f i) ((norm_le (norm_nonneg _)).2 hi)⟩
+
+section
+
+variable [DecidableEq I]
+
+/-- **Coordinate expansion**: every `f ∈ C₀(I, β)` is the unconditional sum of its coordinate
+vectors `single i (f i)`. -/
+theorem hasSum_single (f : C₀(I, β)) : HasSum (fun i ↦ single i (f i)) f := by
+  simpa only [HasSum, SummationFilter.unconditional_filter, indicatorCLM_finset_apply] using
+    tendsto_indicatorCLM ℕ (s := fun s : Finset I ↦ (s : Set I))
+      eventually_finset_mem_atTop f
+
+/-- Continuous linear maps out of `C₀(I, β)` agreeing on all coordinate vectors are equal. -/
+theorem continuousLinearMap_ext {R M : Type*} [Semiring R] [Module R β] [ContinuousConstSMul R β]
+    [AddCommMonoid M] [Module R M] [TopologicalSpace M] [T2Space M]
+    {φ ψ : C₀(I, β) →L[R] M} (h : ∀ i b, φ (single i b) = ψ (single i b)) : φ = ψ := by
+  ext f
+  exact ((hasSum_single f).mapL φ).unique (by simpa only [h] using (hasSum_single f).mapL ψ)
+
+end
+
+/-- **Finite-support density**: the finitely supported families are dense in `C₀(I, β)`. -/
+theorem dense_setOf_finite_support : Dense {f : C₀(I, β) | (Function.support f).Finite} := by
+  classical
+  exact fun f ↦ mem_closure_of_tendsto (hasSum_single f) <| Eventually.of_forall fun s ↦
+    s.finite_toSet.subset fun j hj ↦ by
+      by_contra h
+      exact hj (by simp only [sum_single_apply]; simp [Finset.mem_coe.not.1 h])
+
+end Normed
+
+/-- On an infinite index type, the coordinate vectors `single i b` with a fixed nonzero value `b`
+do not tend to zero in norm along the cofinite filter. In particular the unit coordinate vectors
+of `c₀` are not norm null. -/
+theorem not_tendsto_single_cofinite [NormedAddCommGroup β] [DecidableEq I] [Infinite I] {b : β}
+    (hb : b ≠ 0) : ¬ Tendsto (fun i : I ↦ single i b) cofinite (𝓝 0) := fun h ↦ by
+  have h1 := h.norm
+  simp only [norm_single, norm_zero] at h1
+  exact hb (norm_eq_zero.1 (tendsto_const_nhds_iff.1 h1))
+
+variable (R : Type*) [SeminormedCommRing R] in
+/-- The coordinate functionals of `C₀(I, R)` tend to zero in the weak-star topology along the
+cofinite filter. -/
+theorem tendsto_toWeakDual_evalCLM_cofinite :
+    Tendsto (fun i : I ↦ StrongDual.toWeakDual (evalCLM R i : StrongDual R C₀(I, R))) cofinite
+      (𝓝 0) :=
+  tendsto_iff_forall_eval_tendsto_topDualPairing.2 fun f ↦ by
+    have : Tendsto (fun i ↦ evalCLM R i f) cofinite (𝓝 0) := by simpa using f.tendsto_cofinite
+    -- `topDualPairing R _ (StrongDual.toWeakDual g) f` is `g f` by definition of the pairing.
+    exact this
+
+section Ring
+
+variable {R : Type*} [SeminormedRing R] [DecidableEq I]
+
+/-- **Coordinate expansion in the unit vectors**: every `f ∈ C₀(I, R)` is the unconditional sum
+`∑ i, f i • single i 1`. -/
+theorem hasSum_smul_single_one (f : C₀(I, R)) : HasSum (fun i ↦ f i • single i (1 : R)) f := by
+  simpa only [smul_single_one] using hasSum_single f
+
+/-- The unit vectors `single i 1` span a dense submodule of `C₀(I, R)`. -/
+theorem dense_span_single_one :
+    Dense (Submodule.span R (Set.range fun i : I ↦ single i (1 : R)) : Set C₀(I, R)) :=
+  fun f ↦ mem_closure_of_tendsto (hasSum_smul_single_one f) <| Eventually.of_forall fun _ ↦
+    Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, rfl⟩)
+
+/-- The unit vectors `single i 1` of `C₀(I, R)` are linearly independent. -/
+theorem linearIndependent_single_one : LinearIndependent R fun i : I ↦ single i (1 : R) := by
+  let f : C₀(I, R) →ₗ[R] I → R := {
+    toFun := (⇑)
+    map_add' := FunLike.coe_add
+    map_smul' := FunLike.coe_smul }
+  exact .of_comp f (by simpa [f, Function.comp_def] using Pi.linearIndependent_single_one I R)
+
+/-- Over a ring with the strong rank condition, a finitely generated submodule of `C₀(I, R)`
+contains only finitely many of the unit vectors `single i 1`. -/
+theorem finite_setOf_single_one_mem [StrongRankCondition R] {Q : Submodule R C₀(I, R)}
+    (hQ : Q.FG) : {i | single i (1 : R) ∈ Q}.Finite := by
+  obtain ⟨s, rfl⟩ := hQ
+  have := (linearIndependent_single_one.comp _ Subtype.val_injective).finite_of_le_span_finite _
+    (s : Set C₀(I, R)) <| Set.range_subset_iff.2
+      fun i : {i | single i (1 : R) ∈ Submodule.span R s} ↦ i.2
+  exact Set.toFinite _
+
+/-- Continuous linear maps out of `C₀(I, R)` agreeing on the unit vectors `single i 1` are
+equal. -/
+theorem continuousLinearMap_ext_single_one {M : Type*} [AddCommMonoid M] [Module R M]
+    [TopologicalSpace M] [T2Space M] {φ ψ : C₀(I, R) →L[R] M}
+    (h : ∀ i, φ (single i 1) = ψ (single i 1)) : φ = ψ :=
+  continuousLinearMap_ext fun i r ↦ by rw [← smul_single_one, map_smul, map_smul, h]
+
+end Ring
 
 /-! ### Changes of index -/
 

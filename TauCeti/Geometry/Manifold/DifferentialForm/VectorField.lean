@@ -20,6 +20,11 @@ vector fields as an alternating sum of directional derivatives and a sum of Lie-
 It is useful when the fields are adapted to a distribution rather than to a coordinate chart.
 The within-set statements also apply at boundary and corner points.
 
+For vector fields `V` and `W` tangent to the kernel of a real one-form `α` near `x`, the formula
+reduces to `α_x ([V, W]_x) = -dα_x (V_x, W_x)`
+(`TauCeti.RoughForm.apply_mlieBracket_eq_neg_mextDeriv`), so the bracket stays in the kernel
+exactly when `dα` vanishes on the fields (`TauCeti.RoughForm.mlieBracket_mem_ker_iff`).
+
 ## References
 
 * John M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Proposition 14.29 and
@@ -197,5 +202,136 @@ theorem mextDeriv_apply_one {φ : RoughForm I M F 1}
   simpa only [mextDerivWithin_univ, mvfderivWithin_univ, mlieBracketWithin_univ] using
     mextDerivWithin_apply_one hφ.mdifferentiableWithinAt hV.mdifferentiableWithinAt
       hW.mdifferentiableWithinAt (uniqueMDiffWithinAt_univ I)
+
+/-- For a two-form and three vector fields differentiable at a point, the invariant formula
+`dφ(U, V, W) = U(φ(V, W)) - V(φ(U, W)) + W(φ(U, V)) - φ([U, V], W) + φ([U, W], V) - φ([V, W], U)`.
+-/
+theorem mextDeriv_apply_two {φ : RoughForm I M F 2}
+    {U V W : (y : M) → TangentSpace I y}
+    (hφ : MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin 2]→L[ℝ] F))
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin 2]→L[ℝ] F) y (φ y)) x)
+    (hU : MDifferentiableAt I I.tangent (fun y ↦ (U y : TangentBundle I M)) x)
+    (hV : MDifferentiableAt I I.tangent (fun y ↦ (V y : TangentBundle I M)) x)
+    (hW : MDifferentiableAt I I.tangent (fun y ↦ (W y : TangentBundle I M)) x) :
+    mextDeriv φ x ![U x, V x, W x] =
+      mvfderiv I (fun y ↦ φ y ![V y, W y]) x (U x) -
+        mvfderiv I (fun y ↦ φ y ![U y, W y]) x (V x) +
+        mvfderiv I (fun y ↦ φ y ![U y, V y]) x (W x) -
+        φ x ![mlieBracket I U V x, W x] + φ x ![mlieBracket I U W x, V x] -
+        φ x ![mlieBracket I V W x, U x] := by
+  have h := mextDeriv_apply_vectorField (n := 1) (V := fun i y ↦ ![U y, V y, W y] i) hφ
+    (fun i ↦ by fin_cases i <;> assumption)
+  simp +unfoldPartialApp only [Nat.reduceAdd, Nat.succ_eq_add_one, Int.reduceNeg, Fin.removeNth,
+    Fin.sum_univ_succ, Fin.isValue, Fin.coe_ofNat_eq_mod, Nat.zero_mod, pow_zero,
+    Fin.zero_succAbove, Matrix.cons_val_zero, Fin.val_succ, Matrix.cons_val_succ, zero_add, pow_one,
+    Fin.succ_zero_eq_one, Finset.univ_unique, Fin.default_eq_zero, Fin.val_eq_zero, even_two,
+    Even.neg_pow, one_pow, Matrix.cons_val_fin_one, Finset.sum_singleton, Fin.succ_one_eq_two,
+    Finset.Ici_zero_eq_univ, Fin.castSucc_zero, one_smul, neg_smul, Finset.sum_neg_distrib,
+    Fin.castSucc_succ] at h
+  -- Normalize the remaining tuples, which `simp` leaves as functions of `Fin.succAbove`.
+  have hsum (g : Fin 2 → F) : ∑ j ≥ (1 : Fin 2), g j = g 1 := by
+    rw [show Finset.Ici (1 : Fin 2) = {1} by decide, Finset.sum_singleton]
+  have hW₁ : (fun _ : Fin 1 ↦ W x) = ![W x] := by
+    funext i; fin_cases i; rfl
+  have hV₁ : (fun i ↦ ![V x, W x] (Fin.succAbove 1 i)) = ![V x] := by
+    funext i; fin_cases i; rfl
+  have hU₁ : (fun i ↦ ![U x, V x, W x] (Fin.succAbove 1 (Fin.succAbove 1 i))) = ![U x] := by
+    funext i; fin_cases i; rfl
+  have hUW : (fun y ↦ φ y fun i : Fin 2 ↦ ![U y, V y, W y] (Fin.succAbove 1 i)) =
+      fun y ↦ φ y ![U y, W y] := by
+    funext y; exact congrArg (φ y) (by funext i; fin_cases i <;> rfl)
+  have hUV : (fun y ↦ φ y fun i : Fin 2 ↦ ![U y, V y, W y] (Fin.succAbove 2 i)) =
+      fun y ↦ φ y ![U y, V y] := by
+    funext y; exact congrArg (φ y) (by funext i; fin_cases i <;> rfl)
+  rw [h, hsum]
+  simp only [hW₁, hV₁, hU₁]
+  rw [hUW, hUV]
+  simp only [one_smul, Fin.isValue, Fin.val_one, pow_succ, pow_zero, one_mul, neg_mul, neg_neg]
+  abel
+
+section Kernel
+
+variable {α : RoughForm I M ℝ 1} {V W : (y : M) → TangentSpace I y}
+
+namespace RoughForm
+
+/-- **Cartan's formula for the Levi form.** For vector fields `V` and `W` tangent to the kernel of
+a one-form `α` near `x`, `α_x ([V, W]_x) = -dα_x (V_x, W_x)`. -/
+theorem apply_mlieBracket_eq_neg_mextDeriv
+    (hα : MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ))
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) y (α y)) x)
+    (hV : MDifferentiableAt I I.tangent (fun y ↦ (V y : TangentBundle I M)) x)
+    (hW : MDifferentiableAt I I.tangent (fun y ↦ (W y : TangentBundle I M)) x)
+    (hVα : ∀ᶠ y in 𝓝 x, V y ∈ α.ker y) (hWα : ∀ᶠ y in 𝓝 x, W y ∈ α.ker y) :
+    α x ![mlieBracket I V W x] = -mextDeriv α x ![V x, W x] := by
+  have hzero {U : (y : M) → TangentSpace I y} (hU : ∀ᶠ y in 𝓝 x, U y ∈ α.ker y) :
+      mvfderiv I (fun y ↦ α y ![U y]) x = 0 := by
+    have hU' : (fun y ↦ α y ![U y]) =ᶠ[𝓝 x] fun _ ↦ (0 : ℝ) := by
+      filter_upwards [hU] with y hy using mem_ker.mp hy
+    ext v
+    simp [mvfderiv, hU'.mfderiv_eq]
+  rw [mextDeriv_apply_one hα hV hW, hzero hVα, hzero hWα]
+  simp
+
+/-- For vector fields `V` and `W` tangent to the kernel of a one-form `α` near `x`, the bracket
+`[V, W]_x` lies in `ker α_x` exactly when `dα_x (V_x, W_x) = 0`. -/
+theorem mlieBracket_mem_ker_iff
+    (hα : MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ))
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) y (α y)) x)
+    (hV : MDifferentiableAt I I.tangent (fun y ↦ (V y : TangentBundle I M)) x)
+    (hW : MDifferentiableAt I I.tangent (fun y ↦ (W y : TangentBundle I M)) x)
+    (hVα : ∀ᶠ y in 𝓝 x, V y ∈ α.ker y) (hWα : ∀ᶠ y in 𝓝 x, W y ∈ α.ker y) :
+    mlieBracket I V W x ∈ α.ker x ↔ mextDeriv α x ![V x, W x] = 0 := by
+  rw [mem_ker, apply_mlieBracket_eq_neg_mextDeriv hα hV hW hVα hWα, neg_eq_zero]
+
+end RoughForm
+
+end Kernel
+
+namespace SmoothForm
+
+/-- The invariant exterior-derivative formula for a bundled smooth form. -/
+theorem mextDeriv_apply_vectorField {n : ℕ} {φ : SmoothForm I M F (n + 1)}
+    {V : Fin (n + 2) → (y : M) → TangentSpace I y}
+    (hV : ∀ i, MDifferentiableAt I I.tangent
+      (fun y ↦ (V i y : TangentBundle I M)) x) :
+    mextDeriv φ.1 x (V · x) =
+      (∑ i, (-1) ^ i.val •
+        mvfderiv I (fun y ↦ φ.1 y (i.removeNth (V · y))) x (V i x)) -
+      ∑ i : Fin (n + 1), ∑ j ≥ i, (-1) ^ (i + j : ℕ) •
+        φ.1 x (Matrix.vecCons (mlieBracket I (V i.castSucc) (V j.succ) x)
+          (j.removeNth <| i.castSucc.removeNth (V · x))) := by
+  exact TauCeti.mextDeriv_apply_vectorField (φ.mdifferentiableAt x) hV
+
+/-- The invariant formula for the exterior derivative of a bundled smooth one-form. -/
+theorem mextDeriv_apply_one {φ : SmoothForm I M F 1}
+    {V W : (y : M) → TangentSpace I y}
+    (hV : MDifferentiableAt I I.tangent
+      (fun y ↦ (V y : TangentBundle I M)) x)
+    (hW : MDifferentiableAt I I.tangent
+      (fun y ↦ (W y : TangentBundle I M)) x) :
+    mextDeriv φ.1 x ![V x, W x] =
+      mvfderiv I (fun y ↦ φ.1 y ![W y]) x (V x) -
+        mvfderiv I (fun y ↦ φ.1 y ![V y]) x (W x) -
+        φ.1 x ![mlieBracket I V W x] := by
+  exact TauCeti.mextDeriv_apply_one (φ.mdifferentiableAt x) hV hW
+
+/-- The invariant formula for the exterior derivative of a bundled smooth two-form on three
+vector fields: `dφ(U, V, W) = U(φ(V, W)) - V(φ(U, W)) + W(φ(U, V)) - φ([U, V], W) +
+φ([U, W], V) - φ([V, W], U)`. -/
+theorem mextDeriv_apply_two {φ : SmoothForm I M F 2}
+    {U V W : (y : M) → TangentSpace I y}
+    (hU : MDifferentiableAt I I.tangent (fun y ↦ (U y : TangentBundle I M)) x)
+    (hV : MDifferentiableAt I I.tangent (fun y ↦ (V y : TangentBundle I M)) x)
+    (hW : MDifferentiableAt I I.tangent (fun y ↦ (W y : TangentBundle I M)) x) :
+    mextDeriv φ.1 x ![U x, V x, W x] =
+      mvfderiv I (fun y ↦ φ.1 y ![V y, W y]) x (U x) -
+        mvfderiv I (fun y ↦ φ.1 y ![U y, W y]) x (V x) +
+        mvfderiv I (fun y ↦ φ.1 y ![U y, V y]) x (W x) -
+        φ.1 x ![mlieBracket I U V x, W x] + φ.1 x ![mlieBracket I U W x, V x] -
+        φ.1 x ![mlieBracket I V W x, U x] :=
+  TauCeti.mextDeriv_apply_two (φ.mdifferentiableAt x) hU hV hW
+
+end SmoothForm
 
 end TauCeti

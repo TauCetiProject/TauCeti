@@ -104,7 +104,7 @@ theorem coe_binaryFormRep_apply (M : Matrix (Fin 2) (Fin 2) ℤ)
 theorem binaryFormRep_op_mul_apply (M N : Matrix (Fin 2) (Fin 2) ℤ)
     (P : homogeneousSubmodule (Fin 2) R w) :
     binaryFormRep R w (op (M * N)) P = binaryFormRep R w (op N) (binaryFormRep R w (op M) P) := by
-  rw [op_mul, map_mul, Module.End.mul_apply]
+  rw [op_mul, map_mul, mul_apply_eq_comp]
 
 /-- Negating the matrix multiplies a form of degree `w` by `(-1)ʷ`. -/
 theorem binaryFormRep_op_neg (M : Matrix (Fin 2) (Fin 2) ℤ) :
@@ -138,6 +138,17 @@ noncomputable def binaryFormAdjugateRep :
 theorem binaryFormAdjugateRep_apply (M : Matrix (Fin 2) (Fin 2) ℤ)
     (P : homogeneousSubmodule (Fin 2) R w) :
     binaryFormAdjugateRep R w M P = binaryFormRep R w (op (adjugate M)) P := (rfl)
+
+/-- For even `w`, a matrix and its negative act in the same way by adjugate substitution. -/
+theorem binaryFormAdjugateRep_neg_of_even (hw : Even w) (M : Matrix (Fin 2) (Fin 2) ℤ) :
+    binaryFormAdjugateRep R w (-M) = binaryFormAdjugateRep R w M := by
+  have h : adjugate (-M) = -adjugate M := by
+    rw [adjugate_fin_two, adjugate_fin_two]
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp
+  ext P : 1
+  rw [binaryFormAdjugateRep_apply, binaryFormAdjugateRep_apply, h,
+    binaryFormRep_op_neg_of_even hw]
 
 /-- An integer scalar matrix acts on degree-`w` binary forms by its `w`th power. -/
 @[simp]

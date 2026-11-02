@@ -7,22 +7,27 @@ module
 
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.InternalHom.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Flat
+import TauCeti.AlgebraicGeometry.Modules.Pullback.InternalHom.Coherence
+import TauCeti.AlgebraicGeometry.Modules.Pullback.InternalHom.Restriction
 import TauCeti.CategoryTheory.Monoidal.Closed.Presentation
 import TauCeti.AlgebraicGeometry.Modules.FinitePresentation
 import TauCeti.AlgebraicGeometry.Modules.InternalHom.Quasicoherent
 
 /-!
-# Flat pullback of internal Hom on an affine base
+# Flat pullback of internal Hom
 
 The canonical internal-Hom comparison is invertible along a flat scheme morphism when its
-source sheaf is finitely presented, its target sheaf is quasicoherent, and the base scheme is
-affine. The scheme mapping to that base is arbitrary. No local freeness or Noetherian hypothesis
-is required.
+source sheaf is finitely presented and its target sheaf is quasicoherent. Both schemes are
+arbitrary; no local freeness or Noetherian hypothesis is required.
 
 A finite presentation expresses internal Hom as a kernel between internal Homs from finite free
 sheaves. Flat pullback preserves this quasicoherent kernel, and the finite free comparisons are
 invertible by duality. Source naturality identifies the induced kernel isomorphism with the
 canonical comparison, rather than defining another base-change map.
+
+The affine-base calculation globalizes by restricting to the preimages of affine opens.
+Restriction commutes with internal Hom, and composition coherence identifies the local
+comparisons with the restrictions of the canonical comparison.
 
 The kernel comparison uses
 `CategoryTheory.Functor.ihomComparison_isIso_of_cokernel_of_naturality`.
@@ -34,7 +39,9 @@ module sheaves is not assumed to be lax monoidal.
 * `AlgebraicGeometry.Scheme.Hom.isIso_pullbackIhomComparison_app_of_presentation`:
   invertibility from a finite global presentation, without an affineness hypothesis;
 * `AlgebraicGeometry.Scheme.Hom.isIso_pullbackIhomComparison_app_of_isAffine`:
-  invertibility for finitely presented sources over an affine base.
+  invertibility for finitely presented sources over an affine base;
+* `AlgebraicGeometry.Scheme.Hom.isIso_pullbackIhomComparison_app`:
+  invertibility for finitely presented sources and quasicoherent targets on arbitrary schemes.
 
 ## References
 
@@ -102,6 +109,27 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.isIso_pullbackIhomComparison_app_of_
   obtain ⟨P, hP⟩ := Scheme.Modules.exists_isFinite_presentation_of_isAffine M
   have : P.IsFinite := hP
   exact f.isIso_pullbackIhomComparison_app_of_presentation M N P
+
+/-- Flat pullback commutes with internal Hom from a finitely presented module sheaf into a
+quasicoherent module sheaf. Neither scheme needs to be affine or Noetherian. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.isIso_pullbackIhomComparison_app
+    (M N : Y.Modules) [M.IsFinitePresentation] [N.IsQuasicoherent] :
+    letI := SheafOfModules.instIsQuasicoherentOfIsFinitePresentation M
+    IsIso ((pullbackIhomComparison M f).app N) := by
+  let := SheafOfModules.instIsQuasicoherentOfIsFinitePresentation M
+  refine (Scheme.Modules.isIso_iff_of_isOpenCover
+    (TopologicalSpace.IsOpenCover.comap (iSup_affineOpens_eq_top Y) f.base.hom) _).mpr
+      fun V ↦ ?_
+  have : IsAffine V.1 := V.2
+  have := V.1.isIso_pullbackIhomComparison_app M N
+  have := (f ∣_ V.1).isIso_pullbackIhomComparison_app_of_isAffine
+    ((Scheme.Modules.pullback V.1.ι).obj M) ((Scheme.Modules.pullback V.1.ι).obj N)
+  have h := ((f ∣_ V.1).isIso_pullbackIhomComparison_app_comp_iff V.1.ι M N).mpr
+    inferInstance
+  rw [morphismRestrict_ι] at h
+  have := (f ⁻¹ᵁ V.1).isIso_pullbackIhomComparison_app
+    ((Scheme.Modules.pullback f).obj M) ((Scheme.Modules.pullback f).obj N)
+  exact ((f ⁻¹ᵁ V.1).ι.isIso_pullbackIhomComparison_app_comp_iff f M N).mp h
 
 end
 

@@ -161,7 +161,7 @@ theorem scalar_sq_eq_one_of_basePointsRepresentation_eq_smul (hm : m ≠ 0)
     have hv := LinearMap.congr_fun hc v
     rw [basePointsRepresentation_eq_mulVec] at hv
     simpa only [Matrix.toLin'_apply, Matrix.smul_mulVec, Matrix.one_mulVec,
-      LinearMap.smul_apply, Module.End.one_apply] using hv
+      LinearMap.smul_apply, one_apply_eq_self] using hv
   have : Nonempty (Fin (m + m)) := ⟨⟨0, by omega⟩⟩
   exact Matrix.sq_eq_one_of_smul_one_mul_mul_transpose_eq (isUnit_JFin m R)
     (hmat ▸ GLSymplecticFin.mem_iff.mp (pointsMulEquiv (R := R) (A := R) m g).2)

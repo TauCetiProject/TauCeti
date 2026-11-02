@@ -461,33 +461,25 @@ theorem loweringMatrix_apply_eq_zero_of_weight_sub_ne (i : B) (a b : ι)
   rw [Pi.sub_apply, Pi.neg_apply, T.weight_reflection, hb]
   ring
 
-/-- The column of a raising matrix over any commutative ring is the reflected coordinate
-vector exactly at a raising edge, and otherwise is zero. -/
+/-- The column of a raising matrix cast into any additive group with one is the reflected
+coordinate vector exactly at a raising edge, and otherwise is zero. -/
 @[simp]
-theorem raisingMatrix_map_col {R : Type*} [CommRing R]
+theorem raisingMatrix_map_col {R : Type*} [AddGroupWithOne R]
     (i : B) (a : ι) :
     ((T.raisingMatrix i).map (Int.cast : ℤ → R)).col a =
       if T.weight a i = -1 then Pi.single (T.reflection i a) 1 else 0 := by
   ext b
-  by_cases h : T.weight a i = -1
-  · simp only [h, ite_true]
-    rw [Pi.single_apply]
-    simp [Matrix.col_apply, h]
-  · simp [Matrix.col_apply, h]
+  simp [Matrix.col_apply, Pi.single_apply, ite_and, ite_apply]
 
-/-- The column of a lowering matrix over any commutative ring is the reflected coordinate
-vector exactly at a lowering edge, and otherwise is zero. -/
+/-- The column of a lowering matrix cast into any additive group with one is the reflected
+coordinate vector exactly at a lowering edge, and otherwise is zero. -/
 @[simp]
-theorem loweringMatrix_map_col {R : Type*} [CommRing R]
+theorem loweringMatrix_map_col {R : Type*} [AddGroupWithOne R]
     (i : B) (a : ι) :
     ((T.loweringMatrix i).map (Int.cast : ℤ → R)).col a =
       if T.weight a i = 1 then Pi.single (T.reflection i a) 1 else 0 := by
   ext b
-  by_cases h : T.weight a i = 1
-  · simp only [h, ite_true]
-    rw [Pi.single_apply]
-    simp [Matrix.col_apply, h]
-  · simp [Matrix.col_apply, h]
+  simp [Matrix.col_apply, Pi.single_apply, ite_and, ite_apply]
 
 /-- The entry formula for a simple Cartan generator matrix. -/
 @[simp]

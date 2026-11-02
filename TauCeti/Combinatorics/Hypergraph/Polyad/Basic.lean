@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Combinatorics.Hypergraph.PairColor.Regular
 public import Mathlib.Data.Matrix.Basic
+import TauCeti.Data.Fin.Tuple.Basic
+import TauCeti.Order.Partition.Finpartition
 
 /-!
 # Triadic polyads
@@ -98,6 +100,14 @@ theorem mem_support (P : Polyad3 S) (x : {x : Fin 3 → V // Function.Injective 
         S.pairColors.colorOfPair (x.1 0) (x.1 2) = some P.color₀₂ ∧
         S.pairColors.colorOfPair (x.1 1) (x.1 2) = some P.color₁₂ :=
   mem_polyadSupport
+
+/-- The support of a polyad has at most as many triples as the product of its three cells. -/
+theorem card_support_le (P : Polyad3 S) : #P.support ≤ #P.c₀ * #P.c₁ * #P.c₂ := by
+  rw [mul_assoc, ← card_product, ← card_product]
+  refine card_le_card_of_injOn (fun x ↦ (x.1 0, x.1 1, x.1 2)) (fun x hx ↦ ?_)
+    (Fin.injective_apply_zero_one_two.comp Subtype.val_injective).injOn
+  obtain ⟨h₀, h₁, h₂, -⟩ := (P.mem_support x).1 hx
+  simp [h₀, h₁, h₂]
 
 /-- Two polyads are equal when their three cells and three pair colors agree. -/
 @[ext]
@@ -366,6 +376,30 @@ theorem mem_support_iff_eq_ofTriple {P : Polyad3 S}
   exact ext_data (S.vertexPart.part_eq_of_mem P.hc₀ h₀).symm
     (S.vertexPart.part_eq_of_mem P.hc₁ h₁).symm (S.vertexPart.part_eq_of_mem P.hc₂ h₂).symm
     k₀₁.2.2.symm k₀₂.2.2.symm k₁₂.2.2.symm
+
+/-- **Polyads under a refined skeleton.** If the vertex cells of `T` refine those of `S` and the
+pair colors of `S` factor through those of `T`, then two injective triples with the same polyad
+over `T` have the same polyad over `S`. -/
+theorem ofTriple_eq_ofTriple_of_le {κ' : Type*} {T : PairSkeleton3 κ' V}
+    (hV : T.vertexPart ≤ S.vertexPart) (f : κ' → κ)
+    (hf : ∀ p, S.pairColors.color p = f (T.pairColors.color p))
+    {x y : {x : Fin 3 → V // Function.Injective x}} (h : ofTriple T x = ofTriple T y) :
+    ofTriple S x = ofTriple S y := by
+  -- Points sharing a fine cell share the coarse cell containing it.
+  have hpart : ∀ {a b : V}, T.vertexPart.part a = T.vertexPart.part b →
+      S.vertexPart.part a = S.vertexPart.part b := fun {a b} hab ↦
+    (S.vertexPart.part_eq_of_mem (S.vertexPart.part_mem.2 (mem_univ a))
+      (Finpartition.part_mono hV a (hab ▸ T.vertexPart.mem_part_self.2 (mem_univ b)))).symm
+  exact ext_data (hpart (congrArg c₀ h)) (hpart (congrArg c₁ h)) (hpart (congrArg c₂ h))
+    (by simpa [hf] using congrArg (f ∘ color₀₁) h) (by simpa [hf] using congrArg (f ∘ color₀₂) h)
+    (by simpa [hf] using congrArg (f ∘ color₁₂) h)
+
+/-- Relabeling the pair palette does not change which injective triples share a polyad. -/
+theorem ofTriple_relabel_eq_ofTriple_relabel_iff {κ' : Type*} (e : κ ≃ κ')
+    {x y : {x : Fin 3 → V // Function.Injective x}} :
+    ofTriple (S.relabel e) x = ofTriple (S.relabel e) y ↔ ofTriple S x = ofTriple S y :=
+  ⟨ofTriple_eq_ofTriple_of_le (S.relabel_vertexPart e).le e.symm fun p ↦ by simp,
+    ofTriple_eq_ofTriple_of_le (S.relabel_vertexPart e).ge e fun p ↦ by simp⟩
 
 open Function in
 /-- Distinct polyads over the same lower skeleton have disjoint supports. -/

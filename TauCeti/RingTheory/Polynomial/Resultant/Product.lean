@@ -16,7 +16,9 @@ product law, this applies to primitive polynomials over polynomial coefficient r
 where leading coefficients need not be units.
 
 Positive degrees are essential with the convention `Polynomial.discr_C = 1`: multiplying
-by a constant instead obeys the scaling law `TauCeti.discr_C_mul`.
+by a constant instead obeys the scaling law `TauCeti.discr_C_mul`. Multiplying by `X`
+multiplies the discriminant by the square of the constant coefficient
+(`Polynomial.discr_X_mul`).
 
 This extends `Polynomial.Monic.discr_mul` and supplies the discriminant identity for
 products of primitive basis members in McCallum projection, where the coefficient ring
@@ -84,6 +86,14 @@ theorem discr_mul_of_natDegree_pos {R : Type u} [CommRing R] [IsDomain R]
   simpa only [← Polynomial.map_mul, discr_map_of_natDegree_eq φ
     (natDegree_map_eq_of_injective hφ _), resultant_map_map,
     natDegree_map_eq_of_injective hφ, map_mul, map_pow] using h
+
+/-- Multiplying a positive-degree polynomial over a domain by `X` multiplies its discriminant by
+the square of its constant coefficient. -/
+theorem discr_X_mul {R : Type u} [CommRing R] [IsDomain R] (f : R[X]) (hf : 0 < f.natDegree) :
+    (X * f).discr = f.discr * f.coeff 0 ^ 2 := by
+  rw [discr_mul_of_natDegree_pos _ _ (by rw [natDegree_X]; exact one_pos) hf,
+    discr_of_degree_eq_one degree_X, natDegree_X, ← pow_one X,
+    resultant_X_pow_left _ _ _ le_rfl, pow_one, one_mul]
 
 end Polynomial
 

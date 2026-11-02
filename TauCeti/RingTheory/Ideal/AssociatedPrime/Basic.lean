@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.KrullDimension.Module
 public import Mathlib.RingTheory.KrullDimension.NonZeroDivisors
 public import Mathlib.RingTheory.Nakayama
 public import Mathlib.RingTheory.QuotSMulTop
+public import TauCeti.RingTheory.Ideal.Colon
 
 /-!
 # Associated primes, dimension, and quotients by a regular element
@@ -29,6 +30,14 @@ A separate fact describes the associated primes of a reduced ring:
 
 * `IsAssociatedPrime.mem_minimalPrimes_of_isReduced`: every associated prime of a reduced ring is
   a minimal prime.
+
+For an `R`-algebra `S`, two facts compare the associated primes of an `S`-module `M` over `S`
+and over `R`, using `Submodule.comap_colon_singleton` from `TauCeti.RingTheory.Ideal.Colon`:
+
+* `IsAssociatedPrime.comap`: the contraction of an associated prime over `S` is an associated
+  prime over `R`.
+* `IsAssociatedPrime.exists_isAssociatedPrime_comap_eq`: if `S` is Noetherian, every maximal ideal
+  of `R` that is an associated prime over `R` is such a contraction.
 
 ## References
 
@@ -119,3 +128,41 @@ theorem exists_le_isAssociatedPrime_quotSMulTop [IsNoetherianRing R] [Module.Fin
   exact Submodule.zero_mem _
 
 end IsAssociatedPrime
+
+section Algebra
+
+variable {R S M : Type*} [CommSemiring R] [CommSemiring S] [Algebra R S] [AddCommMonoid M]
+  [Module R M] [Module S M] [IsScalarTower R S M]
+
+namespace IsAssociatedPrime
+
+/-- An associated prime of an `S`-module `M` contracts to an associated prime of `M` as an
+`R`-module. -/
+theorem comap {q : Ideal S} (hq : IsAssociatedPrime q M) :
+    IsAssociatedPrime (q.comap (algebraMap R S)) M := by
+  obtain ⟨hq, x, rfl⟩ := hq
+  exact ⟨Ideal.comap_isPrime _ _, x, by
+    rw [Ideal.comap_radical, Submodule.comap_colon_singleton, Submodule.restrictScalars_bot]⟩
+
+/-- Let `S` be a Noetherian `R`-algebra. A maximal ideal of `R` that is an associated prime of an
+`S`-module `M`, viewed as an `R`-module, is the contraction of an associated prime of `M` over
+`S`. -/
+theorem exists_isAssociatedPrime_comap_eq [IsNoetherianRing S] {p : Ideal R} [hmax : p.IsMaximal]
+    (hp : IsAssociatedPrime p M) :
+    ∃ q : Ideal S, IsAssociatedPrime q M ∧ q.comap (algebraMap R S) = p := by
+  obtain ⟨-, x, hpx⟩ := hp
+  have hx : x ≠ 0 := by
+    rintro rfl
+    exact hmax.ne_top (by simp [hpx])
+  obtain ⟨q, hq, hle⟩ := exists_le_isAssociatedPrime_of_isNoetherianRing S x hx
+  have := hq.isPrime
+  -- The contraction of `q` is a prime containing the annihilator of `x` in `R`, hence `p`.
+  refine ⟨q, hq, (hmax.eq_of_le (Ideal.comap_isPrime _ q).ne_top ?_).symm⟩
+  have hcolon := Submodule.comap_colon_singleton (R := R) (⊥ : Submodule S M) x
+  rw [Submodule.restrictScalars_bot] at hcolon
+  rw [hpx, ← hcolon]
+  exact (Ideal.comap_isPrime _ q).radical_le_iff.2 (Ideal.comap_mono hle)
+
+end IsAssociatedPrime
+
+end Algebra

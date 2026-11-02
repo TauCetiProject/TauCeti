@@ -12,18 +12,19 @@ public import TauCeti.RepresentationTheory.GrothendieckGroup.ProjectiveBasis
 /-!
 # Forgetting the grading on the idempotent projective basis
 
-Let `A` be a nonnegatively graded finite-dimensional algebra over a field `k` whose degree-zero
-piece is spanned by a complete family of orthogonal nonzero idempotents `eᵢ`. The graded
-projectives `A eᵢ` form a Laurent basis of `K₀^gr(proj A)`
-(`TauCeti.gradedIdempotentProjectiveBasis`). This file shows that the underlying ungraded modules
-`A eᵢ` form a `ℤ`-basis of `K₀(proj A)`, so that forgetting the grading identifies graded
-projective `K₀` specialized at `q = 1` with ordinary projective `K₀`. No finite global dimension is
-assumed: the comparison goes through the two bases, not through the Cartan maps.
+Let `A` be a graded finite-dimensional algebra over a field `k` with a complete family of
+orthogonal primitive idempotents `eᵢ` of degree zero whose ungraded left ideals `A eᵢ` are pairwise
+nonisomorphic. The graded projectives `A eᵢ` form a Laurent basis of `K₀^gr(proj A)`
+(`TauCeti.gradedIdempotentProjectiveBasisOfPrimitive`), and over the Artinian ring `A` the
+underlying ungraded modules `A eᵢ` form the `ℤ`-basis `TauCeti.idempotentProjectiveBasis` of
+`K₀(proj A)`. Matching the two bases, forgetting the grading identifies graded projective `K₀`
+specialized at `q = 1` with ordinary projective `K₀`. No finite global dimension, positivity of the
+grading or splitting of the simple modules is assumed: the comparison goes through the two bases,
+not through the Cartan maps.
 
-The ungraded input is that each `eᵢ` is primitive
-(`TauCeti.isPrimitiveIdempotent_of_gradeZero_le_span`) and that the ungraded modules `A eᵢ` are
-pairwise nonisomorphic (`TauCeti.isEmpty_linearEquiv_span_singleton_of_gradeZero_le_span`). Over
-the Artinian ring `A` they then form the basis `TauCeti.idempotentProjectiveBasis`.
+When `A` is nonnegatively graded and its degree-zero piece is spanned by nonzero `eᵢ`, the
+hypotheses are supplied by `TauCeti.isPrimitiveIdempotent_of_gradeZero_le_span` and
+`TauCeti.isEmpty_linearEquiv_span_singleton_of_gradeZero_le_span`.
 
 ## Main definitions
 
@@ -61,14 +62,15 @@ variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A]
 section ForgetGrading
 
 variable [Fintype I] [Module.Finite k A] (he : CompleteOrthogonalIdempotents e)
-  (he₀ : ∀ i, e i ∈ 𝒜 0) (hneg : ∀ p < 0, 𝒜 p = ⊥) (hspan : 𝒜 0 ≤ Submodule.span k (Set.range e))
-  (hne : ∀ i, e i ≠ 0)
+  (he₀ : ∀ i, e i ∈ 𝒜 0) (hprim : ∀ i, IsPrimitiveIdempotent (e i))
+  (hnoniso : Pairwise fun i j =>
+    IsEmpty ((Ideal.span {e i} : Ideal A) ≃ₗ[A] (Ideal.span {e j} : Ideal A)))
 
-include he₀ hneg hspan hne in
-/-- **Forgetting the grading identifies projective `K₀` at `q = 1`** for a nonnegatively graded
-finite-dimensional algebra whose degree-zero piece is spanned by a complete family of orthogonal
-nonzero idempotents `eᵢ`: it sends the specialized graded basis `[A eᵢ]` to the ungraded basis
-`[A eᵢ]` of `K₀(proj A)`. The underlying map is
+include he₀ hprim hnoniso in
+/-- **Forgetting the grading identifies projective `K₀` at `q = 1`** for a graded
+finite-dimensional algebra with a complete family of orthogonal primitive idempotents `eᵢ` of
+degree zero whose ungraded left ideals `A eᵢ` are pairwise nonisomorphic: it sends the specialized
+graded basis `[A eᵢ]` to the ungraded basis `[A eᵢ]` of `K₀(proj A)`. The underlying map is
 `TauCeti.gradedFiniteProjectiveModulesForgetK0`
 (`TauCeti.gradedIdempotentProjectiveForgetK0Equiv_toLinearMap`). -/
 noncomputable def gradedIdempotentProjectiveForgetK0Equiv :
@@ -79,27 +81,24 @@ noncomputable def gradedIdempotentProjectiveForgetK0Equiv :
   have hI (i : I) : (Ideal.span {e i} : Ideal A).IsHomogeneous 𝒜 :=
     Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀ i⟩
   (LaurentSpecialization.basis 1
-      (gradedIdempotentProjectiveBasis he he₀ hI hneg hspan hne)).repr.trans
-    (idempotentProjectiveBasis he
-      (fun i => isPrimitiveIdempotent_of_gradeZero_le_span he₀ he.toOrthogonalIdempotents hneg
-        hspan i (hne i))
-      (fun i _ hij => isEmpty_linearEquiv_span_singleton_of_gradeZero_le_span
-        he₀ he.toOrthogonalIdempotents hneg hspan hij (hne i))).repr.symm
+      (gradedIdempotentProjectiveBasisOfPrimitive he he₀ hI hprim hnoniso)).repr.trans
+    (idempotentProjectiveBasis he hprim hnoniso).repr.symm
 
 /-- The equivalence `TauCeti.gradedIdempotentProjectiveForgetK0Equiv` is the map induced by
 forgetting the grading. -/
 @[simp]
 theorem gradedIdempotentProjectiveForgetK0Equiv_toLinearMap :
-    (gradedIdempotentProjectiveForgetK0Equiv he he₀ hneg hspan hne).toLinearMap =
+    (gradedIdempotentProjectiveForgetK0Equiv he he₀ hprim hnoniso).toLinearMap =
       gradedFiniteProjectiveModulesForgetK0 𝒜 := by
   let _ : IsArtinianRing A := IsArtinianRing.of_finite k A
   have hI (i : I) : (Ideal.span {e i} : Ideal A).IsHomogeneous 𝒜 :=
     Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀ i⟩
   let b :=
-    LaurentSpecialization.basis 1 (gradedIdempotentProjectiveBasis he he₀ hI hneg hspan hne)
+    LaurentSpecialization.basis 1
+      (gradedIdempotentProjectiveBasisOfPrimitive he he₀ hI hprim hnoniso)
   refine b.ext fun i => ?_
   calc
-    gradedIdempotentProjectiveForgetK0Equiv he he₀ hneg hspan hne (b i) =
+    gradedIdempotentProjectiveForgetK0Equiv he he₀ hprim hnoniso (b i) =
         ExactK0.of.{uA} (⟨ModuleCat.of A (Ideal.span {e i}), finiteProjectiveModules_iff.2
           ⟨inferInstance, (he.idem i).projective_span_singleton⟩⟩ :
             (finiteProjectiveModules A).FullSubcategory) := by
@@ -109,7 +108,7 @@ theorem gradedIdempotentProjectiveForgetK0Equiv_toLinearMap :
     _ = gradedFiniteProjectiveModulesForgetK0 𝒜 (b i) := by
       -- The rewrite closes the goal by `rfl`: the underlying module of the graded ideal
       -- `GradedModuleCat.ofIdeal` is the ideal itself.
-      rw [LaurentSpecialization.basis_apply, gradedIdempotentProjectiveBasis_apply,
+      rw [LaurentSpecialization.basis_apply, gradedIdempotentProjectiveBasisOfPrimitive_apply,
         gradedFiniteProjectiveModulesForgetK0_mk_of, gradedFiniteProjectiveModulesForget_obj]
 
 /-- On a specialized graded projective class, the equivalence returns its underlying ungraded
@@ -117,7 +116,7 @@ class. -/
 -- A simp rule here would normalize the inner application before generic inverse laws match.
 theorem gradedIdempotentProjectiveForgetK0Equiv_mk_of
     (M : (gradedFiniteProjectiveModules 𝒜).FullSubcategory) :
-    gradedIdempotentProjectiveForgetK0Equiv he he₀ hneg hspan hne
+    gradedIdempotentProjectiveForgetK0Equiv he he₀ hprim hnoniso
         (LaurentSpecialization.mk 1
           (LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜) M)) =
       ExactK0.of.{uA} ((gradedFiniteProjectiveModulesForget 𝒜).obj M) := by
@@ -128,7 +127,7 @@ theorem gradedIdempotentProjectiveForgetK0Equiv_mk_of
 projective, for instance of an ideal `A eᵢ`, to its specialized graded class. -/
 theorem gradedIdempotentProjectiveForgetK0Equiv_symm_of
     (M : (gradedFiniteProjectiveModules 𝒜).FullSubcategory) :
-    (gradedIdempotentProjectiveForgetK0Equiv he he₀ hneg hspan hne).symm
+    (gradedIdempotentProjectiveForgetK0Equiv he he₀ hprim hnoniso).symm
         (ExactK0.of.{uA} ((gradedFiniteProjectiveModulesForget 𝒜).obj M)) =
       LaurentSpecialization.mk 1
         (LaurentK0.of.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜) M) := by
