@@ -67,9 +67,10 @@ analytic diffeomorphism with derivative `p⁻¹ * q`.
   derivative of `f`.
 * `AddCircle.hasMFDerivAt_coe`, `AddCircle.mfderiv_add_right`: the quotient map and the
   translations have derivative the identity of `ℝ`.
-* `AddCircle.isLocalDiffeomorph_prodMap_coe`, `AddCircle.mfderiv_prodMap_coe_apply`: the quotient
-  map `ℝ × ℝ → AddCircle p × AddCircle q` is an analytic local diffeomorphism whose differential is
-  the identity of `ℝ × ℝ`.
+* `AddCircle.isLocalDiffeomorph_prodMap_coe`, `AddCircle.hasMFDerivAt_prodMap_coe`,
+  `AddCircle.mfderiv_prodMap_coe`, `AddCircle.mfderiv_prodMap_coe_apply`: the quotient map
+  `ℝ × ℝ → AddCircle p × AddCircle q` is an analytic local diffeomorphism whose differential is the
+  identity of `ℝ × ℝ`.
 * `AddCircle.mfderiv_zsmul`: multiplication by an integer `k` has derivative multiplication by `k`.
 * `AddCircle.mfderiv_diffeomorphAddCircle`: the rescaling from period `p` to period `q` has
   derivative multiplication by `p⁻¹ * q`.
@@ -617,6 +618,29 @@ theorem isLocalDiffeomorph_prodMap_coe (n : ℕ∞ω) :
   rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
   exact (isLocalDiffeomorph_coe p n).prodMap (isLocalDiffeomorph_coe q n)
 
+/-- The quotient map `ℝ × ℝ → AddCircle p × AddCircle q` has derivative the identity of `ℝ × ℝ`,
+the tangent spaces of both circles being read in their charts. -/
+theorem hasMFDerivAt_prodMap_coe (z : ℝ × ℝ) :
+    HasMFDerivAt 𝓘(ℝ, ℝ × ℝ) (𝓘(ℝ).prod 𝓘(ℝ))
+      (Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q)) z
+      (ContinuousLinearMap.id ℝ (ℝ × ℝ)) := by
+  -- The derivatives `id ∘ fst` and `id ∘ snd` of the two factors pair to the identity of `ℝ × ℝ`.
+  have hid : ((ContinuousLinearMap.id ℝ ℝ).comp (ContinuousLinearMap.fst ℝ ℝ ℝ)).prod
+      ((ContinuousLinearMap.id ℝ ℝ).comp (ContinuousLinearMap.snd ℝ ℝ ℝ)) =
+        ContinuousLinearMap.id ℝ (ℝ × ℝ) := by
+    rw [ContinuousLinearMap.id_comp, ContinuousLinearMap.id_comp, ContinuousLinearMap.fst_prod_snd]
+  exact (((hasMFDerivAt_coe p z.1).comp z hasFDerivAt_fst.hasMFDerivAt).prodMk
+    ((hasMFDerivAt_coe q z.2).comp z hasFDerivAt_snd.hasMFDerivAt)).congr_mfderiv hid
+
+/-- The derivative of the quotient map `ℝ × ℝ → AddCircle p × AddCircle q` is the identity of
+`ℝ × ℝ`. -/
+@[simp]
+theorem mfderiv_prodMap_coe (z : ℝ × ℝ) :
+    mfderiv 𝓘(ℝ, ℝ × ℝ) (𝓘(ℝ).prod 𝓘(ℝ))
+        (Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q)) z =
+      ContinuousLinearMap.id ℝ (ℝ × ℝ) :=
+  (hasMFDerivAt_prodMap_coe p q z).mfderiv
+
 /-- The differential of the quotient map `ℝ × ℝ → AddCircle p × AddCircle q` sends the tangent
 vector `(a, b)` of the plane to `a ∂_s + b ∂_t`, the tangent spaces of both circles being read in
 their charts. -/
@@ -626,19 +650,10 @@ theorem mfderiv_prodMap_coe_apply (z : ℝ × ℝ) (v : TangentSpace 𝓘(ℝ, �
       (Manifold.tangentSpaceProdEquiv
         (Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q) z)).symm
         (NormedSpace.fromTangentSpace z v) := by
-  -- The derivatives `id ∘ fst` and `id ∘ snd` of the two factors pair to the identity of `ℝ × ℝ`.
-  have hid : ((ContinuousLinearMap.id ℝ ℝ).comp (ContinuousLinearMap.fst ℝ ℝ ℝ)).prod
-      ((ContinuousLinearMap.id ℝ ℝ).comp (ContinuousLinearMap.snd ℝ ℝ ℝ)) =
-        ContinuousLinearMap.id ℝ (ℝ × ℝ) := by
-    rw [ContinuousLinearMap.id_comp, ContinuousLinearMap.id_comp, ContinuousLinearMap.fst_prod_snd]
-  have hd : HasMFDerivAt 𝓘(ℝ, ℝ × ℝ) (𝓘(ℝ).prod 𝓘(ℝ))
-      (Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q)) z
-      (ContinuousLinearMap.id ℝ (ℝ × ℝ)) :=
-    (((hasMFDerivAt_coe p z.1).comp z hasFDerivAt_fst.hasMFDerivAt).prodMk
-      ((hasMFDerivAt_coe q z.2).comp z hasFDerivAt_snd.hasMFDerivAt)).congr_mfderiv hid
-  rw [hd.mfderiv]
+  rw [mfderiv_prodMap_coe]
   -- The tangent spaces of the plane and of the torus are `ℝ × ℝ`, and the identifications
-  -- `NormedSpace.fromTangentSpace` and `Manifold.tangentSpaceProdEquiv` with it are the identity.
+  -- `NormedSpace.fromTangentSpace` and `Manifold.tangentSpaceProdEquiv` with it are the identity,
+  -- as is `ContinuousLinearMap.id` applied to a tangent vector.
   exact (Manifold.tangentSpaceProdEquiv_symm_apply _ _).symm
 
 end AddCircle

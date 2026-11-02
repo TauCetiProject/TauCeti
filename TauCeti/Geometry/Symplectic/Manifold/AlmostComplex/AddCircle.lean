@@ -55,15 +55,6 @@ namespace TauCeti.SmoothAlmostComplexStructure
 
 variable (p q : ℝ) [Fact (0 < p)] [Fact (0 < q)]
 
-/-- In the real coordinates of the circles, the differential of the quotient map
-`ℝ × ℝ → AddCircle p × AddCircle q` is the identity. -/
-private theorem mfderiv_prodMap_coe_apply_eq (z : ℝ × ℝ) (v : TangentSpace 𝓘(ℝ, ℝ × ℝ) z) :
-    mfderiv 𝓘(ℝ, ℝ × ℝ) (𝓘(ℝ).prod 𝓘(ℝ))
-      (Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q)) z v = v :=
-  -- `Manifold.tangentSpaceProdEquiv` and `NormedSpace.fromTangentSpace` are the identity.
-  (AddCircle.mfderiv_prodMap_coe_apply p q z v).trans
-    (Manifold.tangentSpaceProdEquiv_symm_apply _ _)
-
 /-- The standard structure of the plane respects the identifications of the quotient map
 `ℝ × ℝ → AddCircle p × AddCircle q`. -/
 private theorem product_respects ⦃z z' : ℝ × ℝ⦄ (v : TangentSpace 𝓘(ℝ, ℝ × ℝ) z)
@@ -78,13 +69,12 @@ private theorem product_respects ⦃z z' : ℝ × ℝ⦄ (v : TangentSpace 𝓘(
         (Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q)) z (product ℝ z v) =
       mfderiv 𝓘(ℝ, ℝ × ℝ) (𝓘(ℝ).prod 𝓘(ℝ))
         (Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q)) z' (product ℝ z' v') := by
-  -- Both differentials are the identity, so `v = v'` and the claim is `J v = J v'`.
-  have hv : v = v' := (mfderiv_prodMap_coe_apply_eq p q z v).symm.trans
-    (hvv'.trans (mfderiv_prodMap_coe_apply_eq p q z' v'))
-  refine (mfderiv_prodMap_coe_apply_eq p q z _).trans
-    (Eq.trans ?_ (mfderiv_prodMap_coe_apply_eq p q z' _).symm)
+  -- Both differentials are the identity, so `v = v'` and the claim is `J v = J v'`. The identity
+  -- of `ℝ × ℝ` is applied here to tangent vectors, which `ContinuousLinearMap.id_apply` does not
+  -- match syntactically; it reduces to them by definition.
+  simp only [AddCircle.mfderiv_prodMap_coe] at hvv' ⊢
   exact (product_apply z v).trans
-    ((congrArg (fun w : ℝ × ℝ ↦ (-w.2, w.1)) hv).trans (product_apply z' v').symm)
+    ((congrArg (fun w : ℝ × ℝ ↦ (-w.2, w.1)) hvv').trans (product_apply z' v').symm)
 
 /-- The standard almost complex structure on the product `AddCircle p × AddCircle q` of two
 circles: in the real coordinates of the circles it sends `a ∂_s + b ∂_t` to `-b ∂_s + a ∂_t`
@@ -105,10 +95,9 @@ theorem addCircleProd_apply_symm (x : AddCircle p × AddCircle q) (a b : ℝ) :
   have h := descend_apply_mfderiv (AddCircle.isLocalDiffeomorph_prodMap_coe p q ∞)
     (AddCircle.surjective_prodMap_coe p q) (product ℝ) (product_respects p q) z (a, b)
   rw [Manifold.tangentSpaceProdEquiv_symm_apply, Manifold.tangentSpaceProdEquiv_symm_apply]
-  -- Both differentials in `h` are the identity of `ℝ × ℝ`.
-  exact (congrArg (addCircleProd p q (Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q) z))
-    (mfderiv_prodMap_coe_apply_eq p q z (a, b)).symm).trans
-      (h.trans ((mfderiv_prodMap_coe_apply_eq p q z _).trans (product_apply z (a, b))))
+  -- Both differentials in `h` are the identity of `ℝ × ℝ`, which reduces to its argument.
+  simp only [AddCircle.mfderiv_prodMap_coe] at h
+  exact h.trans (product_apply z (a, b))
 
 /-- The standard almost complex structure of `AddCircle p × AddCircle q` sends a tangent vector
 `v = (a, b)`, written in the real coordinates of the two circles, to `(-b, a)`. This is the
