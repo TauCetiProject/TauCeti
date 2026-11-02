@@ -7,11 +7,10 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Dual
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
-public import Mathlib.Analysis.Complex.Order
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 
 /-!
-# The Riesz isomorphism and `innerSL`
+# The Riesz isomorphism and the positive dual metric
 
 On a Hilbert space `E`, the Riesz isomorphism `InnerProductSpace.toDual 𝕜 E` is the map
 `innerSL 𝕜 : E →L⋆[𝕜] StrongDual 𝕜 E`, upgraded to a conjugate-linear isometric equivalence. So its
@@ -19,13 +18,20 @@ inverse undoes `innerSL` on either side.
 
 In finite dimension, `InnerProductSpace.dualMetric` is the positive Hermitian form on the
 algebraic dual transported through Riesz duality. Since Riesz duality is conjugate-linear,
-its formula reverses the two slots. Transposing an operator transposes its adjoint for this
-metric; no inner product instance on the algebraic dual is installed.
+its formula reverses the two slots. For these metrics, the adjoint of the transpose
+`T.dualMap` is the transpose of the Hermitian adjoint, `T.adjoint.dualMap`.
+No inner product instance on the algebraic dual is installed.
 
 ## Main results
 
 * `InnerProductSpace.toDual_symm_innerSL`: `(toDual 𝕜 E).symm (innerSL 𝕜 w) = w`.
 * `InnerProductSpace.innerSL_toDual_symm`: `innerSL 𝕜 ((toDual 𝕜 E).symm q) = q`.
+* `InnerProductSpace.dualMetric`: the Hermitian form on the algebraic dual transported by Riesz.
+* `InnerProductSpace.dualMetric_innerₛₗ`: its value on Riesz functionals is `⟪y, x⟫`.
+* `InnerProductSpace.isPosSemidef_dualMetric`: the dual metric is Hermitian and
+  positive semidefinite.
+* `InnerProductSpace.dualMetric_self_eq_zero_iff`: a functional has zero square norm iff it is zero.
+* `LinearMap.dualMetric_dualMap_left`: transposition and Hermitian adjunction commute.
 -/
 
 public section
@@ -101,7 +107,7 @@ open scoped ComplexOrder
 variable (𝕜 E)
 
 /-- The transported dual metric is Hermitian and positive semidefinite. -/
-theorem dualMetric_isPosSemidef : (dualMetric 𝕜 E).IsPosSemidef where
+theorem isPosSemidef_dualMetric : (dualMetric 𝕜 E).IsPosSemidef where
   eq φ ψ := by
     obtain ⟨x, rfl, _⟩ := φ.existsUnique_innerₛₗ_eq
     obtain ⟨y, rfl, _⟩ := ψ.existsUnique_innerₛₗ_eq
