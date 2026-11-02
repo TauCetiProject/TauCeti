@@ -233,7 +233,7 @@ private theorem exists_smul_eq_mul_of_subalgebra (hJ : J ≤ Ideal.jacobson ⊥)
     (heγ : e - γ ∈ J.map (algebraMap S C')) (hse : ∀ x : C', ∃ σ : S, σ • e = e * x) (c : C) :
     ∃ σ : S, σ • (e : C) = e * c := by
   classical
-  obtain ⟨m, hm1, hm⟩ : ∃ m, 1 ≤ m ∧ ∀ r ∈ s, r ^ m * c ∈ C' :=
+  obtain ⟨m, _, hm⟩ : ∃ m, 1 ≤ m ∧ ∀ r ∈ s, r ^ m * c ∈ C' :=
     ((eventually_ge_atTop 1).and ((eventually_all_finset s).mpr fun r hr ↦ hZ r hr c)).exists
   -- The `m`-th powers of `s` together with `1 - e` generate the unit ideal of `C'`.
   have h1 : (1 : C') ∈ Ideal.span ((· ^ m) '' {x : C' | (x : C) ∈ s}) ⊔ Ideal.span {1 - e} := by

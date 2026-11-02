@@ -129,7 +129,7 @@ theorem thetaSeries_smul_eq_tsum_gaussSumTwisted (hk : finrank ℝ E = 2 * k) (A
     ring
   rw [hAτ, thetaSeries_vadd_eq_sum hL]
   simp_rw [hclass, thetaCoset_S_smul L hk, hterm,
-    Summable.tsum_finsetSum fun y _ => (hsum _).mul_left _, ← hfac, tsum_mul_left, Finset.mul_sum]
+    Summable.tsum_finsetSum fun _ _ => (hsum _).mul_left _, ← hfac, tsum_mul_left, Finset.mul_sum]
   -- `thetaSeries_vadd_eq_sum` sums over its own `Fintype` instance on `L / c L`.
   refine Finset.sum_congr (by congr; exact Subsingleton.elim _ _) fun y _ => ?_
   ring

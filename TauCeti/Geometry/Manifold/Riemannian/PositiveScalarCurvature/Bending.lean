@@ -421,7 +421,7 @@ private theorem tendsto_bendHeight_atTop (hr₁ : 0 < r₁) (hW : 1 ≤ W) :
 
 /-- The first stage: during the small-angle bend `[0, 1]` the bending term is at most `R₀ / 2`. -/
 private theorem bend_first_le {q R₀ K : ℝ} (hq : 3 ≤ q) (hR₀ : 0 ≤ R₀) (hr₁ : 0 < r₁)
-    (h₀ : 0 ≤ θ₀) (h₁ : θ₀ ≤ π / 2) (hK : ∀ x, deriv smoothTransition x ≤ K)
+    (h₀ : 0 ≤ θ₀) (_ : θ₀ ≤ π / 2) (hK : ∀ x, deriv smoothTransition x ≤ K)
     (hθ₀ : 6 * (q - 1) * K * θ₀ ≤ R₀ * (r₁ * exp (-1)) ^ 2) {u : ℝ} (hu : 0 ≤ u) :
     3 * (q - 1) * (θ₀ * deriv smoothTransition u / bendSpeed r₁ θ₀ W u)
       * sin (bendAngle θ₀ u) / bendRadius r₁ θ₀ W u ≤ R₀ / 2 := by
@@ -431,9 +431,6 @@ private theorem bend_first_le {q R₀ K : ℝ} (hq : 3 ≤ q) (hR₀ : 0 ≤ R�
   · have hρ : r₁ * exp (-1) ≤ bendRadius r₁ θ₀ W u :=
       mul_le_mul_of_nonneg_left (exp_le_exp.2 (neg_le_neg (bendLogRadius_le_one hu hu₁)))
         hr₁.le
-    have hs₀ : 0 ≤ sin (bendAngle θ₀ u) :=
-      sin_nonneg_of_nonneg_of_le_pi (bendAngle_nonneg h₀ h₁ u)
-        (by linarith [bendAngle_le h₀ h₁ u, pi_pos])
     have has : deriv smoothTransition u * sin (bendAngle θ₀ u) ≤ K := by
       nlinarith [hK u, sin_le_one (bendAngle θ₀ u)]
     have hL : 3 * (q - 1) * (θ₀ * deriv smoothTransition u / bendSpeed r₁ θ₀ W u)

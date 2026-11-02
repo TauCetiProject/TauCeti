@@ -119,14 +119,13 @@ theorem exists_eLpNorm_rpow_le_mul_eLpNorm_rpow :
   refine ⟨2 * √2 * c, by positivity, ?_⟩
   intro mu _ Omega a lam Lam q S u ε p x₀ r ρ h ha hS hu hε hεu hp hr hrρ hball
   have hlam := h.pos
-  have h1p : 0 < 1 - p := by linarith
   set K := |p| * Lam / ((1 - p) * lam)
   have hK : 0 ≤ K := div_nonneg (mul_nonneg (abs_nonneg p) h.upper_nonneg) (by positivity)
   -- A cutoff equal to `1` on `B(x₀, r)`, supported in `closedBall x₀ ρ'` with `ρ' = (r + ρ)/2`.
   set ρ' := (r + ρ) / 2
   have hrρ' : r < ρ' := by simp only [ρ']; linarith
   have hρ'ρ : ρ' < ρ := by simp only [ρ']; linarith
-  obtain ⟨ψ, hψ, hψr, hψ1, hψts, hψg, -⟩ := hcut x₀ hr.le hrρ'
+  obtain ⟨ψ, hψ, _, hψ1, hψts, hψg, -⟩ := hcut x₀ hr.le hrρ'
   set G := c / (ρ' - r)
   have hρ'B : Metric.closedBall x₀ ρ' ⊆ Metric.ball x₀ ρ :=
     Metric.closedBall_subset_ball hρ'ρ
@@ -236,7 +235,6 @@ theorem exists_eLpNorm_le_ofReal_rpow_mul_eLpNorm :
   obtain ⟨C, hC0, hstep⟩ := exists_eLpNorm_rpow_le_mul_eLpNorm_rpow (ι := ι)
   refine ⟨C, hC0, ?_⟩
   intro mu _ Omega a lam Lam q S u ε p x₀ r ρ h ha hq hS hu hε hεu hp0 hp hr hrρ hball
-  have h1p : 0 < 1 - p := by linarith
   have hlam := h.pos
   have hstep' := hstep mu h ha hS hu hε hεu hp hr hrρ hball
   rw [abs_of_pos hp0] at hstep'
@@ -310,7 +308,6 @@ private theorem exists_eLpNorm_le_ofReal_rpow_mul_eLpNorm_of_ball_subset [Nonemp
   set n : ℝ := (Fintype.card ι : ℝ)
   have hn : (1 : ℝ) ≤ n := Nat.one_le_cast.2 Fintype.card_pos
   have hn0 : (0 : ℝ) < n := by linarith
-  have hχ0 : 0 < χ := zero_lt_one.trans hχ
   set δ : ℝ := (χ - 1) / (2 * χ)
   have hδn : δ < n⁻¹ := by
     rw [div_lt_iff₀ (by positivity), inv_mul_eq_div, lt_div_iff₀ hn0]
@@ -432,7 +429,6 @@ theorem exists_eLpNorm_le_mul_rpow_mul_eLpNorm [Nonempty ι] {p s : ℝ} (hp : 0
   have hlam := h.pos
   -- The radii `rₖ = R - k R/(2M)`, shrinking from `R` to `R/2` in steps of `R/(2M)`.
   set rk : ℕ → ℝ := fun k => R - k * (R / (2 * M))
-  have hM0 : (0 : ℝ) < M := Nat.cast_pos.2 hM
   have hrk : ∀ k ≤ M, R / 2 ≤ rk k ∧ rk k ≤ R := by
     intro k hk
     have hk' : (k : ℝ) ≤ M := by exact_mod_cast hk
@@ -601,7 +597,6 @@ private theorem exists_setAverage_rpow_rpow_inv_le_mul_setAverage_rpow_rpow_inv_
   -- Divide by `|B(x₀, R/2)|^{1/s}` and collect the powers of `R` and `V`.
   set As := (⨍ x in Metric.ball x₀ (R / 2), W1p.value u x ^ s ∂mu) ^ s⁻¹
   set Ap := (⨍ x in Metric.ball x₀ R, W1p.value u x ^ p ∂mu) ^ p⁻¹
-  have hB : 0 < ((R / 2) ^ n * V) ^ s⁻¹ := by positivity
   calc As = (((R / 2) ^ n * V) ^ s⁻¹)⁻¹ * (((R / 2) ^ n * V) ^ s⁻¹ * As) := by field_simp
     _ ≤ (((R / 2) ^ n * V) ^ s⁻¹)⁻¹ * (D * R ^ (n / s - n / p) * ((R ^ n * V) ^ p⁻¹ * Ap)) := by
         gcongr

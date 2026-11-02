@@ -123,11 +123,11 @@ theorem mfderiv_eq_of_chartAt_eq {c c' : ChartedSpace H M} (h : c.chartAt = c'.c
     (letI := c; mfderiv I I' f x) = (letI := c'; mfderiv I I' f x) := by
   have hd := mdifferentiableAt_iff_of_chartAt_eq (I := I) (I' := I') h f x
   -- Select c as the local atlas for the source-side derivative formula.
-  let sourceAtlas : ChartedSpace H M := c
+  let _ : ChartedSpace H M := c
   by_cases hf : (letI := c; MDifferentiableAt I I' f x)
   · have hleft : (letI := c; mfderiv I I' f x) = _ := hf.mfderiv
     -- Select c' for the target-side formula; both displayed statements fix their atlas.
-    let targetAtlas : ChartedSpace H M := c'
+    let _ : ChartedSpace H M := c'
     have hright : (letI := c'; mfderiv I I' f x) = _ := (hd.mp hf).mfderiv
     apply hleft.trans
     apply Eq.trans ?_ hright.symm
@@ -137,7 +137,7 @@ theorem mfderiv_eq_of_chartAt_eq {c c' : ChartedSpace H M} (h : c.chartAt = c'.c
   · have hleft : (letI := c; mfderiv I I' f x) = 0 :=
       mfderiv_zero_of_not_mdifferentiableAt hf
     -- Select c' to apply its non-differentiability law.
-    let targetAtlas : ChartedSpace H M := c'
+    let _ : ChartedSpace H M := c'
     have hright : (letI := c'; mfderiv I I' f x) = 0 :=
       mfderiv_zero_of_not_mdifferentiableAt (hd.not.mp hf)
     exact hleft.trans hright.symm

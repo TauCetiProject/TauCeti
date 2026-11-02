@@ -161,7 +161,7 @@ theorem exists_isTilingChart_of_vertex_eq_inr
     rw [side_smul, mul_smul]
     exact smul_mem_smul_set (smul_mem_smul_set hi)
   -- crossing a side through the ideal vertex moves to the previous or the next tile of the cycle
-  have hmul (h : PSL(2, ℝ)) (hh : h ∈ M) (v : ℍ) (hv : v ∈ P.carrier)
+  have hmul (h : PSL(2, ℝ)) (hh : h ∈ M) (v : ℍ) (_ : v ∈ P.carrier)
       (hvW : h • v ∈ {z : ℍ | max A₀ A₁ < (g • z).im}) (c : PSL(2, ℝ))
       (hc : c ∈ σ.localNeighbors v) : h * c ∈ M := by
     obtain ⟨k, m, hm, rfl⟩ := hnorm hh

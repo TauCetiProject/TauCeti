@@ -150,7 +150,7 @@ theorem hasIntegral_Henstock_of_partition {f : (ι → ℝ) → E} {vol : ι →
   obtain ⟨r₀, hr₀⟩ := p.exists_gauge_tag_mem_Icc
   apply HasIntegral.of_mul (p.boxes.card : ℝ)
   intro ε hε
-  choose r hr he using fun J (hJ : J ∈ p) ↦ hasIntegral_iff.mp (hy J hJ) ε hε
+  choose r _ he using fun J (hJ : J ∈ p) ↦ hasIntegral_iff.mp (hy J hJ) ε hε
   let rJ (J : Box ι) (x : ι → ℝ) : Ioi (0 : ℝ) :=
     if hJ : J ∈ p then r J hJ 0 x else ⟨1, zero_lt_one⟩
   let R (x : ι → ℝ) : Ioi (0 : ℝ) := min (r₀ x) (p.boxes.inf' hpne (fun J ↦ rJ J x))

@@ -59,7 +59,7 @@ theorem log_eq_sum {a : A} {n : ℕ} (hn : (a - 1) ^ n = 0) :
   classical
   rw [log_def]
   apply sum_subset (range_mono (TauCeti.nilpotencyClass_le_of_pow_eq_zero hn))
-  intro i hi hni
+  intro i _ hni
   rw [mem_range, not_lt] at hni
   rw [pow_eq_zero_of_le hni (pow_nilpotencyClass ⟨n, hn⟩), smul_zero]
 

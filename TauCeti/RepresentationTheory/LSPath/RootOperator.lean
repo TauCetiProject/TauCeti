@@ -481,7 +481,6 @@ private theorem normalize_reflectRecords_cons_smul_of_pos {μ : 𝕜} (hfv : 0 <
       normalize 𝕜 (reflectRecords f x c ((1 + μ) • v :: l)) := by
   have hfμ : f (μ • v) = μ * f v := by simp
   have hf1μ : f ((1 + μ) • v) = (1 + μ) * f v := by simp
-  have hl := listMinHeight_nonpos (f := f) l
   have e₁ : min (f v + min 0 (μ * f v + listMinHeight f l)) c = f v := by
     simp only [min_def] at h₂ ⊢
     split_ifs at h₂ ⊢ <;> linarith

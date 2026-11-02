@@ -599,7 +599,7 @@ theorem residue_trace (hF' : IsFunctionField k F') (hP : P.degree = 1) {v : F'}
     (hv : ∀ Q' : Place k F', Q'.restrict k F = P → Q' ≠ P' → v ∈ Q'.integers) :
     P.residue hP ht (Algebra.trace F F' v) = P'.traceResidue ht' v := by
   set n := (-P'.ord v).toNat
-  have ht0 : t ≠ 0 := by
+  have _ : t ≠ 0 := by
     rintro rfl
     simp at ht
   -- `t ^ (n + 1) v` is regular at `P'` and vanishes to order `e(Q' ∣ P) (n + 1)` at the others.

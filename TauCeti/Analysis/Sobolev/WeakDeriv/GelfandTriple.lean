@@ -169,12 +169,12 @@ theorem HasWeakLineDerivOn.exists_continuousOn_ae_eq_of_gelfandDual [CompleteSpa
   obtain ⟨c₁, hc₁⟩ := (h.norm_sq_of_gelfandDual hu hu').exists_ae_eq_add_intervalIntegral ht₀
   obtain ⟨c₂, hc₂⟩ := h.exists_ae_eq_add_intervalIntegral ht₀
   set P : ℝ → Prop := fun t ↦ ‖ι (u t)‖ ^ 2 = c₁ + ∫ r in (a + b) / 2..t, 2 * u' r (u r) ∧
-    ι.gelfandDual (ι (u t)) = c₂ + ∫ r in (a + b) / 2..t, u' r with hP
+    ι.gelfandDual (ι (u t)) = c₂ + ∫ r in (a + b) / 2..t, u' r
   set N := toMeasurable volume {t | ¬(t ∈ Ioo a b → P t)} with hN_def
   have hN : volume N = 0 := by
     rw [hN_def, measure_toMeasurable, ← ae_iff]
     exact (ae_restrict_iff' measurableSet_Ioo).1 (hc₁.and hc₂)
-  set S₀ := Ioo a b \ N with hS₀_def
+  set S₀ := Ioo a b \ N
   have hS₀ (t : ℝ) (ht : t ∈ S₀) : P t := by
     by_contra hc
     exact ht.2 (subset_toMeasurable _ _ fun h' ↦ hc (h' ht.1))
@@ -195,7 +195,6 @@ theorem HasWeakLineDerivOn.exists_continuousOn_ae_eq_of_gelfandDual [CompleteSpa
     have hav : (β - α) * ‖u s'‖ ^ 2 ≤ ∫ r in Ioo α β, ‖u r‖ ^ 2 := by
       rw [setAverage_eq, measureReal_def, hμK, ENNReal.toReal_ofReal (sub_nonneg.2 hαβ.le),
         smul_eq_mul, setIntegral_congr_set (hK ▸ sdiff_null_ae_eq_self hN)] at hs'le
-      have hpos := sub_pos.2 hαβ
       calc (β - α) * ‖u s'‖ ^ 2 ≤ (β - α) * ((β - α)⁻¹ * ∫ r in Ioo α β, ‖u r‖ ^ 2) := by
             gcongr
         _ = ∫ r in Ioo α β, ‖u r‖ ^ 2 := by field_simp
@@ -222,7 +221,7 @@ theorem HasWeakLineDerivOn.exists_continuousOn_ae_eq_of_gelfandDual [CompleteSpa
     have hαβ : (x - δ) ⊔ a < (x + δ) ⊓ b :=
       sup_lt_iff.2 ⟨lt_inf_iff.2 ⟨by linarith, by linarith [hx.2]⟩,
         lt_inf_iff.2 ⟨by linarith [hx.1], hab⟩⟩
-    obtain ⟨s', hs'K, hs'⟩ := hosc _ _ le_sup_right hαβ inf_le_right
+    obtain ⟨s', _, hs'⟩ := hosc _ _ le_sup_right hαβ inf_le_right
     have hclose (t : ℝ) (ht : t ∈ S₀) (hd : dist t x < δ) : dist (ι (u t)) (ι (u s')) < ε / 2 := by
       rw [Real.dist_eq, abs_lt] at hd
       have htK : t ∈ S₀ ∩ Ioo ((x - δ) ⊔ a) ((x + δ) ⊓ b) :=

@@ -115,7 +115,7 @@ theorem homotopyOperator_apply (φ : RoughForm (I.prod (𝓡∂ 1)) (M × Icc (0
 @[simp]
 theorem homotopyOperator_zero :
     homotopyOperator (0 : RoughForm (I.prod (𝓡∂ 1)) (M × Icc (0 : ℝ) 1) F (k + 1)) = 0 := by
-  funext x
+  funext _
   -- The integrand of the zero form is the zero function.
   exact intervalIntegral.integral_zero (E := E [⋀^Fin k]→L[ℝ] F) (a := 0) (b := 1)
 

@@ -579,7 +579,6 @@ theorem tendsto_inverseRegularizedIncompleteBeta_zero (ha : 0 < a) (hb : 0 < b) 
   intro ε hε
   let x : ℝ := min (ε / 2) (1 / 2)
   have hx0 : 0 < x := by simp [x, hε]
-  have hx1 : x < 1 := lt_of_le_of_lt (min_le_right _ _) (by norm_num)
   have hxε : x < ε := lt_of_le_of_lt (min_le_left _ _) (by linarith)
   let δ := regularizedIncompleteBeta a b x
   have hδ0 : 0 < δ := (regularizedIncompleteBeta_pos_iff ha hb).2 hx0

@@ -474,7 +474,7 @@ theorem GeodesicallyConvex.lowerSemicontinuousOn_descendingSlope (hφ : Geodesic
   · -- If `φ y = ⊥`, the term at `y` is infinite at every point near `x₀` where `φ ≠ ⊥`.
     have hM : M < ⊤ := hyM.trans_le le_top
     filter_upwards [hev, hlsc x₀ hx₀ ⊥ (bot_lt_iff_ne_bot.2 hxb)]
-      with x ⟨hx, hxy⟩ hxb'
+      with x ⟨hx, _⟩ hxb'
     refine hM.trans_le <| le_trans ?_ (hφ.le_descendingSlope hx y)
     rw [hyb, EReal.sub_bot hxb'.ne', EReal.top_add_coe, EReal.toENNReal_top,
       ENNReal.top_div_of_ne_top (edist_ne_top x y)]

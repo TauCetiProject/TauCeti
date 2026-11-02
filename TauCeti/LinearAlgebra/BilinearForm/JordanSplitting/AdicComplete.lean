@@ -203,7 +203,7 @@ private theorem IsJordanSplitting.exists_dual [Module.Free R M] [Module.Finite R
     · rfl
     · exact (htop k (by omega)).symm
   refine ⟨D, hDs hEs, hτN ▸ ⟨?_, ?_, fun k ↦ ?_⟩, horth, fun i hi ↦ ⟨d i, ?_⟩,
-    fun i hi heven w hw ↦ ?_⟩
+    fun i _ heven w hw ↦ ?_⟩
   · exact (DirectSum.isInternal_submodule_iff_iSupIndep_and_iSup_eq_top _).mpr
       ⟨h.isInternal.submodule_iSupIndep.comp hτ.injective,
         (hτ.surjective.iSup_comp N).trans h.isInternal.submodule_iSup_eq_top⟩

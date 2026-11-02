@@ -397,7 +397,7 @@ theorem IsRefl.isInternal_orthogonal_finCons {B : LinearMap.BilinForm R M} (hB :
   let Q := fun i ↦ (N i).map T.subtype
   let P : Fin (k + 1) → Submodule R M := Fin.cons S Q
   have hQle : ∀ i, Q i ≤ T := by
-    rintro i _ ⟨x, hx, rfl⟩
+    rintro i _ ⟨x, _, rfl⟩
     exact x.2
   have hT : iSup Q = T := by
     rw [← Submodule.map_iSup, hN.submodule_iSup_eq_top,
@@ -426,9 +426,9 @@ theorem IsRefl.isInternal_orthogonal_finCons {B : LinearMap.BilinForm R M} (hB :
     refine Fin.cases ?_ (fun i ↦ ?_) i <;> refine Fin.cases ?_ (fun j ↦ ?_) j
     all_goals intro hij
     · exact (hij rfl).elim
-    · rintro x hx _ ⟨y, hy, rfl⟩
+    · rintro x hx _ ⟨y, _, rfl⟩
       exact y.2 x hx
-    · rintro _ ⟨x, hx, rfl⟩ y hy
+    · rintro _ ⟨x, _, rfl⟩ y hy
       exact hB.eq_zero (x.2 y hy)
     · rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩
       exact horth i j (fun h ↦ hij (congrArg Fin.succ h)) x hx y hy

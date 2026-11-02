@@ -242,7 +242,6 @@ theorem exists_pathELength_le_mul_sqrt_maximalIntegralCurve_neg_mgradient
     | succ n ih =>
       intro t ht
       have ht1 : t + 1 ∈ Ici T := le_add_of_le_of_nonneg ht zero_le_one
-      have hn : (0 : ℝ) ≤ n := Nat.cast_nonneg n
       rw [← Manifold.pathELength_add (b := t + 1) (by linarith) (by push_cast; linarith)]
       calc Manifold.pathELength I γ t (t + 1) + Manifold.pathELength I γ (t + 1) (t + ↑(n + 1))
           ≤ ENNReal.ofReal √(e t) + ENNReal.ofReal (K * √(e (t + 1))) := by

@@ -256,7 +256,7 @@ theorem normSubgroup_le_range_levelNorm {V : OpenNormalSubgroup G} {W : OpenSubg
   -- the norm from `A^W` to `A^G` are compared on the ambient module after substituting.
   have key : ∀ {U U' : OpenSubgroup G} (_ : U = U') (hU : W ≤ U) (hU' : W ≤ U'),
       (F.levelNorm hU y : F.toRep.V) = (F.levelNorm hU' y : F.toRep.V) := by
-    rintro U _ rfl hU hU'
+    rintro U _ rfl hU _
     rfl
   rw [key (NormalLayer.ground_ofOpenNormal V).symm le_top hW, hy,
     NormalLayer.groundEquivOfOpenNormal_apply_coe]

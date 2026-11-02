@@ -599,7 +599,7 @@ private theorem terminalInitial_ne_recut (hzx : z ≠ x) (hp : P.IsEmpty) (hq : 
   have hs' := G.terminalInitial_oppositeTurnRow_mem_cIco C P Q
   have hQright : Q.right ≠ b := by simpa only [C.reverse_column] using Q.right_ne
   rcases hdata.recut_geometry (G.hasOneCommonSide_terminalInitialPentagonPair C P Q hzx) with
-      ⟨hrow, h1l, h1r, h2l, h2r, h1b, h1t, -, -⟩ | ⟨hrow, h1l, h1r, h2l, h2r, -, -, h2b, h2t⟩ <;>
+      ⟨hrow, _, _, h2l, h2r, h1b, h1t, -, -⟩ | ⟨hrow, h1l, h1r, _, _, -, -, h2b, h2t⟩ <;>
     rcases G.toRectangleDecomposition_side_turns C F with
       ⟨hside, hturn, hturn'⟩ | ⟨hside, hturn, hturn'⟩
   · rw [h1b, h1t] at hturn
@@ -753,7 +753,7 @@ private theorem initialTerminal_ne_recut (hzx : z ≠ x) (hp : P.IsEmpty) (hq : 
   have hs' := G.initialTerminal_oppositeTurnRow_mem_cIco C P Q
   have hQleft : Q.left ≠ b := by simpa only [C.reverse_column] using Q.left_ne
   rcases hdata.recut_geometry (G.hasOneCommonSide_initialTerminalPentagonPair C P Q hzx) with
-      ⟨hrow, h1l, h1r, h2l, h2r, h1b, h1t, -, -⟩ | ⟨hrow, h1l, h1r, h2l, h2r, -, -, h2b, h2t⟩ <;>
+      ⟨hrow, _, _, h2l, h2r, h1b, h1t, -, -⟩ | ⟨hrow, h1l, h1r, _, _, -, -, h2b, h2t⟩ <;>
     rcases G.toRectangleDecomposition_side_turns C F with
       ⟨hside, hturn, hturn'⟩ | ⟨hside, hturn, hturn'⟩
   · rw [h1b, h1t] at hturn

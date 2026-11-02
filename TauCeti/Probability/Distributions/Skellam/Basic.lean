@@ -132,7 +132,6 @@ theorem skellamMeasure_singleton_pos {r₁ r₂ : ℝ≥0} (h₁ : 0 < r₁) (h�
     rw [skellamMeasure_singleton_natCast]
     apply lt_of_lt_of_le _ (ENNReal.le_tsum 0)
     simp only [zero_add, poissonMeasure_singleton, pow_zero, Nat.factorial_zero]
-    have hs : (0 : ℝ) < s₁ := h
     positivity
   cases k with
   | ofNat n => exact hnat r₁ r₂ h₁ n

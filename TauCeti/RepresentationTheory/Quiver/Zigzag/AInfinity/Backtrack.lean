@@ -648,7 +648,7 @@ private theorem backtrack_component_four (x : Fin 4 → nonisolatedZigzagQuotien
     letter_add_zigzagBacktrackTaylor_subword_one, letter_add_zigzagBacktrackTaylor_subword_three]
   -- All Koszul twists are those of one grading, in which the arity-four suspension twists the
   -- first and third letters; the remaining identity is the coboundary identity with signs.
-  set 𝒢 := (zigzagStrictAInfinityAlgebra k hns).grading with h𝒢
+  set 𝒢 := (zigzagStrictAInfinityAlgebra k hns).grading
   have hG : (zigzagLoopAInfinityAlgebra hns (zigzagBacktrackCoefficients P a)
       (fst_eq_snd_of_mem_support_zigzagBacktrackCoefficients a hP)).grading = 𝒢 :=
     zigzagLoopAInfinityAlgebra_grading_eq_zigzagStrictAInfinityAlgebra_grading _ _

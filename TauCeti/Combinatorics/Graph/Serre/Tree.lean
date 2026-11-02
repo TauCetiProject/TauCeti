@@ -81,7 +81,7 @@ theorem IsAcyclic.eq_of_isReduced (h : Γ.IsAcyclic) {a b : Γ.V} {p q : Γ.Path
 variable {Γ} in
 /-- An acyclic graph has no loop: a loop dart is a nonempty reduced closed path. -/
 theorem IsAcyclic.src_ne_tgt (h : Γ.IsAcyclic) (e : Γ.E) : Γ.src e ≠ Γ.tgt e := by
-  have key : ∀ {a b : Γ.V} (f : Quiver.Hom a b), a ≠ b := by
+  have key : ∀ {a b : Γ.V} (_ : Quiver.Hom a b), a ≠ b := by
     rintro a _ f rfl
     cases h a f.toPath (Path.isReduced_toPath Γ f)
   exact key (Γ.dart e)

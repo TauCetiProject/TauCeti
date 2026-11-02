@@ -217,7 +217,7 @@ theorem exists_lpNorm_smul_iteratedGradient_le_of_sum_mul_inner_eq_of_abs_sub_le
   have hE : MemLp (fun x => Matrix.contraction (a x) (T x)) p (volume.restrict Omega) :=
     (Lp.memLp TL).of_le_mul hEmeas hEle
   have hζf : MemLp (fun x => zeta x * f x) p (volume.restrict Omega) := hζ_top.smul (Lp.memLp f)
-  set FL := hζf.toLp _ + hE.toLp _ with hFL_def
+  set FL := hζf.toLp _ + hE.toLp _
   have hFLnorm : ‖FL‖ ≤ lpNorm (fun x => zeta x * f x) p (volume.restrict Omega)
       + n ^ 2 * Λ * ‖TL‖ := by
     refine (norm_add_le _ _).trans (add_le_add (Lp.norm_toLp _ _).le ?_)
@@ -251,7 +251,6 @@ theorem exists_lpNorm_smul_iteratedGradient_le_of_sum_mul_inner_eq_of_abs_sub_le
     at hkey
   have hHL : hζH.toLp _ = Wkp.iteratedGradient 1 w - TL := by
     rw [hTL_def, sub_sub_cancel]
-  have hCl : 0 ≤ (C : ℝ) / lam := by positivity
   rw [← toReal_eLpNorm, ← Lp.norm_toLp _ hζH, hHL]
   calc ‖Wkp.iteratedGradient 1 w - TL‖
       ≤ ‖Wkp.iteratedGradient 1 w‖ + ‖TL‖ := norm_sub_le _ _

@@ -455,7 +455,6 @@ theorem exists_holderWith_iteratedFDeriv_two_heatDuhamelPotential {α : ℝ≥0}
     exists_ae_norm_iteratedFDeriv_two_heatKernel_convolution_sub_le (E := E) (F := F) (α := α)
   have hα₀' : (0 : ℝ) < α := hα₀
   have hα₁' : (α : ℝ) < 1 := hα₁
-  have h1α : (0 : ℝ) < 1 - α := by linarith
   refine ⟨(2 / α * (2 * C₂) + 2 / (1 - α) * C₃).toNNReal, fun {f M t H} hf hfM hH ht => ?_⟩
   rw [← holderOnWith_univ]
   refine HolderOnWith.of_dist_le fun x _ y _ => ?_

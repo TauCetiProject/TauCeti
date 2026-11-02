@@ -128,9 +128,6 @@ theorem exists_holderWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv_of_abs_su
     have := (hA (EuclideanSpace.single 0 1)).trans (hA' _)
     have hlamLam : lam ≤ Lam := by simpa using this
     exact hlam.trans_le hlamLam
-  have hκ : 0 ≤ κ := by positivity
-  have hM : 0 ≤ M := ENNReal.toReal_nonneg
-  have hV : 0 ≤ V := ENNReal.toReal_nonneg
   have hJ : HolderWith J α H := hH.holderWith
   have hvol : volume (ball (0 : E) r) ^ (-((2 : ℝ)⁻¹)) ≠ ∞ :=
     ENNReal.rpow_ne_top_of_ne_zero (measure_ball_pos volume 0 hr).ne' measure_ball_lt_top.ne

@@ -238,7 +238,7 @@ theorem IsCompact.isCompact_setOf_isCompact_closure_connectedComponentIn_compl
   obtain ⟨L, hL, hKL⟩ := exists_compact_superset hK
   -- Finitely many components of `Kᶜ` cover the frontier of the compact neighbourhood `L`.
   have hfrK : frontier L ⊆ Kᶜ := fun y hy hyK ↦ hy.2 (hKL hyK)
-  obtain ⟨F, hFL, hcover⟩ := (hL.of_isClosed_subset isClosed_frontier
+  obtain ⟨F, _, hcover⟩ := (hL.of_isClosed_subset isClosed_frontier
     hL.isClosed.frontier_subset).elim_nhds_subcover (connectedComponentIn Kᶜ)
       fun y hy ↦ hK.isClosed.isOpen_compl.connectedComponentIn.mem_nhds
         (mem_connectedComponentIn (hfrK hy))

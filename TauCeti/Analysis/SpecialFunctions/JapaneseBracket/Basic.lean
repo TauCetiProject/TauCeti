@@ -126,7 +126,7 @@ theorem integral_norm_rpow_mul_rpow_neg_one_add_norm_sq (μ : Measure V) [μ.IsA
     ∫ x : V, ‖x‖ ^ p * (1 + ‖x‖ ^ 2) ^ (-r / 2) ∂μ =
       (finrank ℝ V : ℝ) * μ.real (ball (0 : V) 1) *
         (beta (((finrank ℝ V : ℝ) + p) / 2) ((r - finrank ℝ V - p) / 2) / 2) := by
-  set d := finrank ℝ V with hd
+  set d := finrank ℝ V
   have hd0 : 0 < d := finrank_pos
   -- In polar coordinates the moment is the radial beta integral with `s = d + p`.
   have hrad :
@@ -395,7 +395,6 @@ theorem integral_rpow_neg_one_add_norm_sq {r : ℝ} (hr : (finrank ℝ V : ℝ) 
   have hmoment := integral_norm_rpow_mul_rpow_neg_one_add_norm_sq (volume : Measure V)
     le_rfl (p := 0) (r := r) (by rwa [add_zero])
   simp only [Real.rpow_zero, one_mul, add_zero, sub_zero] at hmoment
-  have hΓ := Gamma_pos_of_pos (show 0 < (d : ℝ) / 2 by positivity)
   rw [hmoment, volume_real_unitBall, beta, Gamma_add_one (by positivity), hsum, ← hd]
   field_simp
 

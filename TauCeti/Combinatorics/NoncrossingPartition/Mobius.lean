@@ -188,7 +188,7 @@ private theorem sum_erase_top_mu_bot (hpair : {m₁, m₂} ⊆ s) (hmin₁ : ∀
     have hy' : y ∈ s \ {z ∈ s.erase m₁ | z ≤ y} := h₁.symm ▸ hCs y (hC hy)
     exact (mem_sdiff.1 hy').2 (hC hy)
   · -- The last position of the part through `m₂` is not `m₁`.
-    obtain ⟨hu, hne⟩ := hX x hx
+    obtain ⟨_, hne⟩ := hX x hx
     have hmax := max'_mem (x.1.part m₂) ⟨m₂, x.1.mem_part_self.2 hm₂s⟩
     refine mem_erase.2 ⟨fun h => hne ?_, x.1.part_subset m₂ hmax⟩
     exact (x.1.mem_part_iff_part_eq_part hm₁ hm₂s).1 (h ▸ hmax)

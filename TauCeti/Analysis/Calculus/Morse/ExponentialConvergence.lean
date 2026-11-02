@@ -273,7 +273,6 @@ theorem exists_norm_sub_le_mul_exp_atTop (hγ : IsIntegralCurveOn γ (fun _ x �
   have hr1 : r < 1 := by
     rw [hrdef]
     exact Real.exp_lt_one_iff.2 (by linarith)
-  have hone : (0 : ℝ) < 1 - r := by linarith
   have htel : ∀ (n : ℕ) (t : ℝ), T ≤ t →
       ‖γ (t + n) - γ t‖ ≤ q * Real.exp (-(lam / 2 * (t - T))) * ((1 - r ^ n) / (1 - r)) := by
     intro n

@@ -294,7 +294,6 @@ theorem W1p0.exists_strongDual_apply_eq_setIntegral_of_memLp [Nontrivial E]
   have hn : (1 : ℝ) ≤ n := Nat.one_le_cast.2 finrank_pos
   set ν := mu.restrict (Omega : Set E)
   have : IsFiniteMeasure ν := isFiniteMeasure_restrict.2 hOmega
-  have hr0 : (0 : ℝ) < r := by exact_mod_cast zero_lt_one.trans hr
   have hr1 : (1 : ℝ) < r := by exact_mod_cast hr
   -- The Sobolev exponent `t`, with `1/t = min (1/2) (1 - 1/r)`: then `t ≥ 2`,
   -- `1/2 - 1/t < 1/n` and `1/r + 1/t ≤ 1`.

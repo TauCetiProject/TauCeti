@@ -94,7 +94,6 @@ theorem hasDerivAt_arcsin_add_mul_sub_div_sub_mul (ha : 0 < a) {x : ℝ} (hx : x
   have hx0 : 0 < x := ha.trans hx.1
   have hb : 0 < b := hx0.trans hx.2
   have hR := sqrt_mul_sub_mul_sub_pos hx
-  have hab : 0 < √(a * b) := sqrt_pos.2 (mul_pos ha hb)
   have hsq : 1 - (((a + b) * x - 2 * a * b) / ((b - a) * x)) ^ 2 =
       (2 * √(a * b) / ((b - a) * x)) ^ 2 * ((x - a) * (b - x)) := by
     rw [div_pow, div_pow, mul_pow (2 : ℝ), sq_sqrt (mul_pos ha hb).le]
@@ -304,7 +303,6 @@ theorem integral_sqrt_mul_sub_mul_sub_div (ha : 0 < a) (hab : a ≤ b) :
   -- On `(a, b)`, `√((x - a) (b - x)) / x = (a + b - 2 x) / (2 √(…)) + (a + b) / 2 * 1 / √(…)
   -- - a b / (x √(…))`, the derivative of an explicit continuous function.
   have hb : 0 < b := ha.trans hab
-  have hab' : 0 < √(a * b) := sqrt_pos.2 (mul_pos ha hb)
   set F : ℝ → ℝ := fun y => √((y - a) * (b - y)) + (a + b) / 2 *
       arcsin ((2 * y - a - b) / (b - a)) -
       √(a * b) * arcsin (((a + b) * y - 2 * a * b) / ((b - a) * y)) with hF

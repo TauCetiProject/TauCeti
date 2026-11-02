@@ -224,7 +224,6 @@ theorem isLittleO_of_forall_mem_subdifferential_norm_sub_le {x y : E} {A : E →
     push_cast at e₁
     have l₀ := mul_le_mul_of_nonneg_left e₀.1 ha.le
     have u₁ := mul_le_mul_of_nonneg_left e₁.2 ha.le
-    have a₁ := mul_le_mul_of_nonneg_left hX'.1 (sq_nonneg a)
     have a₂ := mul_le_mul_of_nonneg_left hX'.2 (sq_nonneg a)
     rw [abs_le]
     constructor <;> nlinarith
@@ -358,7 +357,6 @@ private theorem inner_sub_inner_add_inner_nonneg {x y : E} {A : E →L[ℝ] E}
     rw [hab] at hTab'
     nlinarith [real_inner_comm (A a) b]
   have hM : 2 * ε' * M ≤ ε := by
-    have hM0 : 0 ≤ M := by positivity
     rw [show 2 * ε' * M = ε * (2 * M / (2 * M + 1)) by simp only [ε']; ring]
     exact mul_le_of_le_one_right hε.le ((div_le_one (by positivity)).2 (by linarith))
   linarith [le_of_mul_le_mul_left hkey (by positivity)]

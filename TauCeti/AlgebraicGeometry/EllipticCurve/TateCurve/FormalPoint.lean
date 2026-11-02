@@ -594,7 +594,7 @@ private theorem eq_zero_of_swap_eq_self {G : ℚ⟦X⟧⟦X⟧} (hT : PowerSerie
       rw [← hsymm, hcoe]
       split_ifs with h
       · rfl
-      · have hmN : m ≤ N := by omega
+      · have _ : m ≤ N := by omega
         have h' := ih (N - m) (by omega) m hm
         rw [hcoe, ite_eq_right (by omega)] at h'
         have e₁ : (-(m : ℤ) + N).natAbs = N - m := by omega

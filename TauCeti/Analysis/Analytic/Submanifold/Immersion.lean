@@ -130,7 +130,7 @@ theorem exists_isAnalyticChart_of_injective_fderiv {T : Set (Fin n → 𝕜)}
   have hV : ι ⁻¹' Θ.source ∈ 𝓝 u₀ :=
     ι.continuous.continuousAt.preimage_mem_nhds (Θ.open_source.mem_nhds hy₀)
   obtain ⟨W, hW, hpW, hWT⟩ := mem_nhdsWithin.1 (himage _ hV)
-  have hΘι {u : Fin d → 𝕜} (hu : ι u ∈ Θ.source) : Θ (ι u) = p u := by rw [hΘ, hGι]
+  have hΘι {u : Fin d → 𝕜} (_ : ι u ∈ Θ.source) : Θ (ι u) = p u := by rw [hΘ, hGι]
   have hpu₀ : Θ (ι u₀) = p u₀ := hΘι hy₀
   have hsource : (Θ.symm.restrOpen W hW).source = Θ.target ∩ W := by
     rw [OpenPartialHomeomorph.restrOpen_source, OpenPartialHomeomorph.symm_source]

@@ -242,7 +242,7 @@ theorem HasWeakLineDerivOn.lipschitzWith_smul (h : HasWeakLineDerivOn μ Ω u u'
     HasWeakLineDerivOn μ Ω (fun x => ψ x • u x)
       (fun x => ψ x • u' x + lineDeriv ℝ ψ x v • u x) v := by
   have hΩ : IsLocallyClosed (Ω : Set E) := Ω.isOpen.isLocallyClosed
-  set ψ' : E → ℝ := fun x => lineDeriv ℝ ψ x v with hψ'_def
+  set ψ' : E → ℝ := fun x => lineDeriv ℝ ψ x v
   have hψ'm : Measurable ψ' := measurable_lineDeriv hψ.continuous
   have hψ'b : ∀ x, ‖ψ' x‖ ≤ K * ‖v‖ := fun x => norm_lineDeriv_le_of_lipschitz ℝ hψ
   have hu1 : LocallyIntegrableOn (fun x => ψ x • u x) Ω μ :=

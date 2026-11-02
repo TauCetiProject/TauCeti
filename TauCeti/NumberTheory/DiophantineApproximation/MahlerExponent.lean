@@ -100,7 +100,6 @@ theorem IsAlgebraic.exists_pos_le_norm_aeval_mul_supNorm_pow {ξ : ℂ} (hξ : I
   set R : ℝ := max 1 (house g)
   have hR (σ : F →+* ℂ) : max 1 ‖σ g‖ ≤ R := max_le_max le_rfl (norm_embedding_le_house g σ)
   set B : ℝ := (s : ℝ) ^ n * ((n + 1) * R ^ n)
-  have hB : 0 < B := by positivity
   refine ⟨((s : ℝ) ^ n * B ^ (D - 1))⁻¹, by positivity, fun P hP hPξ ↦ ?_⟩
   set d := P.natDegree
   have hH := P.supNorm_nonneg

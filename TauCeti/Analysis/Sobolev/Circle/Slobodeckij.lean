@@ -351,7 +351,6 @@ theorem exists_norm_sq_le_slobodeckijEnergy (hs : 0 ≤ s) :
     ∃ C : ℝ≥0∞, C ≠ ∞ ∧ ∀ a : CircleSobolev s E,
       ENNReal.ofReal (‖a‖ ^ 2) ≤
         ENNReal.ofReal (‖inclusion hs a‖ ^ 2) + C * slobodeckijEnergy T s (inclusion hs a) := by
-  have hT0 := hT.out
   refine ⟨ENNReal.ofReal (2⁻¹ * (3 / (2 * T)) ^ (2 * s))⁻¹, ENNReal.ofReal_ne_top, fun a ↦ ?_⟩
   refine le_trans (le_of_eq ?_) (tsum_ofReal_weight_mul_le T hs (inclusion hs a))
   rw [ofReal_norm_sq_eq_tsum, coeff_inclusion]

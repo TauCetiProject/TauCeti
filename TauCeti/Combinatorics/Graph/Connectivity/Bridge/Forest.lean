@@ -131,7 +131,7 @@ def bridgeForest (G : Graph α β) : Graph G.BridgeComponent β where
   IsLink e C D := G.IsBridge e ∧ ∃ x ∈ V(C.1), ∃ y ∈ V(D.1), G.IsLink e x y
   isLink_symm _ _ := ⟨fun _ _ ⟨he, x, hx, y, hy, h⟩ ↦ ⟨he, y, hy, x, hx, h.symm⟩⟩
   eq_or_eq_of_isLink_of_isLink := by
-    rintro e C D C' D' ⟨-, x, hx, y, hy, h⟩ ⟨-, x', hx', y', hy', h'⟩
+    rintro e C D C' D' ⟨-, x, hx, y, _, h⟩ ⟨-, x', hx', y', hy', h'⟩
     obtain rfl | rfl := h.left_eq_or_eq h'
     · exact .inl (ConnectedComponent.eq_of_mem_of_mem hx hx')
     · exact .inr (ConnectedComponent.eq_of_mem_of_mem hx hy')

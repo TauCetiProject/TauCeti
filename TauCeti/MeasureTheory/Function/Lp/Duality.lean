@@ -296,7 +296,7 @@ theorem AEStronglyMeasurable.eLpNorm_le_of_forall_enorm_integral_inner_le {H : T
   set h' := hh.mk h
   have hh' : StronglyMeasurable h' := hh.stronglyMeasurable_mk
   -- Truncate `h` to the sets `S N` where it is bounded by `N` and inside the `N`-th spanning set.
-  set S : ℕ → Set α := fun N => spanningSets μ N ∩ {x | ‖h' x‖ ≤ N} with hS_def
+  set S : ℕ → Set α := fun N => spanningSets μ N ∩ {x | ‖h' x‖ ≤ N}
   have hSm : ∀ N, MeasurableSet (S N) := fun N =>
     (measurableSet_spanningSets μ N).inter (measurableSet_le hh'.norm.measurable measurable_const)
   rw [eLpNorm_congr_ae hh.ae_eq_mk]

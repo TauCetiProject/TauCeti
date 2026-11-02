@@ -133,8 +133,6 @@ cusp stabilizer moves it a hyperbolic distance less than `ε`. -/
 theorem mem_horodisc_iff_exists_dist_smul_lt {ε : ℝ} (hε : 0 < ε) (z : ℍ) :
     z ∈ horodisc D (D.width / (2 * Real.sinh (ε / 2))) ↔
       ∃ g ∈ stabilizer Γ D.cusp, g ≠ 1 ∧ dist (g • z) z < ε := by
-  have hs : 0 < Real.sinh (ε / 2) := Real.sinh_pos_iff.mpr (by positivity)
-  have hz := (D.scaling • z).im_pos
   have hlt (n : ℤ) : dist (D.generator ^ n • z) z < ε ↔
       |(n : ℝ)| * D.width / (2 * (D.scaling • z).im) < Real.sinh (ε / 2) := by
     rw [← sinh_half_dist_generator_zpow_smul, Real.sinh_lt_sinh,

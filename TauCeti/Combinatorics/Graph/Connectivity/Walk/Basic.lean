@@ -500,7 +500,7 @@ namespace Walk
 theorem end_mem_vertexSet {x y : α} (p : G.Walk x y) (hx : x ∈ V(G)) : y ∈ V(G) := by
   induction p with
   | nil => exact hx
-  | cons e h p ih => exact ih h.right_mem
+  | cons e h _ ih => exact ih h.right_mem
 
 /-- A walk starting at an actual vertex witnesses reachability. -/
 theorem reachable {x y : α} (p : G.Walk x y) (hx : x ∈ V(G)) : G.Reachable x y :=
@@ -561,6 +561,6 @@ theorem IsClosedSubgraph.mem_vertexSet_of_reachable {H : Graph α β} (hHG : H �
   clear hxy
   induction p with
   | nil => exact hx
-  | cons e hxy p ih => exact ih ((hHG.mem_iff_of_isLink hxy).mp hx)
+  | cons e hxy _ ih => exact ih ((hHG.mem_iff_of_isLink hxy).mp hx)
 
 end Graph

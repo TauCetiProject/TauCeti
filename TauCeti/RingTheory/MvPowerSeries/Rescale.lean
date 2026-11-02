@@ -42,7 +42,7 @@ theorem norm_coeff_rescale_mul_prod (u : σ → R) (hu : ∀ i, IsNormMulUnit (u
     simp [Subsingleton.elim (coeff n (rescale u f)) 0, Subsingleton.elim (coeff n f) 0]
   · let _ : Nontrivial R := hR
     by_cases hn : n.support.Nonempty
-    · obtain ⟨i, hi⟩ := hn
+    · obtain ⟨i, _⟩ := hn
       let _ : NormOneClass R := ⟨(hu i).norm_one⟩
       have hpow (j : σ) (_ : j ∈ n.support) : IsNormMulUnit (u j ^ n j) := (hu j).pow _
       rw [coeff_rescale, Finsupp.prod, (IsNormMulUnit.prod hpow).norm_mul,

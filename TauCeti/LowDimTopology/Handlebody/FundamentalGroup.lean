@@ -92,7 +92,6 @@ private theorem mem_planarSurface_iff {z : ℂ} :
 
 private theorem norm_holeCenter_le (k : Fin g) : ‖(holeCenter g k : ℂ)‖ ≤ g - 1 := by
   have hk : ((k : ℕ) : ℝ) + 1 ≤ g := by exact_mod_cast k.isLt
-  have hk₀ : (0 : ℝ) ≤ (k : ℕ) := Nat.cast_nonneg _
   rw [Complex.norm_real, Real.norm_eq_abs, abs_le, holeCenter]
   constructor <;> linarith
 
@@ -635,7 +634,7 @@ private theorem boundaryDeform_spec {p : ℂ × ℝ} (hp : p ∈ handlebody g) (
       boundaryLevel g (boundaryDeform g τ p) =
         (1 + τ * ((boundaryLevel g p)⁻¹ - 1)) * boundaryLevel g p := by
   set m := boundaryLevel g p with hm_def
-  set s := τ * (m⁻¹ - 1) with hs_def
+  set s := τ * (m⁻¹ - 1)
   have hm₁ : m ≤ 1 := boundaryLevel_le_one hp
   have hinv : 1 ≤ m⁻¹ := one_le_inv₀ hm |>.2 hm₁
   have hs : 0 ≤ s := mul_nonneg hτ₀ (by linarith)

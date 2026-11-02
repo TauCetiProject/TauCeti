@@ -83,7 +83,6 @@ theorem _root_.SimpleGraph.IsAcyclic.degree_le_one_of_isRegularOfDegree
   simp only [hd.degree_eq, Finset.sum_const, Finset.card_univ, smul_eq_mul] at hs
   rw [← G.coe_edgeFinset, Set.ncard_coe_finset] at he
   rw [Fintype.card_eq_nat_card] at hs
-  have hv : 0 < Nat.card V := Nat.card_pos
   nlinarith
 
 end TauCeti

@@ -142,7 +142,7 @@ theorem circleLoop_surjective : Function.Surjective circleLoop := by
     rw [Complex.cos_arg hz0, hzn, div_one]
   have hsin : sin (Complex.arg z) = v 1 := by
     rw [Complex.sin_arg, hzn, div_one]
-  set θ := Complex.arg z with hθ
+  set θ := Complex.arg z
   have hp : (0 : ℝ) < 2 * π := by positivity
   set r := toIcoMod hp 0 θ with hr
   have hrmem : r ∈ Set.Ico 0 (2 * π) := toIcoMod_mem_Ico' hp θ

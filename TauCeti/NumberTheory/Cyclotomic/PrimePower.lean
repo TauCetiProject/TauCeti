@@ -39,7 +39,7 @@ theorem adjoin_nth_roots_le_iSup_adjoin_prime_pow {K L : Type*} [Field K] [Field
     induction n using Nat.recOnPrimeCoprime with
     | zero => simp
     | prime_pow p r hp =>
-      intro hn hd ζ hζ
+      intro _ hd ζ hζ
       by_cases hr : r = 0
       · simp only [hr, pow_zero, pow_one] at hζ
         rw [hζ]

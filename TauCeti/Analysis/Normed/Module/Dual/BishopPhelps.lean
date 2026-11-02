@@ -250,7 +250,6 @@ theorem Convex.dense_setOf_ne_zero_isMaxOn_re [Nontrivial E] (hconv : Convex ℝ
   have hsub : ({0}ᶜ : Set (StrongDual 𝕜 E)) ⊆ closure S := by
     intro f hf
     rw [mem_compl_singleton_iff] at hf
-    have hfpos : 0 < ‖f‖ := norm_pos_iff.2 hf
     refine Metric.mem_closure_iff.2 fun ε hε ↦ ?_
     set k := min (1 / 2) (ε / (2 * ‖f‖))
     have hk₀ : 0 < k := lt_min (by norm_num) (by positivity)

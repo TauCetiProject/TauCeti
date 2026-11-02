@@ -664,9 +664,6 @@ theorem integral_rpow_mul_div_sq_add_sq_sub_div_one_add_sq (hs : -1 < s) (hs3 : 
     have hsin : Real.sin (Real.pi * (s - 1) / 2) = -Real.cos (Real.pi * s / 2) := by
       rw [show Real.pi * (s - 1) / 2 = Real.pi * s / 2 - Real.pi / 2 by ring,
         Real.sin_sub_pi_div_two]
-    have hcos : Real.cos (Real.pi * s / 2) ≠ 0 :=
-      (Real.cos_neg_of_pi_div_two_lt_of_lt (by nlinarith [Real.pi_pos])
-        (by nlinarith [Real.pi_pos])).ne
     calc
       _ = ∫ y in Ioi (0 : ℝ), (t * (y ^ (s - 1 - 1) / (y ^ 2 + 1 ^ 2)) -
             t ^ 3 * (y ^ (s - 1 - 1) / (y ^ 2 + t ^ 2))) := by

@@ -79,7 +79,6 @@ theorem exists_norm_iteratedGradient_le_mul_norm_of_sum_mul_inner_eq_of_abs_sub_
           EuclideanSpace.single j 1⟫_ℝ = f x) →
         ‖Wkp.iteratedGradient 1 u‖ ≤ C / lam * ‖f‖ := by
   obtain ⟨C, hC⟩ := exists_norm_iteratedGradient_le_mul_norm_of_sum_mul_inner_eq hp hp_top
-  have hn0 : (0 : ℝ) < n := by exact_mod_cast hn
   refine ⟨2 * C, 1 / (2 * (C + 1) * n ^ 2), by positivity,
     fun {A lam} hlam hA {a s ε} hs hε ha u f hu hf => ?_⟩
   set H := Wkp.iteratedGradient 1 u
@@ -126,7 +125,6 @@ theorem exists_norm_iteratedGradient_le_mul_norm_of_sum_mul_inner_eq_of_abs_sub_
           rw [div_le_div_iff₀ (by positivity) two_pos]
           linarith [C.coe_nonneg]
   have hfg := norm_sub_norm_le g f
-  have hCl : 0 ≤ (C : ℝ) / lam := by positivity
   have habs : ‖H‖ ≤ C / lam * ‖f‖ + 1 / 2 * ‖H‖ := by
     calc ‖H‖ ≤ C / lam * ‖g‖ := hHg
       _ ≤ C / lam * (‖f‖ + n ^ 2 * ε * ‖H‖) := by gcongr; linarith

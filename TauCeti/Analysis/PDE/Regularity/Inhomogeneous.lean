@@ -188,7 +188,6 @@ theorem exists_ae_abs_value_le_mul_add_of_memLp [Nonempty ι] {lam Lam : ℝ} {r
   obtain ⟨D₀, hD₀, hbound⟩ :=
     exists_ae_abs_value_le_mul_rpow_mul_sqrt_setIntegral (mu := mu) (lam := lam) (Lam := Lam)
   set ω := mu.real (ball (0 : EuclideanSpace ℝ ι) 1)
-  have hω : 0 < ω := Metric.measureReal_ball_pos mu 0 one_pos
   refine ⟨max (√2 * D₀) ((√2 * D₀ * √ω + 1) * K), lt_max_of_lt_left (by positivity), ?_⟩
   intro Omega a f u x₀ R h ha hf hu hR hball
   set B : Opens (EuclideanSpace ℝ ι) := ⟨ball x₀ R, isOpen_ball⟩
@@ -247,7 +246,6 @@ theorem exists_ae_abs_value_le_mul_add_of_memLp [Nonempty ι] {lam Lam : ℝ} {r
     (ball_subset_ball (half_le_self hR.le)) hug] with x hx hxu
   set Q := R ^ (-n / 2) * √(∫ x in ball x₀ R, W1p.value u x ^ 2 ∂mu)
   set P := R ^ (2 - n / r) * (eLpNorm f r (mu.restrict (ball x₀ R))).toReal / lam
-  have hQ : 0 ≤ Q := by positivity
   have hP : 0 ≤ P := by have := h.pos; positivity
   have hWP : W = K * P := by simp only [W, P]; ring
   calc |W1p.value u x| ≤ |W1p.value g x| + |W1p.value u x - W1p.value g x| := by
@@ -335,7 +333,6 @@ theorem exists_essSup_sub_essInf_le_mul_rpow_mul_add_of_memLp [Nonempty ι] {lam
   have hsρ1 : C₀ * (s / ρ) ^ α₀ ≤ C₀ :=
     mul_le_of_le_one_right hC₀.le
       (Real.rpow_le_one (by positivity) ((div_le_one hρ).2 hsρ) hα₀.le)
-  have hC₀s : 0 ≤ C₀ * (s / ρ) ^ α₀ := by positivity
   calc _ ≤ C₀ * (s / ρ) ^ α₀ * (m₁ + W - (m - W)) + 2 * W := hosc
     _ = C₀ * (s / ρ) ^ α₀ * (m₁ - m) + (2 * (C₀ * (s / ρ) ^ α₀) + 2) * W := by ring
     _ ≤ C₀ * (s / ρ) ^ α₀ * (m₁ - m) + (2 * C₀ + 2) * W := by gcongr
@@ -476,7 +473,7 @@ theorem exists_ae_value_mem_Icc_add_mul_rpow_mul_add_of_memLp [Nonempty ι] {lam
     rw [← Real.mul_rpow (by norm_num) (by positivity), hR₁def]
     congr 1
     field_simp
-  have hM₀ : 0 ≤ M₀ := by rw [hM₀def]; positivity
+  have _ : 0 ≤ M₀ := by rw [hM₀def]; positivity
   have hφs : φ s ≤ C₁ * 2 ^ β * (2 * D + K) * (s / R) ^ β * (Q + R ^ γ * F) :=
   calc φ s ≤ C₁ * ((s / R₁) ^ β * φ R₁ + B * s ^ β) := hfin
     _ ≤ C₁ * ((s / R₁) ^ β * (2 * M₀) + K * F * R ^ γ * (s / R₁) ^ β) := by

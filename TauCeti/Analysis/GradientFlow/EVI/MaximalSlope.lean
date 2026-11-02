@@ -366,7 +366,7 @@ private theorem sq_le_of_tendsto (h : IsEVISolution lam φ u) (hs : 0 < s) {m D 
       refine (h.eventually_slope_lt (y := u s) (h.apply_ne_top hs) hx0 (c := F s - F x) ?_
         ?_).frequently
       · rw [← h.coe_toReal hs, ← h.coe_toReal hx0, ← EReal.coe_sub]
-      · have hxs := sub_pos.2 hsx
+      · have _ := sub_pos.2 hsx
         have hd2 : dist (u x) (u s) ^ 2 ≤ ((m + 1) * (x - s)) ^ 2 :=
           pow_le_pow_left₀ dist_nonneg h₂ 2
         have hxδ : x - s ≤ δ := by linarith [hx.2]
@@ -387,7 +387,6 @@ private theorem le_toReal_mul_of_tendsto (h : IsEVISolution lam φ u) (hs : 0 < 
     (hD : Tendsto (fun σ ↦ ((φ (u s)).toReal - (φ (u σ)).toReal) / (σ - s)) (𝓝[>] s) (𝓝 D)) :
     D ≤ (descendingSlope φ (u s)).toReal * m := by
   set G := (descendingSlope φ (u s)).toReal
-  have hG0 : 0 ≤ G := ENNReal.toReal_nonneg
   have hm0 : 0 ≤ m := ge_of_tendsto hQ <| by
     filter_upwards [self_mem_nhdsWithin] with σ (hσ : s < σ)
     exact div_nonneg dist_nonneg (sub_pos.2 hσ).le

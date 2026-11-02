@@ -145,13 +145,12 @@ private theorem exists_convexPolygon_three_vertex_two_eq_infty {α β : ℝ} (h�
 
 /-- For `α, β ∈ (0, π / 2]` and `γ > 0` with `α + β + γ < π` there is a compact convex triangle
 with angles `α`, `γ` and `β` at its three vertices. -/
-private theorem exists_compactConvexPolygon_three {α β γ : ℝ} (hα : 0 < α) (hα' : α ≤ π / 2)
+private theorem exists_compactConvexPolygon_three {α β γ : ℝ} (hα : 0 < α) (_ : α ≤ π / 2)
     (hβ : 0 < β) (hβ' : β ≤ π / 2) (hγ : 0 < γ) (h : α + β + γ < π) :
     ∃ P : CompactConvexPolygon 3,
       P.interiorAngle 0 = α ∧ P.interiorAngle 1 = γ ∧ P.interiorAngle 2 = β := by
   have hsα : 0 < Real.sin α := Real.sin_pos_of_pos_of_lt_pi hα (by linarith)
   have hsβ : 0 < Real.sin β := Real.sin_pos_of_pos_of_lt_pi hβ (by linarith)
-  have hcα : 0 ≤ Real.cos α := Real.cos_nonneg_of_mem_Icc ⟨by linarith, hα'⟩
   have hcβ : 0 ≤ Real.cos β := Real.cos_nonneg_of_mem_Icc ⟨by linarith, hβ'⟩
   have hα₂ := Real.sin_sq_add_cos_sq α
   have hβ₂ := Real.sin_sq_add_cos_sq β

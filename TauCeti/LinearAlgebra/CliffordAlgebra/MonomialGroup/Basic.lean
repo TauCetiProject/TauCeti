@@ -830,7 +830,7 @@ theorem ker_monomialGroupAlgHom (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
     RingHom.ker (monomialGroupAlgHom Q b) =
       Ideal.span
         {MonoidAlgebra.of R (monomialGroup Q b) (monomialGroupEpsilon Q b) + 1} := by
-  set x := MonoidAlgebra.of R (monomialGroup Q b) (monomialGroupEpsilon Q b) + 1 with hx
+  set x := MonoidAlgebra.of R (monomialGroup Q b) (monomialGroupEpsilon Q b) + 1
   refine le_antisymm (fun y hy ↦ ?_) (Ideal.span_le.mpr (Set.singleton_subset_iff.mpr
     (monomialGroupAlgHom_of_monomialGroupEpsilon_add_one_eq_zero b)))
   -- Every basis vector `e_s` is the value of a group element `u s`.

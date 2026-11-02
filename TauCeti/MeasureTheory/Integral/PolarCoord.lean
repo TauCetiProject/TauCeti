@@ -131,7 +131,7 @@ theorem integral_comp_polarCoord_symm_Icc (f : ℂ → W) (z₀ : ℂ) {a b : �
       ((Icc a b ×ˢ (univ : Set ℝ)).indicator
         (fun p : ℝ × ℝ ↦ p.1 • f (z₀ + Complex.polarCoord.symm p)))
       _root_.polarCoord.target := by
-    rintro ⟨r, θ⟩ ⟨hr, hθ⟩
+    rintro ⟨r, θ⟩ ⟨hr, _⟩
     have hn : ‖z₀ + Complex.polarCoord.symm (r, θ) - z₀‖ = r := by
       simp only [add_sub_cancel_left, Complex.norm_polarCoord_symm, abs_of_pos (mem_Ioi.mp hr)]
     simp only [S, indicator_apply, mem_ofPred_eq, hn, mem_prod, mem_Icc, mem_univ, and_true]

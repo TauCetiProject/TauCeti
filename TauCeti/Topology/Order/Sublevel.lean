@@ -254,7 +254,7 @@ theorem apply_neg_eq_add_of_apply_eq_sub (hf : Continuous f)
   · -- Some earlier point `φ (-u) y` of the backward flow line lies on the level `a + t`; flowing
     -- down from it for time `t` overshoots the point `y` of the level `a`.
     exfalso
-    obtain ⟨u, ⟨hu0, hut⟩, hfu⟩ : ∃ u ∈ Icc 0 t, f (φ (-u) y) = a + t :=
+    obtain ⟨u, ⟨_, hut⟩, hfu⟩ : ∃ u ∈ Icc 0 t, f (φ (-u) y) = a + t :=
       intermediate_value_Icc ht
         (hf.comp (φ.continuous continuous_neg continuous_const)).continuousOn
         ⟨by simp [hy, ht], hgt.le⟩

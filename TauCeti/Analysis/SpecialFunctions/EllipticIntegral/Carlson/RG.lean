@@ -119,9 +119,9 @@ theorem integrableOn_carlsonRGIntegrand {x y z : ℂ} (hx : x ∈ slitPlane ∪ 
   obtain ⟨Cz, hCz0, hCz⟩ := TauCeti.exists_norm_ofReal_add_cpow_le_mul_one_add_rpow hz hr
   have hCx0 : 0 ≤ Cx := by simpa using (norm_nonneg _).trans (hCx 1 one_pos)
   push_cast at hCx hCy hCz
-  obtain ⟨Dx, hDx0, hDx⟩ := TauCeti.exists_norm_div_ofReal_add_mul_le hx
-  obtain ⟨Dy, hDy0, hDy⟩ := TauCeti.exists_norm_div_ofReal_add_mul_le (Or.inl hy)
-  obtain ⟨Dz, hDz0, hDz⟩ := TauCeti.exists_norm_div_ofReal_add_mul_le (Or.inl hz)
+  obtain ⟨Dx, _, hDx⟩ := TauCeti.exists_norm_div_ofReal_add_mul_le hx
+  obtain ⟨Dy, _, hDy⟩ := TauCeti.exists_norm_div_ofReal_add_mul_le (Or.inl hy)
+  obtain ⟨Dz, _, hDz⟩ := TauCeti.exists_norm_div_ofReal_add_mul_le (Or.inl hz)
   have hcont := ((((TauCeti.continuousOn_ofReal_add_cpow hx (-(1 / 2))).mul
     (TauCeti.continuousOn_ofReal_add_cpow (Or.inl hy) (-(1 / 2)))).mul
     (TauCeti.continuousOn_ofReal_add_cpow (Or.inl hz) (-(1 / 2)))).mul

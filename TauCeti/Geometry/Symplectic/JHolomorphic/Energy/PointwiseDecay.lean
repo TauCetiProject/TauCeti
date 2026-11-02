@@ -109,7 +109,7 @@ theorem exists_pos_norm_fderiv_le_rpow
   have hM : 0 ≤ M := (norm_nonneg _).trans (hbound _ hmem)
   -- Normalize the energy power bound, then choose a radius below the mean-value threshold.
   let β := c / (1 + M) ^ 2
-  have hβ : 0 < β := by dsimp [β]; positivity
+  have _ : 0 < β := by dsimp [β]; positivity
   obtain ⟨A, hA, hpower⟩ := exists_energy_power_bound hg hc hR
     (hu.of_le (by norm_num)) hCR htame hbound henergy
   obtain ⟨δ, hδ, hmean⟩ :=

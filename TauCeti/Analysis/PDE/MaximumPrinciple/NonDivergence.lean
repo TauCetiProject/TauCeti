@@ -488,7 +488,6 @@ theorem le_add_of_mul_sub_le_sum_mul_fderiv_fderiv_add_fderiv_le_frontier
     simp only [fderiv_fun_const, fderiv_zero, Pi.zero_apply, _root_.zero_apply, mul_zero,
       Finset.sum_const_zero, zero_add, neg_mul]
     -- `r L w ≥ α λ (r w) ≥ α λ (F / λ) = α F ≥ F`.
-    have h1 : r * (α * lam * w y) = α * lam * (r * w y) := by ring
     have h2 : α * lam * (F / lam) = α * F := by field_simp
     have h3 := mul_le_mul_of_nonneg_left (hrwK y hyK).1 (by positivity : 0 ≤ α * lam)
     have h4 : F ≤ α * F := le_mul_of_one_le_left hF hα

@@ -97,7 +97,7 @@ theorem countablyRectifiable_iff_exists_bilipschitz_cover {k : ℕ} {s : Set V} 
         μHE[k] (s \ ⋃ n, range (f n)) = 0 := by
   refine ⟨fun hs ↦ hs.exists_bilipschitz_cover, ?_⟩
   rintro ⟨A, f, -, hf, hnull⟩
-  choose K L hLip hAnti using hf
+  choose K L hLip _ using hf
   exact countablyRectifiable_iff.mpr
     ⟨A, f, fun n ↦ ⟨K n, hLip n⟩, hnull⟩
 

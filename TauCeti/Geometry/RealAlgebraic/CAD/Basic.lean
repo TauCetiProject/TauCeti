@@ -208,7 +208,7 @@ theorem isLocallyClosed (h : IsCAD n 𝒞) {E : Set (Fin n → ℝ)} (hE : E ∈
   | zero =>
     rw [mem_singleton_iff.1 hE]
     exact isClosed_univ.isLocallyClosed
-  | @succ n 𝒟 k θ h𝒟 hθ ih =>
+  | @succ n 𝒟 k θ _ hθ ih =>
     obtain ⟨C, hC, hE⟩ := mem_iUnion₂.1 hE
     -- The cylinder over the locally closed cell `C` is an embedding with locally closed range.
     have hrange : IsLocallyClosed (range (cylinder C)) := by
@@ -228,7 +228,7 @@ theorem exists_isOpenEmbedding (h : IsCAD n 𝒞) {E : Set (Fin n → ℝ)} (hE 
   | zero =>
     rw [mem_singleton_iff.1 hE]
     exact ⟨0, Subtype.val, isOpen_univ.isOpenEmbedding_subtypeVal⟩
-  | @succ n 𝒟 k θ h𝒟 hθ ih =>
+  | @succ n 𝒟 k θ _ hθ ih =>
     obtain ⟨C, hC, hE⟩ := mem_iUnion₂.1 hE
     obtain ⟨d, f, hf⟩ := ih hC
     rcases mem_stackCells.1 hE with ⟨i, rfl⟩ | ⟨j, rfl⟩

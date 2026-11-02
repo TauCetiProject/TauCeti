@@ -317,8 +317,6 @@ theorem continuous_gaugeAdjoint (hx : Continuous x) (hy : ContDiff ℝ 1 y) :
   have (i : Fin 4) (v : ℂ) : Continuous fun z ↦ fderiv ℝ (fun w ↦ y w i) z v :=
     (((EuclideanSpace.proj (𝕜 := ℝ) i).contDiff.comp hy :).continuous_fderiv
       one_ne_zero).clm_apply continuous_const
-  have hxi (i : Fin 4) : Continuous fun z ↦ x z i := by fun_prop
-  have hyi (i : Fin 4) : Continuous fun z ↦ y z i := by fun_prop
   rw [funext (gaugeAdjoint_def x y)]
   fun_prop
 
@@ -368,8 +366,6 @@ theorem continuous_gaugeFixedOperator (hx : Continuous x) (hy : ContDiff ℝ 1 y
   have hd (i : Fin 4) (v : ℂ) : Continuous fun z ↦ fderiv ℝ (fun w ↦ y w i) z v :=
     (((EuclideanSpace.proj (𝕜 := ℝ) i).contDiff.comp hy :).continuous_fderiv
       one_ne_zero).clm_apply continuous_const
-  have hxi (i : Fin 4) : Continuous fun z ↦ x z i := by fun_prop
-  have hyi (i : Fin 4) : Continuous fun z ↦ y z i := by fun_prop
   have h₀ : Continuous fun z ↦ gaugeFixedOperator x y z 0 := by
     simp only [gaugeFixedOperator_apply_zero, gaugeAdjoint_def]; fun_prop
   have h₁ : Continuous fun z ↦ gaugeFixedOperator x y z 1 := by

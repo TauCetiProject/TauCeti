@@ -123,7 +123,7 @@ private theorem add_mul_add_lt_zero {a b c₁ c₂ C h q d r : ℝ} (hc₁ : 0 <
     (hr : r ≤ c₂ / 8 * h * (2 * a ^ 2 + 2 * b ^ 2)) :
     q + h * d + r < 0 := by
   set K₀ := C + 2 * C ^ 2 / c₂ + c₂ / 4
-  have hK₀ : 0 ≤ K₀ := by positivity
+  have _ : 0 ≤ K₀ := by positivity
   -- Absorb the cross term `2 C a b` into the two squares.
   have hcross : 2 * C * a * b ≤ c₂ / 2 * b ^ 2 + 2 * C ^ 2 / c₂ * a ^ 2 := by
     have h := two_mul_le_add_mul_sq (a := b) (b := C * a) (half_pos hc₂)

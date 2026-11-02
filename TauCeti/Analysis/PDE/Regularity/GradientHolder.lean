@@ -138,7 +138,7 @@ private theorem setIntegral_norm_gradient_sub_sq_le {ι : Type*} [Fintype ι]
   calc ‖W1p.gradient (W1p.restrictL hB u - w)‖ ^ 2 ≤ ‖hGc.toLp‖ ^ 2 :=
         pow_le_pow_left₀ (norm_nonneg _) hest 2
     _ = ∫ x in B, ‖G x - c‖ ^ 2 ∂mu := h2
-    _ ≤ ∫ x in B, M ^ 2 ∂mu :=
+    _ ≤ ∫ _ in B, M ^ 2 ∂mu :=
         setIntegral_mono_on (hGc.integrable_norm_pow two_ne_zero) (integrableOn_const hBfin)
           B.isOpen.measurableSet fun x hx => pow_le_pow_left₀ (norm_nonneg _) (hbd x hx) 2
     _ = mu.real B * M ^ 2 := by rw [setIntegral_const, smul_eq_mul]
@@ -165,7 +165,6 @@ private theorem setIntegral_norm_gradient_sub_setAverage_sq_le
   set f : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1)) := ⇑(W1p.gradient u)
   set B : Opens (EuclideanSpace ℝ (Fin (n + 1))) := ⟨ball x₀ r, isOpen_ball⟩
   have hB : B ≤ Omega := hball
-  have hx₀ : x₀ ∈ (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) := hball (mem_ball_self hr)
   have : IsFiniteMeasure (volume.restrict (B : Set (EuclideanSpace ℝ (Fin (n + 1))))) :=
     isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
   -- On `B_r`, the field `G - G x₀` is bounded by `K r^α`.
@@ -231,7 +230,6 @@ private theorem exists_setIntegral_norm_gradient_sub_setAverage_sq_le {α : ℝ�
           C * ρ ^ ((n : ℝ) + 1 + 2 * α) *
             (R ^ (-((n : ℝ) + 1 + 2 * α)) * ‖W1p.gradient u‖ ^ 2 + K ^ 2) := by
   set ω := volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)
-  have hω : 0 ≤ ω := measureReal_nonneg
   have hγ : (n : ℝ) + 1 + 2 * α < n + 3 := by
     have : (α : ℝ) < 1 := hα1
     linarith
@@ -274,8 +272,6 @@ private theorem exists_setIntegral_norm_gradient_sub_setAverage_sq_le {α : ℝ�
   obtain ⟨M, hM⟩ : ∃ M : ℝ, M = max 1 ((4 * decayConst n + 2) * ω) := ⟨_, rfl⟩
   rw [← hγ] at hdec ⊢
   rw [← hM]
-  have hργ : 0 ≤ ρ ^ γ := by positivity
-  have hRγ : 0 ≤ R ^ (-γ) := by positivity
   have h1 : (ρ / R) ^ γ * ψ R ≤ M * ρ ^ γ * R ^ (-γ) * ‖W1p.gradient u‖ ^ 2 := by
     rw [Real.div_rpow hρ.le hR.le, div_eq_mul_inv, ← Real.rpow_neg hR.le]
     calc ρ ^ γ * R ^ (-γ) * ψ R ≤ ρ ^ γ * R ^ (-γ) * ‖W1p.gradient u‖ ^ 2 :=
@@ -329,21 +325,18 @@ private theorem exists_setAverage_norm_gradient_sub_le {α : ℝ≥0} (hα : 0 <
       ((Lp.memLp (W1p.gradient u)).integrableOn_norm_sub_sq_of_subset hsub
         measure_ball_lt_top.ne (⨍ z in ball x t, W1p.gradient u z))
   have hψ := hdec hG hu hball t ht htR
-  have hN := norm_nonneg (W1p.gradient u)
   have ha2 : (R ^ (-(((n : ℝ) + 1) / 2 + α)) * ‖W1p.gradient u‖) ^ 2 =
       R ^ (-((n : ℝ) + 1 + 2 * α)) * ‖W1p.gradient u‖ ^ 2 := by
     rw [mul_pow, ← Real.rpow_natCast, ← Real.rpow_mul hR.le]
     congr 2
     push_cast
     ring
-  have htn : 0 < t ^ (n + 1) := by positivity
   rw [← pow_le_pow_iff_left₀ (average_nonneg fun _ => norm_nonneg _) (by positivity) two_ne_zero]
   refine hJ.trans ?_
   rw [measureReal_ball_eq x ht, div_le_iff₀ (by positivity), mul_pow, mul_pow,
     Real.sq_sqrt (by positivity)]
   refine hψ.trans ?_
   rw [rpow_add_two_mul_eq ht, ← ha2]
-  have hK : (0 : ℝ) ≤ K := K.2
   have hcross : 0 ≤ R ^ (-(((n : ℝ) + 1) / 2 + α)) * ‖W1p.gradient u‖ * K := by positivity
   have key : C * (t ^ (n + 1) * (t ^ (α : ℝ)) ^ 2) *
       ((R ^ (-(((n : ℝ) + 1) / 2 + α)) * ‖W1p.gradient u‖) ^ 2 + (K : ℝ) ^ 2) ≤
@@ -490,7 +483,6 @@ theorem exists_holderOnWith_preciseRepresentative_gradient {α : ℝ≥0} (hα :
       (fun r hr hr' => hM y hy r hr (by linarith [dist_nonneg (x := x) (y := y)]))
     rw [finrank_euclideanSpace_fin, ← hcαdef] at h
     refine h.trans ?_
-    have hd0 : 0 ≤ dist x y ^ (α : ℝ) := by positivity
     have h1 : 0 ≤ 2 * 2 ^ (α : ℝ) * (cα * C₀ + (√ω)⁻¹) * (K + a) * dist x y ^ (α : ℝ) := by
       positivity
     nlinarith

@@ -325,7 +325,7 @@ theorem Connected.exists_pos_smul_le_sum (hG : G.Connected) {c : C} {δ : V → 
   have hwalk {u w : V} (p : G.Walk u w) : (∃ x, P x ∧ 0 < x u) → ∃ x, P x ∧ 0 < x w := by
     induction p with
     | nil => exact id
-    | @cons a b c h p ih =>
+    | @cons a b c h _ ih =>
       rintro ⟨x, hx, hxa⟩
       refine ih ⟨_, hstep x hx, ?_⟩
       calc 0 < x a := hxa

@@ -322,13 +322,13 @@ theorem exists_forall_contDiff_cutoff_closedBall [InnerProductSpace ℝ E] [Comp
   refine ⟨2 * L₁ + 4 * L₂, by positivity, fun x₀ r R hr hrR => ?_⟩
   have hRr : 0 < R - r := sub_pos.2 hrR
   have hR : 0 < R := hr.trans_lt hrR
-  set D := R ^ 2 - r ^ 2 with hD_def
+  set D := R ^ 2 - r ^ 2
   have hD : (R - r) * R ≤ D := by nlinarith
   have hD' : (R - r) ^ 2 ≤ D := by nlinarith
   have hD0 : 0 < D := lt_of_lt_of_le (by positivity) hD'
   -- The cutoff is `S ((R² - ‖x - x₀‖²) / D)`.
-  set g : E → ℝ := fun x => (R ^ 2 - ‖x - x₀‖ ^ 2) / D with hg
-  set ψ : E → ℝ := fun x => S (g x) with hψ
+  set g : E → ℝ := fun x => (R ^ 2 - ‖x - x₀‖ ^ 2) / D
+  set ψ : E → ℝ := fun x => S (g x)
   set c : ℝ → ℝ := fun τ => -(2 / D) * deriv S ((R ^ 2 - τ) / D) with hc
   have hgrad : ∀ x, ∇ ψ x = c (‖x - x₀‖ ^ 2) • (x - x₀) := by
     intro x

@@ -242,7 +242,7 @@ geometric factor `(|c| / |c'|)ⁿ` absorbs this growth. Over an ultrametric ring
 theorem IsRestricted.mul_of_abs_lt (hf : f.IsRestricted c') (hg : g.IsRestricted c')
     (h : |c| < |c'|) : (f * g).IsRestricted c := by
   obtain ⟨A, hA0, hA⟩ := hf.exists_nonneg_norm_coeff_mul_pow_le
-  obtain ⟨B, hB0, hB⟩ := hg.exists_nonneg_norm_coeff_mul_pow_le
+  obtain ⟨B, _, hB⟩ := hg.exists_nonneg_norm_coeff_mul_pow_le
   have hq : 0 < |c'| := (abs_nonneg c).trans_lt h
   set ρ := |c| / |c'|
   have hupper : Tendsto (fun n : ℕ ↦ (n + 1 : ℝ) * ρ ^ n * (A * B)) atTop (𝓝 0) := by

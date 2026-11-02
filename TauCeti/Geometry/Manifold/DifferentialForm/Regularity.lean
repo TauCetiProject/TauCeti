@@ -520,7 +520,7 @@ theorem RoughForm.contDiffOn_indicator_inChartAt {r : WithTop ℕ∞}
     (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] F) φ) ⊆ (extChartAt I α).source) :
     ContDiffOn ℝ r ((extChartAt I α).target.indicator (φ.inChartAt α)) (range I) := by
   classical
-  intro z hz
+  intro z _
   by_cases ht : z ∈ (extChartAt I α).target
   · exact (hφ z ht).congr_of_eventuallyEq (φ.indicator_inChartAt_eventuallyEq α ht)
       (indicator_of_mem ht _)

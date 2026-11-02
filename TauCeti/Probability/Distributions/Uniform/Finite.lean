@@ -48,7 +48,7 @@ finite sum of Dirac measures.  This includes the common zero-measure convention 
 set. -/
 theorem uniformOn_coe_finset_eq_uniformOfFinset (s : Finset α) :
     uniformOn (s : Set α) = Measure.uniformOfFinset s := by
-  ext t ht
+  ext t _
   rw [uniformOn, cond_apply s.measurableSet, Measure.uniformOfFinset_apply]
   rw [Measure.count_apply_finset]
   rw [Measure.count_apply_finite _ (s.finite_toSet.inter_of_left t)]

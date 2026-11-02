@@ -611,7 +611,7 @@ theorem typeAStandardQuadraticModule_one_quadratic (a : ZMod 2) :
     typeAOneZModStandardIsometry_apply, FiniteQuadraticModule.zmodStandard_quadratic,
     FiniteQuadraticModule.zmodStandardMap_val]
   have hlt : a.val < 2 := a.isLt
-  interval_cases hval : a.val <;> norm_num
+  interval_cases _ : a.val <;> norm_num
 
 /-- In the standard `A₂` discriminant module, the quadratic value of a symbol is `0` at zero
 and `1/3` at either nonzero symbol. -/

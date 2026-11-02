@@ -71,7 +71,7 @@ theorem hausdorffMeasure_zero_eq_count {X : Type*} [EMetricSpace X] [MeasurableS
   have hfinite (s : Set X) (hs : s.Finite) : μH[0] s = count s := by
     simpa [count_apply_finite _ hs] using
       (sum_measure_singleton (μ := μH[0]) (s := hs.toFinset)).symm
-  ext s hs
+  ext s _
   rcases s.finite_or_infinite with hfin | hinf
   · exact hfinite s hfin
   · rw [count_apply_infinite hinf]

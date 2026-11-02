@@ -243,7 +243,7 @@ theorem recutRightEqLeft_geometry (D : GridRectanglePentagonDecomposition a s x 
     E.rectangle.top = D.rectangle.top ∧
         s ∈ Grid.cIco E.pentagon.bottom E.pentagon.top := by
   let E := D.recutRightEqLeft hcommon hrectangle hpentagon hturn
-  obtain ⟨hright, hptop, hrtop, hturn'⟩ :=
+  obtain ⟨_, hptop, hrtop, hturn'⟩ :=
     D.rightLeftRecut_geometry hcommon hrectangle hpentagon hturn
   refine ⟨?_, ?_, ?_, ?_⟩
   · simp only [recutRightEqLeft, GridPentagonRectangleDecomposition.pentagon,

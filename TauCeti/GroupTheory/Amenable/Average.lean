@@ -205,7 +205,7 @@ theorem Amenable.of_isFoelner [MeasurableSpace G] [MeasurableSingletonClass G] {
   exact hF's.tendsto_card_smul_symmDiff_div_card g
 
 /-- A group with Følner sets is amenable, for every group topology. -/
-theorem Amenable.of_hasFoelnerSets (h : HasFoelnerSets G) : Amenable G :=
+theorem Amenable.of_hasFoelnerSets (_ : HasFoelnerSets G) : Amenable G :=
   let : MeasurableSpace G := ⊤
   .of_isFoelner (isFoelner_maxFoelner G MeasureTheory.Measure.count)
 

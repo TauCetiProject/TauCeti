@@ -458,7 +458,6 @@ theorem IsJordanCurve.exists_isCompact_isPreconnected_notMem_sdiff_subset_ball
   obtain ⟨η₀, hη₀, hη⟩ := Metric.continuousAt_iff.mp hcont r hr
   set η : ℝ := min η₀ (π / 2)
   have hηpos : 0 < η := lt_min hη₀ (by positivity)
-  have hηle : η ≤ π / 2 := min_le_right _ _
   have hηη₀ : η ≤ η₀ := min_le_left _ _
   set K : Set Circle := Circle.exp '' Icc (θ₀ + η) (θ₀ - η + 2 * π)
   set S : Set X := g '' K

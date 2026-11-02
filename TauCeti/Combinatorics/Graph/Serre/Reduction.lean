@@ -60,7 +60,7 @@ theorem Homotopic.comp_left {a b c : Γ.V} {q r : Γ.Path b c}
   | refl => exact .refl _
   | symm _ ih => exact ih.symm
   | trans _ _ ih₁ ih₂ => exact ih₁.trans ih₂
-  | cons h e ih => exact ih.cons e
+  | cons _ e ih => exact ih.cons e
   | backtrack q e => exact .backtrack (p.comp q) e
 
 /-- Homotopy is preserved by appending a fixed path. -/
@@ -262,7 +262,7 @@ theorem Homotopic.reduce_eq {a b : Γ.V} {p q : Γ.Path a b}
   | refl p => rfl
   | symm _ ih => exact ih.symm
   | trans _ _ ih₁ ih₂ => exact ih₁.trans ih₂
-  | cons h e ih => simp only [reduce_cons, ih]
+  | cons _ e ih => simp only [reduce_cons, ih]
   | backtrack p e => exact reduce_backtrack Γ p e
 
 -- Run inverse cancellation before Mathlib expands the reverse of a path ending in a dart.

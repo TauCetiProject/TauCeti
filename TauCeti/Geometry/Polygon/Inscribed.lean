@@ -532,7 +532,7 @@ private theorem FineMesh.exists_combinatoriallyEquivalent_union (hF : FineMesh �
   classical
   induction A using Finset.induction_on with
   | empty => exact ⟨N, t, ht, hp, by simp, .refl _⟩
-  | insert a A haA ih =>
+  | insert a A _ ih =>
     obtain ⟨N', t', ht', hp', hr, he⟩ := ih fun b hb ↦ hA b (Finset.mem_insert_of_mem hb)
     have haT := hA a (Finset.mem_insert_self a A)
     rw [Finset.coe_insert, union_insert, ← hr]
@@ -586,7 +586,6 @@ private theorem exists_fineMesh (hγ : ContDiff ℝ 1 γ) (hper : Periodic γ T)
   refine ⟨δ₀ / 3, η, h, K, hh, hper, min_le_left _ _, fun a ha ↦ ?_, hK, hsep, ?_⟩
   · exact (hmono a ha).imp fun _ hφ ↦ hφ.mono (Icc_subset_Icc le_rfl (by linarith))
   · have h₁ : h * (2 * K + 1) ≤ η := (le_div_iff₀ (by positivity)).1 (min_le_right _ _)
-    have h₂ : h * (2 * K + 1) = 2 * K * h + h := by ring
     linarith
 
 /-- **Fine inscribed polygons of a `C¹` loop are combinatorially equivalent.** Let `γ : ℝ → E` be

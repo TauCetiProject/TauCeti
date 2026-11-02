@@ -130,7 +130,6 @@ private theorem mul_sqrt_sum_sq_sub_comp_le {w : ι → ℝ} {γ : ℝ} (hγ : 0
           (sum_pair (f := fun j ↦ (w j - w (σ j)) ^ 2) hi.symm).symm
       _ ≤ Q := sum_le_sum_of_subset_of_nonneg hsub fun j _ _ ↦ sq_nonneg _
   -- Hence `√2 γ ≤ √Q`, and `(γ / √2) √Q ≤ √Q * √Q / 2 = Q / 2`.
-  have h2' : 0 < √2 := by positivity
   have hγQ : √2 * γ ≤ √Q := by
     rw [← Real.sqrt_sq hγ, ← Real.sqrt_mul zero_le_two]
     exact Real.sqrt_le_sqrt h2

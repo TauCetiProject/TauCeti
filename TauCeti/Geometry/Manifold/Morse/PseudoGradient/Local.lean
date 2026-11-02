@@ -396,7 +396,6 @@ theorem exists_forall_mem_stableSet_iff (hX : IsAdaptedPseudoGradient f X)
     ∃ ε > 0, ∀ y ∈ φ.toChart.source, ‖φ.coord (φ.toChart y)‖ < ε →
       (y ∈ hX.flow.stableSet x ↔ ∀ i, φ.weight i < 0 → φ.coord (φ.toChart y) i = 0) := by
   obtain ⟨r, hr, hrT⟩ := φ.exists_pos_forall_norm_lt_mem_target
-  have hn : (0 : ℝ) ≤ Module.finrank ℝ E := Nat.cast_nonneg _
   refine ⟨r / (4 * (Module.finrank ℝ E + 1)), by positivity, fun y hy hyε ↦ ⟨fun hs ↦ ?_, fun hu ↦
     hX.mem_stableSet_of_forall_coord_eq_zero φ hφ hrT hy (hyε.trans_le ?_) hu⟩⟩
   · by_contra hne

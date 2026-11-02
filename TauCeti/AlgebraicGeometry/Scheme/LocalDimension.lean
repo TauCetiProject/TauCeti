@@ -137,7 +137,7 @@ theorem topologicalKrullDimAt_eq_iSup_topologicalKrullDim_irreducibleComponents 
     (topologicalKrullDimAt_eq_iInf x).ge.trans' (le_iInf fun U ↦ ?_))
   · -- In an affine chart `Spec R` through `x`, the local dimension is bounded by the dimensions
     -- of the components `V(q)` of `Spec R` through `x`, and each lies in a component of `X`.
-    obtain ⟨R, g, _, y, φ, hφ, rfl, hR⟩ := (X ↘ Spec (.of k)).exists_isOpenImmersion_finiteType x
+    obtain ⟨R, g, _, y, φ, _, rfl, hR⟩ := (X ↘ Spec (.of k)).exists_isOpenImmersion_finiteType x
     let := φ.hom.toAlgebra
     have : Algebra.FiniteType k R := hR
     have : IsNoetherianRing R := Algebra.FiniteType.isNoetherianRing k R

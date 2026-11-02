@@ -197,7 +197,7 @@ theorem l1Norm_mul_le (P Q : R[X]) : (P * Q).l1Norm ≤ P.l1Norm * Q.l1Norm := b
         ≤ ∑ i ∈ P.support, (Q.sum fun j a ↦ monomial (i + j) (P.coeff i * a)).l1Norm :=
       l1Norm_sum_le P.support _
     _ ≤ ∑ i ∈ P.support, ‖P.coeff i‖ * Q.l1Norm := by
-      gcongr with i hi
+      gcongr with i _
       rw [sum_def]
       calc
         (∑ j ∈ Q.support, monomial (i + j) (P.coeff i * Q.coeff j)).l1Norm
@@ -205,7 +205,7 @@ theorem l1Norm_mul_le (P Q : R[X]) : (P * Q).l1Norm ≤ P.l1Norm * Q.l1Norm := b
                 (monomial (i + j) (P.coeff i * Q.coeff j)).l1Norm :=
           l1Norm_sum_le Q.support _
         _ ≤ ∑ j ∈ Q.support, ‖P.coeff i‖ * ‖Q.coeff j‖ := by
-          gcongr with j hj
+          gcongr with j _
           simpa only [l1Norm_monomial] using norm_mul_le (P.coeff i) (Q.coeff j)
         _ = ‖P.coeff i‖ * Q.l1Norm := by
           rw [l1Norm_eq_sum_support, Finset.mul_sum]

@@ -547,11 +547,11 @@ linear in their barycentric coordinates. -/
 theorem plHomeomorphic
     (h : _root_.PreAbstractSimplicialComplex.StellarEquivalent K L)
     (hfin : K.faces.Finite) : PLHomeomorphic K L := by
-  have hP : ∃ hKL : StellarEquivalent K L,
-      ∀ hfin : K.faces.Finite, PLHomeomorphic K L := by
+  have hP : ∃ _ : StellarEquivalent K L,
+      ∀ _ : K.faces.Finite, PLHomeomorphic K L := by
     refine StellarEquivalent.induction_on h
-      (P := fun A B => ∃ hAB : StellarEquivalent A B,
-        ∀ hfin : A.faces.Finite, PLHomeomorphic A B) ?_ ?_ ?_ ?_
+      (P := fun A B => ∃ _ : StellarEquivalent A B,
+        ∀ _ : A.faces.Finite, PLHomeomorphic A B) ?_ ?_ ?_ ?_
     · intro A B hmove
       exact ⟨hmove.stellarEquivalent, fun hA => hmove.plHomeomorphic hA⟩
     · intro A

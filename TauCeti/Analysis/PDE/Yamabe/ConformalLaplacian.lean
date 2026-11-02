@@ -293,7 +293,6 @@ theorem conformalLaplacian_rescale
       simp only [p]; field_simp; ring, Real.rpow_add hux, Real.rpow_neg hux.le, Real.rpow_neg_one]
   have hpow' : u x ^ (p - 1) = u x ^ p * (u x)⁻¹ := by
     rw [Real.rpow_sub_one hux.ne', div_eq_mul_inv]
-  have hf0 : u x ^ p ≠ 0 := (hf_pos x).ne'
   rw [conformalLaplacian_def, ← (g.rescale (fun x ↦ u x ^ p) hf hf_pos).scalarCurvature_def x,
     scalarCurvature_rescale_eq_rpow_mul_conformalLaplacian g hn hu_pos x,
     g.laplaceBeltrami_rescale (by simp) hf hf_pos (hv.contMDiffAt), hgrad]

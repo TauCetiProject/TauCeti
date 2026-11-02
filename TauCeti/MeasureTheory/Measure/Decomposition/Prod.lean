@@ -46,7 +46,7 @@ theorem ae_lintegral_rnDeriv_prod_right_eq_one (hm : m.fst = μ) (hac : m ≪ μ
   calc ∫⁻ x in s, ∫⁻ y, m.rnDeriv (μ.prod ν) (x, y) ∂ν ∂μ
       = ∫⁻ z in s ×ˢ univ, m.rnDeriv (μ.prod ν) z ∂μ.prod ν := by
         rw [setLIntegral_prod _ hd.aemeasurable, restrict_univ]
-    _ = ∫⁻ x in s, 1 ∂μ := by
+    _ = ∫⁻ _ in s, 1 ∂μ := by
         rw [setLIntegral_rnDeriv hac, setLIntegral_one, ← hm, fst_apply hs, prod_univ]
 
 /-- If `m ≪ μ ⊗ ν` has second marginal `ν`, then for `ν`-almost every `y` the density of `m`
@@ -61,7 +61,7 @@ theorem ae_lintegral_rnDeriv_prod_left_eq_one (hm : m.snd = ν) (hac : m ≪ μ.
   calc ∫⁻ y in t, ∫⁻ x, m.rnDeriv (μ.prod ν) (x, y) ∂μ ∂ν
       = ∫⁻ z in univ ×ˢ t, m.rnDeriv (μ.prod ν) z ∂μ.prod ν := by
         rw [← prod_restrict, restrict_univ, lintegral_prod_symm _ hd.aemeasurable]
-    _ = ∫⁻ y in t, 1 ∂ν := by
+    _ = ∫⁻ _ in t, 1 ∂ν := by
         rw [setLIntegral_rnDeriv hac, setLIntegral_one, ← hm, snd_apply ht, univ_prod]
 
 end MeasureTheory.Measure

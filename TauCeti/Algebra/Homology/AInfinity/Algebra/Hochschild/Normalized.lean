@@ -263,7 +263,7 @@ private theorem hochschildDifferential_of_tprod_eq_zero (h : 𝒜.StrictUnit e)
     simp only [hS] at hsign
     rw [hsign, zero_smul, smul_zero, sub_zero]
   · -- A unit in the last position: the collapse `m₂(F(⋯), e)` cancels that of `[a, e]`.
-    obtain hjn' : j.1 = n := by omega
+    obtain _ : j.1 = n := by omega
     have hW : splice R x 0 (n + 1) (j.1 - 1) 2 (x ⟨j.1 - 1, by omega⟩) = subword R x 0 n :=
       splice_two_pred_eq_subword R hn (by omega) x
     -- The value of `F` on the first `n` letters has degree `S n + q` after suspension.

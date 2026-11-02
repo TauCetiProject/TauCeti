@@ -261,7 +261,7 @@ theorem exists_sqrt_mul_measureReal_le_mul_measureReal_ball {θ : ℝ} (hθ : 0 
   intro mu _ Omega a u x₀ R k M h ha hu hR hball hkM hwLp hM hθk j
   refine (sqrt_mul_measureReal_le_mul_measureReal_ball_of_forall_setIntegral_le
     (Q := (2 * Lam / lam) ^ 2 * c ^ 2 * 2 ^ n) hR ((ball_subset_ball (by linarith)).trans hball)
-    hkM hθ hwLp (fun l hkl hlM hl => ?_) hθk j).trans ?_
+    hkM hθ hwLp (fun l _ hlM hl => ?_) hθk j).trans ?_
   · -- Caccioppoli on `B_R ⊆ B_{2R}`, followed by the bound `(u - l)⁺ ≤ M - l` on `B_{2R}`.
     have henergy := hcacc hl h ha hu hR (by linarith : R < 2 * R) hball
     rw [(by ring : 2 * R - R = R)] at henergy

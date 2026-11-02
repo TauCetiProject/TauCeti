@@ -671,7 +671,7 @@ private theorem setOf_vle_union_biUnion_closedSubdisc_eq {F : Finset (K × K)} (
         ((closedPolydisc_vle_weightedC_iff x _ _).mpr hτs.le) hx'
     · have hq₀τ : ‖q₀.2‖ < ‖τ‖ := (hρ q₀ hq₀).trans_lt hρτ
       refine ⟨Or.inl ((valuation_le_iff _ _ _).mp (valuation_prod_le_of_mem_closedSubdisc hq₀
-        (hρ q₀ hq₀) hq₀τ.le (fun q hq ↦ hdist q hq q₀ hq₀) hx)), fun q hq ↦ ?_⟩
+        (hρ q₀ hq₀) hq₀τ.le (fun q hq ↦ hdist q hq q₀ hq₀) hx)), fun q _ ↦ ?_⟩
       by_cases hq₀q : ‖q₀.1 - q.1‖ < ‖τ‖
       · exact Or.inr ⟨q₀, Finset.mem_filter.mpr ⟨hq₀, hq₀q⟩, hx⟩
       · -- a disc of another class lies at distance at least `τ` from `q.1`
@@ -750,7 +750,7 @@ private theorem isRat_setOf_vle_union_biUnion_closedSubdisc (F : Finset (K × K)
     (hρ _ (Finset.mem_image_of_mem _ hq₁)))
   -- the class of each centre is a proper subfamily
   set G : K × K → Finset (K × K) := fun q ↦ F.filter fun q'' ↦ ‖q''.1 - q.1‖ < ‖τ‖
-  have hGF {q : K × K} (hq : q ∈ F) : G q ⊂ F := by
+  have hGF {q : K × K} (_ : q ∈ F) : G q ⊂ F := by
     refine Finset.filter_ssubset.mpr ?_
     by_contra! h
     have h' := IsUltrametricDist.norm_sub_le_max_norm_sub q'.1 q.1 q₁.1
@@ -851,7 +851,7 @@ private theorem isRat_biUnion_closedSubdisc_union_biUnion_setOf_vle (𝒟 ℰ : 
   -- `isRat_setOf_vle_union_biUnion_closedSubdisc`.
   classical
   set U := (⋃ q ∈ 𝒟, closedSubdisc q.1 q.2) ∪
-    ⋃ e ∈ ℰ, {v : closedPolydisc 1 K | v.1.toValuativeRel.vle (C e.2) (T - C e.1)} with hU
+    ⋃ e ∈ ℰ, {v : closedPolydisc 1 K | v.1.toValuativeRel.vle (C e.2) (T - C e.1)}
   obtain ⟨σ, hσ⟩ := NormedField.exists_one_lt_norm K
   set ℰ' := insert (0, σ) ℰ
   have hℰ' {e : K × K} (he : e ∈ ℰ') :

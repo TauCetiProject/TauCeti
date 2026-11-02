@@ -103,7 +103,7 @@ theorem cast_reductionHom_map_eq_map_frobeniusAlgHom
       rw [← map_pow, ← sub_eq_zero, ← map_sub, residue_eq_zero_iff, Valuation.mem_maximalIdeal_iff]
       exact hτ z hz
     obtain ⟨hτx, hx'⟩ := hres x hx
-    obtain ⟨hτy, hy'⟩ := hres y (valuation_y_le_one_of_valuation_x_le_one v h.left hx)
+    obtain ⟨_, hy'⟩ := hres y (valuation_y_le_one_of_valuation_x_le_one v h.left hx)
     have hmem (P : (W⁄L).toAffine.Point) : P ∈ (W⁄L).toAffine.nonsingularReduction v := by
       rw [nonsingularReduction_eq_top]
       trivial
