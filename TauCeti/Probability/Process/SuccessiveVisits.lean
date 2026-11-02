@@ -165,12 +165,11 @@ theorem successiveVisit_lt_succ (h : successiveVisit X a k ω ≠ ⊤) :
 `k ↦ successiveVisit X a k ω` enumerates the visit times. -/
 theorem encard_setOf_successiveVisit_ne_top :
     {k | successiveVisit X a k ω ≠ ⊤}.encard = {n | X n ω = a}.encard := by
+  classical
   have hinj : Set.InjOn (visitCount (fun i => X i ω) a) {n | X n ω = a} := by
     intro n hn m hm h
-    have hn' := successiveVisit_eq_coe_iff.mpr ⟨hn, rfl⟩
-    have hm' : successiveVisit X a (visitCount (fun i => X i ω) a n) ω = m :=
-      successiveVisit_eq_coe_iff.mpr ⟨hm, h.symm⟩
-    exact_mod_cast hn'.symm.trans hm'
+    exact Nat.count_injective (p := fun i => X i ω = a) hn hm
+      (by simpa only [visitCount_eq_count] using h)
   rw [← hinj.encard_image]
   congr 1
   ext k
