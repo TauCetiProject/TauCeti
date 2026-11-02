@@ -40,16 +40,15 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 /-- Every `C²` embedded circle in a unit three-sphere has a solid torus neighbourhood `Φ` inside
 any prescribed neighbourhood of its image. Moreover `Φ` is differentiable at the point `(0, 1)` of
-its core, with injective derivative: read in `E` as `(u, t) ↦ Φ (u, exp (t i))`, it is the
-restriction to the closed unit disc of a map `G` on `ℂ × ℝ` with an injective derivative at the
-origin. -/
+its core, with injective derivative: its reading `(u, t) ↦ Φ (u, exp (t i))` in `E`
+(`TauCeti.SolidTorus.coreReading`) has an injective derivative at the origin. -/
 theorem exists_isSolidTorusNeighborhood_sphere {f : Circle → sphere (0 : E) 1}
     (hf : ContMDiff (𝓡 1) (𝓡 3) 2 f)
     (himm : ∀ z, Injective (mfderiv (𝓡 1) (𝓡 3) f z)) (hinj : Injective f)
     {U : Set (sphere (0 : E) 1)} (hU : U ∈ 𝓝ˢ (range f)) :
     ∃ Φ : SolidTorus → sphere (0 : E) 1, IsSolidTorusNeighborhood f Φ ∧ range Φ ⊆ U ∧
-      ∃ (G : ℂ × ℝ → E) (L : ℂ × ℝ →L[ℝ] E), (∀ u t, (Φ (u, Circle.exp t) : E) = G (u, t)) ∧
-        HasFDerivAt G L 0 ∧ Injective L := by
+      ∃ L : ℂ × ℝ →L[ℝ] E,
+        HasFDerivAt (SolidTorus.coreReading (Subtype.val ∘ Φ)) L 0 ∧ Injective L := by
   obtain ⟨p, hp⟩ := exists_notMem_range_circle_sphere (by omega) (hf.mdifferentiable (by decide))
   -- The extended chart gives the coordinate map and its invertible manifold derivative.
   let c := extChartAt (𝓡 3) (-p)
@@ -78,16 +77,19 @@ theorem exists_isSolidTorusNeighborhood_sphere {f : Circle → sphere (0 : E) 1}
     apply nhdsSet_mono ?_ (he.continuous.preimage_mem_nhdsSet hU)
     rintro _ ⟨z, rfl⟩
     exact ⟨z, (c.left_inv (hsrc z)).symm⟩
-  obtain ⟨Ψ, hΨ, hΨU, G, L, hG, hL, hLinj⟩ := exists_isSolidTorusNeighborhood hcf hicf hinjcf hpre
+  obtain ⟨Ψ, hΨ, hΨU, L, hL, hLinj⟩ := exists_isSolidTorusNeighborhood hcf hicf hinjcf hpre
   have hback : c.symm ∘ (c ∘ f) = f := funext fun z => c.left_inv (hsrc z)
   -- Read in `E`, the inverse chart is inverse stereographic projection, an immersion.
   set S : EuclideanSpace ℝ (Fin 3) → E := ((↑) : sphere (0 : E) 1 → E) ∘ (stereographic' 3 p).symm
-  have hS : HasFDerivAt S (fderiv ℝ S (G 0)) (G 0) :=
+  have hS : HasFDerivAt S (fderiv ℝ S (SolidTorus.coreReading Ψ 0)) (SolidTorus.coreReading Ψ 0) :=
     ((contDiff_coe_comp_stereographic'_symm p (k := 1)).differentiable one_ne_zero _).hasFDerivAt
-  refine ⟨c.symm ∘ Ψ, hback ▸ hΨ.comp he, ?_, S ∘ G, _, fun u t => ?_, hS.comp 0 hL,
+  refine ⟨c.symm ∘ Ψ, hback ▸ hΨ.comp he, ?_, _, (hS.comp 0 hL).congr_of_eventuallyEq ?_,
     (injective_fderiv_coe_comp_stereographic'_symm p _).comp hLinj⟩
   · rintro _ ⟨q, rfl⟩
     exact hΨU (mem_range_self q)
-  · simp only [S, comp_apply, ← hG, hc, OpenPartialHomeomorph.coe_toPartialEquiv_symm]
+  · filter_upwards [SolidTorus.eventually_coreReading_eq (Subtype.val ∘ c.symm ∘ Ψ),
+      SolidTorus.eventually_coreReading_eq Ψ] with v ⟨hv, heq⟩ ⟨hv', heq'⟩
+    rw [heq, comp_apply (f := S), heq']
+    simp only [S, comp_apply, hc, OpenPartialHomeomorph.coe_toPartialEquiv_symm]
 
 end TauCeti

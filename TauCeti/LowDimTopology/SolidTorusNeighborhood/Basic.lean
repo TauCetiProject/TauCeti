@@ -50,6 +50,9 @@ two terms are orthogonal.
   the loop `f`.
 * `TauCeti.SolidTorus.boundaryInclusion`: the inclusion of the boundary torus `S¹ × S¹` into the
   solid torus.
+* `TauCeti.SolidTorus.coreReading Φ`: the map `(u, t) ↦ Φ (u, exp (t i))` on `ℂ × ℝ`, reading
+  `Φ` near the point `(0, 1)` of its core.
+* `TauCeti.SolidTorus.conj`: the reflection `(u, z) ↦ (conj u, z)` of the solid torus.
 
 ## Main results
 
@@ -62,6 +65,8 @@ two terms are orthogonal.
   `S¹ × S¹` embeds.
 * `TauCeti.IsSolidTorusNeighborhood.comp`: solid torus neighbourhoods are carried along open
   embeddings of the ambient space.
+* `TauCeti.IsSolidTorusNeighborhood.comp_conj`: precomposing with the reflection
+  `TauCeti.SolidTorus.conj` gives a solid torus neighbourhood of the same loop.
 * `TauCeti.IsSolidTorusNeighborhood.apply_mem_range_iff`: a point of the solid torus lies on the
   knot exactly when it lies on the core.
 * `TauCeti.IsSolidTorusNeighborhood.frontier_subset_compl_range`: the boundary torus of the exterior
@@ -155,6 +160,71 @@ theorem SolidTorus.closure_setOf_norm_lt_one :
   ext p
   simp
 
+/-- A map `Φ` from the solid torus, read near the point `(0, 1)` of its core as the map
+`(u, t) ↦ Φ (u, exp (t i))` on `ℂ × ℝ`. It is extended by `0` off the closed unit disc, which does
+not affect its derivative at the origin. -/
+noncomputable def SolidTorus.coreReading {F : Type*} [Zero F] (Φ : SolidTorus → F) (v : ℂ × ℝ) :
+    F :=
+  if hv : ‖v.1‖ ≤ 1 then Φ (⟨v.1, mem_closedBall_zero_iff.2 hv⟩, Circle.exp v.2) else 0
+
+section CoreReading
+
+variable {F : Type*} [Zero F]
+
+/-- On the closed unit disc the reading of `Φ` is `(u, t) ↦ Φ (u, exp (t i))`. -/
+theorem SolidTorus.coreReading_of_norm_le (Φ : SolidTorus → F) {v : ℂ × ℝ} (hv : ‖v.1‖ ≤ 1) :
+    SolidTorus.coreReading Φ v = Φ (⟨v.1, mem_closedBall_zero_iff.2 hv⟩, Circle.exp v.2) := by
+  simp only [SolidTorus.coreReading, hv, ↓reduceDIte]
+
+/-- At the origin the reading of `Φ` is the core point `Φ (0, 1)`. -/
+@[simp]
+theorem SolidTorus.coreReading_zero (Φ : SolidTorus → F) :
+    SolidTorus.coreReading Φ 0 = Φ (0, 1) := by
+  rw [SolidTorus.coreReading_of_norm_le Φ (by simp)]
+  congr
+  simp
+
+/-- Near the origin the reading of `Φ` is `(u, t) ↦ Φ (u, exp (t i))`. -/
+theorem SolidTorus.eventually_coreReading_eq (Φ : SolidTorus → F) :
+    ∀ᶠ v in 𝓝 (0 : ℂ × ℝ), ∃ hv : ‖v.1‖ ≤ 1,
+      SolidTorus.coreReading Φ v = Φ (⟨v.1, mem_closedBall_zero_iff.2 hv⟩, Circle.exp v.2) := by
+  have hball : {v : ℂ × ℝ | ‖v.1‖ < 1} ∈ 𝓝 (0 : ℂ × ℝ) :=
+    (isOpen_lt (continuous_norm.comp continuous_fst) continuous_const).mem_nhds (by simp)
+  filter_upwards [hball] with v hv
+  exact ⟨hv.le, SolidTorus.coreReading_of_norm_le Φ hv.le⟩
+
+end CoreReading
+
+/-- The reflection `(u, z) ↦ (conj u, z)` of the solid torus. It fixes the core and preserves the
+open solid torus. -/
+def SolidTorus.conj : SolidTorus ≃ₜ SolidTorus where
+  toFun q := (⟨starRingEnd ℂ q.1, mem_closedBall_zero_iff.2 <|
+    (Complex.norm_conj _).trans_le (mem_closedBall_zero_iff.1 q.1.2)⟩, q.2)
+  invFun q := (⟨starRingEnd ℂ q.1, mem_closedBall_zero_iff.2 <|
+    (Complex.norm_conj _).trans_le (mem_closedBall_zero_iff.1 q.1.2)⟩, q.2)
+  left_inv q := by simp
+  right_inv q := by simp
+  continuous_toFun := by fun_prop
+  continuous_invFun := by fun_prop
+
+@[simp]
+theorem SolidTorus.coe_conj_fst (q : SolidTorus) :
+    ((SolidTorus.conj q).1 : ℂ) = starRingEnd ℂ q.1 :=
+  (rfl)
+
+@[simp]
+theorem SolidTorus.conj_snd (q : SolidTorus) : (SolidTorus.conj q).2 = q.2 :=
+  (rfl)
+
+/-- The reading of `Φ ∘ SolidTorus.conj` at the core is the reading of `Φ` precomposed with
+`(u, t) ↦ (conj u, t)`. -/
+theorem SolidTorus.coreReading_comp_conj {F : Type*} [Zero F] (Φ : SolidTorus → F) (v : ℂ × ℝ) :
+    SolidTorus.coreReading (Φ ∘ SolidTorus.conj) v =
+      SolidTorus.coreReading Φ (starRingEnd ℂ v.1, v.2) := by
+  simp only [SolidTorus.coreReading, Complex.norm_conj]
+  -- On the disc, `SolidTorus.conj` conjugates the disc coordinate by definition.
+  split_ifs <;> rfl
+
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
 
 /-- `Φ : D² × S¹ → X` is a **solid torus neighbourhood** of the loop `f : S¹ → X` when it is an
@@ -223,6 +293,21 @@ theorem comp {e : X → Y} (he : IsOpenEmbedding e) (h : IsSolidTorusNeighborhoo
   isOpen_image := by
     rw [image_comp]
     exact he.isOpenMap _ h.isOpen_image
+
+/-- Precomposing a solid torus neighbourhood with the reflection `(u, z) ↦ (conj u, z)` gives a
+solid torus neighbourhood of the same loop. -/
+theorem comp_conj (h : IsSolidTorusNeighborhood f Φ) :
+    IsSolidTorusNeighborhood f (Φ ∘ SolidTorus.conj) where
+  isEmbedding := h.isEmbedding.comp SolidTorus.conj.isEmbedding
+  apply_zero z := by
+    rw [comp_apply, ← h.apply_zero z]
+    congr 1
+    ext <;> simp
+  isOpen_image := by
+    convert h.isOpen_image using 1
+    rw [image_comp, SolidTorus.conj.image_eq_preimage_symm]
+    ext q
+    simp [SolidTorus.conj]
 
 /-- In a Hausdorff ambient space, the frontier of the image of the open solid torus is the image
 of the boundary torus `{w | ‖w‖ = 1} × S¹`. This set is also the frontier of the exterior of the
@@ -458,15 +543,13 @@ private theorem exists_hasFDerivAt_normalTube {f : Circle → ℝ³}
 
 /-- **Solid torus neighbourhoods of knots in `ℝ³`.** A `C²` embedded circle in `ℝ³` has a solid
 torus neighbourhood `Φ` inside any neighbourhood of its image. Moreover `Φ` is differentiable at
-the point `(0, 1)` of its core, with injective derivative: read as `(u, t) ↦ Φ (u, exp (t i))`, it
-is the restriction to the closed unit disc of a map `G` on `ℂ × ℝ` with an injective derivative at
-the origin. -/
+the point `(0, 1)` of its core, with injective derivative: its reading `(u, t) ↦ Φ (u, exp (t i))`
+(`TauCeti.SolidTorus.coreReading`) has an injective derivative at the origin. -/
 theorem exists_isSolidTorusNeighborhood {f : Circle → ℝ³} (hf : ContMDiff (𝓡 1) 𝓘(ℝ, ℝ³) 2 f)
     (himm : ∀ z, Injective (mfderiv (𝓡 1) 𝓘(ℝ, ℝ³) f z)) (hinj : Injective f)
     {U : Set ℝ³} (hU : U ∈ 𝓝ˢ (range f)) :
     ∃ Φ : SolidTorus → ℝ³, IsSolidTorusNeighborhood f Φ ∧ range Φ ⊆ U ∧
-      ∃ (G : ℂ × ℝ → ℝ³) (L : ℂ × ℝ →L[ℝ] ℝ³), (∀ u t, Φ (u, Circle.exp t) = G (u, t)) ∧
-        HasFDerivAt G L 0 ∧ Injective L := by
+      ∃ L : ℂ × ℝ →L[ℝ] ℝ³, HasFDerivAt (SolidTorus.coreReading Φ) L 0 ∧ Injective L := by
   -- The tubular neighbourhood of radius `ε`, and a radius `r < ε` keeping the tube inside `U`.
   obtain ⟨ε, hε, hemb⟩ := exists_isOpenEmbedding_normalTube hf himm hinj
   obtain ⟨δ, hδ, hδU⟩ := (isCompact_range hf.continuous).exists_thickening_subset_open
@@ -495,7 +578,7 @@ theorem exists_isSolidTorusNeighborhood {f : Circle → ℝ³} (hf : ContMDiff (
     exists_hasFDerivAt_normalTube hf himm hψc (fun z => ⟨(hψ z).1, (hψ z).2.1⟩) hr.ne'
   refine ⟨fun q => f q.2 + r • ψ q.2 q.1, ⟨((hf.continuous.comp continuous_snd).add
     (hψc'.const_smul r)).isClosedEmbedding hinj |>.isEmbedding, fun z => ?_, ?_⟩, ?_,
-    _, L, fun u t => rfl, hL, hLinj⟩
+    L, hL.congr_of_eventuallyEq ?_, hLinj⟩
   · dsimp only
     rw [Metric.unitClosedBall.coe_zero, norm_eq_zero.mp (((hψ z).2.1 0).trans norm_zero),
       smul_zero, add_zero]
@@ -521,6 +604,9 @@ theorem exists_isSolidTorusNeighborhood {f : Circle → ℝ³} (hf : ContMDiff (
     refine interior_subset (hδU (mem_thickening_iff.mpr ⟨f q.2, mem_range_self _, ?_⟩))
     rw [dist_eq_norm, add_sub_cancel_left]
     exact (hle q).trans_lt hrδ
+  · filter_upwards [SolidTorus.eventually_coreReading_eq
+      fun q : SolidTorus => f q.2 + r • ψ q.2 q.1] with v ⟨hv, heq⟩
+    exact heq
 
 end Euclidean
 

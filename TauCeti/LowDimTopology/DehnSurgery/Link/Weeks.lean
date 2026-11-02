@@ -11,6 +11,7 @@ public import TauCeti.LowDimTopology.DehnSurgery.Link.Surgery
 public import TauCeti.LowDimTopology.SolidTorusNeighborhood.Orientation
 
 import TauCeti.LowDimTopology.DehnSurgery.Existence
+import TauCeti.LowDimTopology.SolidTorusNeighborhood.Link.Orientation
 
 /-!
 # The Weeks manifold
