@@ -332,9 +332,7 @@ labelling of that degree. -/
 theorem circlePieceEquivOfUnique_apply {p : ℤ} {l₀ : ι → Bool}
     (h : ∀ l, labelingQuantumDegree ι l = p ↔ l = l₀) (x : (circleQuantumGrading R ι).piece p) :
     circlePieceEquivOfUnique R l₀ h x = (circleBasis R ι).repr x l₀ := by
-  rw [circlePieceEquivOfUnique, LinearEquiv.trans_apply, LinearEquiv.funUnique_apply,
-    Function.eval, Module.Basis.equivFun_apply, circlePieceBasis_repr_apply,
-    coe_default_uniqueLabelingOfDegree]
+  simp [circlePieceEquivOfUnique, circlePieceBasis_repr_apply, coe_default_uniqueLabelingOfDegree]
 
 /-- The inverse identification sends a scalar to that multiple of the basis vector of the unique
 labelling of that degree. -/

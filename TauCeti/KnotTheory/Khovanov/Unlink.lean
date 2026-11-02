@@ -161,12 +161,6 @@ theorem isZero_homology_khovanovComplex_zero_of_labelingQuantumDegree_ne
   rw [ModuleCat.isZero_of_iff_subsingleton, Submodule.subsingleton_iff_eq_bot]
   exact Khovanov.circleQuantumGrading_piece_eq_bot h
 
-/-- A crossing-free diagram has one resolved circle for each of its components. -/
-theorem card_resolvedCircle_cubeState_empty :
-    Fintype.card (D.toPDCode.ResolvedCircle (PDCode.cubeState ∅)) =
-      D.crossinglessComponentCount := by
-  rw [PDCode.card_resolvedCircle, PDCode.stateLoopCount_eq_crossinglessComponentCount]
-
 /-- **The graded rank of the Khovanov homology of an unlink**: for a crossing-free diagram with
 `k` circles, the rank of the homology in bidegree `(0, j)` is the coefficient of `q ^ j` in
 `(q + q⁻¹) ^ k`. -/
@@ -175,7 +169,7 @@ theorem coeff_pow_eq_finrank_homology_khovanovComplex [Nontrivial R] :
       Module.finrank R ((D.khovanovComplex hD R j).homology 0) := by
   have h := Khovanov.coeff_pow_eq_finrank_circleQuantumGrading_piece R
     (ι := D.toPDCode.ResolvedCircle (PDCode.cubeState ∅)) j
-  rw [card_resolvedCircle_cubeState_empty] at h
+  rw [PDCode.card_resolvedCircle_eq_crossinglessComponentCount] at h
   rw [h, (D.khovanovComplexHomologyZeroIso hD R j).toLinearEquiv.finrank_eq]
 
 section Empty
@@ -185,7 +179,7 @@ variable (hD : empty.toPDCode.IsPlanar)
 /-- The empty diagram has no resolved circles. -/
 private theorem isEmpty_resolvedCircle_empty :
     IsEmpty (empty.toPDCode.ResolvedCircle (PDCode.cubeState ∅)) := by
-  rw [← Fintype.card_eq_zero_iff, card_resolvedCircle_cubeState_empty,
+  rw [← Fintype.card_eq_zero_iff, PDCode.card_resolvedCircle_eq_crossinglessComponentCount,
     ← card_crossinglessComponents, crossinglessComponents_empty, Multiset.card_zero]
 
 /-- The only labelling of the circles of the empty diagram has quantum degree `0`. -/
@@ -242,7 +236,7 @@ variable (o : Bool) (hD : (unknot o).toPDCode.IsPlanar)
 /-- A crossing-free unknot has exactly one resolved circle. -/
 private theorem card_resolvedCircle_unknot :
     Fintype.card ((unknot o).toPDCode.ResolvedCircle (PDCode.cubeState ∅)) = 1 := by
-  rw [card_resolvedCircle_cubeState_empty, ← card_crossinglessComponents,
+  rw [PDCode.card_resolvedCircle_eq_crossinglessComponentCount, ← card_crossinglessComponents,
     crossinglessComponents_unknot, Multiset.card_singleton]
 
 /-- The quantum degree of a labelling of the only circle `x` of an unknot is `1` for the label `1`
