@@ -26,6 +26,9 @@ of Artinian rings onto whose residue field it maps, hence is Artinian.
 
 * `TauCeti.isArtinian_of_surjective_algebraMap_quotient`: if `I` kills the Artinian `B`-module `M`
   and `S → B ⧸ I` is surjective, then `M` is an Artinian `S`-module.
+* `TauCeti.isArtinian_of_le_of_smul_le`: if `S → B ⧸ I` is surjective and `N' ≤ N` are
+  submodules of an Artinian `B`-module with `I • N ≤ N'`, then `N` is Artinian over `S` as soon
+  as `N'` is.
 * `TauCeti.isArtinian_of_isNilpotent_of_surjective_algebraMap_quotient`: if `M` is an Artinian
   `B`-module, `I` is nilpotent and `S → B ⧸ I` is surjective, then `M` is an Artinian `S`-module.
 -/
@@ -53,9 +56,9 @@ theorem isArtinian_of_surjective_algebraMap_quotient {I : Ideal B}
   · rw [Submodule.ext_iff] at h ⊢
     exact h
 
-/-- One step of the `I`-adic filtration: if `N' ≤ N` are `B`-submodules with `I • N ≤ N'`, and `N'`
-is an Artinian `S`-module, then so is `N`. -/
-private theorem isArtinian_of_le_of_smul_le [IsArtinian B M] {I : Ideal B}
+/-- One step of an `I`-adic filtration: if `S → B ⧸ I` is surjective, `N' ≤ N` are `B`-submodules
+of an Artinian `B`-module with `I • N ≤ N'`, and `N'` is an Artinian `S`-module, then so is `N`. -/
+theorem isArtinian_of_le_of_smul_le [IsArtinian B M] {I : Ideal B}
     (hI : Function.Surjective ((Ideal.Quotient.mk I).comp (algebraMap S B)))
     {N' N : Submodule B M} (hle : N' ≤ N) (hIN : I • N ≤ N') [IsArtinian S N'] :
     IsArtinian S N := by

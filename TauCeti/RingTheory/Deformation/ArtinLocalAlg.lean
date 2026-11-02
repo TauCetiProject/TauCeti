@@ -334,7 +334,8 @@ theorem pullbackAugmentation_apply (x : AlgHom.pullback f.hom.left.hom g.hom.lef
 /-- The two components of a point of the fibre product have the same augmentation. -/
 theorem augmentation_snd_pullback (x : AlgHom.pullback f.hom.left.hom g.hom.left.hom) :
     A''.augmentation x.1.2 = A'.augmentation x.1.1 := by
-  have hx : f.hom.left.hom x.1.1 = g.hom.left.hom x.1.2 := x.2
+  have hx : f.hom.left.hom x.1.1 = g.hom.left.hom x.1.2 :=
+    AlgHom.congr_fun (AlgHom.pullback_comm_sq _ _) x
   rw [← augmentation_hom_apply g, ← hx, augmentation_hom_apply]
 
 variable {f g}
@@ -422,7 +423,9 @@ theorem pullbackSnd_hom_left_hom_apply (x : (pullback f g hg).obj.left) :
 /-- The fibre product square commutes. -/
 theorem pullback_condition : pullbackFst f g hg ≫ f = pullbackSnd f g hg ≫ g := by
   ext x
-  exact x.2
+  simp only [comp_hom_left_hom_apply, pullbackFst_hom_left_hom_apply,
+    pullbackSnd_hom_left_hom_apply]
+  exact AlgHom.congr_fun (AlgHom.pullback_comm_sq _ _) x
 
 /-- The fibre product of `f` and `g` along the two projections is a pullback square in `C_Λ`.
 Stacks, Lemma 90.3.8 (06GH). -/
@@ -433,14 +436,20 @@ theorem isPullback : IsPullback (pullbackFst f g hg) (pullbackSnd f g hg) f g :=
   · simpa using congrArg (fun φ ↦ φ.hom.left.hom t) s.condition
   · ext t
     exact augmentation_hom_apply s.fst t
+  -- The lift lands in the carrier of `AlgHom.pullback`, whose instances agree with those of
+  -- `(pullback f g hg).obj.left` only after unfolding `pullback` and `mk'`, so neither
+  -- `homMk'_hom_left_hom` nor `CommAlgCat.hom_ofHom` rewrites here. Both factorisations hold by
+  -- unfolding `homMk'`, `AlgHom.codRestrict` and `AlgHom.prod`.
   · ext t
     rfl
   · ext t
     rfl
   · ext t
-    refine Subtype.ext (Prod.ext ?_ ?_)
-    · exact congrArg (fun φ ↦ φ.hom.left.hom t) hfst
-    · exact congrArg (fun φ ↦ φ.hom.left.hom t) hsnd
+    have h₁ := congrArg (fun φ ↦ φ.hom.left.hom t) hfst
+    have h₂ := congrArg (fun φ ↦ φ.hom.left.hom t) hsnd
+    simp only [comp_hom_left_hom_apply, pullbackFst_hom_left_hom_apply,
+      pullbackSnd_hom_left_hom_apply] at h₁ h₂
+    exact Subtype.ext (Prod.ext h₁ h₂)
 
 end Pullback
 
