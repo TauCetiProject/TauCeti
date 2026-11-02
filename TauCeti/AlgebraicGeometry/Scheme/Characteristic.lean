@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Frobenius.Basic
 public import TauCeti.AlgebraicGeometry.Scheme.ToSpecZMod
+public import Mathlib.Algebra.CharP.Algebra
 public import Mathlib.AlgebraicGeometry.Limits
 
 /-!
@@ -73,6 +74,18 @@ theorem charP_sections (hX : SchemeCharP X p) (U : X.Opens) [Nonempty U] :
       obtain ⟨k, rfl⟩ := hn
       simp [hX.natCast_eq_zero U]⟩
 
+/-- Characteristic is invariant under isomorphism, for every natural characteristic. -/
+theorem iff_of_iso (e : X ≅ Y) : SchemeCharP X p ↔ SchemeCharP Y p := by
+  constructor
+  · intro h
+    let := h
+    exact ⟨fun y ↦ charP_of_injective_ringHom
+      (f := (e.inv.stalkMap y).hom) (ConcreteCategory.bijective_of_isIso _).1 p⟩
+  · intro h
+    let := h
+    exact ⟨fun x ↦ charP_of_injective_ringHom
+      (f := (e.hom.stalkMap x).hom) (ConcreteCategory.bijective_of_isIso _).1 p⟩
+
 variable [Fact p.Prime]
 
 /-- For prime `p`, stalkwise characteristic is equivalent to global vanishing of `p`. -/
@@ -98,10 +111,6 @@ theorem iff_affineOpens : SchemeCharP X p ↔
 /-- A scheme over a characteristic-`p` scheme has characteristic `p`. -/
 theorem of_hom (hY : SchemeCharP Y p) (f : X ⟶ Y) : SchemeCharP X p :=
   iff_natCast_eq_zero.mpr (Scheme.natCast_eq_zero_of_hom f (hY.natCast_eq_zero ⊤))
-
-/-- Characteristic is invariant under isomorphism. -/
-theorem iff_of_iso (e : X ≅ Y) : SchemeCharP X p ↔ SchemeCharP Y p :=
-  ⟨fun h ↦ h.of_hom e.inv, fun h ↦ h.of_hom e.hom⟩
 
 /-- The spectrum of a ring has characteristic `p` exactly when `p` vanishes in the ring.
 This also applies to the zero ring. -/
@@ -141,11 +150,13 @@ theorem SchemeCharP.eq [Nonempty X] (hp : SchemeCharP X p) (hq : SchemeCharP X q
   let x : X := Classical.arbitrary X
   exact CharP.eq (X.presheaf.stalk x) (hp.charP_stalk x) (hq.charP_stalk x)
 
-variable [Fact p.Prime]
+/-- Open subschemes inherit the characteristic of the ambient scheme for every natural
+characteristic. -/
+instance (U : X.Opens) [SchemeCharP X p] : SchemeCharP U p :=
+  ⟨fun x ↦ charP_of_injective_ringHom
+    (f := (U.ι.stalkMap x).hom) (ConcreteCategory.bijective_of_isIso _).1 p⟩
 
-/-- Open subschemes inherit the characteristic of the ambient scheme. -/
-instance (U : X.Opens) [h : SchemeCharP X p] : SchemeCharP U p :=
-  h.of_hom U.ι
+variable [Fact p.Prime]
 
 /-- The base change of a characteristic-`p` scheme has characteristic `p`, with no
 condition on the morphism used to change base. -/

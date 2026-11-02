@@ -39,6 +39,13 @@ example (p : ℕ) : SchemeCharP (∅ : Scheme) p := inferInstance
 example (X : Scheme) (p : ℕ) (h : SchemeCharP X p) :
     (p : Γ(X, ⊥)) = 0 := h.natCast_eq_zero ⊥
 
+-- Isomorphisms and open restrictions preserve every natural characteristic, not just primes.
+example {X Y : Scheme} (p : ℕ) (e : X ≅ Y) :
+    SchemeCharP X p ↔ SchemeCharP Y p := SchemeCharP.iff_of_iso e
+
+example {X : Scheme} (p : ℕ) [SchemeCharP X p] (U : X.Opens) :
+    SchemeCharP U p := inferInstance
+
 -- The intrinsic hypothesis supplies exactly what the existing Frobenius needs.
 example (X : Scheme) (p : ℕ) [Fact p.Prime] (h : SchemeCharP X p)
     (s : Γ(X, ⊤)) : (X.frobenius p (h.natCast_eq_zero ⊤)).appTop s = s ^ p := by
