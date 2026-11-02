@@ -49,7 +49,8 @@ public noncomputable section
 
 open CategoryTheory ContinuousMap MulAction
 open CategoryTheory.ActionCategory
-open MulActionHom (constOfMemFixedPoints constOfMemFixedPoints_apply toPUnit)
+open MulActionHom (coe_constOfMemFixedPoints coe_toPUnit constOfMemFixedPoints
+  constOfMemFixedPoints_apply toPUnit)
 
 universe u
 
@@ -131,10 +132,11 @@ def fatClassifyingSpaceHomotopyEquivOfContraction (x : X)
       fatClassifyingSpace (ActionCategory G PUnit.{u + 1}) where
   toFun := (fatClassifyingSpaceMap
     (ActionCategory.map (MonoidHom.id G) (toPUnit X (MonoidHom.id G)))
-    (continuous_mapTotal_map continuous_id continuous_const)).hom
+    (continuous_mapTotal_map continuous_id (by rw [coe_toPUnit]; exact continuous_const))).hom
   invFun := (fatClassifyingSpaceMap (ActionCategory.map (MonoidHom.id G)
       (constOfMemFixedPoints (H.mem_fixedPoints_of_map_smul hH)))
-    (continuous_mapTotal_map continuous_id continuous_const)).hom
+    (continuous_mapTotal_map continuous_id
+      (by rw [coe_constOfMemFixedPoints]; exact continuous_const))).hom
   left_inv := by
     -- The composite is induced by the constant map onto `x`, which `H` joins to the identity.
     have hc : ActionCategory.map (MonoidHom.id G)
@@ -143,17 +145,20 @@ def fatClassifyingSpaceHomotopyEquivOfContraction (x : X)
           (constOfMemFixedPoints (H.mem_fixedPoints_of_map_smul hH)) =
         ActionCategory.map (MonoidHom.id G)
           (constOfMemFixedPoints (H.mem_fixedPoints_of_map_smul hH)) :=
-      (map_comp _ _ _).trans (congrArg _ (MulActionHom.ext fun _ ↦ rfl))
-    exact ⟨(fatClassifyingSpaceHomotopy (f₀ := MulActionHom.id G)
-      (f₁ := constOfMemFixedPoints (H.mem_fixedPoints_of_map_smul hH)) (hf₁ := continuous_const)
-      H hH).symm.cast
+      (map_comp _ _ _).trans (congrArg _ (MulActionHom.ext fun _ ↦ by simp))
+    -- Read the endpoint `const X x` of `H` as the coercion of the constant equivariant map.
+    have h₁ : ContinuousMap.const X x = ⟨constOfMemFixedPoints (φ := MonoidHom.id G)
+        (H.mem_fixedPoints_of_map_smul hH),
+          by rw [coe_constOfMemFixedPoints]; exact continuous_const⟩ :=
+      ContinuousMap.ext fun _ ↦ (constOfMemFixedPoints_apply _ _).symm
+    exact ⟨(fatClassifyingSpaceHomotopy (f₀ := MulActionHom.id G) (H.cast rfl h₁) hH).symm.cast
         (by rw [← TopCat.hom_comp, ← fatClassifyingSpaceMap_comp]; simp only [hc])
         (by simp only [map_id, fatClassifyingSpaceMap_id, TopCat.hom_id])⟩
   right_inv := by
     have hp : (toPUnit X (MonoidHom.id G) : X →ₑ[MonoidHom.id G] PUnit.{u + 1}).comp
         (constOfMemFixedPoints (φ := MonoidHom.id G) (H.mem_fixedPoints_of_map_smul hH)) =
           MulActionHom.id G :=
-      MulActionHom.ext fun _ ↦ rfl
+      MulActionHom.ext fun _ ↦ Subsingleton.elim _ _
     rw [← TopCat.hom_comp, ← fatClassifyingSpaceMap_comp]
     simp only [map_comp, hp, map_id, fatClassifyingSpaceMap_id, TopCat.hom_id]
     exact .refl _

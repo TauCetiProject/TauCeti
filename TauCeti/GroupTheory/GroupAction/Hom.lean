@@ -34,18 +34,26 @@ variable {M N X Y : Type*} [SMul M X] {φ : M → N}
 
 variable (X φ) in
 /-- The equivariant map from `X` to the point. -/
-@[expose] def toPUnit : X →ₑ[φ] PUnit.{w + 1} :=
+def toPUnit : X →ₑ[φ] PUnit.{w + 1} :=
   ⟨fun _ ↦ PUnit.unit, fun _ _ ↦ rfl⟩
+
+variable (X φ) in
+theorem coe_toPUnit : ⇑(toPUnit.{w} X φ) = Function.const X PUnit.unit :=
+  (rfl)
 
 variable [Monoid N] [MulAction N Y]
 
 /-- The equivariant map from `X` with constant value a fixed point `y` of `Y`. -/
-@[expose] def constOfMemFixedPoints {y : Y} (hy : y ∈ fixedPoints N Y) : X →ₑ[φ] Y :=
+def constOfMemFixedPoints {y : Y} (hy : y ∈ fixedPoints N Y) : X →ₑ[φ] Y :=
   ⟨fun _ ↦ y, fun m _ ↦ (hy (φ m)).symm⟩
 
 @[simp]
 theorem constOfMemFixedPoints_apply {y : Y} (hy : y ∈ fixedPoints N Y) (x : X) :
     constOfMemFixedPoints (φ := φ) hy x = y :=
-  rfl
+  (rfl)
+
+theorem coe_constOfMemFixedPoints {y : Y} (hy : y ∈ fixedPoints N Y) :
+    ⇑(constOfMemFixedPoints (X := X) (φ := φ) hy) = Function.const X y :=
+  (rfl)
 
 end MulActionHom
