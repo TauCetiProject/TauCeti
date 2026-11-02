@@ -30,6 +30,8 @@ inside a passport is asserted.
 * `TauCeti.PassportSpec.passportSize_eq_card_hasPassport`: the passport size as a `Nat.card`.
 * `TauCeti.PassportSpec.partition_eq_of_mem_classSet`: passports sharing a class have the same
   ordered partitions.
+* `TauCeti.PassportSpec.disjoint_classSet`: distinct passports with the same reference subgroup
+  share no class.
 * `TauCeti.PassportSpec.cycleData_eq_of_hasPassport`: two triples in one passport have the same
   ordered cycle data.
 * `TauCeti.PassportSpec.genus_eq_of_hasPassport`: a passport determines the genus.
@@ -152,6 +154,16 @@ theorem partition_eq_of_mem_classSet {P Q : PassportSpec n} {c : ConnectedIsoCla
   · simp [← hP0, ← hQ0]
   · simp [← hP1, ← hQ1]
   · simp [← hPinf, ← hQinf]
+
+/-- Two passports with the same reference subgroup that share an isomorphism class are equal. -/
+theorem eq_of_mem_classSet {P Q : PassportSpec n} (hG : P.G = Q.G) {c : ConnectedIsoClass n}
+    (hP : c ∈ P.classSet) (hQ : c ∈ Q.classSet) : P = Q :=
+  ext_partition hG (partition_eq_of_mem_classSet hP hQ)
+
+/-- Distinct passports with the same reference subgroup have disjoint class sets. -/
+theorem disjoint_classSet {P Q : PassportSpec n} (hG : P.G = Q.G) (hne : P ≠ Q) :
+    Disjoint P.classSet Q.classSet :=
+  Finset.disjoint_left.mpr fun _ hP hQ ↦ hne (eq_of_mem_classSet hG hP hQ)
 
 /-! ## Invariants determined by a passport -/
 

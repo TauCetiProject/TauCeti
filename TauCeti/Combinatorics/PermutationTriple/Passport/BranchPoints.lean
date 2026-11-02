@@ -244,8 +244,7 @@ theorem eq_of_mem_orbit_of_mem_classSet {P Q : OrderedPassport n}
     (hQ : Q ∈ orbit (Perm (Fin 3))ᵐᵒᵖ P) {c : ConnectedIsoClass n} (hcQ : c ∈ Q.1.classSet)
     (hcP : c ∈ P.1.classSet) : Q = P := by
   obtain ⟨ρ, rfl⟩ := hQ
-  exact Subtype.ext (PassportSpec.ext_partition (by simp)
-    (PassportSpec.partition_eq_of_mem_classSet hcQ hcP))
+  exact Subtype.ext (PassportSpec.eq_of_mem_classSet (by simp) hcQ hcP)
 
 /-- Distinct ordered passports of one branch-point orbit have disjoint class sets. -/
 theorem disjoint_classSet_of_mem_orbit {P Q : OrderedPassport n}
