@@ -45,6 +45,10 @@ noncomputable def faceIdeal (F : AddSubmonoid M) (R : Type*) [CommSemiring R] :
     Ideal (AddMonoidAlgebra R M) :=
   Ideal.span (of' R M '' (F : Set M)ᶜ)
 
+/-- The face ideal is the span of the coefficient-one monomials outside the submonoid. -/
+theorem faceIdeal_def (F : AddSubmonoid M) (R : Type*) [CommSemiring R] :
+    F.faceIdeal R = Ideal.span (of' R M '' (F : Set M)ᶜ) := (rfl)
+
 /-- Restriction to a face: retain monomials on the face and kill those outside it. -/
 noncomputable def faceRestriction (F : AddSubmonoid M) (hF : F.AddSaturated)
     (R : Type*) [CommSemiring R] : AddMonoidAlgebra R M →ₐ[R] AddMonoidAlgebra R F := by
@@ -113,7 +117,7 @@ include hF in
 theorem mem_faceIdeal_iff (p : AddMonoidAlgebra R M) :
     p ∈ F.faceIdeal R ↔ ∀ a : F, p.coeff (a : M) = 0 := by
   classical
-  rw [faceIdeal, mem_ideal_span_of'_image]
+  rw [faceIdeal_def, mem_ideal_span_of'_image]
   constructor
   · intro hp a
     by_contra ha
