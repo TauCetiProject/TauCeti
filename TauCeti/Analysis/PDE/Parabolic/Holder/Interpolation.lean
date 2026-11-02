@@ -41,6 +41,8 @@ absorb lower-order terms in parabolic Schauder estimates.
   `TauCeti.ParabolicC2HolderSpace.norm_toBoundedContinuousFunction_spatialSecondFDerivL_le` and
   `TauCeti.ParabolicC2HolderSpace.norm_toBoundedContinuousFunction_timeDerivL_le`: the three
   interpolation inequalities.
+* `TauCeti.ParabolicC2HolderSpace.timeEHolderNorm_le`: the temporal Hölder seminorms of every
+  exponent at most one.
 * `TauCeti.ParabolicC2HolderSpace.valueHolderL` and
   `TauCeti.ParabolicC2HolderSpace.spatialFDerivHolderL`: the value and the spatial gradient as
   continuous linear maps into the bounded parabolic Hölder space.
@@ -101,8 +103,7 @@ theorem norm_toBoundedContinuousFunction_spatialSecondFDerivL_le
       ⟨fun y ↦ spatialFDerivL f (slabMk y t), ?_, f.hasSpatialFDerivAt t⟩
     refine (contDiff_succ_iff_hasFDerivAt (n := 0)).2
       ⟨fun y ↦ spatialSecondFDerivL f (slabMk y t), ?_, f.hasSpatialSecondFDerivAt t⟩
-    exact contDiff_zero.2 ((spatialSecondFDerivL f).continuous.comp
-      (continuous_slabMk.comp (continuous_id.prodMk continuous_const)))
+    exact contDiff_zero.2 ((spatialSecondFDerivL f).continuous.comp (by fun_prop))
   -- At a common time the parabolic distance is the spatial one, so the second iterated
   -- derivative of each slice is `α`-Hölder with the parabolic seminorm as constant.
   have hH : HolderWith (nnHolderNorm α
@@ -164,6 +165,29 @@ theorem norm_toBoundedContinuousFunction_timeDerivL_le (f : ParabolicC2HolderSpa
     push_cast
     ring
   rwa [hpow, timeExtension_of_mem, ← HolderSpace.toBoundedContinuousFunction_apply] at h
+
+/-- For `γ ≤ 1`, the temporal `γ`-seminorm of an order-two map is at most
+`‖∂ₜ u‖_∞ + 2 ‖u‖_∞`: a bounded time derivative makes the time slices Lipschitz, and the
+oscillation bound handles time differences larger than one. -/
+theorem timeEHolderNorm_le {γ : ℝ≥0} (hγ : γ ≤ 1) (f : ParabolicC2HolderSpace α E F hab) :
+    timeEHolderNorm γ (f : slab (E := E) a b → F) ≤
+      ↑(‖(timeDerivL f).toBoundedContinuousFunction‖₊ + 2 * ‖valueL f‖₊) := by
+  have ht : ∀ x, ∀ s ∈ Icc a b, HasDerivWithinAt (timeExtension hab.le f x)
+      (timeExtension hab.le (timeDerivL f) x s) (Icc a b) s := fun x s hs ↦ by
+    simpa [timeExtension_def, projIcc_of_mem hab.le hs] using f.hasTimeDerivWithinAt x ⟨s, hs⟩
+  have hlip := timeEHolderNorm_one_le_of_hasDerivWithinAt
+    (C := ‖(timeDerivL f).toBoundedContinuousFunction‖₊) ht fun x s _ ↦ by
+    simpa only [timeExtension_def, HolderSpace.toBoundedContinuousFunction_apply, coe_nnnorm]
+      using (timeDerivL f).toBoundedContinuousFunction.norm_coe_le_norm _
+  rw [timeExtension_space_slabTime] at hlip
+  refine timeEHolderNorm_le_iff.2 fun x ↦ ?_
+  -- Each time slice is Lipschitz; at time differences above one the oscillation bound wins.
+  have h := HolderOnWith.of_le_of_dist_le (s := univ) (D := 2 * ‖valueL f‖₊)
+    (fun t _ s _ ↦ timeEHolderNorm_le_iff.1 hlip x t s)
+    (fun t _ s _ ↦ by simpa using (valueL f).dist_le_two_norm (slabMk x t) (slabMk x s))
+    hγ one_pos
+  simp only [NNReal.one_rpow, mul_one] at h
+  exact fun t s ↦ h t (mem_univ t) s (mem_univ s)
 
 /-! ### Lower-order parabolic Hölder norms -/
 

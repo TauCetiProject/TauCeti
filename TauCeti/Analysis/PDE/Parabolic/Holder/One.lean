@@ -46,8 +46,6 @@ consecutive orders, and that the spatial gradient lowers the order by one: it ma
   `TauCeti.ParabolicC1HolderSpace.fullNorm_le_norm_le`: the temporal seminorm and the comparison
   with the full parabolic norm.
 * `TauCeti.ParabolicC1HolderSpace.valueHolderL`: the inclusion into `C_b^{α,α/2}`.
-* `TauCeti.ParabolicC2HolderSpace.timeEHolderNorm_le`: the temporal Hölder seminorms of an
-  order-two map, of every exponent at most one.
 * `TauCeti.ParabolicC2HolderSpace.toC1L`: the inclusion of `C_b^{2+α,1+α/2}`.
 * `TauCeti.ParabolicC2HolderSpace.spatialFDerivC1L`: the spatial gradient as a map from
   `C_b^{2+α,1+α/2}` to the order-one space.
@@ -151,6 +149,7 @@ private def toJetL : ParabolicC1HolderSpace α E F a b →L[ℝ] Jet α E F a b 
 
 private theorem isJetGraph_toJetL (f : ParabolicC1HolderSpace α E F a b) :
     IsJetGraph (toJetL f) :=
+  -- `toJetL` is the submodule inclusion, so its value is the underlying jet of `f`.
   f.2
 
 private theorem norm_toJetL (f : ParabolicC1HolderSpace α E F a b) : ‖toJetL f‖ = ‖f‖ :=
@@ -224,6 +223,7 @@ private theorem norm_eq (f : ParabolicC1HolderSpace α E F a b) :
   rw [← norm_toJetL f]
   simp only [WithLp.prod_norm_eq_add (show (0 : ℝ) < (1 : ℝ≥0∞).toReal by norm_num),
     Real.rpow_one, ENNReal.toReal_one, one_div_one]
+  -- The three field maps are the `WithLp` projections composed with `toJetL`.
   rfl
 
 /-- Each time slice is `(1 + α) / 2`-Hölder, with the Hölder seminorm bounded by the norm of
@@ -238,13 +238,17 @@ private theorem eHolderNorm_timeSlice_le (f : ParabolicC1HolderSpace α E F a b)
   rw [HolderSpace.coe_toBoundedContinuousFunction, coe_timeSliceL] at h
   exact h.trans (lp.norm_apply_le_norm ENNReal.top_ne_zero _ x)
 
+/-- The temporal seminorm is at most the norm of the family of time slices. -/
+private theorem timeEHolderNorm_le_nnnorm_timeSliceL (f : ParabolicC1HolderSpace α E F a b) :
+    timeEHolderNorm ((1 + α) / 2) (f : slab (E := E) a b → F) ≤ ‖timeSliceL f‖₊ :=
+  timeEHolderNorm_le_iff.2 fun x ↦ eHolderNorm_le_iff.1 (f.eHolderNorm_timeSlice_le x)
+
 /-- **The temporal seminorm is controlled by the norm.** The temporal `(1 + α) / 2`-seminorm
 `[u]_{t,(1+α)/2}`, the supremum over `x` of the Hölder seminorms of the time slices, is at most
 the norm. -/
 theorem timeEHolderNorm_le_nnnorm (f : ParabolicC1HolderSpace α E F a b) :
     timeEHolderNorm ((1 + α) / 2) (f : slab (E := E) a b → F) ≤ ‖f‖₊ := by
-  refine timeEHolderNorm_le_iff.2 fun x ↦
-    eHolderNorm_le_iff.1 ((f.eHolderNorm_timeSlice_le x).trans ?_)
+  refine f.timeEHolderNorm_le_nnnorm_timeSliceL.trans ?_
   rw [ENNReal.coe_le_coe, ← NNReal.coe_le_coe, coe_nnnorm, coe_nnnorm, norm_eq]
   linarith [norm_nonneg (valueL f), norm_nonneg (spatialFDerivL f)]
 
@@ -259,20 +263,12 @@ theorem memHolder_timeSlice (f : ParabolicC1HolderSpace α E F a b) (x : E) :
   have hm := (timeSliceL f x).memHolder
   rwa [HolderSpace.coe_toBoundedContinuousFunction, coe_timeSliceL] at hm
 
-/-- The time slice of a bounded continuous map on the slab at position `x`. -/
-private def sliceBCF (u : slab (E := E) a b →ᵇ F) (x : E) : Icc a b →ᵇ F :=
-  u.compContinuous ⟨slabMk x, continuous_slabMk.comp (continuous_const.prodMk continuous_id)⟩
-
-omit [NormedSpace ℝ E] [NormedSpace ℝ F] in
-private theorem sliceBCF_apply (u : slab (E := E) a b →ᵇ F) (x : E) (t : Icc a b) :
-    sliceBCF u x t = u (slabMk x t) := (rfl)
-
 omit [NormedSpace ℝ E] in
 /-- The norm of the Hölder time slice of `u` at `x` is at most `‖u‖_∞ + [u]_{t,(1+α)/2}`. -/
 private theorem norm_sliceHolder_le (u : slab (E := E) a b →ᵇ F)
     (ht : timeEHolderNorm ((1 + α) / 2) (u : slab (E := E) a b → F) < ∞) (x : E)
-    (hx : MemHolder ((1 + α) / 2) (sliceBCF u x : Icc a b → F)) :
-    ‖HolderSpace.ofBoundedContinuousFunction (sliceBCF u x) hx‖ ≤
+    (hx : MemHolder ((1 + α) / 2) (u.compContinuous (timeSlice x) : Icc a b → F)) :
+    ‖HolderSpace.ofBoundedContinuousFunction (u.compContinuous (timeSlice x)) hx‖ ≤
       ‖u‖ + (timeEHolderNorm ((1 + α) / 2) (u : slab (E := E) a b → F)).toReal := by
   rw [HolderSpace.norm_def, HolderSpace.toBoundedContinuousFunction_ofBoundedContinuousFunction]
   gcongr
@@ -282,9 +278,9 @@ private theorem norm_sliceHolder_le (u : slab (E := E) a b →ᵇ F)
 
 omit [NormedSpace ℝ E] [NormedSpace ℝ F] in
 /-- The slices of a bounded continuous map with finite temporal seminorm are Hölder. -/
-private theorem memHolder_sliceBCF (u : slab (E := E) a b →ᵇ F)
+private theorem memHolder_timeSlice_of_timeEHolderNorm_lt_top (u : slab (E := E) a b →ᵇ F)
     (ht : timeEHolderNorm ((1 + α) / 2) (u : slab (E := E) a b → F) < ∞) (x : E) :
-    MemHolder ((1 + α) / 2) (sliceBCF u x : Icc a b → F) :=
+    MemHolder ((1 + α) / 2) (u.compContinuous (timeSlice x) : Icc a b → F) :=
   eHolderNorm_lt_top.1 ((eHolderNorm_le_timeEHolderNorm _ _ x).trans_lt ht)
 
 /-- The `ℓ^∞` family of Hölder time slices of a bounded continuous map with finite temporal
@@ -292,7 +288,8 @@ seminorm. -/
 private def sliceFamily (u : slab (E := E) a b →ᵇ F)
     (ht : timeEHolderNorm ((1 + α) / 2) (u : slab (E := E) a b → F) < ∞) :
     lp (fun _ : E ↦ HolderSpace ((1 + α) / 2) (Icc a b) F) ∞ :=
-  ⟨fun x ↦ HolderSpace.ofBoundedContinuousFunction (sliceBCF u x) (memHolder_sliceBCF u ht x),
+  ⟨fun x ↦ HolderSpace.ofBoundedContinuousFunction (u.compContinuous (timeSlice x))
+      (memHolder_timeSlice_of_timeEHolderNorm_lt_top u ht x),
     memℓp_infty_iff.2 ⟨_, by
       rintro _ ⟨x, rfl⟩
       exact norm_sliceHolder_le u ht x _⟩⟩
@@ -386,9 +383,7 @@ theorem fullNorm_le_norm_le (f : ParabolicC1HolderSpace α E F a b) :
     f.fullNorm ≤ ‖f‖ ∧ ‖f‖ ≤ 2 * f.fullNorm := by
   have hT : (timeEHolderNorm ((1 + α) / 2) (f : slab (E := E) a b → F)).toReal ≤
       ‖timeSliceL f‖ := by
-    have h : timeEHolderNorm ((1 + α) / 2) (f : slab (E := E) a b → F) ≤ ‖timeSliceL f‖₊ :=
-      timeEHolderNorm_le_iff.2 fun x ↦ eHolderNorm_le_iff.1 (f.eHolderNorm_timeSlice_le x)
-    simpa using ENNReal.toReal_mono ENNReal.coe_ne_top h
+    simpa using ENNReal.toReal_mono ENNReal.coe_ne_top f.timeEHolderNorm_le_nnnorm_timeSliceL
   have hS : ‖timeSliceL f‖ ≤
       ‖valueL f‖ + (timeEHolderNorm ((1 + α) / 2) (f : slab (E := E) a b → F)).toReal := by
     have h := norm_sliceFamily_le (valueL f) f.timeEHolderNorm_lt_top
@@ -404,16 +399,14 @@ theorem fullNorm_le_norm_le (f : ParabolicC1HolderSpace α E F a b) :
 
 private theorem isClosed_spatialGraph (t : Icc a b) : IsClosed {J : Jet α E F a b |
     ∀ x, HasFDerivAt (fun y ↦ valueJetL J (slabMk y t)) (gradJetL J (slabMk x t)) x} := by
-  let slice : C(E, slab (E := E) a b) :=
-    ⟨fun x ↦ slabMk x t, continuous_slabMk.comp (continuous_id.prodMk continuous_const)⟩
   simpa only [preimage_ofPred_eq, Function.comp_def,
     BoundedContinuousFunction.coe_compContinuous, BoundedContinuousFunction.compContinuous_apply,
     HolderSpace.toBoundedContinuousFunctionCLM_apply,
-    HolderSpace.toBoundedContinuousFunction_apply, slice, ContinuousMap.coe_mk] using
+    HolderSpace.toBoundedContinuousFunction_apply, spatialSlice_apply] using
     (isClosed_setOf_hasFDerivAt (𝕜 := ℝ) (E := E) (Y := F)).preimage
-      (((BoundedContinuousFunction.continuous_compContinuous slice).comp
+      (((BoundedContinuousFunction.continuous_compContinuous (spatialSlice t)).comp
         valueJetL.continuous).prodMk
-          ((BoundedContinuousFunction.continuous_compContinuous slice).comp
+          ((BoundedContinuousFunction.continuous_compContinuous (spatialSlice t)).comp
             (HolderSpace.toBoundedContinuousFunctionCLM.continuous.comp gradJetL.continuous)))
 
 private theorem isClosed_sliceGraph (x : E) (t : Icc a b) :
@@ -448,17 +441,22 @@ private theorem eHolderNorm_le (hα : α ≤ 1) (f : ParabolicC1HolderSpace α E
         4 * ‖valueL f‖₊) := by
   have hspace : spaceEHolderNorm 1 (f : slab (E := E) a b → F) ≤
       ‖(spatialFDerivL f).toBoundedContinuousFunction‖₊ := by
-    refine spaceEHolderNorm_le_iff.2 fun t x y ↦ ?_
-    have hlip := lipschitzWith_of_nnnorm_fderiv_le
-      (C := ‖(spatialFDerivL f).toBoundedContinuousFunction‖₊)
-      (fun y ↦ (f.hasSpatialFDerivAt t y).differentiableAt) fun y ↦ by
-        rw [f.fderiv_eq, ← HolderSpace.toBoundedContinuousFunction_apply]
-        exact BoundedContinuousFunction.nnnorm_coe_le_nnnorm _ _
-    simpa using hlip.edist_le_mul x y
+    rcases le_or_gt a b with hab | hab
+    · -- Extend constantly in time, so as to apply the Lipschitz bound on `E × ℝ`.
+      rw [← ParabolicC2HolderSpace.timeExtension_space_slabTime hab
+        (f : slab (E := E) a b → F)]
+      refine spaceEHolderNorm_one_le_of_hasFDerivAt
+        (w' := ParabolicC2HolderSpace.timeExtension hab (spatialFDerivL f))
+        (fun t ht y ↦ ?_) fun y t ht ↦ ?_
+      · simpa [ParabolicC2HolderSpace.timeExtension_def, projIcc_of_mem hab ht] using
+          f.hasSpatialFDerivAt ⟨t, ht⟩ y
+      · simpa only [ParabolicC2HolderSpace.timeExtension_def,
+          HolderSpace.toBoundedContinuousFunction_apply, coe_nnnorm] using
+          (spatialFDerivL f).toBoundedContinuousFunction.norm_coe_le_norm _
+    · -- The slab is empty.
+      exact spaceEHolderNorm_le_iff.2 fun t ↦ absurd (t.2.1.trans t.2.2) hab.not_ge
   have hD : ∀ p q, dist (f p) (f q) ≤ ((2 * ‖valueL f‖₊ : ℝ≥0) : ℝ) := fun p q ↦ by
-    push_cast
-    linarith [dist_le_norm_add_norm (f p) (f q), (valueL f).norm_coe_le_norm p,
-      (valueL f).norm_coe_le_norm q]
+    simpa using (valueL f).dist_le_two_norm p q
   have h := eHolderNorm_le_of_spaceEHolderNorm_le_of_timeEHolderNorm_le hspace
     (ENNReal.coe_toNNReal f.timeEHolderNorm_lt_top.ne).ge hD hα
     (by gcongr; exact le_add_self) one_pos one_pos
@@ -518,31 +516,6 @@ end ParabolicC1HolderSpace
 namespace ParabolicC2HolderSpace
 
 variable {hab : a < b}
-
-/-- For `γ ≤ 1`, the temporal `γ`-seminorm of an order-two map is at most
-`‖∂ₜ u‖_∞ + 2 ‖u‖_∞`: a bounded time derivative makes the time slices Lipschitz, and the
-oscillation bound handles time differences larger than one. -/
-theorem timeEHolderNorm_le {γ : ℝ≥0} (hγ : γ ≤ 1) (f : ParabolicC2HolderSpace α E F hab) :
-    timeEHolderNorm γ (f : slab (E := E) a b → F) ≤
-      ↑(‖(timeDerivL f).toBoundedContinuousFunction‖₊ + 2 * ‖valueL f‖₊) := by
-  have ht : ∀ x, ∀ s ∈ Icc a b, HasDerivWithinAt (timeExtension hab.le f x)
-      (timeExtension hab.le (timeDerivL f) x s) (Icc a b) s := fun x s hs ↦ by
-    simpa [timeExtension_def, projIcc_of_mem hab.le hs] using f.hasTimeDerivWithinAt x ⟨s, hs⟩
-  have hlip := timeEHolderNorm_one_le_of_hasDerivWithinAt
-    (C := ‖(timeDerivL f).toBoundedContinuousFunction‖₊) ht fun x s _ ↦ by
-    simpa only [timeExtension_def, HolderSpace.toBoundedContinuousFunction_apply, coe_nnnorm]
-      using (timeDerivL f).toBoundedContinuousFunction.norm_coe_le_norm _
-  rw [timeExtension_space_slabTime] at hlip
-  refine timeEHolderNorm_le_iff.2 fun x ↦ ?_
-  -- Each time slice is Lipschitz; at time differences above one the oscillation bound wins.
-  have h := HolderOnWith.of_le_of_dist_le (s := univ) (D := 2 * ‖valueL f‖₊)
-    (fun t _ s _ ↦ timeEHolderNorm_le_iff.1 hlip x t s) (fun t _ s _ ↦ by
-      push_cast
-      linarith [dist_le_norm_add_norm (f (slabMk x t)) (f (slabMk x s)),
-        (valueL f).norm_coe_le_norm (slabMk x t), (valueL f).norm_coe_le_norm (slabMk x s)])
-    hγ one_pos
-  simp only [NNReal.one_rpow, mul_one] at h
-  exact fun t s ↦ h t (mem_univ t) s (mem_univ s)
 
 /-- For `α ≤ 1` the temporal exponent `(1 + α) / 2` of the order-one space is at most one. -/
 private theorem one_add_div_two_le_one (hα : α ≤ 1) : (1 + α) / 2 ≤ 1 := by
@@ -605,18 +578,6 @@ theorem valueHolderL_toC1L (hα : α ≤ 1) (f : ParabolicC2HolderSpace α E F h
     ParabolicC1HolderSpace.valueHolderL hα (toC1L hα f) = valueHolderL hα f :=
   HolderSpace.ext fun p ↦ by simp
 
-/-- The temporal `(1 + α) / 2`-seminorm of the gradient, as a real number, is at most the sum of
-the Hölder norms of the Hessian and of the time derivative. -/
-private theorem toReal_timeEHolderNorm_spatialFDeriv_le (f : ParabolicC2HolderSpace α E F hab) :
-    (timeEHolderNorm ((1 + α) / 2) (spatialFDerivL f : _ → _)).toReal ≤
-      ‖spatialSecondFDerivL f‖ + ‖timeDerivL f‖ := by
-  have h := f.timeEHolderNorm_spatialFDeriv_le
-  rw [← (spatialSecondFDerivL f).memHolder.coe_nnHolderNorm_eq_eHolderNorm,
-    ← (timeDerivL f).memHolder.coe_nnHolderNorm_eq_eHolderNorm, ← ENNReal.coe_add] at h
-  have hr := ENNReal.toReal_mono ENNReal.coe_ne_top h
-  rw [ENNReal.coe_toReal, NNReal.coe_add] at hr
-  linarith [(spatialSecondFDerivL f).nnHolderNorm_le, (timeDerivL f).nnHolderNorm_le]
-
 /-- **The spatial gradient lowers the order by one.** For every `α`, `u ↦ D_x u` maps
 `C_b^{2+α,1+α/2}` into the order-one space `C_{par,b}^{1+α}` of gradient-valued maps, whose
 gradient is the Hessian `D_x² u`. It is a continuous linear map of norm at most `2`. -/
@@ -654,5 +615,7 @@ theorem spatialFDerivC1L_apply (f : ParabolicC2HolderSpace α E F hab) (p : slab
   rw [← ParabolicC1HolderSpace.valueL_apply, valueL_spatialFDerivC1L]
 
 end ParabolicC2HolderSpace
+
+attribute [irreducible] _root_.TauCeti.ParabolicC1HolderSpace
 
 end TauCeti
