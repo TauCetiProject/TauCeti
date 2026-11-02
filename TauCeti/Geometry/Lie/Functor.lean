@@ -60,19 +60,13 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 attribute [local instance] ContMDiffMul.boundarylessManifold
 
-/-- `MonoidHom.groupLieAlgebraMap_apply`, stated for the coercion of a smooth monoid morphism. -/
-private theorem groupLieAlgebraMap_toMonoidHom_apply
-    (φ : ContMDiffMonoidMorphism I I' ∞ G G') (X : GroupLieAlgebra I G) :
-    φ.toMonoidHom.groupLieAlgebraMap I I' X = mfderiv I I' φ 1 X :=
-  φ.toMonoidHom.groupLieAlgebraMap_apply I X
-
 variable [LieGroup I ∞ G] [LieGroup I' ∞ G']
 
 private theorem mfderiv_monoidHom_mulInvariantVectorField
     (φ : ContMDiffMonoidMorphism I I' ∞ G G') (g : G)
     (X : GroupLieAlgebra I G) :
     mfderiv I I' φ g (mulInvariantVectorField X g) =
-      mulInvariantVectorField (mfderiv I I' φ 1 X) (φ g) := by
+      mulInvariantVectorField (φ.toMonoidHom.groupLieAlgebraMap I I' X) (φ g) := by
   simp only [mulInvariantVectorField]
   have hfun : (φ : G → G') ∘ (fun y : G ↦ g * y) =
       (fun z : G' ↦ φ g * z) ∘ φ := by
@@ -90,6 +84,7 @@ private theorem mfderiv_monoidHom_mulInvariantVectorField
     (φ.contMDiff_toFun.mdifferentiable (by simp)).mdifferentiableAt
   rw [hleft, hright] at h
   rw [mul_one, map_one] at h
+  rw [φ.toMonoidHom.groupLieAlgebraMap_apply I X]
   exact h
 
 private theorem tangent_comp_monoidHom
@@ -97,7 +92,7 @@ private theorem tangent_comp_monoidHom
     (X : GroupLieAlgebra I G) (f : G' → ℝ) (hf : ContMDiff I' 𝓘(ℝ, ℝ) ∞ f) :
     mvfderiv I' f (φ g) (mulInvariantVectorField (φ.toMonoidHom.groupLieAlgebraMap I I' X) (φ g)) =
       mvfderiv I (f ∘ φ) g (mulInvariantVectorField X g) := by
-  rw [groupLieAlgebraMap_toMonoidHom_apply, ← mfderiv_monoidHom_mulInvariantVectorField φ g X]
+  rw [← mfderiv_monoidHom_mulInvariantVectorField φ g X]
   exact (mfderiv_comp_apply g
     (hf.mdifferentiable (by simp)).mdifferentiableAt
     (φ.contMDiff_toFun.mdifferentiable (by simp)).mdifferentiableAt
@@ -214,7 +209,7 @@ theorem leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap
   -- equivalences; their inverse law then characterizes `lieMap` without exposing its body publicly.
   change e' (e'.symm (φ.toMonoidHom.groupLieAlgebraMap I I' (e D))) = _
   rw [e'.apply_symm_apply]
-  exact groupLieAlgebraMap_toMonoidHom_apply φ (e D)
+  exact φ.toMonoidHom.groupLieAlgebraMap_apply I (e D)
 
 /-- The Lie map of the identity homomorphism is the identity Lie-algebra homomorphism. -/
 @[simp]
@@ -284,7 +279,6 @@ private theorem monoidHom_mulInvariantExp
   let _ : T2Space G' := I'.t2Space_of_lieGroup ∞
   dsimp only
   let Y := φ.toMonoidHom.groupLieAlgebraMap I I' X
-  have hY : Y = mfderiv I I' φ 1 X := groupLieAlgebraMap_toMonoidHom_apply φ X
   let γ := mulInvariantIntegralCurve (I := I) (G := G) X 1
   have hcurve : IsMIntegralCurve (φ ∘ γ)
       (mulInvariantVectorField (I := I') (G := G') Y) := by
@@ -295,9 +289,7 @@ private theorem monoidHom_mulInvariantExp
       (W := mulInvariantVectorField (I := I') (G := G') Y)
       (γ := γ) (s := Set.univ)
       (fun t _ => φ.contMDiff_toFun.mdifferentiable (by simp) (γ t))
-      (fun t _ => by
-        rw [hY]
-        exact mfderiv_monoidHom_mulInvariantVectorField (I := I) (I' := I') φ (γ t) X)
+      (fun t _ => mfderiv_monoidHom_mulInvariantVectorField (I := I) (I' := I') φ (γ t) X)
       ((isMIntegralCurve_mulInvariantIntegralCurve
         (I := I) (G := G) X 1).isMIntegralCurveOn Set.univ)
   have hzero : (φ ∘ γ) 0 = (1 : G') := by simp [γ]
@@ -323,7 +315,7 @@ theorem map_lieExp [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
   rw [monoidHom_mulInvariantExp (I := I) (I' := I') φ]
   congr 1
   rw [← leftInvariantDerivationLieEquivGroupLieAlgebra_apply,
-    ← leftInvariantDerivationLieEquivGroupLieAlgebra_apply, groupLieAlgebraMap_toMonoidHom_apply]
+    ← leftInvariantDerivationLieEquivGroupLieAlgebra_apply, MonoidHom.groupLieAlgebraMap_apply]
   exact (leftInvariantDerivationLieEquivGroupLieAlgebra_lieMap
     (I := I) (I' := I') φ X).symm
 
