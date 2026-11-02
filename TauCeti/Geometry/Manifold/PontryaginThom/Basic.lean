@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 public import Mathlib.Topology.Homotopy.Basic
+public import TauCeti.Topology.Algebra.Module.ProdUnitsHomeomorph
 public import TauCeti.Topology.Compactification.OnePoint.Collapse
 public import TauCeti.Topology.Compactification.OnePoint.Sphere
 
@@ -25,7 +25,7 @@ framed normal bundle with an open neighbourhood of `S`, through an open embeddin
 used; the ambient space `M` is an arbitrary Hausdorff space, for instance a closed manifold, and
 the fibre `V` an arbitrary topological space with a zero.
 
-The collapse is independent of the choices up to homotopy:
+The collapse is unchanged up to homotopy under isotopy of the tube and homotopy of the framing:
 
 * a continuous family of tubes `τ t`, `t ∈ [0, 1]`, whose total map
   `(t, x, v) ↦ (t, τ t (x, v))` is an open embedding, gives a homotopy between the collapses of
@@ -170,33 +170,7 @@ end Collapse
 section Framing
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
-
-/-- The homeomorphism `(x, v) ↦ (x, A x v)` of `B × V` defined by a continuous family `A` of
-invertible continuous linear maps of `V`; it changes the framing of a trivial bundle by `A`. -/
-noncomputable def prodUnitsHomeomorph {B : Type*} [TopologicalSpace B] (A : B → (V →L[𝕜] V)ˣ)
-    (hA : Continuous A) : B × V ≃ₜ B × V where
-  toFun p := (p.1, (A p.1 : V →L[𝕜] V) p.2)
-  invFun p := (p.1, (↑(A p.1)⁻¹ : V →L[𝕜] V) p.2)
-  left_inv p := by simp [← mul_apply_eq_comp]
-  right_inv p := by simp [← mul_apply_eq_comp]
-  continuous_toFun := continuous_fst.prodMk
-    ((Units.continuous_val.comp (hA.comp continuous_fst)).clm_apply continuous_snd)
-  continuous_invFun := continuous_fst.prodMk
-    ((Units.continuous_coe_inv.comp (hA.comp continuous_fst)).clm_apply continuous_snd)
-
-@[simp]
-theorem prodUnitsHomeomorph_apply {B : Type*} [TopologicalSpace B] (A : B → (V →L[𝕜] V)ˣ)
-    (hA : Continuous A) (p : B × V) :
-    prodUnitsHomeomorph A hA p = (p.1, (A p.1 : V →L[𝕜] V) p.2) :=
-  (rfl)
-
-@[simp]
-theorem prodUnitsHomeomorph_symm_apply {B : Type*} [TopologicalSpace B] (A : B → (V →L[𝕜] V)ˣ)
-    (hA : Continuous A) (p : B × V) :
-    (prodUnitsHomeomorph A hA).symm p = (p.1, (↑(A p.1)⁻¹ : V →L[𝕜] V) p.2) :=
-  (rfl)
-
-variable [TopologicalSpace S] [TopologicalSpace M] {f : S → M} {τ : S × V → M}
+  [TopologicalSpace S] [TopologicalSpace M] {f : S → M} {τ : S × V → M}
 
 /-- Changing the framing of a framed tube by a continuous family of linear automorphisms gives a
 framed tube around the same core. -/

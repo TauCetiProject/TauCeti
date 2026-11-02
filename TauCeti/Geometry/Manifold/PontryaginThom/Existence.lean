@@ -23,7 +23,7 @@ prescribed open neighbourhood of the image of `f`.
 So every framed embedding of a compact manifold `M` has a Pontryagin–Thom collapse
 `N → OnePoint P` (`TauCeti.pontryaginThomCollapse`), continuous because `M` is compact and `N`
 is Hausdorff, with `M` the preimage of the origin. For a closed ambient manifold `N` this is the
-collapse of a framed submanifold onto the sphere `Sᵏ = OnePoint ℝᵏ`. Different tubes and
+collapse of a framed submanifold onto the sphere `Sᵏ = OnePoint ℝᵏ`. Isotopic tubes and
 homotopic framings give homotopic collapses
 (`TauCeti.pontryaginThomCollapseMap_homotopic`,
 `TauCeti.pontryaginThomCollapseMap_comp_prodUnitsHomeomorph_homotopic`).
@@ -91,9 +91,11 @@ theorem exists_isFramedTube (f : SmoothEmbedding I J ∞ M N) (hn : (∞ : ℕ�
     exact hWO (Φ (ψ.symm p)).2
 
 /-- **The Pontryagin–Thom collapse of a framed submanifold.** A framed smooth embedding `f` of a
-compact manifold has a continuous collapse `c : N → OnePoint P`, the Pontryagin–Thom collapse of a
-framed tube around `f`, that sends exactly the image of `f` to the origin and every point outside
-a prescribed open neighbourhood `O` of that image to `∞`. -/
+compact manifold has a continuous map `c : N → OnePoint P` that sends exactly the image of `f` to
+the origin and every point outside a prescribed open neighbourhood `O` of that image to `∞`. The
+statement records only these two properties; the map constructed is the Pontryagin–Thom collapse
+of the framed tube given by `TauCeti.SmoothEmbedding.exists_isFramedTube`, which is the way to
+access the tube itself. -/
 theorem exists_pontryaginThomCollapse [CompactSpace M] (f : SmoothEmbedding I J ∞ M N)
     (hn : (∞ : ℕ∞ω) ≠ 0) (hdim : Module.finrank ℝ P = Module.finrank ℝ V - Module.finrank ℝ E)
     (φ : Trivialization P (π P fun x ↦ f.NormalSpace x hn)) [φ.IsLinear ℝ]
