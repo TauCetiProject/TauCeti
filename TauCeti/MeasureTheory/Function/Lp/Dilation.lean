@@ -126,12 +126,15 @@ noncomputable def dilateLp (hr : 0 < r) : Lp F p μ ≃ₗᵢ[ℝ] Lp F p μ whe
     (LinearEquiv.smulOfNeZero ℝ _ (r ^ (-((finrank ℝ E : ℝ) / p.toReal)))
       (Real.rpow_pos_of_pos hr _).ne')
   norm_map' f := by
-    have hc : 0 < r ^ (-((finrank ℝ E : ℝ) / p.toReal)) := Real.rpow_pos_of_pos hr _
-    rw [LinearEquiv.trans_apply, LinearEquiv.smulOfNeZero_apply, norm_smul,
-      Real.norm_of_nonneg hc.le, Lp.norm_def,
-      eLpNorm_congr_ae (coeFn_compInvSmulLp hr f), eLpNorm_comp_inv_smul μ _ hr,
-      ENNReal.toReal_mul, ENNReal.toReal_ofReal (Real.rpow_pos_of_pos hr _).le, ← mul_assoc,
-      ← Real.rpow_add hr, neg_add_cancel, Real.rpow_zero, one_mul, Lp.norm_def]
+    -- Precomposition with `r⁻¹ • ·` scales the norm by `r ^ (n / p)`, which the factor cancels.
+    have hnorm : ‖compInvSmulLp μ p hr f‖ = r ^ ((finrank ℝ E : ℝ) / p.toReal) * ‖f‖ := by
+      simp only [Lp.norm_def, eLpNorm_congr_ae (coeFn_compInvSmulLp hr f),
+        eLpNorm_comp_inv_smul μ _ hr, ENNReal.toReal_mul,
+        ENNReal.toReal_ofReal (Real.rpow_nonneg hr.le _)]
+    have hc : r ^ (-((finrank ℝ E : ℝ) / p.toReal)) * r ^ ((finrank ℝ E : ℝ) / p.toReal) = 1 := by
+      rw [← Real.rpow_add hr, neg_add_cancel, Real.rpow_zero]
+    simp only [LinearEquiv.trans_apply, LinearEquiv.smulOfNeZero_apply, norm_smul, hnorm,
+      Real.norm_of_nonneg (Real.rpow_nonneg hr.le _), ← mul_assoc, hc, one_mul]
 
 private theorem dilateLp_eq_smul (hr : 0 < r) (f : Lp F p μ) :
     dilateLp μ p hr f = r ^ (-((finrank ℝ E : ℝ) / p.toReal)) • compInvSmulLp μ p hr f :=

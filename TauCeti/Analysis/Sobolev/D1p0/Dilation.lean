@@ -46,20 +46,18 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {p : ENNReal} [Fact (1 ≤ p)] {r s : ℝ}
 
-local instance D1p0.instIsAddHaarMeasureRestrictTopDilate :
-    (mu.restrict (⊤ : Opens E)).IsAddHaarMeasure := by
-  simpa only [Opens.coe_top, Measure.restrict_univ] using (inferInstance : mu.IsAddHaarMeasure)
-
 /-- The isometric `Lᵖ` dilate of a test-function gradient is the gradient of the dilated test
 function `r ^ (1 - n / p) • φ (r⁻¹ • ·)`. -/
 private theorem gradientTestFunctionLp_smul_dilateTestFunction (hr : 0 < r)
     (phi : 𝓓((⊤ : Opens E), ℝ)) :
     gradientTestFunctionLp (mu := mu) p
         (r ^ (1 - (finrank ℝ E : ℝ) / p.toReal) •
-          dilateTestFunction (Ω := ⊤) hr.ne' (by intro x _; exact Opens.mem_top _) phi) =
+          dilateTestFunction (Ω := ⊤) hr.ne' (mapsTo_univ _ _) phi) =
       (mu.restrict (⊤ : Opens E)).dilateLp p hr (gradientTestFunctionLp p phi) := by
+  have hexp : 1 - (finrank ℝ E : ℝ) / p.toReal + ((finrank ℝ E : ℝ) / p.toReal - 1) = 0 := by
+    ring
   rw [gradientTestFunctionLp_smul, gradientTestFunctionLp_dilateTestFunction, smul_smul,
-    ← Real.rpow_add hr, sub_add_sub_cancel', sub_self, Real.rpow_zero, one_smul]
+    ← Real.rpow_add hr, hexp, Real.rpow_zero, one_smul]
 
 /-- Dilation preserves the closed subspace of whole-space test-function gradients. -/
 theorem dilateLp_mem_d1p0Submodule (hr : 0 < r) {u : Lp E p (mu.restrict (⊤ : Opens E))}
@@ -113,7 +111,7 @@ theorem coe_dilate (hr : 0 < r) (u : D1p0 mu ⊤ p) :
 theorem dilate_ofTestFunctionₗ (hr : 0 < r) (phi : 𝓓((⊤ : Opens E), ℝ)) :
     dilate mu p hr (ofTestFunctionₗ mu ⊤ p phi) =
       ofTestFunctionₗ mu ⊤ p (r ^ (1 - (finrank ℝ E : ℝ) / p.toReal) •
-        dilateTestFunction (Ω := ⊤) hr.ne' (by intro x _; exact Opens.mem_top _) phi) := by
+        dilateTestFunction (Ω := ⊤) hr.ne' (mapsTo_univ _ _) phi) := by
   apply Subtype.ext
   simp only [coe_dilate, coe_ofTestFunctionₗ]
   exact (gradientTestFunctionLp_smul_dilateTestFunction hr phi).symm
@@ -150,10 +148,12 @@ theorem sobolevEmbeddingL_dilate {pstar : ENNReal} (hpstar : pstar ≠ ∞)
     (isClosed_eq ((sobolevEmbeddingL hexp).continuous.comp (dilate mu p hr).continuous)
       (((mu.restrict (⊤ : Opens E)).dilateLp pstar hr).continuous.comp
         (sobolevEmbeddingL hexp).continuous)) fun phi ↦ ?_
+  have hsum : 1 - (finrank ℝ E : ℝ) / p.toReal + (finrank ℝ E : ℝ) / pstar.toReal = 0 := by
+    rw [div_toReal_eq_div_toReal_sub_one hexp]
+    ring
   rw [dilate_ofTestFunctionₗ, sobolevEmbeddingL_ofTestFunctionₗ hpstar hexp,
     sobolevEmbeddingL_ofTestFunctionₗ hpstar hexp, testFunctionLp_smul,
-    testFunctionLp_dilateTestFunction, smul_smul, ← Real.rpow_add hr,
-    div_toReal_eq_div_toReal_sub_one hexp, sub_add_sub_cancel', sub_self, Real.rpow_zero,
+    testFunctionLp_dilateTestFunction, smul_smul, ← Real.rpow_add hr, hsum, Real.rpow_zero,
     one_smul]
 
 end D1p0

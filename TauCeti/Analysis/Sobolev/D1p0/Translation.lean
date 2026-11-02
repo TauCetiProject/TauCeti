@@ -41,11 +41,6 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {p : ENNReal} [Fact (1 ≤ p)]
 
-local instance D1p0.instIsAddHaarMeasureRestrictTop :
-    (mu.restrict (⊤ : Opens E)).IsAddHaarMeasure := by
-  simpa only [Opens.coe_top, Measure.restrict_univ] using
-    (inferInstance : mu.IsAddHaarMeasure)
-
 /-- Translation preserves the closed subspace of whole-space test-function gradients. -/
 theorem translateLp_mem_d1p0Submodule (h : E) {u : Lp E p (mu.restrict (⊤ : Opens E))}
     (hu : u ∈ (d1p0Submodule mu ⊤ p : Set _)) :
@@ -98,7 +93,7 @@ theorem coe_translate (h : E) (u : D1p0 mu ⊤ p) :
 theorem translate_ofTestFunctionₗ (h : E) (phi : 𝓓((⊤ : Opens E), ℝ)) :
     translate mu p h (ofTestFunctionₗ mu ⊤ p phi) =
       ofTestFunctionₗ mu ⊤ p (translateTestFunction (Omega := ⊤) (h := -h)
-        (by intro x _; exact Opens.mem_top _) phi) := by
+        (mapsTo_univ _ _) phi) := by
   apply Subtype.ext
   simp only [coe_translate, coe_ofTestFunctionₗ, gradientTestFunctionLp_translateTestFunction]
 
