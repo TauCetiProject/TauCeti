@@ -170,13 +170,6 @@ theorem forget₂HomLinearEquiv_apply {R : Type u} [CommRing R] {G : Type v} [Mo
     forget₂HomLinearEquiv X Y f x = f.hom x :=
   rfl
 
-/-- The inverse forgetful Hom equivalence is the forgetful functor on morphisms. -/
-@[simp]
-theorem forget₂HomLinearEquiv_symm_apply {R : Type u} [CommRing R] {G : Type v} [Monoid G]
-    (X Y : FDRep R G) (f : X ⟶ Y) :
-    (forget₂HomLinearEquiv X Y).symm f = (forget₂ (FDRep R G) (Rep R G)).map f :=
-  rfl
-
 /-- **The character of the trivial one-dimensional representation is constantly `1`**, that
 dimension being `1`. This is the form in which the trivial character enters a pairing or a
 Frobenius reciprocity computation, both of which are phrased for objects of `FDRep k G`. -/
