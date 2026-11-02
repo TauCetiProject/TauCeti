@@ -50,4 +50,11 @@ def baseChange (f : M →ₗ⁅R,L⁆ N) :
     (f.baseChange A).toLinearMap = f.toLinearMap.baseChange A := by
   rfl
 
+/-- On pure tensors, extension of scalars applies the original equivariant map to the module
+factor. -/
+@[simp] theorem baseChange_tmul (f : M →ₗ⁅R,L⁆ N) (a : A) (m : M) :
+    f.baseChange A (a ⊗ₜ[R] m) = a ⊗ₜ[R] f m := by
+  rw [← coe_toLinearMap, baseChange_toLinearMap, LinearMap.baseChange_tmul]
+  rfl
+
 end LieModuleHom
