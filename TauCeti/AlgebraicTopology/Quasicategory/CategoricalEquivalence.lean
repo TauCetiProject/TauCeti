@@ -66,6 +66,9 @@ variable {X Y Z : QCat.{u}}
 /-- The functor from the hom-category `X ⟶ Y` of the bicategory of quasicategories to the
 category of functors between the homotopy categories. It sends a map `f` to
 `mapHomotopyCategory f.hom`, see `homotopyCategoryFunctor_obj`. -/
+-- The body must stay exposed: `homotopyCategoryFunctor_map` identifies its values with those of
+-- `ihomHoFunctor`, whose source and target agree with them only definitionally.
+@[expose]
 noncomputable def homotopyCategoryFunctor (X Y : QCat.{u}) :
     (X ⟶ Y) ⥤ (X.obj.HomotopyCategory ⥤ Y.obj.HomotopyCategory) where
   obj f := (ihomHoFunctor X.obj Y.obj).obj (CatEnrichedOrdinary.homEquiv f)
@@ -79,6 +82,14 @@ lemma homotopyCategoryFunctor_obj (f : X ⟶ Y) :
   -- The vertex of `Fun(X, Y)` classified by `f` is `natTransEquiv.symm f.hom`, which
   -- uncurries to `f.hom` by definition.
   ihomHoFunctor_obj_mk _
+
+/-- On a `2`-morphism `α`, the functor `homotopyCategoryFunctor X Y` is `ihomHoFunctor` applied to
+the underlying morphism of `ho Fun(X, Y)`; its components are computed on edges by
+`ihomHoFunctor_map_homMk_app`. -/
+@[simp]
+lemma homotopyCategoryFunctor_map {f g : X ⟶ Y} (α : f ⟶ g) :
+    (homotopyCategoryFunctor X Y).map α = (ihomHoFunctor X.obj Y.obj).map α.base :=
+  rfl
 
 /-- A map of quasicategories is a categorical equivalence when it is an equivalence in the
 bicategory of quasicategories: it admits a quasi-inverse together with invertible natural

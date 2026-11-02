@@ -26,6 +26,8 @@ categories.
 * `SSet.ihomHoFunctor A B`: the functor `ho Fun(A, B) ⥤ (ho A ⥤ ho B)`.
 * `SSet.ihomHoFunctor_obj_mk`: its value on a vertex of `Fun(A, B)` is the functor of homotopy
   categories induced by the corresponding map `A ⟶ B`.
+* `SSet.ihomHoFunctor_map_homMk_app`: the component at `a` of the natural transformation
+  induced by an edge `h` of `Fun(A, B)` is the evaluation of `h` at `a`.
 -/
 
 public section
@@ -40,10 +42,24 @@ variable {A B : SSet.{u}}
 
 /-- The functor `ho Fun(A, B) ⥤ (ho A ⥤ ho B)` induced by the evaluation map
 `A ⊗ Fun(A, B) ⟶ B`, using that the homotopy category functor preserves binary products. -/
+-- The body must stay exposed: the endpoints of the components in `ihomHoFunctor_map_homMk_app`
+-- agree with evaluations only definitionally, so without it that statement is not type-correct.
+@[expose]
 noncomputable def ihomHoFunctor (A B : SSet.{u}) :
     hoFunctor.obj ((ihom A).obj B) ⥤ hoFunctor.obj A ⥤ hoFunctor.obj B :=
   (Functor.curry.obj ((Functor.LaxMonoidal.μ hoFunctor A ((ihom A).obj B)).toFunctor ⋙
     (hoFunctor.map ((ihom.ev A).app B)).toFunctor)).flip
+
+/-- The component at a vertex `a` of `A` of the natural transformation induced by an edge `h`
+of `Fun(A, B)` is the edge of `B` obtained by evaluating `h` at `a`, that is, the image of the
+edge `(σ₀ a, h)` of `A ⊗ Fun(A, B)` under the evaluation map. -/
+@[simp]
+lemma ihomHoFunctor_map_homMk_app {f g : ((ihom A).obj B) _⦋0⦌} (h : Edge f g) (a : A _⦋0⦌) :
+    ((ihomHoFunctor A B).map (HomotopyCategory.homMk h)).app (.mk a) =
+      HomotopyCategory.homMk ((Edge.mk (X := A ⊗ (ihom A).obj B) (x₀ := (a, f)) (x₁ := (a, g))
+        (A.σ 0 a, h.edge) (Prod.ext (Edge.id a).src_eq h.src_eq)
+        (Prod.ext (Edge.id a).tgt_eq h.tgt_eq)).map ((ihom.ev A).app B)) :=
+  rfl
 
 private lemma ihomHoFunctor_obj_mk_map_homMk (φ : 𝟙_ SSet ⟶ (ihom A).obj B) {x y : A _⦋0⦌}
     (e : Edge x y) :
