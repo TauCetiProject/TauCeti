@@ -63,18 +63,6 @@ variable [I.Boundaryless] [T2Space M]
 
 namespace IsNormalDomain
 
-omit [Fintype ι] [LinearOrder ι] [LocallyFiniteOrderBot ι] in
-/-- Normal coordinate fields associated to independent tangent vectors remain linearly independent
-on the normal neighbourhood. -/
-theorem linearIndependent_normalCoordinateField (h : IsNormalDomain I M p U)
-    {v : ι → TangentSpace I p} (hv : LinearIndependent ℝ v)
-    {q : M} (hq : q ∈ riemannianExp I M p '' U) :
-    LinearIndependent ℝ (fun i ↦ normalCoordinateField I M p U (v i) q) := by
-  obtain ⟨w, hw, rfl⟩ := hq
-  simp_rw [h.normalCoordinateField_riemannianExp hw]
-  exact hv.map' _ (LinearMap.ker_eq_bot.mpr
-    ((h.isLocalDiffeomorphOn ⟨w, hw⟩).isInvertible_mfderiv (by simp)).injective)
-
 /-- The normal orthonormal frame is orthonormal at every point of the normal neighbourhood. -/
 theorem orthonormal_normalOrthonormalFrame (h : IsNormalDomain I M p U)
     (b : OrthonormalBasis ι ℝ (TangentSpace I p)) {q : M}
@@ -131,8 +119,7 @@ theorem leviCivitaConnection_normalOrthonormalFrame_self (h : IsNormalDomain I M
     (b : OrthonormalBasis ι ℝ (TangentSpace I p)) (i : ι) :
     leviCivitaConnection I M (normalOrthonormalFrame I M p U b i) p = 0 := by
   exact (isMetricCompatible_leviCivitaConnection I).apply_gramSchmidtNormed_eq_zero
-    (fun j ↦ ((h.contMDiffOn_normalCoordinateField (b j)).contMDiffAt
-      h.image_mem_nhds).of_le (by simp))
+    (fun j ↦ h.mdifferentiableAt_normalCoordinateField (b j) h.self_mem_image)
     (h.linearIndependent_normalCoordinateField b.orthonormal.linearIndependent h.self_mem_image)
     (fun j ↦ h.leviCivitaConnection_normalCoordinateField_self (b j)) i
 

@@ -95,4 +95,43 @@ theorem ContMDiffAt.gramSchmidtNormed_bundle
         (gramSchmidt ℝ (fun i ↦ v i y) j)) hh
   exact (hn.inv₀ (norm_ne_zero_iff.mpr (gramSchmidt_ne_zero j hli))).smul_section hg
 
+section Differentiable
+
+variable [IsContMDiffRiemannianBundle I 1 F V]
+
+omit [IsContMDiffRiemannianBundle I n F V] in
+/-- Fiberwise Gram–Schmidt preserves differentiability at a linearly independent family. -/
+theorem MDifferentiableAt.gramSchmidt_bundle
+    (hv : ∀ i, MDiffAt (T% (v i)) x)
+    (hli : LinearIndependent ℝ (fun i ↦ v i x)) (j : ι) :
+    MDiffAt (T% (fun y ↦ gramSchmidt ℝ (fun i ↦ v i y) j)) x := by
+  classical
+  induction j using WellFoundedLT.induction with
+  | ind j ih =>
+    have hg (i : ι) (hi : i < j) := ih i hi
+    have hc (i : ι) (hi : i < j) :
+        MDiffAt (fun y ↦ inner ℝ (gramSchmidt ℝ (fun k ↦ v k y) i) (v j y) /
+          inner ℝ (gramSchmidt ℝ (fun k ↦ v k y) i)
+            (gramSchmidt ℝ (fun k ↦ v k y) i)) x :=
+      ((hg i hi).inner_bundle (hv j)).div ((hg i hi).inner_bundle (hg i hi))
+        (inner_self_ne_zero.mpr (gramSchmidt_ne_zero i hli))
+    have hformula : (fun y ↦ gramSchmidt ℝ (fun i ↦ v i y) j) =
+        v j - ∑ i ∈ Finset.Iio j,
+          (fun y ↦ inner ℝ (gramSchmidt ℝ (fun k ↦ v k y) i) (v j y) /
+            inner ℝ (gramSchmidt ℝ (fun k ↦ v k y) i)
+              (gramSchmidt ℝ (fun k ↦ v k y) i)) •
+            (fun y ↦ gramSchmidt ℝ (fun k ↦ v k y) i) := by
+      funext y
+      simp only [Pi.sub_apply, Finset.sum_apply, real_inner_self_eq_norm_sq]
+      exact eq_sub_of_add_eq (gramSchmidt_def'' ℝ (fun i ↦ v i y) j).symm
+    have hs := mdifferentiableAt_sub_section (hv j) (MDifferentiableAt.sum_section fun i hi ↦
+      (hc i (Finset.mem_Iio.mp hi)).smul_section (hg i (Finset.mem_Iio.mp hi)))
+    apply hs.congr_of_eventuallyEq
+    apply Filter.Eventually.of_forall
+    intro y
+    apply congrArg (TotalSpace.mk' F y)
+    simpa only [Pi.sub_apply, Finset.sum_apply] using congrFun hformula y
+
+end Differentiable
+
 end

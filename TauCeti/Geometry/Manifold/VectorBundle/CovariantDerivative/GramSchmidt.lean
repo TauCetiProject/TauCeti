@@ -45,13 +45,13 @@ attribute [local instance] IsWellOrder.toHasWellFounded
 
 /-- Gram–Schmidt preserves a family's being parallel at a point for a metric connection. -/
 theorem apply_gramSchmidt_eq_zero (hcov : cov.IsMetricCompatible)
-    (hv : ∀ i, CMDiffAt 1 (T% (v i)) x)
+    (hv : ∀ i, MDiffAt (T% (v i)) x)
     (hli : LinearIndependent ℝ (fun i ↦ v i x)) (hzero : ∀ i, cov (v i) x = 0) (j : ι) :
     cov (fun y ↦ gramSchmidt ℝ (fun i ↦ v i y) j) x = 0 := by
   classical
   let w (i : ι) (y : M) := gramSchmidt ℝ (fun k ↦ v k y) i
   have hw (i : ι) : MDiffAt (T% (w i)) x :=
-    (ContMDiffAt.gramSchmidt_bundle hv hli i).mdifferentiableAt one_ne_zero
+    MDifferentiableAt.gramSchmidt_bundle hv hli i
   induction j using WellFoundedLT.induction with
   | ind j ih =>
     have hc (i : ι) (hi : i < j) :
@@ -59,7 +59,7 @@ theorem apply_gramSchmidt_eq_zero (hcov : cov.IsMetricCompatible)
           inner ℝ (w i y) (w i y)) x 0 := by
       exact (
         (hcov.hasMFDerivAt_inner_of_eq_zero (hw i)
-          ((hv j).mdifferentiableAt one_ne_zero) (ih i hi) (hzero j)).div
+          (hv j) (ih i hi) (hzero j)).div
           (hcov.hasMFDerivAt_inner_of_eq_zero (hw i) (hw i) (ih i hi) (ih i hi))
           (inner_self_ne_zero.mpr (gramSchmidt_ne_zero i hli))).congr_mfderiv (by
             ext
@@ -84,7 +84,7 @@ theorem apply_gramSchmidt_eq_zero (hcov : cov.IsMetricCompatible)
       simpa only [Finset.sum_apply] using MDifferentiableAt.sum_section
         (fun i hi ↦ ht i (Finset.mem_Iio.mp hi))
     rw [hformula, cov.isCovariantDerivativeOnUniv.sub
-      ((hv j).mdifferentiableAt one_ne_zero) hsum,
+      (hv j) hsum,
       TauCeti.Manifold.covariantDerivative_sum cov.isCovariantDerivativeOnUniv (Set.mem_univ x)
         (fun i hi ↦ ht i (Finset.mem_Iio.mp hi)), hzero j]
     rw [Finset.sum_eq_zero (fun i hi ↦ hz i (Finset.mem_Iio.mp hi)), sub_zero]
@@ -92,12 +92,12 @@ theorem apply_gramSchmidt_eq_zero (hcov : cov.IsMetricCompatible)
 /-- Normalized Gram–Schmidt preserves a family's being parallel at a point for a metric
 connection. -/
 theorem apply_gramSchmidtNormed_eq_zero (hcov : cov.IsMetricCompatible)
-    (hv : ∀ i, CMDiffAt 1 (T% (v i)) x)
+    (hv : ∀ i, MDiffAt (T% (v i)) x)
     (hli : LinearIndependent ℝ (fun i ↦ v i x)) (hzero : ∀ i, cov (v i) x = 0) (j : ι) :
     cov (fun y ↦ gramSchmidtNormed ℝ (fun i ↦ v i y) j) x = 0 := by
   let w (y : M) := gramSchmidt ℝ (fun i ↦ v i y) j
   have hw : MDiffAt (T% w) x :=
-    (ContMDiffAt.gramSchmidt_bundle hv hli j).mdifferentiableAt one_ne_zero
+    MDifferentiableAt.gramSchmidt_bundle hv hli j
   have hz : cov w x = 0 := hcov.apply_gramSchmidt_eq_zero hv hli hzero j
   have hinner := hcov.hasMFDerivAt_inner_of_eq_zero hw hw hz hz
   have hn : HasMFDerivAt I 𝓘(ℝ) (fun y ↦ ‖w y‖) x 0 := by
