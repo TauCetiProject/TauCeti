@@ -175,6 +175,45 @@ theorem Compatible.cayleyPath_of_one_le (h₀ : ω.Compatible J₀) (h₁ : ω.C
   exact h₀.eq_of_cayley_eq (h₀.compatible_cayleyPath h₁ t).tames h₁.tames
     (by simp [smoothTransition.one_of_one_le ht])
 
+/-- In operator-norm coordinates, the Cayley transform is the same rational formula
+`-(1 + J₀ J)(1 - J₀ J)⁻¹` as its algebraic version. -/
+theorem _root_.TauCeti.AlmostComplexStructure.toContinuousLinearMap_cayley
+    (J₀ J : AlmostComplexStructure V) :
+    LinearMap.toContinuousLinearMap (J₀.cayley J) =
+      -((1 + LinearMap.toContinuousLinearMap J₀.toLinearMap *
+          LinearMap.toContinuousLinearMap J.toLinearMap) *
+        Ring.inverse (1 - LinearMap.toContinuousLinearMap J₀.toLinearMap *
+          LinearMap.toContinuousLinearMap J.toLinearMap)) := by
+  -- In finite dimension, forgetting continuity is a ring isomorphism which detects units.
+  have : IsLocalHom (ContinuousLinearMap.toLinearMapRingHom (R₁ := ℝ) (M₁ := V)) :=
+    ⟨fun _ hf ↦ ContinuousLinearMap.isUnit_iff_isUnit_toLinearMap.2 hf⟩
+  apply ContinuousLinearMap.coe_injective
+  have hinv := map_ringInverse (ContinuousLinearMap.toLinearMapRingHom (R₁ := ℝ) (M₁ := V))
+    (1 - LinearMap.toContinuousLinearMap J₀.toLinearMap *
+      LinearMap.toContinuousLinearMap J.toLinearMap)
+  simp only [ContinuousLinearMap.toLinearMapRingHom_apply, map_sub, map_one, map_mul,
+    LinearMap.coe_toContinuousLinearMap] at hinv
+  simp only [LinearMap.coe_toContinuousLinearMap, ContinuousLinearMap.toLinearMap_neg,
+    ContinuousLinearMap.toLinearMap_mul, ContinuousLinearMap.toLinearMap_add,
+    ContinuousLinearMap.toLinearMap_one, hinv, AlmostComplexStructure.cayley_def]
+
+/-- In operator-norm coordinates, the path at `t` is `J₀ (1 + C)(1 - C)⁻¹` for the
+cutoff-scaled Cayley coordinate `C = smoothTransition t • J₀.cayley J₁`. -/
+theorem Compatible.toContinuousLinearMap_cayleyPath (h₀ : ω.Compatible J₀)
+    (h₁ : ω.Compatible J₁) (t : ℝ) :
+    LinearMap.toContinuousLinearMap (h₀.cayleyPath h₁ t).toLinearMap =
+      LinearMap.toContinuousLinearMap J₀.toLinearMap *
+        (1 + smoothTransition t • LinearMap.toContinuousLinearMap (J₀.cayley J₁)) *
+        Ring.inverse (1 - smoothTransition t • LinearMap.toContinuousLinearMap (J₀.cayley J₁)) := by
+  have hC : (smoothTransition t • LinearMap.toContinuousLinearMap (J₀.cayley J₁)).toLinearMap ∈
+      ω.compatibleCayleyBall J₀ := by
+    simpa only [ContinuousLinearMap.toLinearMap_smul, LinearMap.coe_toContinuousLinearMap] using
+      h₀.smul_cayley_mem_compatibleCayleyBall h₁
+        ⟨smoothTransition.nonneg t, smoothTransition.le_one t⟩
+  rw [← h₀.compatibleCayleyEquiv_symm_apply_toContinuousLinearMap _ hC,
+    h₀.cayleyPath_eq_compatibleCayleyEquiv_symm h₁ t]
+  simp only [ContinuousLinearMap.toLinearMap_smul, LinearMap.coe_toContinuousLinearMap]
+
 /-- The path is smooth on the whole real line, including both transition endpoints. -/
 theorem Compatible.contDiff_cayleyPath (h₀ : ω.Compatible J₀) (h₁ : ω.Compatible J₁)
     (n : ℕ∞) :
