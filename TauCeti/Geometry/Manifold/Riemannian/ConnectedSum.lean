@@ -13,6 +13,8 @@ public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Restriction
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Sum
 public import TauCeti.Geometry.Manifold.Riemannian.Pullback.Descent
 
+import TauCeti.Geometry.Manifold.MFDeriv.Sum
+
 /-!
 # Gluing Riemannian metrics along the neck of a connected sum
 
@@ -275,11 +277,8 @@ private theorem mfderiv_neckInl_apply (ha : 0 ≤ a) (w : neck E a b)
   have hval' : Subtype.val ∘ neckPunctureInl (b := b) h₁ ha = e₁ ∘ Subtype.val := rfl
   refine (TauCeti.Manifold.mfderiv_subtype_val_comp_apply
     ((contMDiff_neckInl h₁ h₂ d₁ ha w).mdifferentiableAt (by simp)) ξ).symm.trans ?_
-  rw [hval, mfderiv_comp w (ContMDiff.inl.mdifferentiableAt one_ne_zero) hP,
-    ContinuousLinearMap.comp_apply, mfderiv_sumInl (p := .inl (neckPunctureInl h₁ ha w))]
-  -- The differential of `Sum.inl` is the identity of `E`.
-  refine (TauCeti.Manifold.mfderiv_subtype_val_comp_apply hP ξ).symm.trans ?_
-  rw [hval']
+  rw [hval, TauCeti.mfderiv_sumInl_comp_apply hP,
+    ← TauCeti.Manifold.mfderiv_subtype_val_comp_apply hP ξ, hval']
   exact TauCeti.Manifold.mfderiv_comp_subtype_val_apply ((d₁ w.1).mdifferentiableAt (by simp)) ξ
 
 omit [IsManifold I ∞ M] [IsManifold I ∞ N] in
@@ -301,12 +300,8 @@ private theorem mfderiv_neckInr_apply (ha : 0 ≤ a) (w : neck E a b)
       (e₂ ∘ inversion 0 1) ∘ Subtype.val := rfl
   refine (TauCeti.Manifold.mfderiv_subtype_val_comp_apply
     ((contMDiff_neckInr h₁ h₂ d₂ ha w).mdifferentiableAt (by simp)) ξ).symm.trans ?_
-  rw [hval, mfderiv_comp w (ContMDiff.inr.mdifferentiableAt one_ne_zero) hP,
-    ContinuousLinearMap.comp_apply,
-    mfderiv_sumInr (M := puncture e₁) (q' := neckPunctureInr h₂ ha w)]
-  -- The differential of `Sum.inr` is the identity of `E`.
-  refine (TauCeti.Manifold.mfderiv_subtype_val_comp_apply hP ξ).symm.trans ?_
-  rw [hval']
+  rw [hval, TauCeti.mfderiv_sumInr_comp_apply hP,
+    ← TauCeti.Manifold.mfderiv_subtype_val_comp_apply hP ξ, hval']
   refine (TauCeti.Manifold.mfderiv_comp_subtype_val_apply (he₂.comp _ hinv) ξ).trans ?_
   rw [mfderiv_comp _ he₂ hinv, mfderiv_eq_fderiv]
   exact ContinuousLinearMap.comp_apply _ _ _
