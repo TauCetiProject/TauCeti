@@ -202,7 +202,7 @@ private theorem jConj_jConj (Z : Matrix (l ⊕ l) (l ⊕ l) R) : jConj (jConj Z)
     neg_neg, ← mul_assoc]
   simpa only [mul_assoc] using J_mul_mul_J_mul_J Z
 
-/-- The map `Z ↦ Z + J Zᵀ J` onto `sp l R`, which is multiplication by two on `sp l R`. -/
+/-- The map `Z ↦ Z + J Zᵀ J` into `sp l R`, which is multiplication by two on `sp l R`. -/
 private noncomputable def symmetrize : Matrix (l ⊕ l) (l ⊕ l) R →ₗ[R] sp l R where
   toFun Z := ⟨Z + jConj Z, by
     rw [mem_sp_iff_J_mul_transpose_mul_J_eq, ← jConj_apply, map_add, jConj_jConj, add_comm]⟩
