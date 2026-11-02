@@ -189,48 +189,38 @@ variable (p) in
 /-- The short exact sequence `0 ⟶ K ⟶ P₁* ⟶ Tr M ⟶ 0` of right modules, where `K` is the image of
 the dual `p* : P₀* ⟶ P₁*`. -/
 noncomputable abbrev AuslanderReitenTranspose.shortComplex : ShortComplex (ModuleCat.{u} Aᵐᵒᵖ) :=
-  ShortComplex.mk (X₁ := ModuleCat.of Aᵐᵒᵖ (LinearMap.range (p.lcomp Aᵐᵒᵖ A)))
-    (X₂ := ModuleCat.of Aᵐᵒᵖ (Module.Dual A P₁))
-    (X₃ := ModuleCat.of Aᵐᵒᵖ (AuslanderReitenTranspose p))
-    (ModuleCat.ofHom (LinearMap.range (p.lcomp Aᵐᵒᵖ A)).subtype)
-    (ModuleCat.ofHom (AuslanderReitenTranspose.mk p))
-    (ModuleCat.hom_ext (LinearMap.ext fun ⟨_, hx⟩ ↦
-      (AuslanderReitenTranspose.mk_eq_zero_iff p _).2 hx))
+  ModuleCat.shortComplexOfCompEqZero (R := Aᵐᵒᵖ) (M := LinearMap.range (p.lcomp Aᵐᵒᵖ A))
+    (N := Module.Dual A P₁) (L := AuslanderReitenTranspose p)
+    (LinearMap.range (p.lcomp Aᵐᵒᵖ A)).subtype (AuslanderReitenTranspose.mk p)
+    (LinearMap.ext fun ⟨_, hx⟩ ↦ (AuslanderReitenTranspose.mk_eq_zero_iff p _).2 hx)
 
 variable (p) in
 /-- The sequence `0 ⟶ K ⟶ P₁* ⟶ Tr M ⟶ 0` is short exact. -/
-theorem AuslanderReitenTranspose.shortComplex_shortExact : (shortComplex p).ShortExact := by
-  refine .mk' (ShortComplex.Exact.moduleCat_of_range_eq_ker _ _ ?_) ?_ ?_
-  · simp
-  · rw [ModuleCat.mono_iff_injective]
-    exact Subtype.val_injective
-  · rw [ModuleCat.epi_iff_surjective]
-    exact AuslanderReitenTranspose.mk_surjective p
+theorem AuslanderReitenTranspose.shortComplex_shortExact : (shortComplex p).ShortExact :=
+  ModuleCat.shortComplex_shortExact (shortComplex p)
+    ((LinearMap.exact_iff (f := (LinearMap.range (p.lcomp Aᵐᵒᵖ A)).subtype) (g := mk p)).2
+      (by rw [ker_mk, Submodule.range_subtype])) Subtype.val_injective
+    (mk_surjective p)
 
 variable (p π) in
 /-- The short exact sequence `0 ⟶ M* ⟶ P₀* ⟶ K ⟶ 0` of right modules dual to a presentation,
 where `K` is the image of the dual `p* : P₀* ⟶ P₁*`. -/
 noncomputable abbrev AuslanderReitenTranspose.dualShortComplex (h : π ∘ₗ p = 0) :
     ShortComplex (ModuleCat.{u} Aᵐᵒᵖ) :=
-  ShortComplex.mk (X₁ := ModuleCat.of Aᵐᵒᵖ (Module.Dual A M))
-    (X₂ := ModuleCat.of Aᵐᵒᵖ (Module.Dual A P₀))
-    (X₃ := ModuleCat.of Aᵐᵒᵖ (LinearMap.range (p.lcomp Aᵐᵒᵖ A)))
-    (ModuleCat.ofHom (π.lcomp Aᵐᵒᵖ A))
-    (ModuleCat.ofHom (p.lcomp Aᵐᵒᵖ A).rangeRestrict)
-    (ModuleCat.hom_ext (LinearMap.ext fun φ ↦ Subtype.ext (LinearMap.ext fun x ↦ by
-      simp [← LinearMap.comp_apply π p, h])))
+  ModuleCat.shortComplexOfCompEqZero (R := Aᵐᵒᵖ) (M := Module.Dual A M) (N := Module.Dual A P₀)
+    (L := LinearMap.range (p.lcomp Aᵐᵒᵖ A)) (π.lcomp Aᵐᵒᵖ A) (p.lcomp Aᵐᵒᵖ A).rangeRestrict
+    (LinearMap.ext fun φ ↦ Subtype.ext (LinearMap.ext fun x ↦ by
+      simp [← LinearMap.comp_apply π p, h]))
 
 /-- The sequence `0 ⟶ M* ⟶ P₀* ⟶ K ⟶ 0` is short exact. -/
 theorem AuslanderReitenTranspose.dualShortComplex_shortExact (hexact : Function.Exact p π)
     (hπ : Function.Surjective π) :
-    (dualShortComplex p π hexact.linearMap_comp_eq_zero).ShortExact := by
-  refine .mk' (ShortComplex.Exact.moduleCat_of_range_eq_ker _ _ ?_) ?_ ?_
-  · rw [ModuleCat.hom_ofHom, ModuleCat.hom_ofHom, LinearMap.ker_rangeRestrict]
-    exact (hexact.lcomp_of_surjective (T := Aᵐᵒᵖ) A hπ).linearMap_ker_eq.symm
-  · rw [ModuleCat.mono_iff_injective]
-    exact LinearMap.lcomp_injective_of_surjective π hπ
-  · rw [ModuleCat.epi_iff_surjective]
-    exact LinearMap.surjective_rangeRestrict _
+    (dualShortComplex p π hexact.linearMap_comp_eq_zero).ShortExact :=
+  ModuleCat.shortComplex_shortExact (dualShortComplex p π hexact.linearMap_comp_eq_zero)
+    ((LinearMap.exact_iff (f := π.lcomp Aᵐᵒᵖ A) (g := (p.lcomp Aᵐᵒᵖ A).rangeRestrict)).2 (by
+      rw [LinearMap.ker_rangeRestrict]
+      exact (hexact.lcomp_of_surjective (T := Aᵐᵒᵖ) A hπ).linearMap_ker_eq))
+    (LinearMap.lcomp_injective_of_surjective π hπ) (LinearMap.surjective_rangeRestrict _)
 
 variable [Module.Finite A P₀] [Module.Projective A P₀] [Module.Finite A P₁]
   [Module.Projective A P₁] [HasExt.{w} (ModuleCat.{u} Aᵐᵒᵖ)]
@@ -247,10 +237,9 @@ through `TauCeti.homCokernelEquivExt`, by a functional `g : K ⟶ A` on the imag
 `ψ ↦ g (ψ ∘ p)`. -/
 noncomputable def AuslanderReitenTranspose.extOneToModule (hexact : Function.Exact p π) :
     Ext.{w} (ModuleCat.of Aᵐᵒᵖ (AuslanderReitenTranspose p)) (ModuleCat.of Aᵐᵒᵖ A) 1 →+ M :=
-  ((Submodule.liftQ _ (AddMonoidHom.mk'
-      (fun g : ModuleCat.of Aᵐᵒᵖ (LinearMap.range (p.lcomp Aᵐᵒᵖ A)) ⟶ ModuleCat.of Aᵐᵒᵖ A ↦
-        rangeDualToModule p π g.hom) fun g g' ↦ by
-        rw [ModuleCat.hom_add, map_add]).toIntLinearMap
+  ((Submodule.liftQ _ ((rangeDualToModule p π).comp (ModuleCat.homAddEquiv
+      (M := ModuleCat.of Aᵐᵒᵖ (LinearMap.range (p.lcomp Aᵐᵒᵖ A)))
+      (N := ModuleCat.of Aᵐᵒᵖ A)).toAddMonoidHom).toIntLinearMap
     (by
       rintro _ ⟨h, rfl⟩
       exact (rangeDualToModule_eq_zero_iff hexact _).2 ⟨h.hom, rfl⟩)) ∘ₗ
@@ -267,7 +256,7 @@ private lemma extOneToModule_homBoundary' (hexact : Function.Exact p π)
   simp only [AuslanderReitenTranspose.extOneToModule, LinearMap.toAddMonoidHom_coe,
     LinearMap.comp_apply, LinearEquiv.coe_coe]
   rw [homCokernelEquivExt_symm_comp_mk₀, Submodule.liftQ_apply, AddMonoidHom.coe_toIntLinearMap,
-    AddMonoidHom.mk'_apply]
+    AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom, ModuleCat.homAddEquiv_apply]
 
 /-- **Computing the first map of the Auslander–Bridger sequence**: the connecting image in
 `Ext¹(Tr M, A)` of a functional `g : K ⟶ A` goes to `π x`, for the element `x : P₀` with
@@ -314,8 +303,8 @@ noncomputable def AuslanderReitenTranspose.doubleDualToExtTwo (hexact : Function
     (by norm_num : 1 + 1 = 2)).comp
     (homBoundary ℤ (AuslanderReitenTranspose.dualShortComplex_shortExact hexact hπ)
       (ModuleCat.of Aᵐᵒᵖ A)).toAddMonoidHom).comp
-    (AddMonoidHom.mk' (fun g ↦ (ModuleCat.ofHom g : ModuleCat.of Aᵐᵒᵖ (Module.Dual A M) ⟶
-      ModuleCat.of Aᵐᵒᵖ A)) fun g g' ↦ ModuleCat.ofHom_add g g')
+    (ModuleCat.homAddEquiv (M := ModuleCat.of Aᵐᵒᵖ (Module.Dual A M))
+      (N := ModuleCat.of Aᵐᵒᵖ A)).symm.toAddMonoidHom
 
 omit [Module.Finite A P₀] [Module.Projective A P₀] [Module.Finite A P₁] [Module.Projective A P₁] in
 /-- **Computing the last map of the Auslander–Bridger sequence**: it sends `g : M**` to the
