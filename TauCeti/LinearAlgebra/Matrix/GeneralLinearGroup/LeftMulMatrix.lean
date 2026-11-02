@@ -16,6 +16,8 @@ public import Mathlib.LinearAlgebra.Matrix.ToLin
 -- `Algebra.norm` and `Algebra.trace` occur in the statements below.
 public import Mathlib.RingTheory.Norm.Defs
 public import Mathlib.RingTheory.Trace.Defs
+-- `Algebra.leftMulMatrix_algebraMap` is used in a proof below.
+import TauCeti.LinearAlgebra.Matrix.ToLin
 
 /-!
 # The unit group of an algebra inside a general linear group
@@ -87,19 +89,12 @@ theorem unitsLeftMulMatrix_apply (x : Sˣ) (i j : ι) :
 theorem unitsLeftMulMatrix_injective : Function.Injective (unitsLeftMulMatrix b) := fun _ _ h =>
   Units.ext (Algebra.leftMulMatrix_injective b (congrArg Units.val h))
 
--- Not a `simp` lemma: `simp` rewrites the left-hand side through `AlgHom.commutes` first, into
--- `algebraMap R (Matrix ι ι R) r`, so this lemma would never fire.
-/-- Left multiplication by an element of the base ring is the corresponding scalar matrix. -/
-theorem _root_.Algebra.leftMulMatrix_algebraMap (r : R) :
-    Algebra.leftMulMatrix b (algebraMap R S r) = Matrix.scalar ι r := by
-  simp [Matrix.algebraMap_eq_diagonal, Matrix.scalar_apply]
-
 /-- A unit of the base ring is sent to the corresponding scalar matrix. -/
 @[simp, grind =]
 theorem unitsLeftMulMatrix_map_algebraMap (r : Rˣ) :
     unitsLeftMulMatrix b (Units.map (algebraMap R S : R →* S) r) =
       Matrix.GeneralLinearGroup.scalar ι r :=
-  Units.ext <| by simp [Matrix.algebraMap_eq_diagonal]
+  Units.ext (Algebra.leftMulMatrix_algebraMap b (r : R))
 
 end Semiring
 

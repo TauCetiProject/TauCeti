@@ -25,6 +25,8 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.ScalarUnipotent
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Card
 import TauCeti.GroupTheory.Index.Basic
 import TauCeti.LinearAlgebra.Matrix.Diagonal
+-- Non-public: `Algebra.leftMulMatrix_algebraMap` is used only inside a proof.
+import TauCeti.LinearAlgebra.Matrix.ToLin
 
 /-!
 # Centralizers of the regular elements of `GL₂`
