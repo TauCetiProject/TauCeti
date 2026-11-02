@@ -8,7 +8,7 @@ module
 public import TauCeti.LinearAlgebra.Orientation.Basis
 public import TauCeti.LinearAlgebra.Prod
 import Mathlib.LinearAlgebra.Dimension.Finrank
-import TauCeti.GroupTheory.Perm.Fin
+import TauCeti.GroupTheory.Perm.Inversion
 import TauCeti.LinearAlgebra.Orientation.Basic
 import TauCeti.LinearAlgebra.Ray
 
@@ -163,7 +163,7 @@ theorem map_prodComm_prod (o : Orientation R E (Fin m)) (p : Orientation R F (Fi
         (prod c.orientation b.orientation hn hm) := by
     rw [prod_basis_orientation, prod_basis_orientation, ← Basis.orientation_map, he,
       Basis.orientation_reindex, Basis.orientation_reindex, reindex_perm, Equiv.Perm.sign_symm,
-      sign_finAddFlip_trans_finCongr]
+      TauCeti.sign_finAddFlip_trans_finCongr]
     simp
   rcases b.orientation_eq_or_eq_neg o with ho | ho <;>
     rcases c.orientation_eq_or_eq_neg p with hp | hp <;> subst o <;> subst p <;>
