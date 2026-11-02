@@ -23,8 +23,8 @@ this file proves the properties of `A⁺` used to make the untilt a complete Tat
   `𝕎 S` is `(p, [ϖ])`-adically, hence `[ϖ]`-adically, complete, and `ξ` is a nonzerodivisor
   modulo every power of `[ϖ]`.
 * If `ϖ` divides `ξ₀`, then `p ≡ -u⁻¹ [ξ₀]` lies in `[ϖ] A⁺`, so the `(p, [ϖ])`-adic and
-  `[ϖ]`-adic topologies on `A⁺` coincide, `A⁺` is also `p`-adically complete, and
-  `A⁺ ⧸ [ϖ] = 𝕎 S ⧸ (p, [ϖ]) = S ⧸ (ϖ)`.
+  `[ϖ]`-adic topologies on `A⁺` coincide and `A⁺ ⧸ [ϖ] = 𝕎 S ⧸ (p, [ϖ]) = S ⧸ (ϖ)`. If `S` is
+  also `ϖ`-adically complete, then `A⁺` is `p`-adically complete.
 * If `ϖ` is a nonzerodivisor, then `[ϖ]` is a nonzerodivisor on `A⁺`
   (`WittVector.IsDistinguished.mk_teichmuller_mem_nonZeroDivisors`), so
   `ξ 𝕎 S [1/[ϖ]] ∩ 𝕎 S = ξ 𝕎 S` and `A⁺` embeds into `𝕎 S [1/[ϖ]] ⧸ (ξ)`.
@@ -116,24 +116,16 @@ theorem isAdicComplete_quotient_natCast (hξ : ξ.IsDistinguished) (hξ₀ : ϖ 
   rw [map_natCast, mem_span_singleton] at hp
   exact .span_singleton_of_dvd hp
 
-/-- The zeroth Witt coordinate followed by reduction modulo `ϖ` has kernel `(p, [ϖ])`. -/
-private theorem ker_constantCoeff_mk :
-    RingHom.ker ((Ideal.Quotient.mk (span {ϖ})).comp (constantCoeff : 𝕎 S →+* S)) =
-      span {(p : 𝕎 S), teichmuller p ϖ} := by
-  ext x
-  simp [RingHom.mem_ker, Ideal.Quotient.eq_zero_iff_mem, mem_span_singleton,
-    mem_span_p_teichmuller_iff]
-
-private theorem span_le_ker_constantCoeff_mk (hξ : ξ.IsDistinguished) (hξ₀ : ϖ ∣ ξ.coeff 0) :
+private theorem span_le_ker_mk_comp_constantCoeff (hξ : ξ.IsDistinguished) (hξ₀ : ϖ ∣ ξ.coeff 0) :
     span {ξ} ≤ RingHom.ker ((Ideal.Quotient.mk (span {ϖ})).comp (constantCoeff : 𝕎 S →+* S)) := by
-  rw [ker_constantCoeff_mk, ← hξ.span_pair_teichmuller_eq hξ₀]
+  rw [ker_mk_comp_constantCoeff, ← hξ.span_pair_teichmuller_eq hξ₀]
   exact span_mono (by simp)
 
 /-- The map `𝕎 S ⧸ (ξ) → S ⧸ (ϖ)` induced by the zeroth Witt coordinate, when `ϖ ∣ ξ₀`. -/
 private noncomputable def quotientMap (hξ : ξ.IsDistinguished) (hξ₀ : ϖ ∣ ξ.coeff 0) :
     𝕎 S ⧸ span {ξ} →+* S ⧸ span {ϖ} :=
   Ideal.Quotient.lift (span {ξ}) ((Ideal.Quotient.mk (span {ϖ})).comp constantCoeff)
-    fun _ ha ↦ RingHom.mem_ker.mp (span_le_ker_constantCoeff_mk hξ hξ₀ ha)
+    fun _ ha ↦ RingHom.mem_ker.mp (span_le_ker_mk_comp_constantCoeff hξ hξ₀ ha)
 
 private theorem quotientMap_mk (hξ : ξ.IsDistinguished) (hξ₀ : ϖ ∣ ξ.coeff 0) (x : 𝕎 S) :
     quotientMap hξ hξ₀ (Ideal.Quotient.mk _ x) = Ideal.Quotient.mk _ (x.coeff 0) :=
@@ -141,8 +133,8 @@ private theorem quotientMap_mk (hξ : ξ.IsDistinguished) (hξ₀ : ϖ ∣ ξ.co
 
 private theorem ker_quotientMap (hξ : ξ.IsDistinguished) (hξ₀ : ϖ ∣ ξ.coeff 0) :
     RingHom.ker (quotientMap hξ hξ₀) = span {Ideal.Quotient.mk (span {ξ}) (teichmuller p ϖ)} := by
-  rw [quotientMap, Ideal.ker_quotient_lift _ (span_le_ker_constantCoeff_mk hξ hξ₀),
-    ker_constantCoeff_mk, hξ.map_span_p_teichmuller hξ₀]
+  rw [quotientMap, Ideal.ker_quotient_lift _ (span_le_ker_mk_comp_constantCoeff hξ hξ₀),
+    ker_mk_comp_constantCoeff, hξ.map_span_p_teichmuller hξ₀]
 
 private theorem quotientMap_surjective (hξ : ξ.IsDistinguished) (hξ₀ : ϖ ∣ ξ.coeff 0) :
     Function.Surjective (quotientMap hξ hξ₀) :=
