@@ -153,8 +153,7 @@ theorem mfderiv_ofWithMetric_mgradient_rescale (u : M → ℝ) (x : M) :
       (f x)⁻¹ • mfderiv I I ofWithMetric (toWithMetric g x)
         (mgradient I (u ∘ ofWithMetric) (toWithMetric g x)) := by
   -- The chain rule pulls back the differential defining each gradient.
-  simpa only [mgradient_def, mvfderiv, mfderiv_comp_ofWithMetric,
-    ContinuousLinearMap.comp_assoc, Function.comp_apply, ofWithMetric_toWithMetric] using
+  simpa only [mgradient_def, mvfderiv_comp_ofWithMetric, ofWithMetric_toWithMetric] using
     (mfderiv_ofWithMetric_rieszDual_rescale (g := g) (hf := hf) (hf_pos := hf_pos)
       x (mvfderiv I u x))
 
@@ -167,8 +166,8 @@ theorem inner_mgradient_rescale (u w : M → ℝ) (x : M) :
       (f x)⁻¹ * inner ℝ (mgradient I (u ∘ ofWithMetric) (toWithMetric g x))
         (mgradient I (w ∘ ofWithMetric) (toWithMetric g x)) := by
   -- Identify the gradient pairing with the inverse-metric pairing of the pulled-back differentials.
-  simpa only [mgradient_def, inner_rieszDual, mvfderiv, mfderiv_comp_ofWithMetric,
-    ContinuousLinearMap.comp_assoc, Function.comp_apply, ofWithMetric_toWithMetric] using
+  simpa only [mgradient_def, inner_rieszDual, mvfderiv_comp_ofWithMetric,
+    ofWithMetric_toWithMetric] using
     (apply_rieszDual_rescale (g := g) (hf := hf) (hf_pos := hf_pos)
       x (mvfderiv I u x) (mvfderiv I w x))
 
