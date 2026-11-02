@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.Current.CentralExtension
 public import TauCeti.Algebra.Lie.UniversalEnveloping.CentralQuotient
+public import TauCeti.Algebra.Lie.Derivation.Basic
 
 /-!
 # Enveloping algebras of residue central extensions at a fixed level
@@ -44,13 +45,18 @@ than to `K`.
 
 * `TauCeti.CurrentAlgebra.envelopingι`: the current generators of `U(ĝ) / (ι K - a)`.
 * `TauCeti.CurrentAlgebra.liftOfCurrents`: the universal property in terms of currents.
+* `TauCeti.CurrentAlgebra.envelopingAction`: the action of the currents on a module over
+  `U(ĝ) / (ι K - a)`.
 * `TauCeti.CurrentAlgebra.levelEnvelopingEquiv`: the level comparison isomorphism.
 
 ## Main results
 
 * `TauCeti.CurrentAlgebra.envelopingι_mul_sub_mul`: the commutator relations.
+* `TauCeti.CurrentAlgebra.envelopingAction_mul_sub_mul`: the commutator relations for the action
+  of the currents on a module.
 * `TauCeti.CurrentAlgebra.adjoin_range_envelopingι`: the currents generate the algebra.
 * `TauCeti.CurrentAlgebra.algHom_ext_envelopingι`: algebra morphisms are determined on currents.
+* `TauCeti.CurrentAlgebra.derivation_ext_envelopingι`: derivations are determined on currents.
 * `TauCeti.CurrentAlgebra.envelopingι_injective`: over a field, the currents embed.
 
 ## References
@@ -191,7 +197,60 @@ theorem algHom_ext_envelopingι {g₁ g₂ : UK →ₐ[R] A}
   obtain ⟨⟨u, z⟩, rfl⟩ := (ofProd c).surjective v
   rw [ι_ofProd, map_add, map_add, h, AlgHom.commutes, AlgHom.commutes]
 
+/-- **A derivation of `U(ĝ) / (ι K - a)` is determined by its values on the current
+generators.** -/
+theorem derivation_ext_envelopingι {D₁ D₂ : derivationLieAlgebra R UK}
+    (h : ∀ u : C, (D₁ : Module.End R UK) (envelopingι Φ hΦ hΦs a u) =
+      (D₂ : Module.End R UK) (envelopingι Φ hΦ hΦs a u)) : D₁ = D₂ := by
+  -- The elements on which `D₁` and `D₂` agree contain the scalars and are closed under sums and
+  -- products, and the current generators generate the algebra.
+  refine derivationLieAlgebra.ext fun x ↦ ?_
+  have hx : x ∈ Algebra.adjoin R (Set.range (envelopingι Φ hΦ hΦs a)) := by
+    rw [adjoin_range_envelopingι]
+    exact Algebra.mem_top
+  induction hx using Algebra.adjoin_induction with
+  | mem x hx =>
+    obtain ⟨u, rfl⟩ := hx
+    exact h u
+  | algebraMap r =>
+    rw [Algebra.algebraMap_eq_smul_one, map_smul, map_smul,
+      derivationLieAlgebra.apply_one_eq_zero, derivationLieAlgebra.apply_one_eq_zero]
+  | add x y _ _ hx hy => rw [map_add, map_add, hx, hy]
+  | mul x y _ _ hx hy => rw [derivationLieAlgebra.leibniz, derivationLieAlgebra.leibniz, hx, hy]
+
 end Generators
+
+section Action
+
+variable (Φ : LinearMap.BilinForm R L) (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (a : R)
+  {M : Type*} [AddCommGroup M] [Module R M]
+  [Module (CentralQuotient R (centralElement Φ hΦ hΦs) a) M]
+  [IsScalarTower R (CentralQuotient R (centralElement Φ hΦ hΦs) a) M]
+
+/-- The action of the currents on a module over `U(ĝ) / (ι K - a)`: `u` acts by its current
+generator. -/
+def envelopingAction : C →ₗ[R] Module.End R M :=
+  (Algebra.lsmul R R M).toLinearMap ∘ₗ envelopingι Φ hΦ hΦs a
+
+/-- A current acts by its current generator. -/
+@[simp]
+theorem envelopingAction_apply (u : C) (m : M) :
+    envelopingAction (M := M) Φ hΦ hΦs a u m = envelopingι Φ hΦ hΦs a u • m :=
+  (rfl)
+
+/-- The action of the currents on a module over `U(ĝ) / (ι K - a)` satisfies the commutator
+relations `[u, v] = ⁅u, v⁆ + a Res(u dv)`. -/
+theorem envelopingAction_mul_sub_mul (u v : C) :
+    envelopingAction (M := M) Φ hΦ hΦs a u * envelopingAction Φ hΦ hΦs a v -
+        envelopingAction Φ hΦ hΦs a v * envelopingAction Φ hΦ hΦs a u =
+      envelopingAction Φ hΦ hΦs a ⁅u, v⁆ +
+        algebraMap R (Module.End R M) (a * residuePairing R L Φ u v) := by
+  have h := congrArg (Algebra.lsmul R R M) (envelopingι_mul_sub_mul Φ hΦ hΦs a u v)
+  simp only [map_sub, map_mul, map_add, AlgHom.commutes] at h
+  simpa only [envelopingAction, LinearMap.coe_comp, Function.comp_apply,
+    AlgHom.toLinearMap_apply, map_mul] using h
+
+end Action
 
 section Field
 
