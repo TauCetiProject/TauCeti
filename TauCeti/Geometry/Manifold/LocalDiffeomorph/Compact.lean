@@ -10,8 +10,7 @@ public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 import TauCeti.AlgebraicTopology.Sphere.SimplyConnected
 import TauCeti.Geometry.Manifold.Topology
-import TauCeti.Topology.Covering.Clopen
-import TauCeti.Topology.Homotopy.Covering
+import TauCeti.Topology.Covering.Compact
 
 /-!
 # Local diffeomorphisms out of closed manifolds
@@ -19,12 +18,9 @@ import TauCeti.Topology.Homotopy.Covering
 A local diffeomorphism `f : M → N` from a compact connected Hausdorff manifold, real or complex, to
 a simply connected Hausdorff manifold is bijective, so by Mathlib's
 `IsLocalDiffeomorph.diffeomorphOfBijective` it is a diffeomorphism, whose forward map is `f` by
-`TauCeti.coe_diffeomorphOfBijective`. The topological input is that a local homeomorphism from a
-compact Hausdorff space to a Hausdorff space is a covering map
-(`isLocalHomeomorph_iff_isCoveringMap`), that a covering map from a nonempty space onto a connected
-space is surjective (`IsCoveringMap.surjective`), and that a covering map from a path-connected
-space onto a simply connected space is injective (`IsCoveringMap.injective`). A connected manifold
-is path-connected because its model space is locally path-connected.
+`TauCeti.coe_diffeomorphOfBijective`. This is the topological statement
+`IsLocalHomeomorph.bijective_of_compactSpace`, which applies because a manifold modelled on a real
+normed space is locally path-connected.
 
 The unit sphere `Sⁿ` is simply connected for `n ≥ 2`, so every local diffeomorphism from a compact
 connected manifold to `Sⁿ`, `n ≥ 2`, is a diffeomorphism. This is the step of the
@@ -37,7 +33,7 @@ beforehand. Neither the simple connectivity of `M` nor any conformal structure i
 
 * `IsLocalDiffeomorph.bijective_of_compactSpace`: a local diffeomorphism from a compact connected
   manifold to a simply connected Hausdorff manifold is bijective.
-* `IsLocalDiffeomorph.bijective_of_compactSpace_of_two_le`: a local diffeomorphism from a compact
+* `IsLocalDiffeomorph.bijective_of_compactSpace_sphere`: a local diffeomorphism from a compact
   connected manifold to the unit sphere `Sⁿ`, `n ≥ 2`, is bijective.
 
 ## References
@@ -72,14 +68,12 @@ theorem _root_.IsLocalDiffeomorph.bijective_of_compactSpace {I : ModelWithCorner
     {f : M → N} (hf : IsLocalDiffeomorph I J k f) : Bijective f := by
   have := I.locallyPathConnectedSpace
   have := ChartedSpace.locallyPathConnectedSpace (H := H) (M := M)
-  have := pathConnectedSpace_iff_connectedSpace.mpr ‹ConnectedSpace M›
-  have hcov : IsCoveringMap f := isLocalHomeomorph_iff_isCoveringMap.mp hf.isLocalHomeomorph
-  exact ⟨hcov.injective, hcov.surjective⟩
+  exact hf.isLocalHomeomorph.bijective_of_compactSpace
 
 /-- **A local diffeomorphism from a closed connected manifold to the unit sphere `Sⁿ`, `n ≥ 2`, is
 bijective**, hence a diffeomorphism by `IsLocalDiffeomorph.diffeomorphOfBijective`. The sphere
 carries Mathlib's stereographic atlas, and the source is compact, connected and Hausdorff. -/
-theorem _root_.IsLocalDiffeomorph.bijective_of_compactSpace_of_two_le {I : ModelWithCorners ℝ E H}
+theorem _root_.IsLocalDiffeomorph.bijective_of_compactSpace_sphere {I : ModelWithCorners ℝ E H}
     {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] {n : ℕ} [Fact (finrank ℝ F = n + 1)]
     (hn : 2 ≤ n) {f : M → sphere (0 : F) 1} (hf : IsLocalDiffeomorph I (𝓡 n) k f) :
     Bijective f :=
