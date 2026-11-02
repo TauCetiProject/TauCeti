@@ -283,15 +283,15 @@ continuously on the inner product `h`, among the bilinear forms with strictly po
 operator. -/
 theorem continuousOn_metricChangeTransport :
     ContinuousOn (fun h : E →L[ℝ] E →L[ℝ] ℝ ↦ h.metricChangeTransport)
-      {h | IsStrictlyPositive h♯} :=
-  -- The Riesz operator `h♯` is the composite of `h` with the inverse Riesz isomorphism.
-  (CFC.continuousOn_rpow _).comp (continuous_const.clm_comp continuous_id).continuousOn
+      {h | IsStrictlyPositive h♯} := by
+  simp_rw [metricChangeTransport_def]
+  exact (CFC.continuousOn_rpow _).comp continuous_continuousLinearMapOfBilin.continuousOn
     fun _ hH ↦ hH
 
 /-- The inverse transport `CFC.sqrt h♯` depends continuously on the bilinear form `h`, among those
 with positive Riesz operator. -/
 theorem continuousOn_sqrt_continuousLinearMapOfBilin :
     ContinuousOn (fun h : E →L[ℝ] E →L[ℝ] ℝ ↦ CFC.sqrt h♯) {h | 0 ≤ h♯} :=
-  CFC.continuousOn_sqrt.comp (continuous_const.clm_comp continuous_id).continuousOn fun _ hH ↦ hH
+  CFC.continuousOn_sqrt.comp continuous_continuousLinearMapOfBilin.continuousOn fun _ hH ↦ hH
 
 end ContinuousLinearMap
