@@ -9,14 +9,13 @@ public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Adjoint
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Compact
 
 /-!
-# The ideal and adjoint properties of compact operators
+# The adjoint property of compact operators
 
 The compact operators on a normed space form a two-sided ideal of the algebra of bounded
-operators: a compact operator stays compact when multiplied on either side by a bounded
-operator. Between Hilbert spaces they are also closed under adjoints, so on a Hilbert space they
-form a two-sided `*`-ideal. These are the algebraic rules used to manipulate the compactness
-conditions in the definition of a Fredholm module, such as compactness of commutators `[F, a]`
-and of the defects `(F² - 1) a`.
+operators (`IsCompactOperator.mul_left`, `IsCompactOperator.mul_right`). Between Hilbert spaces
+they are also closed under adjoints, so on a Hilbert space they form a two-sided `*`-ideal. These
+are the algebraic rules used to manipulate the compactness conditions in the definition of a
+Fredholm module, such as compactness of commutators `[F, a]` and of the defects `(F² - 1) a`.
 
 The adjoint statement uses approximation numbers: an operator into a Hilbert space is compact
 exactly when its approximation numbers tend to zero, and an operator and its adjoint have the same
@@ -24,8 +23,6 @@ approximation numbers.
 
 ## Main declarations
 
-* `IsCompactOperator.mul_left`, `IsCompactOperator.mul_right`: products of a compact operator
-  with a bounded operator, on either side, are compact.
 * `IsCompactOperator.adjoint`: the Hilbert-space adjoint of a compact operator is compact.
 * `ContinuousLinearMap.isCompactOperator_adjoint_iff`: `T†` is compact exactly when `T` is.
 * `IsCompactOperator.star`: on a Hilbert space, `star T` is compact when `T` is.
@@ -38,24 +35,6 @@ public section
 open scoped InnerProduct
 
 namespace IsCompactOperator
-
-section Mul
-
-variable {R : Type*} [Semiring R] {M : Type*} [TopologicalSpace M] [AddCommMonoid M] [Module R M]
-
-/-- A bounded operator times a compact operator is compact. -/
-theorem mul_left {T : M →L[R] M} (hT : IsCompactOperator T) (S : M →L[R] M) :
-    IsCompactOperator (S * T) := by
-  rw [ContinuousLinearMap.mul_def, ContinuousLinearMap.coe_comp]
-  exact hT.clm_comp S
-
-/-- A compact operator times a bounded operator is compact. -/
-theorem mul_right {T : M →L[R] M} (hT : IsCompactOperator T) (S : M →L[R] M) :
-    IsCompactOperator (T * S) := by
-  rw [ContinuousLinearMap.mul_def, ContinuousLinearMap.coe_comp]
-  exact hT.comp_clm S
-
-end Mul
 
 section Adjoint
 

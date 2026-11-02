@@ -13,12 +13,15 @@ public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
 
 This file records sequential consequences of compactness for bounded sequences in seminormed
 spaces. These give the subsequence and separation arguments used in Riesz theory for compact
-perturbations of the identity. It also shows that a compact operator descends to a compact
-operator on the quotient by a submodule of its kernel, and characterizes compact operators into
-complete spaces by total boundedness of the image of a closed ball.
+perturbations of the identity. It also shows that the compact operators form a two-sided ideal of
+the algebra of bounded operators, that a compact operator descends to a compact operator on the
+quotient by a submodule of its kernel, and characterizes compact operators into complete spaces by
+total boundedness of the image of a closed ball.
 
 ## Main declarations
 
+* `IsCompactOperator.mul_left`, `IsCompactOperator.mul_right`: products of a compact operator
+  with a bounded operator, on either side, are compact.
 * `IsCompactOperator.exists_subseq_tendsto`: a compact operator sends a bounded sequence
   to a sequence with a convergent subsequence.
 * `IsCompactOperator.exists_dist_lt_of_norm_le`: a compact operator cannot keep the
@@ -37,6 +40,24 @@ namespace IsCompactOperator
 
 open Filter
 open scoped Topology
+
+section Mul
+
+variable {R : Type*} [Semiring R] {M : Type*} [TopologicalSpace M] [AddCommMonoid M] [Module R M]
+
+/-- A bounded operator times a compact operator is compact. -/
+theorem mul_left {T : M →L[R] M} (hT : IsCompactOperator T) (S : M →L[R] M) :
+    IsCompactOperator (S * T) := by
+  rw [ContinuousLinearMap.mul_def, ContinuousLinearMap.coe_comp]
+  exact hT.clm_comp S
+
+/-- A compact operator times a bounded operator is compact. -/
+theorem mul_right {T : M →L[R] M} (hT : IsCompactOperator T) (S : M →L[R] M) :
+    IsCompactOperator (T * S) := by
+  rw [ContinuousLinearMap.mul_def, ContinuousLinearMap.coe_comp]
+  exact hT.comp_clm S
+
+end Mul
 
 variable {𝕜 X Y : Type*} [NontriviallyNormedField 𝕜]
 variable [SeminormedAddCommGroup X] [NormedSpace 𝕜 X]
