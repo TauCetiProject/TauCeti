@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Normed.Module.RCLike.Basic
 public import Mathlib.Analysis.Normed.Operator.Basic
-import Mathlib.Topology.Algebra.InfiniteSum.Module
 
 /-!
 # Basic facts about bounded operators
@@ -22,9 +21,6 @@ uniformly bounded, their values at the limiting argument converge, and the argum
 In particular, it supplies the common continuity step for
 `StronglyContinuousSemigroup.tendsto_realOperator_apply` and
 `StronglyContinuousGroup.tendsto_apply`.
-
-A series of rank-one operators `x ↦ f i x • y i` converging in operator norm to `T` also converges
-pointwise to `T x` (`ContinuousLinearMap.hasSum_apply_of_hasSum_smulRight`).
 
 Finally, an operator bounded below is injective
 (`ContinuousLinearMap.injective_of_forall_norm_le`), an invertible operator `A` on a normed space
@@ -100,13 +96,6 @@ theorem tendsto_apply_of_eventually_norm_le {ι : Type*} {l : Filter ι}
       exact (T i).le_of_opNorm_le hi _
     · simpa using (tendsto_iff_norm_sub_tendsto_zero.mp hg).const_mul C
   simpa only [map_sub, sub_add_cancel, zero_add] using hmove.add hz
-
-/-- A series of rank-one operators `x ↦ f i x • y i` converging in operator norm to `T` converges
-pointwise to `T x`. -/
-theorem hasSum_apply_of_hasSum_smulRight {ι : Type*} {T : X →L[𝕜] Y} {f : ι → StrongDual 𝕜 X}
-    {y : ι → Y} (hT : HasSum (fun i ↦ (f i).smulRight (y i)) T) (x : X) :
-    HasSum (fun i ↦ f i x • y i) (T x) := by
-  simpa only [apply_apply, smulRight_apply] using (apply 𝕜 Y x).hasSum hT
 
 section Inverse
 

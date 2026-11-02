@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Normed.Module.TensorProduct.Series
 public import TauCeti.Analysis.OperatorIdeal.Carrier
 public import Mathlib.Analysis.Normed.Group.Quotient
+import Mathlib.Topology.Algebra.InfiniteSum.ContinuousEval
 import Mathlib.Topology.Algebra.InfiniteSum.Module
 import TauCeti.Analysis.Normed.Group.InfiniteSum
 import TauCeti.Analysis.Normed.Operator.Basic
@@ -371,7 +372,7 @@ theorem nuclearGauge_eq_iInf_tsum (T : E →L[𝕜] F) :
   obtain ⟨f, y, hT, -, hlt⟩ := exists_hasSum_smulRight_of_nuclearGauge_lt hc
   calc
     _ ≤ ∑' n, ‖f n‖ₑ * ‖y n‖ₑ := iInf₂_le_of_le f y <|
-      iInf_le_of_le (ContinuousLinearMap.hasSum_apply_of_hasSum_smulRight hT) le_rfl
+      iInf_le_of_le (hasSum_apply hT) le_rfl
     _ < c := hlt
 
 /-- An operator `T` is nuclear iff it has a series representation `T x = ∑ n, f n x • y n` with
@@ -382,7 +383,7 @@ theorem mem_nuclearOperators_iff_exists_hasSum {T : E →L[𝕜] F} :
   refine ⟨fun hT ↦ ?_, fun ⟨f, y, hfy, hT⟩ ↦ ?_⟩
   · obtain ⟨f, y, hT, hfy, -⟩ :=
       exists_hasSum_smulRight_of_nuclearGauge_lt (nuclearGauge_lt_top_iff.2 hT)
-    exact ⟨f, y, hfy, ContinuousLinearMap.hasSum_apply_of_hasSum_smulRight hT⟩
+    exact ⟨f, y, hfy, hasSum_apply hT⟩
   · obtain ⟨u, hu, -⟩ := exists_toContinuousLinearMap_eq_of_hasSum hfy hT
     exact ⟨u, hu⟩
 
