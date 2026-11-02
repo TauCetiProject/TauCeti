@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Order.Interval.Set.UnorderedInterval
 public import TauCeti.KnotTheory.Grid.Diagram.Basic
+public import TauCeti.Order.Interval.Set.Fin
 
 /-!
 # The crossings of a grid diagram
@@ -51,12 +51,6 @@ runs upwards and the horizontal one to the left, or downwards and to the right
 -/
 
 public section
-
-/-- A point of `Fin n` lies strictly between `a` and `b` exactly when its value lies strictly
-between theirs. -/
-theorem Fin.mem_uIoo_iff_val {n : ℕ} {a b x : Fin n} :
-    x ∈ Set.uIoo a b ↔ min (a : ℕ) b < x ∧ (x : ℕ) < max (a : ℕ) b := by
-  rw [← Set.Ioo_min_max, Set.mem_Ioo, Fin.lt_def, Fin.lt_def, Fin.val_min, Fin.val_max]
 
 namespace TauCeti
 

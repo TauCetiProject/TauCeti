@@ -230,12 +230,6 @@ theorem IsKnot.isCycleOn_componentPerm {G : GridDiagram n} (hG : G.IsKnot) :
   have h := (G.isKnot_iff_componentPerm_isCycle.mp hG).isCycleOn
   rwa [Set.eq_univ_of_forall (s := {c | G.componentPerm c ≠ c}) G.componentPerm_apply_ne_self] at h
 
-/-- The component permutation of a knot grid is a single cycle on `Finset.univ`, the form taken by
-the `Finset` lemmas on `Equiv.Perm.IsCycleOn`. -/
-theorem IsKnot.isCycleOn_componentPerm_finsetUniv {G : GridDiagram n} (hG : G.IsKnot) :
-    G.componentPerm.IsCycleOn ((Finset.univ : Finset (Fin n)) : Set (Fin n)) := by
-  simpa using hG.isCycleOn_componentPerm
-
 /-- The **traversal** of a knot grid from the column `c₀`: step `t` reaches the column
 `componentPerm ^ t c₀`, after `t` horizontal and `t` vertical segments. The component permutation
 of a knot is a single cycle through all `n` columns, so the first `n` steps reach every column
@@ -244,8 +238,8 @@ noncomputable def IsKnot.traversal {G : GridDiagram n} (hG : G.IsKnot) (c₀ : F
     Fin n ≃ Fin n :=
   Equiv.ofBijective (fun t ↦ (G.componentPerm ^ (t : ℕ)) c₀) <|
     Finite.injective_iff_bijective.1 fun s t h ↦ Fin.ext <|
-      hG.isCycleOn_componentPerm_finsetUniv.injOn_pow_apply (Finset.mem_univ c₀)
-        (by simp) (by simp) h
+      (Finset.coe_univ (α := Fin n) ▸ hG.isCycleOn_componentPerm).injOn_pow_apply
+        (Finset.mem_univ c₀) (by simp) (by simp) h
 
 @[simp]
 theorem IsKnot.traversal_apply {G : GridDiagram n} (hG : G.IsKnot) (c₀ t : Fin n) :
@@ -271,7 +265,8 @@ theorem IsKnot.val_traversal_symm_componentPerm {G : GridDiagram n} (hG : G.IsKn
   have hlt : (t : ℕ) + 1 < n := by
     refine (show (t : ℕ) + 1 ≤ n from t.isLt).lt_of_ne fun h ↦ hc ?_
     rw [← hstep, h]
-    simpa using hG.isCycleOn_componentPerm_finsetUniv.pow_card_apply (Finset.mem_univ c₀)
+    have hcyc := Finset.coe_univ (α := Fin n) ▸ hG.isCycleOn_componentPerm
+    simpa using hcyc.pow_card_apply (Finset.mem_univ c₀)
   rw [(Equiv.symm_apply_eq _).2 (show G.componentPerm c = hG.traversal c₀ ⟨t + 1, hlt⟩ by
     simp [hstep])]
 
