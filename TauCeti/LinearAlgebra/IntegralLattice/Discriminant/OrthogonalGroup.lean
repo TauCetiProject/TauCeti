@@ -198,6 +198,16 @@ theorem discriminantGroupHom_conjMulEquiv (e : Isometry L M) (g : Isometry L L) 
   rw [discriminantGroupHom_apply, discriminantGroupHom_apply, h, discriminantGroupEquiv_trans,
     discriminantGroupEquiv_trans, discriminantGroupEquiv_symm]
 
+/-- Pointwise form of `discriminantGroupHom_conjMulEquiv`: the conjugate of `g` by `e : L ≅ M`
+acts on the image under `e` of a discriminant class as `e` applied to the action of `g`. -/
+@[simp]
+theorem discriminantGroupEquiv_conjMulEquiv_apply (e : Isometry L M) (g : Isometry L L)
+    (z : L.DiscriminantGroup) :
+    (e.conjMulEquiv g).discriminantGroupEquiv (e.discriminantGroupEquiv z) =
+      e.discriminantGroupEquiv (g.discriminantGroupEquiv z) := by
+  rw [← discriminantGroupHom_apply, discriminantGroupHom_conjMulEquiv, LinearEquiv.trans_apply,
+    LinearEquiv.trans_apply, LinearEquiv.symm_apply_apply, discriminantGroupHom_apply]
+
 /-- Conjugation by an isometry preserves membership in the discriminant kernel. -/
 @[simp]
 theorem conjMulEquiv_mem_discriminantKernel_iff (e : Isometry L M) {g : Isometry L L} :

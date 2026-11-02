@@ -16,7 +16,7 @@ Dilating the variable of a function on a finite-dimensional real normed space `E
 `n` is the dimension of `E`. Here `n / p` stands for `n / p.toReal`, which is `0` at `p = 0` and
 `p = ∞` by Lean's conventions `ENNReal.toReal ∞ = 0` and `x / 0 = 0`, so at those two exponents
 the factor is `1`. This is the `eLpNorm` counterpart of the lower Lebesgue integral law
-`TauCeti.lintegral_comp_inv_smul`.
+`MeasureTheory.Measure.lintegral_comp_inv_smul`.
 
 More generally, composing with a linear automorphism `e` multiplies the `Lᵖ` seminorm by
 `|det e|^(-1 / p)`, and the `Lᵖ` seminorm on a preimage `e ⁻¹' s` by the same factor relative to
