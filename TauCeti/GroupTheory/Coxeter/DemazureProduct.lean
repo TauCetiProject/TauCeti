@@ -51,6 +51,8 @@ Matsumoto's theorem `TauCeti.matsumoto` from reduced words to all words.
 * `CoxeterSystem.bruhatLE_demazureProd_iff_exists_sublist_wordProd_eq`: **the subword
   characterization**, `u ≤ δ(ω)` exactly when some subword of `ω` spells `u`.
 * `CoxeterSystem.demazureProd_reverse`: `δ(ω.reverse) = δ(ω)⁻¹`.
+* `CoxeterSystem.mul_prod_map_eq_of_isLeftDescent`: a 0-Hecke generator `f i` is absorbed into
+  the product along a reduced word whose element has `sᵢ` as a left descent.
 * `CoxeterSystem.prod_map_eq_of_wordProd_eq_demazureProd`: **the universal property of the
   0-Hecke monoid**.
 
@@ -141,8 +143,7 @@ theorem exists_sublist_isReduced_wordProd_eq_demazureProd (ω : List B) :
     · exact ⟨σ, hσω.cons i, hσ, by rw [cs.demazureProd_cons_of_isLeftDescent h, hσprod]⟩
     · refine ⟨i :: σ, hσω.cons_cons i, ?_, by
         rw [cs.demazureProd_cons_of_not_isLeftDescent h, cs.wordProd_cons, hσprod]⟩
-      rw [IsReduced, cs.wordProd_cons, hσprod, List.length_cons, ← hσ.eq, hσprod]
-      exact cs.not_isLeftDescent_iff.mp h
+      exact cs.isReduced_cons_of_not_isLeftDescent h hσ hσprod
 
 /-- The Demazure product of a word is no longer than the word. -/
 theorem length_demazureProd_le (ω : List B) : ℓ (cs.demazureProd ω) ≤ ω.length := by
@@ -211,6 +212,7 @@ theorem bruhatLE_demazureProd_iff_exists_sublist_wordProd_eq {u : W} {ω : List 
     exact (cs.bruhatLE_wordProd_demazureProd σ).trans (cs.bruhatLE_demazureProd_of_sublist hσω)
 
 /-- **The Demazure product of the reversed word is the inverse.** -/
+@[simp]
 theorem demazureProd_reverse (ω : List B) :
     cs.demazureProd ω.reverse = (cs.demazureProd ω)⁻¹ := by
   -- Both sides have the same Bruhat lower set, the inverses of the subword products of `ω`.
@@ -247,6 +249,21 @@ theorem demazureProd_append_singleton_of_not_isRightDescent {i : B} {ω : List B
 
 /-! ### The universal property of the 0-Hecke monoid -/
 
+/-- **A 0-Hecke generator absorbs into a product along a word it can start.** Let `f` assign to
+each simple reflection an element of a monoid, satisfying the braid relations, and let
+`f i * f i = f i`. If `ω` is a reduced word and `sᵢ` is a left descent of `π ω`, then
+`f i * f(ω) = f(ω)`: some reduced word for `π ω` starts with `i`. -/
+theorem mul_prod_map_eq_of_isLeftDescent {G : Type*} [Monoid G] (f : B → G)
+    (hbraid : ∀ i j, ((braidWord M i j).map f).prod = ((braidWord M j i).map f).prod)
+    {i : B} (hidem : f i * f i = f i) {ω : List B} (hω : cs.IsReduced ω)
+    (hi : cs.IsLeftDescent (π ω) i) : f i * (ω.map f).prod = (ω.map f).prod := by
+  obtain ⟨σ, hσ, hσw⟩ := cs.exists_isReduced (cs.simple i * π ω)
+  have hred := cs.isReduced_cons_of_isLeftDescent hi hσ hσw.symm
+  have hprod : π (i :: σ) = π ω := by
+    rw [cs.wordProd_cons, ← hσw, cs.simple_mul_simple_cancel_left]
+  rw [← TauCeti.matsumoto cs f hbraid hred hω hprod, List.map_cons, List.prod_cons, ← mul_assoc,
+    hidem]
+
 /-- **The universal property of the 0-Hecke monoid.** Let `f` assign to each simple reflection
 an element of a monoid, satisfying the braid relations and `f i * f i = f i`. Then the product of
 `f` along an arbitrary word `ω` equals its product along any reduced word `σ` for the Demazure
@@ -264,20 +281,13 @@ theorem prod_map_eq_of_wordProd_eq_demazureProd {G : Type*} [Monoid G] (f : B �
     obtain ⟨τ, hτ, hτprod⟩ := cs.exists_isReduced (cs.demazureProd ω)
     rw [List.map_cons, List.prod_cons, ih hτ hτprod.symm]
     by_cases hd : cs.IsLeftDescent (cs.demazureProd ω) i
-    · -- `δ(ω)` has a reduced word `i :: ρ`, and `f i` is absorbed by its first letter.
+    · -- `f i` is absorbed into the product along the reduced word `τ` for `δ(ω) = δ(i ω)`.
       rw [cs.demazureProd_cons_of_isLeftDescent hd] at h
-      obtain ⟨ρ, hρ, hρprod⟩ := cs.exists_isReduced (cs.simple i * cs.demazureProd ω)
-      have hiρ := cs.isReduced_cons_of_isLeftDescent hd hρ hρprod.symm
-      have hiρprod : π (i :: ρ) = π τ := by
-        rw [cs.wordProd_cons, ← hρprod, cs.simple_mul_simple_cancel_left, hτprod]
-      rw [TauCeti.matsumoto cs f hbraid hτ hiρ hiρprod.symm, List.map_cons, List.prod_cons,
-        ← mul_assoc, hidem, ← List.prod_cons, ← List.map_cons,
-        TauCeti.matsumoto cs f hbraid hiρ hσ (by rw [hiρprod, ← hτprod, h])]
+      rw [cs.mul_prod_map_eq_of_isLeftDescent f hbraid (hidem i) hτ (hτprod ▸ hd),
+        TauCeti.matsumoto cs f hbraid hτ hσ (by rw [h, hτprod])]
     · -- `i :: τ` is a reduced word for `sᵢ δ(ω) = δ(i ω)`.
       rw [cs.demazureProd_cons_of_not_isLeftDescent hd] at h
-      have hiτ : cs.IsReduced (i :: τ) := by
-        rw [IsReduced, cs.wordProd_cons, List.length_cons, ← hτ.eq, ← hτprod]
-        exact cs.not_isLeftDescent_iff.mp hd
+      have hiτ := cs.isReduced_cons_of_not_isLeftDescent hd hτ hτprod.symm
       rw [← List.prod_cons, ← List.map_cons,
         TauCeti.matsumoto cs f hbraid hiτ hσ (by rw [h, cs.wordProd_cons, hτprod])]
 
