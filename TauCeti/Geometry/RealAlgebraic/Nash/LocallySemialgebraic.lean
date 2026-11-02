@@ -260,14 +260,11 @@ coordinates are Nash germs at every point of `V`, and which maps `V` into `U`, i
 combination of Nash sign conditions on `V`. -/
 theorem preimage [Fintype τ] {U t : Set (τ → ℝ)} (ht : IsNashBooleanCombination U t)
     {g : (σ → ℝ) → (τ → ℝ)} (hg : ∀ y ∈ V, ∀ i, IsNashAt (fun z ↦ g z i) y)
-    (hgVU : MapsTo g V U) : IsNashBooleanCombination V (g ⁻¹' t) := by
-  refine setOf_isNashBooleanCombination_subset
-    (ℬ := {t | IsNashBooleanCombination V (g ⁻¹' t)}) ⟨?_, fun s hs ↦ ?_, fun s s' hs hs' ↦ ?_⟩
-    (fun f hf ↦ isNashBooleanCombination_setOf_eq_zero fun y hy ↦ (hf _ (hgVU hy)).comp (hg y hy))
-    (fun f hf ↦ isNashBooleanCombination_setOf_pos fun y hy ↦ (hf _ (hgVU hy)).comp (hg y hy)) ht
-  · exact isNashBooleanCombination_empty V
-  · exact IsNashBooleanCombination.compl hs
-  · exact IsNashBooleanCombination.union hs hs'
+    (hgVU : MapsTo g V U) : IsNashBooleanCombination V (g ⁻¹' t) :=
+  setOf_isNashBooleanCombination_subset
+    ((isSetAlgebra_setOf_isNashBooleanCombination V).preimage g)
+    (fun _ hf ↦ isNashBooleanCombination_setOf_eq_zero fun y hy ↦ (hf _ (hgVU hy)).comp (hg y hy))
+    (fun _ hf ↦ isNashBooleanCombination_setOf_pos fun y hy ↦ (hf _ (hgVU hy)).comp (hg y hy)) ht
 
 /-- A Boolean combination of Nash sign conditions on `U` is a Boolean combination of analytic sign
 conditions on `U`. -/
