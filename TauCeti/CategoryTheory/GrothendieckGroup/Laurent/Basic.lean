@@ -283,6 +283,12 @@ private lemma liftAux_of (f : ExactK0 E.toExactStructure →+ N)
     liftAux f hf (of E X) = f (ExactK0.of X) :=
   (rfl)
 
+private lemma liftAux_ofExactK0 (f : ExactK0 E.toExactStructure →+ N)
+    (hf : ∀ x, f (E.shiftEquiv x) = (T 1 : LaurentPolynomial ℤ) • f x)
+    (x : ExactK0 E.toExactStructure) :
+    liftAux f hf (ofExactK0 E x) = f x :=
+  congrArg f ((ofExactK0 E).symm_apply_apply x)
+
 variable (E) in
 /-- **The homomorphism out of graded `K₀` induced by a shift-compatible invariant**, as a map of
 `ℤ[q,q⁻¹]`-modules.  The invariant is compared against multiplication by `q` on the target. -/
@@ -346,9 +352,7 @@ functor is the map induced by the underlying conflation-exact functor. -/
 @[simp]
 theorem map_ofExactK0 (h : GradedConflationExact E E' F) (x : ExactK0 E.toExactStructure) :
     map h (ofExactK0 E x) = ofExactK0 E' (ExactK0.map F h.isConflationExact x) := by
-  simp only [map, liftAux, AddEquiv.toAddMonoidHom_eq_coe, AddMonoidHom.coe_comp,
-    AddMonoidHom.coe_ofClass, Function.comp_apply, LinearMap.coe_mk, AddHom.coe_mk,
-    AddEquiv.symm_apply_apply]
+  rw [map, liftAux_ofExactK0, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom]
 
 /-- An essentially surjective graded conflation-exact functor induces a surjection of graded
 Grothendieck groups. -/
