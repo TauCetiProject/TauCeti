@@ -73,6 +73,7 @@ theorem max_natAbs_eq_of_add_eq_one {p : ℕ} [hp : Fact p.Prime] {x y : ℚ} (h
   have h₁ := eq_zero_of_add_eq_one_of_pos (p := p) hxy
   have h₂ := eq_zero_of_add_eq_one_of_pos (p := p) ((add_comm y x).trans hxy)
   -- a prime cannot divide both the numerator and the denominator of `x`, or of `y`
+  have hx := Rat.num_or_den_zero_padicVal x hp.out
   have hy := Rat.num_or_den_zero_padicVal y hp.out
   simp only [padicValRat_def, hden, Nat.padicValNat_def] at h₁ h₂ hx hy ⊢
   omega
