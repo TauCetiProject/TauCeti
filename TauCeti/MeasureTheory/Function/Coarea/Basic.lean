@@ -280,32 +280,6 @@ private theorem lintegral_le_and_setLIntegral_le {Q : Set E} (hQ : MeasurableSet
               (mul_le_mul' (ENNReal.coe_le_coe.2 h₂) le_rfl))
       _ = _ := by rw [← mul_assoc, ENNReal.coe_mul]
 
-omit [MeasurableSpace E] [BorelSpace E] [MeasurableSpace F] [BorelSpace F] in
-/-- For every `K` and `τ > 1` there is a positive precision `δ` with `δ K < 1` for which the factors
-of the linear coarea bounds are at most `τ`. -/
-private theorem exists_pos_factor_le (K : ℝ≥0) (a b : ℕ) {τ : ℝ≥0} (hτ : 1 < τ) :
-    ∃ δ : ℝ≥0, 0 < δ ∧ δ * K < 1 ∧ (1 - δ * K)⁻¹ ^ a * (1 + δ * K) ^ b ≤ τ ∧
-      (1 - δ * K)⁻¹ ^ b * (1 + δ * K) ^ a ≤ τ := by
-  have hlim (a b : ℕ) : ∀ᶠ δ : ℝ in 𝓝 0, (1 - δ * K)⁻¹ ^ a * (1 + δ * K) ^ b < τ := by
-    have hc : ContinuousAt (fun δ : ℝ ↦ (1 - δ * K)⁻¹ ^ a * (1 + δ * K) ^ b) 0 := by
-      fun_prop (disch := simp)
-    have ht := hc.tendsto
-    simp only [zero_mul, sub_zero, inv_one, one_pow, add_zero, mul_one] at ht
-    exact ht.eventually_lt_const (by exact_mod_cast hτ)
-  have hsmall : ∀ᶠ δ : ℝ in 𝓝 0, δ * K < 1 :=
-    ((continuous_id.mul continuous_const).tendsto' 0 0 (by simp)).eventually_lt_const one_pos
-  obtain ⟨δ, ⟨⟨h₁, h₂⟩, h₃⟩, hδ⟩ :=
-    ((((hlim a b).and (hlim b a)).and hsmall).filter_mono nhdsWithin_le_nhds).and
-      (self_mem_nhdsWithin (s := Ioi (0 : ℝ))) |>.exists
-  have hδ' : ((δ.toNNReal : ℝ≥0) : ℝ) = δ := Real.coe_toNNReal _ (le_of_lt hδ)
-  have hδK : δ.toNNReal * K < 1 := by
-    rw [← NNReal.coe_lt_coe, NNReal.coe_mul, hδ']
-    exact h₃
-  refine ⟨δ.toNNReal, Real.toNNReal_pos.2 hδ, hδK, ?_, ?_⟩ <;>
-  · rw [← NNReal.coe_le_coe]
-    push_cast [NNReal.coe_sub hδK.le, hδ']
-    linarith
-
 /-- A measurable set `s` on which `f` is differentiable with surjective derivative splits into
 countably many disjoint measurable pieces, on each of which `f` is Lipschitz and the coarea formula
 holds up to the factor `τ²`. -/
@@ -326,9 +300,22 @@ private theorem exists_partition_le_and_le (hs : MeasurableSet s)
       (1 - δ * ‖M‖₊)⁻¹ ^ finrank ℝ E * (1 + δ * ‖M‖₊) ^ (finrank ℝ E - finrank ℝ F) ≤ τ) := by
     by_cases h : Surjective A
     · have hR : A.HasRightInverse := .of_surjective_of_finiteDimensional h
-      obtain ⟨δ, hδ, h₁, h₂, h₃⟩ := exists_pos_factor_le ‖hR.rightInverse‖₊
-        (finrank ℝ E - finrank ℝ F) (finrank ℝ E) hτ
-      exact ⟨hR.rightInverse, δ, hδ, fun _ ↦ ⟨hR.rightInverse_rightInverse, h₁, h₂, h₃⟩⟩
+      -- Both factors are continuous in `δ` and equal `1 < τ` at `δ = 0`.
+      have hlim (a b : ℕ) : ∀ᶠ δ : ℝ≥0 in 𝓝 0,
+          (1 - δ * ‖hR.rightInverse‖₊)⁻¹ ^ a * (1 + δ * ‖hR.rightInverse‖₊) ^ b < τ := by
+        have hc : ContinuousAt
+            (fun δ : ℝ≥0 ↦ (1 - δ * ‖hR.rightInverse‖₊)⁻¹ ^ a * (1 + δ * ‖hR.rightInverse‖₊) ^ b)
+            0 := by
+          fun_prop (disch := simp)
+        exact hc.tendsto.eventually_lt_const (by simpa using hτ)
+      have hsmall : ∀ᶠ δ : ℝ≥0 in 𝓝 0, δ * ‖hR.rightInverse‖₊ < 1 :=
+        (continuous_id.mul continuous_const).continuousAt.tendsto.eventually_lt_const
+          (by simp)
+      obtain ⟨δ, ⟨⟨h₁, h₂⟩, h₃⟩, hδ⟩ :=
+        ((((hlim _ _).and (hlim _ _)).and hsmall).filter_mono nhdsWithin_le_nhds).and
+          (self_mem_nhdsWithin (s := Ioi (0 : ℝ≥0))) |>.exists
+      exact ⟨hR.rightInverse, δ, hδ, fun _ ↦
+        ⟨hR.rightInverse_rightInverse, h₃, h₁.le, h₂.le⟩⟩
     · exact ⟨0, 1, one_pos, fun h' ↦ (h h').elim⟩
   choose M δ hδpos hδ using hA
   -- Split `s` into the level sets `τ ^ j ≤ J f x < τ ^ (j + 1)` of the coarea Jacobian, then
