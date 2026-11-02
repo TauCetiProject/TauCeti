@@ -281,7 +281,8 @@ theorem hom_hom_hom_comm {R : Type u} {G : Type v} [CommRing R] [Monoid G] {X Y 
   simpa using congrArg (fun t : X.V ⟶ Y.V => t.hom.hom) (φ.comm g)
 
 /-- The native opposite-endomorphism action is precomposition on underlying vectors. -/
-@[simp]
+-- Evaluate the scalar action before unfolding the opposite-representation wrapper.
+@[simp↓]
 theorem op_smul_apply {R : Type u} {G : Type v} [CommRing R] [Monoid G] (A : FDRep R G)
     {B : FDRep R G} (d : End A) (f : A ⟶ B) (x : A) :
     (MulOpposite.op d • f).hom.hom.hom x = f.hom.hom.hom (d.asHom.hom.hom.hom x) := by

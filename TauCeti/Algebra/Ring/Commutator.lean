@@ -44,6 +44,8 @@ divide by the multiplicity a power releases. Over a ring the same `z` is the com
   arguments is nilpotent as soon as one of them is.
 * `TauCeti.Associative.isNilpotent_of_commutator_eq_nsmul`: the same conclusion when the
   commutator is a nonzero natural multiple of the element.
+* `Commute.of_commutator_eq_of_commutator_eq_smul_left`: commutation with the second
+  correction term, deduced from commutation with the first.
 * `Commute.of_commutator_eq_of_commutator_eq_smul`: commutation of the two successive
   correction terms when the second coefficient is a unit.
 -/
@@ -51,6 +53,22 @@ divide by the multiplicity a power releases. Over a ring the same `z` is the com
 public section
 
 namespace Commute
+
+/-- If `z` is the commutator of `x` and `y`, `y` commutes with `z`, and the commutator
+of `x` and `z` is a unit scalar multiple of `w`, then `y` commutes with `w`. -/
+theorem of_commutator_eq_of_commutator_eq_smul_left
+    {R A : Type*} [CommRing R] [Semiring A] [Algebra R A] {x y z w : A} {c : R}
+    (hyz : Commute y z) (hxy : x * y = y * x + z) (hxz : x * z = z * x + c • w)
+    (hc : IsUnit c) : Commute y w := by
+  let : Ring A := Algebra.semiringToRing R
+  let : LieRing A := LieRing.ofAssociativeRing
+  have hxy' : ⁅x, y⁆ = z := by
+    simpa only [Ring.lie_def, add_sub_cancel_left] using congrArg (fun a => a - y * x) hxy
+  have hxz' : ⁅x, z⁆ = c • w := by
+    simpa only [Ring.lie_def, add_sub_cancel_left] using congrArg (fun a => a - z * x) hxz
+  have h : c • ⁅y, w⁆ = 0 := by
+    simpa [hxy', hxz', commute_iff_lie_eq.mp hyz] using (lie_lie x y z).symm
+  exact commute_iff_lie_eq.mpr (hc.smul_eq_zero.mp h)
 
 /-- If `x * y = y * x + z` and `x * z = z * x + c • w`, where `c` is a unit scalar,
 `x` commutes with `w`, and `y` commutes with `z`, then `z` commutes with `w`. -/
@@ -63,13 +81,7 @@ theorem of_commutator_eq_of_commutator_eq_smul
   let : LieRing A := LieRing.ofAssociativeRing
   have hxy' : ⁅x, y⁆ = z := by
     simpa only [Ring.lie_def, add_sub_cancel_left] using congrArg (fun a => a - y * x) hxy
-  have hxz' : ⁅x, z⁆ = c • w := by
-    simpa only [Ring.lie_def, add_sub_cancel_left] using congrArg (fun a => a - z * x) hxz
-  have hyz' := commute_iff_lie_eq.mp hyz
-  have hyw : Commute y w := by
-    have h : c • ⁅y, w⁆ = 0 := by
-      simpa [hxy', hxz', hyz'] using (lie_lie x y z).symm
-    exact commute_iff_lie_eq.mpr (hc.smul_eq_zero.mp h)
+  have hyw := hyz.of_commutator_eq_of_commutator_eq_smul_left hxy hxz hc
   rw [commute_iff_lie_eq, ← hxy', lie_lie]
   simp [commute_iff_lie_eq.mp hyw, commute_iff_lie_eq.mp hxw]
 
