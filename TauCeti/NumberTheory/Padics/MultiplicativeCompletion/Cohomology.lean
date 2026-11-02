@@ -225,7 +225,7 @@ theorem exists_zmultiples_eq_top_restriction_groupCohomology_two_padicCompletion
     (quotientGaloisSubgroupEquiv K L ι).toMulEquiv (classModuleAddEquiv p K L ι)
     (classModuleAddEquiv_smul p K L ι)
 
-omit [CharZero K] [CharZero L] in
+omit [CharZero K] [CharZero L] [FiniteDimensional K L] in
 /-- **`H²` of `A(L)` on a `p`-subgroup has the order of the subgroup** (NSW (3.6.4), read through
 local reciprocity): `#H²(S, A(L)) = #S` for every `p`-subgroup `S` of `Gal(L/K)`. -/
 theorem natCard_groupCohomology_two_res_padicCompletionUnits
@@ -235,6 +235,8 @@ theorem natCard_groupCohomology_two_res_padicCompletionUnits
       Nat.card S := by
   obtain ⟨-, -, hcard⟩ := exists_zmultiples_eq_top_groupCohomology_two_res_padicCompletionUnits
     p K L S
+  -- `S` is finite because `L` is finite over `ℚ_[p]`, hence over `K`.
+  have : FiniteDimensional K L := Module.Finite.of_restrictScalars_finite ℚ_[p] K L
   obtain ⟨n, hn⟩ := IsPGroup.iff_card.mp hS
   rw [hcard, hn, padicValNat.prime_pow]
 
