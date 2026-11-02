@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Category.GradedModuleCat.Shift
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.Basic
 public import TauCeti.Algebra.Homology.Ext.Equivalence
 public import TauCeti.CategoryTheory.Equivalence.Pow
+public import TauCeti.CategoryTheory.Preadditive.Equivalence
 
 /-!
 # The shift identities of the graded Ext-Euler characteristic
@@ -234,10 +235,6 @@ noncomputable def shiftSourceObjIso (Y : C) (j : ℤ) :
     e.functor.obj ((e ^ (j - 1)).functor.obj Y) ≅ (e ^ j).functor.obj Y :=
   ((e.powSuccRightIso (j - 1)).app Y).symm ≪≫
     eqToIso (congrArg (fun i : ℤ => (e ^ i).functor.obj Y) (by ring : j - 1 + 1 = j))
-
--- An equivalence of abelian categories preserves binary products, hence is additive.
-local instance : e.functor.Additive :=
-  CategoryTheory.Functor.additive_of_preserves_binary_products _
 
 section CommRingSource
 
