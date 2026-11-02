@@ -88,6 +88,7 @@ theorem complexConj_reverse_mul_self_eq_one_iff (g : spinGroup (Q.baseChange ℂ
 /-- **Spin membership descends from the complexification.** For a nondegenerate real quadratic
 form on a finite-dimensional space, a real Clifford element is a Spin element exactly when its
 image in the complexified Clifford algebra is a Spin element of `Q_ℂ`. -/
+@[simp]
 theorem ofBaseChangeAux_mem_spinGroup_iff [FiniteDimensional ℝ V] (hQ : Q.Nondegenerate)
     {x : CliffordAlgebra Q} :
     ofBaseChangeAux ℂ Q x ∈ spinGroup (Q.baseChange ℂ) ↔ x ∈ spinGroup Q := by
