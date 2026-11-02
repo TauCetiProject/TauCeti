@@ -17,8 +17,8 @@ to the unit sphere, but that restriction need not land in the unit sphere of `F`
 `L` stretches norms by a factor `‖L u‖ > 0` depending on the direction `u`. This file removes that
 stretching by a homeomorphism of the source. The radial rescaling `v ↦ (‖L v‖ / ‖v‖) • v` moves
 every point along its own ray, commutes with nonnegative scalars and turns `‖v‖` into `‖L v‖`, and
-it is a homeomorphism of `E` (`TauCeti.exists_homeomorph_norm_eq`). Composed with its inverse, `L`
-becomes positively homogeneous and norm-preserving, that is, the cone `w ↦ ‖w‖ • γ (‖w‖⁻¹ • w)`
+it is a homeomorphism of `E` (`Continuous.exists_homeomorph_norm_eq`). Composed with its inverse,
+`L` becomes positively homogeneous and norm-preserving, that is, the cone `w ↦ ‖w‖ • γ (‖w‖⁻¹ • w)`
 over a map `γ` from the unit sphere of `E` to the unit sphere of `F`, the *link* of `L`.
 
 Mathlib's `gaugeRescaleHomeomorph` rescales rays in the same way by the ratio of the gauges of two
@@ -27,7 +27,7 @@ convex when `L` is only piecewise linear.
 
 Continuity of the inverse at the origin is where finite dimension enters: on the compact unit
 sphere `‖L u‖` is bounded below by a positive constant, so `‖L v‖` is at least a positive multiple
-of `‖v‖` (`TauCeti.exists_pos_mul_norm_le`).
+of `‖v‖` (`Continuous.exists_pos_mul_norm_le`).
 
 The positively homogeneous injective maps of interest are the conical germs of piecewise-linear
 embeddings (`TauCeti.IsPLWithinAt.exists_eventually_eq_add_homogeneous`): after the normalization
@@ -36,8 +36,8 @@ questions about that cone.
 
 ## Main results
 
-* `TauCeti.exists_pos_mul_norm_le`: such a map stretches norms by at least a positive factor.
-* `TauCeti.exists_homeomorph_norm_eq`: such a map `L` admits a homeomorphism `σ` of the source
+* `Continuous.exists_pos_mul_norm_le`: such a map stretches norms by at least a positive factor.
+* `Continuous.exists_homeomorph_norm_eq`: such a map `L` admits a homeomorphism `σ` of the source
   which commutes with nonnegative scalars, maps every vector into its own ray, and satisfies
   `‖σ v‖ = ‖L v‖`.
 -/
@@ -46,7 +46,7 @@ public section
 
 open Set Filter Topology Metric
 
-namespace TauCeti
+namespace Continuous
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {L : E → F}
@@ -91,7 +91,7 @@ theorem exists_homeomorph_norm_eq (hL : Continuous L) (hne : ∀ v, v ≠ 0 → 
       (∀ v, ∃ a : ℝ, 0 < a ∧ σ v = a • v) ∧ ∀ v, ‖σ v‖ = ‖L v‖ := by
   have hL0 : L 0 = 0 := by simpa using hhom 0 le_rfl 0
   have hLne {v : E} (hv : v ≠ 0) : ‖L v‖ ≠ 0 := norm_ne_zero_iff.2 (hne v hv)
-  obtain ⟨m, hm, hmL⟩ := exists_pos_mul_norm_le hL hne hhom
+  obtain ⟨m, hm, hmL⟩ := hL.exists_pos_mul_norm_le hne hhom
   have hpos {v : E} (hv : v ≠ 0) : 0 < ‖L v‖ := lt_of_le_of_ne (norm_nonneg _) (hLne hv).symm
   -- The rescaling `σ` and its inverse `τ` multiply each vector by a factor constant on its ray.
   let σ : E → E := fun v => (‖L v‖ / ‖v‖) • v
@@ -160,4 +160,4 @@ theorem exists_homeomorph_norm_eq (hL : Continuous L) (hne : ∀ v, v ≠ 0 → 
   · exact ⟨1, one_pos, by simp [σ]⟩
   · exact ⟨_, div_pos (hpos hv) (norm_pos_iff.2 hv), rfl⟩
 
-end TauCeti
+end Continuous

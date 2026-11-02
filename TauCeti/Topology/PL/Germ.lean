@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.Algebra.Module.Homogeneous
 public import TauCeti.Topology.PL.Map
 
 /-!
@@ -30,11 +31,14 @@ these cones assemble into one map `L : E → F` which is
 
 Rourke and Sanderson *define* a PL map as one that is conical on a star of each point; these
 results show that the cell-by-cell notion `TauCeti.IsPLOn` has that property. Near `x`, the image
-of `f` is the cone with vertex `f x` on the image of a small sphere about `x` under `L`, and after
-the radial normalization `TauCeti.exists_homeomorph_norm_eq` of the source, `L` becomes the cone
+of `f` is the cone with vertex `f x` on the image of a small sphere about `x` under `L`.
+
+When `E` is a finite-dimensional real normed space, `F` is a real normed space and `L` vanishes
+only at the origin (for example when `f` is injective near `x`, so that `L` is injective), the
+radial normalization `Continuous.exists_homeomorph_norm_eq` of the source turns `L` into the cone
 over a map of unit spheres, the link of `f` at `x`. This is the local model that reduces questions
-about PL maps near a point, such as the local flatness of PL embeddings, to questions about
-cones.
+about PL embeddings near a point, such as their local flatness, to questions about cones. Without
+these hypotheses no such normalization exists: a constant PL map has `L = 0`.
 
 ## Main results
 
@@ -43,8 +47,6 @@ cones.
 * `TauCeti.IsPLWithinAt.exists_eventually_eq_add_homogeneous`: the germ at `x` of a map PL on a
   neighbourhood of `x` is that of `y ↦ f x + L (y - x)`, for a positively homogeneous map `L`
   piecewise affine on the whole space.
-* `TauCeti.injective_of_eventually_eq_add`: such an `L` is injective when `f` is injective near
-  `x`.
 
 ## References
 
@@ -93,28 +95,6 @@ theorem IsPLWithinAt.eventually_apply_lineMap (hf : IsPLWithinAt f s x) (hs : St
   have hxi : x ∈ C i := hyC hyi
   rw [heq i ⟨hseg ht, (hC i).convex.lineMap_mem hxi hyi ht⟩, ContinuousAffineMap.apply_lineMap,
     heq i ⟨hxV, hxi⟩, heq i ⟨hyV, hyi⟩]
-
-omit [TopologicalSpace F] in
-/-- **Injectivity passes to the conical germ.** If `f y = f x + L (y - x)` for all `y` near `x`,
-where `L` is positively homogeneous, and `f` is injective on a neighbourhood of `x`, then `L` is
-injective: two vectors with the same image under `L` are scaled down until they are read by `f`
-near `x`. -/
-theorem injective_of_eventually_eq_add {L : E → F}
-    (hL : ∀ c : ℝ, 0 ≤ c → ∀ v, L (c • v) = c • L v)
-    (hfL : ∀ᶠ y in 𝓝 x, f y = f x + L (y - x)) {D : Set E} (hD : D ∈ 𝓝 x) (hinj : InjOn f D) :
-    Function.Injective L := by
-  intro v w hvw
-  have hev (u : E) : ∀ᶠ c in 𝓝[>] (0 : ℝ), x + c • u ∈ D ∧ f (x + c • u) = f x + L (c • u) := by
-    have hlim : Tendsto (fun c : ℝ => x + c • u) (𝓝 0) (𝓝 x) :=
-      (by fun_prop : Continuous fun c : ℝ => x + c • u).tendsto' 0 x (by simp)
-    refine (hlim.eventually ((eventually_mem_set.2 hD).and hfL)).filter_mono
-      nhdsWithin_le_nhds |>.mono fun c h => ⟨h.1, ?_⟩
-    simpa using h.2
-  obtain ⟨c, ⟨hvD, hv⟩, ⟨hwD, hw⟩, hc⟩ :=
-    ((hev v).and ((hev w).and (self_mem_nhdsWithin (s := Ioi (0 : ℝ))))).exists
-  have hcvw : x + c • v = x + c • w :=
-    hinj hvD hwD (by rw [hv, hw, hL c (le_of_lt hc), hL c (le_of_lt hc), hvw])
-  exact smul_right_injective E (ne_of_gt hc) (add_left_cancel hcvw)
 
 variable [IsTopologicalAddGroup F]
 
