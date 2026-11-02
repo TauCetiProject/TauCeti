@@ -8,7 +8,7 @@ module
 public import Mathlib.ModelTheory.LanguageMap
 
 /-!
-# Expansions along composite language maps
+# Expansions along composite language maps, and language maps for adjoining constants
 
 Additions to Mathlib's `Mathlib.ModelTheory.LanguageMap`: expansions compose along composite
 language maps, and the reduct of an expansion along a composite `h.comp g` along the outer map `h`
@@ -26,6 +26,10 @@ the `L`-structure along `g`; the `L'`-structure can be taken to be the reduct.
   it expands along is the original structure.
 * `FirstOrder.Language.LHom.sumMap_isExpansionOn_of_reduct`: a structure on a sum language is
   expanded along `ϕ.sumMap ψ` by a sum structure expanding its two parts along `ϕ` and `ψ`.
+
+The relation map of `lhomWithConstants` inverts the elimination of the empty summand of
+`L[[γ]].Relations n` by `Equiv.sumEmpty`
+(`FirstOrder.Language.lhomWithConstants_onRelation_sumEmpty`).
 -/
 
 public section
@@ -85,3 +89,16 @@ end LHom
 end Language
 
 end FirstOrder
+
+namespace FirstOrder.Language
+
+variable {L : Language} {γ : Type*}
+
+theorem lhomWithConstants_onRelation_sumEmpty {l : ℕ} (R : L[[γ]].Relations l) :
+    (L.lhomWithConstants γ).onRelation ((Equiv.sumEmpty _ _) R) = R := by
+  -- lhomWithConstants is sumInl, so its relation map restores the left summand.
+  cases R with
+  | inl R => rfl
+  | inr R => exact R.elim
+
+end FirstOrder.Language

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.RieszProjection.Splitting
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.Idempotent
-public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.PrModule
+public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.PrModule.Basic
 public import TauCeti.Algebra.Ring.SpectralIdempotent
 public import TauCeti.LinearAlgebra.Charpoly.Nilpotent
 public import TauCeti.RingTheory.PowerSeries.Entire.GoodZero
@@ -33,6 +33,9 @@ zero of order `h` has a generalised eigenspace of dimension `h`.
   `ContinuousLinearMap.IsRieszProjection.charPowerSeries_matrixCoeff_eq_pow_mul`: the finite
   factor is `(1 - a⁻¹ X) ^ h`, and the Fredholm series splits off this factor.
 * `ContinuousLinearMap.IsRieszProjection.finrank_range`: over a field, the generalised eigenspace
+  has dimension `h`.
+* `ContinuousLinearMap.IsRowCompact.exists_isGoodZero_finrank_ker_pow`: over a field, the Fredholm
+  series has a good zero of finite order `h` at every scalar, and the generalised eigenspace there
   has dimension `h`.
 
 ## References
@@ -236,5 +239,29 @@ theorem finrank_ker_pow (hE : IsRieszProjection u a h E) (hu : u.IsRowCompact)
 end Field
 
 end IsRieszProjection
+
+section Field
+
+variable {I K : Type*} [TopologicalSpace I] [DiscreteTopology I] [DecidableEq I]
+  [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
+  {u : C₀(I, K) →L[K] C₀(I, K)}
+
+/-- **Every zero of the Fredholm series has a finite order.** Over a complete ultrametric field,
+the Fredholm series of a row-compact `u` has a good zero of some order `h` at every scalar `a`,
+and the generalised eigenspace `ker (1 - a u)ⁿ` has dimension `h` for every `n ≥ h`. The order is
+positive exactly when `H_u(a) = 0`, so `h` is the algebraic multiplicity of the eigenvalue `a⁻¹`
+at each zero `a` of `H_u`. -/
+theorem IsRowCompact.exists_isGoodZero_finrank_ker_pow (hu : u.IsRowCompact) (a : K) :
+    ∃ h, u.matrixCoeff.charPowerSeries.IsGoodZero a h ∧ ∀ n, h ≤ n →
+      Module.finrank K (LinearMap.ker (((1 - a • u) ^ n : C₀(I, K) →L[K] C₀(I, K)) :
+        Module.End K C₀(I, K))) = h := by
+  have hne : u.matrixCoeff.charPowerSeries ≠ 0 := fun h0 ↦ by
+    simpa [h0] using u.matrixCoeff.constantCoeff_charPowerSeries
+  obtain ⟨h, hH⟩ := hu.isEntire_charPowerSeries.exists_isGoodZero hne a
+  exact ⟨h, hH, fun _ hn ↦
+    (hu.isRieszProjection_rieszProjection (fun _ ↦ hH.evalAt_hasseDeriv_eq_zero)
+      hH.isUnit_evalAt_hasseDeriv).finrank_ker_pow hu hH hn⟩
+
+end Field
 
 end ContinuousLinearMap

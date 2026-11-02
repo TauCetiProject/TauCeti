@@ -27,6 +27,10 @@ divisor sums with pullback.
 * `AlgebraicGeometry.Scheme.IdealSheafData.comap_pow`: `(I ^ n).comap f = I.comap f ^ n`.
 * `AlgebraicGeometry.Scheme.IdealSheafData.comap_prod`: the inverse image of a finite product is
   the product of the inverse images.
+* `AlgebraicGeometry.Scheme.IdealSheafData.compl_support_comap`: the complement of the support of
+  `I.comap f` is the inverse image of the complement of the support of `I`.
+* `AlgebraicGeometry.Scheme.IdealSheafData.comap_eq_top_iff`: `I.comap f` is the unit ideal sheaf
+  exactly when `f` maps into the complement of the support of `I`.
 -/
 
 public section
@@ -126,5 +130,20 @@ theorem comap_prod {ι : Type*} (s : Finset ι) (I : ι → Y.IdealSheafData) (f
   induction s using Finset.induction_on with
   | empty => simp
   | insert i s hi hs => rw [Finset.prod_insert hi, Finset.prod_insert hi, comap_mul, hs]
+
+/-- The open complement of the support of `I.comap f` is the inverse image of the open complement
+of the support of `I`. -/
+theorem compl_support_comap (I : Y.IdealSheafData) (f : X ⟶ Y) :
+    (I.comap f).support.compl = f ⁻¹ᵁ I.support.compl := by
+  ext x
+  simp [support_comap]
+
+/-- The inverse image of an ideal sheaf `I` along `f` is the unit ideal sheaf exactly when `f`
+maps into the open complement of `V(I)`. -/
+theorem comap_eq_top_iff (I : Y.IdealSheafData) (f : X ⟶ Y) :
+    I.comap f = ⊤ ↔ f ⁻¹ᵁ I.support.compl = ⊤ := by
+  rw [← support_eq_bot_iff, ← compl_support_comap, ← TopologicalSpace.Closeds.coe_eq_empty,
+    ← TopologicalSpace.Opens.coe_eq_univ]
+  simp [TopologicalSpace.Closeds.compl]
 
 end AlgebraicGeometry.Scheme.IdealSheafData
