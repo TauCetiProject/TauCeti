@@ -17,10 +17,10 @@ roots form a basis of `M` (`RootPairing.Base.toWeightBasis`), so the perfect pai
 with the dual of `M`, and the dual basis is the basis of **fundamental coweights** `ϖᵢ` of `N`,
 characterized by `⟨αᵢ, ϖⱼ⟩ = δᵢⱼ`. The coordinate of a coweight `x` at `ϖᵢ` is `⟨αᵢ, x⟩`.
 
-Over a coefficient ring of characteristic zero, every root is an integer combination of the simple
-roots, so a coweight lies in the coweight lattice `P∨ = RootPairing.coweightLattice` (the
-coweights at which every root is an integer) as soon as the simple roots are integers at it. Hence
-the fundamental coweights form a `ℤ`-basis of `P∨`.
+Every root is, up to sign, a natural combination of the simple roots, so a coweight lies in the
+coweight lattice `P∨ = RootPairing.coweightLattice` (the coweights at which every root is an
+integer) as soon as the simple roots are integers at it. Hence, over a coefficient ring of
+characteristic zero, the fundamental coweights form a `ℤ`-basis of `P∨`.
 
 The simple coroots form a `ℤ`-basis of the coroot lattice `Q∨`, and the coordinates of `αⱼ^∨` in
 the fundamental coweights are the Cartan integers `⟨αᵢ, αⱼ^∨⟩`. So the matrix of the inclusion
@@ -84,8 +84,6 @@ theorem root'_fundamentalCoweightBasis [DecidableEq ι] (i j : b.support) :
   rw [← fundamentalCoweightBasis_repr, Basis.repr_self, Finsupp.single_apply]
   exact if_congr eq_comm rfl rfl
 
-variable [CharZero R]
-
 omit [P.IsRootSystem] in
 /-- **A coweight lies in the coweight lattice iff every simple root takes an integer value at
 it.** -/
@@ -93,10 +91,13 @@ theorem mem_coweightLattice_iff {x : N} :
     x ∈ P.coweightLattice ↔ ∀ i : b.support, ∃ z : ℤ, P.root' i x = z := by
   refine ⟨fun hx i ↦ P.mem_coweightLattice.1 hx i, fun hx ↦ P.mem_coweightLattice.2 fun k ↦ ?_⟩
   choose z hz using hx
-  obtain ⟨f, -, -, hf⟩ := b.exists_root_eq_sum_int k
-  refine ⟨∑ j : b.support, f j * z j, ?_⟩
-  rw [root', hf, ← Finset.sum_coe_sort b.support]
-  simp [hz]
+  obtain ⟨f, -, hf | hf⟩ := b.exists_root_eq_sum_nat_or_neg k
+  · refine ⟨∑ j : b.support, (f j : ℤ) * z j, ?_⟩
+    rw [root', hf, ← Finset.sum_coe_sort b.support]
+    simp [hz]
+  · refine ⟨-∑ j : b.support, (f j : ℤ) * z j, ?_⟩
+    rw [root', hf, ← Finset.sum_coe_sort b.support]
+    simp [hz]
 
 /-- The fundamental coweights lie in the coweight lattice. -/
 theorem fundamentalCoweightBasis_mem_coweightLattice (i : b.support) :
@@ -105,6 +106,8 @@ theorem fundamentalCoweightBasis_mem_coweightLattice (i : b.support) :
   refine b.mem_coweightLattice_iff.2 fun j ↦ ⟨if j = i then 1 else 0, ?_⟩
   rw [root'_fundamentalCoweightBasis]
   split_ifs <;> simp
+
+variable [CharZero R]
 
 /-- **The fundamental coweights form a `ℤ`-basis of the coweight lattice.** -/
 noncomputable def coweightLatticeBasis : Basis b.support ℤ P.coweightLattice :=
