@@ -368,6 +368,23 @@ theorem smul_mem_lattice {R V : Type*} [Semiring R] [AddCommMonoid V] [Module R 
   simp only [vadd_eq_add] at hij
   omega
 
+variable {R V} in
+/-- Multiplying by a Laurent monomial translates the lattice bound. -/
+theorem single_smul_mem_lattice_iff (k a : ℤ) (f : HahnModule ℤ R V) :
+    HahnSeries.single k (1 : R) • f ∈ lattice R V (a + k) ↔ f ∈ lattice R V a := by
+  simp only [mem_lattice_iff]
+  constructor
+  · intro h n hn
+    have hc := coeff_single_smul_vadd (r := (1 : R)) (x := f) (b := k) (a := n)
+    rw [vadd_eq_add, one_smul] at hc
+    rw [← hc]
+    exact h (k + n) (by omega)
+  · intro h n hn
+    have hc := coeff_single_smul_vadd (r := (1 : R)) (x := f) (b := k) (a := n - k)
+    rw [vadd_eq_add, add_sub_cancel, one_smul] at hc
+    rw [hc]
+    exact h (n - k) (by omega)
+
 end Lattice
 
 section Quotient

@@ -95,38 +95,15 @@ theorem restrictScalars_powerSeriesLattice (a : ℤ) :
 theorem powerSeriesLattice_antitone : Antitone (powerSeriesLattice R V) :=
   fun _ _ h _ hf ↦ lattice_antitone R V h hf
 
-end Semiring
-
-end TauCeti.HahnModule
-
-namespace HahnModule
-
-open TauCeti.HahnModule HahnSeries
-
-variable {R V : Type*} [Semiring R] [AddCommMonoid V] [Module R V]
-
-/-- Multiplying by a Laurent monomial translates the coefficient indices. -/
-theorem single_smul_mem_powerSeriesLattice_iff (k a : ℤ) (f : HahnModule ℤ R V) :
-    single k (1 : R) • f ∈ powerSeriesLattice R V (a + k) ↔
+variable {R V} in
+/-- Multiplying by a power of `X` translates the power-series lattice bound. -/
+theorem X_pow_smul_mem_powerSeriesLattice_iff (a : ℤ) (n : ℕ) (f : HahnModule ℤ R V) :
+    (PowerSeries.X ^ n : R⟦X⟧) • f ∈ powerSeriesLattice R V (a + n) ↔
       f ∈ powerSeriesLattice R V a := by
-  simp only [mem_powerSeriesLattice, mem_lattice_iff]
-  constructor
-  · intro h n hn
-    have hc := coeff_single_smul_vadd (r := (1 : R)) (x := f) (b := k) (a := n)
-    rw [vadd_eq_add, one_smul] at hc
-    rw [← hc]
-    exact h (k + n) (by omega)
-  · intro h n hn
-    have hc := coeff_single_smul_vadd (r := (1 : R)) (x := f) (b := k) (a := n - k)
-    rw [vadd_eq_add, add_sub_cancel, one_smul] at hc
-    rw [hc]
-    exact h (n - k) (by omega)
+  rw [_root_.HahnModule.powerSeries_smul, HahnSeries.ofPowerSeries_X_pow]
+  simp only [mem_powerSeriesLattice, single_smul_mem_lattice_iff]
 
-end HahnModule
-
-namespace TauCeti.HahnModule
-
-open _root_.HahnModule HahnSeries
+end Semiring
 
 section CommSemiring
 
@@ -135,10 +112,11 @@ variable {R V : Type*} [CommSemiring R] [AddCommMonoid V] [Module R V]
 /-- Laurent-monomial multiplication identifies any two shifted power-series lattices. -/
 noncomputable def powerSeriesLatticeShift (a k : ℤ) :
     powerSeriesLattice R V a ≃ₗ[R⟦X⟧] powerSeriesLattice R V (a + k) where
-  toFun f := ⟨single k 1 • f.1, (single_smul_mem_powerSeriesLattice_iff k a f.1).2 f.2⟩
+  toFun f := ⟨single k 1 • f.1, by
+    simpa only [mem_powerSeriesLattice] using (single_smul_mem_lattice_iff k a f.1).2 f.2⟩
   invFun f := ⟨single (-k) 1 • f.1, by
-    have h := (single_smul_mem_powerSeriesLattice_iff (-k) (a + k) f.1).2 f.2
-    simpa using h⟩
+    have h := (single_smul_mem_lattice_iff (-k) (a + k) f.1).2 f.2
+    simpa only [mem_powerSeriesLattice, add_neg_cancel_right] using h⟩
   left_inv f := Subtype.ext (single_neg_smul_single_smul k f.1)
   right_inv f := Subtype.ext (by
     simpa using single_neg_smul_single_smul (-k) f.1)
@@ -149,14 +127,14 @@ noncomputable def powerSeriesLatticeShift (a k : ℤ) :
 
 /-- The lattice-shift equivalence acts by the specified Laurent monomial. -/
 @[simp]
-theorem coe_powerSeriesLatticeShift (a k : ℤ) (f : powerSeriesLattice R V a) :
+theorem powerSeriesLatticeShift_apply (a k : ℤ) (f : powerSeriesLattice R V a) :
     (powerSeriesLatticeShift a k f : HahnModule ℤ R V) =
       single k (1 : R) • (f : HahnModule ℤ R V) :=
   (rfl)
 
 /-- The inverse lattice-shift equivalence acts by the inverse Laurent monomial. -/
 @[simp]
-theorem coe_powerSeriesLatticeShift_symm (a k : ℤ)
+theorem powerSeriesLatticeShift_symm_apply (a k : ℤ)
     (f : powerSeriesLattice R V (a + k)) :
     ((powerSeriesLatticeShift a k).symm f : HahnModule ℤ R V) =
       single (-k) (1 : R) • (f : HahnModule ℤ R V) :=
@@ -170,14 +148,13 @@ theorem X_pow_smul_powerSeriesLattice (a : ℤ) (n : ℕ) :
   rw [Submodule.mem_smul_pointwise_iff_exists]
   constructor
   · rintro ⟨g, hg, rfl⟩
-    rw [_root_.HahnModule.powerSeries_smul, HahnSeries.ofPowerSeries_X_pow]
-    exact (single_smul_mem_powerSeriesLattice_iff (n : ℤ) a g).2 hg
+    exact (X_pow_smul_mem_powerSeriesLattice_iff a n g).2 hg
   · intro hf
     let g := (powerSeriesLatticeShift a (n : ℤ)).symm ⟨f, hf⟩
     refine ⟨g.1, g.2, ?_⟩
     have h := congrArg Subtype.val ((powerSeriesLatticeShift a (n : ℤ)).apply_symm_apply ⟨f, hf⟩)
     rw [_root_.HahnModule.powerSeries_smul, HahnSeries.ofPowerSeries_X_pow]
-    exact h
+    simpa only [powerSeriesLatticeShift_apply] using h
 
 end CommSemiring
 
@@ -223,10 +200,10 @@ theorem X_pow_smul_latticeQuotient_eq_zero (a b : ℤ) (n : ℕ) (h : b ≤ a + 
   induction f using Submodule.Quotient.induction_on with
   | _ f =>
     rw [smul_latticeQuotient_mk, Submodule.Quotient.mk_eq_zero]
-    apply powerSeriesLattice_antitone R V h
-    simp only [Submodule.subtype_apply]
-    rw [_root_.HahnModule.powerSeries_smul, HahnSeries.ofPowerSeries_X_pow]
-    exact (single_smul_mem_powerSeriesLattice_iff (n : ℤ) a f.1).2 f.2
+    rw [Submodule.mem_comap, Submodule.subtype_apply, ← mem_powerSeriesLattice]
+    exact powerSeriesLattice_antitone R V h
+      ((X_pow_smul_mem_powerSeriesLattice_iff a n f.1).2
+        ((mem_powerSeriesLattice R V).mpr f.2))
 
 end Ring
 
