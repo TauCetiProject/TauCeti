@@ -161,6 +161,7 @@ theorem crossRatio_bijective {a b c : OnePoint K} (h : a ≠ b ∧ a ≠ c ∧ b
 
 /-- The cross ratio `crossRatio a b c d` is `0` exactly when `a`, `b`, `c` are pairwise distinct
 and `d = a`. -/
+@[simp]
 theorem crossRatio_eq_zero_iff {a b c d : OnePoint K} :
     crossRatio a b c d = (0 : K) ↔ (a ≠ b ∧ a ≠ c ∧ b ≠ c) ∧ d = a := by
   by_cases h : a ≠ b ∧ a ≠ c ∧ b ≠ c
@@ -171,6 +172,7 @@ theorem crossRatio_eq_zero_iff {a b c d : OnePoint K} :
 
 /-- The cross ratio `crossRatio a b c d` is `1` exactly when `a`, `b`, `c` are pairwise distinct
 and `d = b`. -/
+@[simp]
 theorem crossRatio_eq_one_iff {a b c d : OnePoint K} :
     crossRatio a b c d = (1 : K) ↔ (a ≠ b ∧ a ≠ c ∧ b ≠ c) ∧ d = b := by
   by_cases h : a ≠ b ∧ a ≠ c ∧ b ≠ c
@@ -181,6 +183,7 @@ theorem crossRatio_eq_one_iff {a b c d : OnePoint K} :
 
 /-- The cross ratio `crossRatio a b c d` is `∞` exactly when `a`, `b`, `c` are not pairwise
 distinct or `d = c`. -/
+@[simp]
 theorem crossRatio_eq_infty_iff {a b c d : OnePoint K} :
     crossRatio a b c d = ∞ ↔ ¬(a ≠ b ∧ a ≠ c ∧ b ≠ c) ∨ d = c := by
   by_cases h : a ≠ b ∧ a ≠ c ∧ b ≠ c
@@ -362,19 +365,11 @@ theorem crossRatio_swap_second_fourth {a b c d : OnePoint K} {t : K}
 
 /-! ### Ordered quadruples of distinct points -/
 
-/-- The first three points of an ordered quadruple of distinct points are pairwise distinct. -/
-private theorem pairwise_ne_of_embedding {X : Type*} (x : Fin 4 ↪ X) :
-    x 0 ≠ x 1 ∧ x 0 ≠ x 2 ∧ x 1 ≠ x 2 :=
-  ⟨x.injective.ne (by decide), x.injective.ne (by decide), x.injective.ne (by decide)⟩
-
 /-- The cross ratio of four pairwise distinct points is neither `0`, `1` nor `∞`. -/
 theorem crossRatio_mem_compl (x : Fin 4 ↪ OnePoint K) :
     crossRatio (x 0) (x 1) (x 2) (x 3) ∈
       ({((0 : K) : OnePoint K), ((1 : K) : OnePoint K), ∞}ᶜ : Set (OnePoint K)) := by
-  simp only [Set.mem_compl_iff, Set.mem_insert_iff, Set.mem_singleton_iff, not_or,
-    crossRatio_eq_zero_iff, crossRatio_eq_one_iff, crossRatio_eq_infty_iff, not_not]
-  exact ⟨fun h ↦ x.injective.ne (by decide) h.2, fun h ↦ x.injective.ne (by decide) h.2,
-    pairwise_ne_of_embedding x, x.injective.ne (by decide)⟩
+  simp
 
 /-- **The cross ratio classifies ordered quadruples of distinct points up to Möbius
 transformations**: two quadruples have the same cross ratio exactly when an element of
@@ -383,10 +378,10 @@ theorem crossRatio_eq_crossRatio_iff (x y : Fin 4 ↪ OnePoint K) :
     crossRatio (x 0) (x 1) (x 2) (x 3) = crossRatio (y 0) (y 1) (y 2) (y 3) ↔
       ∃ g : PGL(2, K), g • x = y := by
   refine ⟨fun h ↦ ?_, fun ⟨g, hg⟩ ↦ by simp [← hg, Function.Embedding.smul_apply]⟩
-  have hx := pairwise_ne_of_embedding x
-  obtain ⟨g, hx0, hx1, hx2⟩ := exists_pgl_smul_eq_zero_one_infty hx.1 hx.2.1 hx.2.2
-  have hy := pairwise_ne_of_embedding y
-  obtain ⟨k, hy0, hy1, hy2⟩ := exists_pgl_smul_eq_zero_one_infty hy.1 hy.2.1 hy.2.2
+  obtain ⟨g, hx0, hx1, hx2⟩ :=
+    exists_pgl_smul_eq_zero_one_infty (x := x 0) (y := x 1) (z := x 2) (by simp) (by simp) (by simp)
+  obtain ⟨k, hy0, hy1, hy2⟩ :=
+    exists_pgl_smul_eq_zero_one_infty (x := y 0) (y := y 1) (z := y 2) (by simp) (by simp) (by simp)
   rw [crossRatio_eq_smul _ hx0 hx1 hx2, crossRatio_eq_smul _ hy0 hy1 hy2] at h
   -- Both quadruples are carried to `0`, `1`, `∞` and their common cross ratio.
   refine ⟨k⁻¹ * g, Function.Embedding.ext fun i ↦ ?_⟩
