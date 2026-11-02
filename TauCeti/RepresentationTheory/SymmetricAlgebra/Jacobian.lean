@@ -66,8 +66,7 @@ theorem symmetricAlgebra_apply_jacobian (b : Module.Basis n R M) {f : n → Symm
   have hg (i : n) : map R (ρ g) (f i) = f i := by
     rw [← symmetricAlgebra_apply, (ρ.mem_symmetricAlgebraInvariants _).1 (hf i) g]
   conv_rhs => rw [← algebraMap_det_mul_map_jacobian b hg]
-  rw [symmetricAlgebra_apply, ← mul_assoc, ← map_mul, ← map_mul, ← map_mul, inv_mul_cancel,
-    map_one, map_one, map_one, one_mul]
+  simp [symmetricAlgebra_apply, ← mul_assoc, ← map_mul]
 
 /-- **The Jacobian of invariant polynomial functions is a relative invariant.** For polynomial
 functions `Sym(V*)` on `V`, acted on through the contragredient representation, if every `f i` is

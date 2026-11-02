@@ -5,30 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.MvPolynomial.PDeriv
 public import Mathlib.LinearAlgebra.Determinant
-public import Mathlib.LinearAlgebra.SymmetricAlgebra.Basis
 public import Mathlib.RingTheory.Algebraic.Defs
-public import TauCeti.LinearAlgebra.SymmetricAlgebra.Derivation.Basic
-public import TauCeti.LinearAlgebra.SymmetricAlgebra.Functoriality
-public import TauCeti.LinearAlgebra.SymmetricAlgebra.Grading
+public import TauCeti.LinearAlgebra.SymmetricAlgebra.Derivation.PDeriv
 import Mathlib.Algebra.CharP.Algebra
 import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
-import TauCeti.LinearAlgebra.SymmetricAlgebra.BasisComparison
 import TauCeti.RingTheory.Derivation.Algebraic
 
 /-!
-# Partial derivatives and Jacobians in a symmetric algebra
-
-A linear form `φ` on a module `M` over a commutative ring `R` extends uniquely to a derivation
-`SymmetricAlgebra.pderiv φ` of the symmetric algebra `Sym M`, sending each generator `ι m` to
-the scalar `φ m`. For the polynomial functions `Sym(V*)` on a vector space `V`, the derivative
-along the evaluation at `v ∈ V` is the directional derivative along `v`. In the coordinates of a
-basis `b` of `M`, the derivative along the coordinate form `b.coord j` is Mathlib's partial
-derivative `MvPolynomial.pderiv j` (`SymmetricAlgebra.equivMvPolynomial_pderiv_coord`).
+# Jacobians in a symmetric algebra
 
 The **Jacobian** of a family `f : n → Sym M` in a finite basis `b : Basis n R M` is the
-determinant of the matrix of partial derivatives `∂ (f i) / ∂ (b j)`. This file proves:
+determinant of the matrix of partial derivatives `∂ (f i) / ∂ (b j)`, the derivatives
+`SymmetricAlgebra.pderiv (b.coord j) (f i)` along the coordinate forms of `b`. This file proves:
 
 * a change of basis multiplies the Jacobian by the determinant of the change of basis, a unit;
 * the chain rule: for an endomorphism `g` of `M`, the Jacobian of the family `map g (f i)` is
@@ -48,17 +37,12 @@ product of the linear forms of the reflecting hyperplanes.
 
 ## Main definitions
 
-* `SymmetricAlgebra.pderiv`: the derivative of `Sym M` along a linear form on `M`.
 * `SymmetricAlgebra.jacobianMatrix`: the matrix of partial derivatives of a family in `Sym M`, in
   the coordinates of a basis of `M`.
 * `SymmetricAlgebra.jacobian`: its determinant.
 
 ## Main results
 
-* `SymmetricAlgebra.equivMvPolynomial_pderiv_coord`: in coordinates, the derivatives along the
-  coordinate forms are the partial derivatives of polynomials.
-* `SymmetricAlgebra.pderiv_map`: the chain rule for the derivatives along linear forms.
-* `SymmetricAlgebra.pderiv_mem_homogeneousSubmodule`: a derivative lowers degrees by one.
 * `SymmetricAlgebra.jacobian_eq_algebraMap_det_mul`: the Jacobian under a change of basis.
 * `SymmetricAlgebra.jacobian_map`: the chain rule for Jacobians.
 * `SymmetricAlgebra.jacobian_mem_homogeneousSubmodule`: the degree of the Jacobian.
@@ -75,71 +59,6 @@ public section
 open TauCeti.SymmetricAlgebra
 
 namespace SymmetricAlgebra
-
-section CommSemiring
-
-variable {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
-
-/-- The derivative of `Sym M` along a linear form `φ` on `M`: the derivation sending each
-generator `ι m` to the scalar `φ m`. In the coordinates of a basis `b` of `M`, the derivative
-along the coordinate form `b.coord j` is the partial derivative in the variable `b j`. -/
-noncomputable def pderiv :
-    Module.Dual R M →ₗ[R] Derivation R (SymmetricAlgebra R M) (SymmetricAlgebra R M) :=
-  mkDerivation ∘ₗ LinearMap.llcomp R M R _ (Algebra.linearMap R (SymmetricAlgebra R M))
-
-/-- The derivative along `φ` sends the generator `ι m` to the scalar `φ m`. -/
-@[simp]
-theorem pderiv_ι (φ : Module.Dual R M) (m : M) :
-    pderiv φ (ι R M m) = algebraMap R (SymmetricAlgebra R M) (φ m) := by
-  simp [pderiv]
-
-/-- **The chain rule.** Differentiating the image of `p` under the map induced by `g : M → N`
-along `φ` is the image of the derivative of `p` along `φ ∘ g`. -/
-theorem pderiv_map {N : Type*} [AddCommMonoid N] [Module R N] (g : M →ₗ[R] N)
-    (φ : Module.Dual R N) (p : SymmetricAlgebra R M) :
-    pderiv φ (map R g p) = map R g (pderiv (φ ∘ₗ g) p) := by
-  induction p using SymmetricAlgebra.induction with
-  | algebraMap r => simp
-  | ι x => simp
-  | mul a b ha hb => simp [Derivation.leibniz, ha, hb]
-  | add a b ha hb => simp [ha, hb]
-
-/-- A derivative along a linear form lowers degrees by one: it sends the degree-`n` part of
-`Sym M` to the degree-`(n - 1)` part, and kills the scalars. -/
-theorem pderiv_mem_homogeneousSubmodule (φ : Module.Dual R M) {n : ℕ}
-    {p : SymmetricAlgebra R M} (hp : p ∈ homogeneousSubmodule R M n) :
-    pderiv φ p ∈ homogeneousSubmodule R M (n - 1) := by
-  induction hp using Submodule.pow_induction_on_left' with
-  | algebraMap r => simp
-  | add x y i _ _ ihx ihy => rw [map_add]; exact Submodule.add_mem _ ihx ihy
-  | mem_mul m hm i x hx ih =>
-    obtain ⟨y, rfl⟩ := hm
-    rw [Derivation.leibniz, smul_eq_mul, smul_eq_mul, pderiv_ι, Nat.succ_sub_one,
-      mul_comm x, ← Algebra.smul_def]
-    refine Submodule.add_mem _ ?_ (Submodule.smul_mem _ _ hx)
-    cases i with
-    | zero =>
-      obtain ⟨r, rfl⟩ : ∃ r, algebraMap R _ r = x :=
-        ⟨_, algebraMap_homogeneousSubmoduleZeroEquiv_apply R M ⟨x, hx⟩⟩
-      simp
-    | succ j => simpa [add_comm] using SetLike.mul_mem_graded (ι_mem_homogeneousSubmodule R M y) ih
-
-/-- In the coordinates of a basis `b`, the derivative along the coordinate form `b.coord i` is
-Mathlib's partial derivative `MvPolynomial.pderiv i` in the variable `i`. -/
-theorem equivMvPolynomial_pderiv_coord {n : Type*} (b : Module.Basis n R M)
-    (i : n) (p : SymmetricAlgebra R M) :
-    equivMvPolynomial b (pderiv (b.coord i) p) = MvPolynomial.pderiv i (equivMvPolynomial b p) := by
-  classical
-  induction p using SymmetricAlgebra.induction with
-  | algebraMap r => simp
-  | ι x =>
-    -- Both sides are the constant polynomial with value the `i`-th coordinate of `x`.
-    simp [Module.Basis.constr_apply, map_finsuppSum, Pi.single_apply, MvPolynomial.smul_eq_C_mul,
-      Finsupp.sum_ite_eq']
-  | mul a c ha hc => simp [Derivation.leibniz, ha, hc]
-  | add a c ha hc => simp [ha, hc]
-
-end CommSemiring
 
 section CommRing
 
@@ -177,9 +96,8 @@ private theorem det_of_pderiv (φ : n → Module.Dual R M) (f : n → SymmetricA
       ((algebraMap R (SymmetricAlgebra R M)).mapMatrix
         (Matrix.of fun j k ↦ φ j (b k))).transpose := by
     ext i j
-    conv_lhs => rw [Matrix.of_apply, ← b.sum_dual_apply_smul_coord (φ j), map_sum,
-      ← Derivation.coeFn_coe, Derivation.coe_sum_linearMap, LinearMap.sum_apply]
-    simp [Matrix.mul_apply, Algebra.smul_def, mul_comm]
+    rw [Matrix.of_apply, pderiv_eq_sum b]
+    simp [Matrix.mul_apply, mul_comm]
   rw [h, Matrix.det_mul, Matrix.det_transpose, ← RingHom.map_det, jacobian_def, mul_comm]
 
 /-- **Change of basis.** The Jacobians of a family in two bases `b` and `b'` differ by the
