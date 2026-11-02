@@ -48,14 +48,14 @@ variable {k K : Type*} [Field k] [Field K] [Algebra k K]
 thickened point `K[T]/((T - α)^p)`, as a `K`-algebra. -/
 noncomputable def inseparableFibreEquiv (ha : ∀ c : k, c ^ p ≠ a)
     (hα : α ^ p = algebraMap k K a) :
-    K ⊗[k] (adicOfIrreducible (X_pow_sub_C_irreducible_of_prime Fact.out ha)).ResidueField ≃ₐ[K]
+    K ⊗[k] (adicOfIrreducible (irreducible_X_pow_sub_C_of_prime Fact.out ha)).ResidueField ≃ₐ[K]
       AdjoinRoot ((X - C α) ^ p) := by
   let e := adicOfIrreducibleResidueFieldEquiv
-    (X_pow_sub_C_irreducible_of_prime Fact.out ha)
+    (irreducible_X_pow_sub_C_of_prime Fact.out ha)
   -- Repackage the quotient presentation on the `AdjoinRoot` type synonym, with its
   -- own inherited algebra instances, before applying tensor-product functoriality.
   let e' : AdjoinRoot (X ^ p - C a) ≃ₐ[k]
-      (adicOfIrreducible (X_pow_sub_C_irreducible_of_prime Fact.out ha)).ResidueField :=
+      (adicOfIrreducible (irreducible_X_pow_sub_C_of_prime Fact.out ha)).ResidueField :=
     { toFun := e
       invFun := e.symm
       left_inv := e.left_inv
@@ -75,7 +75,7 @@ theorem inseparableFibreEquiv_tmul_root (ha : ∀ c : k, c ^ p ≠ a)
     (hα : α ^ p = algebraMap k K a) :
     inseparableFibreEquiv ha hα
       (1 ⊗ₜ[k] adicOfIrreducibleResidueFieldEquiv
-        (X_pow_sub_C_irreducible_of_prime Fact.out ha) (AdjoinRoot.root (X ^ p - C a))) =
+        (irreducible_X_pow_sub_C_of_prime Fact.out ha) (AdjoinRoot.root (X ^ p - C a))) =
       AdjoinRoot.root ((X - C α) ^ p) := by
   unfold inseparableFibreEquiv
   extract_lets e e'
@@ -89,7 +89,7 @@ theorem inseparableFibreEquiv_tmul_root (ha : ∀ c : k, c ^ p ≠ a)
 theorem isLocalRing_inseparableFibre (ha : ∀ c : k, c ^ p ≠ a)
     (hα : α ^ p = algebraMap k K a) :
     IsLocalRing
-      (K ⊗[k] (adicOfIrreducible (X_pow_sub_C_irreducible_of_prime Fact.out ha)).ResidueField) := by
+      (K ⊗[k] (adicOfIrreducible (irreducible_X_pow_sub_C_of_prime Fact.out ha)).ResidueField) := by
   have := isLocalRing_adjoinRoot_X_sub_C_pow α p
   exact (inseparableFibreEquiv ha hα).toRingEquiv.symm.isLocalRing
 
@@ -98,7 +98,7 @@ In particular one must not replace this fibre by its reduced field factor. -/
 theorem length_inseparableFibre (ha : ∀ c : k, c ^ p ≠ a)
     (hα : α ^ p = algebraMap k K a) :
     let B := K ⊗[k]
-      (adicOfIrreducible (X_pow_sub_C_irreducible_of_prime Fact.out ha)).ResidueField
+      (adicOfIrreducible (irreducible_X_pow_sub_C_of_prime Fact.out ha)).ResidueField
     Module.length B B = p := by
   dsimp only
   rw [(inseparableFibreEquiv ha hα).toRingEquiv.length_self_eq,
@@ -108,11 +108,11 @@ theorem length_inseparableFibre (ha : ∀ c : k, c ^ p ≠ a)
 theorem isArtinianRing_inseparableFibre (ha : ∀ c : k, c ^ p ≠ a)
     (hα : α ^ p = algebraMap k K a) :
     IsArtinianRing
-      (K ⊗[k] (adicOfIrreducible (X_pow_sub_C_irreducible_of_prime Fact.out ha)).ResidueField) := by
+      (K ⊗[k] (adicOfIrreducible (irreducible_X_pow_sub_C_of_prime Fact.out ha)).ResidueField) := by
   have h := length_inseparableFibre ha hα
   have : IsFiniteLength
-      (K ⊗[k] (adicOfIrreducible (X_pow_sub_C_irreducible_of_prime Fact.out ha)).ResidueField)
-      (K ⊗[k] (adicOfIrreducible (X_pow_sub_C_irreducible_of_prime Fact.out ha)).ResidueField) :=
+      (K ⊗[k] (adicOfIrreducible (irreducible_X_pow_sub_C_of_prime Fact.out ha)).ResidueField)
+      (K ⊗[k] (adicOfIrreducible (irreducible_X_pow_sub_C_of_prime Fact.out ha)).ResidueField) :=
     Module.length_ne_top_iff.mp (by rw [h]; exact ENat.natCast_ne_top p)
   exact (isFiniteLength_iff_isNoetherian_isArtinian.mp this).2
 
@@ -120,7 +120,7 @@ theorem isArtinianRing_inseparableFibre (ha : ∀ c : k, c ^ p ≠ a)
 theorem exists_ne_zero_pow_eq_zero_inseparableFibre (ha : ∀ c : k, c ^ p ≠ a)
     (hα : α ^ p = algebraMap k K a) :
     ∃ z : K ⊗[k]
-      (adicOfIrreducible (X_pow_sub_C_irreducible_of_prime Fact.out ha)).ResidueField,
+      (adicOfIrreducible (irreducible_X_pow_sub_C_of_prime Fact.out ha)).ResidueField,
       z ≠ 0 ∧ z ^ p = 0 := by
   let e := inseparableFibreEquiv ha hα
   let q : K[X] := X - C α
