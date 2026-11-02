@@ -168,4 +168,20 @@ theorem clebschGordanRecouplingEquiv_single_apply (hq : IsGenericQuantumParamete
   simp only [clebschGordanRecouplingEquiv, LinearEquiv.trans_apply,
     clebschGordanLeftEquiv_single, clebschGordanRightEquiv_symm_apply]
 
+/-- An inverse recoupling coordinate is obtained by including its right channel, undoing
+reassociation, and then projecting onto the left channel. -/
+theorem clebschGordanRecouplingEquiv_symm_single_apply (hq : IsGenericQuantumParameter q)
+    (i : Fin (min m n + 1)) (j : Fin (min (m + n - 2 * (i : ℕ)) p + 1))
+    (r : Fin (min n p + 1)) (s : Fin (min m (n + p - 2 * (r : ℕ)) + 1))
+    (x : LadderModule q (m + (n + p - 2 * (r : ℕ)) - 2 * (s : ℕ)) (ε * (δ * ζ))) :
+    (clebschGordanRecouplingEquiv hq).symm (Pi.single r (Pi.single s x)) i j =
+      clebschGordanProjection hq j
+        (tensorMap ℂ (UqSl2 q) (clebschGordanProjection hq i) LinearMap.id
+          ((assoc ℂ (UqSl2 q) _ _ _).symm
+            (tensorMap ℂ (UqSl2 q) LinearMap.id (clebschGordanInclusion hq r)
+              (clebschGordanInclusion hq s x)))) := by
+  simp only [clebschGordanRecouplingEquiv, LinearEquiv.trans_symm,
+    LinearEquiv.symm_symm, LinearEquiv.trans_apply,
+    clebschGordanRightEquiv_single, clebschGordanLeftEquiv_symm_apply]
+
 end TauCeti.UqSl2
