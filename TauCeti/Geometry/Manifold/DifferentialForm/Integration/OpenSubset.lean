@@ -29,7 +29,7 @@ integration on compactly supported cohomology interacts with the extension-by-ze
   supported in `U`.
 * `TauCeti.integralTopForm_extendByZero`: `∫_W ext ω = ∫_U ω` for a compactly supported top form
   `ω` on `U ≤ W`, on a Hausdorff manifold.
-* `TauCeti.integrableTopForm_mpullback_subtypeVal_iff`,
+* `TopologicalSpace.Opens.integrableTopForm_mpullback_subtypeVal_iff`,
   `TauCeti.integrableTopForm_extendByZero_iff`: restriction and extension by zero preserve and
   reflect integrability.
 
@@ -45,11 +45,13 @@ noncomputable section
 open Set Topology TopologicalSpace
 open scoped Manifold
 
-namespace TauCeti
-
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   [IsManifold I 1 M] {k : ℕ}
+
+namespace TopologicalSpace.Opens
+
+open TauCeti
 
 /-- Restricting a top form supported in an open subset `U` preserves and reflects
 integrability. -/
@@ -59,6 +61,10 @@ theorem integrableTopForm_mpullback_subtypeVal_iff (U : Opens M) {φ : RoughForm
   U.isOpenEmbedding'.integrableTopForm_mpullback_iff
     (fun x ↦ (isLocalDiffeomorph_subtype_val (n := 1) x).isInvertible_mfderiv one_ne_zero)
     (by rwa [Subtype.range_coe])
+
+end TopologicalSpace.Opens
+
+namespace TauCeti
 
 /-- **Integration over an open subset.** The integral over `M` of a top form supported in an open
 subset `U` is its integral over `U`, for the restricted orientation: `∫_U φ|_U = ∫_M φ`. -/

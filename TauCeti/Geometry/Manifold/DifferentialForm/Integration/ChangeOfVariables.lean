@@ -40,10 +40,6 @@ assemble these pieces into the integrals over `N` and `M`.
   orientation-preserving such embedding preserves the integral of top forms supported in its
   range, and `Topology.IsOpenEmbedding.integralTopForm_mpullback_of_isOrientationReversingAt`:
   an orientation-reversing one negates it.
-* `Homeomorph.integrableTopForm_mpullback_iff`,
-  `Homeomorph.integralTopForm_mpullback_of_isOrientationPreservingAt` and
-  `Homeomorph.integralTopForm_mpullback_of_isOrientationReversingAt`: the case of
-  homeomorphisms.
 
 ## References
 
@@ -311,34 +307,3 @@ theorem integralTopForm_mpullback_of_isOrientationReversingAt {f : M → N}
   exact (Manifold.Orientation.isOrientationPreservingAt_neg_right o o' f x).2 (ho x)
 
 end Topology.IsOpenEmbedding
-
-namespace Homeomorph
-
-open TauCeti
-
-/-- Pullback along a homeomorphism whose manifold derivative is invertible at every point
-preserves and reflects integrability of top forms. -/
-theorem integrableTopForm_mpullback_iff (f : M ≃ₜ N) (hd : ∀ x, (mfderiv I J f x).IsInvertible)
-    (φ : RoughForm J N ℝ k) : IntegrableTopForm (mpullback I J f φ) ↔ IntegrableTopForm φ :=
-  f.isOpenEmbedding.integrableTopForm_mpullback_iff hd (by simp only [f.range_coe, subset_univ])
-
-/-- **Change of variables for top forms.** Pullback along an orientation-preserving
-homeomorphism preserves the integral of every top form: `∫_M f^*φ = ∫_N φ`. Both sides vanish
-together when `φ` is not integrable. -/
-theorem integralTopForm_mpullback_of_isOrientationPreservingAt (f : M ≃ₜ N)
-    {o : Manifold.Orientation I M (Fin k)} {o' : Manifold.Orientation J N (Fin k)}
-    (ho : ∀ x, Manifold.Orientation.IsOrientationPreservingAt o o' f x)
-    (φ : RoughForm J N ℝ k) : integralTopForm o (mpullback I J f φ) = integralTopForm o' φ :=
-  f.isOpenEmbedding.integralTopForm_mpullback_of_isOrientationPreservingAt ho
-    (by simp only [f.range_coe, subset_univ])
-
-/-- Pullback along an orientation-reversing homeomorphism negates the integral of every top
-form: `∫_M f^*φ = -∫_N φ`. -/
-theorem integralTopForm_mpullback_of_isOrientationReversingAt (f : M ≃ₜ N)
-    {o : Manifold.Orientation I M (Fin k)} {o' : Manifold.Orientation J N (Fin k)}
-    (ho : ∀ x, Manifold.Orientation.IsOrientationReversingAt o o' f x)
-    (φ : RoughForm J N ℝ k) : integralTopForm o (mpullback I J f φ) = -integralTopForm o' φ :=
-  f.isOpenEmbedding.integralTopForm_mpullback_of_isOrientationReversingAt ho
-    (by simp only [f.range_coe, subset_univ])
-
-end Homeomorph
