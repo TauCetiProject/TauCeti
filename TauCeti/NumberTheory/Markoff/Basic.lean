@@ -46,7 +46,8 @@ joins two positive triples related by a move.
 * `TauCeti.markoffVieta_comp_perm`: coordinate permutations normalise the moves.
 * `TauCeti.markoffVieta_apply_self_mul_self`: the two roots in the moved coordinate multiply to
   `x_{i+1}² + x_{i+2}²`.
-* `TauCeti.markoffVieta_mem_positiveMarkoffTriples`: the moves preserve `M`.
+* `TauCeti.markoffVieta_mem_positiveMarkoffTriples_iff`: the moves preserve `M`, in both
+  directions.
 
 ## References
 
@@ -340,6 +341,13 @@ theorem markoffVieta_mem_positiveMarkoffTriples {x : Fin 3 → ℤ}
     exact pos_of_mul_pos_left (hmul ▸ hsq) (hx.2 j).le
   · rw [markoffVieta_apply_of_ne h]
     exact hx.2 j
+
+/-- The Vieta moves preserve the positive Markoff triples, in both directions. -/
+@[simp]
+theorem markoffVieta_mem_positiveMarkoffTriples_iff {i : Fin 3} {x : Fin 3 → ℤ} :
+    markoffVieta i x ∈ positiveMarkoffTriples ↔ x ∈ positiveMarkoffTriples :=
+  ⟨fun h => markoffVieta_markoffVieta i x ▸ markoffVieta_mem_positiveMarkoffTriples h i,
+    fun h => markoffVieta_mem_positiveMarkoffTriples h i⟩
 
 /-- The integer Markoff graph: the simple graph on the positive Markoff triples in which `x` and
 `y` are adjacent when they are distinct and `y` is obtained from `x` by a Vieta move. -/
