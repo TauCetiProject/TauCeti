@@ -94,6 +94,14 @@ noncomputable def germ (P : Bᵒᵖ ⥤ A) (U : B) (x : X) (hx : x ∈ ι U) :
     P.obj (op U) ⟶ (G.point x).presheafFiber.obj P :=
   (G.point x).toPresheafFiber U ⟨⟨hx⟩⟩ P
 
+/-- Mathlib's canonical maps to the fibre at the point `G.point x` are the germs. -/
+@[simp]
+theorem toPresheafFiber_point (x : X) (U : B) (u : (G.point x).fiber.obj U) (P : Bᵒᵖ ⥤ A) :
+    (G.point x).toPresheafFiber U u P =
+      G.germ P U x ((G.nonempty_point_fiber_obj_iff x U).mp ⟨u⟩) := by
+  rw [Subsingleton.elim u ⟨⟨(G.nonempty_point_fiber_obj_iff x U).mp ⟨u⟩⟩⟩]
+  rfl
+
 /-- The germ of a restricted section is the germ of the original section. -/
 @[reassoc (attr := simp), elementwise (attr := simp)]
 theorem germ_res (P : Bᵒᵖ ⥤ A) {U V : B} (f : V ⟶ U) (x : X) (hx : x ∈ ι V) :
