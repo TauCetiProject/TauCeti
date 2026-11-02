@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.LinearAlgebra.PiTensorProduct.Finite
-import TauCeti.RingTheory.PiTensorProduct.Etale
+import TauCeti.RingTheory.Etale.PiTensorProduct
 import TauCeti.RingTheory.Etale.Idempotent
 
 /-!
