@@ -132,6 +132,7 @@ lemma smallTwistedChainComplex_d (n : ℕ) :
         (fun _ hc ↦ d_mem_smallTwistedChains L U hc)) ≫
       eqToHom (smallTwistedChainComplex_X L U n).symm := by
   simp only [smallTwistedChainComplex, ChainComplex.of_d]
+  -- The degree-object equalities are reflexive, so both `eqToHom` transports are identities.
   rfl
 
 /-- The boundary of a small chain has the same underlying chain as the singular boundary. -/
@@ -143,6 +144,7 @@ lemma coe_smallTwistedChainComplex_d_apply (n : ℕ)
       (L.twistedChainComplex.d (n + 1) n).hom
         ((eqToHom (smallTwistedChainComplex_X L U (n + 1))).hom c) := by
   rw [smallTwistedChainComplex_d]
+  -- The reflexive degree transports are identities; the restricted map has the same value.
   rfl
 
 /-- The inclusion of small twisted chains into all twisted singular chains. -/
@@ -153,6 +155,7 @@ def smallTwistedChainComplexι : smallTwistedChainComplex L U ⟶ L.twistedChain
       dsimp only [smallTwistedChainComplex]
       rw [ChainComplex.of_d]
       ext c
+      -- The degree transport is the identity, and restriction commutes with subtype inclusion.
       rfl)
 
 /-- In each degree the small-chain inclusion is the submodule inclusion. -/
@@ -208,10 +211,11 @@ lemma twistedSingularChain_mem_smallTwistedChains {m k : ℕ}
   intro a ha
   apply (smallTwistedChains L U k).toAddSubgroup.zsmul_mem
   rw [twistedAffineSimplex_def]
-  -- The composite evaluates as transport followed by fibre inclusion; the simplex's image
-  -- simplifies by the `toSSetObjEquiv` apply/symm round-trip.
-  exact ιTwistedChainComplex_mem_smallTwistedChains L U
-    ((TopCat.mem_smallSingularSubcomplex_iff X U _).2 (hc a ha)) _
+  -- The simplex-point wrappers must unfold for the composite's intermediate fibre to match.
+  erw [ModuleCat.hom_comp, LinearMap.comp_apply]
+  apply ιTwistedChainComplex_mem_smallTwistedChains
+  rw [TopCat.mem_smallSingularSubcomplex_iff, Equiv.apply_symm_apply]
+  exact hc a ha
 
 /-- Subdivision preserves small twisted chains, without openness assumptions on the family. -/
 lemma twistedSubdivisionX_mem_smallTwistedChains {n : ℕ} {c : L.twistedChainComplex.X n}
