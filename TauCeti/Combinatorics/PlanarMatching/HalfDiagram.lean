@@ -621,7 +621,9 @@ theorem halfCount_eq_choose_sub_choose {n k : ℕ} (hkn : k < n) (h : Even (n + 
     halfCount n k = n.choose ((n - k) / 2) - n.choose ((n - k) / 2 - 1) := by
   obtain ⟨i, rfl⟩ : ∃ i, n = k + 2 * i := ⟨(n - k) / 2, by rw [Nat.even_iff] at h; omega⟩
   have e : (k + 2 * i - k) / 2 = i := by omega
-  rw [e, Nat.choose_symm_of_eq_add (show k + 2 * i = (i - 1) + (i + k + 1) by omega)]
+  -- `k < k + 2 * i` forces `1 ≤ i`, so `i - 1` and `i + k + 1` are complementary in `k + 2 * i`.
+  have hsplit : k + 2 * i = (i - 1) + (i + k + 1) := by omega
+  rw [e, Nat.choose_symm_of_eq_add hsplit]
   have := halfCount_add_two_mul_add_choose k i
   omega
 
