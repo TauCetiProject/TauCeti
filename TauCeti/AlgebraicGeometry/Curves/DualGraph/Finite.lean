@@ -82,15 +82,10 @@ theorem exists_finset_representatives_of_bounds [Finite ι] (V E g : ℕ) :
     ⟨(fun e k ↦ a (G.endpoint (b.symm e) k),
       fun x ↦ ⟨G.genus (a.symm x), Nat.lt_succ_of_le (hg _)⟩,
       fun i ↦ a (G.marking i)),
-      ⟨⟨a (Classical.arbitrary G.Vertex)⟩, fun x y ↦ by
-        rw [← a.apply_symm_apply x, ← a.apply_symm_apply y]
-        refine (G.connected (a.symm x) (a.symm y)).lift a ?_
-        intro z w hzw
-        obtain ⟨e, he | he⟩ := hzw
-        · exact ⟨b e, Or.inl ⟨by simpa using congrArg a he.1,
-            by simpa using congrArg a he.2⟩⟩
-        · exact ⟨b e, Or.inr ⟨by simpa using congrArg a he.1,
-            by simpa using congrArg a he.2⟩⟩⟩⟩
+      ⟨⟨a (Classical.arbitrary G.Vertex)⟩, by
+        apply G.connected_of_surjective a a.surjective
+        intro e
+        exact Or.inr ⟨b e, Or.inl ⟨by simp, by simp⟩⟩⟩⟩
   let c : BoundedPresentation ι V E g :=
     ⟨⟨_, Nat.lt_succ_of_le hV⟩, ⟨_, Nat.lt_succ_of_le hE⟩, d⟩
   refine ⟨c.toGraph, ?_, ⟨?_⟩⟩
