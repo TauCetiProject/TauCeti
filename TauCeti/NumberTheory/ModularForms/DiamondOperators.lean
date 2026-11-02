@@ -591,8 +591,8 @@ theorem projection_mem_modFormCharSpace {k : ℤ}
     F.projection _ hF f ∈ modFormCharSpace k χ := by
   rw [mem_modFormCharSpace_iff]
   intro d
-  rw [diamondOpHom_apply, ← Module.End.mul_apply, ← (commute_projection_diamondOp hF (hd d)).eq,
-    Module.End.mul_apply, diamondOp_apply_of_mem_modFormCharSpace k χ d hf, map_smul]
+  rw [diamondOpHom_apply, ← mul_apply_eq_comp, ← (commute_projection_diamondOp hF (hd d)).eq,
+    mul_apply_eq_comp, diamondOp_apply_of_mem_modFormCharSpace k χ d hf, map_smul]
 
 /-- **A diamond-stable complement of the cusp forms splits each nebentypus space.** If `F` is a
 complement of the cusp forms in `M_k(Γ₁(N))` stable under the diamond operators, then its forms of

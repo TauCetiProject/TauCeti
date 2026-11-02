@@ -97,12 +97,12 @@ private theorem exists_le_one :
   -- A reference measure `ρ`, finite on compact sets, dominating `|Du|` and every `νᵢ`.
   set ρ : Measure Ω := lam + ∑ i, (ν₁ i + ν₂ i) with hρ
   have : IsFiniteMeasureOnCompacts ρ := ⟨fun K hK => by
-    simp only [hρ, Measure.coe_add, Measure.coe_finsetSum, Pi.add_apply, Finset.sum_apply]
+    simp only [hρ, FunLike.coe_add, FunLike.coe_sum, Pi.add_apply, Finset.sum_apply]
     exact ENNReal.add_lt_top.2 ⟨hK.measure_lt_top, ENNReal.sum_lt_top.2 fun i _ =>
       ENNReal.add_lt_top.2 ⟨(h₁ i).lt_top_of_isCompact hK, (h₂ i).lt_top_of_isCompact hK⟩⟩⟩
   have hlam : lam ≪ ρ := Measure.AbsolutelyContinuous.rfl.add_right _
   have hac {i} {ν : Measure Ω} (hν : ν = ν₁ i ∨ ν = ν₂ i) : ν ≪ ρ := fun s hs => by
-    simp only [hρ, Measure.coe_add, Measure.coe_finsetSum, Pi.add_apply, Finset.sum_apply,
+    simp only [hρ, FunLike.coe_add, FunLike.coe_sum, Pi.add_apply, Finset.sum_apply,
       add_eq_zero, Finset.sum_eq_zero_iff, Finset.mem_univ, true_implies] at hs
     rcases hν with rfl | rfl
     exacts [(hs.2 i).1, (hs.2 i).2]
