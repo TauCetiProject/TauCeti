@@ -201,18 +201,30 @@ variable {M' N' : Type*}
   [SetLike.GradedSMul 𝒜 𝒩']
 
 -- Use the characteristic piece equation, since `ofDecomposition` is opaque across modules.
-local instance gradedSMulOfDecompositionRight (ℳ : ℤ → Submodule R M) [Decomposition ℳ]
-    [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ] :
+local instance tensorGradedRight :
     SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece
     (InternalGrading.ofDecomposition ℳ).piece := by
   rw [InternalGrading.ofDecomposition_piece]
   infer_instance
 
-local instance gradedSMulOfDecompositionLeft (𝒩 : ℤ → Submodule R N) [Decomposition 𝒩]
-    [SetLike.GradedSMul 𝒜 𝒩] :
+local instance tensorGradedLeft :
     SetLike.GradedSMul 𝒜 (InternalGrading.ofDecomposition 𝒩).piece := by
   rw [InternalGrading.ofDecomposition_piece]
   infer_instance
+
+omit [Module R A] in
+/-- Maps out of the balanced tensor product agree once they agree on pure tensors with a
+homogeneous left factor. -/
+theorem hom_ext_of_mem {P : Type*} [AddCommGroup P] [Module R P]
+    {φ ψ : BalancedTensorProduct R A M N →ₗ[R] P}
+    (h : ∀ {q : ℤ} {m : M}, m ∈ ℳ q → ∀ n : N, φ (tmul R A m n) = ψ (tmul R A m n)) :
+    φ = ψ := by
+  refine hom_ext fun m n ↦ ?_
+  have key : φ ∘ₗ (mk R A).flip n = ψ ∘ₗ (mk R A).flip n := by
+    refine (InternalGrading.ofDecomposition ℳ).linearMap_ext fun q x hx ↦ ?_
+    rw [InternalGrading.ofDecomposition_piece] at hx
+    simpa only [LinearMap.comp_apply, LinearMap.flip_apply, mk_apply] using h hx n
+  simpa only [LinearMap.comp_apply, LinearMap.flip_apply, mk_apply] using LinearMap.congr_fun key m
 
 /-- Tensoring homogeneous equivariant maps adds their degrees for the total grading of the
 balanced tensor product of internally decomposed modules. -/

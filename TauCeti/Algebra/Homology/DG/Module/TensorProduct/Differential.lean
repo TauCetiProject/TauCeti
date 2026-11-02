@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Homology.DG.Module.Right.Defs
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Unit
 import TauCeti.Algebra.Ring.NegOnePow
+import TauCeti.LinearAlgebra.TensorProduct.Balanced.Grading.Basic
 
 /-!
 # The differential on a balanced tensor product of DG modules
@@ -67,20 +68,6 @@ variable {R A M N : Type*} [CommRing R] [Ring A] [Algebra R A]
   [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ]
   [SetLike.GradedSMul 𝒜 ℳN]
   {dM : M →ₗ[R] M} {dN : N →ₗ[R] N}
-
-omit [Algebra R A] [IsScalarTower R Aᵐᵒᵖ M] [IsScalarTower R A N] in
-/-- Maps out of the balanced tensor product agree once they agree on pure tensors with a
-homogeneous left factor. -/
-private theorem hom_ext_of_mem {P : Type*} [AddCommGroup P] [Module R P]
-    {φ ψ : BalancedTensorProduct R A M N →ₗ[R] P}
-    (h : ∀ {q : ℤ} {m : M}, m ∈ ℳ q → ∀ n : N, φ (tmul R A m n) = ψ (tmul R A m n)) :
-    φ = ψ := by
-  refine hom_ext fun m n ↦ ?_
-  have key : φ ∘ₗ (mk R A).flip n = ψ ∘ₗ (mk R A).flip n := by
-    refine (InternalGrading.ofDecomposition ℳ).linearMap_ext fun q x hx ↦ ?_
-    rw [InternalGrading.ofDecomposition_piece] at hx
-    simpa only [LinearMap.comp_apply, LinearMap.flip_apply, mk_apply] using h hx n
-  simpa only [LinearMap.comp_apply, LinearMap.flip_apply, mk_apply] using LinearMap.congr_fun key m
 
 private noncomputable def differentialBilinear :
     M →ₗ[R] N →ₗ[R] BalancedTensorProduct R A M N :=

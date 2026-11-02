@@ -48,17 +48,7 @@ variable {R A M N : Type*} [CommRing R] [Ring A] [Algebra R A]
   [SetLike.GradedSMul 𝒜 𝒩]
   {dM : M →ₗ[R] M} {dN : N →ₗ[R] N}
 
--- Use the characteristic piece equation, since `ofDecomposition` is opaque across modules.
-local instance tensorGradedRight :
-    SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece
-    (InternalGrading.ofDecomposition ℳ).piece := by
-  rw [InternalGrading.ofDecomposition_piece]
-  infer_instance
-
-local instance tensorGradedLeft :
-    SetLike.GradedSMul 𝒜 (InternalGrading.ofDecomposition 𝒩).piece := by
-  rw [InternalGrading.ofDecomposition_piece]
-  infer_instance
+attribute [local instance] tensorGradedRight tensorGradedLeft
 
 omit [IsScalarTower R Aᵐᵒᵖ M] [IsScalarTower R A N] in
 open MulOpposite in

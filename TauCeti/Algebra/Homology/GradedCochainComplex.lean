@@ -170,6 +170,8 @@ theorem gradedCochainComplexHom_f_apply (f : M →ₗ[R] N)
       ((gradedCochainComplexHom (hdeg := hdeg) (hsq := hsq) f hf hcomm).f p
         (eqToHom (gradedCochainComplex_X (hdeg := hdeg) (hsq := hsq) p).symm x)) : N) = f x := by
   rw [gradedCochainComplex_X_proof_eq_rfl, gradedCochainComplex_X_proof_eq_rfl]
+  -- Both transports are now `eqToHom rfl`, and the component of `CochainComplex.ofHom` is the
+  -- restriction of `f`, so both sides are the same ambient value.
   rfl
 
 /-- Under `gradedCochainComplexXEquiv`, the induced cochain map is the original linear map. -/
@@ -200,7 +202,9 @@ theorem gradedCochainComplex_hom_ext
 theorem gradedCochainComplexHom_id :
     gradedCochainComplexHom (hdeg := hdeg) (hsq := hsq) (hdegN := hdeg) (hsqN := hsq)
       (LinearMap.id : M →ₗ[R] M) (LinearMap.isHomogeneous_id ℳ) rfl = 𝟙 _ :=
-  gradedCochainComplex_hom_ext fun _ _ ↦ (rfl)
+  gradedCochainComplex_hom_ext fun _ _ ↦ by
+    simp only [gradedCochainComplexXEquiv_gradedCochainComplexHom_f_apply, LinearMap.id_apply,
+      HomologicalComplex.id_f, ModuleCat.hom_id]
 
 /-- Cochain maps induced by linear maps preserve composition. -/
 theorem gradedCochainComplexHom_comp {P : Type uM} [AddCommGroup P] [Module R P]
@@ -213,7 +217,9 @@ theorem gradedCochainComplexHom_comp {P : Type uM} [AddCommGroup P] [Module R P]
       (LinearMap.comp_comm_comp hcommg hcommf) =
       gradedCochainComplexHom (hdegN := hdegN) (hsqN := hsqN) f hf hcommf ≫
         gradedCochainComplexHom g hg hcommg :=
-  gradedCochainComplex_hom_ext fun _ _ ↦ (rfl)
+  gradedCochainComplex_hom_ext fun _ _ ↦ by
+    simp only [gradedCochainComplexXEquiv_gradedCochainComplexHom_f_apply, LinearMap.comp_apply,
+      HomologicalComplex.comp_f, ModuleCat.hom_comp]
 
 /-- The degree `-1` cochain whose components are the restrictions of a linear map `k` of
 degree `-1`. -/
