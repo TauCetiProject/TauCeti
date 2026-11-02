@@ -64,6 +64,8 @@ Huber namespace, alongside `TauCeti/RingTheory/Localization/DenIdeal.lean`.
   `f` carries `R` into `R'` and `T` into `T'`.
 * `IsLocalization.Away.isSMulRegular_algebraMap`: an element whose annihilator is killed by `r`
   becomes a nonzerodivisor after inverting `r`.
+* `IsLocalization.Away.intCast_mul_invSelf`: `m · (1/m) = 1` in a localisation of `ℤ` away from
+  `m`, with `m` written as an integer cast.
 
 ## Provenance
 
@@ -95,6 +97,10 @@ directly from Mathlib's `mk'` API.
 `IsLocalization.Away.isSMulRegular_algebraMap`, which says when an element stays a
 nonzerodivisor in the localisation, is **also a later addition with no AINTLIB analogue**, proved
 here directly from Mathlib's `mk'` API.
+
+`IsLocalization.Away.intCast_mul_invSelf` is **also a later addition with no AINTLIB analogue**,
+Mathlib's `IsLocalization.Away.mul_invSelf` restated with the integer cast, which is the simp-normal
+form of `algebraMap ℤ S m`.
 
 `map_divBy_eq_mul_inv` is a **generalisation of an AINTLIB statement**, checked against the same
 commit. There, `awayLift_divByS_one_eq_unit_inv` in
@@ -467,5 +473,12 @@ theorem isSMulRegular_algebraMap {r a : A} [IsLocalization.Away r B]
   refine ⟨⟨r ^ (n + 1), n + 1, rfl⟩, ?_⟩
   have := h (r ^ n * c) (by linear_combination hn)
   linear_combination this
+
+/-- `m⁻¹` is the inverse of `m` in a localisation of `ℤ` away from `m`, with `m` written as an
+integer cast. Mathlib's `IsLocalization.Away.mul_invSelf` states this for `algebraMap ℤ S m`,
+which simp rewrites to the cast. -/
+theorem intCast_mul_invSelf {S : Type*} [CommRing S] [Algebra ℤ S] (m : ℤ)
+    [IsLocalization.Away m S] : (m : S) * invSelf m = 1 := by
+  simpa using mul_invSelf (S := S) m
 
 end IsLocalization.Away

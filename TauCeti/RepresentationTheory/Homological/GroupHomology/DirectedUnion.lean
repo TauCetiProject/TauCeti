@@ -15,30 +15,39 @@ Let `A` be a representation of a group `G`, and let `S i` be a directed family o
 whose union is `G`. Every class of `Hₙ(G, A)` is then the image of a class of `Hₙ(S i, A)` for some
 `i`, under the map induced by the inclusion of `S i`
 (`groupHomology.exists_map_subtype_eq`). In particular, if every `Hₙ(S i, A)` vanishes,
-so does `Hₙ(G, A)` (`groupHomology.isZero_groupHomology_of_directed`).
+so does `Hₙ(G, A)` (`TauCeti.groupHomology.isZero_groupHomology_of_directed`).
 
 This follows from the finiteness of chains. An inhomogeneous chain is a finite combination of
 tuples of elements of `G`, so it involves finitely many elements of `G`, which all lie in one
-`S i` (`groupHomology.exists_chainsMap_subtype_f_eq_of_directed`). The maps of
+`S i` (`TauCeti.groupHomology.exists_chainsMap_subtype_f_eq_of_directed`). The maps of
 inhomogeneous chains induced by injective group homomorphisms are injective
 (`groupHomology.chainsMap_f_map_mono`), so a chain of `S i` whose image is a cycle is itself a
 cycle.
 
-Since the singular homology of a classifying space `BG` is the group homology of `G`, this reduces
-the homology of an Eilenberg–MacLane space `K(G, 1)` to the homology of the spaces `K(S i, 1)`, for
-instance the homology of `K(ℤ[1/2], 1)`, with `ℤ[1/2] = ⋃ᵣ 2⁻ʳ ℤ`, to that of the circle.
+Since the singular homology of a classifying space `BG` is the group homology of `G`, every
+homology class of an Eilenberg–MacLane space `K(G, 1)` comes from some `K(S i, 1)`, so `K(G, 1)` is
+acyclic whenever every `K(S i, 1)` is; for instance `K(ℤ[1/2], 1)`, with `ℤ[1/2] = ⋃ᵣ 2⁻ʳ ℤ`, is
+acyclic modulo two. Only this half of the comparison is proved here: a class of `S i` vanishing in
+`G` is not shown to vanish in a larger member, so `Hₙ(G, A)` is not identified with the colimit of
+the `Hₙ(S i, A)`.
 
 ## Main results
 
 * `groupHomology.exists_map_subtype_eq`: a class of a directed union of subgroups comes
   from a member.
-* `groupHomology.isZero_groupHomology_of_directed`: group homology of a directed union of
+* `TauCeti.groupHomology.isZero_groupHomology_of_directed`: group homology of a directed union of
   subgroups with vanishing homology vanishes.
 
 ## References
 
 * K. S. Brown, *Cohomology of Groups*, Graduate Texts in Mathematics 87, Springer, 1982
   (homology commutes with directed unions of groups).
+
+## Implementation notes
+
+`exists_map_subtype_eq` takes a class of `groupHomology A n` as an explicit argument, so the
+dot-notation namespace lint keeps it in Mathlib's root `groupHomology` namespace rather than in a
+copy of that namespace nested inside `TauCeti`. The other results are in `TauCeti.groupHomology`.
 -/
 
 public section
@@ -47,7 +56,9 @@ open CategoryTheory Limits Rep
 
 universe u
 
-namespace groupHomology
+namespace TauCeti.groupHomology
+
+open _root_.groupHomology
 
 variable {k G : Type u} [CommRing k] [Group G] {A : Rep k G}
 
@@ -90,6 +101,12 @@ theorem exists_chainsMap_subtype_f_eq_of_directed {ι : Type*} [Nonempty ι] {S 
   exact Finset.mem_coe.2 <|
     Finset.mem_biUnion.2 ⟨g, hg, Finset.mem_image_of_mem g (Finset.mem_univ m)⟩
 
+end TauCeti.groupHomology
+
+namespace groupHomology
+
+variable {k G : Type u} [CommRing k] [Group G] {A : Rep k G}
+
 /-- **Homology classes of a directed union of subgroups.** If `S` is a directed family of
 subgroups whose union is `G`, every class of `Hₙ(G, A)` is the image of a class of `Hₙ(S i, A)`,
 for some `i`, under the map induced by the inclusion of `S i`. -/
@@ -100,7 +117,15 @@ theorem exists_map_subtype_eq {ι : Type*} [Nonempty ι] {S : ι → Subgroup G}
     (fun i ↦ chainsMap (S i).subtype (𝟙 (res (S i).subtype A)))
     (fun i ↦ (ModuleCat.mono_iff_injective _).1 <|
       chainsMap_f_map_mono _ (𝟙 (res (S i).subtype A)) (S i).subtype_injective _)
-    (exists_chainsMap_subtype_f_eq_of_directed hS hG) x
+    (TauCeti.groupHomology.exists_chainsMap_subtype_f_eq_of_directed hS hG) x
+
+end groupHomology
+
+namespace TauCeti.groupHomology
+
+open _root_.groupHomology
+
+variable {k G : Type u} [CommRing k] [Group G] {A : Rep k G}
 
 /-- **Group homology of a directed union of acyclic subgroups.** If `S` is a directed family of
 subgroups whose union is `G`, and `Hₙ(S i, A) = 0` for every `i`, then `Hₙ(G, A) = 0`. -/
@@ -113,4 +138,4 @@ theorem isZero_groupHomology_of_directed {ι : Type*} [Nonempty ι] {S : ι → 
   have := ModuleCat.isZero_iff_subsingleton.1 (h i)
   rw [Subsingleton.elim y 0, map_zero]
 
-end groupHomology
+end TauCeti.groupHomology
