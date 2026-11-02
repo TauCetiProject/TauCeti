@@ -13,6 +13,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Restriction
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Sum
 public import TauCeti.Geometry.Manifold.Riemannian.Pullback.Descent
 
+import TauCeti.Analysis.Normed.Group.BallSphere
 import TauCeti.Geometry.Manifold.MFDeriv.Sum
 
 /-!
@@ -132,13 +133,6 @@ omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] in
 private theorem ne_zero_of_mem_neck (ha : 0 ≤ a) (w : neck E a b) : w.1 ≠ 0 :=
   norm_pos_iff.1 (ha.trans_lt (mem_neck.1 w.2).1)
 
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] in
-/-- The image of `v` under an injective ball lies outside the image of the closed ball of radius
-`r` exactly when `r < ‖v‖`. -/
-private theorem apply_notMem_image_closedBall_iff {X : Type*} {e : E → X} (he : Injective e)
-    {r : ℝ} {v : E} : e v ∉ e '' closedBall 0 r ↔ r < ‖v‖ := by
-  rw [he.mem_set_image, mem_closedBall_zero_iff, not_le]
-
 section Gluing
 
 variable (g₁ : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
@@ -176,7 +170,7 @@ private theorem outerMap_surjective (ha : 0 ≤ a) (hab : a < b) :
       have hv0 : v ≠ 0 := fun h ↦ mem_puncture.1 hx (by rw [h])
       have hy : e₂ (inversion 0 1 v) ∈ puncture e₂ := apply_inversion_mem_puncture h₂.injective hv0
       refine ⟨⟨.inr ⟨_, hy⟩, inr_mem_outerOpens.2 ?_⟩, ?_⟩
-      · rw [apply_notMem_image_closedBall_iff h₂.injective,
+      · rw [h₂.injective.apply_notMem_image_closedBall_zero_iff,
           inv_lt_norm_inversion_iff (ha.trans_lt hab) hv0]
         exact (mem_closedBall_zero_iff.1 hv).trans_lt hab
       · rw [outerMap_apply, mk_inl, mk_inr]
@@ -190,7 +184,7 @@ private theorem outerMap_surjective (ha : 0 ≤ a) (hab : a < b) :
       have hpos : 0 < ‖w‖ := norm_pos_iff.2 hw0
       have hx : e₁ (inversion 0 1 w) ∈ puncture e₁ := apply_inversion_mem_puncture h₁.injective hw0
       refine ⟨⟨.inl ⟨_, hx⟩, inl_mem_outerOpens.2 ?_⟩, ?_⟩
-      · rw [apply_notMem_image_closedBall_iff h₁.injective, norm_inversion_zero_one]
+      · rw [h₁.injective.apply_notMem_image_closedBall_zero_iff, norm_inversion_zero_one]
         have hb : b ≤ ‖w‖⁻¹ := by
           rw [le_inv_comm₀ (ha.trans_lt hab) hpos]
           exact mem_closedBall_zero_iff.1 hw
@@ -211,12 +205,12 @@ private def neckPunctureInr (ha : 0 ≤ a) (w : neck E a b) : puncture e₂ :=
 private def neckInl (ha : 0 ≤ a) (w : neck E a b) :
     outerOpens (a := a) (b := b) h₁.continuous h₂.continuous :=
   ⟨.inl (neckPunctureInl h₁ ha w),
-    (apply_notMem_image_closedBall_iff h₁.injective).2 (mem_neck.1 w.2).1⟩
+    h₁.injective.apply_notMem_image_closedBall_zero_iff.2 (mem_neck.1 w.2).1⟩
 
 /-- The neck, mapped into the second region by `e₂ ∘ inversion 0 1`. -/
 private def neckInr (ha : 0 ≤ a) (w : neck E a b) :
     outerOpens (a := a) (b := b) h₁.continuous h₂.continuous :=
-  ⟨.inr (neckPunctureInr h₂ ha w), (apply_notMem_image_closedBall_iff h₂.injective).2 <|
+  ⟨.inr (neckPunctureInr h₂ ha w), h₂.injective.apply_notMem_image_closedBall_zero_iff.2 <|
     (inv_lt_norm_inversion_iff (ha.trans_lt ((mem_neck.1 w.2).1.trans (mem_neck.1 w.2).2))
       (ne_zero_of_mem_neck ha w)).2 (mem_neck.1 w.2).2⟩
 
@@ -420,17 +414,19 @@ private theorem outerMetric_inner_eq (ha : 0 ≤ a) (hab : a < b) :
       simp only [rel_inl_inr, not_rel_inl_inl, not_rel_inr_inl, not_rel_inr_inr] at h
     obtain ⟨v₀, hv₀, rfl, rfl⟩ := h
     have hlt : ‖v₀‖ < b :=
-      (inv_lt_norm_inversion_iff hb hv₀).1 ((apply_notMem_image_closedBall_iff h₂.injective).1 hz')
+      (inv_lt_norm_inversion_iff hb hv₀).1
+        (h₂.injective.apply_notMem_image_closedBall_zero_iff.1 hz')
     exact outerMetric_inner_neckInl_eq h₁ h₂ d₁ d₂ hg ha
-      ⟨v₀, mem_neck.2 ⟨(apply_notMem_image_closedBall_iff h₁.injective).1 hz, hlt⟩⟩ hu hu'
+      ⟨v₀, mem_neck.2 ⟨h₁.injective.apply_notMem_image_closedBall_zero_iff.1 hz, hlt⟩⟩ hu hu'
   · -- `z' = e₁ v₀` and `z = e₂ (inversion 0 1 v₀)`, with `v₀` on the neck.
     rcases z with ⟨x | ⟨x, hx⟩, hz⟩ <;> rcases z' with ⟨⟨y, hy⟩ | y, hz'⟩ <;>
       simp only [rel_inl_inr, not_rel_inl_inl, not_rel_inr_inl, not_rel_inr_inr] at h
     obtain ⟨v₀, hv₀, rfl, rfl⟩ := h
     have hlt : ‖v₀‖ < b :=
-      (inv_lt_norm_inversion_iff hb hv₀).1 ((apply_notMem_image_closedBall_iff h₂.injective).1 hz)
+      (inv_lt_norm_inversion_iff hb hv₀).1
+        (h₂.injective.apply_notMem_image_closedBall_zero_iff.1 hz)
     exact (outerMetric_inner_neckInl_eq h₁ h₂ d₁ d₂ hg ha
-      ⟨v₀, mem_neck.2 ⟨(apply_notMem_image_closedBall_iff h₁.injective).1 hz', hlt⟩⟩
+      ⟨v₀, mem_neck.2 ⟨h₁.injective.apply_notMem_image_closedBall_zero_iff.1 hz', hlt⟩⟩
         hu.symm hu'.symm).symm
 
 variable (g₁ g₂) in
