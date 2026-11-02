@@ -11,10 +11,9 @@ public import TauCeti.Topology.Covering.Proper
 /-!
 # Compact universal covers and finite fundamental groups
 
-The fibre of the native based-path universal cover over its basepoint is in bijection with
-the fundamental group: read off the path class after identifying its endpoint with the
-basepoint. This is an equivalence of types, with no assertion about multiplication or deck
-action conventions.
+The basepoint-fibre equivalence from `TauCeti.AlgebraicTopology.UniversalCover.Basic`
+identifies the fibre with the fundamental group. This file uses it to relate compactness of
+the universal cover to finiteness of the fundamental group.
 
 For a locally path-connected, semilocally simply connected space with closed points, a compact
 universal cover has finite fundamental group. The basepoint fibre is closed in the compact
@@ -27,7 +26,6 @@ its covering projection has finite fibres and is therefore proper.
 
 ## Main declarations
 
-* `TauCeti.UniversalCover.fiberEquivFundamentalGroup`: the basepoint-fibre bijection.
 * `TauCeti.UniversalCover.finite_fundamentalGroup_of_compactSpace`: compactness upstairs
   implies finiteness of the fundamental group.
 * `TauCeti.UniversalCover.compactSpace_iff`: over a path-connected base with closed points,
@@ -50,41 +48,6 @@ open Set
 namespace TauCeti.UniversalCover
 
 variable {X : Type*} [TopologicalSpace X] (x₀ : X)
-
-/-- The fibre over the basepoint of the based-path universal cover is in bijection with
-endpoint-fixed loop homotopy classes. This is a type equivalence, not a group equivalence. -/
-def fiberEquivFundamentalGroup :
-    (proj : UniversalCover x₀ → X) ⁻¹' {x₀} ≃ FundamentalGroup X x₀ where
-  toFun e := FundamentalGroup.fromPath (cast (congrArg (Path.Homotopic.Quotient x₀) e.2) e.1.path)
-  invFun g := ⟨mk x₀ g.toPath, rfl⟩
-  left_inv := by
-    rintro ⟨⟨x, q⟩, hx⟩
-    -- Eliminate the endpoint equality before comparing the dependent path-class fields.
-    have h : x = x₀ := hx
-    subst x
-    rfl
-  right_inv g := by cases g; rfl
-
-/-- The inverse fibre bijection represents a loop class by that same class in the cover. -/
-@[simp]
-theorem coe_fiberEquivFundamentalGroup_symm (g : FundamentalGroup X x₀) :
-    ((fiberEquivFundamentalGroup x₀).symm g : UniversalCover x₀) = mk x₀ g.toPath :=
-  (rfl)
-
-/-- On a point whose endpoint is already the basepoint, the fibre bijection reads its class. -/
-@[simp]
-theorem fiberEquivFundamentalGroup_apply_mk (q : Path.Homotopic.Quotient x₀ x₀) :
-    fiberEquivFundamentalGroup x₀ ⟨mk x₀ q, rfl⟩ = FundamentalGroup.fromPath q :=
-  (rfl)
-
-/-- The distinguished constant-path lift corresponds to the identity loop class. -/
-@[simp]
-theorem fiberEquivFundamentalGroup_basepointLift :
-    fiberEquivFundamentalGroup x₀ (basepointLift x₀) = 1 := by
-  have h : basepointLift x₀ = ⟨mk x₀ (Path.Homotopic.Quotient.refl x₀), rfl⟩ :=
-    Subtype.ext (basepointLift_coe x₀)
-  rw [h, fiberEquivFundamentalGroup_apply_mk]
-  rfl
 
 variable [LocallyPathConnectedSpace X] [SemilocallySimplyConnectedSpace X]
 
