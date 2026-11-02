@@ -148,12 +148,8 @@ is its multiplicity in the finite slope multiset. -/
 @[simp]
 theorem newtonSlopeMultiplicity_coe (σ : ℝ) :
     (p : PowerSeries R).newtonSlopeMultiplicity v σ = (p.newtonSlopes v).count σ := by
-  classical
-  rw [PowerSeries.newtonSlopeMultiplicity_def, newtonPolygon_coe, newtonSlopes_def,
-    Multiset.count_map, ← Finset.filter_val, Finset.card_val, ← Set.ncard_coe_finset]
-  congr 1
-  ext n
-  simp [eq_comm]
+  simp_rw [PowerSeries.newtonSlopeMultiplicity_def, newtonPolygon_coe,
+    Multiset.count_eq_card_filter_eq, card_filter_newtonSlopes, eq_comm]
 
 end Polynomial
 
