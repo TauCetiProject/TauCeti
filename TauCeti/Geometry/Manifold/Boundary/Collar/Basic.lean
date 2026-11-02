@@ -92,22 +92,30 @@ theorem collarAmbientEquiv_apply_succ (n : ℕ) (x : EuclideanSpace ℝ (Fin n))
     collarAmbientEquiv n (x, t) i.succ = x i := by
   simp [collarAmbientEquiv]
 
-private theorem collarAmbientEquiv_apply_zero_eq_boundaryParam (n : ℕ)
+/-- At normal coordinate zero, the ambient collar equivalence is the boundary parametrization. -/
+theorem collarAmbientEquiv_apply_zero_eq_boundaryParam (n : ℕ)
     (x : EuclideanSpace ℝ (Fin n)) :
     collarAmbientEquiv n (x, 0) = euclideanHalfSpaceBoundaryParam n x := by
   simp [collarAmbientEquiv]
 
-private theorem collarAmbientEquiv_symm_apply_fst (n : ℕ)
+/-- The boundary component of the inverse ambient collar equivalence is the boundary
+projection. -/
+@[simp]
+theorem collarAmbientEquiv_symm_apply_fst (n : ℕ)
     (y : EuclideanSpace ℝ (Fin (n + 1))) :
     ((collarAmbientEquiv n).symm y).1 = euclideanHalfSpaceBoundaryProj n y := by
   simp [collarAmbientEquiv]
 
-private theorem collarAmbientEquiv_symm_apply_snd_apply_zero (n : ℕ)
+/-- The inverse ambient collar equivalence recovers coordinate zero as the normal coordinate. -/
+@[simp]
+theorem collarAmbientEquiv_symm_apply_snd_apply_zero (n : ℕ)
     (y : EuclideanSpace ℝ (Fin (n + 1))) :
     ((collarAmbientEquiv n).symm y).2 0 = y 0 := by
   simp [collarAmbientEquiv]
 
-private theorem collarAmbientEquiv_symm_apply_snd_apply_zero_nonneg (n : ℕ)
+/-- On the half-space, the normal coordinate recovered by the inverse ambient collar equivalence
+is nonnegative. -/
+theorem collarAmbientEquiv_symm_apply_snd_apply_zero_nonneg (n : ℕ)
     (y : EuclideanHalfSpace (n + 1)) :
     0 ≤ ((collarAmbientEquiv n).symm y.1).2 0 := by
   rw [collarAmbientEquiv_symm_apply_snd_apply_zero]
@@ -235,9 +243,8 @@ theorem model_collarDiffeomorph (n : ℕ) {k : WithTop ℕ∞}
     (p : EuclideanSpace ℝ (Fin n) × EuclideanHalfSpace 1) :
     (𝓡∂ (n + 1)) (collarDiffeomorph (k := k) n p) =
       collarAmbientEquiv n (((𝓡 n).prod (𝓡∂ 1)) p) := by
-  rw [modelWithCornersEuclideanHalfSpace_apply, coe_collarDiffeomorph_apply,
-    modelWithCorners_prod_coe, modelWithCornersSelf_coe, Prod.map_apply', id_eq,
-    modelWithCornersEuclideanHalfSpace_apply]
+  simp only [modelWithCornersEuclideanHalfSpace_apply, coe_collarDiffeomorph_apply,
+    modelWithCorners_prod_coe, modelWithCornersSelf_coe, Prod.map_apply', id_eq]
 
 /-- The collar diffeomorphism sends the inward normal coordinate to coordinate zero. -/
 @[simp]

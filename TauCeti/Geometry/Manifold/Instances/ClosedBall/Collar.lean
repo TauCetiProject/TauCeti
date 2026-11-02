@@ -276,10 +276,50 @@ theorem ballCollarChart_extend_symm_apply (u : EuclideanHalfSpace (n + 1)) :
   rw [OpenPartialHomeomorph.extend_coe_symm, Function.comp_apply, ModelWithCorners.left_inv,
     ballCollarChart_symm_apply]
 
+/-- A point lies in the source of the collar chart of `ψ` restricted to the radial collar of an
+open set `W` exactly when it is the radial collar of a point of `W` in the source of `ψ`. -/
+theorem mem_ballCollarChart_restr_source {W : Set (sphere (0 : E) 1 × EuclideanHalfSpace 1)}
+    (hW : IsOpen W) {y : closedBall (0 : E) 1} :
+    y ∈ ((ballCollarChart ψ).restr (ballCollar '' W)).source ↔
+      ∃ p ∈ W, p ∈ ψ.source ∧ ballCollar p = y := by
+  rw [OpenPartialHomeomorph.restr_source' _ _ (isOpenEmbedding_ballCollar.isOpenMap W hW),
+    mem_inter_iff, mem_ballCollarChart_source]
+  constructor
+  · rintro ⟨⟨p, hp, rfl⟩, p', hp', hpp'⟩
+    rw [isOpenEmbedding_ballCollar.injective hpp'] at hp'
+    exact ⟨p, hp', hp, rfl⟩
+  · rintro ⟨p, hpW, hp, rfl⟩
+    exact ⟨⟨p, hp, rfl⟩, mem_image_of_mem _ hpW⟩
+
 /-! ### Immersions read in the radial collars -/
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] {m : ℕ}
   [Fact (finrank ℝ F = m + 1)]
+
+omit [InnerProductSpace ℝ F] [Fact (finrank ℝ F = m + 1)] in
+/-- **Maps read in collar charts.** Let `ψ` and `ψ'` be charts of the unit sphere times the
+half-line for `F` and for `E`, and `G` a map between these products. In the extended collar
+charts of `ψ` and `ψ'`, the map `ballCollar ∘ G` read at the chart preimage of `u` is `G` read in
+the extended charts `ψ` and `ψ'`, conjugated by the linear collar identifications
+`EuclideanHalfSpace.collarAmbientEquiv`. -/
+theorem ballCollarChart_extend_ballCollar_apply
+    (ψ : OpenPartialHomeomorph (sphere (0 : F) 1 × EuclideanHalfSpace 1)
+      (ModelProd (EuclideanSpace ℝ (Fin m)) (EuclideanHalfSpace 1)))
+    (ψ' : OpenPartialHomeomorph (sphere (0 : E) 1 × EuclideanHalfSpace 1)
+      (ModelProd (EuclideanSpace ℝ (Fin n)) (EuclideanHalfSpace 1)))
+    (G : sphere (0 : F) 1 × EuclideanHalfSpace 1 → sphere (0 : E) 1 × EuclideanHalfSpace 1)
+    (u : EuclideanHalfSpace (m + 1)) :
+    (ballCollarChart ψ').extend (𝓡∂ (n + 1))
+        (ballCollar (G (ψ.symm ((EuclideanHalfSpace.collarDiffeomorph (k := ⊤) m).symm u)))) =
+      EuclideanHalfSpace.collarAmbientEquiv n
+        ((ψ'.extend ((𝓡 n).prod (𝓡∂ 1)) ∘ G ∘ (ψ.extend ((𝓡 m).prod (𝓡∂ 1))).symm)
+          ((EuclideanHalfSpace.collarAmbientEquiv m).symm ((𝓡∂ (m + 1)) u))) := by
+  have hu : (EuclideanHalfSpace.collarAmbientEquiv m).symm ((𝓡∂ (m + 1)) u) =
+      ((𝓡 m).prod (𝓡∂ 1)) ((EuclideanHalfSpace.collarDiffeomorph (k := ⊤) m).symm u) :=
+    (EuclideanHalfSpace.collarDiffeomorph_symm_apply_coe m u).symm
+  rw [ballCollarChart_extend_apply_ballCollar, hu]
+  simp only [Function.comp_apply, OpenPartialHomeomorph.extend_coe_symm,
+    OpenPartialHomeomorph.extend_coe, ModelWithCorners.left_inv]
 
 /-- **Immersions in the radial collars.** Let `Φ` be a map between the closed unit balls of `F`
 and `E`. If near a point `q` of the unit sphere of `F` times the half-line, `Φ` reads in the radial
@@ -293,26 +333,16 @@ theorem isImmersionAt_of_comp_ballCollar_eventuallyEq {k : ℕ∞ω}
     (hG : IsImmersionAt ((𝓡 m).prod (𝓡∂ 1)) ((𝓡 n).prod (𝓡∂ 1)) k G q)
     (hΦ : Φ ∘ ballCollar =ᶠ[𝓝 q] ballCollar ∘ G) :
     IsImmersionAt (𝓡∂ (m + 1)) (𝓡∂ (n + 1)) k Φ (ballCollar q) := by
-  -- Build the two collar charts, check the four chart conditions, and then compute `Φ` in these
-  -- charts by transporting the normal form of `G` along `collarAmbientEquiv`.
-  obtain ⟨W, hWeq, hW, hqW⟩ := eventually_nhds_iff.1 hΦ
-  have hWo : IsOpen (ballCollar '' W) := isOpenEmbedding_ballCollar.isOpenMap W hW
   -- The domain chart is the collar chart of the normal-form domain chart of `G`, restricted to
   -- the collar of `W`, where `Φ` reads as `G`; the codomain chart is the collar chart of the
-  -- normal-form codomain chart of `G`.
+  -- normal-form codomain chart of `G`. In these charts `Φ` is the normal form of `G` transported
+  -- along `collarAmbientEquiv`.
+  obtain ⟨W, hWeq, hW, hqW⟩ := eventually_nhds_iff.1 hΦ
   set dom := (ballCollarChart hG.domChart).restr (ballCollar '' W)
   set cod := ballCollarChart (E := E) hG.codChart
-  have hdom_source {y : closedBall (0 : F) 1} (hy : y ∈ dom.source) :
-      ∃ p ∈ W, p ∈ hG.domChart.source ∧ ballCollar p = y := by
-    rw [OpenPartialHomeomorph.restr_source' _ _ hWo] at hy
-    obtain ⟨⟨p, hp, rfl⟩, ⟨p', hp', hpp'⟩⟩ := (And.imp_left mem_ballCollarChart_source.1 hy)
-    rw [isOpenEmbedding_ballCollar.injective hpp'] at hp'
-    exact ⟨p, hp', hp, rfl⟩
   have hsource {p} (hp : p ∈ W) (hpd : p ∈ hG.domChart.source) :
       Φ (ballCollar p) ∈ cod.source := by
-    have h := hWeq p hp
-    simp only [Function.comp_apply] at h
-    rw [h]
+    rw [show Φ (ballCollar p) = ballCollar (G p) from hWeq p hp]
     exact mem_ballCollarChart_source.2 ⟨G p, hG.source_subset_preimage_source hpd, rfl⟩
   let equiv : (EuclideanSpace ℝ (Fin (m + 1)) × hG.complement) ≃L[ℝ]
       EuclideanSpace ℝ (Fin (n + 1)) :=
@@ -320,14 +350,13 @@ theorem isImmersionAt_of_comp_ballCollar_eventuallyEq {k : ℕ∞ω}
       (ContinuousLinearEquiv.refl ℝ hG.complement)).trans
       (hG.equiv.trans (EuclideanHalfSpace.collarAmbientEquiv n))
   refine IsImmersionAt.mk_of_charts equiv dom cod ?_ ?_ ?_ ?_ ?_ ?_
-  · rw [OpenPartialHomeomorph.restr_source' _ _ hWo]
-    exact ⟨mem_ballCollarChart_source.2 ⟨q, hG.mem_domChart_source, rfl⟩, mem_image_of_mem _ hqW⟩
+  · exact (mem_ballCollarChart_restr_source hW).2 ⟨q, hqW, hG.mem_domChart_source, rfl⟩
   · exact hsource hqW hG.mem_domChart_source
   · exact restr_mem_maximalAtlas _ (ballCollarChart_mem_maximalAtlas hG.domChart_mem_maximalAtlas)
-      hWo
+      (isOpenEmbedding_ballCollar.isOpenMap W hW)
   · exact ballCollarChart_mem_maximalAtlas hG.codChart_mem_maximalAtlas
   · intro y hy
-    obtain ⟨p, hp, hpd, rfl⟩ := hdom_source hy
+    obtain ⟨p, hp, hpd, rfl⟩ := (mem_ballCollarChart_restr_source hW).1 hy
     exact hsource hp hpd
   · intro u hu
     have hu' := hu
@@ -340,26 +369,19 @@ theorem isImmersionAt_of_comp_ballCollar_eventuallyEq {k : ℕ∞ω}
     have hmem : ballCollar p ∈ dom.source := by
       rw [← hsymm, ← dom.extend_source (I := 𝓡∂ (m + 1))]
       exact (dom.extend (𝓡∂ (m + 1))).map_target hu
-    obtain ⟨p', hp', -, hpp'⟩ := hdom_source hmem
+    obtain ⟨p', hp', -, hpp'⟩ := (mem_ballCollarChart_restr_source hW).1 hmem
     rw [isOpenEmbedding_ballCollar.injective hpp'] at hp'
-    have hΦp : Φ (ballCollar p) = ballCollar (G p) := hWeq p hp'
     -- The normal form of `G` at the corresponding point of the model of the product.
-    have hv : ((𝓡 m).prod (𝓡∂ 1))
-        ((EuclideanHalfSpace.collarDiffeomorph (k := ⊤) m).symm u') ∈
-          (hG.domChart.extend ((𝓡 m).prod (𝓡∂ 1))).target := by
-      rw [OpenPartialHomeomorph.extend_target']
+    have hv : (EuclideanHalfSpace.collarAmbientEquiv m).symm ((𝓡∂ (m + 1)) u') ∈
+        (hG.domChart.extend ((𝓡 m).prod (𝓡∂ 1))).target := by
       rw [OpenPartialHomeomorph.restr_target] at hut
-      exact mem_image_of_mem _ (mem_ballCollarChart_target.1 hut.1)
-    have hnf := hG.writtenInCharts hv
-    simp only [Function.comp_apply, OpenPartialHomeomorph.extend_coe_symm,
-      OpenPartialHomeomorph.extend_coe, ModelWithCorners.left_inv] at hnf
-    rw [Function.comp_apply, Function.comp_apply, hsymm, hΦp,
-      ballCollarChart_extend_apply_ballCollar, hnf]
-    simp only [equiv, Function.comp_apply, ContinuousLinearEquiv.trans_apply,
-      ContinuousLinearEquiv.prodCongr_apply, ContinuousLinearEquiv.refl_apply]
-    rw [modelWithCorners_prod_coe, modelWithCornersSelf_coe, Prod.map_apply', id_eq,
-      modelWithCornersEuclideanHalfSpace_apply, modelWithCornersEuclideanHalfSpace_apply,
-      EuclideanHalfSpace.collarDiffeomorph_symm_apply_coe]
+      rw [OpenPartialHomeomorph.extend_target']
+      exact ⟨_, mem_ballCollarChart_target.1 hut.1,
+        EuclideanHalfSpace.collarDiffeomorph_symm_apply_coe m u'⟩
+    rw [Function.comp_apply, Function.comp_apply, hsymm, show Φ (ballCollar p) =
+      ballCollar (G p) from hWeq p hp', ballCollarChart_extend_ballCollar_apply,
+      hG.writtenInCharts hv]
+    rfl
 
 /-- **A map that is a cone near a collar point is an immersion there.** Let `g` be a map of the
 unit sphere of `F` into the unit sphere of `E` which is an immersion at `q.1`. If near `q` the map
