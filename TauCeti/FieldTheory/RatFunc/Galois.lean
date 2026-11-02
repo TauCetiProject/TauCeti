@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Polynomial.Lifts
 public import Mathlib.FieldTheory.Galois.Infinite
+public import TauCeti.Algebra.Polynomial.Lifts
 public import TauCeti.FieldTheory.RatFunc.Map
 public import TauCeti.FieldTheory.RatFunc.NumDenom
 
@@ -31,7 +31,6 @@ of their coefficients. This is the rational-function input to descent of functio
 
 ## Main results
 
-* `RatFunc.mapRingEquiv_algebraMap_ratFunc`: a coefficient map fixing `F` fixes `F(X)`.
 * `TauCeti.RatFunc.mem_range_of_forall_mapRingEquiv_eq` and
   `TauCeti.RatFunc.forall_mapRingEquiv_eq_iff_mem_range`: a rational function is fixed by the
   coefficient maps of `S` exactly when it comes from `F(X)`.
@@ -52,46 +51,11 @@ public section
 open Polynomial
 open scoped nonZeroDivisors
 
-namespace RatFunc
-
-open TauCeti.RatFunc
-
-variable {F K : Type*} [Field F] [Field K] [Algebra F K] [Algebra (RatFunc F) (RatFunc K)]
-  [IsScalarTower F (RatFunc F) (RatFunc K)]
-
-/-- A coefficient automorphism of `K(X)` whose automorphism `σ` of `K` fixes the image of `F`
-fixes the image of `F(X)`, for any `F`-algebra map `F(X) → K(X)` sending `X` to `X`. -/
-theorem mapRingEquiv_algebraMap_ratFunc
-    (hX : algebraMap (RatFunc F) (RatFunc K) RatFunc.X = RatFunc.X)
-    {σ : K ≃+* K} (hσ : ∀ c : F, σ (algebraMap F K c) = algebraMap F K c) (w : RatFunc F) :
-    mapRingEquiv σ (algebraMap (RatFunc F) (RatFunc K) w) =
-      algebraMap (RatFunc F) (RatFunc K) w := by
-  have h : (mapRingEquiv σ : RatFunc K →+* RatFunc K).comp
-      (algebraMap (RatFunc F) (RatFunc K)) = algebraMap (RatFunc F) (RatFunc K) := by
-    refine IsFractionRing.ringHom_ext (A := F[X]) fun p ↦ ?_
-    have hp : (p.map (algebraMap F K)).map (σ : K →+* K) = p.map (algebraMap F K) := by
-      ext n
-      simp [hσ]
-    rw [RingHom.comp_apply, RingHom.coe_coe, TauCeti.algebraMap_ratFunc_algebraMap_polynomial hX,
-      mapRingEquiv_algebraMap, hp]
-  exact congr($h w)
-
-end RatFunc
-
 namespace TauCeti.RatFunc
 
 open _root_.RatFunc
 
 variable {F K : Type*} [Field F] [Field K] [Algebra F K]
-
-/-- Coefficients fixed by `S` come from `F`: a polynomial over `K` fixed by `Polynomial.map σ`
-for every `σ ∈ S` is the image of a polynomial over `F`, when the elements of `K` fixed by `S`
-are the image of `F`. -/
-private theorem exists_map_eq_of_forall_map_eq {S : Set (K ≃+* K)}
-    (hS : ∀ c : K, (∀ σ ∈ S, σ c = c) → c ∈ Set.range (algebraMap F K)) {p : K[X]}
-    (hp : ∀ σ ∈ S, p.map (σ : K →+* K) = p) : ∃ q : F[X], q.map (algebraMap F K) = p :=
-  (Polynomial.mem_lifts p).mp <| (Polynomial.lifts_iff_coeff_lifts p).mpr fun n ↦
-    hS _ fun σ hσ ↦ by simpa using congr(Polynomial.coeff $(hp σ hσ) n)
 
 variable [Algebra (RatFunc F) (RatFunc K)] [IsScalarTower F (RatFunc F) (RatFunc K)]
 
@@ -105,10 +69,12 @@ theorem mem_range_of_forall_mapRingEquiv_eq
     {z : RatFunc K} (hz : ∀ σ ∈ S, mapRingEquiv σ z = z) :
     z ∈ Set.range (algebraMap (RatFunc F) (RatFunc K)) := by
   -- The coefficient maps preserve the normalized numerator and denominator, so these are fixed.
-  obtain ⟨p, hp⟩ := exists_map_eq_of_forall_map_eq hS (p := z.num) fun σ hσ ↦ by
-    simpa only [coe_mapRingEquiv, num_mapRingHom] using congr(num $(hz σ hσ))
-  obtain ⟨q, hq⟩ := exists_map_eq_of_forall_map_eq hS (p := z.denom) fun σ hσ ↦ by
-    simpa only [coe_mapRingEquiv, denom_mapRingHom] using congr(denom $(hz σ hσ))
+  obtain ⟨p, hp⟩ := (Polynomial.mem_lifts _).mp <|
+    Polynomial.mem_lifts_of_forall_map_eq hS (p := z.num) fun σ hσ ↦ by
+      simpa only [coe_mapRingEquiv, num_mapRingHom] using congr(num $(hz σ hσ))
+  obtain ⟨q, hq⟩ := (Polynomial.mem_lifts _).mp <|
+    Polynomial.mem_lifts_of_forall_map_eq hS (p := z.denom) fun σ hσ ↦ by
+      simpa only [coe_mapRingEquiv, denom_mapRingHom] using congr(denom $(hz σ hσ))
   refine ⟨algebraMap F[X] (RatFunc F) p / algebraMap F[X] (RatFunc F) q, ?_⟩
   rw [map_div₀, algebraMap_ratFunc_algebraMap_polynomial hX,
     algebraMap_ratFunc_algebraMap_polynomial hX, hp, hq, num_div_denom]
@@ -186,8 +152,8 @@ theorem mem_range_mapRingHom_iff_fixed (z : RatFunc K) :
   · intro hz
     have lift (p : K[X])
         (hp : ∀ σ : K ≃ₐ[F] K, p.map σ.toRingHom = p) :
-        ∃ q : F[X], q.map (algebraMap F K) = p :=
-      TauCeti.RatFunc.exists_map_eq_of_forall_map_eq
+        p ∈ lifts (algebraMap F K) :=
+      Polynomial.mem_lifts_of_forall_map_eq
         (S := Set.range AlgEquiv.toRingEquiv)
         (fun c hc ↦ (InfiniteGalois.mem_range_algebraMap_iff_fixed c).mpr fun σ ↦ hc _ ⟨σ, rfl⟩)
         (by rintro _ ⟨σ, rfl⟩; exact hp σ)
