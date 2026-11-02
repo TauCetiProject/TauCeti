@@ -29,8 +29,6 @@ argument.
 
 * `CategoryTheory.ShortComplex.ShortExact.map_Γ_of_isFlasque`: `Γ` keeps a short exact sequence
   of sheaves of `R`-modules whose first term is flasque short exact, over any ring `R`.
-* `CategoryTheory.Sheaf.isFlasque`: flasque sheaves, as a class of objects closed under
-  isomorphisms.
 * `CategoryTheory.Sheaf.quasiIso_map_Γ_of_isFlasque`: for a flasque resolution `K` and a
   comparison map `φ : K ⟶ I` to an injective resolution, `Γ(φ)` is a quasi-isomorphism.
 * `CategoryTheory.Sheaf.rightDerivedΓObjIsoOfIsFlasque`: `RⁿΓ(F) ≅ Hⁿ(Γ(K))` for a flasque
@@ -81,23 +79,6 @@ theorem map_Γ_of_isFlasque
 end CategoryTheory.ShortComplex.ShortExact
 
 namespace CategoryTheory.Sheaf
-
-/-- Flasque sheaves on `X` with values in `A`, as a class of objects. -/
-def isFlasque (X : TopCat.{u}) (A : Type*) [Category* A] :
-    ObjectProperty (Sheaf (Opens.grothendieckTopology X) A) :=
-  fun G ↦ TopCat.Presheaf.IsFlasque G.obj
-
-/-- A sheaf satisfies `isFlasque` exactly when its underlying presheaf is flasque. -/
-@[simp]
-lemma isFlasque_iff {X : TopCat.{u}} {A : Type*} [Category* A]
-    {G : Sheaf (Opens.grothendieckTopology X) A} :
-    isFlasque X A G ↔ TopCat.Presheaf.IsFlasque G.obj :=
-  Iff.rfl
-
-/-- A sheaf isomorphic to a flasque sheaf is flasque. -/
-instance {X : TopCat.{u}} {A : Type*} [Category* A] :
-    (isFlasque X A).IsClosedUnderIsomorphisms where
-  of_iso e h := @TopCat.Presheaf.IsFlasque.of_iso _ _ _ _ _ ((sheafToPresheaf _ _).mapIso e) h
 
 variable {X : TopCat.{u}} {R : Type u} [CommRing R]
   [(Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).Additive]
