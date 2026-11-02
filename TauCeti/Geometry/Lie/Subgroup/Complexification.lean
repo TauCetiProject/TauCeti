@@ -287,6 +287,21 @@ theorem coe_skewAdjointBaseChangeLieEquiv_tmul (G : Subgroup (Matrix m m ℝ)ˣ)
         (algebraMap ℝ S) := by
   simp [skewAdjointBaseChangeLieEquiv, LieEquiv.ofSubalgebras_apply]
 
+/-- The inverse isomorphism sends the matrix coordinates of `X`, mapped into `S`, back to
+`1 ⊗ X`. -/
+theorem skewAdjointBaseChangeLieEquiv_symm_apply (G : Subgroup (Matrix m m ℝ)ˣ)
+    (J : Matrix m m ℝ)
+    (hG : ∀ A, (unitsLieAlgebraLieEquiv (R := Matrix m m ℝ)).symm A ∈
+      lieSubalgebraOfSubgroup G ↔ A ∈ skewAdjointMatricesLieSubalgebra J)
+    (X : lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Matrix m m ℝ)) G) :
+    (skewAdjointBaseChangeLieEquiv S G J hG).symm
+        ⟨(unitsLieAlgebraLieEquiv (R := Matrix m m ℝ) (X : LeftInvariantDerivation _ _)).map
+            (algebraMap ℝ S),
+          by simpa using (skewAdjointBaseChangeLieEquiv S G J hG (1 ⊗ₜ[ℝ] X)).2⟩ =
+      1 ⊗ₜ[ℝ] X := by
+  rw [LieEquiv.symm_apply_eq]
+  exact Subtype.ext (by rw [coe_skewAdjointBaseChangeLieEquiv_tmul, one_smul])
+
 variable (n : Type*) [Fintype n] [DecidableEq n]
 
 /-- **The Lie algebra of `SO(n)` extends to `𝔰𝔬(n, S)`.**  Extending the scalars of the Lie algebra
@@ -314,10 +329,23 @@ theorem coe_specialOrthogonalBaseChangeLieEquiv_tmul (s : S)
   rw [specialOrthogonalBaseChangeLieEquiv, LieEquiv.trans_apply, LieEquiv.ofEq_apply]
   exact coe_skewAdjointBaseChangeLieEquiv_tmul S _ _ _ s X
 
+/-- The inverse isomorphism sends the matrix coordinates of `X`, mapped into `S`, back to
+`1 ⊗ X`. -/
+theorem specialOrthogonalBaseChangeLieEquiv_symm_apply
+    (X : lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Matrix n n ℝ))
+      (GLSpecialUnitary n ℝ : Subgroup (Matrix n n ℝ)ˣ)) :
+    (specialOrthogonalBaseChangeLieEquiv S n).symm
+        ⟨(unitsLieAlgebraLieEquiv (R := Matrix n n ℝ) (X : LeftInvariantDerivation _ _)).map
+            (algebraMap ℝ S),
+          by simpa using (specialOrthogonalBaseChangeLieEquiv S n (1 ⊗ₜ[ℝ] X)).2⟩ =
+      1 ⊗ₜ[ℝ] X := by
+  rw [LieEquiv.symm_apply_eq]
+  exact Subtype.ext (by rw [coe_specialOrthogonalBaseChangeLieEquiv_tmul, one_smul])
+
 /-- **The Lie algebra of `Sp(2l, ℝ)` extends to `𝔰𝔭(2l, S)`.**  Extending the scalars of the Lie
 algebra of the real symplectic group to an `ℝ`-algebra `S` gives the symplectic Lie algebra over
-`S`, by `s ⊗ X ↦ s • X`.  For `S = ℂ` this is `𝔰𝔭(2l, ℝ) ⊗_ℝ ℂ ≅ 𝔰𝔭(2l, ℂ)`: the real symplectic
-group is a real form of the complex symplectic group. -/
+`S`, by `s ⊗ X ↦ s • X`.  For `S = ℂ` this is `𝔰𝔭(2l, ℝ) ⊗_ℝ ℂ ≅ 𝔰𝔭(2l, ℂ)`: `𝔰𝔭(2l, ℝ)` is a
+real form of `𝔰𝔭(2l, ℂ)`, the Lie algebra half of `Sp(2l, ℝ)` being a real form of `Sp(2l, ℂ)`. -/
 noncomputable def symplecticBaseChangeLieEquiv (l : Type*) [Fintype l] [DecidableEq l] :
     S ⊗[ℝ] lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Matrix (l ⊕ l) (l ⊕ l) ℝ))
         (GLSymplectic l ℝ : Subgroup (Matrix (l ⊕ l) (l ⊕ l) ℝ)ˣ) ≃ₗ⁅S⁆
@@ -337,6 +365,19 @@ theorem coe_symplecticBaseChangeLieEquiv_tmul (l : Type*) [Fintype l] [Decidable
         (X : LeftInvariantDerivation _ _)).map (algebraMap ℝ S) := by
   rw [symplecticBaseChangeLieEquiv, LieEquiv.trans_apply, LieEquiv.ofEq_apply]
   exact coe_skewAdjointBaseChangeLieEquiv_tmul S _ _ _ s X
+
+/-- The inverse isomorphism sends the matrix coordinates of `X`, mapped into `S`, back to
+`1 ⊗ X`. -/
+theorem symplecticBaseChangeLieEquiv_symm_apply (l : Type*) [Fintype l] [DecidableEq l]
+    (X : lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Matrix (l ⊕ l) (l ⊕ l) ℝ))
+      (GLSymplectic l ℝ : Subgroup (Matrix (l ⊕ l) (l ⊕ l) ℝ)ˣ)) :
+    (symplecticBaseChangeLieEquiv S l).symm
+        ⟨(unitsLieAlgebraLieEquiv (R := Matrix (l ⊕ l) (l ⊕ l) ℝ)
+            (X : LeftInvariantDerivation _ _)).map (algebraMap ℝ S),
+          by simpa using (symplecticBaseChangeLieEquiv S l (1 ⊗ₜ[ℝ] X)).2⟩ =
+      1 ⊗ₜ[ℝ] X := by
+  rw [LieEquiv.symm_apply_eq]
+  exact Subtype.ext (by rw [coe_symplecticBaseChangeLieEquiv_tmul, one_smul])
 
 end SkewAdjoint
 
