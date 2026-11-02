@@ -272,6 +272,16 @@ dominant. -/
 theorem isGlDominantIntegral_of_le_one (hn : n ≤ 1) (mu : Fin n → R) : IsGlDominantIntegral mu :=
   fun _ j hij => absurd (j.isLt) (by omega)
 
+/-- **Dominance in rank two**: `(μ₀, μ₁)` is dominant integral exactly when `μ₀ - μ₁` is a natural
+number. -/
+theorem isGlDominantIntegral_fin_two_iff {mu : Fin 2 → R} :
+    IsGlDominantIntegral mu ↔ ∃ n : ℕ, mu 0 - mu 1 = n := by
+  refine ⟨fun h => isGlDominantIntegral_iff.mp h 0 1 rfl, fun h => ?_⟩
+  refine isGlDominantIntegral_iff.mpr fun i j hij => ?_
+  obtain rfl : i = 0 := by omega
+  obtain rfl : j = 1 := by omega
+  exact h
+
 /-! ### The staircase weight -/
 
 /-- The **staircase** weight `(N - 1/2, N - 3/2, …, 1/2) : Fin N → ℚ`, the standard witness that

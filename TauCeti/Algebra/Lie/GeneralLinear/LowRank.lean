@@ -28,9 +28,9 @@ weights `TauCeti.DominantWeight 1`, which only see the integers.
 
 ## Main results
 
-* `TauCeti.isGlDominantIntegral_fin_two_iff`: `(μ₀, μ₁)` is dominant iff `μ₀ - μ₁` is a natural
-  number, and `TauCeti.existsUnique_natCast_sub_and_nonempty_lieModuleEquiv_glIrreducible_fin_two`
-  is the resulting classification of the irreducibles of `gl 2`.
+* `TauCeti.existsUnique_natCast_sub_and_nonempty_lieModuleEquiv_glIrreducible_fin_two`: the
+  classification of the irreducibles of `gl 2` by the pairs `(μ₀, μ₁)` with `μ₀ - μ₁` a natural
+  number, which is dominance in rank two (`TauCeti.isGlDominantIntegral_fin_two_iff`).
 * `TauCeti.IsGlHighestWeightVector.hasPrimitiveVectorWith`: a highest weight vector of weight
   `(μ₀, μ₁)` for `gl 2` is a primitive vector of weight `μ₀ - μ₁` for the standard triple of `sl 2`.
 * `TauCeti.nonempty_lieModuleEquiv_glIrreducible_sl2Std` and
@@ -60,22 +60,6 @@ open Matrix Module
 attribute [local instance 100] LieRing.ofAssociativeRing
 
 universe u
-
-section Dominance
-
-variable {R : Type*} [CommRing R] [CharZero R]
-
-/-- **Dominance in rank two**: `(μ₀, μ₁)` is dominant integral exactly when `μ₀ - μ₁` is a natural
-number. -/
-theorem isGlDominantIntegral_fin_two_iff {mu : Fin 2 → R} :
-    IsGlDominantIntegral mu ↔ ∃ n : ℕ, mu 0 - mu 1 = n := by
-  refine ⟨fun h => isGlDominantIntegral_iff.mp h 0 1 rfl, fun h => ?_⟩
-  refine isGlDominantIntegral_iff.mpr fun i j hij => ?_
-  obtain rfl : i = 0 := by omega
-  obtain rfl : j = 1 := by omega
-  exact h
-
-end Dominance
 
 section Primitive
 
@@ -164,11 +148,13 @@ theorem finrank_glIrreducible_fin_two (hn : mu 0 - mu 1 = n) :
     (isGlHighestWeightVector_glIrreducibleGenerator hmu) hn
 
 /-- **The identity matrix acts on `L(μ₀, μ₁)` by `μ₀ + μ₁`.** -/
+@[simp]
 theorem one_lie_glIrreducible_fin_two (hmu : IsGlDominantIntegral mu) (x : glIrreducible 2 mu) :
     ⁅(1 : Matrix (Fin 2) (Fin 2) K), x⁆ = (mu 0 + mu 1) • x := by
   rw [one_lie_glIrreducible_eq_smul hmu, Fin.sum_univ_two]
 
 /-- **The trace-form Casimir acts on `L(μ₀, μ₁)` by `μ₀ (μ₀ + 1) + μ₁ (μ₁ - 1)`.** -/
+@[simp]
 theorem representation_glCasimir_glIrreducible_fin_two (hmu : IsGlDominantIntegral mu)
     (x : glIrreducible 2 mu) :
     UniversalEnvelopingAlgebra.representation K (Matrix (Fin 2) (Fin 2) K) (glIrreducible 2 mu)
@@ -204,6 +190,7 @@ variable {K : Type u} [Field K] [CharZero K]
 
 /-- **A matrix `(a)` acts on `L(μ)` for `gl 1` by `a * μ`.** Every `μ` is dominant, and a matrix
 over a one-element index type is a scalar multiple of the identity. -/
+@[simp]
 theorem lie_glIrreducible_fin_one (mu : Fin 1 → K) (A : Matrix (Fin 1) (Fin 1) K)
     (x : glIrreducible 1 mu) : ⁅A, x⁆ = (A 0 0 * mu 0) • x := by
   have hA : A = A 0 0 • (1 : Matrix (Fin 1) (Fin 1) K) := by
@@ -214,9 +201,10 @@ theorem lie_glIrreducible_fin_one (mu : Fin 1 → K) (A : Matrix (Fin 1) (Fin 1)
     one_lie_glIrreducible_eq_smul (isGlDominantIntegral_of_le_one le_rfl mu), Fin.sum_univ_one,
     smul_smul]
 
-/-- **`L(μ)` for `gl 1` is a line**, for every `μ`: the line through the generator is a Lie
-submodule, by `TauCeti.lie_glIrreducible_fin_one`, and the generator generates. -/
+/-- **`L(μ)` for `gl 1` is a line**, for every `μ`. -/
+@[simp]
 theorem finrank_glIrreducible_fin_one (mu : Fin 1 → K) : finrank K (glIrreducible 1 mu) = 1 := by
+  -- The line through the generator is a Lie submodule, and the generator generates.
   have hmu := isGlDominantIntegral_of_le_one le_rfl mu
   refine (finrank_eq_one_iff_of_nonzero' _
     (isGlHighestWeightVector_glIrreducibleGenerator hmu).ne_zero).mpr fun w => ?_
