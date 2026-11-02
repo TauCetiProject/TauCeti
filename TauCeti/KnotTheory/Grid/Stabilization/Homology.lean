@@ -11,7 +11,7 @@ public import TauCeti.KnotTheory.Grid.Stabilization.Components
 public import TauCeti.KnotTheory.Grid.Stabilization.Map.Grading
 
 /-!
-# Stabilization invariance of `GH⁻` and of `τ`
+# Stabilization invariance of `GH⁻`
 
 Let `G` be a grid diagram of size `n`, let `s` be a column, and let
 `G' = G.stabilizeX s.castSucc (G.X s).castSucc s` be the stabilization splitting the `X`-marking
