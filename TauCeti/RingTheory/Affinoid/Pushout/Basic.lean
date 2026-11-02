@@ -285,32 +285,17 @@ variable (hA : IsAffinoidAlgebra K A) {E : Type*} [NormedCommRing E] [NormedAlge
   (β : IsRestricted.subring (R := A) (fun _ : Fin m ↦ 1) ⧸ I →ₐ[K] E)
   (γ : IsRestricted.subring (R := A) (fun _ : Fin n ↦ 1) ⧸ J →ₐ[K] E)
 
-include hA hE in
--- `K`-algebra maps out of a quotient `A⟨X⟩ ⧸ L` are continuous for the quotient topology.
-private theorem continuous_algHom_quotient {k : ℕ}
-    {L : Ideal (IsRestricted.subring (R := A) (fun _ : Fin k ↦ 1))}
-    (δ : IsRestricted.subring (R := A) (fun _ : Fin k ↦ 1) ⧸ L →ₐ[K] E) : Continuous δ :=
-  have := (hA.isRestricted_subring (τ := Fin k)).isNoetherianRing
-  continuous_coinduced_dom.mpr (hE.continuous_algHom (δ.comp (Ideal.Quotient.mkₐ K L)))
-
-include hA hE in
--- `K`-algebra maps out of a quotient `A⟨X⟩ ⧸ L` send the variables to power-bounded elements.
-private theorem isPowerBounded_algHom_quotient {k : ℕ}
-    {L : Ideal (IsRestricted.subring (R := A) (fun _ : Fin k ↦ 1))}
-    (δ : IsRestricted.subring (R := A) (fun _ : Fin k ↦ 1) ⧸ L →ₐ[K] E) (i : Fin k) :
-    Huber.IsPowerBounded (δ (Ideal.Quotient.mk L ⟨X i, isRestricted_X _ i⟩)) :=
-  have := (hA.isRestricted_subring (τ := Fin k)).isNoetherianRing
-  hE.isPowerBounded_map (δ.comp (Ideal.Quotient.mkₐ K L)) (isPowerBounded_X i)
-
 /-- **The map out of the affinoid pushout** `A⟨X, Y⟩ ⧸ (I, J) → E` induced by `K`-algebra maps
 `β : A⟨X⟩ ⧸ I → E` and `γ : A⟨Y⟩ ⧸ J → E` into a completely normed affinoid algebra which agree
 on `A`. It is the unique such map with `lift ∘ inl = β` and `lift ∘ inr = γ`; its underlying ring
 homomorphism is `liftRingHom`, since `β` and `γ` are automatically continuous. -/
 noncomputable def lift (h : ∀ a, β (algebraMap A _ a) = γ (algebraMap A _ a)) :
     AffinoidPushout I J →ₐ[K] E :=
-  { liftRingHom (β := (β : _ →+* E)) (γ := (γ : _ →+* E)) (continuous_algHom_quotient hA hE β)
-      (continuous_algHom_quotient hA hE γ) (isPowerBounded_algHom_quotient hA hE β)
-      (isPowerBounded_algHom_quotient hA hE γ) (RingHom.ext h) with
+  { liftRingHom (β := (β : _ →+* E)) (γ := (γ : _ →+* E))
+      (IsAffinoidAlgebra.continuous_algHom_quotient hA hE β)
+      (IsAffinoidAlgebra.continuous_algHom_quotient hA hE γ)
+      (IsAffinoidAlgebra.isPowerBounded_map_quotient_X hA hE β)
+      (IsAffinoidAlgebra.isPowerBounded_map_quotient_X hA hE γ) (RingHom.ext h) with
     commutes' k := by
       rw [← ((inl I J).restrictScalars K).commutes k]
       exact (liftRingHom_inl _ _ _ _ _ _).trans (β.commutes k) }
@@ -321,23 +306,29 @@ variable (h : ∀ a, β (algebraMap A _ a) = γ (algebraMap A _ a))
 @[simp]
 theorem lift_inl (x : IsRestricted.subring (R := A) (fun _ : Fin m ↦ 1) ⧸ I) :
     lift hA hE β γ h (inl I J x) = β x :=
-  liftRingHom_inl (continuous_algHom_quotient hA hE β)
-    (continuous_algHom_quotient hA hE γ) (isPowerBounded_algHom_quotient hA hE β)
-    (isPowerBounded_algHom_quotient hA hE γ) (RingHom.ext h) x
+  liftRingHom_inl
+    (IsAffinoidAlgebra.continuous_algHom_quotient hA hE β)
+    (IsAffinoidAlgebra.continuous_algHom_quotient hA hE γ)
+    (IsAffinoidAlgebra.isPowerBounded_map_quotient_X hA hE β)
+    (IsAffinoidAlgebra.isPowerBounded_map_quotient_X hA hE γ) (RingHom.ext h) x
 
 /-- `lift` restricts to `γ` along `inr`. -/
 @[simp]
 theorem lift_inr (y : IsRestricted.subring (R := A) (fun _ : Fin n ↦ 1) ⧸ J) :
     lift hA hE β γ h (inr I J y) = γ y :=
-  liftRingHom_inr (continuous_algHom_quotient hA hE β)
-    (continuous_algHom_quotient hA hE γ) (isPowerBounded_algHom_quotient hA hE β)
-    (isPowerBounded_algHom_quotient hA hE γ) (RingHom.ext h) y
+  liftRingHom_inr
+    (IsAffinoidAlgebra.continuous_algHom_quotient hA hE β)
+    (IsAffinoidAlgebra.continuous_algHom_quotient hA hE γ)
+    (IsAffinoidAlgebra.isPowerBounded_map_quotient_X hA hE β)
+    (IsAffinoidAlgebra.isPowerBounded_map_quotient_X hA hE γ) (RingHom.ext h) y
 
 /-- `lift` is continuous for the quotient topology on `A⟨X, Y⟩ ⧸ (I, J)`. -/
 theorem continuous_lift : Continuous (lift hA hE β γ h) :=
-  continuous_liftRingHom (continuous_algHom_quotient hA hE β)
-    (continuous_algHom_quotient hA hE γ) (isPowerBounded_algHom_quotient hA hE β)
-    (isPowerBounded_algHom_quotient hA hE γ) (RingHom.ext h)
+  continuous_liftRingHom
+    (IsAffinoidAlgebra.continuous_algHom_quotient hA hE β)
+    (IsAffinoidAlgebra.continuous_algHom_quotient hA hE γ)
+    (IsAffinoidAlgebra.isPowerBounded_map_quotient_X hA hE β)
+    (IsAffinoidAlgebra.isPowerBounded_map_quotient_X hA hE γ) (RingHom.ext h)
 
 include hA hE in
 /-- **`K`-algebra maps out of the affinoid pushout are determined by `inl` and `inr`.** Two
@@ -345,13 +336,10 @@ include hA hE in
 the images of `A⟨X⟩ ⧸ I` and of `A⟨Y⟩ ⧸ J` are equal. No continuity is assumed. -/
 theorem algHom_ext {δ₁ δ₂ : AffinoidPushout I J →ₐ[K] E}
     (hl : ∀ x, δ₁ (inl I J x) = δ₂ (inl I J x)) (hr : ∀ y, δ₁ (inr I J y) = δ₂ (inr I J y)) :
-    δ₁ = δ₂ := by
-  refine Ideal.Quotient.algHom_ext K
-    (IsAffinoidAlgebra.algHom_ext_isRestricted_subring hA hE (fun a ↦ ?_) (fun k ↦ ?_))
-  · simpa using hl (algebraMap A _ a)
-  · refine Fin.addCases (fun i ↦ ?_) (fun j ↦ ?_) k
-    · simpa using hl (Ideal.Quotient.mk I ⟨X i, isRestricted_X _ i⟩)
-    · simpa using hr (Ideal.Quotient.mk J ⟨X j, isRestricted_X _ j⟩)
+    δ₁ = δ₂ :=
+  AlgHom.toRingHom_injective <| ringHom_ext_of_continuous
+    (IsAffinoidAlgebra.continuous_algHom_quotient hA hE δ₁)
+    (IsAffinoidAlgebra.continuous_algHom_quotient hA hE δ₂) hl hr
 
 include hA in
 /-- **The universal property of the affinoid pushout.** Let `A` be an affinoid algebra with a
