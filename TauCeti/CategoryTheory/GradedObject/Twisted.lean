@@ -100,7 +100,6 @@ end TwistingCocycle
 `TauCeti.groupCohomology.IsMulCocycle₃`, which is normalized in the middle variable, as a twisting
 cocycle on `Additive G`. By `TauCeti.groupCohomology.exists_normalized_of_isMulCocycle₃`, every
 `3`-cocycle of a group is cohomologous to one satisfying the normalization. -/
-@[expose, simps]
 def TwistingCocycle.ofIsMulCocycle₃ {R G : Type*} [CommMonoid R] [Monoid G] [SMul G Rˣ]
     (f : G × G × G → Rˣ) (hf : groupCohomology.IsMulCocycle₃ f)
     (htriv : ∀ (g : G) (x : Rˣ), g • x = x)
@@ -110,6 +109,14 @@ def TwistingCocycle.ofIsMulCocycle₃ {R G : Type*} [CommMonoid R] [Monoid G] [S
     simpa only [toMul_add, htriv] using
       (groupCohomology.isMulCocycle₃_iff f).1 hf i₁.toMul i₂.toMul i₃.toMul i₄.toMul
   ω_zero i₁ i₃ := hf₁ _ _
+
+/-- The twisting cocycle `TwistingCocycle.ofIsMulCocycle₃ f` is `f` read in `Additive G`. -/
+@[simp]
+lemma TwistingCocycle.ofIsMulCocycle₃_ω {R G : Type*} [CommMonoid R] [Monoid G] [SMul G Rˣ]
+    (f : G × G × G → Rˣ) (hf : groupCohomology.IsMulCocycle₃ f)
+    (htriv : ∀ (g : G) (x : Rˣ), g • x = x) (hf₁ : ∀ g j : G, f (g, 1, j) = 1)
+    (i₁ i₂ i₃ : Additive G) :
+    (ofIsMulCocycle₃ f hf htriv hf₁).ω i₁ i₂ i₃ = f (i₁.toMul, i₂.toMul, i₃.toMul) := (rfl)
 
 end TauCeti.GradedObject
 
