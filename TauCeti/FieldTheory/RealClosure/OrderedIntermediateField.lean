@@ -130,19 +130,8 @@ theorem isPreordering (P : OrderedIntermediateField K L) : P.preordering.IsPreor
 omit [IsOrderedRing K] in
 /-- The positive cone on an ordered intermediate field is an ordering. -/
 theorem isOrdering (P : OrderedIntermediateField K L) : P.preordering.IsOrdering := by
-  apply P.isPreordering.isOrdering_iff.mpr
-  intro a b hab
-  by_cases ha : a ∈ P.preordering
-  · exact Or.inl ha
-  by_cases hb : b ∈ P.preordering
-  · exact Or.inr hb
-  have hna : -a ∈ P.preordering := (P.mem_or_neg_mem a.val a.property).resolve_left ha
-  have hnb : -b ∈ P.preordering := (P.mem_or_neg_mem b.val b.property).resolve_left hb
-  have hprod : a * b ∈ P.preordering := by simpa using P.preordering.mul_mem hna hnb
-  rcases mul_eq_zero.mp (P.isPreordering.isPointed.eq_zero_of_mem_of_neg_mem hprod hab)
-      with h | h
-  · exact Or.inl (h ▸ P.preordering.zero_mem)
-  · exact Or.inr (h ▸ P.preordering.zero_mem)
+  exact P.isPreordering.isOrdering_of_isSpanning <|
+    Subsemiring.isSpanning_def.mpr fun a => P.mem_or_neg_mem a.val a.property
 
 /-- The induced linear order on the intermediate field. -/
 @[instance_reducible] noncomputable instance linearOrder (P : OrderedIntermediateField K L) :

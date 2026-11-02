@@ -54,7 +54,7 @@ end TauCeti
 measure vanishing on singletons. No differentiability assumption or countability of the preimage
 is required. -/
 theorem Set.Countable.ae_deriv_eq_zero_on_preimage {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] {S : Set E} (hS : S.Countable) (measurableReal : MeasurableSpace ℝ)
+    [NormedSpace ℝ E] {S : Set E} (hS : S.Countable) {measurableReal : MeasurableSpace ℝ}
     (θ : ℝ → E) :
     letI := measurableReal
     ∀ (μ : Measure ℝ) [NullSingletonClass μ], ∀ᵐ t ∂μ, θ t ∈ S → deriv θ t = 0 := by

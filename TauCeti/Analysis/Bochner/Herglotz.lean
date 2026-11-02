@@ -243,14 +243,13 @@ section Pontryagin
 @[simp]
 theorem
     _root_.MeasureTheory.FiniteMeasure.pontryaginMeasureTransform_map_circleEquivPontryaginDualInt
-    (measurableDual : MeasurableSpace (PontryaginDual (Multiplicative ℤ)))
-    (borelDual : @BorelSpace (PontryaginDual (Multiplicative ℤ)) _ measurableDual)
+    {measurableDual : MeasurableSpace (PontryaginDual (Multiplicative ℤ))}
+    [borelDual : @BorelSpace (PontryaginDual (Multiplicative ℤ)) _ measurableDual]
     (μ : FiniteMeasure Circle) (n : ℤ) :
     letI := measurableDual
     (μ.map circleEquivPontryaginDualInt).pontryaginMeasureTransform n =
       ∫ z : Circle, (z : ℂ) ^ n ∂μ.toMeasure := by
   let := measurableDual
-  let := borelDual
   rw [FiniteMeasure.pontryaginMeasureTransform_apply, FiniteMeasure.toMeasure_map,
     integral_map (map_continuous circleEquivPontryaginDualInt).aemeasurable
       (PontryaginDual.continuous_coe_eval_const _).aestronglyMeasurable]
@@ -271,7 +270,7 @@ theorem isPositiveDefiniteSub_iff_exists_isFiniteMeasure_integral_zpow_eq (φ : 
   have hφ : φ = (μf.map circleEquivPontryaginDualInt).pontryaginMeasureTransform := funext fun n ↦
     (hrep n).trans
       (FiniteMeasure.pontryaginMeasureTransform_map_circleEquivPontryaginDualInt
-        inferInstance inferInstance μf n).symm
+        μf n).symm
   exact hφ ▸ (μf.map circleEquivPontryaginDualInt).isPositiveDefiniteSub_pontryaginMeasureTransform
 
 end TauCeti

@@ -100,6 +100,9 @@ theorem adDerivation_weightTorus_rootVector {B : Type*} [CommRing B]
   · rw [Matrix.map_apply, rootMatrix_eq_zero_of_weight_ne k hab]
     simp
 
+/- The cotangent carrier below is concrete. Its projectivity is passed as a hypothesis
+rather than a local instance: Mathlib's concrete-instance linter forbids the latter. -/
+
 /-- An adjoint weight vector has matrix entries only at the corresponding integral weight
 differences. Cotangent projectivity is needed for the adjoint comodule, not for the entrywise
 torus-action equation. -/

@@ -21,9 +21,6 @@ as comeagre Gδ sets and model classes cut out by countably many open conditions
 
 ## Main results
 
-* `IsGδ.isCompletelyMetrizableSpace`: a Gδ subset of a completely metrizable space is completely
-  metrizable.
-* `IsGδ.polishSpace`: a Gδ subset of a Polish space is Polish.
 * `TauCeti.isGδ_of_isCompletelyMetrizableSpace`: in a perfectly normal Hausdorff space (for
   example a metrizable space), a completely metrizable subspace is Gδ.
 * `TauCeti.isGδ_iff_isCompletelyMetrizableSpace`, `TauCeti.isGδ_iff_polishSpace`: the resulting
@@ -31,11 +28,9 @@ as comeagre Gδ sets and model classes cut out by countably many open conditions
 
 ## Implementation notes
 
-For the forward direction, a Gδ set `⋂ i, U i` with `U i` open is mapped into
-`α × (ι → ℝ≥0)` by `x ↦ (x, fun i ↦ (infEDist x (U i)ᶜ)⁻¹)`. The second component blows up near
-the boundary of each `U i`, so this map is a closed embedding and the subspace inherits complete
-metrizability from the product. This avoids constructing a complete metric on the subspace by
-hand.
+The forward direction uses Mathlib's `IsGδ.isCompletelyMetrizableSpace` and
+`IsGδ.polishSpace`. This file supplies the converse and combines it with those
+upstream results to obtain the iff characterizations.
 
 For the converse, the sets `U n` of points having a neighbourhood whose trace on `s` has
 diameter less than `1 / (n + 1)` for a complete metric on `s` are open and contain `s`, and
@@ -45,9 +40,6 @@ neighbourhood filter is a Cauchy filter, whose limit in `s` must be the point it
 ## References
 
 * A. S. Kechris, *Classical Descriptive Set Theory*, Springer, 1995, Theorem 3.11.
-* The closed-embedding proof of the forward direction is attributed to A. Bernshteyn in
-  A. Tserunyan, *Introduction to descriptive set theory*, lecture notes; it follows the
-  formalization of Justin Palumbo in Mathlib PR #42693.
 -/
 
 public section

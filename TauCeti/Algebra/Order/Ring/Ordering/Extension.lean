@@ -5,7 +5,7 @@ Authors: Kim Morrison
 -/
 module
 
-public import Mathlib.Algebra.Order.Ring.Ordering.Basic
+public import TauCeti.Algebra.Order.Ring.Ordering.Basic
 public import Mathlib.Algebra.Order.Ring.Cone
 public import Mathlib.Order.Zorn
 import Mathlib.Tactic.FieldSimp
@@ -35,28 +35,17 @@ namespace Subsemiring.IsPreordering
 
 variable {P : Subsemiring K}
 
-/-- Adjoin an element to a field preordering using expressions `u + a * v`. -/
-private def adjoin (hP : P.IsPreordering) (a : K) : Subsemiring K where
-  carrier := {x | ∃ u ∈ P, ∃ v ∈ P, x = u + a * v}
-  zero_mem' := ⟨0, P.zero_mem, 0, P.zero_mem, by simp⟩
-  one_mem' := ⟨1, P.one_mem, 0, P.zero_mem, by simp⟩
-  add_mem' := by
-    rintro x y ⟨u, hu, v, hv, rfl⟩ ⟨w, hw, z, hz, rfl⟩
-    exact ⟨u + w, P.add_mem hu hw, v + z, P.add_mem hv hz, by ring⟩
-  mul_mem' := by
-    rintro x y ⟨u, hu, v, hv, rfl⟩ ⟨w, hw, z, hz, rfl⟩
-    exact ⟨u * w + a ^ 2 * (v * z),
-      P.add_mem (P.mul_mem hu hw) (P.mul_mem (hP.pow_two_mem a) (P.mul_mem hv hz)),
-      u * z + v * w, P.add_mem (P.mul_mem hu hz) (P.mul_mem hv hw), by ring⟩
-
 /-- Adjoining an element whose negative is absent preserves properness. -/
-private theorem isPreordering_adjoin (hP : P.IsPreordering) {a : K} (ha : -a ∉ P) :
+theorem isPreordering_adjoin (hP : P.IsPreordering) {a : K} (ha : -a ∉ P) :
     (hP.adjoin a).IsPreordering where
   mem_of_isSquare := by
     rintro x ⟨y, rfl⟩
+    rw [mem_adjoin]
     exact ⟨y * y, hP.mul_self_mem y, 0, P.zero_mem, by simp⟩
   neg_one_notMem := by
-    rintro ⟨u, hu, v, hv, heq⟩
+    intro hx
+    rw [mem_adjoin] at hx
+    obtain ⟨u, hu, v, hv, heq⟩ := hx
     by_cases hv0 : v = 0
     · apply hP.neg_one_notMem
       have heq' : -1 = u := by simpa only [hv0, mul_zero, add_zero] using heq
@@ -69,59 +58,20 @@ private theorem isPreordering_adjoin (hP : P.IsPreordering) {a : K} (ha : -a ∉
         linear_combination heq
       rwa [← hval] at hmem
 
-private theorem le_adjoin (hP : P.IsPreordering) (a : K) : P ≤ hP.adjoin a :=
-  fun x hx => ⟨x, hx, 0, P.zero_mem, by simp⟩
-
-private theorem self_mem_adjoin (hP : P.IsPreordering) (a : K) : a ∈ hP.adjoin a :=
-  ⟨0, P.zero_mem, 1, P.one_mem, by simp⟩
-
-private def chainUnion (c : Set (Subsemiring K)) (hc : IsChain (· ≤ ·) c)
-    (hne : c.Nonempty) : Subsemiring K := by
-  have := hne.to_subtype
-  have hd : Directed (· ≤ ·) (fun P : c => P.val) := hc.directed
-  exact (⨆ P : c, P.val).copy {x | ∃ P ∈ c, x ∈ P} (by
-    rw [Subsemiring.coe_iSup_of_directed hd]
-    ext x
-    simp)
-
-private theorem le_chainUnion (c : Set (Subsemiring K)) (hc : IsChain (· ≤ ·) c)
-    (hne : c.Nonempty) {P : Subsemiring K} (hP : P ∈ c) : P ≤ chainUnion c hc hne :=
-  fun _ hx => ⟨P, hP, hx⟩
-
-private theorem isPreordering_chainUnion (c : Set (Subsemiring K))
-    (hpre : ∀ P ∈ c, P.IsPreordering) (hc : IsChain (· ≤ ·) c) (hne : c.Nonempty) :
-    (chainUnion c hc hne).IsPreordering where
-  mem_of_isSquare := by
-    intro x hx
-    obtain ⟨P, hP⟩ := hne
-    exact ⟨P, hP, (hpre P hP).mem_of_isSquare hx⟩
-  neg_one_notMem := by
-    rintro ⟨P, hPc, hP⟩
-    exact (hpre P hPc).neg_one_notMem hP
-
 /-- A field preordering extends to an ordering, retaining every prescribed sign. -/
 theorem exists_le_isOrdering (hP : P.IsPreordering) :
     ∃ Q : Subsemiring K, P ≤ Q ∧ Q.IsOrdering := by
   obtain ⟨Q, hPQ, hQ, hmax⟩ := zorn_le_nonempty₀ {Q : Subsemiring K | Q.IsPreordering}
-    (fun c hpre hc y hy =>
-      ⟨chainUnion c hc ⟨y, hy⟩, isPreordering_chainUnion c hpre hc ⟨y, hy⟩,
-        fun z hz => le_chainUnion c hc ⟨y, hy⟩ hz⟩) P hP
+    (fun c hpre hc y hy => by
+      let : Nonempty c := ⟨⟨y, hy⟩⟩
+      refine ⟨⨆ P : c, P.val, ?_, fun z hz => le_iSup (fun P : c => P.val) ⟨z, hz⟩⟩
+      exact Subsemiring.IsPreordering.iSup (fun P : c => hpre P.property) hc.directed) P hP
   have htotal (a : K) : a ∈ Q ∨ -a ∈ Q := by
     by_cases ha : -a ∈ Q
     · exact Or.inr ha
     · exact Or.inl ((hmax (hQ.isPreordering_adjoin ha) (hQ.le_adjoin a))
         (hQ.self_mem_adjoin a))
-  refine ⟨Q, hPQ, hQ.isOrdering_iff.mpr fun a b hab => ?_⟩
-  by_cases ha : a ∈ Q
-  · exact Or.inl ha
-  by_cases hb : b ∈ Q
-  · exact Or.inr hb
-  have hna := (htotal a).resolve_left ha
-  have hnb := (htotal b).resolve_left hb
-  have hprod : a * b ∈ Q := by simpa using Q.mul_mem hna hnb
-  rcases mul_eq_zero.mp (hQ.isPointed.eq_zero_of_mem_of_neg_mem hprod hab) with h | h
-  · exact Or.inl (h ▸ Q.zero_mem)
-  · exact Or.inr (h ▸ Q.zero_mem)
+  exact ⟨Q, hPQ, hQ.isOrdering_of_isSpanning (Subsemiring.isSpanning_def.mpr htotal)⟩
 
 /-- An element whose negative is absent can be made nonnegative in an extending ordering. -/
 theorem exists_le_isOrdering_mem (hP : P.IsPreordering) {a : K} (ha : -a ∉ P) :

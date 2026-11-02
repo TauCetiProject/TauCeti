@@ -288,6 +288,8 @@ end Nullification
 
 section WellOriented
 
+-- Keep the chosen GCD structures as data: every recursive projection must use
+-- the same family, and these concrete polynomial rings cannot be local instance binders.
 variable (polynomialGCD : ∀ m, NormalizedGCDMonoid (MvPolynomial (Fin m) ℝ))
 
 

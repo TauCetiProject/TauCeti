@@ -98,6 +98,8 @@ theorem adDerivation_weightTorus_rootVector {B : Type*} [CommRing B]
 /-- An adjoint weight vector has matrix entries only at the corresponding integral weight
 differences. Cotangent projectivity is needed for the adjoint comodule, not for the entrywise
 torus-action equation. -/
+-- Projectivity of this concrete cotangent carrier is an ordinary hypothesis;
+-- a local instance binder would violate Mathlib's concrete-instance policy.
 theorem mem_adjointWeightSpace_iff
     (projectiveCotangent : Module.Projective ℤ (Bialgebra.CotangentSpace ℤ Q))
     (α : Multiplicative (Fin 6 →₀ ℤ))
