@@ -13,7 +13,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Montgomery.DiffAdd
 Adjacent multiples `[k + 1]P` and `[k]P` have difference `P` and sum `[2k + 1]P`.
 Consequently differential addition of representatives of their coordinate pairs, using a
 representative of `P` as the difference, computes the odd multiple `[2k + 1]P`.
-`diffAdd_cross_two_mul_add_one_nsmul_of_cross_eq_zero` proves the cross-difference relation
+`diffAdd_cross_two_mul_add_one_nsmul_eq_zero_of_cross_eq_zero` proves the cross-difference relation
 for arbitrary representatives, with no characteristic restriction. Over a field with `2 ≠ 0`,
 `diffAdd_nsmul_ne_zero_iff_of_cross_eq_zero` gives the exact exceptional set for nonzero
 representatives: the output is nonzero if and only if `P` is neither infinity nor the
@@ -39,7 +39,7 @@ variable {K : Type*} [Field K] [DecidableEq K] {A B : K}
 
 /-- For `B ≠ 0`, the odd Montgomery-ladder step on arbitrary representatives has vanishing
 cross difference with `[2k + 1]P`, including in characteristic two and at exceptional points. -/
-theorem diffAdd_cross_two_mul_add_one_nsmul_of_cross_eq_zero (hB : B ≠ 0)
+theorem diffAdd_cross_two_mul_add_one_nsmul_eq_zero_of_cross_eq_zero (hB : B ≠ 0)
     (P : (model A B).toAffine.Point) (k : ℕ) {SNext SCurrent SBase : Pair K}
     (hNextCross : SNext.cross (coordinates A B ((k + 1) • P)) = 0)
     (hCurrentCross : SCurrent.cross (coordinates A B (k • P)) = 0)
@@ -80,15 +80,10 @@ theorem diffAdd_eq_zero_of_cross_eq_zero_twoTorsionPoint (hB : B ≠ 0) (k : ℕ
     (hCurrent : SCurrent.cross (coordinates A B (k • twoTorsionPoint A hB)) = 0)
     (hBase : SBase.cross (coordinates A B (twoTorsionPoint A hB)) = 0) :
     diffAdd SNext SCurrent SBase = 0 := by
-  obtain ⟨a, rfl⟩ := (Pair.cross_eq_zero_iff_exists_smul
-    (coordinates_ne_zero hB ((k + 1) • twoTorsionPoint A hB))).mp hNext
-  obtain ⟨b, rfl⟩ := (Pair.cross_eq_zero_iff_exists_smul
-    (coordinates_ne_zero hB (k • twoTorsionPoint A hB))).mp hCurrent
-  obtain ⟨c, rfl⟩ := (Pair.cross_eq_zero_iff_exists_smul
-    (coordinates_ne_zero hB (twoTorsionPoint A hB))).mp hBase
-  have hk' : (k + 1) % 2 = 0 ↔ k % 2 ≠ 0 := by omega
-  by_cases hk : k % 2 = 0 <;> ext <;>
-    simp [coordinates_nsmul_twoTorsionPoint, diffAdd_x, diffAdd_z, hk', hk, Pair.cross_def]
+  have hsub : (k + 1) • twoTorsionPoint A hB - k • twoTorsionPoint A hB =
+      twoTorsionPoint A hB := by simp [add_nsmul, add_comm]
+  exact diffAdd_eq_zero_of_cross_eq_zero hB hNext hCurrent
+    (by simpa only [hsub] using hBase) (.inr hsub)
 
 /-- At the distinguished point of order two the odd differential-addition step degenerates
 to the zero raw pair for every index, although the odd multiple itself is not infinity.

@@ -275,6 +275,27 @@ theorem diffAdd_ne_zero_iff_of_cross_eq_zero (h₂ : (2 : K) ≠ 0) (hB : B ≠ 
   rw [← (diffAdd_coordinates h₂ hB P Q).2]
   simp [hSP.1, hSQ.1, hSD.1]
 
+/-- For `B ≠ 0`, differential addition of arbitrary representatives is the zero raw pair
+when the difference is infinity or the distinguished point of order two. No restriction on the
+characteristic or nonvanishing of the representatives is needed. -/
+theorem diffAdd_eq_zero_of_cross_eq_zero (hB : B ≠ 0)
+    {P Q : (model A B).toAffine.Point} {SP SQ SD : Pair K}
+    (hP : SP.cross (coordinates A B P) = 0) (hQ : SQ.cross (coordinates A B Q) = 0)
+    (hD : SD.cross (coordinates A B (P - Q)) = 0)
+    (h : P - Q = 0 ∨ P - Q = twoTorsionPoint A hB) : diffAdd SP SQ SD = 0 := by
+  by_cases h₂ : (2 : K) = 0
+  · have h₄ : (4 : K) = 0 := by linear_combination 2 * h₂
+    ext <;> simp [diffAdd_x, diffAdd_z, h₄]
+  obtain ⟨a, rfl⟩ := (Pair.cross_eq_zero_iff_exists_smul (coordinates_ne_zero hB P)).mp hP
+  obtain ⟨b, rfl⟩ := (Pair.cross_eq_zero_iff_exists_smul (coordinates_ne_zero hB Q)).mp hQ
+  obtain ⟨c, rfl⟩ := (Pair.cross_eq_zero_iff_exists_smul (coordinates_ne_zero hB (P - Q))).mp hD
+  have h₀ : diffAdd (coordinates A B P) (coordinates A B Q)
+      (coordinates A B (P - Q)) = 0 := by
+    by_contra hn
+    obtain ⟨hzero, hT⟩ := (diffAdd_coordinates h₂ hB P Q).2.mp hn
+    exact h.elim hzero hT
+  simp [h₀]
+
 end Field
 
 end TauCeti.Montgomery
