@@ -29,8 +29,7 @@ smoothness of the square-root map itself.
 
 ## References
 
-* R. Bhatia, *Positive Definite Matrices*, Princeton University Press (2007), Chapter 1
-  (positive matrices and Sylvester equations) and Chapter 5 (differential calculus).
+* R. Bhatia, *Positive Definite Matrices*, Princeton University Press (2007).
 -/
 
 public section
@@ -112,7 +111,7 @@ theorem positiveSylvesterEquiv_symm_comp_add_comp (hA : IsStrictlyPositive A) (h
   rw [← positiveSylvesterEquiv_apply hA hB, ContinuousLinearEquiv.symm_apply_apply]
 
 /-- A solution of the positive Sylvester equation is the value of the inverse equivalence. -/
-theorem comp_add_comp_eq_iff (hA : IsStrictlyPositive A) (hB : 0 ≤ B)
+theorem comp_add_comp_eq_iff_eq_positiveSylvesterEquiv_symm (hA : IsStrictlyPositive A) (hB : 0 ≤ B)
     {X C : F →L[𝕜] E} :
     A ∘L X + X ∘L B = C ↔ X = (positiveSylvesterEquiv hA hB).symm C := by
   rw [← positiveSylvesterEquiv_apply hA hB, ContinuousLinearEquiv.eq_symm_apply]
@@ -126,7 +125,7 @@ variable [CompleteSpace E]
 theorem adjoint_positiveSylvesterEquiv_symm (hA : IsStrictlyPositive A) (C : E →L[𝕜] E) :
     adjoint ((positiveSylvesterEquiv hA hA.nonneg).symm C) =
       (positiveSylvesterEquiv hA hA.nonneg).symm (adjoint C) := by
-  apply (comp_add_comp_eq_iff hA hA.nonneg).1
+  apply (comp_add_comp_eq_iff_eq_positiveSylvesterEquiv_symm hA hA.nonneg).1
   have h := congrArg adjoint (comp_positiveSylvesterEquiv_symm_add hA hA.nonneg C)
   simpa only [map_add, adjoint_comp,
     ((nonneg_iff_isPositive.mp hA.nonneg).isSelfAdjoint).adjoint_eq, add_comm] using h
@@ -141,38 +140,39 @@ theorem isSelfAdjoint_positiveSylvesterEquiv_symm_iff (hA : IsStrictlyPositive A
 
 section RealScalars
 
-variable [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] {A : E →L[ℝ] E}
+variable [NormedSpace ℝ E] [IsScalarTower ℝ 𝕜 E] [StarModule ℝ (E →L[𝕜] E)]
 
 /-- The positive Sylvester equivalence restricted to the real subspace of self-adjoint
 operators. Its inverse solves the equation within that subspace. -/
 def positiveSylvesterSelfAdjointEquiv (hA : IsStrictlyPositive A) :
-    (selfAdjoint.submodule ℝ (E →L[ℝ] E)) ≃L[ℝ]
-      (selfAdjoint.submodule ℝ (E →L[ℝ] E)) :=
-  (positiveSylvesterEquiv hA hA.nonneg).ofSubmodules _ _ (by
+    (selfAdjoint.submodule ℝ (E →L[𝕜] E)) ≃L[ℝ]
+      (selfAdjoint.submodule ℝ (E →L[𝕜] E)) :=
+  ((positiveSylvesterEquiv hA hA.nonneg).restrictScalars ℝ).ofSubmodules _ _ (by
     ext C
+    -- Mathlib has no membership lemma for selfAdjoint.submodule, so expose its predicate here.
+    change (∃ X, IsSelfAdjoint X ∧
+      (positiveSylvesterEquiv hA hA.nonneg) X = C) ↔ IsSelfAdjoint C
     constructor
     · rintro ⟨X, hX, rfl⟩
-      have hX' : IsSelfAdjoint X := hX
       exact (isSelfAdjoint_positiveSylvesterEquiv_symm_iff hA _).mp (by
-        simpa only [LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv,
-          ContinuousLinearEquiv.symm_apply_apply] using hX')
+        simpa only [ContinuousLinearEquiv.symm_apply_apply] using hX)
     · intro hC
-      refine ⟨(positiveSylvesterEquiv hA hA.nonneg).symm C,
-        (isSelfAdjoint_positiveSylvesterEquiv_symm_iff hA C).mpr hC, ?_⟩
-      exact (positiveSylvesterEquiv hA hA.nonneg).apply_symm_apply C)
+      exact ⟨(positiveSylvesterEquiv hA hA.nonneg).symm C,
+        (isSelfAdjoint_positiveSylvesterEquiv_symm_iff hA C).mpr hC,
+        (positiveSylvesterEquiv hA hA.nonneg).apply_symm_apply C⟩)
 
 /-- The self-adjoint restriction has the same formula `X ↦ A X + X A`. -/
 @[simp]
 theorem coe_positiveSylvesterSelfAdjointEquiv_apply (hA : IsStrictlyPositive A)
-    (X : selfAdjoint.submodule ℝ (E →L[ℝ] E)) :
-    (positiveSylvesterSelfAdjointEquiv hA X : E →L[ℝ] E) = A ∘L X + (X : E →L[ℝ] E) ∘L A := by
+    (X : selfAdjoint.submodule ℝ (E →L[𝕜] E)) :
+    (positiveSylvesterSelfAdjointEquiv hA X : E →L[𝕜] E) = A ∘L X + (X : E →L[𝕜] E) ∘L A := by
   simp [positiveSylvesterSelfAdjointEquiv]
 
 /-- The inverse self-adjoint restriction is the unrestricted solution operator. -/
 @[simp]
 theorem coe_positiveSylvesterSelfAdjointEquiv_symm_apply (hA : IsStrictlyPositive A)
-    (C : selfAdjoint.submodule ℝ (E →L[ℝ] E)) :
-    ((positiveSylvesterSelfAdjointEquiv hA).symm C : E →L[ℝ] E) =
+    (C : selfAdjoint.submodule ℝ (E →L[𝕜] E)) :
+    ((positiveSylvesterSelfAdjointEquiv hA).symm C : E →L[𝕜] E) =
       (positiveSylvesterEquiv hA hA.nonneg).symm C := by
   simp [positiveSylvesterSelfAdjointEquiv]
 
@@ -181,15 +181,15 @@ end RealScalars
 omit [CompleteSpace E] in
 /-- Squaring has the positive Sylvester equivalence as its strict derivative at a strictly
 positive operator. In particular this derivative is invertible, including in dimension zero. -/
-theorem hasStrictFDerivAt_sq_positiveSylvesterEquiv (hA : IsStrictlyPositive A) :
+theorem hasStrictFDerivAt_mul_self_positiveSylvesterEquiv (hA : IsStrictlyPositive A) :
     HasStrictFDerivAt (fun S : E →L[𝕜] E ↦ S * S)
       (positiveSylvesterEquiv hA hA.nonneg : (E →L[𝕜] E) →L[𝕜] (E →L[𝕜] E)) A := by
   refine ((hasStrictFDerivAt_id (𝕜 := 𝕜) A).mul'
     (hasStrictFDerivAt_id (𝕜 := 𝕜) A)).congr_fderiv ?_
-  ext X x
-  simp only [ContinuousLinearEquiv.coe_coe, positiveSylvesterEquiv_apply, add_apply,
-    smul_apply, id_apply, id_eq, smul_eq_mul, MulOpposite.smul_eq_mul_unop,
-    MulOpposite.unop_op, mul_apply_eq_comp, comp_apply]
+  ext X
+  simp only [ContinuousLinearEquiv.coe_coe, positiveSylvesterEquiv_apply]
+  -- Both sides now evaluate the product rule as A (X x) + X (A x).
+  rfl
 
 end Adjoint
 
