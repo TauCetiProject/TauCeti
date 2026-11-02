@@ -186,7 +186,8 @@ theorem localHomologyMap_domRestrict_eq_affine_of_hasFDerivAt {f : E → F} {f' 
   -- On `B`, the straight-line homotopy from `f` to its linearization avoids `f x` off `x`.
   refine localHomologyMap_eq_of_homotopy R (ContinuousMap.Homotopy.affine _ _)
     (fun t y hy ↦ ?_) _ _ k
-  have hfι : (⟨U.domRestrict f, hfU.domRestrict⟩ : C(U, F)).comp ι y = f y := rfl
+  have hfι : (⟨U.domRestrict f, hfU.domRestrict⟩ : C(U, F)).comp ι y = f y := by
+    simp only [ι, ContinuousMap.comp_apply, ContinuousMap.coe_mk, Set.domRestrict_apply]
   have hrem : ‖f y - f x - f' (y - x)‖ ≤ ε * ‖(y : E) - x‖ := (hrU y.2).2
   rw [ContinuousMap.Homotopy.affine_apply, AffineMap.lineMap_apply_module, hfι]
   exact segment_ne_of_norm_remainder_le hC K.coe_nonneg hKε hrem
