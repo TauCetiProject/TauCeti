@@ -44,7 +44,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {n : WithTop ℕ∞} [IsManifold I n M]
 
-private theorem exists_chartDerivativeSeminorm_le_coordinateChange
+private theorem exists_chartDerivativeSeminorm_le_coordChange
     (x y : M) (K : TopologicalSpace.Compacts (extChartAt I x).target)
     (L : TopologicalSpace.Compacts (extChartAt I y).target)
     (hoverlap : ∀ z ∈ K, (extChartAt I x).symm z ∈ (extChartAt I y).source)
@@ -55,17 +55,22 @@ private theorem exists_chartDerivativeSeminorm_le_coordinateChange
     ∃ C : ℝ, 0 < C ∧ ∀ f : C^n⟮I, M; 𝓘(𝕜, F), F⟯,
       chartDerivativeSeminorm x K k hk f ≤ C * chartCkSeminorm y L k hk f := by
   -- Work on the actual overlap, where the native transition has unique derivatives.
-  let τ := I.extendCoordChange (chartAt H x) (chartAt H y)
+  let τ := (extChartAt I x).symm ≫ extChartAt I y
+  have hτs : τ.source = (extChartAt I x).target ∩
+      (extChartAt I x).symm ⁻¹' (extChartAt I y).source := by
+    rw [PartialEquiv.trans_source, PartialEquiv.symm_source]
   let K' : Set E := Subtype.val '' (K : Set (extChartAt I x).target)
   have hK' : IsCompact K' := K.isCompact.image continuous_subtype_val
   have hKs : K' ⊆ τ.source := by
     rintro _ ⟨z, hz, rfl⟩
+    rw [hτs, mem_inter_iff]
     exact ⟨z.2, hoverlap z hz⟩
-  have hτ : ContDiffOn 𝕜 k τ τ.source :=
-    (I.contDiffOn_extendCoordChange (chart_mem_maximalAtlas x)
-      (chart_mem_maximalAtlas y)).of_le hk
-  have hτt : MapsTo τ τ.source (extChartAt I y).target :=
-    fun z hz ↦ (extChartAt I y).map_source hz.2
+  have hτ : ContDiffOn 𝕜 k τ τ.source := by
+    simpa only [τ, PartialEquiv.coe_trans] using (contDiffOn_ext_coord_change y x).of_le hk
+  have hτt : MapsTo τ τ.source (extChartAt I y).target := by
+    intro z hz
+    rw [hτs, mem_inter_iff] at hz
+    exact (extChartAt I y).map_source hz.2
   have hId : ContDiffOn 𝕜 k (fun _ : E ↦ ContinuousLinearMap.id 𝕜 F) τ.source :=
     contDiffOn_const
   obtain ⟨C, hC⟩ := hId.exists_norm_iteratedFDerivWithin_clm_apply_comp_le hτ
@@ -80,8 +85,7 @@ private theorem exists_chartDerivativeSeminorm_le_coordinateChange
     obtain ⟨w, hw, rfl⟩ := hz
     have hb := (chartCkSeminorm_le_iff y L k hk f hδ).mp le_rfl i hi _ (himage w hw)
     rw [chartIteratedFDeriv_self_target_apply] at hb
-    simpa only [τ, ModelWithCorners.extendCoordChange, PartialEquiv.trans_apply, extChartAt]
-      using hb)
+    simpa only [τ, PartialEquiv.coe_trans, Function.comp_apply] using hb)
   refine (chartDerivativeSeminorm_le_iff x K k hk f (mul_nonneg (by positivity) hδ)).mpr
     fun z hz ↦ ?_
   -- Restricting the chart target to this overlap does not change derivatives at its points.
@@ -91,12 +95,14 @@ private theorem exists_chartDerivativeSeminorm_le_coordinateChange
       ((isOpen_extChartAt_source y).mem_nhds (hoverlap z hz))
   have hset : iteratedFDerivWithin 𝕜 k (f ∘ (extChartAt I x).symm) τ.source z =
       iteratedFDerivWithin 𝕜 k (f ∘ (extChartAt I x).symm)
-        (extChartAt I x).target z :=
-    iteratedFDerivWithin_inter' hmem
+        (extChartAt I x).target z := by
+    rw [hτs]
+    exact iteratedFDerivWithin_inter' hmem
   have heq : (fun w ↦ (ContinuousLinearMap.id 𝕜 F)
       ((f ∘ (extChartAt I y).symm) (τ w))) =ᶠ[𝓝[τ.source] (z : E)]
       f ∘ (extChartAt I x).symm := by
     filter_upwards [self_mem_nhdsWithin] with w hw
+    rw [hτs, mem_inter_iff] at hw
     exact congrArg f ((extChartAt I y).left_inv hw.2)
   have heqz : (ContinuousLinearMap.id 𝕜 F) ((f ∘ (extChartAt I y).symm) (τ z)) =
       (f ∘ (extChartAt I x).symm) z :=
@@ -108,7 +114,7 @@ private theorem exists_chartDerivativeSeminorm_le_coordinateChange
 /-- On a compact chart overlap, changing coordinates bounds the `C^k` seminorm by a
 constant multiple of the `C^k` seminorm on any compact set containing the transformed
 coordinates. The constant does not depend on the map being measured. -/
-theorem exists_chartCkSeminorm_le_coordinateChange
+theorem exists_chartCkSeminorm_le_coordChange
     (x y : M) (K : TopologicalSpace.Compacts (extChartAt I x).target)
     (L : TopologicalSpace.Compacts (extChartAt I y).target)
     (hoverlap : ∀ z ∈ K, (extChartAt I x).symm z ∈ (extChartAt I y).source)
@@ -118,7 +124,7 @@ theorem exists_chartCkSeminorm_le_coordinateChange
     (k : ℕ) (hk : k ≤ n) :
     ∃ C : ℝ, 0 < C ∧ ∀ f : C^n⟮I, M; 𝓘(𝕜, F), F⟯,
       chartCkSeminorm x K k hk f ≤ C * chartCkSeminorm y L k hk f := by
-  have hb (i : Fin (k + 1)) := exists_chartDerivativeSeminorm_le_coordinateChange
+  have hb (i : Fin (k + 1)) := exists_chartDerivativeSeminorm_le_coordChange
     (F := F) x y K L hoverlap himage i
       ((Nat.cast_le.mpr (Nat.le_of_lt_succ i.isLt)).trans hk)
   choose C hCpos hC using hb
@@ -141,7 +147,7 @@ theorem exists_chartCkSeminorm_le_coordinateChange
 The two compact `C^k` seminorms on this same set of manifold points bound one another,
 with positive constants independent of the map. The membership equation specifies the
 coordinate image exactly, rather than choosing a larger compact neighborhood. -/
-theorem exists_chartCkSeminorm_coordinateChange
+theorem exists_chartCkSeminorm_coordChange
     (x y : M) (K : TopologicalSpace.Compacts (extChartAt I x).target)
     (hoverlap : ∀ z ∈ K, (extChartAt I x).symm z ∈ (extChartAt I y).source)
     (k : ℕ) (hk : k ≤ n) :
@@ -187,9 +193,9 @@ theorem exists_chartCkSeminorm_coordinateChange
         (extChartAt I x).map_source (hinv w hw)⟩ : (extChartAt I x).target) = z :=
       Subtype.ext heq
     exact hsub.symm ▸ hz
-  obtain ⟨C, hCpos, hC⟩ := exists_chartCkSeminorm_le_coordinateChange
+  obtain ⟨C, hCpos, hC⟩ := exists_chartCkSeminorm_le_coordChange
     (F := F) x y K L hoverlap (fun z hz ↦ (hL _).mpr ⟨z, hz, rfl⟩) k hk
-  obtain ⟨D, hDpos, hD⟩ := exists_chartCkSeminorm_le_coordinateChange
+  obtain ⟨D, hDpos, hD⟩ := exists_chartCkSeminorm_le_coordChange
     (F := F) y x L K hinv hback k hk
   exact ⟨L, hL, C, D, hCpos, hDpos, fun f ↦ ⟨hC f, hD f⟩⟩
 
