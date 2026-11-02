@@ -73,12 +73,8 @@ theorem IsDistinguished.exists_isMonicOfDegree_mul_eq_of_preparations
   have hAm : A.IsMonicOfDegree (e - d) :=
     hP.of_mul_left (by simpa only [Nat.add_sub_of_le hle] using hPA)
   have hrel : u = v' * polynomialToRestricted r A := by
-    have hP0 : polynomialToRestricted r P ≠ 0 := by
-      intro h
-      exact hP.ne_zero (Polynomial.coe_injective R (by
-        simpa only [coe_polynomialToRestricted, Subring.coe_zero, Polynomial.coe_zero] using
-          congrArg (fun x : PowerSeries.IsRestricted.subring (R := R) r =>
-            (x : PowerSeries R)) h))
+    have hP0 : polynomialToRestricted r P ≠ 0 :=
+      (map_ne_zero_iff _ (polynomialToRestricted_injective r)).mpr hP.ne_zero
     apply mul_left_cancel₀ hP0
     calc polynomialToRestricted r P * u = v' * polynomialToRestricted r Q := by
            rw [mul_comm]; exact hPQ

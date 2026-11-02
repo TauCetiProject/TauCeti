@@ -390,10 +390,8 @@ theorem IsDistinguished.norm_le_of_eval_eq_zero {P : Polynomial R}
   have hxi' : ‖x‖ ^ (s - i) ≤ ‖P.coeff i‖ := by
     simpa only [← RingNorm.toFun_eq_coe, normRingNorm_toFun] using hxi
   have hcoeff : ‖P.coeff i‖ * c ^ i ≤ c ^ s := by
-    have h := _root_.PowerSeries.le_gaussNorm norm c (P : PowerSeries R) hP.hasGaussNorm i
-    rw [← hP.norm_coeff_mul_pow_eq, hm.coeff_coe_self, norm_one, one_mul,
-      Polynomial.coeff_coe] at h
-    exact h
+    simpa [← hP.norm_coeff_mul_pow_eq, hm.coeff_coe_self] using
+      _root_.PowerSeries.le_gaussNorm norm c (P : PowerSeries R) hP.hasGaussNorm i
   have hpow : ‖x‖ ^ (s - i) ≤ c ^ (s - i) := by
     apply (mul_le_mul_iff_left₀ (pow_pos hc i)).mp
     calc ‖x‖ ^ (s - i) * c ^ i ≤ ‖P.coeff i‖ * c ^ i :=
