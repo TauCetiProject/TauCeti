@@ -347,7 +347,7 @@ include hn in
 /-- Fixing the second input `b` of a supported product kernel gives the one-input kernel
 `p₁ ↦ ∑ b(p₂) n(p₁, p₂, ·)`, which obeys a potential bound: its constant uses an upper bound of
 the potential on the support of `b`. -/
-private theorem exists_potential_le_left (b : NovikovModule R F₂) :
+theorem exists_potential_le_left (b : NovikovModule R F₂) :
     ∃ D, ∀ p₁ p₀, ∑ᶠ p₂, b.val p₂ * n p₁ p₂ p₀ ≠ 0 → F₀ p₀ ≤ F₁ p₁ + D := by
   obtain ⟨M, hM⟩ := bddAbove_image_support b
   refine ⟨M + C, fun p₁ p₀ h => ?_⟩
@@ -361,7 +361,7 @@ include hn in
 /-- Fixing the first input `a` of a supported product kernel gives the one-input kernel
 `p₂ ↦ ∑ a(p₁) n(p₁, p₂, ·)`, which obeys a potential bound: its constant uses an upper bound of
 the potential on the support of `a`. -/
-private theorem exists_potential_le_right (a : NovikovModule R F₁) :
+theorem exists_potential_le_right (a : NovikovModule R F₁) :
     ∃ D, ∀ p₂ p₀, ∑ᶠ p₁, a.val p₁ * n p₁ p₂ p₀ ≠ 0 → F₀ p₀ ≤ F₂ p₂ + D := by
   obtain ⟨M, hM⟩ := bddAbove_image_support a
   refine ⟨M + C, fun p₂ p₀ h => ?_⟩
@@ -374,14 +374,14 @@ private theorem exists_potential_le_right (a : NovikovModule R F₁) :
 include hn hfin in
 /-- The one-input kernel obtained by fixing the second input of a supported product kernel has
 completed outputs. -/
-private theorem finsum_mul_mem_left (b : NovikovModule R F₂) (p₁ : S₁) :
+theorem finsum_mul_mem_left (b : NovikovModule R F₂) (p₁ : S₁) :
     (fun p₀ => ∑ᶠ p₂, b.val p₂ * n p₁ p₂ p₀) ∈ NovikovModule R F₀ :=
   finsum_mul_mem (D := F₁ p₁ + C) (fun p₂ p₀ h => by linarith [hn p₁ p₂ p₀ h]) (hfin p₁) b
 
 include hn hfin in
 /-- The one-input kernel obtained by fixing the first input of a supported product kernel has
 completed outputs. -/
-private theorem finsum_mul_mem_right (a : NovikovModule R F₁) (p₂ : S₂) :
+theorem finsum_mul_mem_right (a : NovikovModule R F₁) (p₂ : S₂) :
     (fun p₀ => ∑ᶠ p₁, a.val p₁ * n p₁ p₂ p₀) ∈ NovikovModule R F₀ :=
   finsum_mul_mem (κ := fun p₁ => n p₁ p₂) (D := F₂ p₂ + C)
     (fun p₁ p₀ h => by linarith [hn p₁ p₂ p₀ h]) (hfin · p₂) a
