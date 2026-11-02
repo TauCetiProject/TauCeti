@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Blowup.Map
+public import TauCeti.AlgebraicGeometry.Blowup.Pullback
 public import Mathlib.AlgebraicGeometry.Noetherian
 import TauCeti.AlgebraicGeometry.Blowup.Restriction
 import TauCeti.AlgebraicGeometry.IdealSheaf.Extension
