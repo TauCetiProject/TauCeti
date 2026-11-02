@@ -39,7 +39,7 @@ namespace TauCeti.Algebra
 /-- A finite étale algebra over a localization descends to a principal localization at a
 single element of the denominator submonoid. For `M = p.primeCompl`, this is a finite étale
 model on a principal open neighbourhood of `p`. -/
-theorem exists_etale_finite_localizationAway
+theorem exists_etale_finite_algEquiv_tensorProduct_localizationAway
     {R S : Type u} [CommRing R] [CommRing S] [Algebra R S]
     (B : Type*) [CommRing B] [Algebra S B] [Algebra.Etale S B] [Module.Finite S B]
     (M : Submonoid R) [IsLocalization M S] :
@@ -49,24 +49,18 @@ theorem exists_etale_finite_localizationAway
       letI := (IsLocalization.Away.lift (S := Localization.Away (s : R)) (s : R)
         (g := algebraMap R S) (IsLocalization.map_units S s)).toAlgebra
       Nonempty (B ≃ₐ[S] S ⊗[Localization.Away (s : R)] Bₛ) := by
-  obtain ⟨S₀, B₀, _, _, hS₀, _, _, ⟨e⟩⟩ :=
-    Algebra.Etale.exists_subalgebra_fg_of_finite ℤ S B
-  have : Algebra.FinitePresentation ℤ S₀ :=
-    Algebra.FinitePresentation.of_finiteType.mp (Subalgebra.fg_iff_finiteType S₀ |>.mp hS₀)
+  refine exists_etale_finite_algEquiv_tensorProduct_of_factorization
+    (fun s : M ↦ Localization.Away (s : R))
+    (fun s ↦ IsLocalization.Away.lift (S := Localization.Away (s : R)) (s : R)
+      (g := algebraMap R S) (IsLocalization.map_units S s)) ?_ B
+  intro P _ _ g
   -- Lift the initial ring to the universe of the localization diagram.
-  let f := (algebraMap ℤ S₀).comp (ULift.ringEquiv : ULift.{u} ℤ ≃+* ℤ).toRingHom
+  let f := (algebraMap ℤ P).comp (ULift.ringEquiv : ULift.{u} ℤ ≃+* ℤ).toRingHom
   have hf : f.FinitePresentation :=
     (RingHom.finitePresentation_algebraMap.mpr inferInstance).comp
       (.of_bijective ULift.ringEquiv.bijective)
   obtain ⟨s, φ, -, hφ⟩ := f.exists_factorization_localizationAway hf M
-    ((algebraMap ℤ R).comp ULift.ringEquiv.toRingHom) (algebraMap S₀ S) (by ext; simp [f])
-  let Rₛ := Localization.Away (s : R)
-  let : Algebra Rₛ S := (IsLocalization.Away.lift (S := Rₛ) (s : R)
-    (g := algebraMap R S) (IsLocalization.map_units S s)).toAlgebra
-  let : Algebra S₀ Rₛ := φ.toAlgebra
-  have : IsScalarTower S₀ Rₛ S :=
-    .of_algebraMap_eq fun x ↦ (congrArg (fun f : S₀ →+* S ↦ f x) hφ).symm
-  exact ⟨s, Rₛ ⊗[S₀] B₀, inferInstance, inferInstance, inferInstance, inferInstance,
-    ⟨e.trans (Algebra.TensorProduct.cancelBaseChange S₀ Rₛ S S B₀).symm⟩⟩
+    ((algebraMap ℤ R).comp ULift.ringEquiv.toRingHom) g (by ext; simp [f])
+  exact ⟨s, φ, hφ⟩
 
 end TauCeti.Algebra

@@ -8,8 +8,7 @@ module
 public import Mathlib.Algebra.Category.Ring.FinitePresentation
 public import Mathlib.RingTheory.Localization.Away.Basic
 import TauCeti.Algebra.Category.CommAlgCat.FilteredColimits
--- The cocone and diagram definitions identify the ring maps in the factorization below.
-import all TauCeti.Algebra.Category.CommAlgCat.Localization
+import TauCeti.Algebra.Category.CommAlgCat.Localization
 
 /-!
 # Factoring finitely presented maps through principal localizations
@@ -44,7 +43,8 @@ theorem exists_factorization_localizationAway
   classical
   let U := forget₂ (CommAlgCat.{u} R) CommRingCat.{u}
   let D := M.localizationAwayDiagram
-  let c := M.localizationAwayCocone S
+  -- Transport the unexposed cocone apex using its public identification with `S`.
+  let c := (M.localizationAwayCocone S).extend (eqToHom (M.localizationAwayCocone_pt S))
   -- Forgetting the algebra structure preserves this filtered colimit: the forgetful functor
   -- to types preserves it, and the forgetful functor from rings to types reflects it.
   have : PreservesColimitsOfShape (Finset M) (U ⋙ forget CommRingCat) :=
@@ -61,13 +61,25 @@ theorem exists_factorization_localizationAway
   obtain ⟨s, g', hg', hg⟩ :=
     RingHom.EssFiniteType.exists_eq_comp_ι_app_of_isColimit
       (CommRingCat.of A) (D ⋙ U) α (CommRingCat.ofHom f) (U.mapCocone c)
-      (isColimitOfPreserves U (M.localizationAwayCoconeIsColimit S)) hf
+      (isColimitOfPreserves U
+        (IsColimit.extendIso _ (M.localizationAwayCoconeIsColimit S))) hf
       (CommRingCat.ofHom g) (fun s ↦ by
         ext x
         exact (congrArg (fun k : A →+* S ↦ k x) h).trans
           ((c.ι.app s).hom.commutes (a x)).symm)
-  refine ⟨⟨∏ x ∈ s, (x : R), M.prod_mem fun x _ ↦ x.property⟩, g'.hom, ?_, ?_⟩
-  · exact congrArg CommRingCat.Hom.hom hg'
-  · exact (congrArg CommRingCat.Hom.hom hg).symm
+  let e := (eqToHom (M.localizationAwayDiagram_obj s)).hom.toRingHom
+  refine ⟨⟨∏ x ∈ s, (x : R), M.prod_mem fun x _ ↦ x.property⟩, e.comp g'.hom, ?_, ?_⟩
+  · ext x
+    exact (congrArg (fun k : A →+* D.obj s ↦ e (k x))
+      (congrArg CommRingCat.Hom.hom hg')).trans
+      ((eqToHom (M.localizationAwayDiagram_obj s)).hom.commutes (a x))
+  · have hleg := congrArg (fun k ↦ eqToHom (M.localizationAwayDiagram_obj s) ≫ k)
+      (M.localizationAwayCocone_ι_app S s)
+    simp only [← Category.assoc, eqToHom_trans, eqToHom_refl, Category.id_comp] at hleg
+    have hg'' : g = (c.ι.app s).hom.toRingHom.comp g'.hom :=
+      congrArg CommRingCat.Hom.hom hg
+    have hleg' : c.ι.app s = _ := hleg
+    rw [hleg'] at hg''
+    exact hg''.symm
 
 end RingHom
