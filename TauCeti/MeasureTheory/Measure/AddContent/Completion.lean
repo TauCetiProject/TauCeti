@@ -123,12 +123,14 @@ theorem completion_apply_of_measurableSet (hs : MeasurableSet s) : m.completion 
   m.completion_apply hs.nullMeasurableSet hs EventuallyEq.rfl
 
 /-- The extension of `m` is zero at a set that is not null-measurable, by convention. -/
+@[simp]
 theorem completion_of_not_nullMeasurableSet (hs : ¬NullMeasurableSet s μ) :
     m.completion μ hm s = 0 := by
   rw [completion_apply_eq_ite]
   exact ite_eq_right hs
 
 /-- The extension of `m` vanishes on `μ`-null sets. -/
+@[simp]
 theorem completion_of_measure_eq_zero (hs : μ s = 0) : m.completion μ hm s = 0 := by
   rw [m.completion_apply (.of_null hs) MeasurableSet.empty (ae_eq_empty.2 hs), addContent_empty]
 
