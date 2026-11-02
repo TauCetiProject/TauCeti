@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.Twisted.LocallyFinite.Basic
 public import TauCeti.AlgebraicTopology.Singular.Twisted.TotallyDisconnected
-public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
 
 /-!
 # Zeroth Borel–Moore homology of discrete spaces
