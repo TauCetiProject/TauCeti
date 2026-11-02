@@ -69,32 +69,35 @@ namespace Suzuki
 
 variable (n : ℕ)
 
-/-- The generator field of a Suzuki group has `2 ^ (2n + 1)` elements. -/
-private theorem card_galoisField [Fintype (GaloisField 2 (2 * n + 1))] :
-    Fintype.card (GaloisField 2 (2 * n + 1)) = 2 ^ (2 * n + 1) := by
-  rw [← Nat.card_eq_fintype_card, GaloisField.card 2 (2 * n + 1) (by omega)]
-
 /-- Applying `x ↦ x ^ 2 ^ (n + 1)` twice on `𝔽_(2^(2n+1))` is the Frobenius `x ↦ x ^ 2`. -/
 @[simp]
 theorem pow_two_pow_succ_pow_two_pow_succ (x : GaloisField 2 (2 * n + 1)) :
     (x ^ 2 ^ (n + 1)) ^ 2 ^ (n + 1) = x ^ 2 := by
   let _ : Fintype (GaloisField 2 (2 * n + 1)) := Fintype.ofFinite _
-  rw [← pow_mul, ← pow_add, show n + 1 + (n + 1) = 2 * n + 1 + 1 by omega, pow_succ, pow_mul,
-    ← card_galoisField, FiniteField.pow_card]
+  have hcard : Fintype.card (GaloisField 2 (2 * n + 1)) = 2 ^ (2 * n + 1) :=
+    Nat.card_eq_fintype_card.symm.trans (GaloisField.card 2 _ (by omega))
+  -- The exponent `2 ^ (n + 1)` squares to twice the field size `2 ^ (2n + 1)`.
+  have hexp : 2 ^ (n + 1) * 2 ^ (n + 1) = 2 ^ (2 * n + 1) * 2 := by ring
+  calc (x ^ 2 ^ (n + 1)) ^ 2 ^ (n + 1) = (x ^ 2 ^ (2 * n + 1)) ^ 2 := by
+        rw [← pow_mul, hexp, pow_mul]
+    _ = x ^ 2 := by rw [← hcard, FiniteField.pow_card]
 
 /-- Some unit `κ` of `𝔽_(2^(2n+1))` has `κ ^ 2 ^ (n + 1) ≠ κ ^ 2` exactly when `n ≠ 0`; at
 `n = 0` the two exponents agree. -/
+@[simp]
 theorem exists_pow_two_pow_succ_ne_sq_iff :
     (∃ κ : (GaloisField 2 (2 * n + 1))ˣ,
       (κ : GaloisField 2 (2 * n + 1)) ^ 2 ^ (n + 1) ≠ (κ : GaloisField 2 (2 * n + 1)) ^ 2) ↔
       n ≠ 0 := by
   refine ⟨by rintro ⟨κ, hκ⟩ rfl; exact hκ rfl, fun hn => ?_⟩
   let _ : Fintype (GaloisField 2 (2 * n + 1)) := Fintype.ofFinite _
+  have hcard : Fintype.card (GaloisField 2 (2 * n + 1)) = 2 ^ (2 * n + 1) :=
+    Nat.card_eq_fintype_card.symm.trans (GaloisField.card 2 _ (by omega))
   have hfour : 2 ^ 2 ≤ 2 ^ (n + 1) := Nat.pow_le_pow_right two_pos (by omega)
   have hlt : 2 ^ (n + 1) < 2 ^ (2 * n + 1) := Nat.pow_lt_pow_right one_lt_two (by omega)
   by_contra! h
   have hdvd : 2 ^ (2 * n + 1) - 1 ∣ 2 ^ (n + 1) - 2 := by
-    rw [← card_galoisField, ← FiniteField.forall_pow_eq_one_iff]
+    rw [← hcard, ← FiniteField.forall_pow_eq_one_iff]
     intro κ
     have hκ : κ ^ 2 ^ (n + 1) = κ ^ 2 := Units.ext (by simpa using h κ)
     rw [pow_sub _ (by omega), hκ, mul_inv_cancel]
