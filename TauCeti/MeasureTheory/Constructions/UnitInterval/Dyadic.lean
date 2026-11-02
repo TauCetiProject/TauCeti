@@ -131,7 +131,8 @@ theorem iSup_dyadicFiltration :
   exact hval.comap_le
 
 /-- Conditioning an integrable function on the whole dyadic filtration recovers it. -/
-private theorem condExp_iSup_dyadicFiltration_ae_eq {f : I → ℝ} (hf : Integrable f) :
+private theorem condExp_iSup_dyadicFiltration_ae_eq {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [CompleteSpace E] {f : I → E} (hf : Integrable f) :
     volume[f | ⨆ N, dyadicFiltration N] =ᵐ[volume] f := by
   rw [iSup_dyadicFiltration]
   exact condExp_of_aestronglyMeasurable' le_rfl hf.aestronglyMeasurable hf
@@ -142,49 +143,10 @@ private theorem condExp_iSup_dyadicFiltration_ae_eq {f : I → ℝ} (hf : Integr
 theorem tendsto_eLpNorm_condExp_dyadicFiltration {𝕜 : Type*} [RCLike 𝕜] {p : ℝ≥0∞} (hp1 : 1 ≤ p)
     (hp : p ≠ ∞) {f : I → 𝕜} (hf : MemLp f p) :
     Tendsto (fun N => eLpNorm (volume[f | dyadicFiltration N] - f) p volume) atTop (𝓝 0) := by
-  have hreal {u : I → ℝ} (hu : MemLp u p) :
-      Tendsto (fun N => eLpNorm (volume[u | dyadicFiltration N] - u) p volume) atTop (𝓝 0) := by
-    refine (hu.tendsto_eLpNorm_condExp (ℱ := dyadicFiltration) hp).congr fun N =>
-      eLpNorm_congr_ae ?_
-    filter_upwards [condExp_iSup_dyadicFiltration_ae_eq (hu.integrable hp1)] with x hx
-    simp [hx]
-  -- Conditional expectation commutes with the real and imaginary parts, and the norm of a scalar
-  -- is at most the sum of the absolute values of its real and imaginary parts.
-  have hint := hf.integrable hp1
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
-    (by simpa using (hreal hf.re).add (hreal hf.im)) (fun _ => zero_le) fun N => ?_
-  set re' : I → ℝ := fun x => RCLike.re (f x)
-  set im' : I → ℝ := fun x => RCLike.im (f x)
-  have haesm {u : I → ℝ} (hu : MemLp u p) :
-      AEStronglyMeasurable (volume[u | dyadicFiltration N] - u) volume :=
-    integrable_condExp.aestronglyMeasurable.sub hu.aestronglyMeasurable
-  calc eLpNorm (volume[f | dyadicFiltration N] - f) p volume
-      ≤ eLpNorm ((fun x => ‖(volume[re' | dyadicFiltration N] - re') x‖) +
-          fun x => ‖(volume[im' | dyadicFiltration N] - im') x‖) p volume := by
-        refine eLpNorm_mono_ae
-          (integrable_condExp.aestronglyMeasurable.sub hf.aestronglyMeasurable) ?_
-        filter_upwards [RCLike.reCLM.comp_condExp_comm (m := dyadicFiltration N) hint,
-          RCLike.imCLM.comp_condExp_comm (m := dyadicFiltration N) hint] with x hre him
-        set z := (volume[f | dyadicFiltration N] - f) x
-        have hz_re : RCLike.re z = (volume[re' | dyadicFiltration N] - re') x := by
-          simpa [z, re', Function.comp_def] using congrArg (· - RCLike.re (f x)) hre
-        have hz_im : RCLike.im z = (volume[im' | dyadicFiltration N] - im') x := by
-          simpa [z, im', Function.comp_def] using congrArg (· - RCLike.im (f x)) him
-        have hI : ‖(RCLike.I : 𝕜)‖ ≤ 1 := by rw [RCLike.norm_I]; split_ifs <;> norm_num
-        calc ‖z‖ = ‖(RCLike.re z : 𝕜) + RCLike.im z * RCLike.I‖ := by rw [RCLike.re_add_im]
-          _ ≤ ‖RCLike.re z‖ + ‖RCLike.im z‖ := by
-            refine (norm_add_le _ _).trans ?_
-            rw [norm_mul, RCLike.norm_ofReal, RCLike.norm_ofReal, Real.norm_eq_abs,
-              Real.norm_eq_abs]
-            gcongr
-            exact mul_le_of_le_one_right (abs_nonneg _) hI
-          _ = _ := by
-            rw [hz_re, hz_im]
-            exact (Real.norm_of_nonneg (by positivity)).symm
-    _ ≤ eLpNorm (volume[re' | dyadicFiltration N] - re') p volume +
-          eLpNorm (volume[im' | dyadicFiltration N] - im') p volume := by
-        refine (eLpNorm_add_le hp1).trans ?_
-        rw [eLpNorm_norm _ (haesm hf.re), eLpNorm_norm _ (haesm hf.im)]
+  refine (hf.tendsto_eLpNorm_condExp (ℱ := dyadicFiltration) hp).congr fun N =>
+    eLpNorm_congr_ae ?_
+  filter_upwards [condExp_iSup_dyadicFiltration_ae_eq (hf.integrable hp1)] with x hx
+  simp [hx]
 
 /-- **Dyadic conditional expectations converge almost everywhere.** The conditional expectations
 of an integrable function with respect to the dyadic filtration converge to it almost
