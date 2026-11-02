@@ -114,14 +114,14 @@ private theorem exists_hasStrictFDerivAt_splitCoord {G : Type*} [NormedAddCommGr
     LinearMap.range_eq_top_of_surjective _ (hpr.comp φ.splitCoordL.surjective)
   have hs₂' : ∀ᶠ z in 𝓝 y, z ∈ s₂ ↔ π (φ.toChart z) = 0 :=
     φ.eventually_iff_of_norm_lt (P := fun w ↦ π w = 0)
-      (fun z hz hzε ↦ (hs₂ z hz hzε).trans (by simp [π, φ.splitCoordL_apply])) hyφ hyε
+      (fun z hz hzε ↦ (hs₂ z hz hzε).trans (by simp [π])) hyφ hyε
   obtain ⟨ψ, ψ', hψ, hπψ, hψ0, hψs⟩ :=
     exists_hasStrictFDerivAt_comp_eq_id_of_span_mtangentConeAt_sup_eq_top (by simp)
       φ.mem_maximalAtlas hq hs₁ L.closed_of_finiteDimensional hyφ hyq hys₁ hπs hs₂' hys₂ htr
   refine ⟨fun z ↦ φ.splitCoordL (ψ z), (φ.splitCoordL : E →L[ℝ] _) ∘L ψ',
     φ.splitCoordL.hasStrictFDerivAt.comp 0 hψ, ?_, ?_, ?_⟩
   · rw [← hπψ, hπ, ContinuousLinearMap.comp_assoc]
-  · simp [hψ0, φ.splitCoordL_apply]
+  · simp [hψ0]
   · filter_upwards [hψs] with z hz
     simpa [← φ.splitCoordL_symm_apply] using hz
 

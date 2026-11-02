@@ -211,10 +211,12 @@ noncomputable def splitCoordL :
 
 /-- The continuous split coordinates of a point of the model are the split coordinates of its
 coordinates. -/
+@[simp]
 theorem splitCoordL_apply (z : E) : φ.splitCoordL z = φ.splitCoord (φ.coord z) :=
   (rfl)
 
 /-- The point of the model with given continuous split coordinates. -/
+@[simp]
 theorem splitCoordL_symm_apply
     (w : WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ))) :
     φ.splitCoordL.symm w = φ.coord.symm (φ.splitCoord.symm w) :=
