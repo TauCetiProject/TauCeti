@@ -30,6 +30,8 @@ and the unlink of `k` components has graded rank `(q + q⁻¹) ^ k`.
 
 ## Main definitions
 
+* `TauCeti.OrientedPDCode.emptyVertex`: the only vertex `∅` of the cube of resolutions of a
+  crossing-free diagram, as a state of cochain degree `0`.
 * `TauCeti.OrientedPDCode.khovanovComplexXZeroIso`: the cochain term in degree `0` of a
   crossing-free diagram is the degree-`j` piece of the circle tensor of its resolved circles.
 * `TauCeti.OrientedPDCode.khovanovComplexHomologyZeroIso`: so is its homology in degree `0`.
@@ -74,10 +76,14 @@ theorem resolutionCube_obj_empty :
       (j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)).obj ∅ =
         ModuleCat.of R ((Khovanov.circleQuantumGrading R
           (D.toPDCode.ResolvedCircle (PDCode.cubeState ∅))).piece j) := by
-  have hj : j - D.positiveCrossingCount + 2 * D.negativeCrossingCount - (#(∅ : Finset (Fin 0)) : ℤ)
-      = j := by
-    simp [positiveCrossingCount_def, negativeCrossingCount_def]
-  rw [PDCode.resolutionCube_obj, hj]
+  rw [D.resolutionCube_obj_normalized hD R j ∅, show D.stateQuantumShift (PDCode.cubeState ∅) = 0
+    by simp [stateQuantumShift_cubeState, positiveCrossingCount_def, negativeCrossingCount_def],
+    sub_zero]
+
+/-- The only vertex `∅` of the cube of resolutions of a crossing-free diagram, as a state of
+cochain degree `0`. -/
+abbrev emptyVertex : {S : Finset (Fin 0) // (#S : ℤ) = 0 + D.negativeCrossingCount} :=
+  ⟨∅, by simp [negativeCrossingCount_def]⟩
 
 /-- The Khovanov complex of a crossing-free diagram vanishes outside cochain degree `0`. -/
 theorem isZero_khovanovComplex_X {i : ℤ} (hi : i ≠ 0) :
@@ -94,20 +100,20 @@ def khovanovComplexXZeroIso :
     (D.khovanovComplex hD R j).X 0 ≅
       ModuleCat.of R ((Khovanov.circleQuantumGrading R
         (D.toPDCode.ResolvedCircle (PDCode.cubeState ∅))).piece j) where
-  hom := D.khovanovComplexπ hD R j ⟨∅, by simp [negativeCrossingCount_def]⟩ ≫
+  hom := D.khovanovComplexπ hD R j D.emptyVertex ≫
     eqToHom (D.resolutionCube_obj_empty hD R j)
   inv := eqToHom (D.resolutionCube_obj_empty hD R j).symm ≫
-    D.khovanovComplexι hD R j ⟨∅, by simp [negativeCrossingCount_def]⟩
+    D.khovanovComplexι hD R j D.emptyVertex
   hom_inv_id := by
     ext S
-    obtain rfl : S = ⟨∅, by simp [negativeCrossingCount_def]⟩ := Subsingleton.elim _ _
+    obtain rfl : S = D.emptyVertex := Subsingleton.elim _ _
     simp
   inv_hom_id := by simp
 
 /-- The degree-`0` term comparison is the projection onto the only cube vertex. -/
 theorem khovanovComplexXZeroIso_hom :
     (D.khovanovComplexXZeroIso hD R j).hom =
-      D.khovanovComplexπ hD R j ⟨∅, by simp [negativeCrossingCount_def]⟩ ≫
+      D.khovanovComplexπ hD R j D.emptyVertex ≫
         eqToHom (D.resolutionCube_obj_empty hD R j) :=
   (rfl)
 
@@ -115,7 +121,7 @@ theorem khovanovComplexXZeroIso_hom :
 theorem khovanovComplexXZeroIso_inv :
     (D.khovanovComplexXZeroIso hD R j).inv =
       eqToHom (D.resolutionCube_obj_empty hD R j).symm ≫
-        D.khovanovComplexι hD R j ⟨∅, by simp [negativeCrossingCount_def]⟩ :=
+        D.khovanovComplexι hD R j D.emptyVertex :=
   (rfl)
 
 /-- **The Khovanov homology of a crossing-free diagram** in cochain degree `0` and quantum degree
@@ -187,7 +193,7 @@ private theorem labelingQuantumDegree_empty_eq_zero_iff
     (l : empty.toPDCode.ResolvedCircle (PDCode.cubeState ∅) → Bool) :
     Khovanov.labelingQuantumDegree _ l = 0 ↔ l = fun _ ↦ false := by
   have := isEmpty_resolvedCircle_empty
-  simpa [Khovanov.labelingQuantumDegree_def] using Subsingleton.elim _ _
+  simp [Khovanov.labelingQuantumDegree_def, Subsingleton.elim l (fun _ ↦ false)]
 
 /-- **The Khovanov homology of the empty link** in bidegree `(0, 0)` is `R`. -/
 def khovanovComplexHomologyEmptyIso :
