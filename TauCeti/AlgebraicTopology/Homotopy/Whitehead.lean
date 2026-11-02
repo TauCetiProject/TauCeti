@@ -50,6 +50,11 @@ to the ends. Together, the two halves say that composition with `f` is a bijecti
 (`ContinuousMap.IsWeakHomotopyEquivalence.comp_homotopic_comp_iff` and
 `ContinuousMap.IsWeakHomotopyEquivalence.exists_comp_homotopic`).
 
+Consequently a map `φ : X → Y`, together with `a : A → X` out of a space of CW type and a weak
+homotopy equivalence `b : B → Y`, induces a map `A → B` making the square commute up to homotopy
+(`ContinuousMap.IsWeakHomotopyEquivalence.lift`), unique up to homotopy and functorial up to
+homotopy in `φ` (Hatcher, Proposition 4.18, for arbitrary CW approximations `a` and `b`).
+
 Applied to the identity of `Y`, when `Y` has CW type, the lift is a map `g : Y → X` with
 `f ∘ g ≃ id`. By two out of three, `g` is again a weak homotopy equivalence, so when `X` has CW
 type `g` has a right homotopy inverse `h` in turn. Then `f ≃ f ∘ g ∘ h ≃ h`, and so
@@ -66,15 +71,23 @@ the skeletal induction inside the compression lemma.
 * `ContinuousMap.IsWeakHomotopyEquivalence.homotopic_of_comp_homotopic` and
   `ContinuousMap.IsWeakHomotopyEquivalence.comp_homotopic_comp_iff`: such lifts are unique up to
   homotopy.
+* `ContinuousMap.IsWeakHomotopyEquivalence.lift`: the map induced on CW approximations, with
+  `ContinuousMap.IsWeakHomotopyEquivalence.comp_lift_homotopic`,
+  `ContinuousMap.IsWeakHomotopyEquivalence.homotopic_lift`,
+  `ContinuousMap.IsWeakHomotopyEquivalence.lift_id_homotopic` and
+  `ContinuousMap.IsWeakHomotopyEquivalence.lift_comp_homotopic`.
 * `ContinuousMap.IsWeakHomotopyEquivalence.homotopyEquiv`: **Whitehead's theorem**.
+* `ContinuousMap.IsWeakHomotopyEquivalence.exists_homotopyEquiv_comp_homotopic`: CW approximations
+  are unique up to homotopy equivalence.
 * `TauCeti.contractibleSpace_of_subsingleton_homotopyGroup`: a weakly contractible space of CW
   type is contractible.
 
 ## References
 
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
-  Section 4.1, Theorem 4.5 (Whitehead's theorem), Lemma 4.6 (the compression lemma), and
-  Proposition 4.22, and the corollary after Theorem 4.5 on weakly contractible CW complexes.
+  Section 4.1, Theorem 4.5 (Whitehead's theorem), Lemma 4.6 (the compression lemma),
+  Proposition 4.18 and the uniqueness of CW approximations stated after it, Proposition 4.22, and
+  the corollary after Theorem 4.5 on weakly contractible CW complexes.
 -/
 
 public section
@@ -148,16 +161,12 @@ equivalence are homotopic (the injectivity half of Hatcher, Proposition 4.22, fo
 private theorem homotopic_of_comp_homotopic_cwComplex (hf : f.IsWeakHomotopyEquivalence)
     {g₀ g₁ : C(C, X)} (h : (f.comp g₀).Homotopic (f.comp g₁)) : g₀.Homotopic g₁ := by
   open TauCeti TauCeti.MappingCylinder in
-  -- In `M_f`, `incl ∘ gᵢ ≃ mkBase ∘ f ∘ gᵢ`, since `mkBase ∘ proj ≃ id` and `proj ∘ incl = f`.
+  -- In `M_f`, `incl ∘ gᵢ ≃ mkBase ∘ f ∘ gᵢ` by the deformation onto the base.
   have hM : ((incl f).comp g₀).Homotopic ((incl f).comp g₁) := by
-    have hinv : (MappingCylinder.homotopyEquiv f).invFun = mkBase f :=
-      ContinuousMap.ext homotopyEquiv_symm_apply
-    have hr := (MappingCylinder.homotopyEquiv f).left_inv
-    rw [hinv, homotopyEquiv_toFun] at hr
-    have h₀ := hr.symm.comp (ContinuousMap.Homotopic.refl ((incl f).comp g₀))
-    have h₁ := hr.comp (ContinuousMap.Homotopic.refl ((incl f).comp g₁))
-    rw [comp_assoc, ← comp_assoc (proj f), proj_comp_incl, id_comp] at h₀ h₁
-    exact h₀.trans (((ContinuousMap.Homotopic.refl (mkBase f)).comp h).trans h₁)
+    have h₀ := (incl_homotopic_mkBase_comp (f := f)).comp (ContinuousMap.Homotopic.refl g₀)
+    have h₁ := (incl_homotopic_mkBase_comp (f := f)).comp (ContinuousMap.Homotopic.refl g₁)
+    rw [comp_assoc] at h₀ h₁
+    exact h₀.trans (((ContinuousMap.Homotopic.refl (mkBase f)).comp h).trans h₁.symm)
   obtain ⟨F⟩ := hM
   -- Read `F` on the cylinder `C × I`, a CW complex relative to its two ends `C × {0, 1}`, which
   -- `F` maps into the bottom face; compress it into the bottom face relative to the ends.
@@ -252,6 +261,80 @@ noncomputable def homotopyEquiv (hf : f.IsWeakHomotopyEquivalence) : X ≃ₕ Y 
 @[simp]
 theorem homotopyEquiv_toFun (hf : f.IsWeakHomotopyEquivalence) : hf.homotopyEquiv.toFun = f :=
   (rfl)
+
+end ContinuousMap.IsWeakHomotopyEquivalence
+
+namespace ContinuousMap.IsWeakHomotopyEquivalence
+
+variable {A A' B D X Y Z : Type*} [TopologicalSpace A] [TopologicalSpace A'] [TopologicalSpace B]
+  [TopologicalSpace D] [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z]
+  [TauCeti.CWType A]
+
+/-- **CW approximations are unique up to homotopy equivalence** (Hatcher, after Proposition 4.18).
+If `a : A → X` and `a' : A' → X` are weak homotopy equivalences out of spaces of CW type, there is
+a homotopy equivalence `e : A ≃ₕ A'` with `a' ∘ e ≃ a`. -/
+theorem exists_homotopyEquiv_comp_homotopic [TauCeti.CWType A'] {a : C(A, X)} {a' : C(A', X)}
+    (ha : a.IsWeakHomotopyEquivalence) (ha' : a'.IsWeakHomotopyEquivalence) :
+    ∃ e : A ≃ₕ A', (a'.comp e.toFun).Homotopic a := by
+  obtain ⟨g, hg⟩ := ha'.exists_comp_homotopic a
+  -- `a' ∘ g ≃ a` is a weak homotopy equivalence, so `g` is one by two out of three.
+  have hg' : g.IsWeakHomotopyEquivalence := ha'.of_postcomp (ha.of_homotopic hg.symm)
+  exact ⟨hg'.homotopyEquiv, by rwa [homotopyEquiv_toFun]⟩
+
+/-- The map `A → B` induced by `φ : X → Y` between spaces over `X` and `Y`: given `a : A → X` with
+`A` of CW type and a weak homotopy equivalence `b : B → Y`, a lift of `φ ∘ a` through `b`, so that
+the square of `φ` and the lift with `a` and `b` commutes up to homotopy
+(`ContinuousMap.IsWeakHomotopyEquivalence.comp_lift_homotopic`). It is determined up to homotopy
+by this property (`ContinuousMap.IsWeakHomotopyEquivalence.homotopic_lift`). -/
+noncomputable def lift {b : C(B, Y)} (hb : b.IsWeakHomotopyEquivalence) (a : C(A, X))
+    (φ : C(X, Y)) : C(A, B) :=
+  (hb.exists_comp_homotopic (φ.comp a)).choose
+
+/-- The square of `φ` and its lift commutes up to homotopy: `b ∘ lift ≃ φ ∘ a`. -/
+theorem comp_lift_homotopic {b : C(B, Y)} (hb : b.IsWeakHomotopyEquivalence) (a : C(A, X))
+    (φ : C(X, Y)) : (b.comp (hb.lift a φ)).Homotopic (φ.comp a) :=
+  (hb.exists_comp_homotopic (φ.comp a)).choose_spec
+
+/-- **Uniqueness of the lift.** Every map `ψ : A → B` with `b ∘ ψ ≃ φ ∘ a` is homotopic to the
+lift of `φ`. -/
+theorem homotopic_lift {b : C(B, Y)} (hb : b.IsWeakHomotopyEquivalence) {a : C(A, X)}
+    {φ : C(X, Y)} {ψ : C(A, B)} (hψ : (b.comp ψ).Homotopic (φ.comp a)) :
+    ψ.Homotopic (hb.lift a φ) :=
+  hb.homotopic_of_comp_homotopic (hψ.trans (hb.comp_lift_homotopic a φ).symm)
+
+/-- Homotopic maps have homotopic lifts. -/
+theorem lift_homotopic_of_homotopic {b : C(B, Y)} (hb : b.IsWeakHomotopyEquivalence)
+    (a : C(A, X)) {φ φ' : C(X, Y)} (h : φ.Homotopic φ') :
+    (hb.lift a φ).Homotopic (hb.lift a φ') :=
+  hb.homotopic_lift ((hb.comp_lift_homotopic a φ).trans (h.comp (Homotopic.refl _)))
+
+/-- **The identity lifts to the identity up to homotopy.** -/
+theorem lift_id_homotopic {a : C(A, X)} (ha : a.IsWeakHomotopyEquivalence) :
+    (ha.lift a (ContinuousMap.id X)).Homotopic (ContinuousMap.id A) :=
+  (ha.homotopic_lift (φ := ContinuousMap.id X) (ψ := ContinuousMap.id A)
+    (by rw [comp_id, id_comp])).symm
+
+/-- **Composites lift to composites up to homotopy**: the lift of `χ ∘ φ` is homotopic to the
+composite of the lifts of `φ` and `χ`. -/
+theorem lift_comp_homotopic [TauCeti.CWType B] {b : C(B, Y)} {d : C(D, Z)}
+    (hb : b.IsWeakHomotopyEquivalence) (hd : d.IsWeakHomotopyEquivalence) (a : C(A, X))
+    (χ : C(Y, Z)) (φ : C(X, Y)) :
+    (hd.lift a (χ.comp φ)).Homotopic ((hd.lift b χ).comp (hb.lift a φ)) := by
+  refine (hd.homotopic_lift ?_).symm
+  -- `d ∘ lift χ ∘ lift φ ≃ χ ∘ b ∘ lift φ ≃ χ ∘ φ ∘ a`.
+  have h₁ := (hd.comp_lift_homotopic b χ).comp (Homotopic.refl (hb.lift a φ))
+  have h₂ := (Homotopic.refl χ).comp (hb.comp_lift_homotopic a φ)
+  rw [comp_assoc] at h₁ ⊢
+  exact h₁.trans h₂
+
+/-- **The lift of `φ` is a weak homotopy equivalence exactly when `φ` is**, when `a` is also a
+weak homotopy equivalence. -/
+theorem isWeakHomotopyEquivalence_lift_iff {a : C(A, X)} {b : C(B, Y)}
+    (ha : a.IsWeakHomotopyEquivalence) (hb : b.IsWeakHomotopyEquivalence) {φ : C(X, Y)} :
+    (hb.lift a φ).IsWeakHomotopyEquivalence ↔ φ.IsWeakHomotopyEquivalence := by
+  have h := hb.comp_lift_homotopic a φ
+  refine ⟨fun hψ ↦ ha.of_precomp ((hb.comp hψ).of_homotopic h), fun hφ ↦ ?_⟩
+  exact hb.of_postcomp ((hφ.comp ha).of_homotopic h.symm)
 
 end ContinuousMap.IsWeakHomotopyEquivalence
 
