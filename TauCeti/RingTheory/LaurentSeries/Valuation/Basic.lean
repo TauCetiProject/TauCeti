@@ -47,6 +47,42 @@ open scoped LaurentSeries
 
 namespace LaurentSeries
 
+section embReal
+
+variable (R : Type*) [NonAssocSemiring R]
+
+/-- A Laurent series read in the Hahn series with real exponents: the embedding
+`HahnSeries.embDomainRingHom` along the inclusion `ℤ → ℝ`. -/
+noncomputable def embReal : R⸨X⸩ →+* HahnSeries ℝ R :=
+  embDomainRingHom (Int.castAddHom ℝ) Int.cast_injective (fun _ _ => Int.cast_le)
+
+variable {R}
+
+/-- `embReal R` is `HahnSeries.embDomain` along `ℤ → ℝ`, as an order embedding. -/
+theorem embReal_apply (f : R⸨X⸩) :
+    embReal R f = embDomain ⟨⟨Int.castAddHom ℝ, Int.cast_injective⟩, Int.cast_le⟩ f :=
+  -- The ring homomorphism `HahnSeries.embDomainRingHom` has this `embDomain` as its underlying
+  -- function.
+  embDomainRingHom_apply _ _ _ f
+
+/-- Read in the Hahn series with real exponents, a Laurent series has its coefficients at the
+integers. -/
+@[simp]
+theorem coeff_embReal_intCast (f : R⸨X⸩) (k : ℤ) : (embReal R f).coeff (k : ℝ) = f.coeff k := by
+  rw [embReal_apply]
+  -- The order embedding `ℤ ↪o ℝ` above sends `k` to `(k : ℝ)` by definition.
+  exact embDomain_coeff (a := k)
+
+/-- Read in the Hahn series with real exponents, a Laurent series has zero coefficients away from
+the integers. -/
+theorem coeff_embReal_of_notMem_range {f : R⸨X⸩} {r : ℝ} (hr : r ∉ Set.range ((↑) : ℤ → ℝ)) :
+    (embReal R f).coeff r = 0 := by
+  rw [embReal_apply]
+  -- The order embedding `ℤ ↪o ℝ` above coerces to `Int.cast` by definition.
+  exact embDomain_of_notMem_range hr
+
+end embReal
+
 variable (R : Type*) [Ring R] [IsDomain R]
 
 /-- The order of vanishing `ord = orderTop` on `R⸨X⸩` as a real additive valuation: a nonzero
@@ -86,39 +122,6 @@ theorem realAddVal_le_of_coeff_ne_zero {f : R⸨X⸩} {k : ℤ} (hk : f.coeff k 
     realAddVal R f ≤ ((k : ℝ) : WithTop ℝ) := by
   rw [realAddVal_of_ne_zero (ne_zero_of_coeff_ne_zero hk), WithTop.coe_le_coe, Int.cast_le]
   exact order_le_of_coeff_ne_zero hk
-
-omit [IsDomain R] in
-variable (R) in
-/-- A Laurent series read in the Hahn series with real exponents: the embedding
-`HahnSeries.embDomainRingHom` along the inclusion `ℤ → ℝ`. -/
-noncomputable def embReal : R⸨X⸩ →+* HahnSeries ℝ R :=
-  embDomainRingHom (Int.castAddHom ℝ) Int.cast_injective (fun _ _ => Int.cast_le)
-
-omit [IsDomain R] in
-/-- `embReal R` is `HahnSeries.embDomain` along `ℤ → ℝ`, as an order embedding. -/
-theorem embReal_apply (f : R⸨X⸩) :
-    embReal R f = embDomain ⟨⟨Int.castAddHom ℝ, Int.cast_injective⟩, Int.cast_le⟩ f :=
-  -- The ring homomorphism `HahnSeries.embDomainRingHom` has this `embDomain` as its underlying
-  -- function.
-  embDomainRingHom_apply _ _ _ f
-
-omit [IsDomain R] in
-/-- Read in the Hahn series with real exponents, a Laurent series has its coefficients at the
-integers. -/
-@[simp]
-theorem coeff_embReal_intCast (f : R⸨X⸩) (k : ℤ) : (embReal R f).coeff (k : ℝ) = f.coeff k := by
-  rw [embReal_apply]
-  -- The order embedding `ℤ ↪o ℝ` above sends `k` to `(k : ℝ)` by definition.
-  exact embDomain_coeff (a := k)
-
-omit [IsDomain R] in
-/-- Read in the Hahn series with real exponents, a Laurent series has zero coefficients away from
-the integers. -/
-theorem coeff_embReal_of_notMem_range {f : R⸨X⸩} {r : ℝ} (hr : r ∉ Set.range ((↑) : ℤ → ℝ)) :
-    (embReal R f).coeff r = 0 := by
-  rw [embReal_apply]
-  -- The order embedding `ℤ ↪o ℝ` above coerces to `Int.cast` by definition.
-  exact embDomain_of_notMem_range hr
 
 /-- The real valuation of a Laurent series is the order of the series read in the Hahn series with
 real exponents. -/
