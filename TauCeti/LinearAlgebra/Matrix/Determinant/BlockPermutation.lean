@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Block
-import Mathlib.Order.Preorder.Finite
 
 /-!
 # Leading minors of matrices permuting blocks
@@ -44,11 +43,9 @@ theorem det_toSquareBlockProp_eq_zero_of_block_maps_out
   intro i
   exact hsupport i j fun h => hfj (h ▸ i.property)
 
-variable [PartialOrder α] [DecidableLE α]
-
 /-- Nonvanishing of the leading block minors forces a supported block map to send each
 occurring label to a label no larger than itself. -/
-theorem blockMap_le_of_det_leadingBlock_ne_zero
+theorem apply_le_of_det_toSquareBlockProp_le_ne_zero [Preorder α] [DecidableLE α]
     (M : Matrix n n R) (b : n → α) (f : α → α)
     (hsupport : ∀ i j, b i ≠ f (b j) → M i j = 0)
     (hminor : ∀ a, (M.toSquareBlockProp fun i => b i ≤ a).det ≠ 0) (j : n) :
@@ -57,9 +54,11 @@ theorem blockMap_le_of_det_leadingBlock_ne_zero
   exact hminor (b j) (det_toSquareBlockProp_eq_zero_of_block_maps_out M b f hsupport
     (· ≤ b j) j le_rfl hj)
 
+variable [PartialOrder α] [DecidableLE α]
+
 /-- A permutation of the occurring blocks is trivial if every leading block minor is
 nonzero. The blocks may have arbitrary sizes and arbitrary internal matrices. -/
-theorem blockPerm_eq_one_of_det_leadingBlock_ne_zero
+theorem eq_one_of_det_toSquareBlockProp_le_ne_zero
     (M : Matrix n n R) (b : n → α) (hb : Function.Surjective b) (σ : Equiv.Perm α)
     (hsupport : ∀ i j, b i ≠ σ (b j) → M i j = 0)
     (hminor : ∀ a, (M.toSquareBlockProp fun i => b i ≤ a).det ≠ 0) :
@@ -67,7 +66,7 @@ theorem blockPerm_eq_one_of_det_leadingBlock_ne_zero
   have : Finite α := Finite.of_surjective b hb
   have hle (a : α) : σ a ≤ a := by
     obtain ⟨j, rfl⟩ := hb a
-    exact blockMap_le_of_det_leadingBlock_ne_zero M b σ hsupport hminor j
+    exact apply_le_of_det_toSquareBlockProp_le_ne_zero M b σ hsupport hminor j
   ext a
   induction a using WellFoundedLT.induction with
   | ind a ih =>
@@ -77,11 +76,11 @@ theorem blockPerm_eq_one_of_det_leadingBlock_ne_zero
 
 /-- For an invertible matrix permuting a partially ordered family of nonempty blocks,
 all leading block minors are units if and only if the block permutation is trivial. -/
-theorem isUnit_det_leadingBlock_iff_blockPerm_eq_one [Nontrivial R]
+theorem isUnit_det_toSquareBlockProp_le_iff_eq_one [Nontrivial R]
     (M : Matrix n n R) (hM : IsUnit M.det) (b : n → α) (hb : Function.Surjective b)
     (σ : Equiv.Perm α) (hsupport : ∀ i j, b i ≠ σ (b j) → M i j = 0) :
     (∀ a, IsUnit (M.toSquareBlockProp fun i => b i ≤ a).det) ↔ σ = 1 := by
-  refine ⟨fun h => blockPerm_eq_one_of_det_leadingBlock_ne_zero M b hb σ hsupport
+  refine ⟨fun h => eq_one_of_det_toSquareBlockProp_le_ne_zero M b hb σ hsupport
     (fun a => (h a).ne_zero), ?_⟩
   rintro rfl a
   have hdet := M.twoBlockTriangular_det (fun i => b i ≤ a) (by
