@@ -146,11 +146,7 @@ theorem hasDerivAt_extended_hamiltonianVectorField_of_hasDerivAt (ω : Symplecti
       (ω.extended.hamiltonianVectorField (extendedHamiltonian H) (x s, (s, c - H s (x s)))) s := by
   rw [hamiltonianVectorField_extendedHamiltonian ω hH]
   have hE : HasDerivAt (fun u ↦ c - H u (x u)) (-timeFDeriv (uncurry H) s (x s)) s := by
-    have hspatial : spatialFDeriv (uncurry H) (x s) s = fderiv ℝ (H s) (x s) :=
-      (fderiv_timeSlice hH).symm
-    have h := (hasDerivAt_comp_prodMk (F := uncurry H) hH hx).const_sub c
-    rw [hspatial, fderiv_apply_hamiltonianVectorField, add_zero] at h
-    exact h
+    simpa using (ω.hasDerivAt_apply_of_hasDerivAt_hamiltonianVectorField_self hH hx).const_sub c
   exact hx.prodMk ((hasDerivAt_id s).prodMk hE)
 
 /-- **The bracket with the extended Hamiltonian is the total time derivative.** A time-dependent
