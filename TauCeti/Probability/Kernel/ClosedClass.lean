@@ -33,8 +33,7 @@ In particular, every nonempty finite closed set contains a closed communicating 
 on a finite nonempty state space such a class always exists. Only the relevant reachable
 set, or the closed set trapping the chain, has to be finite; no Markov or finiteness
 assumption on the kernel is needed. These structural results do not assert almost-sure
-entrance into a class. The proof chooses a minimal reachable set using the finite-order
-minimal-element theorem.
+entrance into a class.
 
 ## References
 
@@ -233,6 +232,7 @@ The representative of the class is itself reachable from the initial state. -/
 theorem exists_reaches_isClosedSet_communicatingClass_of_finite (κ : Kernel S S) (x : S)
     (hfinite : {y | κ.Reaches x y}.Finite) :
     ∃ y, κ.Reaches x y ∧ κ.IsClosedSet (κ.communicatingClass y) := by
+  -- Choose a minimal reachable set using the finite-order minimal-element theorem.
   obtain ⟨y, hxy, hmin⟩ := hfinite.exists_minimalFor
     (fun y => {z | κ.Reaches y z}) _ ⟨x, Reaches.refl x⟩
   refine ⟨y, hxy, (isClosedSet_communicatingClass_iff y).mpr ?_⟩
