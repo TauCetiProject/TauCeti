@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Noetherian
-public import TauCeti.AlgebraicGeometry.CartierDivisor.Effective
+public import TauCeti.AlgebraicGeometry.CartierDivisor.Effective.Basic
 public import TauCeti.AlgebraicGeometry.CartierDivisor.Picard
 public import TauCeti.AlgebraicGeometry.Scheme.GenericPoint
 public import TauCeti.Topology.KrullDimension.Basic
@@ -14,10 +13,10 @@ public import TauCeti.Topology.KrullDimension.Basic
 /-!
 # Cartier divisors on curves are differences of effective divisors
 
-Let `X` be a Noetherian integral scheme all of whose points have codimension at most one, for
-instance a proper integral curve over a field, possibly singular. Every Cartier divisor `D` on `X`
-is a difference `E - F` of effective Cartier divisors, so every line bundle on `X` is
-`𝒪_X(E) ⊗ 𝒪_X(F)⁻¹` with `E` and `F` effective.
+Let `X` be an integral scheme whose underlying space is Noetherian and all of whose points have
+codimension at most one, for instance a proper integral curve over a field, possibly singular.
+Every Cartier divisor `D` on `X` is a difference `E - F` of effective Cartier divisors, so every
+line bundle on `X` is `𝒪_X(E) ⊗ 𝒪_X(F)⁻¹` with `E` and `F` effective.
 
 The proof chooses, near each point, an affine open `A` on which `D` has an equation `g`, and
 writes `g = a / b` with `a` and `b` regular on `A`. The function `b` is the equation on `A` of an
@@ -26,19 +25,18 @@ a locally closed set of points other than the generic point. On a scheme of dime
 such points are closed, so the zero locus is closed in `X`
 (`TauCeti.AlgebraicGeometry.Scheme.isClosed_of_isLocallyClosed_of_genericPoint_notMem`). Hence
 the divisor `G` can be glued from the equation `b` on `A` and the zero divisor on the complement
-of the zero locus. The divisor `D + G` has the regular equation `a` on `A`. Finitely many such
-opens cover `X`, and adding the corresponding divisors `G` to `D` makes it effective.
+of the zero locus
+(`TauCeti.AlgebraicGeometry.Scheme.CartierDivisor.exists_restrict_eq_and_restrict_eq_zero`).
+The divisor `D + G` has the regular equation `a` on `A`. Finitely many such opens cover `X`, and
+adding the corresponding divisors `G` to `D` makes it effective.
 
-Without the dimension hypothesis the zero locus of `b` need not be closed in `X`; on a Noetherian
-integral scheme of higher dimension one uses an ample invertible sheaf instead.
+Without the dimension hypothesis the zero locus of `b` need not be closed in `X`.
 
 This is the input that reduces additivity of the degree `deg L = χ(L) - χ(𝒪_X)` on a singular
 proper curve to twisting by effective Cartier divisors.
 
 ## Main results
 
-* `TauCeti.AlgebraicGeometry.Scheme.CartierDivisor.exists_restrict_eq_and_restrict_eq_zero`: a
-  local equation on `V` which is a unit on `V ⊓ W` extends by zero across `W` when `V ⊔ W = X`.
 * `TauCeti.AlgebraicGeometry.Scheme.CartierDivisor.exists_isEffective_restrict_eq`: a nonzero
   rational function which is regular on an open subset `V` is the equation on `V` of an effective
   Cartier divisor.
@@ -72,45 +70,14 @@ noncomputable section
 
 namespace Scheme.CartierDivisor
 
-variable {X : Scheme.{u}} [IsIntegral X]
-
-/-- **Extension by zero.** Let `V` and `W` be open subsets covering `X` with `V ⊓ W` nonempty, and
-let `f` be a nonzero rational function whose Cartier class on `V ⊓ W` vanishes, that is, which is a
-unit of `Γ(X, V ⊓ W)`. Then there is a Cartier divisor with equation `f` on `V` and trivial on
-`W`. -/
-theorem exists_restrict_eq_and_restrict_eq_zero {V W : X.Opens} [Nonempty V]
-    [Nonempty (V ⊓ W : X.Opens)] (hVW : V ⊔ W = ⊤) (f : X.functionFieldˣ)
-    (hf : rationalUnitClass X (V ⊓ W) (Additive.ofMul f) = 0) :
-    ∃ G : CartierDivisor X,
-      G |_ V = rationalUnitClass X V (Additive.ofMul f) ∧ G |_ W = 0 := by
-  let U : Bool → X.Opens := fun i ↦ bif i then V else W
-  let sf : ∀ i, ((cartierDivisorSheaf X).obj.obj (op (U i)) : Type u) := fun i ↦
-    Bool.rec (motive := fun i ↦ ((cartierDivisorSheaf X).obj.obj (op (U i)) : Type u)) 0
-      (rationalUnitClass X V (Additive.ofMul f)) i
-  have hcompat : TopCat.Presheaf.IsCompatible (cartierDivisorSheaf X).obj U sf := by
-    have hVW : rationalUnitClass X V (Additive.ofMul f) |_ (V ⊓ W) = 0 :=
-      (rationalUnitClass_restrict X inf_le_left _).trans hf
-    have hWV : rationalUnitClass X V (Additive.ofMul f) |_ (W ⊓ V) = 0 := by
-      have : Nonempty (W ⊓ V : X.Opens) := by rw [inf_comm]; infer_instance
-      rw [rationalUnitClass_restrict X inf_le_right,
-        ← rationalUnitClass_restrict X (inf_comm W V).le, hf]
-      simp only [TopCat.Presheaf.restrictOpen, TopCat.Presheaf.restrict, map_zero]
-    rintro (_ | _) (_ | _)
-    · rfl
-    · exact (map_zero _).trans hWV.symm
-    · exact hVW.trans (map_zero _).symm
-    · rfl
-  obtain ⟨G, hG, -⟩ := (cartierDivisorSheaf X).existsUnique_gluing' U ⊤
-    (fun _ ↦ homOfLE le_top) (by rw [← hVW]; exact sup_le (le_iSup U true) (le_iSup U false))
-    sf hcompat
-  exact ⟨G, hG true, hG false⟩
-
-variable [IsNoetherian X] (hX : ∀ x : X, Order.coheight x ≤ 1)
+variable {X : Scheme.{u}} [IsIntegral X] [NoetherianSpace X]
+  (hX : ∀ x : X, Order.coheight x ≤ 1)
 include hX
 
-/-- **The divisor of zeros of a regular function.** On a Noetherian integral scheme all of whose
-points have codimension at most one, a nonzero rational function `f` which is regular on an open
-subset `V`, the image of `b ∈ Γ(X, V)`, is the equation on `V` of an effective Cartier divisor. -/
+/-- **The divisor of zeros of a regular function.** On an integral scheme whose underlying space
+is Noetherian and all of whose points have codimension at most one, a nonzero rational function
+`f` which is regular on an open subset `V`, the image of `b ∈ Γ(X, V)`, is the equation on `V` of
+an effective Cartier divisor. -/
 theorem exists_isEffective_restrict_eq {V : X.Opens} [Nonempty V] (b : Γ(X, V))
     (f : X.functionFieldˣ) (hf : X.germToFunctionField V b = f) :
     ∃ G : CartierDivisor X, G.IsEffective ∧ G |_ V = rationalUnitClass X V (Additive.ofMul f) := by
@@ -170,7 +137,7 @@ private lemma exists_add_isLocalEquationAt_mem_range (D : CartierDivisor X) (x :
     X.isBasis_affineOpens.exists_subset_of_mem_open hxV V.isOpen
   have : Nonempty V := ⟨⟨x, hxV⟩⟩
   have : Nonempty A := ⟨⟨x, hxA⟩⟩
-  have hgA := rationalUnitClass_eq_of_le (show A ≤ V from hAV) hg
+  have hgA := rationalUnitClass_eq_of_le (fun _ hy ↦ hAV hy) hg
   have := functionField_isFractionRing_of_isAffineOpen X A hA
   -- Write the equation `g` of `D` on the affine open `A` as a fraction `a / b`.
   obtain ⟨a, b, hb, hab⟩ := IsFractionRing.div_surjective (A := Γ(X, A)) (g : X.functionField)
@@ -186,9 +153,10 @@ private lemma exists_add_isLocalEquationAt_mem_range (D : CartierDivisor X) (x :
   rw [Units.val_mul, Units.val_mk0, hga, ← Scheme.algebraMap_germ_eq_germToFunctionField X hy]
   exact RingHom.mem_range_self _ _
 
-/-- **Cartier divisors on curves are differences of effective divisors.** On a Noetherian integral
-scheme all of whose points have codimension at most one, for instance a proper integral curve over
-a field, every Cartier divisor is `E - F` with `E` and `F` effective. -/
+/-- **Cartier divisors on curves are differences of effective divisors.** On an integral scheme
+whose underlying space is Noetherian and all of whose points have codimension at most one, for
+instance a proper integral curve over a field, every Cartier divisor is `E - F` with `E` and `F`
+effective. -/
 theorem exists_isEffective_sub_eq (D : CartierDivisor X) :
     ∃ E F : CartierDivisor X, E.IsEffective ∧ F.IsEffective ∧ E - F = D := by
   choose A hxA G hG hloc using exists_add_isLocalEquationAt_mem_range hX D
@@ -207,8 +175,8 @@ theorem exists_isEffective_sub_eq (D : CartierDivisor X) :
   rw [← Finset.add_sum_erase s G hxs, ← add_assoc]
   exact hf.mul he
 
-/-- On a Noetherian integral scheme all of whose points have codimension at most one, the
-effective Cartier divisors generate the group of Cartier divisors. -/
+/-- On an integral scheme whose underlying space is Noetherian and all of whose points have
+codimension at most one, the effective Cartier divisors generate the group of Cartier divisors. -/
 theorem closure_effectiveSubmonoid_eq_top :
     AddSubgroup.closure (effectiveSubmonoid X : Set (CartierDivisor X)) = ⊤ := by
   refine eq_top_iff.mpr fun D _ ↦ ?_
@@ -216,9 +184,10 @@ theorem closure_effectiveSubmonoid_eq_top :
   exact sub_mem (AddSubgroup.subset_closure ((mem_effectiveSubmonoid E).mpr hE))
     (AddSubgroup.subset_closure ((mem_effectiveSubmonoid F).mpr hF))
 
-/-- **Line bundles on curves come from effective divisors.** On a Noetherian integral scheme all
-of whose points have codimension at most one, every line-bundle class is the class of
-`𝒪_X(E) ⊗ 𝒪_X(F)⁻¹` for effective Cartier divisors `E` and `F`. -/
+/-- **Line bundles on curves come from effective divisors.** On an integral scheme whose
+underlying space is Noetherian and all of whose points have codimension at most one, every
+line-bundle class is the class of `𝒪_X(E) ⊗ 𝒪_X(F)⁻¹` for effective Cartier divisors `E` and
+`F`. -/
 theorem exists_isEffective_toLineBundleClass_mul_inv_eq (a : LineBundleClass X) :
     ∃ E F : CartierDivisor X, E.IsEffective ∧ F.IsEffective ∧
       E.toLineBundleClass * F.toLineBundleClass⁻¹ = a := by
