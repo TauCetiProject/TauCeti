@@ -36,7 +36,7 @@ is substituting `h'(h)` with weight `g · g'(h)`
 (`TauCeti.MvPowerSeries.restrictedWeightedSubstCLM_comp`). The weight `1` with `h = X` gives the
 identity, while `h = 0` gives the map `f ↦ f(0) · g`, since `f(0)` is the constant coefficient
 (`TauCeti.MvPowerSeries.restrictedAnalyticSubst_zero_apply`,
-`TauCeti.MvPowerSeries.restrictedWeightedSubstCLM_zero_apply`) of rank at most one
+`TauCeti.MvPowerSeries.restrictedWeightedSubstCLM_zero_apply`). This map has finite rank
 (`TauCeti.MvPowerSeries.isFiniteRank_weightedSubstCLM_zero`). Row compactness of weighted
 substitutions converging on a larger polydisc is in
 `TauCeti.Analysis.Normed.Operator.RowCompact.WeightedSubst`.
@@ -186,12 +186,9 @@ theorem matrixCoeff_weightedSubstCLM [DecidableEq (WithDiscreteTopology (Fin k �
   have hx : (restrictedCoeffLinearIsometryEquiv.symm
       (ZeroAtInftyContinuousMap.single (.toTopology ⊥ t) (1 : R)) :
         IsRestricted.subring (R := R) fun _ : Fin k ↦ (1 : ℝ)) =
-      ⟨monomial t 1, isRestricted_monomial _ t 1⟩ := by
-    refine Subtype.ext <| MvPowerSeries.ext fun s ↦ ?_
-    classical
-    rw [restrictedCoeffLinearIsometryEquiv_symm_apply, ZeroAtInftyContinuousMap.single_apply,
-      coeff_monomial]
-    simp
+      ⟨monomial t 1, isRestricted_monomial _ t 1⟩ :=
+    (LinearIsometryEquiv.symm_apply_eq _).2 <| by
+      convert (restrictedCoeffLinearIsometryEquiv_monomial t (1 : R)).symm
   rw [ContinuousLinearMap.matrixCoeff_apply, weightedSubstCLM_apply_toTopology, hx,
     restrictedAnalyticSubst_apply, restrictedEval₂_monomial, map_one, one_mul]
   simp only [SubmonoidClass.coe_pow, SubmonoidClass.coe_finsetProd]
@@ -228,8 +225,8 @@ theorem weightedSubstCLM_zero_apply (x : C₀(WithDiscreteTopology (Fin k →₀
   rw [weightedSubstCLM_apply, restrictedWeightedSubstCLM_zero_apply, map_smul,
     ← coeff_zero_eq_constantCoeff_apply, restrictedCoeffLinearIsometryEquiv_symm_apply]
 
-/-- **Substituting zero has finite rank**: the weighted substitution with `h = 0` takes values in
-the line spanned by the coefficient family of `g`. -/
+/-- **Substituting zero has finite rank**: the weighted substitution with `h = 0` is a linear map
+of finite rank. -/
 theorem isFiniteRank_weightedSubstCLM_zero :
     LinearMap.IsFiniteRank (weightedSubstCLM g (0 : Fin k → _) (fun _ ↦ by simp) :
       C₀(WithDiscreteTopology (Fin k →₀ ℕ), R) →ₗ[R] C₀(WithDiscreteTopology (τ →₀ ℕ), R)) :=
