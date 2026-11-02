@@ -38,22 +38,22 @@ example : (MulAction.stabilizer (Perm (Fin 3)) (0 : Fin 3)).index ≤ 3 := by
       Perm.closure_isSwap
     · exact ⟨0, DoubleCoset.mem_doubleCoset.mpr
         ⟨1, H.one_mem, 1, H.one_mem, by simp [hw]⟩⟩
-    · intro s hs i q
+    · intro s hs i h
       have hs' : s.IsSwap := by
         rcases hs with hs | hs
         · exact hs
         · obtain ⟨a, b, hab, heq⟩ := hs
           exact ⟨a, b, hab, by simpa using congrArg Inv.inv heq⟩
-      obtain ⟨j, a, b, ha, hb, hab⟩ := transitions s q.out hs' q.out.property i
+      obtain ⟨j, a, b, ha, hb, hab⟩ := transitions s h hs' h.property i
       exact ⟨j, DoubleCoset.mem_doubleCoset.mpr ⟨a, ha, b, hb, hab.symm⟩⟩
   have hcard : Nat.card H = 2 := by
     rw [Nat.card_eq_fintype_card]
     decide +kernel
   have bound := H.index_le_sum_of_doubleCoset_cover w cover
-  have hzero : ((ConjAct.toConjAct (w 0) • H).subgroupOf H).index = 1 := by
+  have hzero : (ConjAct.toConjAct (w 0) • H).relIndex H = 1 := by
     simp [hw]
-  have hone : ((ConjAct.toConjAct (w 1) • H).subgroupOf H).index ≤ 2 :=
-    (Nat.le_of_dvd Nat.card_pos (Subgroup.index_dvd_card _)).trans hcard.le
+  have hone : (ConjAct.toConjAct (w 1) • H).relIndex H ≤ 2 :=
+    (Nat.le_of_dvd Nat.card_pos (Subgroup.relIndex_dvd_card _ _)).trans hcard.le
   exact bound.trans (by simpa only [Fin.sum_univ_two, hzero] using Nat.add_le_add_left hone 1)
 
 /-- Omitting the nonidentity block cannot satisfy all transposition transitions. -/
