@@ -68,7 +68,6 @@ lemma smallTwistedChains_le_comap {n : ℕ} {M : Type*} [AddCommGroup M] [Module
   exact hf σ.val σ.property x
 
 /-- A twisted chain is small exactly when its coefficient on every nonsmall simplex vanishes. -/
-@[simp]
 lemma mem_smallTwistedChains_iff {n : ℕ} (c : L.twistedChainComplex.X n) :
     c ∈ smallTwistedChains L U n ↔ ∀ σ : (TopCat.toSSet.obj X) _⦋n⦌,
       σ ∉ (X.smallSingularSubcomplex U).obj _ → (twistedChainComplexCoeff L σ).hom c = 0 := by
@@ -88,7 +87,8 @@ lemma mem_smallTwistedChains_iff {n : ℕ} (c : L.twistedChainComplex.X n) :
     · exact ιTwistedChainComplex_mem_smallTwistedChains L U hσ _
     · simp [hc σ hσ]
 
-/-- Enlarging the family by a refinement enlarges the small twisted chains. -/
+/-- If every member of `U` lies in a member of `V` (so `U` refines `V`), then chains small
+for `U` are small for `V`. -/
 lemma smallTwistedChains_mono {κ : Type*} (V : κ → Set X) (r : ι → κ)
     (h : ∀ i, U i ⊆ V (r i)) (n : ℕ) :
     smallTwistedChains L U n ≤ smallTwistedChains L V n := by
@@ -134,6 +134,17 @@ lemma smallTwistedChainComplex_d (n : ℕ) :
   simp only [smallTwistedChainComplex, ChainComplex.of_d]
   rfl
 
+/-- The boundary of a small chain has the same underlying chain as the singular boundary. -/
+@[simp]
+lemma coe_smallTwistedChainComplex_d_apply (n : ℕ)
+    (c : (smallTwistedChainComplex L U).X (n + 1)) :
+    ((eqToHom (smallTwistedChainComplex_X L U n)).hom
+      (((smallTwistedChainComplex L U).d (n + 1) n).hom c) : L.twistedChainComplex.X n) =
+      (L.twistedChainComplex.d (n + 1) n).hom
+        ((eqToHom (smallTwistedChainComplex_X L U (n + 1))).hom c) := by
+  rw [smallTwistedChainComplex_d]
+  rfl
+
 /-- The inclusion of small twisted chains into all twisted singular chains. -/
 def smallTwistedChainComplexι : smallTwistedChainComplex L U ⟶ L.twistedChainComplex :=
   ChainComplex.ofHom (fun n ↦ eqToHom (smallTwistedChainComplex_X L U n) ≫
@@ -150,6 +161,13 @@ def smallTwistedChainComplexι : smallTwistedChainComplex L U ⟶ L.twistedChain
 lemma smallTwistedChainComplexι_f (n : ℕ) :
     (smallTwistedChainComplexι L U).f n = eqToHom (smallTwistedChainComplex_X L U n) ≫
       ModuleCat.ofHom (smallTwistedChains L U n).subtype := (rfl)
+
+/-- The small-chain inclusion sends an element to its underlying twisted chain. -/
+@[simp]
+lemma smallTwistedChainComplexι_f_apply (n : ℕ)
+    (c : (smallTwistedChainComplex L U).X n) :
+    ((smallTwistedChainComplexι L U).f n).hom c =
+      ((eqToHom (smallTwistedChainComplex_X L U n)).hom c : L.twistedChainComplex.X n) := (rfl)
 
 /-- The image of the inclusion is exactly the submodule of small twisted chains. -/
 @[simp]
@@ -190,7 +208,8 @@ lemma twistedSingularChain_mem_smallTwistedChains {m k : ℕ}
   intro a ha
   apply (smallTwistedChains L U k).toAddSubgroup.zsmul_mem
   rw [twistedAffineSimplex_def]
-  -- The categorical composite evaluates as coefficient transport followed by fibre inclusion.
+  -- The composite evaluates as transport followed by fibre inclusion; the simplex's image
+  -- simplifies by the `toSSetObjEquiv` apply/symm round-trip.
   exact ιTwistedChainComplex_mem_smallTwistedChains L U
     ((TopCat.mem_smallSingularSubcomplex_iff X U _).2 (hc a ha)) _
 
@@ -204,9 +223,8 @@ lemma twistedSubdivisionX_mem_smallTwistedChains {n : ℕ} {c : L.twistedChainCo
   rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp,
     ιTwistedChainComplex_twistedSubdivisionX_eq]
   apply twistedSingularChain_mem_smallTwistedChains
-  intro a _
-  obtain ⟨i, hi⟩ := (TopCat.mem_smallSingularSubcomplex_iff X U σ).1 hσ
-  exact ⟨i, fun _ ⟨z, hz⟩ ↦ hi ⟨StdSimplex.continuousAffineMapMk a z, hz⟩⟩
+  exact fun a _ ↦
+    TopCat.exists_range_comp_affineMapMk_subset_of_mem_smallSingularSubcomplex X U hσ a
 
 /-- The subdivision prism preserves small twisted chains. -/
 lemma twistedPrismX_mem_smallTwistedChains {n : ℕ} {c : L.twistedChainComplex.X n}
@@ -217,9 +235,8 @@ lemma twistedPrismX_mem_smallTwistedChains {n : ℕ} {c : L.twistedChainComplex.
   intro σ hσ x
   rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp, ιTwistedChainComplex_twistedPrismX]
   apply twistedSingularChain_mem_smallTwistedChains
-  intro a _
-  obtain ⟨i, hi⟩ := (TopCat.mem_smallSingularSubcomplex_iff X U σ).1 hσ
-  exact ⟨i, fun _ ⟨z, hz⟩ ↦ hi ⟨StdSimplex.continuousAffineMapMk a z, hz⟩⟩
+  exact fun a _ ↦
+    TopCat.exists_range_comp_affineMapMk_subset_of_mem_smallSingularSubcomplex X U hσ a
 
 /-- For an open cover, a uniform number of subdivisions makes the whole coefficient fibre
 on a given singular simplex small. -/
@@ -288,8 +305,9 @@ lemma twistedChainComplexMap_mem_smallTwistedChains (r : ι → κ)
   rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp, ιTwistedChainComplex_twistedChainComplexMap_f]
   apply ιTwistedChainComplex_mem_smallTwistedChains
   obtain ⟨i, hi⟩ := (TopCat.mem_smallSingularSubcomplex_iff X U σ).1 hσ
-  rw [TopCat.mem_smallSingularSubcomplex_iff]
-  exact ⟨r i, fun _ ⟨z, hz⟩ ↦ hz ▸ hf i (hi ⟨z, rfl⟩)⟩
+  rw [TopCat.mem_smallSingularSubcomplex_iff, TopCat.toSSetObjEquiv_toSSet_map_app,
+    ContinuousMap.coe_comp, Set.range_comp]
+  exact ⟨r i, ((hf i).mono_left hi).image_subset⟩
 
 end Naturality
 
