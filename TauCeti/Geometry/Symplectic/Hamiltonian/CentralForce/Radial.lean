@@ -253,14 +253,6 @@ theorem hasFDerivAt_radialProjection {x : V × V} (hq : x.1 ≠ 0) :
 
 /-! ### Uniform circular motion -/
 
-/-- For orthonormal `u` and `w`, the combination `a • u + b • w` with `a² + b² = 1` is a unit
-vector; this is `norm_smul_add_smul_sq` read on the unit circle. -/
-private theorem norm_smul_add_smul_eq_one_of_sq_add_sq {u w : V} (hu : ‖u‖ = 1) (hw : ‖w‖ = 1)
-    (huw : ⟪u, w⟫_ℝ = 0) {a b : ℝ} (hab : a ^ 2 + b ^ 2 = 1) : ‖a • u + b • w‖ = 1 := by
-  have h := norm_smul_add_smul_sq (𝕜 := ℝ) (by simpa using huw) a b
-  simp only [RCLike.ofReal_real_eq_id, id, hu, hw, one_pow, mul_one, hab] at h
-  exact (pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero).1 h
-
 /-- The uniform circular motion `q(t) = r₀ (cos(ω t) u + sin(ω t) w)` of radius `r₀` and angular
 velocity `ω` in the plane of `u` and `w`, together with the momentum `p(t) = m q'(t)` of a particle
 of mass `m`. -/
@@ -298,7 +290,9 @@ its radial projection is the point `(r₀, 0)`. -/
 theorem radialProjection_circularMotion (m : ℝ) {r₀ : ℝ} (hr₀ : 0 ≤ r₀) (ω : ℝ) {u w : V}
     (hu : ‖u‖ = 1) (hw : ‖w‖ = 1) (huw : ⟪u, w⟫_ℝ = 0) (t : ℝ) :
     radialProjection (circularMotion m r₀ ω u w t) = (r₀, 0) := by
-  have h := norm_smul_add_smul_eq_one_of_sq_add_sq hu hw huw (Real.cos_sq_add_sin_sq (ω * t))
+  have h : ‖Real.cos (ω * t) • u + Real.sin (ω * t) • w‖ = 1 := by
+    simpa using norm_smul_add_smul_eq_one_of_sq_add_sq (𝕜 := ℝ) hu hw (by simpa using huw)
+      (Real.cos_sq_add_sin_sq (ω * t))
   simp only [circularMotion, radialProjection, radialMomentum, norm_smul, h, Real.norm_eq_abs,
     abs_of_nonneg hr₀, mul_one, Prod.mk.injEq, true_and]
   simp only [inner_smul_left, inner_smul_right, inner_add_left, inner_add_right,
@@ -311,9 +305,14 @@ theorem sq_sub_inner_sq_circularMotion (m r₀ ω : ℝ) {u w : V} (hu : ‖u‖
     ‖(circularMotion m r₀ ω u w t).1‖ ^ 2 * ‖(circularMotion m r₀ ω u w t).2‖ ^ 2 -
         ⟪(circularMotion m r₀ ω u w t).1, (circularMotion m r₀ ω u w t).2⟫_ℝ ^ 2 =
       (m * r₀ ^ 2 * ω) ^ 2 := by
-  have h₁ := norm_smul_add_smul_eq_one_of_sq_add_sq hu hw huw (Real.cos_sq_add_sin_sq (ω * t))
-  have h₂ := norm_smul_add_smul_eq_one_of_sq_add_sq hu hw huw (a := -Real.sin (ω * t))
-    (b := Real.cos (ω * t)) (by rw [neg_sq]; exact Real.sin_sq_add_cos_sq (ω * t))
+  have huw' : RCLike.re ⟪u, w⟫_ℝ = 0 := by simpa using huw
+  have h₁ : ‖Real.cos (ω * t) • u + Real.sin (ω * t) • w‖ = 1 := by
+    simpa using norm_smul_add_smul_eq_one_of_sq_add_sq (𝕜 := ℝ) hu hw huw'
+      (Real.cos_sq_add_sin_sq (ω * t))
+  have h₂ : ‖-Real.sin (ω * t) • u + Real.cos (ω * t) • w‖ = 1 := by
+    simpa using norm_smul_add_smul_eq_one_of_sq_add_sq (𝕜 := ℝ) hu hw huw'
+      (γ := -Real.sin (ω * t)) (σ := Real.cos (ω * t))
+      (by rw [neg_sq]; exact Real.sin_sq_add_cos_sq (ω * t))
   simp only [circularMotion, norm_smul, h₁, h₂, Real.norm_eq_abs, mul_one, mul_pow, sq_abs,
     inner_smul_left, inner_smul_right, inner_add_left, inner_add_right, real_inner_self_eq_norm_sq,
     hu, hw, huw, real_inner_comm u w, RCLike.conj_to_real]
