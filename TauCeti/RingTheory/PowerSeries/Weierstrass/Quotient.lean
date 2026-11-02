@@ -16,12 +16,15 @@ import TauCeti.Algebra.GroupWithZero.Irreducible
 
 Weierstrass division identifies the quotient of restricted series by a distinguished monic
 polynomial with its polynomial quotient. Preparation extends this description to any distinguished
-restricted series with a unit dominant coefficient. In particular, these quotients are finite free
-over the coefficient ring, so a finite module over restricted series killed by such a series is
-finite over the coefficient ring, and maximal ideals containing such a series contract to maximal
-ideals of the coefficient ring. This is the finite-module step in the induction proving
-noetherianity of Tate algebras: after making a series distinguished in the last variable, its
-quotient is finite over the Tate algebra in the remaining variables. The divisibility reflection
+restricted series with a unit dominant coefficient. Finite freeness over the coefficient ring is
+proved in `TauCeti.RingTheory.PowerSeries.Weierstrass.Basis` by
+`TauCeti.PowerSeries.IsMulDistinguished.finite_quotient` and
+`TauCeti.PowerSeries.IsMulDistinguished.free_quotient`. Here we deduce that a finite module over
+restricted series killed by such a series is finite over the coefficient ring, and that maximal
+ideals containing such a series contract to maximal ideals of the coefficient ring. This is the
+finite-module step in the induction proving noetherianity of Tate algebras: after making a series
+distinguished in the last variable, its quotient is finite over the Tate algebra in the remaining
+variables. The divisibility reflection
 underlying the comparison shows, without completeness, that a distinguished monic polynomial which
 is irreducible as a restricted series is irreducible as a polynomial; this is the step in the
 induction proving that Tate algebras are unique factorisation domains.
