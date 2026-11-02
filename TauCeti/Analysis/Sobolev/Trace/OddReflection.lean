@@ -52,6 +52,9 @@ hyperplane, using the symmetry of the weak Hessian of `u`
 
 * `TauCeti.Wkp.exists_value_ae_eq_sub_comp_normalReflection`: the odd reflection of a function
   in `W^{2,p}(H)` with first-order part in `W^{1,p}_0(H)` lies in `W^{2,p}(ℝ × E)`.
+* `TauCeti.eLpNorm_traceCLM_le_of_ae_eq_sub_comp_normalReflection`: the trace of the odd
+  reflection of an endomorphism field on `H` has `Lᵖ` norm at most twice that of the trace of the
+  field on `H`.
 
 ## References
 
@@ -368,5 +371,72 @@ theorem Wkp.exists_value_ae_eq_sub_comp_normalReflection {a : ℝ}
     · simp only [indicator_of_notMem hxS, zero_apply, inner_zero_left]
 
 end Construction
+
+section Trace
+
+variable {p : ℝ≥0∞}
+
+/-- An endomorphism field `w` on `ℝ × E` that is the odd reflection of a field `d` on the
+half-space `H = {x | a < x.fst}`, in the sense of
+`TauCeti.Wkp.exists_value_ae_eq_sub_comp_normalReflection`, agrees with `d` on `H`. -/
+theorem ae_restrict_eq_of_ae_eq_sub_comp_normalReflection {a : ℝ}
+    {d w : WithLp 2 (ℝ × E) → IteratedGradient (WithLp 2 (ℝ × E)) 1}
+    (hw : w =ᵐ[volume] fun x =>
+      (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))).indicator d x -
+        ((normalLinearReflection E).toContinuousLinearEquiv :
+            WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) ∘L
+          (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))).indicator d
+            (normalReflection E a x) ∘L
+          ((normalLinearReflection E).toContinuousLinearEquiv :
+            WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E))) :
+    d =ᵐ[volume.restrict (normalHalfSpace (E := E) a)] w := by
+  have hH := (normalHalfSpace (E := E) a).isOpen.measurableSet
+  filter_upwards [ae_restrict_mem hH, ae_restrict_of_ae hw] with x hx hwx
+  have hρx : normalReflection E a x ∉ (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))) :=
+    fun h => lt_asymm ((mem_normalHalfSpace a x).1 hx)
+      ((normalReflection_mem_normalHalfSpace_iff a x).1 h)
+  rw [hwx, indicator_of_mem hx, indicator_of_notMem hρx, ContinuousLinearMap.zero_comp,
+    ContinuousLinearMap.comp_zero, sub_zero]
+
+/-- The trace of the odd reflection `w` of an endomorphism field `d` on the half-space
+`H = {x | a < x.fst}` is the odd reflection of the trace of `d`, so its `Lᵖ` norm on `ℝ × E` is at
+most twice the `Lᵖ` norm of the trace of `d` on `H`. -/
+theorem eLpNorm_traceCLM_le_of_ae_eq_sub_comp_normalReflection [Fact (1 ≤ p)] {a : ℝ}
+    {d w : WithLp 2 (ℝ × E) → IteratedGradient (WithLp 2 (ℝ × E)) 1}
+    (hd : AEStronglyMeasurable d (volume.restrict (normalHalfSpace (E := E) a)))
+    (hw : w =ᵐ[volume] fun x =>
+      (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))).indicator d x -
+        ((normalLinearReflection E).toContinuousLinearEquiv :
+            WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) ∘L
+          (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))).indicator d
+            (normalReflection E a x) ∘L
+          ((normalLinearReflection E).toContinuousLinearEquiv :
+            WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E))) :
+    eLpNorm (fun x => traceCLM ℝ (WithLp 2 (ℝ × E)) (w x)) p volume ≤
+      2 * eLpNorm (fun x => traceCLM ℝ (WithLp 2 (ℝ × E)) (d x)) p
+        (volume.restrict (normalHalfSpace (E := E) a)) := by
+  set H := (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E)))
+  have hH : MeasurableSet H := (normalHalfSpace (E := E) a).isOpen.measurableSet
+  have hρ := measurePreserving_normalReflection (E := E) a
+  set T := traceCLM ℝ (WithLp 2 (ℝ × E))
+  -- The trace of `w` is the odd reflection of `φ`, the trace of `d` extended by zero off `H`.
+  obtain ⟨φ, hφ⟩ : ∃ φ : WithLp 2 (ℝ × E) → ℝ, φ = H.indicator fun x => T (d x) := ⟨_, rfl⟩
+  have hφm : AEStronglyMeasurable φ volume :=
+    hφ ▸ (aestronglyMeasurable_indicator_iff hH).2 (T.continuous.comp_aestronglyMeasurable hd)
+  have hTφ (y : WithLp 2 (ℝ × E)) : T (H.indicator d y) = φ y := by
+    by_cases hy : y ∈ H <;> simp [hφ, hy]
+  have hae : (fun x => T (w x)) =ᵐ[volume] φ - φ ∘ normalReflection E a := by
+    filter_upwards [hw] with x hwx
+    rw [hwx, map_sub, ContinuousLinearMap.traceCLM_normalLinearReflection_comp_comp, hTφ, hTφ,
+      Pi.sub_apply, Function.comp_apply]
+  calc eLpNorm (fun x => T (w x)) p volume
+      = eLpNorm (φ - φ ∘ normalReflection E a) p volume := eLpNorm_congr_ae hae
+    _ ≤ eLpNorm φ p volume + eLpNorm (φ ∘ normalReflection E a) p volume :=
+      eLpNorm_sub_le Fact.out
+    _ = 2 * eLpNorm (fun x => T (d x)) p (volume.restrict H) := by
+      rw [eLpNorm_comp_measurePreserving hφm hρ, ← two_mul, hφ,
+        eLpNorm_indicator_eq_eLpNorm_restrict hH.nullMeasurableSet]
+
+end Trace
 
 end TauCeti
