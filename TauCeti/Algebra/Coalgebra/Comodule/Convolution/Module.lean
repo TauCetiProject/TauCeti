@@ -10,7 +10,6 @@ public import TauCeti.Algebra.Coalgebra.Comodule.Hom
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Basic
 public import Mathlib.Algebra.Module.Projective
 public import Mathlib.RingTheory.SimpleModule.Basic
-import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 import TauCeti.LinearAlgebra.TensorProduct.Basis
 
 /-!
@@ -123,31 +122,11 @@ attribute [local instance] Comodule.convolutionModule
 
 namespace Submodule
 
-/-- A coaction lies in the tensor product with a submodule exactly when all its
-contractions against linear functionals on the coalgebra lie in that submodule. -/
-theorem coact_mem_range_iff_forall_tensorComponent_mem (S : Submodule R M) (m : M) :
-    Comodule.coact (R := R) (C := C) m ∈
-        LinearMap.range (TensorProduct.map S.subtype (LinearMap.id : C →ₗ[R] C)) ↔
-      ∀ f : C →ₗ[R] R,
-        LinearMap.tensorComponent f (Comodule.coact (R := R) (C := C) m) ∈ S := by
-  constructor
-  · rintro ⟨z, hz⟩ f
-    rw [← hz]
-    have h := LinearMap.tensorComponent_map f S.subtype (LinearMap.id : C →ₗ[R] C) z
-    rw [LinearMap.comp_id] at h
-    rw [h]
-    exact (LinearMap.tensorComponent f z).property
-  · intro h
-    rw [← LinearMap.rTensor_def, ← rTensor_mkQ, LinearMap.mem_ker]
-    apply TensorProduct.tensor_eq_of_forall_tensorComponent_eq
-    intro f
-    rw [map_zero, LinearMap.rTensor_def, LinearMap.tensorComponent_map, LinearMap.comp_id]
-    simpa only [Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero] using h f
-
 /-- A submodule for the convolution-dual action is a subcomodule. -/
 def toSubcomodule (S : Submodule (WithConv (C →ₗ[R] R)) M) : Subcomodule R C M :=
   Subcomodule.ofSubmodule (S.restrictScalars R) fun m hm ↦ by
-    apply (coact_mem_range_iff_forall_tensorComponent_mem _ m).mpr
+    apply (tensor_mem_range_iff_forall_tensorComponent_mem _
+      (Comodule.coact (R := R) (C := C) m)).mpr
     intro f
     simpa only [restrictScalars_mem, Comodule.convolutionModule_smul,
       WithConv.ofConv_toConv] using S.smul_mem (WithConv.toConv f) hm
