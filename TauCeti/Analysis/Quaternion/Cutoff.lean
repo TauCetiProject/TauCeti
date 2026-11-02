@@ -38,9 +38,11 @@ divergence of the original field. This file computes the first factor and its to
 Integrals over the quaternions are taken on the coordinate space `Fin 4 → ℝ`, read as `ℍ`
 through `dq`, with its product Lebesgue measure; no measure is placed on `ℍ` itself. Radial
 variables are the Euclidean norm of `ℍ`, never the sup norm of the coordinate space. The polar
-formula transports the coordinate space isometrically onto `EuclideanSpace ℝ (Fin 4)` and uses
-Mathlib's polar decomposition of Haar measure and the volume `π² / 2` of the unit ball in
-dimension four.
+formula transports the coordinate space onto `EuclideanSpace ℝ (Fin 4)` by the
+measure-preserving map `WithLp.toLp 2`, which is not an isometry for the sup norm;
+`TauCeti.Quaternion.norm_dq` identifies the norm of `dq x` with the Euclidean norm of the
+transported point. It then uses Mathlib's polar decomposition of Haar measure and the volume
+`π² / 2` of the unit ball in dimension four.
 
 ## References
 
@@ -170,22 +172,14 @@ theorem cauchyFueterKernel_mul_sum_fderiv_cauchyFueterCutoff (q q₀ : ℍ) (ε 
       ((ε⁻¹ * deriv cauchyFueterCutoff (‖q - q₀‖ / ε) * (‖q - q₀‖ ^ 3)⁻¹ : ℝ) : ℍ) := by
   simp only [(hasFDerivAt_cauchyFueterCutoff_norm_sub_div q q₀ ε).fderiv,
     FunLike.coe_smul, Pi.smul_apply, innerSL_apply_apply, smul_eq_mul, mul_smul,
-    ← Finset.smul_sum, sum_inner_dq_single_smul, mul_smul_comm, cauchyFueterKernel_mul_sub,
-    ← _root_.Quaternion.coe_smul]
+    ← Finset.smul_sum, _root_.Quaternion.sum_inner_dq_single_smul, mul_smul_comm,
+    cauchyFueterKernel_mul_sub, ← _root_.Quaternion.coe_smul]
   congr 1
   ring
 
 /-! ### Polar coordinates and the mass of the cutoff density -/
 
 namespace Quaternion
-
-/-- The Euclidean norm of the quaternion with coordinates `x` is the norm of `x` in
-`EuclideanSpace ℝ (Fin 4)`. -/
-theorem norm_dq (x : Fin 4 → ℝ) : ‖dq x‖ = ‖WithLp.toLp 2 x‖ := by
-  rw [← _root_.Quaternion.norm_toLp_equivTuple]
-  congr 2
-  simp only [coe_dq, _root_.Quaternion.equivTuple]
-  exact (QuaternionAlgebra.linearEquivTuple (-1 : ℝ) 0 (-1)).apply_symm_apply x
 
 /-- Polar coordinates on the quaternions, centred at `q₀` and read on the coordinate space:
 the integral of a function of `‖dq x - q₀‖` is `2π²`, the area of the unit `3`-sphere, times
