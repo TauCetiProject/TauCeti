@@ -81,7 +81,7 @@ circles: in the real coordinates of the circles it sends `a ∂_s + b ∂_t` to 
 (`TauCeti.SmoothAlmostComplexStructure.addCircleProd_apply_symm`). It is the descent of the standard
 structure `(a, b) ↦ (-b, a)` of the plane along `(s, t) ↦ ([s], [t])`. -/
 def addCircleProd : SmoothAlmostComplexStructure (𝓘(ℝ).prod 𝓘(ℝ)) (AddCircle p × AddCircle q) :=
-  descend (AddCircle.isLocalDiffeomorph_prodMap_coe p q ∞) (AddCircle.surjective_prodMap_coe p q)
+  descend (AddCircle.isLocalDiffeomorph_prodMap_coe p q ∞) (AddCircle.prodMap_coe_surjective p q)
     (product ℝ) (product_respects p q)
 
 /-- In the real coordinates of the two circles, the standard almost complex structure of
@@ -91,9 +91,9 @@ def addCircleProd : SmoothAlmostComplexStructure (𝓘(ℝ).prod 𝓘(ℝ)) (Add
 theorem addCircleProd_apply_symm (x : AddCircle p × AddCircle q) (a b : ℝ) :
     addCircleProd p q x ((Manifold.tangentSpaceProdEquiv x).symm (a, b)) =
       (Manifold.tangentSpaceProdEquiv x).symm (-b, a) := by
-  obtain ⟨z, rfl⟩ := AddCircle.surjective_prodMap_coe p q x
+  obtain ⟨z, rfl⟩ := AddCircle.prodMap_coe_surjective p q x
   have h := descend_apply_mfderiv (AddCircle.isLocalDiffeomorph_prodMap_coe p q ∞)
-    (AddCircle.surjective_prodMap_coe p q) (product ℝ) (product_respects p q) z (a, b)
+    (AddCircle.prodMap_coe_surjective p q) (product ℝ) (product_respects p q) z (a, b)
   rw [Manifold.tangentSpaceProdEquiv_symm_apply, Manifold.tangentSpaceProdEquiv_symm_apply]
   -- Both differentials in `h` are the identity of `ℝ × ℝ`, which reduces to its argument.
   simp only [AddCircle.mfderiv_prodMap_coe] at h
@@ -129,7 +129,7 @@ theorem eq_addCircleProd_iff
         (Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q)) := by
   refine ⟨fun h ↦ h ▸ isPseudoholomorphic_prodMap_coe p q, fun h ↦ ?_⟩
   refine (eq_descend_iff (AddCircle.isLocalDiffeomorph_prodMap_coe p q ∞)
-    (AddCircle.surjective_prodMap_coe p q) _ _ K).2 fun z v ↦ ?_
+    (AddCircle.prodMap_coe_surjective p q) _ _ K).2 fun z v ↦ ?_
   exact ((isPseudoholomorphic_iff.1 h z).mfderiv_apply_commute v).symm
 
 end TauCeti.SmoothAlmostComplexStructure

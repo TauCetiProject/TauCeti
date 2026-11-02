@@ -12,7 +12,6 @@ public import TauCeti.Geometry.Manifold.Algebra.LieGroup
 public import TauCeti.Geometry.Manifold.Instances.Quotient
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 public import TauCeti.Geometry.Manifold.PullbackGroupoid
-public import TauCeti.Geometry.Manifold.VectorBundle.Tangent
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Prod
 
 /-!
@@ -68,7 +67,7 @@ analytic diffeomorphism with derivative `p⁻¹ * q`.
 * `AddCircle.hasMFDerivAt_coe`, `AddCircle.mfderiv_add_right`: the quotient map and the
   translations have derivative the identity of `ℝ`.
 * `AddCircle.isLocalDiffeomorph_prodMap_coe`, `AddCircle.hasMFDerivAt_prodMap_coe`,
-  `AddCircle.mfderiv_prodMap_coe`, `AddCircle.mfderiv_prodMap_coe_apply`: the quotient map
+  `AddCircle.mfderiv_prodMap_coe`: the quotient map
   `ℝ × ℝ → AddCircle p × AddCircle q` is an analytic local diffeomorphism whose differential is the
   identity of `ℝ × ℝ`.
 * `AddCircle.mfderiv_zsmul`: multiplication by an integer `k` has derivative multiplication by `k`.
@@ -607,7 +606,7 @@ theorem mfderiv_diffeomorphAddCircle (n : ℕ∞ω) (x : AddCircle p) :
 
 omit [Fact (0 < p)] [Fact (0 < q)] in
 /-- The quotient map `ℝ × ℝ → AddCircle p × AddCircle q` is surjective. -/
-theorem surjective_prodMap_coe :
+theorem prodMap_coe_surjective :
     Function.Surjective (Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q)) :=
   QuotientAddGroup.mk_surjective.prodMap QuotientAddGroup.mk_surjective
 
@@ -640,20 +639,5 @@ theorem mfderiv_prodMap_coe (z : ℝ × ℝ) :
         (Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q)) z =
       ContinuousLinearMap.id ℝ (ℝ × ℝ) :=
   (hasMFDerivAt_prodMap_coe p q z).mfderiv
-
-/-- The differential of the quotient map `ℝ × ℝ → AddCircle p × AddCircle q` sends the tangent
-vector `(a, b)` of the plane to `a ∂_s + b ∂_t`, the tangent spaces of both circles being read in
-their charts. -/
-theorem mfderiv_prodMap_coe_apply (z : ℝ × ℝ) (v : TangentSpace 𝓘(ℝ, ℝ × ℝ) z) :
-    mfderiv 𝓘(ℝ, ℝ × ℝ) (𝓘(ℝ).prod 𝓘(ℝ))
-        (Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q)) z v =
-      (Manifold.tangentSpaceProdEquiv
-        (Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q) z)).symm
-        (NormedSpace.fromTangentSpace z v) := by
-  rw [mfderiv_prodMap_coe]
-  -- The tangent spaces of the plane and of the torus are `ℝ × ℝ`, and the identifications
-  -- `NormedSpace.fromTangentSpace` and `Manifold.tangentSpaceProdEquiv` with it are the identity,
-  -- as is `ContinuousLinearMap.id` applied to a tangent vector.
-  exact (Manifold.tangentSpaceProdEquiv_symm_apply _ _).symm
 
 end AddCircle
