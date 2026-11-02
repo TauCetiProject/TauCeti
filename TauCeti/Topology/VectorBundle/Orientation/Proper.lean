@@ -12,8 +12,9 @@ public import Mathlib.Data.Set.Card
 /-!
 # Properness of the orientation cover
 
-The orientation cover has exactly two points over every base point, so its projection is
-proper. In particular, orientation covers of bundles over compact bases are compact.
+When `ι` has cardinality equal to the rank of the finite-dimensional model fibre, the
+orientation cover has exactly two points over every base point, so its projection is proper.
+Under this hypothesis, orientation covers of bundles over compact bases are compact.
 
 ## References
 
