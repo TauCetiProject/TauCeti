@@ -49,7 +49,7 @@ variable (A : Type u) [Ring A] [HasDerivedCategory.{w} (ModuleCat.{v} A)]
 
 /-- A perfect object of the derived category of left `A`-modules has a bounded representative
 whose terms are finitely generated projective modules. -/
-def IsPerfect : ObjectProperty (DerivedCategory (ModuleCat.{v} A)) := fun K ↦
+def IsPerfect (K : DerivedCategory (ModuleCat.{v} A)) : Prop :=
   ∃ P : CochainComplex (ModuleCat.{v} A) ℤ, CochainComplex.bounded _ P ∧
     (∀ i, Module.Finite A (P.X i)) ∧ (∀ i, Module.Projective A (P.X i)) ∧
     Nonempty (Q.obj P ≅ K)
@@ -89,7 +89,7 @@ theorem of_iso (hK : IsPerfect A K) (e : K ≅ L) : IsPerfect A L := by
 
 end IsPerfect
 
-instance : (IsPerfect A).IsClosedUnderIsomorphisms where
+instance : ObjectProperty.IsClosedUnderIsomorphisms (IsPerfect A) where
   of_iso e h := h.of_iso e
 
 end TauCeti.DerivedDeRham
@@ -171,11 +171,11 @@ namespace TauCeti.DerivedDeRham
 
 variable {A : Type u} [Ring A] [HasDerivedCategory.{w} (ModuleCat.{v} A)]
 
-instance : (IsPerfect A).IsStableUnderShift ℤ where
+instance : ObjectProperty.IsStableUnderShift (IsPerfect A) ℤ where
   isStableUnderShiftBy n := ⟨fun _ h ↦ h.shift n⟩
 
 /-- Perfect complexes are closed under the third vertex of a distinguished triangle. -/
-instance : (IsPerfect A).IsTriangulatedClosed₃ :=
+instance : ObjectProperty.IsTriangulatedClosed₃ (IsPerfect A) :=
   ObjectProperty.IsTriangulatedClosed₃.mk' <| by
     intro T hT h₁ h₂
     obtain ⟨P, hP, hfP, hpP, ⟨eP⟩⟩ := h₁
@@ -203,14 +203,14 @@ instance : (IsPerfect A).IsTriangulatedClosed₃ :=
       fun i ↦ (hterm i).1, fun i ↦ (hterm i).2, ⟨Triangle.π₃.mapIso e⟩⟩
 
 /-- The zero derived object is perfect. -/
-instance : (IsPerfect A).ContainsZero := by
+instance : ObjectProperty.ContainsZero (IsPerfect A) := by
   let M : ModuleCat.{v} A := ModuleCat.of A PUnit
   have hM : IsZero M := ModuleCat.isZero_of_subsingleton _
   exact ⟨⟨_, (singleFunctor (ModuleCat A) 0).map_isZero hM, ModuleCat.isPerfect_single M 0⟩⟩
 
 /-- Perfect complexes form a triangulated subcategory, giving two out of three for every
 vertex of a distinguished triangle. This does not assert closure under arbitrary retracts. -/
-instance : (IsPerfect A).IsTriangulated where
+instance : ObjectProperty.IsTriangulated (IsPerfect A) where
   toIsTriangulatedClosed₂ := .of_isTriangulatedClosed₃
 
 end TauCeti.DerivedDeRham
