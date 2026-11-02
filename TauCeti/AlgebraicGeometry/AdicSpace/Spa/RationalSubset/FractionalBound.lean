@@ -64,7 +64,7 @@ theorem fracPowLE_inter_spa [DecidableEq A] (Aplus : Subring A) (f : A) {g : A} 
   have hg' (v : Spv A) : ¬ v.toValuativeRel.vle (g ^ q.num) 0 :=
     @TauCeti.ValuativeRel.not_vle_zero_of_isUnit A _ v.toValuativeRel _ (hg.pow q.num)
   ext v
-  simp only [fracPowLE_def, Set.mem_inter_iff, Set.mem_ofPred_eq, mem_rationalSubset_iff,
+  simp only [mem_fracPowLE, Set.mem_inter_iff, mem_rationalSubset_iff,
     Finset.mem_insert, Finset.mem_singleton, forall_eq_or_imp, forall_eq,
     v.toValuativeRel.vle_refl, hg' v, not_false_eq_true, and_true]
   exact and_comm
@@ -78,7 +78,7 @@ theorem fracPowGE_inter_spa [DecidableEq A] (Aplus : Subring A) (f : A) {g : A} 
   have hg' (v : Spv A) : ¬ v.toValuativeRel.vle (g ^ q.num) 0 :=
     @TauCeti.ValuativeRel.not_vle_zero_of_isUnit A _ v.toValuativeRel _ (hg.pow q.num)
   ext v
-  simp only [fracPowGE_def, Set.mem_inter_iff, Set.mem_ofPred_eq, mem_rationalSubset_iff,
+  simp only [mem_fracPowGE, Set.mem_inter_iff, mem_rationalSubset_iff,
     Finset.mem_insert, Finset.mem_singleton, forall_eq_or_imp, forall_eq,
     v.toValuativeRel.vle_refl, and_true]
   exact ⟨fun ⟨hv, hspa⟩ ↦ ⟨hspa, hv, fun h ↦ hg' v (v.toValuativeRel.vle_trans hv h)⟩,
@@ -119,7 +119,7 @@ theorem fracPowLE_mul_left_inter_spa (u : Aˣ) (hu : (u : A) ∈ Aplus)
     (hu' : ((u⁻¹ : Aˣ) : A) ∈ Aplus) :
     fracPowLE (u * f) g q ∩ spa Aplus = fracPowLE f g q ∩ spa Aplus := by
   ext v
-  simp only [Set.mem_inter_iff, fracPowLE_def, Set.mem_ofPred_eq, and_congr_left_iff]
+  simp only [Set.mem_inter_iff, mem_fracPowLE, and_congr_left_iff]
   intro hv
   rw [← valuation_le_iff, ← valuation_le_iff, mul_pow, map_mul, map_pow v.valuation (u : A),
     valuation_units_eq_one_of_mem_spa hv u hu hu', one_pow, one_mul]
@@ -130,7 +130,7 @@ theorem fracPowGE_mul_left_inter_spa (u : Aˣ) (hu : (u : A) ∈ Aplus)
     (hu' : ((u⁻¹ : Aˣ) : A) ∈ Aplus) :
     fracPowGE (u * f) g q ∩ spa Aplus = fracPowGE f g q ∩ spa Aplus := by
   ext v
-  simp only [Set.mem_inter_iff, fracPowGE_def, Set.mem_ofPred_eq, and_congr_left_iff]
+  simp only [Set.mem_inter_iff, mem_fracPowGE, and_congr_left_iff]
   intro hv
   rw [← valuation_le_iff, ← valuation_le_iff, mul_pow, map_mul, map_pow v.valuation (u : A),
     valuation_units_eq_one_of_mem_spa hv u hu hu', one_pow, one_mul]

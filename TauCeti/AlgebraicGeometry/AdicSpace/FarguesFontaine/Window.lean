@@ -146,8 +146,8 @@ theorem isRadiusUpperBound_iff_of_eq_div {q : ℚ≥0} {a b : ℕ} (hb : b ≠ 0
 value group is linearly ordered. -/
 theorem isRadiusUpperBound_of_not_isRadiusLowerBound {q : ℚ≥0} {v : Spv (WittVector p R)}
     (h : ¬ IsRadiusLowerBound p ϖ q v) : IsRadiusUpperBound p ϖ q v := by
-  rw [IsRadiusLowerBound, fracPowLE_def, Set.mem_ofPred_eq, ← valuation_le_iff, not_le] at h
-  rw [IsRadiusUpperBound, fracPowGE_def, Set.mem_ofPred_eq, ← valuation_le_iff]
+  rw [IsRadiusLowerBound, mem_fracPowLE, ← valuation_le_iff, not_le] at h
+  rw [IsRadiusUpperBound, mem_fracPowGE, ← valuation_le_iff]
   exact h.le
 
 section CharP
@@ -158,7 +158,7 @@ variable [CharP R p]
 `q / p ≤ κ(v)`. -/
 theorem isRadiusLowerBound_comap_frobenius_iff (q : ℚ≥0) (v : Spv (WittVector p R)) :
     IsRadiusLowerBound p ϖ q (comap frobenius v) ↔ IsRadiusLowerBound p ϖ (q / p) v := by
-  rw [IsRadiusLowerBound, fracPowLE_def, Set.mem_ofPred_eq,
+  rw [IsRadiusLowerBound, mem_fracPowLE,
     comap_frobenius_teichmuller_pow_vle_natCast_pow_iff,
     isRadiusLowerBound_iff_of_eq_div (mul_ne_zero (Fact.out : p.Prime).ne_zero q.den_ne_zero)]
   rw [Nat.cast_mul, mul_comm, ← div_div, NNRat.num_div_den]
@@ -167,7 +167,7 @@ theorem isRadiusLowerBound_comap_frobenius_iff (q : ℚ≥0) (v : Spv (WittVecto
 `κ(v) ≤ q / p`. -/
 theorem isRadiusUpperBound_comap_frobenius_iff (q : ℚ≥0) (v : Spv (WittVector p R)) :
     IsRadiusUpperBound p ϖ q (comap frobenius v) ↔ IsRadiusUpperBound p ϖ (q / p) v := by
-  rw [IsRadiusUpperBound, fracPowGE_def, Set.mem_ofPred_eq,
+  rw [IsRadiusUpperBound, mem_fracPowGE,
     comap_frobenius_natCast_pow_vle_teichmuller_pow_iff,
     isRadiusUpperBound_iff_of_eq_div (mul_ne_zero (Fact.out : p.Prime).ne_zero q.den_ne_zero)]
   rw [Nat.cast_mul, mul_comm, ← div_div, NNRat.num_div_den]
@@ -336,7 +336,7 @@ private theorem setOf_isRadiusLowerBound_isRadiusUpperBound_eq [DecidableEq (Wit
   simp only [Set.mem_ofPred_eq, Set.mem_inter_iff, mem_rationalSubset_iff, mem_spaY_iff,
     Finset.mem_insert, Finset.mem_singleton, forall_eq_or_imp, forall_eq,
     hsupp (NNRat.num_ne_zero.mpr hq), hsupp q'.den_ne_zero, IsRadiusLowerBound,
-    IsRadiusUpperBound, fracPowLE_def, fracPowGE_def]
+    IsRadiusUpperBound, mem_fracPowLE, mem_fracPowGE]
   tauto
 
 /-- The set `{v ∈ 𝒴 : q ≤ κ(v) ≤ q'}`, for `q ≠ 0`, is a rational subset of

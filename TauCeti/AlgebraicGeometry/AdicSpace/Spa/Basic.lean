@@ -131,11 +131,10 @@ theorem valuation_le_one_of_mem_spa {Aplus : Subring A} {v : Spv A} (hv : v ∈ 
 /-- At a point of `Spa (A, A⁺)`, a unit `u` of `A` with `u, u⁻¹ ∈ A⁺` has valuation `1`. -/
 theorem valuation_units_eq_one_of_mem_spa {Aplus : Subring A} {v : Spv A} (hv : v ∈ spa Aplus)
     (u : Aˣ) (hu : (u : A) ∈ Aplus) (hu' : ((u⁻¹ : Aˣ) : A) ∈ Aplus) :
-    v.valuation (u : A) = 1 := by
-  refine le_antisymm (valuation_le_one_of_mem_spa hv hu) ?_
-  calc (1 : _) = v.valuation (u : A) * v.valuation ((u⁻¹ : Aˣ) : A) := by
-        rw [← map_mul, Units.mul_inv, map_one]
-    _ ≤ v.valuation (u : A) := mul_le_of_le_one_right zero_le (valuation_le_one_of_mem_spa hv hu')
+    v.valuation (u : A) = 1 :=
+  Valuation.Integers.one_of_isUnit' (O := Aplus) (x := ⟨u, hu⟩)
+    ⟨⟨⟨u, hu⟩, ⟨_, hu'⟩, by ext; simp, by ext; simp⟩, rfl⟩
+    fun x ↦ valuation_le_one_of_mem_spa hv x.2
 
 /-- Enlarging the plus ring shrinks the adic spectrum. -/
 theorem spa_antitone : Antitone (spa (A := A)) := fun _ _ hle ↦ by
