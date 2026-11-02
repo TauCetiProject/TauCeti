@@ -56,6 +56,40 @@ The body is exposed so that finite coefficient calculations can be checked by re
       if f4ShortRootWeight i = f4Root α then (f4Root α ⟨k + 2, by omega⟩ : ZMod 2) else 0
   | .inr _, _, .inr _ => 0
 
+/-- Root--root coefficients are determined by the sum weight, with opposite roots
+contributing the two short-simple-coroot coordinates. -/
+@[simp]
+theorem f4ShortRootBracketCoeff_root_root (α β : F4ShortRootIndex) (i : Fin 26) :
+    f4ShortRootBracketCoeff (Sum.inl α) i (Sum.inl β) =
+      if f4ShortRootWeight i = 0 then
+        if f4Root β = -f4Root α then
+          if i = 12 then (f4Coroot α 2 : ZMod 2)
+          else if i = 13 then (f4Coroot α 3 : ZMod 2) else 0
+        else 0
+      else if f4ShortRootWeight i = f4Root β + f4Root α then 1 else 0 := (rfl)
+
+/-- Cartan--root coefficients are the Cartan integer at the root's weight and zero
+at all other weights. -/
+@[simp]
+theorem f4ShortRootBracketCoeff_cartan_root (k : Fin 2) (β : F4ShortRootIndex)
+    (i : Fin 26) :
+    f4ShortRootBracketCoeff (Sum.inr k) i (Sum.inl β) =
+      if f4ShortRootWeight i = f4Root β then (f4Root β ⟨k + 2, by omega⟩ : ZMod 2)
+      else 0 := (rfl)
+
+/-- Root--Cartan coefficients have the same Cartan-integer formula in characteristic two. -/
+@[simp]
+theorem f4ShortRootBracketCoeff_root_cartan (α : F4ShortRootIndex) (k : Fin 2)
+    (i : Fin 26) :
+    f4ShortRootBracketCoeff (Sum.inl α) i (Sum.inr k) =
+      if f4ShortRootWeight i = f4Root α then (f4Root α ⟨k + 2, by omega⟩ : ZMod 2)
+      else 0 := (rfl)
+
+/-- All Cartan--Cartan coefficients vanish. -/
+@[simp]
+theorem f4ShortRootBracketCoeff_cartan_cartan (k l : Fin 2) (i : Fin 26) :
+    f4ShortRootBracketCoeff (Sum.inr k) i (Sum.inr l) = 0 := (rfl)
+
 noncomputable section
 
 private theorem coroot_coordinate (α : Fin 48) (i : Fin 26) :
