@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Matrix.Mul
+public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import TauCeti.LinearAlgebra.BilinearForm.Contact
 import Mathlib.LinearAlgebra.Projection
 import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
@@ -34,7 +34,8 @@ The coordinates are built from the splitting `V = ker a ⊕ K r` along the Reeb 
 symplectic basis of the nondegenerate alternating form that `B` restricts to on `ker a`
 (`LinearMap.BilinForm.IsAlt.exists_basis_toMatrix_eq_J`). They map the Reeb vector to `∂_z`, as
 both contactness and the Reeb vector are transported by linear equivalences
-(`Module.Dual.isContact_comp_compl₁₂_iff`, `Module.Dual.IsContact.reebVector_comp_compl₁₂`).
+(`Module.Dual.isContact_comp_linearEquiv_compl₁₂_iff`,
+`Module.Dual.IsContact.reebVector_comp_linearEquiv_compl₁₂`).
 
 This is the pointwise normal form underlying the contact Darboux theorem: at a point of a contact
 manifold, the contact form and its exterior derivative take the standard values in a suitable
@@ -70,13 +71,10 @@ theorem stdContactCovector_apply (x : (Fin n → K) × (Fin n → K) × K) :
 `(q, p, z)`: `((q, p, z), (q', p', z')) ↦ q ⬝ᵥ p' - p ⬝ᵥ q'`. It is the exterior derivative of the
 standard contact form `dz - Σᵢ pᵢ dqᵢ`. -/
 def stdContactBilinForm : LinearMap.BilinForm K ((Fin n → K) × (Fin n → K) × K) :=
-  LinearMap.mk₂ K (fun x y ↦ x.1 ⬝ᵥ y.2.1 - x.2.1 ⬝ᵥ y.1)
-    (fun x x' y ↦ by simp only [Prod.fst_add, Prod.snd_add, add_dotProduct]; ring)
-    (fun c x y ↦ by
-      simp only [Prod.smul_fst, Prod.smul_snd, smul_dotProduct, smul_eq_mul]; ring)
-    (fun x y y' ↦ by simp only [Prod.fst_add, Prod.snd_add, dotProduct_add]; ring)
-    (fun c x y ↦ by
-      simp only [Prod.smul_fst, Prod.smul_snd, dotProduct_smul, smul_eq_mul]; ring)
+  (dotProductBilin K K).compl₁₂ (LinearMap.fst K _ _)
+      (LinearMap.fst K _ _ ∘ₗ LinearMap.snd K (Fin n → K) ((Fin n → K) × K)) -
+    (dotProductBilin K K).compl₁₂
+      (LinearMap.fst K _ _ ∘ₗ LinearMap.snd K (Fin n → K) ((Fin n → K) × K)) (LinearMap.fst K _ _)
 
 @[simp]
 theorem stdContactBilinForm_apply (x y : (Fin n → K) × (Fin n → K) × K) :
@@ -121,50 +119,22 @@ open TauCeti
 variable {K V V' : Type*} [Field K] [AddCommGroup V] [Module K V] [AddCommGroup V'] [Module K V']
   {a : Module.Dual K V} {B : LinearMap.BilinForm K V}
 
-/-! ### Transport along linear equivalences -/
-
-/-- **Contactness is invariant under linear equivalences.** For a linear equivalence
-`e : V ≃ V'`, the pullback `a' ∘ e` is contact for the pullback `B' ∘ (e × e)` exactly when `a'`
-is contact for `B'`. -/
-@[simp]
-theorem isContact_comp_compl₁₂_iff (e : V ≃ₗ[K] V') {a' : Module.Dual K V'}
-    {B' : LinearMap.BilinForm K V'} :
-    IsContact (a' ∘ₗ (e : V →ₗ[K] V')) (B'.compl₁₂ (e : V →ₗ[K] V') e) ↔ a'.IsContact B' := by
-  have hker : (LinearMap.ker (a' ∘ₗ (e : V →ₗ[K] V'))).map (e : V →ₗ[K] V') =
-      LinearMap.ker a' := by
-    rw [LinearMap.ker_comp, Submodule.map_comap_eq_of_surjective e.surjective]
-  -- The kernels correspond under `e`, and so do the restricted forms.
-  set e₀ := e.ofSubmodules _ _ hker
-  have hrestrict : LinearMap.BilinForm.restrict (B'.compl₁₂ (e : V →ₗ[K] V') e)
-      (LinearMap.ker (a' ∘ₗ (e : V →ₗ[K] V'))) =
-      LinearMap.BilinForm.congr e₀.symm (B'.restrict (LinearMap.ker a')) := by
-    ext v w
-    simp [e₀, LinearMap.BilinForm.congr_apply]
-  rw [isContact_def, isContact_def, hrestrict, LinearMap.BilinForm.nondegenerate_congr_iff]
-  refine and_congr_left fun _ ↦ not_congr ⟨fun h ↦ ?_, fun h ↦ by rw [h, LinearMap.zero_comp]⟩
-  ext v
-  simpa using LinearMap.congr_fun h (e.symm v)
-
-/-- **The Reeb vector is transported by linear equivalences.** If `a'` is contact for `B'`,
-then the Reeb vector of the pullback `a' ∘ e` for `B' ∘ (e × e)` is `e⁻¹` of the Reeb vector of
-`a'` for `B'`. -/
-theorem IsContact.reebVector_comp_compl₁₂ [FiniteDimensional K V'] {a' : Module.Dual K V'}
-    {B' : LinearMap.BilinForm K V'} (h : a'.IsContact B') (e : V ≃ₗ[K] V') :
-    reebVector (a' ∘ₗ (e : V →ₗ[K] V')) (B'.compl₁₂ (e : V →ₗ[K] V') e) =
-      e.symm (a'.reebVector B') := by
-  have : FiniteDimensional K V := e.symm.finiteDimensional
-  refine (((isContact_comp_compl₁₂_iff e).2 h).eq_reebVector_iff.2 ⟨?_, fun w hw ↦ ?_⟩).symm
-  · simp [h.apply_reebVector]
-  · simpa using h.apply_reebVector_of_apply_eq_zero (by simpa using hw)
-
 /-! ### The normal form -/
+
+/-- In the coordinates `Sum.elim p q` of a symplectic basis, the form with matrix `Matrix.J` is
+`q ⬝ᵥ p' - p ⬝ᵥ q'`. -/
+private theorem sumElim_dotProduct_J_mulVec_sumElim {n : ℕ} (p q p' q' : Fin n → K) :
+    Sum.elim p q ⬝ᵥ (Matrix.J (Fin n) K).mulVec (Sum.elim p' q') = q ⬝ᵥ p' - p ⬝ᵥ q' := by
+  rw [Matrix.J, Matrix.fromBlocks_mulVec, sumElim_dotProduct_sumElim]
+  simp [Matrix.neg_mulVec]
+  ring
 
 variable [FiniteDimensional K V]
 
 /-- **Linear normal form of a contact covector.** If `a` is contact for an alternating form `B` on
 a finite-dimensional space `V`, there are linear coordinates `e : V ≃ Kⁿ × Kⁿ × K` in which `a` is
 the standard contact covector `dz` and `B` is the standard form `Σᵢ dqᵢ ∧ dpᵢ`. Such coordinates
-send the Reeb vector of `a` to `∂_z` (`Module.Dual.IsContact.reebVector_comp_compl₁₂`,
+send the Reeb vector of `a` to `∂_z` (`Module.Dual.IsContact.reebVector_comp_linearEquiv_compl₁₂`,
 `TauCeti.reebVector_stdContactCovector`). -/
 theorem IsContact.exists_linearEquiv_eq_stdContact (hB : B.IsAlt) (h : a.IsContact B) :
     ∃ (n : ℕ) (e : V ≃ₗ[K] (Fin n → K) × (Fin n → K) × K),
@@ -197,22 +167,19 @@ theorem IsContact.exists_linearEquiv_eq_stdContact (hB : B.IsAlt) (h : a.IsConta
   have ha (x : (Fin n → K) × (Fin n → K) × K) : a (f x) = x.2.2 := by
     rw [hf, map_add, LinearMap.mem_ker.1 (w x).2, map_smul, h.apply_reebVector, smul_eq_mul,
       mul_one, zero_add]
-  have hw (x : (Fin n → K) × (Fin n → K) × K) (s : Fin n ⊕ Fin n) :
-      c.repr (w x) s = Sum.elim x.2.1 x.1 s := by
+  have hw (x : (Fin n → K) × (Fin n → K) × K) : ⇑(c.repr (w x)) = Sum.elim x.2.1 x.1 := by
+    ext s
     rw [← c.equivFun_apply, LinearEquiv.apply_symm_apply]
   have hB' (x y : (Fin n → K) × (Fin n → K) × K) :
       B (f x) (f y) = x.1 ⬝ᵥ y.2.1 - x.2.1 ⬝ᵥ y.1 := by
     -- The Reeb vector lies in the kernel of `B`; on `ker a`, `B` has the matrix `J` in `c`.
-    have hwB : B (w x) (w y) = Matrix.toBilin c (Matrix.J (Fin n) K) (w x) (w y) := by
-      rw [← hc, Matrix.toBilin_toMatrix, LinearMap.BilinForm.restrict_apply,
+    have hwB : B (w x) (w y) =
+        Sum.elim x.2.1 x.1 ⬝ᵥ (Matrix.J (Fin n) K).mulVec (Sum.elim y.2.1 y.1) := by
+      rw [← hw, ← hw, ← Matrix.toBilin'_apply', Matrix.toBilin'_apply, ← Matrix.toBilin_apply,
+        ← hc, Matrix.toBilin_toMatrix, LinearMap.BilinForm.restrict_apply,
         LinearMap.domRestrict_apply]
     simp only [hf, map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, hrB, hBr,
-      smul_zero, add_zero, hwB, Matrix.toBilin_apply, hw, Fintype.sum_sum_type, Sum.elim_inl,
-      Sum.elim_inr, Matrix.J, Matrix.fromBlocks_apply₁₁, Matrix.fromBlocks_apply₁₂,
-      Matrix.fromBlocks_apply₂₁, Matrix.fromBlocks_apply₂₂, Matrix.zero_apply, Matrix.neg_apply,
-      Matrix.one_apply, dotProduct]
-    simp [Finset.sum_ite_eq, mul_comm]
-    ring
+      smul_zero, add_zero, hwB, sumElim_dotProduct_J_mulVec_sumElim]
   refine ⟨n, f.symm, LinearMap.ext fun v ↦ ?_, LinearMap.ext₂ fun v v' ↦ ?_⟩
   · simpa using (ha (f.symm v)).symm
   · simpa using (hB' (f.symm v) (f.symm v')).symm
@@ -227,7 +194,7 @@ theorem isContact_iff_exists_linearEquiv_eq_stdContact (hB : B.IsAlt) :
         (stdContactBilinForm K n).compl₁₂ (e : V →ₗ[K] _) e = B := by
   refine ⟨IsContact.exists_linearEquiv_eq_stdContact hB, ?_⟩
   rintro ⟨n, e, rfl, rfl⟩
-  exact (isContact_comp_compl₁₂_iff e).2 (isContact_stdContactCovector K n)
+  exact (isContact_comp_linearEquiv_compl₁₂_iff e).2 (isContact_stdContactCovector K n)
 
 /-- **Uniqueness of linear contact structures.** Two contact covectors for alternating forms, on
 finite-dimensional spaces of the same dimension, are carried to each other by a linear
