@@ -234,9 +234,7 @@ private theorem isUnit_blockSwap (a b : ℕ) :
             ⟨_, shift_mem_stage 1 (blockSwap_mem_stage a b)⟩ :=
       Subtype.ext (blockSwap_succ a b)
     rw [e]
-    exact ((isUnit_mk_cosetRep b 0).map _).mul ((ih.map (((shift R q 1).comp
-      (stage R q (a + b)).val).codRestrict (stage R q (a + b + 1))
-        fun y ↦ shift_mem_stage 1 y.2)).map _)
+    exact ((isUnit_mk_cosetRep b 0).map _).mul ((isUnit_mk_shift 1 ih).map _)
 
 /-- The block swap carries a generator crossing two of the last `b` strands to the corresponding
 generator crossing two of the first `b` strands. -/
