@@ -338,11 +338,13 @@ example :
     ringKrullDim ((Spec (CommRingCat.of (MvPolynomial (Fin 2) k))).presheaf.stalk
       (⟨Ideal.span {X 0}, (Ideal.span_singleton_prime (X_ne_zero _)).mpr prime_X⟩ :
         Spec (CommRingCat.of (MvPolynomial (Fin 2) k)))) = 1 := by
+  -- `rw [ringKrullDim_stalk_eq_coheight, ← idealHeight_eq_coheight]` cannot match: the point is
+  -- elaborated as a `PrimeSpectrum` term rather than a point of `Spec`, so we chain with `trans`.
   refine (ringKrullDim_stalk_eq_coheight _).trans
     ((congrArg _ (idealHeight_eq_coheight _ _).symm).trans ?_)
   rw [Ideal.height_span_singleton_eq_one_of_mem_nonZeroDivisors
     (mem_nonZeroDivisors_of_ne_zero (X_ne_zero _)) prime_X.not_isUnit]
-  rfl
+  norm_cast
 
 end Square
 
