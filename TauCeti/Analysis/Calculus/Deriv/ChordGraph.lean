@@ -159,14 +159,19 @@ theorem exists_continuousMap_comp_eq_of_norm_deriv_le_mul_deriv {x x' : ℝ → 
     rw [hg t ht]
     rcases min_cases (x t - x a) (x b - x t) with ⟨h, -⟩ | ⟨h, -⟩ <;> rw [h] <;> assumption
 
+/-- If `φ u = 1` and `‖φ‖ = ‖u‖⁻¹`, then `‖u‖ ≠ 0` and `|φ y| ≤ ‖u‖⁻¹ ‖y‖` for every `y`. -/
+private lemma norm_ne_zero_and_abs_apply_le {φ : StrongDual ℝ E} {u : E} (hφu : φ u = 1)
+    (hφ : ‖φ‖ = ‖u‖⁻¹) : ‖u‖ ≠ 0 ∧ ∀ y, |φ y| ≤ ‖u‖⁻¹ * ‖y‖ :=
+  ⟨norm_ne_zero_iff.2 fun hu ↦ by simp [hu] at hφu,
+    fun y ↦ by simpa [Real.norm_eq_abs, hφ] using φ.le_opNorm y⟩
+
 /-- If `φ u = 1`, `‖φ‖ = ‖u‖⁻¹` and `‖h • v - u‖ ≤ θ ‖u‖`, then `1 - θ ≤ h φ v`. -/
 private lemma one_sub_le_mul_of_norm_smul_sub_le {φ : StrongDual ℝ E} {u v : E} {h θ : ℝ}
     (hφu : φ u = 1) (hφ : ‖φ‖ = ‖u‖⁻¹) (hv : ‖h • v - u‖ ≤ θ * ‖u‖) : 1 - θ ≤ h * φ v := by
-  have hu0 : 0 < ‖u‖ := norm_pos_iff.2 fun hu ↦ by simp [hu] at hφu
-  have h₁ : |φ (h • v - u)| ≤ ‖u‖⁻¹ * ‖h • v - u‖ := by
-    simpa [Real.norm_eq_abs, hφ] using φ.le_opNorm (h • v - u)
+  obtain ⟨hu0, hφy⟩ := norm_ne_zero_and_abs_apply_le hφu hφ
+  have h₁ := hφy (h • v - u)
   have h₂ : ‖u‖⁻¹ * ‖h • v - u‖ ≤ θ := by
-    rw [inv_mul_le_iff₀ hu0, mul_comm]
+    rw [inv_mul_le_iff₀ ((norm_nonneg u).lt_of_ne' hu0), mul_comm]
     exact hv
   rw [map_sub, map_smul, hφu, smul_eq_mul] at h₁
   linarith [neg_abs_le (h * φ v - 1)]
@@ -179,12 +184,12 @@ private lemma norm_sub_smul_le_of_norm_smul_sub_le {φ : StrongDual ℝ E} {u v 
   have hlow := one_sub_le_mul_of_norm_smul_sub_le hφu hφ hv
   have h1θ : 0 < 1 - θ := sub_pos.2 hθ
   have hpos : 0 < φ v := pos_of_mul_pos_right (h1θ.trans_le hlow) hh.le
+  obtain ⟨hu0, hφy⟩ := norm_ne_zero_and_abs_apply_le hφu hφ
   -- `h • (v - φ v • u) = r - φ r • u` with `r = h • v - u`, since `φ u = 1`.
   have hr : h * ‖v - φ v • u‖ ≤ 2 * θ * ‖u‖ := by
-    have hφr : |φ (h • v - u)| ≤ ‖u‖⁻¹ * ‖h • v - u‖ := by
-      simpa [Real.norm_eq_abs, hφ] using φ.le_opNorm (h • v - u)
+    have hφr := hφy (h • v - u)
     have hsplit : h • (v - φ v • u) = h • v - u - φ (h • v - u) • u := by
-      rw [map_sub, map_smul, hφu, smul_eq_mul, smul_sub, sub_smul, mul_smul, one_smul]
+      simp only [map_sub, map_smul, hφu, smul_eq_mul, smul_sub, sub_smul, mul_smul, one_smul]
       abel
     rw [← Real.norm_of_nonneg hh.le, ← norm_smul, hsplit]
     calc ‖h • v - u - φ (h • v - u) • u‖ ≤ ‖h • v - u‖ + |φ (h • v - u)| * ‖u‖ := by
@@ -194,7 +199,6 @@ private lemma norm_sub_smul_le_of_norm_smul_sub_le {φ : StrongDual ℝ E} {u v 
           gcongr
           exact hφr.trans (by gcongr)
       _ = 2 * θ * ‖u‖ := by
-          have hu0 : ‖u‖ ≠ 0 := norm_ne_zero_iff.2 fun hu ↦ by simp [hu] at hφu
           field_simp; ring
   rw [div_mul_eq_mul_div, div_mul_eq_mul_div, le_div_iff₀ h1θ]
   calc ‖v - φ v • u‖ * (1 - θ) ≤ ‖v - φ v • u‖ * (h * φ v) :=
@@ -222,18 +226,18 @@ theorem exists_graph_over_chord_of_norm_smul_deriv_sub_sub_le {γ γ' : ℝ → 
   have hu0 : 0 < ‖u‖ := norm_pos_iff.2 (sub_ne_zero.2 hu)
   -- The functional `φ`, normalized by `φ u = 1`, and the projection `P` onto its kernel along `u`.
   obtain ⟨φ₀, hφ₀, hφ₀u⟩ := exists_dual_vector ℝ u hu0.ne'
-  set φ : StrongDual ℝ E := ‖u‖⁻¹ • φ₀ with hφ_def
+  set φ : StrongDual ℝ E := ‖u‖⁻¹ • φ₀
   have hφu : φ u = 1 := by
     simp [φ, hφ₀u, inv_mul_cancel₀ hu0.ne']
   have hφnorm : ‖φ‖ = ‖u‖⁻¹ := by
-    rw [hφ_def, norm_smul, hφ₀, mul_one, norm_inv, norm_norm]
+    simp [φ, norm_smul, hφ₀]
   have hright : Function.RightInverse (ContinuousLinearMap.toSpanSingleton ℝ u) φ := fun r ↦ by
     simp [hφu]
   set P := φ.projKerOfRightInverse _ hright
   have hP : ∀ z, (P z : E) = z - φ z • u := fun z ↦ by simp [P]
   have hPu : P u = 0 := by
     ext1
-    rw [hP, hφu, one_smul, sub_self, Submodule.coe_zero]
+    simp [hP, hφu]
   -- In the coordinates `x = φ (· - γ a)` and `w = P (· - γ a)`, the arc has slope at most
   -- `2θ / (1 - θ) · ‖u‖`.
   have hx : ∀ t ∈ Icc a b, HasDerivWithinAt (fun t ↦ φ (γ t - γ a)) (φ (γ' t)) (Icc a b) t :=
@@ -365,9 +369,7 @@ theorem exists_graph_over_chord (hγ : ContDiff ℝ 1 γ) (hderiv : ∀ t, deriv
   have hu : γ b ≠ γ a := by
     intro hba
     have := hchord a ha b hb a (left_mem_Icc.2 hab.le)
-    rw [hba, sub_self, norm_zero, mul_zero, sub_zero, norm_le_zero_iff,
-      smul_eq_zero] at this
-    exact this.elim (fun h ↦ (sub_ne_zero.2 hab.ne').elim h) (hderiv a)
+    simp [hba, sub_eq_zero, hab.ne', hderiv a] at this
   obtain ⟨φ, hφu, hφnorm, hmono, g, hg0, hgb, hγg⟩ :=
     TauCeti.exists_graph_over_chord_of_norm_smul_deriv_sub_sub_le hab.le
       (fun t _ ↦ (hdiff t).hasDerivAt.hasDerivWithinAt) hu (by linarith)
