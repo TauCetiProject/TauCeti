@@ -8,7 +8,7 @@ module
 public import Mathlib.FieldTheory.AbsoluteGaloisGroup
 public import TauCeti.FieldTheory.KrullTopology
 public import TauCeti.RingTheory.LaurentSeries.Puiseux.FiniteExtension
-public import TauCeti.RingTheory.LaurentSeries.Puiseux.Galois
+public import TauCeti.RingTheory.LaurentSeries.Puiseux.Galois.Basic
 
 /-!
 # The absolute Galois group of `K⸨X⸩` on any model of the Puiseux field

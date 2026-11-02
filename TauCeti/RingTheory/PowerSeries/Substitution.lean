@@ -91,7 +91,8 @@ of a completed group algebra attached to two topological generators.
   through the linear term `Xₛ` of the multivariate series.
 * `PowerSeries.algHom_eq_substAlgHom`: an algebra map `R⟦X⟧ → S⟦X⟧` sending `X` to a
   substitutable series is a substitution.
-* `PowerSeries.subst_X_add_of_sq_eq_zero`: `f (X + h) = f + h f'` when `h ^ 2 = 0`.
+* `PowerSeries.subst_add_of_sq_eq_zero`: `f (a + h) = f (a) + h f' (a)` when `h ^ 2 = 0`, and
+  its special case `PowerSeries.subst_X_add_of_sq_eq_zero`, `f (X + h) = f + h f'`.
 * `AlgHom.apply_eq_subst`: over a field, every algebra endomorphism of `K⟦X⟧` is substitution by
   its value at `X`.
 * `TauCeti.hasSubst_binomialSeries_sub_one`: `(1 + X) ^ u - 1` can be substituted.
@@ -244,28 +245,36 @@ theorem algHom_eq_substAlgHom {σ : R⟦X⟧ →ₐ[R] S⟦X⟧} (hσ : HasSubst
   simp only [map_add, map_mul, map_pow, substAlgHom_X, key, zero_add]
   rw [hpoly]
 
-/-- The first-order Taylor formula: substituting a square-zero perturbation `X + h` of `X` gives
-`f (X + h) = f + h f'`. -/
-theorem subst_X_add_of_sq_eq_zero {h : S⟦X⟧} (hh : h ^ 2 = 0) (f : S⟦X⟧) :
-    f.subst (X + h) = f + h * d⁄dX f := by
-  -- `f ↦ f + h f'` is an algebra map, multiplicative by the Leibniz rule and `h ^ 2 = 0`, and it
-  -- sends `X` to `X + h`, so it is the substitution of `X + h`.
-  let T : S⟦X⟧ →ₐ[S] S⟦X⟧ :=
-    { toFun g := g + h * d⁄dX g
+/-- The first-order Taylor formula: substituting a square-zero perturbation `a + h` of a
+substitutable series `a` gives `f (a + h) = f (a) + h f' (a)`. -/
+theorem subst_add_of_sq_eq_zero {a h : S⟦X⟧} (ha : HasSubst a) (hh : h ^ 2 = 0) (f : R⟦X⟧) :
+    f.subst (a + h) = f.subst a + h * (d⁄dX f).subst a := by
+  -- `g ↦ g (a) + h g' (a)` is an algebra map, multiplicative by the Leibniz rule and `h ^ 2 = 0`,
+  -- and it sends `X` to `a + h`, so it is the substitution of `a + h`.
+  let T : R⟦X⟧ →ₐ[R] S⟦X⟧ :=
+    { toFun g := substAlgHom ha g + h * substAlgHom ha (d⁄dX g)
       map_one' := by simp
       map_mul' g₁ g₂ := by
-        simp only [Derivation.leibniz, smul_eq_mul]
-        linear_combination (-(d⁄dX g₁ * d⁄dX g₂)) * hh
+        simp only [map_mul, Derivation.leibniz, smul_eq_mul, map_add]
+        linear_combination (-(substAlgHom ha (d⁄dX g₁) * substAlgHom ha (d⁄dX g₂))) * hh
       map_zero' := by simp
       map_add' g₁ g₂ := by
         simp only [map_add]
         ring
-      commutes' r := by simp }
-  have hT (g : S⟦X⟧) : T g = g + h * d⁄dX g := rfl
-  have hTX : T X = X + h := by rw [hT, derivative_X, mul_one]
-  have hσ := congr($(algHom_eq_substAlgHom (σ := T) (hTX ▸ HasSubst.X'.add (.map ⟨2, hh⟩ _))) f)
+      commutes' r := by
+        simp only [Derivation.map_algebraMap, map_zero, mul_zero, add_zero, AlgHom.commutes] }
+  have hT (g : R⟦X⟧) : T g = g.subst a + h * (d⁄dX g).subst a := by
+    simp [T, coe_substAlgHom]
+  have hTX : T X = a + h := by rw [hT, derivative_X, subst_X ha, subst_one ha, mul_one]
+  have hσ := congr($(algHom_eq_substAlgHom (σ := T) (hTX ▸ ha.add (.map ⟨2, hh⟩ _))) f)
   rw [coe_substAlgHom, hTX, hT] at hσ
   exact hσ.symm
+
+/-- The first-order Taylor formula at `X`: substituting a square-zero perturbation `X + h` of
+`X` gives `f (X + h) = f + h f'`. -/
+theorem subst_X_add_of_sq_eq_zero {h : S⟦X⟧} (hh : h ^ 2 = 0) (f : S⟦X⟧) :
+    f.subst (X + h) = f + h * d⁄dX f := by
+  rw [subst_add_of_sq_eq_zero HasSubst.X' hh, X_subst, X_subst]
 
 /-- Substituting a series of zero constant coefficient preserves divisibility by `X ^ n`. -/
 theorem X_pow_dvd_subst {a : S⟦X⟧} (ha : constantCoeff a = 0) {n : ℕ} {f : R⟦X⟧}

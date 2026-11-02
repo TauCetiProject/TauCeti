@@ -8,13 +8,24 @@ module
 public import TauCeti.NumberTheory.NumberField.SUnits.Rat.Structure
 
 import TauCeti.Analysis.SpecialFunctions.Log.AddMulLog
+import TauCeti.Data.Rat.AbcTriple
 
 /-!
-# The exponent bound for the rational `S`-unit equation
+# The rational `S`-unit equation
 
-Let `S` be a finite set of primes and `U_S` the rational `S`-units. This file bounds the
-`p`-adic valuations of the solutions `(x, y) ∈ U_S × U_S` of the `S`-unit equation `x + y = 1`,
-assuming a `p`-adic lower bound for linear forms in logarithms.
+Let `S` be a finite set of primes and `U_S` the rational `S`-units. This file describes the
+solutions `(x, y) ∈ U_S × U_S` of the `S`-unit equation `x + y = 1` as coprime triples of integers,
+and bounds their `p`-adic valuations, assuming a `p`-adic lower bound for linear forms in
+logarithms.
+
+Writing `x = u / w` in lowest terms with `w > 0`, the equation forces `y = v / w` with
+`v = w - u`, so `u + v = w` with `u` and `v` coprime (hence `u`, `v` and `w` pairwise coprime), and
+`x` and `y` are `S`-units exactly when `|u|`, `|v|` and `w` have all their prime factors in `S`.
+Conversely every such triple gives a solution, so the solutions are in bijection with the triples
+(`TauCeti.bijOn_num_num_den_of_add_eq_one`). At every prime `p` the larger of `|v_p(x)|` and
+`|v_p(y)|` is the largest of `v_p(u)`, `v_p(v)` and `v_p(w)`
+(`padicValRat.max_natAbs_eq_of_add_eq_one`), so bounds for the valuations of the solutions are
+bounds for the valuations of the triples.
 
 The lower bound is the hypothesis that there is `C ≥ 0` such that for every `p ∈ S`, every sign
 `ε` and every exponent vector `b : S → ℤ` with `b p = 0`, the `p`-adic unit
@@ -34,6 +45,9 @@ attained at the prime `p`. By the ultrametric inequality applied to `x + y = 1`,
 
 ## Main results
 
+* `TauCeti.bijOn_num_num_den_of_add_eq_one`: `(x, y) ↦ (num x, num y, den x)` is a bijection from
+  the solutions of `x + y = 1` in rational `S`-units onto the triples `(u, v, w)` of integers with
+  `u + v = w`, `w > 0`, `u` and `v` coprime, and `|u|`, `|v|`, `w` composed of primes of `S`.
 * `TauCeti.abs_padicValRat_le_of_add_eq_one`: the explicit bound for the valuations of the
   solutions of `x + y = 1` in rational `S`-units.
 
@@ -50,6 +64,65 @@ open IsDedekindDomain NumberField Rat.HeightOneSpectrum
 namespace TauCeti
 
 variable {S : Finset ℕ}
+
+/-! ### Solutions as coprime triples -/
+
+/-- **Solutions of the rational `S`-unit equation as coprime triples** (Evertse, Theorem 5.17).
+For a finite set `S` of natural numbers, `(x, y) ↦ (num x, num y, den x)` is a bijection from the
+pairs `(x, y)` of rational `S`-units with `x + y = 1` onto the triples `(u, v, w)` of integers with
+`u + v = w`, `w > 0`, `u` and `v` coprime, and `|u|`, `|v|` and `w` having all their prime factors
+in `S`. The inverse sends `(u, v, w)` to `(u / w, v / w)`. Since `u + v = w`, coprimality of `u`
+and `v` makes `u`, `v` and `w` pairwise coprime. -/
+theorem bijOn_num_num_den_of_add_eq_one :
+    Set.BijOn (fun p : ℚˣ × ℚˣ ↦ ((p.1 : ℚ).num, (p.2 : ℚ).num, ((p.1 : ℚ).den : ℤ)))
+      {p | p.1 ∈ Set.unit {v : HeightOneSpectrum (𝓞 ℚ) | (primesEquiv v : ℕ) ∈ S} ℚ ∧
+        p.2 ∈ Set.unit {v : HeightOneSpectrum (𝓞 ℚ) | (primesEquiv v : ℕ) ∈ S} ℚ ∧
+        (p.1 : ℚ) + p.2 = 1}
+      {t | t.1 + t.2.1 = t.2.2 ∧ 0 < t.2.2 ∧ IsCoprime t.1 t.2.1 ∧
+        t.1.natAbs ∈ Nat.factoredNumbers S ∧ t.2.1.natAbs ∈ Nat.factoredNumbers S ∧
+        t.2.2.natAbs ∈ Nat.factoredNumbers S} := by
+  refine ⟨?_, ?_, ?_⟩
+  · -- `y = 1 - x` has numerator `den x - num x` and denominator `den x`
+    rintro ⟨x, y⟩ ⟨hx, hy, hxy⟩
+    dsimp only at hx hy hxy ⊢
+    obtain ⟨hxn, hxd⟩ := mem_sUnits_rat_iff_num_den.1 hx
+    obtain ⟨hyn, -⟩ := mem_sUnits_rat_iff_num_den.1 hy
+    have hy' : (y : ℚ) = 1 - x := eq_sub_of_add_eq' hxy
+    refine ⟨by simp [hy'], by simp [Rat.den_pos], ?_, hxn, hyn, by simpa using hxd⟩
+    rw [hy', Rat.num_one_sub, sub_eq_add_neg]
+    simpa using (Rat.isCoprime_num_den (x : ℚ)).add_mul_left_right (-1)
+  · -- `x` is determined by its numerator and denominator, and `y = 1 - x`
+    rintro ⟨x, y⟩ ⟨-, -, hxy⟩ ⟨x', y'⟩ ⟨-, -, hxy'⟩ h
+    simp only [Prod.mk.injEq, Nat.cast_inj] at h
+    have hx : x = x' := Units.ext (Rat.ext h.1 h.2.2)
+    refine Prod.ext hx (Units.ext ?_)
+    rw [eq_sub_of_add_eq' hxy, eq_sub_of_add_eq' hxy', hx]
+  · -- the fractions `u / w` and `v / w` are in lowest terms
+    rintro ⟨u, v, w⟩ ⟨huvw, hw, huv, hu, hv, hwS⟩
+    dsimp only at huvw hw huv hu hv hwS
+    have hw0 : (w : ℚ) ≠ 0 := by exact_mod_cast hw.ne'
+    have huw : Nat.Coprime u.natAbs w.natAbs := by
+      rw [← Int.isCoprime_iff_nat_coprime, ← huvw]
+      simpa [add_comm] using huv.add_mul_left_right 1
+    have hvw : Nat.Coprime v.natAbs w.natAbs := by
+      rw [← Int.isCoprime_iff_nat_coprime, ← huvw]
+      simpa using huv.symm.add_mul_left_right 1
+    have hne (a : ℤ) (haS : a.natAbs ∈ Nat.factoredNumbers S) : (a : ℚ) / w ≠ 0 :=
+      div_ne_zero (Int.cast_ne_zero.2 (Int.natAbs_ne_zero.1 haS.1)) hw0
+    have hmem (a : ℤ) (ha : Nat.Coprime a.natAbs w.natAbs)
+        (haS : a.natAbs ∈ Nat.factoredNumbers S) : Units.mk0 _ (hne a haS) ∈
+          Set.unit {v : HeightOneSpectrum (𝓞 ℚ) | (primesEquiv v : ℕ) ∈ S} ℚ := by
+      refine mem_sUnits_rat_iff_num_den.2 ⟨?_, ?_⟩
+      · rwa [Units.val_mk0, Rat.num_div_eq_of_coprime hw ha]
+      · rwa [Units.val_mk0, ← Int.natAbs_natCast (((a : ℚ) / w).den),
+          Rat.den_div_eq_of_coprime hw ha]
+    refine ⟨(Units.mk0 _ (hne u hu), Units.mk0 _ (hne v hv)),
+      ⟨hmem u huw hu, hmem v hvw hv, ?_⟩, ?_⟩
+    · rw [Units.val_mk0, Units.val_mk0, ← add_div, ← Int.cast_add, huvw, div_self hw0]
+    · simp only [Units.val_mk0, Rat.num_div_eq_of_coprime hw huw, Rat.num_div_eq_of_coprime hw hvw,
+        Rat.den_div_eq_of_coprime hw huw]
+
+/-! ### The exponent bound -/
 
 /-- The lower bound for an `S`-unit `z ≠ 1` with `v_p(z) = 0` and all exponents bounded by `N`,
 obtained by writing `z` as a signed product of powers of the primes of `S`. -/

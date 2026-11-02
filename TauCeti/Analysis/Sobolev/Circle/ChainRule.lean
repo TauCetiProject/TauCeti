@@ -263,45 +263,36 @@ private theorem inclusion_precompOneCLM (a : CircleSobolev 1 ℂ) :
       precompEquivOfLift hF hper hφ hc hcF hMF (inclusion zero_le_one a) := by
   rw [precompOneCLM_apply, inclusion_precompOne]
 
-/-- The inverse `G` of the lift `F`: a lift of the inverse map of the circle, with derivative
-`(F' ∘ G)⁻¹` (`AddCircle.exists_lift_inverse`). -/
-private def invLift : ℝ → ℝ :=
-  (exists_lift_inverse hF hper fun x ↦ hc.trans_le (hcF x)).choose
-
-private theorem invLift_spec :
-    Function.LeftInverse (invLift hF hper hc hcF) F ∧
-      Function.RightInverse (invLift hF hper hc hcF) F ∧
-      (∀ y, invLift hF hper hc hcF (y + T) = invLift hF hper hc hcF y + T) ∧
-      ∀ y, HasDerivAt (invLift hF hper hc hcF) (F' (invLift hF hper hc hcF y))⁻¹ y :=
-  (exists_lift_inverse hF hper fun x ↦ hc.trans_le (hcF x)).choose_spec
-
-/-- The inverse map of the circle. -/
+/-- The inverse map of the circle (`AddCircle.exists_inverse_of_lift`). -/
 private def invMap : AddCircle T → AddCircle T :=
-  (homeomorphOfLift φ (strictMono_of_hasDerivAt_pos hF fun x ↦ hc.trans_le (hcF x))
-    (continuous_iff_continuousAt.2 fun x ↦ (hF x).continuousAt) hper hφ).symm
+  (exists_inverse_of_lift hF hper hφ hc hcF hMF).choose
 
-private theorem invMap_leftInverse : Function.LeftInverse (invMap hF hper hφ hc hcF) φ :=
-  homeomorphOfLift_symm_apply_apply _ _ _ _
+/-- The inverse `G` of the lift `F`: a lift of the inverse map of the circle, with derivative
+`(F' ∘ G)⁻¹` (`AddCircle.exists_inverse_of_lift`). -/
+private def invLift : ℝ → ℝ :=
+  (exists_inverse_of_lift hF hper hφ hc hcF hMF).choose_spec.choose
 
-private theorem invMap_coe (y : ℝ) : invMap hF hper hφ hc hcF y = invLift hF hper hc hcF y := by
-  have h : ((y : ℝ) : AddCircle T) = φ (invLift hF hper hc hcF y) := by
-    rw [hφ, (invLift_spec hF hper hc hcF).2.1 y]
-  rw [h, invMap_leftInverse]
-
-private theorem hasDerivAt_invLift (y : ℝ) :
-    HasDerivAt (invLift hF hper hc hcF) (F' (invLift hF hper hc hcF y))⁻¹ y :=
-  (invLift_spec hF hper hc hcF).2.2.2 y
+private theorem invMap_leftInverse : Function.LeftInverse (invMap hF hper hφ hc hcF hMF) φ :=
+  (exists_inverse_of_lift hF hper hφ hc hcF hMF).choose_spec.choose_spec.1
 
 private theorem invLift_add_period (y : ℝ) :
-    invLift hF hper hc hcF (y + T) = invLift hF hper hc hcF y + T :=
-  (invLift_spec hF hper hc hcF).2.2.1 y
+    invLift hF hper hφ hc hcF hMF (y + T) = invLift hF hper hφ hc hcF hMF y + T :=
+  (exists_inverse_of_lift hF hper hφ hc hcF hMF).choose_spec.choose_spec.2.2.2.1 y
 
-include hMF in
-private theorem inv_le_inv_deriv_invLift (y : ℝ) : M⁻¹ ≤ (F' (invLift hF hper hc hcF y))⁻¹ :=
-  inv_anti₀ (hc.trans_le (hcF _)) (hMF _)
+private theorem invMap_coe (y : ℝ) :
+    invMap hF hper hφ hc hcF hMF y = invLift hF hper hφ hc hcF hMF y :=
+  (exists_inverse_of_lift hF hper hφ hc hcF hMF).choose_spec.choose_spec.2.2.2.2.1 y
 
-private theorem inv_deriv_invLift_le (y : ℝ) : (F' (invLift hF hper hc hcF y))⁻¹ ≤ c⁻¹ :=
-  inv_anti₀ hc (hcF _)
+private theorem hasDerivAt_invLift (y : ℝ) :
+    HasDerivAt (invLift hF hper hφ hc hcF hMF) (F' (invLift hF hper hφ hc hcF hMF y))⁻¹ y :=
+  (exists_inverse_of_lift hF hper hφ hc hcF hMF).choose_spec.choose_spec.2.2.2.2.2.1 y
+
+private theorem inv_le_inv_deriv_invLift (y : ℝ) :
+    M⁻¹ ≤ (F' (invLift hF hper hφ hc hcF hMF y))⁻¹ :=
+  (exists_inverse_of_lift hF hper hφ hc hcF hMF).choose_spec.choose_spec.2.2.2.2.2.2.1 y
+
+private theorem inv_deriv_invLift_le (y : ℝ) : (F' (invLift hF hper hφ hc hcF hMF y))⁻¹ ≤ c⁻¹ :=
+  (exists_inverse_of_lift hF hper hφ hc hcF hMF).choose_spec.choose_spec.2.2.2.2.2.2.2 y
 
 include hc hcF hMF in
 private theorem inv_pos_of_lift : 0 < M⁻¹ :=
@@ -309,33 +300,36 @@ private theorem inv_pos_of_lift : 0 < M⁻¹ :=
 
 include hF'c in
 private theorem continuous_inv_deriv_invLift :
-    Continuous fun y ↦ (F' (invLift hF hper hc hcF y))⁻¹ :=
+    Continuous fun y ↦ (F' (invLift hF hper hφ hc hcF hMF y))⁻¹ :=
   (hF'c.comp (continuous_iff_continuousAt.2 fun y ↦
-    (hasDerivAt_invLift hF hper hc hcF y).continuousAt)).inv₀ fun _ ↦ (hc.trans_le (hcF _)).ne'
+    (hasDerivAt_invLift hF hper hφ hc hcF hMF y).continuousAt)).inv₀
+    fun _ ↦ (hc.trans_le (hcF _)).ne'
 
 /-- Precomposition with the inverse map of the circle on `H¹`. -/
 private def precompOneInvCLM : CircleSobolev 1 ℂ →L[ℂ] CircleSobolev 1 ℂ :=
-  precompOneCLM (hasDerivAt_invLift hF hper hc hcF)
-    (invLift_add_period hF hper hc hcF) (invMap_coe hF hper hφ hc hcF) (inv_pos_of_lift hc hcF hMF)
-    (inv_le_inv_deriv_invLift hF hper hc hcF hMF) (inv_deriv_invLift_le hF hper hc hcF)
-    (continuous_inv_deriv_invLift hF hper hc hcF hF'c)
+  precompOneCLM (hasDerivAt_invLift hF hper hφ hc hcF hMF)
+    (invLift_add_period hF hper hφ hc hcF hMF) (invMap_coe hF hper hφ hc hcF hMF)
+    (inv_pos_of_lift hc hcF hMF) (inv_le_inv_deriv_invLift hF hper hφ hc hcF hMF)
+    (inv_deriv_invLift_le hF hper hφ hc hcF hMF)
+    (continuous_inv_deriv_invLift hF hper hφ hc hcF hMF hF'c)
 
 private theorem precompOneInvCLM_apply (a : CircleSobolev 1 ℂ) :
     precompOneInvCLM hF hper hφ hc hcF hMF hF'c a =
-      precompOne (hasDerivAt_invLift hF hper hc hcF) (invLift_add_period hF hper hc hcF)
-        (invMap_coe hF hper hφ hc hcF) (inv_pos_of_lift hc hcF hMF)
-        (inv_le_inv_deriv_invLift hF hper hc hcF hMF) (inv_deriv_invLift_le hF hper hc hcF)
-        (continuous_inv_deriv_invLift hF hper hc hcF hF'c) a :=
+      precompOne (hasDerivAt_invLift hF hper hφ hc hcF hMF)
+        (invLift_add_period hF hper hφ hc hcF hMF) (invMap_coe hF hper hφ hc hcF hMF)
+        (inv_pos_of_lift hc hcF hMF) (inv_le_inv_deriv_invLift hF hper hφ hc hcF hMF)
+        (inv_deriv_invLift_le hF hper hφ hc hcF hMF)
+        (continuous_inv_deriv_invLift hF hper hφ hc hcF hMF hF'c) a :=
   (rfl)
 
 private theorem inclusion_precompOneInvCLM (a : CircleSobolev 1 ℂ) :
     inclusion zero_le_one (precompOneInvCLM hF hper hφ hc hcF hMF hF'c a) =
       (precompEquivOfLift hF hper hφ hc hcF hMF).symm (inclusion zero_le_one a) := by
-  rw [precompEquivOfLift_symm_eq hF hper hφ hc hcF hMF (hasDerivAt_invLift hF hper hc hcF)
-      (invLift_add_period hF hper hc hcF) (invMap_coe hF hper hφ hc hcF)
-      (inv_pos_of_lift hc hcF hMF) (inv_le_inv_deriv_invLift hF hper hc hcF hMF)
-      (inv_deriv_invLift_le hF hper hc hcF)
-      (invMap_leftInverse hF hper hφ hc hcF), precompOneInvCLM_apply, inclusion_precompOne]
+  rw [precompEquivOfLift_symm_eq hF hper hφ hc hcF hMF (hasDerivAt_invLift hF hper hφ hc hcF hMF)
+      (invLift_add_period hF hper hφ hc hcF hMF) (invMap_coe hF hper hφ hc hcF hMF)
+      (inv_pos_of_lift hc hcF hMF) (inv_le_inv_deriv_invLift hF hper hφ hc hcF hMF)
+      (inv_deriv_invLift_le hF hper hφ hc hcF hMF)
+      (invMap_leftInverse hF hper hφ hc hcF hMF), precompOneInvCLM_apply, inclusion_precompOne]
 
 /-- **Circle diffeomorphisms act on `H¹`.** Let `φ` be the map of the circle with lift `F`, so
 that `F (x + T) = F x + T` and `φ x = F x`, and suppose that `F` has a continuous derivative with
@@ -418,10 +412,11 @@ theorem norm_precompOneEquivOfLift_symm_le (a : CircleSobolev 1 ℂ) :
       √(2 * (1 + c⁻¹ ^ 2) * M) * ‖a‖ := by
   rw [precompOneEquivOfLift_symm_apply, precompOneInvCLM_apply,
     show 2 * (1 + c⁻¹ ^ 2) * M = 2 * (1 + c⁻¹ ^ 2) / M⁻¹ by rw [div_inv_eq_mul]]
-  exact norm_precompOne_le (hasDerivAt_invLift hF hper hc hcF)
-    (invLift_add_period hF hper hc hcF) (invMap_coe hF hper hφ hc hcF) (inv_pos_of_lift hc hcF hMF)
-    (inv_le_inv_deriv_invLift hF hper hc hcF hMF) (inv_deriv_invLift_le hF hper hc hcF)
-    (continuous_inv_deriv_invLift hF hper hc hcF hF'c) a
+  exact norm_precompOne_le (hasDerivAt_invLift hF hper hφ hc hcF hMF)
+    (invLift_add_period hF hper hφ hc hcF hMF) (invMap_coe hF hper hφ hc hcF hMF)
+    (inv_pos_of_lift hc hcF hMF) (inv_le_inv_deriv_invLift hF hper hφ hc hcF hMF)
+    (inv_deriv_invLift_le hF hper hφ hc hcF hMF)
+    (continuous_inv_deriv_invLift hF hper hφ hc hcF hMF hF'c) a
 
 end Lift
 

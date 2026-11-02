@@ -215,7 +215,7 @@ private theorem initialTerminal_counted_match {x y z : GridState n}
           if p ∈ G.OSet then MvPolynomial.X p.1 else 1) := by
     rw [← Finset.prod_union_inter (s₁ := firstCrossingSquares C t F),
       ← Finset.prod_union_inter (s₁ := P.coveredSquares), hu, hi]
-  rw [G.rename_initialPentagonWeight, pentagonWeight_withTurnRow,
+  rw [G.rename_initialPentagonWeight, swapColumns_pentagonWeight_withTurnRow,
     ← G.prod_ite_OSet_eq_prod_OColumnsOfSquares]
   refine ⟨?_, ?_⟩
   · cases F with

@@ -16,7 +16,7 @@ public import Mathlib.Analysis.Complex.UpperHalfPlane.Manifold
 Let `Γ ≤ PSL(2, ℝ)` be a subgroup and `z` a point of the upper half-plane with finite stabilizer
 of order `m`. The orbit space of a small hyperbolic disc about `z` under that stabilizer maps to an
 open subset of the coarse orbit quotient `Γ \ ℍ` as soon as the disc is precisely invariant
-(`Subgroup.eventually_isOpenEmbedding_stabilizerBallQuotientToQuotient`). This file packages the
+(`Subgroup.eventually_isOpenEmbedding_orbitRelQuotientMap_stabilizerBall`). This file packages the
 local quotient coordinate on that open subset as a chart `Subgroup.stabilizerBallQuotientChart`,
 an open partial homeomorphism from `Γ \ ℍ` to `ℂ` sending the orbit of a point `τ` of the disc to
 `discCoordinate z τ ^ m` (`Subgroup.stabilizerBallQuotientChart_mk`). On the free locus `m = 1` and
@@ -63,7 +63,7 @@ open scoped ComplexConjugate ContDiff Manifold MatrixGroups
 namespace Subgroup
 
 variable {Γ : Subgroup PSL(2, ℝ)} {z : ℍ} {ε : ℝ} [Finite (stabilizer Γ z)] (hε : 0 < ε)
-  (hopen : IsOpenEmbedding (stabilizerBallQuotientToQuotient Γ z ε))
+  (hopen : IsOpenEmbedding (stabilizerBall Γ z ε).orbitRelQuotientMap)
 
 /-- **The chart at the orbit of `z`.** Its source is the image in `Γ \ ℍ` of the local orbit space
 of the hyperbolic disc of radius `ε` about `z`, assumed to embed openly, and its target is the
@@ -88,7 +88,7 @@ def stabilizerBallQuotientChart : OpenPartialHomeomorph (orbitRel.Quotient Γ �
 -- (`Subgroup.stabilizerBallQuotientChart_trans_apply`).
 theorem stabilizerBallQuotientChart_source :
     (stabilizerBallQuotientChart hε hopen).source =
-      range (stabilizerBallQuotientToQuotient Γ z ε) := by
+      range (stabilizerBall Γ z ε).orbitRelQuotientMap := by
   simp [stabilizerBallQuotientChart]
 
 theorem stabilizerBallQuotientChart_target :
@@ -104,7 +104,7 @@ theorem stabilizerBallQuotientChart_mk {τ : ℍ} (hτ : dist τ z < ε) :
       discCoordinate z τ ^ Nat.card (stabilizer Γ z) := by
   have : Nonempty (orbitRel.Quotient (stabilizer Γ z) (stabilizerBall Γ z ε)) :=
     ⟨Quotient.mk _ ⟨τ, (mem_stabilizerBall Γ z ε).2 hτ⟩⟩
-  rw [← stabilizerBallQuotientToQuotient_mk Γ z ε ⟨τ, (mem_stabilizerBall Γ z ε).2 hτ⟩,
+  rw [← SubMulAction.orbitRelQuotientMap_mk _ ⟨τ, (mem_stabilizerBall Γ z ε).2 hτ⟩,
     stabilizerBallQuotientChart, OpenPartialHomeomorph.trans_apply,
     OpenPartialHomeomorph.transHomeomorph_apply, Function.comp_apply,
     hopen.toOpenPartialHomeomorph_left_inv, IsOpenEmbedding.toOpenPartialHomeomorph_apply,
@@ -120,14 +120,14 @@ theorem mem_stabilizerBallQuotientChart_source_iff {τ : ℍ} :
   · rintro ⟨q, hq⟩
     induction q using Quotient.inductionOn with
     | h σ =>
-      rw [stabilizerBallQuotientToQuotient_mk] at hq
+      rw [SubMulAction.orbitRelQuotientMap_mk] at hq
       obtain ⟨g, hg⟩ := mem_orbit_iff.mp (orbitRel_apply.mp (Quotient.exact hq))
       refine ⟨g, ?_⟩
       rw [hg]
       exact (mem_stabilizerBall Γ z ε).1 σ.2
   · rintro ⟨g, hg⟩
     refine ⟨Quotient.mk _ ⟨g • τ, (mem_stabilizerBall Γ z ε).2 hg⟩, ?_⟩
-    rw [stabilizerBallQuotientToQuotient_mk]
+    rw [SubMulAction.orbitRelQuotientMap_mk]
     exact Quotient.sound (orbitRel_apply.mpr (mem_orbit τ g))
 
 /-- The inverse of the chart at the orbit of `z` sends the `m`-th power of a point `w` of the disc
@@ -212,7 +212,7 @@ theorem differentiableAt_comp_stabilizerBallQuotientChart_symm_pow
 domain: it is the descent through `u ↦ u ^ m` of its pullback to the disc coordinate at `z`. -/
 theorem differentiableOn_stabilizerBallQuotientChart_symm_trans {z' : ℍ} {ε' : ℝ}
     [Finite (stabilizer Γ z')] (hε' : 0 < ε')
-    (hopen' : IsOpenEmbedding (stabilizerBallQuotientToQuotient Γ z' ε')) :
+    (hopen' : IsOpenEmbedding (stabilizerBall Γ z' ε').orbitRelQuotientMap) :
     DifferentiableOn ℂ
       ((stabilizerBallQuotientChart hε hopen).symm ≫ₕ stabilizerBallQuotientChart hε' hopen')
       ((stabilizerBallQuotientChart hε hopen).symm ≫ₕ
@@ -261,7 +261,7 @@ define the same local complex structure on the coarse quotient. Being the charac
 computation rule for that independence, it is recorded as a simp lemma. -/
 @[simp]
 theorem stabilizerBallQuotientChart_trans_apply {ε' : ℝ} (hε' : 0 < ε')
-    (hopen' : IsOpenEmbedding (stabilizerBallQuotientToQuotient Γ z ε')) {u : ℂ}
+    (hopen' : IsOpenEmbedding (stabilizerBall Γ z ε').orbitRelQuotientMap) {u : ℂ}
     (hu : u ∈ (stabilizerBallQuotientChart hε hopen).target ∧
       (stabilizerBallQuotientChart hε hopen).symm u ∈
         (stabilizerBallQuotientChart hε' hopen').source) :
@@ -296,7 +296,7 @@ theorem stabilizerBallQuotientChart_trans_apply {ε' : ℝ} (hε' : 0 < ε')
     rw [stabilizerBallQuotientChart_symm_pow hε hopen hwn,
       stabilizerBallQuotientChart_mk hε' hopen' hτε, hτ, hτdisc]
   · have hu1' : (stabilizerBallQuotientChart hε hopen).symm u ∈
-        range (stabilizerBallQuotientToQuotient Γ z ε') := by
+        range (stabilizerBall Γ z ε').orbitRelQuotientMap := by
       rwa [← stabilizerBallQuotientChart_source]
     obtain ⟨σ, hσ⟩ := Set.mem_range.mp hu1'
     obtain ⟨τ, rfl⟩ := Quotient.exists_rep σ
@@ -304,7 +304,7 @@ theorem stabilizerBallQuotientChart_trans_apply {ε' : ℝ} (hε' : 0 < ε')
     have hε'ε : ε' ≤ ε := le_of_not_ge hεε'
     have hτεε : dist (τ : ℍ) z < ε := lt_of_lt_of_le hτε hε'ε
     have hp : (stabilizerBallQuotientChart hε hopen).symm u = Quotient.mk _ (τ : ℍ) := by
-      rw [← hσ, stabilizerBallQuotientToQuotient_mk]
+      rw [← hσ, SubMulAction.orbitRelQuotientMap_mk]
     rw [hp, stabilizerBallQuotientChart_mk hε' hopen' hτε,
       ← stabilizerBallQuotientChart_mk hε hopen hτεε, hp.symm,
       (stabilizerBallQuotientChart hε hopen).right_inv hu2]

@@ -128,6 +128,14 @@ theorem map_comp {R S T : Type*} [CommRing R] [CommRing S] [CommRing T] {n : Typ
     [DecidableEq n] (f : R →+* S) (g : S →+* T) :
     (map (n := n) g).comp (map f) = map (g.comp f) := rfl
 
+/-- Entrywise coefficient mapping commutes with scalar extension of an integer matrix. -/
+@[simp]
+theorem map_intCast_coe {R S : Type*} [CommRing R] [CommRing S] {n : Type*} [Fintype n]
+    [DecidableEq n] (f : R →+* S) (g : SpecialLinearGroup n ℤ) :
+    map f (g : SpecialLinearGroup n R) = (g : SpecialLinearGroup n S) := by
+  rw [← MonoidHom.comp_apply, map_comp,
+    RingHom.ext_int (f.comp (Int.castRingHom R)) (Int.castRingHom S)]
+
 /-- The inclusion into the general linear group commutes with entrywise ring maps. -/
 theorem toGL_map {R S : Type*} [CommRing R] [CommRing S] {n : Type*}
     [Fintype n] [DecidableEq n] (f : R →+* S) (g : SpecialLinearGroup n R) :

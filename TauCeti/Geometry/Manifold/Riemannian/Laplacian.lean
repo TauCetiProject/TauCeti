@@ -367,6 +367,16 @@ theorem divergence_eq_zero_of_notMem_tsupport {X : (x : M) → TangentSpace I x}
     hcov.zero]
   simp
 
+/-- The divergence of a compactly supported vector field is compactly supported. -/
+protected theorem _root_.HasCompactSupport.divergence {X : (x : M) → TangentSpace I x}
+    (hX : HasCompactSupport (β := E) X) : HasCompactSupport (divergence I X) :=
+  hX.mono' fun _ hx ↦ by_contra fun h ↦ hx (divergence_eq_zero_of_notMem_tsupport I h)
+
+/-- The Laplace--Beltrami operator of a compactly supported function is compactly supported. -/
+protected theorem _root_.HasCompactSupport.laplaceBeltrami {f : M → ℝ}
+    (hf : HasCompactSupport f) : HasCompactSupport (laplaceBeltrami I f) :=
+  (hf.mgradient I).divergence I
+
 /-- The Hessian of a constant function is zero. -/
 @[simp]
 theorem hessian_const (c : ℝ) (x : M) (v w : TangentSpace I x) :

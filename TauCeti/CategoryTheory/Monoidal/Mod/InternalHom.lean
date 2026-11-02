@@ -91,6 +91,23 @@ abbrev tensorLeft (M : Mod C A) : C ⥤ Mod C A where
 lemma tensorLeft_smul (M : Mod C A) (K : C) :
     ((tensorLeft M).obj K).mod.smul = (α_ A M.X K).inv ≫ γ[A, M.X] ▷ K := (rfl)
 
+/-- Tensoring a module with the unit object gives back the module: the right unitor
+`M ⊗ 𝟙 ≅ M` is `A`-linear. -/
+def tensorLeftUnitIso (M : Mod C A) : (tensorLeft M).obj (𝟙_ C) ≅ M where
+  hom := Hom.mk' (ρ_ M.X).hom (by simp)
+  inv := Hom.mk' (ρ_ M.X).inv (by simp)
+
+-- The body of `tensorLeftUnitIso` is not exposed, so its projections are proved with `by rfl`.
+/-- The isomorphism `M ⊗ 𝟙 ≅ M` is the right unitor. -/
+@[simp]
+lemma tensorLeftUnitIso_hom_hom (M : Mod C A) : (tensorLeftUnitIso M).hom.hom = (ρ_ M.X).hom := by
+  rfl
+
+/-- The inverse of the isomorphism `M ⊗ 𝟙 ≅ M` is the inverse right unitor. -/
+@[simp]
+lemma tensorLeftUnitIso_inv_hom (M : Mod C A) : (tensorLeftUnitIso M).inv.hom = (ρ_ M.X).inv := by
+  rfl
+
 section ihom
 
 variable [MonoidalClosed C]

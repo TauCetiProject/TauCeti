@@ -17,9 +17,8 @@ indexed by `Fin n` rewrites into `ZMod n` arithmetic instead of being unfolded a
 ## Main results
 
 * `ZMod.finEquiv_apply`: `ZMod.finEquiv n j` is the natural cast of `j.val`.
-* `ZMod.finEquiv_symm_apply_val`: it is `(ZMod.finEquiv n).symm` that produces the canonical `Fin n`
-  representative of an element of `ZMod n`, and that representative's coerced natural value is
-  the element's `val`.
+* `ZMod.finEquiv_symm_apply_val`: the canonical `Fin n` representative
+  `(ZMod.finEquiv n).symm z` of `z : ZMod n` has natural value `z.val`.
 * `TauCeti.mulModEquiv`: multiplication by `d` modulo `p` as a permutation of `Fin p`, for `d`
   coprime to `p`, with its evaluation rule `TauCeti.mulModEquiv_apply_val`. These take a modulus
   rather than a `ZMod` value, so they are not dot notation on `ZMod` and live in `TauCeti`.
@@ -38,24 +37,23 @@ the lemma a `Fin n`-indexed statement rewrites through to reach `ZMod n`. -/
 @[simp]
 lemma finEquiv_apply {n : ℕ} [NeZero n] (j : Fin n) :
     (ZMod.finEquiv n) j = ((j : ℕ) : ZMod n) := by
-  -- Through stated lemmas rather than defeq: `Fin.cast_val_eq_self` puts `j` in natural-cast
-  -- form, then `map_natCast` moves the cast across the ring hom. So the proof does not depend on
-  -- `finEquiv` being defined by cases on `n`. `Fin.instCommRing` is scoped
+  -- Through stated lemmas rather than defeq: `map_natCast` moves the cast of `j.val` back across
+  -- the ring hom, and `Fin.cast_val_eq_self` recognises it as `j`. So the proof does not depend
+  -- on `finEquiv` being defined by cases on `n`. `Fin.instCommRing` is scoped
   -- (`Mathlib/Data/ZMod/Defs.lean`), hence the `open Fin.CommRing in` above.
-  conv_lhs => rw [← Fin.cast_val_eq_self j]
-  exact map_natCast (ZMod.finEquiv n) j.val
+  rw [← map_natCast (ZMod.finEquiv n), Fin.cast_val_eq_self]
 
 /-- **The canonical `Fin n` representative of `z : ZMod n` has natural value `z.val`.** The
-representative is produced by `(ZMod.finEquiv n).symm`, not by `finEquiv` itself, which maps the
-other way. This is the companion of `finEquiv_apply`, and the form needed to index by `Fin n` an
-element obtained by solving in `ZMod n`. -/
+representative is `(ZMod.finEquiv n).symm z`. This is the companion of `finEquiv_apply`, and the
+form needed to index by `Fin n` an element obtained by solving in `ZMod n`. -/
 @[simp]
 lemma finEquiv_symm_apply_val {n : ℕ} [NeZero n] (z : ZMod n) :
     (((ZMod.finEquiv n).symm z : Fin n) : ℕ) = z.val := by
-  -- Through the stated rules rather than the `ZMod (k+1) = Fin (k+1)` reduction: rewrite `z` as
-  -- `finEquiv` of its representative, then evaluate with `finEquiv_apply`.
-  conv_rhs => rw [← (ZMod.finEquiv n).apply_symm_apply z, finEquiv_apply]
-  exact (ZMod.val_natCast_of_lt ((ZMod.finEquiv n).symm z).isLt).symm
+  -- Through the stated rules rather than the `ZMod (k+1) = Fin (k+1)` reduction: the
+  -- representative is below `n`, so it is the `val` of its own cast, which `finEquiv_apply`
+  -- identifies with `finEquiv` applied to it, that is with `z`.
+  rw [← ZMod.val_natCast_of_lt ((ZMod.finEquiv n).symm z).isLt, ← finEquiv_apply,
+    RingEquiv.apply_symm_apply]
 
 end ZMod
 

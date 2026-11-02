@@ -1063,6 +1063,18 @@ theorem vertexIdempotent_mul_ofArrow [DecidableEq Q] (u : Q) {i j : Q} (b : i �
     exact vertexIdempotent_mul_ofPath _
   · exact vertexIdempotent_mul_ofPath_of_ne _ (Ne.symm h)
 
+/-- The vertex idempotent at the target of an arrow is a left unit for it. This is not a `simp`
+lemma, since `TauCeti.PathAlgebra.ofArrow_eq_ofPath` rewrites its left-hand side. -/
+theorem vertexIdempotent_mul_ofArrow_self {i j : Q} (b : i ⟶ j) :
+    vertexIdempotent k j * ofArrow b = (ofArrow b : pathAlgebra k Q) :=
+  vertexIdempotent_mul_ofPath _
+
+/-- The vertex idempotent at the source of an arrow is a right unit for it. This is not a `simp`
+lemma, since `TauCeti.PathAlgebra.ofArrow_eq_ofPath` rewrites its left-hand side. -/
+theorem ofArrow_mul_vertexIdempotent_self {i j : Q} (b : i ⟶ j) :
+    ofArrow b * vertexIdempotent k i = (ofArrow b : pathAlgebra k Q) :=
+  ofPath_mul_vertexIdempotent _
+
 /-- **Extending a path by an arrow.** In the later-factor-first convention the new arrow is the
 left factor, so the product is the path with that arrow consed on. -/
 theorem ofArrow_mul_ofPath {a b c : Q} (e : b ⟶ c) (p : _root_.Quiver.Path a b) :
