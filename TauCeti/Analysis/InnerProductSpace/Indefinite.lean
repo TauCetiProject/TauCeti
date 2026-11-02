@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.LinearMap
-public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import TauCeti.Analysis.Calculus.Bilinear
+public import TauCeti.Analysis.Normed.Module.FiniteDimension
 
 /-!
 # Linearization of changes of indefinite quadratic coordinates
@@ -16,7 +16,9 @@ public import TauCeti.Analysis.Calculus.Bilinear
 A local change of coordinates fixing the origin and preserving
 `Q(u,v) = -‖u‖² + ‖v‖²` has a derivative preserving the same quadratic form.
 Its negative column `u ↦ (A u, B u)` consequently satisfies
-`‖A u‖² - ‖B u‖² = ‖u‖²`. In particular `A` expands norms and, in finite
+`‖A u‖² - ‖B u‖² = ‖u‖²`; we call such a column an *isometric negative
+column*, meaning that it pulls `Q` back to `-‖u‖²`, not that it preserves the
+product norm. In particular `A` expands norms and, in finite
 dimension, is invertible. The image of the negative coordinate plane is the graph
 of `B ∘ A⁻¹`, which strictly decreases the norm of every nonzero vector.
 
@@ -61,14 +63,12 @@ theorem norm_snd_lt_norm_fst_of_norm_sq_sub {u : E} (hu : u ≠ 0) :
 /-- In finite dimension, the negative block of an isometric negative column is invertible. -/
 theorem isInvertible_fst_of_norm_sq_sub [FiniteDimensional ℝ E] :
     ((fst ℝ E F).comp L).IsInvertible := by
-  have hinj : Injective ((fst ℝ E F).comp L) := by
-    apply (injective_iff_map_eq_zero _).mpr
-    intro u hu
-    have hnorm := L.norm_le_norm_fst_of_norm_sq_sub hL u
-    have hfst : (L u).1 = 0 := hu
-    simpa only [hfst, norm_zero, norm_le_zero_iff] using hnorm
-  let e := LinearEquiv.ofInjectiveEndo ((fst ℝ E F).comp L).toLinearMap hinj
-  exact ⟨e.toContinuousLinearEquiv, by ext; rfl⟩
+  obtain ⟨G, hCG, hGC, -⟩ := LinearMap.exists_comp_eq_id_of_mul_norm_le
+    (C := ((fst ℝ E F).comp L).toLinearMap) (c := 1) one_pos
+    (fun u ↦ by simpa using L.norm_le_norm_fst_of_norm_sq_sub hL u)
+  let e : E ≃ₗ[ℝ] E :=
+    LinearEquiv.ofLinearMap ((fst ℝ E F).comp L).toLinearMap G hCG hGC
+  exact ⟨e.toContinuousLinearEquiv, by ext; simp [e]⟩
 
 /-- For any inverse of the negative block, its norm is at most one. -/
 theorem norm_symm_le_one_of_norm_sq_sub (e : E ≃L[ℝ] E)
@@ -90,7 +90,8 @@ theorem norm_snd_symm_lt_of_norm_sq_sub (e : E ≃L[ℝ] E)
 
 /-- Contracting the positive component of an isometric negative column keeps the
 quadratic value at or below its original negative value. -/
-theorem neg_norm_fst_sq_add_norm_smul_snd_sq_le {t : ℝ} (ht : |t| ≤ 1) (u : E) :
+theorem neg_norm_fst_sq_add_norm_smul_snd_sq_le_of_norm_sq_sub
+    {t : ℝ} (ht : |t| ≤ 1) (u : E) :
     -‖(L u).1‖ ^ 2 + ‖t • (L u).2‖ ^ 2 ≤ -‖u‖ ^ 2 := by
   rw [norm_smul, Real.norm_eq_abs, mul_pow]
   have hs : |t| ^ 2 ≤ 1 := pow_le_one₀ (abs_nonneg _) ht
@@ -114,11 +115,10 @@ theorem norm_sq_sub_fderiv (hT : ContDiffAt ℝ 2 T 0) (hT0 : T 0 = 0)
   let p := ContinuousLinearMap.fst ℝ E F
   let q := ContinuousLinearMap.snd ℝ E F
   let B : (E × F) →L[ℝ] (E × F) →L[ℝ] ℝ :=
-    (ContinuousLinearMap.precomp ℝ p).comp ((innerSL ℝ).comp p) -
-      (ContinuousLinearMap.precomp ℝ q).comp ((innerSL ℝ).comp q)
+    (innerSL ℝ).bilinearComp p p - (innerSL ℝ).bilinearComp q q
   have hB (v : E × F) : B v v = ‖v.1‖ ^ 2 - ‖v.2‖ ^ 2 := by
     simp [B, p, q]
-  have h := B.apply_self_fderiv_eq_of_eventuallyEq B hT hT0
+  have h := ContinuousLinearMap.apply_self_fderiv_eq_of_eventuallyEq B B hT hT0
     (hQ.mono fun z hz ↦ by simpa only [hB] using hz) z
   simpa only [hB] using h
 
