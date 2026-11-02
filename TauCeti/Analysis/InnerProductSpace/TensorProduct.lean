@@ -63,8 +63,8 @@ section Sesquilinear
 variable {W₁ W₂ : Type*} [AddCommGroup W₁] [Module 𝕜 W₁] [AddCommGroup W₂] [Module 𝕜 W₂]
 
 /-- The inner product space core of a positive definite Hermitian form. -/
-private noncomputable abbrev coreOfPos (h : W₁ →ₗ⋆[𝕜] W₁ →ₗ[𝕜] 𝕜) (hh : h.IsSymm)
-    (hpos : ∀ x, x ≠ 0 → 0 < h x x) : InnerProductSpace.Core 𝕜 W₁ where
+noncomputable abbrev _root_.LinearMap.innerProductSpaceCoreOfPos (h : W₁ →ₗ⋆[𝕜] W₁ →ₗ[𝕜] 𝕜)
+    (hh : h.IsSymm) (hpos : ∀ x, x ≠ 0 → 0 < h x x) : InnerProductSpace.Core 𝕜 W₁ where
   inner x y := h x y
   conj_inner_symm x y := hh.eq y x
   re_inner_nonneg x := by
@@ -87,8 +87,8 @@ theorem apply_self_pos_of_apply_tmul_tmul {h₁ : W₁ →ₗ⋆[𝕜] W₁ →�
     {x : W₁ ⊗[𝕜] W₂} (hx : x ≠ 0) : 0 < H x x := by
   -- Make `h₁` and `h₂` the inner products of `W₁` and `W₂`; then `H` is Mathlib's inner product
   -- on the tensor product, which is positive definite.
-  let c₁ := coreOfPos h₁ hh₁ hpos₁
-  let c₂ := coreOfPos h₂ hh₂ hpos₂
+  let c₁ := h₁.innerProductSpaceCoreOfPos hh₁ hpos₁
+  let c₂ := h₂.innerProductSpaceCoreOfPos hh₂ hpos₂
   let : NormedAddCommGroup W₁ := c₁.toNormedAddCommGroup
   let : NormedAddCommGroup W₂ := c₂.toNormedAddCommGroup
   let : InnerProductSpace 𝕜 W₁ := InnerProductSpace.ofCore c₁.toCore
