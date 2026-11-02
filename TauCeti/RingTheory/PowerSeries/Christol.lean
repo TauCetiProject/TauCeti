@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.Algebraic.Defs
 public import TauCeti.Computability.AutomaticSequence.Kernel
 public import TauCeti.RingTheory.PowerSeries.Cartier
 import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
+import TauCeti.RingTheory.Algebraic.LinearIndependent
 
 /-!
 # Power series with automatic coefficients are algebraic
@@ -31,7 +32,9 @@ endomorphism of `K⟦X⟧`, shows `M_j ≤ M_{j + 1}`
 So the `m + 1` series `f ^ q ^ j`, `j ≤ m`, lie in `M_m`, which is spanned by `m = |T|` elements;
 they are therefore linearly dependent over `K[X]`. A relation `∑_{j ≤ m} cⱼ f ^ q ^ j = 0` with
 some `cⱼ ≠ 0` is `f` times the value at `f` of the nonzero polynomial
-`∑_{j ≤ m} cⱼ T ^ (q ^ j - 1)`.
+`∑_{j ≤ m} cⱼ T ^ (q ^ j - 1)`
+(`TauCeti.exists_natDegree_le_aeval_eq_zero_of_sum_smul_pow_pow_eq_zero` in
+`TauCeti.RingTheory.Algebraic.LinearIndependent`).
 
 ## Main results
 
@@ -59,33 +62,6 @@ open scoped PowerSeries
 namespace PowerSeries
 
 variable {K : Type*} [Field K] [Fintype K]
-
-/-- A nontrivial relation `∑_{j ≤ m} cⱼ f ^ q ^ j = 0` with `2 ≤ q` and `f ≠ 0` makes `f` a root of
-the nonzero polynomial `∑_{j ≤ m} cⱼ T ^ (q ^ j - 1)`, of degree at most `q ^ m - 1`. -/
-private theorem exists_natDegree_le_aeval_eq_zero_of_sum_smul_pow_pow_eq_zero {R A : Type*}
-    [CommRing R] [Ring A] [NoZeroDivisors A] [Algebra R A] {q m : ℕ} (hq : 2 ≤ q)
-    {c : Fin (m + 1) → R} {i : Fin (m + 1)} (hi : c i ≠ 0) {f : A} (hf : f ≠ 0)
-    (hc : ∑ j, c j • f ^ q ^ (j : ℕ) = 0) :
-    ∃ Q : Polynomial R, Q ≠ 0 ∧ Q.natDegree ≤ q ^ m - 1 ∧ Polynomial.aeval f Q = 0 := by
-  classical
-  have hqj (j : ℕ) : 0 < q ^ j := Nat.pow_pos (by omega)
-  -- The exponents `q ^ j - 1` are distinct, so `Q` has coefficient `c i ≠ 0` at `q ^ i - 1`.
-  have hinj : Function.Injective fun j : Fin (m + 1) ↦ q ^ (j : ℕ) - 1 := fun a b hab ↦
-    Fin.ext <| Nat.pow_right_injective hq <| Nat.sub_one_cancel (hqj a) (hqj b) hab
-  set Q : Polynomial R := ∑ j : Fin (m + 1), Polynomial.monomial (q ^ (j : ℕ) - 1) (c j)
-  have hQ : Q ≠ 0 := by
-    intro hQ
-    apply hi
-    have := congrArg (Polynomial.coeff · (q ^ (i : ℕ) - 1)) hQ
-    simpa [Q, Polynomial.finsetSum_coeff, Polynomial.coeff_monomial, hinj.eq_iff] using this
-  have hQdeg : Q.natDegree ≤ q ^ m - 1 :=
-    natDegree_sum_le_of_forall_le _ _ fun j _ ↦ (natDegree_monomial_le _).trans <|
-      Nat.sub_le_sub_right (Nat.pow_le_pow_right (by omega : 0 < q) (Nat.lt_succ_iff.mp j.isLt)) 1
-  -- Multiplying `Q(f)` by `f` turns each `cⱼ f ^ (q ^ j - 1)` into `cⱼ f ^ q ^ j`.
-  refine ⟨Q, hQ, hQdeg, (mul_eq_zero.mp ?_).resolve_right hf⟩
-  rw [← hc, map_sum, Finset.sum_mul]
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  simp [aeval_monomial, ← Algebra.smul_def, ← pow_succ, Nat.sub_add_cancel (hqj j)]
 
 /-- Over a finite field `K` with `q` elements, let `T` be a finite set of power series that is
 stable under the Cartier operators `cartier K q r` with `r < q`. Every `f ∈ T` is a root of a
@@ -121,7 +97,7 @@ theorem exists_natDegree_le_aeval_eq_zero_of_finite_cartier_stable {T : Set K⟦
     have := Nat.pow_le_pow_right (by omega : 0 < q) hm
     rw [pow_one] at this
     omega
-  exact exists_natDegree_le_aeval_eq_zero_of_sum_smul_pow_pow_eq_zero hq hi hf0 hc
+  exact TauCeti.exists_natDegree_le_aeval_eq_zero_of_sum_smul_pow_pow_eq_zero hq hi hf0 hc
 
 /-- Over a finite field `K` with `q` elements, a power series whose coefficient sequence is
 `q`-automatic is a root of a nonzero polynomial over `K[X]` of degree at most `q ^ m - 1`, where

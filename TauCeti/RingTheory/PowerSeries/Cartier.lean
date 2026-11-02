@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.PowerSeries.Derivative
 public import Mathlib.RingTheory.PowerSeries.Expand
 import TauCeti.RingTheory.PowerSeries.Derivative
+import TauCeti.RingTheory.PowerSeries.Expand
 
 /-!
 # Cartier operators on power series
@@ -16,8 +17,9 @@ The Cartier operator of modulus `q` and index `r` selects coefficients at the in
 `q * n + r`. It is linear in the series. For an actual residue `r < q`, it commutes with
 multiplication by an expanded series, and the expanded Cartier components reconstruct the
 original series. Over a finite field, expansion by its cardinality is the Frobenius power,
-so these identities give the usual Cartier identities used in residue averaging, and the `j`-th
-iterate of that expansion is the `q ^ j`-th power map. Consequently,
+so these identities give the usual Cartier identities used in residue averaging. Since the `j`-th
+iterate of that expansion is the `q ^ j`-th power map
+(`FiniteField.PowerSeries.expand_card_pow_apply`),
 for a set `T` of series stable under the Cartier operators of modulus `q = |K|`, the powers
 `h ^ q ^ j` with `h ∈ T` lie in the `K[X]`-span of the powers `g ^ q ^ m` with `g ∈ T` whenever
 `j ≤ m`; this is the linear-algebra step of the proof of Christol's theorem.
@@ -226,14 +228,6 @@ theorem eq_sum_X_pow_mul_cartier_pow (F : PowerSeries K) :
       X ^ r * (cartier K (Fintype.card K) r F) ^ Fintype.card K := by
   simpa only [FiniteField.PowerSeries.expand_card] using
     sum_X_pow_mul_expand_cartier (Fintype.card K) Fintype.card_ne_zero F
-
-/-- Over a finite field `K` with `q` elements, the `j`-th iterate of `expand q` is the
-`q ^ j`-th power map. -/
-theorem _root_.FiniteField.PowerSeries.expand_card_pow_apply (j : ℕ) (F : PowerSeries K) :
-    (expand (Fintype.card K) Fintype.card_ne_zero ^ j) F = F ^ Fintype.card K ^ j := by
-  induction j with
-  | zero => simp
-  | succ j ih => simp [pow_succ', ih, FiniteField.PowerSeries.expand_card, pow_mul']
 
 /-- Over a finite field `K` with `q` elements, let `T` be a set of power series that is stable under
 the Cartier operators `cartier K q r` with `r < q`. For `h ∈ T` and `j ≤ m`, the power `h ^ q ^ j`
