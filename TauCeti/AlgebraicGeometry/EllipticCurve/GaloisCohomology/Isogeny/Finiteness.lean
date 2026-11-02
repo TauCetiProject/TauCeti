@@ -119,6 +119,6 @@ theorem finiteIndex_range_pointMapHom_of_module_finite_padic (hf : f ≠ 0) :
     f.pointMapHom.range.FiniteIndex := by
   have : CharZero K := charZero_of_injective_algebraMap (algebraMap ℚ_[p] K).injective
   exact f.finiteIndex_range_pointMapHom_of_isTopologicallyFinitelyGenerated hf
-    (isTopologicallyFinitelyGenerated_absoluteGaloisGroup_separableClosure p K)
+    (isTopologicallyFinitelyGenerated_absoluteGaloisGroup p K)
 
 end TauCeti.Isogeny.Hom
