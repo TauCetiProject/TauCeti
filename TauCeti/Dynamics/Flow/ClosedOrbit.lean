@@ -103,8 +103,14 @@ def periods (x : α) : AddSubgroup τ := @AddAction.stabilizer τ α _ ϕ.toAddA
 theorem mem_periods : t ∈ ϕ.periods x ↔ ϕ t x = x :=
   Iff.rfl
 
-theorem isClosed_periods [T1Space α] (x : α) : IsClosed (ϕ.periods x : Set τ) :=
-  isClosed_singleton.preimage (ϕ.continuous continuous_id continuous_const)
+/-- The periods of `x` are the preimage of `{x}` under the orbit map `t ↦ ϕ t x`. -/
+theorem coe_periods (x : α) : (ϕ.periods x : Set τ) = (fun t ↦ ϕ t x) ⁻¹' {x} := by
+  ext
+  simp
+
+theorem isClosed_periods [T1Space α] (x : α) : IsClosed (ϕ.periods x : Set τ) := by
+  rw [coe_periods]
+  exact isClosed_singleton.preimage (ϕ.continuous continuous_id continuous_const)
 
 end AddGroup
 
@@ -172,7 +178,7 @@ theorem periods_eq_zmultiples_minimalPeriod [T1Space α] (hx : ∃ t, ϕ t x ≠
     have : t ∈ (ϕ.periods x : Set ℝ) := by
       rw [← (ϕ.isClosed_periods x).closure_eq, hdense.closure_eq]
       exact mem_univ t
-    exact ht this
+    exact ht (ϕ.mem_periods.1 (SetLike.mem_coe.1 this))
   unfold minimalPeriod
   rw [ha.csInf_eq, AddSubgroup.zmultiples_eq_of_isLeast_mem_and_pos ha]
 
@@ -186,7 +192,7 @@ theorem apply_minimalPeriod [T1Space α] (x : α) : ϕ (ϕ.minimalPeriod x) x = 
   · have : ϕ.minimalPeriod x ∈ ϕ.periods x := by
       rw [ϕ.periods_eq_zmultiples_minimalPeriod hx]
       exact AddSubgroup.mem_zmultiples _
-    exact this
+    exact ϕ.mem_periods.1 this
   · simp only [not_exists, not_not] at hx
     exact hx _
 
@@ -220,18 +226,17 @@ namespace PeriodicTrajectory
 
 variable {ϕ}
 
-/-- The flow acts on periodic trajectories by rotation: `s +ᵥ γ` has base point `ϕ s γ.point`
-and the same period. -/
-instance : AddAction ℝ (PeriodicTrajectory ϕ) where
+/-- The flow rotates periodic trajectories: `s +ᵥ γ` has base point `ϕ s γ.point` and the same
+period. -/
+instance : VAdd ℝ (PeriodicTrajectory ϕ) where
   vadd s γ :=
     { point := ϕ s γ.point
       period := γ.period
       period_pos := γ.period_pos
       apply_period := by rw [ϕ.apply_comm, γ.apply_period]
       exists_apply_ne := by
-        simpa [← mem_periods, ϕ.periods_apply] using γ.exists_apply_ne }
-  zero_vadd γ := by ext <;> simp [HVAdd.hVAdd]
-  add_vadd s t γ := by ext <;> simp [HVAdd.hVAdd, map_add]
+        obtain ⟨t, ht⟩ := γ.exists_apply_ne
+        exact ⟨t, by rwa [ne_eq, ← mem_periods, periods_apply, mem_periods]⟩ }
 
 @[simp]
 theorem point_vadd (s : ℝ) (γ : PeriodicTrajectory ϕ) : (s +ᵥ γ).point = ϕ s γ.point :=
@@ -241,6 +246,11 @@ theorem point_vadd (s : ℝ) (γ : PeriodicTrajectory ϕ) : (s +ᵥ γ).point = 
 theorem period_vadd (s : ℝ) (γ : PeriodicTrajectory ϕ) : (s +ᵥ γ).period = γ.period :=
   (rfl)
 
+/-- Rotation is an action of `ℝ` on periodic trajectories. -/
+instance : AddAction ℝ (PeriodicTrajectory ϕ) where
+  zero_vadd γ := by ext <;> simp
+  add_vadd s t γ := by ext <;> simp [map_add]
+
 /-- The `k`-fold iterate of a periodic trajectory: the same base point with `k` times the return
 time. -/
 def iterate (γ : PeriodicTrajectory ϕ) (k : ℕ+) : PeriodicTrajectory ϕ where
@@ -248,7 +258,7 @@ def iterate (γ : PeriodicTrajectory ϕ) (k : ℕ+) : PeriodicTrajectory ϕ wher
   period := k * γ.period
   period_pos := mul_pos (by exact_mod_cast k.pos) γ.period_pos
   apply_period := by
-    have h : (k : ℕ) • γ.period ∈ ϕ.periods γ.point := nsmul_mem γ.apply_period _
+    have h : (k : ℕ) • γ.period ∈ ϕ.periods γ.point := nsmul_mem (ϕ.mem_periods.2 γ.apply_period) _
     rwa [nsmul_eq_mul, mem_periods] at h
   exists_apply_ne := γ.exists_apply_ne
 
@@ -469,6 +479,7 @@ theorem minimalPeriod_primitive (γ : ClosedOrbit ϕ) : γ.primitive.minimalPeri
 theorem support_primitive (γ : ClosedOrbit ϕ) : γ.primitive.support = γ.support :=
   γ.ind fun _ ↦ (rfl)
 
+@[simp]
 theorem isPrimitive_primitive (γ : ClosedOrbit ϕ) : γ.primitive.IsPrimitive := by
   simp [isPrimitive_iff]
 
@@ -476,6 +487,10 @@ theorem IsPrimitive.primitive_eq {γ : ClosedOrbit ϕ} (hγ : γ.IsPrimitive) : 
   ext
   · simp
   · simpa using (isPrimitive_iff.1 hγ).symm
+
+@[simp]
+theorem primitive_primitive (γ : ClosedOrbit ϕ) : γ.primitive.primitive = γ.primitive :=
+  γ.isPrimitive_primitive.primitive_eq
 
 @[simp]
 theorem primitive_iterate (γ : ClosedOrbit ϕ) (k : ℕ+) : (γ.iterate k).primitive = γ.primitive := by
