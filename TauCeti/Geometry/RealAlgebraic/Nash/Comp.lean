@@ -14,8 +14,8 @@ import TauCeti.Geometry.RealAlgebraic.CAD.Existence
 
 A map `g : (σ → ℝ) → (τ → ℝ)` between finite-dimensional coordinate spaces is regarded as a Nash
 map germ at `x` when each of its coordinates `fun y ↦ g y i` is a Nash germ at `x`
-(`TauCeti.IsNashAt`). This file proves the map form of the local Nash graph criterion and deduces
-that Nash germs compose.
+(`TauCeti.IsNashAt`). This file deduces from the map form of the local Nash graph criterion
+(`TauCeti.forall_isNashAt_apply_iff_exists_isSemialgebraicOn`) that Nash germs compose.
 
 The proof of composition goes through semialgebraic graphs rather than through polynomial
 relations. Nash coordinates of `g` have semialgebraic graphs on one open semialgebraic
@@ -27,9 +27,6 @@ Nash germ.
 
 ## Main results
 
-* `TauCeti.forall_isNashAt_apply_iff_exists_isSemialgebraicOn`: the coordinates of a map are Nash
-  germs at `x` exactly when the map is analytic at `x` and has semialgebraic graph on some open
-  semialgebraic neighbourhood of `x`.
 * `TauCeti.IsNashAt.comp`: if `f` is a Nash germ at `g x` and the coordinates of `g` are Nash germs
   at `x`, then `f ∘ g` is a Nash germ at `x`.
 
@@ -46,21 +43,6 @@ open Filter Set Topology
 namespace TauCeti
 
 variable {σ τ : Type*} [Fintype σ] [Fintype τ] {g : (σ → ℝ) → (τ → ℝ)} {x : σ → ℝ}
-
-/-- **The local Nash graph criterion for maps.** The coordinates of a map between
-finite-dimensional coordinate spaces are Nash germs at `x` exactly when the map is analytic at `x`
-and its graph is semialgebraic on some open semialgebraic neighbourhood of `x`. -/
-theorem forall_isNashAt_apply_iff_exists_isSemialgebraicOn :
-    (∀ i, IsNashAt (fun y ↦ g y i) x) ↔
-      AnalyticAt ℝ g x ∧ ∃ U, IsOpen U ∧ x ∈ U ∧ IsSemialgebraicOn g U := by
-  constructor
-  · intro hg
-    obtain ⟨U, hUo, hxU, hU, hgU⟩ := exists_isSemialgebraicOn_of_forall_isNashAt hg
-    exact ⟨AnalyticAt.pi fun i ↦ (hg i).analyticAt, U, hUo, hxU, .pi hU hgU⟩
-  · rintro ⟨hga, U, hUo, hxU, hgU⟩ i
-    obtain ⟨hU, hgU⟩ := isSemialgebraicOn_pi_iff.mp hgU
-    exact isNashAt_iff_exists_isSemialgebraicOn.mpr
-      ⟨analyticAt_pi_iff.mp hga i, U, hUo, hxU, hU, hgU i⟩
 
 /-- **Composition of Nash germs.** If `f` is a Nash germ at `g x` and every coordinate of `g` is a
 Nash germ at `x`, then `f ∘ g` is a Nash germ at `x`. -/
