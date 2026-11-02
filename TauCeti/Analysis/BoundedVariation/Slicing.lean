@@ -10,8 +10,8 @@ public import TauCeti.MeasureTheory.Measure.Lebesgue.OrthogonalSlices
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Topology.Algebra.Order.LiminfLimsup
 import TauCeti.Analysis.BoundedVariation.Approximation
-import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
-import TauCeti.Analysis.Sobolev.WeakDeriv.Lipschitz
+import TauCeti.Analysis.InnerProductSpace.OrthogonalLine
+import TauCeti.Analysis.Sobolev.WeakDeriv.Slicing
 
 /-!
 # Slicing functions of bounded variation along parallel lines
@@ -55,8 +55,11 @@ perimeters under Steiner symmetrization.
 For a `C¹` function `w` the line variations are computed exactly: they integrate to
 `∫_E |∂_e w|` (`ContDiff.lintegral_totalVariationOn_line_eq`), which is at most
 `∫_E ‖Dw‖ = |Dw|(E)`. In the joint inequality the transverse term of a `C¹` function is
-`-∫_E Dw (φ (y))`, by integration by parts on each hyperplane, and
-`√(1 - ‖φ‖²) |∂_e w| - Dw (φ) ≤ ‖Dw‖` pointwise because `±√(1 - ‖φ‖²) e - φ` is a unit vector.
+`-∫_E Dw (φ (y))`, by integration by parts on each hyperplane
+(`TauCeti.integral_divergence_mul_integral_line_eq`), and
+`√(1 - ‖φ‖²) |∂_e w| - Dw (φ) ≤ ‖Dw‖` pointwise because `±√(1 - ‖φ‖²) e - φ` is a unit vector
+(`TauCeti.sqrt_mul_abs_apply_sub_apply_le`). The transverse term passes to the limit by `L¹`
+continuity of the pairing (`TauCeti.tendsto_integral_mul_integral_line`).
 The general inequality follows by strict approximation
 (`MeasureTheory.Integrable.exists_contDiff_hasCompactSupport_strict_approximation`). Along a
 subsequence with summable `L¹` errors, Tonelli's theorem in orthogonal line coordinates makes the
@@ -91,7 +94,7 @@ on each such line (`TauCeti.totalVariationOn_le_liminf`) and Fatou's lemma concl
 public section
 
 open MeasureTheory Filter Set TopologicalSpace TestFunction
-open scoped ENNReal Topology Distributions RealInnerProductSpace
+open scoped ENNReal Topology Distributions
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
@@ -131,116 +134,6 @@ theorem ContDiff.lintegral_totalVariationOn_line_eq {w : E → ℝ} (hw : ContDi
 
 namespace TauCeti
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- A covector `L` and a vector `v ⊥ e` with `‖v‖ ≤ 1` satisfy
-`√(1 - ‖v‖²) |L e| - L v ≤ ‖L‖`: the left side is `L` applied to `±√(1 - ‖v‖²) e - v`, a vector
-of norm one. -/
-private theorem sqrt_mul_abs_apply_sub_apply_le (L : E →L[ℝ] ℝ) {e v : E} (he : ‖e‖ = 1)
-    (hv : ⟪e, v⟫ = 0) (hv1 : ‖v‖ ≤ 1) :
-    √(1 - ‖v‖ ^ 2) * |L e| - L v ≤ ‖L‖ := by
-  have key (σ : ℝ) (hσ : σ ^ 2 = 1) : σ * √(1 - ‖v‖ ^ 2) * L e - L v ≤ ‖L‖ := by
-    set z := (σ * √(1 - ‖v‖ ^ 2)) • e - v
-    have hz2 : ‖z‖ ^ 2 = 1 := by
-      have hs : √(1 - ‖v‖ ^ 2) ^ 2 = 1 - ‖v‖ ^ 2 :=
-        Real.sq_sqrt (by nlinarith [norm_nonneg v])
-      rw [norm_sub_sq_real, real_inner_smul_left, hv, norm_smul, he, Real.norm_eq_abs, mul_one,
-        sq_abs, mul_pow, hσ, hs]
-      ring
-    have hz : ‖z‖ ≤ 1 := by nlinarith [norm_nonneg z]
-    calc σ * √(1 - ‖v‖ ^ 2) * L e - L v = L z := by simp [z, smul_eq_mul]
-      _ ≤ ‖L z‖ := Real.le_norm_self _
-      _ ≤ ‖L‖ * ‖z‖ := L.le_opNorm z
-      _ ≤ ‖L‖ := mul_le_of_le_one_right (norm_nonneg L) hz
-  rcases le_total 0 (L e) with h | h
-  · simpa [abs_of_nonneg h] using key 1 (by norm_num)
-  · simpa [abs_of_nonpos h] using key (-1) (by norm_num)
-
-/-- The pairing of the line integrals of `f` with a bounded continuous transverse weight `ψ` is an
-integral in orthogonal line coordinates. -/
-private theorem integral_mul_integral_line_eq {f : E → ℝ} (hf : Integrable f) (e : E)
-    (he : ‖e‖ = 1) {ψ : (ℝ ∙ e)ᗮ → ℝ} (hψ : Continuous ψ) {C : ℝ} (hC : ∀ y, ‖ψ y‖ ≤ C) :
-    ∫ y : (ℝ ∙ e)ᗮ, ψ y * ∫ t : ℝ, f ((y : E) + t • e) =
-      ∫ p : (ℝ ∙ e)ᗮ × ℝ, ψ p.1 * f (orthogonalLineEquiv e he p) ∂(volume.prod volume) := by
-  have hfL : Integrable (f ∘ orthogonalLineEquiv e he) (volume.prod volume) :=
-    (measurePreserving_orthogonalLineEquiv e he).integrable_comp_of_integrable hf
-  have hint : Integrable (fun p : (ℝ ∙ e)ᗮ × ℝ => ψ p.1 * f (orthogonalLineEquiv e he p))
-      (volume.prod volume) :=
-    hfL.bdd_mul (hψ.comp continuous_fst).aestronglyMeasurable (.of_forall fun p => hC p.1)
-  rw [integral_prod _ hint]
-  simp only [orthogonalLineEquiv_apply, integral_const_mul]
-
-/-- Pairing line integrals with a bounded continuous transverse weight is continuous for `L¹`
-convergence on the whole space. -/
-private theorem tendsto_integral_mul_integral_line {w : ℕ → E → ℝ} {u : E → ℝ}
-    (hw : ∀ n, Integrable (w n)) (hu : Integrable u)
-    (hlim : Tendsto (fun n => ∫⁻ x, ‖w n x - u x‖ₑ) atTop (𝓝 0)) (e : E) (he : ‖e‖ = 1)
-    {ψ : (ℝ ∙ e)ᗮ → ℝ} (hψ : Continuous ψ) {C : ℝ} (hC : ∀ y, ‖ψ y‖ ≤ C) :
-    Tendsto (fun n => ∫ y : (ℝ ∙ e)ᗮ, ψ y * ∫ t : ℝ, w n ((y : E) + t • e)) atTop
-      (𝓝 (∫ y : (ℝ ∙ e)ᗮ, ψ y * ∫ t : ℝ, u ((y : E) + t • e))) := by
-  have hL := measurePreserving_orthogonalLineEquiv e he
-  have hLe : MeasurableEmbedding (orthogonalLineEquiv e he) :=
-    (orthogonalLineEquiv e he).toHomeomorph.measurableEmbedding
-  simp_rw [integral_mul_integral_line_eq (hw _) e he hψ hC,
-    integral_mul_integral_line_eq hu e he hψ hC]
-  refine tendsto_integral_of_L1 _
-    ((hψ.comp continuous_fst).aestronglyMeasurable.mul
-      (hu.aestronglyMeasurable.comp_measurePreserving hL))
-    (.of_forall fun n => (hL.integrable_comp_of_integrable (hw n)).bdd_mul
-      (hψ.comp continuous_fst).aestronglyMeasurable (.of_forall fun p => hC p.1)) ?_
-  have hb (n : ℕ) : ∫⁻ p : (ℝ ∙ e)ᗮ × ℝ,
-      ‖ψ p.1 * w n (orthogonalLineEquiv e he p) - ψ p.1 * u (orthogonalLineEquiv e he p)‖ₑ
-        ∂(volume.prod volume) ≤ ENNReal.ofReal C * ∫⁻ x, ‖w n x - u x‖ₑ := by
-    rw [← hL.lintegral_comp_emb hLe, ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
-    refine lintegral_mono fun p => ?_
-    rw [← mul_sub, enorm_mul, ← ofReal_norm (ψ p.1)]
-    gcongr
-    exact hC p.1
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds ?_ (fun _ => zero_le) hb
-  simpa using ENNReal.Tendsto.const_mul hlim (Or.inr ENNReal.ofReal_ne_top)
-
-/-- For a compactly supported `C¹` function `w`, the pairing of its line integrals with the
-divergence of a transverse test vector field `φ` is `-∫_E Dw (φ ∘ π)`, written in orthogonal line
-coordinates. -/
-private theorem integral_divergence_mul_integral_line_eq {w : E → ℝ} (hw : ContDiff ℝ 1 w)
-    (hwc : HasCompactSupport w) (e : E) (he : ‖e‖ = 1) (φ : 𝓓(⊤, (ℝ ∙ e)ᗮ)) :
-    ∫ y : (ℝ ∙ e)ᗮ, divergenceCLM φ y * ∫ t : ℝ, w ((y : E) + t • e) =
-      -∫ p : (ℝ ∙ e)ᗮ × ℝ, fderiv ℝ w (orthogonalLineEquiv e he p) (φ p.1)
-        ∂(volume.prod volume) := by
-  have hL := measurePreserving_orthogonalLineEquiv e he
-  obtain ⟨C, hC⟩ := (divergenceCLM φ).continuous.bounded_above_of_compact_support
-    (divergenceCLM φ).hasCompactSupport
-  obtain ⟨Cφ, hCφ⟩ := φ.continuous.bounded_above_of_compact_support φ.hasCompactSupport
-  have hD : Continuous (fderiv ℝ w) := hw.continuous_fderiv one_ne_zero
-  have hDint : Integrable (fun x => ‖fderiv ℝ w x‖) :=
-    (hD.norm.integrable_of_hasCompactSupport (hwc.fderiv (𝕜 := ℝ)).norm)
-  -- The integrand of the right side is integrable on the product.
-  have hint : Integrable (fun p : (ℝ ∙ e)ᗮ × ℝ =>
-      fderiv ℝ w (orthogonalLineEquiv e he p) (φ p.1)) (volume.prod volume) := by
-    refine Integrable.mono' ((hL.integrable_comp_of_integrable hDint).mul_const Cφ)
-      ((hD.comp (orthogonalLineEquiv e he).continuous).clm_apply
-        ((continuous_subtype_val.comp φ.continuous).comp continuous_fst)).aestronglyMeasurable
-      (.of_forall fun p => ?_)
-    exact (fderiv ℝ w _).le_opNorm_of_le (by simpa using hCφ p.1)
-  have hprod : Integrable (fun p : (ℝ ∙ e)ᗮ × ℝ =>
-      divergenceCLM φ p.1 * w (orthogonalLineEquiv e he p)) (volume.prod volume) :=
-    (hL.integrable_comp_of_integrable (hw.continuous.integrable_of_hasCompactSupport hwc)).bdd_mul
-      ((divergenceCLM φ).continuous.comp continuous_fst).aestronglyMeasurable
-      (.of_forall fun p => hC p.1)
-  rw [integral_mul_integral_line_eq (hw.continuous.integrable_of_hasCompactSupport hwc) e he
-    (divergenceCLM φ).continuous hC, integral_prod_symm _ hprod, integral_prod_symm _ hint,
-    ← integral_neg]
-  refine integral_congr_ae (.of_forall fun t => ?_)
-  -- On each hyperplane `t = const`, integrate by parts against the test field `φ`.
-  have hshift : ContDiff ℝ 1 fun y : (ℝ ∙ e)ᗮ => (y : E) + t • e :=
-    (ℝ ∙ e)ᗮ.subtypeL.contDiff.add contDiff_const
-  have hweak : HasWeakFDerivOn volume ⊤ (fun y : (ℝ ∙ e)ᗮ => w ((y : E) + t • e))
-      fun y => (fderiv ℝ w ((y : E) + t • e)).comp (ℝ ∙ e)ᗮ.subtypeL :=
-    (hw.comp hshift).locallyLipschitz.locallyLipschitzOn.hasWeakFDerivOn
-      (.of_forall fun y _ => ((hw.differentiable one_ne_zero _).hasFDerivAt).comp y
-        ((ℝ ∙ e)ᗮ.subtypeL.hasFDerivAt.add_const _))
-  simpa [orthogonalLineEquiv_apply, smul_eq_mul] using
-    hweak.integral_divergenceCLM_smul_eq_neg_integral φ
-
 /-- **The joint slicing inequality for `C¹` functions.** -/
 private theorem lintegral_mul_totalVariationOn_line_add_le_of_contDiff {w : E → ℝ}
     (hw : ContDiff ℝ 1 w) (hwc : HasCompactSupport w) (e : E) (he : ‖e‖ = 1)
@@ -274,8 +167,7 @@ private theorem lintegral_mul_totalVariationOn_line_add_le_of_contDiff {w : E �
       (.of_forall fun p => by
         rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
         exact hFle p)
-  have hFG (p) : F p + G p ≤ N p := sqrt_mul_abs_apply_sub_apply_le _ he
-    (Submodule.mem_orthogonal_singleton_iff_inner_right.mp (φ p.1).2) (hφ p.1)
+  have hFG (p) : F p + G p ≤ N p := sqrt_mul_abs_apply_sub_apply_le e he _ (hφ p.1)
   have hG : Integrable G (volume.prod volume) :=
     hN.mono' ((hD.comp L.continuous).clm_apply
       ((continuous_subtype_val.comp φ.continuous).comp continuous_fst)).neg.aestronglyMeasurable
@@ -344,7 +236,7 @@ private theorem exists_aemeasurable_totalVariationOn_line_le {u : E → ℝ} (hu
     (divergenceCLM φ).hasCompactSupport
   have hB := tendsto_integral_mul_integral_line
     (fun n => (hw (σ n)).1.continuous.integrable_of_hasCompactSupport (hw (σ n)).2) hu
-    (hL1.comp hσ.tendsto_atTop) e he (divergenceCLM φ).continuous hC
+    (hL1.comp hσ.tendsto_atTop) e he (divergenceCLM φ).continuous.aestronglyMeasurable hC
   refine ⟨fun y => liminf (fun j => V j y) atTop, AEMeasurable.liminf hVm, ?_, ?_⟩
   · -- On almost every line the restrictions converge in `L¹`; the variation is l.s.c.
     filter_upwards [hFlim, hline] with y hy hyi
@@ -366,9 +258,9 @@ private theorem exists_aemeasurable_totalVariationOn_line_le {u : E → ℝ} (hu
         ENNReal.le_liminf_mul (u := fun _ : ℕ => c y) (v := fun j => V j y) (f := atTop)
     -- The pairings converge, so the defect `B - b j` tends to zero.
     have hb : Tendsto (fun j => B - b j) atTop (𝓝 0) := by
+      have hBfinite : B ≠ ∞ := ENNReal.ofReal_ne_top
       have h := ENNReal.Tendsto.sub tendsto_const_nhds
-        (ENNReal.continuous_ofReal.continuousAt.tendsto.comp hB) (Or.inl (show B ≠ ∞ from
-          ENNReal.ofReal_ne_top))
+        (ENNReal.continuous_ofReal.continuousAt.tendsto.comp hB) (Or.inl hBfinite)
       rwa [tsub_self] at h
     calc (∫⁻ y, c y * liminf (fun j => V j y) atTop) + B ≤ liminf A atTop + B := by gcongr
       _ = liminf (fun j => A j + B) atTop := (liminf_add_const atTop A B
