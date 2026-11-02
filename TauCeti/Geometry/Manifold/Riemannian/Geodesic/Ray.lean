@@ -70,32 +70,25 @@ embedding of `[0, ∞)`: `dist (exp_p (s • u)) (exp_p (t • u)) = |s - t|` fo
 theorem isometry_riemannianExp_smul_of_forall_dist_eq {u : TangentSpace I p} (hu : ‖u‖ = 1)
     (h : ∀ t, 0 ≤ t → dist p (riemannianExp I M p (t • u)) = t) :
     Isometry (fun t : Ici (0 : ℝ) ↦ riemannianExp I M p ((t : ℝ) • u)) := by
-  -- For `0 ≤ s ≤ t` with `t > 0`, the vector `t • u` is minimizing, and `s • u` is the point
-  -- at time `s / t` of its radial segment.
-  have key (s t : ℝ) (hs : 0 ≤ s) (hst : s ≤ t) :
-      dist (riemannianExp I M p (s • u)) (riemannianExp I M p (t • u)) = t - s := by
-    rcases (hs.trans hst).eq_or_lt with rfl | ht
-    · rw [le_antisymm hst hs, dist_self, sub_self]
-    have hnorm : ‖t • u‖ = t := by rw [norm_smul, hu, mul_one, Real.norm_of_nonneg ht.le]
+  -- For `a > 0` the vector `a • u` is minimizing, so `exp_p (· • u)` is isometric on `[0, a]`.
+  have key (a s t : ℝ) (ha : 0 < a) (hs : s ∈ Icc 0 a) (ht : t ∈ Icc 0 a) :
+      dist (riemannianExp I M p (s • u)) (riemannianExp I M p (t • u)) = |s - t| := by
+    have hnorm : ‖a • u‖ = a := by rw [norm_smul, hu, mul_one, Real.norm_of_nonneg ha.le]
     -- Outside the domain of `exp_p` the exponential map takes the junk value `p`.
-    have hmem : t • u ∈ expDomain I M p := by
+    have hmem : a • u ∈ expDomain I M p := by
       by_contra hnot
-      have := h t ht.le
+      have := h a ha.le
       rw [riemannianExp_of_notMem_expDomain hnot, dist_self] at this
-      exact ht.ne this
-    have hst' : s / t ∈ Icc (0 : ℝ) 1 := ⟨div_nonneg hs ht.le, (div_le_one ht).2 hst⟩
-    have hd := dist_riemannianExp_smul_riemannianExp_smul hmem (by rw [hnorm, h t ht.le]) hst'
-      (right_mem_Icc.2 zero_le_one)
-    rw [smul_smul, div_mul_cancel₀ s ht.ne', one_smul, hnorm,
-      abs_of_nonpos (sub_nonpos.2 hst'.2)] at hd
-    rw [hd]
-    field_simp
-    ring
+      exact ha.ne this
+    simpa [hu] using
+      dist_riemannianExp_smul_riemannianExp_smul_of_mem_Icc hmem (by rw [hnorm, h a ha.le]) hs ht
   refine Isometry.of_dist_eq fun s t ↦ ?_
+  -- Both times lie in `[0, a]` for `a = max s t + 1 > 0`.
+  have hs : (s : ℝ) ≤ max s t + 1 := (le_max_left _ _).trans (le_add_of_nonneg_right zero_le_one)
+  have ht : (t : ℝ) ≤ max s t + 1 := (le_max_right _ _).trans (le_add_of_nonneg_right zero_le_one)
   rw [Subtype.dist_eq, Real.dist_eq]
-  rcases le_total (s : ℝ) t with hst | hts
-  · rw [key s t s.2 hst, abs_of_nonpos (sub_nonpos.2 hst), neg_sub]
-  · rw [dist_comm, key t s t.2 hts, abs_of_nonneg (sub_nonneg.2 hts)]
+  exact key _ _ _ ((mem_Ici.1 s.2).trans_lt ((le_max_left _ _).trans_lt (lt_add_one _)))
+    ⟨s.2, hs⟩ ⟨t.2, ht⟩
 
 /-- In a complete noncompact Riemannian manifold, every point `p` has a unit tangent vector `u`
 such that `t ↦ exp_p (t • u)` is an isometric embedding of `[0, ∞)`. -/

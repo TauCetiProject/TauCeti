@@ -33,6 +33,8 @@ In the namespace `TauCeti.Manifold`:
   `exp_p v` for a tangent vector `v` with `‖v‖ = dist p q`.**
 * `dist_riemannianExp_smul_riemannianExp_smul`: along such a minimizing initial velocity, the
   radial geodesic on `[0, 1]` travels at constant speed `dist p q` in the metric sense.
+* `dist_riemannianExp_smul_riemannianExp_smul_of_mem_Icc`: the same constant metric speed for
+  `s, t ∈ [0, a]` along a minimizing vector `a • v`.
 * `dist_riemannianExp_smul_eq_norm` and `dist_riemannianExp_smul_eq_norm_of_le`: shorter
   radial segments in a minimizing direction are minimizing.
 * `isClosed_setOf_dist_riemannianExp_eq_norm`: if `exp_p` is everywhere defined, the tangent
@@ -231,6 +233,24 @@ theorem dist_riemannianExp_smul_eq_norm {v : TangentSpace I p} (hv : v ∈ expDo
     (left_mem_Icc.2 zero_le_one) ht
   simpa [norm_smul, abs_of_nonneg ht.1] using h
 
+/-- **Minimizing radial geodesics travel at constant metric speed, rescaled form.** If `a • v`
+lies in the domain of `exp_p` and `dist p (exp_p (a • v)) = ‖a • v‖`, then for all
+`s, t ∈ [0, a]` the points `exp_p (s • v)` and `exp_p (t • v)` are at distance
+`|s - t| * ‖v‖`. -/
+theorem dist_riemannianExp_smul_riemannianExp_smul_of_mem_Icc {v : TangentSpace I p}
+    {a s t : ℝ} (hv : a • v ∈ expDomain I M p)
+    (hmin : dist p (riemannianExp I M p (a • v)) = ‖a • v‖) (hs : s ∈ Icc 0 a)
+    (ht : t ∈ Icc 0 a) :
+    dist (riemannianExp I M p (s • v)) (riemannianExp I M p (t • v)) = |s - t| * ‖v‖ := by
+  rcases (hs.1.trans hs.2).eq_or_lt with rfl | ha
+  · simp [le_antisymm hs.2 hs.1, le_antisymm ht.2 ht.1]
+  -- `s • v` and `t • v` are the points at times `s / a` and `t / a` of the segment of `a • v`.
+  have h := dist_riemannianExp_smul_riemannianExp_smul hv hmin.ge
+    ⟨div_nonneg hs.1 ha.le, (div_le_one ha).2 hs.2⟩ ⟨div_nonneg ht.1 ha.le, (div_le_one ha).2 ht.2⟩
+  rw [smul_smul, smul_smul, div_mul_cancel₀ s ha.ne', div_mul_cancel₀ t ha.ne'] at h
+  rw [h, norm_smul, ← sub_div, abs_div, Real.norm_of_nonneg ha.le, abs_of_pos ha]
+  field_simp
+
 /-- **Shorter radial segments in a minimizing direction are minimizing.** If `a • v` lies in the
 domain of `exp_p` and `dist p (exp_p (a • v)) = ‖a • v‖`, then
 `dist p (exp_p (b • v)) = ‖b • v‖` for every `b` with `0 ≤ b ≤ a`. -/
@@ -238,11 +258,9 @@ theorem dist_riemannianExp_smul_eq_norm_of_le {v : TangentSpace I p} {a b : ℝ}
     (hv : a • v ∈ expDomain I M p) (hmin : dist p (riemannianExp I M p (a • v)) = ‖a • v‖)
     (hb : 0 ≤ b) (hba : b ≤ a) :
     dist p (riemannianExp I M p (b • v)) = ‖b • v‖ := by
-  rcases hb.eq_or_lt with rfl | hb0
-  · simp
-  have ha : 0 < a := hb0.trans_le hba
-  have h := dist_riemannianExp_smul_eq_norm hv hmin ⟨div_nonneg hb ha.le, (div_le_one ha).2 hba⟩
-  rwa [smul_smul, div_mul_cancel₀ b ha.ne'] at h
+  simpa [norm_smul, abs_of_nonneg hb] using
+    dist_riemannianExp_smul_riemannianExp_smul_of_mem_Icc hv hmin
+      (left_mem_Icc.2 (hb.trans hba)) ⟨hb, hba⟩
 
 /-- **An everywhere-defined exponential map yields minimizing geodesics.**  If the exponential map
 at `p` is defined on all of `T_p M`, then every point `q` is joined to `p` by a geodesic segment
