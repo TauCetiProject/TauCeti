@@ -365,6 +365,13 @@ theorem withStar_mk_true {A : Type*} [Star A] (a : ι → A) (i : ι) :
     withStar a (i, true) = star (a i) :=
   (rfl)
 
+/-- Relabeling variables commutes with adjoining the adjoint letters. -/
+@[simp]
+theorem withStar_comp {A κ : Type*} [Star A] (a : ι → A) (r : κ → ι) :
+    withStar (a ∘ r) = withStar a ∘ Prod.map r id := by
+  funext x
+  simp [withStar_def, Function.comp_def]
+
 /-- For a selfadjoint family, `withStar a` forgets whether a letter is an adjoint. -/
 theorem withStar_eq_comp_fst {A : Type*} [Star A] {a : ι → A} (ha : ∀ i, IsSelfAdjoint (a i)) :
     withStar a = a ∘ Prod.fst := by
