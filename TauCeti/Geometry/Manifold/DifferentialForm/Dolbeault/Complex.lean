@@ -169,6 +169,16 @@ def mk (p q : ℕ) : closedForms E M F p q →ₗ[ℂ] dolbeaultCohomology E M F
     (fun q ↦ (ofComplexManifold E M).typeForms (F := F) p q) (closedForms E M F p)
     (dolbeaultComplexXIso p) (mem_closedForms_iff_complex p) q
 
+/-- The class of a closed type form is the native homology class of any corresponding cycle. -/
+theorem mk_eq_homologyπ (p q : ℕ) (φ : closedForms E M F p q)
+    (z : (dolbeaultComplex E M F p).cycles q)
+    (hz : (dolbeaultComplexXIso p q).hom
+      ((dolbeaultComplex E M F p).iCycles q z) = φ.1) :
+    mk p q φ = (dolbeaultComplex E M F p).homologyπ q z :=
+  (dolbeaultComplex E M F p).moduleCatCohomologyClassOfIso_eq_homologyπ
+    (fun q ↦ (ofComplexManifold E M).typeForms (F := F) p q) (closedForms E M F p)
+    (dolbeaultComplexXIso p) (mem_closedForms_iff_complex p) φ z hz
+
 /-- Every Dolbeault cohomology class has a `∂bar`-closed representative. -/
 theorem mk_surjective (p q : ℕ) : Function.Surjective (mk (E := E) (M := M) (F := F) p q) := by
   exact (dolbeaultComplex E M F p).moduleCatCohomologyClassOfIso_surjective
