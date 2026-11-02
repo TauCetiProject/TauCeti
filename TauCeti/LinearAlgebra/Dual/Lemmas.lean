@@ -30,6 +30,8 @@ algebra is finite-dimensional is itself finite-dimensional.
   is the kernel of a nonzero functional.
 * `Module.Finite.of_finite_end`: a vector space is finite-dimensional once its endomorphism
   algebra is.
+* `LinearIndependent.exists_sum_smul_eq_proj`: `#ι` linearly independent forms on `Kⁱ` express
+  every coordinate projection.
 -/
 
 public section
@@ -118,3 +120,18 @@ theorem of_finite_end (K S : Type*) [Field K] [AddCommGroup S] [Module K S]
     fun y ↦ ⟨(φ x)⁻¹ • φ.smulRight y, by simp [hφ]⟩
 
 end Module.Finite
+
+namespace LinearIndependent
+
+/-- `#ι` linearly independent forms on `Kⁱ` span its dual, so every coordinate projection is a
+combination of them. -/
+theorem exists_sum_smul_eq_proj {K ι : Type*} [Field K] [Fintype ι]
+    {l : ι → Module.Dual K (ι → K)} (hl : LinearIndependent K l) :
+    ∃ a : ι → ι → K, ∀ j, ∑ i, a j i • l i = LinearMap.proj j := by
+  have hspan : Submodule.span K (Set.range l) = ⊤ :=
+    hl.span_eq_top_of_card_eq_finrank' (by simp [Subspace.dual_finrank_eq])
+  choose a ha using fun j : ι ↦ (Submodule.mem_span_range_iff_exists_fun K).mp
+    (hspan ▸ Submodule.mem_top : LinearMap.proj (φ := fun _ : ι ↦ K) j ∈ _)
+  exact ⟨a, ha⟩
+
+end LinearIndependent

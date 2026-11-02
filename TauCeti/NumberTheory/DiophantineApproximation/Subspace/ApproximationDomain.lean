@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Dual.Defs
 public import Mathlib.NumberTheory.NumberField.CanonicalEmbedding.Basic
 public import Mathlib.NumberTheory.NumberField.Completion.FinitePlace
 import Mathlib.LinearAlgebra.Dual.Lemmas
+import TauCeti.LinearAlgebra.Dual.Lemmas
 import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.MixedImage
 import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
 
@@ -172,16 +173,6 @@ theorem approxDomain_eq [NumberField K] (S₀ : Finset (FinitePlace K))
     Set.mem_ofPred_eq, abs_of_nonneg hQ]
   tauto
 
-/-- `#ι` linearly independent forms on `Kⁱ` span its dual, so every coordinate form is a
-combination of them. -/
-private theorem exists_sum_smul_eq_proj {l : ι → Dual K (ι → K)} (hl : LinearIndependent K l) :
-    ∃ a : ι → ι → K, ∀ j, ∑ i, a j i • l i = LinearMap.proj j := by
-  have hspan : Submodule.span K (Set.range l) = ⊤ :=
-    hl.span_eq_top_of_card_eq_finrank' (by simp [Subspace.dual_finrank_eq])
-  choose a ha using fun j : ι ↦ (Submodule.mem_span_range_iff_exists_fun K).mp
-    (hspan ▸ Submodule.mem_top : LinearMap.proj (φ := fun _ : ι ↦ K) j ∈ _)
-  exact ⟨a, ha⟩
-
 omit [Fintype ι] in
 /-- At a place of `S₀` where the forms are linearly independent, the coordinates of the points of
 the finite part of an approximation domain are bounded. -/
@@ -191,7 +182,7 @@ private theorem exists_forall_mem_approxModule_apply_le [Finite ι] [NumberField
     (hL : LinearIndependent K (L v.1)) :
     ∃ R : ℝ, 0 ≤ R ∧ ∀ x ∈ approxModule S₀ L c Q, ∀ j, v (x j) ≤ R := by
   have : Fintype ι := Fintype.ofFinite ι
-  obtain ⟨a, ha⟩ := exists_sum_smul_eq_proj hL
+  obtain ⟨a, ha⟩ := hL.exists_sum_smul_eq_proj
   refine ⟨∑ j, ∑ i, v (a j i) * |Q| ^ c v.1 i, by positivity, fun x hx j ↦ ?_⟩
   have hxj : x j = ∑ i, a j i * L v.1 i x := by
     simpa using (LinearMap.congr_fun (ha j) x).symm
@@ -276,7 +267,7 @@ theorem isBounded_approxBody [NumberField K] {L : AbsoluteValue K ℝ → ι →
     (Q : ℝ) : Bornology.IsBounded (approxBody L c Q) := by
   classical
   -- At each infinite place `w` every coordinate form is a combination `a w j` of the forms at `w`.
-  choose a ha using fun w : InfinitePlace K ↦ exists_sum_smul_eq_proj (hL w)
+  choose a ha using fun w : InfinitePlace K ↦ (hL w).exists_sum_smul_eq_proj
   set R : ℝ := ∑ w : InfinitePlace K, ∑ j, ∑ i, w (a w j i) * |Q ^ c w.1 i|
   have hR (w : InfinitePlace K) (j : ι) : ∑ i, w (a w j i) * |Q ^ c w.1 i| ≤ R :=
     (Finset.single_le_sum (f := fun j ↦ ∑ i, w (a w j i) * |Q ^ c w.1 i|)
