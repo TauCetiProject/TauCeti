@@ -121,10 +121,13 @@ theorem IsFinite.isIntegral_restrict {φ : Hom S U} (hφ : φ.IsFinite) :
     exact ⟨⟨a, ha⟩, rfl⟩
   obtain ⟨q, rfl, -, hqm⟩ :=
     Polynomial.lifts_and_natDegree_eq_and_monic (Polynomial.mem_lifts_of_surjective hρ p) hpm
+  have hcomp : (algebraMap (S.plus.map φ.toRingHom) B).comp ρ =
+      U.plus.subtype.comp (φ.toRingHom.restrict S.plus U.plus φ.map_mem_plus) := by
+    ext; rfl
   refine ⟨q, hqm, Subtype.ext ?_⟩
-  rw [Polynomial.eval₂_map] at hp
+  rw [Polynomial.eval₂_map, hcomp] at hp
   rw [← Subring.coe_subtype, Polynomial.hom_eval₂]
-  exact hp
+  simpa using hp
 
 /-- **A finite morphism whose ring map is the identity does not enlarge the plus ring.** Thus
 `(K, K⁺) → (K, K°)` is not finite when `K⁺ ⊊ K°`, although its ring map is. -/
