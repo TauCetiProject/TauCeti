@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Basic
+public import TauCeti.AlgebraicGeometry.Pullback.SpecMap
 public import TauCeti.RingTheory.Etale.Splitting
 
 /-!
@@ -24,13 +25,12 @@ Both statements are scheme forms of algebraic splitting results:
 `TauCeti.Algebra.Etale.exists_isFiniteSplit_tensorProduct` over a field and
 `Algebra.IsFiniteSplit.exists_liesOver_tensorProduct_of_etale` over a ring. They are transported
 through `AlgebraicGeometry.Scheme.Hom.exists_overIso_spec_of_isFinite_of_etale`, which presents a
-finite étale scheme over an affine base as a spectrum, and Mathlib's affine pullback comparison
-`AlgebraicGeometry.pullbackSpecIso`.
+finite étale scheme over an affine base as a spectrum, and
+`TauCeti.AlgebraicGeometry.Over.pullbackSndSpecIsoOfAlgEquiv`, built on Mathlib's affine pullback
+comparison `AlgebraicGeometry.pullbackSpecIso`.
 
 ## Main results
 
-* `AlgebraicGeometry.nonempty_overIso_pullback_snd_spec`: an isomorphism `T ⊗[R] A ≃ₐ[T] B`
-  identifies the base change of `Spec A` along `Spec T ⟶ Spec R` with `Spec B` over `Spec T`.
 * `AlgebraicGeometry.Scheme.Hom.exists_split_of_isFinite_of_etale`: over a field, a finite étale
   scheme splits after a finite Galois extension of degree dividing `n!`.
 * `AlgebraicGeometry.Scheme.Hom.exists_etale_split_of_isFinite_of_etale`: a finite étale
@@ -54,23 +54,6 @@ universe u
 
 namespace AlgebraicGeometry
 
-/-- An isomorphism `T ⊗[R] A ≃ₐ[T] B` identifies the base change of `Spec A ⟶ Spec R` along
-`Spec T ⟶ Spec R` with `Spec B ⟶ Spec T`, as schemes over `Spec T`. -/
-theorem nonempty_overIso_pullback_snd_spec (R A T : Type u) {B : Type u} [CommRing R]
-    [CommRing A] [CommRing T] [CommRing B] [Algebra R A] [Algebra R T] [Algebra T B]
-    (a : T ⊗[R] A ≃ₐ[T] B) :
-    Nonempty (Over.mk (pullback.snd (Spec.algebraMap R A) (Spec.algebraMap R T)) ≅
-      Over.mk (Spec.algebraMap T B)) := by
-  have ha : CommRingCat.ofHom (algebraMap T B) ≫ a.symm.toRingEquiv.toCommRingCatIso.hom =
-      CommRingCat.ofHom (algebraMap T (T ⊗[R] A)) := by
-    ext t
-    exact a.symm.commutes t
-  refine ⟨Over.isoMk (pullbackSymmetry _ _ ≪≫ pullbackSpecIso R T A ≪≫
-    Scheme.Spec.mapIso a.symm.toRingEquiv.toCommRingCatIso.op) ?_⟩
-  simp only [Over.mk_hom, Iso.trans_hom, Functor.mapIso_hom, Iso.op_hom, Scheme.Spec_map,
-    Quiver.Hom.unop_op, Category.assoc, ← Spec.map_comp, ha]
-  simp [pullbackSpecIso_hom_fst']
-
 namespace Scheme.Hom
 
 /-- A finite étale scheme becomes a disjoint union of `n` rational points after a finite
@@ -89,9 +72,9 @@ theorem exists_split_of_isFinite_of_etale {K : Type u} [Field K] {X : Scheme.{u}
   have hn : Module.finrank K A = n := by
     rw [← Module.finrank_baseChange (R := L), a.toLinearEquiv.finrank_eq]
     simp
-  obtain ⟨e⟩ := nonempty_overIso_pullback_snd_spec K A L a
   exact ⟨L, inferInstance, inferInstance, inferInstance, inferInstance, n, hn ▸ hdeg,
-    ⟨(Over.pullback (Spec.algebraMap K L)).mapIso e₀ ≪≫ e⟩⟩
+    ⟨(Over.pullback (Spec.algebraMap K L)).mapIso e₀ ≪≫
+      TauCeti.AlgebraicGeometry.Over.pullbackSndSpecIsoOfAlgEquiv a⟩⟩
 
 /-- **A finite étale morphism splits étale locally.** For `f : X ⟶ S` finite étale and a point
 `s` of `S`, there are an étale morphism `φ : Spec T ⟶ S` and a point `t` with `φ t = s` such that
@@ -112,7 +95,7 @@ theorem exists_etale_split_of_isFinite_of_etale {X S : Scheme.{u}} (f : X ⟶ S)
   obtain ⟨T, _, _, _, P, _, hP, hT⟩ :=
     Algebra.IsFiniteSplit.exists_liesOver_tensorProduct_of_etale A x.asIdeal
   obtain ⟨n, ⟨a⟩⟩ := hT.nonempty_algEquiv_fun
-  obtain ⟨e⟩ := nonempty_overIso_pullback_snd_spec Γ(S, V) A T
+  let e := TauCeti.AlgebraicGeometry.Over.pullbackSndSpecIsoOfAlgEquiv
     (a.trans (AlgEquiv.piCongrLeft' T (fun _ ↦ T) Equiv.ulift.{u}.symm))
   let ψ : Spec (.of T) ⟶ Spec Γ(S, V) := Spec.map (CommRingCat.ofHom (algebraMap Γ(S, V) T))
   have : Etale ψ := (HasRingHomProperty.Spec_iff (P := @Etale)).mpr

@@ -35,6 +35,9 @@ change `X ×_k Spec K`, over `Spec K`.
   composite of pullbacks.
 * `TauCeti.AlgebraicGeometry.exists_isOpenImmersion_tensorProduct_of_isPullback`: the base change
   of an affine chart is an affine chart of the base change.
+* `TauCeti.AlgebraicGeometry.Over.pullbackSndSpecIsoOfAlgEquiv`: an isomorphism
+  `T ⊗[R] A ≃ₐ[T] B` identifies the base change of `Spec A` along `Spec T ⟶ Spec R` with `Spec B`
+  over `Spec T`.
 -/
 
 public section
@@ -77,6 +80,50 @@ theorem exists_isOpenImmersion_tensorProduct_of_isPullback {k A K : Type u} [Com
     (pullbackRightPullbackFstIso _ _ _).inv ≫ pullback.snd _ _ ≫ H.isoPullback.inv,
     inferInstance, ?_⟩
   simp
+
+section AlgEquiv
+
+variable {R A T B : Type u} [CommRing R] [CommRing A] [CommRing T] [CommRing B] [Algebra R A]
+  [Algebra R T] [Algebra T B]
+
+/-- An isomorphism `a : T ⊗[R] A ≃ₐ[T] B` identifies the base change of `Spec A ⟶ Spec R` along
+`Spec T ⟶ Spec R` with `Spec B ⟶ Spec T`, as schemes over `Spec T`. The underlying isomorphism
+of schemes is Mathlib's `pullbackSpecIso` followed by `Spec.map` of `a.symm`. -/
+@[expose] noncomputable def Over.pullbackSndSpecIsoOfAlgEquiv (a : T ⊗[R] A ≃ₐ[T] B) :
+    Over.mk (pullback.snd (Spec.algebraMap R A) (Spec.algebraMap R T)) ≅
+      Over.mk (Spec.algebraMap T B) :=
+  Over.isoMk (pullbackSymmetry _ _ ≪≫ pullbackSpecIso R T A ≪≫
+    Scheme.Spec.mapIso a.symm.toRingEquiv.toCommRingCatIso.op) <| by
+    have ha : CommRingCat.ofHom (algebraMap T B) ≫ a.symm.toRingEquiv.toCommRingCatIso.hom =
+        CommRingCat.ofHom (algebraMap T (T ⊗[R] A)) := by
+      ext t
+      exact a.symm.commutes t
+    simp only [Over.mk_hom, Iso.trans_hom, Functor.mapIso_hom, Iso.op_hom, Scheme.Spec_map,
+      Quiver.Hom.unop_op, Category.assoc, ← Spec.map_comp, ha]
+    simp [pullbackSpecIso_hom_fst']
+
+/-- The underlying morphism of `Over.pullbackSndSpecIsoOfAlgEquiv a` is `pullbackSymmetry`,
+then `pullbackSpecIso`, then `Spec.map` of `a.symm`. -/
+theorem Over.pullbackSndSpecIsoOfAlgEquiv_hom_left (a : T ⊗[R] A ≃ₐ[T] B) :
+    (Over.pullbackSndSpecIsoOfAlgEquiv a).hom.left =
+      (pullbackSymmetry _ _).hom ≫ (pullbackSpecIso R T A).hom ≫
+        Spec.map (CommRingCat.ofHom (a.symm : B →+* T ⊗[R] A)) :=
+  rfl
+
+/-- The inverse of `Over.pullbackSndSpecIsoOfAlgEquiv a`, followed by the projection to `Spec A`,
+is `Spec.map` of `A → T ⊗[R] A → B`. -/
+@[reassoc (attr := simp)]
+theorem Over.pullbackSndSpecIsoOfAlgEquiv_inv_left_fst (a : T ⊗[R] A ≃ₐ[T] B) :
+    (Over.pullbackSndSpecIsoOfAlgEquiv a).inv.left ≫ pullback.fst _ _ =
+      Spec.map (CommRingCat.ofHom ((a : T ⊗[R] A →+* B).comp
+        (Algebra.TensorProduct.includeRight : A →ₐ[R] T ⊗[R] A).toRingHom)) := by
+  simp only [Over.pullbackSndSpecIsoOfAlgEquiv, Over.isoMk_inv_left, Iso.trans_inv,
+    Functor.mapIso_inv, Iso.op_inv, Scheme.Spec_map, Quiver.Hom.unop_op, Category.assoc,
+    pullbackSymmetry_inv_comp_fst, pullbackSpecIso_inv_snd, ← Spec.map_comp,
+    RingEquiv.toCommRingCatIso_inv]
+  rfl
+
+end AlgEquiv
 
 end AlgebraicGeometry
 
