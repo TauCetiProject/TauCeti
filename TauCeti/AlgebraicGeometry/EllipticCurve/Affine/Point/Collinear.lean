@@ -68,19 +68,13 @@ theorem some_add_some_add_some_eq_zero_iff (h₁ : W.Nonsingular x₁ y₁) (h�
     rw [add_some hxy] at h
     obtain ⟨hx₃, hy₃⟩ := some.inj ((eq_neg_of_add_eq_zero_right h).trans (neg_some _))
     rw [addY, negY_negY] at hy₃
-    set ℓ := W.slope x₁ x₂ y₁ y₂ with hℓ
-    have hy₂ : y₂ = ℓ * x₂ + (y₁ - ℓ * x₁) := by
-      by_cases hx : x₁ = x₂
-      · rw [← Y_eq_of_Y_ne h₁.1 h₂.1 hx fun hy ↦ hxy ⟨hx, hy⟩, hx]
-        ring
-      · rw [hℓ, slope_of_X_ne hx]
-        field_simp [sub_ne_zero.2 hx]
-        ring
-    refine ⟨ℓ, y₁ - ℓ * x₁, by ring, hy₂, by rw [hy₃, negAddY, ← hx₃]; ring, ?_⟩
+    set ℓ := W.slope x₁ x₂ y₁ y₂
+    refine ⟨ℓ, y₁ - ℓ * x₁, by ring, Y_eq_slope_mul_add h₁.1 h₂.1 hxy,
+      by rw [hy₃, negAddY, ← hx₃]; ring, ?_⟩
     rw [← addPolynomial_eq_eval (x₁ := x₁) (y₁ := y₁) (by ring), addPolynomial_slope h₁.1 h₂.1 hxy,
       hx₃]
   · rintro ⟨ℓ, ν, hy₁, hy₂, hy₃, hW⟩
-    obtain ⟨hb, hc⟩ := coeffs_of_addPolynomial_eq ((addPolynomial_eq_eval hy₁).trans hW)
+    obtain ⟨hb, hc, -⟩ := coeffs_of_addPolynomial_eq ((addPolynomial_eq_eval hy₁).trans hW)
     -- When the first two points coincide, the line has the slope of the tangent there.
     have htangent (hx : x₁ = x₂) :
         ℓ * (2 * y₁ + W.a₁ * x₁ + W.a₃) = 3 * x₁ ^ 2 + 2 * W.a₂ * x₁ + W.a₄ - W.a₁ * y₁ := by
