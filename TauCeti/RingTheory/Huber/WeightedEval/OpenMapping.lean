@@ -21,7 +21,7 @@ map. Evaluation `A⟨X₁, …, Xₙ⟩_T → B` at a weight-bounded family `b�
 completion (`weightedEvalHomCompletion`), is an open quotient map as soon as the `bᵢ` span `B` as
 an `A`-module. It is surjective because already the linear polynomials `∑ aᵢ Xᵢ` hit every element
 of `B`, and open by the open mapping theorem over a Tate ring
-(`TauCeti.Huber.IsTateRing.isOpenMap_of_isTateRing`), applied to the evaluation as an `A`-linear
+(`LinearMap.isOpenMap_of_isTateRing`), applied to the evaluation as an `A`-linear
 map between complete metrizable modules.
 
 ## Main results
