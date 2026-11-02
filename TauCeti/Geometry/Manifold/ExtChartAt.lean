@@ -390,7 +390,7 @@ theorem extChartAt_target_subset (U : Opens M) (x : U) :
 
 /-- On the inherited chart target, the inverse extended chart followed by inclusion is the
 ambient inverse extended chart. -/
-theorem extChartAt_subtype_val_symm (U : Opens M) (x : U) {z : E}
+theorem coe_extChartAt_symm_apply (U : Opens M) (x : U) {z : E}
     (hz : z ∈ (extChartAt I x).target) :
     ((extChartAt I x).symm z : M) = (extChartAt I (x : M)).symm z := by
   simp only [extChartAt, OpenPartialHomeomorph.extend_target] at hz

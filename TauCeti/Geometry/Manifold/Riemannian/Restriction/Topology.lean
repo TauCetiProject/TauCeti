@@ -46,13 +46,13 @@ theorem chartMetric_restrictOpenTangentSpace
   have hτ : EqOn (extChartAt I (x : M) ∘ (Subtype.val : U → M) ∘
       (extChartAt I x).symm) id (extChartAt I x).target := by
     intro y hy
-    simp only [Function.comp_apply, U.extChartAt_subtype_val_symm x hy, id_eq]
+    simp only [Function.comp_apply, U.coe_extChartAt_symm_apply x hy, id_eq]
     exact (extChartAt I (x : M)).right_inv (U.extChartAt_target_subset x hy)
   have hzRange := extChartAt_target_subset_range x hz
   have hd := (hτ.eventuallyEq_of_mem
     (extChartAt_target_mem_nhdsWithin_of_mem hz)).fderivWithin_eq_of_mem (𝕜 := ℝ) hzRange
   have hsource : ((extChartAt I x).symm z : M) ∈ (extChartAt I (x : M)).source := by
-    rw [U.extChartAt_subtype_val_symm x hz]
+    rw [U.coe_extChartAt_symm_apply x hz]
     exact (extChartAt I (x : M)).map_target (U.extChartAt_target_subset x hz)
   rw [restrictOpenTangentSpace_eq_pullback,
     chartMetric_pullback g contMDiff_subtype_val
