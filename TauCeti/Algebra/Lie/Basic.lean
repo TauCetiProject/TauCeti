@@ -399,6 +399,7 @@ theorem _root_.LieHom.map_ad_pow (f : L →ₗ⁅R⁆ L') (x : L) (n : ℕ) (y :
 
 /-- **A Lie algebra isomorphism carries Engel subalgebras to Engel subalgebras.** The image
 under `e` of the Engel subalgebra of `x` is the Engel subalgebra of `e x`. -/
+@[simp]
 theorem _root_.LieEquiv.map_engel (e : L ≃ₗ⁅R⁆ L') (x : L) :
     (LieSubalgebra.engel R x).map e.toLieHom = LieSubalgebra.engel R (e x) := by
   ext y
