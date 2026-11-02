@@ -344,11 +344,9 @@ private lemma relativeSpecSymmetricAlgebraPullbackHomEquiv_map_comp_totalSpacePu
 -- The equation `M' = f^* M` is a hypothesis so that it can be eliminated: the sheaf underlying a
 -- pulled-back finite locally free sheaf is equal, but not syntactically equal, to the pullback
 -- of the underlying sheaf.
-/-- The base-change maps of linear functionals along `q ≫ f`, `f` and `q` are compatible with the
-identifications `Scheme.Modules.dualHomUnitEquiv` of sections of `(q ≫ f)^* M` and of `q^* M'`,
-for a sheaf `M'` equal to `f^* M`: a functional on `(q ≫ f)^* M^∨` obtained from a functional
-`ψ` on `q^* M'^∨` corresponds to the section of `q^* M'` of `ψ`, through `q^* f^* M ≅ (q ≫ f)^* M`.
--/
+/-- `Scheme.Hom.dualHomUnitEquiv_inv_pullbackIhomComparison_app_unit_comp` for a sheaf `M'` equal
+to `f^* M`: a functional on `(q ≫ f)^* M^∨` obtained from a functional `ψ` on `q^* M'^∨`
+corresponds to the section of `q^* M'` of `ψ`, through `q^* f^* M ≅ (q ≫ f)^* M`. -/
 private lemma dualHomUnitEquiv_inv_comp_eq_of_pullbackComp {T : Scheme.{u}} (q : T ⟶ Y)
     (M : X.Modules) [M.IsQuasicoherent] [M.IsLocallyFree] [M.IsFiniteType]
     (M' : Y.Modules) [M'.IsQuasicoherent] [M'.IsLocallyFree] [M'.IsFiniteType]
@@ -376,13 +374,7 @@ private lemma dualHomUnitEquiv_inv_comp_eq_of_pullbackComp {T : Scheme.{u}} (q :
           (Scheme.Modules.pullbackComp q f).hom.app M := by
   subst hψ h
   simp only [eqToHom_refl, Category.comp_id, Category.id_comp]
-  refine Eq.trans ?_ (Scheme.Modules.dualHomUnitEquiv_pre_comp _ _)
-  refine congrArg _ ((IsIso.inv_comp_eq _).2 ?_)
-  -- The coherence of the base-change maps of linear functionals with composition.
-  exact (congrArg (_ ≫ _ ≫ ·) ((IsIso.hom_inv_id_assoc _ _).symm.trans
-    (Category.assoc _ _ _))).trans
-      ((Scheme.Hom.pullbackIhomComparison_app_unit_comp_assoc q f M _).trans
-        (Category.assoc _ _ _).symm)
+  exact Scheme.Hom.dualHomUnitEquiv_inv_pullbackIhomComparison_app_unit_comp q f M ψ
 
 /-- **Base change of the total space on points.** For a scheme `q : T ⟶ Y` over `Y` and a point
 `t : T ⟶ 𝕍(f^* E)` over `Y`, the section of `(q ≫ f)^* E` of the projection of `t` to `𝕍(E)` is
