@@ -498,7 +498,7 @@ theorem isHomeomorph_toCompletedGroupAlgebra_weak :
 
 open Topology in
 /-- Integral measures on a profinite group form a topological ring for the weak topology. -/
-theorem isTopologicalRing_integralMeasures_weak :
+theorem _root_.TauCeti.isTopologicalRing_integralMeasures_weak :
     @IsTopologicalRing D(Γ, ℤ_[p]) WeakTopology _ := by
   let : TopologicalSpace D(Γ, ℤ_[p]) := WeakTopology
   have h := (isHomeomorph_toCompletedGroupAlgebra_weak (Γ := Γ) (p := p)).isEmbedding.isInducing
