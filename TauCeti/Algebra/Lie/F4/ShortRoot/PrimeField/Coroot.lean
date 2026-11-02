@@ -55,52 +55,6 @@ local notation "J" => CommHopfAlgCat.commonKernelHopfIdeal generator
 
 variable (B : Type*) [CommRing B] [Algebra (ZMod 2) B]
 
-/-- The differential of the carrier's closed immersion into `GL₂₆`, in matrix form. -/
-def tangentMatrixLieHom :
-    Derivation (ZMod 2) Q (Bialgebra.CounitAlgebra (ZMod 2) Q B) →ₗ⁅B⁆
-      Matrix (Fin 26) (Fin 26) B :=
-  (GeneralLinear.tangentLieEquivMatrix (R := ZMod 2) (B := B) 26).toLieHom.comp
-    (HopfIdeal.quotientLieHom (B := B) J)
-
-/-- The tangent inclusion evaluates the included derivation on the generic matrix. -/
-theorem tangentMatrixLieHom_apply
-    (d : Derivation (ZMod 2) Q (Bialgebra.CounitAlgebra (ZMod 2) Q B)) :
-    tangentMatrixLieHom B d = GeneralLinear.tangentMatrix 26
-      (HopfIdeal.quotientLieHom J d) := by
-  simp only [tangentMatrixLieHom, LieHom.comp_apply, LieEquiv.coe_toLieHom,
-    GeneralLinear.tangentLieEquivMatrix_apply]
-
-/-- The closed-immersion differential is injective for arbitrary tangent coefficients. -/
-theorem tangentMatrixLieHom_injective : Function.Injective (tangentMatrixLieHom B) :=
-  (GeneralLinear.tangentLieEquivMatrix (R := ZMod 2) (B := B) 26).injective.comp
-    (HopfIdeal.quotientLieHom_injective J)
-
-/-- The normalized differential of a numbered signed simple-root subgroup. -/
-def rootDerivation (k : Fin 4 ⊕ Fin 4) :
-    Derivation (ZMod 2) Q (Bialgebra.CounitAlgebra (ZMod 2) Q B) :=
-  derivationComp (B := B) (CommHopfAlgCat.commonKernelLift generator (.inl k)).hom
-    ((AdditiveGroup.gaTangentLinearEquiv (R := ZMod 2) (B := B)).symm 1)
-
-/-- The normalized root differential is the image of the additive unit tangent vector. -/
-theorem rootDerivation_def (k : Fin 4 ⊕ Fin 4) :
-    rootDerivation B k =
-      derivationComp (B := B) (CommHopfAlgCat.commonKernelLift generator (.inl k)).hom
-        ((AdditiveGroup.gaTangentLinearEquiv (R := ZMod 2) (B := B)).symm 1) :=
-  (rfl)
-
-/-- The normalized differential has the integral Chevalley matrix with coefficients in `B`. -/
-@[simp]
-theorem tangentMatrixLieHom_rootDerivation (k : Fin 4 ⊕ Fin 4) :
-    tangentMatrixLieHom B (rootDerivation B k) =
-      (rootMatrix k).map (Int.cast : ℤ → B) := by
-  have hcomp : (CommHopfAlgCat.commonKernelLift generator (.inl k)).hom.comp
-      (Bialgebra.Quotient.mkBialgHom (J).toIdeal) = (generator (.inl k)).hom := by
-    rw [← CommHopfAlgCat.hom_mkQuotient, ← CommHopfAlgCat.hom_comp,
-      CommHopfAlgCat.mkQuotient_comp_commonKernelLift]
-  rw [tangentMatrixLieHom_apply, rootDerivation_def, HopfIdeal.quotientLieHom_apply,
-    ← LinearMap.comp_apply, ← derivationComp_comp, hcomp,
-    tangentMatrix_derivationComp_generator_inl, LinearEquiv.apply_symm_apply, one_smul]
-
 /-- The bracket of the normalized opposite-root differentials. -/
 def cartanDerivation (i : Fin 4) :
     Derivation (ZMod 2) Q (Bialgebra.CounitAlgebra (ZMod 2) Q B) :=
@@ -117,15 +71,8 @@ theorem tangentMatrixLieHom_cartanDerivation (i : Fin 4) :
     tangentMatrixLieHom B (cartanDerivation B i) = cartanMatrixBaseChange B i := by
   rw [cartanDerivation_def, LieHom.map_lie, tangentMatrixLieHom_rootDerivation,
     tangentMatrixLieHom_rootDerivation, rootMatrix_inl, rootMatrix_inr]
-  have hE (j : Fin 4) : raisingMatrixBaseChange B j =
-      (raisingMatrix j).map (Int.cast : ℤ → B) := by
-    ext a b
-    exact raisingMatrixBaseChange_apply B j a b
-  have hF (j : Fin 4) : loweringMatrixBaseChange B j =
-      (loweringMatrix j).map (Int.cast : ℤ → B) := by
-    ext a b
-    exact loweringMatrixBaseChange_apply B j a b
-  simpa only [hE, hF] using (isSerreSystemBaseChange B).lie_E_F_self i
+  simpa only [raisingMatrixBaseChange_eq_map, loweringMatrixBaseChange_eq_map] using
+    (isSerreSystemBaseChange B).lie_E_F_self i
 
 /-- The actual root differentials satisfy the F₄ Serre relations, with Cartan rows indexed by
 coroots, including in characteristic two. -/
@@ -133,23 +80,21 @@ theorem isSerreSystem_rootDerivation :
     IsSerreSystem B CartanMatrix.F₄ᵀ (cartanDerivation B)
       (fun i ↦ rootDerivation B (.inl i)) (fun i ↦ rootDerivation B (.inr i)) := by
   apply IsSerreSystem.of_injective (tangentMatrixLieHom B) (tangentMatrixLieHom_injective B)
-  have hE : raisingMatrixBaseChange B =
-      fun i ↦ (raisingMatrix i).map (Int.cast : ℤ → B) := by
-    ext i a b
-    exact raisingMatrixBaseChange_apply B i a b
-  have hF : loweringMatrixBaseChange B =
-      fun i ↦ (loweringMatrix i).map (Int.cast : ℤ → B) := by
-    ext i a b
-    exact loweringMatrixBaseChange_apply B i a b
-  convert isSerreSystemBaseChange B using 1
-  · funext i
+  have hH : tangentMatrixLieHom B ∘ cartanDerivation B = cartanMatrixBaseChange B := by
+    funext i
     exact tangentMatrixLieHom_cartanDerivation B i
-  · funext i
-    rw [Function.comp_apply, tangentMatrixLieHom_rootDerivation, rootMatrix_inl]
-    exact (congrFun hE i).symm
-  · funext i
-    rw [Function.comp_apply, tangentMatrixLieHom_rootDerivation, rootMatrix_inr]
-    exact (congrFun hF i).symm
+  have hE : tangentMatrixLieHom B ∘ (fun i ↦ rootDerivation B (.inl i)) =
+      raisingMatrixBaseChange B := by
+    funext i
+    rw [Function.comp_apply, tangentMatrixLieHom_rootDerivation, rootMatrix_inl,
+      raisingMatrixBaseChange_eq_map]
+  have hF : tangentMatrixLieHom B ∘ (fun i ↦ rootDerivation B (.inr i)) =
+      loweringMatrixBaseChange B := by
+    funext i
+    rw [Function.comp_apply, tangentMatrixLieHom_rootDerivation, rootMatrix_inr,
+      loweringMatrixBaseChange_eq_map]
+  rw [hH, hE, hF]
+  exact isSerreSystemBaseChange B
 
 /-- The comparison from the F₄ Serre presentation to the carrier's tangent Lie algebra. -/
 def tangentSerreLift : Matrix.ToLieAlgebra B CartanMatrix.F₄ᵀ →ₗ⁅B⁆
@@ -179,21 +124,17 @@ theorem tangentMatrixLieHom_comp_tangentSerreLift :
     (tangentMatrixLieHom B).comp (tangentSerreLift B) = serreRepresentationBaseChange B := by
   apply serre_hom_ext
   · intro i
-    rw [LieHom.comp_apply]
-    erw [tangentSerreLift_serreH, tangentMatrixLieHom_cartanDerivation,
+    change tangentMatrixLieHom B (tangentSerreLift B (serreH B CartanMatrix.F₄ᵀ i)) = _
+    rw [tangentSerreLift_serreH, tangentMatrixLieHom_cartanDerivation,
       serreRepresentationBaseChange_serreH]
   · intro i
-    rw [LieHom.comp_apply]
-    erw [tangentSerreLift_serreE, tangentMatrixLieHom_rootDerivation,
-      serreRepresentationBaseChange_serreE, rootMatrix_inl]
-    ext a b
-    exact (raisingMatrixBaseChange_apply B i a b).symm
+    change tangentMatrixLieHom B (tangentSerreLift B (serreE B CartanMatrix.F₄ᵀ i)) = _
+    rw [tangentSerreLift_serreE, tangentMatrixLieHom_rootDerivation,
+      serreRepresentationBaseChange_serreE, rootMatrix_inl, raisingMatrixBaseChange_eq_map]
   · intro i
-    rw [LieHom.comp_apply]
-    erw [tangentSerreLift_serreF, tangentMatrixLieHom_rootDerivation,
-      serreRepresentationBaseChange_serreF, rootMatrix_inr]
-    ext a b
-    exact (loweringMatrixBaseChange_apply B i a b).symm
+    change tangentMatrixLieHom B (tangentSerreLift B (serreF B CartanMatrix.F₄ᵀ i)) = _
+    rw [tangentSerreLift_serreF, tangentMatrixLieHom_rootDerivation,
+      serreRepresentationBaseChange_serreF, rootMatrix_inr, loweringMatrixBaseChange_eq_map]
 
 /-- The simple-coroot cocharacter defined by evaluation in fundamental-weight coordinates. -/
 def corootCocharacter (i : Fin 4) : Q →ₐc[ZMod 2] LaurentPolynomial (ZMod 2) :=
