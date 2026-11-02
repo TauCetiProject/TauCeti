@@ -201,7 +201,7 @@ private lemma of_bounded_quotient_obj_aux (K : CochainComplex C ℤ)
         fun n hn ↦ K.isZero_X_of_notMem_Icc a (b + 1) hn
     have hX₃ : SplitK0.eulerChar X₃ s = SplitK0.eulerChar X₃ (Finset.Icc a b) :=
       SplitK0.eulerChar_eq_eulerChar_of_isZero X₃ hs₃
-        fun n hn ↦ X₃.isZero_X_of_notMem_Icc a b hn
+        fun n hn ↦ CochainComplex.isZero_X_of_notMem_Icc X₃ a b hn
     calc _ = ((b + 1).negOnePow : ℤ) • SplitK0.toBoundedHomotopy C (SplitK0.of (K.X (b + 1))) +
           SplitK0.toBoundedHomotopy C (SplitK0.eulerChar X₃ s) := by
             rw [htri, ih _ s hs₃, SplitK0.toBoundedHomotopy_of]
