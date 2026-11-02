@@ -21,11 +21,10 @@ the open image crosscut together with those ends. This file packages the same cu
 `Path`: its range is exactly that closure, it follows the usual angular parametrisation in its
 interior, and that interior is injective when the holomorphic map is injective on the disc.
 
-This is a topological input to layer **L5** of the conformal-mapping roadmap
-(`TauCetiRoadmap/ConformalMapping/README.md`), the Carathéodory boundary correspondence. The next
-separation step joins a closed image crosscut to one of the two arcs that its endpoints cut from
-the Jordan boundary. The set-level description of the closure does not by itself supply the
-continuous parametrisation that such an argument needs; the path below does.
+This is a topological input to the Carathéodory boundary correspondence. Its separation step joins a
+closed image crosscut to one of the two arcs that its endpoints cut from the Jordan boundary. The
+set-level description of the closure does not by itself supply the continuous parametrisation that
+such an argument needs; the path below does.
 
 ## Construction
 

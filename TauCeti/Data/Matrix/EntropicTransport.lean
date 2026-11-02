@@ -183,7 +183,7 @@ theorem entropicTransportValue_eq_of_isMinOn
 theorem entropicTransportObjective_add (C H : Matrix ι κ ℝ) (ε : ℝ) (a : ι → ℝ) (b : κ → ℝ)
     (P : Matrix ι κ ℝ) :
     (C + H).entropicTransportObjective ε a b P = C.entropicTransportObjective ε a b P + ⟪H, P⟫ := by
-  simp only [entropicTransportObjective_def, frobenius_inner_def, add_apply, add_mul,
+  simp only [entropicTransportObjective_def, frobenius_real_inner_eq_sum_mul, add_apply, add_mul,
     Finset.sum_add_distrib]
   ring
 
@@ -299,7 +299,7 @@ private theorem mul_sum_sum_sub_mul_log_sub_log_eq (hε : 0 < ε) (ha : ∀ i, 0
     refine Finset.sum_congr rfl fun j _ ↦ ?_
     simp only [sub_apply]
     ring
-  rw [frobenius_inner_def]
+  rw [frobenius_real_inner_eq_sum_mul]
   linarith
 
 /-- **The optimal plan is a Lipschitz function of the cost.** For a positive temperature and
@@ -320,7 +320,7 @@ theorem norm_sub_le_of_isMinOn_entropicTransportObjective (hε : 0 < ε) (ha : �
       _ ≤ m := Finset.single_le_sum (fun i' _ ↦ (ha i').le) (Finset.mem_univ i)
   -- Strong monotonicity of the logarithm on `(0, m]`, summed over the entries.
   have hsq : ‖P - Q‖ ^ 2 ≤ m * ∑ i, ∑ j, (P i j - Q i j) * (log (P i j) - log (Q i j)) := by
-    rw [← real_inner_self_eq_norm_sq, frobenius_inner_def, Finset.mul_sum]
+    rw [← real_inner_self_eq_norm_sq, frobenius_real_inner_eq_sum_mul, Finset.mul_sum]
     refine Finset.sum_le_sum fun i _ ↦ ?_
     rw [Finset.mul_sum]
     refine Finset.sum_le_sum fun j _ ↦ ?_

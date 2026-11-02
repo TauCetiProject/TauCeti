@@ -258,6 +258,14 @@ theorem fderiv_spatialFDeriv_eq (f : ParabolicC2HolderSpace α E F hab)
     (t : Icc a b) (x : E) : fderiv ℝ (fun y ↦ spatialFDerivL f (slabMk y t)) x =
       spatialSecondFDerivL f (slabMk x t) := (f.hasSpatialSecondFDerivAt t x).fderiv
 
+/-- The second Fréchet derivative of each spatial slice is the Hessian field. -/
+@[simp]
+theorem fderiv_fderiv_eq (f : ParabolicC2HolderSpace α E F hab) (t : Icc a b) (x : E) :
+    fderiv ℝ (fderiv ℝ fun y ↦ f (slabMk y t)) x = spatialSecondFDerivL f (slabMk x t) := by
+  have hx : fderiv ℝ (fun y ↦ f (slabMk y t)) =
+      fun y ↦ spatialFDerivL f (slabMk y t) := funext (f.fderiv_eq t)
+  rw [hx, f.fderiv_spatialFDeriv_eq]
+
 @[simp]
 theorem derivWithin_eq (f : ParabolicC2HolderSpace α E F hab) (x : E) (t : Icc a b) :
     derivWithin (timeExtension hab.le f x) (Icc a b) t = timeDerivL f (slabMk x t) :=
@@ -414,20 +422,14 @@ theorem iteratedFDeriv_two_apply (f : ParabolicC2HolderSpace α E F hab)
     (t : Icc a b) (x : E) (v : Fin 2 → E) :
     iteratedFDeriv ℝ 2 (fun y ↦ f (slabMk y t)) x v =
       spatialSecondFDerivL f (slabMk x t) (v 0) (v 1) := by
-  rw [_root_.iteratedFDeriv_two_apply]
-  have hx : fderiv ℝ (fun y ↦ f (slabMk y t)) =
-      fun y ↦ spatialFDerivL f (slabMk y t) := funext (f.fderiv_eq t)
-  rw [hx, f.fderiv_spatialFDeriv_eq]
+  rw [_root_.iteratedFDeriv_two_apply, f.fderiv_fderiv_eq]
 
 /-- The iterated derivative uses its continuous multilinear operator norm. -/
 theorem norm_iteratedFDeriv_two (f : ParabolicC2HolderSpace α E F hab)
     (t : Icc a b) (x : E) :
     ‖iteratedFDeriv ℝ 2 (fun y ↦ f (slabMk y t)) x‖ =
       ‖spatialSecondFDerivL f (slabMk x t)‖ := by
-  rw [← norm_iteratedFDeriv_fderiv (n := 1), norm_iteratedFDeriv_one]
-  have hx : fderiv ℝ (fun y ↦ f (slabMk y t)) =
-      fun y ↦ spatialFDerivL f (slabMk y t) := funext (f.fderiv_eq t)
-  rw [hx, f.fderiv_spatialFDeriv_eq]
+  rw [← norm_iteratedFDeriv_fderiv (n := 1), norm_iteratedFDeriv_one, f.fderiv_fderiv_eq]
 
 /-- The temporal gradient seminorm is controlled by the top-order parabolic seminorms. -/
 theorem timeEHolderNorm_spatialFDeriv_le (f : ParabolicC2HolderSpace α E F hab) :
