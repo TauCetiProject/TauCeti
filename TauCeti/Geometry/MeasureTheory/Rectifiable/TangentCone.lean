@@ -84,33 +84,19 @@ theorem CountablyRectifiable.exists_measurable_cover_forall_infDist_le
         ∀ ε > (0 : ℝ), ∃ r > 0, ∀ z ∈ T n, dist z y < r →
           infDist (z - y) (P : Set V) ≤ ε * dist z y := by
   classical
-  obtain ⟨A, f, hAm, hbi, hcover⟩ := hs.exists_bilipschitz_cover
-  choose K L hK hL using hbi
-  -- Work with total parametrizations so that Lipschitz extension and differentiation apply.
-  let F (n : ℕ) : EuclideanSpace ℝ (Fin k) → V :=
-    Function.extend Subtype.val (f n) (fun _ ↦ 0)
-  have hF (n : ℕ) (x : A n) : F n x = f n x :=
-    Subtype.val_injective.extend_apply _ _ x
-  have hLip (n : ℕ) : LipschitzOnWith (K n) (F n) (A n) := by
-    intro x hx y hy
-    simpa only [hF n ⟨x, hx⟩, hF n ⟨y, hy⟩, Subtype.edist_eq] using
-      hK n ⟨x, hx⟩ ⟨y, hy⟩
-  have hAnti (n : ℕ) : AntilipschitzWith (L n) ((A n).domRestrict (F n)) := by
-    intro x y
-    simpa only [domRestrict_apply, hF] using hL n x y
+  obtain ⟨A, F, hAm, hbi, hcover⟩ := hs.exists_bilipschitz_cover
+  choose K L hLip hAnti using hbi
   let S (n : ℕ) := F n '' A n
   have hSm (n : ℕ) : MeasurableSet (S n) :=
-    (hAm n).image_of_continuousOn_injOn (hLip n).continuousOn
+    (hAm n).image_of_continuousOn_injOn (hLip n).continuous.continuousOn
       (injOn_iff_injective.mpr (hAnti n).injective)
-  have hS (n : ℕ) : S n = range (f n) := by
-    simp only [S, image_eq_range, hF]
   let G (n : ℕ) : Set V := {y | ∃ P : Submodule ℝ V, Module.finrank ℝ P = k ∧
     ∀ ε > (0 : ℝ), ∃ r > 0, ∀ z ∈ S n, dist z y < r →
       infDist (z - y) (P : Set V) ≤ ε * dist z y}
   have hgood (n : ℕ) : ∀ᵐ y ∂(μHE[k] : Measure V).restrict (S n), y ∈ G n := by
     apply (ae_restrict_iff' (hSm n)).mpr
     simpa only [finrank_euclideanSpace_fin, G, S, mem_ofPred_eq] using
-      (hLip n).ae_exists_submodule_forall_infDist_le (hAnti n)
+      (hLip n).lipschitzOnWith.ae_exists_submodule_forall_infDist_le (hAnti n)
   -- Choose measurable full-measure subsets where cone containment holds pointwise.
   choose B hBae hBm hBG using fun n ↦ (hgood n).exists_measurable_mem
   let T (n : ℕ) := S n ∩ B n
@@ -119,7 +105,6 @@ theorem CountablyRectifiable.exists_measurable_cover_forall_infDist_le
     exact ⟨hys, hy hys⟩
   refine ⟨T, fun n ↦ (hSm n).inter (hBm n), ?_, ?_⟩
   · apply ae_le_set.mp
-    simp_rw [← hS] at hcover
     exact (ae_le_set.mpr hcover).trans (Filter.EventuallySubset.countable_iUnion hST)
   · intro n y hy
     obtain ⟨P, hdim, hP⟩ := hBG n y hy.2
