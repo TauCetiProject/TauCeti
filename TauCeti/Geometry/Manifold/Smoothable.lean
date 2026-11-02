@@ -19,9 +19,8 @@ projective plane `∗ℂℙ²` does not, and by Ruberman and Stern the connected
 does.
 
 Every `C^∞` manifold is smoothable (`TauCeti.IsSmoothable.of_isManifold`), and smoothability is
-invariant under homeomorphisms (`TauCeti.isSmoothable_congr`): a smooth atlas of `M` is pulled back
-along a homeomorphism `N ≃ₜ M` to a smooth atlas of `N`
-(`Homeomorph.pullback_isManifold`).
+invariant under homeomorphisms (`Homeomorph.isSmoothable_congr`): a smooth atlas of `M` is pulled
+back along a homeomorphism `N ≃ₜ M` to a smooth atlas of `N` (`Homeomorph.pullback_isManifold`).
 
 ## Main definitions
 
@@ -29,8 +28,9 @@ along a homeomorphism `N ≃ₜ M` to a smooth atlas of `N`
 
 ## Main results
 
+* `TauCeti.isSmoothable_iff`: a smoothable space is one with a smooth atlas.
 * `TauCeti.IsSmoothable.of_isManifold`: a `C^∞` manifold is smoothable.
-* `TauCeti.IsSmoothable.of_homeomorph`, `TauCeti.isSmoothable_congr`: smoothability is invariant
+* `TauCeti.IsSmoothable.of_homeomorph`, `Homeomorph.isSmoothable_congr`: smoothability is invariant
   under homeomorphisms.
 -/
 
@@ -52,18 +52,33 @@ def IsSmoothable : Prop :=
 
 variable {I M}
 
+/-- A space is smoothable exactly when some atlas of charts to `H` makes it a `C^∞` manifold for
+`I`. -/
+theorem isSmoothable_iff : IsSmoothable I M ↔ ∃ _ : ChartedSpace H M, IsManifold I ∞ M :=
+  Iff.rfl
+
 /-- A `C^∞` manifold is smoothable. -/
 theorem IsSmoothable.of_isManifold [ChartedSpace H M] [IsManifold I ∞ M] : IsSmoothable I M :=
   ⟨inferInstance, inferInstance⟩
 
 /-- Smoothability is transported backwards along a homeomorphism: a smooth atlas of `M` pulls back
 along `e : N ≃ₜ M` to a smooth atlas of `N`. -/
-theorem IsSmoothable.of_homeomorph (e : N ≃ₜ M) (h : IsSmoothable I M) : IsSmoothable I N := by
+theorem IsSmoothable.of_homeomorph (h : IsSmoothable I M) (e : N ≃ₜ M) : IsSmoothable I N := by
   obtain ⟨_, _⟩ := h
   exact ⟨e.pullbackChartedSpace, Homeomorph.pullback_isManifold I ∞ e⟩
 
+end TauCeti
+
+namespace Homeomorph
+
+open TauCeti
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E] {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {M : Type*} [TopologicalSpace M] {N : Type*} [TopologicalSpace N]
+
 /-- Smoothability is invariant under homeomorphisms. -/
 theorem isSmoothable_congr (e : N ≃ₜ M) : IsSmoothable I N ↔ IsSmoothable I M :=
-  ⟨IsSmoothable.of_homeomorph e.symm, IsSmoothable.of_homeomorph e⟩
+  ⟨fun h => h.of_homeomorph e.symm, fun h => h.of_homeomorph e⟩
 
-end TauCeti
+end Homeomorph

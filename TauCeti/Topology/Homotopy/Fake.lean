@@ -19,7 +19,7 @@ Statements about such manifolds quantify over the spaces with `TauCeti.IsFake M 
 whatever manifold hypotheses they need on `X`.
 
 Being a fake `M` only depends on `X` and `M` up to homeomorphism
-(`TauCeti.isFake_congr_left`, `TauCeti.isFake_congr_right`), no space is a fake copy of itself
+(`Homeomorph.isFake_congr_left`, `Homeomorph.isFake_congr_right`), no space is a fake copy of itself
 (`TauCeti.not_isFake_self`), and the predicate is not empty: the real line is a fake point
 (`TauCeti.isFake_punit_real`), since it is contractible.
 
@@ -29,7 +29,8 @@ Being a fake `M` only depends on `X` and `M` up to homeomorphism
 
 ## Main results
 
-* `TauCeti.isFake_congr_left`, `TauCeti.isFake_congr_right`: invariance under homeomorphisms.
+* `Homeomorph.isFake_congr_left`, `Homeomorph.isFake_congr_right`: invariance under
+  homeomorphisms.
 * `TauCeti.IsFake.not_homeomorph`: a fake `M` is not homeomorphic to `M`.
 * `TauCeti.not_isFake_self`: no space is a fake copy of itself.
 * `TauCeti.isFake_punit_real`: the real line is a fake point.
@@ -48,10 +49,9 @@ open ContinuousMap
 
 namespace TauCeti
 
-universe u v w
+universe u v
 
-variable {M : Type u} {M' : Type w} {X : Type v} {X' : Type w} [TopologicalSpace M]
-  [TopologicalSpace M'] [TopologicalSpace X] [TopologicalSpace X']
+variable {M : Type u} {X : Type v} [TopologicalSpace M] [TopologicalSpace X]
 
 variable (M X) in
 /-- A space `X` is a **fake** `M` if it is homotopy equivalent to `M` but not homeomorphic to it.
@@ -75,6 +75,27 @@ theorem not_homeomorph (h : IsFake M X) (e : X ≃ₜ M) : False :=
 
 end IsFake
 
+/-- No space is a fake copy of itself. -/
+@[simp]
+theorem not_isFake_self : ¬ IsFake M M :=
+  fun h => h.not_homeomorph (Homeomorph.refl M)
+
+/-- The real line is a **fake point**: it is contractible, so homotopy equivalent to a point,
+but it has more than one point. -/
+theorem isFake_punit_real : IsFake PUnit.{u + 1} ℝ := by
+  obtain ⟨f⟩ := ContractibleSpace.hequiv_unit ℝ
+  refine ⟨⟨f.trans (Homeomorph.homeomorphOfUnique Unit PUnit).toHomotopyEquiv⟩, fun ⟨e⟩ => ?_⟩
+  exact zero_ne_one (e.injective (Subsingleton.elim (e 0) (e 1)))
+
+end TauCeti
+
+namespace Homeomorph
+
+open TauCeti
+
+variable {M : Type*} {M' : Type*} {X : Type*} {X' : Type*} [TopologicalSpace M]
+  [TopologicalSpace M'] [TopologicalSpace X] [TopologicalSpace X']
+
 /-- Being a fake `M` only depends on `M` up to homeomorphism. -/
 theorem isFake_congr_left (e : M ≃ₜ M') : IsFake M X ↔ IsFake M' X := by
   constructor
@@ -91,16 +112,4 @@ theorem isFake_congr_right (e : X ≃ₜ X') : IsFake M X ↔ IsFake M X' := by
   · rintro ⟨⟨f⟩, hf⟩
     exact ⟨⟨e.toHomotopyEquiv.trans f⟩, fun ⟨g⟩ => hf ⟨e.symm.trans g⟩⟩
 
-/-- No space is a fake copy of itself. -/
-@[simp]
-theorem not_isFake_self : ¬ IsFake M M :=
-  fun h => h.not_homeomorph (Homeomorph.refl M)
-
-/-- The real line is a **fake point**: it is contractible, so homotopy equivalent to a point,
-but it has more than one point. -/
-theorem isFake_punit_real : IsFake PUnit.{u + 1} ℝ := by
-  obtain ⟨f⟩ := ContractibleSpace.hequiv_unit ℝ
-  refine ⟨⟨f.trans (Homeomorph.homeomorphOfUnique Unit PUnit).toHomotopyEquiv⟩, fun ⟨e⟩ => ?_⟩
-  exact zero_ne_one (e.injective (Subsingleton.elim (e 0) (e 1)))
-
-end TauCeti
+end Homeomorph
