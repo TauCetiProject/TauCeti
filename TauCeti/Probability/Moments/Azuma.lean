@@ -22,6 +22,8 @@ inequality then controls the sum.
   Hoeffding's lemma for an arbitrary interval;
 * `TauCeti.Probability.measureReal_sum_range_ge_le_of_mem_Icc_martingale_differences` — the
   one-sided Azuma-Hoeffding inequality with interval bounds;
+* `TauCeti.Probability.measureReal_abs_sum_range_ge_le_of_mem_Icc_martingale_differences` — its
+  two-sided interval-bounded form;
 * `TauCeti.Probability.measureReal_abs_sum_range_ge_le_of_bounded_martingale_differences` — the
   two-sided bounded-increment form.
 
@@ -133,15 +135,65 @@ theorem measureReal_sum_range_ge_le_of_bounded_martingale_differences
     filter_upwards [hbound i hi] with ω hω
     exact abs_le.mp hω
   have hterm (i : ℕ) :
-      (|((b i : ℝ) + (b i : ℝ))| / 2) ^ 2 = (b i : ℝ) ^ 2 := by
+      ((‖(b i : ℝ) - -(b i : ℝ)‖₊ / 2) ^ 2 : ℝ) = (b i : ℝ) ^ 2 := by
+    simp only [coe_nnnorm, Real.norm_eq_abs, sub_neg_eq_add]
     rw [abs_of_nonneg (by positivity : 0 ≤ (b i : ℝ) + (b i : ℝ))]
     ring
-  simpa [hterm] using
-    (measureReal_sum_range_ge_le_of_mem_Icc_martingale_differences
+  have hbound' := measureReal_sum_range_ge_le_of_mem_Icc_martingale_differences
       (a := fun i => -(b i : ℝ)) (b := fun i => (b i : ℝ))
-      h_adapted n hIcc hmean0 hmean hε)
+      h_adapted n hIcc hmean0 hmean hε
+  simp_rw [hterm] at hbound'
+  exact hbound'
 
-/-- **Two-sided Azuma-Hoeffding inequality.** Under the same assumptions as
+/-- **Two-sided Azuma-Hoeffding inequality for interval-bounded martingale differences.** Under
+the assumptions of the one-sided interval theorem, the absolute value of the sum exceeds `ε` with
+probability at most twice its one-sided bound. -/
+theorem measureReal_abs_sum_range_ge_le_of_mem_Icc_martingale_differences
+    [StandardBorelSpace Ω] [IsProbabilityMeasure μ] {ℱ : Filtration ℕ mΩ}
+    {Y : ℕ → Ω → ℝ} {a b : ℕ → ℝ}
+    (h_adapted : StronglyAdapted ℱ Y) (n : ℕ)
+    (hbound : ∀ i < n, ∀ᵐ ω ∂μ, Y i ω ∈ Set.Icc (a i) (b i))
+    (hmean0 : ∫ ω, Y 0 ω ∂μ = 0)
+    (hmean : ∀ i < n - 1, μ[Y (i + 1) | ℱ i] =ᵐ[μ] 0)
+    {ε : ℝ} (hε : 0 ≤ ε) :
+    μ.real {ω | ε ≤ |∑ i ∈ Finset.range n, Y i ω|} ≤
+      2 * exp (-ε ^ 2 /
+        (2 * ∑ i ∈ Finset.range n, ((‖b i - a i‖₊ / 2) ^ 2 : ℝ))) := by
+  have hneg_adapted : StronglyAdapted ℱ (fun i ω ↦ -Y i ω) := by
+    intro i
+    exact (h_adapted i).neg
+  have hneg_bound : ∀ i < n, ∀ᵐ ω ∂μ, -Y i ω ∈ Set.Icc (-b i) (-a i) := by
+    intro i hi
+    filter_upwards [hbound i hi] with ω hω
+    exact ⟨neg_le_neg hω.2, neg_le_neg hω.1⟩
+  have hneg_mean0 : ∫ ω, -Y 0 ω ∂μ = 0 := by
+    simp [integral_neg, hmean0]
+  have hneg_mean : ∀ i < n - 1, μ[-Y (i + 1) | ℱ i] =ᵐ[μ] 0 := by
+    intro i hi
+    calc
+      μ[-Y (i + 1) | ℱ i] =ᵐ[μ] -μ[Y (i + 1) | ℱ i] := condExp_neg _ _
+      _ =ᵐ[μ] 0 := by simpa using (hmean i hi).neg
+  have hupper := measureReal_sum_range_ge_le_of_mem_Icc_martingale_differences
+    h_adapted n hbound hmean0 hmean hε
+  have hlower := measureReal_sum_range_ge_le_of_mem_Icc_martingale_differences
+    (a := fun i => -b i) (b := fun i => -a i)
+    hneg_adapted n hneg_bound hneg_mean0 hneg_mean hε
+  have hwidth (i : ℕ) : abs (-a i + b i) = abs (b i - a i) := by
+    congr 1
+    ring
+  have hlower' :
+      μ.real {ω | ε ≤ -∑ i ∈ Finset.range n, Y i ω} ≤
+        exp (-ε ^ 2 /
+          (2 * ∑ i ∈ Finset.range n, ((‖b i - a i‖₊ / 2) ^ 2 : ℝ))) := by
+    simpa [hwidth] using hlower
+  calc
+    μ.real {ω | ε ≤ |∑ i ∈ Finset.range n, Y i ω|}
+      ≤ μ.real {ω | ε ≤ ∑ i ∈ Finset.range n, Y i ω} +
+          μ.real {ω | ε ≤ -∑ i ∈ Finset.range n, Y i ω} :=
+        TauCeti.measureReal_le_abs_le_add
+    _ ≤ _ := (add_le_add hupper hlower').trans (le_of_eq (by ring))
+
+/-- **Two-sided Azuma-Hoeffding inequality.** Under the assumptions of
 `measureReal_sum_range_ge_le_of_bounded_martingale_differences`, the absolute value of the sum
 exceeds `ε` with probability at most twice the one-sided bound. -/
 theorem measureReal_abs_sum_range_ge_le_of_bounded_martingale_differences
@@ -154,29 +206,19 @@ theorem measureReal_abs_sum_range_ge_le_of_bounded_martingale_differences
     {ε : ℝ} (hε : 0 ≤ ε) :
     μ.real {ω | ε ≤ |∑ i ∈ Finset.range n, Y i ω|} ≤
       2 * exp (-ε ^ 2 / (2 * ∑ i ∈ Finset.range n, (b i : ℝ) ^ 2)) := by
-  have hneg_adapted : StronglyAdapted ℱ (fun i ω ↦ -Y i ω) := by
-    intro i
-    exact (h_adapted i).neg
-  have hneg_bound : ∀ i < n, ∀ᵐ ω ∂μ, |-(Y i ω)| ≤ (b i : ℝ) := by
+  have hIcc : ∀ i < n, ∀ᵐ ω ∂μ, Y i ω ∈ Set.Icc (-(b i : ℝ)) (b i : ℝ) := by
     intro i hi
-    simpa using hbound i hi
-  have hneg_mean0 : ∫ ω, -Y 0 ω ∂μ = 0 := by
-    simp [integral_neg, hmean0]
-  have hneg_mean : ∀ i < n - 1, μ[-Y (i + 1) | ℱ i] =ᵐ[μ] 0 := by
-    intro i hi
-    calc
-      μ[-Y (i + 1) | ℱ i] =ᵐ[μ] -μ[Y (i + 1) | ℱ i] := condExp_neg _ _
-      _ =ᵐ[μ] 0 := by simpa using (hmean i hi).neg
-  have hupper := measureReal_sum_range_ge_le_of_bounded_martingale_differences
-    h_adapted n hbound hmean0 hmean hε
-  have hlower := measureReal_sum_range_ge_le_of_bounded_martingale_differences
-    hneg_adapted n hneg_bound hneg_mean0 hneg_mean hε
-  simp only [Finset.sum_neg_distrib] at hlower
-  calc
-    μ.real {ω | ε ≤ |∑ i ∈ Finset.range n, Y i ω|}
-      ≤ μ.real {ω | ε ≤ ∑ i ∈ Finset.range n, Y i ω} +
-          μ.real {ω | ε ≤ -∑ i ∈ Finset.range n, Y i ω} :=
-        TauCeti.measureReal_le_abs_le_add
-    _ ≤ _ := (add_le_add hupper hlower).trans (le_of_eq (by ring))
+    filter_upwards [hbound i hi] with ω hω
+    exact abs_le.mp hω
+  have hterm (i : ℕ) :
+      ((‖(b i : ℝ) - -(b i : ℝ)‖₊ / 2) ^ 2 : ℝ) = (b i : ℝ) ^ 2 := by
+    simp only [coe_nnnorm, Real.norm_eq_abs, sub_neg_eq_add]
+    rw [abs_of_nonneg (by positivity : 0 ≤ (b i : ℝ) + (b i : ℝ))]
+    ring
+  have hbound' := measureReal_abs_sum_range_ge_le_of_mem_Icc_martingale_differences
+    (a := fun i => -(b i : ℝ)) (b := fun i => (b i : ℝ))
+    h_adapted n hIcc hmean0 hmean hε
+  simp_rw [hterm] at hbound'
+  exact hbound'
 
 end TauCeti.Probability
