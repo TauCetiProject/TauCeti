@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Matrix.SpectralMeasure.Basic
-public import TauCeti.Analysis.Matrix.Charpoly
+public import TauCeti.Topology.Instances.Matrix
 public import TauCeti.Analysis.Polynomial.SymmetricPower
 public import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Borel
 
@@ -20,14 +20,14 @@ be treated as a random probability measure, even when its eigenvalues collide.
 
 The construction follows `TauCeti.Sym.coeffHomeomorph`: the lower coefficients of a monic
 polynomial determine its root multiset continuously as a point of the symmetric power.
-A continuous test function has a continuous sum on that symmetric power, since its pullback
-to ordered tuples is a finite sum. Thus no continuous ordering of complex roots is required,
-and algebraic multiplicities are preserved throughout.
+The empirical-measure map descends continuously from ordered tuples to that symmetric power,
+using `TauCeti.Probability.continuous_empiricalMeasureOfFintype`. Thus no continuous ordering of
+complex roots is required, and algebraic multiplicities are preserved throughout.
 -/
 
 public section
 
-open MeasureTheory Topology
+open MeasureTheory Topology TauCeti.Probability
 
 namespace Matrix
 
@@ -38,24 +38,38 @@ repeated characteristic roots. -/
 @[continuity, fun_prop]
 theorem continuous_eigenvalueMeasure :
     Continuous (eigenvalueMeasure : Matrix n n ℂ → ProbabilityMeasure ℂ) := by
-  apply ProbabilityMeasure.continuous_iff_forall_continuous_integral.mpr
-  intro f
-  have hsum : Continuous (fun s : Sym ℂ (Fintype.card n) =>
-      ((s : Multiset ℂ).map f).sum) := by
+  classical
+  have hnonempty (s : Sym ℂ (Fintype.card n)) : Nonempty (s : Multiset ℂ) :=
+    Fintype.card_pos_iff.mp (by
+      simpa only [Multiset.card_coe, Sym.card_coe] using Fintype.card_pos (α := n))
+  let μ (s : Sym ℂ (Fintype.card n)) : ProbabilityMeasure ℂ :=
+    letI := hnonempty s
+    empiricalMeasureOfFintype fun z : (s : Multiset ℂ) => (z : ℂ)
+  have hμ : Continuous μ := by
     apply TauCeti.Sym.continuous_iff_comp_ofFn.mpr
-    simpa only [Function.comp_def, TauCeti.Sym.coe_ofFn, Multiset.map_coe,
-      Multiset.sum_coe, List.map_ofFn, List.sum_ofFn, Function.comp_apply] using
-      (continuous_finsetSum (Finset.univ : Finset (Fin (Fintype.card n)))
-        fun i _ => f.continuous.comp (continuous_apply i))
+    have hcomp : μ ∘ TauCeti.Sym.ofFn =
+        (empiricalMeasureOfFintype : (Fin (Fintype.card n) → ℂ) → ProbabilityMeasure ℂ) := by
+      funext a
+      apply empiricalMeasureOfFintype_eq_of_map_univ_val_eq
+      rw [Multiset.map_univ_coe, TauCeti.Sym.coe_ofFn, Fin.univ_val_map]
+    rw [hcomp]
+    exact continuous_empiricalMeasureOfFintype
   have hroots (A : Matrix n n ℂ) :
       (((TauCeti.Sym.coeffHomeomorph ℂ (Fintype.card n)).symm
         (fun i => A.charpoly.coeff i) : Sym ℂ (Fintype.card n)) : Multiset ℂ) =
         A.charpoly.roots := by
-    simp only [TauCeti.Sym.coeffHomeomorph_symm_apply, TauCeti.Sym.coeffEquiv_symm_apply]
-    rw [TauCeti.Polynomial.monicOfCoeff_coeff A.charpoly_monic (charpoly_natDegree_eq_dim A)]
-  simp_rw [integral_eigenvalueMeasure, ← hroots]
-  exact (hsum.comp ((TauCeti.Sym.coeffHomeomorph ℂ (Fintype.card n)).symm.continuous.comp
-    (continuous_pi fun i => continuous_charpoly_coeff i))).fun_const_smul _
+    rw [TauCeti.Sym.coeffHomeomorph_symm_apply,
+      TauCeti.Sym.coeffEquiv_symm_coeff_of_monic A.charpoly_monic (charpoly_natDegree_eq_dim A)]
+  have hmeasure : eigenvalueMeasure = μ ∘ fun A : Matrix n n ℂ =>
+      (TauCeti.Sym.coeffHomeomorph ℂ (Fintype.card n)).symm
+        (fun i => A.charpoly.coeff i) := by
+    funext A
+    rw [eigenvalueMeasure_def]
+    apply empiricalMeasureOfFintype_eq_of_map_univ_val_eq
+    simp only [Multiset.map_univ_coe, hroots]
+  rw [hmeasure]
+  exact hμ.comp ((TauCeti.Sym.coeffHomeomorph ℂ (Fintype.card n)).symm.continuous.comp
+    (continuous_pi fun i => continuous_charpoly_coeff i))
 
 /-- A complex matrix's empirical eigenvalue measure is measurable for the entrywise
 measurable structure. -/
