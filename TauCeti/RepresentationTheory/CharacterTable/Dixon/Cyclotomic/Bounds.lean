@@ -41,9 +41,7 @@ theorem IsGoodDixonPrime.of_two_mul_centralCoefficientBound_lt {e p : ℕ}
     rw [Nat.card_eq_fintype_card]
     exact card_le_centralCoefficientBound G e
   have hsqrt := Nat.sqrt_le_self (Nat.card G)
-  refine ⟨hp, fun h ↦ ?_, he ▸ hdvd, by omega⟩
-  have := Nat.le_of_dvd Nat.card_pos h
-  omega
+  exact .of_lt hp (he ▸ hdvd) (by omega)
 
 /-- **Strong Dixon primes exist.** There is Dixon prime data whose prime exceeds twice the central
 coefficient bound, since there are arbitrarily large primes congruent to `1` modulo the

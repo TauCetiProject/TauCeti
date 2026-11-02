@@ -111,17 +111,17 @@ theorem exists_exact_character_and_central_values
       ∀ j, (w.coeff j).natAbs ≤ centralCoefficientBound G e := by
   obtain ⟨x, hx⟩ := characterTable_mem_range_complexEmbedding e he i C
   obtain ⟨w, hw⟩ := centralCharacterTable_mem_range_complexEmbedding e he i C
-  have hmul := centralCharacterTable_mul_characterDegree (k := ℂ) i C
+  have hmul := (mul_comm _ _).trans (centralCharacterTable_mul_characterDegree (k := ℂ) i C)
   have hbound : ∀ j, (w.coeff j).natAbs ≤ Nat.card C.carrier * Cyclotomic.rootCoeffBound e := by
     intro j
     obtain ⟨g, rfl⟩ := C.exists_rep
     apply Representation.coeff_natAbs_le_of_finrank_mul_complexEmbedding_eq_natCast_mul_char
       (irreducibleRepresentation ℂ i) (he ▸ Monoid.pow_exponent_eq_one g)
       (by simpa using characterDegree_pos ℂ i)
-    simpa only [Module.finrank_fintype_fun_eq_card, Fintype.card_fin, hw, mul_comm,
+    simpa only [Module.finrank_fintype_fun_eq_card, Fintype.card_fin, hw,
       character_irreducibleRepresentation, characterTable_apply] using hmul
   refine ⟨x, w, hx, hw, Cyclotomic.complexEmbedding_injective ?_, hbound, fun j ↦
     (hbound j).trans (natCard_mul_rootCoeffBound_le_centralCoefficientBound e C)⟩
-  simpa only [map_mul, map_natCast, hx, hw, mul_comm] using hmul
+  simpa only [map_mul, map_natCast, hx, hw] using hmul
 
 end TauCeti
