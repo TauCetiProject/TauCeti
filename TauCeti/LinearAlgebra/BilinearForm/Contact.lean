@@ -144,11 +144,7 @@ theorem isContact_smul_iff {c : K} (hc : c ≠ 0) : (c • a).IsContact B ↔ a.
 @[simp]
 theorem isContact_smul_bilinForm_iff {c : K} (hc : c ≠ 0) :
     a.IsContact (c • B) ↔ a.IsContact B := by
-  have hrestrict : (c • B).restrict (LinearMap.ker a) = c • B.restrict (LinearMap.ker a) := by
-    ext v w
-    simp only [LinearMap.BilinForm.restrict_apply, LinearMap.domRestrict_apply,
-      LinearMap.smul_apply]
-  rw [isContact_def, isContact_def, hrestrict,
+  rw [isContact_def, isContact_def, LinearMap.BilinForm.restrict_smul,
     TauCeti.BilinForm.nondegenerate_smul_iff (IsRegular.of_ne_zero hc)]
 
 /-- For an alternating `B`, the kernel of a contact covector has even dimension. -/
