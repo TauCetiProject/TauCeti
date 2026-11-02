@@ -271,28 +271,6 @@ private theorem exists_smoothIsotopy_line_of_map_sub_eq_zero {n : ℕ∞ω} (hn�
     hBemb, L + 1, fun t s hs => ?_⟩
   rw [SmoothIsotopy.ofContDiff_apply, hBline _ s hs, hℓ]
 
-/-- **The projection direction for an arc.** An injective `C²` immersion `γ` of the line in a real
-normed space of dimension at least four has a nonzero direction `d` such that no secant
-`γ s - γ s'` with `s ≠ s'` and no velocity `γ' s` is a multiple of `d`. -/
-private theorem exists_forall_sub_eq_smul_and_deriv_ne {γ : ℝ → V} (hγ : ContDiff ℝ 2 γ)
-    (hV : 4 ≤ finrank ℝ V) (hinj : Injective γ) (hγ' : ∀ s, deriv γ s ≠ 0) :
-    ∃ d : V, d ≠ 0 ∧ (∀ s s' (c : ℝ), γ s - γ s' = c • d → s = s') ∧
-      ∀ s (c : ℝ), deriv γ s ≠ c • d := by
-  obtain ⟨d, hsec, htan⟩ := hγ.exists_forall_smul_sub_ne_and_fderiv_ne
-    (by simp only [finrank_self]; omega)
-  refine ⟨d, fun hd => hsec 0 0 0 (by simp [hd]), fun s s' c h => ?_, fun s c h => ?_⟩
-  · by_contra hne
-    have hc : c ≠ 0 := by
-      rintro rfl
-      exact sub_ne_zero.2 (hinj.ne hne) (by simpa using h)
-    exact hsec s s' c⁻¹ (by rw [h, smul_smul, inv_mul_cancel₀ hc, one_smul])
-  · have hc : c ≠ 0 := by
-      rintro rfl
-      exact hγ' s (by simpa using h)
-    refine htan s c⁻¹ ?_
-    rw [← toSpanSingleton_deriv]
-    simp [h, smul_smul, inv_mul_cancel₀ hc]
-
 /-- **Smooth arcs in dimension at least four are unknotted.** Let `V` be a real normed space of
 dimension at least four, `ℓ : s ↦ p + s • e` an affine line in `V`, and `γ : ℝ → V` an injective
 `C^n` immersion, `2 ≤ n ≤ ∞`, which agrees with `ℓ` for `|s| ≥ R`. Then `γ` is smoothly isotopic
@@ -317,7 +295,7 @@ theorem exists_smoothIsotopy_line_of_four_le_finrank {n : ℕ∞ω} (hn₂ : 2 �
   /- A direction `d` off every secant and tangent line of the arc, and a linear form `φ` with
   `φ d = 1` and `φ e = 0`; `d` is off the line `ℝ ∙ e` since `e` is a velocity of the arc. -/
   obtain ⟨d, hd0, hsec, htan⟩ :=
-    exists_forall_sub_eq_smul_and_deriv_ne (hγ.of_le hn₂) hV hinj hγ'
+    (hγ.of_le hn₂).exists_forall_sub_eq_smul_and_deriv_ne hV hinj hγ'
   have hde : d ∉ (ℝ ∙ e) := fun hd => by
     obtain ⟨a, rfl⟩ := Submodule.mem_span_singleton.1 hd
     have ha : a ≠ 0 := by

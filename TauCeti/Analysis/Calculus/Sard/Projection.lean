@@ -33,6 +33,8 @@ velocity of the moved curve is computed in `TauCeti.hasDerivAt_sub_smul`.
 
 * `ContDiff.exists_forall_smul_sub_ne_and_fderiv_ne`: a vector which is neither on a secant line
   nor a tangent vector of a `C²` map, when `2 * dim E + 1 < dim F`.
+* `ContDiff.exists_forall_sub_eq_smul_and_deriv_ne`: the curve case, for an injective `C²`
+  immersion of the line in dimension at least four.
 * `TauCeti.injective_sub_smul`: `x ↦ f x - ψ (f x - p) • d` is injective when no secant of `f`
   is a multiple of `d`.
 
@@ -82,6 +84,28 @@ theorem ContDiff.exists_forall_smul_sub_ne_and_fderiv_ne {f : E → F} (hf : Con
     exact NeZero.ne μ (Measure.measure_univ_eq_zero.mp h0)
   simp only [mem_compl_iff, mem_union, mem_range, not_or, not_exists, Prod.forall] at hv
   exact ⟨v, fun x y c => hv.1 x y c, fun x w => hv.2 x w⟩
+
+/-- **The projection direction for an arc.** An injective `C²` immersion `γ` of the line in a real
+normed space of dimension at least four has a nonzero direction `d` such that no secant
+`γ s - γ s'` with `s ≠ s'` and no velocity `γ' s` is a multiple of `d`. -/
+theorem ContDiff.exists_forall_sub_eq_smul_and_deriv_ne {γ : ℝ → F} (hγ : ContDiff ℝ 2 γ)
+    (hF : 4 ≤ finrank ℝ F) (hinj : Injective γ) (hγ' : ∀ s, deriv γ s ≠ 0) :
+    ∃ d : F, d ≠ 0 ∧ (∀ s s' (c : ℝ), γ s - γ s' = c • d → s = s') ∧
+      ∀ s (c : ℝ), deriv γ s ≠ c • d := by
+  obtain ⟨d, hsec, htan⟩ := hγ.exists_forall_smul_sub_ne_and_fderiv_ne
+    (by simp only [finrank_self]; omega)
+  refine ⟨d, fun hd => hsec 0 0 0 (by simp [hd]), fun s s' c h => ?_, fun s c h => ?_⟩
+  · by_contra hne
+    have hc : c ≠ 0 := by
+      rintro rfl
+      exact sub_ne_zero.2 (hinj.ne hne) (by simpa using h)
+    exact hsec s s' c⁻¹ (by rw [h, smul_smul, inv_mul_cancel₀ hc, one_smul])
+  · have hc : c ≠ 0 := by
+      rintro rfl
+      exact hγ' s (by simpa using h)
+    refine htan s c⁻¹ ?_
+    rw [← toSpanSingleton_deriv]
+    simp [h, smul_smul, inv_mul_cancel₀ hc]
 
 namespace TauCeti
 
