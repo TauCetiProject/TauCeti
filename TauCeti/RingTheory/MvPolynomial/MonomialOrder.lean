@@ -159,17 +159,15 @@ theorem withBotDegree_sub_lt [CommRing R] {f q : MvPolynomial σ R} (hf : f ≠ 
   rw [heq.1, mem_support_iff, coeff_sub, hqf, leadingCoeff, sub_self] at this
   exact this rfl
 
-/-- Subtracting polynomials with equal leading exponents and leading coefficients strictly
-lowers the leading exponent when the difference is nonzero. -/
-theorem degree_sub_lt_of_degree_eq_of_leadingCoeff_eq [CommRing R]
-    {f q : MvPolynomial σ R} (hfq : f - q ≠ 0) (hd : m.degree f = m.degree q)
-    (hc : m.leadingCoeff f = m.leadingCoeff q) : m.degree (f - q) ≺[m] m.degree f := by
-  refine lt_of_le_of_ne (by simpa [← hd] using (m.degree_sub_le (f := f) (g := q))) ?_
+/-- If `q` has degree at most that of `f` and the same coefficient of `X^(deg f)`, then
+`f - q` has strictly smaller leading exponent when the difference is nonzero. -/
+theorem degree_sub_lt [CommRing R] {f q : MvPolynomial σ R} (hfq : f - q ≠ 0)
+    (hq : m.degree q ≼[m] m.degree f) (hqf : q.coeff (m.degree f) = m.leadingCoeff f) :
+    m.degree (f - q) ≺[m] m.degree f := by
+  refine lt_of_le_of_ne (m.degree_sub_le.trans (max_le le_rfl hq)) ?_
   intro heq
   have hmem := m.degree_mem_support hfq
-  have hcoeff : f.coeff (m.degree f) = q.coeff (m.degree f) := by
-    simpa only [leadingCoeff, ← hd] using hc
-  rw [m.toSyn.injective heq, mem_support_iff, coeff_sub, hcoeff, sub_self] at hmem
+  rw [m.toSyn.injective heq, mem_support_iff, coeff_sub, hqf, leadingCoeff, sub_self] at hmem
   exact hmem rfl
 
 /-- A monomial multiple `c X^a * b` has degree at most `a + deg b`. -/
@@ -442,8 +440,10 @@ theorem aeval_monomial_sub_monomial_eq_zero_or_degree_lt
   · exact Or.inl hz
   · right
     simpa only [← map_sub, m.degree_aeval_monomial_one hb0] using
-      m.degree_sub_lt_of_degree_eq_of_leadingCoeff_eq (by simpa only [map_sub] using hn)
-        hdeg (hu.leadingCoeff_eq_one.trans hv.leadingCoeff_eq_one.symm)
+      m.degree_sub_lt (by simpa only [map_sub] using hn)
+        (le_of_eq (congrArg m.toSyn hdeg.symm)) (by
+          simpa only [leadingCoeff, ← hdeg] using
+            hv.leadingCoeff_eq_one.trans hu.leadingCoeff_eq_one.symm)
 
 /-- **Algebraic independence from leading monomials.** Over a ring without zero divisors, a family
 `yᵢ` of polynomials in the variables `Xᵢ` whose leading monomial for a monomial order is `Xᵢ` is
