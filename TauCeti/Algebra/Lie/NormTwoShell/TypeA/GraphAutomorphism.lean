@@ -62,35 +62,12 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 
 variable (r : ℕ)
 
-/-- The reversal of the chain relabels the type-`A` root `ε_p - ε_q`, in simple-root coordinates,
-as the root `ε_(rev q) - ε_(rev p)`. -/
-@[simp]
-theorem typeAPairRoot_comp_graphPermA (p q : Fin (r + 1)) :
-    typeAPairRoot r p q ∘ graphPermA r = typeAPairRoot r q.rev p.rev := by
-  ext k
-  have := k.isLt
-  have := p.isLt
-  have := q.isLt
-  simp only [Function.comp_apply, graphPermA_apply, typeAPairRoot_apply, Fin.le_def,
-    Fin.val_castSucc, Fin.val_rev]
-  split_ifs <;> omega
-
-/-- The reversal of the chain carries the root `ε_p - ε_q` of the norm-two shell to the root
-`ε_(rev q) - ε_(rev p)`. -/
-@[simp]
-theorem normTwoShellCongr_graphPermA_typeAPairRoot {p q : Fin (r + 1)} (hpq : p ≠ q) :
-    normTwoShellCongr (reindex_cartanMatrix_A_graphPermA r)
-        ⟨typeAPairRoot r p q, typeAPairRoot_mem_normTwoShell r hpq⟩ =
-      ⟨typeAPairRoot r q.rev p.rev,
-        typeAPairRoot_mem_normTwoShell r (Fin.rev_injective.ne hpq.symm)⟩ :=
-  Subtype.ext <| by
-    rw [coe_normTwoShellCongr_apply, graphPermA_symm, typeAPairRoot_comp_graphPermA]
-
 /-- **The pinned reversal of the type-`A` signed shell Lie algebra is the matrix graph
 automorphism.** Under the signed matrix comparison `TauCeti.typeAShellEquiv` of the signed shell
 Lie algebra of `CartanMatrix.A r` with `sl_(r+1)` over `ℤ`, the relabelling
 `Matrix.ShellLieAlgebra.reindex` by the reversal `graphPermA r` of the chain is the pinned graph
 automorphism `X ↦ -J Xᵀ J⁻¹` of `sl_(r+1)`. -/
+@[simp]
 theorem typeAShellEquiv_reindex_graphPermA (x : ShellLieAlgebra (CartanMatrix.A r)) :
     typeAShellEquiv r (reindex (graphPermA r) (reindex_cartanMatrix_A_graphPermA r) x) =
       typeASpecialLinearGraphAutomorphism r ℤ (typeAShellEquiv r x) := by
