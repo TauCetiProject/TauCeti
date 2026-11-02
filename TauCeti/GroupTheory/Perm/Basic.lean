@@ -37,7 +37,8 @@ paired with a map on its second (`Equiv.Perm.apply_inv_eq_comp_of_apply_apply_eq
 cycle quotients along conjugating equivalences, and the factorization of an invariant function
 through a map on whose fibres the permutation is a single cycle, and a correction by a power of
 a cycle for a permutation commuting with it. Points over distinct classes of the cycle quotient are
-distinct (`Equiv.Perm.ne_of_sameCycle_out`), and precomposing with `σ` does not change a sum over a
+distinct (`Equiv.Perm.ne_of_sameCycle_out`), every such class is nonempty
+(`Equiv.Perm.card_sameCycle_out_pos`), and precomposing with `σ` does not change a sum over a
 `σ`-orbit (`Equiv.Perm.sum_filter_sameCycle_comp`). It also identifies functions invariant under a
 permutation with functions on its cycle quotient (`TauCeti.invariantColouringEquiv`); a function
 invariant under a set of permutations is invariant under the subgroup they generate
@@ -197,6 +198,12 @@ theorem ne_of_sameCycle_out {x y : α} {O P : Quotient (SameCycle.setoid σ)}
     (hx : σ.SameCycle x O.out) (hy : σ.SameCycle y P.out) (hOP : O ≠ P) : x ≠ y := by
   rintro rfl
   exact hOP ((Quotient.mk_eq_iff_out.mpr hx).symm.trans (Quotient.mk_eq_iff_out.mpr hy))
+
+open _root_.Finset in
+/-- A cycle of `σ` has at least one element. -/
+theorem card_sameCycle_out_pos [Fintype α] [DecidableRel σ.SameCycle]
+    (O : Quotient (SameCycle.setoid σ)) : 0 < #{j | σ.SameCycle j O.out} :=
+  card_pos.2 ⟨O.out, by simp [SameCycle.refl]⟩
 
 /-- Precomposing with `σ` does not change a product over a `σ`-orbit. -/
 @[to_additive /-- Precomposing with `σ` does not change a sum over a `σ`-orbit. -/]
