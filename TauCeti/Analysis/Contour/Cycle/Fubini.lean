@@ -47,27 +47,19 @@ private theorem integrableOn_deriv_smul_deriv_smul
     (hη : η ∈ FreeAbelianGroup.support D) :
     IntegrableOn (fun p : ℝ × ℝ ↦ deriv γ p.1 • deriv η p.2 • F (γ p.1) (η p.2))
       (Ι γ.a γ.b ×ˢ Ι η.a η.b) := by
-  obtain ⟨M, hM⟩ := ((isCompact_trace C).prod (isCompact_trace D)).exists_bound_of_continuousOn hF
   have hmaps : MapsTo (fun p : ℝ × ℝ ↦ (γ p.1, η p.2)) (uIcc γ.a γ.b ×ˢ uIcc η.a η.b)
       (trace C ×ˢ trace D) := fun p hp ↦
     ⟨mem_trace_iff.mpr ⟨γ, hγ, p.1, hp.1, rfl⟩, mem_trace_iff.mpr ⟨η, hη, p.2, hp.2, rfl⟩⟩
   have hcont : ContinuousOn (fun p : ℝ × ℝ ↦ F (γ p.1) (η p.2)) (uIcc γ.a γ.b ×ˢ uIcc η.a η.b) :=
     hF.comp ((γ.continuousOn.comp continuousOn_fst fun _ hp ↦ (mem_prod.mp hp).1).prodMk
       (η.continuousOn.comp continuousOn_snd fun _ hp ↦ (mem_prod.mp hp).2)) hmaps
-  have hsub : Ι γ.a γ.b ×ˢ Ι η.a η.b ⊆ uIcc γ.a γ.b ×ˢ uIcc η.a η.b :=
-    prod_mono uIoc_subset_uIcc uIoc_subset_uIcc
-  have hbound : Integrable (fun p : ℝ × ℝ ↦ ‖deriv γ p.1‖ * ‖deriv η p.2‖ * M)
-      (volume.restrict (Ι γ.a γ.b ×ˢ Ι η.a η.b)) := by
-    rw [Measure.volume_eq_prod, ← Measure.prod_restrict]
-    exact (γ.intervalIntegrable_deriv.def'.norm.mul_prod
-      η.intervalIntegrable_deriv.def'.norm).mul_const M
-  refine hbound.mono' ?_ (ae_restrict_of_forall_mem (measurableSet_uIoc.prod measurableSet_uIoc)
-    fun p hp ↦ ?_)
-  · exact ((measurable_deriv γ).comp measurable_fst).aestronglyMeasurable.smul
-      (((measurable_deriv η).comp measurable_snd).aestronglyMeasurable.smul
-        ((hcont.mono hsub).aestronglyMeasurable (measurableSet_uIoc.prod measurableSet_uIoc)))
-  · rw [norm_smul, norm_smul, ← mul_assoc]
-    exact mul_le_mul_of_nonneg_left (hM _ (hmaps (hsub hp))) (by positivity)
+  have hderiv : IntegrableOn (fun p : ℝ × ℝ ↦ deriv γ p.1 * deriv η p.2)
+      (Ι γ.a γ.b ×ˢ Ι η.a η.b) := by
+    rw [IntegrableOn, Measure.volume_eq_prod, ← Measure.prod_restrict]
+    exact γ.intervalIntegrable_deriv.def'.mul_prod η.intervalIntegrable_deriv.def'
+  simpa only [mul_smul] using hderiv.smul_continuousOn_of_subset hcont
+    (measurableSet_uIoc.prod measurableSet_uIoc) (isCompact_uIcc.prod isCompact_uIcc)
+    (prod_mono uIoc_subset_uIcc uIoc_subset_uIcc)
 
 /-- For curves `γ` and `η` in the supports of `C` and `D`, the order of the two contour integrals
 along `γ` and `η` can be exchanged. -/
