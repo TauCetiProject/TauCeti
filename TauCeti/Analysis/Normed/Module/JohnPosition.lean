@@ -26,7 +26,7 @@ real volume factor is `‖det T‖ ^ 2`, so `B` is the complex ellipsoid of maxi
 the John ellipsoid of a symmetric convex body `K` when `K` is moreover circled.
 
 Existence of the maximizer uses no inner product, so it is stated for linear images of the unit
-ball of any finite-dimensional normed space over a proper field: the linear maps sending the unit
+ball of any finite-dimensional normed space over a complete field: the linear maps sending the unit
 ball into a compact set form a compact set (`IsCompact.isCompact_setOfPred_mapsTo`), on which the
 continuous function `‖det T‖` attains its maximum, and a neighbourhood of `0` contains a nonzero
 multiple of the unit ball. These images are ellipsoids when the norm comes from an inner product.
@@ -115,10 +115,10 @@ theorem isJohnPosition_preimage_iff {K : Set E} (T : E ≃L[𝕜] E) :
     rw [hcomp] at h
     exact (mul_le_iff_le_one_right hpos).1 h
 
-variable [ProperSpace 𝕜] [FiniteDimensional 𝕜 E]
+variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E]
 
 /-- **Existence of an inscribed ellipsoid of maximal volume.** A compact neighbourhood `K` of `0`
-in a finite-dimensional normed space over a proper field contains the image of the closed unit
+in a finite-dimensional normed space over a complete field contains the image of the closed unit
 ball under a linear equivalence `T` whose determinant has maximal norm among all linear maps
 sending the unit ball into `K`. In an inner product space, `T(B)` has maximal volume among the
 `𝕜`-linear images of the unit ball contained in `K`: the ellipsoids centred at `0` when `𝕜 = ℝ`,
@@ -152,7 +152,7 @@ theorem _root_.IsCompact.exists_isMaxOn_norm_det {K : Set E} (hK : IsCompact K)
   rwa [ContinuousLinearMap.coe_toContinuousLinearEquivOfDetNeZero]
 
 /-- **John's position.** Every compact neighbourhood `K` of `0` in a finite-dimensional normed
-space over a proper field has a preimage `T⁻¹(K)` under some linear equivalence `T` that is in
+space over a complete field has a preimage `T⁻¹(K)` under some linear equivalence `T` that is in
 John's position. -/
 theorem _root_.IsCompact.exists_isJohnPosition_preimage {K : Set E} (hK : IsCompact K)
     (hK0 : K ∈ 𝓝 (0 : E)) : ∃ T : E ≃L[𝕜] E, IsJohnPosition 𝕜 (T ⁻¹' K) := by
