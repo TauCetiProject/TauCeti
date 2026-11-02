@@ -36,8 +36,9 @@ The construction follows the family modules it imports.
 * `TauCeti.ValidLieTypeIndex.steinberg_suzuki`, `TauCeti.ValidLieTypeIndex.steinberg_reeG2`,
   `TauCeti.ValidLieTypeIndex.steinberg_reeF4` and `TauCeti.ValidLieTypeIndex.steinberg_tits`: on
   the four half-Frobenius constructors the Steinberg endomorphism is that of the family.
-* `TauCeti.ValidLieTypeIndex.steinberg_A`: on `Aₙ(q)` the Steinberg endomorphism is that of the
-  graph-twisted assembly.
+* `TauCeti.ValidLieTypeIndex.steinberg_A`, `TauCeti.ValidLieTypeIndex.steinberg_B` and
+  `TauCeti.ValidLieTypeIndex.steinberg_C`: on `Aₙ(q)`, `Bₙ(q)` and `Cₙ(q)` the Steinberg
+  endomorphism is that of the graph-twisted assembly.
 * `TauCeti.ValidLieTypeIndex.steinberg_simpleRootSubgroup_of_not_usesHalfFrobenius`: on ordinary
   and graph-twisted indices, the action on simple root subgroups permutes by the diagram
   automorphism and raises the parameter to the `q`-th power.

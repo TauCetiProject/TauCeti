@@ -122,11 +122,8 @@ def projectiveSymplecticEquivGroup :
     GLSymplecticFin (d.carrierRank + 1) (GaloisField d.1.characteristic d.1.fieldExponent) ⧸
         Subgroup.center (GLSymplecticFin (d.carrierRank + 1)
           (GaloisField d.1.characteristic d.1.fieldExponent)) ≃* d.Group :=
-  letI : Group.IsPerfect (GLSymplecticFin (d.carrierRank + 1)
-      (GaloisField d.1.characteristic d.1.fieldExponent)) :=
-    ⟨d.commutator_symplectic_eq_top⟩
-  DerivedCentralQuotient.mulEquivQuotientCenter.symm.trans
-    (DerivedCentralQuotient.congr d.symplecticEquivFixedPoints)
+  DerivedCentralQuotient.quotientCenterEquivOfPerfect d.commutator_symplectic_eq_top
+    d.symplecticEquivFixedPoints
 
 /-- The isomorphism with `PSp_{2r}(𝔽_q)` sends the class of a matrix in the derived subgroup to the
 class of the corresponding fixed point. -/
@@ -138,13 +135,8 @@ theorem projectiveSymplecticEquivGroup_mk
         (x : GLSymplecticFin (d.carrierRank + 1)
           (GaloisField d.1.characteristic d.1.fieldExponent))) =
       ((MulEquiv.commutatorCongr d.symplecticEquivFixedPoints x :
-          commutator d.FixedPoints) : d.Group) := by
-  let _ : Group.IsPerfect (GLSymplecticFin (d.carrierRank + 1)
-      (GaloisField d.1.characteristic d.1.fieldExponent)) :=
-    ⟨d.commutator_symplectic_eq_top⟩
-  rw [projectiveSymplecticEquivGroup, MulEquiv.trans_apply,
-    ← DerivedCentralQuotient.mulEquivQuotientCenter_mk, MulEquiv.symm_apply_apply,
-    DerivedCentralQuotient.congr_mk]
+          commutator d.FixedPoints) : d.Group) :=
+  DerivedCentralQuotient.quotientCenterEquivOfPerfect_mk _ _ x
 
 /-- **The group attached to `C_r(q)` is simple**, for every valid index: it is `PSp_{2r}(𝔽_q)`,
 which is simple by Iwasawa's criterion because `Sp_{2r}(𝔽_q)` is perfect. -/

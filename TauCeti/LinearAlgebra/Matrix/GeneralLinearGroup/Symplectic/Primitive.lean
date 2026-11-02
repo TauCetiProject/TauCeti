@@ -96,8 +96,8 @@ private theorem exists_mulVec_eq_of_dotProduct_JFin_mulVec_ne_zero {x y z : Fin 
     add_zero]
 
 /-- **The stabilizer of a vector is transitive on each level set of its pairing.** If
-`ω(y, x) ≠ 0` and `ω(y', x) = ω(y, x)`, a product of two symplectic transvections fixes `x` and
-sends `y` to `y'`. -/
+`ω(y, x) ≠ 0` and `ω(y', x) = ω(y, x)`, some symplectic matrix fixes `x` and sends `y` to `y'`.
+The proof uses a product of at most two symplectic transvections. -/
 theorem exists_mulVec_eq_of_dotProduct_JFin_mulVec_eq {x y y' : Fin (m + m) → K}
     (hy : y ⬝ᵥ (JFin m K *ᵥ x) ≠ 0) (hy' : y' ⬝ᵥ (JFin m K *ᵥ x) = y ⬝ᵥ (JFin m K *ᵥ x)) :
     ∃ g : GLSymplecticFin m K,
@@ -122,22 +122,13 @@ theorem exists_mulVec_eq_of_dotProduct_JFin_mulVec_eq {x y y' : Fin (m + m) → 
   · rw [Subgroup.coe_mul, Units.val_mul, ← mulVec_mulVec, hg₁x, hg₂x]
   · rw [Subgroup.coe_mul, Units.val_mul, ← mulVec_mulVec, hg₁y, hg₂y]
 
-/-- A symplectic matrix sending `x` to `y` sends the projective point of `x` to that of `y`. -/
-private theorem smul_mk_eq_mk {g : GLSymplecticFin m K} {x y : Fin (m + m) → K}
-    (hx : x ≠ 0) (hy : y ≠ 0)
-    (h : ((g : GL (Fin (m + m)) K) : Matrix (Fin (m + m)) (Fin (m + m)) K) *ᵥ x = y) :
-    g • Projectivization.mk K x hx = Projectivization.mk K y hy := by
-  rw [Subgroup.smul_def, Projectivization.smul_mk]
-  apply (Projectivization.mk_eq_mk_iff K _ _ _ _).mpr
-  exact ⟨1, by simp [Units.smul_def, Matrix.smul_eq_mulVec, h]⟩
-
 /-- A symplectic matrix fixing the projective point of a vector in a block preserves the block. -/
 private theorem smul_eq_of_mulVec_eq {B : Set (ℙ K (Fin (m + m) → K))}
     (hB : IsBlock (GLSymplecticFin m K) B) {x : Fin (m + m) → K} (hx : x ≠ 0)
     (hxB : Projectivization.mk K x hx ∈ B) {g : GLSymplecticFin m K}
     (hg : ((g : GL (Fin (m + m)) K) : Matrix (Fin (m + m)) (Fin (m + m)) K) *ᵥ x = x) :
     g • B = B :=
-  hB.smul_eq_of_mem hxB (by rwa [smul_mk_eq_mk hx hx hg])
+  hB.smul_eq_of_mem hxB (by rwa [smul_mk_eq_mk_of_mulVec_eq hx hx hg])
 
 /-- A block containing two non-orthogonal points `[x]` and `[y]` contains every point
 non-orthogonal to `[x]`. -/
@@ -159,7 +150,7 @@ private theorem mk_mem_of_isBlock {B : Set (ℙ K (Fin (m + m) → K))}
   have hmk : Projectivization.mk K y' hy'0 = Projectivization.mk K (a • y') hay' :=
     (Projectivization.mk_eq_mk_iff' K _ _ _ _).mpr ⟨a⁻¹, by rw [smul_smul, inv_mul_cancel₀ ha,
       one_smul]⟩
-  rw [hmk, ← smul_mk_eq_mk hy hay' hgy, ← smul_eq_of_mulVec_eq hB hx hxB hgx]
+  rw [hmk, ← smul_mk_eq_mk_of_mulVec_eq hy hay' hgy, ← smul_eq_of_mulVec_eq hB hx hxB hgx]
   exact Set.smul_mem_smul_set hyB
 
 /-- A block containing two non-orthogonal points is the whole projective space. -/
@@ -213,7 +204,7 @@ instance instIsPreprimitiveProjectivization :
       rintro h
       exact hy'y (by rw [h, zero_dotProduct])
     have hy'B : Projectivization.mk K y' hy' ∈ B := by
-      rw [← smul_mk_eq_mk hy hy' rfl, ← smul_eq_of_mulVec_eq hB hx hp hgx]
+      rw [← smul_mk_eq_mk_of_mulVec_eq hy hy' rfl, ← smul_eq_of_mulVec_eq hB hx hp hgx]
       exact Set.smul_mem_smul_set hq
     exact eq_univ_of_isBlock hB hy hy' hq hy'B hy'y
 
