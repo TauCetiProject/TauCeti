@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.ReidemeisterTorsion.Ambiguity
+public import TauCeti.Algebra.MonoidAlgebra.TorsionClass
 public import TauCeti.RingTheory.NovikovSeries.NonZeroDivisors
 
 /-!
@@ -60,30 +60,6 @@ theorem torsionClass_mk_eq_mk_iff {a b : Q} :
   simp only [TauCeti.TorsionClass.mk_eq_mk_iff, coe_deckUnitsHom]
   exact ⟨fun ⟨h, hh⟩ => ⟨h.toAdd, hh⟩, fun ⟨h, hh⟩ => ⟨Multiplicative.ofAdd h, hh⟩⟩
 
-/-- The group-ring deck monomials as units in an algebra over the group ring. -/
-def addMonoidAlgebraDeckUnitsHom (Q₀ : Type*) [CommRing Q₀]
-    [Algebra (AddMonoidAlgebra R H) Q₀] : Multiplicative H →* Q₀ˣ :=
-  ((algebraMap (AddMonoidAlgebra R H) Q₀).toMonoidHom.comp
-    (AddMonoidAlgebra.of R H)).toHomUnits
-
-/-- The group-ring deck unit has the corresponding group-ring monomial as its value. -/
-@[simp]
-theorem coe_addMonoidAlgebraDeckUnitsHom (Q₀ : Type*) [CommRing Q₀]
-    [Algebra (AddMonoidAlgebra R H) Q₀] (h : Multiplicative H) :
-    (addMonoidAlgebraDeckUnitsHom R (H := H) Q₀ h : Q₀) =
-      algebraMap (AddMonoidAlgebra R H) Q₀ (AddMonoidAlgebra.single h.toAdd 1) := by
-  simp [addMonoidAlgebraDeckUnitsHom, AddMonoidAlgebra.of_apply]
-
-/-- Equality in the group-ring torsion target is exactly signed deck-monomial ambiguity. -/
-theorem addMonoidAlgebra_torsionClass_mk_eq_mk_iff (Q₀ : Type*) [CommRing Q₀]
-    [Algebra (AddMonoidAlgebra R H) Q₀] {a b : Q₀} :
-    TauCeti.TorsionClass.mk (addMonoidAlgebraDeckUnitsHom R (H := H) Q₀) a =
-      TauCeti.TorsionClass.mk (addMonoidAlgebraDeckUnitsHom R (H := H) Q₀) b ↔
-    ∃ h : H, a = algebraMap (AddMonoidAlgebra R H) Q₀ (AddMonoidAlgebra.single h 1) * b ∨
-      a = -algebraMap (AddMonoidAlgebra R H) Q₀ (AddMonoidAlgebra.single h 1) * b := by
-  simp only [TauCeti.TorsionClass.mk_eq_mk_iff, coe_addMonoidAlgebraDeckUnitsHom]
-  exact ⟨fun ⟨h, hh⟩ => ⟨h.toAdd, hh⟩, fun ⟨h, hh⟩ => ⟨Multiplicative.ofAdd h, hh⟩⟩
-
 variable {R N Q}
 
 /-- A map from the group ring's total quotient to the Novikov total quotient respects the
@@ -95,7 +71,7 @@ theorem map_deckUnitsHom (Q₀ : Type*) [CommRing Q₀]
     Units.map (IsLocalization.map Q
       (ofAddMonoidAlgebra : AddMonoidAlgebra R H →+* NovikovSeries R H N)
       nonZeroDivisors_le_comap_ofAddMonoidAlgebra : Q₀ →+* Q)
-      (addMonoidAlgebraDeckUnitsHom R (H := H) Q₀ h) = deckUnitsHom R N Q h := by
+      (AddMonoidAlgebra.deckUnitsHom R (H := H) Q₀ h) = deckUnitsHom R N Q h := by
   apply Units.ext
   simp [coe_deckUnitsHom, IsLocalization.map_eq]
 
@@ -104,7 +80,8 @@ quotients of the whole rings, not merely of their units. -/
 def torsionClassOfAddMonoidAlgebra (Q₀ : Type*) [CommRing Q₀]
     [Algebra (AddMonoidAlgebra R H) Q₀] [IsFractionRing (AddMonoidAlgebra R H) Q₀]
     [IsFractionRing (NovikovSeries R H N) Q] [NoZeroDivisors R] [AddGroup.FG H] :
-    TauCeti.TorsionClass (addMonoidAlgebraDeckUnitsHom R (H := H) Q₀) →*₀ TorsionClass R N Q :=
+    TauCeti.TorsionClass (AddMonoidAlgebra.deckUnitsHom R (H := H) Q₀) →*₀
+      TorsionClass R N Q :=
   TauCeti.TorsionClass.map
     (IsLocalization.map Q
       (ofAddMonoidAlgebra : AddMonoidAlgebra R H →+* NovikovSeries R H N)
