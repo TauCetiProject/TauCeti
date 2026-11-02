@@ -19,6 +19,7 @@ import TauCeti.LinearAlgebra.PerfectPairing.Basis
 public import TauCeti.LinearAlgebra.BilinearForm.Ideals
 import TauCeti.LinearAlgebra.BilinearForm.LinearIndependent
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
+public import TauCeti.LinearAlgebra.BilinearForm.Prod
 import TauCeti.LinearAlgebra.Dual.Divisibility
 import TauCeti.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.LinearAlgebra.Matrix.Symmetric
@@ -45,6 +46,9 @@ This file proves the facts about modular forms that hold over every commutative 
 * a vector `x` with `a r ∣ B x y` for all `y`, where `B` is `a`-modular and `a` and `r` are
   non-zero-divisors, is divisible by `r`
   (`LinearMap.BilinForm.IsModular.exists_eq_smul_of_forall_dvd`);
+* the block-diagonal product of two `a`-modular forms is `a`-modular
+  (`LinearMap.BilinForm.IsModular.prod`), and so is the restriction of a product form to a
+  product of `a`-modular submodules (`LinearMap.BilinForm.IsModular.restrict_prod`);
 * the orthogonal sum of two `a`-modular submodules is `a`-modular
   (`LinearMap.BilinForm.IsModular.restrict_sup`);
 * an `a`-modular submodule splits off orthogonally when `a` divides every value of the form
@@ -133,6 +137,11 @@ theorem IsModular.dvd (h : B.IsModular a) (x y : M) : a ∣ B x y := by
   obtain ⟨C, rfl, -⟩ := h
   exact ⟨C x y, by simp⟩
 
+/-- Multiplying an `a`-modular form by `r` multiplies its modularity factor by `r`. -/
+theorem IsModular.smul (h : B.IsModular a) (r : R) : (r • B).IsModular (r * a) := by
+  obtain ⟨C, rfl, hC⟩ := h
+  exact ⟨C, (smul_smul r a C).symm, hC⟩
+
 /-- Modularity only depends on `a` up to a unit. -/
 theorem IsModular.of_associated (h : B.IsModular a) {b : R} (hab : Associated a b) :
     B.IsModular b := by
@@ -178,6 +187,22 @@ theorem isModular_congr_iff {M' : Type*} [AddCommMonoid M'] [Module R M'] (e : M
   ⟨fun h ↦ by
     simpa only [congr_congr, e.self_trans_symm, congr_refl, LinearEquiv.refl_apply] using
       h.congr e.symm, fun h ↦ h.congr e⟩
+
+/-- The block-diagonal product of two `a`-modular forms is `a`-modular. -/
+theorem IsModular.prod {M' : Type*} [AddCommMonoid M'] [Module R M'] {C : BilinForm R M'}
+    (hB : B.IsModular a) (hC : C.IsModular a) : (B.prod C).IsModular a := by
+  obtain ⟨B', rfl, hB'⟩ := hB
+  obtain ⟨C', rfl, hC'⟩ := hC
+  exact ⟨B'.prod C', LinearMap.ext₂ fun x y ↦ by simp [mul_add], inferInstance⟩
+
+/-- The restriction of a block-diagonal product form to a product of submodules is `a`-modular
+when the restrictions of the factors are. -/
+theorem IsModular.restrict_prod {M' : Type*} [AddCommMonoid M'] [Module R M']
+    {C : BilinForm R M'} {P : Submodule R M} {Q : Submodule R M'} (hB : (B.restrict P).IsModular a)
+    (hC : (C.restrict Q).IsModular a) : ((B.prod C).restrict (P.prod Q)).IsModular a := by
+  rw [← isModular_congr_iff (Submodule.prodEquiv P Q)]
+  convert hB.prod hC using 1
+  exact LinearMap.ext₂ fun x y ↦ by simp [Submodule.prodEquiv]
 
 /-- Modularity of a restriction to a submodule of a submodule is modularity of the restriction to
 its image in the ambient module. -/

@@ -116,11 +116,7 @@ instance symmetricMatrixInnerProductSpace :
     add_left A B C := by
       rw [Submodule.coe_add]
       exact InnerProductSpace.add_left (𝕜 := ℝ) (A : Matrix (Fin p) (Fin p) ℝ) ↑B ↑C
-    smul_left A B r := by
-      -- `InnerProductSpace.smul_left` phrases the ambient scalar action through the unexposed
-      -- body of `Matrix.frobeniusInnerProductSpace`, so expand the inner product instead.
-      rw [Submodule.coe_smul, Matrix.frobenius_inner_def, Matrix.frobenius_inner_def]
-      simp [Finset.mul_sum, mul_assoc] }
+    smul_left A B r := Matrix.frobenius_inner_smul_left r (A : Matrix (Fin p) (Fin p) ℝ) ↑B }
 
 instance symmetricMatrixIsUniformAddGroup :
     IsUniformAddGroup (selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) :=
@@ -414,7 +410,7 @@ theorem inner_eq_trace_mul {p : ℕ}
     ⟪A, Θ⟫ = ((Θ : Matrix (Fin p) (Fin p) ℝ) * (A : Matrix (Fin p) (Fin p) ℝ)).trace := by
   let _ : NormedAddCommGroup (Matrix (Fin p) (Fin p) ℝ) := Matrix.frobeniusNormedAddCommGroup
   let _ : InnerProductSpace ℝ (Matrix (Fin p) (Fin p) ℝ) := Matrix.frobeniusInnerProductSpace
-  rw [coe_inner, Matrix.frobenius_inner_eq_trace_transpose_mul, transpose_coe A,
+  rw [coe_inner, Matrix.frobenius_inner_eq_trace_conjTranspose_mul, (isHermitian_coe A).eq,
     Matrix.trace_mul_comm]
 
 /-- The trace pairing against a fixed symmetric matrix is continuous, being the Frobenius inner
