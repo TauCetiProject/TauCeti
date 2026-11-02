@@ -14,7 +14,14 @@ public import Mathlib.Data.Int.Interval
 public import Mathlib.Order.SuccPred.Int
 
 /-!
-# Split maps between coproducts, and cokernels of maps between coproducts
+# Split maps between (co)products, and cokernels of maps between coproducts
+
+## Products of split epimorphisms are split
+
+A product `Limits.Pi.map p : ∏ᶜ f ⟶ ∏ᶜ g` of split epimorphisms `p b : f b ⟶ g b`, indexed by a
+type of any size, is a split epimorphism, with section the product of the sections
+(`TauCeti.isSplitEpi_piMap`). Unlike `CategoryTheory.Limits.Pi.map_epi`, this needs no finiteness
+and no biproducts; it is how products of skyscraper presheaves are shown to be flasque.
 
 ## Reindexing a coproduct along an injection is split
 
@@ -87,6 +94,18 @@ open CategoryTheory Limits
 universe w
 
 namespace TauCeti
+
+section PiMap
+
+variable {C : Type*} [Category* C] {β : Type*} {f g : β → C} [HasProduct f] [HasProduct g]
+
+/-- A product of split epimorphisms is a split epimorphism, with section the product of the
+sections. -/
+instance isSplitEpi_piMap (p : ∀ b, f b ⟶ g b) [∀ b, IsSplitEpi (p b)] :
+    IsSplitEpi (Limits.Pi.map p) :=
+  IsSplitEpi.mk' { section_ := Limits.Pi.map fun b ↦ section_ (p b), id := by ext; simp }
+
+end PiMap
 
 section Reindex
 
