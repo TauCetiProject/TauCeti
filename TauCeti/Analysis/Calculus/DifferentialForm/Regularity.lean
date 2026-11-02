@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
+import TauCeti.Analysis.Calculus.ContDiff.ContinuousAlternatingMap
 
 /-!
 # Regularity of the exterior derivative
@@ -67,6 +68,22 @@ theorem contDiffAt_extDeriv (hω : ContDiffAt 𝕜 p ω x) (hrp : r + 1 ≤ p) :
   rw [← contDiffWithinAt_univ] at hω ⊢
   simpa only [extDerivWithin_univ] using
     contDiffWithinAt_extDerivWithin hω uniqueDiffOn_univ hrp (Set.mem_univ x)
+
+/-- Pulling back a `C^r` differential form by a `C^(r+1)` map gives a `C^r` form at a point.
+Only the analytic order requires the arity factorial to be nonzero in the scalar field. -/
+theorem _root_.ContDiffAt.differentialForm_pullback
+    {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+    {f : E → F} {η : F → F [⋀^Fin k]→L[𝕜] G}
+    (hf : ContDiffAt 𝕜 (r + 1) f x) (hη : ContDiffAt 𝕜 r η (f x))
+    (hr : r = ⊤ → (k.factorial : 𝕜) ≠ 0 := by
+      intro h
+      first | exact NeZero.ne _ | cases h) :
+    ContDiffAt 𝕜 r (fun y ↦ (η (f y)).compContinuousLinearMap (fderiv 𝕜 f y)) x := by
+  exact ((ContinuousAlternatingMap.contDiff_compContinuousLinearMapCLM
+    (𝕜 := 𝕜) (E := E) (F := F) (G := G) (ι := Fin k) r
+    (by simpa using hr)).contDiffAt.comp x
+    (hf.fderiv_right le_rfl)).clm_apply
+      (hη.comp x (hf.of_le le_self_add))
 
 /-- A `C^p` form has a `C^r` exterior derivative, provided `r + 1 ≤ p`.
 In particular, the exterior derivative preserves smooth forms. -/

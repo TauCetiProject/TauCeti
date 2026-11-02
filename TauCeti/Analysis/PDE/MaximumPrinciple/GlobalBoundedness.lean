@@ -17,7 +17,7 @@ Let `Ω ⊆ ℝⁿ` be open with finite measure, let `a` be measurable and unifo
 with constants `0 < λ ≤ Λ`, and let `c` be bounded, measurable and nonnegative. This file proves
 the weak maximum principle with a right-hand side: if `u ∈ H¹(Ω)` is a weak subsolution of
 
-`-∂ⱼ(aⁱʲ ∂ᵢu) + c u ≤ f` in `Ω`, with `f ∈ Lʳ(Ω)`, `r > 1` and `r > n/2`,
+`-∂ᵢ(aⁱʲ ∂ⱼu) + c u ≤ f` in `Ω`, with `f ∈ Lʳ(Ω)`, `r > 1` and `r > n/2`,
 
 meaning `a(u, v) ≤ ∫_Ω f v` for every nonnegative `v ∈ H¹₀(Ω)`, and `u ≤ k` on `∂Ω` for a level
 `k ≥ 0`, in the sense that `(u - k)⁺ ∈ H¹₀(Ω)`, then
@@ -25,14 +25,14 @@ meaning `a(u, v) ≤ ∫_Ω f v` for every nonnegative `v ∈ H¹₀(Ω)`, and `
 `u ≤ k + C ‖f‖_{Lʳ(Ω)} / λ · |Ω| ^ (2/n - 1/r)` almost everywhere in `Ω`,
 
 with `C` depending only on `n`, `r` and the normalization of the Haar measure. In particular the
-weak solution `u ∈ H¹₀(Ω)` of the Dirichlet problem `-∂ⱼ(aⁱʲ ∂ᵢu) + c u = f` with
+weak solution `u ∈ H¹₀(Ω)` of the Dirichlet problem `-∂ᵢ(aⁱʲ ∂ⱼu) + c u = f` with
 `f ∈ Lʳ(Ω)`, meaning `a(u, v) = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`, is bounded, with
 `|u| ≤ C ‖f‖_{Lʳ} / λ · |Ω| ^ (2/n - 1/r)`. No regularity of `∂Ω` and no regularity of the
 coefficients beyond measurability is used, and the power of `|Ω|` makes the estimate invariant
 under dilations.
 
 This is the bound that lets De Giorgi's interior estimates absorb a right-hand side: on a ball
-`B ⊆ Ω`, a solution of `-∂ⱼ(aⁱʲ ∂ᵢu) = f` differs from a solution of the homogeneous equation by
+`B ⊆ Ω`, a solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = f` differs from a solution of the homogeneous equation by
 the solution of the Dirichlet problem on `B` with data `f`, and the bound above controls that
 difference by `R ^ (2 - n/r) ‖f‖_{Lʳ}`.
 
@@ -90,7 +90,7 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpac
   {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {c : EuclideanSpace ℝ ι → ℝ} {lam Lam gamma : ℝ}
 
 /-- The energy estimate behind Stampacchia's method. For a weak subsolution `u` of
-`-∂ⱼ(aⁱʲ ∂ᵢu) + c u ≤ f` with `(u - k)⁺ ∈ H¹₀(Ω)`, testing against `w = (u - l)⁺` at a level
+`-∂ᵢ(aⁱʲ ∂ⱼu) + c u ≤ f` with `(u - k)⁺ ∈ H¹₀(Ω)`, testing against `w = (u - l)⁺` at a level
 `l ≥ k` and combining ellipticity, the Sobolev inequality and Hölder's inequality on the
 superlevel set `{u > l}` gives
 
@@ -248,7 +248,7 @@ uniformly elliptic on `Ω` with constants `0 < λ ≤ Λ`, and let `c` be bounde
 nonnegative. Suppose that `W^{1,2}_0(Ω)` satisfies a Sobolev inequality `‖v‖_{Lˢ} ≤ S ‖∇v‖_{L²}`,
 and let `f ∈ Lʳ(Ω)` with `s (1 - 1/r) > 2`. If `u ∈ H¹(Ω)` is a weak subsolution of
 
-`-∂ⱼ(aⁱʲ ∂ᵢu) + c u ≤ f` in `Ω`,
+`-∂ᵢ(aⁱʲ ∂ⱼu) + c u ≤ f` in `Ω`,
 
 that is `a(u, v) ≤ ∫_Ω f v` for every nonnegative `v ∈ H¹₀(Ω)`, and `u ≤ k` on `∂Ω` for a level
 `k ≥ 0`, in the sense that `(u - k)⁺ ∈ H¹₀(Ω)`, then almost everywhere in `Ω`
@@ -360,7 +360,7 @@ additive Haar measure `mu`, with the following property. Let `Ω` have finite me
 measurable and uniformly elliptic on `Ω` with constants `0 < λ ≤ Λ`, let `c` be bounded,
 measurable and nonnegative, and let `f ∈ Lʳ(Ω)`. If `u ∈ H¹(Ω)` is a weak subsolution of
 
-`-∂ⱼ(aⁱʲ ∂ᵢu) + c u ≤ f` in `Ω`
+`-∂ᵢ(aⁱʲ ∂ⱼu) + c u ≤ f` in `Ω`
 
 with `u ≤ k` on `∂Ω` for a level `k ≥ 0`, in the sense that `(u - k)⁺ ∈ H¹₀(Ω)`, then almost
 everywhere in `Ω`
@@ -477,7 +477,7 @@ theorem exists_ae_value_le_add_mul_div_mul_rpow [Nonempty ι] {r : ℝ≥0} (hr 
 dimension and let `r > 1` with `r > n/2`. There is `C > 0`, depending only on `n`, `r` and the
 normalization of `mu`, such that on every `Ω` of finite measure, for measurable, uniformly
 elliptic `a` with constants `0 < λ ≤ Λ` and bounded, measurable, nonnegative `c`, the weak
-solution `u ∈ H¹₀(Ω)` of the Dirichlet problem `-∂ⱼ(aⁱʲ ∂ᵢu) + c u = f` with `f ∈ Lʳ(Ω)`,
+solution `u ∈ H¹₀(Ω)` of the Dirichlet problem `-∂ᵢ(aⁱʲ ∂ⱼu) + c u = f` with `f ∈ Lʳ(Ω)`,
 that is `a(u, v) = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`, satisfies, almost everywhere in `Ω`,
 
 `|u| ≤ C ‖f‖_{Lʳ(Ω)} / λ · |Ω| ^ (2/n - 1/r)`.

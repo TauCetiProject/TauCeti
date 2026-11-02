@@ -36,7 +36,15 @@ shift. That is what a `q`-support hypothesis is spent on when descending along `
 stated here rather than at the descent because it mentions only coefficients, divisibility and
 `Function.Periodic.qParam`.
 
-Finally, the `q`-parameter as a function on `ℍ`: it is periodic, its own `q`-expansion is `X`,
+Cusp functions of raw functions on `ℍ` are then compared off `q = 0`, where the cusp function is
+just the function evaluated at the logarithm of `q`. There they commute with pointwise
+operations, so meromorphy at `q = 0` is preserved by the field operations, twisting by `𝕢 ^ k`
+multiplies the cusp function by `q ^ k`, and the `q`-expansion only depends on the cusp function
+on a punctured neighbourhood of `0`. Constant functions have constant cusp functions, and for an
+analytic cusp function the cusp function and the `q`-expansion of a power are the powers.
+
+Finally, the `q`-parameter as a function on `ℍ`: it is periodic, its own `q`-expansion is `X`
+(and that of its `m`-th power is `X ^ m`),
 and a periodic function whose `q`-expansion has no constant term is asymptotic at `i∞` to its
 `q`-coefficient times `q`.  These are what a function with a pole at the cusp, such as `j`, is
 expanded through: one multiplies by `q` and divides the expansion of the product by `q`.
@@ -50,7 +58,15 @@ expanded through: one multiplies by `q` and divides the expansion of the product
 * `CuspForm.qExpansion_injective`: a cusp form is determined by its `q`-expansion.
 * `TauCeti.smul_qParam_pow_shift_eq`: a shift by `1 / d` fixes every `q`-power that a
   `d`-supported coefficient function leaves alive.
-* `TauCeti.UpperHalfPlane.qExpansion_qParam`: the `q`-expansion of `q` is `X`.
+* `TauCeti.UpperHalfPlane.cuspFunction_map₂_eventuallyEq`,
+  `TauCeti.UpperHalfPlane.cuspFunction_qParam_pow_mul_eventuallyEq` and
+  `TauCeti.UpperHalfPlane.qExpansion_congr`: cusp functions off `q = 0`.
+* `TauCeti.UpperHalfPlane.meromorphicAt_cuspFunction_mul` and its companions: meromorphy at `0`
+  of cusp functions under the field operations.
+* `TauCeti.UpperHalfPlane.cuspFunction_pow` and `TauCeti.UpperHalfPlane.qExpansion_pow`: powers of
+  functions with analytic cusp functions.
+* `TauCeti.UpperHalfPlane.qExpansion_qParam` and `TauCeti.UpperHalfPlane.qExpansion_qParam_pow`:
+  the `q`-expansions of `q` and of its powers are `X` and its powers.
 * `TauCeti.UpperHalfPlane.tendsto_div_qParam_atImInfty`: `f / q` tends to the `q`-coefficient of
   `f` when the constant coefficient vanishes.
 
@@ -111,21 +127,191 @@ theorem UpperHalfPlane.periodic_qParam_comp_ofComplex (hh : h ≠ 0) :
       mul_div_cancel_right₀ _ (Complex.ofReal_ne_zero.mpr hh), Complex.exp_add,
       Complex.exp_two_pi_mul_I, one_mul]
 
+/-- The cusp function of the `q`-parameter is analytic at `0`. -/
+theorem UpperHalfPlane.analyticAt_cuspFunction_qParam (hh : 0 < h) :
+    AnalyticAt ℂ (cuspFunction h fun τ : ℍ ↦ Function.Periodic.qParam h τ) 0 :=
+  _root_.UpperHalfPlane.analyticAt_cuspFunction_zero hh (periodic_qParam_comp_ofComplex hh.ne')
+    (Function.Periodic.differentiable_qParam.mdifferentiable.comp mdifferentiable_coe)
+    ((_root_.UpperHalfPlane.qParam_tendsto_atImInfty hh).isBigO_one ℝ)
+
 /-- The `q`-expansion of the `q`-parameter itself is the variable `X`. -/
+@[simp]
 theorem UpperHalfPlane.qExpansion_qParam (hh : 0 < h) :
     qExpansion h (fun τ : ℍ ↦ Function.Periodic.qParam h τ) = PowerSeries.X := by
-  have hper := periodic_qParam_comp_ofComplex hh.ne'
-  have hhol : MDiff (fun τ : ℍ ↦ Function.Periodic.qParam h τ) :=
-    Function.Periodic.differentiable_qParam.mdifferentiable.comp mdifferentiable_coe
-  have hbdd : IsBoundedAtImInfty (fun τ : ℍ ↦ Function.Periodic.qParam h τ) :=
-    (_root_.UpperHalfPlane.qParam_tendsto_atImInfty hh).isBigO_one ℝ
   ext m
-  rw [← qExpansion_coeff_unique hh
-    (_root_.UpperHalfPlane.analyticAt_cuspFunction_zero hh hper hhol hbdd)
+  rw [← qExpansion_coeff_unique hh (analyticAt_cuspFunction_qParam hh)
     (c := fun m ↦ PowerSeries.coeff m (PowerSeries.X : PowerSeries ℂ)) (fun τ ↦ ?_) m]
   convert hasSum_ite_eq 1 (Function.Periodic.qParam h (τ : ℂ)) using 2 with m
   rw [PowerSeries.coeff_X]
   split_ifs with hm <;> simp [hm]
+
+section CuspFunction
+
+open Filter Topology
+
+variable {f g : ℍ → ℂ}
+
+/-- Off `q = 0`, the cusp function is evaluated at the logarithm of `q`. -/
+theorem UpperHalfPlane.cuspFunction_of_ne_zero {q : ℂ} (hq : q ≠ 0) (f : ℍ → ℂ) :
+    cuspFunction h f q = f (ofComplex (Function.Periodic.invQParam h q)) := by
+  simp [cuspFunction, Function.Periodic.cuspFunction_eq_of_nonzero _ _ hq]
+
+/-- Off `q = 0`, cusp functions commute with pointwise binary operations. -/
+theorem UpperHalfPlane.cuspFunction_map₂_eventuallyEq (op : ℂ → ℂ → ℂ) (f g : ℍ → ℂ) :
+    cuspFunction h (fun τ ↦ op (f τ) (g τ)) =ᶠ[𝓝[≠] 0]
+      fun q ↦ op (cuspFunction h f q) (cuspFunction h g q) :=
+  eventually_nhdsWithin_of_forall fun q hq ↦ by
+    simp only [cuspFunction_of_ne_zero (Set.mem_compl_singleton_iff.mp hq)]
+
+/-- Off `q = 0`, cusp functions commute with pointwise operations. -/
+theorem UpperHalfPlane.cuspFunction_map_eventuallyEq (op : ℂ → ℂ) (f : ℍ → ℂ) :
+    cuspFunction h (fun τ ↦ op (f τ)) =ᶠ[𝓝[≠] 0] fun q ↦ op (cuspFunction h f q) :=
+  eventually_nhdsWithin_of_forall fun q hq ↦ by
+    simp only [cuspFunction_of_ne_zero (Set.mem_compl_singleton_iff.mp hq)]
+
+/-- Off `q = 0` and inside the unit disc, the cusp function of `𝕢 ^ k * f` is `q ^ k` times the
+cusp function of `f`. -/
+theorem UpperHalfPlane.cuspFunction_qParam_pow_mul_eventuallyEq (hh : 0 < h) (k : ℕ)
+    (f : ℍ → ℂ) :
+    cuspFunction h (fun τ ↦ Function.Periodic.qParam h τ ^ k * f τ) =ᶠ[𝓝[≠] 0]
+      fun q ↦ q ^ k * cuspFunction h f q := by
+  filter_upwards [self_mem_nhdsWithin,
+    nhdsWithin_le_nhds (Metric.ball_mem_nhds (0 : ℂ) zero_lt_one)] with q hq hqn
+  simp only [Set.mem_compl_iff, Set.mem_singleton_iff] at hq
+  rw [cuspFunction_of_ne_zero hq, cuspFunction_of_ne_zero hq,
+    ofComplex_apply_of_im_pos (Function.Periodic.im_invQParam_pos_of_norm_lt_one hh
+      (mem_ball_zero_iff.mp hqn) hq)]
+  rw [Function.Periodic.qParam_right_inv hh.ne' hq]
+
+/-- Cusp functions which agree off `q = 0` agree near `q = 0`: the value at `0` is the limit
+along the punctured neighbourhoods. -/
+theorem UpperHalfPlane.cuspFunction_eventuallyEq_nhds
+    (hfg : cuspFunction h f =ᶠ[𝓝[≠] 0] cuspFunction h g) :
+    cuspFunction h f =ᶠ[𝓝 0] cuspFunction h g := by
+  refine eventuallyEq_nhds_of_eventuallyEq_nhdsNE hfg ?_
+  simp only [cuspFunction]
+  rw [Function.Periodic.cuspFunction_zero_eq_limUnder_nhds_ne,
+    Function.Periodic.cuspFunction_zero_eq_limUnder_nhds_ne]
+  exact congrArg lim (Filter.map_congr hfg)
+
+/-- A cusp function which agrees off `q = 0` with a function continuous at `0` agrees with it
+near `0`. -/
+theorem UpperHalfPlane.cuspFunction_eventuallyEq_nhds_of_continuousAt {ψ : ℂ → ℂ}
+    (hf : cuspFunction h f =ᶠ[𝓝[≠] 0] ψ) (hψ : ContinuousAt ψ 0) :
+    cuspFunction h f =ᶠ[𝓝 0] ψ := by
+  refine eventuallyEq_nhds_of_eventuallyEq_nhdsNE hf ?_
+  simp only [cuspFunction]
+  rw [Function.Periodic.cuspFunction_zero_eq_limUnder_nhds_ne]
+  exact ((hψ.tendsto.mono_left nhdsWithin_le_nhds).congr' hf.symm).limUnder_eq
+
+/-- The `q`-expansion only depends on the cusp function off `q = 0`. -/
+theorem UpperHalfPlane.qExpansion_congr (hfg : cuspFunction h f =ᶠ[𝓝[≠] 0] cuspFunction h g) :
+    qExpansion h f = qExpansion h g := by
+  ext n
+  rw [_root_.UpperHalfPlane.qExpansion_coeff, _root_.UpperHalfPlane.qExpansion_coeff,
+    (cuspFunction_eventuallyEq_nhds hfg).iteratedDeriv_eq]
+
+/-- The cusp function of a constant function is constant. -/
+@[simp]
+theorem UpperHalfPlane.cuspFunction_const (h : ℝ) (c : ℂ) :
+    cuspFunction h (fun _ : ℍ ↦ c) = fun _ ↦ c := by
+  have h_lim : limUnder (𝓝[≠] (0 : ℂ))
+      (((fun _ ↦ c : ℍ → ℂ) ∘ ofComplex) ∘ Function.Periodic.invQParam h) = c :=
+    Filter.Tendsto.limUnder_eq tendsto_const_nhds
+  rw [cuspFunction, Function.Periodic.cuspFunction, h_lim]
+  exact Function.update_eq_self 0 (fun _ ↦ c)
+
+/-- The cusp function of `1` is `1`. -/
+@[simp]
+theorem UpperHalfPlane.cuspFunction_one (h : ℝ) : cuspFunction h (1 : ℍ → ℂ) = 1 :=
+  cuspFunction_const h 1
+
+/-- The cusp function of a power is the power of the cusp function, when the cusp function is
+continuous at `0`. -/
+theorem UpperHalfPlane.cuspFunction_pow (hf : ContinuousAt (cuspFunction h f) 0) :
+    ∀ n : ℕ, cuspFunction h (f ^ n) = cuspFunction h f ^ n
+  | 0 => by rw [pow_zero, pow_zero]; exact cuspFunction_one h
+  | n + 1 => by
+    rw [pow_succ, pow_succ, ← cuspFunction_pow hf n,
+      _root_.UpperHalfPlane.cuspFunction_mul
+        (by rw [cuspFunction_pow hf n]; exact hf.pow n) hf]
+
+/-- The `q`-expansion of a power is the power of the `q`-expansion, when the cusp function is
+analytic at `0`. -/
+theorem UpperHalfPlane.qExpansion_pow (hf : AnalyticAt ℂ (cuspFunction h f) 0) :
+    ∀ n : ℕ, qExpansion h (f ^ n) = qExpansion h f ^ n
+  | 0 => by rw [pow_zero, pow_zero, _root_.UpperHalfPlane.qExpansion_one]
+  | n + 1 => by
+    have h_an : AnalyticAt ℂ (cuspFunction h (f ^ n)) 0 := by
+      rw [cuspFunction_pow hf.continuousAt n]
+      exact hf.pow n
+    rw [pow_succ, pow_succ, _root_.UpperHalfPlane.qExpansion_mul h_an hf, qExpansion_pow hf n]
+
+/-- The cusp function of a product is meromorphic at `0` when both cusp functions are. -/
+theorem UpperHalfPlane.meromorphicAt_cuspFunction_mul (hf : MeromorphicAt (cuspFunction h f) 0)
+    (hg : MeromorphicAt (cuspFunction h g) 0) : MeromorphicAt (cuspFunction h (f * g)) 0 :=
+  (hf.mul hg).congr (cuspFunction_map₂_eventuallyEq (· * ·) f g).symm
+
+/-- The cusp function of a sum is meromorphic at `0` when both cusp functions are. -/
+theorem UpperHalfPlane.meromorphicAt_cuspFunction_add (hf : MeromorphicAt (cuspFunction h f) 0)
+    (hg : MeromorphicAt (cuspFunction h g) 0) : MeromorphicAt (cuspFunction h (f + g)) 0 :=
+  (hf.add hg).congr (cuspFunction_map₂_eventuallyEq (· + ·) f g).symm
+
+/-- The cusp function of a difference is meromorphic at `0` when both cusp functions are. -/
+theorem UpperHalfPlane.meromorphicAt_cuspFunction_sub (hf : MeromorphicAt (cuspFunction h f) 0)
+    (hg : MeromorphicAt (cuspFunction h g) 0) : MeromorphicAt (cuspFunction h (f - g)) 0 :=
+  (hf.sub hg).congr (cuspFunction_map₂_eventuallyEq (· - ·) f g).symm
+
+/-- The cusp function of a quotient is meromorphic at `0` when both cusp functions are. -/
+theorem UpperHalfPlane.meromorphicAt_cuspFunction_div (hf : MeromorphicAt (cuspFunction h f) 0)
+    (hg : MeromorphicAt (cuspFunction h g) 0) : MeromorphicAt (cuspFunction h (f / g)) 0 :=
+  (hf.div hg).congr (cuspFunction_map₂_eventuallyEq (· / ·) f g).symm
+
+/-- The cusp function of a negation is meromorphic at `0` when the cusp function is. -/
+theorem UpperHalfPlane.meromorphicAt_cuspFunction_neg (hf : MeromorphicAt (cuspFunction h f) 0) :
+    MeromorphicAt (cuspFunction h (-f)) 0 :=
+  hf.neg.congr (cuspFunction_map_eventuallyEq (- ·) f).symm
+
+/-- The cusp function of an inverse is meromorphic at `0` when the cusp function is. -/
+theorem UpperHalfPlane.meromorphicAt_cuspFunction_inv (hf : MeromorphicAt (cuspFunction h f) 0) :
+    MeromorphicAt (cuspFunction h f⁻¹) 0 :=
+  hf.inv.congr (cuspFunction_map_eventuallyEq (·⁻¹) f).symm
+
+/-- The cusp function of a power is meromorphic at `0` when the cusp function is. -/
+theorem UpperHalfPlane.meromorphicAt_cuspFunction_pow (hf : MeromorphicAt (cuspFunction h f) 0)
+    (n : ℕ) : MeromorphicAt (cuspFunction h (f ^ n)) 0 :=
+  (hf.pow n).congr (cuspFunction_map_eventuallyEq (· ^ n) f).symm
+
+/-- The cusp function of a constant function is meromorphic at `0`. -/
+theorem UpperHalfPlane.meromorphicAt_cuspFunction_const (c : ℂ) :
+    MeromorphicAt (cuspFunction h fun _ : ℍ ↦ c) 0 :=
+  cuspFunction_const h c ▸ analyticAt_const.meromorphicAt
+
+/-- The order at `0` of `q ^ k` times the cusp function of `f`. -/
+theorem UpperHalfPlane.meromorphicOrderAt_pow_mul_cuspFunction {k : ℕ}
+    (hf : MeromorphicAt (cuspFunction h f) 0) :
+    meromorphicOrderAt (fun q ↦ q ^ k * cuspFunction h f q) 0 =
+      k + meromorphicOrderAt (cuspFunction h f) 0 := by
+  have hq : MeromorphicAt (fun q : ℂ ↦ q ^ k) 0 := (analyticAt_id.pow k).meromorphicAt
+  rw [fun_meromorphicOrderAt_mul hq hf]
+  congr 1
+  simpa using fun_meromorphicOrderAt_pow_id_sub_const (x := (0 : ℂ)) (n := k)
+
+end CuspFunction
+
+/-- The cusp function of a power of the `q`-parameter is analytic at `0`. -/
+theorem UpperHalfPlane.analyticAt_cuspFunction_qParam_pow (hh : 0 < h) (m : ℕ) :
+    AnalyticAt ℂ (cuspFunction h fun τ : ℍ ↦ Function.Periodic.qParam h τ ^ m) 0 := by
+  have hq := analyticAt_cuspFunction_qParam hh
+  rw [← Pi.pow_def (fun τ : ℍ ↦ Function.Periodic.qParam h τ) m, cuspFunction_pow hq.continuousAt m]
+  exact hq.pow m
+
+/-- The `q`-expansion of the `m`-th power of the `q`-parameter is `X ^ m`. -/
+@[simp]
+theorem UpperHalfPlane.qExpansion_qParam_pow (hh : 0 < h) (m : ℕ) :
+    qExpansion h (fun τ : ℍ ↦ Function.Periodic.qParam h τ ^ m) = PowerSeries.X ^ m := by
+  rw [← Pi.pow_def (fun τ : ℍ ↦ Function.Periodic.qParam h τ) m,
+    qExpansion_pow (analyticAt_cuspFunction_qParam hh) m, qExpansion_qParam hh]
 
 /-- A periodic function whose `q`-expansion has no constant term is asymptotic to its first
 coefficient times `q` at `i∞`: `f τ / q` tends to the coefficient of `q`. -/

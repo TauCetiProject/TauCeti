@@ -9,6 +9,8 @@ public import TauCeti.Combinatorics.Hypergraph.PairColor.Density
 public import Mathlib.Order.Partition.Finpartition
 public import Mathlib.Basic.Real.Basic
 import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.Ring
+import TauCeti.Algebra.Order.BigOperators.Sum.UnitWeights
 
 /-!
 # Regularity of pair colors and of the lower skeleton
@@ -18,6 +20,14 @@ the density of every palette color on `(s, t)` is within `ε` of its density on 
 subsets `s' ⊆ s`, `t' ⊆ t` with `ε * #s ≤ #s'` and `ε * #t ≤ #t'`. The condition is
 coordinatewise: each color is controlled separately. Densities are taken among ordered
 *distinct* pairs, so the condition is meaningful also when `s = t`.
+
+For disjoint `s` and `t`, an `ε`-regular pair has small *rectangle discrepancy*: for every color
+`c`, the number of pairs of color `c` in `s' ×ˢ t'` is within `ε |s| |t|` of the count
+`d_c(s, t) |s'| |t'|` predicted by the density on `(s, t)`. The same bound holds when the
+indicator of `c` is tested against functions with values in `[0, 1]`; this is the input of
+counting lemmas. Both follow the corresponding bounds for uniform pairs of a graph,
+`SimpleGraph.IsUniform.abs_card_interedges_sub_le` and
+`SimpleGraph.IsUniform.abs_sum_sum_mul_sub_le`.
 
 A `PairSkeleton3` bundles a partition of the host into vertex cells with a pair-color system.
 It is the lower skeleton over which triple densities and their regularity are measured.
@@ -29,13 +39,22 @@ schedule `F : ℕ → ℝ` at the lower complexity, the number of vertex cells p
 
 * `TauCeti.PairColorSystem.IsRegularPair`: coordinatewise `ε`-regularity of a pair of sets.
 * `TauCeti.PairColorSystem.isRegularPair_comm`: regularity is symmetric in the two sets.
+* `TauCeti.PairColorSystem.IsRegularPair.of_subset`: the slicing lemma; subsets of at least an
+  `α`-fraction of the sizes form a `max (2ε) (ε / α)`-regular pair.
+* `TauCeti.PairColorSystem.IsRegularPair.abs_card_filter_colorOfPair_sub_le`: rectangle
+  discrepancy of a regular pair of disjoint sets.
+* `TauCeti.PairColorSystem.IsRegularPair.abs_sum_sum_mul_sub_le`: the same bound for tests with
+  values in `[0, 1]`.
 * `TauCeti.PairSkeleton3`: vertex cells together with a pair-color system.
 * `TauCeti.PairSkeleton3.IsPairColorRegular`: every pair of vertex cells is regular.
 * `TauCeti.PairSkeleton3.isPairColorRegular_bot`: the partition into singletons is regular.
 * `TauCeti.PairSkeleton3.LowerSkeletonRegular`: regularity at the lower complexity.
+* `TauCeti.PairSkeleton3.relabel`: renaming the pair palette along an equivalence.
 
 ## References
 
+* J. Komlós and M. Simonovits, *Szemerédi's regularity lemma and its applications in graph
+  theory*, in Combinatorics, Paul Erdős is Eighty, Vol. 2 (1996), Fact 1.5 (the slicing lemma).
 * V. Rödl, M. Schacht, *Regular partitions of hypergraphs: regularity lemmas*,
   Combin. Probab. Comput. 16 (2007).
 * C. Terry, *Growth of regular partitions 4: strong regularity and the pairs partition*,
@@ -95,6 +114,41 @@ theorem IsRegularPair.symm (h : S.IsRegularPair ε s t) : S.IsRegularPair ε t s
 theorem isRegularPair_comm : S.IsRegularPair ε s t ↔ S.IsRegularPair ε t s :=
   ⟨IsRegularPair.symm, IsRegularPair.symm⟩
 
+/-- A regular pair for a nonempty palette has a nonnegative parameter: for a negative parameter,
+the empty subsets pass the size thresholds. -/
+theorem IsRegularPair.nonneg [Nonempty κ] (h : S.IsRegularPair ε s t) : 0 ≤ ε := by
+  by_contra! hε
+  have h₀ (u : Finset V) : ε * #u ≤ (#(∅ : Finset V) : ℝ) := by
+    rw [card_empty, Nat.cast_zero]
+    exact mul_nonpos_of_nonpos_of_nonneg hε.le (Nat.cast_nonneg _)
+  exact (abs_nonneg _).not_gt
+    ((h (Classical.arbitrary κ) ∅ (empty_subset _) ∅ (empty_subset _) (h₀ s) (h₀ t)).trans_lt hε)
+
+/-- **Slicing lemma.** If `(s, t)` is `ε`-regular, then every pair of subsets `s₁ ⊆ s` and
+`t₁ ⊆ t` of at least an `α`-fraction of the sizes of `s` and `t` is
+`max (2ε) (ε / α)`-regular. -/
+theorem IsRegularPair.of_subset (h : S.IsRegularPair ε s t) {s₁ t₁ : Finset V} (hs : s₁ ⊆ s)
+    (ht : t₁ ⊆ t) {α : ℝ} (hα : 0 < α) (hs₁ : α * #s ≤ #s₁) (ht₁ : α * #t ≤ #t₁) :
+    S.IsRegularPair (max (2 * ε) (ε / α)) s₁ t₁ := by
+  intro c s' hs' t' ht' hs'₁ ht'₁
+  have hε : 0 ≤ ε := haveI : Nonempty κ := ⟨c⟩; h.nonneg
+  obtain hαε | hεα := lt_or_ge α ε
+  · exact isRegularPair_of_one_le (le_max_of_le_right ((one_lt_div hα).2 hαε).le) c s' hs' t' ht'
+      hs'₁ ht'₁
+  -- A subset of `u₁` passing the sliced threshold passes the original threshold in `u`.
+  have key {u u₁ u' : Finset V} (hu₁ : α * #u ≤ #u₁)
+      (hu' : max (2 * ε) (ε / α) * #u₁ ≤ #u') : ε * #u ≤ #u' :=
+    calc ε * #u = ε / α * (α * #u) := by rw [← mul_assoc, div_mul_cancel₀ ε hα.ne']
+      _ ≤ ε / α * #u₁ := by gcongr
+      _ ≤ max (2 * ε) (ε / α) * #u₁ := by gcongr; exact le_max_right _ _
+      _ ≤ #u' := hu'
+  have h₁ := h c s' (hs'.trans hs) t' (ht'.trans ht) (key hs₁ hs'₁) (key ht₁ ht'₁)
+  have h₂ := h c s₁ hs t₁ ht (by grw [hεα, hs₁]) (by grw [hεα, ht₁])
+  rw [abs_sub_comm] at h₂
+  calc _ ≤ _ := abs_sub_le _ (pairColorDensity S c s t : ℝ) _
+    _ ≤ 2 * ε := by linarith
+    _ ≤ _ := le_max_left _ _
+
 /-- Two singletons form an `ε`-regular pair for every `ε > 0`. -/
 theorem isRegularPair_singleton (hε : 0 < ε) (u v : V) : S.IsRegularPair ε {u} {v} := by
   intro c s' hs' t' ht' hs ht
@@ -104,6 +158,71 @@ theorem isRegularPair_singleton (hε : 0 < ε) (u v : V) : S.IsRegularPair ε {u
   obtain rfl | rfl := subset_singleton_iff.mp ht'
   · exact absurd ht (by simpa using hε)
   simpa using hε.le
+
+section Discrepancy
+
+variable [DecidableEq κ] {s' t' : Finset V} {c : κ}
+
+/-- **Rectangle discrepancy of a regular pair.** If `(s, t)` is an `ε`-regular pair of disjoint
+sets, then for all `s' ⊆ s` and `t' ⊆ t` the number of pairs of color `c` in `s' ×ˢ t'` is within
+`ε |s| |t|` of the count `d_c(s, t) |s'| |t'|` predicted by the density of `c` on `(s, t)`. -/
+theorem IsRegularPair.abs_card_filter_colorOfPair_sub_le (h : S.IsRegularPair ε s t)
+    (hst : Disjoint s t) (hs' : s' ⊆ s) (ht' : t' ⊆ t) :
+    |(#{p ∈ s' ×ˢ t' | S.colorOfPair p.1 p.2 = some c} : ℝ) -
+        pairColorDensity S c s t * #s' * #t'| ≤ ε * #s * #t := by
+  classical
+  have hε : 0 ≤ ε := haveI : Nonempty κ := ⟨c⟩; h.nonneg
+  have hs : (#s' : ℝ) ≤ #s := by exact_mod_cast card_le_card hs'
+  have ht : (#t' : ℝ) ≤ #t := by exact_mod_cast card_le_card ht'
+  -- The sets are disjoint, so every pair in `s' ×ˢ t'` is a pair of distinct vertices.
+  have hsupp : {p ∈ s' ×ˢ t' | p.1 ≠ p.2} = s' ×ˢ t' := by
+    refine filter_true_of_mem fun p hp ↦ ?_
+    rw [mem_product] at hp
+    exact ne_of_mem_of_not_mem hp.1 (disjoint_right.mp (hst.mono hs' ht') hp.2)
+  have hcount : (#{p ∈ s' ×ˢ t' | S.colorOfPair p.1 p.2 = some c} : ℝ) =
+      pairColorDensity S c s' t' * (#s' * #t') := by
+    have := pairColorDensity_mul_card_support S c s' t'
+    rw [hsupp, card_product] at this
+    exact_mod_cast this.symm
+  have hd₀ : (0 : ℝ) ≤ pairColorDensity S c s t := mod_cast pairColorDensity_nonneg S c s t
+  have hd₁ : (pairColorDensity S c s t : ℝ) ≤ 1 := mod_cast pairColorDensity_le_one S c s t
+  by_cases hbig : ε * #s ≤ #s' ∧ ε * #t ≤ #t'
+  · rw [hcount, mul_assoc (pairColorDensity S c s t : ℝ), ← sub_mul, abs_mul,
+      abs_of_nonneg (a := (#s' : ℝ) * #t') (by positivity), mul_assoc]
+    exact mul_le_mul (h c s' hs' t' ht' hbig.1 hbig.2) (mul_le_mul hs ht (by positivity)
+      (by positivity)) (by positivity) hε
+  · -- A thin rectangle has at most `ε |s| |t|` pairs, which bounds both counts.
+    have hsmall : (#s' : ℝ) * #t' ≤ ε * #s * #t := by
+      rcases not_and_or.1 hbig with hb | hb
+      · calc (#s' : ℝ) * #t' ≤ (ε * #s) * #t :=
+              mul_le_mul (not_le.1 hb).le ht (by positivity) (by positivity)
+          _ = ε * #s * #t := by ring
+      · calc (#s' : ℝ) * #t' ≤ #s * (ε * #t) :=
+              mul_le_mul hs (not_le.1 hb).le (by positivity) (by positivity)
+          _ = ε * #s * #t := by ring
+    refine (abs_sub_le_of_nonneg_of_le (by positivity) ?_ (by positivity) ?_).trans hsmall
+    · rw [hcount]
+      exact mul_le_of_le_one_left (by positivity) (mod_cast pairColorDensity_le_one S c s' t')
+    · rw [mul_assoc]
+      exact mul_le_of_le_one_left (by positivity) hd₁
+
+/-- **Test-function discrepancy of a regular pair.** If `(s, t)` is an `ε`-regular pair of
+disjoint sets, then testing the deviation of the indicator of a color `c` from its density on
+`(s, t)` against functions `f` on `s` and `g` on `t` with values in `[0, 1]` gives at most
+`ε |s| |t|`. -/
+theorem IsRegularPair.abs_sum_sum_mul_sub_le (h : S.IsRegularPair ε s t) (hst : Disjoint s t)
+    (c : κ) {f g : V → ℝ} (hf₀ : ∀ x ∈ s, 0 ≤ f x) (hf₁ : ∀ x ∈ s, f x ≤ 1)
+    (hg₀ : ∀ y ∈ t, 0 ≤ g y) (hg₁ : ∀ y ∈ t, g y ≤ 1) :
+    |∑ x ∈ s, ∑ y ∈ t, f x * g y *
+        ((if S.colorOfPair x y = some c then 1 else 0) - pairColorDensity S c s t)| ≤
+      ε * #s * #t := by
+  refine abs_sum_sum_mul_mul_le_of_forall_subset hf₀ hf₁ hg₀ hg₁ fun s' hs' t' ht' ↦ ?_
+  convert h.abs_card_filter_colorOfPair_sub_le (c := c) hst hs' ht' using 2
+  rw [natCast_card_filter, sum_product]
+  simp only [sum_sub_distrib, sum_const, nsmul_eq_mul]
+  ring
+
+end Discrepancy
 
 end PairColorSystem
 
@@ -156,14 +275,8 @@ theorem isPairColorRegular_of_one_le (hε : 1 ≤ ε) : S.IsPairColorRegular ε 
 parameter. -/
 theorem IsPairColorRegular.nonneg [Nonempty κ] [Nonempty V] (h : S.IsPairColorRegular ε) :
     0 ≤ ε := by
-  refine le_of_not_gt fun hε => ?_
   obtain ⟨A, hA⟩ := S.vertexPart.parts_nonempty univ_nonempty.ne_empty
-  have hA' : ε * #A ≤ (#(∅ : Finset V) : ℝ) := by
-    rw [card_empty, Nat.cast_zero]
-    exact mul_nonpos_of_nonpos_of_nonneg hε.le (Nat.cast_nonneg _)
-  have h0 := h A hA A hA (Classical.arbitrary κ) ∅ (empty_subset _) ∅ (empty_subset _) hA' hA'
-  linarith [abs_nonneg ((pairColorDensity S.pairColors (Classical.arbitrary κ) ∅ ∅ : ℝ) -
-    pairColorDensity S.pairColors (Classical.arbitrary κ) A A)]
+  exact (h A hA A hA).nonneg
 
 /-- A lower skeleton whose vertex cells are the singletons is `ε`-regular for every `ε > 0`. -/
 theorem isPairColorRegular_bot (hε : 0 < ε) (C : PairColorSystem κ V) :
@@ -190,6 +303,20 @@ theorem LowerSkeletonRegular.isPairColorRegular [Fintype κ] {F : ℕ → ℝ}
     (h : S.LowerSkeletonRegular F) (hε : F (#S.vertexPart.parts + Fintype.card κ) ≤ ε) :
     S.IsPairColorRegular ε :=
   IsPairColorRegular.mono h hε
+
+variable (S) in
+/-- Rename the pair palette of a lower skeleton along an equivalence, keeping its vertex cells. -/
+def relabel {κ' : Type*} (e : κ ≃ κ') : PairSkeleton3 κ' V :=
+  ⟨S.vertexPart, S.pairColors.relabel e⟩
+
+@[simp]
+theorem relabel_vertexPart {κ' : Type*} (e : κ ≃ κ') : (S.relabel e).vertexPart = S.vertexPart :=
+  (rfl)
+
+@[simp]
+theorem relabel_pairColors {κ' : Type*} (e : κ ≃ κ') :
+    (S.relabel e).pairColors = S.pairColors.relabel e :=
+  (rfl)
 
 end PairSkeleton3
 

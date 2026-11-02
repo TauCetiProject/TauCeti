@@ -58,16 +58,14 @@ contributes at most `log x`.  Since a higher prime power of norm at most `x` has
 * `TauCeti.primePowerSummatory_indicator_isLittleO`: its specialization to the higher prime powers
   whose base lies in a prescribed set of primes.
 
-## Roadmap role
+## Use
 
-This is the prime and prime-power half of Layer **5.1** together with Layer **5.2** of
-`TauCetiRoadmap/ArithmeticDirichletSeries/README.md`, whose target 5.2 asks for "the generic
-`O(√x log² x)` estimate under the standard logarithmic prime-power weight" and for the
-hypotheses needed by other arithmetic weights.  Layer 10.2 consumes it as the named estimate
-turning an asymptotic for `ψ` into one for `ϑ`; the roadmap's own accounting there requires only
-the `o(x)` corollary.
+`TauCeti/NumberTheory/ArithmeticDirichletSeries/Prime/Psi.lean` consumes the estimate as
+`TauCeti.standardPrimePowerRemoval`, which turns an asymptotic for `ψ` into one for `ϑ`; only the
+`o(x)` corollary is needed there.
 
-The ideal-counting half of Layer 5.1 is a separate estimate: it is analytic, resting on Mathlib's
+The linear ideal count of `TauCeti/NumberTheory/ArithmeticDirichletSeries/Estimates.lean` is a
+separate estimate: it is analytic, resting on Mathlib's
 `NumberField.Ideal.tendsto_norm_le_div_atTop₀`, and is not needed here.
 
 ## References
@@ -370,10 +368,12 @@ multiple of the standard logarithmic weight on the higher prime powers has `o(x)
 function. -/
 theorem primePowerSummatory_isLittleO_of_le_higherPrimePowerWeight
     (K : Type*) [Field K] [NumberField K] {E : Type*} [NormedAddCommGroup E]
-    {w : IdealPrimePower K → E} {C : ℝ} (hC : 0 ≤ C)
+    {w : IdealPrimePower K → E} {C : ℝ}
     (hw : ∀ A, ‖w A‖ ≤ C * higherPrimePowerWeight A) :
     (fun x ↦ primePowerSummatory K w x) =o[atTop] fun x : ℝ ↦ x :=
-  (primePowerSummatory_isBigO_of_le_higherPrimePowerWeight K hC hw).trans_isLittleO
+  (primePowerSummatory_isBigO_of_le_higherPrimePowerWeight K (abs_nonneg C)
+    (fun A ↦ (hw A).trans (mul_le_mul_of_nonneg_right (le_abs_self C)
+      (higherPrimePowerWeight_nonneg A)))).trans_isLittleO
     isLittleO_sqrt_mul_log_sq
 
 /-- Restricting to the prime powers whose base lies in a set `S` of primes only removes
@@ -384,7 +384,7 @@ theorem primePowerSummatory_indicator_isLittleO (K : Type*) [Field K] [NumberFie
     (fun x ↦ primePowerSummatory K
         ({A : IdealPrimePower K | primePowerBase A ∈ S}.indicator higherPrimePowerWeight) x)
       =o[atTop] fun x : ℝ ↦ x :=
-  primePowerSummatory_isLittleO_of_le_higherPrimePowerWeight K zero_le_one
+  primePowerSummatory_isLittleO_of_le_higherPrimePowerWeight K
     fun A ↦ by
       rw [norm_indicator_eq_indicator_norm, one_mul]
       exact Set.indicator_apply_le'

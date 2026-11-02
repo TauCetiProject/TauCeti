@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.EMetricSpace.VariationOnFromTo
 public import Mathlib.Topology.MetricSpace.Lipschitz
+public import TauCeti.Topology.EMetricSpace.BoundedVariation
 
 /-!
 # Distance controlled by cumulative variation
@@ -14,11 +15,42 @@ public import Mathlib.Topology.MetricSpace.Lipschitz
 Cumulative signed variation controls distances between values of a metric-valued function.
 In particular, the function is constant on each fibre of cumulative variation, allowing an
 arclength factorization even when the original curve has pauses.
+
+The file also records that cumulative variation only depends on the function on `s`
+(`variationOnFromTo.eq_of_eqOn`), and the antitone counterpart
+`variationOnFromTo.comp_eq_of_antitoneOn` of Mathlib's `variationOnFromTo.comp_eq_of_monotoneOn`.
 -/
 
 public section
 
 open Set
+
+namespace variationOnFromTo
+
+variable {α β E : Type*} [LinearOrder α] [LinearOrder β] [TopologicalSpace E]
+  [WeakPseudoEMetricSpace E]
+
+/-- Cumulative signed variation only depends on the function on `s`. -/
+protected theorem eq_of_eqOn {f f' : α → E} {s : Set α} (h : EqOn f f' s) :
+    variationOnFromTo f s = variationOnFromTo f' s := by
+  funext a b
+  rcases le_total a b with hab | hba
+  · rw [variationOnFromTo.eq_of_le _ _ hab, variationOnFromTo.eq_of_le _ _ hab,
+      eVariationOn.eq_of_eqOn (h.mono inter_subset_left)]
+  · rw [variationOnFromTo.eq_of_ge _ _ hba, variationOnFromTo.eq_of_ge _ _ hba,
+      eVariationOn.eq_of_eqOn (h.mono inter_subset_left)]
+
+/-- Composing with an antitone map reverses the endpoints of cumulative signed variation. -/
+protected theorem comp_eq_of_antitoneOn (f : α → E) {t : Set β} (φ : β → α)
+    (hφ : AntitoneOn φ t) {x y : β} (hx : x ∈ t) (hy : y ∈ t) :
+    variationOnFromTo (f ∘ φ) t x y = variationOnFromTo f (φ '' t) (φ y) (φ x) := by
+  rcases le_total x y with h | h
+  · rw [variationOnFromTo.eq_of_le _ _ h, variationOnFromTo.eq_of_le _ _ (hφ hx hy h),
+      eVariationOn.comp_inter_Icc_eq_of_antitoneOn f φ hφ hx hy]
+  · rw [variationOnFromTo.eq_of_ge _ _ h, variationOnFromTo.eq_of_ge _ _ (hφ hy hx h),
+      eVariationOn.comp_inter_Icc_eq_of_antitoneOn f φ hφ hy hx]
+
+end variationOnFromTo
 
 namespace LocallyBoundedVariationOn
 

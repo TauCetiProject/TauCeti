@@ -206,9 +206,8 @@ private theorem extendJetL_mem_w1pSubmodule (a : ℝ)
   · filter_upwards [Sobolev1JetLp.value_apply_ae (extendJetL a J), hJ] with x h1 h2
     rw [h1, h2, WithLp.add_fst, jetFlip_fst, WithLp.fst_indicator, WithLp.fst_indicator]
   · filter_upwards [Sobolev1JetLp.gradient_apply_ae (extendJetL a J), hJ] with x h1 h2
-    refine ContinuousLinearMap.ext fun v => ?_
-    rw [Sobolev1JetLp.candidateWeakFDeriv_apply, innerSL_apply_apply, real_inner_comm, h1, h2,
-      WithLp.add_snd, jetFlip_snd, WithLp.snd_indicator, WithLp.snd_indicator]
+    rw [Sobolev1JetLp.candidateWeakFDeriv_def, h1, h2, WithLp.add_snd, jetFlip_snd,
+      WithLp.snd_indicator, WithLp.snd_indicator]
 
 /-- **Extension by reflection** from the half-space `{x | a < x.fst}` to the whole space: a
 Sobolev function `u` on the half-space is sent to its even reflection, equal to `u` on the

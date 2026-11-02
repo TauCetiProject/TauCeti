@@ -33,6 +33,12 @@ It exposes the chosen presentation and its commuting squares for subsequent comp
 * `TauCeti.ExactStructure.EnoughProjectives.stableLoopObjIso`: the stable loop object is the
   kernel term of any relative projective presentation.
 
+## Main results
+
+* `TauCeti.ExactStructure.EnoughProjectives.stableLoop_map_comp_stableLoopObjIso_hom`: under
+  these identifications, the stable loop functor acts on a morphism by the map it induces between
+  the kernel terms of arbitrary presentations.
+
 ## References
 
 * Dieter Happel, *Triangulated Categories in the Representation Theory of Finite Dimensional
@@ -216,6 +222,16 @@ theorem stableLoopObjIso_inv {X : C} (P : E.ProjectivePresentation X) :
       E.projectiveStableFunctor.map (P.kernelMap (hE.projectivePresentation X) (𝟙 X)) ≫
         eqToHom (hE.stableLoop_obj_projectiveStableFunctor_obj X).symm := by
   simp [stableLoopObjIso]
+
+/-- The identifications `stableLoopObjIso` are natural: for presentations `P` of `X` and `Q` of
+`Y`, the stable loop functor acts on `f : X ⟶ Y` by the map `P.kernelMap Q f` induced between
+their kernel terms. -/
+@[reassoc]
+theorem stableLoop_map_comp_stableLoopObjIso_hom {X Y : C} (P : E.ProjectivePresentation X)
+    (Q : E.ProjectivePresentation Y) (f : X ⟶ Y) :
+    hE.stableLoop.map (E.projectiveStableFunctor.map f) ≫ (hE.stableLoopObjIso Q).hom =
+      (hE.stableLoopObjIso P).hom ≫ E.projectiveStableFunctor.map (P.kernelMap Q f) := by
+  simp [loopMap, ← projectiveStableFunctor_map_kernelMap_comp]
 
 end ExactStructure.EnoughProjectives
 

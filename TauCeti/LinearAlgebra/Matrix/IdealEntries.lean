@@ -36,6 +36,9 @@ closure proof performs when it propagates a relation through a matrix identity.
   ideal vanishes.
 * `Matrix.forall_mem_ker_iff_map_eq_zero`: the entries of a matrix lie in the kernel of a ring
   homomorphism exactly when its image under that homomorphism is zero.
+* `Matrix.pow_apply_mem_pow`, `Matrix.isNilpotent_of_forall_apply_mem`: the `k`-th power of a
+  square matrix with entries in `I` has entries in `I ^ k`, so a square matrix with entries in a
+  nilpotent ideal is nilpotent.
 -/
 
 public section
@@ -83,5 +86,21 @@ theorem forall_mem_ker_iff_map_eq_zero {R : Type*} [Semiring R] [Semiring S] {F 
     [FunLike F R S] [RingHomClass F R S] {f : F} {D : Matrix m n R} :
     (∀ i j, D i j ∈ RingHom.ker f) ↔ D.map f = 0 := by
   simp only [RingHom.mem_ker, ← Matrix.ext_iff, map_apply, zero_apply]
+
+/-- **The powers of a matrix with entries in an ideal.** If every entry of a square matrix `M`
+lies in `I`, then every entry of `M ^ k` lies in `I ^ k`. -/
+theorem pow_apply_mem_pow [Semiring S] [Fintype n] [DecidableEq n] {I : Ideal S}
+    {M : Matrix n n S} (hM : ∀ i j, M i j ∈ I) (k : ℕ) (i j : n) : (M ^ k) i j ∈ I ^ k := by
+  induction k generalizing j with
+  | zero => rw [Submodule.pow_zero, Ideal.one_eq_top]; exact Submodule.mem_top
+  | succ k ih =>
+    rw [pow_succ, Matrix.mul_apply, Submodule.pow_succ]
+    exact Ideal.sum_mem _ fun l _ => Ideal.mul_mem_mul (ih l) (hM l j)
+
+/-- **A matrix with entries in a nilpotent ideal is nilpotent.** -/
+theorem isNilpotent_of_forall_apply_mem [Semiring S] [Fintype n] [DecidableEq n] {I : Ideal S}
+    (hI : IsNilpotent I) {M : Matrix n n S} (hM : ∀ i j, M i j ∈ I) : IsNilpotent M := by
+  obtain ⟨k, hk⟩ := hI
+  exact ⟨k, ext fun i j => by simpa [hk] using pow_apply_mem_pow hM k i j⟩
 
 end Matrix

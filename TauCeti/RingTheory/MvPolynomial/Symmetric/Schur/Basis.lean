@@ -44,7 +44,7 @@ the coordinates of `s_μ` are the Kostka numbers `K_{μν}`
 (`TauCeti.msymmBasis_repr_schurPoly`), which vanish unless `μ` dominates `ν`
 (`TauCeti.kostkaNumber_eq_zero_of_not_dominates`) and equal `1` on the diagonal
 (`TauCeti.kostkaNumber_self`).  Since dominance refines the lexicographic linear order on
-partitions (`TauCeti.lex_le_of_dominates`), the Kostka matrix is triangular with `1`s on the
+partitions (`Nat.Partition.lex_le_of_dominates`), the Kostka matrix is triangular with `1`s on the
 diagonal for that linear order, so its determinant is `1` and it is a change of basis.  This is
 where the ring hypothesis enters: over `ℕ` the transition matrix is not invertible.
 
@@ -280,7 +280,7 @@ private theorem isUnit_det_schurPolyElem :
     intro ν μ hμν
     have hlt : (μ : n.Partition) < (ν : n.Partition) := Subtype.coe_lt_coe.mpr hμν
     rw [hentry ν μ, kostkaNumber_eq_zero_of_not_dominates fun hdom =>
-      absurd (lex_le_of_dominates hdom) (not_le.mpr hlt), Nat.cast_zero]
+      absurd (Nat.Partition.lex_le_of_dominates hdom) (not_le.mpr hlt), Nat.cast_zero]
   have hdiag : ∏ ν, (msymmBasis σ R n).toMatrix (schurPolyElem σ R n) ν ν = 1 :=
     Finset.prod_eq_one fun ν _ => by rw [hentry ν ν, kostkaNumber_self, Nat.cast_one]
   rw [Module.Basis.det_apply, Matrix.det_of_isUpperTriangular htri, hdiag]
@@ -312,6 +312,22 @@ theorem coe_schurPolyBasis (μ : {ν : n.Partition // ν.parts.card ≤ Fintype.
   have h : schurPolyBasis σ R n μ = schurPolyElem σ R n μ := Module.Basis.mk_apply _ _ μ
   rw [h]
   rfl
+
+/-- **The coordinates of a Schur expansion**: if a symmetric homogeneous polynomial is a combination
+`∑_λ c_λ s_λ` of the Schur polynomials of *all* partitions of `n`, its coordinate in the Schur
+basis at a partition the alphabet records is `c_μ`.  The partitions with more parts than the
+alphabet has letters contribute nothing, their Schur polynomials vanishing. -/
+theorem schurPolyBasis_repr_of_coe_eq_sum {p : symmetricHomogeneousSubmodule σ R n}
+    {c : n.Partition → R} (hp : (p : MvPolynomial σ R) = ∑ l, c l • schurPoly σ R l)
+    (μ : {ν : n.Partition // ν.parts.card ≤ Fintype.card σ}) :
+    (schurPolyBasis σ R n).repr p μ = c μ.1 := by
+  have h : p = ∑ ν, c ν.1 • schurPolyBasis σ R n ν := by
+    refine Subtype.ext ?_
+    simp only [hp, Submodule.coe_sum, Submodule.coe_smul, coe_schurPolyBasis]
+    rw [← Fintype.sum_subtype_add_sum_subtype (fun l : n.Partition => l.parts.card ≤
+      Fintype.card σ), Fintype.sum_eq_zero (fun l : {l : n.Partition // ¬_} => _)
+      fun l => by rw [schurPoly_eq_zero_of_card_lt _ (not_le.mp l.2), smul_zero], add_zero]
+  rw [h, Module.Basis.repr_sum_self]
 
 /-- In an alphabet with at least `n` letters, the Schur polynomials of all partitions of
 `n` are linearly independent. Thus their coefficients in a finite expansion are unique. -/

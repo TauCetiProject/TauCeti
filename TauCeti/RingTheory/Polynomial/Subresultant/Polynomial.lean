@@ -36,10 +36,16 @@ that controls the subresultant gcd criterion.
   `j`.
 * `Polynomial.subresultant_map_map`: fixed-bound subresultant polynomials commute with
   coefficient maps.
+* `Polynomial.subresultant_map_of_natDegree_eq`: at the actual degrees, they commute with
+  coefficient maps that preserve both degrees.
 * `Polynomial.subresultant_comm`: swapping the inputs gives the Sylvester block-swap
   sign.
 * `Polynomial.psc_C_mul_left`, `Polynomial.psc_C_mul_right`: scaling one polynomial by a constant
   scales the principal subresultant coefficient by a power of that constant.
+* `Polynomial.subresultant_zero_left`, `Polynomial.subresultant_zero_right`: a zero input gives
+  zero subresultant polynomials; the minors with a nonempty column block of the zero input vanish.
+* `Polynomial.subresultant_succ_succ_self`: with equal bounds `j + 1`, the subresultant at index
+  `j` is `p_{j+1} q - q_{j+1} p`.
 
 ## References
 
@@ -207,6 +213,15 @@ theorem subresultantCoeff_map_map [CommRing R] [CommRing S]
       f (subresultantCoeff p q m n j k) := by
   simp [subresultantCoeff_def, RingHom.map_det]
 
+/-- At the actual degrees, subresultant coefficient minors commute with a coefficient map that
+preserves both degrees. -/
+theorem subresultantCoeff_map_of_natDegree_eq [CommRing R] [CommRing S] (f : R →+* S)
+    {p q : R[X]} (hp : (p.map f).natDegree = p.natDegree) (hq : (q.map f).natDegree = q.natDegree)
+    (j k : ℕ) :
+    subresultantCoeff (p.map f) (q.map f) (p.map f).natDegree (q.map f).natDegree j k =
+      f (subresultantCoeff p q p.natDegree q.natDegree j k) := by
+  rw [hp, hq, subresultantCoeff_map_map]
+
 /-- Swapping the inputs changes every coefficient minor by the Sylvester block-swap sign. -/
 theorem subresultantCoeff_comm [CommRing R]
     (p q : R[X]) (m n j k : ℕ) :
@@ -335,6 +350,18 @@ theorem subresultant_map_map [CommRing R] [CommRing S]
   ext k
   by_cases hj : j < min m n <;> by_cases hkj : k ≤ j <;> simp [hj, hkj]
 
+/-- At the actual degrees, subresultant polynomials commute with a coefficient map that preserves
+both degrees, for instance one that does not kill the leading coefficients
+(`Polynomial.natDegree_map_of_leadingCoeff_ne_zero`). When a degree drops, the degree-drop formulas
+`Polynomial.map_subresultant_of_right_degree_drop` and
+`Polynomial.map_subresultant_of_left_degree_drop` apply instead. -/
+theorem subresultant_map_of_natDegree_eq [CommRing R] [CommRing S] (f : R →+* S)
+    {p q : R[X]} (hp : (p.map f).natDegree = p.natDegree) (hq : (q.map f).natDegree = q.natDegree)
+    (j : ℕ) :
+    subresultant (p.map f) (q.map f) (p.map f).natDegree (q.map f).natDegree j =
+      (subresultant p q p.natDegree q.natDegree j).map f := by
+  rw [hp, hq, subresultant_map_map]
+
 /-- Scaling the left input by `r` scales its subresultant polynomial at index `j` by
 `r ^ (n - j)`. -/
 theorem subresultant_C_mul_left [CommRing R]
@@ -364,6 +391,101 @@ theorem subresultant_comm [CommRing R]
   ext k
   rw [coeff_subresultant, coeff_C_mul, coeff_subresultant, min_comm n m, subresultantCoeff_comm,
     mul_ite, mul_zero]
+
+/-! ### Zero inputs -/
+
+/-- A zero left input makes a coefficient minor vanish when its column block, of size `n - j`,
+is nonempty. -/
+@[simp]
+theorem subresultantCoeff_zero_left [CommRing R] (q : R[X]) {m n j : ℕ} (hjn : j < n) (k : ℕ) :
+    subresultantCoeff 0 q m n j k = 0 := by
+  simpa [zero_pow (Nat.sub_ne_zero_of_lt hjn)] using
+    subresultantCoeff_C_mul_left (0 : R[X]) q 0 m n j k
+
+/-- A zero right input makes a coefficient minor vanish when its column block, of size `m - j`,
+is nonempty. -/
+@[simp]
+theorem subresultantCoeff_zero_right [CommRing R] (p : R[X]) {m n j : ℕ} (hjm : j < m) (k : ℕ) :
+    subresultantCoeff p 0 m n j k = 0 := by
+  simpa [zero_pow (Nat.sub_ne_zero_of_lt hjm)] using
+    subresultantCoeff_C_mul_right p (0 : R[X]) 0 m n j k
+
+/-- A zero left input makes the principal coefficient vanish below the right bound. At `j = n`
+the empty column block gives instead `psc 0 q m n n = q.coeff n ^ (m - n)`
+(`Polynomial.psc_right_bound`). -/
+@[simp]
+theorem psc_zero_left [CommRing R] (q : R[X]) {m n j : ℕ} (hjn : j < n) :
+    psc 0 q m n j = 0 := by
+  simpa using subresultantCoeff_zero_left q (m := m) hjn j
+
+/-- A zero right input makes the principal coefficient vanish below the left bound. At `j = m`
+the empty column block gives instead `psc p 0 m n m = p.coeff m ^ (n - m)`
+(`Polynomial.psc_left_bound`). -/
+@[simp]
+theorem psc_zero_right [CommRing R] (p : R[X]) {m n j : ℕ} (hjm : j < m) :
+    psc p 0 m n j = 0 := by
+  simpa using subresultantCoeff_zero_right p (n := n) hjm j
+
+/-- Every subresultant polynomial with a zero left input vanishes. -/
+@[simp]
+theorem subresultant_zero_left [CommRing R] (q : R[X]) (m n j : ℕ) :
+    subresultant 0 q m n j = 0 := by
+  ext k
+  rw [coeff_subresultant, coeff_zero]
+  split_ifs with h
+  · exact subresultantCoeff_zero_left q (by omega) k
+  · rfl
+
+/-- Every subresultant polynomial with a zero right input vanishes. -/
+@[simp]
+theorem subresultant_zero_right [CommRing R] (p : R[X]) (m n j : ℕ) :
+    subresultant p 0 m n j = 0 := by
+  ext k
+  rw [coeff_subresultant, coeff_zero]
+  split_ifs with h
+  · exact subresultantCoeff_zero_right p (by omega) k
+  · rfl
+
+/-! ### Equal degree bounds -/
+
+/-- With equal bounds `j + 1`, the coefficient minors at index `j` are the `2 × 2`
+determinants `p_{j+1} q_k - q_{j+1} p_k`. -/
+theorem subresultantCoeff_succ_succ_self [CommRing R] (p q : R[X]) {j k : ℕ} (hk : k ≤ j + 1) :
+    subresultantCoeff p q (j + 1) (j + 1) j k =
+      p.coeff (j + 1) * q.coeff k - q.coeff (j + 1) * p.coeff k := by
+  have h1 : j + 1 - j = 1 := by omega
+  let e : Fin ((j + 1 - j) + (j + 1 - j)) ≃ Fin 2 := finCongr (by omega)
+  have hq : (e.symm 0 : Fin _) = Fin.castAdd (j + 1 - j) ⟨0, by omega⟩ := Fin.ext (by simp [e])
+  have hp : (e.symm 1 : Fin _) = Fin.natAdd (j + 1 - j) ⟨0, by omega⟩ :=
+    Fin.ext (by simp [e, h1])
+  rw [subresultantCoeff_def, ← Matrix.det_submatrix_equiv_self e.symm, Matrix.det_fin_two]
+  simp only [Matrix.submatrix_apply, hq, hp, subresultantCoeffMatrix_castAdd,
+    subresultantCoeffMatrix_natAdd, Fin.val_castAdd, Fin.val_natAdd]
+  simp [hk, mul_comm, add_comm 1 j]
+
+/-- With equal bounds `j + 1`, the principal coefficient at index `j` is
+`p_{j+1} q_j - q_{j+1} p_j`. -/
+theorem psc_succ_succ_self [CommRing R] (p q : R[X]) (j : ℕ) :
+    psc p q (j + 1) (j + 1) j = p.coeff (j + 1) * q.coeff j - q.coeff (j + 1) * p.coeff j := by
+  simpa using subresultantCoeff_succ_succ_self p q (Nat.le_succ j)
+
+/-- **Equal degrees.** With equal bounds `j + 1` dominating both degrees, the subresultant
+polynomial at index `j` is `p_{j+1} q - q_{j+1} p`, the first step of a pseudo-division of
+polynomials of the same degree. -/
+theorem subresultant_succ_succ_self [CommRing R] {p q : R[X]} {j : ℕ}
+    (hp : p.natDegree ≤ j + 1) (hq : q.natDegree ≤ j + 1) :
+    subresultant p q (j + 1) (j + 1) j = C (p.coeff (j + 1)) * q - C (q.coeff (j + 1)) * p := by
+  ext k
+  rw [coeff_subresultant, coeff_sub, coeff_C_mul, coeff_C_mul]
+  by_cases hk : k ≤ j
+  · simp only [min_self, Nat.lt_succ_self j, hk, and_self, ↓reduceIte]
+    exact subresultantCoeff_succ_succ_self p q (by omega)
+  · simp only [hk, and_false, ↓reduceIte]
+    obtain rfl | hk' : k = j + 1 ∨ j + 1 < k := by omega
+    · ring
+    · rw [coeff_eq_zero_of_natDegree_lt (hp.trans_lt hk'),
+        coeff_eq_zero_of_natDegree_lt (hq.trans_lt hk')]
+      ring
 
 end Polynomial
 

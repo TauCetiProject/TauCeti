@@ -197,6 +197,31 @@ theorem dgDifferential_eq (n : ℤ) (f : DGHom R n M N) :
     (DGCategoryData.dgDifferential_toDGCategory (homComplexData (h := h)) n f)).trans
       (homComplexData_d_apply M N n f)
 
+/-- Homogeneous differentials vanish between DG right modules with zero differentials. -/
+-- Apply this rule before the enrichment exposes its concrete Hom-complex data.
+@[simp↓]
+theorem dgDifferential_eq_zero (hM : M.differential = 0) (hN : N.differential = 0)
+    (n : ℤ) (f : DGHom R n M N) : dgDifferential R n f = 0 := by
+  apply (dgHomLinearEquivCochains M N (n + 1)).injective
+  rw [dgDifferential_eq, map_zero]
+  apply Subtype.ext
+  apply LinearMap.ext
+  intro x
+  rw [dgRightModuleCochains.differential_apply, hM, hN]
+  simp only [Submodule.coe_zero, LinearMap.zero_apply, map_zero, smul_zero, sub_zero]
+
+/-- All Hom-complex differentials vanish when both module differentials are zero. -/
+@[simp↓]
+theorem dgHomComplex_d_eq_zero (hM : M.differential = 0) (hN : N.differential = 0)
+    (p q : ℤ) : (dgHomComplex R M N).d p q = 0 := by
+  by_cases h : p + 1 = q
+  · subst q
+    apply ModuleCat.hom_ext
+    ext f
+    simpa only [dgDifferential, ModuleCat.hom_zero, LinearMap.zero_apply] using
+      dgDifferential_eq_zero M N hM hN p f
+  · exact (dgHomComplex R M N).shape p q h
+
 /-- The identity of the differential graded category of right modules transports to the identity
 cochain. -/
 @[simp↓]

@@ -13,7 +13,7 @@ public import TauCeti.Analysis.Sobolev.W1p.ChainRule
 
 Let `u ∈ H¹(Ω)` be a weak subsolution of the divergence-form equation
 
-`-∂ⱼ(aⁱʲ ∂ᵢu) ≤ f` in `Ω`.
+`-∂ᵢ(aⁱʲ ∂ⱼu) ≤ f` in `Ω`.
 
 Thus the weak energy inequality holds against every nonnegative test function in `H¹₀(Ω)`.
 For a level `k`, put `w = (u - k)⁺` and assume `w ∈ L²(Ω)`. If `a` is measurable and uniformly
@@ -164,7 +164,7 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_
 /-- **The zero-forcing Caccioppoli inequality for a positive truncation of a weak
 subsolution.** This is the specialization of
 `UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_of_memLp` to
-`-∂ⱼ(aⁱʲ ∂ᵢu) ≤ 0`. -/
+`-∂ᵢ(aⁱʲ ∂ⱼu) ≤ 0`. -/
 theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_of_nonpos
     (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
     (ha : AEStronglyMeasurable a (mu.restrict Omega)) {u : W1p mu Omega 2}
@@ -217,7 +217,7 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le
 /-- **The Caccioppoli inequality on concentric balls.** There is a constant `c > 0`, depending
 only on the dimension, such that the following holds for every additive Haar measure `μ`.
 Let `a` be measurable and uniformly elliptic on `Ω` with constants `0 < λ ≤ Λ`, and let
-`u ∈ H¹(Ω)` be a weak subsolution of `-∂ⱼ(aⁱʲ ∂ᵢu) ≤ 0`. At any level `k` with
+`u ∈ H¹(Ω)` be a weak subsolution of `-∂ᵢ(aⁱʲ ∂ⱼu) ≤ 0`. At any level `k` with
 `w = (u - k)⁺ ∈ L²(Ω)`, and for every pair of balls `B(x₀, r) ⊆ B(x₀, R) ⊆ Ω` with
 `0 < r < R`,
 

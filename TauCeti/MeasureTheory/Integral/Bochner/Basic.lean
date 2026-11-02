@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.Convex.Integral
 import Mathlib.Analysis.Convex.Mul
 import Mathlib.MeasureTheory.Measure.Haar.Unique
+import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 
 /-!
 # Additional lemmas for the Bochner integral
@@ -17,6 +18,11 @@ import Mathlib.MeasureTheory.Measure.Haar.Unique
 This file records general-purpose lemmas for Bochner integrals, including bridges between
 real-valued Bochner integrals and extended-nonnegative Lebesgue integrals, as well as inequalities
 for set and probability integrals.
+
+## Continuous additive maps
+
+* `AddMonoidHom.integral_comp_comm` commutes integration with a continuous additive map
+  between real Banach spaces.
 
 ## Positive parts
 
@@ -102,6 +108,15 @@ noncomputable section
 open MeasureTheory Filter TopologicalSpace
 
 open scoped ENNReal Function Topology
+
+/-- Integration commutes with a continuous additive map between real Banach spaces. -/
+theorem AddMonoidHom.integral_comp_comm {X E F : Type*} [MeasurableSpace X]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+    {μ : Measure X} (T : E →+ F) (hT : Continuous T) {f : X → E} (hf : Integrable f μ) :
+    ∫ x, T (f x) ∂μ = T (∫ x, f x ∂μ) := by
+  simpa only [AddMonoidHom.coe_toRealLinearMap] using
+    (T.toRealLinearMap hT).integral_comp_comm hf
 
 namespace TauCeti
 

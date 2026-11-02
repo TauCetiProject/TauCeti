@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Field.UnitBall
 public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import TauCeti.LowDimTopology.SeifertFibration
+public import TauCeti.Topology.Category.TopCat.DisjointOpens
 
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.Deriv.Shift
@@ -48,6 +49,8 @@ onto the normal plane, and `n₂ z` is the cross product of the unit tangent wit
 
 ## Main results
 
+* `TauCeti.SolidTorus.extendsDisjointOpens_boundaryInclusion`: the inclusion of the boundary torus
+  into the solid torus extends disjoint open sets, through open collars.
 * `TauCeti.IsSolidTorusNeighborhood.frontier_image`: the frontier of the image of the open solid
   torus, which is also the frontier of the knot exterior, is the image of the boundary torus
   when the ambient space is Hausdorff.
@@ -55,6 +58,10 @@ onto the normal plane, and `n₂ z` is the cross product of the unit tangent wit
   `S¹ × S¹` embeds.
 * `TauCeti.IsSolidTorusNeighborhood.comp`: solid torus neighbourhoods are carried along open
   embeddings of the ambient space.
+* `TauCeti.IsSolidTorusNeighborhood.apply_mem_range_iff`: a point of the solid torus lies on the
+  knot exactly when it lies on the core.
+* `TauCeti.IsSolidTorusNeighborhood.frontier_subset_compl_range`: the boundary torus of the exterior
+  misses the knot.
 * `TauCeti.IsSolidTorusNeighborhood.exteriorFrontierHomeomorph`: the framing identifies the torus
   with the frontier of the exterior.
 * `TauCeti.exists_isSolidTorusNeighborhood`: a `C²` embedded circle in `ℝ³` has a solid torus
@@ -98,6 +105,27 @@ theorem SolidTorus.boundaryInclusion_snd (q : Circle × Circle) :
 theorem SolidTorus.isEmbedding_boundaryInclusion : IsEmbedding SolidTorus.boundaryInclusion :=
   (IsEmbedding.subtypeVal.codRestrict (closedBall (0 : ℂ) 1)
     fun z : Circle => mem_closedBall_zero_iff.mpr (Circle.norm_coe z).le).prodMap IsEmbedding.id
+
+/-- The inclusion of the boundary torus into the solid torus extends disjoint open sets: an open
+subset `U` of `S¹ × S¹` is the trace of the open collar of points `(w, z)` with `1 / 2 < ‖w‖` and
+`(w / ‖w‖, z) ∈ U`, and the collars over disjoint sets are disjoint
+(`TauCeti.TopCat.extendsDisjointOpens_of_continuousOn` with the radial projection). -/
+theorem SolidTorus.extendsDisjointOpens_boundaryInclusion :
+    TopCat.extendsDisjointOpens (TopCat.ofHom
+      ⟨SolidTorus.boundaryInclusion, SolidTorus.isEmbedding_boundaryInclusion.continuous⟩) := by
+  have hw : Continuous fun p : SolidTorus ↦ (p.1 : ℂ) := continuous_subtype_val.comp continuous_fst
+  refine TopCat.extendsDisjointOpens_of_continuousOn _
+    (μ := fun q : Circle × Circle ↦ ((q.1 : ℂ), q.2)) (IsInducing.subtypeVal.prodMap .id)
+    (N := {p | 1 / 2 < ‖(p.1 : ℂ)‖}) (ρ := fun p ↦ (‖(p.1 : ℂ)‖⁻¹ • (p.1 : ℂ), p.2))
+    (isOpen_lt continuous_const hw.norm)
+    (((ContinuousOn.inv₀ hw.norm.continuousOn fun p hp ↦ (lt_trans (by norm_num) hp).ne').smul
+      hw.continuousOn).prodMk continuous_snd.continuousOn) (fun q ↦ ?_) (fun p hp ↦ ?_)
+    (fun q ↦ ?_)
+  · simp [show (2⁻¹ : ℝ) < 1 by norm_num]
+  · have h₁ : ‖‖(p.1 : ℂ)‖⁻¹ • (p.1 : ℂ)‖ = 1 :=
+      norm_smul_inv_norm (𝕜 := ℝ) (norm_pos_iff.1 (lt_trans (by norm_num) hp))
+    exact ⟨(⟨_, mem_sphere_zero_iff_norm.2 h₁⟩, p.2), rfl⟩
+  · simp
 
 /-- The boundary torus is the set of points `(w, z)` of the solid torus with `‖w‖ = 1`. -/
 theorem SolidTorus.range_boundaryInclusion :
@@ -152,10 +180,34 @@ theorem range_mem_nhdsSet (h : IsSolidTorusNeighborhood f Φ) : range Φ ∈ �
   Filter.mem_of_superset (h.isOpen_image.mem_nhdsSet.mpr h.range_subset_image)
     (image_subset_range _ _)
 
+/-- A point of the solid torus lies on the knot exactly when it lies on the core `{0} × S¹`. -/
+theorem apply_mem_range_iff (h : IsSolidTorusNeighborhood f Φ) (p : SolidTorus) :
+    Φ p ∈ range f ↔ (p.1 : ℂ) = 0 := by
+  constructor
+  · rintro ⟨z, hz⟩
+    rw [← h.apply_zero z] at hz
+    rw [← h.isEmbedding.injective hz]
+    rfl
+  · intro hp
+    refine ⟨p.2, ?_⟩
+    rw [← h.apply_zero]
+    exact congrArg Φ (Prod.ext (Subtype.ext hp.symm) rfl)
+
 /-- A solid torus neighbourhood in a Hausdorff space is a closed embedding. -/
 theorem isClosedEmbedding [T2Space X] (h : IsSolidTorusNeighborhood f Φ) :
     IsClosedEmbedding Φ :=
   h.isEmbedding.continuous.isClosedEmbedding h.isEmbedding.injective
+
+/-- A loop with a solid torus neighbourhood has compact image, the image of the core circle. -/
+theorem isCompact_range (h : IsSolidTorusNeighborhood f Φ) : IsCompact (range f) := by
+  have hcore : f = fun z ↦ Φ (0, z) := funext fun z ↦ (h.apply_zero z).symm
+  rw [hcore]
+  exact _root_.isCompact_range
+    (h.isEmbedding.continuous.comp (continuous_const.prodMk continuous_id))
+
+/-- A loop with a solid torus neighbourhood in a Hausdorff space has closed image. -/
+theorem isClosed_range [T2Space X] (h : IsSolidTorusNeighborhood f Φ) : IsClosed (range f) :=
+  h.isCompact_range.isClosed
 
 /-- A solid torus neighbourhood is carried along an open embedding of the ambient space, such as
 the inclusion of an open subset or a homeomorphism. -/
@@ -187,6 +239,15 @@ torus when the ambient space is Hausdorff. -/
 theorem isEmbedding_comp_boundaryInclusion (h : IsSolidTorusNeighborhood f Φ) :
     IsEmbedding (Φ ∘ SolidTorus.boundaryInclusion) :=
   h.isEmbedding.comp SolidTorus.isEmbedding_boundaryInclusion
+
+/-- The boundary torus of the knot exterior is disjoint from the knot. -/
+theorem frontier_subset_compl_range [T2Space X] (h : IsSolidTorusNeighborhood f Φ) :
+    frontier (Φ '' {p | ‖(p.1 : ℂ)‖ < 1})ᶜ ⊆ (range f)ᶜ := by
+  rw [frontier_compl, h.frontier_image]
+  rintro _ ⟨q, rfl⟩
+  rw [mem_compl_iff, comp_apply, h.apply_mem_range_iff, ← norm_eq_zero,
+    SolidTorus.coe_boundaryInclusion_fst, Circle.norm_coe]
+  exact one_ne_zero
 
 /-- The framing identifies the boundary torus with the frontier of the knot exterior,
 the complement of the image of the open solid torus. -/

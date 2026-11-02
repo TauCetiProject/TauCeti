@@ -7,12 +7,15 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
 public import TauCeti.LinearAlgebra.CliffordAlgebra.ScalarTrace.Basic
+import Mathlib.LinearAlgebra.CliffordAlgebra.Inversion
+public import TauCeti.Algebra.Group.CommuteOrNeg
 -- Private: the product, reversal and exterior-basis lemmas below are used only inside proofs.
 import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
 import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
-import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement
+import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
 import TauCeti.LinearAlgebra.ExteriorAlgebra.AlgebraMapInv
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
+import TauCeti.Algebra.CharP.Invertible
 
 /-!
 # The ordered-product basis of an orthogonal basis, and the trace pairing
@@ -45,11 +48,29 @@ of the pairing: if every `Q (b i)` is nonnegative then `τ (reverse x * x) ≥ 0
   scalar part.
 * `CliffordAlgebra.basis_eq_prod_map_sort`: for an orthogonal basis, the basis vector indexed by
   `s` is the product of the generators of `s` in increasing order.
+* `CliffordAlgebra.involute_basis` and `CliffordAlgebra.basis_repr_involute`: for an orthogonal
+  basis, the grade involution acts on `e_s` and on the coordinate at `s` by `(-1) ^ |s|`.
 * `CliffordAlgebra.basis_mul_basis_of_disjoint`: for an orthogonal basis, basis vectors with
   disjoint index sets multiply to the signed basis vector of the union.
+* `CliffordAlgebra.basis_insert_of_forall_lt`: for an orthogonal basis, adjoining an index below
+  all of `s` multiplies `e_s` on the left by its generator.
 * `CliffordAlgebra.basis_mul_ι_of_mem` and `CliffordAlgebra.basis_mul_ι_of_notMem`: a basis
   vector `e_s` and a basis generator `ι Q (b i)` commute up to the sign `(-1) ^ (|s| - 1)` when
   `i ∈ s`, and up to `(-1) ^ |s|` when `i ∉ s`.
+* `CliffordAlgebra.basis_comm_ι_iff`: a basis vector commutes with every basis generator exactly
+  when its support is empty or is the full index set of odd cardinality, under unit-square
+  hypotheses.
+* `CliffordAlgebra.basis_univ_mem_center_of_odd_card`: the product of an odd number of
+  orthogonal basis generators is central.
+* `CliffordAlgebra.ι_mul_basis` and `CliffordAlgebra.basis_mul_basis`: for an orthogonal basis,
+  the product of a generator, respectively a basis vector `e_s`, with a basis vector `e_t` is
+  `(-1) ^ N * (∏ i ∈ s ∩ t, Q (b i)) • e_{s ∆ t}`, where `N` counts the pairs of an index of `s`
+  and a smaller index of `t`.
+* `CliffordAlgebra.basis_mul_basis_eq_or` and `CliffordAlgebra.basis_mul_self_eq_or`: signed
+  multiplication and square laws when the generators square to `±1`.
+* `CliffordAlgebra.basis_commuteOrNeg`: basis products commute up to sign for every
+  orthogonal basis.
+* `CliffordAlgebra.isUnit_basis`: a basis monomial is a unit when its generator squares are units.
 * `CliffordAlgebra.scalarTrace_reverse_basis_mul_basis`: the pairing of two basis vectors.
 * `CliffordAlgebra.scalarTrace_reverse_basis_mul`: pairing against a basis vector extracts a
   coordinate, `τ (reverse e_s * x) = (∏ i ∈ s, Q (b i)) * xₛ`.
@@ -57,6 +78,9 @@ of the pairing: if every `Q (b i)` is nonnegative then `τ (reverse x * x) ≥ 0
 * `CliffordAlgebra.scalarTrace_reverse_mul_self_nonneg` and
   `CliffordAlgebra.scalarTrace_reverse_mul_self_eq_zero_iff`: positivity and faithfulness of the
   pairing over an ordered ring.
+* `CliffordAlgebra.scalarTrace_reverse_mul_self_eq_zero_iff_basis_repr_eq_zero`: for a form
+  nonnegative on the basis, the null vectors of the pairing are the elements whose coordinates
+  vanish at every monomial of nonzero quadratic weight.
 
 ## References
 
@@ -64,6 +88,8 @@ of the pairing: if every `Q (b i)` is nonnegative then `τ (reverse x * x) ≥ 0
 -/
 
 public section
+
+open scoped symmDiff
 
 namespace CliffordAlgebra
 
@@ -77,6 +103,16 @@ theorem basis_repr_empty (b : Module.Basis I R M) (x : CliffordAlgebra Q) :
     (basis Q b).repr x ∅ = scalarTrace Q x := by
   rw [basis, Module.Basis.map_repr, LinearEquiv.trans_apply, LinearEquiv.symm_symm,
     Module.Basis.exteriorAlgebra_repr_empty, scalarTrace_apply]
+
+/-- If no weight `w i` vanishes, then the coordinates of `x` vanish at every monomial of nonzero
+weight `∏ i ∈ s, w i` exactly when `x = 0`. -/
+theorem forall_prod_ne_zero_basis_repr_eq_zero_iff {b : Module.Basis I R M} {S : Type*}
+    [CommMonoidWithZero S] [NoZeroDivisors S] [Nontrivial S] {w : I → S} (hw : ∀ i, w i ≠ 0)
+    {x : CliffordAlgebra Q} :
+    (∀ s : Finset I, (∏ i ∈ s, w i) ≠ 0 → (basis Q b).repr x s = 0) ↔ x = 0 := by
+  simp only [fun s ↦ Finset.prod_ne_zero_iff.mpr fun i (_ : i ∈ s) ↦ hw i, ne_eq,
+    not_false_eq_true, forall_const, ← Module.Basis.coord_apply,
+    Module.Basis.forall_coord_eq_zero_iff]
 
 variable {b : Module.Basis I R M}
 
@@ -95,6 +131,36 @@ theorem basis_eq_prod_map_sort (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (
   rw [basis_apply, LinearEquiv.symm_apply_eq,
     equivExterior_prod_map_ι_of_pairwise_isOrtho Q (pairwise_isOrtho_map_sort hb s),
     Module.Basis.exteriorAlgebra_eq_prod_map_sort]
+
+/-- For an orthogonal basis, the grade involution multiplies the Clifford basis vector indexed by
+`s` by the sign `(-1) ^ |s|` of its degree. -/
+theorem involute_basis (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (s : Finset I) :
+    involute (basis Q b s) = (-1 : R) ^ s.card • basis Q b s := by
+  rw [basis_eq_prod_map_sort hb, involute_prod_map_ι]
+  simp
+
+/-- For an orthogonal basis, the grade involution multiplies the coordinate at `s` by the sign
+`(-1) ^ |s|`. -/
+theorem basis_repr_involute (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (x : CliffordAlgebra Q)
+    (s : Finset I) :
+    (basis Q b).repr (involute x) s = (-1 : R) ^ s.card * (basis Q b).repr x s := by
+  refine LinearMap.congr_fun ((basis Q b).ext
+    (f₁ := (basis Q b).coord s ∘ₗ involute.toLinearMap)
+    (f₂ := (-1 : R) ^ s.card • (basis Q b).coord s) fun t ↦ ?_) x
+  by_cases h : t = s <;> simp [-basis_apply, involute_basis hb, h]
+
+/-- The full-support Clifford basis vector of an odd-dimensional orthogonal basis is central. -/
+theorem basis_univ_mem_center_of_odd_card [Fintype I]
+    (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hodd : Odd (Fintype.card I)) :
+    basis Q b Finset.univ ∈ Subalgebra.center R (CliffordAlgebra Q) := by
+  rw [basis_eq_prod_map_sort hb]
+  apply prod_map_ι_mem_center_of_odd_length (pairwise_isOrtho_map_sort hb Finset.univ)
+  · simpa only [List.length_map, Finset.length_sort, Finset.card_univ] using hodd
+  · apply le_antisymm le_top
+    rw [← b.span_eq]
+    apply Submodule.span_mono
+    rintro x ⟨i, rfl⟩
+    exact List.mem_map.mpr ⟨i, (Finset.mem_sort _).2 (Finset.mem_univ i), rfl⟩
 
 /-- **For an orthogonal basis, multiplying basis vectors with disjoint index sets is transported
 from the exterior algebra**: the Clifford product of `e_s` and `e_t` is the image of the exterior
@@ -144,6 +210,222 @@ theorem basis_mul_ι_of_notMem (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) {
   refine QuadraticMap.associated_isOrtho.mp (hb ?_)
   rintro rfl
   exact hi ((Finset.mem_sort _).1 hj)
+
+/-- For an orthogonal basis, adjoining an index `a` smaller than every index of `s` multiplies the
+basis vector `e_s` on the left by the generator `ι Q (b a)`. -/
+theorem basis_insert_of_forall_lt (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) {a : I}
+    {s : Finset I} (ha : ∀ x ∈ s, a < x) :
+    basis Q b (insert a s) = ι Q (b a) * basis Q b s := by
+  rw [basis_eq_prod_map_sort hb, basis_eq_prod_map_sort hb,
+    Finset.sort_insert _ (fun x hx ↦ (ha x hx).le) fun h ↦ lt_irrefl a (ha a h)]
+  simp
+
+/-- **A generator times a basis vector**, for an orthogonal basis: `ι Q (b a) * e_t` is the basis
+vector of `t ∆ {a}`, with the sign `(-1) ^ k` for the number `k` of indices of `t` below `a`, and
+the scalar `Q (b a)` when `a ∈ t`, since the generator then meets itself. -/
+theorem ι_mul_basis (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (a : I) (t : Finset I) :
+    ι Q (b a) * basis Q b t =
+      ((-1 : R) ^ (t.filter (· < a)).card * if a ∈ t then Q (b a) else 1) •
+        basis Q b (t ∆ {a}) := by
+  induction t using Finset.induction_on_min with
+  | empty =>
+    rw [basis_empty, ← Finset.bot_eq_empty, bot_symmDiff, basis_singleton]
+    simp
+  | insert c t hc ih =>
+    have hct : c ∉ t := fun h ↦ lt_irrefl c (hc c h)
+    rw [basis_insert_of_forall_lt hb hc]
+    rcases lt_trichotomy a c with h | rfl | h
+    · -- `a` lies below every index, so its generator is adjoined in front.
+      have hat : ∀ x ∈ insert c t, a < x := by
+        simp only [Finset.mem_insert, forall_eq_or_imp]
+        exact ⟨h, fun x hx ↦ h.trans (hc x hx)⟩
+      have ha : a ∉ insert c t := fun h ↦ lt_irrefl a (hat a h)
+      have hsd : insert c t ∆ {a} = insert a (insert c t) := by
+        ext x; simp only [Finset.mem_symmDiff, Finset.mem_insert, Finset.mem_singleton]; grind
+      have hf : (insert c t).filter (· < a) = ∅ :=
+        Finset.filter_eq_empty_iff.mpr fun x hx ↦ not_lt.mpr (hat x hx).le
+      rw [← basis_insert_of_forall_lt hb hc, ← basis_insert_of_forall_lt hb hat, hsd, hf,
+        ite_eq_right ha]
+      simp
+    · -- `a` is the least index, and its generator squares to the scalar `Q (b a)`.
+      have hsd : insert a t ∆ {a} = t := by
+        ext x; simp only [Finset.mem_symmDiff, Finset.mem_insert, Finset.mem_singleton]; grind
+      have hf : (insert a t).filter (· < a) = ∅ :=
+        Finset.filter_eq_empty_iff.mpr fun x hx ↦ by grind
+      rw [← mul_assoc, ι_sq_scalar, hsd, hf, ite_eq_left (Finset.mem_insert_self a t),
+        Algebra.algebraMap_eq_smul_one, smul_mul_assoc, one_mul]
+      simp
+    · -- `c < a`: the generators of `a` and `c` anticommute, and `c` stays in front.
+      have hac : a ≠ c := h.ne'
+      have hct' : ∀ x ∈ t ∆ {a}, c < x := fun x hx ↦ by
+        rcases Finset.mem_symmDiff.mp hx with ⟨hx, -⟩ | ⟨hx, -⟩
+        · exact hc x hx
+        · rwa [Finset.mem_singleton.mp hx]
+      have hsd : insert c t ∆ {a} = insert c (t ∆ {a}) := by
+        ext x; simp only [Finset.mem_symmDiff, Finset.mem_insert, Finset.mem_singleton]; grind
+      have hcf : c ∉ t.filter (· < a) := fun hx ↦ hct (Finset.mem_filter.mp hx).1
+      have hf : ((insert c t).filter (· < a)).card = (t.filter (· < a)).card + 1 := by
+        simp [Finset.filter_insert, h, hcf]
+      have hmem : a ∈ insert c t ↔ a ∈ t := by simp [hac]
+      calc
+        ι Q (b a) * (ι Q (b c) * basis Q b t) =
+            -(ι Q (b c) * (ι Q (b a) * basis Q b t)) := by
+          exact ι_mul_ι_mul_of_isOrtho _ (QuadraticMap.associated_isOrtho.mp (hb hac))
+        _ = -(((-1 : R) ^ (t.filter (· < a)).card * if a ∈ t then Q (b a) else 1) •
+            basis Q b (insert c (t ∆ {a}))) := by
+          rw [ih, mul_smul_comm, basis_insert_of_forall_lt hb hct']
+        _ = _ := by
+          simp only [hsd, hf, hmem, ← neg_smul]
+          congr 1
+          ring
+
+/-- **The multiplication rule for the basis of an orthogonal basis**:
+`e_s * e_t = ((-1) ^ N * ∏ i ∈ s ∩ t, Q (b i)) • e_{s ∆ t}`, where
+`N = ∑ i ∈ s, #{j ∈ t | j < i}` counts the pairs of an index of `s` and a smaller index of `t`.
+Each common index contributes the square `Q (b i)` of its generator. For disjoint `s` and `t`,
+`CliffordAlgebra.basis_mul_basis_of_disjoint` writes the same product with the sign of a shuffle
+permutation. -/
+theorem basis_mul_basis (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (s t : Finset I) :
+    basis Q b s * basis Q b t =
+      ((-1 : R) ^ (∑ i ∈ s, (t.filter (· < i)).card) * ∏ i ∈ s ∩ t, Q (b i)) •
+        basis Q b (s ∆ t) := by
+  induction s using Finset.induction_on_min with
+  | empty =>
+    rw [basis_empty, ← Finset.bot_eq_empty, bot_symmDiff]
+    simp
+  | insert a s ha ih =>
+    have has : a ∉ s := fun h ↦ lt_irrefl a (ha a h)
+    -- Every index of `s` lies above `a`, so `s` does not change what lies below `a`.
+    have hf : (s ∆ t).filter (· < a) = t.filter (· < a) := by
+      ext x; simp only [Finset.mem_filter, Finset.mem_symmDiff]
+      have := ha x; grind
+    have hsd : s ∆ t ∆ {a} = insert a s ∆ t := by
+      ext x; simp only [Finset.mem_symmDiff, Finset.mem_insert, Finset.mem_singleton]; grind
+    have hmem : a ∈ s ∆ t ↔ a ∈ t := by rw [Finset.mem_symmDiff]; tauto
+    -- First multiply the generators, then normalize the index sets and scalar coefficient.
+    rw [basis_insert_of_forall_lt hb ha, mul_assoc, ih, mul_smul_comm, ι_mul_basis hb]
+    simp only [smul_smul, hf, hsd, Finset.sum_insert has, hmem]
+    congr 1
+    by_cases hat : a ∈ t
+    · rw [ite_eq_left hat, Finset.insert_inter_of_mem hat,
+        Finset.prod_insert fun h ↦ has (Finset.mem_inter.mp h).1]
+      ring
+    · rw [ite_eq_right hat, Finset.insert_inter_of_notMem hat]
+      ring
+
+omit [Invertible (2 : R)] in
+/-- The coefficient in the multiplication rule `CliffordAlgebra.basis_mul_basis` is `±1` when every
+generator squares to `±1`. -/
+private theorem coeff_eq_one_or_neg_one (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1) (s t : Finset I) :
+    (-1 : R) ^ (∑ i ∈ s, (t.filter (· < i)).card) * ∏ i ∈ s ∩ t, Q (b i) = 1 ∨
+      (-1 : R) ^ (∑ i ∈ s, (t.filter (· < i)).card) * ∏ i ∈ s ∩ t, Q (b i) = -1 := by
+  have hprod : ∏ i ∈ s ∩ t, Q (b i) = 1 ∨ ∏ i ∈ s ∩ t, Q (b i) = -1 :=
+    Finset.prod_induction _ (fun x : R ↦ x = 1 ∨ x = -1)
+      (fun x y hx hy ↦ by rcases hx with rfl | rfl <;> rcases hy with rfl | rfl <;> simp)
+      (Or.inl rfl) fun i _ ↦ hQ i
+  rcases neg_one_pow_eq_or R (∑ i ∈ s, (t.filter (· < i)).card) with h | h <;> rw [h] <;>
+    rcases hprod with h' | h' <;> rw [h'] <;> simp
+
+/-- When every generator squares to `±1`, the product of two basis vectors is `±e_{s ∆ t}`. -/
+theorem basis_mul_basis_eq_or (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
+    (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1) (s t : Finset I) :
+    basis Q b s * basis Q b t = basis Q b (s ∆ t) ∨
+      basis Q b s * basis Q b t = -basis Q b (s ∆ t) := by
+  rw [basis_mul_basis hb]
+  rcases coeff_eq_one_or_neg_one hQ s t with hc | hc <;> rw [hc] <;> simp
+
+/-- For an orthogonal basis, two basis-vector products commute or anticommute. -/
+theorem basis_commuteOrNeg
+    (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (s t : Finset I) :
+    TauCeti.CommuteOrNeg (basis Q b s) (basis Q b t) := by
+  rcases neg_one_pow_eq_or R (∑ i ∈ s, (t.filter (· < i)).card) with hs | hs <;>
+    rcases neg_one_pow_eq_or R (∑ i ∈ t, (s.filter (· < i)).card) with ht | ht
+  · apply TauCeti.CommuteOrNeg.of_commute
+    rw [Commute, SemiconjBy]
+    rw [basis_mul_basis hb, basis_mul_basis hb]
+    rw [hs, ht, symmDiff_comm]
+    simp [Finset.inter_comm]
+  · apply TauCeti.CommuteOrNeg.of_semiconjBy
+    rw [SemiconjBy, neg_mul]
+    rw [basis_mul_basis hb, basis_mul_basis hb]
+    rw [hs, ht, symmDiff_comm]
+    simp [Finset.inter_comm]
+  · apply TauCeti.CommuteOrNeg.of_semiconjBy
+    rw [SemiconjBy, neg_mul]
+    rw [basis_mul_basis hb, basis_mul_basis hb]
+    rw [hs, ht, symmDiff_comm]
+    simp [Finset.inter_comm]
+  · apply TauCeti.CommuteOrNeg.of_commute
+    rw [Commute, SemiconjBy]
+    rw [basis_mul_basis hb, basis_mul_basis hb]
+    rw [hs, ht, symmDiff_comm]
+    simp [Finset.inter_comm]
+
+/-- When every generator squares to `±1`, each basis vector `e_s` squares to `±1`. -/
+theorem basis_mul_self_eq_or (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
+    (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1) (s : Finset I) :
+    basis Q b s * basis Q b s = 1 ∨ basis Q b s * basis Q b s = -1 := by
+  simpa only [symmDiff_self, Finset.bot_eq_empty, basis_empty] using
+    basis_mul_basis_eq_or hb hQ s s
+
+/-- An orthogonal basis vector is a unit whenever the squares of its generators are units. -/
+theorem isUnit_basis (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (s : Finset I)
+    (hQ : ∀ i ∈ s, IsUnit (Q (b i))) : IsUnit (basis Q b s) := by
+  rw [basis_eq_prod_map_sort hb]
+  apply isUnit_prod_map_ι
+  rw [List.prod_isUnit_iff]
+  intro x hx
+  obtain ⟨v, hv, rfl⟩ := List.mem_map.mp hx
+  obtain ⟨i, hi, rfl⟩ := List.mem_map.mp hv
+  exact hQ i ((Finset.mem_sort _).mp hi)
+
+/-- **A basis vector commutes with every basis generator** exactly when its support is empty or is
+the full index set of odd cardinality, for an orthogonal basis whose vectors have unit squares
+over a nontrivial commutative ring in which `2` is invertible. -/
+theorem basis_comm_ι_iff [Fintype I] [Nontrivial R]
+    (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
+    (hQ : ∀ i : I, IsUnit (Q (b i))) (s : Finset I) :
+    (∀ i : I, basis Q b s * ι Q (b i) = ι Q (b i) * basis Q b s) ↔
+      s = ∅ ∨ (s = Finset.univ ∧ Odd s.card) := by
+  have hunit (i : I) : IsUnit (ι Q (b i) * basis Q b s) :=
+    (isUnit_ι_of_isUnit Q (hQ i)).mul (isUnit_basis hb s (fun j _ ↦ hQ j))
+  constructor
+  · intro hs
+    by_cases hempty : s = ∅
+    · exact Or.inl hempty
+    · right
+      have hsodd : Odd s.card := by
+        obtain ⟨i, hi⟩ := Finset.nonempty_iff_ne_empty.mpr hempty
+        have h := hs i
+        rw [basis_mul_ι_of_mem hb hi] at h
+        have heven : Even (s.card - 1) :=
+          TauCeti.even_of_neg_one_pow_smul_eq_self (isUnit_of_invertible (2 : R))
+            (hunit i).ne_zero h
+        have hpos : 1 ≤ s.card := by
+          exact Nat.one_le_iff_ne_zero.mpr (by
+            intro hzero
+            exact hempty (Finset.card_eq_zero.mp hzero))
+        have hodd' := heven.add_one
+        simpa [Nat.sub_add_cancel hpos] using hodd'
+      have heq : s = Finset.univ := by
+        apply Finset.eq_univ_of_forall
+        intro i
+        by_contra hi
+        have heven : Even s.card := by
+          have h := hs i
+          rw [basis_mul_ι_of_notMem hb hi] at h
+          exact TauCeti.even_of_neg_one_pow_smul_eq_self (isUnit_of_invertible (2 : R))
+            (hunit i).ne_zero h
+        exact (Nat.not_even_iff_odd.mpr hsodd) heven
+      exact ⟨heq, hsodd⟩
+  · rintro (rfl | ⟨rfl, hsodd⟩) i
+    · rw [basis_empty, one_mul, mul_one]
+    · obtain ⟨k, hk⟩ := hsodd
+      have heven : Even ((Finset.univ : Finset I).card - 1) := by
+        refine ⟨k, ?_⟩
+        simp [hk, two_mul]
+      rw [basis_mul_ι_of_mem hb (by simp), heven.neg_one_pow]
+      simp
 
 /-- The scalar part of a product of generators of an orthogonal basis vanishes as soon as one index
 occurs exactly once. -/
@@ -236,21 +518,32 @@ theorem scalarTrace_reverse_mul_self_nonneg [IsOrderedRing R]
   rw [scalarTrace_reverse_mul hb, Finsupp.sum]
   exact Finset.sum_nonneg fun s _ ↦ mul_prod_mul_self_nonneg hQ s _
 
+/-- **Null vectors of the trace pairing in coordinates**: if `Q` is nonnegative on an orthogonal
+basis, then `τ (reverse x * x) = 0` exactly when the coordinates of `x` vanish at every monomial of
+nonzero quadratic weight. -/
+theorem scalarTrace_reverse_mul_self_eq_zero_iff_basis_repr_eq_zero [IsStrictOrderedRing R]
+    (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, 0 ≤ Q (b i))
+    {x : CliffordAlgebra Q} :
+    scalarTrace Q (reverse x * x) = 0 ↔
+      ∀ s : Finset I, (∏ i ∈ s, Q (b i)) ≠ 0 → (basis Q b).repr x s = 0 := by
+  rw [scalarTrace_reverse_mul hb, Finsupp.sum,
+    Finset.sum_eq_zero_iff_of_nonneg fun s _ ↦ mul_prod_mul_self_nonneg hQ s _]
+  refine ⟨fun h s hs ↦ ?_, fun h s _ ↦ ?_⟩
+  · by_contra hx
+    have hs' := h s (Finsupp.mem_support_iff.mpr hx)
+    rw [mul_left_comm, mul_eq_zero, or_iff_right hs, mul_self_eq_zero] at hs'
+    exact hx hs'
+  · by_cases hs : ∏ i ∈ s, Q (b i) = 0
+    · simp [hs]
+    · simp [h s hs]
+
 /-- **Faithfulness of the trace pairing**: if `Q` is positive on an orthogonal basis, then
 `τ (reverse x * x) = 0` only for `x = 0`. -/
 theorem scalarTrace_reverse_mul_self_eq_zero_iff [IsStrictOrderedRing R]
     (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, 0 < Q (b i))
     {x : CliffordAlgebra Q} : scalarTrace Q (reverse x * x) = 0 ↔ x = 0 := by
-  refine ⟨fun h ↦ ?_, fun h ↦ by simp [h]⟩
-  have hpos (s : Finset I) : 0 < ∏ i ∈ s, Q (b i) := Finset.prod_pos fun i _ ↦ hQ i
-  rw [scalarTrace_reverse_mul hb, Finsupp.sum, Finset.sum_eq_zero_iff_of_nonneg
-    fun s _ ↦ mul_prod_mul_self_nonneg (fun i ↦ (hQ i).le) s _] at h
-  rw [← (basis Q b).repr.map_eq_zero_iff, ← Finsupp.support_eq_empty,
-    Finset.eq_empty_iff_forall_notMem]
-  intro s hs
-  have hs' := h s hs
-  rw [mul_left_comm, mul_eq_zero, or_iff_right (hpos s).ne', mul_self_eq_zero] at hs'
-  exact Finsupp.mem_support_iff.mp hs hs'
+  rw [scalarTrace_reverse_mul_self_eq_zero_iff_basis_repr_eq_zero hb fun i ↦ (hQ i).le,
+    forall_prod_ne_zero_basis_repr_eq_zero_iff fun i ↦ (hQ i).ne']
 
 end Ordered
 

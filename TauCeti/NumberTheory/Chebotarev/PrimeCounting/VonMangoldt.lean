@@ -429,7 +429,7 @@ theorem frobeniusPsi_sub_frobeniusTheta_isLittleO (C : ConjClasses (L ≃ₐ[K] 
     (fun x ↦ frobeniusPsi K L C x - frobeniusTheta K L C x) =o[atTop]
       fun x : ℝ ↦ x := by
   simpa only [frobeniusPsi_sub_frobeniusTheta_eq_primePowerSummatory] using
-    primePowerSummatory_isLittleO_of_le_higherPrimePowerWeight K zero_le_one fun A ↦ by
+    primePowerSummatory_isLittleO_of_le_higherPrimePowerWeight K fun A ↦ by
       rw [Real.norm_of_nonneg (Set.indicator_nonneg
         (fun A _ ↦ higherPrimePowerWeight_nonneg A) A), one_mul]
       exact Set.indicator_apply_le' (fun _ ↦ le_rfl) fun _ ↦ higherPrimePowerWeight_nonneg A

@@ -45,6 +45,8 @@ instances of it.
 * `TauCeti.ad_mem_derivationLieAlgebra_commutatorRing`: the adjoint action of a Lie algebra is by
   derivations -- the Jacobi identity in Leibniz form; and
   `TauCeti.ad_mem_derivationLieAlgebra`: the same for the commutator of an associative algebra.
+* `TauCeti.lie_innerDerivation`: the bracket `⁅D, ad z⁆` of a derivation with an inner derivation
+  is the inner derivation `ad (D z)`.
 * `TauCeti.derivationEquivDerivationLieAlgebra`: for a commutative associative algebra, `Der A` is
   Mathlib's `Derivation R A A` with its Lie structure.
 * `TauCeti.derivationLieAlgebraCommutatorRingEquivLieDerivation`: for a Lie algebra `L`, the
@@ -279,6 +281,16 @@ def innerDerivation : A →ₗ⁅R⁆ derivationLieAlgebra R A where
 theorem coe_innerDerivation (z : A) :
     (innerDerivation R z : Module.End R A) = LieAlgebra.ad R A z :=
   (rfl)
+
+/-- **The bracket of a derivation with an inner derivation is inner**: `⁅D, ad z⁆ = ad (D z)`.
+This is the identity making the image of `innerDerivation` an ideal of `Der A`. It is the
+associative-algebra analogue of Mathlib's `LieDerivation.lie_der_ad_eq_ad_der`. -/
+theorem lie_innerDerivation (D : derivationLieAlgebra R A) (z : A) :
+    ⁅D, innerDerivation R z⁆ = innerDerivation R ((D : Module.End R A) z) := by
+  ext a
+  simp only [LieSubalgebra.coe_bracket, Ring.lie_def, LinearMap.sub_apply, Module.End.mul_apply,
+    coe_innerDerivation, LieAlgebra.ad_apply, map_sub, derivationLieAlgebra.leibniz]
+  abel
 
 end Associative
 

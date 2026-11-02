@@ -17,9 +17,10 @@ tend to zero. A series whose coefficients vanish in every degree past some bound
 satisfies that condition at every radius, and a series restricted at one radius is restricted at
 every smaller one. Without any ultrametric hypothesis, products of series restricted at one
 radius are restricted at every strictly smaller radius. Over an ultrametric
-normed commutative ring, constant series give the restricted subring its coefficient algebra
-structure. The polynomial inclusion is an algebra homomorphism;
-it induces the polynomial-to-series comparisons used in Weierstrass division and its quotients.
+normed ring, constant series make the restricted subring an `S`-algebra whenever the coefficient
+ring is an `S`-algebra. Scalar actions are coefficientwise, and scalar towers of the coefficients
+extend to the restricted series. Over a commutative coefficient ring the polynomial inclusion is
+an algebra homomorphism; it gives the comparisons used in Weierstrass division and its quotients.
 
 ## Main results
 
@@ -27,7 +28,10 @@ it induces the polynomial-to-series comparisons used in Weierstrass division and
   restricted at every radius.
 * `TauCeti.PowerSeries.isRestricted_of_abs_le`: restrictedness passes to smaller radii, and
   `TauCeti.PowerSeries.isRestrictedSubring_le_of_abs_le` is the resulting containment of subrings.
-* `TauCeti.PowerSeries.isRestricted_polynomial`: every polynomial is restricted.
+* `TauCeti.PowerSeries.isRestricted_polynomial`: every polynomial is restricted, in particular
+  `X - a` (`TauCeti.PowerSeries.isRestricted_X_sub_C`).
+* `PowerSeries.IsRestricted.summable_norm_coeff_mul_pow`: weighted coefficient norms are
+  summable strictly inside the radius of restrictedness.
 * `PowerSeries.IsRestricted.mul_of_abs_lt`: over any normed ring, a product of series restricted
   at `c'` is restricted at every `c` with `|c| < |c'|`.
 * `TauCeti.PowerSeries.not_isRestricted_mk_pow`: for `a ≠ 0` and a multiplicative norm, `∑ aⁿ Xⁿ`
@@ -35,6 +39,9 @@ it induces the polynomial-to-series comparisons used in Weierstrass division and
   over a nontrivial normed ring, `∑ Xⁿ` is not restricted at the radius `1`.
 * `PowerSeries.IsRestricted.rescale`: if `f(X)` is restricted at `‖a‖ * c`, then `f(aX)`
   is restricted at `c`.
+* `TauCeti.PowerSeries.coe_algebraMap_isRestrictedSubring` and
+  `TauCeti.PowerSeries.coe_smul_isRestrictedSubring`: scalar maps and scalar multiplication agree
+  with those on the ambient formal series.
 * `TauCeti.PowerSeries.polynomialToRestricted`: the polynomial inclusion as an algebra map.
 -/
 
@@ -75,6 +82,13 @@ theorem isRestricted_polynomial (p : Polynomial R) : (p : PowerSeries R).IsRestr
   isRestricted_of_forall_coeff_eq_zero (n := p.natDegree + 1) fun m hm ↦ by
     rw [Polynomial.coeff_coe]
     exact Polynomial.coeff_eq_zero_of_natDegree_lt (by omega)
+
+/-- The linear polynomial `X - a` is restricted at every radius. -/
+theorem isRestricted_X_sub_C (a : R) :
+    (PowerSeries.X - PowerSeries.C a : PowerSeries R).IsRestricted c := by
+  have h := (isRestricted_polynomial (c := c) (Polynomial.X : Polynomial R)).sub
+    (PowerSeries.isRestricted_C c a)
+  rwa [Polynomial.coe_X] at h
 
 /-- **Rescaling changes the radius.** If `f(X)` is restricted at the radius `‖a‖ * c`, then
 `f(aX)` is restricted at the radius `c`. No multiplicativity of the norm is needed: the weighted
@@ -120,18 +134,55 @@ theorem _root_.PowerSeries.IsRestricted.exists_nonneg_norm_coeff_mul_pow_le
 
 section Algebra
 
-variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] {c : ℝ}
+variable {R : Type*} [NormedRing R] [IsUltrametricDist R] {c : ℝ}
 
-/-- The coefficient algebra structure on restricted power series, given by constant series. -/
-noncomputable instance instAlgebraIsRestrictedSubring :
-    Algebra R (PowerSeries.IsRestricted.subring (R := R) c) :=
-  (PowerSeries.C.codRestrict _ (PowerSeries.isRestricted_C c)).toAlgebra
+/-- An algebra structure on the coefficients induces one on restricted power series through
+constant series. Scalars act as on the ambient formal series, and the coefficient ring need not
+be commutative. -/
+noncomputable instance instAlgebraIsRestrictedSubring {S : Type*} [CommSemiring S] [Algebra S R] :
+    Algebra S (PowerSeries.IsRestricted.subring (R := R) c) where
+  smul s f := ⟨s • (f : PowerSeries R), by
+    rw [Algebra.smul_def, PowerSeries.algebraMap_apply]
+    exact (PowerSeries.isRestricted_C c (algebraMap S R s)).mul f.2⟩
+  algebraMap := (algebraMap S (PowerSeries R)).codRestrict _ fun s ↦ by
+    rw [PowerSeries.algebraMap_apply]
+    exact PowerSeries.isRestricted_C c _
+  commutes' s f := Subtype.ext <| by
+    simpa only [Subring.coe_mul, RingHom.codRestrict_apply] using
+      Algebra.commutes s (f : PowerSeries R)
+  smul_def' s f := Subtype.ext <| by
+    rw [Subring.coe_mul, RingHom.codRestrict_apply]
+    convert Algebra.smul_def s (f : PowerSeries R) using 1
 
-/-- The coefficient map of the restricted-series algebra is the constant series map. -/
+/-- A scalar maps to the constant restricted series of its image in the coefficient ring. -/
 @[simp]
-theorem coe_algebraMap_isRestrictedSubring (a : R) :
-    (algebraMap R (PowerSeries.IsRestricted.subring (R := R) c) a : PowerSeries R) =
-      PowerSeries.C a := (rfl)
+theorem coe_algebraMap_isRestrictedSubring {S : Type*} [CommSemiring S] [Algebra S R] (s : S) :
+    (algebraMap S (PowerSeries.IsRestricted.subring (R := R) c) s : PowerSeries R) =
+      PowerSeries.C (algebraMap S R s) := by
+  calc
+    _ = algebraMap S (PowerSeries R) s := (rfl)
+    _ = _ := PowerSeries.algebraMap_apply
+
+/-- Scalars act on restricted series as on their underlying formal power series. -/
+@[simp]
+theorem coe_smul_isRestrictedSubring {S : Type*} [CommSemiring S] [Algebra S R] (s : S)
+    (f : PowerSeries.IsRestricted.subring (R := R) c) :
+    ((s • f : PowerSeries.IsRestricted.subring (R := R) c) : PowerSeries R) =
+      s • (f : PowerSeries R) := (rfl)
+
+/-- Scalar towers on the coefficients induce scalar towers on restricted power series. -/
+instance {S T : Type*} [CommSemiring S] [CommSemiring T] [Algebra S R] [Algebra T R]
+    [SMul S T] [IsScalarTower S T R] :
+    IsScalarTower S T (PowerSeries.IsRestricted.subring (R := R) c) where
+  smul_assoc s t f := Subtype.ext <| by
+    simp only [coe_smul_isRestrictedSubring]
+    exact smul_assoc s t (f : PowerSeries R)
+
+end Algebra
+
+section CommAlgebra
+
+variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] {c : ℝ}
 
 /-- The inclusion of polynomials into the algebra of restricted power series. -/
 noncomputable def polynomialToRestricted (c : ℝ) :
@@ -157,7 +208,7 @@ theorem polynomialToRestricted_trunc_eq_of_coeff_eq_zero {s : ℕ}
   · rfl
   · exact (hr n (by omega)).symm
 
-end Algebra
+end CommAlgebra
 
 end TauCeti.PowerSeries
 
@@ -167,6 +218,21 @@ open Filter
 open scoped Topology
 
 variable {R : Type*} [NormedRing R] {c c' : ℝ} {f g : PowerSeries R}
+
+/-- The weighted coefficient norms of a restricted series are summable at every strictly
+smaller radius. No completeness or ultrametric hypothesis is needed. -/
+theorem IsRestricted.summable_norm_coeff_mul_pow (hf : f.IsRestricted c') {t : ℝ}
+    (ht : |t| < |c'|) : Summable fun n ↦ ‖coeff n f‖ * t ^ n := by
+  have hs : 0 < |c'| := (abs_nonneg t).trans_lt ht
+  obtain ⟨B, _, hB⟩ := hf.exists_nonneg_norm_coeff_mul_pow_le
+  have hq : |t| / |c'| < 1 := (div_lt_one hs).mpr ht
+  refine Summable.of_norm_bounded
+    ((summable_geometric_of_lt_one (by positivity) hq).mul_left B) fun n ↦ ?_
+  calc ‖‖coeff n f‖ * t ^ n‖ = ‖coeff n f‖ * |c'| ^ n * (|t| / |c'|) ^ n := by
+        rw [Real.norm_eq_abs, abs_mul, abs_of_nonneg (norm_nonneg _), abs_pow, div_pow]
+        field_simp
+    _ ≤ B * (|t| / |c'|) ^ n :=
+      mul_le_mul_of_nonneg_right (hB n) (by positivity)
 
 /-- **Products of restricted series at a smaller radius.** Over any normed ring, if `f` and `g`
 are restricted at the radius `c'`, then `f * g` is restricted at every radius `c` with

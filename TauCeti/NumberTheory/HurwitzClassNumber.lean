@@ -75,6 +75,12 @@ def reducedFormWeight (f : BinaryQuadraticForm ℤ) : ℚ :=
     (h₂ : ¬(f.a = f.b ∧ f.b = f.c)) : reducedFormWeight f = 1 :=
   (ite_eq_right h₁).trans <| ite_eq_right h₂
 
+/-- Scaling by a nonzero integer does not change the weight of a form. -/
+@[simp] theorem reducedFormWeight_smul {r : ℤ} (hr : r ≠ 0) (f : BinaryQuadraticForm ℤ) :
+    reducedFormWeight (r • f) = reducedFormWeight f := by
+  simp only [reducedFormWeight, BinaryQuadraticForm.smul_a', BinaryQuadraticForm.smul_b',
+    BinaryQuadraticForm.smul_c', smul_eq_mul, mul_eq_zero, hr, false_or, mul_right_inj' hr]
+
 /-- **The Hurwitz class number** `H D`: `H 0 = -1/12`, and for `D ≠ 0` the number of reduced forms
 of discriminant `-D`, primitive or not, each counted with its `reducedFormWeight`.
 

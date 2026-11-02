@@ -80,7 +80,7 @@ theorem pointsMulEquiv_quotientPointsHom_baseChangeIsoPointsMulEquiv (B : CommAl
       (H := CommHopfAlgCat.quotient (coordinateHopfAlgebra A n) J) B) :
     pointsMulEquiv n
         (CommHopfAlgCat.quotientPointsHom (coordinateHopfAlgebra k n) I
-          (TauCeti.CommAlgCat.restrictScalarsObj (algebraMap k A) B)
+          (CommAlgCat.restrictScalarsObj (algebraMap k A) B)
           (CommHopfAlgCat.baseChangeIsoPointsMulEquiv e B q)) =
       pointsMulEquiv n
         (CommHopfAlgCat.quotientPointsHom (coordinateHopfAlgebra A n) J B q) := by

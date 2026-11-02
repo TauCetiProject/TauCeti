@@ -8,10 +8,10 @@ module
 public import Mathlib.Algebra.Order.Antidiag.Pi
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
 public import Mathlib.RingTheory.PowerSeries.Basic
+public import TauCeti.RingTheory.MvPolynomial.Symmetric.Homogeneous
 import Mathlib.Data.Finset.Sym
 import TauCeti.Data.Sym.Basic
 import TauCeti.RingTheory.MvPolynomial.Homogeneous
-import TauCeti.RingTheory.MvPolynomial.Symmetric.Homogeneous
 
 /-!
 # Evaluating the complete homogeneous symmetric polynomial
@@ -49,6 +49,8 @@ polynomial.
 * `TauCeti.mk_hsymm_eq_prod_mk_pow`: the generating function of the `h_d`, and
   `TauCeti.mk_aeval_hsymm_eq_prod_mk_pow`, the same evaluated at an arbitrary family.
 * `TauCeti.aeval_hsymm_prod_eq_sum_finsuppAntidiag`: `hₙ(fᵢ gⱼ) = ∑_l ∏ᵢ fᵢ^{lᵢ} h_{lᵢ}(g)`.
+* `TauCeti.hsymmPart_mem_symmetricHomogeneousSubmodule`: a product `h_ν` of complete homogeneous
+  symmetric polynomials is symmetric and homogeneous of degree `n` for a partition `ν` of `n`.
 * `TauCeti.hsymmInt`: the complete homogeneous symmetric polynomial `h_m` of an integer degree `m`,
   which is `0` for `m < 0`.
 -/
@@ -140,6 +142,18 @@ theorem aeval_hsymm_prod_eq_sum_finsuppAntidiag {σ τ R S : Type*} [Fintype σ]
     simp only [hscale, mk_aeval_hsymm_eq_prod_mk_pow, Fintype.prod_prod_type]
   simpa only [PowerSeries.coeff_mk, PowerSeries.coeff_prod] using
     congrArg (PowerSeries.coeff n) h
+
+/-- **A product of complete homogeneous symmetric polynomials is symmetric and homogeneous**: for
+a partition `ν` of `n`, `h_ν = ∏ᵢ h_{νᵢ}` lies in `TauCeti.symmetricHomogeneousSubmodule σ R n`,
+each factor `h_{νᵢ}` being symmetric and homogeneous of degree `νᵢ`. -/
+theorem hsymmPart_mem_symmetricHomogeneousSubmodule {σ R : Type*} [Fintype σ] [DecidableEq σ]
+    [CommSemiring R] {n : ℕ} (ν : n.Partition) :
+    MvPolynomial.hsymmPart σ R ν ∈ symmetricHomogeneousSubmodule σ R n := by
+  rw [MvPolynomial.hsymmPart]
+  simpa only [ν.parts_sum] using
+    prod_map_mem_symmetricHomogeneousSubmodule (MvPolynomial.hsymm σ R)
+      (fun k => mem_symmetricHomogeneousSubmodule.mpr
+        ⟨MvPolynomial.hsymm_isSymmetric σ R k, MvPolynomial.isHomogeneous_hsymm k⟩) ν.parts
 
 section hsymmInt
 

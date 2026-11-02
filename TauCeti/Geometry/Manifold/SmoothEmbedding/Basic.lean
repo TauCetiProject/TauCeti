@@ -34,6 +34,11 @@ later tubular-neighbourhood and surgery interfaces.
 * `TauCeti.SmoothEmbedding.prodMap`: the product of two bundled smooth embeddings.
 * `TauCeti.SmoothEmbedding.sumInl` / `sumInr`: the coproduct inclusions as smooth embeddings.
 
+## Main results
+
+* `TauCeti.isSmoothEmbedding_prodMkLeft_of_extChartAt_eq_zero`: the slice `x ↦ (x, c)` of a product
+  `M × M'` is a smooth embedding when the preferred chart of `M'` at `c` sends `c` to `0`.
+
 The construction is a thin wrapper around Mathlib's
 `Manifold.IsSmoothEmbedding` API, especially `IsSmoothEmbedding.id`, `of_opens`, `prodMap`,
 `sumInl`, and `sumInr`.
@@ -277,5 +282,18 @@ theorem coe_sumInr {M₂ : Type*} [TopologicalSpace M₂] [ChartedSpace H M₂]
   exact sumInr_apply (I := I) (n := n) (M := M) x
 
 end SmoothEmbedding
+
+open Manifold in
+/-- **Slices of a product.** If the preferred chart of `M'` at `c` sends `c` to `0`, then the slice
+`x ↦ (x, c)` of the product `M × M'` is a smooth embedding: in product charts it is `u ↦ (u, 0)`. -/
+theorem isSmoothEmbedding_prodMkLeft_of_extChartAt_eq_zero [IsManifold I n M] [IsManifold I' n M']
+    {c : M'} (hc : extChartAt I' c c = 0) :
+    IsSmoothEmbedding I (I.prod I') n (fun x : M ↦ (x, c)) := by
+  refine ⟨IsImmersionOfComplement.isImmersion (F := F) fun x ↦ ?_, isEmbedding_prodMkLeft c⟩
+  refine IsImmersionAtOfComplement.mk_of_continuousAt_of_extChartAt (by fun_prop)
+    (ContinuousLinearEquiv.refl 𝕜 _) fun v hv ↦ ?_
+  simp only [Function.comp_apply, ContinuousLinearEquiv.refl_apply]
+  rw [extChartAt_prod, PartialEquiv.prod_coe]
+  simp only [hc, (extChartAt I x).right_inv hv]
 
 end TauCeti

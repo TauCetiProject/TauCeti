@@ -130,16 +130,15 @@ theorem inflH2MaximalProP_injective :
   have : ContinuousSMul (G ⧸ R) (ZMod p) := ⟨continuous_snd⟩
   have htrivG : ∀ (g : G) (m : ZMod p), g • m = m := fun _ _ ↦ rfl
   have htrivQ : ∀ (q : G ⧸ R) (m : ZMod p), q • m = m := fun _ _ ↦ rfl
-  let eR := zmodEquivFixedPointsOfTrivialAction p G R htrivG
+  let eR : ZMod p ≃+ FixedPoints.addSubgroup R (ZMod p) :=
+    AddSubgroup.topEquiv.symm.trans (AddEquiv.addSubgroupCongr
+      (fixedPoints_addSubgroup_eq_top_of_smul_eq (ZMod p) R htrivG).symm)
+  have heR (m : ZMod p) : (eR m).1 = m := by simp [eR]
   have hequiv : ∀ (q : G ⧸ R) (m : ZMod p),
       eR ((ContinuousMulEquiv.refl (G ⧸ R)) q • m) = q • eR m := by
     intro q m
-    simp only [ContinuousMulEquiv.coe_refl, id_eq, htrivQ]
-    induction q using QuotientGroup.induction_on with
-    | H g =>
-      rw [coe_quotient_smul_fixedPoints_addSubgroup]
-      apply Subtype.ext
-      rw [coe_smul_fixedPoints_addSubgroup, htrivG]
+    simp only [ContinuousMulEquiv.coe_refl, id_eq, htrivQ,
+      quotient_smul_fixedPoints_addSubgroup_eq_of_smul_eq htrivG]
   let eFix := explicitMap2Equiv (G ⧸ R) (ZMod p) (G ⧸ R) (FixedPoints.addSubgroup R (ZMod p))
     (ContinuousMulEquiv.refl (G ⧸ R)) eR continuous_of_discreteTopology
       continuous_of_discreteTopology hequiv
@@ -149,9 +148,9 @@ theorem inflH2MaximalProP_injective :
   apply explicitInfl2_proPKernel_injective (p := p) htrivG
     fun m ↦ by rw [nsmul_eq_mul, ZMod.natCast_self, zero_mul]
   rw [← cohomFpAddEquivH2_cohomFpMap_quotientMk_eq_explicitInfl2 p G R htrivG htrivQ
-      eR (zmodEquivFixedPointsOfTrivialAction_apply p G R htrivG) hequiv,
+      eR heR hequiv,
     ← cohomFpAddEquivH2_cohomFpMap_quotientMk_eq_explicitInfl2 p G R htrivG htrivQ eR
-      (zmodEquivFixedPointsOfTrivialAction_apply p G R htrivG) hequiv,
+      heR hequiv,
     hxy]
 
 omit [CompactSpace G] [TotallyDisconnectedSpace G] in

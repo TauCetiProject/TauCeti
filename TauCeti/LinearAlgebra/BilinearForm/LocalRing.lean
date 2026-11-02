@@ -28,6 +28,9 @@ nonunit, such an entry determines a perfect binary summand and an orthogonal dec
 
 * `LinearMap.BilinForm.exists_index_ne_zero_isUnit_apply_of_not_isUnit_diag_of_isUnit_det` finds
   a unit off-diagonal entry from a nonunit diagonal entry.
+* `LinearMap.BilinForm.IsSymm.exists_mem_maximalIdeal_of_mem_span_pair`: a vector of the span of
+  a pair with unit mutual pairing and self-pairings in `𝔪`, pairing into `𝔪` with the pair, has
+  coordinates in `𝔪`.
 * `LinearMap.BilinForm.IsSymm.exists_binary_isPerfPair_isCompl_orthogonal_of_dual_apply_eq_one`
   splits a binary perfect summand from a perfect pairing with nonunit diagonal values.
 * `LinearMap.BilinForm.IsSymm.exists_binary_isPerfPair_isCompl_orthogonal` splits a perfect binary
@@ -35,6 +38,8 @@ nonunit, such an entry determines a perfect binary summand and an orthogonal dec
 * `LinearMap.BilinForm.IsSymm.exists_basis_orthogonal` splits off the span of a family with unit
   Gram determinant, with a basis of the complement and the resulting factorization of the Gram
   determinant.
+* `LinearMap.BilinForm.IsSymm.exists_basis_orthogonal_span_singleton_isUnit_det`: in particular,
+  the orthogonal complement of a vector with unit self-pairing in a unimodular form is unimodular.
 * `LinearMap.BilinForm.IsSymm.equivalent_of_equivalent_restrict_orthogonal` recombines two such
   splittings with the same Gram matrix into an isometry.
 -/
@@ -163,6 +168,26 @@ theorem IsSymm.exists_basis_orthogonal (hB : B.IsSymm) {m k : ℕ}
   refine ⟨(c.toMatrix (b.reindex e.symm)).det, Matrix.isUnit_det_of_invertible _, ?_⟩
   rw [← hb, det_toMatrix_eq_det_sq_mul_det c, hblock, Matrix.det_fromBlocks_zero₂₁]
 
+/-- The orthogonal complement of a vector `x` with unit self-pairing, for a symmetric form whose
+Gram determinant in a basis of size `n + 1` is a unit, has a basis of size `n` in which the Gram
+determinant of the restricted form is a unit. -/
+theorem IsSymm.exists_basis_orthogonal_span_singleton_isUnit_det (hB : B.IsSymm) {n : ℕ}
+    (b : Basis (Fin (n + 1)) R M) (hdet : IsUnit (B.toMatrix b).det) {x : M}
+    (hx : IsUnit (B x x)) :
+    ∃ t : Basis (Fin n) R (B.orthogonal (R ∙ x)),
+      IsUnit ((B.restrict (B.orthogonal (R ∙ x))).toMatrix t).det := by
+  let v : Fin 1 → M := fun _ ↦ x
+  let G : Matrix (Fin 1) (Fin 1) R := fun _ _ ↦ B x x
+  have hGdet : IsUnit G.det := by
+    rw [Matrix.det_fin_one]
+    exact hx
+  obtain ⟨_, t, _w, _hw, hdetT⟩ :=
+    hB.exists_basis_orthogonal (m := n) b (v := v) (fun _ _ ↦ rfl) hGdet
+  rw [hdetT] at hdet
+  have hTdet := isUnit_of_mul_isUnit_right (isUnit_of_mul_isUnit_right hdet)
+  have hvspan : Submodule.span R (Set.range v) = R ∙ x := by simp [v]
+  exact hvspan ▸ ⟨t, hTdet⟩
+
 end Blocks
 
 variable {R M : Type*} [CommRing R] [IsLocalRing R] [AddCommGroup M] [Module R M]
@@ -210,6 +235,30 @@ theorem IsSymm.isUnit_pairGramDet_of_dvd_apply_self (hB : B.IsSymm) {x y : M}
     rw [hcancel] at hnonunit
     exact hnonunit hoff
   simpa [Matrix.det_fin_two] using hunit
+
+variable {B} in
+/-- In a symmetric form over a local ring, let `e, f` have self-pairings in the maximal ideal and
+unit mutual pairing. A vector `s` of their span pairing into the maximal ideal with both `e` and
+`f` has both coordinates in the maximal ideal. -/
+theorem IsSymm.exists_mem_maximalIdeal_of_mem_span_pair (hB : B.IsSymm) {e f : M}
+    (h₁ : IsUnit (B e f)) (he : B e e ∈ IsLocalRing.maximalIdeal R)
+    (hf : B f f ∈ IsLocalRing.maximalIdeal R) {s : M} (hs : s ∈ Submodule.span R {e, f})
+    (hse : B s e ∈ IsLocalRing.maximalIdeal R) (hsf : B s f ∈ IsLocalRing.maximalIdeal R) :
+    ∃ α ∈ IsLocalRing.maximalIdeal R, ∃ β ∈ IsLocalRing.maximalIdeal R, s = α • e + β • f := by
+  set 𝔪 := IsLocalRing.maximalIdeal R
+  obtain ⟨α, β, rfl⟩ := Submodule.mem_span_pair.mp hs
+  have hfe : B f e = B e f := (hB.eq e f).symm
+  simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul,
+    hfe] at hse hsf
+  have hβ : β ∈ 𝔪 := by
+    rw [← Ideal.mul_unit_mem_iff_mem 𝔪 h₁, show β * B e f = α * B e e + β * B e f - α * B e e by
+      ring]
+    exact 𝔪.sub_mem hse (𝔪.mul_mem_left α he)
+  have hα : α ∈ 𝔪 := by
+    rw [← Ideal.mul_unit_mem_iff_mem 𝔪 h₁, show α * B e f = α * B e f + β * B f f - β * B f f by
+      ring]
+    exact 𝔪.sub_mem hsf (𝔪.mul_mem_left β hf)
+  exact ⟨α, hα, β, hβ, rfl⟩
 
 /-- A symmetric perfect pairing with nonunit diagonal values splits off a binary perfect
 pairing if some linear functional takes the value one. The summand is supplied with a basis

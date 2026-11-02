@@ -6,15 +6,22 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.ForwardDiff
+import Mathlib.Data.Nat.Choose.Sum
+import Mathlib.Tactic.Abel
 
 /-!
-# Alternating forward differences
+# Alternating forward differences and the discrete Leibniz rule
 
 For functions from an additive commutative monoid to an additive commutative group, multiplying
 the `n`-th forward difference by the integer `(-1) ^ n` gives the alternating difference. These
 identities describe its successor step and its alternating binomial expansion, using Mathlib's
 forward-difference operator and integer scalar multiplication. For ring-valued functions, the same
 identities are stated using multiplication by the coefficients in the ring.
+
+The discrete Leibniz rule computes differences of a scalar product from finitely many differences
+of its factors. Its shifted form evaluates the second factor along the arithmetic progression
+starting at the input point. Its unshifted form uses only differences at that point, of orders
+at most the output order, so it also computes products in finite-difference coordinates.
 
 ## Main declarations
 
@@ -25,6 +32,8 @@ identities are stated using multiplication by the coefficients in the ring.
 * `TauCeti.neg_one_pow_mul_fwdDiff_iter_succ` and
   `TauCeti.neg_one_pow_mul_fwdDiff_iter_eq_alternating_sum`: the ring-valued forms.
 * `TauCeti.sum_neg_one_pow_mul_choose_succ`: the successor step for alternating binomial sums.
+* `TauCeti.fwdDiff_iter_smul`: the discrete Leibniz rule, with the second factor shifted by
+  the order of the difference on the first factor.
 -/
 
 public section
@@ -86,5 +95,51 @@ theorem sum_neg_one_pow_mul_choose_succ (n : ℕ) (f : ℕ → R) :
   have h := congrFun (neg_one_pow_mul_fwdDiff_iter_succ n f 1) 0
   simpa only [neg_one_pow_mul_fwdDiff_iter_eq_alternating_sum,
     smul_eq_mul, mul_one, zero_add, Pi.neg_apply, fwdDiff, neg_sub] using h.symm
+
+/-- **Discrete Leibniz rule.** The `n`-th difference of a scalar product is a binomial sum
+of products of differences. In the term with orders `i` and `j`, the second factor is evaluated
+at `x + i • h`, where `i + j = n`. No commutativity of the scalar ring is required. -/
+theorem fwdDiff_iter_smul [Module R G] (h : M) (f : M → R) (g : M → G) (n : ℕ) :
+    Δ_[h]^[n] (f • g) = fun x ↦ ∑ ij ∈ Finset.antidiagonal n,
+      n.choose ij.1 • (Δ_[h]^[ij.1] f x • Δ_[h]^[ij.2] g (x + ij.1 • h)) := by
+  induction n with
+  | zero => ext x; simp
+  | succ n ih =>
+    rw [Function.iterate_succ_apply', ih]
+    ext x
+    rw [Finset.sum_antidiagonal_choose_succ_nsmul (M := G)
+      (fun i j ↦ Δ_[h]^[i] f x • Δ_[h]^[j] g (x + i • h)) n]
+    simp only [fwdDiff, ← Finset.sum_sub_distrib, ← Finset.sum_add_distrib]
+    apply Finset.sum_congr rfl
+    intro ij hij
+    have hc := Nat.choose_symm_of_eq_add (Finset.mem_antidiagonal.mp hij).symm
+    rw [← hc]
+    simp only [Function.iterate_succ_apply', fwdDiff, add_nsmul, one_nsmul,
+      add_assoc]
+    simp only [smul_sub, sub_smul]
+    abel_nf
+
+/-- Range-indexed discrete Leibniz rule for a scalar product. -/
+theorem fwdDiff_iter_smul_eq_sum_range [Module R G] (h : M) (f : M → R) (g : M → G)
+    (n : ℕ) (x : M) :
+    Δ_[h]^[n] (f • g) x = ∑ i ∈ Finset.range (n + 1),
+      n.choose i • (Δ_[h]^[i] f x • Δ_[h]^[n - i] g (x + i • h)) := by
+  rw [fwdDiff_iter_smul]
+  exact Finset.Nat.sum_antidiagonal_eq_sum_range_succ
+    (fun i j ↦ n.choose i • (Δ_[h]^[i] f x • Δ_[h]^[j] g (x + i • h))) n
+
+/-- **Unshifted discrete Leibniz rule.** Expanding the shifted differences in the discrete
+Leibniz rule by the Gregory–Newton formula expresses the result using differences at `x` only.
+In particular, only orders at most `n` of each input occur. -/
+theorem fwdDiff_iter_smul_eq_sum_range_sum_range [Module R G] (h : M) (f : M → R)
+    (g : M → G) (n : ℕ) (x : M) :
+    Δ_[h]^[n] (f • g) x = ∑ i ∈ Finset.range (n + 1), ∑ j ∈ Finset.range (i + 1),
+      (n.choose i * i.choose j) • (Δ_[h]^[i] f x • Δ_[h]^[n - i + j] g x) := by
+  rw [fwdDiff_iter_smul_eq_sum_range]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [shift_eq_sum_fwdDiff_iter h (Δ_[h]^[n - i] g) i x, Finset.smul_sum, Finset.smul_sum]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  rw [← Function.iterate_add_apply, Nat.add_comm j (n - i), smul_comm, smul_smul,
+    smul_comm]
 
 end TauCeti

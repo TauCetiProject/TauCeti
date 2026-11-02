@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.GeneralLinear.Basic
 
 import Mathlib.LinearAlgebra.Dimension.Finite
+import TauCeti.LinearAlgebra.Dual.Lemmas
 
 /-!
 # The dimension of the special linear Lie algebra
@@ -25,6 +26,10 @@ Over a nontrivial commutative ring, the strong rank condition gives
 
 * `TauCeti.finrank_sl`: `sl n R` has rank `(card n) ^ 2 - 1`.
 * `TauCeti.finrank_sl_add_one`: the untruncated form, for a nonempty index type.
+* `TauCeti.finrank_inf_sl_add_one`: over a field in which the size of the matrices is nonzero, a
+  subspace of matrices containing the identity meets `sl n K` in codimension one.
+* `TauCeti.finrank_ker_ad_sl_add_one`: applied to a centralizer, the centralizer of `x` in
+  `sl n K` has codimension one in its centralizer in `gl n K`.
 
 The same coordinate system also gives the `Module.Free` and `Module.Finite` instances for `sl n R`
 that any rank computation involving it needs; over a commutative ring these do not come for free
@@ -32,7 +37,7 @@ from finiteness of the matrices.
 
 ## Implementation notes
 
-A private linear equivalence identifies `sl n R` with the entries away from one diagonal place.
+`specialLinearEntryEquiv` identifies `sl n R` with the entries away from one diagonal place.
 Freeness, finiteness and dimension follow by transporting the corresponding facts about this
 function space. Membership is read through `LieAlgebra.SpecialLinear.mem_sl_iff`.
 -/
@@ -57,7 +62,7 @@ private def diagIdx (k : {k : n // k ≠ i₀}) : {p : n × n // p ≠ (i₀, i�
   ⟨(k.1, k.1), fun hk => k.2 (congrArg Prod.fst hk)⟩
 
 /-- A trace-zero matrix is determined by its entries away from `(i₀, i₀)`. -/
-private def slEquivFun : SpecialLinear.sl n R ≃ₗ[R] ({p : n × n // p ≠ (i₀, i₀)} → R) where
+def specialLinearEntryEquiv : SpecialLinear.sl n R ≃ₗ[R] ({p : n × n // p ≠ (i₀, i₀)} → R) where
   toFun A p := A.val p.1.1 p.1.2
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
@@ -90,6 +95,39 @@ private def slEquivFun : SpecialLinear.sl n R ≃ₗ[R] ({p : n × n // p ≠ (i
     funext p
     exact dite_eq_right p.property
 
+/-- The free entry coordinates read the corresponding matrix entries. -/
+@[simp]
+theorem specialLinearEntryEquiv_apply (X : SpecialLinear.sl n R)
+    (p : {p : n × n // p ≠ (i₀, i₀)}) :
+    specialLinearEntryEquiv (R := R) i₀ X p = X.val p.val.1 p.val.2 := by
+  rfl
+
+
+/-- Away from the omitted diagonal place, the inverse reads the free entry coordinate. -/
+@[simp]
+theorem specialLinearEntryEquiv_symm_apply_of_ne
+    (g : {p : n × n // p ≠ (i₀, i₀)} → R) {i j : n} (h : (i, j) ≠ (i₀, i₀)) :
+    ((specialLinearEntryEquiv (R := R) i₀).symm g).val i j = g ⟨(i, j), h⟩ := by
+  exact congrFun ((specialLinearEntryEquiv (R := R) i₀).apply_symm_apply g) ⟨(i, j), h⟩
+
+/-- The omitted diagonal entry is minus the sum of the other diagonal coordinates. -/
+@[simp]
+theorem specialLinearEntryEquiv_symm_apply_self
+    (g : {p : n × n // p ≠ (i₀, i₀)} → R) :
+    ((specialLinearEntryEquiv (R := R) i₀).symm g).val i₀ i₀ =
+      -∑ k : {k : n // k ≠ i₀},
+        g ⟨(k.1, k.1), fun h => k.2 (congrArg Prod.fst h)⟩ := by
+  have htrace := SpecialLinear.mem_sl_iff.mp
+    ((specialLinearEntryEquiv (R := R) i₀).symm g).property
+  simp only [Matrix.trace, Matrix.diag_apply] at htrace
+  rw [Fintype.sum_eq_add_sum_subtype_ne _ i₀] at htrace
+  have hdiag (k : {k : n // k ≠ i₀}) :
+      ((specialLinearEntryEquiv (R := R) i₀).symm g).val k.1 k.1 =
+        g ⟨(k.1, k.1), fun h => k.2 (congrArg Prod.fst h)⟩ :=
+    specialLinearEntryEquiv_symm_apply_of_ne i₀ g fun h => k.2 (congrArg Prod.fst h)
+  simp only [hdiag] at htrace
+  exact (neg_eq_of_add_eq_zero_left htrace).symm
+
 end Coordinates
 
 section FreeFinite
@@ -101,13 +139,13 @@ it; for an empty one it is the zero module. -/
 instance : Module.Free R (SpecialLinear.sl n R) := by
   rcases isEmpty_or_nonempty n with hn | ⟨⟨i₀⟩⟩
   · infer_instance
-  · exact Module.Free.of_equiv (slEquivFun (R := R) i₀).symm
+  · exact Module.Free.of_equiv (specialLinearEntryEquiv (R := R) i₀).symm
 
 /-- **`sl n R` is a finite module**, the coordinates above being finite in number. -/
 instance : Module.Finite R (SpecialLinear.sl n R) := by
   rcases isEmpty_or_nonempty n with hn | ⟨⟨i₀⟩⟩
   · infer_instance
-  · exact Module.Finite.equiv (slEquivFun (R := R) i₀).symm
+  · exact Module.Finite.equiv (specialLinearEntryEquiv (R := R) i₀).symm
 
 end FreeFinite
 
@@ -124,7 +162,7 @@ theorem finrank_sl :
     finrank R (SpecialLinear.sl n R) = Fintype.card n ^ 2 - 1 := by
   rcases isEmpty_or_nonempty n with hn | ⟨⟨i₀⟩⟩
   · simp [Module.finrank_zero_of_subsingleton]
-  · rw [(slEquivFun (R := R) i₀).finrank_eq]
+  · rw [(specialLinearEntryEquiv (R := R) i₀).finrank_eq]
     simp [Fintype.card_subtype_compl, sq]
 
 variable [Nonempty n]
@@ -137,5 +175,47 @@ theorem finrank_sl_add_one :
   omega
 
 end Finrank
+
+section Field
+
+variable {K : Type*} [Field K]
+
+/-- A subspace of square matrices containing the identity meets `sl n K` in codimension one, when
+the size of the matrices is nonzero in `K`: the trace does not vanish on it, since the identity
+has trace `Fintype.card n`. -/
+theorem finrank_inf_sl_add_one (hn : (Fintype.card n : K) ≠ 0) {A : Submodule K (Matrix n n K)}
+    (hA : (1 : Matrix n n K) ∈ A) :
+    finrank K ↥(A ⊓ (SpecialLinear.sl n K).toSubmodule) + 1 = finrank K A := by
+  have hsl : (SpecialLinear.sl n K).toSubmodule = LinearMap.ker (Matrix.traceLinearMap n K K) := by
+    ext Y
+    simp [SpecialLinear.mem_sl_iff]
+  rw [inf_comm, hsl]
+  exact Module.Dual.finrank_ker_inf_add_one fun h ↦ hn (by simpa using h hA)
+
+/-- **Centralizers in `sl n` and `gl n`.** When the size of the matrices is nonzero in `K`, the
+centralizer of `x ∈ sl n K` in `sl n K` has codimension one in its centralizer in `gl n K`. -/
+theorem finrank_ker_ad_sl_add_one (hn : (Fintype.card n : K) ≠ 0) (x : SpecialLinear.sl n K) :
+    finrank K (LinearMap.ker (ad K (SpecialLinear.sl n K) x)) + 1 =
+      finrank K (LinearMap.ker (ad K (Matrix n n K) (x : Matrix n n K))) := by
+  have hmap : (LinearMap.ker (ad K (SpecialLinear.sl n K) x)).map
+      ((SpecialLinear.sl n K).incl : SpecialLinear.sl n K →ₗ[K] Matrix n n K) =
+        LinearMap.ker (ad K (Matrix n n K) (x : Matrix n n K)) ⊓
+          (SpecialLinear.sl n K).toSubmodule := by
+    ext Y
+    simp only [Submodule.mem_map, LinearMap.mem_ker, ad_apply, LieHom.coe_toLinearMap,
+      LieSubalgebra.coe_incl, Submodule.mem_inf, LieSubalgebra.mem_toSubmodule]
+    constructor
+    · rintro ⟨y, hy, rfl⟩
+      exact ⟨by simpa using congrArg Subtype.val hy, y.2⟩
+    · rintro ⟨hY, hYsl⟩
+      exact ⟨⟨Y, hYsl⟩, Subtype.ext (by simpa using hY), rfl⟩
+  have h1 : (1 : Matrix n n K) ∈ LinearMap.ker (ad K (Matrix n n K) (x : Matrix n n K)) := by
+    simp [LieRing.of_associative_ring_bracket]
+  rw [← finrank_inf_sl_add_one hn h1, ← hmap,
+    (Submodule.equivMapOfInjective
+      ((SpecialLinear.sl n K).incl : SpecialLinear.sl n K →ₗ[K] Matrix n n K)
+      (fun _ _ h ↦ Subtype.ext h) _).finrank_eq]
+
+end Field
 
 end TauCeti

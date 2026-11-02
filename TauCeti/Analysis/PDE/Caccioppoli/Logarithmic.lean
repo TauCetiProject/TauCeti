@@ -18,7 +18,7 @@ import TauCeti.Analysis.Sobolev.W1p.ChainRule
 Let `a` be measurable and uniformly elliptic on `Ω ⊆ ℝⁿ` with constants `0 < λ ≤ Λ`, and let
 `u ∈ H¹(Ω)` be a weak supersolution of the divergence-form equation
 
-`-∂ⱼ(aⁱʲ ∂ᵢu) ≥ 0` in `Ω`,
+`-∂ᵢ(aⁱʲ ∂ⱼu) ≥ 0` in `Ω`,
 
 meaning `a(u, v) ≥ 0` for every nonnegative `v ∈ H¹₀(Ω)`. If `u` is bounded below by a positive
 constant on the support of a smooth cutoff `ψ` compactly supported in `Ω`, then
@@ -146,7 +146,7 @@ private theorem mul_sq_mul_norm_sq_div_sq_le_neg_matrixBilinearForm_add {A : Mat
 
 /-- **The logarithmic Caccioppoli inequality.** Let `a` be measurable and uniformly elliptic on
 `Ω` with constants `0 < λ ≤ Λ`, and let `u ∈ H¹(Ω)` be a weak supersolution of
-`-∂ⱼ(aⁱʲ ∂ᵢu) ≥ 0`, that is `a(u, v) ≥ 0` for every nonnegative `v ∈ H¹₀(Ω)`. Let `ψ` be smooth
+`-∂ᵢ(aⁱʲ ∂ⱼu) ≥ 0`, that is `a(u, v) ≥ 0` for every nonnegative `v ∈ H¹₀(Ω)`. Let `ψ` be smooth
 and compactly supported in `Ω`, and suppose that `u ≥ m` almost everywhere on the support of `ψ`
 for some `m > 0`. Then
 
@@ -275,7 +275,7 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_sq_div_sq_le
 /-- **The logarithmic Caccioppoli inequality on concentric balls.** There is a constant `c > 0`,
 depending only on the dimension, such that the following holds for every additive Haar measure
 `μ`. Let `a` be measurable and uniformly elliptic on `Ω` with constants `0 < λ ≤ Λ`, and let
-`u ∈ H¹(Ω)` be a weak supersolution of `-∂ⱼ(aⁱʲ ∂ᵢu) ≥ 0`. If `B(x₀, r) ⊆ B(x₀, R) ⊆ Ω` with
+`u ∈ H¹(Ω)` be a weak supersolution of `-∂ᵢ(aⁱʲ ∂ⱼu) ≥ 0`. If `B(x₀, r) ⊆ B(x₀, R) ⊆ Ω` with
 `0 < r < R`, and `u ≥ m` almost everywhere on `B(x₀, R)` for some `m > 0`, then
 
 `∫_{B(x₀, r)} ‖∇u‖² / u² ≤ (2Λ/λ)² (c / (R - r))² |B(x₀, R)|`. -/
@@ -346,7 +346,7 @@ theorem exists_setIntegral_ball_norm_gradient_sq_div_sq_le :
 /-- **Bounded mean oscillation of the logarithm of a positive supersolution (Moser).** There is
 a constant `C > 0`, depending only on the dimension, such that the following holds for every
 additive Haar measure `μ`. Let `a` be measurable and uniformly elliptic on `Ω` with constants
-`0 < λ ≤ Λ`, and let `u ∈ H¹(Ω)` be a weak supersolution of `-∂ⱼ(aⁱʲ ∂ᵢu) ≥ 0`. If
+`0 < λ ≤ Λ`, and let `u ∈ H¹(Ω)` be a weak supersolution of `-∂ᵢ(aⁱʲ ∂ⱼu) ≥ 0`. If
 `B(x₀, 2R) ⊆ Ω` and `u ≥ m` almost everywhere on `B(x₀, 2R)` for some `m > 0`, then
 
 `∫_{B(x₀, R)} (log u - (log u)_{B(x₀, R)})² ≤ C (Λ/λ)² |B(x₀, R)|`,

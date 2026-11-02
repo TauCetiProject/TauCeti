@@ -59,7 +59,10 @@ variable {N n : ℕ} [NeZero N] [NeZero n] (k : ℤ)
 /-- **The Petersson adjoint of `Tₙ`** (Diamond–Shurman, Theorem 5.5.3). For `n` coprime to the
 level `N` and cusp forms `f`, `g` on `Γ₁(N)`,
 
-`⟪Tₙ f, g⟫ = ⟪f, ⟨n⟩⁻¹ (Tₙ g)⟫`. -/
+`⟪Tₙ f, g⟫ = ⟪f, ⟨n⟩⁻¹ (Tₙ g)⟫`,
+
+for the double-coset operator `Tₙ = heckeTCuspNat k n`, which for `n` coprime to `N` is the
+classical one exactly when `n` is squarefree (see `heckeTNat`). -/
 theorem peterssonInnerCosets_heckeTCuspNat_left (hn : n.Coprime N)
     (f g : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :
     CuspForm.peterssonInnerCosets (heckeTCuspNat k n f) g =
@@ -85,7 +88,7 @@ theorem peterssonInnerCosets_heckeTCuspNat_left_of_mem_cuspFormCharSpace
       CuspForm.peterssonInnerCosets f
         ((χ (ZMod.unitOfCoprime n hn) : ℂ)⁻¹ • heckeTCuspNat k n g) := by
   have hcomm := DFunLike.congr_fun
-    (commute_heckeTCuspNat_diamondOpCusp k hn (ZMod.unitOfCoprime n hn)⁻¹).eq g
+    (commute_heckeTCuspNat_diamondOpCusp k n (ZMod.unitOfCoprime n hn)⁻¹).eq g
   simp only [Module.End.mul_apply] at hcomm
   rw [peterssonInnerCosets_heckeTCuspNat_left k hn, ← hcomm,
     diamondOpCusp_apply_of_mem_cuspFormCharSpace k χ _ hg, map_smul, map_inv,

@@ -898,12 +898,12 @@ theorem ReducedTensorWords.letter_comp_gradedCoderiv (G : InternalGrading R M)
   refine (Finset.sum_eq_single 0 ?_ ?_).trans ?_
   · intro p _ hp
     refine Finset.sum_eq_zero fun d _ ↦
-      letter_splice_eq_zero_of_not_whole R (twistedTuple G q x 0 p) _ (by omega)
+      letter_splice_eq_zero R (twistedTuple G q x 0 p) _ (by omega)
   · intro hp
     exact absurd hp (by simp [hn])
   · refine (Finset.sum_eq_single n.1 ?_ ?_).trans ?_
     · intro d _ hd'
-      exact letter_splice_eq_zero_of_not_whole R (twistedTuple G q x 0 0) _ (by omega)
+      exact letter_splice_eq_zero R (twistedTuple G q x 0 0) _ (by omega)
     · intro hcon
       exact absurd hcon (by simp)
     · exact letter_splice_self R (twistedTuple G q x 0 0)
@@ -1141,6 +1141,12 @@ theorem ReducedTensorWords.gradedCoderiv_smul (G : InternalGrading R M) (c : R)
     (F : ReducedTensorWords R M →ₗ[R] M) (q : ℤ) :
     gradedCoderiv G (c • F) q = c • gradedCoderiv G F q :=
   congrArg Subtype.val (map_smul (gradedCoderivEquivTaylor G q).symm c F)
+
+/-- The graded Taylor expansion of the zero Taylor map is zero. -/
+@[simp]
+theorem ReducedTensorWords.gradedCoderiv_zero_left (G : InternalGrading R M) (q : ℤ) :
+    gradedCoderiv G (0 : ReducedTensorWords R M →ₗ[R] M) q = 0 :=
+  congrArg Subtype.val (map_zero (gradedCoderivEquivTaylor G q).symm)
 
 end GradedCoderiv
 

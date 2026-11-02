@@ -33,7 +33,7 @@ which fails for `n ≥ 2`. Unlike Trudinger's inequality
 By the John–Nirenberg inequality, functions of bounded mean oscillation are exponentially
 integrable. In `ℝⁿ = EuclideanSpace ℝ ι` this gives a local form of exponential integrability for
 every `u ∈ W^{1,n}(Ω)`: there are constants `A > 0` and `C`, depending only on `n`, such that if
-`B(x₀, R) ⊆ Ω` and `σ ω^(-1/n) ‖∇u‖_{Lⁿ(B(x₀, R))} ≤ A`, then on `B' = B(x₀, R / (3√n))`
+`B(x₀, R) ⊆ Ω` and `σ ω^(-1/n) ‖∇u‖_{Lⁿ(B(x₀, R))} ≤ A`, then on `B' = B(x₀, R / (2√n))`
 
 `∫_{B'} exp (σ |u - u_{B'}|) ≤ C |B'|`.
 
@@ -179,7 +179,7 @@ variable {ι : Type*} [Fintype ι]
 /-- **Local exponential integrability of `W^{1,n}` functions.** There are constants `A > 0` and
 `C`, depending only on the dimension `n`, such that the following holds for every additive Haar
 measure `μ` on `ℝⁿ = EuclideanSpace ℝ ι`, with `ω = μ(B(0, 1))`. Let `u ∈ W^{1,n}(Ω)` and
-`B(x₀, R) ⊆ Ω`. If `σ ω^(-1/n) ‖∇u‖_{Lⁿ(B(x₀, R))} ≤ A`, then on `B' = B(x₀, R / (3√n))`
+`B(x₀, R) ⊆ Ω`. If `σ ω^(-1/n) ‖∇u‖_{Lⁿ(B(x₀, R))} ≤ A`, then on `B' = B(x₀, R / (2√n))`
 
 `∫_{B'} exp (σ |u - u_{B'}|) ≤ C |B'|`.
 
@@ -191,10 +191,10 @@ theorem W1p.exists_setLIntegral_exp_mul_abs_value_sub_setAverage_ball_le :
       ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
       σ * (mu.real (ball 0 1) ^ (-(Fintype.card ι : ℝ)⁻¹) *
         (eLpNorm (W1p.gradient u) p (mu.restrict (ball x₀ R))).toReal) ≤ A →
-      ∫⁻ x in ball x₀ (R / (3 * √(Fintype.card ι))),
+      ∫⁻ x in ball x₀ (R / (2 * √(Fintype.card ι))),
           ENNReal.ofReal (Real.exp (σ * |W1p.value u x -
-            ⨍ y in ball x₀ (R / (3 * √(Fintype.card ι))), W1p.value u y ∂mu|)) ∂mu ≤
-        C * mu (ball x₀ (R / (3 * √(Fintype.card ι)))) := by
+            ⨍ y in ball x₀ (R / (2 * √(Fintype.card ι))), W1p.value u y ∂mu|)) ∂mu ≤
+        C * mu (ball x₀ (R / (2 * √(Fintype.card ι)))) := by
   obtain ⟨A, hA, C, hJN⟩ := exists_setLIntegral_exp_mul_norm_sub_setAverage_ball_le (ι := ι)
   set n := Fintype.card ι
   refine ⟨A / 2 ^ (n + 1), by positivity, C, fun {mu} _ Omega p _ hp u x₀ R σ hball hσ => ?_⟩

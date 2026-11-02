@@ -19,6 +19,9 @@ is the induced quiver along `Subtype.val`.  An `A∞` structure on `C` induces o
 quiver (`TauCeti.AInfinityCategory.induced`), operating on a composable string as `C` does on its
 image.
 
+The quiver, its total-module constructions, and their Koszul-twist compatibility work over any
+ring. The higher `A∞` structure uses commutative scalars.
+
 The total module of morphisms of the induced quiver maps to that of `C`
 (`TauCeti.GradedLinearQuiver.InducedQuiver.totalHomMap`), sending a morphism `X ⟶ Y` to the same
 morphism `F X.obj ⟶ F Y.obj`.  The map preserves degrees and is injective on each hom module.
@@ -42,6 +45,8 @@ become composable in `C`.
 * `TauCeti.GradedLinearQuiver.InducedQuiver.totalHomMap_injective` and
   `TauCeti.GradedLinearQuiver.InducedQuiver.totalHomMap_mem_totalGrading_piece_iff`: along an
   injective map of objects, the map is injective and detects degrees.
+* `TauCeti.GradedLinearQuiver.InducedQuiver.totalHomMap_surjective`: along a surjective map of
+  objects, the map is surjective.
 
 ## References
 
@@ -69,7 +74,9 @@ structure InducedQuiver (F : D → C) where
 
 namespace InducedQuiver
 
-variable {R : Type w} [CommRing R] {C} [GradedLinearQuiver.{u, v, w} R C] {F : D → C}
+section Ring
+
+variable {R : Type w} [Ring R] {C} [GradedLinearQuiver.{u, v, w} R C] {F : D → C}
 
 /-- The induced quiver of a graded linear quiver is a graded linear quiver, with the graded hom
 modules of `C` between the images of the objects. -/
@@ -123,12 +130,6 @@ theorem isHomogeneous_totalHomMap :
   intro p x hx
   rw [add_zero]
   exact totalHomMap_mem_totalGrading_piece hx
-
-/-- The map of total modules of an induced quiver commutes with the Koszul twists. -/
-theorem koszulTwist_totalHomMap (q : ℤ) (x : TotalHom R (InducedQuiver C F)) :
-    (totalGrading R C).koszulTwist q (totalHomMap R F x) =
-      totalHomMap R F ((totalGrading R (InducedQuiver C F)).koszulTwist q x) := by
-  simpa using LinearMap.congr_fun (isHomogeneous_totalHomMap.koszulTwist_comp q) x
 
 /-- The component of the image of an element between two objects of `C` not both in the image of
 `F` vanishes. -/
@@ -188,6 +189,31 @@ theorem totalHomMap_mem_totalGrading_piece_iff (n : ℤ) (x : TotalHom R (Induce
     exact zero_mem _
 
 end Injective
+
+/-- Along a surjective map of objects, the map of total modules of morphisms is surjective: a
+morphism `F X ⟶ F Y` of `C` is the image of the same morphism `⟨X⟩ ⟶ ⟨Y⟩` of the induced
+quiver. -/
+theorem totalHomMap_surjective (hF : Function.Surjective F) :
+    Function.Surjective (totalHomMap R F) := by
+  intro y
+  induction y using totalHom_induction with
+  | zero => exact ⟨0, map_zero _⟩
+  | add x y hx hy =>
+    obtain ⟨x', rfl⟩ := hx
+    obtain ⟨y', rfl⟩ := hy
+    exact ⟨x' + y', map_add _ _ _⟩
+  | homInclusion U V f =>
+    obtain ⟨X, rfl⟩ := hF U
+    obtain ⟨Y, rfl⟩ := hF V
+    exact ⟨homInclusion (R := R) (C := InducedQuiver C F) ⟨X⟩ ⟨Y⟩ f, totalHomMap_homInclusion _ _ _⟩
+
+/-- The map of total modules of an induced quiver commutes with the Koszul twists. -/
+theorem koszulTwist_totalHomMap (q : ℤ) (x : TotalHom R (InducedQuiver C F)) :
+    (totalGrading R C).koszulTwist q (totalHomMap R F x) =
+      totalHomMap R F ((totalGrading R (InducedQuiver C F)).koszulTwist q x) := by
+  simpa using isHomogeneous_totalHomMap.koszulTwist_apply q x
+
+end Ring
 
 end InducedQuiver
 

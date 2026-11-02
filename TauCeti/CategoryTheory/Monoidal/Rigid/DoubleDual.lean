@@ -22,7 +22,8 @@ is the transpose of the braided evaluation `Yᵛ ⊗ Y ⟶ Y ⊗ Yᵛ ⟶ 𝟙_ 
 commutative ring it is the evaluation map `m ↦ (φ ↦ φ m)` into the double dual, `Module.Dual.eval`
 in Mathlib; for sheaves of modules it is the map `𝓔 ⟶ 𝓗om(𝓗om(𝓔, 𝒪), 𝒪)`.
 
-The map is natural in `Y`, and it is an isomorphism whenever `Y` has a left or a right dual. So in
+The map is natural in `Y`, satisfies the triangle identity `Yᵛ ⟶ Yᵛᵛᵛ ⟶ Yᵛ` in a symmetric
+monoidal category, and it is an isomorphism whenever `Y` has a left or a right dual. So in
 a closed symmetric monoidal category such as `QCoh(X)` or modules over a commutative ring, every
 dualizable object is canonically isomorphic to its double dual, with the duals computed by
 internal homs into the unit. The `IsIso` instances are found by instance search, so
@@ -34,6 +35,8 @@ instance, for example a finite projective module.
 * `TauCeti.doubleDualMap`: the canonical map `Y ⟶ ((Y ⟶[C] 𝟙_ C) ⟶[C] 𝟙_ C)`, characterized by
   `TauCeti.whiskerLeft_doubleDualMap_comp_ev`;
 * `TauCeti.doubleDualMap_naturality`: its naturality in `Y`;
+* `TauCeti.doubleDualMap_comp_pre_doubleDualMap`: in a symmetric monoidal category, the triangle
+  identity relating the double-dual maps of `Y` and of `Yᵛ`;
 * `TauCeti.doubleDualMap_comp_pre_ihomUnitIso_inv_app`: its form for a chosen left dual `D`, the
   transpose of the braided pairing `D ⊗ Y ⟶ 𝟙_ C`;
 * `TauCeti.isIso_doubleDualMap_of_exactPairing`, `TauCeti.isIso_doubleDualMap` and
@@ -53,7 +56,11 @@ namespace TauCeti
 
 universe v u
 
-variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [BraidedCategory C]
+variable {C : Type u} [Category.{v} C] [MonoidalCategory C]
+
+section Braided
+
+variable [BraidedCategory C]
 
 section Map
 
@@ -134,5 +141,17 @@ instance isIso_doubleDualMap_of_hasRightDual [HasRightDual Y] : IsIso (doubleDua
   isIso_doubleDualMap
 
 end IsIso
+
+end Braided
+
+/-- **Triangle identity of dualization.** In a symmetric monoidal category, the double-dual map
+of the dual `Yᵛ` followed by the dual of the double-dual map of `Y` is the identity of `Yᵛ`. -/
+@[reassoc (attr := simp)]
+theorem doubleDualMap_comp_pre_doubleDualMap [SymmetricCategory C] (Y : C) [Closed Y]
+    [Closed (Y ⟶[C] 𝟙_ C)] [Closed ((Y ⟶[C] 𝟙_ C) ⟶[C] 𝟙_ C)] :
+    doubleDualMap (Y ⟶[C] 𝟙_ C) ≫ (pre (doubleDualMap Y)).app (𝟙_ C) = 𝟙 _ := by
+  apply uncurry_injective
+  rw [uncurry_pre_app, uncurry_doubleDualMap, braiding_naturality_left_assoc,
+    whiskerLeft_doubleDualMap_comp_ev, SymmetricCategory.symmetry_assoc, uncurry_id_eq_ev]
 
 end TauCeti

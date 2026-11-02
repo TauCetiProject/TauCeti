@@ -90,6 +90,12 @@ theorem coe_zmodMonoidHomEquiv_apply {G : Type*} [Group G] (φ : Multiplicative 
     (zmodMonoidHomEquiv N G φ : G) = φ (.ofAdd 1) :=
   (rfl)
 
+/-- The homomorphism associated to an element killed by `N` sends `1` to that element,
+including when `N = 1`. -/
+theorem zmodMonoidHomEquiv_symm_apply_ofAdd_one {G : Type*} [Group G]
+    (g : {g : G // g ^ N = 1}) : (zmodMonoidHomEquiv N G).symm g (.ofAdd 1) = g.1 := by
+  rw [← coe_zmodMonoidHomEquiv_apply, Equiv.apply_symm_apply]
+
 /-- The homomorphism `ℤ/Nℤ →* G` of an element `g` killed by `N` sends `a` to `g ^ a.val`. -/
 @[simp]
 theorem zmodMonoidHomEquiv_symm_apply {G : Type*} [Group G] (g : {g : G // g ^ N = 1})

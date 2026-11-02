@@ -5,14 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Matrix.PosSemidef
+public import TauCeti.Analysis.Matrix.PosSemidef.Basic
 
 /-!
 # Hermitian symmetry and bounds for subtraction kernels
 
 This file records the reality of `ψ 0` and symmetry under negation for Hermitian subtraction
 kernels `(a, b) ↦ ψ (a - b)`. For positive-semidefinite subtraction kernels, the scalar
-Cauchy--Schwarz estimates from `TauCeti.Analysis.Matrix.PosSemidef` give nonnegativity of
+Cauchy--Schwarz estimates from `TauCeti.Analysis.Matrix.PosSemidef.Basic` give nonnegativity of
 `re (ψ 0)` and the uniform norm bound `‖ψ z‖ ≤ re (ψ 0)`. These properties supply the conjugate
 symmetry and boundedness used in the Fourier analysis of positive-definite functions.
 

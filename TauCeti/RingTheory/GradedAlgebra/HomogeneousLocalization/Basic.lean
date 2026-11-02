@@ -46,6 +46,9 @@ localization is.
   graded ring homomorphism.
 * `HomogeneousLocalization.Away.map_surjective`: a surjective graded ring homomorphism induces
   surjections of homogeneous localizations at homogeneous elements.
+* `HomogeneousLocalization.Away.map_surjective_of_grade_subset_range`: for `ℕ`-graded rings,
+  surjectivity onto the elements of positive degree suffices at homogeneous elements of positive
+  degree.
 * `HomogeneousLocalization.Away.lift_eq_of_forall_mem`: rescaling the homogeneous coordinates,
   so that `ψ a = cⁿ φ a` on the degree-`n` part, does not change `lift`.
 * `HomogeneousLocalization.awayMap_injective`: the restriction `awayMap` from `A_{(f)}` to
@@ -151,6 +154,30 @@ theorem Away.map_surjective {F : 𝒜 →+*ᵍ ℬ} (hF : Function.Surjective F)
   rw [Away.map_mk]
   congr 1
   rw [GradedRingHom.map_directSumDecompose, DirectSum.decompose_of_mem_same ℬ hb]
+
+/-- A graded ring homomorphism `F` of `ℕ`-graded rings whose image contains every homogeneous
+element of positive degree induces a surjection `A_{(s)} →+* B_{(F s)}` for every `s` homogeneous
+of positive degree. The degree-zero part of `B` need not lie in the image: a fraction
+`b / F(s)ⁿ` is also `b F(s) / F(s)ⁿ⁺¹`, whose numerator has positive degree. -/
+theorem Away.map_surjective_of_grade_subset_range {𝒜 : ℕ → σ} {ℬ : ℕ → τ} [GradedRing 𝒜]
+    [GradedRing ℬ] {F : 𝒜 →+*ᵍ ℬ} (hF : ∀ i, 0 < i → (ℬ i : Set B) ⊆ Set.range F) {s : A}
+    {d : ℕ} (hs : s ∈ 𝒜 d) (hd : 0 < d) : Function.Surjective (Away.map F s) := by
+  intro z
+  obtain ⟨n, b, hb, rfl⟩ := Away.mk_surjective ℬ (Graded.map_mem F hs) z
+  have hb' : b * F s ∈ ℬ ((n + 1) • d) := by
+    rw [succ_nsmul]
+    exact SetLike.mul_mem_graded hb (Graded.map_mem F hs)
+  obtain ⟨a, ha⟩ := hF _ (by rw [smul_eq_mul]; positivity) hb'
+  -- `b / F(s)ⁿ = b F(s) / F(s)ⁿ⁺¹`
+  have hz : Away.mk ℬ (Graded.map_mem F hs) n b hb =
+      Away.mk ℬ (Graded.map_mem F hs) (n + 1) (b * F s) hb' := by
+    apply val_injective
+    rw [Away.val_mk, Away.val_mk, Localization.mk_eq_mk_iff, Localization.r_iff_exists]
+    exact ⟨1, by simp only [OneMemClass.coe_one, one_mul, pow_succ]; ring⟩
+  refine ⟨Away.mk 𝒜 hs (n + 1) (DirectSum.decompose 𝒜 a ((n + 1) • d)) (SetLike.coe_mem _), ?_⟩
+  rw [hz, Away.map_mk]
+  congr 1
+  rw [GradedRingHom.map_directSumDecompose, ha, DirectSum.decompose_of_mem_same ℬ hb']
 
 /-- Rescaling homogeneous coordinates does not change `Away.lift`: if `ψ a = cⁿ φ a` for every
 `a` of degree `n`, then `φ` and `ψ` induce the same homomorphism `A_{(f)} →+* R`. -/

@@ -17,9 +17,10 @@ import TauCeti.Algebra.Lie.Submodule.Atom
 /-!
 # Finite-dimensionality of dominant irreducible highest weight modules
 
-Let `L` be a finite-dimensional Lie algebra with non-degenerate Killing form over an algebraically
-closed field of characteristic zero. An irreducible highest weight `L`-module is
-finite-dimensional exactly when its highest weight is dominant integral.
+Let `L` be a finite-dimensional Lie algebra with non-degenerate Killing form over a field of
+characteristic zero, with a splitting Cartan subalgebra. An irreducible highest weight `L`-module
+is finite-dimensional exactly when its highest weight is dominant integral. Algebraic closure of
+the field is not needed for this criterion or for its application to `L(lam)`.
 
 The forward implication is the rank-one argument of
 `TauCeti.IsHighestWeightVector.isDominantIntegral`. For the reverse implication, two results supply
@@ -36,10 +37,10 @@ assuming finite-dimensionality of the ambient module at any intermediate step.
 
 The criterion is then read at the named carrier `TauCeti.irreducibleQuotient b lam`, that is
 `L(lam)`, in the two directions a consumer wants: **`L(lam)` is finite-dimensional whenever `lam`
-is dominant integral**, with no side condition on the Verma module `M(lam)` because `L(lam)` is the
-zero module when `M(lam)` vanishes; and conversely **every finite-dimensional irreducible module is
-a copy of `L(lam)` for a dominant integral `lam`**, which is the classification of the
-finite-dimensional irreducibles.
+is dominant integral**, with no side condition on the Verma module `M(lam)`; and conversely,
+over an algebraically closed field, **every finite-dimensional irreducible module is a copy of
+`L(lam)` for a dominant integral `lam`**, which is the classification of the finite-dimensional
+irreducibles.
 
 ## Main results
 
@@ -67,9 +68,9 @@ open LieAlgebra LieModule Module
 
 universe u v w
 
-variable {K : Type u} {L : Type v} [Field K] [CharZero K] [IsAlgClosed K] [LieRing L]
+variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L]
   [LieAlgebra K L] [IsKilling K L] [FiniteDimensional K L]
-  {H : LieSubalgebra K L} [H.IsCartanSubalgebra]
+  {H : LieSubalgebra K L} [H.IsCartanSubalgebra] [IsTriangularizable K H L]
   {M : Type w} [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M]
   [LieModule.IsIrreducible K L M]
   {b : (IsKilling.rootSystem H).Base} {lam : Dual K H} {v : M}
@@ -171,7 +172,7 @@ weight `lam`.** It carries a highest weight vector of a dominant integral weight
 (`TauCeti.exists_isHighestWeightVector_and_isDominantIntegral_of_irreducible`), and two
 irreducible modules with highest weight vectors of the same weight are equivalent. -/
 theorem exists_isDominantIntegral_nonempty_lieModuleEquiv_irreducibleQuotient
-    [FiniteDimensional K M] :
+    [IsAlgClosed K] [FiniteDimensional K M] :
     ∃ lam : Dual K H, IsDominantIntegral b lam ∧
       Nonempty (M ≃ₗ⁅K,L⁆ irreducibleQuotient b lam) := by
   obtain ⟨lam, v, hv, hlam⟩ :=

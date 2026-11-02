@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Quiver.SemisimpleQuotient
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Multiplication
-public import TauCeti.RingTheory.Jacobson.MulOpposite
+public import TauCeti.RingTheory.Jacobson.Basic
 
 /-!
 # The radical filtration of a zigzag algebra

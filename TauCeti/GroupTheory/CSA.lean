@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.GroupTheory.Commutator.Basic
 public import TauCeti.Algebra.Group.Subgroup.Centralizer
 public import TauCeti.GroupTheory.TrivialIntersection
 
@@ -13,14 +14,22 @@ public import TauCeti.GroupTheory.TrivialIntersection
 
 A group is CSA if its maximal abelian subgroups are malnormal. The centralizer of a nonidentity
 element in such a group is its unique maximal abelian subgroup containing that element. In
-particular, commutation is transitive through a nonidentity element. These properties are useful
-for the centralizers and equations of free groups and limit groups.
+particular, commutation is transitive through a nonidentity element. In a torsion-free
+commutative-transitive group no nonidentity element is conjugate to its inverse. A group is CSA
+exactly when it is commutative transitive and every nonidentity element commuting with one of its
+conjugates `g * x * g⁻¹` commutes with `g`. A failure of either condition is witnessed by a
+nonidentity element together with a nontrivial commutator, so both conditions pass to any group
+in which every pair of nonidentity elements survives under one homomorphism to a CSA group. This
+is how fully residually free groups inherit the CSA property from free groups. These properties
+are useful for the centralizers and equations of free groups and limit groups.
 
 The definition follows Baumslag, Myasnikov and Remeslennikov, *Algebraic geometry over groups I*,
 §§1–2.
 -/
 
 public section
+
+open scoped commutatorElement
 
 namespace Group
 
@@ -78,16 +87,92 @@ theorem IsCSA.centralizer_isMaximalAbelian (hG : IsCSA G) {y : G} (hy : y ≠ 1)
   have hyM : y ∈ M := hHM (Subgroup.subset_closure (by simp))
   simpa only [hG.eq_centralizer_of_mem hM hyM hy] using hM
 
+/-- The centralizer of a nonidentity element in a CSA group is abelian. -/
+theorem IsCSA.centralizer_isMulCommutative (hG : IsCSA G) {y : G} (hy : y ≠ 1) :
+    IsMulCommutative (Subgroup.centralizer {y}) :=
+  (hG.centralizer_isMaximalAbelian hy).prop
+
+/-- The centralizer of a nonidentity element in a CSA group is malnormal. -/
+theorem IsCSA.centralizer_isTISubgroup (hG : IsCSA G) {y : G} (hy : y ≠ 1) :
+    TauCeti.IsTISubgroup (Subgroup.centralizer {y}) :=
+  hG _ (hG.centralizer_isMaximalAbelian hy)
+
+/-- Commutation is transitive through a nonidentity element exactly when every nonidentity
+element has an abelian centralizer. -/
+theorem isCommTransitive_iff_centralizer_isMulCommutative :
+    IsCommTransitive G ↔
+      ∀ y : G, y ≠ 1 → IsMulCommutative (Subgroup.centralizer {y}) := by
+  constructor
+  · intro h y hy
+    apply IsMulCommutative.of_setLike_mul_comm
+    intro a ha b hb
+    exact (h a y b hy
+      ((commute_iff_eq _ _).mpr (Subgroup.mem_centralizer_singleton_iff.mp ha))
+      ((commute_iff_eq _ _).mpr (Subgroup.mem_centralizer_singleton_iff.mp hb).symm)).eq
+  · intro h x y z hy hxy hyz
+    have hx : x ∈ Subgroup.centralizer {y} :=
+      Subgroup.mem_centralizer_singleton_iff.mpr hxy.eq
+    have hz : z ∈ Subgroup.centralizer {y} :=
+      Subgroup.mem_centralizer_singleton_iff.mpr hyz.eq.symm
+    exact (commute_iff_eq _ _).mpr
+      ((isMulCommutative_iff_of_setLike.mp (h y hy)) x hx z hz)
+
 /-- CSA groups have transitive commutation through every nonidentity element. -/
-theorem IsCSA.isCommTransitive (hG : IsCSA G) : IsCommTransitive G := by
-  intro x y z hy hxy hyz
-  have hC := (hG.centralizer_isMaximalAbelian hy).prop
-  have : IsMulCommutative (Subgroup.centralizer {y} : Subgroup G) := hC
-  have hx : x ∈ Subgroup.centralizer {y} :=
-    Subgroup.mem_centralizer_singleton_iff.mpr hxy.eq
-  have hz : z ∈ Subgroup.centralizer {y} :=
-    Subgroup.mem_centralizer_singleton_iff.mpr hyz.eq.symm
-  exact setLike_mul_comm hx hz
+theorem IsCSA.isCommTransitive (hG : IsCSA G) : IsCommTransitive G :=
+  isCommTransitive_iff_centralizer_isMulCommutative.mpr
+    (fun _ hy => hG.centralizer_isMulCommutative hy)
+
+/-- **Elementwise characterization of CSA groups.** A group is CSA exactly when commutation is
+transitive through nonidentity elements and every nonidentity element `x` commuting with a
+conjugate `g * x * g⁻¹` commutes with `g`. -/
+theorem isCSA_iff_isCommTransitive_and_commute_conj :
+    IsCSA G ↔ IsCommTransitive G ∧
+      ∀ x g : G, x ≠ 1 → Commute x (g * x * g⁻¹) → Commute x g := by
+  constructor
+  · refine fun hG => ⟨hG.isCommTransitive, fun x g hx hxg => ?_⟩
+    -- Both `x` and `g * x * g⁻¹` lie in the malnormal centralizer of `x`, so `g` does too.
+    by_contra hg
+    exact (hG.centralizer_isTISubgroup hx).conj_notMem
+      (fun h => hg (Subgroup.mem_centralizer_singleton_iff.1 h).symm)
+      (Subgroup.mem_centralizer_singleton_iff.2 rfl) hx
+      (Subgroup.mem_centralizer_singleton_iff.2 hxg.eq.symm)
+  · rintro ⟨hG, hconj⟩ M hM
+    rw [TauCeti.isTISubgroup_iff]
+    intro g x hg hxM hgxM
+    by_contra hx
+    -- A maximal abelian subgroup containing `x ≠ 1` is the abelian centralizer of `x`.
+    have : IsMulCommutative M := hM.prop
+    have hMC : M = Subgroup.centralizer {x} :=
+      hM.eq_of_le (isCommTransitive_iff_centralizer_isMulCommutative.1 hG x hx) fun y hy =>
+        Subgroup.mem_centralizer_singleton_iff.2 (setLike_mul_comm hy hxM)
+    apply hg
+    rw [hMC, Subgroup.mem_centralizer_singleton_iff]
+    exact (hconj x g hx ((commute_iff_eq _ _).2 (setLike_mul_comm hxM hgxM))).eq.symm
+
+/-- In a torsion-free commutative-transitive group, a nonidentity element is not conjugate to its
+inverse. -/
+theorem IsCommTransitive.not_isConj_inv [IsMulTorsionFree G] (hG : IsCommTransitive G) {x : G}
+    (hx : x ≠ 1) : ¬IsConj x x⁻¹ := by
+  rintro h
+  obtain ⟨g, hg⟩ := isConj_iff.1 h
+  have hxx : x * x ≠ 1 := by
+    rw [← pow_two]
+    exact (pow_eq_one_iff_left two_ne_zero).not.2 hx
+  -- Conjugating twice by `g` fixes `x`, so `g ^ 2` commutes with `x`.
+  have hg2 : Commute (g ^ 2) x := by
+    have h2 : g * (g * x * g⁻¹) * g⁻¹ = x := by
+      calc g * (g * x * g⁻¹) * g⁻¹ = g * x⁻¹ * g⁻¹ := by rw [hg]
+        _ = (g * x * g⁻¹)⁻¹ := by group
+        _ = x := by rw [hg, inv_inv]
+    calc g ^ 2 * x = g * (g * x * g⁻¹) * g⁻¹ * g ^ 2 := by simp [pow_two, mul_assoc]
+      _ = x * g ^ 2 := by rw [h2]
+  have hgx : Commute g x := by
+    by_cases hg1 : g ^ 2 = 1
+    · rw [(pow_eq_one_iff_left two_ne_zero).1 hg1]
+      exact Commute.one_left x
+    · exact hG g (g ^ 2) x hg1 (Commute.self_pow g 2) hg2
+  rw [hgx.eq, mul_inv_cancel_right] at hg
+  exact hxx (mul_eq_one_iff_eq_inv.2 hg)
 
 /-- A nonabelian commutative-transitive group has trivial center. -/
 theorem IsCommTransitive.center_eq_bot (hG : IsCommTransitive G)
@@ -130,6 +215,37 @@ theorem IsCSA.of_injective {H : Type*} [Group H] (hG : IsCSA G)
     have hM_eq : M = C.comap f := hM.eq_of_le hCM hMC
     rw [hM_eq]
     exact (hG C hC).comap f hf
+
+/-- Commutation transitivity passes from `H` to `G` when any two nonidentity elements of `G`
+survive together under some homomorphism `G →* H`. -/
+theorem IsCommTransitive.of_forall_exists_monoidHom {H : Type*} [Group H]
+    (hH : IsCommTransitive H)
+    (h : ∀ a b : G, a ≠ 1 → b ≠ 1 → ∃ φ : G →* H, φ a ≠ 1 ∧ φ b ≠ 1) :
+    IsCommTransitive G := by
+  intro x y z hy hxy hyz
+  rw [← commutatorElement_eq_one_iff_commute]
+  -- Otherwise one homomorphism keeps both `y` and `⁅x, z⁆` nontrivial, contradicting commutation
+  -- transitivity in `H`.
+  by_contra hxz
+  obtain ⟨φ, hφy, hφxz⟩ := h y ⁅x, z⁆ hy hxz
+  apply hφxz
+  rw [map_commutatorElement, commutatorElement_eq_one_iff_commute]
+  exact hH _ _ _ hφy (hxy.map φ) (hyz.map φ)
+
+/-- Being CSA passes from `H` to `G` when any two nonidentity elements of `G` survive together
+under some homomorphism `G →* H`. In particular a group discriminated by a CSA group is CSA. -/
+theorem IsCSA.of_forall_exists_monoidHom {H : Type*} [Group H] (hH : IsCSA H)
+    (h : ∀ a b : G, a ≠ 1 → b ≠ 1 → ∃ φ : G →* H, φ a ≠ 1 ∧ φ b ≠ 1) : IsCSA G := by
+  refine isCSA_iff_isCommTransitive_and_commute_conj.2
+    ⟨hH.isCommTransitive.of_forall_exists_monoidHom h, fun x g hx hxg => ?_⟩
+  rw [← commutatorElement_eq_one_iff_commute]
+  -- Otherwise one homomorphism keeps both `x` and `⁅x, g⁆` nontrivial, contradicting the
+  -- elementwise characterization of CSA groups in `H`.
+  by_contra hxg'
+  obtain ⟨φ, hφx, hφxg⟩ := h x ⁅x, g⁆ hx hxg'
+  apply hφxg
+  rw [map_commutatorElement, commutatorElement_eq_one_iff_commute]
+  exact (isCSA_iff_isCommTransitive_and_commute_conj.1 hH).2 _ _ hφx (by simpa using hxg.map φ)
 
 /-- If `G` is nonabelian and `C` is nontrivial, then `G × C` is not commutative transitive. -/
 theorem not_isCommTransitive_prod_of_nontrivial {C : Type*} [Group C]

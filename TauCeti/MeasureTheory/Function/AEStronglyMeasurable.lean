@@ -6,16 +6,18 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.StronglyMeasurable.AEStronglyMeasurable
+public import Mathlib.MeasureTheory.Group.Defs
+public import Mathlib.MeasureTheory.Measure.Prod
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
+import Mathlib.MeasureTheory.Group.Measure
 
 /-!
-# σ-algebra helpers for `AEStronglyMeasurable`
+# Almost everywhere strong measurability
 
-A helper lemma for establishing `AEStronglyMeasurable` with respect to the infimum of an antitone
-sequence of σ-algebras, used when working with tail σ-algebras and reverse martingales, and a
-lemma transporting `AEStronglyMeasurable` along precomposition by a map with absolutely continuous
-pushforward.
-
+This file provides lemmas for establishing `AEStronglyMeasurable` with respect to infima of
+antitone sequences of σ-algebras, as needed for tail σ-algebras and reverse martingales.
+Precomposition lemmas cover maps with absolutely continuous pushforwards and measurable families
+of translations.
 ## Main results
 
 - `aestronglyMeasurable_of_tendsto_ae'`: an a.e. pointwise limit of `AEStronglyMeasurable[m]`
@@ -30,10 +32,12 @@ pushforward.
 - `MeasureTheory.AEStronglyMeasurable.comp_aemeasurable_of_map_absolutelyContinuous`: if
   `μ.map f ≪ ν`, precomposition with an a.e.-measurable `f` preserves almost-everywhere strong
   measurability.
+- `MeasureTheory.AEStronglyMeasurable.comp_prod_sub`: a measurable family of translations
+  preserves a.e. strong measurability for the product measure.
 
-The result holds for a codomain in any second-countable conditionally complete linear order with the
-order topology and Borel σ-algebra (`ℝ` qualifies). The witness σ-algebras `m N` need not be related
-to the measure's ambient σ-algebra `m₀`.
+The antitone σ-algebra results hold for a codomain in any second-countable conditionally complete
+linear order with the order topology and Borel σ-algebra (`ℝ` qualifies). The witness σ-algebras
+`m N` need not be related to the measure's ambient σ-algebra `m₀`.
 
 Adapted from `cameronfreer/exchangeability` (`Probability/SigmaAlgebraHelpers.lean`, pin
 `e0532e59ceff23edab44dda9ab0655debbc9cc22`); the two a.e.-limit lemmas
@@ -182,5 +186,25 @@ theorem AEStronglyMeasurable.comp_aemeasurable_of_map_absolutelyContinuous
     (hg : AEStronglyMeasurable g ν) (hf : AEMeasurable f μ) (hmap : μ.map f ≪ ν) :
     AEStronglyMeasurable (g ∘ f) μ :=
   (hg.mono_ac hmap).comp_aemeasurable hf
+
+/-- A measurable family of translations preserves a.e. strong measurability for the product
+measure when the measure on the translated variable is right invariant. -/
+theorem AEStronglyMeasurable.comp_prod_sub
+    {G : Type*} [AddGroup G] [MeasurableSpace G] [MeasurableAdd G] [MeasurableSub₂ G]
+    {ν : Measure G} [ν.IsAddRightInvariant] {k : G → F} {c : α → G}
+    (hk : AEStronglyMeasurable k ν) (hc : AEMeasurable c μ) :
+    AEStronglyMeasurable (fun p : α × G ↦ k (p.2 - c p.1)) (μ.prod ν) := by
+  have hm : Measurable (fun p : α × G ↦ p.2 - hc.mk c p.1) :=
+    measurable_snd.sub (hc.measurable_mk.comp measurable_fst)
+  have hq : QuasiMeasurePreserving (fun p : α × G ↦ p.2 - hc.mk c p.1) (μ.prod ν) ν := by
+    refine ⟨hm, Measure.AbsolutelyContinuous.mk fun s hs hs0 ↦ ?_⟩
+    rw [Measure.map_apply hm hs]
+    apply Measure.measure_prod_null_of_ae_null (hm hs)
+    exact Eventually.of_forall fun t ↦
+      (measurePreserving_sub_right ν (hc.mk c t)).quasiMeasurePreserving.preimage_null hs0
+  refine (hk.comp_quasiMeasurePreserving hq).congr ?_
+  filter_upwards [Measure.quasiMeasurePreserving_fst.ae_eq_comp hc.ae_eq_mk] with p hp
+  simp only [Function.comp_def] at hp ⊢
+  rw [hp]
 
 end MeasureTheory

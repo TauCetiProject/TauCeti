@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Module.DoubleDual
+public import TauCeti.Analysis.Normed.Module.DoubleDual
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 import Mathlib.Analysis.LocallyConvex.WeakSpace
 import Mathlib.Analysis.Normed.Operator.Compact.FiniteDimension
@@ -229,7 +229,7 @@ theorem isWeaklyCompact_iff_range_subset {T : E →L[𝕜] F} :
   · -- The image of the unit ball of `E` lands in `A` of the weak-star compact bidual ball,
     -- which lies in the canonical image of `F`.
     intro h
-    apply isCompact_closure_of_isBounded 𝕜 F
+    apply isCompact_closure_weakSpace_of_isBounded 𝕜 F
     · rw [preimage_image_eq _ (toWeakSpace 𝕜 F).injective]
       exact T.lipschitzWith.isBounded_image isBounded_closedBall
     · have hsub : inclusionInDoubleDualWeak 𝕜 F '' (toWeakSpace 𝕜 F '' (T '' closedBall 0 1)) ⊆

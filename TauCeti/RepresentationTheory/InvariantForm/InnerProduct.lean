@@ -5,20 +5,24 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Convex.Function
 public import Mathlib.Analysis.InnerProductSpace.Continuous
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import TauCeti.RepresentationTheory.InvariantForm.SumOfConjugates
+
+import Mathlib.Analysis.Convex.Mul
+import Mathlib.Analysis.Normed.Module.Convex
 
 /-!
 # Invariant inner products for finite actions
 
 A real inner product can be summed over a finite monoid representation.  The resulting
 positive-definite symmetric bilinear form controls the original norm, and its positive strict
-sublevel sets contain the origin and, in finite dimensions, are open neighbourhoods of it;
-arbitrarily small such sublevel sets fit inside a prescribed open neighbourhood.  When the monoid
-is a group, so that it acts by linear automorphisms, the form is preserved by the action, without
-any faithfulness assumption, and so are its sublevel sets.
+sublevel sets are convex, contain the origin and, in finite dimensions, are open neighbourhoods
+of it; arbitrarily small such sublevel sets fit inside a prescribed open neighbourhood.  When the
+monoid is a group, so that it acts by linear automorphisms, the form is preserved by the action,
+without any faithfulness assumption, and so are its sublevel sets.
 
 These invariant ellipsoids are the linear-algebraic shrinking device in finite-action charts: an
 equivariant chart about a fixed point can be restricted to an invariant ball while retaining every
@@ -38,6 +42,7 @@ linearization; see S. Bochner, *Compact groups of differentiable transformations
   dimensions.
 * `Representation.exists_pos_sumOfConjugatesInnerSublevel_subset`: arbitrarily small such
   sublevel sets exist.
+* `Representation.convex_sumOfConjugatesInnerSublevel`: these sublevel sets are convex.
 * `Representation.preimage_sumOfConjugatesInnerSublevel`: for a group, every element preserves
   these sublevel sets.
 -/
@@ -106,6 +111,16 @@ theorem exists_pos_sumOfConjugatesInnerSublevel_subset (ρ : Representation ℝ 
   have hsq := (ρ.norm_sq_le_sumOfConjugatesForm_inner_apply_self x).trans_lt
     ((ρ.mem_sumOfConjugatesInnerSublevel).1 hx)
   exact (pow_lt_pow_iff_left₀ (norm_nonneg x) hr.le two_ne_zero).1 hsq
+
+/-- The orbit-sum inner sublevel sets are convex. -/
+theorem convex_sumOfConjugatesInnerSublevel (ρ : Representation ℝ G V) (c : ℝ) :
+    Convex ℝ (ρ.sumOfConjugatesInnerSublevel c) := by
+  have hf : ConvexOn ℝ Set.univ (∑ g : G, fun x ↦ ‖ρ g x‖ ^ 2) :=
+    Finset.sum_induction _ (ConvexOn ℝ Set.univ) (fun _ _ ↦ ConvexOn.add)
+      (convexOn_const 0 convex_univ) fun g _ ↦
+        (convexOn_univ_norm.pow (fun _ _ ↦ norm_nonneg _) 2).comp_linearMap (ρ g)
+  rw [Finset.sum_fn] at hf
+  simpa [sumOfConjugatesInnerSublevel, sumOfConjugatesForm_inner_apply_self] using hf.convex_lt c
 
 end Monoid
 

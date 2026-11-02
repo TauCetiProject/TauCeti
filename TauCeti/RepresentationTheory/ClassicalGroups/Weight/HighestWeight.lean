@@ -9,6 +9,8 @@ public import TauCeti.LinearAlgebra.PolynomialFamily
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transvection
 public import TauCeti.RepresentationTheory.ClassicalGroups.Weight.Decomposition
 public import TauCeti.RepresentationTheory.ClassicalGroups.Weight.Weyl
+import TauCeti.Algebra.Lie.GeneralLinear.Uniqueness
+import TauCeti.RepresentationTheory.ClassicalGroups.Weight.Differential
 
 /-!
 # Highest weight vectors of a rational representation of `GL n`
@@ -61,6 +63,14 @@ height while permutations of a weight are again weights
   weight spaces vanish is fixed by the root subgroup.
 * `TauCeti.IsRationalRep.exists_highestWeightVector`: **a nonzero rational representation has a
   highest weight vector**, of a dominant weight.
+* `TauCeti.IsRationalRep.nonempty_equiv_of_highestWeightVector`: **an irreducible rational
+  representation is determined by its highest weight.** Differentiating, both highest weight
+  vectors become highest weight vectors for `𝔤𝔩ₙ`
+  (`TauCeti.IsRationalRep.isGlHighestWeightVector_differential`) of irreducible `𝔤𝔩ₙ`-modules
+  (`TauCeti.IsRationalRep.isIrreducible_differential`), which are therefore isomorphic
+  (`TauCeti.lieModuleEquivOfIsGlHighestWeightVector`); a `𝔤𝔩ₙ`-intertwiner of rational
+  representations intertwines the group actions
+  (`TauCeti.IsRationalRep.isIntertwiningMap_iff_forall_map_differential`).
 
 ## References
 
@@ -71,6 +81,8 @@ height while permutations of a weight are again weights
 public section
 
 open Matrix
+
+attribute [local instance 100] LieRing.ofAssociativeRing
 
 universe u v
 
@@ -322,5 +334,35 @@ theorem IsRationalRep.exists_highestWeightVector [Nontrivial W] (h : IsRationalR
       exact_mod_cast Fin.lt_def.mp hij
     nlinarith [sub_pos.mpr hij']
   exact absurd (hmax _ hbot) (not_le.mpr hgt)
+
+/-! ## An irreducible rational representation is determined by its highest weight -/
+
+/-- **An irreducible rational representation is determined by its highest weight**: two
+irreducible rational representations of `GL n ℂ`, each with a nonzero vector of weight `l` fixed
+by every transvection `xᵢⱼ(c)` with `i < j`, are equivalent. -/
+theorem IsRationalRep.nonempty_equiv_of_highestWeightVector {V : Type*} [AddCommGroup V]
+    [Module ℂ V] {σ : Representation ℂ (GL (Fin n) ℂ) V} (hρ : IsRationalRep ρ)
+    (hσ : IsRationalRep σ) [ρ.IsIrreducible] [σ.IsIrreducible] {l : Fin n → ℤ} {w : W} {v : V}
+    (hw0 : w ≠ 0) (hwl : w ∈ weightSpace ρ l)
+    (hw : ∀ (i j : Fin n) (hij : i < j) (c : ℂ), ρ (transvectionUnit hij.ne c) w = w)
+    (hv0 : v ≠ 0) (hvl : v ∈ weightSpace σ l)
+    (hv : ∀ (i j : Fin n) (hij : i < j) (c : ℂ), σ (transvectionUnit hij.ne c) v = v) :
+    Nonempty (ρ.Equiv σ) := by
+  let _ := LieRingModule.compLieHom W hρ.differential
+  let _ := LieModule.compLieHom W hρ.differential
+  let _ := LieRingModule.compLieHom V hσ.differential
+  let _ := LieModule.compLieHom V hσ.differential
+  have _ := hρ.isIrreducible_differential
+  have _ := hσ.isIrreducible_differential
+  let e := lieModuleEquivOfIsGlHighestWeightVector
+    (hρ.isGlHighestWeightVector_differential hw0 hwl hw)
+    (hσ.isGlHighestWeightVector_differential hv0 hvl hv)
+  refine ⟨.mk e.toLinearEquiv fun g ↦ LinearMap.ext fun x ↦ ?_⟩
+  have hint := (hρ.isIntertwiningMap_iff_forall_map_differential hσ
+    e.toLinearEquiv.toLinearMap).mpr fun X x ↦ by
+      simpa only [LieRingModule.compLieHom_apply, Module.End.lie_apply,
+        LieModuleEquiv.coe_toLieModuleHom, LieModuleEquiv.coe_toLinearEquiv,
+        LinearEquiv.coe_coe] using e.toLieModuleHom.map_lie X x
+  exact (Representation.isIntertwiningMap_iff _ _ _).mp hint g x
 
 end TauCeti

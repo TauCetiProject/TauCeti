@@ -20,7 +20,8 @@ It also records that a covering map is injective on fundamental groups — the
 fundamental-group form of Mathlib's `IsCoveringMap.injective_path_homotopic_map`, which states
 the same injectivity for the Hom-sets of the fundamental groupoid. Dually, a covering map of a
 path-connected space onto a simply connected space is injective: a path joining two points of a
-fibre projects to a loop, which is null-homotopic, so its lift is a loop as well.
+fibre projects to a loop, which is null-homotopic, so its lift is a loop as well. The same
+argument applies within one path component of an arbitrary total space.
 
 It also records the lifting criterion in a subgroup form used by the universal-covers
 roadmap. Mathlib already proves the fundamental result
@@ -34,6 +35,8 @@ separately identifies `H` as a subgroup of the image of `p_*`.
 
 * `IsCoveringMap.map_injective` and `IsCoveringMap.mapOfEq_injective`: a
   covering map is injective on fundamental groups.
+* `IsCoveringMap.eq_of_joined`: over a simply connected space, two points of the total space
+  that are joined by a path and lie over the same point are equal.
 * `IsCoveringMap.injective`: a covering map from a path-connected space to a simply connected
   space is injective.
 * `IsCoveringMapOn.injective_of_range_subset`: the same for a covering map over a set, when its
@@ -84,11 +87,12 @@ theorem _root_.IsCoveringMap.mapOfEq_injective
   (CategoryTheory.eqToIso (congrArg FundamentalGroupoid.mk he)).conj.injective.comp
     (IsCoveringMap.map_injective hp e)
 
-/-- **A covering map from a path-connected space to a simply connected space is injective.** -/
-theorem _root_.IsCoveringMap.injective [PathConnectedSpace E] [SimplyConnectedSpace X]
-    (hp : IsCoveringMap p) : Function.Injective p := by
-  intro e₀ e₁ h
-  let γ := PathConnectedSpace.somePath e₀ e₁
+/-- **Points joined by a path over a simply connected space are equal if their images are.**
+Two points of the total space of a covering map of a simply connected space that are joined by a
+path and lie over the same point coincide. -/
+theorem _root_.IsCoveringMap.eq_of_joined [SimplyConnectedSpace X] (hp : IsCoveringMap p)
+    {e₀ e₁ : E} (hj : Joined e₀ e₁) (h : p e₀ = p e₁) : e₀ = e₁ := by
+  let γ := hj.somePath
   let δ : Path (p e₀) (p e₀) := (γ.map hp.continuous).cast rfl h
   have hδ : hp.liftPath δ.toContinuousMap e₀ δ.source = γ.toContinuousMap :=
     ((hp.eq_liftPath_iff' _).mpr ⟨rfl, γ.source⟩).symm
@@ -99,6 +103,11 @@ theorem _root_.IsCoveringMap.injective [PathConnectedSpace E] [SimplyConnectedSp
     (SimplyConnectedSpace.paths_homotopic δ (Path.refl (p e₀))) e₀ δ.source rfl
   rw [hδ, hrefl] at key
   simpa [γ] using key.symm
+
+/-- **A covering map from a path-connected space to a simply connected space is injective.** -/
+theorem _root_.IsCoveringMap.injective [PathConnectedSpace E] [SimplyConnectedSpace X]
+    (hp : IsCoveringMap p) : Function.Injective p := fun e₀ e₁ h ↦
+  hp.eq_of_joined (PathConnectedSpace.joined e₀ e₁) h
 
 /-- **A covering map whose range lies in a simply connected part of its base is injective.**
 If `p : E → X` is a covering map over `s`, its total space is path-connected, and its range lies

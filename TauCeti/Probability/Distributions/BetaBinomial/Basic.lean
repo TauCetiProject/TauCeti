@@ -202,7 +202,7 @@ theorem betaBinomialMeasure_zero_trials {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
 
 /-- Every function on the native carrier is integrable against a beta-binomial law.
 This also includes invalid shapes, for which the law is zero. -/
-theorem integrable_betaBinomialMeasure {E : Type*} [NormedAddGroup E]
+theorem integrable_betaBinomialMeasure {E : Type*} [SeminormedAddGroup E]
     (f : ℕ → E) (n : ℕ) (a b : ℝ) : Integrable f (betaBinomialMeasure n a b) := by
   by_cases h : 0 < a ∧ 0 < b
   · rw [betaBinomialMeasure_eq_sum_dirac h.1 h.2]
@@ -211,7 +211,7 @@ theorem integrable_betaBinomialMeasure {E : Type*} [NormedAddGroup E]
   · simp [betaBinomialMeasure_eq_zero_of_invalid h]
 
 /-- Every function is integrable against the real cast of a beta-binomial law. -/
-theorem integrable_map_cast_betaBinomialMeasure {E : Type*} [NormedAddGroup E]
+theorem integrable_map_cast_betaBinomialMeasure {E : Type*} [SeminormedAddGroup E]
     (f : ℝ → E) (n : ℕ) (a b : ℝ) :
     Integrable f ((betaBinomialMeasure n a b).map (Nat.cast : ℕ → ℝ)) := by
   rw [(MeasurableEmbedding.natCast (α := ℝ)).integrable_map_iff]

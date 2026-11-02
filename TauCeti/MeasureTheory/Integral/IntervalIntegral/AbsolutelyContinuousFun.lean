@@ -139,20 +139,12 @@ theorem norm_sub_le_integral_norm_deriv_sub [FiniteDimensional ℝ F] {p : ℝ �
     (intervalIntegral.integral_mono_interval le_rfl ht.1 ht.2
       (Filter.Eventually.of_forall fun _ ↦ norm_nonneg _) (hpI.sub hγI).norm)
 
-omit [NormedSpace ℝ F] in
-/-- An AC curve is almost everywhere measurable on the ordered half-open parameter interval. -/
-theorem aemeasurable_restrict_Ioc [MeasurableSpace F] [BorelSpace F]
-    (hγ : AbsolutelyContinuousOnInterval γ a b) (hab : a ≤ b) :
-    AEMeasurable γ (volume.restrict (Ioc a b)) :=
-  (hγ.continuousOn.mono
-    (fun _ ht ↦ (uIcc_of_le hab).symm ▸ Ioc_subset_Icc_self ht)).aemeasurable measurableSet_Ioc
-
 /-- The derivative of a finite-dimensional AC curve is integrable on the ordered half-open
 parameter interval. -/
 theorem integrableOn_deriv_Ioc [FiniteDimensional ℝ F]
-    (hγ : AbsolutelyContinuousOnInterval γ a b) (hab : a ≤ b) :
-    IntegrableOn (deriv γ) (Ioc a b) := by
-  simpa only [uIoc_of_le hab] using hγ.intervalIntegrable_deriv_of_finiteDimensional.def'
+    (hγ : AbsolutelyContinuousOnInterval γ a b) :
+    IntegrableOn (deriv γ) (Ioc a b) :=
+  hγ.intervalIntegrable_deriv_of_finiteDimensional.1
 
 end AbsolutelyContinuousOnInterval
 

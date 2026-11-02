@@ -24,10 +24,10 @@ univariate polynomial in the variable `Xᵢ`, on monomials.
 
 * `TauCeti.prod_map_X_eq_monomial`: the product of a multiset of variables is the monomial with
   coefficient `1` at the multiplicity function of the multiset.
-* `MvPolynomial.coeff_sum_monomial`, `MvPolynomial.degreeOf_sum_monomial_le`,
-  `MvPolynomial.sum_monomial_ne_zero`: the coefficients, partial degrees and nonvanishing of the
-  polynomial `∑_{μ ∈ s} x_μ X^μ` whose coefficient vector `x` is indexed by a finite set `s` of
-  exponents.
+* `MvPolynomial.coeff_prod_univ_X_pow`: the coefficients of the monomial `∏ᵢ Xᵢ ^ Lᵢ` in finitely
+  many variables.
+* `MvPolynomial.coeff_prod_X_pow_mul_prod_X_pow`: the coefficients of a product `Xᵃ Yᵇ` of
+  monomials in two disjoint groups of variables.
 * `MvPolynomial.eval₂_monomial_sumElim_of_eq_one`: evaluating `c X^a Y^e` with every `X`
   variable set to `1` gives the value of `c Y^e`.
 * `Polynomial.toMvPolynomial_monomial`: a univariate monomial placed in `Xᵢ` is the multivariate
@@ -54,43 +54,25 @@ namespace MvPolynomial
 
 variable {ι A : Type*} [CommSemiring A]
 
-/-- The coefficients of the polynomial `∑_{μ ∈ s} x_μ X^μ` whose coefficient vector `x` is
-indexed by a finite set `s` of exponents. -/
-theorem coeff_sum_monomial [Fintype ι] {s : Finset (ι → ℕ)} (x : s → A) (m : ι →₀ ℕ) :
-    (∑ μ : s, monomial (Finsupp.equivFunOnFinite.symm μ.1) (x μ)).coeff m =
-      if h : ⇑m ∈ s then x ⟨m, h⟩ else 0 := by
+/-- The coefficient of `Xᴷ` in the monomial `∏ᵢ Xᵢ ^ Lᵢ` in finitely many variables is `1` when
+the exponents agree and `0` otherwise. -/
+theorem coeff_prod_univ_X_pow [Fintype ι] (L : ι → ℕ) (K : ι →₀ ℕ) :
+    (∏ i, (X i : MvPolynomial ι A) ^ L i).coeff K = if ∀ i, L i = K i then 1 else 0 := by
   classical
-  simp only [coeff_sum, coeff_monomial]
-  split_ifs with h
-  · rw [Finset.sum_eq_single ⟨m, h⟩]
-    · simp
-    · intro μ _ hμ
-      refine ite_eq_right_iff.mpr fun h' ↦ absurd (Subtype.ext ?_) hμ
-      simpa using congrArg DFunLike.coe h'
-    · simp
-  · refine Finset.sum_eq_zero fun μ _ ↦ ite_eq_right_iff.mpr fun h' ↦ absurd ?_ h
-    simp [← h']
+  simp [coeff_prod_X_pow, Finsupp.ext_iff, eq_comm]
 
-/-- The polynomial `∑_{μ ∈ s} x_μ X^μ` has degree at most `rᵢ` in `Xᵢ` when every exponent
-`μ ∈ s` satisfies `μᵢ ≤ rᵢ`. -/
-theorem degreeOf_sum_monomial_le [Finite ι] {s : Finset (ι → ℕ)} {r : ι → ℕ}
-    (hs : ∀ μ ∈ s, ∀ i, μ i ≤ r i) (x : s → A) (i : ι) :
-    (∑ μ : s, monomial (Finsupp.equivFunOnFinite.symm μ.1) (x μ)).degreeOf i ≤ r i := by
-  have := Fintype.ofFinite ι
-  refine degreeOf_le_iff.mpr fun m hm ↦ ?_
-  rw [mem_support_iff, coeff_sum_monomial] at hm
-  split_ifs at hm with h
-  · exact hs _ h i
-  · exact absurd rfl hm
-
-/-- The polynomial `∑_{μ ∈ s} x_μ X^μ` is nonzero when its coefficient vector `x` is. -/
-theorem sum_monomial_ne_zero [Finite ι] {s : Finset (ι → ℕ)} {x : s → A} (hx : x ≠ 0) :
-    ∑ μ : s, monomial (Finsupp.equivFunOnFinite.symm μ.1) (x μ) ≠ 0 := by
-  have := Fintype.ofFinite ι
-  obtain ⟨μ, hμ⟩ := Function.ne_iff.mp hx
-  refine ne_of_apply_ne (fun Q : MvPolynomial ι A ↦ Q.coeff (Finsupp.equivFunOnFinite.symm μ.1)) ?_
-  rw [coeff_sum_monomial]
-  simpa [μ.2] using hμ
+/-- The coefficient of `Xᵉ` in the product `Xᵃ Yᵇ` of monomials in two disjoint groups of
+finitely many variables `Xᵢ = X (inl i)` and `Yⱼ = X (inr j)` is `1` when `a` and `b` are the
+restrictions of `e` and `0` otherwise. -/
+theorem coeff_prod_X_pow_mul_prod_X_pow {κ : Type*} [Fintype ι] [Fintype κ] (a : ι → ℕ)
+    (b : κ → ℕ) (e : ι ⊕ κ →₀ ℕ) :
+    ((∏ i, (X (Sum.inl i) : MvPolynomial (ι ⊕ κ) A) ^ a i) *
+        ∏ j, (X (Sum.inr j) : MvPolynomial (ι ⊕ κ) A) ^ b j).coeff e =
+      if (∀ i, a i = e (Sum.inl i)) ∧ ∀ j, b j = e (Sum.inr j) then 1 else 0 := by
+  have h := Fintype.prod_sum_type (fun k ↦ (X k : MvPolynomial (ι ⊕ κ) A) ^ Sum.elim a b k)
+  simp only [Sum.elim_inl, Sum.elim_inr] at h
+  rw [← h, coeff_prod_univ_X_pow]
+  simp [Sum.forall]
 
 /-- Evaluating the monomial `c X^a Y^e` in the variables `τ ⊕ σ` at a point whose `.inl`
 coordinates are all `1` gives the value of `c Y^e` at the `.inr` coordinates. -/

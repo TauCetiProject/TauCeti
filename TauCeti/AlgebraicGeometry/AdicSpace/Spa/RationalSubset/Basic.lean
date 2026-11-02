@@ -5,7 +5,7 @@ Authors: Chris Birkbeck
 -/
 module
 
-import TauCeti.RingTheory.Valuation.CofinalIdeal.Greatest
+import TauCeti.RingTheory.Valuation.SpanPow
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Basic
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Points
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Presentation
@@ -63,6 +63,8 @@ layer deferred above.
   are the exported interface, as for `spa_def`/`mem_spa_iff`.
 * `TauCeti.ValuationSpectrum.rationalSubset_subset_spa` : every rational subset is contained
   in the adic spectrum.
+* `TauCeti.ValuationSpectrum.trivialSection_mem_rationalSubset_iff` : the trivial valuation of a
+  prime `𝔭` lies in `R(T/s)` exactly when `𝔭` is open and `s ∉ 𝔭`.
 * `TauCeti.ValuationSpectrum.rationalSubset_subset_rationalSubset_of_subset` : the rational
   subset is antitone in its numerator set.
 * `TauCeti.ValuationSpectrum.rationalSubset_mul_subset_rationalSubset` : refining a
@@ -163,6 +165,18 @@ theorem mem_rationalSubset_iff (Aplus : Subring A) (T : Finset A) (s : A) (v : S
 theorem rationalSubset_subset_spa (Aplus : Subring A) (T : Finset A) (s : A) :
     rationalSubset Aplus T s ⊆ spa Aplus :=
   rationalSubset_def Aplus T s ▸ Set.inter_subset_left
+
+/-- The trivial valuation of a prime `𝔭` lies in the rational subset `R(T/s)` exactly when `𝔭` is
+open and `s ∉ 𝔭`. Its values are `0` and `1`, so the numerator conditions `v(t) ≤ v(s)` hold as
+soon as `v(s) = 1`. High priority so that `simp` uses this rather than unfolding membership with
+`mem_rationalSubset_iff`. -/
+@[simp high]
+theorem trivialSection_mem_rationalSubset_iff (Aplus : Subring A) (T : Finset A) (s : A)
+    (p : PrimeSpectrum A) :
+    trivialSection p ∈ rationalSubset Aplus T s ↔ IsOpen (p.asIdeal : Set A) ∧ s ∉ p.asIdeal := by
+  simp only [mem_rationalSubset_iff, trivialSection_mem_spa_iff, trivialSection_vle_iff,
+    p.asIdeal.zero_mem, not_true_eq_false, or_false]
+  tauto
 
 /-- **The containment criterion for rational subsets.** One rational subset is contained in
 another exactly when, at every point of the smaller, the larger one's numerators are dominated
@@ -423,8 +437,8 @@ theorem mem_rationalSubset_of_span_eq_top_of_mem_spa (Aplus : Subring A) {T : Fi
     (hT : Ideal.span (T : Set A) = ⊤) {v : Spv A} (hv : v ∈ spa Aplus) :
     ∃ s ∈ T, v ∈ rationalSubset Aplus T s := by
   obtain ⟨s, hs, hs0, hmax'⟩ :=
-    Valuation.exists_mem_max_restrict_ne_zero (v := v.valuation) (I := (⊤ : Ideal A))
-      hT rfl (a₀ := 1) Submodule.mem_top (by simp)
+    Valuation.exists_mem_max_restrict_ne_zero (v := v.valuation) (a₀ := 1)
+      (by rw [hT, Ideal.radical_top]; exact Submodule.mem_top) (by simp)
   have hmax : ∀ t ∈ T, v.toValuativeRel.vle t s := fun t ht ↦
     (valuation_le_iff v t s).mp (v.valuation.restrict_le_iff.mp (hmax' t ht))
   refine ⟨s, hs, (mem_rationalSubset_iff Aplus T s v).mpr ⟨hv, hmax, fun hzero ↦ ?_⟩⟩

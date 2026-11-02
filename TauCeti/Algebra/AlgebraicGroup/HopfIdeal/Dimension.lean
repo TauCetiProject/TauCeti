@@ -7,11 +7,13 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Connected.Irreducible
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Basic
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Tangent
+public import TauCeti.Algebra.AlgebraicGroup.Smooth.CharZero
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Regularity
 import Mathlib.RingTheory.KrullDimension.NonZeroDivisors
 
 /-!
-# Dimension drop for proper closed subgroups
+# Dimensions of closed subgroups
 
 A proper closed subgroup of a reduced geometrically connected affine group of finite type
 has strictly smaller dimension. In coordinate rings, a nonzero Hopf ideal `I` satisfies
@@ -27,6 +29,13 @@ perfectness assumption on the field is needed.
 The proof uses irreducibility of geometrically connected affine groups and Mathlib's
 `ringKrullDim_succ_le_of_surjective`: a nonzero function in the defining ideal is a
 non-zero-divisor in the ambient coordinate domain.
+
+A smooth closed subgroup has the dimension of its Lie algebra, computed inside the Lie algebra
+of the ambient group (`TauCeti.HopfIdeal.ringKrullDim_quotient_eq_finrank_lieSubalgebra_of_smooth`).
+Over a field of characteristic zero every closed subgroup of a finite-type affine group is smooth,
+by Cartier's theorem, so this applies to all of them
+(`TauCeti.HopfIdeal.ringKrullDim_quotient_eq_finrank_lieSubalgebra`). This turns dimensions of
+stabilizers and centralizers into linear algebra.
 
 ## References
 
@@ -80,5 +89,29 @@ theorem finrank_quotientLie_lt (I : HopfIdeal k H)
     ← HopfAlgebra.smooth_iff_finrank_lie_eq_ringKrullDim.mp
       (inferInstance : Algebra.Smooth k (H ⧸ I.toIdeal))] at hdim
   exact Nat.lt_of_succ_le (by exact_mod_cast hdim)
+
+section LieDimension
+
+variable {k : Type u} [Field k] {H : Type v} [CommRing H] [_root_.HopfAlgebra k H]
+  [Algebra.FiniteType k H]
+
+/-- A smooth closed subgroup of a finite-type affine group has the dimension of its Lie algebra,
+viewed inside the Lie algebra of the ambient group. -/
+theorem ringKrullDim_quotient_eq_finrank_lieSubalgebra_of_smooth (I : HopfIdeal k H)
+    [Algebra.Smooth k (H ⧸ I.toIdeal)] :
+    ringKrullDim (H ⧸ I.toIdeal) = Module.finrank k (I.lieSubalgebra (B := k)) := by
+  rw [← HopfAlgebra.smooth_iff_finrank_lie_eq_ringKrullDim.mp ‹_›,
+    (quotientLieEquiv (B := k) I).toLinearEquiv.finrank_eq]
+
+/-- **The dimension of a closed subgroup in characteristic zero.** Over a field of characteristic
+zero, every closed subgroup of a finite-type affine group has the dimension of its Lie algebra,
+viewed inside the Lie algebra of the ambient group. The closed subgroup need not be connected. -/
+theorem ringKrullDim_quotient_eq_finrank_lieSubalgebra [CharZero k] (I : HopfIdeal k H) :
+    ringKrullDim (H ⧸ I.toIdeal) = Module.finrank k (I.lieSubalgebra (B := k)) := by
+  have : Algebra.Smooth k (H ⧸ I.toIdeal) := (smoothCommHopfAlgProperty_iff _).mp
+    (smoothCommHopfAlgProperty_of_charZero k (CommHopfAlgCat.of k (H ⧸ I.toIdeal)))
+  exact I.ringKrullDim_quotient_eq_finrank_lieSubalgebra_of_smooth
+
+end LieDimension
 
 end TauCeti.HopfIdeal

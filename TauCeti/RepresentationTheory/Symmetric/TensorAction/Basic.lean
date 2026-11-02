@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.PiTensorProduct.Basis
 public import Mathlib.RepresentationTheory.Basic
+public import TauCeti.LinearAlgebra.Matrix.KroneckerPower
 
 /-!
 # Permuting tensor factors
@@ -35,6 +36,11 @@ It reuses `PiTensorProduct.reindex`; the convention is
 
 * `TauCeti.finrank_tensorPower` is the dimension count `dim (Rⁿ)^{⊗d} = nᵈ` that the monomial
   basis supplies.
+* `Matrix.piTensorProductMap_tensorPowerBasis` and
+  `Matrix.toMatrix_piTensorProductMap_tensorPowerBasis`: in the monomial basis, a matrix `A` acting
+  in every tensor factor has the Kronecker power `Matrix.kroneckerPower (Fin d) A` as its matrix.
+* `PiTensorProduct.map_reindex_range_reindexRepresentation_asAlgebraHom` transports the image of
+  a group-algebra element along any equivalence of tensor-factor index types.
 -/
 
 public section
@@ -101,6 +107,30 @@ theorem reindexRepresentation_asAlgebraHom_apply_tprod
   simp [Representation.asAlgebraHom_def, MonoidAlgebra.lift_apply, Finsupp.sum,
     LinearMap.sum_apply]
 
+/-- Relabeling tensor factors along an equivalence transports the image of a group-algebra
+element onto the image of its transport to the permutation group of the new index type. -/
+theorem map_reindex_range_reindexRepresentation_asAlgebraHom {κ : Type*} (e : ι ≃ κ)
+    (a : MonoidAlgebra R (Equiv.Perm ι)) :
+    (LinearMap.range ((reindexRepresentation R M ι).asAlgebraHom a)).map
+        (reindex R (fun _ => M) e : (⨂[R] _ : ι, M) →ₗ[R] (⨂[R] _ : κ, M)) =
+      LinearMap.range ((reindexRepresentation R M κ).asAlgebraHom
+        (MonoidAlgebra.domCongr R R e.permCongrHom a)) := by
+  have h :
+      (reindex R (fun _ => M) e).toLinearMap ∘ₗ
+          (reindexRepresentation R M ι).asAlgebraHom a =
+        (reindexRepresentation R M κ).asAlgebraHom
+            (MonoidAlgebra.domCongr R R e.permCongrHom a) ∘ₗ
+          (reindex R (fun _ => M) e).toLinearMap := by
+    induction a using MonoidAlgebra.induction_on with
+    | of σ =>
+      ext f
+      simp [MonoidAlgebra.of_apply, Equiv.permCongrHom_coe, Equiv.permCongr_def,
+        ← Equiv.trans_assoc]
+    | add a b ha hb => simp [ha, hb, LinearMap.comp_add, LinearMap.add_comp]
+    | smul r a ha => simp [ha, LinearMap.comp_smul, LinearMap.smul_comp]
+  rw [← LinearMap.range_comp, h]
+  exact LinearMap.range_comp_of_range_eq_top _ (LinearEquiv.range _)
+
 end PiTensorProduct
 
 namespace TauCeti
@@ -161,6 +191,19 @@ theorem permTensorActionAlgHom_apply_tprod (a : MonoidAlgebra R (Equiv.Perm (Fin
   rw [permTensorActionAlgHom_def, permTensorAction_def]
   exact PiTensorProduct.reindexRepresentation_asAlgebraHom_apply_tprod R (Fin n → R) (Fin d) a m
 
+/-- Relabeling the tensor factors along `finCongr h`, for `h : m = d`, transports the image of
+`a ∈ R[S_m]` onto the image of its transport to `R[S_d]`. -/
+theorem map_reindex_range_permTensorAction_asAlgebraHom {m : ℕ} (h : m = d)
+    (a : MonoidAlgebra R (Equiv.Perm (Fin m))) :
+    (LinearMap.range ((permTensorAction R n m).asAlgebraHom a)).map
+        (PiTensorProduct.reindex R (fun _ => Fin n → R) (finCongr h) :
+          (⨂[R] _ : Fin m, Fin n → R) →ₗ[R] (⨂[R] _ : Fin d, Fin n → R)) =
+      LinearMap.range ((permTensorAction R n d).asAlgebraHom
+        (MonoidAlgebra.domCongr R R (finCongr h).permCongrHom a)) := by
+  simpa only [permTensorAction_def] using
+    PiTensorProduct.map_reindex_range_reindexRepresentation_asAlgebraHom R (Fin n → R) (Fin m)
+      (finCongr h) a
+
 /-- The monomial basis of `(Rⁿ)^{⊗d}`: the basis vector at `f : Fin d → Fin n` is the pure tensor
 whose `i`-th factor is the `f i`-th standard basis vector of `Rⁿ`. -/
 noncomputable def tensorPowerBasis :
@@ -187,6 +230,34 @@ theorem finrank_tensorPower [StrongRankCondition R] :
     Module.finrank R (⨂[R] _ : Fin d, Fin n → R) = n ^ d := by
   rw [Module.finrank_eq_card_basis (tensorPowerBasis R n d), Fintype.card_fun]
   simp
+
+/-- **A matrix acting diagonally on the monomial basis of `(Rⁿ)^{⊗d}`.** Applying `A` in every
+tensor factor sends the basis tensor `e_u` to `∑ v, (∏ i, A (v i) (u i)) • e_v`, so its matrix in
+the monomial basis is the Kronecker power of `A`. -/
+theorem _root_.Matrix.piTensorProductMap_tensorPowerBasis {R : Type u} [CommSemiring R] {n d : ℕ}
+    (A : Matrix (Fin n) (Fin n) R) (u : Fin d → Fin n) :
+    PiTensorProduct.map (fun _ : Fin d => A.mulVecLin) (tensorPowerBasis R n d u) =
+      ∑ v, A.kroneckerPower (Fin d) v u • tensorPowerBasis R n d v := by
+  have hcol : ∀ i, A.mulVecLin (Pi.single (u i) (1 : R)) =
+      ∑ c, A c (u i) • Pi.single c (1 : R) := fun i => by
+    rw [Matrix.mulVecLin_apply, Matrix.mulVec_single_one, ← (Pi.basisFun R (Fin n)).sum_repr
+      (A.col (u i))]
+    simp [Matrix.col_apply]
+  simp only [tensorPowerBasis_apply, PiTensorProduct.map_tprod, hcol,
+    MultilinearMap.map_sum_finset, MultilinearMap.map_smul_univ]
+  simp
+
+/-- **The matrix of `A^{⊗d}` in the monomial basis is the Kronecker power of `A`.** The matrix of
+`A` acting in every tensor factor of `(Rⁿ)^{⊗d}`, in the basis `TauCeti.tensorPowerBasis`, is
+`Matrix.kroneckerPower (Fin d) A`. -/
+theorem _root_.Matrix.toMatrix_piTensorProductMap_tensorPowerBasis {R : Type u} [CommSemiring R]
+    {n d : ℕ} (A : Matrix (Fin n) (Fin n) R) :
+    LinearMap.toMatrix (tensorPowerBasis R n d) (tensorPowerBasis R n d)
+        (PiTensorProduct.map fun _ : Fin d => A.mulVecLin) =
+      A.kroneckerPower (Fin d) := by
+  ext v u
+  rw [LinearMap.toMatrix_apply, A.piTensorProductMap_tensorPowerBasis u, map_sum]
+  simp [Finsupp.single_apply, -tensorPowerBasis_apply]
 
 -- These two derived normal forms remain explicit rewrite lemmas: `simpNF` detects each as already
 -- provable from the underlying tensor-action rules, so adding them to the simp set is redundant.

@@ -9,9 +9,9 @@ public import Mathlib.RingTheory.Polynomial.Content
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
 
 import Mathlib.Algebra.Squarefree.Basic
-import Mathlib.FieldTheory.Perfect
 import Mathlib.RingTheory.PrincipalIdealDomain
 import TauCeti.RingTheory.Polynomial.GaussLemma
+import TauCeti.RingTheory.Polynomial.Resultant.Basic
 import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
 
 /-!
@@ -34,6 +34,14 @@ Over the fraction field the product of a squarefree basis stays squarefree and i
 pairwise coprime, by Gauss's lemma. Hence the resultants of distinct members are nonzero, and in
 characteristic zero the discriminant of the product of any subfamily is nonzero.
 
+The factorization of each member also reconstructs its roots and their multiplicities after any
+specialization into a domain that does not nullify the member: the multiplicity of a root is a
+weighted sum of its multiplicities in the specialized basis members, with exponents independent
+of the specialization and of the root. Specialized basis members may acquire common or multiple
+roots, and their contributions then add. This transfers invariant multiplicities on common root
+sections from the basis to the original family. Nullified members have multiplicity zero,
+following the convention of `Polynomial.rootMultiplicity`.
+
 ## Main definitions and results
 
 * `Finset.IsSquarefreeBasis F B`: `B` is a squarefree basis of the finite family `F`.
@@ -50,6 +58,13 @@ characteristic zero the discriminant of the product of any subfamily is nonzero.
 * `Finset.IsSquarefreeBasis.isRoot_map_iff`: after a specialization `φ : D →+* A` into a
   domain under which a member `f` of the family does not vanish, the roots of the specialized
   `f` are exactly the roots of the specialized basis members dividing `f`.
+* `Finset.IsSquarefreeBasis.exists_rootMultiplicity_eq_sum`,
+  `Finset.IsSquarefreeBasis.exists_rootMultiplicity_map_eq_sum`: after any such specialization,
+  the root multiplicities of the specialized `f` are a weighted sum of those of the specialized
+  basis members, with weights independent of the specialization and of the root.
+* `Finset.IsSquarefreeBasis.rootMultiplicity_map_eq`: equal basis multiplicities at two
+  specialized points give equal multiplicities for every member of the family that is nullified
+  by both specializations or by neither.
 
 ## References
 
@@ -125,6 +140,58 @@ theorem exists_eq_C_content_mul_unit_mul_prod [NormalizedGCDMonoid D]
   obtain ⟨u, hu⟩ := hc.symm
   exact ⟨u⁻¹, e, by rw [← hu, Units.mul_inv_cancel_right]⟩
 
+section Multiplicity
+
+variable {A : Type*} [CommRing A] [IsDomain A] {f : D[X]}
+
+/-- One fixed exponent vector reconstructs root multiplicities under every
+zero-preserving multiplicative map that sends constants to constants and does
+not nullify the input. Additivity and preservation of degrees are not required. -/
+theorem exists_rootMultiplicity_eq_sum (hB : F.IsSquarefreeBasis B) (hf : f ∈ F) :
+    ∃ e : D[X] → ℕ, ∀ (φ : D[X] →*₀ A[X]),
+      (∀ c : D, ∃ a : A, φ (C c) = C a) → φ f ≠ 0 → ∀ t : A,
+      (φ f).rootMultiplicity t = ∑ b ∈ B, e b * (φ b).rootMultiplicity t := by
+  classical
+  obtain ⟨c, e, hfe⟩ := hB.exists_eq_C_mul_prod f hf
+  refine ⟨e, fun φ hC hφ t ↦ ?_⟩
+  obtain ⟨a, ha⟩ := hC c
+  have hmap : φ f = C a * ∏ b ∈ B, (φ b) ^ e b := by
+    rw [hfe, map_mul, ha, map_prod]
+    simp only [map_pow]
+  have hc : a ≠ 0 := by
+    intro hc
+    simp [hmap, hc] at hφ
+  have hprod : (∏ b ∈ B, (φ b) ^ e b) ≠ 0 :=
+    right_ne_zero_of_mul (hmap ▸ hφ)
+  rw [← count_roots, hmap, roots_C_mul _ hc, roots_prod _ _ hprod]
+  simp only [Multiset.count_bind, roots_pow, Multiset.count_nsmul, count_roots]
+  rfl
+
+/-- One fixed exponent vector reconstructs root multiplicities after every
+specialization that does not nullify the input. Neither injectivity of the
+coefficient map nor preservation of degrees or coprimality is required. -/
+theorem exists_rootMultiplicity_map_eq_sum (hB : F.IsSquarefreeBasis B) (hf : f ∈ F) :
+    ∃ e : D[X] → ℕ, ∀ (φ : D →+* A), f.map φ ≠ 0 → ∀ t : A,
+      (f.map φ).rootMultiplicity t =
+        ∑ b ∈ B, e b * (b.map φ).rootMultiplicity t := by
+  obtain ⟨e, he⟩ := hB.exists_rootMultiplicity_eq_sum (A := A) hf
+  exact ⟨e, fun φ ↦ he (Polynomial.mapRingHom φ) (fun c ↦ ⟨φ c, map_C φ⟩)⟩
+
+/-- Equal basis multiplicities at two specialized points give equal input
+multiplicities, provided the input is nullified by both maps or by neither.
+The two root values need not be equal, so this applies along moving sections. -/
+theorem rootMultiplicity_map_eq (hB : F.IsSquarefreeBasis B) (hf : f ∈ F)
+    (φ ψ : D →+* A) (s t : A) (hzero : f.map φ = 0 ↔ f.map ψ = 0)
+    (hm : ∀ b ∈ B, (b.map φ).rootMultiplicity s = (b.map ψ).rootMultiplicity t) :
+    (f.map φ).rootMultiplicity s = (f.map ψ).rootMultiplicity t := by
+  by_cases hφ : f.map φ = 0
+  · simp [hφ, hzero.mp hφ]
+  · obtain ⟨e, he⟩ := hB.exists_rootMultiplicity_map_eq_sum (A := A) hf
+    rw [he φ hφ s, he ψ (hzero.not.mp hφ) t]
+    exact Finset.sum_congr rfl fun b hb ↦ congrArg (e b * ·) (hm b hb)
+
+end Multiplicity
+
 variable [IsDomain D] [IsGCDMonoid D]
 
 /-- The product of the members of a squarefree basis is squarefree. -/
@@ -141,22 +208,12 @@ theorem squarefree_prod_map (K : Type*) [Field K] [Algebra D K] [IsFractionRing 
 /-- In characteristic zero, the product of any subfamily of a squarefree basis has
 nonzero discriminant. This includes the empty subfamily, whose product is `1`. -/
 theorem discr_prod_ne_zero [CharZero D] (hB : F.IsSquarefreeBasis B)
-    {A : Finset D[X]} (hA : A ⊆ B) : (∏ b ∈ A, b).discr ≠ 0 := by
-  let K := FractionRing D
-  have hinj := IsFractionRing.injective D K
-  have : CharZero K := charZero_of_injective_algebraMap hinj
-  have hsep : (∏ b ∈ A, b.map (algebraMap D K)).Separable :=
-    PerfectField.separable_iff_squarefree.2 <|
-      (hB.squarefree_prod_map K).squarefree_of_dvd
-        (Finset.prod_dvd_prod_of_subset A B _ hA)
-  have h := (Polynomial.discr_ne_zero_iff hsep.ne_zero).2 hsep
-  rw [← Polynomial.map_prod, Polynomial.discr_map_of_natDegree_eq _
-    (Polynomial.natDegree_map_eq_of_injective hinj _), map_ne_zero_iff _ hinj] at h
-  exact h
+    {A : Finset D[X]} (hA : A ⊆ B) : (∏ b ∈ A, b).discr ≠ 0 :=
+  (hB.squarefree_prod.squarefree_of_dvd (Finset.prod_dvd_prod_of_subset A B _ hA)).discr_ne_zero
 
 /-- In characteristic zero, the discriminant of a member of a squarefree basis is nonzero. -/
-theorem discr_ne_zero [CharZero D] (hB : F.IsSquarefreeBasis B) (hb : b ∈ B) : b.discr ≠ 0 := by
-  simpa using hB.discr_prod_ne_zero (singleton_subset_iff.2 hb)
+theorem discr_ne_zero [CharZero D] (hB : F.IsSquarefreeBasis B) (hb : b ∈ B) : b.discr ≠ 0 :=
+  (hB.squarefree b hb).discr_ne_zero
 
 /-- Distinct members of a squarefree basis are coprime over the fraction field. -/
 theorem isCoprime_map (K : Type*) [Field K] [Algebra D K] [IsFractionRing D K]
@@ -169,8 +226,8 @@ theorem resultant_ne_zero (hB : F.IsSquarefreeBasis B) (hb : b ∈ B) (hb' : b' 
     (hne : b ≠ b') : resultant b b' ≠ 0 := by
   have hinj := IsFractionRing.injective D (FractionRing D)
   have h := Polynomial.resultant_ne_zero _ _ (hB.isCoprime_map (FractionRing D) hb hb' hne)
-  rwa [natDegree_map_eq_of_injective hinj, natDegree_map_eq_of_injective hinj, resultant_map_map,
-    map_ne_zero_iff _ hinj] at h
+  rwa [resultant_map_of_natDegree_eq _ (natDegree_map_eq_of_injective hinj _)
+    (natDegree_map_eq_of_injective hinj _), map_ne_zero_iff _ hinj] at h
 
 end IsSquarefreeBasis
 

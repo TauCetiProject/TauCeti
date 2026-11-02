@@ -21,8 +21,9 @@ with cyclic rotation, the cyclic norm, insertion of the unit, and Connes' operat
 It is the cochain-level input to matrix Morita invariance and pairings with idempotents and
 invertibles.
 
-No multiplication on the coefficient module is needed. In degree zero the construction
-is ordinary matrix trace followed by the original linear functional.
+No multiplication on the coefficient module is needed. The cochain constructions work over
+any semiring whose action on the coefficient module commutes with itself. In degree zero the
+construction is ordinary matrix trace followed by the original linear functional.
 
 Matrix extension commutes with every Hochschild coface, hence with the Hochschild
 coboundary: `(bφ)#Tr = b(φ#Tr)`. For the faces multiplying adjacent entries this is the
@@ -32,7 +33,7 @@ extension maps cyclic cocycles and coboundaries to cyclic cocycles and coboundar
 induces a map `HCⁿ(A; M) → HCⁿ(Matrix ι ι A; M)` on cyclic cohomology.
 
 The convention follows Connes, *Noncommutative Geometry*, Chapter III, §1.
-The construction uses `MultilinearMap.compLinearMapₗ` and `Matrix.entryLinearMap`.
+The construction uses `MultilinearMap.compLinearMap` and `Matrix.entryLinearMap`.
 
 ## Main definitions
 
@@ -45,6 +46,8 @@ The construction uses `MultilinearMap.compLinearMapₗ` and `Matrix.entryLinearM
 * `TauCeti.matrixCochainExtension_cyclic`: matrix extension preserves signed cyclicity.
 * `TauCeti.matrixCochainExtension_fromBlocks_zero₁₂_zero₂₁`: matrix extension is additive on
   block-diagonal matrices, the cochain-level input to additivity of the pairings on direct sums.
+* `TauCeti.matrixCochainExtension_diagonal`: on diagonal matrices, matrix extension is the sum of
+  the original cochain over the diagonal positions.
 * `TauCeti.matrixCochainExtension_hochschildCoface`,
   `TauCeti.matrixCochainExtension_hochschildCoboundary`: compatibility with the cofaces and the
   Hochschild coboundary.
@@ -56,17 +59,24 @@ namespace TauCeti
 
 open scoped BigOperators
 
-variable {R A M : Type*} [CommSemiring R] [AddCommMonoid A] [Module R A]
-  [AddCommMonoid M] [Module R M]
+variable {R A M : Type*} [Semiring R] [AddCommMonoid A] [Module R A]
+  [AddCommMonoid M] [Module R M] [SMulCommClass R R M]
 
 /-- Extend a degree-`n` cochain to square matrices by the generalized matrix trace:
 sum `φ(a₀(i₀,i₁), …, aₙ(iₙ,i₀))` over all closed index paths. -/
 noncomputable def matrixCochainExtension (ι : Type*) [Fintype ι] (n : ℕ) :
     MultilinearMap R (fun _ : Fin (n + 1) => A) M →ₗ[R]
-      MultilinearMap R (fun _ : Fin (n + 1) => Matrix ι ι A) M :=
-  ∑ p : Fin (n + 1) → ι,
-    MultilinearMap.compLinearMapₗ
-      (fun j => Matrix.entryLinearMap R A (p j) (p (finRotate (n + 1) j)))
+      MultilinearMap R (fun _ : Fin (n + 1) => Matrix ι ι A) M where
+  toFun φ := ∑ p : Fin (n + 1) → ι,
+    φ.compLinearMap (fun j => Matrix.entryLinearMap R A (p j) (p (finRotate (n + 1) j)))
+  map_add' φ ψ := by
+    classical
+    ext a
+    simp [MultilinearMap.compLinearMap_apply, Finset.sum_add_distrib]
+  map_smul' c φ := by
+    classical
+    ext a
+    simp [MultilinearMap.compLinearMap_apply, Finset.smul_sum]
 
 /-- The closed-path formula for the matrix extension. -/
 -- Prefer the corner and stabilization normal forms to expanding the closed-path sum.
@@ -130,7 +140,7 @@ theorem matrixCochainExtension_cyclic (ι : Type*) [Fintype ι] (n : ℕ)
 
 /-- Matrix extension sends cyclic cochains to cyclic cochains. -/
 theorem matrixCochainExtension_mem_cyclicCochains
-    {R : Type*} [CommSemiring R] {A M : Type*} [AddCommMonoid A] [Module R A]
+    {R : Type*} [Semiring R] {A M : Type*} [AddCommMonoid A] [Module R A]
     [AddCommGroup M] [Module R M] [SMulCommClass R R M]
     (ι : Type*) [Fintype ι] (n : ℕ) (φ : cyclicCochains R A M n) :
     matrixCochainExtension ι n φ.1 ∈ cyclicCochains R (Matrix ι ι A) M n := by
@@ -142,7 +152,7 @@ theorem matrixCochainExtension_mem_cyclicCochains
 
 /-- Extension of cyclic cochains to square matrix algebras. -/
 noncomputable def matrixCyclicCochainExtension
-    {R : Type*} [CommSemiring R] {A M : Type*} [AddCommMonoid A] [Module R A]
+    {R : Type*} [Semiring R] {A M : Type*} [AddCommMonoid A] [Module R A]
     [AddCommGroup M] [Module R M] [SMulCommClass R R M]
     (ι : Type*) [Fintype ι] (n : ℕ) :
     cyclicCochains R A M n →ₗ[R] cyclicCochains R (Matrix ι ι A) M n :=
@@ -153,7 +163,7 @@ noncomputable def matrixCyclicCochainExtension
 /-- The underlying cochain of a matrix-extended cyclic cochain is its generalized matrix trace. -/
 @[simp]
 theorem coe_matrixCyclicCochainExtension_apply
-    {R : Type*} [CommSemiring R] {A M : Type*} [AddCommMonoid A] [Module R A]
+    {R : Type*} [Semiring R] {A M : Type*} [AddCommMonoid A] [Module R A]
     [AddCommGroup M] [Module R M] [SMulCommClass R R M]
     (ι : Type*) [Fintype ι] (n : ℕ) (φ : cyclicCochains R A M n) :
     (matrixCyclicCochainExtension ι n φ :
@@ -244,6 +254,23 @@ theorem matrixCochainExtension_fromBlocks_zero₁₂_zero₂₁ (ι κ : Type*) 
       matrixCochainExtension ι n φ a := by
   simpa using matrixCochainExtension_fromBlocks_zero₁₂_zero₂₁ ι κ n φ a 0
 
+/-- The matrix extension of a tuple of diagonal matrices is the sum, over the diagonal positions,
+of the original cochain on the diagonal entries. -/
+theorem matrixCochainExtension_diagonal (ι : Type*) [Fintype ι] [DecidableEq ι] (n : ℕ)
+    (φ : MultilinearMap R (fun _ : Fin (n + 1) => A) M) (d : Fin (n + 1) → ι → A) :
+    matrixCochainExtension ι n φ (fun j => Matrix.diagonal (d j)) =
+      ∑ i, φ (fun j => d j i) := by
+  simp only [matrixCochainExtension_apply]
+  -- Only the constant closed paths contribute.
+  refine (Fintype.sum_of_injective (fun i _ ↦ i) (fun i i' h ↦ congrFun h 0) _ _
+    (fun p hp ↦ ?_) fun i ↦ by simp).symm
+  -- A nonconstant closed path leaves the diagonal somewhere.
+  obtain ⟨j, hj⟩ : ∃ j, p (finRotate (n + 1) j) ≠ p j := by
+    by_contra! h
+    exact hp ⟨p 0, funext fun j ↦ (apply_eq_apply_zero_of_add_one
+      (fun j ↦ by simpa only [finRotate_apply] using h j) j).symm⟩
+  exact φ.map_coord_zero j (Matrix.diagonal_apply_ne _ hj.symm)
+
 /-- Restricting to a diagonal matrix corner recovers the original cochain in every degree. -/
 @[simp] theorem matrixCochainExtension_single (ι : Type*) [Fintype ι] [DecidableEq ι]
     (r : ι) (n : ℕ) (φ : MultilinearMap R (fun _ : Fin (n + 1) => A) M)
@@ -273,7 +300,7 @@ theorem matrixCochainExtension_injective (ι : Type*) [Fintype ι] [Nonempty ι]
 
 /-- Matrix extension is injective on cyclic cochains for a nonempty matrix index type. -/
 theorem matrixCyclicCochainExtension_injective
-    {R : Type*} [CommSemiring R] {A M : Type*} [AddCommMonoid A] [Module R A]
+    {R : Type*} [Semiring R] {A M : Type*} [AddCommMonoid A] [Module R A]
     [AddCommGroup M] [Module R M] [SMulCommClass R R M]
     (ι : Type*) [Fintype ι] [Nonempty ι] (n : ℕ) :
     Function.Injective (matrixCyclicCochainExtension (R := R) (A := A) (M := M) ι n) := by
@@ -292,7 +319,7 @@ theorem matrixCyclicCochainExtension_injective
 
 /-- Applying a linear map to the cochain values commutes with matrix extension. -/
 theorem matrixCochainExtension_compMultilinearMap
-    {N : Type*} [AddCommMonoid N] [Module R N]
+    {N : Type*} [AddCommMonoid N] [Module R N] [SMulCommClass R R N]
     (ι : Type*) [Fintype ι] (n : ℕ) (f : M →ₗ[R] N)
     (φ : MultilinearMap R (fun _ : Fin (n + 1) => A) M) :
     matrixCochainExtension ι n (f.compMultilinearMap φ) =
@@ -315,10 +342,8 @@ theorem matrixCochainExtension_compLinearMap
 
 section Hochschild
 
-variable {R A M : Type*} [CommSemiring R] [NonUnitalNonAssocSemiring A] [Module R A]
-  [IsScalarTower R A A] [SMulCommClass R A A] [AddCommMonoid M] [Module R M]
+variable {R A M : Type*} [NonUnitalNonAssocSemiring A] [AddCommMonoid M]
 
-omit [IsScalarTower R A A] [SMulCommClass R A A] in
 /-- Inserting an intermediate index `k` at position `i + 1` of a closed path `p`: the entries of
 the contracted matrices along `p`, with the product entry at `i` replaced by its `k`-th summand,
 are the contracted entries along the lengthened path. -/
@@ -345,7 +370,10 @@ private theorem update_pathEntries_hochschildFace_castSucc {ι : Type*} [Fintype
       pathEntries_apply, hsA m hm, Fin.finRotate_succ_succAbove_of_ne hm,
       Fin.insertNth_apply_succAbove]
 
-omit [IsScalarTower R A A] [SMulCommClass R A A] in
+section Semiring
+
+variable [Semiring R] [Module R A] [Module R M]
+
 /-- Matrix extension commutes with a face multiplying adjacent entries. Expanding the matrix
 product `(aᵢaᵢ₊₁)(pᵢ, pᵢ₊₁)` over the intermediate index `k` turns a closed path `p` of length
 `n + 1` into the closed path of length `n + 2` obtained by inserting `k` at position `i + 1`. -/
@@ -365,7 +393,6 @@ private theorem sum_pathEntries_hochschildFace_castSucc {ι : Type*} [Fintype ι
   rw [hx, φ.map_update_sum]
   simp only [update_pathEntries_hochschildFace_castSucc, Fin.insertNthEquiv_apply]
 
-omit [IsScalarTower R A A] [SMulCommClass R A A] in
 /-- Matrix extension commutes with the last face, which is the zeroth face of the rotated
 tuple. -/
 private theorem sum_pathEntries_hochschildFace_last {ι : Type*} [Fintype ι] {n : ℕ}
@@ -376,6 +403,11 @@ private theorem sum_pathEntries_hochschildFace_last {ι : Type*} [Fintype ι] {n
   rw [Fin.castSucc_zero, hochschildFace_zero_comp_finRotate_symm] at h
   rw [h, ← sum_comp_finRotate_symm]
   simp only [pathEntries_comp_finRotate_symm, hochschildFace_zero_comp_finRotate_symm]
+
+end Semiring
+
+variable [Semiring R] [Module R A] [IsScalarTower R A A] [SMulCommClass R A A] [Module R M]
+  [SMulCommClass R R M]
 
 /-- Matrix extension commutes with each Hochschild coface. -/
 theorem matrixCochainExtension_hochschildCoface (ι : Type*) [Fintype ι] (n : ℕ)
@@ -394,8 +426,9 @@ end Hochschild
 
 section Coboundary
 
-variable {R A M : Type*} [CommSemiring R] [NonUnitalNonAssocSemiring A] [Module R A]
+variable {R A M : Type*} [Semiring R] [NonUnitalNonAssocSemiring A] [Module R A]
   [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M]
+  [SMulCommClass R R M]
 
 /-- Matrix extension commutes with the Hochschild coboundary: `(bφ)#Tr = b(φ#Tr)`. -/
 theorem matrixCochainExtension_hochschildCoboundary (ι : Type*) [Fintype ι] (n : ℕ)
@@ -417,12 +450,12 @@ end Coboundary
 
 section CyclicCohomology
 
-variable {R A M : Type*} [CommRing R] [AddCommGroup M] [Module R M] {ι : Type*} [Fintype ι]
-  {n : ℕ}
+variable {R A M : Type*} [AddCommGroup M] {ι : Type*} [Fintype ι] {n : ℕ}
 
 section NonUnital
 
-variable [NonUnitalSemiring A] [Module R A] [IsScalarTower R A A] [SMulCommClass R A A]
+variable [Semiring R] [Module R M] [SMulCommClass R R M] [NonUnitalNonAssocSemiring A]
+  [Module R A] [IsScalarTower R A A] [SMulCommClass R A A]
 
 /-- Matrix extension of cyclic cochains commutes with the Hochschild coboundary. -/
 theorem cyclicHochschildCoboundary_matrixCyclicCochainExtension (φ : cyclicCochains R A M n) :
@@ -456,7 +489,7 @@ end NonUnital
 
 namespace cyclicCohomology
 
-variable [Ring A] [Algebra R A] [DecidableEq ι]
+variable [CommRing R] [Module R M] [Ring A] [Algebra R A] [DecidableEq ι]
 
 variable (M ι n) in
 /-- The map `HCⁿ(A; M) → HCⁿ(Matrix ι ι A; M)` on cyclic cohomology induced by matrix extension of
@@ -481,7 +514,7 @@ end CyclicCohomology
 
 section Differential
 
-variable {R A M : Type*} [CommSemiring R] [AddCommMonoid A] [One A] [Module R A]
+variable {R A M : Type*} [Semiring R] [AddCommMonoid A] [One A] [Module R A]
   [AddCommGroup M] [Module R M] [SMulCommClass R R M]
 
 omit [One A] in

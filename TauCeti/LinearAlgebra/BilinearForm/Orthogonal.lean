@@ -9,10 +9,10 @@ public import Mathlib.Algebra.DirectSum.Module
 public import Mathlib.LinearAlgebra.BilinearForm.IsometryEquiv
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.PerfectPairing.Restrict
+public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 import Mathlib.Algebra.DirectSum.Module
 import Mathlib.LinearAlgebra.Basis.Fin
 import Mathlib.LinearAlgebra.Projection
-import Mathlib.LinearAlgebra.QuadraticForm.Basic
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -35,6 +35,9 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
 
 * `LinearMap.BilinForm.iSupIndep_of_restrict_separatingRight`: pairwise orthogonal submodules on
   which the form is right-separating are independent.
+* `LinearMap.BilinForm.eq_bot_of_le_orthogonal` and
+  `LinearMap.BilinForm.sSupIndep_of_pairwise_le_orthogonal`: for an anisotropic form, a
+  self-orthogonal submodule is zero and pairwise orthogonal submodules are independent.
 * `LinearMap.BilinForm.apply_eq_zero_of_mem_biSup`: in a pairwise orthogonal family, the sums over
   disjoint sets of indices are orthogonal.
 * `LinearMap.BilinForm.iIsOrtho.apply_sum_sum`: the self-pairing of the sum of a finite
@@ -42,6 +45,8 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
 * `LinearMap.BilinForm.iIsOrtho.isSymm`: a form with an orthogonal basis is symmetric.
 * `LinearMap.BilinForm.equivalent_of_isInternal`: orthogonal internal direct sums of isometric
   forms are isometric.
+* `LinearMap.BilinForm.exists_forall_restrict_eq_of_isInternal`: forms on the summands of an
+  internal direct sum are the restrictions of a form for which the summands are orthogonal.
 * `LinearMap.BilinForm.IsRefl.exists_orthogonal_basis_of_orthogonal_span_singleton`: an
   orthogonal basis of `x^⊥` extends by `x` to an orthogonal basis of the whole space.
 * `LinearMap.BilinForm.IsSymm.exists_orthogonal_basis_apply_zero_eq` and
@@ -63,8 +68,6 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
   remains perfect on a submodule complementary to its orthogonal complement.
 * `LinearMap.BilinForm.orthogonal_orthogonal_of_isCompl`: double orthogonality for an
   orthogonally split submodule over a commutative semiring.
-* `LinearMap.BilinForm.restrict_span_singleton_bijective_of_isUnit`: unit self-pairing makes
-  the cyclic restriction perfect.
 * `LinearMap.BilinForm.isCompl_span_singleton_orthogonal_of_dvd`: a vector whose self-pairing is
   a non-zero-divisor dividing all its pairings splits off.
 * `LinearMap.BilinForm.isCompl_span_singleton_orthogonal_of_isUnit`: a vector with unit
@@ -108,6 +111,20 @@ theorem iSupIndep_of_restrict_separatingRight (B : LinearMap.BilinForm K V) {ι 
   have hle : ⨆ (j) (_ : j ≠ i), N j ≤ B.orthogonal (N i) :=
     iSup₂_le fun j hj y hy z hz ↦ hO i j (Ne.symm hj) z hz y hy
   exact congrArg Subtype.val (hN i ⟨x, hxi⟩ fun z ↦ hle hx z z.2)
+
+/-- For an anisotropic form, a submodule orthogonal to itself is zero. -/
+theorem eq_bot_of_le_orthogonal {B : LinearMap.BilinForm K V}
+    (hani : B.toQuadraticMap.Anisotropic) {N : Submodule K V} (h : N ≤ B.orthogonal N) : N = ⊥ :=
+  (Submodule.eq_bot_iff _).mpr fun x hx ↦ hani x (by simpa using h hx x hx)
+
+/-- For an anisotropic form, a set of pairwise orthogonal submodules is independent. -/
+theorem sSupIndep_of_pairwise_le_orthogonal {B : LinearMap.BilinForm K V}
+    (hani : B.toQuadraticMap.Anisotropic) {S : Set (Submodule K V)}
+    (hS : S.Pairwise fun N N' ↦ N ≤ B.orthogonal N') : sSupIndep S := by
+  rw [sSupIndep_iff]
+  refine B.iSupIndep_of_restrict_separatingRight (fun i j hij x hx y hy ↦ ?_) fun i y hy ↦ ?_
+  · exact hS j.2 i.2 (fun h ↦ hij (Subtype.ext h.symm)) hy x hx
+  · exact Subtype.ext <| hani y (by simpa using hy y)
 
 /-- In a family of pairwise orthogonal submodules, the sums of the members indexed by two disjoint
 sets are orthogonal. -/
@@ -172,6 +189,48 @@ theorem equivalent_of_isInternal {M : Type*} [AddCommMonoid M] [Module K M] {ι 
       = B (DirectSum.coeLinearMap N (c.symm x)) (DirectSum.coeLinearMap N (c.symm y)) :=
         (LinearMap.congr_fun₂ key _ _).symm
     _ = B x y := by rw [hc, hc]
+
+/-- **Orthogonal sums of forms on the summands.** If `V` is the internal direct sum of submodules
+`N i`, then any forms `E i` on the `N i` are the restrictions of a form on `V` for which the `N i`
+are pairwise orthogonal. This form is symmetric when the `E i` are. -/
+theorem exists_forall_restrict_eq_of_isInternal {ι : Type*} [DecidableEq ι]
+    {N : ι → Submodule K V} (hN : DirectSum.IsInternal N)
+    (E : ∀ i, LinearMap.BilinForm K (N i)) :
+    ∃ D : LinearMap.BilinForm K V, (∀ i, D.restrict (N i) = E i) ∧
+      (∀ i j, i ≠ j → ∀ x ∈ N i, ∀ y ∈ N j, D x y = 0) ∧ ((∀ i, (E i).IsSymm) → D.IsSymm) := by
+  -- `D` pairs the components of its arguments in each summand.
+  let e := LinearEquiv.ofBijective (DirectSum.coeLinearMap N) hN
+  have he (i : ι) (a : N i) : e (DirectSum.lof K ι (fun i ↦ N i) i a) = a :=
+    DirectSum.coeLinearMap_lof N i a
+  let p (i : ι) : V →ₗ[K] N i := DirectSum.component K ι (fun i ↦ N i) i ∘ₗ e.symm.toLinearMap
+  have hp_same {i : ι} {x : V} (hx : x ∈ N i) : p i x = ⟨x, hx⟩ :=
+    hN.ofBijective_coeLinearMap_of_mem hx
+  have hp_ne {i k : ι} (hik : k ≠ i) {x : V} (hx : x ∈ N k) : p i x = 0 :=
+    hN.ofBijective_coeLinearMap_of_mem_ne hik hx
+  let D : LinearMap.BilinForm K V :=
+    DirectSum.toModule K ι _ (fun i ↦ (E i).compl₂ (p i)) ∘ₗ e.symm.toLinearMap
+  have hD {i : ι} {x : V} (hx : x ∈ N i) (y : V) : D x y = E i ⟨x, hx⟩ (p i y) := by
+    have : e.symm x = DirectSum.lof K ι (fun i ↦ N i) i ⟨x, hx⟩ :=
+      e.symm_apply_eq.mpr (he i ⟨x, hx⟩).symm
+    simp [D, this]
+  refine ⟨D, fun i ↦ ?_, fun i k hik x hx y hy ↦ ?_, fun hE ↦ ⟨fun x y ↦ ?_⟩⟩
+  · ext x y
+    rw [restrict_apply, LinearMap.domRestrict_apply, hD x.2, hp_same y.2]
+  · rw [hD hx, hp_ne hik.symm hy, map_zero]
+  · -- Both sides are bilinear in the components of `x` and `y`, so it suffices to compare them on
+    -- pairs of elements of the summands.
+    have key : (D.compl₁₂ e.toLinearMap e.toLinearMap).flip =
+        D.compl₁₂ e.toLinearMap e.toLinearMap := by
+      refine DirectSum.linearMap_ext K fun i ↦ LinearMap.ext fun a ↦
+        DirectSum.linearMap_ext K fun k ↦ LinearMap.ext fun b ↦ ?_
+      simp only [LinearMap.comp_apply, LinearMap.flip_apply, LinearMap.compl₁₂_apply,
+        LinearEquiv.coe_coe, he]
+      rw [hD b.2, hD a.2]
+      rcases eq_or_ne i k with rfl | hik
+      · rw [hp_same a.2, hp_same b.2]
+        exact (hE i).eq _ _
+      · rw [hp_ne hik a.2, hp_ne hik.symm b.2, map_zero, map_zero]
+    simpa using LinearMap.congr_fun₂ key (e.symm y) (e.symm x)
 
 end LinearMap.BilinForm
 
@@ -391,45 +450,6 @@ theorem orthogonal_orthogonal_of_isCompl {R : Type u} {M : Type v}
     simp [ht s' hs', ht't]
   simpa [ht0] using hs
 
-/-- Unit self-pairing makes the restricted pairing on the cyclic span perfect. -/
-theorem restrict_span_singleton_bijective_of_isUnit (B : LinearMap.BilinForm R M)
-    (x : M) (hx : IsUnit (B x x)) : Function.Bijective (B.restrict (R ∙ x)) := by
-  obtain ⟨a, ha⟩ := isUnit_iff_exists_inv.mp hx
-  have ha' : a * B x x = 1 := by simpa [mul_comm] using ha
-  let S : Submodule R M := R ∙ x
-  have hxS : x ∈ S := Submodule.mem_span_singleton_self x
-  constructor
-  · intro y z hyz
-    obtain ⟨b, hb⟩ := Submodule.mem_span_singleton.mp y.property
-    obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.mp z.property
-    have hval : B (y : M) x = B (z : M) x := by
-      simpa only [LinearMap.BilinForm.restrict_apply, LinearMap.domRestrict_apply] using
-        congrArg (fun f : Module.Dual R S ↦ f ⟨x, hxS⟩) hyz
-    rw [← hb, ← hc, map_smul, map_smul, LinearMap.smul_apply, LinearMap.smul_apply] at hval
-    simp only [smul_eq_mul] at hval
-    have hbc : b = c := by
-      calc
-        b = (a * B x x) * b := by rw [ha']; ring
-        _ = a * (b * B x x) := by ring
-        _ = a * (c * B x x) := by rw [hval]
-        _ = c := by calc
-          a * (c * B x x) = c * (a * B x x) := by ring
-          _ = c := by rw [ha', mul_one]
-    apply Subtype.ext
-    rw [← hb, ← hc, hbc]
-  · intro f
-    refine ⟨⟨(a * f ⟨x, hxS⟩) • x, Submodule.smul_mem S _ hxS⟩, ?_⟩
-    ext y
-    obtain ⟨b, hb⟩ := Submodule.mem_span_singleton.mp y.property
-    have hy : y = b • (⟨x, hxS⟩ : S) := Subtype.ext hb.symm
-    rw [hy]
-    simp only [LinearMap.BilinForm.restrict_apply]
-    rw [map_smul, map_smul, map_smul]
-    simp only [smul_eq_mul]
-    calc
-      b * (a * f ⟨x, hxS⟩ * B x x) = b * (a * B x x) * f ⟨x, hxS⟩ := by ring
-      _ = b * f ⟨x, hxS⟩ := by rw [ha']; ring
-
 /-- A vector `x` whose self-pairing `B x x` is a non-zero-divisor dividing every pairing `B x y`
 spans an orthogonal direct summand. Over a field this is the condition `B x x ≠ 0`; over a
 valuation ring it says that `B x x` has minimal valuation among the pairings of `x`. -/
@@ -496,6 +516,24 @@ theorem isCompl_span_singleton_orthogonal_of_isUnit
     IsCompl (R ∙ x) (B.orthogonal (R ∙ x)) :=
   B.isCompl_span_singleton_orthogonal_of_dvd hx.mem_nonZeroDivisors fun _ ↦ hx.dvd
 
+/-- Adjoining a vector `x` with unit self-pairing to an orthogonal basis `t` of its orthogonal
+complement with unit self-pairings gives an orthogonal basis of the whole module with unit
+self-pairings, for a reflexive form. Its diagonal is `B x x` followed by the diagonal of `t`. -/
+theorem IsRefl.exists_orthogonal_basis_isUnit_apply_self_eq_cons {B : LinearMap.BilinForm R M}
+    (hB : B.IsRefl) {x : M} (hx : IsUnit (B x x)) {d : ℕ}
+    {t : Basis (Fin d) R (B.orthogonal (R ∙ x))}
+    (ht : (B.restrict (B.orthogonal (R ∙ x))).iIsOrtho t) (htu : ∀ i, IsUnit (B (t i) (t i))) :
+    ∃ c : Basis (Fin (d + 1)) R M, B.iIsOrtho c ∧ (∀ i, IsUnit (B (c i) (c i))) ∧
+      ∀ i, B (c i) (c i) = (Fin.cons (B x x) fun j ↦ B (t j) (t j) : Fin (d + 1) → R) i := by
+  obtain ⟨c, hc, hc0, hcs⟩ := hB.exists_orthogonal_basis_of_orthogonal_span_singleton
+    hx.mem_nonZeroDivisors (fun _ ↦ hx.dvd) ht
+  have hcd (i : Fin (d + 1)) :
+      B (c i) (c i) = (Fin.cons (B x x) fun j ↦ B (t j) (t j) : Fin (d + 1) → R) i :=
+    Fin.cases (by rw [hc0, Fin.cons_zero]) (fun j ↦ by rw [hcs, Fin.cons_succ]) i
+  refine ⟨c, hc, fun i ↦ ?_, hcd⟩
+  rw [hcd]
+  exact Fin.cases hx htu i
+
 end LinearMap.BilinForm
 
 namespace LinearMap.BilinForm
@@ -504,6 +542,17 @@ open Module
 
 variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
   [FiniteDimensional K V] {B : LinearMap.BilinForm K V}
+
+/-- For a nondegenerate reflexive form in finite dimension, the orthogonal complement
+of an intersection is the sum of the orthogonal complements. -/
+theorem orthogonal_inf (B : LinearMap.BilinForm K V) (hB : B.Nondegenerate)
+    (hRefl : B.IsRefl) (S T : Submodule K V) :
+    B.orthogonal (S ⊓ T) = B.orthogonal S ⊔ B.orthogonal T := by
+  have hsup : B.orthogonal (B.orthogonal S ⊔ B.orthogonal T) = S ⊓ T := by
+    rw [orthogonal, Submodule.orthogonalBilin_sup]
+    exact congrArg₂ (· ⊓ ·) (B.orthogonal_orthogonal hB hRefl S)
+      (B.orthogonal_orthogonal hB hRefl T)
+  rw [← hsup, B.orthogonal_orthogonal hB hRefl]
 
 /-- The orthogonal complement of a vector with nonzero self-pairing has codimension one,
 without any symmetry or characteristic assumption on the bilinear form. -/

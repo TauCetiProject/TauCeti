@@ -8,7 +8,8 @@ module
 public import Mathlib.RingTheory.Flat.TorsionFree
 public import Mathlib.RingTheory.LocalRing.Module
 public import Mathlib.RingTheory.Valuation.ValuationRing
-public import TauCeti.RingTheory.Grassmannian.Localization
+public import TauCeti.LinearAlgebra.TensorProduct.Tower
+public import TauCeti.RingTheory.Grassmannian.Basic
 
 /-!
 # Points of the Grassmannian over a valuation ring
@@ -54,35 +55,27 @@ private def saturation (N : G(k, K ⊗[R] M; K)) : Submodule V (V ⊗[R] M) :=
   (N.toSubmodule.restrictScalars V).comap
     (AlgebraTensorModule.rTensor R M (Algebra.linearMap V K))
 
-private theorem mem_saturation_iff {N : G(k, K ⊗[R] M; K)} {x : V ⊗[R] M} :
-    x ∈ saturation V N ↔
-      (IsScalarTower.toAlgHom R V K).toLinearMap.rTensor M x ∈ N.toSubmodule := by
-  simp only [saturation, Submodule.mem_comap, Submodule.restrictScalars_mem,
-    AlgebraTensorModule.rTensor_linearMap_apply]
-
 variable [IsFractionRing V K]
 
 /-- For `t` a nonzero element of `V`, `t • x` lies in the saturation exactly when `x` does. -/
 private theorem smul_mem_saturation_iff {N : G(k, K ⊗[R] M; K)} {x : V ⊗[R] M}
     {t : V} (ht : t ∈ nonZeroDivisors V) : t • x ∈ saturation V N ↔ x ∈ saturation V N := by
-  have hu : IsUnit (algebraMap V K t) :=
-    IsLocalization.map_units K (⟨t, ht⟩ : nonZeroDivisors V)
-  simp only [saturation, Submodule.mem_comap, Submodule.restrictScalars_mem, map_smul,
-    ← algebraMap_smul K t]
-  exact Submodule.smul_mem_iff_of_isUnit _ hu
+  simpa only [saturation, Submodule.mem_comap, Submodule.restrictScalars_mem, map_smul,
+    Submonoid.smul_def] using
+    (IsLocalization.smul_mem_iff (S := nonZeroDivisors V) (s := ⟨t, ht⟩)
+      (N' := N.toSubmodule))
 
 /-- The base change of the saturation of `N` to `K` is `N`. -/
 private theorem ker_baseChangeMkQ_saturation (N : G(k, K ⊗[R] M; K)) :
     LinearMap.ker (baseChangeMkQ K (saturation V N)) = N.toSubmodule := by
-  let g := AlgebraTensorModule.rTensor R M (Algebra.linearMap V K)
-  ext z
-  -- write `z = g x / t`; membership of `z` in a `K`-submodule is membership of `g x`
-  obtain ⟨⟨x, t⟩, rfl⟩ := IsLocalizedModule.mk'_surjective (nonZeroDivisors V) g z
-  rw [Function.uncurry_apply_pair, IsLocalizedModule.mk'_mem_iff, IsLocalizedModule.mk'_mem_iff,
-    AlgebraTensorModule.rTensor_linearMap_apply,
-    rTensor_mem_ker_baseChangeMkQ_iff (nonZeroDivisors V), ← mem_saturation_iff]
-  exact ⟨fun ⟨t, ht, h⟩ ↦ (smul_mem_saturation_iff ht).mp h,
-    fun h ↦ ⟨1, one_mem _, by rwa [one_smul]⟩⟩
+  -- Localizing the inverse image recovers every submodule over the localization.
+  rw [ker_baseChangeMkQ]
+  have hmap : ⇑(AlgebraTensorModule.rTensor R M (Algebra.linearMap V K)) =
+      ⇑((IsScalarTower.toAlgHom R V K).toLinearMap.rTensor M) :=
+    funext fun x ↦ AlgebraTensorModule.rTensor_linearMap_apply x
+  simpa only [saturation, Submodule.localized'_eq_span, hmap] using
+    (Submodule.localized'gi K (nonZeroDivisors V)
+      (AlgebraTensorModule.rTensor R M (Algebra.linearMap V K))).l_u_eq N.toSubmodule
 
 /-- The quotient by the saturation is torsion-free. -/
 private theorem torsion_quotient_saturation (N : G(k, K ⊗[R] M; K)) :

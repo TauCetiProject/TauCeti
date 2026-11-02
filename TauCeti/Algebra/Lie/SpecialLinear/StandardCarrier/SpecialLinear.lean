@@ -204,7 +204,7 @@ theorem specialLinearDefiningHopfIdeal_le_baseChangeDefiningIdeal
     exact HopfIdeal.mem_toIdeal.mpr hmem
   have hmap := map_tmul_mem_kostantToralBaseChangePresentationIdeal_of_mem
     (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-    (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+    (rep_kostantForm_mem_lattice r)
     (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r) A (1 : A) hgenerator
   rw [TensorProduct.tmul_sub, map_sub,
     GeneralLinear.coordinateHopfAlgebraBaseChangeIso_hom_determinantGroupLike,

@@ -33,7 +33,7 @@ computation it rests on.
   hypotheses that theorem needs; the case of a field is picked up by typeclass inference.
 * `TauCeti.Algebra.IsCentral.tensorProduct`: `A ⊗[K] B` is central when both factors are.
 
-The companion simplicity statement, `TauCeti.IsSimpleRing.tensorProduct`, is in
+The companion simplicity statement, `IsSimpleRing.tensorProduct`, is in
 `TauCeti/Algebra/CentralSimple/TensorProduct.lean`; together the two say that central simple
 `K`-algebras are closed under `⊗[K]`. That closure is what lets the tensor product descend to a
 multiplication on Brauer classes. Note that the centrality proved here is centrality over the base

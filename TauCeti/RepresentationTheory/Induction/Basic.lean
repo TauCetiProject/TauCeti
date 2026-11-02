@@ -20,6 +20,7 @@ on the groups or on the representations.
 
 * `Rep.indMap_add`: inducing an intertwiner along `φ` is additive, and `Rep.indFunctor_additive`:
   the same fact as a `CategoryTheory.Functor.Additive` instance for `Rep.indFunctor`.
+* `Rep.indMap_smul` and `Rep.indFunctor_linear`: induction is linear over the coefficient ring.
 -/
 
 public section
@@ -44,5 +45,19 @@ instance indFunctor_additive {k : Type u} {G : Type v} {H : Type w} [CommRing k]
     [Group H] (φ : G →* H) :
     ((Rep.indFunctor k φ : Rep.{w'} k G ⥤ Rep k H)).Additive where
   map_add {_ _} f g := indMap_add φ f g
+
+/-- Inducing an intertwiner commutes with scalar multiplication. -/
+@[simp]
+theorem indMap_smul {k : Type u} {G : Type v} {H : Type w} [CommRing k] [Group G]
+    [Group H] (φ : G →* H) {A B : Rep.{w'} k G} (r : k) (f : A ⟶ B) :
+    Rep.indMap φ (r • f) = r • Rep.indMap φ f := by
+  ext h a
+  simp [Rep.indMap, Rep.smul_hom]
+
+/-- Induction along a group homomorphism is linear over the coefficient ring. -/
+instance indFunctor_linear {k : Type u} {G : Type v} {H : Type w} [CommRing k] [Group G]
+    [Group H] (φ : G →* H) :
+    Functor.Linear k (Rep.indFunctor k φ : Rep.{w'} k G ⥤ Rep k H) where
+  map_smul f r := indMap_smul φ r f
 
 end Rep

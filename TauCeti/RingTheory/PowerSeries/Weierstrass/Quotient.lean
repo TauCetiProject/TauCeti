@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.Preparation
 public import Mathlib.RingTheory.AdjoinRoot
 import Mathlib.RingTheory.Ideal.GoingUp
+import TauCeti.Algebra.GroupWithZero.Irreducible
 
 /-!
 # Quotients by distinguished restricted power series
@@ -79,22 +80,9 @@ as a polynomial. -/
 theorem IsDistinguished.irreducible_of_irreducible_polynomialToRestricted
     (hp : IsDistinguished c s (p : PowerSeries R)) (hc : 0 < c)
     (hm : p.IsMonicOfDegree s) (h : Irreducible (polynomialToRestricted c p)) :
-    Irreducible p := by
+    Irreducible p :=
   have : Nontrivial R := nontrivial_of_ne _ _ hp.coeff_ne_zero
-  -- If the image of a factor `a` of `p = a * b` is a unit, then `p` divides `b` after passing
-  -- to restricted series, hence as polynomials; cancelling `b` shows that `a` is a unit.
-  have key (a b : Polynomial R) (hab : p = a * b) (ha : IsUnit (polynomialToRestricted c a)) :
-      IsUnit a := by
-    have hb : b ≠ 0 := right_ne_zero_of_mul (hab ▸ hm.ne_zero)
-    obtain ⟨d, hd⟩ := (hp.polynomialToRestricted_dvd_iff hc hm b).mp <| by
-      rw [hab, map_mul]
-      exact ha.mul_left_dvd.mpr dvd_rfl
-    rw [hab] at hd
-    exact IsUnit.of_mul_eq_one d (mul_left_cancel₀ hb (by linear_combination -hd))
-  refine ⟨fun hu ↦ h.not_isUnit (hu.map _), fun a b hab ↦ ?_⟩
-  rcases h.isUnit_or_isUnit (by rw [hab, map_mul]) with ha | hb
-  · exact Or.inl (key a b hab ha)
-  · exact Or.inr (key b a (hab.trans (mul_comm a b)) hb)
+  h.of_map_of_dvd hm.ne_zero fun g ↦ (hp.polynomialToRestricted_dvd_iff hc hm g).mp
 
 section Complete
 
@@ -128,7 +116,8 @@ noncomputable def IsDistinguished.polynomialQuotientEquiv
       simp [← hm.natDegree_eq, hm.monic.coeff_natDegree]
     have hp' : IsDistinguished c s (polynomialToRestricted c p : PowerSeries R) := by
       simpa only [coe_polynomialToRestricted] using hp
-    obtain ⟨q, r, hr, hqr⟩ := hp'.exists_mul_add_eq_subring hc hu g
+    obtain ⟨q, r, hr, hqr⟩ :=
+      (isMulDistinguished_iff_isUnit.mpr ⟨hp', hu⟩).exists_mul_add_eq_subring hc g
     refine ⟨Ideal.Quotient.mk _ (PowerSeries.trunc s (r : PowerSeries R)), ?_⟩
     rw [Ideal.quotient_map_mkₐ]
     rw [polynomialToRestricted_trunc_eq_of_coeff_eq_zero r hr, ← hqr, map_add, map_mul]
@@ -251,7 +240,8 @@ theorem IsDistinguished.map_comap_polynomialToRestricted
     (Ideal.unit_mul_mem_iff_mem I he).mp (hfp ▸ hfI)
   have hfJ : f ∈ J := hfp ▸ J.mul_mem_left e (Ideal.mem_map_of_mem _ (Ideal.mem_comap.mpr hpI))
   -- Dividing `x` by `f` leaves a polynomial remainder, which lies in `I`.
-  obtain ⟨q, r, hr, hqr⟩ := hf.exists_mul_add_eq_subring hc hu x
+  obtain ⟨q, r, hr, hqr⟩ :=
+    (isMulDistinguished_iff_isUnit.mpr ⟨hf, hu⟩).exists_mul_add_eq_subring hc x
   have hrI : r ∈ I := eq_sub_of_add_eq' hqr ▸ I.sub_mem hx (I.mul_mem_left q hfI)
   rw [← hqr, ← polynomialToRestricted_trunc_eq_of_coeff_eq_zero r hr]
   refine J.add_mem (J.mul_mem_left q hfJ) (Ideal.mem_map_of_mem _ (Ideal.mem_comap.mpr ?_))

@@ -31,6 +31,10 @@ Rourke--Sanderson, *Introduction to Piecewise-Linear Topology*, Chapter 2, "Deri
 
 ## Main results
 
+* `AbstractSimplicialComplex.support_barycentricSubdivisionLinearMap_eq_greatest`: the support of
+  a nonnegative combination of the barycenters of a chain of faces is the greatest face.
+* `AbstractSimplicialComplex.linearIndepOn_faceBarycenter`: the barycenters of a chain of faces
+  are linearly independent.
 * `AbstractSimplicialComplex.barycentricSubdivisionRealizationMap_injective`: the canonical
   realization map is one-to-one.
 * `AbstractSimplicialComplex.barycentricSubdivisionRealizationMap_bijective`: the canonical
@@ -57,7 +61,7 @@ private theorem inv_card_pos (K : AbstractSimplicialComplex ι) (σ : Face K) :
 
 /-- The greatest face of a nonnegative chain-supported combination is exactly the coordinate
 support of its image under the barycentric-subdivision linear map. -/
-private theorem support_barycentricSubdivisionLinearMap_eq_greatest
+theorem support_barycentricSubdivisionLinearMap_eq_greatest
     (K : AbstractSimplicialComplex ι) {a : Face K →₀ ℝ} (ha : ∀ σ, 0 ≤ a σ)
     {σ : Face K} (hσ : σ ∈ a.support) (hmax : ∀ τ ∈ a.support, τ ≤ σ) :
     (barycentricSubdivisionLinearMap K a).support = σ.1 := by
@@ -200,6 +204,20 @@ private theorem barycentricSubdivisionLinearMap_injective_of_nonneg_of_isChain
             (fun ρ => by by_cases h : ρ = σ <;> simp [h, hb ρ])
             (hca.mono (by simp)) (hcb.mono (by simp)) hmapErase rfl
           rw [← Finsupp.single_add_erase σ a, ← Finsupp.single_add_erase σ b, habσ, herase]
+
+/-- The barycenters of a chain of faces are linearly independent. -/
+theorem linearIndepOn_faceBarycenter (K : AbstractSimplicialComplex ι) {s : Set (Face K)}
+    (hs : IsChain (· ≤ ·) s) : LinearIndepOn ℝ (faceBarycenter K) s := by
+  rw [linearIndepOn_iff]
+  intro a ha ha0
+  by_contra hne
+  have hca : IsChain (· ≤ ·) (a.support : Set (Face K)) := hs.mono ha
+  obtain ⟨σ, hσa, hσmax⟩ := hca.exists_isGreatest a.support.finite_toSet
+    (Finsupp.support_nonempty_iff.mpr hne)
+  obtain ⟨v, hvσ, hv⟩ := exists_mem_greatest_not_mem_of_ne_face K hca hσmax
+  have hval := barycentricSubdivisionLinearMap_apply_eq_of_exposed K hσa hvσ hv
+  rw [barycentricSubdivisionLinearMap_eq_linearCombination, ha0, Finsupp.zero_apply] at hval
+  exact mul_ne_zero (Finsupp.mem_support_iff.mp hσa) (inv_card_pos K σ).ne' hval.symm
 
 /-- The canonical map from the realization of the barycentric subdivision to the realization of
 the original complex is injective. -/

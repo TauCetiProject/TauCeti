@@ -20,10 +20,9 @@ triangular with diagonal `c` exactly when, for every `i`, the coaction of `bᵢ`
 comodule-stable and its successive one-dimensional factors have weights `cᵢ`. The unitriangular
 case `c = 1` says those factors are trivial.
 
-This is the flag interface needed for the Kolchin inductions in Layer 5, "Unipotent groups", of
-the ReductiveGroups roadmap. Once such an induction supplies successive fixed vectors, the
-criterion here produces the upper-unitriangular coefficient matrix used to embed a faithful
-representation into `Uₙ`.
+This is the flag interface needed for the Kolchin inductions on unipotent groups. Once such an
+induction supplies successive fixed vectors, the criterion here produces the
+upper-unitriangular coefficient matrix used to embed a faithful representation into `Uₙ`.
 
 ## Main declarations
 

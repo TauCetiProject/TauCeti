@@ -8,7 +8,7 @@ module
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import TauCeti.MeasureTheory.Integral.Average
-import TauCeti.MeasureTheory.Function.Lp.OperatorLocalBound
+import TauCeti.MeasureTheory.Function.Lp.Operator.LocalBound
 
 /-!
 # Singular integral operators map bounded functions to functions of bounded mean oscillation
@@ -20,7 +20,7 @@ oscillation**: there is a constant `C` with
 `⨍_Q ‖T f - (T f)_Q‖ ≤ C ‖f‖_∞`, where `(T f)_Q = ⨍_Q T f`,
 
 for every ball `Q`. Such a function need not be bounded, but by the John–Nirenberg inequality
-(`TauCeti.volume_lt_norm_sub_setAverage_closedBall_le`) it is exponentially integrable on every
+(`TauCeti.measure_lt_norm_sub_setAverage_closedBall_le`) it is exponentially integrable on every
 cube of `ℝⁿ`.
 
 Let `T` be a bounded linear operator on `L²`, given away from the support of its argument by a

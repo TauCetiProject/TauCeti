@@ -14,7 +14,9 @@ public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Basic
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Augmentation
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Map
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Kernel
+public import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive
 public import TauCeti.LinearAlgebra.TensorProduct.Basis
+import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive.Ascent
 
 /-!
 # Base change of Hopf ideals
@@ -81,6 +83,8 @@ along `h ↦ 1 ⊗ h`.
   same criterion for a point of `H` valued in a `K`-algebra and its base change.
 * `TauCeti.CommHopfAlgCat.isCentral_baseChangeHopfIdeal`: base change preserves central Hopf
   ideals.
+* `TauCeti.HopfIdeal.isLinearlyReductive_quotient_baseChangeHopfIdeal`: linear reductivity of a
+  closed subgroup survives every extension of the base field.
 
 ## References
 
@@ -836,7 +840,7 @@ theorem mem_quotientPointsSubgroup_baseChangeHopfIdeal_iff (J : HopfIdeal k H)
     g ∈ quotientPointsSubgroup (baseChange (K := K) H) (baseChangeHopfIdeal (K := K) J) A ↔
       baseChangePointsMulEquiv (K := K) A H g ∈
         quotientPointsSubgroup H J
-          (_root_.TauCeti.CommAlgCat.restrictScalarsObj (algebraMap k K) A) := by
+          (CommAlgCat.restrictScalarsObj (algebraMap k K) A) := by
   rw [mem_quotientPointsSubgroup_iff, mem_quotientPointsSubgroup_iff]
   constructor
   · intro hg h hh
@@ -891,3 +895,25 @@ theorem isCentral_baseChangeHopfIdeal {J : HopfIdeal k H} (hJ : J.IsCentral) :
   exact (isCentralPoint_baseChangePointsMulEquiv_iff H A g).mp hrestrictCentral
 
 end TauCeti.CommHopfAlgCat
+
+namespace TauCeti.HopfIdeal
+
+universe u
+
+variable {k : Type u} [Field k] {H : _root_.CommHopfAlgCat.{u} k}
+
+/-- Linear reductivity of a closed subgroup survives every extension `K / k` of the base field:
+the quotient by the scalar-extended Hopf ideal is the scalar extension of the quotient
+coalgebra. -/
+theorem isLinearlyReductive_quotient_baseChangeHopfIdeal (I : HopfIdeal k H) (K : Type u)
+    [Field K] [Algebra k K]
+    (hI : Coalgebra.IsLinearlyReductive.{u, u, u} k (H ⧸ I.toIdeal)) :
+    Coalgebra.IsLinearlyReductive.{u, u, u} K
+      (CommHopfAlgCat.baseChange (K := K) H ⧸
+        (CommHopfAlgCat.baseChangeHopfIdeal (K := K) I).toIdeal) :=
+  (Coalgebra.isLinearlyReductive_iff_of_coalgEquiv K
+    (_root_.CommHopfAlgCat.ofIso
+      (CommHopfAlgCat.quotientBaseChangeIso (K := K) I)).toCoalgEquiv).mpr
+    (Coalgebra.IsLinearlyReductive.baseChange K hI)
+
+end TauCeti.HopfIdeal

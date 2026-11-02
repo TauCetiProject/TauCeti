@@ -10,6 +10,9 @@ public import Mathlib.LinearAlgebra.TensorProduct.Quotient
 public import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 public import Mathlib.LinearAlgebra.TensorProduct.Tower
 public import Mathlib.Algebra.CharP.Defs
+public import Mathlib.Algebra.Module.Projective
+public import Mathlib.LinearAlgebra.TensorProduct.Lift
+public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import Mathlib.RingTheory.TensorProduct.Finite
 public import Mathlib.RingTheory.QuotSMulTop
 public import TauCeti.LinearAlgebra.TensorProduct.Submodule
@@ -45,6 +48,8 @@ relations, for instance the rationalisation of a module over an integral group r
 
 * `TensorProduct.AlgebraTensorModule.quotientRangeTensorEquiv`: the `A`-linear
   isomorphism `(M ⧸ range f) ⊗[R] N ≃ₗ[A] (M ⊗[R] N) ⧸ range (f ⊗ 𝟙 N)`.
+* `TensorProduct.AlgebraTensorModule.tensorQuotEquivQuotMapSMul`: the `S`-linear isomorphism
+  `N ⊗[R] (R ⧸ I) ≃ N ⧸ I S • N` for an `S`-module `N`.
 * `LinearMap.cokernelBaseChangeEquiv`: the `S`-linear isomorphism
   `S ⊗[R] cokernel f ≃ₗ[S] cokernel (S ⊗[R] f)`.
 
@@ -53,10 +58,20 @@ relations, for instance the rationalisation of a module over an integral group r
 * `TensorProduct.exists_one_tmul_eq`: every element of `(R ⧸ I) ⊗ M` is `1 ⊗ x`.
 * `TensorProduct.one_tmul_eq_zero_iff_exists_smul_eq`: `1 ⊗ x` vanishes in
   `(R ⧸ (r)) ⊗ M` exactly when `x` is a multiple of `r`.
+* `LinearMap.exact_lTensor_quotient_span_singleton`: if `a : M → N` and `b : N → M` compose in
+  both orders to multiplication by `r`, and `r` is regular on `M`, then the reductions of `b` and
+  `a` modulo `r` form an exact pair.
+* `LinearMap.exact_comp_baseChange_quotient_span_singleton`: under the same hypotheses, with `r`
+  regular on `R` and `N` projective, the `R ⧸ (r)`-duals of these reductions form an exact pair.
 * `TensorProduct.AlgebraTensorModule.ker_rTensor_mkQ`: the kernel of the tensored
   quotient map `mkQ ⊗ 𝟙 N` is the range of `f ⊗ 𝟙 N`.
 * `TensorProduct.AlgebraTensorModule.rTensor_mkQ_surjective`: the tensored quotient map
   is surjective.
+* `TensorProduct.AlgebraTensorModule.ker_lTensor_mkQ_smul_top` and
+  `TensorProduct.AlgebraTensorModule.ker_rTensor_mkQ_smul_top`: tensoring the quotient map by a
+  scalar on either factor has kernel the multiples of that scalar.
+* `TensorProduct.AlgebraTensorModule.range_lTensor_subtype_smul_top_le`: the image of
+  `N ⊗[R] I M` in `N ⊗[R] M` lies in `J (N ⊗[R] M)` when `I S ≤ J`.
 * `Submodule.baseChange_eq_top_iff_subsingleton`: the extension of scalars of `p ≤ M` to `A` is
   all of `A ⊗[R] M` exactly when `A ⊗[R] (M ⧸ p) = 0`.
 * `QuotSMulTop.baseChange_mkQ_bijective`: if `r` maps to `0` in `A`, the base change of
@@ -90,6 +105,88 @@ theorem one_tmul_eq_zero_iff_exists_smul_eq (r : R) (x : M) :
   exact ⟨fun ⟨y, _, hy⟩ ↦ ⟨y, hy⟩, fun ⟨y, hy⟩ ↦ ⟨y, Submodule.mem_top, hy⟩⟩
 
 end TensorProduct
+
+namespace LinearMap
+
+open TensorProduct
+
+/-- **Reductions of a factorization of a regular scalar are exact.** Let `a : M → N` and
+`b : N → M` satisfy `a ∘ b = r • id` and `b ∘ a = r • id`, with `r` regular on `M`. Then the
+reductions `(R ⧸ (r)) ⊗ b` and `(R ⧸ (r)) ⊗ a` form an exact pair: if `a x ∈ rN`, say
+`a x = r • n`, then `r • b n = b (a x) = r • x`, so `x = b n`. -/
+theorem exact_lTensor_quotient_span_singleton {R M N : Type*} [CommRing R] [AddCommGroup M]
+    [Module R M] [AddCommGroup N] [Module R N] {r : R} (a : M →ₗ[R] N) (b : N →ₗ[R] M)
+    (hab : a ∘ₗ b = r • LinearMap.id) (hba : b ∘ₗ a = r • LinearMap.id) (hr : IsSMulRegular M r) :
+    Function.Exact (b.lTensor (R ⧸ Ideal.span {r})) (a.lTensor (R ⧸ Ideal.span {r})) := by
+  intro y
+  obtain ⟨x, rfl⟩ := exists_one_tmul_eq _ y
+  rw [lTensor_tmul, one_tmul_eq_zero_iff_exists_smul_eq]
+  constructor
+  · rintro ⟨n, hn⟩
+    refine ⟨1 ⊗ₜ n, ?_⟩
+    rw [lTensor_tmul, hr (show r • b n = r • x by
+      simpa [← map_smul, hn] using LinearMap.congr_fun hba x)]
+  · rintro ⟨z, hz⟩
+    obtain ⟨n, rfl⟩ := exists_one_tmul_eq _ z
+    rw [lTensor_tmul, ← sub_eq_zero, ← tmul_sub, one_tmul_eq_zero_iff_exists_smul_eq] at hz
+    obtain ⟨m, hm⟩ := hz
+    refine ⟨n - a m, ?_⟩
+    rw [smul_sub, ← map_smul, hm, map_sub, ← LinearMap.comp_apply, hab]
+    simp
+
+/-- **Reductions of a factorization of a regular scalar are dually exact.** Let `a : M → N` and
+`b : N → M` satisfy `a ∘ b = r • id` and `b ∘ a = r • id`, with `r` regular on `R` and `N`
+projective. Then the `R ⧸ (r)`-duals of the reductions of `a` and `b` modulo `r` form an exact
+pair: a functional on `(R ⧸ (r)) ⊗ N` vanishing on the image of the reduction of `a` factors
+through the reduction of `b`. Together with `LinearMap.exact_lTensor_quotient_span_singleton`,
+this says that reducing a matrix factorization modulo a non-zero-divisor gives a totally acyclic
+periodic complex. -/
+theorem exact_comp_baseChange_quotient_span_singleton {R M N : Type*} [CommRing R]
+    [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N] [Module.Projective R N] {r : R}
+    (a : M →ₗ[R] N) (b : N →ₗ[R] M) (hab : a ∘ₗ b = r • LinearMap.id)
+    (hba : b ∘ₗ a = r • LinearMap.id) (hr : IsSMulRegular R r) :
+    Function.Exact
+      (fun ψ : (R ⧸ Ideal.span {r}) ⊗[R] M →ₗ[R ⧸ Ideal.span {r}] R ⧸ Ideal.span {r} ↦
+        ψ ∘ₗ b.baseChange (R ⧸ Ideal.span {r}))
+      (fun φ ↦ φ ∘ₗ a.baseChange (R ⧸ Ideal.span {r})) := by
+  intro φ
+  constructor
+  · intro hφ
+    -- Lift `n ↦ φ (1 ⊗ n)` to `ϕ : N → R` using projectivity of `N`.
+    obtain ⟨ϕ, hϕ⟩ := Module.projective_lifting_property (Ideal.span {r}).mkQ
+      (φ.restrictScalars R ∘ₗ TensorProduct.mk R (R ⧸ Ideal.span {r}) N 1)
+      (Submodule.mkQ_surjective _)
+    have hϕ' (n : N) : Ideal.Quotient.mk _ (ϕ n) = φ (1 ⊗ₜ n) := congr($hϕ n)
+    -- Since `φ` kills the image of `a`, the map `ϕ ∘ a` takes values in `rR`, so it is `r` times
+    -- a map `χ : M → R`, which is linear because `r` is regular.
+    have hc (x : M) : ∃ c : R, ϕ (a x) = r * c := by
+      refine Ideal.mem_span_singleton.1 ?_
+      rw [← Ideal.Quotient.eq_zero_iff_mem, hϕ']
+      simpa using congr($hφ (1 ⊗ₜ x))
+    choose c hc using hc
+    let χ : M →ₗ[R] R :=
+      { toFun := c
+        map_add' x y := hr (by simp only [smul_eq_mul, mul_add, ← hc, map_add])
+        map_smul' s x := hr (by
+          simp only [smul_eq_mul, RingHom.id_apply, ← hc, map_smul]
+          rw [hc]
+          ring) }
+    -- From `a ∘ b = r • id`, `r • χ (b n) = ϕ (a (b n)) = r • ϕ n`, so `χ ∘ b = ϕ`.
+    have hχ (n : N) : χ (b n) = ϕ n := hr (by
+      simp only [smul_eq_mul]
+      rw [show r * χ (b n) = ϕ (a (b n)) from (hc _).symm, ← LinearMap.comp_apply a b, hab]
+      simp)
+    refine ⟨((Ideal.span {r}).mkQ ∘ₗ χ).liftBaseChange _, ?_⟩
+    refine TensorProduct.AlgebraTensorModule.ext fun s n ↦ ?_
+    rw [← mul_one s, ← smul_eq_mul, ← smul_tmul', map_smul, map_smul]
+    congr 1
+    simp [hχ, ← hϕ']
+  · rintro ⟨ψ, rfl⟩
+    refine TensorProduct.AlgebraTensorModule.ext fun s x ↦ ?_
+    have hx : b (a x) = r • x := by simpa using LinearMap.congr_fun hba x
+    simp [hx, Algebra.smul_def]
+
+end LinearMap
 
 namespace TensorProduct.AlgebraTensorModule
 
@@ -150,6 +247,113 @@ theorem quotientRangeTensorEquiv_symm_mk_tmul (f : M' →ₗ[A] M) (x : M) (n : 
     (quotientRangeTensorEquiv (N := N) f).symm (Submodule.Quotient.mk (x ⊗ₜ[R] n)) =
       Submodule.Quotient.mk x ⊗ₜ[R] n :=
   (LinearEquiv.symm_apply_eq _).mpr (quotientRangeTensorEquiv_mk_tmul f x n).symm
+
+end TensorProduct.AlgebraTensorModule
+
+namespace TensorProduct.AlgebraTensorModule
+
+open LinearMap
+open scoped Pointwise
+
+variable {R S N M : Type*} [CommRing R] [CommRing S] [Algebra R S]
+  [AddCommGroup N] [Module R N] [Module S N] [IsScalarTower R S N]
+  [AddCommGroup M] [Module R M]
+
+/-- The `S`-linear isomorphism `N ⊗[R] (R ⧸ I) ≃ N ⧸ I S • N` for an `S`-module `N` and an ideal
+`I` of `R`. It upgrades Mathlib's `TensorProduct.tensorQuotEquivQuotSMul`, which is `R`-linear
+with target `N ⧸ I • N`. -/
+noncomputable def tensorQuotEquivQuotMapSMul (I : Ideal R) :
+    N ⊗[R] (R ⧸ I) ≃ₗ[S] N ⧸ (I.map (algebraMap R S) • ⊤ : Submodule S N) where
+  __ := tensorQuotEquivQuotSMul N I ≪≫ₗ
+    Submodule.quotEquivOfEq _ _
+      (by rw [Ideal.smul_restrictScalars, Submodule.restrictScalars_top]) ≪≫ₗ
+    Submodule.Quotient.restrictScalarsEquiv R _
+  map_smul' s x := by
+    induction x with
+    | add x y hx hy => simp_all
+    | tmul n r =>
+      obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective r
+      simp only [smul_tmul']
+      simp [smul_comm r s]
+
+@[simp]
+theorem tensorQuotEquivQuotMapSMul_tmul_mk (I : Ideal R) (n : N) (r : R) :
+    tensorQuotEquivQuotMapSMul (S := S) I (n ⊗ₜ[R] Ideal.Quotient.mk I r) =
+      Submodule.Quotient.mk (r • n) := by
+  simp [tensorQuotEquivQuotMapSMul]
+
+/-- The inverse of `tensorQuotEquivQuotMapSMul` sends the class of `n` to `n ⊗ 1`. -/
+@[simp]
+theorem tensorQuotEquivQuotMapSMul_symm_mk (I : Ideal R) (n : N) :
+    (tensorQuotEquivQuotMapSMul (S := S) I).symm (Submodule.Quotient.mk n) = n ⊗ₜ[R] 1 := by
+  rw [LinearEquiv.symm_apply_eq, ← map_one (Ideal.Quotient.mk I),
+    tensorQuotEquivQuotMapSMul_tmul_mk, one_smul]
+
+/-- The tensored quotient map `𝟙 N ⊗ mkQ` is surjective. -/
+theorem lTensor_mkQ_surjective (p : Submodule R M) :
+    Function.Surjective (AlgebraTensorModule.lTensor S N p.mkQ) :=
+  LinearMap.lTensor_surjective N p.mkQ_surjective
+
+/-- Dividing `M` by `x` corresponds to dividing `N ⊗[R] M` by the image of `x` in `S`: the kernel
+of `𝟙 N ⊗ mkQ : N ⊗[R] M → N ⊗[R] (M ⧸ x M)` is `x (N ⊗[R] M)`. -/
+theorem ker_lTensor_mkQ_smul_top (x : R) :
+    ker (AlgebraTensorModule.lTensor S N (x • ⊤ : Submodule R M).mkQ) =
+      (algebraMap R S x • ⊤ : Submodule S (N ⊗[R] M)) := by
+  ext z
+  rw [mem_ker]
+  constructor
+  · intro hz
+    obtain ⟨w, rfl⟩ := ((_root_.lTensor_exact N (LinearMap.exact_subtype_mkQ _)
+      (Submodule.mkQ_surjective _)) z).mp hz
+    clear hz
+    induction w with
+    | add a b ha hb => rw [map_add]; exact add_mem ha hb
+    | tmul n v =>
+      obtain ⟨v, hv⟩ := v
+      obtain ⟨m, -, rfl⟩ := Submodule.mem_smul_pointwise_iff_exists _ _ _ |>.mp hv
+      rw [LinearMap.lTensor_tmul, Submodule.subtype_apply, Submodule.coe_mk, tmul_smul,
+        ← algebraMap_smul S x]
+      exact Submodule.smul_mem_pointwise_smul _ _ _ trivial
+  · intro hz
+    obtain ⟨z, -, rfl⟩ := Submodule.mem_smul_pointwise_iff_exists _ _ _ |>.mp hz
+    rw [map_smul]
+    generalize AlgebraTensorModule.lTensor S N (x • ⊤ : Submodule R M).mkQ z = w
+    induction w with
+    | add a b ha hb => rw [smul_add, ha, hb, add_zero]
+    | tmul n p =>
+      rw [algebraMap_smul, ← tmul_smul,
+        Module.mem_annihilator.mp (QuotSMulTop.mem_annihilator M x), tmul_zero]
+
+/-- The kernel of `mkQ ⊗ 𝟙 M : N ⊗[R] M → (N ⧸ y N) ⊗[R] M` is `y (N ⊗[R] M)`. -/
+theorem ker_rTensor_mkQ_smul_top (y : S) :
+    ker (AlgebraTensorModule.rTensor R M (y • ⊤ : Submodule S N).mkQ) =
+      (y • ⊤ : Submodule S (N ⊗[R] M)) := by
+  have hN : range (lsmul S N y) = y • ⊤ := by
+    ext n
+    simp [Submodule.mem_smul_pointwise_iff_exists]
+  have hNM : range (AlgebraTensorModule.rTensor R M (lsmul S N y)) = y • ⊤ := by
+    have h : ⇑(AlgebraTensorModule.rTensor R M (lsmul S N y)) = (y • ·) :=
+      funext fun w ↦ (AlgebraTensorModule.smul_eq_lsmul_rTensor y w).symm
+    ext w
+    simp [Submodule.mem_smul_pointwise_iff_exists, LinearMap.mem_range, h]
+  rw [← hN, ker_rTensor_mkQ, hNM]
+
+/-- If `I S ≤ J`, the image of `N ⊗[R] I M` in `N ⊗[R] M` lies in `J (N ⊗[R] M)`. -/
+theorem range_lTensor_subtype_smul_top_le {I : Ideal R} {J : Ideal S}
+    (hIJ : I.map (algebraMap R S) ≤ J) :
+    range (AlgebraTensorModule.lTensor S N (I • ⊤ : Submodule R M).subtype) ≤
+      (J • ⊤ : Submodule S (N ⊗[R] M)) := by
+  rintro _ ⟨w, rfl⟩
+  induction w with
+  | add x z hx hz => rw [map_add]; exact add_mem hx hz
+  | tmul n v =>
+    obtain ⟨v, hv⟩ := v
+    rw [AlgebraTensorModule.lTensor_tmul, Submodule.subtype_apply, Submodule.coe_mk]
+    refine Submodule.smul_induction_on hv (fun a ha m _ ↦ ?_) (fun x z hx hz ↦ ?_)
+    · rw [tmul_smul, ← algebraMap_smul S a]
+      exact Submodule.smul_mem_smul (hIJ (Ideal.mem_map_of_mem _ ha)) trivial
+    · rw [tmul_add]
+      exact add_mem hx hz
 
 end TensorProduct.AlgebraTensorModule
 

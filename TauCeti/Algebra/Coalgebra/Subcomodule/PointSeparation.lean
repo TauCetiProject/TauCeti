@@ -33,6 +33,8 @@ product then identifies `coact m` with a tensor in `N ⊗ C`.
 * `TauCeti.Subcomodule.ofEndOfPointStable`: promote a point-stable submodule to a subcomodule.
 * `TauCeti.Subcomodule.endOfPoint_mapsTo_baseChange`: every algebra-valued point preserves
   the scalar extension of a subcomodule.
+* `TauCeti.Subcomodule.lid_rTensor_endOfPoint_mem`: contracting the action of an
+  algebra-valued point against a linear functional preserves every subcomodule.
 
 ## References
 
@@ -181,6 +183,21 @@ theorem endOfPoint_mapsTo_baseChange (N : Subcomodule R C M) (g : C →ₐ[R] A)
   | tmul a m =>
       rw [LinearMap.baseChange_tmul]
       exact N.endOfPoint_tmul_mem_baseChange g a m.2
+
+/-- Contracting the action of an algebra-valued point against a linear functional on the value
+algebra preserves every subcomodule. -/
+theorem lid_rTensor_endOfPoint_mem (N : Subcomodule R C M) (g : C →ₐ[R] A) (ψ : A →ₗ[R] R)
+    {m : M} (hm : m ∈ N) :
+    TensorProduct.lid R M (LinearMap.rTensor M ψ (Comodule.endOfPoint M g (1 ⊗ₜ m))) ∈ N := by
+  have key (x : M ⊗[R] C) :
+      TensorProduct.lid R M (LinearMap.rTensor M ψ
+        (TensorProduct.comm R M A (LinearMap.lTensor M g.toLinearMap x))) =
+      TensorProduct.rid R M (LinearMap.lTensor M (ψ ∘ₗ g.toLinearMap) x) := by
+    induction x using TensorProduct.inductionOn with
+    | tmul p h => simp
+    | add x y hx hy => simp only [map_add, hx, hy]
+  rw [Comodule.endOfPoint_tmul, one_smul, key]
+  exact N.rid_lTensor_coact_mem _ hm
 
 end Preservation
 

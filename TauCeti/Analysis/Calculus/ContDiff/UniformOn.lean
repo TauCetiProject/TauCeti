@@ -37,8 +37,11 @@ once.
 * `TauCeti.UniformContDiffOn.mono` and `TauCeti.UniformContDiffOn.of_le`: shrinking the set and
   lowering the order. `TauCeti.UniformContDiffOn.congr`: the predicate depends only on the values
   of the function on an open set.
+* `TauCeti.UniformContDiffOn.neg`: negation preserves the predicate.
 * `TauCeti.uniformContDiffOn_succ_iff_fderiv_of_isOpen`: on an open set, the derivative family is
   `fderiv`.
+* `ContDiffAt.exists_uniformContDiffOn_closedBall`: a function that is `C^n` at a point is
+  uniformly `C^n` on a small closed ball about it.
 * `ContDiffOn.uniformContDiffOn`: a function that is `C^n` on an open set is uniformly `C^n` on
   every compact subset.
 -/
@@ -152,6 +155,23 @@ theorem UniformContDiffOn.of_succ {n : ℕ} (h : UniformContDiffOn 𝕜 (n + 1) 
     exact uniformContDiffOn_succ_iff.2
       ⟨hu, G', hG', hC, uniformContDiffOn_of_succ_aux.{u, v, w} hG'n⟩
 
+/-- A Lipschitz function with a derivative `G' x` at every point of `s`, where `G'` is uniformly
+continuous on `s`, is uniformly `C^1` on `s`. -/
+theorem _root_.LipschitzWith.uniformContDiffOn_one {C : NNReal} (hG : LipschitzWith C G)
+    {G' : X → X →L[𝕜] Y} (hGs : ∀ x ∈ s, HasFDerivAt G (G' x) x)
+    (hG' : UniformContinuousOn G' s) : UniformContDiffOn 𝕜 1 G s :=
+  uniformContDiffOn_succ_iff.2 ⟨hG.uniformContinuous.uniformContinuousOn, G', hGs,
+    ⟨C, fun x hx ↦ (hGs x hx).le_of_lipschitz hG⟩, uniformContDiffOn_zero_iff.2 hG'⟩
+
+/-- A function that is Lipschitz on an open set `s`, with a derivative `G' x` at every point of `s`
+that is uniformly continuous on `s`, is uniformly `C^1` on `s`. -/
+theorem _root_.LipschitzOnWith.uniformContDiffOn_one {C : NNReal} (hs : IsOpen s)
+    (hG : LipschitzOnWith C G s) {G' : X → X →L[𝕜] Y} (hGs : ∀ x ∈ s, HasFDerivAt G (G' x) x)
+    (hG' : UniformContinuousOn G' s) : UniformContDiffOn 𝕜 1 G s :=
+  uniformContDiffOn_succ_iff.2 ⟨hG.uniformContinuousOn, G', hGs,
+    ⟨C, fun x hx ↦ (hGs x hx).le_of_lipschitzOn (hs.mem_nhds hx) hG⟩,
+    uniformContDiffOn_zero_iff.2 hG'⟩
+
 /-- Uniform `C^n` regularity implies uniform `C^m` regularity for `m ≤ n`. -/
 theorem UniformContDiffOn.of_le {m n : ℕ} (hmn : m ≤ n) (h : UniformContDiffOn 𝕜 n G s) :
     UniformContDiffOn 𝕜 m G s := by
@@ -188,6 +208,29 @@ theorem UniformContDiffOn.congr (hs : IsOpen s) {n : ℕ} {G₂ : X → Y} (hGG 
     exact uniformContDiffOn_succ_iff.2 ⟨hu.congr hGG, G', fun x hx ↦
       (hG' x hx).congr_of_eventuallyEq (Filter.eventuallyEq_of_mem (hs.mem_nhds hx) hGG.symm),
       hC, hG'n⟩
+
+private theorem uniformContDiffOn_neg_aux {Z : Type (max u v)} [NormedAddCommGroup Z]
+    [NormedSpace 𝕜 Z] {G : X → Z} {n : ℕ} (h : UniformContDiffOn 𝕜 n G s) :
+    UniformContDiffOn 𝕜 n (fun x ↦ -G x) s := by
+  induction n generalizing Z with
+  | zero => exact uniformContinuous_neg.comp_uniformContinuousOn h
+  | succ n ih =>
+    obtain ⟨hu, G', hG', ⟨C, hC⟩, hG'n⟩ := uniformContDiffOn_succ_iff.1 h
+    exact uniformContDiffOn_succ_iff.2 ⟨uniformContinuous_neg.comp_uniformContinuousOn hu,
+      fun x ↦ -G' x, fun x hx ↦ (hG' x hx).neg,
+      ⟨C, fun x hx ↦ (norm_neg (G' x)).le.trans (hC x hx)⟩, ih hG'n⟩
+
+/-- The negative of a uniformly `C^n` function is uniformly `C^n`. -/
+theorem UniformContDiffOn.neg {n : ℕ} (h : UniformContDiffOn 𝕜 n G s) :
+    UniformContDiffOn 𝕜 n (fun x ↦ -G x) s := by
+  cases n with
+  | zero => exact uniformContinuous_neg.comp_uniformContinuousOn h
+  | succ n =>
+    obtain ⟨hu, G', hG', ⟨C, hC⟩, hG'n⟩ := uniformContDiffOn_succ_iff.1 h
+    exact uniformContDiffOn_succ_iff.2 ⟨uniformContinuous_neg.comp_uniformContinuousOn hu,
+      fun x ↦ -G' x, fun x hx ↦ (hG' x hx).neg,
+      ⟨C, fun x hx ↦ (norm_neg (G' x)).le.trans (hC x hx)⟩,
+      uniformContDiffOn_neg_aux.{u, v, w} hG'n⟩
 
 /-- **The derivative characterization of uniform regularity on an open set.** A function is
 uniformly `C^{n+1}` on an open set `s` if and only if it is differentiable and uniformly
@@ -261,5 +304,14 @@ theorem _root_.ContDiffOn.uniformContDiffOn {t : Set X} (ht : IsOpen t) (hst : s
   | succ n =>
     exact uniformContDiffOn_of_contDiffOn_step ht hst hs hG
       (uniformContDiffOn_of_contDiffOn_aux.{u, v, w} ht hst hs (hG.fderiv_of_isOpen ht (by simp)))
+
+/-- **A function that is `C^n` at a point is uniformly `C^n` on a small closed ball.** It is `C^n`
+on a neighborhood of the point, and a closed ball in a proper space is compact. -/
+theorem _root_.ContDiffAt.exists_uniformContDiffOn_closedBall [ProperSpace X] {n : ℕ} {y : X}
+    (hG : ContDiffAt 𝕜 n G y) : ∃ r > 0, UniformContDiffOn 𝕜 n G (Metric.closedBall y r) := by
+  obtain ⟨r₀, hr₀, hball⟩ := Metric.eventually_nhds_iff_ball.1 (hG.eventually (by simp))
+  exact ⟨r₀ / 2, half_pos hr₀, ContDiffOn.uniformContDiffOn Metric.isOpen_ball
+    (Metric.closedBall_subset_ball (half_lt_self hr₀)) (isCompact_closedBall _ _)
+    fun z hz ↦ (hball z hz).contDiffWithinAt⟩
 
 end TauCeti

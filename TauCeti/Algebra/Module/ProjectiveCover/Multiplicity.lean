@@ -9,6 +9,7 @@ public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import TauCeti.Algebra.Module.ProjectiveCover.Basic
 public import TauCeti.RingTheory.CompositionSeries.Additivity
+import TauCeti.Algebra.Module.LinearMap.Finite
 import TauCeti.Algebra.Module.Projective.LinearMap
 import TauCeti.RingTheory.Semisimple.Schur
 
@@ -21,7 +22,9 @@ cover of `S`. This file proves the multiplicity formula
 `dim_k Hom_A(P, M) = [M : S] · dim_k End_A(S)`,
 
 for every `A`-module `M` that is finite-dimensional over `k`, where `[M : S]` is the
-Jordan--Hölder multiplicity `TauCeti.jordanHolderMultiplicity`. It is the integral pairing between
+Jordan--Hölder multiplicity `TauCeti.jordanHolderMultiplicity`. The covering module `P` need not
+be finite-dimensional over `k`: it is finitely generated over `A`, which makes its hom spaces into
+finite-dimensional modules finite-dimensional. It is the integral pairing between
 projectives and modules made explicit: reading `dim_k Hom_A(P, -)` off a finite-dimensional module
 returns its `S`-multiplicity, scaled by the dimension of the division algebra `D = End_A(S)`. Over
 a splitting field `D` is `k` and the scale disappears, so the hom dimension *is* the multiplicity;
@@ -67,37 +70,33 @@ namespace TauCeti
 
 /-! ### The multiplicity formula -/
 
-section Multiplicity
+section Pairing
 
-variable {k A P S : Type*} [Field k] [Ring A] [Algebra k A]
-  [AddCommGroup P] [Module A P]
-  [AddCommGroup S] [Module k S] [Module A S] [IsScalarTower k A S] [IsSimpleModule A S]
+variable {k A P S : Type*} [CommSemiring k] [Ring A] [Algebra k A]
+  [AddCommGroup P] [Module A P] [AddCommGroup S] [Module A S]
+  {T : Type*} [AddCommGroup T] [Module k T] [Module A T] [IsScalarTower k A T]
 
-variable {T : Type*} [AddCommGroup T] [Module k T] [Module A T] [IsScalarTower k A T]
-  [IsSimpleModule A T]
-
-omit [IsSimpleModule A S] in
-/-- **The diagonal value of the projective/simple pairing.** If the simple module `T` is
-isomorphic to `S`, the hom space out of a projective cover of `S` has the dimension of the
-division algebra `End_A(S)`. -/
-theorem IsProjectiveCover.finrank_linearMap_eq_finrank_end {f : P →ₗ[A] S}
-    (hf : IsProjectiveCover f) (e : T ≃ₗ[A] S) :
+/-- For a semisimple module `T` isomorphic to `S`, the hom space out of a projective cover of `S`
+has the same finrank as `End_A(S)`, over any commutative semiring of scalars. When `S` is simple
+and the scalars form a field, this is the diagonal value of the projective/simple pairing. -/
+theorem IsProjectiveCover.finrank_linearMap_eq_finrank_end [Module k S] [IsScalarTower k A S]
+    [IsSemisimpleModule A T] {f : P →ₗ[A] S} (hf : IsProjectiveCover f) (e : T ≃ₗ[A] S) :
     Module.finrank k (P →ₗ[A] T) = Module.finrank k (Module.End A S) := by
   rw [← (hf.homEquivOfIsSemisimpleModule k (T := T)).finrank_eq,
     ← (LinearEquiv.homCongrRight k (S := S) e).finrank_eq]
 
-omit [Module k S] [IsScalarTower k A S] in
 /-- **The off-diagonal value of the projective/simple pairing.** Between a projective cover of `S`
 and a simple module not isomorphic to `S` the hom space vanishes, by Schur's lemma. -/
-theorem IsProjectiveCover.finrank_linearMap_eq_zero {f : P →ₗ[A] S}
-    (hf : IsProjectiveCover f) (he : IsEmpty (T ≃ₗ[A] S)) :
+theorem IsProjectiveCover.finrank_linearMap_eq_zero [Nontrivial k] [IsSimpleModule A S]
+    [IsSimpleModule A T] {f : P →ₗ[A] S} (hf : IsProjectiveCover f) (he : IsEmpty (T ≃ₗ[A] S)) :
     Module.finrank k (P →ₗ[A] T) = 0 := by
   rw [← (hf.homEquivOfIsSemisimpleModule k (T := T)).finrank_eq]
   exact finrank_linearMap_eq_zero_of_isEmpty_linearEquiv ⟨fun e => he.elim e.symm⟩
 
 /-- The simple case of the multiplicity formula, the step of the induction on a composition
 series. -/
-private theorem finrank_linearMap_simple_eq {f : P →ₗ[A] S} (hf : IsProjectiveCover f) :
+private theorem finrank_linearMap_simple_eq [Nontrivial k] [Module k S] [IsScalarTower k A S]
+    [IsSimpleModule A S] [IsSimpleModule A T] {f : P →ₗ[A] S} (hf : IsProjectiveCover f) :
     Module.finrank k (P →ₗ[A] T)
       = jordanHolderMultiplicity A T S * Module.finrank k (Module.End A S) := by
   by_cases h : Nonempty (T ≃ₗ[A] S)
@@ -107,14 +106,20 @@ private theorem finrank_linearMap_simple_eq {f : P →ₗ[A] S} (hf : IsProjecti
       jordanHolderMultiplicity_eq_zero_of_isEmpty_linearEquiv_of_isSimpleModule S
         (not_nonempty_iff.mp h), zero_mul]
 
+end Pairing
+
 section Formula
 
-variable [Module k P] [IsScalarTower k A P] [FiniteDimensional k P]
+variable {k A P S : Type*} [Field k] [Ring A] [Algebra k A]
+  [AddCommGroup P] [Module A P]
+  [AddCommGroup S] [Module k S] [Module A S] [IsScalarTower k A S] [IsSimpleModule A S]
 
 /-- **The multiplicity formula.** For a projective cover `f : P →ₗ[A] S` of a simple module `S`
 and an `A`-module `M` that is finite-dimensional over `k`, the dimension of `Hom_A(P, M)` is the
 Jordan--Hölder multiplicity of `S` in `M`, scaled by the dimension of the division algebra
 `End_A(S)`.
+
+No scalar structure or finite-dimensionality assumption on `P` is needed.
 
 The Noetherian and Artinian hypotheses on `M` follow from `FiniteDimensional k M`, but are binders
 here because `TauCeti.jordanHolderMultiplicity A M S` does not elaborate without them, so a caller
@@ -126,6 +131,7 @@ theorem IsProjectiveCover.finrank_linearMap_eq_jordanHolderMultiplicity_mul_finr
     Module.finrank k (P →ₗ[A] M)
       = jordanHolderMultiplicity A M S * Module.finrank k (Module.End A S) := by
   have hP : Module.Projective A P := hf.projective
+  have : Module.Finite A P := hf.finite
   have hlen : IsFiniteLength A M :=
     isFiniteLength_iff_isNoetherian_isArtinian.mpr ⟨inferInstance, inferInstance⟩
   refine IsFiniteLength.rec (motive := fun (M : Type w) _ _ _ ↦
@@ -137,6 +143,7 @@ theorem IsProjectiveCover.finrank_linearMap_eq_jordanHolderMultiplicity_mul_finr
     have : Subsingleton (P →ₗ[A] M) := ⟨fun _ _ => LinearMap.ext fun _ => Subsingleton.elim _ _⟩
     exact Module.finrank_zero_of_subsingleton
   · intro M _ _ N _ _ ih _ _ _ _ _
+    have : FiniteDimensional k (P →ₗ[A] M) := Module.Finite.linearMap_of_isNoetherian
     have : FiniteDimensional k N :=
       Module.Finite.of_injective ((N.subtype).restrictScalars k) N.injective_subtype
     have : FiniteDimensional k (M ⧸ N) :=
@@ -167,7 +174,5 @@ theorem IsProjectiveCover.finrank_linearMap_eq_jordanHolderMultiplicity_of_isAlg
       Module.finrank_self]) M
 
 end Formula
-
-end Multiplicity
 
 end TauCeti

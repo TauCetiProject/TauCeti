@@ -9,6 +9,7 @@ public import TauCeti.Combinatorics.Enumerative.PerfectMatching
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Logic.Equiv.Fin.Rotate
 import Mathlib.Tactic.FinCases
+import TauCeti.Data.Fin.Basic
 
 /-!
 # PD-codes
@@ -144,8 +145,8 @@ theorem two_le_oppositeCrossingSlot_val_iff (slot : Fin 4) :
     2 ≤ (oppositeCrossingSlot slot).val ↔ ¬2 ≤ slot.val := by
   fin_cases slot <;> decide
 
+-- Simp uses `IsPerfectMatching.apply_apply` and the matching fact below.
 /-- Taking the opposite crossing slot twice returns to the original slot. -/
-@[simp]
 theorem oppositeCrossingSlot_apply_oppositeCrossingSlot (slot : Fin 4) :
     oppositeCrossingSlot (oppositeCrossingSlot slot) = slot := by
   fin_cases slot <;> decide
@@ -167,8 +168,8 @@ def slotSmoothing (b : Bool) : Equiv.Perm (Fin 4) :=
 @[simp] theorem slotSmoothing_false :
     slotSmoothing false = Equiv.swap 0 3 * Equiv.swap 1 2 := (rfl)
 
+-- Simp uses `IsPerfectMatching.apply_apply` and the matching fact below.
 /-- A local smoothing is an involution of the four slots. -/
-@[simp]
 theorem slotSmoothing_apply_apply (b : Bool) (slot : Fin 4) :
     slotSmoothing b (slotSmoothing b slot) = slot := by
   revert slot
@@ -178,6 +179,43 @@ theorem slotSmoothing_apply_apply (b : Bool) (slot : Fin 4) :
 theorem slotSmoothing_ne (b : Bool) (slot : Fin 4) : slotSmoothing b slot ≠ slot := by
   revert slot
   cases b <;> decide
+
+/-- The local smoothing determines its Boolean choice. -/
+theorem slotSmoothing_injective : Function.Injective slotSmoothing := by
+  intro b c
+  cases b <;> cases c <;> decide
+
+/-- Two local smoothings agree exactly when their Boolean choices agree. -/
+-- Simplify before the concrete smoothing lemmas expand the permutations.
+@[simp↓] theorem slotSmoothing_inj {b c : Bool} : slotSmoothing b = slotSmoothing c ↔ b = c :=
+  slotSmoothing_injective.eq_iff
+
+/-- Each local smoothing is a perfect matching of the four crossing slots. -/
+@[simp] theorem isPerfectMatching_slotSmoothing (b : Bool) : IsPerfectMatching (slotSmoothing b) :=
+  isPerfectMatching_iff.mpr ⟨slotSmoothing_apply_apply b, slotSmoothing_ne b⟩
+
+/-- A local smoothing never joins a slot to the opposite slot: the two arcs of a smoothing cut
+across the two local strands instead of following them, which is what distinguishes a smoothing
+from `TauCeti.PDCode.crossingTurn`. -/
+theorem slotSmoothing_ne_oppositeCrossingSlot (b : Bool) (slot : Fin 4) :
+    slotSmoothing b slot ≠ oppositeCrossingSlot slot := by
+  have key : ∀ (c : Bool) (t : Fin 4), (slotSmoothing c t).val ≠ (t + 2).val := by
+    intro c
+    cases c <;> simp only [slotSmoothing_false, slotSmoothing_true] <;> decide
+  intro h
+  exact key b slot (by rw [h, oppositeCrossingSlot_apply])
+
+/-- A local smoothing differs from the opposite-slot permutation. -/
+-- Simplify before the concrete smoothing lemmas expand the permutation.
+@[simp↓] theorem slotSmoothing_ne_oppositeCrossingSlot_perm (b : Bool) :
+    slotSmoothing b ≠ oppositeCrossingSlot :=
+  fun h => slotSmoothing_ne_oppositeCrossingSlot b 0 (congrArg (fun f => f 0) h)
+
+/-- The opposite-slot permutation differs from every local smoothing. -/
+-- Simplify before the concrete smoothing lemmas expand the permutation.
+@[simp↓] theorem oppositeCrossingSlot_ne_slotSmoothing (b : Bool) :
+    oppositeCrossingSlot ≠ slotSmoothing b :=
+  (slotSmoothing_ne_oppositeCrossingSlot_perm b).symm
 
 end PDCode
 
@@ -193,6 +231,22 @@ theorem oppositeCrossingSlot_ne (slot : Fin 4) :
 end Fin
 
 namespace TauCeti
+
+namespace PDCode
+
+/-- Opposite slots form a perfect matching of the four crossing slots. -/
+@[simp] theorem isPerfectMatching_oppositeCrossingSlot : IsPerfectMatching oppositeCrossingSlot :=
+  isPerfectMatching_iff.mpr
+    ⟨oppositeCrossingSlot_apply_oppositeCrossingSlot, Fin.oppositeCrossingSlot_ne⟩
+
+/-- Closing a local smoothing by the opposite-slot pairing gives two directed traversal orbits. -/
+theorem orbitCount_oppositeCrossingSlot_mul_slotSmoothing (b : Bool) :
+    orbitCount (oppositeCrossingSlot * slotSmoothing b) = 2 := by
+  rw [isPerfectMatching_oppositeCrossingSlot.orbitCount_mul_fin_four
+    (isPerfectMatching_slotSmoothing b),
+    ite_eq_right (slotSmoothing_ne_oppositeCrossingSlot_perm b).symm]
+
+end PDCode
 
 /-- A finite unoriented PD-code with `n` crossings.
 
@@ -270,6 +324,11 @@ def crossing (D : PDCode n) (i : Fin n) (slot : Fin 4) : Fin (4 * n) :=
 theorem crossing_apply (D : PDCode n) (i : Fin n) (slot : Fin 4) :
     D.crossing i slot = D.halfEdge (crossingSlotEquiv n (i, slot)) :=
   crossing.eq_1 D i slot
+
+/-- Different slots, at the same or at different crossings, hold different half-edges. -/
+theorem crossing_eq_crossing_iff (D : PDCode n) {i j : Fin n} {k l : Fin 4} :
+    D.crossing i k = D.crossing j l ↔ i = j ∧ k = l := by
+  simp
 
 /-- Let `D'` be a code with one crossing more than `D`, whose first `n` crossings keep the
 half-edges of `D` and whose last crossing takes the four new half-edge positions. A permutation of
@@ -474,6 +533,22 @@ theorem crossingBlockEquiv_trans {m r : ℕ} (cross₁ : Fin n ≃ Fin m) (cross
   obtain ⟨⟨i, slot⟩, rfl⟩ := (crossingSlotEquiv n).surjective h
   simp
 
+/-- Renaming the crossings of a code with one crossing added last by the cyclic rotation sends
+slot `s` of the old crossing `j` to slot `s` of crossing `j + 1`. -/
+theorem crossingBlockEquiv_finRotate_halfEdgeSuccEquiv_inl {m : ℕ} (j : Fin m) (s : Fin 4) :
+    crossingBlockEquiv (finRotate (m + 1))
+        (halfEdgeSuccEquiv m (.inl (crossingSlotEquiv m (j, s)))) =
+      crossingSlotEquiv (m + 1) (j.succ, s) := by
+  rw [← crossingSlotEquiv_succ_castSucc, crossingBlockEquiv_apply_crossingSlotEquiv,
+    Fin.finRotate_castSucc]
+
+/-- Renaming the crossings of a code with one crossing added last by the cyclic rotation sends
+slot `s` of the added crossing to slot `s` of crossing `0`. -/
+theorem crossingBlockEquiv_finRotate_halfEdgeSuccEquiv_inr {m : ℕ} (s : Fin 4) :
+    crossingBlockEquiv (finRotate (m + 1)) (halfEdgeSuccEquiv m (.inr s)) =
+      crossingSlotEquiv (m + 1) (0, s) := by
+  rw [← crossingSlotEquiv_succ_last, crossingBlockEquiv_apply_crossingSlotEquiv, finRotate_last]
+
 /-- Relabel the half-edges and crossings of a code along equivalences of their index types: the
 half-edge `h` becomes `half h` and the crossing `j` becomes `cross j`. Slots are kept, so the
 half-edge in slot `s` of crossing `cross j` is `half` of the half-edge in slot `s` of crossing `j`;
@@ -586,6 +661,24 @@ theorem orientation_crossing_of_add_two_eq (D : OrientedPDCode n) (i : Fin n) {s
     D.orientation (D.crossing i t) = !D.orientation (D.crossing i s) := by
   rw [← hst, ← PDCode.oppositeCrossingSlot_apply, PDCode.crossing_apply, PDCode.crossing_apply,
     D.orientation_oppositeCrossingSlot]
+
+/-- The orientations at the four slots of a crossing are determined by those at the slots `0`
+and `1`, since the orientation reverses between opposite slots. -/
+theorem orientation_crossing_eq (D : OrientedPDCode n) (i : Fin n) (k : Fin 4) :
+    D.orientation (D.crossing i k) =
+      ![D.orientation (D.crossing i 0), D.orientation (D.crossing i 1),
+        !D.orientation (D.crossing i 0), !D.orientation (D.crossing i 1)] k := by
+  fin_cases k <;>
+    simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, Matrix.cons_val, Matrix.cons_val_zero,
+      Matrix.cons_val_one, D.orientation_crossing_of_add_two_eq i (s := 0) (t := 2) (by decide),
+      D.orientation_crossing_of_add_two_eq i (s := 1) (t := 3) (by decide)]
+
+/-- An arc joins half-edges of opposite orientations, so no half-edge is paired with one of the
+same orientation. -/
+theorem ne_edgePair_of_orientation_eq (D : OrientedPDCode n) {x y : Fin (4 * n)}
+    (h : D.orientation x = D.orientation y) : x ≠ D.edgePair.val y := by
+  rintro rfl
+  simp at h
 
 /-- The sign of crossing `i`:`1` if the crossing is right-handed and `-1` if it is left-handed,
 as in Lickorish, Chapter 1. The slots are read counterclockwise in the oriented plane and

@@ -26,11 +26,15 @@ compares all atomic formulas.
 The recursion follows Cameron Freer's `cameronfreer/infinitary-logic`,
 `InfinitaryLogic/Scott/BackAndForth.lean`. Here the ordinal universe is independent of the
 universes of the structures.
+
+For a family of structures `M i`, `i : ι`, `bfTupleSetoid L M α n` packages equivalence at depth
+`α` as an equivalence relation on the pointed tuples `⟨i, a⟩` with `a : Fin n → M i`, comparing
+tuples across all members of the family.
 -/
 
 public section
 
-universe u v w w' w'' o
+universe u v w w' w'' o x
 
 namespace TauCeti
 
@@ -180,6 +184,25 @@ theorem comp {α : Ordinal.{o}} (h : BFEquiv (L := L) α n a b) {m : ℕ}
 theorem symm_iff (α : Ordinal.{o}) (a : Fin n → M) (b : Fin n → N) :
     BFEquiv (L := L) α n a b ↔ BFEquiv (L := L) α n b a := ⟨symm, symm⟩
 
+/-- Equivalence at depth `β + k` extends along any `k` further elements of the first structure to
+equivalence at depth `β`: `k` forth steps match them with elements of the second structure. -/
+theorem exists_bfEquiv_append {β : Ordinal.{o}} {m : ℕ} {a : Fin m → M} {b : Fin m → N}
+    (k : ℕ) (h : BFEquiv (L := L) (β + k) m a b) (x : Fin k → M) :
+    ∃ y : Fin k → N, BFEquiv (L := L) β (m + k) (append a x) (append b y) := by
+  induction k generalizing β with
+  | zero =>
+    refine ⟨Fin.elim0, ?_⟩
+    rw [append_right_nil a x rfl, append_right_nil b _ rfl]
+    have h' := h.comp (Fin.cast (Nat.add_zero m))
+    rwa [Nat.cast_zero, add_zero] at h'
+  | succ k ih =>
+    rw [Nat.add_comm, Nat.cast_add, Nat.cast_one, ← add_assoc] at h
+    obtain ⟨y, hy⟩ := ih h (init x)
+    obtain ⟨z, hz⟩ := ((add_one β _ _).mp hy).2.1 (x (last k))
+    refine ⟨snoc y z, ?_⟩
+    rw [← snoc_init_self x, append_snoc, append_snoc]
+    exact hz
+
 end BFEquiv
 
 /-- An isomorphism carries every tuple to a tuple back-and-forth equivalent to it at every
@@ -196,6 +219,35 @@ theorem _root_.FirstOrder.Language.Equiv.bfEquiv (e : M ≃[L] N) (α : Ordinal.
     · simpa only [Fin.comp_snoc] using ih (snoc a x)
     · simpa only [Fin.comp_snoc, e.apply_symm_apply] using ih (snoc a (e.symm y))
   | limit α hα ih => exact (BFEquiv.limit hα a _).mpr fun β hβ => ih β hβ a
+
+/-! ## Equivalence of pointed tuples of a family -/
+
+section Family
+
+variable {ι : Type x} {M : ι → Type w} [∀ i, L.Structure (M i)]
+
+variable (L M) in
+/-- Back-and-forth equivalence at depth `α` of pointed `n`-tuples of the family `M`: the pointed
+tuples `⟨i, a⟩` and `⟨j, b⟩` are related when `a` in `M i` and `b` in `M j` are back-and-forth
+equivalent at depth `α`. -/
+def bfTupleSetoid (α : Ordinal.{o}) (n : ℕ) : Setoid (Σ i, Fin n → M i) where
+  r x y := BFEquiv (L := L) α n x.2 y.2
+  iseqv := ⟨fun x => BFEquiv.refl α x.2, BFEquiv.symm, BFEquiv.trans⟩
+
+variable {α : Ordinal.{o}} {n : ℕ}
+
+/-- Two pointed tuples are related at depth `α` exactly when their tuples are back-and-forth
+equivalent at depth `α`. -/
+@[simp]
+theorem bfTupleSetoid_apply {x y : Σ i, Fin n → M i} :
+    bfTupleSetoid L M α n x y ↔ BFEquiv (L := L) α n x.2 y.2 :=
+  Iff.rfl
+
+/-- The levels decrease as the depth grows. -/
+theorem bfTupleSetoid_anti (n : ℕ) : Antitone (bfTupleSetoid L M · n : Ordinal.{o} → _) :=
+  fun _ _ hαβ _ _ h => BFEquiv.mono h hαβ
+
+end Family
 
 /-! ## Empty-structure regression examples -/
 

@@ -19,8 +19,10 @@ quasi-coherent sheaf `I^~` on `Spec R` is flasque: every section of `I^~` over a
 extends to a global section (Hartshorne, *Algebraic Geometry*, Proposition III.3.4).
 
 Flasque sheaves have no higher cohomology, and every `R`-module embeds into an injective one, so
-this is the input for Serre's vanishing theorem `Hⁱ(Spec R, M^~) = 0` for `i > 0` on a Noetherian
-affine scheme.
+over a Noetherian ring this gives Hartshorne's route to Serre's vanishing theorem
+`Hⁱ(Spec R, M^~) = 0` for `i > 0`. The vanishing theorem itself is proved for every ring in
+`TauCeti.AlgebraicGeometry.Cohomology.Affine`, through Cartan's criterion, and does not use this
+file.
 
 ## Implementation notes
 

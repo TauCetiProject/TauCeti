@@ -29,6 +29,10 @@ group `G`, `Sym M` is integral over its invariants: an element `p` is a root of 
 polynomial `∏ g, (X - g • p)`, whose coefficients are invariant
 (`Algebra.IsInvariant.isIntegral`).
 
+Each `ρ g` fixes the invariant subalgebra pointwise, so it is linear over it; this gives the
+representation `Representation.symmetricAlgebraOverInvariants` of `G` on `Sym M` as a module over
+`Sym(M)^G`, whose invariants are `Sym(M)^G` itself.
+
 Since the representation `ρ` is data that instance search cannot infer, the induced action is
 bundled as `Representation.symmetricAlgebraMulSemiringAction` for local use, rather than
 registered as an instance; this gives access to the `MulSemiringAction` API, in particular to
@@ -40,6 +44,8 @@ Mathlib's invariant extensions `Algebra.IsInvariant`.
 * `Representation.symmetricAlgebraMulSemiringAction`: the same action, bundled as an action by
   semiring endomorphisms.
 * `Representation.symmetricAlgebraInvariants`: the subalgebra of `Sym M` fixed by every `ρ g`.
+* `Representation.symmetricAlgebraOverInvariants`: the induced action on `Sym M`, as a
+  representation by linear maps over the invariant subalgebra.
 * `Representation.symmetricAlgebraHomogeneous`: the representation of `G` on the degree-`n`
   homogeneous component `Symⁿ M`.
 
@@ -53,15 +59,23 @@ Mathlib's invariant extensions `Algebra.IsInvariant`.
 * `Representation.toSubmodule_symmetricAlgebraInvariants`: as a submodule, it is the module of
   invariants of the induced representation.
 * `Representation.ι_mem_symmetricAlgebraInvariants_iff`: its degree-one part is `M^G`.
+* `Representation.map_symmetricAlgebraInvariants_of_leftInverse`: an intertwining map with an
+  intertwining right inverse carries the invariant subalgebra onto the invariant subalgebra.
+* `Representation.mem_invariants_symmetricAlgebraOverInvariants_iff`: the invariants of the
+  action over the invariant subalgebra are the invariant subalgebra.
 * `Representation.symmetricAlgebraHomogeneous_apply`: on `Symⁿ M`, `g` acts by the map
   `homogeneousSubmoduleMapₛₗ (ρ g) n` induced on degree `n`.
 * `Representation.map_subtype_invariants_symmetricAlgebraHomogeneous` and
   `Representation.finrank_invariants_symmetricAlgebraHomogeneous`: the invariants of `Symⁿ M` are
   the degree-`n` part of the invariant subalgebra.
+* `Representation.faithfulSMul_symmetricAlgebraMulSemiringAction_iff`: the bundled action is
+  faithful exactly when `ρ` is.
 * `Representation.symmetricAlgebraInvariants_eq_fixedPoints` and
   `Representation.isInvariant_symmetricAlgebraInvariants`: it is the fixed subalgebra of the
   bundled action, and `Sym M` is an invariant extension of it in the sense of
   `Algebra.IsInvariant`.
+* `Representation.symmetricAlgebraInvariants_comp_subtype`: the invariants of the restriction to
+  a subgroup `H` are the fixed points of `H` under the bundled action of `G`.
 * `Representation.isIntegral_symmetricAlgebraInvariants`: for a finite group, `Sym M` is integral
   over the invariant subalgebra.
 
@@ -105,6 +119,12 @@ noncomputable def symmetricAlgebra : Representation R G (SymmetricAlgebra R M) w
 theorem symmetricAlgebra_apply (g : G) (p : SymmetricAlgebra R M) :
     ρ.symmetricAlgebra g p = SymmetricAlgebra.map R (ρ g) p :=
   (rfl)
+
+/-- The action induced by a representation pulled back along `f : G' →* G` is the induced action
+of `f g`. -/
+theorem symmetricAlgebra_comp_apply {G' : Type*} [Monoid G'] (f : G' →* G) (g : G') :
+    Representation.symmetricAlgebra (ρ.comp f) g = ρ.symmetricAlgebra (f g) :=
+  LinearMap.ext fun p ↦ by simp
 
 /-- The induced action applies `ρ` to a canonical generator.
 
@@ -177,6 +197,32 @@ theorem smulCommClass_symmetricAlgebraMulSemiringAction :
   letI := ρ.symmetricAlgebraMulSemiringAction
   ⟨fun g r p ↦ map_smul (ρ.symmetricAlgebra g) r p⟩
 
+/-- The action of `G` on `Sym M` induced by `ρ` is faithful exactly when `ρ` is: an element of `G`
+is determined by its action on the degree-one elements `ι m`. -/
+theorem faithfulSMul_symmetricAlgebraMulSemiringAction_iff :
+    letI := ρ.symmetricAlgebraMulSemiringAction
+    FaithfulSMul G (SymmetricAlgebra R M) ↔ Function.Injective ρ := by
+  let := ρ.symmetricAlgebraMulSemiringAction
+  refine ⟨fun h g₁ g₂ hg ↦ h.eq_of_smul_eq_smul fun p ↦ ?_,
+    fun hρ ↦ ⟨fun h ↦ hρ <| LinearMap.ext fun m ↦ ι_injective R M ?_⟩⟩
+  · simp [symmetricAlgebraMulSemiringAction_smul, hg]
+  · simpa [symmetricAlgebraMulSemiringAction_smul] using h (SymmetricAlgebra.ι R M m)
+
+variable {ρ} in
+/-- The symmetric-algebra map induced by an intertwining map intertwines the induced
+representations. -/
+theorem IsIntertwiningMap.symmetricAlgebraMap {N : Type*} [AddCommMonoid N] [Module R N]
+    {ρ' : Representation R G N} {f : M →ₗ[R] N} (hf : IsIntertwiningMap ρ ρ' f) :
+    IsIntertwiningMap ρ.symmetricAlgebra ρ'.symmetricAlgebra
+      (SymmetricAlgebra.map R f).toLinearMap := by
+  refine ⟨fun g p ↦ ?_⟩
+  have h : (SymmetricAlgebra.map R f).comp (SymmetricAlgebra.map R (ρ g)) =
+      (SymmetricAlgebra.map R (ρ' g)).comp (SymmetricAlgebra.map R f) := by
+    simp only [SymmetricAlgebra.map_comp_map]
+    exact congrArg _ (LinearMap.ext (hf.isIntertwining g))
+  simpa only [symmetricAlgebra_apply, AlgHom.toLinearMap_apply, AlgHom.comp_apply] using
+    DFunLike.congr_fun h p
+
 /-- The invariant subalgebra `Sym(M)^G`: the elements of `Sym M` fixed by the induced action of
 every element of `G`, that is, the fixed subalgebra `FixedPoints.subalgebra` of the bundled
 action. -/
@@ -213,6 +259,55 @@ theorem ι_mem_symmetricAlgebraInvariants_iff (m : M) :
   simp only [mem_symmetricAlgebraInvariants, symmetricAlgebra_ι,
     (ι_injective R M).eq_iff]
 
+section Map
+
+variable {ρ} {N : Type*} [AddCommMonoid N] [Module R N] {ρ' : Representation R G N}
+
+/-- The symmetric-algebra map induced by an intertwining map sends invariants to invariants. -/
+theorem map_mem_symmetricAlgebraInvariants {f : M →ₗ[R] N} (hf : IsIntertwiningMap ρ ρ' f)
+    {p : SymmetricAlgebra R M} (hp : p ∈ ρ.symmetricAlgebraInvariants) :
+    SymmetricAlgebra.map R f p ∈ ρ'.symmetricAlgebraInvariants := by
+  refine (ρ'.mem_symmetricAlgebraInvariants _).2 fun g ↦ ?_
+  rw [← AlgHom.toLinearMap_apply, ← hf.symmetricAlgebraMap.isIntertwining,
+    (ρ.mem_symmetricAlgebraInvariants p).1 hp g, AlgHom.toLinearMap_apply]
+
+/-- **Invariants of an equivariant retract.** If `f : M → N` intertwines `ρ` with `ρ'` and has
+an intertwining right inverse, the induced map carries the invariant subalgebra of `ρ` onto that
+of `ρ'`. For instance, when `N` is an invariant direct summand of `M`, every invariant of `Sym N`
+is the image of an invariant of `Sym M`. -/
+theorem map_symmetricAlgebraInvariants_of_leftInverse {f : M →ₗ[R] N} {s : N →ₗ[R] M}
+    (hf : IsIntertwiningMap ρ ρ' f) (hs : IsIntertwiningMap ρ' ρ s)
+    (hfs : Function.LeftInverse f s) :
+    ρ.symmetricAlgebraInvariants.map (SymmetricAlgebra.map R f) =
+      ρ'.symmetricAlgebraInvariants :=
+  le_antisymm (Subalgebra.map_le.2 fun _ ↦ map_mem_symmetricAlgebraInvariants hf)
+    fun q hq ↦ ⟨SymmetricAlgebra.map R s q, map_mem_symmetricAlgebraInvariants hs hq,
+      SymmetricAlgebra.map_leftInverse R hfs q⟩
+
+end Map
+
+/-- The action of `G` on `Sym M` induced by `ρ`, as a representation by linear maps over the
+invariant subalgebra `Sym(M)^G`: each `ρ g` fixes the invariants, so it is linear over them. Its
+underlying maps are those of `Representation.symmetricAlgebra`. -/
+noncomputable def symmetricAlgebraOverInvariants :
+    Representation ρ.symmetricAlgebraInvariants G (SymmetricAlgebra R M) where
+  toFun g :=
+    { toFun := ρ.symmetricAlgebra g
+      map_add' := map_add _
+      map_smul' a p := by
+        -- `g` fixes the invariant factor `a`.
+        have ha := (ρ.mem_symmetricAlgebraInvariants a).1 a.2 g
+        simp only [symmetricAlgebra_apply] at ha ⊢
+        simp only [Subalgebra.smul_def, smul_eq_mul, map_mul, ha, RingHom.id_apply] }
+  map_one' := LinearMap.ext fun p ↦ by simp
+  map_mul' g h := LinearMap.ext fun p ↦ by simp
+
+/-- Over the invariant subalgebra, `g` acts on `Sym M` by `Representation.symmetricAlgebra`. -/
+@[simp]
+theorem symmetricAlgebraOverInvariants_apply (g : G) (p : SymmetricAlgebra R M) :
+    ρ.symmetricAlgebraOverInvariants g p = ρ.symmetricAlgebra g p :=
+  (rfl)
+
 end CommSemiring
 
 section Group
@@ -229,6 +324,19 @@ theorem isInvariant_symmetricAlgebraInvariants :
   letI := ρ.symmetricAlgebraMulSemiringAction
   haveI := ρ.smulCommClass_symmetricAlgebraMulSemiringAction
   ρ.symmetricAlgebraInvariants_eq_fixedPoints ▸ inferInstance
+
+/-- The invariants of the restriction of `ρ` to a subgroup `H` are the fixed points of `H` under
+the bundled action of `G`, so Mathlib's `FixedPoints.subalgebra` API applies to them. -/
+theorem symmetricAlgebraInvariants_comp_subtype (H : Subgroup G) :
+    letI := ρ.symmetricAlgebraMulSemiringAction
+    haveI := ρ.smulCommClass_symmetricAlgebraMulSemiringAction
+    Representation.symmetricAlgebraInvariants (ρ.comp H.subtype) =
+      FixedPoints.subalgebra R (SymmetricAlgebra R M) H := by
+  let := ρ.symmetricAlgebraMulSemiringAction
+  have := ρ.smulCommClass_symmetricAlgebraMulSemiringAction
+  ext p
+  simp [FixedPoints.mem_subalgebra, Subgroup.smul_def, symmetricAlgebraMulSemiringAction_smul,
+    symmetricAlgebra_comp_apply]
 
 end Group
 
@@ -252,6 +360,11 @@ theorem mem_invariants_symmetricAlgebraHomogeneous_iff {n : ℕ} (p : homogeneou
       (p : SymmetricAlgebra R M) ∈ ρ.symmetricAlgebraInvariants := by
   simp only [mem_invariants, mem_symmetricAlgebraInvariants, Subtype.ext_iff,
     coe_symmetricAlgebraHomogeneous_apply]
+
+/-- The invariants of the action over the invariant subalgebra are the invariant subalgebra. -/
+theorem mem_invariants_symmetricAlgebraOverInvariants_iff (p : SymmetricAlgebra R M) :
+    p ∈ ρ.symmetricAlgebraOverInvariants.invariants ↔ p ∈ ρ.symmetricAlgebraInvariants := by
+  simp [mem_invariants]
 
 /-- The invariants of the degree-`n` representation are the degree-`n` part of the invariant
 subalgebra. -/

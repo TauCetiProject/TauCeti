@@ -144,7 +144,7 @@ theorem weightL2Isometry_gaussianHermitePiBasis (a : ι → ℕ) :
   refine Filter.EventuallyEq.trans ?_
     (sqrt_prod_gaussianPDFReal_smul_gaussianHermitePiBasis 𝕜 ι a)
   exact Filter.Eventually.of_forall fun x => by
-    simp only [coeFn_cast_lp (pi_gaussianReal_eq_withDensity ι)
+    simp only [coeFn_cast_Lp (pi_gaussianReal_eq_withDensity ι)
       (gaussianHermitePiBasis 𝕜 ι a) x]
 
 end TauCeti

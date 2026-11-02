@@ -76,7 +76,7 @@ theorem map_reindex_weylModuleOfShape (μ : d.Partition) :
             ⨂[k]^(YoungDiagram.ofPartition μ).card (Fin n → k) →ₗ[k] ⨂[k]^d (Fin n → k)) =
       LinearMap.range ((permTensorAction k n d).asAlgebraHom (μ.youngSymmetrizer k)) := by
   rw [weylModuleOfShape_toSubmodule, permTensorActionAlgHom_def,
-    map_reindex_range_asAlgebraHom, Nat.Partition.youngSymmetrizer_def]
+    map_reindex_range_permTensorAction_asAlgebraHom, Nat.Partition.youngSymmetrizer_def]
 
 /-- **The Weyl module of the shape of `μ` as the image of `c_μ`**: relabeling the tensor factors
 is an equivalence of representations of `GL n k` from `𝕊^μ(kⁿ)` onto `c_μ (kⁿ)^{⊗d}`. -/

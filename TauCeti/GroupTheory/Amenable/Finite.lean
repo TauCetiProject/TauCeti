@@ -9,15 +9,21 @@ public import Mathlib.Algebra.Order.BigOperators.Expect
 public import TauCeti.GroupTheory.Amenable.Basic
 
 /-!
-# Finite groups are amenable
+# Finite averages; finite groups are amenable
 
-On a finite topological group `G`, averaging over the group,
+For a finite nonempty subset `F` of a topological group `G`, averaging over `F`,
+
+```text
+m_F f = 𝔼 x ∈ F, f x = |F|⁻¹ ∑_{x ∈ F} f x,
+```
+
+is a mean on `TauCeti.UCB G`. On a finite group, the average over the whole group,
 
 ```text
 m f = 𝔼 x, f x = (∑ x, f x) / |G|,
 ```
 
-is a mean on `TauCeti.UCB G`. It is left invariant because `x ↦ g⁻¹ * x` permutes `G`, so every
+is the uniform mean. It is left invariant because `x ↦ g⁻¹ * x` permutes `G`, so every
 finite topological group is amenable, whatever its topology.
 
 Conversely, the uniform mean is the only left-invariant mean on a finite group: the sum
@@ -28,10 +34,13 @@ mean is evaluation at that element.
 
 ## Main definitions
 
+* `TauCeti.Mean.average F hF`: the average over a finite nonempty set `F`, as a mean.
 * `TauCeti.Mean.uniform G`: the normalized counting mean `f ↦ 𝔼 x, f x` on a finite group.
 
 ## Main results
 
+* `TauCeti.Mean.average_singleton`: the average over a singleton is point evaluation.
+* `TauCeti.Mean.average_univ`: the average over the whole of a finite group is the uniform mean.
 * `TauCeti.Mean.uniform_apply`, `TauCeti.Mean.uniform_apply_eq_sum_div_card`: the value of the
   uniform mean, for any choice of `Fintype` instance.
 * `TauCeti.Mean.isLeftInvariant_uniform`: the uniform mean is left invariant.
@@ -56,6 +65,35 @@ variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 
 namespace Mean
 
+/-- The average `f ↦ 𝔼 x ∈ F, f x` over a finite nonempty set `F ⊆ G`, as a mean on `UCB G`. -/
+def average (F : Finset G) (hF : F.Nonempty) : Mean G :=
+  mk₀
+    { toFun f := 𝔼 x ∈ F, (f : G →ᵇ ℝ) x
+      map_add' f f' := by simp [Finset.expect_add_distrib]
+      map_smul' c f := by simp [Finset.mul_expect] }
+    (fun f hf => Finset.expect_nonneg fun x _ => UCB.le_def.1 hf x)
+    (by simp [hF])
+
+section Average
+
+variable {F : Finset G} (hF : F.Nonempty)
+
+@[simp]
+theorem average_apply (f : UCB G) : average F hF f = 𝔼 x ∈ F, (f : G →ᵇ ℝ) x :=
+  mk₀_apply _ _ _ f
+
+/-- The average over `F` is the sum over `F` divided by the cardinality of `F`. -/
+theorem average_apply_eq_sum_div_card (f : UCB G) :
+    average F hF f = (∑ x ∈ F, (f : G →ᵇ ℝ) x) / F.card := by
+  rw [average_apply, Finset.expect_eq_sum_div_card]
+
+/-- The average over a singleton `{x}` is evaluation at `x`. -/
+@[simp]
+theorem average_singleton (x : G) : average {x} (Finset.singleton_nonempty x) = eval G x :=
+  ext fun f => by simp
+
+end Average
+
 section Uniform
 
 variable [Finite G]
@@ -64,18 +102,18 @@ variable (G) in
 /-- The normalized counting mean `f ↦ 𝔼 x, f x` on a finite topological group `G`. -/
 def uniform : Mean G :=
   letI := Fintype.ofFinite G
-  mk₀
-    { toFun f := 𝔼 x, (f : G →ᵇ ℝ) x
-      map_add' f f' := by simp [Finset.expect_add_distrib]
-      map_smul' c f := by simp [Finset.mul_expect] }
-    (fun f hf => Finset.expect_nonneg fun x _ => UCB.le_def.1 hf x)
-    (by simp)
+  average Finset.univ Finset.univ_nonempty
 
 /-- The uniform mean is the average over the group. The `Fintype` instance is arbitrary. -/
 @[simp]
 theorem uniform_apply [Fintype G] (f : UCB G) : uniform G f = 𝔼 x, (f : G →ᵇ ℝ) x := by
-  simp only [uniform, mk₀_apply, LinearMap.coe_mk, AddHom.coe_mk]
+  simp only [uniform, average_apply]
   congr!
+
+/-- On a finite group, the average over the whole group is the uniform mean. -/
+@[simp]
+theorem average_univ [Fintype G] : average Finset.univ Finset.univ_nonempty = uniform G :=
+  ext fun f => by simp
 
 /-- The uniform mean is the sum over the group divided by its cardinality. The `Fintype` instance
 is arbitrary. -/

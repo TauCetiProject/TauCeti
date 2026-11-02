@@ -53,6 +53,12 @@ positive and equals the geometric side length, as proved below. -/
 noncomputable def schwarzChristoffelSideIntegral (a e : Fin (n + 1) → ℝ) (i : Fin n) : ℝ :=
   ∫ x in a i.castSucc..a i.succ, schwarzChristoffelDensity a e x
 
+/-- The side-length integral is the integral of the density between consecutive prevertices. -/
+theorem schwarzChristoffelSideIntegral_def (a e : Fin (n + 1) → ℝ) (i : Fin n) :
+    schwarzChristoffelSideIntegral a e i =
+      ∫ x in a i.castSucc..a i.succ, schwarzChristoffelDensity a e x :=
+  (rfl)
+
 /-- The Schwarz--Christoffel density is interval integrable between two distinct endpoints when
 there is no nonzero-exponent prevertex in the open interval and the total exponent at each
 endpoint is greater than `-1`. -/

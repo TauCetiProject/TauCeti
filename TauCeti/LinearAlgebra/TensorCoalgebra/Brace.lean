@@ -90,6 +90,12 @@ noncomputable def brace (F g : ReducedTensorWords R M →ₗ[R] M) (q : ℤ) :
 theorem brace_def (F g : ReducedTensorWords R M →ₗ[R] M) (q : ℤ) :
     brace G F g q = F ∘ₗ gradedCoderiv G g q := (rfl)
 
+/-- At twist parameter zero, the brace `F{g}` applies `F` after the ungraded Taylor expansion
+of `g`. -/
+theorem brace_zero_apply (F g : ReducedTensorWords R M →ₗ[R] M) (z : ReducedTensorWords R M) :
+    brace G F g 0 z = F (coderiv R g z) := by
+  rw [brace_def, gradedCoderiv_zero, LinearMap.comp_apply]
+
 /-- The brace of a Taylor map of degree `p` with one of degree `q` has degree `p + q`. -/
 theorem isHomogeneous_brace {F g : ReducedTensorWords R M →ₗ[R] M} {p q : ℤ}
     (hF : LinearMap.IsHomogeneous F (gradedPiece G) G.piece p)

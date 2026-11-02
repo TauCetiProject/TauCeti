@@ -18,9 +18,9 @@ import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 
 Lane D, item 16 of `TauCetiRoadmap/PDE/README.md` asks for the weak energy form
 
-`a(u, v) = ∫_Ω aⁱʲ ∂ᵢu ∂ⱼv + bⁱ ∂ᵢu v + c u v`
+`a(u, v) = ∫_Ω aⁱʲ ∂ⱼu ∂ᵢv + bⁱ ∂ᵢu v + c u v`
 
-of a divergence-form operator `L u = -∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu + c u`, together with **Gårding's
+of a divergence-form operator `L u = -∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u`, together with **Gårding's
 inequality** `a(u, u) ≥ α‖u‖²_{H¹} - β‖u‖²_{L²}` and the lower bounds used to establish
 coercivity on `H¹₀(Ω)` under suitable hypotheses. The pointwise and raw-jet halves of that
 program are already in place: `TauCeti.PDE.energyIntegrand` is the
@@ -402,7 +402,7 @@ theorem integral_norm_jetField_mul_le (u v : W1p mu Omega 2) :
 
 /-- The **divergence-form energy form on `H¹(Ω) = W^{1,2}(Ω)`**,
 
-`a(u, v) = ∫_Ω aⁱʲ ∂ᵢu ∂ⱼv + bⁱ ∂ᵢu v + c u v`,
+`a(u, v) = ∫_Ω aⁱʲ ∂ⱼu ∂ᵢv + bⁱ ∂ᵢu v + c u v`,
 
 obtained by integrating the pointwise jet form `TauCeti.PDE.energyIntegrand` against the jet
 fields of two Sobolev functions. The coefficients stay separate, explicit data: no
@@ -1093,7 +1093,7 @@ condition: a Poincaré inequality alone gives
 
 `λ/(P² + 1) · ‖u‖²_{H¹} ≤ a(u, u)`.
 
-This is the case of a divergence-form operator `-∂ⱼ(aⁱʲ ∂ᵢu) + c u`. The constant is the one
+This is the case of a divergence-form operator `-∂ᵢ(aⁱʲ ∂ⱼu) + c u`. The constant is the one
 the ellipticity floor gives directly, without the factor `2` that Young's inequality costs when
 a drift has to be absorbed. -/
 theorem div_mul_norm_sq_le_energyFormH1_self_of_zero_drift

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Basic
-public import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.Section
+public import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.Symmetric
 import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
@@ -23,6 +23,14 @@ directions. The reverse construction proves the native bounded-unit-set conditio
 dimensionality; positivity alone would not suffice in infinite dimensions. The forward map and
 convexity do not require finite dimensionality. All results allow boundary charts and arbitrary
 regularity `n`.
+
+The same comparison holds in the vector bundle `fun x ↦ symmetricBilinearMaps ℝ (V x) ℝ` of
+symmetric bilinear forms, which for the tangent bundle is `Sym²(T*M)`.
+`TauCeti.Manifold.positiveDefiniteSymmetricSections` is the convex cone of its positive-definite
+`C^n` sections, and `Bundle.ContMDiffRiemannianMetric.positiveDefiniteSymmetricSectionEquiv`
+identifies it with the native metrics, through the identification
+`TauCeti.Manifold.symmetricBilinearSectionEquiv` of `C^n` sections of the symmetric bundle with
+symmetric `C^n` bilinear sections.
 -/
 
 public section
@@ -70,11 +78,48 @@ theorem convex_positiveDefiniteBilinearSections :
   · exact add_pos_of_pos_of_nonneg (mul_pos ha (hb.2 x v hv))
       (mul_nonneg hd (hc.2 x v hv).le)
 
+/-! ### The cone in the bundle of symmetric bilinear forms -/
+
+variable (IB n F V) in
+/-- The cone of `C^n` sections of the bundle of symmetric bilinear forms that are positive on
+every nonzero vector. For the tangent bundle these are the metrics as sections of `Sym²(T*M)`. -/
+def positiveDefiniteSymmetricSections :
+    Set Cₛ^n⟮IB; symmetricBilinearMaps ℝ F ℝ, fun x ↦ symmetricBilinearMaps ℝ (V x) ℝ⟯ :=
+  {σ | ∀ x v, v ≠ 0 → 0 < (σ x : V x →L[ℝ] V x →L[ℝ] ℝ) v v}
+
+/-- Membership in the cone of positive-definite symmetric sections is strict diagonal
+positivity. -/
+@[simp]
+theorem mem_positiveDefiniteSymmetricSections
+    (σ : Cₛ^n⟮IB; symmetricBilinearMaps ℝ F ℝ, fun x ↦ symmetricBilinearMaps ℝ (V x) ℝ⟯) :
+    σ ∈ positiveDefiniteSymmetricSections IB n F V ↔
+      ∀ x v, v ≠ 0 → 0 < (σ x : V x →L[ℝ] V x →L[ℝ] ℝ) v v :=
+  Iff.rfl
+
+/-- Identifying sections of the symmetric bundle with symmetric bilinear sections matches the two
+cones of positive-definite sections. -/
+theorem symmetricBilinearSectionEquiv_mem_positiveDefiniteBilinearSections_iff
+    (σ : Cₛ^n⟮IB; symmetricBilinearMaps ℝ F ℝ, fun x ↦ symmetricBilinearMaps ℝ (V x) ℝ⟯) :
+    (symmetricBilinearSectionEquiv IB n σ : BilinearSection IB F V ℝ n) ∈
+        positiveDefiniteBilinearSections IB n F V ↔
+      σ ∈ positiveDefiniteSymmetricSections IB n F V := by
+  simp [(symmetricBilinearSectionEquiv IB n σ).2]
+
+/-- Positive-definite sections of the symmetric bundle are closed under convex combinations. -/
+theorem convex_positiveDefiniteSymmetricSections :
+    Convex ℝ (positiveDefiniteSymmetricSections IB n F V) := by
+  have h := (convex_positiveDefiniteBilinearSections (IB := IB) (n := n) (F := F)
+    (V := V)).linear_preimage (symmetricBilinearSections.subtype ∘ₗ
+      (symmetricBilinearSectionEquiv IB n).toLinearMap)
+  convert h using 1
+  ext σ
+  simp
+
 end TauCeti.Manifold
 
 namespace Bundle.ContMDiffRiemannianMetric
 
-open TauCeti.Manifold
+open TauCeti TauCeti.Manifold
 
 variable
   {EB : Type*} [NormedAddCommGroup EB] [NormedSpace ℝ EB]
@@ -105,6 +150,40 @@ theorem toBilinearSection_injective :
 theorem toBilinearSection_mem (g : ContMDiffRiemannianMetric IB n F V) :
     g.toBilinearSection ∈ positiveDefiniteBilinearSections IB n F V :=
   ⟨(mem_symmetricBilinearSections _).2 g.symm, g.pos⟩
+
+/-- A native `C^n` Riemannian metric as a `C^n` section of the bundle of symmetric bilinear
+forms. -/
+def toSymmetricSection (g : ContMDiffRiemannianMetric IB n F V) :
+    Cₛ^n⟮IB; symmetricBilinearMaps ℝ F ℝ, fun x ↦ symmetricBilinearMaps ℝ (V x) ℝ⟯ :=
+  (symmetricBilinearSectionEquiv IB n).symm
+    ⟨g.toBilinearSection, (mem_symmetricBilinearSections _).2 g.symm⟩
+
+@[simp]
+theorem coe_toSymmetricSection_apply (g : ContMDiffRiemannianMetric IB n F V) (x : B) :
+    (g.toSymmetricSection x : V x →L[ℝ] V x →L[ℝ] ℝ) = g.inner x :=
+  coe_symmetricBilinearSectionEquiv_symm_apply _ x
+
+/-- Under the identification of sections of the symmetric bundle with symmetric bilinear
+sections, the section of a metric is its bilinear section. -/
+@[simp]
+theorem symmetricBilinearSectionEquiv_toSymmetricSection
+    (g : ContMDiffRiemannianMetric IB n F V) :
+    (symmetricBilinearSectionEquiv IB n g.toSymmetricSection : BilinearSection IB F V ℝ n) =
+      g.toBilinearSection := by
+  simp [toSymmetricSection]
+
+/-- The section of the symmetric bundle determines a Riemannian metric. -/
+theorem toSymmetricSection_injective :
+    Function.Injective (toSymmetricSection (IB := IB) (n := n) (F := F) (V := V)) := by
+  intro g h heq
+  exact ext fun x v w ↦ by
+    simpa using congrArg (fun σ ↦ (σ x : V x →L[ℝ] V x →L[ℝ] ℝ) v w) heq
+
+/-- The section of a Riemannian metric belongs to the positive-definite symmetric cone. -/
+@[simp↓]
+theorem toSymmetricSection_mem (g : ContMDiffRiemannianMetric IB n F V) :
+    g.toSymmetricSection ∈ positiveDefiniteSymmetricSections IB n F V :=
+  fun x v hv ↦ by simpa using g.pos x v hv
 
 variable [FiniteDimensional ℝ F]
 
@@ -177,5 +256,75 @@ theorem range_toBilinearSection :
     exact g.toBilinearSection_mem
   · intro hb
     exact ⟨ofPositiveDefiniteSection b hb, toBilinearSection_ofPositiveDefiniteSection b hb⟩
+
+/-- A positive-definite section of the bundle of symmetric bilinear forms determines a native
+Riemannian metric. -/
+def ofPositiveDefiniteSymmetricSection
+    (σ : Cₛ^n⟮IB; symmetricBilinearMaps ℝ F ℝ, fun x ↦ symmetricBilinearMaps ℝ (V x) ℝ⟯)
+    (hσ : σ ∈ positiveDefiniteSymmetricSections IB n F V) :
+    ContMDiffRiemannianMetric IB n F V :=
+  ofPositiveDefiniteSection (symmetricBilinearSectionEquiv IB n σ)
+    ((symmetricBilinearSectionEquiv_mem_positiveDefiniteBilinearSections_iff σ).2 hσ)
+
+@[simp]
+theorem ofPositiveDefiniteSymmetricSection_inner
+    (σ : Cₛ^n⟮IB; symmetricBilinearMaps ℝ F ℝ, fun x ↦ symmetricBilinearMaps ℝ (V x) ℝ⟯)
+    (hσ : σ ∈ positiveDefiniteSymmetricSections IB n F V) (x : B) :
+    (ofPositiveDefiniteSymmetricSection σ hσ).inner x = (σ x : V x →L[ℝ] V x →L[ℝ] ℝ) := by
+  ext v w
+  simp [ofPositiveDefiniteSymmetricSection]
+
+/-- Recovering a metric from its section of the symmetric bundle preserves the original
+metric. -/
+@[simp]
+theorem ofPositiveDefiniteSymmetricSection_toSymmetricSection
+    (g : ContMDiffRiemannianMetric IB n F V) :
+    ofPositiveDefiniteSymmetricSection g.toSymmetricSection g.toSymmetricSection_mem = g := by
+  ext x v w
+  simp
+
+/-- Recovering a metric from a positive-definite section of the symmetric bundle preserves that
+section. -/
+@[simp]
+theorem toSymmetricSection_ofPositiveDefiniteSymmetricSection
+    (σ : Cₛ^n⟮IB; symmetricBilinearMaps ℝ F ℝ, fun x ↦ symmetricBilinearMaps ℝ (V x) ℝ⟯)
+    (hσ : σ ∈ positiveDefiniteSymmetricSections IB n F V) :
+    (ofPositiveDefiniteSymmetricSection σ hσ).toSymmetricSection = σ := by
+  ext x : 1
+  apply Subtype.ext
+  simp
+
+/-- Native finite-rank `C^n` metrics are exactly the positive-definite `C^n` sections of the
+bundle of symmetric bilinear forms. -/
+def positiveDefiniteSymmetricSectionEquiv : ContMDiffRiemannianMetric IB n F V ≃
+    positiveDefiniteSymmetricSections IB n F V where
+  toFun g := ⟨g.toSymmetricSection, g.toSymmetricSection_mem⟩
+  invFun σ := ofPositiveDefiniteSymmetricSection σ.1 σ.2
+  left_inv := ofPositiveDefiniteSymmetricSection_toSymmetricSection
+  right_inv σ := Subtype.ext (toSymmetricSection_ofPositiveDefiniteSymmetricSection σ.1 σ.2)
+
+@[simp]
+theorem positiveDefiniteSymmetricSectionEquiv_apply (g : ContMDiffRiemannianMetric IB n F V) :
+    (positiveDefiniteSymmetricSectionEquiv g).1 = g.toSymmetricSection :=
+  (rfl)
+
+@[simp]
+theorem positiveDefiniteSymmetricSectionEquiv_symm_apply
+    (σ : positiveDefiniteSymmetricSections IB n F V) :
+    positiveDefiniteSymmetricSectionEquiv.symm σ = ofPositiveDefiniteSymmetricSection σ.1 σ.2 :=
+  (rfl)
+
+/-- The image of the native metric carrier in the sections of the symmetric bundle is the
+positive-definite cone. -/
+theorem range_toSymmetricSection :
+    Set.range (toSymmetricSection (IB := IB) (n := n) (F := F) (V := V)) =
+      positiveDefiniteSymmetricSections IB n F V := by
+  ext σ
+  constructor
+  · rintro ⟨g, rfl⟩
+    exact g.toSymmetricSection_mem
+  · intro hσ
+    exact ⟨ofPositiveDefiniteSymmetricSection σ hσ,
+      toSymmetricSection_ofPositiveDefiniteSymmetricSection σ hσ⟩
 
 end Bundle.ContMDiffRiemannianMetric

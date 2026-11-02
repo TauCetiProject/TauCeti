@@ -302,34 +302,79 @@ namespace TauCeti
 
 open _root_.CliffordAlgebra Module
 
+section Polarized
+
+variable {K : Type u} [Field K] {V : Type v} [AddCommGroup V] [Module K V]
+  {Q : QuadraticForm K V} (P : SpinPolarizationData Q)
+
+namespace SpinPolarizationData
+
+/-- The remainder line of a polarization of a six-dimensional quadratic space vanishes. -/
+theorem line_eq_bot_of_finrank_eq_six (hV : finrank K V = 6) : P.line = ⊥ :=
+  have : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
+  P.line_eq_bot_of_even_finrank (hV ▸ by decide)
+
+/-- A polarization of a six-dimensional quadratic space has a three-dimensional isotropic
+summand `W`. -/
+theorem finrank_W_eq_three_of_finrank_eq_six (hV : finrank K V = 6) : finrank K P.W = 3 :=
+  have : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
+  P.finrank_W_eq_of_finrank_eq_two_mul hV
+
+/-- A polarization of a six-dimensional quadratic space has a nonzero isotropic summand `W`. -/
+theorem W_ne_bot_of_finrank_eq_six (hV : finrank K V = 6) : P.W ≠ ⊥ :=
+  Submodule.nontrivial_iff_ne_bot.mp <|
+    Module.nontrivial_of_finrank_eq_succ (P.finrank_W_eq_three_of_finrank_eq_six hV)
+
+end SpinPolarizationData
+
+/-- The even half-spin module of a polarized six-dimensional quadratic space has dimension
+four. -/
+theorem finrank_spinPlus_eq_four_of_finrank_eq_six (hV : finrank K V = 6) :
+    finrank K (spinPlus Q P) = 4 := by
+  have : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
+  rw [finrank_spinPlus P (P.W_ne_bot_of_finrank_eq_six hV),
+    P.finrank_W_eq_three_of_finrank_eq_six hV]
+  norm_num
+
+/-- The basis `Module.finBasisOfFinrankEq` of the even half-spin module of a polarized
+six-dimensional quadratic space. It is the basis in which `Algebra.endAlgEquivMatrix` computes the
+first factor of `TauCeti.SpinPolarizationData.evenCliffordEquivProdMatrix`. -/
+noncomputable def spinPlusFinBasisOfFinrankEqSix (hV : finrank K V = 6) :
+    Basis (Fin 4) K (spinPlus Q P) :=
+  haveI : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
+  Module.finBasisOfFinrankEq K (spinPlus Q P) (finrank_spinPlus_eq_four_of_finrank_eq_six P hV)
+
+/-- `TauCeti.spinPlusFinBasisOfFinrankEqSix` is the basis `Module.finBasisOfFinrankEq` for the
+dimension count `TauCeti.finrank_spinPlus_eq_four_of_finrank_eq_six`. -/
+theorem spinPlusFinBasisOfFinrankEqSix_def [FiniteDimensional K (spinPlus Q P)]
+    (hV : finrank K V = 6) :
+    spinPlusFinBasisOfFinrankEqSix P hV =
+      Module.finBasisOfFinrankEq K (spinPlus Q P)
+        (finrank_spinPlus_eq_four_of_finrank_eq_six P hV) :=
+  -- `(rfl)`, not `rfl`: the body of `spinPlusFinBasisOfFinrankEqSix` is not `@[expose]`d.
+  (rfl)
+
 /-- The first matrix factor of a polarized six-dimensional Spin element is the matrix of its
-even half-spin action in the basis used by `Algebra.endAlgEquivMatrix`. -/
+even half-spin action in the basis `TauCeti.spinPlusFinBasisOfFinrankEqSix`. -/
 theorem coe_evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix_spinGroupToEvenUnitary_apply
-    {K : Type u} [Field K] {V : Type v} [AddCommGroup V] [Module K V]
-    {Q : QuadraticForm K V} [Invertible (2 : K)] (P : SpinPolarizationData Q)
-    [FiniteDimensional K V] [FiniteDimensional K (spinPlus Q P)] (hline : P.line = ⊥)
-    (hW : P.W ≠ ⊥) (hplus : finrank K (spinPlus Q P) = 4) (hV : finrank K V = 6)
-    (b : Basis (Fin 4) K (spinPlus Q P))
-    (hb : b = Module.finBasisOfFinrankEq K (spinPlus Q P) hplus) (s : spinGroup Q) :
-    let e := P.evenCliffordEquivProdMatrix (l := 3) hW (by omega)
-    let u := e.evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix
-      (P.nondegenerate_of_line_eq_bot hline) hV
-    (u (spinGroupToEvenUnitary Q s) : Matrix (Fin 4) (Fin 4) K) =
-      LinearMap.toMatrix b b (spinPlusAction Q P hline (spinGroupToEven Q s)) := by
-  dsimp
-  calc
-    _ = (P.evenCliffordEquivProdMatrix (l := 3) hW (by omega)
-        (spinGroupToEven Q s)).1 := by
-      rw [AlgEquiv.coe_evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix_apply,
-        CliffordAlgebra.evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_apply]
-    _ = (Algebra.endAlgEquivMatrix K (spinPlus Q P) hplus
-        (spinPlusAction Q P hline (spinGroupToEven Q s))) := by
-      simpa using congrArg Prod.fst
-        (P.evenCliffordEquivProdMatrix_apply (l := 3) hW (by omega)
-          (spinGroupToEven Q s))
-    _ = _ := by
-      rw [Algebra.endAlgEquivMatrix_apply K _ _]
-      rw [hb]
+    [Invertible (2 : K)] [FiniteDimensional K V] (hV : finrank K V = 6)
+    (s : spinGroup Q) :
+    (AlgEquiv.evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix
+        (P.evenCliffordEquivProdMatrix (l := 3) (P.W_ne_bot_of_finrank_eq_six hV) hV)
+        (P.nondegenerate_of_line_eq_bot (P.line_eq_bot_of_finrank_eq_six hV)) hV
+        (spinGroupToEvenUnitary Q s) :
+        Matrix (Fin 4) (Fin 4) K) =
+      LinearMap.toMatrix (spinPlusFinBasisOfFinrankEqSix P hV) (spinPlusFinBasisOfFinrankEqSix P hV)
+        (spinPlusAction Q P (P.line_eq_bot_of_finrank_eq_six hV)
+          (spinGroupToEven Q s)) := by
+  -- Plain `simp` first rewrites the matrix size `2 ^ (3 - 1)`, after which
+  -- `evenCliffordEquivProdMatrix_apply` no longer applies.
+  simp only [AlgEquiv.coe_evenUnitaryGroupEquivGeneralLinearOfFinrankEqSix_apply,
+    CliffordAlgebra.evenUnitaryGroupEvenPart_spinGroupToEvenUnitary_apply,
+    SpinPolarizationData.evenCliffordEquivProdMatrix_apply, Algebra.endAlgEquivMatrix_apply,
+    spinPlusFinBasisOfFinrankEqSix_def]
+
+end Polarized
 
 variable (K : Type u) [Field K]
 

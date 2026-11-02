@@ -114,7 +114,7 @@ symplectic root subgroup of the corresponding index, read through the symplectic
 theorem kostantRootSubgroupCoordinateMap_eq_comp_rootSubgroupCoordinateMap
     (k : Fin (n + 1) ⊕ Fin (n + 1)) :
     kostantRootSubgroupCoordinateMap (rootGenerator n) (cartanGenerator n) (rep n)
-        (lattice n).toAddSubgroup (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv) k
+        (lattice n).toAddSubgroup (rep_kostantForm_mem_lattice n) k
         (isNilpotent_rep_rootGenerator n k) (latticeBasis n) =
       Symplectic.coordinateMap ℤ (n + 1) ≫
         Symplectic.rootSubgroupCoordinateMap (R := ℤ) (symplecticRootIndex n k) := by
@@ -128,7 +128,7 @@ theorem kostantRootSubgroupCoordinateMap_eq_comp_rootSubgroupCoordinateMap
   erw [MulEquiv.symm_apply_apply] at hroot
   have hmatrix := map_genericMatrix_eq_kostantRootSubgroupMatrix
     (rootGenerator n) (cartanGenerator n) (rep n) (lattice n).toAddSubgroup
-    (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv) k
+    (rep_kostantForm_mem_lattice n) k
     (isNilpotent_rep_rootGenerator n k) (latticeBasis n)
   -- The same additive-algebra presentation change applies to the universal matrix formula.
   erw [hroot] at hmatrix

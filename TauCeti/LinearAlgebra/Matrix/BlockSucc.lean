@@ -34,6 +34,9 @@ the last basis vector.
 
 ## Main results
 
+* `Matrix.submatrix_blockSucc_castSucc`: the upper-left block of the extension is the original
+  matrix.
+* `Matrix.map_blockSucc`: extending a matrix commutes with ring homomorphisms of its entries.
 * `Matrix.blockSucc_mulVec`: the extended matrix acts on the first `n` coordinates by `M` and
   fixes the last one.
 * `Matrix.transpose_blockSucc`: extending a matrix commutes with transposing it, the last row and
@@ -79,6 +82,13 @@ theorem blockSucc_last_last (M : Matrix (Fin n) (Fin n) k) :
     blockSucc M (Fin.last n) (Fin.last n) = 1 := by
   simp [blockSucc]
 
+/-- The upper-left block of the extension of a matrix is the matrix itself. -/
+@[simp]
+theorem submatrix_blockSucc_castSucc (M : Matrix (Fin n) (Fin n) k) :
+    (blockSucc M).submatrix Fin.castSucc Fin.castSucc = M := by
+  ext i j
+  simp
+
 @[simp]
 theorem blockSucc_one : blockSucc (1 : Matrix (Fin n) (Fin n) k) = 1 := by
   ext i j
@@ -91,6 +101,23 @@ theorem blockSucc_one : blockSucc (1 : Matrix (Fin n) (Fin n) k) = 1 := by
     induction j using Fin.lastCases with
     | last => simp [(Fin.castSucc_lt_last i).ne]
     | cast j => simp [Matrix.one_apply, Fin.castSucc_inj]
+
+/-- **Extending a matrix commutes with applying a ring homomorphism to its entries**, since the
+new entries `0` and `1` are preserved. -/
+@[simp]
+theorem map_blockSucc {l : Type*} [Semiring l] {F : Type*} [FunLike F k l] [RingHomClass F k l]
+    (f : F) (M : Matrix (Fin n) (Fin n) k) :
+    (blockSucc M).map f = blockSucc (M.map f) := by
+  ext i j
+  induction i using Fin.lastCases with
+  | last =>
+    induction j using Fin.lastCases with
+    | last => simp
+    | cast j => simp
+  | cast i =>
+    induction j using Fin.lastCases with
+    | last => simp
+    | cast j => simp
 
 /-- **Extending a matrix commutes with transposing it**: the last row and the last column of
 `Matrix.blockSucc M` are those of the identity matrix, so transposing exchanges them with each

@@ -27,6 +27,8 @@ passing to the `p`-free parts strictly shrinks the gcd.
 * `TauCeti.Nat.gcd_pow_mul_pow_mul`: the gcd splits at a prime, for an explicit splitting.
 * `TauCeti.Nat.gcd_eq_gcd_ordCompl_mul_pow_min`: the same for the `ordProj`/`ordCompl` splitting.
 * `TauCeti.Nat.gcd_ordCompl_lt`: removing the `p`-part strictly shrinks the gcd.
+* `Nat.coprime_iff_coprime_ordCompl`: coprimality to `n` splits into a condition at `p`
+  and coprimality to the `p`-free part of `n`.
 -/
 
 public section
@@ -88,5 +90,22 @@ theorem gcd_ordCompl_lt {p m n : ℕ} (hp : p.Prime) (hm : m ≠ 0) (hn : n ≠ 
 end Nat
 
 end TauCeti
+
+namespace Nat
+
+/-- **Coprimality splits at a prime.** Writing `n = p ^ e * n'` with `p ∤ n'`, the number `m` is
+coprime to `n` exactly when `p ∣ m` forces `e = 0` and `m` is coprime to `n'`. -/
+theorem coprime_iff_coprime_ordCompl {p m n : ℕ} (hp : p.Prime) :
+    m.Coprime n ↔ (p ∣ m → n.factorization p = 0) ∧ m.Coprime (ordCompl[p] n) := by
+  conv_lhs => rw [← Nat.ordProj_mul_ordCompl_eq_self n p]
+  rw [Nat.coprime_mul_iff_right]
+  refine and_congr_left' ?_
+  rcases eq_or_ne (n.factorization p) 0 with he | he
+  · simp [he]
+  · rw [Nat.coprime_pow_right_iff (Nat.pos_of_ne_zero he), Nat.coprime_comm,
+      hp.coprime_iff_not_dvd]
+    simp [he]
+
+end Nat
 
 end

@@ -10,6 +10,9 @@ public import Mathlib.LinearAlgebra.BilinearForm.Hom
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import TauCeti.LinearAlgebra.Complex.LinearPart
+public import TauCeti.LinearAlgebra.Determinant.Prod
+
+import Mathlib.Tactic.Linarith
 
 /-!
 # Almost complex structures and compatible symplectic forms
@@ -27,7 +30,9 @@ on tangent fibers rather than restating the linear algebra.
 * `TauCeti.IsComplexLinearMap`: a real-linear map intertwining two almost complex structures.
 * `TauCeti.SymplecticForm`: an alternating, nondegenerate real bilinear form.
 * `TauCeti.SymplecticForm.apply_smul_add_smul`: evaluation of a symplectic form on the plane
-  spanned by two vectors, and `TauCeti.SymplecticForm.exists_apply_eq_one`: existence of a
+  spanned by two vectors, `TauCeti.SymplecticForm.apply_smul_add_smul_det`: its coefficient
+  for the images of the coordinate directions under a linear map of `ℝ × ℝ` is the
+  determinant, and `TauCeti.SymplecticForm.exists_apply_eq_one`: existence of a
   hyperbolic partner for every nonzero vector.
 * `TauCeti.SymplecticForm.Tames`: the positivity condition `0 < ω v (J v)` for `v ≠ 0`.
 * `TauCeti.SymplecticForm.Compatible`: `J`-invariance plus positivity of `ω(·, J ·)`.
@@ -35,6 +40,9 @@ on tangent fibers rather than restating the linear algebra.
   `V × V`, sending `(x, y)` to `(-y, x)`.
 * `TauCeti.AlmostComplexStructure.cayley`: the Cayley transform `-(1 + J₀ J)(1 - J₀ J)⁻¹` of `J`
   relative to `J₀`.
+* `TauCeti.AlmostComplexStructure.bilinForm_apply_left_eq_neg_apply_right` and
+  `TauCeti.AlmostComplexStructure.bilinForm_apply_apply_self_eq_zero`: a bilinear form preserved
+  by `J` satisfies `g (J v, w) = -g (v, J w)`, and `g (v, J v) = 0` when it is symmetric.
 
 The definitions follow the standard conventions in McDuff--Salamon,
 *J-holomorphic Curves and Symplectic Topology*, Section 2.2, specialized here to the
@@ -126,6 +134,22 @@ lemma map_ne_zero_iff (J : AlmostComplexStructure V) {v : V} :
     J v ≠ 0 ↔ v ≠ 0 :=
   not_congr J.map_eq_zero_iff
 
+/-- A nonzero vector `v` and its image `J v` are linearly independent, since `J` has no real
+eigenvalue. -/
+lemma linearIndependent_pair (J : AlmostComplexStructure V) {v : V} (hv : v ≠ 0) :
+    LinearIndependent ℝ ![v, J v] := by
+  refine LinearIndependent.pair_iff.2 fun s t hst ↦ ?_
+  -- Applying `J` to `s v + t J v = 0` gives `s J v - t v = 0`.
+  have hJ : s • J v - t • v = 0 := by
+    have h := congrArg J.toLinearMap hst
+    rw [map_add, map_smul, map_smul] at h
+    simpa [sub_eq_add_neg, add_comm] using h
+  have h : (s ^ 2 + t ^ 2) • v = 0 :=
+    calc (s ^ 2 + t ^ 2) • v = s • (s • v + t • J v) - t • (s • J v - t • v) := by module
+      _ = 0 := by rw [hst, hJ, smul_zero, smul_zero, sub_zero]
+  have hst' : s ^ 2 + t ^ 2 = 0 := (smul_eq_zero.1 h).resolve_right hv
+  constructor <;> nlinarith [sq_nonneg s, sq_nonneg t]
+
 /-- Two almost complex structures agreeing pointwise are equal. -/
 @[ext]
 lemma ext {J K : AlmostComplexStructure V} (h : ∀ v, J v = K v) : J = K := by
@@ -186,6 +210,23 @@ lemma cayley_def (J₀ J : AlmostComplexStructure V) :
 @[simp]
 lemma cayley_self (J₀ : AlmostComplexStructure V) : J₀.cayley J₀ = 0 := by
   simp [cayley_def]
+
+/-- A bilinear form preserved by `J` is antisymmetric under moving `J` across:
+`g (J v, w) = -g (v, J w)`. -/
+theorem bilinForm_apply_left_eq_neg_apply_right (J : AlmostComplexStructure V)
+    {g : LinearMap.BilinForm ℝ V} (hgJ : ∀ v w, g (J v) (J w) = g v w) (v w : V) :
+    g (J v) w = -g v (J w) := by
+  have h := hgJ v (J w)
+  rw [apply_apply, map_neg] at h
+  rw [← h, neg_neg]
+
+/-- A symmetric bilinear form preserved by `J` pairs every vector `v` trivially with `J v`. -/
+theorem bilinForm_apply_apply_self_eq_zero (J : AlmostComplexStructure V)
+    {g : LinearMap.BilinForm ℝ V} (hg : g.IsSymm) (hgJ : ∀ v w, g (J v) (J w) = g v w)
+    (v : V) : g v (J v) = 0 := by
+  have h := J.bilinForm_apply_left_eq_neg_apply_right hgJ v v
+  rw [← hg.eq v (J v)] at h
+  linarith
 
 end AlmostComplexStructure
 
@@ -411,6 +452,13 @@ lemma apply_smul_add_smul (ω : SymplecticForm V) (x y : V) (a b c d : ℝ) :
     self_eq_zero, hyx]
   ring
 
+/-- The bilinear expansion `SymplecticForm.apply_smul_add_smul` with coefficients the images of
+the coordinate directions under a linear map `B` of the plane: the coefficient is `det B`. -/
+lemma apply_smul_add_smul_det (ω : SymplecticForm V) (B : (ℝ × ℝ) →ₗ[ℝ] ℝ × ℝ) (x y : V) :
+    ω ((B (1, 0)).1 • x + (B (1, 0)).2 • y) ((B (0, 1)).1 • x + (B (0, 1)).2 • y) =
+      LinearMap.det B * ω x y := by
+  rw [ω.apply_smul_add_smul, LinearMap.det_finTwoProd]
+
 /-- The ordered area density `ω (F v) (F (J₀ v))` is unchanged when both arguments are
 precomposed by a source almost complex structure `J₀`: rotating the source by `J₀` sends the
 pair `(v, J₀ v)` to `(J₀ v, -v)`, which has the same symplectic area. This is the
@@ -468,6 +516,18 @@ lemma invariant_iff (ω : SymplecticForm V) (J : AlmostComplexStructure V) :
 lemma associatedBilinForm_apply
     (ω : SymplecticForm V) (J : AlmostComplexStructure V) (v w : V) :
     ω.associatedBilinForm J v w = ω v (J w) := rfl
+
+/-- The associated bilinear form is nondegenerate for every almost complex structure, since
+precomposition in the second argument by `J` is invertible. -/
+lemma associatedBilinForm_nondegenerate (ω : SymplecticForm V) (J : AlmostComplexStructure V) :
+    (ω.associatedBilinForm J).Nondegenerate := by
+  have h : ω.associatedBilinForm J = (LinearEquiv.refl ℝ V).arrowCongr
+      (J.linearEquiv.symm.arrowCongr (LinearEquiv.refl ℝ ℝ)) ω.toBilinForm := by
+    ext v w
+    simp
+  rw [h]
+  exact LinearMap.Nondegenerate.congr (LinearEquiv.refl ℝ V) J.linearEquiv.symm
+    ω.nondegenerate
 
 /-- `ω` tames `J` if `ω(v, Jv)` is positive on every nonzero vector. -/
 @[expose] def Tames (ω : SymplecticForm V) (J : AlmostComplexStructure V) : Prop :=

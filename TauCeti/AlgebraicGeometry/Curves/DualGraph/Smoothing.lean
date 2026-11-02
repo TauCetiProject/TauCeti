@@ -236,6 +236,13 @@ lemma card_edge_smoothing : Fintype.card (G.smoothing S).Edge + #S = Fintype.car
   have := S.card_le_univ
   omega
 
+/-- The number of smoothed components is at most one more than the number of remaining nodes. -/
+theorem card_vertex_smoothing_add_card_le :
+    Fintype.card (G.smoothing S).Vertex + #S ≤ Fintype.card G.Edge + 1 := by
+  have := (G.smoothing S).card_vertex_le_card_edge_add_one
+  have := G.card_edge_smoothing S
+  omega
+
 /-- **Genus of a smoothed component.** The genus of the component `x` of the smoothing, plus the
 number of components of `G` in `x`, is the sum of their genera plus the number of nodes of `S`
 in `x` plus one. That is, it is `∑ g(v) + b₁` of the part of `G` smoothed into `x`. -/

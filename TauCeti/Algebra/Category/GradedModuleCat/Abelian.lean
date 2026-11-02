@@ -132,26 +132,18 @@ end Kernel
 
 section Cokernel
 
-private theorem isHomogeneous_range_restrictScalars :
-    DirectSum.SetLike.IsHomogeneous N.grading.piece ((LinearMap.range f.hom).restrictScalars k) :=
-  f.isHomogeneous.isHomogeneous_range
-
 /-- The grading of the quotient of `N` by the image of `f`, whose degree-`p` piece is the image
 of `Nₚ`. -/
 noncomputable def cokernelGrading : InternalGrading k (N ⧸ LinearMap.range f.hom) :=
-  (N.grading.quotient ((LinearMap.range f.hom).restrictScalars k)
-    (isHomogeneous_range_restrictScalars f)).map
-    (Submodule.Quotient.restrictScalarsEquiv k (LinearMap.range f.hom))
+  N.grading.quotient (LinearMap.range f.hom) f.isHomogeneous.isHomogeneous_range
 
 /-- An element of the quotient of `N` by the image of `f` has degree `p` exactly when it is the
 class of an element of degree `p`. -/
 @[simp]
 theorem mem_cokernelGrading_piece_iff {p : ℤ} {y : N ⧸ LinearMap.range f.hom} :
     y ∈ (cokernelGrading f).piece p ↔
-      ∃ x ∈ N.grading.piece p, Submodule.Quotient.mk x = y := by
-  rw [cokernelGrading, InternalGrading.mem_map_piece_iff, InternalGrading.mem_quotient_piece_iff]
-  refine exists_congr fun x ↦ and_congr_right fun _ ↦ ?_
-  rw [LinearEquiv.eq_symm_apply, Submodule.Quotient.restrictScalarsEquiv_mk]
+      ∃ x ∈ N.grading.piece p, Submodule.Quotient.mk x = y :=
+  InternalGrading.mem_quotient_piece_iff ..
 
 /-- The cokernel of a morphism of graded modules: the quotient of the target by the image, with
 the grading induced from the target. -/

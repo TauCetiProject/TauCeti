@@ -53,7 +53,7 @@ theorem map_rootSubgroupPoints (f : A →+* B)
     (UniversalEnvelopingAlgebra.map_kostantToralRootSubgroupPoints
       (e := rootGenerator n) (h := cartanGenerator n) (ρ := rep n)
       (M := (lattice n).toAddSubgroup)
-      (hM := fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv)
+      (hM := rep_kostantForm_mem_lattice n)
       (hnil := isNilpotent_rep_rootGenerator n) (b := latticeBasis n)
       (wt := basisWeight n) f i u)
   rw [TauCeti.GeneralLinear.IntegralPointsPresentation.coe_map] at h
@@ -72,7 +72,7 @@ theorem map_weightTorusPoints (f : A →+* B) (s : Fin (n + 1) → Aˣ) :
     (UniversalEnvelopingAlgebra.map_kostantToralWeightTorusPoints
       (e := rootGenerator n) (h := cartanGenerator n) (ρ := rep n)
       (M := (lattice n).toAddSubgroup)
-      (hM := fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv)
+      (hM := rep_kostantForm_mem_lattice n)
       (hnil := isNilpotent_rep_rootGenerator n) (b := latticeBasis n)
       (wt := basisWeight n) f s)
   rw [TauCeti.GeneralLinear.IntegralPointsPresentation.coe_map] at h

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.Basic
-public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Congr
+public import TauCeti.FieldTheory.GaloisCohomology.Congr
 
 /-!
 # Transporting the cohomological Brauer group along a field isomorphism
@@ -32,25 +32,14 @@ namespace TauCeti.ClassFieldTheory
 
 /-- An isomorphism of fields supplies an additive equivalence of their cohomological Brauer
 groups, using a chosen identification of separable closures. -/
-def brCongr {K L : Type*} [Field K] [Field L] (e : K ≃+* L) : Br K ≃+ Br L := by
-  let φ : AbsoluteGaloisGroup L ≃ₜ* AbsoluteGaloisGroup K := e.absoluteGaloisGroupCongr
-  let c : UnitsCoeff L ≃+ UnitsCoeff K :=
-    (Units.mapEquiv e.separableClosureCongr.toMulEquiv).toAdditive
-  have hc (g : AbsoluteGaloisGroup L) (x : UnitsCoeff K) :
-      c.symm (φ g • x) = g • c.symm x := by
-    apply c.injective
-    rw [c.apply_symm_apply]
-    apply Additive.toMul.injective
-    apply Units.ext
-    -- The coefficient actions are evaluation by field automorphisms; taking values exposes
-    -- the conjugation formula supplied by the absolute-Galois-group equivalence.
-    change (φ g) (x.toMul : SeparableClosure K) =
-      e.separableClosureCongr (g (e.separableClosureCongr.symm (x.toMul : SeparableClosure K)))
-    exact e.absoluteGaloisGroupCongr_apply g _
-  exact (unitsRepH2Equiv K).symm.trans
-    ((ContCohomology.explicitMap2Equiv (AbsoluteGaloisGroup K) (UnitsCoeff K)
-      (AbsoluteGaloisGroup L) (UnitsCoeff L) φ c.symm
-      continuous_of_discreteTopology continuous_of_discreteTopology hc).trans
-        (unitsRepH2Equiv L))
+def brCongr {K L : Type*} [Field K] [Field L] (e : K ≃+* L) : Br K ≃+ Br L :=
+  (unitsRepH2Equiv K).symm.trans (e.unitsH2Congr.trans (unitsRepH2Equiv L))
+
+/-- The cohomological Brauer-group identification is the field transport on explicit unit-valued
+second Galois cohomology, read through the canonical cohomology comparison. -/
+theorem brCongr_unitsRepH2Equiv {K L : Type*} [Field K] [Field L] (e : K ≃+* L)
+    (x : ContCohomology.H2 (AbsoluteGaloisGroup K) (UnitsCoeff K)) :
+    brCongr e (unitsRepH2Equiv K x) = unitsRepH2Equiv L (e.unitsH2Congr x) := by
+  simp [brCongr]
 
 end TauCeti.ClassFieldTheory

@@ -37,6 +37,11 @@ critical points `x`, and also of their unstable sets `W^u(x)`.
 * `TauCeti.IsAdaptedPseudoGradient.exists_tendsto_atTop` and
   `TauCeti.IsAdaptedPseudoGradient.exists_tendsto_atBot`: every orbit converges to a critical point
   forward, respectively backward, in time.
+* `TauCeti.IsAdaptedPseudoGradient.mem_stableSet_of_forall_mem` and
+  `TauCeti.IsAdaptedPseudoGradient.mem_unstableSet_of_forall_mem`: an orbit trapped in a closed set
+  whose only critical point is `x` converges to `x`.
+* `TauCeti.IsAdaptedPseudoGradient.eq_of_mem_unstableSet_inter_stableSet`: an orbit converging to
+  the same point in both directions of time is that point.
 * `TauCeti.IsAdaptedPseudoGradient.iUnion_stableSet` and
   `TauCeti.IsAdaptedPseudoGradient.iUnion_unstableSet`: the stable sets of the critical points
   cover the manifold, and so do their unstable sets. Together with
@@ -169,6 +174,42 @@ theorem exists_tendsto_atBot (hf : IsMorse 𝓘(ℝ, E) f) (y : M) :
   refine ⟨x, hx, ?_⟩
   have := htend.comp tendsto_neg_atBot_atTop
   simpa [comp_def, Flow.reverse_apply] using this
+
+/-- **An orbit trapped near a critical point converges to it.** If the forward orbit of `w` stays
+in a closed set `K` whose only critical point of the Morse function `f` is `x`, then the orbit
+converges to `x`. -/
+theorem mem_stableSet_of_forall_mem (hf : IsMorse 𝓘(ℝ, E) f) {x : M} {K : Set M} (hK : IsClosed K)
+    (hKx : ∀ z ∈ K, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f z = 0 → z = x) {w : M}
+    (hw : ∀ t, 0 ≤ t → hX.flow t w ∈ K) : w ∈ hX.flow.stableSet x := by
+  obtain ⟨z, hz, hlim⟩ := hX.exists_tendsto_atTop hf w
+  rw [hKx z (hK.mem_of_tendsto hlim (eventually_atTop.2 ⟨0, hw⟩)) hz] at hlim
+  exact Flow.mem_stableSet.2 hlim
+
+/-- **An orbit trapped near a critical point in backward time converges to it.** If the backward
+orbit of `w` stays in a closed set `K` whose only critical point of the Morse function `f` is `x`,
+then the orbit converges to `x` in backward time. -/
+theorem mem_unstableSet_of_forall_mem (hf : IsMorse 𝓘(ℝ, E) f) {x : M} {K : Set M} (hK : IsClosed K)
+    (hKx : ∀ z ∈ K, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f z = 0 → z = x) {w : M}
+    (hw : ∀ t, t ≤ 0 → hX.flow t w ∈ K) : w ∈ hX.flow.unstableSet x := by
+  obtain ⟨z, hz, hlim⟩ := hX.exists_tendsto_atBot hf w
+  rw [hKx z (hK.mem_of_tendsto hlim (eventually_atBot.2 ⟨0, hw⟩)) hz] at hlim
+  exact Flow.mem_unstableSet.2 hlim
+
+/-- **A trajectory from a critical point back to itself is constant.** If the orbit of `y`
+converges to the same point `x` in backward and in forward time, then `y = x`: the function `f`,
+which decreases along the orbit, is constant on it, so `y` is a rest point. -/
+theorem eq_of_mem_unstableSet_inter_stableSet (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) {x y : M}
+    (hy : y ∈ hX.flow.unstableSet x ∩ hX.flow.stableSet x) : y = x := by
+  have hval : ∀ z ∈ hX.flow.unstableSet x ∩ hX.flow.stableSet x, f z = f x := fun z hz ↦
+    le_antisymm (Flow.le_of_mem_unstableSet_of_antitone hz.1 hf.continuous.continuousAt
+      (hX.antitone_flow hf z))
+      (Flow.le_of_mem_stableSet_of_antitone hz.2 hf.continuous.continuousAt (hX.antitone_flow hf z))
+  have hcrit := hX.mfderiv_eq_zero_of_forall_eq (hf y) fun t ↦ by
+    rw [hval _ ⟨(Flow.apply_mem_unstableSet_iff _ t).2 hy.1,
+      (Flow.apply_mem_stableSet_iff _ t).2 hy.2⟩, hval y hy]
+  have hlim := Flow.mem_stableSet.1 hy.2
+  simp only [hX.flow_apply_of_mfderiv_eq_zero hcrit] at hlim
+  exact tendsto_nhds_unique tendsto_const_nhds hlim
 
 /-- **The stable sets of the critical points cover the manifold.** -/
 theorem iUnion_stableSet (hf : IsMorse 𝓘(ℝ, E) f) :

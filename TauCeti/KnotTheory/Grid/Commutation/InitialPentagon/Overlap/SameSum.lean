@@ -69,17 +69,6 @@ theorem hasOneCommonSide_of_initial_self (D : GridRectangleInitialPentagonDecomp
     have _ := Grid.ne_right_of_mem_cIoo hcol
     grind
 
-private theorem underlying_first_isEmpty
-    (D : GridRectangleInitialPentagonDecomposition a s x z) (h : D.first.IsEmpty) :
-    D.toGridRectangleDecomposition.first.IsEmpty := by
-  exact h
-
-private theorem underlying_second_isEmpty
-    (D : GridRectangleInitialPentagonDecomposition a s x z) (h : D.pentagon.IsEmpty) :
-    D.toGridRectangleDecomposition.second.IsEmpty := by
-  rw [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor] at h ⊢
-  simpa only [D.pentagon_toGridRectangleBetween] using h
-
 private noncomputable def initialSelfRecut
     (D : GridRectangleInitialPentagonDecomposition a s x z)
     (hcommon : D.first.left = D.second.left)

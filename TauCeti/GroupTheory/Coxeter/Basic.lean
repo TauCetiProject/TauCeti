@@ -25,6 +25,8 @@ trivial group.
 * `TauCeti.reverse_alternatingWord_two_mul`: reversing an alternating word of even length swaps its
   two letters.
 * `TauCeti.subsingleton_of_isEmpty_index`: a Coxeter system of rank zero has a trivial group.
+* `CoxeterSystem.commute_simple_of_eq_two`: two simple reflections commute when their entry of the
+  Coxeter matrix is `2`.
 -/
 
 public section
@@ -102,3 +104,16 @@ theorem subsingleton_of_isEmpty_index (cs : CoxeterSystem M W) [IsEmpty B] : Sub
   cs.wordProd_surjective.subsingleton
 
 end TauCeti
+
+namespace CoxeterSystem
+
+variable {B W : Type*} [Group W] {M : CoxeterMatrix B} (cs : CoxeterSystem M W)
+
+/-- Two simple reflections commute when their entry of the Coxeter matrix is `2`. -/
+theorem commute_simple_of_eq_two {i i' : B} (h : M i i' = 2) :
+    Commute (cs.simple i) (cs.simple i') := by
+  have h2 := cs.simple_mul_simple_pow i i'
+  rw [h, pow_two, ← eq_inv_iff_mul_eq_one, mul_inv_rev, inv_simple, inv_simple] at h2
+  exact (commute_iff_eq _ _).mpr h2
+
+end CoxeterSystem

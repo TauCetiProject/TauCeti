@@ -6,8 +6,10 @@ Authors: Chris Birkbeck
 module
 
 public import Mathlib.GroupTheory.GroupAction.ConjAct
+public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 public import Mathlib.LinearAlgebra.Matrix.Trace
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # The conjugation action of the special linear group on matrices
@@ -21,6 +23,11 @@ the action of `SL(n, R)`, whose orbits are the `SL(n, R)`-conjugacy classes of m
 
 Conjugation preserves the trace, the determinant and, since `adjugate g = g⁻¹` for `g ∈ SL(n, R)`,
 commutes with taking adjugates.
+
+Conjugation by `SL(n, R)` is conjugation by its image in `GL(n, R)`, so `SL(n, R)`-conjugates are
+`GL(n, R)`-conjugates. Conversely, a conjugate `g X g⁻¹` by `g ∈ GL(n, R)` is also a conjugate by
+`SL(n, R)` exactly when the determinant of `g` can be corrected inside the centralizer of `X`: some
+invertible matrix commuting with `X` has the same determinant as `g`.
 
 ## Main definitions
 
@@ -39,8 +46,18 @@ commutes with taking adjugates.
 * `Matrix.SpecialLinearGroup.trace_mul_mul_inv`: the product form `trace (P k P⁻¹) = trace k` of
   trace invariance, for `P k : SL(n, R)`.
 * `ConjAct.adjugate_specialLinearGroup_smul`: conjugation commutes with the adjugate.
+* `ConjAct.toConjAct_toGL_smul`: conjugating by `s ∈ SL(n, R)` is conjugating by its image in
+  `GL(n, R)`.
+* `Matrix.GeneralLinearGroup.toConjAct_smul_mem_orbit_specialLinearGroup_iff`: a
+  `GL(n, R)`-conjugate is an `SL(n, R)`-conjugate exactly when the determinant of the conjugator
+  is the determinant of an invertible matrix in the centralizer.
+* `Matrix.GeneralLinearGroup.orbit_conjAct_specialLinearGroup_subset`: an `SL(n, R)`-conjugate is
+  a `GL(n, R)`-conjugate.
 * `TauCeti.adjugate_mem_traceDetFiber`: for `2 × 2` matrices, the adjugate has the same trace and
   determinant.
+* `TauCeti.traceDetFiberAddScalarEquiv`: for `2 × 2` matrices, translation `M ↦ M + r` by a scalar
+  matrix maps the matrices of trace `t` and determinant `d` bijectively to those of trace `t + 2 r`
+  and determinant `d + r t + r²`.
 
 ## References
 
@@ -97,7 +114,51 @@ theorem adjugate_specialLinearGroup_smul (g : ConjAct (SpecialLinearGroup n R))
   simp [specialLinearGroup_smul_def, adjugate_mul_distrib, Matrix.mul_assoc,
     ← SpecialLinearGroup.coe_inv]
 
+/-- Conjugating a matrix by the image of `s ∈ SL(n, R)` in `GL(n, R)` is conjugating it by `s`. -/
+@[simp]
+theorem toConjAct_toGL_smul (s : SpecialLinearGroup n R) (M : Matrix n n R) :
+    toConjAct (SpecialLinearGroup.toGL s) • M = toConjAct s • M := by
+  simp [units_smul_def, specialLinearGroup_smul_def, ← map_inv]
+
 end ConjAct
+
+namespace Matrix.GeneralLinearGroup
+
+variable {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R]
+
+/-- **Determinant correction of conjugators.** Over a commutative ring `R`, the conjugate
+`g X g⁻¹` of a matrix `X` by `g ∈ GL(n, R)` is also a conjugate of `X` by `SL(n, R)` exactly when
+some invertible matrix commuting with `X` has the determinant of `g`. -/
+theorem toConjAct_smul_mem_orbit_specialLinearGroup_iff {g : GL n R} {X : Matrix n n R} :
+    ConjAct.toConjAct g • X ∈ MulAction.orbit (ConjAct (SpecialLinearGroup n R)) X ↔
+      ∃ c : GL n R, Commute (c : Matrix n n R) X ∧ det c = det g := by
+  -- An invertible matrix fixes `X` under conjugation exactly when it commutes with `X`.
+  have hfix (c : GL n R) : ConjAct.toConjAct c • X = X ↔ Commute (c : Matrix n n R) X := by
+    rw [ConjAct.units_smul_def, ConjAct.ofConjAct_toConjAct, Units.mul_inv_eq_iff_eq_mul]
+    exact (commute_iff_eq _ _).symm
+  rw [MulAction.mem_orbit_iff]
+  constructor
+  · rintro ⟨s, hs⟩
+    obtain ⟨s, rfl⟩ := ConjAct.toConjAct.surjective s
+    refine ⟨(SpecialLinearGroup.toGL s)⁻¹ * g, (hfix _).mp ?_, by simp⟩
+    rw [ConjAct.toConjAct_mul, mul_smul, ← hs, ← ConjAct.toConjAct_toGL_smul,
+      ConjAct.toConjAct_inv, inv_smul_smul]
+  · rintro ⟨c, hc, hdet⟩
+    obtain ⟨s, hs⟩ : g * c⁻¹ ∈ (SpecialLinearGroup.toGL (n := n) (R := R)).range := by
+      rw [SpecialLinearGroup.range_toGL_eq_ker_det, MonoidHom.mem_ker, map_mul, map_inv, hdet,
+        mul_inv_cancel]
+    refine ⟨ConjAct.toConjAct s, ?_⟩
+    rw [← ConjAct.toConjAct_toGL_smul, hs, ConjAct.toConjAct_mul, mul_smul, ConjAct.toConjAct_inv,
+      inv_smul_eq_iff.mpr ((hfix c).mpr hc).symm]
+
+/-- An `SL(n, R)`-conjugate of a matrix is a `GL(n, R)`-conjugate. -/
+theorem orbit_conjAct_specialLinearGroup_subset (X : Matrix n n R) :
+    MulAction.orbit (ConjAct (SpecialLinearGroup n R)) X ⊆
+      MulAction.orbit (ConjAct (GL n R)) X := by
+  rintro _ ⟨s, rfl⟩
+  exact ⟨ConjAct.toConjAct (SpecialLinearGroup.toGL (ConjAct.ofConjAct s)), by simp⟩
+
+end Matrix.GeneralLinearGroup
 
 namespace Matrix.SpecialLinearGroup
 
@@ -130,11 +191,58 @@ theorem mem_traceDetFiber {t d : R} {M : Matrix n n R} :
     M ∈ traceDetFiber n t d ↔ M.trace = t ∧ M.det = d :=
   Iff.rfl
 
+/-- A `2 × 2` matrix lies in `traceDetFiber (Fin 2) t d` exactly when its entries satisfy
+`M₀₀ + M₁₁ = t` and `M₀₀ M₁₁ - M₀₁ M₁₀ = d`. -/
+theorem mem_traceDetFiber_fin_two {t d : R} {M : Matrix (Fin 2) (Fin 2) R} :
+    M ∈ traceDetFiber (Fin 2) t d ↔ M 0 0 + M 1 1 = t ∧ M 0 0 * M 1 1 - M 0 1 * M 1 0 = d := by
+  rw [mem_traceDetFiber, trace_fin_two, det_fin_two]
+
 /-- The adjugate of a `2 × 2` matrix `M` has the trace and the determinant of `M`: it lies in
 `traceDetFiber (Fin 2) t d` whenever `M` does. -/
 theorem adjugate_mem_traceDetFiber {t d : R} {M : Matrix (Fin 2) (Fin 2) R}
     (hM : M ∈ traceDetFiber (Fin 2) t d) : adjugate M ∈ traceDetFiber (Fin 2) t d := by
   obtain ⟨rfl, rfl⟩ := hM
   exact ⟨by simp [adjugate_fin_two, trace_fin_two, add_comm], by simp [det_adjugate]⟩
+
+/-- Adding the scalar matrix `r` to a `2 × 2` matrix of trace `t` and determinant `d` gives a matrix
+of trace `t + 2 r` and determinant `d + r t + r²`. -/
+theorem add_scalar_mem_traceDetFiber {t d : R} {M : Matrix (Fin 2) (Fin 2) R}
+    (hM : M ∈ traceDetFiber (Fin 2) t d) (r : R) :
+    M + scalar (Fin 2) r ∈ traceDetFiber (Fin 2) (t + 2 * r) (d + r * t + r ^ 2) := by
+  obtain ⟨rfl, rfl⟩ := hM
+  rw [mem_traceDetFiber, trace_fin_two, trace_fin_two, det_fin_two, det_fin_two]
+  simp only [Matrix.add_apply, scalar_apply, diagonal_apply_eq, diagonal_apply_ne _ zero_ne_one,
+    diagonal_apply_ne _ one_ne_zero, add_zero]
+  constructor <;> ring
+
+/-- Translation `M ↦ M + r` by a scalar matrix, from the `2 × 2` matrices of trace `t` and
+determinant `d` to those of trace `t + 2 r` and determinant `d + r t + r²`. -/
+def traceDetFiberAddScalarEquiv (t d r : R) :
+    traceDetFiber (Fin 2) t d ≃ traceDetFiber (Fin 2) (t + 2 * r) (d + r * t + r ^ 2) where
+  toFun M := ⟨M.1 + scalar (Fin 2) r, add_scalar_mem_traceDetFiber M.2 r⟩
+  invFun M := ⟨M.1 - scalar (Fin 2) r, by
+    obtain ⟨ht, hd⟩ := mem_traceDetFiber.mp M.2
+    rw [trace_fin_two] at ht
+    rw [det_fin_two] at hd
+    rw [mem_traceDetFiber, trace_fin_two, det_fin_two]
+    simp only [Matrix.sub_apply, scalar_apply, diagonal_apply_eq, diagonal_apply_ne _ zero_ne_one,
+      diagonal_apply_ne _ one_ne_zero, sub_zero]
+    exact ⟨by linear_combination ht, by linear_combination hd - r * ht⟩⟩
+  left_inv M := Subtype.ext (add_sub_cancel_right _ _)
+  right_inv M := Subtype.ext (sub_add_cancel _ _)
+
+/-- `traceDetFiberAddScalarEquiv t d r` adds the scalar matrix `r`. -/
+@[simp]
+theorem traceDetFiberAddScalarEquiv_apply_coe (t d r : R) (M : traceDetFiber (Fin 2) t d) :
+    (traceDetFiberAddScalarEquiv t d r M : Matrix (Fin 2) (Fin 2) R) = M.1 + scalar (Fin 2) r :=
+  (rfl)
+
+/-- The inverse of `traceDetFiberAddScalarEquiv t d r` subtracts the scalar matrix `r`. -/
+@[simp]
+theorem traceDetFiberAddScalarEquiv_symm_apply_coe (t d r : R)
+    (M : traceDetFiber (Fin 2) (t + 2 * r) (d + r * t + r ^ 2)) :
+    ((traceDetFiberAddScalarEquiv t d r).symm M : Matrix (Fin 2) (Fin 2) R) =
+      M.1 - scalar (Fin 2) r :=
+  (rfl)
 
 end TauCeti

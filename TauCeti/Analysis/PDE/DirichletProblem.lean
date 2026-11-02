@@ -15,7 +15,7 @@ public import TauCeti.Analysis.Sobolev.FiniteMeasure
 Lane D, item 17 of `TauCetiRoadmap/PDE/README.md` asks for the first end-to-end existence
 theorem of the roadmap: for a divergence-form operator
 
-`L u = -∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu + c u`
+`L u = -∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u`
 
 whose energy form is coercive on `H¹₀(Ω)`, the homogeneous Dirichlet problem `L u = f` in `Ω`,
 `u = 0` on `∂Ω`, has a unique weak solution. This file assembles that theorem out of pieces
@@ -88,7 +88,9 @@ the constructed one, so it is available before, and independently of, uniqueness
   `∂Ω`.
 * `TauCeti.PDE.forall_energyFormH1_eq_setIntegral_iff_forall_testFunction` and
   `TauCeti.PDE.isWeakSolutionDirichlet_iff_forall_testFunction`: for bounded coefficients it is
-  enough to test the weak formulation against `C_c^∞(Ω)`.
+  enough to test the weak formulation against `C_c^∞(Ω)`; conversely
+  `TauCeti.PDE.IsWeakSolutionDirichlet.energyFormH1_ofTestFunctionₗ` tests a weak solution against
+  `C_c^∞(Ω)` with no hypothesis on the coefficients.
 * `TauCeti.PDE.isCoercive_energyFormH1L0`: a diagonal lower bound packaged as `IsCoercive`, and
   `TauCeti.PDE.UniformlyEllipticOn.isCoercive_energyFormH1L0_of_mass_lower_bound`: coercivity
   when the potential absorbs the drift.
@@ -103,7 +105,7 @@ the constructed one, so it is available before, and independently of, uniqueness
 * `TauCeti.PDE.UniformlyEllipticOn.existsUnique_isWeakSolutionDirichlet_of_mass_lower_bound`:
   existence and uniqueness on an arbitrary open domain when the potential absorbs the drift.
 * `TauCeti.PDE.UniformlyEllipticOn.existsUnique_forall_energyFormH1_eq_setIntegral_of_memLp`:
-  existence and uniqueness for `-∂ⱼ(aⁱʲ ∂ᵢu) + c u = f`, `c ≥ 0`, on a domain of finite measure
+  existence and uniqueness for `-∂ᵢ(aⁱʲ ∂ⱼu) + c u = f`, `c ≥ 0`, on a domain of finite measure
   with data `f ∈ Lʳ(Ω)`, `r > max 1 (2n/(n+2))`, which need not be square integrable.
 * `TauCeti.PDE.existsUnique_isWeakSolutionDirichlet_of_subset_slab` and
   `TauCeti.PDE.existsUnique_isWeakSolutionDirichlet_of_subset_ball`: existence and uniqueness
@@ -177,7 +179,7 @@ theorem norm_dirichletForcing_le (f : Lp ℝ 2 (mu.restrict Omega)) :
 
 /-- **The weak formulation of the homogeneous Dirichlet problem.** `u ∈ H¹₀(Ω)` is a weak
 solution of `L u = f` in `Ω`, `u = 0` on `∂Ω`, for
-`L u = -∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu + c u`, when
+`L u = -∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u`, when
 
 `a(u, v) = ∫_Ω f v` for every test function `v ∈ H¹₀(Ω)`.
 
@@ -218,10 +220,9 @@ theorem forall_energyFormH1_eq_setIntegral_iff_forall_testFunction
     (dirichletForcing_apply f v).symm.trans (dirichletForcing_apply_eq_setIntegral f v)
   have htest : ∀ φ : 𝓓(Omega, ℝ),
       ∫ x in Omega, f x * W1p.value (W1p.ofTestFunctionₗ mu Omega 2 φ) x ∂mu
-        = ∫ x in Omega, f x * φ x ∂mu := fun φ => by
-    refine integral_congr_ae ?_
-    filter_upwards [testFunctionLp_apply_ae (mu := mu) 2 φ] with x hx
-    rw [W1p.value_ofTestFunctionₗ, hx]
+        = ∫ x in Omega, f x * φ x ∂mu := fun φ =>
+    integral_congr_ae ((W1p.value_ofTestFunctionₗ_ae (p := 2) φ).mono fun x hx =>
+      congrArg (f x * ·) hx)
   refine ⟨fun h φ => (h ⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩).trans (htest φ),
     fun h v => ?_⟩
   have hclosed : IsClosed {v : W1p mu Omega 2 |
@@ -235,6 +236,18 @@ theorem forall_energyFormH1_eq_setIntegral_iff_forall_testFunction
       (hforce ⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩).symm) v.2
   rw [← energyFormH1L_apply hcoeff, ← hforce v]
   exact hmem
+
+/-- A weak solution satisfies the weak equation `a(u, φ) = ∫_Ω f φ` against every test function
+`φ ∈ C_c^∞(Ω)`. Unlike the converse in
+`TauCeti.PDE.isWeakSolutionDirichlet_iff_forall_testFunction`, this needs no bound on the
+coefficients. -/
+theorem IsWeakSolutionDirichlet.energyFormH1_ofTestFunctionₗ {f : Lp ℝ 2 (mu.restrict Omega)}
+    {u : W1p0 mu Omega 2} (hu : IsWeakSolutionDirichlet a b c f u) (φ : 𝓓(Omega, ℝ)) :
+    energyFormH1 a b c (u : W1p mu Omega 2) (W1p.ofTestFunctionₗ mu Omega 2 φ) =
+      ∫ x in Omega, f x * φ x ∂mu :=
+  ((isWeakSolutionDirichlet_iff f u).1 hu ⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩).trans
+    (integral_congr_ae ((W1p.value_ofTestFunctionₗ_ae (p := 2) φ).mono fun x hx =>
+      congrArg (f x * ·) hx))
 
 /-- **Testing against test functions suffices.** When the energy density is essentially bounded,
 so that the energy form is continuous on `H¹(Ω)`, `u` is a weak solution as soon as the weak
@@ -447,7 +460,7 @@ nonnegative. For every `f ∈ Lʳ(Ω)` there is exactly one `w ∈ H¹₀(Ω)` w
 
 `a(w, v) = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`,
 
-the weak solution of `-∂ⱼ(aⁱʲ ∂ᵢw) + c w = f` in `Ω`, `w = 0` on `∂Ω`. Unlike
+the weak solution of `-∂ᵢ(aⁱʲ ∂ⱼw) + c w = f` in `Ω`, `w = 0` on `∂Ω`. Unlike
 `TauCeti.PDE.existsUnique_isWeakSolutionDirichlet`, the data need not be square integrable. The
 range `r > max 1 (2n/(n + 2))` is the one in which `v ↦ ∫_Ω f v` is continuous on `H¹₀(Ω)`
 (`TauCeti.W1p0.exists_strongDual_apply_eq_setIntegral_of_memLp`). -/

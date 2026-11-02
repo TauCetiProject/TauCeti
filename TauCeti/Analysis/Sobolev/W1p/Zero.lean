@@ -104,6 +104,13 @@ theorem W1p.value_ofTestFunctionₗ (phi : 𝓓(Omega, ℝ)) :
     W1p.value (W1p.ofTestFunctionₗ mu Omega p phi) = testFunctionLp p phi :=
   W1p.value_mk _ _ _
 
+/-- The value of an embedded test function agrees almost everywhere on `Ω` with the test
+function itself. -/
+theorem W1p.value_ofTestFunctionₗ_ae (phi : 𝓓(Omega, ℝ)) :
+    W1p.value (W1p.ofTestFunctionₗ mu Omega p phi) =ᵐ[mu.restrict Omega] phi := by
+  rw [W1p.value_ofTestFunctionₗ]
+  exact testFunctionLp_apply_ae p phi
+
 @[simp]
 theorem W1p.gradient_ofTestFunctionₗ (phi : 𝓓(Omega, ℝ)) :
     W1p.gradient (W1p.ofTestFunctionₗ mu Omega p phi) = gradientTestFunctionLp p phi :=

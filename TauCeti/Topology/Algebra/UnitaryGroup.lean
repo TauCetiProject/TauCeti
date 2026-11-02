@@ -9,6 +9,7 @@ public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import Mathlib.Analysis.RCLike.Lemmas
 public import Mathlib.Topology.Algebra.Star.Unitary
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.SpecialUnitary
+public import TauCeti.Topology.Algebra.Star.Unitary
 
 /-!
 # The unitary and special unitary matrix groups are compact
@@ -35,7 +36,8 @@ is inherited from the ambient matrix topology whenever `𝕜` is Hausdorff.
 Closedness is also recorded one level up, for `TauCeti.GLSpecialUnitary`, the same group seen as
 a subgroup of the general linear group of units: its carrier is the preimage of the matrix special
 unitary group under the continuous coercion `Units.val`.  That is the form in which the
-closed-subgroup theorem consumes it.
+closed-subgroup theorem consumes it.  Over `ℝ` or `ℂ`, compactness of the matrix unitary group
+likewise passes to the unitary subgroup `unitarySubgroup (GL n 𝕜)`.
 
 This is the setup the compact-group representation theory of `SU(2)` runs on; see
 `TauCeti/RepresentationTheory/SU2/Basic.lean`.
@@ -47,6 +49,8 @@ This is the setup the compact-group representation theory of `SU(2)` runs on; se
   unitary and special unitary matrix groups over `ℝ` or `ℂ` are compact.
 * `TauCeti.isClosed_GLSpecialUnitary`: the special unitary subgroup of the general linear group is
   closed.
+* `Matrix.GeneralLinearGroup.isCompact_unitarySubgroup`: the unitary subgroup of the general linear
+  group over `ℝ` or `ℂ` is compact.
 -/
 
 public section
@@ -137,3 +141,15 @@ theorem isClosed_GLSpecialUnitary :
 end GeneralLinear
 
 end TauCeti
+
+namespace Matrix.GeneralLinearGroup
+
+variable {n : Type*} [Fintype n] [DecidableEq n] {𝕜 : Type*} [RCLike 𝕜]
+
+/-- **The unitary subgroup of `GL n 𝕜` is compact** over `ℝ` or `ℂ`: the matrix unitary group is
+compact. -/
+theorem isCompact_unitarySubgroup :
+    IsCompact ((unitarySubgroup (GL n 𝕜) : Subgroup (GL n 𝕜)) : Set (GL n 𝕜)) :=
+  TauCeti.isCompact_unitarySubgroup_units TauCeti.Matrix.isCompact_unitaryGroup
+
+end Matrix.GeneralLinearGroup

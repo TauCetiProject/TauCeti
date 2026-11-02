@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.Torsion.Snake
+public import TauCeti.RepresentationTheory.Cyclic.Affine
 public import TauCeti.RepresentationTheory.Cyclic.Automorphism
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.Corestriction
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.FiniteCyclic
@@ -29,7 +30,9 @@ the cyclic representation of `A` these quotient maps read as follows.
   `b - A b` for some `b : T` (`AddEquiv.groupCohomologyπOdd_cyclicRep_eq_iff`). The image of
   `A - 1` is that of `1 - A`, by negating the argument. These are the twists `t` for which the
   affine map `x ↦ A x + t` has order dividing `m`, up to conjugation by translations, which
-  changes `t` to `t + (b - A b)`.
+  changes `t` to `t + (b - A b)`: two norm-zero twists have the same class exactly when their
+  affine maps are conjugate by a translation
+  (`AddEquiv.groupCohomologyπOdd_cyclicRep_eq_iff_exists_conj_affineEquiv`).
 * In positive even degree, the classes are the fixed points of `A`, two of them having the same
   class exactly when they differ by a norm `∑ j < m, A^j y`
   (`AddEquiv.groupCohomologyπEven_cyclicRep_eq_iff`).
@@ -88,6 +91,8 @@ description of its `m`-torsion points as `(1 / m) Λ ⧸ Λ ≃ Λ ⧸ m Λ`.
 * `AddEquiv.groupCohomologyπOdd_cyclicRep_eq_zero_iff`,
   `AddEquiv.groupCohomologyπOdd_cyclicRep_eq_iff`: odd-degree classes are norm-zero elements
   modulo the image of `1 - A`.
+* `AddEquiv.groupCohomologyπOdd_cyclicRep_eq_iff_exists_conj_affineEquiv`: two norm-zero twists
+  have the same odd-degree class exactly when their affine maps are conjugate by a translation.
 * `AddEquiv.groupCohomologyπEven_cyclicRep_eq_zero_iff`,
   `AddEquiv.groupCohomologyπEven_cyclicRep_eq_iff`: positive even-degree classes are fixed points
   of `A` modulo the image of the norm.
@@ -141,6 +146,17 @@ theorem groupCohomologyπOdd_cyclicRep_eq_iff (i : ℕ) (hi : Odd i)
       ∃ b, (y : T) = (x : T) + (b - A b) := by
   rw [eq_comm, groupCohomologyπOdd_eq_iff, mem_range_cyclicRep_applyAsHom_sub_iff]
   constructor <;> rintro ⟨b, hb⟩ <;> refine ⟨b, ?_⟩ <;> rw [hb] <;> abel
+
+/-- **Translation conjugacy classes of affine maps.** Two norm-zero twists `x` and `y` have the
+same class in odd degree, in particular in degree one, exactly when the affine maps
+`z ↦ A z + x` and `z ↦ A z + y` are conjugate by a translation of `T`. -/
+theorem groupCohomologyπOdd_cyclicRep_eq_iff_exists_conj_affineEquiv (i : ℕ) (hi : Odd i)
+    (x y : LinearMap.ker (A.cyclicRep hA).norm.asHom.hom.toLinearMap) :
+    groupCohomologyπOdd (A.cyclicRep hA) (.ofAdd 1) mem_zpowers_ofAdd_one i hi x =
+        groupCohomologyπOdd (A.cyclicRep hA) (.ofAdd 1) mem_zpowers_ofAdd_one i hi y ↔
+      ∃ b, MulAut.conj (Equiv.addRight b) (A.affineEquiv x) = A.affineEquiv y := by
+  rw [groupCohomologyπOdd_cyclicRep_eq_iff]
+  simp_rw [conj_addRight_affineEquiv, affineEquiv_inj, true_and, eq_comm]
 
 /-- **Even-degree classes of the cyclic representation.** A fixed point `x` of `A` has zero
 class in positive even degree exactly when it is a norm `∑ j < m, A^j y`. -/

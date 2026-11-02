@@ -32,18 +32,30 @@ permutations transported along injections with disjoint ranges, a fiber-preservi
 carrying one finite family to another with the same equality pattern
 (`TauCeti.exists_perm_apply_eq_of_eq_iff`), the fact that a permutation
 is a single cycle on each of its own orbits, the transport of its cycles along an equivalence of
-types, and the factorization of an invariant function
+types, the relabelling of a two-argument family invariant under a permutation of its first argument
+paired with a map on its second (`Equiv.Perm.apply_inv_eq_comp_of_apply_apply_eq`), transport of
+cycle quotients along conjugating equivalences, and the factorization of an invariant function
 through a map on whose fibres the permutation is a single cycle, and a correction by a power of
-a cycle for a permutation commuting with it. It also identifies functions invariant under a
-permutation with functions on its cycle quotient (`TauCeti.invariantColouringEquiv`). Finally,
-right multiplication by `a` is a single cycle on the whole group exactly when `a` generates it
-(`Equiv.isCycleOn_mulRight_univ_iff`). Alternating a signed sum over permutations a second
-time, along a sign-preserving map of permutation groups, multiplies it by the number of
-permutations alternated over (`TauCeti.sum_sign_smul_sum_sign_smul_eq_card_nsmul`), and a signed
-sum over the permutations of `Fin (n + 1)` evaluated on a tuple `Fin.cons x w` expands along the
-slot that receives `x` (`TauCeti.sum_sign_smul_cons_comp_eq_sum_insertNth`), or along the entry
-moved to the front or to any other slot (`TauCeti.sum_sign_smul_comp_eq_sum_cons_removeNth`,
-`TauCeti.sum_sign_smul_comp_eq_sum_insertNth_removeNth`).
+a cycle for a permutation commuting with it. Points over distinct classes of the cycle quotient are
+distinct (`Equiv.Perm.ne_of_sameCycle_out`), and precomposing with `σ` does not change a sum over a
+`σ`-orbit (`Equiv.Perm.sum_filter_sameCycle_comp`). It also identifies functions invariant under a
+permutation with functions on its cycle quotient (`TauCeti.invariantColouringEquiv`); a function
+invariant under a set of permutations is invariant under the subgroup they generate
+(`TauCeti.apply_eq_of_mem_closure`), hence constant when that subgroup acts transitively
+(`TauCeti.apply_eq_apply_of_isPretransitive_closure`). Finally, right
+multiplication by `a` is a single cycle on the whole group exactly when `a` generates it
+(`Equiv.isCycleOn_mulRight_univ_iff`). Alternating a signed sum over permutations a second time,
+along a sign-preserving map of permutation groups, multiplies it by the number of permutations
+alternated over (`TauCeti.sum_sign_smul_sum_sign_smul_eq_card_nsmul`), and a signed sum over the
+permutations of `Fin (n + 1)` evaluated on a tuple `Fin.cons x w` expands along the slot that
+receives `x` (`TauCeti.sum_sign_smul_cons_comp_eq_sum_insertNth`), or along the entry moved to the
+front or to any other slot (`TauCeti.sum_sign_smul_comp_eq_sum_cons_removeNth`,
+`TauCeti.sum_sign_smul_comp_eq_sum_insertNth_removeNth`). Removing a pair `{a, σ a}` from an
+involution `σ` by left multiplication with `Equiv.swap a (σ a)` leaves an involution that agrees
+with `σ` off the pair (`Function.Involutive.swap_mul`,
+`Function.Involutive.swap_mul_apply_eq_self_or`), and multiplying back on the right recovers `σ`
+(`Function.Involutive.swap_mul_mul_swap`). A permutation of a finite type sends as many points
+into a set as out of it (`Equiv.Perm.card_filter_not_and_apply_eq`).
 -/
 
 public section
@@ -178,6 +190,21 @@ theorem factorsThrough_of_forall_isCycleOn {ι β : Type*} {g : α → ι}
     f.FactorsThrough g :=
   fun _ b hab => ((hσ (g b)).2 hab rfl).apply_eq_of_apply_eq hf
 
+variable {σ} in
+/-- Points in the orbits of the representatives of two distinct classes of the cycle quotient
+are distinct. -/
+theorem ne_of_sameCycle_out {x y : α} {O P : Quotient (SameCycle.setoid σ)}
+    (hx : σ.SameCycle x O.out) (hy : σ.SameCycle y P.out) (hOP : O ≠ P) : x ≠ y := by
+  rintro rfl
+  exact hOP ((Quotient.mk_eq_iff_out.mpr hx).symm.trans (Quotient.mk_eq_iff_out.mpr hy))
+
+/-- Precomposing with `σ` does not change a product over a `σ`-orbit. -/
+@[to_additive /-- Precomposing with `σ` does not change a sum over a `σ`-orbit. -/]
+theorem prod_filter_sameCycle_comp {M : Type*} [CommMonoid M] [Fintype α]
+    [DecidableRel σ.SameCycle] (x : α) (f : α → M) :
+    ∏ y with σ.SameCycle y x, f (σ y) = ∏ y with σ.SameCycle y x, f y :=
+  Finset.prod_equiv σ (fun _ => by simp [sameCycle_apply_left]) fun _ _ => rfl
+
 /-- Finitely many pairs `u i`, `v i`, each in a single orbit of `σ`, are joined along the
 orbits with weights `a i`: some `c : α → M` has difference `z ↦ c (σ⁻¹ z) - c z` equal to
 `∑ i, Pi.single (v i) (a i) - ∑ i, Pi.single (u i) (a i)`. -/
@@ -233,6 +260,28 @@ theorem IsCycleOn.permCongr {σ : Perm α} {β : Type*} (e : α ≃ β) {s : Set
   · rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩
     exact (sameCycle_permCongr σ e).2 (h.2 hx hy)
 
+/-- If a two-argument family `F` is invariant under applying `σ` to its first argument together
+with `f` to its second, then relabelling the first argument by `σ⁻¹` is the same as precomposing
+every member of the family with `f`. -/
+theorem apply_inv_eq_comp_of_apply_apply_eq {β γ : Sort*} (F : α → β → γ) (f : β → β)
+    (hF : ∀ a b, F (σ a) (f b) = F a b) : (fun a => F (σ⁻¹ a)) = fun a => F a ∘ f := by
+  funext a b
+  simpa using (hF (σ⁻¹ a) b).symm
+
+open _root_.Finset in
+/-- A permutation of a finite type sends as many points from outside `p` into `p` as from
+inside `p` out of it. -/
+theorem card_filter_not_and_apply_eq [Fintype α] (p : α → Prop) [DecidablePred p] :
+    #{x | ¬p x ∧ p (σ x)} = #{x | ¬p (σ x) ∧ p x} := by
+  have hσ : #{x | p (σ x)} = #{x | p x} := card_equiv σ fun x ↦ by simp
+  have h₁ := card_filter_add_card_filter_not (s := {x | p x}) fun x ↦ p (σ x)
+  have h₂ := card_filter_add_card_filter_not (s := {x | p (σ x)}) p
+  simp only [filter_filter] at h₁ h₂
+  have h₃ : #{x | p (σ x) ∧ p x} = #{x | p x ∧ p (σ x)} := by simp only [and_comm]
+  have h₄ : #{x | p x ∧ ¬p (σ x)} = #{x | ¬p (σ x) ∧ p x} := by simp only [and_comm]
+  have h₅ : #{x | p (σ x) ∧ ¬p x} = #{x | ¬p x ∧ p (σ x)} := by simp only [and_comm]
+  omega
+
 end Equiv.Perm
 
 namespace Equiv
@@ -249,6 +298,56 @@ theorem isCycleOn_mulRight_univ_iff {G : Type*} [Group G] {a : G} :
     exact ⟨k, by simpa using hk⟩
   · obtain ⟨k, hk⟩ := h (x⁻¹ * y)
     exact ⟨k, by simp [hk]⟩
+
+end Equiv
+
+namespace Equiv
+
+section CycleQuotient
+
+open Equiv.Perm
+
+/-- An equivalence conjugating two permutations transports their cycle quotients. -/
+def sameCycleQuotientCongr {α β : Type*} (e : α ≃ β)
+    {σ : Equiv.Perm α} {τ : Equiv.Perm β} (h : τ = e.permCongr σ) :
+    Quotient (SameCycle.setoid σ) ≃ Quotient (SameCycle.setoid τ) :=
+  Quotient.congr e fun _ _ => by
+    rw [h]
+    exact (sameCycle_permCongr σ e).symm
+
+/-- Cycle-quotient transport sends a class to the class of its transported representative. -/
+@[simp] theorem sameCycleQuotientCongr_mk {α β : Type*} (e : α ≃ β)
+    {σ : Equiv.Perm α} {τ : Equiv.Perm β} (h : τ = e.permCongr σ) (x : α) :
+    sameCycleQuotientCongr e h (Quotient.mk _ x) = Quotient.mk _ (e x) := (rfl)
+
+/-- Identity conjugacy induces identity transport of cycle quotients. -/
+@[simp] theorem Perm.sameCycleQuotientCongr_refl {α : Type*} (σ : Equiv.Perm α) :
+    sameCycleQuotientCongr (Equiv.refl α) (σ := σ) (by ext x; simp) =
+      Equiv.refl _ := by
+  ext q
+  induction q using Quotient.inductionOn with
+  | _ x => rfl
+
+/-- Inverting cycle-quotient transport reverses the conjugating equivalence. -/
+@[simp] theorem sameCycleQuotientCongr_symm {α β : Type*} (e : α ≃ β)
+    {σ : Equiv.Perm α} {τ : Equiv.Perm β} (h : τ = e.permCongr σ) :
+    (sameCycleQuotientCongr e h).symm =
+      sameCycleQuotientCongr e.symm (by ext x; simp [h]) := by
+  ext q
+  induction q using Quotient.inductionOn with
+  | _ x => rfl
+
+/-- Transport of cycle quotients respects composition of conjugating equivalences. -/
+theorem sameCycleQuotientCongr_trans {α β γ : Type*} (e : α ≃ β) (f : β ≃ γ)
+    {σ : Equiv.Perm α} {τ : Equiv.Perm β} {υ : Equiv.Perm γ}
+    (he : τ = e.permCongr σ) (hf : υ = f.permCongr τ) :
+    (sameCycleQuotientCongr e he).trans (sameCycleQuotientCongr f hf) =
+      sameCycleQuotientCongr (e.trans f) (by ext x; simp [hf, he]) := by
+  ext q
+  induction q using Quotient.inductionOn with
+  | _ x => rfl
+
+end CycleQuotient
 
 end Equiv
 
@@ -282,6 +381,25 @@ theorem invariantColouringEquiv_symm_apply (π : Perm α)
     (f : {f : α → σ // f ∘ π = f}) (a : α) :
     (invariantColouringEquiv π).symm f (Quotient.mk _ a) = f.1 a :=
   congrFun (congrArg Subtype.val ((invariantColouringEquiv π).apply_symm_apply f)) a
+
+/-- A function invariant under every permutation in a set `S` is invariant under the whole
+subgroup generated by `S`. -/
+theorem apply_eq_of_mem_closure {β : Type*} {S : Set (Perm α)} {f : α → β}
+    (hS : ∀ g ∈ S, ∀ a, f (g a) = f a) {g : Perm α} (hg : g ∈ Subgroup.closure S) (a : α) :
+    f (g a) = f a := by
+  induction hg using Subgroup.closure_induction generalizing a with
+  | mem g hg => exact hS g hg a
+  | one => rfl
+  | mul g g' _ _ ih ih' => rw [Perm.mul_apply, ih, ih']
+  | inv g _ ih => rw [← ih (g⁻¹ a), Perm.inv_def, apply_symm_apply]
+
+/-- A function invariant under every permutation in a set `S` takes a single value when the
+subgroup generated by `S` acts transitively. -/
+theorem apply_eq_apply_of_isPretransitive_closure {β : Type*} {S : Set (Perm α)} {f : α → β}
+    (hS : ∀ g ∈ S, ∀ a, f (g a) = f a)
+    (hconn : MulAction.IsPretransitive (Subgroup.closure S) α) (a b : α) : f a = f b := by
+  obtain ⟨g, rfl⟩ := hconn.exists_smul_eq a b
+  exact (apply_eq_of_mem_closure hS g.2 a).symm
 
 /-- Precomposing a function with a permutation preserves the cardinality of each fiber. -/
 theorem card_filter_comp_perm {ι : Type*} [Fintype α] [DecidableEq ι]
@@ -342,6 +460,14 @@ theorem sameCycle_toPerm_iff {α : Type*} (f : α → α) (hf : Function.Involut
           f a = f (f b) := congrArg f h
           _ = b := hf b
       simpa using this
+
+/-- Two points of an involutive permutation lie in one cycle exactly when they coincide or
+one is the image of the other. -/
+theorem _root_.Function.Involutive.sameCycle_iff {α : Type*} {f : Equiv.Perm α}
+    (hf : Function.Involutive f) (x y : α) :
+    f.SameCycle x y ↔ x = y ∨ x = f y := by
+  have he : Function.Involutive.toPerm f hf = f := Equiv.ext fun _ ↦ rfl
+  exact he ▸ sameCycle_toPerm_iff _ hf x y
 
 variable {α : Type*} [Fintype α] [DecidableEq α]
 
@@ -564,3 +690,46 @@ theorem sum_sign_smul_comp_eq_sum_insertNth_removeNth {α M : Type*} [AddCommGro
   simp
 
 end TauCeti
+
+/-! ### Removing a transposition from an involution -/
+
+namespace Function.Involutive
+
+open Equiv (Perm)
+
+variable {α : Type*} [DecidableEq α] {σ : Perm α}
+
+/-- Removing the pair `{a, σ a}` from an involution `σ` fixes its two points and keeps every other
+pair: `Equiv.swap a (σ a) * σ` agrees with `σ` away from `a` and `σ a`. -/
+theorem swap_mul_apply_eq_self_or (hσ : Function.Involutive σ) (a x : α) :
+    ((x = a ∨ x = σ a) ∧ (Equiv.swap a (σ a) * σ) x = x) ∨
+      (x ≠ a ∧ x ≠ σ a ∧ (Equiv.swap a (σ a) * σ) x = σ x) := by
+  by_cases hxa : x = a
+  · subst hxa
+    simp
+  by_cases hxc : x = σ a
+  · subst hxc
+    simp [hσ a]
+  refine Or.inr ⟨hxa, hxc, Equiv.swap_apply_of_ne_of_ne ?_ ?_⟩
+  · exact fun h => hxc (by rw [← h, hσ x])
+  · exact fun h => hxa (σ.injective h)
+
+/-- Removing a pair `{a, σ a}` from an involution `σ` leaves an involution. -/
+theorem swap_mul (hσ : Function.Involutive σ) (a : α) :
+    Function.Involutive (Equiv.swap a (σ a) * σ) := by
+  intro x
+  rcases hσ.swap_mul_apply_eq_self_or a x with ⟨-, hx⟩ | ⟨hxa, hxc, hx⟩
+  · rw [hx, hx]
+  rcases hσ.swap_mul_apply_eq_self_or a (σ x) with ⟨hy, -⟩ | ⟨-, -, hy⟩
+  · rcases hy with hy | hy
+    · exact (hxc (by rw [← hy, hσ x])).elim
+    · exact (hxa (σ.injective hy)).elim
+  · rw [hx, hy, hσ x]
+
+/-- Putting a removed pair back: `σ = (Equiv.swap a (σ a) * σ) * Equiv.swap a (σ a)` for an
+involution `σ`. -/
+theorem swap_mul_mul_swap (hσ : Function.Involutive σ) (a : α) :
+    Equiv.swap a (σ a) * σ * Equiv.swap a (σ a) = σ := by
+  rw [mul_assoc, Equiv.mul_swap_eq_swap_mul, hσ a, Equiv.swap_comm, Equiv.swap_mul_self_mul]
+
+end Function.Involutive

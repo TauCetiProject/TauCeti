@@ -32,9 +32,8 @@ name: Nightly verification
 #
 # The cache-restored build runs under bwrap, because it imports the very artifacts it is meant to
 # be judging and importing Lean code executes its initializers. Only `reference` is mounted, with
-# `reference/.lake` writable; the clean build, its manifest and the comparator are outside the mount
-# set entirely. Both manifests are taken outside the sandbox, and the clean one is taken before the
-# reference workspace runs anything at all.
+# `reference/.lake` writable. The clean build runs in a separate job; only its digest manifest
+# crosses jobs. Both manifests and the comparator remain outside the sandbox mount set.
 
 on:
   schedule:
@@ -68,25 +67,23 @@ jobs:
       actions: read
       contents: read
 
-  # No secrets reach this job. It builds and executes repository code, including a build restored
-  # from the public cache, so anything it can read is code-reachable. Reporting lives in a separate
-  # job for exactly that reason.
+  # The hard signal runs independently of cache verification, without secrets.
   verify:
     needs: pick-runner
     if: ${{ !cancelled() && github.repository == 'TauCetiProject/TauCeti' }}
     # Use only this attempt's capacity decision; a missing picker answer queues
     # on GitHub and cannot bypass the shared Namespace build cap.
     runs-on: ${{ fromJSON(needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && needs.pick-runner.outputs.runner || '"ubuntu-24.04"') }}
-    # The from-scratch build alone ran about 49 minutes as ci.yml's Build step before #3715, and the
-    # cache-restored build adds roughly 15. Generous headroom, but bounded; a run that hits this
-    # still reports, because the report job keys off the job result.
-    timeout-minutes: 240
+    # The growing library has exceeded four hours on GitHub-hosted runners. Six hours is
+    # their platform maximum, not a scaling solution; the source build still needs measurement
+    # and eventual partitioning. The reference build gets its own job and timeout below.
+    timeout-minutes: 360
     outputs:
       sha: ${{ steps.rev.outputs.sha }}
       build: ${{ steps.fresh_build.outcome }}
       audit: ${{ steps.fresh_audit.outcome }}
-      compare: ${{ steps.compare.outputs.status }}
-      detail: ${{ steps.compare.outputs.detail }}
+      manifest: ${{ steps.rev.outputs.manifest }}
+      manifest_upload: ${{ steps.fresh_manifest.outcome }}
     steps:
       # We expect the 262k default to be relevant at around 10m LOC, and this raised limit to be relevant at around 40m LOC.
       - name: Raise vm.max_map_count
@@ -104,12 +101,9 @@ jobs:
         with:
           ref: main
           path: fresh
-          # This job executes repository code and a cache-restored build; leaving the token in
-          # the workspace git config would put it within their reach.
+          # This job executes repository code; keep the token out of its git config.
           persist-credentials: false
-          # Enough history for `lake cache get` to backtrack to a published ancestor in the
-          # reference workspace below.
-          fetch-depth: 100
+          fetch-depth: 1
 
       - name: Prepare pinned shared tools
         uses: TauCetiProject/TauCetiTools/.github/actions/setup@472566310e766bbc7933579a1f7743f41960046e
@@ -124,14 +118,140 @@ jobs:
           set -euo pipefail
           sha=$(git -C fresh rev-parse HEAD)
           echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "manifest=nightly-clean-manifest-${{ github.run_attempt }}" >> "$GITHUB_OUTPUT"
           echo "verifying $sha"
+
+      # Both jobs use the same verified installer. scripts/test_elan_pin.py checks these copies.
+      - name: Install elan (pinned + checksum)
+        env:
+          ELAN_SHA256: df0b2b3a439961ffcbb3985214365ffe40f49bc871df04dff268c7d8e21ca8b2
+          ELAN_VER: v4.2.3
+        run: |
+          curl -sSL -H "Accept: application/octet-stream" \
+            "https://github.com/leanprover/elan/releases/download/${ELAN_VER}/elan-x86_64-unknown-linux-gnu.tar.gz" -o elan.tar.gz
+          echo "${ELAN_SHA256}  elan.tar.gz" | sha256sum -c -
+          tar -xzf elan.tar.gz elan-init
+          ./elan-init -y --default-toolchain none
+          rm -f elan.tar.gz elan-init
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+
+      # This contains only Mathlib dependencies, never TauCeti's own compiled outputs.
+      - name: Restore Mathlib's compressed download cache
+        uses: ./fresh/.github/actions/restore-mathlib-ltars
+        with:
+          project-dir: fresh
+
+      - name: Fetch Mathlib oleans for the clean build
+        run: |
+          set -euo pipefail
+          cd fresh
+          lake exe cache get || lake exe cache get!
+
+      # --- The hard signal: everything elaborated from source -------------------------------
+      # LAKE_RESTORE_ARTIFACTS=false and a workspace-local LAKE_CACHE_DIR that is never fetched into
+      # are what make this from scratch. LAKE_ARTIFACT_CACHE stays true only so the build packs its
+      # own outputs locally for the audits that follow; nothing is ever read from the network.
+      - name: Build main from source, with no cached artifacts
+        id: fresh_build
+        env:
+          LAKE_ARTIFACT_CACHE: "true"
+          LAKE_RESTORE_ARTIFACTS: "false"
+          LAKE_NO_CACHE: "true"
+          LAKE_CACHE_DIR: ${{ github.workspace }}/fresh/.lake/cache
+        run: ( cd fresh && lake build )
+
+      # Snapshot before the audits add their own artifacts. Transfer only the digest manifest;
+      # the cache-verification job must never import outputs from the clean build.
+      - name: Record what the clean build produced
+        run: python3 fresh/scripts/compare-build-outputs.py manifest fresh/.lake/build "$RUNNER_TEMP/clean-manifest.txt"
+
+      - name: Audit and lint the from-source build
+        id: fresh_audit
+        env:
+          LAKE_ARTIFACT_CACHE: "true"
+          LAKE_RESTORE_ARTIFACTS: "false"
+          LAKE_NO_CACHE: "true"
+          LAKE_CACHE_DIR: ${{ github.workspace }}/fresh/.lake/cache
+        run: |
+          set -euo pipefail
+          cd fresh
+          lake exe axioms
+          lake exe module-system
+          # The whole-library #lint belongs to lint-full.yml, which turns violations into a repair
+          # PR; here an empty scope keeps the docstring scan and the nolint ratchet without making
+          # this run red for violations that PR is already repairing.
+          : > "$RUNNER_TEMP/no-lint-modules.txt"
+          LINT_ONLY_MODULES="$RUNNER_TEMP/no-lint-modules.txt" bash scripts/lint-env.sh
+          bash scripts/lint-style.sh
+
+      # Evidence transfer must not prevent audits or make their outcome depend on the artifact
+      # service. A failed audit still permits the advisory comparison of the completed builds.
+      - name: Retain the clean manifest for cache verification
+        id: fresh_manifest
+        if: ${{ !cancelled() && steps.fresh_build.outcome == 'success' }}
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.rev.outputs.manifest }}
+          path: ${{ runner.temp }}/clean-manifest.txt
+          if-no-files-found: error
+          retention-days: 7
+
+  # Select capacity again when the expensive clean build has finished. Reusing its earlier
+  # placement decision would ignore other builds that started in the meantime.
+  pick-reference-runner:
+    needs: verify
+    if: ${{ !cancelled() && needs.verify.outputs.build == 'success'
+            && needs.verify.outputs.manifest_upload == 'success' && github.repository == 'TauCetiProject/TauCeti' }}
+    uses: ./.github/workflows/pick-runner.yml
+    permissions:
+      actions: read
+      contents: read
+
+  # No secrets reach this job. The public cache's artifacts run only inside the sandbox;
+  # neither the clean build nor its compiled outputs are present on this runner.
+  reference:
+    needs: [verify, pick-reference-runner]
+    if: ${{ !cancelled() && needs.verify.outputs.build == 'success'
+            && needs.verify.outputs.manifest_upload == 'success' && github.repository == 'TauCetiProject/TauCeti' }}
+    runs-on: ${{ fromJSON(needs.pick-reference-runner.outputs.attempt == format('{0}', github.run_attempt) && needs.pick-reference-runner.outputs.runner || '"ubuntu-24.04"') }}
+    timeout-minutes: 240
+    outputs:
+      compare: ${{ steps.compare.outputs.status }}
+      detail: ${{ steps.compare.outputs.detail }}
+    steps:
+      # We expect the 262k default to be relevant at around 10m LOC, and this raised limit to be relevant at around 40m LOC.
+      - name: Raise vm.max_map_count
+        run: |
+          target=1048576
+          if [ "$(cat /proc/sys/vm/max_map_count)" -lt "$target" ]; then
+            sudo -n sysctl -w vm.max_map_count="$target" >/dev/null 2>&1 \
+              || sysctl -w vm.max_map_count="$target" >/dev/null 2>&1 || true
+          fi
+          now="$(cat /proc/sys/vm/max_map_count)"
+          echo "vm.max_map_count=$now"
+          [ "$now" -ge "$target" ] || echo "::warning::vm.max_map_count is $now, below $target"
+      # Keep the materialized helpers and comparator outside the reference sandbox.
+      - name: Check out helpers for the verified commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.verify.outputs.sha }}
+          path: fresh
+          persist-credentials: false
+
+      - name: Prepare pinned shared tools
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@472566310e766bbc7933579a1f7743f41960046e
+        with:
+          tools-repository: TauCetiProject/TauCetiTools
+          tools-ref: 472566310e766bbc7933579a1f7743f41960046e
+          project-directory: fresh
 
       # Pin the reference workspace to the SAME commit, by SHA rather than by branch: main advances
       # several times an hour, and comparing two different trees would report everything as divergent.
       - name: Check out the same commit for the reference build
         uses: actions/checkout@v4
         with:
-          ref: ${{ steps.rev.outputs.sha }}
+          ref: ${{ needs.verify.outputs.sha }}
           path: reference
           persist-credentials: false
           fetch-depth: 100
@@ -329,9 +449,6 @@ jobs:
             exit 1
           fi
 
-      # Pinned by SHA-256 like bwrap above. Both sides of this job's comparison install elan
-      # the same way, so an installer substituted under the workflow is exactly the failure the
-      # from-source rebuild could not detect. scripts/test_elan_pin.py keeps the copies honest.
       - name: Install elan (pinned + checksum)
         env:
           ELAN_SHA256: df0b2b3a439961ffcbb3985214365ffe40f49bc871df04dff268c7d8e21ca8b2
@@ -345,58 +462,16 @@ jobs:
           rm -f elan.tar.gz elan-init
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
 
-      # One restore serves both workspaces: same commit, so same manifest and toolchain, and the
-      # action exports MATHLIB_CACHE_DIR for every later step. This holds Mathlib's artifacts only;
-      # TauCeti's own oleans are never in it, so it cannot pre-populate the from-source build.
       - name: Restore Mathlib's compressed download cache
         uses: ./fresh/.github/actions/restore-mathlib-ltars
         with:
           project-dir: fresh
 
-      - name: Fetch Mathlib oleans for both workspaces
+      - name: Fetch Mathlib oleans for the reference build
         run: |
           set -euo pipefail
-          for dir in fresh reference; do
-            ( cd "$dir" && { lake exe cache get || lake exe cache get!; } )
-          done
-
-      # --- The hard signal: everything elaborated from source -------------------------------
-      # LAKE_RESTORE_ARTIFACTS=false and a workspace-local LAKE_CACHE_DIR that is never fetched into
-      # are what make this from scratch. LAKE_ARTIFACT_CACHE stays true only so the build packs its
-      # own outputs locally for the audits that follow; nothing is ever read from the network.
-      - name: Build main from source, with no cached artifacts
-        id: fresh_build
-        env:
-          LAKE_ARTIFACT_CACHE: "true"
-          LAKE_RESTORE_ARTIFACTS: "false"
-          LAKE_NO_CACHE: "true"
-          LAKE_CACHE_DIR: ${{ github.workspace }}/fresh/.lake/cache
-        run: ( cd fresh && lake build )
-
-      # Immediately after the clean build and before anything else runs here: the audits below
-      # build `scripts/Axioms.olean` and friends in this workspace only, which would read as
-      # divergence, and the cache-restored build later on shares this runner.
-      - name: Record what the clean build produced
-        run: python3 fresh/scripts/compare-build-outputs.py manifest fresh/.lake/build "$RUNNER_TEMP/clean-manifest.txt"
-
-      - name: Audit and lint the from-source build
-        id: fresh_audit
-        env:
-          LAKE_ARTIFACT_CACHE: "true"
-          LAKE_RESTORE_ARTIFACTS: "false"
-          LAKE_NO_CACHE: "true"
-          LAKE_CACHE_DIR: ${{ github.workspace }}/fresh/.lake/cache
-        run: |
-          set -euo pipefail
-          cd fresh
-          lake exe axioms
-          lake exe module-system
-          # The whole-library #lint belongs to lint-full.yml, which turns violations into a repair
-          # PR; here an empty scope keeps the docstring scan and the nolint ratchet without making
-          # this run red for violations that PR is already repairing.
-          : > "$RUNNER_TEMP/no-lint-modules.txt"
-          LINT_ONLY_MODULES="$RUNNER_TEMP/no-lint-modules.txt" bash scripts/lint-env.sh
-          bash scripts/lint-style.sh
+          cd reference
+          lake exe cache get || lake exe cache get!
 
       # --- The advisory signal: does the cache agree with a clean compile? -------------------
       - name: Configure the Lake artifact cache for the reference build
@@ -424,7 +499,9 @@ jobs:
         env:
           PUBLIC_ARTIFACT_ENDPOINT: ${{ vars.LAKE_CACHE_ARTIFACT_ENDPOINT_PUBLIC }}
           PUBLIC_REVISION_ENDPOINT: ${{ vars.LAKE_CACHE_REVISION_ENDPOINT_PUBLIC }}
-        run: bash reference/scripts/lake-cache-get.sh reference
+        # The reference checkout contains a uvx wrapper. Use the helper materialized by
+        # pinned Tools setup above, which does not require uvx on the runner.
+        run: bash fresh/scripts/lake-cache-get.sh reference
 
       # The step above falls back to LAKE_ARTIFACT_CACHE=false when it cannot get a whole cache,
       # which would leave the reference workspace building from source. Comparing that against the
@@ -457,8 +534,8 @@ jobs:
 
       # Under bwrap, because this build IMPORTS the artifacts it is meant to be judging, and
       # importing Lean code executes its initializers (see scripts/lint-env.sh). Unsandboxed it
-      # could reach the clean build's outputs, the manifest recording them, or the comparator, and
-      # a poisoned artifact could arrange to be found identical to a clean one. The sandbox mounts
+      # could reach the comparator or the manifest downloaded below, and a poisoned artifact could
+      # arrange to be found identical to a clean one. The sandbox mounts
       # only `reference` read-only with `reference/.lake` writable: `fresh` and $RUNNER_TEMP are
       # not in the mount set at all, so the evidence is out of reach. Offline too, like pr-build's
       # sandbox, so nothing here can fetch more than the restore step already placed on disk.
@@ -506,6 +583,12 @@ jobs:
         if: ${{ steps.reference_build.outcome == 'success' }}
         run: python3 fresh/scripts/compare-build-outputs.py manifest reference/.lake/build "$RUNNER_TEMP/cached-manifest.txt"
 
+      - name: Download the clean manifest from the source-build job
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.verify.outputs.manifest }}
+          path: ${{ runner.temp }}
+
       # Always runs, and every path that could not actually compare a cache-restored build against a
       # clean one reports `inconclusive`, which the report job treats as alert-worthy.
       - name: Compare the two builds
@@ -535,14 +618,15 @@ jobs:
   # written. It receives only the structured outputs above, and the Zulip client here is a dozen
   # lines of standard library rather than an import from the tree being verified.
   report:
-    needs: verify
+    needs: [verify, reference]
     # `always()` so a timed-out or cancelled verify still reports; without it the very failure this
     # workflow exists to catch could pass in silence. Parenthesised because `&&` binds tighter
     # than `||`.
     # The repository guard matters here too: on a fork `verify` is skipped, and without it this
     # job would fire on every schedule and fail for want of a Zulip secret it should not have.
     if: ${{ always() && github.repository == 'TauCetiProject/TauCeti'
-            && (needs.verify.result != 'success' || needs.verify.outputs.compare != 'agree') }}
+            && (needs.verify.result != 'success' || needs.reference.result != 'success'
+                || needs.reference.outputs.compare != 'agree') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
@@ -556,11 +640,12 @@ jobs:
           # edits messages it recognises, so an unrelated post would sit inside its bookkeeping.
           ZULIP_TOPIC: Nightly verification
           RESULT: ${{ needs.verify.result }}
+          REFERENCE_RESULT: ${{ needs.reference.result }}
           SHA: ${{ needs.verify.outputs.sha }}
           BUILD: ${{ needs.verify.outputs.build }}
           AUDIT: ${{ needs.verify.outputs.audit }}
-          COMPARE: ${{ needs.verify.outputs.compare }}
-          DETAIL: ${{ needs.verify.outputs.detail }}
+          COMPARE: ${{ needs.reference.outputs.compare }}
+          DETAIL: ${{ needs.reference.outputs.detail }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           set -euo pipefail
@@ -580,15 +665,20 @@ jobs:
           # Deliberately does not claim the cached per-push CI passed for this SHA: main's CI
           # coalesces intermediate commits, so this workflow's commit may never have had its own run.
           if os.environ.get("RESULT") != "success":
-              if os.environ.get("BUILD") not in ("success", "", None):
+              if os.environ.get("BUILD") == "failure":
                   lines.append("The from-source build FAILED with the artifact cache disabled. "
                                "Treat the published Lake cache as suspect until this is explained.")
-              elif os.environ.get("AUDIT") not in ("success", "", None):
+              elif os.environ.get("AUDIT") == "failure":
                   lines.append("main built from source, but an audit or lint FAILED there. "
                                "Treat the published Lake cache as suspect until this is explained.")
               else:
-                  lines.append(f"The verification job did not complete "
-                               f"(result: `{os.environ.get('RESULT')}`).")
+                  lines.append(f"The from-source verification did not complete "
+                               f"(result: `{os.environ.get('RESULT')}`, "
+                               f"build: `{os.environ.get('BUILD') or 'not run'}`). "
+                               "No complete independent verification was established for this commit.")
+          elif os.environ.get("REFERENCE_RESULT") != "success":
+              lines.append(f"The from-source build and audits passed, but cache verification "
+                           f"did not complete (result: `{os.environ.get('REFERENCE_RESULT')}`).")
 
           compare = os.environ.get("COMPARE") or ""
           detail = os.environ.get("DETAIL") or ""

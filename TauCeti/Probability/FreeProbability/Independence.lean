@@ -169,6 +169,24 @@ theorem map (h : IsFreelyIndependent φ B) (f : A →ₐ[R] A') {φ' : A' →ₗ
     rw [← hφ, hgf]
     exact hc x hx
 
+/-- Pulling back a free family and its functional along an algebra homomorphism preserves
+freeness. The homomorphism need not be injective: letters in its kernel have zero expectation. -/
+theorem comap {φ' : A' →ₗ[R] R} {B' : ι → Subalgebra R A'}
+    (h : IsFreelyIndependent φ' B') (f : A →ₐ[R] A') :
+    IsFreelyIndependent (φ'.comp f.toLinearMap) fun i => (B' i).comap f := by
+  intro w hne halt hw hc
+  have hz := h (w.map (Prod.map id f)) (by simpa using hne)
+    (by simpa [List.map_map, Function.comp_def] using halt)
+    (by
+      simp only [List.mem_map]
+      rintro _ ⟨x, hx, rfl⟩
+      exact hw x hx)
+    (by
+      simp only [List.mem_map]
+      rintro _ ⟨x, hx, rfl⟩
+      exact hc x hx)
+  simpa [List.map_map, Function.comp_def, map_list_prod] using hz
+
 end IsFreelyIndependent
 
 /-- For a normalised functional, members of a family equal to the scalars do not affect freeness:

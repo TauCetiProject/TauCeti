@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Octonion.Basic
 
+import Mathlib.Tactic.LinearCombination
 import TauCeti.Data.Fin.Basic
 
 /-!
@@ -34,9 +35,11 @@ Mathlib's. The diagonal of the product is
 `½ (x (i + 1) * y (i + 2) + y (i + 1) * x (i + 2))`. That expression *is* the definition below.
 
 The product is commutative, `R`-bilinear, and unital with the identity matrix as its unit, and the
-three diagonal idempotents form a complete orthogonal frame. The **Jordan identity**
-`(A ∘ B) ∘ A² = A ∘ (B ∘ A²)` — that is, `IsCommJordan (AlbertAlgebra R)` — is **not proved here**;
-it is what makes `H₃(𝕆)` an exceptional Jordan algebra rather than merely a commutative one.
+three diagonal idempotents form a complete orthogonal frame. The trace form `T(A ∘ B)` is
+associative. The **Jordan identity** `(A ∘ B) ∘ A² = A ∘ (B ∘ A²)`, which makes `H₃(𝕆)` an
+exceptional Jordan algebra rather than merely a commutative one, is proved in
+`TauCeti/Algebra/AlbertAlgebra/Jordan.lean` from the cubic equation of
+`TauCeti/Algebra/AlbertAlgebra/Determinant.lean`.
 
 The coordinate isomorphism works for any semiring acting on coefficients that form an additive
 commutative monoid. The trace, its kernel and the decomposition of a Hermitian matrix into
@@ -64,6 +67,10 @@ ring for the trace-zero subspace.
 * the `NonAssocCommRing` instance: the product is `R`-bilinear and commutative, and the identity
   matrix is a two-sided unit. It is `NonAssocCommRing` and not `CommRing` because the product is
   not associative.
+* `TauCeti.AlbertAlgebra.mul_self_diag`, `TauCeti.AlbertAlgebra.mul_self_offDiag` and
+  `TauCeti.AlbertAlgebra.trace_mul_self`: the entries and the trace of the Jordan square.
+* `TauCeti.AlbertAlgebra.trace_mul` and `TauCeti.AlbertAlgebra.trace_mul_assoc`: the trace form
+  `T(A ∘ B)` in coordinates, and its associativity `T((A ∘ B) ∘ C) = T(A ∘ (B ∘ C))`.
 * `TauCeti.AlbertAlgebra.diagIdempotent_mul_diagIdempotent` and
   `TauCeti.AlbertAlgebra.sum_diagIdempotent`: the diagonal idempotents are orthogonal and sum
   to `1`.
@@ -261,6 +268,21 @@ instance [Invertible (2 : R)] : Mul (AlbertAlgebra R) :=
               + B.offDiag (i + 1) * A.offDiag (i + 2))) :=
   (rfl)
 
+/-- **The diagonal of the Jordan square**: `(A ∘ A)ᵢᵢ = aᵢ² + N(xᵢ₊₁) + N(xᵢ₊₂)`. -/
+theorem mul_self_diag [Invertible (2 : R)] (A : AlbertAlgebra R) (i : Fin 3) :
+    (A * A).diag i = A.diag i ^ 2 + Octonion.norm (A.offDiag (i + 1))
+      + Octonion.norm (A.offDiag (i + 2)) := by
+  rw [mul_diag, sq, QuadraticMap.associated_eq_self_apply, QuadraticMap.associated_eq_self_apply,
+    Octonion.normQuadraticForm_apply, Octonion.normQuadraticForm_apply]
+
+/-- **The off-diagonal entries of the Jordan square**:
+`(A ∘ A)ᵢ = (aᵢ₊₁ + aᵢ₊₂) xᵢ + conj (xᵢ₊₁ xᵢ₊₂)`. -/
+theorem mul_self_offDiag [Invertible (2 : R)] (A : AlbertAlgebra R) (i : Fin 3) :
+    (A * A).offDiag i = (A.diag (i + 1) + A.diag (i + 2)) • A.offDiag i
+      + Octonion.conj (A.offDiag (i + 1) * A.offDiag (i + 2)) := by
+  rw [mul_offDiag, smul_add, invOf_two_smul_add_invOf_two_smul, smul_add,
+    invOf_two_smul_add_invOf_two_smul]
+
 variable [Invertible (2 : R)]
 
 instance : NonAssocCommRing (AlbertAlgebra R) where
@@ -364,6 +386,53 @@ private def traceZeroLinearEquivProd (R : Type*) [Ring R] :
   right_inv _ := rfl
 
 end Trace
+
+/-- **The trace of the Jordan square** is the sum of the squares of the diagonal entries and twice
+the norms of the octonion entries. -/
+theorem trace_mul_self [CommRing R] [Invertible (2 : R)] (A : AlbertAlgebra R) :
+    trace (A * A) = ∑ i, A.diag i ^ 2 + 2 * ∑ i, Octonion.norm (A.offDiag i) := by
+  simp only [trace_apply, mul_self_diag, Fin.sum_univ_three, Fin.reduceAdd]
+  ring
+
+section TraceForm
+
+variable [CommRing R] [Invertible (2 : R)]
+
+/-- **The trace form** `T(A ∘ B)` is the sum of the products of the diagonal entries and of the
+polar forms of the norm on the octonion entries. -/
+theorem trace_mul (A B : AlbertAlgebra R) :
+    trace (A * B) = ∑ i, A.diag i * B.diag i
+      + ∑ i, QuadraticMap.polar (Octonion.normQuadraticForm R) (A.offDiag i) (B.offDiag i) := by
+  simp only [trace_apply, mul_diag, Fin.sum_univ_three, Fin.reduceAdd,
+    Octonion.associated_normQuadraticForm_apply, Octonion.trace_mul_conj]
+  -- Each polar form occurs twice on the diagonal, each time halved.
+  linear_combination
+    (QuadraticMap.polar (Octonion.normQuadraticForm R) (A.offDiag 0) (B.offDiag 0)
+      + QuadraticMap.polar (Octonion.normQuadraticForm R) (A.offDiag 1) (B.offDiag 1)
+      + QuadraticMap.polar (Octonion.normQuadraticForm R) (A.offDiag 2) (B.offDiag 2)) *
+      (invOf_two_add_invOf_two : (⅟2 : R) + ⅟2 = 1)
+
+/-- **The trace form is associative**: `T((A ∘ B) ∘ C) = T(A ∘ (B ∘ C))`. Together with the
+commutativity of the product, `T((A ∘ B) ∘ C)` is a symmetric trilinear form in `A`, `B`, `C`. -/
+theorem trace_mul_assoc (A B C : AlbertAlgebra R) :
+    trace (A * B * C) = trace (A * (B * C)) := by
+  -- In coordinates both sides are the same symmetric expression: the diagonal and polar-form
+  -- terms agree as they stand, and the octonion triple products agree once each is rotated, by
+  -- the cyclic invariance of the octonion trace, to begin with an entry in slot `0`.
+  rw [trace_mul, trace_mul]
+  simp only [mul_diag, mul_offDiag, Fin.sum_univ_three, Fin.reduceAdd,
+    Octonion.associated_normQuadraticForm_apply, Octonion.trace_mul_conj, map_add, map_smul,
+    QuadraticMap.polar_add_left, QuadraticMap.polar_add_right, QuadraticMap.polar_smul_left,
+    QuadraticMap.polar_smul_right, smul_eq_mul, Octonion.polar_normQuadraticForm_conj_left,
+    Octonion.polar_normQuadraticForm_conj_right, mul_add, add_mul, ← Octonion.trace_mul_assoc,
+    Octonion.trace_mul_cycle _ _ (A.offDiag 0), Octonion.trace_mul_cycle _ _ (B.offDiag 0),
+    Octonion.trace_mul_cycle _ _ (C.offDiag 0),
+    fun x y => (Octonion.trace_mul_cycle (A.offDiag 0) y x).symm,
+    fun x y => (Octonion.trace_mul_cycle (B.offDiag 0) y x).symm,
+    fun x y => (Octonion.trace_mul_cycle (C.offDiag 0) y x).symm]
+  ring
+
+end TraceForm
 
 /-- **The trace-zero subspace of the split Albert algebra is `26`-dimensional**: a vanishing trace
 pins the last diagonal entry to the negative of the sum of the other two. -/

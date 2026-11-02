@@ -22,7 +22,8 @@ composite of the induced group homs, and the identity to the identity, which is 
 congruence on a whole matrix be reduced along a further ring map in one step rather than entry
 by entry. Basic coordinate descriptions for `SL₂` and its image under `mapGL` are also
 recorded here for downstream matrix computations, together with what the determinant says about
-a matrix with a prescribed bottom row `(N, p)`: it is the Bézout relation `m p - n N = 1`.
+a matrix with a prescribed bottom row `(c, d)`: it is the Bézout relation `a d - b c = 1` for
+the top row `(a, b)`.
 
 `mem_center_iff_eq_one_or_eq_neg_one` pins down `±I` itself, which is what the base-change
 statement moves around:
@@ -31,6 +32,10 @@ scalar form Mathlib gives having no other square roots of `1` to offer.
 
 The general positive-size center is identified with the corresponding roots-of-unity group by
 specializing Mathlib's finite-index-type equivalence to `Fin n`.
+
+For any finite index type `ι`, the kernel of reduction `SL(ι, ℤ) → SL(ι, ℤ/Nℤ)`, the principal
+congruence subgroup of level `N`, is described entrywise: it consists of the matrices congruent
+to the identity modulo `N`.
 
 The surjectivity is ported from the AINTLIB `LeanModularForms` project
 (`LeanModularForms/HeckeRIngs/GLn/SL2Surjection.lean`, Chris Birkbeck). It realizes every unit of
@@ -48,19 +53,30 @@ proof is independent of the source's.
 * `Matrix.SpecialLinearGroup.map_intCast_zmod_surjective`: strong approximation for `SL₂`,
   with `Matrix.SpecialLinearGroup.map_intCast_zmod_prod_surjective` its two-modulus form:
   reductions prescribed at coprime `d` and `d'` are realized by one integral matrix.
+* `Matrix.SpecialLinearGroup.mem_ker_map_intCast_zmod_iff`: an element of `SL(ι, ℤ)` lies in
+  the kernel of reduction modulo `N` iff it is congruent to the identity modulo `N` entrywise.
 * `Matrix.SpecialLinearGroup.map_comp` and `Matrix.SpecialLinearGroup.map_id`: the two functor
   laws for base change, which support whole-matrix reduction arguments such as the level
   antitonicity of the principal congruence subgroups.
+* `Matrix.SpecialLinearGroup.map_injective` and `Matrix.SpecialLinearGroup.mem_range_map_iff`:
+  along an injective ring hom, base change is injective and its range is described entrywise.
 * `Matrix.SpecialLinearGroup.mapGL_neg_one`: `mapGL S (-1) = -1`.
 * `Matrix.SpecialLinearGroup.vecMul_eq_iff_eq_vecMul_inv`: right multiplication of row vectors
   by `g` is inverted by `g⁻¹`.
+* `Matrix.SpecialLinearGroup.sum_comp_vecMul`: over a finite ring, this right multiplication
+  leaves sums over all row vectors unchanged.
+* `Matrix.SpecialLinearGroup.intCast_comp_vecCons_eq_zsmul_vecMul_inv`: the bottom row of
+  `γ⁻¹` for `γ = [a, b; c, d] ∈ SL₂(ℤ)` is `(-c, a)`, in any commutative ring; and
+  `Matrix.SpecialLinearGroup.neg_vecMul_inv`: replacing `γ` by `-γ` negates `v ᵥ* γ⁻¹`.
 * `Matrix.SpecialLinearGroup` is countable when its coefficient ring is.
 * `Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one`: the determinant-one identity in
-  coordinates, with `intCast_fin_two_mul_sub_mul_eq_one` its cast from `SL₂(ℤ)` to any ring.
+  coordinates, with `intCast_fin_two_mul_sub_mul_eq_one` its cast from `SL₂(ℤ)` to any
+  nonassociative ring.
 * `Matrix.SpecialLinearGroup.coe_mapGL_fin_two`: the entrywise matrix of `mapGL S` on `SL₂(R)`,
   with `coe_mapGL_int_rat_fin_two` its `ℤ`-to-`ℚ` specialization.
-* `Matrix.SpecialLinearGroup.mul_sub_mul_eq_one_of_lowerRow`: a bottom row `(N, p)` gives the
-  Bézout relation `m p - n N = 1`.
+* `Matrix.SpecialLinearGroup.mul_sub_mul_eq_one_of_lowerRow`: a bottom row `(c, d)` of an
+  `SL₂(R)` matrix over a commutative ring gives the Bézout relation `a d - b c = 1` for its top
+  row `(a, b)`.
 * `Matrix.SpecialLinearGroup.centerMulEquivRootsOfUnityFin`: the center of `SL(Fin n, A)` is
   `rootsOfUnity n A` when `0 < n`.
 * `Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one`: the centre of `SL₂` is
@@ -121,6 +137,31 @@ theorem toGL_map {R S : Type*} [CommRing R] [CommRing S] {n : Type*}
   simp only [coe_GL_coe_matrix, map_apply_coe, GeneralLinearGroup.map_apply,
     RingHom.mapMatrix_apply, Matrix.map_apply]
 
+/-- Base change of special linear groups along an injective ring hom is injective. -/
+theorem map_injective {R S : Type*} [CommRing R] [CommRing S] {n : Type*} [Fintype n]
+    [DecidableEq n] {f : R →+* S} (hf : Function.Injective f) :
+    Function.Injective (map (n := n) f) :=
+  fun _ _ h ↦ Subtype.ext (Matrix.map_injective hf (congrArg Subtype.val h))
+
+/-- Along an injective ring hom, a special linear matrix comes by base change exactly when each of
+its entries lies in the range of the ring hom. Injectivity lifts the determinant-one condition.
+
+This is not a `simp` lemma: `MonoidHom.mem_range` already unfolds the left-hand side into an
+existential, so it is not in `simp`-normal form. -/
+theorem mem_range_map_iff {R S : Type*} [CommRing R] [CommRing S] {n : Type*} [Fintype n]
+    [DecidableEq n] {f : R →+* S} (hf : Function.Injective f) (g : SpecialLinearGroup n S) :
+    g ∈ (map (n := n) f).range ↔ ∀ i j, g i j ∈ f.range := by
+  constructor
+  · rintro ⟨g₀, rfl⟩ i j
+    exact ⟨g₀ i j, rfl⟩
+  · intro hg
+    choose A hA using hg
+    have hmap : (Matrix.of A).map f = g := Matrix.ext hA
+    have hdet : (Matrix.of A).det = 1 := by
+      apply hf
+      rw [RingHom.map_det, RingHom.mapMatrix_apply, hmap, g.property, map_one]
+    exact ⟨⟨Matrix.of A, hdet⟩, Subtype.ext hmap⟩
+
 /-- Right multiplication of row vectors by `g ∈ SL(n, R)` is inverted by `g⁻¹`. -/
 theorem vecMul_eq_iff_eq_vecMul_inv {R : Type*} [CommRing R] {n : Type*} [Fintype n]
     [DecidableEq n] (g : SpecialLinearGroup n R) (a y : n → R) :
@@ -131,13 +172,42 @@ theorem vecMul_eq_iff_eq_vecMul_inv {R : Type*} [CommRing R] {n : Type*} [Fintyp
   · rintro rfl
     rw [vecMul_vecMul, ← coe_mul, inv_mul_cancel, coe_one, vecMul_one]
 
+/-- Right multiplication of row vectors by `g ∈ SL(n, R)` permutes `n → R`, so it does not change
+a sum over all row vectors when `R` is finite. -/
+theorem sum_comp_vecMul {R : Type*} [CommRing R] [Fintype R] {n : Type*} [Fintype n]
+    [DecidableEq n] {M : Type*} [AddCommMonoid M] (F : (n → R) → M)
+    (g : SpecialLinearGroup n R) :
+    ∑ a, F (a ᵥ* (g : Matrix n n R)) = ∑ a, F a :=
+  Fintype.sum_equiv
+    { toFun a := a ᵥ* (g : Matrix n n R)
+      invFun y := y ᵥ* ((g⁻¹ : SpecialLinearGroup n R) : Matrix n n R)
+      left_inv a := ((vecMul_eq_iff_eq_vecMul_inv g a _).mp rfl).symm
+      right_inv y := (vecMul_eq_iff_eq_vecMul_inv g _ y).mpr rfl }
+    _ _ fun _ ↦ rfl
+
+/-- For `γ = [a, b; c, d] ∈ SL₂(ℤ)`, the bottom row of `γ⁻¹` is `(-c, a)`: its `n`-th multiple,
+cast to any commutative ring `R`, is `n • ((0, 1) ᵥ* γ⁻¹)`. -/
+theorem intCast_comp_vecCons_eq_zsmul_vecMul_inv {R : Type*} [CommRing R] (γ : SL(2, ℤ))
+    (n : ℤ) :
+    ((↑) ∘ ![-(n * γ 1 0), n * γ 0 0] : Fin 2 → R) =
+      n • ((![0, 1] : Fin 2 → R) ᵥ* (γ⁻¹ : SL(2, ℤ))) := by
+  ext i
+  fin_cases i <;> simp [Matrix.SpecialLinearGroup.coe_inv, adjugate_fin_two]
+
+/-- Replacing `γ ∈ SL₂(ℤ)` by `-γ` negates the right multiplication of row vectors by `γ⁻¹`,
+over any commutative ring `R`. -/
+theorem neg_vecMul_inv {R : Type*} [CommRing R] (v : Fin 2 → R) (γ : SL(2, ℤ)) :
+    (-(v ᵥ* (γ⁻¹ : SL(2, ℤ))) : Fin 2 → R) = v ᵥ* ((-γ)⁻¹ : SL(2, ℤ)) := by
+  ext i
+  fin_cases i <;> simp [vecMul, dotProduct]
+
 /-- The determinant-one identity for an element of `SL₂(R)`, written in coordinates. -/
 lemma fin_two_mul_sub_mul_eq_one {R : Type*} [CommRing R] (g : SL(2, R)) :
     g 0 0 * g 1 1 - g 0 1 * g 1 0 = 1 := by
   simpa only [Matrix.det_fin_two] using g.det_coe
 
-/-- The determinant-one identity for an element of `SL₂(ℤ)`, cast to any ring. -/
-lemma intCast_fin_two_mul_sub_mul_eq_one {R : Type*} [Ring R] (g : SL(2, ℤ)) :
+/-- The determinant-one identity for an element of `SL₂(ℤ)`, cast to any nonassociative ring. -/
+lemma intCast_fin_two_mul_sub_mul_eq_one {R : Type*} [NonAssocRing R] (g : SL(2, ℤ)) :
     ((g 0 0 : ℤ) : R) * (g 1 1 : ℤ) - (g 0 1 : ℤ) * (g 1 0 : ℤ) = 1 := by
   exact_mod_cast congrArg (Int.cast : ℤ → R) g.fin_two_mul_sub_mul_eq_one
 
@@ -158,10 +228,10 @@ lemma coe_mapGL_int_rat_fin_two (σ : SL(2, ℤ)) :
         ((σ 1 0 : ℤ) : ℚ), ((σ 1 1 : ℤ) : ℚ)] := by
   simpa only [eq_intCast] using coe_mapGL_fin_two (S := ℚ) σ
 
-/-- **The bottom row of an `SL₂(ℤ)` matrix is a Bézout relation.** If it is `(N, p)`, then the
-top row `(m, n)` satisfies `m p - n N = 1`. -/
-lemma mul_sub_mul_eq_one_of_lowerRow {N p : ℕ} {σ : SL(2, ℤ)} (hσ10 : σ 1 0 = (N : ℤ))
-    (hσ11 : σ 1 1 = (p : ℤ)) : σ 0 0 * (p : ℤ) - σ 0 1 * (N : ℤ) = 1 := by
+/-- The top row `(a, b)` of an `SL₂(R)` matrix with bottom row `(c, d)` satisfies the Bézout
+relation `a d - b c = 1`. -/
+lemma mul_sub_mul_eq_one_of_lowerRow {R : Type*} [CommRing R] {c d : R} {σ : SL(2, R)}
+    (hσ10 : σ 1 0 = c) (hσ11 : σ 1 1 = d) : σ 0 0 * d - σ 0 1 * c = 1 := by
   simpa only [hσ10, hσ11] using fin_two_mul_sub_mul_eq_one σ
 
 /-- For `0 < n`, the center of `SL(Fin n, A)` is the group of `n`th roots of unity. -/
@@ -524,5 +594,15 @@ theorem map_intCast_zmod_prod_surjective {d d' : ℕ} (hcop : d.Coprime d') :
   · ext i j
     simpa only [MonoidHom.prod_apply, map_apply_coe, RingHom.mapMatrix_apply, Matrix.map_apply,
       Int.coe_castRingHom] using congrArg Prod.snd (hpair i j)
+
+/-- **Entrywise kernel test**: `γ ∈ SL(ι, ℤ)` lies in the principal congruence subgroup of level
+`N`, the kernel of reduction modulo `N`, iff it is congruent to the identity modulo `N`
+entrywise. -/
+theorem mem_ker_map_intCast_zmod_iff {ι : Type*} [Fintype ι] [DecidableEq ι] {N : ℕ}
+    {γ : SpecialLinearGroup ι ℤ} :
+    γ ∈ (map (Int.castRingHom (ZMod N))).ker ↔
+      ∀ i j, (N : ℤ) ∣ (γ : Matrix ι ι ℤ) i j - if i = j then 1 else 0 := by
+  simp [SpecialLinearGroup.ext_iff, Matrix.one_apply, apply_ite,
+    ← ZMod.intCast_zmod_eq_zero_iff_dvd, sub_eq_zero]
 
 end Matrix.SpecialLinearGroup

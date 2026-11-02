@@ -8,11 +8,17 @@ module
 public import Mathlib.LinearAlgebra.SymmetricAlgebra.Basis
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import Mathlib.RingTheory.TensorProduct.MvPolynomial
+public import Mathlib.Algebra.MvPolynomial.Expand
+import Mathlib.Algebra.CharP.Lemmas
+import Mathlib.Algebra.CharP.Algebra
+import Mathlib.RingTheory.Flat.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.Dual
 public import TauCeti.Algebra.Coalgebra.Comodule.SymmetricAlgebra.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.Transport
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.BasisComparison
 public import TauCeti.RingTheory.TensorProduct.Maps
+import TauCeti.Data.Nat.Choose.Basic
+import TauCeti.RingTheory.MvPolynomial.BinomialSupport
 
 /-!
 # Polynomial functions on a comodule
@@ -26,10 +32,19 @@ Concretely, the coaction is the algebra homomorphism sending the coordinate `X i
 `∑ j, X j ⊗ S(c(b*ᵢ, b j))`, where `c(b*ᵢ, b j)` is a matrix coefficient of `V` and `S` is the
 antipode. On algebra-valued points this is the contragredient action `(g • f)(v) = f(g⁻¹ v)`: a
 point `g` substitutes `∑ j, g(S(c(b*ᵢ, b j))) X j` for `X i`. Every homogeneous component is a
-subcomodule.
+subcomodule. In prime characteristic, the polynomials in the pth powers of the variables
+also form a subcomodule, without a perfectness hypothesis on the coefficient ring.
 
 For the standard representation of `SL₂` these are the binary forms, the basic rational
 representations of `SL₂`.
+
+In two variables `x = X 0` and `y = X 1`, over a ring without zero divisors, the span of the
+monomials `xⁱ yʲ` of degree `d = i + j` whose binomial coefficient `d choose i` is nonzero in `R`
+is a subcomodule, for every coaction of this form. In characteristic zero it is the whole
+homogeneous component; in characteristic `p` it is a proper subcomodule exactly when some
+`d choose i` vanishes. The reason is the identity
+`C(d, i) C(i, r) C(j, s) = C(d, r + s) C(r + s, r) C(d - r - s, j - s)`: the coaction expands
+`xⁱ yʲ` into monomials `x^(r + s) y^(d - r - s)` with coefficient divisible by `C(i, r) C(j, s)`.
 
 ## Main declarations
 
@@ -37,8 +52,14 @@ representations of `SL₂`.
   of the basis `b`.
 * `TauCeti.Comodule.polynomial_coact_X`: the coaction of a coordinate function.
 * `TauCeti.Comodule.polynomialCoact`: the coaction as an algebra homomorphism.
+* `TauCeti.Comodule.polynomialCoact_expand_mem`: the coaction preserves polynomials in
+  pth powers of variables.
+* `TauCeti.Comodule.polynomialExpandSubcomodule`: polynomials in pth powers of variables, as a
+  subcomodule over any coefficient semiring of characteristic `p`.
 * `TauCeti.Comodule.polynomialHomogeneousSubcomodule`: the homogeneous polynomial functions of a
   fixed degree, as a subcomodule.
+* `TauCeti.Comodule.polynomialBinomialSubcomodule`: in two variables, the monomials of degree `d`
+  with nonzero binomial coefficient span a subcomodule.
 * `TauCeti.Comodule.algebraTensorAlgEquiv_endOfPoint_polynomial`: a point acts on polynomial
   functions by the contragredient linear substitution.
 
@@ -78,6 +99,43 @@ theorem polynomialCoact_X (b : Basis ι R V) (i : ι) :
   MvPolynomial.aeval_X _ _
 
 end Coact
+
+section Frobenius
+
+variable (H) (b : Basis ι R V) (p : ℕ) [Fact p.Prime] [CharP R p]
+
+/-- The range of substitution `X i ↦ X i ^ p` is stable under the polynomial coaction.
+The coefficients are left unchanged, so this does not require a perfect base ring. -/
+theorem polynomialCoact_expand_mem (f : MvPolynomial ι R) :
+    polynomialCoact H b (MvPolynomial.expand p f) ∈
+      LinearMap.range (TensorProduct.map
+        (MvPolynomial.expand (σ := ι) (R := R) p).range.toSubmodule.subtype
+        (LinearMap.id : H →ₗ[R] H)) := by
+  classical
+  let : CharP (MvPolynomial ι R ⊗[R] H) p := charP_of_injective_ringHom
+    (Algebra.TensorProduct.includeLeft_injective (S := R)
+      (Bialgebra.algebraMap_injective (R := R) H)) p
+  let N := (MvPolynomial.expand (σ := ι) (R := R) p).range
+  let ψ : MvPolynomial ι R →ₐ[R] N ⊗[R] H := MvPolynomial.aeval fun i ↦
+    ∑ j, (⟨MvPolynomial.X j ^ p, ⟨MvPolynomial.X j, MvPolynomial.expand_X p j⟩⟩ : N) ⊗ₜ[R]
+      ((HopfAlgebra.antipode R (matrixCoefficient (C := H) (b.coord i) (b j))) ^ p)
+  let inc := Algebra.TensorProduct.map N.val (AlgHom.id R H)
+  have h : inc.comp ψ = (polynomialCoact H b).comp (MvPolynomial.expand p) := by
+    apply MvPolynomial.algHom_ext
+    intro i
+    simp only [AlgHom.comp_apply, MvPolynomial.aeval_X, MvPolynomial.expand_X,
+      map_pow, polynomialCoact_X, sum_pow_char p, map_sum, Algebra.TensorProduct.map_tmul,
+      AlgHom.id_apply, ψ, inc]
+    simp only [Subalgebra.val_apply, Algebra.TensorProduct.tmul_pow]
+  have hinc : inc.toLinearMap = TensorProduct.map N.toSubmodule.subtype
+      (LinearMap.id : H →ₗ[R] H) :=
+    (Algebra.TensorProduct.toLinearMap_map N.val (AlgHom.id R H)).trans
+      (TensorProduct.AlgebraTensorModule.map_eq _ _)
+  -- The remaining carrier identification is `↥N = ↥N.toSubmodule`: both are the same subtype.
+  refine ⟨ψ f, ?_⟩
+  exact (DFunLike.congr_fun hinc (ψ f)).symm.trans (DFunLike.congr_fun h f)
+
+end Frobenius
 
 variable [DecidableEq ι]
 
@@ -145,6 +203,27 @@ theorem polynomial_coact_apply (b : Basis ι R V) (f : MvPolynomial ι R) :
   rw [polynomial_coact, AlgHom.toLinearMap_apply]
 
 variable (H) in
+/-- The polynomial functions in the pth powers of the coordinates form a subcomodule in
+characteristic `p`. The coefficients remain in the original semiring. -/
+noncomputable def polynomialExpandSubcomodule (b : Basis ι R V) (p : ℕ)
+    [Fact p.Prime] [CharP R p] :
+    letI := polynomial H b
+    Subcomodule R H (MvPolynomial ι R) :=
+  letI := polynomial H b
+  { carrier := (MvPolynomial.expand p).range.toSubmodule
+    coact_mem' := by
+      rintro _ ⟨f, rfl⟩
+      rw [polynomial_coact_apply]
+      exact polynomialCoact_expand_mem H b p f }
+
+/-- Membership in the polynomial Frobenius subcomodule means being an expansion by `p`. -/
+@[simp]
+theorem mem_polynomialExpandSubcomodule (b : Basis ι R V) (p : ℕ)
+    [Fact p.Prime] [CharP R p] {f : MvPolynomial ι R} :
+    f ∈ polynomialExpandSubcomodule H b p ↔ ∃ g, MvPolynomial.expand p g = f :=
+  Iff.rfl
+
+variable (H) in
 /-- The homogeneous polynomial functions of degree `d` on `V`, as a subcomodule of
 `polynomial H b`: the image of the `d`-th symmetric power of `V*`. -/
 noncomputable def polynomialHomogeneousSubcomodule (b : Basis ι R V) (d : ℕ) :
@@ -205,6 +284,138 @@ theorem algebraTensorAlgEquiv_endOfPoint_polynomial (b : Basis ι R V) (g : H �
   simp [Ψ, Algebra.TensorProduct.map_tmul, MvPolynomial.smul_eq_C_mul]
 
 end Points
+
+/-! ### Binary forms with binomial support -/
+
+section Binomial
+
+variable [NoZeroDivisors R]
+
+/-- The coaction sends a monomial `xⁱ yʲ` with nonzero `(i + j) choose i` into the tensor
+product of the binomial span with `H`. -/
+private theorem polynomialCoact_X_pow_mul_X_pow_mem (b : Basis (Fin 2) R V) {d i j : ℕ}
+    (hij : i + j = d) (hi : (d.choose i : R) ≠ 0) :
+    polynomialCoact H b (MvPolynomial.X 0 ^ i * MvPolynomial.X 1 ^ j) ∈
+      LinearMap.range (TensorProduct.map
+        (MvPolynomial.restrictSupport R {m | m 0 + m 1 = d ∧ (d.choose (m 0) : R) ≠ 0}).subtype
+        (LinearMap.id : H →ₗ[R] H)) := by
+  have : Nontrivial R := ⟨⟨_, _, hi⟩⟩
+  set c : Fin 2 → Fin 2 → H := fun i j ↦
+    HopfAlgebra.antipode R (matrixCoefficient (C := H) (b.coord i) (b j))
+  -- Expand both powers by the binomial theorem; the double sum has one term for each pair of
+  -- powers of `x` taken from the two factors.
+  rw [map_mul, map_pow, map_pow, polynomialCoact_X, polynomialCoact_X, Fin.sum_univ_two,
+    Fin.sum_univ_two, add_pow, add_pow, Finset.sum_mul_sum]
+  refine Submodule.sum_mem _ fun r hr ↦ Submodule.sum_mem _ fun s hs ↦ ?_
+  have hr' : r ≤ i := Nat.lt_succ_iff.mp (Finset.mem_range.mp hr)
+  have hs' : s ≤ j := Nat.lt_succ_iff.mp (Finset.mem_range.mp hs)
+  have hterm : (MvPolynomial.X 0 ⊗ₜ[R] c 0 0) ^ r * (MvPolynomial.X 1 ⊗ₜ[R] c 0 1) ^ (i - r) *
+        (i.choose r : MvPolynomial (Fin 2) R ⊗[R] H) *
+      ((MvPolynomial.X 0 ⊗ₜ[R] c 1 0) ^ s * (MvPolynomial.X 1 ⊗ₜ[R] c 1 1) ^ (j - s) *
+        (j.choose s : MvPolynomial (Fin 2) R ⊗[R] H)) =
+      ((i.choose r * j.choose s : ℕ) : R) •
+        ((MvPolynomial.X 0 ^ (r + s) * MvPolynomial.X 1 ^ (i - r + (j - s)) :
+          MvPolynomial (Fin 2) R) ⊗ₜ[R]
+          (c 0 0 ^ r * c 0 1 ^ (i - r) * (c 1 0 ^ s * c 1 1 ^ (j - s)))) := by
+    simp only [Algebra.TensorProduct.tmul_pow, Algebra.TensorProduct.tmul_mul_tmul,
+      ← nsmul_eq_mul', smul_mul_assoc, mul_smul_comm, smul_smul, Nat.cast_smul_eq_nsmul]
+    rw [Nat.mul_comm]
+    congr 2
+    ring
+  rw [hterm]
+  by_cases h0 : ((i.choose r * j.choose s : ℕ) : R) = 0
+  · rw [h0, zero_smul]
+    exact Submodule.zero_mem _
+  refine Submodule.smul_mem _ _ ⟨⟨_, ?_⟩ ⊗ₜ[R] _, rfl⟩
+  -- The monomial `x^(r + s) y^(d - r - s)` has nonzero binomial coefficient, by the
+  -- factorization of `C(d, i) C(i, r) C(j, s)` through `C(d, r + s)`.
+  refine (X_pow_mul_X_pow_mem_restrictSupport_binomial_iff (R := R)).mpr ⟨by omega, fun hrs ↦ ?_⟩
+  have key := congrArg (Nat.cast : ℕ → R) (Nat.add_choose_mul_choose_mul_choose hr' hs')
+  rw [hij] at key
+  push_cast at key h0
+  rw [hrs, zero_mul, zero_mul, mul_assoc, mul_eq_zero] at key
+  exact key.elim hi h0
+
+variable (H) in
+/-- **The binomial span of binary forms**, as a subcomodule of the polynomial functions on a
+comodule with a basis indexed by `Fin 2`, over a ring without zero divisors: the span of the
+monomials `xⁱ yʲ` in `x = X 0` and `y = X 1` of degree `i + j = d` whose binomial coefficient
+`d choose i` is nonzero in `R`.
+
+For the standard representation of `SL₂` over a field this is the simple socle of the binary forms
+of degree `d`. -/
+noncomputable def polynomialBinomialSubcomodule (b : Basis (Fin 2) R V) (d : ℕ) :
+    letI := polynomial H b
+    Subcomodule R H (MvPolynomial (Fin 2) R) :=
+  letI := polynomial H b
+  Subcomodule.ofSubmodule
+    (MvPolynomial.restrictSupport R {m | m 0 + m 1 = d ∧ (d.choose (m 0) : R) ≠ 0}) <| by
+    -- It suffices to check the spanning monomials.
+    suffices h : MvPolynomial.restrictSupport R {m | m 0 + m 1 = d ∧ (d.choose (m 0) : R) ≠ 0} ≤
+        (LinearMap.range (TensorProduct.map (MvPolynomial.restrictSupport R
+          {m | m 0 + m 1 = d ∧ (d.choose (m 0) : R) ≠ 0}).subtype
+            (LinearMap.id : H →ₗ[R] H))).comap (polynomialCoact H b).toLinearMap by
+      intro f hf
+      rw [polynomial_coact]
+      exact h hf
+    refine restrictSupport_binomial_le_iff.mpr fun i j hij hi ↦ ?_
+    rw [Submodule.mem_comap, AlgHom.toLinearMap_apply]
+    exact polynomialCoact_X_pow_mul_X_pow_mem b hij hi
+
+/-- The underlying submodule of the binomial span is spanned by its monomials. -/
+@[simp]
+theorem polynomialBinomialSubcomodule_toSubmodule (b : Basis (Fin 2) R V) (d : ℕ) :
+    letI := polynomial H b
+    (polynomialBinomialSubcomodule H b d).toSubmodule =
+      MvPolynomial.restrictSupport R {m | m 0 + m 1 = d ∧ (d.choose (m 0) : R) ≠ 0} :=
+  (rfl)
+
+/-- A polynomial lies in the binomial span exactly when each of its monomials `xⁱ yʲ` has degree
+`i + j = d` and nonzero binomial coefficient `d choose i`. -/
+@[simp]
+theorem mem_polynomialBinomialSubcomodule (b : Basis (Fin 2) R V) {d : ℕ}
+    {f : MvPolynomial (Fin 2) R} :
+    f ∈ polynomialBinomialSubcomodule H b d ↔
+      ∀ m ∈ f.support, m 0 + m 1 = d ∧ (d.choose (m 0) : R) ≠ 0 := by
+  let _ := polynomial H b
+  rw [← Subcomodule.mem_toSubmodule, polynomialBinomialSubcomodule_toSubmodule,
+    MvPolynomial.mem_restrictSupport_iff, Set.subset_def]
+  simp only [Finset.mem_coe, Set.mem_ofPred_eq]
+
+/-- The monomial `xⁱ yʲ` lies in the binomial span of degree `d` exactly when `i + j = d` and
+`d choose i` is nonzero. -/
+theorem X_pow_mul_X_pow_mem_polynomialBinomialSubcomodule_iff [Nontrivial R]
+    (b : Basis (Fin 2) R V) {d i j : ℕ} :
+    (MvPolynomial.X 0 ^ i * MvPolynomial.X 1 ^ j : MvPolynomial (Fin 2) R) ∈
+        polynomialBinomialSubcomodule H b d ↔ i + j = d ∧ (d.choose i : R) ≠ 0 := by
+  let _ := polynomial H b
+  rw [← Subcomodule.mem_toSubmodule, polynomialBinomialSubcomodule_toSubmodule]
+  exact X_pow_mul_X_pow_mem_restrictSupport_binomial_iff
+
+/-- A submodule contains the binomial span of degree `d` exactly when it contains each monomial
+`xⁱ yʲ` with `i + j = d` and nonzero binomial coefficient `d choose i`. -/
+theorem polynomialBinomialSubcomodule_toSubmodule_le_iff (b : Basis (Fin 2) R V) {d : ℕ}
+    {p : Submodule R (MvPolynomial (Fin 2) R)} :
+    letI := polynomial H b
+    (polynomialBinomialSubcomodule H b d).toSubmodule ≤ p ↔
+      ∀ i j, i + j = d → (d.choose i : R) ≠ 0 →
+        (MvPolynomial.X 0 ^ i * MvPolynomial.X 1 ^ j : MvPolynomial (Fin 2) R) ∈ p := by
+  let _ := polynomial H b
+  rw [polynomialBinomialSubcomodule_toSubmodule]
+  exact restrictSupport_binomial_le_iff
+
+/-- The binomial span consists of homogeneous polynomials of degree `d`. -/
+theorem polynomialBinomialSubcomodule_le_polynomialHomogeneousSubcomodule
+    (b : Basis (Fin 2) R V) (d : ℕ) :
+    polynomialBinomialSubcomodule H b d ≤ polynomialHomogeneousSubcomodule H b d := by
+  intro f hf
+  rw [mem_polynomialHomogeneousSubcomodule]
+  intro m hm
+  rw [Finsupp.weight_apply, Finsupp.sum_fintype _ _ (by simp), Fin.sum_univ_two]
+  simpa using
+    ((mem_polynomialBinomialSubcomodule b).mp hf m (MvPolynomial.mem_support_iff.mpr hm)).1
+
+end Binomial
 
 end Comodule
 

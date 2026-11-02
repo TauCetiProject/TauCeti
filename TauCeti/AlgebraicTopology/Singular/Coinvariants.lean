@@ -21,7 +21,8 @@ complex with any coefficients, of `B` are the coinvariants of those of `E`:
 
 * `IsQuotientCoveringMap.isColimitMapCoconeToSSet`: the singular simplicial set of `B` is the
   quotient of that of `E` by `G`: every singular simplex of `B` lifts to `E`, and any two lifts of
-  the same simplex differ by an element of `G`.
+  the same simplex differ by an element of `G` (`IsQuotientCoveringMap.toSSet_map_app_surjective`
+  and `IsQuotientCoveringMap.toSSet_map_app_eq_iff`).
 * `IsQuotientCoveringMap.isColimitMapCoconeSingularChainComplex`: hence `C(B; R)` is the colimit
   `C(E; R)_G` of the action of `G` on `C(E; R)` by the chain maps `g_*`, for coefficients `R` in
   any preadditive category with coproducts, since the simplicial chain complex preserves
@@ -94,6 +95,22 @@ def isColimitMapCoconeToSSet : IsColimit (TopCat.toSSet.mapCocone hG.cocone) :=
         change simplexMap ((TopCat.toSSet.map ((E.actionFunctor G).map g)).app n τ') x = _
         rw [simplexMap_app, ContinuousMap.comp_apply]
         exact (TopCat.actionFunctor_map_apply ..).trans hg
+
+include hG in
+/-- **Every singular simplex of the base of a quotient covering lifts** to the total space. -/
+theorem toSSet_map_app_surjective (n : SimplexCategoryᵒᵖ) :
+    Function.Surjective ((TopCat.toSSet.map p).app n) :=
+  ((SingleObj.Types.nonempty_isColimit_iff _).1
+    ⟨isColimitOfPreserves ((evaluation _ _).obj n) hG.isColimitMapCoconeToSSet⟩).1
+
+/-- **Two lifts of a singular simplex of the base of a quotient covering differ by an element of
+`G`**: two singular simplices of the total space have the same image in the base exactly when one
+is a translate of the other. -/
+theorem toSSet_map_app_eq_iff {n : SimplexCategoryᵒᵖ} (σ σ' : (TopCat.toSSet.obj E).obj n) :
+    haveI := hG.toContinuousConstSMul
+    (TopCat.toSSet.map p).app n σ = (TopCat.toSSet.map p).app n σ' ↔ ∃ g : G, g • σ' = σ :=
+  ((SingleObj.Types.nonempty_isColimit_iff _).1
+    ⟨isColimitOfPreserves ((evaluation _ _).obj n) hG.isColimitMapCoconeToSSet⟩).2 σ σ'
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasCoproducts.{w} C] (R : C)
 

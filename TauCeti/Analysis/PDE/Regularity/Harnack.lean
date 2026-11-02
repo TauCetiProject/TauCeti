@@ -16,19 +16,19 @@ import TauCeti.MeasureTheory.Measure.OpenPos
 
 Let `a` be measurable and uniformly elliptic on `Ω ⊆ ℝⁿ` with constants `0 < λ ≤ Λ`. This file
 proves, in every dimension `n ≥ 1`, the two Harnack inequalities of Moser for the divergence-form
-equation `-∂ⱼ(aⁱʲ ∂ᵢu) = 0`, with no regularity of the coefficients beyond measurability.
+equation `-∂ᵢ(aⁱʲ ∂ⱼu) = 0`, with no regularity of the coefficients beyond measurability.
 
 * The **weak Harnack inequality**: if `u ∈ H¹(Ω)` is a weak supersolution, `a(u, v) ≥ 0` for
   every nonnegative `v ∈ H¹₀(Ω)`, and `u ≥ 0` almost everywhere, then for every exponent `s > 0`
   with `(n - 2) s < n` (that is `s < n/(n - 2)` when `n ≥ 3`, and any `s > 0` when `n ≤ 2`) and
-  every ball with `B(x₀, 12√n r) ⊆ Ω`,
+  every ball with `B(x₀, 8√n r) ⊆ Ω`,
 
   `(⨍_{B(x₀, r)} u^s)^{1/s} ≤ C u(x)` for almost every `x ∈ B(x₀, r)`,
 
   that is, the `L^s` average of `u` is controlled by its essential infimum. In particular `u^s`
   is integrable on `B(x₀, r)`, which is part of the conclusion.
 * The **Harnack inequality**: if `u` is a weak solution, `a(u, v) = 0` for every `v ∈ H¹₀(Ω)`,
-  and `u ≥ 0` almost everywhere, then on every ball with `B(x₀, 24√n r) ⊆ Ω`,
+  and `u ≥ 0` almost everywhere, then on every ball with `B(x₀, 16√n r) ⊆ Ω`,
 
   `u(y) ≤ C u(x)` for almost every `x, y ∈ B(x₀, r)`,
 
@@ -49,7 +49,7 @@ exponent `p₀ = min(cλ/Λ, 2)` of the crossover estimate, it combines
 
 Together they bound `(⨍_B u^{p₀})^{1/p₀}` by `C u(x)` for almost every `x ∈ B(x₀, r)`, in every
 dimension `n ≥ 1`. A nonnegative supersolution is reduced to this case by applying it to `u + δ`
-on the bounded ball `B(x₀, 12√n r)`, where constants lie in `H¹`, and letting `δ → 0`. Moser's
+on the bounded ball `B(x₀, 8√n r)`, where constants lie in `H¹`, and letting `δ → 0`. Moser's
 iteration for small positive powers of nonnegative supersolutions
 (`TauCeti.PDE.exists_setAverage_rpow_rpow_inv_le_mul_setAverage_rpow_rpow_inv`) then raises the
 exponent from `p₀` to any `s` with `(n - 2) s < n`. The Harnack inequality combines the weak
@@ -99,7 +99,7 @@ private theorem exists_pos_ae_setAverage_rpow_rpow_inv_le_mul_value_of_pos [None
         (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
           0 ≤ energyFormH1 a 0 0 u (v : W1p mu Omega 2)) →
       0 < ε → (∀ᵐ x ∂mu.restrict Omega, ε ≤ W1p.value u x) →
-      ball x₀ (12 * √(Fintype.card ι) * r) ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
+      ball x₀ (8 * √(Fintype.card ι) * r) ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
       ∀ᵐ x ∂mu.restrict (ball x₀ r),
         (⨍ y in ball x₀ (2 * r), W1p.value u y ^ p₀ ∂mu) ^ p₀⁻¹ ≤ C * W1p.value u x := by
   -- Without `0 < λ ≤ Λ` there is no uniformly elliptic `a`, and any constants work.
@@ -169,8 +169,8 @@ private theorem exists_pos_ae_setAverage_rpow_rpow_inv_le_mul_value_of_pos [None
 are an exponent `p₀ ∈ (0, 2]` and a constant `C > 0`, depending only on `λ`, `Λ`, the dimension
 and the normalization of the additive Haar measure `mu`, with the following property. Let `a` be
 measurable and uniformly elliptic on `Ω` with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a
-nonnegative weak supersolution of `-∂ⱼ(aⁱʲ ∂ᵢu) ≥ 0`, that is `a(u, v) ≥ 0` for every
-nonnegative `v ∈ H¹₀(Ω)`. Then on every ball with `B(x₀, 12√n r) ⊆ Ω`,
+nonnegative weak supersolution of `-∂ᵢ(aⁱʲ ∂ⱼu) ≥ 0`, that is `a(u, v) ≥ 0` for every
+nonnegative `v ∈ H¹₀(Ω)`. Then on every ball with `B(x₀, 8√n r) ⊆ Ω`,
 
 `(⨍_{B(x₀, 2r)} u^{p₀})^{1/p₀} ≤ C u(x)` for almost every `x ∈ B(x₀, r)`.
 
@@ -185,7 +185,7 @@ theorem exists_pos_ae_setAverage_rpow_rpow_inv_le_mul_value [Nonempty ι] :
         (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
           0 ≤ energyFormH1 a 0 0 u (v : W1p mu Omega 2)) →
       (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value u x) →
-      ball x₀ (12 * √(Fintype.card ι) * r) ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
+      ball x₀ (8 * √(Fintype.card ι) * r) ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
       ∀ᵐ x ∂mu.restrict (ball x₀ r),
         (⨍ y in ball x₀ (2 * r), W1p.value u y ^ p₀ ∂mu) ^ p₀⁻¹ ≤ C * W1p.value u x := by
   obtain ⟨p₀, hp₀, hp₀2, C, hC, hpos⟩ :=
@@ -195,8 +195,8 @@ theorem exists_pos_ae_setAverage_rpow_rpow_inv_le_mul_value [Nonempty ι] :
   rcases le_or_gt r 0 with hr | hr
   · simp [ball_eq_empty.2 hr]
   have hsqrt : 1 ≤ √(Fintype.card ι : ℝ) := Real.one_le_sqrt.2 (Nat.one_le_cast.2 Fintype.card_pos)
-  -- Work on the bounded open ball `U = B(x₀, 12√n r)`, where constants lie in `H¹(U)`.
-  set U : Opens (EuclideanSpace ℝ ι) := ⟨ball x₀ (12 * √(Fintype.card ι) * r), isOpen_ball⟩
+  -- Work on the bounded open ball `U = B(x₀, 8√n r)`, where constants lie in `H¹(U)`.
+  set U : Opens (EuclideanSpace ℝ ι) := ⟨ball x₀ (8 * √(Fintype.card ι) * r), isOpen_ball⟩
   have hU : U ≤ Omega := hball
   have h2U : ball x₀ (2 * r) ⊆ (U : Set (EuclideanSpace ℝ ι)) := ball_subset_ball (by nlinarith)
   have hrU : ball x₀ r ⊆ (U : Set (EuclideanSpace ℝ ι)) := ball_subset_ball (by nlinarith)
@@ -274,8 +274,8 @@ with `(n - 2) s < n`, that is `s < n/(n - 2)` when `n ≥ 3` and `s` arbitrary w
 is `C > 0`, depending only on `λ`, `Λ`, `s`, the dimension and the normalization of the additive
 Haar measure `mu`, with the following property. Let `a` be measurable and uniformly elliptic on
 `Ω` with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a nonnegative weak supersolution of
-`-∂ⱼ(aⁱʲ ∂ᵢu) ≥ 0`, that is `a(u, v) ≥ 0` for every nonnegative `v ∈ H¹₀(Ω)`. Then on every ball
-with `B(x₀, 12√n r) ⊆ Ω`,
+`-∂ᵢ(aⁱʲ ∂ⱼu) ≥ 0`, that is `a(u, v) ≥ 0` for every nonnegative `v ∈ H¹₀(Ω)`. Then on every ball
+with `B(x₀, 8√n r) ⊆ Ω`,
 
 `(⨍_{B(x₀, r)} u^s)^{1/s} ≤ C u(x)` for almost every `x ∈ B(x₀, r)`,
 
@@ -292,7 +292,7 @@ theorem exists_ae_setAverage_rpow_rpow_inv_le_mul_value [Nonempty ι] {s : ℝ} 
         (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
           0 ≤ energyFormH1 a 0 0 u (v : W1p mu Omega 2)) →
       (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value u x) →
-      ball x₀ (12 * √(Fintype.card ι) * r) ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
+      ball x₀ (8 * √(Fintype.card ι) * r) ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
       IntegrableOn (fun y => W1p.value u y ^ s) (ball x₀ r) mu ∧ ∀ᵐ x ∂mu.restrict (ball x₀ r),
         (⨍ y in ball x₀ r, W1p.value u y ^ s ∂mu) ^ s⁻¹ ≤ C * W1p.value u x := by
   obtain ⟨p₀, hp₀, hp₀2, C₁, hC₁, hsmall⟩ :=
@@ -318,8 +318,8 @@ theorem exists_ae_setAverage_rpow_rpow_inv_le_mul_value [Nonempty ι] {s : ℝ} 
 /-- **Moser's Harnack inequality.** Let `n ≥ 1` be the dimension. There is `C > 0`, depending
 only on `λ`, `Λ`, the dimension and the normalization of the additive Haar measure `mu`, with the
 following property. Let `a` be measurable and uniformly elliptic on `Ω` with constants `λ, Λ`,
-and let `u ∈ H¹(Ω)` be a weak solution of `-∂ⱼ(aⁱʲ ∂ᵢu) = 0`, that is `a(u, v) = 0` for every
-`v ∈ H¹₀(Ω)`, with `u ≥ 0` almost everywhere. Then on every ball with `B(x₀, 24√n r) ⊆ Ω`,
+and let `u ∈ H¹(Ω)` be a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = 0`, that is `a(u, v) = 0` for every
+`v ∈ H¹₀(Ω)`, with `u ≥ 0` almost everywhere. Then on every ball with `B(x₀, 16√n r) ⊆ Ω`,
 
 `u(y) ≤ C u(x)` for almost every `x, y ∈ B(x₀, r)`,
 
@@ -333,7 +333,7 @@ theorem exists_ae_ae_value_le_mul_value [Nonempty ι] :
       AEStronglyMeasurable a (mu.restrict Omega) →
       (∀ v : W1p0 mu Omega 2, energyFormH1 a 0 0 u (v : W1p mu Omega 2) = 0) →
       (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value u x) →
-      ball x₀ (24 * √(Fintype.card ι) * r) ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
+      ball x₀ (16 * √(Fintype.card ι) * r) ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
       ∀ᵐ x ∂mu.restrict (ball x₀ r), ∀ᵐ y ∂mu.restrict (ball x₀ r),
         W1p.value u y ≤ C * W1p.value u x := by
   -- The weak Harnack inequality at `s = 1`, and local boundedness in `L¹`.

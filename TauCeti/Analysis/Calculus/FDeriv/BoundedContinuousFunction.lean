@@ -281,11 +281,7 @@ point `x` of `s`, where `G'` is uniformly continuous on `s`. If the values of `f
 theorem contDiffAt_comp (hG : LipschitzWith C G) (hGs : ∀ x ∈ s, HasFDerivAt G (G' x) x)
     (hG' : UniformContinuousOn G' s) (hδ : 0 < δ) (hf₀ : ∀ t, ball (f₀ t) δ ⊆ s) :
     ContDiffAt 𝕜 1 (comp G hG) f₀ := by
-  exact contDiffAt_comp_of_uniformContDiffOn hG
-    (TauCeti.uniformContDiffOn_succ_iff.2
-      ⟨hG.uniformContinuous.uniformContinuousOn, G', hGs,
-        ⟨C, fun x hx ↦ (hGs x hx).le_of_lipschitz hG⟩,
-        TauCeti.uniformContDiffOn_zero_iff.2 hG'⟩) hδ hf₀
+  exact contDiffAt_comp_of_uniformContDiffOn hG (hG.uniformContDiffOn_one hGs hG') hδ hf₀
 
 /-- **A superposition operator is `C¹`, global form.** If `G` is Lipschitz and differentiable
 everywhere, with a derivative `G'` that is uniformly continuous on every ball about `0`, then

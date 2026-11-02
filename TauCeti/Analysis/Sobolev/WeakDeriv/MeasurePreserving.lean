@@ -74,34 +74,22 @@ variable {E E' F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDime
 
 variable [BorelSpace E] [μ.IsAddHaarMeasure] [BorelSpace E'] [ν.IsAddHaarMeasure]
 
-omit [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E]
-  [μ.IsAddHaarMeasure] [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
-  [BorelSpace E'] [ν.IsAddHaarMeasure] in
-/-- Precomposition with a measure-preserving map does not increase the lower integral of an
-a.e.-measurable function over a set. -/
-private theorem setLIntegral_comp_le {Φ : E → E'} (hΦ : MeasurePreserving Φ μ ν) (W : Set E)
-    {g : E' → ℝ≥0∞} (hg : AEMeasurable g ν) :
-    ∫⁻ x in W, g (Φ x) ∂μ ≤ ∫⁻ y, g y ∂ν := by
-  refine (setLIntegral_le_lintegral _ _).trans_eq ?_
-  rw [← hΦ.map_eq] at hg ⊢
-  exact (lintegral_map' hg hΦ.measurable.aemeasurable).symm
-
-omit [μ.IsAddHaarMeasure] [BorelSpace E'] [ν.IsAddHaarMeasure] in
+omit [BorelSpace E] [μ.IsAddHaarMeasure] [BorelSpace E'] [ν.IsAddHaarMeasure] in
 /-- **Passing the chain rule to the limit.** Let `Φ` be measure-preserving, with
 `‖fderiv ℝ Φ‖ ≤ M` on `W`. If each `f k ∘ Φ` has weak derivative `x ↦ G k (Φ x) ∘L fderiv ℝ Φ x`
 on `W`, and `f k → g`, `G k → H` in `L¹` (through a.e.-strongly measurable differences), with
 `g ∘ Φ` and `H ∘ Φ` integrable on `W`, then `g ∘ Φ` has weak derivative
 `x ↦ H (Φ x) ∘L fderiv ℝ Φ x` on `W`. -/
-private theorem hasWeakFDerivOn_comp_of_tendsto {W : Opens E} {Φ : E → E'}
-    (hΦ : MeasurePreserving Φ μ ν) {M : ℝ}
+private theorem hasWeakFDerivOn_comp_of_tendsto [OpensMeasurableSpace E] {W : Opens E}
+    {Φ : E → E'} (hΦ : MeasurePreserving Φ μ ν) {M : ℝ}
     (hM : ∀ x ∈ (W : Set E), ‖fderiv ℝ Φ x‖ ≤ M)
     {f : ℕ → E' → F} {G : ℕ → E' → E' →L[ℝ] F} {g : E' → F} {H : E' → E' →L[ℝ] F}
     (hweak : ∀ k, HasWeakFDerivOn μ W (f k ∘ Φ) fun x => (G k (Φ x)).comp (fderiv ℝ Φ x))
     (hg : IntegrableOn (g ∘ Φ) W μ) (hH : IntegrableOn (H ∘ Φ) W μ)
     (hfm : ∀ k, AEStronglyMeasurable (fun y => f k y - g y) ν)
     (hGm : ∀ k, AEStronglyMeasurable (fun y => G k y - H y) ν)
-    (hf : Tendsto (fun k => ∫⁻ y, ‖f k y - g y‖ₑ ∂ν) atTop (𝓝 0))
-    (hG : Tendsto (fun k => ∫⁻ y, ‖G k y - H y‖ₑ ∂ν) atTop (𝓝 0)) :
+    (hf : Tendsto (fun k => eLpNorm (f k - g) 1 ν) atTop (𝓝 0))
+    (hG : Tendsto (fun k => eLpNorm (G k - H) 1 ν) atTop (𝓝 0)) :
     HasWeakFDerivOn μ W (g ∘ Φ) fun x => (H (Φ x)).comp (fderiv ℝ Φ x) := by
   have hW := W.isOpen.measurableSet
   have hcomp : ∀ x ∈ (W : Set E), ∀ A : E' →L[ℝ] F,
@@ -117,7 +105,9 @@ private theorem hasWeakFDerivOn_comp_of_tendsto {W : Opens E} {Φ : E → E'}
       ((ContinuousLinearMap.apply ℝ F v).integrable_comp hcand))
     hweak ?_ ?_
   · exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hf
-      (fun _ => bot_le) fun k => setLIntegral_comp_le hΦ W (hfm k).enorm
+      (fun _ => bot_le) fun k =>
+        (setLIntegral_le_lintegral _ _).trans <|
+          (hΦ.lintegral_comp' (hfm k).enorm).le.trans lintegral_enorm_le_eLpNorm_one
   · have hGM := ENNReal.Tendsto.mul_const (b := ENNReal.ofReal M) hG
       (Or.inr ENNReal.ofReal_ne_top)
     rw [zero_mul] at hGM
@@ -131,24 +121,8 @@ private theorem hasWeakFDerivOn_comp_of_tendsto {W : Opens E} {Φ : E → E'}
           exact ENNReal.ofReal_le_ofReal (hcomp x hx _)
       _ = (∫⁻ x in W, ‖G k (Φ x) - H (Φ x)‖ₑ ∂μ) * ENNReal.ofReal M :=
           lintegral_mul_const' _ _ ENNReal.ofReal_ne_top
-      _ ≤ _ := mul_le_mul_left (setLIntegral_comp_le hΦ W (hGm k).enorm) _
-
-omit [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E]
-  [μ.IsAddHaarMeasure] [BorelSpace E'] [ν.IsAddHaarMeasure] in
-/-- Mollification by normalized bumps of shrinking radius converges in `L¹`, stated for the
-convolution order `g ⋆ ρ` of the interior mollification lemmas. -/
-private theorem tendsto_lintegral_convolution_normed_sub [BorelSpace E'] [ν.IsAddHaarMeasure]
-    {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G] {g : E' → G}
-    (hg : MemLp g 1 ν) {φ : ℕ → ContDiffBump (0 : E')}
-    (hφ : Tendsto (fun k => (φ k).rOut) atTop (𝓝 0)) :
-    Tendsto (fun k => ∫⁻ y,
-      ‖(g ⋆[(ContinuousLinearMap.lsmul ℝ ℝ).flip, ν] (φ k).normed ν) y - g y‖ₑ ∂ν) atTop
-      (𝓝 0) := by
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
-    (tendsto_eLpNorm_normed_convolution_sub ENNReal.one_ne_top hφ hg) (fun _ => bot_le)
-    fun k => ?_
-  rw [convolution_flip]
-  exact lintegral_enorm_le_eLpNorm_one
+      _ ≤ _ := mul_le_mul_left ((setLIntegral_le_lintegral _ _).trans <|
+          (hΦ.lintegral_comp' (hGm k).enorm).le.trans lintegral_enorm_le_eLpNorm_one) _
 
 /-- **The weak chain rule.** If `u` has weak derivative `D` on the open set `V`, and `Φ` is a
 measure-preserving map, locally Lipschitz on the open set `U` and mapping `U` into `V`, then
@@ -233,8 +207,11 @@ theorem HasWeakFDerivOn.comp_measurePreserving {U : Opens E} {V : Opens E'} {u :
     (hΦ.integrable_comp_of_integrable (memLp_one_iff_integrable.1 hD')).integrableOn
     (fun k => (hfc k).aestronglyMeasurable.sub hu'.aestronglyMeasurable)
     (fun k => (hGc k).aestronglyMeasurable.sub hD'.aestronglyMeasurable)
-    (tendsto_lintegral_convolution_normed_sub hu' hφ)
-    (tendsto_lintegral_convolution_normed_sub hD' hφ)).congr_ae hindu |>.congr_ae_deriv ?_
+    (by simpa only [f, convolution_flip] using
+      tendsto_eLpNorm_normed_convolution_sub ENNReal.one_ne_top hφ hu')
+    (by simpa only [G, convolution_flip] using
+      tendsto_eLpNorm_normed_convolution_sub ENNReal.one_ne_top hφ hD')).congr_ae hindu
+    |>.congr_ae_deriv ?_
   filter_upwards [hindD] with x hx
   simp only [Function.comp_apply] at hx
   rw [hx]

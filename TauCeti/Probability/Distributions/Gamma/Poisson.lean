@@ -12,6 +12,7 @@ public import Mathlib.Probability.Distributions.Poisson.Basic
 
 import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 import TauCeti.Probability.Distributions.Poisson.Measurability
+import TauCeti.Probability.Distributions.Poisson.Basic
 
 /-!
 # Gamma mixtures of Poisson distributions
@@ -28,6 +29,8 @@ to `r + k`. Euler's Gamma integral then gives exactly the negative-binomial mass
 
 * `TauCeti.Probability.bind_gammaMeasure_poissonMeasure` — a Gamma mixture of Poisson laws is
   negative-binomial.
+* `TauCeti.Probability.bind_gammaMeasure_poissonMeasure_mul_toNNReal` — the same identity with
+  an arbitrary positive Gamma rate and a nonnegative multiplier of the Poisson rate.
 * `TauCeti.Probability.mixedPoissonMeasure_map_toNNReal_gammaMeasure` — the same identity for the
   mixed Poisson law `TauCeti.Probability.mixedPoissonMeasure`, whose mixing measure lives on the
   rates `ℝ≥0`; the Gamma law is carried there by `Real.toNNReal`.
@@ -184,6 +187,33 @@ theorem bind_gammaMeasure_poissonMeasure {r p : ℝ} (hr : 0 < r) (hp : 0 < p) (
     filter_upwards [TauCeti.Probability.ae_pos_gammaMeasure r (p / (1 - p))] with lam hlam
     rw [Real.coe_toNNReal lam hlam.le])]
   exact integral_poissonMass_gammaMeasure hr hp hp1 k
+
+/-- A Gamma mixture of Poisson laws with rates multiplied by a nonnegative weight is
+negative-binomial. A zero weight gives success probability one and hence a Dirac law. -/
+@[simp]
+theorem bind_gammaMeasure_poissonMeasure_mul_toNNReal {r c : ℝ} (hr : 0 < r)
+    (hc : 0 < c) (a : ℝ≥0) :
+    (gammaMeasure r c).bind (fun x => poissonMeasure (a * Real.toNNReal x)) =
+      negativeBinomialMeasure r (c / (c + a)) := by
+  let _ := isProbabilityMeasure_gammaMeasure hr hc
+  by_cases ha : a = 0
+  · subst a
+    simp [Measure.bind_const, hc.ne', poissonMeasure_zero,
+      negativeBinomialMeasure_eq_dirac_of_successProbability_eq_one hr.le]
+  have ha' : 0 < (a : ℝ) := by exact_mod_cast (pos_iff_ne_zero.mpr ha)
+  have hp : 0 < c / (c + a) := div_pos hc (by positivity)
+  have hp1 : c / (c + a) < 1 := (div_lt_one (by positivity)).mpr (by linarith)
+  have hrate : c / (c + a) / (1 - c / (c + a)) = c / a := by
+    field_simp [ha'.ne', (add_pos hc ha').ne']
+    ring
+  calc
+    _ = ((gammaMeasure r c).map (fun x => (a : ℝ) * x)).bind
+        (fun x => poissonMeasure (Real.toNNReal x)) := by
+      rw [Measure.bind_map (by fun_prop) (by fun_prop)]
+      simp only [Real.toNNReal_mul a.coe_nonneg, Real.toNNReal_coe]
+    _ = _ := by
+      rw [gammaMeasure_map_const_mul hr hc ha',
+        ← hrate, bind_gammaMeasure_poissonMeasure hr hp hp1]
 
 /-- **The Gamma-mixed Poisson law is negative-binomial**, stated for
 `TauCeti.Probability.mixedPoissonMeasure`: the Gamma law of shape `r` and rate `p / (1 - p)`,

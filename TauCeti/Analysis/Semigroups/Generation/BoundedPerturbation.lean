@@ -471,7 +471,7 @@ theorem exists_generator_eq_vadd (S : StronglyContinuousSemigroup X)
     hUbound.mono_omega <| LinearMap.mkContinuous_norm_le _
       (mul_nonneg (zero_le_one.trans hb.one_le) (norm_nonneg B)) _
   refine ⟨U.expShift (-omega), ?_, ?_⟩
-  · rw [generator_expShift, hUgen, TauCeti.LinearPMap.vadd_subScalar,
+  · rw [generator_expShift, hUgen, LinearPMap.vadd_subScalar,
       LinearPMap.subScalar_subScalar, add_neg_cancel, LinearPMap.subScalar_zero]
   · simpa [sub_eq_add_neg, add_comm, add_left_comm, add_assoc] using
       hUbound'.expShift (lambda := -omega)

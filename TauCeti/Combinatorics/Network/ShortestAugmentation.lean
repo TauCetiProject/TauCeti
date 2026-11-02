@@ -314,6 +314,13 @@ theorem exists_isMaximum (f : BoundedFlow lo hi s t) : ∃ g : BoundedFlow lo hi
   let ⟨g, _, hg⟩ := exists_reflTransGen_shortestAugmentationStep_isMaximum f
   ⟨g, hg⟩
 
+/-- A feasible bounded terminal problem has a minimum assignment, including when its values
+are all negative. -/
+theorem exists_isMinimum (f : BoundedFlow lo hi s t) :
+    ∃ g : BoundedFlow lo hi s t, g.IsMinimum := by
+  obtain ⟨g, hg⟩ := f.swap.exists_isMaximum
+  exact ⟨g.swap, (isMaximum_swap _).1 (by simpa using hg)⟩
+
 /-- **Max-flow/min-cut theorem for bounded assignments.** If some bounded `s`–`t` assignment
 between distinct terminals exists, then some bounded `s`–`t` assignment has value equal to the cut
 bound of some vertex set containing `s` but not `t`. By weak duality
@@ -352,13 +359,11 @@ some cut by `TauCeti.Flow.IsMaximum.exists_val_eq_arrowSum`. -/
 theorem exists_isMaximum_mem (hcap : 0 ≤ cap) (H : AddSubgroup K)
     (hcapH : ∀ ⦃v w⦄ (e : Q v w), cap e ∈ H) :
     ∃ f : Flow cap s t, f.IsMaximum ∧ ∀ ⦃v w⦄ (e : Q v w), f.toFun e ∈ H := by
-  let f₀ : Flow cap s t :=
-    ⟨⟨0, ⟨le_rfl, hcap⟩, fun v _ _ ↦ excessAt_zero v⟩, (excessAt_zero t).ge⟩
-  obtain ⟨g, hg, hgH⟩ := f₀.toBoundedFlow.exists_isMaximum_mem H (fun _ _ _ ↦ H.zero_mem)
-    hcapH fun _ _ _ ↦ H.zero_mem
+  obtain ⟨g, hg, hgH⟩ := (zero hcap : Flow cap s t).toBoundedFlow.exists_isMaximum_mem H
+    (fun _ _ _ ↦ H.zero_mem) hcapH fun _ _ _ ↦ by simp
   have hval : 0 ≤ excessAt g.toFun t := by
     rw [← BoundedFlow.val_def]
-    exact f₀.val_nonneg.trans (BoundedFlow.isMaximum_iff.1 hg _)
+    simpa using BoundedFlow.isMaximum_iff.1 hg (zero hcap).toBoundedFlow
   exact ⟨⟨g, hval⟩, (isMaximum_toBoundedFlow _).1 hg, hgH⟩
 
 /-- For nonnegative capacities, a maximum ordinary flow exists. -/

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Holder.One
+public import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.FTaylorSeries
 
 /-!
@@ -271,29 +272,20 @@ theorem memHolder_secondFDeriv (f : C2HolderSpace α E F) :
   rw [f.fderiv_eq_fderivC1_coe]
   exact C1HolderSpace.memHolder_fderiv f.fderivC1
 
-private noncomputable def secondIteratedEquiv :
-    (E →L[ℝ] E →L[ℝ] F) ≃ₗᵢ[ℝ] E [×2]→L[ℝ] F :=
-  (continuousMultilinearCurryFin1 ℝ E (E →L[ℝ] F)).symm.trans
-    (continuousMultilinearCurryRightEquiv' ℝ 1 E F).symm
-
-private theorem secondIteratedEquiv_apply (g : E →L[ℝ] E →L[ℝ] F) (m : Fin 2 → E) :
-    secondIteratedEquiv (E := E) (F := F) g m = g (m 0) (m 1) := by
-  simp [secondIteratedEquiv, Fin.init]
-
 private theorem iteratedFDeriv_two_eq (f : C2HolderSpace α E F) :
     iteratedFDeriv ℝ 2 (f : E → F) =
-      (secondIteratedEquiv (E := E) (F := F) : _ → _) ∘
+      ((continuousMultilinearCurryFin2 ℝ E F).symm : _ → _) ∘
         _root_.fderiv ℝ (_root_.fderiv ℝ (f : E → F)) := by
   funext x
   ext m
-  rw [iteratedFDeriv_two_apply, Function.comp_apply, secondIteratedEquiv_apply]
+  rw [iteratedFDeriv_two_apply, Function.comp_apply, continuousMultilinearCurryFin2_symm_apply]
 
 /-- The canonical second iterated Fréchet derivative is globally `α`-Hölder. -/
 theorem memHolder_iteratedFDeriv_two (f : C2HolderSpace α E F) :
     MemHolder α (iteratedFDeriv ℝ 2 (f : E → F)) := by
   rw [f.iteratedFDeriv_two_eq]
   simpa using f.memHolder_secondFDeriv.comp
-    (secondIteratedEquiv (E := E) (F := F)).lipschitzWith.holderWith.memHolder
+    (continuousMultilinearCurryFin2 ℝ E F).symm.lipschitzWith.holderWith.memHolder
 
 /-- Two bounded `C^{2,α}` maps are equal when their underlying functions agree pointwise. -/
 @[ext]

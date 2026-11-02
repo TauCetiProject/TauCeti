@@ -22,8 +22,9 @@ cross distances `f` are called a *metric coupling* of `X` and `Y`.
 
 Metric couplings are the metric half of Sturm's transportation distance between metric-measure
 spaces, `TauCeti.sturmEDist`, which minimises a transport cost over a metric coupling and a
-coupling of the two measures. The measure-theoretic part of that theory uses three facts proved
-here.
+coupling of the two measures, and of the Gromov–Prokhorov distance
+`TauCeti.gromovProkhorovEDist`, which minimises a Lévy–Prokhorov distance over metric couplings.
+These distances use the following facts proved here.
 
 * Every pair of isometric embeddings into a common space induces a metric coupling
   (`TauCeti.IsMetricCoupling.of_isometry`); in particular the distance of `X` is a metric coupling
@@ -35,6 +36,10 @@ here.
 * The cross distances are `1`-Lipschitz in each variable, hence jointly continuous
   (`TauCeti.IsMetricCoupling.continuous`), so they are measurable whenever the open sets of
   `X × Y` are.
+* The glued pseudometric itself, `TauCeti.IsMetricCoupling.pseudoEMetricSpace`, places measures on
+  `X` and on `Y` in one space, where they can be compared by the Lévy–Prokhorov distance. The
+  points of `Y` at cross distance less than `a` from a set of `X` form an open set
+  (`TauCeti.IsMetricCoupling.isOpen_setOf_exists_lt`).
 
 The cross distances take values in `[0, ∞]`. On ordinary pseudometric spaces this is no extra
 generality where it matters: a metric coupling with one finite cross distance has only finite ones
@@ -45,16 +50,18 @@ or identically `∞`.
 
 * `TauCeti.IsMetricCoupling f`: the cross distances `f : X → Y → ℝ≥0∞` extend the distances of `X`
   and `Y` to an extended pseudometric on `X ⊕ Y`.
+* `TauCeti.IsMetricCoupling.pseudoEMetricSpace hf`: that extended pseudometric on `X ⊕ Y`.
 
 ## Main statements
 
 * `TauCeti.isMetricCoupling_iff_exists_pseudoEMetricSpace`: the characterization by extended
   pseudometrics on the disjoint union.
 * `TauCeti.IsMetricCoupling.swap`, `TauCeti.IsMetricCoupling.of_isometry`,
-  `TauCeti.isMetricCoupling_edist` and `TauCeti.isMetricCoupling_edist_add_edist`: the basic
-  constructions.
+  `TauCeti.isMetricCoupling_edist`, `TauCeti.isMetricCoupling_top` and
+  `TauCeti.isMetricCoupling_edist_add_edist`: the basic constructions.
 * `TauCeti.IsMetricCoupling.comp`: gluing two metric couplings along a common space.
 * `TauCeti.IsMetricCoupling.continuous`: joint continuity of the cross distances.
+* `TauCeti.IsMetricCoupling.isOpen_setOf_exists_lt`: cross thickenings are open.
 
 ## References
 
@@ -88,6 +95,49 @@ structure IsMetricCoupling (f : X → Y → ℝ≥0∞) : Prop where
   /-- Two points of `Y` are no farther apart than their cross distances to a point of `X`. -/
   edist_right_le (x : X) (y y' : Y) : edist y y' ≤ f x y + f x y'
 
+namespace IsMetricCoupling
+
+variable {f : X → Y → ℝ≥0∞}
+
+/-- The extended pseudometric on `X ⊕ Y` glued from a metric coupling `f`: it restricts to the
+distances of `X` and of `Y`, and its cross distances are given by `f`. It is not an instance, since
+it depends on the coupling. -/
+@[instance_reducible]
+noncomputable def pseudoEMetricSpace (hf : IsMetricCoupling f) : PseudoEMetricSpace (X ⊕ Y) where
+  edist := Sum.elim (fun x ↦ Sum.elim (edist x) (f x)) fun y ↦ Sum.elim (fun x ↦ f x y) (edist y)
+  edist_self := by rintro (x | y) <;> simp
+  edist_comm := by rintro (x | y) (x' | y') <;> simp [edist_comm]
+  edist_triangle := by
+    rintro (x | y) (x' | y') (x'' | y'') <;> simp only [Sum.elim_inl, Sum.elim_inr]
+    · exact edist_triangle x x' x''
+    · exact hf.le_edist_add_left x x' y''
+    · exact hf.edist_left_le x x'' y'
+    · exact hf.le_add_edist_right x y'' y'
+    · rw [add_comm, edist_comm]
+      exact hf.le_edist_add_left x'' x' y
+    · exact hf.edist_right_le x' y y''
+    · rw [add_comm, edist_comm]
+      exact hf.le_add_edist_right x'' y y'
+    · exact edist_triangle y y' y''
+
+@[simp]
+theorem pseudoEMetricSpace_edist_inl_inl (hf : IsMetricCoupling f) (x x' : X) :
+    hf.pseudoEMetricSpace.edist (.inl x) (.inl x') = edist x x' := (rfl)
+
+@[simp]
+theorem pseudoEMetricSpace_edist_inr_inr (hf : IsMetricCoupling f) (y y' : Y) :
+    hf.pseudoEMetricSpace.edist (.inr y) (.inr y') = edist y y' := (rfl)
+
+@[simp]
+theorem pseudoEMetricSpace_edist_inl_inr (hf : IsMetricCoupling f) (x : X) (y : Y) :
+    hf.pseudoEMetricSpace.edist (.inl x) (.inr y) = f x y := (rfl)
+
+@[simp]
+theorem pseudoEMetricSpace_edist_inr_inl (hf : IsMetricCoupling f) (y : Y) (x : X) :
+    hf.pseudoEMetricSpace.edist (.inr y) (.inl x) = f x y := (rfl)
+
+end IsMetricCoupling
+
 /-- **Metric couplings are pseudometrics on the disjoint union.** A function `f : X → Y → ℝ≥0∞`
 is a metric coupling exactly when there is an extended pseudometric on `X ⊕ Y` restricting to the
 distances of `X` and `Y` and with cross distances `f`. -/
@@ -98,23 +148,8 @@ theorem isMetricCoupling_iff_exists_pseudoEMetricSpace {f : X → Y → ℝ≥0�
       ∀ x y, d.edist (.inl x) (.inr y) = f x y := by
   constructor
   · intro hf
-    let e : X ⊕ Y → X ⊕ Y → ℝ≥0∞ :=
-      Sum.elim (fun x ↦ Sum.elim (edist x) (f x)) fun y ↦ Sum.elim (fun x ↦ f x y) (edist y)
-    refine ⟨{ edist := e, edist_self := ?_, edist_comm := ?_, edist_triangle := ?_ },
-      fun _ _ ↦ rfl, fun _ _ ↦ rfl, fun _ _ ↦ rfl⟩
-    · rintro (x | y) <;> simp [e]
-    · rintro (x | y) (x' | y') <;> simp [e, edist_comm]
-    · rintro (x | y) (x' | y') (x'' | y'') <;> simp only [e, Sum.elim_inl, Sum.elim_inr]
-      · exact edist_triangle x x' x''
-      · exact hf.le_edist_add_left x x' y''
-      · exact hf.edist_left_le x x'' y'
-      · exact hf.le_add_edist_right x y'' y'
-      · rw [add_comm, edist_comm]
-        exact hf.le_edist_add_left x'' x' y
-      · exact hf.edist_right_le x' y y''
-      · rw [add_comm, edist_comm]
-        exact hf.le_add_edist_right x'' y y'
-      · exact edist_triangle y y' y''
+    exact ⟨hf.pseudoEMetricSpace, hf.pseudoEMetricSpace_edist_inl_inl,
+      hf.pseudoEMetricSpace_edist_inr_inr, hf.pseudoEMetricSpace_edist_inl_inr⟩
   · rintro ⟨d, hX, hY, hXY⟩
     refine ⟨fun x x' y ↦ ?_, fun x y y' ↦ ?_, fun x x' y ↦ ?_, fun x y y' ↦ ?_⟩
     · rw [← hX, ← hXY, ← hXY]
@@ -138,6 +173,14 @@ theorem IsMetricCoupling.of_isometry {T : X → Z} {S : Y → Z} (hT : Isometry 
 /-- The distance of `X` is a metric coupling of `X` with itself. -/
 theorem isMetricCoupling_edist : IsMetricCoupling fun x x' : X ↦ edist x x' :=
   IsMetricCoupling.of_isometry isometry_id isometry_id
+
+/-- The constant cross distance `∞` is a metric coupling: it places `X` and `Y` infinitely far
+apart. -/
+theorem isMetricCoupling_top : IsMetricCoupling fun (_ : X) (_ : Y) ↦ (∞ : ℝ≥0∞) where
+  le_edist_add_left _ _ _ := by simp
+  le_add_edist_right _ _ _ := by simp
+  edist_left_le _ _ _ := le_top
+  edist_right_le _ _ _ := le_top
 
 /-- **Gluing at a point.** Identifying `x₀ ∈ X` with `y₀ ∈ Y` gives the metric coupling whose cross
 distance is the length `edist x₀ x + edist y₀ y` of the path through the glued point. -/
@@ -206,6 +249,15 @@ theorem continuous (hf : IsMetricCoupling f) : Continuous fun z : X × Y ↦ f z
         hf.le_edist_add_add_edist _ _ _ _
     _ ≤ edist z z' + f z'.1 z'.2 + edist z z' := by gcongr
     _ = f z'.1 z'.2 + 2 * edist z z' := by ring
+
+/-- The points of `Y` at cross distance less than `a` from some point of a set `A ⊆ X` form an
+open set: it is the trace on `Y` of the open `a`-thickening of `A` in the glued space. -/
+theorem isOpen_setOf_exists_lt (hf : IsMetricCoupling f) (A : Set X) (a : ℝ≥0∞) :
+    IsOpen {y | ∃ x ∈ A, f x y < a} := by
+  have : {y | ∃ x ∈ A, f x y < a} = ⋃ x ∈ A, {y | f x y < a} := by ext; simp
+  rw [this]
+  exact isOpen_biUnion fun x _ ↦
+    isOpen_lt (hf.continuous.comp (Continuous.prodMk_right x)) continuous_const
 
 /-- **Gluing metric couplings.** Metric couplings of `X` with `Y` and of `Y` with `Z` glue along
 `Y` to a metric coupling of `X` with `Z`, whose cross distance from `x` to `z` is the length of the

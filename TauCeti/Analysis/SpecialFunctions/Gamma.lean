@@ -40,9 +40,12 @@ summability and moment arguments for discrete laws with Beta-function masses.
 
 * `Real.measurable_Gamma` — `Real.Gamma` is measurable.
 * `Real.continuous_inv_Gamma` — `s ↦ (Real.Gamma s)⁻¹` is continuous.
+* `TauCeti.continuous_Gamma_sum_div_prod` — the finite Gamma quotient is jointly continuous on
+  positive parameters.
 * `Real.exists_abs_inv_Gamma_le` — `(Real.Gamma s)⁻¹` is bounded on `[a, ∞)`.
 * `Real.Gamma_add_nat_div_Gamma_eq` — `Γ(x + n) / Γ x` is the rising factorial `x (x + 1) ⋯`.
 * `Real.prod_range_add_mul_Gamma` — `s (s + 1) ⋯ (s + n - 1) Γ s = Γ(s + n)` for positive `s`.
+* `Real.Gamma_nat_add_half_eq_factorial` — `Γ(n + 1 / 2) = (2 n)! √π / (4 ^ n n!)`.
 * `Real.isEquivalent_Gamma_natCast_add_one_add` — `Γ(n + 1 + s) ~ n ^ s * n!` as `n → ∞`.
 * `Real.tendsto_Gamma_natCast_add_div_Gamma_natCast_add_atTop` — `Γ(n + a) / Γ(n + b) → 0` for
   `a < b`.
@@ -74,6 +77,27 @@ theorem _root_.Real.continuous_inv_Gamma : Continuous fun s : ℝ => (Real.Gamma
   rw [h]
   exact Complex.continuous_re.comp
     (Complex.differentiable_one_div_Gamma.continuous.comp Complex.continuous_ofReal)
+
+/-- For a finite family of positive parameters, the Gamma quotient
+`Γ(∑ i, a i) / ∏ i, Γ(a i)` is jointly continuous. -/
+@[fun_prop]
+theorem continuous_Gamma_sum_div_prod {ι : Type*} [Fintype ι] :
+    Continuous (fun a : ι → Set.Ioi (0 : ℝ) ↦
+      Real.Gamma (∑ i, (a i : ℝ)) / ∏ i, Real.Gamma (a i)) := by
+  cases isEmpty_or_nonempty ι with
+  | inl h =>
+    let := h
+    -- With no parameters, the quotient is constant.
+    simpa using (continuous_const : Continuous (fun _ : ι → Set.Ioi (0 : ℝ) ↦ Real.Gamma 0))
+  | inr h =>
+    let := h
+    have hΓ := Real.differentiableOn_Gamma_Ioi.continuousOn
+    have hc (i : ι) : Continuous (fun a : ι → Set.Ioi (0 : ℝ) ↦ (a i : ℝ)) := by
+      fun_prop
+    exact (hΓ.comp_continuous (by fun_prop)
+      (fun a ↦ Finset.sum_pos (fun i _ ↦ (a i).2) Finset.univ_nonempty)).div
+      (continuous_finsetProd _ fun i _ ↦ hΓ.comp_continuous (hc i) fun a ↦ (a i).2)
+      (fun a ↦ Finset.prod_ne_zero_iff.mpr fun i _ ↦ (Real.Gamma_pos_of_pos (a i).2).ne')
 
 /-- The reciprocal of the real Gamma function is bounded on every half-line `[a, ∞)`. -/
 theorem _root_.Real.exists_abs_inv_Gamma_le (a : ℝ) :
@@ -112,6 +136,21 @@ theorem prod_range_add_mul_Gamma {s : ℝ} (hs : 0 < s) (n : ℕ) :
   | succ n ih =>
     rw [Finset.prod_range_succ, mul_right_comm, ih, Nat.cast_succ, ← add_assoc,
       Gamma_add_one (by positivity), mul_comm]
+
+/-- The half-integer value `Γ(n + 1 / 2) = (2 n)! √π / (4 ^ n n!)`, the factorial form of
+`Real.Gamma_nat_add_half`, obtained from Legendre's duplication formula at `n + 1 / 2`. -/
+theorem Gamma_nat_add_half_eq_factorial (n : ℕ) :
+    Gamma (n + 1 / 2) = (2 * n)! * √π / (4 ^ n * n !) := by
+  -- the arguments and exponent of duplication at `n + 1 / 2`, rewritten as natural-number casts
+  have hshift : (n : ℝ) + 1 / 2 + 1 / 2 = n + 1 := by ring
+  have hdouble : 2 * ((n : ℝ) + 1 / 2) = ((2 * n : ℕ) : ℝ) + 1 := by push_cast; ring
+  have hexp : (1 : ℝ) - (((2 * n : ℕ) : ℝ) + 1) = -((2 * n : ℕ) : ℝ) := by ring
+  have hfour : (4 : ℝ) ^ n = 2 ^ (2 * n) := by rw [pow_mul]; norm_num
+  have h := Gamma_mul_Gamma_add_half ((n : ℝ) + 1 / 2)
+  rw [hshift, hdouble, hexp, Gamma_nat_eq_factorial, Gamma_nat_eq_factorial,
+    rpow_neg zero_le_two, rpow_natCast] at h
+  rw [eq_div_iff (by positivity), hfour, mul_left_comm, h]
+  field_simp
 
 /-- The positive-shift case of `isEquivalent_Gamma_natCast_add_one_add`, read off from Euler's
 limit `GammaSeq s n → Γ s`. -/

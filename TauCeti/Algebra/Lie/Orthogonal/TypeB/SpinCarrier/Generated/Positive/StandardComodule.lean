@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.Generated.Positiv
 public import TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.Generated.StandardComodule
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Coordinate
 import TauCeti.Algebra.Coalgebra.Subcomodule.Corestrict
+import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.StandardComodule.Quotient
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Parabolic.StandardComodule
 
 /-!
@@ -112,19 +113,11 @@ theorem rootSubgroupPoints_mulVec_mem
     ((rootSubgroupPoints n (.inl i) R t : Matrix.GeneralLinearGroup (Fin (dimension n)) R) :
       Matrix (Fin (dimension n)) (Fin (dimension n)) R) *ᵥ v ∈ N := by
   let q := (AdditiveGroup.gaPointsMulEquiv (R := R) (A := R)).symm t
-  let f := CommHopfAlgCat.commonKernelLift (generator n R) (.inl i)
-  have h := GeneralLinear.corestrictStandardComodule_mulVec_mem R (dimension n)
-    (CommHopfAlgCat.mkQuotient _ (definingIdeal n R)).hom N
-    (toConv (q.ofConv.comp f.hom.toAlgHom)) hv
-  have hcomp : BialgHom.mapDomain (CommHopfAlgCat.mkQuotient _ (definingIdeal n R)).hom
-      (toConv (q.ofConv.comp f.hom.toAlgHom)) =
-      toConv (q.ofConv.comp (generator n R (.inl i)).hom.toAlgHom) := by
-    apply WithConv.ext
-    ext x
-    simp only [BialgHom.mapDomain_apply_apply, AlgHom.comp_apply]
-    exact congrArg (fun g ↦ q.ofConv (g.hom x))
-      (CommHopfAlgCat.mkQuotient_comp_commonKernelLift (generator n R) (.inl i))
-  rw [hcomp, rootPoint_matrix n R i R q, MulEquiv.apply_symm_apply] at h
+  have h := GeneralLinear.quotientStandardComodule_mulVec_mem R (dimension n)
+    (definingIdeal n R) (generator n R (.inl i))
+    (by simpa only [generator_inl] using
+      ((le_definingIdeal_iff n R (definingIdeal n R)).mp le_rfl).1 i) N q hv
+  rw [rootPoint_matrix n R i R q, MulEquiv.apply_symm_apply] at h
   exact h
 
 /-- A subcomodule containing a weight vector contains every vector obtained by one raising step:

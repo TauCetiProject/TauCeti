@@ -5,8 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Subgroup.Finite
 public import Mathlib.GroupTheory.GroupAction.Basic
 public import Mathlib.Topology.Algebra.ConstMulAction
+
+import Mathlib.Topology.GDelta.Basic
+import TauCeti.Topology.Algebra.ConstMulAction
 
 /-!
 # The germ kernel of a group action
@@ -21,7 +25,15 @@ the stabilizer of `x`.
 For the presentation `[X/G]` of an orbifold by a group action, the germ kernel at `x` is the
 ineffective part of the isotropy at `x`: the isotropy elements whose action cannot be seen near
 `x`. The effective reduction of the action discards these elements, while the orbifold keeps them.
-Transport along the action conjugates germ kernels, as it does stabilizers.
+Transport along the action conjugates germ kernels, as it does stabilizers, so the order of the
+germ kernel is a function on the orbit space.
+
+The stabilizer of `x` is the whole isotropy at `x`, and it equals the germ kernel exactly when all
+of the isotropy at `x` is ineffective. For a finite group acting continuously on a Hausdorff space,
+this happens on a dense open set of points: a point outside it lies on the frontier of the closed
+fixed set of some element, and a finite union of such frontiers is closed with empty interior. In
+the presentation `[X/G]`, this is the dense open principal part, on which the isotropy reduces to
+its ineffective kernel. No smoothness or linearity is needed for this statement.
 
 ## Main declarations
 
@@ -32,6 +44,15 @@ Transport along the action conjugates germ kernels, as it does stabilizers.
   the germ kernel contains the kernel of the action and is contained in the stabilizer.
 * `TauCeti.MulAction.germKernel_smul_eq_germKernel_map_conj`: the germ kernel at `h • x` is the
   conjugate by `h` of the germ kernel at `x`.
+* `TauCeti.MulAction.orbitCardGermKernel G`: the order of the germ kernel as a function on the
+  orbit space, well defined by `TauCeti.MulAction.card_germKernel_smul`.
+* `TauCeti.MulAction.stabilizer_eq_germKernel_iff_of_stabilizer_le`: at a point whose stabilizer
+  lies in a subgroup `H`, the stabilizer is the germ kernel for `G` exactly when it is for `H`.
+* `TauCeti.MulAction.setOf_stabilizer_eq_germKernel`: the points whose stabilizer is the germ
+  kernel are those lying in no fixed set without lying in its interior.
+* `TauCeti.MulAction.isOpen_setOf_stabilizer_eq_germKernel`,
+  `TauCeti.MulAction.dense_setOf_stabilizer_eq_germKernel`: for a finite group acting continuously
+  on a Hausdorff space, these points form a dense open set.
 
 ## References
 
@@ -91,5 +112,90 @@ theorem germKernel_smul_eq_germKernel_map_conj [ContinuousConstSMul G X] (h : G)
     eventually_map]
   refine eventually_congr (Eventually.of_forall fun y ↦ ?_)
   rw [mul_smul, mul_smul, inv_smul_eq_iff]
+
+/-- The germ kernels along an orbit have the same order. -/
+theorem card_germKernel_smul [ContinuousConstSMul G X] (h : G) (x : X) :
+    Nat.card (germKernel G (h • x)) = Nat.card (germKernel G x) := by
+  rw [germKernel_smul_eq_germKernel_map_conj,
+    Subgroup.card_map_of_injective (MulAut.conj h).injective]
+
+variable (G) in
+/-- The order of the germ kernel as a function on the orbit space: its value at the orbit of `x` is
+the order of the germ kernel at `x`, which does not depend on the representative by
+`TauCeti.MulAction.card_germKernel_smul`. For the presentation `[X/G]` it is the order of the
+ineffective isotropy at a point of the coarse space. -/
+noncomputable def orbitCardGermKernel [ContinuousConstSMul G X] : orbitRel.Quotient G X → ℕ :=
+  Quotient.lift (fun x ↦ Nat.card (germKernel G x)) fun _ _ ⟨h, hx⟩ ↦
+    hx ▸ card_germKernel_smul h _
+
+@[simp]
+theorem orbitCardGermKernel_mk [ContinuousConstSMul G X] (x : X) :
+    orbitCardGermKernel G (⟦x⟧ : orbitRel.Quotient G X) = Nat.card (germKernel G x) :=
+  (rfl)
+
+/-- The germ kernel of the restricted action of a subgroup `H` is the germ kernel of `G` pulled
+back to `H`. -/
+@[simp]
+theorem germKernel_subgroupOf (H : Subgroup G) (x : X) :
+    (germKernel G x).subgroupOf H = germKernel H x := by
+  ext g
+  simp [Subgroup.mem_subgroupOf, Subgroup.smul_def]
+
+/-- If the stabilizer of `y` lies in a subgroup `H`, then the stabilizer of `y` is its germ kernel
+for `G` exactly when it is for `H`. This applies to the points of a slice for `H`. -/
+theorem stabilizer_eq_germKernel_iff_of_stabilizer_le {H : Subgroup G} {y : X}
+    (hy : stabilizer G y ≤ H) :
+    stabilizer H y = germKernel H y ↔ stabilizer G y = germKernel G y := by
+  rw [← stabilizer_subgroupOf, ← germKernel_subgroupOf, Subgroup.subgroupOf_inj,
+    inf_eq_left.mpr hy, inf_eq_left.mpr ((germKernel_le_stabilizer y).trans hy)]
+
+/-- A point has its germ kernel as its stabilizer exactly when it lies in no fixed set without
+lying in its interior: every element fixing the point acts as the identity near it. -/
+theorem setOf_stabilizer_eq_germKernel :
+    {x : X | stabilizer G x = germKernel G x} =
+      (⋃ g : G, fixedBy X g \ interior (fixedBy X g))ᶜ := by
+  ext x
+  simp only [mem_ofPred_eq, mem_compl_iff, mem_iUnion, Set.mem_sdiff, not_exists, not_and, not_not]
+  refine ⟨fun h g hg ↦ ?_, fun h ↦ le_antisymm (fun g hg ↦ ?_) (germKernel_le_stabilizer x)⟩
+  · rw [← mem_germKernel_iff_mem_interior_fixedBy, ← h]
+    exact mem_stabilizer_iff.mpr hg
+  · exact mem_germKernel_iff_mem_interior_fixedBy.mpr (h g (mem_stabilizer_iff.mp hg))
+
+/-- The set of points whose stabilizer is the germ kernel is invariant under the action. -/
+@[simp]
+theorem stabilizer_smul_eq_germKernel_iff [ContinuousConstSMul G X] (g : G) (x : X) :
+    stabilizer G (g • x) = germKernel G (g • x) ↔ stabilizer G x = germKernel G x := by
+  rw [stabilizer_smul_eq_stabilizer_map_conj, germKernel_smul_eq_germKernel_map_conj]
+  exact (Subgroup.map_injective (MulAut.conj g).injective).eq_iff
+
+section Hausdorff
+
+variable [T2Space X] [ContinuousConstSMul G X]
+
+/-- For an action by continuous maps on a Hausdorff space, the points whose stabilizer is the germ
+kernel are those lying on the frontier of no fixed set. -/
+private theorem setOf_stabilizer_eq_germKernel_eq_compl_iUnion_frontier :
+    {x : X | stabilizer G x = germKernel G x} = (⋃ g : G, frontier (fixedBy X g))ᶜ := by
+  simp only [setOf_stabilizer_eq_germKernel, (isClosed_fixedBy _).frontier_eq]
+
+/-- For a finite group acting continuously on a Hausdorff space, the points whose stabilizer is the
+germ kernel form an open set. -/
+theorem isOpen_setOf_stabilizer_eq_germKernel [Finite G] :
+    IsOpen {x : X | stabilizer G x = germKernel G x} := by
+  rw [setOf_stabilizer_eq_germKernel_eq_compl_iUnion_frontier, isOpen_compl_iff]
+  exact isClosed_iUnion_of_finite fun _ ↦ isClosed_frontier
+
+/-- **The principal part of a finite action.** For a finite group acting continuously on a
+Hausdorff space, the points whose stabilizer is the germ kernel form a dense set: generically, an
+element fixing a point acts as the identity near it. The set is also open, by
+`TauCeti.MulAction.isOpen_setOf_stabilizer_eq_germKernel`. -/
+theorem dense_setOf_stabilizer_eq_germKernel [Finite G] :
+    Dense {x : X | stabilizer G x = germKernel G x} := by
+  rw [setOf_stabilizer_eq_germKernel_eq_compl_iUnion_frontier]
+  refine (isClosed_isNowhereDense_iff_compl.mp ⟨isClosed_iUnion_of_finite fun _ ↦
+    isClosed_frontier, IsNowhereDense.iUnion fun g ↦ ?_⟩).2
+  exact isClosed_frontier.isNowhereDense_iff.mpr (interior_frontier (isClosed_fixedBy g))
+
+end Hausdorff
 
 end TauCeti.MulAction

@@ -48,6 +48,12 @@ topological Lie algebra, such as the formal loop algebra, by a discrete trivial 
   one-cochains which are continuous two-cocycles.
 * `TauCeti.LieModule.Cohomology.continuousSecondCohomology`: their quotient.
 
+Continuous two-cochains pull back along continuous Lie algebra morphisms and push forward along
+linear maps of coefficients (`twoCochainMap_mem_continuousTwoCochain`), and with trivial
+coefficients so do continuous two-cocycles (`twoCochainMap_mem_continuousTwoCocycle`, and
+`twoCochainMap_id_mem_continuousTwoCocycle` for coefficient maps alone). Continuous one-cochains
+push forward along linear maps of coefficients (`comp_mem_continuousOneCochain`).
+
 ## Main results
 
 * `TauCeti.LieModule.Cohomology.mem_continuousTwoCochain_iff_continuous`: the defining condition
@@ -175,6 +181,27 @@ theorem continuousTwoCochain_ext_on [IsTopologicalAddGroup L] {c d : twoCochain 
     (mem_continuousTwoCochain_iff_continuous.mp hd) fun p hp ↦ h _ hp.1 _ hp.2
   exact Subtype.ext (LinearMap.ext₂ fun x y ↦ congrFun hcd (x, y))
 
+variable {L' M' : Type*} [LieRing L'] [LieAlgebra R L'] [TopologicalSpace L'] [AddCommGroup M']
+  [Module R M']
+
+/-- **Continuous two-cochains pull back along continuous morphisms.** Pulling a continuous
+two-cochain back along a continuous Lie algebra morphism `φ` and pushing it forward along a linear
+map `e` of coefficients gives a continuous two-cochain. -/
+theorem twoCochainMap_mem_continuousTwoCochain (e : M →ₗ[R] M') {φ : L' →ₗ⁅R⁆ L}
+    (hφ : Continuous φ) {c : twoCochain R L M} (hc : c ∈ continuousTwoCochain R L M) :
+    twoCochainMap e φ c ∈ continuousTwoCochain R L' M' := by
+  have h₁ : Tendsto φ (𝓝 0) (𝓝 0) := by simpa using hφ.tendsto 0
+  have h₂ : Tendsto (Prod.map φ φ) (𝓝 0) (𝓝 0) := by
+    simpa [Prod.map, Prod.zero_eq_mk] using (hφ.prodMap hφ).tendsto 0
+  exact ⟨fun x ↦ (h₁.eventually (hc.1 (φ x))).mono fun y hy ↦ by simp [hy],
+    (h₂.eventually hc.2).mono fun p (hp : c (φ p.1) (φ p.2) = 0) ↦ by simp [hp]⟩
+
+/-- Pushing a continuous one-cochain forward along a linear map `e` of coefficients gives a
+continuous one-cochain. -/
+theorem comp_mem_continuousOneCochain (e : M →ₗ[R] M') {f : oneCochain R L M}
+    (hf : f ∈ continuousOneCochain R L M) : e ∘ₗ f ∈ continuousOneCochain R L M' :=
+  hf.mono fun x hx ↦ by simp [hx]
+
 end Cochains
 
 section Cohomology
@@ -230,6 +257,24 @@ theorem d₁₂_mem_continuousTwoCocycle (hL : Continuous fun p : L × L ↦ ⁅
     filter_upwards [(continuous_fst.tendsto 0).eventually hf,
       (continuous_snd.tendsto 0).eventually hf, hp.eventually hf] with p h₁ h₂ h₃
     simp [d₁₂_apply_apply, h₁, h₂, h₃]
+
+/-- With trivial coefficients, pulling a continuous two-cocycle back along a continuous Lie
+algebra morphism and pushing it forward along a linear map of coefficients gives a continuous
+two-cocycle. -/
+theorem twoCochainMap_mem_continuousTwoCocycle {L' M' : Type*} [LieRing L'] [LieAlgebra R L']
+    [TopologicalSpace L'] [AddCommGroup M'] [Module R M'] [LieRingModule L' M'] [LieModule R L' M']
+    [LieModule.IsTrivial L M] [LieModule.IsTrivial L' M'] (e : M →ₗ[R] M') {φ : L' →ₗ⁅R⁆ L}
+    (hφ : Continuous φ) {c : twoCochain R L M} (hc : c ∈ continuousTwoCocycle R L M) :
+    twoCochainMap e φ c ∈ continuousTwoCocycle R L' M' :=
+  ⟨twoCochainMap_mem_continuousTwoCochain e hφ hc.1, twoCochainMap_mem_twoCocycle e φ hc.2⟩
+
+/-- With trivial coefficients, pushing a continuous two-cocycle forward along a linear map `e` of
+coefficients gives a continuous two-cocycle. -/
+theorem twoCochainMap_id_mem_continuousTwoCocycle {M' : Type*} [AddCommGroup M'] [Module R M']
+    [LieRingModule L M'] [LieModule R L M'] [LieModule.IsTrivial L M] [LieModule.IsTrivial L M']
+    (e : M →ₗ[R] M') {c : twoCochain R L M} (hc : c ∈ continuousTwoCocycle R L M) :
+    twoCochainMap e LieHom.id c ∈ continuousTwoCocycle R L M' :=
+  twoCochainMap_mem_continuousTwoCocycle e (by simpa using continuous_id) hc
 
 variable {N : Type*} [AddCommGroup N] [Module R N]
 

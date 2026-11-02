@@ -8,11 +8,12 @@ module
 public import Mathlib.ModelTheory.Syntax
 
 /-!
-# Left variables of first-order terms under relabelling and substitution
+# First-order terms under relabelling, substitution and language maps
 
 Mathlib's `FirstOrder.Language.Term.varFinsetLeft` collects the variables of a term over `α ⊕ β`
 that come from the left summand `α`. This file characterizes it through the full variable set
-`Term.varFinset`, and computes it after `Term.relabel` and `Term.subst`.
+`Term.varFinset`, and computes it after `Term.relabel` and `Term.subst`. It also records that a
+language map commutes with relabelling the variables of a term.
 
 ## Main results
 
@@ -20,6 +21,12 @@ that come from the left summand `α`. This file characterizes it through the ful
   `Sum.inl a` is a variable of `t`.
 * `FirstOrder.Language.Term.mem_varFinsetLeft_relabel`: the left variables of a relabelled term.
 * `FirstOrder.Language.Term.mem_varFinsetLeft_subst`: the left variables of a substituted term.
+* `FirstOrder.Language.Term.exists_eq_var_of_isRelational`: in a relational language, every term
+  is a variable.
+* `FirstOrder.Language.Term.exists_eq_var_inr_of_isRelational`: in a relational language, a term
+  over `α ⊕ β` with `α` empty is a variable `Sum.inr b`.
+* `FirstOrder.Language.LHom.onTerm_relabel`: a language map commutes with relabelling the
+  variables of a term.
 -/
 
 public section
@@ -63,7 +70,37 @@ theorem mem_varFinsetLeft_subst [DecidableEq α] [DecidableEq β] (σ : α → L
       ih]
     exact ⟨fun ⟨i, x, hx, h⟩ => ⟨x, ⟨i, hx⟩, h⟩, fun ⟨x, ⟨i, hx⟩, h⟩ => ⟨i, x, hx, h⟩⟩
 
+/-- In a relational language, every term is a variable. -/
+theorem exists_eq_var_of_isRelational [L.IsRelational] (t : L.Term α) : ∃ a, t = var a := by
+  cases t with
+  | var a => exact ⟨a, rfl⟩
+  | func f _ => exact isEmptyElim f
+
+/-- In a relational language, a term whose left variables range over an empty type is a right
+variable. -/
+theorem exists_eq_var_inr_of_isRelational [L.IsRelational] [IsEmpty α] (t : L.Term (α ⊕ β)) :
+    ∃ b, t = var (Sum.inr b) := by
+  cases t with
+  | var x => rcases x with a | b
+             · exact isEmptyElim a
+             · exact ⟨b, rfl⟩
+  | func f _ => exact isEmptyElim f
+
 end Term
+
+namespace LHom
+
+variable {L L' : Language}
+
+/-- A language map commutes with relabelling the variables of a term. -/
+@[simp]
+theorem onTerm_relabel {β γ : Type*} (g : L →ᴸ L') (h : β → γ) (t : L.Term β) :
+    g.onTerm (t.relabel h) = (g.onTerm t).relabel h := by
+  induction t with
+  | var => rfl
+  | func f ts ih => simp [Term.relabel, ih]
+
+end LHom
 
 end Language
 

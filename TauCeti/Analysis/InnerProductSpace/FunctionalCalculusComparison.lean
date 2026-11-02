@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.StarOrder
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Abs
 public import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.FiniteSpectrum
+public import TauCeti.Analysis.InnerProductSpace.Modulus
 public import TauCeti.Analysis.InnerProductSpace.Positive.SquareRoot
 public import TauCeti.Analysis.Normed.Operator.FiniteDimensional
 
@@ -48,6 +49,8 @@ automatic in finite dimension, is assumed because Mathlib's adjoint on `E →L[�
   the square root `CFC.sqrt (A† A)` of its source Gram operator.
 * `LinearMap.toContinuousLinearMap_operatorAbs_eq_cfcAbs`: the finite modulus of an endomorphism
   is its absolute value `CFC.abs` in the `C⋆`-algebra sense.
+* `LinearMap.toContinuousLinearMap_operatorAbs_eq_modulus`: the finite and bounded modulus
+  constructions coincide for every finite-dimensional real or complex inner product space.
 -/
 
 public section
@@ -120,5 +123,14 @@ theorem toContinuousLinearMap_operatorAbs_eq_cfcAbs (A : E →ₗ[𝕜] E) :
     toContinuousLinearMap A.operatorAbs = CFC.abs (toContinuousLinearMap A) := by
   rw [toContinuousLinearMap_operatorAbs, CFC.abs, ContinuousLinearMap.star_eq_adjoint,
     ← adjoint_toContinuousLinearMap, ContinuousLinearMap.mul_def]
+
+/-- **Agreement of the finite and bounded moduli.** For a linear map between
+finite-dimensional real or complex inner product spaces, the finite spectral modulus is the
+bounded-operator modulus after converting the maps to continuous linear maps. -/
+theorem toContinuousLinearMap_operatorAbs_eq_modulus [CompleteSpace F]
+    (A : E →ₗ[𝕜] F) :
+    toContinuousLinearMap A.operatorAbs = (toContinuousLinearMap A).modulus := by
+  simp only [toContinuousLinearMap_operatorAbs, ContinuousLinearMap.modulus_eq_sqrt,
+    adjoint_toContinuousLinearMap]
 
 end LinearMap

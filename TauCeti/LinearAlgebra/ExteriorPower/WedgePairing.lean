@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.ExteriorPower.WedgePairing
+public import TauCeti.LinearAlgebra.ExteriorPower.Basis
 -- Private: the exterior algebra basis is used only inside the proof of
 -- `Set.powersetCard.sign_mul_sign_compl`.
 import Mathlib.LinearAlgebra.ExteriorAlgebra.Basis
@@ -16,12 +17,15 @@ import Mathlib.LinearAlgebra.ExteriorAlgebra.Basis
 Inside the exterior algebra, the wedge product of exterior powers is the algebra product, and the
 wedge product of pure exterior products concatenates their vector families. A trivialisation
 in a specified top degree gives the wedge pairing by composing the wedge product with that
-trivialisation; the degree transports disappear after identifying the degree with the finrank.
+trivialisation; the degree transports disappear after identifying the degree with the finrank,
+and a wedge pairing is the trivialisation of the exterior-algebra product of its arguments.
 On the exterior-power bases induced by a basis `b`, the wedge pairing of `e_s` and `e_t` is the
 shuffle sign of `s` times the volume of `b` when `s` and `t` are disjoint, and zero otherwise.
 The top exterior product `Module.Basis.topVector` of a basis indexed by `Fin n` is the wedge of
 the basis vectors, and the shuffle signs of a set of `k` indices and of its complement of `l`
-indices multiply to `(-1) ^ (k * l)`.
+indices multiply to `(-1) ^ (k * l)`. Composing a complementary-degree wedge pairing,
+trivialised by a linear map on the top exterior power, with the exterior powers of an endomorphism
+scales it by the determinant of that endomorphism.
 -/
 
 public section
@@ -43,6 +47,25 @@ theorem wedge_ιMulti (u : Fin k → M) (v : Fin l → M) :
   apply Subtype.ext
   simp only [coe_wedge, ιMulti_apply_coe, ExteriorAlgebra.ιMulti_mul_ιMulti]
 
+/-- The wedge product commutes with applying a linear map to both factors. -/
+theorem wedge_map {N : Type*} [AddCommGroup N] [Module R N] (f : M →ₗ[R] N) :
+    (wedge R N k l).compl₁₂ (exteriorPower.map k f) (exteriorPower.map l f) =
+      (wedge R M k l).compr₂ (exteriorPower.map (k + l) f) := by
+  apply LinearMap.ext
+  intro x
+  apply LinearMap.ext
+  intro y
+  apply Subtype.ext
+  simp only [LinearMap.compl₁₂_apply, LinearMap.compr₂_apply, coe_wedge,
+    exteriorPower.coe_map, map_mul]
+
+/-- Pointwise form of `wedge_map` for rewriting evaluations of wedge products. -/
+theorem wedge_map_apply {N : Type*} [AddCommGroup N] [Module R N] (f : M →ₗ[R] N)
+    (x : ⋀[R]^k M) (y : ⋀[R]^l M) :
+    wedge R N k l (exteriorPower.map k f x) (exteriorPower.map l f y) =
+      exteriorPower.map (k + l) f (wedge R M k l x y) :=
+  LinearMap.congr_fun₂ (wedge_map f) x y
+
 /-- A wedge pairing transported from a specified top degree is the wedge product followed by
 the trivialisation in that degree. -/
 theorem wedgePairing_eq_compr₂_of_finrank_eq (n : ℕ) (hfin : Module.finrank R M = n)
@@ -53,6 +76,44 @@ theorem wedgePairing_eq_compr₂_of_finrank_eq (n : ℕ) (hfin : Module.finrank 
       (wedge R M k l).compr₂ (hdeg ▸ vol) := by
   subst n
   rfl
+
+/-- The wedge pairing of `x` and `y` is `vol` of their product in the exterior algebra, read as an
+element `z` of the top exterior power. This removes the degree transport `k + l = finrank R M`
+built into `exteriorPower.wedgePairing`, so pairings with different splittings of the top degree
+can be compared through the exterior algebra. -/
+theorem wedgePairing_apply_eq_of_coe_mul_eq (vol : ⋀[R]^(Module.finrank R M) M ≃ₗ[R] R)
+    (hkl : k + l = Module.finrank R M) (x : ⋀[R]^k M) (y : ⋀[R]^l M)
+    (z : ⋀[R]^(Module.finrank R M) M) (h : (x : ExteriorAlgebra R M) * y = z) :
+    wedgePairing vol hkl x y = vol z := by
+  -- Evaluating a degree-transported functional only depends on the exterior-algebra element.
+  have key : ∀ {d e : ℕ} (hde : e = d) (f : ⋀[R]^e M →ₗ[R] R) (w : ⋀[R]^d M) (w' : ⋀[R]^e M),
+      (w : ExteriorAlgebra R M) = w' →
+        (Eq.rec (motive := fun d _ ↦ ⋀[R]^d M →ₗ[R] R) f hde) w = f w' := by
+    rintro d e rfl f w w' hw
+    exact congrArg f (Subtype.ext hw)
+  exact key _ _ _ _ (by simpa using h)
+
+/-- For a free module of finrank `n = k + l` and any linear functional `vol` on `⋀^n M`,
+precomposing `wedge` followed by `vol` with the exterior powers of an endomorphism `f` scales it
+by `det f`. -/
+theorem
+    wedge_compr₂_compl₁₂_exteriorPower_map_eq_det_smul [Module.Free R M]
+    (hn : Module.finrank R M = n) (hkl : k + l = n) (vol : ⋀[R]^n M →ₗ[R] R)
+    (f : M →ₗ[R] M) :
+    LinearMap.compl₁₂ ((wedge R M k l).compr₂ (hkl ▸ vol))
+      (exteriorPower.map k f) (exteriorPower.map l f) =
+      LinearMap.det f • ((wedge R M k l).compr₂ (hkl ▸ vol)) := by
+  apply LinearMap.ext
+  intro x
+  apply LinearMap.ext
+  intro y
+  simp only [LinearMap.compl₁₂_apply, LinearMap.smul_apply, LinearMap.compr₂_apply]
+  rw [wedge_map_apply]
+  subst n
+  have htop := LinearMap.map_exteriorPower_finrank_eq_det_smul f
+  rw [← hkl] at htop
+  rw [htop]
+  simp only [LinearMap.smul_apply, map_smul, LinearMap.id_apply, smul_eq_mul]
 
 /-- **The wedge pairing on exterior-power basis vectors**: `e_s` and `e_t` pair to the shuffle sign
 of `s` times the volume `vol b.topVector` when `s` and `t` are disjoint, and to zero otherwise.

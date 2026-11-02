@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
+public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.SymplecticGroup
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
@@ -37,6 +38,9 @@ hyperbolic pair `e, f` hold over any commutative ring and are stated at that lev
 
 ## Main declarations
 
+* `LinearMap.BilinForm.IsAlt.nondegenerate_iff_ne_zero_of_finrank_eq_two`: on a two-dimensional
+  space an alternating form is nondegenerate exactly when it is nonzero, since a single
+  hyperbolic pair already spans the plane.
 * `LinearMap.BilinForm.IsAlt.restrict_nondegenerate_orthogonal_span_pair`: a nondegenerate
   alternating form stays nondegenerate on the orthogonal complement of a hyperbolic pair.
 * `LinearMap.BilinForm.IsAlt.exists_basis_apply_eq_J_of_basis_orthogonal_span_pair`: adjoining a
@@ -46,6 +50,8 @@ hyperbolic pair `e, f` hold over any commutative ring and are stated at that lev
   alternating form on a compatibly graded space has a homogeneous symplectic basis.**
 * `LinearMap.BilinForm.IsAlt.exists_basis_toMatrix_eq_J`: **a nondegenerate alternating form has
   a symplectic basis.**
+* `LinearMap.BilinForm.basis_det_eq_one_of_toMatrix_eq_J`: two symplectic bases of the same form
+  have relative determinant `1`.
 * `LinearMap.BilinForm.IsAlt.even_finrank`: a space carrying a nondegenerate alternating form has
   even dimension.
 * `LinearMap.BilinForm.IsAlt.exists_basis_apply_eq_J_inl_zero_eq`: every nonzero vector is the
@@ -186,6 +192,54 @@ private theorem IsAlt.apply_cons_cons_eq_J {m : ℕ}
       Matrix.one_apply, Fin.succ_inj, Fin.succ_ne_zero, fun a : Fin m => (Fin.succ_ne_zero a).symm]
 
 end CommRing
+
+section Determinant
+
+variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+
+/-- **Symplectic bases have unit relative determinant.** Two bases in which `B` has the standard
+symplectic matrix `Matrix.J` differ by a symplectic matrix, so `b.det c = 1`. -/
+theorem basis_det_eq_one_of_toMatrix_eq_J {l : Type*} [Fintype l] [DecidableEq l]
+    {B : BilinForm R M} {b c : Basis (l ⊕ l) R M} (hb : BilinForm.toMatrix b B = Matrix.J l R)
+    (hc : BilinForm.toMatrix c B = Matrix.J l R) : b.det c = 1 := by
+  have h := toMatrix_mul_basis_toMatrix b c B
+  rw [hb, hc, ← SymplecticGroup.mem_iff'] at h
+  rw [Basis.det_apply, SymplecticGroup.det_eq_one h]
+
+end Determinant
+
+section FinrankTwo
+
+variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
+
+/-- **An alternating form on a two-dimensional space is nondegenerate exactly when it is
+nonzero.** -/
+theorem IsAlt.nondegenerate_iff_ne_zero_of_finrank_eq_two {B : BilinForm K V} (hB : B.IsAlt)
+    (hV : finrank K V = 2) : B.Nondegenerate ↔ B ≠ 0 := by
+  have : Nontrivial V := Module.nontrivial_of_finrank_eq_succ hV
+  refine ⟨Nondegenerate.ne_zero, fun hB0 => ?_⟩
+  -- A hyperbolic pair `e, f` spans the plane, and pairing a kernel vector against `e` and `f`
+  -- kills both of its coordinates.
+  obtain ⟨w, e, hwe⟩ : ∃ w e, B w e ≠ 0 := by
+    by_contra! h
+    exact hB0 (LinearMap.ext₂ h)
+  set f := (B w e)⁻¹ • w
+  have hfe : B f e = 1 := by
+    rw [map_smul, LinearMap.smul_apply, smul_eq_mul, inv_mul_cancel₀ hwe]
+  have hef : B e f = -1 := by rw [← hB.neg_eq, hfe]
+  have hspan : span K {e, f} = ⊤ := by
+    rw [← Matrix.range_cons_cons_empty e f ![]]
+    exact (hB.linearIndependent_pair_of_apply_eq_one hfe).span_eq_top_of_card_eq_finrank
+      (by rw [Fintype.card_fin, hV])
+  refine (IsRefl.nondegenerate_iff_separatingLeft hB.isRefl).2 fun v hv => ?_
+  obtain ⟨a, b, rfl⟩ := mem_span_pair.1 (hspan ▸ mem_top : v ∈ span K {e, f})
+  have he := hv e
+  have hf := hv f
+  simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul, hfe, hef,
+    hB.self_eq_zero, mul_zero, mul_one, mul_neg, zero_add, add_zero, neg_eq_zero] at he hf
+  simp [he, hf]
+
+end FinrankTwo
 
 variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] [FiniteDimensional K V]
 variable {B : BilinForm K V} (hB : B.IsAlt) (hnd : B.Nondegenerate)

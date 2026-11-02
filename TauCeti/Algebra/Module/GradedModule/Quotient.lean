@@ -26,8 +26,8 @@ In both cases the homogeneous projections are those of `M`, transported along th
 the quotient map respectively.  Combining the two gives the grading of a subquotient, such as the
 cohomology `ker d ⧸ im d` of a differential of degree one.
 
-The submodule may be over a larger semiring `S` than the semiring `R` of the grading; it then
-inherits a grading by `R`-submodules through scalar restriction.
+The submodule may be over a larger semiring `S` than the semiring `R` of the grading; it and,
+for rings, the quotient by it then inherit gradings by `R`-submodules through scalar restriction.
 
 The kernel of a homogeneous linear map is homogeneous
 (`TauCeti.LinearMap.IsHomogeneous.isHomogeneous_ker`), so it inherits a grading in the same way.
@@ -161,41 +161,39 @@ end Ker
 
 section Quotient
 
-variable [Ring R] [AddCommGroup M] [Module R M] (G : InternalGrading R M ι)
-  (U : Submodule R M) (hU : SetLike.IsHomogeneous G.piece U)
+variable {S : Type*} [Ring R] [Ring S] [SMul R S]
+  [AddCommGroup M] [Module R M] [Module S M] [IsScalarTower R S M]
+  (G : InternalGrading R M ι) (U : Submodule S M) (hU : SetLike.IsHomogeneous G.piece U)
 
 include hU in
-/-- A homogeneous submodule is the sum of its intersections with the homogeneous pieces. -/
-private theorem le_iSup_inf_piece : U ≤ ⨆ p, U ⊓ G.piece p := by
-  classical
-  intro x hx
-  rw [← DirectSum.sum_support_decompose G.piece x]
-  exact Submodule.sum_mem _ fun p _ ↦
-    Submodule.mem_iSup_of_mem p ⟨hU p hx, SetLike.coe_mem _⟩
-
-include hU in
-/-- The internal grading of the quotient by a homogeneous submodule: its degree-`p` piece is the
-image of the degree-`p` piece of `M`. -/
+/-- The internal grading of the quotient by a homogeneous `S`-submodule: its degree-`p` piece is
+the image of the degree-`p` piece of `M`. -/
 noncomputable def quotient : InternalGrading R (M ⧸ U) ι where
-  piece p := (G.piece p).map U.mkQ
+  piece p := (G.piece p).map (U.mkQ.restrictScalars R)
   isInternal := by
     refine DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top
-      (G.isInternal.submodule_iSupIndep.map_of_ker_inf_iSup_le U.mkQ ?_) ?_
-    · simpa only [Submodule.ker_mkQ] using
-        inf_le_left.trans (le_iSup_inf_piece G U hU)
+      (G.isInternal.submodule_iSupIndep.map_of_ker_inf_iSup_le (U.mkQ.restrictScalars R) ?_) ?_
+    · -- Map the internal decomposition of `U` into the ambient module.
+      have hspan := congrArg (Submodule.map (U.subtype.restrictScalars R))
+        (G.submodule U hU).isInternal.submodule_iSup_eq_top
+      simp only [Submodule.map_iSup, submodule_piece, Submodule.map_comap_eq,
+        Submodule.map_top, LinearMap.range_restrictScalars, Submodule.range_subtype] at hspan
+      simpa only [LinearMap.ker_restrictScalars, Submodule.ker_mkQ, inf_comm] using
+        inf_le_left.trans_eq hspan.symm
     · rw [← Submodule.map_iSup, G.isInternal.submodule_iSup_eq_top, Submodule.map_top,
-        Submodule.range_mkQ]
+        LinearMap.range_restrictScalars, Submodule.range_mkQ, Submodule.restrictScalars_top]
 
 @[simp]
 theorem quotient_piece (p : ι) :
-    (G.quotient U hU).piece p = (G.piece p).map U.mkQ :=
+    (G.quotient U hU).piece p = (G.piece p).map (U.mkQ.restrictScalars R) :=
   (rfl)
 
 /-- An element of the quotient has degree `p` exactly when it is the class of an element of
 degree `p`. -/
 theorem mem_quotient_piece_iff {p : ι} {y : M ⧸ U} :
     y ∈ (G.quotient U hU).piece p ↔ ∃ x ∈ G.piece p, Submodule.Quotient.mk x = y := by
-  simp only [quotient_piece, Submodule.mem_map, Submodule.mkQ_apply]
+  simp only [quotient_piece, Submodule.mem_map, LinearMap.restrictScalars_apply,
+    Submodule.mkQ_apply]
 
 /-- The class of an element of degree `p` has degree `p`. -/
 theorem mk_mem_quotient_piece {p : ι} {x : M} (hx : x ∈ G.piece p) :

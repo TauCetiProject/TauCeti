@@ -13,7 +13,8 @@ public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Map
 
 A simplicial map that is injective on a face sends its cell to a cell of the same dimension.
 If it also preserves the order of that face's vertices, its realization carries the chosen
-characteristic map to the chosen characteristic map of the image cell. The hypothesis is local
+characteristic map to the chosen characteristic map of the image cell, and the image of its
+`j`-th deleted-vertex face is the `j`-th face of the image cell. The hypothesis is local
 to the face: vertices belonging to different faces may be identified or have their order
 reversed. The equality holds on the whole characteristic-map domain, including the constant
 extension outside the closed ball.
@@ -102,6 +103,23 @@ theorem vertexEmbedding_map (c : RealizationCell K n)
     simp [← Finset.image_image]
   simpa only [Finset.coe_image, Finset.coe_univ, Set.image_univ] using
     congrArg (fun s : Finset β => (s : Set β)) himage
+
+/-- A vertex map increasing on a cell carries its `j`-th deleted-vertex face to the `j`-th
+deleted-vertex face of the image cell. -/
+theorem face_map (c : RealizationCell K (n + 1))
+    (f : PreAbstractSimplicialComplex.SimplicialMap
+      K.toPreAbstractSimplicialComplex L.toPreAbstractSimplicialComplex)
+    (hf : StrictMonoOn f (↑c.1.1 : Set α)) (j : Fin (n + 2)) :
+    (c.face j).map f (hf.mono (by simp)).injOn = (c.map f hf.injOn).face j := by
+  have hj : StrictMonoOn f (↑(c.face j).1.1 : Set α) := hf.mono (by simp)
+  have h : ⇑((c.face j).map f hj.injOn).vertexEmbedding =
+      ⇑((c.map f hf.injOn).face j).vertexEmbedding := by
+    rw [vertexEmbedding_map _ f hj, vertexEmbedding_face, vertexEmbedding_face,
+      vertexEmbedding_map _ f hf]
+    rfl
+  apply Subtype.ext
+  apply Subtype.ext
+  rw [← image_vertexEmbedding ((c.face j).map f hj.injOn), h, image_vertexEmbedding]
 
 end AbstractSimplicialComplex.RealizationCell
 

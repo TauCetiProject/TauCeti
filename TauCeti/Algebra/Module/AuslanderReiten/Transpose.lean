@@ -7,6 +7,7 @@ module
 
 import Mathlib.RingTheory.Finiteness.Projective
 public import TauCeti.Algebra.Module.MinimalProjectivePresentation.Basic
+public import TauCeti.Algebra.Module.Equiv.Basic
 
 /-!
 # The Auslander--Reiten transpose
@@ -32,17 +33,16 @@ identifies the transpose of a direct sum with the product of the two transposes,
 `AuslanderReitenTranspose.compFstEquiv` identifies the transpose of an arrow enlarged by a zero
 source summand with the product of its transpose and the dual of that summand.
 
-The transpose is a construction on the *non-projective* modules: for a minimal projective
-presentation `P₁ → P₀ → M` whose left-hand source `P₁` is finitely generated, it vanishes on a
-projective `M` and on no other, which is
+Vanishing of the transpose forces the presented module to be projective for any right-exact
+projective presentation `P₁ → P₀ → M → 0` with finitely generated `P₁`. For a minimal
+presentation the converse holds as well, giving
 `IsMinimalProjectivePresentation.subsingleton_auslanderReitenTranspose_iff_projective`.
+The converse needs minimality: an extra zero source summand contributes its dual to the
+transpose, even when the presented module is projective.
 
-This supplies the transpose construction in sublayer 6C of the quiver-representations roadmap.
-The remaining part of 6C develops its stable equivalence; sublayer 6D applies the duality
-`D = Hom_k(-, k)` to construct the Auslander--Reiten translate `τ = D Tr`, in
-`TauCeti/Algebra/Module/AuslanderReiten/Translate.lean`.  The scalar structure that duality
-dualizes over — a base ring `k` of `A` acting on the transpose through `Aᵐᵒᵖ` — is supplied here,
-next to the other module structures on the transpose.
+The Auslander--Reiten translate `τ = D Tr` applies the duality `D = Hom_k(-, k)` to this
+transpose. The base ring `k` of `A` acts on the transpose through `Aᵐᵒᵖ`; this scalar structure
+is supplied here alongside the opposite-ring module structure.
 
 ## Main definitions
 
@@ -61,12 +61,15 @@ next to the other module structures on the transpose.
 
 * `AuslanderReitenTranspose.subsingleton_iff_exists_comp_eq_id`: for a finitely generated
   projective `P₁`, the transpose of `p₁` vanishes exactly when `p₁` is a split monomorphism.
+* `Function.Exact.projective_of_subsingleton_auslanderReitenTranspose`: a right-exact projective
+  presentation with finitely generated left-hand source and vanishing transpose presents a
+  projective module, without a minimality hypothesis.
 * `IsMinimalProjectivePresentation.subsingleton_auslanderReitenTranspose_iff_projective`: for a
   minimal projective presentation with finitely generated left-hand source, **the transpose
-  vanishes exactly on the projective modules**.  The forward direction is
+  vanishes exactly on the projective modules**. The implication from projectivity is
   `IsMinimalProjectivePresentation.subsingleton_auslanderReitenTranspose_of_projective` and needs
-  no finiteness; the converse is
-  `IsMinimalProjectivePresentation.projective_of_subsingleton_auslanderReitenTranspose`, and asks
+  no finiteness; the implication to projectivity is
+  `Function.Exact.projective_of_subsingleton_auslanderReitenTranspose`, and asks
   the left-hand source of the presentation to be finitely generated, which it is over an Artin
   algebra once the presented module is.
 * `IsMinimalProjectivePresentation.nonempty_linearEquiv_auslanderReitenTranspose`: the transpose
@@ -359,15 +362,12 @@ No finiteness or projectivity is needed for this direction;
 both. -/
 theorem subsingleton_of_comp_eq_id {r : P₀ →ₗ[A] P₁} (hr : r ∘ₗ p₁ = LinearMap.id) :
     Subsingleton (AuslanderReitenTranspose p₁) := by
-  have hzero : ∀ x : AuslanderReitenTranspose p₁, x = 0 := by
-    intro x
-    induction x using induction_on p₁ with
-    | _ φ =>
-      rw [mk_eq_zero_iff]
-      refine ⟨φ ∘ₗ r, LinearMap.ext fun y => ?_⟩
-      simp only [LinearMap.lcomp_apply, LinearMap.comp_apply]
-      exact congrArg φ (by simpa using LinearMap.congr_fun hr y)
-  exact ⟨fun x y => by rw [hzero x, hzero y]⟩
+  refine subsingleton_of_forall_eq 0 fun x => ?_
+  obtain ⟨φ, rfl⟩ := mk_surjective p₁ x
+  rw [mk_eq_zero_iff]
+  refine ⟨φ ∘ₗ r, ?_⟩
+  ext y
+  simpa using LinearMap.congr_fun (congrArg (fun f => φ ∘ₗ f) hr) y
 
 /-- **A vanishing transpose splits the presenting map.**  If `P₁` is a finitely generated
 projective module and the transpose of `p₁ : P₁ → P₀` vanishes, then `p₁` admits a retraction.
@@ -403,22 +403,6 @@ section Equivalence
 variable {Q₀ : Type v'} {Q₁ : Type w'} [AddCommMonoid Q₀] [Module A Q₀]
   [AddCommMonoid Q₁] [Module A Q₁]
 
-private theorem map_range_lcomp_eq {q₁ : Q₁ →ₗ[A] Q₀} (e₀ : P₀ ≃ₗ[A] Q₀)
-    (e₁ : P₁ ≃ₗ[A] Q₁)
-    (hsquare : e₀.toLinearMap ∘ₗ p₁ = q₁ ∘ₗ e₁.toLinearMap) :
-    Submodule.map (e₁.congrLeft A Aᵐᵒᵖ : Module.Dual A P₁ →ₗ[Aᵐᵒᵖ] Module.Dual A Q₁)
-        (LinearMap.range (p₁.lcomp Aᵐᵒᵖ A)) =
-      LinearMap.range (q₁.lcomp Aᵐᵒᵖ A) := by
-  rw [← LinearMap.range_comp]
-  have hcomp :
-      (e₁.congrLeft A Aᵐᵒᵖ).toLinearMap.comp (p₁.lcomp Aᵐᵒᵖ A) =
-        (q₁.lcomp Aᵐᵒᵖ A).comp (e₀.congrLeft A Aᵐᵒᵖ).toLinearMap := by
-    ext φ x
-    simp only [LinearMap.comp_apply, LinearMap.lcomp_apply]
-    apply congrArg φ
-    simpa using congrArg e₀.symm (LinearMap.congr_fun hsquare (e₁.symm x))
-  rw [hcomp, LinearEquiv.range_comp]
-
 /-- An isomorphism of the first square of two projective presentations induces an equivalence of
 their Auslander--Reiten transposes.  On representatives it sends `φ : Hom_A(P₁, A)` to
 `φ ∘ e₁⁻¹ : Hom_A(Q₁, A)`.
@@ -429,7 +413,7 @@ def linearEquiv {q₁ : Q₁ →ₗ[A] Q₀} (e₀ : P₀ ≃ₗ[A] Q₀)
     (e₁ : P₁ ≃ₗ[A] Q₁)
     (hsquare : e₀.toLinearMap ∘ₗ p₁ = q₁ ∘ₗ e₁.toLinearMap) :
     AuslanderReitenTranspose p₁ ≃ₗ[Aᵐᵒᵖ] AuslanderReitenTranspose q₁ :=
-  quotientEquiv p₁ _ (e₁.congrLeft A Aᵐᵒᵖ) (map_range_lcomp_eq e₀ e₁ hsquare)
+  quotientEquiv p₁ _ (e₁.congrLeft A Aᵐᵒᵖ) (e₀.map_range_lcomp e₁ Aᵐᵒᵖ A hsquare)
 
 /-- The presentation equivalence on transposes, evaluated on a functional representative. -/
 @[simp]
@@ -444,7 +428,7 @@ theorem linearEquiv_mk {q₁ : Q₁ →ₗ[A] Q₀} (e₀ : P₀ ≃ₗ[A] Q₀)
     ext x
     simp [LinearMap.lcomp_apply]
   exact (quotientEquiv_mk p₁ _ (e₁.congrLeft A Aᵐᵒᵖ)
-    (map_range_lcomp_eq e₀ e₁ hsquare) φ).trans (congrArg (mk q₁) hrep)
+    (e₀.map_range_lcomp e₁ Aᵐᵒᵖ A hsquare) φ).trans (congrArg (mk q₁) hrep)
 
 /-- Transport along the identity presentation equivalences is the identity. -/
 @[simp]
@@ -517,6 +501,29 @@ end AuslanderReitenTranspose
 
 end Transpose
 
+section Projectivity
+
+variable {M P₀ P₁ : Type*} [AddCommGroup M] [Module A M]
+  [AddCommGroup P₀] [Module A P₀] [Module.Projective A P₀]
+  [AddCommGroup P₁] [Module A P₁] [Module.Finite A P₁] [Module.Projective A P₁]
+  {p₁ : P₁ →ₗ[A] P₀} {p₀ : P₀ →ₗ[A] M}
+
+/-- A right-exact projective presentation with finitely generated left-hand source and vanishing
+Auslander--Reiten transpose presents a projective module. No minimality is required.
+
+Vanishing splits the left-hand arrow, so the presented module is a direct summand of the
+middle projective. The converse requires a minimal presentation: an extra zero source summand
+contributes its dual to the transpose. -/
+theorem _root_.Function.Exact.projective_of_subsingleton_auslanderReitenTranspose
+    (h : Function.Exact p₁ p₀) (hsurj : Function.Surjective p₀)
+    (hTr : Subsingleton (AuslanderReitenTranspose p₁)) : Module.Projective A M := by
+  obtain ⟨r, hr⟩ := AuslanderReitenTranspose.exists_comp_eq_id_of_subsingleton p₁ hTr
+  obtain ⟨e, -, -⟩ := h.splitInjectiveEquiv hsurj ⟨r, hr⟩
+  let _ : Module.Projective A (P₁ × M) := Module.Projective.of_equiv' e
+  exact Module.Projective.of_split (LinearMap.inr A P₁ M) (LinearMap.snd A P₁ M) (by simp)
+
+end Projectivity
+
 namespace IsMinimalProjectivePresentation
 
 variable {M : Type*} [AddCommGroup M] [Module A M]
@@ -533,12 +540,7 @@ theorem subsingleton_auslanderReitenTranspose_of_projective
     [Module.Projective A M] (h : IsMinimalProjectivePresentation p₁ p₀) :
     Subsingleton (AuslanderReitenTranspose p₁) := by
   let _ : Subsingleton P₁ := h.subsingleton_of_projective
-  constructor
-  intro x y
-  induction x using AuslanderReitenTranspose.induction_on p₁ with
-  | _ φ =>
-    induction y using AuslanderReitenTranspose.induction_on p₁ with
-    | _ ψ => exact congrArg (AuslanderReitenTranspose.mk p₁) (Subsingleton.elim φ ψ)
+  exact (AuslanderReitenTranspose.mk_surjective p₁).subsingleton
 
 end Projective
 
@@ -547,50 +549,16 @@ section Vanishing
 variable {P₁ : Type w} [AddCommGroup P₁] [Module A P₁]
 variable {p₁ : P₁ →ₗ[A] P₀} {p₀ : P₀ →ₗ[A] M}
 
-/-- **A module with vanishing Auslander--Reiten transpose is projective**, the converse of
-`TauCeti.IsMinimalProjectivePresentation.subsingleton_auslanderReitenTranspose_of_projective`.
-
-Finite generation of `P₁` is a genuine hypothesis rather than a convenience: it is what makes the
-dual basis splitting `p₁` finite.  It is automatic for a *finitely generated* `M` over an Artin
-algebra, where such an `M` has a minimal projective presentation by finitely generated
-projectives. -/
-theorem projective_of_subsingleton_auslanderReitenTranspose [Module.Finite A P₁]
-    (h : IsMinimalProjectivePresentation p₁ p₀)
-    (hTr : Subsingleton (AuslanderReitenTranspose p₁)) : Module.Projective A M := by
-  let _ : Module.Projective A P₁ := h.projective
-  obtain ⟨r, hr⟩ := AuslanderReitenTranspose.exists_comp_eq_id_of_subsingleton p₁ hTr
-  have hid : ∀ x : P₁, r (p₁ x) = x := fun x => by simpa using LinearMap.congr_fun hr x
-  -- The retraction splits `P₀` as `range p₁ ⊔ ker r`, and `range p₁` is the superfluous syzygy.
-  have hsup : LinearMap.ker p₀ ⊔ LinearMap.ker r = ⊤ := by
-    rw [← h.range_eq_ker, eq_top_iff]
-    rintro y -
-    have hy : y = p₁ (r y) + (y - p₁ (r y)) := by abel
-    rw [hy]
-    refine Submodule.add_mem_sup (LinearMap.mem_range_self _ _) (LinearMap.mem_ker.mpr ?_)
-    rw [map_sub, hid (r y), sub_self]
-  have hker : LinearMap.ker r = ⊤ :=
-    h.isProjectiveCover.isSuperfluous_ker.eq_top_of_sup_eq_top hsup
-  -- A retraction that kills everything forces its section's source to vanish.
-  have hzero : ∀ x : P₁, x = 0 := fun x => by
-    rw [← hid x]
-    exact LinearMap.mem_ker.mp (by rw [hker]; trivial)
-  have hp₁ : p₁ = 0 := by
-    ext x
-    rw [hzero x]
-    simp
-  have hkerp₀ : LinearMap.ker p₀ = ⊥ := by
-    rw [← h.range_eq_ker, hp₁, LinearMap.range_zero]
-  let _ : Module.Projective A P₀ := h.isProjectiveCover.projective
-  exact Module.Projective.of_equiv'
-    (LinearEquiv.ofBijective p₀ ⟨LinearMap.ker_eq_bot.mp hkerp₀, h.surjective⟩)
-
 /-- **The Auslander--Reiten transpose vanishes exactly on the projective modules.**  This is what
 makes `Tr`, and with it the translate `τ = D Tr`, a construction on *non-projective* modules: it
 carries no information about a projective one and detects every other. -/
 theorem subsingleton_auslanderReitenTranspose_iff_projective [Module.Finite A P₁]
     (h : IsMinimalProjectivePresentation p₁ p₀) :
     Subsingleton (AuslanderReitenTranspose p₁) ↔ Module.Projective A M :=
-  ⟨h.projective_of_subsingleton_auslanderReitenTranspose,
+  ⟨fun hTr => by
+      let _ : Module.Projective A P₀ := h.isProjectiveCover.projective
+      let _ : Module.Projective A P₁ := h.projective
+      exact h.exact.projective_of_subsingleton_auslanderReitenTranspose h.surjective hTr,
     fun _ => h.subsingleton_auslanderReitenTranspose_of_projective⟩
 
 end Vanishing

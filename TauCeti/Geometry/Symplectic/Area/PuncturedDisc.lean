@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Area.Basic
-public import TauCeti.MeasureTheory.Integral.CircleLIntegral
+public import TauCeti.MeasureTheory.Integral.Circle.LIntegral
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear

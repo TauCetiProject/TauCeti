@@ -8,7 +8,7 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.Kernel
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.ReverseNorm
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpecialOrthogonal
-public import TauCeti.FieldTheory.SquareClassGroup.Basic
+public import TauCeti.FieldTheory.SquareClassGroup.Multiplicative
 public import TauCeti.LinearAlgebra.QuadraticForm.Radical
 public import TauCeti.LinearAlgebra.QuadraticForm.CartanDieudonne.SpecialOrthogonal
 import TauCeti.Algebra.Group.Units.Basic
@@ -78,7 +78,7 @@ theorem isSquare_cliffordNorm_of_mem_ker (Q : QuadraticForm K V) (hQ : Q.Nondege
     hnorm
 
 private noncomputable def cliffordSquareClassHom (Q : QuadraticForm K V) :
-    lipschitzGroup Q →* Multiplicative (SquareClassGroup K) :=
+    lipschitzGroup Q →* (Kˣ ⧸ Subgroup.square Kˣ) :=
   squareClassHom.comp (cliffordNorm Q)
 
 private theorem ker_lipschitzToOrthogonal_le_ker_cliffordSquareClassHom
@@ -89,16 +89,16 @@ private theorem ker_lipschitzToOrthogonal_le_ker_cliffordSquareClassHom
   simpa [cliffordSquareClassHom] using isSquare_cliffordNorm_of_mem_ker Q hQ x hx
 
 private noncomputable def spinorNormDescentData (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) :
-    {g : lipschitzGroup Q →* Multiplicative (SquareClassGroup K) //
+    {g : lipschitzGroup Q →* (Kˣ ⧸ Subgroup.square Kˣ) //
       MonoidHom.ker (lipschitzToOrthogonal Q) ≤ MonoidHom.ker g} :=
   ⟨cliffordSquareClassHom Q,
     ker_lipschitzToOrthogonal_le_ker_cliffordSquareClassHom Q hQ⟩
 
 /-- The Clifford norm modulo squares, descended through the Lipschitz action to `O(Q)`. -/
 noncomputable def orthogonalSpinorNorm (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) :
-    QuadraticMap.orthogonalGroup Q →* Multiplicative (SquareClassGroup K) := by
+    QuadraticMap.orthogonalGroup Q →* (Kˣ ⧸ Subgroup.square Kˣ) := by
   exact MonoidHom.liftOfSurjective
-    (G₃ := Multiplicative (SquareClassGroup K))
+    (G₃ := (Kˣ ⧸ Subgroup.square Kˣ))
     (lipschitzToOrthogonal Q) (lipschitzToOrthogonal_surjective Q hQ)
     (spinorNormDescentData Q hQ)
 
@@ -111,7 +111,7 @@ theorem orthogonalSpinorNorm_lipschitzToOrthogonal (Q : QuadraticForm K V)
   simpa only [orthogonalSpinorNorm, MonoidHom.liftOfSurjective, spinorNormDescentData,
     cliffordSquareClassHom, MonoidHom.comp_apply] using
     MonoidHom.liftOfRightInverse_comp_apply
-      (G₃ := Multiplicative (SquareClassGroup K))
+      (G₃ := (Kˣ ⧸ Subgroup.square Kˣ))
       (lipschitzToOrthogonal Q)
       (Function.surjInv (lipschitzToOrthogonal_surjective Q hQ))
       (Function.rightInverse_surjInv (lipschitzToOrthogonal_surjective Q hQ))
@@ -153,7 +153,7 @@ theorem orthogonalSpinorNorm_eq_one_of_isSquare_apply
 
 /-- The spinor norm on `SO(Q)`, obtained by restricting the orthogonal spinor norm. -/
 noncomputable def spinorNorm (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) :
-    QuadraticMap.specialOrthogonalGroup Q →* Multiplicative (SquareClassGroup K) :=
+    QuadraticMap.specialOrthogonalGroup Q →* (Kˣ ⧸ Subgroup.square Kˣ) :=
   (orthogonalSpinorNorm Q hQ).comp (_root_.QuadraticMap.specialOrthogonalToOrthogonal Q)
 
 /-- The spinor norm is the restriction of the orthogonal spinor norm to `SO(Q)`. -/

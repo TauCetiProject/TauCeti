@@ -14,7 +14,7 @@ import TauCeti.Analysis.Sobolev.W1p.Truncation
 Let `a` be measurable and uniformly elliptic on `Ω ⊆ ℝⁿ` with constants `0 < λ ≤ Λ`, and let
 `u ∈ H¹(Ω)` be a weak supersolution of the divergence-form equation
 
-`-∂ⱼ(aⁱʲ ∂ᵢu) ≥ 0` in `Ω`,
+`-∂ᵢ(aⁱʲ ∂ⱼu) ≥ 0` in `Ω`,
 
 meaning `a(u, v) ≥ 0` for every nonnegative `v ∈ H¹₀(Ω)`. If `u ≥ m` almost everywhere and `F` is
 convex and nonincreasing on `[m, ∞)`, then `F(u)` is a weak **sub**solution:
@@ -197,7 +197,7 @@ private theorem energyFormH1_contDiffComp_posPart_ofTestFunction_nonpos
 
 /-- **A convex nonincreasing function of a supersolution is a subsolution.** Let `a` be measurable
 and uniformly elliptic on `Ω`, and let `u ∈ H¹(Ω)` be a weak supersolution of
-`-∂ⱼ(aⁱʲ ∂ᵢu) ≥ 0`, that is `a(u, v) ≥ 0` for every nonnegative `v ∈ H¹₀(Ω)`, with `u ≥ m`
+`-∂ᵢ(aⁱʲ ∂ⱼu) ≥ 0`, that is `a(u, v) ≥ 0` for every nonnegative `v ∈ H¹₀(Ω)`, with `u ≥ m`
 almost everywhere on `Ω`. Let `F` be `C²` with bounded first and second derivatives and
 `F(0) = 0`, so that `F(u) ∈ H¹(Ω)` (`TauCeti.W1p.contDiffComp`), and suppose that `F' ≤ 0` and
 `F'' ≥ 0` on `[m, ∞)`. Then `F(u)` is a weak subsolution: `a(F(u), v) ≤ 0` for every
@@ -408,7 +408,7 @@ theorem UniformlyEllipticOn.ae_inv_value_le_mul_setIntegral_rpow
 constants `λ, Λ` and an exponent `q > 2`, and let `α = 1 - 2/q`. There is `D > 0`, depending only
 on these (and the dimension), such that the following holds. Let `a` be measurable and uniformly
 elliptic on `Ω` with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a weak supersolution of
-`-∂ⱼ(aⁱʲ ∂ᵢu) ≥ 0`, that is `a(u, v) ≥ 0` for every nonnegative `v ∈ H¹₀(Ω)`, with `u ≥ m > 0`
+`-∂ᵢ(aⁱʲ ∂ⱼu) ≥ 0`, that is `a(u, v) ≥ 0` for every nonnegative `v ∈ H¹₀(Ω)`, with `u ≥ m > 0`
 almost everywhere on `Ω`. If `B(x₀, R) ⊆ Ω` and `‖v‖_q ≤ S ‖∇v‖₂` for every
 `v ∈ W^{1,2}_0(B(x₀, R))`, then
 

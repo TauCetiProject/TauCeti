@@ -57,6 +57,7 @@ This file sets up that candidate and proves its Hopf-algebraic closure propertie
 * `TauCeti.HopfIdeal.coinvariants_mono`, `TauCeti.HopfIdeal.coinvariants_bot` and
   `TauCeti.HopfIdeal.coinvariants_augmentation`: dependence on the Hopf ideal.
 * `TauCeti.HopfIdeal.comul_mem_range_lTensor_of_mem_coinvariants`: the left coideal property.
+* `TauCeti.HopfIdeal.mem_coinvariants_ker_iff`: the coinvariants of the kernel of a morphism.
 * `TauCeti.HopfIdeal.inv_mul_mem_quotientPointsSubgroup_iff_comp_val_eq`: when `I` is generated
   by the coinvariants vanishing at the identity, the coinvariants detect left cosets.
 * `TauCeti.HopfIdeal.IsNormal.antipode_mem_coinvariants`: stability under the antipode.
@@ -235,6 +236,32 @@ theorem comul_mem_range_lTensor_of_mem_coinvariants [Module.Flat R H] (hh : h �
   obtain ⟨y, hy⟩ := hmem
   rw [hB]
   exact ⟨y, by rw [← hy, TensorProduct.AlgebraTensorModule.coe_lTensor]⟩
+
+/-- **Coinvariants of a kernel.** If `I` is the kernel of a bialgebra morphism `f : H → K`, then,
+when `H`, `K` and `H ⧸ ker f` are flat over `R` (automatic over a field), an element `h` is a
+coinvariant exactly when `(id ⊗ f) (Δ h) = h ⊗ 1`.
+Geometrically, invariance under right translation by the scheme-theoretic image of the
+homomorphism represented by `f` may be tested on `f` itself. -/
+theorem mem_coinvariants_ker_iff [Module.Flat R H] {K : Type w} [Ring K] [HopfAlgebra R K]
+    [Module.Flat R K] (f : H →ₐc[R] K) [Module.Flat R (H ⧸ RingHom.ker f.toAlgHom)] :
+    h ∈ (ker f).coinvariants ↔
+      Algebra.TensorProduct.map (AlgHom.id R H) (f : H →ₐ[R] K) (Coalgebra.comul (R := R) h) =
+        h ⊗ₜ[R] (1 : K) := by
+  -- `f` factors through the quotient by its kernel via an injective map `φ`.
+  let φ : H ⧸ (ker f).toIdeal →ₐ[R] K :=
+    Ideal.Quotient.liftₐ _ (f : H →ₐ[R] K) fun a ha ↦ (mem_ker f).mp (mem_toIdeal.mp ha)
+  have hφ : Function.Injective φ :=
+    RingHom.lift_injective_of_ker_le_ideal _ _ fun _ ha ↦
+      mem_toIdeal.mpr ((mem_ker f).mpr ha)
+  have hinj : Function.Injective (Algebra.TensorProduct.map (AlgHom.id R H) φ) :=
+    Module.Flat.lTensor_preserves_injective_linearMap φ.toLinearMap hφ
+  have hcomp : (Algebra.TensorProduct.map (AlgHom.id R H) φ).comp
+      (Algebra.TensorProduct.map (AlgHom.id R H) (Ideal.Quotient.mkₐ R (ker f).toIdeal)) =
+      Algebra.TensorProduct.map (AlgHom.id R H) (f : H →ₐ[R] K) := by
+    rw [← Algebra.TensorProduct.map_id_comp]
+    exact congrArg _ (Ideal.Quotient.liftₐ_comp _ _ _)
+  rw [mem_coinvariants_iff, ← hinj.eq_iff, ← AlgHom.comp_apply, hcomp,
+    Algebra.TensorProduct.map_tmul, AlgHom.id_apply, map_one]
 
 end Ring
 

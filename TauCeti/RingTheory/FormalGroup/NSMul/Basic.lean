@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.FormalGroup.AddInv
-public import TauCeti.RingTheory.FormalGroup.Logarithm
+public import TauCeti.RingTheory.FormalGroup.Logarithm.Basic
 -- Proof-only: splitting a power series into its truncation and its tail.
 import Mathlib.RingTheory.PowerSeries.Trunc
 
@@ -40,19 +40,28 @@ IV.6.1).
 ## Main definitions
 
 * `FormalGroup.nsmulSeries`: the multiplication-by-`n` series `[n]_F(T)`.
+* `FormalGroup.nsmulHom`: multiplication by `n` as an endomorphism of a commutative formal group.
 
 ## Main results
 
 * `FormalGroup.nsmulSeries_succ`: `[n + 1]_F(T) = F([n]_F(T), T)`.
 * `FormalGroup.nsmulSeries_add`: `[m + n]_F(T) = F([m]_F(T), [n]_F(T))`.
 * `FormalGroup.nsmulSeries_mul`: `[m n]_F(T) = [m]_F([n]_F(T))`.
+* `FormalGroup.subst_nsmulSeries`: `[n]_F(x) = n • x` for every power-series point `x` of `F`.
+* `FormalGroup.subst_toPowerSeries_nsmulSeries`: for commutative `F`, `[n]_F` is an endomorphism,
+  `[n]_F(F(X, Y)) = F([n]_F(X), [n]_F(Y))`.
+* `FormalGroup.nsmulSeries_𝔾ₐ` and `FormalGroup.nsmulSeries_𝔾ₘ`: `[n](T) = n T` on the additive
+  formal group law and `[n](T) = (1 + T) ^ n - 1` on the multiplicative one.
 * `FormalGroup.subst_nsmulSeries_invariantDifferential_mul_derivative`:
   `P([n]_F(T)) · [n]_F'(T) = n · P(T)`.
 * `FormalGroup.coeff_one_nsmulSeries`: `[n]_F(T) = n T + ⋯`.
+* `FormalGroup.natCast_eq_zero_of_nsmulSeries_eq_zero`: if `[n]_F = 0` then `n = 0` in `R`.
 * `FormalGroup.natCast_dvd_derivative_nsmulSeries`: `n` divides the derivative of `[n]_F`.
 * `FormalGroup.natCast_dvd_coeff_nsmulSeries`: `n` divides the coefficient of `Tᵏ` in `[n]_F`
   for `k` coprime to `n`.
 * `FormalGroup.exists_nsmulSeries_eq_of_prime`: `[p]_F(T) = p T u(T) + Tᵖ h(T)` with `u(0) = 1`.
+* `TauCeti.FormalGroupHom.subst_nsmulSeries`: a homomorphism `f` from `F` to `G` commutes with
+  multiplication by `n`, `f([n]_F(T)) = [n]_G(f(T))`.
 
 ## References
 
@@ -133,6 +142,78 @@ theorem nsmulSeries_mul (m n : ℕ) :
     · rfl
     · exact (PowerSeries.subst_X hn).symm
 
+/-- Substituting a power-series point `x` of `F` into `[n]_F(T)` gives `n • x`. -/
+theorem subst_nsmulSeries {σ : Type*} (x : F.Point σ) (n : ℕ) :
+    PowerSeries.subst x.val (F.nsmulSeries n) = (n • x).val := by
+  induction n with
+  | zero =>
+    rw [nsmulSeries_zero, ← PowerSeries.coe_substAlgHom x.prop, map_zero, zero_nsmul, zero_apply]
+  | succ n ih =>
+    rw [nsmulSeries_succ, succ_nsmul, add_apply, ← ih, PowerSeries.subst_def _ (subst _ _),
+      subst_comp_subst_apply (F.hasSubst_nsmulSeries_X n) x.prop.const]
+    congr 1
+    funext s
+    fin_cases s
+    · rfl
+    · exact PowerSeries.subst_X x.prop
+
+/-- **Multiplication by `n` is an endomorphism** of a commutative formal group law `F`:
+`[n]_F(F(X, Y)) = F([n]_F(X), [n]_F(Y))`. -/
+theorem subst_toPowerSeries_nsmulSeries [F.IsComm] (n : ℕ) :
+    PowerSeries.subst F.toPowerSeries (F.nsmulSeries n) =
+      subst (fun i ↦ (F.nsmulSeries n).toMvPowerSeries i) F.toPowerSeries := by
+  -- `F(X, Y)` is the sum of the points `X` and `Y` of `F` with values in `R⟦X, Y⟧`
+  let x : F.Point (Fin 2) := ⟨X 0, PowerSeries.HasSubst.X 0⟩
+  let y : F.Point (Fin 2) := ⟨X 1, PowerSeries.HasSubst.X 1⟩
+  have hxy : (x + y).val = F.toPowerSeries := by
+    rw [add_apply]
+    trans subst X F.toPowerSeries
+    · congr 1
+      funext s
+      fin_cases s <;> rfl
+    · rw [subst_self, id]
+  conv_lhs => rw [← hxy]
+  rw [F.subst_nsmulSeries, nsmul_add, add_apply]
+  congr 1
+  funext s
+  rw [PowerSeries.toMvPowerSeries_eq_subst, F.subst_nsmulSeries ⟨X s, PowerSeries.HasSubst.X s⟩]
+  fin_cases s <;> rfl
+
+/-- Multiplication by `n` as an endomorphism of a commutative formal group law. -/
+noncomputable def nsmulHom [F.IsComm] (n : ℕ) : TauCeti.FormalGroupHom F F where
+  toPowerSeries := F.nsmulSeries n
+  zero_constantCoeff := F.constantCoeff_nsmulSeries n
+  hom := F.subst_toPowerSeries_nsmulSeries n
+
+@[simp]
+theorem nsmulHom_toPowerSeries [F.IsComm] (n : ℕ) :
+    (F.nsmulHom n).toPowerSeries = F.nsmulSeries n := (rfl)
+
+/-- Multiplication by `n` on the additive formal group law `X + Y` is `[n](T) = n T`. -/
+@[simp]
+theorem nsmulSeries_𝔾ₐ (n : ℕ) :
+    (𝔾ₐ (R := R)).nsmulSeries n = (n : PowerSeries R) * PowerSeries.X := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    have ha := (𝔾ₐ (R := R)).hasSubst_nsmulSeries_X n
+    rw [nsmulSeries_succ, 𝔾ₐ_toPowerSeries, subst_add ha, subst_X ha, subst_X ha]
+    simp [ih, add_mul]
+
+/-- Multiplication by `n` on the multiplicative formal group law `X + Y + X Y` is
+`[n](T) = (1 + T) ^ n - 1`. -/
+@[simp]
+theorem nsmulSeries_𝔾ₘ (n : ℕ) :
+    (𝔾ₘ (R := R)).nsmulSeries n = (1 + PowerSeries.X) ^ n - 1 := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    have ha := (𝔾ₘ (R := R)).hasSubst_nsmulSeries_X n
+    rw [nsmulSeries_succ, 𝔾ₘ_toPowerSeries, subst_add ha, subst_add ha, subst_mul ha, subst_X ha,
+      subst_X ha]
+    simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one, ih]
+    ring
+
 /-- The chain rule for `[n + 1]_F(T) = F([n]_F(T), T)`. -/
 private theorem derivative_nsmulSeries_succ (n : ℕ) :
     PowerSeries.derivative (F.nsmulSeries (n + 1)) =
@@ -201,6 +282,10 @@ theorem coeff_one_nsmulSeries (n : ℕ) :
       PowerSeries.coeff_derivative, ih] at h
     simpa [F.lin_coeff_X, F.lin_coeff_Y] using h
 
+/-- If `[n]_F = 0` then `n = 0` in `R`, as `n` is the linear coefficient of `[n]_F`. -/
+theorem natCast_eq_zero_of_nsmulSeries_eq_zero {n : ℕ} (h : F.nsmulSeries n = 0) : (n : R) = 0 := by
+  simpa [h] using (F.coeff_one_nsmulSeries n).symm
+
 /-- **The derivative of `[n]_F` is divisible by `n`**, for a commutative formal group law `F`. -/
 theorem natCast_dvd_derivative_nsmulSeries [F.IsComm] (n : ℕ) :
     (n : PowerSeries R) ∣ PowerSeries.derivative (F.nsmulSeries n) := by
@@ -254,3 +339,23 @@ theorem exists_nsmulSeries_eq_of_prime [F.IsComm] {p : ℕ} (hp : p.Prime) :
   · simp [hj.ne', hjp.not_gt]
 
 end FormalGroup
+
+namespace TauCeti.FormalGroupHom
+
+variable {R : Type*} [CommRing R] {F G : FormalGroup R}
+
+/-- **Homomorphisms commute with multiplication by `n`**: if `f` is a homomorphism of formal group
+laws from `F` to `G`, then `f([n]_F(T)) = [n]_G(f(T))`. Neither law needs to be commutative. -/
+theorem subst_nsmulSeries (f : FormalGroupHom F G) (n : ℕ) :
+    PowerSeries.subst (F.nsmulSeries n) f.toPowerSeries =
+      PowerSeries.subst f.toPowerSeries (G.nsmulSeries n) := by
+  -- `f` is additive on power-series points, and sends the tautological point `T` to `f(T)`
+  have hF : (n • F.tautologicalPoint).val = F.nsmulSeries n := by
+    rw [← F.subst_nsmulSeries, FormalGroup.val_tautologicalPoint, PowerSeries.X_subst]
+  have hG : (n • f.applyPoint F.tautologicalPoint).val =
+      PowerSeries.subst f.toPowerSeries (G.nsmulSeries n) := by
+    rw [← G.subst_nsmulSeries, applyPoint_val, FormalGroup.val_tautologicalPoint,
+      PowerSeries.X_subst]
+  rw [← hF, ← hG, ← applyPoint_val, ← toAddMonoidHom_apply, map_nsmul, toAddMonoidHom_apply]
+
+end TauCeti.FormalGroupHom

@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.NumberField.Cyclotomic.Quadratic
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.Three.Basic
+import TauCeti.NumberTheory.NumberField.RingOfIntegers.Norm
 
 /-!
 # Primary elements of the Eisenstein integers
@@ -27,6 +29,8 @@ already satisfies the closure property `IsPrimaryEisenstein.neg_mul`. Its conten
   `ω - 1` has exactly one primary multiple by a unit of `ℤ[ω]`;
 * `Prime.existsUnique_associated_isPrimaryEisenstein`: a prime of `ℤ[ω]` of norm different
   from `3` has exactly one primary associate.
+* `TauCeti.IsPrimaryEisenstein.absNorm_span_singleton_coprime_three`: a primary element
+  generates an ideal whose norm is prime to `3`.
 
 The uniqueness of the primary associate uses Mathlib's special case of Kummer's lemma,
 `IsCyclotomicExtension.Rat.Three.eq_one_or_neg_one_of_unit_of_congruent`.
@@ -82,10 +86,7 @@ congruent to `2` modulo `3`. -/
 theorem isPrimaryEisenstein_intCast_iff {K : Type*} [Field K] [NumberField K] {a : ℤ} :
     IsPrimaryEisenstein (a : 𝓞 K) ↔ a ≡ 2 [ZMOD 3] := by
   rw [isPrimaryEisenstein_iff, Int.modEq_comm, Int.modEq_iff_dvd]
-  refine ⟨fun h ↦ ?_, fun h ↦ by exact_mod_cast Int.cast_dvd_cast _ _ h⟩
-  have h' : algebraMap ℤ (𝓞 K) 3 ∣ algebraMap ℤ (𝓞 K) (a - 2) := by simpa using h
-  have hd : Module.finrank ℤ (𝓞 K) ≠ 0 := Module.finrank_pos.ne'
-  simpa only [Algebra.norm_algebraMap, Int.pow_dvd_pow_iff hd] using map_dvd (Algebra.norm ℤ) h'
+  exact_mod_cast NumberField.RingOfIntegers.intCast_dvd_intCast (K := K) (m := 3) (n := a - 2)
 
 /-- In the ring of integers of a number field, a natural number is primary exactly when it is
 congruent to `2` modulo `3`. -/
@@ -119,15 +120,15 @@ theorem isPrimaryEisenstein_add_mul_iff {a b : ℤ} :
   have h : (a : 𝓞 K) + b * hζ.toInteger - 2 = ((a - 2 : ℤ) : 𝓞 K) + b * hζ.toInteger := by
     push_cast; ring
   rw [isPrimaryEisenstein_iff, h, ← Int.cast_ofNat,
-    intCast_dvd_intCast_add_intCast_mul_toInteger_iff, Int.modEq_comm, Int.modEq_iff_dvd,
-    Int.modEq_zero_iff_dvd]
+    hζ.intCast_dvd_intCast_add_intCast_mul_toInteger_iff (by decide), Int.modEq_comm,
+    Int.modEq_iff_dvd, Int.modEq_zero_iff_dvd]
 
 /-- Every element of `𝓞 K` not divisible by `ζ - 1` has a primary multiple by a unit. See Xu,
 *Reciprocity Laws*, Proposition 4.5. -/
 theorem exists_isPrimaryEisenstein_unit_mul {x : 𝓞 K} (hx : ¬ hζ.toInteger - 1 ∣ x) :
     ∃ u : (𝓞 K)ˣ, IsPrimaryEisenstein ((u : 𝓞 K) * x) := by
   -- The six-associate case analysis of Xu, Proposition 4.5.
-  obtain ⟨a, b, rfl⟩ := hζ.exists_intCast_add_intCast_mul_toInteger_eq x
+  obtain ⟨a, b, rfl⟩ := hζ.exists_intCast_add_intCast_mul_toInteger_eq (by decide) x
   set ω := hζ.toInteger
   have hab : ¬ (3 : ℤ) ∣ a + b := by
     rintro ⟨c, hc⟩
@@ -215,6 +216,20 @@ end Prime
 namespace TauCeti
 
 variable {K : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {3} ℚ K]
+
+/-- A primary element `x` of `𝓞 K = ℤ[ω]` generates an ideal whose norm is prime to `3`: writing
+`x = a + b ω` with `a ≡ 2` and `b ≡ 0` modulo `3`, its norm `a ^ 2 - a b + b ^ 2` is `1`
+modulo `3`. -/
+theorem IsPrimaryEisenstein.absNorm_span_singleton_coprime_three {x : 𝓞 K}
+    (hx : IsPrimaryEisenstein x) : (Ideal.absNorm (Ideal.span {x})).Coprime 3 := by
+  have hζ := IsCyclotomicExtension.zeta_spec 3 ℚ K
+  obtain ⟨a, b, rfl⟩ := hζ.exists_intCast_add_intCast_mul_toInteger_eq (by decide) x
+  obtain ⟨ha, hb⟩ := hζ.isPrimaryEisenstein_add_mul_iff.mp hx
+  obtain ⟨s, rfl⟩ : ∃ s, a = 3 * s + 2 := ⟨a / 3, by unfold Int.ModEq at ha; omega⟩
+  obtain ⟨t, rfl⟩ : ∃ t, b = 3 * t := ⟨b / 3, by unfold Int.ModEq at hb; omega⟩
+  rw [Ideal.absNorm_span_singleton, hζ.norm_intCast_add_intCast_mul_toInteger_of_three,
+    ← Int.natAbs_natCast 3, ← Int.isCoprime_iff_nat_coprime]
+  exact ⟨1, -(3 * s ^ 2 + 4 * s + 1 - 3 * s * t - 2 * t + 3 * t ^ 2), by push_cast; ring⟩
 
 section Examples
 

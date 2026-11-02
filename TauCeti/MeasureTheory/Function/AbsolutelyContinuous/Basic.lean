@@ -27,6 +27,8 @@ variation.
 
 * `AbsolutelyContinuousOnInterval.continuousOn'`: an absolutely continuous curve in a pseudometric
   space is continuous on its interval.
+* `AbsolutelyContinuousOnInterval.aemeasurable_restrict_Ioc`: an absolutely continuous curve is
+  almost everywhere measurable on its ordered half-open parameter interval for any measure.
 * `AbsolutelyContinuousOnInterval.boundedVariationOn'`: an absolutely continuous curve in a
   pseudometric space has bounded variation on its interval.
 * `AbsolutelyContinuousOnInterval.prodMk`: a pair of absolutely continuous curves is an absolutely
@@ -48,6 +50,13 @@ theorem continuousOn' (hγ : AbsolutelyContinuousOnInterval γ a b) : Continuous
   have he := TauCeti.isometry_kuratowskiEmbedding (γ a)
   he.isUniformInducing.isInducing.continuousOn_iff.2
     (he.lipschitzWith.comp_absolutelyContinuousOnInterval hγ).continuousOn
+
+/-- An absolutely continuous curve in a pseudometric space is almost everywhere measurable on
+its ordered half-open parameter interval, with respect to any measure on the parameter space. -/
+theorem aemeasurable_restrict_Ioc [MeasurableSpace X] [BorelSpace X]
+    {μ : MeasureTheory.Measure ℝ} (hγ : AbsolutelyContinuousOnInterval γ a b) :
+    AEMeasurable γ (μ.restrict (Ioc a b)) :=
+  (hγ.continuousOn'.mono (Ioc_subset_uIoc.trans uIoc_subset_uIcc)).aemeasurable measurableSet_Ioc
 
 /-- An absolutely continuous curve in a pseudometric space has bounded variation on its interval.
 This generalizes `AbsolutelyContinuousOnInterval.boundedVariationOn` from seminormed groups to

@@ -6,12 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
+public import TauCeti.Algebra.Homology.HomologicalComplex.Biprod
 public import TauCeti.Algebra.Homology.HomotopyCategory.ShiftSequence
 public import TauCeti.LinearAlgebra.Exact
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.Algebra.Category.ModuleCat.Projective
-public import Mathlib.Algebra.Homology.Double
+public import TauCeti.Algebra.Homology.Disk
+public import Mathlib.CategoryTheory.ObjectProperty.Shift
 public import Mathlib.Algebra.Homology.HomologicalComplexBiprod
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.LinearAlgebra.BilinearMap
@@ -190,17 +192,7 @@ theorem biprod (hP : P.IsTotallyAcyclic) (hQ : Q.IsTotallyAcyclic) :
     have := hP.projective n
     have := hQ.projective n
     exact Projective.of_iso (HomologicalComplex.biprodXIso P Q n).symm inferInstance
-  acyclic n := by
-    rw [HomologicalComplex.exactAt_iff_isZero_homology]
-    let F := HomologicalComplex.homologyFunctor
-      (ModuleCat.{v} A) (ComplexShape.up ℤ) n
-    let _ : PreservesFiniteBiproducts F := Functor.preservesFiniteBiproductsOfAdditive F
-    let _ : PreservesBiproductsOfShape WalkingPair F := inferInstance
-    let _ : PreservesBinaryBiproducts F :=
-      preservesBinaryBiproducts_of_preservesBiproducts F
-    refine IsZero.of_iso ?_ (F.mapBiprod P Q)
-    rw [biprod_isZero_iff]
-    exact ⟨(hP.acyclic n).isZero_homology, (hQ.acyclic n).isZero_homology⟩
+  acyclic n := (HomologicalComplex.exactAt_biprod_iff P Q n).2 ⟨hP.acyclic n, hQ.acyclic n⟩
   exact_dual i j k hij hjk := by
     let δP (p q : ℤ) := LinearMap.lcomp Aᵐᵒᵖ A (P.d p q).hom
     let δQ (p q : ℤ) := LinearMap.lcomp Aᵐᵒᵖ A (Q.d p q).hom
@@ -238,6 +230,12 @@ namespace TauCeti
 abbrev TotallyAcyclicComplex (A : Type u) [Ring A] :=
   ObjectProperty.FullSubcategory
     (fun P : CochainComplex (ModuleCat.{v} A) ℤ ↦ P.IsTotallyAcyclic)
+
+/-- Total acyclicity is stable under shifts, so totally acyclic complexes inherit the shift of
+cochain complexes. -/
+instance (A : Type u) [Ring A] : ObjectProperty.IsStableUnderShift
+    (fun P : CochainComplex (ModuleCat.{v} A) ℤ ↦ P.IsTotallyAcyclic) ℤ where
+  isStableUnderShiftBy n := ⟨fun _ hP ↦ hP.shift n⟩
 
 variable (A : Type u) [Ring A]
 
@@ -291,61 +289,23 @@ section Disk
 
 variable (M : ModuleCat.{v} A)
 
-/-- The relation `-1 → 0` in the shape of cochain complexes. -/
-private lemma rel_neg_one_zero : (ComplexShape.up ℤ).Rel (-1) 0 := by simp
-
-/-- The complex `M --𝟙--> M` concentrated in degrees `-1` and `0`. -/
-private noncomputable abbrev disk : CochainComplex (ModuleCat.{v} A) ℤ :=
-  HomologicalComplex.double (𝟙 M) rel_neg_one_zero
-
-private lemma isIso_disk_d : IsIso ((disk M).d (-1) 0) := by
-  rw [HomologicalComplex.double_d _ _ (by decide)]
-  infer_instance
-
-private lemma disk_d_eq_zero (j k : ℤ) (hj : j ≠ -1) : (disk M).d j k = 0 :=
-  HomologicalComplex.double_d_eq_zero₀ _ _ _ _ hj
-
-private lemma isZero_disk_X (n : ℤ) (h₀ : n ≠ -1) (h₁ : n ≠ 0) : IsZero ((disk M).X n) :=
-  HomologicalComplex.isZero_double_X _ _ _ h₀ h₁
-
+open CochainComplex in
 private lemma isTotallyAcyclic_disk [Module.Finite A M] [Projective M] :
     (disk M).IsTotallyAcyclic where
   finite n := by
     by_cases h₀ : n = -1
     · subst h₀
       exact Module.Finite.equiv
-        (HomologicalComplex.doubleXIso₀ (𝟙 M) rel_neg_one_zero).symm.toLinearEquiv
+        (diskXIso₀ M).symm.toLinearEquiv
     by_cases h₁ : n = 0
     · subst h₁
       exact Module.Finite.equiv
-        (HomologicalComplex.doubleXIso₁ (𝟙 M) rel_neg_one_zero (by decide)).symm.toLinearEquiv
+        (diskXIso₁ M).symm.toLinearEquiv
     have := ModuleCat.subsingleton_of_isZero (isZero_disk_X M n h₀ h₁)
     infer_instance
-  projective n := by
-    by_cases h₀ : n = -1
-    · subst h₀
-      exact Projective.of_iso (HomologicalComplex.doubleXIso₀ (𝟙 M) rel_neg_one_zero).symm
-        inferInstance
-    by_cases h₁ : n = 0
-    · subst h₁
-      exact Projective.of_iso
-        (HomologicalComplex.doubleXIso₁ (𝟙 M) rel_neg_one_zero (by decide)).symm inferInstance
-    exact (isZero_disk_X M n h₀ h₁).projective
-  acyclic n := by
-    have := isIso_disk_d M
-    by_cases h₀ : n = -1
-    · subst h₀
-      rw [HomologicalComplex.exactAt_iff' _ (-2) (-1) 0 (by simp) (by simp),
-        ShortComplex.exact_iff_mono _ (disk_d_eq_zero M _ _ (by decide))]
-      exact inferInstanceAs (Mono ((disk M).d (-1) 0))
-    by_cases h₁ : n = 0
-    · subst h₁
-      rw [HomologicalComplex.exactAt_iff' _ (-1) 0 1 (by simp) (by simp),
-        ShortComplex.exact_iff_epi _ (disk_d_eq_zero M _ _ (by decide))]
-      exact inferInstanceAs (Epi ((disk M).d (-1) 0))
-    exact HomologicalComplex.ExactAt.of_isZero (isZero_disk_X M n h₀ h₁)
+  projective := projective_disk_X M
+  acyclic := acyclic_disk M
   exact_dual i j k hij hjk := by
-    have := isIso_disk_d M
     by_cases h₀ : j = -1
     · subst h₀
       obtain rfl : k = 0 := by lia
@@ -373,9 +333,7 @@ end Disk
 `M --𝟙--> M`, concentrated in degrees `-1` and `0`, is a complete resolution of `M`. -/
 theorem isGorensteinProjective_of_projective (M : ModuleCat.{v} A) [Module.Finite A M]
     [Projective M] : IsGorensteinProjective A M :=
-  ⟨disk M, isTotallyAcyclic_disk M, ⟨(disk M).iCyclesIso 0 1 (by simp)
-    (disk_d_eq_zero M _ _ (by decide)) ≪≫
-      HomologicalComplex.doubleXIso₁ (𝟙 M) rel_neg_one_zero (by decide)⟩⟩
+  ⟨CochainComplex.disk M, isTotallyAcyclic_disk M, ⟨CochainComplex.diskCyclesIso M⟩⟩
 
 section ExactPair
 

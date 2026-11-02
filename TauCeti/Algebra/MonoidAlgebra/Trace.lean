@@ -17,7 +17,7 @@ monoid elements the matrix of *right* multiplication by `x` has `g`-th diagonal 
 because `g * h = g` forces `h = 1` as soon as `G` cancels on the left; the trace is therefore
 `|G| * x_1`, and it sees nothing of `x` beyond its coefficient at the identity. The same count on
 the left needs cancellation on the right and gives the same answer, in the matrix form
-`TauCeti.trace_leftMulMatrix_monoidAlgebra` that the character-table files consume. A group cancels
+`MonoidAlgebra.trace_leftMulMatrix` that the character-table files consume. A group cancels
 on both sides, so all three statements apply to a finite group algebra.
 
 The special case `x = g` recovers the character of the regular representation, but the general
@@ -31,11 +31,11 @@ a field `k`, if `y * y = κ • y`, this trace is `κ` times the character of th
 
 ## Main statements
 
-* `TauCeti.trace_leftMulMatrix_monoidAlgebra`: the matrix form, the trace of the left regular
+* `MonoidAlgebra.trace_leftMulMatrix`: the matrix form, the trace of the left regular
   matrix of `x` is `|G| * x_1`.
-* `TauCeti.MonoidAlgebra.trace_mulRight`: the trace of right multiplication by `x` on `k[G]` is
+* `MonoidAlgebra.trace_mulRight`: the trace of right multiplication by `x` on `k[G]` is
   `|G| * x_1`.
-* `TauCeti.MonoidAlgebra.trace_mulLeft`: the same for left multiplication.
+* `MonoidAlgebra.trace_mulLeft`: the same for left multiplication.
 * `MonoidAlgebra.trace_mulLeft_single_mul_mulRight`: the trace of `x ↦ g * x * y` on a
   finite group algebra is `∑ σ, y_{σ⁻¹ g⁻¹ σ}`.
 -/
@@ -44,12 +44,12 @@ public section
 
 open MonoidAlgebra
 
-namespace TauCeti
+namespace MonoidAlgebra
 
 /-- **The regular trace reads off the coefficient at the identity.** Every diagonal entry of the
 left regular matrix of `x` is the coefficient of `x` at `1`, so the trace is `|G|` times it. -/
 @[simp]
-theorem trace_leftMulMatrix_monoidAlgebra {k G : Type*} [CommSemiring k] [Monoid G]
+theorem trace_leftMulMatrix {k G : Type*} [CommSemiring k] [Monoid G]
     [IsRightCancelMul G] [Fintype G] [DecidableEq G] (x : MonoidAlgebra k G) :
     Matrix.trace (Algebra.leftMulMatrix (MonoidAlgebra.basis G k) x) =
       (Fintype.card G : k) * x.coeff 1 := by
@@ -60,7 +60,7 @@ theorem trace_leftMulMatrix_monoidAlgebra {k G : Type*} [CommSemiring k] [Monoid
 /-- **The trace of right multiplication on a finite monoid algebra.** Multiplication on the right
 by `x` has trace `|G| * x_1`. -/
 @[simp]
-theorem MonoidAlgebra.trace_mulRight {k G : Type*} [CommSemiring k] [Monoid G]
+theorem trace_mulRight {k G : Type*} [CommSemiring k] [Monoid G]
     [IsLeftCancelMul G] [Finite G] (x : MonoidAlgebra k G) :
     LinearMap.trace k (MonoidAlgebra k G) (LinearMap.mulRight k x) =
       (Nat.card G : k) * x.coeff 1 := by
@@ -77,16 +77,16 @@ theorem MonoidAlgebra.trace_mulRight {k G : Type*} [CommSemiring k] [Monoid G]
 /-- **The trace of left multiplication on a finite monoid algebra.** Multiplication on the left by
 `x` has trace `|G| * x_1`, the same as multiplication on the right. -/
 @[simp]
-theorem MonoidAlgebra.trace_mulLeft {k G : Type*} [CommSemiring k] [Monoid G]
+theorem trace_mulLeft {k G : Type*} [CommSemiring k] [Monoid G]
     [IsRightCancelMul G] [Finite G] (x : MonoidAlgebra k G) :
     LinearMap.trace k (MonoidAlgebra k G) (LinearMap.mulLeft k x) =
       (Nat.card G : k) * x.coeff 1 := by
   classical
   have : Fintype G := Fintype.ofFinite G
   rw [LinearMap.trace_eq_matrix_trace k (MonoidAlgebra.basis G k), Algebra.toMatrix_lmul_eq,
-    trace_leftMulMatrix_monoidAlgebra, Nat.card_eq_fintype_card]
+    trace_leftMulMatrix, Nat.card_eq_fintype_card]
 
-end TauCeti
+end MonoidAlgebra
 
 /-- **The trace of a two-sided multiplication on a finite group algebra.** The endomorphism
 `x ↦ g * x * y` of `k[G]` has trace `∑ σ, y_{σ⁻¹ g⁻¹ σ}`: its diagonal entry at `σ` is the

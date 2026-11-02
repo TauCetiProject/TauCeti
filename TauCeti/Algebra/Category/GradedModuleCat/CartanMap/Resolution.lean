@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Basic
+public import Mathlib.LinearAlgebra.Determinant
+public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Matrix
 public import TauCeti.CategoryTheory.GrothendieckGroup.Laurent.Resolution
 
 /-!
@@ -19,7 +20,9 @@ Grothendieck groups.
 Consequently, if every finite graded module admits such a resolution, the graded Cartan map is
 an isomorphism of `ℤ[q,q⁻¹]`-modules. Its inverse sends the class of a module to the alternating
 class of any finite graded projective resolution. This is the graded analogue of
-`TauCeti.cartanEquiv`.
+`TauCeti.cartanEquiv`. In particular the graded Cartan matrix, in any projective and module
+bases indexed by the same finite type, has determinant a unit of `ℤ[q,q⁻¹]`. This needs no
+splitting hypothesis on the simple modules or on the degree-zero part of `A`.
 
 ## Main definitions
 
@@ -38,6 +41,8 @@ class of any finite graded projective resolution. This is the graded analogue of
   graded module to the alternating class of any finite graded-projective resolution.
 * `TauCeti.gradedCartanMap_bijective`: the graded Cartan map is bijective when every finite
   graded module has a finite graded-projective resolution.
+* `TauCeti.isUnit_det_gradedCartanMatrix_of_le_admitsFiniteResolution`: graded Cartan
+  unimodularity, in any two bases indexed by the same finite type.
 
 ## References
 
@@ -190,8 +195,8 @@ private def finiteToFiniteResolutionFunctor :
     ((gradedModuleCanonicalExactStructure 𝒜).admitsFiniteResolution_inverseImage_shift
       gradedFiniteProjectiveModules_gradedAbelian_shift) h
 
-/-- Under finite graded-projective dimension, compare all finite graded modules with the
-subcategory of modules admitting finite graded-projective resolutions. -/
+/-- When every finite graded module admits a finite resolution by finite graded projectives,
+compare all finite graded modules with the subcategory of modules admitting such resolutions. -/
 def toGradedFiniteProjectiveResolution :
     LaurentK0.{uA} (gradedFiniteModulesExactStructure 𝒜) →ₗ[LaurentPolynomial ℤ]
       LaurentK0.{uA} (gradedFiniteProjectiveResolutionExactStructure 𝒜) :=
@@ -233,7 +238,8 @@ theorem toGradedFiniteProjectiveResolution_fromGradedFiniteProjectiveResolution
   rcases M with ⟨M, hM⟩
   simp
 
-/-- The inverse of the graded Cartan map under finite graded-projective dimension. -/
+/-- The inverse of the graded Cartan map, when every finite graded module admits a finite
+resolution by finite graded projectives. -/
 def gradedCartanInverse :
     LaurentK0.{uA} (gradedFiniteModulesExactStructure 𝒜) →ₗ[LaurentPolynomial ℤ]
       LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜) :=
@@ -285,6 +291,25 @@ include h in
 graded-projective resolution. -/
 theorem gradedCartanMap_bijective : Function.Bijective (gradedCartanMap 𝒜) :=
   (gradedCartanEquiv 𝒜 h).bijective
+
+include h in
+/-- **Graded Cartan unimodularity**: if every finite graded module has a finite graded-projective
+resolution, the graded Cartan matrix in a projective basis and a module basis indexed by the same
+finite type has determinant a unit of `ℤ[q,q⁻¹]`. -/
+theorem isUnit_det_gradedCartanMatrix_of_le_admitsFiniteResolution {I : Type*} [Fintype I]
+    [DecidableEq I]
+    (bP : Module.Basis I (LaurentPolynomial ℤ)
+      (LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜)))
+    (bM : Module.Basis I (LaurentPolynomial ℤ)
+      (LaurentK0.{uA} (gradedFiniteModulesExactStructure 𝒜))) :
+    IsUnit (gradedCartanMatrix 𝒜 bP bM).det := by
+  have hC : gradedCartanMatrix 𝒜 bP bM =
+      LinearMap.toMatrix bP bM (gradedCartanEquiv 𝒜 h).toLinearMap :=
+    Matrix.ext fun i j => by
+      rw [gradedCartanMatrix_apply, LinearMap.toMatrix_apply, LinearEquiv.coe_coe,
+        gradedCartanEquiv_apply]
+  rw [hC]
+  exact LinearEquiv.isUnit_det _ bP bM
 
 end Inverse
 

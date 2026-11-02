@@ -156,6 +156,15 @@ theorem cartanMatrix_apply (i j : I) :
     indecomposableProjectiveClassBasis_apply, AddMonoidHom.coe_toIntLinearMap, cartanMap_of,
     simpleClassBasis_repr_apply, jordanHolderCoordinate_of]
 
+/-- **The Cartan matrix is the matrix of the Cartan map** in the indecomposable-projective basis
+on the source and the simple-class basis on the target. -/
+theorem cartanMatrix_eq_toMatrix [DecidableEq I] :
+    cartanMatrix P S hind hPnoniso hPexhaustive hSnoniso hSexhaustive =
+      LinearMap.toMatrix (indecomposableProjectiveClassBasis P hind hPnoniso hPexhaustive)
+        (simpleClassBasis S hSnoniso hSexhaustive) (cartanMap R).toIntLinearMap := by
+  ext i j
+  simp [LinearMap.toMatrix_apply, cartanMap_of R (P j)]
+
 /-- A Cartan-matrix entry is obtained by pairing the corresponding projective basis vector with
 the image under the Cartan map of the column projective. -/
 theorem cartanMatrix_apply_eq_projectiveSimplePairing (i j : I) :

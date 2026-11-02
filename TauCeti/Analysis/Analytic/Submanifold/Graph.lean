@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Analytic.Submanifold.Basic
+import TauCeti.Analysis.Analytic.Submanifold.Transport
 import TauCeti.Data.Fin.Basic
 import TauCeti.Topology.Algebra.Module.ProjectionGraph
 import Mathlib.Topology.Algebra.Module.Equiv.Pi
@@ -17,8 +18,9 @@ import Mathlib.Topology.Order.OrderClosed
 
 In cylinder coordinates `Fin.cons t x`, adjoining a free scalar coordinate increases the
 dimension of an analytic submanifold by one. The graph of a scalar function analytic on the
-submanifold has the same dimension as its base. These constructions provide analytic charts
-for sections and open sectors between analytic root functions.
+submanifold has the same dimension as its base, and so does the graph of a vector-valued
+function, whose values are placed in new leading coordinates. These constructions provide analytic
+charts for sections and open sectors between analytic root functions.
 
 The graph construction only requires analyticity on the submanifold: it uses a local extension
 in a base chart, rather than requiring the given ambient function to be analytic.
@@ -188,6 +190,49 @@ theorem IsAnalyticSubmanifold.graph (hS : IsAnalyticSubmanifold d S)
       exact ⟨hx, h.trans (hfg' hx).symm⟩
     · rintro ⟨hx, h⟩
       exact ⟨h.trans (hfg' hx), hx⟩
+
+/-- The graph of a vector-valued function analytic on a submanifold `S ⊆ 𝕜ⁿ` is an analytic
+submanifold of `𝕜ᵐ⁺ⁿ` of the same dimension. As for cylinders, the new coordinates come first:
+the graph consists of the points whose last `n` coordinates form a point `x ∈ S` and whose first
+`m` coordinates are those of `f x`. Only the values of `f` on `S` matter. -/
+theorem IsAnalyticSubmanifold.graph_pi {m : ℕ} (hS : IsAnalyticSubmanifold d S)
+    {f : (Fin n → 𝕜) → Fin m → 𝕜} (hf : AnalyticOnSubmanifold d f S) :
+    IsAnalyticSubmanifold d {v : Fin (m + n) → 𝕜 | (fun i ↦ v (Fin.natAdd m i)) ∈ S ∧
+      (fun j ↦ v (Fin.castAdd n j)) = f fun i ↦ v (Fin.natAdd m i)} := by
+  induction m with
+  | zero =>
+    -- Without new coordinates the graph is the base, reindexed along `Fin n ≃ Fin (0 + n)`.
+    convert hS.preimage_comp_equiv (finCongr (zero_add n).symm) using 1
+    ext v
+    simp [funext_iff, Fin.natAdd_zero, Function.comp_def]
+  | succ m ih =>
+    -- Take the graph of the last `m` components, then the scalar graph of the first one over it.
+    let π : (Fin (m + n) → 𝕜) →L[𝕜] Fin n → 𝕜 :=
+      Pi.compRightL 𝕜 (fun _ ↦ 𝕜) (Fin.natAdd m)
+    let σ : (Fin (m + 1) → 𝕜) →L[𝕜] Fin m → 𝕜 :=
+      Pi.compRightL 𝕜 (fun _ ↦ 𝕜) Fin.succ
+    have hπ_apply (w : Fin (m + n) → 𝕜) : π w = fun i ↦ w (Fin.natAdd m i) :=
+      funext (Pi.compRightL_apply 𝕜 (fun _ ↦ 𝕜) (Fin.natAdd m) w)
+    have hG := ih ((σ.analyticOnNhd univ).comp_analyticOnSubmanifold hf (mapsTo_univ _ _))
+    have hπ : AnalyticOnSubmanifold d (f ∘ π) _ :=
+      hf.comp ((π.analyticOnNhd _).analyticOnSubmanifold hG) fun w hw ↦ by
+        simpa only [hπ_apply] using hw.1
+    have hgraph := hG.graph
+      (((ContinuousLinearMap.proj 0).analyticOnNhd univ).comp_analyticOnSubmanifold hπ
+        (mapsTo_univ _ _))
+    -- Reading coordinate zero of `𝕜ᵐ⁺ⁿ⁺¹` as the first new coordinate of `𝕜⁽ᵐ⁺¹⁾⁺ⁿ`.
+    let e : Fin (m + n + 1) ≃ Fin (m + 1 + n) := finCongr (Nat.succ_add m n).symm
+    have h₀ : e 0 = Fin.castAdd n 0 := Fin.ext (by simp [e])
+    have hcast (j : Fin m) : e (Fin.castAdd n j).succ = Fin.castAdd n j.succ :=
+      Fin.ext (by simp [e])
+    have hnat (i : Fin n) : e (Fin.natAdd m i).succ = Fin.natAdd (m + 1) i :=
+      Fin.ext (by simp [e]; omega)
+    convert hgraph.preimage_comp_equiv e using 1
+    ext v
+    simp only [mem_ofPred_eq, mem_preimage, Fin.tail, Function.comp_apply, h₀, hcast, hnat,
+      hπ_apply, σ, Pi.compRightL_apply, ContinuousLinearMap.proj_apply, funext_iff,
+      Fin.forall_fin_succ]
+    tauto
 
 /-- The nonempty sector below a continuous real function is an analytic submanifold of dimension
 one more than its base. -/

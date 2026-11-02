@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Combinatorics.Graph.Connected.EdgeCut
 public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Basic
+public import TauCeti.Combinatorics.Graph.EdgeEnds
+public import TauCeti.Data.Sym.Crosses
 
 import all Mathlib.Combinatorics.Graph.Connected.EdgeCut
 
@@ -20,6 +22,8 @@ set of vertices reachable from a point has empty edge cut, and every vertex set 
 mutually reachable vertices has a nonempty edge cut.  Deleting edges removes them from every
 edge cut, and loops never cross a cut.  In a graph on two distinct vertices, the edge cut of
 either vertex consists of all edges.
+An actual edge crosses a cut exactly when its unordered pair of ends crosses the corresponding
+set of actual vertices.
 
 If the edge cut of `T` is contained in that of `S`, then the subgraph induced on `S` has empty
 edge cut along `T`; conversely when `T ⊆ S`.
@@ -65,6 +69,21 @@ theorem IsLoopAt.notMem_edgeCut (h : G.IsLoopAt e x) : e ∉ G.edgeCut S := by
   rw [IsLink.mem_edgeCut_iff h]
   tauto
 
+/-- An actual edge crosses a vertex cut exactly when its unordered pair of ends crosses the
+corresponding cut of actual vertices. -/
+theorem edgeEnds_crosses_iff_mem_edgeCut (G : Graph α β) (e : G.edgeSet)
+    (S : Set G.vertexSet) :
+    (G.edgeEnds e).Crosses S ↔ e.1 ∈ G.edgeCut (Subtype.val '' S) := by
+  classical
+  obtain ⟨x, y, hxy⟩ := G.exists_isLink_of_mem_edgeSet e.property
+  let x' : G.vertexSet := ⟨x, hxy.left_mem⟩
+  let y' : G.vertexSet := ⟨y, hxy.right_mem⟩
+  have hend : G.edgeEnds e = s(x', y') := (G.edgeEnds_eq_iff_isLink e x' y').2 hxy
+  have hx' : x'.1 = x := rfl
+  have hy' : y'.1 = y := rfl
+  rw [hend, Sym2.crosses_mk_iff, hxy.mem_edgeCut_iff, ← hx', ← hy',
+    Subtype.val_injective.mem_set_image, Subtype.val_injective.mem_set_image]
+
 /-- A walk from a vertex inside `S` to a point outside `S` traverses an edge of the edge cut
 of `S`. -/
 theorem Walk.exists_mem_edges_mem_edgeCut (p : G.Walk x y) (hx : x ∈ S) (hy : y ∉ S) :
@@ -101,6 +120,22 @@ theorem Reachable.mem_of_edgeCut_eq_empty (h : G.Reachable x y) (hS : G.edgeCut 
 theorem edgeCut_setOf_reachable (G : Graph α β) (x : α) :
     G.edgeCut {y | G.Reachable x y} = ∅ :=
   edgeCut_eq_empty_iff_forall_reachable.mpr fun _ _ h hx ↦ Reachable.trans hx h
+
+/-- The boundary of the vertices reachable from `x` after deleting `F` is contained in `F`.
+Thus every edge separator contains an edge cut separating the same vertices. -/
+theorem edgeCut_setOf_reachable_deleteEdges_subset (G : Graph α β) (F : Set β) (x : α) :
+    G.edgeCut {y | (G.deleteEdges F).Reachable x y} ⊆ F := by
+  have h := edgeCut_setOf_reachable (G.deleteEdges F) x
+  rw [edgeCut_deleteEdges] at h
+  exact Set.sdiff_eq_empty.mp h
+
+/-- Deleting every edge crossing a set leaves no path from inside the set to outside it. -/
+theorem not_reachable_deleteEdges_edgeCut (G : Graph α β) (hx : x ∈ S) (hy : y ∉ S) :
+    ¬(G.deleteEdges (G.edgeCut S)).Reachable x y := by
+  intro hxy
+  have hcut : (G.deleteEdges (G.edgeCut S)).edgeCut S = ∅ := by
+    simp only [edgeCut_deleteEdges, Set.sdiff_self]
+  exact hy (hxy.mem_of_edgeCut_eq_empty hcut hx)
 
 /-- A vertex set containing one end of a reachable pair and missing the other has a nonempty edge
 cut. -/

@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Normed.Field.LinearForms
 public import TauCeti.NumberTheory.DiophantineApproximation.Roth.Theorem
 
 import TauCeti.Data.Int.MaxAbs
+import TauCeti.RingTheory.Polynomial.BinaryForm
 import TauCeti.RingTheory.Algebraic.Basic
 
 /-!
@@ -33,7 +34,11 @@ point `(x, y)` with `M = max(|x|, |y|)`:
 Multiplying gives `|F(x, y)| ≥ c M ^ (d - 1) M ^ (1 - κ)`
 (`TauCeti.exists_pos_mul_max_abs_rpow_le_prod_norm`). Like Roth's theorem, the inequality is
 ineffective. For `d ≥ 3` it is the analytic input to Thue's theorem on the equations
-`F(x, y) = m` with `m ≠ 0`: choosing `2 < κ < d` bounds `max(|x|, |y|)` on their solutions.
+`F(x, y) = m` with `m ≠ 0`: choosing `2 < κ < d` bounds `max(|x|, |y|)` on the solutions of
+`0 < |F(x, y)| ≤ B`. An arbitrary binary form `F` such that `F(X, 1)` has at least three distinct
+complex zeros has such a divisor `G ∣ F` of degree at least `3`
+(`MvPolynomial.IsHomogeneous.exists_dvd_isHomogeneous_not_sq_dvd`), and `G(x, y)` divides
+`F(x, y)`, so Thue's theorem holds for `F` as well.
 
 ## Main results
 
@@ -43,10 +48,22 @@ ineffective. For `d ≥ 3` it is the analytic input to Thue's theorem on the equ
   linear forms satisfying such bounds is at least `c max(|x|, |y|) ^ (#T - κ)`.
 * `MvPolynomial.IsHomogeneous.exists_pos_mul_max_abs_rpow_le_abs_eval`: the Thue–Roth inequality
   for binary forms without squared linear factors.
+* `MvPolynomial.IsHomogeneous.finite_setOf_eval_ne_zero_and_abs_le`,
+  `MvPolynomial.IsHomogeneous.finite_setOf_eval_eq`: the Thue inequality `0 < |F(x, y)| ≤ B`
+  and Thue's equation `F(x, y) = m` with `m ≠ 0` have finitely many integer solutions, for such
+  forms of degree `d ≥ 3`.
+* `MvPolynomial.IsHomogeneous.finite_setOf_eval_ne_zero_and_abs_le_of_three_le_card_roots`,
+  `MvPolynomial.IsHomogeneous.finite_setOf_eval_eq_of_three_le_card_roots`: the same for binary
+  forms `F` such that `F(X, 1)` has at least three distinct complex zeros (Thue's theorem).
+* `TauCeti.finite_setOf_mul_pow_add_mul_pow_eq`: the binomial Thue equation `a x ^ n + c y ^ n = m`
+  with `n ≥ 3` and `a, c, m ≠ 0` has finitely many integer solutions.
 
 ## References
 
-* J.-H. Evertse, *Diophantine Approximation*, lecture notes (2019), ch. 6, Theorem 6.3.
+* J.-H. Evertse, *Diophantine Approximation*, lecture notes (2019), ch. 6, Theorem 6.3 and
+  Corollary 6.4.
+* A. Thue, *Über Annäherungswerte algebraischer Zahlen*, J. Reine Angew. Math. 135 (1909),
+  284–305.
 -/
 
 public section
@@ -223,5 +240,122 @@ theorem _root_.MvPolynomial.IsHomogeneous.exists_pos_mul_max_abs_rpow_le_abs_eva
     rw [← Complex.norm_intCast, hcast, norm_mul, norm_prod]
   rw [habs, mul_assoc, ← hTd]
   exact mul_le_mul_of_nonneg_left (h x y hne) (norm_nonneg a)
+
+end TauCeti
+
+namespace MvPolynomial.IsHomogeneous
+
+/-- **The Thue inequality for square-free binary forms** (Evertse, Corollary 6.4, square-free
+case). Let `F ∈ ℤ[X₀, X₁]` be a binary form of degree `d ≥ 3` with no squared linear factor over
+`ℂ`. Then for every bound `B`, the inequality `0 < |F(x, y)| ≤ B` has only finitely many integer
+solutions. Like Roth's theorem, the proof is ineffective. -/
+theorem finite_setOf_eval_ne_zero_and_abs_le
+    {F : MvPolynomial (Fin 2) ℤ} {d : ℕ} (hF : F.IsHomogeneous d)
+    (hsq : ∀ a b : ℂ, (a, b) ≠ (0, 0) →
+      ¬(MvPolynomial.C a * MvPolynomial.X 0 + MvPolynomial.C b * MvPolynomial.X 1) ^ 2 ∣
+        F.map (Int.castRingHom ℂ))
+    (hd : 3 ≤ d) (B : ℤ) :
+    {p : ℤ × ℤ | MvPolynomial.eval ![p.1, p.2] F ≠ 0 ∧
+      |MvPolynomial.eval ![p.1, p.2] F| ≤ B}.Finite := by
+  -- The Thue–Roth inequality with `κ = 5/2 < d` bounds `max (|x|, |y|)` on the solutions.
+  obtain ⟨c, hc, h⟩ := hF.exists_pos_mul_max_abs_rpow_le_abs_eval hsq (κ := 5 / 2) (by norm_num)
+  have he : 0 < (d : ℝ) - 5 / 2 := by
+    have : (3 : ℝ) ≤ d := by exact_mod_cast hd
+    linarith
+  -- Every solution satisfies `max(|x|, |y|) ≤ N := (B / c) ^ (1 / (d - 5/2))`.
+  set N : ℝ := ((B : ℝ) / c) ^ ((d : ℝ) - 5 / 2)⁻¹
+  have hbound : ∀ p ∈ {p : ℤ × ℤ | MvPolynomial.eval ![p.1, p.2] F ≠ 0 ∧
+      |MvPolynomial.eval ![p.1, p.2] F| ≤ B}, max |(p.1 : ℝ)| |(p.2 : ℝ)| ≤ N := by
+    rintro ⟨x, y⟩ ⟨hp, hpB⟩
+    have hM : 0 ≤ max |(x : ℝ)| |(y : ℝ)| := le_max_of_le_left (abs_nonneg _)
+    have hpB' : |(MvPolynomial.eval ![x, y] F : ℝ)| ≤ B := by exact_mod_cast hpB
+    have hpow : max |(x : ℝ)| |(y : ℝ)| ^ ((d : ℝ) - 5 / 2) ≤ B / c := by
+      rw [le_div_iff₀ hc, mul_comm]
+      exact (h x y hp).trans hpB'
+    calc max |(x : ℝ)| |(y : ℝ)|
+        = (max |(x : ℝ)| |(y : ℝ)| ^ ((d : ℝ) - 5 / 2)) ^ ((d : ℝ) - 5 / 2)⁻¹ :=
+          (rpow_rpow_inv hM he.ne').symm
+      _ ≤ N := rpow_le_rpow (rpow_nonneg hM _) hpow (inv_nonneg.2 he.le)
+  -- Hence the solutions lie in the square `[-K, K]²` with `K = ⌈N⌉`.
+  refine ((Set.finite_Icc (-⌈N⌉) ⌈N⌉).prod (Set.finite_Icc (-⌈N⌉) ⌈N⌉)).subset ?_
+  intro p hp
+  have hN := hbound p hp
+  have h1 : |(p.1 : ℝ)| ≤ ⌈N⌉ := (le_max_left _ _).trans (hN.trans (Int.le_ceil N))
+  have h2 : |(p.2 : ℝ)| ≤ ⌈N⌉ := (le_max_right _ _).trans (hN.trans (Int.le_ceil N))
+  exact ⟨abs_le.1 (by exact_mod_cast h1), abs_le.1 (by exact_mod_cast h2)⟩
+
+/-- **Thue's theorem for square-free binary forms** (Evertse, Corollary 6.4, square-free case).
+Let `F ∈ ℤ[X₀, X₁]` be a binary form of degree `d ≥ 3` with no squared linear factor over `ℂ`,
+and let `m ≠ 0`. Then the Thue equation `F(x, y) = m` has only finitely many integer solutions.
+Like Roth's theorem, the proof is ineffective. -/
+theorem finite_setOf_eval_eq
+    {F : MvPolynomial (Fin 2) ℤ} {d : ℕ} (hF : F.IsHomogeneous d)
+    (hsq : ∀ a b : ℂ, (a, b) ≠ (0, 0) →
+      ¬(MvPolynomial.C a * MvPolynomial.X 0 + MvPolynomial.C b * MvPolynomial.X 1) ^ 2 ∣
+        F.map (Int.castRingHom ℂ))
+    (hd : 3 ≤ d) {m : ℤ} (hm : m ≠ 0) :
+    {p : ℤ × ℤ | MvPolynomial.eval ![p.1, p.2] F = m}.Finite :=
+  (hF.finite_setOf_eval_ne_zero_and_abs_le hsq hd |m|).subset fun _ hp ↦
+    ⟨hp ▸ hm, hp ▸ le_rfl⟩
+
+/-- **The Thue inequality** (Evertse, Corollary 6.4). Let `F ∈ ℤ[X₀, X₁]` be a binary form such
+that `F(X, 1)` has at least three distinct complex zeros. Then for every bound `B`, the
+inequality `0 < |F(x, y)| ≤ B` has only finitely many integer solutions. Like Roth's theorem,
+the proof is ineffective. -/
+theorem finite_setOf_eval_ne_zero_and_abs_le_of_three_le_card_roots
+    {F : MvPolynomial (Fin 2) ℤ} {d : ℕ} (hF : F.IsHomogeneous d)
+    (hroots : 3 ≤ ((MvPolynomial.aeval ![Polynomial.X, 1] F : ℤ[X]).map
+      (Int.castRingHom ℂ)).roots.toFinset.card) (B : ℤ) :
+    {p : ℤ × ℤ | MvPolynomial.eval ![p.1, p.2] F ≠ 0 ∧
+      |MvPolynomial.eval ![p.1, p.2] F| ≤ B}.Finite := by
+  obtain ⟨G, hGF, hG, hsq⟩ := hF.exists_dvd_isHomogeneous_not_sq_dvd ℂ
+  refine (hG.finite_setOf_eval_ne_zero_and_abs_le hsq hroots B).subset ?_
+  rintro p ⟨hp, hpB⟩
+  have hdvd := map_dvd (MvPolynomial.eval ![p.1, p.2]) hGF
+  -- `G(x, y)` is a divisor of the nonzero integer `F(x, y)`.
+  exact ⟨fun h ↦ hp (zero_dvd_iff.1 (h ▸ hdvd)),
+    (Int.le_of_dvd (abs_pos.2 hp) ((abs_dvd_abs _ _).2 hdvd)).trans hpB⟩
+
+/-- **Thue's theorem** (Thue 1909; Evertse, Corollary 6.4). Let `F ∈ ℤ[X₀, X₁]` be a binary form
+such that `F(X, 1)` has at least three distinct complex zeros, and let `m ≠ 0`. Then the Thue
+equation `F(x, y) = m` has only finitely many integer solutions. Like Roth's theorem, the proof
+is ineffective. -/
+theorem finite_setOf_eval_eq_of_three_le_card_roots
+    {F : MvPolynomial (Fin 2) ℤ} {d : ℕ} (hF : F.IsHomogeneous d)
+    (hroots : 3 ≤ ((MvPolynomial.aeval ![Polynomial.X, 1] F : ℤ[X]).map
+      (Int.castRingHom ℂ)).roots.toFinset.card) {m : ℤ} (hm : m ≠ 0) :
+    {p : ℤ × ℤ | MvPolynomial.eval ![p.1, p.2] F = m}.Finite :=
+  (hF.finite_setOf_eval_ne_zero_and_abs_le_of_three_le_card_roots hroots |m|).subset fun _ hp ↦
+    ⟨hp ▸ hm, hp ▸ le_rfl⟩
+
+end MvPolynomial.IsHomogeneous
+
+namespace TauCeti
+
+/-- **Binomial Thue equations.** For `n ≥ 3` and nonzero integers `a`, `c` and `m`, the equation
+`a x ^ n + c y ^ n = m` has only finitely many integer solutions: `a X ^ n + c` has `n` distinct
+complex zeros. Like Thue's theorem, the proof is ineffective. -/
+theorem finite_setOf_mul_pow_add_mul_pow_eq {n : ℕ} (hn : 3 ≤ n) {a c m : ℤ} (ha : a ≠ 0)
+    (hc : c ≠ 0) (hm : m ≠ 0) :
+    {p : ℤ × ℤ | a * p.1 ^ n + c * p.2 ^ n = m}.Finite := by
+  set F : MvPolynomial (Fin 2) ℤ :=
+    MvPolynomial.C a * MvPolynomial.X 0 ^ n + MvPolynomial.C c * MvPolynomial.X 1 ^ n
+  have hF : F.IsHomogeneous n :=
+    ((MvPolynomial.isHomogeneous_X_pow 0 n).C_mul a).add
+      ((MvPolynomial.isHomogeneous_X_pow 1 n).C_mul c)
+  have ha' : (a : ℂ) ≠ 0 := by exact_mod_cast ha
+  have hF1 : (MvPolynomial.aeval ![X, 1] F : ℤ[X]).map (Int.castRingHom ℂ) =
+      C (a : ℂ) * (X ^ n - C (-(c : ℂ) / a)) := by
+    rw [mul_sub, ← C_mul, mul_div_cancel₀ _ ha', C_neg, sub_neg_eq_add]
+    simp [F]
+  have hsep : (X ^ n - C (-(c : ℂ) / a)).Separable :=
+    separable_X_pow_sub_C _ (by exact_mod_cast (by omega : n ≠ 0))
+      (div_ne_zero (neg_ne_zero.mpr (by exact_mod_cast hc)) ha')
+  have hroots : 3 ≤ ((MvPolynomial.aeval ![X, 1] F : ℤ[X]).map
+      (Int.castRingHom ℂ)).roots.toFinset.card := by
+    rw [hF1, roots_C_mul _ ha', Multiset.toFinset_card_of_nodup (nodup_roots hsep),
+      IsAlgClosed.card_roots_eq_natDegree, natDegree_X_pow_sub_C]
+    exact hn
+  simpa [F] using hF.finite_setOf_eval_eq_of_three_le_card_roots hroots hm
 
 end TauCeti

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.Degree.TrailingDegree
 public import Mathlib.RingTheory.MvPowerSeries.LexOrder
+public import TauCeti.Data.Finsupp.MapDomain
 public import TauCeti.Data.Finsupp.Weight
 public import TauCeti.RingTheory.MvPolynomial.OrderAt
 
@@ -25,6 +26,9 @@ the two invariants differ in that the Lazard valuation retains the whole lexicog
 leading exponent rather than only a total degree. The Lazard valuation is additive on products
 over a domain, it is zero exactly where `p` does not vanish, and its coordinates are bounded by
 the degrees of `p`, so a fixed polynomial takes only finitely many Lazard valuations.
+It transports along Taylor shifts, after translating the point, and along injective coefficient
+maps. Renaming the variables along a strictly monotone map relabels it; other renamings change
+the lexicographic order and need not.
 
 Valuations turn into orders of vanishing along monomial curves. An *evaluator* for a set `V` of
 exponents is a weight vector `c : σ → ℕ`, positive everywhere, such that for every `v ∈ V` and
@@ -57,6 +61,10 @@ orders of vanishing of one-variable restrictions.
   vanish.
 * `MvPolynomial.finite_range_lazardValuation`, `MvPolynomial.finite_setOf_lazardValuation_eq`:
   a polynomial has only finitely many Lazard valuations.
+* `MvPolynomial.lazardValuation_taylor`, `MvPolynomial.lazardValuation_map`: the valuation is
+  unchanged by Taylor shifts, after translating the point, and by injective coefficient maps.
+* `MvPolynomial.lazardValuation_rename`: renaming along a strictly monotone map of the variables
+  relabels the valuation.
 * `TauCeti.exists_isLazardEvaluator`: every finite set of exponents has an evaluator.
 * `MvPolynomial.natTrailingDegree_aeval_monomialCurve`: the order of `y ↦ p (a + y ^ c)` at `0`
   is the `c`-weight of the Lazard valuation of `p` at `a`.
@@ -383,6 +391,45 @@ theorem finite_setOf_lazardValuation_eq (p : MvPolynomial σ R) :
     {v : σ →₀ ℕ | ∃ a, p.lazardValuation a = toLex v}.Finite :=
   ((finite_range_lazardValuation p).preimage
     (WithTop.coe_injective.comp toLex.injective).injOn).subset fun _ ⟨a, ha⟩ ↦ ⟨a, ha⟩
+
+/-- The Lazard valuation of the Taylor shift of `p` at `a` is the Lazard valuation of `p` at the
+translated point. -/
+@[simp]
+theorem lazardValuation_taylor (a b : σ → R) (p : MvPolynomial σ R) :
+    (taylor a p).lazardValuation b = p.lazardValuation (b + a) := by
+  rw [lazardValuation_def, lazardValuation_def, taylor_taylor]
+
+/-- Mapping the coefficients along an injective ring homomorphism does not change the Lazard
+valuation, at the image of the point. -/
+theorem lazardValuation_map {S : Type*} [CommSemiring S] {f : R →+* S}
+    (hf : Function.Injective f) (p : MvPolynomial σ R) (a : σ → R) :
+    (map f p).lazardValuation (fun i ↦ f (a i)) = p.lazardValuation a := by
+  refine eq_of_forall_le_iff fun w ↦ ?_
+  simp only [le_lazardValuation_iff, ← map_taylor, coeff_map, map_eq_zero_iff f hf]
+
+/-- Renaming the variables along a strictly monotone map relabels the Lazard valuation: the
+lexicographically least exponent of a nonzero Taylor coefficient of `rename f p` at `b` is the
+image under `f` of that of `p` at `b ∘ f`. Monotonicity is needed because the lexicographic order
+depends on the order of the variables. -/
+theorem lazardValuation_rename {τ : Type*} [LinearOrder τ] [WellFoundedGT τ] {f : σ → τ}
+    (hf : StrictMono f) (p : MvPolynomial σ R) (b : τ → R) :
+    (rename f p).lazardValuation b =
+      (p.lazardValuation (b ∘ f)).map fun v ↦ toLex (mapDomain f (ofLex v)) := by
+  induction h : p.lazardValuation (b ∘ f) with
+  | top =>
+    -- Every Taylor coefficient of `p` at `b ∘ f` vanishes, hence so does every one of the rename.
+    refine top_le_iff.1 (le_lazardValuation_iff.2 fun d _ ↦ ?_)
+    rw [taylor_rename]
+    exact coeff_rename_eq_zero f _ d fun u _ ↦
+      le_lazardValuation_iff.1 h.ge u (WithTop.coe_lt_top _)
+  | coe v =>
+    replace h : p.lazardValuation (b ∘ f) = toLex (ofLex v) := by rw [h, toLex_ofLex]
+    rw [WithTop.map_coe, lazardValuation_eq_coe_iff, taylor_rename,
+      coeff_rename_mapDomain f hf.injective]
+    refine ⟨coeff_taylor_ne_zero_of_lazardValuation_eq h, fun d hd ↦
+      coeff_rename_eq_zero f _ d fun u hu ↦ coeff_taylor_eq_zero_of_lt_lazardValuation ?_⟩
+    rw [h, WithTop.coe_lt_coe, ← toLex_mapDomain_lt_toLex_mapDomain_iff hf, hu]
+    exact hd
 
 end CommSemiring
 

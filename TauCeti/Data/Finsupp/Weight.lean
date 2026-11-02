@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Finsupp.Weight
+public import Mathlib.Algebra.Order.Antidiag.Finsupp
 public import Mathlib.Data.Finsupp.Multiset
 public import Mathlib.Data.Finsupp.Option
 public import TauCeti.Data.Finsupp.Order
@@ -53,6 +54,13 @@ at `h` of the pushforward `Finsupp.mapDomain b`.
   corresponding value of `Finsupp.mapDomain b`.
 * `Finsupp.weight_ite_sumElim_eq_add_mapDomain_apply`: for the block map `Sum.elim id b` on
   `τ ⊕ σ`, the indicator weight of block `h` of `a.sumElim e` is `a h + e.mapDomain b h`.
+* `Finsupp.natCast_weight_eq_of_support_subset`: on monomials supported in a finite set `s`, the
+  weight `weight w` agrees with any additive functional on `s → ℤ` taking the value `w i` on the
+  `i`-th coordinate vector.
+* `Finsupp.finite_degree_eq`, `Finsupp.finite_degree_le`: in finitely many variables there are
+  finitely many exponent vectors of each degree, and of degree at most `n`.
+* `Finsupp.fintypeDegreeEq`: for a fintype of variables with decidable equality, the exponent
+  vectors of degree `n` form a fintype, enumerated by `Finset.finsuppAntidiag`.
 -/
 
 public section
@@ -198,5 +206,46 @@ theorem weight_ite_sumElim_eq_add_mapDomain_apply {σ τ R : Type*} [DecidableEq
   rw [weight_ite_eq_mapDomain_apply, sumElim_eq_add, mapDomain_add, ← mapDomain_comp,
     ← mapDomain_comp]
   simp
+
+end Finsupp
+
+namespace Finsupp
+
+/-- If an additive functional `μ` on the integer vectors indexed by a finite set `s` takes the
+value `w i` on the `i`-th coordinate vector, then `μ` agrees with the weight `weight w` on every
+monomial supported in `s`. -/
+theorem natCast_weight_eq_of_support_subset {σ : Type*} [DecidableEq σ] {s : Finset σ}
+    (μ : (s → ℤ) →+ ℤ) {w : σ → ℕ} (hμ : ∀ i : s, μ (Pi.single i 1) = w i) {a : σ →₀ ℕ}
+    (ha : a.support ⊆ s) : (weight w a : ℤ) = μ fun i ↦ (a i : ℤ) := by
+  rw [weight_apply, Finsupp.sum_of_support_subset a ha _ (by simp), Nat.cast_sum,
+    ← Finset.sum_coe_sort s]
+  conv_rhs => rw [← Finset.univ_sum_single fun i : s ↦ (a i : ℤ)]
+  rw [map_sum]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  have hc : (Pi.single i (a i : ℤ) : s → ℤ) = a i • Pi.single i 1 := by
+    rw [← Pi.single_smul', Nat.smul_one_eq_cast]
+  rw [hc, map_nsmul, hμ]
+  simp
+
+end Finsupp
+
+namespace Finsupp
+
+/-- In finitely many variables there are finitely many exponent vectors of each degree. -/
+instance finite_degree_eq {σ : Type*} [Finite σ] (n : ℕ) :
+    Finite {s : σ →₀ ℕ // s.degree = n} :=
+  (finite_of_degree_eq n).to_subtype
+
+/-- In finitely many variables there are finitely many exponent vectors of degree at most `n`. -/
+instance finite_degree_le {σ : Type*} [Finite σ] (n : ℕ) :
+    Finite {s : σ →₀ ℕ // s.degree ≤ n} :=
+  (finite_of_degree_le n).to_subtype
+
+/-- For a fintype of variables with decidable equality, the exponent vectors of degree `n` form a
+fintype, enumerated by `Finset.finsuppAntidiag`. -/
+instance fintypeDegreeEq {σ : Type*} [Fintype σ] [DecidableEq σ] (n : ℕ) :
+    Fintype {s : σ →₀ ℕ // s.degree = n} :=
+  Fintype.ofFinset (p := {s : σ →₀ ℕ | s.degree = n}) ((Finset.univ : Finset σ).finsuppAntidiag n)
+    fun s ↦ by simp [Finset.mem_finsuppAntidiag, degree_eq_sum]
 
 end Finsupp

@@ -37,6 +37,8 @@ open scoped ENNReal NNReal RealInnerProductSpace
 
 namespace TauCeti.Probability
 
+section Normed
+
 variable {E : Type*} [NormedAddCommGroup E]
   [MeasurableSpace E] [OpensMeasurableSpace E] [MeasurableAdd₂ E]
   {μ : Measure E} [IsProbabilityMeasure μ]
@@ -95,6 +97,20 @@ theorem memLp_two_id_compoundPoissonMeasure (hμ : MemLp id 2 μ) (r : ℝ≥0) 
   exact memLp_id_compoundPoissonMeasure (by norm_num) (by simp) hμ r
 
 variable [NormedSpace ℝ E]
+  {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → E} {r : ℝ≥0}
+
+/-- A compound Poisson random variable has mean equal to the rate times the jump mean. -/
+theorem integral_of_hasLaw_compoundPoissonMeasure [CompleteSpace E] (hμ : Integrable id μ)
+    (hX : HasLaw X (compoundPoissonMeasure r μ) P) :
+    ∫ ω, X ω ∂P = (r : ℝ) • ∫ x, x ∂μ := by
+  simpa only [Function.id_comp, id_eq, integral_id_compoundPoissonMeasure hμ] using
+    hX.integral_comp (integrable_id_compoundPoissonMeasure hμ r).aestronglyMeasurable
+
+end Normed
+
+variable {E : Type*} [AddCommMonoid E] [Module ℝ E] [TopologicalSpace E]
+  [MeasurableSpace E] [OpensMeasurableSpace E] [MeasurableAdd₂ E]
+  {μ : Measure E} [IsProbabilityMeasure μ]
 
 /-- Compound Poisson laws preserve every finite moment of order `p ≥ 1` of a linear
 observable. -/
@@ -104,7 +120,7 @@ theorem memLp_continuousLinearMap_compoundPoissonMeasure {p : ℝ≥0∞} (hp : 
   have hmap : MemLp id p (μ.map L) :=
     (memLp_map_measure_iff (by fun_prop) (by fun_prop)).2 (by simpa using hL)
   apply (memLp_map_measure_iff (g := id) (f := L) (by fun_prop) (by fun_prop)).1
-  have htransport := map_compoundPoissonMeasure r μ L.toAddMonoidHom L.measurable
+  have htransport := map_compoundPoissonMeasure r μ L.toAddMonoidHom L.continuous.measurable
   simp only [LinearMap.toAddMonoidHom_coe, ContinuousLinearMap.coe_coe] at htransport
   rw [htransport]
   exact memLp_id_compoundPoissonMeasure hp hp_top hmap r
@@ -193,13 +209,6 @@ theorem covarianceBilin_compoundPoissonMeasure {F : Type*} [NormedAddCommGroup F
     (by simpa only [id_eq] using hν.continuousLinearMap_comp (innerSL ℝ y)) r
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → E} {r : ℝ≥0}
-
-/-- A compound Poisson random variable has mean equal to the rate times the jump mean. -/
-theorem integral_of_hasLaw_compoundPoissonMeasure [CompleteSpace E] (hμ : Integrable id μ)
-    (hX : HasLaw X (compoundPoissonMeasure r μ) P) :
-    ∫ ω, X ω ∂P = (r : ℝ) • ∫ x, x ∂μ := by
-  simpa only [Function.id_comp, id_eq, integral_id_compoundPoissonMeasure hμ] using
-    hX.integral_comp (integrable_id_compoundPoissonMeasure hμ r).aestronglyMeasurable
 
 /-- A linear observable of a compound Poisson random variable has mean equal to the rate
 times its jump mean. Only the observed first moment needs to be finite. -/

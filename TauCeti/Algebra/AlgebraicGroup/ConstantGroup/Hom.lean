@@ -24,6 +24,7 @@ that restricting along the evaluations at the elements of `A` is a bijection
 (`TauCeti.ConstantGroup.bialgHomEquiv`). No finiteness, flatness or commutativity hypothesis is
 made on `H`, and no connectedness hypothesis is made on `R`; `R` is only required to be a
 commutative ring (a commutative semiring for `TauCeti.ConstantGroup.mapDomain_comp_bijective`).
+The base-change results allow any commutative semiring `T` equipped with an `R`-algebra structure.
 
 When `H` is commutative, so that `G = Spec H` is an affine monoid scheme over `R`, this is the
 universal property of the constant monoid scheme `A_R = ⨆_{a ∈ A} Spec R`: a homomorphism of monoid
@@ -69,13 +70,13 @@ namespace TauCeti.ConstantGroup
 section Recognition
 
 variable {R : Type*} [CommSemiring R] {H C : Type*} [Semiring H] [Bialgebra R H] [Semiring C]
-  [Bialgebra R C] {A : Type*} [Monoid A] [Finite A] {p : A →* WithConv (C →ₐ[R] R)}
+  [Bialgebra R C] {A : Type*} [MulOne A] [Finite A] {p : A →* WithConv (C →ₐ[R] R)}
 
-/-- **Recognition of constant monoids.** Let `p : A →* WithConv (C →ₐ[R] R)` be a monoid
-homomorphism from a finite monoid to the `R`-points of `C` whose values identify `C` with the
-functions on `A`, that is, `c ↦ (a ↦ p a c)` is bijective. Then for every bialgebra `H`, a
-bialgebra homomorphism `g : H →ₐc[R] C` is determined by, and can be prescribed through, the monoid
-homomorphism `a ↦ p a ∘ g` from `A` to the `R`-points of `H`. -/
+/-- **Recognition of constant monoids.** Let `p : A →* WithConv (C →ₐ[R] R)` preserve
+multiplication and one on a finite type `A`, with no associativity or unit laws assumed on `A`.
+Suppose its values identify `C` with the functions on `A`, that is, `c ↦ (a ↦ p a c)` is
+bijective. Then for every bialgebra `H`, a bialgebra homomorphism `g : H →ₐc[R] C` is determined
+by, and can be prescribed through, the homomorphism `a ↦ p a ∘ g` to the `R`-points of `H`. -/
 theorem mapDomain_comp_bijective
     (hp : Function.Bijective (AlgHom.pi fun a ↦ (p a).ofConv)) :
     Function.Bijective fun g : H →ₐc[R] C ↦ (BialgHom.mapDomain g).comp p := by
@@ -140,7 +141,7 @@ noncomputable def bialgHomEquiv :
 /-- The base changes to an `R`-algebra `T` of the evaluations at the elements of `A` identify
 `T ⊗[R] coordinateRing R A` with the functions `A → T`. Geometrically, the base change of the
 constant monoid `A_R` is the constant monoid `A_T`. -/
-theorem pi_pointsBaseChange_toPoints_bijective (T : Type*) [CommRing T] [Algebra R T] :
+theorem pi_pointsBaseChange_toPoints_bijective (T : Type*) [CommSemiring T] [Algebra R T] :
     Function.Bijective
       (AlgHom.pi fun a ↦ ((AlgHom.pointsBaseChange T).comp (toPoints R A) a).ofConv) := by
   classical
@@ -174,7 +175,7 @@ end Universal
 section BaseChange
 
 variable {R : Type*} [CommRing R] (H : Type*) [Semiring H] [Bialgebra R H] {A : Type*} [Monoid A]
-  [Finite A] {T : Type*} [CommRing T] [Algebra R T]
+  [Finite A] {T : Type*} [CommSemiring T] [Algebra R T]
 
 /-- The homomorphism `A →* WithConv (T ⊗[R] H →ₐ[T] T)` attached to a `T`-bialgebra homomorphism
 `g : T ⊗[R] H →ₐc[T] T ⊗[R] coordinateRing R A`: `a ∈ A` goes to the composite of `g` with the base

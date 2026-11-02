@@ -48,6 +48,10 @@ theorem.
   at `∞` is a closed vertical strip, and its interior is the open strip.
 * `ConvexPolygon.eventuallyEq_carrier_vertexSector_atImInfty`: near a vertex at `∞`, the polygon
   is that strip.
+* `ConvexPolygon.eventually_forall_mem_side_atImInfty`: near a vertex at `∞`, the only sides are
+  the two incident to it.
+* `ConvexPolygon.not_isCompact_carrier_of_vertex_eq_inr`: a polygon with an ideal vertex is not
+  compact.
 
 ## References
 
@@ -241,6 +245,35 @@ theorem exists_mem_interior_carrier_im_gt_of_vertex_eq_inr_infty {j : Fin n}
   obtain ⟨z, hzA, hzP⟩ := mem_closure_iff.1 hwP {z : ℍ | A < z.im}
     (isOpen_lt continuous_const UpperHalfPlane.continuous_im) hwA
   exact ⟨z, hzP, hzA⟩
+
+/-- Near an ideal vertex at `∞`, the only sides of the polygon are the two incident to it: above
+some height, a point of side `i` has `i = j - 1` or `i = j`. -/
+theorem eventually_forall_mem_side_atImInfty {j : Fin n} (hj : P.vertex j = .inr ∞) :
+    ∀ᶠ w in atImInfty, ∀ i, w ∈ P.side i → i = j - 1 ∨ i = j := by
+  refine Filter.eventually_all.2 fun i ↦ ?_
+  by_cases hi : i = j - 1 ∨ i = j
+  · exact .of_forall fun _ _ ↦ hi
+  -- a nonincident side lies on a semicircle with `∞` strictly on its left
+  have hv := P.vertex_mem_extLeftHalfPlane_sideGeodesic (Ne.symm (not_or.mp hi).2)
+    fun h ↦ (not_or.mp hi).1 (by rw [h]; simp)
+  rw [hj, inr_mem_extLeftHalfPlane_iff] at hv
+  filter_upwards [eventually_mem_leftHalfPlane_of_infty_mem_boundaryLeftHalfPlane hv] with w hw hwi
+  exact (disjoint_left.1 (disjoint_leftHalfPlane_range_geodesicLine _) hw
+    (P.side_subset_range_sideGeodesic i hwi)).elim
+
+/-- A convex polygon with an ideal vertex is not compact. -/
+theorem not_isCompact_carrier_of_vertex_eq_inr {j : Fin n} {ξ : OnePoint ℝ}
+    (hj : P.vertex j = .inr ξ) : ¬IsCompact P.carrier := by
+  intro hc
+  -- move the ideal vertex to `∞`, where the interior reaches arbitrarily high
+  obtain ⟨g, hg⟩ := MulAction.exists_smul_eq PSL(2, ℝ) ξ (∞ : OnePoint ℝ)
+  have hQ : (g • P).vertex j = .inr ∞ := by rw [vertex_smul, hj, Sum.smul_inr, hg]
+  have hc' : IsCompact (g • P).carrier := by
+    rw [carrier_smul]
+    exact hc.smul g
+  obtain ⟨B, hB⟩ := (hc'.image UpperHalfPlane.continuous_im).bddAbove
+  obtain ⟨z, hz, hBz⟩ := (g • P).exists_mem_interior_carrier_im_gt_of_vertex_eq_inr_infty hQ B
+  exact (hBz.trans_le (hB (mem_image_of_mem _ (interior_subset hz)))).false
 
 /-! ### The sector in angular coordinates -/
 

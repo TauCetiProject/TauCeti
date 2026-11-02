@@ -26,17 +26,14 @@ longitude, `H₁(T; ℤ)` is identified with `ℤ × ℤ` (first coordinate the 
 `λ`-coefficient) and every slope acquires a value `p / q ∈ ℚ ∪ {∞}`, the ratio of its coordinates;
 the filling then sends the solid torus's meridian to `p · μ + q · λ`.
 
-This file builds the slope arithmetic for the framed model, the first piece of the
-geometric-topology roadmap's Dehn-surgery layer (`TauCetiRoadmap/GeometricTopology/README.md`,
-layer 5, "Dehn surgery": "Slopes, with the primitive pinned … give a `FramedBoundaryTorus` an
-ordered basis `(μ, λ)` … and the resulting bijection `Slope T ≃ ℚ ∪ {∞}`"). The layer asks for two
-objects kept **distinct**: the sign-quotient `Slope` (basis-free) and the `ℚ ∪ {∞}` parametrisation
-(basis-dependent). Accordingly `TauCeti.Slope M` is the basis-free set of primitive classes modulo
-sign in an abstract `ℤ`-module `M`, and every framing-dependent notion — `meridian`, `longitude`,
-`value`, and the bijection `slopeEquiv` — is a field/operation of `TauCeti.FramedBoundaryTorus`,
-carrying its own ordered basis. Identifying `H₁(T; ℤ)` with the boundary torus of a genuine link
-complement is now expressed through `BoundaryTorus.firstHomology`; the framed boundary torus of a
-knot exterior is built in `TauCeti.LowDimTopology.DehnSurgery.Framing`, as
+This file builds the slope arithmetic for the framed model. It keeps two objects distinct: the
+sign-quotient `Slope`, which is basis-free, and the `ℚ ∪ {∞}` parametrisation, which depends on a
+basis. So `TauCeti.Slope M` is the set of primitive classes modulo sign in an abstract `ℤ`-module
+`M`, and every framing-dependent notion — `meridian`, `longitude`, `value`, and the bijection
+`slopeEquiv` — belongs to `TauCeti.FramedBoundaryTorus`, which carries its own ordered basis.
+For a topological boundary torus, `H₁(T; ℤ)` is `BoundaryTorus.firstHomology`, its degree-one
+singular homology; the framed boundary torus of a knot exterior is built in
+`TauCeti.LowDimTopology.DehnSurgery.Framing`, as
 `TauCeti.IsSolidTorusNeighborhood.framedBoundaryTorus` via
 `TauCeti.FramedBoundaryTorus.ofHomeomorph`.
 
@@ -61,6 +58,8 @@ the `ℚ ∪ {∞}` bijection through any framing's coordinate isomorphism.
   framing.
 * `TauCeti.FramedBoundaryTorus.value`: the framing-dependent `ℚ ∪ {∞}` value of a slope.
 * `TauCeti.FramedBoundaryTorus.slopeEquiv`: the bijection `Slope T.H ≃ ℚ ∪ {∞}` a framing produces.
+* `TauCeti.FramedBoundaryTorus.shiftLongitude`: the framing with the same meridian and the
+  longitude `λ + n · μ`.
 
 ## Main results
 
@@ -71,6 +70,8 @@ the `ℚ ∪ {∞}` bijection through any framing's coordinate isomorphism.
   a value comes from the slope whose coordinates are the corresponding reduced pair.
 * `TauCeti.FramedBoundaryTorus.coord_symm_apply`: a pair of coordinates `(p, q)` names the class
   `p · μ + q · λ`, so the filling class of a slope is reachable without unfolding `coord`.
+* `TauCeti.FramedBoundaryTorus.value_shiftLongitude`: replacing the longitude `λ` by `λ + n · μ`
+  lowers every finite slope value by `n`.
 
 `ℚ ∪ {∞}` is Mathlib's one-point extension `OnePoint ℚ` from
 `Mathlib/Topology/Compactification/OnePoint/Basic.lean`; the reduced-fraction bookkeeping reuses
@@ -442,6 +443,92 @@ theorem value_longitude : T.value T.longitude = (0 : ℚ) := by
   unfold value longitude
   rw [Slope.congr_mk, Slope.value_mk, T.coord_basis_one, slopeValue_of_snd_ne_zero one_ne_zero]
   norm_num
+
+/-! ### Changing the longitude -/
+
+/-- The change of `(μ, λ)`-coordinates `(p, q) ↦ (p - n q, q)` that accompanies replacing the
+longitude `λ` by `λ + n · μ`. -/
+@[simps apply]
+private def shiftCoord (n : ℤ) : (ℤ × ℤ) ≃ₗ[ℤ] ℤ × ℤ where
+  toFun v := (v.1 - n * v.2, v.2)
+  invFun v := (v.1 + n * v.2, v.2)
+  map_add' v w := by ext <;> simp only [Prod.fst_add, Prod.snd_add]; ring
+  map_smul' c v := by
+    ext <;> simp only [Prod.smul_fst, Prod.smul_snd, smul_eq_mul, RingHom.id_apply]; ring
+  left_inv v := by simp
+  right_inv v := by simp
+
+/-- The basis `(μ, λ + n · μ)` of `H₁(T; ℤ)`. -/
+noncomputable def shiftLongitudeBasis (n : ℤ) : Basis (Fin 2) ℤ T.H :=
+  .ofEquivFun (T.coord ≪≫ₗ shiftCoord n ≪≫ₗ (LinearEquiv.finTwoArrow ℤ ℤ).symm)
+
+/-- The framing of the same torus with the same meridian `μ` and the longitude `λ + n · μ`. For
+the boundary torus of a knot exterior this is the framing changed by `n` twists about the
+meridian.
+
+This is reducible so that the torus of the new framing is that of `T` for consumers, and hence
+that classes of `T.H` are classes of `(T.shiftLongitude n).H`. -/
+noncomputable abbrev shiftLongitude (n : ℤ) : FramedBoundaryTorus where
+  torus := T.torus
+  basis := T.shiftLongitudeBasis n
+
+/-- The coordinates of a class for the shifted framing: `p · μ + q · λ = (p - n q) · μ +
+q · (λ + n · μ)`. -/
+@[simp]
+theorem coord_shiftLongitude (n : ℤ) (x : T.H) :
+    (T.shiftLongitude n).coord x = ((T.coord x).1 - n * (T.coord x).2, (T.coord x).2) := by
+  have h : (T.shiftLongitude n).basis.equivFun =
+      T.coord ≪≫ₗ shiftCoord n ≪≫ₗ (LinearEquiv.finTwoArrow ℤ ℤ).symm :=
+    Basis.equivFun_ofEquivFun _
+  rw [coord, LinearEquiv.trans_apply, h]
+  simp only [LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply, shiftCoord_apply]
+
+/-- The shifted framing keeps the meridian. -/
+@[simp]
+theorem shiftLongitudeBasis_zero (n : ℤ) : T.shiftLongitudeBasis n 0 = T.basis 0 := by
+  -- `shiftLongitude` is reducible, so the `basis` lemmas of the shifted framing apply here.
+  apply (T.shiftLongitude n).coord.injective
+  rw [coord_basis_zero, coord_shiftLongitude, coord_basis_zero]
+  simp
+
+/-- The longitude of the shifted framing is `λ + n · μ`. -/
+@[simp]
+theorem shiftLongitudeBasis_one (n : ℤ) :
+    T.shiftLongitudeBasis n 1 = T.basis 1 + n • T.basis 0 := by
+  -- `shiftLongitude` is reducible, so the `basis` lemmas of the shifted framing apply here.
+  apply (T.shiftLongitude n).coord.injective
+  rw [coord_basis_one, coord_shiftLongitude, map_add, map_zsmul, coord_basis_one,
+    coord_basis_zero]
+  simp
+
+/-- **Slope values under a change of longitude.** Replacing the longitude `λ` by `λ + n · μ`
+lowers every finite slope value by `n` and keeps `∞`: the class `p · μ + q · λ` is
+`(p - n q) · μ + q · (λ + n · μ)`.
+
+This is not a `simp` lemma: framings such as the preferred framing of a knot are reducible
+`shiftLongitude`s, and rewriting their values this way would preempt the lemmas stated for them. -/
+theorem value_shiftLongitude (n : ℤ) (s : Slope T.H) :
+    (T.shiftLongitude n).value s = (T.value s).map (· - (n : ℚ)) := by
+  induction s using Slope.induction_on with
+  | h v hv =>
+    rw [value_mk, value_mk, coord_shiftLongitude]
+    by_cases hq : (T.coord v).2 = 0
+    · simp [hq]
+    · rw [slopeValue_of_snd_ne_zero hq, slopeValue_of_snd_ne_zero (by exact hq), OnePoint.map_some]
+      congr 1
+      push_cast
+      field_simp
+
+/-- Shifting the longitude by `0` leaves the framing unchanged. -/
+@[simp]
+theorem shiftLongitude_zero : T.shiftLongitude 0 = T := by
+  obtain ⟨torus, basis⟩ := T
+  dsimp only [shiftLongitude]
+  congr 1
+  refine Module.Basis.eq_of_apply_eq fun i ↦ ?_
+  fin_cases i
+  · exact shiftLongitudeBasis_zero _ 0
+  · simp [shiftLongitudeBasis_one]
 
 end FramedBoundaryTorus
 

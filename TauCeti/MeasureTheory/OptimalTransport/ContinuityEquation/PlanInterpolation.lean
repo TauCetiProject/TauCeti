@@ -50,8 +50,10 @@ the solutions of the continuity equation joining `μ` to `ν`. If `E` is strictl
 the segments joining the pairs of a cyclically monotone set do not cross
 (`TauCeti.IsCyclicallyMonotone.injOn_smul_add_smul`). The velocity is then the displacement
 itself and the action is exactly `W_p (μ, ν) ^ p`. Combined with the lower bound
-`W_p (μ, ν) ^ p ≤ ∫₀¹ ∫ ‖vₜ‖ ^ p dμₜ dt` for every solution joining `μ` to `ν`, which is not proved
-here, this makes the displacement interpolation a minimiser in the Benamou–Brenier formula.
+`W_p (μ, ν) ^ p ≤ ∫₀¹ ∫ ‖vₜ‖ ^ p dμₜ dt` for every solution joining `μ` to `ν`
+(`TauCeti.IsContinuityEquation.wassersteinEDist_rpow_le`), this makes the displacement
+interpolation a minimiser in the Benamou–Brenier formula
+(`TauCeti.isLeast_lintegral_isContinuityEquation`).
 
 ## Main results
 

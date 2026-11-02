@@ -30,6 +30,7 @@ point and generators vanishing at that point.
 * `Derivation.apply_mem_pow_smul_top_of_mem_pow_succ`: a derivation maps `I ^ (n + 1)` into
   `I ^ n • M`.
 * `Derivation.apply_mem_smul_top_of_mem_sq`: a derivation maps `I ^ 2` into `I • M`.
+* `Derivation.apply_mem_of_mem_sq`: a derivation of `A` into itself maps `I ^ 2` into `I`.
 * `Derivation.apply_eq_zero_of_mem_span`: vanishing on generators that annihilate the target
   extends to their ideal span.
 -/
@@ -73,5 +74,10 @@ theorem apply_mem_pow_smul_top_of_mem_pow_succ (D : Derivation R A M) {I : Ideal
 theorem apply_mem_smul_top_of_mem_sq (D : Derivation R A M) {I : Ideal A} {x : A}
     (hx : x ∈ I ^ 2) : D x ∈ I • (⊤ : Submodule A M) := by
   simpa using D.apply_mem_pow_smul_top_of_mem_pow_succ (n := 1) hx
+
+/-- A derivation of `A` into itself maps the square of an ideal `I` into `I`. -/
+theorem apply_mem_of_mem_sq (D : Derivation R A A) {I : Ideal A} {x : A} (hx : x ∈ I ^ 2) :
+    D x ∈ I := by
+  simpa [smul_eq_mul] using D.apply_mem_smul_top_of_mem_sq hx
 
 end Derivation

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
+public import Mathlib.Data.Fin.Tuple.Take
 public import Mathlib.Topology.Algebra.Module.Equiv.Pi
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 public import Mathlib.Topology.Algebra.Monoid.FunOnFinite
@@ -39,6 +40,17 @@ Borel measurable structure on the scalar field.
   of its values at the vertices.
 * `EuclideanSpace.consEquivL`: splitting off the first coordinate identifies `𝕜ⁿ⁺¹` with
   `𝕜 × 𝕜ⁿ`.
+* `EuclideanSpace.finTwoEquivProd`: the two coordinates identify `𝕜²` isometrically with the `L²`
+  product `WithLp 2 (𝕜 × 𝕜)`.
+* `EuclideanSpace.nonempty_linearIsometry_iff_finrank_le`: a finite-dimensional inner product
+  space embeds isometrically into `EuclideanSpace 𝕜 ι` exactly when its dimension is at most the
+  cardinality of `ι`.
+* `EuclideanSpace.exists_norm_eq_and_inner_eq`: consequently a finite family `ι → E` of vectors has
+  a copy in `EuclideanSpace 𝕜 ι` with the same norms and mutual inner products.
+* `EuclideanSpace.sumComplEquivProd`: splitting the coordinates along a predicate `p` identifies
+  `EuclideanSpace 𝕜 ι` with `EuclideanSpace 𝕜 {i // p i} × EuclideanSpace 𝕜 {i // ¬p i}`.
+* `EuclideanSpace.take`: the first `m` coordinates of a point of `𝕜ⁿ`, a left inverse of the
+  zero extension `LinearIsometry.piLpExtendByZero` along `Fin.castLEEmb`.
 -/
 
 public section
@@ -120,6 +132,58 @@ theorem abs_sub_sum_mul_basisFun_le_sqrt {x : EuclideanSpace ℝ ι} (hx0 : ∀ 
     _ ≤ K * √(1 - ‖x‖ ^ 2) :=
       mul_le_mul_of_nonneg_left (sum_mul_dist_basisFun_le_sqrt hx0 hx1) K.coe_nonneg
 
+section take
+
+variable {m n : ℕ}
+
+/-- The first `m` coordinates of a point of `𝕜ⁿ`, for `m ≤ n`: `Fin.take` on Euclidean space. -/
+def take (hm : m ≤ n) (x : EuclideanSpace 𝕜 (Fin n)) : EuclideanSpace 𝕜 (Fin m) :=
+  WithLp.toLp 2 (Fin.take m hm x.ofLp)
+
+@[simp]
+theorem take_apply (hm : m ≤ n) (x : EuclideanSpace 𝕜 (Fin n)) (i : Fin m) :
+    take hm x i = x (Fin.castLE hm i) :=
+  (rfl)
+
+variable [RCLike 𝕜]
+
+theorem continuous_take (hm : m ≤ n) : Continuous (take (𝕜 := 𝕜) hm) := by
+  refine (PiLp.continuous_toLp 2 _).comp (continuous_pi fun i ↦ ?_)
+  simp only [Fin.take_apply]
+  fun_prop
+
+/-- The zero extension of `w : 𝕜ᵐ` to `𝕜ⁿ` along `Fin.castLE` keeps the first `m` coordinates. -/
+theorem piLpExtendByZero_castLEEmb_apply_castLE (hm : m ≤ n) (w : EuclideanSpace 𝕜 (Fin m))
+    (i : Fin m) :
+    LinearIsometry.piLpExtendByZero 2 𝕜 𝕜 (Fin.castLEEmb hm) w (Fin.castLE hm i) = w i :=
+  (Fin.castLE_injective hm).extend_apply w.ofLp 0 i
+
+/-- The zero extension of `w : 𝕜ᵐ` to `𝕜ⁿ` along `Fin.castLE` vanishes beyond the first `m`
+coordinates. -/
+theorem piLpExtendByZero_castLEEmb_apply_of_le (hm : m ≤ n) (w : EuclideanSpace 𝕜 (Fin m))
+    {j : Fin n} (hj : m ≤ j.val) :
+    LinearIsometry.piLpExtendByZero 2 𝕜 𝕜 (Fin.castLEEmb hm) w j = 0 :=
+  LinearIsometry.piLpExtendByZero_apply_eq_zero (by rintro ⟨i, rfl⟩; simp at hj; omega) w
+
+/-- Taking the first `m` coordinates undoes the zero extension along `Fin.castLE`. -/
+@[simp]
+theorem take_piLpExtendByZero_castLEEmb (hm : m ≤ n) (w : EuclideanSpace 𝕜 (Fin m)) :
+    take hm (LinearIsometry.piLpExtendByZero 2 𝕜 𝕜 (Fin.castLEEmb hm) w) = w := by
+  ext i
+  exact piLpExtendByZero_castLEEmb_apply_castLE hm w i
+
+/-- A point of `𝕜ⁿ` whose coordinates vanish beyond the first `m` is the zero extension of its
+first `m` coordinates. -/
+theorem piLpExtendByZero_castLEEmb_take (hm : m ≤ n) {x : EuclideanSpace 𝕜 (Fin n)}
+    (hx : ∀ j : Fin n, m ≤ j.val → x j = 0) :
+    LinearIsometry.piLpExtendByZero 2 𝕜 𝕜 (Fin.castLEEmb hm) (take hm x) = x := by
+  ext j
+  by_cases hj : j.val < m
+  · simpa using piLpExtendByZero_castLEEmb_apply_castLE hm (take hm x) ⟨j, hj⟩
+  · rw [piLpExtendByZero_castLEEmb_apply_of_le hm _ (not_lt.1 hj), hx j (not_lt.1 hj)]
+
+end take
+
 variable [RCLike 𝕜]
 
 variable (𝕜) in
@@ -160,6 +224,166 @@ theorem consEquivL_symm_apply_fst {n : ℕ} (x : EuclideanSpace 𝕜 (Fin (n + 1
 theorem consEquivL_symm_apply_snd {n : ℕ} (x : EuclideanSpace 𝕜 (Fin (n + 1))) (i : Fin n) :
     ((consEquivL 𝕜 n).symm x).2 i = x i.succ := by
   simp [consEquivL_symm_apply, Fin.tail]
+
+variable (𝕜) in
+/-- The two coordinates identify `𝕜²` with the `L²` product `WithLp 2 (𝕜 × 𝕜)`, as a linear
+isometry equivalence `x ↦ (x 0, x 1)`. -/
+def finTwoEquivProd : EuclideanSpace 𝕜 (Fin 2) ≃ₗᵢ[𝕜] WithLp 2 (𝕜 × 𝕜) where
+  toFun x := WithLp.toLp 2 (x 0, x 1)
+  invFun p := WithLp.toLp 2 ![p.fst, p.snd]
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  left_inv x := by
+    ext k
+    fin_cases k <;> rfl
+  right_inv _ := rfl
+  norm_map' x := by
+    -- `simp` does not unfold the coercion of the linear equivalence under construction, so state
+    -- its value `WithLp.toLp 2 (x 0, x 1)` first.
+    change ‖WithLp.toLp 2 (x 0, x 1)‖ = ‖x‖
+    simp [WithLp.prod_norm_eq_of_L2, EuclideanSpace.norm_eq, Fin.sum_univ_two]
+
+@[simp]
+theorem finTwoEquivProd_apply_fst (x : EuclideanSpace 𝕜 (Fin 2)) :
+    (finTwoEquivProd 𝕜 x).fst = x 0 :=
+  (rfl)
+
+@[simp]
+theorem finTwoEquivProd_apply_snd (x : EuclideanSpace 𝕜 (Fin 2)) :
+    (finTwoEquivProd 𝕜 x).snd = x 1 :=
+  (rfl)
+
+@[simp]
+theorem finTwoEquivProd_symm_apply (p : WithLp 2 (𝕜 × 𝕜)) :
+    (finTwoEquivProd 𝕜).symm p = WithLp.toLp 2 ![p.fst, p.snd] :=
+  (rfl)
+
+/-- A finite-dimensional inner product space admits a linear isometry into `EuclideanSpace 𝕜 ι`
+if and only if its dimension is at most the cardinality of `ι`. -/
+theorem nonempty_linearIsometry_iff_finrank_le {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E] :
+    Nonempty (E →ₗᵢ[𝕜] EuclideanSpace 𝕜 ι) ↔ Module.finrank 𝕜 E ≤ Fintype.card ι := by
+  refine ⟨fun ⟨L⟩ ↦ finrank_euclideanSpace (𝕜 := 𝕜) (ι := ι) ▸
+    LinearMap.finrank_le_finrank_of_injective L.injective, fun h ↦ ?_⟩
+  obtain ⟨f⟩ : Nonempty (Fin (Module.finrank 𝕜 E) ↪ ι) :=
+    Function.Embedding.nonempty_of_card_le (by rwa [Fintype.card_fin])
+  exact ⟨(LinearIsometry.piLpExtendByZero 2 𝕜 𝕜 f).comp
+    (stdOrthonormalBasis 𝕜 E).repr.toLinearIsometry⟩
+
+open scoped InnerProductSpace in
+/-- A finite family of vectors of an inner product space has a copy in `EuclideanSpace 𝕜 ι` with
+the same norms and mutual inner products: its span has dimension at most `card ι`. -/
+theorem exists_norm_eq_and_inner_eq {E : Type*} [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+    (w : ι → E) :
+    ∃ w' : ι → EuclideanSpace 𝕜 ι,
+      (∀ i, ‖w' i‖ = ‖w i‖) ∧ ∀ i j, ⟪w' i, w' j⟫_𝕜 = ⟪w i, w j⟫_𝕜 := by
+  let W := Submodule.span 𝕜 (Set.range w)
+  have : FiniteDimensional 𝕜 W := FiniteDimensional.span_of_finite 𝕜 (Set.finite_range _)
+  obtain ⟨L⟩ : Nonempty (W →ₗᵢ[𝕜] EuclideanSpace 𝕜 ι) :=
+    nonempty_linearIsometry_iff_finrank_le.2 (finrank_range_le_card (R := 𝕜) w)
+  have hw (i : ι) : w i ∈ W := Submodule.subset_span ⟨i, rfl⟩
+  refine ⟨fun i ↦ L ⟨w i, hw i⟩, fun i ↦ ?_, fun i j ↦ ?_⟩
+  · rw [L.norm_map, ← Submodule.norm_coe]
+  · rw [L.inner_map_map, Submodule.coe_inner]
+
+section sumCompl
+
+variable (𝕜) (p : ι → Prop) [DecidablePred p]
+
+/-- Splitting the coordinates along a predicate `p` identifies `EuclideanSpace 𝕜 ι` with the
+product of the Euclidean spaces on the coordinates satisfying `p` and on the others. This is
+`EuclideanSpace.sumEquivProd` for the decomposition `ι ≃ {i // p i} ⊕ {i // ¬p i}`. -/
+def sumComplEquivProd :
+    EuclideanSpace 𝕜 ι ≃L[𝕜] EuclideanSpace 𝕜 {i // p i} × EuclideanSpace 𝕜 {i // ¬p i} :=
+  (LinearIsometryEquiv.piLpCongrLeft 2 𝕜 𝕜 (Equiv.sumCompl p).symm).toContinuousLinearEquiv.trans
+    sumEquivProd
+
+variable {𝕜 p}
+
+@[simp]
+theorem sumComplEquivProd_apply_fst (x : EuclideanSpace 𝕜 ι) (i : {i // p i}) :
+    (sumComplEquivProd 𝕜 p x).1 i = x i := by
+  simp [sumComplEquivProd, Equiv.piCongrLeft']
+
+@[simp]
+theorem sumComplEquivProd_apply_snd (x : EuclideanSpace 𝕜 ι) (i : {i // ¬p i}) :
+    (sumComplEquivProd 𝕜 p x).2 i = x i := by
+  simp [sumComplEquivProd, Equiv.piCongrLeft']
+
+theorem sumComplEquivProd_symm_apply
+    (z : EuclideanSpace 𝕜 {i // p i} × EuclideanSpace 𝕜 {i // ¬p i}) (i : ι) :
+    (sumComplEquivProd 𝕜 p).symm z i = if h : p i then z.1 ⟨i, h⟩ else z.2 ⟨i, h⟩ := by
+  obtain ⟨x, rfl⟩ := (sumComplEquivProd 𝕜 p).surjective z
+  split_ifs <;> simp
+
+theorem norm_fst_sumComplEquivProd_sq (x : EuclideanSpace 𝕜 ι) :
+    ‖(sumComplEquivProd 𝕜 p x).1‖ ^ 2 = ∑ i with p i, ‖x i‖ ^ 2 := by
+  rw [EuclideanSpace.norm_sq_eq,
+    Finset.sum_subtype (F := inferInstance) _ fun _ ↦ Finset.mem_filter_univ _]
+  simp
+
+theorem norm_snd_sumComplEquivProd_sq (x : EuclideanSpace 𝕜 ι) :
+    ‖(sumComplEquivProd 𝕜 p x).2‖ ^ 2 = ∑ i with ¬p i, ‖x i‖ ^ 2 := by
+  rw [EuclideanSpace.norm_sq_eq,
+    Finset.sum_subtype (F := inferInstance) _ fun _ ↦ Finset.mem_filter_univ _]
+  simp
+
+/-- The two components of the splitting are orthogonal: their squared norms add up to the squared
+norm of the vector. -/
+theorem norm_fst_sumComplEquivProd_sq_add_norm_snd_sq (x : EuclideanSpace 𝕜 ι) :
+    ‖(sumComplEquivProd 𝕜 p x).1‖ ^ 2 + ‖(sumComplEquivProd 𝕜 p x).2‖ ^ 2 = ‖x‖ ^ 2 := by
+  rw [norm_fst_sumComplEquivProd_sq, norm_snd_sumComplEquivProd_sq,
+    Finset.sum_filter_add_sum_filter_not, EuclideanSpace.norm_sq_eq]
+
+/-- Scaling the second component of the splitting along `p` by `s` scales the coordinates not
+satisfying `p` by `s`. -/
+theorem sumComplEquivProd_symm_smul_snd (x : EuclideanSpace 𝕜 ι) (s : 𝕜) :
+    (sumComplEquivProd 𝕜 p).symm ((sumComplEquivProd 𝕜 p x).1, s • (sumComplEquivProd 𝕜 p x).2) =
+      WithLp.toLp 2 fun i ↦ if p i then x i else s * x i := by
+  ext i
+  by_cases h : p i <;> simp [sumComplEquivProd_symm_apply, h]
+
+/-- Scaling the second component of the splitting by a factor of norm at most `1` does not
+increase the norm. -/
+theorem norm_sumComplEquivProd_symm_smul_snd_le (x : EuclideanSpace 𝕜 ι) {s : 𝕜}
+    (hs : ‖s‖ ≤ 1) :
+    ‖(sumComplEquivProd 𝕜 p).symm
+        ((sumComplEquivProd 𝕜 p x).1, s • (sumComplEquivProd 𝕜 p x).2)‖ ≤ ‖x‖ := by
+  refine (pow_le_pow_iff_left₀ (norm_nonneg _) (norm_nonneg _) two_ne_zero).1 ?_
+  rw [← norm_fst_sumComplEquivProd_sq_add_norm_snd_sq (p := p),
+    ← norm_fst_sumComplEquivProd_sq_add_norm_snd_sq (p := p) x,
+    ContinuousLinearEquiv.apply_symm_apply, norm_smul, mul_pow]
+  have : ‖s‖ ^ 2 ≤ 1 := pow_le_one₀ (norm_nonneg _) hs
+  nlinarith [sq_nonneg ‖(sumComplEquivProd 𝕜 p x).2‖]
+
+/-- The second component of the splitting along `p` vanishes exactly when the coordinates not
+satisfying `p` do. -/
+theorem snd_sumComplEquivProd_eq_zero_iff {x : EuclideanSpace 𝕜 ι} :
+    (sumComplEquivProd 𝕜 p x).2 = 0 ↔ ∀ i, ¬p i → x i = 0 := by
+  refine ⟨fun h i hi ↦ ?_, fun h ↦ ?_⟩
+  · simpa using congr($h ⟨i, hi⟩)
+  · ext i
+    simpa using h i i.2
+
+/-- The cell condition `‖u‖² ≤ ε`, `v = 0` on the components `(u, v)` of the splitting along `p`
+says that `‖x‖² ≤ ε` and that the coordinates not satisfying `p` vanish. -/
+theorem norm_fst_sumComplEquivProd_sq_le_and_snd_eq_zero_iff {x : EuclideanSpace 𝕜 ι} {ε : ℝ} :
+    (‖(sumComplEquivProd 𝕜 p x).1‖ ^ 2 ≤ ε ∧ (sumComplEquivProd 𝕜 p x).2 = 0) ↔
+      ‖x‖ ^ 2 ≤ ε ∧ ∀ i, ¬p i → x i = 0 := by
+  rw [← snd_sumComplEquivProd_eq_zero_iff, ← norm_fst_sumComplEquivProd_sq_add_norm_snd_sq (p := p)]
+  refine and_congr_left fun h ↦ ?_
+  rw [h, norm_zero]
+  simp
+
+/-- The diagonal quadratic form with coefficient `-1` on the coordinates satisfying `p` and `1` on
+the others is `-‖u‖² + ‖v‖²` in the components `(u, v)` of the splitting along `p`. -/
+theorem sum_ite_neg_one_mul_sq_eq (x : EuclideanSpace ℝ ι) :
+    ∑ i, (if p i then -1 else 1) * x i ^ 2 =
+      -‖(sumComplEquivProd ℝ p x).1‖ ^ 2 + ‖(sumComplEquivProd ℝ p x).2‖ ^ 2 := by
+  simp only [norm_fst_sumComplEquivProd_sq, norm_snd_sumComplEquivProd_sq, Real.norm_eq_abs,
+    sq_abs, ite_mul, neg_one_mul, one_mul, Finset.sum_ite, Finset.sum_neg_distrib]
+
+end sumCompl
 
 end EuclideanSpace
 

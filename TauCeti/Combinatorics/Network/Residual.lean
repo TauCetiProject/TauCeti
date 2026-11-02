@@ -30,8 +30,12 @@ lower bounds. We prove:
 * `excessAt f' = excessAt f + excessAt r` at every vertex, with no conservation hypothesis on `r`;
   so a residual circulation preserves every excess, and a residual `s`–`t` assignment changes the
   excess only at `s` and `t`, raising it at `t` and lowering it at `s` by its value;
-* conversely every feasible assignment is a residual update of `f` by a feasible residual
-  assignment, so the feasible residual updates of `f` are exactly the feasible assignments.
+* conversely every feasible assignment `g` is the residual update of `f` by the *residual
+  difference* from `f` to `g`, the positive part of `g - f` on forward copies and its negative part
+  on reverse copies; this residual assignment is feasible, its values on the two copies of an arrow
+  have infimum zero (so in a linear order one of them vanishes), and it has excess
+  `excessAt g - excessAt f`. So the feasible residual updates of `f` are exactly the feasible
+  assignments, and two assignments of the same excess differ by a residual circulation.
 
 ## Main definitions
 
@@ -40,6 +44,7 @@ lower bounds. We prove:
 * `TauCeti.residualNet`: the net change `r e⁺ - r e⁻` of a residual assignment, as an additive
   homomorphism.
 * `TauCeti.residualUpdate f r`: the residual update `f + residualNet r`.
+* `TauCeti.residualDifference f g`: the canonical residual assignment updating `f` to `g`.
 
 ## Main results
 
@@ -49,6 +54,9 @@ lower bounds. We prove:
 * `TauCeti.residualCapacity_residualUpdate`: the residual capacities after a residual update.
 * `TauCeti.excessAt_residualUpdate_source`: a residual assignment conserved away from `s` and `t`
   lowers the excess at `s` by its value at `t`.
+* `TauCeti.residualUpdate_residualDifference`, `TauCeti.residualDifference_mem_Icc` and
+  `TauCeti.excessAt_residualDifference`: the residual difference updates `f` to `g`, is feasible
+  for feasible `f` and `g`, and changes excess by the difference of the excesses.
 * `TauCeti.image_residualUpdate_Icc`: the residual updates of a feasible `f` by feasible residual
   assignments are exactly the feasible assignments.
 * `TauCeti.Assignment.map_residualCapacity` and `TauCeti.Assignment.map_residualUpdate`:
@@ -108,12 +116,46 @@ theorem residualCapacity_inr (lo hi f : Assignment Q K) {v w : V} (e : Q w v) :
 
 end Sub
 
+section AddGroup
+
+variable [AddGroup K]
+
 /-- Residual capacities commute with additive coefficient maps. -/
-theorem Assignment.map_residualCapacity [AddGroup K] {L F : Type*} [AddGroup L] [FunLike F K L]
+theorem Assignment.map_residualCapacity {L F : Type*} [SubtractionMonoid L] [FunLike F K L]
     [AddMonoidHomClass F K L] (φ : F) (lo hi f : Assignment Q K) :
     (residualCapacity lo hi f).map φ = residualCapacity (lo.map φ) (hi.map φ) (f.map φ) := by
   funext _ _ e
   rcases e with e | e <;> simp
+
+/-- Residual capacities take values in an additive subgroup containing the bounds and the
+assignment. -/
+theorem residualCapacity_mem {S : Type*} [SetLike S K] [AddSubgroupClass S K] (H : S)
+    {lo hi f : Assignment Q K} (hlo : ∀ ⦃v w⦄ (e : Q v w), lo e ∈ H)
+    (hhi : ∀ ⦃v w⦄ (e : Q v w), hi e ∈ H) (hf : ∀ ⦃v w⦄ (e : Q v w), f e ∈ H) {v w : V}
+    (e : ResidualHom Q v w) : residualCapacity lo hi f e ∈ H := by
+  rcases e with e | e
+  · exact sub_mem (hhi e) (hf e)
+  · exact sub_mem (hf e) (hlo e)
+
+/-- The residual capacities of a feasible assignment are nonnegative. -/
+theorem residualCapacity_nonneg [Preorder K] [AddRightMono K] {lo hi f : Assignment Q K}
+    (hf : f ∈ Set.Icc lo hi) : 0 ≤ residualCapacity lo hi f := by
+  intro v w e
+  rcases e with e | e
+  · exact sub_nonneg.mpr (hf.2 v w e)
+  · exact sub_nonneg.mpr (hf.1 w v e)
+
+end AddGroup
+
+/-- The residual capacity on the residual arrows from `S` to `T` is the room left on the arrows
+from `S` to `T` plus the room left to decrease the arrows from `T` to `S`. -/
+theorem arrowSum_residualCapacity [AddCommMonoid K] [Sub K] [∀ v w, Fintype (Q v w)]
+    (lo hi f : Assignment Q K) (S T : Finset V) :
+    arrowSum (residualCapacity lo hi f) S T = arrowSum (hi - f) S T + arrowSum (f - lo) T S := by
+  simp only [arrowSum_def, Fintype.sum_sum_type, residualCapacity_inl, residualCapacity_inr,
+    sum_add_distrib, Pi.sub_apply]
+  congr 1
+  exact sum_comm
 
 section AddCommGroup
 
@@ -177,22 +219,12 @@ end Map
 
 /-- Residual updates preserve values in an additive subgroup: if `f` and `r` take values in `H`,
 so does the residual update of `f` by `r`. -/
-theorem residualUpdate_mem (H : AddSubgroup K) {f : Assignment Q K}
-    {r : Assignment (ResidualHom Q) K} (hf : ∀ ⦃v w⦄ (e : Q v w), f e ∈ H)
+theorem residualUpdate_mem {S : Type*} [SetLike S K] [AddSubgroupClass S K] (H : S)
+    {f : Assignment Q K} {r : Assignment (ResidualHom Q) K} (hf : ∀ ⦃v w⦄ (e : Q v w), f e ∈ H)
     (hr : ∀ ⦃v w⦄ (e : ResidualHom Q v w), r e ∈ H) {v w : V} (e : Q v w) :
     residualUpdate f r e ∈ H := by
   rw [residualUpdate_apply]
-  exact H.sub_mem (H.add_mem (hf e) (hr _)) (hr _)
-
-/-- Residual capacities take values in an additive subgroup containing the bounds and the
-assignment. -/
-theorem residualCapacity_mem (H : AddSubgroup K) {lo hi f : Assignment Q K}
-    (hlo : ∀ ⦃v w⦄ (e : Q v w), lo e ∈ H) (hhi : ∀ ⦃v w⦄ (e : Q v w), hi e ∈ H)
-    (hf : ∀ ⦃v w⦄ (e : Q v w), f e ∈ H) {v w : V} (e : ResidualHom Q v w) :
-    residualCapacity lo hi f e ∈ H := by
-  rcases e with e | e
-  · exact H.sub_mem (hhi e) (hf e)
-  · exact H.sub_mem (hf e) (hlo e)
+  exact sub_mem (add_mem (hf e) (hr _)) (hr _)
 
 /-- **Residual capacities after a residual update.** Updating `f` by `r` lowers the residual
 capacity of a residual arrow `a` by the value of `r` on `a` and raises it by the value of `r` on the
@@ -203,16 +235,6 @@ theorem residualCapacity_residualUpdate (lo hi f : Assignment Q K)
       residualCapacity lo hi f a - r a + r (a.swap : ResidualHom Q w v) := by
   rcases a with e | e <;> simp only [residualCapacity_inl, residualCapacity_inr, Sum.swap_inl,
     Sum.swap_inr, residualUpdate_apply] <;> abel
-
-/-- The residual capacity on the residual arrows from `S` to `T` is the room left on the arrows
-from `S` to `T` plus the room left to decrease the arrows from `T` to `S`. -/
-theorem arrowSum_residualCapacity [∀ v w, Fintype (Q v w)] (lo hi f : Assignment Q K)
-    (S T : Finset V) :
-    arrowSum (residualCapacity lo hi f) S T = arrowSum (hi - f) S T + arrowSum (f - lo) T S := by
-  simp only [arrowSum_def, Fintype.sum_sum_type, residualCapacity_inl, residualCapacity_inr,
-    sum_add_distrib, Pi.sub_apply]
-  congr 1
-  exact sum_comm
 
 section Excess
 
@@ -252,15 +274,7 @@ end Excess
 
 section Order
 
-variable [PartialOrder K] [IsOrderedAddMonoid K]
-
-/-- The residual capacities of a feasible assignment are nonnegative. -/
-theorem residualCapacity_nonneg {lo hi f : Assignment Q K} (hf : f ∈ Set.Icc lo hi) :
-    0 ≤ residualCapacity lo hi f := by
-  intro v w e
-  rcases e with e | e
-  · exact sub_nonneg.mpr (hf.2 v w e)
-  · exact sub_nonneg.mpr (hf.1 w v e)
+variable [Preorder K] [AddLeftMono K]
 
 /-- **Feasibility of residual updates.** Updating an assignment by a residual assignment between
 zero and its residual capacities gives an assignment within the bounds. Such a residual assignment
@@ -282,30 +296,78 @@ end Order
 
 section Lattice
 
-variable [Lattice K] [IsOrderedAddMonoid K]
+variable [Lattice K]
+
+/-- The *residual difference* from `f` to `g`: the positive part of `g - f` on the forward copy of
+each arrow and its negative part on the reverse copy. It is the canonical residual assignment
+updating `f` to `g`, and its values on the two residual copies of an arrow have infimum zero. -/
+def residualDifference (f g : Assignment Q K) : Assignment (ResidualHom Q) K :=
+  fun _ _ e ↦ Sum.elim (fun e ↦ (g e - f e)⁺) (fun e ↦ (g e - f e)⁻) e
+
+@[simp]
+theorem residualDifference_inl (f g : Assignment Q K) {v w : V} (e : Q v w) :
+    residualDifference f g (Sum.inl e : ResidualHom Q v w) = (g e - f e)⁺ :=
+  (rfl)
+
+@[simp]
+theorem residualDifference_inr (f g : Assignment Q K) {v w : V} (e : Q w v) :
+    residualDifference f g (Sum.inr e : ResidualHom Q v w) = (g e - f e)⁻ :=
+  (rfl)
+
+@[simp]
+theorem residualDifference_self (f : Assignment Q K) : residualDifference f f = 0 := by
+  funext _ _ e
+  rcases e with e | e <;> simp
+
+theorem residualDifference_nonneg (f g : Assignment Q K) : 0 ≤ residualDifference f g := by
+  intro v w e
+  rcases e with e | e
+  · exact posPart_nonneg _
+  · exact negPart_nonneg _
+
+variable [IsOrderedAddMonoid K]
+
+/-- The net change of the residual difference from `f` to `g` is `g - f`. -/
+@[simp]
+theorem residualNet_residualDifference (f g : Assignment Q K) :
+    residualNet (residualDifference f g) = g - f := by
+  funext v w e
+  simp [residualNet_apply, posPart_sub_negPart]
+
+/-- **Residual update by the residual difference.** Updating `f` by the residual difference from
+`f` to `g` gives `g`. -/
+@[simp]
+theorem residualUpdate_residualDifference (f g : Assignment Q K) :
+    residualUpdate f (residualDifference f g) = g := by
+  rw [residualUpdate_def, residualNet_residualDifference, add_sub_cancel]
+
+/-- The values of the residual difference on the two residual copies of an arrow have infimum
+zero; in a linear order, at least one of them vanishes. -/
+theorem residualDifference_inl_inf_inr (f g : Assignment Q K) {v w : V} (e : Q v w) :
+    residualDifference f g (Sum.inl e : ResidualHom Q v w) ⊓
+      residualDifference f g (Sum.inr e : ResidualHom Q w v) = 0 :=
+  posPart_inf_negPart_eq_zero _
+
+/-- The residual difference between two feasible assignments lies between zero and the residual
+capacities of the first. -/
+theorem residualDifference_mem_Icc {lo hi f g : Assignment Q K} (hf : f ∈ Set.Icc lo hi)
+    (hg : g ∈ Set.Icc lo hi) :
+    residualDifference f g ∈ Set.Icc 0 (residualCapacity lo hi f) := by
+  refine ⟨residualDifference_nonneg f g, fun v w e ↦ ?_⟩
+  rcases e with e | e
+  · rw [residualCapacity_inl, residualDifference_inl, posPart_def]
+    exact sup_le (sub_le_sub_right (hg.2 v w e) _) (sub_nonneg.mpr (hf.2 v w e))
+  · rw [residualCapacity_inr, residualDifference_inr, negPart_def, neg_sub]
+    exact sup_le (sub_le_sub_left (hg.1 w v e) _) (sub_nonneg.mpr (hf.1 w v e))
 
 /-- **Completeness of residual updates.** Every feasible assignment `g` is the residual update of
-a feasible `f` by a residual assignment between zero and the residual capacities of `f`: put the
-positive part of `g - f` on the forward copies and its negative part on the reverse copies. -/
+a feasible `f` by a residual assignment between zero and the residual capacities of `f`, namely
+the residual difference from `f` to `g`. -/
 theorem exists_residualUpdate_eq {lo hi f g : Assignment Q K} (hf : f ∈ Set.Icc lo hi)
     (hg : g ∈ Set.Icc lo hi) :
-    ∃ r ∈ Set.Icc 0 (residualCapacity lo hi f), residualUpdate f r = g := by
-  refine ⟨fun _ _ e ↦ Sum.elim (fun e ↦ (g e - f e)⁺) (fun e ↦ (g e - f e)⁻) e, ⟨?_, ?_⟩, ?_⟩
-  · intro v w e
-    rcases e with e | e
-    · exact posPart_nonneg _
-    · exact negPart_nonneg _
-  · intro v w e
-    rcases e with e | e
-    · dsimp only [Sum.elim_inl]
-      rw [residualCapacity_inl, posPart_def]
-      exact sup_le (sub_le_sub_right (hg.2 v w e) _) (sub_nonneg.mpr (hf.2 v w e))
-    · dsimp only [Sum.elim_inr]
-      rw [residualCapacity_inr, negPart_def, neg_sub]
-      exact sup_le (sub_le_sub_left (hg.1 w v e) _) (sub_nonneg.mpr (hf.1 w v e))
-  · funext v w e
-    rw [residualUpdate_apply, add_sub_assoc]
-    exact (congrArg (f e + ·) (posPart_sub_negPart _)).trans (add_sub_cancel _ _)
+    ∃ r ∈ Set.Icc 0 (residualCapacity lo hi f), residualUpdate f r = g :=
+  ⟨residualDifference f g, residualDifference_mem_Icc hf hg,
+    residualUpdate_residualDifference f g⟩
 
 /-- The residual updates of a feasible assignment `f` by residual assignments between zero and its
 residual capacities are exactly the feasible assignments. -/
@@ -318,7 +380,41 @@ theorem image_residualUpdate_Icc {lo hi f : Assignment Q K} (hf : f ∈ Set.Icc 
   · intro hg
     exact exists_residualUpdate_eq hf hg
 
+section Excess
+
+variable [Fintype V] [∀ v w, Fintype (Q v w)]
+
+/-- **Excess of the residual difference.** The excess of the residual difference from `f` to `g`
+is the excess of `g` minus the excess of `f`. -/
+@[simp]
+theorem excessAt_residualDifference (f g : Assignment Q K) (v : V) :
+    excessAt (residualDifference f g) v = excessAt g v - excessAt f v := by
+  conv_rhs => rw [← residualUpdate_residualDifference f g, excessAt_residualUpdate]
+  exact (add_sub_cancel_left _ _).symm
+
+/-- The residual difference between two assignments with the same excess is a residual
+circulation. -/
+theorem isCirculation_residualDifference {f g : Assignment Q K}
+    (hfg : ∀ v, excessAt f v = excessAt g v) : IsCirculation (residualDifference f g) :=
+  (isCirculation_iff _).2 fun v ↦ by rw [excessAt_residualDifference, hfg, sub_self]
+
+end Excess
+
 end Lattice
+
+/-- The residual difference between two assignments with values in an additive subgroup takes
+values in it. -/
+theorem residualDifference_mem [LinearOrder K] {S : Type*} [SetLike S K] [AddSubgroupClass S K]
+    (H : S) {f g : Assignment Q K} (hf : ∀ ⦃v w⦄ (e : Q v w), f e ∈ H)
+    (hg : ∀ ⦃v w⦄ (e : Q v w), g e ∈ H) {v w : V} (e : ResidualHom Q v w) :
+    residualDifference f g e ∈ H := by
+  rcases e with e | e
+  · rw [residualDifference_inl, posPart_eq_ite]
+    split_ifs
+    exacts [sub_mem (hg e) (hf e), zero_mem H]
+  · rw [residualDifference_inr, ← posPart_neg, posPart_eq_ite]
+    split_ifs
+    exacts [neg_mem (sub_mem (hg e) (hf e)), zero_mem H]
 
 end AddCommGroup
 

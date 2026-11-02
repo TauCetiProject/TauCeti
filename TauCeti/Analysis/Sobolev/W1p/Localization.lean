@@ -70,11 +70,10 @@ private theorem localize_mem (hU : U ≤ Ω) (hψ : ContDiff ℝ ∞ ψ) (hM : 0
   refine (hw.congr_ae hvalue.symm).congr_ae_deriv ?_
   filter_upwards [hgradient] with x hx
   dsimp only [w] at hx ⊢
-  ext v
-  simp only [Sobolev1JetLp.candidateWeakFDeriv_apply,
-    Sobolev1JetLp.gradient_extendByZeroₗᵢ, ← W1p.gradient_coe]
+  rw [Sobolev1JetLp.candidateWeakFDeriv_def, Sobolev1JetLp.gradient_extendByZeroₗᵢ,
+    ← W1p.gradient_coe]
   by_cases hxU : x ∈ (U : Set E) <;>
-    simp [hx, hxU, real_inner_comm]
+    simp [hx, hxU]
 
 /-- Multiply a Sobolev function on `U` by a smooth cutoff, then extend it by zero to `Ω`.
 The relative support condition permits nonzero values on the physical boundary of `Ω`.

@@ -8,6 +8,8 @@ module
 public import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
 public import Mathlib.RingTheory.LocalRing.ResidueField.Fiber
 public import Mathlib.RingTheory.QuasiFinite.Basic
+import Mathlib.RingTheory.Artinian.Algebra
+import Mathlib.RingTheory.Nakayama
 
 /-!
 # Krull dimension and the fibres of a ring homomorphism
@@ -36,8 +38,21 @@ set-theoretic fibre of `Spec S → Spec R` over `p`. Mathlib's
 * `Ideal.height_eq_height_under_of_quasiFinite`: along a quasi-finite algebra satisfying going
   down, for instance an étale algebra, the height of a prime equals the height of the prime
   below it.
+* `Ideal.ringKrullDim_localization_atPrime_eq_height_under`: under the same hypotheses, the
+  localization of `S` at a prime `P` has Krull dimension the height of the prime below `P`.
+* `Ideal.ringKrullDim_localization_atPrime_quotient_map_eq_zero`: for a quasi-finite algebra and
+  a prime `P` over `p`, the fibre `S_P ⧸ p S_P` of the local ring `S_P` has Krull dimension zero.
 * `TauCeti.ringKrullDim_le_ringKrullDim_add_of_ringKrullDim_fiber_le`: the Krull dimension of `S`
   is at most that of `R` plus a bound on the Krull dimensions of all fibres.
+* `TauCeti.ringKrullDim_quotient_map_maximalIdeal_eq_zero`: the closed fibre `S ⧸ 𝔪S` of a finite
+  nonzero algebra over a local ring `(R, 𝔪)` has Krull dimension zero.
+* `TauCeti.ringKrullDim_eq_of_flat_of_map_maximalIdeal_eq`: a flat local homomorphism whose
+  closed fibre is a field, such as the completion of a Noetherian local ring, preserves the Krull
+  dimension.
+* `TauCeti.ringKrullDim_le_ringKrullDim_add_ringKrullDim_quotient_map_maximalIdeal`: for a local
+  homomorphism of Noetherian local rings, `dim S ≤ dim R + dim S ⧸ 𝔪_R S`.
+* `TauCeti.ringKrullDim_quotient_map_maximalIdeal_quotient`: dividing the base by an ideal `J`
+  with `R ⧸ J` local does not change the closed fibre.
 
 ## References
 
@@ -119,6 +134,29 @@ theorem height_eq_height_under_of_quasiFinite [IsNoetherianRing R] [IsNoetherian
     nonpos_iff_eq_zero.mp (by exact_mod_cast h)
   rw [h0, add_zero]
 
+variable (R) in
+/-- Let `S` be a Noetherian `R`-algebra which is quasi-finite and satisfies going down, for
+instance a finite torsion-free algebra over a Noetherian integrally closed domain. Then the
+localization of `S` at a prime `P` has Krull dimension the height of the prime of `R` below `P`. -/
+theorem ringKrullDim_localization_atPrime_eq_height_under [IsNoetherianRing R]
+    [IsNoetherianRing S] [Algebra.HasGoingDown R S] [Algebra.QuasiFinite R S] (P : Ideal S)
+    [P.IsPrime] : ringKrullDim (Localization.AtPrime P) = (P.under R).height := by
+  rw [IsLocalization.AtPrime.ringKrullDim_eq_height P,
+    height_eq_height_under_of_quasiFinite (R := R)]
+
+/-- Let `S` be a quasi-finite `R`-algebra and `P` a prime of `S` lying over `p`. The fibre
+`S_P ⧸ p S_P` of the local ring `S_P` over `p` has Krull dimension zero. -/
+theorem ringKrullDim_localization_atPrime_quotient_map_eq_zero [Algebra.QuasiFinite R S]
+    (p : Ideal R) (P : Ideal S) [P.IsPrime] [P.LiesOver p] :
+    ringKrullDim (Localization.AtPrime P ⧸ p.map (algebraMap R (Localization.AtPrime P))) = 0 := by
+  have hle : p.map (algebraMap R (Localization.AtPrime P)) ≤
+      IsLocalRing.maximalIdeal (Localization.AtPrime P) := by
+    rw [map_le_iff_le_comap, ← under_def, ← under_under (B := S),
+      Localization.AtPrime.under_maximalIdeal, ← over_def P p]
+  have : Nontrivial (Localization.AtPrime P ⧸ p.map (algebraMap R (Localization.AtPrime P))) :=
+    Quotient.nontrivial_iff.mpr (ne_top_of_le_ne_top IsPrime.ne_top' hle)
+  exact ringKrullDimZero_iff_ringKrullDim_eq_zero.mp inferInstance
+
 end Ideal
 
 namespace TauCeti
@@ -136,5 +174,74 @@ theorem ringKrullDim_le_ringKrullDim_add_of_ringKrullDim_fiber_le [IsNoetherianR
   gcongr
   · exact Ideal.height_le_ringKrullDim_of_ne_top Ideal.IsPrime.ne_top'
   · exact h _
+
+open IsLocalRing in
+/-- The closed fibre `S ⧸ 𝔪S` of a finite nonzero algebra `S` over a local ring `(R, 𝔪)` has Krull
+dimension zero: it is a nonzero finite algebra over the residue field, hence Artinian. -/
+theorem ringKrullDim_quotient_map_maximalIdeal_eq_zero [IsLocalRing R] [Module.Finite R S]
+    [Nontrivial S] : ringKrullDim (S ⧸ (maximalIdeal R).map (algebraMap R S)) = 0 := by
+  set I := (maximalIdeal R).map (algebraMap R S) with hIdef
+  -- By Nakayama's lemma `𝔪S ≠ S`, since `S` is a finite nonzero `R`-module.
+  have : Nontrivial (S ⧸ I) := by
+    refine Ideal.Quotient.nontrivial_iff.2 fun hI ↦
+      Submodule.top_ne_ideal_smul_of_le_jacobson_annihilator
+        (maximalIdeal_le_jacobson (Module.annihilator R S)) ?_
+    rw [Ideal.smul_top_eq_map, ← hIdef, hI, Submodule.restrictScalars_top]
+  have : Module.Finite R (S ⧸ I) :=
+    .of_surjective (Ideal.Quotient.mkₐ R I).toLinearMap Ideal.Quotient.mk_surjective
+  have : Module.Finite (R ⧸ maximalIdeal R) (S ⧸ I) := .of_restrictScalars_finite R _ _
+  have : IsArtinianRing (R ⧸ maximalIdeal R) :=
+    letI := Ideal.Quotient.field (maximalIdeal R)
+    inferInstance
+  have : IsArtinianRing (S ⧸ I) := .of_finite (R ⧸ maximalIdeal R) _
+  exact ringKrullDimZero_iff_ringKrullDim_eq_zero.mp inferInstance
+
+open IsLocalRing in
+/-- Along a flat homomorphism of local rings under which the maximal ideal of `R` generates the
+maximal ideal of `S`, so that the closed fibre is a field, the Krull dimensions of `R` and `S`
+agree. -/
+theorem ringKrullDim_eq_of_flat_of_map_maximalIdeal_eq [IsLocalRing R] [IsLocalRing S]
+    [IsNoetherianRing R] [IsNoetherianRing S] [Module.Flat R S]
+    (h : (maximalIdeal R).map (algebraMap R S) = maximalIdeal S) :
+    ringKrullDim S = ringKrullDim R := by
+  have : IsLocalHom (algebraMap R S) := ((local_hom_TFAE (algebraMap R S)).out 1 3).mpr h.le
+  rw [← maximalIdeal_height_eq_ringKrullDim, ← maximalIdeal_height_eq_ringKrullDim,
+    Ideal.height_eq_height_add_of_liesOver_of_hasGoingDown (maximalIdeal R) (maximalIdeal S), h,
+    Ideal.map_quotient_self, Ideal.height_bot, add_zero]
+
+open IsLocalRing in
+/-- For a local homomorphism of Noetherian local rings `R → S`, the Krull dimension of `S` is at
+most the Krull dimension of `R` plus that of the closed fibre `S ⧸ 𝔪_R S`. -/
+@[stacks 00OM "for the maximal ideals"]
+theorem ringKrullDim_le_ringKrullDim_add_ringKrullDim_quotient_map_maximalIdeal [IsLocalRing R]
+    [IsLocalRing S] [IsNoetherianRing R] [IsNoetherianRing S] [IsLocalHom (algebraMap R S)] :
+    ringKrullDim S ≤ ringKrullDim R + ringKrullDim (S ⧸ (maximalIdeal R).map (algebraMap R S)) := by
+  have h := WithBot.coe_le_coe.mpr
+    (Ideal.height_le_height_add_of_liesOver (maximalIdeal R) (maximalIdeal S))
+  rw [maximalIdeal_height_eq_ringKrullDim, WithBot.coe_add,
+    maximalIdeal_height_eq_ringKrullDim] at h
+  refine h.trans (add_le_add_right (Ideal.height_le_ringKrullDim_of_ne_top ?_) _)
+  have hle : (maximalIdeal R).map (algebraMap R S) ≤ maximalIdeal S :=
+    Ideal.map_le_iff_le_comap.mpr (maximalIdeal_comap (algebraMap R S)).ge
+  exact (Ideal.isPrime_map_quotientMk_of_isPrime hle).ne_top
+
+open IsLocalRing in
+/-- Dividing the base of a local `R`-algebra `S` by an ideal `J`, with `R ⧸ J` local, does not
+change the closed fibre: the closed fibre of `R ⧸ J → S ⧸ J S` has the Krull dimension of the
+closed fibre `S ⧸ 𝔪_R S` of `R → S`. -/
+theorem ringKrullDim_quotient_map_maximalIdeal_quotient [IsLocalRing R] (J : Ideal R)
+    [IsLocalRing (R ⧸ J)] :
+    ringKrullDim ((S ⧸ J.map (algebraMap R S)) ⧸
+        (maximalIdeal (R ⧸ J)).map (algebraMap (R ⧸ J) (S ⧸ J.map (algebraMap R S)))) =
+      ringKrullDim (S ⧸ (maximalIdeal R).map (algebraMap R S)) := by
+  have hJ : J ≤ maximalIdeal R := le_maximalIdeal fun h ↦ by
+    subst h
+    exact not_nontrivial (R ⧸ (⊤ : Ideal R)) inferInstance
+  have hcomp : (algebraMap (R ⧸ J) (S ⧸ J.map (algebraMap R S))).comp (Ideal.Quotient.mk J) =
+      (Ideal.Quotient.mk _).comp (algebraMap R S) :=
+    RingHom.ext Ideal.Quotient.algebraMap_quotient_map_quotient
+  rw [← map_maximalIdeal_of_surjective _ Ideal.Quotient.mk_surjective, Ideal.map_map, hcomp,
+    ← Ideal.map_map]
+  exact ringKrullDim_eq_of_ringEquiv (DoubleQuot.quotQuotEquivQuotOfLE (Ideal.map_mono hJ))
 
 end TauCeti

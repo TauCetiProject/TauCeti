@@ -8,10 +8,13 @@ module
 public import TauCeti.Topology.Algebra.Module.Submodule
 
 /-!
-# Dense span inside a closed span
+# Dense spans
 
 A generating family, regarded as a family in the closure of its span, has dense span there.
 This lets constructions on densely spanning families apply to arbitrary closed spans.
+Conversely, a densely spanning family stays densely spanning when pushed forward along a
+continuous linear map with dense range, such as the projection onto a quotient module, so that a
+quotient of a module spanned densely by a countable family is again spanned densely by one.
 No norm, separation, or completeness assumptions are needed.
 -/
 
@@ -40,3 +43,14 @@ theorem dense_span_in_topologicalClosure {R ι M : Type*} [Semiring R]
   exact closure_mono hspan.symm.subset
 
 end TauCeti
+
+/-- The image of a densely spanning family under a continuous linear map with dense range has
+dense span. For instance, the image of a densely spanning family in a quotient module `M ⧸ p`
+(take `f = p.mkQ`) has dense span. -/
+theorem DenseRange.dense_span_range_comp {R M N ι : Type*} [Semiring R]
+    [AddCommMonoid M] [Module R M] [TopologicalSpace M] [AddCommMonoid N] [Module R N]
+    [TopologicalSpace N] {f : M →ₗ[R] N} (hf : DenseRange f) (hfc : Continuous f) {v : ι → M}
+    (hv : Dense (Submodule.span R (Set.range v) : Set M)) :
+    Dense (Submodule.span R (Set.range (f ∘ v)) : Set N) := by
+  rw [Set.range_comp, ← Submodule.map_span, Submodule.map_coe]
+  exact hf.dense_image hfc hv

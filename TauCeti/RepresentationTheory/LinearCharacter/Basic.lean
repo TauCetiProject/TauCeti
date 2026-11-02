@@ -44,6 +44,8 @@ representation, and its irreducibility is what the Mackey criterion decides.
   is the original character, coerced into the coefficient field.
 * `Representation.isIrreducible_ofLinearCharacter`: a line has no room for a proper nonzero
   subrepresentation.
+* `Representation.IsIrreducible.nonempty_equiv_ofLinearCharacter_iff`: an irreducible
+  representation is the line of `χ` exactly when each `g` acts by the scalar `χ g`.
 * `FDRep.ofLinearCharacter_def`: the bundled representation is the unbundled one, bundled.
 * `FDRep.finrank_ofLinearCharacter`: it is a line.
 * `FDRep.simple_ofLinearCharacter`: it is a simple object of `FDRep k G`, being a line.
@@ -129,6 +131,25 @@ subrepresentation. -/
 instance isIrreducible_ofLinearCharacter [Field k] [Monoid G] (χ : G →* kˣ) :
     (ofLinearCharacter (k := k) χ).IsIrreducible :=
   isIrreducible_of_finrank_eq_one _ (Module.finrank_self k)
+
+/-- **An irreducible representation is the line of a linear character `χ` exactly when every `g`
+acts by the scalar `χ g`.** If it does, a nonzero vector spans an equivariant copy of the line `k`,
+and irreducibility makes this copy everything. -/
+theorem IsIrreducible.nonempty_equiv_ofLinearCharacter_iff [Field k] [Monoid G] {V : Type*}
+    [AddCommGroup V] [Module k V] {ρ : Representation k G V} (hρ : ρ.IsIrreducible)
+    (χ : G →* kˣ) :
+    Nonempty (ρ.Equiv (ofLinearCharacter χ)) ↔ ∀ g, ρ g = (χ g : k) • (1 : Module.End k V) := by
+  refine ⟨fun ⟨e⟩ g ↦ LinearMap.ext fun v ↦ e.injective ?_, fun h ↦ ?_⟩
+  · simpa using IntertwiningMap.isIntertwining _ _ e.toIntertwiningMap g v
+  let := hρ
+  have := hρ.nontrivial
+  obtain ⟨v, hv⟩ := exists_ne (0 : V)
+  -- A nonzero vector spans an equivariant copy of the line, which Schur makes bijective.
+  let f : IntertwiningMap (ofLinearCharacter χ) ρ :=
+    (LinearMap.toSpanSingleton k V v).intertwiningMap_of_isIntertwiningMap _ _ fun g c ↦ by
+      simpa [h, mul_smul] using smul_comm (χ g : k) c v
+  have hf : f ≠ 0 := fun h0 ↦ hv (by simpa [f] using DFunLike.congr_fun h0 1)
+  exact ⟨(f.ofBijective ((IsIrreducible.bijective_or_eq_zero f).resolve_right hf)).symm⟩
 
 end Representation
 

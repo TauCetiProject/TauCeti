@@ -24,10 +24,15 @@ for a volatility `σ > 0` and strike `K > 0`. Here `Φ` is the standard Gaussian
 * **Far field.** As `s → ∞`, `C - s + K e^{-rτ} → 0` and `P → 0`.
 * **Maturity.** As `(s, τ) → (s₀, 0⁺)` with `s₀ > 0`, `C → (s₀ - K)⁺` and `P → (K - s₀)⁺`. So
   the prices extend continuously to the expiry `τ = 0` by the call and put payoffs.
+* **Delta at maturity.** For a fixed spot, as `τ → 0⁺` the call delta `Φ(d₊)` tends to `1` in
+  the money (`s > K`), to `0` out of the money (`s < K`) and to `1 / 2` at the money. The put
+  delta, which is the call delta minus `1`, tends to `0`, `-1` and `-1 / 2` respectively.
 * **Gamma at maturity.** For a fixed spot `s ≠ K` the gamma `φ(d₊) / (s σ √τ)` of the call
   (equivalently, of the put) tends to `0` as `τ → 0⁺`. At the money it blows up like `1 / √τ`:
   `√τ ∂²C/∂s²(K, τ) → 1 / (K σ √(2π))`, so the gamma tends to `+∞` and has no finite terminal
   value at `s = K`.
+* **Vega at maturity.** For every fixed spot `s > 0`, including `s = K`, the vega `s φ(d₊) √τ`
+  of the call (equivalently, of the put) tends to `0` as `τ → 0⁺`.
 
 The spot limits are the boundary conditions at `s = 0` and `s = ∞`, and the maturity limits the
 terminal condition at `τ = 0`, that accompany the Black–Scholes equation for the call and put.
@@ -52,11 +57,18 @@ limit here.
   `TauCeti.BlackScholes.tendsto_putPrice_maturity_zero` — the limits at maturity for a fixed spot.
 * `TauCeti.BlackScholes.tendsto_callPrice_terminal`,
   `TauCeti.BlackScholes.tendsto_putPrice_terminal` — the joint limits at maturity.
+* `TauCeti.BlackScholes.tendsto_deriv_callPrice_spot_maturity_zero_of_strike_lt`,
+  `TauCeti.BlackScholes.tendsto_deriv_callPrice_spot_maturity_zero_of_lt_strike`,
+  `TauCeti.BlackScholes.tendsto_deriv_callPrice_spot_strike` and their put analogues — delta at
+  maturity in, out of and at the money.
 * `TauCeti.BlackScholes.tendsto_deriv_deriv_callPrice_spot_maturity_zero` — gamma away from the
   money vanishes at maturity.
 * `TauCeti.BlackScholes.tendsto_sqrt_mul_deriv_deriv_callPrice_spot_strike`,
   `TauCeti.BlackScholes.tendsto_deriv_deriv_callPrice_spot_strike_atTop` — gamma at the money.
 * The corresponding put gamma statements.
+* `TauCeti.BlackScholes.tendsto_deriv_callPrice_volatility_maturity_zero`,
+  `TauCeti.BlackScholes.tendsto_deriv_putPrice_volatility_maturity_zero` — vega vanishes at
+  maturity.
 
 ## References
 
@@ -274,6 +286,78 @@ theorem tendsto_putPrice_maturity_zero (hs : 0 < s) (hσ : 0 < σ) (hK : 0 < K) 
     Tendsto (putPrice s r σ K) (𝓝[>] 0) (𝓝 (K - s)⁺) :=
   (tendsto_putPrice_terminal hs hσ hK).comp (tendsto_const_nhds.prodMk tendsto_id)
 
+/-! ### Delta at maturity -/
+
+-- The call delta `Φ(d₊)` follows `d₊` at maturity, so it tends to `1` in the money, to `0` out
+-- of the money and to `Φ(0) = 1 / 2` at the money. The put delta is the call delta minus `1`.
+
+/-- For a positive maturity the call delta is `Φ(d₊)`; as functions of the maturity they are
+eventually equal as `τ → 0⁺`. -/
+private theorem deriv_callPrice_spot_eventuallyEq (hs : 0 < s) (hσ : σ ≠ 0) (hK : 0 < K) :
+    (fun u => deriv (fun x => callPrice x r σ K u) s) =ᶠ[𝓝[>] 0]
+      fun u => cdf (gaussianReal 0 1) (dPlus s r σ K u) := by
+  filter_upwards [self_mem_nhdsWithin] with u hu
+  exact deriv_callPrice_spot hs hK hσ hu
+
+/-- For a positive maturity the put delta is the call delta minus `1`; as functions of the
+maturity they are eventually equal as `τ → 0⁺`. -/
+private theorem deriv_putPrice_spot_eventuallyEq (hs : 0 < s) (hσ : σ ≠ 0) (hK : 0 < K) :
+    (fun u => deriv (fun x => putPrice x r σ K u) s) =ᶠ[𝓝[>] 0]
+      fun u => deriv (fun x => callPrice x r σ K u) s - 1 := by
+  filter_upwards [self_mem_nhdsWithin] with u hu
+  rw [deriv_putPrice_spot hs hK hσ hu, deriv_callPrice_spot hs hK hσ hu,
+    cdf_gaussianReal_zero_one_neg]
+  ring
+
+/-- **Call delta in the money at maturity.** For a fixed spot `s > K`, the call delta tends to
+`1` as the remaining maturity tends to `0⁺`. -/
+theorem tendsto_deriv_callPrice_spot_maturity_zero_of_strike_lt (hσ : 0 < σ) (hK : 0 < K)
+    (hsK : K < s) :
+    Tendsto (fun u => deriv (fun x => callPrice x r σ K u) s) (𝓝[>] 0) (𝓝 1) :=
+  ((tendsto_cdf_atTop _).comp (tendsto_dPlus_maturity_atTop hσ hK hsK)).congr'
+    (deriv_callPrice_spot_eventuallyEq (hK.trans hsK) hσ.ne' hK).symm
+
+/-- **Call delta out of the money at maturity.** For a fixed spot `0 < s < K`, the call delta
+tends to `0` as the remaining maturity tends to `0⁺`. -/
+theorem tendsto_deriv_callPrice_spot_maturity_zero_of_lt_strike (hs : 0 < s) (hσ : 0 < σ)
+    (hsK : s < K) :
+    Tendsto (fun u => deriv (fun x => callPrice x r σ K u) s) (𝓝[>] 0) (𝓝 0) :=
+  ((tendsto_cdf_atBot _).comp (tendsto_dPlus_maturity_atBot hσ hs hsK)).congr'
+    (deriv_callPrice_spot_eventuallyEq hs hσ.ne' (hs.trans hsK)).symm
+
+/-- **Call delta at the money at maturity.** At the spot `s = K`, the call delta tends to `1 / 2`
+as the remaining maturity tends to `0⁺`. -/
+theorem tendsto_deriv_callPrice_spot_strike (hσ : σ ≠ 0) (hK : 0 < K) :
+    Tendsto (fun u => deriv (fun x => callPrice x r σ K u) K) (𝓝[>] 0) (𝓝 (1 / 2)) := by
+  have hΦ := (hasDerivAt_cdf_gaussianReal 0 one_ne_zero 0).continuousAt.tendsto
+  rw [cdf_gaussianReal_self 0 one_ne_zero] at hΦ
+  exact (hΦ.comp (tendsto_dPlus_maturity_strike (r := r) hσ hK.ne')).congr'
+    (deriv_callPrice_spot_eventuallyEq hK hσ hK).symm
+
+/-- **Put delta in the money at maturity.** For a fixed spot `0 < s < K`, the put delta tends to
+`-1` as the remaining maturity tends to `0⁺`. -/
+theorem tendsto_deriv_putPrice_spot_maturity_zero_of_lt_strike (hs : 0 < s) (hσ : 0 < σ)
+    (hsK : s < K) :
+    Tendsto (fun u => deriv (fun x => putPrice x r σ K u) s) (𝓝[>] 0) (𝓝 (-1)) := by
+  simpa using ((tendsto_deriv_callPrice_spot_maturity_zero_of_lt_strike (r := r) hs hσ
+    hsK).sub_const 1).congr' (deriv_putPrice_spot_eventuallyEq hs hσ.ne' (hs.trans hsK)).symm
+
+/-- **Put delta out of the money at maturity.** For a fixed spot `s > K`, the put delta tends to
+`0` as the remaining maturity tends to `0⁺`. -/
+theorem tendsto_deriv_putPrice_spot_maturity_zero_of_strike_lt (hσ : 0 < σ) (hK : 0 < K)
+    (hsK : K < s) :
+    Tendsto (fun u => deriv (fun x => putPrice x r σ K u) s) (𝓝[>] 0) (𝓝 0) := by
+  simpa using ((tendsto_deriv_callPrice_spot_maturity_zero_of_strike_lt (r := r) hσ hK
+    hsK).sub_const 1).congr' (deriv_putPrice_spot_eventuallyEq (hK.trans hsK) hσ.ne' hK).symm
+
+/-- **Put delta at the money at maturity.** At the spot `s = K`, the put delta tends to `-1 / 2`
+as the remaining maturity tends to `0⁺`. -/
+theorem tendsto_deriv_putPrice_spot_strike (hσ : σ ≠ 0) (hK : 0 < K) :
+    Tendsto (fun u => deriv (fun x => putPrice x r σ K u) K) (𝓝[>] 0) (𝓝 (-1 / 2)) := by
+  have h := ((tendsto_deriv_callPrice_spot_strike (r := r) hσ hK).sub_const 1).congr'
+    (deriv_putPrice_spot_eventuallyEq hK hσ hK).symm
+  rwa [show (1 / 2 : ℝ) - 1 = -1 / 2 by norm_num] at h
+
 /-! ### Gamma at maturity -/
 
 /-- **Gamma away from the money at maturity.** For a fixed spot `s > 0` with `s ≠ K`, the call
@@ -372,5 +456,33 @@ theorem tendsto_deriv_deriv_putPrice_spot_strike_atTop (hσ : 0 < σ) (hK : 0 < 
     Tendsto (fun u => deriv (deriv fun x => putPrice x r σ K u) K) (𝓝[>] 0) atTop :=
   (tendsto_deriv_deriv_callPrice_spot_strike_atTop hσ hK).congr'
     (deriv_deriv_putPrice_spot_eventuallyEq hK hσ hK).symm
+
+/-! ### Vega at maturity -/
+
+/-- **Vega at maturity.** For every spot `s > 0`, in or out of or at the money, the call vega
+`s φ(d₊) √τ` tends to `0` as the remaining maturity tends to `0⁺`. -/
+theorem tendsto_deriv_callPrice_volatility_maturity_zero (hs : 0 < s) (hσ : σ ≠ 0) (hK : 0 < K) :
+    Tendsto (fun u => deriv (fun v => callPrice s r v K u) σ) (𝓝[>] 0) (𝓝 0) := by
+  -- Squeeze `0 ≤ s φ(d₊) √τ ≤ s (√(2π))⁻¹ √τ`, using `φ ≤ (√(2π))⁻¹`.
+  have hup := (tendsto_mul_sqrt_nhds_zero (s * (√(2 * π))⁻¹)).mono_left
+    (nhdsWithin_le_nhds (s := Ioi 0))
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hup ?_ ?_ <;>
+    filter_upwards [self_mem_nhdsWithin] with u hu <;>
+    rw [(hasDerivAt_callPrice_volatility hs hK hσ hu).deriv]
+  · have := gaussianPDFReal_nonneg 0 1 (dPlus s r σ K u)
+    positivity
+  · have hφ : gaussianPDFReal 0 1 (dPlus s r σ K u) ≤ (√(2 * π))⁻¹ := by
+      rw [gaussianPDFReal_zero_one]
+      exact mul_le_of_le_one_right (by positivity) (exp_le_one_iff.2 (neg_nonpos.2 (by positivity)))
+    gcongr
+
+/-- **Put vega at maturity.** For every spot `s > 0`, the put vega tends to `0` as the remaining
+maturity tends to `0⁺`. -/
+theorem tendsto_deriv_putPrice_volatility_maturity_zero (hs : 0 < s) (hσ : σ ≠ 0) (hK : 0 < K) :
+    Tendsto (fun u => deriv (fun v => putPrice s r v K u) σ) (𝓝[>] 0) (𝓝 0) := by
+  refine (tendsto_deriv_callPrice_volatility_maturity_zero (r := r) hs hσ hK).congr' ?_
+  filter_upwards [self_mem_nhdsWithin] with u hu
+  rw [(hasDerivAt_callPrice_volatility hs hK hσ hu).deriv,
+    (hasDerivAt_putPrice_volatility hs hK hσ hu).deriv]
 
 end TauCeti.BlackScholes

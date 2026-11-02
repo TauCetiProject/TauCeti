@@ -60,6 +60,9 @@ groups through presentations by relators in `Φ(F)`.
   `q ≠ 2`, where the image is `1 + qℤ_p` and the invariant may be taken to be `q` itself.
 * `TauCeti.freeProP.exists_continuousMulEquiv_apply_eq_of_range_demushkinCharacter_eq_of_odd`:
   Labute's Theorem 2 for odd rank, the dyadic case proved from the odd normal forms alone.
+* `TauCeti.IsDemushkin.nonempty_continuousMulEquiv_iff`: **the classification**, two Demushkin
+  groups are topologically isomorphic exactly when they have the same rank and the same image of
+  the canonical character.
 
 ## References
 
@@ -223,5 +226,17 @@ theorem IsDemushkin.nonempty_continuousMulEquiv_of_range_demushkinCharacter_eq {
       ((range_demushkinCharacter_of_equiv hG hGr e.symm).trans
         (h.trans (range_demushkinCharacter_of_equiv hH hHr e'.symm).symm))
   exact ⟨e.symm.trans ((presentedProP.congrSingleton φ hφ).trans e')⟩
+
+/-- **The classification of Demushkin groups** (Labute): two Demushkin groups are topologically
+isomorphic if and only if they have the same rank and their canonical characters have the same
+image. The forward direction is the invariance of both invariants under isomorphism; the
+converse is `TauCeti.IsDemushkin.nonempty_continuousMulEquiv_of_range_demushkinCharacter_eq`. -/
+theorem IsDemushkin.nonempty_continuousMulEquiv_iff {H : Type v} [Group H] [TopologicalSpace H]
+    [IsTopologicalGroup H] [CompactSpace H] [TotallyDisconnectedSpace H] (hG : IsDemushkin p G)
+    (hH : IsDemushkin p H) :
+    Nonempty (G ≃ₜ* H) ↔ demushkinRank hG = demushkinRank hH ∧
+      (demushkinCharacter hG).toMonoidHom.range = (demushkinCharacter hH).toMonoidHom.range :=
+  ⟨fun ⟨e⟩ ↦ ⟨demushkinRank_congr hG hH e, (range_demushkinCharacter_of_equiv hG hH e).symm⟩,
+    fun ⟨hn, h⟩ ↦ hG.nonempty_continuousMulEquiv_of_range_demushkinCharacter_eq hH h hn⟩
 
 end TauCeti

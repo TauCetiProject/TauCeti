@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Curves.Node.SingularLocus
 public import TauCeti.AlgebraicGeometry.Morphisms.Syntomic.PureRelativeDimension
-public import TauCeti.AlgebraicGeometry.Morphisms.Unramified
+public import TauCeti.AlgebraicGeometry.Morphisms.Unramified.Basic
 import TauCeti.RingTheory.Node.Syntomic
 
 /-!

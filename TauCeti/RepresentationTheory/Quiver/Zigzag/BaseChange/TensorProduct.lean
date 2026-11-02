@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.BaseChange.Basic
-public import Mathlib.RingTheory.TensorProduct.Basic
+public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.BaseChange.TensorProduct
 
 /-!
 # Tensor-product scalar extension of skew-zigzag algebras
@@ -75,59 +75,35 @@ theorem skewZigzagScalarExtension_tmul (a : l) (x : skewZigzagQuotient k G c) :
       a • skewZigzagBaseChange G (algebraMap k l) c x := by
   exact AlgHom.liftEquiv_tmul (coefficientAlgHom G c) a x
 
--- Use the path-algebra universal property, as in `RingHom.pathAlgebraBaseChangeAlgHom`,
--- with unit pure tensors as the assigned path values.
-private noncomputable def tensorPathAlgHom :
-    pathAlgebra l (DoubledQuiver G) →ₐ[l] l ⊗[k] skewZigzagQuotient k G c := by
-  let g : pathAlgebra k (DoubledQuiver G) →ₐ[k] l ⊗[k] skewZigzagQuotient k G c :=
-    Algebra.TensorProduct.includeRight.comp (skewZigzagMk k G c)
-  refine liftAlgHom l (fun p => g (ofPath p)) ?_ ?_ ?_
-  · intro a b d p q
-    rw [← map_mul, ofPath_mul_ofPath_of_comp]
-  · intro p q hpq
-    rw [← map_mul, ofPath_mul_ofPath_of_not_composable hpq, map_zero]
-  · let _ := Fintype.ofFinite (DoubledQuiver G)
-    rw [← map_sum]
-    simp only [← vertexIdempotent_eq_ofPath, ← one_def, map_one]
-
-private theorem tensorPathAlgHom_ofPath (p : Quiver.TotalPath (DoubledQuiver G)) :
-    tensorPathAlgHom (l := l) G c (ofPath p) = 1 ⊗ₜ[k] skewZigzagMk k G c (ofPath p) := by
-  dsimp only [tensorPathAlgHom]
-  refine liftAlgHom_ofPath l _ ?_ ?_ _ p
-  · intro a b d p q
-    rw [← map_mul, ofPath_mul_ofPath_of_comp]
-  · intro p q hpq
-    rw [← map_mul, ofPath_mul_ofPath_of_not_composable hpq, map_zero]
-
-private theorem tensorPathAlgHom_relator (x : pathAlgebra l (DoubledQuiver G))
+private theorem tensorLiftAlgHom_relator (x : pathAlgebra l (DoubledQuiver G))
     (hx : IsSkewZigzagRelator l G (c.map (algebraMap k l : k →* l)) x) :
-    tensorPathAlgHom G c x = 0 := by
+    tensorLiftAlgHom (skewZigzagMk k G c) x = 0 := by
   cases hx with
   | nonreturn p hlen hne =>
-      rw [tensorPathAlgHom_ofPath,
+      rw [tensorLiftAlgHom_ofPath,
         skewZigzagMk_ofPath_eq_zero_of_ne k G c p hlen hne, TensorProduct.tmul_zero]
   | backtrack_ratio h h' =>
-      simp only [map_sub, map_smul, backtrackElem_eq_ofPath, tensorPathAlgHom_ofPath]
+      simp only [map_sub, map_smul, backtrackElem_eq_ofPath, tensorLiftAlgHom_ofPath]
       simp only [← backtrackElem_eq_ofPath, sub_eq_zero]
       rw [skewZigzagMk_backtrackElem_eq_smul k G c h h']
       simp only [SkewZigzagParameter.map_ratio, Units.coe_map, MonoidHom.coe_ofClass,
         TensorProduct.tmul_smul]
-      simp [TensorProduct.smul_tmul', Algebra.smul_def]
+      simp [Algebra.smul_def]
   | long_path p hlen =>
-      rw [tensorPathAlgHom_ofPath,
+      rw [tensorLiftAlgHom_ofPath,
         skewZigzagMk_ofPath_eq_zero_of_three_le k G c p hlen, TensorProduct.tmul_zero]
 
 private noncomputable def scalarExtensionInverse :
     skewZigzagQuotient l G (c.map (algebraMap k l : k →* l)) →ₐ[l]
       l ⊗[k] skewZigzagQuotient k G c :=
-  skewZigzagLift l G (c.map (algebraMap k l : k →* l)) (tensorPathAlgHom G c)
-    (tensorPathAlgHom_relator G c)
+  skewZigzagLift l G (c.map (algebraMap k l : k →* l)) (tensorLiftAlgHom (skewZigzagMk k G c))
+    (tensorLiftAlgHom_relator G c)
 
 private theorem scalarExtensionInverse_ofPath (p : Quiver.TotalPath (DoubledQuiver G)) :
     scalarExtensionInverse (l := l) G c
       (skewZigzagMk l G (c.map (algebraMap k l : k →* l)) (ofPath p)) =
         1 ⊗ₜ[k] skewZigzagMk k G c (ofPath p) := by
-  rw [scalarExtensionInverse, skewZigzagLift_skewZigzagMk, tensorPathAlgHom_ofPath]
+  rw [scalarExtensionInverse, skewZigzagLift_skewZigzagMk, tensorLiftAlgHom_ofPath]
 
 /-- The tensor-product comparison is bijective for every finite graph,
 over arbitrary commutative coefficient rings. -/

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.PDCode.Reidemeister.One
+public import TauCeti.KnotTheory.PDCode.Reidemeister.One.Basic
 
 /-!
 # The first Reidemeister move on oriented PD-codes

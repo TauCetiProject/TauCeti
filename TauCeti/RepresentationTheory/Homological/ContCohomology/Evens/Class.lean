@@ -54,6 +54,8 @@ places the class in Mathlib's canonical continuous cohomology.
   `inhomogeneousCochain2`.
 * `TauCeti.ContCohomology.graphClass_eq_explicitGraphClass`: the canonical class is the image of
   the explicit one under the degree-two comparison.
+* `TauCeti.ContCohomology.evensGraphCocycle_class_eq_graphClass`: the degree-two comparison for
+  the discrete coefficient object `trivialF2 G` sends every graph cocycle to `graphClass`.
 
 ## References
 
@@ -299,6 +301,26 @@ theorem graphClass_eq_cochainClass [LocallyCompactSpace G] (U : OpenSubgroup G)
   rw [graphClass_eq_evensGraphCochainClass U hU s hs, evensGraphCochainClass_def]
   exact eqToHom_explicitH2AddEquivContinuousCohomology_eq_cochainClass _ _ _
     (fun p => by rw [coe_evensGraphCocycle]) _
+
+/-- The degree-two comparison for the discrete representation `trivialF2 G` sends the explicit
+graph cocycle formed using any element outside `U` to the choice-free canonical graph class. -/
+theorem evensGraphCocycle_class_eq_graphClass [LocallyCompactSpace G] (U : OpenSubgroup G)
+    (hU : U.toSubgroup.index = 2) (s : G) (hs : s ∉ U)
+    (α : U.toSubgroup →* Multiplicative (ZMod 2)) (hα : Continuous α) :
+    (trivialF2 G).explicitH2AddEquivContinuousCohomologyOfDiscrete
+      (evensGraphCocycle U s α hU hs hα : H2 G (trivialF2 G).V) =
+        graphClass U hU α hα := by
+  rw [graphClass_eq_cochainClass U hU s hs α hα]
+  refine (trivialF2 G).explicitH2AddEquivContinuousCohomologyOfDiscrete_eq_cochainClass
+    (evensGraphCocycle U s α hU hs hα)
+    (inhomogeneousCochain2 (evensGraphCochain U.toSubgroup s α)
+      (continuous_evensGraphCochain U.toSubgroup s α U.isOpen' hα))
+    (inhomogeneousCochain2_d_eq_zero _ _ (evensGraphCochain_cocycle_identity hU hs)) ?_
+  intro g h
+  rw [coe_evensGraphCocycle]
+  simpa only [inv_one, one_mul, inv_mul_cancel_left] using
+    (inhomogeneousCochain2_apply (evensGraphCochain U.toSubgroup s α)
+      (continuous_evensGraphCochain U.toSubgroup s α U.isOpen' hα) 1 g (g * h)).symm
 
 end GraphClass
 

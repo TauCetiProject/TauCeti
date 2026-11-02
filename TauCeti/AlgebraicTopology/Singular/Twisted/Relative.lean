@@ -60,6 +60,7 @@ public section
 noncomputable section
 
 open CategoryTheory Limits TauCeti
+open scoped Simplicial
 
 universe u v w
 
@@ -98,11 +99,46 @@ def cokernelCoforkTwistedChainComplex :
     CokernelCofork (LocalCoefficientSystem.twistedChainComplexMap P.map L) :=
   CokernelCofork.ofπ _ (P.twistedChainComplexMap_comp_twistedChainComplexπ L)
 
+/-- The cokernel cofork is the cofork of the ambient-to-relative quotient map. -/
+lemma cokernelCoforkTwistedChainComplex_def :
+    P.cokernelCoforkTwistedChainComplex L =
+      CokernelCofork.ofπ (P.twistedChainComplexπ L)
+        (P.twistedChainComplexMap_comp_twistedChainComplexπ L) := (rfl)
+
 /-- The relative twisted chain complex of a pair is the cokernel of the inclusion of the twisted
 chains of its subspace. -/
 def isColimitCokernelCoforkTwistedChainComplex :
     IsColimit (P.cokernelCoforkTwistedChainComplex L) :=
   cokernelIsCokernel _
+
+/-- In every degree the subspace inclusion followed by the relative quotient is zero. -/
+@[reassoc (attr := simp)]
+lemma twistedChainComplex_condition_f (i : ℕ) :
+    (LocalCoefficientSystem.twistedChainComplexMap P.map L).f i ≫
+      (P.twistedChainComplexπ L).f i = 0 := by
+  simpa only [HomologicalComplex.comp_f, HomologicalComplex.zero_f] using
+    congrArg (fun k ↦ k.f i) (P.twistedChainComplexMap_comp_twistedChainComplexπ L)
+
+/-- The summand of a simplex coming from the subspace vanishes in relative twisted chains. -/
+@[reassoc (attr := simp)]
+lemma ιTwistedChainComplex_comp_twistedChainComplexπ (n : ℕ)
+    (σ : (TopCat.toSSet.obj P.snd) _⦋n⦌) :
+    LocalCoefficientSystem.ιTwistedChainComplex L n ((TopCat.toSSet.map P.map).app _ σ) ≫
+      (P.twistedChainComplexπ L).f n = 0 := by
+  have h := congrArg (fun k ↦
+    LocalCoefficientSystem.ιTwistedChainComplex (P.subspaceSystem L) n σ ≫ k)
+    (P.twistedChainComplex_condition_f L n)
+  rw [← Category.assoc,
+    LocalCoefficientSystem.ιTwistedChainComplex_twistedChainComplexMap_f] at h
+  -- The pullback fibre at σ is definitionally the fibre of L at the image initial vertex.
+  exact h.trans (comp_zero)
+
+/-- The relative twisted chains in each degree are the cokernel of the subspace chains. -/
+def isColimitCokernelCoforkTwistedChainComplexX (i : ℕ) :
+    IsColimit (CokernelCofork.ofπ ((P.twistedChainComplexπ L).f i)
+      (P.twistedChainComplex_condition_f L i)) :=
+  CokernelCofork.mapIsColimit _ (P.isColimitCokernelCoforkTwistedChainComplex L)
+    (HomologicalComplex.eval _ _ i)
 
 /-- Descend a map out of the ambient twisted chains to the relative twisted chain complex when it
 vanishes on the chains of the subspace. -/

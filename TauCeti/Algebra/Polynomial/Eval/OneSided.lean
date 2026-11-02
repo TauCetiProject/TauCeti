@@ -23,7 +23,14 @@ formulas to include multiple roots without choosing nearby evaluation points.
 
 Both signs are zero for the zero polynomial. Over any ordered field they agree
 with evaluation on sufficiently small open intervals on the appropriate side.
-No completeness or Archimedean assumption is needed.
+No completeness or Archimedean assumption is needed. The two signs agree exactly when the root
+multiplicity is even, so a nonzero polynomial changes sign at a point exactly when its root
+multiplicity there is odd.
+
+In characteristic zero, the one-sided signs of the derivative at `a` are those of the increment
+`p - p(a)` on the right and their negatives on the left. In particular, at a root the
+derivative has the sign of `p` immediately to the right of the root and the opposite sign
+immediately to the left.
 
 ## Main definitions
 
@@ -178,6 +185,48 @@ theorem derivSignLeft_neg (p : R[X]) (a : R) :
 
 end Neg
 
+section Derivative
+
+variable {R : Type*} [CommRing R] [LinearOrder R] [NoZeroDivisors R] [CharZero R]
+
+/-- At a root, the derivative has the right-hand sign of the polynomial. -/
+theorem derivSignRight_derivative_of_isRoot {p : R[X]} {a : R} (ha : p.IsRoot a) :
+    p.derivative.derivSignRight a = p.derivSignRight a := by
+  by_cases hp : p = 0
+  · simp [hp]
+  have hm : 0 < p.rootMultiplicity a := (rootMultiplicity_pos hp).mpr ha
+  rw [derivSignRight, derivSignRight, derivative_rootMultiplicity_of_root ha,
+    derivativeSign_derivative, Nat.sub_add_cancel hm]
+
+/-- At a root, the derivative has the opposite of the left-hand sign of the polynomial. -/
+theorem derivSignLeft_derivative_of_isRoot {p : R[X]} {a : R} (ha : p.IsRoot a) :
+    p.derivative.derivSignLeft a = -p.derivSignLeft a := by
+  by_cases hp : p = 0
+  · simp [hp]
+  have hm : 0 < p.rootMultiplicity a := (rootMultiplicity_pos hp).mpr ha
+  obtain ⟨k, hk⟩ := Nat.exists_eq_succ_of_ne_zero hm.ne'
+  rw [derivSignLeft_def, derivSignLeft_def, derivSignRight_derivative_of_isRoot ha,
+    derivative_rootMultiplicity_of_root ha, hk]
+  simp [pow_succ]
+
+/-- At any point `a`, the right-hand sign of the derivative equals the right-hand sign of the
+increment `p - C (p.eval a)`. Over an ordered field this is the sign of `p(x) - p(a)` just to the
+right of `a`; see `exists_sign_eval_derivative`. -/
+theorem derivSignRight_derivative (p : R[X]) (a : R) :
+    p.derivative.derivSignRight a = (p - C (p.eval a)).derivSignRight a := by
+  have h := derivSignRight_derivative_of_isRoot (p := p - C (p.eval a)) (a := a) (by simp)
+  rwa [derivative_sub, derivative_C, sub_zero] at h
+
+/-- At any point `a`, the left-hand sign of the derivative equals the negative of the left-hand
+sign of the increment `p - C (p.eval a)`. Over an ordered field this is the opposite of the sign
+of `p(x) - p(a)` just to the left of `a`; see `exists_sign_eval_derivative`. -/
+theorem derivSignLeft_derivative (p : R[X]) (a : R) :
+    p.derivative.derivSignLeft a = -(p - C (p.eval a)).derivSignLeft a := by
+  have h := derivSignLeft_derivative_of_isRoot (p := p - C (p.eval a)) (a := a) (by simp)
+  rwa [derivative_sub, derivative_C, sub_zero] at h
+
+end Derivative
+
 section OrderedRing
 
 variable {R : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
@@ -227,6 +276,30 @@ omit [IsStrictOrderedRing R] in
 theorem derivSignLeft_eq_neg_derivSignRight_of_odd (p : R[X]) (a : R)
     (h : Odd (p.rootMultiplicity a)) : p.derivSignLeft a = -p.derivSignRight a := by
   rw [derivSignLeft_def, h.neg_one_pow, neg_one_mul]
+
+/-- The one-sided signs agree exactly when the root multiplicity is even. This includes the zero
+polynomial, whose one-sided signs are both zero. -/
+@[simp]
+theorem derivSignLeft_eq_derivSignRight_iff (p : R[X]) (a : R) :
+    p.derivSignLeft a = p.derivSignRight a ↔ Even (p.rootMultiplicity a) := by
+  rcases Nat.even_or_odd (p.rootMultiplicity a) with h | h
+  · simp [derivSignLeft_eq_derivSignRight_of_even p a h, h]
+  by_cases hp : p = 0
+  · simp [hp] at h
+  rw [derivSignLeft_eq_neg_derivSignRight_of_odd p a h, iff_false_intro (Nat.not_even_iff_odd.2 h),
+    iff_false, eq_comm, SignType.self_eq_neg_iff]
+  simpa using hp
+
+/-- For a nonzero polynomial, the one-sided signs are opposite exactly when the root multiplicity
+is odd. -/
+@[simp]
+theorem derivSignLeft_eq_neg_derivSignRight_iff {p : R[X]} (hp : p ≠ 0) (a : R) :
+    p.derivSignLeft a = -p.derivSignRight a ↔ Odd (p.rootMultiplicity a) := by
+  rcases Nat.even_or_odd (p.rootMultiplicity a) with h | h
+  · rw [derivSignLeft_eq_derivSignRight_of_even p a h,
+      iff_false_intro (Nat.not_odd_iff_even.2 h), iff_false, SignType.self_eq_neg_iff]
+    simpa using hp
+  · simp [derivSignLeft_eq_neg_derivSignRight_of_odd p a h, h]
 
 /-- Multiplication multiplies right-hand signs, including when a factor is zero. -/
 @[simp]
@@ -301,6 +374,37 @@ theorem exists_derivSignLeft_derivSignRight (p : R[X]) (a : R) :
   · intro x hx
     rw [hf, sign_pos (sub_pos.mpr hx.1), one_pow, one_mul,
       hlu ⟨hla.trans hx.1, hx.2⟩, hs]
+
+/-- A nonzero polynomial changes sign at `a` exactly when its root multiplicity at `a` is odd:
+its signs immediately to the left of `a` are the negatives of those immediately to the right. -/
+theorem odd_rootMultiplicity_iff_exists_sign_eval_eq_neg {p : R[X]} (hp : p ≠ 0) (a : R) :
+    Odd (p.rootMultiplicity a) ↔ ∃ l u, l < a ∧ a < u ∧
+      ∀ x ∈ Ioo l a, ∀ y ∈ Ioo a u, sign (p.eval x) = -sign (p.eval y) := by
+  obtain ⟨l, u, hl, hu, hL, hR⟩ := p.exists_derivSignLeft_derivSignRight a
+  rw [← derivSignLeft_eq_neg_derivSignRight_iff hp]
+  constructor
+  · intro h
+    exact ⟨l, u, hl, hu, fun x hx y hy => by rw [hL x hx, hR y hy, h]⟩
+  · rintro ⟨l', u', hl', hu', h⟩
+    obtain ⟨x, hx, hxa⟩ := exists_between (max_lt hl hl')
+    obtain ⟨y, hay, hy⟩ := exists_between (lt_min hu hu')
+    rw [← hL x ⟨(le_max_left _ _).trans_lt hx, hxa⟩, ← hR y ⟨hay, hy.trans_le (min_le_left _ _)⟩]
+    exact h x ⟨(le_max_right _ _).trans_lt hx, hxa⟩ y ⟨hay, hy.trans_le (min_le_right _ _)⟩
+
+/-- Immediately to the right of a point `a`, the derivative has the sign of `p(x) - p(a)`, and
+immediately to the left it has the opposite sign. This includes points where `p - p(a)` has a
+multiple root, and constant polynomials. -/
+theorem exists_sign_eval_derivative (p : R[X]) (a : R) :
+    ∃ l u, l < a ∧ a < u ∧
+      (∀ x ∈ Ioo l a, sign (p.derivative.eval x) = -sign (p.eval x - p.eval a)) ∧
+      (∀ x ∈ Ioo a u, sign (p.derivative.eval x) = sign (p.eval x - p.eval a)) := by
+  obtain ⟨l₁, u₁, hl₁, hu₁, hL₁, hR₁⟩ := p.derivative.exists_derivSignLeft_derivSignRight a
+  obtain ⟨l₂, u₂, hl₂, hu₂, hL₂, hR₂⟩ := (p - C (p.eval a)).exists_derivSignLeft_derivSignRight a
+  refine ⟨max l₁ l₂, min u₁ u₂, max_lt hl₁ hl₂, lt_min hu₁ hu₂, fun x hx => ?_, fun x hx => ?_⟩
+  · rw [hL₁ x ⟨(le_max_left _ _).trans_lt hx.1, hx.2⟩, derivSignLeft_derivative,
+      ← hL₂ x ⟨(le_max_right _ _).trans_lt hx.1, hx.2⟩, eval_sub, eval_C]
+  · rw [hR₁ x ⟨hx.1, hx.2.trans_le (min_le_left _ _)⟩, derivSignRight_derivative,
+      ← hR₂ x ⟨hx.1, hx.2.trans_le (min_le_right _ _)⟩, eval_sub, eval_C]
 
 end OrderedField
 

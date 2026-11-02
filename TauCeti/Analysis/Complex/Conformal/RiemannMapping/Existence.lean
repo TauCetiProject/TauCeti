@@ -51,14 +51,6 @@ hypothesis, where this file constructs one.
   `TauCeti.isSimplyConnected_iff_hasHolomorphicSquareRoots` — a connected open set with holomorphic
   square roots is simply connected, and conversely.
 
-## Coordination with upstream Mathlib
-
-The Riemann mapping theorem is being formalized upstream at
-[mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505), which proves the
-L0–L3 prerequisites internally as private lemmas. The declarations here are an explicitly
-**temporary shim**: delete them and refactor downstream consumers onto the exported Mathlib
-versions once those land.
-
 ## References
 
 * B. Riemann, *Grundlagen für eine allgemeine Theorie der Functionen einer veränderlichen complexen

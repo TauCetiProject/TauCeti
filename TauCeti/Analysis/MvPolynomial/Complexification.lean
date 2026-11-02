@@ -211,17 +211,14 @@ theorem exists_complexification_dense_open_directions_eval_add_smul_eq_pow_mul [
   obtain ⟨u, hu, hu0, heq⟩ :=
     p.exists_analyticAt_complex_eval_add_smul_eq_pow_mul_of_coeff_ne_zero
       v (analyticAt_pi_iff.1 hΦa) hreal' hm hc
-  obtain ⟨s, hs, hsu⟩ := Metric.eventually_nhds_iff.1
-    (hu.eventually_analyticAt.and ((hu.continuousAt.eventually_ne hu0).and heq))
-  have hlocal : ∀ z ∈ Metric.ball (fun j ↦ (a j : ℂ)) (min ρ s) ×ˢ
-      Metric.ball 0 (min ρ s), AnalyticAt ℂ u z ∧ u z ≠ 0 ∧
-        eval (Φ z.1 + z.2 • (fun i ↦ (v i : ℂ))) (p.map Complex.ofRealHom) =
-          z.2 ^ m * u z := by
-    intro z hz
-    have hz' := Metric.ball_subset_ball (min_le_right ρ s)
-      (ball_prod_same (fun j ↦ (a j : ℂ)) (0 : ℂ) (min ρ s) ▸ hz)
-    exact hsu (by simpa only [Metric.mem_ball, dist_comm] using hz')
-  exact ⟨min ρ s, lt_min hρ hs, min_le_left _ _, u,
-    fun z hz ↦ (hlocal z hz).1, fun z hz ↦ (hlocal z hz).2⟩
+  obtain ⟨s, hs, hsu, hsh⟩ := hu.exists_ball_prod_eq_pow_smul hu0
+    (G := fun z ↦ eval (Φ z.1 + z.2 • (fun i ↦ (v i : ℂ))) (p.map Complex.ofRealHom))
+    (by simpa only [sub_zero, smul_eq_mul] using heq)
+  have hsub : Metric.ball (fun j ↦ (a j : ℂ)) (min ρ s) ×ˢ Metric.ball (0 : ℂ) (min ρ s) ⊆
+      Metric.ball (fun j ↦ (a j : ℂ)) s ×ˢ Metric.ball (0 : ℂ) s :=
+    Set.prod_mono (Metric.ball_subset_ball (min_le_right ρ s))
+      (Metric.ball_subset_ball (min_le_right ρ s))
+  refine ⟨min ρ s, lt_min hρ hs, min_le_left _ _, u, hsu.mono hsub, fun z hz ↦ ?_⟩
+  simpa only [sub_zero, smul_eq_mul] using hsh z (hsub hz)
 
 end MvPolynomial

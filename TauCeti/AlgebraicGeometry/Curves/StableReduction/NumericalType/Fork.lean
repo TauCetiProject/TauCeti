@@ -574,6 +574,33 @@ lemma branch_fiber_relation (hf : T.IsSelfIntersectionMinusTwoFork t c branch)
 
 end IsSelfIntersectionMinusTwoFork
 
+/-- Every component of a numerical type exhausted by a fork `(c, b)` of chain length `t` is either
+`b` or `c i` for some `i < t`. -/
+lemma IsSelfIntersectionMinusTwoFork.eq_or_exists_lt_eq_of_card_eq {t : ℕ} {c : ℕ → T.Component}
+    {b : T.Component} (hf : T.IsSelfIntersectionMinusTwoFork t c b)
+    (hcard : Fintype.card T.Component = t + 1) (v : T.Component) :
+    v = b ∨ ∃ i < t, c i = v := by
+  classical
+  have hu := hf.insert_image_range_eq_univ hcard
+  simpa [← hu] using mem_univ v
+
+/-- Enumerate an exhaustive fork by its chain indices, followed by its extra leaf. -/
+noncomputable def IsSelfIntersectionMinusTwoFork.equivFinOfCardEq
+    (hf : T.IsSelfIntersectionMinusTwoFork t c branch)
+    (hcard : Fintype.card T.Component = t + 1) : Fin (t + 1) ≃ T.Component :=
+  Equiv.ofBijective (fun i ↦ if (i : ℕ) = t then branch else c i)
+    ((Fintype.bijective_iff_injective_and_card _).mpr
+      ⟨fun i j hij ↦ Fin.ext (hf.injOn_snoc hf.branch_ne i (by omega) j (by omega) hij),
+        by simpa using hcard.symm⟩)
+
+/-- Evaluation of the enumeration of an exhaustive fork at a chain index or its extra leaf. -/
+@[simp]
+lemma IsSelfIntersectionMinusTwoFork.equivFinOfCardEq_apply
+    (hf : T.IsSelfIntersectionMinusTwoFork t c branch)
+    (hcard : Fintype.card T.Component = t + 1) (i : Fin (t + 1)) :
+    hf.equivFinOfCardEq hcard i = if (i : ℕ) = t then branch else c i := by
+  rw [equivFinOfCardEq, Equiv.ofBijective_apply]
+
 end NumericalType
 
 end TauCeti

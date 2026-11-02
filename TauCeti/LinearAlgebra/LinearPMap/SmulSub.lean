@@ -15,7 +15,7 @@ For a partial linear map `A : E →ₗ.[R] E` and a scalar `c`, the shift `x ↦
 linear map from the domain of `A` to `E`.  Bundling it (`LinearPMap.smulSub`) gives access to the
 `LinearMap` API, in particular to its range as a submodule, for arguments about resolvents,
 deficiency shifts and dissipativity, where surjectivity or density of this range is the question.
-Up to sign it is the scalar shift `TauCeti.LinearPMap.subScalar A c = A - c • 1` of
+Up to sign it is the scalar shift `LinearPMap.subScalar A c = A - c • 1` of
 `TauCeti.LinearAlgebra.LinearPMap.Shift`, regarded as a linear map on the domain
 (`smulSub_apply_eq_neg_subScalar`), so results about the range of either form transfer to the
 other.
@@ -47,9 +47,9 @@ theorem smulSub_apply (c : R) (A : E →ₗ.[R] E) (x : A.domain) :
 /-- The bundled shift `c • x - A x` is the negative of the scalar shift `subScalar A c = A - c • 1`
 of the same domain, pointwise. -/
 theorem smulSub_apply_eq_neg_subScalar (c : R) (A : E →ₗ.[R] E) (x : A.domain) :
-    A.smulSub c x = -TauCeti.LinearPMap.subScalar A c
-      ⟨x, (TauCeti.LinearPMap.subScalar_domain A c).symm ▸ x.property⟩ := by
-  rw [A.smulSub_apply, TauCeti.LinearPMap.subScalar_apply, neg_sub]
+    A.smulSub c x = -subScalar A c
+      ⟨x, (subScalar_domain A c).symm ▸ x.property⟩ := by
+  rw [A.smulSub_apply, subScalar_apply, neg_sub]
 
 /-- The range of the bundled shift is the range of the shift. -/
 theorem coe_range_smulSub (c : R) (A : E →ₗ.[R] E) :

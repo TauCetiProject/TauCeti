@@ -342,14 +342,6 @@ private lemma false_of_left_equal {n : ℕ} {c : ℕ → T.Component}
       linear_combination hP
     nlinarith
 
-private lemma nonconsecutive_zero_reverse {n : ℕ} {c : ℕ → T.Component}
-    (hzero : ∀ i < n, ∀ j < n, i ≠ j → i + 1 ≠ j → j + 1 ≠ i →
-      T.intersection (c i) (c j) = 0) :
-    ∀ i < n, ∀ j < n, i ≠ j → i + 1 ≠ j → j + 1 ≠ i →
-      T.intersection (c (n - 1 - i)) (c (n - 1 - j)) = 0 := by
-  intro i hi j hj hij hnext hprev
-  apply hzero (n - 1 - i) (by omega) (n - 1 - j) (by omega) <;> omega
-
 private lemma shape_of_left_half_right_double {n : ℕ} {c : ℕ → T.Component}
     (hc : T.IsSelfIntersectionMinusTwoChain n c) (hcard : Fintype.card T.Component = n)
     (hn : 6 ≤ n)
@@ -507,7 +499,7 @@ theorem isGenusOneLongPathShape_or_isGenusOneLongPathShape {n : ℕ}
   obtain ⟨W, hW, hint, hleft, hright⟩ := interior_weight_eq hc hcard hn
   let cr : ℕ → T.Component := fun i ↦ c (n - 1 - i)
   have hcRev : T.IsSelfIntersectionMinusTwoChain n cr := hc.reverse
-  have hzeroRev := nonconsecutive_zero_reverse hzero
+  have hzeroRev := intersection_reverse_eq_zero_of_nonconsecutive hzero
   have hintRev : ∀ i, 0 < i → i + 1 < n → (T.weight (cr i) : ℤ) = W := by
     intro i hi hin
     exact hint (n - 1 - i) (by omega) (by omega)
@@ -551,5 +543,42 @@ theorem isGenusOneLongPathShape_or_isGenusOneLongPathShape_of_isMinimal_and_arit
   apply T.isGenusOneLongPathShape_or_isGenusOneLongPathShape hcard hn
   · exact ⟨hinj, fun i hi ↦ (T.isMinusTwoIndex_iff.mp (h₂ (c i))).2, hpos⟩
   · exact hzero
+
+/-- For a genus-one long path on a minus-two chain exhausting all components, some component's
+weight divides every weight with quotient at most four, and some component's multiplicity
+divides every multiplicity with quotient at most six. -/
+lemma IsGenusOneLongPathShape.exists_weight_and_multiplicity_dvd_and_le
+    {n : ℕ} {c : ℕ → T.Component} (hlong : T.IsGenusOneLongPathShape n c)
+    (hn : 3 ≤ n) (hcard : Fintype.card T.Component = n)
+    (hc : T.IsSelfIntersectionMinusTwoChain n c) :
+    (∃ j, ∀ i, (T.weight j : ℕ) ∣ T.weight i ∧ (T.weight i : ℕ) ≤ 4 * T.weight j) ∧
+      (∃ j, ∀ i, (T.multiplicity j : ℕ) ∣ T.multiplicity i ∧
+        (T.multiplicity i : ℕ) ≤ 6 * T.multiplicity j) := by
+  classical
+  obtain ⟨w, m, _, _, ⟨hw, hm, -⟩ | ⟨hw, hm, -⟩ | ⟨hw, hm, -⟩⟩ :=
+    isGenusOneLongPathShape_iff.mp hlong
+  · refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) (c 0) (c (n - 1))
+      (fun i ↦ ?_) (fun i ↦ ?_)
+    all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
+    · obtain ⟨k, hk, rfl⟩ := hc.exists_lt_eq_of_card_eq hcard i
+      have hwk := hw k hk; have hw0 := hw 0 (by omega); split_ifs at hwk hw0 <;> omega
+    · obtain ⟨k, hk, rfl⟩ := hc.exists_lt_eq_of_card_eq hcard i
+      have hmk := hm k hk; have hm0 := hm (n - 1) (by omega); split_ifs at hmk hm0 <;> omega
+  · refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6)
+      (c 0) (c 0) (fun i ↦ ?_) (fun i ↦ ?_)
+    all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
+    · obtain ⟨k, hk, rfl⟩ := hc.exists_lt_eq_of_card_eq hcard i
+      have hwk := hw k hk; have hw0 := hw 0 (by omega); split_ifs at hwk hw0 <;> omega
+    · obtain ⟨k, hk, rfl⟩ := hc.exists_lt_eq_of_card_eq hcard i
+      have hmk := hm k hk; have hm0 := hm 0 (by omega); omega
+  · refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6)
+      (c 1) (c 0) (fun i ↦ ?_) (fun i ↦ ?_)
+    all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
+    · have hw1 := hw 1 (by omega); rw [ite_eq_right (by omega)] at hw1
+      obtain ⟨k, hk, rfl⟩ := hc.exists_lt_eq_of_card_eq hcard i
+      have hwk := hw k hk; split_ifs at hwk <;> omega
+    · have hm0 := hm 0 (by omega); rw [ite_eq_left (by omega)] at hm0
+      obtain ⟨k, hk, rfl⟩ := hc.exists_lt_eq_of_card_eq hcard i
+      have hmk := hm k hk; split_ifs at hmk <;> omega
 
 end TauCeti.NumericalType

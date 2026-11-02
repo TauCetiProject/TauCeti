@@ -16,11 +16,11 @@ import TauCeti.MeasureTheory.Function.Lp.Norm
 
 Let `u ∈ H¹(Ω)` be a weak solution of the divergence-form equation
 
-`-∂ⱼ(aⁱʲ ∂ᵢu) = -div G` in `Ω`,
+`-∂ᵢ(aⁱʲ ∂ⱼu) = -div G` in `Ω`,
 
 tested against test functions, with a variable coefficient matrix `a`. On an open `B ⊆ Ω`, freeze
 the coefficients at a constant elliptic matrix `A`, typically `A = a(x₀)` for a centre `x₀`, and
-let `w ∈ H¹(B)` be the weak solution of the frozen problem `-∂ⱼ(Aⁱʲ ∂ᵢw) = 0` in `B` with the
+let `w ∈ H¹(B)` be the weak solution of the frozen problem `-∂ᵢ(Aⁱʲ ∂ⱼw) = 0` in `B` with the
 boundary values of `u`, `u - w ∈ H¹₀(B)`. This file bounds the energy of the error `u - w`:
 if `‖a(x) - A‖ ≤ ε` on `B` and `A` has lower ellipticity constant `λ`, then
 
@@ -46,11 +46,11 @@ The coefficient oscillation is measured in the operator norm of the attached bil
 
 ## The argument
 
-Since constants have zero divergence, `u` solves `-∂ⱼ(aⁱʲ ∂ᵢu) = -div (G - c)` on `B` against all
-of `H¹₀(B)` (`TauCeti.PDE.forall_energyFormH1_restrictL_eq_inner`). Adding `-∂ⱼ((A - a)ⁱʲ ∂ᵢu)`
+Since constants have zero divergence, `u` solves `-∂ᵢ(aⁱʲ ∂ⱼu) = -div (G - c)` on `B` against all
+of `H¹₀(B)` (`TauCeti.PDE.forall_energyFormH1_restrictL_eq_inner`). Adding `-∂ᵢ((A - a)ⁱʲ ∂ⱼu)`
 to both sides, `u` solves the frozen equation
 
-`-∂ⱼ(Aⁱʲ ∂ᵢu) = -div (G - c + (A - a) ∇u)` on `B`,
+`-∂ᵢ(Aⁱʲ ∂ⱼu) = -div (G - c + (A - a) ∇u)` on `B`,
 
 whose field is square integrable with norm at most `‖G - c‖_{L²(B)} + ε ‖∇u‖_{L²(B)}`. The
 energy estimate for the replacement relative to the elliptic matrix `A`
@@ -87,11 +87,11 @@ namespace PDE
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpace ℝ ι)}
   [mu.IsAddHaarMeasure]
 
-/-- **Comparison with the frozen problem.** Let `u ∈ H¹(Ω)` solve `-∂ⱼ(aⁱʲ ∂ᵢu) = -div G`
+/-- **Comparison with the frozen problem.** Let `u ∈ H¹(Ω)` solve `-∂ᵢ(aⁱʲ ∂ⱼu) = -div G`
 weakly on `Ω`, tested against test functions, let `B ⊆ Ω` be open, and let `A` be a constant
 matrix, uniformly elliptic with lower constant `λ`, with `‖a(x) - A‖ ≤ ε` for `x ∈ B` in the
 operator norm of the attached bilinear forms. If `w ∈ H¹(B)` has the boundary values of `u`,
-`u - w ∈ H¹₀(B)`, and solves the frozen problem `-∂ⱼ(Aⁱʲ ∂ᵢw) = 0` weakly on `B`, then for every
+`u - w ∈ H¹₀(B)`, and solves the frozen problem `-∂ᵢ(Aⁱʲ ∂ⱼw) = 0` weakly on `B`, then for every
 constant `c` with `G - c ∈ L²(B)`
 
 `λ ‖∇(u - w)‖_{L²(B)} ≤ ε ‖∇u‖_{L²(B)} + ‖G - c‖_{L²(B)}`. -/
@@ -166,13 +166,13 @@ theorem UniformlyEllipticOn.mul_norm_gradient_restrictL_sub_le
         rwa [hx]
     _ = ε * ‖W1p.gradient (W1p.restrictL hB u)‖ + ‖hGc.toLp‖ := add_comm _ _
 
-/-- **The replacement frozen at a centre.** Let `u ∈ H¹(Ω)` solve `-∂ⱼ(aⁱʲ ∂ᵢu) = -div G` weakly
+/-- **The replacement frozen at a centre.** Let `u ∈ H¹(Ω)` solve `-∂ᵢ(aⁱʲ ∂ⱼu) = -div G` weakly
 on `Ω ⊆ ℝ^{n+1}`, tested against test functions, let `B ⊆ Ω` be open with `B ⊆ B(x₀, r)`, and let
 `a` be uniformly elliptic with constants `0 < λ ≤ Λ` on a set containing `x₀`. Suppose that on
 `B(x₀, r)` the coefficients are `α`-Hölder with constant `K_a`, in the operator norm of the
 attached bilinear forms, and `G` is `α`-Hölder with constant `K_G`, where `α > 0`. Then there is
 `w ∈ H¹(B)` with the boundary values of `u`, `u - w ∈ H¹₀(B)`, solving the problem
-`-∂ⱼ(a(x₀)ⁱʲ ∂ᵢw) = 0` with coefficients frozen at `x₀` weakly on `B`, such that
+`-∂ᵢ(a(x₀)ⁱʲ ∂ⱼw) = 0` with coefficients frozen at `x₀` weakly on `B`, such that
 
 `λ ‖∇(u - w)‖_{L²(B)} ≤ r^α (K_a ‖∇u‖_{L²(B)} + K_G |B|^{1/2})`.
 

@@ -178,8 +178,7 @@ of its rational spinor norm in the local square classes. -/
 theorem adelicSpinorNorm_finiteAdelicSpecialOrthogonalDiagonal_apply
     (g : specialOrthogonalGroup Q) (p : Nat.Primes) :
     U.adelicSpinorNorm hQ (U.finiteAdelicSpecialOrthogonalDiagonal g) p =
-      Multiplicative.ofAdd ((algebraMap ℚ ℚ_[p]).squareClassMap
-        (CliffordAlgebra.spinorNorm Q hQ g).toAdd) := by
+      (algebraMap ℚ ℚ_[p]).multiplicativeSquareClassMap (CliffordAlgebra.spinorNorm Q hQ g) := by
   have h := CliffordAlgebra.spinorNorm_specialOrthogonalGroupBaseChange (L := ℚ_[p]) Q hQ g
   -- Identify the scalar-extended inverse of two with the canonical `p`-adic instance.
   rw [Subsingleton.elim ((Invertible.map (algebraMap ℚ ℚ_[p]) 2).copy 2 (map_ofNat _ _).symm)
@@ -193,8 +192,8 @@ theorem finiteAdelicSpecialOrthogonalDiagonal_mem_adelicSpinorKernel
     U.finiteAdelicSpecialOrthogonalDiagonal g ∈ U.adelicSpinorKernel hQ := by
   rw [adelicSpinorKernel_def, MonoidHom.mem_ker]
   ext p : 1
-  rw [adelicSpinorNorm_finiteAdelicSpecialOrthogonalDiagonal_apply, hg, toAdd_one, map_zero,
-    ofAdd_zero, RestrictedProduct.one_apply]
+  rw [adelicSpinorNorm_finiteAdelicSpecialOrthogonalDiagonal_apply, hg, map_one,
+    RestrictedProduct.one_apply]
 
 end
 

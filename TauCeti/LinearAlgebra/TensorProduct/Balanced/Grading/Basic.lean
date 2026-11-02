@@ -6,12 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Basic
-public import TauCeti.Algebra.Module.GradedModule.TensorProduct
+public import TauCeti.Algebra.Module.GradedModule.TensorProduct.Basic
 public import TauCeti.Algebra.Module.GradedModule.Quotient
 public import TauCeti.Algebra.Module.GradedModule.Opposite
 
 /-!
-# Grading tensor products balanced over a graded algebra
+# Total gradings on balanced tensor products
 
 The balancing relations for a right and a left graded module are homogeneous for total
 cohomological degree. The quotient therefore inherits an internal grading, with
@@ -22,6 +22,9 @@ adds their degrees.
 This is the grading needed to equip the ordinary balanced tensor product of differential
 graded modules with its cochain complex. No flatness or finite-dimensionality is required.
 The construction reuses `InternalGrading.tensorProduct` and `InternalGrading.quotient`.
+Only an internal decomposition of the balancing semiring and homogeneous module actions are
+needed; its multiplication need not respect that decomposition, and its ground-ring module
+structure need not arise from an algebra structure.
 
 ## References
 
@@ -35,10 +38,10 @@ open scoped TensorProduct
 
 namespace TauCeti.BalancedTensorProduct
 
-variable {R A M N : Type*} [CommRing R] [Semiring A] [Algebra R A]
+variable {R A M N : Type*} [CommRing R] [Semiring A] [Module R A]
   [AddCommGroup M] [Module R M] [Module Aᵐᵒᵖ M]
   [AddCommGroup N] [Module R N] [Module A N]
-  {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜]
+  {𝒜 : ℤ → Submodule R A} [Decomposition 𝒜]
   (G : InternalGrading R M) (H : InternalGrading R N)
 
 private def homogeneousRelations : Set (M ⊗[R] N) :=
@@ -88,15 +91,12 @@ theorem isHomogeneous_relations :
   rw [relations_eq_span_homogeneous (𝒜 := 𝒜) G H]
   apply (G.tensorProduct H).isHomogeneous_span
   rintro z ⟨p, q, r, a, m, n, ha, hm, hn, rfl⟩
-  have hop : op a ∈ (InternalGrading.ofDecomposition 𝒜).opposite.piece p :=
-    (InternalGrading.op_mem_opposite_piece_iff _ _ _).2 (by simpa using ha)
-  refine ⟨p + q + r, Submodule.sub_mem _
-    (G.tmul_mem_tensorProduct H (SetLike.GradedSMul.smul_mem hop hm) hn) ?_⟩
-  have hdeg : p + q + r = q + (p +ᵥ r) := by simp only [vadd_eq_add]; ring
-  rw [hdeg]
-  exact G.tmul_mem_tensorProduct H hm (SetLike.GradedSMul.smul_mem ha hn)
+  refine ⟨q + p + r, Submodule.sub_mem _
+    (G.tmul_mem_tensorProduct H (op_smul_mem_of_mem_graded ha hm) hn) ?_⟩
+  simpa only [vadd_eq_add, add_assoc] using
+    G.tmul_mem_tensorProduct H hm (SetLike.GradedSMul.smul_mem ha hn)
 
-/-- The total-degree grading of a tensor product balanced over a graded algebra. -/
+/-- The total-degree grading of a tensor product balanced over homogeneous module actions. -/
 noncomputable def grading : InternalGrading R (BalancedTensorProduct R A M N) :=
   (G.tensorProduct H).quotient (balancedTensorRelations R A M N)
     (isHomogeneous_relations (𝒜 := 𝒜) G H)
@@ -132,7 +132,7 @@ theorem tmul_mem_grading {p q : ℤ} {m : M} {n : N}
   (mem_grading_piece_iff (𝒜 := 𝒜) G H).2 ⟨_, G.tmul_mem_tensorProduct H hm hn, mkQ_tmul R A m n⟩
 
 /-- A linear map shifts balanced tensor degrees if it does so on homogeneous pure tensors. -/
-theorem map_mem_of_tmul {Q : Type*} [AddCommGroup Q] [Module R Q]
+theorem map_mem_of_tmul {Q : Type*} [AddCommMonoid Q] [Module R Q]
     (𝓟 : ℤ → Submodule R Q) (f : BalancedTensorProduct R A M N →ₗ[R] Q) (s : ℤ)
     (hf : ∀ {p q : ℤ} {m : M} {n : N},
       m ∈ G.piece p → n ∈ H.piece q → f (tmul R A m n) ∈ 𝓟 (p + q + s))
@@ -147,7 +147,7 @@ theorem map_mem_of_tmul {Q : Type*} [AddCommGroup Q] [Module R Q]
   omega
 
 /-- Homogeneity of a balanced tensor map can be checked on homogeneous pure tensors. -/
-theorem isHomogeneous_of_tmul {Q : Type*} [AddCommGroup Q] [Module R Q]
+theorem isHomogeneous_of_tmul {Q : Type*} [AddCommMonoid Q] [Module R Q]
     (𝓟 : ℤ → Submodule R Q) (f : BalancedTensorProduct R A M N →ₗ[R] Q) (s : ℤ)
     (hf : ∀ {p q : ℤ} {m : M} {n : N},
       m ∈ G.piece p → n ∈ H.piece q → f (tmul R A m n) ∈ 𝓟 (p + q + s)) :

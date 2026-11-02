@@ -9,6 +9,7 @@ public import TauCeti.KnotTheory.Grid.Commutation.InitialPentagon.Overlap.Residu
 public import TauCeti.KnotTheory.Grid.Commutation.Grading.Map
 public import TauCeti.KnotTheory.Grid.Homology.Bigraded
 public import TauCeti.KnotTheory.Grid.Homology.Alexander
+public import TauCeti.KnotTheory.Grid.Homology.KnotAlexander
 
 /-!
 # The pentagon map on unblocked grid homology
@@ -16,13 +17,18 @@ public import TauCeti.KnotTheory.Grid.Homology.Alexander
 The pentagon-counting map of a column turn (`GridDiagram.ColumnTurn`) intertwines the unblocked
 differentials. It therefore induces a specified map on `GH⁻`, sending the class of a cycle
 to the class of its pentagon image. The map is semilinear along the transposition of the
-two coefficient variables. For a column commutation, over any commutative ring of characteristic
-two it preserves the Maslov--Alexander bigrading for diagrams with an odd number of link
-components, and for knot grids it is linear over `R[U]`.
+two coefficient variables. Over any commutative ring of characteristic two, for diagrams with an
+odd number of link components it raises the Maslov--Alexander bigrading by the bidegree
+`GridDiagram.commutationBidegree` of the turn, which vanishes for a column commutation. For knot
+grids it is linear over `R[U]` and homogeneous for the Alexander grading
+(`GridDiagram.IsKnot.isHomogeneous_unblockedHomologyCommutationLinearMap`).
 
 The construction uses the concrete cycle quotient through `unblockedHomologyIso` and
 Mathlib's `Submodule.mapQ`. It supplies the homology map itself; invertibility requires
-the hexagon homotopy identities.
+the hexagon homotopy identities. In one direction this is recorded here: if the commutation map
+`Φ` of a column turn followed by a commutation map `Ψ` back at the same columns is chain homotopic
+to multiplication by a polynomial `p`, then `ΨΦ` acts on `GH⁻` as `p`
+(`GridDiagram.unblockedHomologyClass_commutationMap_withTurnRow_commutationMap`).
 
 ## References
 
@@ -80,6 +86,16 @@ private theorem commutationCyclesMap_mem_boundariesInKer
   have h := LinearMap.congr_fun (G.commutationMap_comp_unblockedDifferential C R) w
   simpa only [LinearMap.comp_apply, hw, coe_commutationCyclesMap] using h.symm
 
+/-- The commutation map of a column turn followed by the commutation map back, turning at the same
+columns in any row `t`, sends cycles of `GC⁻(G)` to cycles of `GC⁻(G)`. -/
+theorem commutationMap_withTurnRow_commutationMap_mem_ker (t : Fin n) {z : GridChainMinus R n}
+    (hz : z ∈ LinearMap.ker (G.unblockedDifferential R)) :
+    (G').commutationMap R (C.withTurnRow t) (G.commutationMap R C z) ∈
+      LinearMap.ker (G.unblockedDifferential R) := by
+  simpa only [ColumnTurn.withTurnRow_column, swapColumns_swapColumns] using
+    (G').commutationMap_mem_ker_unblockedDifferential R (C.withTurnRow t)
+      (G.commutationMap_mem_ker_unblockedDifferential R C hz)
+
 end Cycles
 
 variable [CommRing R] [CharP R 2]
@@ -120,40 +136,57 @@ theorem unblockedHomologyCommutationMap_unblockedHomologyClass
     LinearMap.homologyπ_apply, Submodule.mapQ_apply]
   exact congrArg Submodule.Quotient.mk (Subtype.ext (G.coe_commutationCyclesMap R C z))
 
+/-- **The return composite on homology.** Let `Φ` be the commutation map of the column turn `C`
+and `Ψ` the commutation map back, turning at the same columns in row `t`. If `ΨΦ` is chain
+homotopic to multiplication by a polynomial `p`, that is `∂H + H∂ = p + ΨΦ` over a ring of
+characteristic two, then `ΨΦ` sends the class in `GH⁻(G)` of every cycle `z` to `p` times that
+class. -/
+theorem unblockedHomologyClass_commutationMap_withTurnRow_commutationMap (t : Fin n)
+    (H : GridChainMinus R n →ₗ[MvPolynomial (Fin n) R] GridChainMinus R n)
+    (p : MvPolynomial (Fin n) R)
+    (hH : ∀ c, G.unblockedDifferential R (H c) + H (G.unblockedDifferential R c) =
+      p • c + (G').commutationMap R (C.withTurnRow t) (G.commutationMap R C c))
+    (z : LinearMap.ker (G.unblockedDifferential R)) :
+    G.unblockedHomologyClass R
+        ⟨_, G.commutationMap_withTurnRow_commutationMap_mem_ker R C t z.2⟩ =
+      p • G.unblockedHomologyClass R z := by
+  rw [← map_smul, ← sub_eq_zero, ← map_sub, unblockedHomologyClass_eq_zero_iff]
+  refine ⟨H z, ?_⟩
+  have h := hH z
+  rw [LinearMap.mem_ker.mp z.2, map_zero, add_zero] at h
+  rw [h, Submodule.coe_sub, Submodule.coe_smul, sub_eq_add_neg, ← neg_smul, CharTwo.neg_eq,
+    add_comm]
+
 end GridDiagram
 
 namespace OddComponentGridDiagram
 
 variable {n : ℕ} (G : OddComponentGridDiagram n) (R : Type*) [CommRing R] [CharP R 2]
-  (C : GridDiagram.ColumnCommutationData G.1)
 
-/-- The commutation map on `GH⁻` preserves the full Maslov--Alexander bigrading. -/
-theorem unblockedHomologyCommutationMap_mem_bigradedUnblockedHomologyPiece
+section Turn
+
+variable (C : GridDiagram.ColumnTurn n)
+
+/-- The commutation map of a column turn `C` on `GH⁻` raises the full Maslov--Alexander bidegree
+by `G.commutationBidegree C`. -/
+theorem unblockedHomologyCommutationMap_mem_bigradedUnblockedHomologyPiece_add
     {g : ℤ × ℤ} {y : G.1.unblockedHomology R}
     (hy : y ∈ G.bigradedUnblockedHomologyPiece R g) :
     G.1.unblockedHomologyCommutationMap R C y ∈
-      bigradedUnblockedHomologyPiece
-        ⟨G.1.swapColumns C.column (finRotate n C.column),
-          C.isColumnCommutation.componentCount_eq.symm ▸ G.2⟩ R g := by
+      (G.swapColumns C).bigradedUnblockedHomologyPiece R (g + G.1.commutationBidegree C) := by
   obtain ⟨z, hz, rfl⟩ := (G.mem_bigradedUnblockedHomologyPiece_iff R).mp hy
   rw [GridDiagram.unblockedHomologyCommutationMap_unblockedHomologyClass]
   apply unblockedHomologyClass_mem_bigradedUnblockedHomologyPiece
-  have hG' : G.swapColumns C = ⟨G.1.swapColumns C.column (finRotate n C.column),
-      C.isColumnCommutation.componentCount_eq.symm ▸ G.2⟩ := Subtype.ext (G.val_swapColumns C)
-  have hc := G.commutationMap_mem_bigradedChainMinusPiece C R hz
-  rwa [hG'] at hc
+  exact G.commutationMap_mem_bigradedChainMinusPiece_add R C hz
 
-/-- The commutation map on `GH⁻` preserves the Alexander grading. -/
-theorem unblockedHomologyCommutationMap_mem_alexanderUnblockedHomologyGrading_piece
+/-- The commutation map of a column turn `C` on `GH⁻` raises the Alexander grading by the
+Alexander component of `G.commutationBidegree C`. -/
+theorem unblockedHomologyCommutationMap_mem_alexanderUnblockedHomologyGrading_piece_add
     {a : ℤ} {y : G.1.unblockedHomology R}
     (hy : y ∈ (G.alexanderUnblockedHomologyGrading R).piece a) :
     G.1.unblockedHomologyCommutationMap R C y ∈
-      (alexanderUnblockedHomologyGrading
-        ⟨G.1.swapColumns C.column (finRotate n C.column),
-          C.isColumnCommutation.componentCount_eq.symm ▸ G.2⟩ R).piece a := by
-  let G' : OddComponentGridDiagram n :=
-    ⟨G.1.swapColumns C.column (finRotate n C.column),
-      C.isColumnCommutation.componentCount_eq.symm ▸ G.2⟩
+      ((G.swapColumns C).alexanderUnblockedHomologyGrading R).piece
+        (a + (G.1.commutationBidegree C).2) := by
   rw [G.mem_alexanderUnblockedHomologyGrading_piece_iff R,
     G.mem_alexanderHomologyGrading_piece_iff] at hy
   obtain ⟨z, hz, hzy⟩ := hy
@@ -161,29 +194,48 @@ theorem unblockedHomologyCommutationMap_mem_alexanderUnblockedHomologyGrading_pi
     apply (ModuleCat.mono_iff_injective (G.1.unblockedHomologyIso R).hom).mp inferInstance
     rw [GridDiagram.unblockedHomologyIso_hom_unblockedHomologyClass, hzy]
   rw [GridDiagram.unblockedHomologyCommutationMap_unblockedHomologyClass,
-    G'.mem_alexanderUnblockedHomologyGrading_piece_iff R,
-    G'.mem_alexanderHomologyGrading_piece_iff]
-  refine ⟨_, ?_, (GridDiagram.unblockedHomologyIso_hom_unblockedHomologyClass ..).symm⟩
-  have hG' : G.swapColumns C = G' := Subtype.ext (G.val_swapColumns C)
-  have hc := G.commutationMap_mem_alexanderChainMinusPiece C R hz
-  rwa [hG'] at hc
+    (G.swapColumns C).mem_alexanderUnblockedHomologyGrading_piece_iff R,
+    (G.swapColumns C).mem_alexanderHomologyGrading_piece_iff]
+  exact ⟨_, G.commutationMap_mem_alexanderChainMinusPiece_add R C hz,
+    (GridDiagram.unblockedHomologyIso_hom_unblockedHomologyClass ..).symm⟩
+
+end Turn
+
+variable (C : GridDiagram.ColumnCommutationData G.1)
+
+/-- The commutation map on `GH⁻` preserves the full Maslov--Alexander bigrading. -/
+theorem unblockedHomologyCommutationMap_mem_bigradedUnblockedHomologyPiece
+    {g : ℤ × ℤ} {y : G.1.unblockedHomology R}
+    (hy : y ∈ G.bigradedUnblockedHomologyPiece R g) :
+    G.1.unblockedHomologyCommutationMap R C y ∈
+      (G.swapColumns C).bigradedUnblockedHomologyPiece R g := by
+  simpa using G.unblockedHomologyCommutationMap_mem_bigradedUnblockedHomologyPiece_add R C hy
+
+/-- The commutation map on `GH⁻` preserves the Alexander grading. -/
+theorem unblockedHomologyCommutationMap_mem_alexanderUnblockedHomologyGrading_piece
+    {a : ℤ} {y : G.1.unblockedHomology R}
+    (hy : y ∈ (G.alexanderUnblockedHomologyGrading R).piece a) :
+    G.1.unblockedHomologyCommutationMap R C y ∈
+      ((G.swapColumns C).alexanderUnblockedHomologyGrading R).piece a := by
+  simpa using
+    G.unblockedHomologyCommutationMap_mem_alexanderUnblockedHomologyGrading_piece_add R C hy
 
 end OddComponentGridDiagram
 
 namespace GridDiagram.IsKnot
 
 variable {n : ℕ} {G : GridDiagram n} (hG : G.IsKnot) (R : Type*) [CommRing R] [CharP R 2]
-  (C : ColumnCommutationData G)
+  (C : ColumnTurn n)
 
-/-- For a knot grid, the specified commutation map is linear over `R[U]`, since renaming
-the grid variables commutes with their common specialization to `U`. -/
+/-- For a knot grid, the specified commutation map of a column turn is linear over `R[U]`, since
+renaming the grid variables commutes with their common specialization to `U`. -/
 noncomputable def unblockedHomologyCommutationLinearMap :
     letI := hG.unblockedHomologyModule R
-    letI := (C.isColumnCommutation.isKnot_iff.mpr hG).unblockedHomologyModule R
+    letI := (hG.swapColumns C.column (finRotate n C.column)).unblockedHomologyModule R
     G.unblockedHomology R →ₗ[Polynomial R]
       (G.swapColumns C.column (finRotate n C.column)).unblockedHomology R := by
   letI := hG.unblockedHomologyModule R
-  letI := (C.isColumnCommutation.isKnot_iff.mpr hG).unblockedHomologyModule R
+  letI := (hG.swapColumns C.column (finRotate n C.column)).unblockedHomologyModule R
   have : Nonempty (Fin n) := ⟨⟨0, Nat.pos_of_ne_zero hG.ne_zero⟩⟩
   exact
     { toFun := G.unblockedHomologyCommutationMap R C
@@ -191,7 +243,7 @@ noncomputable def unblockedHomologyCommutationLinearMap :
       map_smul' := fun q y => by
         obtain ⟨p, rfl⟩ := aeval_const_X_surjective (Fin n) R q
         rw [hG.aeval_smul_unblockedHomology, LinearMap.map_smulₛₗ,
-          ← (C.isColumnCommutation.isKnot_iff.mpr hG).aeval_smul_unblockedHomology]
+          ← (hG.swapColumns C.column (finRotate n C.column)).aeval_smul_unblockedHomology]
         simp only [AlgEquiv.toRingEquiv_toRingHom, RingHom.coe_coe, renameEquiv_apply,
           aeval_rename, Function.comp_def, RingHom.id_apply] }
 
@@ -200,6 +252,32 @@ noncomputable def unblockedHomologyCommutationLinearMap :
 theorem unblockedHomologyCommutationLinearMap_apply (y : G.unblockedHomology R) :
     hG.unblockedHomologyCommutationLinearMap R C y =
       G.unblockedHomologyCommutationMap R C y := (rfl)
+
+open OddComponentGridDiagram in
+/-- For a knot grid, the `R[U]`-linear commutation map of a column turn `C` is homogeneous for the
+Alexander gradings, of degree the Alexander component of `G.commutationBidegree C`. -/
+theorem isHomogeneous_unblockedHomologyCommutationLinearMap :
+    letI := hG.unblockedHomologyModule R
+    letI := (hG.swapColumns C.column (finRotate n C.column)).unblockedHomologyModule R
+    LinearMap.IsHomogeneous (hG.unblockedHomologyCommutationLinearMap R C)
+      (hG.alexanderUnblockedHomologyGrading R).piece
+      ((hG.swapColumns C.column (finRotate n C.column)).alexanderUnblockedHomologyGrading R).piece
+      (G.commutationBidegree C).2 := by
+  let _ := hG.unblockedHomologyModule R
+  let _ := (hG.swapColumns C.column (finRotate n C.column)).unblockedHomologyModule R
+  refine LinearMap.isHomogeneous_def.mpr fun a y hy => ?_
+  rw [mem_alexanderUnblockedHomologyGrading_piece_iff,
+    ← OddComponentGridDiagram.mem_alexanderUnblockedHomologyGrading_piece_iff] at hy ⊢
+  -- The target grading belongs to `(hG.swapColumns ..).toOddComponentGridDiagram`, which is
+  -- `hG.toOddComponentGridDiagram.swapColumns C` by definition: both pair the grid
+  -- `G.swapColumns C.column (finRotate n C.column)` with a proof that its component count is odd
+  -- (equal by proof irrelevance), and `OddComponentGridDiagram.swapColumns` is an `abbrev` (see
+  -- `val_swapColumns`). A rewrite along `Subtype.ext` is not available here, since the type of
+  -- the homology class mentions that grid.
+  change G.unblockedHomologyCommutationMap R C y ∈
+    ((hG.toOddComponentGridDiagram.swapColumns C).alexanderUnblockedHomologyGrading R).piece
+      (a + (G.commutationBidegree C).2)
+  exact unblockedHomologyCommutationMap_mem_alexanderUnblockedHomologyGrading_piece_add _ R C hy
 
 end GridDiagram.IsKnot
 

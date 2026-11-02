@@ -36,7 +36,11 @@ is equivalent to generation of the coordinate ring by matrix coefficients and th
 ## Main declarations
 
 * `TauCeti.Comodule.coordinateBialgHom_range`: the exact range of the coordinate morphism.
+* `TauCeti.Comodule.coordinateBialgHom_surjective_iff_of_bases`: coordinate-morphism
+  surjectivity is independent of the finite basis.
 * `TauCeti.Comodule.IsFaithful`: the basis-independent predicate for a faithful comodule.
+* `TauCeti.Comodule.coordinateBialgHom_surjective_iff_isFaithful`: faithfulness is surjectivity
+  of the coordinate morphism for any basis.
 * `TauCeti.Comodule.isFaithful_iff_matrixCoefficientSubalgebra_sup_antipode_eq_top`: the
   matrix-coefficient criterion for faithfulness.
 * `TauCeti.Comodule.isFaithful_corestrict_of_surjective`: corestriction along a surjective
@@ -169,6 +173,15 @@ theorem coordinateBialgHom_surjective_iff_matrixCoefficientSubalgebra_sup_antipo
   change Function.Surjective (coordinateBialgHom (H := H) b).toAlgHom ↔ _
   rw [← AlgHom.range_eq_top, coordinateBialgHom_range]
 
+/-- Surjectivity of a comodule's coordinate morphism is independent of its finite basis,
+even when the base ring, Hopf algebra, and comodule lie in independent universes. -/
+theorem coordinateBialgHom_surjective_iff_of_bases
+    {m : ℕ} (b : Basis (Fin n) R M) (c : Basis (Fin m) R M) :
+    Function.Surjective (coordinateBialgHom (H := H) b) ↔
+      Function.Surjective (coordinateBialgHom (H := H) c) := by
+  rw [coordinateBialgHom_surjective_iff_matrixCoefficientSubalgebra_sup_antipode_eq_top,
+    coordinateBialgHom_surjective_iff_matrixCoefficientSubalgebra_sup_antipode_eq_top]
+
 section Dual
 
 attribute [local instance] dual Prod
@@ -266,6 +279,14 @@ theorem isFaithful_iff_isClosedImmersion_coordinateGroupSchemeHom
     exact (isClosedImmersion_coordinateGroupSchemeHom_iff_of_bases c b).mp hc
   · intro hb
     exact ⟨d, b, hb⟩
+
+/-- A finite basis witnesses faithfulness exactly when its coordinate morphism
+`O(GL_d) ⟶ H` is surjective. -/
+theorem coordinateBialgHom_surjective_iff_isFaithful (b : Basis (Fin d) k V) :
+    Function.Surjective (coordinateBialgHom (H := H) b) ↔
+      IsFaithful (k := k) (H := H) (V := V) := by
+  rw [isFaithful_iff_isClosedImmersion_coordinateGroupSchemeHom b,
+    isClosedImmersion_coordinateGroupSchemeHom_iff]
 
 /-- Corestricting a faithful finite free comodule along a surjective bialgebra morphism gives a
 faithful comodule over the codomain. Geometrically, restricting a faithful representation to a

@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Immersion
-public import Mathlib.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant
+public import TauCeti.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant
 
 /-!
 # Factoring through immersions after a schematic cover
@@ -20,7 +20,8 @@ This allows equivariant morphisms to restrict to locally closed scheme-theoretic
 including images with nonreduced scheme structure.
 
 The construction uses Mathlib's `Scheme.Hom.liftCoborder`, `IsOpenImmersion.lift`,
-`IsClosedImmersion.lift`, and the ideal-sheaf formula `Scheme.Hom.ker_comp`.
+`IsClosedImmersion.lift`, and the ideal-sheaf formula `Scheme.Hom.ker_comp`, through
+`Scheme.Hom.ker_comp_of_isSchemeTheoreticallyDominant`.
 -/
 
 public section
@@ -55,7 +56,7 @@ theorem existsUnique_lift_of_surjective_of_isSchemeTheoreticallyDominant
     calc
       i.liftCoborder.ker ≤ (a ≫ i.liftCoborder).ker := a.le_ker_comp _
       _ = (p ≫ gU).ker := congrArg Scheme.Hom.ker hU
-      _ = gU.ker := by rw [ker_comp, p.ker_eq_bot, Scheme.IdealSheafData.map_bot]
+      _ = gU.ker := p.ker_comp_of_isSchemeTheoreticallyDominant gU
   let l := IsClosedImmersion.lift i.liftCoborder gU hker
   have hl : l ≫ i = g := by
     calc

@@ -19,6 +19,10 @@ set of encodings realized by roots.
 
 * `Polynomial.thomEncodings p` is the finite set of Thom encodings of the distinct roots of `p`.
   Its cardinality is the number of distinct roots (`Polynomial.card_thomEncodings`).
+  Constant polynomials realize no encoding, and `-p`, `C c * p` with `c ≠ 0` and `p (a X + b)`
+  with `a` a unit realize the correspondingly negated or rescaled encodings of `p`
+  (`Polynomial.thomEncodings_neg`, `Polynomial.thomEncodings_C_mul`,
+  `Polynomial.thomEncodings_comp_C_mul_X_add_C`).
 * `Polynomial.thomEncodingEquiv` identifies the distinct roots with their encodings, so that
   `(thomEncodingEquiv hrolle p).symm` reconstructs a root from its encoding
   (`Polynomial.existsUnique_eval_eq_zero_thomEncoding_eq` is the underlying uniqueness).
@@ -26,8 +30,11 @@ set of encodings realized by roots.
   they differ. It is decidable and refers to no point of `R`. The order of two points with
   distinct encodings is this comparison of their encodings (`Polynomial.lt_iff_thomLT`), so the
   order of the roots of `p` is recovered from their encodings alone
-  (`Polynomial.thomEncodingEquiv_lt_iff`). Including the zeroth derivative compares any point
-  with a root (`Polynomial.lt_iff_thomLT_cons_derivativeSign_of_eval_eq_zero_right`,
+  (`Polynomial.thomEncodingEquiv_lt_iff`). Negating both words preserves the comparison
+  (`Polynomial.thomLT_neg_iff`), while the sign changes `(-1) ^ (i + 1)` produced by the
+  reflection `X ↦ -X` reverse it (`Polynomial.thomLT_neg_one_pow_mul_iff`). Including the zeroth
+  derivative compares any point with a root
+  (`Polynomial.lt_iff_thomLT_cons_derivativeSign_of_eval_eq_zero_right`,
   `Polynomial.lt_iff_thomLT_cons_derivativeSign_of_eval_eq_zero_left`). The degree-bounded
   comparisons and `Polynomial.card_roots_lt_eq_card_filter_thomLT_of_natDegree_le` use sign words
   of a fixed length across specializations whose degrees may drop.
@@ -122,6 +129,42 @@ theorem ThomLT.trans {σ τ υ : Fin d → SignType} (hστ : ThomLT σ τ) (hτ
     refine ⟨i, hk' i hik ▸ hi, fun j hj ↦ (ht j hj).trans (hk' j (hik.trans hj)), hd, ?_⟩
     rwa [← hk' i hik]
 
+private theorem thomLT_cmp_neg (s a b : SignType) :
+    (-s = 1 ∧ -a < -b) ∨ (-s = -1 ∧ -b < -a) ↔ (s = 1 ∧ a < b) ∨ (s = -1 ∧ b < a) := by
+  revert s a b
+  decide
+
+/-- Negating both sign words preserves the Thom comparison. This is the comparison counterpart of
+`Polynomial.thomEncoding_neg`: `p` and `-p` have the same roots, in the same order. -/
+@[simp]
+theorem thomLT_neg_iff {σ τ : Fin d → SignType} : ThomLT (-σ) (-τ) ↔ ThomLT σ τ := by
+  simp only [thomLT_iff, Pi.neg_apply, thomLT_cmp_neg]
+  simp only [ne_eq, neg_inj]
+
+private theorem thomLT_cmp_mul {e : SignType} (he : e = 1 ∨ e = -1) (s a b : SignType) :
+    (-e * s = 1 ∧ e * a < e * b) ∨ (-e * s = -1 ∧ e * b < e * a) ↔
+      (s = 1 ∧ b < a) ∨ (s = -1 ∧ a < b) := by
+  rcases he with rfl | rfl <;> revert s a b <;> decide
+
+/-- Multiplying coordinate `i` of both sign words by `(-1) ^ (i + 1)` reverses the Thom
+comparison. This is the comparison counterpart of the reflection `X ↦ -X`, under which the
+derivative of order `i + 1` changes sign by `(-1) ^ (i + 1)`
+(`Polynomial.thomEncoding_comp_C_mul_X_add_C`) and the order of the roots is reversed. -/
+theorem thomLT_neg_one_pow_mul_iff {σ τ : Fin d → SignType} :
+    ThomLT (fun i ↦ (-1) ^ (i.val + 1) * σ i) (fun i ↦ (-1) ^ (i.val + 1) * τ i) ↔
+      ThomLT τ σ := by
+  have hinj (n : ℕ) (a b : SignType) : (-1) ^ n * a = (-1) ^ n * b ↔ a = b :=
+    (isUnit_neg_one.pow n).mul_right_inj
+  simp only [thomLT_iff, ne_eq, hinj]
+  refine exists_congr fun i ↦ ?_
+  rw [eq_comm (a := τ i)]
+  refine and_congr_right fun _ ↦ ⟨?_, ?_⟩ <;> rintro ⟨ht, h, hc⟩ <;>
+    refine ⟨fun j hj ↦ (ht j hj).symm, h, ?_⟩
+  · rwa [pow_succ, mul_neg_one, ht _ (Fin.lt_def.2 (Nat.lt_succ_self i.val)),
+      thomLT_cmp_mul (neg_one_pow_eq_or SignType _)] at hc
+  · rwa [pow_succ, mul_neg_one, ← ht _ (Fin.lt_def.2 (Nat.lt_succ_self i.val)),
+      thomLT_cmp_mul (neg_one_pow_eq_or SignType _)]
+
 end Comparison
 
 section Realized
@@ -132,6 +175,10 @@ variable {R : Type*} [CommRing R] [IsDomain R] [LinearOrder R]
 roots in `Polynomial.roots`, so it realizes no encoding. -/
 noncomputable def thomEncodings (p : R[X]) : Finset (Fin p.natDegree → SignType) :=
   p.roots.toFinset.image (thomEncoding p)
+
+/-- The realized Thom encodings are the images of the distinct roots under `thomEncoding`. -/
+theorem thomEncodings_def (p : R[X]) : p.thomEncodings = p.roots.toFinset.image (thomEncoding p) :=
+  (rfl)
 
 /-- A word is a realized Thom encoding exactly when `p` is nonzero and some root of `p` has it as
 its encoding. -/
@@ -156,7 +203,43 @@ theorem thomEncodings_zero : (0 : R[X]).thomEncodings = ∅ := by
   rw [thomEncodings, roots_zero, Multiset.toFinset_zero]
   exact Finset.image_empty _
 
+/-- A constant polynomial realizes no Thom encoding: it is zero or has no roots. -/
+@[simp]
+theorem thomEncodings_C (c : R) : (C c).thomEncodings = ∅ := by
+  simp [thomEncodings_def]
+
 end Realized
+
+/-- The realized Thom encodings of `-p` are the negations of those of `p`. -/
+theorem thomEncodings_neg {R : Type*} [CommRing R] [IsDomain R] [LinearOrder R] [IsOrderedRing R]
+    (p : R[X]) :
+    (-p).thomEncodings = p.thomEncodings.image fun σ ↦ -(σ ∘ Fin.cast (natDegree_neg p)) := by
+  rw [thomEncodings_def, thomEncodings_def, roots_neg, Finset.image_image]
+  exact Finset.image_congr fun x _ ↦ thomEncoding_neg p x
+
+/-- The realized Thom encodings of `C c * p`, for `c ≠ 0`, are those of `p` multiplied by
+`sign c`. -/
+theorem thomEncodings_C_mul {R : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
+    {c : R} (hc : c ≠ 0) (p : R[X]) :
+    (C c * p).thomEncodings =
+      p.thomEncodings.image fun σ i ↦ SignType.sign c * σ (Fin.cast (natDegree_C_mul hc) i) := by
+  rw [thomEncodings_def, thomEncodings_def, roots_C_mul p hc, Finset.image_image]
+  exact Finset.image_congr fun x _ ↦ thomEncoding_C_mul hc p x
+
+/-- **Affine change of variable.** For a unit `a`, the realized Thom encodings of `p (a X + b)`
+are those of `p` with coordinate `i` multiplied by `sign a ^ (i + 1)`. The root `a⁻¹ (x - b)` of
+`p (a X + b)` corresponds to the root `x` of `p`. -/
+theorem thomEncodings_comp_C_mul_X_add_C {R : Type*} [CommRing R] [LinearOrder R]
+    [IsStrictOrderedRing R] {a : R} (ha : IsUnit a) (b : R) (p : R[X]) :
+    (p.comp (C a * X + C b)).thomEncodings = p.thomEncodings.image fun σ i ↦
+      SignType.sign a ^ (i.val + 1) *
+        σ (Fin.cast (natDegree_comp_C_mul_X_add_C ha.ne_zero b p) i) := by
+  classical
+  rw [thomEncodings_def, thomEncodings_def, roots_comp_C_mul_X_add_C p a b ha,
+    Multiset.toFinset_map, Finset.image_image, Finset.image_image]
+  refine Finset.image_congr fun x _ ↦ ?_
+  simp only [Function.comp_apply, thomEncoding_comp_C_mul_X_add_C ha.ne_zero, ← mul_assoc,
+    Ring.mul_inverse_cancel a ha, one_mul, sub_add_cancel]
 
 variable {R : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R]
 

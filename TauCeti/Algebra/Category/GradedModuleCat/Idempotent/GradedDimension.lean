@@ -179,6 +179,28 @@ theorem coeff_smulGradedDimension [Module.Finite k M] (p : ℤ) :
     (M.smulGradedDimension e).coeff p = Module.finrank k ↥(e • M.grading.piece p) :=
   coeff_gradedDimension _ p
 
+/-- If a graded module is concentrated in degree zero, the graded dimension of `e • M` is
+constant. No idempotence assumption on `e` is needed. -/
+theorem smulGradedDimension_eq_C_of_concentrated [Module.Finite k M]
+    (hM : ∀ p, p ≠ 0 → M.grading.piece p = ⊥) :
+    M.smulGradedDimension e =
+      C (Module.finrank k ↥(e • M.grading.piece 0) : ℤ) := by
+  ext p
+  by_cases hp : p = 0
+  · subst p
+    simp
+  · simp [coeff_smulGradedDimension, hM p hp, hp]
+
+/-- A nonzero idempotent graded dimension of a degree-zero module has positive
+degree-zero dimension. No idempotence assumption on `e` is needed. -/
+theorem finrank_smul_piece_zero_pos_of_concentrated [Module.Finite k M]
+    (hM : ∀ p, p ≠ 0 → M.grading.piece p = ⊥) (h : M.smulGradedDimension e ≠ 0) :
+    0 < Module.finrank k ↥(e • M.grading.piece 0) := by
+  rw [smulGradedDimension_eq_C_of_concentrated e M hM] at h
+  by_contra hn
+  have hz : Module.finrank k ↥(e • M.grading.piece 0) = 0 := by omega
+  exact h (by simp [hz])
+
 variable {M}
 
 /-- Isomorphic graded modules have the same graded dimension of `e • M`. -/

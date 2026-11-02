@@ -35,6 +35,8 @@ and `⊥` have rank `0`; this includes an empty source carrier, where every bran
   `Ordinal.lift`.
 * `FirstOrder.Language.BoundedFormulaInf.qrank_toInf`: the rank of a finitary formula does not
   depend on the carrier, up to `Ordinal.lift`.
+* `FirstOrder.Language.BoundedFormulaInf.qrank_toInf_lt_omega0`: the rank of a finitary formula is
+  finite.
 
 ## References
 
@@ -219,6 +221,18 @@ theorem qrank_toInf : ∀ {n} (φ : L.BoundedFormula α n),
   | all φ ih =>
     rw [BoundedFormula.toInf_all, BoundedFormula.toInf_all, qrank_all, qrank_all]
     simp only [Order.succ_eq_add_one, Ordinal.lift_add_one, ih]
+
+/-- **The rank of a finitary formula is finite.** -/
+theorem qrank_toInf_lt_omega0 : ∀ {n} (φ : L.BoundedFormula α n),
+    (BoundedFormula.toInf (ι := ι) φ).qrank < Ordinal.omega0 := by
+  intro n φ
+  induction φ with
+  | falsum => simp [Ordinal.omega0_pos]
+  | equal t₁ t₂ => simp [Ordinal.omega0_pos]
+  | rel R ts => simp [Ordinal.omega0_pos]
+  | imp φ ψ ihφ ihψ => simpa only [BoundedFormula.toInf_imp, qrank_imp] using max_lt ihφ ihψ
+  | all φ ih =>
+    simpa only [BoundedFormula.toInf_all, qrank_all] using Ordinal.isSuccLimit_omega0.succ_lt ih
 
 end Finitary
 

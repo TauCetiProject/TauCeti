@@ -9,7 +9,7 @@ public import TauCeti.NumberTheory.Padics.GroupAlgebra.Cancellation
 public import TauCeti.NumberTheory.Padics.GroupAlgebra.Swan
 import Mathlib.LinearAlgebra.TensorProduct.Prod
 import Mathlib.RingTheory.Finiteness.Prod
-import TauCeti.RingTheory.KrullSchmidt.FractionRing
+import TauCeti.RingTheory.KrullSchmidt.Localization
 
 /-!
 # From a stable isomorphism to an isomorphism over `ℤ_p[G]`
@@ -71,7 +71,8 @@ theorem nonempty_linearEquiv_prod_of_stable
   let _ : Module ℤ_[p] Q := .compHom Q (algebraMap ℤ_[p] A)
   have : IsScalarTower ℤ_[p] A Q := .of_compHom _ _ _
   -- Rationally, `(F × P) × N ≃ (N × F) × P ≃ M × P ≃ N × Q ≃ Q × N`; cancel `N ⊗ ℚ_p`.
-  obtain ⟨g⟩ := IsFractionRing.nonempty_tensor_linearEquiv_of_prod_tensor_linearEquiv ℚ_[p]
+  obtain ⟨g⟩ := IsLocalization.nonempty_tensor_linearEquiv_of_prod_tensor_linearEquiv
+    (nonZeroDivisors ℤ_[p]) ℚ_[p]
     (M := F × P) (N := Q) (P := N)
     ⟨TensorProduct.AlgebraTensorModule.congr
         ((LinearEquiv.prodComm A (F × P) N).trans (LinearEquiv.prodAssoc A N F P).symm)

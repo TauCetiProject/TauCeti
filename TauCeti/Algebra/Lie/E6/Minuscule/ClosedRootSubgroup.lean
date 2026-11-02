@@ -62,26 +62,15 @@ noncomputable section
 
 /-! ## A unit-coefficient edge at every simple root -/
 
-/-- A weight whose pairing with the given simple coroot is `-1`. The choice is internal to the
-coordinate proof; no public construction depends on which suitable weight is selected. -/
-private noncomputable def negativeWeightIndex (i : Fin 6) : Fin 27 :=
-  (DynkinType.exists_e6MinusculeWeight_apply_eq_neg_one i).choose
-
-private theorem e6MinusculeWeight_negativeWeightIndex (i : Fin 6) :
-    weightTable.weight (negativeWeightIndex i) i = -1 :=
-  by
-    rw [weightTable_weight]
-    exact (DynkinType.exists_e6MinusculeWeight_apply_eq_neg_one i).choose_spec
-
 /-- The source coordinate of the selected edge for a raising or lowering root generator. -/
 private def rootSource : Fin 6 ⊕ Fin 6 → Fin 27
-  | .inl i => negativeWeightIndex i
-  | .inr i => DynkinType.e6MinusculeReflection i (negativeWeightIndex i)
+  | .inl i => DynkinType.e6MinusculeNegOneIndex i
+  | .inr i => DynkinType.e6MinusculeReflection i (DynkinType.e6MinusculeNegOneIndex i)
 
 /-- The target coordinate of the selected edge for a raising or lowering root generator. -/
 private def rootTarget : Fin 6 ⊕ Fin 6 → Fin 27
-  | .inl i => DynkinType.e6MinusculeReflection i (negativeWeightIndex i)
-  | .inr i => negativeWeightIndex i
+  | .inl i => DynkinType.e6MinusculeReflection i (DynkinType.e6MinusculeNegOneIndex i)
+  | .inr i => DynkinType.e6MinusculeNegOneIndex i
 
 private theorem rep_serreRootGenerator_latticeBasis (k : Fin 6 ⊕ Fin 6) :
     weightTable.rep (_root_.UniversalEnvelopingAlgebra.ι ℚ
@@ -90,23 +79,19 @@ private theorem rep_serreRootGenerator_latticeBasis (k : Fin 6 ⊕ Fin 6) :
       (1 : ℤ) • ((𝓑 (rootTarget k) : Λ) : Fin 27 → ℚ) := by
   cases k with
   | inl i =>
-      have hi := e6MinusculeWeight_negativeWeightIndex i
-      rw [weightTable_weight] at hi
       rw [TauCeti.serreRootGenerator_inl, weightTable.rep_ι_apply,
         weightTable.rationalSerreRepresentation_serreE,
         TauCeti.coe_coordinateLatticeBasis, Pi.basisFun_apply,
         Matrix.mulVec_single_one, one_smul]
       ext a
-      simp [rootSource, rootTarget, Pi.single_apply, hi]
+      simp [rootSource, rootTarget, Pi.single_apply]
   | inr i =>
-      have hi := e6MinusculeWeight_negativeWeightIndex i
-      rw [weightTable_weight] at hi
       rw [TauCeti.serreRootGenerator_inr, weightTable.rep_ι_apply,
         weightTable.rationalSerreRepresentation_serreF,
         TauCeti.coe_coordinateLatticeBasis, Pi.basisFun_apply,
         Matrix.mulVec_single_one, one_smul]
       ext a
-      simp [rootSource, rootTarget, weightTable_weight, Pi.single_apply, hi]
+      simp [rootSource, rootTarget, weightTable_weight, Pi.single_apply]
 
 private theorem rep_serreRootGenerator_pow_two_apply_latticeBasis (k : Fin 6 ⊕ Fin 6) :
     weightTable.rep (_root_.UniversalEnvelopingAlgebra.ι ℚ

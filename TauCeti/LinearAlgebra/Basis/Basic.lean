@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Basis.Basic
+import Mathlib.LinearAlgebra.StdBasis
 
 /-!
 # Basic lemmas about bases
@@ -15,9 +16,10 @@ the corresponding basis vector.  This repackages `Module.Basis.repr_symm_single`
 through in the same direction, for the common situation where what one holds is a bound on the
 support rather than an explicit `Finsupp.single`.
 
-These lemmas need no additive inverses: they hold over a semiring of scalars. Their proofs combine
-coordinate isomorphisms and `Finsupp.support_subset_singleton` with basis extensionality and
-linear-map composition.
+The coordinate and linear-map lemmas hold over a semiring of scalars. For a finite integer basis of
+an additive group, we also express an additive map in coordinates. A ring homomorphism's values on
+an integer basis cannot all vanish when its target is nontrivial. Over a ring in which `2 ≠ 0`, no
+basis vector is the negative of a basis vector.
 
 ## Main results
 
@@ -29,6 +31,15 @@ linear-map composition.
   linear equivalence are the coordinates of the vector transported back.
 * `Module.Basis.linearIndependent_coe_basis`: the vectors of a basis of a submodule `U`, viewed in
   the ambient module, are linearly independent.
+* `Module.Basis.linearIndependent_of_repr_eq_single`: a family indexed by a finite set `S` of
+  indices, whose `s`-th member has the coordinates of `b s` at the indices in `S`, is linearly
+  independent.
+* `Module.Basis.apply_eq_sum_repr_zsmul`: an additive map evaluated at a vector is the sum of its
+  values on a finite integer basis, weighted by the coordinates.
+* `Module.Basis.ringHom_comp_ne_zero`: the values of a ring homomorphism to a nontrivial ring on
+  an integer basis do not all vanish.
+* `Module.Basis.ne_neg`: over a ring in which `2 ≠ 0`, no basis vector is the negative of a basis
+  vector.
 -/
 
 public section
@@ -77,6 +88,23 @@ theorem coord_map_apply {R M M' ι : Type*} [Semiring R] [AddCommMonoid M] [Modu
     (b.map f).coord i x = b.coord i (f.symm x) := by
   simp only [coord_apply, map_repr, LinearEquiv.trans_apply]
 
+/-- A family of vectors indexed by a finite set `S` of indices, whose `s`-th member has the
+coordinates of `b s` at the indices in `S`, is linearly independent. -/
+theorem linearIndependent_of_repr_eq_single {b : Module.Basis ι K V} {S : Finset ι} {v : S → V}
+    (hv : ∀ s : S, ∀ t ∈ S, b.repr (v s) t = Finsupp.single (s : ι) 1 t) :
+    LinearIndependent K v := by
+  classical
+  let π : V →ₗ[K] (S → K) := LinearMap.pi fun t ↦ b.coord t
+  have hπ : π ∘ v = fun s ↦ Pi.single s 1 := by
+    funext s t
+    simp only [Function.comp_apply, π, LinearMap.pi_apply, coord_apply]
+    rw [hv s t t.2]
+    by_cases hst : t = s
+    · simp [hst]
+    · rw [Finsupp.single_eq_of_ne (fun h : (t : ι) = s ↦ hst (Subtype.ext h)),
+        Pi.single_eq_of_ne hst]
+  exact LinearIndependent.of_comp π (hπ ▸ Pi.linearIndependent_single_one S K)
+
 section Submodule
 
 variable {R M n : Type*} [Semiring R] [AddCommMonoid M] [Module R M] {U : Submodule R M}
@@ -88,5 +116,47 @@ theorem linearIndependent_coe_basis (b : Module.Basis n R U) :
   b.linearIndependent.map_injOn U.subtype U.injective_subtype.injOn
 
 end Submodule
+
+/-- An additive map evaluated at a vector is the sum of its values on a finite integer basis,
+weighted by the coordinates. -/
+theorem apply_eq_sum_repr_zsmul {M N F : Type*} [AddCommGroup M] [AddCommGroup N]
+    [FunLike F M N] [AddMonoidHomClass F M N] [Fintype ι] (b : Basis ι ℤ M) (f : F) (y : M) :
+    f y = ∑ l, b.repr y l • f (b l) := by
+  conv_lhs => rw [← b.sum_repr y]
+  simp only [map_sum, map_zsmul]
+
+section RingHom
+
+variable {R S : Type*} [NonAssocRing R] [NonAssocRing S] (b : Basis ι ℤ R)
+
+/-- The values of a ring homomorphism to a nontrivial ring on an integer basis do not all
+vanish. The basis need not be finite. -/
+theorem ringHom_comp_ne_zero [Nontrivial S] (ψ : R →+* S) : ⇑ψ ∘ ⇑b ≠ 0 := fun h ↦ by
+  have : ψ.toAddMonoidHom.toIntLinearMap = 0 := b.ext fun l ↦ by simpa using congrFun h l
+  simpa using LinearMap.congr_fun this 1
+
+end RingHom
+
+section Ring
+
+variable {R M : Type*} [Ring R] [AddCommGroup M] [Module R M]
+
+/-- **No basis vector is the negative of a basis vector** over a ring in which `2 ≠ 0`. The
+hypothesis is needed: when `2 = 0`, every vector is its own negative. -/
+theorem ne_neg (b : Basis ι R M) (h2 : (2 : R) ≠ 0) (i j : ι) : b i ≠ -b j := by
+  intro h
+  have h' := congrArg (fun x ↦ b.repr x i) h
+  simp only [repr_self, map_neg, Finsupp.coe_neg, Pi.neg_apply, Finsupp.single_eq_same] at h'
+  by_cases hji : j = i
+  · subst hji
+    rw [Finsupp.single_eq_same] at h'
+    refine h2 ?_
+    rw [← one_add_one_eq_two]
+    nth_rw 1 [h']
+    exact neg_add_cancel 1
+  · rw [Finsupp.single_eq_of_ne (Ne.symm hji), neg_zero] at h'
+    exact h2 (by rw [← one_add_one_eq_two, h', add_zero])
+
+end Ring
 
 end Module.Basis

@@ -7,13 +7,18 @@ module
 
 public import Mathlib.Combinatorics.SimpleGraph.Acyclic
 
-/-!
-# Paths in acyclic simple graphs
+import Mathlib.Tactic.Linarith
 
-This file records reusable consequences of acyclicity for paths in simple graphs.
+/-!
+# Paths and degrees in acyclic simple graphs
+
+This file records consequences of acyclicity for paths and bounds the degree of a
+nonempty finite regular forest.
 
 ## Main results
 
+* `SimpleGraph.IsAcyclic.degree_le_one_of_isRegularOfDegree`: a nonempty finite regular
+  forest has degree at most one.
 * `SimpleGraph.IsAcyclic.not_adj_getVert_of_add_one_lt`: nonconsecutive vertices of a path
   in an acyclic graph are not adjacent.
 * `SimpleGraph.IsAcyclic.ne_of_adj_start_of_adj_end`: an off-path neighbour of a path's start
@@ -67,5 +72,18 @@ theorem _root_.SimpleGraph.IsAcyclic.not_adj_of_adj_start_of_adj_end {V : Type*}
   have hmem := hG.mem_support_of_ne_mem_support_of_adj_of_isPath (hq.cons ha' (h := ha.symm))
     hadj.isPath_toWalk hb (by simp [hb.ne, ne_of_mem_of_not_mem q.end_mem_support ha'])
   simp [hadj.ne', hb'] at hmem
+
+/-- A nonempty finite regular forest has degree at most one. -/
+theorem _root_.SimpleGraph.IsAcyclic.degree_le_one_of_isRegularOfDegree
+    {V : Type*} {G : SimpleGraph V} [DecidableRel G.Adj] [Fintype V] [Nonempty V] {d : ℕ}
+    (hG : G.IsAcyclic) (hd : G.IsRegularOfDegree d) : d ≤ 1 := by
+  classical
+  have he := hG.ncard_edgeSet_add_one_le_card
+  have hs := G.sum_degrees_eq_twice_card_edges
+  simp only [hd.degree_eq, Finset.sum_const, Finset.card_univ, smul_eq_mul] at hs
+  rw [← G.coe_edgeFinset, Set.ncard_coe_finset] at he
+  rw [Fintype.card_eq_nat_card] at hs
+  have hv : 0 < Nat.card V := Nat.card_pos
+  nlinarith
 
 end TauCeti

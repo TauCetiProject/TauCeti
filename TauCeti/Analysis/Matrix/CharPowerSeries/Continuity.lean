@@ -10,7 +10,7 @@ public import TauCeti.Analysis.Matrix.CharPowerSeries.Basic
 /-!
 # Continuity of principal-minor coefficients
 
-For ultrametric coefficient rings, the coefficients of `det (1 - T A)` satisfy the
+For ultrametric seminormed coefficient rings, the coefficients of `det (1 - T A)` satisfy the
 entrywise perturbation estimate
 
 `‖A.charCoeff n - B.charCoeff n‖ ≤ ε * M ^ (n - 1)`
@@ -39,23 +39,24 @@ open Filter Finset Topology
 namespace TauCeti
 
 variable {ι R : Type*} [DecidableEq ι]
-  [NormedCommRing R] [NormOneClass R] [IsUltrametricDist R]
+  [SeminormedCommRing R] [NormOneClass R] [IsUltrametricDist R]
 
 /-- Fredholm coefficients are Lipschitz on entrywise bounded sets whenever the defining
 principal-minor sums converge. In particular, over a complete coefficient ring this applies to
 matrices with null row majorants (`Matrix.summable_principalMinor`).
-No completeness hypothesis is needed once summability is supplied. -/
+Neither completeness nor Hausdorffness is needed once summability is supplied. -/
 theorem norm_charCoeff_sub_le {A B : Matrix ι ι R} {n : ℕ} {M ε : ℝ}
     (hM : 0 ≤ M) (hε : 0 ≤ ε) (hA : ∀ i j, ‖A i j‖ ≤ M) (hB : ∀ i j, ‖B i j‖ ≤ M)
     (hAB : ∀ i j, ‖A i j - B i j‖ ≤ ε)
     (hAs : Summable fun s : {s : Finset ι // s.card = n} ↦ A.principalMinor s)
     (hBs : Summable fun s : {s : Finset ι // s.card = n} ↦ B.principalMinor s) :
     ‖A.charCoeff n - B.charCoeff n‖ ≤ ε * M ^ (n - 1) := by
-  have hsum : ‖∑' s : {s : Finset ι // s.card = n},
-      (A.principalMinor s - B.principalMinor s)‖ ≤ ε * M ^ (n - 1) :=
-    IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg (by positivity) fun s ↦ by
+  have hsum : ‖(∑' s : {s : Finset ι // s.card = n}, A.principalMinor s) -
+      ∑' s : {s : Finset ι // s.card = n}, B.principalMinor s‖ ≤ ε * M ^ (n - 1) := by
+    refine le_of_tendsto' (hAs.hasSum.sub hBs.hasSum).norm fun t ↦ ?_
+    exact IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (by positivity) fun s _ ↦ by
       simpa only [s.2] using norm_principalMinor_sub_le (s := s.1) hM hε hA hB hAB
-  rw [Matrix.charCoeff_def, Matrix.charCoeff_def, ← mul_sub, ← hAs.tsum_sub hBs]
+  rw [Matrix.charCoeff_def, Matrix.charCoeff_def, ← mul_sub]
   rcases neg_one_pow_eq_or R n with hn | hn <;> simpa only [hn, one_mul, neg_one_mul,
     norm_neg] using hsum
 

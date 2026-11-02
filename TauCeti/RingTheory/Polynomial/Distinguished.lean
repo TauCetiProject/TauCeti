@@ -15,16 +15,19 @@ public import Mathlib.RingTheory.Polynomial.Eisenstein.Distinguished
 The polynomial `(1 + X) ^ n - 1` over a ring `R` is monic of degree `n` for `n ≠ 0`,
 with constant coefficient `0` and, for `0 < k`, `k`-th coefficient the binomial coefficient
 `n.choose k`. Over a commutative ring, when `n = p ^ m` is a power of a prime `p`, every
-binomial coefficient
-`(p ^ m).choose k` with `0 < k < p ^ m` is divisible by `p`, so the polynomial is
-*distinguished* at the ideal `(p)`: monic with all non-leading coefficients in `(p)`. Over the
-`p`-adic integers this is the shape of divisor for which Mathlib's Weierstrass division in
-`ℤ_p⟦X⟧` is available.
+binomial coefficient `(p ^ m).choose k` with `0 < k < p ^ m` is divisible by `p`, so the
+polynomial is *distinguished* at every ideal `I` containing `p`: monic with all non-leading
+coefficients in `I`. Over the `p`-adic integers, or any complete local ring of residue
+characteristic `p`, this is the shape of divisor for which Mathlib's Weierstrass division is
+available.
 
 This is the polynomial cutting out the finite levels of the power-series coordinate on the
 completed group algebra `ℤ_p[[Γ]]` of a procyclic pro-`p` group `Γ`: at a level `Γ ⧸ U` of order
 `p ^ m`, the class of the topological generator satisfies `σ ^ (p ^ m) = 1`, so
 `(1 + X) ^ (p ^ m) - 1` vanishes at `X = σ - 1`.
+
+For a general polynomial `F` distinguished at an ideal `I` with `I ^ e ⊆ (p)`, every root `t` of
+`F` in an `O`-algebra satisfies `t ^ deg F ∈ I`, hence `p ∣ t ^ (deg F * e)`.
 
 ## Main results
 
@@ -32,7 +35,9 @@ completed group algebra `ℤ_p[[Γ]]` of a procyclic pro-`p` group `Γ`: at a le
 * `TauCeti.Polynomial.natDegree_one_add_X_pow_sub_one`: `(1 + X) ^ n - 1` has `natDegree` equal
   to `n` (at `n = 0` the polynomial is `0`, whose `natDegree` is `0` by convention).
 * `TauCeti.Polynomial.isDistinguishedAt_one_add_X_pow_sub_one`: `(1 + X) ^ (p ^ m) - 1` is
-  distinguished at `(p)`.
+  distinguished at every ideal containing `p`.
+* `Polynomial.IsDistinguishedAt.natCast_dvd_pow_of_aeval_eq_zero`: a root `t` of a polynomial `F`
+  distinguished at `I`, with `I ^ e ⊆ (p)`, satisfies `p ∣ t ^ (deg F * e)`.
 -/
 
 public section
@@ -68,21 +73,38 @@ end Ring
 
 variable [CommRing R]
 
-/-- **`(1 + X) ^ (p ^ m) - 1` is a distinguished polynomial at `(p)`**, for a prime `p`: it is
-monic, its constant coefficient is `0`, and its other non-leading coefficients are the binomial
-coefficients `(p ^ m).choose k` with `0 < k < p ^ m`, which `p` divides. -/
-theorem isDistinguishedAt_one_add_X_pow_sub_one {p : ℕ} (hp : p.Prime) (m : ℕ) :
-    ((1 + X) ^ p ^ m - 1 : R[X]).IsDistinguishedAt (Ideal.span {(p : R)}) := by
+/-- **`(1 + X) ^ (p ^ m) - 1` is a distinguished polynomial at every ideal containing `p`**, for a
+prime `p`: it is monic, its constant coefficient is `0`, and its other non-leading coefficients are
+the binomial coefficients `(p ^ m).choose k` with `0 < k < p ^ m`, which `p` divides. -/
+theorem isDistinguishedAt_one_add_X_pow_sub_one {p : ℕ} (hp : p.Prime) {I : Ideal R}
+    (hI : (p : R) ∈ I) (m : ℕ) : ((1 + X) ^ p ^ m - 1 : R[X]).IsDistinguishedAt I := by
   rcases subsingleton_or_nontrivial R with hR | hR
   · exact ⟨⟨fun hk ↦ by simp [natDegree_of_subsingleton] at hk⟩, monic_of_subsingleton _⟩
   refine ⟨⟨fun {k} hk ↦ ?_⟩, monic_one_add_X_pow_sub_one (pow_ne_zero m hp.ne_zero)⟩
   rw [natDegree_one_add_X_pow_sub_one] at hk
   rcases Nat.eq_zero_or_pos k with rfl | hk0
   · simp [coeff_one_add_X_pow]
-  · rw [coeff_sub, coeff_one_add_X_pow, coeff_one, ite_eq_right hk0.ne', sub_zero,
-      Ideal.mem_span_singleton]
-    exact Nat.cast_dvd_cast (hp.dvd_choose_pow hk0.ne' hk.ne)
+  · rw [coeff_sub, coeff_one_add_X_pow, coeff_one, ite_eq_right hk0.ne', sub_zero]
+    exact I.mem_of_dvd (Nat.cast_dvd_cast (hp.dvd_choose_pow hk0.ne' hk.ne)) hI
 
 end Polynomial
 
 end TauCeti
+
+namespace Polynomial.IsDistinguishedAt
+
+variable {O : Type*} [CommRing O] {I : Ideal O} {F : O[X]} {p e : ℕ}
+
+/-- If `F` is distinguished at `I` and `I ^ e ⊆ (p)`, then every root `t` of `F` in an `O`-algebra
+satisfies `p ∣ t ^ (deg F * e)`. -/
+theorem natCast_dvd_pow_of_aeval_eq_zero (hF : F.IsDistinguishedAt I)
+    (hI : I ^ e ≤ Ideal.span {(p : O)}) {S : Type*} [CommRing S] [Algebra O S] {t : S}
+    (ht : aeval t F = 0) : (p : S) ∣ t ^ (F.natDegree * e) := by
+  have h := hF.toIsWeaklyEisensteinAt.pow_natDegree_le_of_aeval_zero_of_monic_mem_map ht
+    hF.monic F.natDegree natDegree_map_le
+  have h' : t ^ (F.natDegree * e) ∈ (Ideal.span {(p : O)}).map (algebraMap O S) := by
+    rw [pow_mul]
+    exact Ideal.map_mono hI (Ideal.map_pow (algebraMap O S) I e ▸ Ideal.pow_mem_pow h e)
+  rwa [Ideal.map_span, Set.image_singleton, map_natCast, Ideal.mem_span_singleton] at h'
+
+end Polynomial.IsDistinguishedAt

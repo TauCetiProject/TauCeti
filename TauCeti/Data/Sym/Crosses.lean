@@ -5,17 +5,23 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Order.Monoid.Defs
 public import Mathlib.Data.Sym.Sym2
 
 /-!
 # Unordered pairs crossing a set
 
 This file defines when an unordered pair has one endpoint in a set and the other endpoint outside
-the set.
+the set. It also proves that one pair's weighted cut contribution is submodular, for use in pair
+and multigraph cut-capacity estimates.
 
 ## Main definition
 
 * `Sym2.Crosses`: an unordered pair crosses a set when its endpoints lie on opposite sides.
+
+## Main results
+
+* `Sym2.ite_crosses_union_add_ite_crosses_inter_le`: one pair contributes a submodular cut weight.
 -/
 
 public section
@@ -54,5 +60,28 @@ theorem Crosses.not_isDiag {p : Sym2 V} {S : Set V} (h : p.Crosses S) : ¬p.IsDi
       simp only [crosses_mk_iff, mk_isDiag_iff] at h ⊢
       rintro rfl
       simp at h
+
+/-- The contribution of one unordered pair to a weighted cut is submodular when its weight is
+nonnegative off the diagonal. Diagonal weights are unrestricted. -/
+theorem ite_crosses_union_add_ite_crosses_inter_le {K : Type*} [AddCommMonoid K] [Preorder K]
+    [IsOrderedAddMonoid K] (p : Sym2 V) (a : K) (ha : ¬p.IsDiag → 0 ≤ a) (S T : Set V)
+    [dU : Decidable (p.Crosses (S ∪ T))] [dI : Decidable (p.Crosses (S ∩ T))]
+    [dS : Decidable (p.Crosses S)] [dT : Decidable (p.Crosses T)] :
+    (if p.Crosses (S ∪ T) then a else 0) + (if p.Crosses (S ∩ T) then a else 0) ≤
+      (if p.Crosses S then a else 0) + (if p.Crosses T then a else 0) := by
+  -- The decisions depend on the pair, so quantify them before choosing representatives.
+  revert dU dI dS dT
+  induction p using Sym2.inductionOn with
+  | _ x y =>
+    intro dU dI dS dT
+    classical
+    by_cases hxy : x = y
+    · subst y
+      simp only [not_crosses_diag, ↓reduceIte, add_zero, le_refl]
+    have h := ha (by simpa using hxy)
+    have haa := add_nonneg h h
+    by_cases hxS : x ∈ S <;> by_cases hxT : x ∈ T <;>
+      by_cases hyS : y ∈ S <;> by_cases hyT : y ∈ T <;>
+      simp_all
 
 end Sym2

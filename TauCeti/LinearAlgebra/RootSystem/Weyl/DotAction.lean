@@ -57,6 +57,15 @@ needs: distinct dominant weights lie in distinct dot orbits.
   `TauCeti.dotAction_eq_dotAction_iff_of_mem_dominantChamber`: **a dominant weight is the only
   dominant weight in its dot orbit**, and it is reached by a unique Weyl-group element.
 
+Since the Weyl-vector shift is a sum of roots,
+`w ρ - ρ = -∑_{α > 0, w⁻¹ α < 0} α` (`TauCeti.smul_weylVector_sub_weylVector`),
+`TauCeti.dotAction_eq_smul_sub_sum` expresses the dot action as the linear
+action followed by a translation by a sum of roots. It preserves every Weyl-stable lattice
+containing the roots, whether or not that lattice contains `ρ`. Any weight `d` pairing to `1`
+with every simple coroot may replace `ρ` in the definition,
+`w ⬝ x = w (x + d) - d` (`TauCeti.dotAction_eq_smul_add_sub_of_forall_coroot'_eq_one`), so an
+integral such `d` computes the dot action without leaving the lattice.
+
 ## Implementation notes
 
 The dot action is deliberately *not* a `MulAction` instance on `M`: the weight space already
@@ -244,6 +253,23 @@ theorem dotAction_ofIdx_eq_self_iff {i : ι} (hi : i ∈ b.support) (x : M) :
   · rw [h, neg_add_cancel, zero_smul]
 
 end Reduced
+
+/-! ### The dot action as a translated linear action -/
+
+/-- **The dot action is the linear action followed by a translation by a sum of roots**:
+`w ⬝ x = w x - ∑_{α > 0, w⁻¹ α < 0} α`. -/
+theorem dotAction_eq_smul_sub_sum (w : P.weylGroup) (x : M) :
+    dotAction P b w x = w • x - ∑ i ∈ inversionsFinset P b w⁻¹, P.root i := by
+  rw [dotAction_def, smul_add, add_sub_assoc, smul_weylVector_sub_weylVector, sub_eq_add_neg]
+
+/-- **Any weight pairing to `1` with every simple coroot may replace `ρ` in the dot action**:
+if `⟨d, αᵢ^∨⟩ = 1` for every simple root, then `w ⬝ x = w (x + d) - d`. -/
+theorem dotAction_eq_smul_add_sub_of_forall_coroot'_eq_one [IsDomain R] [P.IsCrystallographic]
+    [P.IsReduced] {d : M} (hd : ∀ i ∈ b.support, P.coroot' i d = 1) (w : P.weylGroup) (x : M) :
+    dotAction P b w x = w • (x + d) - d := by
+  rw [dotAction_eq_smul_sub_sum, smul_add, add_sub_assoc,
+    smul_sub_eq_neg_sum_inversionsFinset_of_forall_coroot'_eq_one P b hd
+      (IsUnit.isSMulRegular M (isUnit_of_invertible (2 : R))) w, sub_eq_add_neg]
 
 /-! ### The open dominant chamber of the dot action -/
 

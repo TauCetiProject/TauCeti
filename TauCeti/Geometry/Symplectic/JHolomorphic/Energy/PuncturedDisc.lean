@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Isoperimetric
-public import TauCeti.MeasureTheory.Integral.CircleLIntegral
+public import TauCeti.MeasureTheory.Integral.Circle.LIntegral
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 
 /-!

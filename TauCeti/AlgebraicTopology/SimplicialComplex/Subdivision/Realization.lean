@@ -29,6 +29,8 @@ The construction follows Rourke--Sanderson, *Introduction to Piecewise-Linear To
 
 ## Main definitions
 
+* `AbstractSimplicialComplex.barycentricSubdivisionFaceMap`: the map from the standard simplex on a
+  family of faces of `σ` to the standard simplex of `σ`, sending each face to its barycenter.
 * `AbstractSimplicialComplex.barycentricSubdivisionRealizationMap`: the canonical continuous map
   from the realization of the barycentric subdivision to the original realization.
 
@@ -38,6 +40,10 @@ The construction follows Rourke--Sanderson, *Introduction to Piecewise-Linear To
   maps to the barycenter of the face it represents.
 * `AbstractSimplicialComplex.barycentricSubdivisionLinearMap_apply`: the coordinates of a linear
   combination of face barycenters.
+* `AbstractSimplicialComplex.barycentricSubdivisionFaceMap_apply`: the coordinates of the face map.
+* `AbstractSimplicialComplex.continuous_barycentricSubdivisionFaceMap`: the face map is continuous.
+* `AbstractSimplicialComplex.barycentricSubdivisionRealizationMap_comp_faceInclusion`: on a
+  subdivision simplex, the realization map factors through the face map.
 -/
 
 public section
@@ -57,6 +63,11 @@ restriction of this map to the subdivision realization lands in the original rea
 noncomputable def barycentricSubdivisionLinearMap (K : AbstractSimplicialComplex ι) :
     (Face K →₀ ℝ) →ₗ[ℝ] (ι →₀ ℝ) :=
   Finsupp.linearCombination ℝ (faceBarycenter K)
+
+/-- The barycentric-subdivision linear map is the linear combination of face barycenters. -/
+theorem barycentricSubdivisionLinearMap_eq_linearCombination (K : AbstractSimplicialComplex ι) :
+    barycentricSubdivisionLinearMap K = Finsupp.linearCombination ℝ (faceBarycenter K) :=
+  (rfl)
 
 @[simp]
 theorem barycentricSubdivisionLinearMap_single (K : AbstractSimplicialComplex ι)
@@ -91,6 +102,46 @@ private theorem barycentricSubdivisionLinearMap_mem_closedSimplex
       exact Finset.mem_image.mpr
         ⟨v, hρσ τ (StandardSimplex.support_subset x hτ) hv, rfl⟩
     exact faceBarycenter_mem K τ
+
+/-- The barycentric-subdivision linear map, restricted to the standard simplex on a family `ρ` of
+faces of `σ`, as a map into the standard simplex of `σ`. It sends the vertex `τ` of `ρ` to the
+barycenter of `τ`. -/
+noncomputable def barycentricSubdivisionFaceMap (K : AbstractSimplicialComplex ι)
+    {ρ : Finset (Face K)} (σ : Face K) (hρσ : ∀ τ ∈ ρ, τ ≤ σ) :
+    StandardSimplex ρ → StandardSimplex σ.1 :=
+  fun x => ⟨barycentricSubdivisionLinearMap K x.1,
+    barycentricSubdivisionLinearMap_mem_closedSimplex K σ x hρσ⟩
+
+/-- The barycentric-subdivision face map is given by the barycentric-subdivision linear map. -/
+@[simp]
+theorem barycentricSubdivisionFaceMap_val (K : AbstractSimplicialComplex ι)
+    {ρ : Finset (Face K)} (σ : Face K) (hρσ : ∀ τ ∈ ρ, τ ≤ σ) (x : StandardSimplex ρ) :
+    (barycentricSubdivisionFaceMap K σ hρσ x : ι →₀ ℝ) = barycentricSubdivisionLinearMap K x.1 :=
+  (rfl)
+
+/-- The coordinates of the barycentric-subdivision face map: the coordinate at `v` is the
+weighted sum of the coordinates at `v` of the barycenters of the faces in `ρ`. -/
+theorem barycentricSubdivisionFaceMap_apply (K : AbstractSimplicialComplex ι)
+    {ρ : Finset (Face K)} (σ : Face K) (hρσ : ∀ τ ∈ ρ, τ ≤ σ) (x : StandardSimplex ρ) (v : ι) :
+    (barycentricSubdivisionFaceMap K σ hρσ x : ι →₀ ℝ) v =
+      ∑ τ ∈ ρ, x.1 τ * faceBarycenter K τ v := by
+  have hsupp : x.1 ∈ Finsupp.supported ℝ ℝ (↑ρ : Set (Face K)) :=
+    (Finsupp.mem_supported ℝ x.1).mpr (StandardSimplex.support_subset x)
+  rw [barycentricSubdivisionFaceMap_val, barycentricSubdivisionLinearMap,
+    Finsupp.linearCombination_apply_of_mem_supported ℝ hsupp]
+  simp only [Finset.sum_apply', Finsupp.smul_apply, smul_eq_mul]
+
+/-- The barycentric-subdivision face map is continuous. -/
+theorem continuous_barycentricSubdivisionFaceMap (K : AbstractSimplicialComplex ι)
+    {ρ : Finset (Face K)} (σ : Face K) (hρσ : ∀ τ ∈ ρ, τ ≤ σ) :
+    Continuous (barycentricSubdivisionFaceMap K σ hρσ) := by
+  refine continuous_induced_rng.mpr (continuous_pi fun v => ?_)
+  simp only [Function.comp_apply, barycentricSubdivisionFaceMap_apply]
+  apply continuous_finsetSum
+  intro τ _
+  have hcoe : Continuous (fun x : StandardSimplex ρ => (x.1 : Face K → ℝ)) :=
+    continuous_induced_dom
+  exact ((continuous_apply τ).comp hcoe).mul continuous_const
 
 private theorem barycentricSubdivisionLinearMap_mem (K : AbstractSimplicialComplex ι)
     (x : Realization (TauCeti.PreAbstractSimplicialComplex.barycentricSubdivision
@@ -136,6 +187,20 @@ theorem barycentricSubdivisionRealizationMap_vertex (K : AbstractSimplicialCompl
   rw [barycentricSubdivisionRealizationMap_val, vertex_val,
     barycentricSubdivisionLinearMap_single]
 
+/-- Restriction of the barycentric-subdivision realization map to a simplex `ρ` of the
+subdivision, a family of faces of `σ`, is the barycentric-subdivision face map followed by the
+face inclusion of `σ`. -/
+theorem barycentricSubdivisionRealizationMap_comp_faceInclusion
+    (K : AbstractSimplicialComplex ι)
+    (ρ : Face (TauCeti.PreAbstractSimplicialComplex.barycentricSubdivision
+      K.toPreAbstractSimplicialComplex)) (σ : Face K) (hρσ : ∀ τ ∈ ρ.1, τ ≤ σ) :
+    barycentricSubdivisionRealizationMap K ∘ faceInclusion _ ρ =
+      faceInclusion K σ ∘ barycentricSubdivisionFaceMap K σ hρσ := by
+  funext x
+  apply Subtype.ext
+  simp only [Function.comp_apply, barycentricSubdivisionRealizationMap_val, faceInclusion_val,
+    barycentricSubdivisionFaceMap_val]
+
 /-- The barycentric-subdivision realization map is continuous for the weak topologies on both
 realizations. -/
 theorem continuous_barycentricSubdivisionRealizationMap (K : AbstractSimplicialComplex ι) :
@@ -144,46 +209,7 @@ theorem continuous_barycentricSubdivisionRealizationMap (K : AbstractSimplicialC
   intro ρ
   have hρ := TauCeti.PreAbstractSimplicialComplex.mem_barycentricSubdivision_iff.mp ρ.2
   obtain ⟨σ, _, hσmax⟩ := hρ.2.exists_isGreatest ρ.1.finite_toSet hρ.1
-  let toFace : StandardSimplex ρ.1 → StandardSimplex σ.1 := fun x =>
-    ⟨barycentricSubdivisionLinearMap K x.1,
-      barycentricSubdivisionLinearMap_mem_closedSimplex K σ x hσmax⟩
-  -- The induced topology exposes the underlying `Finsupp`; record its value explicitly rather
-  -- than relying on unfolding `toFace` through both subtype coercions below.
-  have htoFace_val (x : StandardSimplex ρ.1) :
-      (toFace x : ι →₀ ℝ) = barycentricSubdivisionLinearMap K x.1 := rfl
-  have hlinear : Continuous (fun x : StandardSimplex ρ.1 =>
-      (barycentricSubdivisionLinearMap K x.1 : ι → ℝ)) := by
-    apply continuous_pi
-    intro v
-    have hformula :
-        (fun x : StandardSimplex ρ.1 => (barycentricSubdivisionLinearMap K x.1) v) =
-      fun x => ∑ τ ∈ ρ.1, x.1 τ * faceBarycenter K τ v := by
-      funext x
-      have hsupp : x.1 ∈ Finsupp.supported ℝ ℝ (↑ρ.1 : Set (Face K)) :=
-        (Finsupp.mem_supported ℝ x.1).mpr (StandardSimplex.support_subset x)
-      rw [barycentricSubdivisionLinearMap,
-        Finsupp.linearCombination_apply_of_mem_supported ℝ hsupp]
-      simp only [Finset.sum_apply', Finsupp.smul_apply, smul_eq_mul]
-      rfl
-    rw [hformula]
-    apply continuous_finsetSum
-    intro τ _
-    have hcoe : Continuous (fun x : StandardSimplex ρ.1 => (x.1 : Face K → ℝ)) :=
-      continuous_induced_dom
-    exact ((continuous_apply τ).comp hcoe).mul continuous_const
-  have htoFace : Continuous toFace := by
-    apply continuous_induced_rng.mpr
-    convert hlinear using 1
-    funext x v
-    exact DFunLike.congr_fun (htoFace_val x) v
-  have hfactor :
-      barycentricSubdivisionRealizationMap K ∘ faceInclusion _ ρ =
-        faceInclusion K ⟨σ.1, σ.2⟩ ∘ toFace := by
-    funext x
-    apply Subtype.ext
-    simp only [Function.comp_apply, barycentricSubdivisionRealizationMap_val, faceInclusion_val,
-      toFace]
-  rw [hfactor]
-  exact (continuous_faceInclusion K ⟨σ.1, σ.2⟩).comp htoFace
+  rw [barycentricSubdivisionRealizationMap_comp_faceInclusion K ρ σ hσmax]
+  exact (continuous_faceInclusion K σ).comp (continuous_barycentricSubdivisionFaceMap K σ hσmax)
 
 end AbstractSimplicialComplex

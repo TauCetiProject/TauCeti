@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.RealAlgebraic.Stack.Lazard.Basic
+import TauCeti.Geometry.RealAlgebraic.Stack.Lazard.Product
 import TauCeti.Geometry.RealAlgebraic.Stack.Sign
 
 /-!
@@ -23,6 +24,9 @@ evaluations either over every base point or over none. Then either some root fun
 identically, and the root list is kept, or `0` lies in one fixed sector over every base point
 (since no root function changes sign), and the zero section is inserted there. Without the
 hypothesis on the root `0`, a root function could cross zero, as for `Xₙ - X₀` over `ℝ`.
+The hypothesis holds for every member whose formal constant coefficient has constant Lazard
+valuation on the base. In particular, a Lazard delineation of `q` gives one of `X * q` when the
+constant coefficient of `q` has constant Lazard valuation.
 
 ## Main results
 
@@ -31,6 +35,10 @@ hypothesis on the root `0`, a root function could cross zero, as for `Xₙ - X�
 * `TauCeti.nonempty_lazardDelineation_lastCoordinate`: the specialization to the monic coordinate.
 * `TauCeti.nonempty_lazardDelineation_of_comp`: adjoining nonzero multiples of the last
   coordinate to a family with a Lazard delineation.
+* `TauCeti.LazardDelineation.isRoot_zero_of_lazardValuation_coeff_zero_eq`: constant valuation
+  of the constant coefficient decides the root `0` uniformly.
+* `TauCeti.nonempty_lazardDelineation_X_mul`: multiplying a delineated polynomial by the
+  distinguished coordinate.
 
 ## References
 
@@ -328,6 +336,63 @@ theorem nonempty_lazardDelineation_of_comp (D : LazardDelineation (F ∘ f) S)
   · exact nonempty_lazardDelineation_of_comp_of_forall_eq_zero D hcoord fun k hk ↦
       absurd ⟨k, hk⟩ hc
 
+/-- **The root `0` from the constant coefficient.** Let `F k` be the polynomial in `n + 1`
+variables corresponding to a polynomial `f` in the distinguished variable. Over the base of a
+Lazard delineation of `F`, if the formal constant coefficient of `f` has constant Lazard
+valuation, then `0` is a root of the Lazard evaluations of `F k` over every base point or over
+none. -/
+theorem LazardDelineation.isRoot_zero_of_lazardValuation_coeff_zero_eq
+    (D : LazardDelineation F S) {k : ι} {f : Polynomial (MvPolynomial (Fin n) ℝ)}
+    (hf : F k = rename finSuccEquivLast.symm ((optionEquivLeft ℝ (Fin n)).symm f))
+    (hval : ∀ x ∈ S, ∀ y ∈ S, (f.coeff 0).lazardValuation x = (f.coeff 0).lazardValuation y)
+    (x y : S)
+    (hx : ((optionEquivRight ℝ (Fin n) (rename finSuccEquivLast (F k))).lazardEval
+      (Polynomial.C ∘ x.1)).IsRoot 0) :
+    ((optionEquivRight ℝ (Fin n) (rename finSuccEquivLast (F k))).lazardEval
+      (Polynomial.C ∘ y.1)).IsRoot 0 := by
+  -- Putting the distinguished variable last and moving it back into the coefficients is the
+  -- coefficient swap of the two `Option` equivalences.
+  have hswap : optionEquivRight ℝ (Fin n) (rename finSuccEquivLast (F k)) =
+      ((optionEquivLeft ℝ (Fin n)).symm.trans (optionEquivRight ℝ (Fin n))) f := by
+    rw [hf, rename_rename, Equiv.self_comp_symm, rename_id_apply, AlgEquiv.trans_apply]
+  have hv := hval x x.2 y y.2
+  rw [← map_constantCoeff_optionEquivRight_optionEquivLeft_symm] at hv
+  have hexp := (D.lazardExponent_eq k x).trans (D.lazardExponent_eq k y).symm
+  rw [hswap] at hx hexp ⊢
+  by_contra hy
+  rw [← lazardValuation_map_constantCoeff_eq_iff] at hy
+  exact (lazardValuation_map_constantCoeff_eq_iff _ _).1 (by rw [hv, hy, hexp]) hx
+
 end Adjoin
+
+/-- **Multiplying by the distinguished coordinate.** Let `q` be a nonzero polynomial in the
+distinguished variable whose formal constant coefficient has constant Lazard valuation on a
+preconnected base. A Lazard delineation of `q` over the base gives one of `X * q`: the zero
+section is adjoined unless `0` is already a root function. -/
+theorem nonempty_lazardDelineation_X_mul {q : Polynomial (MvPolynomial (Fin n) ℝ)} (hq : q ≠ 0)
+    (D : LazardDelineation
+      (fun _ : Unit ↦ rename finSuccEquivLast.symm ((optionEquivLeft ℝ (Fin n)).symm q)) S)
+    (hS : IsPreconnected S)
+    (hval : ∀ x ∈ S, ∀ y ∈ S, (q.coeff 0).lazardValuation x = (q.coeff 0).lazardValuation y) :
+    Nonempty (LazardDelineation (fun _ : Unit ↦
+      rename finSuccEquivLast.symm ((optionEquivLeft ℝ (Fin n)).symm (Polynomial.X * q))) S) := by
+  classical
+  -- Adjoin the coordinate to the delineation of `q`, then pass to the product.
+  let G : Option Unit → MvPolynomial (Fin (n + 1)) ℝ := fun k ↦
+    k.elim (X (Fin.last n)) fun _ ↦
+      rename finSuccEquivLast.symm ((optionEquivLeft ℝ (Fin n)).symm q)
+  obtain ⟨E⟩ := nonempty_lazardDelineation_of_comp (F := G) (f := some) D hS
+    (fun k hk ↦ ⟨1, one_ne_zero, by
+      obtain rfl : k = none := Option.eq_none_iff_forall_ne_some.2 fun j hj ↦ hk ⟨j, hj.symm⟩
+      simp [G]⟩)
+    (fun j ↦ D.isRoot_zero_of_lazardValuation_coeff_zero_eq (k := j) rfl hval)
+  have hG : ∏ k, G k =
+      rename finSuccEquivLast.symm ((optionEquivLeft ℝ (Fin n)).symm (Polynomial.X * q)) := by
+    simp [G, Fintype.prod_option]
+  rw [← hG]
+  refine ⟨E.prod ?_⟩
+  rw [hG]
+  exact (map_ne_zero_iff _ (rename_injective _ finSuccEquivLast.symm.injective)).2
+    (EmbeddingLike.map_ne_zero_iff.2 (mul_ne_zero Polynomial.X_ne_zero hq))
 
 end TauCeti

@@ -38,6 +38,7 @@ regularity; these are the energy-increment inputs of weak and strong regularity 
   `weightedEnergy_le_one`.
 * `SimpleGraph.weightedEnergy_eq_sum_part`: the energy is the mean square of the block-average
   step function.
+* `SimpleGraph.weightedEnergy_comap_symm`: the energy is invariant under relabelling the vertices.
 * `SimpleGraph.weightedDensityDeviation_sq`: the refinement defect identity.
 * `SimpleGraph.weightedEnergy_mono_of_refines`: refining a partition does not decrease energy.
 * `SimpleGraph.weightedDensityDeviation_abs_le`: the absolute-deviation bound from an energy gap.
@@ -109,6 +110,29 @@ theorem weightedEnergy_eq_sum_part (P : Finpartition (univ : Finset V)) :
   refine sum_congr rfl fun C _ => ?_
   rw [nsmul_eq_mul]
   ring
+
+/-- **The weighted energy is invariant under relabelling.** Relabel the vertices along `e`: the
+graph becomes `G.comap e.symm` and the partition becomes the pullback of `P` along `e.symm`. The
+size-weighted energy is unchanged. -/
+@[simp]
+theorem weightedEnergy_comap_symm {W : Type*} [Fintype W] [DecidableEq W] (e : V ≃ W)
+    (P : Finpartition (univ : Finset V)) :
+    (G.comap e.symm).weightedEnergy ((P.copy (image_univ_equiv e.symm).symm).comap e.symm) =
+      G.weightedEnergy P := by
+  -- the part through `e v` is the part of `P` through `v`, relabelled
+  have hpart (v : V) : ((P.copy (image_univ_equiv e.symm).symm).comap e.symm).part (e v) =
+      (P.part v).map e.toEmbedding := by
+    have hcopy : (P.copy (image_univ_equiv e.symm).symm).part v = P.part v :=
+      part_eq_of_mem _ (by simp) (P.mem_part (mem_univ v))
+    ext y
+    rw [Finpartition.part_comap (mem_univ _), mem_filter, Equiv.symm_apply_apply, hcopy,
+      mem_map_equiv]
+    simp
+  rw [weightedEnergy_eq_sum_part, weightedEnergy_eq_sum_part, Fintype.card_congr e.symm,
+    ← e.sum_comp]
+  simp_rw [← e.sum_comp (fun y => ((G.comap e.symm).edgeDensity _
+    (((P.copy (image_univ_equiv e.symm).symm).comap e.symm).part y) : ℝ) ^ 2), hpart,
+    edgeDensity_comap_symm]
 
 section Refinement
 

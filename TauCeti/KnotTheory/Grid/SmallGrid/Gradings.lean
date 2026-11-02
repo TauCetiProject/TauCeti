@@ -242,6 +242,19 @@ abbrev twoByTwo : OddComponentGridDiagram 2 :=
     rw [h]
     exact odd_one⟩
 
+/-- The identity generator in the standard two-by-two diagram has bidegree `(-1, -1)`. -/
+@[simp]
+theorem bidegree_twoByTwo_twoByTwoId :
+    twoByTwo.bidegree GridState.twoByTwoId = (-1, -1) := by
+  apply Prod.ext
+  · simpa only [bidegree_fst] using
+      GridDiagram.maslovOℤ_twoByTwo_twoByTwoId
+  · have h := twoByTwo.two_mul_alexanderℤ GridState.twoByTwoId
+    rw [GridDiagram.alexanderTwoℤ_twoByTwo_twoByTwoId] at h
+    have hA : twoByTwo.alexanderℤ GridState.twoByTwoId = -1 := by
+      omega
+    simpa only [bidegree_snd] using hA
+
 /-- The transposition generator in the standard two-by-two diagram has bidegree `(0, 0)`. -/
 @[simp]
 theorem bidegree_twoByTwo_twoByTwoSwap :

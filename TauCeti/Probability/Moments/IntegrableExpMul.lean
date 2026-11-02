@@ -30,7 +30,9 @@ half-line law, which is `Set.Iic 0`.
   below;
 * `TauCeti.not_integrable_exp_mul_of_not_integrable_rpow` and
   `TauCeti.not_integrable_exp_mul_of_not_integrable_pow` — no positive rate is integrable once a
-  real, respectively natural, moment of `X` fails to exist.
+  real, respectively natural, moment of `X` fails to exist;
+* `TauCeti.integrableExpSet_eq_Iic_of_not_integrable_pow` — a statistic bounded below with an
+  infinite natural moment has exponential-integrability domain `Set.Iic 0`.
 -/
 
 public section
@@ -71,5 +73,16 @@ theorem not_integrable_exp_mul_of_not_integrable_pow [IsFiniteMeasure μ] {b t :
     ¬ Integrable (fun ω ↦ Real.exp (t * X ω)) μ := fun hexp ↦
   hmom <| integrable_pow_of_integrable_exp_mul ht.ne' hexp
     (integrable_exp_mul_of_ge (-t) b (neg_nonpos.mpr ht.le) hX hb) n
+
+/-- A statistic bounded below with a nonintegrable natural power has exponential moments
+exactly at nonpositive rates. -/
+theorem integrableExpSet_eq_Iic_of_not_integrable_pow [IsFiniteMeasure μ] {b : ℝ}
+    (hX : AEMeasurable X μ) (hb : ∀ᵐ ω ∂μ, b ≤ X ω) (n : ℕ)
+    (hn : ¬ Integrable (fun ω ↦ X ω ^ n) μ) : integrableExpSet X μ = Set.Iic 0 := by
+  ext t
+  simp only [integrableExpSet, Set.mem_ofPred_eq, Set.mem_Iic]
+  refine ⟨fun h ↦ ?_, fun ht ↦ integrable_exp_mul_of_ge t b ht hX hb⟩
+  by_contra ht
+  exact not_integrable_exp_mul_of_not_integrable_pow n hX hb hn (lt_of_not_ge ht) h
 
 end TauCeti

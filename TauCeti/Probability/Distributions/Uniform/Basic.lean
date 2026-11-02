@@ -47,6 +47,8 @@ therefore takes `a < b` as a hypothesis rather than assuming it silently.
 * `isUniform_of_hasLaw_uniformMeasure` — a variable with this law is uniform in Mathlib's sense;
 * `uniformMeasure_eq_withDensity` and `rnDeriv_uniformMeasure` — Mathlib's `pdf.uniformPDF` is the
   density of this measure, as a `withDensity` and as the Radon–Nikodym derivative;
+* `measurable_uniformPDF` — Mathlib's `pdf.uniformPDF` on a measurable set is measurable, for any
+  reference measure;
 * `hasPDF_of_hasLaw_uniformMeasure` — a variable with this law satisfies `HasPDF`, i.e. its law is
   absolutely continuous; the density itself is identified by the two results above;
 * `uniformPDF_eq_ofReal_uniformPDFReal` — the bridge between that density and the real-valued one;
@@ -217,11 +219,11 @@ theorem uniformPDF_eq_ofReal_uniformPDFReal {a b : ℝ} (x : ℝ) :
   · rw [uniformPDFReal_of_notMem hx, ENNReal.ofReal_zero]
     simp [hx]
 
-/-- Mathlib's uniform density on `Set.Ioc a b`, against `volume`, is measurable. -/
-theorem measurable_uniformPDF_Ioc_volume {a b : ℝ} :
-    Measurable fun x => pdf.uniformPDF (Set.Ioc a b) x volume := by
-  unfold pdf.uniformPDF
-  exact (measurable_const.smul measurable_const).indicator measurableSet_Ioc
+/-- Mathlib's uniform density on a measurable set, against any reference measure, is
+measurable. -/
+theorem measurable_uniformPDF {E : Type*} [MeasurableSpace E] {s : Set E} (hs : MeasurableSet s)
+    (μ : Measure E) : Measurable fun x => pdf.uniformPDF s x μ :=
+  (measurable_const.smul measurable_const).indicator hs
 
 /-- The uniform measure is Lebesgue measure weighted by Mathlib's uniform density.
 
@@ -241,7 +243,7 @@ interval the law is the zero measure, so no probability-measure claim is made he
 theorem hasPDF_of_hasLaw_uniformMeasure {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
     {X : Ω → ℝ} {a b : ℝ} (hX : HasLaw X (uniformMeasure a b) P) :
     HasPDF X P :=
-  hasPDF_of_hasLaw_withDensity measurable_uniformPDF_Ioc_volume.aemeasurable
+  hasPDF_of_hasLaw_withDensity (measurable_uniformPDF measurableSet_Ioc volume).aemeasurable
     (by rwa [uniformMeasure_eq_withDensity] at hX)
 
 /-- The Radon-Nikodym derivative of the uniform measure against Lebesgue measure is its density. -/
@@ -249,7 +251,7 @@ theorem rnDeriv_uniformMeasure {a b : ℝ} :
     (uniformMeasure a b).rnDeriv volume
       =ᵐ[volume] fun x => pdf.uniformPDF (Set.Ioc a b) x volume := by
   rw [uniformMeasure_eq_withDensity]
-  exact Measure.rnDeriv_withDensity volume measurable_uniformPDF_Ioc_volume
+  exact Measure.rnDeriv_withDensity volume (measurable_uniformPDF measurableSet_Ioc volume)
 
 /-! ### The cumulative distribution function, mean and variance -/
 
@@ -479,8 +481,8 @@ theorem map_uniformMeasure_affine {a b : ℝ} (hab : a < b) :
 /-- Mathlib's uniform density on `Set.Ioc a b` is measurable jointly in the two endpoints and the
 point.
 
-This is the input `MeasureTheory.measurable_withDensity` needs; `measurable_uniformPDF_Ioc_volume`
-fixes the endpoints and is too weak for it. -/
+This is the input `MeasureTheory.measurable_withDensity` needs; `measurable_uniformPDF`
+fixes the set and is too weak for it. -/
 @[fun_prop]
 theorem measurable_uncurry_uniformPDF :
     Measurable fun q : (ℝ × ℝ) × ℝ => pdf.uniformPDF (Set.Ioc q.1.1 q.1.2) q.2 volume := by

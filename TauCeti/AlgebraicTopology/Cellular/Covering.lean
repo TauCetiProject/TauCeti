@@ -204,6 +204,17 @@ def cellularChainComplexRepForget₂Iso :
       -- definition, so both sides are the cellular differential.
       rfl
 
+/-- The components of `TauCeti.cellularChainComplexRepForget₂Iso` are the transports along the
+equalities of objects that hold by definition. -/
+@[simp]
+lemma cellularChainComplexRepForget₂Iso_hom_f (n : ℕ) :
+    letI := cwComplexPreimage C hG.isCoveringMap
+    haveI := hG.isCoveringMap.t2Space
+    (cellularChainComplexRepForget₂Iso C hG R).hom.f n = eqToHom (by
+      rw [Functor.mapHomologicalComplex_obj_X, cellularChainComplex_X, cellularChainComplexRep_X]
+      rfl) :=
+  (rfl)
+
 section Free
 
 variable {n : ℕ}

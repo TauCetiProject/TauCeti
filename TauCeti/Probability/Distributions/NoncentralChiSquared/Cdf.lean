@@ -114,25 +114,15 @@ theorem strictMonoOn_cdf_noncentralChiSquaredMeasure (hk : 0 ≤ k)
     (h : k ≠ 0 ∨ l ≠ 0) :
     StrictMonoOn (cdf (noncentralChiSquaredMeasure k l)) (Ici 0) := by
   have := isProbabilityMeasure_noncentralChiSquaredMeasure hk l
-  intro a ha b _ hab
-  rw [← Measure.measure_Ioc_pos_iff_cdf_lt]
-  have hsupport : (a + b) / 2 ∈ (noncentralChiSquaredMeasure k l).support := by
-    rw [support_noncentralChiSquaredMeasure, ite_eq_right (not_lt.mpr hk),
-      ite_eq_right (not_and_or.mpr h)]
-    simp only [mem_Ici] at ha ⊢
-    linarith
-  exact lt_of_lt_of_le
-    ((Measure.mem_support_iff_forall _).mp hsupport (Ioo a b)
-      (Ioo_mem_nhds (by linarith) (by linarith))) (measure_mono Ioo_subset_Ioc_self)
+  exact Measure.strictMonoOn_cdf_of_subset_support _ ordConnected_Ici
+    (by rw [support_noncentralChiSquaredMeasure, ite_eq_right (not_lt.mpr hk),
+      ite_eq_right (not_and_or.mpr h)])
 
 /-- Every finite cutoff leaves positive upper-tail probability, except at the double-zero
 Dirac boundary. -/
 theorem cdf_noncentralChiSquaredMeasure_lt_one (hk : 0 ≤ k) (h : k ≠ 0 ∨ l ≠ 0) (x : ℝ) :
-    cdf (noncentralChiSquaredMeasure k l) x < 1 := by
-  have hm := strictMonoOn_cdf_noncentralChiSquaredMeasure hk h
-    (a := max x 0) (b := max x 0 + 1) (le_max_right _ _)
-    (add_nonneg (le_max_right _ _) zero_le_one) (by linarith)
-  exact ((monotone_cdf _ (le_max_left x 0)).trans_lt hm).trans_le (cdf_le_one _ _)
+    cdf (noncentralChiSquaredMeasure k l) x < 1 :=
+  Measure.cdf_lt_one_of_strictMonoOn_Ici _ (strictMonoOn_cdf_noncentralChiSquaredMeasure hk h) x
 
 /-- A positive cutoff has positive cumulative probability, including for the Dirac law. -/
 theorem cdf_noncentralChiSquaredMeasure_pos (hk : 0 ≤ k) (l : ℝ≥0) (hx : 0 < x) :

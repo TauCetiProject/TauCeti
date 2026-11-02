@@ -16,6 +16,10 @@ points. Conversely, every closed point in its image lifts to a closed point of t
 the nonempty closed fiber contains a closed point in the Jacobson source. Thus its image
 on closed points is exactly the closed-point part of its full topological image.
 
+The file also records the affine charts of a morphism `X ⟶ Spec A` locally of finite type:
+every point lies in an affine open `Spec R ⟶ X` with `R` of finite type over `A`
+(`Scheme.Hom.exists_isOpenImmersion_finiteType`).
+
 This complements Mathlib's `Scheme.Hom.closedPoints_subset_preimage_closedPoints` with the
 lifting direction, needed to compare rational and topological orbit images.
 
@@ -26,11 +30,29 @@ lifting direction, needed to compare rational and topological orbit images.
 
 public section
 
-open Topology
+open CategoryTheory Topology
 
 namespace AlgebraicGeometry.Scheme.Hom
 
 universe u
+
+section Chart
+
+variable {X : Scheme.{u}} {A : CommRingCat.{u}} (f : X ⟶ Spec A) [LocallyOfFiniteType f]
+
+/-- Every point of the source of a morphism `f : X ⟶ Spec A` locally of finite type lies in the
+image of an affine open immersion `g : Spec R ⟶ X` such that `g ≫ f` is induced by a ring map
+`A ⟶ R` of finite type. -/
+theorem exists_isOpenImmersion_finiteType (x : X) :
+    ∃ (R : CommRingCat.{u}) (g : Spec R ⟶ X) (_ : IsOpenImmersion g) (y : Spec R)
+      (φ : A ⟶ R) (_ : Spec.map φ = g ≫ f), g y = x ∧ φ.hom.FiniteType := by
+  obtain ⟨R, g, _, ⟨y, rfl⟩, -⟩ :=
+    X.exists_affine_mem_range_and_range_subset (x := x) (U := ⊤) (by simp)
+  obtain ⟨φ, hφ⟩ : ∃ φ, Spec.map φ = g ≫ f := ⟨_, Spec.map_preimage _⟩
+  exact ⟨R, g, inferInstance, y, φ, hφ, rfl,
+    (HasRingHomProperty.Spec_iff (P := @LocallyOfFiniteType) (φ := φ)).mp (hφ ▸ inferInstance)⟩
+
+end Chart
 
 variable {X Y : Scheme.{u}} (f : X ⟶ Y) [LocallyOfFiniteType f] [JacobsonSpace Y]
 

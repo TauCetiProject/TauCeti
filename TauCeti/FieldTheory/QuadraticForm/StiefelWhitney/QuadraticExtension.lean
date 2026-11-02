@@ -91,11 +91,13 @@ public section
 
 noncomputable section
 
+universe u
+
 namespace TauCeti
 
 open _root_.QuadraticMap _root_.ContinuousCohomology
 
-variable {K L : Type} [Field K] [Invertible (2 : K)]
+variable {K L : Type u} [Field K] [Invertible (2 : K)]
 
 section CommRing
 

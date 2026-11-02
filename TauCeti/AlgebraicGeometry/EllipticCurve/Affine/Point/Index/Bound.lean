@@ -139,11 +139,9 @@ private theorem index_nonsingularReduction_bounds {ϖ : v.valuationSubring}
       -- without a rational tangent direction, the index divides `2`
       refine hdvd (index_nonsingularReduction_dvd_two_of_tangentQuadratic_no_roots v
         ((mem_maximalIdeal_iff_dvd hϖ).2 h₃) ((mem_maximalIdeal_iff_dvd hϖ).2 h₄)
-        ((mem_maximalIdeal_iff_dvd hϖ).2 h₆) fun t ht ↦ hroot ?_) two_pos (by simp) (by norm_num)
-      obtain ⟨t, rfl⟩ := residue_surjective t
-      refine hasTateTangentRoot_def.2 ⟨t, (mem_maximalIdeal_iff_dvd hϖ).1 ?_⟩
-      rw [← residue_eq_zero_iff]
-      simpa using ht
+        ((mem_maximalIdeal_iff_dvd hϖ).2 h₆) fun t ht ↦
+          hroot ((hasTateTangentRoot_iff_exists_residue_root hϖ).2 ⟨t, ht⟩)) two_pos (by simp)
+        (by norm_num)
   · -- `II`: every point has nonsingular reduction
     obtain ⟨-, h₃, h₄, h₆, h₆'⟩ := isTateTerminal_II.1 h
     refine htop (nonsingularReduction_eq_top_of_a₆_notMem v ((mem_maximalIdeal_iff_dvd hϖ).2 h₃)

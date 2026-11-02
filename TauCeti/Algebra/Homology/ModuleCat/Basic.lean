@@ -9,6 +9,8 @@ public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.Algebra.Homology.ConcreteCategory
+public import Mathlib.RingTheory.Finiteness.Defs
+public import TauCeti.LinearAlgebra.End.LocallyNilpotent
 
 /-!
 # Cycles and homology of homological complexes of modules
@@ -18,10 +20,13 @@ For a homological complex `K` of modules over a ring, the inclusion of the degre
 These are the elementwise forms of the facts that `K.iCycles n` is a monomorphism and
 `K.homologyπ n` is an epimorphism.  Chain maps commute with the differentials and the square of
 the differential vanishes, on elements (`HomologicalComplex.Hom.comm_apply`,
-`HomologicalComplex.d_comp_d_apply`).  Conversely, an element of `K.X n` killed by the differential
-is a cycle, `HomologicalComplex.moduleCatCyclesMk`.  This constructor directly returns
-an element of `K.cycles n` for modules over a ring in any universe, whereas Mathlib's
-`HomologicalComplex.cyclesMk` returns an element of `(forget₂ C Ab).obj (K.cycles n)`.
+`HomologicalComplex.d_comp_d_apply`), and an element killed by the differential to degree
+`c.next i` is killed by every differential out of degree `i`
+(`HomologicalComplex.d_apply_eq_zero_of_d_next_apply_eq_zero`).  Conversely, an element of
+`K.X n` killed by the differential is a cycle, `HomologicalComplex.moduleCatCyclesMk`.  This
+constructor directly returns an element of `K.cycles n` for modules over a ring in any universe,
+whereas Mathlib's `HomologicalComplex.cyclesMk` returns an element of
+`(forget₂ C Ab).obj (K.cycles n)`.
 A linear map into `K.X n` whose values are cycles induces a class map into the homology,
 `HomologicalComplex.moduleCatHomologyClass`; it is surjective when every cycle is a value, its
 kernel consists of the elements sent to boundaries, and chain maps act on it compatibly.
@@ -30,6 +35,13 @@ some `L i` (`HomologicalComplex.exists_homologyMap_eq_of_injective`).  Two cycle
 is a boundary have the same homology class
 (`HomologicalComplex.moduleCat_homologyπ_eq_of_iCycles_sub_eq_d`), and a cycle has zero homology
 class exactly when it is a boundary (`HomologicalComplex.moduleCat_homologyπ_eq_zero_iff`).
+When the homology is finitely generated, finitely many cycles generate all cycles modulo
+boundaries (`HomologicalComplex.exists_fin_moduleCat_cycles_generating`).
+Cycles are elements of the kernel of the outgoing differential
+(`HomologicalComplex.moduleCatCyclesToKer`), that kernel has a homology class map
+(`HomologicalComplex.moduleCatKerHomologyClass`), and the image of the incoming differential, the
+kernel and the homology form an exact sequence
+(`HomologicalComplex.exact_inclusion_moduleCatKerHomologyClass`).
 Given concrete cocycle and coboundary submodules identified with the terms of a cochain complex,
 `HomologicalComplex.moduleCatCohomologyClassOfIso` specializes this class map to the cocycles,
 with its surjectivity and its kernel described by the coboundaries.  When the differential is a
@@ -38,6 +50,14 @@ satisfy the hypotheses of this construction (`HomologicalComplex.moduleCat_d_inv
 `HomologicalComplex.moduleCat_mem_iff_exists_d_eq_inv`).  At a degree where the complex
 is exact, the image of the incoming differential, the term and the image of the outgoing
 differential form a short exact sequence (`HomologicalComplex.exact_subtype_rangeRestrict`).
+A chain map restricts to a map between the images of the differentials
+(`HomologicalComplex.Hom.boundaryMap`), functorially in the chain map
+(`HomologicalComplex.Hom.boundaryMap_comp`), and injective where the chain map is; for a
+degreewise short exact sequence of complexes whose third term is exact, these maps form a sequence
+exact in the middle (`HomologicalComplex.Hom.exact_boundaryMap`).  A family of chain endomorphisms
+that is locally nilpotent on the degree-`n` term is locally nilpotent on the degree-`n` homology
+(`HomologicalComplex.iSup_wordKer_homologyMap_eq_top`), since the homology is a quotient of the
+cycles, a submodule of the term.
 -/
 
 public section
@@ -65,6 +85,16 @@ theorem d_comp_d_apply {R : Type*} [Ring R] {ι : Type*} {c : ComplexShape ι}
   rw [← ModuleCat.comp_apply, HomologicalComplex.d_comp_d]
   rfl
 
+/-- In a complex of modules, an element killed by the differential to degree `c.next i` is killed
+by every differential out of degree `i`. -/
+theorem d_apply_eq_zero_of_d_next_apply_eq_zero {R : Type*} [Ring R] {ι : Type*}
+    {c : ComplexShape ι} (K : HomologicalComplex (ModuleCat R) c) {i j : ι} (hj : c.next i = j)
+    {x : K.X i} (hx : K.d i j x = 0) (l : ι) : K.d i l x = 0 := by
+  by_cases hl : c.Rel i l
+  · obtain rfl := hj.symm.trans (c.next_eq' hl)
+    exact hx
+  · simp [K.shape i l hl]
+
 variable {R : Type*} [Ring R] {ι : Type*} {c : ComplexShape ι}
   (K : HomologicalComplex (ModuleCat R) c) (n : ι)
 
@@ -78,6 +108,69 @@ theorem exact_subtype_rangeRestrict {i j k : ι} (hi : c.prev j = i) (hk : c.nex
   rw [LinearMap.exact_iff, LinearMap.ker_rangeRestrict, Submodule.range_subtype]
   exact ((ShortComplex.moduleCat_exact_iff_range_eq_ker _).1
     ((K.exactAt_iff' i j k hi hk).1 h)).symm
+
+section BoundaryMap
+
+variable {K L M : HomologicalComplex (ModuleCat R) c}
+
+/-- A chain map of complexes of modules sends the image of the differential `K.X i ⟶ K.X j` into
+the image of the differential `L.X i ⟶ L.X j`. -/
+def Hom.boundaryMap (φ : K ⟶ L) (i j : ι) :
+    LinearMap.range (K.d i j).hom →ₗ[R] LinearMap.range (L.d i j).hom :=
+  (φ.f j).hom.restrict fun _ ⟨y, hy⟩ ↦ ⟨(φ.f i).hom y, by rw [Hom.comm_apply, hy]⟩
+
+/-- The map on boundaries induced by a chain map is the restriction of the chain map. -/
+@[simp]
+theorem Hom.coe_boundaryMap (φ : K ⟶ L) (i j : ι) (x : LinearMap.range (K.d i j).hom) :
+    (φ.boundaryMap i j x : L.X j) = (φ.f j).hom x :=
+  (rfl)
+
+/-- The identity chain map induces the identity on boundaries. -/
+@[simp]
+theorem Hom.boundaryMap_id (i j : ι) : (𝟙 K : K ⟶ K).boundaryMap i j = LinearMap.id :=
+  LinearMap.ext fun _ ↦ Subtype.ext rfl
+
+/-- The map on boundaries induced by a composite of chain maps is the composite of the induced
+maps. -/
+@[simp]
+theorem Hom.boundaryMap_comp (φ : K ⟶ L) (ψ : L ⟶ M) (i j : ι) :
+    (φ ≫ ψ).boundaryMap i j = ψ.boundaryMap i j ∘ₗ φ.boundaryMap i j :=
+  LinearMap.ext fun _ ↦ Subtype.ext rfl
+
+/-- A chain map that is injective in degree `j` is injective on the boundaries of degree `j`. -/
+theorem Hom.boundaryMap_injective (φ : K ⟶ L) (i : ι) {j : ι}
+    (hφ : Function.Injective (φ.f j).hom) : Function.Injective (φ.boundaryMap i j) :=
+  fun _ _ hxy ↦ Subtype.ext (hφ (congrArg Subtype.val hxy))
+
+/-- Let `K ⟶ L ⟶ M` be chain maps of complexes of modules, let `h = c.prev i` and
+`j = c.next i`. If the sequence `K ⟶ L ⟶ M` is exact in degrees `i` and `j`, `L ⟶ M` is
+surjective in degree `h` and `M` is exact in degree `i`, then the induced maps on the images of
+the differentials `K.X i ⟶ K.X j`, `L.X i ⟶ L.X j` and `M.X i ⟶ M.X j` form a sequence that is
+exact in the middle. -/
+theorem Hom.exact_boundaryMap {φ : K ⟶ L} {ψ : L ⟶ M} {h i j : ι} (hh : c.prev i = h)
+    (hj : c.next i = j) (hi : Function.Exact (φ.f i).hom (ψ.f i).hom)
+    (hj' : Function.Exact (φ.f j).hom (ψ.f j).hom) (hψ : Function.Surjective (ψ.f h).hom)
+    (hM : M.ExactAt i) : Function.Exact (φ.boundaryMap i j) (ψ.boundaryMap i j) := by
+  rintro ⟨_, x, rfl⟩
+  constructor
+  · intro hx
+    have hx' : (M.d i j).hom ((ψ.f i).hom x) = 0 := by
+      rw [Hom.comm_apply]
+      exact congrArg Subtype.val hx
+    -- The image of `x` in `M.X i` is a cycle, hence the boundary of some `ψ w`; then
+    -- `x - d w` comes from `K.X i` and has the same boundary as `x`.
+    obtain ⟨⟨_, z, rfl⟩, hz⟩ := ((exact_subtype_rangeRestrict hh hj hM) _).1 (Subtype.ext hx')
+    obtain ⟨w, rfl⟩ := hψ z
+    obtain ⟨x', hx''⟩ := (hi (x - (L.d h i).hom w)).1 (by
+      rw [map_sub, ← Hom.comm_apply, sub_eq_zero]
+      exact hz.symm)
+    refine ⟨⟨(K.d i j).hom x', x', rfl⟩, Subtype.ext ?_⟩
+    rw [coe_boundaryMap, ← Hom.comm_apply, hx'', map_sub, d_comp_d_apply, sub_zero]
+  · rintro ⟨x', hx'⟩
+    rw [← hx']
+    exact Subtype.ext (hj'.apply_apply_eq_zero _)
+
+end BoundaryMap
 
 /-- The inclusion of the degree-`n` cycles of a homological complex of modules into its degree-`n`
 term is injective. -/
@@ -173,6 +266,58 @@ lemma homologyMap_moduleCatHomologyClass {L : HomologicalComplex (ModuleCat R) c
     iCycles_moduleCatCyclesMk, h]
 
 end HomologyClass
+
+section KerHomologyClass
+
+/-- In a complex of modules the image of the incoming differential `K.d p n` is contained in the
+kernel of the outgoing differential `K.d n m`. -/
+theorem range_d_le_ker_d (p m : ι) :
+    LinearMap.range (K.d p n).hom ≤ LinearMap.ker (K.d n m).hom := by
+  rintro _ ⟨x, rfl⟩
+  exact K.d_comp_d_apply _ _ _ x
+
+/-- A degree-`n` cycle of a complex of modules, as an element of the kernel of the differential
+`K.d n m`. -/
+noncomputable def moduleCatCyclesToKer (m : ι) : K.cycles n →ₗ[R] LinearMap.ker (K.d n m).hom :=
+  (K.iCycles n).hom.codRestrict _ fun y ↦ by
+    rw [LinearMap.mem_ker, ← ModuleCat.comp_apply, iCycles_d]
+    rfl
+
+/-- The element of the kernel of `K.d n m` given by a cycle `y` is `K.iCycles n y`. -/
+@[simp]
+lemma coe_moduleCatCyclesToKer (m : ι) (y : K.cycles n) :
+    (K.moduleCatCyclesToKer n m y : K.X n) = K.iCycles n y :=
+  (rfl)
+
+variable {n} {m : ι} (hm : c.next n = m)
+
+/-- The homology class of an element of the kernel of the outgoing differential `K.d n m`. -/
+noncomputable def moduleCatKerHomologyClass : LinearMap.ker (K.d n m).hom →ₗ[R] K.homology n :=
+  K.moduleCatHomologyClass hm (Submodule.subtype _) fun z ↦ LinearMap.mem_ker.1 z.2
+
+/-- The homology class of the kernel element given by a cycle `y` is the class of `y`. -/
+@[simp]
+lemma moduleCatKerHomologyClass_moduleCatCyclesToKer (y : K.cycles n) :
+    K.moduleCatKerHomologyClass hm (K.moduleCatCyclesToKer n m y) = K.homologyπ n y := by
+  rw [moduleCatKerHomologyClass, moduleCatHomologyClass_apply]
+  congr 1
+  exact K.moduleCat_iCycles_injective _
+    ((K.iCycles_moduleCatCyclesMk _ _ _ _ _).trans (K.coe_moduleCatCyclesToKer n m y))
+
+/-- The boundaries, the cycles and the homology in degree `n` form an exact sequence: the kernel
+of the homology class map on the kernel of `K.d n m` is the image of the incoming differential. -/
+theorem exact_inclusion_moduleCatKerHomologyClass {p : ι} (hp : c.prev n = p) :
+    Function.Exact (Submodule.inclusion (K.range_d_le_ker_d n p m))
+      (K.moduleCatKerHomologyClass hm) := by
+  intro z
+  rw [moduleCatKerHomologyClass, K.moduleCatHomologyClass_eq_zero_iff _ _ _ hp]
+  constructor
+  · rintro ⟨y, hy⟩
+    exact ⟨⟨_, y, rfl⟩, Subtype.ext hy⟩
+  · rintro ⟨⟨_, y, rfl⟩, rfl⟩
+    exact ⟨y, rfl⟩
+
+end KerHomologyClass
 
 section CochainPresentation
 
@@ -295,6 +440,32 @@ lemma exists_homologyπ_moduleCatCyclesMk_eq (m : ι) (hm : c.next n = m) (z : K
     congrArg _ (K.moduleCat_iCycles_injective n (iCycles_moduleCatCyclesMk _ _ _ _ _ _))⟩
 
 variable {n} in
+/-- If the degree-`n` homology of a complex of modules is finitely generated, there are finitely
+many cycles `v i` of degree `n` such that every cycle of degree `n` is a linear combination of
+them up to a boundary, the image of an element of the term of degree `p = c.prev n`. -/
+lemma exists_fin_moduleCat_cycles_generating (hK : Module.Finite R (K.homology n)) {p : ι}
+    (hp : c.prev n = p) :
+    ∃ (m : ℕ) (v : Fin m → K.X n), (∀ i l, K.d n l (v i) = 0) ∧
+      ∀ x : K.X n, (∀ l, K.d n l x = 0) →
+        ∃ (r : Fin m → R) (y : K.X p), ∑ i, r i • v i + K.d p n y = x := by
+  obtain ⟨m, s, hs⟩ := Module.Finite.exists_fin (R := R) (M := K.homology n)
+  choose w hw using fun i ↦ K.moduleCat_homologyπ_surjective n (s i)
+  refine ⟨m, fun i ↦ K.iCycles n (w i), fun i l ↦ ?_, fun x hx ↦ ?_⟩
+  · rw [← ModuleCat.comp_apply, K.iCycles_d]
+    simp only [ModuleCat.hom_zero, LinearMap.zero_apply]
+  · set x' := K.moduleCatCyclesMk x _ rfl (hx _)
+    have hmem : K.homologyπ n x' ∈ Submodule.span R (Set.range s) := hs ▸ Submodule.mem_top
+    obtain ⟨r, hr⟩ := Submodule.mem_span_range_iff_exists_fun R |>.1 hmem
+    have h0 : K.homologyπ n (x' - ∑ i, r i • w i) = 0 := by
+      simp [map_sub, map_sum, map_smul, hw, hr]
+    obtain ⟨y, hy⟩ := (K.moduleCat_homologyπ_eq_zero_iff hp _).1 h0
+    refine ⟨r, y, ?_⟩
+    have hy' := congrArg (K.iCycles n) hy
+    rw [← ModuleCat.comp_apply, HomologicalComplex.toCycles_i] at hy'
+    rw [hy', map_sub, map_sum, HomologicalComplex.iCycles_moduleCatCyclesMk]
+    simp
+
+variable {n} in
 /-- A finite sum of cycles built by `moduleCatCyclesMk` is the cycle built from the sum. -/
 lemma sum_moduleCatCyclesMk {κ : Type*} (s : Finset κ) (x : κ → K.X n) (m : ι)
     (hm : c.next n = m) (hx : ∀ i, K.d n m (x i) = 0) :
@@ -347,6 +518,22 @@ lemma homologyMap_homologyπ_moduleCatCyclesMk {L : HomologicalComplex (ModuleCa
   apply L.moduleCat_iCycles_injective
   rw [← ModuleCat.comp_apply, cyclesMap_i, ModuleCat.comp_apply, iCycles_moduleCatCyclesMk,
     iCycles_moduleCatCyclesMk]
+
+/-- **Local nilpotence passes to homology.** Let `φ` be a family of chain endomorphisms of a
+complex of modules. If every element of the degree-`n` term is killed by all sufficiently long
+composites of the maps `(φ i).f n`, then every degree-`n` homology class is killed by all
+sufficiently long composites of the induced maps `homologyMap (φ i) n`. -/
+theorem iSup_wordKer_homologyMap_eq_top {κ : Type*} (φ : κ → (K ⟶ K))
+    (h : ⨆ d, Module.End.wordKer (fun i ↦ ((φ i).f n).hom) d = ⊤) :
+    ⨆ d, Module.End.wordKer (fun i ↦ (homologyMap (φ i) n).hom) d = ⊤ := by
+  -- The cycles form a submodule of `K.X n` on which the maps `(φ i).f n` restrict to
+  -- `cyclesMap (φ i) n`, and the homology is a quotient of the cycles.
+  refine Module.End.iSup_wordKer_eq_top_of_surjective (f := fun i ↦ (cyclesMap (φ i) n).hom)
+    (fun i ↦ by rw [← ModuleCat.hom_comp, ← homologyπ_naturality, ModuleCat.hom_comp])
+    (K.moduleCat_homologyπ_surjective n) ?_
+  exact Module.End.iSup_wordKer_eq_top_of_injective
+    (fun i ↦ by rw [← ModuleCat.hom_comp, cyclesMap_i, ModuleCat.hom_comp])
+    (K.moduleCat_iCycles_injective n) h
 
 end HomologicalComplex
 

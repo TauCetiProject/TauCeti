@@ -48,6 +48,8 @@ and contains `D(X)` itself. The main instance is the common kernel `D(X ⧸ S) �
   and `centralizerCoefficient_def` are the public formulas for these two definitions.
 * `BialgHom.centralizerHopfIdeal`: the Hopf ideal cutting out the centralizer of the diagonalizable
   subgroup.
+* `BialgHom.centralizerHopfIdeal_toIdeal_fg`: the centralizer ideal is finitely generated when `H`
+  is of finite type, over any base ring.
 * `BialgHom.centralizerHopfIdeal_le_ker_iff`: an algebra-valued point kills the centralizer
   ideal exactly when it commutes with every point of the diagonalizable subgroup over every
   extension of its value algebra.
@@ -63,6 +65,8 @@ and contains `D(X)` itself. The main instance is the common kernel `D(X ⧸ S) �
   when the diagonalizable subgroup is central.
 * `BialgHom.centralizerHopfIdeal_comp_le`: the centralizer of a composite `D(Y) → D(X) → G`
   contains the centralizer of `D(X)`.
+* `BialgHom.centralizerHopfIdeal_mapDomainBialgHom_comp_eq_of_leftInverse`: a split injection
+  of character groups preserves the centralizer.
 * `BialgHom.centralizerHopfIdeal_comp_le_kerOfSurjective`: the centralizer of a composite
   `D(Y) → D(X) → G` contains `D(X)`.
 * `BialgHom.centralizerHopfIdeal_mapDomainBialgHom_mk'_comp_anti`: the centralizer of the common
@@ -214,6 +218,45 @@ theorem centralizerHopfIdeal_toIdeal :
     (centralizerHopfIdeal π).toIdeal =
       Ideal.span (Set.range fun p : H × X ↦ centralizerCoefficient π p.1 p.2) :=
   HopfIdeal.ofIdealOfPointsSubgroup_toIdeal _ _ _
+
+/-- **The centralizer ideal is finitely generated when `H` is of finite type**, over any base
+ring: the coefficients of the conjugation defects of finitely many algebra generators of `H`
+already generate it. -/
+theorem centralizerHopfIdeal_toIdeal_fg [Algebra.FiniteType R H] :
+    (centralizerHopfIdeal π).toIdeal.FG := by
+  obtain ⟨s, hs⟩ := Algebra.FiniteType.out (R := R) (A := H)
+  set T : Set H := ⋃ x ∈ s, Set.range (centralizerCoefficient π x)
+  have hT : T.Finite := s.finite_toSet.biUnion fun x _ ↦ by
+    have h : centralizerCoefficient π x = Comodule.tensorCoeffEquiv R X H (centralizerDefect π x) :=
+      funext fun χ ↦ by rw [centralizerCoefficient_def, Comodule.tensorCoeffEquiv_apply]
+    rw [h]
+    exact Finsupp.finite_range _
+  refine ⟨hT.toFinset, le_antisymm ?_ ?_⟩
+  · rw [hT.coe_toFinset, Ideal.span_le, centralizerHopfIdeal_toIdeal]
+    exact Set.iUnion₂_subset fun x _ ↦ Set.range_subset_iff.mpr fun χ ↦
+      Ideal.subset_span ⟨(x, χ), rfl⟩
+  · rw [hT.coe_toFinset]
+    let φ := Algebra.TensorProduct.map (Ideal.Quotient.mkₐ R (Ideal.span T))
+      (AlgHom.id R (MonoidAlgebra R X))
+    have key (x : H) :
+        φ (centralizerDefect π x) = 0 ↔ ∀ χ, centralizerCoefficient π x χ ∈ Ideal.span T := by
+      rw [Algebra.TensorProduct.map_apply_eq_map, AlgHom.toLinearMap_id,
+        map_centralizerDefect_eq_zero_iff]
+      simp [Ideal.Quotient.eq_zero_iff_mem]
+    -- The defect is the difference of two algebra maps `F` and `G`, which agree modulo the
+    -- span of `T` on the generators `s`, hence everywhere.
+    let F := (Algebra.TensorProduct.map (AlgHom.id R H) π.toAlgHom).comp
+      (HopfAlgebra.conjugationAlgHom (R := R) (H := H))
+    let G := (Algebra.TensorProduct.includeRight (R := R) (A := H)).comp π.toAlgHom
+    have hdef (x : H) : φ (centralizerDefect π x) = φ.comp F x - φ.comp G x := by
+      rw [centralizerDefect_def, map_sub]
+      rfl
+    have hFG : φ.comp F = φ.comp G := AlgHom.ext_of_adjoin_eq_top hs fun x hx ↦
+      sub_eq_zero.mp <| (hdef x).symm.trans <| (key x).mpr fun χ ↦
+        Ideal.subset_span (Set.mem_biUnion hx ⟨χ, rfl⟩)
+    rw [centralizerHopfIdeal_toIdeal, Ideal.span_le]
+    rintro _ ⟨⟨x, χ⟩, rfl⟩
+    exact (key x).mp (by rw [hdef, hFG, sub_self]) χ
 
 /-- A point of `G` kills the centralizer ideal exactly when it commutes with the point of `D(X)`
 carried by any injective algebra map `ψ` out of `A ⊗[R] R[X]`. The identity of `A ⊗[R] R[X]`
@@ -461,6 +504,25 @@ theorem centralizerHopfIdeal_comp_le (ψ : MonoidAlgebra R X →ₐc[R] MonoidAl
     rw [BialgHom.mapDomain_comp, MonoidHom.comp_apply]
     exact commute_mapValue_mapDomain_of_centralizerHopfIdeal_le_ker π hg φ _
   rwa [hker, HopfIdeal.toIdeal_le_toIdeal] at hg'
+
+/-- A split injective map of character groups does not change the centralizer of a
+composite diagonalizable subgroup. -/
+theorem centralizerHopfIdeal_mapDomainBialgHom_comp_eq_of_leftInverse
+    (f : X →* Y) (g : Y →* X) (hgf : g.comp f = MonoidHom.id X) :
+    centralizerHopfIdeal ((MonoidAlgebra.mapDomainBialgHom R f).comp π) =
+      centralizerHopfIdeal π := by
+  refine le_antisymm (BialgHom.centralizerHopfIdeal_comp_le _ _) ?_
+  have hπ : (MonoidAlgebra.mapDomainBialgHom R g).comp
+      ((MonoidAlgebra.mapDomainBialgHom R f).comp π) = π := by
+    rw [← BialgHom.comp_assoc, ← MonoidAlgebra.mapDomainBialgHom_comp, hgf,
+      MonoidAlgebra.mapDomainBialgHom_id]
+    exact BialgHom.id_comp _
+  calc
+    BialgHom.centralizerHopfIdeal π = BialgHom.centralizerHopfIdeal
+        ((MonoidAlgebra.mapDomainBialgHom R g).comp
+          ((MonoidAlgebra.mapDomainBialgHom R f).comp π)) :=
+      congrArg BialgHom.centralizerHopfIdeal hπ.symm
+    _ ≤ _ := BialgHom.centralizerHopfIdeal_comp_le _ _
 
 /-- **The diagonalizable subgroup `D(X)` lies in the centralizer of any composite
 `D(Y) → D(X) → G`**, being commutative. -/

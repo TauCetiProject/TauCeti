@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Local.ArtinMap
 public import TauCeti.NumberTheory.NumberField.Ideal.ArtinMap
 public import TauCeti.NumberTheory.NumberField.LocalGlobal.DecompositionGroup
 import TauCeti.Algebra.Group.Subgroup.Ker
+import TauCeti.GroupTheory.Abelianization.Basic
 import TauCeti.NumberTheory.ClassFieldTheory.Local.Unramified
 import TauCeti.NumberTheory.NumberField.LocalGlobal.Frobenius
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.RamificationIndex
@@ -84,7 +85,7 @@ noncomputable section
 
 namespace TauCeti.ClassFieldTheory
 
-open IsDedekindDomain NumberField
+open IsDedekindDomain _root_.NumberField
 open scoped AdicCompletionExtension Pointwise
 
 variable (K : Type) [Field K] [NumberField K] (L : Type) [Field L] [Algebra K L]
@@ -224,9 +225,8 @@ theorem localArtinAt_eq_one_iff_mem_normGroup [IsMulCommutative Gal(L/K)]
     induction z using QuotientGroup.induction_on with
     | H ρ =>
       intro h
-      have h' : φ ρ ∈ (Abelianization.of (G := Gal(L/K))).ker :=
-        MonoidHom.mem_ker.2 (by rwa [← Abelianization.map_of])
-      rw [Abelianization.ker_of, commutator_eq_bot, Subgroup.mem_bot] at h'
+      have h' : φ ρ = 1 := Abelianization.of_injective <| by
+        rwa [← Abelianization.map_of, map_one]
       have hρ : ρ = 1 := (HeightOneSpectrum.decompositionEquiv v w).symm.injective <|
         Subtype.ext (by simpa [φ] using h')
       rw [hρ]

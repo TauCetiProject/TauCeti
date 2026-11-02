@@ -11,6 +11,7 @@ public import TauCeti.Geometry.RealAlgebraic.SquarefreeBasis
 public import TauCeti.Geometry.RealAlgebraic.OrderInvariant
 public import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
 import Mathlib.Analysis.Complex.Polynomial.Basic
+import TauCeti.RingTheory.Polynomial.Resultant.Basic
 
 /-!
 # Nonsingular McCallum lifting
@@ -63,7 +64,7 @@ theorem nonempty_delineation_of_leadingCoeff_discr_resultant_ne_zero
   have hcop (b c : B) (hne : b ≠ c) (x : X) :
       IsCoprime (b.1.map (φ x)) (c.1.map (φ x)) := by
     have hr : resultant (b.1.map (φ x)) (c.1.map (φ x)) ≠ 0 := by
-      rw [hdeg b x, hdeg c x, resultant_map_map]
+      rw [resultant_map_of_natDegree_eq _ (hdeg b x) (hdeg c x)]
       exact hres _ b.2 _ c.2 (Subtype.coe_ne_coe.mpr hne) x
     exact not_not.mp fun h ↦ hr (resultant_eq_zero_iff.mpr ⟨Or.inl (hn b x), h⟩)
   refine nonempty_delineation (fun b j ↦ by simpa only [Polynomial.coeff_map] using hc _ b.2 j)

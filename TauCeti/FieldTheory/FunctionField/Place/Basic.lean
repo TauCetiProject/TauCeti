@@ -423,6 +423,16 @@ theorem mem_maximalIdeal_iff_ord_pos {f : P.integers} (hf : (f : F) ≠ 0) :
     f ∈ IsLocalRing.maximalIdeal P.integers ↔ 0 < P.ord (f : F) :=
   Valuation.mem_maximalIdeal_iff_ord_pos P.valuation hf
 
+/-- Multiplying by a function `s` of order `d` at `P` clears exactly the poles of order at most
+`d`: `s * x ∈ 𝒪_P` if and only if `v_P(x) ≤ exp d`. -/
+theorem mul_mem_integers_iff {P : Place k F} {s x : F} {d : ℤ} (hs0 : s ≠ 0)
+    (hs : P.ord s = d) : s * x ∈ P.integers ↔ P.valuation x ≤ WithZero.exp d := by
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp
+  rw [P.mem_integers_iff_ord_nonneg, P.ord_mul hs0 hx, P.valuation_eq_exp_neg_ord hx,
+    WithZero.exp_le_exp, hs]
+  omega
+
 /-- The valuation ring of a place is a proper subring of `F` (Stichtenoth,
 Definition 1.1.4). -/
 theorem integers_ne_top : P.integers ≠ ⊤ :=
@@ -509,6 +519,36 @@ positive order: the additive form of `TauCeti.Place.residue_eq_zero_iff_valuatio
 theorem residue_eq_zero_iff_ord_pos {f : P.integers} (hf : (f : F) ≠ 0) :
     IsLocalRing.residue P.integers f = 0 ↔ 0 < P.ord (f : F) := by
   rw [IsLocalRing.residue_eq_zero_iff, P.mem_maximalIdeal_iff_ord_pos hf]
+
+/-- Evaluating a polynomial over `k` commutes with the inclusion of the valuation ring. -/
+@[simp, norm_cast]
+theorem coe_aeval_integers (p : Polynomial k) (y : P.integers) :
+    ((Polynomial.aeval y p : P.integers) : F) = Polynomial.aeval (y : F) p := by
+  rw [← ValuationSubring.algebraMap_apply, ← Polynomial.aeval_algebraMap_apply,
+    ValuationSubring.algebraMap_apply]
+
+/-- Evaluating a polynomial over `k` commutes with evaluation at a place. The low simp priority
+lets `TauCeti.Place.residue_aeval_of_residue_eq_zero` fire first when it applies. -/
+@[simp low]
+theorem residue_aeval (p : Polynomial k) (y : P.integers) :
+    IsLocalRing.residue P.integers (Polynomial.aeval y p) =
+      Polynomial.aeval (IsLocalRing.residue P.integers y) p := by
+  rw [← IsLocalRing.ResidueField.algebraMap_eq, Polynomial.aeval_algebraMap_apply]
+
+/-- **A function is regular wherever a nonconstant polynomial in it is**: if `q(y) ∈ 𝒪_P` for a
+nonconstant `q ∈ k[X]`, then `y ∈ 𝒪_P`, since `y` is a root of the monic polynomial
+`(q(X) - q(y)) / lc(q)` with coefficients in `𝒪_P`. -/
+theorem mem_integers_of_aeval_mem_integers {q : Polynomial k} (hq : q.natDegree ≠ 0) {y : F}
+    (hy : Polynomial.aeval y q ∈ P.integers) : y ∈ P.integers := by
+  have hq0 : q.leadingCoeff ≠ 0 := Polynomial.leadingCoeff_ne_zero.mpr (by rintro rfl; simp at hq)
+  have hm : (Polynomial.C q.leadingCoeff⁻¹ * q).Monic :=
+    Polynomial.monic_C_mul_of_mul_leadingCoeff_eq_one (inv_mul_cancel₀ hq0)
+  refine P.mem_integers_of_isIntegral (R := P.integers) (fun r ↦ r.2)
+    (IsIntegral.of_aeval_monic (hm.map (algebraMap k P.integers)) ?_ ?_)
+  · rwa [hm.natDegree_map, Polynomial.natDegree_C_mul (inv_ne_zero hq0)]
+  · rw [Polynomial.aeval_map_algebraMap, map_mul, Polynomial.aeval_C]
+    have h := mul_mem (P.algebraMap_mem_integers q.leadingCoeff⁻¹) hy
+    simpa using isIntegral_algebraMap (R := P.integers) (A := F) (x := ⟨_, h⟩)
 
 /-- The **degree** `deg P = [F_P : k]` of a place (Stichtenoth, Definition 1.1.14). Its
 finiteness, which guards the junk value of `Module.finrank`, holds whenever `F/k` is a function

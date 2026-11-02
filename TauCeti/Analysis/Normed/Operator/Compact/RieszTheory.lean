@@ -156,26 +156,35 @@ variable [CompleteSpace 𝕜]
 
 variable [IsRCLikeNormedField 𝕜] [CompleteSpace X]
 
+/-- Every power of a compact perturbation of the identity has closed range. -/
+theorem _root_.IsCompactOperator.isClosed_range_pow_one_sub
+    (hK : IsCompactOperator K) (n : ℕ) :
+    IsClosed (LinearMap.range (((1 - K : X →L[𝕜] X) : X →ₗ[𝕜] X) ^ n) : Set X) := by
+  have h := ((1 - K) ^ n).isClosed_range_of_compact_estimate
+    (hK.isCompactOperator_one_sub_pow n) (C := 1)
+    (fun x ↦ by simpa using norm_le_norm_add_norm_sub' x (((1 - K) ^ n) x))
+  simpa only [ContinuousLinearMap.toLinearMap_pow] using h
+
+/-- The ranges of powers of a compact perturbation of the identity eventually stabilise. -/
+theorem _root_.IsCompactOperator.exists_range_pow_succ_eq_one_sub
+    (hK : IsCompactOperator K) :
+    ∃ p : ℕ, LinearMap.range (((1 - K : X →L[𝕜] X) : X →ₗ[𝕜] X) ^ (p + 1)) =
+      LinearMap.range (((1 - K : X →L[𝕜] X) : X →ₗ[𝕜] X) ^ p) := by
+  refine IsCompactOperator.exists_eq_succ_of_chain hK (fun n ↦ ?_)
+    (hK.isClosed_range_pow_one_sub) ?_
+  · rw [pow_succ, Module.End.mul_eq_comp]
+    exact LinearMap.range_comp_le_range _ _
+  · intro n x hx
+    obtain ⟨z, rfl⟩ := hx
+    refine ⟨z, ?_⟩
+    simp [pow_succ', Module.End.mul_apply]
+
 /-- The cokernel of a compact perturbation of the identity is finite dimensional. -/
 theorem _root_.IsCompactOperator.finiteDimensional_quotient_range_one_sub
     (hK : IsCompactOperator K) :
     FiniteDimensional 𝕜 (X ⧸ LinearMap.range ((1 - K : X →L[𝕜] X) : X →ₗ[𝕜] X)) := by
   set A : X →L[𝕜] X := 1 - K with hA
-  -- The ranges of the powers of `A` form a decreasing chain of closed subspaces, which must
-  -- stabilise at some `p`.
-  have hVclosed : ∀ n, IsClosed (LinearMap.range ((A : X →ₗ[𝕜] X) ^ n) : Set X) := fun n => by
-    have hKn : IsCompactOperator (1 - A ^ n : X →L[𝕜] X) := by
-      simpa only [hA] using hK.isCompactOperator_one_sub_pow n
-    have h := (A ^ n).isClosed_range_of_compact_estimate hKn (C := 1)
-      (fun x ↦ by simpa using norm_le_norm_add_norm_sub' x ((A ^ n) x))
-    simpa only [ContinuousLinearMap.toLinearMap_pow] using h
-  have hVmono : ∀ n, LinearMap.range ((A : X →ₗ[𝕜] X) ^ (n + 1)) ≤
-      LinearMap.range ((A : X →ₗ[𝕜] X) ^ n) := fun n => by
-    rw [pow_succ, Module.End.mul_eq_comp]
-    exact LinearMap.range_comp_le_range _ _
-  obtain ⟨p, hp⟩ := IsCompactOperator.exists_eq_succ_of_chain
-    (V := fun n => LinearMap.range ((A : X →ₗ[𝕜] X) ^ n)) hK hVmono hVclosed
-    fun n _ ⟨z, hz⟩ => ⟨z, by rw [pow_succ', Module.End.mul_apply, hz, hA]; simp⟩
+  obtain ⟨p, hp⟩ := hK.exists_range_pow_succ_eq_one_sub
   -- Then `ker (A ^ p)`, which is finite dimensional, together with `range A` spans `X`.
   have hcod : Codisjoint (LinearMap.ker ((A : X →ₗ[𝕜] X) ^ p))
       (LinearMap.range (A : X →ₗ[𝕜] X)) := by

@@ -31,11 +31,12 @@ precomposition with them is then a pair of mutually inverse
 bounded operators between `W^{1,p}` of the region and `W^{1,p}` of the half-space
 (`TauCeti.W1p.normalEpigraphEquivL`), and for `p < ∞` both preserve zero boundary values.
 
-Composing with the half-space trace `TauCeti.W1p.halfSpaceTrace` gives the trace on the graph,
-`TauCeti.W1p.normalEpigraphTrace φ : H¹(normalEpigraph φ) →L[ℝ] L²(E)`, a bounded operator. The
-graph is parametrized by `y ↦ (φ y, y)`, the image under the inverse flattening of the boundary
+For `1 ≤ p < ∞`, composing with the half-space trace `TauCeti.W1p.halfSpaceTrace` gives the
+trace on the graph, `TauCeti.W1p.normalEpigraphTrace : W^{1,p}(normalEpigraph φ) →L[ℝ] Lᵖ(E)`, a
+bounded operator of norm at most `p ^ (1 / p) (1 + K)`, and at most `1 + K` for `p = 2`. The graph
+is parametrized by `y ↦ (φ y, y)`, the image under the inverse flattening of the boundary
 point `(0, y)` of the half-space, and the trace is measured by Lebesgue measure on `E` rather
-than by surface measure on the graph. Its kernel is exactly `H¹₀` of the region
+than by surface measure on the graph. Its kernel is exactly `W^{1,p}_0` of the region
 (`TauCeti.W1p.ker_normalEpigraphTrace`), the characterization of the homogeneous Dirichlet
 condition by the trace.
 
@@ -44,8 +45,9 @@ condition by the trace.
 * `TauCeti.W1p.normalEpigraphEquivL`: `W^{1,p}` of the region is isomorphic to `W^{1,p}` of the
   half-space, with `TauCeti.W1p.normalEpigraphEquivL_mem_w1p0Submodule_iff`.
 * `TauCeti.W1p.normalEpigraphTrace`: the trace on the graph, with
-  `TauCeti.W1p.norm_normalEpigraphTrace_le`, `TauCeti.W1p.opNorm_normalEpigraphTrace_le` and
-  `TauCeti.W1p.ker_normalEpigraphTrace`.
+  `TauCeti.W1p.norm_normalEpigraphTrace_le`, `TauCeti.W1p.opNorm_normalEpigraphTrace_le`, their
+  `H¹` versions `TauCeti.W1p.norm_normalEpigraphTrace_two_le` and
+  `TauCeti.W1p.opNorm_normalEpigraphTrace_two_le`, and `TauCeti.W1p.ker_normalEpigraphTrace`.
 
 ## References
 
@@ -231,52 +233,66 @@ end Flatten
 
 section Trace
 
-variable {φ : C(E, ℝ)} {K : ℝ≥0}
+variable {φ : C(E, ℝ)} {K : ℝ≥0} {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-/-- **The trace on the graph of a Lipschitz function.** For a `K`-Lipschitz `φ`, the trace of
-`u ∈ H¹` of the region `{φ y < t}` above the graph is the
-half-space trace of the flattened function `u ∘ (graphFlattening φ).symm`. It is an element of
-`L²(E)`: the graph is parametrized by `y ↦ (φ y, y)`, the image under inverse flattening of the
-boundary point `(0, y)` of the half-space. -/
-def W1p.normalEpigraphTrace (hφ : LipschitzWith K φ) :
-    W1p volume (normalEpigraph φ) 2 →L[ℝ] Lp ℝ 2 (volume : Measure E) :=
-  (W1p.halfSpaceTrace (p := 2) ENNReal.ofNat_ne_top 0).comp
-    (W1p.normalEpigraphEquivL hφ).toContinuousLinearMap
+/-- **The trace on the graph of a Lipschitz function.** For `1 ≤ p < ∞` and a `K`-Lipschitz `φ`,
+the trace of `u ∈ W^{1,p}` of the region `{φ y < t}` above the graph is the half-space trace of the
+flattened function `u ∘ (graphFlattening φ).symm`. It is an element of `Lᵖ(E)`: the graph is
+parametrized by `y ↦ (φ y, y)`, the image under inverse flattening of the boundary point `(0, y)`
+of the half-space. -/
+def W1p.normalEpigraphTrace (hp : p ≠ ∞) (hφ : LipschitzWith K φ) :
+    W1p volume (normalEpigraph φ) p →L[ℝ] Lp ℝ p (volume : Measure E) :=
+  (W1p.halfSpaceTrace hp 0).comp (W1p.normalEpigraphEquivL hφ).toContinuousLinearMap
 
-theorem W1p.normalEpigraphTrace_apply (hφ : LipschitzWith K φ)
-    (u : W1p volume (normalEpigraph φ) 2) :
-    W1p.normalEpigraphTrace hφ u =
-      W1p.halfSpaceTrace ENNReal.ofNat_ne_top 0 (W1p.normalEpigraphEquivL hφ u) :=
+theorem W1p.normalEpigraphTrace_apply (hp : p ≠ ∞) (hφ : LipschitzWith K φ)
+    (u : W1p volume (normalEpigraph φ) p) :
+    W1p.normalEpigraphTrace hp hφ u =
+      W1p.halfSpaceTrace hp 0 (W1p.normalEpigraphEquivL hφ u) :=
   (rfl)
 
-/-- **The trace inequality on a graph domain**: `‖Tu‖_{L²} ≤ (1 + K) ‖u‖_{H¹}`. -/
-theorem W1p.norm_normalEpigraphTrace_le (hφ : LipschitzWith K φ)
+/-- **The trace inequality on a graph domain**: for `1 ≤ p < ∞`,
+`‖Tu‖_{Lᵖ} ≤ p ^ (1 / p) (1 + K) ‖u‖_{W^{1,p}}`. -/
+theorem W1p.norm_normalEpigraphTrace_le (hp : p ≠ ∞) (hφ : LipschitzWith K φ)
+    (u : W1p volume (normalEpigraph φ) p) :
+    ‖W1p.normalEpigraphTrace hp hφ u‖ ≤ p.toReal ^ p.toReal⁻¹ * (1 + K) * ‖u‖ := by
+  rw [mul_assoc]
+  exact (W1p.norm_halfSpaceTrace_le hp 0 _).trans
+    (mul_le_mul_of_nonneg_left (W1p.norm_normalEpigraphEquivL_le hφ u) (by positivity))
+
+/-- For `1 ≤ p < ∞`, the trace on a graph domain has operator norm at most
+`p ^ (1 / p) (1 + K)`. -/
+theorem W1p.opNorm_normalEpigraphTrace_le (hp : p ≠ ∞) (hφ : LipschitzWith K φ) :
+    ‖W1p.normalEpigraphTrace hp hφ‖ ≤ p.toReal ^ p.toReal⁻¹ * (1 + K) :=
+  ContinuousLinearMap.opNorm_le_bound _ (by positivity) (W1p.norm_normalEpigraphTrace_le hp hφ)
+
+/-- **The `H¹` trace inequality on a graph domain**: `‖Tu‖_{L²} ≤ (1 + K) ‖u‖_{H¹}`. -/
+theorem W1p.norm_normalEpigraphTrace_two_le (hφ : LipschitzWith K φ)
     (u : W1p volume (normalEpigraph φ) 2) :
-    ‖W1p.normalEpigraphTrace hφ u‖ ≤ (1 + K) * ‖u‖ :=
+    ‖W1p.normalEpigraphTrace ENNReal.ofNat_ne_top hφ u‖ ≤ (1 + K) * ‖u‖ :=
   (W1p.norm_halfSpaceTrace_le_norm 0 _).trans (W1p.norm_normalEpigraphEquivL_le hφ u)
 
-/-- The trace on a graph domain has operator norm at most `1 + K`. -/
-theorem W1p.opNorm_normalEpigraphTrace_le (hφ : LipschitzWith K φ) :
-    ‖W1p.normalEpigraphTrace hφ‖ ≤ 1 + K :=
+/-- The `H¹` trace on a graph domain has operator norm at most `1 + K`. -/
+theorem W1p.opNorm_normalEpigraphTrace_two_le (hφ : LipschitzWith K φ) :
+    ‖W1p.normalEpigraphTrace (p := 2) ENNReal.ofNat_ne_top hφ‖ ≤ 1 + K :=
   ContinuousLinearMap.opNorm_le_bound _ (zero_le_one.trans (one_le_one_add K))
-    (W1p.norm_normalEpigraphTrace_le hφ)
+    (W1p.norm_normalEpigraphTrace_two_le hφ)
 
-/-- **The functions of zero trace on a graph domain are those of `H¹₀`.** -/
-theorem W1p.mem_w1p0Submodule_iff_normalEpigraphTrace_eq_zero (hφ : LipschitzWith K φ)
-    (u : W1p volume (normalEpigraph φ) 2) :
-    u ∈ w1p0Submodule volume (normalEpigraph φ) 2 ↔ W1p.normalEpigraphTrace hφ u = 0 := by
-  rw [W1p.normalEpigraphTrace_apply, ← W1p.mem_w1p0Submodule_iff_halfSpaceTrace_eq_zero,
-    W1p.normalEpigraphEquivL_mem_w1p0Submodule_iff (p := 2) ENNReal.ofNat_ne_top]
+/-- **The functions of zero trace on a graph domain are those of `W^{1,p}_0`.** -/
+theorem W1p.mem_w1p0Submodule_iff_normalEpigraphTrace_eq_zero (hp : p ≠ ∞)
+    (hφ : LipschitzWith K φ) (u : W1p volume (normalEpigraph φ) p) :
+    u ∈ w1p0Submodule volume (normalEpigraph φ) p ↔ W1p.normalEpigraphTrace hp hφ u = 0 := by
+  rw [W1p.normalEpigraphTrace_apply, ← W1p.mem_w1p0Submodule_iff_halfSpaceTrace_eq_zero hp,
+    W1p.normalEpigraphEquivL_mem_w1p0Submodule_iff hp]
 
-/-- **The kernel of the trace on a graph domain is `H¹₀`.** On the region above the graph of a
-Lipschitz function, the trace `H¹ → L²(E)` vanishes exactly on the closure of the test
-functions. -/
-theorem W1p.ker_normalEpigraphTrace (hφ : LipschitzWith K φ) :
-    LinearMap.ker (W1p.normalEpigraphTrace hφ).toLinearMap =
-      (w1p0Submodule volume (normalEpigraph φ) 2).toSubmodule := by
+/-- **The kernel of the trace on a graph domain is `W^{1,p}_0`.** For `1 ≤ p < ∞`, on the region
+above the graph of a Lipschitz function, the trace `W^{1,p} → Lᵖ(E)` vanishes exactly on the
+closure of the test functions. -/
+theorem W1p.ker_normalEpigraphTrace (hp : p ≠ ∞) (hφ : LipschitzWith K φ) :
+    LinearMap.ker (W1p.normalEpigraphTrace hp hφ).toLinearMap =
+      (w1p0Submodule volume (normalEpigraph φ) p).toSubmodule := by
   ext u
   rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, ClosedSubmodule.mem_toSubmodule_iff,
-    W1p.mem_w1p0Submodule_iff_normalEpigraphTrace_eq_zero hφ]
+    W1p.mem_w1p0Submodule_iff_normalEpigraphTrace_eq_zero hp hφ]
 
 end Trace
 

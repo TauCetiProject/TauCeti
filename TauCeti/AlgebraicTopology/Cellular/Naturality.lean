@@ -23,7 +23,10 @@ of both complexes.
 
 The source is A. Hatcher, *Algebraic Topology*, Section 2.2, Theorem 2.35 and the discussion
 of cellular maps following it. The comparison maps and their formulas on cycles are those
-of `TauCeti.cellularCyclesIso` and `TauCeti.cellularSingularHomologyIso`.
+of `TauCeti.cellularCyclesIso` and `TauCeti.cellularSingularHomologyIso`. For absolute CW
+complexes, the comparison `TauCeti.cellularSingularHomologyIsoOfCWComplex` with ordinary singular
+homology is natural for the same reason
+(`TauCeti.cellularSingularHomologyIsoOfCWComplex_hom_naturality`).
 -/
 
 public section
@@ -103,5 +106,47 @@ lemma cellularSingularHomologyIso_inv_naturality :
         homologyMap (cellularChainComplexMap C C' hf R) n := by
   rw [Iso.comp_inv_eq, Category.assoc, Iso.eq_inv_comp]
   exact (cellularSingularHomologyIso_hom_naturality C C' hf R n).symm
+
+section Absolute
+
+variable {X Y : Type w} [TopologicalSpace X] [T2Space X] [TopologicalSpace Y] [T2Space Y]
+  (C : Set X) [CWComplex C] (C' : Set Y) [CWComplex C']
+  {f : TopCat.of C ⟶ TopCat.of C'} (hf : IsCellular C C' f)
+  {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A] (R : A)
+  [∀ m, HasExactColimitsOfShape (Discrete (cell C m)) A]
+  [∀ m, HasExactColimitsOfShape (Discrete (cell C' m)) A] (n : ℕ)
+  [IsIso ((skeletonBasePair C (n + 1)).singularHomologyMap
+    (skeletonBasePairToComplex C (n + 1)) R n)]
+  [IsIso ((skeletonBasePair C' (n + 1)).singularHomologyMap
+    (skeletonBasePairToComplex C' (n + 1)) R n)]
+
+/-- The comparison of cellular homology of a CW complex with its ordinary singular homology is
+natural under cellular maps. -/
+@[reassoc]
+lemma cellularSingularHomologyIsoOfCWComplex_hom_naturality :
+    homologyMap (cellularChainComplexMap C C' hf R) n ≫
+        (cellularSingularHomologyIsoOfCWComplex C' R n).hom =
+      (cellularSingularHomologyIsoOfCWComplex C R n).hom ≫
+        ((AlgebraicTopology.singularHomologyFunctor A n).obj R).map f := by
+  apply (cancel_mono ((complexBasePair C').singularHomologyπ R n)).1
+  have h := TopPair.singularHomologyπ_naturality (complexBasePairMap C C' hf) (R := R) n
+  rw [complexBasePairMap_fst] at h
+  -- The source of `singularHomologyπ` is the homology of the singular simplicial set, which is
+  -- `((singularHomologyFunctor A n).obj R).obj` of the space only up to unfolding, so the
+  -- composites below are reassociated by terms rather than by `rw` or `simp`.
+  calc _ = homologyMap (cellularChainComplexMap C C' hf R) n ≫
+          (cellularSingularHomologyIso C' R n).hom :=
+        (Category.assoc _ _ _).trans (homologyMap _ n ≫=
+          cellularSingularHomologyIsoOfCWComplex_hom_comp_singularHomologyπ C' R n)
+    _ = (cellularSingularHomologyIso C R n).hom ≫
+          (complexBasePair C).singularHomologyMap (complexBasePairMap C C' hf) R n :=
+        cellularSingularHomologyIso_hom_naturality C C' hf R n
+    _ = _ := by
+      rw [← cellularSingularHomologyIsoOfCWComplex_hom_comp_singularHomologyπ C R n]
+      exact (Category.assoc _ _ _).trans
+        (((cellularSingularHomologyIsoOfCWComplex C R n).hom ≫= h.symm).trans
+          (Category.assoc _ _ _).symm)
+
+end Absolute
 
 end TauCeti

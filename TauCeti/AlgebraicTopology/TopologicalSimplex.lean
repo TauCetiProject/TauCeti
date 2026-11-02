@@ -8,16 +8,19 @@ module
 public import Mathlib.AlgebraicTopology.SimplicialSet.StdSimplexOne
 public import Mathlib.AlgebraicTopology.SimplicialSet.TopAdj
 public import Mathlib.AlgebraicTopology.SingularSet
+public import Mathlib.CategoryTheory.Limits.Shapes.SingleObj
 public import TauCeti.Geometry.Convex.ConvexSpace.ContractibleSpaceStdSimplex
 public import TauCeti.Geometry.Convex.ConvexSpace.LocallyPathConnectedSpaceStdSimplex
+public import TauCeti.Topology.Category.TopCat.Action
 
 /-!
 # The topological simplices and the singular simplices of a space
 
 The topological `n`-simplex is a standard simplex on a finite nonempty type, up to a universe
-lift, hence contractible and in particular simply connected, and locally path connected.  This
-file also names its initial vertex, and the continuous map on the topological `n`-simplex that
-underlies a singular `n`-simplex of a space.
+lift, hence contractible and in particular simply connected, and locally path connected. The
+geometric realization `|Δ[n]|` of the standard simplicial simplex, being homeomorphic to it, is
+contractible as well.  This file also names its initial vertex, and the continuous map on the
+topological `n`-simplex that underlies a singular `n`-simplex of a space.
 
 ## Main declarations
 
@@ -26,6 +29,9 @@ underlies a singular `n`-simplex of a space.
 * `TauCeti.TopCat.simplexMap`: the continuous map underlying a singular simplex, with its
   behaviour under reindexing, pushforward and the lax monoidal structure of `TopCat.toSSet`, and
   the endpoints of the parametrization `SSet.stdSimplex.toSSetObjI` of the unit interval.
+* `TauCeti.TopCat.mulActionToSSetObj`: a continuous action on a space acts on its singular
+  simplices by translation, freely if it is free on the space
+  (`TauCeti.TopCat.isCancelSMul_toSSetObj`).
 -/
 
 public section
@@ -42,6 +48,12 @@ namespace SimplexCategory
 finite nonempty type. -/
 instance contractibleSpace (n : SimplexCategory) : ContractibleSpace (toTop.{u}.obj n) :=
   (Homeomorph.ulift (X := StdSimplex ℝ (Fin (n.len + 1)))).contractibleSpace
+
+/-- The geometric realization `|Δ[n]|` of every standard simplex is contractible, being
+homeomorphic to a standard simplex on a finite nonempty type. -/
+instance contractibleSpace_toTop_stdSimplex (n : SimplexCategory) :
+    ContractibleSpace |SSet.stdSimplex.{u}.obj n| :=
+  n.toTopHomeo.contractibleSpace
 
 /-- Every topological simplex is locally path connected, being a universe lift of a standard
 simplex on a finite type. -/
@@ -135,6 +147,13 @@ lemma simplexMap_map (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m) :
     simplexMap ((TopCat.toSSet.obj X).map α σ) =
       (simplexMap σ).comp (SimplexCategory.toTop.map α.unop).hom := rfl
 
+/-- The image of a reindexed singular simplex, for instance of a face, lies in the image of the
+original simplex. -/
+lemma range_simplexMap_map_subset (α : m ⟶ n) (σ : (TopCat.toSSet.obj X).obj m) :
+    Set.range (simplexMap ((TopCat.toSSet.obj X).map α σ)) ⊆ Set.range (simplexMap σ) := by
+  rw [simplexMap_map, ContinuousMap.coe_comp]
+  exact Set.range_comp_subset_range _ _
+
 /-- Pushing a singular simplex forward along a continuous map postcomposes the underlying
 continuous map with that map. -/
 @[simp]
@@ -195,6 +214,44 @@ lemma homeomorph_simplexMap_toSSetObjI_toTop_map_δ_zero :
   rw [simplexMap_toSSetObjI_objMk₁_toTop_map _ (ε := 1) rfl,
     SSet.stdSimplex.toSSetObj_app_const_one, simplexMap_toSSetObj₀Equiv_symm_apply,
     TopCat.I.homeomorph_one]
+
+section Action
+
+variable (E : _root_.TopCat.{u}) (G : Type*) [Monoid G] [MulAction G E] [ContinuousConstSMul G E]
+
+/-- The action of `G` on the singular simplices of a `G`-space `E` by translation, induced from
+the functor `SingleObj G ⥤ Type u` they form: `g` pushes a simplex forward along `g • ·`
+(`TauCeti.TopCat.toSSetObj_smul_def`). -/
+noncomputable instance mulActionToSSetObj (n : SimplexCategoryᵒᵖ) :
+    MulAction G ((_root_.TopCat.toSSet.obj E).obj n) :=
+  inferInstanceAs (MulAction G
+    (((E.actionFunctor G ⋙ _root_.TopCat.toSSet) ⋙ (evaluation _ _).obj n).obj
+      (SingleObj.star G)))
+
+variable {E G}
+
+/-- An element `g` acts on a singular simplex by pushing it forward along `g • ·`. -/
+lemma toSSetObj_smul_def {n : SimplexCategoryᵒᵖ} (g : G) (σ : (_root_.TopCat.toSSet.obj E).obj n) :
+    g • σ = (_root_.TopCat.toSSet.map
+      (_root_.TopCat.ofHom ⟨(g • · : E → E), continuous_const_smul g⟩)).app n σ :=
+  (rfl)
+
+end Action
+
+section Free
+
+variable {E : _root_.TopCat.{u}} {G : Type*} [Group G] [MulAction G E] [ContinuousConstSMul G E]
+
+/-- **A free action on a space is free on its singular simplices**: two translates of a simplex
+that agree also agree at one point of the topological simplex. -/
+instance isCancelSMul_toSSetObj [IsCancelSMul G E] (n : SimplexCategoryᵒᵖ) :
+    IsCancelSMul G ((_root_.TopCat.toSSet.obj E).obj n) where
+  right_cancel' g h σ hσ := by
+    have hx := congr(simplexMap $hσ (SimplexCategory.toTopInitialVertex n.unop))
+    simp only [toSSetObj_smul_def, simplexMap_app] at hx
+    exact IsCancelSMul.right_cancel g h _ hx
+
+end Free
 
 end TauCeti.TopCat
 

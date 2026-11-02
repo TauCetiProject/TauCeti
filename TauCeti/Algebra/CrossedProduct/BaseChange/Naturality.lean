@@ -38,9 +38,11 @@ public section
 
 noncomputable section
 
+universe u
+
 namespace TauCeti
 
-variable {K L : Type} [Field K] [Field L] [Algebra K L] [FiniteDimensional K L]
+variable {K L : Type u} [Field K] [Field L] [Algebra K L] [FiniteDimensional K L]
   (σ : L →ₐ[K] SeparableClosure K)
 
 /-- Scalar extension of any Brauer class corresponds to restriction under the

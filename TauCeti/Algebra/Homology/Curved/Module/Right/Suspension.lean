@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.Curved.Module.Right.Stable
+public import TauCeti.CategoryTheory.Exact.Stable.Connecting
 public import TauCeti.CategoryTheory.Exact.Stable.Shift
 public import TauCeti.CategoryTheory.Exact.Stable.Suspension
 
@@ -32,6 +33,8 @@ curved homotopy category.
   stable-to-homotopy comparison intertwines stable suspension with the shift by one.
 * `TauCeti.CurvedDGRightModuleCat.gradedSplitStableToHomotopyCommShift`: the stable-to-homotopy
   comparison commutes with the shifts by `ℤ`.
+* `TauCeti.CurvedDGRightModuleCat.gradedSplitStableToHomotopy_map_connectingMap`: identity-cone
+  extensions compute the transported stable connecting arrows of graded-split conflations.
 
 ## References
 
@@ -184,5 +187,59 @@ theorem gradedSplitStableToHomotopyCommShift_iso_one :
       Functor.isoWhiskerRight gradedSplitExact_isFrobenius.stableShiftFunctorOneIso _ ≪≫
         stableSuspensionCompGradedSplitStableToHomotopyIso :=
   gradedSplitExact_isFrobenius.commShiftOfIntertwiningStableSuspensionShift_iso_one _ _
+
+section Connecting
+
+attribute [local implicit_reducible] coneIdentityInjectivePresentation
+  EnrichedFunctor.ofDGMap EnrichedFunctor.mapDGHomotopyCategory
+
+/-- The stable connecting arrow of a graded-split conflation is the homotopy class of the map
+induced by an extension to the identity-cone presentation. The canonical suspension and shift
+comparisons identify its target with the cohomological shift, with positive sign. -/
+theorem gradedSplitStableToHomotopy_map_connectingMap
+    {S : ShortComplex (ForgetEnrichment (CochainComplex (ModuleCat R) ℤ)
+      (CurvedDGRightModuleCat.{u, u, u} h))}
+    (hS : (gradedSplitExact (h := h)).Conflation S)
+    (a : S.X₂ ⟶ (coneIdentityInjectivePresentation (ForgetEnrichment.to _ S.X₁)).I)
+    (δ : S.X₃ ⟶ (coneIdentityInjectivePresentation (ForgetEnrichment.to _ S.X₁)).K)
+    (ha : S.f ≫ a = (coneIdentityInjectivePresentation (ForgetEnrichment.to _ S.X₁)).i)
+    (hδ : S.g ≫ δ = a ≫ (coneIdentityInjectivePresentation (ForgetEnrichment.to _ S.X₁)).p) :
+    letI := (gradedSplitExact_isFrobenius (h := h)).stableHasShift
+    letI := gradedSplitStableToHomotopyCommShift (h := h)
+    (gradedSplitStableToHomotopy (h := h)).map
+        ((gradedSplitExact (h := h)).projectiveStableFunctor.map
+            ((gradedSplitExact_isFrobenius (h := h)).connectingMap hS) ≫
+          eqToHom
+            (gradedSplitExact_isFrobenius.stableSuspension_obj_projectiveStableFunctor_obj
+              S.X₁).symm ≫
+          (gradedSplitExact_isFrobenius (h := h)).stableShiftFunctorOneIso.inv.app
+            ((gradedSplitExact (h := h)).projectiveStableFunctor.obj S.X₁)) ≫
+        ((gradedSplitStableToHomotopy (h := h)).commShiftIso (1 : ℤ)).hom.app
+          ((gradedSplitExact (h := h)).projectiveStableFunctor.obj S.X₁) =
+      eqToHom (gradedSplitStableToHomotopy_obj_projectiveStableFunctor_obj S.X₃) ≫
+        (dgClosedToHomotopy R).map δ ≫ eqToHom (by simp) := by
+  let := (gradedSplitExact_isFrobenius (h := h)).stableHasShift
+  let := gradedSplitStableToHomotopyCommShift (h := h)
+  have key := congrArg ((gradedSplitStableToHomotopy (h := h)).map)
+    ((gradedSplitExact_isFrobenius (h := h)).projectiveStableFunctor_map_eq_connectingMap_comp
+      hS (coneIdentityInjectivePresentation (ForgetEnrichment.to _ S.X₁)) a δ ha hδ)
+  -- The generic factorization is typed at represented stable objects, while δ is a closed
+  -- map. Align its image first, then normalize the public comparison transports.
+  erw [gradedSplitStableToHomotopy_map_projectiveStableFunctor_map (h := h) δ] at key
+  simp only [gradedSplitStableToHomotopy_map_projectiveStableFunctor_map, Functor.map_comp,
+    ExactStructure.IsFrobenius.projectiveStableIsoSuspensionObj_inv, Category.assoc,
+    eqToHom_trans_assoc, eqToHom_refl, Category.id_comp] at key
+  rw [eqToHom_comp_iff, comp_eqToHom_iff] at key
+  simp only [Functor.map_comp, gradedSplitStableToHomotopy_map_projectiveStableFunctor_map,
+    gradedSplitStableToHomotopyCommShift_iso_one, Iso.trans_hom,
+    Functor.isoWhiskerRight_hom, NatTrans.comp_app, Functor.comp_obj,
+    Functor.whiskerRight_app, stableSuspensionCompGradedSplitStableToHomotopyIso_hom_app,
+    gradedSplitStableSuspensionIsoShift_hom_app, Category.assoc,
+    Iso.inv_hom_id_app_map_assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
+  simp only [key, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp, Category.assoc,
+    eqToHom_map]
+  simp only [dgClosedToHomotopy_commShiftIso_hom_app, eqToHom_trans]
+
+end Connecting
 
 end TauCeti.CurvedDGRightModuleCat

@@ -23,6 +23,12 @@ The weaker vertex-box condition `IsVertexBoxRegularOverPolyad` only tests restri
 three vertex cells, keeping the full pair graphs. It follows from top regularity at any positive
 rank.
 
+Top regularity passes to smaller polyads. If the three pair graphs of a polyad `P'`, possibly over
+another skeleton such as a refinement of the skeleton of `P`, lie in those of `P`, then every
+subpolyad of `P'` is a subpolyad of `P` with the same support. Hence a large `P'` inherits the
+relative densities of `P` up to `δ`, and the slicing lemma makes `H` top-regular over `P'` with a
+parameter worsened by a factor depending only on the relative size of `P'`.
+
 ## Main definitions
 
 * `TauCeti.Colored3Graph.IsTopRegularOverPolyad`: `(δ, r)`-regularity over a polyad.
@@ -36,6 +42,13 @@ rank.
   regularity at every lower rank.
 * `TauCeti.Colored3Graph.isTopRegularOverPolyad_one_iff`: at rank one the condition tests single
   subpolyads.
+* `TauCeti.Colored3Graph.IsTopRegularOverPolyad.nonneg`: the parameter of a top-regular coloring
+  is nonnegative.
+* `TauCeti.Colored3Graph.IsTopRegularOverPolyad.abs_relativeDensity_sub_le`: a large polyad with
+  smaller pair graphs inherits the relative densities up to `δ`.
+* `TauCeti.Colored3Graph.IsTopRegularOverPolyad.of_pairSupport_subset`: the slicing lemma; top
+  regularity passes to every polyad with smaller pair graphs and at least an `α`-fraction of the
+  support, with parameter `max (2δ) (δ / α)`.
 * `TauCeti.Colored3Graph.IsTopRegularOverPolyad.isVertexBoxRegularOverPolyad`: top regularity at a
   positive rank implies vertex-box regularity.
 * `TauCeti.Colored3Graph.isTopRegularOverPolyad_const`: a constant coloring is top-regular over
@@ -43,6 +56,9 @@ rank.
 
 ## References
 
+* J. Komlós and M. Simonovits, *Szemerédi's regularity lemma and its applications in graph
+  theory*, in Combinatorics, Paul Erdős is Eighty, Vol. 2 (1996), Fact 1.5 (the graph slicing
+  lemma, whose argument the hypergraph slicing lemma follows).
 * V. Rödl and M. Schacht, *Regular partitions of hypergraphs: regularity lemmas*,
   Combin. Probab. Comput. 16 (2007).
 * B. Nagle, V. Rödl and M. Schacht, *The counting lemma for regular k-uniform hypergraphs*,
@@ -117,6 +133,63 @@ theorem isTopRegularOverPolyad_of_one_le (hδ : 1 ≤ δ) : H.IsTopRegularOverPo
   have h₀' : (0 : ℝ) ≤ H.relativeDensity c P := mod_cast H.relativeDensity_nonneg c P
   have h₁' : (H.relativeDensity c P : ℝ) ≤ 1 := mod_cast H.relativeDensity_le_one c P
   exact abs_sub_le_iff.2 ⟨by linarith, by linarith⟩
+
+/-- Top regularity over a polyad forces a nonnegative parameter when the top palette is
+nonempty: for a negative parameter, every family passes the size threshold. -/
+theorem IsTopRegularOverPolyad.nonneg [Nonempty κ] (h : H.IsTopRegularOverPolyad P δ r) :
+    0 ≤ δ := by
+  by_contra! hδ
+  have hQ : δ * #P.support ≤ #(unionSupport fun _ : Fin r ↦ ofSubcells P ∅ ∅ ∅) :=
+    (mul_nonpos_of_nonpos_of_nonneg hδ.le (Nat.cast_nonneg _)).trans (Nat.cast_nonneg _)
+  exact (abs_nonneg _).not_gt ((h (Classical.arbitrary κ) _ hQ).trans_lt hδ)
+
+section inclusion
+
+variable {κ₂' : Type*} {S' : PairSkeleton3 κ₂' V} {P' : Polyad3 S'}
+  (h₀₁ : P'.pairSupport₀₁ ⊆ P.pairSupport₀₁) (h₀₂ : P'.pairSupport₀₂ ⊆ P.pairSupport₀₂)
+  (h₁₂ : P'.pairSupport₁₂ ⊆ P.pairSupport₁₂)
+include h₀₁ h₀₂ h₁₂
+
+/-- **Density inheritance.** If `H` is top-regular over `P` at a positive rank, then over every
+polyad `P'` whose pair graphs lie in those of `P` and whose support passes the size threshold,
+each top color has relative density within `δ` of its relative density over `P`. The polyad
+`P'` may live over a different skeleton, for instance one refining the skeleton of `P`. -/
+theorem IsTopRegularOverPolyad.abs_relativeDensity_sub_le (h : H.IsTopRegularOverPolyad P δ r)
+    (hr : 1 ≤ r) (hP' : δ * #P.support ≤ #P'.support) (c : κ) :
+    |(H.relativeDensity c P' : ℝ) - H.relativeDensity c P| ≤ δ := by
+  have hQ := support_inclusion h₀₁ h₀₂ h₁₂ (ofSubcells P' P'.c₀ P'.c₁ P'.c₂)
+  rw [support_ofSubcells_cells] at hQ
+  have := isTopRegularOverPolyad_one_iff.1 (h.of_rank_le hr) c _ (hQ ▸ hP')
+  rwa [hQ, ← relativeDensity_def] at this
+
+/-- **Slicing lemma.** If `H` is `(δ, r)`-top-regular over `P` at a positive rank, then it is
+`(max (2δ) (δ / α), r)`-top-regular over every polyad `P'` whose pair graphs lie in those of `P`
+and whose support is at least an `α`-fraction of the support of `P`. The polyad `P'` may live
+over a different skeleton, so this is how top regularity passes to a refined lower skeleton. -/
+theorem IsTopRegularOverPolyad.of_pairSupport_subset (h : H.IsTopRegularOverPolyad P δ r)
+    (hr : 1 ≤ r) {α : ℝ} (hα : 0 < α) (hP' : α * #P.support ≤ #P'.support) :
+    H.IsTopRegularOverPolyad P' (max (2 * δ) (δ / α)) r := by
+  intro c Q hQ
+  have hδ : 0 ≤ δ := haveI : Nonempty κ := ⟨c⟩; h.nonneg
+  obtain hαδ | hδα := lt_or_ge α δ
+  · exact isTopRegularOverPolyad_of_one_le (H := H) (P := P') (r := r)
+      (le_max_of_le_right ((one_lt_div hα).2 hαδ).le) c Q hQ
+  -- The included family passes the original size threshold over `P`.
+  have hU : δ * #P.support ≤ #(unionSupport fun i ↦ (Q i).inclusion h₀₁ h₀₂ h₁₂) := by
+    rw [unionSupport_inclusion]
+    calc δ * #P.support = δ / α * (α * #P.support) := by rw [← mul_assoc, div_mul_cancel₀ δ hα.ne']
+      _ ≤ δ / α * #P'.support := by gcongr
+      _ ≤ max (2 * δ) (δ / α) * #P'.support := by gcongr; exact le_max_right _ _
+      _ ≤ #(unionSupport Q) := hQ
+  have h₁ := h c _ hU
+  rw [unionSupport_inclusion] at h₁
+  have h₂ := h.abs_relativeDensity_sub_le h₀₁ h₀₂ h₁₂ hr (by grw [hδα, hP']) c
+  rw [abs_sub_comm] at h₂
+  calc _ ≤ _ := abs_sub_le _ (H.relativeDensity c P : ℝ) _
+    _ ≤ 2 * δ := by linarith
+    _ ≤ _ := le_max_left _ _
+
+end inclusion
 
 variable (P r) in
 /-- A constant coloring is `(δ, r)`-top-regular over every polyad, for every rank and every

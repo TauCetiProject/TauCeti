@@ -17,7 +17,9 @@ import TauCeti.Data.Finset.Basic
 
 This file expresses a finite increment of the exponential in a possibly noncommutative real
 Banach algebra as an integral. Unlike a first-order derivative formula, the identity is exact for
-every increment. It also derives the corresponding integral formula for the Fréchet derivative.
+every increment. It also derives the corresponding integral formula for the Fréchet derivative,
+the derivative at zero of conjugation by an exponential, and the complex-time differentiability
+of the conjugation formula in a complex Banach algebra.
 
 ## Main results
 
@@ -25,13 +27,15 @@ every increment. It also derives the corresponding integral formula for the Fré
   integrable.
 * `exp_add_sub_exp_eq_integral`: `exp (x + h) - exp x` is the integral of
   `exp ((1 - t) (x + h)) * h * exp (t x)` over the unit interval.
+* `TauCeti.hasDerivAt_exp_mul_const_mul_exp_neg`: the derivative at zero of conjugation by an
+  exponential is the associative commutator.
 * `TauCeti.expFDeriv_apply_eq_integral`: the Fréchet derivative is the corresponding Duhamel
   integral linear in the increment.
+* `TauCeti.differentiable_exp_smul_mul_mul_exp_neg_smul`: `z ↦ exp (izh) a exp (-izh)` is entire
+  in the complex time `z`.
 
 ## References
 
-* [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
-  Deliverable A, Layer 1, "The conjugation formulas".
 * R. M. Wilcox, *Exponential Operators and Parameter Differentiation in Quantum Physics*, Journal
   of Mathematical Physics 8 (1967), 962–982.
 -/
@@ -89,7 +93,38 @@ theorem exp_add_sub_exp_eq_integral (x h : A) :
   have hneg := congrArg Neg.neg hFTC
   simpa only [neg_neg, neg_sub] using hneg.symm
 
+/-- The derivative at zero of conjugation by an exponential is the associative commutator. -/
+theorem hasDerivAt_exp_mul_const_mul_exp_neg (x c : A) :
+    HasDerivAt
+      (fun t : ℝ ↦ exp (t • x) * c * exp (t • (-x)))
+      (x * c - c * x) 0 := by
+  have h := ((hasDerivAt_exp_smul_const x (0 : ℝ)).mul_const c).mul
+    (hasDerivAt_exp_smul_const (-x) (0 : ℝ))
+  convert h using 1
+  all_goals
+    simp only [zero_smul, exp_zero, one_mul, mul_one, mul_neg, sub_eq_add_neg]
+
 end Duhamel
+
+/-!
+### Complex-time differentiability of the conjugation formula
+-/
+
+section ComplexTime
+
+open Complex
+
+variable {A : Type*} [NormedRing A] [NormedAlgebra ℂ A] [CompleteSpace A]
+
+/-- Conjugation by `exp (izh)` is an entire function of the complex time `z`:
+`z ↦ exp (izh) a exp (-izh)`. -/
+theorem differentiable_exp_smul_mul_mul_exp_neg_smul (h a : A) :
+    Differentiable ℂ fun z : ℂ => exp ((I * z) • h) * a * exp (-(I * z) • h) := by
+  have hd : Differentiable ℂ fun z : ℂ => exp (z • h) := differentiable_exp_smul_const (𝕂 := ℂ) h
+  exact ((hd.comp (differentiable_id.const_mul I)).mul (differentiable_const a)).mul
+    (hd.comp (differentiable_id.const_mul I).neg)
+
+end ComplexTime
 
 /-!
 ## The Fréchet derivative series

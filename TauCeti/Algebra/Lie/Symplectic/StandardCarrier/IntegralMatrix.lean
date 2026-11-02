@@ -110,7 +110,7 @@ theorem coe_rootSubgroupPoints_eq_one_add_smul (k : Fin (n + 1) ⊕ Fin (n + 1))
   simpa only [MulEquiv.apply_symm_apply] using
     (TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupMatrix_eq_one_add_smul
       (rootGenerator n) (cartanGenerator n) (rep n) (lattice n).toAddSubgroup
-      (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv) k
+      (rep_kostantForm_mem_lattice n) k
       (isNilpotent_rep_rootGenerator n k) (latticeBasis n) (rootIntMatrix n k)
       (nilpotencyClass_rep_rootGenerator n k).le
       (rep_rootGenerator_latticeBasis_eq_sum n k)

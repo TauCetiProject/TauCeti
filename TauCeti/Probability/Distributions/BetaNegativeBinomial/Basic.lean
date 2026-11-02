@@ -64,6 +64,12 @@ theorem betaNegativeBinomialWeight_def (r a b : ℝ) (k : ℕ) :
     betaNegativeBinomialWeight r a b k = ENNReal.ofReal (betaNegativeBinomialWeightReal r a b k) :=
   (rfl)
 
+/-- Every beta-negative-binomial mass is finite. -/
+@[simp]
+theorem betaNegativeBinomialWeight_ne_top (r a b : ℝ) (k : ℕ) :
+    betaNegativeBinomialWeight r a b k ≠ ∞ :=
+  ENNReal.ofReal_ne_top
+
 /-- At shape zero the real mass is one at zero and vanishes elsewhere. -/
 @[simp]
 theorem betaNegativeBinomialWeightReal_zero (a b : ℝ) (k : ℕ) :
@@ -199,6 +205,23 @@ theorem betaNegativeBinomialMeasure_singleton {r a b : ℝ} (hr : 0 ≤ r) (ha :
   let _ := isProbabilityMeasure_betaNegativeBinomialMeasure hr ha hb
   rw [← ofReal_measureReal (s := {k}), betaNegativeBinomialMeasure_real_singleton hr ha hb,
     betaNegativeBinomialWeight_def]
+
+/-- The real beta-negative-binomial masses sum to one throughout the valid parameter range. -/
+theorem hasSum_betaNegativeBinomialWeightReal {r a b : ℝ} (hr : 0 ≤ r) (ha : 0 < a)
+    (hb : 0 < b) : HasSum (betaNegativeBinomialWeightReal r a b) 1 := by
+  have := isProbabilityMeasure_betaNegativeBinomialMeasure hr ha hb
+  have hsum : ∑' k, betaNegativeBinomialWeight r a b k = 1 := by
+    simpa only [Set.indicator_univ, betaNegativeBinomialMeasure_singleton hr ha hb,
+      measure_univ] using
+        (Measure.tsum_indicator_apply_singleton (betaNegativeBinomialMeasure r a b)
+          univ MeasurableSet.univ)
+  have hsumReal : ∑' k, (betaNegativeBinomialWeight r a b k).toReal = 1 := by
+    rw [← ENNReal.tsum_toReal_eq (betaNegativeBinomialWeight_ne_top r a b), hsum,
+      ENNReal.toReal_one]
+  have h := ENNReal.hasSum_toReal (f := betaNegativeBinomialWeight r a b)
+    (by rw [hsum]; exact ENNReal.one_ne_top)
+  rw [hsumReal] at h
+  simpa only [betaNegativeBinomialWeight_toReal hr ha hb] using h
 
 /-- A valid beta-negative-binomial law is the weighted Dirac sum of its singleton masses. -/
 theorem betaNegativeBinomialMeasure_eq_sum_dirac {r a b : ℝ} (hr : 0 ≤ r) (ha : 0 < a)

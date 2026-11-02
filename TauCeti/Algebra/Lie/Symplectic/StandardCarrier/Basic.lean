@@ -13,7 +13,6 @@ public import TauCeti.Algebra.Lie.Symplectic.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.CoordinateLattice
 public import TauCeti.Algebra.Lie.UniversalEnveloping.MatrixRepresentation
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.C.Datum
-import TauCeti.Algebra.Lie.GeneralLinear.Basic
 import TauCeti.Algebra.Lie.GeneralLinear.DiagonalCartan
 import TauCeti.Algebra.Lie.Sl2.WeightString
 
@@ -78,8 +77,8 @@ is asserted here.
   zero as a matrix, hence on the standard module, and has nilpotency class exactly two.
 * `TauCeti.SpStd.intCast_latticeBasis_repr`: the coordinate-basis coefficients of a lattice vector
   are its rational coordinates.
-* `TauCeti.SpStd.rep_kostantForm_mem_lattice`: the Kostant `ℤ`-form preserves the standard
-  lattice, so the lattice is admissible.
+* `TauCeti.SpStd.rep_kostantForm_mem_lattice`: the Kostant `ℤ`-form preserves the standard lattice,
+  so the lattice is admissible.
 * `TauCeti.SpStd.span_range_weight_eq_top`: the weights of the standard module generate the full
   character lattice.
 * `TauCeti.SpStd.torusPoints_conj_rootSubgroupParam`: the pointwise pinning equation.
@@ -225,7 +224,7 @@ theorem rep_ι_apply (x : sp (Fin (n + 1)) ℚ)
     (v : (Fin (n + 1) ⊕ Fin (n + 1)) → ℚ) :
     rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ x) v =
       (x : Matrix (Fin (n + 1) ⊕ Fin (n + 1)) (Fin (n + 1) ⊕ Fin (n + 1)) ℚ) *ᵥ v :=
-  LieSubalgebra.matrixRepresentation_ι_apply _ x v
+  LieSubalgebra.matrixRepresentation_ι_apply x v
 
 /-- A Cartan generator acts diagonally on every standard-module vector with the recorded
 coordinate weight. -/
@@ -359,15 +358,15 @@ private theorem lie_positiveRootMatrix_negativeRootMatrix_self (i : Fin (n + 1))
     ⁅positiveRootMatrix n i, negativeRootMatrix n i⁆ = cartanGeneratorMatrix n i := by
   by_cases hi : i = Fin.last n
   · subst i
-    rw [positiveRootMatrix_last, negativeRootMatrix_last, lie_single_single]
+    rw [positiveRootMatrix_last, negativeRootMatrix_last, Matrix.lie_single_single]
     ext a b
     cases a <;> cases b <;>
       simp [cartanGeneratorMatrix, DynkinType.TypeC.weight_apply, diagonal_apply,
         single_apply] <;>
       split_ifs <;> simp_all [Fin.ext_iff, Fin.val_last] <;> omega
   · rw [positiveRootMatrix_of_ne_last n i hi, negativeRootMatrix_of_ne_last n i hi,
-      sub_lie, lie_sub, lie_sub, lie_single_single, lie_single_single, lie_single_single,
-      lie_single_single]
+      sub_lie, lie_sub, lie_sub, Matrix.lie_single_single, Matrix.lie_single_single,
+      Matrix.lie_single_single, Matrix.lie_single_single]
     obtain ⟨k, rfl⟩ := Fin.eq_castSucc_of_ne_last hi
     ext a b
     cases a <;> cases b <;>
@@ -382,18 +381,18 @@ private theorem lie_positiveRootMatrix_negativeRootMatrix_of_ne
   · subst i
     have hj : j ≠ Fin.last n := Ne.symm hij
     rw [positiveRootMatrix_last, negativeRootMatrix_of_ne_last n j hj, lie_sub,
-      lie_single_single, lie_single_single]
+      Matrix.lie_single_single, Matrix.lie_single_single]
     ext a b
     cases a <;> cases b <;> simp [hj, Ne.symm hj]
   · by_cases hj : j = Fin.last n
     · subst j
       rw [positiveRootMatrix_of_ne_last n i hi, negativeRootMatrix_last, sub_lie,
-        lie_single_single, lie_single_single]
+        Matrix.lie_single_single, Matrix.lie_single_single]
       ext a b
       cases a <;> cases b <;> simp [hi, Ne.symm hi]
     · rw [positiveRootMatrix_of_ne_last n i hi, negativeRootMatrix_of_ne_last n j hj,
-        sub_lie, lie_sub, lie_sub, lie_single_single, lie_single_single, lie_single_single,
-        lie_single_single]
+        sub_lie, lie_sub, lie_sub, Matrix.lie_single_single, Matrix.lie_single_single,
+        Matrix.lie_single_single, Matrix.lie_single_single]
       have hsucc : Order.succ i ≠ Order.succ j :=
         (Order.succ_eq_succ_iff_of_not_isMax (not_isMax_iff_ne_top.2 hi)
           (not_isMax_iff_ne_top.2 hj)).not.2 hij
@@ -737,17 +736,19 @@ theorem rep_rootGenerator_mem_lattice (k : Fin (n + 1) ⊕ Fin (n + 1))
       · rw [rootAction_inr_of_ne_last n i hi]
         exact sub_mem (key _ _) (key _ _)
 
-/-- The standard coordinate lattice is stable under the Kostant integral form: the root generators
-square to zero and preserve it, and the coordinate vectors have integral weights. -/
-theorem rep_kostantForm_mem_lattice
-    {u : _root_.UniversalEnvelopingAlgebra ℚ (sp (Fin (n + 1)) ℚ)}
-    (hu : u ∈ TauCeti.UniversalEnvelopingAlgebra.kostantForm (rootGenerator n)
-      (cartanGenerator n))
-    {v : (Fin (n + 1) ⊕ Fin (n + 1)) → ℚ} (hv : v ∈ lattice n) :
-    rep n u v ∈ lattice n :=
-  TauCeti.UniversalEnvelopingAlgebra.kostantForm_apply_mem_coordinateLattice (rootGenerator n)
-    (cartanGenerator n) (rep n) (wt := weight n) (pow_two_rep_rootGenerator_eq_zero n)
-    (fun k _ hw => rep_rootGenerator_mem_lattice n k hw) (isCartanWeightVector_single n) hu hv
+/-- The standard coordinate lattice is stable under the Kostant integral form. This theorem is
+stated in the form of the lattice-stability hypothesis of
+`TauCeti.UniversalEnvelopingAlgebra.kostantToralGroupScheme` and the other generic Kostant
+constructions, which take the lattice as an additive subgroup, so it is passed to them as
+`rep_kostantForm_mem_lattice n`. -/
+theorem rep_kostantForm_mem_lattice :
+    ∀ u ∈ TauCeti.UniversalEnvelopingAlgebra.kostantForm (rootGenerator n) (cartanGenerator n),
+      ∀ v ∈ (lattice n).toAddSubgroup, rep n u v ∈ (lattice n).toAddSubgroup :=
+  -- The root generators square to zero and preserve the lattice, and the coordinate vectors have
+  -- integral weights.
+  fun _ hu _ hv ↦ TauCeti.UniversalEnvelopingAlgebra.kostantForm_apply_mem_coordinateLattice
+    (rootGenerator n) (cartanGenerator n) (rep n) (pow_two_rep_rootGenerator_eq_zero n)
+    (rep_rootGenerator_mem_lattice n) (isCartanWeightVector_single n) hu hv
 
 /-! ## The full weight lattice -/
 
@@ -823,7 +824,7 @@ noncomputable def rootSubgroupParam (k : Fin (n + 1) ⊕ Fin (n + 1)) (A : CommA
     Multiplicative A →* LinearMap.GeneralLinearGroup A (A ⊗[ℤ] (lattice n).toAddSubgroup) :=
   TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupParam (rootGenerator n)
     (cartanGenerator n) (rep n) (lattice n).toAddSubgroup
-    (fun _ hu _ hv => rep_kostantForm_mem_lattice n hu hv) k
+    (rep_kostantForm_mem_lattice n) k
     (isNilpotent_rep_rootGenerator n k) A
 
 /-- The split weight torus on points of a value algebra. -/

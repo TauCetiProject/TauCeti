@@ -30,6 +30,10 @@ and `3/2` of the minuscule classes of `E₆` and `E₇`.
 * `TauCeti.IntegralLattice.IsPosSemidef.isLeast_form_self_of_form_self_lt_two`: in an even
   positive semidefinite lattice, a dual vector of norm less than `2` has the least norm in its
   discriminant class.
+* `TauCeti.IntegralLattice.Isometry.setOf_form_self_discriminantGroupEquiv`: an isometry of
+  lattices carries each discriminant class to a class with the same norms, so coset minima
+  computed in one model of a lattice transfer to every isometric model
+  (`TauCeti.IntegralLattice.Isometry.isLeast_form_self_iff_of_discriminantGroupEquiv_eq`).
 
 ## References
 
@@ -40,7 +44,7 @@ public section
 
 namespace TauCeti
 
-universe u
+universe u v
 
 namespace IntegralLattice
 
@@ -85,6 +89,33 @@ theorem IsPosSemidef.isLeast_form_self_of_form_self_lt_two (hP : L.IsPosSemidef)
     exact_mod_cast this
   have hk0 : (0 : ℚ) ≤ k := by exact_mod_cast (show (0 : ℤ) ≤ k by omega)
   linarith
+
+/-- **Isometries preserve the norms of a discriminant class**: the dual vectors in the class
+`e.discriminantGroupEquiv c` have exactly the norms of the dual vectors in `c`. -/
+theorem Isometry.setOf_form_self_discriminantGroupEquiv {W : Type v} [AddCommGroup W]
+    [Module ℚ W] {M : IntegralLattice W} (e : Isometry L M) (c : L.DiscriminantGroup) :
+    {q : ℚ | ∃ y : M.dualCarrier,
+      Submodule.Quotient.mk y = e.discriminantGroupEquiv c ∧ M.form y y = q} =
+      {q : ℚ | ∃ x : L.dualCarrier, Submodule.Quotient.mk x = c ∧ L.form x x = q} := by
+  ext q
+  constructor
+  · rintro ⟨y, hy, rfl⟩
+    refine ⟨e.dualCarrierEquiv.symm y, e.discriminantGroupEquiv.injective ?_, ?_⟩
+    · rw [discriminantGroupEquiv_mk, LinearEquiv.apply_symm_apply, hy]
+    · rw [← e.map_app, ← coe_dualCarrierEquiv_apply, LinearEquiv.apply_symm_apply]
+  · rintro ⟨x, rfl, rfl⟩
+    exact ⟨e.dualCarrierEquiv x, (discriminantGroupEquiv_mk e x).symm,
+      by rw [coe_dualCarrierEquiv_apply, e.map_app]⟩
+
+/-- **Coset minima transfer along isometries**: if an isometry `e` carries the class `c` to `d`,
+then `r` is the least norm of a dual vector in `d` exactly when it is the least norm in `c`. -/
+theorem Isometry.isLeast_form_self_iff_of_discriminantGroupEquiv_eq {W : Type v}
+    [AddCommGroup W] [Module ℚ W] {M : IntegralLattice W} (e : Isometry L M)
+    {c : L.DiscriminantGroup} {d : M.DiscriminantGroup} (h : e.discriminantGroupEquiv c = d)
+    {r : ℚ} :
+    IsLeast {q : ℚ | ∃ y : M.dualCarrier, Submodule.Quotient.mk y = d ∧ M.form y y = q} r ↔
+      IsLeast {q : ℚ | ∃ x : L.dualCarrier, Submodule.Quotient.mk x = c ∧ L.form x x = q} r := by
+  rw [← h, e.setOf_form_self_discriminantGroupEquiv]
 
 end IntegralLattice
 

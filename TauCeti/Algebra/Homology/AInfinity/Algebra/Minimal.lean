@@ -18,6 +18,8 @@ algebras, a morphism is a quasi-isomorphism exactly when its linear part is bije
 
 * `TauCeti.AInfinityAlgebra.IsMinimal`: the unary operation vanishes.
 * `TauCeti.AInfinityAlgebra.IsMinimal.cohomologyEquiv`: identification with cohomology.
+* `TauCeti.AInfinityStrictHom.ofMapMTwo`: between minimal algebras without operations above arity
+  two, a degree-preserving linear map preserving `m₂` as a strict morphism.
 
 ## Main results
 
@@ -28,10 +30,14 @@ algebras, a morphism is a quasi-isomorphism exactly when its linear part is bije
   algebra is minimal exactly when the differential vanishes.
 * `TauCeti.AInfinityAlgebra.isMinimal_cohomologyAInfinityAlgebra`: the cohomology `A∞` algebra is
   minimal.
+* `TauCeti.AInfinityAlgebra.IsMinimal.taylor_coalgHom_of_tprod`: after a coalgebra morphism, the
+  Taylor map of a graded algebra only sees the cuts of a word into two blocks.
 * `TauCeti.AInfinityHom.isQuasiIso_iff_linearPart_bijective`: between minimal algebras, a
   quasi-isomorphism has bijective linear part.
 * `TauCeti.AInfinityHom.isQuasiIso_iff_isIso`: between minimal algebras, the quasi-isomorphisms
   are exactly the `A∞` isomorphisms.
+* `TauCeti.AInfinityHom.linearPart_m_two`: between minimal algebras, the linear part of an `A∞`
+  morphism is multiplicative.
 
 ## References
 
@@ -83,6 +89,36 @@ variable {𝒜 : AInfinityAlgebra R A}
 theorem m_one (h : 𝒜.IsMinimal) (x : Fin 1 → A) : 𝒜.m 1 x = 0 := by
   obtain ⟨y, rfl⟩ : ∃ y, x = ![y] := ⟨x 0, funext fun i ↦ by fin_cases i; rfl⟩
   exact (isMinimal_iff_m_one_eq_zero 𝒜).1 h y
+
+open ReducedTensorWords in
+/-- The Taylor map of an `A∞` algebra without operations above arity two vanishes on words obtained
+by prepending two letters to a nonempty word. -/
+private theorem taylor_prepend_prepend (hm : ∀ k, 3 ≤ k → 𝒜.m k = 0) (u v : A)
+    (W : ReducedTensorWords R A) : 𝒜.taylor (prepend R A u (prepend R A v W)) = 0 := by
+  have h : 𝒜.taylor ∘ₗ prepend R A u ∘ₗ prepend R A v = 0 := by
+    refine linearMap_ext R A fun n y ↦ ?_
+    rw [LinearMap.comp_apply, LinearMap.comp_apply, prepend_of_tprod, prepend_of_tprod,
+      𝒜.taylor_of_tprod, hm _ (by have := n.2; simp only; omega), LinearMap.zero_apply,
+      _root_.zero_apply]
+  exact LinearMap.congr_fun h W
+
+open ReducedTensorWords in
+/-- **The Taylor map of a graded algebra after a coalgebra morphism.**  For a minimal `A∞` algebra
+`𝒜` without operations above arity two, the Taylor map after the coalgebra morphism with Taylor
+components `f` only sees the cuts of a word into two blocks: on `x₁ ⋯ xₙ` it is the sum over the
+cuts of `m₂(τ f(x₁ ⋯ x_d), f(x_{d+1} ⋯ xₙ))`, with `τ` the degree-one Koszul twist carrying the
+suspension sign of `m₂`. -/
+theorem taylor_coalgHom_of_tprod (h : 𝒜.IsMinimal) (hm : ∀ k, 3 ≤ k → 𝒜.m k = 0)
+    (f : ReducedTensorWords R A →ₗ[R] A) {n : ℕ} (hn : 0 < n) (x : Fin n → A) :
+    𝒜.taylor (coalgHom R f (of R A ⟨n, hn⟩ (PiTensorProduct.tprod R x))) =
+      ∑ d ∈ Finset.range n,
+        𝒜.m 2 ![𝒜.grading.koszulTwist 1 (f (subword R x 0 d)), f (subword R x d (n - d))] := by
+  rw [of_tprod_eq_subword R hn, coalgHom_subword, map_add, map_sum, taylor_ofLetter, h.m_one,
+    zero_add]
+  refine Finset.sum_congr rfl fun d _ ↦ ?_
+  rw [coalgHom_subword, map_add, map_sum, map_add, map_sum, prepend_ofLetter, taylor_of_two,
+    zero_add]
+  simp [taylor_prepend_prepend hm]
 
 /-- Every element of a minimal `A∞` algebra is a cycle. -/
 theorem mem_cycles (h : 𝒜.IsMinimal) (x : A) : x ∈ 𝒜.cycles := by
@@ -178,6 +214,51 @@ theorem IsQuasiIso.isIso (hA : AA.IsMinimal) (hB : BB.IsMinimal) {f : AInfinityH
     (hf : f.IsQuasiIso) : f.IsIso :=
   (isQuasiIso_iff_isIso hA hB f).1 hf
 
+/-- Between minimal algebras, the linear part of an `A∞` morphism carries `m₂` to `m₂`: the
+defect of multiplicativity is a boundary, and a minimal algebra has no nonzero boundaries. -/
+theorem linearPart_m_two (hA : AA.IsMinimal) (hB : BB.IsMinimal) (f : AInfinityHom AA BB)
+    (a b : A) : f.linearPart (AA.m 2 ![a, b]) = BB.m 2 ![f.linearPart a, f.linearPart b] := by
+  have hab := f.linearPart_m_two_sub_mem_boundaries (hA.mem_cycles a) (hA.mem_cycles b)
+  rwa [(AInfinityAlgebra.isMinimal_iff_boundaries_eq_bot BB).1 hB, Submodule.mem_bot,
+    sub_eq_zero] at hab
+
 end AInfinityHom
+
+namespace AInfinityStrictHom
+
+variable {AA : AInfinityAlgebra R A} {BB : AInfinityAlgebra R B}
+
+/-- Between minimal algebras without operations above arity two, a degree-preserving linear map
+which carries `m₂` to `m₂` is a strict morphism. -/
+def ofMapMTwo (hA : AA.IsMinimal) (hB : BB.IsMinimal) (hmA : ∀ n, 3 ≤ n → AA.m n = 0)
+    (hmB : ∀ n, 3 ≤ n → BB.m n = 0) (f : A →ₗ[R] B)
+    (hf : LinearMap.IsHomogeneous f AA.grading.piece BB.grading.piece 0)
+    (hf₂ : ∀ a b, f (AA.m 2 ![a, b]) = BB.m 2 ![f a, f b]) : AInfinityStrictHom AA BB where
+  toLinearMap := f
+  map_mem' ha := by simpa only [add_zero] using hf.map_mem ha
+  map_m' n := by
+    ext x
+    rw [LinearMap.compMultilinearMap_apply, MultilinearMap.compLinearMap_apply]
+    match n with
+    | 0 => simp
+    | 1 => simp [hA.m_one, hB.m_one]
+    | 2 =>
+      obtain ⟨a, b, rfl⟩ : ∃ a b, x = ![a, b] :=
+        ⟨x 0, x 1, funext fun i ↦ by fin_cases i <;> rfl⟩
+      rw [hf₂]
+      congr 1
+      funext i
+      fin_cases i <;> rfl
+    | n + 3 => simp [hmA (n + 3) (by omega), hmB (n + 3) (by omega)]
+
+/-- The strict morphism `ofMapMTwo` has the given underlying map. -/
+@[simp]
+theorem coe_ofMapMTwo (hA : AA.IsMinimal) (hB : BB.IsMinimal) (hmA : ∀ n, 3 ≤ n → AA.m n = 0)
+    (hmB : ∀ n, 3 ≤ n → BB.m n = 0) (f : A →ₗ[R] B)
+    (hf : LinearMap.IsHomogeneous f AA.grading.piece BB.grading.piece 0)
+    (hf₂ : ∀ a b, f (AA.m 2 ![a, b]) = BB.m 2 ![f a, f b]) :
+    ⇑(ofMapMTwo hA hB hmA hmB f hf hf₂) = f := (rfl)
+
+end AInfinityStrictHom
 
 end TauCeti

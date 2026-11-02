@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicGeometry.Modules.RationalFunctions
 public import TauCeti.AlgebraicGeometry.Morphisms.Dominant
 public import Mathlib.AlgebraicGeometry.FunctionField
 public import Mathlib.AlgebraicGeometry.ResidueField
+import TauCeti.AlgebraicGeometry.AffineScheme
 
 /-!
 # Algebra structures induced by a scheme over an affine base
@@ -35,6 +36,14 @@ the base, stalk, and function-field algebra structures form a scalar tower.
   function-field algebra structures.
 * `Scheme.residueFieldBaseAlgebra_eq_compHom`: the base-ring algebra structure on a residue field
   is the one used by Mathlib's `Scheme.Hom.residueDegree_eq_finrank`.
+* `Scheme.Hom.residueFieldAlgEquivOfIsOpenImmersion`: an affine open immersion over `Spec k`
+  identifies the residue fields of `X` with those of the chart as `k`-algebras.
+* `Scheme.Hom.nonempty_functionField_algEquiv_of_isOpenImmersion`: the function field of an
+  integral scheme over `Spec k` is, as a `k`-algebra, the fraction field of any affine chart over
+  `Spec k`.
+* `TauCeti.AlgebraicGeometry.exists_affineOpen_isFractionRing`: an integral scheme over `Spec k`
+  has a nonempty affine open `U` whose sections are a `k`-algebra with fraction field the function
+  field, compatibly with the structure morphism.
 -/
 
 public section
@@ -238,6 +247,132 @@ theorem _root_.AlgebraicGeometry.Scheme.specMap_comp_fromSpecStalk_genericPoint_
   exact hf c
 
 end CommRing
+
+section OpenImmersion
+
+variable {k : Type u} [CommRing k] {X : Scheme.{u}} [X.Over (Spec (.of k))]
+
+/-- An open immersion `g : Spec R ⟶ X` over `Spec k`, where `Spec.map φ = g ≫ X ↘ Spec k`,
+identifies the residue field of `X` at `g y` with the residue field of the prime `y` of `R`, as
+`k`-algebras for the `k`-algebra structure of `R` given by `φ`. -/
+def _root_.AlgebraicGeometry.Scheme.Hom.residueFieldAlgEquivOfIsOpenImmersion
+    {R : CommRingCat.{u}} (g : Spec R ⟶ X) [IsOpenImmersion g] (φ : CommRingCat.of k ⟶ R)
+    (hφ : Spec.map φ = g ≫ X ↘ Spec (.of k)) (y : Spec R) :
+    letI := φ.hom.toAlgebra
+    haveI := y.isPrime
+    X.residueField (g y) ≃ₐ[k] y.asIdeal.ResidueField :=
+  letI := φ.hom.toAlgebra
+  haveI := y.isPrime
+  let e : X.residueField (g y) ≅ .of y.asIdeal.ResidueField :=
+    asIso (g.residueFieldMap y) ≪≫ Scheme.Spec.residueFieldIso R y
+  -- On `k`, the composite `k → Γ(X) → κ(g y) → κ(y)` is `k → Γ(Spec R) → κ(y)` by naturality of
+  -- evaluation at a point, and the latter is the algebra map `k → R → κ(y)`. The two steps are
+  -- glued by `congrArg` rather than `rw`: goals mentioning `y.asIdeal` for `y : Spec R` are not
+  -- type-correct at the transparency `rw` uses for its motive.
+  have h₁ : (Scheme.ΓSpecIso (.of k)).inv ≫ (X ↘ Spec (.of k)).appTop ≫ X.Γevaluation (g y) ≫
+      g.residueFieldMap y = φ ≫ (Scheme.ΓSpecIso R).inv ≫ (Spec R).Γevaluation y := by
+    rw [Scheme.Γevaluation_naturality, ← Scheme.Hom.comp_appTop_assoc, ← hφ,
+      Scheme.ΓSpecIso_inv_naturality_assoc]
+  have h₂ : ((Scheme.ΓSpecIso R).inv ≫ (Spec R).Γevaluation y) ≫
+      (Scheme.Spec.residueFieldIso R y).hom =
+        CommRingCat.ofHom (algebraMap R y.asIdeal.ResidueField) :=
+    ((Iso.comp_inv_eq _).mp (Scheme.Spec.algebraMap_residueFieldIso_inv R y)).symm
+  have he : ((Scheme.ΓSpecIso (.of k)).inv ≫ (X ↘ Spec (.of k)).appTop ≫ X.Γevaluation (g y) ≫
+      g.residueFieldMap y) ≫ (Scheme.Spec.residueFieldIso R y).hom =
+        φ ≫ CommRingCat.ofHom (algebraMap R y.asIdeal.ResidueField) :=
+    (congrArg (· ≫ (Scheme.Spec.residueFieldIso R y).hom) h₁).trans
+      ((Category.assoc _ _ _).trans (congrArg (φ ≫ ·) h₂))
+  AlgEquiv.ofRingEquiv (f := e.commRingCatIsoToRingEquiv) fun c ↦ by
+    have hc : algebraMap k (X.residueField (g y)) c =
+        X.Γevaluation (g y) ((X ↘ Spec (.of k)).appTop ((Scheme.ΓSpecIso (.of k)).inv c)) := by
+      rw [Scheme.algebraMap_residueField_eq_residue_comp_baseRingToStalk, RingHom.comp_apply,
+        Scheme.residue_baseRingToStalk, Scheme.Modules.baseRingToGlobalSections_apply]
+    refine (congrArg e.commRingCatIsoToRingEquiv hc).trans ?_
+    refine congr($he c).trans ?_
+    exact (IsScalarTower.algebraMap_apply k R y.asIdeal.ResidueField c).symm
+
+/-- The residue-field algebra equivalence of an open immersion is residue-field pullback along
+`g`, followed by Mathlib's identification of the residue field of `Spec R` at `y` with
+`y.asIdeal.ResidueField`. -/
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Hom.residueFieldAlgEquivOfIsOpenImmersion_apply
+    {R : CommRingCat.{u}} (g : Spec R ⟶ X) [IsOpenImmersion g] (φ : CommRingCat.of k ⟶ R)
+    (hφ : Spec.map φ = g ≫ X ↘ Spec (.of k)) (y : Spec R) (a : X.residueField (g y)) :
+    letI := φ.hom.toAlgebra
+    haveI := y.isPrime
+    g.residueFieldAlgEquivOfIsOpenImmersion φ hφ y a =
+      (Scheme.Spec.residueFieldIso R y).hom (g.residueFieldMap y a) := by
+  unfold Scheme.Hom.residueFieldAlgEquivOfIsOpenImmersion
+  rfl
+
+end OpenImmersion
+
+section FunctionFieldChart
+
+/-- **The function field of an integral scheme is the fraction field of an affine chart.** If
+`ι : Spec R ⟶ Y` is an open immersion over `Spec k` into an integral scheme `Y`, then the function
+field of `Y` is, as a `k`-algebra, every fraction field `L` of `R`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.nonempty_functionField_algEquiv_of_isOpenImmersion
+    {k R : Type u} [CommRing k] [CommRing R] [Algebra k R] {Y : Scheme.{u}} [Y.Over (Spec (.of k))]
+    [IsIntegral Y] (ι : Spec (.of R) ⟶ Y) [IsOpenImmersion ι]
+    (hι : ι ≫ (Y ↘ Spec (.of k)) = Spec.map (CommRingCat.ofHom (algebraMap k R)))
+    (L : Type*) [Field L] [Algebra k L] [Algebra R L] [IsScalarTower k R L] [IsFractionRing R L] :
+    Nonempty (Y.functionField ≃ₐ[k] L) := by
+  have : Nontrivial R := (IsFractionRing.nontrivial_iff_nontrivial R L).mpr inferInstance
+  have hV : IsAffineOpen (ι ''ᵁ ⊤) := (isAffineOpen_top _).image_of_isOpenImmersion ι
+  have : Nonempty (ι ''ᵁ ⊤) := ⟨⟨ι (Classical.arbitrary _), ⟨_, trivial, rfl⟩⟩⟩
+  have := functionField_isFractionRing_of_isAffineOpen Y _ hV
+  -- the sections of `Y` over the image of `ι` are `R`, compatibly with the constants
+  let θ : Γ(Y, ι ''ᵁ ⊤) ≃+* R :=
+    ((ι.appIso ⊤) ≪≫ Scheme.ΓSpecIso (.of R)).commRingCatIsoToRingEquiv
+  have hθ (c : Γ(Spec (.of k), ⊤)) : θ ((Y ↘ Spec (.of k)).appLE ⊤ (ι ''ᵁ ⊤) le_top c) =
+      algebraMap k R ((Scheme.ΓSpecIso (.of k)).hom c) := by
+    suffices hs : (Y ↘ Spec (.of k)).appLE ⊤ (ι ''ᵁ ⊤) le_top ≫ (ι.appIso ⊤).hom ≫
+        (Scheme.ΓSpecIso _).hom =
+          (Scheme.ΓSpecIso (.of k)).hom ≫ CommRingCat.ofHom (algebraMap k R) from
+      congr($hs c)
+    rw [← cancel_epi (Scheme.ΓSpecIso (.of k)).inv, Iso.inv_hom_id_assoc, Scheme.Hom.appIso_hom',
+      reassoc_of% Scheme.Hom.appLE_comp_appLE ι (Y ↘ Spec (.of k)) ⊤ (ι ''ᵁ ⊤) ⊤ le_top
+      (Scheme.Hom.preimage_image_eq _ _).ge]
+    -- the proof that `⊤` lies over `⊤` mentions `ι ≫ (Y ↘ Spec k)`, so it has to be generalized
+    -- before rewriting the composite
+    generalize_proofs e
+    revert e
+    rw [hι]
+    intro e
+    -- `⊤` is the preimage of `⊤`, so this `appLE` is `appTop`; the `show` states that form
+    rw [show Scheme.Hom.appLE _ ⊤ ⊤ e = Scheme.Hom.appTop _ from Scheme.Hom.appLE_eq_app _,
+      Scheme.ΓSpecIso_naturality, Iso.inv_hom_id_assoc]
+  refine ⟨AlgEquiv.ofRingEquiv (f := IsFractionRing.ringEquivOfRingEquiv θ) fun c ↦ ?_⟩
+  rw [Scheme.algebraMap_functionField_eq_baseRingToFunctionField,
+    Scheme.baseRingToFunctionField_eq_comp_appLE k _ (ι ''ᵁ ⊤), RingHom.comp_apply]
+  refine (IsFractionRing.ringEquivOfRingEquiv_algebraMap _ _).trans ?_
+  rw [CommRingCat.hom_comp, RingHom.comp_apply, hθ, Iso.inv_hom_id_apply,
+    ← IsScalarTower.algebraMap_apply]
+
+/-- **An affine chart presenting the function field.** An integral scheme `X` over `Spec k` has a
+nonempty affine open `U` such that, with the `k`-algebra structure on `Γ(X, U)` coming from the
+structure morphism, the function field of `X` is the fraction field of `Γ(X, U)` compatibly with
+`k`, and `Spec Γ(X, U) ⟶ X` lies over `Spec k`. -/
+theorem exists_affineOpen_isFractionRing {k : Type u} [CommRing k] {X : Scheme.{u}}
+    [X.Over (Spec (.of k))] [IsIntegral X] :
+    ∃ (U : X.Opens) (hU : IsAffineOpen U) (_ : Nonempty U) (_ : Algebra k Γ(X, U))
+      (_ : IsScalarTower k Γ(X, U) X.functionField) (_ : IsFractionRing Γ(X, U) X.functionField),
+      hU.fromSpec ≫ (X ↘ Spec (.of k)) = Spec.map (CommRingCat.ofHom (algebraMap k Γ(X, U))) := by
+  obtain ⟨x⟩ : Nonempty X := inferInstance
+  obtain ⟨_, ⟨U, hU, rfl⟩, hxU, -⟩ :=
+    X.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ x) isOpen_univ
+  have : Nonempty U := ⟨⟨x, hxU⟩⟩
+  replace hU : IsAffineOpen U := hU
+  -- `Γ(X, U)` is a `k`-algebra through the structure morphism, compatibly with `k(X)`.
+  let _ : Algebra k Γ(X, U) :=
+    ((Scheme.ΓSpecIso (.of k)).inv ≫ (X ↘ Spec (.of k)).appLE ⊤ U le_top).hom.toAlgebra
+  refine ⟨U, hU, inferInstance, inferInstance,
+    .of_algebraMap_eq' (Scheme.baseRingToFunctionField_eq_comp_appLE k X U),
+    functionField_isFractionRing_of_isAffineOpen X U hU, ?_⟩
+  rw [hU.fromSpec_comp_eq_SpecMap, RingHom.algebraMap_toAlgebra, CommRingCat.ofHom_hom]
+
+end FunctionFieldChart
 
 section FunctionFieldMap
 
