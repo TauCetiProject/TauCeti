@@ -12,9 +12,9 @@ public import Mathlib.RingTheory.Flat.Localization
 public import TauCeti.LinearAlgebra.FreeModule.Filtration
 
 import Mathlib.RingTheory.Flat.Rank
-import Mathlib.RingTheory.Ideal.Pure
 import Mathlib.RingTheory.Localization.Away.Lemmas
 import TauCeti.RingTheory.Flat.Pi
+import TauCeti.RingTheory.Ideal.Pure
 
 /-!
 # The free locus over a reduced ring, and of a filtered module
@@ -51,8 +51,6 @@ At a maximal ideal `P`, the rank of a finite flat module is the dimension of its
   a finitely presented flat module lies in a given set is the basic open set of an idempotent.
 * `Module.exists_isIdempotentElem_basicOpen_eq_support`: the support of a finitely presented flat
   module is the basic open set of an idempotent.
-* `Module.Flat.quotient_span_singleton_of_isIdempotentElem`: for an idempotent `e`, `R ⧸ (e)` is
-  flat.
 * `Module.rankAtStalk_quotient_span_one_sub`: for an idempotent `e`, `R ⧸ (1 - e)` has rank `1`
   on the basic open set of `e` and rank `0` off it.
 * `Module.exists_rankAtStalk_prod_quotient_eq_max`: adding the complement of the support of a
@@ -165,13 +163,6 @@ theorem exists_isIdempotentElem_basicOpen_eq_support {R : Type*} (M : Type*) [Co
   obtain ⟨e, he, hU⟩ := exists_isIdempotentElem_basicOpen_eq_rankAtStalk_preimage (R := R) M
     {n | 0 < n}
   exact ⟨e, he, hU.trans (Set.ext fun p ↦ rankAtStalk_pos_iff_mem_support p)⟩
-
-/-- For an idempotent `e`, the quotient `R ⧸ (e)` is flat: the ideal `(e)` is a finitely
-generated idempotent ideal. -/
-theorem Flat.quotient_span_singleton_of_isIdempotentElem {R : Type*} [CommRing R] {e : R}
-    (he : IsIdempotentElem e) : Module.Flat R (R ⧸ Ideal.span {e}) :=
-  Ideal.Pure.of_isIdempotentElem (Submodule.fg_span_singleton _)
-    (by rw [IsIdempotentElem, Ideal.span_singleton_mul_span_singleton, he.eq])
 
 open scoped Classical in
 /-- For an idempotent `e`, the quotient `R ⧸ (1 - e)`, the localization away from `e`, has rank `1`
