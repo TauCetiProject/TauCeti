@@ -7,7 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Geometrically.Integral
 public import Mathlib.RingTheory.TensorProduct.Nontrivial
-public import TauCeti.AlgebraicGeometry.PullbackSpecMap
+public import TauCeti.AlgebraicGeometry.Pullback.SpecMap
 public import TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
 public import TauCeti.FieldTheory.AlgebraicClosure
 public import TauCeti.FieldTheory.FunctionField.ConstantField
@@ -60,7 +60,7 @@ field of an integral scheme is the fraction field of any affine chart), from
 `TauCeti/AlgebraicGeometry/Scheme/BaseAlgebra.lean`, and
 `TauCeti.AlgebraicGeometry.exists_isOpenImmersion_tensorProduct_of_isPullback` (the base change of
 an affine chart is an affine chart of the base change), from
-`TauCeti/AlgebraicGeometry/PullbackSpecMap.lean`.
+`TauCeti/AlgebraicGeometry/Pullback/SpecMap.lean`.
 -/
 
 public section

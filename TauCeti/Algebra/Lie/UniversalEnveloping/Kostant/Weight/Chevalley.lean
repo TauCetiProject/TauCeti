@@ -107,7 +107,7 @@ theorem isCartanWeightVector_cartan (y : H) :
       (UniversalEnvelopingAlgebra.representation ℚ L L) 0 (y : L) :=
   (UniversalEnvelopingAlgebra.isCartanWeightVector_iff _ _).2 fun α => by
     rw [corootFamily_apply, UniversalEnvelopingAlgebra.representation_ι_ad,
-      LieAlgebra.ad_apply, lie_cartan_cartan_eq_zero]
+      LieAlgebra.ad_apply, LieSubalgebra.lie_eq_zero_of_mem (coroot _).2 y.2]
     simp
 
 omit [LieModule.IsTriangularizable ℚ H L] in

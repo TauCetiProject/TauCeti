@@ -143,7 +143,7 @@ theorem finiteMixtureMeasure_def (p : StdSimplex NNReal I) (K : I → Measure B)
 theorem isProbabilityMeasure_finiteMixtureMeasure
     (hK : ∀ i, IsProbabilityMeasure (K i)) : IsProbabilityMeasure (finiteMixtureMeasure p K) := by
   constructor
-  simp only [finiteMixtureMeasure_def, Measure.finsetSum_apply, Measure.smul_apply, smul_eq_mul]
+  simp only [finiteMixtureMeasure_def, _root_.sum_apply, _root_.smul_apply, smul_eq_mul]
   simp_rw [@measure_univ _ _ _ (hK _), mul_one]
   exact_mod_cast p.total_of_fintype
 
@@ -152,9 +152,9 @@ theorem finiteMixtureMeasure_eq_bind [MeasurableSpace I] [MeasurableSingletonCla
     (p : StdSimplex NNReal I) (K : I → Measure B) :
     finiteMixtureMeasure p K = (categoricalMeasure p).bind K := by
   ext s hs
-  rw [finiteMixtureMeasure_def, Measure.finsetSum_apply,
+  rw [finiteMixtureMeasure_def, _root_.sum_apply,
     Measure.bind_apply hs Measurable.of_discrete.aemeasurable, lintegral_fintype]
-  simp only [categoricalMeasure_singleton, Measure.smul_apply, smul_eq_mul, mul_comm]
+  simp only [categoricalMeasure_singleton, _root_.smul_apply, smul_eq_mul, mul_comm]
 
 /-- A finite mixture of identical components is that component. -/
 @[simp]
@@ -180,7 +180,7 @@ theorem measurable_finiteMixtureMeasure [MeasurableSpace Z]
     Measurable fun z ↦ finiteMixtureMeasure (p z) (K z) := by
   simp only [finiteMixtureMeasure_def]
   refine Finset.measurable_sum _ fun i _ ↦ Measure.measurable_measure.mpr fun s hs ↦ ?_
-  simp only [Measure.smul_apply, smul_eq_mul]
+  simp only [_root_.smul_apply, smul_eq_mul]
   exact (measurable_coe_nnreal_ennreal.comp
     (((measurable_pi_apply i).comp StdSimplex.measurable_toFun_comp_weights).comp hp)).mul
       ((Measure.measurable_coe hs).comp (hK i))

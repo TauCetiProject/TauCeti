@@ -7,6 +7,8 @@ module
 
 public import TauCeti.LinearAlgebra.End.JordanChain.Partition
 public import TauCeti.RingTheory.Polynomial.Truncated.Centralizer
+public import Mathlib.LinearAlgebra.Matrix.ToLin
+import TauCeti.Algebra.Algebra.Subalgebra.Centralizer
 import TauCeti.RingTheory.Polynomial.Truncated.Module
 import Mathlib.Algebra.Algebra.Subalgebra.MulOpposite
 
@@ -17,7 +19,9 @@ The dimension of the endomorphism centralizer of a nilpotent linear map is the s
 of the squares of the successive increases of its kernel dimensions. These increases
 are the column lengths of its Jordan partition, so the formula is intrinsic and needs
 neither an algebraically closed field nor a selected Jordan-chain basis. In terms of the
-Jordan partition `λ` and its conjugate `λ'`, the dimension is `∑ⱼ (λ'ⱼ)²`.
+Jordan partition `λ` and its conjugate `λ'`, the dimension is `∑ⱼ (λ'ⱼ)²`. The same formula
+holds for the centralizer algebra of a nilpotent square matrix, with the Jordan partition of the
+corresponding endomorphism.
 
 The proof uses the finite-module decomposition over the truncated polynomial ring
 from `TauCeti.RingTheory.Polynomial.Truncated.Module`, together with the cyclic-block
@@ -140,3 +144,18 @@ theorem finrank_centralizer_eq_sum_sq_conjugate_jordanPartition (f : Module.End 
   simp only [card_filter_jordanPartition_parts]
 
 end Module.End
+
+namespace Matrix
+
+variable {K : Type*} [Field K] {n : Type*} [Fintype n] [DecidableEq n]
+
+/-- **The centralizer dimension of a nilpotent matrix** is `∑ⱼ (λ'ⱼ)²`, where `λ'` is the
+conjugate of the Jordan partition of the corresponding endomorphism of `n → K`. -/
+theorem finrank_centralizer_eq_sum_sq_conjugate_jordanPartition (X : Matrix n n K)
+    (hX : IsNilpotent (toLinAlgEquiv' X)) :
+    Module.finrank K (Subalgebra.centralizer K {X}) =
+      ((Module.End.jordanPartition (toLinAlgEquiv' X) hX).conjugate.parts.map (· ^ 2)).sum := by
+  rw [(toLinAlgEquiv'.subalgebraMap _).toLinearEquiv.finrank_eq, AlgEquiv.map_centralizer,
+    Set.image_singleton, Module.End.finrank_centralizer_eq_sum_sq_conjugate_jordanPartition]
+
+end Matrix

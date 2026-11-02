@@ -7,6 +7,7 @@ module
 
 public import TauCeti.ModelTheory.RelationalConfiguration.Isomorphism
 public import TauCeti.ModelTheory.Infinitary.LanguageMap
+public import TauCeti.ModelTheory.RelationalConfiguration.ModelsOf
 
 /-!
 # Relational configurations along language maps
@@ -52,6 +53,9 @@ countable relational language can be presented in universe `0`.
   `FirstOrder.Language.LEquiv.realize_sentenceInf_onConfiguration`: the transported
   configuration realizes the translation of a formula exactly when the original realizes the
   formula.
+* `FirstOrder.Language.LEquiv.preimage_onConfiguration_modelsOf` and
+  `FirstOrder.Language.LEquiv.image_onConfiguration_modelsOf`: transport carries the model class
+  of a sentence exactly onto the model class of its translation.
 -/
 
 public section
@@ -259,6 +263,21 @@ theorem realize_sentenceInf_onConfiguration {ι : Type uι} (c : RelationalConfi
       @SentenceInf.Realize L ι φ V c.toStructure := by
   simp only [SentenceInf.realize_def, FormulaInf.realize_def]
   exact e.realize_onConfiguration c φ _ _
+
+/-- The configurations whose transport along `e` is a model of the translation of `φ` form the
+model class of `φ`. -/
+@[simp]
+theorem preimage_onConfiguration_modelsOf {ι : Type uι} (φ : L.SentenceInf ι) :
+    e.onConfiguration ⁻¹' modelsOf (V := V) (e.toLHom.onBoundedFormulaInf φ) = modelsOf φ :=
+  Set.ext fun c => by
+    rw [Set.mem_preimage, mem_modelsOf, mem_modelsOf, e.realize_sentenceInf_onConfiguration]
+
+/-- Transport along `e` carries the model class of `φ` onto the model class of its translation. -/
+@[simp]
+theorem image_onConfiguration_modelsOf {ι : Type uι} (φ : L.SentenceInf ι) :
+    e.onConfiguration '' modelsOf (V := V) φ = modelsOf (e.toLHom.onBoundedFormulaInf φ) := by
+  rw [← e.preimage_onConfiguration_modelsOf φ,
+    Set.image_preimage_eq _ e.onConfiguration.surjective]
 
 end LEquiv
 

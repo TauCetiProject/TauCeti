@@ -156,7 +156,7 @@ theorem localDensity_fromBlocks_smul (hp : p ≠ 2) {A : Matrix ι ι ℤ_[p]} {
     rw [det_smul]
     exact mul_ne_zero (pow_ne_zero _ hc) hBdet
   rw [localDensity_fromBlocks hp hA hdet hcB hcBdet fun i j => by
-      rw [smul_apply, smul_eq_mul]
+      rw [Matrix.smul_apply, smul_eq_mul]
       exact dvd_mul_of_dvd_left hcp _,
     localDensity_smul hc hB hBdet]
   ring

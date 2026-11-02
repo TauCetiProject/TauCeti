@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.NumberField.FinitePlace
+public import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
 import Mathlib.RingTheory.RamificationInertia.Basic
 import TauCeti.Analysis.AbsoluteValue.Nonarchimedean
 
