@@ -105,8 +105,8 @@ theorem simpleWeylPoint_conj_rootSubgroupPoints (i : Fin n) (A : Type v) [CommRi
 
 /-- Conjugation by the representative acts on the weight torus by the reflection
 at the corresponding row of the type-D Cartan matrix. -/
-@[simp]
-theorem simpleWeylPoint_conj_weightTorusPoints (i : Fin n) (A : Type v) [CommRing A]
+theorem simpleWeylPoint_conj_weightTorusPoints_eq_weylReflectTorusPoint
+    (i : Fin n) (A : Type v) [CommRing A]
     (s : Fin n → Aˣ) :
     simpleWeylPoint n hn i A * weightTorusPoints n hn A s *
         (simpleWeylPoint n hn i A)⁻¹ =
@@ -129,7 +129,8 @@ theorem simpleWeylPoint_conj_weightTorusPoints (i : Fin n) (A : Type v) [CommRin
     congrArg Subtype.val h
 
 /-- The torus action is the simple reflection of the named simply connected type-D datum. -/
-theorem simpleWeylPoint_conj_weightTorusPoints_root_simpleIndex (i : Fin n)
+@[simp]
+theorem simpleWeylPoint_conj_weightTorusPoints (i : Fin n)
     (A : Type v) [CommRing A] (s : Fin n → Aˣ) :
     simpleWeylPoint n hn i A * weightTorusPoints n hn A s *
         (simpleWeylPoint n hn i A)⁻¹ =
@@ -138,7 +139,7 @@ theorem simpleWeylPoint_conj_weightTorusPoints_root_simpleIndex (i : Fin n)
   -- Explicit indices keep rewriting at the named datum's definitionally equal rank.
   rw [(D n).geckSimpleReflectionTorusPoint_def (valid_D.mpr hn) i A,
     (D n).root_simpleIndex (valid_D.mpr hn) i, cartanMatrix_D]
-  exact simpleWeylPoint_conj_weightTorusPoints n hn i A s
+  exact simpleWeylPoint_conj_weightTorusPoints_eq_weylReflectTorusPoint n hn i A s
 
 /-- Every pinned simple Weyl representative normalizes the weight torus. -/
 theorem simpleWeylPoint_mem_normalizer_weightTorusPoints (i : Fin n) (A : Type v)
@@ -148,7 +149,7 @@ theorem simpleWeylPoint_mem_normalizer_weightTorusPoints (i : Fin n) (A : Type v
     (Function.Involutive.surjective
       ((D n).geckSimpleReflectionTorusPoint_geckSimpleReflectionTorusPoint
         (valid_D.mpr hn) i A))
-    (simpleWeylPoint_conj_weightTorusPoints_root_simpleIndex n hn i A)
+    (simpleWeylPoint_conj_weightTorusPoints n hn i A)
 
 /-! ## Products along words -/
 
@@ -192,7 +193,7 @@ theorem weylWordPoint_conj_weightTorusPoints (l : List (Fin n))
     weylWordPoint n hn l A * weightTorusPoints n hn A s * (weylWordPoint n hn l A)⁻¹ =
       weightTorusPoints n hn A ((D n).geckWeylWordTorusAction (valid_D.mpr hn) l A s) :=
   (D n).list_prod_conj_eq_geckWeylWordTorusAction (valid_D.mpr hn) _ _
-    (simpleWeylPoint_conj_weightTorusPoints_root_simpleIndex n hn · A) l s
+    (simpleWeylPoint_conj_weightTorusPoints n hn · A) l s
 
 /-- Every Weyl-word representative normalizes the weight torus. -/
 theorem weylWordPoint_mem_normalizer_weightTorusPoints (l : List (Fin n))
