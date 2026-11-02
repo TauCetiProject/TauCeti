@@ -45,6 +45,8 @@ constant `2 ^ d` nor `2 ^ d / d!` can therefore be improved.
   weighted cross-polytope and the weighted box has the weights as its successive minima.
 * `ZLattice.successiveMin_box`: the successive minima of the weighted box.
 * `ZLattice.successiveMin_crosspolytope`: the successive minima of the weighted cross-polytope.
+* `ZLattice.successiveMin_pi_box`, `ZLattice.successiveMin_pi_crosspolytope`: the same for the
+  standard lattice `ℤⁿ ⊆ ℝⁿ` in coordinates, without a choice of basis.
 * `ZLattice.prod_successiveMin_mul_measureReal_box`: the weighted box attains the upper bound of
   Minkowski's second theorem.
 * `ZLattice.prod_successiveMin_mul_measureReal_crosspolytope`: the weighted cross-polytope attains
@@ -119,11 +121,6 @@ theorem successiveMin_eq_of_crosspolytope_subset_of_subset_box (ha : ∀ j, 0 < 
   rw [finrank_span_eq_card hv, Fintype.card_fin, Basis.finrank_flag, Fin.val_castSucc] at hle
   omega
 
-/-- With nonnegative weights, the weighted cross-polytope lies in the weighted box. -/
-private lemma crosspolytope_subset_box (ha : ∀ j, 0 ≤ a j) :
-    {x | ∑ j, a j * |b.repr x j| ≤ 1} ⊆ {x | ∀ j, a j * |b.repr x j| ≤ 1} := fun _ hx j ↦
-  (Finset.single_le_sum (fun k _ ↦ mul_nonneg (ha k) (abs_nonneg _)) (Finset.mem_univ j)).trans hx
-
 /-- **The successive minima of a weighted box.** Let `b` be a basis of `E` and `a` positive
 nondecreasing weights. The successive minima of the lattice `span ℤ (range b)` with respect to the
 weighted box `K = {x | ∀ j, a j * |b.repr x j| ≤ 1}` are the weights `a i`. -/
@@ -131,7 +128,8 @@ theorem successiveMin_box (ha : ∀ j, 0 < a j) (hmono : Monotone a)
     (hK : (K : Set E) = {x | ∀ j, a j * |b.repr x j| ≤ 1}) (i : Fin (finrank ℝ E)) :
     successiveMin (span ℤ (Set.range b)) K i = a i :=
   successiveMin_eq_of_crosspolytope_subset_of_subset_box ha hmono
-    ((crosspolytope_subset_box fun j ↦ (ha j).le).trans hK.ge) hK.le i
+    ((TauCeti.weighted_crosspolytope_subset_weighted_box (fun j ↦ (ha j).le) fun x ↦
+      b.repr x).trans hK.ge) hK.le i
 
 /-- **The successive minima of a weighted cross-polytope.** Let `b` be a basis of `E` and `a`
 positive nondecreasing weights. The successive minima of the lattice `span ℤ (range b)` with
@@ -141,7 +139,64 @@ theorem successiveMin_crosspolytope (ha : ∀ j, 0 < a j) (hmono : Monotone a)
     (hK : (K : Set E) = {x | ∑ j, a j * |b.repr x j| ≤ 1}) (i : Fin (finrank ℝ E)) :
     successiveMin (span ℤ (Set.range b)) K i = a i :=
   successiveMin_eq_of_crosspolytope_subset_of_subset_box ha hmono hK.ge
-    (hK.le.trans (crosspolytope_subset_box fun j ↦ (ha j).le)) i
+    (hK.le.trans (TauCeti.weighted_crosspolytope_subset_weighted_box (fun j ↦ (ha j).le) fun x ↦
+      b.repr x)) i
+
+/-! ### The standard lattice `ℤⁿ ⊆ ℝⁿ`
+
+The statements above, in the coordinates of `Fin n → ℝ`. The successive minima are indexed by
+`Fin (finrank ℝ (Fin n → ℝ))`, which is `Fin n` only up to `Module.finrank_fin_fun`, so the weight
+attached to the `i`-th minimum is `w (i.cast (finrank_fin_fun ℝ))`. -/
+
+section Pi
+
+variable {n : ℕ} {w : Fin n → ℝ} {C : ConvexBody (Fin n → ℝ)}
+
+/-- **The successive minima of `ℤⁿ` with respect to a body between a weighted cross-polytope and a
+weighted box.** If the convex body `C ⊆ ℝⁿ` contains `{x | ∑ j, w j * |x j| ≤ 1}` and is contained
+in `{x | ∀ j, w j * |x j| ≤ 1}` for positive nondecreasing weights `w`, then the successive
+minima of the standard lattice `ℤⁿ` with respect to `C` are the weights. -/
+theorem successiveMin_pi_eq_of_crosspolytope_subset_of_subset_box (hw : ∀ j, 0 < w j)
+    (hmono : Monotone w) (hcross : {x | ∑ j, w j * |x j| ≤ 1} ⊆ (C : Set (Fin n → ℝ)))
+    (hbox : (C : Set (Fin n → ℝ)) ⊆ {x | ∀ j, w j * |x j| ≤ 1})
+    (i : Fin (finrank ℝ (Fin n → ℝ))) :
+    successiveMin (span ℤ (Set.range (Pi.basisFun ℝ (Fin n)))) C i =
+      w (i.cast (finrank_fin_fun ℝ)) := by
+  -- Apply the basis form to the standard basis, reindexed by `Fin (finrank ℝ (Fin n → ℝ))`.
+  set e : Fin (finrank ℝ (Fin n → ℝ)) ≃ Fin n := finCongr (finrank_fin_fun ℝ)
+  have hrepr (x : Fin n → ℝ) (j) : ((Pi.basisFun ℝ (Fin n)).reindex e.symm).repr x j = x (e j) := by
+    simp
+  have h := successiveMin_eq_of_crosspolytope_subset_of_subset_box
+    (b := (Pi.basisFun ℝ (Fin n)).reindex e.symm) (a := w ∘ e) (K := C) (fun j ↦ hw _)
+    (hmono.comp fun _ _ ↦ by simp [e]) (fun x hx ↦ hcross ?_) (fun x hx ↦ ?_) i
+  · rwa [Basis.range_reindex] at h
+  · simpa [hrepr, e.sum_comp fun j ↦ w j * |x j|] using hx
+  · simpa [hrepr, e.forall_congr_left] using hbox hx
+
+/-- **The successive minima of `ℤⁿ` with respect to a weighted box.** For positive nondecreasing
+weights `w`, the successive minima of the standard lattice `ℤⁿ` with respect to the box
+`C = {x | ∀ j, w j * |x j| ≤ 1}` are the weights. -/
+theorem successiveMin_pi_box (hw : ∀ j, 0 < w j) (hmono : Monotone w)
+    (hC : (C : Set (Fin n → ℝ)) = {x | ∀ j, w j * |x j| ≤ 1}) (i : Fin (finrank ℝ (Fin n → ℝ))) :
+    successiveMin (span ℤ (Set.range (Pi.basisFun ℝ (Fin n)))) C i =
+      w (i.cast (finrank_fin_fun ℝ)) :=
+  successiveMin_pi_eq_of_crosspolytope_subset_of_subset_box hw hmono
+    ((TauCeti.weighted_crosspolytope_subset_weighted_box (fun j ↦ (hw j).le) id).trans hC.ge)
+    hC.le i
+
+/-- **The successive minima of `ℤⁿ` with respect to a weighted cross-polytope.** For positive
+nondecreasing weights `w`, the successive minima of the standard lattice `ℤⁿ` with respect to the
+cross-polytope `C = {x | ∑ j, w j * |x j| ≤ 1}` are the weights. -/
+theorem successiveMin_pi_crosspolytope (hw : ∀ j, 0 < w j) (hmono : Monotone w)
+    (hC : (C : Set (Fin n → ℝ)) = {x | ∑ j, w j * |x j| ≤ 1})
+    (i : Fin (finrank ℝ (Fin n → ℝ))) :
+    successiveMin (span ℤ (Set.range (Pi.basisFun ℝ (Fin n)))) C i =
+      w (i.cast (finrank_fin_fun ℝ)) :=
+  successiveMin_pi_eq_of_crosspolytope_subset_of_subset_box hw hmono hC.ge
+    (hC.le.trans (TauCeti.weighted_crosspolytope_subset_weighted_box (fun j ↦ (hw j).le) id))
+    i
+
+end Pi
 
 section Measure
 

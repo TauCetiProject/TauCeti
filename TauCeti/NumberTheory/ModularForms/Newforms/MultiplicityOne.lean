@@ -146,7 +146,7 @@ theorem exists_eq_smul_of_commute_heckeRingHomCusp_of_mem_cuspFormsNew
         heckeRingHomCuspCharSpace k χ (heckeTCompositeGamma0 N p) (W f) = c • W f := by
     obtain ⟨c, hc⟩ := ha p hp hpN
     refine ⟨c, hc, ?_⟩
-    rw [← Module.End.mul_apply, ← (hW p hp hpN).eq, Module.End.mul_apply, hc, map_smul]
+    rw [← mul_apply_eq_comp, ← (hW p hp hpN).eq, mul_apply_eq_comp, hc, map_smul]
   -- so multiplicity one makes it a multiple of `f`
   obtain ⟨ε, hε⟩ := exists_eq_smul_of_forall_prime_heckeRingHomCusp_of_mem_cuspFormsNew heig hf
     (hWnew f hf) hf0

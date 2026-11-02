@@ -54,12 +54,6 @@ public interface, and consumers never unfold the equivalence.
 
 The proposition `a = j` is wrapped in `PLift` only to make the summand a type, so that `Nat.card`
 applies, exactly as in the last-arrow decomposition.
-
-## References
-
-The path count is the combinatorial input to the Euler-form identity for the injective
-representation at a vertex, Layer 4 of
-`TauCetiRoadmap/RepresentationTheory/QuiverRepresentations/README.md`.
 -/
 
 public section
@@ -163,10 +157,9 @@ def pathFirstArrowEquiv (a j : V) :
   toFun := pathFirstArrowSplit
   invFun := pathOfFirstArrow
   left_inv := pathOfFirstArrow_pathFirstArrowSplit
-  right_inv x := by
-    cases x with
-    | inl h => obtain ⟨rfl⟩ := h; rfl
-    | inr y => obtain ⟨b, e, q⟩ := y; exact pathFirstArrowSplit_toPath_comp e q
+  right_inv := by
+    rintro (⟨⟨rfl⟩⟩ | ⟨b, e, q⟩)
+    exacts [rfl, pathFirstArrowSplit_toPath_comp e q]
 
 /-- The trivial path is the left summand of the first-arrow decomposition. -/
 @[simp]
@@ -193,28 +186,24 @@ theorem pathFirstArrowEquiv_symm_inr {a j : V} (b : V) (e : a ⟶ b) (q : Quiver
   (rfl)
 
 /-- **The first-arrow recursion for path counts.** The paths `a → j` are the trivial one, present
-exactly when `a = j`, together with an arrow `a ⟶ b` and a path `b → j`. All three cardinalities
-are honest counts only when the paths into `j` are finite, which is what the hypothesis
-`[∀ b, Finite (Quiver.Path b j)]` provides. The only arrows counted are those out of `a`, so
-`[∀ b, Finite (a ⟶ b)]` suffices for the arrow factors.
+exactly when `a = j`, together with an arrow `a ⟶ b` and a path `b → j`. Only the paths `a → j`
+need to be finite. A single factor `#(a ⟶ b)` or `#(b → j)` may then be the junk value `0` of an
+infinite type, but each summand `#(a ⟶ b) * #(b → j)` is still an honest count: if either type is
+nonempty, the other one injects into the paths `a → j`, so an infinite factor only occurs alongside
+an empty one.
 
 This is the mirror image of `TauCeti.card_path_eq_ite_add_sum_lastArrow`. -/
-theorem card_path_eq_ite_add_sum_firstArrow [DecidableEq V] [Fintype V] (a : V)
-    [∀ b : V, Finite (a ⟶ b)] (j : V) [∀ b : V, Finite (Quiver.Path b j)] :
+theorem card_path_eq_ite_add_sum_firstArrow [DecidableEq V] [Fintype V] (a j : V)
+    [Finite (Quiver.Path a j)] :
     Nat.card (Quiver.Path a j)
       = (if a = j then 1 else 0)
         + ∑ b : V, Nat.card (a ⟶ b) * Nat.card (Quiver.Path b j) := by
-  have hsub : Subsingleton (PLift (a = j)) := ⟨fun x y ↦ by cases x; cases y; rfl⟩
-  have : Finite (PLift (a = j)) := Finite.of_subsingleton
-  have hcard : Nat.card (PLift (a = j)) = if a = j then 1 else 0 := by
-    by_cases h : a = j
-    · rw [ite_eq_left h]
-      exact Nat.card_eq_one_iff_unique.mpr ⟨hsub, ⟨⟨h⟩⟩⟩
-    · rw [ite_eq_right h]
-      have : IsEmpty (PLift (a = j)) := ⟨fun x ↦ h x.down⟩
-      exact Nat.card_of_isEmpty
-  rw [Nat.card_congr (pathFirstArrowEquiv a j), Nat.card_sum, hcard, Nat.card_sigma]
-  exact congrArg _ (Finset.sum_congr rfl fun b _ ↦ Nat.card_prod _ _)
+  have : Finite (Σ b : V, (a ⟶ b) × Quiver.Path b j) :=
+    .of_injective _ ((pathFirstArrowEquiv a j).symm.injective.comp Sum.inr_injective)
+  have (b : V) : Finite ((a ⟶ b) × Quiver.Path b j) :=
+    .of_injective (Sigma.mk (β := fun b ↦ (a ⟶ b) × Quiver.Path b j) b) sigma_mk_injective
+  rw [Nat.card_congr (pathFirstArrowEquiv a j), Nat.card_sum, Nat.card_sigma]
+  split_ifs with h <;> simp [h]
 
 /-- **A path out of `i` is determined by its first arrow and the path after it**: two indexed paths
 beginning with arrows out of `i` agree exactly when their remainders and their first arrows do.

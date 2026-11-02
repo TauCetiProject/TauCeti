@@ -7,6 +7,9 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.Normed
 public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Integrated
+public import TauCeti.Analysis.CStarAlgebra.Completion
+public import TauCeti.Analysis.Normed.Ring.Completion
+public import Mathlib.Topology.Algebra.LinearMapCompletion
 
 /-!
 # Contractive integrated representations
@@ -14,8 +17,9 @@ public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Integrated
 The vector-valued integrated form of a covariant representation is a contraction from the
 compact-support twisted convolution algebra with its L¹ seminorm to the bounded operators on
 the representation space. We bundle it both as a continuous linear map and, for a left-invariant
-measure, as a nonunital algebra homomorphism. The continuous linear map is the input for extending
-the integrated form to the completion using `ContinuousLinearMap.fromCompletion`.
+measure, as a nonunital algebra homomorphism. Extending by continuity, the integrated form is a
+contractive nonunital algebra homomorphism on the twisted L¹ algebra, the completion
+`UniformSpace.Completion (ConvolutionAlgebra α μ)`.
 
 Only finiteness on compact sets is needed for continuity. Left invariance is needed for the
 algebra homomorphism. Neither unitality of the coefficient algebra, nondegeneracy of the
@@ -28,7 +32,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory
+open MeasureTheory UniformSpace
 open scoped CompactlySupported
 
 namespace TauCeti.CStarAction.CovariantRepresentation
@@ -84,6 +88,41 @@ theorem integratedNonUnitalAlgHom_apply (f : ConvolutionAlgebra α μ) :
 @[fun_prop]
 theorem continuous_integratedNonUnitalAlgHom : Continuous (P.integratedNonUnitalAlgHom μ) :=
   (P.integratedOperatorCLM μ).continuous
+
+/-- The integrated form on the twisted L¹ algebra: the extension by continuity of
+`integratedNonUnitalAlgHom` to the completion of the convolution algebra in its L¹ seminorm. -/
+def integratedOperatorL1 :
+    Completion (ConvolutionAlgebra α μ) →ₙₐ[ℂ] (H →L[ℂ] H) where
+  toFun := (P.integratedOperatorCLM μ).fromCompletion
+  map_smul' := map_smul _
+  map_zero' := map_zero _
+  map_add' := map_add _
+  map_mul' x y := by
+    induction x, y using Completion.induction_on₂ with
+    | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
+    | ih f g => simp only [← Completion.coe_mul', ContinuousLinearMap.fromCompletion_apply_coe,
+        integratedOperatorCLM_apply, ConvolutionAlgebra.ofConv_mul, integratedOperator_convolution]
+
+/-- On compactly supported coefficients the L¹ integrated form is the integrated form. -/
+@[simp]
+theorem integratedOperatorL1_coe (f : ConvolutionAlgebra α μ) :
+    P.integratedOperatorL1 μ f = P.integratedOperator μ f.ofConv := by
+  simp [integratedOperatorL1]
+
+/-- The L¹ integrated form is continuous. -/
+@[fun_prop]
+theorem continuous_integratedOperatorL1 : Continuous (P.integratedOperatorL1 μ) :=
+  (P.integratedOperatorCLM μ).fromCompletion.continuous
+
+/-- The L¹ integrated form is a contraction: `‖(π ⋊ U)(x)‖ ≤ ‖x‖₁` on the twisted L¹ algebra. -/
+theorem norm_integratedOperatorL1_le (x : Completion (ConvolutionAlgebra α μ)) :
+    ‖P.integratedOperatorL1 μ x‖ ≤ ‖x‖ := by
+  induction x using Completion.induction_on with
+  | hp => exact isClosed_le (by fun_prop) (by fun_prop)
+  | ih f =>
+    simpa only [integratedOperatorL1_coe, Completion.norm_coe, one_mul,
+      integratedOperatorCLM_apply] using (P.integratedOperatorCLM μ).le_of_opNorm_le
+        (P.norm_integratedOperatorCLM_le μ) f
 
 end Multiplication
 

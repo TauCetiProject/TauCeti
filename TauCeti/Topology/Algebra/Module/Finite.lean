@@ -25,10 +25,12 @@ uniformity, by `IsOpenQuotientMap.completeSpace` — completeness.
 
 Each theorem asks of `A` exactly what its proof consumes, and none of them needs `A` to be a
 Huber or a Tate ring. Separatedness is different: it is equivalent to closedness of the kernel of
-the presentation, which is a genuinely arithmetic condition, and it is proved for a complete
-noetherian Tate ring in `TauCeti.RingTheory.Huber.FiniteModuleTopology`. For a finite
-*projective* module no arithmetic is needed: `M` is a direct summand of some `Aⁿ`, the section
-`M → Aⁿ` is a continuous injection, and so `M` is Hausdorff as soon as `A` is (compare
+the presentation (`TauCeti.t2Space_moduleTopology_iff_isClosed_ker` in
+`TauCeti.Topology.Algebra.Module.ModuleTopology`), which is a genuinely arithmetic condition,
+and it is proved for a complete noetherian Tate ring in
+`TauCeti.RingTheory.Huber.FiniteModuleTopology`. For a finite *projective* module no arithmetic
+is needed: `M` is a direct summand of some `Aⁿ`, the section `M → Aⁿ` is a continuous injection,
+and so `M` is Hausdorff as soon as `A` is (compare
 Kedlaya–Liu, Lemma 2.2.12(a), where the module topology of a finite projective module is
 identified with the subspace topology from such a summand embedding).
 
@@ -85,7 +87,7 @@ theorem nonarchimedeanAddGroup_moduleTopology [TopologicalSpace A]
   have _ : IsModuleTopology A M := inferInstance
   let _ : IsTopologicalAddGroup M := IsModuleTopology.isTopologicalAddGroup A M
   obtain ⟨n, f, hf⟩ := Module.Finite.exists_fin' A M
-  exact NonarchimedeanAddGroup.nonarchimedean_of_isOpenMap f.toAddMonoidHom
+  exact NonarchimedeanAddGroup.nonarchimedean_of_isOpenMap f
     (IsModuleTopology.continuous_of_linearMap f).continuousAt
     (IsModuleTopology.isOpenQuotientMap_of_surjective hf).isOpenMap
 

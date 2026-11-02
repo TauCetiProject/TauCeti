@@ -25,8 +25,8 @@ integrand stays holomorphic even for `w` on the curve.
   on `U`, for `f` differentiable on the open set `U` and `γ` continuous on `uIcc a b` with
   interval-integrable derivative and image in `U`.
 
-This feeds the `homologyCauchyTheorem` roadmap target
-(`TauCetiRoadmap/ContourIntegration/Suggested.lean`, Layer 3, Dixon's argument).
+This feeds Dixon's proof of the homology form of Cauchy's theorem,
+recorded as `TauCeti.Contour.homologyCauchyTheorem`.
 
 ## Provenance
 

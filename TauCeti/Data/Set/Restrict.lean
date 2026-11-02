@@ -12,8 +12,8 @@ public import Mathlib.Data.Set.Restrict
 # Fibers of a map restricted to a preimage
 
 The fiber of `Set.restrictPreimage` over a point has the same cardinality as the corresponding
-fiber of the original map. Dually, removing the preimage of a set from the domain does not change
-the fibers over points outside that set.
+fiber of the original map, and is finite exactly when that fiber is. Dually, removing the preimage
+of a set from the domain does not change the fibers over points outside that set.
 -/
 
 public section
@@ -32,6 +32,13 @@ over a point of that set. -/
     _ = ((Subtype.val : (f ⁻¹' t) → α) '' ((t.restrictPreimage f) ⁻¹' {w})).ncard :=
       (Set.ncard_image_of_injective _ Subtype.val_injective).symm
     _ = _ := by rw [image_val_preimage_restrictPreimage, image_singleton]
+
+/-- Restricting a map to the preimage of a set does not change whether a fiber over a point of
+that set is finite. -/
+@[simp] theorem finite_fiber_restrictPreimage_iff (w : t) :
+    ((t.restrictPreimage f) ⁻¹' {w}).Finite ↔ (f ⁻¹' {w.val}).Finite := by
+  rw [← finite_image_iff Subtype.val_injective.injOn, image_val_preimage_restrictPreimage,
+    image_singleton]
 
 /-- Removing the preimage of a set `Z` from a set `T` does not change the cardinality of the part
 of `T` in a fiber over a point outside `Z`. -/

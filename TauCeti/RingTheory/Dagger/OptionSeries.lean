@@ -170,6 +170,15 @@ theorem optionSeries_optionC (f : washnitzerAlgebra σ R) :
 theorem optionC_X (i : σ) : optionC (X σ R i) = X (Option σ) R (some i) :=
   optionSeries_injective (by simp)
 
+/-- On polynomials, `optionC` is renaming the variables along `some`. -/
+@[simp]
+theorem optionC_ofMvPolynomial (p : MvPolynomial σ R) :
+    optionC (ofMvPolynomial σ R p) = ofMvPolynomial (Option σ) R (MvPolynomial.rename some p) := by
+  have h : optionC.comp (ofMvPolynomial σ R) =
+      (ofMvPolynomial (Option σ) R).comp (MvPolynomial.rename some) :=
+    MvPolynomial.algHom_ext fun i ↦ by simp
+  exact AlgHom.congr_fun h p
+
 /-- `optionC` is injective. -/
 theorem optionC_injective : Function.Injective (optionC (σ := σ) (R := R)) := fun f g h ↦
   PowerSeries.C_injective (by simpa using congrArg optionSeries h)

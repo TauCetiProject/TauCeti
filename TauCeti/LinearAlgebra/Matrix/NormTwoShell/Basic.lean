@@ -49,6 +49,8 @@ nonzero exactly in the cases `a + b ∈ Φ` and `a = -b` isolated here.
 * `Matrix.normTwoShell`: the vectors of norm two of an integer Gram matrix.
 * `Matrix.normTwoShellCongr`: the bijection of norm-two shells induced by a relabelling of the
   vertices.
+* `Matrix.normTwoShellEquivOfIsometry`: the bijection of norm-two shells induced by a linear
+  isometry of Gram lattices.
 
 ## Main results
 
@@ -336,5 +338,46 @@ theorem coe_normTwoShellCongr_symm_apply (he : B.reindex e e = B') (b : B'.normT
   simp [normTwoShellCongr]
 
 end Reindex
+
+section Isometry
+
+variable {J : Type*} [Fintype J] {B' : Matrix J J ℤ}
+
+/-- A vector lies in the norm-two shell of `B` exactly when its image under an isometry from the
+Gram lattice of `B` to that of `B'` lies in the norm-two shell of `B'`. -/
+theorem apply_mem_normTwoShell_iff {g : (I → ℤ) → J → ℤ}
+    (hg : ∀ a b, g a ⬝ᵥ B' *ᵥ g b = a ⬝ᵥ B *ᵥ b) :
+    g a ∈ B'.normTwoShell ↔ a ∈ B.normTwoShell := by
+  rw [mem_normTwoShell, mem_normTwoShell, hg]
+
+/-- **The norm-two shells of isometric Gram lattices**: a linear isometry `g` from the Gram lattice
+of `B` onto that of `B'` restricts to a bijection `a ↦ g a` from the norm-two shell of `B` to that
+of `B'`. -/
+def normTwoShellEquivOfIsometry (g : (I → ℤ) ≃ₗ[ℤ] (J → ℤ))
+    (hg : ∀ a b, g a ⬝ᵥ B' *ᵥ g b = a ⬝ᵥ B *ᵥ b) : B.normTwoShell ≃ B'.normTwoShell :=
+  g.toEquiv.subtypeEquiv fun _ => (apply_mem_normTwoShell_iff hg).symm
+
+@[simp]
+theorem coe_normTwoShellEquivOfIsometry_apply (g : (I → ℤ) ≃ₗ[ℤ] (J → ℤ))
+    (hg : ∀ a b, g a ⬝ᵥ B' *ᵥ g b = a ⬝ᵥ B *ᵥ b) (a : B.normTwoShell) :
+    (normTwoShellEquivOfIsometry g hg a : J → ℤ) = g a :=
+  (rfl)
+
+@[simp]
+theorem coe_normTwoShellEquivOfIsometry_symm_apply (g : (I → ℤ) ≃ₗ[ℤ] (J → ℤ))
+    (hg : ∀ a b, g a ⬝ᵥ B' *ᵥ g b = a ⬝ᵥ B *ᵥ b) (b : B'.normTwoShell) :
+    ((normTwoShellEquivOfIsometry g hg).symm b : I → ℤ) = g.symm b :=
+  (rfl)
+
+/-- The isometry `a ↦ a ∘ e.symm` induced by a relabelling `e` restricts on the norm-two shells to
+the relabelling bijection `Matrix.normTwoShellCongr`. -/
+theorem normTwoShellEquivOfIsometry_funCongrLeft {e : I ≃ J} (he : B.reindex e e = B')
+    (hg : ∀ a b, LinearEquiv.funCongrLeft ℤ ℤ e.symm a ⬝ᵥ B' *ᵥ
+      LinearEquiv.funCongrLeft ℤ ℤ e.symm b = a ⬝ᵥ B *ᵥ b) (a : B.normTwoShell) :
+    normTwoShellEquivOfIsometry (LinearEquiv.funCongrLeft ℤ ℤ e.symm) hg a =
+      normTwoShellCongr he a :=
+  Subtype.ext (funext fun j => by simp [LinearMap.funLeft_apply])
+
+end Isometry
 
 end Matrix

@@ -38,7 +38,7 @@ positive characteristic.
 
 public section
 
-namespace TauCeti.IsSemisimpleRing
+namespace IsSemisimpleRing
 
 variable (k A : Type*) [Field k] [Ring A] [Algebra k A] [IsSemisimpleRing A]
 
@@ -46,10 +46,10 @@ variable (k A : Type*) [Field k] [Ring A] [Algebra k A] [IsSemisimpleRing A]
 algebra of each simple left ideal has dimension one over the base field. -/
 theorem nonempty_splitWedderburnAlgebraPresentation_of_finrank_end_eq_one
     (h : ∀ S : Ideal A, IsSimpleModule A S → Module.finrank k (Module.End A S) = 1) :
-    Nonempty (SplitWedderburnAlgebraPresentation k A) := by
+    Nonempty (TauCeti.SplitWedderburnAlgebraPresentation k A) := by
   classical
   obtain ⟨n, S, d, hS, hd, ⟨e⟩⟩ :=
-    _root_.IsSemisimpleRing.exists_algEquiv_pi_matrix_end_mulOpposite k A
+    IsSemisimpleRing.exists_algEquiv_pi_matrix_end_mulOpposite k A
   let (i : Fin n) : IsSimpleModule A (S i) := hS i
   let (i : Fin n) : NeZero (d i) := hd i
   have hcoeff (i : Fin n) : Nonempty (k ≃ₐ[k] Module.End A (S i)) :=
@@ -61,7 +61,7 @@ theorem nonempty_splitWedderburnAlgebraPresentation_of_finrank_end_eq_one
     degree := d
     equiv := e.trans (AlgEquiv.piCongrRight fun i ↦ AlgEquiv.mapMatrix (f i)) }⟩
 
-end TauCeti.IsSemisimpleRing
+end IsSemisimpleRing
 
 namespace TauCeti.SplitWedderburnAlgebraPresentation
 
@@ -102,14 +102,14 @@ theorem nonempty_end_algEquiv_self (P : SplitWedderburnAlgebraPresentation k A)
 
 end TauCeti.SplitWedderburnAlgebraPresentation
 
-namespace TauCeti.IsSemisimpleRing
+namespace IsSemisimpleRing
 
 variable (k A : Type*) [Field k] [Ring A] [Algebra k A] [IsSemisimpleRing A]
 
 /-- A semisimple algebra is split exactly when every simple left ideal has a
 one-dimensional endomorphism algebra over the base field. -/
 theorem nonempty_splitWedderburnAlgebraPresentation_iff_finrank_end_eq_one :
-    Nonempty (SplitWedderburnAlgebraPresentation k A) ↔
+    Nonempty (TauCeti.SplitWedderburnAlgebraPresentation k A) ↔
       ∀ S : Ideal A, IsSimpleModule A S → Module.finrank k (Module.End A S) = 1 := by
   refine ⟨?_, nonempty_splitWedderburnAlgebraPresentation_of_finrank_end_eq_one k A⟩
   rintro ⟨P⟩ S hS
@@ -117,4 +117,4 @@ theorem nonempty_splitWedderburnAlgebraPresentation_iff_finrank_end_eq_one :
   obtain ⟨e⟩ := P.nonempty_end_algEquiv_self S
   rw [e.toLinearEquiv.finrank_eq, Module.finrank_self]
 
-end TauCeti.IsSemisimpleRing
+end IsSemisimpleRing

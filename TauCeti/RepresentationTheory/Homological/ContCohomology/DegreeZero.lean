@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RepresentationTheory.Homological.ContCohomology.LowDegree
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Functoriality
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Basic
 import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
 
 /-!
@@ -62,6 +63,8 @@ together with the invariant-class constructor `degreeZeroClass` that the same la
   `TauCeti.ContinuousCohomology.infl_comp_zeroIso_hom`: the same for the three named instances.
 * `TauCeti.ContinuousCohomology.degreeZeroClass_eq_π`: the degree-zero class of an invariant
   vector is the class of any `0`-cocycle with that value at `1`.
+* `TopRep.cochainClass_eq_degreeZeroClass`: the class of a homogeneous `0`-cocycle is the
+  degree-zero class of its value at `1`.
 * `TauCeti.ContinuousCohomology.map_degreeZeroClass`: compatible-pair functoriality on classes of
   invariant vectors.
 * `TauCeti.ContinuousCohomology.isIso_infl_zero`, `TauCeti.ContinuousCohomology.res_zero_injective`,
@@ -329,3 +332,19 @@ end Edge
 end ContinuousCohomology
 
 end TauCeti
+
+namespace TopRep
+
+variable {R G : Type*} [Ring R] [TopologicalSpace R] [Group G] [TopologicalSpace G]
+  [IsTopologicalGroup G]
+
+/-- **The class of a homogeneous `0`-cocycle is the degree-zero class of its value at `1`.** -/
+theorem cochainClass_eq_degreeZeroClass (X : TopRep R G)
+    (a : (homogeneousCochains X).X 0) (ha : ((homogeneousCochains X).d 0 (0 + 1)).hom a = 0)
+    (u : X.V) (hu : ∀ g : G, X.ρ g u = u) (h : a.1 1 = u) :
+    X.cochainClass 0 a ha = TauCeti.ContinuousCohomology.degreeZeroClass X u hu :=
+  (cochainClass_def X 0 a ha).trans (TauCeti.ContinuousCohomology.degreeZeroClass_eq_π
+    ((homogeneousCochains X).cyclesMkOfEq a (0 + 1) (CochainComplex.next ℕ 0) ha) u hu
+    (by rw [HomologicalComplex.iCycles_cyclesMkOfEq]; exact h)).symm
+
+end TopRep

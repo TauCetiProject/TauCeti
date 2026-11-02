@@ -31,6 +31,8 @@ Rourke--Sanderson, *Introduction to Piecewise-Linear Topology*, Chapter 2, "Deri
 
 ## Main results
 
+* `AbstractSimplicialComplex.support_barycentricSubdivisionLinearMap_eq_greatest`: the support of
+  a nonnegative combination of the barycenters of a chain of faces is the greatest face.
 * `AbstractSimplicialComplex.linearIndepOn_faceBarycenter`: the barycenters of a chain of faces
   are linearly independent.
 * `AbstractSimplicialComplex.barycentricSubdivisionRealizationMap_injective`: the canonical
@@ -59,7 +61,7 @@ private theorem inv_card_pos (K : AbstractSimplicialComplex ι) (σ : Face K) :
 
 /-- The greatest face of a nonnegative chain-supported combination is exactly the coordinate
 support of its image under the barycentric-subdivision linear map. -/
-private theorem support_barycentricSubdivisionLinearMap_eq_greatest
+theorem support_barycentricSubdivisionLinearMap_eq_greatest
     (K : AbstractSimplicialComplex ι) {a : Face K →₀ ℝ} (ha : ∀ σ, 0 ≤ a σ)
     {σ : Face K} (hσ : σ ∈ a.support) (hmax : ∀ τ ∈ a.support, τ ≤ σ) :
     (barycentricSubdivisionLinearMap K a).support = σ.1 := by
@@ -138,7 +140,7 @@ private theorem barycentricSubdivisionLinearMap_injective_of_nonneg_of_isChain
     (hab : barycentricSubdivisionLinearMap K a = barycentricSubdivisionLinearMap K b) : a = b := by
   induction hmeasure : a.support.card + b.support.card using Nat.strong_induction_on
     generalizing a b with
-  | h n ih =>
+  | ind n ih =>
       -- A nonzero nonnegative combination has nonzero image, so the zero cases agree.
       by_cases ha0 : a = 0
       · subst a

@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.GroupWithZero.Finset
 public import Mathlib.NumberTheory.PrimeCounting
+public import Mathlib.Topology.Algebra.GroupWithZero
 import TauCeti.Order.Filter.AtTopBot
 
 /-!
@@ -29,6 +31,10 @@ These comparisons concern conditionally convergent products such as Euler produc
 of their half-plane of absolute convergence, where only ordered cutoffs make sense and different
 orderings of the primes could give different limits. No topology on the values is needed.
 
+Deleting the factors at a finite set `S` of primes changes the cutoffs `∏ p ∈ primesLE B, f p`,
+once `B` is past `S`, by the fixed factor `∏ p ∈ S, f p`. When no deleted factor vanishes,
+convergence of the cutoffs therefore transports in both directions with this explicit correction.
+
 ## Main results
 
 * `Nat.primesBelow_eq_image_nth`, `Nat.primesLE_eq_image_nth`: the primes below a bound are the
@@ -39,11 +45,15 @@ orderings of the primes could give different limits. No topology on the values i
   when the products over the first `k` primes do.
 * `Nat.tendsto_prod_primesLE_comp_iff`: the same along cutoffs passing every prime one at a time.
 * `Nat.tendsto_prod_primesLE_nth_iff`: the same along the cutoffs `nth Nat.Prime k`.
+* `Nat.eventually_subset_primesLE`: a finite set of primes eventually lies in `Nat.primesLE B`.
+* `Nat.tendsto_prod_primesLE_filter_notMem_iff`: deleting the factors at a finite set of primes
+  transports convergence of the ordered products, with the explicit finite correction.
 -/
 
 public section
 
 open Filter Finset
+open scoped Topology
 
 namespace Nat
 
@@ -118,5 +128,32 @@ theorem tendsto_prod_primesLE_nth_iff :
       Tendsto (fun n ↦ ∏ p ∈ primesLE n, f p) atTop l :=
   tendsto_prod_primesLE_comp_iff (nth_strictMono infinite_setOfPred_prime).tendsto_atTop
     (.of_forall fun k ↦ by simp)
+
+section FiniteDeletion
+
+variable {S : Finset ℕ}
+
+/-- Every element of a finite set of primes eventually lies below the cutoff. -/
+theorem eventually_subset_primesLE (hS : ∀ p ∈ S, p.Prime) : ∀ᶠ B in atTop, S ⊆ primesLE B := by
+  filter_upwards [eventually_ge_atTop (S.sup id)] with B hB p hp
+  exact mem_primesLE.mpr ⟨(le_sup (f := id) hp).trans hB, hS p hp⟩
+
+/-- **Deleting finitely many factors from ordered prime products.** Let `S` be a finite set of
+primes at which no factor `f p` vanishes. The products of `f` over all primes `p ≤ B` converge to
+`L * ∏ p ∈ S, f p` if and only if the products over the primes `p ≤ B` outside `S` converge to
+`L`. -/
+theorem tendsto_prod_primesLE_filter_notMem_iff {G₀ : Type*} [CommGroupWithZero G₀]
+    [TopologicalSpace G₀] [SeparatelyContinuousMul G₀] {f : ℕ → G₀} (hS : ∀ p ∈ S, p.Prime)
+    (hf : ∀ p ∈ S, f p ≠ 0) {L : G₀} :
+    Tendsto (fun B : ℕ ↦ ∏ p ∈ primesLE B, f p) atTop (𝓝 (L * ∏ p ∈ S, f p)) ↔
+      Tendsto (fun B : ℕ ↦ ∏ p ∈ primesLE B with p ∉ S, f p) atTop (𝓝 L) := by
+  have heq : (fun B : ℕ ↦ ∏ p ∈ primesLE B, f p) =ᶠ[atTop]
+      fun B ↦ (∏ p ∈ primesLE B with p ∉ S, f p) * ∏ p ∈ S, f p := by
+    filter_upwards [eventually_subset_primesLE hS] with B hB
+    rw [← sdiff_eq_filter, prod_sdiff hB]
+  rw [tendsto_congr' heq]
+  exact ((Homeomorph.mulRight₀ _ (prod_ne_zero_iff.mpr hf)).isInducing.tendsto_nhds_iff).symm
+
+end FiniteDeletion
 
 end Nat

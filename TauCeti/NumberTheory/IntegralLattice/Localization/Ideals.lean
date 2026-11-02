@@ -77,11 +77,15 @@ theorem isEven_iff_forall_two_dvd_localIntegralForm_apply_self :
   simp only [L.isEven_iff_localNormIdeal_le_span_two, LinearMap.BilinForm.normIdeal_le_iff,
     Ideal.mem_span_singleton]
 
-variable {L} in
-/-- **The dyadic localization of an even lattice is even.** Every value `B(x, x)` of the localized
-integral form of an even lattice at `2` is divisible by `2` in `ℤ_[2]`. -/
+variable {L p} in
+/-- **The localizations of an even lattice are even.** Every value `B(x, x)` of the localized
+integral form of an even lattice at a prime `p` is divisible by `2` in `ℤ_[p]`. -/
 theorem IsEven.two_dvd_localIntegralForm_apply_self (heven : L.IsEven)
-    (x : L.LocalCarrier 2) : (2 : ℤ_[2]) ∣ L.localIntegralForm 2 x x :=
-  L.isEven_iff_forall_two_dvd_localIntegralForm_apply_self.mp heven x
+    (x : L.LocalCarrier p) : (2 : ℤ_[p]) ∣ L.localIntegralForm p x x := by
+  have h : L.localNormIdeal p ≤ Ideal.span {(2 : ℤ_[p])} := by
+    rw [localNormIdeal_eq_map]
+    refine (Ideal.map_mono (L.isEven_iff_normIdeal_le_span_singleton_two.mp heven)).trans ?_
+    rw [Ideal.map_span, Set.image_singleton, map_ofNat]
+  exact Ideal.mem_span_singleton.mp (h ((L.localIntegralForm p).self_mem_normIdeal x))
 
 end TauCeti.IntegralLattice

@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Category.Preorder
 public import Mathlib.CategoryTheory.EqToHom
 public import Mathlib.Data.Finset.Grade
+public import TauCeti.CategoryTheory.Category.Preorder
 import TauCeti.Data.Finset.Card
 
 /-!
@@ -31,8 +31,6 @@ and checked along edges.
   maps `f`, given that the two routes `S ⋖ T ⋖ U` and `S ⋖ T' ⋖ U` around every square face
   agree (`comm`). The map along `S ⊆ T` composes the edge maps along any maximal chain from `S`
   to `T`.
-* `CategoryTheory.NatTrans.ofCovBy app naturality`: a natural transformation between functors
-  `Finset ι ⥤ C`, from its components and naturality along the edges only.
 
 ## Main results
 
@@ -41,6 +39,10 @@ and checked along edges.
 * `CategoryTheory.Functor.ext_of_covBy`: two functors `Finset ι ⥤ C` agreeing on vertices and
   edge maps are equal, so `Functor.ofCovBy f comm` is the only functor with vertices `X` and edge
   maps `f`.
+
+Maps of cubes are built by `CategoryTheory.NatTrans.ofCovBy` in
+`TauCeti.CategoryTheory.Category.Preorder`, from their components and naturality along the edges
+only; it applies to functors on any locally finite partial order, such as `Finset ι`.
 
 The analogous constructions for functors out of `ℕ` are `CategoryTheory.Functor.ofSequence` and
 `CategoryTheory.NatTrans.ofSequence`.
@@ -235,33 +237,5 @@ theorem ext_of_covBy {F G : Finset ι ⥤ C} (h_obj : ∀ S, F.obj S = G.obj S)
     simp
 
 end Functor
-
-namespace NatTrans
-
-variable {F G : Finset ι ⥤ C} (app : ∀ S, F.obj S ⟶ G.obj S)
-  (naturality : ∀ ⦃S T : Finset ι⦄ (h : S ⋖ T),
-    F.map (homOfLE h.le) ≫ app T = app S ≫ G.map (homOfLE h.le))
-
-/-- The natural transformation between functors `Finset ι ⥤ C` with components `app`, which
-need only be natural along the edges `S ⋖ T`. -/
-def ofCovBy : F ⟶ G where
-  app := app
-  naturality S T φ := by
-    classical
-    suffices ∀ S (h : S ⊆ T), F.map (homOfLE h) ≫ app T = app S ≫ G.map (homOfLE h) from
-      this S (leOfHom φ)
-    intro S h
-    induction S, h using subset_induction with
-    | self => simp
-    | step S a ha h ih =>
-      rw [← homOfLE_comp (S.subset_insert a) h, F.map_comp, G.map_comp, assoc, ih,
-        reassoc_of% naturality (covBy_insert ha)]
-
-/-- The components of `NatTrans.ofCovBy app naturality` are `app`. -/
-@[simp]
-theorem ofCovBy_app (S : Finset ι) : (ofCovBy app naturality).app S = app S :=
-  (rfl)
-
-end NatTrans
 
 end CategoryTheory

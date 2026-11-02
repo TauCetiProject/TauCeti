@@ -57,18 +57,18 @@ theorem Module.End.isUnit_one_add_of_forall_exists_pow_apply_eq_zero (f : Module
     (hf : ∀ x, ∃ n, (f ^ n) x = 0) : IsUnit (1 + f) := by
   have hneg : ∀ (n : ℕ) (x : M), (f ^ n) x = 0 → ((-f) ^ n) x = 0 := by
     intro n x hx
-    rw [neg_pow, Module.End.mul_apply, hx, map_zero]
+    rw [neg_pow, _root_.mul_apply_eq_comp, hx, map_zero]
   rw [Module.End.isUnit_iff]
   refine ⟨(injective_iff_map_eq_zero (1 + f)).2 fun x hx ↦ ?_, fun y ↦ ?_⟩
   · obtain ⟨n, hn⟩ := hf x
     have h := LinearMap.congr_fun (geom_sum_mul_neg (-f) n) x
-    rw [sub_neg_eq_add, Module.End.mul_apply, hx, map_zero, LinearMap.sub_apply,
-      Module.End.one_apply, hneg n x hn, sub_zero] at h
+    rw [sub_neg_eq_add, _root_.mul_apply_eq_comp, hx, map_zero, LinearMap.sub_apply,
+      _root_.one_apply_eq_self, hneg n x hn, sub_zero] at h
     exact h.symm
   · obtain ⟨n, hn⟩ := hf y
     refine ⟨(∑ i ∈ Finset.range n, (-f) ^ i) y, ?_⟩
     have h := LinearMap.congr_fun (mul_neg_geom_sum (-f) n) y
-    rwa [sub_neg_eq_add, Module.End.mul_apply, LinearMap.sub_apply, Module.End.one_apply,
+    rwa [sub_neg_eq_add, _root_.mul_apply_eq_comp, LinearMap.sub_apply, _root_.one_apply_eq_self,
       hneg n y hn, sub_zero] at h
 
 
@@ -90,17 +90,17 @@ theorem TauCeti.LinearMap.IsHomogeneous.ringInverse_one_add {ι : Type*} [AddMon
     induction i with
     | zero => simpa using hx
     | succ i ih =>
-      rw [pow_succ', Module.End.mul_apply, LinearMap.neg_apply]
+      rw [pow_succ', _root_.mul_apply_eq_comp, LinearMap.neg_apply]
       simpa only [add_zero] using neg_mem (hf.map_mem ih)
   set y := (∑ i ∈ Finset.range n, (-f) ^ i) x with hy_def
   have hy : (1 + f) y = x := by
     have h := LinearMap.congr_fun (mul_neg_geom_sum (-f) n) x
-    rwa [sub_neg_eq_add, Module.End.mul_apply, LinearMap.sub_apply, Module.End.one_apply,
-      neg_pow, Module.End.mul_apply, hn, map_zero, sub_zero] at h
+    rwa [sub_neg_eq_add, _root_.mul_apply_eq_comp, LinearMap.sub_apply, _root_.one_apply_eq_self,
+      neg_pow, _root_.mul_apply_eq_comp, hn, map_zero, sub_zero] at h
   have hinv : Ring.inverse (1 + f) x = y := by
-    rw [← hy, ← Module.End.mul_apply,
+    rw [← hy, ← _root_.mul_apply_eq_comp,
       Ring.inverse_mul_cancel _ (Module.End.isUnit_one_add_of_forall_exists_pow_apply_eq_zero f
-        hnil), Module.End.one_apply]
+        hnil), _root_.one_apply_eq_self]
   rw [hinv, add_zero, hy_def, LinearMap.sum_apply]
   exact Submodule.sum_mem _ fun i _ ↦ hpow i
 
@@ -145,7 +145,7 @@ theorem Module.End.exists_pow_apply_eq_zero_of_forall_mem_support_lt
         rw [← Finsupp.smul_single_one]
         exact N.smul_mem _ (ih j (hf i j hj))
       obtain ⟨k, hk⟩ := (hN _).1 hfi
-      exact (hN _).2 ⟨k + 1, by rw [pow_succ, Module.End.mul_apply, hk]⟩
+      exact (hN _).2 ⟨k + 1, by rw [pow_succ, _root_.mul_apply_eq_comp, hk]⟩
   have hx : x ∈ N := by
     induction x using Finsupp.induction_linear with
     | zero => exact N.zero_mem
@@ -206,8 +206,8 @@ theorem mem_wordKer_iff {d : ℕ} {x : M} :
       · simp at hw
       · simp only [List.concat_eq_append, List.length_append, List.length_singleton,
           Nat.add_right_cancel_iff] at hw
-        simpa [Module.End.mul_apply] using h i w hw
-    · simpa [Module.End.mul_apply] using h (w ++ [i]) (by simp [hw])
+        simpa [_root_.mul_apply_eq_comp] using h i w hw
+    · simpa [_root_.mul_apply_eq_comp] using h (w ++ [i]) (by simp [hw])
 
 /-- A vector killed by all composites of length `d` is killed by all longer composites. -/
 theorem monotone_wordKer : Monotone (wordKer f) := by

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.Grid.Move.Components
+public import TauCeti.KnotTheory.Grid.Move.Transpose
 
 /-!
 # The unknot as a grid link
@@ -105,6 +105,15 @@ theorem toGridLink_unknot (n : ℕ) : (unknot n).toGridLink = GridLink.unknot :=
 end GridDiagram
 
 namespace GridLink
+
+/-- Diagonal reflection fixes the unknot, whose two-by-two diagram is symmetric. -/
+@[simp]
+theorem transpose_unknot : unknot.transpose = unknot := by
+  have h : (GridDiagram.unknot 0).transpose = GridDiagram.unknot 0 := by
+    ext c <;> simp only [GridDiagram.transpose_O, GridDiagram.transpose_X,
+      GridState.transpose_apply, GridDiagram.unknot_O_toPerm, GridDiagram.unknot_X_toPerm] <;>
+      fin_cases c <;> decide
+  rw [← GridDiagram.toGridLink_unknot 0, transpose_toGridLink, h]
 
 /-- The unknot is a knot. -/
 @[simp]

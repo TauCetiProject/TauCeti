@@ -7,6 +7,8 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.OrderComplex
 
+import Mathlib.Order.Interval.Finset.Nat
+
 /-!
 # Barycentric subdivision of abstract simplicial complexes
 
@@ -38,6 +40,8 @@ arbitrary simplicial maps.
   posets induced by a simplicial map.
 * `TauCeti.PreAbstractSimplicialComplex.SimplicialMap.barycentricSubdivisionMap`: the induced
   simplicial map between barycentric subdivisions.
+* `AbstractSimplicialComplex.subdivisionSubcomplex`: the barycentric subdivision of a
+  subcomplex `P` of `K`, as a subcomplex of the barycentric subdivision of `K`.
 
 ## Main results
 
@@ -45,6 +49,8 @@ arbitrary simplicial maps.
   criterion.
 * `TauCeti.PreAbstractSimplicialComplex.pair_mem_barycentricSubdivision_iff`: two original faces
   span an edge exactly when one contains the other.
+* `TauCeti.PreAbstractSimplicialComplex.card_le_of_mem_barycentricSubdivision`: subdivision does
+  not increase the number of vertices of a face.
 * `TauCeti.PreAbstractSimplicialComplex.SimplicialMap.barycentricSubdivisionMap_id` and
   `TauCeti.PreAbstractSimplicialComplex.SimplicialMap.barycentricSubdivisionMap_comp`:
   functoriality laws.
@@ -117,6 +123,21 @@ theorem subset_or_subset_of_mem_barycentricSubdivision
   simpa only [SetLike.face_le_iff] using
     AbstractSimplicialComplex.le_or_le_of_mem_orderComplex hρ hσ hτ
 
+/-- Barycentric subdivision does not increase the number of vertices of a face: if every face
+of `K` has at most `D` vertices, so does every face of its barycentric subdivision. Distinct
+members of a chain of nonempty faces have distinct cardinalities between `1` and `D`. -/
+theorem card_le_of_mem_barycentricSubdivision {D : ℕ} (hD : ∀ σ ∈ K, σ.card ≤ D)
+    {ρ : Finset (SetLike.Face K)} (hρ : ρ ∈ barycentricSubdivision K) : ρ.card ≤ D := by
+  have hmaps : ∀ σ ∈ ρ, σ.1.card ∈ Finset.Icc 1 D := fun σ _ =>
+    Finset.mem_Icc.2 ⟨Finset.card_pos.2 (K.isRelLowerSet_faces.prop_of_mem σ.2), hD σ.1 σ.2⟩
+  have hinj : Set.InjOn (fun σ : SetLike.Face K => σ.1.card) ρ := by
+    intro σ hσ τ hτ hστ
+    apply Subtype.ext
+    rcases subset_or_subset_of_mem_barycentricSubdivision hρ hσ hτ with h | h
+    · exact Finset.eq_of_subset_of_card_le h hστ.ge
+    · exact (Finset.eq_of_subset_of_card_le h hστ.le).symm
+  simpa using Finset.card_le_card_of_injOn _ hmaps hinj
+
 namespace SimplicialMap
 
 variable {K : PreAbstractSimplicialComplex α} {L : PreAbstractSimplicialComplex β}
@@ -178,3 +199,27 @@ end SimplicialMap
 end PreAbstractSimplicialComplex
 
 end TauCeti
+
+namespace AbstractSimplicialComplex
+
+variable {ι : Type*} (K : AbstractSimplicialComplex ι) (P : PreAbstractSimplicialComplex ι)
+
+/-- The barycentric subdivision of `P`, as a subcomplex of the barycentric subdivision of `K`:
+the chains of faces of `K` all of whose members are faces of `P`. -/
+def subdivisionSubcomplex : PreAbstractSimplicialComplex (TauCeti.SetLike.Face K) where
+  faces := {ρ | ρ ∈ TauCeti.PreAbstractSimplicialComplex.barycentricSubdivision
+    K.toPreAbstractSimplicialComplex ∧ ∀ σ ∈ ρ, σ.1 ∈ P}
+  isRelLowerSet_faces := by
+    rintro ρ ⟨hρK, hρP⟩
+    have h := (TauCeti.PreAbstractSimplicialComplex.barycentricSubdivision
+      K.toPreAbstractSimplicialComplex).isRelLowerSet_faces
+    exact ⟨h.prop_of_mem hρK, fun τ hτρ hτ => ⟨h.mem_of_le hρK hτρ hτ, fun σ hσ => hρP σ (hτρ hσ)⟩⟩
+
+@[simp]
+theorem mem_subdivisionSubcomplex_iff {ρ : Finset (TauCeti.SetLike.Face K)} :
+    ρ ∈ K.subdivisionSubcomplex P ↔
+      ρ ∈ TauCeti.PreAbstractSimplicialComplex.barycentricSubdivision
+        K.toPreAbstractSimplicialComplex ∧ ∀ σ ∈ ρ, σ.1 ∈ P :=
+  Iff.rfl
+
+end AbstractSimplicialComplex

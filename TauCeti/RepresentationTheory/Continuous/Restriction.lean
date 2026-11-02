@@ -17,7 +17,7 @@ along monoid homomorphisms.
 
 * `TauCeti.res_trivial`: restriction of a trivial representation is trivial on the nose.
 * `TopRep.full_res`: restriction along a surjective monoid homomorphism is full; it is always
-  faithful.
+  faithful and additive.
 -/
 
 public section
@@ -54,6 +54,11 @@ instance (φ : H →* G) : (resFunctor.{u, v, t, w} (k := k) φ).Faithful where
   map_injective {_ _} f g h := by
     ext a
     exact congr(($h).hom a)
+
+/-- Restriction along a monoid homomorphism is additive: it leaves the underlying continuous
+linear maps unchanged. In particular it maps cochain complexes to cochain complexes. -/
+instance (φ : H →* G) : (resFunctor.{u, v, t, w} (k := k) φ).Additive where
+  map_add {_ _} _ _ := rfl
 
 /-- Restriction along a surjective monoid homomorphism is full: a continuous linear map
 intertwining the restricted actions intertwines the original ones. This is the continuous form of

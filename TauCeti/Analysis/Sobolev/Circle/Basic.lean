@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 public import Mathlib.Analysis.PSeries
 
 import Mathlib.Analysis.Normed.Group.Tannery
+import Mathlib.Analysis.Normed.Operator.Banach
 
 /-!
 # Fourier-coefficient Sobolev spaces on the circle
@@ -36,7 +37,12 @@ product when `E` has them.
 * `TauCeti.CircleSobolev s E`: the Sobolev space of order `s`, with norm
   `‖a‖² = ∑ₙ weight (2 s) n * ‖a.coeff n‖²` (`CircleSobolev.hasSum_norm_sq`).
 * `TauCeti.CircleSobolev.single n x`: the Fourier monomial `x e^{inθ}`.
+* `TauCeti.CircleSobolev.reflect`: the linear isometric reflection `n ↦ -n` of the Fourier
+  coefficients.
 * `TauCeti.CircleSobolev.inclusion`: the continuous inclusion `H^s → H^t` for `t ≤ s`.
+* `TauCeti.CircleSobolev.restrict`: a continuous linear map `H^t → H^t'` carrying `H^s` into
+  `H^s'`, as a continuous linear map `H^s → H^s'` (by the closed graph theorem), and
+  `TauCeti.CircleSobolev.restrictEquiv`, its analogue for continuous linear isomorphisms.
 * `TauCeti.CircleSobolev.toContinuousMap`: for `s > 1/2`, the continuous function on
   `AddCircle T` given by the uniformly convergent Fourier series.
 
@@ -370,6 +376,13 @@ theorem norm_sq_eq_tsum (a : CircleSobolev s E) :
     ‖a‖ ^ 2 = ∑' n, weight (2 * s) n * ‖a.coeff n‖ ^ 2 :=
   (hasSum_norm_sq a).tsum_eq.symm
 
+/-- Parseval's identity for `H^s` in `ℝ≥0∞`: the squared norm is the weighted sum of the squared
+coefficient norms. -/
+theorem ofReal_norm_sq_eq_tsum (a : CircleSobolev s E) :
+    ENNReal.ofReal (‖a‖ ^ 2) = ∑' n, ENNReal.ofReal (weight (2 * s) n * ‖a.coeff n‖ ^ 2) := by
+  rw [← (hasSum_norm_sq a).tsum_eq, ENNReal.ofReal_tsum_of_nonneg
+    (fun n ↦ by positivity [weight_nonneg (2 * s) n]) (hasSum_norm_sq a).summable]
+
 /-- A coefficientwise bound of weighted norms gives the corresponding bound on the norms, possibly
 between different orders. -/
 theorem norm_le_of_forall_le {a : CircleSobolev s E} {b : CircleSobolev t E} {C : ℝ}
@@ -411,6 +424,38 @@ theorem memℓp_of_forall_le {a : CircleSobolev s E} {c : ℤ → E} {C : ℝ}
   rw [Pi.smul_apply, norm_smul, norm_smul, norm_smul, norm_weight, norm_weight, Real.norm_eq_abs]
   exact (h n).trans
     (mul_le_mul_of_nonneg_right (le_abs_self C) (mul_nonneg (weight_nonneg s n) (norm_nonneg _)))
+
+private theorem hasSum_sq_weight_mul_norm_coeff_neg (a : CircleSobolev s E) :
+    HasSum (fun n ↦ (weight s n * ‖a.coeff (-n)‖) ^ 2) (‖a‖ ^ 2) := by
+  have h := (Equiv.neg ℤ).hasSum_iff.2 (hasSum_sq_weight_mul_norm_coeff a)
+  simpa only [Function.comp_def, Equiv.neg_apply, weight_neg_right] using h
+
+/-- The element of `H^s` with the Fourier coefficients of `a` reflected across frequency zero. -/
+private def reflectFun (a : CircleSobolev s E) : CircleSobolev s E :=
+  ⟨fun n ↦ a.coeff (-n),
+    (memℓp_weight_smul_iff _).2 (hasSum_sq_weight_mul_norm_coeff_neg a).summable⟩
+
+/-- The reflection `n ↦ -n` of the Fourier coefficients, as a linear isometric automorphism of
+`H^s`. It corresponds to the reflection `x ↦ -x` of the circle. -/
+def reflect : CircleSobolev s E ≃ₗᵢ[ℂ] CircleSobolev s E where
+  toFun := reflectFun
+  invFun := reflectFun
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  left_inv a := CircleSobolev.ext <| funext fun n ↦ congrArg a.coeff (neg_neg n)
+  right_inv a := CircleSobolev.ext <| funext fun n ↦ congrArg a.coeff (neg_neg n)
+  norm_map' a := by
+    have h := (hasSum_sq_weight_mul_norm_coeff (reflectFun a)).unique
+      (hasSum_sq_weight_mul_norm_coeff_neg a)
+    exact (pow_left_inj₀ (norm_nonneg _) (norm_nonneg _) two_ne_zero).1 h
+
+@[simp]
+theorem coeff_reflect (a : CircleSobolev s E) (n : ℤ) : (reflect a).coeff n = a.coeff (-n) :=
+  (rfl)
+
+@[simp]
+theorem reflect_symm : (reflect : CircleSobolev s E ≃ₗᵢ[ℂ] CircleSobolev s E).symm = reflect :=
+  (rfl)
 
 /-- Dominated convergence in `H^s`: if the Fourier coefficients of `b x` converge to those of `a`
 and the squared weighted norms `((1 + |n|) ^ s ‖(b x).coeff n - a.coeff n‖) ^ 2` are eventually
@@ -577,6 +622,87 @@ theorem inclusion_injective (h : t ≤ s) :
 theorem norm_inclusion_le (h : t ≤ s) (a : CircleSobolev s E) : ‖inclusion h a‖ ≤ ‖a‖ := by
   simpa using norm_le_of_forall_le (a := a) (b := inclusion h a) zero_le_one
     (by simpa using weight_mul_norm_le_of_le h a)
+
+section Restrict
+
+variable {s' t' : ℝ} (h : t ≤ s) (h' : t' ≤ s')
+  (P : CircleSobolev t E →L[ℂ] CircleSobolev t' E)
+  (hP : ∀ a : CircleSobolev s E, ∃ b : CircleSobolev s' E, inclusion h' b = P (inclusion h a))
+
+/-- A map `P` carrying `H^s` into `H^s'`, as a function `H^s → H^s'`. -/
+private def restrictFun (a : CircleSobolev s E) : CircleSobolev s' E :=
+  (hP a).choose
+
+private theorem inclusion_restrictFun (a : CircleSobolev s E) :
+    inclusion h' (restrictFun h h' P hP a) = P (inclusion h a) :=
+  (hP a).choose_spec
+
+/-- A map `P` carrying `H^s` into `H^s'`, as a linear map `H^s → H^s'`. -/
+private def restrictLinear : CircleSobolev s E →ₗ[ℂ] CircleSobolev s' E where
+  toFun := restrictFun h h' P hP
+  map_add' a b := inclusion_injective h' (by
+    simp only [map_add, inclusion_restrictFun])
+  map_smul' z a := inclusion_injective h' (by
+    simp only [map_smul, inclusion_restrictFun, RingHom.id_apply])
+
+/-- The graph of `restrictLinear` is closed: it is the set of pairs `(u, v)` with
+`v = P u` in `H^t'`. -/
+private theorem isClosed_graph_restrictLinear :
+    IsClosed ((restrictLinear h h' P hP).graph : Set (CircleSobolev s E × CircleSobolev s' E)) := by
+  have hgr : ((restrictLinear h h' P hP).graph : Set (CircleSobolev s E × CircleSobolev s' E)) =
+      {p | inclusion h' p.2 = P (inclusion h p.1)} := by
+    ext ⟨a, b⟩
+    simp only [SetLike.mem_coe, LinearMap.mem_graph_iff, Set.mem_ofPred_eq]
+    refine ⟨fun hb ↦ hb ▸ inclusion_restrictFun h h' P hP a, fun hb ↦ ?_⟩
+    exact inclusion_injective h' (hb.trans (inclusion_restrictFun h h' P hP a).symm)
+  rw [hgr]
+  exact isClosed_eq ((inclusion _).continuous.comp continuous_snd)
+    ((P.continuous.comp (inclusion _).continuous).comp continuous_fst)
+
+/-- **Restriction of an operator to smaller Sobolev spaces.** A continuous linear map
+`P : H^t → H^t'` carrying `H^s` into `H^s'`, for `t ≤ s` and `t' ≤ s'`, as a continuous linear map
+`H^s → H^s'`. It is continuous by the closed graph theorem. -/
+def restrict [CompleteSpace E] : CircleSobolev s E →L[ℂ] CircleSobolev s' E :=
+  ContinuousLinearMap.ofIsClosedGraph (isClosed_graph_restrictLinear h h' P hP)
+
+/-- In `H^t'`, `restrict` is `P`: the inclusion of the image of `u` is `P` applied to the inclusion
+of `u`. -/
+@[simp]
+theorem inclusion_restrict [CompleteSpace E] (a : CircleSobolev s E) :
+    inclusion h' (restrict h h' P hP a) = P (inclusion h a) :=
+  inclusion_restrictFun h h' P hP a
+
+end Restrict
+
+section RestrictEquiv
+
+variable {s' t' : ℝ} (h : t ≤ s) (h' : t' ≤ s') (P : CircleSobolev t E ≃L[ℂ] CircleSobolev t' E)
+  (hP : ∀ a : CircleSobolev s E, ∃ b : CircleSobolev s' E, inclusion h' b = P (inclusion h a))
+  (hP' : ∀ b : CircleSobolev s' E, ∃ a : CircleSobolev s E,
+    inclusion h a = P.symm (inclusion h' b))
+
+/-- **Restriction of an isomorphism to smaller Sobolev spaces.** A continuous linear isomorphism
+`P : H^t → H^t'` such that `P` carries `H^s` into `H^s'` and `P⁻¹` carries `H^s'` into `H^s`, for
+`t ≤ s` and `t' ≤ s'`, as a continuous linear isomorphism `H^s → H^s'`. -/
+def restrictEquiv [CompleteSpace E] : CircleSobolev s E ≃L[ℂ] CircleSobolev s' E :=
+  ContinuousLinearEquiv.equivOfInverse (restrict h h' P fun a ↦ by simpa using hP a)
+    (restrict h' h P.symm fun b ↦ by simpa using hP' b)
+    (fun a ↦ inclusion_injective h (by simp))
+    (fun b ↦ inclusion_injective h' (by simp))
+
+/-- In `H^t'`, `restrictEquiv` is `P`. -/
+@[simp]
+theorem inclusion_restrictEquiv [CompleteSpace E] (a : CircleSobolev s E) :
+    inclusion h' (restrictEquiv h h' P hP hP' a) = P (inclusion h a) :=
+  inclusion_restrict h h' (P : CircleSobolev t E →L[ℂ] CircleSobolev t' E) _ a
+
+/-- In `H^t`, the inverse of `restrictEquiv` is the inverse of `P`. -/
+@[simp]
+theorem inclusion_restrictEquiv_symm [CompleteSpace E] (b : CircleSobolev s' E) :
+    inclusion h ((restrictEquiv h h' P hP hP').symm b) = P.symm (inclusion h' b) :=
+  inclusion_restrict h' h (P.symm : CircleSobolev t' E →L[ℂ] CircleSobolev t E) _ b
+
+end RestrictEquiv
 
 /-- **Rellich's theorem** on the circle: the inclusion `H^s → H^t` is a compact operator for
 `t < s` when `E` is finite-dimensional. -/

@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Free
 public import Mathlib.AlgebraicGeometry.Modules.Sheaf
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.ExtensionByZero
+import Mathlib.Topology.Sheaves.SheafCondition.UniqueGluing
 
 /-!
 # Restriction of module sheaves preserves limits, injectives, and free modules
@@ -22,6 +23,14 @@ Restriction preserves injective module sheaves because its left adjoint, extensi
 is exact. Thus injective resolutions may be restricted to an open subscheme without losing
 injectivity of their terms. Being a left adjoint that preserves the structure sheaf, restriction
 also sends free module sheaves to free module sheaves on the same generators.
+
+A module sheaf is zero exactly when its restrictions to the members of an open cover are zero
+(`AlgebraicGeometry.Scheme.Modules.isZero_iff_of_iSup_eq_top`), by the sheaf condition.
+Restriction to an open `U` only sees sections over opens contained in `U`: a morphism that is an
+isomorphism on those sections restricts to an isomorphism
+(`AlgebraicGeometry.Scheme.Modules.isIso_restrictFunctor_map_of_isIso_app`), and over them the
+unit of the restriction--pushforward adjunction is an isomorphism on sections
+(`AlgebraicGeometry.Scheme.Modules.isIso_restrictAdjunction_unit_app_app`).
 
 The adjunction is Mathlib's `SheafOfModules.PullbackConstruction.adjunction`; the underlying
 presheaf right adjoint is `PresheafOfModules.instIsRightAdjointPushforward`.
@@ -115,5 +124,52 @@ noncomputable def restrictFreeIso {X Y : Scheme.{u}} (f : Y ⟶ X) [IsOpenImmers
   have : PreservesColimitsOfShape (Discrete ι) G :=
     (restrictAdjunction f).leftAdjoint_preservesColimits.preservesColimitsOfShape
   (SheafOfModules.mapFreeIso G ι (restrictUnitIso f).symm).symm
+
+/-- A section of `M` over the image of an open of `U` is zero when the restriction `M|_U` is zero.
+-/
+private lemma eq_zero_of_isZero_restrict {X : Scheme.{u}} {M : X.Modules} {U : X.Opens}
+    (h : IsZero (M.restrict U.ι)) (W : U.toScheme.Opens) (s : Γ(M, U.ι ''ᵁ W)) : s = 0 := by
+  have h₀ : (M.restrictAppIso U.ι W).inv s = 0 := by
+    simpa using ConcreteCategory.congr_hom
+      congr(Hom.app $(h.eq_of_src (𝟙 _) 0) W) ((M.restrictAppIso U.ι W).inv s)
+  rw [← Iso.inv_hom_id_apply (M.restrictAppIso U.ι W) s, h₀, map_zero]
+
+/-- A sheaf of modules on a scheme is zero exactly when its restrictions to the members of an open
+cover are zero. -/
+theorem isZero_iff_of_iSup_eq_top {X : Scheme.{u}} {ι : Type*} (U : ι → X.Opens)
+    (hU : iSup U = ⊤) (M : X.Modules) :
+    IsZero M ↔ ∀ i, IsZero (M.restrict (U i).ι) := by
+  refine ⟨fun h i ↦ (restrictFunctor (U i).ι).map_isZero h, fun h ↦ ?_⟩
+  rw [IsZero.iff_id_eq_zero]
+  refine hom_ext _ _ fun V ↦ ?_
+  ext s
+  simp only [Hom.id_app, Hom.zero_app, AddCommGrpCat.hom_id, AddCommGrpCat.hom_zero,
+    AddMonoidHom.id_apply, AddMonoidHom.zero_apply]
+  -- `s` vanishes on each `V ⊓ U i`, the image of the preimage of `V` in `U i`
+  refine TopCat.Sheaf.eq_of_locally_eq' (⟨M.presheaf, M.isSheaf⟩ : TopCat.Sheaf AddCommGrpCat X)
+    (fun i ↦ (U i).ι ''ᵁ ((U i).ι ⁻¹ᵁ V)) V (fun i ↦ homOfLE ((U i).ι.image_preimage_le V))
+    ?_ s 0 fun i ↦ ?_
+  · simp_rw [Scheme.Hom.image_preimage_eq_opensRange_inf, Scheme.Opens.opensRange_ι,
+      ← iSup_inf_eq, hU, top_inf_eq, le_rfl]
+  · rw [map_zero]
+    exact eq_zero_of_isZero_restrict (h i) _ _
+
+/-- A morphism of `𝒪_X`-modules restricts to an isomorphism over an open `U` if it is an
+isomorphism on sections over every open contained in `U`. -/
+theorem isIso_restrictFunctor_map_of_isIso_app {X : Scheme.{u}} {M N : X.Modules} (φ : M ⟶ N)
+    (U : X.Opens) (h : ∀ V ≤ U, IsIso (φ.app V)) : IsIso ((restrictFunctor U.ι).map φ) :=
+  Hom.isIso_iff_isIso_app.2 fun W ↦ h _ (U.ι_image_le W)
+
+/-- Over an open `V` contained in `U`, the unit `M ⟶ U.ι_* (M|_U)` of the restriction-pushforward
+adjunction is an isomorphism on sections. -/
+theorem isIso_restrictAdjunction_unit_app_app {X : Scheme.{u}} (U : X.Opens) (M : X.Modules)
+    {V : X.Opens} (hV : V ≤ U) : IsIso (((restrictAdjunction U.ι).unit.app M).app V) := by
+  have h : U.ι ''ᵁ (U.ι ⁻¹ᵁ V) = V := by
+    rw [Scheme.Hom.image_preimage_eq_opensRange_inf, Scheme.Opens.opensRange_ι]
+    exact inf_eq_right.2 hV
+  -- The component is the restriction of sections along `ι(ι⁻¹ V) ≤ V`, an equality here.
+  have : homOfLE (U.ι.image_preimage_le V) = eqToHom h := Subsingleton.elim _ _
+  rw [restrictAdjunction_unit_app_app, this]
+  exact Functor.map_isIso M.presheaf (eqToHom h).op
 
 end AlgebraicGeometry.Scheme.Modules

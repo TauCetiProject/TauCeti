@@ -214,6 +214,18 @@ theorem dvd_apply_of_forall_dvd_basis {ι : Type*} (b : Basis ι R M) {d : R}
   simp only [smul_eq_mul]
   exact dvd_mul_of_dvd_right (dvd_mul_of_dvd_right (hd i j) _) _
 
+/-- If `d` divides the Gram entries of a symmetric form in a basis and `2 * d` divides the
+diagonal ones, then `2 * d` divides every self-pairing: the norm ideal lies in `2 d R`. -/
+theorem IsSymm.two_mul_dvd_apply_self_of_forall_dvd_basis (hB : B.IsSymm) {ι : Type*}
+    (b : Basis ι R M) {d : R} (hd : ∀ i j, d ∣ B (b i) (b j)) (hdd : ∀ i, 2 * d ∣ B (b i) (b i))
+    (x : M) : 2 * d ∣ B x x := by
+  rw [← Ideal.mem_span_singleton]
+  refine (B.normIdeal_le_iff _).mp ?_ x
+  rw [normIdeal_eq_span_basis B hB b, Ideal.span_le]
+  rintro _ (⟨i, rfl⟩ | ⟨⟨i, j⟩, rfl⟩)
+  · exact Ideal.mem_span_singleton.mpr (hdd i)
+  · exact Ideal.mem_span_singleton.mpr (mul_dvd_mul_left 2 (hd i j))
+
 end BasisDivisibility
 
 section BaseChange

@@ -35,22 +35,22 @@ the failure being exactly that its structure map is not surjective.
 
 ## Main results
 
-* `TauCeti.IsSimpleRing.exists_algEquiv_matrix_centralDivisionRing`: **Wedderburn-Artin for central
+* `IsSimpleRing.exists_algEquiv_matrix_centralDivisionRing`: **Wedderburn-Artin for central
   simple algebras**. A finite-dimensional central simple `K`-algebra `A` is
   `Matrix (Fin n) (Fin n) D` for a finite-dimensional **central** division `K`-algebra `D`, and
   `finrank K A = n ^ 2 * finrank K D`.
-* `TauCeti.IsSimpleRing.exists_algEquiv_matrix_of_forall_nonempty_algEquiv`: over a field whose
+* `IsSimpleRing.exists_algEquiv_matrix_of_forall_nonempty_algEquiv`: over a field whose
   finite-dimensional central division algebras are all the field itself, every
   finite-dimensional central simple algebra is a full matrix algebra over that field. It is the
-  criterion behind `TauCeti.IsSimpleRing.exists_algEquiv_matrix_of_finite` below and
-  `TauCeti.IsSimpleRing.exists_algEquiv_matrix_of_isSepClosed` in
+  criterion behind `IsSimpleRing.exists_algEquiv_matrix_of_finite` below and
+  `IsSimpleRing.exists_algEquiv_matrix_of_isSepClosed` in
   `TauCeti/Algebra/CentralSimple/SeparablyClosed.lean`.
 * `TauCeti.baseFieldAlgEquivOfFinite`: a finite central division algebra over a field is the base
   field.
-* `TauCeti.IsSimpleRing.exists_algEquiv_matrix_of_finite`: a central simple algebra over a
+* `IsSimpleRing.exists_algEquiv_matrix_of_finite`: a central simple algebra over a
   **finite** field is a full matrix algebra over that field, so in particular its dimension is the
   perfect square `n ^ 2`. That dimension count holds over every base field, by
-  `TauCeti.IsSimpleRing.isSquare_finrank` in `TauCeti/Algebra/CentralSimple/Degree.lean`, which is
+  `IsSimpleRing.isSquare_finrank` in `TauCeti/Algebra/CentralSimple/Degree.lean`, which is
   the statement to use; only the matrix presentation itself is special to a finite field.
 
 ## Implementation notes
@@ -74,8 +74,6 @@ and P. Gille, T. Szamuely, *Central Simple Algebras and Galois Cohomology*, Chap
 
 public section
 
-namespace TauCeti
-
 universe u
 
 /-! ### Wedderburn-Artin for central simple algebras -/
@@ -98,11 +96,11 @@ theorem exists_algEquiv_matrix_centralDivisionRing [Algebra.IsCentral K A] [IsSi
         Nonempty (A ≃ₐ[K] Matrix (Fin n) (Fin n) D) := by
   have := IsArtinianRing.of_finite K A
   obtain ⟨n, hn, D, hD, hDalg, hDfin, ⟨e⟩⟩ :=
-    _root_.IsSimpleRing.exists_algEquiv_matrix_divisionRing_finite K A
+    exists_algEquiv_matrix_divisionRing_finite K A
   have : Nonempty (Fin n) := ⟨0⟩
   have : Algebra.IsCentral K (Matrix (Fin n) (Fin n) D) :=
     Algebra.IsCentral.of_algEquiv K A _ e
-  refine ⟨n, hn, D, hD, hDalg, Algebra.IsCentral.of_matrix K D (Fin n), hDfin, ?_, ⟨e⟩⟩
+  refine ⟨n, hn, D, hD, hDalg, TauCeti.Algebra.IsCentral.of_matrix K D (Fin n), hDfin, ?_, ⟨e⟩⟩
   rw [e.toLinearEquiv.finrank_eq, Module.finrank_matrix, Fintype.card_fin]
   ring
 
@@ -125,6 +123,8 @@ theorem exists_algEquiv_matrix_of_forall_nonempty_algEquiv [Algebra.IsCentral K 
   rw [hrank, d.toLinearEquiv.finrank_eq, Module.finrank_self, mul_one]
 
 end IsSimpleRing
+
+namespace TauCeti
 
 /-! ### Finite central division algebras and finite base fields -/
 
@@ -161,6 +161,8 @@ theorem finrank_eq_one_of_finite : Module.finrank K D = 1 := by
 
 end Finite
 
+end TauCeti
+
 namespace IsSimpleRing
 
 variable (K : Type*) [Field K] [Finite K] (A : Type u) [Ring A] [Algebra K A]
@@ -178,8 +180,6 @@ theorem exists_algEquiv_matrix_of_finite :
       Nonempty (A ≃ₐ[K] Matrix (Fin n) (Fin n) K) :=
   exists_algEquiv_matrix_of_forall_nonempty_algEquiv K A fun D ↦
     have : Finite D := Module.finite_of_finite K
-    ⟨baseFieldAlgEquivOfFinite K D⟩
+    ⟨TauCeti.baseFieldAlgEquivOfFinite K D⟩
 
 end IsSimpleRing
-
-end TauCeti

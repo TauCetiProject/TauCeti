@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.CategoryTheory.Abelian.Ext
+import Mathlib.Algebra.Category.ModuleCat.EpiMono
+import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 import Mathlib.CategoryTheory.Limits.Preserves.Opposites
 import Mathlib.CategoryTheory.Limits.Shapes.Opposites.Products
 import Mathlib.CategoryTheory.Preadditive.Yoneda.Limits
@@ -24,6 +26,10 @@ records elementwise descriptions of the differential, cocycles, coboundaries and
 of `Hom(X, Y)`, and of the maps between them induced by chain maps. Postcomposition
 with coefficient morphisms is provided by `ChainComplex.linearYonedaObjMap`; it commutes with the
 maps induced by chain maps (`ChainComplex.linearYonedaObjMap_comp_linearYonedaFunctor_map`).
+It makes `Hom(X, -)` a functor of the coefficient object (`ChainComplex.linearYonedaObjFunctor`),
+which is exact when every term of `X` is projective: it takes short exact sequences of
+coefficients to short exact sequences of cochain complexes. For singular chains this gives the long
+exact cohomology sequence of a short exact sequence of coefficients.
 
 It also sends coproducts of chain complexes to products of cochain complexes, with smallness
 measured in the universe of morphisms of the coefficient category. This uses Mathlib's
@@ -48,6 +54,10 @@ singular cohomology is obtained from the one of chain complexes.
 * `Homotopy.linearYonedaFunctorMap`: `Hom(-, Y)` takes a chain homotopy to a cochain homotopy.
 * `HomotopyEquiv.linearYonedaFunctorMap`: `Hom(-, Y)` takes a chain homotopy
   equivalence to a cochain homotopy equivalence in the opposite direction.
+* `ChainComplex.linearYonedaObjFunctor`: the functor `Y ↦ Hom(X, Y)` of the coefficients, with
+  `ChainComplex.linearYonedaObjFunctorMap` the natural transformation induced by a chain map.
+* `ChainComplex.shortExact_map_linearYonedaObjFunctor`: for `X` with projective terms, `Hom(X, -)`
+  preserves short exact sequences.
 -/
 
 public section
@@ -306,6 +316,68 @@ lemma iCycles_cyclesMap_linearYonedaFunctor_map_apply {X' : ChainComplex C α} (
   ConcreteCategory.congr_hom (HomologicalComplex.cyclesMap_i _ i) a
 
 end Elementwise
+
+section CoefficientSequence
+
+/-- For a chain complex `X`, the covariant functor `Y ↦ Hom(X, Y)` from the coefficient category to
+cochain complexes of `k`-modules. Its action on morphisms is postcomposition. -/
+-- `@[expose]` is mandated by the module system, as for `linearYonedaFunctor`: without it `map`
+-- cannot be characterised at all, since `linearYonedaObjFunctorMap_app` and the `simps` lemmas only
+-- typecheck once `obj` unfolds to `X.linearYonedaObj k Y`, and an exported statement may unfold
+-- only exposed definitions. Downstream, the terms of `S.map (X.linearYonedaObjFunctor k)` must be
+-- the singular cochain complexes with coefficients in the terms of `S`, for the same reason.
+@[expose, simps]
+noncomputable def _root_.ChainComplex.linearYonedaObjFunctor (X : ChainComplex C α) :
+    C ⥤ CochainComplex (ModuleCat k) α where
+  obj Y := X.linearYonedaObj k Y
+  map g := X.linearYonedaObjMap k g
+  map_id Y := X.linearYonedaObjMap_id k Y
+  map_comp g h := X.linearYonedaObjMap_comp k g h
+
+instance _root_.ChainComplex.linearYonedaObjFunctor_additive (X : ChainComplex C α) :
+    (X.linearYonedaObjFunctor k).Additive where
+  map_add {Y Z g h} := by
+    ext i (a : X.X i ⟶ Y)
+    -- The components of both sides send `a` to `a ≫ (g + h)` and `a ≫ g + a ≫ h`: the maps are
+    -- postcomposition by definition (`linearYonedaObjMap_f_hom_apply`), and sums of cochain maps
+    -- are computed degreewise and pointwise. `simp` cannot use the former, whose statement is
+    -- typed in `X.linearYonedaObj k Y` rather than in the image of the functor.
+    exact Preadditive.comp_add _ _ _ a g h
+
+/-- A chain map `β : X ⟶ X'` induces, by precomposition, a natural transformation from
+`Hom(X', -)` to `Hom(X, -)`. -/
+noncomputable def _root_.ChainComplex.linearYonedaObjFunctorMap {X X' : ChainComplex C α}
+    (β : X ⟶ X') : X'.linearYonedaObjFunctor k ⟶ X.linearYonedaObjFunctor k where
+  app Y := (linearYonedaFunctor k Y).map β.op
+  naturality _ _ g := X.linearYonedaObjMap_comp_linearYonedaFunctor_map k β g
+
+@[simp]
+lemma _root_.ChainComplex.linearYonedaObjFunctorMap_app {X X' : ChainComplex C α} (β : X ⟶ X')
+    (Y : C) :
+    (ChainComplex.linearYonedaObjFunctorMap k β).app Y = (linearYonedaFunctor k Y).map β.op :=
+  (rfl)
+
+/-- If every term of the chain complex `X` is projective, then `Hom(X, -)` takes a short exact
+sequence `0 ⟶ Y₁ ⟶ Y₂ ⟶ Y₃ ⟶ 0` of coefficients to a short exact sequence of cochain complexes
+`0 ⟶ Hom(X, Y₁) ⟶ Hom(X, Y₂) ⟶ Hom(X, Y₃) ⟶ 0`. -/
+lemma _root_.ChainComplex.shortExact_map_linearYonedaObjFunctor (X : ChainComplex C α)
+    [∀ i, Projective (X.X i)] {S : ShortComplex C} (hS : S.ShortExact) :
+    (S.map (X.linearYonedaObjFunctor k)).ShortExact := by
+  have := hS.mono_f
+  have := hS.epi_g
+  refine HomologicalComplex.shortExact_of_degreewise_shortExact _ fun i ↦ ?_
+  refine { exact := ?_, mono_f := ?_, epi_g := ?_ }
+  · rw [ShortComplex.moduleCat_exact_iff]
+    intro (a : X.X i ⟶ S.X₂) (ha : a ≫ S.g = 0)
+    exact ⟨hS.exact.lift a ha, hS.exact.lift_f a ha⟩
+  · rw [ModuleCat.mono_iff_injective]
+    intro (a : X.X i ⟶ S.X₁) (b : X.X i ⟶ S.X₁) (h : a ≫ S.f = b ≫ S.f)
+    exact (cancel_mono S.f).1 h
+  · rw [ModuleCat.epi_iff_surjective]
+    intro (a : X.X i ⟶ S.X₃)
+    exact ⟨Projective.factorThru a S.g, Projective.factorThru_comp a S.g⟩
+
+end CoefficientSequence
 
 end Abelian
 

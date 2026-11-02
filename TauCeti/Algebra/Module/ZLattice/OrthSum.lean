@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
 public import TauCeti.Algebra.Module.ZLattice.Determinant
+public import TauCeti.Algebra.Module.ZLattice.Quotient
 public import TauCeti.Algebra.Module.ZLattice.Shell
 import Mathlib.Data.Set.Card.Arithmetic
 
@@ -41,6 +42,9 @@ for instance the even unimodular lattice `E₈ ⊕ E₈` of rank `16`.
 ## Main definitions
 
 * `ZLattice.orthSum L M`: the orthogonal direct sum of `L` and `M`, in `WithLp 2 (E × F)`.
+* `ZLattice.orthSumEquivProd L M`: the identification of `L ⊕ M` with `L × M` as `ℤ`-modules.
+* `ZLattice.quotientSmulOrthSumEquiv L M c`: the identification of `(L ⊕ M) / c (L ⊕ M)` with
+  `(L / cL) × (M / cM)`.
 
 ## Main statements
 
@@ -66,7 +70,7 @@ for instance the even unimodular lattice `E₈ ⊕ E₈` of rank `16`.
 public section
 
 open Module Submodule MeasureTheory WithLp
-open scoped RealInnerProductSpace
+open scoped Pointwise RealInnerProductSpace
 
 namespace ZLattice
 
@@ -105,6 +109,27 @@ theorem orthSum_inj : orthSum L M = orthSum L' M' ↔ L = L' ∧ M = M' := by
   simp only [le_antisymm_iff, orthSum_le_orthSum_iff]
   tauto
 
+variable (L M) in
+/-- As a `ℤ`-module, the orthogonal direct sum `L ⊕ M` is the product `L × M`: a vector of `L ⊕ M`
+corresponds to the pair of its components. -/
+def orthSumEquivProd : orthSum L M ≃ₗ[ℤ] L × M :=
+  ((WithLp.linearEquiv 2 ℤ (E × F)).ofSubmodule' (L.prod M)).trans (L.prodEquiv M)
+
+@[simp]
+theorem coe_orthSumEquivProd_apply_fst (x : orthSum L M) :
+    ((orthSumEquivProd L M x).1 : E) = (x : WithLp 2 (E × F)).fst :=
+  (rfl)
+
+@[simp]
+theorem coe_orthSumEquivProd_apply_snd (x : orthSum L M) :
+    ((orthSumEquivProd L M x).2 : F) = (x : WithLp 2 (E × F)).snd :=
+  (rfl)
+
+@[simp]
+theorem coe_orthSumEquivProd_symm_apply (p : L × M) :
+    ((orthSumEquivProd L M).symm p : WithLp 2 (E × F)) = toLp 2 ((p.1 : E), (p.2 : F)) :=
+  (rfl)
+
 instance [TopologicalSpace E] [TopologicalSpace F] (L : Submodule ℤ E) (M : Submodule ℤ F)
     [DiscreteTopology L] [DiscreteTopology M] : DiscreteTopology (orthSum L M) :=
   .of_continuous_injective (f := fun x : orthSum L M ↦
@@ -114,6 +139,45 @@ instance [TopologicalSpace E] [TopologicalSpace F] (L : Submodule ℤ E) (M : Su
       exact Subtype.ext (ofLp_injective 2 (Prod.ext h.1 h.2))
 
 end AddCommGroup
+
+/-! ### The quotient `(L ⊕ M) / c (L ⊕ M)` -/
+
+section Quotient
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
+  [NormedSpace ℝ F] (L : Submodule ℤ E) (M : Submodule ℤ F) (c : ℕ)
+
+/-- The quotient `(L ⊕ M) / c (L ⊕ M)` is `(L / cL) × (M / cM)`: the class of a vector of `L ⊕ M`
+corresponds to the pair of classes of its components. -/
+noncomputable def quotientSmulOrthSumEquiv :
+    (orthSum L M ⧸ ((c : ℝ) • orthSum L M).submoduleOf (orthSum L M)) ≃ₗ[ℤ]
+      (L ⧸ ((c : ℝ) • L).submoduleOf L) × (M ⧸ ((c : ℝ) • M).submoduleOf M) :=
+  let f := ((((c : ℝ) • L).submoduleOf L).mkQ.prodMap (((c : ℝ) • M).submoduleOf M).mkQ) ∘ₗ
+    (orthSumEquivProd L M).toLinearMap
+  have hf : Function.Surjective f :=
+    (Function.Surjective.prodMap (mkQ_surjective _) (mkQ_surjective _)).comp
+      (orthSumEquivProd L M).surjective
+  have hker : LinearMap.ker f = ((c : ℝ) • orthSum L M).submoduleOf (orthSum L M) := by
+    ext x
+    simp only [f, LinearMap.mem_ker, LinearMap.comp_apply, LinearMap.prodMap_apply, mkQ_apply,
+      Prod.mk_eq_zero, Quotient.mk_eq_zero, mem_smul_submoduleOf_iff]
+    constructor
+    · rintro ⟨⟨w₁, hw₁⟩, ⟨w₂, hw₂⟩⟩
+      exact ⟨(orthSumEquivProd L M).symm (w₁, w₂),
+        (orthSumEquivProd L M).injective (by simp [hw₁, hw₂])⟩
+    · rintro ⟨w, rfl⟩
+      exact ⟨⟨(orthSumEquivProd L M w).1, by simp⟩, ⟨(orthSumEquivProd L M w).2, by simp⟩⟩
+  (quotEquivOfEq _ _ hker.symm).trans (f.quotKerEquivOfSurjective hf)
+
+/-- The class of `x ∈ L ⊕ M` corresponds to the pair of classes of the components of `x`. -/
+@[simp]
+theorem quotientSmulOrthSumEquiv_mk (x : orthSum L M) :
+    quotientSmulOrthSumEquiv L M c (Submodule.Quotient.mk x) =
+      (Submodule.Quotient.mk (orthSumEquivProd L M x).1,
+        Submodule.Quotient.mk (orthSumEquivProd L M x).2) :=
+  (rfl)
+
+end Quotient
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [NormedAddCommGroup F] [InnerProductSpace ℝ F]

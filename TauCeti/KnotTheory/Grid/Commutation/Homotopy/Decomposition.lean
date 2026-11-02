@@ -182,6 +182,12 @@ theorem pair_subset_cIco_bottom_top (P : GridCommutationHexagonBetween a s s' x 
     refine Finset.insert_subset P.lower_mem (Finset.singleton_subset_iff.mpr ?_)
     exact P.insert_cIco_subset_cIco_bottom_top (Finset.mem_insert_self _ _)
 
+/-- The two intersection rows of a commutation hexagon are distinct. -/
+theorem ne (P : GridCommutationHexagonBetween a s s' x y) : s ≠ s' := by
+  cases P with
+  | inl P => exact Grid.ne_left_of_mem_cIoo P.upper_mem
+  | inr P => exact (Grid.ne_left_of_mem_cIoo P.upper_mem).symm
+
 /-- Away from the two columns next to the replaced line, a commutation hexagon covers the squares
 of its underlying rectangle. -/
 theorem mem_coveredSquares_iff_of_ne (P : GridCommutationHexagonBetween a s s' x y)
@@ -349,6 +355,22 @@ theorem toRectangleDecomposition_inr (D : GridRectangleHexagonDecomposition a s 
     toRectangleDecomposition (Sum.inr D : GridHexagonCompositeDecomposition a s s' x z) =
       D.toRectangleDecomposition := (rfl)
 
+/-- A family of hexagon composites is determined by the underlying rectangle decompositions as
+soon as a property of the underlying decomposition tells which piece is the hexagon. -/
+theorem injOn_toRectangleDecomposition_of_isLeft_iff
+    {S : Set (GridHexagonCompositeDecomposition a s s' x z)}
+    (p : GridRectangleDecomposition x z → Prop)
+    (h : ∀ D ∈ S, D.isLeft ↔ p D.toRectangleDecomposition) :
+    Set.InjOn toRectangleDecomposition S := by
+  intro D hD E hE hDE
+  have hside : D.isLeft ↔ E.isLeft := by rw [h D hD, h E hE, hDE]
+  rcases D with D | D <;> rcases E with E | E <;> simp at hside <;>
+    simp only [toRectangleDecomposition_inl, toRectangleDecomposition_inr] at hDE
+  · exact congrArg Sum.inl
+      (GridHexagonRectangleDecomposition.toRectangleDecomposition_injective hDE)
+  · exact congrArg Sum.inr
+      (GridRectangleHexagonDecomposition.toRectangleDecomposition_injective hDE)
+
 end GridHexagonCompositeDecomposition
 
 /-- A two-step domain consisting of a commutation pentagon followed by a pentagon for the reverse
@@ -431,6 +453,29 @@ theorem cutColumn_X_mem_toGridRectangle_coveredSquares {x y : GridState n}
   cases P with
   | inl P => exact G.column_mem_toGridRectangle_coveredSquares P C.X_column_below
   | inr P => exact G.next_mem_toGridRectangle_coveredSquares P C.X_next_above
+
+/-- A commutation hexagon is counted exactly when its underlying rectangle is empty and carries
+exactly one `X`-marking, that of the column the hexagon cuts away. -/
+theorem mem_commutationHexagons_iff_XSet_inter_eq {x y : GridState n}
+    (P : GridCommutationHexagonBetween C.column C.turnRow C.oppositeTurnRow x y) :
+    P ∈ G.commutationHexagons C x y ↔
+      P.toGridRectangleBetween.IsEmpty ∧
+        G.XSet ∩ P.toGridRectangleBetween.toGridRectangle.coveredSquares =
+          {(P.cutColumn, G.X P.cutColumn)} := by
+  refine ⟨fun hP => ⟨((G.mem_commutationHexagons C P).mp hP).1,
+    G.XSet_inter_coveredSquares_of_mem_commutationHexagons C hP⟩,
+    fun ⟨hempty, hinter⟩ => (G.mem_commutationHexagons C P).mpr
+      ⟨hempty, Finset.disjoint_left.mpr fun {p} hp hX => ?_⟩⟩
+  obtain ⟨d, r⟩ := p
+  -- A covered square lies outside both columns next to the replaced line, so in the rectangle.
+  have hda : d ≠ C.column := fun h => P.mk_notMem_coveredSquares_left_column r (h ▸ hp)
+  have hdb : d ≠ b := fun h => P.mk_notMem_coveredSquares_right_column r (h ▸ hp)
+  have hmem := Finset.mem_inter.mpr ⟨hX, (P.mem_coveredSquares_iff_of_ne hda hdb).mp hp⟩
+  rw [hinter, Finset.mem_singleton] at hmem
+  have hcol : d = P.cutColumn := (Prod.mk.inj hmem).1
+  cases P with
+  | inl P => exact hda (by rwa [GridCommutationHexagonBetween.cutColumn_inl] at hcol)
+  | inr P => exact hdb (by rwa [GridCommutationHexagonBetween.cutColumn_inr] at hcol)
 
 /-- The counted commutation pentagons of either turn-side kind. -/
 noncomputable def commutationPentagons (x y : GridState n) :
@@ -744,12 +789,8 @@ theorem injOn_toRectangleDecomposition_hexagonCompositeDecompositions (x z : Gri
       rw [GridHexagonCompositeDecomposition.toRectangleDecomposition_inr,
         Finset.disjoint_iff_inter_eq_empty.mp (G.disjoint_XSet_of_mem_unblockedRectangles hr).symm]
       simp
-  intro D hD E hE h
-  rw [Finset.mem_coe] at hD hE
-  have hside : D.isLeft ↔ E.isLeft := by rw [key D hD, key E hE, h]
-  rcases D with D | D <;> rcases E with E | E <;> simp at hside
-  · exact congrArg Sum.inl (GridHexagonRectangleDecomposition.toRectangleDecomposition_injective h)
-  · exact congrArg Sum.inr (GridRectangleHexagonDecomposition.toRectangleDecomposition_injective h)
+  exact GridHexagonCompositeDecomposition.injOn_toRectangleDecomposition_of_isLeft_iff
+    (fun D => (G.XSet ∩ D.first.toGridRectangle.coveredSquares).Nonempty) key
 
 /-- The weight of a forward pentagon followed by a reverse pentagon. The first factor is renamed
 because the forward commutation map is semilinear. -/

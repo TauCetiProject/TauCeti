@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.CohenMacaulay.Basic
 public import TauCeti.RingTheory.RegularLocalRing.Basic
 import TauCeti.Algebra.Module.SpanRank
+import TauCeti.RingTheory.CohenMacaulay.Height
 import TauCeti.RingTheory.LocalRing.MaximalIdeal.Square
 
 /-!
@@ -126,3 +127,9 @@ theorem isCohenMacaulay : Module.IsCohenMacaulay R R := by
   exact depth_eq_ringKrullDim
 
 end TauCeti.IsRegularLocalRing
+
+/-- In particular, every prime `p` of a regular local ring satisfies
+`ht p + dim (R ⧸ p) = dim R`. -/
+example {R : Type u} [CommRing R] [IsRegularLocalRing R] (p : Ideal R) [p.IsPrime] :
+    p.height + ringKrullDim (R ⧸ p) = ringKrullDim R :=
+  TauCeti.IsRegularLocalRing.isCohenMacaulay.height_add_ringKrullDim_quotient p

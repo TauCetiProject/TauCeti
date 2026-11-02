@@ -57,8 +57,8 @@ at `h` of the pushforward `Finsupp.mapDomain b`.
 * `Finsupp.natCast_weight_eq_of_support_subset`: on monomials supported in a finite set `s`, the
   weight `weight w` agrees with any additive functional on `s → ℤ` taking the value `w i` on the
   `i`-th coordinate vector.
-* `Finsupp.finite_degree_eq`: in finitely many variables there are finitely many exponent
-  vectors of each degree.
+* `Finsupp.finite_degree_eq`, `Finsupp.finite_degree_le`: in finitely many variables there are
+  finitely many exponent vectors of each degree, and of degree at most `n`.
 * `Finsupp.fintypeDegreeEq`: for a fintype of variables with decidable equality, the exponent
   vectors of degree `n` form a fintype, enumerated by `Finset.finsuppAntidiag`.
 -/
@@ -235,6 +235,11 @@ namespace Finsupp
 instance finite_degree_eq {σ : Type*} [Finite σ] (n : ℕ) :
     Finite {s : σ →₀ ℕ // s.degree = n} :=
   (finite_of_degree_eq n).to_subtype
+
+/-- In finitely many variables there are finitely many exponent vectors of degree at most `n`. -/
+instance finite_degree_le {σ : Type*} [Finite σ] (n : ℕ) :
+    Finite {s : σ →₀ ℕ // s.degree ≤ n} :=
+  (finite_of_degree_le n).to_subtype
 
 /-- For a fintype of variables with decidable equality, the exponent vectors of degree `n` form a
 fintype, enumerated by `Finset.finsuppAntidiag`. -/

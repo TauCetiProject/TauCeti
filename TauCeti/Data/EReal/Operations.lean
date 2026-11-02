@@ -16,9 +16,10 @@ are defined for every extended real `a`, are never of the form `∞ - ∞`, and 
 subtraction in the ways recorded here. The first two results below have a real subtrahend and
 the last two a real minuend. The file also records that adding a finite extended nonnegative real
 to a real number is real addition, how the positive part `ENNReal.ofReal` of a real number
-compares with the number itself in `EReal`, and that the coercion from `ℝ≥0∞` commutes with
-infima. The named inclusion `WithTop.toEReal` embeds real heights with a possible top value
-into `EReal` without installing a coercion; it is additive.
+compares with the number itself in `EReal`, that the coercion from `ℝ≥0∞` commutes with
+infima, and how combinations `s a + t b - r` with real weights and subtrahend behave. The named
+inclusion `WithTop.toEReal` embeds real heights with a possible top value into `EReal` without
+installing a coercion; it is additive.
 
 ## Main results
 
@@ -46,6 +47,10 @@ into `EReal` without installing a coercion; it is additive.
 * `EReal.coe_ennreal_iInf` — the coercion from `ℝ≥0∞` to `EReal` commutes with infima.
 * `EReal.coe_mul_add_coe_mul_eq_top` — a combination `s a + t b` with positive real weights is `⊤`
   when neither `a` nor `b` is `⊥` and one of them is `⊤`.
+* `EReal.coe_mul_add_coe_mul_sub_coe_ne_top` — a combination `s a + t b - r` with nonnegative
+  real weights and a real subtrahend is `≠ ⊤` when `a` and `b` are.
+* `EReal.coe_mul_add_coe_mul_sub_add_sub_comm` — two such combinations with the same weights add
+  termwise.
 * `WithTop.toEReal_add` and `WithTop.toEReal_add_sub_coe_add` — the inclusion of `WithTop ℝ` into
   `EReal` is additive, and subtracting a real sum from the image of a sum splits termwise.
 -/
@@ -230,6 +235,27 @@ theorem _root_.EReal.coe_mul_add_coe_mul_eq_top {s t : ℝ} (hs : 0 < s) (ht : 0
     refine EReal.add_top_of_ne_bot ?_
     exact (EReal.mul_ne_bot _ _).2 ⟨.inl (EReal.coe_ne_bot _), .inr ha, .inl (EReal.coe_ne_top _),
       .inl (EReal.coe_nonneg.2 hs.le)⟩
+
+/-- A combination `s a + t b - r` with nonnegative real weights `s`, `t` and a real subtrahend
+`r` is `≠ ⊤` when `a` and `b` are. -/
+theorem _root_.EReal.coe_mul_add_coe_mul_sub_coe_ne_top {a b : EReal} (ha : a ≠ ⊤) (hb : b ≠ ⊤)
+    {s t r : ℝ} (hs : 0 ≤ s) (ht : 0 ≤ t) :
+    (s : EReal) * a + (t : EReal) * b - (r : EReal) ≠ ⊤ := by
+  rw [sub_eq_add_neg, ← EReal.coe_neg]
+  exact EReal.add_ne_top (EReal.add_ne_top (by simp [EReal.mul_ne_top, hs, ha])
+    (by simp [EReal.mul_ne_top, ht, hb])) (EReal.coe_ne_top _)
+
+/-- Two combinations `s a + t b - r` with the same nonnegative real weights `s`, `t` and real
+subtrahends add termwise, as in `sub_add_sub_comm` for groups. -/
+theorem _root_.EReal.coe_mul_add_coe_mul_sub_add_sub_comm (a b a' b' : EReal) {s t : ℝ}
+    (hs : 0 ≤ s) (ht : 0 ≤ t) (r r' : ℝ) :
+    (s : EReal) * a + (t : EReal) * b - (r : EReal) + ((s : EReal) * a' + (t : EReal) * b' - r') =
+      (s : EReal) * (a + a') + (t : EReal) * (b + b') - ((r + r' : ℝ) : EReal) := by
+  rw [EReal.left_distrib_of_nonneg_of_ne_top (EReal.coe_nonneg.2 hs) (EReal.coe_ne_top _),
+    EReal.left_distrib_of_nonneg_of_ne_top (EReal.coe_nonneg.2 ht) (EReal.coe_ne_top _)]
+  simp only [sub_eq_add_neg, ← EReal.coe_neg]
+  rw [neg_add, EReal.coe_add]
+  abel
 
 end TauCeti
 

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Probability.BrownianMotion.Basic
 public import Mathlib.Probability.Process.Adapted
+import TauCeti.Probability.Independence.Filtration
 
 /-!
 # Pre-Brownian motion relative to a filtration
@@ -16,7 +17,11 @@ Mathlib's `ProbabilityTheory.IsPreBrownianReal` prescribes only the finite-dimen
 interacts with it: `TauCeti.Probability.IsFilteredPreBrownianReal ℱ W P` adds that `W` is adapted
 to `ℱ` and that every increment `W_t - W_s`, `s ≤ t`, is independent of `ℱ_s`. A pre-Brownian
 motion is a pre-Brownian motion relative to its own natural filtration
-(`ProbabilityTheory.IsPreBrownianReal.isFilteredPreBrownianReal_natural`).
+(`ProbabilityTheory.IsPreBrownianReal.isFilteredPreBrownianReal_natural`). Conversely, an adapted
+process started at `0` whose increments `W_t - W_s` have law `N(0, t - s)` and are independent of
+`ℱ_s` is a pre-Brownian motion relative to `ℱ`
+(`MeasureTheory.Adapted.isFilteredPreBrownianReal`); this is how a change of measure is shown to
+produce a new Brownian motion.
 
 ## Main declarations
 
@@ -24,6 +29,10 @@ motion is a pre-Brownian motion relative to its own natural filtration
   filtration.
 * `ProbabilityTheory.IsPreBrownianReal.isFilteredPreBrownianReal_natural`: the natural
   filtration.
+* `ProbabilityTheory.IsPreBrownianReal.hasLaw_sub_of_le`: for `s ≤ t`, the increment
+  `W_t - W_s` has law `N(0, t - s)`.
+* `MeasureTheory.Adapted.isFilteredPreBrownianReal`: the characterization by Gaussian increments
+  independent of the past.
 
 ## References
 
@@ -74,4 +83,33 @@ theorem isFilteredPreBrownianReal_natural (hB : IsPreBrownianReal B P)
     rw [this, ← MeasurableSpace.comap_comp]
     exact MeasurableSpace.comap_mono (measurable_pi_apply _).comap_le
 
+/-- For `s ≤ t`, the increment `B t - B s` of a pre-Brownian motion has law `N(0, t - s)`. -/
+theorem hasLaw_sub_of_le (hB : IsPreBrownianReal B P) {s t : ℝ≥0} (hst : s ≤ t) :
+    HasLaw (B t - B s) (gaussianReal 0 (t - s)) P := by
+  convert hB.hasLaw_sub t s using 2
+  ext
+  simp [Real.nndist_eq, hst]
+
 end ProbabilityTheory.IsPreBrownianReal
+
+namespace MeasureTheory.Adapted
+
+open TauCeti.Probability
+
+variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {ℱ : Filtration ℝ≥0 mΩ}
+  {X : ℝ≥0 → Ω → ℝ}
+
+/-- An adapted process that starts at `0` and whose increments `X t - X s`, `s ≤ t`, have law
+`N(0, t - s)` and are independent of `ℱ s` is a pre-Brownian motion relative to `ℱ`. -/
+theorem isFilteredPreBrownianReal (hX : Adapted ℱ X) (h0 : ∀ᵐ ω ∂P, X 0 ω = 0)
+    (hlaw : ∀ ⦃s t : ℝ≥0⦄, s ≤ t → HasLaw (X t - X s) (gaussianReal 0 (t - s)) P)
+    (hindep : ∀ ⦃s t : ℝ≥0⦄, s ≤ t → Indep (.comap (X t - X s) inferInstance) (ℱ s) P) :
+    IsFilteredPreBrownianReal ℱ X P := by
+  have := (hlaw (le_refl 0)).isProbabilityMeasure
+  refine ⟨HasIndepIncrements.isPreBrownianReal_of_hasLaw (fun t ↦ ?_)
+    (hX.hasIndepIncrements hindep), hX, hindep⟩
+  refine (tsub_zero t ▸ hlaw (zero_le (a := t))).congr ?_
+  filter_upwards [h0] with ω hω
+  simp [hω]
+
+end MeasureTheory.Adapted

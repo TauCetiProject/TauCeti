@@ -37,6 +37,9 @@ a nonzero nilpotent element is not uniform.
 * `TauCeti.Huber.IsUniform.nilradical_le_closure_bot`: in a uniform Tate ring every nilpotent
   element lies in the closure of zero.
 * `TauCeti.Huber.IsUniform.isReduced`: a Hausdorff uniform Tate ring is reduced.
+* `TauCeti.Huber.isUniform_of_isReduced_quotient`: if `B` is an open bounded subring and `ϖ ∈ B`
+  is topologically nilpotent and regular in `A` with `B ⧸ ϖB` reduced, then `A` is uniform, since
+  `A° = B` by `TauCeti.Huber.isPowerBounded_iff_mem_of_isReduced_quotient`.
 * `TauCeti.Huber.IsUniform.isAdicComplete_span_singleton`: in a complete Hausdorff uniform Huber
   ring, `A°` is `a`-adically complete for every pseudouniformiser `a ∈ A°`.
 
@@ -50,6 +53,7 @@ division rings, by `TauCeti.Huber.IsUniform.of_normedDivisionRing` in
 * K. Buzzard, A. Verberkmoes, *Stably uniform affinoids are sheafy*, J. reine angew. Math. 740
   (2018).
 * [Wedhorn, *Adic Spaces*][wedhorn_adic], Lemma 6.2 and Corollary 6.4.
+* K. Fujiwara, F. Kato, *Foundations of Rigid Geometry I*, Appendix B, Proposition B.1.3(1).
 -/
 
 public section
@@ -112,6 +116,21 @@ theorem IsUniform.isBounded_powerBoundedSubring [IsUniform A] :
   isUniform_iff_isBounded_powerBoundedSubring.mp ‹_›
 
 end Nonarchimedean
+
+section ReducedQuotient
+
+variable {A : Type*} [CommRing A] [TopologicalSpace A] {B : Subring A} {ϖ : B}
+
+/-- **A topological ring with a bounded open subring with reduced quotient is uniform**, under the
+hypotheses of `isPowerBounded_iff_mem_of_isReduced_quotient`: its power-bounded elements form the
+bounded set `B`. -/
+theorem isUniform_of_isReduced_quotient (hBo : IsOpen (B : Set A)) (hBb : IsBounded (B : Set A))
+    (hϖ : IsTopologicallyNilpotent (ϖ : A)) (hϖr : IsLeftRegular (ϖ : A))
+    (hred : IsReduced (B ⧸ Ideal.span {ϖ})) : IsUniform A :=
+  isUniform_iff.mpr <| hBb.subset fun _ hx ↦
+    (isPowerBounded_iff_mem_of_isReduced_quotient hBo hBb hϖ hϖr hred).mp hx
+
+end ReducedQuotient
 
 section Huber
 

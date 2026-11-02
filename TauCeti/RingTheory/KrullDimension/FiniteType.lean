@@ -72,6 +72,8 @@ irreducible components `V(q)` through `p`, and each of these satisfies the dimen
 
 * `TauCeti.ringKrullDim_eq_of_injective_of_isIntegral_mvPolynomial`: an injective integral map
   `k[X₁, …, Xₛ] → A` forces `dim A = s`, the number of variables.
+* `RingHom.injective_of_surjective_of_natCard_le_ringKrullDim_mvPolynomial`: a surjection
+  `k[X₁, …, Xₛ] → A` with `s ≤ dim A` is injective.
 * `TauCeti.finiteRingKrullDim_of_finiteType`: a nontrivial finitely generated algebra over a field
   has finite Krull dimension.
 * `TauCeti.ringKrullDim_tensorProduct_of_isNoetherianRing_of_finiteType`:
@@ -135,6 +137,20 @@ theorem ringKrullDim_eq_of_injective_of_isIntegral_mvPolynomial {ι A : Type*} [
   rw [ringKrullDim_eq_of_isIntegral_of_faithfulSMul (R := MvPolynomial ι k),
     MvPolynomial.ringKrullDim_of_isNoetherianRing_of_finite, ringKrullDim_eq_zero_of_field,
     zero_add]
+
+/-- A surjection from a polynomial ring `k[Xᵢ | i ∈ ι]` in finitely many variables onto a ring
+whose Krull dimension is at least the number of variables is injective. -/
+theorem _root_.RingHom.injective_of_surjective_of_natCard_le_ringKrullDim_mvPolynomial
+    {ι A : Type*} [Finite ι] [CommRing A] (g : MvPolynomial ι k →+* A)
+    (hsurj : Function.Surjective g) (hdim : Nat.card ι ≤ ringKrullDim A) :
+    Function.Injective g := by
+  refine (injective_iff_map_eq_zero g).2 fun r hr ↦ by_contra fun hr0 ↦ ?_
+  -- A nonzero element of the kernel is a nonzerodivisor, so it lowers the dimension.
+  have h := (add_le_add_left hdim 1).trans
+    (ringKrullDim_succ_le_of_surjective g hsurj (mem_nonZeroDivisors_of_ne_zero hr0) hr)
+  rw [MvPolynomial.ringKrullDim_of_isNoetherianRing_of_finite, ringKrullDim_eq_zero_of_field,
+    zero_add] at h
+  exact absurd h (by norm_cast; omega)
 
 variable (k) in
 /-- A nontrivial finitely generated algebra over a field has finite Krull dimension. -/

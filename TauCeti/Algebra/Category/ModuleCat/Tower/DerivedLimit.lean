@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.DerivedCategory.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Tower.Product
-public import TauCeti.Algebra.Homology.HomotopyCategory.MappingCocone
+public import TauCeti.Algebra.Homology.HomotopyCategory.MappingCocone.Basic
 
 /-!
 # Derived limits of towers of complexes of modules
@@ -22,6 +22,18 @@ towers by its homotopy limit. By construction `holim K` sits in the fibre triang
 `holim K → ∏ₙ Kₙ → ∏ₙ Kₙ → (holim K)[1]` of `δ`, which is distinguished in `D(R)`; consequently
 the projections `Rlim K → Kₙ` are compatible with the transition maps `Kₙ₊₁ → Kₙ` in `D(R)`,
 although the corresponding maps of complexes are only compatible up to homotopy.
+
+When every term of `K` is a tower with vanishing `lim¹`, for instance when all transitions are
+surjective, the derived limit is the termwise limit complex `lim K`: the inclusion
+`lim K → ∏ₙ Kₙ` lifts to a quasi-isomorphism `lim K → holim K`, because
+`0 → lim K → ∏ₙ Kₙ → ∏ₙ Kₙ → 0` is then a short exact sequence of complexes. Under the resulting
+isomorphism `Rlim K ≅ lim K` the projections of `Rlim K` are the projections of the limit.
+
+The homotopy limit is the mapping cocone functor of the natural transformation `δ`
+(`NatTrans.mappingCoconeFunctor`), so it commutes with the shifts of complexes, and its projection
+`holim K → ∏ₙ Kₙ` is compatible with these isomorphisms. Through the localization this equips
+`Rlim` with `Functor.CommShift ℤ`, that is with coherent isomorphisms `Rlim (K⟦a⟧) ≅ (Rlim K)⟦a⟧`,
+compatible with the identification of `Rlim` with the homotopy limit.
 
 The key input is that products of modules are exact: the product functor `A ↦ ∏ₙ Aₙ` on towers
 (`TauCeti.ModuleTower.productFunctor`) preserves homology, hence quasi-isomorphisms of complexes,
@@ -44,9 +56,16 @@ with localization.
 * `TauCeti.ModuleTower.homotopyLimitTriangle`: the fibre triangle of `δ`, distinguished in the
   derived category (`TauCeti.ModuleTower.homotopyLimitTriangle_distinguished`).
 * `TauCeti.ModuleTower.derivedLimit`: the derived limit functor `Rlim`, with
-  `TauCeti.ModuleTower.derivedLimitFactors : Q ⋙ Rlim ≅ holim ⋙ Q`.
+  `TauCeti.ModuleTower.derivedLimitFactors : Q ⋙ Rlim ≅ holim ⋙ Q`, and its commutation with
+  the shifts, as a `Functor.CommShift ℤ` instance compatible with `derivedLimitFactors`.
 * `TauCeti.ModuleTower.derivedLimitπ`: the projections `Rlim K → Kₙ`, compatible with the
   transitions (`TauCeti.ModuleTower.derivedLimitπ_comp_transition`).
+* `TauCeti.ModuleTower.homotopyLimitLift`: the natural comparison map `lim K → holim K`, whose
+  projections are the inclusion of `lim K` and zero, a quasi-isomorphism when every term has
+  vanishing `lim¹` (`TauCeti.ModuleTower.quasiIso_homotopyLimitLift`).
+* `TauCeti.ModuleTower.derivedLimitIsoLimComplex`: the isomorphism `Rlim K ≅ lim K` in that case,
+  compatible with the projections
+  (`TauCeti.ModuleTower.derivedLimitIsoLimComplex_inv_comp_derivedLimitπ`).
 
 ## References
 
@@ -101,29 +120,8 @@ variable (R)
 the shift chain map `δ : ∏ₙ Kₙ → ∏ₙ Kₙ`. It computes the derived limit `Rlim K`. -/
 @[expose]
 def homotopyLimitFunctor :
-    CochainComplex (ModuleTower.{v} R) ℤ ⥤ CochainComplex (ModuleCat.{v} R) ℤ where
-  obj K := mappingCocone ((complexShift R).app K)
-  map f := (mappingCone.map _ _ ((productComplexFunctor R).map f)
-    ((productComplexFunctor R).map f) ((complexShift R).naturality f).symm)⟦(-1 : ℤ)⟧'
-  map_id K := by
-    have h : mappingCone.map _ _ ((productComplexFunctor R).map (𝟙 K))
-        ((productComplexFunctor R).map (𝟙 K)) ((complexShift R).naturality (𝟙 K)).symm =
-          𝟙 _ := by
-      simp only [CategoryTheory.Functor.map_id]
-      exact mappingCone.map_id _
-    rw [h]
-    exact CategoryTheory.Functor.map_id _ _
-  map_comp f g := by
-    have h : mappingCone.map _ _ ((productComplexFunctor R).map (f ≫ g))
-        ((productComplexFunctor R).map (f ≫ g)) ((complexShift R).naturality (f ≫ g)).symm =
-          mappingCone.map _ _ ((productComplexFunctor R).map f)
-            ((productComplexFunctor R).map f) ((complexShift R).naturality f).symm ≫
-          mappingCone.map _ _ ((productComplexFunctor R).map g)
-            ((productComplexFunctor R).map g) ((complexShift R).naturality g).symm := by
-      simp only [CategoryTheory.Functor.map_comp]
-      exact mappingCone.map_comp _ _ _ _ _ _ _ _ _
-    rw [h]
-    exact CategoryTheory.Functor.map_comp _ _ _
+    CochainComplex (ModuleTower.{v} R) ℤ ⥤ CochainComplex (ModuleCat.{v} R) ℤ :=
+  NatTrans.mappingCoconeFunctor (complexShift R)
 
 theorem homotopyLimitFunctor_obj (K : CochainComplex (ModuleTower.{v} R) ℤ) :
     (homotopyLimitFunctor R).obj K = mappingCocone ((complexShift R).app K) :=
@@ -152,7 +150,20 @@ theorem homotopyLimitFunctor_map_comp_homotopyLimitFst
     {K L : CochainComplex (ModuleTower.{v} R) ℤ} (f : K ⟶ L) :
     (homotopyLimitFunctor R).map f ≫ homotopyLimitFst L =
       homotopyLimitFst K ≫ (productComplexFunctor R).map f :=
-  mappingCocone.shiftFunctor_map_mappingCone_map_comp_fst _ _ _ _ _
+  mappingCocone.shiftFunctor_map_mappingCone_map_comp_fst _ _ _ _
+    ((complexShift R).naturality f).symm
+
+variable (R) in
+/-- The shift chain maps `δ` commute with the shifts of complexes of towers. -/
+instance : NatTrans.CommShift (complexShift R) ℤ :=
+  inferInstanceAs (NatTrans.CommShift (NatTrans.mapHomologicalComplex (shiftNatTrans R) _) ℤ)
+
+/-- The homotopy limit commutes with the shifts, as the mapping cocone functor of the shift chain
+maps `δ` (`NatTrans.mappingCoconeFunctor`). For this structure the projection `holim K → ∏ₙ Kₙ`
+commutes with the shifts: it is the natural transformation `NatTrans.mappingCoconeFunctorFst`,
+whose compatibility with the shifts is an instance. -/
+noncomputable instance : (homotopyLimitFunctor R).CommShift ℤ :=
+  inferInstanceAs ((NatTrans.mappingCoconeFunctor (complexShift R)).CommShift ℤ)
 
 /-- The fibre triangle `holim K → ∏ₙ Kₙ → ∏ₙ Kₙ → (holim K)[1]` of the shift chain map, the
 mapping cocone triangle of `δ`. -/
@@ -205,6 +216,88 @@ theorem quasiIso_isInvertedBy_homotopyLimitFunctor_comp_Q
   dsimp only [Functor.comp_map]
   infer_instance
 
+/-- The termwise limit `lim K` of a cochain complex of towers `K`. -/
+abbrev limComplexFunctor :
+    CochainComplex (ModuleTower.{v} R) ℤ ⥤ CochainComplex (ModuleCat.{v} R) ℤ :=
+  (limFunctor R).mapHomologicalComplex _
+
+/-- The inclusion `lim K → ∏ₙ Kₙ` of the termwise limit into the product complex. -/
+def limComplexι : limComplexFunctor.{v} R ⟶ productComplexFunctor.{v} R :=
+  NatTrans.mapHomologicalComplex (limι R) _
+
+variable {R}
+
+@[simp]
+theorem limComplexι_app_f (K : CochainComplex (ModuleTower.{v} R) ℤ) (i : ℤ) :
+    ((limComplexι R).app K).f i = (limι R).app (K.X i) :=
+  (rfl)
+
+/-- The termwise limit is killed by the shift: `lim K → ∏ₙ Kₙ → ∏ₙ Kₙ` vanishes. -/
+@[reassoc (attr := simp)]
+theorem limComplexι_app_comp_complexShift_app (K : CochainComplex (ModuleTower.{v} R) ℤ) :
+    (limComplexι R).app K ≫ (complexShift R).app K = 0 := by
+  ext i : 1
+  exact limι_app_comp_shiftNatTrans_app R (K.X i)
+
+/-- The comparison map `lim K → holim K` from the termwise limit of a complex of towers to its
+homotopy limit, lifting the inclusion `lim K → ∏ₙ Kₙ` through the mapping cocone of `δ`. -/
+def homotopyLimitLift (K : CochainComplex (ModuleTower.{v} R) ℤ) :
+    (limComplexFunctor R).obj K ⟶ (homotopyLimitFunctor R).obj K :=
+  mappingCocone.lift _ ((limComplexι R).app K) 0 (by simp)
+
+/-- The comparison map `lim K → holim K` followed by `holim K → ∏ₙ Kₙ` is the inclusion of the
+termwise limit. -/
+@[reassoc (attr := simp)]
+theorem homotopyLimitLift_comp_homotopyLimitFst (K : CochainComplex (ModuleTower.{v} R) ℤ) :
+    homotopyLimitLift K ≫ homotopyLimitFst K = (limComplexι R).app K :=
+  mappingCocone.lift_fst _ _ _ _
+
+/-- The comparison map `lim K → holim K` has vanishing second component in the mapping cocone
+of `δ`. -/
+@[simp, reassoc]
+theorem homotopyLimitLift_f_snd_v (K : CochainComplex (ModuleTower.{v} R) ℤ) (p q : ℤ)
+    (hpq : p + -1 = q) :
+    (homotopyLimitLift K).f p ≫ (mappingCocone.snd ((complexShift R).app K)).v p q hpq = 0 :=
+  (mappingCocone.lift_f_snd_v _ _ _ _ p q hpq).trans (HomComplex.Cochain.zero_v ..)
+
+/-- The comparison map `lim K → holim K` is natural in the complex of towers `K`. -/
+@[reassoc]
+theorem homotopyLimitLift_naturality {K L : CochainComplex (ModuleTower.{v} R) ℤ} (f : K ⟶ L) :
+    (limComplexFunctor R).map f ≫ homotopyLimitLift L =
+      homotopyLimitLift K ≫ (homotopyLimitFunctor R).map f := by
+  -- Both sides are compared through the two projections of the mapping cocone.
+  have hfst : (limComplexFunctor R).map f ≫ homotopyLimitLift L ≫ homotopyLimitFst L =
+      homotopyLimitLift K ≫ (homotopyLimitFunctor R).map f ≫ homotopyLimitFst L := by
+    rw [homotopyLimitLift_comp_homotopyLimitFst, homotopyLimitFunctor_map_comp_homotopyLimitFst,
+      homotopyLimitLift_comp_homotopyLimitFst_assoc]
+    exact (limComplexι R).naturality f
+  have hsnd := mappingCocone.shiftFunctor_map_mappingCone_map_f_snd_v _ _
+    ((productComplexFunctor R).map f) ((productComplexFunctor R).map f)
+    ((complexShift R).naturality f).symm
+  ext p : 1
+  apply mappingCocone.ext_to _ p (p + -1) rfl
+  · have h := HomologicalComplex.congr_hom hfst p
+    simp only [HomologicalComplex.comp_f] at h
+    exact (Category.assoc _ _ _).trans (h.trans (Category.assoc _ _ _).symm)
+  · have h₁ : ((limComplexFunctor R).map f).f p ≫ (homotopyLimitLift L).f p ≫
+        (mappingCocone.snd _).v p (p + -1) rfl = 0 := by
+      rw [homotopyLimitLift_f_snd_v, Limits.comp_zero]
+    have h₂ : (homotopyLimitLift K).f p ≫ ((homotopyLimitFunctor R).map f).f p ≫
+        (mappingCocone.snd _).v p (p + -1) rfl = 0 := by
+      -- `(homotopyLimitFunctor R).map f` is the shifted mapping cone map only up to unfolding.
+      erw [hsnd p, homotopyLimitLift_f_snd_v_assoc K p (p + -1) rfl, Limits.zero_comp]
+    exact (Category.assoc _ _ _).trans (h₁.trans (h₂.symm.trans (Category.assoc _ _ _).symm))
+
+/-- For a complex of towers whose terms have vanishing `lim¹`, for instance towers with surjective
+transitions, the comparison map `lim K → holim K` is a quasi-isomorphism. -/
+theorem quasiIso_homotopyLimitLift {K : CochainComplex (ModuleTower.{v} R) ℤ}
+    (hK : ∀ i, Subsingleton (K.X i).limOne) :
+    QuasiIso (homotopyLimitLift K) :=
+  mappingCocone.quasiIso_lift_of_shortExact (S := ShortComplex.mk _ _
+    (limComplexι_app_comp_complexShift_app K))
+    (HomologicalComplex.shortExact_of_degreewise_shortExact _ fun i ↦
+      shortExact_limι_shiftNatTrans (hK i))
+
 end Complexes
 
 section Derived
@@ -230,6 +323,20 @@ def derivedLimitFactors :
     DerivedCategory.Q ⋙ derivedLimit R ≅ homotopyLimitFunctor R ⋙ DerivedCategory.Q :=
   Localization.Lifting.iso (DerivedCategory.Q (C := ModuleTower.{v} R))
     (HomologicalComplex.quasiIso (ModuleTower.{v} R) (ComplexShape.up ℤ)) _ _
+
+/-- The derived limit commutes with the shifts: `Rlim (K⟦a⟧) ≅ (Rlim K)⟦a⟧`, induced by the
+commutation of the homotopy limit with the shifts. -/
+noncomputable instance : (derivedLimit R).CommShift ℤ :=
+  Functor.commShiftOfLocalization DerivedCategory.Q
+    (HomologicalComplex.quasiIso (ModuleTower.{v} R) (ComplexShape.up ℤ)) ℤ
+    (homotopyLimitFunctor R ⋙ DerivedCategory.Q) (derivedLimit R)
+
+/-- The identification of the derived limit with the homotopy limit is compatible with the
+shifts. -/
+instance : NatTrans.CommShift (derivedLimitFactors R).hom ℤ :=
+  inferInstanceAs (NatTrans.CommShift (Localization.Lifting.iso DerivedCategory.Q
+    (HomologicalComplex.quasiIso (ModuleTower.{v} R) (ComplexShape.up ℤ))
+    (homotopyLimitFunctor R ⋙ DerivedCategory.Q) (derivedLimit R)).hom ℤ)
 
 end Derived
 
@@ -275,6 +382,42 @@ theorem derivedLimitπ_comp_transition (K : CochainComplex (ModuleTower.{v} R) �
   simp [Preadditive.comp_sub]
 
 end Projections
+
+section LimComplex
+
+variable [HasDerivedCategory.{w} (ModuleTower.{v} R)] [HasDerivedCategory.{w'} (ModuleCat.{v} R)]
+  {R}
+
+/-- For a complex of towers whose terms have vanishing `lim¹`, for instance towers with surjective
+transitions, the derived limit is the termwise limit: `Rlim K ≅ lim K` in `D(R)`, through the
+comparison map `lim K → holim K`. -/
+def derivedLimitIsoLimComplex (K : CochainComplex (ModuleTower.{v} R) ℤ)
+    (hK : ∀ i, Subsingleton (K.X i).limOne) :
+    (derivedLimit R).obj (DerivedCategory.Q.obj K) ≅
+      DerivedCategory.Q.obj ((limComplexFunctor R).obj K) :=
+  have := quasiIso_homotopyLimitLift hK
+  (derivedLimitFactors R).app K ≪≫ (asIso (DerivedCategory.Q.map (homotopyLimitLift K))).symm
+
+theorem derivedLimitIsoLimComplex_inv (K : CochainComplex (ModuleTower.{v} R) ℤ)
+    (hK : ∀ i, Subsingleton (K.X i).limOne) :
+    (derivedLimitIsoLimComplex K hK).inv =
+      DerivedCategory.Q.map (homotopyLimitLift K) ≫ (derivedLimitFactors R).inv.app K :=
+  (rfl)
+
+/-- Under the identification of the derived limit with the termwise limit, the projections
+`Rlim K → Kₙ` become the projections `lim K → Kₙ`. -/
+@[reassoc (attr := simp)]
+theorem derivedLimitIsoLimComplex_inv_comp_derivedLimitπ
+    (K : CochainComplex (ModuleTower.{v} R) ℤ)
+    (hK : ∀ i, Subsingleton (K.X i).limOne) (n : ℕ) :
+    (derivedLimitIsoLimComplex K hK).inv ≫ derivedLimitπ K n =
+      DerivedCategory.Q.map
+        ((limComplexι R).app K ≫ (NatTrans.mapHomologicalComplex (productπ R n) _).app K) := by
+  rw [derivedLimitIsoLimComplex_inv, derivedLimitπ_def, Category.assoc,
+    Iso.inv_hom_id_app_assoc, ← CategoryTheory.Functor.map_comp,
+    homotopyLimitLift_comp_homotopyLimitFst_assoc]
+
+end LimComplex
 
 end ModuleTower
 

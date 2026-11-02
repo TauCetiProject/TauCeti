@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.LocalDiffeomorph
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 
 /-!
 # Manifolds glued from open pieces
@@ -22,6 +22,15 @@ maps. The gluing condition is phrased without inverses: whenever `φ j x = φ k 
 as `φ k` is injective). For a space glued along transition maps, `T` is the transition itself. Each
 embedding `φ j` is then a `C^n` diffeomorphism onto its open image.
 
+Up to its maximal atlas, the glued structure is the only `C^n` manifold structure on `M` for which
+every `φ j` is a local diffeomorphism. A chart belongs to the maximal atlas of a `C^n`
+manifold structure on `M` for which every `φ j` is a local diffeomorphism exactly when its
+composites with the maps `φ j` are local diffeomorphisms, a condition that does not mention the
+structure on `M`. Hence any such structure has the same maximal atlas as the glued one: both
+define the same `C^n` structure on `M`. Dually, a map out of `M` is a local diffeomorphism exactly
+when its composites with the embeddings are, so a bijection onto another manifold with this
+property is a diffeomorphism (`IsLocalDiffeomorph.diffeomorphOfBijective`).
+
 The gluing condition has the local-deck-transformation shape of
 `IsLocalHomeomorph.isManifold_chartedSpaceOfRightInverse` in
 `TauCeti/Geometry/Manifold/Instances/Quotient.lean`.
@@ -35,6 +44,14 @@ The gluing condition has the local-deck-transformation shape of
   diffeomorphism onto its image.
 * `TauCeti.contMDiff_iff_chartedSpaceOfIsOpenEmbedding`: a map out of `M` is `C^n` exactly when
   its composite with every embedding is.
+* `TauCeti.isLocalDiffeomorph_iff_forall_comp`: if every map of a jointly surjective family is a
+  local diffeomorphism, a map out of `M` is a local diffeomorphism exactly when its composite with
+  every map of the family is.
+* `TauCeti.isLocalDiffeomorph_iff_chartedSpaceOfIsOpenEmbedding`: a map out of `M` is a `C^n` local
+  diffeomorphism exactly when its composite with every embedding is.
+* `TauCeti.maximalAtlas_eq_of_forall_isLocalDiffeomorph`: two `C^n` manifold structures making
+  every map of a jointly surjective family a local diffeomorphism have the same maximal atlas.
+* `TauCeti.maximalAtlas_chartedSpaceOfIsOpenEmbedding_eq`: uniqueness of the glued atlas.
 
 ## Implementation notes
 
@@ -288,5 +305,68 @@ theorem contMDiff_iff_chartedSpaceOfIsOpenEmbedding [∀ j, IsManifold I n (U j)
     ((hφ j).toOpenPartialHomeomorph_left_inv _)).congr_of_eventuallyEq ?_
   filter_upwards [hrange] with w hw
   simp [(hφ j).toOpenPartialHomeomorph_right_inv _ hw]
+
+include hcover in
+/-- **Local diffeomorphisms out of a jointly surjective family.** If every map `φ j` of a jointly
+surjective family is a `C^n` local diffeomorphism, then a map out of `M` is a `C^n` local
+diffeomorphism exactly when its composite with every `φ j` is one. -/
+theorem isLocalDiffeomorph_iff_forall_comp [ChartedSpace H M]
+    (hφM : ∀ j, IsLocalDiffeomorph I I n (φ j)) {E' : Type*} [NormedAddCommGroup E']
+    [NormedSpace 𝕜 E'] {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+    {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] {g : M → N} :
+    IsLocalDiffeomorph I I' n g ↔ ∀ j, IsLocalDiffeomorph I I' n (g ∘ φ j) := by
+  refine ⟨fun hg j y ↦ (hφM j y).isLocalDiffeomorphAt_comp_iff.2 (hg _), fun hg x ↦ ?_⟩
+  obtain ⟨j, y, rfl⟩ := hcover x
+  exact (hφM j y).isLocalDiffeomorphAt_comp_iff.1 (hg j y)
+
+include hdeck in
+/-- **Local diffeomorphisms out of a glued space.** A map out of `M` is a `C^n` local
+diffeomorphism exactly when its composite with the embedding of every piece is one. -/
+theorem isLocalDiffeomorph_iff_chartedSpaceOfIsOpenEmbedding [∀ j, IsManifold I n (U j)]
+    {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] {H' : Type*} [TopologicalSpace H']
+    {I' : ModelWithCorners 𝕜 E' H'} {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
+    {g : M → N} :
+    letI := chartedSpaceOfIsOpenEmbedding (H := H) hφ hcover
+    IsLocalDiffeomorph I I' n g ↔ ∀ j, IsLocalDiffeomorph I I' n (g ∘ φ j) :=
+  letI := chartedSpaceOfIsOpenEmbedding (H := H) hφ hcover
+  isLocalDiffeomorph_iff_forall_comp hcover
+    (isLocalDiffeomorph_chartedSpaceOfIsOpenEmbedding hφ hcover hdeck)
+
+include hcover in
+/-- **Uniqueness of glued atlases.** Two `C^n` manifold structures on `M` for which every map
+`φ j` of a jointly surjective family is a `C^n` local diffeomorphism have the same maximal atlas.
+The maps `φ j` need not be embeddings. -/
+theorem maximalAtlas_eq_of_forall_isLocalDiffeomorph {c c' : ChartedSpace H M}
+    (hc : letI := c; IsManifold I n M) (hc' : letI := c'; IsManifold I n M)
+    (hφc : ∀ j, letI := c; IsLocalDiffeomorph I I n (φ j))
+    (hφc' : ∀ j, letI := c'; IsLocalDiffeomorph I I n (φ j)) :
+    (letI := c; maximalAtlas I n M) = (letI := c'; maximalAtlas I n M) := by
+  -- For either structure, a chart `e` belongs to the maximal atlas exactly when every `e ∘ φ j`
+  -- is a local diffeomorphism on the preimage of its source, a condition independent of the
+  -- structure.
+  have key (c : ChartedSpace H M) (hc : letI := c; IsManifold I n M)
+      (hφc : ∀ j, letI := c; IsLocalDiffeomorph I I n (φ j)) (e : OpenPartialHomeomorph M H) :
+      (letI := c; e ∈ maximalAtlas I n M) ↔
+        ∀ j y, φ j y ∈ e.source → IsLocalDiffeomorphAt I I n (e ∘ φ j) y := by
+    let := c
+    rw [IsManifold.mem_maximalAtlas_iff_forall_isLocalDiffeomorphAt]
+    refine ⟨fun h j y hy ↦ (hφc j y).isLocalDiffeomorphAt_comp_iff.2 (h _ hy), fun h x hx ↦ ?_⟩
+    obtain ⟨j, y, rfl⟩ := hcover x
+    exact (hφc j y).isLocalDiffeomorphAt_comp_iff.1 (h j y hx)
+  ext e
+  rw [key c hc hφc, key c' hc' hφc']
+
+include hdeck in
+/-- **Uniqueness of the glued atlas.** A `C^n` manifold structure on `M` for which the embedding
+of every piece is a `C^n` local diffeomorphism has the same maximal atlas as
+`chartedSpaceOfIsOpenEmbedding`. -/
+theorem maximalAtlas_chartedSpaceOfIsOpenEmbedding_eq [∀ j, IsManifold I n (U j)]
+    {c : ChartedSpace H M} (hc : letI := c; IsManifold I n M)
+    (hφc : ∀ j, letI := c; IsLocalDiffeomorph I I n (φ j)) :
+    (letI := chartedSpaceOfIsOpenEmbedding (H := H) hφ hcover; maximalAtlas I n M) =
+      (letI := c; maximalAtlas I n M) :=
+  maximalAtlas_eq_of_forall_isLocalDiffeomorph hcover
+    (isManifold_chartedSpaceOfIsOpenEmbedding hφ hcover hdeck) hc
+    (isLocalDiffeomorph_chartedSpaceOfIsOpenEmbedding hφ hcover hdeck) hφc
 
 end TauCeti

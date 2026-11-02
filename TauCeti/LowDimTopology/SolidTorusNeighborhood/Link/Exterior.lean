@@ -159,6 +159,11 @@ theorem exteriorBoundaryInclusion_injective (h : IsSolidTorusLinkNeighborhood f 
     Injective (h.exteriorBoundaryInclusion i) := fun _ _ hq =>
   (h.neighborhood i).isEmbedding_comp_boundaryInclusion.injective (congrArg Subtype.val hq)
 
+/-- The parametrization of each boundary torus of the link exterior is an embedding. -/
+theorem isEmbedding_exteriorBoundaryInclusion (h : IsSolidTorusLinkNeighborhood f Φ) (i : ι) :
+    IsEmbedding (h.exteriorBoundaryInclusion i) :=
+  IsEmbedding.subtypeVal.of_comp_iff.1 (h.neighborhood i).isEmbedding_comp_boundaryInclusion
+
 /-- Shrinking every solid torus to half its radius gives disjoint solid-torus neighbourhoods
 again. -/
 theorem comp_halve (h : IsSolidTorusLinkNeighborhood f Φ) :

@@ -14,8 +14,8 @@ public import TauCeti.RepresentationTheory.Symmetric.TensorAction.Invariants
 The symmetric group of `ι` acts on `⨂[R] (_ : ι), M` by permuting the tensor factors, and every
 **diagonal** endomorphism `f^{⊗ι} = PiTensorProduct.map (fun _ ↦ f)` commutes with that action
 (`PiTensorProduct.commute_reindexRepresentation_map`). This file proves the converse when `M` is
-finite free and `(#ι)!` is invertible in `R`: an endomorphism of the tensor power commuting with
-all the factor permutations is an `R`-linear combination of diagonal ones.
+finite projective and `(#ι)!` is invertible in `R`: an endomorphism of the tensor power commuting
+with all the factor permutations is an `R`-linear combination of diagonal ones.
 
 That is one half of the double centralizer of Schur-Weyl duality, at the level of image
 subalgebras: the commutant of the image of `R[S_ι]` in `End (M^{⊗ι})` is the span of the diagonal
@@ -27,8 +27,8 @@ identification conjugation by a factor permutation on `End (M^{⊗ι})` becomes 
 on `(End M)^{⊗ι}`, so a commuting endomorphism is an invariant tensor; and the invariants of a
 permutation action are the span of the pure powers
 (`PiTensorProduct.invariants_reindexRepresentation`), which are exactly the diagonal operators.
-Both hypotheses are used once: freeness and finiteness make the comparison map an isomorphism, and
-the invertibility of `(#ι)!` is what averaging over the symmetric group needs.
+Both hypotheses are used once: projectivity and finiteness make the comparison map an isomorphism,
+and the invertibility of `(#ι)!` is what averaging over the symmetric group needs.
 
 ## Main results
 
@@ -68,7 +68,7 @@ private theorem reindexRepresentation_mul_inv (σ : Equiv.Perm ι) :
     reindexRepresentation R M ι σ * reindexRepresentation R M ι σ⁻¹ = 1 := by
   rw [← map_mul, mul_inv_cancel, map_one]
 
-variable [Finite ι] [Module.Free R M] [Module.Finite R M]
+variable [Finite ι] [Module.Projective R M] [Module.Finite R M]
 
 /-- **The comparison isomorphism carries a permuted pure tensor to the conjugated map.** This is
 the pure-tensor case of `PiTensorProduct.piTensorHomEquiv_reindexRepresentation_mul`, and is
@@ -108,10 +108,10 @@ section Ring
 
 variable {R : Type u} {M : Type v} {ι : Type w}
 variable [CommRing R] [AddCommGroup M] [Module R M] [Fintype ι]
-  [Module.Free R M] [Module.Finite R M]
+  [Module.Projective R M] [Module.Finite R M]
 
 /-- **The commutant of the permutation action on a tensor power is the span of the diagonal
-operators.** For a finite free module `M` and `(#ι)!` invertible in `R`, an endomorphism of
+operators.** For a finite projective module `M` and `(#ι)!` invertible in `R`, an endomorphism of
 `⨂[R] (_ : ι), M` commutes with every permutation of the tensor factors exactly when it is an
 `R`-linear combination of the operators `f^{⊗ι}` applying one endomorphism `f` in every factor.
 

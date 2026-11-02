@@ -16,13 +16,24 @@ immersions. This construction is functorial in refinement maps in both variables
 `Compactification.prodFunctor`.
 
 These are products of two different morphisms over a common base, not categorical products
-in the category of compactifications of one fixed morphism. No density is asserted: products
-over a base need not preserve scheme-theoretic density without further hypotheses.
+in the category of compactifications of one fixed morphism. Products of closed immersions of
+compactifications are closed immersions, and the product of the identity compactifications of
+two proper morphisms is the identity compactification of their fibre product.
 The construction supplies product compactification diagrams for proper-support functors.
+
+Scheme-theoretic density of the interior is not preserved by products in general, but it is
+when `f` and the structure map of the second compactification are flat
+(`Compactification.prod_isSchemeTheoreticallyDominant`). The interior map factors as the base
+change of one dense open immersion along a flat map followed by the base change of the other,
+and flat base change preserves scheme-theoretic density.
+Over the spectrum of a field every structure morphism to the base is flat, so instance search
+supplies the hypotheses on `f` and the second structure map, and products of dense
+compactifications are dense there.
 
 ## References
 
 * The Stacks Project, Section 38.32, *Compactifications* (tag 0ATT).
+* The Stacks Project, Section 29.7, *Scheme theoretic closure and density* (tag 01RB).
 * The constructions use the compactification carrier in
   `TauCeti.AlgebraicGeometry.Compactification.Basic` and Mathlib's
   `CategoryTheory.MorphismProperty.pullbackMap`.
@@ -149,6 +160,55 @@ theorem prodFunctor_obj (C : Compactification f × Compactification g) :
 theorem prodFunctor_map {C D : Compactification f × Compactification g} (h : C ⟶ D) :
     prodFunctor.map h = prodMap h.1 h.2 :=
   (rfl)
+
+/-- Products of closed immersions of compactifications are closed immersions. -/
+instance {C₁ C₂ : Compactification f} {D₁ D₂ : Compactification g} (h : C₁ ⟶ C₂) (k : D₁ ⟶ D₂)
+    [IsClosedImmersion h.hom.h] [IsClosedImmersion k.hom.h] :
+    IsClosedImmersion (prodMap h k).hom.h := by
+  -- Instance search does not reach composition stability through `IsMultiplicative` here.
+  have : MorphismProperty.IsStableUnderComposition @IsClosedImmersion :=
+    MorphismProperty.IsMultiplicative.toIsStableUnderComposition
+  exact MorphismProperty.pullbackMap (P := @IsClosedImmersion)
+    (inferInstanceAs (IsClosedImmersion h.hom.h)) (inferInstanceAs (IsClosedImmersion k.hom.h))
+    h.hom.h_π.symm k.hom.h_π.symm
+
+/-- The product of the identity compactifications of two proper morphisms is the identity
+compactification of their fibre product. -/
+@[simp]
+theorem identity_prod_identity [IsProper f] [IsProper g] :
+    (identity f).prod (identity g) = identity (pullback.fst f g ≫ f) := by
+  -- Both sides are built by `ofHom` on the same ambient scheme and proper map.
+  dsimp only [prod, identity, ofHom]
+  congr
+  exact pullback.map_id
+
+/-- The product of compactifications with scheme-theoretically dense interiors has dense
+interior when `f` and the structure map of the second compactification are flat. -/
+instance prod_isSchemeTheoreticallyDominant (C : Compactification f) (D : Compactification g)
+    [IsSchemeTheoreticallyDominant C.j] [IsSchemeTheoreticallyDominant D.j] [Flat f]
+    [Flat D.p] : IsSchemeTheoreticallyDominant (C.prod D).j := by
+  -- Enlarge the second factor first, then the first factor.
+  let a : pullback f g ⟶ pullback f D.p :=
+    pullback.map f g f D.p (𝟙 X) D.j (𝟙 S) (by simp) (by simp)
+  let b : pullback f D.p ⟶ pullback C.p D.p :=
+    pullback.map f D.p C.p D.p C.j (𝟙 _) (𝟙 S) (by simp) (by simp)
+  -- `a` is the base change of `D.j` along the flat projection `pullback.snd f D.p`.
+  have ha : IsPullback (pullback.snd f g) a D.j (pullback.snd f D.p) :=
+    IsPullback.of_bot (by simpa [a] using (IsPullback.of_hasPullback f g).flip) (by simp [a])
+      (IsPullback.of_hasPullback f D.p).flip
+  -- `b` is the base change of `C.j` along the flat projection `pullback.fst C.p D.p`.
+  have hb : IsPullback (pullback.fst f D.p) b C.j (pullback.fst C.p D.p) :=
+    IsPullback.of_bot (by simpa [b] using IsPullback.of_hasPullback f D.p) (by simp [b])
+      (IsPullback.of_hasPullback C.p D.p)
+  -- Mathlib's `AlgebraicGeometry.IsSchemeTheoreticallyDominant.of_isPullback` transports density
+  -- along each flat base change.
+  have := IsSchemeTheoreticallyDominant.of_isPullback ha
+  have := IsSchemeTheoreticallyDominant.of_isPullback hb
+  have hab : (C.prod D).j = a ≫ b := by
+    simp only [prod_j, a, b, pullback.map_comp]
+    simp
+  rw [hab]
+  infer_instance
 
 end
 

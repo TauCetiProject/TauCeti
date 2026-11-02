@@ -76,8 +76,8 @@ specialization.
   `HeckeRing.GL2.trace_translate_adjugateGL_natDiagGL_eq_diamondOpCusp_heckeTCuspNat`: the
   adjugate trace is `⟨n⟩⁻¹ Tₙ` on modular forms and on cusp forms.
 * `HeckeRing.GL2.commute_heckeTNat_diamondOp` and
-  `HeckeRing.GL2.commute_heckeTCuspNat_diamondOpCusp`: at every index prime to the level, `Tₙ`
-  commutes with every diamond operator.
+  `HeckeRing.GL2.commute_heckeTCuspNat_diamondOpCusp`: at every nonzero index, `Tₙ` commutes
+  with every diamond operator.
 * `HeckeRing.GL2.heckeSlashGamma1ModularFormEnd_diamondCosetGamma1_apply_of_mem_modFormCharSpace`
   and its cusp-form counterpart: on a nebentypus space the diamond coset acts by the scalar
   `χ(d)`.
@@ -223,14 +223,16 @@ theorem trace_translate_adjugateGL_natDiagGL_eq_diamondOp_heckeTNat
     (by rw [hadj]) ?_)
   rw [ModularForm.coe_translate, SlashInvariantForm.coe_translate, hadj]
 
+variable (n) in
 /-- **Every diamond operator commutes with `Tₙ` on modular forms** (Diamond–Shurman,
-Proposition 5.2.4). For `n` coprime to `N` and every `d ∈ (ZMod N)ˣ`, `⟨d⟩` commutes with `Tₙ`
-on `M_k(Γ₁(N))`. A matrix of `Γ₀(N)` with label `d` and upper-right entry divisible by `n` moves
-across `diag(1, n)` to another matrix of label `d` (`exists_natDiagGL_mul_mapGL_eq`), and through
-the trace description of `Tₙ` this is the commutation. -/
-theorem commute_heckeTNat_diamondOp (hn : n.Coprime N) (d : (ZMod N)ˣ) :
+Proposition 5.2.4). For every `n ≠ 0` and every `d ∈ (ZMod N)ˣ`, `⟨d⟩` commutes with `Tₙ`
+on `M_k(Γ₁(N))`; no condition relating `n` to `N` is needed. A matrix of `Γ₀(N)` with label `d`
+and upper-right entry divisible by `n` moves across `diag(1, n)` to another matrix of label `d`
+(`exists_natDiagGL_mul_mapGL_eq`), and through the trace description of `Tₙ` this is the
+commutation. -/
+theorem commute_heckeTNat_diamondOp (d : (ZMod N)ˣ) :
     Commute (heckeTNat k n) (diamondOp k d) := by
-  obtain ⟨A, hA, hAd, A', hA', hA'd, hmul⟩ := exists_natDiagGL_mul_mapGL_eq hn d
+  obtain ⟨A, hA, hAd, A', hA', hA'd, hmul⟩ := exists_natDiagGL_mul_mapGL_eq (n := n) d
   have hδ : natDiagGL 2 ![1, n] ∈
       doubleCoset ((diagCosetGamma1 N n).out : GL (Fin 2) ℚ)
         ((Gamma1 N).map (mapGL ℚ)) ((Gamma1 N).map (mapGL ℚ)) := by
@@ -249,7 +251,7 @@ theorem commute_heckeTNat_diamondOp (hn : n.Coprime N) (d : (ZMod N)ˣ) :
   have : (ConjAct.toConjAct (φ (natDiagGL 2 ![1, n]) * mapGL ℝ A)⁻¹ •
       (Gamma1 N).map (mapGL ℝ)).IsFiniteRelIndex ((Gamma1 N).map (mapGL ℝ)) := hlevel ▸ ‹_›
   refine LinearMap.ext fun f ↦ DFunLike.coe_injective ?_
-  rw [Module.End.mul_apply, Module.End.mul_apply, coe_diamondOp k d ⟨A, hA⟩ hAd, coe_heckeTNat,
+  rw [mul_apply_eq_comp, mul_apply_eq_comp, coe_diamondOp k d ⟨A, hA⟩ hAd, coe_heckeTNat,
     coe_heckeTNat,
     TauCeti.heckeSlashSum_eq_coe_trace_translate k (diagCosetGamma1 N n) hδ
       (Subgroup.map_mapGL (Gamma1 N)) (Subgroup.map_mapGL (Gamma1 N)) f,
@@ -285,17 +287,18 @@ theorem trace_translate_adjugateGL_natDiagGL_eq_diamondOpCusp_heckeTCuspNat
     ← heckeTNat_coe_cuspForm]
   exact trace_translate_adjugateGL_natDiagGL_eq_diamondOp_heckeTNat k hn _
 
-/-- **Every diamond operator commutes with `Tₙ` on cusp forms.** For `n` coprime to `N` and
-every `d ∈ (ZMod N)ˣ`, `⟨d⟩` commutes with `Tₙ` on `S_k(Γ₁(N))`. -/
-theorem commute_heckeTCuspNat_diamondOpCusp (hn : n.Coprime N) (d : (ZMod N)ˣ) :
+variable (n) in
+/-- **Every diamond operator commutes with `Tₙ` on cusp forms.** For every `n ≠ 0` and every
+`d ∈ (ZMod N)ˣ`, `⟨d⟩` commutes with `Tₙ` on `S_k(Γ₁(N))`. -/
+theorem commute_heckeTCuspNat_diamondOpCusp (d : (ZMod N)ˣ) :
     Commute (heckeTCuspNat k n) (diamondOpCusp k d) := by
   rw [commute_iff_eq]
   apply LinearMap.ext
   intro f
   apply CuspForm.toModularFormₗ_injective
-  simpa only [Module.End.mul_apply, CuspForm.toModularFormₗ_eq_coe,
+  simpa only [mul_apply_eq_comp, CuspForm.toModularFormₗ_eq_coe,
     heckeTNat_coe_cuspForm, diamondOp_coe_cuspForm] using
-    DFunLike.congr_fun (commute_heckeTNat_diamondOp k hn d).eq
+    DFunLike.congr_fun (commute_heckeTNat_diamondOp k n d).eq
       (f : ModularForm ((Gamma1 N).map (mapGL ℝ)) k)
 
 end Adjugate

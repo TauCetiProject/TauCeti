@@ -325,6 +325,11 @@ theorem crossing_apply (D : PDCode n) (i : Fin n) (slot : Fin 4) :
     D.crossing i slot = D.halfEdge (crossingSlotEquiv n (i, slot)) :=
   crossing.eq_1 D i slot
 
+/-- Different slots, at the same or at different crossings, hold different half-edges. -/
+theorem crossing_eq_crossing_iff (D : PDCode n) {i j : Fin n} {k l : Fin 4} :
+    D.crossing i k = D.crossing j l ↔ i = j ∧ k = l := by
+  simp
+
 /-- Let `D'` be a code with one crossing more than `D`, whose first `n` crossings keep the
 half-edges of `D` and whose last crossing takes the four new half-edge positions. A permutation of
 the half-edges of `D'` that acts at each crossing `i` by the local permutation `f i` of its slots

@@ -69,6 +69,10 @@ a prior formalisation of this theory; its proofs were not used.
   `TauCeti.Huber.isIntegrallyClosedIn_powerBoundedSubring` (Wedhorn Proposition 5.30(4)): `A°` is
   integrally closed in `A`, elementwise and as a Mathlib instance.
 * `TauCeti.Huber.IsPowerBounded.of_isTopologicallyNilpotent`: `A°° ⊆ A°`.
+* `TauCeti.Huber.isPowerBounded_iff_mem_of_isReduced_quotient` and
+  `TauCeti.Huber.powerBoundedSubring_eq_of_isReduced_quotient` (Fujiwara–Kato Proposition
+  B.1.3(1)): if `B` is an open bounded subring and `ϖ ∈ B` is topologically nilpotent and regular
+  in `A` with `B ⧸ ϖB` reduced, then `A° = B`.
 * `TauCeti.Huber.isTopologicallyNilpotent_add_of_commute` and
   `TauCeti.Huber.isTopologicallyNilpotent_add`: commuting topologically nilpotent elements of a
   nonarchimedean ring have topologically nilpotent sum. Mathlib's `IsTopologicallyNilpotent.add`
@@ -95,6 +99,7 @@ nilpotent element.
 
 * [Wedhorn, *Adic Spaces*][wedhorn_adic], Definition 5.25, Definition 5.27, Remark 5.28,
   Proposition 5.30.
+* K. Fujiwara, F. Kato, *Foundations of Rigid Geometry I*, Appendix B, Proposition B.1.3(1).
 * William Coram, *feat: define bounded sets and power bounded elements*,
   [mathlib4#40013](https://github.com/leanprover-community/mathlib4/pull/40013).
 * [AINTLIB](https://github.com/CBirkbeck/AINTLIB), branch `dev/adic-spaces`,
@@ -529,6 +534,58 @@ instance isIntegrallyClosedIn_powerBoundedSubring :
     mem_powerBoundedSubring.mpr (isPowerBounded_of_isIntegral hx)
 
 end Nonarchimedean
+
+section ReducedQuotient
+
+variable {A : Type*} [CommRing A] [TopologicalSpace A] {B : Subring A} {ϖ : B}
+
+/-- **A bounded open subring with reduced quotient is the ring of power-bounded elements.** Let
+`B` be an open bounded subring of a topological ring `A` and `ϖ ∈ B` an element which is
+topologically nilpotent and left regular in `A`, for instance a topologically nilpotent unit of
+`A`. If `B ⧸ ϖB` is reduced, then the power-bounded elements of `A` are exactly the elements of
+`B`. -/
+theorem isPowerBounded_iff_mem_of_isReduced_quotient (hBo : IsOpen (B : Set A))
+    (hBb : IsBounded (B : Set A)) (hϖ : IsTopologicallyNilpotent (ϖ : A))
+    (hϖr : IsLeftRegular (ϖ : A)) (hred : IsReduced (B ⧸ Ideal.span {ϖ})) {x : A} :
+    IsPowerBounded x ↔ x ∈ B := by
+  refine ⟨fun hx ↦ ?_, hBb.isPowerBounded_of_mem⟩
+  -- Some `ϖ ^ n` multiplies all powers of `x` into the neighbourhood `B` of zero.
+  obtain ⟨n, hn⟩ :=
+    (isPowerBounded_iff.mp hx).exists_pow_mul_subset hϖ (hBo.mem_nhds B.zero_mem)
+  have hn : ∀ k, (ϖ : A) ^ n * x ^ k ∈ B := fun k ↦
+    hn (Set.mul_mem_mul (Set.mem_singleton _) ⟨k, rfl⟩)
+  -- Lower the exponent of `ϖ` one step at a time.
+  have key : ∀ m, (∀ k, (ϖ : A) ^ m * x ^ k ∈ B) → ∀ k, x ^ k ∈ B := by
+    intro m
+    induction m with
+    | zero => exact fun h k ↦ by simpa using h k
+    | succ m ih =>
+      refine fun h ↦ ih fun k ↦ ?_
+      let z : B := ⟨(ϖ : A) ^ (m + 1) * x ^ k, h k⟩
+      -- `z ^ 2 = ϖ * (ϖ ^ m * (ϖ ^ (m + 1) * x ^ (2 * k)))` lies in `ϖB`.
+      have hz2 : z ^ 2 ∈ Ideal.span {ϖ} := by
+        refine Ideal.mem_span_singleton'.mpr
+          ⟨ϖ ^ m * ⟨(ϖ : A) ^ (m + 1) * x ^ (2 * k), h (2 * k)⟩, Subtype.ext ?_⟩
+        simp only [z, Subring.coe_mul, Subring.coe_pow]
+        ring
+      -- Since `B ⧸ ϖB` is reduced, `z = b * ϖ` for some `b ∈ B`; cancel `ϖ` in `A`.
+      rw [← Ideal.Quotient.eq_zero_iff_mem, map_pow] at hz2
+      obtain ⟨b, hb⟩ := Ideal.mem_span_singleton'.mp <|
+        Ideal.Quotient.eq_zero_iff_mem.mp (hred.eq_zero _ ⟨2, hz2⟩)
+      have hb : (ϖ : A) * b = (ϖ : A) * ((ϖ : A) ^ m * x ^ k) := by
+        rw [mul_comm, ← Subring.coe_mul, hb, ← mul_assoc, ← pow_succ']
+      exact hϖr hb ▸ b.2
+  simpa using key n hn 1
+
+/-- Under the hypotheses of `isPowerBounded_iff_mem_of_isReduced_quotient`, `A° = B`. -/
+theorem powerBoundedSubring_eq_of_isReduced_quotient [NonarchimedeanAddGroup A]
+    (hBo : IsOpen (B : Set A)) (hBb : IsBounded (B : Set A))
+    (hϖ : IsTopologicallyNilpotent (ϖ : A)) (hϖr : IsLeftRegular (ϖ : A))
+    (hred : IsReduced (B ⧸ Ideal.span {ϖ})) : powerBoundedSubring A = B :=
+  SetLike.ext fun _ ↦ mem_powerBoundedSubring.trans <|
+    isPowerBounded_iff_mem_of_isReduced_quotient hBo hBb hϖ hϖr hred
+
+end ReducedQuotient
 
 section NonarchimedeanContinuousMul
 

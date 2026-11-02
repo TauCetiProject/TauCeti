@@ -6,7 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.FiniteAbelian.Basic
+public import Mathlib.GroupTheory.Index
+public import Mathlib.LinearAlgebra.FreeModule.Finite.Quotient
+public import Mathlib.LinearAlgebra.RootSystem.Finite.Nondegenerate
 public import Mathlib.LinearAlgebra.RootSystem.IsValuedIn
+public import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
+import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
 
 /-!
 # The coweight lattice and the coroot lattice of a root datum
@@ -40,10 +45,37 @@ quotient being a torsion module (`Module.IsTorsion`); over `ℤ` with `M` finite
 torsion quotient is the same as a finite one. Only the perfectness of the pairing is used: no
 finiteness of the root system, reducedness or crystallographic condition is needed.
 
+For a root pairing with *finitely many* roots the spanning hypotheses can be dropped instead, as
+long as one only asks about the coroot lattice: the restriction map is injective on `Q∨`
+(`RootPairing.disjoint_corootSpan_ker_toDualRootSpan`, from the nondegeneracy of the canonical
+form `RootPairing.CorootForm` on `Q∨`), and over `ℤ` the coroot lattice still has finite index in
+`Hom_ℤ(Q, ℤ)` (`RootPairing.finite_quotient_corootSpan_map_of_finite`). This is a rank count: over a
+principal ideal domain the root lattice is free of finite rank (`RootPairing.free_rootSpan`), and
+`Q` and `Q∨` have equal rank (`RootPairing.finrank_corootSpan_eq'`).
+
+When the roots span `M`, the restriction map is an isomorphism of `N` onto the dual of the root
+span (`RootPairing.toDualRootSpan_bijective`); so then the coroot lattice has finite index in `N`
+itself (`RootPairing.finite_quotient_corootSpan`), and if the coroots also span `N`, as for a root
+system, it is the whole of the dual (`RootPairing.corootSpan_map_toDualRootSpan_eq_top`).
+
+For a root system over a field such as `ℝ`, the coweight lattice is instead a subgroup of the
+coweight space itself: the coweights at which every root takes an integer value
+(`RootPairing.coweightLattice`). It contains the coroot lattice when the pairing is
+crystallographic (`RootPairing.corootSpan_le_coweightLattice`). The Weyl group, acting on `N`
+through the coreflections, preserves it and moves each of its points by an element of the coroot
+lattice (`RootPairing.sub_mem_corootSpan_of_mem_closure_range_coreflection`). This is the lattice
+of translations of the extended affine Weyl group `P∨ ⋊ W`.
+
+Over a linearly ordered ring the coroot lattice of a crystallographic pairing with finitely many
+roots contains no nonzero minuscule element, no nonzero `v` at which every root takes one of the
+values `-1`, `0` and `1` (`RootPairing.eq_zero_of_mem_corootSpan_of_forall_abs_root'_lt_two`).
+This is what makes the affine Weyl group `Q∨ ⋊ W` act freely on the alcoves.
+
 ## Main definitions
 
 * `RootPairing.toDualRootSpan`: the restriction of the pairing to the root span, as a linear map
   from the coweight space to the dual of the root span.
+* `RootPairing.coweightLattice`: the coweights at which every root takes an integer value.
 
 ## Main results
 
@@ -54,11 +86,29 @@ finiteness of the root system, reducedness or crystallographic condition is need
 * `RootPairing.finite_quotient_corootSpan_map`: for a root datum with finitely generated character
   lattice whose roots and coroots span finite-index sublattices, the coroot lattice has finite
   index in the coweight lattice.
+* `RootPairing.free_rootSpan`: over a principal ideal domain, the root lattice of a root pairing
+  with finitely many roots is free.
+* `RootPairing.disjoint_corootSpan_ker_toDualRootSpan`: with finitely many roots, the restriction
+  map is injective on the coroot lattice.
+* `RootPairing.finite_quotient_corootSpan_map_of_finite`: for a root datum with finitely many roots,
+  the coroot lattice has finite index in the coweight lattice, without spanning hypotheses.
+* `RootPairing.toDualRootSpan_bijective`: if the roots span, the restriction map is bijective.
+* `RootPairing.finite_quotient_corootSpan` and `RootPairing.finiteIndex_toAddSubgroup_corootSpan`:
+  for a root datum with finitely many roots spanning the character lattice, the coroot lattice has
+  finite index in the cocharacter lattice.
+* `RootPairing.mem_coweightLattice_of_mem_closure_range_coreflection` and
+  `RootPairing.sub_mem_corootSpan_of_mem_closure_range_coreflection`: the Weyl group preserves the
+  coweight lattice and moves each of its points by an element of the coroot lattice.
+* `RootPairing.corootSpan_map_toDualRootSpan_eq_top`: if the roots and the coroots both span, the
+  coroot lattice is the whole coweight lattice.
+* `RootPairing.eq_zero_of_mem_corootSpan_of_forall_abs_root'_lt_two`: a minuscule element of the
+  coroot lattice is zero.
 
 ## References
 
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4–6*, Chapter VI, §1.9 and §2.2–2.3.
 * J. E. Humphreys, *Reflection Groups and Coxeter Groups*, §4.2–4.9.
+* M. Demazure, *SGA III, Exposé XXI, Données Radicielles*, 6.2.
 -/
 
 public section
@@ -151,5 +201,262 @@ theorem finite_quotient_corootSpan_map {M N : Type*} [AddCommGroup M] [AddCommGr
     (hM : IsTorsion ℤ (M ⧸ P.rootSpan ℤ)) (hN : IsTorsion ℤ (N ⧸ P.corootSpan ℤ)) :
     Finite (Dual ℤ (P.rootSpan ℤ) ⧸ (P.corootSpan ℤ).map P.toDualRootSpan) :=
   Module.finite_of_fg_torsion _ (P.isTorsion_quotient_corootSpan_map hM hN)
+
+/-! ### Spanning roots -/
+
+/-- **The restriction map is onto when the roots span**: by perfectness, every functional on
+`M = Q` is the pairing with a coweight. -/
+theorem toDualRootSpan_surjective (hP : P.rootSpan R = ⊤) :
+    Function.Surjective P.toDualRootSpan := by
+  intro f
+  obtain ⟨y, hy⟩ := (LinearMap.IsPerfPair.bijective_right P.toLinearMap).2
+    (f ∘ₗ (LinearEquiv.ofTop (P.rootSpan R) hP).symm.toLinearMap)
+  refine ⟨y, ?_⟩
+  ext x
+  have hx : (LinearEquiv.ofTop (P.rootSpan R) hP).symm (x : M) = x :=
+    Subtype.ext (LinearEquiv.coe_ofTop_symm_apply _ _)
+  simpa [hx] using congr($hy x)
+
+/-- **The restriction map is an isomorphism when the roots span**: the coweight space is then the
+dual of the root span. -/
+theorem toDualRootSpan_bijective (hP : P.rootSpan R = ⊤) :
+    Function.Bijective P.toDualRootSpan := by
+  refine ⟨P.toDualRootSpan_injective fun x ↦ ⟨1, ?_⟩, P.toDualRootSpan_surjective hP⟩
+  have : Subsingleton (M ⧸ P.rootSpan R) := Submodule.Quotient.subsingleton_iff.2 hP
+  exact Subsingleton.elim _ _
+
+/-- **The coroot lattice is the whole coweight lattice when the roots and the coroots both span**,
+as they do for a root system. -/
+theorem corootSpan_map_toDualRootSpan_eq_top (hP : P.rootSpan R = ⊤)
+    (hQ : P.corootSpan R = ⊤) : (P.corootSpan R).map P.toDualRootSpan = ⊤ := by
+  rw [hQ, Submodule.map_top, LinearMap.range_eq_top]
+  exact P.toDualRootSpan_surjective hP
+
+/-! ### Finitely many roots -/
+
+/-- The root span of a root pairing is torsion-free: it sits inside `M`, which the
+perfect pairing makes reflexive. -/
+theorem isTorsionFree_rootSpan : IsTorsionFree R (P.rootSpan R) :=
+  have : IsReflexive R M := .of_isPerfPair P.toLinearMap
+  (Submodule.injective_subtype _).moduleIsTorsionFree _ fun _ _ ↦ rfl
+
+/-- **The root lattice is free of finite rank** over a principal ideal domain: it is finitely
+generated because there are finitely many roots, and torsion-free because the pairing is
+perfect. -/
+theorem free_rootSpan [Finite ι] [IsDomain R] [IsPrincipalIdealRing R] :
+    Module.Free R (P.rootSpan R) :=
+  have := P.isTorsionFree_rootSpan
+  inferInstance
+
+/-- **The restriction map is injective on the coroot lattice**, for finitely many roots: a
+coroot-lattice element on which every root vanishes is in the kernel of the coroot form, whose
+kernel meets the coroot lattice trivially. -/
+theorem disjoint_corootSpan_ker_toDualRootSpan [Fintype ι] [IsDomain R] [P.IsAnisotropic] :
+    Disjoint (P.corootSpan R) (LinearMap.ker P.toDualRootSpan) := by
+  refine Submodule.disjoint_def.2 fun y hy hy0 ↦
+    Submodule.disjoint_def.1 P.disjoint_corootSpan_ker_corootForm y hy ?_
+  have hroot (i : ι) : P.root' i y = 0 := by
+    simpa using congr($(LinearMap.mem_ker.1 hy0) (P.rootSpanMem R i))
+  exact LinearMap.mem_ker.2 <| LinearMap.ext fun z ↦ by simp [P.corootForm_apply_apply, hroot]
+
+/-- **The coroot lattice has finite index in the coweight lattice of a root datum with finitely
+many roots**, with no spanning hypothesis: the image of `Q∨` in the free `ℤ`-module
+`Hom_ℤ(Q, ℤ)` has full rank, because `Q∨` embeds and has the rank of `Q`. -/
+theorem finite_quotient_corootSpan_map_of_finite {M N : Type*} [AddCommGroup M] [AddCommGroup N]
+    [Finite ι] (P : RootPairing ι ℤ M N) :
+    Finite (Dual ℤ (P.rootSpan ℤ) ⧸ (P.corootSpan ℤ).map P.toDualRootSpan) := by
+  have := Fintype.ofFinite ι
+  have := P.free_rootSpan
+  have hinj : Function.Injective (P.toDualRootSpan ∘ₗ (P.corootSpan ℤ).subtype) := by
+    rw [← LinearMap.ker_eq_bot, LinearMap.ker_comp, ← Submodule.disjoint_iff_comap_eq_bot]
+    exact P.disjoint_corootSpan_ker_toDualRootSpan
+  refine Submodule.finiteQuotientOfFreeOfRankEq _ ?_
+  rw [← Submodule.range_subtype (P.corootSpan ℤ), ← LinearMap.range_comp,
+    LinearMap.finrank_range_of_inj hinj, P.finrank_corootSpan_eq']
+  exact (Module.finrank_linearMap_self ℤ ℤ _).symm
+
+/-- **The coroot lattice has finite index in the cocharacter lattice** of a root datum with
+finitely many roots spanning the character lattice: the restriction map identifies `N` with
+`Hom_ℤ(Q, ℤ)` (`RootPairing.toDualRootSpan_bijective`). -/
+theorem finite_quotient_corootSpan {M N : Type*} [AddCommGroup M] [AddCommGroup N] [Finite ι]
+    (P : RootPairing ι ℤ M N) (hP : P.rootSpan ℤ = ⊤) : Finite (N ⧸ P.corootSpan ℤ) :=
+  have := P.finite_quotient_corootSpan_map_of_finite
+  .of_equiv _ (Submodule.Quotient.equiv (P.corootSpan ℤ) ((P.corootSpan ℤ).map P.toDualRootSpan)
+    (LinearEquiv.ofBijective _ (P.toDualRootSpan_bijective hP)) rfl).symm.toEquiv
+
+/-- The index form of `RootPairing.finite_quotient_corootSpan`. -/
+theorem finiteIndex_toAddSubgroup_corootSpan {M N : Type*} [AddCommGroup M] [AddCommGroup N]
+    [Finite ι] (P : RootPairing ι ℤ M N) (hP : P.rootSpan ℤ = ⊤) :
+    (P.corootSpan ℤ).toAddSubgroup.FiniteIndex :=
+  have : Finite (N ⧸ (P.corootSpan ℤ).toAddSubgroup) := P.finite_quotient_corootSpan hP
+  AddSubgroup.finiteIndex_of_finite_quotient
+
+/-! ### The coweight lattice inside the coweight space -/
+
+/-- **The coweight lattice** inside the coweight space: the coweights `x` at which every root takes
+an integer value, `⟨αᵢ, x⟩ ∈ ℤ`.
+
+For a root system over a field of characteristic zero, such as `ℝ`, this is the classical coweight
+lattice `P∨`, the group of coweights of Bourbaki. For a root datum (`R = ℤ`) every coweight
+qualifies, so this is the whole cocharacter lattice `N`, which may be smaller than
+`Hom_ℤ(Q, ℤ)`; for that comparison use `RootPairing.toDualRootSpan`. -/
+def coweightLattice : Submodule ℤ N where
+  carrier := {x | ∀ i, ∃ z : ℤ, P.root' i x = z}
+  zero_mem' i := ⟨0, by simp⟩
+  add_mem' {x y} hx hy i := by
+    obtain ⟨a, ha⟩ := hx i
+    obtain ⟨b, hb⟩ := hy i
+    exact ⟨a + b, by simp [ha, hb]⟩
+  smul_mem' n x hx i := by
+    obtain ⟨a, ha⟩ := hx i
+    exact ⟨n * a, by simp [ha]⟩
+
+@[simp]
+theorem mem_coweightLattice {x : N} : x ∈ P.coweightLattice ↔ ∀ i, ∃ z : ℤ, P.root' i x = z :=
+  Iff.rfl
+
+/-- A coroot lies in the coweight lattice of a crystallographic pairing. -/
+theorem coroot_mem_coweightLattice [P.IsCrystallographic] (i : ι) :
+    P.coroot i ∈ P.coweightLattice := fun j ↦
+  ⟨P.pairingIn ℤ j i, by simp [← P.algebraMap_pairingIn ℤ]⟩
+
+/-- **The coroot lattice lies in the coweight lattice** of a crystallographic pairing. -/
+theorem corootSpan_le_coweightLattice [P.IsCrystallographic] :
+    P.corootSpan ℤ ≤ P.coweightLattice :=
+  Submodule.span_le.2 <| Set.range_subset_iff.2 P.coroot_mem_coweightLattice
+
+/-! ### The Weyl group on the coweight lattice -/
+
+/-- An element of the group generated by the coreflections, the coweight image of the Weyl group,
+preserves the coweight lattice. -/
+lemma mem_coweightLattice_of_mem_closure_range_coreflection {w : N ≃ₗ[R] N}
+    (hw : w ∈ Subgroup.closure (Set.range P.coreflection)) {x : N} (hx : x ∈ P.coweightLattice) :
+    w x ∈ P.coweightLattice := P.mem_coweightLattice.2 fun j ↦ by
+  obtain ⟨j', hj'⟩ := P.exists_root'_apply_eq_of_mem_closure_range_coreflection hw j
+  rw [hj']
+  exact P.mem_coweightLattice.1 hx j'
+
+/-- **The Weyl group moves coweights by coroots**: for an element `w` of the group generated by
+the coreflections and `x` in the coweight lattice, `w x - x` lies in the coroot lattice. For a
+single coreflection, `s_{αᵢ} x - x = -⟨αᵢ, x⟩ αᵢ^∨`. -/
+lemma sub_mem_corootSpan_of_mem_closure_range_coreflection {w : N ≃ₗ[R] N}
+    (hw : w ∈ Subgroup.closure (Set.range P.coreflection)) {x : N} (hx : x ∈ P.coweightLattice) :
+    w x - x ∈ P.corootSpan ℤ := by
+  have hrefl (i : ι) {x : N} (hx : x ∈ P.coweightLattice) :
+      P.coreflection i x - x ∈ P.corootSpan ℤ := by
+    obtain ⟨z, hz⟩ := P.mem_coweightLattice.1 hx i
+    rw [coreflection_apply, sub_sub_cancel_left, hz, Int.cast_smul_eq_zsmul]
+    exact neg_mem (Submodule.smul_mem _ z (Submodule.subset_span (Set.mem_range_self i)))
+  induction hw using Subgroup.closure_induction'' generalizing x with
+  | mem w hw =>
+    obtain ⟨i, rfl⟩ := hw
+    exact hrefl i hx
+  | inv_mem w hw =>
+    obtain ⟨i, rfl⟩ := hw
+    simpa using hrefl i hx
+  | one => simp
+  | mul w₁ w₂ hw₁ hw₂ h₁ h₂ =>
+    have h := add_mem (h₁ (P.mem_coweightLattice_of_mem_closure_range_coreflection hw₂ hx))
+      (h₂ hx)
+    rwa [sub_add_sub_cancel] at h
+
+/-- The coroot form `B` computes a root functional:
+`2 B(αₖ^∨, v) = B(αₖ^∨, αₖ^∨) ⟨αₖ, v⟩`. -/
+lemma two_mul_corootForm_coroot_apply [Fintype ι] (k : ι) (v : N) :
+    2 * P.CorootForm (P.coroot k) v =
+      P.CorootForm (P.coroot k) (P.coroot k) * P.root' k v := by
+  have := congr(P.toLinearMap $(P.corootForm_self_smul_root k) v)
+  rw [map_smul, map_nsmul, toLinearMap_apply_CoPolarization] at this
+  simpa [two_mul, mul_comm] using this.symm
+
+/-! ### Minuscule elements of the coroot lattice -/
+
+section Minuscule
+
+variable [LinearOrder R] [IsStrictOrderedRing R]
+
+/-- A combination `v = ∑ⱼ cⱼ αⱼ^∨` with `cⱼ ⟨αⱼ, v⟩ ≤ 0` for all `j` is zero: the coroot form `B`
+satisfies `2 B(v, v) = ∑ⱼ cⱼ B(αⱼ^∨, αⱼ^∨) ⟨αⱼ, v⟩ ≤ 0`, and it is positive semidefinite and
+anisotropic on the coroot lattice. `P.CorootForm` is `P.flip.RootForm` by definition, so Mathlib's
+root-form facts for `P.flip` apply to it. -/
+private lemma sum_zsmul_coroot_eq_zero_of_forall_mul_root'_nonpos [Fintype ι] (c : ι → ℤ)
+    (h : ∀ k, (c k : R) * P.root' k (∑ j, c j • P.coroot j) ≤ 0) :
+    ∑ j, c j • P.coroot j = 0 := by
+  set v := ∑ j, c j • P.coroot j with hv
+  have hB : 2 * P.CorootForm v v ≤ 0 := by
+    conv_lhs => enter [2, 1]; rw [hv]
+    simp only [map_sum, map_zsmul, LinearMap.sum_apply, LinearMap.smul_apply, zsmul_eq_mul,
+      Finset.mul_sum, mul_left_comm (2 : R), two_mul_corootForm_coroot_apply]
+    refine Finset.sum_nonpos fun k _ ↦ ?_
+    have hkk : 0 ≤ P.CorootForm (P.coroot k) (P.coroot k) := P.flip.zero_le_rootForm _
+    nlinarith [h k]
+  have h0 : P.CorootForm v v = 0 := le_antisymm (by linarith) (P.flip.zero_le_rootForm v)
+  exact P.flip.eq_zero_of_mem_rootSpan_of_rootForm_self_eq_zero
+    (Submodule.sum_mem _ fun k _ ↦ Submodule.smul_of_tower_mem _ _ (subset_span ⟨k, rfl⟩)) h0
+
+variable [P.IsCrystallographic]
+
+/-- The induction behind `RootPairing.eq_zero_of_mem_corootSpan_of_forall_abs_root'_lt_two`, on
+the size `∑ⱼ |cⱼ|` of the coefficients of `v = ∑ⱼ cⱼ αⱼ^∨`. If `cⱼ ⟨αⱼ, v⟩ > 0` for some `j`,
+then `⟨αⱼ, v⟩ = ±1` has the sign of `cⱼ`, and the reflection `s_{αⱼ} v = v - ⟨αⱼ, v⟩ αⱼ^∨`, which
+is again minuscule, has a smaller combination. Otherwise `v = 0` by
+`RootPairing.sum_zsmul_coroot_eq_zero_of_forall_mul_root'_nonpos`. -/
+private lemma sum_zsmul_coroot_eq_zero [Fintype ι] (n : ℕ) (c : ι → ℤ)
+    (hn : ∑ j, (c j).natAbs = n) (h : ∀ j, |P.root' j (∑ k, c k • P.coroot k)| < 2) :
+    ∑ k, c k • P.coroot k = 0 := by
+  induction n using Nat.strong_induction_on generalizing c with
+  | _ n ih =>
+  classical
+  set v := ∑ k, c k • P.coroot k with hv
+  have hvQ : v ∈ P.corootSpan ℤ :=
+    Submodule.sum_mem _ fun k _ ↦ Submodule.smul_mem _ _ (Submodule.subset_span ⟨k, rfl⟩)
+  choose z hz using P.mem_coweightLattice.1 (P.corootSpan_le_coweightLattice hvQ)
+  by_cases hpos : ∃ j, 0 < c j * z j
+  · -- Reflecting in a coroot `αⱼ^∨` with `cⱼ ⟨αⱼ, v⟩ > 0` removes one copy of `αⱼ^∨`.
+    obtain ⟨j, hj⟩ := hpos
+    have hzj : |z j| < 2 := by exact_mod_cast hz j ▸ h j
+    set c' := c - Pi.single j (z j)
+    have hc' : ∑ k, (c' k).natAbs < n := by
+      rw [← hn, ← Finset.add_sum_erase _ _ (Finset.mem_univ j),
+        ← Finset.add_sum_erase _ _ (Finset.mem_univ j)]
+      have herase : ∑ k ∈ Finset.univ.erase j, (c' k).natAbs =
+          ∑ k ∈ Finset.univ.erase j, (c k).natAbs :=
+        Finset.sum_congr rfl fun k hk ↦ by simp [c', Finset.ne_of_mem_erase hk]
+      rw [herase, add_lt_add_iff_right]
+      simp only [c', Pi.sub_apply, Pi.single_eq_same]
+      have hz0 : z j ≠ 0 := by
+        rintro h0
+        simp [h0] at hj
+      rw [abs_lt] at hzj
+      rcases (by omega : z j = 1 ∨ z j = -1) with h1 | h1 <;> rw [h1] at hj ⊢ <;> omega
+    have hu : ∑ k, c' k • P.coroot k = P.coreflection j v := by
+      simp [c', sub_smul, Finset.sum_sub_distrib, coreflection_apply, ← hv, hz j,
+        Int.cast_smul_eq_zsmul, Pi.single_apply, ite_smul]
+    have h0 := ih _ hc' c' rfl fun k ↦ by
+      rw [hu, root'_coreflection]
+      exact h _
+    rw [hu, map_eq_zero_iff _ (P.coreflection j).injective] at h0
+    have := hz j
+    rw [h0, map_zero, eq_comm, Int.cast_eq_zero] at this
+    simp [this] at hj
+  · simp only [not_exists, not_lt] at hpos
+    refine P.sum_zsmul_coroot_eq_zero_of_forall_mul_root'_nonpos c fun k ↦ ?_
+    rw [← hv, hz k]
+    exact_mod_cast hpos k
+
+/-- **A minuscule element of the coroot lattice is zero.** If every root takes a value of absolute
+value less than `2` at a point `v` of the coroot lattice `Q∨`, then `v = 0`. These values are
+integers, so the hypothesis says that `v` is minuscule: every root takes one of the values `-1`,
+`0` and `1` at `v`. Classically, the nonzero dominant minuscule coweights of a reduced irreducible
+root system are the fundamental coweights of its special nodes, and they represent the nontrivial
+classes of `P∨ / Q∨`; this theorem says that no nonzero minuscule coweight, dominant or not, lies
+in `Q∨`. -/
+theorem eq_zero_of_mem_corootSpan_of_forall_abs_root'_lt_two [Finite ι] {v : N}
+    (hv : v ∈ P.corootSpan ℤ) (h : ∀ j, |P.root' j v| < 2) : v = 0 := by
+  have := Fintype.ofFinite ι
+  obtain ⟨c, rfl⟩ := (Submodule.mem_span_range_iff_exists_fun ℤ).1 hv
+  exact P.sum_zsmul_coroot_eq_zero _ c rfl h
+
+end Minuscule
 
 end RootPairing

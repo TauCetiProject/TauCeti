@@ -40,6 +40,8 @@ operation is introduced.
 * `Derivation.laurentSeriesLieRing` and `Derivation.laurentSeriesLieAlgebra`: the commutator
   Lie structures on Laurent derivations.
 * `LaurentSeries.lie_smul_laurentSeriesDerivation`: the coefficient formula for the commutator.
+* `LaurentSeries.weightDerivation_intCastAddHom`: the weight derivation of the integer cast is
+  the Euler operator `X D`.
 * `LaurentSeries.coeff_derivative_order_sub_one`: the coefficient of `X ^ (r - 1)` in `D f` is
   `r` times the leading coefficient of `f`, where `r = f.order`.
 * `LaurentSeries.orderTop_le_orderTop_derivative_add_one`: `ord f ≤ ord (D f) + 1`.
@@ -133,7 +135,7 @@ noncomputable instance laurentSeriesLieAlgebra : LieAlgebra R (Derivation R R⸨
   __ := (inferInstance : Module R (Derivation R R⸨X⸩ R⸨X⸩))
   lie_smul r δ ε := by
     ext1 f
-    simp only [laurentSeries_commutator_apply, Derivation.smul_apply,
+    simp only [laurentSeries_commutator_apply, _root_.smul_apply,
       smul_sub]
     congr 1
     -- The input action on a derivation is algebra-induced; its output action is coefficientwise.
@@ -150,7 +152,7 @@ theorem lie_smul_laurentSeriesDerivation {R : Type*} [CommRing R] (a b : R⸨X�
       (a * TauCeti.laurentSeriesDerivation R b - b * TauCeti.laurentSeriesDerivation R a) •
         TauCeti.laurentSeriesDerivation R := by
   ext1 f
-  simp only [Derivation.laurentSeries_commutator_apply, Derivation.smul_apply, smul_eq_mul,
+  simp only [Derivation.laurentSeries_commutator_apply, _root_.smul_apply, smul_eq_mul,
     Derivation.leibniz]
   ring
 
@@ -230,6 +232,17 @@ theorem derivative_eq_zero_iff_eq_single [IsAddTorsionFree V] {f : LaurentSeries
     by_cases hn : n = 0 <;> simp [hn]
 
 end Module
+
+/-- The Euler operator `X D` multiplies the coefficient of `Xⁿ` by `n`. -/
+theorem coeff_single_one_mul_derivative {R : Type*} [Ring R] (f : R⸨X⸩) (n : ℤ) :
+    (single (1 : ℤ) (1 : R) * derivative R f).coeff n = n • f.coeff n := by
+  rw [coeff_single_mul, one_mul, coeff_derivative_sub_one]
+
+/-- The weight derivation of the integer cast is the Euler operator `X D`. -/
+theorem weightDerivation_intCastAddHom {R : Type*} [CommRing R] (f : R⸨X⸩) :
+    weightDerivation (Int.castAddHom R) f = single (1 : ℤ) (1 : R) * derivative R f := by
+  ext n
+  rw [coeff_weightDerivation, coeff_single_one_mul_derivative, Int.coe_castAddHom, zsmul_eq_mul]
 
 /-- If `f ≠ 0` has order `r` and `r` is nonzero in a ring `R` without zero divisors, for instance
 a field in which `r` is nonzero, then `f'` has order `r - 1`. -/

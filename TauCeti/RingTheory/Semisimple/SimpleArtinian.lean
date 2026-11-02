@@ -35,13 +35,13 @@ is exactly the input the Skolem-Noether theorem needs, in
 
 ## Main results
 
-* `TauCeti.IsIsotypicOfType.of_isSimpleRing`: over a simple Artinian ring, every module is isotypic
+* `IsIsotypicOfType.of_isSimpleRing`: over a simple Artinian ring, every module is isotypic
   of the type of any fixed simple module. This upgrades Mathlib's `IsSimpleRing.isIsotypic`, which
   compares simple submodules of a single module, to a comparison against a fixed simple module,
   which is what lets two different modules be compared with each other.
-* `TauCeti.IsSimpleRing.nonempty_linearEquiv_of_finrank_eq`: two finite-dimensional modules over a
+* `IsSimpleRing.nonempty_linearEquiv_of_finrank_eq`: two finite-dimensional modules over a
   finite-dimensional simple `K`-algebra with the same `K`-dimension are isomorphic.
-* `TauCeti.IsSimpleRing.nonempty_linearEquiv_iff_finrank_eq`: the two-way form, the classification
+* `IsSimpleRing.nonempty_linearEquiv_iff_finrank_eq`: the two-way form, the classification
   itself.
 
 ## Implementation notes
@@ -54,7 +54,7 @@ and can be cancelled.
 
 The two classification statements ask `R` to be finite-dimensional over `K` and do not also ask it
 to be Artinian: `IsArtinianRing.of_finite` derives that from finite-dimensionality, so callers never
-have to supply it. Only `TauCeti.IsIsotypicOfType.of_isSimpleRing`, which has no field in sight,
+have to supply it. Only `IsIsotypicOfType.of_isSimpleRing`, which has no field in sight,
 takes `IsArtinianRing R` as a hypothesis.
 
 Simplicity of `R` is not weakened to semisimplicity: over a semisimple ring with more than one block
@@ -68,8 +68,6 @@ See T. Y. Lam, *A First Course in Noncommutative Rings*, GTM 131, Chapter 1, and
 -/
 
 public section
-
-namespace TauCeti
 
 open Module
 
@@ -123,11 +121,9 @@ theorem nonempty_linearEquiv_of_finrank_eq (h : finrank K M = finrank K N) :
 
 /-- **The classification of finite-dimensional modules over a simple Artinian algebra**: the
 `K`-dimension is a complete invariant. The forward implication holds over any ring; the content is
-the converse, `TauCeti.IsSimpleRing.nonempty_linearEquiv_of_finrank_eq`. -/
+the converse, `IsSimpleRing.nonempty_linearEquiv_of_finrank_eq`. -/
 theorem nonempty_linearEquiv_iff_finrank_eq :
     Nonempty (M ≃ₗ[R] N) ↔ finrank K M = finrank K N :=
   ⟨fun ⟨e⟩ ↦ (e.restrictScalars K).finrank_eq, nonempty_linearEquiv_of_finrank_eq K⟩
 
 end IsSimpleRing
-
-end TauCeti
