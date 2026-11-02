@@ -44,8 +44,8 @@ kernel.
   closed point `p` with a simply connected neighbourhood `B` such that `B \ {p}` is simply
   connected, from a space whose complement of `p` is path connected, induces a bijection of
   fundamental groups.
-* `OpenPartialHomeomorph.isSimplyConnected_symm_image`: a chart carries simply connected subsets
-  of its target to simply connected sets.
+* `PartialHomeomorph.isSimplyConnected_image`: a partial homeomorphism carries simply connected
+  subsets of its source to simply connected sets.
 * `OpenPartialHomeomorph.exists_mem_nhds_isSimplyConnected_sdiff_singleton`: in dimension greater
   than two, every point in the source of a chart has such a neighbourhood, the preimage of a ball.
   In dimension greater than one the punctured neighbourhood is still path connected
@@ -106,13 +106,13 @@ end TauCeti
 
 section Chart
 
-/-- The image under `φ.symm` of a simply connected subset of the target of `φ` is simply
-connected. -/
-theorem OpenPartialHomeomorph.isSimplyConnected_symm_image {X Y : Type*} [TopologicalSpace X]
-    [TopologicalSpace Y] (φ : OpenPartialHomeomorph X Y) {S : Set Y} (hS : S ⊆ φ.target)
-    (hSc : IsSimplyConnected S) : IsSimplyConnected (φ.symm '' S) :=
+/-- The image under a partial homeomorphism `φ` of a simply connected subset of the source of `φ`
+is simply connected. -/
+theorem PartialHomeomorph.isSimplyConnected_image {X Y : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] (φ : PartialHomeomorph X Y) {S : Set X} (hS : S ⊆ φ.source)
+    (hSc : IsSimplyConnected S) : IsSimplyConnected (φ '' S) :=
   have := hSc.simplyConnectedSpace
-  (φ.symm.homeomorphOfImageSubsetSource hS rfl).symm.toHomotopyEquiv.simplyConnectedSpace
+  (φ.homeomorphOfImageSubsetSource hS rfl).symm.toHomotopyEquiv.simplyConnectedSpace
 
 variable {X E : Type*} [TopologicalSpace X] [NormedAddCommGroup E] [NormedSpace ℝ E]
 
@@ -125,7 +125,7 @@ private theorem OpenPartialHomeomorph.exists_ball_subset_target (φ : OpenPartia
       φ.symm '' ball (φ p) r \ {p} = φ.symm '' (ball (φ p) r \ {φ p}) := by
   obtain ⟨r, hr, hbt⟩ := Metric.isOpen_iff.1 φ.open_target (φ p) (φ.map_source hp)
   refine ⟨r, hr, hbt, ?_,
-    φ.isSimplyConnected_symm_image hbt ((convex_ball _ r).isSimplyConnected ⟨_, mem_ball_self hr⟩),
+    φ.symm.isSimplyConnected_image hbt ((convex_ball _ r).isSimplyConnected ⟨_, mem_ball_self hr⟩),
     ?_⟩
   · simpa [φ.left_inv hp] using φ.symm.image_mem_nhds (φ.map_source hp) (ball_mem_nhds _ hr)
   · rw [(φ.symm.injOn.mono hbt).image_sdiff_subset (singleton_subset_iff.2 (mem_ball_self hr)),
@@ -152,7 +152,7 @@ theorem OpenPartialHomeomorph.exists_mem_nhds_isSimplyConnected_sdiff_singleton
   obtain ⟨r, hr, hbt, hB, hBsc, hsdiff⟩ := φ.exists_ball_subset_target hp
   refine ⟨_, hB, hBsc, ?_⟩
   rw [hsdiff]
-  exact φ.isSimplyConnected_symm_image (sdiff_subset.trans hbt)
+  exact φ.symm.isSimplyConnected_image (sdiff_subset.trans hbt)
     (TauCeti.isSimplyConnected_ball_sdiff_singleton h _ hr)
 
 end Chart
