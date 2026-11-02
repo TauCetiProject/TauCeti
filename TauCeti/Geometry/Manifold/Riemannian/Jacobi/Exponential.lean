@@ -69,22 +69,6 @@ variable
 private abbrev radialFamily (p : M) (v w : TangentSpace I p) (q t : ℝ) : M :=
   riemannianExp I M p (t • (v + q • w))
 
-/-- The variation field of the radial family is the differential of the exponential map. -/
-private theorem variationField_radialFamily {p : M} {v : TangentSpace I p}
-    (w : TangentSpace I p) {t : ℝ} (ht : t ∈ geodesicInterval I M p v) :
-    variationField I (radialFamily (I := I) p v w) t =
-      mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (t • v) (t • w) := by
-  have hfun : (fun q : ℝ ↦ radialFamily (I := I) p v w q t) =
-      fun q : ℝ ↦ riemannianExp I M p (t • v + q • t • w) :=
-    funext fun q ↦ by rw [radialFamily, smul_add, smul_comm t q w]
-  have h := curveVelocity_riemannianExp_add_smul (I := I) (M := M) (v := t • v) (w := t • w)
-    (u := 0) (by simpa using mem_geodesicInterval_iff_smul_mem_expDomain.1 ht)
-  rw [zero_smul, add_zero] at h
-  -- The goal is stated in the fibre over `exp_p (t • (v + 0 • w))`, while the differential lives
-  -- in the fibre over `exp_p (t • v)`; both fibres are `E`, so `h` closes it.
-  rw [variationField_apply, hfun]
-  exact h
-
 /-- **The differential of the exponential map along a ray is a Jacobi field.** For
 `v, w ∈ T_p M`, the field `t ↦ d(exp_p)_{t v} (t w)` is a Jacobi field along the radial geodesic
 `t ↦ exp_p (t v)` on the maximal geodesic interval of `v`. -/
@@ -99,7 +83,7 @@ theorem isJacobiFieldOn_mfderiv_riemannianExp (p : M) (v w : TangentSpace I p) :
       (by simpa using mem_geodesicInterval_iff_smul_mem_expDomain.1 ht)).of_le (by norm_cast))
     (fun t ht ↦ eventually_acceleration_radialVariation_eq_zero hF ht)
   rw [radialVariation_zero hF] at hJ
-  exact hJ.congr fun t ht ↦ (variationField_radialFamily w ht).symm
+  exact hJ.congr fun t ht ↦ (variationField_radialVariation hF ht).symm
 
 /-- The variation field of the radial family has covariant derivative `w` at `t = 0`. -/
 private theorem alongCurve_variationField_radialFamily_zero (p : M) (v w : TangentSpace I p) :
@@ -140,7 +124,7 @@ private theorem alongCurve_variationField_radialFamily_zero (p : M) (v w : Tange
       (mfderiv 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (t • v) (t • w) :
         TangentSpace I (F 0 t)) = variationField I F t := by
     filter_upwards [isOpen_geodesicInterval.mem_nhds h0] with t ht
-    exact (variationField_radialFamily w ht).symm
+    exact (variationField_radialVariation hF ht).symm
   -- Rewriting the curve to `F 0` also moves the fibres of the field to those over `F 0`, which
   -- are again `E`.
   rw [alongCurveWithin_of_mem_nhds _ _ _ (isOpen_geodesicInterval.mem_nhds h0),
