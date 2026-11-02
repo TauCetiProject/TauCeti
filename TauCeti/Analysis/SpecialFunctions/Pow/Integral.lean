@@ -244,7 +244,8 @@ theorem lintegral_indicator_le_ofReal_rpow_Ioi (hs : s < -1) {c : ℝ} (hc : 0 <
 /-- The kernel `t ^ (-s - 1)`, integrated against the weight `a * r` over those `t ∈ (0, ∞)` with
 `r ≤ t * D`, is at most `D ^ s / s * a * r ^ (1 - s)`, for `0 < s` and `0 ≤ r`. For `0 < D` and
 `0 < r` the region is the half-line `[r / D, ∞)` and the bound is attained, the tail integral
-`∫_{r / D}^∞ t ^ (-s - 1) dt` being `D ^ s r ^ (-s) / s`; for `D ≤ 0` the region is empty. -/
+`∫_{r / D}^∞ t ^ (-s - 1) dt` being `D ^ s r ^ (-s) / s`; for `D ≤ 0` and `0 < r` the region is
+empty. For `r = 0` the weight `a * r` vanishes, so the integral is `0`. -/
 theorem setLIntegral_Ioi_rpow_mul_ite_le (hs : 0 < s) (a : ℝ≥0∞) {r : ℝ} (hr : 0 ≤ r) (D : ℝ) :
     ∫⁻ t in Ioi (0 : ℝ), ENNReal.ofReal (t ^ (-s - 1)) *
         (a * if r ≤ t * D then ENNReal.ofReal r else 0) ≤
@@ -267,10 +268,14 @@ theorem setLIntegral_Ioi_rpow_mul_ite_le (hs : 0 < s) (a : ℝ≥0∞) {r : ℝ}
       fun t => ENNReal.ofReal (t ^ (-s - 1))) :=
     (by fun_prop : Measurable fun t : ℝ => ENNReal.ofReal (t ^ (-s - 1))).indicator
       (measurableSet_le measurable_const (by fun_prop))
-  have hexp : -s - 1 + 1 = -s := by ring
+  -- Evaluate the integral with the tail-integral formula.
   rw [setLIntegral_congr_fun measurableSet_Ioi hpt, lintegral_const_mul _ hmeas,
-    lintegral_indicator_le_ofReal_rpow_Ioi (by linarith) hD, hexp, neg_neg, sub_eq_add_neg,
-    ENNReal.rpow_add _ _ (ENNReal.ofReal_pos.2 hr).ne' ENNReal.ofReal_ne_top, ENNReal.rpow_one]
+    lintegral_indicator_le_ofReal_rpow_Ioi (by linarith) hD]
+  -- What remains is algebra; splitting `r ^ (1 - s)` needs `r ≠ 0, ∞` in `ℝ≥0∞`.
+  have hsplit : ENNReal.ofReal r ^ (1 - s) = ENNReal.ofReal r * ENNReal.ofReal r ^ (-s) := by
+    rw [sub_eq_add_neg, ENNReal.rpow_add _ _ (ENNReal.ofReal_pos.2 hr).ne' ENNReal.ofReal_ne_top,
+      ENNReal.rpow_one]
+  simp only [sub_add_cancel, neg_neg, hsplit]
   exact le_of_eq (by ring)
 
 variable {α : Type*} [MeasurableSpace α] {μ : Measure α} {f : α → ℝ≥0∞} {p : ℝ}
