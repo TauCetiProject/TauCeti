@@ -186,7 +186,7 @@ theorem extendRestrictScalarsAdj_homEquiv_sectionsPullbackExtend_app_hom_apply (
 
 /-- On an affine open, sections of `g^* M` are the base change of sections of `M`, so the
 adjoint of the pullback of sections is an isomorphism. -/
-private lemma isIso_sectionsPullbackExtend_app (M : X.Modules) [M.IsQuasicoherent] {W : X.Opens}
+theorem isIso_sectionsPullbackExtend_app (M : X.Modules) [M.IsQuasicoherent] {W : X.Opens}
     (hW : IsAffineOpen W) : IsIso ((sectionsPullbackExtend H.toCommSq M).app (op W)) := by
   let : Algebra R Γ(X, W) := ((X.baseRingToStructurePresheaf R).app (op W)).hom.toAlgebra
   let : Algebra R' Γ(Y, g ⁻¹ᵁ W) :=
