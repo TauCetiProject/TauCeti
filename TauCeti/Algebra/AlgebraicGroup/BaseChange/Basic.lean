@@ -193,12 +193,6 @@ lemma ofConv_pointsLTensor (f : WithConv (A →ₐ[k] T)) :
   ext a
   simp [pointsLTensor]
 
-/-- The base change of the point `toConv f` is the point `toConv (K ⊗[k] f)`. -/
-@[simp]
-lemma _root_.AlgHom.pointsLTensor_toConv (f : A →ₐ[k] T) :
-    pointsLTensor K (toConv f) = toConv (Algebra.TensorProduct.lTensor K f) :=
-  WithConv.ofConv_injective <| by rw [ofConv_pointsLTensor, ofConv_toConv, ofConv_toConv]
-
 end AlgHom
 
 end TauCeti

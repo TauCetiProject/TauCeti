@@ -107,6 +107,14 @@ noncomputable def counit : WeilRestriction A B H →ₐ[A] A :=
 
 variable {A B H} {T : Type*} [CommRing T] [Algebra A T]
 
+/-- The comultiplication classifies the convolution product of the points defined by the two
+tensor factors of `W ⊗[A] W`. -/
+theorem homEquiv_comul :
+    homEquiv A B H _ (comul A B H) =
+      ofConv (toConv (homEquiv A B H _ Algebra.TensorProduct.includeLeft) *
+        toConv (homEquiv A B H _ Algebra.TensorProduct.includeRight)) := by
+  rw [comul, Equiv.apply_symm_apply]
+
 /-- Post-composing the comultiplication with `f : W ⊗[A] W → T` gives the convolution product of
 the points classified by the restrictions of `f` to the two tensor factors. -/
 theorem homEquiv_comp_comul (f : WeilRestriction A B H ⊗[A] WeilRestriction A B H →ₐ[A] T) :
@@ -267,14 +275,18 @@ noncomputable def mapBialgHom (φ : H₁ →ₐc[B] H₂) :
     WeilRestriction A B H₁ →ₐc[A] WeilRestriction A B H₂ :=
   .ofAlgHom (map A B (φ : H₁ →ₐ[B] H₂))
     ((homEquiv A B H₁ A).injective <| by
-      rw [counitAlgHom_eq, counitAlgHom_eq, homEquiv_comp_map, homEquiv_counit, homEquiv_counit,
-        AlgHom.convOne_def, AlgHom.convOne_def, ofConv_toConv, ofConv_toConv, AlgHom.comp_assoc,
-        BialgHom.counitAlgHom_comp])
+      -- both counits classify the identity point, and precomposing the identity point of `H₂`
+      -- with the bialgebra map `φ` gives the identity point of `H₁`
+      simp only [counitAlgHom_eq, homEquiv_comp_map, homEquiv_counit, AlgHom.convOne_def,
+        ofConv_toConv, AlgHom.comp_assoc, BialgHom.counitAlgHom_comp])
     ((homEquiv A B H₁ _).injective <| by
-      rw [comulAlgHom_eq, comulAlgHom_eq, homEquiv_comp_comul, homEquiv_comp_map,
-        Algebra.TensorProduct.map_comp_includeLeft, Algebra.TensorProduct.map_comp_includeRight,
-        homEquiv_comp_map, homEquiv_comp_map, comul, Equiv.apply_symm_apply,
-        AlgHom.convMul_comp_bialgHom_distrib, ofConv_toConv, ofConv_toConv])
+      -- both sides classify convolution products of the points defined by the two tensor
+      -- factors: on the left that of `H₂`, precomposed with `φ`; on the right that of `H₁`, of
+      -- the factor points precomposed with `φ`
+      simp only [comulAlgHom_eq, homEquiv_comp_comul, homEquiv_comp_map,
+        Algebra.TensorProduct.map_comp_includeLeft, Algebra.TensorProduct.map_comp_includeRight]
+      -- precomposition with the bialgebra map `φ` distributes over the convolution product
+      simp only [homEquiv_comul, AlgHom.convMul_comp_bialgHom_distrib])
 
 /-- The algebra map underlying `WeilRestriction.mapBialgHom φ` is `WeilRestriction.map φ`. -/
 @[simp]
@@ -338,17 +350,20 @@ restriction. -/
 noncomputable def diagonal : WeilRestriction A B (B ⊗[A] H) →ₐc[A] H :=
   .ofAlgHom ((homEquiv A B (B ⊗[A] H) H).symm (AlgHom.id B (B ⊗[A] H)))
     ((homEquiv A B (B ⊗[A] H) A).injective <| by
-      have h : (1 : WithConv (H →ₐ[A] A)).ofConv = counitAlgHom A H := by
-        rw [AlgHom.convOne_def, ofConv_toConv, Subsingleton.elim (Algebra.ofId A A) (.id A A),
-          AlgHom.id_comp]
-      rw [homEquiv_comp_symm_id, counitAlgHom_eq, homEquiv_counit, ← h,
-        ← TauCeti.AlgHom.ofConv_pointsLTensor, map_one])
+      -- the counit of `H` is the identity point, whose base change is the identity point
+      rw [homEquiv_comp_symm_id, counitAlgHom_eq, homEquiv_counit,
+        ← TauCeti.Bialgebra.ofConv_one_eq_counitAlgHom, ← TauCeti.AlgHom.ofConv_pointsLTensor,
+        map_one])
     ((homEquiv A B (B ⊗[A] H) _).injective <| by
-      rw [comulAlgHom_eq, homEquiv_comp_comul, Algebra.TensorProduct.map_comp_includeLeft,
-        Algebra.TensorProduct.map_comp_includeRight, homEquiv_comp_symm_id,
-        homEquiv_comp_symm_id, homEquiv_comp_symm_id, ← _root_.AlgHom.pointsLTensor_toConv,
-        ← _root_.AlgHom.pointsLTensor_toConv, ← map_mul,
-        ← TauCeti.Bialgebra.comulPoint_eq_include_mul, TauCeti.AlgHom.ofConv_pointsLTensor,
+      -- the left side classifies the convolution product of the base changes of the two
+      -- tensor-factor points of `H`, the right side the base change of its comultiplication point
+      simp only [comulAlgHom_eq, homEquiv_comp_comul, Algebra.TensorProduct.map_comp_includeLeft,
+        Algebra.TensorProduct.map_comp_includeRight, homEquiv_comp_symm_id]
+      -- base change of points `x ↦ B ⊗[A] x` is multiplicative for convolution
+      rw [← TauCeti.AlgHom.ofConv_pointsLTensor, ← TauCeti.AlgHom.ofConv_pointsLTensor,
+        toConv_ofConv, toConv_ofConv, ← map_mul]
+      -- the convolution product of the two tensor-factor points is the comultiplication point
+      rw [← TauCeti.Bialgebra.comulPoint_eq_include_mul, TauCeti.AlgHom.ofConv_pointsLTensor,
         ofConv_toConv])
 
 /-- The algebra map underlying `WeilRestriction.diagonal` is the one classifying the identity of
