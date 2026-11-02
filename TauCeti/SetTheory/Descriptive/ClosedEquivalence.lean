@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.MeasureTheory.MeasurableSpace.CountablyGenerated
 public import TauCeti.SetTheory.Descriptive.InvariantSeparation
 import Mathlib.Topology.Compactness.Lindelof
 
@@ -28,8 +29,10 @@ it suffices that open sets are measurable.
 
 * `Setoid.countablySeparated_quotient_of_isClosed`: the quotient of a closed equivalence relation
   on a Polish space is countably separated.
-* `Setoid.exists_measurable_eq_iff_of_countablySeparated`: any equivalence relation with a
-  countably separated measurable quotient has a measurable Cantor-valued classifier.
+
+Combining this with `Setoid.exists_measurable_eq_iff_of_countablySeparated` from
+`TauCeti.MeasureTheory.MeasurableSpace.CountablyGenerated` gives a measurable Cantor-valued
+classifier.
 
 ## References
 
@@ -89,16 +92,5 @@ theorem countablySeparated_quotient_of_isClosed (E : Setoid X)
   exact (disjoint_left.1 (hVC p)) (mem_image_of_mem _ hyp) hyC
 
 end
-
-/-- An equivalence relation with a countably separated measurable quotient is classified by a
-measurable map into Cantor space: two points have the same image exactly when they are
-equivalent. -/
-theorem exists_measurable_eq_iff_of_countablySeparated {X : Type*} [MeasurableSpace X]
-    (E : Setoid X) [MeasurableSpace.CountablySeparated (Quotient E)] :
-    ∃ f : X → (ℕ → Bool), Measurable f ∧ ∀ x y, f x = f y ↔ E x y := by
-  obtain ⟨g, hg, hinj⟩ :=
-    MeasurableSpace.measurable_injection_nat_bool_of_countablySeparated (Quotient E)
-  refine ⟨g ∘ Quotient.mk E, hg.comp measurable_quotient_mk', fun x y => ?_⟩
-  exact hinj.eq_iff.trans Quotient.eq
 
 end Setoid
