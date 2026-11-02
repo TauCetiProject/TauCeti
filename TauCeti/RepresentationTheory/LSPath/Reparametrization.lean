@@ -43,6 +43,8 @@ reparametrization stays rational.
 * `TauCeti.PLPath.evalTimed`: the parametrized path of a timed presentation.
 * `TauCeti.PLPath.timedComp`: a timed presentation of the composite of two parametrized paths.
 * `TauCeti.PLPath.IsReparam`: one timed presentation is a reparametrization of another.
+* `TauCeti.PLPath.reverseTimed`: the reversal of a timed presentation, presenting the reversed
+  path.
 
 ## Main results
 
@@ -146,6 +148,45 @@ theorem IsTimed.nonneg [Zero 𝕜] [Preorder 𝕜] {p : List (𝕜 × V)} (hp : 
 theorem IsTimed.and_nonneg {W : Type*} [Zero 𝕜] [Preorder 𝕜] [Zero W] [LE W]
     {p : List (𝕜 × W)} (hp : IsTimed p) (hp' : ∀ x ∈ p, 0 ≤ x.2) : ∀ x ∈ p, 0 ≤ x.1 ∧ 0 ≤ x.2 :=
   fun x hx ↦ ⟨(hp x hx).le, hp' x hx⟩
+
+section Reverse
+
+/-- The reversal of a list of `(duration, segment)` pairs: the segments are negated and traversed
+in the opposite order, each in its own time. It presents the reversed path
+(`TauCeti.PLPath.ofSegments_map_snd_reverseTimed`). -/
+def reverseTimed [Neg V] (p : List (𝕜 × V)) : List (𝕜 × V) :=
+  (p.map fun z ↦ (z.1, -z.2)).reverse
+
+theorem reverseTimed_def [Neg V] (p : List (𝕜 × V)) :
+    reverseTimed p = (p.map fun z ↦ (z.1, -z.2)).reverse :=
+  (rfl)
+
+@[simp]
+theorem mem_reverseTimed [InvolutiveNeg V] {p : List (𝕜 × V)} {z : 𝕜 × V} :
+    z ∈ reverseTimed p ↔ (z.1, -z.2) ∈ p := by
+  simp only [reverseTimed_def, List.mem_reverse, List.mem_map]
+  constructor
+  · rintro ⟨y, hy, rfl⟩
+    simpa using hy
+  · exact fun h ↦ ⟨_, h, by simp⟩
+
+@[simp]
+theorem reverseTimed_reverseTimed [InvolutiveNeg V] (p : List (𝕜 × V)) :
+    reverseTimed (reverseTimed p) = p := by
+  simp [reverseTimed_def, List.map_reverse, Function.comp_def]
+
+@[simp]
+theorem duration_reverseTimed [AddCommMonoid 𝕜] [Neg V] (p : List (𝕜 × V)) :
+    duration (reverseTimed p) = duration p := by
+  simp [reverseTimed_def, duration_def, List.map_reverse, Function.comp_def]
+
+@[simp]
+theorem ofSegments_map_snd_reverseTimed [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
+    [AddCommGroup V] [Module 𝕜 V] (p : List (𝕜 × V)) :
+    ofSegments 𝕜 ((reverseTimed p).map Prod.snd) = (ofSegments 𝕜 (p.map Prod.snd)).reverse := by
+  simp [reverseTimed_def, List.map_reverse, Function.comp_def]
+
+end Reverse
 
 section Eval
 

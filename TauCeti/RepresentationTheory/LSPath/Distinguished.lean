@@ -51,7 +51,6 @@ same minimum height.
   in `S`, changing velocity at each break.
 * `TauCeti.PLPath.HasDistinguished S π`: the path `π` has a distinguished presentation for `S`.
 * `TauCeti.PLPath.distinguished S π`: the distinguished presentation of `π`, if it has one.
-* `TauCeti.PLPath.reverseTimed`: the reversal of a timed presentation.
 * `TauCeti.PLPath.shiftDistinguished S χ π`: the path obtained by adding `t ↦ t χ` to the
   distinguished presentation of `π`, or the constant path if `π` has none.
 
@@ -241,32 +240,6 @@ theorem HasDistinguished.eq_straight_zero (h : HasDistinguished S π)
 
 /-! ### Distinguished presentations by normalization -/
 
-omit [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] in
-/-- Rescaling a segment `(d, v)` and its duration by the same nonzero factor does not change its
-velocity `d⁻¹ • v`. -/
-theorem slope_smul {a : 𝕜} (ha : a ≠ 0) (z : 𝕜 × V) : (a • z).1⁻¹ • (a • z).2 = z.1⁻¹ • z.2 := by
-  rw [Prod.smul_fst, Prod.smul_snd, smul_eq_mul, mul_inv_rev, mul_smul, inv_smul_smul₀ ha]
-
-/-- Two segments of positive duration lie in the same ray in `𝕜 × V` exactly when they have the
-same velocity. So normalizing a timed presentation merges exactly the adjacent segments of equal
-velocity. -/
-theorem sameRay_iff_slope_eq {y z : 𝕜 × V} (hy : 0 < y.1) (hz : 0 < z.1) :
-    SameRay 𝕜 y z ↔ y.1⁻¹ • y.2 = z.1⁻¹ • z.2 := by
-  constructor
-  · intro h
-    obtain ⟨r, hr, rfl⟩ := h.exists_pos_left (fun h0 ↦ hy.ne' (by simp [h0]))
-      (fun h0 ↦ hz.ne' (by simp [h0]))
-    exact (slope_smul hr.ne' y).symm
-  · intro h
-    -- Both segments are positive multiples of `(1, u)`, where `u` is their common velocity.
-    have hy' : y = y.1 • ((1 : 𝕜), z.1⁻¹ • z.2) := by
-      ext <;> simp [← h, smul_inv_smul₀ hy.ne']
-    have hz' : z = z.1 • ((1 : 𝕜), z.1⁻¹ • z.2) := by
-      ext <;> simp [smul_inv_smul₀ hz.ne']
-    have h := ((SameRay.refl (R := 𝕜) ((1 : 𝕜), z.1⁻¹ • z.2)).nonneg_smul_left
-      hy.le).nonneg_smul_right hz.le
-    rwa [← hy', ← hz'] at h
-
 /-- Normalizing a presentation whose nonstationary segments have positive duration and velocity in
 `S`, of total duration `1`, gives a distinguished presentation for `S`. Normalization removes the
 stationary segments and merges the adjacent segments of equal velocity. -/
@@ -282,12 +255,12 @@ theorem isDistinguished_normalize (hp : ∀ z ∈ p, z ≠ 0 → 0 < z.1 ∧ z.1
     have hsum : r • z + z = (r + 1) • z := by rw [add_smul, one_smul]
     have hr1 : (0 : 𝕜) < r + 1 := add_pos hr one_pos
     rw [hsum]
-    exact ⟨by simpa using mul_pos hr1 hz, by rwa [slope_smul hr1.ne']⟩
+    exact ⟨by simpa using mul_pos hr1 hz, by rwa [Prod.inv_fst_smul_snd_smul hr1.ne']⟩
   refine ⟨isTimed_iff.2 fun z hz ↦ (hT z hz).1, ?_, fun z hz ↦ (hT z hz).2, ?_⟩
   · rw [duration_eq_fst_sum, sum_normalize, ← duration_eq_fst_sum, hd]
   · rw [List.isChain_map]
     exact (isReduced_normalize (𝕜 := 𝕜) p).isChain.imp_of_mem_imp fun y z hy hz hyz h ↦
-      hyz ((sameRay_iff_slope_eq (hT y hy).1 (hT z hz).1).2 h)
+      hyz ((Prod.sameRay_iff_inv_fst_smul_snd_eq (hT y hy).1 (hT z hz).1).2 h)
 
 /-- A presentation whose nonstationary segments have positive duration and velocity in `S`, of
 total duration `1`, presents a path with a distinguished presentation for `S`, namely its
@@ -389,21 +362,6 @@ theorem minHeight_shiftDistinguished {f : Module.Dual 𝕜 V} {χ : V} (hχ : f 
 
 /-! ### Reversal -/
 
-/-- The reversal of a timed presentation: the segments are negated and traversed in the opposite
-order, each in its own time. It presents the reversed path. -/
-def reverseTimed (p : List (𝕜 × V)) : List (𝕜 × V) :=
-  (p.map fun z ↦ (z.1, -z.2)).reverse
-
-omit [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] [Module 𝕜 V] in
-theorem reverseTimed_def (p : List (𝕜 × V)) :
-    reverseTimed p = (p.map fun z ↦ (z.1, -z.2)).reverse :=
-  (rfl)
-
-@[simp]
-theorem ofSegments_map_snd_reverseTimed (p : List (𝕜 × V)) :
-    ofSegments 𝕜 ((reverseTimed p).map Prod.snd) = (ofSegments 𝕜 (p.map Prod.snd)).reverse := by
-  simp [reverseTimed_def, List.map_reverse, Function.comp_def]
-
 open scoped Pointwise
 
 omit [IsStrictOrderedRing 𝕜] in
@@ -414,15 +372,10 @@ theorem IsDistinguished.reverseTimed (hp : IsDistinguished S p) :
   have hslope (z : 𝕜 × V) : (fun y : 𝕜 × V ↦ y.1⁻¹ • y.2) (z.1, -z.2) = -(z.1⁻¹ • z.2) :=
     smul_neg _ _
   refine ⟨isTimed_iff.2 fun z hz ↦ ?_, ?_, fun z hz ↦ ?_, ?_⟩
-  · simp only [reverseTimed_def, List.mem_reverse, List.mem_map] at hz
-    obtain ⟨y, hy, rfl⟩ := hz
-    exact isTimed_iff.1 hp.isTimed y hy
-  · simpa [reverseTimed_def, duration_def, List.map_reverse, Function.comp_def] using
-      hp.duration_eq_one
-  · simp only [reverseTimed_def, List.mem_reverse, List.mem_map] at hz
-    obtain ⟨y, hy, rfl⟩ := hz
-    rw [Set.mem_neg, smul_neg, neg_neg]
-    exact hp.slope_mem y hy
+  · exact isTimed_iff.1 hp.isTimed (z.1, -z.2) (mem_reverseTimed.1 hz)
+  · rw [duration_reverseTimed, hp.duration_eq_one]
+  · rw [Set.mem_neg, ← smul_neg]
+    exact hp.slope_mem (z.1, -z.2) (mem_reverseTimed.1 hz)
   · rw [reverseTimed_def, List.map_reverse, List.map_map, List.isChain_reverse]
     have := hp.isChain_slope
     rw [List.isChain_map] at this ⊢

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit.Ray
 public import TauCeti.RepresentationTheory.LSPath.Distinguished
 
 /-!
@@ -33,8 +34,6 @@ ray, this is the distinguished presentation of `f_α π`.
 
 ## Main results
 
-* `TauCeti.PLPath.lower_ofSegments_map_snd`: the lowering operator may be computed on the
-  time–weight graph of any presentation.
 * `TauCeti.PLPath.isDistinguished_segments_of_lower_eq_some`: if `S` is stable under
   `s = preReflection x f`, the segments of the lowered graph of a duration-one timed presentation
   with velocities in `S` form a distinguished presentation for `S`.
@@ -65,21 +64,9 @@ variable {𝕜 V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing �
 
 /-! ### Lowering time–weight graphs -/
 
-/-- **The lowering operator may be computed on the time–weight graph.** Lowering the path
-presented by `p`, a list of `(duration, segment)` pairs, is lowering the path presented by `p` in
-`𝕜 × V` along the lifted root `(0, x)` and coroot form `f ∘ snd`, and then forgetting time. This
-is the case `χ = 0` of `TauCeti.PLPath.lower_ofSegments_shiftTimed`. -/
-theorem lower_ofSegments_map_snd (p : List (𝕜 × V)) :
-    lower f x (ofSegments 𝕜 (p.map Prod.snd)) =
-      (lower (f.comp (LinearMap.snd 𝕜 𝕜 V)) (0, x) (ofSegments 𝕜 p)).map
-        (·.map (LinearMap.snd 𝕜 𝕜 V)) := by
-  simpa using lower_ofSegments_shiftTimed p (map_zero f) x
-
 /-- **Lowered time–weight graphs are distinguished.** If `S` is stable under
 `s = preReflection x f` and `p` is a duration-one timed presentation with velocities in `S`, the
-segments of the lowered time–weight graph of `p` form a distinguished presentation for `S`.
-Capped reflection of the graph cuts segments at fractions in `[0, 1]` and reflects some pieces
-along `(0, x)` and `f ∘ snd`, which keeps durations and reflects velocities by `s`. -/
+segments of the lowered time–weight graph of `p` form a distinguished presentation for `S`. -/
 theorem isDistinguished_segments_of_lower_eq_some (hS : MapsTo (preReflection x f) S S)
     (hp : IsTimed p) (hd : duration p = 1) (hpS : ∀ z ∈ p, z.1⁻¹ • z.2 ∈ S)
     {Γ : PLPath 𝕜 (𝕜 × V)}
@@ -92,12 +79,14 @@ theorem isDistinguished_segments_of_lower_eq_some (hS : MapsTo (preReflection x 
   cases hq
   rw [segments_ofSegments]
   refine isDistinguished_normalize (fun z hz hz0 ↦ ?_) ?_
+  -- Capped reflection of the graph cuts segments at fractions in `[0, 1]` and reflects some
+  -- pieces along `(0, x)` and `f ∘ snd`, which keeps durations and reflects velocities by `s`.
   -- The segments of positive duration and velocity in `S` are stable under positive rescaling
   -- and under the reflection of the graph.
   · refine mem_of_mem_reflectRecords (T := {z | 0 < z.1 ∧ z.1⁻¹ • z.2 ∈ S}) ?_ ?_
       (fun z hz ↦ ⟨isTimed_iff.1 hp z hz, hpS z hz⟩) hz hz0
     · rintro a ha z ⟨hz, hzS⟩
-      exact ⟨by simpa using mul_pos ha hz, by rwa [slope_smul ha.ne']⟩
+      exact ⟨by simpa using mul_pos ha hz, by rwa [Prod.inv_fst_smul_snd_smul ha.ne']⟩
     · rintro z ⟨hz, hzS⟩
       have hz' : preReflection (0, x) (f.comp (LinearMap.snd 𝕜 𝕜 V)) z =
           (z.1, preReflection x f z.2) := by
@@ -160,27 +149,6 @@ variable {ι M N : Type*} [AddCommGroup M] [AddCommGroup N] {P : RootPairing ι 
   {𝕜 : Type*} {V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] [AddCommGroup V]
   [Module 𝕜 V] {f : M →+ V}
 
-omit [Finite ι] [P.IsReduced] [P.flip.IsReduced] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] in
-/-- A realization `f` intertwines the simple reflection `s_i` of the weight lattice with the
-reflection in the realized root `f αᵢ` along a height form agreeing with the coroot `αᵢ^∨` on the
-weight lattice. -/
-theorem map_reflection_eq_preReflection (i : ι) {F : Dual 𝕜 V}
-    (hF : ∀ m, F (f m) = (P.coroot' i m : 𝕜)) (m : M) :
-    f (P.reflection i m) = preReflection (f (P.root i)) F (f m) := by
-  simp [P.reflection_apply, preReflection_apply, hF, Int.cast_smul_eq_zsmul]
-
-omit [Finite ι] [P.IsReduced] [P.flip.IsReduced] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] in
-/-- The realized Weyl orbit `f (W λ)` is stable under the reflection in a realized root `f αᵢ`
-along a height form agreeing with the coroot `αᵢ^∨` on the weight lattice. -/
-theorem mapsTo_preReflection_range_weylGroup (i : ι) {F : Dual 𝕜 V}
-    (hF : ∀ m, F (f m) = (P.coroot' i m : 𝕜)) :
-    MapsTo (preReflection (f (P.root i)) F) (range fun w : P.weylGroup ↦ f (w • lam))
-      (range fun w : P.weylGroup ↦ f (w • lam)) := by
-  rintro _ ⟨w, rfl⟩
-  refine ⟨weylGroup.ofIdx P i * w, ?_⟩
-  dsimp only
-  rw [mul_smul, weylGroup.ofIdx_smul, Equiv.reflection_smul, map_reflection_eq_preReflection i hF]
-
 /-- **Lowering an LS path stays in the Weyl orbit.** For dominant `λ`, a realization `f`
 injective on `W λ`, and a height form `F` agreeing with the coroot `αᵢ^∨` on the weight lattice,
 lowering the realized LS path along the realized root `f αᵢ` gives a path with a distinguished
@@ -190,10 +158,11 @@ theorem hasDistinguished_of_lower_eq_some (hlam : lam ∈ dominantChamber P b)
     (hF : ∀ m, F (f m) = (P.coroot' i m : 𝕜)) {π' : PLPath 𝕜 V}
     (h : PLPath.lower F (f (P.root i)) (π.toPLPath 𝕜 f) = some π') :
     PLPath.HasDistinguished (range fun w : P.weylGroup ↦ f (w • lam)) π' := by
+  have hS := P.mapsTo_preReflection_image_orbit_weylGroup i hF lam
+  rw [MulAction.orbit, ← range_comp] at hS
   rw [toPLPath_def] at h
   exact PLPath.hasDistinguished_of_lower_eq_some
-    (π.isDistinguished_timed 𝕜 f hlam hf).hasDistinguished
-    (mapsTo_preReflection_range_weylGroup i hF) h
+    (π.isDistinguished_timed 𝕜 f hlam hf).hasDistinguished hS h
 
 /-- **Raising an LS path stays in the Weyl orbit.** For dominant `λ`, a realization `f`
 injective on `W λ`, and a height form `F` agreeing with the coroot `αᵢ^∨` on the weight lattice,
@@ -204,9 +173,10 @@ theorem hasDistinguished_of_raise_eq_some (hlam : lam ∈ dominantChamber P b)
     (hF : ∀ m, F (f m) = (P.coroot' i m : 𝕜)) {π' : PLPath 𝕜 V}
     (h : PLPath.raise F (f (P.root i)) (π.toPLPath 𝕜 f) = some π') :
     PLPath.HasDistinguished (range fun w : P.weylGroup ↦ f (w • lam)) π' := by
+  have hS := P.mapsTo_preReflection_image_orbit_weylGroup i hF lam
+  rw [MulAction.orbit, ← range_comp] at hS
   rw [toPLPath_def] at h
   exact PLPath.hasDistinguished_of_raise_eq_some
-    (π.isDistinguished_timed 𝕜 f hlam hf).hasDistinguished
-    (mapsTo_preReflection_range_weylGroup i hF) h
+    (π.isDistinguished_timed 𝕜 f hlam hf).hasDistinguished hS h
 
 end TauCeti.LSPath
