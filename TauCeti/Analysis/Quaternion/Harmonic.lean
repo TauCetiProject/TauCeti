@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import TauCeti.Analysis.Quaternion.Basic
 public import TauCeti.Analysis.Quaternion.Fueter
+import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 
 /-!
 # Twice differentiable Fueter regular functions are harmonic
@@ -89,16 +90,6 @@ theorem sum_fueterRight_mul_star_orthonormalBasisOneIJK {B : ℍ →L[ℝ] ℍ �
     hB ⟨0, 0, 0, 1⟩ ⟨0, 1, 0, 0⟩, hB ⟨0, 0, 0, 1⟩ ⟨0, 0, 1, 0⟩]
   ext <;> simp <;> ring
 
-/-- If a linear map `L` on a finite-dimensional space vanishes on `g` near `x`, and `g` is
-differentiable at `x`, then `L` vanishes on every directional derivative of `g` at `x`. Applied
-with `g = fderiv ℝ f` and `L` a Fueter operator. -/
-private theorem linearMap_fderiv_eq_zero {E F G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F] [NormedAddCommGroup G]
-    [NormedSpace ℝ G] {g : E → F} {x : E} (L : F →ₗ[ℝ] G) (hL : ∀ᶠ y in 𝓝 x, L (g y) = 0)
-    (h : DifferentiableAt ℝ g x) (w : E) : L (fderiv ℝ g x w) = 0 := by
-  have hc := (LinearMap.toContinuousLinearMap L).hasFDerivAt.comp x h.hasFDerivAt
-  simpa using congrArg (· w) (hc.unique ((hasFDerivAt_const 0 x).congr_of_eventuallyEq hL))
-
 /-- A function that is left Fueter regular on a neighbourhood of `q`, and whose derivative is
 differentiable at `q`, has vanishing Laplacian at `q`. -/
 theorem LeftFueterOn.laplacian_eq_zero (hf : LeftFueterOn f s) (hs : s ∈ 𝓝 q)
@@ -109,8 +100,10 @@ theorem LeftFueterOn.laplacian_eq_zero (hf : LeftFueterOn f s) (hs : s ∈ 𝓝 
   rw [InnerProductSpace.laplacian_eq_iteratedFDeriv_orthonormalBasis f orthonormalBasisOneIJK]
   simp only [iteratedFDeriv_two_apply, Matrix.cons_val_zero, Matrix.cons_val_one]
   rw [← sum_star_orthonormalBasisOneIJK_mul_fueterLeft hB]
-  simp [linearMap_fderiv_eq_zero (g := fderiv ℝ f) fueterLeft
-    (hev.mono fun _ hx ↦ hx.fueterLeft_fderiv) h]
+  have hL (w : ℍ) : fueterLeft (fderiv ℝ (fderiv ℝ f) q w) = 0 := by
+    simpa using clm_apply_fderiv_eq_zero (𝕜 := ℝ) (L := LinearMap.toContinuousLinearMap fueterLeft)
+      (g := fderiv ℝ f) (hev.mono fun _ hx ↦ by simpa using hx.fueterLeft_fderiv) w
+  simp [hL]
 
 /-- A function that is right Fueter regular on a neighbourhood of `q`, and whose derivative is
 differentiable at `q`, has vanishing Laplacian at `q`. -/
@@ -122,8 +115,10 @@ theorem RightFueterOn.laplacian_eq_zero (hf : RightFueterOn f s) (hs : s ∈ �
   rw [InnerProductSpace.laplacian_eq_iteratedFDeriv_orthonormalBasis f orthonormalBasisOneIJK]
   simp only [iteratedFDeriv_two_apply, Matrix.cons_val_zero, Matrix.cons_val_one]
   rw [← sum_fueterRight_mul_star_orthonormalBasisOneIJK hB]
-  simp [linearMap_fderiv_eq_zero (g := fderiv ℝ f) fueterRight
-    (hev.mono fun _ hx ↦ hx.fueterRight_fderiv) h]
+  have hL (w : ℍ) : fueterRight (fderiv ℝ (fderiv ℝ f) q w) = 0 := by
+    simpa using clm_apply_fderiv_eq_zero (𝕜 := ℝ) (L := LinearMap.toContinuousLinearMap fueterRight)
+      (g := fderiv ℝ f) (hev.mono fun _ hx ↦ by simpa using hx.fueterRight_fderiv) w
+  simp [hL]
 
 /-- A left Fueter regular function of class `C²` on an open set is harmonic there. -/
 theorem LeftFueterOn.laplacian_eq_zero_of_contDiffOn (hf : LeftFueterOn f s) (hs : IsOpen s)
