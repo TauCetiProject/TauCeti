@@ -317,7 +317,7 @@ theorem orbitZeta_sign_det_one_sub_pow_eq_eulerProduct (hpos : ∀ i, 0 < N (γ 
           ((f i).charpoly.roots.filter (· < -1)).card)) := by
   rw [orbitZeta_eq_eulerProduct hpos hfin _ (fun i => (-1) ^ ((f i).charpoly.roots.filter
     (· < -1)).card) fun i k => by
-      rw [(f i).sign_det_one_sub_pow_succ k (by simpa using hf i 0) (hf i k), pow_one]
+      rw [(f i).sign_det_one_sub_pow_succ k (hf i k), pow_one]
       simp]
   congr 1 <;> funext i
   · simp

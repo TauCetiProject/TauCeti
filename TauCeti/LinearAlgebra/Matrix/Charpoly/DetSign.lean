@@ -115,14 +115,15 @@ theorem sign_det_one_sub_pow (A : Matrix n n ℝ) (k : ℕ) (h : (1 - A ^ k).det
       TauCeti.sign_one_sub_pow (by simpa using eval_ne_zero_of_det_aeval_ne_zero A _ h hx)]]
   rw [Multiset.prod_map_mul, Multiset.prod_map_ite_one, Multiset.prod_map_ite_one, pow_mul]
 
-/-- **The signs of the iterates form a geometric sequence.** If `1 - A` and `1 - A ^ (k + 1)` are
-invertible for a real square matrix `A`, then `sgn det (1 - A ^ (k + 1)) = sgn det (1 - A) * σ ^ k`
-with ratio `σ = (-1) ^ i₋`, where `i₋` counts the real characteristic roots of `A` in `(-∞, -1)`,
-with algebraic multiplicity. -/
-theorem sign_det_one_sub_pow_succ (A : Matrix n n ℝ) (k : ℕ) (h₁ : (1 - A).det ≠ 0)
-    (h : (1 - A ^ (k + 1)).det ≠ 0) :
+/-- **The signs of the iterates form a geometric sequence.** If `1 - A ^ (k + 1)` is invertible for
+a real square matrix `A`, then `sgn det (1 - A ^ (k + 1)) = sgn det (1 - A) * σ ^ k` with ratio
+`σ = (-1) ^ i₋`, where `i₋` counts the real characteristic roots of `A` in `(-∞, -1)`, with
+algebraic multiplicity. -/
+theorem sign_det_one_sub_pow_succ (A : Matrix n n ℝ) (k : ℕ) (h : (1 - A ^ (k + 1)).det ≠ 0) :
     SignType.sign (1 - A ^ (k + 1)).det =
       SignType.sign (1 - A).det * ((-1) ^ (A.charpoly.roots.filter (· < -1)).card) ^ k := by
+  have h₁ : (1 - A).det ≠ 0 :=
+    left_ne_zero_of_mul (by rwa [← det_mul, mul_neg_geom_sum])
   have h₁' := A.sign_det_one_sub_pow 1 (by rwa [pow_one])
   rw [pow_one] at h₁'
   rw [A.sign_det_one_sub_pow _ h, h₁']
@@ -196,13 +197,14 @@ theorem sign_det_one_sub_pow (f : Module.End ℝ V) (k : ℕ) (h : (1 - f ^ k).d
   exact (toMatrix b b f).sign_det_one_sub_pow k h
 
 /-- **The signs of the iterates form a geometric sequence**, for an endomorphism `f` of a
-finite-dimensional real vector space: if `1 - f` and `1 - f ^ (k + 1)` are invertible, then
+finite-dimensional real vector space: if `1 - f ^ (k + 1)` is invertible, then
 `sgn det (1 - f ^ (k + 1)) = sgn det (1 - f) * σ ^ k` with ratio `σ = (-1) ^ i₋`, where `i₋` counts
 the real roots of the characteristic polynomial of `f` in `(-∞, -1)`, with multiplicity. -/
-theorem sign_det_one_sub_pow_succ (f : Module.End ℝ V) (k : ℕ) (h₁ : (1 - f).det ≠ 0)
-    (h : (1 - f ^ (k + 1)).det ≠ 0) :
+theorem sign_det_one_sub_pow_succ (f : Module.End ℝ V) (k : ℕ) (h : (1 - f ^ (k + 1)).det ≠ 0) :
     SignType.sign (1 - f ^ (k + 1)).det =
       SignType.sign (1 - f).det * ((-1) ^ (f.charpoly.roots.filter (· < -1)).card) ^ k := by
+  have h₁ : (1 - f).det ≠ 0 :=
+    left_ne_zero_of_mul (by rwa [← map_mul, mul_neg_geom_sum])
   have h₁' := f.sign_det_one_sub_pow 1 (by rwa [pow_one])
   rw [pow_one] at h₁'
   rw [f.sign_det_one_sub_pow _ h, h₁']
