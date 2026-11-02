@@ -21,8 +21,8 @@ This is distinct from saturation under positive multiples.
 Restriction to a face sends a monomial outside the face to zero and retains every monomial
 on the face. It is a surjective algebra homomorphism, whose kernel is the ideal generated
 by the coefficient-one monomials outside the face. The quotient is canonically the monoid
-algebra of the face. For nontrivial coefficients with no zero divisors and a monoid with
-unique sums, this ideal is prime. These are the coordinate-ring maps for closed face embeddings
+algebra of the face. For nontrivial coefficients with no zero divisors, the ideal of a face `F`
+with unique sums is prime. These are the coordinate-ring maps for closed face embeddings
 of affine semigroup schemes; no normality or finite generation is needed.
 
 ## References
