@@ -9,6 +9,7 @@ public import Mathlib.Algebra.FiveLemma
 public import Mathlib.Algebra.TrivSqZeroExt.Basic
 public import Mathlib.CategoryTheory.IsomorphismClasses
 public import Mathlib.RingTheory.Ideal.Maps
+public import Mathlib.RingTheory.Ideal.Quotient.Operations
 
 /-!
 # Square-zero extensions of algebras and their isomorphism classes
@@ -32,6 +33,9 @@ section. Every extension of `A` itself splits.
 
 * `TauCeti.SquareZeroExtension A B M`: square-zero extensions of `B` by `M` over `A`.
 * `TauCeti.SquareZeroExtension.Hom`: morphisms of extensions, and the groupoid structure.
+* `TauCeti.SquareZeroExtension.homOfSurjective`: the morphism of extensions descended along a
+  surjective algebra map.
+* `TauCeti.SquareZeroExtension.neg`: the extension with the negated kernel identification.
 * `TauCeti.SquareZeroExtension.Splitting`: `A`-algebra sections of the projection.
 * `TauCeti.SquareZeroExtension.squareZero`: the trivial extension `TrivSqZeroExt B M`.
 * `TauCeti.Exal A B M`: isomorphism classes of square-zero extensions, with `0` the class of
@@ -205,6 +209,29 @@ theorem inv_toAlgHom_apply (f : E ⟶ F) (x : E.Ring) : (inv f).toAlgHom (f.toAl
 theorem toAlgHom_inv_apply (f : E ⟶ F) (y : F.Ring) : f.toAlgHom ((inv f).toAlgHom y) = y :=
   congr($(IsIso.inv_hom_id f).toAlgHom y)
 
+/-- A morphism of square-zero extensions induced by algebra maps `α` and `β` out of a common
+`A`-algebra `S`, with `α` surjective and the kernel of `α` killed by `β`, compatible with the
+projections and with the kernel identifications. -/
+noncomputable def homOfSurjective {S : Type*} [CommRing S] [Algebra A S]
+    (α : S →ₐ[A] E.Ring) (hα : Function.Surjective α) (β : S →ₐ[A] F.Ring)
+    (hker : ∀ s, α s = 0 → β s = 0) (hπ : ∀ s, F.π (β s) = E.π (α s))
+    (hι : ∀ m, ∃ s, α s = E.ι m ∧ β s = F.ι m) : E ⟶ F where
+  toAlgHom := α.liftOfSurjective hα β fun s hs ↦ RingHom.mem_ker.2 (hker s (RingHom.mem_ker.1 hs))
+  π_toAlgHom x := by
+    obtain ⟨s, rfl⟩ := hα x
+    simp [hπ]
+  toAlgHom_ι m := by
+    obtain ⟨s, hs, hs'⟩ := hι m
+    rw [← hs, AlgHom.liftOfSurjective_apply, hs']
+
+@[simp]
+theorem homOfSurjective_toAlgHom_apply {S : Type*} [CommRing S] [Algebra A S]
+    (α : S →ₐ[A] E.Ring) (hα : Function.Surjective α) (β : S →ₐ[A] F.Ring)
+    (hker : ∀ s, α s = 0 → β s = 0) (hπ : ∀ s, F.π (β s) = E.π (α s))
+    (hι : ∀ m, ∃ s, α s = E.ι m ∧ β s = F.ι m) (s : S) :
+    (homOfSurjective α hα β hker hπ hι).toAlgHom (α s) = β s :=
+  AlgHom.liftOfSurjective_apply _ _ _ _ s
+
 variable (E) in
 /-- A splitting of a square-zero extension: an `A`-algebra section of its projection. -/
 @[ext]
@@ -240,6 +267,54 @@ def algebraMapSplitting {N : Type t} [AddCommGroup N] [Module A N]
 theorem algebraMapSplitting_toAlgHom {N : Type t} [AddCommGroup N] [Module A N]
     (E : SquareZeroExtension.{w} A A N) : E.algebraMapSplitting.toAlgHom = Algebra.ofId A E.Ring :=
   (rfl)
+
+section Neg
+
+variable (E) in
+/-- The square-zero extension with the same ring and projection as `E` and the negated
+identification `m ↦ -ι m` of `M` with the kernel. Its class is the negative of that of `E`. -/
+-- This is an abbreviation so that the ring of the negated extension is reducibly that of `E`, and
+-- the instances on the two rings agree for `simp` and instance search.
+abbrev neg : SquareZeroExtension.{w} A B M where
+  Ring := E.Ring
+  π := E.π
+  π_surjective := E.π_surjective
+  ι := -E.ι
+  ι_injective := neg_injective.comp E.ι_injective
+  exact x := by
+    rw [E.exact x]
+    exact ⟨fun ⟨m, hm⟩ ↦ ⟨-m, by simpa using hm⟩, fun ⟨m, hm⟩ ↦ ⟨-m, by simpa using hm⟩⟩
+  mul_ι x m := by simp
+
+variable (E) in
+@[simp]
+theorem neg_π (x : E.Ring) : E.neg.π x = E.π x :=
+  rfl
+
+variable (E) in
+@[simp]
+theorem neg_ι (m : M) : E.neg.ι m = -E.ι m :=
+  rfl
+
+/-- A morphism of extensions is also a morphism between their negations. -/
+def Hom.neg (f : E ⟶ F) : E.neg ⟶ F.neg where
+  toAlgHom := f.toAlgHom
+  π_toAlgHom x := f.π_toAlgHom x
+  toAlgHom_ι m := by simp
+
+@[simp]
+theorem Hom.neg_toAlgHom (f : E ⟶ F) : (Hom.neg f).toAlgHom = f.toAlgHom :=
+  (rfl)
+
+@[simp]
+theorem Hom.neg_id : Hom.neg (𝟙 E) = 𝟙 E.neg :=
+  hom_ext fun _ ↦ rfl
+
+@[simp]
+theorem Hom.neg_comp (f : E ⟶ F) (g : F ⟶ G) : Hom.neg (f ≫ g) = Hom.neg f ≫ Hom.neg g :=
+  hom_ext fun _ ↦ rfl
+
+end Neg
 
 section Trivial
 

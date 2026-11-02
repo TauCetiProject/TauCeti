@@ -32,7 +32,6 @@ compares both iterated sums with the triple fibre product. This is the group str
   the Baer sum.
 * `TauCeti.SquareZeroExtension.baerSumDesc`: the universal property of the Baer sum.
 * `TauCeti.SquareZeroExtension.baerSumMap`: functoriality of the Baer sum.
-* `TauCeti.SquareZeroExtension.neg`: the extension with the negated kernel identification.
 * The `AddCommGroup` structure on `TauCeti.Exal A B M`.
 
 ## Main results
@@ -202,7 +201,7 @@ theorem toBaerSum_eq_ι_iff {x : E.π.pullback F.π} {k : M} :
   refine ⟨fun h ↦ ?_, ?_⟩
   · have he : E.π e = 0 := by simpa using congr((E.baerSum F).π $h)
     obtain ⟨m, rfl⟩ := (E.exact e).1 he
-    obtain ⟨n, rfl⟩ := (F.exact f).1 (by rw [← show E.π (E.ι m) = F.π f from hef, he])
+    obtain ⟨n, rfl⟩ := (F.exact f).1 (by simpa using ((AlgHom.mem_equalizer _ _ _).1 hef).symm)
     rw [toBaerSum_ι_ι] at h
     exact ⟨m, n, rfl, (E.baerSum F).ι_injective h⟩
   · rintro ⟨m, n, h, rfl⟩
@@ -227,31 +226,7 @@ end BaerSum
 
 section Descend
 
-variable {E F : SquareZeroExtension.{w} A B M}
-
-/-- A morphism of square-zero extensions induced by algebra maps `α` and `β` out of a common
-`A`-algebra `S`, with `α` surjective and the kernel of `α` killed by `β`, compatible with the
-projections and with the kernel identifications. -/
-private noncomputable def homOfSurjective {S : Type*} [CommRing S] [Algebra A S]
-    (α : S →ₐ[A] E.Ring) (hα : Function.Surjective α) (β : S →ₐ[A] F.Ring)
-    (hker : ∀ s, α s = 0 → β s = 0) (hπ : ∀ s, F.π (β s) = E.π (α s))
-    (hι : ∀ m, ∃ s, α s = E.ι m ∧ β s = F.ι m) : E ⟶ F where
-  toAlgHom := α.liftOfSurjective hα β fun s hs ↦ RingHom.mem_ker.2 (hker s (RingHom.mem_ker.1 hs))
-  π_toAlgHom x := by
-    obtain ⟨s, rfl⟩ := hα x
-    simp [hπ]
-  toAlgHom_ι m := by
-    obtain ⟨s, hs, hs'⟩ := hι m
-    rw [← hs, AlgHom.liftOfSurjective_apply, hs']
-
-private theorem homOfSurjective_toAlgHom_apply {S : Type*} [CommRing S] [Algebra A S]
-    (α : S →ₐ[A] E.Ring) (hα : Function.Surjective α) (β : S →ₐ[A] F.Ring)
-    (hker : ∀ s, α s = 0 → β s = 0) (hπ : ∀ s, F.π (β s) = E.π (α s))
-    (hι : ∀ m, ∃ s, α s = E.ι m ∧ β s = F.ι m) (s : S) :
-    (homOfSurjective α hα β hker hπ hι).toAlgHom (α s) = β s :=
-  AlgHom.liftOfSurjective_apply _ _ _ _ s
-
-variable {G : SquareZeroExtension.{w} A B M}
+variable {E F G : SquareZeroExtension.{w} A B M}
 
 /-- The universal property of the Baer sum: an algebra map `φ` from the fibre product `E ×_B F`
 to an extension `G` that kills the antidiagonal, lies over `B` and restricts to the identity of
@@ -310,6 +285,16 @@ theorem baerSumMap_toAlgHom_toBaerSum (f : E ⟶ E') (g : F ⟶ F') (x : E.π.pu
       E'.toBaerSum F' ⟨(f.toAlgHom x.1.1, g.toAlgHom x.1.2),
         by simpa using (AlgHom.mem_equalizer _ _ _).1 x.prop⟩ :=
   baerSumDesc_toAlgHom_toBaerSum _ _ _ _ x
+
+@[simp]
+theorem baerSumMap_id : baerSumMap (𝟙 E) (𝟙 F) = 𝟙 (E.baerSum F) :=
+  baerSum_hom_ext fun _ ↦ by simp
+
+@[simp]
+theorem baerSumMap_comp {E'' F'' : SquareZeroExtension.{w} A B M} (f : E ⟶ E') (f' : E' ⟶ E'')
+    (g : F ⟶ F') (g' : F' ⟶ F'') :
+    baerSumMap (f ≫ f') (g ≫ g') = baerSumMap f g ≫ baerSumMap f' g' :=
+  baerSum_hom_ext fun _ ↦ by simp
 
 end Map
 
@@ -437,42 +422,6 @@ section Neg
 
 variable (E : SquareZeroExtension.{w} A B M)
 
-/-- The square-zero extension with the same ring and projection as `E` and the negated
-identification `m ↦ -ι m` of `M` with the kernel. Its class is the negative of that of `E`. -/
--- This is an abbreviation so that the ring of the negated extension is reducibly that of `E`, and
--- the instances on the two rings agree for `simp` and instance search.
-abbrev neg : SquareZeroExtension.{w} A B M where
-  Ring := E.Ring
-  π := E.π
-  π_surjective := E.π_surjective
-  ι := -E.ι
-  ι_injective := neg_injective.comp E.ι_injective
-  exact x := by
-    rw [E.exact x]
-    exact ⟨fun ⟨m, hm⟩ ↦ ⟨-m, by simpa using hm⟩, fun ⟨m, hm⟩ ↦ ⟨-m, by simpa using hm⟩⟩
-  mul_ι x m := by simp
-
-@[simp]
-theorem neg_π (x : E.Ring) : E.neg.π x = E.π x :=
-  rfl
-
-@[simp]
-theorem neg_ι (m : M) : E.neg.ι m = -E.ι m :=
-  rfl
-
-variable {E} {F : SquareZeroExtension.{w} A B M}
-
-/-- A morphism of extensions is also a morphism between their negations. -/
-def Hom.neg (f : E ⟶ F) : E.neg ⟶ F.neg where
-  toAlgHom := f.toAlgHom
-  π_toAlgHom x := f.π_toAlgHom x
-  toAlgHom_ι m := by simp
-
-@[simp]
-theorem Hom.neg_toAlgHom (f : E ⟶ F) : (Hom.neg f).toAlgHom = f.toAlgHom :=
-  (rfl)
-
-variable (E) in
 /-- The splitting `π e ↦ (e, e)` of the Baer sum of `E` with its negation. -/
 private noncomputable def baerSumNegSplitting : (E.baerSum E.neg).Splitting where
   toAlgHom := E.π.liftOfSurjective E.π_surjective
