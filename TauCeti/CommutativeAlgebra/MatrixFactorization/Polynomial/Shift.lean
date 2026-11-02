@@ -40,17 +40,23 @@ open CategoryTheory Polynomial
 
 variable (R : Type u) [CommRing R] {i n : ℕ}
 
+/-- Identity comparison reindexing the complementary rank-one factorization. -/
+private def powerXOfLEReindexIso (hi : i ≤ n) :
+    rankOne (X ^ (n - i) : R[X]) (X ^ i)
+      (by rw [← pow_add, Nat.sub_add_cancel hi]) ≅ powerXOfLE R (Nat.sub_le n i) :=
+  ObjectProperty.isoMk (P := isProjective R[X] (X ^ n))
+    (CurvedDuplex.isoMk (Iso.refl _) (Iso.refl _)
+      -- Normalize the indexed carriers and their instances before simplifying the squares.
+      (by dsimp +instances only [powerXOfLE, rankOne, ofCurvedDuplex]; simp)
+      (by dsimp +instances only [powerXOfLE, rankOne, ofCurvedDuplex]
+          simp [Nat.sub_sub_self hi]))
+
 /-- Parity shift exchanges the exponents `i` and `n - i` of the polynomial factorization. -/
 def parityShiftPowerXOfLEIso (hi : i ≤ n) :
     parityShift.obj (powerXOfLE R hi) ≅ powerXOfLE R (Nat.sub_le n i) :=
   parityShiftRankOneIso (X ^ i : R[X]) (X ^ (n - i))
       (by rw [← pow_add, Nat.add_sub_cancel' hi]) ≪≫
-    ObjectProperty.isoMk (P := isProjective R[X] (X ^ n))
-      (CurvedDuplex.isoMk (Iso.refl _) (Iso.refl _)
-        -- Normalize the indexed carriers and their instances before simplifying the squares.
-        (by dsimp +instances only [powerXOfLE, rankOne, ofCurvedDuplex]; simp)
-        (by dsimp +instances only [powerXOfLE, rankOne, ofCurvedDuplex]
-            simp [Nat.sub_sub_self hi]))
+    powerXOfLEReindexIso R hi
 
 -- The component proofs use the rank-one comparison lemmas; constructor reduction below
 -- computes only the identity comparison that reindexes the complementary exponent.
@@ -58,25 +64,29 @@ def parityShiftPowerXOfLEIso (hi : i ≤ n) :
 @[simp]
 theorem parityShiftPowerXOfLEIso_hom_f₀ (hi : i ≤ n) :
     (parityShiftPowerXOfLEIso R hi).hom.hom.f₀ = 𝟙 (FGModuleCat.of R[X] R[X]) := by
-  simp [parityShiftPowerXOfLEIso, powerXOfLE, CurvedDuplex.isoMk, CurvedDuplex.homMk]
+  simp [parityShiftPowerXOfLEIso, powerXOfLEReindexIso, powerXOfLE,
+    CurvedDuplex.isoMk, CurvedDuplex.homMk]
 
 /-- The odd component of the comparison is minus the identity. -/
 @[simp]
 theorem parityShiftPowerXOfLEIso_hom_f₁ (hi : i ≤ n) :
     (parityShiftPowerXOfLEIso R hi).hom.hom.f₁ = -𝟙 (FGModuleCat.of R[X] R[X]) := by
-  simp [parityShiftPowerXOfLEIso, powerXOfLE, CurvedDuplex.isoMk, CurvedDuplex.homMk]
+  simp [parityShiftPowerXOfLEIso, powerXOfLEReindexIso, powerXOfLE,
+    CurvedDuplex.isoMk, CurvedDuplex.homMk]
 
 /-- The inverse comparison is the identity in even parity. -/
 @[simp]
 theorem parityShiftPowerXOfLEIso_inv_f₀ (hi : i ≤ n) :
     (parityShiftPowerXOfLEIso R hi).inv.hom.f₀ = 𝟙 (FGModuleCat.of R[X] R[X]) := by
-  simp [parityShiftPowerXOfLEIso, powerXOfLE, CurvedDuplex.isoMk, CurvedDuplex.homMk]
+  simp [parityShiftPowerXOfLEIso, powerXOfLEReindexIso, powerXOfLE,
+    CurvedDuplex.isoMk, CurvedDuplex.homMk]
 
 /-- The inverse comparison is minus the identity in odd parity. -/
 @[simp]
 theorem parityShiftPowerXOfLEIso_inv_f₁ (hi : i ≤ n) :
     (parityShiftPowerXOfLEIso R hi).inv.hom.f₁ = -𝟙 (FGModuleCat.of R[X] R[X]) := by
-  simp [parityShiftPowerXOfLEIso, powerXOfLE, CurvedDuplex.isoMk, CurvedDuplex.homMk]
+  simp [parityShiftPowerXOfLEIso, powerXOfLEReindexIso, powerXOfLE,
+    CurvedDuplex.isoMk, CurvedDuplex.homMk]
 
 /-- In the triangulated homotopy category, the shift by one of the polynomial factorization
 indexed by `i` is the factorization indexed by `n - i`. -/
@@ -85,10 +95,10 @@ def shiftPowerXOfLEIso (hi : i ≤ n) :
       (powerXOfLE R hi))⟦(1 : ℤ)⟧ ≅
         (nullHomotopic (S := R[X]) (w := X ^ n)).quotientFunctor.obj
           (powerXOfLE R (Nat.sub_le n i)) :=
-  ((HomotopyCategory.parityShiftCompQuotientFunctorIso R[X] (X ^ n)).app
-    (powerXOfLE R hi)).symm ≪≫
+  shiftRankOneIso (X ^ i : R[X]) (X ^ (n - i))
+      (by rw [← pow_add, Nat.add_sub_cancel' hi]) ≪≫
     (nullHomotopic (S := R[X]) (w := X ^ n)).quotientFunctor.mapIso
-      (parityShiftPowerXOfLEIso R hi)
+      (powerXOfLEReindexIso R hi)
 
 /-- Reduction modulo `X ^ n` of the shifted factorization has cyclic right-module cokernel
 `A/(x ^ (n - i))`, viewed as a left module through the commutativity isomorphism. -/
