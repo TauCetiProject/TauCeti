@@ -21,6 +21,8 @@ public section
 
 noncomputable section
 
+open scoped Manifold
+
 namespace TauCeti.Manifold
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -248,6 +250,10 @@ theorem orientationAt_model (o : _root_.Orientation ℝ E ι)
     OrientationLift.toVectorBundleOrientation_apply, OrientationLift.orientationAt_model]
   -- The tangent space of the model uses its model-space scalar structure.
   rfl
+
+/-- The standard orientation of `ℝ`, in which the unit vector `1` is positive. -/
+@[expose] def real : Orientation 𝓘(ℝ, ℝ) ℝ (Fin 1) :=
+  model (Module.Basis.singleton (Fin 1) ℝ).orientation (by simp)
 
 end Orientation
 end TauCeti.Manifold

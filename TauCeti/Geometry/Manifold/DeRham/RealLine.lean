@@ -38,9 +38,6 @@ supported. Surjectivity comes from a normalized bump function times `dx`
 
 ## Main declarations
 
-* `TauCeti.Manifold.Orientation.real`: the standard orientation of `ℝ`.
-* `TauCeti.integralTopForm_real_eq_integral`: against `Manifold.Orientation.real`, the oriented
-  integral of a compactly supported `1`-form is the Lebesgue integral of its value on `1`.
 * `TauCeti.mem_exactCompactlySupportedForms_one_real`: a compactly supported `1`-form on `ℝ`
   with integral zero is compactly supported exact.
 * `TauCeti.compactlySupportedDeRhamCohomology.bijective_integral_real`: integration
@@ -106,25 +103,6 @@ theorem mem_exactCompactlySupportedForms_one_real {φ : SmoothForm 𝓘(ℝ, ℝ
     rw [Subsingleton.elim v 0, hβ, hFc x (not_le.mp hxr), sub_self,
       ContinuousAlternatingMap.coe_zero, Pi.zero_apply]
   · rw [map_sub, hg, (mem_closedForms_iff_mextDerivₗ_eq_zero _ _).mp κ.2, sub_zero]
-
-/-- The standard orientation of `ℝ`, in which the unit vector `1` is positive. -/
-def Manifold.Orientation.real : Manifold.Orientation 𝓘(ℝ, ℝ) ℝ (Fin 1) :=
-  Manifold.Orientation.model (Module.Basis.singleton (Fin 1) ℝ).orientation (by simp)
-
-/-- Against the standard orientation of `ℝ`, the oriented integral of a compactly supported
-continuous `1`-form is the Lebesgue integral of its value on the unit vector. -/
-theorem integralTopForm_real_eq_integral {φ : RoughForm 𝓘(ℝ, ℝ) ℝ ℝ 1}
-    (hφ : IsSmoothForm 𝓘(ℝ, ℝ) 0 φ)
-    (hc : IsCompact (_root_.tsupport (α := ℝ [⋀^Fin 1]→L[ℝ] ℝ) φ)) :
-    integralTopForm Manifold.Orientation.real φ = ∫ t, φ t fun _ ↦ 1 := by
-  have hvol : (Module.Basis.singleton (Fin 1) ℝ).addHaar = volume := by
-    rw [← OrthonormalBasis.toBasis_singleton]
-    exact OrthonormalBasis.addHaar_eq_volume _
-  rw [Manifold.Orientation.real,
-    integralTopForm_model_eq_integral _ _ hφ hc (Module.Basis.singleton (Fin 1) ℝ) rfl, hvol,
-    Module.Basis.coe_singleton]
-  -- Mathlib's unit tangent vector `1 : TangentSpace 𝓘(ℝ) t` is defined to be `1 : ℝ`.
-  rfl
 
 /-- Integration `H¹_c(ℝ) → ℝ` against the standard orientation is bijective. -/
 private theorem bijective_integral_standard :
