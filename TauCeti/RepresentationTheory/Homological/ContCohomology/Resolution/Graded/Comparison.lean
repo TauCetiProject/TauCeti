@@ -25,11 +25,11 @@ on the total modules,
 
 applying the degree-`n` component `Fⁿ` of the comparison to the degree-`n` part `vₙ` of `v` and
 discarding the parts of negative degree (`TopRep.ResolutionContraction.gradedComparison`). It has
-degree zero and lies over the identity of `X`. It commutes with the differentials as soon as `d`
-does not leave the negative degrees, that is, kills `ℳ (-1)`. Then, for smooth discrete `X` over
-a compact group, a homogeneous cocycle `z` of `M` fixed by `G` and the homogeneous cocycle `κ z`
-of the total coinduced resolution have the same class in `Hⁿ(G, X)`
-(`TopRep.ResolutionContraction.gradedCohomologyClass_gradedComparison`).
+degree zero and lies over the identity of `X`. It commutes with the differentials on the pieces of
+non-negative degree, and on all of `M` as soon as `d` does not leave the negative degrees, that is,
+kills `ℳ (-1)`. For smooth discrete `X` over a compact group, a homogeneous cocycle `z` of `M`
+fixed by `G` and the homogeneous cocycle `κ z` of the total coinduced resolution have the same
+class in `Hⁿ(G, X)` (`TopRep.ResolutionContraction.gradedCohomologyClass_gradedComparison`).
 
 Constructions on total modules, such as tensor induction, act on morphisms of representations
 rather than on families of components, so this is the form in which a contracted graded
@@ -52,6 +52,8 @@ class, which is the kind of cocycle the norm from `U` to `G` is computed on.
 * `TopRep.ResolutionContraction.isHomogeneous_gradedComparison`: it has degree zero.
 * `TopRep.ResolutionContraction.gradedComparison_ι_apply`: it carries the augmentation of `c` to
   the augmentation of the total resolution.
+* `TopRep.ResolutionContraction.gradedComparison_differential_apply_of_mem`: it commutes with the
+  differentials on the pieces of non-negative degree.
 * `TopRep.ResolutionContraction.gradedComparison_differential`: it commutes with the
   differentials when `d` kills `ℳ (-1)`.
 * `TopRep.ResolutionContraction.gradedCohomologyClass_gradedComparison`: it preserves classes of
@@ -100,10 +102,9 @@ private theorem gradedComparisonPiece_natCast (n : ℕ) (v : ℳ n) :
 
 private theorem gradedComparisonPiece_of_neg {p : ℤ} (hp : p < 0) (v : ℳ p) :
     c.gradedComparisonPiece p v = 0 := by
-  obtain ⟨m, rfl⟩ := Int.exists_eq_neg_ofNat hp.le
-  cases m with
-  | zero => simp at hp
-  | succ m => rfl
+  cases p with
+  | ofNat n => exact absurd hp (Int.natCast_nonneg n).not_gt
+  | negSucc m => rfl
 
 variable [DirectSum.Decomposition ℳ]
 
@@ -176,6 +177,19 @@ theorem isHomogeneous_gradedComparison :
   · obtain ⟨n, rfl⟩ := Int.eq_ofNat_of_zero_le hp
     exact (c.gradedComparison_apply_of_mem hv).symm ▸ X.lof_mem_gradedResolutionPiece n _
 
+/-- The comparison on total modules carries `ℳ p` into the piece of degree `p` of the total
+resolution. -/
+theorem gradedComparison_mem_gradedResolutionPiece {p : ℤ} {v : M.V} (hv : v ∈ ℳ p) :
+    (c.gradedComparison).hom v ∈ X.gradedResolutionPiece p := by
+  have h := c.isHomogeneous_gradedComparison.map_mem hv
+  rw [add_zero] at h
+  exact h
+
+/-- The comparison on total modules carries a vector fixed by `G` to a vector fixed by `G`. -/
+theorem gradedResolutionTopRep_ρ_gradedComparison {v : M.V} (hv : ∀ g, M.ρ g v = v) (g : G) :
+    X.gradedResolutionTopRep.ρ g ((c.gradedComparison).hom v) = (c.gradedComparison).hom v := by
+  rw [← hom_comm_apply, hv]
+
 /-- **The comparison lies over the identity of `X`**: it carries the augmentation of `c` to the
 augmentation of the total coinduced resolution, by constant functions in degree zero. -/
 @[simp]
@@ -187,6 +201,26 @@ theorem gradedComparison_ι_apply (x : X.V) :
   -- The degree-zero object of `gradedCochainComplex` is the subtype `ℳ 0`, so the element
   -- rebuilt from `(c.ι.hom x).1` is `c.ι.hom x` by subtype eta.
   exact congrArg _ (congrArg (c.comparison.f 0).hom (Subtype.eta _ _))
+
+/-- **The comparison commutes with the differentials on the pieces of non-negative degree.** -/
+theorem gradedComparison_differential_apply_of_mem {n : ℕ} {v : M.V} (hv : v ∈ ℳ n) :
+    X.gradedResolutionTopRepDifferential.hom ((c.gradedComparison).hom v) =
+      (c.gradedComparison).hom (d.hom v) := by
+  classical
+  have hdv : d.hom v ∈ ℳ (n + 1 : ℕ) := by exact_mod_cast hd.map_mem hv
+  rw [c.gradedComparison_apply_of_mem hdv, c.gradedComparison_apply_of_mem hv,
+    gradedResolutionTopRepDifferential_apply, gradedResolutionDifferential_lof]
+  congr 1
+  refine (c.d_comparison_f_apply n ⟨v, hv⟩).trans
+    (congrArg (c.comparison.f (n + 1)).hom (Subtype.ext ?_))
+  exact gradedCochainComplex_d_apply M ℳ hρ d hd hdd n ⟨v, hv⟩
+
+/-- The comparison carries a homogeneous cocycle of non-negative degree to a cocycle of the total
+coinduced resolution. -/
+theorem gradedResolutionTopRepDifferential_gradedComparison_eq_zero {n : ℕ} {z : M.V}
+    (hz : z ∈ ℳ n) (hdz : d.hom z = 0) :
+    X.gradedResolutionTopRepDifferential.hom ((c.gradedComparison).hom z) = 0 := by
+  rw [c.gradedComparison_differential_apply_of_mem hz, hdz, map_zero]
 
 /-- **The comparison commutes with the differentials**, provided `d` kills the piece `ℳ (-1)`,
 so that it does not carry the discarded negative degrees into degree zero. This holds in
@@ -209,34 +243,28 @@ theorem gradedComparison_differential (hneg : ∀ v ∈ ℳ (-1), d.hom v = 0) :
       · obtain rfl : p = -1 := by omega
         simp only [hneg v hv, map_zero]
     · obtain ⟨n, rfl⟩ := Int.eq_ofNat_of_zero_le hp
-      have hdv' : d.hom v ∈ ℳ (n + 1 : ℕ) := by exact_mod_cast hdv
-      rw [c.gradedComparison_apply_of_mem hdv', c.gradedComparison_apply_of_mem hv,
-        gradedResolutionTopRepDifferential_apply, gradedResolutionDifferential_lof]
-      congr 1
-      refine (congrArg (c.comparison.f (n + 1)).hom (Subtype.ext ?_)).trans
-        (c.d_comparison_f_apply n ⟨v, hv⟩).symm
-      exact (gradedCochainComplex_d_apply M ℳ hρ d hd hdd n ⟨v, hv⟩).symm
+      exact (c.gradedComparison_differential_apply_of_mem hv).symm
   | add v w hv hw => simp only [map_add, hv, hw]
 
-/-- **The comparison preserves classes.** For smooth discrete `X` over a compact group, if `d`
-kills `ℳ (-1)`, a homogeneous cocycle `z ∈ ℳ n` fixed by `G` has the same class in `Hⁿ(G, X)`
-through `c` as the homogeneous cocycle `κ z` of the total coinduced resolution through its
-evaluation-at-`1` contraction `TopRep.gradedResolutionContraction`. -/
+/-- **The comparison preserves classes.** For smooth discrete `X` over a compact group, a
+homogeneous cocycle `z ∈ ℳ n` fixed by `G` has the same class in `Hⁿ(G, X)` through `c` as the
+homogeneous cocycle `κ z` of the total coinduced resolution through its evaluation-at-`1`
+contraction `TopRep.gradedResolutionContraction`. -/
 theorem gradedCohomologyClass_gradedComparison [CompactSpace G] (hX : TauCeti.IsSmoothDiscrete k X)
-    (hneg : ∀ v ∈ ℳ (-1), d.hom v = 0) {n : ℕ} {z : M.V} (hz : z ∈ ℳ n)
-    (hinv : ∀ g, M.ρ g z = z) (hdz : d.hom z = 0) :
+    {n : ℕ} {z : M.V} (hz : z ∈ ℳ n) (hinv : ∀ g, M.ρ g z = z) (hdz : d.hom z = 0) :
     (gradedResolutionContraction hX).gradedCohomologyClass ((c.gradedComparison).hom z)
-        (by
-          have h := c.isHomogeneous_gradedComparison.map_mem hz
-          rw [add_zero] at h
-          exact h)
-        (fun g ↦ by rw [← hom_comm_apply, hinv])
-        (by rw [← comp_apply, ← c.gradedComparison_differential hneg, comp_apply, hdz,
-          map_zero]) =
-      c.gradedCohomologyClass z hz hinv hdz :=
-  c.gradedCohomologyClass_map (gradedResolutionContraction hX) c.gradedComparison
-    c.isHomogeneous_gradedComparison (c.gradedComparison_differential hneg)
-    (fun x ↦ by rw [gradedComparison_ι_apply, gradedResolutionContraction_ι_apply]) hz hinv hdz
+        (c.gradedComparison_mem_gradedResolutionPiece hz)
+        (c.gradedResolutionTopRep_ρ_gradedComparison hinv)
+        (c.gradedResolutionTopRepDifferential_gradedComparison_eq_zero hz hdz) =
+      c.gradedCohomologyClass z hz hinv hdz := by
+  rw [gradedCohomologyClass_def, cohomologyClass_def,
+    ← gradedCohomologyClass_gradedResolutionContraction hX]
+  · congr 1
+    rw [c.gradedComparison_apply_of_mem hz, ContIntertwiningMap.mapInvariants_apply]
+    exact congrArg _ (congrArg (c.comparison.f n).hom
+      (Subtype.ext (gradedCochainComplexInvariant_val M ℳ hρ d hd hdd n z hz hinv).symm))
+  · rw [ContIntertwiningMap.mapInvariants_apply, ← comp_apply, c.comparison.comm, comp_apply,
+      gradedCochainComplex_d_invariant M ℳ hρ d hd hdd hz hinv hdz, map_zero]
 
 end ResolutionContraction
 
