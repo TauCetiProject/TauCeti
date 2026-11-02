@@ -21,9 +21,9 @@ This is distinct from saturation under positive multiples.
 Restriction to a face sends a monomial outside the face to zero and retains every monomial
 on the face. It is a surjective algebra homomorphism, whose kernel is the ideal generated
 by the coefficient-one monomials outside the face. The quotient is canonically the monoid
-algebra of the face. For domain coefficients and a monoid with unique sums, this ideal is
-prime. These are the coordinate-ring maps for closed face embeddings of affine semigroup
-schemes; no normality or finite generation is needed.
+algebra of the face. For nontrivial coefficients with no zero divisors and a monoid with
+unique sums, this ideal is prime. These are the coordinate-ring maps for closed face embeddings
+of affine semigroup schemes; no normality or finite generation is needed.
 
 ## References
 
@@ -188,9 +188,10 @@ theorem faceQuotientEquiv_symm_apply (p : AddMonoidAlgebra S F) :
 end CommRing
 
 include hF in
-/-- Over a domain, the ideal of a face is prime whenever the face has unique sums.
-In particular, this applies to every submonoid of a lattice. -/
-theorem faceIdeal_isPrime [IsDomain R] [UniqueSums F] : (F.faceIdeal R).IsPrime := by
+/-- Over a nontrivial semiring with no zero divisors, the ideal of a face is prime whenever
+the face has unique sums. In particular, this applies to every submonoid of a lattice. -/
+theorem faceIdeal_isPrime [NoZeroDivisors R] [Nontrivial R] [UniqueSums F] :
+    (F.faceIdeal R).IsPrime := by
   rw [← F.ker_faceRestriction hF]
   exact RingHom.ker_isPrime (F.faceRestriction hF R)
 
