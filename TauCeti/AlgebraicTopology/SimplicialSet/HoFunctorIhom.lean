@@ -1,0 +1,74 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.AlgebraicTopology.SimplicialSet.HoFunctorMonoidal
+public import Mathlib.CategoryTheory.Monoidal.Closed.FunctorToTypes
+
+/-!
+# The homotopy category of an internal hom
+
+For simplicial sets `A` and `B`, the evaluation map `A ⊗ Fun(A, B) ⟶ B` and the fact that the
+homotopy category functor preserves binary products give a functor
+`ho Fun(A, B) ⥤ (ho A ⥤ ho B)`. A vertex of `Fun(A, B)`, that is a map `f : A ⟶ B`, is sent to
+the induced functor `ho f`, and an edge, that is a homotopy, to a natural transformation.
+
+This describes how the homotopy category functor acts on the hom-categories `ho Fun(A, B)` of
+the bicategory of quasicategories. In particular, an invertible natural transformation between
+maps of quasicategories gives a natural isomorphism between the induced functors of homotopy
+categories.
+
+## Main declarations
+
+* `SSet.ihomHoFunctor A B`: the functor `ho Fun(A, B) ⥤ (ho A ⥤ ho B)`.
+* `SSet.ihomHoFunctor_obj_mk`: its value on a vertex of `Fun(A, B)` is the functor of homotopy
+  categories induced by the corresponding map `A ⟶ B`.
+-/
+
+public section
+
+universe u
+
+open CategoryTheory MonoidalCategory Simplicial
+
+namespace SSet
+
+variable {A B : SSet.{u}}
+
+/-- The functor `ho Fun(A, B) ⥤ (ho A ⥤ ho B)` induced by the evaluation map
+`A ⊗ Fun(A, B) ⟶ B`, using that the homotopy category functor preserves binary products. -/
+noncomputable def ihomHoFunctor (A B : SSet.{u}) :
+    hoFunctor.obj ((ihom A).obj B) ⥤ hoFunctor.obj A ⥤ hoFunctor.obj B :=
+  (Functor.curry.obj ((Functor.LaxMonoidal.μ hoFunctor A ((ihom A).obj B)).toFunctor ⋙
+    (hoFunctor.map ((ihom.ev A).app B)).toFunctor)).flip
+
+private lemma ihomHoFunctor_obj_mk_map_homMk (φ : 𝟙_ SSet ⟶ (ihom A).obj B) {x y : A _⦋0⦌}
+    (e : Edge x y) :
+    ((ihomHoFunctor A B).obj (.mk (unitHomEquiv _ φ))).map (HomotopyCategory.homMk e) =
+      HomotopyCategory.homMk (e.map (MonoidalClosed.uncurry' φ)) := by
+  have h : ((ihom A).obj B).σ 0 (unitHomEquiv _ φ) = φ.app _ PUnit.unit :=
+    (NatTrans.naturality_apply φ _ PUnit.unit).symm
+  refine congrArg Truncated.HomotopyCategory.homMk (Truncated.Edge.ext ?_)
+  -- By definition of the binary product structure of the homotopy category functor, the
+  -- left-hand edge is the evaluation of `e` against the degenerate edge on the vertex `φ`.
+  change ((ihom.ev A).app B).app _ (e.edge, ((ihom A).obj B).σ 0 (unitHomEquiv _ φ)) = _
+  rw [h]
+  rfl
+
+/-- On the vertex of `Fun(A, B)` classified by `φ`, the functor `ihomHoFunctor A B` takes the
+value `ho f`, where `f : A ⟶ B` corresponds to `φ`. -/
+lemma ihomHoFunctor_obj_mk (φ : 𝟙_ SSet ⟶ (ihom A).obj B) :
+    (ihomHoFunctor A B).obj (.mk (unitHomEquiv _ φ)) =
+      mapHomotopyCategory (MonoidalClosed.uncurry' φ) := by
+  -- Both functors agree on objects by definition; on edges this is the previous lemma.
+  refine Functor.ext_of_iso (Truncated.HomotopyCategory.mkNatIso (fun _ ↦ Iso.refl _)
+    (fun x y e ↦ ?_)) (fun _ ↦ rfl)
+  obtain ⟨e, rfl⟩ : ∃ e' : Edge x y, e'.toTruncated = e := ⟨⟨e.edge, e.src_eq, e.tgt_eq⟩, rfl⟩
+  have := ihomHoFunctor_obj_mk_map_homMk φ e
+  simp only [Iso.refl_hom]
+  exact this
+
+end SSet
