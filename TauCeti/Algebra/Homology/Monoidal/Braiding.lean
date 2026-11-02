@@ -366,14 +366,25 @@ private lemma koszulBraidingHom_comp_inv (X Y : CochainComplex C ℤ) :
     HomologicalComplex.id_f]
   exact (Category.comp_id _).symm
 
+/-- Reversing the coefficient braiding twice gives back the original braiding, so the inverse
+Koszul braiding built from the reversed braiding, with the factors swapped, is the original
+forward Koszul braiding. Both sides agree by definition. -/
+private lemma koszulBraidingInv_reverseBraiding (X Y : CochainComplex C ℤ) :
+    (letI := reverseBraiding C; koszulBraidingInv C Y X) = koszulBraidingHom C X Y :=
+  rfl
+
 /-- The Koszul braiding of two cochain complexes in a braided coefficient category. -/
 noncomputable def koszulBraiding (X Y : CochainComplex C ℤ) : X ⊗ Y ≅ Y ⊗ X where
   hom := koszulBraidingHom C X Y
   inv := koszulBraidingInv C X Y
   hom_inv_id := koszulBraidingHom_comp_inv C X Y
   inv_hom_id := by
-    let := reverseBraiding C
-    exact koszulBraidingHom_comp_inv C Y X
+    -- `hom ≫ inv = 𝟙` for the reversed braiding and the swapped complexes is this identity, once
+    -- its inverse is identified with the original forward map.
+    have h := (letI := reverseBraiding C; koszulBraidingHom_comp_inv C Y X)
+    rw [koszulBraidingInv_reverseBraiding] at h
+    dsimp only [koszulBraidingInv]
+    exact h
 
 /-- The forward direction of the Koszul braiding isomorphism. -/
 @[simp]
