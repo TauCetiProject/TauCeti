@@ -34,8 +34,12 @@ adjointness of creation and annihilation: exterior multiplication by `x ∈ W` i
 contraction `ι(conj x)` against `g_ℂ`, that is to `-(1/2)` times the contraction
 `TauCeti.SpinPolarizationData.contract` against the polar form. Since the normalized Fock action
 is `c(x) = √2 ε(x)` on `W` and `c(y) = (1/√2)` times contraction on `W'`, both halves of
-`c(v) = √2 (ε(v^(1,0)) - ι(v^(0,1)))` carry the same factor, and the wedge basis is orthonormal
-without the factors `2^p` that the native action `TauCeti.spinAction` would require.
+`c(v) = √2 (ε(v^(1,0)) - ι(v^(0,1)))` carry the same factor, and the wedge basis is orthonormal.
+
+The native action `TauCeti.spinAction`, which is `ε(v^(1,0)) - 2 ι(v^(0,1))`, is instead a
+`*`-representation for the pullback `H (T s) (T t)` of `H` along the degree scaling `T` by `√2`
+that intertwines the two actions. On `⋀^p W` this native metric is `2 ^ p` times `H`, so the wedge
+basis is orthogonal for it with squared norms `2 ^ p`.
 
 For a Euclidean space with `Q (v) = -‖v‖²` and an orthogonal complex structure, such a basis
 exists: it is `√2 u₁^(1,0), …, √2 u_ℓ^(1,0)` for an adapted orthonormal basis
@@ -54,6 +58,10 @@ exists: it is `√2 u₁^(1,0), …, √2 u_ℓ^(1,0)` for an adapted orthonorma
   Clifford algebra is one for Clifford conjugation.
 * `TauCeti.AlmostComplexStructure.toLinearMapₛₗ₂_fockAction_ι_one_tmul_left`: Clifford
   multiplication by a real vector is skew-Hermitian.
+* `TauCeti.AlmostComplexStructure.toLinearMapₛₗ₂_degreeScaling_of_mem_exteriorPower`: the native
+  metric is `2 ^ p` times the normalized one on `⋀^p W`, and
+  `TauCeti.AlmostComplexStructure.toLinearMapₛₗ₂_degreeScaling_spinAction_left`: the native action
+  is a `*`-representation for it.
 * `TauCeti.AlmostComplexStructure.toLinearMapₛₗ₂_exteriorAlgebra_eq`: the metric does not depend
   on the orthonormal basis.
 * `TauCeti.AlmostComplexStructure.exists_basis_polar_tmulConj`: orthonormal bases exist for
@@ -266,6 +274,60 @@ theorem toLinearMapₛₗ₂_exteriorAlgebra_eq {ι' : Type*} [Fintype ι'] [Lin
         J.toLinearMapₛₗ₂_apply_eq_polar hQJ hQ b' hb']
 
 end Metric
+
+section NativeMetric
+
+/-! ### The metric of the native action
+
+The degree scaling `T` by `√2` intertwines the native action `TauCeti.spinAction` with the
+normalized Fock action, so the native action is a `*`-representation for the pullback
+`H (T s) (T t)` of the normalized Fock metric. On `⋀^p W` that pullback is `2 ^ p` times `H`. -/
+
+variable {V : Type*} [AddCommGroup V] [Module ℝ V] (J : AlmostComplexStructure V)
+  {Q : QuadraticForm ℝ V} [FiniteDimensional ℝ V] (hQJ : ∀ v, Q (J v) = Q v)
+  (hQ : Q.Nondegenerate) {ι : Type*} [Fintype ι] [LinearOrder ι]
+  (b : Basis ι ℂ (J.spinPolarizationData hQJ hQ).W) {r : ℂˣ} (hr : (r : ℂ) = Real.sqrt 2)
+include hr
+
+/-- **The native Fock metric has degree-`p` factor `2 ^ p`**: for the metric `H` making the wedge
+basis of `b` orthonormal and the degree scaling `T` by `√2`, the pullback `H (T s) (T t)` is
+`2 ^ p` times `H s t` for `s` in `⋀^p W`. -/
+theorem toLinearMapₛₗ₂_degreeScaling_of_mem_exteriorPower {p : ℕ}
+    {s : ExteriorAlgebra ℂ (J.spinPolarizationData hQJ hQ).W}
+    (hs : s ∈ ⋀[ℂ]^p (J.spinPolarizationData hQJ hQ).W)
+    (t : ExteriorAlgebra ℂ (J.spinPolarizationData hQJ hQ).W) :
+    toLinearMapₛₗ₂ (starRingEnd ℂ) b.ExteriorAlgebra b.ExteriorAlgebra
+        (1 : Matrix (Finset ι) (Finset ι) ℂ) (degreeScaling r s) (degreeScaling r t) =
+      2 ^ p * toLinearMapₛₗ₂ (starRingEnd ℂ) b.ExteriorAlgebra b.ExteriorAlgebra
+        (1 : Matrix (Finset ι) (Finset ι) ℂ) s t := by
+  have h2 : star (r : ℂ) * r = 2 := by
+    rw [hr, Complex.star_def, Complex.conj_ofReal, ← Complex.ofReal_mul,
+      Real.mul_self_sqrt zero_le_two, Complex.ofReal_ofNat]
+  rw [ExteriorAlgebra.toLinearMapₛₗ₂_degreeScaling_degreeScaling_of_mem_exteriorPower b r hs, h2]
+
+/-- **The native action is a `*`-representation for the native Fock metric**: for an orthonormal
+basis `b` of `W`, the metric `H` making its wedge basis orthonormal and the degree scaling `T` by
+`√2`, the native action `TauCeti.spinAction` satisfies
+`H (T (a • s)) (T t) = H (T s) (T (a^* • t))`, where `a^*` is `CliffordAlgebra.conjStar`. -/
+theorem toLinearMapₛₗ₂_degreeScaling_spinAction_left
+    (hb : ∀ i j, polar (Q.baseChange ℂ) (tmulConj V (b i : ℂ ⊗[ℝ] V)) (b j) =
+      if i = j then -2 else 0)
+    (a : CliffordAlgebra (Q.baseChange ℂ))
+    (s t : ExteriorAlgebra ℂ (J.spinPolarizationData hQJ hQ).W) :
+    toLinearMapₛₗ₂ (starRingEnd ℂ) b.ExteriorAlgebra b.ExteriorAlgebra
+        (1 : Matrix (Finset ι) (Finset ι) ℂ)
+        (degreeScaling r (spinAction _ (J.spinPolarizationData hQJ hQ) a s)) (degreeScaling r t) =
+      toLinearMapₛₗ₂ (starRingEnd ℂ) b.ExteriorAlgebra b.ExteriorAlgebra
+        (1 : Matrix (Finset ι) (Finset ι) ℂ) (degreeScaling r s)
+        (degreeScaling r (spinAction _ (J.spinPolarizationData hQJ hQ) (conjStar Q a) t)) := by
+  have hT (a : CliffordAlgebra (Q.baseChange ℂ))
+      (x : ExteriorAlgebra ℂ (J.spinPolarizationData hQJ hQ).W) :
+      degreeScaling r (spinAction _ (J.spinPolarizationData hQJ hQ) a x) =
+        J.fockAction hQJ hQ a (degreeScaling r x) :=
+    LinearMap.congr_fun (J.degreeScaling_comp_spinAction_eq_fockAction_comp hQJ hQ hr a) x
+  rw [hT, hT, J.toLinearMapₛₗ₂_fockAction_left hQJ hQ b hb]
+
+end NativeMetric
 
 section Existence
 

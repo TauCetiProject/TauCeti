@@ -12,11 +12,10 @@ public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.E6.Basic
 # Type-E₆ simple-root characters
 
 The positive and negative numbered Serre generators have the corresponding simple-root
-characters for the Cartan action. Each positive character is primitive, as witnessed by an
-explicit Bézout certificate for its row of the type-`E₆` Cartan matrix.
+characters for the Cartan action.
 
-These characters and the certificate depend only on the type-`E₆` Serre presentation, so they
-apply to both the minuscule and doubled minuscule carriers.
+These characters depend only on the type-`E₆` Serre presentation, so they apply to both the
+minuscule and doubled minuscule carriers.
 
 The root numbering follows N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Plate V.
 -/
@@ -57,24 +56,6 @@ theorem rootGeneratorWeight_ne_zero (k : Fin 6 ⊕ Fin 6) : rootGeneratorWeight 
   · have hi := congrFun h i
     rw [rootGeneratorWeight_inr, CartanMatrix.E_diag, Pi.zero_apply] at hi
     exact two_ne_zero (neg_eq_zero.mp hi)
-
-private def cartanNeighbor : Fin 6 → Fin 6 :=
-  ![2, 3, 0, 1, 3, 4]
-
-/-- A Bézout certificate for the rows of the type-`E₆` Cartan matrix: the coefficient `-1` at a
-neighbour of `i` whose Cartan entry is `-1`, and `0` elsewhere. -/
-def cartanBezout (i j : Fin 6) : ℤ :=
-  if j = cartanNeighbor i then -1 else 0
-
-private theorem cartan_sum_mul_bezout (i : Fin 6) :
-    ∑ j, CartanMatrix.E 6 i j * cartanBezout i j = 1 := by
-  fin_cases i <;> decide
-
-/-- **Every positive simple-root character of type `E₆` is primitive**, with the explicit
-certificate `TauCeti.E6.cartanBezout`. -/
-theorem rootGeneratorWeight_sum_mul_cartanBezout (i : Fin 6) :
-    ∑ j, rootGeneratorWeight (.inl i) j * cartanBezout i j = 1 := by
-  simpa only [rootGeneratorWeight_inl] using cartan_sum_mul_bezout i
 
 /-- The negative simple-root character at a node is the negative of the positive one. -/
 theorem rootGeneratorWeight_inr_eq_neg_inl (i : Fin 6) :

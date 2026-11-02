@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Flat.Equalizer
 import Mathlib.Algebra.FiveLemma
+import Mathlib.RingTheory.LocalRing.Module
 
 /-!
 # Extensions of flat modules
@@ -21,6 +22,9 @@ the product `M × P` of two flat modules, the split extension, is flat.
 
 * `Function.Exact.flat_of_injective_of_surjective`: the middle term of a short exact sequence
   with flat outer terms is flat.
+* `Module.Flat.of_exact_of_lTensor_quotient_injective`: for an exact pair `M → N → P → 0` with
+  `N` flat, the cokernel `P` is flat when `M → N` stays injective after tensoring with every
+  `R ⧸ I`.
 * `Function.Exact.flat_left_of_injective_of_surjective`: the first term of a short exact
   sequence whose other two terms are flat is flat.
 * `Module.Flat.prod`: the product of two flat modules is flat.
@@ -58,6 +62,26 @@ theorem Function.Exact.flat_of_injective_of_surjective
     (Module.Flat.rTensor_preserves_injective_linearMap i hi)
     (Module.Flat.rTensor_preserves_injective_linearMap i hi)
 
+/-- **A cokernel is flat when the presentation stays injective modulo ideals.** Let
+`f : M → N` and `g : N → P` be exact with `g` surjective and `N` flat over `R`. If
+`id ⊗ f : (R ⧸ I) ⊗[R] M → (R ⧸ I) ⊗[R] N` is injective for every finitely generated ideal `I`,
+then `P` is flat over `R`. In terms of `Tor`, the hypothesis kills the image of
+`Tor₁(R ⧸ I, P)` in `(R ⧸ I) ⊗[R] M`, and flatness of `N` makes `Tor₁(R ⧸ I, P) → (R ⧸ I) ⊗[R] M`
+injective. No flatness of `M` and no injectivity of `f` is needed. The diagram chase is Mathlib's
+`lTensor_injective_of_exact_of_exact_of_rTensor_injective`, applied to `M → N → P` and
+`I → R → R ⧸ I`. -/
+theorem Module.Flat.of_exact_of_lTensor_quotient_injective [Module.Flat R N]
+    (f : M →ₗ[R] N) (g : N →ₗ[R] P) (hexact : Function.Exact f g)
+    (hg : Function.Surjective g)
+    (hf : ∀ ⦃I : Ideal R⦄, I.FG → Function.Injective (LinearMap.lTensor (R ⧸ I) f)) :
+    Module.Flat R P := by
+  rw [Module.Flat.iff_rTensor_injective]
+  intro I hI
+  rw [← LinearMap.lTensor_inj_iff_rTensor_inj]
+  exact lTensor_injective_of_exact_of_exact_of_rTensor_injective hexact hg
+    (LinearMap.exact_subtype_mkQ I) I.mkQ_surjective
+    ((LinearMap.lTensor_inj_iff_rTensor_inj _ _).mp (hf hI))
+    (Module.Flat.lTensor_preserves_injective_linearMap _ I.injective_subtype)
 /-- The first term of a short exact sequence whose middle and last terms are flat is flat. -/
 theorem Function.Exact.flat_left_of_injective_of_surjective
     {f : M →ₗ[R] N} {g : N →ₗ[R] P} (h : Function.Exact f g)

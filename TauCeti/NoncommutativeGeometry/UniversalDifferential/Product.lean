@@ -105,6 +105,14 @@ theorem mk_eq_mk_of_cast {n m : ℕ} (h : n = m) {ω : UniversalForms k A n}
   rw [cast_refl] at h'
   rw [h']
 
+variable {k A} in
+/-- Including a reindexed form in the direct sum is including the original form. -/
+@[simp]
+theorem of_cast {n m : ℕ} (h : n = m) (ω : UniversalForms k A n) :
+    DirectSum.of (UniversalForms k A) m (cast k A h ω) = DirectSum.of (UniversalForms k A) n ω := by
+  subst h
+  rw [cast_refl]
+
 /-- Splitting off the last letter identifies `Ωⁿ ⊗ A` with `Ωⁿ⁺¹`; the word `ω ⊗ b` stands
 for `ω db`. -/
 def snocEquiv (n : ℕ) : UniversalForms k A n ⊗[k] A ≃ₗ[k] UniversalForms k A (n + 1) :=
@@ -177,6 +185,11 @@ instance gOne : GradedMonoid.GOne (UniversalForms k A) where
 
 /-- The graded unit is the empty word with coefficient `1`. -/
 theorem gOne_def : (GradedMonoid.GOne.one : UniversalForms k A 0) = word k A 1 Fin.elim0 := (rfl)
+
+variable {k A} in
+/-- The unit of `⨁ n, Ωⁿ` is the empty word with coefficient `1`. -/
+theorem one_def : (1 : ⨁ n, UniversalForms k A n) = DirectSum.of _ 0 (word k A 1 Fin.elim0) := by
+  rw [DirectSum.one_def, gOne_def]
 
 /-! ### The right action of the unitization -/
 
@@ -445,6 +458,27 @@ instance gRing : DirectSum.GRing (UniversalForms k A) where
   intCast_ofNat n := by rw [Int.cast_natCast]
   intCast_negSucc_ofNat n := by
     simp only [Int.cast_negSucc, word_def, TensorProduct.neg_tmul]
+
+/-- The graded semiring structure of `TauCeti.UniversalForms.gRing`. Instance search assembles the
+addition of `⨁ n, Ωⁿ` from the additive monoids of the tensor products `Ωⁿ`, and it does not
+recover this structure from `gRing` compatibly with that addition, so it is registered directly. -/
+instance gSemiring : DirectSum.GSemiring (UniversalForms k A) := DirectSum.GRing.toGSemiring
+
+variable {k A} in
+/-- The product in `⨁ n, Ωⁿ` of two homogeneous forms is their product of universal forms. -/
+@[simp]
+theorem of_mul_of {n m : ℕ} (ω : UniversalForms k A n) (η : UniversalForms k A m) :
+    DirectSum.of (UniversalForms k A) n ω * DirectSum.of (UniversalForms k A) m η =
+      DirectSum.of (UniversalForms k A) (n + m) (mul k A n m ω η) :=
+  DirectSum.of_mul_of ω η
+
+variable {k A} in
+/-- Left multiplication by a zero-form `y` multiplies the coefficient of a word. -/
+theorem of_word_mul_of_word {n : ℕ} (y x : Unitization k A) (a : Fin n → A) :
+    DirectSum.of (UniversalForms k A) 0 (word k A y Fin.elim0) *
+        DirectSum.of (UniversalForms k A) n (word k A x a) =
+      DirectSum.of (UniversalForms k A) n (word k A (y * x) a) := by
+  rw [of_mul_of, ← cast_word_mul, of_cast]
 
 /-- Left multiplication by the zero-form `r • 1` is the scalar action of `r`, up to reindexing
 the degree `0 + n = n`. -/

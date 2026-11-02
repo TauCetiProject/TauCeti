@@ -7,7 +7,10 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
+public import TauCeti.Algebra.Central.Quaternion
 public import TauCeti.Algebra.Quaternion.NormForm
+public import TauCeti.Algebra.Subalgebra.Center
+import TauCeti.RingTheory.Semisimple.BasicAlgebra
 
 /-!
 # The compact four-dimensional even Clifford algebra
@@ -22,6 +25,12 @@ The two quaternion factors are distinguished by the sign of the third Clifford g
 volume element therefore maps to `(-1, 1)`, which separates the factors and proves surjectivity of
 the model.
 
+Since `ℍ` is a central `ℝ`-algebra, the centre of `Cl⁺(4,0)`, the discriminant quadratic algebra
+of the sum of four squares, is the split algebra `ℝ × ℝ`. A split centre does not split the two
+factors: here they are the division algebra `ℍ`, so `Cl⁺(4,0)` is not `M₂(ℝ) × M₂(ℝ)`. By
+contrast the hyperbolic space `H ⟂ H`, whose centre is also split
+(`TauCeti.hyperbolicFourCenterEvenEquivProd`), has two matrix-algebra factors.
+
 ## Main definitions and results
 
 * `TauCeti.realCliffordZeroThreeEquivQuaternionProd` identifies `Cl(0,3)` with `ℍ × ℍ`.
@@ -34,6 +43,10 @@ the model.
   with coordinates `(-1, 1)` as `-(e₀ e₁)(e₂ e₃)`.
 * `TauCeti.realCliffordFourZeroEvenEquivQuaternionProd_reverseEven` identifies reversal with
   componentwise quaternion conjugation.
+* `TauCeti.realCliffordFourZeroCenterEvenEquivProd` identifies the centre of `Cl⁺(4,0)` with
+  `ℝ × ℝ`.
+* `TauCeti.isEmpty_realCliffordFourZeroEven_algEquiv_matrix_prod`: `Cl⁺(4,0)` is not a product of
+  two real matrix algebras of degree two.
 * `TauCeti.realCliffordFourZeroQuaternionEquiv` identifies the underlying quadratic space of
   `Cl(4,0)` with the Hamilton quaternion norm form.
 
@@ -173,6 +186,36 @@ noncomputable def realCliffordFourZeroEvenEquivQuaternionProd :
       ((CliffordAlgebra.evenEquivOfIsometry realCliffordZeroFourAugmentedIsometry).trans
         ((CliffordAlgebra.equivEven (realCliffordForm 0 3)).symm.trans
           realCliffordZeroThreeEquivQuaternionProd)))
+
+/-- The centre of the even Clifford algebra of the positive-definite four-dimensional real form,
+its discriminant quadratic algebra, is the split algebra `ℝ × ℝ`. -/
+noncomputable def realCliffordFourZeroCenterEvenEquivProd :
+    Subalgebra.center ℝ (CliffordAlgebra.even (realCliffordForm 4 0)) ≃ₐ[ℝ] ℝ × ℝ :=
+  (centerCongr realCliffordFourZeroEvenEquivQuaternionProd).trans
+    (centerProdAlgEquivOfIsCentral ℝ ℍ[ℝ] ℍ[ℝ])
+
+/-- The inverse of the compact centre equivalence sends a pair of reals to the even Clifford
+element whose two quaternion components are the corresponding real quaternions. -/
+@[simp]
+theorem coe_realCliffordFourZeroCenterEvenEquivProd_symm (r : ℝ × ℝ) :
+    (realCliffordFourZeroCenterEvenEquivProd.symm r :
+        CliffordAlgebra.even (realCliffordForm 4 0)) =
+      realCliffordFourZeroEvenEquivQuaternionProd.symm ((r.1 : ℍ[ℝ]), (r.2 : ℍ[ℝ])) := by
+  simp [realCliffordFourZeroCenterEvenEquivProd]
+
+/-- Although its centre is split, the even Clifford algebra of the positive-definite
+four-dimensional real form is not a product of two real matrix algebras of degree two: it is
+`ℍ × ℍ`, which has no nonzero nilpotent elements. -/
+theorem isEmpty_realCliffordFourZeroEven_algEquiv_matrix_prod :
+    IsEmpty (CliffordAlgebra.even (realCliffordForm 4 0) ≃ₐ[ℝ]
+      Matrix (Fin 2) (Fin 2) ℝ × Matrix (Fin 2) (Fin 2) ℝ) := by
+  refine ⟨fun f ↦ ?_⟩
+  have : IsReduced (Matrix (Fin 2) (Fin 2) ℝ × Matrix (Fin 2) (Fin 2) ℝ) :=
+    isReduced_of_injective (f.symm.trans realCliffordFourZeroEvenEquivQuaternionProd)
+      (AlgEquiv.injective _)
+  have : IsReduced (Matrix (Fin 2) (Fin 2) ℝ) :=
+    isReduced_of_injective ((RingHom.id _).prod (RingHom.id _)) fun _ _ h ↦ congrArg Prod.fst h
+  exact zero_ne_one ((Matrix.subsingleton_of_isReduced (m := Fin 2) (A := ℝ)).elim 0 1)
 
 /-- The quaternion-pair coordinates of the image of a product of two compact
 four-dimensional Clifford generators. -/

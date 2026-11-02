@@ -17,12 +17,16 @@ of their squared distances to any third point: the triangle inequality through `
 
 An unbounded set stays unbounded after removing a closed ball, since a closed ball is bounded.
 
+A bound on the norms of a set with two distinct points is positive, since one of the points is
+nonzero.
+
 ## Main declarations
 
 * `TauCeti.norm_sub_sq_le_two_mul` -- the squared triangle inequality through an intermediate
   point.
 * `TauCeti.not_isBounded_inter_lt_norm_sub` -- the part of an unbounded set outside a closed ball
   is unbounded.
+* `Set.Nontrivial.pos_of_forall_norm_le` -- a bound on the norms of a nontrivial set is positive.
 -/
 
 public section
@@ -47,5 +51,11 @@ theorem not_isBounded_inter_lt_norm_sub {E : Type*} [SeminormedAddCommGroup E] {
     by_cases hw' : ρ < ‖w - c‖
     · exact Or.inl ⟨hw, hw'⟩
     · exact Or.inr (mem_closedBall_iff_norm.mpr (not_lt.mp hw'))
+
+/-- In a normed group, a bound on the norms of a set with two distinct points is positive. -/
+theorem _root_.Set.Nontrivial.pos_of_forall_norm_le {E : Type*} [NormedAddGroup E] {s : Set E}
+    (hs : s.Nontrivial) {r : ℝ} (hr : ∀ x ∈ s, ‖x‖ ≤ r) : 0 < r := by
+  obtain ⟨x, hxs, hx0⟩ := hs.exists_ne 0
+  exact (norm_pos_iff.mpr hx0).trans_le (hr x hxs)
 
 end TauCeti

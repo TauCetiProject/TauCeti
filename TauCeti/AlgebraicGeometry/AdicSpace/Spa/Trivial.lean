@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.AdicSpace.RestrictToIdeal
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Laurent.Basic
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Spectral
+public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.Carrier
 
 /-!
 # The trivial points of `Spa(A, A⁺)`
@@ -94,9 +95,10 @@ private theorem isOpen_supp_of_mem_spaTrivial {Aplus : Subring A} {x : spa Aplus
 their supports, the open prime ideals of `A`, with the subspace topology of `Spec A`. The map
 sends an open prime to its trivial valuation. -/
 noncomputable def spaTrivialHomeomorph (Aplus : Subring A) :
-    {p : PrimeSpectrum A // IsOpen (p.asIdeal : Set A)} ≃ₜ spaTrivial Aplus where
-  toFun p := ⟨⟨trivialSection p, (trivialSection_mem_spa_iff Aplus p).mpr p.2⟩, p, rfl⟩
-  invFun x := ⟨suppFun x, isOpen_supp_of_mem_spaTrivial x.2⟩
+    FormalScheme.Spf.carrier A ≃ₜ spaTrivial Aplus where
+  toFun p := ⟨⟨trivialSection p,
+    (trivialSection_mem_spa_iff Aplus p).mpr (FormalScheme.Spf.mem_carrier.mp p.2)⟩, p, rfl⟩
+  invFun x := ⟨suppFun x, FormalScheme.Spf.mem_carrier.mpr (isOpen_supp_of_mem_spaTrivial x.2)⟩
   left_inv p := Subtype.ext (suppFun_trivialSection p.1)
   right_inv x := by
     obtain ⟨p, hp⟩ := x.2
@@ -108,8 +110,7 @@ noncomputable def spaTrivialHomeomorph (Aplus : Subring A) :
 
 /-- `spaTrivialHomeomorph` sends an open prime to its trivial valuation. -/
 @[simp]
-theorem coe_spaTrivialHomeomorph_apply (Aplus : Subring A)
-    (p : {p : PrimeSpectrum A // IsOpen (p.asIdeal : Set A)}) :
+theorem coe_spaTrivialHomeomorph_apply (Aplus : Subring A) (p : FormalScheme.Spf.carrier A) :
     ((spaTrivialHomeomorph Aplus p : spa Aplus) : Spv A) = trivialSection p :=
   (rfl)
 

@@ -7,7 +7,9 @@ module
 
 public import Mathlib.RingTheory.Nilpotent.Defs
 public import TauCeti.Combinatorics.Enumerative.Partition.Basic
+public import TauCeti.Combinatorics.Enumerative.Partition.Dominance
 public import TauCeti.LinearAlgebra.End.JordanChain.Basic
+import TauCeti.Combinatorics.Enumerative.Partition.Conjugate
 
 /-!
 # The Jordan partition of a nilpotent endomorphism
@@ -22,6 +24,11 @@ conjugacy of nilpotent endomorphisms between finite-dimensional vector spaces.
 `Module.End.JordanChainBasis.jordanPartition_eq` identifies it with any supplied chain
 basis, and `Module.End.exists_linearEquiv_conj_eq_iff_jordanPartition_parts_eq` gives the
 conjugacy criterion. No algebraic closure or characteristic assumption is needed.
+
+The dominance order on Jordan partitions compares ranks of powers:
+`Module.End.jordanPartition_dominates_jordanPartition_iff` says that the Jordan partition of `f`
+dominates that of `g` exactly when `rank (g ^ k) ≤ rank (f ^ k)` for every `k`. For nilpotent
+matrices this is the combinatorial side of the description of orbit closures by dominance.
 
 ## References
 
@@ -177,6 +184,19 @@ theorem card_filter_jordanPartition_parts (f : End K V) (hf : IsNilpotent f) (k 
       finrank K (LinearMap.ker (f ^ (k + 1))) - finrank K (LinearMap.ker (f ^ k)) := by
   obtain ⟨ι, _, ⟨c⟩⟩ := exists_jordanChainBasis hf
   rw [c.jordanPartition_eq hf, c.card_filter_partition_parts]
+
+/-- The Jordan partition of `f` dominates that of `g` exactly when, for every `k`, the rank of
+`g ^ k` is at most the rank of `f ^ k`. -/
+theorem jordanPartition_dominates_jordanPartition_iff (f g : End K V) (hf : IsNilpotent f)
+    (hg : IsNilpotent g) :
+    (f.jordanPartition hf).Dominates (g.jordanPartition hg) ↔
+      ∀ k, finrank K (LinearMap.range (g ^ k)) ≤ finrank K (LinearMap.range (f ^ k)) := by
+  rw [Nat.Partition.dominates_iff_forall_sum_map_min_le]
+  refine forall_congr' fun k => ?_
+  rw [← f.finrank_ker_pow_eq_sum_jordanPartition hf, ← g.finrank_ker_pow_eq_sum_jordanPartition hg]
+  have := (f ^ k).finrank_range_add_finrank_ker
+  have := (g ^ k).finrank_range_add_finrank_ker
+  omega
 
 /-- The zero operator has one part of size one for each dimension, including no parts on
 the zero-dimensional space. -/

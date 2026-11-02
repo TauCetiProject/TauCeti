@@ -41,6 +41,8 @@ example.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.symplecticFormAt`: the symplectic form on a tangent fiber.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.symplecticFormAt_transport`: transport of tangent-fiber
   symplectic forms by the differential of a symplectomorphism.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.isNondegenerate_mpullback_of_isLocalDiffeomorph`: a local
+  diffeomorphism pulls a nondegenerate form back to a nondegenerate form.
 * `TauCeti.SmoothTwoForm.Tames` and `TauCeti.SmoothTwoForm.Compatible`: the unbundled pointwise
   relations to a smooth almost complex structure.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.tames_iff`, `invariant_iff`, and `compatible_iff`: these
@@ -150,6 +152,20 @@ theorem IsNondegenerate.symplecticFormAt_transport (ψ : M ≃ₘ⟮I, I₂⟯ M
     SmoothForm.eval₂_mpullback,
     ContinuousLinearEquiv.coe_toLinearEquiv, ← ContinuousLinearEquiv.coe_coe,
     Diffeomorph.mfderivToContinuousLinearEquiv_coe]
+
+include hσ in
+/-- A local diffeomorphism, such as a diffeomorphism, pulls a nondegenerate form back to a
+nondegenerate form. -/
+theorem IsNondegenerate.isNondegenerate_mpullback_of_isLocalDiffeomorph {f : M₂ → M}
+    (hf : IsLocalDiffeomorph I₂ I ∞ f) :
+    SmoothTwoForm.IsNondegenerate (SmoothForm.mpullback f hf.contMDiff σ) := by
+  rw [isNondegenerate_iff_separatingLeft] at hσ ⊢
+  intro x v hv
+  -- The differential at `x` is invertible, so `df v` pairs to zero with every tangent vector.
+  have hinv := hf.isInvertible_mfderiv (by simp) x
+  refine (injective_iff_map_eq_zero _).1 hinv.injective v (hσ (f x) _ fun w ↦ ?_)
+  obtain ⟨u, rfl⟩ := hinv.surjective w
+  simpa only [SmoothForm.eval₂_mpullback] using hv u
 
 end Transport
 

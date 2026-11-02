@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Category.TopCat.Opens
-public import Mathlib.CategoryTheory.Sites.CoverPreserving
 public import TauCeti.Topology.GTopology.Basic
 
 /-!
@@ -202,14 +201,8 @@ instance representablyFlat_comapFunctor (f : G.ContinuousMap G') :
 /-- A continuous map sends covering sieves of admissible opens to covering sieves of their
 preimages. -/
 theorem coverPreserving_comapFunctor (f : G.ContinuousMap G') :
-    CoverPreserving G'.grothendieckTopology G.grothendieckTopology f.comapFunctor where
-  cover_preserve {V R} hR := by
-    obtain ⟨S, hS, hSR⟩ := (mem_grothendieckTopology_iff G').mp hR
-    refine (mem_grothendieckTopology_iff G).mpr ⟨_, f.covers_comap hS, ?_⟩
-    intro _ g hg
-    obtain ⟨W, hW, rfl⟩ := (coverPresieve_apply _ g).mp hg
-    exact ⟨W, homOfLE (G'.subset hS W hW), 𝟙 _, hSR _ _ ((coverPresieve_apply _ _).mpr hW),
-      Subsingleton.elim _ _⟩
+    CoverPreserving G'.grothendieckTopology G.grothendieckTopology f.comapFunctor :=
+  coverPreserving_functor (OrderHom.ofClass f.comapInfTopHom).monotone f.covers_comap
 
 /-- The preimage functor of a continuous map of G-topologies is a continuous functor of sites,
 so it induces the direct image `Functor.sheafPushforwardContinuous` of sheaves. -/

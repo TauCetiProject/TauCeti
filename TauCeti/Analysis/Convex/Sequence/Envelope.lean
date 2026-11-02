@@ -38,6 +38,8 @@ input: geometric conclusions about `lowerConvexEnvelope a` assume `IsAdmissible 
   when it lies below `a`.
 * `lowerConvexEnvelope_mono` and `lowerConvexEnvelope_idem`: the envelope is monotone
   on admissible inputs and idempotent.
+* `lowerConvexEnvelope_inf_lowerConvexEnvelope`: the envelope of the pointwise minimum of two
+  admissible sequences depends only on their envelopes.
 * `lowerConvexEnvelope_ne_top_iff`: the finite domain of an admissible envelope is the
   integer convex hull of the finite indices of the sequence.
 * `lowerConvexEnvelope_eq_of_forall_lt` and `lowerConvexEnvelope_eq_of_forall_gt`: the
@@ -45,6 +47,8 @@ input: geometric conclusions about `lowerConvexEnvelope a` assume `IsAdmissible 
 * `lowerConvexEnvelope_add_affine`: adding a real affine function to the sequence adds it
   to the envelope; `lowerConvexEnvelope_const_add` allows an infinite constant, and
   `lowerConvexEnvelope_add_nsmul` states the shear by a finite slope.
+* `lowerConvexEnvelope_map_mul`: scaling the sequence by a positive real factor scales the
+  envelope by the same factor.
 * `lowerConvexEnvelope_shift`: shifting the sequence to the right, with infinite heights
   at the vacated indices, shifts the envelope in the same way.
 * `lowerConvexEnvelope_reflect`: reflecting points that are infinite beyond `N` in the index
@@ -245,6 +249,21 @@ theorem lowerConvexEnvelope_mono (hb : IsAdmissible b) (hba : b ≤ a) :
   le_lowerConvexEnvelope (isConvexSeq_lowerConvexEnvelope b)
     ((lowerConvexEnvelope_le hb).trans hba)
 
+/-- For admissible `a` and `b`, the envelope of the pointwise minimum of their envelopes is the
+envelope of `a ⊓ b`. So the greatest convex minorant of `a ⊓ b` depends only on the envelopes of
+`a` and `b`, and by `le_lowerConvexEnvelope` it lies above every common convex minorant of the
+two envelopes. The pointwise minimum of two envelopes need not itself be convex. -/
+theorem lowerConvexEnvelope_inf_lowerConvexEnvelope (ha : IsAdmissible a) (hb : IsAdmissible b) :
+    lowerConvexEnvelope (lowerConvexEnvelope a ⊓ lowerConvexEnvelope b) =
+      lowerConvexEnvelope (a ⊓ b) :=
+  le_antisymm
+    (lowerConvexEnvelope_mono ((isConvexSeq_lowerConvexEnvelope a).isAdmissible.inf
+        (isConvexSeq_lowerConvexEnvelope b).isAdmissible)
+      (inf_le_inf (lowerConvexEnvelope_le ha) (lowerConvexEnvelope_le hb)))
+    (le_lowerConvexEnvelope (isConvexSeq_lowerConvexEnvelope _)
+      (le_inf (lowerConvexEnvelope_mono (ha.inf hb) inf_le_left)
+        (lowerConvexEnvelope_mono (ha.inf hb) inf_le_right)))
+
 /-! ### Finite domain and endpoints -/
 
 /-- If `a` is infinite off an order-connected set `s`, the envelope is infinite off `s`
@@ -417,6 +436,37 @@ theorem lowerConvexEnvelope_add_nsmul (a : ℕ → WithTop ℝ) {t : WithTop ℝ
     rw [← WithTop.coe_nsmul, nsmul_eq_mul, zero_add, mul_comm]
   simp only [key]
   exact lowerConvexEnvelope_add_affine a 0 m
+
+/-! ### Scaling of heights -/
+
+/-- Scaling the points by a positive real factor scales their lower convex envelope by the
+same factor. -/
+theorem IsLowerConvexEnvelope.map_mul (hh : IsLowerConvexEnvelope a h) {c : ℝ} (hc : 0 < c) :
+    IsLowerConvexEnvelope (fun n => (a n).map (c * ·)) (fun n => (h n).map (c * ·)) := by
+  have hmono {r : ℝ} (hr : 0 < r) {x y : WithTop ℝ} : x.map (r * ·) ≤ y.map (r * ·) ↔ x ≤ y :=
+    WithTop.map_le_iff _ (mul_le_mul_iff_right₀ hr)
+  refine ⟨hh.isConvexSeq.map_mul hc.le, fun n => (hmono hc).mpr (hh.le n), fun g hg hga n => ?_⟩
+  -- Scaling `g` back by `c⁻¹` gives a convex minorant of `a`.
+  have hle := hh.greatest (hg.map_mul (inv_nonneg.mpr hc.le)) fun k => by
+    rw [← hmono hc, WithTop.map_mul_map_inv_mul hc.ne']
+    exact hga k
+  rw [← WithTop.map_mul_map_inv_mul hc.ne' (g n)]
+  exact (hmono hc).mpr (hle n)
+
+/-- Scaling a sequence by a positive real factor scales its lower convex envelope by the same
+factor. This holds for inadmissible sequences too, where both sides are the all-infinite
+fallback. -/
+theorem lowerConvexEnvelope_map_mul (a : ℕ → WithTop ℝ) {c : ℝ} (hc : 0 < c) :
+    lowerConvexEnvelope (fun n => (a n).map (c * ·)) =
+      fun n => (lowerConvexEnvelope a n).map (c * ·) := by
+  by_cases ha : IsAdmissible a
+  · exact ((isLowerConvexEnvelope_lowerConvexEnvelope ha).map_mul hc
+      |>.eq_lowerConvexEnvelope).symm
+  · have ha' : ¬IsAdmissible fun n => (a n).map (c * ·) := fun h' => ha <| by
+      simpa only [WithTop.map_inv_mul_map_mul hc.ne'] using h'.map_mul (inv_nonneg.mpr hc.le)
+    rw [lowerConvexEnvelope_of_not_isAdmissible ha, lowerConvexEnvelope_of_not_isAdmissible ha']
+    funext n
+    simp
 
 /-! ### Translation of indices -/
 

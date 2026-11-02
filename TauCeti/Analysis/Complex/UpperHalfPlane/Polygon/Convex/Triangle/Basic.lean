@@ -36,6 +36,8 @@ The triangle is written down explicitly in one of two normal forms.
 
 ## Main results
 
+* `ConvexPolygon.triangleInfty`: the convex triangle with vertices `p`, `q` and `∞`, for
+  `Re p < Re q`.
 * `ConvexPolygon.exists_interiorAngle_eq_iff`: the angle triples of convex hyperbolic triangles
   are exactly the nonnegative triples with sum less than `π`.
 
@@ -77,6 +79,40 @@ private theorem exists_re_toComplex_eq_cos {θ : ℝ} (h₀ : 0 ≤ θ) (hπ : �
     · rw [toComplex_inr_coe, Complex.ofReal_zero, sub_zero, Complex.normSq_ofReal]
       linear_combination hθ + Real.sin θ * hs
 
+/-- The convex triangle with vertices `p`, `q` and the ideal vertex `∞`, listed counterclockwise,
+for points `p, q ≠ ∞` of `ℍ ∪ ∂ℍ` with `Re p < Re q`. -/
+def ConvexPolygon.triangleInfty {p q : ℍ ⊕ OnePoint ℝ} (hp : p ≠ .inr ∞) (hq : q ≠ .inr ∞)
+    (hlt : (toComplex p).re < (toComplex q).re) : ConvexPolygon 3 where
+  vertex := ![p, q, .inr ∞]
+  three_le := le_rfl
+  vertex_ne_vertex_add_one i := by
+    have hpq : p ≠ q := fun h ↦ hlt.ne (by rw [h])
+    fin_cases i
+    exacts [hpq, hq, hp.symm]
+  vertex_mem_extLeftHalfPlane i j hji hji' := by
+    have hpq : p ≠ q := fun h ↦ hlt.ne (by rw [h])
+    -- the vertices `p`, `q`, `∞` run counterclockwise: `∞` is above the semicircle from `p` to
+    -- `q`, and each of `p`, `q` is on the inner side of the vertical through the other
+    have h₀ : (∞ : OnePoint ℝ) ∈ boundaryLeftHalfPlane (geodesicFromTo p q) :=
+      ((isGeodesicFromTo_geodesicFromTo hpq).infty_mem_boundaryLeftHalfPlane_iff_re_lt hp hq).2
+        hlt
+    have h₁ : p ∈ extLeftHalfPlane (geodesicFromTo q (.inr ∞)) := by
+      refine (mem_extLeftHalfPlane_iff_sideForm_toComplex_neg hp).2 ?_
+      rw [(isGeodesicFromTo_geodesicFromTo hq).sideForm_eq_of_inr_infty_right hq]
+      linarith
+    have h₂ : q ∈ extLeftHalfPlane (geodesicFromTo (.inr ∞) p) := by
+      refine (mem_extLeftHalfPlane_iff_sideForm_toComplex_neg hq).2 ?_
+      rw [(isGeodesicFromTo_geodesicFromTo hp.symm).sideForm_eq_of_inr_infty_left hp]
+      linarith
+    fin_cases i <;> fin_cases j <;> simp [h₀, h₁, h₂] at hji hji' ⊢
+
+/-- The vertices of `ConvexPolygon.triangleInfty` are `p`, `q` and `∞`. -/
+@[simp]
+theorem ConvexPolygon.vertex_triangleInfty {p q : ℍ ⊕ OnePoint ℝ} (hp : p ≠ .inr ∞)
+    (hq : q ≠ .inr ∞) (hlt : (toComplex p).re < (toComplex q).re) :
+    (ConvexPolygon.triangleInfty hp hq hlt).vertex = ![p, q, .inr ∞] :=
+  (rfl)
+
 /-- For `α, β ≥ 0` with `α + β < π` there is a convex triangle with angles `α` and `β` at its
 first two vertices and the ideal vertex `∞` third. -/
 private theorem exists_convexPolygon_three_vertex_two_eq_infty {α β : ℝ} (hα : 0 ≤ α)
@@ -89,32 +125,16 @@ private theorem exists_convexPolygon_three_vertex_two_eq_infty {α β : ℝ} (h�
   have hlt : (toComplex p).re < (toComplex q).re := by
     rw [hpre, hqre]
     exact Real.cos_lt_cos_of_nonneg_of_le_pi hβ (by linarith) (by linarith)
-  have hpq : p ≠ q := fun h ↦ hlt.ne (by rw [h])
-  -- the vertices `p`, `q`, `∞` run counterclockwise: `∞` is above the semicircle from `p` to
-  -- `q`, and each of `p`, `q` is on the inner side of the vertical through the other
-  have h₀ : (∞ : OnePoint ℝ) ∈ boundaryLeftHalfPlane (geodesicFromTo p q) :=
-    ((isGeodesicFromTo_geodesicFromTo hpq).infty_mem_boundaryLeftHalfPlane_iff_re_lt hp hq).2 hlt
-  have h₁ : p ∈ extLeftHalfPlane (geodesicFromTo q (.inr ∞)) := by
-    refine (mem_extLeftHalfPlane_iff_sideForm_toComplex_neg hp).2 ?_
-    rw [(isGeodesicFromTo_geodesicFromTo hq).sideForm_eq_of_inr_infty_right hq]
-    linarith
-  have h₂ : q ∈ extLeftHalfPlane (geodesicFromTo (.inr ∞) p) := by
-    refine (mem_extLeftHalfPlane_iff_sideForm_toComplex_neg hq).2 ?_
-    rw [(isGeodesicFromTo_geodesicFromTo hp.symm).sideForm_eq_of_inr_infty_left hp]
-    linarith
-  refine ⟨⟨![p, q, .inr ∞], le_rfl, fun i ↦ ?_, fun i j hji hji' ↦ ?_⟩, ?_, ?_, ?_⟩
-  · fin_cases i
-    exacts [hpq, hq, hp.symm]
-  · fin_cases i <;> fin_cases j <;> simp [h₀, h₁, h₂] at hji hji' ⊢
+  refine ⟨ConvexPolygon.triangleInfty hp hq hlt, ?_, ?_, ?_⟩
   · have hsub : (0 : Fin 3) - 1 = 2 := by decide
-    rw [ConvexPolygon.interiorAngle_def, hsub, zero_add]
+    rw [ConvexPolygon.interiorAngle_def, hsub, zero_add, ConvexPolygon.vertex_triangleInfty]
     simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two, Matrix.tail_cons,
       Matrix.head_cons]
     rw [vertexAngle_infty_of_re_lt one_pos hp hq hpm hqm hlt, hpre, sub_zero, div_one,
       Real.cos_pi_sub, Real.arccos_neg, Real.arccos_cos hα (by linarith)]
     ring
   · have hadd : (1 : Fin 3) + 1 = 2 := by decide
-    rw [ConvexPolygon.interiorAngle_def, sub_self, hadd]
+    rw [ConvexPolygon.interiorAngle_def, sub_self, hadd, ConvexPolygon.vertex_triangleInfty]
     simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two, Matrix.tail_cons,
       Matrix.head_cons]
     rw [vertexAngle_infty_of_lt_re one_pos hp hq hpm hqm hlt, hqre, sub_zero, div_one,

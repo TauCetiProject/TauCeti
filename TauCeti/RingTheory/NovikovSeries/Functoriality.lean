@@ -53,7 +53,7 @@ covering and of its base.
 ## Main results
 
 * `TauCeti.NovikovSeries.map_mul`: the pushforward along a multiplicative coefficient map is
-  multiplicative.
+  multiplicative, and `TauCeti.NovikovSeries.map_one`: along a ring homomorphism it preserves `1`.
 * `TauCeti.NovikovSeries.mapRingHom_id` and `TauCeti.NovikovSeries.mapRingHom_comp`: the
   identity and composition laws.
 * `TauCeti.NovikovSeries.map_mem_periodFiltration`: the pushforward sends `U_C` into `U'_(c * C)`.
@@ -61,6 +61,8 @@ covering and of its base.
   pushforward is continuous for the period topologies.
 * `TauCeti.NovikovSeries.mapNonnegSubring_mem_posIdeal`: the pushforward maps the positive ideal
   into the positive ideal.
+* `TauCeti.NovikovSeries.map_unitsOneSubSingle`: the pushforward sends the unit `1 - r e^g` to
+  the unit `1 - ρ r e^(φ g)`.
 * `TauCeti.NovikovSeries.comap_subtype_algebraMap_mul`: the projection formula for restriction
   of coefficients to a subgroup `K`.
 
@@ -194,6 +196,12 @@ theorem mapRingHom_apply (a : NovikovSeries R H N) :
     mapRingHom ρ φ hφ a = map (ρ : R →+ S) φ hφ a :=
   (rfl)
 
+/-- The pushforward along a ring homomorphism of coefficients preserves `1`. -/
+@[simp]
+theorem map_one : map (ρ : R →+ S) φ hφ (1 : NovikovSeries R H N) = 1 := by
+  rw [one_def, map_single]
+  simp
+
 /-- The pushforward ring homomorphism along the identity coefficient and exponent maps is the
 identity. -/
 @[simp]
@@ -312,6 +320,14 @@ theorem mapNonnegSubring_mem_posIdeal {a : nonnegSubring R N} (ha : a ∈ posIde
   rw [mem_posIdeal, coe_mapNonnegSubring]
   exact exists_pos_mem_periodFiltration_iff.1
     ⟨c * C, mul_pos hc hC, map_mem_periodFiltration (ρ : R →+ S) φ _ hc.le hcφ haC⟩
+
+/-- The pushforward sends the unit `1 - r e^g` of the nonnegative subring to the unit
+`1 - ρ r e^(φ g)`. -/
+@[simp]
+theorem map_unitsOneSubSingle {g : H} (hg : 0 < N g) (hg' : 0 < N' (φ g)) (r : R) :
+    Units.map (mapNonnegSubring ρ φ hφ : nonnegSubring R N →* nonnegSubring S N')
+      (unitsOneSubSingle hg r) = unitsOneSubSingle hg' (ρ r) :=
+  Units.ext <| Subtype.ext <| by simp
 
 end TopologyRing
 
