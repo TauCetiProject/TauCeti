@@ -129,9 +129,10 @@ theorem IsolatesIn.exists_countable_model_not_omitsType (hT : T.Countable)
   exact ⟨M, _, hMc, hM, hMφ.2,
     not_omitsType_of_realize hMφ.1 fun ψ hψ => (hp ψ hψ).realize hT M hMφ.2⟩
 
-/-- **Isolated types are realized in models of a complete theory.** If `T` entails every sentence
-true in `N`, for instance when `T` is the `L_{ω₁ω}` theory of `N`, then `N` realizes every partial
-type isolated over `T`. The structure `N` may be empty and of any cardinality, in any universe. -/
+/-- **Isolated types are realized in structures whose theory `T` entails.** If `T` entails every
+sentence true in `N`, for instance when `T` is the `L_{ω₁ω}` theory of `N`, then `N` realizes every
+partial type isolated over `T`. The structure `N` may be empty and of any cardinality, in any
+universe. -/
 theorem IsolatesIn.not_omitsType {N : Type w} [L.Structure N] (h : IsolatesIn A T p)
     (hN : ∀ σ : L.Sentenceω, SentenceInf.Realize σ N → T.Entails σ) : ¬OmitsType N p := by
   obtain ⟨φ, -, hs, hp⟩ := h
