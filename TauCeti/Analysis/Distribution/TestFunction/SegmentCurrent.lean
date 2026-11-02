@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Distribution.TestFunction.ExtDeriv
 import Mathlib.Analysis.Calculus.Deriv.AffineMap
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 public import Mathlib.MeasureTheory.Integral.CurveIntegral.Basic
+import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.Convex.Topology
 import TauCeti.MeasureTheory.Integral.CurveIntegral.Line
 
@@ -162,10 +163,7 @@ theorem segmentCurrent_extDerivCLM (p q : E) (g : 𝓓(Ω, E [⋀^Fin 0]→L[ℝ
     have hx := hg.differentiable one_ne_zero (lineMap p q t)
     refine (ev.hasFDerivAt.comp_hasDerivAt t
       (hx.hasFDerivAt.comp_hasDerivAt t hasDerivAt_lineMap)).congr_deriv ?_
-    rw [extDerivCLM_apply, extDeriv_apply hx, Fin.sum_univ_one,
-      Subsingleton.elim (Fin.removeNth 0 ![q - p]) ![],
-      fderiv_continuousAlternatingMap_apply_const_apply hx]
-    simp [ev]
+    simp [TauCeti.extDeriv_apply_fin_one, ev]
   have hcont : Continuous fun t : ℝ => extDerivCLM g (lineMap p q t) ![q - p] :=
     ((ContinuousAlternatingMap.apply ℝ E ℝ ![q - p]).continuous.comp
       (extDerivCLM g).continuous).comp lineMap_continuous

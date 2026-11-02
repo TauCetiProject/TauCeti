@@ -49,6 +49,13 @@ theorem extDeriv_apply_pair {ω : E → E [⋀^Fin 1]→L[𝕜] F} (x v w : E) :
     funext i; fin_cases i; rfl
   simp [h₀, h₁, sub_eq_add_neg]
 
+/-- The exterior derivative of a zero-form on a single vector is its Fréchet derivative in that
+direction. This formula also respects the derivative's junk-value convention. -/
+theorem extDeriv_apply_fin_one {ω : E → E [⋀^Fin 0]→L[𝕜] F} (x v : E) :
+    extDeriv ω x ![v] = fderiv 𝕜 ω x v ![] := by
+  simp [extDeriv, ContinuousAlternatingMap.alternatizeUncurryFin_apply,
+    Subsingleton.elim (Fin.removeNth 0 ![v]) ![]]
+
 /-- The exterior derivative within a set does not change when the set is modified away from a
 point `y`, as long as it is unchanged near the base point (punctured at `y`). -/
 theorem extDerivWithin_congr_set' (y : E) (h : s =ᶠ[𝓝[{y}ᶜ] x] t) :
