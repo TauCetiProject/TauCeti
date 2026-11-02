@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 public import TauCeti.Algebra.Module.ZLattice.Family.Action
-public import TauCeti.Algebra.Module.ZLattice.Family.RotatedDisc
 public import TauCeti.Analysis.Complex.RootsOfUnity.Manifold
 
 /-!
