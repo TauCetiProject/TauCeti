@@ -35,8 +35,8 @@ theorem map_vecCons_removeNth_basis (f : M [⋀^Fin (n + 1)]→ₗ[R] N)
   rw [← f.neg_one_pow_smul_map_insertNth, Fin.insertNth_removeNth]
   conv_lhs => rw [← b.sum_repr w]
   rw [f.map_update_sum, Finset.sum_eq_single i]
-  · rw [f.map_update_smul, Function.update_eq_self, mul_smul, ← Int.cast_smul_eq_zsmul R,
-      Int.cast_pow, Int.cast_neg, Int.cast_one]
+  · rw [f.map_update_smul, Function.update_eq_self]
+    simp [mul_smul, ← Int.cast_smul_eq_zsmul R]
   · intro j _ hji
     rw [f.map_update_smul, f.map_update_self _ hji.symm, smul_zero]
   · simp

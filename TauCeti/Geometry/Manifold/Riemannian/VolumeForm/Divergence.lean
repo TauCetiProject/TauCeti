@@ -85,12 +85,13 @@ private theorem eventually_interior_riemannianVolumeForm_removeNth
   set e := trivializationAt E (TangentSpace I) x
   filter_upwards [hc, e.open_baseSet.mem_nhds (FiberBundle.mem_baseSet_trivializationAt' x)]
     with y hcy hy i
-  have hframe := coe_basisAt_reindex_eq_chartLocalFrame σ x hy
-  rw [RoughForm.interior_apply, ← hframe, ← ContinuousAlternatingMap.coe_toAlternatingMap,
-    AlternatingMap.map_vecCons_removeNth_basis, ContinuousAlternatingMap.coe_toAlternatingMap,
-    hframe, hcy, Module.Basis.repr_reindex_apply,
-    ← e.localFrameCoeff_apply_of_mem_baseSet (I := I) _ hy X, smul_eq_mul]
-  ring
+  have h := (riemannianVolumeForm o y).toAlternatingMap.map_vecCons_removeNth_basis
+    ((e.basisAt (Module.finBasis ℝ E) hy).reindex σ) (X y) i
+  rw [coe_basisAt_reindex_eq_chartLocalFrame σ x hy] at h
+  simp only [ContinuousAlternatingMap.coe_toAlternatingMap, hcy, Module.Basis.repr_reindex_apply,
+    ← e.localFrameCoeff_apply_of_mem_baseSet (I := I) _ hy X, smul_eq_mul] at h
+  rw [RoughForm.interior_apply]
+  linear_combination h
 
 /-- The directional derivative of `(ι_X dV)(e₁, …, êᵢ, …, eₙ)` along `eᵢ` at `x` is
 `(-1)^i c ∂ᵢ (ρ Xⁱ)`. -/
