@@ -16,10 +16,17 @@ import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 Let `H` be a finite-index subgroup of `SL(2, ℤ)`. In every weight `k` the cusp forms in `M_k(H)`
 have codimension at most the number of cusps
 (`TauCeti.ModularForm.finrank_le_card_cuspOrbit_of_disjoint`), and in weight two at most the number
-of cusps minus one. In weight one the codimension is at most **half** the number of cusps carrying
-a constant term, which are the regular cusps:
+of cusps minus one. In weight one the codimension is at most **half** the number of cusps:
 
-`2 dim (M₁(H) / S₁(H)) ≤ ε∞^reg`.
+`2 dim (M₁(H) / S₁(H)) ≤ ε∞`.
+
+More precisely, it is at most half the size of any family of cusp representatives meeting every
+cusp at which some weight-one form has a nonzero constant term. Not every cusp is of this kind: in
+odd weight the constant term vanishes at every irregular cusp
+(`ModularForm.constantTermAt_eq_zero_of_odd`), and at every cusp when `-1 ∈ H`. Applying the
+bound to representatives of the regular cusps therefore gives `2 dim (M₁(H) / S₁(H)) ≤ ε∞^reg`,
+where `ε∞^reg` is the number of regular cusps. This count can exceed the number of cusps carrying
+a nonzero constant term in weight one, for instance when `-1 ∈ H`.
 
 The constant terms of weight-one forms satisfy a quadratic relation. For `f, g ∈ M₁(H)` the
 product `f g` has weight two, and the weight-two residue relation for `f g`
@@ -29,12 +36,12 @@ constant terms of `f` and `g` vanishes. The constant term of a weight-one form a
 determined by the cusp up to a sign, which the product of two constant terms at the same
 representative does not see. So, reading the constant terms at one representative of each cusp,
 the image of `M₁(H)` is a totally isotropic subspace for a diagonal bilinear form with positive
-weights, and its dimension is at most half the number of representatives. Cusps without a
-constant term in weight one, such as the irregular cusps, can be left out.
+weights, and its dimension is at most half the number of representatives.
 
-Consequently a family of `ε∞^reg / 2` weight-one forms, such as Eisenstein series, which is
-linearly independent modulo the cusp forms spans a complement of `S₁(H)` in `M₁(H)`. This is how
-the weight-one Eisenstein series are compared with the cusp forms.
+Consequently, if `r : ι → SL(2, ℤ)` is a family of representatives as above, a family of
+`Nat.card ι / 2` weight-one forms that is linearly independent modulo the cusp forms spans a
+complement of `S₁(H)` in `M₁(H)`. This is the upper bound needed to show that weight-one
+Eisenstein series span such a complement.
 
 ## Main results
 
@@ -86,36 +93,6 @@ namespace TauCeti.ModularForm
 
 variable {H : Subgroup SL(2, ℤ)} [H.FiniteIndex]
 
-/-- Integral matrices whose cosets lie in the same cusp translation orbit have inverses
-representing the same cusp. -/
-private lemma cuspOrbitOfSL2Z_inv_eq_of_mk_eq {γ γ' : SL(2, ℤ)}
-    (h : (⟦(QuotientGroup.mk ((mapGL ℝ).rangeRestrict γ) :
-        𝒮ℒ ⧸ (H.map (mapGL ℝ)).subgroupOf 𝒮ℒ)⟧ : CuspTranslationOrbit (H.map (mapGL ℝ))) =
-      ⟦QuotientGroup.mk ((mapGL ℝ).rangeRestrict γ')⟧) :
-    H.cuspOrbitOfSL2Z γ⁻¹ = H.cuspOrbitOfSL2Z γ'⁻¹ := by
-  obtain ⟨⟨_, hg⟩, hgq⟩ := MulAction.orbitRel_apply.mp (Quotient.exact h)
-  obtain ⟨j, rfl⟩ := Subgroup.mem_zpowers_iff.mp hg
-  -- The orbit relation says `γ = Tʲ γ' h₀` for some `h₀ ∈ H`.
-  have hmk : (QuotientGroup.mk (TSL ^ j * (mapGL ℝ).rangeRestrict γ') :
-      𝒮ℒ ⧸ (H.map (mapGL ℝ)).subgroupOf 𝒮ℒ) = QuotientGroup.mk ((mapGL ℝ).rangeRestrict γ) := by
-    simpa only [Subgroup.mk_smul, MulAction.Quotient.smul_mk, smul_eq_mul] using hgq
-  obtain ⟨h₀, hh₀, he⟩ :=
-    Subgroup.mem_map.mp (Subgroup.mem_subgroupOf.mp (QuotientGroup.eq.mp hmk))
-  have hcoe : (((TSL ^ j * (mapGL ℝ).rangeRestrict γ')⁻¹ * (mapGL ℝ).rangeRestrict γ : 𝒮ℒ) :
-      GL (Fin 2) ℝ) = mapGL ℝ ((ModularGroup.T ^ j * γ')⁻¹ * γ) := by
-    rw [Subgroup.coe_mul, InvMemClass.coe_inv, Subgroup.coe_mul, coe_TSL_zpow,
-      MonoidHom.coe_rangeRestrict, MonoidHom.coe_rangeRestrict,
-      TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL, map_mul, map_inv, map_mul]
-  have hγ : γ = ModularGroup.T ^ j * γ' * h₀ := by
-    rw [mapGL_injective (he.trans hcoe)]
-    group
-  refine (H.cuspOrbitOfSL2Z_eq_iff _ _).mpr ⟨h₀⁻¹, inv_mem hh₀, ?_⟩
-  have hT : γ⁻¹⁻¹ * h₀⁻¹ * γ'⁻¹ = ModularGroup.T ^ j := by
-    rw [inv_inv, hγ]
-    group
-  rw [hT]
-  simp [ModularGroup.coe_T_zpow]
-
 /-- **The quadratic relation at representatives of distinct cusps.** If the `r i` represent
 distinct cusps and meet every cusp carrying a constant term in weight one, then there are positive
 integer weights `w i` with `∑ i, w i aᵢ(f) aᵢ(g) = 0` for all weight-one forms `f` and `g`, where
@@ -136,7 +113,8 @@ private lemma exists_sum_mul_constantTermAt_mul_eq_zero {ι : Type*} [Fintype ι
   have hP (γ : SL(2, ℤ)) (i : ι) :
       P ⟦QuotientGroup.mk ((mapGL ℝ).rangeRestrict γ)⟧ i ↔
         H.cuspOrbitOfSL2Z γ⁻¹ = H.cuspOrbitOfSL2Z (r i) :=
-    ⟨fun ⟨_, hc, hγ⟩ ↦ (cuspOrbitOfSL2Z_inv_eq_of_mk_eq hc).trans hγ, fun hγ ↦ ⟨γ, rfl, hγ⟩⟩
+    ⟨fun ⟨_, hc, hγ⟩ ↦ (cuspOrbitOfSL2Z_inv_eq_of_cuspTranslationOrbit_mk_eq hc).trans hγ,
+      fun hγ ↦ ⟨γ, rfl, hγ⟩⟩
   refine ⟨fun i ↦ ∑ c ∈ Finset.univ.filter (P · i), cuspTranslationOrbitWidth c,
     fun i ↦ Finset.sum_pos (fun c _ ↦ cuspTranslationOrbitWidth_pos c)
       ⟨⟦QuotientGroup.mk ((mapGL ℝ).rangeRestrict (r i)⁻¹)⟧,
@@ -154,13 +132,7 @@ private lemma exists_sum_mul_constantTermAt_mul_eq_zero {ι : Type*} [Fintype ι
       · have hiff (j : ι) : H.cuspOrbitOfSL2Z γ⁻¹ = H.cuspOrbitOfSL2Z (r j) ↔ i = j :=
           ⟨fun hj ↦ hinj i j (hi.trans hj), fun hj ↦ hj ▸ hi.symm⟩
         simp only [hiff, Finset.sum_ite_eq, Finset.mem_univ, ite_true]
-        obtain ⟨u, hu⟩ :=
-          exists_constantTermAt_eq_zpow_smul_of_cuspOrbitOfSL2Z_eq (k := 1) hi
-        rw [hu, LinearMap.smul_apply, LinearMap.smul_apply, smul_eq_mul, smul_eq_mul,
-          zpow_one]
-        have hu : ((u : ℤ) : ℂ) * ((u : ℤ) : ℂ) = 1 := by
-          rw [← Int.cast_mul, ← Units.val_mul, Int.units_mul_self, Units.val_one, Int.cast_one]
-        linear_combination (constantTermAt (r i) f * constantTermAt (r i) g) * hu
+        exact constantTermAt_mul_constantTermAt_eq_of_cuspOrbitOfSL2Z_eq (by norm_num) hi f g
       · rw [h0 f, zero_mul]
         refine (Finset.sum_eq_zero fun j _ ↦ ?_).symm
         split_ifs with hj
