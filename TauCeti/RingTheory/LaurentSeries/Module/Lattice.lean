@@ -95,7 +95,16 @@ theorem restrictScalars_powerSeriesLattice (a : ℤ) :
 theorem powerSeriesLattice_antitone : Antitone (powerSeriesLattice R V) :=
   fun _ _ h _ hf ↦ lattice_antitone R V h hf
 
-variable {R V} in
+end Semiring
+
+end TauCeti.HahnModule
+
+namespace HahnModule
+
+open TauCeti.HahnModule
+
+variable {R V : Type*} [Semiring R] [AddCommMonoid V] [Module R V]
+
 /-- Multiplying by a power of `X` translates the power-series lattice bound. -/
 theorem X_pow_smul_mem_powerSeriesLattice_iff (a : ℤ) (n : ℕ) (f : HahnModule ℤ R V) :
     (PowerSeries.X ^ n : R⟦X⟧) • f ∈ powerSeriesLattice R V (a + n) ↔
@@ -103,7 +112,11 @@ theorem X_pow_smul_mem_powerSeriesLattice_iff (a : ℤ) (n : ℕ) (f : HahnModul
   rw [_root_.HahnModule.powerSeries_smul, HahnSeries.ofPowerSeries_X_pow]
   simp only [mem_powerSeriesLattice, single_smul_mem_lattice_iff]
 
-end Semiring
+end HahnModule
+
+namespace TauCeti.HahnModule
+
+open _root_.HahnModule HahnSeries
 
 section CommSemiring
 
