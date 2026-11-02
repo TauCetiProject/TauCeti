@@ -55,7 +55,7 @@ theorem linearIndependent_row_one [DecidableEq m] :
     LinearIndependent R (1 : Matrix m m R).row := by
   convert Pi.linearIndependent_single_one m R using 1
   ext i j
-  simp [one_apply, Pi.single_apply, eq_comm]
+  exact one_eq_pi_single
 
 /-- The rows of a systematic matrix `[I | A]` are linearly independent. -/
 theorem linearIndependent_row_one_fromCols [DecidableEq m] (A : Matrix m n₂ R) :
