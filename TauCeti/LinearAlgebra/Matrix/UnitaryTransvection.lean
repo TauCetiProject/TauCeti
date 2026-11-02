@@ -95,8 +95,10 @@ theorem toLin'_unitaryTransvection (a : R) :
   rw [toLin'_apply, unitaryTransvection_mulVec, LinearMap.transvection.apply,
     LinearMap.smul_apply, toBilin'_apply', smul_eq_mul]
 
-/-- **Transvections along an isotropic vector form a one-parameter group.** If `B(v, v) = 0`,
-then `τ_{v,a} τ_{v,b} = τ_{v,a+b}`. -/
+/-- **The parameter of a transvection along an isotropic vector is additive.** If `B(v, v) = 0`,
+then `τ_{v,a} τ_{v,b} = τ_{v,a+b}`, so `a ↦ τ_{v,a}` turns addition into multiplication. Over a
+commutative ring, where `τ_{v,-a}` inverts `τ_{v,a}`, these transvections form a one-parameter
+group. -/
 theorem unitaryTransvection_mul_unitaryTransvection (hv : (σ ∘ v) ⬝ᵥ (Q *ᵥ v) = 0) (a b : R) :
     Q.unitaryTransvection σ v a * Q.unitaryTransvection σ v b =
       Q.unitaryTransvection σ v (a + b) := by
