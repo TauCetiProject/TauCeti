@@ -186,10 +186,8 @@ theorem borelReducible_bot_iff_not_countable_quotient [MeasurableSpace X] [Stand
     (⊥ : Setoid (ℕ → Bool)).BorelReducible E ↔ ¬ Countable (Quotient E) := by
   refine ⟨fun h hc => ?_, fun hc => ?_⟩
   · -- A reduction of equality is injective on classes, so Cantor space would be countable.
-    obtain ⟨f, -, hfE⟩ := borelReducible_iff.1 h
-    have hinj : Function.Injective fun a => Quotient.mk E (f a) :=
-      fun a b hab => (hfE a b).2 (Quotient.exact hab)
-    have := mk_le_aleph0_iff.2 hinj.countable
+    obtain ⟨g, -, hg⟩ := h.exists_measurable_injective_quotient
+    have := mk_le_aleph0_iff.2 (hg.comp quotientBotEquiv.symm.injective).countable
     exact (by simpa using aleph0_lt_continuum : ℵ₀ < #(ℕ → Bool)).not_ge this
   · let := upgradeStandardBorel X
     exact ((silver_dichotomy E hE).resolve_left hc).borelReducible_bot
