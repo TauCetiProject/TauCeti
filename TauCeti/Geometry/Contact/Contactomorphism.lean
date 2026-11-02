@@ -164,6 +164,7 @@ theorem IsContactomorphism.map_kerDistribution (h : e.IsContactomorphism α β) 
 
 variable (α) in
 /-- The identity is a contactomorphism. -/
+@[simp]
 theorem isContactomorphism_refl : (Diffeomorph.refl I M ∞).IsContactomorphism α α := by
   simp [IsContactomorphism]
 
@@ -171,10 +172,8 @@ theorem isContactomorphism_refl : (Diffeomorph.refl I M ∞).IsContactomorphism 
 theorem IsContactomorphism.trans {γ : SmoothForm K P ℝ 1} {e' : N ≃ₘ⟮J, K⟯ P}
     (h : e.IsContactomorphism α β) (h' : e'.IsContactomorphism β γ) :
     (e.trans e').IsContactomorphism α γ := by
-  have hcomp := SmoothForm.mpullback_comp (F := ℝ) (k := 1) e e' e.contMDiff e'.contMDiff
-  rw [IsContactomorphism, ← h]
+  rw [IsContactomorphism, SmoothForm.mpullback_trans, ← h]
   funext x
-  simp only [coe_trans, hcomp, LinearMap.comp_apply]
   rw [SmoothForm.kerDistribution_mpullback, h', ← SmoothForm.kerDistribution_mpullback]
 
 /-- The inverse of a contactomorphism is a contactomorphism. -/
@@ -188,28 +187,33 @@ theorem IsContactomorphism.symm (h : e.IsContactomorphism α β) :
   funext y
   rw [SmoothForm.kerDistribution_mpullback, SmoothForm.kerDistribution_mpullback, h]
 
+/-- Being a contactomorphism depends only on the hyperplane field of the target form, not on its
+coorientation. -/
+@[simp]
+theorem isContactomorphism_neg_right :
+    e.IsContactomorphism α (-β) ↔ e.IsContactomorphism α β := by
+  simp only [IsContactomorphism, map_neg, SmoothForm.kerDistribution_neg]
+
+/-- Being a contactomorphism is unchanged by rescaling the target form by a nonzero constant. -/
+@[simp]
+theorem isContactomorphism_smul_right {c : ℝ} (hc : c ≠ 0) :
+    e.IsContactomorphism α (c • β) ↔ e.IsContactomorphism α β := by
+  simp only [IsContactomorphism, map_smul, SmoothForm.kerDistribution_smul hc]
+
 /-- For a nowhere vanishing form `α`: a diffeomorphism is a contactomorphism exactly when it pulls
 `β` back to `f α` for a unique nowhere vanishing smooth function `f`. -/
 theorem isContactomorphism_iff_existsUnique_fun_smul (hα : ∀ x, α.1 x ≠ 0) :
     e.IsContactomorphism α β ↔
       ∃! f : M → ℝ, ContMDiff I 𝓘(ℝ) ∞ f ∧ (∀ x, f x ≠ 0) ∧
         ∀ x, (SmoothForm.mpullback e e.contMDiff β).1 x = f x • α.1 x :=
-  ⟨fun h ↦ (SmoothForm.kerDistribution_eq_iff_existsUnique_fun_smul hα
-      fun x ↦ (SmoothForm.apply_eq_zero_iff_of_kerDistribution_eq h x).not.mpr (hα x)).mp h,
-    fun ⟨_, ⟨_, hf₀, hmul⟩, _⟩ ↦ SmoothForm.kerDistribution_of_eq_smul hf₀ hmul⟩
+  SmoothForm.kerDistribution_eq_iff_existsUnique_fun_smul hα
 
 /-- A contactomorphism preserves and reflects contactness. -/
 theorem IsContactomorphism.isContactForm_iff (h : e.IsContactomorphism α β) :
     α.IsContactForm ↔ β.IsContactForm := by
-  have hzero := SmoothForm.apply_eq_zero_iff_of_kerDistribution_eq h
   rw [← e.isContactForm_mpullback_iff β]
-  constructor
-  · intro hα
-    exact (hα.isContactForm_iff_of_kerDistribution_eq h).mpr
-      fun x ↦ (hzero x).not.mpr (hα.apply_ne_zero x)
-  · intro hβ
-    exact (hβ.isContactForm_iff_of_kerDistribution_eq (Eq.symm h)).mpr
-      fun x ↦ (hzero x).not.mp (hβ.apply_ne_zero x)
+  exact ⟨fun hα ↦ hα.isContactForm_of_kerDistribution_eq h,
+    fun hβ ↦ hβ.isContactForm_of_kerDistribution_eq (Eq.symm h)⟩
 
 /-! ### Coorientation-preserving contactomorphisms -/
 
@@ -226,13 +230,12 @@ theorem PreservesCoorientation.isContactomorphism (h : e.PreservesCoorientation 
 theorem PreservesCoorientation.trans {γ : SmoothForm K P ℝ 1} {e' : N ≃ₘ⟮J, K⟯ P}
     (h : e.PreservesCoorientation α β) (h' : e'.PreservesCoorientation β γ) :
     (e.trans e').PreservesCoorientation α γ := by
-  have hcomp := SmoothForm.mpullback_comp (F := ℝ) (k := 1) e e' e.contMDiff e'.contMDiff
   intro x
   obtain ⟨c, hc, hx⟩ := h x
   obtain ⟨c', hc', hx'⟩ := h' (e x)
   refine ⟨c' * c, mul_pos hc' hc, ?_⟩
-  simp only [coe_trans, hcomp, LinearMap.comp_apply]
-  rw [(SmoothForm.mpullback_apply_eq_smul_iff e _ _ c' x).mpr hx', hx, smul_smul]
+  rw [SmoothForm.mpullback_trans, (SmoothForm.mpullback_apply_eq_smul_iff e _ _ c' x).mpr hx', hx,
+    smul_smul]
 
 /-- The inverse of a coorientation-preserving diffeomorphism preserves the coorientation. -/
 theorem PreservesCoorientation.symm (h : e.PreservesCoorientation α β) :
@@ -294,12 +297,14 @@ theorem IsStrictContactomorphism.isContactomorphism (h : e.IsStrictContactomorph
 
 variable (α) in
 /-- The identity is a strict contactomorphism. -/
+@[simp]
 theorem isStrictContactomorphism_refl :
     (Diffeomorph.refl I M ∞).IsStrictContactomorphism α α := by
   simp [IsStrictContactomorphism]
 
 variable (α) in
 /-- The identity preserves the coorientation. -/
+@[simp]
 theorem preservesCoorientation_refl : (Diffeomorph.refl I M ∞).PreservesCoorientation α α :=
   (isStrictContactomorphism_refl α).preservesCoorientation
 
@@ -307,9 +312,7 @@ theorem preservesCoorientation_refl : (Diffeomorph.refl I M ∞).PreservesCoorie
 theorem IsStrictContactomorphism.trans {γ : SmoothForm K P ℝ 1} {e' : N ≃ₘ⟮J, K⟯ P}
     (h : e.IsStrictContactomorphism α β) (h' : e'.IsStrictContactomorphism β γ) :
     (e.trans e').IsStrictContactomorphism α γ := by
-  have hcomp := SmoothForm.mpullback_comp (F := ℝ) (k := 1) e e' e.contMDiff e'.contMDiff
-  simp only [IsStrictContactomorphism, coe_trans, hcomp, LinearMap.comp_apply]
-  rw [h', h]
+  rw [IsStrictContactomorphism, SmoothForm.mpullback_trans, h', h]
 
 /-- The inverse of a strict contactomorphism is a strict contactomorphism. -/
 theorem IsStrictContactomorphism.symm (h : e.IsStrictContactomorphism α β) :

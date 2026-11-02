@@ -305,6 +305,14 @@ theorem mpullback_symm_eq_of_mpullback_eq {φ : M ≃ₘ⟮I, I'⟯ M'} {α : Sm
   have hid : ⇑φ ∘ ⇑φ.symm = id := funext φ.apply_symm_apply
   simp only [hid, mpullback_id, LinearMap.id_apply]
 
+/-- Pullback along a composite of diffeomorphisms is the composite of the pullbacks. -/
+theorem mpullback_trans (φ : M ≃ₘ⟮I, I'⟯ M') (ψ : M' ≃ₘ⟮I', I''⟯ M'')
+    (γ : SmoothForm I'' M'' F k) :
+    mpullback (φ.trans ψ) (φ.trans ψ).contMDiff γ =
+      mpullback φ φ.contMDiff (mpullback ψ ψ.contMDiff γ) := by
+  rw [← LinearMap.comp_apply, ← mpullback_comp]
+  rfl
+
 /-- Pullback along a diffeomorphism `φ` transports pointwise proportionality: at `x`, the
 pullback of `α` is `c` times the pullback of `β` exactly when `α` is `c` times `β` at `φ x`. -/
 theorem mpullback_apply_eq_smul_iff (φ : M ≃ₘ⟮I, I'⟯ M') (α β : SmoothForm I' M' F k) (c : ℝ)
