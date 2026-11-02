@@ -21,10 +21,6 @@ vectors, and curvature with two vertical inputs annihilates horizontal vectors. 
 identities remove the off-diagonal components when taking the Ricci contraction of the
 warped-product curvature tensor. They do not assert that mixed sectional curvature vanishes.
 
-The proofs use the Levi-Civita formula on product fields. In the horizontal calculation the
-second derivatives of `f` cancel by the commutator identity; in the vertical calculation the
-remaining terms cancel by torsion-freeness on the fibre.
-
 ## References
 
 * B. O'Neill, *Semi-Riemannian Geometry*, Academic Press (1983), Chapter 7, Proposition 42.
@@ -54,6 +50,10 @@ variable
   [IsContMDiffRiemannianBundle (I.prod J) ∞ (E × F)
     (fun p : M × N ↦ TangentSpace (I.prod J) p)]
   {f : M → ℝ}
+
+/- The proofs use the Levi-Civita formula on product fields. In the horizontal calculation the
+second derivatives of `f` cancel by the commutator identity; in the vertical calculation the
+remaining terms cancel by torsion-freeness on the fibre. -/
 
 private theorem IsWarpedProduct.cov_horizontal_vertical (h : IsWarpedProduct I J N f)
     (hf : MDifferentiable I 𝓘(ℝ) f)
