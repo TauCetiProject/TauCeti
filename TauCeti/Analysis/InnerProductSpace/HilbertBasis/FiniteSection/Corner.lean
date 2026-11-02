@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.FiniteSection.Basic
-public import TauCeti.Analysis.InnerProductSpace.Adjoint
 
 /-!
 # Finite operators and their orthogonal corners
@@ -40,30 +39,7 @@ namespace HilbertBasis
 theorem finiteSection_cornerEmbedding (b : HilbertBasis ℕ 𝕜 H) (n : ℕ)
     (A : EuclideanSpace 𝕜 (Fin (n + 1)) →L[𝕜] EuclideanSpace 𝕜 (Fin (n + 1))) :
     ((b.finiteInclusion n).cornerEmbedding A).finiteSection b n = A := by
-  calc
-    _ = (b.finiteInclusion n).toContinuousLinearMap.adjoint ∘L
-        (b.finiteInclusion n).cornerEmbedding A ∘L
-          (b.finiteInclusion n).toContinuousLinearMap := by
-      ext x i
-      simp only [finiteSection_apply, comp_apply, adjoint_finiteInclusion,
-        coordinateCutoff_apply, LinearIsometry.coe_toContinuousLinearMap]
-    _ = A := (b.finiteInclusion n).adjoint_comp_cornerEmbedding_comp A
-
-/-- Extending a finite identity gives the finite-coordinate projection. -/
-theorem cornerEmbedding_finiteInclusion_id (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
-    (b.finiteInclusion n).cornerEmbedding
-      (ContinuousLinearMap.id 𝕜 (EuclideanSpace 𝕜 (Fin (n + 1)))) = b.finiteProjection n := by
-  simp only [LinearIsometry.cornerEmbedding_id, adjoint_finiteInclusion,
-    finiteInclusion_comp_coordinateCutoff]
-
-/-- Extending the compression of an ambient operator is its existing zero-extended section. -/
-@[simp]
-theorem cornerEmbedding_finiteSection (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) (T : H →L[𝕜] H) :
-    (b.finiteInclusion n).cornerEmbedding (T.finiteSection b n) =
-      T.zeroExtendedFiniteSection b n := by
-  ext x
-  rw [LinearIsometry.cornerEmbedding_apply_apply, adjoint_finiteInclusion,
-    zeroExtendedFiniteSection_apply]
+  rw [finiteSection_def, LinearIsometry.compression_cornerEmbedding]
 
 /-- Every operator supported on the finite-coordinate corner has a unique finite matrix
 representative. -/
@@ -72,17 +48,8 @@ theorem existsUnique_cornerEmbedding_eq_iff (b : HilbertBasis ℕ 𝕜 H) (n : �
     (∃! A, (b.finiteInclusion n).cornerEmbedding A = T) ↔
       b.finiteProjection n ∘L T ∘L b.finiteProjection n = T := by
   rw [(b.finiteInclusion n).cornerEmbedding.injective.existsUnique_iff_exists]
-  simpa only [Set.mem_range, adjoint_finiteInclusion, finiteInclusion_comp_coordinateCutoff] using
+  simpa only [Set.mem_range, adjoint_finiteInclusion, finiteInclusion_comp_coordinateCutoff,
+    compression_def, adjoint_finiteProjection] using
     (b.finiteInclusion n).mem_range_cornerEmbedding_iff T
 
 end HilbertBasis
-
-namespace ContinuousLinearMap
-
-/-- A finite section and its zero extension have exactly the same operator norm. -/
-@[simp]
-theorem norm_zeroExtendedFiniteSection_eq (T : H →L[𝕜] H) (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
-    ‖T.zeroExtendedFiniteSection b n‖ = ‖T.finiteSection b n‖ := by
-  rw [← b.cornerEmbedding_finiteSection n T, LinearIsometry.norm_map]
-
-end ContinuousLinearMap

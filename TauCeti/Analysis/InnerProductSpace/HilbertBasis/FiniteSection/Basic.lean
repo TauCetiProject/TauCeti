@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import Mathlib.Analysis.InnerProductSpace.PiL2
-public import TauCeti.Analysis.Normed.Operator.Basic
+public import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Family
 
 /-!
@@ -170,7 +169,12 @@ namespace ContinuousLinearMap
 /-- Compress an operator to the first `n + 1` coordinates of a Hilbert basis. -/
 noncomputable def finiteSection (T : H →L[𝕜] H) (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
     EuclideanSpace 𝕜 (Fin (n + 1)) →L[𝕜] EuclideanSpace 𝕜 (Fin (n + 1)) :=
-  b.coordinateCutoff n ∘L T ∘L (b.finiteInclusion n).toContinuousLinearMap
+  T.compression (b.finiteInclusion n).toContinuousLinearMap
+
+/-- A finite section is compression along the finite-coordinate inclusion. -/
+theorem finiteSection_def (T : H →L[𝕜] H) (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
+    T.finiteSection b n = T.compression (b.finiteInclusion n).toContinuousLinearMap :=
+  (rfl)
 
 /-- Coordinates of a compressed operator are coordinates of its action on the finite expansion. -/
 @[simp]
@@ -229,12 +233,12 @@ theorem finiteSection_id (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
 @[simp]
 theorem adjoint_finiteSection (T : H →L[𝕜] H) (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
     (T.finiteSection b n).adjoint = T.adjoint.finiteSection b n := by
-  simp only [finiteSection, adjoint_comp, HilbertBasis.adjoint_coordinateCutoff,
-    HilbertBasis.adjoint_finiteInclusion, comp_assoc]
+  simp only [finiteSection, adjoint_compression]
 
 /-- Finite-section operator norms are bounded by the original operator norm. -/
 theorem norm_finiteSection_le (T : H →L[𝕜] H) (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
     ‖T.finiteSection b n‖ ≤ ‖T‖ := by
+  rw [finiteSection, compression_def, HilbertBasis.adjoint_finiteInclusion]
   calc
     _ ≤ ‖b.coordinateCutoff n‖ * (‖T‖ * ‖(b.finiteInclusion n).toContinuousLinearMap‖) :=
       (opNorm_comp_le _ _).trans (mul_le_mul_of_nonneg_left (opNorm_comp_le _ _)
@@ -248,7 +252,7 @@ theorem norm_finiteSection_le (T : H →L[𝕜] H) (b : HilbertBasis ℕ 𝕜 H)
 /-- Include a finite section back into the full Hilbert space, with zero outside its coordinates. -/
 noncomputable def zeroExtendedFiniteSection (T : H →L[𝕜] H)
     (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) : H →L[𝕜] H :=
-  (b.finiteInclusion n).toContinuousLinearMap ∘L T.finiteSection b n ∘L b.coordinateCutoff n
+  (b.finiteInclusion n).cornerEmbedding (T.finiteSection b n)
 
 /-- The zero extension applies the finite section to the restricted coordinates and includes the
 result. -/
@@ -256,7 +260,8 @@ theorem zeroExtendedFiniteSection_apply (T : H →L[𝕜] H) (b : HilbertBasis �
     (x : H) :
     T.zeroExtendedFiniteSection b n x =
       b.finiteInclusion n (T.finiteSection b n (b.coordinateCutoff n x)) := by
-  simp [zeroExtendedFiniteSection]
+  simp only [zeroExtendedFiniteSection, LinearIsometry.cornerEmbedding_apply_apply,
+    HilbertBasis.adjoint_finiteInclusion]
 
 /-- Zero extension of finite sections preserves the zero operator. -/
 @[simp]
@@ -287,27 +292,26 @@ theorem zeroExtendedFiniteSection_smul (c : 𝕜) (T : H →L[𝕜] H)
     (c • T).zeroExtendedFiniteSection b n = c • T.zeroExtendedFiniteSection b n := by
   simp [zeroExtendedFiniteSection]
 
+/-- A finite section and its zero extension have exactly the same operator norm. -/
+@[simp]
+theorem norm_zeroExtendedFiniteSection_eq (T : H →L[𝕜] H) (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
+    ‖T.zeroExtendedFiniteSection b n‖ = ‖T.finiteSection b n‖ := by
+  rw [zeroExtendedFiniteSection, LinearIsometry.norm_map]
+
 /-- The norm of a zero-extended finite section is bounded by the original operator norm. -/
 theorem norm_zeroExtendedFiniteSection_le (T : H →L[𝕜] H)
     (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
     ‖T.zeroExtendedFiniteSection b n‖ ≤ ‖T‖ := by
-  calc
-    _ ≤ ‖(b.finiteInclusion n).toContinuousLinearMap‖ *
-        (‖T.finiteSection b n‖ * ‖b.coordinateCutoff n‖) :=
-      (opNorm_comp_le _ _).trans (mul_le_mul_of_nonneg_left (opNorm_comp_le _ _)
-        (norm_nonneg _))
-    _ ≤ 1 * (‖T‖ * 1) := by
-      gcongr
-      · exact (b.finiteInclusion n).norm_toContinuousLinearMap_le
-      · exact T.norm_finiteSection_le b n
-      · exact b.norm_coordinateCutoff_le n
-    _ = ‖T‖ := by simp
+  rw [norm_zeroExtendedFiniteSection_eq]
+  exact T.norm_finiteSection_le b n
 
 /-- The zero extension is the two-sided compression by the finite-coordinate projection. -/
 theorem zeroExtendedFiniteSection_eq (T : H →L[𝕜] H)
     (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
     T.zeroExtendedFiniteSection b n = b.finiteProjection n ∘L T ∘L b.finiteProjection n := by
-  simp only [zeroExtendedFiniteSection, finiteSection, HilbertBasis.finiteProjection, comp_assoc]
+  rw [zeroExtendedFiniteSection, finiteSection, LinearIsometry.cornerEmbedding_compression,
+    HilbertBasis.adjoint_finiteInclusion, HilbertBasis.finiteInclusion_comp_coordinateCutoff,
+    compression_def, HilbertBasis.adjoint_finiteProjection]
 
 /-- Restricting a zero extension to finite coordinates recovers its finite section. -/
 @[simp]
@@ -322,8 +326,8 @@ theorem coordinateCutoff_zeroExtendedFiniteSection (T : H →L[𝕜] H)
 theorem adjoint_zeroExtendedFiniteSection (T : H →L[𝕜] H)
     (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) :
     (T.zeroExtendedFiniteSection b n).adjoint = T.adjoint.zeroExtendedFiniteSection b n := by
-  simp only [zeroExtendedFiniteSection, adjoint_comp, adjoint_finiteSection,
-    HilbertBasis.adjoint_coordinateCutoff, HilbertBasis.adjoint_finiteInclusion, comp_assoc]
+  simp only [zeroExtendedFiniteSection, LinearIsometry.adjoint_cornerEmbedding,
+    adjoint_finiteSection]
 
 /-- Zero extensions of finite sections converge strongly to the original bounded operator. -/
 theorem tendsto_zeroExtendedFiniteSection (T : H →L[𝕜] H)
