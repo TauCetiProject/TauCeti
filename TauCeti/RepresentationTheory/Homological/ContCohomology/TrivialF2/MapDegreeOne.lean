@@ -101,8 +101,7 @@ theorem trivialF2Map1Equiv_eqToHom (φ : H ≃ₜ* G)
           (trivialF2CoeffHom_smul ((φ : H →ₜ* G) : H →* G)) y) := by
   rw [← modelEquiv_apply, trivialF2Map1Equiv, AddEquiv.trans_apply, AddEquiv.symm_apply_apply,
     AddEquiv.trans_apply, continuousCohomologyMap1Equiv_apply, modelEquiv_apply]
-  -- `trivialF2CoeffHom` is by definition the additive map underlying this coefficient equivalence.
-  rfl
+  simp only [trivialF2CoeffHom_def]
 
 /-- **The inverse transport is the transport along the inverse isomorphism.** -/
 @[simp]
