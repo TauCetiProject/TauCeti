@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.GeneralLinear.Standard
 public import TauCeti.Algebra.Lie.SpecialLinear.Root.Basis
 public import TauCeti.Algebra.Lie.Weights.Basis
 
@@ -362,13 +361,13 @@ characters and supports directly, over any field. In characteristic `2` or `3` s
 roots coincide, as explained in the module docstring.
 -/
 
-section SlThree
+section SlThreeWeights
 
-variable (K : Type*) [Field K]
+variable (A : Type*) [CommRing A]
 
 /-- The coordinate weights of `sl₃` in terms of the fundamental weights: `ε₀ = ω₀`. -/
 theorem specialLinearEpsilon_two_zero :
-    specialLinearEpsilon 2 K 0 = specialLinearFundamentalWeight 2 K 0 := by
+    specialLinearEpsilon 2 A 0 = specialLinearFundamentalWeight 2 A 0 := by
   refine (specialLinearDiagonalCartanBasis _ _).ext fun j => ?_
   rw [specialLinearEpsilon_apply_specialLinearDiagonalCartanBasis,
     specialLinearFundamentalWeight_apply_specialLinearDiagonalCartanBasis]
@@ -376,8 +375,8 @@ theorem specialLinearEpsilon_two_zero :
 
 /-- The coordinate weights of `sl₃` in terms of the fundamental weights: `ε₁ = ω₁ - ω₀`. -/
 theorem specialLinearEpsilon_two_one :
-    specialLinearEpsilon 2 K 1 =
-      specialLinearFundamentalWeight 2 K 1 - specialLinearFundamentalWeight 2 K 0 := by
+    specialLinearEpsilon 2 A 1 =
+      specialLinearFundamentalWeight 2 A 1 - specialLinearFundamentalWeight 2 A 0 := by
   refine (specialLinearDiagonalCartanBasis _ _).ext fun j => ?_
   rw [specialLinearEpsilon_apply_specialLinearDiagonalCartanBasis, LinearMap.sub_apply,
     specialLinearFundamentalWeight_apply_specialLinearDiagonalCartanBasis,
@@ -386,11 +385,55 @@ theorem specialLinearEpsilon_two_one :
 
 /-- The coordinate weights of `sl₃` in terms of the fundamental weights: `ε₂ = -ω₁`. -/
 theorem specialLinearEpsilon_two_two :
-    specialLinearEpsilon 2 K 2 = -specialLinearFundamentalWeight 2 K 1 := by
+    specialLinearEpsilon 2 A 2 = -specialLinearFundamentalWeight 2 A 1 := by
   refine (specialLinearDiagonalCartanBasis _ _).ext fun j => ?_
   rw [specialLinearEpsilon_apply_specialLinearDiagonalCartanBasis, LinearMap.neg_apply,
     specialLinearFundamentalWeight_apply_specialLinearDiagonalCartanBasis]
   fin_cases j <;> simp
+
+/-- A root of `sl₃` in fundamental-weight coordinates: `ε₀ - ε₁ = 2ω₀ - ω₁`. -/
+private theorem specialLinearEpsilon_two_zero_sub_one :
+    specialLinearEpsilon 2 A 0 - specialLinearEpsilon 2 A 1 =
+      2 • specialLinearFundamentalWeight 2 A 0 - specialLinearFundamentalWeight 2 A 1 := by
+  rw [specialLinearEpsilon_two_zero, specialLinearEpsilon_two_one, two_nsmul]
+  abel
+
+/-- A root of `sl₃` in fundamental-weight coordinates: `ε₁ - ε₂ = 2ω₁ - ω₀`. -/
+private theorem specialLinearEpsilon_two_one_sub_two :
+    specialLinearEpsilon 2 A 1 - specialLinearEpsilon 2 A 2 =
+      2 • specialLinearFundamentalWeight 2 A 1 - specialLinearFundamentalWeight 2 A 0 := by
+  rw [specialLinearEpsilon_two_one, specialLinearEpsilon_two_two, two_nsmul]
+  abel
+
+/-- A root of `sl₃` in fundamental-weight coordinates: `ε₀ - ε₂ = ω₀ + ω₁`. -/
+private theorem specialLinearEpsilon_two_zero_sub_two :
+    specialLinearEpsilon 2 A 0 - specialLinearEpsilon 2 A 2 =
+      specialLinearFundamentalWeight 2 A 0 + specialLinearFundamentalWeight 2 A 1 := by
+  rw [specialLinearEpsilon_two_zero, specialLinearEpsilon_two_two, sub_neg_eq_add]
+
+/-- The negative root `ε₁ - ε₀ = -(2ω₀ - ω₁)` of `sl₃`. -/
+private theorem specialLinearEpsilon_two_one_sub_zero :
+    specialLinearEpsilon 2 A 1 - specialLinearEpsilon 2 A 0 =
+      -(2 • specialLinearFundamentalWeight 2 A 0 - specialLinearFundamentalWeight 2 A 1) := by
+  rw [← specialLinearEpsilon_two_zero_sub_one, neg_sub]
+
+/-- The negative root `ε₂ - ε₁ = -(2ω₁ - ω₀)` of `sl₃`. -/
+private theorem specialLinearEpsilon_two_two_sub_one :
+    specialLinearEpsilon 2 A 2 - specialLinearEpsilon 2 A 1 =
+      -(2 • specialLinearFundamentalWeight 2 A 1 - specialLinearFundamentalWeight 2 A 0) := by
+  rw [← specialLinearEpsilon_two_one_sub_two, neg_sub]
+
+/-- The negative root `ε₂ - ε₀ = -(ω₀ + ω₁)` of `sl₃`. -/
+private theorem specialLinearEpsilon_two_two_sub_zero :
+    specialLinearEpsilon 2 A 2 - specialLinearEpsilon 2 A 0 =
+      -(specialLinearFundamentalWeight 2 A 0 + specialLinearFundamentalWeight 2 A 1) := by
+  rw [← specialLinearEpsilon_two_zero_sub_two, neg_sub]
+
+end SlThreeWeights
+
+section SlThree
+
+variable (K : Type*) [Field K]
 
 /-- **The character of the standard module of `sl₃`**, classically `V(ω₀)`: the three weights
 `ω₀, ω₁ - ω₀, -ω₁`, each with multiplicity one. -/
@@ -413,44 +456,6 @@ theorem formalCharacter_slThree_dual :
         AddMonoidAlgebra.single (specialLinearFundamentalWeight 2 K 1) 1 := by
   rw [formalCharacter_specialLinear_dual, Fin.sum_univ_three, specialLinearEpsilon_two_zero,
     specialLinearEpsilon_two_one, specialLinearEpsilon_two_two, neg_sub, neg_neg]
-
-/-- A root of `sl₃` in fundamental-weight coordinates: `ε₀ - ε₁ = 2ω₀ - ω₁`. -/
-private theorem specialLinearEpsilon_two_zero_sub_one :
-    specialLinearEpsilon 2 K 0 - specialLinearEpsilon 2 K 1 =
-      2 • specialLinearFundamentalWeight 2 K 0 - specialLinearFundamentalWeight 2 K 1 := by
-  rw [specialLinearEpsilon_two_zero, specialLinearEpsilon_two_one, two_nsmul]
-  abel
-
-/-- A root of `sl₃` in fundamental-weight coordinates: `ε₁ - ε₂ = 2ω₁ - ω₀`. -/
-private theorem specialLinearEpsilon_two_one_sub_two :
-    specialLinearEpsilon 2 K 1 - specialLinearEpsilon 2 K 2 =
-      2 • specialLinearFundamentalWeight 2 K 1 - specialLinearFundamentalWeight 2 K 0 := by
-  rw [specialLinearEpsilon_two_one, specialLinearEpsilon_two_two, two_nsmul]
-  abel
-
-/-- A root of `sl₃` in fundamental-weight coordinates: `ε₀ - ε₂ = ω₀ + ω₁`. -/
-private theorem specialLinearEpsilon_two_zero_sub_two :
-    specialLinearEpsilon 2 K 0 - specialLinearEpsilon 2 K 2 =
-      specialLinearFundamentalWeight 2 K 0 + specialLinearFundamentalWeight 2 K 1 := by
-  rw [specialLinearEpsilon_two_zero, specialLinearEpsilon_two_two, sub_neg_eq_add]
-
-/-- The negative root `ε₁ - ε₀ = -(2ω₀ - ω₁)` of `sl₃`. -/
-private theorem specialLinearEpsilon_two_one_sub_zero :
-    specialLinearEpsilon 2 K 1 - specialLinearEpsilon 2 K 0 =
-      -(2 • specialLinearFundamentalWeight 2 K 0 - specialLinearFundamentalWeight 2 K 1) := by
-  rw [← specialLinearEpsilon_two_zero_sub_one, neg_sub]
-
-/-- The negative root `ε₂ - ε₁ = -(2ω₁ - ω₀)` of `sl₃`. -/
-private theorem specialLinearEpsilon_two_two_sub_one :
-    specialLinearEpsilon 2 K 2 - specialLinearEpsilon 2 K 1 =
-      -(2 • specialLinearFundamentalWeight 2 K 1 - specialLinearFundamentalWeight 2 K 0) := by
-  rw [← specialLinearEpsilon_two_one_sub_two, neg_sub]
-
-/-- The negative root `ε₂ - ε₀ = -(ω₀ + ω₁)` of `sl₃`. -/
-private theorem specialLinearEpsilon_two_two_sub_zero :
-    specialLinearEpsilon 2 K 2 - specialLinearEpsilon 2 K 0 =
-      -(specialLinearFundamentalWeight 2 K 0 + specialLinearFundamentalWeight 2 K 1) := by
-  rw [← specialLinearEpsilon_two_zero_sub_two, neg_sub]
 
 /-- **The character of the adjoint module of `sl₃`**, in characteristic zero `V(ω₀ + ω₁)`: the
 weight `0` twice, from the two simple coroots, and the six roots `±α₀, ±α₁` and `±(α₀ + α₁)` once
