@@ -206,6 +206,7 @@ namespace Polynomial
 
 /-- The quotient of `p` by `X - a` takes the value `p' (a)` at `a`, over any commutative ring.
 Note that `a` need not be a root of `p`. -/
+@[simp]
 theorem eval_divByMonic_X_sub_C_self {R : Type*} [CommRing R] (p : R[X]) (a : R) :
     (p /ₘ (X - C a)).eval a = p.derivative.eval a := by
   simpa using congrArg (eval a) (divByMonic_add_X_sub_C_mul_derivative_divByMonic_eq_derivative p a)
