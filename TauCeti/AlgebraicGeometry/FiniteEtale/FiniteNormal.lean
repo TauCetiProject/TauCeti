@@ -154,7 +154,6 @@ spectrum. -/
 
 /-- Forgetting finiteness and étaleness, `restrictPuncturedSpec` is Mathlib's `algSpec` followed
 by base change to the punctured spectrum. -/
-@[simp]
 theorem restrictPuncturedSpec_comp_ι :
     restrictPuncturedSpec A ⋙ (finiteEtaleSchemeProperty _).ι =
       (finiteNormalPuncturedEtale A).ι.op ⋙ algSpec (.of A) ⋙
