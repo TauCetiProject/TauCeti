@@ -109,7 +109,7 @@ private theorem bijective_integral_standard :
     Function.Bijective (compactlySupportedDeRhamCohomology.integral Manifold.Orientation.real) := by
   obtain ⟨φ₁, hφ₁⟩ : ∃ φ : compactlySupportedClosedForms 𝓘(ℝ, ℝ) ℝ 1,
       integralTopForm Manifold.Orientation.real φ.1.1 = 1 := by
-    rw [Manifold.Orientation.real]
+    rw [Manifold.Orientation.real_eq_model]
     exact Module.Basis.exists_compactlySupportedClosedForms_integralTopForm_model_eq_one
       (Module.Basis.singleton (Fin 1) ℝ) _
   refine ⟨(injective_iff_map_eq_zero _).mpr fun x hx ↦ ?_, fun y ↦

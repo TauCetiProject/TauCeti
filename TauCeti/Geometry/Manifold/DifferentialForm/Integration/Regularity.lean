@@ -112,7 +112,7 @@ theorem integralTopForm_real_eq_integral {φ : RoughForm 𝓘(ℝ, ℝ) ℝ ℝ 
   have hvol : (Module.Basis.singleton (Fin 1) ℝ).addHaar = volume := by
     rw [← OrthonormalBasis.toBasis_singleton]
     exact OrthonormalBasis.addHaar_eq_volume _
-  rw [Manifold.Orientation.real,
+  rw [Manifold.Orientation.real_eq_model,
     integralTopForm_model_eq_integral _ _ hφ hc (Module.Basis.singleton (Fin 1) ℝ) rfl, hvol,
     Module.Basis.coe_singleton]
   -- Mathlib's unit tangent vector `1 : TangentSpace 𝓘(ℝ) t` is defined to be `1 : ℝ`.
