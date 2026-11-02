@@ -36,10 +36,52 @@ public section
 
 open TensorProduct
 
+namespace TensorProduct
+
+variable {A B M : Type*} [CommRing A] [CommRing B] [Algebra A B] [AddCommGroup M] [Module A M]
+
+/-- If `A → B ⧸ J` is surjective, then every element of `B ⊗[A] M` is of the form `1 ⊗ m` modulo
+`J (B ⊗[A] M)`. -/
+theorem exists_sub_one_tmul_mem_smul_top {J : Ideal B}
+    (hJ : Function.Surjective ((Ideal.Quotient.mk J).comp (algebraMap A B))) (x : B ⊗[A] M) :
+    ∃ m : M, x - 1 ⊗ₜ m ∈ (J • ⊤ : Submodule B (B ⊗[A] M)) := by
+  induction x with
+  | tmul b m =>
+    obtain ⟨a, ha⟩ := hJ (Ideal.Quotient.mk J b)
+    rw [RingHom.comp_apply, Ideal.Quotient.eq] at ha
+    refine ⟨a • m, ?_⟩
+    have : b ⊗ₜ[A] m - 1 ⊗ₜ (a • m) = (b - algebraMap A B a) • ((1 : B) ⊗ₜ[A] m) := by
+      rw [tmul_smul, ← algebraMap_smul B a]
+      simp only [smul_tmul', smul_eq_mul, mul_one, sub_tmul]
+    rw [this]
+    exact Submodule.smul_mem_smul (sub_mem_comm_iff.mp ha) Submodule.mem_top
+  | add x y hx hy =>
+    obtain ⟨m, hm⟩ := hx
+    obtain ⟨m', hm'⟩ := hy
+    refine ⟨m + m', ?_⟩
+    rw [tmul_add]
+    convert add_mem hm hm' using 1
+    abel
+
+end TensorProduct
+
 namespace Module.Flat
 
 variable {A B : Type*} [CommRing A] [CommRing B] [Algebra A B]
   [IsNoetherianRing A] [IsNoetherianRing B]
+
+omit [IsNoetherianRing B] in
+/-- Artin–Rees for an ideal `I` of `A`: there is `c` such that `I ∩ 𝔪^(j + c) ⊆ 𝔪ʲ I` for all
+`j`. -/
+private theorem exists_mem_pow_smul_top_of_mem_pow_add (m I : Ideal A) :
+    ∃ c : ℕ, ∀ (j : ℕ) (i : I), (i : A) ∈ m ^ (j + c) → i ∈ (m ^ j • ⊤ : Submodule A I) := by
+  obtain ⟨c, hc⟩ := Ideal.exists_pow_inf_eq_pow_smul m I
+  refine ⟨c, fun j i him ↦ ?_⟩
+  rw [Submodule.mem_smul_top_iff]
+  have hmem : (i : A) ∈ m ^ (j + c) • (⊤ : Submodule A A) ⊓ I :=
+    ⟨by simpa [Ideal.smul_eq_mul] using him, i.2⟩
+  rw [hc (j + c) (Nat.le_add_left c j), Nat.add_sub_cancel] at hmem
+  exact IsConcreteLE.le_iff.mp (smul_mono_right _ inf_le_right) hmem
 
 /-- **Flatness from bijections on infinitesimal quotients.** If, for every maximal ideal `𝔫` of
 `B` with contraction `𝔪` to `A`, the maps `A ⧸ 𝔪ᵏ → B ⧸ 𝔪ᵏ B` are bijective for all `k`, then
@@ -68,33 +110,17 @@ theorem of_bijective_quotientMap_pow
   intro n hn j _
   set m := n.comap (algebraMap A B)
   have hmn : m.map (algebraMap A B) ≤ n := Ideal.map_comap_le
-  obtain ⟨c, hc⟩ := Ideal.exists_pow_inf_eq_pow_smul m I
+  obtain ⟨c, hc⟩ := exists_mem_pow_smul_top_of_mem_pow_add m I
   set J := (m ^ (j + c)).map (algebraMap A B) with hJdef
   have hJ : J ≤ n ^ j := by
     rw [hJdef, Ideal.map_pow]
     exact (Ideal.pow_le_pow_right (Nat.le_add_right j c)).trans (Ideal.pow_right_mono hmn j)
   obtain ⟨hinj, hsurj⟩ := h n hn (j + c)
   -- Every element of `B ⊗[A] I` is `1 ⊗ i` modulo `J (B ⊗[A] I)`.
-  have hdecomp (x : B ⊗[A] I) : ∃ i : I, x - 1 ⊗ₜ i ∈ (J • ⊤ : Submodule B (B ⊗[A] I)) := by
-    induction x with
-    | tmul b i =>
-      obtain ⟨q, hq⟩ := hsurj (Ideal.Quotient.mk J b)
-      obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective q
-      rw [Ideal.quotientMap_mk, Ideal.Quotient.eq] at hq
-      refine ⟨a • i, ?_⟩
-      have : b ⊗ₜ[A] i - 1 ⊗ₜ (a • i) = (b - algebraMap A B a) • ((1 : B) ⊗ₜ[A] i) := by
-        rw [tmul_smul, ← algebraMap_smul B a]
-        simp only [smul_tmul', smul_eq_mul, mul_one, sub_tmul]
-      rw [this]
-      exact Submodule.smul_mem_smul (sub_mem_comm_iff.mp hq) Submodule.mem_top
-    | add x y hx hy =>
-      obtain ⟨i, hi⟩ := hx
-      obtain ⟨i', hi'⟩ := hy
-      refine ⟨i + i', ?_⟩
-      rw [tmul_add]
-      convert add_mem hi hi' using 1
-      abel
-  obtain ⟨i, hi⟩ := hdecomp z
+  obtain ⟨i, hi⟩ := exists_sub_one_tmul_mem_smul_top (fun b ↦ by
+    obtain ⟨q, rfl⟩ := hsurj b
+    obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective q
+    exact ⟨a, by rw [RingHom.comp_apply, Ideal.quotientMap_mk]⟩) z
   -- The image of `i` in `B` lies in `J`, so `i ∈ 𝔪^(j + c)` by injectivity.
   have hiJ : algebraMap A B i ∈ J := by
     have hmap := Submodule.mem_map_of_mem (f := μ) hi
@@ -109,12 +135,7 @@ theorem of_bijective_quotientMap_pow
     rw [Ideal.quotientMap_mk, map_zero, Ideal.Quotient.eq_zero_iff_mem]
     exact hiJ
   -- Artin–Rees puts `i` into `𝔪ʲ I`.
-  have hiI : i ∈ (m ^ j • ⊤ : Submodule A I) := by
-    rw [Submodule.mem_smul_top_iff]
-    have hmem : (i : A) ∈ m ^ (j + c) • (⊤ : Submodule A A) ⊓ I :=
-      ⟨by simpa [Ideal.smul_eq_mul] using him, i.2⟩
-    rw [hc (j + c) (Nat.le_add_left c j), Nat.add_sub_cancel] at hmem
-    exact IsConcreteLE.le_iff.mp (smul_mono_right _ inf_le_right) hmem
+  have hiI := hc j i him
   -- Hence `1 ⊗ i ∈ 𝔫ʲ (B ⊗[A] I)`.
   have h1i : (1 : B) ⊗ₜ[A] i ∈ (n ^ j • ⊤ : Submodule B (B ⊗[A] I)) := by
     refine Submodule.smul_induction_on hiI (fun a ha y _ ↦ ?_) (fun x y hx hy ↦ ?_)

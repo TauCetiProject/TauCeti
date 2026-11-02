@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Affinoid.Subdomain.Rational
+public import TauCeti.RingTheory.Affinoid.Subdomain.Basic
 public import TauCeti.RingTheory.RingHom.FaithfullyFlat
 
 import TauCeti.RingTheory.Affinoid.FiniteQuotient
@@ -20,8 +20,7 @@ classical maximal spectrum, the map from `A` into the product of their coordinat
 faithfully flat. Neither reducedness of `A` nor a rational presentation of the subdomains is
 assumed, and nilpotents are allowed. The family may be empty, in which case its covering
 hypothesis forces `A` to be the zero ring. Rational domains `A → A⟨f/g⟩` are the special case
-recorded in `TauCeti.RationalFraction.flat_algebraMap` and
-`TauCeti.RationalFraction.faithfullyFlat_pi_algebraMap`.
+obtained by applying these results to `TauCeti.RationalFraction.isAffinoidSubdomainMap`.
 
 Flatness uses only the universal property. For every classical point `x ∈ U` and every `n`, it
 gives isomorphisms `A ⧸ 𝔪ₓⁿ ≃ B ⧸ 𝔪ₓⁿ B`
@@ -97,31 +96,5 @@ theorem faithfullyFlat_pi {ι : Type*} [Finite ι] {B : ι → Type u} [∀ i, C
     ⟨i, ((h i).isMaximal_map hA hi).ne_top⟩
 
 end IsAffinoidSubdomainMap
-
-namespace RationalFraction
-
-variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
-  {A : Type*} [NormedCommRing A] [IsUltrametricDist A] [NormedAlgebra K A] [CompleteSpace A]
-  (hA : IsAffinoidAlgebra K A)
-
-include hA in
-/-- The structure map of a classical rational domain is flat. Nilpotents are allowed in `A`. -/
-theorem flat_algebraMap {m : ℕ} {g : A} {f : Fin m → A}
-    (h : Ideal.span (insert g (Set.range f)) = ⊤) :
-    (algebraMap A (RationalFraction g f)).Flat :=
-  (isAffinoidSubdomainMap hA h).flat hA
-
-include hA in
-/-- A finite cover of the classical spectrum by rational domains gives a faithfully flat map
-into the product of its rational fraction algebras. The number of numerators may vary with the
-member of the cover. -/
-theorem faithfullyFlat_pi_algebraMap {ι : Type*} [Finite ι] {m : ι → ℕ}
-    (g : ι → A) (f : (i : ι) → Fin (m i) → A)
-    (h : ∀ i, Ideal.span (insert (g i) (Set.range (f i))) = ⊤)
-    (hcover : ∀ x : MaximalSpectrum A, ∃ i, x ∈ rationalDomain K (g i) (f i)) :
-    (RingHom.pi fun i ↦ algebraMap A (RationalFraction (g i) (f i))).FaithfullyFlat :=
-  IsAffinoidSubdomainMap.faithfullyFlat_pi (fun i ↦ isAffinoidSubdomainMap hA (h i)) hA hcover
-
-end RationalFraction
 
 end TauCeti
