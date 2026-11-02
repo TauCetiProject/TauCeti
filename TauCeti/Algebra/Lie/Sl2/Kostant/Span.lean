@@ -75,6 +75,11 @@ variable {A : Type u} [Ring A] [Algebra ℚ A]
 noncomputable def orderedKostantMonomial (H E F : A) (a b c : ℕ) : A :=
   dividedPower a F * Ring.choose H b * dividedPower c E
 
+/-- The three factors of an ordered Kostant monomial. -/
+theorem orderedKostantMonomial_def (H E F : A) (a b c : ℕ) :
+    orderedKostantMonomial H E F a b c =
+      dividedPower a F * Ring.choose H b * dividedPower c E := (rfl)
+
 theorem orderedKostantMonomial_zero_zero_zero (H E F : A) :
     orderedKostantMonomial H E F 0 0 0 = 1 := by
   simp [orderedKostantMonomial]
@@ -108,6 +113,10 @@ theorem mem_orderedKostantMonomials_iff {H E F x : A} :
 /-- The additive `ℤ`-span of the ordered rank-one Kostant monomials. -/
 noncomputable def orderedKostantSpan (H E F : A) : AddSubgroup A :=
   AddSubgroup.closure (orderedKostantMonomials H E F)
+
+/-- The ordered Kostant span is the additive closure of the ordered monomials. -/
+theorem orderedKostantSpan_def (H E F : A) :
+    orderedKostantSpan H E F = AddSubgroup.closure (orderedKostantMonomials H E F) := (rfl)
 
 /-- Every ordered Kostant monomial belongs to its additive span. -/
 @[simp]
