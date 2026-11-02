@@ -172,20 +172,10 @@ private theorem norm_compParabolicC2HolderAux_le (u : ParabolicC2HolderSpace α 
     (norm_add_le _ _).trans (add_le_add (B.norm_compHolder₂_apply_le _ _)
       (B.norm_compHolder₂_apply_le _ _))
   -- The lower-order Hölder norms are absorbed into the order-two norm, with constant `24`.
-  have hu : u₀ + u₁ ≤ 24 * U := by
-    have h := norm_valueHolderL_add_norm_spatialFDerivHolderL_le hα u one_pos le_rfl
-    simp only [Real.one_rpow, mul_one] at h
-    linarith [norm_valueL_le u]
-  have hv : v₀ + v₁ ≤ 24 * V := by
-    have h := norm_valueHolderL_add_norm_spatialFDerivHolderL_le hα v one_pos le_rfl
-    simp only [Real.one_rpow, mul_one] at h
-    linarith [norm_valueL_le v]
-  have hu' : u₂ + uₜ ≤ U := by
-    rw [show U = ‖u‖ from rfl, ParabolicC2HolderSpace.norm_eq u]
-    linarith [norm_nonneg (valueL u), norm_nonneg (spatialFDerivL u)]
-  have hv' : v₂ + vₜ ≤ V := by
-    rw [show V = ‖v‖ from rfl, ParabolicC2HolderSpace.norm_eq v]
-    linarith [norm_nonneg (valueL v), norm_nonneg (spatialFDerivL v)]
+  have hu : u₀ + u₁ ≤ 24 * U := norm_valueHolderL_add_norm_spatialFDerivHolderL_le_mul hα u
+  have hv : v₀ + v₁ ≤ 24 * V := norm_valueHolderL_add_norm_spatialFDerivHolderL_le_mul hα v
+  have hu' : u₂ + uₜ ≤ U := norm_spatialSecondFDerivL_add_norm_timeDerivL_le u
+  have hv' : v₂ + vₜ ≤ V := norm_spatialSecondFDerivL_add_norm_timeDerivL_le v
   have hB := norm_nonneg B
   have hu₀ := norm_nonneg (valueHolderL hα u)
   have hu₁ := norm_nonneg (spatialFDerivHolderL hα u)
@@ -226,6 +216,10 @@ def compParabolicC2Holder₂ :
       simp [compParabolicC2HolderAux_apply])).mkContinuous₂
     (1200 * ‖B‖) (norm_compParabolicC2HolderAux_le B hα)
 
+/- This is `LinearMap.mkContinuous₂_apply` followed by `LinearMap.mk₂_apply`, both proved by `rfl`
+in Mathlib. Using them here fails: instantiating `LinearMap.mkContinuous₂_apply` reports an invalid
+projection out of `ParabolicC2HolderSpace`, whose definition as a submodule is not exposed, and
+`rw` or `simp only` with them cannot match the goal. So the equation is closed by `rfl` directly. -/
 private theorem compParabolicC2Holder₂_eq (u : ParabolicC2HolderSpace α E F hab)
     (v : ParabolicC2HolderSpace α E G hab) :
     B.compParabolicC2Holder₂ hα u v = compParabolicC2HolderAux B hα u v := (rfl)
