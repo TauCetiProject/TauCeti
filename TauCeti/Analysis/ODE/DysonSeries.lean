@@ -165,6 +165,12 @@ linear equation `w' t = p t (w t)` (`eq_dysonSeriesLeft_apply`). -/
 def dysonSeriesLeft (p : ℝ → B) (t : ℝ) : B :=
   MulOpposite.unop (dysonSeries (fun s => MulOpposite.op (p s)) t)
 
+/-- The left Dyson series of `p` is the Dyson series of `p` in the opposite algebra. This
+transfers the facts about `dysonSeries` to `dysonSeriesLeft`. -/
+theorem op_dysonSeriesLeft (p : ℝ → B) (t : ℝ) :
+    MulOpposite.op (dysonSeriesLeft p t) = dysonSeries (fun s => MulOpposite.op (p s)) t := by
+  rw [dysonSeriesLeft, MulOpposite.op_unop]
+
 @[simp]
 theorem dysonSeriesLeft_zero (p : ℝ → B) : dysonSeriesLeft p 0 = 1 := by
   simp [dysonSeriesLeft]
