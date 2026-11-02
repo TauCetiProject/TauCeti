@@ -94,10 +94,7 @@ theorem coord_inclusion_zpow_mul_eq_zero_iff [Nontrivial K] (m : ℤ) {ψ : Weig
   have hγm : γ ^ (m * n) = 1 := inclusion_injective (by rw [hγ, map_one])
   have hm : m * n = 0 := by
     by_contra hmn
-    refine not_isOfFinOrder_of_mem_unitsPrincipal (padicUnitsDepth_pos p) (by rintro rfl; simp)
-      padicUnitsGenerator_mem_unitsPrincipal ?_ (isOfFinOrder_iff_zpow_eq_one.mpr ⟨_, hmn, hγm⟩)
-    rintro hγ1
-    exact padicUnitsGenerator_notMem_unitsPrincipal_succ (hγ1 ▸ Subgroup.one_mem _)
+    exact not_isOfFinOrder_padicUnitsGenerator (isOfFinOrder_iff_zpow_eq_one.mpr ⟨_, hmn, hγm⟩)
   have hm0 : m = 0 := by simpa [hn.ne'] using hm
   subst hm0
   refine ⟨rfl, ?_⟩

@@ -160,8 +160,9 @@ theorem unitsPrincipal_le_ker_iff [T2Space R] (κ : WeightSpace p R) (j : ℕ) :
   have hk := padicUnitsDepth_pos p
   have hmem := pow_pow_mem_unitsPrincipal hk padicUnitsGenerator_mem_unitsPrincipal j
   refine ⟨fun h ↦ by simpa using h hmem, fun h ↦ ?_⟩
-  rw [← topologicalClosure_zpowers_eq_unitsPrincipal (by omega) (by rintro rfl; simp) hmem
-    (pow_pow_notMem_unitsPrincipal hk (by rintro rfl; simp) padicUnitsGenerator_mem_unitsPrincipal
+  rw [← topologicalClosure_zpowers_eq_unitsPrincipal (by omega)
+    (fun h ↦ (two_le_padicUnitsDepth h).trans (Nat.le_add_right _ _)) hmem
+    (pow_pow_notMem_unitsPrincipal hk two_le_padicUnitsDepth padicUnitsGenerator_mem_unitsPrincipal
       padicUnitsGenerator_notMem_unitsPrincipal_succ j)]
   refine Subgroup.topologicalClosure_minimal _ ?_ (isClosed_singleton.preimage κ.continuous)
   rw [Subgroup.zpowers_le, MonoidHom.mem_ker]
