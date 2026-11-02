@@ -138,15 +138,15 @@ theorem exists_conj_smul_le_comap_unitarySubgroup {K : Subgroup (SpecialLinearGr
   obtain ⟨k, hk, rfl⟩ := (Subgroup.mem_smul_pointwise_iff_exists _ _ _).mp hx
   have hhk : h * toGL k * h⁻¹ ∈ unitarySubgroup (GL ι 𝕜) :=
     hh ((Subgroup.mem_smul_pointwise_iff_exists _ _ _).mpr ⟨toGL k, ⟨k, hk, rfl⟩, rfl⟩)
-  have hconj : toGL g * toGL k * (toGL g)⁻¹ = V⁻¹ * (h * toGL k * h⁻¹) * V := by
-    rw [← hcVg, show GeneralLinearGroup.scalar ι c * V * toGL g * toGL k *
-        (GeneralLinearGroup.scalar ι c * V * toGL g)⁻¹ =
-        GeneralLinearGroup.scalar ι c * (V * toGL g * toGL k * (V * toGL g)⁻¹) *
-          (GeneralLinearGroup.scalar ι c)⁻¹ by group,
-      GeneralLinearGroup.scalar_commute, mul_inv_cancel_right]
+  -- Conjugation by the central scalar `c` is trivial.
+  have hc : Commute (GeneralLinearGroup.scalar ι c) (V * toGL (g * k * g⁻¹) * V⁻¹) :=
+    GeneralLinearGroup.scalar_commute _ _
+  have hconj : V * toGL (g * k * g⁻¹) * V⁻¹ = h * toGL k * h⁻¹ := by
+    rw [← hc.mul_inv_cancel, ← hcVg, map_mul, map_mul, map_inv]
     group
-  rw [Subgroup.mem_comap, MulAut.smul_def, MulAut.conj_apply, map_mul, map_mul, map_inv, hconj]
-  exact mul_mem (mul_mem (inv_mem hV) hhk) hV
+  rw [MulAut.smul_def, MulAut.conj_apply, Subgroup.mem_comap,
+    ← Subgroup.mul_mem_cancel_left _ hV, ← Subgroup.mul_mem_cancel_right _ (inv_mem hV), hconj]
+  exact hhk
 
 /-- **The maximal compact subgroups of `SL ι 𝕜` are the conjugates of the determinant-one unitary
 matrices.** Over `ℝ` these are the conjugates of the special orthogonal group `SO(n)`, and over `ℂ`
