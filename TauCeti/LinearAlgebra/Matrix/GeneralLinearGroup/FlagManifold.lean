@@ -11,7 +11,7 @@ public import TauCeti.Analysis.Matrix.UnitaryGroup.Torus
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Basic
 
 import Mathlib.Topology.Homeomorph.Quotient
-import TauCeti.Analysis.Matrix.LDL
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.QR
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Unitary
 import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.UpperTriangular
 import TauCeti.Topology.Algebra.UnitaryGroup
@@ -36,11 +36,8 @@ equivariant for the left actions of `U(n)`. It rests on two facts.
 
 * **`U(n)` acts transitively on `GL n 𝕜 ⧸ B`:** every invertible matrix is `g = U b` with `U`
   unitary and `b` upper triangular
-  (`Matrix.GeneralLinearGroup.exists_mem_upperTriangularGroup_toUnits_mul_eq`).
-  This is the `QR` factorization, or the Gram-Schmidt process applied to the columns of `g`. It is
-  read off the `LDL` decomposition of the positive definite Gram matrix `gᴴ g`: if
-  `L gᴴ g Lᴴ = D` with `L` lower triangular and `D` positive diagonal, then
-  `U = g Lᴴ D^{-1/2}` is unitary and `U⁻¹ g = D^{1/2} (Lᴴ)⁻¹` is upper triangular.
+  (`Matrix.GeneralLinearGroup.exists_mem_upperTriangularGroup_toUnits_mul_eq`, from
+  `TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.QR`). This is the `QR` factorization.
 * **The stabilizer is `T`:** a unitary upper triangular matrix is diagonal
   (`TauCeti.mem_comap_toUnits_upperTriangularGroup_iff`, from
   `TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Unitary`).
@@ -59,8 +56,6 @@ bijection between them is a homeomorphism.
 
 ## Main results
 
-* `Matrix.GeneralLinearGroup.exists_mem_upperTriangularGroup_toUnits_mul_eq`: every invertible
-  matrix over `ℝ` or `ℂ` is a unitary matrix times an upper triangular one.
 * `TauCeti.comap_toUnits_upperTriangularGroup_eq_unitaryTorus`: over `ℂ`, the unitary upper
   triangular matrices are the maximal torus of `U(n)`.
 * `TauCeti.unitaryQuotientHomeomorph_smul` and `TauCeti.unitaryTorusQuotientHomeomorph_smul`:
@@ -89,76 +84,6 @@ theorem comap_toUnits_upperTriangularGroup_eq_unitaryTorus (ι : Type*) [Fintype
     [LinearOrder ι] : (upperTriangularGroup ι ℂ).comap Unitary.toUnits = unitaryTorus ι := by
   ext U
   rw [mem_comap_toUnits_upperTriangularGroup_iff, mem_unitaryTorus_iff]
-
-end TauCeti
-
-namespace Matrix.GeneralLinearGroup
-
-open TauCeti
-
-section RCLike
-
-open scoped ComplexOrder
-
-variable {ι 𝕜 : Type*} [Fintype ι] [LinearOrder ι] [RCLike 𝕜]
-
-/-- **Every invertible matrix over `ℝ` or `ℂ` is a unitary matrix times an upper triangular
-one**: the `QR` factorization `g = U b`. -/
-theorem exists_mem_upperTriangularGroup_toUnits_mul_eq (g : GL ι 𝕜) :
-    ∃ U : unitaryGroup ι 𝕜, ∃ b ∈ upperTriangularGroup ι 𝕜, Unitary.toUnits U * b = g := by
-  classical
-  let : LocallyFiniteOrderBot ι :=
-    LocallyFiniteOrderBot.ofIic ι (fun a => Finset.univ.filter (· ≤ a)) (by simp)
-  -- the Gram matrix `S = gᴴ g` is positive definite, with `L S Lᴴ = D` for its `LDL` factors
-  have hS : ((g : Matrix ι ι 𝕜)ᴴ * g).PosDef :=
-    PosDef.conjTranspose_mul_self _ (mulVec_injective_of_isUnit g.isUnit)
-  set L := LDL.lowerInv hS
-  have hd : ∀ i, ∃ x : ℝ, 0 < x ∧ (x : 𝕜) = LDL.diagEntries hS i := fun i =>
-    RCLike.pos_iff_exists_ofReal.1 (LDL.diagEntries_pos hS i)
-  choose x hx hxd using hd
-  -- `c = D^{-1/2}` and `P = Lᴴ c`, an upper triangular matrix with `Pᴴ S P = 1`
-  set c : ι → 𝕜 := fun i => ((Real.sqrt (x i))⁻¹ : ℝ)
-  set P := Lᴴ * diagonal c
-  have hc : ∀ i, star (c i) * LDL.diagEntries hS i * c i = 1 := fun i => by
-    have h : (Real.sqrt (x i))⁻¹ * x i * (Real.sqrt (x i))⁻¹ = 1 := by
-      have h0 := (Real.sqrt_pos.2 (hx i)).ne'
-      field_simp
-      exact (Real.sq_sqrt (hx i).le).symm
-    rw [← hxd i]
-    simp only [c, RCLike.star_def, RCLike.conj_ofReal]
-    exact_mod_cast h
-  have hP : Pᴴ * ((g : Matrix ι ι 𝕜)ᴴ * g) * P = 1 := by
-    have hD := (LDL.diag_eq_lowerInv_conj hS).symm
-    calc Pᴴ * ((g : Matrix ι ι 𝕜)ᴴ * g) * P
-        = (diagonal c)ᴴ * (L * ((g : Matrix ι ι 𝕜)ᴴ * g) * Lᴴ) * diagonal c := by
-          simp only [P, conjTranspose_mul, conjTranspose_conjTranspose, Matrix.mul_assoc]
-      _ = 1 := by
-          rw [hD, LDL.diag, diagonal_conjTranspose, diagonal_mul_diagonal, diagonal_mul_diagonal,
-            ← diagonal_one]
-          exact congrArg diagonal (funext hc)
-  have hU : (g : Matrix ι ι 𝕜) * P ∈ unitaryGroup ι 𝕜 := by
-    rw [mem_unitaryGroup_iff', star_eq_conjTranspose, conjTranspose_mul]
-    simpa only [Matrix.mul_assoc] using hP
-  set U : unitaryGroup ι 𝕜 := ⟨_, hU⟩
-  -- `(U⁻¹ g)⁻¹ = g⁻¹ U = P` is upper triangular
-  have hPB : P.IsUpperTriangular := by
-    refine BlockTriangular.mul (fun i j hij => ?_) (blockTriangular_diagonal c)
-    have h0 : L j i = 0 := LDL.isLowerTriangular_lowerInv hS (OrderDual.toDual_lt_toDual.2 hij)
-    rw [conjTranspose_apply, h0, star_zero]
-  have hinv : ((((Unitary.toUnits U)⁻¹ * g)⁻¹ : GL ι 𝕜) : Matrix ι ι 𝕜) = P := by
-    have hval : ((Unitary.toUnits U : GL ι 𝕜) : Matrix ι ι 𝕜) = g * P :=
-      Unitary.val_toUnits_apply U
-    simp [hval, ← Matrix.mul_assoc]
-  have hB : (Unitary.toUnits U)⁻¹ * g ∈ upperTriangularGroup ι 𝕜 := by
-    rw [← inv_mem_iff, UpperTriangularGroup.mem_iff, hinv]
-    exact hPB
-  exact ⟨U, _, hB, mul_inv_cancel_left _ _⟩
-
-end RCLike
-
-end Matrix.GeneralLinearGroup
-
-namespace TauCeti
 
 section RCLike
 
