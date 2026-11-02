@@ -28,7 +28,7 @@ directions of `σ` on the level are exactly the directions of the orbits of `G_c
 * Since `dμ_x(Z_M x) = ⁅Z, c⁆`, the orbit directions tangent to the level are those of the
   stabilizer: `𝔤 · x ∩ ker dμ_x = 𝔤_c · x`
   (`TauCeti.SmoothTwoForm.IsMomentMap.orbitTangent_inf_ker_differential`).
-* For a nondegenerate `σ`, `ker dμ_x = (𝔤 · x)^σ`, so the symplectic complement of the level
+* Where `σ_x` is nondegenerate, `ker dμ_x = (𝔤 · x)^σ`, so the symplectic complement of the level
   tangent space is the orbit tangent space
   (`TauCeti.SmoothTwoForm.IsMomentMap.orthogonal_ker_differential`), and the **null directions**
   `ker dμ_x ∩ (ker dμ_x)^σ` of `σ` on the level are `𝔤_c · x`
@@ -113,24 +113,25 @@ theorem orbitTangent_le_ker_differential_iff (hc : σ.momentCocycle a μ x = 0) 
 
 /-! ### Null directions of the form on a level -/
 
-variable (hσ : σ.IsNondegenerate)
+/-- **The symplectic complement of a level is the orbit.** Where the form is nondegenerate, the
+`σ_x`-orthogonal of `ker dμ_x` is the orbit tangent space `𝔤 · x`. -/
+theorem orthogonal_ker_differential [FiniteDimensional ℝ E]
+    (hσx : (σ.bilinFormAt x).Nondegenerate) :
+    (σ.bilinFormAt x).orthogonal (LinearMap.ker (h.differential x)) = a.orbitTangent x := by
+  rw [h.ker_differential, LinearMap.BilinForm.orthogonal_orthogonal hσx
+    (SmoothForm.isAlt_bilinFormAt σ x).isRefl]
 
-/-- **The symplectic complement of a level is the orbit.** For a nondegenerate form, the
-symplectic complement of `ker dμ_x` is the orbit tangent space `𝔤 · x`. -/
-theorem orthogonal_ker_differential [FiniteDimensional ℝ E] :
-    (hσ.symplecticFormAt x).orthogonal (LinearMap.ker (h.differential x)) = a.orbitTangent x := by
-  rw [h.ker_differential, ← hσ.toBilinForm_symplecticFormAt, ← SymplecticForm.orthogonal_def,
-    SymplecticForm.orthogonal_orthogonal]
-
-/-- **The null directions of the form on a level are the stabilizer directions.** For a
-nondegenerate form, where the cocycle of a moment map vanishes, the kernel of `σ_x` restricted to
+/-- **The null directions of the form on a level are the stabilizer directions.** Where the form
+is nondegenerate and the cocycle of a moment map vanishes, the kernel of `σ_x` restricted to
 `ker dμ_x` is `𝔤_{μ(x)} · x`. -/
 theorem ker_differential_inf_orthogonal [FiniteDimensional ℝ E]
-    (hc : σ.momentCocycle a μ x = 0) :
+    (hσx : (σ.bilinFormAt x).Nondegenerate) (hc : σ.momentCocycle a μ x = 0) :
     LinearMap.ker (h.differential x) ⊓
-        (hσ.symplecticFormAt x).orthogonal (LinearMap.ker (h.differential x)) =
+        (σ.bilinFormAt x).orthogonal (LinearMap.ker (h.differential x)) =
       (lieAnnihilator ℝ 𝔤 (μ x)).toSubmodule.map (a.eval x) := by
-  rw [h.orthogonal_ker_differential hσ, inf_comm, h.orbitTangent_inf_ker_differential hc]
+  rw [h.orthogonal_ker_differential hσx, inf_comm, h.orbitTangent_inf_ker_differential hc]
+
+variable (hσ : σ.IsNondegenerate)
 
 /-- **Levels over coadjoint-fixed values are coisotropic, and only those.** For a nondegenerate
 form, where the cocycle of a moment map vanishes, `ker dμ_x` is coisotropic exactly when `μ(x)` is
@@ -139,7 +140,8 @@ theorem isCoisotropic_ker_differential_iff [FiniteDimensional ℝ E]
     (hc : σ.momentCocycle a μ x = 0) :
     (hσ.symplecticFormAt x).IsCoisotropic (LinearMap.ker (h.differential x)) ↔
       lieAnnihilator ℝ 𝔤 (μ x) = ⊤ := by
-  rw [SymplecticForm.isCoisotropic_iff_le, h.orthogonal_ker_differential hσ,
+  rw [SymplecticForm.isCoisotropic_iff_le, SymplecticForm.orthogonal_def,
+    hσ.toBilinForm_symplecticFormAt, h.orthogonal_ker_differential (hσ.nondegenerate_bilinFormAt x),
     h.orbitTangent_le_ker_differential_iff hc]
 
 /-- **Orbits in levels over coadjoint-fixed values are isotropic, and only those.** For a
@@ -151,25 +153,34 @@ theorem isIsotropic_orbitTangent_iff (hc : σ.momentCocycle a μ x = 0) :
     hσ.toBilinForm_symplecticFormAt, ← h.ker_differential,
     h.orbitTangent_le_ker_differential_iff hc]
 
+omit h in
+/-- For an abelian Lie algebra, every element of the dual is annihilated by the whole algebra. -/
+private theorem lieAnnihilator_eq_top_of_isLieAbelian [IsLieAbelian 𝔤] (c : Module.Dual ℝ 𝔤) :
+    lieAnnihilator ℝ 𝔤 c = ⊤ :=
+  (lieAnnihilator_eq_top_iff ℝ 𝔤).2 fun Z ↦ by
+    ext Z'
+    simp [Module.Dual.lie_apply, trivial_lie_zero]
+
 /-- **The orbits of an abelian Lie algebra are isotropic.** For a nondegenerate form, where the
 cocycle of a moment map of an action of an abelian Lie algebra vanishes, the orbit tangent space
 is isotropic. -/
 theorem isIsotropic_orbitTangent [IsLieAbelian 𝔤] (hc : σ.momentCocycle a μ x = 0) :
     (hσ.symplecticFormAt x).IsIsotropic (a.orbitTangent x) :=
-  (h.isIsotropic_orbitTangent_iff hσ hc).2 <| eq_top_iff.2 fun Z _ ↦ by
-    rw [mem_lieAnnihilator]
-    ext Z'
-    simp [Module.Dual.lie_apply, trivial_lie_zero]
+  (h.isIsotropic_orbitTangent_iff hσ hc).2 (lieAnnihilator_eq_top_of_isLieAbelian _)
 
-include hσ in
 /-- **The dimension bound for abelian actions.** If an abelian Lie algebra acts locally freely at
-`x` with a moment map whose cocycle vanishes there, for a nondegenerate form, then
+`x` with a moment map whose cocycle vanishes there, and the form is nondegenerate at `x`, then
 `2 dim 𝔤 ≤ dim M`. -/
 theorem two_mul_finrank_le [FiniteDimensional ℝ E] [IsLieAbelian 𝔤]
-    (hc : σ.momentCocycle a μ x = 0) (hfree : a.isotropy x = ⊥) :
+    (hσx : (σ.bilinFormAt x).Nondegenerate) (hc : σ.momentCocycle a μ x = 0)
+    (hfree : a.isotropy x = ⊥) :
     2 * finrank ℝ 𝔤 ≤ finrank ℝ E := by
-  have := (h.isIsotropic_orbitTangent hσ hc).two_mul_finrank_le
-  rwa [a.finrank_orbitTangent_of_isotropy_eq_bot x hfree, finrank_tangentSpace] at this
+  have hle := Submodule.finrank_mono
+    ((h.orbitTangent_le_ker_differential_iff hc).2 (lieAnnihilator_eq_top_of_isLieAbelian _))
+  have hsum := h.finrank_ker_differential_add_finrank_orbitTangent hσx
+  rw [a.finrank_orbitTangent_of_isotropy_eq_bot x hfree] at hle
+  rw [a.finrank_orbitTangent_of_isotropy_eq_bot x hfree, finrank_tangentSpace] at hsum
+  omega
 
 /-! ### Dimensions at a locally free point -/
 
@@ -181,27 +192,30 @@ theorem finrank_ker_differential_add_finrank [FiniteDimensional ℝ E]
   have := h.finrank_ker_differential_add_finrank_orbitTangent hσx
   rwa [a.finrank_orbitTangent_of_isotropy_eq_bot x hfree, finrank_tangentSpace] at this
 
-/-- Where the action is locally free, the null directions of the form on a level have the
-dimension of the stabilizer `𝔤_{μ(x)}`. -/
+/-- Where the form is nondegenerate, the cocycle of a moment map vanishes and the action is
+locally free, the null directions of the form on a level have the dimension of the stabilizer
+`𝔤_{μ(x)}`. -/
 theorem finrank_ker_differential_inf_orthogonal [FiniteDimensional ℝ E]
-    (hc : σ.momentCocycle a μ x = 0) (hfree : a.isotropy x = ⊥) :
+    (hσx : (σ.bilinFormAt x).Nondegenerate) (hc : σ.momentCocycle a μ x = 0)
+    (hfree : a.isotropy x = ⊥) :
     finrank ℝ ↥(LinearMap.ker (h.differential x) ⊓
-        (hσ.symplecticFormAt x).orthogonal (LinearMap.ker (h.differential x))) =
+        (σ.bilinFormAt x).orthogonal (LinearMap.ker (h.differential x))) =
       finrank ℝ (lieAnnihilator ℝ 𝔤 (μ x)) := by
-  rw [h.ker_differential_inf_orthogonal hσ hc]
+  rw [h.ker_differential_inf_orthogonal hσx hc]
   exact (Submodule.equivMapOfInjective _ ((a.isotropy_eq_bot_iff x).1 hfree) _).finrank_eq.symm
 
-/-- **The dimension of the reduced space.** Where the action is locally free, the quotient of the
-level tangent space `ker dμ_x` by the null directions of the form has dimension
-`dim M - dim 𝔤 - dim 𝔤_{μ(x)}`. -/
+/-- **The dimension of the reduced space.** Where the form is nondegenerate, the cocycle of a
+moment map vanishes and the action is locally free, the quotient of the level tangent space
+`ker dμ_x` by the null directions of the form has dimension `dim M - dim 𝔤 - dim 𝔤_{μ(x)}`. -/
 theorem finrank_ker_differential_sub_finrank_inf_orthogonal [FiniteDimensional ℝ E]
-    (hc : σ.momentCocycle a μ x = 0) (hfree : a.isotropy x = ⊥) :
+    (hσx : (σ.bilinFormAt x).Nondegenerate) (hc : σ.momentCocycle a μ x = 0)
+    (hfree : a.isotropy x = ⊥) :
     finrank ℝ (LinearMap.ker (h.differential x)) -
         finrank ℝ ↥(LinearMap.ker (h.differential x) ⊓
-          (hσ.symplecticFormAt x).orthogonal (LinearMap.ker (h.differential x))) =
+          (σ.bilinFormAt x).orthogonal (LinearMap.ker (h.differential x))) =
       finrank ℝ E - finrank ℝ 𝔤 - finrank ℝ (lieAnnihilator ℝ 𝔤 (μ x)) := by
-  have h₁ := h.finrank_ker_differential_add_finrank (hσ.nondegenerate_bilinFormAt x) hfree
-  rw [h.finrank_ker_differential_inf_orthogonal hσ hc hfree]
+  have h₁ := h.finrank_ker_differential_add_finrank hσx hfree
+  rw [h.finrank_ker_differential_inf_orthogonal hσx hc hfree]
   omega
 
 /-! ### The pulled-back form on a parametrized level -/
@@ -209,25 +223,27 @@ theorem finrank_ker_differential_sub_finrank_inf_orthogonal [FiniteDimensional �
 variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
   {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J ∞ N]
 
-include hσ in
 /-- **The kernel of the form pulled back to a level.** Let `g : N → M` be a smooth map whose
 tangent image at `p` is the kernel of `dμ` at `g p`, such as the inclusion of a regular level of
-`μ`. For a nondegenerate form, where the cocycle of the moment map vanishes, the kernel of
-`g^* σ` at `p` consists of the tangent vectors that `dg_p` sends into `𝔤_{μ(g p)} · g p`. -/
+`μ`. Where the form is nondegenerate at `g p` and the cocycle of the moment map vanishes there,
+the kernel of `g^* σ` at `p` consists of the tangent vectors that `dg_p` sends into
+`𝔤_{μ(g p)} · g p`. -/
 theorem ker_bilinFormAt_mpullback [FiniteDimensional ℝ E] {g : N → M} (hg : ContMDiff J I ∞ g)
-    {p : N} (hc : σ.momentCocycle a μ (g p) = 0)
+    {p : N} (hσx : (σ.bilinFormAt (g p)).Nondegenerate) (hc : σ.momentCocycle a μ (g p) = 0)
     (hrange : LinearMap.range (mfderiv J I g p).toLinearMap =
       LinearMap.ker (h.differential (g p))) :
     LinearMap.ker ((SmoothForm.mpullback g hg σ).bilinFormAt p) =
       ((lieAnnihilator ℝ 𝔤 (μ (g p))).toSubmodule.map (a.eval (g p))).comap
         (mfderiv J I g p).toLinearMap := by
-  rw [← h.ker_differential_inf_orthogonal hσ hc, ← hrange]
+  rw [← h.ker_differential_inf_orthogonal hσx hc, ← hrange]
   ext v
   simp only [LinearMap.mem_ker, Submodule.mem_comap, Submodule.mem_inf, LinearMap.mem_range,
-    exists_apply_eq_apply, true_and, SymplecticForm.mem_orthogonal_iff', forall_exists_index,
-    forall_apply_eq_imp_iff, IsNondegenerate.symplecticFormAt_apply, ContinuousLinearMap.coe_coe,
-    LinearMap.ext_iff, SmoothForm.bilinFormAt_apply, SmoothForm.eval₂_mpullback,
-    LinearMap.zero_apply]
+    exists_apply_eq_apply, true_and, LinearMap.BilinForm.mem_orthogonal_iff, forall_exists_index,
+    forall_apply_eq_imp_iff, ContinuousLinearMap.coe_coe, LinearMap.ext_iff,
+    SmoothForm.bilinFormAt_apply, SmoothForm.eval₂_mpullback, LinearMap.zero_apply]
+  refine forall_congr' fun w ↦ ?_
+  rw [← SmoothForm.bilinFormAt_apply, ← SmoothForm.bilinFormAt_apply,
+    (SmoothForm.isAlt_bilinFormAt σ (g p)).eq_iff]
 
 end IsMomentMap
 
