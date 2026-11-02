@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Wirtinger.Basic
-public import TauCeti.Analysis.Complex.Pompeiu
+public import TauCeti.Analysis.Complex.Pompeiu.Basic
 import TauCeti.Analysis.Complex.CauchyKernel
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.MeasureTheory.Measure.Haar.Unique
@@ -19,7 +19,7 @@ functions into a complex Banach space, for `n ≥ 1`. Cutting off the source ins
 open domain gives a solution near any specified point, with the same regularity.
 This supplies integrating factors for scalar Cauchy–Riemann equations.
 
-The construction uses the right-inverse identity in `TauCeti.Analysis.Complex.Pompeiu`,
+The construction uses the right-inverse identity in `TauCeti.Analysis.Complex.Pompeiu.Basic`,
 where the transform normalized by `(2π)⁻¹` inverts `2 bar∂`.
 
 ## References
