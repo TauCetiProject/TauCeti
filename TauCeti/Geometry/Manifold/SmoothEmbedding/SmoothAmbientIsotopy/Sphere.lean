@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Rotation
 public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.SphereBoost
+public import TauCeti.Geometry.Diffeomorphism.Sphere
 public import TauCeti.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.SmoothAmbientIsotopy.Diffeomorph
 
@@ -38,11 +39,21 @@ order.
 For `n = 1` the statement is false: an isotopy of the circle cannot reverse the orientation of an
 embedding of the circle into itself.
 
+More coarsely, an embedding of any manifold into `Sⁿ` moved by two linear isometries of the same
+determinant gives smoothly ambient isotopic embeddings
+(`TauCeti.SmoothEmbedding.smoothAmbientIsotopic_transDiffeomorph_unitSphereDiffeomorph`), since an
+isometry of determinant `1` restricts to the final map of a rotation diffeotopy
+(`TauCeti.exists_diffeotopy_final_apply_eq_of_det_eq_one`). For knots in `S³` this says that the
+mirror image does not depend on the reflection used to form it.
+
 ## Main results
 
 * `TauCeti.SmoothEmbedding.exists_smoothAmbientIsotopic_mfderiv_eq`: a smooth embedding of the
   circle into a sphere of dimension at least two is smoothly ambient isotopic to one agreeing to
   first order at a given point with any loop that has injective derivative there.
+* `TauCeti.SmoothEmbedding.smoothAmbientIsotopic_transDiffeomorph_unitSphereDiffeomorph`: moving
+  an embedding into a sphere by two linear isometries of the same determinant gives smoothly
+  ambient isotopic embeddings.
 
 ## References
 
@@ -136,5 +147,23 @@ theorem exists_smoothAmbientIsotopic_mfderiv_eq (hn : 2 ≤ n) (hk : k ≠ 0)
     smul_smul, smul_smul]
   rw [show ‖w‖ / ‖v‖ * ‖v‖ * ‖w‖⁻¹ = 1 by
     field_simp [norm_ne_zero_iff.2 hv, norm_ne_zero_iff.2 hw], one_smul]
+
+/-- **Isometries of the same determinant give ambient isotopic embeddings.** Moving a `C^k`
+embedding into the unit sphere `Sⁿ` by two linear isometries of `E` with the same determinant gives
+smoothly ambient isotopic embeddings. The second isometry is the first followed by an isometry of
+determinant `1`, the final map of a rotation diffeotopy of the sphere. -/
+theorem smoothAmbientIsotopic_transDiffeomorph_unitSphereDiffeomorph {EM HM M : Type*}
+    [NormedAddCommGroup EM] [NormedSpace ℝ EM] [TopologicalSpace HM]
+    {I : ModelWithCorners ℝ EM HM} [TopologicalSpace M] [ChartedSpace HM M]
+    (f : SmoothEmbedding I (𝓡 n) k M (sphere (0 : E) 1)) {e₁ e₂ : E ≃ₗᵢ[ℝ] E}
+    (he : (LinearEquiv.det e₁.toLinearEquiv : ℝ) = LinearEquiv.det e₂.toLinearEquiv) :
+    (f.transDiffeomorph (e₁.unitSphereDiffeomorph k)).SmoothAmbientIsotopic
+      (f.transDiffeomorph (e₂.unitSphereDiffeomorph k)) := by
+  have hdet : (LinearEquiv.det (e₁.symm.trans e₂).toLinearEquiv : ℝ) = 1 := by
+    simp [Units.ext he]
+  obtain ⟨Φ, hΦ⟩ := exists_diffeotopy_final_apply_eq_of_det_eq_one (n := n) (m := k) hdet
+  refine SmoothAmbientIsotopic.of_diffeotopy Φ fun x => Subtype.ext ?_
+  rw [hΦ]
+  simp
 
 end TauCeti.SmoothEmbedding

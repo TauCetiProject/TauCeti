@@ -36,7 +36,14 @@ than excluding it.
 * `TauCeti.Quaternion.mem_center_iff`: a quaternion is central iff `2` annihilates each of its
   three imaginary coordinates.
 * `TauCeti.Quaternion.center_eq_bot`: if `2` is left regular in `R`, the centre of `ℍ[R]` is the
-  image of `R`.
+  image of `R`; `TauCeti.Quaternion.mem_center_iff_im_eq_zero` says equivalently that the central
+  quaternions are those with vanishing imaginary part, and
+  `TauCeti.Quaternion.forall_mul_comm_iff_im_eq_zero` restates this as commuting with every
+  quaternion.
+* `TauCeti.Quaternion.forall_sub_mul_eq_zero_iff`, `TauCeti.Quaternion.forall_mul_sub_eq_zero_iff`
+  and `TauCeti.Quaternion.im_inv_eq_zero_iff`: over a linearly ordered field, a commutator with `x`
+  multiplied by a fixed `c` vanishes identically iff `c = 0` or `x` is real, and `x⁻¹` is real iff
+  `x` is.
 * `TauCeti.Quaternion.instIsCentral`: `ℍ[R]` is a central `R`-algebra when `R` has no zero divisors
   and `2 ≠ 0` in `R`. This is the roadmap's `quaternion_isCentral` at `R = ℝ`.
 * `TauCeti.Quaternion.isEmpty_algEquiv_matrix`: over a linearly ordered commutative ring, `ℍ[R]` is
@@ -159,6 +166,21 @@ theorem center_eq_bot (h2 : IsLeftRegular (2 : R)) :
   refine Algebra.mem_bot.mpr ⟨x.re, ?_⟩
   refine _root_.Quaternion.ext _ _ rfl ?_ ?_ ?_ <;> simp [hI', hJ', hK']
 
+/-- **A quaternion is central exactly when its imaginary part vanishes**, as soon as `2` is a left
+regular element of `R`. -/
+theorem mem_center_iff_im_eq_zero (h2 : IsLeftRegular (2 : R)) :
+    x ∈ Subalgebra.center R ℍ[R] ↔ x.im = 0 := by
+  rw [center_eq_bot h2, Algebra.mem_bot]
+  refine ⟨fun ⟨r, hr⟩ ↦ hr ▸ _root_.Quaternion.im_coe r, fun h ↦ ⟨x.re, ?_⟩⟩
+  simpa [h] using _root_.Quaternion.re_add_im x
+
+/-- **A quaternion commutes with every quaternion exactly when its imaginary part vanishes**, as
+soon as `2` is a left regular element of `R`. -/
+theorem forall_mul_comm_iff_im_eq_zero (h2 : IsLeftRegular (2 : R)) :
+    (∀ y, x * y = y * x) ↔ x.im = 0 := by
+  rw [← mem_center_iff_im_eq_zero h2, Subalgebra.mem_center_iff]
+  exact forall_congr' fun _ ↦ eq_comm
+
 /-- **The Hamilton quaternions are a central algebra.** Over a commutative ring with no zero
 divisors in which `2 ≠ 0`, the centre of `ℍ[R]` is exactly the image of `R`. Specialized to
 `R = ℝ` this is the centrality half of the statement that `ℍ[ℝ]` is a central simple `ℝ`-algebra. -/
@@ -198,6 +220,31 @@ theorem isEmpty_algEquiv_matrix (n : Type*) [Fintype n] [DecidableEq n] [Nontriv
   · exact he (by simpa using congrArg f h)
 
 end LinearOrderedCommRing
+
+section LinearOrderedField
+
+variable {R : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R] {x c : ℍ[R]}
+
+/-- The commutator with `x` followed by right multiplication by `c` vanishes identically exactly
+when `c = 0` or `x` is real. -/
+theorem forall_sub_mul_eq_zero_iff : (∀ y, (x * y - y * x) * c = 0) ↔ c = 0 ∨ x.im = 0 := by
+  rw [← forall_mul_comm_iff_im_eq_zero fun _ _ h ↦ mul_left_cancel₀ two_ne_zero h]
+  simp only [mul_eq_zero, sub_eq_zero, forall_or_right, or_comm]
+
+/-- Left multiplication by `c` of the commutator with `x` vanishes identically exactly when `c = 0`
+or `x` is real. -/
+theorem forall_mul_sub_eq_zero_iff : (∀ y, c * (y * x - x * y) = 0) ↔ c = 0 ∨ x.im = 0 := by
+  rw [← forall_mul_comm_iff_im_eq_zero fun _ _ h ↦ mul_left_cancel₀ two_ne_zero h]
+  simp only [mul_eq_zero, sub_eq_zero, forall_or_left, eq_comm]
+
+/-- A quaternion is real exactly when its inverse is. -/
+@[simp]
+theorem im_inv_eq_zero_iff : x⁻¹.im = 0 ↔ x.im = 0 := by
+  have h2 : IsLeftRegular (2 : R) := fun _ _ h ↦ mul_left_cancel₀ two_ne_zero h
+  simp_rw [← forall_mul_comm_iff_im_eq_zero h2, ← commute_iff_eq]
+  exact ⟨fun H y ↦ by simpa using (H y).inv_left₀, fun H y ↦ (H y).inv_left₀⟩
+
+end LinearOrderedField
 
 end Quaternion
 
