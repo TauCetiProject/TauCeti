@@ -87,7 +87,7 @@ by the dual basis. -/
 theorem sum_apply_dualBasis_smul_apply (b : Basis ι K V) (u v : V) :
     ∑ i, B (B.dualBasis hB b i) u • f (b i) v = f u v := by
   conv_rhs => rw [← BilinForm.sum_apply_dualBasis_smul hB b u]
-  simp only [map_sum, map_smul, sum_apply, smul_apply]
+  simp only [map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply]
 
 /-- **Expansion of the second argument of a bilinear map in the dual basis**, with the
 coefficients read off by `b`. -/
