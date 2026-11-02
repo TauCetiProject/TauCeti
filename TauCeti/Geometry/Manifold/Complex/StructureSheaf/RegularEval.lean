@@ -19,24 +19,24 @@ regular germs with the stalk `𝒪_a` and transports evaluation at `a` to a ring
 
 A meromorphic germ lives on punctured neighbourhoods of `a`, so it has no value at `a`, and the
 value of a representative at `a` is never used. Instead, a meromorphic germ is regular exactly
-when it has a limit at `a` along `𝓝[≠] a`, and then its value is that limit. Equivalently, a germ is
-regular exactly when its principal part vanishes, and then its value is the value at `a` of its
-regular part. The value is unchanged by pullback along analytic maps which preserve punctured
-neighbourhoods, in particular along local biholomorphisms. A regular germ is a unit of the regular
-subring exactly when its value is nonzero, so the nonunits of the regular subring form the kernel
-of its value homomorphism.
+when it has a limit at `a` along `𝓝[≠] a` (`mem_range_toMeromorphicGerms_iff_exists_tendsto`), and
+then its value is that limit. Equivalently, a germ is regular exactly when its principal part
+vanishes (`mem_range_toMeromorphicGerms_iff_principalPart_eq_zero`), and then its value is the
+value at `a` of its regular part. Both regularity criteria are in
+`TauCeti.Geometry.Manifold.Complex.StructureSheaf.MeromorphicGerm`. The value is unchanged by
+pullback along analytic maps which preserve punctured neighbourhoods, in particular along local
+biholomorphisms. A regular germ is a unit of the regular subring exactly when its value is nonzero,
+so the nonunits of the regular subring form the kernel of its value homomorphism.
 
 ## Main declarations
 
 * `TauCeti.holomorphicStructureSheaf.rangeToMeromorphicGermsEquiv`: the holomorphic stalk at `a` is
   isomorphic to the subring of regular meromorphic germs.
 * `TauCeti.holomorphicStructureSheaf.regularEval`: the value at `a` of a regular germ.
-* `TauCeti.holomorphicStructureSheaf.mem_range_toMeromorphicGerms_iff_exists_tendsto`: a
-  meromorphic germ is regular exactly when it has a limit at `a`.
 * `TauCeti.holomorphicStructureSheaf.regularEval_eq_iff_tendsto`: the value of a regular germ is
   its limit at `a`.
-* `TauCeti.holomorphicStructureSheaf.mem_range_toMeromorphicGerms_iff_principalPart_eq_zero`: a
-  meromorphic germ is regular exactly when its principal part vanishes.
+* `TauCeti.holomorphicStructureSheaf.regularEval_eq_eval_regularPart`: the value of a regular germ
+  is the value at `a` of its regular part.
 * `TauCeti.holomorphicStructureSheaf.regularEval_pullback`: pullback preserves the value.
 * `TauCeti.holomorphicStructureSheaf.isUnit_iff_regularEval_ne_zero`: the units of the regular
   subring are the germs with nonzero value.
@@ -118,29 +118,14 @@ theorem regularEval_eq_iff_tendsto (φ : (toMeromorphicGerms a).range) {c : ℂ}
   rw [← hf, Germ.coe_tendsto] at h hφ
   exact tendsto_nhds_unique hφ h
 
-/-- **Regular germs are those with a limit.** A meromorphic germ at `a` comes from a holomorphic
-germ exactly when it has a limit along the punctured neighbourhoods of `a`. -/
-theorem mem_range_toMeromorphicGerms_iff_exists_tendsto {φ : meromorphicGerms ℂ a} :
-    φ ∈ (toMeromorphicGerms a).range ↔ ∃ c, (φ : Germ (𝓝[≠] a) ℂ).Tendsto (𝓝 c) := by
-  obtain ⟨f, hf, hφ⟩ := mem_meromorphicGerms_iff.1 φ.2
-  simp_rw [← hφ, Germ.coe_tendsto, tendsto_nhds_iff_meromorphicOrderAt_nonneg hf,
-    ← exists_toMeromorphicGerms_eq_iff hf, hφ, RingHom.mem_range, Subtype.ext_iff]
-
-/-- A meromorphic germ at `a` represented by a function continuous at `a` is regular, with value
-the value of the function at `a`. -/
+/-- The value of a regular meromorphic germ at `a` represented by a function continuous at `a` is
+the value of the function at `a`. Regularity of such a germ follows from
+`mem_range_toMeromorphicGerms_iff_exists_tendsto`. -/
 theorem regularEval_eq_of_continuousAt (φ : (toMeromorphicGerms a).range) {f : ℂ → ℂ}
     (hf : ContinuousAt f a) (hφ : ((φ : meromorphicGerms ℂ a) : Germ (𝓝[≠] a) ℂ) = f) :
     regularEval a φ = f a := by
   rw [regularEval_eq_iff_tendsto, hφ, Germ.coe_tendsto]
   exact hf.continuousWithinAt.tendsto
-
-open meromorphicGerms in
-/-- A meromorphic germ at `a` comes from a holomorphic germ exactly when its principal part
-vanishes. -/
-theorem mem_range_toMeromorphicGerms_iff_principalPart_eq_zero {φ : meromorphicGerms ℂ a} :
-    φ ∈ (toMeromorphicGerms a).range ↔ principalPart φ = 0 := by
-  refine ⟨fun ⟨s, hs⟩ ↦ hs ▸ principalPart_toMeromorphicGerms s, fun h ↦ ⟨regularPart a φ, ?_⟩⟩
-  rw [toMeromorphicGerms_regularPart, h, map_zero, sub_zero]
 
 /-- The value of a regular germ is the value at `a` of its regular part. -/
 theorem regularEval_eq_eval_regularPart (φ : (toMeromorphicGerms a).range) :
@@ -165,6 +150,7 @@ theorem regularEval_pullback {b : ℂ} (g : ℂ → ℂ) (hg : AnalyticAt ℂ g 
   exact h.comp ht
 
 /-- A regular germ is a unit of the regular subring exactly when its value is nonzero. -/
+@[simp]
 theorem isUnit_iff_regularEval_ne_zero (φ : (toMeromorphicGerms a).range) :
     IsUnit φ ↔ regularEval a φ ≠ 0 := by
   obtain ⟨s, rfl⟩ := (rangeToMeromorphicGermsEquiv a).surjective φ
