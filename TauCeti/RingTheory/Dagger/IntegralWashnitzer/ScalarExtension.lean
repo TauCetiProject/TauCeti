@@ -18,14 +18,19 @@ Consequently the natural map `K ⊗[K°] K°⟨X⟩† → K⟨X⟩†` is an is
 power series. Neither completeness nor discreteness of the valuation is needed,
 and the variable type may be infinite.
 
-The localization proof uses the denominator-clearing criterion
-`TauCeti.Dagger.mem_washnitzerAlgebra_iff_exists_C_pow_mul_mem`; scalar extension
-then follows from Mathlib's `Algebra.isPushout_of_isLocalization`.
+`isLocalizationAway` gives access to Mathlib's localization API for extending maps
+out of the integral algebra after inverting the chosen scalar. The comparison
+`scalarExtensionEquiv` sends `c ⊗ f` to `c • f` by `scalarExtensionEquiv_tmul`;
+`scalarExtensionEquiv_symm_toWashnitzerAlgebra` sends an included integral series
+back to `1 ⊗ f`.
 
 ## References
 
 * M. van der Put, *The cohomology of Monsky and Washnitzer*,
   Mém. Soc. Math. France 23 (1986), §2.
+* Formal constructions: the denominator-clearing criterion
+  `TauCeti.Dagger.mem_washnitzerAlgebra_iff_exists_C_pow_mul_mem` and Mathlib's
+  `Algebra.isPushout_of_isLocalization`.
 -/
 
 public section

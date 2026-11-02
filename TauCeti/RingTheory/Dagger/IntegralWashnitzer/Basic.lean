@@ -214,8 +214,7 @@ instance : IsScalarTower (Subring.unitClosedBall R) (intWashnitzerAlgebra σ R)
     (washnitzerAlgebra σ R) := .of_algebraMap_eq fun a ↦ by
   apply Subtype.ext
   simp [IsScalarTower.algebraMap_eq (Subring.unitClosedBall R) R (washnitzerAlgebra σ R),
-    MvPowerSeries.algebraMap_apply]
-  rfl
+    MvPowerSeries.algebraMap_apply, Algebra.algebraMap_ofSubsemiring_apply]
 
 variable (σ R) in
 /-- The inclusion of the polynomials with coefficients in `R°` into `R°⟨X⟩†`. -/
