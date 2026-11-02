@@ -169,6 +169,24 @@ theorem pullbackForgetIso_inv_app (V : QuasicoherentLinearScheme X) :
     (a ≫ (linearSpecForgetIso X).hom.app ((degreeOne X).obj V)) ≫ _)
     (Equivalence.invFunIdAssoc_inv_app _ _ V)
 
+/-- The base-change comparison after forgetting the affine slice structure. -/
+def pullbackForgetIsoLeft (V : QuasicoherentLinearScheme X) :
+    ((pullback f).obj V).obj.fst.left ≅ Limits.pullback V.obj.fst.hom f :=
+  ((MorphismProperty.Over.forget _ _ Y) ⋙ Over.forget Y).mapIso
+    ((pullbackForgetIso f).app V)
+
+/-- The forward scheme comparison is the underlying map of the affine-slice comparison. -/
+@[simp]
+theorem pullbackForgetIsoLeft_hom (V : QuasicoherentLinearScheme X) :
+    (pullbackForgetIsoLeft f V).hom = ((pullbackForgetIso f).hom.app V).left :=
+  (rfl)
+
+/-- The inverse scheme comparison is the underlying inverse affine-slice map. -/
+@[simp]
+theorem pullbackForgetIsoLeft_inv (V : QuasicoherentLinearScheme X) :
+    (pullbackForgetIsoLeft f V).inv = ((pullbackForgetIso f).inv.app V).left :=
+  (rfl)
+
 /-- The projection from a base-changed linear scheme to the original total space. -/
 def pullbackFst (V : QuasicoherentLinearScheme X) :
     ((pullback f).obj V).obj.fst.left ⟶ V.obj.fst.left :=
@@ -198,10 +216,7 @@ theorem pullbackForgetIso_inv_left_fst (V : QuasicoherentLinearScheme X) :
     ((pullbackForgetIso f).inv.app V).left ≫ pullbackFst f V =
       Limits.pullback.fst V.obj.fst.hom f := by
   rw [← pullbackForgetIso_hom_left_fst]
-  -- Mapping the component iso to schemes identifies its inverse-hom composite.
-  let e := ((MorphismProperty.Over.forget _ _ Y) ⋙ Over.forget Y).mapIso
-    ((pullbackForgetIso f).app V)
-  exact e.inv_hom_id_assoc _
+  exact (pullbackForgetIsoLeft f V).inv_hom_id_assoc _
 
 /-- The inverse underlying-scheme comparison recovers the second fibre-product projection. -/
 @[simp, reassoc]
@@ -209,9 +224,7 @@ theorem pullbackForgetIso_inv_left_snd (V : QuasicoherentLinearScheme X) :
     ((pullbackForgetIso f).inv.app V).left ≫ ((pullback f).obj V).obj.fst.hom =
       Limits.pullback.snd V.obj.fst.hom f := by
   rw [← pullbackForgetIso_hom_left_snd]
-  let e := ((MorphismProperty.Over.forget _ _ Y) ⋙ Over.forget Y).mapIso
-    ((pullbackForgetIso f).app V)
-  exact e.inv_hom_id_assoc _
+  exact (pullbackForgetIsoLeft f V).inv_hom_id_assoc _
 
 /-- The base-change projection is natural in the original linear scheme. -/
 @[reassoc]
@@ -219,41 +232,27 @@ theorem pullbackFst_naturality {V W : QuasicoherentLinearScheme X} (a : V ⟶ W)
     ((pullback f).map a).hom.fst.left ≫ pullbackFst f W =
       pullbackFst f V ≫ a.hom.fst.left := by
   have h := congrArg (fun b ↦ b.left) ((pullbackForgetIso f).hom.naturality a)
-  change ((pullback f).map a).hom.fst.left ≫ ((pullbackForgetIso f).hom.app W).left =
-    ((pullbackForgetIso f).hom.app V).left ≫
-      ((baseChangeAffineSchemeOver f).map ((forget X).map a)).left at h
-  -- As in the projection equations, use typed equalities: rewriting associativity cannot
-  -- match the slice's `IsAffineHom` instances without unfolding.
-  let c := ((pullbackForgetIso f).hom.app V).left
-  let b := ((baseChangeAffineSchemeOver f).map ((forget X).map a)).left
-  exact (Category.assoc ((pullback f).map a).hom.fst.left
-    ((pullbackForgetIso f).hom.app W).left (Limits.pullback.fst W.obj.fst.hom f)).symm.trans
-    ((congrArg (· ≫ Limits.pullback.fst W.obj.fst.hom f) h).trans
-      ((Category.assoc c b _).trans
-        ((congrArg (c ≫ ·) (baseChangeAffineSchemeOver_map_left_fst f ((forget X).map a))).trans
-          (Category.assoc c (Limits.pullback.fst V.obj.fst.hom f) a.hom.fst.left).symm)))
+  -- `erw` unfolds the mixed `IsAffineHom` instances; ordinary `rw` cannot type-check
+  -- these expressions at implicit transparency, even for associativity in schemes.
+  erw [MorphismProperty.Comma.comp_left, MorphismProperty.Comma.comp_left] at h
+  rw [← pullbackForgetIso_hom_left_fst, ← pullbackForgetIso_hom_left_fst]
+  erw [← Category.assoc, h, Category.assoc,
+    baseChangeAffineSchemeOver_map_left_fst, Category.assoc]
 
 /-- The base-change projection commutes with the structure morphisms. -/
 @[reassoc (attr := simp)]
 theorem pullbackFst_hom (V : QuasicoherentLinearScheme X) :
     pullbackFst f V ≫ V.obj.fst.hom = ((pullback f).obj V).obj.fst.hom ≫ f := by
-  -- The affine slice uses `IsAffineHom` as a morphism property only after unfolding;
-  -- ordinary rewriting cannot match the resulting mixed category instances.
-  let a := ((pullbackForgetIso f).hom.app V).left
-  exact (Category.assoc a _ _).trans
-    ((congrArg (a ≫ ·) (Limits.pullback.condition (f := V.obj.fst.hom) (g := f))).trans
-      ((Category.assoc a _ f).symm.trans
-        (congrArg (· ≫ f) (pullbackForgetIso_hom_left_snd f V))))
+  -- As in naturality, `erw` is needed for the mixed affine-slice instances.
+  erw [← pullbackForgetIso_hom_left_fst, Category.assoc,
+    Limits.pullback.condition (f := V.obj.fst.hom) (g := f), ← Category.assoc]
+  exact congrArg (· ≫ f) (pullbackForgetIso_hom_left_snd f V)
 
 /-- The square consisting of the base-change projection and the structure morphisms is
 cartesian in schemes. -/
 theorem isPullback_pullbackFst (V : QuasicoherentLinearScheme X) :
     IsPullback (pullbackFst f V) ((pullback f).obj V).obj.fst.hom V.obj.fst.hom f := by
-  let e := ((MorphismProperty.Over.forget _ _ Y) ⋙ Over.forget Y).mapIso
-    ((pullbackForgetIso f).app V)
-  -- Mapping to schemes makes `e.hom` the component's `.left`; the first equality is
-  -- the defining equation of `pullbackFst`, and the second is the named slice equation.
-  exact IsPullback.of_iso_pullback ⟨pullbackFst_hom f V⟩ e
+  exact IsPullback.of_iso_pullback ⟨pullbackFst_hom f V⟩ (pullbackForgetIsoLeft f V)
     (pullbackForgetIso_hom_left_fst f V) (pullbackForgetIso_hom_left_snd f V)
 
 /-- Base change along the identity is naturally the identity on linear schemes. -/
@@ -270,14 +269,12 @@ theorem pullbackId_hom_app (V : QuasicoherentLinearScheme X) :
     (pullbackId X).hom.app V =
       (linearSpec X).map (((QuasicoherentSheaf.pullbackId X).inv.app
         ((degreeOne X).obj V).unop).op) ≫ (linearSpecDegreeOneIso V).hom := by
-  -- Whiskering, iso composition and `NatIso.op` give this component definitionally;
-  -- rewriting those operations fails to match the mixed sheaf category instances.
-  change (linearSpec X).map
-    (((QuasicoherentSheaf.pullbackId X).inv.app ((degreeOne X).obj V).unop).op) ≫
-      (linearSpecEquiv X).counit.app V = _
-  exact congrArg ((linearSpec X).map
-    (((QuasicoherentSheaf.pullbackId X).inv.app ((degreeOne X).obj V).unop).op) ≫ ·)
-    (linearSpecEquiv_counit_app V)
+  unfold pullbackId
+  -- `erw` recognizes composition through the mixed sheaf category instances.
+  erw [Iso.trans_hom, NatTrans.comp_app]
+  rw [linearSpecEquiv_counit_app]
+  -- Whiskering and `NatIso.op` evaluate to the displayed mapped component.
+  rfl
 
 /-- The inverse identity comparison reverses reconstruction, then the identity comparison
 of quasicoherent pullback. -/
