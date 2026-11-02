@@ -54,17 +54,6 @@ namespace TauCeti.FiniteEtaleScheme
 
 variable {S : Scheme.{u}} {Ω Ω' : Type u} [Field Ω] [IsSepClosed Ω] [Field Ω'] [IsSepClosed Ω']
 
-/-- Let `U` be an open subscheme of the base whose inclusion is finite, that is, `U` is also
-closed. The geometric fibre at `x` of `U`, as a finite étale `S`-scheme, is nonempty exactly when
-`x` lies in `U`. -/
-theorem nonempty_fiber_obj_ofHom_ι_iff (U : S.Opens) [IsFinite U.ι] (x : Spec (.of Ω) ⟶ S) :
-    Nonempty ((fiber x).obj (ofHom U.ι)) ↔ x default ∈ U := by
-  rw [nonempty_fiber_obj_iff_range_subset_range, Set.range_unique, Set.singleton_subset_iff,
-    ofHom_obj]
-  -- The structure morphism `(Over.mk U.ι).hom` is `U.ι` (`Over.mk_hom`), but its codomain is
-  -- written differently, so `rw` cannot replace it under the coercion to functions.
-  exact Iff.of_eq (congrArg (x default ∈ ·) (Scheme.Opens.range_ι U))
-
 /-- Geometric points `x` and `y` separated by an open and closed subset `U` of the base are not
 joined by an étale path: the geometric fibres of `U`, as a finite étale `S`-scheme, are a point at
 `x` and empty at `y`. -/
