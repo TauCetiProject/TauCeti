@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.ModelWithCorners.RestrictScalars.Basic
+public import TauCeti.Geometry.Manifold.IsManifold.RestrictScalars
 public import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
 public import Mathlib.Geometry.Manifold.MFDeriv.Basic
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
@@ -47,9 +47,12 @@ Chapter 1.
 * `MDifferentiableWithinAt.restrictScalars_mfderivWithin`,
   `MDifferentiableAt.mfderiv_restrictScalars`: the derivative over `𝕜` is the derivative over `𝕜'`
   with scalars restricted to `𝕜`.
+* `TauCeti.hasMFDerivWithinAt_restrictScalars_self_iff`: identifies the restricted self-model
+  derivative predicate with the usual derivative predicate over the smaller field.
 * `TauCeti.tangentCoordChange_restrictScalars`: the tangent coordinate changes over `𝕜` are those
   over `𝕜'` with scalars restricted to `𝕜`; in particular they are `𝕜'`-linear
-  (`TauCeti.tangentCoordChange_smul`), and so is the derivative of the inverse of a chart
+  (`TauCeti.tangentCoordChange_smul`, or `TauCeti.tangentCoordChange_smul_self` for self-models),
+  and so is the derivative of the inverse of a chart
   (`TauCeti.mfderivWithin_extChartAt_symm_smul`).
 -/
 
@@ -77,9 +80,7 @@ differentiable within that set at that point for the models over the smaller fie
 theorem MDifferentiableWithinAt.restrictScalars
     (h : MDifferentiableWithinAt I I' f s x) :
     MDifferentiableWithinAt (I.restrictScalars 𝕜) (I'.restrictScalars 𝕜) f s x := by
-  simp only [mdifferentiableWithinAt_iff', writtenInExtChartAt, extChartAt_coe,
-    extChartAt_coe_symm, ModelWithCorners.coe_restrictScalars,
-    ModelWithCorners.coe_restrictScalars_symm, I.range_eq_univ] at h ⊢
+  simp only [mdifferentiableWithinAt_iff', mfld_simps, I.range_eq_univ] at h ⊢
   exact ⟨h.1, h.2.restrictScalars 𝕜⟩
 
 /-- A map which is differentiable at a point for the models over `𝕜'` is differentiable at that
@@ -114,11 +115,8 @@ theorem HasMFDerivWithinAt.restrictScalars
         ((tangentSpaceCastModel (I.restrictScalars 𝕜) x).symm : E →L[𝕜] _)) :
     HasMFDerivWithinAt (I.restrictScalars 𝕜) (I'.restrictScalars 𝕜) f s x g' := by
   have hf := h.2.restrictScalars 𝕜
-  simp only [hg, writtenInExtChartAt, extChartAt_coe, extChartAt_coe_symm,
-    I.range_eq_univ] at hf
-  simp only [HasMFDerivWithinAt, writtenInExtChartAt, extChartAt_coe, extChartAt_coe_symm,
-    ModelWithCorners.coe_restrictScalars, ModelWithCorners.coe_restrictScalars_symm,
-    I.range_eq_univ]
+  simp only [hg, mfld_simps, I.range_eq_univ] at hf
+  simp only [HasMFDerivWithinAt, mfld_simps, I.range_eq_univ]
   exact ⟨h.1, hf⟩
 
 /-- If `f'` is a derivative of `f` at a point for the models over `𝕜'`, and `g'` is a `𝕜`-linear map
@@ -149,11 +147,8 @@ theorem HasMFDerivWithinAt.of_restrictScalars
         ((tangentSpaceCastModel (I.restrictScalars 𝕜) x).symm : E →L[𝕜] _)) :
     HasMFDerivWithinAt I I' f s x f' := by
   have hf := h.2
-  simp only [writtenInExtChartAt, extChartAt_coe, extChartAt_coe_symm,
-    ModelWithCorners.coe_restrictScalars, ModelWithCorners.coe_restrictScalars_symm,
-    I.range_eq_univ] at hf
-  simp only [HasMFDerivWithinAt, writtenInExtChartAt, extChartAt_coe, extChartAt_coe_symm,
-    I.range_eq_univ]
+  simp only [mfld_simps, I.range_eq_univ] at hf
+  simp only [HasMFDerivWithinAt, mfld_simps, I.range_eq_univ]
   exact ⟨h.1, hf.of_restrictScalars 𝕜 hg⟩
 
 /-- If `g'` is a derivative of `f` at a point for the models over `𝕜`, and `f'` is a `𝕜'`-linear map
@@ -185,9 +180,7 @@ theorem MDifferentiableWithinAt.restrictScalars_mfderivWithin
         ((tangentSpaceCastModel (I.restrictScalars 𝕜) x).symm : E →L[𝕜] _) := by
   have h₁ := h.hasMFDerivWithinAt.2.restrictScalars 𝕜
   have h₂ := (h.restrictScalars 𝕜).hasMFDerivWithinAt.2
-  simp only [UniqueMDiffWithinAt, writtenInExtChartAt, extChartAt_coe, extChartAt_coe_symm,
-    ModelWithCorners.coe_restrictScalars, ModelWithCorners.coe_restrictScalars_symm,
-    I.range_eq_univ] at h₁ h₂ hs
+  simp only [UniqueMDiffWithinAt, mfld_simps, I.range_eq_univ] at h₁ h₂ hs
   exact hs.eq h₁ h₂
 
 /-- At a point where `f` is differentiable for the models over `𝕜'`, the derivative of `f` over the
@@ -208,6 +201,30 @@ end Boundaryless
 
 namespace TauCeti
 
+section Self
+
+variable {𝕜 𝕜' : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜']
+  {E E' : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedSpace 𝕜' E]
+  [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [NormedSpace 𝕜' E']
+  {M N : Type*} [TopologicalSpace M] [ChartedSpace E M]
+  [TopologicalSpace N] [ChartedSpace E' N] {f : M → N} {s : Set M} {x : M}
+
+/-- For self-models, restricting the model scalars gives the usual derivative predicate over
+the smaller field, with the derivative read as a map between the model vector spaces. -/
+@[simp]
+theorem hasMFDerivWithinAt_restrictScalars_self_iff {f' : E →L[𝕜] E'} :
+    HasMFDerivWithinAt (𝓘(𝕜', E).restrictScalars 𝕜) (𝓘(𝕜', E').restrictScalars 𝕜) f s x f' ↔
+      HasMFDerivWithinAt 𝓘(𝕜, E) 𝓘(𝕜, E') f s x f' := by
+  constructor <;> intro h
+  all_goals
+    refine ⟨h.1, ?_⟩
+    have hd := h.2
+    simp only [modelWithCornersSelf_restrictScalars] at hd ⊢
+    -- The derivative casts are identities on the model spaces, for either self-model.
+    exact hd.congr_fderiv (by ext v; rfl)
+
+end Self
+
 section Boundaryless
 
 variable {𝕜 𝕜' : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜']
@@ -222,10 +239,12 @@ variable (𝕜)
 `𝕜` is the tangent coordinate change for the model over `𝕜'`, with scalars restricted to `𝕜`: both
 are the derivative of the same chart transition. For instance, the tangent coordinate changes of
 a complex manifold, regarded as a real manifold, are complex linear. -/
-theorem tangentCoordChange_restrictScalars [IsManifold I 1 M] [IsManifold (I.restrictScalars 𝕜) 1 M]
+theorem tangentCoordChange_restrictScalars [hI : IsManifold I 1 M]
     {y z : M} (h : z ∈ (chartAt H x).source ∩ (chartAt H y).source) :
+    letI := I.isManifold_restrictScalars 𝕜 hI
     tangentCoordChange (I.restrictScalars 𝕜) x y z =
       (tangentCoordChange I x y z).restrictScalars 𝕜 := by
+  let := I.isManifold_restrictScalars 𝕜 hI
   have h' : z ∈ (extChartAt I x).source ∩ (extChartAt I y).source := by
     simpa only [extChartAt_source] using h
   have h₁ := (hasFDerivWithinAt_tangentCoordChange h').restrictScalars 𝕜
@@ -233,17 +252,18 @@ theorem tangentCoordChange_restrictScalars [IsManifold I 1 M] [IsManifold (I.res
       (extChartAt (I.restrictScalars 𝕜) y).source := by
     simpa only [extChartAt_source] using h
   have h₂ := hasFDerivWithinAt_tangentCoordChange h''
-  simp only [extChartAt_coe, extChartAt_coe_symm, ModelWithCorners.coe_restrictScalars,
-    ModelWithCorners.coe_restrictScalars_symm, I.range_eq_univ] at h₁ h₂
+  simp only [mfld_simps, I.range_eq_univ] at h₁ h₂
   exact (h₂.hasFDerivAt Filter.univ_mem).unique (h₁.hasFDerivAt Filter.univ_mem)
 
 /-- On the overlap of the charts at `x` and `y`, the tangent coordinate change for the model over
 `𝕜` is `𝕜'`-linear. For instance, the real tangent coordinate changes of a complex manifold are
 complex linear. -/
-theorem tangentCoordChange_smul [IsManifold I 1 M] [IsManifold (I.restrictScalars 𝕜) 1 M] {y z : M}
+theorem tangentCoordChange_smul [hI : IsManifold I 1 M] {y z : M}
     (h : z ∈ (chartAt H x).source ∩ (chartAt H y).source) (c : 𝕜') (w : E) :
+    letI := I.isManifold_restrictScalars 𝕜 hI
     tangentCoordChange (I.restrictScalars 𝕜) x y z (c • w) =
       c • tangentCoordChange (I.restrictScalars 𝕜) x y z w := by
+  let := I.isManifold_restrictScalars 𝕜 hI
   rw [tangentCoordChange_restrictScalars 𝕜 (𝕜' := 𝕜') h, ContinuousLinearMap.coe_restrictScalars',
     map_smul]
 
@@ -255,6 +275,17 @@ variable {𝕜 𝕜' : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormed
   [ChartedSpace E M] {x : M}
 
 variable (𝕜)
+
+/-- For self-models, tangent coordinate changes over the smaller field commute with scalar
+multiplication over the larger field on chart overlaps. -/
+theorem tangentCoordChange_smul_self [hI : IsManifold 𝓘(𝕜', E) 1 M]
+    {y z : M} (h : z ∈ (chartAt E x).source ∩ (chartAt E y).source) (c : 𝕜') (w : E) :
+    letI := hI.restrictScalars 𝕜
+    tangentCoordChange 𝓘(𝕜, E) x y z (c • w) =
+      c • tangentCoordChange 𝓘(𝕜, E) x y z w := by
+  let := hI.restrictScalars 𝕜
+  simpa only [modelWithCornersSelf_restrictScalars] using
+    tangentCoordChange_smul 𝕜 (I := 𝓘(𝕜', E)) h c w
 
 /-- On the target of the chart at `x`, the derivative over `𝕜` of the inverse of the chart is
 `𝕜'`-linear: it is a tangent coordinate change. For instance, on a complex manifold, regarded as
@@ -270,11 +301,6 @@ theorem mfderivWithin_extChartAt_symm_smul [IsManifold 𝓘(𝕜', E) 1 M] [IsMa
     simpa only [extChartAt_source] using (extChartAt 𝓘(𝕜, E) x).map_target hz
   rw [← (extChartAt 𝓘(𝕜, E) x).right_inv hz, ← TangentBundle.symmL_trivializationAt hy,
     TangentBundle.symmL_trivializationAt_eq_core hy]
-  let : IsManifold (𝓘(𝕜', E).restrictScalars 𝕜) 1 M := by
-    simpa only [modelWithCornersSelf_restrictScalars] using
-      (inferInstance : IsManifold 𝓘(𝕜, E) 1 M)
-  have h := tangentCoordChange_smul 𝕜 (I := 𝓘(𝕜', E)) ⟨hy, mem_chart_source E _⟩ c w
-  simp only [modelWithCornersSelf_restrictScalars] at h
-  exact h
+  exact tangentCoordChange_smul_self 𝕜 (𝕜' := 𝕜') ⟨hy, mem_chart_source E _⟩ c w
 
 end TauCeti

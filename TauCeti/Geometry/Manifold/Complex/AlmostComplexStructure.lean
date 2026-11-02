@@ -90,13 +90,9 @@ def ofComplexManifold : SmoothAlmostComplexStructure 𝓘(ℝ, E) M where
           (extChartAt 𝓘(ℝ, E) x₀).source := by
         simp [hx]
       simp only [ContinuousLinearMap.comp_apply, smul_apply, ContinuousLinearMap.id_apply]
-      let : IsManifold (𝓘(ℂ, E).restrictScalars ℝ) 1 M := by
-        simpa only [modelWithCornersSelf_restrictScalars] using
-          (inferInstance : IsManifold 𝓘(ℝ, E) 1 M)
-      have hsmul := tangentCoordChange_smul ℝ (I := 𝓘(ℂ, E))
+      have hsmul := tangentCoordChange_smul_self ℝ (𝕜' := ℂ)
         ⟨mem_chart_source E x, hx⟩ Complex.I
         (tangentCoordChange 𝓘(ℝ, E) x₀ x x v)
-      simp only [modelWithCornersSelf_restrictScalars] at hsmul
       exact hsmul.trans
         (congrArg (Complex.I • ·)
           ((tangentCoordChange_comp hx').trans (tangentCoordChange_self (by simp [hx]))))⟩
@@ -156,11 +152,8 @@ theorem isPseudoholomorphicWithinAt_ofComplexManifold_iff :
         ofComplexManifold_apply (E := E') (f x) (u w)] at h
     -- Read in the model spaces, `complexOfMapISmul` with scalars restricted to `ℝ` is `u₀`.
     have hu' : HasMFDerivWithinAt (𝓘(ℂ, E).restrictScalars ℝ)
-        (𝓘(ℂ, E').restrictScalars ℝ) f s x u₀ := by
-      -- Rewrite the model identity in chart-level data before identifying tangent spaces.
-      have h := hu
-      simp only [HasMFDerivWithinAt, modelWithCornersSelf_restrictScalars] at h ⊢
-      exact h
+        (𝓘(ℂ, E').restrictScalars ℝ) f s x u₀ :=
+      hasMFDerivWithinAt_restrictScalars_self_iff.mpr hu
     exact (hu'.of_restrictScalars ℝ (f' := u₀.complexOfMapISmul hI)
       (by
         ext w
@@ -173,9 +166,7 @@ theorem isPseudoholomorphicWithinAt_ofComplexManifold_iff :
         (𝓘(ℂ, E').restrictScalars ℝ) f s x u :=
       h.hasMFDerivWithinAt.restrictScalars ℝ rfl
     refine ⟨u, ?_, (isComplexLinearMap_iff_apply _ _ _).mpr fun w ↦ ?_⟩
-    · -- The scalar-restricted self-model has the same chart-level derivative data.
-      simp only [HasMFDerivWithinAt, modelWithCornersSelf_restrictScalars] at hu ⊢
-      exact hu
+    · exact hasMFDerivWithinAt_restrictScalars_self_iff.mp hu
     · rw [almostComplexStructureAt_apply, almostComplexStructureAt_apply]
       exact (congrArg u (ofComplexManifold_apply (E := E) x w)).trans
         (((mfderivWithin 𝓘(ℂ, E) 𝓘(ℂ, E') f s x).map_smul Complex.I w).trans
@@ -230,11 +221,7 @@ private lemma mpullbackWithin_ofComplexManifold_eventuallyEq
   have h : y ∈ (chartAt E y).source ∩ (chartAt E x).source := by
     simpa using hy
   rw [smul_apply, ContinuousLinearMap.id_apply]
-  let : IsManifold (𝓘(ℂ, E).restrictScalars ℝ) 1 M := by
-    simpa only [modelWithCornersSelf_restrictScalars] using
-      (inferInstance : IsManifold 𝓘(ℝ, E) 1 M)
-  have hsmul := tangentCoordChange_smul ℝ (I := 𝓘(ℂ, E)) h Complex.I (V y)
-  simp only [modelWithCornersSelf_restrictScalars] at hsmul
+  have hsmul := tangentCoordChange_smul_self ℝ (𝕜' := ℂ) h Complex.I (V y)
   exact (congrArg (tangentCoordChange 𝓘(ℝ, E) y x y)
     (ofComplexManifold_apply (E := E) y (V y))).trans hsmul
 
