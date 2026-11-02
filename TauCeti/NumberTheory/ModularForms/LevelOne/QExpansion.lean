@@ -65,6 +65,21 @@ theorem E₄_qExpansion_coeff_two : (qExpansion 1 E₄).coeff 2 = 2160 := by
   norm_num [E_qExpansion_coeff _ ⟨2, rfl⟩, bernoulli_four, ArithmeticFunction.sigma_apply,
     Nat.prime_two.divisors]
 
+/-- The constant coefficient of `E₄³` is `1`. -/
+theorem E₄_cube_qExpansion_coeff_zero : (qExpansion 1 E₄ ^ 3).coeff 0 = 1 := by
+  rw [PowerSeries.coeff_zero_eq_constantCoeff, map_pow,
+    ← PowerSeries.coeff_zero_eq_constantCoeff, E_qExpansion_coeff_zero _ ⟨2, rfl⟩, one_pow]
+
+/-- The linear coefficient of `E₄³` is `720`. -/
+theorem E₄_cube_qExpansion_coeff_one : (qExpansion 1 E₄ ^ 3).coeff 1 = 720 := by
+  norm_num [pow_succ, PowerSeries.coeff_mul, Finset.Nat.antidiagonal_succ,
+    E₄_qExpansion_coeff_one, E_qExpansion_coeff_zero _ ⟨2, rfl⟩]
+
+/-- The quadratic coefficient of `E₄³` is `179280`. -/
+theorem E₄_cube_qExpansion_coeff_two : (qExpansion 1 E₄ ^ 3).coeff 2 = 179280 := by
+  norm_num [pow_succ, PowerSeries.coeff_mul, Finset.Nat.antidiagonal_succ,
+    E₄_qExpansion_coeff_one, E₄_qExpansion_coeff_two, E_qExpansion_coeff_zero _ ⟨2, rfl⟩]
+
 /-- The `q³`-coefficient of `E₄` is `240 σ₃(3) = 6720`. -/
 theorem E₄_qExpansion_coeff_three : (qExpansion 1 E₄).coeff 3 = 6720 := by
   norm_num [E_qExpansion_coeff _ ⟨2, rfl⟩, bernoulli_four, ArithmeticFunction.sigma_apply,
@@ -79,6 +94,20 @@ theorem E₆_qExpansion_coeff_two : (qExpansion 1 E₆).coeff 2 = -16632 := by
 theorem E₆_qExpansion_coeff_three : (qExpansion 1 E₆).coeff 3 = -122976 := by
   norm_num [E_qExpansion_coeff _ ⟨3, rfl⟩, bernoulli_six, ArithmeticFunction.sigma_apply,
     Nat.prime_three.divisors]
+
+/-- The `q`-expansion of the weight-`12` form `E₄³ + c Δ` is the corresponding linear
+combination of power series. -/
+theorem qExpansion_E₄_cube_add_smul_discriminant (c : ℂ) :
+    qExpansion 1
+      (ModularForm.mcast (by norm_num) (E₄.pow 3) +
+        c • CuspForm.toModularFormₗ CuspForm.discriminant : ModularForm 𝒮ℒ 12) =
+      qExpansion 1 E₄ ^ 3 + c • qExpansion 1 ModularForm.discriminant := by
+  have hΔ : ⇑(CuspForm.toModularFormₗ CuspForm.discriminant) =
+      ModularForm.discriminant := (funext (CuspForm.toModularFormₗ_apply _)).trans
+        CuspForm.coe_discriminant
+  rw [FunLike.coe_add, ModularForm.qExpansion_add one_pos one_mem_strictPeriods_SL,
+    FunLike.coe_smul, ModularForm.qExpansion_smul one_pos one_mem_strictPeriods_SL]
+  simp only [coe_mcast, ModularForm.qExpansion_pow one_pos one_mem_strictPeriods_SL, hΔ]
 
 /-- The `q`-expansion of a normalised Eisenstein series of even weight `k ≥ 3` has rational
 coefficients, so it is the image of a power series over `K` under every ring homomorphism
