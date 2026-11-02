@@ -173,17 +173,12 @@ def relativePicardDegreeZeroFunctorBaseChangeIso :
                 ((relativePicardDegreeZeroFunctorι f).app _ c)) ∈ _
           rw [Iso.inv_hom_id_app_apply]
           exact relativePicardDegreeZeroFunctorι_app_mem f c
-  hom_inv_id := relativePicardDegreeZeroFunctor.hom_ext (pullback.fst g f) (H := 𝟭 _) <| by
-    simp only [Category.assoc, relativePicardDegreeZeroFunctor.lift_comp_ι,
-      relativePicardDegreeZeroFunctor.lift_comp_ι_assoc, Iso.hom_inv_id, Category.comp_id,
-      Category.id_comp]
-    -- Whiskering by the identity functor is the identity, by definition.
-    rfl
-  inv_hom_id := relativePicardDegreeZeroFunctor.hom_ext f (H := (Over.map g).op) <| by
-    rw [Category.assoc, relativePicardDegreeZeroFunctor.lift_comp_ι, Category.id_comp]
-    -- `lift_comp_ι` for `H := 𝟭 _` whiskers by the identity functor, which `rw` cannot see.
-    exact (relativePicardDegreeZeroFunctor.lift_comp_ι_assoc (pullback.fst g f) (H := 𝟭 _) _ _
-      _).trans (by rw [Category.assoc, Iso.inv_hom_id, Category.comp_id])
+  hom_inv_id := by
+    ext1
+    simp
+  inv_hom_id := by
+    ext1
+    simp
 
 /-- The base change isomorphism of `Pic⁰` sends a section `c` of `Pic⁰_{X'/S'}` to the section of
 `Pic⁰_{X/S}` whose underlying relative Picard class is the image of `c` under
@@ -230,7 +225,7 @@ theorem relativePicardDegreeZeroFunctorBaseChangeIso_inv_comp_ι :
         relativePicardDegreeZeroFunctorι (pullback.fst g f) =
       Functor.whiskerLeft (Over.map g).op (relativePicardDegreeZeroFunctorι f) ≫
         (relativePicardPresheafBaseChangeIso f g).inv :=
-  relativePicardDegreeZeroFunctor.lift_comp_ι (pullback.fst g f) (H := 𝟭 _) _ _
+  relativePicardDegreeZeroFunctor.lift_comp_ι' (pullback.fst g f) _ _
 
 /-- **A representing scheme of `Pic⁰` base changes to a representing scheme.** For a smooth proper
 geometrically connected family of curves `f : X ⟶ S`, if the `S`-scheme `P` represents

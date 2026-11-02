@@ -513,6 +513,26 @@ lemma relativePicardDegreeZeroFunctor.hom_ext {C : Type*} [Category C] {H : C �
     relativePicardDegreeZeroFunctorι_app_injective f (H.obj T)
       (ConcreteCategory.congr_hom (NatTrans.congr_app h T) c)
 
+/-- For a morphism `α : F ⟶ relativePicardPresheaf f` of presheaves on `(Over S)ᵒᵖ`, the lift
+`relativePicardDegreeZeroFunctor.lift f α hα` (along `H := 𝟭 _`) followed by the inclusion of
+`Pic⁰_{X/S}` is `α`. -/
+@[reassoc (attr := simp)]
+lemma relativePicardDegreeZeroFunctor.lift_comp_ι' {F : (Over S)ᵒᵖ ⥤ CommGrpCat.{u + 1}}
+    (α : F ⟶ relativePicardPresheaf f)
+    (hα : ∀ T c, α.app T c ∈ (relativePicardDegreeZeroSubfunctor f).obj T) :
+    (relativePicardDegreeZeroFunctor.lift f (H := 𝟭 _) α hα :
+        F ⟶ relativePicardDegreeZeroFunctor f) ≫ relativePicardDegreeZeroFunctorι f = α :=
+  relativePicardDegreeZeroFunctor.lift_comp_ι f (H := 𝟭 _) α hα
+
+/-- Two morphisms into `Pic⁰_{X/S}` are equal once they agree after the inclusion into the
+relative Picard presheaf. -/
+@[ext]
+lemma relativePicardDegreeZeroFunctor.hom_ext' {F : (Over S)ᵒᵖ ⥤ CommGrpCat.{u + 1}}
+    {α β : F ⟶ relativePicardDegreeZeroFunctor f}
+    (h : α ≫ relativePicardDegreeZeroFunctorι f = β ≫ relativePicardDegreeZeroFunctorι f) :
+    α = β :=
+  relativePicardDegreeZeroFunctor.hom_ext f (H := 𝟭 _) h
+
 /-- The set-valued degree-zero subfunctor and the underlying set-valued functor of its
 commutative-group structure have the same sections and pullback maps. -/
 def relativePicardDegreeZeroSubfunctorIsoFunctor :

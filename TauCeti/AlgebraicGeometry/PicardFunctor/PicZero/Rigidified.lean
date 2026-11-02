@@ -266,9 +266,9 @@ def rigidifiedPicardDegreeZeroFunctorIso :
       exact (rigidifiedPicardFunctorIso f x₀ hx₀).hom_inv_id_app_apply T
         ((rigidifiedPicardDegreeZeroFunctorι f x₀ hx₀).app T a)
     inv_hom_id := by
+      ext1
       ext T c
-      apply relativePicardDegreeZeroFunctorι_app_injective f T
-      simp only [NatTrans.comp_app, CommGrpCat.comp_apply,
+      simp only [Category.id_comp, NatTrans.comp_app, CommGrpCat.comp_apply,
         relativePicardDegreeZeroToRigidified_app_apply,
         relativePicardDegreeZeroFunctorι_app_toRelative_app,
         rigidifiedPicardDegreeZeroFunctorι_app_toRigidifiedHom]
@@ -281,10 +281,8 @@ degree-zero condition is the comparison of the full rigidified and relative Pica
 theorem rigidifiedPicardDegreeZeroToRelative_comp_relativePicardDegreeZeroFunctorι :
     rigidifiedPicardDegreeZeroToRelative f x₀ hx₀ ≫ relativePicardDegreeZeroFunctorι f =
       rigidifiedPicardDegreeZeroFunctorι f x₀ hx₀ ≫
-        (rigidifiedPicardFunctorIso f x₀ hx₀).hom := by
-  ext T a
-  simp only [NatTrans.comp_app, CommGrpCat.comp_apply,
-    relativePicardDegreeZeroFunctorι_app_toRelative_app]
+        (rigidifiedPicardFunctorIso f x₀ hx₀).hom :=
+  relativePicardDegreeZeroFunctor.lift_comp_ι' f _ _
 
 /-- Restoring the rigidification of a degree-zero relative Picard class and then forgetting the
 degree-zero condition is the inverse comparison of the full Picard presheaves. -/
