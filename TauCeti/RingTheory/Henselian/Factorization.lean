@@ -25,8 +25,8 @@ agree (`TauCeti.henselianRing_iff_forall_exists_monic_mul_eq`).
 
 ## Main results
 
-* `TauCeti.HenselianRing.existsUnique_monic_mul_eq`: over a Henselian pair, a factorization into
-  coprime monic polynomials modulo `I` lifts uniquely to a factorization into monic polynomials.
+* `Ideal.existsUnique_monic_mul_eq`: over a Henselian pair, a factorization into coprime monic
+  polynomials modulo `I` lifts uniquely to a factorization into monic polynomials.
 * `TauCeti.henselianRing_of_forall_exists_monic_mul_eq`: if `I` lies in the Jacobson radical and
   coprime monic factorizations modulo `I` lift, then `(R, I)` is Henselian.
 * `TauCeti.henselianRing_iff_forall_exists_monic_mul_eq`: a pair `(R, I)` is Henselian if and only
@@ -50,9 +50,7 @@ public section
 
 open Polynomial
 
-namespace TauCeti
-
-namespace HenselianRing
+namespace Ideal
 
 variable {R : Type*} [CommRing R] (I : Ideal R) [HenselianRing R I]
 
@@ -113,7 +111,7 @@ theorem existsUnique_monic_mul_eq {p : R[X]} (hp : p.Monic) {g₀ h₀ : (R ⧸ 
     refine Subtype.ext (Prod.ext (Subtype.ext ?_) (Subtype.ext ?_))
     · simp [(hmod _).1, ψ, hgmap]
     · simp [(hmod _).2, ψ, hhmap]
-  obtain ⟨φ, hφ⟩ := (comp_bijective I (A := A)).2 ψ
+  obtain ⟨φ, hφ⟩ := (TauCeti.HenselianRing.comp_bijective I (A := A)).2 ψ
   set q := UniversalCoprimeFactorizationRing.homEquiv R m k hn P φ
   have hq₀ := congrArg (fun φ ↦ (UniversalCoprimeFactorizationRing.homEquiv (R ⧸ I) m k hn P φ).1)
     hφ
@@ -123,10 +121,10 @@ theorem existsUnique_monic_mul_eq {p : R[X]} (hp : p.Monic) {g₀ h₀ : (R ⧸ 
   · simpa [q, (hmod φ).2] using congr(($hq₀).2.1)
   · rintro gh ⟨hg, hh, hgh, hgmap, hhmap⟩
     obtain ⟨φ', hφ', rfl⟩ := hpoint gh hg hh hgh hgmap hhmap
-    rw [(comp_bijective I (A := A)).1 (hφ'.trans hφ.symm)]
+    rw [(TauCeti.HenselianRing.comp_bijective I (A := A)).1 (hφ'.trans hφ.symm)]
 
 /-- **Coprime factorizations lift along a Henselian pair.** The existence half of
-`TauCeti.HenselianRing.existsUnique_monic_mul_eq`, recording that the lifted factors are again
+`Ideal.existsUnique_monic_mul_eq`, recording that the lifted factors are again
 coprime. -/
 theorem exists_monic_mul_eq {p : R[X]} (hp : p.Monic) {g₀ h₀ : (R ⧸ I)[X]}
     (hg₀ : g₀.Monic) (hh₀ : h₀.Monic) (hgh₀ : IsCoprime g₀ h₀)
@@ -134,11 +132,13 @@ theorem exists_monic_mul_eq {p : R[X]} (hp : p.Monic) {g₀ h₀ : (R ⧸ I)[X]}
     ∃ g h : R[X], g.Monic ∧ h.Monic ∧ g * h = p ∧ IsCoprime g h ∧
       g.map (Ideal.Quotient.mk I) = g₀ ∧ h.map (Ideal.Quotient.mk I) = h₀ := by
   obtain ⟨⟨g, h⟩, ⟨hg, hh, hgh, hgmap, hhmap⟩, -⟩ :=
-    existsUnique_monic_mul_eq I hp hg₀ hh₀ hgh₀ hp₀
+    I.existsUnique_monic_mul_eq hp hg₀ hh₀ hgh₀ hp₀
   exact ⟨g, h, hg, hh, hgh, Polynomial.isCoprime_of_isCoprime_map HenselianRing.jac hg
     (by rwa [hgmap, hhmap]), hgmap, hhmap⟩
 
-end HenselianRing
+end Ideal
+
+namespace TauCeti
 
 /-- **Henselian pairs from lifted factorizations.** If `I` lies in the Jacobson radical of `R` and
 every factorization of a monic polynomial modulo `I` into coprime monic polynomials lifts to a
@@ -197,7 +197,7 @@ theorem henselianRing_iff_forall_exists_monic_mul_eq {R : Type*} [CommRing R] {I
   refine ⟨fun _ ↦ ⟨HenselianRing.jac, fun p hp g₀ h₀ hg₀ hh₀ hgh₀ hp₀ ↦ ?_⟩,
     fun ⟨hjac, H⟩ ↦ henselianRing_of_forall_exists_monic_mul_eq hjac H⟩
   obtain ⟨g, h, hg, hh, hgh, -, hgmap, hhmap⟩ :=
-    HenselianRing.exists_monic_mul_eq I hp hg₀ hh₀ hgh₀ hp₀
+    I.exists_monic_mul_eq hp hg₀ hh₀ hgh₀ hp₀
   exact ⟨g, h, hg, hh, hgh, hgmap, hhmap⟩
 
 end TauCeti

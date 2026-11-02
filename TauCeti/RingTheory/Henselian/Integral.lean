@@ -7,30 +7,27 @@ module
 
 public import Mathlib.RingTheory.AdjoinRoot
 public import TauCeti.RingTheory.Henselian.Idempotent
-import Mathlib.Algebra.Module.Projective
 import Mathlib.RingTheory.IntegralClosure.Algebra.Ideal
 import Mathlib.RingTheory.Polynomial.Eisenstein.Distinguished
-import TauCeti.Algebra.Polynomial.AlgebraMap
-import TauCeti.Algebra.Polynomial.Derivative
+import TauCeti.RingTheory.AdjoinRoot.Idempotent
 import TauCeti.RingTheory.Henselian.Factorization
-import TauCeti.RingTheory.Idempotents.Projective
 
 /-!
 # Idempotents of integral algebras over a Henselian pair
 
 Let `(R, I)` be a Henselian pair and let `S` be an integral `R`-algebra, for instance a finite
 one. Then every idempotent of `S ⧸ IS` lifts to an idempotent of `S`
-(`TauCeti.HenselianRing.exists_isIdempotentElem_sub_mem_map_of_isIntegral`), and the lift is
-unique. Conversely, if `I` lies in the Jacobson radical and idempotents lift along `I` in every
-finite `R`-algebra, then `(R, I)` is Henselian. This shows that `(S, IS)` is again a Henselian pair
+(`Ideal.exists_isIdempotentElem_sub_mem_map_of_isIntegral`), and the lift is unique. Conversely,
+if `I` lies in the Jacobson radical and idempotents lift along `I` in every finite `R`-algebra,
+then `(R, I)` is Henselian. This shows that `(S, IS)` is again a Henselian pair
 for every integral `R`-algebra `S`, so reduction modulo `IS` is a bijection on idempotents
 (`TauCeti.HenselianRing.bijOn_quotient_mk_isIdempotentElem`), and it characterises Henselian
 pairs by their finite algebras, and by their integral algebras.
 
 ## Main results
 
-* `TauCeti.HenselianRing.exists_isIdempotentElem_sub_mem_map_of_isIntegral`: over a Henselian
-  pair `(R, I)`, idempotents of `S ⧸ IS` lift to `S` for every integral `R`-algebra `S`.
+* `Ideal.exists_isIdempotentElem_sub_mem_map_of_isIntegral`: over a Henselian pair `(R, I)`,
+  idempotents of `S ⧸ IS` lift to `S` for every integral `R`-algebra `S`.
 * `TauCeti.henselianRing_of_forall_exists_isIdempotentElem_adjoinRoot`: a pair `(R, I)` with `I`
   in the Jacobson radical is Henselian if idempotents lift along `I` in `R[X]/(f)` for every
   monic `f`.
@@ -55,9 +52,9 @@ lemma; it is an input to the lifting of sections of étale algebras, on which th
 factorizations used here rests.
 
 For the converse, a simple root `a₀` modulo `I` of a monic `f` gives an idempotent of `R[X]/(f)`
-modulo `I` cutting out the factor `R[X]/(X - a₀)`. Its lift `e` spans `e R[X]/(f) = R e` by
-Nakayama's lemma, and `X e = a e` for a root `a` of `f`. The `R`-module `R e` is projective, being
-a direct summand of `R[X]/(f)`, and this forces it to be free on `e`.
+modulo `I` cutting out the factor `R[X]/(X - a₀)`
+(`TauCeti.exists_mul_self_sub_mem_of_isUnit_eval_derivative`), and its lift gives a root
+`a ≡ a₀` of `f` (`Polynomial.Monic.exists_isRoot_of_isIdempotentElem`).
 
 ## References
 
@@ -74,7 +71,33 @@ open Polynomial
 
 namespace TauCeti
 
-namespace HenselianRing
+variable {R : Type*} [CommRing R]
+
+/-- **Henselian pairs from idempotents.** Let `I` be an ideal in the Jacobson radical of `R`. If for
+every monic `f` over `R`, idempotents of `R[X]/(f)` modulo `I` lift to idempotents of `R[X]/(f)`,
+then `(R, I)` is Henselian. -/
+@[stacks 09XI "(3) ⇒ (1)"]
+theorem henselianRing_of_forall_exists_isIdempotentElem_adjoinRoot {I : Ideal R}
+    (hjac : I ≤ Ideal.jacobson ⊥)
+    (H : ∀ f : R[X], f.Monic → ∀ s : AdjoinRoot f,
+      s * s - s ∈ I.map (algebraMap R (AdjoinRoot f)) →
+      ∃ e : AdjoinRoot f, IsIdempotentElem e ∧ e - s ∈ I.map (algebraMap R (AdjoinRoot f))) :
+    HenselianRing R I where
+  jac := hjac
+  is_henselian f hf a₀ hfa₀ hunit := by
+    set J := I.map (algebraMap R (AdjoinRoot f))
+    obtain ⟨γ, hγ, hxγ, hrγ⟩ := exists_mul_self_sub_mem_of_isUnit_eval_derivative hfa₀ hunit
+    -- The idempotent lift `e` of `γ` cuts out the factor `R[X]/(X - a₀)` of `R[X]/(f)`.
+    obtain ⟨e, he, heγ⟩ := H f hf γ hγ
+    refine hf.exists_isRoot_of_isIdempotentElem hjac he ?_ fun r hr ↦ hrγ r ?_
+    · rw [← sub_add_cancel e γ, mul_add]
+      exact add_mem (J.mul_mem_left _ heγ) hxγ
+    · rw [← sub_sub_cancel e γ, smul_sub, Algebra.smul_def r (e - γ)]
+      exact sub_mem hr (J.mul_mem_left _ heγ)
+
+end TauCeti
+
+namespace Ideal
 
 variable {R : Type*} [CommRing R] (I : Ideal R)
   {S : Type*} [CommRing S] [Algebra R S]
@@ -140,7 +163,7 @@ theorem exists_isIdempotentElem_sub_mem_map_of_isIntegral {s : S}
   have hcop : IsCoprime (X ^ (d + 1) : (R ⧸ I)[X]) ((X - C 1) ^ (d + 1)) :=
     IsCoprime.pow ⟨1, -1, by rw [map_one]; ring⟩
   obtain ⟨g, h, -, -, hgh, ⟨a, b, hab⟩, hgmap, hhmap⟩ :=
-    exists_monic_mul_eq I hP (monic_X_pow _) ((monic_X_sub_C _).pow _) hcop hPmap
+    I.exists_monic_mul_eq hP (monic_X_pow _) ((monic_X_sub_C _).pow _) hcop hPmap
   refine ⟨aeval s (a * g), ?_, aeval_mul_sub_mem_map_of_add_eq_one I hs hab hgmap hhmap⟩
   -- `a(s) g(s)` and `b(s) h(s)` are complementary idempotents, since `g h = P` kills `s`.
   have h1 : aeval s (a * g) + aeval s (b * h) = 1 := by rw [← map_add, hab, map_one]
@@ -149,142 +172,17 @@ theorem exists_isIdempotentElem_sub_mem_map_of_isIntegral {s : S}
     rw [← map_mul, hagbh, map_mul, hPs, mul_zero]
   exact (IsIdempotentElem.of_mul_add h0 h1).1
 
-end HenselianRing
-
-section Converse
-
-variable {R : Type*} [CommRing R]
-
-/-- Let `I` lie in the Jacobson radical of `R`, let `f` be monic and let `e` be an idempotent of
-`R[X]/(f)` with `(X - a₀) e ≡ 0` modulo `I`, such that `r e ≡ 0` modulo `I` only for `r ∈ I`.
-Then `f` has a root `a ≡ a₀` modulo `I`: Nakayama's lemma gives `e R[X]/(f) = R e`, so
-`X e = a e`, and `R e` is free on `e`. -/
-private theorem exists_isRoot_of_isIdempotentElem {I : Ideal R} (hjac : I ≤ Ideal.jacobson ⊥)
-    {f : R[X]} (hf : f.Monic) {a₀ : R} {e : AdjoinRoot f} (he : IsIdempotentElem e)
-    (hxe : (AdjoinRoot.root f - algebraMap R _ a₀) * e ∈ I.map (algebraMap R (AdjoinRoot f)))
-    (hI : ∀ r : R, r • e ∈ I.map (algebraMap R (AdjoinRoot f)) → r ∈ I) :
-    ∃ a : R, f.IsRoot a ∧ a - a₀ ∈ I := by
-  have : Module.Free R (AdjoinRoot f) := hf.free_adjoinRoot
-  have : Module.Finite R (AdjoinRoot f) := hf.finite_adjoinRoot
-  set x := AdjoinRoot.root f
-  have hσ : ∀ y : AdjoinRoot f, ∃ σ : R, σ • e = e * y :=
-    he.exists_smul_eq_mul_of_mul_sub_smul_mem hjac fun y ↦ by
-      induction y using AdjoinRoot.induction_on with | ih p =>
-      refine ⟨p.eval a₀, ?_⟩
-      rw [← AdjoinRoot.aeval_eq, Algebra.smul_def, mul_comm e, ← sub_mul]
-      exact aeval_sub_algebraMap_eval_mul_mem hxe p
-  obtain ⟨a, ha⟩ := hσ x
-  refine ⟨a, ?_, hI _ ?_⟩
-  · -- `x e = a e` gives `f(a) e = f(x) e = 0`, and `r e = 0` forces `r c = 0` for a unit `c`.
-    have hxa : (x - algebraMap R _ a) * e ∈ (⊥ : Ideal (AdjoinRoot f)) := by
-      rw [Ideal.mem_bot, sub_mul, ← Algebra.smul_def, ha, mul_comm, sub_self]
-    have hfa := aeval_sub_algebraMap_eval_mul_mem hxa f
-    rw [Ideal.mem_bot, AdjoinRoot.aeval_eq, AdjoinRoot.mk_self, zero_sub, neg_mul, neg_eq_zero,
-      ← Algebra.smul_def] at hfa
-    obtain ⟨c, hce, hc⟩ := he.exists_smul_eq_self_and_mul_eq_zero hσ
-    have hcu : IsUnit c := Ideal.isUnit_of_sub_one_mem_jacobson_bot _ (hjac (hI _ (by
-      rw [sub_smul, hce, one_smul, sub_self]; exact zero_mem _)))
-    exact hcu.mul_left_eq_zero.mp (hc _ hfa)
-  · convert hxe using 1
-    rw [sub_smul, ha, Algebra.smul_def]
-    ring
-
-/-- Let `a₀` be a simple root modulo `I` of `f`. Then `R[X]/(f)` has an element `γ` that is
-idempotent modulo `I`, with `(X - a₀) γ ≡ 0` modulo `I`, such that `r γ ≡ 0` modulo `I` only for
-`r ∈ I`: with `f = (X - a₀) q + f(a₀)` and `u f'(a₀) ≡ 1`, take `γ = u q(X)`. -/
-private theorem exists_mul_self_sub_mem_of_isUnit_eval_derivative {I : Ideal R} {f : R[X]}
-    {a₀ : R} (hfa₀ : f.eval a₀ ∈ I)
-    (hunit : IsUnit (Ideal.Quotient.mk I (f.derivative.eval a₀))) :
-    ∃ γ : AdjoinRoot f, γ * γ - γ ∈ I.map (algebraMap R (AdjoinRoot f)) ∧
-      (AdjoinRoot.root f - algebraMap R _ a₀) * γ ∈ I.map (algebraMap R (AdjoinRoot f)) ∧
-      ∀ r : R, r • γ ∈ I.map (algebraMap R (AdjoinRoot f)) → r ∈ I := by
-  set S := AdjoinRoot f
-  set J := I.map (algebraMap R S)
-  set x := AdjoinRoot.root f
-  -- Evaluation at `a₀` modulo `I` kills `J`.
-  let χ : S →ₐ[R] R ⧸ I :=
-    AdjoinRoot.liftAlgHom f (Algebra.ofId R (R ⧸ I)) (Ideal.Quotient.mk I a₀) (by
-      rw [Algebra.toRingHom_ofId, Ideal.Quotient.algebraMap_eq, eval₂_hom,
-        Ideal.Quotient.eq_zero_iff_mem]
-      exact hfa₀)
-  have hχJ : ∀ y ∈ J, χ y = 0 := by
-    refine fun y hy ↦ (Ideal.map_le_iff_le_comap.mpr fun r hr ↦ ?_ : J ≤ RingHom.ker χ) hy
-    rw [Ideal.mem_comap, RingHom.mem_ker, AlgHom.commutes, Ideal.Quotient.algebraMap_eq,
-      Ideal.Quotient.eq_zero_iff_mem]
-    exact hr
-  -- Split off the root modulo `I`: `f = (X - a₀) q + f(a₀)` and `q(a₀) = f'(a₀)`.
-  set q := f /ₘ (X - C a₀)
-  have hfq : (X - C a₀) * q + C (f.eval a₀) = f := by
-    rw [← modByMonic_X_sub_C_eq_C_eval, add_comm, modByMonic_add_div f (X - C a₀)]
-  obtain ⟨v, hv⟩ := isUnit_iff_exists_inv'.mp hunit
-  obtain ⟨u, rfl⟩ := Ideal.Quotient.mk_surjective v
-  rw [← map_mul, ← eval_divByMonic_X_sub_C_self, ← map_one (Ideal.Quotient.mk I),
-    Ideal.Quotient.eq] at hv
-  -- `γ = u q(x)` is idempotent modulo `J`, with `(x - a₀) γ ∈ J` and `χ(γ) = 1`.
-  have hxq : (x - algebraMap R S a₀) * aeval x q ∈ J := by
-    have hfx : aeval x f = 0 := by rw [AdjoinRoot.aeval_eq, AdjoinRoot.mk_self]
-    have := congrArg (aeval x) hfq
-    rw [map_add, map_mul, map_sub, aeval_X, aeval_C, aeval_C, hfx] at this
-    rw [eq_neg_of_add_eq_zero_left this]
-    exact neg_mem (Ideal.mem_map_of_mem _ hfa₀)
-  set γ := algebraMap R S u * aeval x q
-  refine ⟨γ, ?_, ?_, fun r hr ↦ ?_⟩
-  · have h1 := aeval_sub_algebraMap_eval_mul_mem hxq q
-    have h2 : algebraMap R S (u * q.eval a₀ - 1) ∈ J := Ideal.mem_map_of_mem _ hv
-    have : γ * γ - γ = algebraMap R S u ^ 2 * ((aeval x q - algebraMap R S (q.eval a₀)) *
-        aeval x q) + γ * algebraMap R S (u * q.eval a₀ - 1) := by
-      simp only [γ, map_sub, map_mul, map_one]
-      ring
-    rw [this]
-    exact add_mem (J.mul_mem_left _ h1) (J.mul_mem_left _ h2)
-  · rw [mul_left_comm]
-    exact J.mul_mem_left _ hxq
-  · have hχγ : χ γ = 1 := by
-      simpa [γ, χ, x, S, q] using Ideal.Quotient.eq.mpr hv
-    have := hχJ _ hr
-    rwa [map_smul, hχγ, Algebra.smul_def, mul_one, Ideal.Quotient.algebraMap_eq,
-      Ideal.Quotient.eq_zero_iff_mem] at this
-
-/-- **Henselian pairs from idempotents.** Let `I` be an ideal in the Jacobson radical of `R`. If for
-every monic `f` over `R`, idempotents of `R[X]/(f)` modulo `I` lift to idempotents of `R[X]/(f)`,
-then `(R, I)` is Henselian. -/
-@[stacks 09XI "(3) ⇒ (1)"]
-theorem henselianRing_of_forall_exists_isIdempotentElem_adjoinRoot {I : Ideal R}
-    (hjac : I ≤ Ideal.jacobson ⊥)
-    (H : ∀ f : R[X], f.Monic → ∀ s : AdjoinRoot f,
-      s * s - s ∈ I.map (algebraMap R (AdjoinRoot f)) →
-      ∃ e : AdjoinRoot f, IsIdempotentElem e ∧ e - s ∈ I.map (algebraMap R (AdjoinRoot f))) :
-    HenselianRing R I where
-  jac := hjac
-  is_henselian f hf a₀ hfa₀ hunit := by
-    set J := I.map (algebraMap R (AdjoinRoot f))
-    obtain ⟨γ, hγ, hxγ, hrγ⟩ := exists_mul_self_sub_mem_of_isUnit_eval_derivative hfa₀ hunit
-    -- The idempotent lift `e` of `γ` cuts out the factor `R[X]/(X - a₀)` of `R[X]/(f)`.
-    obtain ⟨e, he, heγ⟩ := H f hf γ hγ
-    refine exists_isRoot_of_isIdempotentElem hjac hf he ?_ fun r hr ↦ hrγ r ?_
-    · rw [← sub_add_cancel e γ, mul_add]
-      exact add_mem (J.mul_mem_left _ heγ) hxγ
-    · rw [← sub_sub_cancel e γ, smul_sub, Algebra.smul_def r (e - γ)]
-      exact sub_mem hr (J.mul_mem_left _ heγ)
-
-end Converse
-
-end TauCeti
-
-namespace Ideal
-
 /-- **Henselian pairs are stable under integral extensions.** If `(R, I)` is Henselian and `S` is
 an integral `R`-algebra, then `(S, IS)` is Henselian. -/
 @[stacks 09XK]
-instance henselianRing_map_of_isIntegral {R : Type*} [CommRing R] (I : Ideal R) [HenselianRing R I]
-    {S : Type*} [CommRing S] [Algebra R S] [Algebra.IsIntegral R S] :
+instance henselianRing_map_of_isIntegral :
     HenselianRing S (I.map (algebraMap R S)) :=
   TauCeti.henselianRing_of_forall_exists_isIdempotentElem_adjoinRoot
     (map_le_jacobson_bot_of_isIntegral HenselianRing.jac) fun f hf s hs ↦ by
       have : Module.Finite S (AdjoinRoot f) := hf.finite_adjoinRoot
       have : Algebra.IsIntegral R (AdjoinRoot f) := Algebra.IsIntegral.trans S
       rw [map_map, ← IsScalarTower.algebraMap_eq] at hs ⊢
-      exact TauCeti.HenselianRing.exists_isIdempotentElem_sub_mem_map_of_isIntegral I hs
+      exact exists_isIdempotentElem_sub_mem_map_of_isIntegral I hs
 
 end Ideal
 
@@ -332,7 +230,6 @@ theorem henselianRing_iff_forall_bijOn_isIdempotentElem_of_isIntegral {R : Type 
         {t | IsIdempotentElem t} :=
   ⟨fun _ _ _ _ _ ↦ HenselianRing.bijOn_quotient_mk_isIdempotentElem _,
     fun H ↦ henselianRing_iff_forall_bijOn_isIdempotentElem.mpr fun S _ _ _ ↦ H S⟩
-
 
 /-- **Henselian pairs and integral extensions.** A pair `(R, I)` is Henselian if and only if
 `(S, IS)` is Henselian for every integral `R`-algebra `S` in the universe of `R`; the converse
