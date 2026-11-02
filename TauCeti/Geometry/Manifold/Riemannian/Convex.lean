@@ -7,16 +7,16 @@ module
 
 public import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 public import TauCeti.Geometry.Manifold.Riemannian.PathELength
-public import TauCeti.Geometry.Manifold.Riemannian.Restriction
+public import TauCeti.Geometry.Manifold.Riemannian.Restriction.Basic
 
 /-!
 # The Riemannian distance on inner product spaces and their convex open subsets
 
 The standard Riemannian metric of an inner product space `F` restricts to any open subset `U ⊆ F`
-through the open-submanifold instances of `TauCeti.Geometry.Manifold.Riemannian.Restriction`. This
-file computes the resulting Riemannian distance when `U` is convex: straight segments stay in `U`,
-so every two points of `U` are joined by a curve of length exactly the ambient norm distance,
-while no curve can be shorter than that chord. Hence
+through the open-submanifold instances of `TauCeti.Geometry.Manifold.Riemannian.Restriction.Basic`.
+This file computes the resulting Riemannian distance when `U` is convex. Straight segments
+stay in `U`, so every two points of `U` are joined by a curve of length exactly the ambient
+norm distance, while no curve can be shorter than that chord. Hence
 
 * the Riemannian extended distance of a convex open subset equals the ambient norm distance;
 * with its ambient metric, a convex open subset satisfies `IsRiemannianManifold`, which makes the
@@ -27,7 +27,7 @@ No finite-dimensionality assumption is needed: convexity is the only substantive
 general facts about path length used along the way live in their canonical modules:
 `TauCeti.Manifold.pathELength_lineMap`
 (`Riemannian.PathELength`), and `TauCeti.Manifold.pathELength_subtypeVal_comp`
-(`Riemannian.Restriction`). That module also proves
+(`Riemannian.Restriction.Basic`). That module also proves
 `TopologicalSpace.Opens.riemannianEDist_le_riemannianEDist_subtype`: restriction to any open
 submanifold cannot decrease distance.
 

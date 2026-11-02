@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.Restriction
+public import TauCeti.Geometry.Manifold.Riemannian.Restriction.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Topology
 import TauCeti.Geometry.Manifold.ExtChartAt
 import TauCeti.Geometry.Manifold.Riemannian.Pullback.Topology
@@ -33,7 +33,7 @@ noncomputable section
 namespace Bundle.ContMDiffRiemannianMetric
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
 
 /-- On an inherited chart target, the coordinate metric of the restriction is the ambient
@@ -43,32 +43,29 @@ theorem chartMetric_restrictOpenTangentSpace
     (U : Opens M) (x : U) {z : E} (hz : z ∈ (extChartAt I x).target) :
     (g.restrictOpenTangentSpace U).toNondegenerateMetric.chartMetric x z =
       g.toNondegenerateMetric.chartMetric (x : M) z := by
-  have hf : ContMDiff I I (∞ + 1) (Subtype.val : U → M) := contMDiff_subtype_val
-  have hinj : ∀ y : U, Function.Injective (mfderiv I I (Subtype.val : U → M) y) := by
-    intro y
-    rw [TauCeti.Manifold.mfderiv_subtype_val]
-    exact (TauCeti.Manifold.tangentSpaceOpenEquiv (I := I) y).injective
-  have hpull : g.restrictOpenTangentSpace U = g.pullback Subtype.val hf hinj := by
-    ext y v w
-    simp only [restrictOpenTangentSpace_inner, pullback_inner,
-      TauCeti.Manifold.mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe]
   have hτ : EqOn (extChartAt I (x : M) ∘ (Subtype.val : U → M) ∘
       (extChartAt I x).symm) id (extChartAt I x).target := by
     intro y hy
     simp only [Function.comp_apply, U.extChartAt_subtype_val_symm x hy, id_eq]
     exact (extChartAt I (x : M)).right_inv (U.extChartAt_target_subset x hy)
+  have hzRange := extChartAt_target_subset_range x hz
   have hd := (hτ.eventuallyEq_of_mem
-    ((isOpen_extChartAt_target x).mem_nhds hz)).fderiv_eq (𝕜 := ℝ)
+    (extChartAt_target_mem_nhdsWithin_of_mem hz)).fderivWithin_eq_of_mem (𝕜 := ℝ) hzRange
   have hsource : ((extChartAt I x).symm z : M) ∈ (extChartAt I (x : M)).source := by
     rw [U.extChartAt_subtype_val_symm x hz]
     exact (extChartAt I (x : M)).map_target (U.extChartAt_target_subset x hz)
-  rw [hpull, chartMetric_pullback g hf hinj hz hsource, I.range_eq_univ,
-    fderivWithin_univ, hd, fderiv_id]
+  rw [restrictOpenTangentSpace_eq_pullback,
+    chartMetric_pullback g contMDiff_subtype_val
+      (TauCeti.Manifold.mfderiv_subtype_val_injective (I := I)) hz hsource,
+    hd, fderivWithin_id (I.uniqueDiffOn _ hzRange)]
   have hτz := hτ hz
   simp only [Function.comp_apply, id_eq] at hτz
   rw [hτz]
   ext v w
-  simp
+  simp only [ContinuousLinearMap.precomp_apply, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.id_apply]
+
+variable [I.Boundaryless]
 
 -- Cache the canonical operator-space instances, as in the definition of chart Cᵏ topologies.
 private local instance : NormedAddCommGroup (E →L[ℝ] ℝ) :=
