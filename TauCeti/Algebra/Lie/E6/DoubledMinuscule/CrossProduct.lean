@@ -238,16 +238,8 @@ on every index reached from `S`. -/
 private theorem eq_one_of_reached {G : Type*} [CommGroup G] {f : Fin 27 ⊕ Fin 27 → G}
     (hf : ∀ k i j, crossProductCoefficient k i j ≠ 0 → f i = f k * f j)
     {S : Finset (Fin 27 ⊕ Fin 27)} (hS : ∀ a ∈ S, f a = 1) {x : Fin 27 ⊕ Fin 27}
-    (hx : Reached S x) : f x = 1 := by
-  rcases hx with hx | ⟨k, hk, j, hj, h | h | h⟩
-  · exact hS x hx
-  · rw [hf k x j h, hS k hk, hS j hj, one_mul]
-  · have hx := hf x k j h
-    rw [hS k hk, hS j hj, mul_one] at hx
-    exact hx.symm
-  · have hx := hf k j x h
-    rw [hS k hk, hS j hj, one_mul] at hx
-    exact hx.symm
+    (hx : Reached S x) : f x = 1 :=
+  hx.elim (hS x) (ConstantMultiplication.eq_one_of_eq_mul_of_ne_zero (T := S) hf hS)
 
 /-- **A function multiplicative along the cross product is determined by its values at the
 indices `0`, `1`, `2`, `4`, `5` and `11` of `V(ϖ₁)`.** Here `t` and `u` take values in a
@@ -401,6 +393,37 @@ theorem preserves_crossProductMatrix_weightTorusPoints (A : Type v) [CommRing A]
     ring
   · rw [crossProductMatrix_apply_eq_zero_of_weight_ne h, map_zero, mul_zero, mul_zero, zero_mul]
 
+/-- The generic root-subgroup matrices of the carrier preserve the cross product, in the form
+required by the generic toral-closure criterion. -/
+private theorem preserves_crossProductMatrix_kostantRootSubgroupMatrix (k : Fin 6 ⊕ Fin 6)
+    (A : Type) [CommRing A] (q : WithConv (AdditiveGroup.coordinateHopfAlgebra ℤ →ₐ[ℤ] A)) :
+    ConstantMultiplication.Preserves ℤ 54 crossProductMatrix
+      ((UniversalEnvelopingAlgebra.kostantRootSubgroupMatrix
+        (TauCeti.serreRootGenerator (CartanMatrix.E 6)ᵀ) (TauCeti.serreH ℚ (CartanMatrix.E 6)ᵀ)
+        rep lattice.toAddSubgroup rep_kostantForm_mem_lattice k
+        (isNilpotent_rep_serreRootGenerator k) matrixBasis q :
+          Matrix.GeneralLinearGroup (Fin 54) A) : Matrix (Fin 54) (Fin 54) A) := by
+  have h := coe_rootSubgroupPoints k A (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A) q)
+  rw [MulEquiv.symm_apply_apply] at h
+  rw [← h]
+  exact preserves_crossProductMatrix_rootSubgroupPoints k A _
+
+/-- The generic weight-torus matrices of the carrier preserve the cross product, in the form
+required by the generic toral-closure criterion. -/
+private theorem preserves_crossProductMatrix_kostantTorusMatrix :
+    letI := Fintype.ofFinite (Fin 6)
+    ∀ (A : Type) [CommRing A] (s : Fin 6 → Aˣ),
+      ConstantMultiplication.Preserves ℤ 54 crossProductMatrix
+        ((UniversalEnvelopingAlgebra.kostantTorusMatrix lattice.toAddSubgroup matrixBasis
+          matrixWeight s : Matrix.GeneralLinearGroup (Fin 54) A) : Matrix (Fin 54) (Fin 54) A) := by
+  intro A _ s
+  -- The generic criterion states the torus matrix with the `Fintype` instance obtained from
+  -- `Finite`; `convert` identifies it with the standard instance on `Fin 6`.
+  convert preserves_crossProductMatrix_weightTorusPoints A s using 2
+  rw [coe_weightTorusPoints]
+  congr
+  exact Subsingleton.elim _ _
+
 /-- **The doubled carrier is a closed subgroup scheme of the stabilizer of the cross product.**
 The Hopf ideal cutting out the subgroup scheme of `GL₅₄` preserving the product is contained in
 the defining ideal of the carrier. -/
@@ -408,18 +431,9 @@ theorem constantMultiplicationDefiningHopfIdeal_le_definingIdeal :
     ConstantMultiplication.definingHopfIdeal ℤ 54 crossProductMatrix ≤ definingIdeal := by
   rw [definingIdeal_def]
   open TauCeti.UniversalEnvelopingAlgebra in
-  refine constantMultiplicationDefiningHopfIdeal_le_kostantToralDefiningIdeal_of_generators
-    _ _ _ _ _ _ _ _ _ (fun k A _ q => ?_) (fun A _ s => ?_)
-  · have h := coe_rootSubgroupPoints k A (AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A) q)
-    rw [MulEquiv.symm_apply_apply] at h
-    rw [← h]
-    exact preserves_crossProductMatrix_rootSubgroupPoints k A _
-  · -- The generic criterion states the torus matrix with the `Fintype` instance obtained from
-    -- `Finite`; `convert` identifies it with the standard instance on `Fin 6`.
-    convert preserves_crossProductMatrix_weightTorusPoints A s using 2
-    rw [coe_weightTorusPoints]
-    congr
-    exact Subsingleton.elim _ _
+  exact constantMultiplicationDefiningHopfIdeal_le_kostantToralDefiningIdeal_of_generators
+    _ _ _ _ _ _ _ _ _ preserves_crossProductMatrix_kostantRootSubgroupMatrix
+    preserves_crossProductMatrix_kostantTorusMatrix
 
 /-- **Every point of the doubled carrier preserves the cross product**, over every commutative
 ring, including nonreduced ones. -/
@@ -427,15 +441,10 @@ theorem preserves_crossProductMatrix_of_mem_points {A : Type v} [CommRing A]
     {g : Matrix.GeneralLinearGroup (Fin 54) A} (hg : g ∈ points A) :
     ConstantMultiplication.Preserves ℤ 54 crossProductMatrix
       (g : Matrix (Fin 54) (Fin 54) A) := by
-  rw [points_def] at hg
-  have hsub := GeneralLinear.hopfIdealPointsSubgroup_le_of_le 54
-    constantMultiplicationDefiningHopfIdeal_le_definingIdeal A hg
-  rw [GeneralLinear.mem_hopfIdealPointsSubgroup_iff] at hsub
-  have hmem : (GeneralLinear.pointsMulEquiv (R := ℤ) 54).symm g ∈
-      CommHopfAlgCat.quotientPointsSubgroup (GeneralLinear.coordinateHopfAlgebra ℤ 54)
-        (ConstantMultiplication.definingHopfIdeal ℤ 54 crossProductMatrix)
-        (CommAlgCat.of ℤ A) :=
-    (CommHopfAlgCat.mem_quotientPointsSubgroup_iff _ _ _ _).mpr hsub
-  rwa [ConstantMultiplication.mem_definingPointsSubgroup_iff, MulEquiv.apply_symm_apply] at hmem
+  rw [points_def, definingIdeal_def,
+    ← UniversalEnvelopingAlgebra.kostantToralPointsSubgroup_def] at hg
+  exact UniversalEnvelopingAlgebra.preserves_of_mem_kostantToralPointsSubgroup_of_generators
+    _ _ _ _ _ _ _ _ _ preserves_crossProductMatrix_kostantRootSubgroupMatrix
+    preserves_crossProductMatrix_kostantTorusMatrix A hg
 
 end TauCeti.E6DoubledMinuscule

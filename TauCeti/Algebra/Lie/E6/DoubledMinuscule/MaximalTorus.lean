@@ -56,33 +56,6 @@ open TauCeti.DynkinType
 
 universe v
 
-/-- The diagonal entries of a diagonal carrier point are multiplicative along the cross
-product. -/
-private theorem eq_mul_of_diagGL_mem_points {A : Type v} [CommRing A] {t : Fin 54 → Aˣ}
-    (ht : diagGL t ∈ points A) {k i j : Fin 54} (h : crossProductMatrix k i j ≠ 0) :
-    t i = t k * t j := by
-  have hpres := preserves_crossProductMatrix_of_mem_points ht
-  rw [diagGL_coe, ConstantMultiplication.preserves_diagonal_iff] at hpres
-  have hkij := hpres k i j
-  apply Units.ext
-  rw [Units.val_mul]
-  rcases crossProductMatrix_apply_eq_neg_one_or_eq_zero_or_eq_one k i j with hc | hc | hc
-  · rw [hc] at hkij
-    simpa using hkij
-  · exact absurd hc h
-  · rw [hc] at hkij
-    simpa using hkij
-
-/-- The values of a torus character on the doubled weights are multiplicative along the cross
-product, which is homogeneous for the weights. -/
-private theorem torusCharacter_eq_mul {A : Type v} [CommRing A] (s : Fin 6 → Aˣ)
-    {k i j : Fin 54} (h : crossProductMatrix k i j ≠ 0) :
-    torusCharacter s (matrixWeight i) =
-      torusCharacter s (matrixWeight k) * torusCharacter s (matrixWeight j) := by
-  by_contra hne
-  refine h (crossProductMatrix_apply_eq_zero_of_weight_ne fun hw => hne ?_)
-  rw [hw, torusCharacter_add]
-
 /-- **Over every commutative ring, a point of the doubled carrier lies in the weight torus exactly
 when its matrix is diagonal** in the weight basis. -/
 theorem mem_range_weightTorusPoints_iff_isDiag {A : Type v} [CommRing A] (g : points A) :
@@ -101,10 +74,26 @@ theorem mem_range_weightTorusPoints_iff_isDiag {A : Type v} [CommRing A] (g : po
     let τ : Fin 27 → Aˣ := fun a => t (matrixIndexEquiv (.inl a))
     let s : Fin 6 → Aˣ :=
       ![τ 0, τ 2 * τ 5 * τ 11, τ 0 * τ 1, τ 0 * τ 1 * τ 2, τ 2 * τ 4 * τ 5 * τ 11, τ 4 * τ 5]
+    -- The carrier point `diagGL t` and the torus point at `s` both preserve the cross product,
+    -- whose nonzero structure constants are `±1`, so their diagonal entries are multiplicative
+    -- along it.
+    have hunit {k i j : Fin 54} (h : crossProductMatrix k i j ≠ 0) :
+        IsUnit (algebraMap ℤ A (crossProductMatrix k i j)) :=
+      (Int.isUnit_iff.mpr <| by
+        rcases crossProductMatrix_apply_eq_neg_one_or_eq_zero_or_eq_one k i j with hc | hc | hc <;>
+          simp_all).map _
+    have hpt := preserves_crossProductMatrix_of_mem_points htmem
+    rw [diagGL_coe] at hpt
+    have hps := preserves_crossProductMatrix_weightTorusPoints A s
+    rw [coe_weightTorusPoints, UniversalEnvelopingAlgebra.kostantTorusMatrix_apply,
+      diagGL_coe] at hps
     have hchar : (fun a => torusCharacter s (matrixWeight a)) = t := by
       refine eq_of_eq_mul_of_crossProductMatrix_ne_zero
-        (fun k i j h => torusCharacter_eq_mul s h)
-        (fun k i j h => eq_mul_of_diagGL_mem_points htmem h) ?_
+        (fun k i j h => Units.ext ?_) (fun k i j h => Units.ext ?_) ?_
+      · rw [Units.val_mul]
+        exact ConstantMultiplication.eq_mul_of_preserves_diagonal _ hps (hunit h)
+      · rw [Units.val_mul]
+        exact ConstantMultiplication.eq_mul_of_preserves_diagonal _ hpt (hunit h)
       simp only [Finset.mem_insert, Finset.mem_singleton]
       rintro a (rfl | rfl | rfl | rfl | rfl | rfl) <;>
         simp only [s, τ, torusCharacter_def, Fin.prod_univ_six, matrixWeight_apply,
