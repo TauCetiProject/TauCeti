@@ -467,10 +467,11 @@ theorem coeff_neg_one_derivative_mul_inv {K : Type*} [Field K] (f : K⸨X⸩) :
     conv_lhs => rw [← single_order_mul_powerSeriesPart f]
     rw [derivative_single_mul, mul_inv, inv_single, zpow_neg_one, add_mul]
     congr 1
-    · rw [mul_mul_mul_comm, single_mul_single, mul_inv_cancel₀ hφ, inv_one, mul_one, mul_one,
-        show f.order - 1 + -f.order = -1 by ring, mul_one]
-    · rw [mul_mul_mul_comm, single_mul_single, add_neg_cancel, inv_one, mul_one,
-        HahnSeries.single_zero_one, one_mul, mul_comm]
+    · rw [mul_mul_mul_comm, single_mul_single, mul_inv_cancel₀ hφ,
+        show f.order - 1 + -f.order = -1 by ring]
+      simp
+    · rw [mul_mul_mul_comm, single_mul_single]
+      simp [φ, mul_comm]
   have hφ0 : φ.order = 0 :=
     PowerSeries.order_zero_of_isUnit (TauCeti.LaurentSeries.isUnit_powerSeriesPart hf)
   rw [hlog, coeff_add, coeff_single_same,

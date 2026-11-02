@@ -265,11 +265,10 @@ theorem residue_derivation_mul_inv (x : puiseuxField K) :
   -- On level `n`, with `u = t ^ (1 / n)`, `x⁻¹ dx/dt` is `(1 / n) u ^ (1 - n) f⁻¹ df/du`.
   obtain ⟨n, hn⟩ := exists_mem_range_levelEmbedding x
   obtain ⟨f, rfl⟩ := (AlgHom.mem_range _).mp hn
-  rw [derivation_levelEmbedding, ← map_inv₀, ← map_mul, residue_levelEmbedding, mul_assoc,
-    coeff_single_mul, show -(n : ℤ) - (1 - n) = -1 by ring,
-    LaurentSeries.coeff_neg_one_derivative_mul_inv, coe_levelEmbedding, order_ramifiedEmbedding]
-  push_cast
-  ring
+  rw [derivation_levelEmbedding, ← map_inv₀, ← map_mul, residue_levelEmbedding,
+    coe_levelEmbedding, order_ramifiedEmbedding]
+  simp [-derivative_apply, mul_assoc, coeff_single_mul, show -(n : ℤ) - (1 - n) = -1 by ring,
+    LaurentSeries.coeff_neg_one_derivative_mul_inv, div_eq_inv_mul]
 
 /-- **The residue under a continuous endomorphism.** Let `ρ` be a continuous `K`-algebra
 endomorphism of the Puiseux field, and let `e` be the rational order of `ρ t`. Then the residue of
@@ -278,16 +277,21 @@ theorem residue_map_mul_derivation_eq_mul (ρ : puiseuxField K →ₐ[K] puiseux
     (hρ : Continuous ρ) (x : puiseuxField K) :
     residue K (ρ x * derivation K (ρ (single K 1 1))) =
       ((ρ (single K 1 1) : HahnSeries ℚ K).order : K) * residue K x := by
-  -- Split `x = a t⁻¹ + dy/dt` with `a` the residue of `x`. By the chain rule the second term
-  -- becomes the exact form `d(ρ y)`, and the first becomes `a (ρ t)⁻¹ d(ρ t)`.
-  have hx : x = algebraMap K (puiseuxField K) (residue K x) * (single K 1 1)⁻¹ +
+  set a := residue K x
+  set s := ρ (single K 1 1)
+  -- Split `x = a t⁻¹ + dy/dt` with `a` the residue of `x`.
+  have hx : x = algebraMap K (puiseuxField K) a * (single K 1 1)⁻¹ +
       derivation K (primitive K x) := by
     rw [derivation_primitive, inv_single, inv_one, algebraMap_mul_single, mul_one, add_sub_cancel]
-  conv_lhs => rw [hx]
-  rw [map_add ρ, map_mul ρ, map_inv₀ ρ, AlgHom.commutes, add_mul,
-    ← derivation_algHom_apply ρ hρ, map_add, residue_derivation, add_zero, mul_assoc,
-    ← Algebra.smul_def, map_smul, mul_comm _ (derivation K _), residue_derivation_mul_inv,
-    smul_eq_mul, mul_comm]
+  -- By the chain rule the exact part `dy/dt` becomes the exact form `d(ρ y)`, of residue zero.
+  have hexact : residue K (ρ (derivation K (primitive K x)) * derivation K s) = 0 := by
+    rw [← derivation_algHom_apply ρ hρ, residue_derivation]
+  -- The part `a t⁻¹` becomes `a (ρ t)⁻¹ d(ρ t)`, whose residue is `a` times the order of `ρ t`.
+  have hlog : residue K (ρ (algebraMap K _ a * (single K 1 1)⁻¹) * derivation K s) =
+      a * ((s : HahnSeries ℚ K).order : K) := by
+    rw [map_mul ρ, map_inv₀ ρ, AlgHom.commutes, mul_assoc, ← Algebra.smul_def, map_smul,
+      mul_comm _ (derivation K s), residue_derivation_mul_inv, smul_eq_mul]
+  rw [hx, map_add, add_mul, map_add, hlog, hexact, add_zero, mul_comm]
 
 /-- **Residues are invariant under a change of parameter of order one.** If a continuous
 `K`-algebra endomorphism `ρ` of the Puiseux field sends `t` to a series of order one, then the
