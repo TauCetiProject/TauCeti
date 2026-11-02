@@ -33,7 +33,6 @@ needs to identify the class of a product with the cup product of the classes.
 
 ## Main definitions
 
-* `TauCeti.TopPairing.smoothTensorInduced`: the tensor induction of a coefficient pairing.
 * `TauCeti.TopPairing.smoothTensorInducedGradedResolutionCupPairing`: the factorwise cup, read on
   the carriers of the smooth tensor-induced total resolutions.
 
@@ -68,36 +67,6 @@ variable {R : Type u} [CommRing R] [TopologicalSpace R] [DiscreteTopology R]
   [CompactSpace U]
   {A B C : SmoothDiscreteTopRep.{u, v, max v w} R U} (P : TopPairing A.obj B.obj C.obj)
 
-/-- **The tensor induction of a coefficient pairing**: applying a pairing of smooth discrete
-`U`-representations in every coset factor gives a coefficient pairing of their tensor inductions
-to `G`. -/
-noncomputable def TopPairing.smoothTensorInduced :
-    TopPairing
-      ((toSmoothDiscrete R G).obj
-        (DiscreteRep.tensorInduced U hU s ((ofSmoothDiscrete R U).obj A))).obj
-      ((toSmoothDiscrete R G).obj
-        (DiscreteRep.tensorInduced U hU s ((ofSmoothDiscrete R U).obj B))).obj
-      ((toSmoothDiscrete R G).obj
-        (DiscreteRep.tensorInduced U hU s ((ofSmoothDiscrete R U).obj C))).obj where
-  bil := PiTensorProduct.map₂ fun _ ↦ P.bil
-  cont := by
-    have := ((toSmoothDiscrete R G).obj
-      (DiscreteRep.tensorInduced U hU s ((ofSmoothDiscrete R U).obj A))).property.discreteTopology
-    have := ((toSmoothDiscrete R G).obj
-      (DiscreteRep.tensorInduced U hU s ((ofSmoothDiscrete R U).obj B))).property.discreteTopology
-    exact continuous_of_discreteTopology
-  equivariant g a b := U.map₂_tensorInducedRepresentation s P.bil
-    (fun u m n ↦ (congrArg₂ (fun a b ↦ P.bil a b) (ofSmoothDiscrete_obj_ρ_apply R U A u m)
-      (ofSmoothDiscrete_obj_ρ_apply R U B u n)).trans
-        ((P.equivariant u m n).trans (ofSmoothDiscrete_obj_ρ_apply R U C u _).symm)) g a b
-
-omit [CompactSpace U] in
-/-- The tensor induction of a coefficient pairing applies it in every coset factor. -/
-@[simp]
-theorem TopPairing.smoothTensorInduced_bil :
-    (P.smoothTensorInduced U hU s).bil = PiTensorProduct.map₂ fun _ ↦ P.bil :=
-  (rfl)
-
 /-! ### Left multiplication by augmented tensors and the contraction -/
 
 section Contraction
@@ -115,16 +84,18 @@ theorem smoothTensorInducedGradedResolutionProjection_tensorInducedGradedResolut
           (PiTensorProduct.map (fun _ ↦ A.obj.gradedResolutionAugmentation) x) w) =
       PiTensorProduct.map₂ (fun _ ↦ P.bil) x
         (smoothTensorInducedGradedResolutionProjection U B w) := by
-  induction x using PiTensorProduct.induction_on with
-  | smul_tprod r x =>
-    induction w using PiTensorProduct.induction_on with
-    | smul_tprod t w =>
-      simp only [map_smul, LinearMap.smul_apply, PiTensorProduct.map_tprod,
-        TopPairing.tensorInducedGradedResolutionCupPairing_tprod,
-        smoothTensorInducedGradedResolutionProjection_tprod, PiTensorProduct.map₂_tprod_tprod,
-        TopPairing.gradedResolutionProjection_gradedResolutionCupPairing_augmentation]
-    | add w w' hw hw' => simp only [map_add, hw, hw']
-  | add x x' hx hx' => simp only [map_add, LinearMap.add_apply, hx, hx']
+  -- absorb the augmentation into the factor pairing, then project factorwise
+  have h := PiTensorProduct.map_map₂
+    (fun _ ↦ P.gradedResolutionCupPairing ∘ₗ A.obj.gradedResolutionAugmentation)
+    (fun _ ↦ P.gradedResolutionCupPairing) (fun _ ↦ A.obj.gradedResolutionAugmentation)
+    (fun _ ↦ LinearMap.id) (fun _ ↦ LinearMap.id) (fun _ _ _ ↦ rfl) x w
+  rw [PiTensorProduct.map_id, PiTensorProduct.map_id, LinearMap.id_apply, LinearMap.id_apply] at h
+  rw [TopPairing.tensorInducedGradedResolutionCupPairing_def, ← h,
+    smoothTensorInducedGradedResolutionProjection_def,
+    smoothTensorInducedGradedResolutionProjection_def,
+    PiTensorProduct.map_map₂ _ (fun _ ↦ P.bil) (fun _ ↦ LinearMap.id) _ _
+      (fun _ ↦ P.gradedResolutionProjection_gradedResolutionCupPairing_augmentation),
+    PiTensorProduct.map_id, LinearMap.id_apply]
 
 omit [DiscreteTopology R] [U.FiniteIndex] [CompactSpace U] in
 /-- The contracting homotopy of the tensor-induced total resolution commutes with the induced cup
@@ -179,22 +150,6 @@ theorem TopPairing.smoothTensorInducedGradedResolutionCupPairing_tprod_const
         (PiTensorProduct.tprod R fun _ : G ⧸ U ↦ z) (PiTensorProduct.tprod R fun _ : G ⧸ U ↦ z') =
       PiTensorProduct.tprod R fun _ : G ⧸ U ↦ P.gradedResolutionCupPairing z z' :=
   P.tensorInducedGradedResolutionCupPairing_tprod _ _
-
-/-- The action of `G` on the tensor-induced total resolution is tensor induction of the action of
-`U` on the total resolution. -/
-private theorem smoothTensorInducedGradedResolutionFunctor_obj_ρ_apply'
-    (D : SmoothDiscreteTopRep.{u, v, max v w} R U) (g : G)
-    (x : ((smoothTensorInducedGradedResolutionFunctor U hU s).obj D).obj.V) :
-    ((smoothTensorInducedGradedResolutionFunctor U hU s).obj D).obj.ρ g x =
-      U.tensorInducedRepresentation s D.obj.gradedResolutionRepresentation g x := by
-  have hρ : ((ofSmoothDiscrete R U).obj (smoothGradedResolutionFunctor.obj D)).ρ =
-      D.obj.gradedResolutionRepresentation :=
-    MonoidHom.ext fun u ↦ LinearMap.ext fun y ↦
-      (ofSmoothDiscrete_obj_ρ_apply R U _ u y).trans
-        ((smoothGradedResolutionFunctor_obj_obj_ρ_apply D u y).trans
-          (D.obj.gradedResolutionTopRep_ρ_apply u y))
-  exact (smoothTensorInducedGradedResolutionFunctor_obj_ρ_apply U hU s D g x).trans
-    (congrArg (fun ρ ↦ U.tensorInducedRepresentation s ρ g x) hρ)
 
 /-- The induced cup on the tensor-induced total resolutions is equivariant. -/
 theorem TopPairing.smoothTensorInducedGradedResolutionCupPairing_ρ (g : G)
@@ -273,8 +228,9 @@ private theorem smoothTensorInducedGradedResolutionContraction_proj_cupPairing
   _ = PiTensorProduct.map₂ (fun _ ↦ P.bil) x
         (smoothTensorInducedGradedResolutionProjection U B w) :=
       smoothTensorInducedGradedResolutionProjection_tensorInducedGradedResolutionCupPairing U P x w
-  _ = _ := congrArg _
-      (smoothTensorInducedGradedResolutionContraction_proj_apply U hU s B hB ⟨w, hw⟩).symm
+  _ = _ := (congrArg _
+      (smoothTensorInducedGradedResolutionContraction_proj_apply U hU s B hB ⟨w, hw⟩).symm).trans
+      (LinearMap.congr_fun₂ (P.smoothTensorInduced_bil U hU s).symm _ _)
 
 /-- The contracting homotopy of the contraction of the tensor-induced total resolution of `C`
 commutes with the induced cup with an augmented element on the left. -/
