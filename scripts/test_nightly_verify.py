@@ -64,8 +64,8 @@ class NightlyVerification(unittest.TestCase):
         # Regressions must not send the full clean rebuild back to a GitHub-hosted
         # runner: even its platform maximum of six hours is insufficient.
         self.assertEqual(JOBS['verify']['runs-on'], [
-            'nscloud-ubuntu-24.04-amd64-8x16-with-features',
-            'namespace-features:container.privileged=true',
+            'nscloud-ubuntu-24.04-amd64-16x32-with-features;job.priority=1',
+            'namespace-features:container.privileged=true;github.run-id=${{ github.run_id }}',
         ])
         self.assertGreater(JOBS['verify']['timeout-minutes'], 360)
         self.assertNotIn('needs', JOBS['verify'])
