@@ -266,6 +266,27 @@ private theorem pentagonPair_squares {S₁ S₂ : Finset (Fin n × Fin n)} {B T 
   · simp only [Equiv.swap_apply_of_ne_of_ne hca hcb, hca, hcb, false_and, or_self, iff_self,
       not_false_eq_true, and_self]
 
+/-- The weight of a pentagon of the exchanged diagram, read in `G` by exchanging the columns `a`
+and `b`. -/
+theorem swapColumns_pentagonWeight_withTurnRow {u v : GridState n}
+    (Q : GridPentagonBetween a t u v) :
+    (G.swapColumns a b).pentagonWeight R (C.withTurnRow t) Q =
+      ∏ c ∈ G.OColumnsOfSquares
+        (Q.coveredSquares.map ((Equiv.swap a b).prodCongr (Equiv.refl (Fin n))).toEmbedding),
+        MvPolynomial.X c := by
+  rw [G.pentagonWeight_swapColumns R (C.withTurnRow t), prod_ite_OSet_eq_prod_OColumnsOfSquares]
+
+/-- The weight of an initial-side pentagon of the exchanged diagram, read in `G` by exchanging the
+columns `a` and `b`. -/
+theorem swapColumns_initialPentagonWeight_withTurnRow {u v : GridState n}
+    (Q : GridInitialPentagonBetween a t u v) :
+    (G.swapColumns a b).initialPentagonWeight R (C.withTurnRow t) Q =
+      ∏ c ∈ G.OColumnsOfSquares
+        (Q.coveredSquares.map ((Equiv.swap a b).prodCongr (Equiv.refl (Fin n))).toEmbedding),
+        MvPolynomial.X c := by
+  rw [G.initialPentagonWeight_swapColumns R (C.withTurnRow t),
+    prod_ite_OSet_eq_prod_OColumnsOfSquares]
+
 /-- Two empty returning terminal-side pentagons, the first turning in the turn row of `C` and the
 second in row `t`, cover exactly the annulus squares. -/
 private theorem pentagon_squares {u v : GridState n} (P : GridPentagonBetween a C.turnRow u v)
@@ -389,8 +410,7 @@ theorem rename_pentagonWeight_mul_pentagonWeight_eq_crossingChangeAnnulusWeight
         (G.swapColumns a b).pentagonWeight R (C.withTurnRow t) Q =
       G.crossingChangeAnnulusWeight R C t := by
   rw [rename_pentagonWeight, prod_ite_OSet_eq_prod_OColumnsOfSquares,
-    G.pentagonWeight_swapColumns R (C.withTurnRow t),
-    prod_ite_OSet_eq_prod_OColumnsOfSquares]
+    swapColumns_pentagonWeight_withTurnRow]
   exact prod_OColumnsOfSquares_mul_prod_eq R (pentagon_squares P Q h)
 
 /-- An empty returning pair of initial-side pentagons, of `G` turning in the turn row of `C` and
@@ -403,8 +423,7 @@ theorem rename_initialPentagonWeight_mul_initialPentagonWeight_eq_crossingChange
         (G.swapColumns a b).initialPentagonWeight R (C.withTurnRow t) Q =
       G.crossingChangeAnnulusWeight R C t := by
   rw [rename_initialPentagonWeight, prod_ite_OSet_eq_prod_OColumnsOfSquares,
-    G.initialPentagonWeight_swapColumns R (C.withTurnRow t),
-    prod_ite_OSet_eq_prod_OColumnsOfSquares]
+    swapColumns_initialPentagonWeight_withTurnRow]
   exact prod_OColumnsOfSquares_mul_prod_eq R (initialPentagon_squares P Q h)
 
 /-! ### Interleaving columns -/

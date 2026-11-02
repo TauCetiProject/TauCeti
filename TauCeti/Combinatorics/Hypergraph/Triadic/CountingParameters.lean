@@ -160,12 +160,38 @@ theorem inducedCountingSchedule3_mul_le_routeBudget3 (C : TriadicComplex3 V) (k 
       apply div_le_div_of_nonneg_left (by positivity) hN
       gcongr
 
+/-- At any index dominating the pair palette size, the schedule pays `k.choose j` errors per
+route for `1 ≤ j ≤ 3`, such as one for each pattern pair or one for each pattern triple. -/
+theorem choose_mul_inducedCountingSchedule3_le_routeBudget3 (C : TriadicComplex3 V) (k : ℕ)
+    {j : ℕ} (hj₀ : 1 ≤ j) (hj : j ≤ 3) {ε : ℝ} (hε : 0 ≤ ε) {n : ℕ}
+    (hn : C.pairColorCount ≤ n) :
+    (k.choose j : ℝ) * inducedCountingSchedule3 k ε n ≤ routeBudget3 C k (ε / 12) := by
+  have hchoose : k.choose j ≤ k ^ 3 := by
+    rcases Nat.eq_zero_or_pos k with rfl | hk
+    · simp [Nat.choose_eq_zero_of_lt hj₀]
+    · exact (Nat.choose_le_pow k j).trans (Nat.pow_le_pow_right hk hj)
+  refine le_trans ?_ (inducedCountingSchedule3_mul_le_routeBudget3 C k hε hn)
+  exact mul_le_mul_of_nonneg_right (by exact_mod_cast hchoose)
+    (inducedCountingSchedule3_nonneg k hε n)
+
 /-- The route multiplicity times its per-route budget is at most the original budget. -/
 theorem routeBudget3_charge (C : TriadicComplex3 V) (k : ℕ) {ε : ℝ} (hε : 0 ≤ ε) :
     (C.pairColorCount : ℝ) ^ k.choose 2 * routeBudget3 C k ε ≤ ε := by
   rw [routeBudget3_def, mul_div_left_comm]
   exact mul_le_of_le_one_right hε
     (div_le_one_of_le₀ (le_max_right _ _) (by positivity))
+
+/-- At any index dominating the pair palette size, one scheduled error for each pattern pair on
+each route fits a twelfth of the error budget. -/
+theorem pairColorCount_pow_mul_choose_two_mul_inducedCountingSchedule3_le
+    (C : TriadicComplex3 V) (k : ℕ) {ε : ℝ} (hε : 0 ≤ ε) {n : ℕ}
+    (hn : C.pairColorCount ≤ n) :
+    (C.pairColorCount : ℝ) ^ k.choose 2 * k.choose 2 * inducedCountingSchedule3 k ε n ≤
+      ε / 12 := by
+  rw [mul_assoc]
+  exact (mul_le_mul_of_nonneg_left
+    (choose_mul_inducedCountingSchedule3_le_routeBudget3 C k one_le_two (by norm_num) hε hn)
+    (by positivity)).trans (routeBudget3_charge C k (by positivity))
 
 variable {κ : Type*} {C : TriadicComplex3 V}
   {F : FiniteColored3Pattern κ}
@@ -221,28 +247,12 @@ theorem exceptional_route_prediction_mass_le_countingSchedule [DecidableEq κ] {
   have hreg' : C.skeleton.IsPairColorRegular (inducedCountingSchedule3 F.k ε n) := by
     simpa [PairSkeleton3.lowerSkeletonRegular_iff, n] using hreg
   have hmass := topRegularOverMostPolyads_iff.1 htop
-  have hlocal := inducedCountingSchedule3_mul_le_routeBudget3 C F.k hε hn
-  have hglobal := routeBudget3_charge C F.k (show 0 ≤ ε / 12 by positivity)
   have hsched0 := inducedCountingSchedule3_nonneg F.k hε n
   have htriple : F.k.choose 3 * H.exceptionalPolyadMass C η r ≤ ε / 6 := by
     calc _ ≤ (F.k.choose 3 : ℝ) * inducedCountingParameter3 F.k ε :=
         mul_le_mul_of_nonneg_left hmass (Nat.cast_nonneg _)
       _ ≤ _ := inducedCountingParameter3_choose_charge F.k hε
-  have hpair : (C.pairColorCount : ℝ) ^ F.k.choose 2 * F.k.choose 2 *
-      inducedCountingSchedule3 F.k ε n ≤ ε / 12 := by
-    calc _ ≤ (C.pairColorCount : ℝ) ^ F.k.choose 2 *
-          ((F.k : ℝ) ^ 3 * inducedCountingSchedule3 F.k ε n) := by
-            rw [mul_assoc]
-            gcongr
-            have hchoose : (F.k.choose 2 : ℝ) ≤ (F.k : ℝ) ^ 2 := by
-              exact_mod_cast Nat.choose_le_pow F.k 2
-            rcases Nat.eq_zero_or_pos F.k with hk | hk
-            · simp [hk]
-            · have hk' : (1 : ℝ) ≤ F.k := by exact_mod_cast hk
-              nlinarith [sq_nonneg (F.k : ℝ)]
-      _ ≤ (C.pairColorCount : ℝ) ^ F.k.choose 2 * routeBudget3 C F.k (ε / 12) :=
-        mul_le_mul_of_nonneg_left hlocal (by positivity)
-      _ ≤ _ := hglobal
+  have hpair := pairColorCount_pow_mul_choose_two_mul_inducedCountingSchedule3_le C F.k hε hn
   refine (exceptional_route_prediction_mass_le hsched0 hreg' η r).trans ?_
   apply mul_le_mul_of_nonneg_right _ (by positivity)
   linarith only [htriple, hpair, hε]
