@@ -73,9 +73,17 @@ theorem ext {η θ : RowFiniteParametrizedCocycle ν₀ ν₁}
 
 variable (η : RowFiniteParametrizedCocycle ν₀ ν₁)
 
+/-- The signed map of a parametrized cocycle lowers total degree by one. -/
+theorem signedMap_mem_totalGrading {n : ℤ} {f : P →₀ A}
+    (hf : f ∈ rowFiniteTotalGrading 𝒜 indP n) :
+    rowFiniteSignedMap (𝒜 := 𝒜) η.h f ∈ rowFiniteTotalGrading 𝒜 indQ (n - 1) := by
+  simpa only [sub_eq_add_neg] using
+    rowFiniteSignedMap_mem_totalGrading η.h (k := -1)
+      (fun x y ↦ by simpa only [sub_eq_add_neg] using η.mem_graded x y) hf
+
 /-- The generator equation extends to the entire free left module: the signed row map is a
 chain homotopy between the two continuation substitutions. -/
-theorem homotopyMap_differential (hA : IsDGAlgebra 𝒜 d) (f : P →₀ A) :
+theorem rowFiniteSignedMap_differential (hA : IsDGAlgebra 𝒜 d) (f : P →₀ A) :
     rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) mQ.m
         (rowFiniteSignedMap (𝒜 := 𝒜) η.h f) +
       rowFiniteSignedMap (𝒜 := 𝒜) η.h
@@ -123,7 +131,7 @@ private theorem signedRow_sum_eq_neg {X : Type*} (f : X →₀ A) (g : X → Q �
     Int.negOnePow_odd _ hs, ← Int.negOnePow_neg (k - i z), neg_sub]
   simp
 
-/-- The generator equation written in the usual signed Maurer–Cartan row notation. -/
+/-- The generator equation expanded into the signed finite-row homotopy equation. -/
 theorem parametrized_iff (h : P → Q →₀ A)
     (hh : ∀ x y, h x y ∈ 𝒜 (indQ y - indP x - 1)) (x : P) :
     (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) mQ.m (h x) +
