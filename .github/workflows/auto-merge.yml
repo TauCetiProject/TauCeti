@@ -15,7 +15,9 @@ name: Auto-merge
 # change the waiting PRs' heads, builds, or comments and therefore cannot wake this workflow.
 
 on:
-  # Recheck pushed heads and newly ready PRs after dispatched maintenance builds.
+  # A pushed head is immediately unsafe until it has current-head reviews.
+  # The ready-to-merge label wakes the gate after readiness reconciliation, including
+  # reconciliation after dispatched maintenance builds.
   pull_request_target:
     types: [synchronize, labeled]
   # Head is freshly green: re-check whether this PR is now mergeable.
