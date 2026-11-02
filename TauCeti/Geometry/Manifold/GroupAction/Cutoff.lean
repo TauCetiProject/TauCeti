@@ -11,7 +11,7 @@ public import Mathlib.Geometry.Manifold.Algebra.Structures
 public import Mathlib.Geometry.Manifold.PartitionOfUnity
 public import Mathlib.Topology.ShrinkingLemma
 public import TauCeti.Topology.Algebra.GroupAction.Cutoff
-public import TauCeti.Topology.LocallyFinite
+public import TauCeti.Topology.LocallyFinite.Basic
 
 /-!
 # Smooth cutoff functions for proper actions on manifolds

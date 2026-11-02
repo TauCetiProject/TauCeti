@@ -121,6 +121,22 @@ theorem edgeCut_setOf_reachable (G : Graph α β) (x : α) :
     G.edgeCut {y | G.Reachable x y} = ∅ :=
   edgeCut_eq_empty_iff_forall_reachable.mpr fun _ _ h hx ↦ Reachable.trans hx h
 
+/-- The boundary of the vertices reachable from `x` after deleting `F` is contained in `F`.
+Thus every edge separator contains an edge cut separating the same vertices. -/
+theorem edgeCut_setOf_reachable_deleteEdges_subset (G : Graph α β) (F : Set β) (x : α) :
+    G.edgeCut {y | (G.deleteEdges F).Reachable x y} ⊆ F := by
+  have h := edgeCut_setOf_reachable (G.deleteEdges F) x
+  rw [edgeCut_deleteEdges] at h
+  exact Set.sdiff_eq_empty.mp h
+
+/-- Deleting every edge crossing a set leaves no path from inside the set to outside it. -/
+theorem not_reachable_deleteEdges_edgeCut (G : Graph α β) (hx : x ∈ S) (hy : y ∉ S) :
+    ¬(G.deleteEdges (G.edgeCut S)).Reachable x y := by
+  intro hxy
+  have hcut : (G.deleteEdges (G.edgeCut S)).edgeCut S = ∅ := by
+    simp only [edgeCut_deleteEdges, Set.sdiff_self]
+  exact hy (hxy.mem_of_edgeCut_eq_empty hcut hx)
+
 /-- A vertex set containing one end of a reachable pair and missing the other has a nonempty edge
 cut. -/
 theorem Reachable.edgeCut_nonempty (h : G.Reachable x y) (hxS : x ∈ S) (hyS : y ∉ S) :
