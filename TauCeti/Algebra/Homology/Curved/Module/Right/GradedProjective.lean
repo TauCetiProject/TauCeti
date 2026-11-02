@@ -26,9 +26,9 @@ modules with maps `f` and `g`. Its totalization is the cone of the induced map
 `cone(f) ⟶ M`. Composition with this map is a bijection from homotopy classes of maps
 `P ⟶ cone(f)` to homotopy classes of maps `P ⟶ M`:
 
-* a closed map `u : P ⟶ M` lifts to a right-linear map `ũ : P ⟶ L` of degree zero, since `P` is
-  graded-projective; the commutator `d ũ - ũ d` is killed by `g`, so it is `f ∘ v` for a map `v`
-  of degree one, and `(-v, ũ)` is a closed map to the cone lifting `u`;
+* a closed map `u : P ⟶ M` lifts to a right-linear map `u' : P ⟶ L` of degree zero, since `P` is
+  graded-projective; the commutator `d u' - u' d` is killed by `g`, so it is `f ∘ v` for a map `v`
+  of degree one, and `(-v, u')` is a closed map to the cone lifting `u`;
 * if the composite of a closed map `φ : P ⟶ cone(f)` with `cone(f) ⟶ M` is the boundary of an
   odd homotopy `k`, a lift of `k` to `L` and the factorization through `f` of the resulting
   correction of the second component of `φ` assemble to an odd homotopy contracting `φ`.
@@ -180,34 +180,34 @@ private theorem exists_comp_coneDesc_eq
     ∃ φ : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) P ⟶
         ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) (cone f),
       φ ≫ coneDesc f g hfg = u := by
-  -- Lift `u` to a right-linear map `ũ : P ⟶ L` of degree zero.
-  obtain ⟨ũ, hũ⟩ := exists_comp_eq_of_surjective g hg (p := 0)
+  -- Lift `u` to a right-linear map `u' : P ⟶ L` of degree zero.
+  obtain ⟨u', hu'⟩ := exists_comp_eq_of_surjective g hg (p := 0)
     ⟨closedHom u, (isHomogeneous_toGradedModuleCat_iff _).1
       ((forgetDifferential (h := h)).map u).isHomogeneous⟩
-  simp only at hũ
+  simp only at hu'
   -- Its commutator with the differentials is killed by `g`, so it factors through `f`.
   obtain ⟨δ, hδ⟩ : ∃ δ : dgRightModuleCochains (R := R) (A := A) (ℳ := P.grading)
       (ℳN := L.grading) (0 + 1),
-      ∀ x, δ.1 x = L.differential (ũ.1 x) - ũ.1 (P.differential x) :=
+      ∀ x, δ.1 x = L.differential (u'.1 x) - u'.1 (P.differential x) :=
     ⟨dgRightModuleCochains.curvedDifferential (hM := P.isCurvedDGRightModule)
-      (hN := L.isCurvedDGRightModule) 0 ũ, fun x ↦ by
+      (hN := L.isCurvedDGRightModule) 0 u', fun x ↦ by
       rw [dgRightModuleCochains.curvedDifferential_apply, Int.negOnePow_zero, one_smul]⟩
   obtain ⟨v, hv⟩ := exists_comp_eq_of_injective f hf δ fun x ↦
     (hex _).1 (by
-      rw [hδ, map_sub, ← differential_closedHom, hũ, hũ, differential_closedHom, sub_self])
+      rw [hδ, map_sub, ← differential_closedHom, hu', hu', differential_closedHom, sub_self])
   have hdv (x : P) : K.differential (v.1 x) = -v.1 (P.differential x) := by
     apply hf
     rw [← differential_closedHom, map_neg, hv, hv]
     simp only [hδ, map_sub, L.isCurvedDGRightModule.sq_eq, P.isCurvedDGRightModule.sq_eq,
       LinearMap.map_smul]
     abel
-  -- The lift `x ↦ (-v x, ũ x)`, computed on the cone's product carrier.
-  have hφ₀ (x : P) : ((-v.1).prod ũ.1 : P →ₗ[Aᵐᵒᵖ] cone f) x = (-v.1 x, ũ.1 x) := rfl
-  refine ⟨closedHomOf (M := P) (N := cone f) ((-v.1).prod ũ.1) (fun p x hx ↦ ?_) (fun x ↦ ?_),
+  -- The lift `x ↦ (-v x, u' x)`, computed on the cone's product carrier.
+  have hφ₀ (x : P) : ((-v.1).prod u'.1 : P →ₗ[Aᵐᵒᵖ] cone f) x = (-v.1 x, u'.1 x) := rfl
+  refine ⟨closedHomOf (M := P) (N := cone f) ((-v.1).prod u'.1) (fun p x hx ↦ ?_) (fun x ↦ ?_),
     closedHom_ext fun x ↦ ?_⟩
   · rw [cone_grading, hφ₀]
     exact ⟨(K.grading (p + 1)).neg_mem (by simpa using dgRightModuleCochains.map_mem v hx),
-      by simpa using dgRightModuleCochains.map_mem ũ hx⟩
+      by simpa using dgRightModuleCochains.map_mem u' hx⟩
   · rw [cone_differential_apply, hφ₀, hφ₀]
     refine Prod.ext ?_ ?_
     · dsimp only
@@ -216,7 +216,7 @@ private theorem exists_comp_coneDesc_eq
       rw [map_neg, hv, hδ]
       abel
   · rw [closedHom_comp, closedHom_coneDesc, closedHom_closedHomOf, LinearMap.comp_apply,
-      LinearMap.comp_apply, hφ₀, LinearMap.snd_apply, hũ]
+      LinearMap.comp_apply, hφ₀, LinearMap.snd_apply, hu']
 
 /-- For a short exact sequence `K ⟶ L ⟶ M` of curved modules, a closed map from a
 graded-projective module to the cone of `K ⟶ L` is null-homotopic as soon as its composite with
