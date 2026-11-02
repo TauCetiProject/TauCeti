@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.ModularForms.DedekindEta
 public import TauCeti.NumberTheory.ModularForms.SiegelFunction.Basic
 import Mathlib.LinearAlgebra.Matrix.FixedDetMatrices
+import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
 
 /-!
 # The level-two Siegel functions as eta quotients

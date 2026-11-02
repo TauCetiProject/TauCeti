@@ -114,10 +114,6 @@ theorem eta_add_one_div_two {τ : ℂ} (hτ : 0 < τ.im) :
   simp only [one_sub_neg_pow_odd]
   ring
 
-/-- `S : τ ↦ -1/τ` preserves the upper half-plane: `0 < (-1/τ).im` whenever `0 < τ.im`. -/
-theorem im_neg_one_div_pos {τ : ℂ} (hτ : 0 < τ.im) : 0 < (-1 / τ).im := by
-  simpa [neg_div, inv_neg] using UpperHalfPlane.im_inv_neg_coe_pos ⟨τ, hτ⟩
-
 /-- **The square of the `S`-transformation of `η`**: `η(-1/τ)² = -i τ η(τ)²` on the upper
 half-plane. -/
 theorem eta_neg_one_div_sq {τ : ℂ} (hτ : 0 < τ.im) : η (-1 / τ) ^ 2 = -I * τ * η τ ^ 2 := by
