@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
 import Mathlib.LinearAlgebra.Eigenspace.Minpoly
+import TauCeti.LinearAlgebra.Eigenspace.Involution
 
 /-!
 # Separating eigenspace summands
@@ -83,16 +84,11 @@ theorem isCompl_eigenspace_one_neg_one (h2 : IsUnit (2 : K)) {T : Module.End K V
     exact h2.smul_eq_zero.mp h2x
   · rw [codisjoint_iff, eq_top_iff]
     intro x _
-    refine Submodule.mem_sup.mpr
-      ⟨(↑h2.unit⁻¹ : K) • (x + T x), ?_, (↑h2.unit⁻¹ : K) • (x - T x), ?_, ?_⟩
-    · rw [Module.End.mem_eigenspace_iff, one_smul, map_smul, map_add, hT x, add_comm (T x) x]
-    · rw [Module.End.mem_eigenspace_iff, map_smul, map_sub, hT x, neg_one_smul, ← smul_neg,
-        neg_sub]
-    · have hadd : x + T x + (x - T x) = (2 : K) • x := by
-        rw [two_smul]
-        abel
-      rw [← smul_add, hadd, smul_smul]
-      rw [Units.inv_mul_eq_one.mpr h2.unit_spec, one_smul]
+    let := h2.invertible
+    exact Submodule.mem_sup.mpr
+      ⟨_, (Module.End.eigenProjOfInvolutive hT (one_mul 1) x).2, _,
+        (Module.End.eigenProjOfInvolutive hT ((neg_mul_neg (1 : K) 1).trans (one_mul 1)) x).2,
+        Module.End.eigenProjOfInvolutive_add_eigenProjOfInvolutive_neg hT _ _ x⟩
 
 variable [IsDomain K] [Module.IsTorsionFree K V]
 

@@ -40,11 +40,17 @@ the cochains with coefficients in the dual bimodule, see
 
 ## Main definitions
 
+* `TauCeti.hochschildBimoduleCofaceFun`: the coface formulas on plain functions of tuples, for any
+  left and right actions of `A`.
 * `TauCeti.hochschildBimoduleCoface`: the cofaces `∂ᵢ`.
 * `TauCeti.hochschildBimoduleCoboundary`: the Hochschild coboundary `δ = ∑ᵢ (-1)ⁱ ∂ᵢ`.
 
 ## Main results
 
+* `TauCeti.hochschildBimoduleCofaceFun_hochschildBimoduleCofaceFun`: the cosimplicial identities
+  for the coface formulas, from the associativity and commutation laws of the actions; they give
+  both the algebraic cosimplicial identities here and the bounded ones of
+  `ContinuousLinearMap.hochschildBimoduleCoface_hochschildBimoduleCoface`.
 * `TauCeti.hochschildBimoduleCoface_hochschildBimoduleCoface`: the cosimplicial identities
   `∂_{j+1} ∘ ∂ᵢ = ∂ᵢ ∘ ∂_j` for `i ≤ j`.
 * `TauCeti.hochschildBimoduleCoboundary_hochschildBimoduleCoboundary`: `δ (δ ψ) = 0`.
@@ -67,6 +73,126 @@ public section
 open MulOpposite
 
 namespace TauCeti
+
+section Tuple
+
+variable {A M : Type*} [Semigroup A] {n : ℕ}
+
+/-- The `i`-th Hochschild coface of a function `f` of `n` entries of `A`, valued in a type `M` with
+a left action `l` and a right action `r` of `A`: the zeroth coface is `l (a 0) (f (a₁, …, aₙ))`,
+the last coface is `r aₙ (f (a₀, …, aₙ₋₁))`, and the others multiply two adjacent entries. This
+is the formula shared by `TauCeti.hochschildBimoduleCoface` and its bounded analogue
+`ContinuousLinearMap.hochschildBimoduleCoface`; it needs no linear structure on `M`. -/
+def hochschildBimoduleCofaceFun (l r : A → M → M) (f : (Fin n → A) → M) (i : Fin (n + 2))
+    (a : Fin (n + 1) → A) : M :=
+  Fin.cases (l (a 0) (f (Fin.tail a)))
+    (Fin.lastCases (r (a (Fin.last n)) (f (Fin.init a)))
+      fun j ↦ f (Fin.contractNth j.castSucc (· * ·) a)) i
+
+variable (l r : A → M → M) (f : (Fin n → A) → M) (a : Fin (n + 1) → A)
+
+/-- The zeroth coface acts by the first entry on the left. -/
+@[simp]
+theorem hochschildBimoduleCofaceFun_zero :
+    hochschildBimoduleCofaceFun l r f 0 a = l (a 0) (f (Fin.tail a)) := by
+  simp [hochschildBimoduleCofaceFun]
+
+/-- The last coface acts by the last entry on the right. -/
+@[simp]
+theorem hochschildBimoduleCofaceFun_last :
+    hochschildBimoduleCofaceFun l r f (Fin.last (n + 1)) a =
+      r (a (Fin.last n)) (f (Fin.init a)) := by
+  rw [hochschildBimoduleCofaceFun, ← Fin.succ_last, Fin.cases_succ, Fin.lastCases_last]
+
+/-- The inner cofaces multiply two adjacent entries. -/
+@[simp]
+theorem hochschildBimoduleCofaceFun_castSucc_succ (j : Fin n) :
+    hochschildBimoduleCofaceFun l r f j.castSucc.succ a =
+      f (Fin.contractNth j.castSucc (· * ·) a) := by
+  rw [hochschildBimoduleCofaceFun, Fin.cases_succ, Fin.lastCases_castSucc]
+
+/-- The inner cofaces multiply two adjacent entries, with the index written as `j.succ.castSucc`
+rather than `j.castSucc.succ`. -/
+theorem hochschildBimoduleCofaceFun_succ_castSucc (j : Fin n) :
+    hochschildBimoduleCofaceFun l r f j.succ.castSucc a =
+      f (Fin.contractNth j.castSucc (· * ·) a) := by
+  rw [← Fin.succ_castSucc, hochschildBimoduleCofaceFun_castSucc_succ]
+
+variable {l r} in
+/-- The cosimplicial identity `∂_{j+1} ∘ ∂ᵢ = ∂ᵢ ∘ ∂_j` for `i ≤ j` between the coface formulas,
+for actions `l` and `r` satisfying `l (a * b) = l a ∘ l b`, `r (a * b) = r b ∘ r a` and
+`l a ∘ r b = r b ∘ l a`. -/
+theorem hochschildBimoduleCofaceFun_hochschildBimoduleCofaceFun
+    (hl : ∀ a b x, l (a * b) x = l a (l b x)) (hr : ∀ a b x, r (a * b) x = r b (r a x))
+    (hlr : ∀ a b x, l a (r b x) = r b (l a x)) {i j : Fin (n + 2)} (hij : i ≤ j) :
+    hochschildBimoduleCofaceFun l r (hochschildBimoduleCofaceFun l r f i) j.succ =
+      hochschildBimoduleCofaceFun l r (hochschildBimoduleCofaceFun l r f j) i.castSucc := by
+  -- Each of `i` and `j` is the left coface `0`, an inner coface `k.castSucc.succ` or the right
+  -- coface `Fin.last`; the six cases with `i ≤ j` reduce to identities between tuples, after
+  -- rewriting each inner index into the shape `k.castSucc.succ` of
+  -- `hochschildBimoduleCofaceFun_castSucc_succ`.
+  funext a
+  induction i using Fin.cases with
+  | zero =>
+    induction j using Fin.cases with
+    | zero =>
+      -- `l (a₀ a₁) (f (a₂, …)) = l a₀ (l a₁ (f (a₂, …)))`
+      rw [← Fin.castSucc_zero (n := n + 1), hochschildBimoduleCofaceFun_castSucc_succ]
+      simp only [Fin.castSucc_zero, hochschildBimoduleCofaceFun_zero]
+      rw [← Fin.cons_self_tail a, Fin.contractNth_zero_cons]
+      simp only [Fin.cons_zero, Fin.tail_cons, hl]
+    | succ j =>
+      induction j using Fin.lastCases with
+      | last =>
+        -- the left and right actions commute
+        simp only [Fin.succ_last, hochschildBimoduleCofaceFun_last,
+          Fin.castSucc_zero, hochschildBimoduleCofaceFun_zero]
+        rw [Fin.tail_init_eq_init_tail]
+        exact (hlr _ _ _).symm
+      | cast j =>
+        -- an inner contraction commutes with dropping the first entry
+        rw [Fin.succ_castSucc, hochschildBimoduleCofaceFun_castSucc_succ]
+        simp only [Fin.castSucc_zero, hochschildBimoduleCofaceFun_zero,
+          hochschildBimoduleCofaceFun_succ_castSucc]
+        rw [Fin.contractNth_apply_of_lt _ _ _ _ (Nat.succ_pos _), Fin.castSucc_zero,
+          ← Fin.succ_castSucc, Fin.tail_contractNth_succ]
+  | succ i =>
+    induction i using Fin.lastCases with
+    | last =>
+      -- `r (aₙ aₙ₊₁) (f (…)) = r aₙ₊₁ (r aₙ (f (…)))`
+      rw [Fin.succ_last] at hij ⊢
+      obtain rfl : j = Fin.last (n + 1) := le_antisymm (Fin.le_last _) hij
+      rw [Fin.succ_last, show (Fin.last (n + 1)).castSucc = (Fin.last n).castSucc.succ by
+        rw [Fin.succ_castSucc, Fin.succ_last], hochschildBimoduleCofaceFun_castSucc_succ]
+      simp only [hochschildBimoduleCofaceFun_last]
+      rw [Fin.contractNth_apply_of_eq _ _ _ _ rfl, Fin.init_contractNth_castSucc_last, hr,
+        Fin.succ_last, Fin.init_def]
+    | cast i =>
+      induction j using Fin.cases with
+      | zero => exact absurd hij (not_le.2 (Fin.succ_pos _))
+      | succ j =>
+        induction j using Fin.lastCases with
+        | last =>
+          -- an inner contraction commutes with dropping the last entry
+          rw [Fin.succ_last, Fin.succ_last, hochschildBimoduleCofaceFun_succ_castSucc]
+          simp only [hochschildBimoduleCofaceFun_last,
+            hochschildBimoduleCofaceFun_castSucc_succ]
+          rw [Fin.contractNth_apply_of_gt _ _ _ _ i.2, Fin.init_contractNth_castSucc,
+            Fin.succ_last]
+        | cast j =>
+          -- two inner contractions: the simplicial identity of `hochschildFace`
+          rw [Fin.succ_castSucc j]
+          simp only [hochschildBimoduleCofaceFun_castSucc_succ,
+            hochschildBimoduleCofaceFun_succ_castSucc]
+          cases n with
+          | zero => exact i.elim0
+          | succ n =>
+            have h := hochschildFace_hochschildFace (i := i.castSucc) (j := j.castSucc)
+              (by simpa using hij) a
+            simp only [Fin.succ_castSucc, hochschildFace_castSucc] at h
+            rw [h]
+
+end Tuple
 
 section Coface
 
@@ -137,75 +263,30 @@ theorem hochschildBimoduleCoface_succ_castSucc_apply (j : Fin n)
       ψ (Fin.contractNth j.castSucc (· * ·) a) := by
   rw [← Fin.succ_castSucc, hochschildBimoduleCoface_castSucc_succ_apply]
 
+/-- The cofaces evaluate by the coface formulas `TauCeti.hochschildBimoduleCofaceFun`. -/
+private theorem coe_hochschildBimoduleCoface (i : Fin (n + 2))
+    (ψ : MultilinearMap R (fun _ : Fin n ↦ A) M) :
+    ⇑(hochschildBimoduleCoface R A M i ψ) =
+      hochschildBimoduleCofaceFun (· • ·) (fun a m ↦ op a • m) ψ i := by
+  funext a
+  induction i using Fin.cases with
+  | zero => simp
+  | succ i =>
+    induction i using Fin.lastCases with
+    | last =>
+      rw [Fin.succ_last, hochschildBimoduleCoface_last_apply, hochschildBimoduleCofaceFun_last]
+    | cast j =>
+      rw [hochschildBimoduleCoface_castSucc_succ_apply, hochschildBimoduleCofaceFun_castSucc_succ]
+
 /-- The cosimplicial identity `∂_{j+1} ∘ ∂ᵢ = ∂ᵢ ∘ ∂_j` for `i ≤ j`. -/
 theorem hochschildBimoduleCoface_hochschildBimoduleCoface [SMulCommClass A Aᵐᵒᵖ M]
     {i j : Fin (n + 2)} (hij : i ≤ j) (ψ : MultilinearMap R (fun _ : Fin n ↦ A) M) :
     hochschildBimoduleCoface R A M j.succ (hochschildBimoduleCoface R A M i ψ) =
-      hochschildBimoduleCoface R A M i.castSucc (hochschildBimoduleCoface R A M j ψ) := by
-  -- Each of `i` and `j` is the left coface `0`, an inner coface `k.castSucc.succ` or the right
-  -- coface `Fin.last`; the six cases with `i ≤ j` reduce to identities between tuples, after
-  -- rewriting each inner index into the shape `k.castSucc.succ` of
-  -- `hochschildBimoduleCoface_castSucc_succ_apply`.
-  ext a
-  induction i using Fin.cases with
-  | zero =>
-    induction j using Fin.cases with
-    | zero =>
-      -- `(a₀ a₁) • ψ(a₂, …) = a₀ • a₁ • ψ(a₂, …)`
-      rw [← Fin.castSucc_zero (n := n + 1), hochschildBimoduleCoface_castSucc_succ_apply]
-      simp only [Fin.castSucc_zero, hochschildBimoduleCoface_zero_apply]
-      rw [← Fin.cons_self_tail a, Fin.contractNth_zero_cons]
-      simp only [Fin.cons_zero, Fin.tail_cons, mul_smul]
-    | succ j =>
-      induction j using Fin.lastCases with
-      | last =>
-        -- the left and right actions commute
-        simp only [Fin.succ_last, hochschildBimoduleCoface_last_apply,
-          Fin.castSucc_zero, hochschildBimoduleCoface_zero_apply]
-        rw [Fin.tail_init_eq_init_tail]
-        exact (smul_comm _ _ _).symm
-      | cast j =>
-        -- an inner contraction commutes with dropping the first entry
-        rw [Fin.succ_castSucc, hochschildBimoduleCoface_castSucc_succ_apply]
-        simp only [Fin.castSucc_zero, hochschildBimoduleCoface_zero_apply,
-          hochschildBimoduleCoface_succ_castSucc_apply]
-        rw [Fin.contractNth_apply_of_lt _ _ _ _ (Nat.succ_pos _), Fin.castSucc_zero,
-          ← Fin.succ_castSucc, Fin.tail_contractNth_succ]
-  | succ i =>
-    induction i using Fin.lastCases with
-    | last =>
-      -- `ψ(…) • (aₙ aₙ₊₁) = (ψ(…) • aₙ) • aₙ₊₁`
-      rw [Fin.succ_last] at hij ⊢
-      obtain rfl : j = Fin.last (n + 1) := le_antisymm (Fin.le_last _) hij
-      rw [Fin.succ_last, show (Fin.last (n + 1)).castSucc = (Fin.last n).castSucc.succ by
-        rw [Fin.succ_castSucc, Fin.succ_last], hochschildBimoduleCoface_castSucc_succ_apply]
-      simp only [hochschildBimoduleCoface_last_apply]
-      rw [Fin.contractNth_apply_of_eq _ _ _ _ rfl, Fin.init_contractNth_castSucc_last, op_mul,
-        mul_smul, Fin.succ_last, Fin.init_def]
-    | cast i =>
-      induction j using Fin.cases with
-      | zero => exact absurd hij (not_le.2 (Fin.succ_pos _))
-      | succ j =>
-        induction j using Fin.lastCases with
-        | last =>
-          -- an inner contraction commutes with dropping the last entry
-          rw [Fin.succ_last, Fin.succ_last, hochschildBimoduleCoface_succ_castSucc_apply]
-          simp only [hochschildBimoduleCoface_last_apply,
-            hochschildBimoduleCoface_castSucc_succ_apply]
-          rw [Fin.contractNth_apply_of_gt _ _ _ _ i.2, Fin.init_contractNth_castSucc,
-            Fin.succ_last]
-        | cast j =>
-          -- two inner contractions: the simplicial identity of `hochschildFace`
-          rw [Fin.succ_castSucc j]
-          simp only [hochschildBimoduleCoface_castSucc_succ_apply,
-            hochschildBimoduleCoface_succ_castSucc_apply]
-          cases n with
-          | zero => exact i.elim0
-          | succ n =>
-            have h := hochschildFace_hochschildFace (i := i.castSucc) (j := j.castSucc)
-              (by simpa using hij) a
-            simp only [Fin.succ_castSucc, hochschildFace_castSucc] at h
-            rw [h]
+      hochschildBimoduleCoface R A M i.castSucc (hochschildBimoduleCoface R A M j ψ) :=
+  MultilinearMap.coe_injective <| by
+    simp only [coe_hochschildBimoduleCoface]
+    exact hochschildBimoduleCofaceFun_hochschildBimoduleCofaceFun _ mul_smul
+      (fun a b m ↦ by rw [op_mul, mul_smul]) (fun _ _ _ ↦ smul_comm _ _ _) hij
 
 end Coface
 

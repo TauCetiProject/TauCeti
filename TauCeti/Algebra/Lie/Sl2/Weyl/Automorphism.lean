@@ -72,6 +72,10 @@ statement above then reads as a relation in the group of units rather than in th
 * `TauCeti.weylAut_apply_of_lie_eq_zero`: it fixes the joint centraliser of `e` and `f`.
 * `TauCeti.weylAut_apply_of_lie_eq_smul`: the reflection formula `y ↦ y - c • h`.
 * `TauCeti.lie_weylAut_apply`: the reflected weight of the image of an eigenvector.
+* `TauCeti.weylAut_apply_eq_expAd_neg_expAd_expAd_neg`: the Weyl automorphism is also
+  `exp (ad (-f)) ∘ exp (ad e) ∘ exp (ad (-f))`.
+* `LieHom.map_weylAut`: a Lie endomorphism exchanging `e` with `-f` and `f` with `-e` commutes with
+  the Weyl automorphism.
 * `IsSl2Triple.ofLinearEquiv_weylAut_mem_intLieAlgebra`: the Weyl automorphism lies in the group
   `TauCeti.intLieAlgebra K L` of inner automorphisms.
 * `TauCeti.weylAut_mem_rootSpace`, `TauCeti.weylAut_map_rootSpace` and
@@ -256,6 +260,60 @@ lemma lie_weylAut_apply (t : IsSl2Triple h e f) {y z : L} {c d m : K}
         rw [weylAut_apply_sub_smul he hf t hye hyf]
     _ = weylAut t he hf ⁅y - c • h, z⁆ := (LieEquiv.map_lie _ _ _).symm
     _ = (d - c * m) • weylAut t he hf z := by rw [key, map_smul]
+
+/-! ### The opposite order and the Chevalley involution -/
+
+/-- **The Weyl automorphism in the opposite order.** The composite
+`exp (ad (-f)) ∘ exp (ad e) ∘ exp (ad (-f))` is again the Weyl automorphism. This is the
+Lie-algebra form of the identity in `SL₂`
+
+```text
+[[1, 0], [-1, 1]] [[1, 1], [0, 1]] [[1, 0], [-1, 1]] = [[0, 1], [-1, 0]]
+  = [[1, 1], [0, 1]] [[1, 0], [-1, 1]] [[1, 1], [0, 1]],
+```
+
+and it is what makes the Weyl automorphism symmetric under the exchange of `e` with `-f`. -/
+lemma weylAut_apply_eq_expAd_neg_expAd_expAd_neg (t : IsSl2Triple h e f) (y : L) :
+    weylAut t he hf y = expAd (-f) hf' (expAd e he (expAd (-f) hf' y)) := by
+  have he' : IsNilpotent (ad K L (-e)) := by simpa using he.neg
+  set W := weylAut t he hf
+  -- `exp (ad (-e))` and `exp (ad f)` invert `exp (ad e)` and `exp (ad (-f))`
+  have hEi (z : L) : expAd (-e) he' (expAd e he z) = z := by
+    rw [← expAd_symm e he, LieEquiv.symm_apply_apply]
+  have hG (z : L) : expAd f hf (expAd (-f) hf' z) = z := by
+    simpa using (expAd (-f) hf').symm_apply_apply z
+  -- conjugation by `W` carries `exp (ad (-e))` to `exp (ad f)`, and `W²` commutes with it
+  have hA (z : L) : W (expAd (-e) he' z) = expAd f hf (W z) := by
+    have hWe : W (-e) = f := by simp [W]
+    simpa [hWe] using LieHom.map_expAd (W : L →ₗ⁅K⁆ L) he' (by simpa [hWe] using hf) z
+  have hB (z : L) : W (W (expAd (-e) he' z)) = expAd (-e) he' (W (W z)) := by
+    have hWf : W f = -e := by simp [W]
+    rw [hA]
+    simpa [hWf] using LieHom.map_expAd (W : L →ₗ⁅K⁆ L) hf (by simpa [hWf] using he') (W z)
+  have hW (z : L) : W z = expAd e he (expAd (-f) hf' (expAd e he z)) := weylAut_apply he hf t z
+  -- so `exp (ad (-e)) ∘ exp (ad f) ∘ exp (ad (-e))` is `W⁻¹`, and `exp (ad (-f))` is
+  -- `exp (ad (-e)) ∘ W ∘ exp (ad (-e))`
+  have hC (z : L) : expAd (-e) he' (expAd f hf (expAd (-e) he' (W z))) = z := by
+    rw [hW, hEi, hG, hEi]
+  have hD (u : L) : expAd (-f) hf' u = expAd (-e) he' (W (expAd (-e) he' u)) := by
+    rw [hW, ← expAd_symm e he, LieEquiv.apply_symm_apply, LieEquiv.symm_apply_apply]
+  rw [hD (expAd e he _), hEi, hD y, hA, hB, hC]
+
+/-- **A Lie endomorphism exchanging `e` with `-f` commutes with the Weyl automorphism.** If
+`ω e = -f` and `ω f = -e`, as for a Chevalley involution and the triple of a root, then `ω` carries
+`exp (ad e) ∘ exp (ad (-f)) ∘ exp (ad e)` to `exp (ad (-f)) ∘ exp (ad e) ∘ exp (ad (-f))`, which is
+the Weyl automorphism again by `TauCeti.weylAut_apply_eq_expAd_neg_expAd_expAd_neg`. -/
+theorem _root_.LieHom.map_weylAut (ω : L →ₗ⁅K⁆ L) (t : IsSl2Triple h e f)
+    (he : IsNilpotent (ad K L e)) (hf : IsNilpotent (ad K L f)) (hωe : ω e = -f)
+    (hωf : ω f = -e) (y : L) :
+    ω (weylAut t he hf y) = weylAut t he hf (ω y) := by
+  have hf' : IsNilpotent (ad K L (-f)) := by simpa using hf.neg
+  have hωf' : ω (-f) = e := by rw [map_neg, hωf, neg_neg]
+  have hE (z : L) : ω (expAd e he z) = expAd (-f) hf' (ω z) := by
+    simpa [hωe] using ω.map_expAd he (by rwa [hωe]) z
+  have hF (z : L) : ω (expAd (-f) hf' z) = expAd e he (ω z) := by
+    simpa [hωf'] using ω.map_expAd hf' (by rwa [hωf']) z
+  rw [weylAut_apply he hf t, hE, hF, hE, weylAut_apply_eq_expAd_neg_expAd_expAd_neg he hf hf' t]
 
 end CommRing
 
