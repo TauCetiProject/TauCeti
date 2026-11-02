@@ -25,10 +25,10 @@ Let `L` and `L'` be lattices in `ℂ`, discrete additive subgroups given as `ℤ
 `L` of full rank. The complex tori `ℂ / L` and `ℂ / L'` are the orbit spaces
 `AddAction.orbitRel.Quotient L ℂ` with their quotient complex structure. Every holomorphic map
 `f : ℂ / L → ℂ / L'` is induced by an affine map: there are `a b : ℂ` with `a L ⊆ L'` and
-`f [z] = [a z + b]` (`ContMDiff.exists_apply_mk_eq_mul_add`). Lift `f` through the covering
-`ℂ → ℂ / L'` to a holomorphic `F : ℂ → ℂ`; for `l ∈ L` the difference `F (z + l) - F z` is a
-continuous function with values in the discrete set `L'`, hence constant, so `F'` is `L`-periodic
-and bounded, and constant by Liouville's theorem.
+`f [z] = [a z + b]` (`ContMDiff.exists_apply_mk_eq_mul_add`). Lift the composite of `f` with the
+projection `ℂ → ℂ / L` through the covering `ℂ → ℂ / L'` to a holomorphic `F : ℂ → ℂ`; for
+`l ∈ L` the difference `F (z + l) - F z` is a continuous function with values in the discrete set
+`L'`, hence constant, so `F'` is `L`-periodic and bounded, and constant by Liouville's theorem.
 
 For a biholomorphism of `ℂ / L` the factor `a` is a unit with `a L = L`, an element of the lattice
 stabilizer `MulAction.stabilizer ℂˣ L` (`Diffeomorph.exists_apply_mk_eq_mul_add`). So every
@@ -63,12 +63,6 @@ open scoped Manifold ContDiff Pointwise
 
 variable {L L' : Submodule ℤ ℂ} [DiscreteTopology L] [DiscreteTopology L'] {n : ℕ∞ω}
 
-/-- A continuous function on `ℂ` with values in a discrete subgroup is constant. -/
-private theorem apply_eq_apply_of_forall_mem {g : ℂ → ℂ} (hg : Continuous g)
-    (hgL : ∀ z, g z ∈ L) (z w : ℂ) : g z = g w :=
-  isPreconnected_univ.constant_of_mapsTo (isDiscrete_iff_discreteTopology.mpr ‹_›)
-    hg.continuousOn (fun z _ ↦ hgL z) (mem_univ z) (mem_univ w)
-
 /-- **Holomorphic maps of complex tori are affine.** A holomorphic map `f : ℂ / L → ℂ / L'`
 between one-dimensional complex tori, with `L` a full lattice, is induced by an affine map
 `z ↦ a * z + b` of `ℂ` with `a * l ∈ L'` for every `l ∈ L`. -/
@@ -96,8 +90,9 @@ theorem ContMDiff.exists_apply_mk_eq_mul_add [IsZLattice ℝ L]
   have hmem {z w : ℂ} (h : z - w ∈ L) : F z - F w ∈ L' := by
     rw [← L'.orbitRelQuotient_mk_eq_mk_iff, hFπ, hFπ, L.orbitRelQuotient_mk_eq_mk_iff.mpr h]
   have hper (l : ℂ) (hl : l ∈ L) (z : ℂ) : F (z + l) = F z + (F l - F 0) := by
-    have := apply_eq_apply_of_forall_mem (g := fun z ↦ F (z + l) - F z) (by fun_prop)
-      (fun z ↦ hmem (by simpa using hl)) z 0
+    have := isPreconnected_univ.constant_of_mapsTo (isDiscrete_iff_discreteTopology.mpr ‹_›)
+      (f := fun z ↦ F (z + l) - F z) (by fun_prop) (fun z _ ↦ hmem (by simpa using hl))
+      (mem_univ z) (mem_univ 0)
     rw [zero_add] at this
     linear_combination this
   -- Hence `F'` is `L`-periodic, so bounded, and constant by Liouville's theorem.
@@ -136,7 +131,9 @@ theorem exists_apply_mk_eq_mul_add [IsZLattice ℝ L]
     convert this using 1
     ring
   have haa : a' * a = 1 := by
-    linear_combination apply_eq_apply_of_forall_mem (by fun_prop) hmem 1 0
+    linear_combination isPreconnected_univ.constant_of_mapsTo
+      (isDiscrete_iff_discreteTopology.mpr ‹_›) (by fun_prop) (fun z _ ↦ hmem z) (mem_univ 1)
+      (mem_univ 0)
   let u : ℂˣ := ⟨a, a', by linear_combination haa, haa⟩
   exact ⟨u, Submodule.mem_stabilizer_units_iff.mpr ⟨ha, ha'⟩, b, hφ⟩
 
@@ -178,11 +175,8 @@ theorem finite_fixingSubgroup_iff_nonempty [IsZLattice ℝ L]
     (e : M ≃ₘ^n⟮I, 𝓘(ℂ)⟯ AddAction.orbitRel.Quotient L ℂ) (hn : n ≠ 0) {s : Set M} :
     Finite (fixingSubgroup (I := I) (n := n) s) ↔ s.Nonempty := by
   refine ⟨fun h ↦ nonempty_iff_ne_empty.mpr fun hs ↦ ?_, fun hs ↦ ?_⟩
-  · have : Infinite (M ≃ₘ^n⟮I, I⟯ M) :=
-      (diffCongr e).toEquiv.infinite_iff.mpr
-        (infinite_of_faithfulVAdd (G := AddAction.orbitRel.Quotient L ℂ))
-    rw [hs, fixingSubgroup_empty] at h
-    exact not_finite_iff_infinite.mpr (Subgroup.topEquiv.toEquiv.infinite_iff.mpr this) h
+  · rw [hs] at h
+    exact not_finite_iff_infinite.mpr e.infinite_fixingSubgroup_empty h
   · have := finite_fixingSubgroup_of_nonempty (n := n) hn (hs.image e)
     exact Finite.of_equiv _ (relativeDiffCongr e s).symm.toEquiv
 

@@ -26,10 +26,11 @@ unordered automorphism group (`AuxiliaryAut.finite_iff`).
 These results do not prove analytic finiteness for stable smooth components in general; they
 reduce the nodal assertion to precisely that componentwise statement. No faithfulness of an action
 on a deformation base is assumed. For components biholomorphic to one-dimensional complex tori
-the componentwise statement is `Diffeomorph.finite_fixingSubgroup_iff_nonempty`, so a curve all
-of whose components have genus one has finitely many automorphisms exactly when every component
-carries a special point (`AuxiliaryAut.finite_ordered_iff_forall_nonempty`), which is the
-stability condition `2 g_i - 2 + n_i > 0` for `g_i = 1`.
+the componentwise statement is `Diffeomorph.finite_fixingSubgroup_iff_nonempty`, so a curve whose
+components are each biholomorphic to a one-dimensional complex torus has finitely many
+label-fixing automorphisms exactly when every component carries a special point
+(`AuxiliaryAut.finite_ordered_iff_forall_specialPoints_nonempty_of_complexTorus`). Read with
+`g_i = 1`, this is the stability condition `2 g_i - 2 + n_i > 0`.
 
 ## References
 
@@ -151,7 +152,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {H : Type*} [Top
 /-- **Stability of elliptic curves.** If every normalization component is biholomorphic to a
 one-dimensional complex torus, the marked nodal curve has finitely many automorphisms fixing
 every label exactly when every component carries a special point. -/
-theorem finite_ordered_iff_forall_nonempty
+theorem finite_ordered_iff_forall_specialPoints_nonempty_of_complexTorus
     (e : ∀ i, X i ≃ₘ^n⟮I, 𝓘(ℂ)⟯ AddAction.orbitRel.Quotient (L i) ℂ) (hn : n ≠ 0) :
     Finite (ordered I n m) ↔ ∀ i, (m.specialPoints i).Nonempty := by
   have (i : ι) : ConnectedSpace (X i) :=
@@ -162,7 +163,7 @@ theorem finite_ordered_iff_forall_nonempty
 /-- With finitely many auxiliary labels, a marked nodal curve whose normalization components are
 all biholomorphic to one-dimensional complex tori has finitely many automorphisms exactly when
 every component carries a special point. -/
-theorem finite_iff_forall_nonempty [Finite R]
+theorem finite_iff_forall_specialPoints_nonempty_of_complexTorus [Finite R]
     (e : ∀ i, X i ≃ₘ^n⟮I, 𝓘(ℂ)⟯ AddAction.orbitRel.Quotient (L i) ℂ) (hn : n ≠ 0) :
     Finite (AuxiliaryAut I n m) ↔ ∀ i, (m.specialPoints i).Nonempty := by
   have (i : ι) : ConnectedSpace (X i) :=
