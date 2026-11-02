@@ -22,7 +22,6 @@ single interval. The gluing theorem counts both endpoints of the overlap.
 ## References
 
 Thijmen J. P. Krebs, *A more reasonable proof of Cobham's theorem* (2018), Lemma 7.
-The residue representative in the overlap uses Mathlib's `Nat.image_Ico_mod`.
 -/
 
 public section

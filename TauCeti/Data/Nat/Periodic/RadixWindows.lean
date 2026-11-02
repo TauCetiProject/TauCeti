@@ -10,10 +10,9 @@ public import TauCeti.Data.Nat.Periodic.Interval
 /-!
 # From periodic radix windows to a periodic tail
 
-Suppose each integer window `[xB + B/3, xB + 5B/3]` has a positive period at most `B/6`.
-Then the period of the first window extends to the entire tail starting at `(N + 1)B`.
-The periods of later windows need not agree with it: their bounds guarantee enough overlap
-for `TauCeti.Nat.period_on_Icc_min_max` to preserve the first period.
+Suppose each integer window `[xB + B/3, xB + 5B/3]` with index `x ≥ N` has a positive
+period at most `B/6`. Then a single positive period at most `B/6` holds on the entire tail
+starting at `(N + 1)B`. The periods of the individual windows need not agree.
 
 All endpoints are rounded inward. The inequalities in the public statement avoid division,
 so callers can supply local periods without manipulating rounded endpoints.
