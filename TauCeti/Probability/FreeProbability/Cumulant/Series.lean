@@ -298,8 +298,7 @@ theorem rSeries_add_algebraMap (hφ : φ 1 = 1) (a : A) (c : R) :
 theorem rSeries_smul (φ : A →ₗ[R] R) (c : R) (a : A) :
     rSeries φ (c • a) = c • rescale c (rSeries φ a) := by
   ext n
-  rw [← coeff_succ_freeCumulantSeries, freeCumulantSeries_smul, coeff_rescale,
-    coeff_succ_freeCumulantSeries, coeff_smul, coeff_rescale, pow_succ', smul_eq_mul, mul_assoc]
+  simpa [pow_succ', mul_assoc] using congr(coeff (n + 1) $(freeCumulantSeries_smul φ c a))
 
 /-- The R-series of `0` vanishes. -/
 @[simp]
@@ -338,20 +337,17 @@ theorem IsFreelyIndependent.rSeries_add {ι : Type*} {B : ι → Subalgebra R A}
 for a normalised `φ`, then `R_{∑ k ∈ T, c k} = ∑ k ∈ T, R_{c k}`. -/
 theorem IsFreelyIndependentElements.rSeries_sum {ι : Type*} {c : ι → A}
     (h : IsFreelyIndependentElements φ c) (hφ : φ 1 = 1) (T : Finset ι) :
-    rSeries φ (∑ k ∈ T, c k) = ∑ k ∈ T, rSeries φ (c k) := by
-  ext n
-  rw [coeff_rSeries, map_sum]
-  simp_rw [coeff_rSeries]
-  exact h.freeCumulant_sum hφ T univ_nonempty
+    rSeries φ (∑ k ∈ T, c k) = ∑ k ∈ T, rSeries φ (c k) :=
+  (isFreelyIndependentElements_iff.mp h).rSeries_sum hφ fun k _ =>
+    Algebra.self_mem_adjoin_singleton R (c k)
 
 /-- *The R-series is additive on two free elements*: if `c i` and `c j`, for `i ≠ j`, belong to a
 freely independent family for a normalised `φ`, then `R_{c i + c j} = R_{c i} + R_{c j}`. -/
 theorem IsFreelyIndependentElements.rSeries_add {ι : Type*} {c : ι → A}
     (h : IsFreelyIndependentElements φ c) (hφ : φ 1 = 1) {i j : ι} (hij : i ≠ j) :
-    rSeries φ (c i + c j) = rSeries φ (c i) + rSeries φ (c j) := by
-  ext n
-  rw [coeff_rSeries, map_add, coeff_rSeries, coeff_rSeries]
-  exact h.freeCumulant_add hφ hij univ_nonempty
+    rSeries φ (c i + c j) = rSeries φ (c i) + rSeries φ (c j) :=
+  (isFreelyIndependentElements_iff.mp h).rSeries_add hφ hij (Algebra.self_mem_adjoin_singleton R _)
+    (Algebra.self_mem_adjoin_singleton R _)
 
 end Algebra
 
