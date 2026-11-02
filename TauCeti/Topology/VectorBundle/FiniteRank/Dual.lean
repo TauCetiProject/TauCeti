@@ -255,31 +255,35 @@ noncomputable def dualDualNatIso :
 section WhitneySum
 
 /-- The transposes of the Whitney-sum inclusions and projections, exhibiting the dual of a
-Whitney sum as a biproduct of the duals. -/
+Whitney sum as a biproduct of the duals. It is the image under `dualFunctor` of the opposite
+Whitney bicone. -/
 -- Expose the point projection so the types of the four legs reduce to the dual Whitney sum.
 @[expose]
 noncomputable def dualWhitneyBicone (A D : FiniteRankBundleCore 𝕜 B) :
-    BinaryBicone A.dual D.dual where
-  pt := (whitneySum A D).dual
-  fst := dualMap (whitneyInl A D)
-  snd := dualMap (whitneyInr A D)
-  inl := dualMap (whitneyFst A D)
-  inr := dualMap (whitneySnd A D)
-  inl_fst := by rw [← dualMap_comp, whitneyInl_fst, dualMap_id]
-  inl_snd := by rw [← dualMap_comp, whitneyInr_fst, dualMap_zero]
-  inr_fst := by rw [← dualMap_comp, whitneyInl_snd, dualMap_zero]
-  inr_snd := by rw [← dualMap_comp, whitneyInr_snd, dualMap_id]
+    BinaryBicone A.dual D.dual :=
+  (dualFunctor 𝕜 B).mapBinaryBicone (whitneyBicone A D).op
 
-/-- The transposed inclusions and projections of a Whitney sum form a biproduct. -/
+@[simp] theorem dualWhitneyBicone_pt (A D : FiniteRankBundleCore 𝕜 B) :
+    (dualWhitneyBicone A D).pt = (whitneySum A D).dual := (rfl)
+
+@[simp] theorem dualWhitneyBicone_fst (A D : FiniteRankBundleCore 𝕜 B) :
+    (dualWhitneyBicone A D).fst = dualMap (whitneyInl A D) := (rfl)
+
+@[simp] theorem dualWhitneyBicone_snd (A D : FiniteRankBundleCore 𝕜 B) :
+    (dualWhitneyBicone A D).snd = dualMap (whitneyInr A D) := (rfl)
+
+@[simp] theorem dualWhitneyBicone_inl (A D : FiniteRankBundleCore 𝕜 B) :
+    (dualWhitneyBicone A D).inl = dualMap (whitneyFst A D) := (rfl)
+
+@[simp] theorem dualWhitneyBicone_inr (A D : FiniteRankBundleCore 𝕜 B) :
+    (dualWhitneyBicone A D).inr = dualMap (whitneySnd A D) := (rfl)
+
+/-- The transposed inclusions and projections of a Whitney sum form a biproduct, since the
+additive functor `dualFunctor` preserves biproducts. -/
 noncomputable def dualWhitneyBiconeIsBilimit (A D : FiniteRankBundleCore 𝕜 B) :
     (dualWhitneyBicone A D).IsBilimit :=
-  isBinaryBilimitOfTotal _ <| by
-    have h : dualMap (whitneyFst A D ≫ whitneyInl A D) +
-        dualMap (whitneySnd A D ≫ whitneyInr A D) = 𝟙 (whitneySum A D).dual := by
-      rw [← dualMap_add, whitney_total, dualMap_id]
-    rw [dualMap_comp, dualMap_comp] at h
-    -- The point of the bicone is the dual Whitney sum, and its legs are the transposed maps.
-    exact h
+  have := preservesBinaryBiproduct_of_preservesBiproduct (dualFunctor 𝕜 B) (op A) (op D)
+  isBinaryBilimitOfPreserves (dualFunctor 𝕜 B) (whitneyBiconeIsBilimit A D).op
 
 /-- The dual of a Whitney sum is the Whitney sum of the duals. -/
 noncomputable def dualWhitneySumIso (A D : FiniteRankBundleCore 𝕜 B) :
@@ -328,6 +332,12 @@ noncomputable def dualFiberEquiv (A : FiniteRankBundleCore 𝕜 B) (x : B) :
     (w : Fin A.rank → 𝕜) (v : Fin A.rank → 𝕜) :
     dualFiberEquiv A x w v = ∑ k, v k * w k :=
   (ContinuousLinearEquiv.piRing_symm_apply (𝕜 := 𝕜) w v).trans (by simp only [smul_eq_mul])
+
+/-- The coordinates of a functional on a fibre of `A` are its values on the standard basis. -/
+@[simp] theorem dualFiberEquiv_symm_apply (A : FiniteRankBundleCore 𝕜 B) (x : B)
+    (f : A.core.Fiber x →L[𝕜] Trivial B 𝕜 x) (i : Fin A.rank) :
+    (dualFiberEquiv A x).symm f i = f (Pi.single i 1) :=
+  ContinuousLinearEquiv.piRing_apply (𝕜 := 𝕜) (E := 𝕜) f i
 
 /-- Reading dual coordinates as functionals is continuous on total spaces, for the topology of
 Mathlib's Hom bundle on the target. -/
