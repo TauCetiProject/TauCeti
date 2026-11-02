@@ -37,6 +37,7 @@ variable {R : Type u} [Ring R]
 
 /-- Shifting a cochain complex of modules by `a` multiplies the Euler characteristic of its terms
 by `(-1) ^ a`. -/
+@[simp]
 theorem eulerChar_shift (K : CochainComplex (ModuleCat.{v} R) ℤ) (a : ℤ) :
     (K⟦a⟧).eulerChar = a.negOnePow * K.eulerChar := by
   -- Reindex the sum by `i ↦ i + a`; the sign `(-1) ^ i` becomes `(-1) ^ (j - a)`.

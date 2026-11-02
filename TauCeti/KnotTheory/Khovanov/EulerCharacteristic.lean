@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.Abelian
+public import TauCeti.Algebra.Homology.EulerCharacteristic.Basic
 public import TauCeti.Algebra.Homology.EulerCharacteristic.Shift
 public import TauCeti.KnotTheory.Khovanov.Complex
 public import TauCeti.KnotTheory.Khovanov.Resolution.EulerCharacteristic
@@ -103,9 +103,7 @@ theorem eulerChar_khovanovComplex (j : ℤ) :
       j - D.positiveCrossingCount + 2 * D.negativeCrossingCount := by
     ring
   rw [hj, ← CochainComplex.eulerChar_shift]
-  -- The terms of isomorphic complexes have the same ranks.
-  refine finsum_congr fun i ↦ ?_
-  rw [(HomologicalComplex.Hom.isoApp (D.khovanovComplexShiftIso hD R j) i).toLinearEquiv.finrank_eq]
+  exact HomologicalComplex.eulerChar_eq_of_iso (D.khovanovComplexShiftIso hD R j)
 
 section Nontrivial
 
@@ -180,6 +178,7 @@ theorem khovanovEulerChar_eq_mul_eval₂_jonesPolynomial (h : 0 < D.toPDCode.com
 
 /-- The empty diagram has graded Euler characteristic of Khovanov homology `1`, over a Noetherian
 ring with the rank-nullity property, such as `ℤ` or a field. -/
+@[simp]
 theorem khovanovEulerChar_empty (hD : empty.toPDCode.IsPlanar) :
     empty.khovanovEulerChar hD R = 1 := by
   rw [khovanovEulerChar_eq_enhancedStateSum, enhancedStateSum_empty]
