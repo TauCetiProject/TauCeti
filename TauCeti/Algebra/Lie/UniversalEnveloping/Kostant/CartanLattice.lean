@@ -58,11 +58,9 @@ theorem ringChoose_mem_kostantForm_of_mem_span (e : ι → L) (h : κ → L)
   have hf : f x ∈ Submodule.span ℤ (f '' range h) := by
     rw [← Submodule.map_span]
     exact Submodule.mem_map_of_mem hx
-  apply (kostantForm e h).choose_mem_of_mem_span (s := f '' range h) ?_ ?_ hf n
+  apply Ring.choose_mem_of_mem_span (kostantForm e h) (s := f '' range h) ?_ ?_ hf n
   · rintro _ ⟨_, ⟨i, rfl⟩, rfl⟩ _ ⟨_, ⟨j, rfl⟩, rfl⟩
-    have hl := (_root_.UniversalEnvelopingAlgebra.ι ℚ (L := L)).map_lie (h i) (h j)
-    rw [hcomm, map_zero] at hl
-    exact sub_eq_zero.mp hl.symm
+    exact commute_of_lie_eq_zero (AlgHom.id ℚ _) (hcomm i j)
   · rintro _ ⟨_, ⟨i, rfl⟩, rfl⟩ n
     exact ringChoose_mem_kostantForm e h i n
 
