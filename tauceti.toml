@@ -75,7 +75,7 @@ kinds = ["pr", "staging"]
 
 [services.fleet.machines.tauchonki]
 machine_id = "11e2756fc11042d798f759410573a935"
-max_jobs = 12
+max_jobs = 2
 kinds = ["pr", "staging"]
 
 [services.fleet.machines.yael]
