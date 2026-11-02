@@ -30,10 +30,10 @@ one and `τ_{v,a} τ_{v,b} = τ_{v,a+b}`. If moreover `σ` is an involution and 
 (τ_{v,a} ^ σ)ᵀ Q τ_{v,a} = Q + (a + ε σ(a)) (Q v) (vᵀ ^ σ Q),
 ```
 
-so `τ_{v,a}` is an isometry when `a + ε σ(a) = 0`, and, for a nondegenerate `Q` and `v ≠ 0`, only
-then. For a Hermitian form (`ε = 1`) the admissible parameters are the elements of trace zero. An
-isometry `g` conjugates `τ_{v,a}` to `τ_{g v,a}`, and rescaling `v` by `c` rescales the parameter
-by `c σ(c)`.
+so `τ_{v,a}` is an isometry when `a + ε σ(a) = 0`, and, over a field, for a nondegenerate `Q` and
+`v ≠ 0`, only then. For a Hermitian form (`ε = 1`) the admissible parameters are the elements of
+trace zero. An isometry `g` conjugates `τ_{v,a}` to `τ_{g v,a}`, and rescaling `v` by `c` rescales
+the parameter by `c σ(c)`.
 
 To an isotropic point `p` of projective space this attaches the group
 `Matrix.unitaryTransvectionSubgroup Q σ p` of isometries that are unitary transvections along a
@@ -95,8 +95,9 @@ variable [CommRing K] (Q : Matrix n n K) (σ : K →+* K)
 form `h(x, y) = (σ ∘ x) ⬝ᵥ (Q *ᵥ y)`. Its matrix is `1 + a v (vᵀ ^ σ Q)`. It has determinant one
 when `v` is isotropic (`Matrix.det_unitaryTransvection`). For an involution `σ` and an
 `ε`-Hermitian `Q` it is then an isometry when `a + ε σ(a) = 0`
-(`Matrix.exists_mem_specialIsometryGroup_coe_eq_unitaryTransvection`), and, if moreover `Q` is
-nondegenerate and `v ≠ 0`, only then (`Matrix.exists_coe_eq_unitaryTransvection_iff`). -/
+(`Matrix.exists_mem_specialIsometryGroup_coe_eq_unitaryTransvection`), and, if moreover `K` is a
+field, `Q` is nondegenerate and `v ≠ 0`, only then (`Matrix.exists_coe_eq_unitaryTransvection_iff`).
+-/
 def unitaryTransvection (v : n → K) (a : K) : Matrix n n K :=
   1 + a • vecMulVec v ((σ ∘ v) ᵥ* Q)
 
