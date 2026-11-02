@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Serre.Tree
+public import TauCeti.Combinatorics.Quiver.Prefunctor
 public import TauCeti.Combinatorics.Quiver.Symmetric
 public import Mathlib.Order.Lattice.Nat
 
@@ -84,18 +85,13 @@ theorem dist_triangle {a b c : Γ.V} (hab : Nonempty (Γ.Path a b))
 theorem dist_src_tgt_le_one (e : Γ.E) : Γ.dist (Γ.src e) (Γ.tgt e) ≤ 1 :=
   dist_le_length (Γ.dart e).toPath
 
-/-- A morphism maps a path to a path of the same length. -/
-@[simp] theorem Hom.length_mapPath {Δ : SerreGraph} (f : Γ.Hom Δ) {a b : Γ.V}
-    (p : Γ.Path a b) : (f.toPrefunctor.mapPath p).length = p.length := by
-  rw [← Path.length_darts, ← Path.length_darts, Hom.darts_mapPath, List.length_map]
-
 /-- A graph morphism does not increase the distance between joined vertices. -/
 theorem Hom.dist_le {Δ : SerreGraph} (f : Γ.Hom Δ) {a b : Γ.V} (h : Nonempty (Γ.Path a b)) :
     Δ.dist (f.mapV a) (f.mapV b) ≤ Γ.dist a b := by
   obtain ⟨p, hp⟩ := exists_length_eq_dist h
   calc Δ.dist (f.mapV a) (f.mapV b) ≤ (f.toPrefunctor.mapPath p).length :=
         dist_le_length (f.toPrefunctor.mapPath p)
-    _ = Γ.dist a b := by rw [f.length_mapPath, hp]
+    _ = Γ.dist a b := by rw [Prefunctor.length_mapPath, hp]
 
 /-! ### Distances in acyclic graphs -/
 

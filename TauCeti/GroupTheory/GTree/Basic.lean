@@ -240,10 +240,7 @@ theorem isConvex_fixedBy (g : G) : T.IsConvex (fixedBy T.V g) :=
 variable (T) in
 /-- The vertices fixed by a subgroup form a convex set. -/
 theorem isConvex_fixedPoints (H : Subgroup G) : T.IsConvex (fixedPoints H T.V) := by
-  have : fixedPoints H T.V = ⋂ h : H, fixedBy T.V (h : G) := by
-    ext v
-    simp only [mem_fixedPoints, Set.mem_iInter, mem_fixedBy, Subgroup.smul_def]
-  rw [this]
+  rw [fixed_eq_iInter_fixedBy]
   exact isConvex_iInter fun h => T.isConvex_fixedBy h
 
 /-- A subgroup is elliptic exactly when it fixes some vertex. -/
