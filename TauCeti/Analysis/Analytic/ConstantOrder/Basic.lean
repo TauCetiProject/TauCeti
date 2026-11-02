@@ -33,7 +33,12 @@ distinguished variable (`AnalyticAt.exists_eventuallyEq_sub_smul`): a function a
 `(x₀, y₀)` that vanishes on `y = y₀` near `x₀` is `(y - y₀) • H` near `(x₀, y₀)` with `H` analytic.
 Applied in both variables, it shows that a function of two variables vanishing on two crossing
 lines is divisible by the product of their equations
-(`AnalyticAt.exists_eventuallyEq_mul_smul`).
+(`AnalyticAt.exists_eventuallyEq_mul_smul`). After straightening, the same holds along the graph
+`y = g x` of an analytic function: a function vanishing there is `(y - g x) • H`
+(`AnalyticAt.exists_eventuallyEq_sub_smul_of_graph`). In particular a function of `(b, x, y)`
+vanishing on the hypersurface `xy = S(b)` away from `x = y = 0` is a multiple of `xy - S(b)`
+(`AnalyticAt.exists_eventuallyEq_mul_sub_smul_of_fst_ne_zero` and
+`AnalyticAt.exists_eventuallyEq_mul_sub_smul_of_snd_ne_zero`).
 
 ## References
 
@@ -129,6 +134,29 @@ theorem AnalyticAt.exists_eventuallyEq_sub_smul {G : E × 𝕜 → F} {x₀ : E}
   refine intervalIntegral.integral_congr fun t _ ↦ ?_
   simp [hLapply, RCLike.real_smul_eq_coe_mul]
 
+/-- **Hadamard's lemma along a graph**: a function `G` analytic at `(x₀, g x₀)` that vanishes on
+the graph `y = g x` of a function `g` analytic at `x₀` is `(y - g x) • H (x, y)` near
+`(x₀, g x₀)`, with `H` analytic at `(x₀, g x₀)`. -/
+theorem AnalyticAt.exists_eventuallyEq_sub_smul_of_graph {G : E × 𝕜 → F} {g : E → 𝕜} {x₀ : E}
+    (hG : AnalyticAt 𝕜 G (x₀, g x₀)) (hg : AnalyticAt 𝕜 g x₀)
+    (h0 : ∀ᶠ x in 𝓝 x₀, G (x, g x) = 0) :
+    ∃ H : E × 𝕜 → F, AnalyticAt 𝕜 H (x₀, g x₀) ∧
+      ∀ᶠ p in 𝓝 (x₀, g x₀), G p = (p.2 - g p.1) • H p := by
+  -- `Φ` straightens the graph onto the hyperplane `y = 0`, and `Ψ` is its inverse.
+  set Φ : E × 𝕜 → E × 𝕜 := fun q ↦ (q.1, q.2 + g q.1)
+  set Ψ : E × 𝕜 → E × 𝕜 := fun q ↦ (q.1, q.2 - g q.1)
+  have hΦ : AnalyticAt 𝕜 Φ (x₀, 0) :=
+    analyticAt_fst.prod (analyticAt_snd.add (hg.comp analyticAt_fst))
+  have hΨ : AnalyticAt 𝕜 Ψ (x₀, g x₀) :=
+    analyticAt_fst.prod (analyticAt_snd.sub (hg.comp analyticAt_fst))
+  have hΨ₀ : Ψ (x₀, g x₀) = (x₀, 0) := by simp [Ψ]
+  obtain ⟨K, hK, hGK⟩ := (hG.comp_of_eq hΦ (by simp [Φ])).exists_eventuallyEq_sub_smul
+    (h0.mono fun x hx ↦ by simpa [Φ] using hx)
+  refine ⟨K ∘ Ψ, hK.comp_of_eq hΨ hΨ₀, ?_⟩
+  have hΨt : Tendsto Ψ (𝓝 (x₀, g x₀)) (𝓝 (x₀, 0)) := hΨ₀ ▸ hΨ.continuousAt.tendsto
+  filter_upwards [hΨt.eventually hGK] with p hp
+  simpa [Φ, Ψ] using hp
+
 /-- **Functions vanishing on two crossing lines.** A function of two scalar variables which is
 analytic at `(a, b)` and vanishes near `(a, b)` on the lines `y = b` and `x = a` is
 `(x - a) (y - b)` times a function analytic at `(a, b)`. -/
@@ -157,6 +185,64 @@ theorem AnalyticAt.exists_eventuallyEq_mul_smul {G : 𝕜 × 𝕜 → F} {a b : 
   filter_upwards [hGg, (continuous_swap.tendsto (a, b)).eventually hgk] with p hp hpk
   rw [Function.comp_apply, Prod.swap_swap, Prod.snd_swap] at hpk
   rw [hp, hpk, smul_smul, mul_comm (p.2 - b), Function.comp_apply]
+
+/-- **Functions vanishing on `xy = S(b)` where `x ≠ 0`.** A function `G (b, x, y)` analytic at a
+point `p` of the hypersurface `xy = S(b)` with `x ≠ 0`, for `S` analytic at the base point of `p`,
+that vanishes near `p` on the hypersurface (written as the graph `y = S(b)/x`), is
+`(xy - S(b)) • K` near `p` with `K` analytic at `p`. -/
+theorem AnalyticAt.exists_eventuallyEq_mul_sub_smul_of_fst_ne_zero {G : E × 𝕜 × 𝕜 → F}
+    {S : E → 𝕜} {p : E × 𝕜 × 𝕜} (hG : AnalyticAt 𝕜 G p) (hS : AnalyticAt 𝕜 S p.1)
+    (hx : p.2.1 ≠ 0) (hp : S p.1 = p.2.1 * p.2.2)
+    (h0 : ∀ᶠ w in 𝓝 (p.1, p.2.1), G (w.1, w.2, S w.1 / w.2) = 0) :
+    ∃ K : E × 𝕜 × 𝕜 → F, AnalyticAt 𝕜 K p ∧
+      ∀ᶠ q in 𝓝 p, G q = (q.2.1 * q.2.2 - S q.1) • K q := by
+  -- Regroup the coordinates as `((b, x), y)` and apply Hadamard's lemma along the graph.
+  set A : E × 𝕜 × 𝕜 → (E × 𝕜) × 𝕜 := fun q ↦ ((q.1, q.2.1), q.2.2)
+  set B : (E × 𝕜) × 𝕜 → E × 𝕜 × 𝕜 := fun q ↦ (q.1.1, q.1.2, q.2)
+  set g : E × 𝕜 → 𝕜 := fun w ↦ S w.1 / w.2
+  have hg : AnalyticAt 𝕜 g (p.1, p.2.1) :=
+    (hS.comp (x := (p.1, p.2.1)) analyticAt_fst).div analyticAt_snd hx
+  have hAp : A p = ((p.1, p.2.1), g (p.1, p.2.1)) := by
+    simp only [A, g, hp, mul_div_cancel_left₀ _ hx]
+  have hB : AnalyticAt 𝕜 B ((p.1, p.2.1), g (p.1, p.2.1)) :=
+    (analyticAt_fst.comp analyticAt_fst).prod
+      ((analyticAt_snd.comp analyticAt_fst).prod analyticAt_snd)
+  obtain ⟨H, hH, hGH⟩ := (hG.comp_of_eq hB (by rw [← hAp])).exists_eventuallyEq_sub_smul_of_graph
+    hg h0
+  have hA : AnalyticAt 𝕜 A p :=
+    (analyticAt_fst.prod (analyticAt_fst.comp analyticAt_snd)).prod
+      (analyticAt_snd.comp analyticAt_snd)
+  refine ⟨fun q ↦ (q.2.1)⁻¹ • H (A q),
+    ((analyticAt_fst.comp analyticAt_snd).inv hx).smul (hH.comp_of_eq hA hAp), ?_⟩
+  have hAt : Tendsto A (𝓝 p) (𝓝 ((p.1, p.2.1), g (p.1, p.2.1))) := by
+    simpa only [hAp] using hA.continuousAt.tendsto
+  filter_upwards [hAt.eventually hGH,
+    (continuous_fst.comp continuous_snd).continuousAt.eventually_ne hx] with q hq hqx
+  simp only [Function.comp_apply, Prod.mk.eta, A, B, g] at hq hqx ⊢
+  rw [hq, smul_smul]
+  congr 1
+  field_simp
+
+/-- **Functions vanishing on `xy = S(b)` where `y ≠ 0`.** A function `G (b, x, y)` analytic at a
+point `p` of the hypersurface `xy = S(b)` with `y ≠ 0`, for `S` analytic at the base point of `p`,
+that vanishes near `p` on the hypersurface (written as the graph `x = S(b)/y`), is
+`(xy - S(b)) • K` near `p` with `K` analytic at `p`. -/
+theorem AnalyticAt.exists_eventuallyEq_mul_sub_smul_of_snd_ne_zero {G : E × 𝕜 × 𝕜 → F}
+    {S : E → 𝕜} {p : E × 𝕜 × 𝕜} (hG : AnalyticAt 𝕜 G p) (hS : AnalyticAt 𝕜 S p.1)
+    (hy : p.2.2 ≠ 0) (hp : S p.1 = p.2.1 * p.2.2)
+    (h0 : ∀ᶠ w in 𝓝 (p.1, p.2.2), G (w.1, S w.1 / w.2, w.2) = 0) :
+    ∃ K : E × 𝕜 × 𝕜 → F, AnalyticAt 𝕜 K p ∧
+      ∀ᶠ q in 𝓝 p, G q = (q.2.1 * q.2.2 - S q.1) • K q := by
+  -- Exchange the two branch coordinates.
+  set τ : E × 𝕜 × 𝕜 → E × 𝕜 × 𝕜 := fun q ↦ (q.1, q.2.2, q.2.1)
+  have hτ (q : E × 𝕜 × 𝕜) : AnalyticAt 𝕜 τ q :=
+    analyticAt_fst.prod ((analyticAt_snd.comp analyticAt_snd).prod
+      (analyticAt_fst.comp analyticAt_snd))
+  obtain ⟨K, hK, hGK⟩ := (hG.comp (hτ (τ p))).exists_eventuallyEq_mul_sub_smul_of_fst_ne_zero
+    (p := τ p) hS hy (by rw [hp, mul_comm]) h0
+  refine ⟨K ∘ τ, hK.comp (hτ _), ?_⟩
+  filter_upwards [(hτ p).continuousAt.tendsto.eventually hGK] with q hq
+  simpa only [Function.comp_apply, τ, mul_comm q.2.2] using hq
 
 /-- **Order in a distinguished variable**, lower bound: a function `G` analytic at `(x₀, y₀)`
 vanishes to order at least `m` in `y` at `y₀` along every slice `x = const` near `x₀` if and only
