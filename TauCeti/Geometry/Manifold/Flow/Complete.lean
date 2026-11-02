@@ -27,6 +27,8 @@ completeness available without choosing a global flow or assuming finite dimensi
 * `TauCeti.IsCompleteVectorField`: the maximal flow is defined at every time and point, with
   eliminators `IsCompleteVectorField.flowDomain_eq_univ`, `IsCompleteVectorField.mem_flowDomain`,
   and `IsCompleteVectorField.mem_maximalIntegralCurveInterval`.
+* `TauCeti.IsCompleteVectorField.contMDiff_flowOf`: in finite dimensions, the flow of a complete
+  `C^n` field is jointly `C^n` on `ℝ × M`.
 * `TauCeti.isCompleteVectorField_iff_maximalIntegralCurveInterval`: completeness in terms of
   pointwise maximal intervals.
 * `TauCeti.isCompleteVectorField_iff_exists_isMIntegralCurve`: completeness in terms of global
@@ -145,6 +147,15 @@ theorem isMIntegralCurve_flowOf {v : (x : M) → TangentSpace I x}
   have := isMIntegralCurveOn_flowOf hv x
   rw [hcomplete.flowDomain_eq_univ] at this
   exact isMIntegralCurve_iff_isMIntegralCurveOn.2 (by simpa using this)
+
+/-- In finite dimensions, the flow of a complete `C^n` vector field is jointly `C^n` in time and
+initial point. -/
+theorem contMDiff_flowOf [FiniteDimensional ℝ E] {n : ℕ∞} (hn : 1 ≤ n) [IsManifold I n M]
+    {v : (x : M) → TangentSpace I x} (hcomplete : IsCompleteVectorField v)
+    (hv : ContMDiff I I.tangent n (fun x ↦ (⟨x, v x⟩ : TangentBundle I M))) :
+    ContMDiff (𝓘(ℝ, ℝ).prod I) I n (fun p : ℝ × M ↦ flowOf v p.1 p.2) := by
+  have := contMDiffOn_flowOf hn hv
+  rwa [hcomplete.flowDomain_eq_univ, contMDiffOn_univ] at this
 
 end IsCompleteVectorField
 

@@ -69,9 +69,7 @@ theorem contMDiffAt_liouvilleRadialCoordinate (h : IsLiouvilleCompletion ω α W
   -- near `x`, and `r = e^τ` there.
   have hZs := h.contMDiff_of_interior_eq hZ
   have hc := h.isCompleteVectorField hZ
-  have hflow : ContMDiff (𝓘(ℝ, ℝ).prod I) I (⊤ : ℕ∞) (fun p : ℝ × M ↦ flowOf Z p.1 p.2) := by
-    have := contMDiffOn_flowOf (n := ⊤) le_top hZs
-    rwa [hc.flowDomain_eq_univ, contMDiffOn_univ] at this
+  have hflow := hc.contMDiff_flowOf le_top hZs
   obtain ⟨f, c, hf, hW, hfc⟩ := h.exists_sublevel_of_interior_eq hZ
   have hfront : frontier W = {y | f y = c} :=
     hW ▸ frontier_setOf_le_eq_of_mvfderiv_pos hf fun y hy ↦ (hfc y hy).2
