@@ -110,15 +110,10 @@ theorem exists_paths_setSeparator_sum_eq [Finite V(G)] [DecidableEq α] (c : α 
     · rw [card_eq_zero.2 (filter_eq_empty_iff.2 fun i _ hi ↦
         hxG ((P i).mem_support_toGraphWalk_iff.1 hi).1)]
       exact Nat.zero_le _
-  · intro x hxA y hyB hxy
-    have hxA' : (⟨x, hA hxA⟩ : V(G)) ∈ A' := Finset.mem_subtype.2 hxA
-    have hyB' : (⟨y, hB hyB⟩ : V(G)) ∈ B' := Finset.mem_subtype.2 hyB
-    apply hX _ hxA' _ hyB'
-    have hxy' := (reachableAvoiding_bidirectedHom_iff
-      (G := G) (Y := (X.map (Function.Embedding.subtype _) : Set α))
-      (x := (⟨x, hA hxA⟩ : V(G))) (y := (⟨y, hB hyB⟩ : V(G)))).2 (by simpa using hxy)
-    simpa [Finset.coe_map, Function.Embedding.coe_subtype,
-      Set.preimage_image_eq _ Subtype.val_injective] using hxy'
+  · intro x hxA y hyB
+    exact not_reachable_deleteVerts_map_subtype
+      (hX _ (Finset.mem_subtype.2 hxA : (⟨x, hA hxA⟩ : V(G)) ∈ A')
+        _ (Finset.mem_subtype.2 hyB : (⟨y, hB hyB⟩ : V(G)) ∈ B'))
   · simpa [sum_map] using hk
 
 /-! ### Vertex-disjoint paths -/
