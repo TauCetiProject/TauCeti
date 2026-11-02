@@ -39,10 +39,10 @@ theorem IsUpperTriangular.isUpperUnitriangular_exp {M : Matrix m m R}
   rw [isUpperUnitriangular_def]
   refine ⟨?_, ?_⟩
   · intro i j hji
-    simp only [sum_apply, smul_apply]
+    simp only [Matrix.sum_apply, Matrix.smul_apply]
     exact sum_eq_zero fun k _ ↦ by rw [(hM.pow k) hji, smul_zero]
   · intro i
-    simp only [sum_apply, smul_apply, pow_apply_diag_of_isUpperTriangular hM, hdiag i]
+    simp only [Matrix.sum_apply, Matrix.smul_apply, pow_apply_diag_of_isUpperTriangular hM, hdiag i]
     simp [zero_pow_eq]
 
 /-- The finite exponential of an upper-unitriangular matrix minus one is upper unitriangular. -/
@@ -56,7 +56,7 @@ theorem IsUpperTriangular.isUpperTriangular_log {M : Matrix m m R}
   classical
   rw [IsNilpotent.log_def]
   intro i j hji
-  simp only [sum_apply, smul_apply]
+  simp only [Matrix.sum_apply, Matrix.smul_apply]
   exact sum_eq_zero fun k _ ↦ by
     rw [((hM.sub blockTriangular_one).pow k) hji, smul_zero]
 
@@ -66,7 +66,7 @@ theorem IsUpperUnitriangular.log_apply_diag {M : Matrix m m R}
     (hM : M.IsUpperUnitriangular) (i : m) : IsNilpotent.log M i i = 0 := by
   classical
   rw [IsNilpotent.log_def]
-  simp only [sum_apply, smul_apply,
+  simp only [Matrix.sum_apply, Matrix.smul_apply,
     pow_apply_diag_of_isUpperTriangular hM.isUpperTriangular_sub_one,
     hM.sub_one_apply_diag]
   apply sum_eq_zero

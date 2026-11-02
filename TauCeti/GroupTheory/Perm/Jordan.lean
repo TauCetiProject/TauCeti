@@ -9,7 +9,7 @@ public import Mathlib.GroupTheory.GroupAction.Jordan
 import TauCeti.Data.Nat.Factorial.Prime
 import TauCeti.GroupTheory.Commutator
 import TauCeti.GroupTheory.Perm.Basic
-import TauCeti.GroupTheory.Sylow
+import TauCeti.GroupTheory.Sylow.Basic
 
 /-!
 # Jordan's theorem for a cycle of prime length

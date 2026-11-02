@@ -40,7 +40,7 @@ theorem linearIndependent_row_one_fromCols [DecidableEq ρ] (A : Matrix ρ τ R)
     convert Pi.linearIndependent_single_one ρ R using 1
     ext i j
     simp only [Function.comp_apply, LinearMap.funLeft_apply, row_apply, fromCols_apply_inl,
-      one_apply, Pi.single_apply, eq_comm]
+      Matrix.one_apply, Pi.single_apply, eq_comm]
 
 /-- The rows of a systematic matrix `[B | I]` are linearly independent. -/
 theorem linearIndependent_row_fromCols_one [DecidableEq τ] (B : Matrix τ ρ R) :
@@ -49,6 +49,6 @@ theorem linearIndependent_row_fromCols_one [DecidableEq τ] (B : Matrix τ ρ R)
     convert Pi.linearIndependent_single_one τ R using 1
     ext i j
     simp only [Function.comp_apply, LinearMap.funLeft_apply, row_apply, fromCols_apply_inr,
-      one_apply, Pi.single_apply, eq_comm]
+      Matrix.one_apply, Pi.single_apply, eq_comm]
 
 end Matrix

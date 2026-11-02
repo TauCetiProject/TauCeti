@@ -41,11 +41,6 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {p : ENNReal} [Fact (1 ≤ p)]
 
-local instance D1p0.instIsAddHaarMeasureRestrictTop :
-    (mu.restrict (⊤ : Opens E)).IsAddHaarMeasure := by
-  simpa only [Opens.coe_top, Measure.restrict_univ] using
-    (inferInstance : mu.IsAddHaarMeasure)
-
 /-- Translation preserves the closed subspace of whole-space test-function gradients. -/
 theorem translateLp_mem_d1p0Submodule (h : E) {u : Lp E p (mu.restrict (⊤ : Opens E))}
     (hu : u ∈ (d1p0Submodule mu ⊤ p : Set _)) :

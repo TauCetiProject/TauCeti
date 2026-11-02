@@ -136,10 +136,10 @@ noncomputable def schurWeylEquiv :
         Representation.IntertwiningMap.isIntertwining, Representation.subrepresentation_apply,
         LinearMap.coe_restrict_apply,
         Representation.youngSymmetrizerEval_lof_tmul,
-        permTensorPowerRep_apply, Module.End.mul_apply,
+        permTensorPowerRep_apply, mul_apply_eq_comp,
         TauCeti.Representation.ofModule'_apply, Submodule.coe_smul, smul_eq_mul, map_mul,
         Representation.asAlgebraHom_single_one]
-      rw [← Module.End.mul_apply _ ((tensorPowerRep k n d) g), h.eq, Module.End.mul_apply]
+      rw [← mul_apply_eq_comp _ ((tensorPowerRep k n d) g), h.eq, mul_apply_eq_comp]
 
 /-- The Schur-Weyl decomposition sends `a ⊗ w` in the summand of `μ` to `a · w`. -/
 @[simp]

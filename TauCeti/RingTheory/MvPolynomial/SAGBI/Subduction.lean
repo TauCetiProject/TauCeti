@@ -17,11 +17,11 @@ element. The bound is on each exponent in the expression's support, not just on 
 its substituted value. Such bounds are needed to lift binomial relations among leading
 monomials to relations among the generators.
 
-For monic generators, a binomial whose two monomials have the same substituted leading
-exponent has a substituted value which is zero or has strictly smaller leading exponent.
-We construct a strict subduction certificate in both cases, taking the zero polynomial when
-the substituted relation vanishes. This also covers scalar generators and relations of
-exponent zero, without asserting a strict bound on the totalized degree of zero.
+If the element is zero or has leading exponent strictly below a given bound, we construct a
+strict subduction certificate, taking the zero polynomial when the element vanishes. This
+also covers scalar generators and bounds of exponent zero, without asserting a strict bound
+on the totalized degree of zero. The binomial certificates for monic families are provided in
+`TauCeti.RingTheory.MvPolynomial.SAGBI.Criterion`.
 
 ## References
 
@@ -62,7 +62,7 @@ theorem IsSAGBIBasis.exists_aeval_eq_support_le
     · intro v hv
       have hvu : u = v := by simpa using hv
       subst v
-      rw [← m.degree_aeval_monomial_one hb]
+      rw [← m.degree_aeval_monomial_one_of_ne_zero hb]
       simpa [aeval_monomial] using hg.2
   · exact ⟨0, by simp, by simp⟩
   · intro g₁ g₂ _ _ ih₁ ih₂
@@ -88,23 +88,5 @@ theorem IsSAGBIBasis.exists_aeval_eq_support_lt
   · exact ⟨0, by simp, by simp⟩
   · obtain ⟨Q, hQ, hbound⟩ := h.exists_aeval_eq_support_le hb hf
     exact ⟨Q, hQ, fun u hu ↦ (hbound u hu).trans_lt hfa⟩
-
-/-- **Necessary bounded SAGBI certificates.** Every coefficient-one binomial relation among
-leading monomials of a monic SAGBI family admits a polynomial zero-subduction expression
-strictly below its common exponent. Exact-zero substitutions admit the zero expression. -/
-theorem IsSAGBIBasis.exists_aeval_eq_aeval_monomial_sub_monomial_support_lt
-    (h : m.IsSAGBIBasis (Set.range b) A) (hb : ∀ i, m.Monic (b i))
-    (u v : ι →₀ ℕ) (huv : Finsupp.linearCombination ℕ (m.degree ∘ b) u =
-      Finsupp.linearCombination ℕ (m.degree ∘ b) v) :
-    ∃ Q : MvPolynomial ι k,
-      aeval b Q = aeval b (monomial u (1 : k) - monomial v 1) ∧
-      ∀ w ∈ Q.support, Finsupp.linearCombination ℕ (m.degree ∘ b) w ≺[m]
-        Finsupp.linearCombination ℕ (m.degree ∘ b) u := by
-  have hf : aeval b (monomial u (1 : k) - monomial v 1) ∈ A := by
-    apply (Algebra.adjoin_le h.subset)
-    rw [← aeval_range]
-    exact AlgHom.mem_range_self _ _
-  exact h.exists_aeval_eq_support_lt (fun i ↦ (hb i).ne_zero) hf
-    (m.aeval_monomial_sub_monomial_eq_zero_or_degree_lt hb u v huv)
 
 end MonomialOrder
