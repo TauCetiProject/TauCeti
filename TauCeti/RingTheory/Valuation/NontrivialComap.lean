@@ -28,6 +28,13 @@ value subgroup and leaves the domain alone.
 * `Valuation.isNontrivial_comap_algebraMap`: the restriction of a nontrivial valuation along an
   integral algebra is nontrivial.
 
+## Implementation notes
+
+The proof adapts the vanishing-sum argument of Aaron Liu's
+`Valuation.exists_map_pow_eq_map_algebraMap_of_isAlgebraic` in
+`Mathlib.RingTheory.Valuation.Algebraic`. That lemma cannot be applied directly, since it needs
+the base `K` to be a field, while here `K` is only a commutative ring.
+
 ## References
 
 * [A. J. Engler and A. Prestel, *Valued Fields*][engler2005].
@@ -51,7 +58,7 @@ theorem isNontrivial_comap_algebraMap [Algebra.IsIntegral K L] (v : Valuation L 
   obtain ⟨p, hp, hpx⟩ := Algebra.IsIntegral.isIntegral (R := K) x
   -- in the vanishing sum `p(x) = 0`, two distinct terms share a nonzero value; their
   -- coefficients have value `1`, so two distinct powers of `v x` agree, impossible as
-  -- `v x ≠ 0, 1`
+  -- `v x ≠ 0, 1` (adapted from `Valuation.exists_map_pow_eq_map_algebraMap_of_isAlgebraic`)
   rw [Polynomial.eval₂_eq_sum_range] at hpx
   obtain ⟨i, -, j, -, hij, hi, hj, heq⟩ := v.exists_map_eq_of_map_sum_eq_zero
     (Finset.self_mem_range_succ p.natDegree) (by simp [hp.coeff_natDegree, hx0])
