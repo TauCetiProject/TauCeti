@@ -12,7 +12,7 @@ import TauCeti.MeasureTheory.Function.AreaFormula.Lipschitz
 /-!
 # Tangent cones of bi-Lipschitz patches
 
-Almost every point of a bi-Lipschitz image of a Borel subset of a Euclidean space has a
+Almost every point of a bi-Lipschitz image of a subset of a Euclidean space has a
 plane of the parameter dimension about which the entire patch lies locally in arbitrarily
 narrow cones. This is stronger than the vanishing of the measure outside each such cone.
 
@@ -34,7 +34,7 @@ public section
 open Set MeasureTheory Metric
 open scoped NNReal ENNReal
 
-/-- At Hausdorff-almost every point of a bi-Lipschitz Borel patch, the patch is locally
+/-- At Hausdorff-almost every point of a bi-Lipschitz patch, the patch is locally
 contained in every cone about some plane of the parameter dimension. Hausdorff measure
 has the normalized Euclidean convention. -/
 theorem LipschitzOnWith.ae_exists_submodule_forall_infDist_le
@@ -42,8 +42,8 @@ theorem LipschitzOnWith.ae_exists_submodule_forall_infDist_le
     [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
     [MeasurableSpace U] [BorelSpace U] [MeasurableSpace V] [BorelSpace V]
     {f : U → V} {s : Set U} {K L : ℝ≥0} (hf : LipschitzOnWith K f s)
-    (hi : AntilipschitzWith L (s.domRestrict f)) (hs : MeasurableSet s) :
-    ∀ᵐ y ∂(μHE[Module.finrank ℝ U] : Measure V).restrict (f '' s),
+    (hi : AntilipschitzWith L (s.domRestrict f)) :
+    ∀ᵐ y ∂(μHE[Module.finrank ℝ U] : Measure V), y ∈ f '' s →
       ∃ P : Submodule ℝ V, Module.finrank ℝ P = Module.finrank ℝ U ∧
         ∀ ε > (0 : ℝ), ∃ r > 0, ∀ z ∈ f '' s, dist z y < r →
           infDist (z - y) (P : Set V) ≤ ε * dist z y := by
@@ -52,13 +52,11 @@ theorem LipschitzOnWith.ae_exists_submodule_forall_infDist_le
   have hi' : AntilipschitzWith L (s.domRestrict g) := by
     intro x y
     simpa only [domRestrict_apply, ← hfg x.property, ← hfg y.property] using hi x y
-  have him : MeasurableSet (f '' s) :=
-    hs.image_of_continuousOn_injOn hf.continuousOn (injOn_iff_injective.mpr hi.injective)
   have hnull := hg.euclideanHausdorffMeasure_image_compl_setOf_regular
   have hgood : ∀ᵐ y ∂(μHE[Module.finrank ℝ U] : Measure V),
       y ∉ g '' {x | DifferentiableAt ℝ g x ∧ (fderiv ℝ g x).normDet ≠ 0}ᶜ :=
     ae_iff.mpr (by simpa only [not_not, ofPred_mem_eq] using hnull)
-  filter_upwards [ae_restrict_mem him, ae_restrict_of_ae hgood] with y hy hreg
+  filter_upwards [hgood] with y hreg hy
   rw [himage] at hy ⊢
   obtain ⟨x, hx, rfl⟩ := hy
   have hxreg : DifferentiableAt ℝ g x ∧ (fderiv ℝ g x).normDet ≠ 0 := by
@@ -110,8 +108,9 @@ theorem CountablyRectifiable.exists_measurable_cover_forall_infDist_le
     ∀ ε > (0 : ℝ), ∃ r > 0, ∀ z ∈ S n, dist z y < r →
       infDist (z - y) (P : Set V) ≤ ε * dist z y}
   have hgood (n : ℕ) : ∀ᵐ y ∂(μHE[k] : Measure V).restrict (S n), y ∈ G n := by
+    apply (ae_restrict_iff' (hSm n)).mpr
     simpa only [finrank_euclideanSpace_fin, G, S, mem_ofPred_eq] using
-      (hLip n).ae_exists_submodule_forall_infDist_le (hAnti n) (hAm n)
+      (hLip n).ae_exists_submodule_forall_infDist_le (hAnti n)
   -- Choose measurable full-measure subsets where cone containment holds pointwise.
   choose B hBae hBm hBG using fun n ↦ (hgood n).exists_measurable_mem
   let T (n : ℕ) := S n ∩ B n
