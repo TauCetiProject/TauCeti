@@ -282,34 +282,6 @@ end ExtEuler
 
 /-! ### Forgetting the grading -/
 
-omit [IsSemisimpleRing (𝒜 0)] in
-/-- The projective basis forgets to the ordinary projective basis `[A eᵢ]`. -/
-private theorem gradedFiniteProjectiveModulesForgetK0_basis
-    [IsArtinianRing A] (i : I) :
-    gradedFiniteProjectiveModulesForgetK0 𝒜 (LaurentSpecialization.basis (1 : ℤˣ) (bP) i) =
-      indecomposableProjectiveClassBasis (fun i ↦ (⟨ModuleCat.of A (Ideal.span {e i}),
-          finiteProjectiveModules_iff.2 ⟨inferInstance, (he.idem i).projective_span_singleton⟩⟩ :
-            (finiteProjectiveModules A).FullSubcategory))
-        (fun i ↦ (hprim i).isIndecomposableModule) hnoniso
-        (isExhaustiveIndecomposableProjectiveFamily_span_singleton he hprim) i := by
-  rw [indecomposableProjectiveClassBasis_apply, LaurentSpecialization.basis_apply,
-    gradedIdempotentProjectiveBasisOfPrimitive_apply, gradedFiniteProjectiveModulesForgetK0_mk_of,
-    gradedFiniteProjectiveModulesForget_obj]
-
-include hneg in
-/-- The head basis forgets to the ordinary simple-class basis of the underlying heads. -/
-private theorem gradedFiniteModulesForgetK0_basis [IsArtinianRing A]
-    [∀ i, IsSimpleModule A (FGModuleCat.of A (gradedPositiveMulQuotient 𝒜 (he₀ i)))] (i : I) :
-    gradedFiniteModulesForgetK0 𝒜 (LaurentSpecialization.basis (1 : ℤˣ) (bS) i) =
-      simpleClassBasis (fun i ↦ FGModuleCat.of A (gradedPositiveMulQuotient 𝒜 (he₀ i)))
-        (hnoniso.mono fun i j ↦
-          isEmpty_linearEquiv_gradedPositiveMulQuotient hneg (hprim i) (he₀ i) (hprim j) (he₀ j))
-        (isExhaustiveSimpleFamily_gradedPositiveMulQuotient_of_isPrimitiveIdempotent hneg he he₀
-          hprim) i := by
-  rw [simpleClassBasis_apply, LaurentSpecialization.basis_apply,
-    gradedIdempotentHeadBasisOfPrimitive_apply, gradedFiniteModulesForgetK0_mk_of,
-    gradedFiniteModulesForget_obj]
-
 include hneg in
 /-- **At `q = 1`, the graded multiplicity pairing is the ungraded multiplicity pairing** of the
 underlying classes, in the projectives `A eᵢ` and the underlying heads `Sᵢ`. -/
@@ -337,10 +309,12 @@ theorem laurentEval_one_gradedProjectiveSimplePairing
     fun i ↦ isSimpleModule_gradedPositiveMulQuotient hneg (hprim i) (he₀ i)
   -- Forgetting the grading carries the specialized graded coordinates to the ordinary ones.
   have hx := Module.Basis.repr_map_eq_of_map_basis _ _ _
-    (gradedFiniteProjectiveModulesForgetK0_basis he he₀ hprim hnoniso)
+    (gradedFiniteProjectiveModulesForgetK0_basis_gradedIdempotentProjectiveBasisOfPrimitive he he₀
+      hprim hnoniso)
     (LaurentSpecialization.mk 1 x)
   have hy (i : I) := DFunLike.congr_fun (Module.Basis.repr_map_eq_of_map_basis _ _ _
-    (gradedFiniteModulesForgetK0_basis hneg he he₀ hprim hnoniso)
+    (gradedFiniteModulesForgetK0_basis_gradedIdempotentHeadBasisOfPrimitive hneg he he₀ hprim
+      hnoniso)
     (LaurentSpecialization.mk 1 y)) i
   simp only [simpleClassBasis_repr_apply, LaurentSpecialization.basis_repr_mk_apply] at hy
   rw [projectiveSimplePairing_apply, hx, gradedProjectiveSimplePairing_apply, map_sum]
