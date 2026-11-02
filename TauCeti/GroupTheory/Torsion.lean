@@ -8,7 +8,6 @@ module
 public import Mathlib.GroupTheory.Torsion
 public import Mathlib.GroupTheory.QuotientGroup.Basic
 public import Mathlib.Algebra.Group.Equiv.TypeTags
-import TauCeti.Algebra.Module.Primitive
 
 /-!
 # The torsion subgroup under a product decomposition
@@ -39,8 +38,6 @@ of the quotient identification is `TauCeti.quotientTorsionContinuousMulEquiv` in
 * `TauCeti.torsionFactorAddEquiv`: two decompositions of `A` have isomorphic torsion factors.
 * `TauCeti.quotientTorsionMulEquiv`: the quotient of `A` by its torsion subgroup is isomorphic to
   `M`.
-* `TauCeti.exists_integral_coordinate_of_not_torsion`: a nontorsion class in a finitely generated
-  abelian group has a surjective integral coordinate taking its divisibility as value.
 -/
 
 /-!
@@ -81,44 +78,6 @@ theorem AddCommGroup.primaryComponent_toAddSubmonoid {G : Type*} [AddCommGroup G
   (rfl)
 
 namespace TauCeti
-
-/-- A nontorsion element of a finitely generated abelian group admits a surjective integral
-coordinate taking its positive divisibility as value. Divisibility is measured in the actual
-torsion-free quotient, not in the original group: every natural multiplier of the quotient
-class divides `d`, and conversely. -/
-theorem exists_integral_coordinate_of_not_torsion {H : Type*} [AddCommGroup H] [AddGroup.FG H]
-    {h : H} (hh : h ∉ AddCommGroup.torsion H) :
-    ∃ (d : ℕ) (f : H →+ ℤ), 0 < d ∧ Function.Surjective f ∧ f h = d ∧
-      ∀ n : ℕ, (∃ x : H ⧸ AddCommGroup.torsion H,
-        QuotientAddGroup.mk' (AddCommGroup.torsion H) h = n • x) ↔ n ∣ d := by
-  let q := QuotientAddGroup.mk' (AddCommGroup.torsion H)
-  have hq : q h ≠ 0 := by simpa [q] using hh
-  obtain ⟨d, p, hd, hp, hdp⟩ := exists_eq_zsmul_isPrimitive hq
-  obtain ⟨g, hg⟩ := isPrimitive_def.1 hp
-  let f := g.toAddMonoidHom.comp q
-  have hfh : f h = d := by simp [f, hdp, hg]
-  refine ⟨d.toNat, f, by omega, ?_, by simpa [Int.toNat_of_nonneg hd.le] using hfh, ?_⟩
-  · intro z
-    obtain ⟨x, hx⟩ := QuotientAddGroup.mk'_surjective (AddCommGroup.torsion H) (z • p)
-    refine ⟨x, ?_⟩
-    have hx' : q x = z • p := hx
-    calc
-      f x = g (q x) := rfl
-      _ = g (z • p) := congrArg g hx'
-      _ = z := by simp [hg]
-  · intro n
-    constructor
-    · rintro ⟨x, hx⟩
-      have heq := congrArg g hx
-      have hgh : g (q h) = d := by simpa [f] using hfh
-      rw [hgh, map_nsmul, nsmul_eq_mul] at heq
-      have hdiv : (n : ℤ) ∣ (d.toNat : ℤ) := by
-        simpa [Int.toNat_of_nonneg hd.le] using (Dvd.intro (g x) heq.symm)
-      exact Int.natCast_dvd_natCast.1 hdiv
-    · rintro ⟨m, hm⟩
-      refine ⟨m • p, ?_⟩
-      rw [smul_smul, ← hm, ← natCast_zsmul, Int.toNat_of_nonneg hd.le]
-      exact hdp
 
 open CommGroup (torsion)
 open Multiplicative

@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Order.Archimedean.Real.Basic
 public import Mathlib.Data.ZMod.Units
 public import Mathlib.GroupTheory.Index
-public import TauCeti.GroupTheory.Torsion
+public import TauCeti.Algebra.Module.Primitive
 import Mathlib.Tactic.Linarith
 
 /-!
@@ -23,11 +23,11 @@ Two different cyclic quotients are useful in finite-cover arguments for dynamica
   intersection with the multiples of `h`, but its index is `d * k`, not `k`.
 
 Both maps kill torsion, since they factor through `ℤ`. For a nontorsion class in a
-finitely generated abelian group, `TauCeti.exists_integral_coordinate_of_not_torsion`
+finitely generated abelian group, `TauCeti.exists_integral_coordinate_of_notMem_torsion`
 constructs such a coordinate with `d` equal to the divisibility of the class in the
 torsion-free quotient. The coprime cover cutoffs exhaust all finite potential drops.
-The example `H = ℤ × ZMod 2`, `h = (2, 1)` illustrates why one must not require the
-slide class itself to be primitive or the deck group to be torsion free.
+The example `H = ℤ × ZMod 2`, `h = (2, 1)` shows that both families apply without
+assuming the slide class is primitive or the group is torsion free.
 
 ## References
 
@@ -75,6 +75,26 @@ theorem slideStabilizationQuotient_surjective (hf : Function.Surjective f)
   dsimp only [Function.comp_apply] at hx
   exact ⟨x, by simp [hx, ← mul_assoc, ZMod.inv_mul_of_unit _ hu]⟩
 
+/-- An element lies in the norm-elimination kernel exactly when its coordinate is divisible
+by `d * k`. -/
+theorem mem_ker_slideNormQuotient_iff (x : H) :
+    x ∈ (f.slideNormQuotient d k).ker ↔ ((d * k : ℕ) : ℤ) ∣ f x := by
+  rw [mem_ker, slideNormQuotient_apply, ZMod.intCast_zmod_eq_zero_iff_dvd]
+
+/-- For coprime degrees, an element lies in the stabilization kernel exactly when its
+coordinate is divisible by `k`. -/
+theorem mem_ker_slideStabilizationQuotient_iff (hdk : d.Coprime k) (x : H) :
+    x ∈ (f.slideStabilizationQuotient d k).ker ↔ (k : ℤ) ∣ f x := by
+  rw [mem_ker, slideStabilizationQuotient_apply,
+    ← ZMod.intCast_zmod_eq_zero_iff_dvd]
+  have hu := (ZMod.isUnit_iff_coprime d k).2 hdk
+  constructor
+  · intro hx
+    have heq := congrArg ((d : ZMod k) * ·) hx
+    simpa only [← mul_assoc, ZMod.mul_inv_of_unit _ hu, one_mul, mul_zero] using heq
+  · intro hx
+    simp [hx]
+
 variable {d k} {h : H}
 
 /-- A slide of integral coordinate `d` maps to `d` in the norm-elimination quotient. -/
@@ -91,17 +111,16 @@ theorem slideStabilizationQuotient_apply_of_eq (hh : f h = d) (hdk : d.Coprime k
 The integer multiplier may be negative. -/
 theorem zsmul_mem_ker_slideNormQuotient_iff (hh : f h = d) (hd : d ≠ 0) (n : ℤ) :
     n • h ∈ (f.slideNormQuotient d k).ker ↔ (k : ℤ) ∣ n := by
-  rw [mem_ker, slideNormQuotient_apply, map_zsmul, hh]
-  simp only [zsmul_eq_mul, Int.cast_id]
-  rw [ZMod.intCast_zmod_eq_zero_iff_dvd, Nat.cast_mul, mul_comm n]
+  rw [mem_ker_slideNormQuotient_iff, map_zsmul, hh, zsmul_eq_mul, Int.cast_id,
+    Nat.cast_mul, mul_comm n]
   exact mul_dvd_mul_iff_left (by exact_mod_cast hd)
 
 /-- The stabilization quotient retains exactly the `k`-divisible iterates of the slide. -/
 theorem zsmul_mem_ker_slideStabilizationQuotient_iff (hh : f h = d)
     (hdk : d.Coprime k) (n : ℤ) :
     n • h ∈ (f.slideStabilizationQuotient d k).ker ↔ (k : ℤ) ∣ n := by
-  rw [mem_ker, map_zsmul, slideStabilizationQuotient_apply_of_eq f hh hdk]
-  simp [zsmul_eq_mul, ZMod.intCast_zmod_eq_zero_iff_dvd]
+  rw [mem_ker_slideStabilizationQuotient_iff f d k hdk, map_zsmul, hh, zsmul_eq_mul]
+  exact hdk.symm.isCoprime.dvd_mul_right_iff
 
 /-- The ordinary nonnegative iterates retained by norm elimination are exactly those
 whose multiplicity is divisible by `k`. -/
@@ -149,8 +168,8 @@ end AddMonoidHom
 
 namespace TauCeti
 
-/-- Coprime stabilization covers have arbitrarily large drop cutoffs `N(k h)`.
-The explicit choices `k = 1 + m d` avoid assuming that all cover degrees are allowed. -/
+/-- For an additive real-valued potential `N` with `N h > 0` and a positive `d`, the
+coprime stabilization cutoffs `N (k • h)` with `k ≥ 2` exceed any prescribed real bound. -/
 theorem exists_coprime_slide_cutoff {H : Type*} [AddCommGroup H] (N : H →+ ℝ)
     {h : H} (hh : 0 < N h) {d : ℕ} (hd : 0 < d) (C : ℝ) :
     ∃ k : ℕ, d.Coprime k ∧ 2 ≤ k ∧ C < N (k • h) := by
@@ -167,11 +186,9 @@ theorem exists_coprime_slide_cutoff {H : Type*} [AddCommGroup H] (N : H →+ ℝ
     apply (div_lt_iff₀ hh).1
     nlinarith
 
-namespace SelfSlideCyclicQuotient
-
 /-- The class `(2,1)` has divisibility exactly two in the quotient by the full torsion
 subgroup, even though it is not twice any element of `ℤ × ZMod 2`. -/
-theorem example_divisibility (n : ℕ) :
+example (n : ℕ) :
     (∃ x : (ℤ × ZMod 2) ⧸ AddCommGroup.torsion (ℤ × ZMod 2),
       QuotientAddGroup.mk' _ (2, 1) = n • x) ↔ n ∣ 2 := by
   have hker : AddCommGroup.torsion (ℤ × ZMod 2) =
@@ -181,36 +198,35 @@ theorem example_divisibility (n : ℕ) :
       isOfFinAddOrder_iff_eq_zero, isOfFinAddOrder_of_finite, AddSubgroup.mem_prod]
   let e := QuotientAddGroup.liftEquiv _ (φ := AddMonoidHom.fst ℤ (ZMod 2))
     (fun z => ⟨(z, 0), rfl⟩) hker
-  have he (x : ℤ × ZMod 2) : e (QuotientAddGroup.mk' _ x) = x.1 := rfl
-  constructor
-  · rintro ⟨x, hx⟩
-    have heq := congrArg e hx
-    rw [he, map_nsmul, nsmul_eq_mul] at heq
-    exact Int.natCast_dvd_natCast.1 ⟨e x, heq⟩
-  · rintro ⟨m, hm⟩
-    refine ⟨e.symm (m : ℤ), e.injective ?_⟩
-    rw [he, map_nsmul, e.apply_symm_apply, nsmul_eq_mul]
-    simpa using congrArg (Nat.cast : ℕ → ℤ) hm
+  have he (x : ℤ × ZMod 2) : e (QuotientAddGroup.mk' _ x) = x.1 := by
+    exact QuotientAddGroup.liftEquiv_mk _ _ hker x
+  have hp : IsPrimitive (e.symm 1) :=
+    isPrimitive_def.2 ⟨e.toAddMonoidHom.toIntLinearMap, by simp⟩
+  have hclass : QuotientAddGroup.mk' _ ((2, 1) : ℤ × ZMod 2) = 2 • e.symm 1 := by
+    apply e.injective
+    rw [he, map_nsmul, e.apply_symm_apply]
+    norm_num
+  rw [hclass]
+  exact hp.exists_eq_nsmul_iff_dvd 2 n
 
 /-- The class `(2,1)` is not primitive in the torsion-free quotient. Its norm-elimination
 cover nevertheless detects multiples exactly by their multiplicities, for every `k`. -/
-theorem example_norm_kernel (k n : ℕ) :
+example (k n : ℕ) :
     n • ((2, 1) : ℤ × ZMod 2) ∈
       ((AddMonoidHom.fst ℤ (ZMod 2)).slideNormQuotient 2 k).ker ↔ k ∣ n :=
   (AddMonoidHom.fst ℤ (ZMod 2)).nsmul_mem_ker_slideNormQuotient_iff
     (by rfl) (by decide) n
 
 /-- For the class `(2,1)`, every odd-degree stabilization quotient sends the class to `1`. -/
-theorem example_stabilization (k : ℕ) (hk : Odd k) :
+example (k : ℕ) (hk : Odd k) :
     (AddMonoidHom.fst ℤ (ZMod 2)).slideStabilizationQuotient 2 k (2, 1) = 1 := by
   apply (AddMonoidHom.fst ℤ (ZMod 2)).slideStabilizationQuotient_apply_of_eq (by rfl)
   exact Nat.coprime_two_left.2 hk
 
 /-- The norm-elimination cover for `(2,1)` has degree `2 k`, retaining the factor of two
 coming from divisibility in the torsion-free quotient. -/
-theorem example_norm_index (k : ℕ) :
+example (k : ℕ) :
     ((AddMonoidHom.fst ℤ (ZMod 2)).slideNormQuotient 2 k).ker.index = 2 * k :=
   (AddMonoidHom.fst ℤ (ZMod 2)).index_ker_slideNormQuotient (fun n => ⟨(n, 0), rfl⟩)
 
-end SelfSlideCyclicQuotient
 end TauCeti
