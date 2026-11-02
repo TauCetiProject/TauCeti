@@ -229,31 +229,10 @@ theorem baseChangeMap_generatedCoordinateLift_comp_generatorCoordinateAlgebraBas
     CommHopfAlgCat.baseChangeMap (K := K) (generatedCoordinateLift k j) ≫
         (generatorCoordinateAlgebraBaseChangeIso k K j).hom =
       (generatedCoordinateHopfAlgebraBaseChangeIso k K).hom ≫
-        generatedCoordinateLift K j := by
-  let F := CommHopfAlgCat.baseChangeFunctor (k := k) (K := K)
-  have := ConcreteCategory.epi_of_surjective _
-    (CommHopfAlgCat.baseChangeMap_surjective (K := K) _
-      (generatedCoordinateMap_surjective k))
-  rw [← CommHopfAlgCat.baseChangeFunctor_map] at this ⊢
-  apply (cancel_epi (F.map (generatedCoordinateMap k))).mp
-  have hquot :=
-    baseChangeMap_generatedCoordinateMap_comp_generatedCoordinateHopfAlgebraBaseChangeIso_hom_assoc
-      k K (generatedCoordinateLift K j)
-  calc
-    _ = F.map (generatorCoordinateMap k j) ≫
-        (generatorCoordinateAlgebraBaseChangeIso k K j).hom := by
-      rw [← Category.assoc, ← Functor.map_comp,
-        generatedCoordinateMap_comp_generatedCoordinateLift]
-    _ = (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K 54).hom ≫
-        generatorCoordinateMap K j := by
-      rw [CommHopfAlgCat.baseChangeFunctor_map]
-      exact (Iso.inv_comp_eq (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K 54)).mp
-        (generatorCoordinateMap_baseChange k K j)
-    _ = (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K 54).hom ≫
-        generatedCoordinateMap K ≫ generatedCoordinateLift K j := by
-      rw [generatedCoordinateMap_comp_generatedCoordinateLift]
-    _ = _ := by
-      simpa only [CommHopfAlgCat.baseChangeFunctor_map] using hquot.symm
+        generatedCoordinateLift K j :=
+  CommHopfAlgCat.baseChangeMap_liftQuotient_comp_quotientBaseChangeIsoOfMapEq_hom
+    _ _ _ (map_baseChangeHopfIdeal_generatedDefiningIdeal k K)
+    _ _ _ _ _ (generatorCoordinateMap_baseChange k K j)
 
 end BaseChange
 

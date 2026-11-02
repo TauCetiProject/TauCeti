@@ -72,7 +72,7 @@ theorem mem_weightTorusDefiningIdeal (x : generatedCoordinateHopfAlgebra R) :
 /-- The quotient by the intrinsic torus ideal is the rank-six split-torus coordinate algebra. -/
 def weightTorusCoordinateIso :
     FiniteTypeCommHopfAlgCat.quotient
-        ⟨generatedCoordinateHopfAlgebra R, (finiteTypeCommHopfAlgProperty_iff _).2 inferInstance⟩
+        (FiniteTypeCommHopfAlgCat.of R (generatedCoordinateHopfAlgebra R))
         (weightTorusDefiningIdeal R) ≅
       DiagonalizableGroup.coordinateRing R (SplitTorus.characterGroup (Fin 6)) :=
   ObjectProperty.isoMk _ <|
@@ -83,7 +83,7 @@ def weightTorusCoordinateIso :
 @[reassoc (attr := simp)]
 theorem mkQuotient_comp_weightTorusCoordinateIso_hom :
     FiniteTypeCommHopfAlgCat.mkQuotient
-        ⟨generatedCoordinateHopfAlgebra R, (finiteTypeCommHopfAlgProperty_iff _).2 inferInstance⟩
+        (FiniteTypeCommHopfAlgCat.of R (generatedCoordinateHopfAlgebra R))
         (weightTorusDefiningIdeal R) ≫ (weightTorusCoordinateIso R).hom =
       ObjectProperty.homMk (generatedWeightTorusCoordinateMap R) := by
   apply ObjectProperty.hom_ext
@@ -93,7 +93,7 @@ theorem mkQuotient_comp_weightTorusCoordinateIso_hom :
 theorem splitTorusCommHopfAlgProperty_quotient_weightTorusDefiningIdeal :
     splitTorusCommHopfAlgProperty R
       (FiniteTypeCommHopfAlgCat.quotient
-        ⟨generatedCoordinateHopfAlgebra R, (finiteTypeCommHopfAlgProperty_iff _).2 inferInstance⟩
+        (FiniteTypeCommHopfAlgCat.of R (generatedCoordinateHopfAlgebra R))
         (weightTorusDefiningIdeal R)) := by
   rw [splitTorusCommHopfAlgProperty_iff]
   let e : Multiplicative (Fin 6 →₀ ℤ) ≃* Multiplicative (ULift.{u} (Fin 6) →₀ ℤ) :=
@@ -137,16 +137,9 @@ theorem pointsMulEquiv_mapPointsFunctor_generatedWeightTorusCoordinateMap
   simp only [_root_.CommHopfAlgCat.hom_comp, hcomp] at hp
   have he := (CommHopfAlgCat.Hom.mapPointsFunctor_comp_app_apply
     (generatedCoordinateMap R) (generatedWeightTorusCoordinateMap R) A q).symm.trans hp
+  rw [he, GeneralLinear.pointsMulEquiv_comp_weightTorusCoordinateBialgHom]
   apply Units.ext
   rw [coe_weightTorusPoints, UniversalEnvelopingAlgebra.kostantTorusMatrix_apply, diagGL_coe]
-  refine (congrArg (fun g ↦
-    (GeneralLinear.pointsMulEquiv 54 g : Matrix (Fin 54) (Fin 54) A)) he).trans ?_
-  rw [GeneralLinear.pointsMulEquiv_apply, GeneralLinear.weightTorusCoordinateBialgHom_def,
-    DiagonalizableGroup.pointToGeneralLinear_comp_diagonalCoordinateMap]
-  congr 1
-  funext i
-  exact congrArg (fun s : Aˣ ↦ (s : A))
-    (SplitTorus.charOfPoint_weightCharacter q (matrixWeight i))
 
 /-- The closed generated torus maps to exactly the named weight-torus matrices in `GL₅₄`.
 The value algebra need not be reduced or a field. -/
