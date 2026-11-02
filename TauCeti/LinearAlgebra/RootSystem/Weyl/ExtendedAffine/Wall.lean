@@ -12,8 +12,8 @@ public import TauCeti.LinearAlgebra.RootSystem.Weyl.ExtendedAffine.Alcove
 
 Let `b` be a base of a finite, reduced, irreducible, crystallographic root pairing `P`, with simple
 roots `αᵢ`, highest root `θ` and fundamental alcove `A` in the coweight space `N`. The walls of `A`
-are the zero sets of the **affine simple roots** (`RootPairing.affineSimpleRoot`, defined with the
-fundamental alcove), indexed by the nodes of the affine Dynkin diagram, `Option b.support`:
+are the zero sets of the **affine simple roots** (`RootPairing.Base.affineSimpleRoot`, defined
+with the fundamental alcove), indexed by the nodes of the affine Dynkin diagram, `Option b.support`:
 
 `a₀ = 1 - θ` at the affine node `0`, and `aᵢ = αᵢ` at a node `i`,
 
@@ -83,20 +83,20 @@ omit [P.IsCrystallographic] [P.IsReduced] [P.IsIrreducible] in
 `α + n`. -/
 private lemma exists_affineSimpleRoot_apply_eq_root'_add {f : N ≃ᵃ[R] N}
     (hf : f ∈ P.extendedAffineWeylGroup) (k : Option b.support) :
-    ∃ (j : ι) (n : ℤ), ∀ x, affineSimpleRoot b k (f x) = P.root' j x + n := by
+    ∃ (j : ι) (n : ℤ), ∀ x, b.affineSimpleRoot k (f x) = P.root' j x + n := by
   obtain ⟨j, m, hm⟩ := P.exists_root'_apply_eq_add_intCast_of_mem_extendedAffineWeylGroup hf
     (b.affineSimpleRootIndex k)
-  obtain ⟨c, hc⟩ : ∃ c : ℤ, affineSimpleRoot b k 0 = c := by
+  obtain ⟨c, hc⟩ : ∃ c : ℤ, b.affineSimpleRoot k 0 = c := by
     rcases k with _ | i
     · exact ⟨1, by simp⟩
     · exact ⟨0, by simp⟩
-  exact ⟨j, m + c, fun x ↦ by rw [affineSimpleRoot_eq_root'_add, hm, hc]; push_cast; ring⟩
+  exact ⟨j, m + c, fun x ↦ by rw [b.affineSimpleRoot_eq_root'_add, hm, hc]; push_cast; ring⟩
 
 /-- **An element of `Ω` carries each affine simple root to an affine simple root**: for `f` in the
 stabilizer of the fundamental alcove, `aₖ ∘ f` is again an affine simple root. -/
 private lemma exists_affineSimpleRoot_comp_eq {f : N ≃ᵃ[R] N}
     (hf : f ∈ P.fundamentalAlcoveStabilizer b) (k : Option b.support) :
-    ∃ l, ∀ x, affineSimpleRoot b k (f x) = affineSimpleRoot b l x := by
+    ∃ l, ∀ x, b.affineSimpleRoot k (f x) = b.affineSimpleRoot l x := by
   -- Each `aₖ ∘ f` is an affine root `α_{jₖ} + nₖ`.
   choose j n hjn using exists_affineSimpleRoot_apply_eq_root'_add b
     (P.fundamentalAlcoveStabilizer_le_extendedAffineWeylGroup b hf)
@@ -107,7 +107,7 @@ private lemma exists_affineSimpleRoot_comp_eq {f : N ≃ᵃ[R] N}
   obtain ⟨x₀, hx₀A, hx₀⟩ := exists_mem_fundamentalAlcove_root'_eq_height_div b
   set H : Option b.support → ℤ := fun k ↦ b.height (j k) + n k * (b.height b.highestRoot + 1)
   have hval (k : Option b.support) :
-      affineSimpleRoot b k (f x₀) = H k / ((b.height b.highestRoot : R) + 1) := by
+      b.affineSimpleRoot k (f x₀) = H k / ((b.height b.highestRoot : R) + 1) := by
     rw [hjn, hx₀]
     push_cast [H]
     field_simp
@@ -122,11 +122,11 @@ private lemma exists_affineSimpleRoot_comp_eq {f : N ≃ᵃ[R] N}
   have hsum : ∑ k, b.affineMarks k * (H k - 1) = 0 := by
     have hR : ∑ k, (b.affineMarks k : R) * H k = (b.height b.highestRoot : R) + 1 := by
       calc ∑ k, (b.affineMarks k : R) * H k
-          = ∑ k, (b.affineMarks k : R) * affineSimpleRoot b k (f x₀) *
+          = ∑ k, (b.affineMarks k : R) * b.affineSimpleRoot k (f x₀) *
               ((b.height b.highestRoot : R) + 1) :=
             Finset.sum_congr rfl fun k _ ↦ by rw [hval]; field_simp
         _ = (b.height b.highestRoot : R) + 1 := by
-            rw [← Finset.sum_mul, sum_affineMarks_mul_affineSimpleRoot, one_mul]
+            rw [← Finset.sum_mul, b.sum_affineMarks_mul_affineSimpleRoot, one_mul]
     have hZ : ∑ k, b.affineMarks k * H k = b.height b.highestRoot + 1 := by exact_mod_cast hR
     simp only [mul_sub, mul_one, Finset.sum_sub_distrib, hZ, b.sum_affineMarks, sub_self]
   have hH1 : H k = 1 := by
@@ -134,7 +134,7 @@ private lemma exists_affineSimpleRoot_comp_eq {f : N ≃ᵃ[R] N}
       mul_nonneg (b.affineMarks_pos l).le (sub_nonneg.mpr (hH l))).mp hsum k (Finset.mem_univ k)
     have := (mul_eq_zero.mp this).resolve_left (b.affineMarks_pos k).ne'
     omega
-  obtain ⟨l, hl⟩ := exists_affineSimpleRoot_eq_of_height_eq_one b hH1
+  obtain ⟨l, hl⟩ := b.exists_affineSimpleRoot_eq_of_height_eq_one hH1
   exact ⟨l, fun x ↦ (hjn k x).trans (hl x).symm⟩
 
 /-- For `f` in `Ω`, the node `l` with `a_l ∘ f = aₖ`. -/
@@ -144,16 +144,16 @@ private noncomputable def wallIndex {f : N ≃ᵃ[R] N} (hf : f ∈ P.fundamenta
 
 private lemma affineSimpleRoot_wallIndex_apply {f : N ≃ᵃ[R] N}
     (hf : f ∈ P.fundamentalAlcoveStabilizer b) (k : Option b.support) (x : N) :
-    affineSimpleRoot b (wallIndex b hf k) (f x) = affineSimpleRoot b k x := by
+    b.affineSimpleRoot (wallIndex b hf k) (f x) = b.affineSimpleRoot k x := by
   have := (exists_affineSimpleRoot_comp_eq b (inv_mem hf) k).choose_spec (f x)
   simp only [AffineEquiv.inv_def, AffineEquiv.symm_apply_apply] at this
   exact this.symm
 
 private lemma wallIndex_eq_iff {f : N ≃ᵃ[R] N} (hf : f ∈ P.fundamentalAlcoveStabilizer b)
     {k l : Option b.support} :
-    wallIndex b hf k = l ↔ ∀ x, affineSimpleRoot b l (f x) = affineSimpleRoot b k x := by
+    wallIndex b hf k = l ↔ ∀ x, b.affineSimpleRoot l (f x) = b.affineSimpleRoot k x := by
   refine ⟨fun h ↦ h ▸ affineSimpleRoot_wallIndex_apply b hf k, fun h ↦ ?_⟩
-  refine affineSimpleRoot_injective b (funext fun y ↦ ?_)
+  refine b.affineSimpleRoot_injective (funext fun y ↦ ?_)
   obtain ⟨x, rfl⟩ := f.surjective y
   rw [affineSimpleRoot_wallIndex_apply, h]
 
@@ -184,15 +184,15 @@ noncomputable def fundamentalAlcoveStabilizerToPerm :
 @[simp]
 theorem affineSimpleRoot_fundamentalAlcoveStabilizerToPerm_apply
     (ω : P.fundamentalAlcoveStabilizer b) (k : Option b.support) (x : N) :
-    affineSimpleRoot b (fundamentalAlcoveStabilizerToPerm b ω k) (ω.1 x) =
-      affineSimpleRoot b k x :=
+    b.affineSimpleRoot (fundamentalAlcoveStabilizerToPerm b ω k) (ω.1 x) =
+      b.affineSimpleRoot k x :=
   affineSimpleRoot_wallIndex_apply b ω.2 k x
 
 /-- The permutation of the nodes induced by `ω ∈ Ω` is characterized by `a_{σ k} ∘ ω = aₖ`. -/
 theorem fundamentalAlcoveStabilizerToPerm_apply_eq_iff (ω : P.fundamentalAlcoveStabilizer b)
     {k l : Option b.support} :
     fundamentalAlcoveStabilizerToPerm b ω k = l ↔
-      ∀ x, affineSimpleRoot b l (ω.1 x) = affineSimpleRoot b k x :=
+      ∀ x, b.affineSimpleRoot l (ω.1 x) = b.affineSimpleRoot k x :=
   wallIndex_eq_iff b ω.2
 
 /-- **The action of `Ω` on the walls of the fundamental alcove preserves the affine Cartan
@@ -210,9 +210,9 @@ theorem fundamentalAlcoveStabilizerToPerm_mem_matrixSymmetryGroup
         P.root' (b.affineSimpleRootIndex k) x := by
     have h₁ := affineSimpleRoot_fundamentalAlcoveStabilizerToPerm_apply b ω k x
     have h₀ := affineSimpleRoot_fundamentalAlcoveStabilizerToPerm_apply b ω k 0
-    rw [affineSimpleRoot_eq_root'_add b (σ k), AffineEquiv.apply_eq_linear_add ω.1 x, map_add] at h₁
-    rw [affineSimpleRoot_eq_root'_add b (σ k)] at h₀
-    rw [affineSimpleRoot_eq_root'_add b k] at h₁
+    rw [b.affineSimpleRoot_eq_root'_add (σ k), AffineEquiv.apply_eq_linear_add ω.1 x, map_add] at h₁
+    rw [b.affineSimpleRoot_eq_root'_add (σ k)] at h₀
+    rw [b.affineSimpleRoot_eq_root'_add k] at h₁
     linear_combination h₁ - h₀
   rw [TauCeti.mem_matrixSymmetryGroup_iff]
   ext k l
