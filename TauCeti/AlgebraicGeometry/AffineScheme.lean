@@ -160,10 +160,9 @@ theorem Scheme.toSpecΓ_apply_asIdeal_eq_smul {X : Scheme.{u}} {G : Type*} [Grou
   have h := congr($(Scheme.toSpecΓ_naturality (σ g).asIso.hom) x)
   rw [Scheme.Hom.comp_apply, Scheme.Hom.comp_apply] at h
   ext a
-  rw [h, Ideal.mem_pointwise_smul_iff_inv_smul_mem, Scheme.globalSectionsMulSemiringAction_smul_def,
-    inv_inv]
-  -- The point `Spec.map φ p` has prime ideal `p.asIdeal.comap φ`.
-  rfl
+  have hc := PrimeSpectrum.comap_asIdeal (σ g).asIso.hom.appTop.hom (X.toSpecΓ x)
+  rw [h, Spec.map_apply, hc, Ideal.mem_comap, Ideal.mem_pointwise_smul_iff_inv_smul_mem,
+    Scheme.globalSectionsMulSemiringAction_smul_def, inv_inv]
 
 /-- **`Spec` of an intermediate ring of a localization.** Let `S` be a localization of `R` away
 from `a`, and let `B` be an `R`-algebra whose map to `S` is injective, for instance an

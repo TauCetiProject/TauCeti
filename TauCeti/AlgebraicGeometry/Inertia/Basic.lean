@@ -48,7 +48,7 @@ of primes in Galois extensions therefore apply to `D_x` and `I_x`.
   `TauCeti.SchemeInertia.inertia_apply_eq_map_conj`: moving the point by `g` conjugates the
   decomposition and inertia groups by `g`.
 * `TauCeti.SchemeInertia.decomposition_eq_stabilizer`,
-  `TauCeti.SchemeInertia.inertia_eq_inertia`: on a quasi-affine scheme, the decomposition and
+  `TauCeti.SchemeInertia.inertia_eq_ideal_inertia`: on a quasi-affine scheme, the decomposition and
   inertia groups of `x` are the stabilizer and the inertia group of the prime ideal of global
   functions vanishing at `x`.
 
@@ -68,19 +68,18 @@ namespace TauCeti.SchemeInertia
 
 variable {X : Scheme.{u}} {G : Type*} [Group G] (σ : G →* Aut X)
 
+/-- The action of `G` on the points of `X` through `σ`: `g • x = σ g x`. -/
+@[instance_reducible]
+private def pointAction : MulAction G X where
+  smul g x := (σ g).asIso.hom x
+  one_smul x := show (σ 1).asIso.hom x = x by simp
+  mul_smul g k x := show (σ (g * k)).asIso.hom x = (σ g).asIso.hom ((σ k).asIso.hom x) by simp
+
 /-- The **decomposition group** of a point `x` for an action `σ` of `G` on a scheme `X`: the
 stabilizer of `x`. -/
-def decomposition (x : X) : Subgroup G where
-  carrier := {g | (σ g).asIso.hom x = x}
-  one_mem' := by simp
-  mul_mem' {g k} hg hk := by
-    simp only [Set.mem_ofPred_eq, map_mul, Aut.mul_asIso, Iso.trans_hom, Scheme.Hom.comp_apply]
-      at hg hk ⊢
-    rw [hk, hg]
-  inv_mem' {g} hg := by
-    simp only [Set.mem_ofPred_eq] at hg ⊢
-    conv_lhs => rw [← hg]
-    simp
+def decomposition (x : X) : Subgroup G :=
+  letI := pointAction σ
+  MulAction.stabilizer G x
 
 variable {σ} in
 /-- An element lies in the decomposition group of `x` exactly when it fixes `x`. -/
@@ -206,16 +205,30 @@ instance (x : X) : ((inertia σ x).subgroupOf (decomposition σ x)).Normal := by
 /-- **Conjugation of decomposition groups.** The decomposition group of `g x` is the conjugate of
 that of `x` by `g`. -/
 theorem decomposition_apply_eq_map_conj (g : G) (x : X) :
-    decomposition σ ((σ g).asIso.hom x) = (decomposition σ x).map (MulAut.conj g).toMonoidHom := by
-  ext k
-  rw [Subgroup.mem_map_equiv, MulAut.conj_symm_apply, mem_decomposition_iff,
-    mem_decomposition_iff]
-  simp only [map_mul, Aut.mul_asIso, Iso.trans_hom, Scheme.Hom.comp_apply]
-  constructor
-  · intro h
-    simp [h]
-  · intro h
-    simpa using congrArg (σ g).asIso.hom h
+    decomposition σ ((σ g).asIso.hom x) = (decomposition σ x).map (MulAut.conj g).toMonoidHom :=
+  letI := pointAction σ
+  MulAction.stabilizer_smul_eq_stabilizer_map_conj g x
+
+/-- The map induced on `κ(σ g x)` by `σ (g k g⁻¹)`, for `k` fixing `x`, is the map induced on
+`κ(x)` by `σ k`, transported along the residue field maps of `σ g` and `σ g⁻¹`. -/
+private theorem residueFieldHom_conj {x : X} {k : G} (hk : k ∈ decomposition σ x) (g : G)
+    (hx : (σ g⁻¹).asIso.hom ((σ g).asIso.hom x) = x)
+    (hgk : g * k * g⁻¹ ∈ decomposition σ ((σ g).asIso.hom x)) :
+    residueFieldHom σ hgk = (σ g).asIso.hom.residueFieldMap x ≫ residueFieldHom σ hk ≫
+      (X.residueFieldCongr hx).inv ≫ (σ g⁻¹).asIso.hom.residueFieldMap ((σ g).asIso.hom x) := by
+  have hkx : (σ k).asIso.hom x = x := mem_decomposition_iff.mp hk
+  have hy : ((σ k).asIso.hom ≫ (σ g).asIso.hom) x = (σ g).asIso.hom x := by
+    rw [Scheme.Hom.comp_apply, hkx]
+  have e : (σ (g * k * g⁻¹)).asIso.hom =
+      (σ g⁻¹).asIso.hom ≫ (σ k).asIso.hom ≫ (σ g).asIso.hom := by
+    simp
+  have hm : ((σ g⁻¹).asIso.hom ≫ (σ k).asIso.hom ≫ (σ g).asIso.hom) ((σ g).asIso.hom x) =
+      (σ g).asIso.hom x := by
+    rw [Scheme.Hom.comp_apply, hx, hy]
+  refine (Scheme.Hom.residueFieldCongr_inv_residueFieldMap_congr e _ hm).trans ?_
+  rw [Scheme.Hom.residueFieldCongr_inv_residueFieldMap_comp _ _ hx hy hm,
+    Scheme.Hom.residueFieldCongr_inv_residueFieldMap_comp _ _ hkx rfl hy]
+  simp [residueFieldHom]
 
 private theorem conj_mem_inertia {x : X} {k : G} (hk : k ∈ inertia σ x) (g : G) :
     g * k * g⁻¹ ∈ inertia σ ((σ g).asIso.hom x) := by
@@ -225,47 +238,15 @@ private theorem conj_mem_inertia {x : X} {k : G} (hk : k ∈ inertia σ x) (g : 
     rw [decomposition_apply_eq_map_conj, Subgroup.mem_map_equiv, MulAut.conj_symm_apply]
     simpa [mul_assoc] using hkD
   refine mem_inertia_iff.mpr ⟨hD, (residueAction_eq_one_iff ⟨_, hD⟩).mpr ?_⟩
-  -- `k⁻¹` acts trivially on `κ(x)`.
-  have hk' := (residueAction_eq_one_iff ⟨k, hkD⟩).mp hk1
-  -- The residue field map of `σ (g k⁻¹ g⁻¹)` at `y` factors through those of `σ g⁻¹`, `σ k⁻¹`
-  -- and `σ g`, and the middle one is trivial.
   have hx : (σ g⁻¹).asIso.hom y = x := by simp [y]
-  have hkx : (σ k⁻¹).asIso.hom x = x := mem_decomposition_iff.mp (inv_mem hkD)
-  have hy : ((σ k⁻¹).asIso.hom ≫ (σ g).asIso.hom) x = y := by
-    rw [Scheme.Hom.comp_apply, hkx]
-  have e : (σ (g * k * g⁻¹)⁻¹).asIso.hom =
-      (σ g⁻¹).asIso.hom ≫ (σ k⁻¹).asIso.hom ≫ (σ g).asIso.hom := by
-    simp [mul_assoc]
-  have hm : ((σ g⁻¹).asIso.hom ≫ (σ k⁻¹).asIso.hom ≫ (σ g).asIso.hom) y = y := by
-    rw [Scheme.Hom.comp_apply, hx, hy]
-  have hgg : ((σ g⁻¹).asIso.hom ≫ (σ g).asIso.hom) y = y := by
-    rw [Scheme.Hom.comp_apply, hx]
-  have e₁ : (σ g⁻¹).asIso.hom ≫ (σ g).asIso.hom = 𝟙 X := by simp
-  have hid : (𝟙 X : X ⟶ X) y = y := rfl
-  calc residueFieldHom σ (inv_mem hD)
-      = (X.residueFieldCongr hm).inv ≫
-          ((σ g⁻¹).asIso.hom ≫ (σ k⁻¹).asIso.hom ≫ (σ g).asIso.hom).residueFieldMap y :=
-        Scheme.Hom.residueFieldCongr_inv_residueFieldMap_congr e _ hm
-    _ = (((X.residueFieldCongr (rfl : (σ g).asIso.hom x = y)).inv ≫
-            (σ g).asIso.hom.residueFieldMap x) ≫
-          (X.residueFieldCongr hkx).inv ≫ (σ k⁻¹).asIso.hom.residueFieldMap x) ≫
-          (X.residueFieldCongr hx).inv ≫ (σ g⁻¹).asIso.hom.residueFieldMap y := by
-        rw [Scheme.Hom.residueFieldCongr_inv_residueFieldMap_comp _ _ hx hy hm,
-          Scheme.Hom.residueFieldCongr_inv_residueFieldMap_comp _ _ hkx rfl hy]
-    _ = ((X.residueFieldCongr (rfl : (σ g).asIso.hom x = y)).inv ≫
-            (σ g).asIso.hom.residueFieldMap x) ≫
-          (X.residueFieldCongr hx).inv ≫ (σ g⁻¹).asIso.hom.residueFieldMap y := by
-        have hk'' : (X.residueFieldCongr hkx).inv ≫ (σ k⁻¹).asIso.hom.residueFieldMap x = 𝟙 _ :=
-          hk'
-        rw [hk'', Category.comp_id]
-    _ = (X.residueFieldCongr hgg).inv ≫
-          ((σ g⁻¹).asIso.hom ≫ (σ g).asIso.hom).residueFieldMap y :=
-        (Scheme.Hom.residueFieldCongr_inv_residueFieldMap_comp _ _ hx rfl hgg).symm
-    _ = (X.residueFieldCongr hid).inv ≫ (𝟙 X : X ⟶ X).residueFieldMap y :=
-        Scheme.Hom.residueFieldCongr_inv_residueFieldMap_congr e₁ _ _
-    _ = 𝟙 (X.residueField y) := by
-        rw [Scheme.residueFieldCongr_inv_residueFieldMap_id]
-        simp
+  have hD' : g * k⁻¹ * g⁻¹ ∈ decomposition σ y := by simpa [mul_assoc] using inv_mem hD
+  have hD₁ : g * 1 * g⁻¹ ∈ decomposition σ y := by simp
+  -- Conjugating the trivial action of `1` shows that the transport maps are mutually inverse.
+  have h₁ := residueFieldHom_conj (one_mem _) g hx hD₁
+  rw [residueFieldHom_congr (by group) hD₁ (one_mem _), residueFieldHom_one, residueFieldHom_one,
+    Category.id_comp] at h₁
+  rw [residueFieldHom_congr (by group) _ hD', residueFieldHom_conj (inv_mem hkD) g hx hD',
+    (residueAction_eq_one_iff ⟨k, hkD⟩).mp hk1, Category.id_comp, ← h₁]
 
 /-- **Conjugation of inertia groups.** The inertia group of `g x` is the conjugate of that of `x`
 by `g`. -/
@@ -301,7 +282,7 @@ theorem decomposition_eq_stabilizer [X.IsQuasiAffine] (x : X) :
 
 /-- The inertia group of `x` acts trivially modulo the prime ideal of global functions vanishing at
 `x`. -/
-theorem inertia_le_inertia (x : X) :
+theorem inertia_le_ideal_inertia (x : X) :
     letI := Scheme.globalSectionsMulSemiringAction σ
     inertia σ x ≤ (X.toSpecΓ x).asIdeal.inertia G := by
   let _ := Scheme.globalSectionsMulSemiringAction σ
@@ -313,11 +294,11 @@ theorem inertia_le_inertia (x : X) :
 
 /-- On a quasi-affine scheme, the inertia group of `x` is the inertia group of the prime ideal of
 global functions vanishing at `x`: the elements acting trivially modulo this prime. -/
-theorem inertia_eq_inertia [X.IsQuasiAffine] (x : X) :
+theorem inertia_eq_ideal_inertia [X.IsQuasiAffine] (x : X) :
     letI := Scheme.globalSectionsMulSemiringAction σ
     inertia σ x = (X.toSpecΓ x).asIdeal.inertia G := by
   let _ := Scheme.globalSectionsMulSemiringAction σ
-  refine le_antisymm (inertia_le_inertia x) fun g hg ↦ ?_
+  refine le_antisymm (inertia_le_ideal_inertia x) fun g hg ↦ ?_
   have hgD : g ∈ decomposition σ x := by
     rw [decomposition_eq_stabilizer]
     exact Ideal.inertia_le_stabilizer _ hg

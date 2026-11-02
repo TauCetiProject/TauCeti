@@ -117,9 +117,14 @@ end residueFieldCongr
 theorem Scheme.toSpecΓ_apply_asIdeal (X : Scheme.{u}) (x : X) :
     (X.toSpecΓ x).asIdeal = RingHom.ker (X.Γevaluation x).hom := by
   ext a
-  -- By `Scheme.toSpecΓ_apply`, the point is the preimage of the maximal ideal of the stalk under
-  -- the germ map, and `Γevaluation` is the germ map followed by the residue map.
-  exact (IsLocalRing.residue_eq_zero_iff (X.presheaf.Γgerm x a)).symm
+  -- A global function lies in this prime iff `x` is not in its basic open, iff its value at `x`
+  -- vanishes.
+  have h : x ∈ X.basicOpen a ↔ a ∉ (X.toSpecΓ x).asIdeal := by
+    rw [← X.toSpecΓ_preimage_basicOpen a]
+    exact PrimeSpectrum.mem_basicOpen a (X.toSpecΓ x)
+  rw [RingHom.mem_ker]
+  exact (not_not.symm.trans h.not.symm).trans
+    (X.evaluation_eq_zero_iff_notMem_basicOpen x trivial a).symm
 
 /-- A ring map out of a residue field of `Spec R` is determined by its values on the elements
 of `R`. -/
