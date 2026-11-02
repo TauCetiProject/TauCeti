@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.HeatKernel.DuhamelPotential.Basic
 import TauCeti.Analysis.PDE.HeatKernel.Derivatives
 import TauCeti.Analysis.PDE.HeatKernel.HeatEquation
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -63,28 +64,6 @@ open scoped Convolution NNReal Interval
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
-
-/-- Away from the diagonal, `d τ^((α - 4)/2) ≤ √d τ^((α - 3)/2)` when `0 ≤ d ≤ τ`. -/
-private theorem mul_rpow_le_sqrt_mul_rpow {α d τ : ℝ} (hτ : 0 < τ) (hd : 0 ≤ d) (hdτ : d ≤ τ) :
-    d * τ ^ ((α - 2 - 2) / 2) ≤ √d * τ ^ ((α - 3) / 2) := by
-  have h : τ ^ ((α - 3) / 2) = √τ * τ ^ ((α - 2 - 2) / 2) := by
-    rw [sqrt_eq_rpow, ← rpow_add hτ]
-    congr 1
-    ring
-  rw [h, ← mul_assoc]
-  refine mul_le_mul_of_nonneg_right ?_ (rpow_nonneg hτ.le _)
-  calc d = √d * √d := (mul_self_sqrt hd).symm
-    _ ≤ √d * √τ := mul_le_mul_of_nonneg_left (sqrt_le_sqrt hdτ) (sqrt_nonneg d)
-
-/-- Near the diagonal, `τ^((α - 2)/2) ≤ √d τ^((α - 3)/2)` when `0 < τ ≤ d`. -/
-private theorem rpow_le_sqrt_mul_rpow {α d τ : ℝ} (hτ : 0 < τ) (hτd : τ ≤ d) :
-    τ ^ ((α - 2) / 2) ≤ √d * τ ^ ((α - 3) / 2) := by
-  have h : τ ^ ((α - 2) / 2) = √τ * τ ^ ((α - 3) / 2) := by
-    rw [sqrt_eq_rpow, ← rpow_add hτ]
-    congr 1
-    ring
-  rw [h]
-  exact mul_le_mul_of_nonneg_right (sqrt_le_sqrt hτd) (rpow_nonneg hτ.le _)
 
 /-- **The Hölder estimate in time for the Hessian of the Duhamel potential.** For `0 < α < 1`
 there is a constant `C`, depending only on `α` and the dimension, such that for every `x` the map
@@ -200,14 +179,18 @@ theorem exists_holderOnWith_iteratedFDeriv_two_heatDuhamelPotential_Icc {α : �
         calc ‖A t r - A s r‖ ≤ C₄ * H * (d * (s - r) ^ (((α : ℝ) - 2 - 2) / 2)) :=
               h.trans_eq (by ring)
           _ ≤ C₄ * H * (√d * (s - r) ^ (((α : ℝ) - 3) / 2)) :=
-              mul_le_mul_of_nonneg_left (mul_rpow_le_sqrt_mul_rpow hτ hd.le hdτ) (by positivity)
+              mul_le_mul_of_nonneg_left (by
+                rw [show ((α : ℝ) - 2 - 2) / 2 = ((α : ℝ) - 3) / 2 - 1 / 2 by ring]
+                exact mul_rpow_sub_half_le_sqrt_mul_rpow hτ hd.le hdτ _) (by positivity)
           _ ≤ (C₄ + 2 * C₂) * H * (s - r) ^ (((α : ℝ) - 3) / 2) * √d := by
               have : 0 ≤ 2 * C₂ * H * (√d * (s - r) ^ (((α : ℝ) - 3) / 2)) := by positivity
               nlinarith
       · -- Near the diagonal: the bound on each term.
         calc ‖A t r - A s r‖ ≤ 2 * C₂ * H * (s - r) ^ (((α : ℝ) - 2) / 2) := hA
           _ ≤ 2 * C₂ * H * (√d * (s - r) ^ (((α : ℝ) - 3) / 2)) :=
-              mul_le_mul_of_nonneg_left (rpow_le_sqrt_mul_rpow hτ hτd.le) (by positivity)
+              mul_le_mul_of_nonneg_left (by
+                rw [show ((α : ℝ) - 2) / 2 = ((α : ℝ) - 3) / 2 + 1 / 2 by ring]
+                exact rpow_add_half_le_sqrt_mul_rpow hτ hτd.le _) (by positivity)
           _ ≤ (C₄ + 2 * C₂) * H * (s - r) ^ (((α : ℝ) - 3) / 2) * √d := by
               have : 0 ≤ C₄ * H * (√d * (s - r) ^ (((α : ℝ) - 3) / 2)) := by positivity
               nlinarith
