@@ -76,10 +76,8 @@ theorem continuous_algebraMap : Continuous (Algebra.algebraMap K⸨X⸩ (Level K
     (TauCeti.LaurentSeries.continuous_substAlgHom (K := K)
       (φ := PowerSeries.X ^ (d : ℕ)) (by simp) (pow_ne_zero _ PowerSeries.X_ne_zero))
 
-instance : ContinuousSMul K⸨X⸩ (Level K d) where
-  continuous_smul := by
-    simp_rw [Algebra.smul_def]
-    exact ((continuous_algebraMap (K := K) (d := d)).comp continuous_fst).mul continuous_snd
+instance : ContinuousSMul K⸨X⸩ (Level K d) :=
+  continuousSMul_of_algebraMap _ _ continuous_algebraMap
 
 /-- The coefficient trace of a ramified level is continuous, also in inseparable degrees. -/
 theorem continuous_trace : Continuous (Algebra.trace K⸨X⸩ (Level K d)) := by
@@ -123,6 +121,7 @@ instance : T2Space (Level.ContinuousKaehlerDifferential K d) :=
 instance : IsTopologicalAddGroup (Level.ContinuousKaehlerDifferential K d) :=
   IsModuleTopology.isTopologicalAddGroup (Level K d) _
 
+variable (K d) in
 /-- Reading level one-forms as ordinary continuous Laurent one-forms is a homeomorphism. -/
 noncomputable def homeomorphForm : Level.ContinuousKaehlerDifferential K d ≃ₜ
     TauCeti.ContinuousKaehlerDifferential K :=
@@ -132,7 +131,7 @@ noncomputable def homeomorphForm : Level.ContinuousKaehlerDifferential K d ≃�
 
 @[simp]
 theorem homeomorphForm_apply (ω : Level.ContinuousKaehlerDifferential K d) :
-    homeomorphForm ω = addEquivContinuousKaehlerDifferential K d ω := by
+    homeomorphForm K d ω = addEquivContinuousKaehlerDifferential K d ω := by
   apply (TauCeti.ContinuousKaehlerDifferential.equivLaurentSeries K).injective
   simp [homeomorphForm]
 
@@ -140,14 +139,14 @@ theorem homeomorphForm_apply (ω : Level.ContinuousKaehlerDifferential K d) :
 `homeomorphForm`. -/
 @[simp]
 theorem homeomorphForm_symm_apply (ω : TauCeti.ContinuousKaehlerDifferential K) :
-    (homeomorphForm (K := K) (d := d)).symm ω =
+    (homeomorphForm K d).symm ω =
       (addEquivContinuousKaehlerDifferential K d).symm ω := by
-  apply (homeomorphForm (K := K) (d := d)).injective
+  apply (homeomorphForm K d).injective
   simp
 
 /-- Pulling back one-forms along `t = u ^ d` is continuous, in every characteristic. -/
 theorem continuous_map : Continuous (map K d) := by
-  apply (homeomorphForm (K := K) (d := d)).comp_continuous_iff.mp
+  apply (homeomorphForm K d).comp_continuous_iff.mp
   simpa only [Function.comp_def, homeomorphForm_apply,
     addEquivContinuousKaehlerDifferential_map] using
     (TauCeti.ContinuousKaehlerDifferential.continuous_subst (K := K)
