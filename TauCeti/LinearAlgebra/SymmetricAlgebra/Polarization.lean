@@ -8,7 +8,9 @@ module
 public import Mathlib.LinearAlgebra.Dual.Defs
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Homogeneous
+import Mathlib.Algebra.CharZero.Infinite
 import Mathlib.LinearAlgebra.Dual.Basis
+import Mathlib.LinearAlgebra.Dual.Lemmas
 import TauCeti.LinearAlgebra.SymmetricAlgebra.BasisComparison
 import TauCeti.LinearAlgebra.SymmetricAlgebra.Evaluation
 import TauCeti.RingTheory.MvPolynomial.Polarization
@@ -33,6 +35,8 @@ identifies the polynomial functions on `V` with polynomials in those coordinates
 
 * `TauCeti.SymmetricAlgebra.span_pow_eq_homogeneous_of_polynomial_vanishing`: the `n`-th powers of
   the vectors of a polynomially dense set span the degree-`n` component of `S(V)`.
+* `TauCeti.SymmetricAlgebra.span_pow_eq_homogeneousSubmodule`: the `n`-th powers of all vectors
+  span it.
 
 ## References
 
@@ -74,5 +78,21 @@ theorem span_pow_eq_homogeneous_of_polynomial_vanishing (S : Set V)
   apply Submodule.map_injective_of_injective (f := e.toLinearMap) e.injective
   rw [Submodule.map_span, himage, map_homogeneousSubmodule_equivMvPolynomial,
     TauCeti.MvPolynomial.span_sum_smul_X_pow_eq_homogeneousSubmodule _ hS' n]
+
+/-- **The `n`-th powers span `Sⁿ(V)`.** Over a field of characteristic zero, the `n`-th powers of
+all vectors of a finite-dimensional space `V` span the degree-`n` component of `S(V)`: the whole
+space is polynomially dense, since `K` is infinite. -/
+theorem span_pow_eq_homogeneousSubmodule (n : ℕ) :
+    Submodule.span K (Set.range fun v ↦ SymmetricAlgebra.ι K V v ^ n) =
+      homogeneousSubmodule K V n := by
+  rw [← Set.image_univ]
+  refine span_pow_eq_homogeneous_of_polynomial_vanishing _ (fun p hp ↦ ?_) n
+  refine eq_of_forall_lift_apply_eq fun F ↦ ?_
+  -- every linear form on `V*` is evaluation at a vector of `V`
+  have hF : Module.Dual.eval K V ((Module.evalEquiv K V).symm F) = F := by
+    ext φ
+    simp
+  rw [map_zero, ← hF]
+  exact hp _ (Set.mem_univ _)
 
 end TauCeti.SymmetricAlgebra
