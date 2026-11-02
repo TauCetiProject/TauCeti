@@ -69,56 +69,6 @@ open scoped unitInterval
 
 namespace TauCeti
 
-/-! ### Contracting the open box -/
-
-section OpenBox
-
-variable {N : Type v}
-
-/-- The contraction of the open box `{1} × I^N ∪ I × ∂I^N` of the cube `I × I^N` to the centre
-`(1, c)` of its top face: up to time `1 / 2` it pushes every point up to the top face, and after
-that it shrinks the top face onto its centre. -/
-def openBoxContraction (t : I) (z : I × I^N) : I × I^N :=
-  (projIcc 0 1 zero_le_one ((z.1 : ℝ) + 2 * t), cubeScale (min 1 (2 - 2 * (t : ℝ))) z.2)
-
-/-- The contraction of the open box is jointly continuous in time and space. -/
-theorem continuous_openBoxContraction :
-    Continuous fun q : I × (I × I^N) ↦ openBoxContraction q.1 q.2 :=
-  (continuous_projIcc.comp' (by fun_prop)).prodMk (continuous_cubeScale.comp
-    ((continuous_const.min (continuous_const.sub (continuous_const.mul
-      (continuous_subtype_val.comp continuous_fst)))).prodMk (continuous_snd.comp continuous_snd)))
-
-/-- At time `0` the contraction of the open box is the identity. -/
-@[simp]
-theorem openBoxContraction_zero (z : I × I^N) : openBoxContraction 0 z = z := by
-  ext1
-  · simp [openBoxContraction]
-  · norm_num [openBoxContraction]
-
-/-- At time `1` the contraction of the open box is constant at the centre of the top face. -/
-@[simp]
-theorem openBoxContraction_one (z : I × I^N) :
-    openBoxContraction 1 z = (1, cubeCenter) := by
-  ext1
-  · exact projIcc_eq_one.2 (by simp; linarith [z.1.2.1])
-  · norm_num [openBoxContraction]
-
-/-- The contraction keeps the open box `{1} × I^N ∪ I × ∂I^N` inside itself. -/
-theorem openBoxContraction_mem_openBox {z : I × I^N} (hz : z.1 = 1 ∨ z.2 ∈ Cube.boundary N)
-    (t : I) : (openBoxContraction t z).1 = 1 ∨ (openBoxContraction t z).2 ∈ Cube.boundary N := by
-  by_cases ht : (t : ℝ) ≤ 1 / 2
-  · rcases hz with hz | hz
-    · exact .inl (projIcc_eq_one.2 (by simp [hz]; linarith [t.2.1]))
-    · exact .inr (by rwa [openBoxContraction, min_eq_left (by linarith), cubeScale_one])
-  · exact .inl (projIcc_eq_one.2 (by linarith [z.1.2.1]))
-
-/-- The contraction keeps the open box `{1} × I^N ∪ I × ∂I^N` inside the boundary of the cube. -/
-theorem openBoxContraction_mem {z : I × I^N} (hz : z.1 = 1 ∨ z.2 ∈ Cube.boundary N)
-    (t : I) : openBoxContraction t z ∈ Cube.prodBoundary N :=
-  Cube.mk_mem_prodBoundary (openBoxContraction_mem_openBox hz t)
-
-end OpenBox
-
 /-! ### Deforming a map of pairs into a relative cube -/
 
 variable {N : Type v} [Finite N] {Y : TopCat.{u}} {B : Set Y}

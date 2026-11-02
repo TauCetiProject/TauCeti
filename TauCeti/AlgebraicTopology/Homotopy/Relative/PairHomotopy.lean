@@ -89,9 +89,23 @@ private theorem apply_eq_of_openBox (p : RelGenLoop N X) {w : I × I^N}
     (hw : w.1 = 1 ∨ w.2 ∈ Cube.boundary N) : p w = X.pair.map X.basepoint :=
   (RelGenLoop.mem_iff.1 p.2).2 w.1 w.2 hw
 
-variable [Finite N]
-
 variable {p q : RelGenLoop N X}
+
+/-- At times `0` and `1`, a homotopy through maps of pairs from `p` to `q` does not see the
+contraction of the open box `{1} × I^N ∪ I × ∂I^N`, since `p` and `q` are constant there. -/
+private theorem apply_openBoxContraction
+    (H : (p : C(I × (I^N), X.pair.fst)).HomotopyWith q
+      fun f ↦ MapsTo f (Cube.prodBoundary N) (range X.pair.map))
+    {i : I} (hi : i = 0 ∨ i = 1) (u : I) {w : I × I^N} (hw : w.1 = 1 ∨ w.2 ∈ Cube.boundary N) :
+    H (i, openBoxContraction u w) = H (i, w) := by
+  have hJ := openBoxContraction_mem_openBox hw u
+  rcases hi with rfl | rfl
+  · rw [H.apply_zero, H.apply_zero, RelGenLoop.coe_coe, apply_eq_of_openBox p hw,
+      apply_eq_of_openBox p hJ]
+  · rw [H.apply_one, H.apply_one, RelGenLoop.coe_coe, apply_eq_of_openBox q hw,
+      apply_eq_of_openBox q hJ]
+
+variable [Finite N]
 
 /-- The deformation of a homotopy `H` through maps of pairs, from `p` to `q`, on the face
 `I × ({0} × I^N)` of the cube `I × (I × I^N)`, the first coordinate being time: it starts at `H`,
@@ -114,15 +128,12 @@ private theorem exists_bottomHomotopy
   have hk₁ (u : I) (z : I^N) : k (u, (1, z)) = q (0, z) := by simp [k]
   have hk {u t : I} {z : I^N} (hz : z ∈ Cube.boundary N) :
       k (u, (t, z)) = H (t, openBoxContraction u (0, z)) := by
-    have hJ := openBoxContraction_mem_openBox (z := ((0 : I), z)) (.inr hz) u
     simp only [k]
     split_ifs with h₀ h₁
     · subst h₀
-      rw [H.apply_zero, RelGenLoop.coe_coe, apply_eq_of_openBox p (.inr hz),
-        apply_eq_of_openBox p hJ]
+      rw [apply_openBoxContraction H (.inl rfl) u (.inr hz), H.apply_zero, RelGenLoop.coe_coe]
     · subst h₁
-      rw [H.apply_one, RelGenLoop.coe_coe, apply_eq_of_openBox q (.inr hz),
-        apply_eq_of_openBox q hJ]
+      rw [apply_openBoxContraction H (.inr rfl) u (.inr hz), H.apply_one, RelGenLoop.coe_coe]
     · rfl
   have hcont : ContinuousOn k {x | x.2 ∈ Cube.prodBoundary N} := by
     have hS : {x : I × (I × I^N) | x.2 ∈ Cube.prodBoundary N} =
@@ -214,18 +225,15 @@ private theorem exists_homotopy_eq_on_openBox
   have hKJ (u t : I) {w : I × I^N} (hw : w.1 = 1 ∨ w.2 ∈ Cube.boundary N) :
       K (u, (t, w)) = H (t, openBoxContraction u w) := by
     obtain ⟨s, z⟩ := w
-    have hJ := openBoxContraction_mem_openBox hw u
     by_cases hs : s = 0
     · subst hs
       exact (hK₀ u t z).trans (hL u t z (hw.resolve_left fun h ↦ zero_ne_one' I h))
     by_cases ht₀ : t = 0
     · subst ht₀
-      rw [hKp, H.apply_zero, RelGenLoop.coe_coe, apply_eq_of_openBox p hw,
-        apply_eq_of_openBox p hJ]
+      rw [hKp, apply_openBoxContraction H (.inl rfl) u hw, H.apply_zero, RelGenLoop.coe_coe]
     by_cases ht₁ : t = 1
     · subst ht₁
-      rw [hKq, H.apply_one, RelGenLoop.coe_coe, apply_eq_of_openBox q hw,
-        apply_eq_of_openBox q hJ]
+      rw [hKq, apply_openBoxContraction H (.inr rfl) u hw, H.apply_one, RelGenLoop.coe_coe]
     simp [K, hs, ht₀, ht₁]
   -- `K` is continuous on the boundary `T` of the cube, which is the union of four closed faces.
   let T : Set (I × (I × I^N)) := {x | (x.1 = 0 ∨ x.1 = 1) ∨ x.2 ∈ Cube.prodBoundary N}
