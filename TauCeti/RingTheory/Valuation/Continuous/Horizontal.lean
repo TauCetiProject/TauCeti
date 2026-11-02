@@ -30,6 +30,8 @@ open Filter Topology
 
 namespace Valuation
 
+section
+
 variable {R : Type*} [CommRing R] [TopologicalSpace R] [IsTopologicalRing R]
   {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ₀]
 
@@ -54,9 +56,11 @@ theorem isContinuous_restrictToIdeal_top (v : Valuation R Γ₀)
       ⟨⊤, Ideal.fg_top R, rfl⟩ (a := a) (b := 1) (by simp)
   rwa [hball]
 
-variable {S : Type*} [CommRing S]
+end
 
-omit [IsTopologicalRing R] in
+variable {R : Type*} [Ring R] [TopologicalSpace R]
+  {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ₀] {S : Type*} [CommRing S]
+
 /-- Horizontal restriction preserves a continuous pullback from a ring with a topologically
 nilpotent unit. In particular it preserves continuous valuations on either factor of a tensor
 product over a Tate ring, including valuations of higher rank. -/
