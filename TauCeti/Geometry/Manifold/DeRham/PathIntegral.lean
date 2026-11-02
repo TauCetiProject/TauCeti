@@ -32,9 +32,9 @@ coefficient space are used. Manifolds with boundary or corners are included.
 
 * `TauCeti.exists_contMDiff_loop_pathIntegral_eq_sub`: two smooth curves with common endpoints
   form a smooth loop whose line integral is the difference of theirs.
-* `TauCeti.exists_local_primitive_pathIntegral_eq_add_sub`: near a point, a closed form has a
-  local primitive `g`, and extending a curve from the base point by short curves changes its line
-  integral by the increment of `g`.
+* `TauCeti.exists_local_primitive_pathIntegral_eq_add_sub`: near a point `x`, a closed form `φ`
+  has a function `g`, `C^r` at `x` with `dg x = φ x`, such that extending a curve from the base
+  point to `x` by short curves changes its line integral by the increment of `g`.
 * `TauCeti.exists_mextDeriv_eq_of_forall_pathIntegral_eq_zero`: a closed `1`-form whose integrals
   along smooth loops at a base point vanish is exact.
 * `TauCeti.mem_exactForms_one_iff_forall_pathIntegral_eq_zero`: a closed smooth real `1`-form is
@@ -98,9 +98,10 @@ theorem pathIntegral_eq_of_forall_pathIntegral_eq_zero [IsManifold I 1 M]
 variable [CompleteSpace F]
 
 /-- **Local primitives extend line integrals.** Let `φ` be a `C^r` `1`-form (`1 ≤ r`) closed near
-`x`, and `γ` a smooth curve from `x₀` to `x`, constant on `(-∞, 0]` and on `[1, ∞)`. Then `φ` has
-a local primitive `g` at `x`, and every `y` near `x` is reached from `x₀` by a smooth curve `δ`, `γ`
-followed by a short curve from `x` to `y`, with `∫_δ φ = ∫_γ φ + g y - g x`. -/
+`x`, and `γ` a smooth curve from `x₀` to `x`, constant on `(-∞, 0]` and on `[1, ∞)`. Then there is
+a function `g`, `C^r` at `x` with `dg x = φ x`, such that every `y` near `x` is reached from `x₀` by
+a smooth curve `δ`, `γ` followed by a short curve from `x` to `y`, with
+`∫_δ φ = ∫_γ φ + g y - g x`. -/
 theorem exists_local_primitive_pathIntegral_eq_add_sub [FiniteDimensional ℝ E] [T2Space M]
     [IsManifold I ∞ M] {r : ℕ∞} (hr : 1 ≤ r) {φ : RoughForm I M F 1} (hφ : IsSmoothForm I r φ)
     {x₀ x : M} (hclosed : ∀ᶠ y in 𝓝 x, mextDeriv φ y = 0) {γ : ℝ → M}

@@ -226,22 +226,31 @@ theorem exists_pathIntegral_mlogDeriv_eq_int_mul {u : M → ℂ} (hu : ContMDiff
 
 /-! ### Logarithmic derivatives of circle-valued functions -/
 
-/-- **The logarithmic derivative of a circle-valued function is imaginary.** -/
-theorem re_mlogDeriv_apply_eq_zero {u : M → ℂ} (hu : ContMDiff I 𝓘(ℝ, ℂ) 1 u)
-    (hu₁ : ∀ x, ‖u x‖ = 1) (x : M) (v : Fin 1 → TangentSpace I x) :
+/-- **The logarithmic derivative of a circle-valued function is imaginary.** If `u` has modulus
+one near `x` and is differentiable at `x`, then `dlog u` is imaginary at `x`. -/
+theorem re_mlogDeriv_apply_eq_zero {u : M → ℂ} {x : M} (hu : MDifferentiableAt I 𝓘(ℝ, ℂ) u x)
+    (hu₁ : ∀ᶠ y in 𝓝 x, ‖u y‖ = 1) (v : Fin 1 → TangentSpace I x) :
     (mlogDeriv I u x v).re = 0 := by
-  have hx : u x ≠ 0 := norm_ne_zero_iff.mp ((hu₁ x).symm ▸ one_ne_zero)
-  obtain ⟨V, hV, hxV, g, hg, hug, hdg⟩ := exists_mlogDeriv_eq_mextDerivWithin one_ne_zero hu hx
-  -- The branch `g` of `log (u / u x)` is imaginary on `V`, so its real part has zero derivative.
+  have hux : ‖u x‖ = 1 := hu₁.self_of_nhds
+  have hx : u x ≠ 0 := norm_ne_zero_iff.mp (hux.symm ▸ one_ne_zero)
+  have h1 : u x / u x ∈ slitPlane := by rw [div_self hx]; exact one_mem_slitPlane
+  -- Near `x`, `u = u x * exp g` for the branch `g = log (u / u x)`, which is imaginary.
+  set g : M → ℂ := fun y ↦ log (u y / u x) with hg_def
+  have hg : MDifferentiableAt I 𝓘(ℝ, ℂ) g x :=
+    ((((differentiableAt_id (x := u x)).div_const (u x)).clog h1).restrictScalars ℝ)
+      |>.comp_mdifferentiableAt hu
+  have hug : ∀ᶠ y in 𝓝 x, u y = u x * exp (g y) := by
+    filter_upwards [(hu.continuousAt.div_const (u x)).preimage_mem_nhds
+      (isOpen_slitPlane.mem_nhds h1)] with y hy
+    rw [hg_def, exp_log (slitPlane_ne_zero hy), mul_div_cancel₀ _ hx]
   have hre : (Complex.reCLM ∘ g) =ᶠ[𝓝 x] fun _ ↦ (0 : ℝ) := by
-    filter_upwards [hV.mem_nhds hxV] with y hy
-    have h := congrArg norm (hug y hy)
-    rw [norm_mul, hu₁, hu₁, one_mul, norm_exp] at h
+    filter_upwards [hug, hu₁] with y hy hy₁
+    have h := congrArg norm hy
+    rw [norm_mul, hy₁, hux, one_mul, norm_exp] at h
     simpa using (Real.exp_eq_one_iff _).mp h.symm
-  have hgx := (hg x hxV).mdifferentiableAt one_ne_zero
-  rw [hdg x hxV, mextDerivWithin_of_isOpen hV hxV, mextDeriv_ofFunction,
+  rw [mlogDeriv_eq_of_eventuallyEq_mul_exp hx hg hug, mextDeriv_ofFunction,
     ContinuousAlternatingMap.ofSubsingleton_apply_apply]
-  have h := mvfderiv_comp_apply_of_differentiableAt Complex.reCLM.differentiableAt hgx (v 0)
+  have h := mvfderiv_comp_apply_of_differentiableAt Complex.reCLM.differentiableAt hg (v 0)
   have h0 : mvfderiv I (fun _ : M ↦ (0 : ℝ)) x = 0 := mvfderiv_eq_zero_iff.mpr (mfderiv_const ..)
   rw [hre.mvfderiv_eq, h0, Complex.reCLM.fderiv, Complex.reCLM_apply] at h
   simpa using h.symm
