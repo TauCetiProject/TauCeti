@@ -49,7 +49,8 @@ of one orientation class give an oriented atlas.
 * `AffineIsometry.map_inversion`: an affine isometry carries inversion in the sphere of centre `c`
   and radius `R` to inversion in the sphere of centre `f c` and radius `R`.
 * `LinearIsometry.map_inversion`: the same for a linear isometry.
-* `EuclideanGeometry.norm_inversion_zero`: the norm of the inversion about the origin.
+* `EuclideanGeometry.norm_inversion_zero`, `EuclideanGeometry.norm_inversion_zero_one`: the norm
+  of the inversion about the origin.
 * `EuclideanGeometry.inner_fderiv_inversion`: inversion is conformal, its derivative scales inner
   products by `(R / dist x c) ^ 4`.
 * `EuclideanGeometry.inner_fderiv_inversion_div_dist_sq`: inversion preserves the cylinder metric
@@ -115,6 +116,11 @@ theorem hasFDerivAt_inversionFDerivEquiv {V : Type*} [NormedAddCommGroup V]
 theorem norm_inversion_zero {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
     (R : ℝ) (x : V) : ‖inversion (0 : V) R x‖ = R ^ 2 / ‖x‖ := by
   simpa only [dist_zero_right] using dist_inversion_center (0 : V) x R
+
+/-- The norm of the inversion about the origin in the unit sphere is the inverse norm. -/
+theorem norm_inversion_zero_one {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+    (x : V) : ‖inversion (0 : V) 1 x‖ = ‖x‖⁻¹ := by
+  rw [norm_inversion_zero, one_pow, one_div]
 
 /-- **Inversion is conformal**: its derivative at `x` multiplies inner products by
 `(R / dist x c) ^ 4`. At the centre both sides vanish. -/

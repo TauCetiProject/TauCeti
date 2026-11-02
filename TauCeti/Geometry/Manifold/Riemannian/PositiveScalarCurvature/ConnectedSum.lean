@@ -137,6 +137,18 @@ private theorem apply_notMem_image_closedBall_iff {X : Type*} {e : E → X} (he 
     {r : ℝ} {v : E} : e v ∉ e '' closedBall 0 r ↔ r < ‖v‖ := by
   rw [he.mem_set_image, mem_closedBall_zero_iff, not_le]
 
+omit [FiniteDimensional ℝ E] in
+/-- The inversion about the origin carries the region `‖v‖ < r` onto `r⁻¹ < ‖w‖`. -/
+private theorem inv_lt_norm_inversion_iff {r : ℝ} (hr : 0 < r) {v : E} (hv : v ≠ 0) :
+    r⁻¹ < ‖inversion (0 : E) 1 v‖ ↔ ‖v‖ < r := by
+  rw [norm_inversion_zero_one, inv_lt_inv₀ hr (norm_pos_iff.2 hv)]
+
+omit [FiniteDimensional ℝ E] in
+/-- The inversion about the origin carries the region `r < ‖v‖` onto `‖w‖ < r⁻¹`. -/
+private theorem norm_inversion_lt_inv_iff {r : ℝ} (hr : 0 < r) {v : E} (hv : v ≠ 0) :
+    ‖inversion (0 : E) 1 v‖ < r⁻¹ ↔ r < ‖v‖ := by
+  rw [norm_inversion_zero_one, inv_lt_inv₀ (norm_pos_iff.2 hv) hr]
+
 section Gluing
 
 variable (g₁ : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
@@ -172,12 +184,11 @@ private theorem outerMap_surjective (ha : 0 ≤ a) (hab : a < b) :
       -- `e₂ (closedBall 0 b⁻¹)` as `‖inversion 0 1 v‖ = ‖v‖⁻¹ ≥ a⁻¹ > b⁻¹`.
       obtain ⟨v, hv, rfl⟩ := hxa
       have hv0 : v ≠ 0 := fun h ↦ mem_puncture.1 hx (by rw [h])
-      have hpos : 0 < ‖v‖ := norm_pos_iff.2 hv0
       have hy : e₂ (inversion 0 1 v) ∈ puncture e₂ := apply_inversion_mem_puncture h₂.injective hv0
       refine ⟨⟨.inr ⟨_, hy⟩, inr_mem_outerOpens.2 ?_⟩, ?_⟩
-      · rw [apply_notMem_image_closedBall_iff h₂.injective, norm_inversion_zero, one_pow,
-          one_div]
-        exact inv_strictAnti₀ hpos ((mem_closedBall_zero_iff.1 hv).trans_lt hab)
+      · rw [apply_notMem_image_closedBall_iff h₂.injective,
+          inv_lt_norm_inversion_iff (ha.trans_lt hab) hv0]
+        exact (mem_closedBall_zero_iff.1 hv).trans_lt hab
       · rw [outerMap_apply, mk_inl, mk_inr]
         exact (inl_eq_inr v hv0 hx hy).symm
     · exact ⟨⟨.inl ⟨x, hx⟩, hxa⟩, outerMap_apply h₁ h₂ _⟩
@@ -189,8 +200,7 @@ private theorem outerMap_surjective (ha : 0 ≤ a) (hab : a < b) :
       have hpos : 0 < ‖w‖ := norm_pos_iff.2 hw0
       have hx : e₁ (inversion 0 1 w) ∈ puncture e₁ := apply_inversion_mem_puncture h₁.injective hw0
       refine ⟨⟨.inl ⟨_, hx⟩, inl_mem_outerOpens.2 ?_⟩, ?_⟩
-      · rw [apply_notMem_image_closedBall_iff h₁.injective, norm_inversion_zero, one_pow,
-          one_div]
+      · rw [apply_notMem_image_closedBall_iff h₁.injective, norm_inversion_zero_one]
         have hb : b ≤ ‖w‖⁻¹ := by
           rw [le_inv_comm₀ (ha.trans_lt hab) hpos]
           exact mem_closedBall_zero_iff.1 hw
@@ -216,9 +226,9 @@ private def neckInl (ha : 0 ≤ a) (w : neck E a b) :
 /-- The neck, mapped into the second region by `e₂ ∘ inversion 0 1`. -/
 private def neckInr (ha : 0 ≤ a) (w : neck E a b) :
     outerOpens (a := a) (b := b) h₁.continuous h₂.continuous :=
-  ⟨.inr (neckPunctureInr h₂ ha w), (apply_notMem_image_closedBall_iff h₂.injective).2 <| by
-    rw [norm_inversion_zero, one_pow, one_div]
-    exact inv_strictAnti₀ (norm_pos_iff.2 (ne_zero_of_mem_neck ha w)) (mem_neck.1 w.2).2⟩
+  ⟨.inr (neckPunctureInr h₂ ha w), (apply_notMem_image_closedBall_iff h₂.injective).2 <|
+    (inv_lt_norm_inversion_iff (ha.trans_lt ((mem_neck.1 w.2).1.trans (mem_neck.1 w.2).2))
+      (ne_zero_of_mem_neck ha w)).2 (mem_neck.1 w.2).2⟩
 
 private theorem coe_neckInl (ha : 0 ≤ a) (w : neck E a b) :
     (neckInl h₁ h₂ ha w).1 = .inl (neckPunctureInl h₁ ha w) :=
@@ -311,8 +321,7 @@ private theorem mfderiv_neckInr_apply (ha : 0 ≤ a) (w : neck E a b)
   rw [hval']
   refine (TauCeti.Manifold.mfderiv_comp_subtype_val_apply (he₂.comp _ hinv) ξ).trans ?_
   rw [mfderiv_comp _ he₂ hinv, mfderiv_eq_fderiv]
-  -- Evaluating a composite of continuous linear maps applies them in turn.
-  rfl
+  exact ContinuousLinearMap.comp_apply _ _ _
 
 /-- The disjoint union of `g₁` and `g₂`, restricted to the two regions. -/
 private def outerMetric :
@@ -427,20 +436,16 @@ private theorem outerMetric_inner_eq (ha : 0 ≤ a) (hab : a < b) :
     rcases z with ⟨⟨x, hx⟩ | x, hz⟩ <;> rcases z' with ⟨y | ⟨y, hy⟩, hz'⟩ <;>
       simp only [rel_inl_inr, not_rel_inl_inl, not_rel_inr_inl, not_rel_inr_inr] at h
     obtain ⟨v₀, hv₀, rfl, rfl⟩ := h
-    have hlt : ‖v₀‖ < b := by
-      have h' := (apply_notMem_image_closedBall_iff h₂.injective).1 hz'
-      rw [norm_inversion_zero, one_pow, one_div] at h'
-      exact (inv_lt_inv₀ hb (norm_pos_iff.2 hv₀)).1 h'
+    have hlt : ‖v₀‖ < b :=
+      (inv_lt_norm_inversion_iff hb hv₀).1 ((apply_notMem_image_closedBall_iff h₂.injective).1 hz')
     exact outerMetric_inner_neckInl_eq h₁ h₂ d₁ d₂ hg ha
       ⟨v₀, mem_neck.2 ⟨(apply_notMem_image_closedBall_iff h₁.injective).1 hz, hlt⟩⟩ hu hu'
   · -- `z' = e₁ v₀` and `z = e₂ (inversion 0 1 v₀)`, with `v₀` on the neck.
     rcases z with ⟨x | ⟨x, hx⟩, hz⟩ <;> rcases z' with ⟨⟨y, hy⟩ | y, hz'⟩ <;>
       simp only [rel_inl_inr, not_rel_inl_inl, not_rel_inr_inl, not_rel_inr_inr] at h
     obtain ⟨v₀, hv₀, rfl, rfl⟩ := h
-    have hlt : ‖v₀‖ < b := by
-      have h' := (apply_notMem_image_closedBall_iff h₂.injective).1 hz
-      rw [norm_inversion_zero, one_pow, one_div] at h'
-      exact (inv_lt_inv₀ hb (norm_pos_iff.2 hv₀)).1 h'
+    have hlt : ‖v₀‖ < b :=
+      (inv_lt_norm_inversion_iff hb hv₀).1 ((apply_notMem_image_closedBall_iff h₂.injective).1 hz)
     exact (outerMetric_inner_neckInl_eq h₁ h₂ d₁ d₂ hg ha
       ⟨v₀, mem_neck.2 ⟨(apply_notMem_image_closedBall_iff h₁.injective).1 hz', hlt⟩⟩
         hu.symm hu'.symm).symm
@@ -472,34 +477,6 @@ private theorem mfderiv_outerMap_apply
   TauCeti.Manifold.mfderiv_comp_subtype_val_apply
     ((isLocalDiffeomorph_mk (n := ⊤) h₁ h₂ d₁ d₂ z.1).mdifferentiableAt (by simp)) u
 
-omit [FiniteDimensional ℝ E] in
-include d₁ d₂ in
-private theorem mfderiv_inl_apply (x : puncture e₁) (u : TangentSpace I x) :
-    letI := ConnectedSum.chartedSpace (H := H) h₁ h₂
-    mfderiv I I (inl e₁ e₂) x u = mfderiv I I (ConnectedSum.mk e₁ e₂) (Sum.inl x) u := by
-  let := ConnectedSum.chartedSpace (H := H) h₁ h₂
-  have := ConnectedSum.isManifold (n := ⊤) h₁ h₂ d₁ d₂
-  rw [← mk_comp_inl, mfderiv_comp x ((isLocalDiffeomorph_mk (n := ⊤) h₁ h₂ d₁ d₂
-    (Sum.inl x)).mdifferentiableAt (by simp)) (ContMDiff.inl.mdifferentiableAt one_ne_zero),
-    mfderiv_sumInl (p := Sum.inl x)]
-  -- The differential of `Sum.inl` is the identity of `E`, typed on the tangent space at
-  -- `Sum.inl x` rather than at `x`, so `ContinuousLinearMap.comp_id` does not apply literally.
-  rfl
-
-omit [FiniteDimensional ℝ E] in
-include d₁ d₂ in
-private theorem mfderiv_inr_apply (y : puncture e₂) (u : TangentSpace I y) :
-    letI := ConnectedSum.chartedSpace (H := H) h₁ h₂
-    mfderiv I I (inr e₁ e₂) y u = mfderiv I I (ConnectedSum.mk e₁ e₂) (Sum.inr y) u := by
-  let := ConnectedSum.chartedSpace (H := H) h₁ h₂
-  have := ConnectedSum.isManifold (n := ⊤) h₁ h₂ d₁ d₂
-  rw [← mk_comp_inr, mfderiv_comp y ((isLocalDiffeomorph_mk (n := ⊤) h₁ h₂ d₁ d₂
-    (Sum.inr y)).mdifferentiableAt (by simp)) (ContMDiff.inr.mdifferentiableAt one_ne_zero),
-    mfderiv_sumInr (M := puncture e₁) (q' := y)]
-  -- The differential of `Sum.inr` is the identity of `E`, typed on the tangent space at
-  -- `Sum.inr y` rather than at `y`, so `ContinuousLinearMap.comp_id` does not apply literally.
-  rfl
-
 /-- On `M` outside `e₁ (closedBall 0 a)`, the glued metric is `g₁`. -/
 theorem connectedSum_inner_mfderiv_inl (ha : 0 ≤ a) (hab : a < b) (x : puncture e₁)
     (hx : (x : M) ∉ e₁ '' closedBall 0 a) (u u' : TangentSpace I x) :
@@ -512,7 +489,8 @@ theorem connectedSum_inner_mfderiv_inl (ha : 0 ≤ a) (hab : a < b) (x : punctur
   let z : outerOpens (a := a) (b := b) h₁.continuous h₂.continuous := ⟨Sum.inl x, hx⟩
   have hD (t : TangentSpace I x) :
       mfderiv I I (outerMap h₁ h₂) z t = mfderiv I I (inl e₁ e₂) x t :=
-    (mfderiv_outerMap_apply h₁ h₂ d₁ d₂ z t).trans (mfderiv_inl_apply h₁ h₂ d₁ d₂ x t).symm
+    (mfderiv_outerMap_apply h₁ h₂ d₁ d₂ z t).trans
+      (mfderiv_inl_apply (n := ⊤) h₁ h₂ d₁ d₂ (by simp) x t).symm
   have h := descend_inner_mfderiv_of_eq (outerMetric g₁ g₂ h₁ h₂)
     (isLocalDiffeomorph_outerMap h₁ h₂ d₁ d₂) (outerMap_surjective h₁ h₂ ha hab)
     (outerMetric_inner_eq h₁ h₂ d₁ d₂ hg ha hab) (x := z) (y := inl e₁ e₂ x)
@@ -532,7 +510,8 @@ theorem connectedSum_inner_mfderiv_inr (ha : 0 ≤ a) (hab : a < b) (y : punctur
   let z : outerOpens (a := a) (b := b) h₁.continuous h₂.continuous := ⟨Sum.inr y, hy⟩
   have hD (t : TangentSpace I y) :
       mfderiv I I (outerMap h₁ h₂) z t = mfderiv I I (inr e₁ e₂) y t :=
-    (mfderiv_outerMap_apply h₁ h₂ d₁ d₂ z t).trans (mfderiv_inr_apply h₁ h₂ d₁ d₂ y t).symm
+    (mfderiv_outerMap_apply h₁ h₂ d₁ d₂ z t).trans
+      (mfderiv_inr_apply (n := ⊤) h₁ h₂ d₁ d₂ (by simp) y t).symm
   have h := descend_inner_mfderiv_of_eq (outerMetric g₁ g₂ h₁ h₂)
     (isLocalDiffeomorph_outerMap h₁ h₂ d₁ d₂) (outerMap_surjective h₁ h₂ ha hab)
     (outerMetric_inner_eq h₁ h₂ d₁ d₂ hg ha hab) (x := z) (y := inr e₁ e₂ y)
@@ -596,15 +575,10 @@ theorem HasPositiveScalarCurvature.connectedSum (hg₁ : g₁.HasPositiveScalarC
   let := ConnectedSum.chartedSpace (H := H) h₁ h₂
   have := ConnectedSum.isManifold (n := ⊤) h₁ h₂ d₁ d₂
   have := ConnectedSum.t2Space h₁ h₂
-  rw [hasPositiveScalarCurvature_iff]
-  intro p
-  obtain ⟨⟨x | y, hz⟩, rfl⟩ := outerMap_surjective h₁ h₂ ha hab p
-  · rw [Bundle.ContMDiffRiemannianMetric.connectedSum, scalarCurvature_descend,
-      scalarCurvature_outerMetric_inl]
-    exact (hasPositiveScalarCurvature_iff g₁).1 hg₁ x
-  · rw [Bundle.ContMDiffRiemannianMetric.connectedSum, scalarCurvature_descend,
-      scalarCurvature_outerMetric_inr]
-    exact (hasPositiveScalarCurvature_iff g₂).1 hg₂ y
+  rw [Bundle.ContMDiffRiemannianMetric.connectedSum, hasPositiveScalarCurvature_descend_iff,
+    outerMetric]
+  exact ((hg₁.restrictOpenTangentSpace _).sumTangentSpace
+    (hg₂.restrictOpenTangentSpace _)).restrictOpenTangentSpace _
 
 end Gluing
 
@@ -630,14 +604,10 @@ theorem inner_mfderiv_inversion_eq_of_cylinder (ha : 0 < a)
           (mfderiv 𝓘(ℝ, E) I e₂ (inversion 0 1 v) (fderiv ℝ (inversion (0 : E) 1) v ξ))
           (mfderiv 𝓘(ℝ, E) I e₂ (inversion 0 1 v) (fderiv ℝ (inversion (0 : E) 1) v ζ)) := by
   intro v hav hvb ξ ζ
-  have hv : 0 < ‖v‖ := ha.trans hav
-  have h₁ : b⁻¹ < ‖inversion (0 : E) 1 v‖ := by
-    rw [norm_inversion_zero, one_pow, one_div]
-    exact inv_strictAnti₀ hv hvb
-  have h₂ : ‖inversion (0 : E) 1 v‖ < a⁻¹ := by
-    rw [norm_inversion_zero, one_pow, one_div]
-    exact inv_strictAnti₀ ha hav
-  rw [hcyl₁ v hav hvb, hcyl₂ _ h₁ h₂]
-  simpa [dist_zero_right] using (inner_fderiv_inversion_div_dist_sq (0 : E) v one_ne_zero ξ ζ).symm
+  have hv : v ≠ 0 := norm_pos_iff.1 (ha.trans hav)
+  rw [hcyl₁ v hav hvb, hcyl₂ _ ((inv_lt_norm_inversion_iff (ha.trans (hav.trans hvb)) hv).2 hvb)
+    ((norm_inversion_lt_inv_iff ha hv).2 hav)]
+  simpa only [dist_zero_right] using
+    (inner_fderiv_inversion_div_dist_sq (0 : E) v one_ne_zero ξ ζ).symm
 
 end Bundle.ContMDiffRiemannianMetric
