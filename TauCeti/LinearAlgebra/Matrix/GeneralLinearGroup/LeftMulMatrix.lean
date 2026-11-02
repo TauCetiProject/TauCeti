@@ -93,8 +93,10 @@ theorem unitsLeftMulMatrix_injective : Function.Injective (unitsLeftMulMatrix b)
 @[simp, grind =]
 theorem unitsLeftMulMatrix_map_algebraMap (r : Rˣ) :
     unitsLeftMulMatrix b (Units.map (algebraMap R S : R →* S) r) =
-      Matrix.GeneralLinearGroup.scalar ι r :=
-  Units.ext (Algebra.leftMulMatrix_algebraMap b (r : R))
+      Matrix.GeneralLinearGroup.scalar ι r := by
+  ext : 1
+  rw [coe_unitsLeftMulMatrix, Units.coe_map, MonoidHom.coe_ofClass,
+    Algebra.leftMulMatrix_algebraMap, Matrix.GeneralLinearGroup.coe_scalar]
 
 end Semiring
 
