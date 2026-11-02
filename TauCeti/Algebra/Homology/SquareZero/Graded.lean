@@ -58,6 +58,8 @@ intertwine the products on cohomology (`LinearMap.cohomologyMap_cohomologyProduc
   cocycles.
 * `LinearMap.cohomologyMap_mk`: the induced map on cohomology is computed on representing cocycles.
 * `LinearMap.cohomologyMap_id`, `LinearMap.cohomologyMap_comp`: functoriality of the induced maps.
+* `LinearMap.cohomologyMap_comp_cohomologyMap`, `LinearMap.cohomologyMap_cohomologyMap`: composites
+  of induced maps, in the orientation used by `simp`.
 * `LinearMap.cohomologyMap_cohomologyProduct`: maps intertwining two products up to coboundaries
   intertwine the products on cohomology.
 -/
@@ -265,6 +267,28 @@ theorem cohomologyMap_comp {hgfdeg : ∀ {i : ℤ} {a : M₁}, a ∈ G₁ i → 
       cohomologyMap g hgdeg hgD i ∘ₗ cohomologyMap f hdeg hD i := by
   ext a
   rfl
+
+include hgdeg hgD
+
+/-- The composite of two induced maps on cohomology is the map induced by the composite. This is
+`cohomologyMap_comp` read right to left, the orientation usable by `simp`: its left-hand side
+mentions the intermediate grading `G₀` and endomorphism `D₀`, which the left-hand side of
+`cohomologyMap_comp` does not. -/
+@[simp]
+theorem cohomologyMap_comp_cohomologyMap :
+    cohomologyMap g hgdeg hgD i ∘ₗ cohomologyMap f hdeg hD i =
+      cohomologyMap (G₁ := G₁) (G₀ := G₂) (g ∘ₗ f) (fun ha => hgdeg (hdeg ha))
+        (fun ha => (hgD (hdeg ha)).trans (congrArg g (hD ha))) i :=
+  (cohomologyMap_comp f hdeg hD g hgdeg hgD).symm
+
+/-- Applying two induced maps on cohomology in turn is applying the map induced by the
+composite. -/
+@[simp]
+theorem cohomologyMap_cohomologyMap (c : D₁.cohomology G₁ i) :
+    cohomologyMap g hgdeg hgD i (cohomologyMap f hdeg hD i c) =
+      cohomologyMap (G₁ := G₁) (G₀ := G₂) (g ∘ₗ f) (fun ha => hgdeg (hdeg ha))
+        (fun ha => (hgD (hdeg ha)).trans (congrArg g (hD ha))) i c :=
+  congr($(cohomologyMap_comp_cohomologyMap f hdeg hD g hgdeg hgD) c)
 
 end Map
 
