@@ -52,6 +52,12 @@ runs upwards and the horizontal one to the left, or downwards and to the right
 
 public section
 
+/-- A point of `Fin n` lies strictly between `a` and `b` exactly when its value lies strictly
+between theirs. -/
+theorem Fin.mem_uIoo_iff_val {n : ℕ} {a b x : Fin n} :
+    x ∈ Set.uIoo a b ↔ min (a : ℕ) b < x ∧ (x : ℕ) < max (a : ℕ) b := by
+  rw [← Set.Ioo_min_max, Set.mem_Ioo, Fin.lt_def, Fin.lt_def, Fin.val_min, Fin.val_max]
+
 namespace TauCeti
 
 namespace GridDiagram
@@ -70,9 +76,17 @@ theorem isCrossing_iff {c r : Fin n} :
       r ∈ Set.uIoo (G.X c) (G.O c) ∧ c ∈ Set.uIoo (G.O.transpose r) (G.X.transpose r) :=
   Iff.rfl
 
+/-- The crossing condition as four strict inequalities between the row `r`, the column `c` and
+the markings of column `c` and row `r`. -/
+theorem isCrossing_iff_lt {c r : Fin n} :
+    G.IsCrossing c r ↔
+      (min (G.X c) (G.O c) < r ∧ r < max (G.X c) (G.O c)) ∧
+        (min (G.O.transpose r) (G.X.transpose r) < c ∧
+          c < max (G.O.transpose r) (G.X.transpose r)) := by
+  rw [isCrossing_iff, ← Set.Ioo_min_max, ← Set.Ioo_min_max, Set.mem_Ioo, Set.mem_Ioo]
+
 instance (c r : Fin n) : Decidable (G.IsCrossing c r) :=
-  inferInstanceAs (Decidable ((G.X c ⊓ G.O c < r ∧ r < G.X c ⊔ G.O c) ∧
-    (G.O.transpose r ⊓ G.X.transpose r < c ∧ c < G.O.transpose r ⊔ G.X.transpose r)))
+  decidable_of_iff _ G.isCrossing_iff_lt.symm
 
 /-- The crossings of the planar diagram of `G`, as the squares `(c, r)` at whose centres they
 lie. -/

@@ -60,10 +60,10 @@ private theorem torusLink_one_two_O_transpose_val (r : Fin 5) :
 theorem crossings_torusLink_one_two :
     (torusLink 1 2).crossings = {(1, 3), (2, 1), (3, 2)} := by
   ext ⟨c, r⟩
-  simp only [mem_crossings, isCrossing_iff, ← Set.Ioo_min_max, Set.mem_Ioo, Fin.lt_def,
-    Fin.val_min, Fin.val_max, torusLink_one_two_O_val, torusLink_one_two_O_transpose_val,
-    torusLink_one_two_X_val, torusLink_one_two_X_transpose_val, Finset.mem_insert,
-    Finset.mem_singleton, Prod.mk.injEq, Fin.ext_iff]
+  simp only [mem_crossings, isCrossing_iff, Fin.mem_uIoo_iff_val, torusLink_one_two_O_val,
+    torusLink_one_two_O_transpose_val, torusLink_one_two_X_val,
+    torusLink_one_two_X_transpose_val, Finset.mem_insert, Finset.mem_singleton, Prod.mk.injEq,
+    Fin.ext_iff]
   fin_cases c <;> fin_cases r <;> decide
 
 /-- The standard `5 × 5` grid `torusLink 1 2` has three crossings. -/

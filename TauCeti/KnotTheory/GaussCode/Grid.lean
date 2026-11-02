@@ -151,8 +151,7 @@ theorem position_injective : Function.Injective (position (hG := hG) (c₀ := c�
   -- Two points strictly between `a` and `b` at the same distance from `a` are equal.
   have hdist {a b x y : Fin n} (hx : x ∈ Set.uIoo a b) (hy : y ∈ Set.uIoo a b)
       (h : Nat.dist x a = Nat.dist y a) : x = y := by
-    rw [← Set.Ioo_min_max, Set.mem_Ioo] at hx hy
-    simp only [Fin.lt_def, Fin.val_min, Fin.val_max] at hx hy
+    rw [Fin.mem_uIoo_iff_val] at hx hy
     unfold Nat.dist at h
     ext
     omega
