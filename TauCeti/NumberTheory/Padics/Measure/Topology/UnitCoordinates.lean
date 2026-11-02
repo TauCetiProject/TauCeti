@@ -11,9 +11,10 @@ public import TauCeti.NumberTheory.Padics.Measure.UnitCoordinates
 /-!
 # The weak topology in finite unit coordinates
 
-Integral measures on the p-adic units embed as a closed subspace of the product of their
-finite unit coordinates. The existing `AbstractMeasure.towerCoordinatesEquiv` identifies
-measures with compatible families, and its inverse is continuous. Reducing each coordinate
+The imported tower-coordinate topology results, specialized to
+`TauCeti.FiniteQuotientTower.unitTower`, embed integral measures on the p-adic units as a closed
+subspace of their finite unit coordinates and give continuous reconstruction from compatible
+families via `AbstractMeasure.towerCoordinatesEquiv`. Reducing each coordinate
 modulo every power of the prime gives another closed embedding, into a product of finite
 discrete rings. Consequently weak convergence is equivalent to eventual equality of each
 joint finite projection.
@@ -38,43 +39,6 @@ namespace AbstractMeasure
 open TauCeti
 
 variable {p : ℕ} [Fact p.Prime]
-
-/-- Taking tower coordinates of unit measures, viewed as coefficient functions with their
-product topology, is weakly continuous. -/
-theorem continuous_unitCoordinates_weak {R : Type*} [NormedCommRing R] :
-    @Continuous _ _ (WeakTopology (X := ℤ_[p]ˣ) (R := R) (E := R)) inferInstance
-      (fun μ : D(ℤ_[p]ˣ, R) ↦ fun n a ↦
-        (towerCoordinates (FiniteQuotientTower.unitTower p) μ).val n a) := by
-  exact continuous_towerCoordinates_weak (FiniteQuotientTower.unitTower p)
-
-/-- Integral unit coordinates give a closed embedding for the weak topology. In particular,
-they induce exactly that topology, not the continuous-dual operator-norm topology. -/
-theorem isClosedEmbedding_unitCoordinates_weak :
-    @IsClosedEmbedding _ _ (WeakTopology (X := ℤ_[p]ˣ) (R := ℤ_[p]) (E := ℤ_[p]))
-      inferInstance (fun μ : D(ℤ_[p]ˣ, ℤ_[p]) ↦ fun n a ↦
-        (towerCoordinates (FiniteQuotientTower.unitTower p) μ).val n a) := by
-  exact isClosedEmbedding_towerCoordinates_weak (FiniteQuotientTower.unitTower p)
-
-/-- A family of coefficient functions comes from an integral unit measure exactly when its
-finite-support forms belong to the unit tower's compatible families. -/
-theorem mem_range_unitCoordinates_iff
-    (c : ∀ n : ℕ, (ZMod (p ^ n))ˣ → ℤ_[p]) :
-    c ∈ Set.range (fun μ : D(ℤ_[p]ˣ, ℤ_[p]) ↦ fun n a ↦
-      (towerCoordinates (FiniteQuotientTower.unitTower p) μ).val n a) ↔
-      (fun n ↦ Finsupp.equivFunOnFinite.symm (c n)) ∈
-        (FiniteQuotientTower.unitTower p).compatibleFamilies ℤ_[p] := by
-  exact mem_range_towerCoordinates_iff (FiniteQuotientTower.unitTower p) c
-
-/-- The inverse of the integral unit-tower coordinate equivalence is continuous from the
-product topology on compatible coefficients to the weak topology on measures. -/
-theorem continuous_unitTowerCoordinatesEquiv_symm_weak :
-    @Continuous _ _
-      (TopologicalSpace.induced
-        (fun c : (FiniteQuotientTower.unitTower p).compatibleFamilies ℤ_[p] ↦
-          fun n a ↦ c.val n a) inferInstance)
-      (WeakTopology (X := ℤ_[p]ˣ) (R := ℤ_[p]) (E := ℤ_[p]))
-      (towerCoordinatesEquiv (FiniteQuotientTower.unitTower p)).symm := by
-  exact continuous_towerCoordinatesEquiv_symm_weak (FiniteQuotientTower.unitTower p)
 
 /-- Joint finite unit coordinates vary continuously in the weak topology. -/
 theorem continuous_jointUnitCoordinates_weak :
