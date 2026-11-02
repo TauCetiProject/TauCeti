@@ -102,6 +102,21 @@ section Topological
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
+/-- The sphere coordinate of the swept cylinder never vanishes. -/
+theorem bendingHypersurface_fst_ne_zero
+    (hγ : IsGromovLawsonBendingCurve q R₀ C r₀ r h θ v)
+    (p : sphere (0 : V) 1 × ℝ) : (bendingHypersurface r h p).1 ≠ 0 :=
+  smul_ne_zero (hγ.radius_pos p.2).ne' (ne_zero_of_mem_unit_sphere p.1)
+
+/-- Radial normalization recovers the sphere coordinate and height minus radius. -/
+theorem normalize_bendingHypersurface
+    (hγ : IsGromovLawsonBendingCurve q R₀ C r₀ r h θ v)
+    (p : sphere (0 : V) 1 × ℝ) :
+    (fun z : V × ℝ ↦ (‖z.1‖⁻¹ • z.1, z.2 - ‖z.1‖)) (bendingHypersurface r h p) =
+      ((p.1 : V), h p.2 - r p.2) := by
+  simp [bendingHypersurface, norm_smul, norm_eq_of_mem_sphere p.1,
+    abs_of_pos (hγ.radius_pos p.2), smul_smul, (hγ.radius_pos p.2).ne']
+
 /-- The swept cylinder is a topologically embedded copy of the sphere times the line.
 This assertion does not require an inner product or finite dimensionality. -/
 theorem isEmbedding_bendingHypersurface
@@ -109,8 +124,7 @@ theorem isEmbedding_bendingHypersurface
     IsEmbedding (bendingHypersurface (V := V) r h) := by
   let S : Set (V × ℝ) := {z | z.1 ≠ 0}
   let f : sphere (0 : V) 1 × ℝ → S := fun p ↦
-    ⟨bendingHypersurface r h p,
-      smul_ne_zero (hγ.radius_pos p.2).ne' (ne_zero_of_mem_unit_sphere p.1)⟩
+    ⟨bendingHypersurface r h p, hγ.bendingHypersurface_fst_ne_zero p⟩
   let k : S → V × ℝ := fun z ↦ (‖z.1.1‖⁻¹ • z.1.1, z.1.2 - ‖z.1.1‖)
   have hf : Continuous f := by
     apply Continuous.subtype_mk
@@ -124,8 +138,7 @@ theorem isEmbedding_bendingHypersurface
   have heq : k ∘ f = Prod.map (Subtype.val : sphere (0 : V) 1 → V)
       (fun t ↦ h t - r t) := by
     funext p
-    simp [k, f, bendingHypersurface, norm_smul, norm_eq_of_mem_sphere p.1,
-      abs_of_pos (hγ.radius_pos p.2), smul_smul, (hγ.radius_pos p.2).ne', Prod.map]
+    exact hγ.normalize_bendingHypersurface p
   have hcomp : IsEmbedding (k ∘ f) := heq ▸
     (IsEmbedding.subtypeVal.prodMap hγ.isEmbedding_height_sub_radius)
   exact IsEmbedding.subtypeVal.comp (IsEmbedding.of_comp hf hk hcomp)
@@ -152,8 +165,7 @@ theorem isDiffImmersionAt_bendingHypersurface
   have : FiniteDimensional ℝ V := .of_fact_finrank_eq_succ n
   let k : V × ℝ → V × ℝ := fun z ↦ (‖z.1‖⁻¹ • z.1, z.2 - ‖z.1‖)
   have hk : ContDiffAt ℝ ∞ k (bendingHypersurface r h p) := by
-    have hx : (bendingHypersurface r h p).1 ≠ 0 :=
-      smul_ne_zero (hγ.radius_pos p.2).ne' (ne_zero_of_mem_unit_sphere p.1)
+    have hx := hγ.bendingHypersurface_fst_ne_zero p
     have hn := (contDiffAt_norm (n := ∞) ℝ hx).comp _ contDiffAt_fst
     exact ((hn.inv (norm_ne_zero_iff.2 hx)).smul contDiffAt_fst).prodMk
       (contDiffAt_snd.sub hn)
@@ -173,8 +185,7 @@ theorem isDiffImmersionAt_bendingHypersurface
   have heq : k ∘ bendingHypersurface (V := V) r h =
       Prod.map (Subtype.val : sphere (0 : V) 1 → V) (fun t ↦ h t - r t) := by
     funext z
-    simp [k, bendingHypersurface, norm_smul, norm_eq_of_mem_sphere z.1,
-      abs_of_pos (hγ.radius_pos z.2), smul_smul, (hγ.radius_pos z.2).ne', Prod.map]
+    exact hγ.normalize_bendingHypersurface z
   apply IsDiffImmersionAt.of_comp
     (hγ.contMDiff_bendingHypersurface.mdifferentiable (by simp) p)
     (hk.differentiableAt (by simp)).mdifferentiableAt
