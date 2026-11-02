@@ -108,6 +108,29 @@ theorem orbitTorusOperator_apply (z : ℝ × ℝ) :
       fderiv ℝ u z stdComplexLineReal + (J₀ (fderiv ℝ u z stdComplexLineImag) + S z.2 (u z)) :=
   (rfl)
 
+/-- The orbit-torus operator vanishes on the zero map. -/
+@[simp]
+theorem orbitTorusOperator_zero : orbitTorusOperator J₀ S (0 : ℝ × ℝ → V) = 0 := by
+  funext z
+  simp [orbitTorusOperator_apply]
+
+/-- The orbit-torus operator is additive on maps differentiable at the point. -/
+theorem orbitTorusOperator_add {v : ℝ × ℝ → V} {z : ℝ × ℝ} (hu : DifferentiableAt ℝ u z)
+    (hv : DifferentiableAt ℝ v z) :
+    orbitTorusOperator J₀ S (u + v) z =
+      orbitTorusOperator J₀ S u z + orbitTorusOperator J₀ S v z := by
+  simp only [orbitTorusOperator_apply, fderiv_add hu hv, add_apply, map_add,
+    Pi.add_apply]
+  abel
+
+/-- The orbit-torus operator commutes with multiplication by a real scalar. -/
+@[simp]
+theorem orbitTorusOperator_smul (c : ℝ) :
+    orbitTorusOperator J₀ S (c • u) = c • orbitTorusOperator J₀ S u := by
+  funext z
+  simp only [orbitTorusOperator_apply, fderiv_const_smul_field, Pi.smul_apply,
+    smul_apply, map_smul, smul_add]
+
 /-- The cross term `⟪∂s u, J₀ ∂t u + S(t) u⟫` of `‖D u‖²` integrates to zero over the fundamental
 rectangle: it is half of `∂s ⟪u, S u + J₀ ∂t u⟫ - ∂t ⟪u, J₀ ∂s u⟫`, and both potentials are
 periodic because the twists square to one. -/
