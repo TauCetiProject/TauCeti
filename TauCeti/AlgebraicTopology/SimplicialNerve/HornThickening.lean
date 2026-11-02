@@ -23,21 +23,22 @@ objects and the same mapping simplicial sets, except from `⊥` to `⊤`. There 
 chains of paths that either all omit a common interior vertex other than `c` (they lie in a face of
 the horn), or all pass through a common interior vertex (they are composites). Identifying
 `N(Path i j)` with a cube `(Δ¹)^{(i, j)}`, this simplicial subset is the cube with its interior
-and its face `x_c = 0` removed, so its inclusion is anodyne. Consequently every simplicial functor
-`C[Λ^J_c] ⥤ C` into a simplicial category whose mapping simplicial sets are Kan complexes extends
-along `C[Λ^J_c] ⥤ C[Δ^J]`. This is the extension property in the proof that the simplicial nerve
-of such a category is a quasicategory.
+and its face `x_c = 0` removed, so its inclusion is anodyne. Consequently a simplicial functor
+`F : C[Λ^J_c] ⥤ C` extends along `C[Λ^J_c] ⥤ C[Δ^J]` as soon as the mapping simplicial set from
+`F ⊥` to `F ⊤` is a Kan complex, for instance when all mapping simplicial sets of `C` are Kan
+complexes. This is the extension property in the proof that the simplicial nerve of such a category
+is a quasicategory.
 
 ## Main declarations
 
-* `CategoryTheory.SimplicialThickening.hornPaths i j c`: the chains of paths from `i` to `j`
-  omitting a common interior vertex other than `c` or passing through a common interior vertex.
-* `CategoryTheory.SimplicialThickening.anodyneExtensions_hornPaths_ι`: for `i < c < j` its
-  inclusion into `N(Path i j)` is an anodyne extension.
-* `CategoryTheory.SimplicialThickening.HornThickening J c`: the simplicial category `C[Λ^J_c]`,
-  with its inclusion `HornThickening.ι J c` into `SimplicialThickening J`.
-* `CategoryTheory.SimplicialThickening.HornThickening.exists_extension`: simplicial functors from
-  `C[Λ^J_c]` into a simplicial category with Kan mapping spaces extend to `C[Δ^J]`.
+* `TauCeti.hornPaths i j c`: the chains of paths from `i` to `j` omitting a common interior vertex
+  other than `c` or passing through a common interior vertex.
+* `TauCeti.anodyneExtensions_hornPaths_ι`: for `i < c < j` its inclusion into `N(Path i j)` is an
+  anodyne extension.
+* `TauCeti.HornThickening J c`: the simplicial category `C[Λ^J_c]`, with its inclusion
+  `HornThickening.ι J c` into `SimplicialThickening J`.
+* `TauCeti.HornThickening.exists_extension`: simplicial functors from `C[Λ^J_c]` whose mapping
+  simplicial set from `F ⊥` to `F ⊤` is a Kan complex extend to `C[Δ^J]`.
 
 ## Implementation notes
 
@@ -73,6 +74,25 @@ instance (a : J) : Subsingleton (Path a a) :=
       exact q.left
     · rw [le_antisymm (q.le_right k h) (q.left_le k h)]
       exact p.left)⟩
+
+/-- The identity of an object `x` of the simplicial thickening is an isomorphism
+`𝟙_ SSet ≅ N(Path x x)`, since the only path from `x` to itself is `{x}`. -/
+instance isIso_eId (x : SimplicialThickening J) : IsIso (eId SSet x) := by
+  rw [NatTrans.isIso_iff_isIso_app]
+  intro n
+  rw [isIso_iff_bijective]
+  refine ⟨fun _ _ _ ↦ rfl, fun s ↦ ⟨PUnit.unit, ?_⟩⟩
+  obtain ⟨⟨d⟩⟩ := n
+  exact ComposableArrows.ext (C := Path x.as x.as) (fun _ ↦ Subsingleton.elim _ _)
+    (by subsingleton)
+
+end CategoryTheory.SimplicialThickening
+
+namespace TauCeti
+
+open SimplicialThickening (Path)
+
+variable {J : Type u} [LinearOrder J] {i j : J}
 
 /-- The chain of paths given by a monotone family of paths. -/
 private def chainMk {d : ℕ} (p : Fin (d + 1) → Path i j) (hp : Monotone fun t ↦ (p t).I) :
@@ -309,25 +329,12 @@ theorem anodyneExtensions_hornPaths_ι {c : J} (hi : i < c) (hj : c < j) :
         rw [← SSet.Subcomplex.image_eq_range, SSet.Subcomplex.image_le_iff, h,
           ← SSet.Subcomplex.preimage_comp, e.inv_hom_id, SSet.Subcomplex.preimage_id])
       hom_inv_id := by
-        rw [← cancel_mono (hornPaths i j c).ι, Category.assoc, SSet.Subcomplex.lift_ι,
-          SSet.Subcomplex.lift_ι_assoc, Category.assoc, e.hom_inv_id, Category.comp_id,
-          Category.id_comp]
+        rw [← cancel_mono (hornPaths i j c).ι]
+        simp
       inv_hom_id := by
-        rw [← cancel_mono B.ι, Category.assoc, SSet.Subcomplex.lift_ι,
-          SSet.Subcomplex.lift_ι_assoc, Category.assoc, e.inv_hom_id, Category.comp_id,
-          Category.id_comp] }
+        rw [← cancel_mono B.ι]
+        simp }
   exact (SSet.anodyneExtensions.arrow_mk_iso_iff (Arrow.isoMk φ e)).2 hB
-
-/-- The identity of an object `x` of the simplicial thickening is an isomorphism
-`𝟙_ SSet ≅ N(Path x x)`, since the only path from `x` to itself is `{x}`. -/
-instance isIso_eId (x : SimplicialThickening J) : IsIso (eId SSet x) := by
-  rw [NatTrans.isIso_iff_isIso_app]
-  intro n
-  rw [isIso_iff_bijective]
-  refine ⟨fun _ _ _ ↦ rfl, fun s ↦ ⟨PUnit.unit, ?_⟩⟩
-  obtain ⟨⟨d⟩⟩ := n
-  exact ComposableArrows.ext (C := Path x.as x.as) (fun _ ↦ Subsingleton.elim _ _)
-    (by subsingleton)
 
 /-! ### The simplicial category `C[Λ^J_c]` -/
 
@@ -336,9 +343,10 @@ section Horn
 variable [BoundedOrder J]
 
 variable (c : J) in
-/-- The mapping simplicial sets of the rigidification `C[Λ^J_c]` of the horn of `Δ^J` opposite `c`,
-as simplicial subsets of those of `C[Δ^J]`: all of `N(Path x y)`, except for `x = ⊥` and `y = ⊤`,
-where only the paths `hornPaths ⊥ ⊤ c` of the horn occur. -/
+/-- Simplicial subsets of the mapping simplicial sets of `C[Δ^J]`: all of `N(Path x y)`, except for
+`x = ⊥` and `y = ⊤`, where only the paths `hornPaths ⊥ ⊤ c` occur. When `⊥ < c < ⊤` these are the
+mapping simplicial sets of the rigidification `C[Λ^J_c]` of the horn of `Δ^J` opposite `c`; the
+definition makes sense for every `c`. -/
 def hornHom (x y : J) : (SimplicialThickening.mk x ⟶[SSet] SimplicialThickening.mk y).Subcomplex :=
   if x = ⊥ ∧ y = ⊤ then hornPaths x y c else ⊤
 
@@ -349,13 +357,20 @@ lemma hornHom_bot_top (c : J) : hornHom c (⊥ : J) ⊤ = hornPaths ⊥ ⊤ c :=
 lemma hornHom_eq_top (c : J) {x y : J} (h : ¬(x = ⊥ ∧ y = ⊤)) : hornHom c x y = ⊤ :=
   ite_eq_right h
 
+/-- Away from the pair `(⊥, ⊤)`, the inclusion `hornHom c x y ⟶ N(Path x y)` is an isomorphism. -/
+lemma isIso_hornHom_ι (c : J) {x y : J} (h : ¬(x = ⊥ ∧ y = ⊤)) : IsIso (hornHom c x y).ι := by
+  rw [hornHom_eq_top c h, ← SSet.Subcomplex.topIso_hom]
+  infer_instance
+
+/-- For `⊥ < c < ⊤`, every inclusion `hornHom c x y ⟶ N(Path x y)` of a mapping simplicial set of
+`C[Λ^J_c]` into the corresponding one of `C[Δ^J]` is an anodyne extension. -/
 lemma anodyneExtensions_hornHom_ι {c : J} (h₁ : ⊥ < c) (h₂ : c < ⊤) (x y : J) :
     SSet.anodyneExtensions (hornHom c x y).ι := by
   by_cases h : x = ⊥ ∧ y = ⊤
   · obtain ⟨rfl, rfl⟩ := h
     rw [hornHom_bot_top]
     exact anodyneExtensions_hornPaths_ι h₁ h₂
-  · rw [hornHom_eq_top c h, ← SSet.Subcomplex.topIso_hom]
+  · have := isIso_hornHom_ι c h
     exact SSet.anodyneExtensions.of_isIso _
 
 /-- The composite of two morphisms of `C[Λ^J_c]` in `C[Δ^J]` belongs to `C[Λ^J_c]`: composites
@@ -402,9 +417,9 @@ lemma range_eId_le_hornHom (c x : J) :
 end Horn
 
 variable (J) in
-/-- The rigidification `C[Λ^J_c]` of the horn of `Δ^J` opposite `c`, for a nontrivial bounded
-linear order `J`: the simplicial subcategory of `SimplicialThickening J` whose mapping simplicial
-sets are `hornHom c x y`. -/
+/-- The simplicial subcategory of `SimplicialThickening J`, for a nontrivial bounded linear order
+`J`, whose mapping simplicial sets are `hornHom c x y`. When `⊥ < c < ⊤` this is the rigidification
+`C[Λ^J_c]` of the horn of `Δ^J` opposite `c`; the definition makes sense for every `c`. -/
 structure HornThickening (c : J) where
   /-- The underlying element of `J`. -/
   as : J
@@ -418,24 +433,32 @@ instance : EnrichedCategory SSet.{u} (HornThickening J c) where
   id x := SSet.Subcomplex.lift _ (range_eId_le_hornHom c x.as)
   comp x y z := SSet.Subcomplex.lift _ (range_eComp_le_hornHom c x.as y.as z.as)
   id_comp x y := by
-    rw [← cancel_mono (hornHom c x.as y.as).ι, Category.assoc, Category.assoc,
-      SSet.Subcomplex.lift_ι, whiskerRight_comp_tensorHom_assoc, SSet.Subcomplex.lift_ι,
-      tensorHom_def', Category.assoc, ← leftUnitor_inv_naturality_assoc]
-    exact (congrArg ((hornHom c x.as y.as).ι ≫ ·) (e_id_comp SSet _ _)).trans (by simp)
+    rw [← cancel_mono (hornHom c x.as y.as).ι]
+    simp [whiskerRight_comp_tensorHom_assoc, leftUnitor_inv_comp_tensorHom_assoc]
   comp_id x y := by
-    rw [← cancel_mono (hornHom c x.as y.as).ι, Category.assoc, Category.assoc,
-      SSet.Subcomplex.lift_ι, whiskerLeft_comp_tensorHom_assoc, SSet.Subcomplex.lift_ι,
-      tensorHom_def, Category.assoc, ← rightUnitor_inv_naturality_assoc]
-    exact (congrArg ((hornHom c x.as y.as).ι ≫ ·) (e_comp_id SSet _ _)).trans (by simp)
+    rw [← cancel_mono (hornHom c x.as y.as).ι]
+    simp [whiskerLeft_comp_tensorHom_assoc, rightUnitor_inv_comp_tensorHom_assoc]
   assoc w x y z := by
-    rw [← cancel_mono (hornHom c w.as z.as).ι, Category.assoc, Category.assoc,
-      SSet.Subcomplex.lift_ι, whiskerRight_comp_tensorHom_assoc, SSet.Subcomplex.lift_ι,
-      Category.assoc, SSet.Subcomplex.lift_ι, whiskerLeft_comp_tensorHom_assoc,
-      SSet.Subcomplex.lift_ι, ← tensorHom_comp_whiskerRight, ← tensorHom_comp_whiskerLeft,
-      Category.assoc, Category.assoc, ← associator_inv_naturality_assoc, e_assoc]
+    rw [← cancel_mono (hornHom c w.as z.as).ι]
+    simp [whiskerRight_comp_tensorHom_assoc, whiskerLeft_comp_tensorHom_assoc,
+      ← tensorHom_comp_whiskerRight, ← tensorHom_comp_whiskerLeft, e_assoc]
 
 lemma hom_eq (x y : HornThickening J c) : (x ⟶[SSet] y) = (hornHom c x.as y.as : SSet) :=
   rfl
+
+/-- The identities of `C[Λ^J_c]` are those of `C[Δ^J]`. -/
+@[reassoc (attr := simp)]
+lemma eId_ι (x : HornThickening J c) :
+    eId SSet x ≫ (hornHom c x.as x.as).ι = eId SSet (SimplicialThickening.mk x.as) :=
+  SSet.Subcomplex.lift_ι _ (range_eId_le_hornHom c x.as)
+
+/-- The composition of `C[Λ^J_c]` is that of `C[Δ^J]`. -/
+@[reassoc (attr := simp)]
+lemma eComp_ι (x y z : HornThickening J c) :
+    eComp SSet x y z ≫ (hornHom c x.as z.as).ι =
+      ((hornHom c x.as y.as).ι ⊗ₘ (hornHom c y.as z.as).ι) ≫
+        eComp SSet (SimplicialThickening.mk x.as) (.mk y.as) (.mk z.as) :=
+  SSet.Subcomplex.lift_ι _ (range_eComp_le_hornHom c x.as y.as z.as)
 
 variable (J c) in
 /-- The inclusion `C[Λ^J_c] ⥤ C[Δ^J]`, the identity on objects and the inclusion `hornHom c x y`
@@ -444,22 +467,28 @@ of mapping simplicial sets. -/
 def ι : EnrichedFunctor SSet (HornThickening J c) (SimplicialThickening J) where
   obj x := SimplicialThickening.mk x.as
   map x y := (hornHom c x.as y.as).ι
-  map_id x := SSet.Subcomplex.lift_ι _ (range_eId_le_hornHom c x.as)
-  map_comp x y z := SSet.Subcomplex.lift_ι _ (range_eComp_le_hornHom c x.as y.as z.as)
+  map_id := eId_ι
+  map_comp := eComp_ι
 
 variable (h₁ : ⊥ < c) (h₂ : c < ⊤) {D : Type*} [EnrichedCategory SSet.{u} D]
-  [∀ X Y : D, SSet.KanComplex (X ⟶[SSet] Y)] (F : EnrichedFunctor SSet (HornThickening J c) D)
+  (F : EnrichedFunctor SSet (HornThickening J c) D) [SSet.KanComplex (F.obj ⟨⊥⟩ ⟶[SSet] F.obj ⟨⊤⟩)]
 
 open SSet.modelCategoryQuillen in
 include h₁ h₂ in
 private lemma exists_extMap (x y : J) :
     ∃ g : (SimplicialThickening.mk x ⟶[SSet] .mk y) ⟶ (F.obj ⟨x⟩ ⟶[SSet] F.obj ⟨y⟩),
       (hornHom c x y).ι ≫ g = F.map ⟨x⟩ ⟨y⟩ := by
-  have := anodyneExtensions_hornHom_ι h₁ h₂ x y _
-    (HomotopicalAlgebra.mem_fibrations (Limits.terminal.from (F.obj ⟨x⟩ ⟶[SSet] F.obj ⟨y⟩)))
-  have sq : CommSq (F.map ⟨x⟩ ⟨y⟩) (hornHom c x y).ι (Limits.terminal.from _)
-    (Limits.terminal.from _) := ⟨Subsingleton.elim _ _⟩
-  exact ⟨sq.lift, sq.fac_left⟩
+  by_cases h : x = ⊥ ∧ y = ⊤
+  · -- The inclusion is anodyne and the target mapping simplicial set is a Kan complex.
+    obtain ⟨rfl, rfl⟩ := h
+    have := anodyneExtensions_hornHom_ι h₁ h₂ ⊥ ⊤ _
+      (HomotopicalAlgebra.mem_fibrations (Limits.terminal.from (F.obj ⟨⊥⟩ ⟶[SSet] F.obj ⟨⊤⟩)))
+    have sq : CommSq (F.map ⟨⊥⟩ ⟨⊤⟩) (hornHom c ⊥ ⊤).ι (Limits.terminal.from _)
+      (Limits.terminal.from _) := ⟨Subsingleton.elim _ _⟩
+    exact ⟨sq.lift, sq.fac_left⟩
+  · -- The inclusion is an isomorphism.
+    have := isIso_hornHom_ι c h
+    exact ⟨inv (hornHom c x y).ι ≫ F.map ⟨x⟩ ⟨y⟩, IsIso.hom_inv_id_assoc _ _⟩
 
 /-- A chosen extension of the action of `F` on the mapping simplicial set from `x` to `y`. -/
 private noncomputable def extMap (x y : J) :
@@ -471,7 +500,7 @@ private lemma ι_extMap (x y : J) : (hornHom c x y).ι ≫ extMap h₁ h₂ F x 
 
 private lemma eId_extMap (x : J) :
     eId SSet (SimplicialThickening.mk x) ≫ extMap h₁ h₂ F x x = eId SSet (F.obj ⟨x⟩) := by
-  rw [← SSet.Subcomplex.lift_ι _ (range_eId_le_hornHom c x), Category.assoc, ι_extMap]
+  rw [← eId_ι_assoc, ι_extMap]
   exact F.map_id ⟨x⟩
 
 private lemma eComp_extMap (x y z : J) :
@@ -481,37 +510,32 @@ private lemma eComp_extMap (x y z : J) :
   · rcases lt_trichotomy y z with hyz | rfl | hyz
     · -- For `x < y < z` both factors are entire mapping simplicial sets of `C[Λ^J_c]`, and the
       -- composite is the composition of `C[Λ^J_c]`, which `F` preserves.
-      have : IsIso (hornHom c x y).ι := by
-        rw [hornHom_eq_top c fun h ↦ (h.2 ▸ hyz).not_ge le_top, ← SSet.Subcomplex.topIso_hom]
-        infer_instance
-      have : IsIso (hornHom c y z).ι := by
-        rw [hornHom_eq_top c fun h ↦ (h.1 ▸ hxy).not_ge bot_le, ← SSet.Subcomplex.topIso_hom]
-        infer_instance
-      rw [← cancel_epi ((hornHom c x y).ι ⊗ₘ (hornHom c y z).ι), ← Category.assoc,
-        ← SSet.Subcomplex.lift_ι _ (range_eComp_le_hornHom c x y z), Category.assoc,
-        ι_extMap, tensorHom_comp_tensorHom_assoc, ι_extMap, ι_extMap]
-      exact F.map_comp ⟨x⟩ ⟨y⟩ ⟨z⟩
+      have := isIso_hornHom_ι c (x := x) (y := y) fun h ↦ (h.2 ▸ hyz).not_ge le_top
+      have := isIso_hornHom_ι c (x := y) (y := z) fun h ↦ (h.1 ▸ hxy).not_ge bot_le
+      rw [← cancel_epi ((hornHom c x y).ι ⊗ₘ (hornHom c y z).ι),
+        ← eComp_ι_assoc (x := ⟨x⟩) (y := ⟨y⟩) (z := ⟨z⟩), ι_extMap]
+      simp [tensorHom_comp_tensorHom_assoc, ι_extMap]
     · -- Composing with the identity of `y`, which is the only path from `y` to `y`.
-      rw [← cancel_epi ((ρ_ _).inv ≫ _ ◁ eId SSet (SimplicialThickening.mk y)), Category.assoc,
-        Category.assoc, reassoc_of% (e_comp_id SSet (SimplicialThickening.mk x) (.mk y)),
-        whiskerLeft_comp_tensorHom_assoc, eId_extMap, rightUnitor_inv_comp_tensorHom_assoc,
-        e_comp_id, Category.comp_id]
+      rw [← cancel_epi ((ρ_ _).inv ≫ _ ◁ eId SSet (SimplicialThickening.mk y))]
+      simp [reassoc_of% (e_comp_id SSet (SimplicialThickening.mk x) (.mk y)),
+        whiskerLeft_comp_tensorHom_assoc, eId_extMap, rightUnitor_inv_comp_tensorHom_assoc]
     · -- There are no paths from `y` to `z < y`.
       ext n ⟨s, t⟩
       exact absurd (Path.le (t.obj 0 : Path y z)) (not_le.2 hyz)
   · -- Composing with the identity of `x`, which is the only path from `x` to `x`.
-    rw [← cancel_epi ((λ_ _).inv ≫ eId SSet (SimplicialThickening.mk x) ▷ _), Category.assoc,
-      Category.assoc, reassoc_of% (e_id_comp SSet (SimplicialThickening.mk x) (.mk z)),
-      whiskerRight_comp_tensorHom_assoc, eId_extMap, leftUnitor_inv_comp_tensorHom_assoc,
-      e_id_comp, Category.comp_id]
+    rw [← cancel_epi ((λ_ _).inv ≫ eId SSet (SimplicialThickening.mk x) ▷ _)]
+    simp [reassoc_of% (e_id_comp SSet (SimplicialThickening.mk x) (.mk z)),
+      whiskerRight_comp_tensorHom_assoc, eId_extMap, leftUnitor_inv_comp_tensorHom_assoc]
   · -- There are no paths from `x` to `y < x`.
     ext n ⟨s, t⟩
     exact absurd (Path.le (s.obj 0 : Path x y)) (not_le.2 hxy)
 
 include h₁ h₂ in
-/-- Every simplicial functor from `C[Λ^J_c]` to a simplicial category whose mapping simplicial sets
-are Kan complexes extends along the inclusion `C[Λ^J_c] ⥤ C[Δ^J]`. This is the extension property
-behind the fact that the simplicial nerve of such a simplicial category is a quasicategory. -/
+/-- A simplicial functor `F` from `C[Λ^J_c]` to a simplicial category extends along the inclusion
+`C[Λ^J_c] ⥤ C[Δ^J]` as soon as the mapping simplicial set from `F ⊥` to `F ⊤` is a Kan complex, for
+instance when all mapping simplicial sets of the target are Kan complexes. This is the extension
+property behind the fact that the simplicial nerve of such a simplicial category is a
+quasicategory. -/
 theorem exists_extension :
     ∃ G : EnrichedFunctor SSet (SimplicialThickening J) D, (ι J c).comp SSet G = F := by
   refine ⟨{ obj x := F.obj ⟨x.as⟩
@@ -524,4 +548,4 @@ theorem exists_extension :
 
 end HornThickening
 
-end CategoryTheory.SimplicialThickening
+end TauCeti
