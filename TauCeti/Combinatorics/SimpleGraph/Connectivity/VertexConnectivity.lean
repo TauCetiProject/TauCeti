@@ -341,12 +341,14 @@ theorem vertexConnectivity_add_one_le_card [Nonempty V] :
   · rw [ENat.card_eq_top_of_infinite]
     exact le_top
 
-/-- On a nonempty vertex type, vertex connectivity is at most the number of vertices minus
-one. -/
-theorem vertexConnectivity_le_card_sub_one [Nonempty V] :
-    G.vertexConnectivity ≤ ENat.card V - 1 :=
-  ((ENat.addLECancellable_of_ne_top ENat.one_ne_top).le_tsub_iff_right
-    ((ENat.one_le_card_iff_nonempty V).2 ‹_›)).mpr vertexConnectivity_add_one_le_card
+/-- Vertex connectivity is at most the number of vertices minus one. -/
+theorem vertexConnectivity_le_card_sub_one :
+    G.vertexConnectivity ≤ ENat.card V - 1 := by
+  cases isEmpty_or_nonempty V
+  · rw [vertexConnectivity_of_isEmpty]
+    exact bot_le
+  · exact ((ENat.addLECancellable_of_ne_top ENat.one_ne_top).le_tsub_iff_right
+      ((ENat.one_le_card_iff_nonempty V).2 ‹_›)).mpr vertexConnectivity_add_one_le_card
 
 /-- A graph on at most one vertex has vertex connectivity zero. -/
 @[simp]
