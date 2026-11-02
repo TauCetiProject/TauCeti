@@ -13,6 +13,7 @@ import TauCeti.RingTheory.Dagger.Jacobson
 import TauCeti.RingTheory.Dagger.Noetherian
 import TauCeti.RingTheory.Dagger.Preparation
 import TauCeti.RingTheory.Ideal.MonicSpan
+import TauCeti.RingTheory.Ideal.Quotient.Operations
 import TauCeti.RingTheory.RegularLocalRing.Maximal
 
 /-!
@@ -87,17 +88,12 @@ private theorem spanFinrank_le_natCard_option {σ : Type*} [Finite σ]
     exact Ideal.add_mem _
       (Ideal.mul_mem_left _ q (Ideal.mem_map_of_mem φ (Ideal.mem_comap.mpr hωN)))
       (Ideal.mem_map_of_mem φ hr)
-  have hsurj : Function.Surjective ((Ideal.Quotient.mk N).comp φ) := fun x ↦ by
+  have hsurj : Function.Surjective (Ideal.Quotient.mk N ∘ φ) := fun x ↦ by
     obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective x
     obtain ⟨q, r, -, rfl⟩ := exists_mul_add_polynomialToOption_eq hd hm f
     refine ⟨r, Ideal.Quotient.eq.mpr ?_⟩
     simpa [φ] using N.neg_mem (N.mul_mem_left q hωN)
-  have : P.IsMaximal := by
-    let := Ideal.Quotient.field N
-    have hker : P = RingHom.ker ((Ideal.Quotient.mk N).comp φ) := by
-      ext r
-      simp [P, RingHom.mem_ker, Ideal.Quotient.eq_zero_iff_mem]
-    exact hker ▸ RingHom.ker_isMaximal_of_surjective _ hsurj
+  have : P.IsMaximal := Ideal.isMaximal_comap_of_surjective_quotient_mk_comp φ hsurj
   -- As `K⟨X⟩†` is a Jacobson ring, `P` lies over a maximal ideal `p` of `K⟨X⟩†`; so `P` needs at
   -- most one generator more than `p`, which needs at most `n` by induction.
   have hP := Polynomial.isMaximal_comap_C_of_isJacobsonRing P

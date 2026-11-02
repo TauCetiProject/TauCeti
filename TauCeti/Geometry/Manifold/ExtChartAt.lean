@@ -34,7 +34,7 @@ applies even when the manifold has boundary.
 For a boundaryless model `I`, a chart `c` read in the model vector space and then moved by a
 homeomorphism `Ψ` is again a chart, `OpenPartialHomeomorph.extendTrans`. When the charts lie in the
 maximal atlas and `Ψ` is smooth with smooth inverse, the transition maps between such charts are
-smooth.
+smooth; such charts are recorded by `OpenPartialHomeomorph.IsExtendTransChart`.
 
 ## Main results
 
@@ -56,6 +56,10 @@ smooth.
 * `OpenPartialHomeomorph.extendTrans` and `OpenPartialHomeomorph.contDiffOn_extendTrans_comp_symm`:
   charts read in the model vector space and moved by a homeomorphism, and their smooth transition
   maps.
+* `OpenPartialHomeomorph.IsExtendTransChart`, with its characterisation
+  `OpenPartialHomeomorph.isExtendTransChart_iff`, its intro lemma
+  `OpenPartialHomeomorph.isExtendTransChart_extendTrans` and its smooth transition maps
+  `OpenPartialHomeomorph.IsExtendTransChart.contDiffOn_comp_symm`.
 -/
 
 public section
@@ -114,6 +118,36 @@ theorem _root_.ModelWithCorners.isOpen_extendCoordChange_source [I.Boundaryless]
     {e e' : OpenPartialHomeomorph M H} : IsOpen (I.extendCoordChange e e').source :=
   (e.continuousOn_extend_symm (I := I)).isOpen_inter_preimage e.isOpen_extend_target
     e'.isOpen_extend_source
+
+omit [ChartedSpace H M] in
+/-- For a boundaryless model, the coordinate overlap is a neighborhood of the coordinate of
+any point in both chart domains. -/
+theorem _root_.ModelWithCorners.extendCoordChange_source_mem_nhds [I.Boundaryless]
+    {e e' : OpenPartialHomeomorph M H} {x : M} (hx : x ∈ e.source) (hx' : x ∈ e'.source) :
+    (I.extendCoordChange e e').source ∈ 𝓝 (I (e x)) := by
+  apply I.isOpen_extendCoordChange_source.mem_nhds
+  rw [← OpenPartialHomeomorph.extend_image_source_inter]
+  exact Set.mem_image_of_mem _ ⟨hx, hx'⟩
+
+omit [ChartedSpace H M] in
+/-- A change of extended charts sends the coordinate of a point in the first chart to its
+coordinate in the second chart. -/
+@[simp]
+theorem _root_.ModelWithCorners.extendCoordChange_apply {e e' : OpenPartialHomeomorph M H}
+    {x : M} (hx : x ∈ e.source) :
+    I.extendCoordChange e e' (I (e x)) = I (e' x) := by
+  simp only [ModelWithCorners.extendCoordChange, PartialEquiv.trans_apply,
+    OpenPartialHomeomorph.extend_coe, OpenPartialHomeomorph.extend_coe_symm,
+    Function.comp_apply, I.left_inv, e.left_inv hx]
+
+omit [ChartedSpace H M] in
+/-- Near a point in a chart overlap, changing coordinates and then applying the inverse of the
+second extended chart agrees with the inverse of the first extended chart. -/
+theorem _root_.ModelWithCorners.extend_symm_comp_extendCoordChange_eventuallyEq [I.Boundaryless]
+    {e e' : OpenPartialHomeomorph M H} {x : M} (hx : x ∈ e.source) (hx' : x ∈ e'.source) :
+    (e'.extend I).symm ∘ I.extendCoordChange e e' =ᶠ[𝓝 (I (e x))] (e.extend I).symm := by
+  filter_upwards [I.extendCoordChange_source_mem_nhds hx hx'] with y hy
+  exact (e'.extend I).left_inv hy.2
 
 /-- The extended chart of an open subset at a point sends that point to the same coordinates as
 the extended chart of a larger open subset at its image under the inclusion. -/
@@ -445,5 +479,49 @@ theorem contDiffOn_extendTrans_comp_symm [NormedSpace 𝕜 F] [ChartedSpace H M]
   simp [mfld_simps]
 
 end ExtendTrans
+
+section IsExtendTransChart
+
+variable {𝕜 E F H M : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace H]
+  [TopologicalSpace M] [ChartedSpace H M]
+
+/-- `e` is a chart `c.extendTrans I Ψ`: a chart `c` of `M` from its maximal atlas for `C^m`, read in
+the model vector space `E` and moved to `F` by a `C^m` homeomorphism `Ψ` with `C^m` inverse. The
+transition maps between such charts are `C^m`
+(`OpenPartialHomeomorph.contDiffOn_extendTrans_comp_symm`). -/
+def IsExtendTransChart (e : OpenPartialHomeomorph M F) (I : ModelWithCorners 𝕜 E H)
+    [I.Boundaryless] (m : ℕ∞ω) : Prop :=
+  ∃ (c : OpenPartialHomeomorph M H) (Ψ : E ≃ₜ F),
+    c ∈ IsManifold.maximalAtlas I m M ∧ ContDiff 𝕜 m Ψ ∧ ContDiff 𝕜 m Ψ.symm ∧
+      e = c.extendTrans I Ψ
+
+variable {I : ModelWithCorners 𝕜 E H} [I.Boundaryless] {m : ℕ∞ω}
+
+/-- Characterisation of `OpenPartialHomeomorph.IsExtendTransChart`: `e` is `c.extendTrans I Ψ` for
+a chart `c` from the maximal atlas for `C^m` and a `C^m` homeomorphism `Ψ` with `C^m` inverse. -/
+theorem isExtendTransChart_iff {e : OpenPartialHomeomorph M F} :
+    e.IsExtendTransChart I m ↔ ∃ (c : OpenPartialHomeomorph M H) (Ψ : E ≃ₜ F),
+      c ∈ IsManifold.maximalAtlas I m M ∧ ContDiff 𝕜 m Ψ ∧ ContDiff 𝕜 m Ψ.symm ∧
+        e = c.extendTrans I Ψ :=
+  Iff.rfl
+
+/-- A chart `c` from the maximal atlas for `C^m`, moved by a `C^m` homeomorphism `Ψ` with `C^m`
+inverse, satisfies `OpenPartialHomeomorph.IsExtendTransChart`. -/
+theorem isExtendTransChart_extendTrans {c : OpenPartialHomeomorph M H}
+    (hc : c ∈ IsManifold.maximalAtlas I m M) {Ψ : E ≃ₜ F} (hΨ : ContDiff 𝕜 m Ψ)
+    (hΨ' : ContDiff 𝕜 m Ψ.symm) : (c.extendTrans I Ψ).IsExtendTransChart I m :=
+  ⟨c, Ψ, hc, hΨ, hΨ', rfl⟩
+
+/-- The transition map between two charts satisfying `OpenPartialHomeomorph.IsExtendTransChart`
+for `C^m` is `C^m`. -/
+theorem IsExtendTransChart.contDiffOn_comp_symm {e₁ e₂ : OpenPartialHomeomorph M F}
+    (he₁ : e₁.IsExtendTransChart I m) (he₂ : e₂.IsExtendTransChart I m) :
+    ContDiffOn 𝕜 m (e₂ ∘ e₁.symm) (e₁.symm ≫ₕ e₂).source := by
+  obtain ⟨c₁, Ψ₁, hc₁, -, hΨ₁, rfl⟩ := he₁
+  obtain ⟨c₂, Ψ₂, hc₂, hΨ₂, -, rfl⟩ := he₂
+  exact contDiffOn_extendTrans_comp_symm I hc₁ hc₂ hΨ₁ hΨ₂
+
+end IsExtendTransChart
 
 end OpenPartialHomeomorph

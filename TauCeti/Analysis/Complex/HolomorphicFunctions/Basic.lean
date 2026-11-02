@@ -108,6 +108,11 @@ theorem differentiableOn_extend (f : holomorphicFunctions U) :
     DifferentiableOn ℂ (extend f) U :=
   mem_holomorphicFunctions_iff_extend.mp f.property
 
+/-- Extension by zero is analytic near every subset of the original open domain. -/
+theorem analyticOnNhd_extend {s : Set ℂ} (hs : s ⊆ U) (f : holomorphicFunctions U) :
+    AnalyticOnNhd ℂ (extend f) s :=
+  ((differentiableOn_extend f).analyticOnNhd U.isOpen).mono hs
+
 /-- Recovering a holomorphic function from its zero extension does not change it. -/
 @[simp]
 theorem of_extend (f : holomorphicFunctions U) :

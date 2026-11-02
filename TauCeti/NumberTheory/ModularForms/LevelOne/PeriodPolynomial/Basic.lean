@@ -162,7 +162,7 @@ theorem mem_oddPeriodPolynomials_iff {P : homogeneousSubmodule (Fin 2) R w} :
 /-! ### The parity involution preserves the period polynomials -/
 
 /-- `εSε = -S`, in the form `ε S = -(S ε)`. -/
-private lemma parity_mul_S :
+theorem parity_mul_S :
     !![-1, 0; 0, 1] * (S : Matrix (Fin 2) (Fin 2) ℤ) = -((S : Matrix (Fin 2) (Fin 2) ℤ) *
       !![-1, 0; 0, 1]) := by
   ext i j
@@ -186,8 +186,16 @@ private lemma parity_mul_U_sq :
   ext i j
   fin_cases i <;> fin_cases j <;> rfl
 
+/-- `εTᵐε = T⁻ᵐ`, in the form `ε Tᵐ = T⁻ᵐ ε`. -/
+theorem parity_mul_T_zpow (m : ℤ) :
+    !![-1, 0; 0, 1] * ((T ^ m : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) =
+      ((T ^ (-m) : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ) * !![-1, 0; 0, 1] := by
+  rw [coe_T_zpow, coe_T_zpow]
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp
+
 /-- The parity involution squares to the identity. -/
-private lemma parity_mul_parity :
+theorem parity_mul_parity :
     !![-1, 0; 0, 1] * !![-1, 0; 0, 1] = (1 : Matrix (Fin 2) (Fin 2) ℤ) := by
   ext i j
   fin_cases i <;> fin_cases j <;> rfl
