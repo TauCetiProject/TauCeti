@@ -19,7 +19,7 @@ Mathlib records the constant and linear `q`-coefficients of `E₄`, `E₆` and `
 continues them to the `q²` and `q³` terms,
 `E₄ = 1 + 240 q + 2160 q² + 6720 q³ + ⋯`, `E₆ = 1 - 504 q - 16632 q² - 122976 q³ + ⋯` and
 `Δ = q - 24 q² + 252 q³ + ⋯`, proves that every coefficient of a normalised Eisenstein series is
-rational and every coefficient of `Δ` is an integer, reads off its
+rational and every coefficient of `E₄` and of `Δ` is an integer, reads off its
 expansion at every period `N`, and records that `Δ` is asymptotic to `q` at `i∞`.  These are
 the coefficients the `q`-expansion of the modular invariant `j = E₄³ / Δ` is computed from.
 
@@ -34,6 +34,9 @@ The Eisenstein coefficients are `240 σ₃(n)` and `-504 σ₅(n)` (Mathlib's
   weight `12`.
 * `TauCeti.ModularForm.qExpansion_E_mem_range_map`: the `q`-expansion of a normalised Eisenstein
   series has rational coefficients.
+* `TauCeti.ModularForm.E₄_qExpansion_coeff_of_ne_zero`,
+  `TauCeti.ModularForm.exists_E₄_qExpansion_coeff_eq_intCast`: the coefficients of `E₄` are
+  `240 σ₃(m)`, so they are integers.
 * `TauCeti.ModularForm.qExpansion_discriminant_eq_E₄_cube_sub_E₆_sq`: the `q`-expansion of `Δ`
   is `(E₄³ - E₆²) / 1728`, computed on power series.
 * `TauCeti.ModularForm.discriminant_qExpansion_coeff_two`,
@@ -89,6 +92,18 @@ theorem E₄_cube_qExpansion_coeff_two : (qExpansion 1 E₄ ^ 3).coeff 2 = 17928
 theorem E₄_qExpansion_coeff_three : (qExpansion 1 E₄).coeff 3 = 6720 := by
   norm_num [E_qExpansion_coeff _ ⟨2, rfl⟩, bernoulli_four, ArithmeticFunction.sigma_apply,
     Nat.prime_three.divisors]
+
+/-- For `m ≠ 0`, the `qᵐ`-coefficient of `E₄` is `240 σ₃(m)`. -/
+theorem E₄_qExpansion_coeff_of_ne_zero {m : ℕ} (hm : m ≠ 0) :
+    (qExpansion 1 E₄).coeff m = 240 * σ 3 m := by
+  norm_num [E_qExpansion_coeff _ ⟨2, rfl⟩, hm, bernoulli_four]
+
+/-- **The `q`-expansion of `E₄` has integer coefficients.** -/
+theorem exists_E₄_qExpansion_coeff_eq_intCast (n : ℕ) :
+    ∃ m : ℤ, (qExpansion 1 E₄).coeff n = m := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · exact ⟨1, by simp [E_qExpansion_coeff_zero _ ⟨2, rfl⟩]⟩
+  · exact ⟨240 * σ 3 n, by simp [E₄_qExpansion_coeff_of_ne_zero hn]⟩
 
 /-- The `q²`-coefficient of `E₆` is `-504 σ₅(2) = -16632`. -/
 theorem E₆_qExpansion_coeff_two : (qExpansion 1 E₆).coeff 2 = -16632 := by
