@@ -16,6 +16,7 @@ two supports, provided those supports have full measure. The additive versions g
 corresponding statements for sums. A concentration lemma transports almost-everywhere
 membership through convolution. This permits support arguments for sums of independent jumps
 without moment or density assumptions.
+Finite sums of support points lie in the support of the matching convolution power.
 -/
 
 public section
@@ -74,8 +75,8 @@ theorem support_mconv (hμ : μ.support ∈ ae μ) (hν : ν.support ∈ ae ν) 
 variable {A : Type*} [AddMonoid A] [TopologicalSpace A] [ContinuousAdd A]
   [MeasurableSpace A] [OpensMeasurableSpace A] [MeasurableAdd₂ A]
 
-/-- A finite sum of jump-support points belongs to the support of the corresponding
-convolution power, with the empty list giving the zeroth power. -/
+/-- A finite sum of support points of `μ` belongs to the support of
+`μ.convolutionPower l.length`; the empty list gives the zeroth power (`dirac 0`). -/
 theorem list_sum_mem_support_convolutionPower (μ : Measure A) [SFinite μ] (l : List A) :
     (∀ x ∈ l, x ∈ μ.support) → l.sum ∈ (μ.convolutionPower l.length).support := by
   induction l with
