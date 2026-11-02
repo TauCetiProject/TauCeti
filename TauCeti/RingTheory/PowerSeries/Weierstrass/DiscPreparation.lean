@@ -28,7 +28,8 @@ The zeros of `f` in the closed disc of radius `r`, in any complete normed field 
 
 For a restricted series `U` with `U(0) = 1`, the bound `‖U - 1‖_r < 1` says exactly that `U` is
 distinguished of degree `0` at `r` (`TauCeti.PowerSeries.gaussNorm_sub_one_lt_one_iff`), that is,
-over a complete field, that `U` is a unit of the ring of series restricted at `r`. Then `‖U‖_r = 1`,
+over a complete field, that `U` is a unit of the ring of series restricted at `r`
+(`TauCeti.PowerSeries.isUnit_iff_gaussNorm_sub_one_lt_one`). Then `‖U‖_r = 1`,
 so `‖f‖_r = ‖P‖_r`, and since the Gauss norm is multiplicative, `f - P = P * (U - 1)` is strictly
 smaller than `f`.
 
@@ -44,10 +45,6 @@ Taking `r = s` gives uniqueness of the normalised preparation.
 
 ## Main results
 
-* `TauCeti.PowerSeries.gaussNorm_sub_one_lt_one_iff` and
-  `TauCeti.PowerSeries.isUnit_iff_gaussNorm_sub_one_lt_one`: a restricted series with constant
-  coefficient `1` satisfies `‖U - 1‖_r < 1` exactly when it is distinguished of degree `0`, and
-  over a complete field exactly when it is a unit of the ring of restricted series.
 * `TauCeti.PowerSeries.IsDistinguished.exists_isDiscPreparation` and
   `TauCeti.PowerSeries.IsDistinguished.existsUnique_isDiscPreparation`: existence and uniqueness of
   the normalised disc preparation.
@@ -79,66 +76,6 @@ open _root_.PowerSeries
 
 variable {K : Type*} [NormedField K] [IsUltrametricDist K] {r s : ℝ} {d e : ℕ}
   {f : PowerSeries K} {P Q : Polynomial K} {U V : PowerSeries K}
-
-/-! ### Restricted series close to `1` -/
-
-omit [IsUltrametricDist K] in
-/-- The weighted coefficients of `U` in positive degrees are those of `U - 1`. -/
-private theorem norm_coeff_mul_pow_le_gaussNorm_sub_one (hU : U.IsRestricted r) {m : ℕ}
-    (hm : m ≠ 0) : ‖U.coeff m‖ * r ^ m ≤ (U - 1).gaussNorm norm r := by
-  have h := PowerSeries.le_gaussNorm norm r (U - 1)
-    (hasGaussNorm_of_isRestricted (hU.sub (PowerSeries.isRestricted_one r))) m
-  simpa [coeff_one, hm] using h
-
-/-- If `‖U - 1‖_r < 1` for a restricted series `U`, its constant coefficient has norm one. -/
-private theorem norm_constantCoeff_eq_one_of_gaussNorm_sub_one_lt (hU : U.IsRestricted r)
-    (h : (U - 1).gaussNorm norm r < 1) : ‖constantCoeff U‖ = 1 := by
-  have h0 : ‖constantCoeff U - 1‖ < ‖(1 : K)‖ := by
-    have := PowerSeries.le_gaussNorm norm r (U - 1)
-      (hasGaussNorm_of_isRestricted (hU.sub (PowerSeries.isRestricted_one r))) 0
-    simp only [map_sub, coeff_zero_eq_constantCoeff_apply, map_one, pow_zero, mul_one] at this
-    simpa using this.trans_lt h
-  rw [← sub_add_cancel (constantCoeff U) 1,
-    IsUltrametricDist.norm_add_eq_max_of_norm_ne_norm h0.ne, max_eq_right h0.le, norm_one]
-
-/-- A restricted series `U` with `‖U - 1‖_r < 1` has Gauss norm `1` at `r`. -/
-theorem gaussNorm_eq_one_of_gaussNorm_sub_one_lt (hU : U.IsRestricted r)
-    (h : (U - 1).gaussNorm norm r < 1) : U.gaussNorm norm r = 1 := by
-  have h0 := norm_constantCoeff_eq_one_of_gaussNorm_sub_one_lt hU h
-  rw [gaussNorm_eq_of_forall_le (s := 0)]
-  · simpa using h0
-  · intro m
-    rcases eq_or_ne m 0 with rfl | hm
-    · rfl
-    · simpa [h0] using ((norm_coeff_mul_pow_le_gaussNorm_sub_one hU hm).trans h.le)
-
-/-- **Restricted series close to `1`.** At a positive radius `r`, a restricted series `U` with
-constant coefficient `1` satisfies `‖U - 1‖_r < 1` exactly when it is distinguished of degree `0`
-at `r`. -/
-theorem gaussNorm_sub_one_lt_one_iff (hr : 0 < r) (hU : U.IsRestricted r)
-    (h0 : constantCoeff U = 1) :
-    (U - 1).gaussNorm norm r < 1 ↔ IsDistinguished r 0 U := by
-  refine ⟨fun h ↦ ⟨?_, fun m hm ↦ ?_⟩, fun hd ↦ ?_⟩
-  · simp [gaussNorm_eq_one_of_gaussNorm_sub_one_lt hU h, h0]
-  · rw [gaussNorm_eq_one_of_gaussNorm_sub_one_lt hU h]
-    exact (norm_coeff_mul_pow_le_gaussNorm_sub_one hU hm.ne').trans_lt h
-  · have hU1 : U.gaussNorm norm r = 1 := by
-      simpa [h0] using hd.norm_coeff_mul_pow_eq.symm
-    rcases eq_or_ne (U - 1) 0 with h1 | h1
-    · simp [h1]
-    obtain ⟨t, ht⟩ := exists_isDistinguished hr (hU.sub (PowerSeries.isRestricted_one r)) h1
-    rw [← ht.norm_coeff_mul_pow_eq]
-    rcases eq_or_ne t 0 with rfl | ht0
-    · simp [h0]
-    · simpa [coeff_one, ht0, hU1] using hd.norm_coeff_mul_pow_lt t (Nat.pos_of_ne_zero ht0)
-
-/-- **Units close to `1`.** Over a complete nonarchimedean field and at a positive radius `r`, a
-restricted series with constant coefficient `1` is a unit of the ring of series restricted at `r`
-exactly when `‖U - 1‖_r < 1`. -/
-theorem isUnit_iff_gaussNorm_sub_one_lt_one [CompleteSpace K] (hr : 0 < r)
-    (U : PowerSeries.IsRestricted.subring (R := K) r) (h0 : constantCoeff (U : PowerSeries K) = 1) :
-    IsUnit U ↔ ((U : PowerSeries K) - 1).gaussNorm norm r < 1 := by
-  rw [isUnit_iff_isDistinguished_zero hr, gaussNorm_sub_one_lt_one_iff hr U.2 h0]
 
 /-! ### The normalised disc preparation -/
 
@@ -229,17 +166,25 @@ theorem order_eq (h : IsDiscPreparation r d f P U) : f.order = (P : PowerSeries 
     simpa [h.constantCoeff_eq_one] using order_ne_zero_iff_constCoeff_eq_zero.mp hne
   rw [h.eq_mul, order_mul, hU, add_zero]
 
-/-- **The zeros in the closed disc.** In a complete normed field extension `L` of a complete
+/-- **The zeros in the closed disc.** In a complete normed field extension `L` of a
 nonarchimedean field `K`, a point `x` with `‖x‖ ≤ r` is a zero of `f` exactly when it is a root of
 the polynomial factor of the normalised disc preparation of `f` at `r`. -/
-theorem evalAt_eq_zero_iff [CompleteSpace K] {L : Type*} [NormedField L] [NormedAlgebra K L]
-    [CompleteSpace L] (h : IsDiscPreparation r d f P U) (hr : 0 < r) {x : L} (hx : ‖x‖ ≤ r) :
+theorem evalAt_eq_zero_iff {L : Type*} [NormedField L] [NormedAlgebra K L]
+    [CompleteSpace L] (h : IsDiscPreparation r d f P U) {x : L} (hx : ‖x‖ ≤ r) :
     f.evalAt x = 0 ↔ Polynomial.aeval x P = 0 := by
   have : IsUltrametricDist L := .of_normedAlgebra K
-  have hu : IsUnit (U.evalAt x) := by
-    simpa using (h.isUnit hr).map (_root_.PowerSeries.IsRestricted.evalAtHom K hx)
+  have hU1 := h.isRestricted.sub (PowerSeries.isRestricted_one r)
+  -- `U(x) = (U - 1)(x) + 1` with `‖(U - 1)(x)‖ ≤ ‖U - 1‖_r < 1`, so `U(x) ≠ 0`.
+  have hu : U.evalAt x ≠ 0 := by
+    intro hx0
+    have hlt := (_root_.PowerSeries.norm_evalAt_le_gaussNorm
+      (hasGaussNorm_of_isRestricted hU1) hx).trans_lt h.gaussNorm_sub_one_lt
+    rw [← sub_add_cancel U 1, _root_.PowerSeries.IsRestricted.evalAt_add hU1
+      (PowerSeries.isRestricted_one r) hx, _root_.PowerSeries.evalAt_one,
+      add_eq_zero_iff_eq_neg] at hx0
+    simp [hx0] at hlt
   rw [h.eq_mul, _root_.PowerSeries.IsRestricted.evalAt_mul (isRestricted_polynomial P)
-    h.isRestricted hx, _root_.PowerSeries.evalAt_coe, hu.mul_left_eq_zero]
+    h.isRestricted hx, _root_.PowerSeries.evalAt_coe, mul_eq_zero, or_iff_left hu]
 
 /-- **Nested disc polynomials.** If `f = P * U` and `f = Q * V` are the normalised disc
 preparations of `f` at radii `0 < r ≤ s`, then `P` divides `Q`. -/
