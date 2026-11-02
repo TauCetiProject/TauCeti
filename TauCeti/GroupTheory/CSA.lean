@@ -170,18 +170,6 @@ theorem IsCSA.mem_centralizer_of_commute_conj (hG : IsCSA G) {u x y g : G}
       (Subgroup.mem_centralizer_singleton_iff.2 h.eq.symm)
   exact (hT g x u hx1 (Subgroup.mem_centralizer_singleton_iff.1 hg) hx).eq
 
-/-- Conjugates of powers of `u` by `y` and `y'` commute when `y⁻¹ * y'` centralizes `u`. -/
-theorem commute_conj_zpow_of_inv_mul_mem_centralizer {u y y' : G} (e e' : ℤ)
-    (hy : y⁻¹ * y' ∈ Subgroup.centralizer {u}) :
-    Commute (y * u ^ e * y⁻¹) (y' * u ^ e' * y'⁻¹) := by
-  have hc : Commute (y⁻¹ * y') (u ^ e') :=
-    (Commute.zpow_right (Subgroup.mem_centralizer_singleton_iff.1 hy) e')
-  have : y' * u ^ e' * y'⁻¹ = y * u ^ e' * y⁻¹ := by
-    calc y' * u ^ e' * y'⁻¹ = y * ((y⁻¹ * y') * u ^ e' * (y⁻¹ * y')⁻¹) * y⁻¹ := by group
-      _ = y * u ^ e' * y⁻¹ := by rw [hc.eq, mul_inv_cancel_right]
-  rw [this, Commute.conj_iff]
-  exact Commute.zpow_zpow_self u e e'
-
 /-- In a torsion-free CSA group, conjugates of nonzero powers of `u ≠ 1` by `y` and `y'` do not
 commute unless `y⁻¹ * y'` centralizes `u`. -/
 theorem IsCSA.not_commute_conj_zpow (hG : IsCSA G) [IsMulTorsionFree G] {u y y' : G}
