@@ -371,7 +371,7 @@ theorem setLIntegral_exp_norm_div_rpow_le_of_eLpNorm_fderiv_le (hu : ContDiff �
   have hSA : (eLpNorm (fderiv ℝ u) (finrank ℝ E) μ).toReal ≤ A :=
     ENNReal.toReal_le_of_le_ofReal hA.le hDu
   refine (setLIntegral_mono' hΩ fun x _ ↦ ?_).trans
-    (setLIntegral_exp_norm_div_rpow_le hu h2u hΩ hsupp hn)
+    (setLIntegral_exp_norm_div_rpow_le hu h2u hsupp hn)
   gcongr ENNReal.ofReal (Real.exp ?_)
   rcases ENNReal.toReal_nonneg.eq_or_lt with hS0 | hSpos
   · -- If `Du` vanishes in `Lⁿ`, it vanishes identically, so the compactly supported `u` is zero.
