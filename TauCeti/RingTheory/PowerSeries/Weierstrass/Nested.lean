@@ -63,12 +63,8 @@ theorem IsDistinguished.exists_isMonicOfDegree_mul_eq_of_preparations
       using huf.trans hvf.symm
   have hPd : IsDistinguished r d (P : PowerSeries R) :=
     IsDistinguished.of_isUnit_mul (huf ▸ hf) hr hu
-  have hdiv : polynomialToRestricted r P ∣ polynomialToRestricted r Q := by
-    obtain ⟨w, hw⟩ := hv'.exists_right_inv
-    refine ⟨w * u, ?_⟩
-    calc polynomialToRestricted r Q = w * (v' * polynomialToRestricted r Q) := by
-           rw [← mul_assoc, mul_comm w v', hw, one_mul]
-      _ = polynomialToRestricted r P * (w * u) := by rw [← hPQ]; ring
+  have hdiv : polynomialToRestricted r P ∣ polynomialToRestricted r Q :=
+    hv'.dvd_mul_left.mp (hPQ ▸ dvd_mul_left _ u)
   obtain ⟨A, hA⟩ := (hPd.polynomialToRestricted_dvd_iff hr hP Q).mp hdiv
   have hPA : (P * A).IsMonicOfDegree e := hA ▸ hQ
   have hle : d ≤ e := by
