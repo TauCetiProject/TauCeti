@@ -11,6 +11,7 @@ public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Basic
 import Mathlib.Order.Hom.PowersetCard
 import TauCeti.CategoryTheory.Limits.Shapes.Products
 import TauCeti.Data.Finset.Sort
+import TauCeti.Order.Hom.Basic
 
 /-!
 # The ordered Čech complex
@@ -331,14 +332,6 @@ the strictly increasing tuples extends by zero to a Čech cochain. -/
 instance (P : Cᵒᵖ ⥤ A) (n : ℕ) : IsSplitEpi (((toStrictMonoCechComplex U).app P).f n) :=
   isSplitEpi_toStrictMonoCechX U P n
 
-/-- An order embedding of `Fin k` into `ι` is the same as a strictly increasing tuple. -/
-private def orderEmbeddingEquivStrictMono (k : ℕ) :
-    (Fin k ↪o ι) ≃ {a : Fin k → ι // StrictMono a} where
-  toFun f := ⟨f, f.strictMono⟩
-  invFun a := OrderEmbedding.ofStrictMono a.1 a.2
-  left_inv _ := DFunLike.coe_injective (OrderEmbedding.coe_ofStrictMono _)
-  right_inv _ := Subtype.ext (OrderEmbedding.coe_ofStrictMono _)
-
 end Preorder
 
 /-! ### Comparison with the ordered Čech complex of a functor on finite sets
@@ -375,8 +368,8 @@ variable (P : Cᵒᵖ ⥤ A)
 /-- The degree `n` term of `Čₒ(U, P)` is the product of the `P(∏_{i ∈ s} U i)` over the sets `s`
 of `n + 1` indices, the factor of `s` being reached through its increasing enumeration. The sets of
 `n + 1` indices are matched with the strictly increasing tuples by
-`Set.powersetCard.ofFinEmbEquiv` and `orderEmbeddingEquivStrictMono`, and `∏_{i ∈ s} U i` is
-reindexed along the increasing enumeration of `s` by `Pi.reindex`. -/
+`Set.powersetCard.ofFinEmbEquiv` and `OrderEmbedding.equivSubtypeStrictMono`, and
+`∏_{i ∈ s} U i` is reindexed along the increasing enumeration of `s` by `Pi.reindex`. -/
 private def isLimitFan (n : ℕ) : IsLimit (Fan.mk
     (∏ᶜ fun a : {a : Fin (n + 1) → ι // StrictMono a} ↦ P.obj (op (∏ᶜ fun j ↦ U (a.1 j))))
     fun s : {s : Finset ι // #s = n + 1} ↦
@@ -386,7 +379,7 @@ private def isLimitFan (n : ℕ) : IsLimit (Fan.mk
         Pi.π (fun i : s.1 ↦ U i) ⟨s.1.orderEmbOfFin s.2 j, orderEmbOfFin_mem _ _ j⟩).op) :=
   (productIsProduct _).ofIsoLimit <| Iso.symm <| Fan.ext (Pi.whiskerEquiv
     (((Equiv.subtypeEquivRight fun _ ↦ Set.powersetCard.mem_iff.symm).trans
-      Set.powersetCard.ofFinEmbEquiv.symm).trans (orderEmbeddingEquivStrictMono (n + 1)))
+      Set.powersetCard.ofFinEmbEquiv.symm).trans OrderEmbedding.equivSubtypeStrictMono)
     fun s ↦ P.mapIso (Pi.reindex (s.1.orderIsoOfFin s.2).toEquiv fun i : s.1 ↦ U i).symm.op).symm
       fun s ↦ by
         have h : Pi.lift (f := fun j ↦ U (s.1.orderEmbOfFin s.2 j)) (fun j ↦
@@ -445,9 +438,10 @@ private lemma strictMonoCechXIso_hom_comp_d (n : ℕ) :
       strictMonoCechComplexD U P n ≫ (strictMonoCechXIso U P (n + 1)).hom := by
   apply Quiver.Hom.op_inj
   refine (presheafCechFunctor U P).orderedCechComplex_hom_ext fun s ↦ ?_
-  rw [op_comp, op_comp, Quiver.Hom.op_unop, Functor.ι_orderedCechComplex_d_assoc,
-    orderedCechComplexι_strictMonoCechXIso_hom_op_assoc, ← op_comp, strictMonoCechComplexD_π_assoc,
-    Preadditive.sum_comp, Preadditive.sum_comp, CategoryTheory.op_sum]
+  simp only [op_comp, Quiver.Hom.op_unop, Functor.ι_orderedCechComplex_d_assoc,
+    orderedCechComplexι_strictMonoCechXIso_hom_op_assoc]
+  simp only [← op_comp, strictMonoCechComplexD_π_assoc, Preadditive.sum_comp,
+    CategoryTheory.op_sum]
   -- match the summand of `s.orderIsoOfFin h m`, the `m`-th smallest element of `s`, with the
   -- coface `m`
   refine (Fintype.sum_equiv (s.1.orderIsoOfFin s.2).toEquiv _ _ fun m ↦ ?_).symm
@@ -455,8 +449,8 @@ private lemma strictMonoCechXIso_hom_comp_d (n : ℕ) :
   have hc : #{j ∈ s.1 | j < (s.1.orderIsoOfFin s.2 m : ι)} = m := by
     rw [coe_orderIsoOfFin_apply]
     exact card_filter_lt_orderEmbOfFin _ _ m
-  rw [orderedCechComplexι_strictMonoCechXIso_hom_op, OrderIso.coe_toEquiv, hc, ← op_comp,
-    Category.assoc, ← P.map_comp, ← op_comp, ← P.map_comp, ← op_comp]
+  rw [orderedCechComplexι_strictMonoCechXIso_hom_op, OrderIso.coe_toEquiv, hc]
+  simp only [← op_comp, Category.assoc, ← P.map_comp]
   congr 2
   have hm (x : Fin (n + 1)) : s.1.orderEmbOfFin s.2 (m.succAbove x) ∈
       s.1.erase (s.1.orderIsoOfFin s.2 m) :=
