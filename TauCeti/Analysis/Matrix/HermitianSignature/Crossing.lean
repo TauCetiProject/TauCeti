@@ -29,8 +29,9 @@ on both sides, so regular crossings are isolated. This is the local computation 
 formula of Robbin and Salamon expressing the spectral flow of a path of symmetric operators as the
 sum of the signatures of its crossing forms, which in turn computes the Fredholm index of
 `d/ds + A(s)` and of linear Cauchy--Riemann operators with Lagrangian boundary conditions as a
-Maslov index. The summation of these local jumps over the crossings of a path on a compact interval
-is not carried out here.
+Maslov index. These local jumps are summed over the finitely many regular crossings of a path on
+a compact interval in `TauCeti.Analysis.Matrix.HermitianSignature.RegularCrossings`, as
+`ContinuousLinearMap.sigNeg_sub_sigNeg_eq_finsum_sigPos_sub_sigNeg_crossingForm`.
 
 The proof compares indices by dimension counting. A subspace on which `V t₀` is negative definite,
 plus a subspace of the kernel on which the crossing form is negative definite, is a subspace on
