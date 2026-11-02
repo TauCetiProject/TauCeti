@@ -62,7 +62,9 @@ private lemma eqToHom_family_apply {n : SimplexCategory} (c : cochainsAt L n)
   subst h
   rfl
 
-private lemma cochainsMap_id (n : SimplexCategory) : cochainsMap L (𝟙 n) = 𝟙 _ := by
+/-- Pullback along the identity reindexing is the identity. -/
+@[simp]
+lemma cochainsMap_id (n : SimplexCategory) : cochainsMap L (𝟙 n) = 𝟙 _ := by
   ext c σ
   dsimp only [cochainsMap, ModuleCat.hom_ofHom, LinearMap.pi_apply, LinearMap.comp_apply,
     LinearMap.proj_apply]
@@ -70,7 +72,9 @@ private lemma cochainsMap_id (n : SimplexCategory) : cochainsMap L (𝟙 n) = �
   have h : (TopCat.toSSet.obj X).map (𝟙 (Opposite.op n)) σ = σ := by simp
   exact eqToHom_family_apply L c h
 
-private lemma cochainsMap_comp {m n p : SimplexCategory} (α : m ⟶ n) (β : n ⟶ p) :
+/-- Cochain pullback respects composition of simplex reindexings. -/
+@[reassoc]
+lemma cochainsMap_comp {m n p : SimplexCategory} (α : m ⟶ n) (β : n ⟶ p) :
     cochainsMap L (α ≫ β) = cochainsMap L α ≫ cochainsMap L β := by
   ext c σ
   dsimp only [cochainsMap, ModuleCat.hom_ofHom, ModuleCat.hom_comp, LinearMap.pi_apply,
@@ -91,6 +95,27 @@ def cochains : CosimplicialObject (ModuleCat.{max v w} R) where
   map := cochainsMap L
   map_id := cochainsMap_id L
   map_comp := cochainsMap_comp L
+
+/-- Evaluation on a singular simplex, on the native cosimplicial degree object. -/
+def cochainsEval {n : SimplexCategory}
+    (σ : (TopCat.toSSet.obj X).obj (Opposite.op n)) :
+    (cochains L).obj n →ₗ[R] L.obj (initialVertex σ) :=
+  LinearMap.proj σ
+
+/-- Cosimplicial cochains are determined by their values on all singular simplices. -/
+@[ext]
+lemma cochains_ext {n : SimplexCategory} {c d : (cochains L).obj n}
+    (h : ∀ σ, cochainsEval L σ c = cochainsEval L σ d) : c = d :=
+  funext h
+
+/-- Reindexing a cosimplicial cochain pulls back values and transports them back to its
+original initial vertex. -/
+-- Keep this as a named rewrite so `Functor.map_comp` can simplify the map first.
+lemma cochains_map_eval {m n : SimplexCategory} (α : m ⟶ n) (c : (cochains L).obj m)
+    (σ : (TopCat.toSSet.obj X).obj (Opposite.op n)) :
+    cochainsEval L σ ((cochains L).map α c) =
+      L.map (inv (vertexTransport α.op σ))
+        (cochainsEval L ((TopCat.toSSet.obj X).map α.op σ) c) := (rfl)
 
 /-- The degree objects of local cochains are dependent products of the simplex fibres. -/
 lemma cochains_obj (n : SimplexCategory) : (cochains L).obj n = cochainsAt L n := (rfl)
@@ -113,6 +138,11 @@ lemma cochains_map_apply {m n : SimplexCategory} (α : m ⟶ n) (c : cochainsAt 
 /-- The singular cochain complex with values in the local coefficient system `L`. -/
 def cochainComplex : CochainComplex (ModuleCat.{max v w} R) ℕ :=
   (AlgebraicTopology.alternatingCofaceMapComplex _).obj (cochains L)
+
+/-- The local-coefficient complex is the alternating coface complex of its cosimplicial
+cochains. -/
+lemma cochainComplex_eq : cochainComplex L =
+    (AlgebraicTopology.alternatingCofaceMapComplex _).obj (cochains L) := (rfl)
 
 /-- Evaluation of a local cochain on one simplex. -/
 def cochainComplexEval (n : ℕ) (σ : (TopCat.toSSet.obj X) _⦋n⦌) :
@@ -158,6 +188,9 @@ lemma cochainComplex_d_eval (n : ℕ) (c : (cochainComplex L).X n)
     AlgebraicTopology.AlternatingCofaceMapComplex.obj, CochainComplex.of_d,
     AlgebraicTopology.AlternatingCofaceMapComplex.objD, cochains, CosimplicialObject.δ,
     cochainComplexEval, ModuleCat.hom_sum, ModuleCat.hom_zsmul]
+  -- Evaluation uses the underlying linear map of the sum of `ModuleCat` morphisms.
+  -- Its coercion to a function reduces definitionally to the cochain-family sum below;
+  -- `simp only` above rewrites the morphisms but does not unfold that coercion.
   change (∑ i : Fin (n + 2), (-1 : ℤ) ^ (i : ℕ) • (cochainsMap L (δ i)).hom) c σ = _
   rw [LinearMap.sum_apply]
   simp only [LinearMap.smul_apply, Finset.sum_apply, Pi.smul_apply]
@@ -184,14 +217,35 @@ lemma cochainsMap_δ_zero (n : ℕ) (c : cochainsAt L ⦋n⦌)
       L.map (pathTransport σ (toTop.map (δ (0 : Fin (n + 2))) (toTopInitialVertex ⦋n⦌))
         (toTopInitialVertex ⦋n + 1⦌))
           (c ((TopCat.toSSet.obj X).map (δ (0 : Fin (n + 2))).op σ)) := by
-  have h : inv (vertexTransport (δ (0 : Fin (n + 2))).op σ) =
-      pathTransport σ (toTop.map (δ (0 : Fin (n + 2))) (toTopInitialVertex ⦋n⦌))
-        (toTopInitialVertex ⦋n + 1⦌) := by
-    apply IsIso.inv_eq_of_hom_inv_id
-    simp only [vertexTransport_def, Quiver.Hom.unop_op]
-    exact (pathTransport_comp σ _ _ _).trans (pathTransport_self σ _)
   exact congrArg (fun f ↦ L.map f
-    (c ((TopCat.toSSet.obj X).map (δ (0 : Fin (n + 2))).op σ))) h
+    (c ((TopCat.toSSet.obj X).map (δ (0 : Fin (n + 2))).op σ)))
+    (inv_vertexTransport (δ (0 : Fin (n + 2))).op σ)
+
+/-- A nonzeroth face term of the differential identifies the equal initial-vertex fibres. -/
+lemma cochainComplex_face_eval_of_ne_zero {n : ℕ} {i : Fin (n + 2)} (hi : i ≠ 0)
+    (c : (cochainComplex L).X n) (σ : (TopCat.toSSet.obj X) _⦋n + 1⦌) :
+    L.map (inv (vertexTransport (δ i).op σ))
+        (cochainComplexEval L n ((TopCat.toSSet.obj X).map (δ i).op σ) c) =
+      eqToHom (congrArg L.obj
+        (initialVertex_eq_initialVertex_map (δ i).op σ (δ_toOrderHom_zero hi)).symm)
+        (cochainComplexEval L n ((TopCat.toSSet.obj X).map (δ i).op σ) c) := by
+  rw [vertexTransport_eq_eqToHom (δ i).op σ (δ_toOrderHom_zero hi), inv_eqToHom,
+    eqToHom_map]
+
+/-- The zeroth face term of the differential transports its value back along the first edge. -/
+lemma cochainComplex_face_eval_zero (n : ℕ) (c : (cochainComplex L).X n)
+    (σ : (TopCat.toSSet.obj X) _⦋n + 1⦌) :
+    L.map (inv (vertexTransport (δ (0 : Fin (n + 2))).op σ))
+        (cochainComplexEval L n
+          ((TopCat.toSSet.obj X).map (δ (0 : Fin (n + 2))).op σ) c) =
+      L.map (pathTransport σ
+        (toTop.map (δ (0 : Fin (n + 2))) (toTopInitialVertex ⦋n⦌))
+        (toTopInitialVertex ⦋n + 1⦌))
+        (cochainComplexEval L n
+          ((TopCat.toSSet.obj X).map (δ (0 : Fin (n + 2))).op σ) c) := by
+  exact congrArg (fun f ↦ L.map f
+    (cochainComplexEval L n ((TopCat.toSSet.obj X).map (δ (0 : Fin (n + 2))).op σ) c))
+    (inv_vertexTransport (δ (0 : Fin (n + 2))).op σ)
 
 variable {L} {K N : LocalCoefficientSystem.{u, v, w} R X}
 
@@ -223,8 +277,18 @@ lemma cochainsCoefficientMap_app_apply (η : L ⟶ K) (n : SimplexCategory)
         ((cochainsCoefficientMap η).app n (eqToHom (cochains_obj L n).symm c)) σ =
       η.app (initialVertex σ) (c σ) := (rfl)
 
-/-- Singular cochains as a functor of the coefficient system. -/
-def cochainsFunctor : LocalCoefficientSystem.{u, v, w} R X ⥤
+/-- A coefficient morphism acts fibrewise on the native cosimplicial degree objects. -/
+@[simp]
+lemma cochainsCoefficientMap_eval (η : L ⟶ K) {n : SimplexCategory}
+    (c : (cochains L).obj n) (σ : (TopCat.toSSet.obj X).obj (Opposite.op n)) :
+    cochainsEval K σ ((cochainsCoefficientMap η).app n c) =
+      η.app (initialVertex σ) (cochainsEval L σ c) := (rfl)
+
+/-- Singular cochains as a functor of the coefficient system, with its fibrewise action
+described by `cochainsCoefficientMap_eval`. -/
+-- This is reducible so that its degree objects retain the native `cochains` carriers and
+-- their evaluation API.
+abbrev cochainsFunctor : LocalCoefficientSystem.{u, v, w} R X ⥤
     CosimplicialObject (ModuleCat.{max v w} R) where
   obj := cochains
   map := cochainsCoefficientMap
@@ -241,31 +305,29 @@ def cochainsFunctor : LocalCoefficientSystem.{u, v, w} R X ⥤
     ext c σ
     rfl
 
-/-- The coefficient functor sends a system to its cosimplicial module of cochains. -/
-lemma cochainsFunctor_obj (L : LocalCoefficientSystem.{u, v, w} R X) :
-    (cochainsFunctor (R := R) (X := X)).obj L = cochains L := (rfl)
+/-- The identity coefficient morphism induces the identity on cosimplicial cochains. -/
+@[simp]
+lemma cochainsCoefficientMap_id (L : LocalCoefficientSystem.{u, v, w} R X) :
+    cochainsCoefficientMap (𝟙 L) = 𝟙 _ :=
+  (cochainsFunctor (R := R) (X := X)).map_id L
 
-/-- The coefficient functor acts by the fibrewise coefficient map. -/
-lemma cochainsFunctor_map (η : L ⟶ K) :
-    (cochainsFunctor (R := R) (X := X)).map η =
-      eqToHom (cochainsFunctor_obj L) ≫ cochainsCoefficientMap η ≫
-        eqToHom (cochainsFunctor_obj K).symm := (rfl)
-
-/-- The coefficient functor applies the fibre map to each simplex value. The explicit
-identifications cross the opaque functor-object and degree-object presentations. -/
--- Keep this as a named rewrite so `Functor.map_comp` can simplify the map first.
-lemma cochainsFunctor_map_app_apply (η : L ⟶ K) (n : SimplexCategory)
-    (c : cochainsAt L n) (σ : (TopCat.toSSet.obj X).obj (Opposite.op n)) :
-    eqToHom (cochains_obj K n)
-        (((eqToHom (cochainsFunctor_obj L).symm ≫
-          (cochainsFunctor (R := R) (X := X)).map η ≫
-          eqToHom (cochainsFunctor_obj K)).app n)
-            (eqToHom (cochains_obj L n).symm c)) σ =
-      η.app (initialVertex σ) (c σ) := (rfl)
+/-- Coefficient morphisms act functorially on cosimplicial cochains. -/
+@[reassoc]
+lemma cochainsCoefficientMap_comp (η : L ⟶ K) (θ : K ⟶ N) :
+    cochainsCoefficientMap (η ≫ θ) =
+      cochainsCoefficientMap η ≫ cochainsCoefficientMap θ :=
+  (cochainsFunctor (R := R) (X := X)).map_comp η θ
 
 /-- The cochain map induced by a morphism of local coefficient systems. -/
 def cochainComplexCoefficientMap (η : L ⟶ K) : cochainComplex L ⟶ cochainComplex K :=
   (AlgebraicTopology.alternatingCofaceMapComplex _).map (cochainsCoefficientMap η)
+
+/-- The coefficient map is obtained by applying the alternating coface complex functor.
+The identifications preserve the opaque complex carriers. -/
+lemma cochainComplexCoefficientMap_eq (η : L ⟶ K) :
+    cochainComplexCoefficientMap η = eqToHom (cochainComplex_eq L) ≫
+      (AlgebraicTopology.alternatingCofaceMapComplex _).map (cochainsCoefficientMap η) ≫
+      eqToHom (cochainComplex_eq K).symm := (rfl)
 
 /-- The induced cochain map applies the coefficient morphism to each simplex value. -/
 @[simp]
@@ -278,16 +340,18 @@ lemma cochainComplexCoefficientMap_eval (η : L ⟶ K) (n : ℕ)
 @[simp]
 lemma cochainComplexCoefficientMap_id (L : LocalCoefficientSystem.{u, v, w} R X) :
     cochainComplexCoefficientMap (𝟙 L) = 𝟙 _ := by
-  exact ((cochainsFunctor (R := R) (X := X)) ⋙
-    AlgebraicTopology.alternatingCofaceMapComplex _).map_id L
+  unfold cochainComplexCoefficientMap cochainComplex
+  rw [cochainsCoefficientMap_id]
+  exact (AlgebraicTopology.alternatingCofaceMapComplex _).map_id _
 
 /-- Composition of coefficient morphisms induces composition of cochain maps. -/
 @[reassoc]
 lemma cochainComplexCoefficientMap_comp (η : L ⟶ K) (θ : K ⟶ N) :
     cochainComplexCoefficientMap (η ≫ θ) =
       cochainComplexCoefficientMap η ≫ cochainComplexCoefficientMap θ := by
-  exact ((cochainsFunctor (R := R) (X := X)) ⋙
-    AlgebraicTopology.alternatingCofaceMapComplex _).map_comp η θ
+  unfold cochainComplexCoefficientMap cochainComplex
+  rw [cochainsCoefficientMap_comp]
+  exact (AlgebraicTopology.alternatingCofaceMapComplex _).map_comp _ _
 
 variable (L)
 
