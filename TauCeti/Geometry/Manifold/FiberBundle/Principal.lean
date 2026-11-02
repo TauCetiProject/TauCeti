@@ -37,12 +37,13 @@ and `TauCeti.PrincipalBundle.contMDiffOn_trivializationOfSection_symm`).
 
 The vertical tangent space at a point `p` of the total space, the kernel of the derivative of the
 projection, is the image of the derivative at the identity of the orbit map `g ↦ p • g`
-(`TauCeti.PrincipalBundle.ker_mfderiv_proj_eq_range_mfderiv_smul_one`), and this derivative is
-injective (`TauCeti.PrincipalBundle.mfderiv_smul_injective`). So the vertical tangent vectors at `p`
-correspond bijectively to the tangent vectors of `G` at the identity, and the vertical tangent space
-has the same `Module.finrank` as the model space of `G`, which is its dimension when that model
-space is finite-dimensional (`TauCeti.PrincipalBundle.finrank_ker_mfderiv_proj`). These statements
-need `C^n` multiplication on `G` and a `C^n` fibre bundle for some `n ≠ 0`.
+(`TauCeti.PrincipalBundle.ker_mfderiv_proj_eq_range_mfderiv_totalSpaceMk_smul_one`), and this
+derivative is injective (`TauCeti.PrincipalBundle.mfderiv_totalSpaceMk_smul_injective`). So the
+vertical tangent vectors at `p` correspond bijectively to the tangent vectors of `G` at the
+identity, and the vertical tangent space has the same `Module.finrank` as the model space of `G`,
+which is its dimension when that model space is finite-dimensional
+(`TauCeti.PrincipalBundle.finrank_ker_mfderiv_proj`). These statements need `C^n` multiplication on
+`G` and a `C^n` fibre bundle for some `n ≠ 0`.
 
 ## Main results
 
@@ -53,9 +54,11 @@ need `C^n` multiplication on `G` and a `C^n` fibre bundle for some `n ≠ 0`.
 * `TauCeti.PrincipalBundle.contMDiffOn_trivializationOfSection` and
   `TauCeti.PrincipalBundle.contMDiffOn_trivializationOfSection_symm`: a `C^n` local section
   determines a `C^n` equivariant trivialization with `C^n` inverse.
-* `TauCeti.PrincipalBundle.ker_mfderiv_proj_eq_range_mfderiv_smul`: the kernel of the derivative of
-  the projection at `p • g₀` is the image of the derivative at `g₀` of the orbit map of `p`.
-* `TauCeti.PrincipalBundle.mfderiv_smul_injective`: the orbit maps have injective derivative.
+* `TauCeti.PrincipalBundle.ker_mfderiv_proj_eq_range_mfderiv_totalSpaceMk_smul`: the kernel of the
+  derivative of the projection at `p • g₀` is the image of the derivative at `g₀` of the orbit map
+  of `p`.
+* `TauCeti.PrincipalBundle.mfderiv_totalSpaceMk_smul_injective`: the orbit maps have injective
+  derivative.
 * `TauCeti.PrincipalBundle.finrank_ker_mfderiv_proj`: the vertical tangent space has the same
   `Module.finrank` as the model space of `G`.
 
@@ -338,7 +341,7 @@ private theorem mfderiv_smul_aux (hn : n ≠ 0) (p : P b) (g₀ : G) :
 variable (IB IG) in
 /-- **The orbit maps of a principal bundle have injective derivative.** For a point `p` of the
 fibre over `b`, the derivative at every `g₀` of the orbit map `g ↦ p • g` is injective. -/
-theorem mfderiv_smul_injective (hn : n ≠ 0) (p : P b) (g₀ : G) :
+theorem mfderiv_totalSpaceMk_smul_injective (hn : n ≠ 0) (p : P b) (g₀ : G) :
     Function.Injective (mfderiv IG (IB.prod IG)
       (fun g : G ↦ ManifoldTotalSpace.homeomorph G P ⟨b, op g • p⟩) g₀) := by
   obtain ⟨-, L, hL, -⟩ := mfderiv_smul_aux (IB := IB) (IG := IG) hn p g₀
@@ -349,8 +352,8 @@ variable (IB IG) in
 `b`, the kernel of the derivative of the projection is the image of the derivative at `g₀` of the
 orbit map `g ↦ p • g`. For `g₀ = 1` this describes the vertical vectors at `p` as the
 derivatives at the identity of `g ↦ p • g`
-(`TauCeti.PrincipalBundle.ker_mfderiv_proj_eq_range_mfderiv_smul_one`). -/
-theorem ker_mfderiv_proj_eq_range_mfderiv_smul (hn : n ≠ 0) (p : P b) (g₀ : G) :
+(`TauCeti.PrincipalBundle.ker_mfderiv_proj_eq_range_mfderiv_totalSpaceMk_smul_one`). -/
+theorem ker_mfderiv_proj_eq_range_mfderiv_totalSpaceMk_smul (hn : n ≠ 0) (p : P b) (g₀ : G) :
     (mfderiv (IB.prod IG) IB
       (fun x : ManifoldTotalSpace G P ↦ ((ManifoldTotalSpace.homeomorph G P).symm x).proj)
       (ManifoldTotalSpace.homeomorph G P ⟨b, op g₀ • p⟩)).ker =
@@ -365,13 +368,13 @@ variable (G IB IG) in
 /-- **The vertical tangent space of a principal bundle at a point.** At a point `p` of the fibre
 over `b`, the kernel of the derivative of the projection is the image of the derivative at the
 identity of the orbit map `g ↦ p • g`. -/
-theorem ker_mfderiv_proj_eq_range_mfderiv_smul_one (hn : n ≠ 0) (p : P b) :
+theorem ker_mfderiv_proj_eq_range_mfderiv_totalSpaceMk_smul_one (hn : n ≠ 0) (p : P b) :
     (mfderiv (IB.prod IG) IB
       (fun x : ManifoldTotalSpace G P ↦ ((ManifoldTotalSpace.homeomorph G P).symm x).proj)
       (ManifoldTotalSpace.homeomorph G P ⟨b, p⟩)).ker =
     (mfderiv IG (IB.prod IG)
       (fun g : G ↦ ManifoldTotalSpace.homeomorph G P ⟨b, op g • p⟩) 1).range := by
-  have := ker_mfderiv_proj_eq_range_mfderiv_smul IB IG hn p (1 : G)
+  have := ker_mfderiv_proj_eq_range_mfderiv_totalSpaceMk_smul IB IG hn p (1 : G)
   rwa [op_one, one_smul] at this
 
 variable (IB IG) in
@@ -384,9 +387,10 @@ theorem finrank_ker_mfderiv_proj (hn : n ≠ 0) (x : ManifoldTotalSpace G P) :
       (fun x : ManifoldTotalSpace G P ↦ ((ManifoldTotalSpace.homeomorph G P).symm x).proj) x).ker =
       Module.finrank 𝕜 EG := by
   obtain ⟨⟨b, p⟩, rfl⟩ := (ManifoldTotalSpace.homeomorph G P).surjective x
-  rw [ker_mfderiv_proj_eq_range_mfderiv_smul_one G IB IG hn p]
+  rw [ker_mfderiv_proj_eq_range_mfderiv_totalSpaceMk_smul_one G IB IG hn p]
   -- Elaborated before unifying with the goal, whose tangent-space instances are indexed by the
   -- equal point `p` rather than `p • 1`.
-  exact (LinearMap.finrank_range_of_inj (R := 𝕜) (mfderiv_smul_injective IB IG hn p (1 : G)) :)
+  exact (LinearMap.finrank_range_of_inj (R := 𝕜)
+    (mfderiv_totalSpaceMk_smul_injective IB IG hn p (1 : G)) :)
 
 end TauCeti.PrincipalBundle
