@@ -172,9 +172,9 @@ instance (f : C(X, Y)) : (pullbackFunctor (𝕜 := 𝕜) f).Additive where
   induction A using induction_on
   induction D using induction_on
   apply heq_of_eq
-  apply CoordinateHom.ext
-  intros
-  rfl
+  apply hom_ext
+  intro x
+  exact fiberMap_pullbackMap a (ContinuousMap.id Y) x
 
 /-- Pullback is contravariantly compatible with composition of base maps. -/
 @[simp] theorem pullbackFunctor_comp (f : C(X, Y)) (g : C(Y, Z)) :
@@ -182,9 +182,10 @@ instance (f : C(X, Y)) : (pullbackFunctor (𝕜 := 𝕜) f).Additive where
   apply Functor.hext (fun A => pullback_comp A f g)
   intro A D a
   apply heq_of_eq
-  apply CoordinateHom.ext
-  intros
-  rfl
+  apply hom_ext
+  intro x
+  exact (fiberMap_pullbackMap (pullbackMap a g) f x).trans
+    ((fiberMap_pullbackMap a g (f x)).trans (fiberMap_pullbackMap a (g.comp f) x).symm)
 
 private def pullbackTotalEquiv (A : FiniteRankBundleCore 𝕜 Y) (f : C(X, Y)) :
     (A.pullback f).core.TotalSpace ≃ TotalSpace (Fin A.rank → 𝕜) ((⇑f) *ᵖ A.core.Fiber) where
@@ -252,7 +253,9 @@ theorem pullbackHomeomorph_naturality {A D : FiniteRankBundleCore 𝕜 Y} (a : A
       a.totalSpaceMap (Pullback.lift f (A.pullbackHomeomorph f p)) := by
   rcases p with ⟨x, v⟩
   simp only [CoordinateHom.totalSpaceMap_mk, pullbackHomeomorph_apply, fiberMap_pullbackMap]
-  dsimp only [Pullback.lift]
-  exact (a.totalSpaceMap_mk (f x) v).symm
+  exact (Pullback.lift_mk (E := D.core.Fiber) (F := Fin D.rank → 𝕜) f x _).trans
+    ((a.totalSpaceMap_mk (f x) v).symm.trans
+      (congrArg a.totalSpaceMap
+        (Pullback.lift_mk (E := A.core.Fiber) (F := Fin A.rank → 𝕜) f x v).symm))
 
 end TauCeti.FiniteRankBundleCore
