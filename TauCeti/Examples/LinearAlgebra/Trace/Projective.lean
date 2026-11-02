@@ -36,8 +36,8 @@ instance : Module.Projective (ℚ × ℚ) (Ideal.span {((1 : ℚ), (0 : ℚ))}) 
   · obtain ⟨a, rfl⟩ := Ideal.mem_span_singleton'.1 hm
     simp
 
-/-- The nonfree Check: on the projective, nonfree ideal `ℚ × 0` of `ℚ × ℚ`, the identity has
-projective trace `(1, 0)`, while Mathlib's `LinearMap.trace` is `0`. -/
+/-- On the projective, nonfree ideal `ℚ × 0` of `ℚ × ℚ`, the identity has projective trace
+`(1, 0)`, while Mathlib's `LinearMap.trace` is `0`. -/
 theorem projectiveTrace_nonfree :
     projectiveTrace (ℚ × ℚ) (Ideal.span {((1 : ℚ), (0 : ℚ))}) LinearMap.id = (1, 0) ∧
       LinearMap.trace (ℚ × ℚ) (Ideal.span {((1 : ℚ), (0 : ℚ))}) LinearMap.id = 0 := by
