@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 public import TauCeti.Analysis.Sobolev.Trudinger
 public import TauCeti.Geometry.Manifold.Riemannian.ChartCutoff
+import TauCeti.MeasureTheory.Integral.Lebesgue.BiUnion
 
 /-!
 # Trudinger's inequality on a closed Riemannian manifold
@@ -158,26 +159,20 @@ theorem exists_mem_nhds_setLIntegral_exp_mul_abs_rpow_le [LindelofSpace M] (hn :
   -- The flat Trudinger inequality for `w` on the ball of radius `r`, read back on `M`.
   have htr := setLIntegral_exp_norm_div_rpow_le_of_eLpNorm_fderiv_le (μ := μ) hw hwcs
     measurableSet_ball hwsupp hn hA hDwA
-  rw [ENNReal.coe_toNNReal hC, setLIntegral_riemannianVolume_inter_preimage c isOpen_ball
-    ((ball_subset_ball (by linarith)).trans hrt)]
-  calc ∫⁻ y in ball (φ c) (r / 4), ENNReal.ofReal (ρ (φ.symm y)) *
-        ENNReal.ofReal (Real.exp (((κ * A) ^ q)⁻¹ * |u (φ.symm y)| ^ q)) ∂μ
-      ≤ ∫⁻ y in ball (φ c) (r / 4), ENNReal.ofReal (2 * ρ c) *
-          ENNReal.ofReal (Real.exp ((‖w y‖ / (κ * A)) ^ q)) ∂μ := by
-        refine setLIntegral_mono' measurableSet_ball fun y hy ↦ ?_
-        -- On the ball of radius `r / 4` the bump is `1`, so `w` is `u` read in the chart.
-        have hwy : w y = u (φ.symm y) := by
-          simp only [w, b.one_of_mem_closedBall (ball_subset_closedBall hy), one_mul]
-        gcongr
-        · exact (hball y (ball_subset_ball (by linarith) hy)).2.2.le
-        · rw [Real.div_rpow (norm_nonneg _) (by positivity), Real.norm_eq_abs, hwy,
-            div_eq_inv_mul]
-    _ ≤ ∫⁻ y in ball (φ c) r, ENNReal.ofReal (2 * ρ c) *
+  have hb : ball (φ c) b.rIn ⊆ ball (φ c) r := ball_subset_ball (by change r / 4 ≤ r; linarith)
+  have hF (t : ℝ) : ((κ * A) ^ q)⁻¹ * |t| ^ q = (‖t‖ / (κ * A)) ^ q := by
+    rw [Real.div_rpow (norm_nonneg _) (by positivity), Real.norm_eq_abs, div_eq_inv_mul]
+  rw [ENNReal.coe_toNNReal hC]
+  simp only [hF]
+  calc _ ≤ ENNReal.ofReal (2 * ρ c) * ∫⁻ y in ball (φ c) (r / 4),
           ENNReal.ofReal (Real.exp ((‖w y‖ / (κ * A)) ^ q)) ∂μ :=
-        lintegral_mono_set (ball_subset_ball (by linarith))
-    _ = ENNReal.ofReal (2 * ρ c) *
-          ∫⁻ y in ball (φ c) r, ENNReal.ofReal (Real.exp ((‖w y‖ / (κ * A)) ^ q)) ∂μ :=
-        lintegral_const_mul' _ _ ENNReal.ofReal_ne_top
+        b.setLIntegral_inter_preimage_le_mul_setLIntegral_mul_comp_extChartAt_symm (hb.trans hrt)
+          (fun y hy ↦ (hball y (hb hy)).2.2.le) u
+          fun t ↦ ENNReal.ofReal (Real.exp ((‖t‖ / (κ * A)) ^ q))
+    _ ≤ ENNReal.ofReal (2 * ρ c) *
+          ∫⁻ y in ball (φ c) r, ENNReal.ofReal (Real.exp ((‖w y‖ / (κ * A)) ^ q)) ∂μ := by
+        gcongr _ * ?_
+        exact lintegral_mono_set hb
     _ ≤ C := mul_le_mul_of_nonneg_left htr bot_le
 
 /-- **Trudinger's inequality on a closed Riemannian manifold.** On a compact manifold without
@@ -201,13 +196,7 @@ theorem exists_lintegral_exp_mul_abs_rpow_le [CompactSpace M] (hn : 2 ≤ finran
       ≤ ∑ c ∈ t, ∫⁻ x in V c, ENNReal.ofReal (Real.exp ((1 + ∑ c ∈ t, (β c)⁻¹)⁻¹ *
           |u x| ^ ((finrank ℝ E : ℝ) / (finrank ℝ E - 1)))) ∂riemannianVolume I M := by
         rw [← setLIntegral_univ]
-        refine (lintegral_mono_set ht).trans ?_
-        rw [← iUnion_subtype (· ∈ t) fun c ↦ V c]
-        refine (lintegral_iUnion_le _ _).trans_eq ?_
-        rw [tsum_fintype]
-        exact Finset.sum_coe_sort t fun c ↦ ∫⁻ x in V c, ENNReal.ofReal (Real.exp
-          ((1 + ∑ c ∈ t, (β c)⁻¹)⁻¹ * |u x| ^ ((finrank ℝ E : ℝ) / (finrank ℝ E - 1))))
-          ∂riemannianVolume I M
+        exact (lintegral_mono_set ht).trans (lintegral_biUnion_finset_le _ _ _)
     _ ≤ ∑ c ∈ t, (C c : ℝ≥0∞) := by
         refine Finset.sum_le_sum fun c hc ↦ (lintegral_mono fun x ↦ ?_).trans (hC c u hu hnorm)
         gcongr

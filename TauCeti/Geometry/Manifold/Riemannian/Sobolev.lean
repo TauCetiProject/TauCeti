@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.FunctionalSpaces.SobolevInequality
 public import TauCeti.Geometry.Manifold.Riemannian.ChartCutoff
+import TauCeti.MeasureTheory.Integral.Lebesgue.BiUnion
 
 /-!
 # The Sobolev inequality on a closed Riemannian manifold
@@ -169,22 +170,11 @@ theorem exists_mem_nhds_eLpNorm_restrict_le_mul_eLpNorm_mgradient_add [LindelofS
     rw [← ENNReal.rpow_le_rpow_iff hp'R,
       eLpNorm_nnreal_pow_eq_lintegral hp'0 hu.continuous.aestronglyMeasurable,
       ENNReal.mul_rpow_of_nonneg _ _ hp'R.le, ENNReal.rpow_inv_rpow hp'R.ne',
-      eLpNorm_nnreal_pow_eq_lintegral hp'0 hw.continuous.aestronglyMeasurable,
-      setLIntegral_riemannianVolume_inter_preimage c isOpen_ball
-        ((ball_subset_ball (by linarith)).trans hrt)]
-    calc ∫⁻ y in ball (φ c) (r / 4), ENNReal.ofReal (ρ (φ.symm y)) *
-          ‖u (φ.symm y)‖ₑ ^ (p' : ℝ) ∂μ
-        ≤ ∫⁻ y in ball (φ c) (r / 4), ENNReal.ofReal (2 * ρ c) * ‖w y‖ₑ ^ (p' : ℝ) ∂μ := by
-          refine setLIntegral_mono' measurableSet_ball fun y hy ↦ ?_
-          -- On the ball of radius `r / 4` the bump is `1`, so `w` is `u` read in the chart.
-          have hwy : w y = u (φ.symm y) := by
-            simp only [w, b.one_of_mem_closedBall (ball_subset_closedBall hy), one_mul]
-          rw [hwy]
-          gcongr
-          exact (hball y (ball_subset_ball (by linarith) hy)).2.2.le
-      _ ≤ ∫⁻ y, ENNReal.ofReal (2 * ρ c) * ‖w y‖ₑ ^ (p' : ℝ) ∂μ := setLIntegral_le_lintegral _ _
-      _ = ENNReal.ofReal (2 * ρ c) * ∫⁻ y, ‖w y‖ₑ ^ (p' : ℝ) ∂μ :=
-          lintegral_const_mul' _ _ ENNReal.ofReal_ne_top
+      eLpNorm_nnreal_pow_eq_lintegral hp'0 hw.continuous.aestronglyMeasurable]
+    have hb : ball (φ c) b.rIn ⊆ ball (φ c) r := ball_subset_ball (by change r / 4 ≤ r; linarith)
+    exact (b.setLIntegral_inter_preimage_le_mul_setLIntegral_mul_comp_extChartAt_symm
+      (hb.trans hrt) (fun y hy ↦ (hball y (hb hy)).2.2.le) u fun t ↦ ‖t‖ₑ ^ (p' : ℝ)).trans
+      (by gcongr; exact Measure.restrict_le_self)
   calc eLpNorm u p' (dV.restrict (φ.source ∩ φ ⁻¹' ball (φ c) (r / 4)))
       ≤ A * (K * (D * X)) := hloc.trans (by gcongr; exact hGNS.trans (by gcongr))
     _ = (A * K * D).toNNReal * X := by
@@ -221,11 +211,7 @@ theorem exists_eLpNorm_le_mul_eLpNorm_mgradient_add [CompactSpace M] {p p' : ℝ
   calc ∫⁻ x, ‖u x‖ₑ ^ (p' : ℝ) ∂riemannianVolume I M
       ≤ ∑ c ∈ t, ∫⁻ x in V c, ‖u x‖ₑ ^ (p' : ℝ) ∂riemannianVolume I M := by
         rw [← setLIntegral_univ]
-        refine (lintegral_mono_set ht).trans ?_
-        rw [← iUnion_subtype (· ∈ t) fun c ↦ V c]
-        refine (lintegral_iUnion_le _ _).trans_eq ?_
-        rw [tsum_fintype]
-        exact Finset.sum_coe_sort t fun c ↦ ∫⁻ x in V c, ‖u x‖ₑ ^ (p' : ℝ) ∂riemannianVolume I M
+        exact (lintegral_mono_set ht).trans (lintegral_biUnion_finset_le _ _ _)
     _ ≤ ∑ c ∈ t, (C c : ℝ≥0∞) ^ (p' : ℝ) * X ^ (p' : ℝ) := by
         refine Finset.sum_le_sum fun c _ ↦ ?_
         rw [← eLpNorm_nnreal_pow_eq_lintegral hp'0 hu.continuous.aestronglyMeasurable,

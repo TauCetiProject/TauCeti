@@ -16,8 +16,8 @@ import TauCeti.Geometry.Manifold.Riemannian.Basic
 
 To localize an integral estimate from the model space to a manifold with a continuous Riemannian
 metric, one reads a function `u` in a chart around a point `c` and cuts it off with a bump function
-`b` centred at the chart image of `c`. This file supplies the two metric comparisons that such a
-localization needs:
+`b` centred at the chart image of `c`. This file supplies the comparisons that such a localization
+needs:
 
 * near the chart image of `c` there is a coordinate ball on which the coordinate derivative of
   every function is bounded by a fixed multiple of the length of its gradient, and the chart volume
@@ -26,7 +26,10 @@ localization needs:
 * on such a ball, `∫ ‖D(b · u)‖ ^ p` with respect to Lebesgue measure on the model space is bounded
   by a constant multiple of `C₁ ^ p ∫ |∇u| ^ p dV + G ^ p ∫ |u| ^ p dV`, where `C₁` is the
   derivative comparison constant and `G` bounds the derivative of the bump
-  (`ContDiffBump.lintegral_enorm_fderiv_mul_comp_extChartAt_symm_rpow_le`).
+  (`ContDiffBump.lintegral_enorm_fderiv_mul_comp_extChartAt_symm_rpow_le`);
+* where the bump is `1` and the chart density is at most `m`, an integral of `F ∘ u` over the
+  chart preimage of a ball is bounded by `m` times the integral of `F (b · u)` over the ball
+  (`ContDiffBump.setLIntegral_inter_preimage_le_mul_setLIntegral_mul_comp_extChartAt_symm`).
 
 They are used for the Trudinger and Sobolev inequalities on a closed Riemannian manifold.
 -/
@@ -160,5 +163,28 @@ theorem lintegral_enorm_fderiv_mul_comp_extChartAt_symm_rpow_le [LindelofSpace M
         · exact setLIntegral_comp_extChartAt_symm_le_mul_lintegral c isOpen_ball hrt hm hρ
             fun x ↦ ‖u x‖ₑ ^ p
     _ = _ := by ring
+
+omit [I.Boundaryless] in
+/-- **Reading a chart cutoff back on `M`.** If the chart density is at most `m` on the ball of
+radius `b.rIn`, where the bump is `1`, then for every `F : ℝ → ℝ≥0∞` the integral of `F ∘ u` over
+the chart preimage of that ball is at most `m` times the integral of `F (b · u)` over the ball, with
+respect to Lebesgue measure on the model space. -/
+theorem setLIntegral_inter_preimage_le_mul_setLIntegral_mul_comp_extChartAt_symm [LindelofSpace M]
+    {c : M}
+    (b : ContDiffBump (extChartAt I c c))
+    (hbt : ball (extChartAt I c c) b.rIn ⊆ (extChartAt I c).target) {m : ℝ}
+    (hρ : ∀ y ∈ ball (extChartAt I c c) b.rIn,
+      chartVolumeDensity (I := I) c ((extChartAt I c).symm y) ≤ m)
+    (u : M → ℝ) (F : ℝ → ℝ≥0∞) :
+    ∫⁻ x in (extChartAt I c).source ∩ extChartAt I c ⁻¹' ball (extChartAt I c c) b.rIn,
+        F (u x) ∂riemannianVolume I M ≤
+      ENNReal.ofReal m * ∫⁻ y in ball (extChartAt I c c) b.rIn,
+        F (b y * u ((extChartAt I c).symm y)) ∂(Module.finBasis ℝ E).addHaar := by
+  rw [setLIntegral_riemannianVolume_inter_preimage c isOpen_ball hbt,
+    ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
+  refine setLIntegral_mono' measurableSet_ball fun y hy ↦ ?_
+  rw [b.one_of_mem_closedBall (ball_subset_closedBall hy), one_mul]
+  gcongr
+  exact hρ y hy
 
 end ContDiffBump
