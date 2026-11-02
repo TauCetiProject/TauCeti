@@ -64,7 +64,7 @@ theorem contMDiff_symm_of_equivariant [LieGroup IG n G]
   let σ : ∀ b, P b := fun b ↦ t.symm b 1
   have hσ : ContMDiffAt IB (IB.prod IG) n
       (fun b ↦ ManifoldTotalSpace.homeomorph G P ⟨b, σ b⟩) b₀ :=
-    contMDiffAt_trivializationAt_symm_const b₀ 1
+    contMDiffAt_totalSpaceMk_trivializationAt_symm b₀ 1
   have hπ := ManifoldTotalSpace.contMDiff_proj n G Q IB IG q
   have hs := hσ.comp q hπ
   have hfs : ContMDiffAt (IB.prod IG) (IB.prod IG) n
@@ -81,8 +81,8 @@ theorem contMDiff_symm_of_equivariant [LieGroup IG n G]
   have hd := hfs.division hq
   refine (hs.totalSpaceMk_smul hd).congr_of_eventuallyEq (Filter.Eventually.of_forall ?_)
   intro y
-  rw [fiberwiseMap_apply]
-  apply congrArg (ManifoldTotalSpace.homeomorph G P)
+  apply (ManifoldTotalSpace.homeomorph G P).symm.injective
+  simp only [Homeomorph.symm_apply_apply, homeomorph_symm_fiberwiseMap]
   apply congrArg (TotalSpace.mk _)
   apply (e _).injective
   simp only [Equiv.apply_symm_apply, he, smul_division]

@@ -32,9 +32,10 @@ projection to the base is `C^n` and its fibre coordinate in the trivialization a
 is `C^n` into `F`. The trivializations of the atlas are `C^n` on their sources with `C^n` inverses,
 and the projection is `C^n`.
 
-Maps out of the base descend smoothly along the projection. Every point `x` of the total space lies
-on a local section of the trivialization at its base point, `b ↦ e⁻¹ (b, (e x).2)`, whose fibre
-coordinate in that trivialization is constant. A map `h` out of the base therefore agrees, near the
+Maps out of the base descend smoothly along the projection. For any `b₀ : B` and `v : F`, the
+local section `b ↦ e⁻¹ (b, v)` of the preferred trivialization `e` at `b₀` is `C^n` at `b₀`.
+In particular, every point `x` of the total space lies on such a section at its base point, with
+constant fibre coordinate `(e x).2`. A map `h` out of the base therefore agrees, near the
 base point of `x`, with the composite of `h ∘ π` and this section, so `h` is `C^n` at the base point
 of `x` exactly when `h ∘ π` is `C^n` at `x`. When the fibre is nonempty the projection is
 surjective, so a `C^n` map on the total space that is constant on the fibres descends uniquely to a
@@ -47,6 +48,8 @@ right action is constant on the fibres, because each fibre is a single orbit.
 * `TauCeti.ContMDiffFiberBundle n F E IB IF`: the coordinate changes of the atlas are `C^n`.
 * `TauCeti.ManifoldTotalSpace F E`: a copy of the total space charted through the charts of the
   fibre, modelled on `ModelProd HB HF`.
+* `TauCeti.ManifoldTotalSpace.fiberwiseMap`: the map of charted total spaces induced by a family
+  `∀ b, E b → E' b`, with no continuity assumed. It represents bundle maps over a fixed base.
 
 ## Main results
 
@@ -57,6 +60,10 @@ right action is constant on the fibres, because each fibre is a single orbit.
 * `TauCeti.ManifoldTotalSpace.extChartAt_proj_extChartAt_symm`: in preferred charts, the projection
   is the first coordinate.
 * `TauCeti.ManifoldTotalSpace.contMDiff_proj`: the projection is `C^n`.
+* `TauCeti.ManifoldTotalSpace.contMDiffAt_trivializationAt_symm` and
+  `TauCeti.ManifoldTotalSpace.contMDiffAt_totalSpaceMk_trivializationAt_symm`: the local section of
+  the preferred trivialization with any constant fibre coordinate is `C^n` at its centre, using
+  either the total-space inverse or the fibre-valued inverse followed by `TotalSpace.mk`.
 * `TauCeti.ManifoldTotalSpace.contMDiffWithinAt_comp_proj_iff` and `contMDiffAt_comp_proj_iff`: a
   map out of the base is `C^n` at the base point of `x` exactly when its composite with the
   projection is `C^n` at `x`.
@@ -209,12 +216,6 @@ def fiberwiseMap (φ : ∀ b, E b → E' b) (x : ManifoldTotalSpace F E) :
     ManifoldTotalSpace F E' :=
   homeomorph F E' ⟨((homeomorph F E).symm x).proj, φ _ ((homeomorph F E).symm x).2⟩
 
-/-- Evaluation of a fibrewise map at an arbitrary point of the charted total space. -/
-theorem fiberwiseMap_apply (φ : ∀ b, E b → E' b) (x : ManifoldTotalSpace F E) :
-    fiberwiseMap φ x =
-      homeomorph F E' ⟨((homeomorph F E).symm x).proj, φ _ ((homeomorph F E).symm x).2⟩ := by
-  rfl
-
 /-- A fibrewise map evaluated on a point transported from the original total space. -/
 @[simp]
 theorem fiberwiseMap_homeomorph (φ : ∀ b, E b → E' b) (p : TotalSpace F E) :
@@ -363,7 +364,7 @@ theorem contMDiffAt_trivializationAt_symm (b₀ : B) (v : F) :
 
 /-- The fibre-valued inverse of the preferred trivialization with constant coordinate `v`
 defines a `C^n` local section at its centre. -/
-theorem contMDiffAt_trivializationAt_symm_const [∀ b, Nonempty (E b)] (b₀ : B) (v : F) :
+theorem contMDiffAt_totalSpaceMk_trivializationAt_symm [∀ b, Nonempty (E b)] (b₀ : B) (v : F) :
     ContMDiffAt IB (IB.prod IF) n
       (fun b ↦ homeomorph F E ⟨b, (trivializationAt F E b₀).symm b v⟩) b₀ := by
   refine (contMDiffAt_trivializationAt_symm b₀ v).congr_of_eventuallyEq ?_
