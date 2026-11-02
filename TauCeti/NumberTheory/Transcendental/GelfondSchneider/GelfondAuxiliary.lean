@@ -9,6 +9,7 @@ public import TauCeti.Analysis.SpecialFunctions.Exp.ExponentialPolynomial
 
 import TauCeti.Algebra.CharZero.RatCast
 import TauCeti.LinearAlgebra.Vandermonde
+import TauCeti.NumberTheory.Transcendental.GelfondSchneider.SchneiderAuxiliary
 
 /-!
 # The first nonvanishing derivative of Gelfond's auxiliary function
@@ -135,15 +136,9 @@ theorem iteratedDeriv_gelfond_auxiliary_natCast {R : Type*} [Ring R] (σ : R →
   refine sum_congr rfl fun a _ ↦ ?_
   rw [map_sum, mul_sum]
   refine sum_congr rfl fun b _ ↦ ?_
-  have he : Complex.exp ((((a + 1 : ℕ) : ℂ) + (b + 1 : ℕ) * σ β) * l * t) =
-      σ (α ^ ((a + 1 : ℕ) * t) * γ ^ ((b + 1 : ℕ) * t)) := by
-    rw [map_mul, map_pow, map_pow, hα, hγ, ← Complex.exp_nat_mul, ← Complex.exp_nat_mul,
-      ← Complex.exp_add]
-    congr 1
-    push_cast
-    ring
-  rw [he]
+  rw [map_mul, σ.map_pow_mul_pow_eq_exp hα hγ]
   simp only [map_mul, map_pow, map_add, map_natCast, mul_pow]
+  rw [mul_comm ((t : ℂ) * l), mul_comm (t : ℂ) l, ← mul_assoc _ l]
   ring
 
 /-- **The first nonvanishing derivative of Gelfond's auxiliary function.** Let `K` be a field with
