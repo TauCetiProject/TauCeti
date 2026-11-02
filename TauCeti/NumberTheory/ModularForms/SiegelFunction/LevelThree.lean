@@ -198,11 +198,9 @@ theorem siegelFunction_third_two_thirds_apply_add_one {τ : ℂ} (hτ : 0 < τ.i
       exp_pi_div_two_mul_I]
   rw [hr] at h
   -- `h` now reads `g_{(1/3, 1)} = -e^{π i / 3} g_{(1/3, 0)}`.
-  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one, Int.cast_zero,
-    Int.cast_one, zero_mul, one_mul, zero_add, zpow_one, zero_sub, mul_neg, neg_neg, ofReal_div,
-    ofReal_one, ofReal_ofNat] at h
+  norm_num at h
   rw [siegelFunction_apply_add_one]
-  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
+  norm_num
   rw [h]
   linear_combination (-siegelFunction ![1 / 3, 0] τ) * he
 

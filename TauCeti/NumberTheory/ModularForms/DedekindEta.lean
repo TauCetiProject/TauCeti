@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.ModularForms.Discriminant
 public import TauCeti.Analysis.SpecialFunctions.QPochhammer
 import TauCeti.Analysis.Complex.UpperHalfPlane.Exp
+import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
 # Product identities for the Dedekind eta function
@@ -126,16 +127,6 @@ theorem eta_neg_one_div_sq {τ : ℂ} (hτ : 0 < τ.im) : η (-1 / τ) ^ 2 = -I 
   rw [h, mul_pow, mul_pow, inv_pow, hsq, hsq, inv_I]
   ring
 
-/-- For real `c > 0`, the principal square roots satisfy `√(c z) = √c √z`, since the
-argument of `c z` is that of `z`. -/
-private theorem sqrt_ofReal_mul {c : ℝ} (hc : 0 < c) {z : ℂ} (hz : z ≠ 0) :
-    Complex.sqrt (c * z) = √c * Complex.sqrt z := by
-  rw [Complex.sqrt, Complex.sqrt, cpow_def_of_ne_zero (mul_ne_zero (ofReal_ne_zero.2 hc.ne') hz),
-    log_ofReal_mul hc hz, add_mul, Complex.exp_add, cpow_def_of_ne_zero hz, Real.sqrt_eq_rpow,
-    Real.rpow_def_of_pos hc, ofReal_exp]
-  push_cast
-  ring_nf
-
 /-- **The `S`-transformation of `η` at a positive real multiple**: for real `c > 0`,
 `η(-1/(c τ)) η(τ) = √c η(c τ) η(-1/τ)` on the upper half-plane. The branch of `√(c τ)` in
 Mathlib's `ModularForm.eta_comp_eq_csqrt_I_inv` is `√c √τ`, so no sign is lost. -/
@@ -146,7 +137,11 @@ theorem eta_neg_one_div_ofReal_mul_mul {c : ℝ} (hc : 0 < c) {τ : ℂ} (hτ : 
     simpa using _root_.ModularForm.eta_comp_eq_csqrt_I_inv hcτ
   have h₂ : η (-1 / τ) = (Complex.sqrt I)⁻¹ * (Complex.sqrt τ * η τ) := by
     simpa using _root_.ModularForm.eta_comp_eq_csqrt_I_inv hτ
-  rw [h₁, h₂, sqrt_ofReal_mul hc (UpperHalfPlane.ne_zero ⟨τ, hτ⟩)]
+  -- `Complex.sqrt` is the principal power `2⁻¹`, which splits across the real factor `c ≥ 0`.
+  have hsqrt : Complex.sqrt (c * τ) = √c * Complex.sqrt τ :=
+    (TauCeti.ofReal_mul_cpow hc.le τ 2⁻¹).trans
+      (congrArg (· * Complex.sqrt τ) (Complex.sqrt_of_nonneg (zero_le_real.2 hc.le)))
+  rw [h₁, h₂, hsqrt]
   ring
 
 end TauCeti.ModularForm

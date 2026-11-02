@@ -299,11 +299,15 @@ theorem qTheta_pow_three_self_mul {s : 𝕜} (hs : ‖s‖ < 1) :
     rw [tprod_eq_zero_mul' (f := fun n ↦ 1 - s ^ (3 * n + 1))
       (by simpa only [← pow_mul, ← pow_succ] using multipliable_one_sub_pow_mul hs3 s)]
     exact congrArg₂ (· * ·) (by norm_num) (tprod_congr fun n ↦ by ring)
-  rw [hsplit, qTheta_def, (multipliable_one_sub_pow_mul hs3 _).tprod_mul
-    (multipliable_one_sub_pow_mul hs3 _), ← mul_assoc, h₄, tprod_congr h₂,
-    ← h₁.tprod_mul ((multipliable_one_sub_pow_mul hs3 s⁻¹).congr h₂), tprod_congr h₃,
-    ← (h₁.mul ((multipliable_one_sub_pow_mul hs3 s⁻¹).congr h₂)).tprod_mul
-      (by simpa only [mul_one, h₃] using multipliable_one_sub_pow_mul hs3 1)]
+  -- The three residue-class products multiply to the product of the blockwise factors.
+  have hgroup : (∏' n : ℕ, (1 - s ^ (3 * n + 1))) * (∏' n : ℕ, (1 - s ^ (3 * n + 2))) *
+      ∏' n : ℕ, (1 - s ^ (3 * n + 3)) =
+      ∏' n : ℕ, (1 - s ^ (3 * n + 1)) * (1 - s ^ (3 * n + 2)) * (1 - s ^ (3 * n + 3)) := by
+    have hm₂ := (multipliable_one_sub_pow_mul hs3 s⁻¹).congr h₂
+    have hm₃ := (multipliable_one_sub_pow_mul hs3 1).congr fun n ↦ by rw [mul_one, h₃]
+    rw [← h₁.tprod_mul hm₂, ← (h₁.mul hm₂).tprod_mul hm₃]
+  rw [hsplit, ← hgroup, qTheta_def, (multipliable_one_sub_pow_mul hs3 _).tprod_mul
+    (multipliable_one_sub_pow_mul hs3 _), ← mul_assoc, h₄, tprod_congr h₂, tprod_congr h₃]
 
 /-- The theta product at a primitive cube root of unity, times the Euler function of the nome: if
 `ω² + ω + 1 = 0` then `θ_q(ω) ∏_{n ≥ 1} (1 - qⁿ) = (1 - ω) ∏_{n ≥ 1} (1 - q^{3n})` for
