@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Liouville.LinearAtInfinity
-import Mathlib.Analysis.Calculus.ImplicitContDiff
-import TauCeti.Geometry.Manifold.MFDeriv.Curve
+import TauCeti.Geometry.Manifold.Flow.HittingTime
 
 /-!
 # Smoothness of the radial coordinate on the cylindrical end
@@ -64,76 +63,33 @@ outside `W`. -/
 theorem contMDiffAt_log_liouvilleRadialCoordinate (h : IsLiouvilleCompletion ω α W)
     (hZ : RoughForm.interior Z ω.1 = α.1) (hx : x ∉ W) :
     ContMDiffAt I 𝓘(ℝ) (⊤ : ℕ∞) (fun x' ↦ Real.log (liouvilleRadialCoordinate Z W x')) x := by
-  -- Smoothness comes from the implicit function theorem. Write `W = {f ≤ c}` with `df(Z) > 0`
-  -- along the boundary `f⁻¹(c)`. Near `x ∉ W`, the time `τ = log r(x')` is the solution of
-  -- `f(ψ_{-τ}(x')) = c`, and the derivative of the left side in `τ` is `-df(Z) ≠ 0` at the
-  -- boundary point `ψ_{-τ}(x)`. Since the flow is jointly smooth, the implicit function theorem
-  -- (`ContDiffAt.implicitFunction`), applied in a chart at `x`, gives a smooth solution `τ(x')`
-  -- near `x`, and `log r = τ` there.
+  -- Write `W = {f ≤ c}` with `df(Z) > 0` along the boundary `f⁻¹(c)`. The trajectory through `x`
+  -- meets the boundary at time `-log r(x)`, transversally, so the hitting time `T` of the boundary
+  -- is smooth near `x` (`IsCompleteVectorField.exists_contMDiffAt_hittingTime`), and `log r = -T`.
   have hZs := h.contMDiff_of_interior_eq hZ
-  have hc := h.isCompleteVectorField hZ
-  have hflow := hc.contMDiff_flowOf le_top hZs
   obtain ⟨f, c, hf, hW, hfc⟩ := h.exists_sublevel_of_interior_eq hZ
   have hfront : frontier W = {y | f y = c} :=
     hW ▸ frontier_setOf_le_eq_of_mvfderiv_pos hf fun y hy ↦ (hfc y hy).2
-  -- The boundary point `y₀ = ψ_{-τ₀}(x)` on the trajectory through `x`, at time `τ₀ = log r(x)`.
+  -- The boundary point `ψ_{-τ₀}(x)` on the trajectory through `x`, at time `τ₀ = log r(x)`.
   set τ₀ := Real.log (liouvilleRadialCoordinate Z W x)
   have hτ₀ : 0 < τ₀ := Real.log_pos ((h.one_lt_liouvilleRadialCoordinate_iff hZ).2 hx)
   have hy₀ : f (flowOf Z (-τ₀) x) = c := by
     have := h.flowOf_neg_log_liouvilleRadialCoordinate_mem_frontier hZ
       fun hi ↦ hx (interior_subset hi)
     rwa [hfront] at this
-  -- The implicit equation `G(u, τ) = f(ψ_{-τ}(φ⁻¹ u)) = c`, read in the chart `φ` at `x`.
-  set φ := extChartAt I x
-  set G : E × ℝ → ℝ := fun p ↦ f (flowOf Z (-p.2) (φ.symm p.1))
-  have hφx : φ.symm (φ x) = x := extChartAt_to_inv x
-  have hG0 : G (φ x, τ₀) = c := by simp only [G, hφx, hy₀]
-  have hG : ContDiffAt ℝ (⊤ : ℕ∞) G (φ x, τ₀) := by
-    rw [← contMDiffAt_iff_contDiffAt]
-    have hsymm : ContMDiffAt 𝓘(ℝ, E) I (⊤ : ℕ∞) φ.symm (φ x) :=
-      (contMDiffOn_extChartAt_symm x).contMDiffAt (extChartAt_target_mem_nhds x)
-    have hfst : ContMDiffAt 𝓘(ℝ, E × ℝ) 𝓘(ℝ, E) (⊤ : ℕ∞) Prod.fst (φ x, τ₀) :=
-      contDiff_fst.contMDiff.contMDiffAt
-    have hneg : ContMDiffAt 𝓘(ℝ, E × ℝ) 𝓘(ℝ, ℝ) (⊤ : ℕ∞) (fun p : E × ℝ ↦ -p.2) (φ x, τ₀) :=
-      contDiff_snd.neg.contMDiff.contMDiffAt
-    have hchart := hneg.prodMk (hsymm.comp (φ x, τ₀) hfst)
-    have hf₀ : ContMDiffAt I 𝓘(ℝ) (⊤ : ℕ∞) f (flowOf Z (-τ₀) (φ.symm (φ x))) := by
-      rw [hφx]
-      exact (hfc _ hy₀).1
-    exact hf₀.comp (φ x, τ₀) ((hflow _).comp (φ x, τ₀) hchart)
-  -- The derivative of `G` in the time variable is `-df(Z) ≠ 0` at the boundary point.
-  have hderiv : HasDerivAt (fun t ↦ G (φ x, t))
-      (-mvfderiv I f (flowOf Z (-τ₀) x) (Z (flowOf Z (-τ₀) x))) τ₀ := by
-    have hcomp := (Manifold.hasDerivAt_comp_curve ((hfc _ hy₀).1.mdifferentiableAt (by simp))
-      (hc.isMIntegralCurve_flowOf (hZs.of_le (by simp)) x (-τ₀))).comp τ₀ (hasDerivAt_neg τ₀)
-    rw [mul_neg_one] at hcomp
-    exact hcomp.congr_of_eventuallyEq
-      (Eventually.of_forall fun t ↦ congrArg (fun y ↦ f (flowOf Z (-t) y)) hφx)
-  have hinv : (fderiv ℝ G (φ x, τ₀) ∘L .inr ℝ E ℝ).IsInvertible := by
-    have hpartial : HasFDerivAt (fun t ↦ G (φ x, t)) (fderiv ℝ G (φ x, τ₀) ∘L .inr ℝ E ℝ) τ₀ :=
-      (hG.differentiableAt (by simp)).hasFDerivAt.comp τ₀ (hasFDerivAt_prodMk_right _ τ₀)
-    rw [hpartial.unique hderiv.hasFDerivAt]
-    exact ⟨ContinuousLinearEquiv.unitsEquivAut ℝ (Units.mk0 _ (neg_ne_zero.2 (hfc _ hy₀).2.ne')),
-      by ext; simp⟩
-  -- The implicit function `T` solves `G(u, T u) = c` near `φ x`, and `log r = T ∘ φ` there.
-  have hn : ((⊤ : ℕ∞) : WithTop ℕ∞) ≠ 0 := by simp
-  set T := hG.implicitFunction hn hinv
-  have hT : ContDiffAt ℝ (⊤ : ℕ∞) T (φ x) := hG.contDiffAt_implicitFunction hn hinv
-  have hTeq : ∀ᶠ u in 𝓝 (φ x), G (u, T u) = c := by
-    simpa [hG0] using hG.eventually_apply_implicitFunction hn hinv
-  have hT₀ : T (φ x) = τ₀ := hG.implicitFunction_apply_self hn hinv
-  have hTpos : ∀ᶠ u in 𝓝 (φ x), 0 < T u := hT.continuousAt.eventually (lt_mem_nhds (hT₀ ▸ hτ₀))
-  have heq : (fun x' ↦ Real.log (liouvilleRadialCoordinate Z W x')) =ᶠ[𝓝 x] T ∘ φ := by
-    have hφ : Tendsto φ (𝓝 x) (𝓝 (φ x)) := continuousAt_extChartAt (I := I) x
-    filter_upwards [hφ.eventually hTeq, hφ.eventually hTpos,
-      extChartAt_source_mem_nhds (I := I) x] with x' h₁ h₂ h₃
-    have hfr : flowOf Z (-T (φ x')) x' ∈ frontier W := by
-      simp only [G, φ.left_inv h₃] at h₁
-      rwa [hfront]
-    have := h.liouvilleRadialCoordinate_flowOf hZ hfr h₂.le
-    rw [h.flowOf_flowOf hZ, add_neg_cancel, h.flowOf_zero hZ] at this
-    rw [Function.comp_apply, this, Real.log_exp]
-  exact (hT.contMDiffAt.comp x contMDiffAt_extChartAt).congr_of_eventuallyEq heq
+  obtain ⟨T, hT, hT₀, hTeq⟩ := (h.isCompleteVectorField hZ).exists_contMDiffAt_hittingTime
+    le_top hZs (hfc _ hy₀).1 (hfc _ hy₀).2.ne'
+  have hTneg : ∀ᶠ x' in 𝓝 x, T x' < 0 :=
+    hT.continuousAt.eventually (gt_mem_nhds (by rw [hT₀]; exact neg_neg_of_pos hτ₀))
+  have heq : (fun x' ↦ Real.log (liouvilleRadialCoordinate Z W x')) =ᶠ[𝓝 x] fun x' ↦ -T x' := by
+    filter_upwards [hTeq, hTneg] with x' h₁ h₂
+    have hfr : flowOf Z (T x') x' ∈ frontier W := by
+      rw [hfront]
+      exact h₁.trans hy₀
+    have := h.liouvilleRadialCoordinate_flowOf hZ hfr (neg_nonneg.2 h₂.le)
+    rw [h.flowOf_flowOf hZ, neg_add_cancel, h.flowOf_zero hZ] at this
+    rw [this, Real.log_exp]
+  exact (contDiff_neg.contMDiff.contMDiffAt.comp x hT).congr_of_eventuallyEq heq
 
 /-- **The radial coordinate is smooth on the cylindrical end.** On a completion of the Liouville
 domain `W`, the radial coordinate is smooth at every point outside `W`. -/
