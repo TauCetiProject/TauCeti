@@ -84,10 +84,11 @@ def shiftPowerXOfLEIso (hi : i ≤ n) :
     ((nullHomotopic (S := R[X]) (w := X ^ n)).quotientFunctor.obj
       (powerXOfLE R hi))⟦(1 : ℤ)⟧ ≅
         (nullHomotopic (S := R[X]) (w := X ^ n)).quotientFunctor.obj
-          (powerXOfLE R (Nat.sub_le n i)) := by
-  simpa only [powerXOfLE, Nat.sub_sub_self hi] using
-    shiftRankOneIso (X ^ i : R[X]) (X ^ (n - i))
-      (by rw [← pow_add, Nat.add_sub_cancel' hi])
+          (powerXOfLE R (Nat.sub_le n i)) :=
+  ((HomotopyCategory.parityShiftCompQuotientFunctorIso R[X] (X ^ n)).app
+    (powerXOfLE R hi)).symm ≪≫
+    (nullHomotopic (S := R[X]) (w := X ^ n)).quotientFunctor.mapIso
+      (parityShiftPowerXOfLEIso R hi)
 
 /-- Reduction modulo `X ^ n` of the shifted factorization has cyclic right-module cokernel
 `A/(x ^ (n - i))`, viewed as a left module through the commutativity isomorphism. -/
