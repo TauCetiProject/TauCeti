@@ -25,7 +25,7 @@ the fundamental identity alone forces each summand `e * f` down to `1`.
   count of primes above `P` makes `e = f = 1` at each of them.
 * `Ideal.ncard_primesOver_eq_finrank_iff_forall_ramificationIdx_eq_one_and_inertiaDeg_eq_one` —
   the count is maximal exactly when `e = f = 1` at every prime above `P`.
-* `TauCeti.RamificationInertia.bijective_algebraMap_quotient_of_ncard_primesOver_eq_finrank` —
+* `Ideal.bijective_algebraMap_quotient_of_ncard_primesOver_eq_finrank` —
   for `P` maximal, the same count makes the residue map `R ⧸ P → S ⧸ Q` bijective.
 
 ## Provenance
@@ -77,10 +77,6 @@ theorem ncard_primesOver_eq_finrank_iff_forall_ramificationIdx_eq_one_and_inerti
     Finset.sum_congr rfl fun q _ ↦ by rw [(h q.1 q.2).1, (h q.1 q.2).2, mul_one]]
   simp
 
-end Ideal
-
-namespace TauCeti.RamificationInertia
-
 /-- **A maximal count of primes above `P` makes the residue extension trivial.** If `P` is maximal
 and the number of primes of `S` lying over `P` equals the rank of `S` over `R`, then the residue
 map `R ⧸ P → S ⧸ Q` is bijective. No Galois hypothesis is needed. -/
@@ -94,4 +90,4 @@ theorem bijective_algebraMap_quotient_of_ncard_primesOver_eq_finrank
   rw [← Algebra.finrank_eq_one_iff_bijective_algebraMap, ← inertiaDeg_eq_of_isMaximal P Q]
   exact (ramificationIdx_eq_one_and_inertiaDeg_eq_one_of_ncard_primesOver_eq_finrank P Q hsplit).2
 
-end TauCeti.RamificationInertia
+end Ideal

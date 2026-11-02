@@ -49,7 +49,7 @@ private theorem legendreSym_eq_one_of_ncard_primesOver_eq_finrank {ι : Type*} (
   -- Lift the residue of `R` to an integer `a`, so `R ≡ a (mod Q)`.
   let R : 𝓞 K := integralSqrt (hr i)
   have hbij :=
-    Ideal.bijective_algebraMap_quotient_of_ncard_primesOver_eq_finrank Q hsplit
+    Ideal.bijective_algebraMap_int_quotient_of_ncard_primesOver_eq_finrank Q hsplit
   obtain ⟨c, hc⟩ := hbij.surjective (Ideal.Quotient.mk Q R)
   obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective c
   -- The algebra map `ℤ ⧸ (p) → 𝓞 K ⧸ Q` is `Ideal.quotientMap`, which sends `mk a` to
