@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.KnotTheory.BraidWord.ArtinEquivalence
 public import TauCeti.KnotTheory.BraidWord.SeifertMatrix.Basic
 public import TauCeti.KnotTheory.SeifertMatrix.Conway
 
 import TauCeti.Data.List.Rotate
+import TauCeti.KnotTheory.BraidWord.FreeCancellation.SeifertMatrix
+import TauCeti.KnotTheory.BraidWord.SeifertMatrix.BraidRelation
 
 /-!
 # The Conway skein relation for the Seifert determinant of a closed braid
@@ -26,7 +29,14 @@ whenever the level `i` already carries a letter of `u v`
 (`TauCeti.BraidWord.seifertConwayDeterminant_seifertMatrix_skein`). This is the relation that
 the normalized Burau invariant satisfies (`TauCeti.MarkovBraid.normalizedBurauAlexander_skein`),
 so it is the Seifert-matrix side of the comparison of the two routes to the Alexander polynomial
-of a closed braid.
+of a closed braid, carried out in `TauCeti.KnotTheory.BraidWord.SeifertMatrix.Burau`.
+
+That comparison also needs `Δ` to be compatible with the moves relating braid words and with
+Markov stabilization, and these are recorded here as well. An Artin relation changes the Seifert
+matrix by a unimodular congruence, so it keeps `Δ`; inserting an inverse pair `σᵢ^ε σᵢ^(-ε)` keeps
+`Δ` on a level already in use, where the matrix changes by an elementary enlargement, and makes it
+vanish on an unused level, where the matrix gains a zero row and column. Stabilization, and
+prepending a letter alone on its level, add a band but no loop, so they keep `Δ`.
 
 The proof first moves the changed letter to the end of the word. Cyclic rotation cuts the same
 closed braid at another place and changes the Seifert matrix by a unimodular congruence
@@ -47,6 +57,14 @@ disjoint discs: the left side of the relation vanishes and the right side does n
 
 * `TauCeti.BraidWord.seifertConwayDeterminant_seifertMatrix_rotate`: cyclic rotation of a braid
   word keeps the Seifert determinant.
+* `TauCeti.BraidWord.seifertConwayDeterminant_seifertMatrix_eq_of_artinStep`,
+  `TauCeti.BraidWord.seifertConwayDeterminant_seifertMatrix_insert` and
+  `TauCeti.BraidWord.seifertConwayDeterminant_seifertMatrix_insert_eq_zero`: Artin relations and
+  free insertion on a level in use keep the Seifert determinant; free insertion on an unused level
+  makes it vanish.
+* `TauCeti.BraidWord.seifertConwayDeterminant_seifertMatrix_stabilize` and
+  `TauCeti.BraidWord.seifertConwayDeterminant_seifertMatrix_cons_of_forall_ne`: so do Markov
+  stabilization and prepending a letter alone on its level.
 * `TauCeti.BraidWord.seifertConwayDeterminant_seifertMatrix_skein`: the Seifert determinant of
   closed braids satisfies the Conway skein relation.
 
@@ -87,6 +105,62 @@ theorem seifertConwayDeterminant_seifertMatrix_rotate (w : BraidWord n) (k : ℕ
   List.apply_rotate_of_append_singleton
     (fun w : BraidWord n ↦ w.seifertMatrix.seifertConwayDeterminant)
     seifertConwayDeterminant_seifertMatrix_append_singleton w k
+
+/-! ### Artin relations, free cancellation and stabilization -/
+
+section Moves
+
+/-- An Artin relation step keeps the Seifert determinant. -/
+theorem seifertConwayDeterminant_seifertMatrix_eq_of_artinStep {w w' : BraidWord n}
+    (h : ArtinStep w w') :
+    w.seifertMatrix.seifertConwayDeterminant = w'.seifertMatrix.seifertConwayDeterminant := by
+  obtain ⟨ι, P, hP, h⟩ := exists_seifertMatrix_of_artinStep h
+  rw [h, seifertConwayDeterminant_submatrix_equiv_self,
+    seifertConwayDeterminant_congruence_of_det_sq_eq_one _ (Int.isUnit_sq hP)]
+
+variable (u v : BraidWord n) (i : Fin (n - 1)) (ε : ℤˣ)
+
+/-- Inserting an inverse pair of letters on a level already in use keeps the Seifert determinant:
+the Seifert matrix changes by an elementary enlargement, up to a unimodular congruence. -/
+theorem seifertConwayDeterminant_seifertMatrix_insert (h : ∃ x ∈ u ++ v, x.1 = i) :
+    (u ++ (i, ε) :: (i, -ε) :: v).seifertMatrix.seifertConwayDeterminant =
+      (u ++ v).seifertMatrix.seifertConwayDeterminant := by
+  rcases Int.units_eq_one_or ε with rfl | rfl
+  · obtain ⟨ι, P, η, hP, hPV⟩ := exists_seifertMatrix_insert_congr_enlargeRow u v i h
+    rw [← seifertConwayDeterminant_enlargeRow _ η, ← hPV,
+      seifertConwayDeterminant_congruence_of_det_sq_eq_one _ (Int.isUnit_sq hP),
+      seifertConwayDeterminant_submatrix_equiv_self]
+  · obtain ⟨ι, P, ξ, hP, hPV⟩ := exists_seifertMatrix_insert_congr_enlargeColumn u v i h
+    rw [neg_neg, ← seifertConwayDeterminant_enlargeColumn _ ξ, ← hPV,
+      seifertConwayDeterminant_congruence_of_det_sq_eq_one _ (Int.isUnit_sq hP),
+      seifertConwayDeterminant_submatrix_equiv_self]
+
+/-- Inserting an inverse pair of letters on an unused level gives Seifert determinant zero: the
+Seifert matrix only gains a zero row and column. -/
+theorem seifertConwayDeterminant_seifertMatrix_insert_eq_zero (h : ¬∃ x ∈ u ++ v, x.1 = i) :
+    (u ++ (i, ε) :: (i, -ε) :: v).seifertMatrix.seifertConwayDeterminant = 0 := by
+  obtain ⟨ι, hι⟩ := exists_seifertMatrix_insert_eq_fromBlocks u v i ε h
+  rw [← seifertConwayDeterminant_submatrix_equiv_self _ ι, hι,
+    seifertConwayDeterminant_fromBlocks_zero, seifertConwayDeterminant_zero, mul_zero]
+
+end Moves
+
+/-- Markov stabilization keeps the Seifert determinant. -/
+theorem seifertConwayDeterminant_seifertMatrix_stabilize (w : BraidWord (n + 1)) (ε : ℤˣ) :
+    (w.stabilize ε).seifertMatrix.seifertConwayDeterminant =
+      w.seifertMatrix.seifertConwayDeterminant := by
+  obtain ⟨ι, hι⟩ := exists_seifertMatrix_stabilize w ε
+  rw [hι, seifertConwayDeterminant_submatrix_equiv_self]
+
+/-- Prepending a letter alone on its level keeps the Seifert determinant: its band closes up no
+loop. -/
+theorem seifertConwayDeterminant_seifertMatrix_cons_of_forall_ne (x : Fin (n - 1) × ℤˣ)
+    (v : BraidWord n) (h : ∀ y ∈ v, y.1 ≠ x.1) :
+    (seifertMatrix (n := n) (x :: v)).seifertConwayDeterminant =
+      v.seifertMatrix.seifertConwayDeterminant := by
+  obtain ⟨ι, hι⟩ := exists_seifertMatrix_append_singleton_of_forall_ne v x h
+  rw [← seifertConwayDeterminant_seifertMatrix_append_singleton, hι,
+    seifertConwayDeterminant_submatrix_equiv_self]
 
 /-! ### Appending a letter -/
 

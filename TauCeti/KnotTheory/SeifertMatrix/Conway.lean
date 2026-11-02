@@ -30,7 +30,10 @@ of Seifert surfaces for a diagram skein triple is asserted here.
   Chapters 6 and 8, especially Theorem 8.6 (the Conway-normalized skein relation).
 
 The determinant is unchanged by reindexing and by a congruence `V ↦ P V Pᵀ` with
-`(det P)² = 1`, such as an integral change of basis of the first homology of the surface.
+`(det P)² = 1`, such as an integral change of basis of the first homology of the surface. It is
+also unchanged by transposition, which reverses the orientation of the surface, and by the
+elementary enlargements that record adding a tube to the surface, in every matrix size; it is
+multiplicative along block diagonals, and vanishes on the zero matrix of positive size.
 
 The normalization comparison uses `TauCeti.KnotTheory.alexander`. The minor calculation uses
 `Matrix.det_updateCol_last_single` and Mathlib's column multilinearity of the determinant.
@@ -100,6 +103,18 @@ private theorem seifertConwayMatrix_eq_smul_map_alexanderMatrix (V : Matrix ι �
     V.seifertConwayMatrix.map signedInvert = V.seifertConwayMatrixᵀ := by
   ext i j : 2
   simp [seifertConwayMatrix_apply, sub_eq_add_neg, add_comm]
+
+/-- Transposing a matrix transposes its half-power Seifert matrix. -/
+theorem seifertConwayMatrix_transpose (V : Matrix ι ι R) :
+    Vᵀ.seifertConwayMatrix = V.seifertConwayMatrixᵀ := by
+  ext i j : 2
+  simp
+
+/-- The half-power Seifert matrix of a block diagonal matrix is block diagonal. -/
+theorem seifertConwayMatrix_fromBlocks_zero {κ : Type*} (V : Matrix ι ι R) (W : Matrix κ κ R) :
+    (fromBlocks V 0 0 W).seifertConwayMatrix =
+      fromBlocks V.seifertConwayMatrix 0 0 W.seifertConwayMatrix := by
+  ext (i | i) (j | j) : 2 <;> simp
 
 variable [Fintype ι] [DecidableEq ι]
 
@@ -191,6 +206,59 @@ theorem seifertConwayDeterminant_eq_map_alexander (V : Matrix ι ι R) {g : ℕ}
   congr 1
   simp only [hcard, Nat.cast_mul, Nat.cast_ofNat]
   omega
+
+/-- Reversing the orientation of a Seifert surface transposes its Seifert matrix and does not
+change the Seifert determinant. -/
+@[simp]
+theorem seifertConwayDeterminant_transpose (V : Matrix ι ι R) :
+    Vᵀ.seifertConwayDeterminant = V.seifertConwayDeterminant := by
+  rw [seifertConwayDeterminant_def, seifertConwayMatrix_transpose, det_transpose,
+    seifertConwayDeterminant_def]
+
+/-- **The Seifert determinant is multiplicative along a block diagonal**, as for the Seifert
+matrix of a surface with two components. -/
+theorem seifertConwayDeterminant_fromBlocks_zero {κ : Type*} [Fintype κ] [DecidableEq κ]
+    (V : Matrix ι ι R) (W : Matrix κ κ R) :
+    (fromBlocks V 0 0 W).seifertConwayDeterminant =
+      V.seifertConwayDeterminant * W.seifertConwayDeterminant := by
+  rw [seifertConwayDeterminant_def, seifertConwayMatrix_fromBlocks_zero, det_fromBlocks_zero₂₁,
+    seifertConwayDeterminant_def, seifertConwayDeterminant_def]
+
+/-- The zero matrix of positive size has Seifert determinant zero. -/
+@[simp]
+theorem seifertConwayDeterminant_zero [Nonempty ι] :
+    (0 : Matrix ι ι R).seifertConwayDeterminant = 0 := by
+  simp [seifertConwayDeterminant_def, seifertConwayMatrix]
+
+/-- **The Seifert determinant is unchanged by a column enlargement**, the effect on the Seifert
+matrix of adding a tube to the surface. Unlike the Alexander polynomial, it needs no
+renormalization by the size of the matrix. -/
+@[simp]
+theorem seifertConwayDeterminant_enlargeColumn (V : Matrix ι ι R) (ξ : ι → R) :
+    (TauCeti.KnotTheory.enlargeColumn V ξ).seifertConwayDeterminant =
+      V.seifertConwayDeterminant := by
+  have hT : AddMonoidAlgebra.mapDomainRingHom R (nsmulAddMonoidHom 2 : ℤ →+ ℤ) (T 1) = T 2 := by
+    simp only [T, AddMonoidAlgebra.mapDomainRingHom_apply, AddMonoidAlgebra.mapDomain_single,
+      nsmulAddMonoidHom_apply, nsmul_eq_mul, Nat.cast_ofNat, mul_one]
+  rw [seifertConwayDeterminant_def, seifertConwayDeterminant_def,
+    seifertConwayMatrix_eq_smul_map_alexanderMatrix,
+    seifertConwayMatrix_eq_smul_map_alexanderMatrix, det_smul, det_smul,
+    ← RingHom.mapMatrix_apply, ← RingHom.map_det, ← RingHom.mapMatrix_apply, ← RingHom.map_det,
+    TauCeti.KnotTheory.det_alexanderMatrix_enlargeColumn, map_mul, hT,
+    Fintype.card_sum, Fintype.card_fin, pow_add, ← mul_assoc, mul_assoc _ (_ ^ 2)]
+  have h : (T (-1) : R[T;T⁻¹]) ^ 2 * T 2 = 1 := by
+    rw [T_pow, ← T_add]
+    norm_num
+  rw [h, mul_one]
+
+/-- **The Seifert determinant is unchanged by a row enlargement**, the transpose of a column
+enlargement. -/
+@[simp]
+theorem seifertConwayDeterminant_enlargeRow (V : Matrix ι ι R) (η : ι → R) :
+    (TauCeti.KnotTheory.enlargeRow V η).seifertConwayDeterminant =
+      V.seifertConwayDeterminant := by
+  rw [TauCeti.KnotTheory.enlargeRow_def, seifertConwayDeterminant_transpose,
+    seifertConwayDeterminant_enlargeColumn, seifertConwayDeterminant_transpose]
 
 /-- Changing a diagonal entry by `r` changes the half-power Seifert matrix in that entry
 by `r (s - s⁻¹)`. -/

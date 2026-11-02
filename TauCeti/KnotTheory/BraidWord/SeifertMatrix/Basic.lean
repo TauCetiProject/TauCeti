@@ -54,7 +54,8 @@ and signature `-2`, and `σ₁ σ₂⁻¹ σ₁ σ₂⁻¹` (the figure-eight kn
 
 Up to relabelling the loops, the Seifert matrix does not change when two letters on distant levels
 are exchanged, nor under the Markov stabilization `w ↦ w σₙ^{±1}`, which adds one disc and one
-band and no new loop.
+band and no new loop, nor when a letter is appended on a level carrying no other letter, which
+adds a band and no new loop.
 
 Cyclic rotation `x :: v ↦ v ++ [x]` cuts the same closed braid at another place, so the surface is
 the same, but the basis of loops changes on the level `l` of `x`: the loop through the first two
@@ -92,6 +93,8 @@ Those comparisons are not made here.
 * `TauCeti.BraidWord.exists_seifertMatrix_append_cons_cons_comm`: exchanging adjacent letters on
   distant levels relabels the Seifert matrix.
 * `TauCeti.BraidWord.exists_seifertMatrix_stabilize`: so does Markov stabilization.
+* `TauCeti.BraidWord.exists_seifertMatrix_append_singleton_of_forall_ne`: so does appending a
+  letter alone on its level.
 * `TauCeti.BraidWord.exists_seifertMatrix_append_singleton`: moving the first letter to the end
   changes the Seifert matrix by a unimodular congruence.
 * `TauCeti.BraidWord.alexander_seifertMatrix_rotate` and
@@ -429,6 +432,42 @@ theorem exists_seifertMatrix_stabilize :
     signAt_stabilize_of_lt w ε (ha12.trans ha2)]
 
 end Stabilize
+
+section AppendSingleton
+
+variable (v : BraidWord n) (x : Fin (n - 1) × ℤˣ)
+
+private theorem isSeifertLoop_append_singleton_iff_of_forall_ne (h : ∀ y ∈ v, y.1 ≠ x.1)
+    (p : ℕ × ℕ) : (v ++ [x]).IsSeifertLoop p ↔ v.IsSeifertLoop p := by
+  rcases lt_or_ge p.2 v.length with hp | hp
+  · exact isSeifertLoop_append_singleton_iff v x hp
+  refine iff_of_false (fun hl ↦ ?_) fun hl ↦ by have := hl.2.1; omega
+  -- a loop ending at the appended letter would start at an earlier letter of the same level
+  obtain ⟨h12, h2, hl, -⟩ := hl
+  simp only [List.length_append, List.length_singleton] at h2
+  have hp2 : p.2 = v.length := by omega
+  have h1 : p.1 < v.length := by omega
+  rw [hp2, levelAt_append_singleton_length, levelAt_append_singleton_of_lt v x h1,
+    levelAt_of_lt _ h1, Option.some_inj] at hl
+  exact h _ (List.getElem_mem h1) (Fin.ext hl.symm)
+
+/-- **A letter alone on its level creates no loop.** If no letter of `v` lies on the level of
+`x`, the band of `x` joins two pieces of the canonical Seifert surface of `v` without closing up a
+loop, so the Seifert matrix of `v ++ [x]` is that of `v`, up to relabelling. -/
+theorem exists_seifertMatrix_append_singleton_of_forall_ne (h : ∀ y ∈ v, y.1 ≠ x.1) :
+    ∃ ι : (v ++ [x]).seifertLoops ≃ v.seifertLoops,
+      (v ++ [x]).seifertMatrix = v.seifertMatrix.submatrix ι ι := by
+  have hloops : ∀ p, p ∈ (v ++ [x]).seifertLoops ↔ p ∈ v.seifertLoops := fun p ↦ by
+    simp only [mem_seifertLoops, isSeifertLoop_append_singleton_iff_of_forall_ne v x h]
+  refine ⟨Equiv.subtypeEquivRight hloops, Matrix.ext fun a b ↦ ?_⟩
+  obtain ⟨ha12, ha2, -, -⟩ := (v.mem_seifertLoops).1 ((hloops a).1 a.2)
+  obtain ⟨hb12, hb2, -, -⟩ := (v.mem_seifertLoops).1 ((hloops b).1 b.2)
+  simp only [Matrix.submatrix_apply, Equiv.subtypeEquivRight_apply_coe, seifertMatrix,
+    Matrix.of_apply, seifertEntry, levelAt_append_singleton_of_lt v x (ha12.trans ha2),
+    levelAt_append_singleton_of_lt v x (hb12.trans hb2), signAt_append_singleton_of_lt v x ha2,
+    signAt_append_singleton_of_lt v x (ha12.trans ha2)]
+
+end AppendSingleton
 
 /-! ### Telescoping along a level
 
