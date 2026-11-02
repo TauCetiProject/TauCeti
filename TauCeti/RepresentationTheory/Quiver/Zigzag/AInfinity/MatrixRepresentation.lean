@@ -57,6 +57,9 @@ the zigzag algebra of any finite non-Dynkin tree.
   representation of the signless preprojective algebra of a bipartite subgraph of `G`, in which a
   closed walk of length `n + 2 ≥ 3` acts with nonzero trace, gives
   `HH^{n + 2, -n}(Z, Z) ≠ 0` for the zigzag algebra `Z` of `G`.
+* `TauCeti.not_hochschildVanishesAt_zigzagStrictAInfinityAlgebra_of_trace_eq_one`: the same for an
+  integer matrix family whose product along the closed walk has trace one, over every nontrivial
+  commutative ring.
 * `TauCeti.not_hochschildVanishesAt_four_zigzagStrictAInfinityAlgebra_of_isContained`,
   `TauCeti.not_hochschildVanishesAt_six_zigzagStrictAInfinityAlgebra`,
   `TauCeti.not_hochschildVanishesAt_eight_zigzagStrictAInfinityAlgebra` and
@@ -248,10 +251,10 @@ theorem not_hochschildVanishesAt_zigzagStrictAInfinityAlgebra_of_trace_ne_zero [
 
 /-- The integer version of
 `TauCeti.not_hochschildVanishesAt_zigzagStrictAInfinityAlgebra_of_trace_ne_zero`: an integer
-matrix family on `H` vanishing off the edges and satisfying the signless relations, whose product
-along a closed walk has trace one, gives a nonzero Hochschild class over every nontrivial
-commutative ring. -/
-private theorem not_hochschildVanishesAt_of_trace_eq_one [Nontrivial k]
+matrix family on a bipartite subgraph `H` of `G`, vanishing off the edges of `H` and satisfying the
+signless relations, whose product along a closed walk of length `n + 2 ≥ 3` has trace one, gives
+`HH^{n + 2, -n}(Z, Z) ≠ 0` over every nontrivial commutative ring. -/
+theorem not_hochschildVanishesAt_zigzagStrictAInfinityAlgebra_of_trace_eq_one [Nontrivial k]
     (β : W → W → Matrix m m ℤ) (h₀ : ∀ x y, ¬H.Adj x y → β x y = 0)
     (h : ∀ x, ∑ y, β y x * β x y = 0) (f : H.Copy G) (hH : H.IsBipartite) {n : ℕ} (hn : 1 ≤ n)
     {u : Fin (n + 2) → H.Dart} (hu : ∀ i, (u i).fst = (u (i + 1)).snd)
@@ -306,9 +309,9 @@ theorem not_hochschildVanishesAt_six_zigzagStrictAInfinityAlgebra
     (hG : AffineDynkinType.E6.graph.IsContained G) :
     ¬(𝒵).HochschildVanishesAt ⟨6, by norm_num⟩ := by
   obtain ⟨f⟩ := hG
-  exact not_hochschildVanishesAt_of_trace_eq_one affineE6Matrix
-    (fun _ _ ↦ affineE6Matrix_eq_zero_of_not_adj) sum_affineE6Matrix_mul_affineE6Matrix f
-    AffineDynkinType.isBipartite_graph_E6
+  exact not_hochschildVanishesAt_zigzagStrictAInfinityAlgebra_of_trace_eq_one
+    affineE6Matrix (fun _ _ ↦ affineE6Matrix_eq_zero_of_not_adj)
+    sum_affineE6Matrix_mul_affineE6Matrix f AffineDynkinType.isBipartite_graph_E6
     (n := 4) (by norm_num) (u := affineE6Walk) (by decide)
     (by simpa [List.ofFn_succ, affineE6Walk, mul_assoc] using trace_affineE6Matrix_backtracks)
 
@@ -322,9 +325,9 @@ theorem not_hochschildVanishesAt_eight_zigzagStrictAInfinityAlgebra
     (hG : AffineDynkinType.E7.graph.IsContained G) :
     ¬(𝒵).HochschildVanishesAt ⟨8, by norm_num⟩ := by
   obtain ⟨f⟩ := hG
-  exact not_hochschildVanishesAt_of_trace_eq_one affineE7Matrix
-    (fun _ _ ↦ affineE7Matrix_eq_zero_of_not_adj) sum_affineE7Matrix_mul_affineE7Matrix f
-    AffineDynkinType.isBipartite_graph_E7
+  exact not_hochschildVanishesAt_zigzagStrictAInfinityAlgebra_of_trace_eq_one
+    affineE7Matrix (fun _ _ ↦ affineE7Matrix_eq_zero_of_not_adj)
+    sum_affineE7Matrix_mul_affineE7Matrix f AffineDynkinType.isBipartite_graph_E7
     (n := 6) (by norm_num) (u := affineE7Walk) (by decide)
     (by simpa [List.ofFn_succ, affineE7Walk, mul_assoc] using trace_affineE7Matrix_backtracks)
 
@@ -338,9 +341,9 @@ theorem not_hochschildVanishesAt_twelve_zigzagStrictAInfinityAlgebra
     (hG : AffineDynkinType.E8.graph.IsContained G) :
     ¬(𝒵).HochschildVanishesAt ⟨12, by norm_num⟩ := by
   obtain ⟨f⟩ := hG
-  exact not_hochschildVanishesAt_of_trace_eq_one affineE8Matrix
-    (fun _ _ ↦ affineE8Matrix_eq_zero_of_not_adj) sum_affineE8Matrix_mul_affineE8Matrix f
-    AffineDynkinType.isBipartite_graph_E8
+  exact not_hochschildVanishesAt_zigzagStrictAInfinityAlgebra_of_trace_eq_one
+    affineE8Matrix (fun _ _ ↦ affineE8Matrix_eq_zero_of_not_adj)
+    sum_affineE8Matrix_mul_affineE8Matrix f AffineDynkinType.isBipartite_graph_E8
     (n := 10) (by norm_num) (u := affineE8Walk) (by decide)
     (by simpa [List.ofFn_succ, affineE8Walk, mul_assoc] using trace_affineE8Matrix_backtracks)
 
