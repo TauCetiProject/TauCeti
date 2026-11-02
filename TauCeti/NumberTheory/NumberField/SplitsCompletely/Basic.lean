@@ -100,7 +100,6 @@ end NumberField
 
 namespace Ideal
 
-open TauCeti.RamificationInertia in
 /-- **A full complement of primes forces unramifiedness.** If `𝓞 L` has `[L : K]` primes above a
 prime ideal `𝔭` of `𝓞 K`, then every prime `Q` of `𝓞 L` above `𝔭` is unramified over `𝓞 K`.
 No Galois hypothesis is needed. -/
@@ -126,7 +125,6 @@ theorem bijective_algebraMap_quotient_of_ncard_primesOver_eq_finrank {K : Type*}
   TauCeti.RamificationInertia.bijective_algebraMap_quotient_of_ncard_primesOver_eq_finrank
     (span {(p : ℤ)}) Q (by rwa [NumberField.RingOfIntegers.rank])
 
-open TauCeti.RamificationInertia in
 /-- **The absolute norm of a prime above a completely split rational prime is that prime.** If
 `p` splits completely in `K` then the inertia degree at each prime `𝔭` above `p` is `1`, so the
 residue field at `𝔭` is `ℤ/p` and `N(𝔭) = p`. No Galois hypothesis is needed. -/
