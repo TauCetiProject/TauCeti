@@ -51,10 +51,10 @@ additive `A`, acts on periods by `A`, whatever the translation `β`
 markings are therefore equivariant: `g` acts on them by `ρ g`
 (`TauCeti.torusFamilyMarking_singularHomologyMap_affineMap`). Combined with trivial monodromy
 of the globally marked family, this computes the monodromy of the family over the quotient
-base: a loop carried along a path from `y₀` to `y₁` and identified back with the fibre over
-`y₀ = g • y₁` by the action of `g` has its marking transformed by `ρ g`
-(`TauCeti.torusFamilyMarking_singularHomologyMap_loopClass_of_homotopy`). For a path from `y₀`
-to `h • y₀` in a group action this transport is `ρ h⁻¹`.
+base: a loop over `y₀` carried by a free homotopy in the total space to a loop over `y₁`, and
+identified back with the fibre over `y₀ = g • y₁` by the action of `g`, has its marking
+transformed by `ρ g` (`TauCeti.torusFamilyMarking_singularHomologyMap_loopClass_of_homotopy`).
+For a group action and a free homotopy ending at a loop over `h • y₀`, this transport is `ρ h⁻¹`.
 
 Singular chains with integer coefficients are defined on spaces in the lowest universe, so `Y`
 and `E` are types in `Type`.
@@ -413,9 +413,10 @@ homotopy `H` in the total space to a loop `γ₁` in the fibre over `y₁`, and 
 that `g • y₁ = y₀`, through its restriction `φ`. Then the transported loop `φ ∘ γ₁` is marked by
 `ρ g` applied to the marking of `γ₀`.
 
-For a group `Γ` and a path in the base from `y₀` to `h • y₀`, the inverse action `g = h⁻¹`
-identifies the end fibre with the starting one, so the transport on the marking is `ρ h⁻¹`;
-equivalently, a path from `y₀` to `g⁻¹ • y₀` followed by the action of `g` has monodromy `ρ g`. -/
+For a group `Γ` and a loop over `y₀` carried by a free homotopy to a loop over `h • y₀`, the
+inverse action `g = h⁻¹` identifies the end fibre with the starting one, so the transport on the
+marking is `ρ h⁻¹`; equivalently, a loop carried by a free homotopy to a loop over `g⁻¹ • y₀` and
+then moved by the action of `g` has monodromy `ρ g`. -/
 theorem torusFamilyMarking_singularHomologyMap_loopClass_of_homotopy {g : Γ} {y₀ y₁ : Y}
     {z₀ : letI := periodAddAction P
       {z : AddAction.orbitRel.Quotient Λ (Y × E) | torusFamilyProjection P z = y₀}}
