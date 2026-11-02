@@ -15,7 +15,9 @@ public import Mathlib.RingTheory.Ideal.Span
 For an ideal `Q` of an `R`-algebra lying over the principal ideal `(a)` of a commutative semiring
 `R` (`Ideal.LiesOver`), an element `m : R` maps into `Q` exactly when `a ∣ m`; this unfolds
 `Ideal.mem_of_liesOver` through `Ideal.mem_span_singleton` once. Over `R = ℤ`, the base residue
-ring `ℤ ⧸ Q ∩ ℤ` of an ideal lying over `(n)` is `ℤ ⧸ (n)`, so it has exactly `n` elements.
+ring `ℤ ⧸ Q ∩ ℤ` of an ideal lying over `(n)` is `ℤ ⧸ (n)`, so its `Nat.card` is `n`: for `n ≠ 0`
+it has exactly `n` elements, while for `n = 0` it is the infinite ring `ℤ`, whose `Nat.card` is
+`0` by convention.
 
 Together they let arithmetic arguments move between divisibility in `ℤ` and membership in `Q`,
 and pin the residue cardinality that `AlgHom.IsArithFrobAt` exponentiates by, without repeating
@@ -45,8 +47,10 @@ theorem algebraMap_mem_iff_dvd_of_liesOver {R S : Type*} [CommSemiring R] [Semir
     algebraMap R S m ∈ Q ↔ a ∣ m :=
   (mem_of_liesOver Q (span {a}) m).symm.trans mem_span_singleton
 
-/-- The base residue ring of an ideal lying over the integer ideal `(n)` has `n` elements:
-`Nat.card (ℤ ⧸ Q ∩ ℤ) = n` for `Q` over `(n)`.
+/-- The base residue ring of an ideal lying over the integer ideal `(n)` has `Nat.card` equal
+to `n`: `Nat.card (ℤ ⧸ Q ∩ ℤ) = n` for `Q` over `(n)`. For `n ≠ 0` this says the residue ring has
+exactly `n` elements; for `n = 0` the residue ring is `ℤ`, which is infinite, so both sides are
+`0` by the `Nat.card` convention.
 
 This is the cardinality that `AlgHom.IsArithFrobAt` raises to over the base `ℤ`, so for `n` a
 rational prime `p` it is what turns an abstract Frobenius congruence into the congruence
