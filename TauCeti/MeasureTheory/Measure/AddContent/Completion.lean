@@ -7,7 +7,6 @@ module
 
 public import Mathlib.MeasureTheory.Group.Action
 public import Mathlib.MeasureTheory.Group.Pointwise
-public import Mathlib.MeasureTheory.Measure.AddContent
 public import TauCeti.MeasureTheory.Measure.AddContent.Basic
 public import TauCeti.MeasureTheory.SetAlgebra
 
@@ -76,12 +75,6 @@ theorem addContent_congr_ae {F : Type*} [FunLike F (Set α) ℝ≥0∞] [OuterMe
   rw [key hs ht (ae_eq_set.1 hst).1, key ht hs (ae_eq_set.1 hst).2, inter_comm]
 
 variable [MeasurableSpace α] {μ : Measure α}
-
-/-- The null-measurable sets of a measure form a ring of sets. -/
-theorem isSetRing_nullMeasurableSet : IsSetRing {s : Set α | NullMeasurableSet s μ} where
-  empty_mem := nullMeasurableSet_empty
-  union_mem _ _ hs ht := NullMeasurableSet.union hs ht
-  sdiff_mem _ _ hs ht := NullMeasurableSet.diff hs ht
 
 namespace AddContent
 
