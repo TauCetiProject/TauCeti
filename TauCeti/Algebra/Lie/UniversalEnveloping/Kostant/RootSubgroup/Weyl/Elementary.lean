@@ -77,7 +77,7 @@ theorem kostantWeylGL_eq_kostantRootSubgroupParam_mul (A : CommAlgCat.{w} ℤ) :
   refine Units.ext ?_
   rw [kostantWeylGL_val, kostantWeylPoints_toLinearMap_eq]
   refine LinearMap.ext fun z => ?_
-  simp only [Units.val_mul, Module.End.mul_apply, kostantRootSubgroupParam_val_apply,
+  simp only [Units.val_mul, mul_apply_eq_comp, kostantRootSubgroupParam_val_apply,
     toAdd_ofAdd]
 
 /-- **Scalar extension of the Weyl representative.** Extending scalars along a morphism of value

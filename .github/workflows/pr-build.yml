@@ -75,7 +75,6 @@ jobs:
   pick-runner:
     uses: ./.github/workflows/pick-runner.yml
     with:
-      maintenance: ${{ inputs.maintenance || (github.event.pull_request.user.type == 'Bot' && github.event.pull_request.head.repo.full_name == github.repository && (startsWith(github.event.pull_request.head.ref, 'bump-mathlib/') || startsWith(github.event.pull_request.head.ref, 'lint-repair/'))) }}
       fleet-staging: ${{ github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' }}
       fleet-pr: ${{ github.event_name == 'pull_request_target' || (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-pr-approved') }}
       pr-head: ${{ github.event.pull_request.head.sha || github.event.client_payload.head_sha || '' }}

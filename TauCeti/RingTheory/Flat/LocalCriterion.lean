@@ -165,7 +165,8 @@ theorem Flat.of_subtype_rTensor_injective [IsNoetherianRing R] {S : Type*} [Comm
   have hle (n : ℕ) : (I ^ n • ⊤ : Submodule R (M ⊗[R] J)) ≤
       (IS ^ n • (⊤ : Submodule S (M ⊗[R] J))).restrictScalars R := by
     rw [← Ideal.map_pow, Ideal.smul_restrictScalars, Submodule.restrictScalars_top]
-  have hbot := Ideal.iInf_pow_smul_eq_bot_of_le_jacobson IS hIS (M := M ⊗[R] J)
+  have hbot := Ideal.iInf_pow_smul_eq_bot_of_le_jacobson IS
+    (by simpa only [Ideal.jacobson_bot] using hIS) (M := M ⊗[R] J)
   have : TensorProduct.comm R J M t ∈ ⨅ n : ℕ, IS ^ n • (⊤ : Submodule S (M ⊗[R] J)) :=
     Submodule.mem_iInf _ |>.mpr fun n ↦ hle n (hcomm n)
   simpa [hbot] using this
