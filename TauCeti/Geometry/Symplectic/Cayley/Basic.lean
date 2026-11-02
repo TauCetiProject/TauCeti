@@ -462,6 +462,13 @@ theorem Compatible.cayley_mem_compatibleCayleyBall_iff (h₀ : ω.Compatible J�
     LinearMap.mem_selfAdjointSubmodule, h₀.isSelfAdjoint_cayley_iff h, compatible_iff]
   exact ⟨fun hC => ⟨hC.2, h⟩, fun hJ => ⟨h₀.cayley_mem_cayleyBall h, hJ.1⟩⟩
 
+/-- Multiplying a tame Cayley coordinate by a scalar between zero and one stays in the Cayley
+ball. -/
+theorem Compatible.smul_cayley_mem_cayleyBall (h₀ : ω.Compatible J₀) (h : ω.Tames J) {t : ℝ}
+    (ht : t ∈ Set.Icc 0 1) : t • J₀.cayley J ∈ ω.cayleyBall J₀ :=
+  h₀.tames.convex_cayleyBall.smul_mem_of_zero_mem h₀.tames.zero_mem_cayleyBall
+    (h₀.cayley_mem_cayleyBall h) ht
+
 /-- Multiplying a compatible Cayley coordinate by a scalar between zero and one stays in the
 compatible Cayley ball. -/
 theorem Compatible.smul_cayley_mem_compatibleCayleyBall (h₀ : ω.Compatible J₀)
