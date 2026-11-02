@@ -8,6 +8,8 @@ module
 public import Mathlib.FieldTheory.Finite.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.GoodReduction
 public import TauCeti.AlgebraicGeometry.EllipticCurve.PointCount
+-- Proof-only: a Frobenius element raises residues to the `q`-th power and keeps poles.
+import TauCeti.RingTheory.Valuation.FrobeniusElement
 -- Proof-only: transport of points along an equality of curves keeps their coordinates.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Basic
 -- Proof-only: reduction is injective on torsion prime to the residue characteristic.
@@ -77,40 +79,7 @@ open IsLocalRing
 namespace WeierstrassCurve.Affine.Point
 
 variable {K L Γ₀ : Type*} [Field K] [Field L] [Algebra K L] [LinearOrderedCommGroupWithZero Γ₀]
-  (v : Valuation L Γ₀)
-
-/-- A Frobenius element for `v` preserves integrality and raises residues to the `q`-th power. -/
-private theorem exists_valuation_map_le_one_and_residue_eq {q : ℕ} {τ : L →ₐ[K] L}
-    (hτ : ∀ x, v x ≤ 1 → v (τ x - x ^ q) < 1) {z : L} (hz : v z ≤ 1) :
-    ∃ hτz : v (τ z) ≤ 1,
-      residue v.valuationSubring ⟨τ z, (v.mem_valuationSubring_iff _).mpr hτz⟩ =
-        residue v.valuationSubring ⟨z, (v.mem_valuationSubring_iff z).mpr hz⟩ ^ q := by
-  have hzq : v (z ^ q) ≤ 1 := by
-    rw [map_pow]
-    exact pow_le_one' hz _
-  have hτz : v (τ z) ≤ 1 := by
-    rw [← sub_add_cancel (τ z) (z ^ q)]
-    exact v.map_add_le (hτ z hz).le hzq
-  refine ⟨hτz, ?_⟩
-  rw [← map_pow, ← sub_eq_zero, ← map_sub, residue_eq_zero_iff, Valuation.mem_maximalIdeal_iff]
-  exact hτ z hz
-
-/-- A Frobenius element for `v` keeps a pole a pole, since it sends `x⁻¹` into the maximal ideal. -/
-private theorem one_lt_valuation_map {q : ℕ} (hq : q ≠ 0) {τ : L →ₐ[K] L}
-    (hτ : ∀ x, v x ≤ 1 → v (τ x - x ^ q) < 1) {x : L} (hx : 1 < v x) :
-    1 < v (τ x) := by
-  have hinv : v x⁻¹ < 1 := by
-    rw [map_inv₀]
-    exact inv_lt_one_of_one_lt₀ hx
-  have h' : v (τ x⁻¹) < 1 := by
-    rw [← sub_add_cancel (τ x⁻¹) (x⁻¹ ^ q)]
-    refine v.map_add_lt (hτ _ hinv.le) ?_
-    rw [map_pow]
-    exact pow_lt_one₀ zero_le hinv hq
-  have hx0 : τ x ≠ 0 := (map_ne_zero τ).mpr (v.ne_zero_iff.mp (zero_lt_one.trans hx).ne')
-  rwa [map_inv₀, map_inv₀, inv_lt_one₀ (v.pos_iff.mpr hx0)] at h'
-
-variable {W : WeierstrassCurve K} [IsIntegral v.valuationSubring (W⁄L)]
+  (v : Valuation L Γ₀) {W : WeierstrassCurve K} [IsIntegral v.valuationSubring (W⁄L)]
   [DecidableEq L] [DecidableEq (ResidueField v.valuationSubring)]
   {F : Type*} [Field F] [Fintype F] [Algebra F (ResidueField v.valuationSubring)]
   {C : WeierstrassCurve F}
@@ -131,8 +100,8 @@ theorem map_mem_nonsingularReduction
   · exact (W⁄L).toAffine.nonsingularReduction v |>.zero_mem
   rw [map_some]
   by_cases hx : v x ≤ 1
-  · obtain ⟨hτx, hx'⟩ := exists_valuation_map_le_one_and_residue_eq v hτ hx
-    obtain ⟨hτy, hy'⟩ := exists_valuation_map_le_one_and_residue_eq v hτ
+  · obtain ⟨hτx, hx'⟩ := v.exists_le_one_and_residue_eq_pow hτ hx
+    obtain ⟨hτy, hy'⟩ := v.exists_le_one_and_residue_eq_pow hτ
       (valuation_y_le_one_of_valuation_x_le_one v h.left hx)
     rw [some_mem_nonsingularReduction_iff v h hx] at hP
     rw [some_mem_nonsingularReduction_iff v _ hτx, hx', hy', hC]
@@ -142,7 +111,7 @@ theorem map_mem_nonsingularReduction
       (C.toAffine.baseChange_nonsingular
         (FiniteField.frobeniusAlgHom F (ResidueField v.valuationSubring)).injective _ _).mpr hP
   · exact mem_nonsingularReduction_of_one_lt v
-      (by rw [xCoord_some]; exact one_lt_valuation_map v Fintype.card_ne_zero hτ (not_le.mp hx))
+      (by rw [xCoord_some]; exact v.one_lt_map_of_one_lt Fintype.card_ne_zero hτ (not_le.mp hx))
 
 /-- **Reduction carries a Frobenius element to the `q`-power map.** Let the reduced curve of `W`
 at the valuation `v` of `L` be the base change of a curve `C` over a finite field `F` with `q`
@@ -168,8 +137,8 @@ theorem cast_nonsingularReductionHom_map_eq_map_frobeniusAlgHom
     rw [e₁, e₂]
     simp only [_root_.map_zero]
   by_cases hx : v x ≤ 1
-  · obtain ⟨hτx, hx'⟩ := exists_valuation_map_le_one_and_residue_eq v hτ hx
-    obtain ⟨hτy, hy'⟩ := exists_valuation_map_le_one_and_residue_eq v hτ
+  · obtain ⟨hτx, hx'⟩ := v.exists_le_one_and_residue_eq_pow hτ hx
+    obtain ⟨hτy, hy'⟩ := v.exists_le_one_and_residue_eq_pow hτ
       (valuation_y_le_one_of_valuation_x_le_one v h.left hx)
     have hτh := (W.toAffine.baseChange_nonsingular τ.injective x y).mpr h
     have hP' := (some_mem_nonsingularReduction_iff v h hx).mp hP
@@ -182,7 +151,7 @@ theorem cast_nonsingularReductionHom_map_eq_map_frobeniusAlgHom
     simp only [FiniteField.frobeniusAlgHom_apply, hx', hy']
   · -- a point with a pole reduces to the point at infinity, and so does its image under `τ`
     have hx₁ : 1 < v x := not_le.mp hx
-    have hτx := one_lt_valuation_map v Fintype.card_ne_zero hτ hx₁
+    have hτx := v.one_lt_map_of_one_lt Fintype.card_ne_zero hτ hx₁
     have e₁ : (W⁄L).toAffine.nonsingularReductionHom v
         ⟨map τ (some x y h), map_mem_nonsingularReduction v hC hτ hP⟩ = 0 :=
       (nonsingularReductionHom_eq_zero_iff v _).mpr

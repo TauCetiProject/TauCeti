@@ -171,10 +171,8 @@ theorem map_frobeniusAlgHom_eq_zsmul (hΔ : W.Δ = 0) (hc₄ : W.c₄ ≠ 0) {K 
     have hL := map_frobeniusAlgHom_eq_zsmul_of_isSingular (hsing L) hα (hnode L hα) (hK x₀) (hK y₀)
       (.inr ⟨rfl, hαq⟩) (map ι P)
     -- `ι` commutes with the `q`-power maps and is injective on points
-    have hι : ι.comp (FiniteField.frobeniusAlgHom F K) = (FiniteField.frobeniusAlgHom F L).comp ι :=
-      AlgHom.ext fun z ↦ by simp
     apply map_injective ι
-    rw [map_zsmul, map_map, hι, ← map_map, hL]
+    rw [map_zsmul, map_map, ι.frobeniusAlgHom_comm, ← map_map, hL]
 
 end WeierstrassCurve.Affine.Point
 
