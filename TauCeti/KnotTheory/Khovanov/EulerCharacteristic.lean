@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.EulerCharacteristic.Basic
 public import TauCeti.Algebra.Homology.EulerCharacteristic.Shift
 public import TauCeti.KnotTheory.Khovanov.Complex
 public import TauCeti.KnotTheory.Khovanov.Resolution.EulerCharacteristic
