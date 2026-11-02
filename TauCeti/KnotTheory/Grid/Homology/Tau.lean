@@ -90,9 +90,9 @@ homogeneous element of the unblocked grid homology `GH⁻(G)` that is not `K[U]`
 
 Over a Noetherian `K`, the supremum is attained as soon as `GH⁻(G)` is not a torsion module
 (`isGreatest_nonTorsionDegrees_neg_tau`); if `GH⁻(G)` is torsion the value is `0`, the supremum
-of the empty set. This is the invariant of the diagram; it is the
-concordance invariant `τ` of the presented knot because `GH⁻` is invariant under grid moves
-(`UnblockedHomologyIsomorphic.tau_eq`). -/
+of the empty set. It is an invariant of the presented knot: knot grids connected by grid moves
+have the same `τ` (`tau_eq_of_movesTo`, in `Homology/Invariance.lean`). This is the grid
+definition of the concordance invariant `τ` of Ozsváth--Stipsicz--Szabó. -/
 noncomputable def tau : ℤ :=
   letI := hG.unblockedHomologyModule K;
   -(hG.alexanderUnblockedHomologyGrading K).supNonTorsionDegree
