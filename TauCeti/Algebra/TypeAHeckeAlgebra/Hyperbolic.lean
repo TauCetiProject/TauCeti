@@ -20,7 +20,8 @@ two eigenvalues `q` and `-q⁻¹`, and
 `P i = s⁻¹ • (T i + q⁻¹)` is the idempotent eigenprojection for `q`, so that
 `T i = q • P i - q⁻¹ • (1 - P i)` and `T i⁻¹ = q⁻¹ • P i - q • (1 - P i)`. A Markov trace with
 parameter `z` multiplies by the projection parameter `η` when the last projection is appended,
-where `z = q * η - q⁻¹ * (1 - η)`, that is `η = (z + q⁻¹) / (q + q⁻¹)`.
+where `z = q * η - q⁻¹ * (1 - η)`, that is `η = (z + q⁻¹) / (q + q⁻¹)`. These general facts are in
+`TauCeti.Algebra.TypeAHeckeAlgebra.BalancedProjection`.
 
 Over `ℂ`, put `q = exp (-θ)` (`TauCeti.hyperbolicHeckeParam`) and rescale the braid generators to
 `γ i = I * exp (-α) • T i` (`TauCeti.InfiniteTypeAHeckeAlgebra.hyperbolicGen`). In terms of the
@@ -56,9 +57,6 @@ stabilization constants, and assert nothing about positivity.
 
 ## Main results
 
-* `TauCeti.InfiniteTypeAHeckeAlgebra.T_eq_smul_eigenprojection_sub_smul` and
-  `TauCeti.InfiniteTypeAHeckeAlgebra.IsMarkovTrace.map_mul_eigenprojection`: the eigenprojection
-  decomposition of a generator, and the projection parameter of a Markov trace.
 * `TauCeti.InfiniteTypeAHeckeAlgebra.val_hyperbolicGen_eq_eigenprojection` and
   `TauCeti.InfiniteTypeAHeckeAlgebra.hyperbolicGen_skein`: the two-eigenvalue form of `γ i` and its
   skein identity.
@@ -88,64 +86,6 @@ public section
 open Complex
 
 namespace TauCeti
-
-/-! ### The eigenprojection of a generator -/
-
-namespace InfiniteTypeAHeckeAlgebra
-
-variable {R : Type*} [CommRing R] {q : Rˣ} (s : Rˣ)
-
-/-- The eigenprojection `P = (q + q⁻¹)⁻¹ • (T i + q⁻¹)` is idempotent: it is the image of the
-projection `e i` under the isomorphism with the balanced projection algebra. -/
-theorem isIdempotentElem_eigenprojection (hs : (s : R) = q + ↑q⁻¹) (i : ℕ) :
-    IsIdempotentElem ((↑s⁻¹ : R) • (T q i + algebraMap R _ (↑q⁻¹ : R))) := by
-  have hτ : (↑s⁻¹ : R) ^ 2 * ((q : R) + ↑q⁻¹) ^ 2 = 1 := by
-    rw [← hs, ← mul_pow, s.inv_mul, one_pow]
-  have h := (BalancedProjectionAlgebra.isIdempotentElem_e (τ := (↑s⁻¹ : R) ^ 2) i).map
-    (BalancedProjectionAlgebra.heckeEquiv q hτ)
-  rwa [BalancedProjectionAlgebra.heckeEquiv_e, ← hs, sq, mul_assoc, s.inv_mul, mul_one] at h
-
-/-- The generator `T i` is `q` on its eigenprojection `P` and `-q⁻¹` on the complement:
-`T i = q • P - q⁻¹ • (1 - P)`. -/
-theorem T_eq_smul_eigenprojection_sub_smul (hs : (s : R) = q + ↑q⁻¹) (i : ℕ) :
-    T q i = (q : R) • ((↑s⁻¹ : R) • (T q i + algebraMap R _ (↑q⁻¹ : R))) -
-      (↑q⁻¹ : R) • (1 - (↑s⁻¹ : R) • (T q i + algebraMap R _ (↑q⁻¹ : R))) := by
-  have hs' : (↑s⁻¹ : R) * s = 1 := s.inv_mul
-  rw [hs] at hs'
-  simp only [Algebra.algebraMap_eq_smul_one]
-  match_scalars
-  · linear_combination -hs'
-  · linear_combination -(↑q⁻¹ : R) * hs'
-
-/-- The inverse generator is `q⁻¹` on the eigenprojection `P` of `T i` and `-q` on the
-complement: `T i⁻¹ = q⁻¹ • P - q • (1 - P)`. -/
-theorem val_inv_unitT_eq_smul_eigenprojection_sub_smul (hs : (s : R) = q + ↑q⁻¹) (i : ℕ) :
-    (↑(unitT q i)⁻¹ : InfiniteTypeAHeckeAlgebra R q) =
-      (↑q⁻¹ : R) • ((↑s⁻¹ : R) • (T q i + algebraMap R _ (↑q⁻¹ : R))) -
-        (q : R) • (1 - (↑s⁻¹ : R) • (T q i + algebraMap R _ (↑q⁻¹ : R))) := by
-  have hs' : (↑s⁻¹ : R) * s = 1 := s.inv_mul
-  rw [hs] at hs'
-  simp only [val_inv_unitT, Algebra.algebraMap_eq_smul_one]
-  match_scalars
-  · linear_combination -hs'
-  · linear_combination -(↑q⁻¹ : R) * hs'
-
-variable {z η : R} {τ : InfiniteTypeAHeckeAlgebra R q →ₗ[R] R}
-
-/-- **The projection parameter of a Markov trace.** If `z = q * η - q⁻¹ * (1 - η)`, a Markov trace
-with parameter `z` multiplies by `η` when the eigenprojection of the generator `T n` adding the
-new last strand is appended. -/
-theorem IsMarkovTrace.map_mul_eigenprojection (hτ : IsMarkovTrace z τ)
-    (hs : (s : R) = q + ↑q⁻¹) (hz : z = q * η - ↑q⁻¹ * (1 - η)) {n : ℕ}
-    {x : InfiniteTypeAHeckeAlgebra R q} (hx : x ∈ stage R q (n + 1)) :
-    τ (x * (↑s⁻¹ : R) • (T q n + algebraMap R _ (↑q⁻¹ : R))) = η * τ x := by
-  have hs' : (↑s⁻¹ : R) * s = 1 := s.inv_mul
-  rw [hs] at hs'
-  rw [mul_smul_comm, map_smul, mul_add, map_add, hτ.map_mul_T hx, ← Algebra.commutes,
-    ← Algebra.smul_def, map_smul, smul_eq_mul, smul_eq_mul, hz]
-  linear_combination η * τ x * hs'
-
-end InfiniteTypeAHeckeAlgebra
 
 /-! ### Hyperbolic parameters -/
 
