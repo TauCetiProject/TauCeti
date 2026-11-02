@@ -11,6 +11,7 @@ public import TauCeti.Topology.Algebra.Group.GeneratingTuples
 public import TauCeti.Topology.Algebra.Group.Generation
 public import TauCeti.Topology.Algebra.Group.Profinite.Basic
 import Mathlib.Topology.Separation.Connected
+import TauCeti.GroupTheory.Coset.Basic
 import TauCeti.Topology.Algebra.Group.Profinite.Section
 
 /-!
@@ -536,19 +537,6 @@ private structure ConvergingGenData (G : Type*) [Group G] [TopologicalSpace G]
   finite : ∀ V : Subgroup G, IsOpen (V : Set G) → K ≤ V →
     (((↑) : G → G ⧸ K) '' (S \ V)).Finite
 
-omit [TopologicalSpace G] [IsTopologicalGroup G] in
-/-- Finiteness of a coarse coset image passes to a finer quotient if coarse congruence on the
-set already implies fine congruence. No normality or topological hypothesis is needed. -/
-private theorem finite_image_mk_of_le {K L : Subgroup G} (hLK : L ≤ K) {s : Set G}
-    (hfin : (((↑) : G → G ⧸ K) '' s).Finite)
-    (hcong : ∀ x ∈ s, ∀ y ∈ s, x⁻¹ * y ∈ K → x⁻¹ * y ∈ L) :
-    (((↑) : G → G ⧸ L) '' s).Finite := by
-  refine Set.Finite.of_finite_image (f := Subgroup.quotientMapOfLE hLK) ?_ ?_
-  · simpa only [Set.image_image, Subgroup.quotientMapOfLE_apply_mk] using hfin
-  · rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩ h
-    simp only [Subgroup.quotientMapOfLE_apply_mk, QuotientGroup.eq] at h ⊢
-    exact hcong x hx y hy h
-
 namespace ConvergingGenData
 
 /-- Refinement of partial solutions: `b` refines `a`. -/
@@ -688,7 +676,7 @@ private def limit {c : Set (ConvergingGenData G)} (hc : IsChain Le c) (hne : c.N
   finite V hV hKV := by
     obtain ⟨a, haV⟩ := exists_K_subset hc hne hV fun x hx ↦ hKV (Subgroup.mem_iInf.mpr hx)
     have hle : (⨅ b : c, b.1.K) ≤ a.1.K := iInf_le _ a
-    refine finite_image_mk_of_le hle ?_ ?_
+    refine Subgroup.finite_image_mk_of_le hle ?_ ?_
     · exact (a.1.finite V hV haV).subset
         (Set.image_mono fun x hx ↦ ⟨Set.mem_iInter.mp hx.1 a, hx.2⟩)
     · intro x hx x' hx' h
@@ -832,10 +820,10 @@ private theorem finite_refineSet (a : ConvergingGenData G) (U : OpenNormalSubgro
     exact V.mul_mem (hN hmN) (hLV (Subgroup.mem_inf.mpr ⟨hk, hkU⟩))
   have hA : (((↑) : G → G ⧸ (a.K ⊓ U.toSubgroup)) '' a.K).Finite := by
     have := Subgroup.quotient_finite_of_isOpen U.toSubgroup U.isOpen
-    exact finite_image_mk_of_le inf_le_right (Set.toFinite _)
+    exact Subgroup.finite_image_mk_of_le inf_le_right (Set.toFinite _)
       fun x hx x' hx' h ↦ ⟨a.K.mul_mem (a.K.inv_mem hx) hx', h⟩
   have hB : (((↑) : G → G ⧸ (a.K ⊓ U.toSubgroup)) '' ((a.S ∩ U.toSubgroup) \ V)).Finite := by
-    exact finite_image_mk_of_le inf_le_left
+    exact Subgroup.finite_image_mk_of_le inf_le_left
       ((a.finite W hWopen le_sup_right).subset (Set.image_mono hUW))
       fun x hx x' hx' h ↦ ⟨h, U.toSubgroup.mul_mem (U.toSubgroup.inv_mem hx.1.2) hx'.1.2⟩
   have hC : (((↑) : G → G ⧸ (a.K ⊓ U.toSubgroup)) '' a.reps U).Finite := by

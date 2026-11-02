@@ -44,6 +44,8 @@ laws after the coordinate maps themselves have been evaluated on quotients. Fina
 `Subgroup.sum_out_smul_eq_relIndex_nsmul` sums an orbit map along a tower: for `K ≤ H` and an
 element `m` of an additive commutative monoid on which `G` acts, fixed by `H`, the sum of
 `q.out • m` over the cosets of `K` is `[H : K]` times the sum over the cosets of `H`.
+`Subgroup.finite_image_mk_of_le` passes finiteness of the image of a set in `G ⧸ K` to a finer
+quotient `G ⧸ L` when congruence modulo `K` on the set implies congruence modulo `L`.
 -/
 
 public section
@@ -188,6 +190,26 @@ theorem mk_mulEquiv_out_bijective {G G' : Type*} [Group G] [Group G'] {H : Subgr
     simp [QuotientGroup.eq, ← he]
   exact ⟨fun q q' h ↦ by simpa using (hmk _ _).1 h,
     fun q' ↦ ⟨e.symm q'.out, by simpa using (hmk _ (e.symm q'.out)).2 (QuotientGroup.out_eq' _)⟩⟩
+
+section FiniteImage
+
+variable {G : Type*} [Group G]
+
+/-- Finiteness of a coarse coset image passes to a finer quotient if coarse congruence on the set
+already implies fine congruence: for `L ≤ K` and a set `s` with finite image in `G ⧸ K`, if any
+two elements of `s` congruent modulo `K` are congruent modulo `L`, then `s` has finite image in
+`G ⧸ L`. No normality is needed. -/
+theorem finite_image_mk_of_le {K L : Subgroup G} (hLK : L ≤ K) {s : Set G}
+    (hfin : (((↑) : G → G ⧸ K) '' s).Finite)
+    (hcong : ∀ x ∈ s, ∀ y ∈ s, x⁻¹ * y ∈ K → x⁻¹ * y ∈ L) :
+    (((↑) : G → G ⧸ L) '' s).Finite := by
+  refine Set.Finite.of_finite_image (f := quotientMapOfLE hLK) ?_ ?_
+  · simpa only [Set.image_image, quotientMapOfLE_apply_mk] using hfin
+  · rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩ h
+    simp only [quotientMapOfLE_apply_mk, QuotientGroup.eq] at h ⊢
+    exact hcong x hx y hy h
+
+end FiniteImage
 
 end Subgroup
 
