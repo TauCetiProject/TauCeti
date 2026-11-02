@@ -5,12 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Weight.Differential
-public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Cocharacter
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.Tangent
+public import TauCeti.Algebra.Lie.E7.Minuscule.Root.Coroot
 public import TauCeti.Algebra.Lie.E7.Minuscule.Root.Differential
-public import TauCeti.Algebra.Lie.E7.Minuscule.Root.Coordinates
-public import TauCeti.Algebra.Lie.Matrix.IntegralCast
 
 /-!
 # Simple-coroot differentials of the integral E₇ carrier
@@ -26,9 +23,9 @@ provides the bracket normalization. `cartanBasis` gives the resulting basis of t
 image. No maximality, full root-space decomposition, or identification of the specialized
 integral carrier with an independently pinned group is asserted.
 
-The calculation adapts `TauCeti.Algebra.Lie.E7.Minuscule.Generated.Coroot` to the specialized
-integral carrier, using its own closed immersion and root parametrizations. It does not
-identify that carrier with the separately generated subgroup.
+The calculation uses the carrier-independent lemmas in `Root.Coroot`, shared with
+`Generated.Coroot`, and the integral carrier's own closed immersion and root parametrizations.
+It does not identify that carrier with the separately generated subgroup.
 
 ## References
 
@@ -54,8 +51,7 @@ def tangentMatrixLieHom :
     Derivation R (coordinateHopfAlgebra R)
       (Bialgebra.CounitAlgebra R (coordinateHopfAlgebra R) R) →ₗ⁅R⁆
         Matrix (Fin 56) (Fin 56) R :=
-  (GeneralLinear.tangentLieEquivMatrix (R := R) (B := R) 56).toLieHom.comp
-    (derivationCompLieHom (B := R) (coordinateMap R).hom)
+  GeneralLinear.tangentMatrixLieHom (coordinateMap R).hom
 
 /-- The matrix realization evaluates the precomposed tangent vector on the generic matrix. -/
 theorem tangentMatrixLieHom_apply
@@ -63,13 +59,11 @@ theorem tangentMatrixLieHom_apply
       (Bialgebra.CounitAlgebra R (coordinateHopfAlgebra R) R)) :
     tangentMatrixLieHom R d = GeneralLinear.tangentMatrix 56
       (derivationComp (B := R) (coordinateMap R).hom d) := by
-  simp only [tangentMatrixLieHom, LieHom.comp_apply, LieEquiv.coe_toLieHom,
-    GeneralLinear.tangentLieEquivMatrix_apply, derivationCompLieHom_apply]
+  exact GeneralLinear.tangentMatrixLieHom_apply _ d
 
 /-- The tangent matrix realization is injective over every commutative base ring. -/
 theorem tangentMatrixLieHom_injective : Function.Injective (tangentMatrixLieHom R) :=
-  (GeneralLinear.tangentLieEquivMatrix (R := R) (B := R) 56).injective.comp
-    (derivationCompLieHom_injective_of_surjective _ (coordinateMap_surjective R))
+  GeneralLinear.tangentMatrixLieHom_injective_of_surjective _ (coordinateMap_surjective R)
 
 /-- Each normalized root vector has its prescribed integral root matrix. -/
 @[simp↓]
@@ -94,10 +88,9 @@ theorem cartanVector_def (i : Fin 7) :
 theorem tangentMatrixLieHom_cartanVector (i : Fin 7) :
     tangentMatrixLieHom R (cartanVector R i) =
       (cartanMatrix i).map (Int.cast : ℤ → R) := by
-  rw [cartanVector_def, LieHom.map_lie, tangentMatrixLieHom_rootVector,
-    tangentMatrixLieHom_rootVector, Sum.elim_inl, Sum.elim_inr]
-  simpa only [Function.comp_apply, matrixIntCastLieHom_eq_map] using
-    (isSerreSystem.map (matrixIntCastLieHom R)).lie_E_F_self i
+  exact map_lie_eq_cartanMatrix (tangentMatrixLieHom R) _ _ i
+    (tangentMatrixLieHom_rootVector R (.inl i))
+    (tangentMatrixLieHom_rootVector R (.inr i))
 
 /-- The cocharacter defined by the `i`-th fundamental-weight coordinate of the weight torus. -/
 def corootCocharacter (i : Fin 7) : coordinateHopfAlgebra R →ₐc[R] LaurentPolynomial R :=
@@ -119,12 +112,7 @@ theorem corootCocharacter_eq_cocharacter_coroot_simpleIndex
           (DynkinType.E7.simpleIndex ht i))) := by
   rw [corootCocharacter_def]
   congr 1
-  apply SplitTorus.cocharEquiv.eq_symm_apply.mpr
-  have heval : SplitTorus.cocharEquiv (Finsupp.applyAddHom i).toMultiplicative =
-      (Pi.single i 1 : Fin 7 → ℤ) := by
-    ext j
-    simp [SplitTorus.cocharEquiv_apply, Finsupp.single_apply, Pi.single_apply, eq_comm]
-  exact heval.trans (coroot_simpleIndex ht i).symm
+  exact (cocharEquiv_symm_coroot_simpleIndex ht i).symm
 
 /-- The coroot differential has diagonal entries given by the weight–coroot pairings.
 The multiplicative tangent vector is normalized to one. -/
@@ -141,12 +129,7 @@ theorem tangentMatrixLieHom_derivationComp_corootCocharacter
     rw [← _root_.CommHopfAlgCat.hom_comp,
       coordinateMap_comp_weightTorusToBaseChangeCoordinateMap,
       GeneralLinear.hom_weightTorusBaseChangeCoordinateMap]
-  rw [tangentMatrixLieHom_apply, corootCocharacter_def,
-    GeneralLinear.tangentMatrix_derivationComp_cocharacter_of_weightTorus _ _ _ hπ]
-  congr 1
-  ext a
-  rw [coroot'_simpleIndex_apply ht i]
-  simp
+  exact tangentMatrixLieHom_derivationComp_coordinateCoroot _ _ hπ ht i
 
 /-- The bracket of normalized opposite simple-root vectors is the actual coroot differential,
 without any restriction on characteristic. -/
@@ -155,12 +138,8 @@ theorem cartanVector_eq_derivationComp_corootCocharacter (i : Fin 7) :
       (MultiplicativeGroup.tangentLinearEquiv.symm (1 : R)) := by
   apply tangentMatrixLieHom_injective R
   rw [tangentMatrixLieHom_cartanVector,
-    tangentMatrixLieHom_derivationComp_corootCocharacter R DynkinType.valid_E7]
-  ext a b
-  simp only [Matrix.map_apply, cartanMatrix_apply, Matrix.diagonal_apply]
-  split_ifs
-  · rw [coroot'_simpleIndex_apply DynkinType.valid_E7 i]
-  · simp
+    tangentMatrixLieHom_derivationComp_corootCocharacter R DynkinType.valid_E7,
+    cartanMatrix_map_intCast_eq_diagonal_coroot' DynkinType.valid_E7]
 
 /-- The weight-torus differential sends each coordinate tangent vector to its Cartan bracket. -/
 theorem derivationCompLieHom_weightTorusToBaseChangeCoordinateMap_tangentBasis (i : Fin 7) :
@@ -175,26 +154,18 @@ theorem range_derivationCompLieHom_weightTorusToBaseChangeCoordinateMap_eq_span 
     LinearMap.range
         (derivationCompLieHom (B := R) (weightTorusToBaseChangeCoordinateMap R).hom).toLinearMap =
       Submodule.span R (Set.range (cartanVector R)) := by
-  rw [SplitTorus.range_derivationCompLieHom]
-  congr 1
-  apply congrArg Set.range
-  funext i
-  rw [cartanVector_eq_derivationComp_corootCocharacter, corootCocharacter_def,
-    derivationCompLieHom_apply]
+  simpa only [derivationCompLieHom_apply, ← corootCocharacter_def R,
+    ← cartanVector_eq_derivationComp_corootCocharacter R] using
+    SplitTorus.range_derivationCompLieHom (B := R) (weightTorusToBaseChangeCoordinateMap R).hom
 
 /-- The seven Cartan brackets are independent, even in characteristic two. -/
 theorem linearIndependent_cartanVector : LinearIndependent R (cartanVector R) := by
-  have hinj := derivationCompLieHom_injective_of_surjective (B := R) _
-    (weightTorusToBaseChangeCoordinateMap_surjective R)
-  have h := (SplitTorus.tangentBasis (R := R) (B := R) (I := Fin 7)).linearIndependent.map_injOn
-    (derivationCompLieHom (B := R) (weightTorusToBaseChangeCoordinateMap R).hom).toLinearMap
-    hinj.injOn
-  have heq :
-      ⇑(derivationCompLieHom (B := R) (weightTorusToBaseChangeCoordinateMap R).hom).toLinearMap ∘
-          SplitTorus.tangentBasis (R := R) (B := R) (I := Fin 7) = cartanVector R := by
-    funext i
-    exact derivationCompLieHom_weightTorusToBaseChangeCoordinateMap_tangentBasis R i
-  rwa [heq] at h
+  simpa only [derivationCompLieHom_apply, ← corootCocharacter_def R,
+    ← cartanVector_eq_derivationComp_corootCocharacter R] using
+    SplitTorus.linearIndependent_derivationComp_cocharacter
+      (B := R) (weightTorusToBaseChangeCoordinateMap R).hom
+      (derivationCompLieHom_injective_of_surjective _
+        (weightTorusToBaseChangeCoordinateMap_surjective R))
 
 /-- The simple-coroot differentials form a basis of the toral tangent image, expressed as a span. -/
 def cartanBasis : Module.Basis (Fin 7) R (Submodule.span R (Set.range (cartanVector R))) :=
