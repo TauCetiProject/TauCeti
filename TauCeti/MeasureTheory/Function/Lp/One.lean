@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.LpOrder
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import TauCeti.Analysis.Normed.Order.PositiveLinearMap
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
@@ -15,7 +16,8 @@ import TauCeti.MeasureTheory.Function.Lp.Norm
 This file equips `L∞(μ)` with the class `1` of the constant function one, for any normed group
 with a distinguished element `1` and on an arbitrary measure space. Unlike
 `MeasureTheory.Lp.const`, the construction needs no finite-measure hypothesis because the
-essential supremum of a constant is always finite. Its norm is that of `1` unless `μ = 0`.
+essential supremum of a constant is always finite. Its norm is that of `1` unless `μ = 0`, and
+its real integral is the total mass of the measure.
 
 Every real `L∞` class `f` satisfies `f ≤ ‖f‖ • 1` (`MeasureTheory.Lp.le_norm_smul_one`), so the
 constant one is an order unit, and a positive linear functional on `L∞` is controlled by its value
@@ -50,6 +52,11 @@ theorem coeFn_one : ((1 : Lp E ∞ μ) : α → E) =ᵐ[μ] 1 :=
 theorem norm_one_of_ne_zero (hμ : μ ≠ 0) : ‖(1 : Lp E ∞ μ)‖ = ‖(1 : E)‖ := by
   rw [norm_def, eLpNorm_congr_ae coeFn_one, Pi.one_def,
     eLpNorm_exponent_top aestronglyMeasurable_const, eLpNormEssSup_const _ hμ, toReal_enorm]
+
+/-- The integral of the constant one of real `L∞` is the total mass. -/
+@[simp]
+theorem integral_one : ∫ x, (1 : Lp ℝ ∞ μ) x ∂μ = μ.real Set.univ := by
+  simp [integral_congr_ae coeFn_one]
 
 /-- Every real `L∞` class lies below its norm times the constant one. With the lemmas of
 `TauCeti/Analysis/Normed/Order/PositiveLinearMap.lean`, this bounds and makes continuous every
