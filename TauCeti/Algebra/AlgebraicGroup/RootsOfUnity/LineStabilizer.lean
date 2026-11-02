@@ -149,12 +149,13 @@ theorem smooth_quotient_stabilizerHopfIdeal_projLineComodule_iff (n : ℕ) [NeZe
 
 /-- **The orbit map of `[1 : 1]` has zero differential when `n = 0` in `k`.** If `n` vanishes in
 `k`, for instance `n = p` in characteristic `p`, then every tangent vector of `𝔾ₘ` lies in the Lie
-algebra of the stabilizer of `[1 : 1]` under `t · [u : v] = [tⁿ u : v]`, although for `n ≠ 0`
-this stabilizer is the proper subgroup `μ_n`. -/
-theorem lieSubalgebra_stabilizerHopfIdeal_projLineComodule_eq_top {n : ℕ} (hn : (n : k) = 0) :
+algebra of the stabilizer of `[1 : 1]` under `t · [u : v] = [tⁿ u : v]`, with values in any
+commutative `k`-algebra `B`, although for `n ≠ 0` this stabilizer is the proper subgroup `μ_n`. -/
+theorem lieSubalgebra_stabilizerHopfIdeal_projLineComodule_eq_top {n : ℕ} (hn : (n : k) = 0)
+    (B : Type*) [CommRing B] [Algebra k B] :
     letI := projLineComodule k n
     ((k ∙ (1 : Fin 2 → k)).stabilizerHopfIdeal
-      (MonoidAlgebra k (Multiplicative ℤ))).lieSubalgebra (B := k) = ⊤ := by
+      (MonoidAlgebra k (Multiplicative ℤ))).lieSubalgebra (B := B) = ⊤ := by
   let : Comodule k (MonoidAlgebra k (Multiplicative ℤ)) (Fin 2 → k) := projLineComodule k n
   refine eq_top_iff.mpr fun d _ ↦ ?_
   -- The stabilizer ideal is spanned by `Tⁿ - 1`, so it suffices that `d (Tⁿ - 1) = 0`.

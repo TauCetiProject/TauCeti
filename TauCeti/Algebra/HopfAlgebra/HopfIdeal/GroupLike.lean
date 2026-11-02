@@ -29,6 +29,8 @@ and `S(χ₁ - χ₂) = -(S χ₁ S χ₂)(χ₁ - χ₂)` because `S χᵢ` is 
 
 * `TauCeti.HopfIdeal.ofGroupLikeSub`: the Hopf ideal `(χ₁ - χ₂)`.
 * `TauCeti.HopfIdeal.ofGroupLikeSub_toIdeal`: its underlying ideal is `Ideal.span {χ₁ - χ₂}`.
+* `TauCeti.HopfIdeal.sub_mem_ofGroupLikeSub` and `TauCeti.HopfIdeal.ofGroupLikeSub_le_iff`: it
+  contains `χ₁ - χ₂` and is the smallest Hopf ideal doing so.
 * `TauCeti.HopfIdeal.ofGroupLikeSub_le_ker_iff`: a ring homomorphism kills it exactly when it
   takes the same value on `χ₁` and `χ₂`; on points, this is the equalizer condition.
 
@@ -94,6 +96,17 @@ theorem ofGroupLikeSub_toIdeal (hχ₁ : IsGroupLikeElem R χ₁) (hχ₂ : IsGr
 theorem mem_ofGroupLikeSub (hχ₁ : IsGroupLikeElem R χ₁) (hχ₂ : IsGroupLikeElem R χ₂) {x : H} :
     x ∈ ofGroupLikeSub hχ₁ hχ₂ ↔ x ∈ Ideal.span {χ₁ - χ₂} := by
   rw [← mem_toIdeal, ofGroupLikeSub_toIdeal]
+
+/-- The generator `χ₁ - χ₂` lies in `ofGroupLikeSub`. -/
+theorem sub_mem_ofGroupLikeSub (hχ₁ : IsGroupLikeElem R χ₁) (hχ₂ : IsGroupLikeElem R χ₂) :
+    χ₁ - χ₂ ∈ ofGroupLikeSub hχ₁ hχ₂ :=
+  (mem_ofGroupLikeSub hχ₁ hχ₂).2 (Ideal.mem_span_singleton_self _)
+
+/-- `ofGroupLikeSub` is the smallest Hopf ideal containing `χ₁ - χ₂`: its universal property. -/
+theorem ofGroupLikeSub_le_iff (hχ₁ : IsGroupLikeElem R χ₁) (hχ₂ : IsGroupLikeElem R χ₂)
+    {J : HopfIdeal R H} : ofGroupLikeSub hχ₁ hχ₂ ≤ J ↔ χ₁ - χ₂ ∈ J := by
+  rw [← toIdeal_le_toIdeal, ofGroupLikeSub_toIdeal, Ideal.span_singleton_le_iff_mem,
+    mem_toIdeal]
 
 /-- **Points of the equalizer of two characters.** A ring homomorphism kills the Hopf ideal
 `(χ₁ - χ₂)` exactly when it takes the same value on `χ₁` and `χ₂`. -/
