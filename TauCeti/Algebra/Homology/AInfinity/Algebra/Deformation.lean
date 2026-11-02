@@ -39,16 +39,12 @@ first-order deformations are the Hochschild cocycles of degree one
 (`isDeformationOfOrder_one_iff`).
 
 The obstruction of a deformation of order `n` is a Hochschild cocycle of degree two
-(`IsDeformationOfOrder.hochschildDifferential_deformationObstruction`).  The proof works with the
-coderivations `Dᵢ` of the coefficients: the coderivation of `∑_{i + j = k} φᵢ{φⱼ}` is
-`∑_{i + j = k} Dᵢ ∘ Dⱼ`
-(`TauCeti.ReducedTensorWords.gradedCoderiv_sum_antidiagonal_brace`), these vanish for `k ≤ n`, and
-comparing the coefficients of `tⁿ⁺¹` in the two bracketings of the cube of the truncated series
-`D₀ + t D₁ + ⋯ + tⁿ Dₙ` shows that the bar differential `D₀` commutes with the coderivation of
-`Oₙ`.  So the obstruction has a class in the positive-arity Hochschild cohomology of degree two,
-and the deformation extends to order `n + 1`, after changing only `φₙ₊₁`, exactly when this
-class vanishes (`IsDeformationOfOrder.obstructionClass_eq_zero_iff`).  In particular, if this
-cohomology group vanishes then every deformation of order `n` extends to a formal deformation
+(`IsDeformationOfOrder.hochschildDifferential_deformationObstruction`).  So the obstruction has a
+class in the positive-arity Hochschild cohomology of degree two
+(`IsDeformationOfOrder.obstructionClass`), and the deformation extends to order `n + 1`, after
+changing only `φₙ₊₁`, exactly when this class vanishes
+(`IsDeformationOfOrder.obstructionClass_eq_zero_iff`).  In particular, if this cohomology group
+vanishes then every deformation of order `n` extends to a formal deformation
 (`IsDeformationOfOrder.exists_isFormalDeformation`).
 
 Degrees are suspended degrees: an arity-`n` component of internal degree `r` has cochain degree
@@ -249,10 +245,12 @@ theorem deformationBrace_succ {φ : ℕ → ReducedTensorWords R A →ₗ[R] A} 
     · obtain rfl : a = n + 1 := by omega
       simp [hb]
     · simp [ha, hb, show a ≤ n by omega, show b ≤ n by omega]
+  -- Split the sum into the truncated part and the two extreme terms.
   rw [deformationBrace_def, Finset.sum_congr rfl key, Finset.sum_add_distrib,
-    Finset.sum_add_distrib, Finset.sum_ite_eq', Finset.sum_ite_eq', ite_eq_left (by simp),
-    ite_eq_left (by simp), hochschildDifferential_eq_brace_sub, negOnePowCast_one, neg_smul,
-    one_smul, sub_neg_eq_add, h₀, deformationObstruction_def, deformationBrace_def]
+    Finset.sum_add_distrib, deformationObstruction_def, deformationBrace_def]
+  congr 1
+  -- The extreme terms form the Hochschild differential of `φ (n + 1)`.
+  simp [hochschildDifferential_eq_brace_sub, h₀, G]
 
 /-- **Extending a deformation by one order.**  A deformation of order `n` is a deformation of
 order `n + 1` exactly when `φ (n + 1)` has degree one and its Hochschild differential is minus
@@ -289,6 +287,11 @@ differential of the obstruction to extending it to order `n + 1` vanishes. -/
 theorem IsDeformationOfOrder.hochschildDifferential_deformationObstruction {n : ℕ}
     {φ : ℕ → ReducedTensorWords R A →ₗ[R] A} (h : 𝒜.IsDeformationOfOrder n φ) :
     𝒜.hochschildDifferential 2 (𝒜.deformationObstruction φ n) = 0 := by
+  -- We pass to the coderivations `Dᵢ` of the coefficients: the coderivation of
+  -- `∑_{i + j = k} φᵢ{φⱼ}` is `∑_{i + j = k} Dᵢ ∘ Dⱼ`, which vanishes for `k ≤ n`.  Comparing the
+  -- coefficients of `tⁿ⁺¹` in the two bracketings of the cube of the truncated series
+  -- `D₀ + t D₁ + ⋯ + tⁿ Dₙ` shows that the bar differential `D₀` commutes with the coderivation
+  -- of the obstruction.
   set G := 𝒜.grading.shift 1 with hG
   set φ' : ℕ → ReducedTensorWords R A →ₗ[R] A := fun i ↦ if i ≤ n then φ i else 0 with hφ'
   have hmem (i : ℕ) : φ' i ∈ PositiveHochschild.cochains 𝒜 1 := by
@@ -362,6 +365,11 @@ noncomputable def IsDeformationOfOrder.obstructionClass {n : ℕ}
     PositiveHochschild.Cohomology 𝒜 2 :=
   Submodule.Quotient.mk ⟨_, h.deformationObstruction_mem_cycles⟩
 
+theorem IsDeformationOfOrder.obstructionClass_def {n : ℕ}
+    {φ : ℕ → ReducedTensorWords R A →ₗ[R] A} (h : 𝒜.IsDeformationOfOrder n φ) :
+    h.obstructionClass = Submodule.Quotient.mk ⟨_, h.deformationObstruction_mem_cycles⟩ :=
+  (rfl)
+
 /-- **The obstruction class is the obstruction to extension.**  A deformation of order `n`
 extends to a deformation of order `n + 1` with the same coefficients up to order `n` exactly when
 its obstruction class vanishes. -/
@@ -374,8 +382,7 @@ theorem IsDeformationOfOrder.obstructionClass_eq_zero_iff {n : ℕ}
     (Function.update_of_ne (a' := n + 1) (by omega) ψ φ).symm
   simp_rw [fun ψ ↦ (h.congr (hagree ψ)).isDeformationOfOrder_succ_iff, Function.update_self,
     ← deformationObstruction_congr (hagree _)]
-  rw [IsDeformationOfOrder.obstructionClass, Submodule.Quotient.mk_eq_zero,
-    PositiveHochschild.mem_range_toCycles]
+  rw [obstructionClass_def, Submodule.Quotient.mk_eq_zero, PositiveHochschild.mem_range_toCycles]
   constructor
   · rintro ⟨⟨ψ, hψ⟩, hdψ⟩
     have hψ' : ψ ∈ PositiveHochschild.cochains 𝒜 1 := by simpa using hψ
