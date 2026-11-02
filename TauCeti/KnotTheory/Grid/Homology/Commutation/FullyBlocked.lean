@@ -154,24 +154,7 @@ end TauCeti.GridDiagram
 
 namespace TauCeti.OddComponentGridDiagram
 
-open MvPolynomial
-
 variable {n : ℕ} (G : OddComponentGridDiagram n) (C : GridDiagram.ColumnCommutationData G.1)
-
-/-- The fully blocked pentagon map has no matrix entries between states of different bidegrees:
-a pentagon carrying no markings preserves both the `O`-Maslov and the Alexander grading. -/
-theorem fullyBlockedCommutationMap_single_apply_eq_zero_of_bidegree_ne (R : Type*)
-    [CommSemiring R] {x y : GridState n} (h : (G.swapColumns C).bidegree y ≠ G.bidegree x) :
-    G.1.fullyBlockedCommutationMap R C (Finsupp.single x 1) y = 0 := by
-  rw [GridDiagram.fullyBlockedCommutationMap_single_apply, one_mul,
-    ← G.1.commutationMap_single_apply, constantCoeff_eq]
-  by_contra hne
-  have hx := G.single_monomial_mem_bigradedChainMinusPiece R x 0 1
-  rw [monomial_zero', C_1] at hx
-  have hy := (mem_bigradedChainMinusPiece _).mp
-    (G.commutationMap_mem_bigradedChainMinusPiece C R hx) y 0 (mem_support_iff.mpr hne)
-  rw [monomialBidegree_zero, monomialBidegree_zero] at hy
-  exact h hy
 
 /-- The map induced on fully blocked homology by a column commutation commutes with the
 homogeneous projections. -/
