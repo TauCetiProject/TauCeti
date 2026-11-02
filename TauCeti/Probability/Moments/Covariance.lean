@@ -30,6 +30,8 @@ totalized coordinate by coordinate.
   the same moment hypotheses.
 * `TauCeti.integral_inner_toEuclideanLin_sub_integral_eq_trace_mul_covMatrix` computes the mean
   of a quadratic form of the centred variable as a trace against the covariance matrix.
+* `TauCeti.integral_inner_toEuclideanLin_sub_integral_eq_trace_mul_covMatrix_map` is the same
+  identity for a square-integrable random vector and the covariance matrix of its law.
 * `TauCeti.integral_norm_sub_sq_eq_norm_integral_sub_sq_add_trace_covMatrix` decomposes the
   second moment about a point into the squared distance from the mean to that point and the trace
   of the covariance matrix.
@@ -154,6 +156,20 @@ theorem integral_inner_toEuclideanLin_sub_integral_eq_trace_mul_covMatrix [Finty
   rw [integral_finsetSum _ fun k _ => hint j k]
   refine Finset.sum_congr rfl fun k _ => ?_
   rw [integral_const_mul, covMatrix_apply, covariance, hmean, hmean]
+
+/-- The mean of the quadratic form of a matrix `B` on the centred variable of a square-integrable
+Euclidean-valued random vector `X` is the trace of `B` times the covariance matrix of the law of
+`X`. -/
+theorem integral_inner_toEuclideanLin_sub_integral_eq_trace_mul_covMatrix_map [Fintype ι]
+    [DecidableEq ι] {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} [IsProbabilityMeasure P]
+    {X : Ω → EuclideanSpace ℝ ι} (hX : MemLp X 2 P) (B : Matrix ι ι ℝ) :
+    ∫ ω, ⟪B.toEuclideanLin (X ω - ∫ ω', X ω' ∂P), X ω - ∫ ω', X ω' ∂P⟫ ∂P =
+      (B * covMatrix (P.map X)).trace := by
+  have hXm : AEMeasurable X P := hX.aestronglyMeasurable.aemeasurable
+  have hmap : MemLp id 2 (P.map X) := (memLp_map_measure_iff aestronglyMeasurable_id hXm).2 hX
+  have hmean : ∫ y, y ∂(P.map X) = ∫ ω', X ω' ∂P := integral_map hXm aestronglyMeasurable_id
+  rw [← integral_inner_toEuclideanLin_sub_integral_eq_trace_mul_covMatrix _ hmap, hmean,
+    integral_map hXm (by fun_prop)]
 
 /-- The second moment of a Euclidean-valued probability measure about a point `c` is the squared
 distance from its mean to `c` plus the trace of its covariance matrix. -/

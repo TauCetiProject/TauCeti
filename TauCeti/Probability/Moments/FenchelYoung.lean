@@ -42,18 +42,6 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι]
   {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} [IsProbabilityMeasure P]
   {X Y : Ω → EuclideanSpace ℝ ι}
 
-/-- Means of quadratic forms of a centred random vector are traces against the covariance matrix
-of its law. -/
-private theorem integral_inner_toEuclideanLin_sub_integral_eq_trace (hX : MemLp X 2 P)
-    (B : Matrix ι ι ℝ) :
-    ∫ ω, ⟪B.toEuclideanLin (X ω - ∫ ω', X ω' ∂P), X ω - ∫ ω', X ω' ∂P⟫ ∂P =
-      (B * covMatrix (P.map X)).trace := by
-  have hXm : AEMeasurable X P := hX.aestronglyMeasurable.aemeasurable
-  have hmap : MemLp id 2 (P.map X) := (memLp_map_measure_iff aestronglyMeasurable_id hXm).2 hX
-  have hmean : ∫ y, y ∂(P.map X) = ∫ ω', X ω' ∂P := integral_map hXm aestronglyMeasurable_id
-  rw [← integral_inner_toEuclideanLin_sub_integral_eq_trace_mul_covMatrix _ hmap, hmean,
-    integral_map hXm (by fun_prop)]
-
 /-- **The centred variable lies in the range of the covariance.** If the covariance matrix of a
 square-integrable random vector `X` has the form `A * T` for a positive-semidefinite matrix `A`,
 then `X - 𝔼 X` lies almost surely in the range of `A`. -/
@@ -76,7 +64,7 @@ theorem ae_sub_integral_mem_range_toEuclideanLin (hX : MemLp X 2 P) {A T : Matri
       Matrix.toEuclideanLin_conjTranspose_eq_adjoint, LinearMap.adjoint_inner_left,
       real_inner_self_eq_norm_sq]
   have hsq : ∫ ω, ‖R.toEuclideanLin (X ω - m)‖ ^ 2 ∂P = 0 := by
-    have h := integral_inner_toEuclideanLin_sub_integral_eq_trace hX (Rᴴ * R)
+    have h := integral_inner_toEuclideanLin_sub_integral_eq_trace_mul_covMatrix_map hX (Rᴴ * R)
     rw [hcov, Matrix.mul_assoc, ← Matrix.mul_assoc R, hRA, Matrix.zero_mul, Matrix.mul_zero,
       Matrix.trace_zero] at h
     simpa only [hRR] using h
@@ -141,6 +129,7 @@ theorem integral_inner_sub_integral_le (hX : MemLp X 2 P) (hY : MemLp Y 2 P)
         integral_mono_ae (hU.integrable_inner hY) ((hAY.add hDU).div_const 2) hpt
     _ = (∫ ω, ⟪A.toEuclideanLin (Y ω), Y ω⟫ ∂P + (A * T).trace) / 2 := by
         rw [integral_div, integral_add hAY hDU,
-          integral_inner_toEuclideanLin_sub_integral_eq_trace hX D, hcov, htrace]
+          integral_inner_toEuclideanLin_sub_integral_eq_trace_mul_covMatrix_map hX D, hcov,
+          htrace]
 
 end TauCeti
