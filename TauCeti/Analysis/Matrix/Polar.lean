@@ -125,7 +125,7 @@ theorem exists_scalar_mul_mul_toGL_eq :
     have hU : ((U : GL n 𝕜) : Matrix n n 𝕜).det = (A : Matrix n n 𝕜).det / d :=
       det_polarUnitary A
     have hUA : ((U⁻¹ * A : GL n 𝕜) : Matrix n n 𝕜).det = d := by
-      rw [Units.val_mul, det_mul, coe_units_inv, det_nonsing_inv, Ring.inverse_eq_inv', hU]
+      simp [det_nonsing_inv, hU]
       field_simp
     rw [Units.val_mul, det_mul, hUA]
     simpa [s] using congrArg ((↑) : ℝ → 𝕜) hrd
@@ -133,7 +133,7 @@ theorem exists_scalar_mul_mul_toGL_eq :
   · rw [mem_unitarySubgroup_iff, Units.unitary_eq]
     exact (Units.polarUnitary A).2
   have htoGL : SpecialLinearGroup.toGL (⟨_, hdet'⟩ : SpecialLinearGroup n 𝕜) = s * (U⁻¹ * A) :=
-    Units.ext rfl
+    Units.ext (SpecialLinearGroup.coe_GL_coe_matrix _)
   -- The scalar `s` is central.
   have hs : U * s = s * U := (GeneralLinearGroup.scalar_commute _ U).symm
   rw [htoGL, map_inv, show s⁻¹ * U * (s * (U⁻¹ * A)) = s⁻¹ * (U * s) * (U⁻¹ * A) by group, hs]

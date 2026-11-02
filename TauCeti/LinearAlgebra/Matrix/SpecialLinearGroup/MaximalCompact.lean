@@ -99,7 +99,8 @@ theorem mem_comap_unitarySubgroup_of_isCompact_of_le {K : Subgroup (SpecialLinea
   -- The unitary polar factor of `g` has determinant one, so it is an element of `K`.
   let V : SpecialLinearGroup ι 𝕜 := ⟨(Units.polarUnitary (toGL g) : Matrix ι ι 𝕜),
     GeneralLinearGroup.det_polarUnitary_of_det_eq_one _ (by simp)⟩
-  have hV : toGL V = Unitary.toUnits (Units.polarUnitary (toGL g)) := Units.ext rfl
+  have hV : toGL V = Unitary.toUnits (Units.polarUnitary (toGL g)) :=
+    Units.ext (coe_GL_coe_matrix _)
   have hVK : V ∈ K := hUK (by simp [hV])
   exact GeneralLinearGroup.mem_unitarySubgroup_of_isCompact_of_polarUnitary_mem
     (isCompact_map_toGL hK) ⟨g, hg, rfl⟩ ⟨V, hVK, hV⟩
