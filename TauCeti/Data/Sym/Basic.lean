@@ -8,10 +8,10 @@ module
 public import Mathlib.Data.Fin.Tuple.Basic
 public import Mathlib.Data.Finset.Card
 public import Mathlib.Data.Fintype.Basic
+public import Mathlib.Data.Finsupp.Multiset
 public import Mathlib.Data.Sym.Basic
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Data.Finset.NatAntidiagonal
-import Mathlib.Data.Finsupp.Multiset
 import Mathlib.Data.Fintype.EquivFin
 import Mathlib.Data.List.FinRange
 import Mathlib.Logic.Equiv.Fin.Basic
@@ -38,6 +38,10 @@ orbits of the permutation action, by `TauCeti.Sym.ofFn_eq_ofFn_iff`. Nothing her
   exactly when one is a reindexing of the other by a permutation.
 * `TauCeti.Sym.count_coe_ofFn`: the multiplicity of a value in an unordered tuple is the number
   of entries of the ordered tuple taking that value.
+* `TauCeti.Sym.sum_single_eq_sum_single_iff`: two ordered tuples have the same letter counts
+  `∑ₜ single (f t) 1` exactly when they have the same underlying unordered tuple, and
+  `TauCeti.Sym.exists_sum_single_eq`: every exponent vector of total degree `n` is such a letter
+  count.
 * `TauCeti.Sym.basepointDivisor` is the set of unordered tuples containing a fixed point;
   `TauCeti.Sym.range_cons` identifies it with the range of adjoining that point.
 * `TauCeti.symFinTwoEquiv`: an unordered `d`-tuple over `Fin 2` is determined by how many of its
@@ -163,6 +167,49 @@ theorem ofFn_eq_ofFn_iff {f g : Fin n → α} :
       funext fun i => Equiv.ofFiberEquiv_map _ i⟩
   · rintro ⟨σ, rfl⟩
     exact (ofFn_comp_perm σ f).symm
+
+/-! ### Letter counts -/
+
+/-- The letter counts of an ordered tuple: the coefficient of `a` in `∑ₜ single (f t) 1` is the
+number of entries of `f` equal to `a`. -/
+theorem sum_single_apply [DecidableEq α] (f : Fin n → α) (a : α) :
+    (∑ t, Finsupp.single (f t) 1 : α →₀ ℕ) a = (Finset.univ.filter fun t => f t = a).card := by
+  simp [Finsupp.finsetSum_apply, Finsupp.single_apply]
+
+/-- The letter counts of an ordered tuple with entries in `F` sum to `n` over `F`. -/
+theorem sum_sum_single_apply {f : Fin n → α} {F : Finset α} (hf : ∀ t, f t ∈ F) :
+    ∑ a ∈ F, (∑ t, Finsupp.single (f t) 1 : α →₀ ℕ) a = n := by
+  classical
+  simp only [sum_single_apply]
+  exact (Finset.card_eq_sum_card_fiberwise fun t _ => hf t).symm.trans (Finset.card_fin n)
+
+/-- A value occurs in an ordered tuple exactly when its letter count is nonzero. -/
+theorem sum_single_apply_ne_zero_iff {f : Fin n → α} {a : α} :
+    (∑ t, Finsupp.single (f t) 1 : α →₀ ℕ) a ≠ 0 ↔ ∃ t, f t = a := by
+  classical
+  rw [sum_single_apply, ← Nat.pos_iff_ne_zero, Finset.card_pos]
+  simp [Finset.Nonempty]
+
+/-- Two ordered tuples have the same letter counts exactly when they have the same underlying
+unordered tuple. -/
+theorem sum_single_eq_sum_single_iff {f g : Fin n → α} :
+    (∑ t, Finsupp.single (f t) 1 : α →₀ ℕ) = ∑ t, Finsupp.single (g t) 1 ↔ ofFn f = ofFn g := by
+  classical
+  refine ⟨fun h => Sym.coe_injective (Multiset.ext.mpr fun a => ?_),
+    fun h => Finsupp.ext fun a => ?_⟩
+  · simpa only [count_coe_ofFn, sum_single_apply] using DFunLike.congr_fun h a
+  · simpa only [count_coe_ofFn, sum_single_apply] using
+      congrArg (fun s : Sym α n => Multiset.count a (s : Multiset α)) h
+
+/-- Every exponent vector of total degree `n` is the letter count of an ordered `n`-tuple. -/
+theorem exists_sum_single_eq (l : α →₀ ℕ) (hl : (l.sum fun _ k => k) = n) :
+    ∃ f : Fin n → α, ∑ t, Finsupp.single (f t) 1 = l := by
+  classical
+  obtain ⟨f, hf⟩ := ofFn_surjective (α := α) (n := n)
+    ⟨Finsupp.toMultiset l, by rw [Finsupp.card_toMultiset]; exact hl⟩
+  refine ⟨f, Finsupp.ext fun a => ?_⟩
+  simpa only [count_coe_ofFn, sum_single_apply, _root_.Sym.coe_mk, Finsupp.count_toMultiset] using
+    congrArg (fun s : Sym α n => Multiset.count a (s : Multiset α)) hf
 
 /-! ### Adjoining a fixed point -/
 

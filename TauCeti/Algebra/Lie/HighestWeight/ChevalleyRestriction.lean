@@ -142,7 +142,7 @@ theorem map_lieInvariants_lieCartanRestriction :
   rw [← DirectSum.sum_support_decompose (homogeneousSubmodule K H) q]
   refine Subalgebra.sum_mem _ fun m _ ↦ ?_
   obtain ⟨p, ⟨hp, -⟩, hpq⟩ := linearInvariants_inf_homogeneousSubmodule_le_map_lieInvariants H m
-    ⟨isHomogeneous_linearInvariants H m hq, SetLike.coe_mem _⟩
+    ⟨isHomogeneous_linearInvariants m hq, SetLike.coe_mem _⟩
   exact ⟨p, hp, hpq⟩
 
 /-- **Chevalley's restriction theorem.** Restriction of polynomial functions from `L` to `H`,

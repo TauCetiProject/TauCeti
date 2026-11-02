@@ -27,7 +27,9 @@ Combined with the characterization of irreducible algebraic sets by discriminati
 recognition theorem for discriminated groups: if `H` is equationally Noetherian and `X` is finite,
 then `K` is discriminated by `H` if and only if it is `G`-isomorphic to the coordinate group of an
 irreducible algebraic set defined by a finite system. This applies for instance to a free group
-of finite rank over itself, which is equationally Noetherian.
+of finite rank over itself, which is equationally Noetherian. Over a domain `H`, discrimination is
+separation plus being a domain, so a nonempty algebraic set is irreducible exactly when its
+coordinate group is a domain over `G`.
 
 No hypothesis on the coefficient maps is needed: they are arbitrary homomorphisms, so the results
 also cover systems without solutions, whose coordinate group is trivial.
@@ -47,11 +49,13 @@ also cover systems without solutions, whose coordinate group is trivial.
   Noetherian `H` and for finite `X`, such a group is discriminated by `H` if and only if it is
   `G`-isomorphic to the coordinate group of an irreducible algebraic set defined by a finite
   system.
+* `TauCeti.GroupAlgGeom.isIrreducible_V_iff_isGDomain`: over a domain `H`, a nonempty algebraic
+  set is irreducible if and only if its coordinate group is a domain over `G`.
 
 ## References
 
 * G. Baumslag, A. Myasnikov, V. Remeslennikov, *Algebraic geometry over groups I. Algebraic sets
-  and ideal theory*, J. Algebra 219 (1999), §3.4 (Corollary 8) and §4 (Theorem 5).
+  and ideal theory*, J. Algebra 219 (1999), Theorem C1, §3.4 (Corollary 8) and §4 (Theorem 5).
 * O. Kharlampovich, A. Myasnikov, *Irreducible affine varieties over a free group. I:
   Irreducibility of quadratic equations and Nullstellensatz*, J. Algebra 200 (1998), §1, Lemma 3.
 * O. Kharlampovich, A. Myasnikov, *Implicit function theorem over free groups*, J. Algebra 290
@@ -157,5 +161,17 @@ theorem isDiscriminatedBy_iff_exists_coordGroup [Finite X] (hH : IsEquationallyN
     exact h.of_injective ψ hψ.1
   · rw [CoordGroup.coeff_def]
     exact ⟨ψ, hψ⟩
+
+/-- Over a domain `H` over `G`, a nonempty algebraic set is irreducible if and only if its
+coordinate group is a domain over `G`. Nonemptiness is needed: the empty set is not irreducible,
+while its trivial coordinate group is a domain. -/
+theorem isIrreducible_V_iff_isGDomain {S : Set (GX G X)} (hH : IsGDomain ι)
+    (hS : (V ι S).Nonempty) :
+    @IsIrreducible (X → H) (zariskiTopology ι X) (V ι S) ↔
+      IsGDomain (CoordGroup.coeff ι S) := by
+  obtain ⟨v, hv⟩ := hS
+  rw [isIrreducible_V_iff_isDiscriminatedBy]
+  exact ⟨fun h => h.isGDomain hH, fun h =>
+    (CoordGroup.isSeparatedBy_coeff S).isDiscriminatedBy h ⟨CoordGroup.evalGHom v hv⟩⟩
 
 end TauCeti.GroupAlgGeom

@@ -17,10 +17,7 @@ the `k`-th step has no homogeneous component of degree above `k`
 (`TauCeti.SymmetricAlgebra.coe_decompose_eq_zero_of_mem_wordFiltration`). In particular a nonzero
 homogeneous element of degree `n` does not have degree below `n`
 (`TauCeti.SymmetricAlgebra.disjoint_homogeneousSubmodule_wordFiltrationPrevious`), which is how
-leading terms are read off in degree inductions on the symmetric algebra. Conversely, an element of
-degree at most `n` is its degree-`n` homogeneous component up to degree below `n`
-(`TauCeti.SymmetricAlgebra.sub_decompose_mem_wordFiltrationPrevious`), and every element has some
-finite degree (`TauCeti.SymmetricAlgebra.exists_mem_wordFiltration`).
+leading terms are read off in degree inductions on the symmetric algebra.
 
 ## Main results
 
@@ -66,39 +63,5 @@ theorem disjoint_homogeneousSubmodule_wordFiltrationPrevious (n : ℕ) :
       rw [wordFiltrationPrevious_succ] at hx
       rw [← DirectSum.decompose_of_mem_same _ hxn]
       exact coe_decompose_eq_zero_of_mem_wordFiltration (Nat.lt_succ_self k) hx
-
-/-- **The degree filtration of the symmetric algebra is exhaustive**: every element has degree at
-most `k` for some `k`. -/
-theorem exists_mem_wordFiltration (x : _root_.SymmetricAlgebra R M) :
-    ∃ k, x ∈ wordFiltration (_root_.SymmetricAlgebra.ι R M) k :=
-  exists_mem_wordFiltration_of_iSup_eq_top _
-    (by rw [iSup_wordFiltration_eq_adjoin, adjoin_range_ι, Algebra.top_toSubmodule]) x
-
-section Ring
-
-variable {R : Type u} {M : Type v} [CommRing R] [AddCommMonoid M] [Module R M]
-
-/-- **The top homogeneous component is the leading term**: an element `x` of degree at most `n`
-agrees with its degree-`n` homogeneous component up to degree strictly less than `n`. -/
-theorem sub_decompose_mem_wordFiltrationPrevious {n : ℕ} {x : _root_.SymmetricAlgebra R M}
-    (hx : x ∈ wordFiltration (_root_.SymmetricAlgebra.ι R M) n) :
-    x - (DirectSum.decompose (homogeneousSubmodule R M) x n : _root_.SymmetricAlgebra R M) ∈
-      wordFiltrationPrevious (_root_.SymmetricAlgebra.ι R M) n := by
-  rw [wordFiltration_eq_iSup_pow] at hx
-  induction hx using Submodule.iSup_induction' with
-  | mem i y hy =>
-      rcases (i.2 : (i : ℕ) ≤ n).eq_or_lt with h | h
-      · rw [← h, DirectSum.decompose_of_mem_same _ hy, sub_self]
-        exact zero_mem _
-      · rw [DirectSum.decompose_of_mem_ne _ hy h.ne, sub_zero]
-        obtain ⟨m, hm⟩ := Nat.exists_eq_add_of_lt h
-        rw [hm, wordFiltrationPrevious_succ]
-        exact wordFiltration_mono _ (Nat.le_add_right _ m) (range_pow_le_wordFiltration _ _ hy)
-  | zero => simp
-  | add y z _ _ hy hz =>
-      rw [DirectSum.decompose_add, DirectSum.add_apply, Submodule.coe_add, add_sub_add_comm]
-      exact add_mem hy hz
-
-end Ring
 
 end TauCeti.SymmetricAlgebra
