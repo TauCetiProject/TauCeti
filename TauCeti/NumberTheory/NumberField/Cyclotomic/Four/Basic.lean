@@ -59,16 +59,6 @@ open NumberField Polynomial TauCeti.NumberField
 
 namespace TauCeti
 
-/-- For `q ≡ 3 (mod 4)`, factor `q² - 1` with the factor `4` made explicit. -/
-theorem sq_sub_one_eq_four_mul_of_mod_four_eq_three {q : ℕ} (hq : q % 4 = 3) :
-    q ^ 2 - 1 = (4 * (q - 1)) * ((q + 1) / 4) := by
-  rw [← Nat.one_pow 2, Nat.sq_sub_sq, Nat.one_pow]
-  have h4 : 4 ∣ q + 1 := by omega
-  calc
-    (q + 1) * (q - 1) = (4 * ((q + 1) / 4)) * (q - 1) := by
-      rw [Nat.mul_div_cancel' h4]
-    _ = (4 * (q - 1)) * ((q + 1) / 4) := by ring
-
 variable {R : Type*} [CommRing R]
 
 /-- A square root `x` of `-1` satisfies `(1 + x)⁴ = -4`. -/
