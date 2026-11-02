@@ -13,6 +13,7 @@ import Mathlib.Geometry.Manifold.Complex
 import Mathlib.Order.Filter.Germ.Basic
 import TauCeti.Analysis.Complex.RiemannSurface.LocalNormalForm
 import TauCeti.Topology.OpenPartialHomeomorph.Continuity
+import TauCeti.Geometry.Manifold.Complex.Analytic
 
 /-!
 # The field of meromorphic functions on a connected Riemann surface
@@ -166,6 +167,14 @@ meromorphic function read in the affine chart of the sphere. -/
 theorem mdifferentiableAt_finitePart (h : f x ≠ ∞) :
     MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) f.finitePart x :=
   (mdifferentiableAt_atlas (Or.inl rfl) (by simpa using h)).comp x (f.mdifferentiable x)
+
+open scoped ContDiff in
+/-- Away from the poles, the finite part of a meromorphic function is complex analytic. -/
+theorem contMDiffAt_finitePart [IsManifold 𝓘(ℂ) 1 X] (h : f x ≠ (∞ : OnePoint ℂ)) :
+    ContMDiffAt 𝓘(ℂ) 𝓘(ℂ) ω f.finitePart x := by
+  apply (contMDiffAt_iff_eventually_mdifferentiableAt (by simp)).2
+  filter_upwards [f.continuous.continuousAt.eventually (isOpen_ne.mem_nhds h)] with y hy
+  exact f.mdifferentiableAt_finitePart hy
 
 /-- The value of a meromorphic function at `x` is the limit at `x`, along the punctured
 neighbourhoods of `x`, of any map to the sphere that agrees with it near `x`. -/

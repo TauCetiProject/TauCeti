@@ -67,7 +67,7 @@ theorem finitePart_toMeromorphic_eventuallyEq (f : divisorSections D ⊤) (x : X
 
 /-- Where the divisor allows no pole, the meromorphic image takes the section's actual value. -/
 @[simp]
-theorem toMeromorphic_apply (f : divisorSections D ⊤) {x : X} (hx : D x ≤ 0) :
+theorem toMeromorphic_apply_of_nonpos (f : divisorSections D ⊤) {x : X} (hx : D x ≤ 0) :
     toMeromorphic D f x = (f.1 ⟨x, trivial⟩ : OnePoint ℂ) :=
   MeromorphicFunction.ofMeromorphic_apply_of_continuousAt
     (fun y ↦ (isDivisorSectionAt f y).meromorphicAt)
@@ -84,8 +84,8 @@ theorem toMeromorphic_injective (D : WeilDivisor X) :
   · rw [apply_eq_zero_of_mem_divisorSections f.property hx,
       apply_eq_zero_of_mem_divisorSections g.property hx]
   · exact OnePoint.coe_injective <| by
-      simpa only [toMeromorphic_apply f (le_of_not_gt hx),
-        toMeromorphic_apply g (le_of_not_gt hx)] using
+      simpa only [toMeromorphic_apply_of_nonpos f (le_of_not_gt hx),
+        toMeromorphic_apply_of_nonpos g (le_of_not_gt hx)] using
         congrArg (fun k : MeromorphicFunction X ↦ k x) h
 
 /-- The order of the meromorphic image is the order of the section's representative. -/
@@ -123,12 +123,7 @@ theorem mem_range_toMeromorphic_iff (f : MeromorphicFunction X) :
         exact_mod_cast neg_nonneg.mpr hx
       have hfinite : f x ≠ (∞ : OnePoint ℂ) :=
         MeromorphicFunction.order_nonneg_iff.mp (hnonneg.trans (hf x))
-      have hcont : ContMDiffAt 𝓘(ℂ) 𝓘(ℂ) ω f.finitePart x := by
-        apply (contMDiffAt_iff_eventually_mdifferentiableAt (by simp)).2
-        filter_upwards [f.continuous.continuousAt.eventually (isOpen_ne.mem_nhds hfinite)]
-          with y hy
-        exact f.mdifferentiableAt_finitePart hy
-      exact hcont.congr_of_eventuallyEq <|
+      exact (f.contMDiffAt_finitePart hfinite).congr_of_eventuallyEq <|
         eventuallyEq_nhds_of_eventuallyEq_nhdsNE (hEq x)
           (Set.indicator_of_mem (s := {x | D x ≤ 0}) hx f.finitePart)
     · intro hx
@@ -142,7 +137,7 @@ theorem mem_range_toMeromorphic_iff (f : MeromorphicFunction X) :
 
 /-- A section space of dimension greater than one contains a section whose meromorphic
 image is not constant. No effectiveness assumption on the divisor is needed. -/
-theorem exists_toMeromorphic_not_mem_constants (D : WeilDivisor X)
+theorem exists_toMeromorphic_notMem_constants (D : WeilDivisor X)
     (hD : 1 < Module.finrank ℂ (divisorSections D ⊤)) :
     ∃ f : divisorSections D ⊤,
       toMeromorphic D f ∉ (Algebra.linearMap ℂ (MeromorphicFunction X)).range := by
@@ -167,7 +162,7 @@ theorem exists_finiteHolomorphicMap_of_one_lt_finrank_divisorSections [CompactSp
     ∃ F : FiniteHolomorphicMap X (OnePoint ℂ),
       ∀ x, ((-D x : ℤ) : WithTop ℤ) ≤
         meromorphicOrderAt (fun y ↦ OnePoint.affineChart (F y)) x := by
-  obtain ⟨s, hs⟩ := divisorSections.exists_toMeromorphic_not_mem_constants D hD
+  obtain ⟨s, hs⟩ := divisorSections.exists_toMeromorphic_notMem_constants D hD
   let f := divisorSections.toMeromorphic D s
   have hne : ∃ x y, f x ≠ f y := by
     by_contra! h
