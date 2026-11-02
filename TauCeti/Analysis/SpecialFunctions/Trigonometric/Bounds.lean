@@ -14,7 +14,8 @@ import Mathlib.Analysis.SpecialFunctions.Arcosh
 The sine of `π / x` is positive for real `x > 1`. The sine of `π * x` is nonzero for nonzero
 `x ∈ (-1, 1)`, a criterion used to detect nonflat Schwarz–Christoffel turns. The sine is
 nonpositive on `[π, 2π]`. For real `a < 1` the quantity `1 - a sin² θ` is positive, and
-`1 - k² ≤ 1 - k² sin² θ ≤ 1` for every real `k`.
+`1 - k² ≤ 1 - k² sin² θ ≤ 1` for every real `k`. Cosine is positive strictly between two
+angles in `[-π/2, π/2]`, in either orientation (`TauCeti.cos_pos_of_mem_uIoo`).
 
 For angles `α, β > 0` and `γ ≥ 0` with
 `α + β + γ < π`, the quotient `(cos α cos β + cos γ) / (sin α sin β)` is greater than `1`; by the
