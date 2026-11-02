@@ -406,20 +406,24 @@ theorem isQuasiFullyFaithful_minimalModelProjection :
 /-- The minimal model of a cohomologically unital category is cohomologically unital. -/
 theorem cohomologicallyUnital_minimalModel (h𝒞 : 𝒞.CohomologicallyUnital) :
     𝒞.minimalModel.CohomologicallyUnital :=
-  𝒞.isQuasiFullyFaithful_minimalModelInclusion.cohomologicallyUnital h𝒞
+  𝒞.cohomologicallyUnital_transfer 𝒞.cohomologyQuiverEquiv 𝒞.cohomologyContraction
+    𝒞.isHomogeneous_cohomologyContraction_homotopy 𝒞.isHomogeneous_cohomologyContraction_incl
+    𝒞.isHomogeneous_cohomologyContraction_proj 𝒞.isHomCompatible_cohomologyContraction h𝒞
 
 /-- The extending functor exhibits the minimal model as quasi-equivalent to the original
 cohomologically unital category. -/
 theorem isQuasiEquivalence_minimalModelInclusion (h𝒞 : 𝒞.CohomologicallyUnital) :
     𝒞.minimalModelInclusion.IsQuasiEquivalence h𝒞 :=
-  𝒞.isQuasiFullyFaithful_minimalModelInclusion.isQuasiEquivalence_of_surjective
-    fun X ↦ ⟨⟨X⟩, 𝒞.minimalModelInclusion_obj _⟩
+  𝒞.isQuasiEquivalence_transferInclusion 𝒞.cohomologyQuiverEquiv 𝒞.cohomologyContraction
+    𝒞.isHomogeneous_cohomologyContraction_homotopy 𝒞.isHomogeneous_cohomologyContraction_incl
+    𝒞.isHomogeneous_cohomologyContraction_proj 𝒞.isHomCompatible_cohomologyContraction h𝒞
 
 /-- The projection to the minimal model is also a quasi-equivalence. -/
 theorem isQuasiEquivalence_minimalModelProjection (h𝒞 : 𝒞.CohomologicallyUnital) :
     𝒞.minimalModelProjection.IsQuasiEquivalence (𝒞.cohomologicallyUnital_minimalModel h𝒞) :=
-  𝒞.isQuasiFullyFaithful_minimalModelProjection.isQuasiEquivalence_of_surjective
-    fun X ↦ ⟨X.obj, 𝒞.minimalModelProjection_obj _⟩
+  𝒞.isQuasiEquivalence_transferProjection 𝒞.cohomologyQuiverEquiv 𝒞.cohomologyContraction
+    𝒞.isHomogeneous_cohomologyContraction_homotopy 𝒞.isHomogeneous_cohomologyContraction_incl
+    𝒞.isHomogeneous_cohomologyContraction_proj 𝒞.isHomCompatible_cohomologyContraction h𝒞
 
 end AInfinityCategory
 
