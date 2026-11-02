@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.PlaneRotation
 public import TauCeti.Analysis.InnerProductSpace.Sphere.Cap
+public import TauCeti.Analysis.SpecialFunctions.Complex.CircleInner
 public import TauCeti.KnotTheory.ConnectedSum.BoostConcordance
 
 /-!
@@ -75,27 +76,6 @@ attribute [local instance] finrank_real_complex_fact'
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
   [Fact (finrank ℝ E = n + 1)] {ι : ℂ →ₗᵢ[ℝ] E}
 
-/-- Rotating the circle back by `c` turns the height `Im` into the height along `c i`. -/
-private theorem im_inv_mul (c z : Circle) :
-    ((c⁻¹ * z : Circle) : ℂ).im = ⟪(z : ℂ), (c : ℂ) * Complex.I⟫ := by
-  rw [Circle.coe_mul, Circle.coe_inv_eq_conj, Complex.inner]
-  simp only [Complex.mul_im, Complex.conj_re, Complex.conj_im, Complex.mul_re, Complex.I_re,
-    Complex.I_im]
-  ring
-
-/-- The height along `-i` is `-Im`. -/
-private theorem inner_neg_one_mul_I (z : ℂ) :
-    ⟪z, ((-1 : Circle) : ℂ) * Complex.I⟫ = -z.im := by
-  simp
-
-/-- The inner product of two points `exp (a i)` and `exp (b i)` of the circle is `cos (a - b)`. -/
-private theorem inner_circleExp (a b : ℝ) :
-    ⟪(Circle.exp a : ℂ), (Circle.exp b : ℂ)⟫ = cos (a - b) := by
-  rw [Circle.coe_exp, Circle.coe_exp, Complex.inner, Complex.mul_re, Complex.conj_re,
-    Complex.conj_im, Complex.exp_ofReal_mul_I_re, Complex.exp_ofReal_mul_I_im,
-    Complex.exp_ofReal_mul_I_re, Complex.exp_ofReal_mul_I_im, Real.cos_sub]
-  ring
-
 /-! ### Sliding a knot along the great circle -/
 
 variable (ι) in
@@ -142,7 +122,7 @@ variable {r : ℝ} {K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)}
 /-- Outside its arc around `c i`, a slid knot in cap position is the great circle. -/
 private theorem IsCapPosition.coe_slide_apply_of_le (hK : IsCapPosition ι r K) {c z : Circle}
     (hz : ⟪(z : ℂ), (c : ℂ) * Complex.I⟫ ≤ r) : (slide ι c K z : E) = ι z := by
-  rw [coe_slide_apply, hK.apply_eq (by rwa [im_inv_mul]), coe_greatCircle_apply,
+  rw [coe_slide_apply, hK.apply_eq (by rwa [Circle.im_inv_mul_eq_inner]), coe_greatCircle_apply,
     LinearIsometry.planeRotation_apply_map, ← Circle.coe_mul, mul_inv_cancel_left]
 
 /-- A slid knot in cap position is in the cap around `ι (c i)` exactly over the arc around `c i`. -/
@@ -152,7 +132,7 @@ private theorem IsCapPosition.lt_inner_slide_iff (hK : IsCapPosition ι r K) (c 
       ⟪(K (c⁻¹ * z) : E), ι Complex.I⟫ := by
     rw [coe_slide_apply, ← LinearIsometry.planeRotation_apply_map,
       LinearIsometryEquiv.inner_map_map]
-  rw [hinner, ← im_inv_mul]
+  rw [hinner, ← Circle.im_inv_mul_eq_inner]
   refine ⟨fun h => not_le.1 fun h' => h.not_ge ?_, hK.lt_inner⟩
   rw [hK.apply_eq h', coe_greatCircle_apply, ι.inner_map_map, Complex.real_inner_I_right]
   exact h'
@@ -167,18 +147,6 @@ private theorem IsCapPosition.isConnectedSumPosition (hK : IsCapPosition ι r K)
     rcases le_or_gt (z : ℂ).im r with h | h
     · rwa [hK.apply_eq h, coe_greatCircle_apply, ι.inner_map_map, Complex.real_inner_I_right]
     · exact hr.trans (hK.lt_inner h)
-
-/-- Every closed arc around `c i` with `c` in the right half-plane lies in the open upper half of
-the circle, when `1 - (Re c)² < r²`. -/
-private theorem im_pos_of_le_inner (hr : 0 < r) {c z : Circle} (hc : 0 ≤ (c : ℂ).re)
-    (hc' : 1 - (c : ℂ).re ^ 2 < r ^ 2) (hz : r ≤ ⟪(z : ℂ), (c : ℂ) * Complex.I⟫) :
-    0 < (z : ℂ).im := by
-  have hcI : ⟪(c : ℂ) * Complex.I, Complex.I⟫ = (c : ℂ).re := by
-    rw [Complex.real_inner_I_right]
-    simp
-  have := inner_pos_of_le_inner (u := Complex.I) (Circle.norm_coe z) (by simp) (by simp) hr
-    (by rwa [hcI]) (by rwa [hcI]) hz
-  rwa [Complex.real_inner_I_right] at this
 
 /-! ### Boosting a knot into a small cap -/
 
@@ -275,16 +243,13 @@ private theorem IsCapConfig.capSumFun_eq (h : IsCapConfig ι r c Ks) {z : Circle
   rw [capSumFun, Finset.sum_eq_zero (fun k _ => by
     rw [(h.isCapPosition k).coe_slide_apply_of_le (hz k), sub_self]), add_zero]
 
-private theorem continuous_inner_mul_I (c : Circle) :
-    Continuous fun w : Circle => ⟪(w : ℂ), (c : ℂ) * Complex.I⟫ :=
-  continuous_subtype_val.inner continuous_const
-
 /-- Near a point off all the closed arcs, the cap sum is the great circle. -/
 private theorem IsCapConfig.eventually_capSumFun_eq (h : IsCapConfig ι r c Ks) {z : Circle}
     (hz : ∀ k, ⟪(z : ℂ), (c k : ℂ) * Complex.I⟫ < r) :
     ∀ᶠ w in 𝓝 z, capSumFun ι c Ks w = greatCircle (n := n) ι w := by
   filter_upwards [eventually_all.2 fun k =>
-    (continuous_inner_mul_I (c k)).continuousAt.eventually (gt_mem_nhds (hz k))] with w hw
+    (continuous_subtype_val.inner continuous_const).continuousAt.eventually
+      (gt_mem_nhds (hz k))] with w hw
   rw [h.capSumFun_eq fun k => (hw k).le, coe_greatCircle_apply]
 
 /-- Near every point, the cap sum is either one of the slid knots or the great circle. -/
@@ -294,8 +259,8 @@ private theorem IsCapConfig.exists_eventually_capSumFun_eq (h : IsCapConfig ι r
   by_cases hj : ∃ j, r ≤ ⟪(z : ℂ), (c j : ℂ) * Complex.I⟫
   · obtain ⟨j, hj⟩ := hj
     refine ⟨slide ι (c j) (Ks j), ?_⟩
-    filter_upwards [eventually_all.2 fun k => eventually_imp_distrib_left.2 fun hkj =>
-      (continuous_inner_mul_I (c k)).continuousAt.eventually
+    filter_upwards [eventually_all.2 fun k : Fin m => eventually_imp_distrib_left.2 fun hkj =>
+      (continuous_subtype_val.inner continuous_const).continuousAt.eventually
         (gt_mem_nhds (h.inner_lt_of_le (Ne.symm hkj) hj))] with w hw
     exact h.capSumFun_eq_slide j fun k hk => (hw k hk).le
   · push Not at hj
@@ -381,7 +346,7 @@ private theorem IsCapConfig.isConnectedSumPosition_capSum (h : IsCapConfig ι r 
   -- Every closed arc lies in the open upper half of the circle.
   have harc {z : Circle} (j : Fin m) (hz : r ≤ ⟪(z : ℂ), (c j : ℂ) * Complex.I⟫) :
       0 < (z : ℂ).im :=
-    im_pos_of_le_inner h.pos (hc j) (hc' j) hz
+    Circle.im_pos_of_le_inner h.pos (hc j) (hc' j) hz
   refine ⟨fun {z} hz => ?_, fun {z} hz => ?_⟩
   · have hz' : ∀ k, ⟪(z : ℂ), (c k : ℂ) * Complex.I⟫ < r := fun k =>
       not_le.1 fun h' => (harc k h').not_ge hz
@@ -440,7 +405,7 @@ private theorem connectedSum_eq_capSum {c : Fin 2 → Circle} (h : IsCapConfig �
   · rw [connectedSum_apply_of_im_nonneg _ _ hz, h.capSumFun_eq_slide 0 fun k hk => ?_]
     · simp [hc₀, slide_one_apply]
     · obtain rfl : k = 1 := by omega
-      rw [hc₁, inner_neg_one_mul_I]
+      rw [hc₁, show ⟪(z : ℂ), ((-1 : Circle) : ℂ) * Complex.I⟫ = -(z : ℂ).im by simp]
       linarith [h.pos]
   · rw [coe_connectedSum_apply_of_im_neg _ _ hz, h.capSumFun_eq_slide 1 fun k hk => ?_]
     · rw [hc₁, ← reflection_slide_neg, slide_one_apply]
@@ -463,7 +428,7 @@ private theorem connectedSum_capSum_eq {c : Fin 2 → Circle} {c' : Fin 3 → Ci
   · rw [connectedSum_apply_of_im_nonneg _ _ hz, coe_capSum_apply, capSumFun, capSumFun,
       Fin.sum_univ_two, Fin.sum_univ_three, hc₀, hc₁, hc₂]
     have h₃' := (h'.isCapPosition 2).coe_slide_apply_of_le (c := -1) (z := z) (by
-      rw [inner_neg_one_mul_I]; linarith [h.pos])
+      rw [show ⟪(z : ℂ), ((-1 : Circle) : ℂ) * Complex.I⟫ = -(z : ℂ).im by simp]; linarith [h.pos])
     simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
       Matrix.head_cons, Matrix.tail_cons] at h₃' ⊢
     rw [h₃', sub_self, add_zero]
@@ -476,7 +441,8 @@ private theorem connectedSum_capSum_eq {c : Fin 2 → Circle} {c' : Fin 3 → Ci
         · exact Or.inr hc₁
         · exact absurd rfl hk
       rcases hk' with hk' | hk' <;> rw [hk'] <;>
-        exact not_lt.1 fun h'' => hz.not_ge (im_pos_of_le_inner h.pos (hc _) (hc' _) h''.le).le
+        exact not_lt.1 fun h'' =>
+          hz.not_ge (Circle.im_pos_of_le_inner h.pos (hc _) (hc' _) h''.le).le
 
 /-- The connected sum of a knot and a cap sum of two knots, with its caps in the upper
 hemisphere, is their cap sum with the first cap at `1` and the other two turned over. -/
@@ -502,7 +468,8 @@ private theorem connectedSum_capSum_eq' {c : Fin 2 → Circle} {c' : Fin 3 → C
         · exact Or.inr hc₂
       have himz : ((-z : Circle) : ℂ).im ≤ 0 := by simpa using hz
       rcases hk' with hk' | hk' <;> rw [hk', Circle.coe_neg, hneg] <;>
-        exact not_lt.1 fun h'' => himz.not_gt (im_pos_of_le_inner h.pos (hc _) (hc' _) h''.le)
+        exact not_lt.1 fun h'' =>
+          himz.not_gt (Circle.im_pos_of_le_inner h.pos (hc _) (hc' _) h''.le)
   · rw [coe_connectedSum_apply_of_im_neg _ _ hz, coe_capSum_apply, capSumFun, capSumFun,
       Fin.sum_univ_two, Fin.sum_univ_three, hc₀, hc₁, hc₂]
     simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
@@ -540,12 +507,8 @@ private theorem cos_lt_of_mem_Icc {x : ℝ} (hx : π / 4 ≤ x) (hx' : x ≤ 7 *
 connected-sum position sits. -/
 private abbrev capPoint : Circle := Circle.exp (7 * π / 4)
 
-private theorem circleExp_pi : Circle.exp π = -1 := by
-  apply Subtype.ext
-  simp [Circle.coe_exp, Complex.exp_pi_mul_I]
-
 private theorem circleExp_three_pi_div_four : Circle.exp (3 * π / 4) = -capPoint := by
-  rw [capPoint, show 7 * π / 4 = 3 * π / 4 + π by ring, Circle.exp_add, circleExp_pi, mul_neg,
+  rw [capPoint, show 7 * π / 4 = 3 * π / 4 + π by ring, Circle.exp_add, Circle.exp_pi, mul_neg,
     mul_one, neg_neg]
 
 private theorem re_capPoint :
@@ -557,11 +520,6 @@ private theorem re_capPoint :
   rw [div_pow, sq_sqrt (by norm_num)]
   norm_num [capRadius]
 
-private theorem contMDiff_circleExp_affine (a b : ℝ) :
-    ContMDiff (𝓡∂ 1) (𝓡 1) ∞ fun t : unitInterval => Circle.exp (a + b * t) :=
-  contMDiff_circleExp.comp (contMDiff_const.add
-    (contMDiff_const.mul (contMDiff_subtypeVal_Icc (x := 0) (y := 1))))
-
 /-- The path of the second cap, from `-1` to `capPoint`. -/
 private def pathTwo (t : unitInterval) : Fin 2 → Circle :=
   ![Circle.exp 0, Circle.exp (π + 3 * π / 4 * t)]
@@ -572,23 +530,24 @@ private def pathThree (t : unitInterval) : Fin 3 → Circle :=
 
 private theorem contMDiff_pathTwo (j : Fin 2) :
     ContMDiff (𝓡∂ 1) (𝓡 1) ∞ fun t => pathTwo t j := by
-  fin_cases j
-  · exact contMDiff_const
-  · exact contMDiff_circleExp_affine _ _
+  fin_cases j <;> first
+    | exact contMDiff_const
+    | exact contMDiff_circleExp.comp (contMDiff_const.add
+        (contMDiff_const.mul (contMDiff_subtypeVal_Icc (x := 0) (y := 1))))
 
 private theorem contMDiff_pathThree (j : Fin 3) :
     ContMDiff (𝓡∂ 1) (𝓡 1) ∞ fun t => pathThree t j := by
-  fin_cases j
-  · exact contMDiff_const
-  · exact contMDiff_circleExp_affine _ _
-  · exact contMDiff_circleExp_affine _ _
+  fin_cases j <;> first
+    | exact contMDiff_const
+    | exact contMDiff_circleExp.comp (contMDiff_const.add
+        (contMDiff_const.mul (contMDiff_subtypeVal_Icc (x := 0) (y := 1))))
 
 /-- Points `exp (a i)` and `exp (b i)` at an angle `a - b` or `b - a` between `π / 4` and
 `7 π / 4` are separated. -/
 private theorem inner_circleExp_lt {a b : ℝ}
     (h : π / 4 ≤ a - b ∧ a - b ≤ 7 * π / 4 ∨ π / 4 ≤ b - a ∧ b - a ≤ 7 * π / 4) :
     ⟪(Circle.exp a : ℂ), (Circle.exp b : ℂ)⟫ < 2 * capRadius ^ 2 - 1 := by
-  rw [inner_circleExp]
+  rw [Circle.inner_exp_exp]
   rcases h with h | h
   · exact cos_lt_of_mem_Icc h.1 h.2
   · rw [← cos_neg, neg_sub]
@@ -657,13 +616,13 @@ theorem exists_concordant_connectedSum_assoc (h₁ : IsConnectedSumPosition ι K
       exact re_capPoint
   -- Evaluating the paths at their ends.
   have hp₂₀ : pathTwo 0 0 = 1 := by simp [pathTwo]
-  have hp₂₁ : pathTwo 0 1 = -1 := by simp [pathTwo, circleExp_pi]
+  have hp₂₁ : pathTwo 0 1 = -1 := by simp [pathTwo, Circle.exp_pi]
   have hq₂₀ : pathTwo 1 0 = 1 := by simp [pathTwo]
   have hq₂₁ : pathTwo 1 1 = capPoint := by
     simp only [pathTwo, Matrix.cons_val_one, Matrix.cons_val_zero, Set.Icc.coe_one, mul_one]
     rw [show π + 3 * π / 4 = 7 * π / 4 by ring]
   have hp₃₀ : pathThree 0 0 = 1 := by simp [pathThree]
-  have hp₃₁ : pathThree 0 1 = -1 := by simp [pathThree, circleExp_pi]
+  have hp₃₁ : pathThree 0 1 = -1 := by simp [pathThree, Circle.exp_pi]
   have hp₃₂ : pathThree 0 2 = -capPoint := by simp [pathThree, circleExp_three_pi_div_four]
   have hq₃₀ : pathThree 1 0 = 1 := by simp [pathThree]
   have hq₃₁ : pathThree 1 1 = capPoint := by
@@ -672,7 +631,7 @@ theorem exists_concordant_connectedSum_assoc (h₁ : IsConnectedSumPosition ι K
   have hq₃₂ : pathThree 1 2 = -1 := by
     simp only [pathThree, Matrix.cons_val_two, Matrix.tail_cons, Matrix.head_cons,
       Set.Icc.coe_one, mul_one]
-    rw [show 3 * π / 4 + π / 4 = π by ring, circleExp_pi]
+    rw [show 3 * π / 4 + π / 4 = π by ring, Circle.exp_pi]
   set P := capSum (hcap₂ L₁ L₂ ha₁ ha₂ 1)
   set Q := capSum (hcap₂ L₂ L₃ ha₂ ha₃ 1)
   have hP : IsConnectedSumPosition ι P :=
