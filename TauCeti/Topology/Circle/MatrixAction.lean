@@ -127,7 +127,7 @@ theorem coe_torusHomeomorph (A : GL (Fin 2) ℤ) : ⇑A.torusHomeomorph = Matrix
 /-- The homeomorphism of the torus induced by an invertible matrix, as a continuous map, is the
 continuous monomial self-map of the matrix. -/
 @[simp]
-theorem coe_continuousMap_torusHomeomorph (A : GL (Fin 2) ℤ) :
+theorem toContinuousMap_torusHomeomorph (A : GL (Fin 2) ℤ) :
     (A.torusHomeomorph : C(Circle × Circle, Circle × Circle)) =
       (A : Matrix (Fin 2) (Fin 2) ℤ).torusContinuousMap :=
   (rfl)

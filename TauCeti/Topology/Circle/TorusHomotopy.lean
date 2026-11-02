@@ -351,10 +351,10 @@ theorem existsUnique_homotopic_torusHomeomorph (h : Circle × Circle ≃ₜ Circ
   obtain ⟨A, hA⟩ := h.isUnit_torusMatrix
   refine ⟨A, ?_, fun B hB ↦ Units.ext ?_⟩
   · dsimp only
-    rw [Matrix.GeneralLinearGroup.coe_continuousMap_torusHomeomorph, hA]
+    rw [Matrix.GeneralLinearGroup.toContinuousMap_torusHomeomorph, hA]
     exact (h : C(Circle × Circle, Circle × Circle)).homotopic_torusContinuousMap_torusMatrix
   · dsimp only at hB
-    rw [Matrix.GeneralLinearGroup.coe_continuousMap_torusHomeomorph,
+    rw [Matrix.GeneralLinearGroup.toContinuousMap_torusHomeomorph,
       ← ContinuousMap.torusMatrix_eq_iff] at hB
     rw [← hB, hA]
 
