@@ -55,13 +55,8 @@ variable [HasEnoughRootsOfUnity (𝓞 K) 4]
 private theorem powerResidueSymbolIdeal_natCast_four_of_mod_four_ne_three {n : ℤ} {q : ℕ}
     (hq : q.Prime) (hq3 : q % 4 ≠ 3) (h : IsCoprime n q) :
     powerResidueSymbolIdeal (span {(q : 𝓞 K)}) 4 n = 1 := by
-  let σ := (galEquivZMod 4 K).symm (-1)
+  obtain ⟨σ, hσ, hτ⟩ := TauCeti.exists_gal_apply_eq_pow_three_of_four (K := K)
   let τ := MulSemiringAction.toRingEquiv Gal(K/ℚ) (𝓞 K) σ
-  have hσ : galEquivZMod 4 K σ = -1 := MulEquiv.apply_symm_apply _ _
-  have hτ (w : 𝓞 K) (hw : w ^ 4 = 1) : τ w = w ^ 3 := by
-    have h := galEquivZMod_smul_of_pow_eq 4 K σ hw
-    rw [hσ] at h
-    exact h
   obtain ⟨β, hβ, hqβ, _⟩ := TauCeti.exists_natCast_eq_mul_of_mod_four_ne_three
     (σ := (τ : 𝓞 K →+* 𝓞 K)) hτ hq hq3
   simp only [RingEquiv.coe_toRingHom] at hqβ
@@ -88,8 +83,8 @@ private theorem powerResidueSymbolIdeal_natCast_four_of_mod_four_eq_three {n : �
       (TauCeti.prime_natCast_of_mod_four_eq_three hq hq3)).isMaximal (by simpa using hq.ne_zero)
   -- `4 (q - 1) ∣ q² - 1 = (q - 1) (q + 1)` since `4 ∣ q + 1`.
   have hdvd : 4 * (q - 1) ∣ absNorm (span {(q : 𝓞 K)}) - 1 := by
-    rw [hN, ← Nat.one_pow 2, Nat.sq_sub_sq, Nat.one_pow]
-    simpa [mul_comm] using mul_dvd_mul_left (q - 1) (by omega : 4 ∣ q + 1)
+    rw [hN]
+    exact ⟨(q + 1) / 4, TauCeti.sq_sub_one_eq_four_mul_of_mod_four_eq_three hq3⟩
   rw [powerResidueSymbolIdeal_of_isMaximal]
   exact powerResidueSymbol_intCast_eq_one hq (mem_span_singleton_self _) hdvd h
 

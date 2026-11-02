@@ -40,7 +40,7 @@ coordinates of `ℤ[i]` in the basis `1, i` are described for every quadratic cy
 * `IsPrimitiveRoot.isUnit_intCast_add_intCast_mul_toInteger_iff_of_four`: `a + b i` is a unit
   exactly when `a² + b² = 1`;
 * `TauCeti.isPrincipalIdealRing_ringOfIntegers_four`: `ℤ[i]` is a principal ideal domain;
-* `TauCeti.exists_ringHom_apply_eq_pow_three_of_four`: complex conjugation of `ℤ[i]` cubes every
+* `TauCeti.exists_gal_apply_eq_pow_three_of_four`: complex conjugation of `ℤ[i]` cubes every
   fourth root of unity;
 * `TauCeti.intCast_norm_eq_mul_of_four`: the norm of `x` is `x σ(x)` for such a conjugation `σ`;
 * `TauCeti.exists_natCast_eq_mul_of_mod_four_ne_three`: a split or ramified rational prime is a
@@ -58,6 +58,16 @@ public section
 open NumberField Polynomial TauCeti.NumberField
 
 namespace TauCeti
+
+/-- For `q ≡ 3 (mod 4)`, factor `q² - 1` with the factor `4` made explicit. -/
+theorem sq_sub_one_eq_four_mul_of_mod_four_eq_three {q : ℕ} (hq : q % 4 = 3) :
+    q ^ 2 - 1 = (4 * (q - 1)) * ((q + 1) / 4) := by
+  rw [← Nat.one_pow 2, Nat.sq_sub_sq, Nat.one_pow]
+  have h4 : 4 ∣ q + 1 := by omega
+  calc
+    (q + 1) * (q - 1) = (4 * ((q + 1) / 4)) * (q - 1) := by
+      rw [Nat.mul_div_cancel' h4]
+    _ = (4 * (q - 1)) * ((q + 1) / 4) := by ring
 
 variable {R : Type*} [CommRing R]
 
@@ -166,11 +176,12 @@ variable {K : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {4} ℚ K]
 
 /-- Complex conjugation of `𝓞 K = ℤ[i]`, the automorphism corresponding to `-1 ∈ (ZMod 4)ˣ`, cubes
 every fourth root of unity. -/
-theorem exists_ringHom_apply_eq_pow_three_of_four :
-    ∃ σ : 𝓞 K →+* 𝓞 K, ∀ x : 𝓞 K, x ^ 4 = 1 → σ x = x ^ 3 := by
-  refine ⟨MulSemiringAction.toRingHom Gal(K/ℚ) (𝓞 K) ((galEquivZMod 4 K).symm (-1)),
-    fun x hx ↦ ?_⟩
-  rw [MulSemiringAction.toRingHom_apply, galEquivZMod_smul_of_pow_eq 4 K _ hx,
+theorem exists_gal_apply_eq_pow_three_of_four :
+    ∃ σ : Gal(K/ℚ), galEquivZMod 4 K σ = -1 ∧
+      ∀ x : 𝓞 K, x ^ 4 = 1 →
+        MulSemiringAction.toRingEquiv Gal(K/ℚ) (𝓞 K) σ x = x ^ 3 := by
+  refine ⟨(galEquivZMod 4 K).symm (-1), MulEquiv.apply_symm_apply _ _, fun x hx ↦ ?_⟩
+  rw [MulSemiringAction.toRingEquiv_apply_apply, galEquivZMod_smul_of_pow_eq 4 K _ hx,
     MulEquiv.apply_symm_apply]
   -- The representative of `-1` in `ZMod 4` is `3`.
   rfl

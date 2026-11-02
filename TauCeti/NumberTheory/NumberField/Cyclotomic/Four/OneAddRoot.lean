@@ -59,13 +59,8 @@ private theorem symbol_one_add_split (hζ : IsPrimitiveRoot ζ 4) {q : ℕ}
     powerResidueSymbolIdeal (span {(q : 𝓞 K)}) 4
       (Ideal.Quotient.mk _ (1 + hζ.toInteger)) = hζ.toInteger ^ ((q - 1) / 4) := by
   -- Factor `q` into conjugate Gaussian integers, each of absolute norm `q`.
-  let σ := (galEquivZMod 4 K).symm (-1)
+  obtain ⟨σ, _, hτ⟩ := TauCeti.exists_gal_apply_eq_pow_three_of_four (K := K)
   let τ := MulSemiringAction.toRingEquiv Gal(K/ℚ) (𝓞 K) σ
-  have hσ : galEquivZMod 4 K σ = -1 := MulEquiv.apply_symm_apply _ _
-  have hτ (w : 𝓞 K) (hw : w ^ 4 = 1) : τ w = w ^ 3 := by
-    have h := galEquivZMod_smul_of_pow_eq 4 K σ hw
-    rw [hσ] at h
-    exact h
   have hτi : τ hζ.toInteger = -hζ.toInteger := by
     rw [hτ _ hζ.toInteger_isPrimitiveRoot.pow_eq_one, pow_succ,
       hζ.toInteger_isPrimitiveRoot.sq_eq_neg_one, neg_one_mul]
@@ -95,9 +90,10 @@ private theorem symbol_one_add_split (hζ : IsPrimitiveRoot ζ 4) {q : ℕ}
   rw [hqβ, ← span_singleton_mul_span_singleton,
     powerResidueSymbolIdeal_mul_right (by simpa using hβ) (by simpa using hβ),
     ← hmapβ, ← hmap]
-  conv_rhs => rw [← hN, ← powerResidueSymbolIdeal_mk_of_pow_eq_one
-    (by rw [hN, show 4 = 2 ^ 2 from rfl, Nat.coprime_pow_right_iff (by decide),
-      Nat.coprime_two_right, Nat.odd_iff]; omega)
+  have hodd : Odd q := Nat.odd_iff.mpr (by omega)
+  have hcop4 : (absNorm (span {β})).Coprime 4 := by
+    simpa only [hN] using hodd.coprime_two_right.pow_right 2
+  conv_rhs => rw [← hN, ← powerResidueSymbolIdeal_mk_of_pow_eq_one hcop4
     hζ.toInteger_isPrimitiveRoot.pow_eq_one]
   exact symbol_one_add_pair hζ _ hu
 
@@ -137,8 +133,8 @@ private theorem symbol_one_add_inert (hζ : IsPrimitiveRoot ζ 4) {q : ℕ}
     have hm : (1 + i) * (-i) = 1 - i := by linear_combination -hi2
     exact mul_right_cancel₀ hn (h.trans (by simpa [mul_comm, sub_eq_add_neg] using hm.symm))
   have hE : (q ^ 2 - 1) / 4 = (q - 1) * ((q + 1) / 4) := by
-    rw [← Nat.one_pow 2, Nat.sq_sub_sq, Nat.one_pow, Nat.mul_comm (q + 1),
-      Nat.mul_div_assoc _ (by omega : 4 ∣ q + 1)]
+    rw [TauCeti.sq_sub_one_eq_four_mul_of_mod_four_eq_three hq3, Nat.mul_assoc,
+      Nat.mul_div_cancel_left _ (by decide : 0 < 4)]
   -- Raise the Frobenius identity to `(q + 1) / 4`, then uniquely lift the residue.
   rw [powerResidueSymbolIdeal_of_isMaximal]
   refine (powerResidueSymbol_eq_iff ?_ (by simpa only [map_add, map_one] using hn)
@@ -146,10 +142,9 @@ private theorem symbol_one_add_inert (hζ : IsPrimitiveRoot ζ 4) {q : ℕ}
       have hneg : (-hζ.toInteger) ^ 4 = 1 := by
         linear_combination hζ.toInteger_isPrimitiveRoot.pow_eq_one
       rw [← pow_mul, Nat.mul_comm, pow_mul, hneg, one_pow])).mpr ?_
-  · rw [TauCeti.absNorm_span_natCast_four,
-      Nat.coprime_pow_left_iff (by decide : 0 < 2), show 4 = 2 ^ 2 from rfl,
-      Nat.coprime_pow_right_iff (by decide : 0 < 2), Nat.coprime_two_right, Nat.odd_iff]
-    omega
+  · have hodd : Odd q := Nat.odd_iff.mpr (by omega)
+    rw [TauCeti.absNorm_span_natCast_four]
+    exact (hodd.coprime_two_right.pow_left 2).pow_right 2
   · rw [TauCeti.absNorm_span_natCast_four, hE, pow_mul, map_pow, map_neg, map_add, map_one]
     exact congrArg (· ^ ((q + 1) / 4)) hF.symm
 
