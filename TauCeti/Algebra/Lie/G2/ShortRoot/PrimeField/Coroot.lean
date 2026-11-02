@@ -137,14 +137,8 @@ theorem lie_rootVector_eq_corootVector (i : Fin 2) :
 @[simp↓]
 theorem mapValue_corootVector {C : Type*} [CommRing C] [Algebra (ZMod 3) C]
     (φ : B →ₐ[ZMod 3] C) (i : Fin 2) :
-    Derivation.mapValue φ (corootVector B i) = corootVector C i := by
-  ext x
-  simp only [corootVector_def, Derivation.mapValue_apply, derivationComp_apply]
-  have h := DFunLike.congr_fun
-    (MultiplicativeGroup.mapValue_tangentLinearEquiv_symm φ 1) ((corootCocharacter i) x)
-  simp only [Derivation.mapValue_apply, map_one] at h
-  -- Evaluation erases the counit-algebra indexing introduced by precomposition.
-  exact h
+    Derivation.mapValue φ (corootVector B i) = corootVector C i :=
+  MultiplicativeGroup.mapValue_derivationComp_tangentLinearEquiv_symm_one φ (corootCocharacter i)
 
 /-- **Opposite-root bracket normalization over every coefficient algebra.** The positive and
 negative root-subgroup differentials at additive tangent parameter one bracket to the
@@ -183,15 +177,10 @@ theorem range_derivationCompLieHom_weightTorusCoordinateMap_eq_span :
 
 /-- The numbered coroot differentials are linearly independent, also over nonreduced algebras. -/
 theorem linearIndependent_corootVector : LinearIndependent B (corootVector B) := by
-  have h := (SplitTorus.tangentBasis (R := ZMod 3) (B := B) (I := Fin 2)).linearIndependent
-    |>.map_injOn (derivationCompLieHom (B := B) weightTorusCoordinateMap.hom).toLinearMap
-    (derivationCompLieHom_injective_of_surjective _ weightTorusCoordinateMap_surjective).injOn
-  have heq :
-      ⇑(derivationCompLieHom (B := B) weightTorusCoordinateMap.hom).toLinearMap ∘
-        SplitTorus.tangentBasis (R := ZMod 3) (B := B) (I := Fin 2) = corootVector B := by
-    funext i
-    exact derivationCompLieHom_weightTorusCoordinateMap_tangentBasis B i
-  rwa [heq] at h
+  convert SplitTorus.linearIndependent_derivationCompLieHom_cocharacter (B := B)
+    weightTorusCoordinateMap.hom weightTorusCoordinateMap_surjective using 1
+  funext i
+  rw [corootVector_def, corootCocharacter_def, derivationCompLieHom_apply]
 
 /-- The coroot differentials form a basis of the toral tangent image, expressed as their span. -/
 def corootBasis : Module.Basis (Fin 2) B (Submodule.span B (Set.range (corootVector B))) :=
