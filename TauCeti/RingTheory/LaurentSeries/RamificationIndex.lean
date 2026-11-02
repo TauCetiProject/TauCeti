@@ -59,9 +59,12 @@ instance : OrderBot RamificationIndex where
 theorem toPNat_bot : (⊥ : RamificationIndex).toPNat = 1 := rfl
 
 /-- The quotient `m / n` attached to a divisibility relation `n ≤ m`. -/
-@[expose]
 def transitionDegree {n m : RamificationIndex} (_h : n ≤ m) : ℕ+ :=
   PNat.divExact m.toPNat n.toPNat
+
+/-- The transition degree along `n ≤ m` is the exact quotient `m / n` of positive naturals. -/
+theorem transitionDegree_def {n m : RamificationIndex} (h : n ≤ m) :
+    transitionDegree h = PNat.divExact m.toPNat n.toPNat := (rfl)
 
 /-- Multiplying an index by its transition degree recovers the target index. -/
 theorem mul_transitionDegree {n m : RamificationIndex} (h : n ≤ m) :

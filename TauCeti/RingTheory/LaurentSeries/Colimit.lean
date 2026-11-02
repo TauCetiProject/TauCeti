@@ -82,6 +82,7 @@ noncomputable def levelCocone : Cocone (levelDiagram K) where
         dsimp only [levelDiagram, Functor.const_obj_obj]
         simp only [CommAlgCat.hom_comp, CommAlgCat.hom_ofHom, Functor.const_obj_map,
           CommAlgCat.hom_id, AlgHom.id_comp]
+        rw [RamificationIndex.transitionDegree_def]
         exact AlgHom.ext (levelEmbedding_expand_divExact f.le) }
 
 /-- The point of the level cocone is the Puiseux field. -/
@@ -103,6 +104,7 @@ private theorem cocone_app_eq_of_levelEmbedding_eq (s : Cocone (levelDiagram K))
   have heq : LaurentSeries.expand K (RamificationIndex.transitionDegree hnl) f =
       LaurentSeries.expand K (RamificationIndex.transitionDegree hml) g := by
     apply (levelEmbedding K l.toPNat).injective
+    rw [RamificationIndex.transitionDegree_def, RamificationIndex.transitionDegree_def]
     exact (levelEmbedding_expand_divExact hnl f).trans
       (hfg.trans (levelEmbedding_expand_divExact hml g).symm)
   rw [← s.w_apply (homOfLE hnl) f, ← s.w_apply (homOfLE hml) g]
