@@ -23,8 +23,8 @@ induced by the integral change-of-basis matrix `c.toMatrix b`: the transition ma
 the parameter `y` and of the periods. The reason is that the period coordinates at `y` in the two
 bases differ by the real coordinate change `Module.Basis.realCoordChange b c`, which does not
 involve `P` (`TauCeti.realCoordChange_periodBasis_equivFun`). The same holds for the topological
-trivialization `TauCeti.torusFamilyHomeomorphProd` of a continuous family, with the induced map of
-quotient groups `ℝ^ι/ℤ^ι → ℝ^κ/ℤ^κ` on the torus factor.
+trivialization `TauCeti.torusFamilyHomeomorphProd` of a continuous family, with the induced
+equivalence of quotient groups `ℝ^ι/ℤ^ι ≃ ℝ^κ/ℤ^κ` on the torus factor.
 
 On the torus factor, the transition map is induced by the real-linear map
 `Module.Basis.realCoordChange b c` of the covering vector spaces. Nothing here says that a
@@ -36,9 +36,11 @@ complex family is holomorphically trivial.
   the period bases for `b` and `c` is the integral matrix `c.toMatrix b`.
 * `TauCeti.realCoordChange_periodBasis_equivFun`: the period coordinates in the bases `b` and `c`
   differ by the integral change of coordinates.
-* `TauCeti.torusFamilyHomeomorphProd_eq_prodMap_mapQ`: the topological trivialization for `c`
-  is the trivialization for `b` followed by the map of standard tori induced by
+* `TauCeti.torusFamilyHomeomorphProd_eq_prodMap_quotientEquiv`: the topological trivialization
+  for `c` is the trivialization for `b` followed by the equivalence of standard tori induced by
   `Module.Basis.realCoordChange b c` on the torus factor.
+* `TauCeti.coe_torusFamilyHomeomorphProd_symm_trans`: the transition homeomorphism between the two
+  topological trivializations is the identity of `Y` times that equivalence of standard tori.
 * `TauCeti.torusFamilyDiffeomorphProd_eq_prodMap_torusCoordChange`: the trivialization for `c`
   is the trivialization for `b` followed by `Module.Basis.torusCoordChange b c` on the torus factor.
 * `TauCeti.coe_torusFamilyDiffeomorphProd_symm_trans`: the transition diffeomorphism between the
@@ -49,11 +51,8 @@ complex family is holomorphically trivial.
 * Christina Birkenhake and Herbert Lange, *Complex Abelian Varieties*, second edition,
   Grundlehren der mathematischen Wissenschaften 302, Springer, 2004, Chapter 8 (families of
   complex tori given by period matrices).
-* Tau Ceti PR [#21079](https://github.com/TauCetiProject/TauCeti/pull/21079) (closed, unmerged)
-  proved basis independence for the topological trivialization of a family of tori;
-  `TauCeti.torusFamilyDiffeomorphProd_eq_prodMap_torusCoordChange` and
-  `TauCeti.coe_torusFamilyDiffeomorphProd_symm_trans` move that result to the smooth
-  trivialization.
+* The basis independence of the topological trivialization follows Tau Ceti
+  PR [#21079](https://github.com/TauCetiProject/TauCeti/pull/21079).
 -/
 
 public section
@@ -110,20 +109,34 @@ variable {Y : Type*} [TopologicalSpace Y] {Λ : Type*} [AddCommGroup Λ]
 
 /-- **Basis independence of the topological trivialization.** The global trivialization of a
 continuous family of tori for the `ℤ`-basis `c` is the trivialization for the `ℤ`-basis `b`
-followed, on the standard torus factor, by the fixed map `ℝ^ι/ℤ^ι → ℝ^κ/ℤ^κ` induced by the real
-coordinate change `Module.Basis.realCoordChange b c`. -/
-theorem torusFamilyHomeomorphProd_eq_prodMap_mapQ
+followed, on the standard torus factor, by the fixed equivalence `ℝ^ι/ℤ^ι ≃ ℝ^κ/ℤ^κ` induced by
+the real coordinate change `Module.Basis.realCoordChange b c`. -/
+theorem torusFamilyHomeomorphProd_eq_prodMap_quotientEquiv
     (z : letI := periodAddAction P; AddAction.orbitRel.Quotient Λ (Y × E)) :
     torusFamilyHomeomorphProd P c hinj hcont z =
-      Prod.map id ((span ℤ (range (Pi.basisFun ℝ ι))).mapQ (span ℤ (range (Pi.basisFun ℝ κ)))
-        ((b.realCoordChange c).restrictScalars ℤ : (ι → ℝ) →ₗ[ℤ] κ → ℝ)
-        (map_le_iff_le_comap.1 (b.map_realCoordChange_span_basisFun c).le))
+      Prod.map id (Quotient.equiv (span ℤ (range (Pi.basisFun ℝ ι)))
+        (span ℤ (range (Pi.basisFun ℝ κ))) ((b.realCoordChange c).restrictScalars ℤ)
+        (b.map_realCoordChange_span_basisFun c))
         (torusFamilyHomeomorphProd P b hinj hcont z) := by
   let _ := periodAddAction P
   induction z using Quotient.inductionOn with | h p => ?_
   rw [torusFamilyHomeomorphProd_mk, torusFamilyHomeomorphProd_mk, Prod.map_apply, id_eq,
-    mapQ_apply, LinearEquiv.coe_coe, LinearEquiv.restrictScalars_apply,
+    Quotient.equiv_apply, mapQ_apply, LinearEquiv.coe_coe, LinearEquiv.restrictScalars_apply,
     realCoordChange_periodBasis_equivFun]
+
+/-- **The transition between two topological trivializations.** For two `ℤ`-bases `b` and `c` of
+`Λ`, the transition homeomorphism from the topological trivialization of the family for `b` to the
+one for `c` is the identity of `Y` times the fixed equivalence `ℝ^ι/ℤ^ι ≃ ℝ^κ/ℤ^κ` induced by
+`Module.Basis.realCoordChange b c`. -/
+theorem coe_torusFamilyHomeomorphProd_symm_trans :
+    ⇑((torusFamilyHomeomorphProd P b hinj hcont).symm.trans
+        (torusFamilyHomeomorphProd P c hinj hcont)) =
+      Prod.map id (Quotient.equiv (span ℤ (range (Pi.basisFun ℝ ι)))
+        (span ℤ (range (Pi.basisFun ℝ κ))) ((b.realCoordChange c).restrictScalars ℤ)
+        (b.map_realCoordChange_span_basisFun c)) := by
+  ext q : 1
+  rw [Homeomorph.trans_apply, torusFamilyHomeomorphProd_eq_prodMap_quotientEquiv P b c hinj hcont,
+    Homeomorph.apply_symm_apply]
 
 end Topology
 
