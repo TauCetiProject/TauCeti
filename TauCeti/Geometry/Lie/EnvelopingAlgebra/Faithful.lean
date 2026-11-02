@@ -137,7 +137,7 @@ theorem iteratedDeriv_apply_mul_lieExp_smul (X : LeftInvariantDerivation I G)
   | zero => simp
   | succ n ih =>
     rw [iteratedDeriv_succ, ih, deriv_apply_mul_lieExp_smul, pow_succ', map_mul,
-      Module.End.mul_apply, envelopingAction_ι, leftInvariantDerivationToEnd_apply]
+      mul_apply_eq_comp, envelopingAction_ι, leftInvariantDerivationToEnd_apply]
 
 /-- On a function `f` with `f (lieExp Y) = exp (ℓ Y)` near `0`, the element `ι X ^ n` of the
 enveloping algebra acts at the identity by `(ℓ X) ^ n`. -/
@@ -152,7 +152,7 @@ theorem envelopingAction_ι_pow_apply_one (X : LeftInvariantDerivation I G)
     have h := deriv_apply_mul_lieExp_smul X
       (envelopingAction I G (UniversalEnvelopingAlgebra.ι ℝ X ^ k) f) 1
     simp only [one_mul] at h
-    simp only [φ, h, pow_succ', map_mul, Module.End.mul_apply, envelopingAction_ι,
+    simp only [φ, h, pow_succ', map_mul, mul_apply_eq_comp, envelopingAction_ι,
       leftInvariantDerivationToEnd_apply]
   have hexp (k : ℕ) (t : ℝ) :
       HasDerivAt (fun s ↦ c ^ k * Real.exp (s * c)) (c ^ (k + 1) * Real.exp (t * c)) t :=
@@ -164,7 +164,7 @@ theorem envelopingAction_ι_pow_apply_one (X : LeftInvariantDerivation I G)
     induction k with
     | zero =>
       filter_upwards [hline.eventually hf] with t ht
-      simp only [φ, pow_zero, map_one, Module.End.one_apply, one_mul, ht, map_smul, smul_eq_mul,
+      simp only [φ, pow_zero, map_one, one_apply_eq_self, one_mul, ht, map_smul, smul_eq_mul,
         c]
     | succ k ih =>
       rw [← hφ k]
