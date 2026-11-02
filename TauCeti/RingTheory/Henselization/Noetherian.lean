@@ -10,7 +10,6 @@ public import TauCeti.RingTheory.Henselization.Quotient
 import TauCeti.RingTheory.AdicCompletion.Flat
 import TauCeti.RingTheory.AdicCompletion.Noetherian
 import TauCeti.RingTheory.Etale.Weakly
-import TauCeti.RingTheory.Flat.Jacobson
 import TauCeti.RingTheory.Flat.Noetherian
 import TauCeti.RingTheory.Henselization.Henselian
 import TauCeti.RingTheory.Henselization.IndEtale
@@ -22,20 +21,18 @@ Let `R^h` be the henselization of a pair `(R, I)`, with extended ideal `I^h`. If
 Noetherian then so is `R^h`, for every ideal `I`. The completion of `R^h` along `I^h` is the
 `I`-adic completion `R^∧` of `R` (`TauCeti.Henselization.completionEquiv`), and the map
 `R^h → R^∧` is faithfully flat. Conversely, when `I` lies in the Jacobson radical of `R`, the
-map `R → R^h` is faithfully flat, so `R` is Noetherian as soon as `R^h` is. This applies to the
-henselization of a local ring along its maximal ideal.
+map `R → R^h` is faithfully flat (`TauCeti.Henselization.faithfullyFlat_of_le_jacobson`), so
+`R` is Noetherian as soon as `R^h` is. This applies to the henselization of a local ring along
+its maximal ideal.
 
 Faithful flatness of `R^h → R^∧` comes in two steps. The completion `R^∧` is flat over `R`, and
 `R^h` is weakly étale over `R`, so flatness passes to `R^h`. The ideal `I^h` lies in the
 Jacobson radical of the henselian pair `(R^h, I^h)`, and `R^∧` has the same closed fibre as
 `R^h`, so every maximal ideal of `R^h` stays proper in `R^∧`. Noetherianity then descends from
-the Noetherian ring `R^∧`. Faithful flatness of `R → R^h` uses instead that `R` and `R^h` have
-the same closed fibre.
+the Noetherian ring `R^∧`.
 
 ## Main results
 
-* `TauCeti.Henselization.faithfullyFlat_of_le_jacobson`: the henselization is faithfully flat
-  over `R` when `I` lies in the Jacobson radical of `R`.
 * `TauCeti.Henselization.faithfullyFlat_adicCompletion`: for `R` Noetherian, the completion of
   the henselization along the extended ideal is faithfully flat over it.
 * `TauCeti.Henselization.isNoetherianRing`: the henselization of a Noetherian ring along any
@@ -58,13 +55,6 @@ universe u
 namespace TauCeti.Henselization
 
 variable {R : Type u} [CommRing R] (I : Ideal R)
-
-/-- The henselization of `(R, I)` is faithfully flat over `R` when `I` lies in the Jacobson
-radical of `R`, for instance when `R` is local and `I` is proper. -/
-theorem faithfullyFlat_of_le_jacobson (hI : I ≤ (⊥ : Ideal R).jacobson) :
-    Module.FaithfullyFlat R (algebra I) :=
-  .of_le_jacobson_of_algHom ((Ideal.pow_le_self one_ne_zero).trans hI)
-    (((quotientPowEquiv I 1).symm : _ →ₐ[R] _).comp (Ideal.Quotient.mkₐ R (extended I ^ 1)))
 
 /-- For `R` Noetherian, the completion of the henselization of `(R, I)` along the extended
 ideal is faithfully flat over the henselization. This completion is the `I`-adic completion of
