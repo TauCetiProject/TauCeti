@@ -17,10 +17,6 @@ the two iterated integrals agree:
 
 `∫_C (∫_D F z w dw) dz = ∫_D (∫_C F z w dz) dw`.
 
-Expanding both cycles into their generators reduces this to Fubini's theorem on a product of two
-parameter intervals. There the integrand `γ' s • η' t • F (γ s) (η t)` is integrable because the
-derivatives of the curves are integrable and `F` is bounded on the compact product of the traces.
-
 Iterated cycle integrals arise in the holomorphic functional calculus, where the product of two
 resolvent integrals over nested cycles is a double integral over both cycles.
 
@@ -129,6 +125,10 @@ theorem integral_integral_swap (hF : ContinuousOn (uncurry F) (trace C ×ˢ trac
     integral (fun z ↦ integral (F z) D) C = integral (fun w ↦ integral (fun z ↦ F z w) C) D := by
   have hF' : ContinuousOn (uncurry fun w z ↦ F z w) (trace D ×ˢ trace C) :=
     hF.comp continuous_swap.continuousOn fun _ hp ↦ ⟨(mem_prod.mp hp).2, (mem_prod.mp hp).1⟩
+  -- Expanding both cycles into their generators reduces this to Fubini's theorem on a product of
+  -- two parameter intervals. There the integrand `γ' s • η' t • F (γ s) (η t)` is integrable
+  -- because the derivatives of the curves are integrable and `F` is bounded on the compact product
+  -- of the traces.
   rw [integral_eq_sum_support, integral_eq_sum_support]
   calc ∑ γ ∈ FreeAbelianGroup.support C, FreeAbelianGroup.coeff γ C •
         ∫ s in γ.a..γ.b, deriv γ s • integral (F (γ s)) D

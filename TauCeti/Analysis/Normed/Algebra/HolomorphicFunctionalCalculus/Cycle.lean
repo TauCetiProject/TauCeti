@@ -9,7 +9,6 @@ public import Mathlib.Topology.Algebra.Polynomial
 public import TauCeti.Algebra.Algebra.Resolvent
 public import TauCeti.Analysis.Contour.Cycle.Circle
 public import TauCeti.Analysis.Contour.Cycle.Fubini
-public import TauCeti.Analysis.Contour.Cycle.HomologyCauchy
 public import TauCeti.Analysis.Contour.Cycle.Residue
 public import TauCeti.Analysis.Normed.Algebra.Resolvent
 
@@ -35,8 +34,7 @@ proves the basic properties of these resolvent integrals, written with Mathlib's
 * The integrals are multiplicative: for cycles `Γ₁` and `Γ₂` with `Γ₂` winding once around `Γ₁`
   and `Γ₁` not winding around `Γ₂`, the product of the integrals of `f(z) (z1 - a)⁻¹` over `Γ₁`
   and of `g(z) (z1 - a)⁻¹` over `Γ₂` is `2πi` times the integral of `f(z) g(z) (z1 - a)⁻¹` over
-  `Γ₁`. The product is a double integral over both cycles, which the first resolvent identity
-  splits into two parts; Fubini's theorem for cycles and Cauchy's integral formula evaluate each.
+  `Γ₁`.
 
 No normalization `‖1‖ = 1` of the norm is assumed.
 
@@ -234,6 +232,8 @@ theorem integral_smul_resolvent_mul_integral_smul_resolvent {U : Set ℂ} (hU : 
     hf₁.smul (continuousOn_resolvent hR₁)
   have hgR₂ : ContinuousOn (fun w ↦ g w • resolvent a w) (trace Γ₂) :=
     hg₂.smul (continuousOn_resolvent hR₂)
+  -- The product is a double integral over both cycles, which the first resolvent identity splits
+  -- into two parts; Fubini's theorem for cycles and Cauchy's integral formula evaluate each.
   set I₂ := integral (fun w ↦ g w • resolvent a w) Γ₂
   -- The part of the double integrand carrying the resolvent at the point `w` of `Γ₂`.
   set B : ℂ → ℂ → A := fun z w ↦ (f z / (w - z)) • (g w • resolvent a w) with hB
@@ -281,8 +281,8 @@ theorem integral_smul_resolvent_mul_integral_smul_resolvent {U : Set ℂ} (hU : 
       intro w hw
       have hw₁' : w ∉ trace Γ₁ := disjoint_right.mp h₁₂ hw
       have hcauchy : integral (fun z ↦ f z / (w - z)) Γ₁ = 0 := by
-        rw [integral_congr fun z _ ↦ show f z / (w - z) = (-1 : ℂ) • (f z / (z - w)) by
-            rw [smul_eq_mul, ← neg_sub z w, div_neg, neg_one_mul], integral_smul,
+        rw [integral_congr (g := fun z ↦ (-1 : ℂ) • (f z / (z - w))) fun z _ ↦ by
+            simp only [smul_eq_mul, ← neg_sub z w, div_neg, neg_one_mul], integral_smul,
           cauchyIntegralFormula_nullHomologous hU hf hΓ₁U hU₁ (isIn_iff.mp hΓ₂U hw) hw₁',
           hw₁ w hw]
         simp
