@@ -60,6 +60,7 @@ theorem hom_geckGeneratedWeightTorusCoordinateMap_comp :
 
 /-- On every value algebra, the generated torus map is the diagonal matrix whose entries
 are the Geck weight characters evaluated at the original torus parameters. -/
+@[simp↓]
 theorem pointsMulEquiv_mapPointsFunctor_geckGeneratedWeightTorusCoordinateMap
     (A : CommAlgCat.{v} R)
     (q : HopfAlgebra.points (R := R)
@@ -69,21 +70,11 @@ theorem pointsMulEquiv_mapPointsFunctor_geckGeneratedWeightTorusCoordinateMap
           ((CommHopfAlgCat.Hom.mapPointsFunctor
             (t.geckGeneratedWeightTorusCoordinateMap ht R)).app A q)) =
       diagGL (fun i ↦ torusCharacter (SplitTorus.pointsMulEquiv q) (t.geckWeightFin ht i)) := by
-  have hp := CommHopfAlgCat.Hom.mapPointsFunctor_app_apply
-    (t.geckGeneratedCoordinateMap ht R ≫ t.geckGeneratedWeightTorusCoordinateMap ht R) A q
-  have hcomp := t.hom_geckGeneratedWeightTorusCoordinateMap_comp ht R
-  simp only [_root_.CommHopfAlgCat.hom_comp, hcomp] at hp
-  have he := (CommHopfAlgCat.Hom.mapPointsFunctor_comp_app_apply
-    (t.geckGeneratedCoordinateMap ht R)
-    (t.geckGeneratedWeightTorusCoordinateMap ht R) A q).symm.trans hp
-  rw [congrArg (GeneralLinear.pointsMulEquiv (t.geckDim ht)) he]
-  apply Units.ext
-  rw [GeneralLinear.pointsMulEquiv_apply, GeneralLinear.weightTorusCoordinateBialgHom_def,
-    DiagonalizableGroup.pointToGeneralLinear_comp_diagonalCoordinateMap, diagGL_coe]
-  congr 1
-  funext i
-  exact congrArg (fun s : Aˣ ↦ (s : A))
-    (SplitTorus.charOfPoint_weightCharacter q (t.geckWeightFin ht i))
+  rw [← CommHopfAlgCat.Hom.mapPointsFunctor_comp_app_apply,
+    CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, _root_.CommHopfAlgCat.hom_comp,
+    hom_geckGeneratedWeightTorusCoordinateMap_comp]
+  simpa only [BialgHom.mapDomain_apply] using
+    GeneralLinear.pointsMulEquiv_mapDomain_weightTorusCoordinateBialgHom (t.geckWeightFin ht) A q
 
 variable (hwt : Submodule.span ℤ (Set.range (t.geckWeight ht)) = ⊤)
 
@@ -155,6 +146,9 @@ theorem splitTorusCommHopfAlgProperty_quotient_geckGeneratedWeightTorusDefiningI
     ObjectProperty.isoMk _
       (_root_.CommHopfAlgCat.isoMk (MonoidAlgebra.domCongrBialgEquiv R R e))
   exact ⟨t.rank, ⟨(t.geckGeneratedWeightTorusCoordinateIso ht R hwt ≪≫ i).symm⟩⟩
+
+grind_pattern splitTorusCommHopfAlgProperty_quotient_geckGeneratedWeightTorusDefiningIdeal =>
+  t.geckGeneratedWeightTorusDefiningIdeal ht R hwt
 
 /-- The closed torus's algebra-valued points, viewed as matrices, are exactly the diagonal
 matrices of Geck weight characters. This includes nonreduced value algebras. -/
