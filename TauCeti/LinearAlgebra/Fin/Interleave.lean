@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Pi
-public import TauCeti.Topology.Algebra.Module.ExtendByZero
+public import Mathlib.Topology.Homeomorph.Lemmas
 
 /-!
 # Interleaving finite coordinate spaces
