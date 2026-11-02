@@ -180,18 +180,12 @@ theorem baseChange_symm (e : L ≃ₗ⁅R⁆ L') : (baseChange A e).symm = baseC
   (rfl)
 
 @[simp]
-theorem baseChange_refl : baseChange A (LieEquiv.refl : L ≃ₗ⁅R⁆ L) = LieEquiv.refl := by
-  ext x
-  induction x with
-  | tmul a x => rfl
-  | add x y hx hy => simp only [map_add, hx, hy]
+theorem baseChange_refl : baseChange A (LieEquiv.refl : L ≃ₗ⁅R⁆ L) = LieEquiv.refl :=
+  toLinearEquiv_injective (LinearEquiv.baseChange_one R A L)
 
 theorem baseChange_trans (e : L ≃ₗ⁅R⁆ L') (e' : L' ≃ₗ⁅R⁆ L'') :
-    baseChange A (e.trans e') = (baseChange A e).trans (baseChange A e') := by
-  ext x
-  induction x with
-  | tmul a x => rfl
-  | add x y hx hy => simp only [map_add, hx, hy]
+    baseChange A (e.trans e') = (baseChange A e).trans (baseChange A e') :=
+  toLinearEquiv_injective (LinearEquiv.baseChange_trans R A L L' e.toLinearEquiv e'.toLinearEquiv)
 
 end LieEquiv
 
