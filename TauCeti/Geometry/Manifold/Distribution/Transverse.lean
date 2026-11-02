@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Geometry.Manifold.Distribution.Graph
 
+import TauCeti.Analysis.Calculus.FDeriv.Equiv
+
 /-!
 # Distributions transverse to the vertical subspace
 
@@ -170,18 +172,6 @@ theorem IsInvolutiveDistribution.exists_eventually_eq_graph_fderiv {n : ℕ∞}
   rw [hxD.2, graphDistribution_def, hx.fderiv]
   exact ⟨hx.differentiableAt, rfl⟩
 
-/-- The derivative of the inverse of an open partial homeomorphism at a point of its target is a
-left inverse of the derivative at the corresponding point of its source. -/
-private theorem fderiv_symm_comp_fderiv {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
-    (e : OpenPartialHomeomorph G G) {p : G} (hp : p ∈ e.target)
-    (hd : DifferentiableAt ℝ e (e.symm p)) (hds : DifferentiableAt ℝ e.symm p) :
-    (fderiv ℝ e.symm p).comp (fderiv ℝ e (e.symm p)) = ContinuousLinearMap.id ℝ G := by
-  have hds' : HasFDerivAt e.symm (fderiv ℝ e.symm p) (e (e.symm p)) := by
-    rw [e.right_inv hp]
-    exact hds.hasFDerivAt
-  refine (hds'.comp _ hd.hasFDerivAt).unique ((hasFDerivAt_id _).congr_of_eventuallyEq ?_)
-  exact eventually_of_mem (e.open_source.mem_nhds (e.map_target hp)) fun r hr ↦ e.left_inv hr
-
 /-- Coordinates carrying the horizontal subspace onto a transverse involutive distribution: the
 change of coordinates `e` is the graph map of the smooth family of Frobenius solutions, restricted
 to the points that it sends where the distribution is a graph distribution. -/
@@ -261,7 +251,7 @@ theorem IsDistributionFrameOn.exists_openPartialHomeomorph_map_fderiv_eq_ker_snd
     (he.contDiffAt (e.open_source.mem_nhds hq)).differentiableAt (by simp)
   have hds : DifferentiableAt ℝ e.symm p :=
     (he'.contDiffAt (e.open_target.mem_nhds hp)).differentiableAt (by simp)
-  have hL := fderiv_symm_comp_fderiv e hp hd hds
+  have hL := e.fderiv_symm_comp_fderiv hp hd hds
   have hmp := hmap _ hq
   rw [heq] at hmp
   rw [← hmp, ← Submodule.map_comp]

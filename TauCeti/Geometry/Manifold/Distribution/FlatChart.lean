@@ -10,6 +10,9 @@ public import TauCeti.Geometry.Manifold.Distribution.Transverse
 public import TauCeti.Geometry.Manifold.IsManifold.InteriorChart
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
+import TauCeti.LinearAlgebra.Projection.ProdEquiv
+
 /-!
 # Flat charts of an involutive distribution
 
@@ -58,54 +61,29 @@ universe u
 variable {E : Type u} {H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
 
-/-- A `C^n` partial diffeomorphism as a `C^m` one, for `m ≤ n`. -/
-private def ofLE {H' N F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace H']
-    {J : ModelWithCorners ℝ F H'} [TopologicalSpace N] [ChartedSpace H' N] {m n : ℕ∞ω}
-    (Ψ : PartialDiffeomorph I J M N n) (hmn : m ≤ n) : PartialDiffeomorph I J M N m where
-  toPartialEquiv := Ψ.toPartialEquiv
-  open_source := Ψ.open_source
-  open_target := Ψ.open_target
-  contMDiffOn_toFun := Ψ.contMDiffOn.of_le hmn
-  contMDiffOn_invFun := Ψ.symm.contMDiffOn.of_le hmn
-
 section SplitChart
 
-variable {P Q : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] [NormedAddCommGroup Q]
-  [NormedSpace ℝ Q] {n : ℕ∞ω}
-
-/-- A linear equivalence as a partial diffeomorphism. -/
-private def linearPartialDiffeomorph (A : P ≃L[ℝ] Q) : PartialDiffeomorph 𝓘(ℝ, P) 𝓘(ℝ, Q) P Q n :=
-  PartialDiffeomorph.ofOpenPartialHomeomorph A.toHomeomorph.toOpenPartialHomeomorph
-    (by simpa using A.contDiff.contDiffOn) (by simpa using A.symm.contDiff.contDiffOn)
-
-variable (A : P ≃L[ℝ] E) [IsManifold I n M] (x : M)
+variable {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] {n : ℕ∞ω}
+  (A : P ≃L[ℝ] E) [IsManifold I n M] (x : M)
 
 /-- The partial diffeomorphism from `M` to `P` given by the extended chart at `x` followed by the
 inverse of a linear equivalence `A : P ≃ E`. -/
 private def splitChart : PartialDiffeomorph I 𝓘(ℝ, P) M P n :=
-  (extChartPartialDiffeomorph I n x).trans (linearPartialDiffeomorph A.symm)
+  (extChartPartialDiffeomorph I n x).trans A.symm.toPartialDiffeomorph
 
 private theorem splitChart_coe : ⇑(splitChart (I := I) (n := n) A x) = A.symm ∘ extChartAt I x := by
   funext y
-  simp [splitChart, linearPartialDiffeomorph]
+  simp [splitChart]
 
 private theorem splitChart_source :
     (splitChart (I := I) (n := n) A x).source = (extChartPartialDiffeomorph I n x).source := by
-  simp [splitChart, linearPartialDiffeomorph]
+  simp [splitChart]
 
 end SplitChart
 
 section Splitting
 
 variable {W T : Submodule ℝ E} (hT : IsCompl W T)
-
-/-- The splitting of `E` along a complement of `W` carries the horizontal subspace of `W × T` onto
-`W`. -/
-private theorem map_ker_snd_prodEquivOfIsCompl :
-    (LinearMap.ker (LinearMap.snd ℝ W T)).map (Submodule.prodEquivOfIsCompl W T hT).toLinearMap =
-      W := by
-  ext v
-  simp
 
 /-- If `W` is the image of `D x` under the differential of the chart at `x` and `A : W × T ≃ E` is
 the splitting along a complement of `W`, then in the split coordinates `D x` is horizontal. -/
@@ -124,7 +102,7 @@ private theorem map_mfderiv_splitChart_eq_ker_snd [FiniteDimensional ℝ E] [IsM
     exact ((A.symm : E →L[ℝ] W × T).hasMFDerivAt.comp x hext.hasMFDerivAt).mfderiv
   rw [hd]
   exact (Submodule.map_comp _ _ S).trans ((congrArg _ hW.symm).trans
-    ((Submodule.map_symm_eq_iff _).2 (map_ker_snd_prodEquivOfIsCompl hT)))
+    ((Submodule.map_symm_eq_iff _).2 (Submodule.map_ker_snd_prodEquivOfIsCompl W T hT)))
 
 end Splitting
 
@@ -142,12 +120,12 @@ private theorem exists_mem_maximalAtlas_eventuallyEq {P : Type*} [NormedAddCommG
   have : IsManifold I m M := .of_le hmn
   -- The coordinates `A ∘ φ ∘ Ψ` on `M`, with values in the model vector space.
   let Θ : PartialDiffeomorph I 𝓘(ℝ, E) M E m :=
-    ((ofLE Ψ hmn).trans (PartialDiffeomorph.ofOpenPartialHomeomorph φ hφ hφ')).trans
-      (linearPartialDiffeomorph A)
+    ((Ψ.ofLE hmn).trans (PartialDiffeomorph.ofOpenPartialHomeomorph φ hφ hφ')).trans
+      A.toPartialDiffeomorph
   have hsource {y : M} : y ∈ Θ.source ↔ y ∈ Ψ.source ∧ Ψ y ∈ φ.source := by
-    simp [Θ, ofLE, linearPartialDiffeomorph]
+    simp [Θ]
   have hΘ (y : M) : Θ y = A (φ (Ψ y)) := by
-    simp [Θ, ofLE, linearPartialDiffeomorph]
+    simp [Θ]
   have hmem {y : M} : y ∈ (Θ.toOpenPartialHomeomorph.trans I.interiorChart.symm).source ↔
       y ∈ Θ.source ∧ Θ y ∈ interior (range I) := by
     simp
@@ -271,6 +249,6 @@ theorem IsInvolutiveDistribution.exists_flatChart [FiniteDimensional ℝ E] [IsM
       hΨd.hasMFDerivAt |>.mfderiv
   rw [hderiv]
   exact (Submodule.map_comp _ _ (D y)).trans ((congrArg _ (Submodule.map_comp _ _ (D y))).trans
-    ((congrArg _ hL).trans (map_ker_snd_prodEquivOfIsCompl hT)))
+    ((congrArg _ hL).trans (Submodule.map_ker_snd_prodEquivOfIsCompl W T hT)))
 
 end TauCeti
