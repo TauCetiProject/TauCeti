@@ -10,6 +10,7 @@ public import Mathlib.AlgebraicTopology.SimplicialSet.Homotopy
 public import Mathlib.AlgebraicTopology.SimplicialSet.Nonempty
 public import TauCeti.AlgebraicTopology.SimplicialSet.Discrete
 public import TauCeti.AlgebraicTopology.SimplicialSet.StdSimplex
+public import TauCeti.CategoryTheory.Monoidal.Closed.Cartesian
 
 /-!
 # Weakly contractible simplicial sets
@@ -72,12 +73,6 @@ variable {K} in
 /-- Evaluation `Fun(K, Z) ⟶ Z` at a vertex `x` of `K`. -/
 noncomputable def evalAt (x : K _⦋0⦌) (Z : SSet.{u}) : (ihom K).obj Z ⟶ Z :=
   lift (const x) (𝟙 _) ≫ (ihom.ev K).app Z
-
-variable {K} in
-/-- Composing with the evaluation map `Fun(K, Z) ⟶ Z` undoes currying. -/
-private lemma lift_curry_ihom_ev_app {W Y Z : SSet.{u}} (a : W ⟶ K) (b : W ⟶ Y) (f : K ⊗ Y ⟶ Z) :
-    lift a (b ≫ curry f) ≫ (ihom.ev K).app Z = lift a b ≫ f := by
-  rw [← lift_whiskerLeft, Category.assoc, whiskerLeft_curry_ihom_ev_app]
 
 variable {K} in
 /-- Evaluating a curried map at a vertex `x` of `K` restricts it to `x` on the first factor. -/
