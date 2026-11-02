@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.WeilRestriction.Basic
-public import Mathlib.RingTheory.FiniteStability
 
 /-!
 # Weil restriction preserves products of affine schemes
