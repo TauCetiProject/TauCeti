@@ -64,10 +64,10 @@ variable {ι κ : Type*} [DecidableEq κ]
 
 /-- **Hoeffding's inequality for a color count.** Color the points of a finite type `ι`
 independently according to a `PMF` `q` on `κ`. The number of points of `T` with color `c`
-deviates from its mean `q c * #T` by at least `a > 0` with probability at most
+deviates from its mean `q c * #T` by at least `a ≥ 0` with probability at most
 `2 * exp (-2 a² / #T)`. -/
 theorem measureReal_le_abs_card_filter_sub_le [Fintype ι] [MeasurableSpace κ]
-    [MeasurableSingletonClass κ] (q : PMF κ) (T : Finset ι) (c : κ) {a : ℝ} (ha : 0 < a) :
+    [MeasurableSingletonClass κ] (q : PMF κ) (T : Finset ι) (c : κ) {a : ℝ} (ha : 0 ≤ a) :
     (Measure.pi fun _ : ι ↦ q.toMeasure).real
         {x | a ≤ |(#{e ∈ T | x e = c} : ℝ) - (q c).toReal * #T|} ≤
       2 * exp (-2 * a ^ 2 / #T) := by
@@ -111,8 +111,8 @@ theorem measureReal_le_abs_card_filter_sub_le [Fintype ι] [MeasurableSpace κ]
     simp only [NNReal.coe_div, NNReal.coe_pow, NNReal.coe_ofNat, h1]
     rw [← sum_div, sum_ite_mem, univ_inter, sum_const, nsmul_one]
   have hexp : -a ^ 2 / (2 * (#T / 4 : ℝ)) = -2 * a ^ 2 / #T := by ring
-  have h₁ := hsub.measure_ge_le ha.le
-  have h₂ := hsub.neg.measure_ge_le ha.le
+  have h₁ := hsub.measure_ge_le ha
+  have h₂ := hsub.neg.measure_ge_le ha
   rw [hmean, hvar, hexp] at h₁ h₂
   -- A deviation of at least `a` is an excess or a shortfall of at least `a`.
   calc μ.real {x | a ≤ |(#{e ∈ T | x e = c} : ℝ) - (q c).toReal * #T|}
@@ -152,7 +152,7 @@ private theorem exists_forall_abs_card_filter_sub_mul_card_lt_of_finite [Fintype
         simp [A, h0, ha.not_ge]
       rw [this, measureReal_empty]
       positivity
-    have hb := measureReal_le_abs_card_filter_sub_le q (T i) c ha
+    have hb := measureReal_le_abs_card_filter_sub_le q (T i) c ha.le
     simp only [hq] at hb
     refine hb.trans ?_
     have hT' : (#(T i) : ℝ) ≤ N := by exact_mod_cast hT i
