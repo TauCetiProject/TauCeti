@@ -298,6 +298,12 @@ theorem mpullback_apply_eq_mpullback_apply_iff {f : M → M'} {x : M}
   · refine ContinuousAlternatingMap.ext fun v ↦ ?_
     rw [mpullback_apply, mpullback_apply, h]
 
+/-- A pullback vanishes at every point where the form vanishes at the image point. -/
+theorem mpullback_apply_eq_zero {f : M → M'} {ω : RoughForm I' M' F k} {x : M}
+    (h : ω (f x) = 0) : mpullback I I' f ω x = 0 := by
+  ext v
+  simp [mpullback_apply, h]
+
 /-- Within-set pullback preserves zero. -/
 @[simp]
 theorem mpullbackWithin_zero (f : M → M') (s : Set M) :
