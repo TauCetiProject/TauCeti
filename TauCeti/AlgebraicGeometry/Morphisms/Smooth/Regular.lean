@@ -24,7 +24,7 @@ are discrete valuation rings.
 
 * `TauCeti.AlgebraicGeometry.isRegularLocalRing_stalk_of_smooth`: a scheme smooth over a
   locally Noetherian scheme with regular local rings has regular local rings.
-* `AlgebraicGeometry.Scheme.isDiscreteValuationRing_stalk_of_smooth`: the local rings of an
+* `TauCeti.AlgebraicGeometry.isDiscreteValuationRing_stalk_of_smooth`: the local rings of an
   integral scheme smooth over a field at its codimension-one points are discrete valuation rings.
 -/
 
@@ -54,23 +54,14 @@ theorem isRegularLocalRing_stalk_of_smooth {X Y : Scheme.{u}} (f : X ⟶ Y) [Smo
   have := IsRegularRing.of_smooth (R := Γ(Y, V)) (S := Γ(X, U))
   exact isRegularLocalRing_stalk_of_isRegularRing hU hxU
 
-end AlgebraicGeometry
-
-end TauCeti
-
-open TauCeti.AlgebraicGeometry
-
-namespace AlgebraicGeometry.Scheme
-
-universe u
-
-variable (k : Type u) [Field k] {X : Scheme.{u}} [X.Over (Spec (.of k))]
-
 /-- The local ring of an integral scheme smooth over `k` at a codimension-one point is a discrete
 valuation ring. -/
-theorem isDiscreteValuationRing_stalk_of_smooth [IsIntegral X] [Smooth (X ↘ Spec (.of k))]
+theorem isDiscreteValuationRing_stalk_of_smooth (k : Type u) [Field k] {X : Scheme.{u}}
+    [X.Over (Spec (.of k))] [IsIntegral X] [Smooth (X ↘ Spec (.of k))]
     (y : CodimensionOnePoint X) : IsDiscreteValuationRing (X.presheaf.stalk (y : X)) := by
   have := isRegularLocalRing_stalk_of_smooth (X ↘ Spec (.of k)) (y : X)
   infer_instance
 
-end AlgebraicGeometry.Scheme
+end AlgebraicGeometry
+
+end TauCeti

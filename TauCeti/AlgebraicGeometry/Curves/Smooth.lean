@@ -16,7 +16,7 @@ A scheme `X` smooth of relative dimension one over a field `k` has dimension one
 (`TauCeti.AlgebraicGeometry.topologicalKrullDim_eq_of_smoothOfRelativeDimension`). So if it is
 moreover integral and proper over `k`, it is a curve over `k`. Its local rings at codimension-one
 points are discrete valuation rings by
-`AlgebraicGeometry.Scheme.isDiscreteValuationRing_stalk_of_smooth`.
+`TauCeti.AlgebraicGeometry.isDiscreteValuationRing_stalk_of_smooth`.
 
 ## Main results
 
