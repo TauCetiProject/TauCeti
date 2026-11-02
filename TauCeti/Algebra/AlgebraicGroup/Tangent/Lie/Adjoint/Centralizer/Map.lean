@@ -40,24 +40,6 @@ open scoped TensorProduct
 
 universe u
 
-namespace TauCeti
-
-variable {k H : Type u} [Field k] [CommRing H] [HopfAlgebra k H]
-  [Module.Finite k (Bialgebra.CotangentSpace k H)]
-
-/-- An algebra-valued point centralizes `x` precisely when its adjoint action fixes `1 ⊗ x`.
-This criterion retains the equations over nonreduced coefficient algebras. -/
-theorem centralizerHopfIdeal_le_ker_iff_adjointAction
-    (x : Module.Dual k (Bialgebra.CotangentSpace k H))
-    (A : CommAlgCat.{u} k) (g : WithConv (H →ₐ[k] A)) :
-    (centralizerHopfIdeal H x).toIdeal ≤ RingHom.ker g.ofConv ↔
-      (adjointAction A g).val (1 ⊗ₜ[k] x) = 1 ⊗ₜ[k] x := by
-  rw [← (tangentScalarExtensionEquiv (R := k) (A := H) (B := A)).injective.eq_iff,
-    tangentScalarExtensionEquiv_adjointAction, tangentScalarExtensionEquiv_tmul, one_smul]
-  exact centralizerHopfIdeal_le_ker_iff x g
-
-end TauCeti
-
 namespace BialgHom
 
 variable {k H K : Type u} [Field k] [CommRing H] [HopfAlgebra k H]
@@ -73,19 +55,15 @@ theorem map_centralizerHopfIdeal_le (φ : H →ₐc[k] K)
   apply (HopfIdeal.le_iff_forall_quotientPointsSubgroup_le
     (H := _root_.CommHopfAlgCat.of k K) _ _).mpr
   intro A g hg
+  apply (CommHopfAlgCat.mem_quotientPointsSubgroup_map_iff
+    (_root_.CommHopfAlgCat.ofHom φ) _ A g).mpr
+  -- Express the functorial pullback as `mapDomain` to apply differential equivariance.
+  change mapDomain φ g ∈ CommHopfAlgCat.quotientPointsSubgroup (_root_.CommHopfAlgCat.of k H)
+    (centralizerHopfIdeal H (dualCotangentMap φ x)) A
   rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff] at hg ⊢
   have hfix := (centralizerHopfIdeal_le_ker_iff_adjointAction x A g).mp hg
-  have ht : (centralizerHopfIdeal H (dualCotangentMap φ x)).toIdeal ≤
-      RingHom.ker (mapDomain φ g).ofConv := by
-    apply (centralizerHopfIdeal_le_ker_iff_adjointAction _ A _).mpr
-    rw [← LinearMap.lTensor_tmul, ← lTensor_dualCotangentMap_adjointAction, hfix]
-  have hm : ((centralizerHopfIdeal H (dualCotangentMap φ x)).map φ).toIdeal ≤
-      RingHom.ker g.ofConv := by
-    rw [HopfIdeal.map_toIdeal, Ideal.map_le_iff_le_comap]
-    intro a ha
-    simpa only [Ideal.mem_comap, RingHom.mem_ker, mapDomain_apply_apply,
-      RingHom.coe_coe] using ht ha
-  exact fun a ha ↦ hm (HopfIdeal.mem_toIdeal.mpr ha)
+  apply (centralizerHopfIdeal_le_ker_iff_adjointAction _ A _).mpr
+  rw [← LinearMap.lTensor_tmul, ← lTensor_dualCotangentMap_adjointAction, hfix]
 
 /-- If the differential is injective, centralizing `dφ(x)` is equivalent to centralizing `x`
 for every coefficient algebra. No smoothness or characteristic hypothesis is needed. -/
@@ -111,16 +89,14 @@ theorem map_centralizerHopfIdeal_eq_of_injective (φ : H →ₐc[k] K)
     (H := _root_.CommHopfAlgCat.of k K)
   intro A
   ext g
+  refine (CommHopfAlgCat.mem_quotientPointsSubgroup_map_iff
+    (_root_.CommHopfAlgCat.ofHom φ) _ A g).trans ?_
+  -- Express the functorial pullback as `mapDomain` to use the point criterion below.
+  change mapDomain φ g ∈ CommHopfAlgCat.quotientPointsSubgroup (_root_.CommHopfAlgCat.of k H)
+    (centralizerHopfIdeal H (dualCotangentMap φ x)) A ↔ _
   rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff,
     CommHopfAlgCat.mem_quotientPointsSubgroup_iff]
-  have hm : ((centralizerHopfIdeal H (dualCotangentMap φ x)).map φ).toIdeal ≤
-        RingHom.ker g.ofConv ↔
-      (centralizerHopfIdeal H (dualCotangentMap φ x)).toIdeal ≤
-        RingHom.ker (mapDomain φ g).ofConv := by
-    rw [HopfIdeal.map_toIdeal, Ideal.map_le_iff_le_comap]
-    simp only [IsConcreteLE.le_iff, Ideal.mem_comap, RingHom.mem_ker,
-      mapDomain_apply_apply, RingHom.coe_coe]
-  exact hm.trans (φ.centralizerHopfIdeal_le_ker_mapDomain_iff hφ x A g)
+  exact φ.centralizerHopfIdeal_le_ker_mapDomain_iff hφ x A g
 
 /-- The coordinate-ring map of the homomorphism `C_Spec K(x) → C_Spec H(dφ(x))`.
 It exists even when the differential is not injective. -/
@@ -143,5 +119,14 @@ theorem centralizerMap_mk (φ : H →ₐc[k] K)
     φ.centralizerMap x (Ideal.Quotient.mk _ a) =
       Ideal.Quotient.mk (centralizerHopfIdeal K x).toIdeal (φ a) := by
   exact Bialgebra.Quotient.liftBialgHom_mk _ _ _ a
+
+/-- The centralizer coordinate map commutes with the ambient quotient maps. -/
+@[simp]
+theorem centralizerMap_comp_mkBialgHom (φ : H →ₐc[k] K)
+    (x : Module.Dual k (Bialgebra.CotangentSpace k K)) :
+    (φ.centralizerMap x).comp
+        (Bialgebra.Quotient.mkBialgHom (centralizerHopfIdeal H (dualCotangentMap φ x)).toIdeal) =
+      (Bialgebra.Quotient.mkBialgHom (centralizerHopfIdeal K x).toIdeal).comp φ :=
+  Bialgebra.Quotient.liftBialgHom_comp_mkBialgHom _ _ _
 
 end BialgHom

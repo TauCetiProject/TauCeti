@@ -57,12 +57,18 @@ theorem map_centralizerHopfIdeal_of_etaleKernel
 
 /-- In characteristic zero, every finite-type affine isogeny pulls back centralizers of
 Lie algebra elements. In particular this applies to semisimple central isogenies, without
-asserting that centralizers or component groups are invariant. -/
+asserting that centralizers or component groups are invariant. Finite type of `K` follows
+from finite type of `H` and finiteness of the isogeny. -/
 theorem map_centralizerHopfIdeal_of_charZero [CharZero k]
-    [Algebra.FiniteType k H] [Algebra.FiniteType k K] (hf : IsIsogeny f)
+    [Algebra.FiniteType k H] (hf : IsIsogeny f)
     (x : Module.Dual k (Bialgebra.CotangentSpace k K)) :
+    let _ : Algebra.FiniteType k K := RingHom.finiteType_algebraMap.mp (by
+      rw [← f.hom.toAlgHom.comp_algebraMap]
+      exact RingHom.FiniteType.comp hf.finite.finiteType
+        (RingHom.finiteType_algebraMap.mpr inferInstance))
     (centralizerHopfIdeal H (dualCotangentMap f.hom x)).map f.hom =
       centralizerHopfIdeal K x := by
+  intro hK
   let _ : Algebra.Smooth k H :=
     (smoothCommHopfAlgProperty_iff _).mp (smoothCommHopfAlgProperty_of_charZero k H)
   let _ : Algebra.Smooth k K :=
