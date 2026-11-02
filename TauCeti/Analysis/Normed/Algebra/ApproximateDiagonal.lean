@@ -183,6 +183,7 @@ theorem norm_mul'_apply_le (m : CompletedProjectiveTensor 𝕜 A A) : ‖mul' �
 
 /-- The multiplication map intertwines the outer left action with left multiplication:
 `Δ (c · m) = c * Δ m`. -/
+@[simp]
 theorem mul'_mulLeft_apply (c : A) (m : CompletedProjectiveTensor 𝕜 A A) :
     mul' 𝕜 A (mulLeft 𝕜 A c m) = c * mul' 𝕜 A m := by
   have : mul' 𝕜 A ∘L mulLeft 𝕜 A c = ContinuousLinearMap.mul 𝕜 A c ∘L mul' 𝕜 A := by
@@ -191,6 +192,7 @@ theorem mul'_mulLeft_apply (c : A) (m : CompletedProjectiveTensor 𝕜 A A) :
 
 /-- The multiplication map intertwines the outer right action with right multiplication:
 `Δ (m · c) = Δ m * c`. -/
+@[simp]
 theorem mul'_mulRight_apply (c : A) (m : CompletedProjectiveTensor 𝕜 A A) :
     mul' 𝕜 A (mulRight 𝕜 A c m) = mul' 𝕜 A m * c := by
   have : mul' 𝕜 A ∘L mulRight 𝕜 A c = (ContinuousLinearMap.mul 𝕜 A).flip c ∘L mul' 𝕜 A := by
@@ -249,8 +251,7 @@ theorem isApproximateUnit_map (h : IsApproximateDiagonal 𝕜 l) :
     have hΔ := ((mul' 𝕜 A).continuous.tendsto 0).comp (h.tendsto_mulLeft_sub_mulRight a)
     rw [map_zero] at hΔ
     refine tendsto_map'_iff.2 ?_
-    simpa [Function.comp_def, mul'_mulLeft_apply, mul'_mulRight_apply] using
-      (h.tendsto_mul_mul' a).sub hΔ
+    simpa [Function.comp_def] using (h.tendsto_mul_mul' a).sub hΔ
   neBot := have := h.neBot; inferInstance
 
 /-- A Banach algebra with an approximate diagonal bounded by `C` has a two-sided approximate
