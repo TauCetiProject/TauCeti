@@ -13,8 +13,8 @@ public import TauCeti.Combinatorics.PermutationTriple.Passport.Stabilizer
 The normalizer of a passport's reference monodromy group acts on its generating triples.
 An element of the normalizer fixes a generating triple exactly when it centralizes the
 reference group. Thus it fixes every generating triple or none of them. This evaluates
-every summand in Burnside's formula and their sum. Rewriting this sum in Mathlib's
-Burnside formula recovers the normalizer formula for passport size.
+every summand in Burnside's formula and their sum. The results concern fixed-point
+counts, not the identification of normalizer orbits with passport classes.
 
 No admissibility, nonzero-degree or transitivity hypothesis is needed to evaluate the
 fixed-point sets. In particular the statements also apply when no generating triple has
@@ -80,7 +80,8 @@ theorem sum_ncard_fixedBy_generatingTriple :
         Nat.card (Subgroup.centralizer (P.G : Set (Perm (Fin n)))) := by
   classical
   simp_rw [P.ncard_fixedBy_generatingTriple]
-  rw [← P.card_centralizer_subgroupOf_normalizer]
+  rw [← Nat.card_congr (Subgroup.subgroupOfEquivOfLe
+    (Subgroup.centralizer_le_normalizer (P.G : Set (Perm (Fin n))))).toEquiv]
   rw [← Finset.sum_filter]
   simp [Nat.card_eq_fintype_card, Fintype.card_subtype, Subgroup.mem_subgroupOf, mul_comm]
 

@@ -49,14 +49,6 @@ theorem stabilizer_generatingTriple_eq_centralizer_subgroupOf (g : P.GeneratingT
   simpa only [GeneratingTriple.coe_smul, Subgroup.smul_def] using
     (Subtype.ext_iff : τ • g = g ↔ (τ • g).1 = g.1)
 
-/-- Viewing the centralizer inside the normalizer preserves its order. -/
-theorem card_centralizer_subgroupOf_normalizer :
-    Nat.card ((Subgroup.centralizer (P.G : Set (Perm (Fin n)))).subgroupOf
-      (Subgroup.normalizer (P.G : Set (Perm (Fin n))))) =
-        Nat.card (Subgroup.centralizer (P.G : Set (Perm (Fin n)))) :=
-  Nat.card_congr (Subgroup.subgroupOfEquivOfLe
-    (Subgroup.centralizer_le_normalizer (P.G : Set (Perm (Fin n))))).toEquiv
-
 /-- Orbit-stabilizer for a generating triple, with its stabilizer expressed as the
 centralizer of the reference monodromy group. -/
 theorem card_orbit_generatingTriple_mul_card_centralizer_eq_card_normalizer
@@ -74,7 +66,8 @@ theorem card_orbit_generatingTriple_mul_card_centralizer_eq_card_normalizer
       _ = Nat.card (C.subgroupOf N) :=
         congrArg (fun H : Subgroup N => Nat.card H)
           (stabilizer_generatingTriple_eq_centralizer_subgroupOf P g)
-      _ = Nat.card C := P.card_centralizer_subgroupOf_normalizer
+      _ = Nat.card C := Nat.card_congr (Subgroup.subgroupOfEquivOfLe
+        (Subgroup.centralizer_le_normalizer (P.G : Set (Perm (Fin n))))).toEquiv
   have h' : Nat.card (MulAction.orbit N g) * Nat.card (MulAction.stabilizer N g) =
       Nat.card N := by simpa only [Nat.card_eq_fintype_card] using h
   simpa only [hstab] using h'
