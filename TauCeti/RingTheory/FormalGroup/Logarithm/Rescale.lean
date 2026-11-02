@@ -7,6 +7,8 @@ module
 
 public import TauCeti.RingTheory.FormalGroup.Logarithm.Basic
 public import TauCeti.RingTheory.FormalGroup.Rescale
+-- Supplies the divisibility hypothesis of the integral logarithm.
+public import TauCeti.Algebra.Ring.Divisibility
 -- Proof-only: the derivative commutes with change of coefficients.
 import TauCeti.RingTheory.PowerSeries.Derivative
 
@@ -52,7 +54,6 @@ of the formal group `F(s 𝔪)` with the additive group `s 𝔪` through the log
   is the logarithm of `F^s`.
 * `FormalGroup.map_invHom_rescaleLogIso`: after base change to a `ℚ`-algebra, the inverse of the
   integral logarithm is the exponential of `F^s`.
-* `TauCeti.natCast_add_one_dvd_pow`: a sufficient condition for `n + 1 ∣ sⁿ` for every `n`.
 
 ## References
 
@@ -62,33 +63,6 @@ of the formal group `F(s 𝔪)` with the additive group `s 𝔪` through the log
 public section
 
 open MvPowerSeries
-
-namespace TauCeti
-
-/-- **`n + 1` divides `sⁿ` for every `n`**, if `p ∣ s ^ (p - 1)` for a prime `p` and every natural
-number prime to `p` is a unit. Write `n + 1 = pᵏ m` with `m` prime to `p`: then `pᵏ` divides
-`s ^ (k (p - 1))`, and `k (p - 1) ≤ pᵏ - 1 ≤ n`. -/
-theorem natCast_add_one_dvd_pow {R : Type*} [CommRing R] {p : ℕ} (hp : p.Prime) {s : R}
-    (hs : (p : R) ∣ s ^ (p - 1)) (hR : ∀ m : ℕ, p.Coprime m → IsUnit (m : R)) (n : ℕ) :
-    (n + 1 : R) ∣ s ^ n := by
-  obtain ⟨k, m, hm, hn⟩ := Nat.exists_eq_pow_mul_and_not_dvd n.succ_ne_zero p hp.one_lt.ne'
-  have hm₀ : m ≠ 0 := by rintro rfl; simp at hm
-  -- Bernoulli's inequality `1 + k (p - 1) ≤ pᵏ`, so `k (p - 1) ≤ n`
-  have hk : k * (p - 1) ≤ n := by
-    have h := one_add_mul_le_pow (show (-2 : ℤ) ≤ (p - 1 : ℕ) by omega) k
-    have hp₁ : ((p - 1 : ℕ) : ℤ) + 1 = p := by rw [Nat.cast_sub hp.one_le]; ring
-    rw [add_comm (1 : ℤ) ((p - 1 : ℕ) : ℤ), hp₁] at h
-    have : p ^ k ≤ n + 1 := by
-      rw [← Nat.succ_eq_add_one, hn]
-      exact Nat.le_mul_of_pos_right _ (Nat.pos_of_ne_zero hm₀)
-    zify at this ⊢
-    linarith
-  have hcast : (n + 1 : R) = (p : R) ^ k * (m : R) := by
-    rw [← Nat.cast_pow, ← Nat.cast_mul, ← hn, Nat.cast_succ]
-  rw [hcast, (hR m ((Nat.Prime.coprime_iff_not_dvd hp).2 hm)).mul_right_dvd]
-  exact (pow_dvd_pow_of_dvd hs k).trans (by rw [← pow_mul]; exact pow_dvd_pow s (by linarith))
-
-end TauCeti
 
 namespace FormalGroup
 
@@ -121,6 +95,13 @@ noncomputable def rescaleLog (hs : ∀ n : ℕ, (n + 1 : R) ∣ s ^ n) : PowerSe
 
 variable (hs : ∀ n : ℕ, (n + 1 : R) ∣ s ^ n)
 
+/-- The coefficient of `Tⁿ⁺¹` in the integral logarithm is the chosen quotient `sⁿ / (n + 1)`
+times the coefficient `pₙ` of the invariant differential of `F`. -/
+theorem coeff_succ_rescaleLog (n : ℕ) :
+    PowerSeries.coeff (n + 1) (F.rescaleLog hs) =
+      (hs n).choose * PowerSeries.coeff n F.invariantDifferential := by
+  rw [rescaleLog, PowerSeries.coeff_mk]
+
 /-- The integral logarithm has no constant term. -/
 @[simp]
 theorem constantCoeff_rescaleLog : PowerSeries.constantCoeff (F.rescaleLog hs) = 0 := by
@@ -132,8 +113,9 @@ the coefficient of `Tⁿ⁺¹` times `n + 1` is `sⁿ pₙ`. -/
 theorem derivative_rescaleLog :
     PowerSeries.derivative (F.rescaleLog hs) = (F.rescale s).invariantDifferential := by
   ext n
-  rw [PowerSeries.coeff_derivative, rescaleLog, PowerSeries.coeff_mk,
-    invariantDifferential_rescale, PowerSeries.coeff_rescale, (hs n).choose_spec]
+  rw [PowerSeries.coeff_derivative, coeff_succ_rescaleLog, invariantDifferential_rescale,
+    PowerSeries.coeff_rescale]
+  conv_rhs => rw [(hs n).choose_spec]
   ring
 
 /-- The integral logarithm has linear coefficient `1`. -/
