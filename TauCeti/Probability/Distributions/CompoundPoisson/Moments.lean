@@ -148,7 +148,7 @@ theorem integral_continuousLinearMap_compoundPoissonMeasure (L : E →L[ℝ] ℝ
 
 /-- The covariance of two linear observables of a compound Poisson sum is the rate times
 their uncentered jump cross moment. Only the two observed second moments need be finite. -/
-@[simp↓]
+@[simp]
 theorem covariance_compoundPoissonMeasure (L M : E →L[ℝ] ℝ)
     (hL : MemLp L 2 μ) (hM : MemLp M 2 μ) (r : ℝ≥0) :
     covariance L M (compoundPoissonMeasure r μ) = (r : ℝ) * ∫ x, L x * M x ∂μ := by
@@ -196,7 +196,7 @@ theorem covMatrix_compoundPoissonMeasure {ι : Type*} [Fintype ι]
 
 /-- The covariance bilinear form of a compound Poisson law is the rate times the uncentered
 second-moment bilinear form of the jump law. -/
-@[simp↓]
+@[simp]
 theorem covarianceBilin_compoundPoissonMeasure {F : Type*} [NormedAddCommGroup F]
     [InnerProductSpace ℝ F] [CompleteSpace F] [MeasurableSpace F] [BorelSpace F]
     [MeasurableAdd₂ F] {ν : Measure F} [IsProbabilityMeasure ν]

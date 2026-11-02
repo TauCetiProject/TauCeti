@@ -9,7 +9,6 @@ public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Solv
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Stabilizer
 public import TauCeti.Algebra.AlgebraicGroup.Representation.TriangularEmbedding
 public import TauCeti.Algebra.AlgebraicGroup.Solvable.UpperTriangular
-import TauCeti.Algebra.AlgebraicGroup.Connected.Irreducible
 import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.ClosedOrbit
 import TauCeti.Algebra.Coalgebra.Subcomodule.PointSeparation
 

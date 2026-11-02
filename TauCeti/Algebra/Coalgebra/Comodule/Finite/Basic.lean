@@ -152,6 +152,7 @@ theorem hom_add {M N : FGComoduleCat.{u, v, w} R C} (f g : M ⟶ N) :
   rfl
 
 /-- Taking the ambient morphism preserves scalar multiplication. -/
+-- Rewrite the induced-category projection before simp descends into its scalar-action wrapper.
 @[simp↓]
 theorem hom_smul {M N : FGComoduleCat.{u, v, w} R C} (r : R) (f : M ⟶ N) :
     (r • f).hom = r • f.hom :=

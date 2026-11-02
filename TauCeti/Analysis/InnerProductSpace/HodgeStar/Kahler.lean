@@ -116,7 +116,7 @@ theorem inner_kahlerForm_self : ⟪J.kahlerForm, J.kahlerForm⟫ = finrank ℝ V
   simp [inner_sum, real_inner_smul_right, inner_kahlerForm_ιMulti hJ, hn, div_eq_inv_mul]
 
 /-- `‖ω‖² = dim V / 2`, the simp normal form of `inner_kahlerForm_self`. -/
-@[simp↓]
+@[simp]
 theorem norm_kahlerForm_sq : ‖J.kahlerForm‖ ^ 2 = finrank ℝ V / 2 := by
   rw [← real_inner_self_eq_norm_sq, inner_kahlerForm_self hJ]
 

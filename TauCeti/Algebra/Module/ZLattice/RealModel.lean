@@ -159,7 +159,7 @@ theorem inner_realModelMap (x y : V) :
   simp [realModelMap_apply, Algebra.smul_def]
 
 /-- The squared norm in the real model is the rational lattice norm, cast to `ℝ`. -/
-@[simp↓]
+@[simp]
 theorem norm_sq_realModelMap (x : V) :
     ‖M.realModelMap hM x‖ ^ 2 = (M.norm x : ℝ) := by
   rw [← real_inner_self_eq_norm_sq, inner_realModelMap, norm_apply]

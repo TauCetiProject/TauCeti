@@ -164,11 +164,7 @@ theorem baseChangeFunctor_obj_parityShift_d₀ (f : S →+* T) (X : MatrixFactor
     ((baseChangeFunctor f).obj (parityShift.obj X)).obj.d₀ =
       (parityShift.obj ((baseChangeFunctor f).obj X)).obj.d₀ := by
   apply (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map_injective
-  change ((baseChangeFunctor f).obj (parityShift.obj X)).obj.d₀.hom =
-    -((baseChangeFunctor f).obj X).obj.d₁.hom
-  rw [baseChangeFunctor_obj_d₀, baseChangeFunctor_obj_d₁]
-  change (ModuleCat.extendScalars f).map (-X.obj.d₁.hom) =
-    -(ModuleCat.extendScalars f).map X.obj.d₁.hom
+  simp only [parityShift_obj_d₀, FGModuleCat.forget₂_map, baseChangeFunctor_obj_d₀]
   exact (ModuleCat.extendScalars f).map_neg
 
 /-- The odd differential of the base change of a parity shift is the odd differential of the
@@ -177,11 +173,7 @@ theorem baseChangeFunctor_obj_parityShift_d₁ (f : S →+* T) (X : MatrixFactor
     ((baseChangeFunctor f).obj (parityShift.obj X)).obj.d₁ =
       (parityShift.obj ((baseChangeFunctor f).obj X)).obj.d₁ := by
   apply (forget₂ (FGModuleCat.{u} T) (ModuleCat.{u} T)).map_injective
-  change ((baseChangeFunctor f).obj (parityShift.obj X)).obj.d₁.hom =
-    -((baseChangeFunctor f).obj X).obj.d₀.hom
-  rw [baseChangeFunctor_obj_d₁, baseChangeFunctor_obj_d₀]
-  change (ModuleCat.extendScalars f).map (-X.obj.d₀.hom) =
-    -(ModuleCat.extendScalars f).map X.obj.d₀.hom
+  simp only [parityShift_obj_d₁, FGModuleCat.forget₂_map, baseChangeFunctor_obj_d₁]
   exact (ModuleCat.extendScalars f).map_neg
 
 /-- Base change commutes with the parity shift. Both sides have the same components, and the
