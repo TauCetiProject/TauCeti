@@ -34,10 +34,10 @@ is the **column** antisymmetrization `b_t · {t}` of the tabloid, and the Young 
 
 The bridge between the two indexings is `rowYoungConjugator t`, the permutation carrying the
 consecutive-block labeling of the shape of `μ` to the labeling of `t`: its coset is the tabloid of
-`t`, and conjugation by it carries the Young subgroup onto the row group of `t`.  The tabloid of
-`t` is therefore fixed exactly by the row group, which is what makes the polytabloid nonzero: the
-column group meets the row group trivially, so the tabloids appearing in `e_t` are pairwise
-distinct and the coefficient of `{t}` itself is `1`.
+`t`, and conjugation by it carries the Young subgroup onto the row group of `t`. The tabloid of `t`
+is therefore fixed exactly by the row group, which is what makes the polytabloid nonzero over a
+nontrivial coefficient ring: the column group meets the row group trivially, so the tabloids
+appearing in `e_t` are pairwise distinct and the coefficient of `{t}` itself is `1`.
 
 The rational specialization is identified with the left ideal `ℚ[Sₙ] c_t` in
 `TauCeti/RepresentationTheory/Symmetric/Specht/Comparison.lean`. James's submodule theorem
@@ -66,10 +66,12 @@ here do not require characteristic zero.
 * `TauCeti.YoungTableau.polytabloid_coeff_eq_zero_of_forall_ne`: only the tabloids reachable from
   `{t}` by a column permutation occur in `e_t`.
 * `TauCeti.YoungTableau.polytabloid_ne_zero` and
-  `TauCeti.YoungTableau.tabloidForm_polytabloid_self`: polytabloids are nonzero, and the tabloid
-  form pairs one with itself to the order of the column group.
+  `TauCeti.YoungTableau.tabloidForm_polytabloid_self`: over a nontrivial coefficient ring
+  polytabloids are nonzero, and the tabloid form pairs one with itself to the order of the column
+  group.
 * `TauCeti.spechtSubrepresentation_eq_span_orbit` and `TauCeti.spechtSubrepresentation_ne_bot`: the
-  Specht module is the span of the orbit of a single polytabloid, and it is nonzero.
+  Specht module is the span of the orbit of a single polytabloid, and over a nontrivial coefficient
+  ring it is nonzero.
 
 ## References
 
@@ -247,8 +249,8 @@ theorem polytabloid_coeff_smul_tabloid (t : YoungTableau μ) (q : colSubgroup t)
   · intro h
     exact absurd (Finset.mem_univ _) h
 
-/-- The coefficient of the tabloid `{t}` in the polytabloid `e_t` is `1`; in particular `e_t` is a
-nonzero element of `M^μ`. -/
+/-- The coefficient of the tabloid `{t}` in the polytabloid `e_t` is `1`; in particular, over a
+nontrivial coefficient ring, `e_t` is a nonzero element of `M^μ`. -/
 @[simp]
 theorem polytabloid_coeff_tabloid (t : YoungTableau μ) :
     (polytabloid (R := R) t).coeff (tabloid t) = 1 := by
