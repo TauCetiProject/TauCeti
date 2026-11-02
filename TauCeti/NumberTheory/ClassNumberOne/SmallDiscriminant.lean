@@ -5,39 +5,33 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.BinaryQuadraticForm.Ideal.ClassNumber
-import TauCeti.NumberTheory.ClassNumberOne.HeegnerNumbers
+public import TauCeti.NumberTheory.ClassNumberOne.HeegnerNumbers
+import TauCeti.NumberTheory.FundamentalDiscriminant
 import TauCeti.NumberTheory.Multiquadratic.Quadratic.Discriminant
 
 /-!
 # Imaginary quadratic fields of class number one with small discriminant
 
 The class number of a quadratic field of discriminant `-n` is the number of primitive reduced
-forms of discriminant `-n` (`classNumber_eq_card_primitiveReducedForms_of_discr_eq`), a finite set
-the kernel enumerates. This file certifies the two finite computations of the class number one
-problem.
-
-* The nine discriminants `-3, -4, -7, -8, -11, -19, -43, -67, -163` have class number one: each
-  has the principal form as its only primitive reduced form
-  (`TauCeti.classNumber_neg_eq_one_of_mem_heegnerDiscriminants`), and this transports from the
-  model `ℚ(√(-n))` to every quadratic field of discriminant `-n`.
-* Among the discriminants `-51 < D < 0`, the class number one fields are exactly those of
-  discriminant `-3, -4, -7, -8, -11, -19, -43`. Every other fundamental discriminant in this range
-  has a second primitive reduced form. The imprimitive discriminants `-12, -16, -27` and `-28`,
-  which also have a single primitive reduced form, are not field discriminants.
+forms of discriminant `-n`
+(`TauCeti.BinaryQuadraticForm.classNumber_eq_card_primitiveReducedForms_of_discr_eq`), a finite
+set the kernel enumerates. This file certifies the finite computation that ends the class number
+one problem: among the discriminants `-51 < D < 0`, the class number one fields are exactly those
+of discriminant `-n` for `n ∈ heegnerDiscriminants`, that is `-3, -4, -7, -8, -11, -19, -43`.
+Every other fundamental discriminant in this range has a second primitive reduced form. The
+imprimitive discriminants `-12, -16, -27` and `-28`, which also have a single primitive reduced
+form, are not field discriminants. That all nine Heegner discriminants have class number one is
+`TauCeti.NumberField.classNumber_eq_one_of_mem_heegnerDiscriminants`.
 
 In Heegner's argument as completed by Stark, and in Shin's version with Siegel functions, the
 product estimates for Siegel functions exclude class number one for `D ≤ -31` when `2` is not
-inert, and for `D ≤ -51` when `2` is inert and `3` ramifies. The second statement handles the
+inert, and for `D ≤ -51` when `2` is inert and `3` ramifies. The result here handles the
 discriminants these estimates leave.
 
 ## Main results
 
-* `TauCeti.NumberField.classNumber_eq_one_of_discr_mem`: a quadratic field whose discriminant is
-  one of the nine discriminants above has class number one.
-* `TauCeti.NumberField.classNumber_eq_one_iff_of_neg_fifty_one_lt_discr`: a quadratic field with
-  `-51 < discr K < 0` has class number one iff its discriminant is `-3, -4, -7, -8, -11, -19` or
-  `-43`.
+* `TauCeti.NumberField.classNumber_eq_one_iff_of_neg_fifty_one_lt_discr`: a quadratic field of
+  discriminant `-n > -51` has class number one iff `n ∈ heegnerDiscriminants`.
 
 ## References
 
@@ -56,46 +50,18 @@ namespace TauCeti.NumberField
 
 variable {K : Type*} [Field K] [NumberField K]
 
-/-- **The nine imaginary quadratic fields of class number one.** A quadratic field whose
-discriminant is `-3, -4, -7, -8, -11, -19, -43, -67` or `-163` has class number one: the
-principal form is its only primitive reduced form. -/
-theorem classNumber_eq_one_of_discr_mem (hK : finrank ℚ K = 2)
-    (hD : NumberField.discr K ∈ ({-3, -4, -7, -8, -11, -19, -43, -67, -163} : Finset ℤ)) :
-    NumberField.classNumber K = 1 := by
-  obtain ⟨n, hn⟩ : ∃ n : ℕ, NumberField.discr K = -n :=
-    ⟨(NumberField.discr K).natAbs, by simp only [mem_insert, mem_singleton] at hD; omega⟩
-  have hmem : n ∈ heegnerDiscriminants := by
-    rw [hn] at hD
-    simp only [mem_insert, mem_singleton] at hD
-    simp only [mem_heegnerDiscriminants]
-    omega
-  have : NeZero n := ⟨by rintro rfl; simp at hmem⟩
-  rw [classNumber_eq_card_primitiveReducedForms_of_discr_eq hK hn,
-    ← BinaryQuadraticForm.classNumber_eq_card_primitiveReducedForms n
-      (isFundamentalDiscr_neg_of_mem_heegnerDiscriminants hmem),
-    classNumber_neg_eq_one_of_mem_heegnerDiscriminants hmem]
-
-/-- **Class number one for discriminants above `-51`.** A quadratic field with
-`-51 < discr K < 0` has class number one exactly when its discriminant is one of
-`-3, -4, -7, -8, -11, -19, -43`. -/
-theorem classNumber_eq_one_iff_of_neg_fifty_one_lt_discr (hK : finrank ℚ K = 2)
-    (h0 : NumberField.discr K < 0) (h51 : -51 < NumberField.discr K) :
-    NumberField.classNumber K = 1 ↔
-      NumberField.discr K ∈ ({-3, -4, -7, -8, -11, -19, -43} : Finset ℤ) := by
-  obtain ⟨n, hn⟩ : ∃ n : ℕ, NumberField.discr K = -n := ⟨(NumberField.discr K).natAbs, by omega⟩
-  have hfund := hn ▸ Multiquadratic.isFundamentalDiscr_discr hK
-  rw [classNumber_eq_card_primitiveReducedForms_of_discr_eq hK hn, hn]
-  rw [Int.isFundamentalDiscr_iff_squarefree, ← Int.squarefree_natAbs,
-    ← Int.squarefree_natAbs] at hfund
-  -- The kernel runs through every `n < 51`, deciding fundamentality by squarefreeness and
-  -- counting the primitive reduced forms of discriminant `-n`.
-  have key : ∀ n : ℕ, n < 51 →
-      (((-n : ℤ) % 4 = 1 ∧ Squarefree (-n : ℤ).natAbs) ∨
-        ((-n : ℤ) % 4 = 0 ∧ Squarefree ((-n : ℤ) / 4).natAbs ∧
-          ((-n : ℤ) / 4 % 4 = 2 ∨ (-n : ℤ) / 4 % 4 = 3))) →
-      (#(primitiveReducedForms n) = 1 ↔
-        (-n : ℤ) ∈ ({-3, -4, -7, -8, -11, -19, -43} : Finset ℤ)) := by
+/-- **Class number one for discriminants above `-51`.** A quadratic field of discriminant `-n`
+with `-51 < -n` has class number one exactly when `n ∈ heegnerDiscriminants`, that is when its
+discriminant is one of `-3, -4, -7, -8, -11, -19, -43`. -/
+theorem classNumber_eq_one_iff_of_neg_fifty_one_lt_discr (hK : finrank ℚ K = 2) {n : ℕ}
+    (hn : NumberField.discr K = -n) (h51 : -51 < NumberField.discr K) :
+    NumberField.classNumber K = 1 ↔ n ∈ heegnerDiscriminants := by
+  rw [classNumber_eq_card_primitiveReducedForms_of_discr_eq hK hn]
+  -- The kernel runs through every `n < 51`, deciding fundamentality and counting the primitive
+  -- reduced forms of discriminant `-n`.
+  have key : ∀ n : ℕ, n < 51 → Int.IsFundamentalDiscr (-n) →
+      (#(primitiveReducedForms n) = 1 ↔ n ∈ heegnerDiscriminants) := by
     decide +kernel
-  exact key n (by omega) hfund
+  exact key n (by omega) (hn ▸ Multiquadratic.isFundamentalDiscr_discr hK)
 
 end TauCeti.NumberField
