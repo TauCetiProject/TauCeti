@@ -9,7 +9,7 @@ public import TauCeti.NumberTheory.ModularForms.LFunction.Basic
 public import TauCeti.NumberTheory.ModularForms.GeodesicIntegral.BetweenCusps
 
 /-!
-# Periods of cusp forms are critical values of their `L`-functions
+# Periods of cusp forms are values of their `L`-functions
 
 Let `f` be a cusp form of weight `k > 0` on an arithmetic subgroup `Γ`. Its **periods** are the
 integrals `rₙ(f) = ∫₀^{i∞} f(τ) τⁿ dτ`, `n ≥ 0`, along the positive imaginary axis, the integral
@@ -65,9 +65,9 @@ theorem cuspIntegral_mul_pow_zero_infty (hk : 0 < k) (f : F) (n : ℕ) :
     add_sub_cancel_right, smul_eq_mul, cpow_natCast]
   ring
 
-/-- **Periods are critical `L`-values**: the period `∫₀^{i∞} f(τ) τⁿ dτ` of a cusp form `f` of
-positive weight on an arithmetic subgroup is `n! / (-2πi)ⁿ⁺¹ · L(f, n + 1)`, for Mathlib's
-`L`-function `ModularForm.L`. -/
+/-- **Periods are `L`-values at positive integers**: the period `∫₀^{i∞} f(τ) τⁿ dτ` of a cusp
+form `f` of positive weight `k` on an arithmetic subgroup is `n! / (-2πi)ⁿ⁺¹ · L(f, n + 1)`, for
+Mathlib's `L`-function `ModularForm.L`. For `0 ≤ n ≤ k - 2` these are the critical values. -/
 theorem cuspIntegral_mul_pow_zero_infty_eq_L (hk : 0 < k) (f : F) (n : ℕ) :
     cuspIntegral (fun τ ↦ f τ * (τ : ℂ) ^ n) ((0 : ℚ) : OnePoint ℚ) ∞ =
       n ! / (-2 * π * I) ^ (n + 1) * ModularForm.L hk f (n + 1) := by

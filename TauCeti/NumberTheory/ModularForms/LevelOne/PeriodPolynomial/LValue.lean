@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.LevelOne.PeriodPolynomial.CuspForm
 public import TauCeti.NumberTheory.ModularForms.LFunction.Period
+import TauCeti.Data.Fin.Rev
 
 /-!
 # The coefficients of a period polynomial are critical `L`-values
@@ -32,10 +33,8 @@ is an absolutely convergent Euler product.
 
 * `TauCeti.periodPolynomial_eq_sum`: `r_f` in the monomial basis, with the completed `L`-values
   `Λ(f, n + 1)` as coefficients.
-* `TauCeti.binaryFormMonomialBasis_repr_periodPolynomial`,
-  `TauCeti.binaryFormMonomialBasis_repr_evenPeriodPolynomial`,
-  `TauCeti.binaryFormMonomialBasis_repr_oddPeriodPolynomial`: the coordinates of `r_f`, `r_f^+`
-  and `r_f^-` in the monomial basis.
+* `TauCeti.binaryFormMonomialBasis_repr_periodPolynomial`: the coordinates of `r_f` in the
+  monomial basis.
 * `TauCeti.evenPeriodPolynomial_eq_zero_iff`, `TauCeti.oddPeriodPolynomial_eq_zero_iff`: `r_f^+`
   (respectively `r_f^-`) vanishes if and only if `L(f, n + 1) = 0` for every `n ≤ w` with `w - n`
   even (respectively odd).
@@ -89,38 +88,6 @@ theorem binaryFormMonomialBasis_repr_periodPolynomial (hk : k = w + 2) (f : Cusp
         ModularForm.Λ (by omega) f ((w - j : ℕ) + 1) := by
   rw [periodPolynomial_eq_sum, Module.Basis.repr_sum_self]
 
-/-- The coordinates of the even period polynomial `r_f^+` in the monomial basis `Xʲ Yʷ⁻ʲ`: those
-of `r_f` at even `j`, and `0` at odd `j`. -/
-theorem binaryFormMonomialBasis_repr_evenPeriodPolynomial (hk : k = w + 2) (f : CuspForm 𝒮ℒ k)
-    (j : Fin (w + 1)) :
-    (binaryFormMonomialBasis ℂ w).repr
-        (evenPeriodPolynomial hk f : homogeneousSubmodule (Fin 2) ℂ w) j =
-      if Even (j : ℕ) then (binaryFormMonomialBasis ℂ w).repr (periodPolynomial hk f) j
-      else 0 := by
-  rw [coe_evenPeriodPolynomial, map_smul, map_add, Finsupp.smul_apply, Finsupp.add_apply,
-    binaryFormMonomialBasis_repr_binaryFormRep_parity, smul_eq_mul]
-  split_ifs with hj
-  · rw [hj.neg_one_pow]
-    ring
-  · rw [(Nat.not_even_iff_odd.1 hj).neg_one_pow]
-    ring
-
-/-- The coordinates of the odd period polynomial `r_f^-` in the monomial basis `Xʲ Yʷ⁻ʲ`: those
-of `r_f` at odd `j`, and `0` at even `j`. -/
-theorem binaryFormMonomialBasis_repr_oddPeriodPolynomial (hk : k = w + 2) (f : CuspForm 𝒮ℒ k)
-    (j : Fin (w + 1)) :
-    (binaryFormMonomialBasis ℂ w).repr
-        (oddPeriodPolynomial hk f : homogeneousSubmodule (Fin 2) ℂ w) j =
-      if Even (j : ℕ) then 0
-      else (binaryFormMonomialBasis ℂ w).repr (periodPolynomial hk f) j := by
-  rw [coe_oddPeriodPolynomial, map_smul, map_sub, Finsupp.smul_apply, Finsupp.sub_apply,
-    binaryFormMonomialBasis_repr_binaryFormRep_parity, smul_eq_mul]
-  split_ifs with hj
-  · rw [hj.neg_one_pow]
-    ring
-  · rw [(Nat.not_even_iff_odd.1 hj).neg_one_pow]
-    ring
-
 /-- A coordinate of `r_f` in the monomial basis vanishes exactly when the corresponding critical
 value of the `L`-function vanishes. -/
 private theorem binaryFormMonomialBasis_repr_periodPolynomial_eq_zero_iff (hk : k = w + 2)
@@ -133,20 +100,13 @@ private theorem binaryFormMonomialBasis_repr_periodPolynomial_eq_zero_iff (hk : 
   exact mul_ne_zero (mul_ne_zero (pow_ne_zero _ (neg_ne_zero.2 one_ne_zero))
     (Nat.cast_ne_zero.2 (Nat.choose_pos hj).ne')) (pow_ne_zero _ I_ne_zero)
 
-/-- Reindex a condition on the exponents `j ≤ w` of `X` by the exponents `n = w - j` of `Y`. -/
-private theorem forall_fin_iff_forall_le {p q : ℕ → Prop} :
-    (∀ j : Fin (w + 1), p j → q (w - j)) ↔ ∀ n ≤ w, p (w - n) → q n := by
-  refine ⟨fun h n hn hp ↦ ?_, fun h j hp ↦ h _ (Nat.sub_le w j) ?_⟩
-  · simpa [Nat.sub_sub_self hn] using h ⟨w - n, by omega⟩ hp
-  · rwa [Nat.sub_sub_self (Nat.lt_succ_iff.1 j.2)]
-
 /-- **The even period polynomial vanishes exactly when the critical `L`-values `L(f, n + 1)`
 with `w - n` even vanish.** -/
 theorem evenPeriodPolynomial_eq_zero_iff (hk : k = w + 2) (f : CuspForm 𝒮ℒ k) :
     evenPeriodPolynomial hk f = 0 ↔
       ∀ n ≤ w, Even (w - n) → ModularForm.L (by omega) f (n + 1) = 0 := by
   rw [← Submodule.coe_eq_zero, ← LinearEquiv.map_eq_zero_iff (binaryFormMonomialBasis ℂ w).repr,
-    Finsupp.ext_iff, ← forall_fin_iff_forall_le]
+    Finsupp.ext_iff, ← Fin.forall_imp_sub_iff_forall_le]
   refine forall_congr' fun j ↦ ?_
   rw [Finsupp.zero_apply, binaryFormMonomialBasis_repr_evenPeriodPolynomial]
   split_ifs with hj
@@ -159,7 +119,7 @@ theorem oddPeriodPolynomial_eq_zero_iff (hk : k = w + 2) (f : CuspForm 𝒮ℒ k
     oddPeriodPolynomial hk f = 0 ↔
       ∀ n ≤ w, Odd (w - n) → ModularForm.L (by omega) f (n + 1) = 0 := by
   rw [← Submodule.coe_eq_zero, ← LinearEquiv.map_eq_zero_iff (binaryFormMonomialBasis ℂ w).repr,
-    Finsupp.ext_iff, ← forall_fin_iff_forall_le]
+    Finsupp.ext_iff, ← Fin.forall_imp_sub_iff_forall_le]
   refine forall_congr' fun j ↦ ?_
   rw [Finsupp.zero_apply, binaryFormMonomialBasis_repr_oddPeriodPolynomial]
   split_ifs with hj
