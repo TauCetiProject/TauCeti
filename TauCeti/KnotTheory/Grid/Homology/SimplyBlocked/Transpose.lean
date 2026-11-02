@@ -77,6 +77,17 @@ theorem simplyBlockedChainEquiv_simplyBlockedTransposeCyclesEquiv
   simp only [simplyBlockedTransposeCyclesEquiv, LinearEquiv.ofSubmodules_apply,
     simplyBlockedTransposeChainEquiv, LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply]
 
+/-- On underlying explicit chains, the inverse cycle equivalence is inverse reflection. -/
+@[simp]
+theorem simplyBlockedChainEquiv_simplyBlockedTransposeCyclesEquiv_symm
+    (z : (G.isKnot_transpose.mpr hG).simplyBlockedCycles R (G.O i)) :
+    G.simplyBlockedChainEquiv R i ((hG.simplyBlockedTransposeCyclesEquiv R i).symm z) =
+      (G.simplyBlockedTransposeEquiv R i).symm
+        (G.transpose.simplyBlockedChainEquiv R (G.O i) z) := by
+  apply (G.simplyBlockedTransposeEquiv R i).injective
+  rw [← simplyBlockedChainEquiv_simplyBlockedTransposeCyclesEquiv,
+    LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply]
+
 private theorem map_boundaries_simplyBlockedTransposeCyclesEquiv :
     (hG.simplyBlockedBoundaries R i).map
         (hG.simplyBlockedTransposeCyclesEquiv R i).toLinearMap =
@@ -116,8 +127,7 @@ theorem simplyBlockedHomologyTransposeEquiv_simplyBlockedHomologyClass
     LinearEquiv.symm_apply_eq]
   rw [Iso.toLinearEquiv_apply, Iso.toLinearEquiv_apply,
     simplyBlockedHomologyIsoQuotient_hom_class, simplyBlockedHomologyIsoQuotient_hom_class,
-    Submodule.Quotient.equiv_apply, Submodule.mapQ_apply]
-  rfl
+    Submodule.Quotient.equiv_apply, Submodule.mapQ_apply, LinearEquiv.coe_coe]
 
 /-- The inverse reflection sends a cycle class back by the inverse cycle equivalence. -/
 @[simp]
