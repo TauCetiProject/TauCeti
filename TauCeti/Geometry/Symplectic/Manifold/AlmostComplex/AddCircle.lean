@@ -116,9 +116,7 @@ structure of the plane and the standard structure of the torus. -/
 theorem isPseudoholomorphic_prodMap_coe :
     IsPseudoholomorphic (product ℝ) (addCircleProd p q)
       (Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q)) :=
-  isPseudoholomorphic_iff.2 fun z ↦ isPseudoholomorphicAt_iff_mfderiv.2
-    ⟨(AddCircle.isLocalDiffeomorph_prodMap_coe p q ∞ z).mdifferentiableAt (by simp),
-      fun w ↦ (descend_apply_mfderiv _ _ _ (product_respects p q) z w).symm⟩
+  isPseudoholomorphic_descend _ _ _ (product_respects p q)
 
 /-- The standard structure is the only almost complex structure on the torus for which the
 quotient map `ℝ × ℝ → AddCircle p × AddCircle q` is pseudoholomorphic. -/
@@ -126,10 +124,7 @@ theorem eq_addCircleProd_iff
     (K : SmoothAlmostComplexStructure (𝓘(ℝ).prod 𝓘(ℝ)) (AddCircle p × AddCircle q)) :
     K = addCircleProd p q ↔
       IsPseudoholomorphic (product ℝ) K
-        (Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q)) := by
-  refine ⟨fun h ↦ h ▸ isPseudoholomorphic_prodMap_coe p q, fun h ↦ ?_⟩
-  refine (eq_descend_iff (AddCircle.isLocalDiffeomorph_prodMap_coe p q ∞)
-    (AddCircle.prodMap_coe_surjective p q) _ _ K).2 fun z v ↦ ?_
-  exact ((isPseudoholomorphic_iff.1 h z).mfderiv_apply_commute v).symm
+        (Prod.map ((↑) : ℝ → AddCircle p) ((↑) : ℝ → AddCircle q)) :=
+  eq_descend_iff_isPseudoholomorphic _ _ _ (product_respects p q) K
 
 end TauCeti.SmoothAlmostComplexStructure
