@@ -30,8 +30,10 @@ nonzero differential into it, the identification of the homology with the cycles
 (`HomologicalComplex.cyclesShortComplex_exact`). For adjacent degrees `i` and `j`, the cycles of a
 complex exact in degree `j` fit into a short exact sequence `0 ⟶ Zᵢ ⟶ Kᵢ ⟶ Zⱼ ⟶ 0`
 (`HomologicalComplex.cyclesShortComplex_shortExact`), which stays short exact when its outer terms
-are replaced by isomorphic objects (`HomologicalComplex.cyclesShortComplex_shortExact_of_iso`);
-likewise a monomorphism onto the kernel of the differential `Kᵢ ⟶ Kⱼ` gives a short exact sequence
+are replaced by isomorphic objects
+(`HomologicalComplex.cyclesShortComplex_shortExact_of_iso`), and whose second map `Kᵢ ⟶ Zⱼ` is an
+isomorphism when `Zᵢ` vanishes (`HomologicalComplex.isIso_toCycles_of_isZero_cycles`); likewise a
+monomorphism onto the kernel of the differential `Kᵢ ⟶ Kⱼ` gives a short exact sequence
 `0 ⟶ A ⟶ Kᵢ ⟶ Zⱼ ⟶ 0` (`HomologicalComplex.shortExact_toCycles`). A morphism of complexes
 vanishing in some degree induces zero on homology there
 (`HomologicalComplex.homologyMap_eq_zero_of_f_eq_zero`). Constructing the bundled cycle
@@ -234,6 +236,13 @@ lemma cyclesShortComplex_shortExact (i j : ι) [K.HasHomology i] [K.HasHomology 
   rw [cyclesShortComplex_def] at hE ⊢
   exact ShortComplex.ShortExact.mk' hE
     inferInstance (epi_toCycles_of_exactAt hK (c.prev_eq' hij))
+
+/-- The map `Kᵢ ⟶ Zⱼ(K)` onto the cycles is an isomorphism when `i` and `j` are adjacent, `K` is
+exact in degree `j` and the cycles of `K` in degree `i` vanish. -/
+lemma isIso_toCycles_of_isZero_cycles [Balanced C] {i j : ι} [K.HasHomology i] [K.HasHomology j]
+    [(K.cyclesShortComplex i j).HasHomology] (hij : c.Rel i j) (hK : K.ExactAt j)
+    (hZ : IsZero (K.cycles i)) : IsIso (K.toCycles i j) :=
+  (K.cyclesShortComplex_shortExact i j hij hK).isIso_g_iff.2 hZ
 
 /-- The cycle sequence `Zᵢ(K) ⟶ Kᵢ ⟶ Zⱼ(K)`, with its outer terms replaced along isomorphisms
 `X ≅ Zᵢ(K)` and `Zⱼ(K) ≅ Y`, is short exact when `i` and `j` are adjacent and `K` is exact in
