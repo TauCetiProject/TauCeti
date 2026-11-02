@@ -113,10 +113,9 @@ theorem continuous_precomp {Y : Type*} [TopologicalSpace Y] {n : ℕ}
           (ha.prodMk ht).subtype_mk _
         convert hc.comp hp using 1
         funext y
-        simp only [Function.comp_apply, totalArrow_def]
-        dsimp only [precomp, Precomp.obj, Precomp.map]
-        dsimp only [map', obj']
-        simp only [Category.assoc]
+        conv_lhs => simp only [Fin.zero_eta]
+        rw [totalArrow_precomp_zero_succ_succ (F y) ((a y).hom ≫ eqToHom (h y)) j (by omega)]
+        simp only [Function.comp_apply, totalArrow_def, Category.assoc]
   | succ i =>
     cases j with
     | zero => simp only [Fin.mk_le_mk] at hij; omega
@@ -124,9 +123,10 @@ theorem continuous_precomp {Y : Type*} [TopologicalSpace Y] {n : ℕ}
       have ht := (continuous_totalArrow ⟨i, by omega⟩ ⟨j, by omega⟩ (by
         simp only [Fin.mk_le_mk] at hij ⊢
         omega)).comp hF
-      simp only [Function.comp_def] at ht
-      simp_rw [totalArrow_def] at ht ⊢
-      exact ht
+      convert ht using 1
+      funext y
+      exact totalArrow_precomp_succ_succ (F y) ((a y).hom ≫ eqToHom (h y))
+        ⟨i, by omega⟩ ⟨j, by omega⟩ (by simp only [Fin.mk_le_mk] at hij ⊢; omega)
 
 include hs hu hc in
 /-- A string of `n + 1` arrows is the fiber product of the arrow space and the space of

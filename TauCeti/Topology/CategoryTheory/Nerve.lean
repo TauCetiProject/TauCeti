@@ -79,6 +79,26 @@ theorem totalArrow_precomp_zero_one {n : ℕ} (a : Quiver.Total C)
   simp only [precomp, Precomp.obj_zero, Precomp.obj_one, Precomp.map_zero_one,
     eqToHom_refl, Category.comp_id]
 
+/-- An arrow from the new first vertex to a later vertex is the prepended arrow followed by
+an arrow of the original string. -/
+@[simp]
+theorem totalArrow_precomp_zero_succ_succ (F : ComposableArrows C n) {X : C}
+    (f : X ⟶ F.left) (j : ℕ) (hj : j + 2 < n + 1 + 1) :
+    (F.precomp f).totalArrow 0 ⟨j + 2, hj⟩ (Nat.zero_le _) =
+      ⟨X, F.obj' (j + 1) (by omega), f ≫ F.map' 0 (j + 1) (by omega) (by omega)⟩ := by
+  -- At these indices precomp inserts f before the original arrow from vertex 0 to j + 1.
+  rfl
+
+/-- Arrows between shifted vertices of a prepended string are the arrows of the original
+string. -/
+@[simp]
+theorem totalArrow_precomp_succ_succ (F : ComposableArrows C n) {X : C}
+    (f : X ⟶ F.left) (i j : Fin (n + 1)) (hij : i ≤ j) :
+    (F.precomp f).totalArrow i.succ j.succ (Fin.succ_le_succ_iff.mpr hij) =
+      F.totalArrow i j hij := by
+  -- Both endpoints lie in the shifted tail, where precomp retains the original map.
+  rfl
+
 /-- Reindexing a string of composable arrows along a functor `Φ` of the indexing posets reindexes
 its arrows. -/
 @[simp]
