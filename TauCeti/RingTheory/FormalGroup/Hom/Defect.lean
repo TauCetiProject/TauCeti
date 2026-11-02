@@ -8,7 +8,6 @@ module
 public import TauCeti.RingTheory.FormalGroup.Hom.Basic
 public import TauCeti.RingTheory.FormalGroup.NSMul.Basic
 public import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.Basic
-import TauCeti.Data.Fin.Basic
 import TauCeti.RingTheory.FormalGroup.Basic
 import TauCeti.RingTheory.FormalGroup.Obstruction
 import TauCeti.RingTheory.MvPowerSeries.Order
@@ -47,6 +46,9 @@ equation. Those degrees are not treated in this file.
 
 ## Main results
 
+* `FormalGroup.le_order_homDefect_sub_smul_X_pow`,
+  `FormalGroup.homogeneousComponent_homDefect_sub_smul_X_pow`: subtracting `c Xⁿ` from `g`
+  subtracts `c ((X + Y)ⁿ - Xⁿ - Yⁿ)` from the degree-`n` part of the defect.
 * `FormalGroup.exists_succ_le_order_homDefect_sub_smul_X_pow`: in a degree `n` with `d_n` a unit,
   the defect can be removed by subtracting a multiple of `Xⁿ`.
 * `FormalGroup.succ_le_order_homDefect_of_coeff_nsmulSeries_eq`: in a degree `pᵏ` where the
@@ -69,42 +71,12 @@ open MvPowerSeries
 
 variable {R : Type*} [CommRing R]
 
-section HomDefect
-
-variable (F G : FormalGroup R)
-
-/-- The homomorphism defect at substitutable `x, y` is `g(F(x, y)) - G(g(x), g(y))`. -/
-theorem subst_homDefect {σ : Type*} {g : PowerSeries R} (hg : PowerSeries.constantCoeff g = 0)
-    {x y : MvPowerSeries σ R} (hx : PowerSeries.HasSubst x) (hy : PowerSeries.HasSubst y) :
-    (homDefect F G g).subst ![x, y] = PowerSeries.subst (F.toPowerSeries.subst ![x, y]) g -
-      G.toPowerSeries.subst ![PowerSeries.subst x g, PowerSeries.subst y g] := by
-  have hxy := hasSubst_finTwo hx hy
-  rw [homDefect_def, subst_sub hxy,
-    subst_powerSeriesSubst hxy (PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff),
-    subst_comp_subst_apply (HasSubst.toMvPowerSeries hg) hxy]
-  congr 2
-  funext i
-  rw [PowerSeries.subst_toMvPowerSeries hxy]
-  fin_cases i <;> rfl
-
-/-- The homomorphism defect is `g(F(X, Y)) - G(g(X), g(Y))`. -/
-theorem homDefect_eq {g : PowerSeries R} (hg : PowerSeries.constantCoeff g = 0) :
-    homDefect F G g = PowerSeries.subst F.toPowerSeries g -
-      G.toPowerSeries.subst ![PowerSeries.subst (X 0 : MvPowerSeries (Fin 2) R) g,
-        PowerSeries.subst (X 1 : MvPowerSeries (Fin 2) R) g] := by
-  have h := subst_homDefect F G hg (PowerSeries.HasSubst.X (S := R) (0 : Fin 2))
-    (PowerSeries.HasSubst.X (S := R) (1 : Fin 2))
-  simpa only [finTwo_X_eq_X, subst_self, id] using h
-
-end HomDefect
-
 section Leading
 
 variable {F G : FormalGroup R}
 
-/-- **Correcting the leading defect.** Subtracting `c Xⁿ` from `g` subtracts
-`c ((X + Y)ⁿ - Xⁿ - Yⁿ)` from the degree-`n` part of the homomorphism defect, and keeps the defect
-zero below degree `n`. -/
+/-- Subtracting `c Xⁿ` from `g` keeps the homomorphism defect zero below degree `n` and subtracts
+`c ((X + Y)ⁿ - Xⁿ - Yⁿ)` from its degree-`n` part. -/
 private theorem homDefect_sub_smul_X_pow {n : ℕ} (hn₀ : n ≠ 0) {g : PowerSeries R}
     (hg : PowerSeries.constantCoeff g = 0) (hn : n ≤ (homDefect F G g).order) (c : R) :
     (n : ℕ∞) ≤ (homDefect F G (g - c • PowerSeries.X ^ n)).order ∧
@@ -154,6 +126,24 @@ private theorem homDefect_sub_smul_X_pow {n : ℕ} (hn₀ : n ≠ 0) {g : PowerS
   refine ⟨le_order_sub (le_order_sub (le_order_sub hn hQ) (hlt _ h₀)) (hlt _ h₁), ?_⟩
   rw [map_sub, map_sub, map_sub, hzero _ h₀, hzero _ h₁, hQc, sub_zero, sub_zero]
 
+/-- If the homomorphism defect of `g` vanishes below degree `n ≠ 0`, so does that of `g - c Xⁿ`. -/
+theorem le_order_homDefect_sub_smul_X_pow {n : ℕ} (hn₀ : n ≠ 0) {g : PowerSeries R}
+    (hg : PowerSeries.constantCoeff g = 0) (hn : n ≤ (homDefect F G g).order) (c : R) :
+    (n : ℕ∞) ≤ (homDefect F G (g - c • PowerSeries.X ^ n)).order :=
+  (homDefect_sub_smul_X_pow hn₀ hg hn c).1
+
+/-- **Correcting the leading defect.** If the homomorphism defect of `g` vanishes below degree
+`n ≠ 0`, subtracting `c Xⁿ` from `g` subtracts `c ((X + Y)ⁿ - Xⁿ - Yⁿ)` from the degree-`n` part
+of the defect. -/
+theorem homogeneousComponent_homDefect_sub_smul_X_pow {n : ℕ} (hn₀ : n ≠ 0)
+    {g : PowerSeries R} (hg : PowerSeries.constantCoeff g = 0) (hn : n ≤ (homDefect F G g).order)
+    (c : R) :
+    homogeneousComponent n (homDefect F G (g - c • PowerSeries.X ^ n)) =
+      homogeneousComponent n (homDefect F G g) -
+        ((c • ((MvPolynomial.X 0 + MvPolynomial.X 1) ^ n - MvPolynomial.X 0 ^ n -
+          MvPolynomial.X 1 ^ n) : MvPolynomial (Fin 2) R) : MvPowerSeries (Fin 2) R) :=
+  (homDefect_sub_smul_X_pow hn₀ hg hn c).2
+
 end Leading
 
 section Step
@@ -175,9 +165,9 @@ theorem exists_succ_le_order_homDefect_sub_smul_X_pow {n : ℕ} (hn₂ : 2 ≤ n
         MvPolynomial.X 1 ^ n : MvPolynomial (Fin 2) R) := by
     rw [← TauCeti.lazardGcd_nsmul_lazardCocycle (by omega), ← Nat.cast_smul_eq_nsmul R,
       smul_smul, mul_assoc, hd.val_inv_mul, mul_one]
-  obtain ⟨h₁, h₂⟩ := homDefect_sub_smul_X_pow (by omega) hg hn (r * ↑hd.unit⁻¹)
-  refine ⟨_, succ_le_order_of_homogeneousComponent_eq_zero h₁ ?_⟩
-  rw [h₂, hr, hc, sub_self]
+  refine ⟨_, succ_le_order_of_homogeneousComponent_eq_zero
+    (le_order_homDefect_sub_smul_X_pow (by omega) hg hn (r * ↑hd.unit⁻¹)) ?_⟩
+  rw [homogeneousComponent_homDefect_sub_smul_X_pow (by omega) hg hn, hr, hc, sub_self]
 
 /-- **No defect in degree `pᵏ` when the `p`-series agree.** Let `F` and `G` be commutative and let
 the homomorphism defect of `g = X + ⋯` vanish below degree `n = pᵏ`, `k ≥ 1`. If the `p`-series of
@@ -244,14 +234,8 @@ private theorem exists_succ_le_order_homDefect {p : ℕ} (hp : p.Prime) {h : ℕ
   · -- otherwise `d_n` is prime to `p`, and `p = 0` in `R`, so `d_n` is a unit
     have hpR : (p : R) = 0 :=
       F.natCast_eq_zero_of_two_le_order_nsmulSeries ((Nat.cast_le.mpr (hn₂.trans hnh)).trans hF)
-    have hd : IsUnit ((TauCeti.lazardGcd n : ℕ) : R) := by
-      have hcop : (TauCeti.lazardGcd n).Coprime p := Nat.Coprime.symm <|
-        (Nat.Prime.coprime_iff_not_dvd hp).mpr fun hdvd ↦
-          hpow ((TauCeti.prime_dvd_lazardGcd_iff hp (by omega)).mp hdvd)
-      have : IsCoprime ((TauCeti.lazardGcd n : ℕ) : R) (p : R) := by
-        simpa using (Nat.isCoprime_iff_coprime.mpr hcop).intCast (R := R)
-      rwa [hpR, isCoprime_zero_right] at this
-    obtain ⟨c, hc⟩ := exists_succ_le_order_homDefect_sub_smul_X_pow hn₂ hd hg hn
+    obtain ⟨c, hc⟩ := exists_succ_le_order_homDefect_sub_smul_X_pow hn₂
+      (TauCeti.isUnit_lazardGcd hp hpR (by omega) hpow) hg hn
     exact ⟨g - c • PowerSeries.X ^ n, by simp [hg, show n ≠ 0 by omega],
       by simp [hg₁, PowerSeries.coeff_X_pow, show 1 ≠ n by omega], hc⟩
 
@@ -281,11 +265,7 @@ theorem exists_le_order_homDefect_of_coeff_nsmulSeries_eq {p : ℕ} (hp : p.Prim
   | zero =>
     -- the defect of `X` is `F(X, Y) - G(X, Y)`
     refine fun _ ↦ ⟨PowerSeries.X, PowerSeries.constantCoeff_X, PowerSeries.coeff_one_X, ?_⟩
-    have hF' := PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff
-    have hX (i : Fin 2) := PowerSeries.HasSubst.X (S := R) i
-    rw [homDefect_eq F G PowerSeries.constantCoeff_X, PowerSeries.subst_X hF',
-      PowerSeries.subst_X (hX 0), PowerSeries.subst_X (hX 1), finTwo_X_eq_X, subst_self, id,
-      ← sub_sub_sub_cancel_right _ _ (X 0 + X 1)]
+    rw [homDefect_X, ← sub_sub_sub_cancel_right _ _ (X 0 + X 1)]
     exact le_order_sub (two_le_order_sub_X_add_X F.zero_constantCoeff F.lin_coeff_X F.lin_coeff_Y)
       (two_le_order_sub_X_add_X G.zero_constantCoeff G.lin_coeff_X G.lin_coeff_Y)
   | succ m ih =>

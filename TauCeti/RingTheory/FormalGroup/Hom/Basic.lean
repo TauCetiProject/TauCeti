@@ -23,6 +23,8 @@ points, including points with nilpotent, not necessarily zero, constant coeffici
 The homomorphism defect `f(F(X, Y)) - G(f(X), f(Y))` (`FormalGroup.homDefect`) of a power series
 `f` measures how far `f` is from a homomorphism: it vanishes exactly for homomorphisms
 (`TauCeti.FormalGroupHom.homDefect_toPowerSeries`, `TauCeti.FormalGroupHom.ofHomDefectEqZero`).
+At substitutable `x, y` the defect is `f(F(x, y)) - G(f(x), f(y))` (`FormalGroup.subst_homDefect`);
+in particular it is `f(F(X, Y)) - G(f(X), f(Y))` (`FormalGroup.homDefect_eq`).
 The defect of `X` is the difference `F - G` (`FormalGroup.homDefect_X`).
 Towards the additive formal group law the defect is additive in `f`
 (`FormalGroup.homDefect_𝔾ₐ_sub`), vanishes to the order of `f`
@@ -68,6 +70,29 @@ theorem homDefect_eq_zero_iff {f : PowerSeries R} :
     F.homDefect G f = 0 ↔
       PowerSeries.subst F.toPowerSeries f = subst (fun i ↦ f.toMvPowerSeries i) G.toPowerSeries :=
   sub_eq_zero
+
+/-- The homomorphism defect at substitutable `x, y` is `g(F(x, y)) - G(g(x), g(y))`. -/
+theorem subst_homDefect {σ : Type*} {g : PowerSeries R} (hg : PowerSeries.constantCoeff g = 0)
+    {x y : MvPowerSeries σ R} (hx : PowerSeries.HasSubst x) (hy : PowerSeries.HasSubst y) :
+    (homDefect F G g).subst ![x, y] = PowerSeries.subst (F.toPowerSeries.subst ![x, y]) g -
+      G.toPowerSeries.subst ![PowerSeries.subst x g, PowerSeries.subst y g] := by
+  have hxy := hasSubst_finTwo hx hy
+  rw [homDefect_def, subst_sub hxy,
+    subst_powerSeriesSubst hxy (PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff),
+    subst_comp_subst_apply (HasSubst.toMvPowerSeries hg) hxy]
+  congr 2
+  funext i
+  rw [PowerSeries.subst_toMvPowerSeries hxy]
+  fin_cases i <;> rfl
+
+/-- The homomorphism defect is `g(F(X, Y)) - G(g(X), g(Y))`. -/
+theorem homDefect_eq {g : PowerSeries R} (hg : PowerSeries.constantCoeff g = 0) :
+    homDefect F G g = PowerSeries.subst F.toPowerSeries g -
+      G.toPowerSeries.subst ![PowerSeries.subst (X 0 : MvPowerSeries (Fin 2) R) g,
+        PowerSeries.subst (X 1 : MvPowerSeries (Fin 2) R) g] := by
+  have h := subst_homDefect F G hg (PowerSeries.HasSubst.X (S := R) (0 : Fin 2))
+    (PowerSeries.HasSubst.X (S := R) (1 : Fin 2))
+  simpa only [finTwo_X_eq_X, subst_self, id] using h
 
 /-- The homomorphism defect of `X` is the difference `F - G` of the formal group laws. -/
 @[simp]
