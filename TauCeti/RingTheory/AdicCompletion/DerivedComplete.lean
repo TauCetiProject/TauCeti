@@ -12,7 +12,6 @@ public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.Algebra.Polynomial.Basis
 public import Mathlib.CategoryTheory.Triangulated.Orthogonal
 public import Mathlib.RingTheory.Localization.Away.AdjoinRoot
-public import Mathlib.RingTheory.PowerSeries.Inverse
 public import TauCeti.Algebra.Homology.DerivedCategory.Coproduct
 public import TauCeti.Algebra.Homology.ModuleCat.KInjective
 public import TauCeti.CategoryTheory.ObjectProperty.Orthogonal
@@ -166,16 +165,11 @@ private lemma Orth.away_mul {f : A} (c : A) (hf : Orth M (deg0 A (Localization.A
     Orth M (deg0 A (Localization.Away (c * f))) := by
   let S := Localization.Away f
   let q : S[X] := C (algebraMap A S c) * X - 1
-  -- `q` is a non-zero-divisor, since its image in the power series ring is a unit.
+  -- `q` is a non-zero-divisor, since its constant coefficient `-1` is a unit.
   have hq : Function.Injective (LinearMap.mulLeft A q) := by
     rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
-    intro p hp
-    have hu : IsUnit (q : PowerSeries S) := by
-      rw [PowerSeries.isUnit_iff_constantCoeff]
-      simp [q]
-    apply Polynomial.coe_injective
-    rw [Polynomial.coe_zero, ← hu.mul_right_eq_zero, ← Polynomial.coe_mul]
-    simpa using congrArg ((↑) : S[X] → PowerSeries S) hp
+    exact mem_nonZeroDivisors_iff_left.1 <| Polynomial.mem_nonZeroDivisors_of_coeff_mem 0 <| by
+      simpa [q] using (isUnit_one.neg : IsUnit (-1 : S)).mem_nonZeroDivisors
   have hexact : Function.Exact (LinearMap.mulLeft A q)
       (Ideal.Quotient.mkₐ A (Ideal.span {q})).toLinearMap := by
     intro p
