@@ -110,30 +110,7 @@ theorem IsArbitrage.integral_pos (h : IsArbitrage P v V) (hV : Integrable V P) :
 section Gains
 
 variable [LinearOrder ι] {ℱ : Filtration ι mΩ} {τ : ℕ → ι} {n k m : ℕ} {a : ℕ → Ω → ℝ}
-  {X : ι → Ω → ℝ}
-
-/-- The gains of a simple strategy at a trading date are integrable when each of its trades has
-integrable gains. -/
-theorem integrable_simpleGains (hτ : MonotoneOn τ (Set.Iic n))
-    (hint : ∀ j < n, Integrable (a j * (X (τ (j + 1)) - X (τ j))) Q) (hm : m ≤ n) :
-    Integrable (simpleGains τ n a X (τ m)) Q := by
-  simp_rw [funext (simpleGains_apply_eq_sum hτ hm X)]
-  exact integrable_finsetSum _ fun i hi ↦ hint i ((mem_range.1 hi).trans_le hm)
-
-/-- The gains of a simple strategy up to a trading date `τ m` are known at `τ m` when the traded
-price is known at each trading date and the holdings `a j` are chosen at `τ j`. -/
-theorem stronglyMeasurable_simpleGains (hτ : MonotoneOn τ (Set.Iic n))
-    (hXm : ∀ j ≤ n, StronglyMeasurable[ℱ (τ j)] (X (τ j)))
-    (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j)) (hm : m ≤ n) :
-    StronglyMeasurable[ℱ (τ m)] (simpleGains τ n a X (τ m)) := by
-  have hle : ∀ i ≤ m, ℱ (τ i) ≤ ℱ (τ m) := fun i hi ↦ ℱ.mono (hτ (hi.trans hm) hm hi)
-  simp_rw [funext (simpleGains_apply_eq_sum hτ hm X)]
-  refine Finset.stronglyMeasurable_fun_sum _ fun i hi ↦ ?_
-  have him : i + 1 ≤ m := mem_range.1 hi
-  exact ((ha i (him.trans hm)).mono (hle i (by omega))).mul
-    (((hXm _ (him.trans hm)).mono (hle _ him)).sub ((hXm i (by omega)).mono (hle i (by omega))))
-
-variable [IsFiniteMeasure Q]
+  {X : ι → Ω → ℝ} [IsFiniteMeasure Q]
 
 /-- **Gains from trading a martingale form a martingale.** If `X` is a `Q`-martingale along the
 trading dates of a simple strategy whose holdings `a j` are chosen at `τ j` and whose trades have

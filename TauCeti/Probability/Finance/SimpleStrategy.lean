@@ -29,10 +29,12 @@ which is predictable when each `a j` is `ℱ (τ j)`-measurable
 an adapted process when `X` is adapted and each `a j` is `ℱ (τ j)`-measurable
 (`TauCeti.Finance.stronglyAdapted_simpleGains`). At a rebalancing date the gains are the discrete
 transform `∑_{i < j} a i · (X (τ (i + 1)) - X (τ i))`
-(`TauCeti.Finance.simpleGains_apply_eq_sum`), and after the last date they stay at their terminal
-value (`TauCeti.Finance.simpleGains_of_ge`). When a real-time price path is the indefinite
-integral of a rate `X'`, as a deterministic bond is, the gains are the time integral
-`∫ a_u X'_u du` (`TauCeti.Finance.simpleGains_eq_integral`).
+(`TauCeti.Finance.simpleGains_apply_eq_sum`); so they are known at that date when `X` is known at
+each trading date (`TauCeti.Finance.stronglyMeasurable_simpleGains`), and integrable when each
+trade has integrable gains (`TauCeti.Finance.integrable_simpleGains`). After the last date they
+stay at their terminal value (`TauCeti.Finance.simpleGains_of_ge`). When a real-time price path
+is the indefinite integral of a rate `X'`, as a deterministic bond is, the gains are the time
+integral `∫ a_u X'_u du` (`TauCeti.Finance.simpleGains_eq_integral`).
 
 The strategy is *self-financing* (`TauCeti.Finance.IsSelfFinancing`) when every rebalancing is
 paid for by the old position: at each date `τ (j + 1)` with `j + 1 < n`, the new portfolio costs
@@ -272,6 +274,27 @@ theorem stronglyAdapted_simpleGains (hτ : MonotoneOn τ (Set.Iic n))
     ext ω
     rw [min_eq_right (ht.trans (hτ (mem_range.1 hj).le (mem_range.1 hj) (Nat.le_succ j))),
       min_eq_right ht, sub_self, mul_zero]
+
+/-- The gains of a simple strategy up to a trading date `τ m` are known at `τ m` when the traded
+price is known at each trading date and the holdings `a j` are chosen at `τ j`. -/
+theorem stronglyMeasurable_simpleGains {m : ℕ} (hτ : MonotoneOn τ (Set.Iic n))
+    (hXm : ∀ j ≤ n, StronglyMeasurable[ℱ (τ j)] (X (τ j)))
+    (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j)) (hm : m ≤ n) :
+    StronglyMeasurable[ℱ (τ m)] (simpleGains τ n a X (τ m)) := by
+  have hle : ∀ i ≤ m, ℱ (τ i) ≤ ℱ (τ m) := fun i hi ↦ ℱ.mono (hτ (hi.trans hm) hm hi)
+  simp_rw [funext (simpleGains_apply_eq_sum hτ hm X)]
+  refine Finset.stronglyMeasurable_fun_sum _ fun i hi ↦ ?_
+  have him : i + 1 ≤ m := mem_range.1 hi
+  exact ((ha i (him.trans hm)).mono (hle i (by omega))).mul
+    (((hXm _ (him.trans hm)).mono (hle _ him)).sub ((hXm i (by omega)).mono (hle i (by omega))))
+
+/-- The gains of a simple strategy at a trading date are integrable when each of its trades has
+integrable gains. -/
+theorem integrable_simpleGains {m : ℕ} {Q : Measure Ω} (hτ : MonotoneOn τ (Set.Iic n))
+    (hint : ∀ j < n, Integrable (a j * (X (τ (j + 1)) - X (τ j))) Q) (hm : m ≤ n) :
+    Integrable (simpleGains τ n a X (τ m)) Q := by
+  simp_rw [funext (simpleGains_apply_eq_sum hτ hm X)]
+  exact integrable_finsetSum _ fun i hi ↦ hint i ((mem_range.1 hi).trans_le hm)
 
 end Measurability
 
