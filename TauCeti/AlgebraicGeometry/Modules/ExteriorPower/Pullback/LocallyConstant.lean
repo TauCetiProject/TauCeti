@@ -58,12 +58,6 @@ noncomputable section
 
 variable {X Y : Scheme.{u}} (f : X ⟶ Y) (r : LocallyConstant Y ℕ)
 
-/-- The preimage under `f` of the fiber of `r` over `n` is the fiber of `r ∘ f` over `n`. -/
-theorem _root_.AlgebraicGeometry.Scheme.Hom.preimage_toOpens_fiberClopens (n : ℕ) :
-    f ⁻¹ᵁ (r.fiberClopens n).toOpens = ((r.comap f.base.hom).fiberClopens n).toOpens := by
-  ext x
-  simp
-
 /-- Over the fiber `f⁻¹ (r⁻¹{n})`, the restriction of `f^* (⋀^r M)` is that of `f^* (⋀ⁿ M)`:
 pullback commutes with restriction, and `⋀^r` restricts to `⋀ⁿ` over `r⁻¹{n}`. -/
 private def restrictPullbackIsoFiber (n : ℕ) :
@@ -72,11 +66,11 @@ private def restrictPullbackIsoFiber (n : ℕ) :
       SheafOfModules.exteriorPower Y.sheaf n ⋙ pullback f ⋙
         restrictFunctor (Scheme.Opens.ι ((r.comap f.base.hom).fiberClopens n).toOpens) :=
   Functor.isoWhiskerLeft (locallyConstantExteriorPower r)
-      (restrictPullbackIso f _ _ (f.preimage_toOpens_fiberClopens r n).ge) ≪≫
+      (restrictPullbackIso f _ _ (r.comap_toOpens_fiberClopens f.base.hom n).ge) ≪≫
     Functor.isoWhiskerRight (restrictLocallyConstantExteriorPowerIso r (r.fiberClopens n).toOpens
       fun _ hx ↦ LocallyConstant.mem_fiberClopens.1 hx) _ ≪≫
     Functor.isoWhiskerLeft (SheafOfModules.exteriorPower Y.sheaf n)
-      (restrictPullbackIso f _ _ (f.preimage_toOpens_fiberClopens r n).ge).symm
+      (restrictPullbackIso f _ _ (r.comap_toOpens_fiberClopens f.base.hom n).ge).symm
 
 /-- The restriction of the comparison to the fiber `f⁻¹ (r⁻¹{n})`: the identification
 `restrictPullbackIsoFiber` followed by the restricted `n`-th exterior power comparison. -/
@@ -165,12 +159,12 @@ theorem restrictFunctor_map_pullbackLocallyConstantExteriorPowerComparison_app_c
           ((r.comap f.base.hom).fiberClopens n).toOpens
           fun _ hx ↦ LocallyConstant.mem_fiberClopens.1 hx).hom.app
             ((Scheme.Modules.pullback f).obj M) =
-      (restrictPullbackIso f _ _ (f.preimage_toOpens_fiberClopens r n).ge).hom.app
+      (restrictPullbackIso f _ _ (r.comap_toOpens_fiberClopens f.base.hom n).ge).hom.app
           ((locallyConstantExteriorPower r).obj M) ≫
-        (Scheme.Modules.pullback (f.resLE _ _ (f.preimage_toOpens_fiberClopens r n).ge)).map
+        (Scheme.Modules.pullback (f.resLE _ _ (r.comap_toOpens_fiberClopens f.base.hom n).ge)).map
           ((restrictLocallyConstantExteriorPowerIso r (r.fiberClopens n).toOpens
             fun _ hx ↦ LocallyConstant.mem_fiberClopens.1 hx).hom.app M) ≫
-        (restrictPullbackIso f _ _ (f.preimage_toOpens_fiberClopens r n).ge).inv.app
+        (restrictPullbackIso f _ _ (r.comap_toOpens_fiberClopens f.base.hom n).ge).inv.app
           ((SheafOfModules.exteriorPower Y.sheaf n).obj M) ≫
         (restrictFunctor (Scheme.Opens.ι ((r.comap f.base.hom).fiberClopens n).toOpens)).map
           ((pullbackExteriorPowerComparison f n).app M) := by
