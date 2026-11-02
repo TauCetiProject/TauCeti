@@ -7,17 +7,18 @@ module
 
 public import Mathlib.Analysis.Convex.SimplicialComplex.Basic
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
+public import TauCeti.Analysis.Convex.SimplicialComplex.Subdivision
 import TauCeti.Analysis.Convex.Intrinsic
 import TauCeti.Analysis.Convex.SimplicialComplex.Carrier
-import TauCeti.Analysis.Convex.SimplicialComplex.Subdivision
 
 /-!
 # Common subdivisions of geometric simplicial complexes
 
 A geometric simplicial complex `K'` is a **subdivision** of `K`
-(`Geometry.SimplicialComplex.IsSubdivision K' K`) when it has the same underlying space and each
-of its simplices lies in a simplex of `K`. This file proves that two locally finite triangulations
-of the same polyhedron have a common subdivision
+(`Geometry.SimplicialComplex.IsSubdivision K' K`, defined in
+`TauCeti.Analysis.Convex.SimplicialComplex.Subdivision`) when it has the same underlying space
+and each of its simplices lies in a simplex of `K`. This file proves that two locally finite
+triangulations of the same polyhedron have a common subdivision
 (`Geometry.SimplicialComplex.exists_isSubdivision_isSubdivision`), the basic comparison theorem of
 piecewise-linear topology. More generally, for any two locally finite complexes `K` and `L` in a
 finite-dimensional real normed space, the intersection `|K| ∩ |L|` of their underlying spaces is
@@ -33,10 +34,6 @@ interiors, because the open simplices of a complex are disjoint
 (`Geometry.SimplicialComplex.exists_mem_faces_subset_mem_intrinsicInterior`), so in the strictly
 smaller cell `σ' ∩ τ'`. These are the hypotheses under which a locally finite family of compact
 convex cells has a simplicial subdivision (`Geometry.SimplicialComplex.exists_subdivision`).
-
-## Main definitions
-
-* `Geometry.SimplicialComplex.IsSubdivision K' K`: `K'` is a subdivision of `K`.
 
 ## Main results
 
@@ -60,35 +57,6 @@ public section
 open Set
 
 namespace Geometry.SimplicialComplex
-
-section IsSubdivision
-
-variable {𝕜 E : Type*} [Ring 𝕜] [PartialOrder 𝕜] [AddCommGroup E] [Module 𝕜 E]
-  {K K' K'' : SimplicialComplex 𝕜 E}
-
-/-- A geometric simplicial complex `K'` is a **subdivision** of `K` when both have the same
-underlying space and every simplex of `K'` lies in a simplex of `K`. -/
-structure IsSubdivision (K' K : SimplicialComplex 𝕜 E) : Prop where
-  /-- The two complexes have the same underlying space. -/
-  space_eq : K'.space = K.space
-  /-- Every simplex of the subdivision lies in a simplex of the subdivided complex. -/
-  exists_convexHull_subset : ∀ ⦃s⦄, s ∈ K'.faces →
-    ∃ t ∈ K.faces, convexHull 𝕜 (s : Set E) ⊆ convexHull 𝕜 (t : Set E)
-
-/-- Every complex is a subdivision of itself. -/
-@[refl]
-theorem IsSubdivision.refl (K : SimplicialComplex 𝕜 E) : K.IsSubdivision K :=
-  ⟨rfl, fun s hs => ⟨s, hs, subset_rfl⟩⟩
-
-/-- A subdivision of a subdivision of `K` is a subdivision of `K`. -/
-theorem IsSubdivision.trans (h' : K''.IsSubdivision K') (h : K'.IsSubdivision K) :
-    K''.IsSubdivision K := by
-  refine ⟨h'.space_eq.trans h.space_eq, fun s hs => ?_⟩
-  obtain ⟨t, ht, hst⟩ := h'.exists_convexHull_subset hs
-  obtain ⟨u, hu, htu⟩ := h.exists_convexHull_subset ht
-  exact ⟨u, hu, hst.trans htu⟩
-
-end IsSubdivision
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {K L : SimplicialComplex ℝ E}

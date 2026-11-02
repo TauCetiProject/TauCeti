@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Convex.Intrinsic
 public import Mathlib.Analysis.Convex.SimplicialComplex.Basic
-public import Mathlib.Analysis.Normed.Module.FiniteDimension
+public import Mathlib.Analysis.Normed.Module.Basic
 import TauCeti.Analysis.Convex.OpenSimplex
 
 /-!
@@ -45,7 +45,7 @@ open Set
 
 namespace Geometry.SimplicialComplex
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {K : SimplicialComplex ℝ E} {s t : Finset E} {x : E}
 
 /-- Every point of a simplex of a geometric simplicial complex lies in the open simplex of one of
@@ -54,22 +54,23 @@ theorem exists_mem_faces_subset_mem_intrinsicInterior (hs : s ∈ K.faces)
     (hx : x ∈ convexHull ℝ (s : Set E)) :
     ∃ t ∈ K.faces, t ⊆ s ∧ x ∈ intrinsicInterior ℝ (convexHull ℝ (t : Set E)) := by
   classical
-  obtain ⟨w, hw₀, hw₁, rfl⟩ := Finset.mem_convexHull.1 hx
+  obtain ⟨w, hw₀, hw₁, rfl⟩ := Finset.mem_convexHull'.1 hx
   -- The face spanned by the vertices of positive weight.
   set t := s.filter fun y => w y ≠ 0
   have ht₁ : ∑ y ∈ t, w y = 1 := by rw [Finset.sum_filter_ne_zero, hw₁]
   have hts : t ⊆ s := Finset.filter_subset _ _
   have htne : t.Nonempty := Finset.nonempty_of_sum_ne_zero (ht₁ ▸ one_ne_zero)
-  refine ⟨t, K.down_closed hs hts htne, hts, ?_⟩
-  rw [← Finset.centerMass_filter_ne_zero, show (t : Set E) = range ((↑) : t → E) by simp,
-    (K.indep (K.down_closed hs hts htne)).mem_intrinsicInterior_convexHull_iff]
-  have ht₁' : ∑ y : t, w y = 1 := by rw [Finset.univ_eq_attach, Finset.sum_attach t w, ht₁]
-  refine ⟨fun y => w y, fun y => ?_, ht₁', ?_⟩
-  · have hy := (Finset.mem_filter.1 y.2)
-    exact (hw₀ _ hy.1).lt_of_ne' hy.2
-  · rw [affineCombination_eq_centerMass ht₁', Finset.centerMass, Finset.centerMass, ht₁', ht₁,
-      Finset.univ_eq_attach, Finset.sum_attach t fun y => w y • y]
-    simp only [id, t]
+  have ht : t ∈ K.faces := K.down_closed hs hts htne
+  refine ⟨t, ht, hts, ?_⟩
+  -- The convex hull of `t` is that of the affinely independent inclusion `t → E`.
+  rw [← Finset.setOfPred_mem, ← Subtype.range_coe_subtype,
+    (K.indep ht).mem_intrinsicInterior_convexHull_iff]
+  have ht₁' : ∑ y : t, w y = 1 := by rw [Finset.sum_coe_sort t w, ht₁]
+  refine ⟨fun y => w y, fun y => (hw₀ _ (Finset.mem_filter.1 y.2).1).lt_of_ne'
+    (Finset.mem_filter.1 y.2).2, ht₁', ?_⟩
+  rw [Finset.affineCombination_eq_linear_combination _ _ _ ht₁',
+    Finset.sum_coe_sort t fun y => w y • y]
+  exact Finset.sum_filter_of_ne fun y _ hy => left_ne_zero_of_smul hy
 
 /-- **The open simplices of a complex are disjoint.** A point lies in the intrinsic interior of
 at most one simplex of a geometric simplicial complex. -/
@@ -83,7 +84,7 @@ theorem eq_of_mem_intrinsicInterior (hs : s ∈ K.faces) (ht : t ∈ K.faces)
     intro s t hs ht hxs hxt
     have hst := K.inter_subset_convexHull hs ht
       ⟨intrinsicInterior_subset hxs, intrinsicInterior_subset hxt⟩
-    rw [show (s : Set E) = range ((↑) : s → E) by simp] at hxs
+    rw [← Finset.setOfPred_mem, ← Subtype.range_coe_subtype] at hxs
     have h := (K.indep hs).eq_univ_of_mem_intrinsicInterior_convexHull hxs
       (s := {y | (y : E) ∈ t}) (by convert hst using 2; ext; simp [and_comm])
     intro y hy
