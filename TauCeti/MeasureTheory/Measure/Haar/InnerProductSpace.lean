@@ -41,8 +41,8 @@ conditions on single coordinates, such as polydiscs, are measured.
   components of `a` along `K` and `Kᗮ`.
 * `MeasureTheory.Measure.addHaar_setOf_fst_eq`: a hyperplane `{a} × E` of the Euclidean product
   `ℝ × E` is null for every additive Haar measure.
-* `MeasureTheory.Measure.addHaar_setOf_inner_eq`: an affine hyperplane `{x | ⟪x, ν⟫ = c}` is null
-  for every additive Haar measure.
+* `MeasureTheory.Measure.addHaar_setOf_inner_eq`: so is a hyperplane `{y | ⟪y, ν⟫ = c}` with
+  `ν ≠ 0`.
 * `PiLp.volume_preserving_symm_measurableEquiv_toLp`: the volume of `PiLp 2 F` is the product of
   the volumes of the factors.
 
@@ -150,21 +150,20 @@ theorem addHaar_setOf_fst_eq (μ : Measure (WithLp 2 (ℝ × E))) [μ.IsAddHaarM
   exact addHaar_affineSubspace μ s hne
 
 open scoped RealInnerProductSpace in
-/-- An affine hyperplane `{x | ⟪x, ν⟫ = c}`, for `ν ≠ 0`, is a null set for every additive Haar
-measure. -/
+/-- A hyperplane `{y | ⟪y, ν⟫ = c}` with `ν ≠ 0` is a null set for every additive Haar measure. -/
 theorem addHaar_setOf_inner_eq (μ : Measure E) [μ.IsAddHaarMeasure] {ν : E} (hν : ν ≠ 0)
-    (c : ℝ) : μ {x | ⟪x, ν⟫ = c} = 0 := by
-  rcases Set.eq_empty_or_nonempty {x : E | ⟪x, ν⟫ = c} with h | ⟨x₀, hx₀⟩
-  · rw [h, measure_empty]
-  -- The hyperplane is a translate of the orthogonal complement of `ν`.
-  have hs : {x : E | ⟪x, ν⟫ = c} = (· + -x₀) ⁻¹' ((ℝ ∙ ν)ᗮ : Submodule ℝ E) := by
-    ext x
-    have hx₀' : ⟪ν, x₀⟫ = c := by rw [real_inner_comm]; exact hx₀
-    simp [Submodule.mem_orthogonal_singleton_iff_inner_right, inner_add_right, real_inner_comm ν,
-      hx₀', add_neg_eq_zero]
+    (c : ℝ) : μ {y | ⟪y, ν⟫ = c} = 0 := by
+  have hν2 : ⟪ν, ν⟫ ≠ 0 := inner_self_ne_zero.2 hν
+  -- The hyperplane is a translate of the proper subspace `K = {y | ⟪ν, y⟫ = 0}`.
+  set K : Submodule ℝ E := LinearMap.ker (innerₛₗ ℝ ν)
+  have hK : K ≠ ⊤ := fun h => hν2 (by simpa [K] using (h ▸ Submodule.mem_top : ν ∈ K))
+  have hs : {y | ⟪y, ν⟫ = c} = (· + -((c / ⟪ν, ν⟫) • ν)) ⁻¹' (K : Set E) := by
+    ext y
+    simp only [K, Set.mem_ofPred_eq, Set.mem_preimage, SetLike.mem_coe, LinearMap.mem_ker,
+      innerₛₗ_apply_apply, inner_add_right, inner_neg_right, real_inner_smul_right,
+      div_mul_cancel₀ _ hν2, real_inner_comm y ν, add_neg_eq_zero]
   rw [hs, measure_preimage_add_right]
-  refine addHaar_submodule μ _ fun h => hν ?_
-  rwa [Submodule.orthogonal_eq_top_iff, Submodule.span_singleton_eq_bot] at h
+  exact addHaar_submodule μ K hK
 
 end MeasureTheory.Measure
 

@@ -6,46 +6,51 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.BoundedVariation.ReducedBoundary
-import Mathlib.MeasureTheory.Covering.BesicovitchVectorSpace
-import TauCeti.Analysis.Distribution.Monotone
-import TauCeti.Analysis.Distribution.TestFunction.Divergence
-import TauCeti.MeasureTheory.Covering.EssentialBoundary
+public import TauCeti.Analysis.BoundedVariation.Translation
+import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
-import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
+import TauCeti.MeasureTheory.Measure.Haar.HalfSpace
 
 /-!
 # Sets with a constant normal are half-spaces
 
-Let `E` be a finite-dimensional real inner product space with an additive Haar measure `μ`, and
-let `ν ∈ E`. This file shows that a set `s ⊆ E` whose distributional normal is the constant
-`ν` is, up to a null set, a half-space `{x | ⟪x, ν⟫ < c}`, the empty set or the whole space.
-The hypothesis is phrased through test vector fields: `∫_s div φ dμ ≥ 0` whenever `⟪φ, ν⟫ ≥ 0`
-pointwise. It holds when `Dχ_s = -ν m` for a positive measure `m`. In particular it holds when
-`s` has locally finite perimeter and its outer normal `ν_s` equals `ν` almost everywhere for the
-perimeter measure
-(`TauCeti.ae_eq_empty_or_univ_or_setOf_inner_lt_of_outerNormal_ae_eq`). This is the step of
-De Giorgi's blow-up theorem that identifies the limits of the blow-ups at a point of the reduced
-boundary.
+Let `u` be locally integrable with locally finite variation on an open set `Ω` of a
+finite-dimensional real inner product space, so that `Du = σ_u |Du|` with the polar density `σ_u`
+(`TauCeti.polarDensity`). If `⟪h, σ_u⟫ ≥ 0` at `|Du|`-almost every point, the derivative of `u` in
+the direction `h` is a nonnegative measure, and `u` is nondecreasing along `h`:
+`u x ≤ u (x + h)` for almost every `x` of an open set `V` whose segments `x + [0, 1] h` lie in `Ω`
+(`TauCeti.ae_le_comp_add_of_ae_inner_polarDensity_nonneg`).
 
-The proof has two steps.
+Let `s` be a null-measurable set with `∫_s div φ ≥ 0` for every test vector field `φ` with
+`⟪φ, ν⟫ ≥ 0` pointwise, the distributional form of `Dχ_s = -ν m` for a positive measure `m`.
+Testing with `φ (-h)` for nonnegative scalar `φ` shows that `χ_s` is nondecreasing along every `h`
+with `⟪h, ν⟫ ≤ 0`, so `s` is almost stable under these translations. Hence `s` agrees almost
+everywhere with `∅`, with the whole space or with a half-space `{y | ⟪y, ν⟫ < c}`
+(`TauCeti.ae_eq_setOf_inner_lt_of_forall_integral_divergenceCLM_mul_indicator_nonneg`). This
+hypothesis needs no finite perimeter, and it is the form in which a blow-up limit at a point of
+the reduced boundary is shown to have a constant normal
+(`TauCeti.integral_divergenceCLM_mul_indicator_nonneg_of_tendsto_measure_symmDiff_inter`). This is
+the rigidity step in the blow-up of a set of finite perimeter: a blow-up limit has a constant
+normal, and is therefore a half-space.
 
-* Testing with `φ = ψ w` for a nonnegative test function `ψ` and `⟪w, ν⟫ ≥ 0` shows that the
-  directional derivative `∂_w χ_s` is nonpositive, so `χ_s (x + w) ≤ χ_s x` almost everywhere
-  (`TauCeti.ae_apply_add_le_of_forall_integral_lineDeriv_mul_nonneg`).
-* A null-measurable set `s` with `(· + w) ⁻¹' s ⊆ s` almost everywhere, for every `w` with
-  `⟪w, ν⟫ ≥ 0`, is almost a half-space
-  (`TauCeti.ae_eq_empty_or_univ_or_setOf_inner_lt_of_preimage_add_ae_le`). Its essential interior
-  is a representative of `s` for which these inclusions hold exactly, so it is a lower set for the
-  preorder `x ≤ y ↔ ⟪x, ν⟫ ≤ ⟪y, ν⟫`; such a set lies between `{⟪x, ν⟫ < c}` and
-  `{⟪x, ν⟫ ≤ c}`, which differ by a null hyperplane.
+In particular a set `s` of locally finite perimeter in the whole space whose outer normal is a
+constant vector `ν` at `|Dχ_s|`-almost every point is a half-space up to a null set
+(`TauCeti.ae_eq_setOf_inner_lt_of_ae_outerNormal_eq`).
 
-When `ν = 0` the half-space case does not occur: the set is then null or conull.
+## Main declarations
+
+* `TauCeti.ae_le_comp_add_of_ae_inner_polarDensity_nonneg`: monotonicity along a direction in
+  which the derivative measure is nonnegative.
+* `TauCeti.ae_eq_setOf_inner_lt_of_forall_integral_divergenceCLM_mul_indicator_nonneg`: a set
+  whose distributional normal is the constant `ν` is a half-space up to a null set.
+* `TauCeti.ae_eq_setOf_inner_lt_of_ae_outerNormal_eq`: a set of locally finite perimeter with a
+  constant outer normal is a half-space up to a null set.
 
 ## References
 
 * L. C. Evans, R. F. Gariepy, *Measure Theory and Fine Properties of Functions*, revised edition,
-  §5.7.2 (Theorem 1, the blow-up of a set of finite perimeter at a point of the reduced boundary).
-* F. Maggi, *Sets of Finite Perimeter and Geometric Variational Problems*, §15.3.
+  §5.7.2 (the blow-up of the reduced boundary).
+* F. Maggi, *Sets of Finite Perimeter and Geometric Variational Problems*, Theorem 15.5.
 -/
 
 public section
@@ -54,94 +59,79 @@ noncomputable section
 
 namespace TauCeti
 
-open MeasureTheory TopologicalSpace Set Filter TestFunction
+open MeasureTheory TopologicalSpace Set TestFunction
 open scoped ENNReal RealInnerProductSpace Distributions
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure] {s : Set E} {ν : E}
+  [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure] {Ω V : Opens E}
+  {u : E → ℝ} {s : Set E} {h ν : E}
 
-/-- **Sets that are almost monotone along a half-space of directions are half-spaces.** If a
-null-measurable set `s` satisfies `x + w ∈ s → x ∈ s` for almost every `x`, for each `w` with
-`⟪w, ν⟫ ≥ 0`, then `s` is almost everywhere equal to the empty set, the whole space, or a
-half-space `{x | ⟪x, ν⟫ < c}`. -/
-theorem ae_eq_empty_or_univ_or_setOf_inner_lt_of_preimage_add_ae_le
-    (hs : NullMeasurableSet s μ) (h : ∀ w, 0 ≤ ⟪w, ν⟫ → (· + w) ⁻¹' s ≤ᵐ[μ] s) :
-    s =ᵐ[μ] (∅ : Set E) ∨ s =ᵐ[μ] (univ : Set E) ∨ ∃ c : ℝ, s =ᵐ[μ] {x | ⟪x, ν⟫ < c} := by
-  set I := essentialInterior μ s
-  have hI : s =ᵐ[μ] I := (essentialInterior_ae_eq hs).symm
-  -- The essential interior is a lower set for `x ↦ ⟪x, ν⟫`.
-  have hdown (y : E) (hy : y ∈ I) (z : E) (hz : ⟪z, ν⟫ ≤ ⟪y, ν⟫) : z ∈ I := by
-    have hw : 0 ≤ ⟪y - z, ν⟫ := by rw [inner_sub_left]; linarith
-    refine essentialInterior_mono_ae (h _ hw) ?_
-    rw [essentialInterior_preimage_add_right, mem_preimage, add_sub_cancel]
-    exact hy
-  rcases I.eq_empty_or_nonempty with hIe | ⟨y₀, hy₀⟩
-  · exact Or.inl (hIe ▸ hI)
-  by_cases hIu : ∀ z, z ∈ I
-  · exact Or.inr (Or.inl ((eq_univ_of_forall hIu) ▸ hI))
-  obtain ⟨z₀, hz₀⟩ := not_forall.1 hIu
-  -- Some point lies outside `I`, so `⟪·, ν⟫` is bounded above on `I` and `ν ≠ 0`.
-  have hlt (y : E) (hy : y ∈ I) : ⟪y, ν⟫ < ⟪z₀, ν⟫ :=
-    lt_of_not_ge fun hle => hz₀ (hdown y hy z₀ hle)
-  have hν : ν ≠ 0 := by
-    rintro rfl
-    simpa using hlt y₀ hy₀
-  have hbdd : BddAbove ((⟪·, ν⟫) '' I) := ⟨⟪z₀, ν⟫, by
-    rintro _ ⟨y, hy, rfl⟩
-    exact (hlt y hy).le⟩
-  set c := sSup ((⟪·, ν⟫) '' I)
-  refine Or.inr (Or.inr ⟨c, hI.trans (ae_eq_set.2 ⟨?_, ?_⟩)⟩)
-  · -- `I` lies in `{⟪x, ν⟫ ≤ c}`, which exceeds `{⟪x, ν⟫ < c}` by a null hyperplane.
-    refine measure_mono_null (fun y hy => ?_) (Measure.addHaar_setOf_inner_eq μ hν c)
-    exact le_antisymm (le_csSup hbdd ⟨y, hy.1, rfl⟩) (not_lt.1 hy.2)
-  · -- `{⟪x, ν⟫ < c}` lies in `I`.
-    refine measure_mono_null (fun x hx => ?_) measure_empty
-    rw [Set.mem_sdiff, mem_ofPred_eq] at hx
-    obtain ⟨_, ⟨y, hy, rfl⟩, hxy⟩ := exists_lt_of_lt_csSup (Set.Nonempty.image _ ⟨y₀, hy₀⟩) hx.1
-    exact hx.2 (hdown y hy x hxy.le)
+/-- **Monotonicity along a direction of nonnegative derivative.** Let `u` be locally integrable
+with locally finite variation on `Ω`, and let `⟪h, σ_u⟫ ≥ 0` at `|Du|`-almost every point, so that
+the derivative `⟪h, Du⟫` of `u` in the direction `h` is a nonnegative measure. Then
+`u x ≤ u (x + h)` for almost every `x ∈ V`, as soon as the segments `x + [0, 1] h` starting in
+`V` lie in `Ω`. -/
+theorem ae_le_comp_add_of_ae_inner_polarDensity_nonneg (hu : LocallyIntegrableOn u Ω μ)
+    (hfin : ∀ K, IsCompact K → K ⊆ Ω →
+      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U u ≠ ∞)
+    (hVΩ : ∀ t ∈ Icc (0 : ℝ) 1, MapsTo (· + t • h) V Ω)
+    (hσ : ∀ᵐ y ∂variationMeasure μ Ω u, 0 ≤ ⟪h, polarDensity μ Ω u y⟫) :
+    ∀ᵐ x ∂μ.restrict V, u x ≤ u (x + h) := by
+  refine ae_le_comp_add_of_forall_integral_lineDeriv_mul_nonpos hu hVΩ fun φ hφ => ?_
+  rw [integral_lineDeriv_mul_eq_neg_integral_mul_inner_polarDensity hu hfin, neg_nonpos]
+  exact integral_nonneg_of_ae (hσ.mono fun y hy => mul_nonneg (hφ y) hy)
 
-/-- **Sets with a constant normal are half-spaces.** Let `s` be null-measurable with
-`0 ≤ ∫_s div φ dμ` for every test vector field `φ` with `⟪φ, ν⟫ ≥ 0` pointwise, as holds when the
-distributional derivative of `χ_s` is `-ν` times a positive measure. Then `s` is almost everywhere
-equal to the empty set, the whole space, or a half-space `{x | ⟪x, ν⟫ < c}`. -/
-theorem ae_eq_empty_or_univ_or_setOf_inner_lt_of_integral_divergenceCLM_mul_indicator_nonneg
+/-- A null-measurable set `s` with `∫_s div φ ≥ 0` for every test vector field `φ` with
+`⟪φ, ν⟫ ≥ 0` pointwise is almost stable under the translation by every `h` with `⟪h, ν⟫ ≤ 0`:
+almost every `x ∈ s` has `x + h ∈ s`. -/
+private theorem ae_mem_add_of_forall_integral_divergenceCLM_mul_indicator_nonneg
     (hs : NullMeasurableSet s μ)
-    (h : ∀ φ : 𝓓((⊤ : Opens E), E), (∀ x, 0 ≤ ⟪φ x, ν⟫) →
-      0 ≤ ∫ x, divergenceCLM φ x * s.indicator 1 x ∂μ) :
-    s =ᵐ[μ] (∅ : Set E) ∨ s =ᵐ[μ] (univ : Set E) ∨ ∃ c : ℝ, s =ᵐ[μ] {x | ⟪x, ν⟫ < c} := by
+    (H : ∀ φ : 𝓓((⊤ : Opens E), E), (∀ y, 0 ≤ ⟪φ y, ν⟫) →
+      0 ≤ ∫ y, divergenceCLM φ y * s.indicator 1 y ∂μ)
+    (hh : ⟪h, ν⟫ ≤ 0) :
+    ∀ᵐ x ∂μ, x ∈ s → x + h ∈ s := by
   have hu : LocallyIntegrable (s.indicator (1 : E → ℝ)) μ :=
     LocallyIntegrable.indicator₀ (locallyIntegrable_const (1 : ℝ)) hs
-  refine ae_eq_empty_or_univ_or_setOf_inner_lt_of_preimage_add_ae_le hs fun w hw => ?_
-  -- Testing with `ψ w` shows that `∂_w χ_s` is nonpositive.
-  have hmono := ae_apply_add_le_of_forall_integral_lineDeriv_mul_nonneg (v := w) hu fun ψ hψ => by
-    rw [← divergenceCLM_postcompCLM_toSpanSingleton]
-    exact h _ fun x => by simpa [real_inner_smul_left] using mul_nonneg (hψ x) hw
-  filter_upwards [hmono] with x hx hxs
-  by_contra hx'
-  have h10 : (1 : ℝ) ≤ 0 := by
-    simpa [indicator_of_mem (mem_preimage.1 hxs), indicator_of_notMem hx'] using hx
-  linarith
+  have hle := ae_le_comp_add_of_forall_integral_lineDeriv_mul_nonpos (Ω := ⊤) (V := ⊤) (h := h)
+    (hu.locallyIntegrableOn _) (fun _ _ _ _ => by simp) fun φ hφ => ?_
+  · rw [Opens.coe_top, Measure.restrict_univ] at hle
+    filter_upwards [hle] with x hx hxs
+    by_contra hxh
+    simp only [indicator_of_mem hxs, indicator_of_notMem hxh, Pi.one_apply] at hx
+    exact zero_lt_one.not_ge hx
+  -- Test with the vector field `φ (-h)`, whose divergence is `-∂_h φ`.
+  have hφh := H (postcompCLM (ContinuousLinearMap.toSpanSingleton ℝ (-h)) φ) fun y => by
+    simpa [real_inner_smul_left, inner_neg_left] using mul_nonneg (hφ y) (neg_nonneg.2 hh)
+  simpa [lineDerivOp_apply, lineDeriv_neg, integral_neg] using hφh
 
-/-- **Sets of locally finite perimeter with a constant outer normal are half-spaces.** If `s` has
-locally finite perimeter in `E` and its measure-theoretic outer normal equals `ν` almost
-everywhere for the perimeter measure `|Dχ_s|`, then `s` is almost everywhere equal to the empty
-set, the whole space, or a half-space `{x | ⟪x, ν⟫ < c}`. -/
-theorem ae_eq_empty_or_univ_or_setOf_inner_lt_of_outerNormal_ae_eq
+/-- **A set with a constant distributional normal is a half-space.** Let `s` be null-measurable
+with `∫_s div φ ≥ 0` for every test vector field `φ` with `⟪φ, ν⟫ ≥ 0` pointwise, as holds when
+the distributional derivative of `χ_s` is `-ν` times a positive measure. Then `s` agrees almost
+everywhere with `∅`, with the whole space, or with a half-space `{y | ⟪y, ν⟫ < c}`. -/
+theorem ae_eq_setOf_inner_lt_of_forall_integral_divergenceCLM_mul_indicator_nonneg
+    (hs : NullMeasurableSet s μ)
+    (H : ∀ φ : 𝓓((⊤ : Opens E), E), (∀ y, 0 ≤ ⟪φ y, ν⟫) →
+      0 ≤ ∫ y, divergenceCLM φ y * s.indicator 1 y ∂μ) :
+    s =ᵐ[μ] (∅ : Set E) ∨ s =ᵐ[μ] (univ : Set E) ∨ ∃ c : ℝ, s =ᵐ[μ] {y | ⟪y, ν⟫ < c} :=
+  ae_eq_setOf_inner_lt_of_forall_inner_nonpos hs fun _ hh =>
+    ae_mem_add_of_forall_integral_divergenceCLM_mul_indicator_nonneg hs H hh
+
+/-- **A set with a constant outer normal is a half-space.** Let `s` have locally finite perimeter
+in the whole space, with outer normal equal to a constant vector `ν` at `|Dχ_s|`-almost every
+point. Then `s` agrees almost everywhere with `∅`, with the whole space, or with a half-space
+`{y | ⟪y, ν⟫ < c}`. -/
+theorem ae_eq_setOf_inner_lt_of_ae_outerNormal_eq
     (hu : LocallyIntegrable (s.indicator (1 : E → ℝ)) μ)
     (hfin : ∀ K, IsCompact K →
-      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U (s.indicator 1) ≠ ∞)
-    (hν : ∀ᵐ y : (⊤ : Opens E) ∂variationMeasure μ ⊤ (s.indicator 1),
-      outerNormal μ ⊤ s y = ν) :
-    s =ᵐ[μ] (∅ : Set E) ∨ s =ᵐ[μ] (univ : Set E) ∨ ∃ c : ℝ, s =ᵐ[μ] {x | ⟪x, ν⟫ < c} := by
-  have hs : NullMeasurableSet s μ :=
-    (aemeasurable_indicator_const_iff (1 : ℝ)).1 hu.aestronglyMeasurable.aemeasurable
-  refine ae_eq_empty_or_univ_or_setOf_inner_lt_of_integral_divergenceCLM_mul_indicator_nonneg hs
+      ∃ U : Opens E, K ⊆ (U : Set E) ∧ perimeter μ U s ≠ ∞)
+    (hν : ∀ᵐ y : (⊤ : Opens E) ∂variationMeasure μ ⊤ (s.indicator 1), outerNormal μ ⊤ s y = ν) :
+    s =ᵐ[μ] (∅ : Set E) ∨ s =ᵐ[μ] (univ : Set E) ∨ ∃ c : ℝ, s =ᵐ[μ] {y | ⟪y, ν⟫ < c} := by
+  refine ae_eq_setOf_inner_lt_of_forall_integral_divergenceCLM_mul_indicator_nonneg
+    ((aemeasurable_indicator_const_iff (1 : ℝ)).1 hu.aestronglyMeasurable.aemeasurable)
     fun φ hφ => ?_
   rw [integral_divergenceCLM_mul_indicator_eq_integral_inner_outerNormal (hu.locallyIntegrableOn _)
-    (fun K hK _ => hfin K hK)]
-  refine integral_nonneg_of_ae ?_
-  filter_upwards [hν] with y hy
-  rw [hy]
-  exact hφ y
+    (fun K hK _ => by simpa [perimeter_def] using hfin K hK)]
+  refine integral_nonneg_of_ae (hν.mono fun y hy => ?_)
+  simpa only [Pi.zero_apply, hy] using hφ y
 
 end TauCeti

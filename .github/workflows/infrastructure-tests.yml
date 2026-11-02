@@ -37,9 +37,11 @@ jobs:
         run: |
           git restore --source=HEAD -- \
             scripts/test_bors_scope_approval.py \
+            scripts/test_check_expired_mathlib_shims.py \
             scripts/test_duplicate_audit_workflow.py \
             scripts/test_lake_cache_probe.py \
             scripts/test_lake_cache_reuse.py \
+            scripts/test_pick_runner.py \
             scripts/test_workflow_pins.py
       - name: Checkout the pinned merge policy (read-only)
         uses: ./.github/actions/checkout-merge-policy
@@ -49,10 +51,10 @@ jobs:
       # The no-stack bot intentionally uses a different Tools release.
       # Test that exact implementation after the general suite, without another runner.
       - name: Prepare stack-policy tools at the production pin
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@980a7a0e321a7fe86981f6c9f872a2acad93af69
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@422751ed4ca60d28f4ec80f149505236fd1db408
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 980a7a0e321a7fe86981f6c9f872a2acad93af69
+          tools-ref: 422751ed4ca60d28f4ec80f149505236fd1db408
           project-directory: .
       - name: Stack-policy regression tests
         run: |

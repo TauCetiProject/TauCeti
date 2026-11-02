@@ -87,12 +87,13 @@ private theorem apply_eq_integral_smul_of_forall_lineDerivOp_eq_zero (μ : Measu
       _ ≤ 2 * r := by linarith
   -- For a bump `ρ` of radius at most `r`, pairing `T` with a mollification of `ψ` gives the
   -- integral of `ψ` times the constant value of the regularization on `ball x r`.
+  let bump (ρ : ContDiffBump (0 : E)) : 𝓓((⊤ : Opens E), ℝ) :=
+    ⟨ρ.normed μ, ρ.contDiff_normed, ρ.hasCompactSupport_normed, by simp⟩
   have hmoll (ρ : ContDiffBump (0 : E)) (hρ : ρ.rOut ≤ r) {ψ : 𝓓(Ω, ℝ)}
       (hψ : tsupport ψ ⊆ ball x r) (h : closedBall (0 : E) ρ.rOut + tsupport ψ ⊆ (Ω : Set E)) :
-      T (TestFunction.mollify ψ μ ρ h) =
-        (∫ y, ψ y ∂μ) • T.translatePairing (ρ.normedTestFunction μ) x := by
-    set ρ' := ρ.normedTestFunction μ
-    have hρ' : (ρ' : E → ℝ) = ρ.normed μ := ρ.coe_normedTestFunction μ
+      T (TestFunction.mollify ψ μ ρ h) = (∫ y, ψ y ∂μ) • T.translatePairing (bump ρ) x := by
+    set ρ' := bump ρ
+    have hρ' : (ρ' : E → ℝ) = ρ.normed μ := rfl
     have htsupp : tsupport ρ' = closedBall 0 ρ.rOut := by
       rw [hρ']
       exact ρ.tsupport_normed_eq
@@ -128,14 +129,12 @@ private theorem apply_eq_integral_smul_of_forall_lineDerivOp_eq_zero (μ : Measu
       closedBall (0 : E) (ρ n).rOut + tsupport ψ ⊆ (Ω : Set E) := by
     rintro _ ⟨z, hz, y, hy, rfl⟩
     exact hadd (hle n) hz (hψ hy)
-  have hTφ : Tendsto
-      (fun n => (∫ y, φ y ∂μ) • T.translatePairing ((ρ n).normedTestFunction μ) x) atTop
+  have hTφ : Tendsto (fun n => (∫ y, φ y ∂μ) • T.translatePairing (bump (ρ n)) x) atTop
       (𝓝 (T φ)) :=
     (((T : 𝓓(Ω, ℝ) →L[ℝ] F).continuous.tendsto φ).comp
       (TestFunction.tendsto_mollify φ μ hlim (hsub hφ))).congr fun n =>
         hmoll (ρ n) (hle n) hφ (hsub hφ n)
-  have hTχ : Tendsto (fun n => T.translatePairing ((ρ n).normedTestFunction μ) x) atTop
-      (𝓝 (T χ)) :=
+  have hTχ : Tendsto (fun n => T.translatePairing (bump (ρ n)) x) atTop (𝓝 (T χ)) :=
     (((T : 𝓓(Ω, ℝ) →L[ℝ] F).continuous.tendsto χ).comp
       (TestFunction.tendsto_mollify χ μ hlim (hsub hχ))).congr fun n =>
         (hmoll (ρ n) (hle n) hχ (hsub hχ n)).trans (by rw [hχint, one_smul])

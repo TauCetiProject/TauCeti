@@ -20,9 +20,6 @@ evaluated along this approximation.
 The codomain is any real Banach space, including the finite-dimensional spaces of alternating
 forms used to test currents in coordinates.
 
-A normalized bump is itself a test function on the whole space,
-`ContDiffBump.normedTestFunction`.
-
 ## References
 
 * L. Hörmander, *The Analysis of Linear Partial Differential Operators I*, §1.3:
@@ -191,20 +188,3 @@ theorem tendsto_mollify {ι : Type*} {l : Filter ι} (φ : 𝓓(Ω, F))
   simp only [mollify_apply, hi]
 
 end TestFunction
-
-namespace ContDiffBump
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] {c : E}
-
-/-- A normalized bump `ρ.normed μ`, as a test function on the whole space. -/
-def normedTestFunction (ρ : ContDiffBump c) (μ : Measure E) [μ.IsAddHaarMeasure] :
-    𝓓((⊤ : Opens E), ℝ) :=
-  ⟨ρ.normed μ, ρ.contDiff_normed, ρ.hasCompactSupport_normed, by simp⟩
-
-/-- The normalized bump test function is the normalized bump `ρ.normed μ`. -/
-@[simp]
-theorem coe_normedTestFunction (ρ : ContDiffBump c) (μ : Measure E) [μ.IsAddHaarMeasure] :
-    ⇑(ρ.normedTestFunction μ) = ρ.normed μ := (rfl)
-
-end ContDiffBump

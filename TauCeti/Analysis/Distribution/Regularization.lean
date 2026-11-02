@@ -7,10 +7,8 @@ module
 
 public import Mathlib.Analysis.Convolution
 public import Mathlib.Analysis.Distribution.Distribution
-public import TauCeti.Analysis.Distribution.TestFunction.Convolution
 public import TauCeti.Analysis.Distribution.TestFunction.Translation
 import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
-import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.LocallyConvex.HahnBanach
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
@@ -62,13 +60,9 @@ derivatives are `o(‖h‖)` uniformly, so its image under `T` is `o(‖h‖)` a
 * `Distribution.contDiffOn_translatePairing`: the regularization is smooth.
 * `Distribution.translatePairing_eq_of_lineDerivOp_eq_zero`: if all derivatives of `T` vanish,
   the regularization is constant on preconnected open sets of admissible translations.
-* `Distribution.antitoneOn_translatePairing_add_smul`: if `∂_v T ≤ 0`, the regularization by a
-  nonnegative test function decreases along `v`.
 * `Distribution.apply_eq_integral_smul_translatePairing`: pairing the regularization with an
   integrable compactly supported `f` is `T` applied to the convolution `f ⋆ ρ`,
   `T (f ⋆ ρ) = ∫ f y • T (ρ (· - y)) dy`.
-* `Distribution.translatePairing_ofFun_normedTestFunction`: the regularization of a locally
-  integrable function by a normalized bump is its convolution with that bump.
 
 ## References
 
@@ -284,29 +278,6 @@ theorem translatePairing_eq_of_lineDerivOp_eq_zero {T : 𝓓'(Ω, F)}
     (fun z hz => ?_) hx hy
   ext v
   simp [fderiv_translatePairing_apply T ρ (hU z hz), hT]
-
-/-- **Distributions with nonpositive derivative have antitone regularizations.** If
-`0 ≤ T (∂_v φ)` for every nonnegative test `φ`, that is `∂_{v} T ≤ 0`, and `ρ` is nonnegative,
-then `t ↦ T (ρ (· - (x + t • v)))` is antitone on every convex set of parameters `t` for which
-`ρ (· - (x + t • v))` is supported in `Ω`. -/
-theorem antitoneOn_translatePairing_add_smul {T : 𝓓'(Ω, ℝ)} {v : E}
-    (hT : ∀ φ : 𝓓(Ω, ℝ), (∀ y, 0 ≤ φ y) → 0 ≤ T (∂_{v} φ)) {ρ : 𝓓(V, ℝ)} (hρ : ∀ y, 0 ≤ ρ y)
-    {x : E} {s : Set ℝ} (hs : Convex ℝ s)
-    (hU : ∀ t ∈ s, MapsTo (· + (x + t • v)) (tsupport ρ) Ω) :
-    AntitoneOn (fun t => T.translatePairing ρ (x + t • v)) s := by
-  have hg (t : ℝ) (ht : t ∈ s) : HasDerivAt (fun t : ℝ => T.translatePairing ρ (x + t • v))
-      ((∂_{v} T).translatePairing ρ (x + t • v)) t := by
-    have hline : HasDerivAt (fun t : ℝ => x + t • v) v t := by
-      simpa using ((hasDerivAt_id t).smul_const v).const_add x
-    have := (T.differentiableAt_translatePairing ρ (hU t ht)).hasFDerivAt.comp_hasDerivAt t hline
-    rwa [T.fderiv_translatePairing_apply ρ (hU t ht)] at this
-  refine antitoneOn_of_deriv_nonpos hs (fun t ht => (hg t ht).continuousAt.continuousWithinAt)
-    (fun t ht => (hg t (interior_subset ht)).differentiableAt.differentiableWithinAt)
-    fun t ht => ?_
-  have hφ := translateOfMapsTo_apply ρ (hU t (interior_subset ht))
-  rw [(hg t (interior_subset ht)).deriv, translatePairing_eq _ hφ, lineDerivOp_apply_apply,
-    map_neg, neg_nonpos]
-  exact hT _ fun y => (hφ y).symm ▸ hρ _
 
 section Convolution
 
@@ -531,29 +502,5 @@ theorem apply_eq_integral_smul_translatePairing (T : 𝓓'(Ω, F)) (ρ : 𝓓(V,
       exact integral_congr_ae (ae_of_all _ hpt)
 
 end Convolution
-
-section OfFun
-
-open MeasureTheory
-open ContinuousLinearMap (lsmul)
-open scoped Convolution
-
-variable [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
-
-/-- **Regularizing a function is convolving it.** The regularization of a locally integrable
-function `u` by a normalized bump is the convolution of `u` with that bump. -/
-theorem translatePairing_ofFun_normedTestFunction {u : E → F} (hu : LocallyIntegrable u μ)
-    (ρ : ContDiffBump (0 : E)) (x : E) :
-    (ofFun (⊤ : Opens E) u μ ⊤).translatePairing (ρ.normedTestFunction μ) x =
-      (ρ.normed μ ⋆[lsmul ℝ ℝ, μ] u) x := by
-  have hx : MapsTo (· + x) (tsupport (ρ.normedTestFunction μ)) ((⊤ : Opens E) : Set E) :=
-    fun _ _ => trivial
-  have hφ := translateOfMapsTo_apply _ hx
-  rw [translatePairing_eq _ hφ, ofFun_apply (hu.locallyIntegrableOn _), convolution_lsmul_swap]
-  refine integral_congr_ae (ae_of_all _ fun y => ?_)
-  dsimp only
-  rw [hφ, ContDiffBump.coe_normedTestFunction, ← neg_sub, ρ.normed_neg]
-
-end OfFun
 
 end Distribution
