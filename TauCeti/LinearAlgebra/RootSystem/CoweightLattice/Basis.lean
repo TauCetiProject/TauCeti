@@ -87,8 +87,8 @@ theorem root'_fundamentalCoweightBasis [DecidableEq ι] (i j : b.support) :
 variable [CharZero R]
 
 omit [P.IsRootSystem] in
-/-- **A coweight lies in the coweight lattice as soon as the simple roots are integers at it**,
-since every root is an integer combination of the simple roots. -/
+/-- **A coweight lies in the coweight lattice iff every simple root takes an integer value at
+it.** -/
 theorem mem_coweightLattice_iff {x : N} :
     x ∈ P.coweightLattice ↔ ∀ i : b.support, ∃ z : ℤ, P.root' i x = z := by
   refine ⟨fun hx i ↦ P.mem_coweightLattice.1 hx i, fun hx ↦ P.mem_coweightLattice.2 fun k ↦ ?_⟩
@@ -136,9 +136,8 @@ theorem coweightLatticeBasis_repr (x : P.coweightLattice) (i : b.support) :
   simp [Finsupp.single_apply]
 
 /-- **The index of the coroot lattice in the coweight lattice is the absolute value of the
-determinant of the Cartan matrix**, `[P∨ : Q∨] = |det C|`. The simple coroots and the fundamental
-coweights are `ℤ`-bases of the two lattices, and the coordinates of `αⱼ^∨` in the fundamental
-coweights are the Cartan integers `⟨αᵢ, αⱼ^∨⟩`. -/
+determinant of the Cartan matrix**, `[P∨ : Q∨] = |det C|`, for a crystallographic root system
+over a ring of characteristic zero. -/
 theorem relIndex_corootSpan_coweightLattice [DecidableEq ι] [P.IsCrystallographic] :
     (P.corootSpan ℤ).toAddSubgroup.relIndex P.coweightLattice.toAddSubgroup =
       b.cartanMatrix.det.natAbs := by
