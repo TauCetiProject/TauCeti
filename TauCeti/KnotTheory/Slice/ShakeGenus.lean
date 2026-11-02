@@ -66,6 +66,14 @@ embedding identifies the boundary of `S` with the disjoint copies `Ψ ({c} × S�
 genus (`TauCeti.zeroShakeGenus K`) is the infimum of the genera of the `0`-shake surfaces of `K`,
 valued in `ℕ∞` so that it is `⊤` should there be none.
 
+The `0`-shake genus depends only on the image of the knot and is invariant under linear isometries
+of the ambient space (`TauCeti.zeroShakeGenus_congr_range`,
+`TauCeti.zeroShakeGenus_congr_linearIsometryEquiv`). A knot with the same image is a
+reparametrization `K ∘ g` by a homeomorphism `g` of the circle, and a `0`-shake surface is carried
+along by reparametrizing its solid torus, `(w, z) ↦ Ψ (w, g z)`. This keeps the longitude
+null-homologous: on the boundary torus, `id × g` sends the `(0, 1)` curve to a `(0, q)` curve
+(`TauCeti.IsSolidTorusNeighborhood.boundaryHomologyMap_basis_one_eq_zero_of_map`).
+
 A smooth slice disc of `K` together with a `0`-framed solid torus neighbourhood is a `0`-shake
 surface of genus `0`, with `C = {0}`, the knot itself
 (`TauCeti.IsSmoothSliceDisc.toZeroShakeSurface`). So the unknot has `0`-shake genus `0`
@@ -80,6 +88,8 @@ boundary component is null-homologous in it, which is not formalized here.
 * `TauCeti.ZeroShakeSurface.genus`: its genus `(dim H₁(S; ℚ) + 1 - b) / 2`, `b` the number of
   copies.
 * `TauCeti.zeroShakeGenus K`: the `0`-shake genus of `K`, in `ℕ∞`.
+* `TauCeti.ZeroShakeSurface.congrRange`, `TauCeti.ZeroShakeSurface.mapLinearIsometryEquiv`:
+  transport of `0`-shake surfaces to a knot with the same image and along a linear isometry.
 * `TauCeti.IsSmoothSliceDisc.toZeroShakeSurface`: a smooth slice disc as a `0`-shake surface.
 * `TauCeti.PiccirilloShakeGenusTheorem`: some knot in `S³` has `0`-shake genus less than its slice
   genus.
@@ -91,6 +101,9 @@ boundary component is null-homologous in it, which is not formalized here.
 * `TauCeti.zeroShakeGenus_le_genus`, `TauCeti.le_zeroShakeGenus_iff`,
   `TauCeti.zeroShakeGenus_lt_top_iff`, `TauCeti.exists_genus_eq_zeroShakeGenus`: the `0`-shake
   genus is the infimum of the genera of the `0`-shake surfaces, attained when finite.
+* `TauCeti.zeroShakeGenus_congr_range`, `TauCeti.zeroShakeGenus_rotate`,
+  `TauCeti.zeroShakeGenus_reverse`, `TauCeti.zeroShakeGenus_congr_linearIsometryEquiv`: the
+  `0`-shake genus depends only on the image of the knot, up to linear isometries.
 * `TauCeti.IsSmoothSliceDisc.genus_toZeroShakeSurface`: a slice disc has genus `0`.
 * `TauCeti.IsSmoothlySlice.zeroShakeGenus_eq_zero`, `TauCeti.zeroShakeGenus_unknot`: a smoothly
   slice knot with a `0`-framed solid torus neighbourhood, in particular the unknot, has `0`-shake
@@ -214,6 +227,118 @@ theorem framingNumber_eq_zero (S : ZeroShakeSurface K)
     S.isSolidTorusNeighborhood.framingNumber h₁ h₂ = 0 := by
   rw [IsSolidTorusNeighborhood.framingNumber_eq_zero_iff, S.boundaryHomologyMap_longitude]
 
+/-! ### Transport -/
+
+variable {K' : SmoothCircleEmbedding (𝓡 3) (sphere (0 : E) 1)}
+
+/-- Reparametrization of a `0`-shake surface along a homeomorphism `g` of the circle with
+`K' = K ∘ g`: the same surface and copies, in the solid torus `(w, z) ↦ Ψ (w, g z)`. -/
+private def reparam (S : ZeroShakeSurface K) (g : Circle ≃ₜ Circle) (hg : ⇑K' = K ∘ g) :
+    ZeroShakeSurface K' where
+  carrier := S.carrier
+  toFun := S.toFun
+  isSmoothEmbedding := S.isSmoothEmbedding
+  preimage_boundary := S.preimage_boundary
+  solidTorus := S.solidTorus ∘ Prod.map id g
+  isSolidTorusNeighborhood := hg ▸ S.isSolidTorusNeighborhood.comp_prodMap g
+  boundaryHomologyMap_longitude :=
+    S.isSolidTorusNeighborhood.boundaryHomologyMap_basis_one_eq_zero_of_map _ g
+      (ContinuousMap.inclusion
+        (compl_subset_compl.2 (by rw [hg, range_comp]; exact image_subset_range _ _)))
+      (fun _ q hx ↦ hx.trans (congrArg S.solidTorus (Prod.ext (Subtype.ext (by simp)) (by simp))))
+      S.boundaryHomologyMap_longitude
+  parallels := S.parallels
+  norm_lt_one_of_mem_parallels := S.norm_lt_one_of_mem_parallels
+  boundaryMap := ((ContinuousMap.id _).prodMap (g.symm : C(Circle, Circle))).comp S.boundaryMap
+  solidTorus_boundaryMap x := by simpa [Prod.map] using S.solidTorus_boundaryMap x
+  range_boundaryMap := by
+    rw [ContinuousMap.coe_comp, range_comp, S.range_boundaryMap]
+    ext ⟨c, z⟩
+    simp [Prod.map, Homeomorph.symm_apply_eq]
+  map_ker_eq_top := by
+    have hmap : ContinuousMap.singularHomologyMap ℤ 1 (ContinuousMap.snd.comp
+        (((ContinuousMap.id _).prodMap (g.symm : C(Circle, Circle))).comp S.boundaryMap)) =
+        ContinuousMap.singularHomologyMap ℤ 1 (g.symm : C(Circle, Circle)) ∘ₗ
+          ContinuousMap.singularHomologyMap ℤ 1 (ContinuousMap.snd.comp S.boundaryMap) :=
+      -- Projecting after the reparametrization is reparametrizing the projection.
+      LinearMap.ext (ContinuousMap.singularHomologyMap_comp (g.symm : C(Circle, Circle))
+        (ContinuousMap.snd.comp S.boundaryMap))
+    rw [hmap, Submodule.map_comp, S.map_ker_eq_top, Submodule.map_top, LinearMap.range_eq_top]
+    exact (ContinuousMap.HomotopyEquiv.bijective_singularHomologyMap ℤ 1
+      g.symm.toHomotopyEquiv).2
+
+/-- Reparametrizing a `0`-shake surface keeps its genus: the surface and the copies are
+unchanged. -/
+private theorem genus_reparam (S : ZeroShakeSurface K) (g : Circle ≃ₜ Circle)
+    (hg : ⇑K' = K ∘ g) : (S.reparam g hg).genus = S.genus :=
+  (rfl)
+
+/-- A `0`-shake surface for `K` is one for every knot `K'` with the same image: `K'` is `K`
+reparametrized by a homeomorphism `g` of the circle, and the solid torus neighbourhood is
+reparametrized along `g`, `(w, z) ↦ Ψ (w, g z)`. -/
+def congrRange (S : ZeroShakeSurface K) (h : range K = range K') : ZeroShakeSurface K' :=
+  S.reparam (K'.isEmbedding.toHomeomorph.trans
+    ((Homeomorph.setCongr h.symm).trans K.isEmbedding.toHomeomorph.symm)) <| funext fun z ↦ by
+      simp only [Function.comp_apply, Homeomorph.trans_apply]
+      rw [← K.isEmbedding.toHomeomorph_apply_coe, Homeomorph.apply_symm_apply]
+      -- `Homeomorph.setCongr` does not change the underlying point.
+      exact (K'.isEmbedding.toHomeomorph_apply_coe z).symm
+
+/-- Transporting a `0`-shake surface to a knot with the same image keeps its genus. -/
+@[simp]
+theorem genus_congrRange (S : ZeroShakeSurface K) (h : range K = range K') :
+    (S.congrRange h).genus = S.genus :=
+  S.genus_reparam _ _
+
+variable {F : Type} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [Fact (finrank ℝ F = 3 + 1)]
+
+/-- Transport of a `0`-shake surface for `K` along a linear isometry `e : E ≃ₗᵢ[ℝ] F` of the ambient
+spaces: the same surface, embedded by `e ∘ S.toFun`, with the solid torus `e ∘ Ψ` and the same
+parallel copies, is a `0`-shake surface for `K' = e ∘ K`. -/
+def mapLinearIsometryEquiv (S : ZeroShakeSurface K) (e : E ≃ₗᵢ[ℝ] F)
+    {K' : SmoothCircleEmbedding (𝓡 3) (sphere (0 : F) 1)} (hK' : ∀ z, (K' z : F) = e (K z)) :
+    ZeroShakeSurface K' where
+  carrier := S.carrier
+  toFun := e.toLinearIsometry.unitClosedBallMap ∘ S.toFun
+  isSmoothEmbedding := by
+    have := isSmoothEmbedding_diffeomorph_comp S.isSmoothEmbedding
+      (e.unitClosedBallDiffeomorph (k := ∞))
+    rwa [LinearIsometryEquiv.coe_unitClosedBallDiffeomorph] at this
+  preimage_boundary := by
+    rw [← S.preimage_boundary]
+    ext x
+    simp [boundary_closedBall]
+  solidTorus := e.unitSphereIsometryEquiv ∘ S.solidTorus
+  isSolidTorusNeighborhood := by
+    have hK : ⇑K' = e.unitSphereIsometryEquiv ∘ K := funext fun z ↦
+      Subtype.ext ((hK' z).trans (e.coe_unitSphereIsometryEquiv_apply _).symm)
+    exact hK ▸ S.isSolidTorusNeighborhood.comp
+      e.unitSphereIsometryEquiv.toHomeomorph.isOpenEmbedding
+  boundaryHomologyMap_longitude := by
+    -- The isometry maps the complement of `K` into the complement of `K'`.
+    have hmaps (x : ↥(range K)ᶜ) : e.unitSphereIsometryEquiv x ∈ (range K')ᶜ := by
+      rintro ⟨z, hz⟩
+      refine x.2 ⟨z, e.unitSphereIsometryEquiv.injective (Subtype.ext ?_)⟩
+      rw [e.coe_unitSphereIsometryEquiv_apply, ← hK', hz]
+    exact S.isSolidTorusNeighborhood.boundaryHomologyMap_basis_one_eq_zero_of_map _
+      (ContinuousMap.id Circle) ⟨fun x ↦ ⟨_, hmaps x⟩,
+        (e.unitSphereIsometryEquiv.continuous.comp continuous_subtype_val).subtype_mk _⟩
+      (fun _ _ hx ↦ congrArg e.unitSphereIsometryEquiv hx) S.boundaryHomologyMap_longitude
+  parallels := S.parallels
+  norm_lt_one_of_mem_parallels := S.norm_lt_one_of_mem_parallels
+  boundaryMap := S.boundaryMap
+  solidTorus_boundaryMap x := by simpa using congrArg e (S.solidTorus_boundaryMap x)
+  range_boundaryMap := S.range_boundaryMap
+  map_ker_eq_top := S.map_ker_eq_top
+
+/-- Transporting a `0`-shake surface along a linear isometry of the ambient spaces keeps its
+genus. -/
+@[simp]
+theorem genus_mapLinearIsometryEquiv (S : ZeroShakeSurface K) (e : E ≃ₗᵢ[ℝ] F)
+    {K' : SmoothCircleEmbedding (𝓡 3) (sphere (0 : F) 1)} (hK' : ∀ z, (K' z : F) = e (K z)) :
+    (S.mapLinearIsometryEquiv e hK').genus = S.genus :=
+  (rfl)
+
 end ZeroShakeSurface
 
 /-- The **`0`-shake genus** `g_sh⁰(K)` of a knot `K : S¹ → S³`: the least genus of a `0`-shake
@@ -223,7 +348,7 @@ homology. -/
 def zeroShakeGenus (K : SmoothCircleEmbedding (𝓡 3) (sphere (0 : E) 1)) : ℕ∞ :=
   ⨅ S : ZeroShakeSurface K, (S.genus : ℕ∞)
 
-variable {K : SmoothCircleEmbedding (𝓡 3) (sphere (0 : E) 1)}
+variable {K K' : SmoothCircleEmbedding (𝓡 3) (sphere (0 : E) 1)}
 
 /-- The `0`-shake genus is the infimum of the genera of all `0`-shake surfaces. -/
 theorem zeroShakeGenus_def : zeroShakeGenus K = ⨅ S : ZeroShakeSurface K, (S.genus : ℕ∞) :=
@@ -249,6 +374,36 @@ theorem exists_genus_eq_zeroShakeGenus [Nonempty (ZeroShakeSurface K)] :
 @[simp]
 theorem zeroShakeGenus_lt_top_iff : zeroShakeGenus K < ⊤ ↔ Nonempty (ZeroShakeSurface K) :=
   ENat.iInf_natCast_lt_top
+
+/-- Two knots with the same image have the same `0`-shake genus. -/
+theorem zeroShakeGenus_congr_range (h : range K = range K') :
+    zeroShakeGenus K = zeroShakeGenus K' :=
+  le_antisymm
+    (le_zeroShakeGenus_iff.2 fun S ↦ by simpa using zeroShakeGenus_le_genus (S.congrRange h.symm))
+    (le_zeroShakeGenus_iff.2 fun S ↦ by simpa using zeroShakeGenus_le_genus (S.congrRange h))
+
+/-- The `0`-shake genus does not depend on the rotation of the parametrization. -/
+@[simp]
+theorem zeroShakeGenus_rotate (a : Circle) : zeroShakeGenus (K.rotate a) = zeroShakeGenus K :=
+  zeroShakeGenus_congr_range (K.range_rotate a)
+
+/-- The `0`-shake genus does not depend on the orientation of the knot. -/
+@[simp]
+theorem zeroShakeGenus_reverse : zeroShakeGenus K.reverse = zeroShakeGenus K :=
+  zeroShakeGenus_congr_range K.range_reverse
+
+/-- The `0`-shake genus is invariant under linear isometries of the ambient spaces: if `K' = e ∘ K`
+for a linear isometry `e : E ≃ₗᵢ[ℝ] F`, then `K'` and `K` have the same `0`-shake genus. -/
+theorem zeroShakeGenus_congr_linearIsometryEquiv {F : Type} [NormedAddCommGroup F]
+    [InnerProductSpace ℝ F] [Fact (finrank ℝ F = 3 + 1)] (e : E ≃ₗᵢ[ℝ] F)
+    {K' : SmoothCircleEmbedding (𝓡 3) (sphere (0 : F) 1)} (hK' : ∀ z, (K' z : F) = e (K z)) :
+    zeroShakeGenus K' = zeroShakeGenus K := by
+  have hK : ∀ z, (K z : E) = e.symm (K' z) := fun z ↦ by simp [hK']
+  exact le_antisymm
+    (le_zeroShakeGenus_iff.2 fun S ↦ by
+      simpa using zeroShakeGenus_le_genus (S.mapLinearIsometryEquiv e hK'))
+    (le_zeroShakeGenus_iff.2 fun S ↦ by
+      simpa using zeroShakeGenus_le_genus (S.mapLinearIsometryEquiv e.symm hK))
 
 /-! ### Slice discs as shake surfaces -/
 
