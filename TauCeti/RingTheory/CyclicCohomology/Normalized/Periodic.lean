@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.CyclicCohomology.Normalized.Basic
+public import TauCeti.Algebra.Homology.ModuleCat.Basic
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.Data.ZMod.Defs
 public import Mathlib.LinearAlgebra.DFinsupp
@@ -53,6 +54,8 @@ is `M`, and the odd one vanishes.
 * `TauCeti.normalizedPeriodicCochainComplex`: the two-periodic direct-sum totalization of the
   stabilized `(b, B)` bicomplex.
 * `TauCeti.normalizedPeriodicCohomology`: its cohomology.
+* `TauCeti.normalizedPeriodicCocycles`, `TauCeti.normalizedPeriodicCohomology.mk`: the periodic
+  cocycles of a given parity and their cohomology classes.
 * `TauCeti.normalizedPeriodicCohomologySelfZeroEquiv`: the even periodic cohomology of the
   ground ring is the coefficient module.
 
@@ -64,6 +67,11 @@ is `M`, and the odd one vanishes.
 * `TauCeti.normalizedMixedDifferential_single_of_mem_cyclicCochains`,
   `TauCeti.normalizedPeriodicDifferential_single_of_mem_cyclicCochains`: on a cyclic
   normalized cochain the differential is `b`.
+* `TauCeti.single_mem_normalizedPeriodicCocycles_of_mem_cyclicCochains`: a normalized cyclic
+  cocycle, placed in its own degree, is a periodic cocycle.
+* `TauCeti.normalizedPeriodicCohomology.mk_surjective`,
+  `TauCeti.normalizedPeriodicCohomology.mk_eq_zero_iff`: every class is the class of a cocycle,
+  and the classes that vanish are those of the images of `b + B`.
 * `TauCeti.isZero_normalizedPeriodicCohomology_self_one`: the odd periodic cohomology of the
   ground ring vanishes.
 
@@ -231,6 +239,14 @@ theorem normalizedPeriodicCochainsι_apply_of_ne (φ : normalizedPeriodicCochain
   exact DFinsupp.extendDomain_apply_of_not (β := fun n : ℕ ↦ normalizedHochschildCochains R A M n)
     (p := fun n : ℕ ↦ (n : ZMod 2) = i) φ hm
 
+/-- In degrees of parity `i`, the extension by zero is the given family. -/
+@[simp]
+theorem normalizedPeriodicCochainsι_apply_of_eq (φ : normalizedPeriodicCochains R A M i)
+    {m : ℕ} (hm : (m : ZMod 2) = i) : normalizedPeriodicCochainsι R A M i φ m = φ ⟨m, hm⟩ := by
+  rw [normalizedPeriodicCochainsι_apply]
+  exact DFinsupp.extendDomain_apply_subtype (β := fun n : ℕ ↦ normalizedHochschildCochains R A M n)
+    (p := fun n : ℕ ↦ (n : ZMod 2) = i) φ ⟨m, hm⟩
+
 end Parity
 
 section ParityDifferential
@@ -268,6 +284,25 @@ theorem normalizedPeriodicDifferential_apply (i j : ZMod 2)
     normalizedPeriodicDifferential R A M i j φ =
       DFinsupp.subtypeDomain (fun n : ℕ ↦ (n : ZMod 2) = j)
         (normalizedMixedDifferential R A M (normalizedPeriodicCochainsι R A M i φ)) := (rfl)
+
+/-- The degree-zero component of the periodic differential is `B φ₁`. -/
+theorem normalizedPeriodicDifferential_apply_zero {i : ZMod 2}
+    (φ : normalizedPeriodicCochains R A M i) (h : ((1 : ℕ) : ZMod 2) = i) :
+    normalizedPeriodicDifferential R A M i (i + 1) φ ⟨0, by rw [← h]; decide⟩ =
+      normalizedConnesB R A M 0 (φ ⟨1, h⟩) := by
+  rw [normalizedPeriodicDifferential_apply, DFinsupp.subtypeDomain_apply,
+    normalizedMixedDifferential_apply_zero, normalizedPeriodicCochainsι_apply_of_eq _ h]
+
+/-- The degree-`n + 1` component of the periodic differential is `b φₙ + B φₙ₊₂`. -/
+theorem normalizedPeriodicDifferential_apply_succ {i : ZMod 2}
+    (φ : normalizedPeriodicCochains R A M i) (n : ℕ) (h : (n : ZMod 2) = i) :
+    normalizedPeriodicDifferential R A M i (i + 1) φ ⟨n + 1, by rw [Nat.cast_succ, h]⟩ =
+      normalizedHochschildCoboundary R A M n (φ ⟨n, h⟩) +
+        normalizedConnesB R A M (n + 1)
+          (φ ⟨n + 2, by rw [← h, Nat.cast_add, add_eq_left]; decide⟩) := by
+  rw [normalizedPeriodicDifferential_apply, DFinsupp.subtypeDomain_apply,
+    normalizedMixedDifferential_apply_succ, normalizedPeriodicCochainsι_apply_of_eq _ h,
+    normalizedPeriodicCochainsι_apply_of_eq]
 
 /-- Extending the periodic differential by zero gives `b + B` of the extension by zero. -/
 @[simp]
@@ -360,6 +395,95 @@ theorem normalizedPeriodicCochainComplex_d (i j : ZMod 2) :
   simp [normalizedPeriodicCochainComplex, normalizedPeriodicCochainComplexXIso]
 
 end Complex
+
+section Cocycles
+
+variable (R A M : Type*) [CommRing R] [Semiring A] [Module R A]
+  [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M]
+
+/-- The periodic cocycles of parity `i`: the families of parity `i` killed by `b + B`. -/
+def normalizedPeriodicCocycles (i : ZMod 2) : Submodule R (normalizedPeriodicCochains R A M i) :=
+  LinearMap.ker (normalizedPeriodicDifferential R A M i (i + 1))
+
+variable {R A M}
+
+/-- A family of parity `i` is a periodic cocycle exactly when `b + B` kills it. -/
+@[simp]
+theorem mem_normalizedPeriodicCocycles_iff {i : ZMod 2}
+    {φ : normalizedPeriodicCochains R A M i} :
+    φ ∈ normalizedPeriodicCocycles R A M i ↔
+      normalizedPeriodicDifferential R A M i (i + 1) φ = 0 :=
+  LinearMap.mem_ker
+
+/-- A family of parity `i` is a periodic cocycle exactly when the differential of the periodic
+complex kills it. -/
+theorem mem_normalizedPeriodicCocycles_iff_complex (i : ZMod 2)
+    (φ : normalizedPeriodicCochains R A M i) :
+    φ ∈ normalizedPeriodicCocycles R A M i ↔
+      (normalizedPeriodicCochainComplex R A M).d i (i + 1)
+        ((normalizedPeriodicCochainComplexXIso R A M i).inv φ) = 0 :=
+  Iff.rfl
+
+/-- A cyclic normalized `n`-cocycle, placed in its own degree, is a periodic cocycle. -/
+theorem single_mem_normalizedPeriodicCocycles_of_mem_cyclicCochains {n : ℕ}
+    {ψ : normalizedHochschildCochains R A M n}
+    (hψ : (ψ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) ∈ cyclicCochains R A M n)
+    (hb : hochschildCoboundary R A M n ψ = 0) :
+    DFinsupp.single ⟨n, rfl⟩ ψ ∈ normalizedPeriodicCocycles R A M n := by
+  rw [mem_normalizedPeriodicCocycles_iff,
+    normalizedPeriodicDifferential_single_of_mem_cyclicCochains hψ,
+    normalizedHochschildCoboundary_eq_zero_iff.2 hb, DFinsupp.single_zero]
+
+/-- The periodic cocycles form an additive group. Instance search does not find
+`Submodule.addCommGroup` through the dependent family of cochain modules, so it is given here. -/
+instance (i : ZMod 2) : AddCommGroup (normalizedPeriodicCocycles R A M i) :=
+  @Submodule.addCommGroup R (normalizedPeriodicCochains R A M i) _ _ _ _
+
+namespace normalizedPeriodicCohomology
+
+variable (R A M) in
+/-- The periodic cohomology class of a periodic cocycle. -/
+noncomputable def mk (i : ZMod 2) :
+    normalizedPeriodicCocycles R A M i →ₗ[R] normalizedPeriodicCohomology R A M i :=
+  (normalizedPeriodicCochainComplex R A M).moduleCatHomologyClass (ComplexShape.next_eq' _ rfl)
+    ((normalizedPeriodicCochainComplexXIso R A M i).inv.hom ∘ₗ
+      (normalizedPeriodicCocycles R A M i).subtype)
+    fun φ : normalizedPeriodicCocycles R A M i ↦
+      (mem_normalizedPeriodicCocycles_iff_complex i φ.1).1 φ.2
+
+/-- The class of a periodic cocycle `φ` is the homology class of any cycle of the periodic
+complex whose underlying family is `φ`. -/
+theorem mk_eq_homologyπ {i : ZMod 2} (φ : normalizedPeriodicCocycles R A M i)
+    (z : (normalizedPeriodicCochainComplex R A M).cycles i)
+    (hz : (normalizedPeriodicCochainComplexXIso R A M i).hom
+      ((normalizedPeriodicCochainComplex R A M).iCycles i z) = φ) :
+    mk R A M i φ = (normalizedPeriodicCochainComplex R A M).homologyπ i z := by
+  refine ((normalizedPeriodicCochainComplex R A M).moduleCatHomologyClass_apply _ _ _ φ).trans ?_
+  congr 1
+  apply (normalizedPeriodicCochainComplex R A M).moduleCat_iCycles_injective i
+  refine ((normalizedPeriodicCochainComplex R A M).iCycles_moduleCatCyclesMk _ _ _ _ _).trans ?_
+  rw [LinearMap.comp_apply, Submodule.subtype_apply, ← hz]
+  exact Iso.hom_inv_id_apply _ _
+
+/-- Every periodic cohomology class is the class of a periodic cocycle. -/
+theorem mk_surjective (i : ZMod 2) : Function.Surjective (mk R A M i) :=
+  (normalizedPeriodicCochainComplex R A M).moduleCatHomologyClass_surjective _ _ _
+    fun x hx ↦ ⟨⟨(normalizedPeriodicCochainComplexXIso R A M i).hom x,
+      (mem_normalizedPeriodicCocycles_iff_complex i _).2 hx⟩, rfl⟩
+
+/-- A periodic cocycle has zero class exactly when it is the image under `b + B` of a family of
+the other parity. -/
+theorem mk_eq_zero_iff {i : ZMod 2} (φ : normalizedPeriodicCocycles R A M i) :
+    mk R A M i φ = 0 ↔
+      ∃ ψ : normalizedPeriodicCochains R A M (i + 1),
+        normalizedPeriodicDifferential R A M (i + 1) i ψ = φ :=
+  (normalizedPeriodicCochainComplex R A M).moduleCatHomologyClass_eq_zero_iff _ _ _
+    (ComplexShape.prev_eq' _
+      (show i + 1 + 1 = i by rw [add_assoc, add_eq_left]; decide)) φ
+
+end normalizedPeriodicCohomology
+
+end Cocycles
 
 section GroundRing
 
