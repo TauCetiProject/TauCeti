@@ -81,6 +81,14 @@ lemma IsEffective.sheafToUnit_toRationalFunctions (hD : D.IsEffective) :
       (congrArg (β ≫ ·) hp).trans (he _ _ (principalCartierDivisor_one X))).trans
         (sheafLift_ι _ _ _)
 
+/-- Including a section of `𝒪_X(-D)` in the structure sheaf preserves its rational section. -/
+@[simp]
+lemma IsEffective.toRationalFunctions_app_sheafToUnit_app (hD : D.IsEffective)
+    (U : X.Opens) (t : Γ((-D).sheaf, U)) :
+    (Scheme.toRationalFunctions X).app U (hD.sheafToUnit.app U t) =
+      (-D).sheafι.app U t :=
+  congrArg (fun ψ ↦ ψ.app U t) hD.sheafToUnit_toRationalFunctions
+
 instance (hD : D.IsEffective) : Mono hD.sheafToUnit :=
   mono_of_mono_fac hD.sheafToUnit_toRationalFunctions
 
@@ -104,25 +112,23 @@ lemma IsEffective.idealSheafIso_hom_ι (hD : D.IsEffective) :
 
 /-- A regular function belongs to the ideal of `D` exactly when, as a rational section,
 it belongs to `𝒪_X(-D)`. This holds on arbitrary opens. -/
+@[simp]
 lemma IsEffective.mem_idealSheaf_sections_iff (hD : D.IsEffective) (U : X.Opens)
     (a : Γ(X, U)) :
     a ∈ hD.idealSheaf.sections U ↔
       (Scheme.toRationalFunctions X).app U a ∈ (-D).sections U := by
-  have hfac (t : Γ((-D).sheaf, U)) :
-      (Scheme.toRationalFunctions X).app U (hD.sheafToUnit.app U t) =
-        (-D).sheafι.app U t :=
-    congrArg (fun ψ ↦ ψ.app U t) hD.sheafToUnit_toRationalFunctions
   have hm : a ∈ hD.idealSheaf.sections U ↔ ∃ t, hD.sheafToUnit.app U t = a := by
     rw [IsEffective.idealSheaf, Scheme.Modules.Hom.imageIdealSheaf_sections,
       Scheme.Modules.Hom.mem_imageIdeal]
   refine hm.trans ⟨?_, ?_⟩
   · rintro ⟨t, rfl⟩
-    exact (hfac t).symm ▸ (-D).sheafι_app_mem U t
+    exact (hD.toRationalFunctions_app_sheafToUnit_app U t).symm ▸ (-D).sheafι_app_mem U t
   · intro ha
     refine ⟨sectionMk _ ha, Scheme.toRationalFunctions_app_injective U ?_⟩
-    exact (hfac _).trans (sheafι_app_sectionMk _ ha)
+    exact (hD.toRationalFunctions_app_sheafToUnit_app U _).trans (sheafι_app_sectionMk _ ha)
 
 /-- On an affine open, the ideal is characterized by membership in `𝒪_X(-D)`. -/
+@[simp]
 lemma IsEffective.mem_idealSheaf_ideal_iff (hD : D.IsEffective) (U : X.affineOpens)
     (a : Γ(X, U)) :
     a ∈ hD.idealSheaf.ideal U ↔
@@ -137,12 +143,9 @@ lemma IsEffective.idealSheaf_ideal_eq_span (hD : D.IsEffective) (U : X.affineOpe
     (hf : Scheme.rationalUnitClass X U.1 (Additive.ofMul f) = D |_ U.1)
     {a : Γ(X, U)} (ha : X.germToFunctionField U.1 a = f) :
     hD.idealSheaf.ideal U = Ideal.span {a} := by
-  have hneg : Scheme.rationalUnitClass X U.1 (Additive.ofMul f⁻¹) = (-D) |_ U.1 := by
-    rw [ofMul_inv, map_neg, hf]
-    simp only [TopCat.Presheaf.restrictOpen, TopCat.Presheaf.restrict, map_neg]
   ext s
   rw [hD.mem_idealSheaf_ideal_iff,
-    mem_sections_iff_of_rationalUnitClass_eq le_rfl hneg,
+    mem_sections_iff_of_rationalUnitClass_eq le_rfl (rationalUnitClass_inv_eq_neg_of_eq hf),
     Scheme.rationalFunctionsEquiv_toRationalFunctions_app, Ideal.mem_span_singleton']
   refine exists_congr fun b ↦ ?_
   rw [← (X.germToFunctionField_injective U.1).eq_iff, map_mul, ha]
