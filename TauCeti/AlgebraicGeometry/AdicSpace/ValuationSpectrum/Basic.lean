@@ -412,6 +412,32 @@ lemma supp_comap {B : Type*} [CommRing B] (φ : A →+* B) (v : Spv B) :
     (comap φ v).supp = v.supp.comap φ :=
   Ideal.ext fun a ↦ by simp
 
+/-- If `w` pulls back to `v` along `φ`, then `w` compares images under `φ` as `v` compares the
+elements themselves. -/
+lemma valuation_map_le_iff {B : Type*} [CommRing B] {φ : A →+* B} {v : Spv A} {w : Spv B}
+    (hw : comap φ w = v) (a b : A) :
+    w.valuation (φ a) ≤ w.valuation (φ b) ↔ v.valuation a ≤ v.valuation b := by
+  rw [valuation_le_iff, valuation_le_iff, ← hw, comap_vle]
+
+/-- If `w` pulls back to `v` along `φ`, then `w(φ a) ≤ 1` iff `v(a) ≤ 1`. -/
+lemma valuation_map_le_one_iff {B : Type*} [CommRing B] {φ : A →+* B} {v : Spv A} {w : Spv B}
+    (hw : comap φ w = v) (a : A) : w.valuation (φ a) ≤ 1 ↔ v.valuation a ≤ 1 := by
+  simpa using valuation_map_le_iff hw a 1
+
+/-- If `w` pulls back to `v` along `φ`, then `w(φ a) < 1` iff `v(a) < 1`. -/
+lemma valuation_map_lt_one_iff {B : Type*} [CommRing B] {φ : A →+* B} {v : Spv A} {w : Spv B}
+    (hw : comap φ w = v) (a : A) : w.valuation (φ a) < 1 ↔ v.valuation a < 1 := by
+  simpa [not_le] using (valuation_map_le_iff hw 1 a).not
+
+/-- An element `b` outside a maximal ideal `𝔮` has an inverse `y` modulo `𝔮`, and
+`w(y) * w(b) = 1` at every point `w` with support `𝔮`. -/
+lemma exists_valuation_mul_eq_one {q : Ideal A} (hq : q.IsMaximal) {b : A} (hb : b ∉ q) :
+    ∃ y : A, ∀ w : Spv A, w.supp = q → w.valuation y * w.valuation b = 1 := by
+  obtain ⟨y, i, hi, hyi⟩ := hq.exists_inv hb
+  refine ⟨y, fun w hw ↦ ?_⟩
+  rw [← map_mul, ← w.valuation.map_add_supp (y * b) (s := i)
+    (by rwa [← supp_eq_valuation_supp, hw]), hyi, map_one]
+
 /-- The canonical valuation gives back the same point of `Spv`. -/
 @[simp]
 lemma ofValuation_valuation (v : Spv A) : ofValuation v.valuation = v := by

@@ -31,10 +31,15 @@ explicit representatives.
 
 ## Main results
 
+* `TauCeti.ModularForm.cuspOrbitOfSL2Z_inv_eq_of_cuspTranslationOrbit_mk_eq`: integral matrices
+  in the same cusp translation orbit have inverses representing the same cusp.
 * `TauCeti.ModularForm.exists_constantTermAt_eq_zpow_smul_of_cuspOrbitOfSL2Z_eq`: the constant
   terms at two representatives of the same cusp orbit agree up to a factor `(±1)ᵏ`.
 * `TauCeti.ModularForm.constantTermAt_eq_of_cuspOrbitOfSL2Z_eq`: at even weight, the constant
   terms at equivalent cusp representatives agree.
+* `ModularForm.constantTermAt_mul_constantTermAt_eq_of_cuspOrbitOfSL2Z_eq`: when the
+  weights have even sum, the product of two constant terms is the same at equivalent cusp
+  representatives.
 * `TauCeti.ModularForm.finrank_le_finrank_range_constantTerms_of_disjoint`: a subspace
   disjoint from cusp forms has dimension at most the image of representative constant terms.
 * `TauCeti.ModularForm.finrank_le_card_cuspOrbit_of_disjoint`: a subspace of `M_k(H)` with zero
@@ -55,6 +60,35 @@ open scoped MatrixGroups
 namespace TauCeti.ModularForm
 
 variable {H : Subgroup SL(2, ℤ)} [H.FiniteIndex] {k : ℤ}
+
+/-- Integral matrices whose cosets lie in the same cusp translation orbit have inverses
+representing the same cusp. -/
+theorem cuspOrbitOfSL2Z_inv_eq_of_cuspTranslationOrbit_mk_eq {γ γ' : SL(2, ℤ)}
+    (h : (⟦(QuotientGroup.mk ((mapGL ℝ).rangeRestrict γ) :
+        𝒮ℒ ⧸ (H.map (mapGL ℝ)).subgroupOf 𝒮ℒ)⟧ : CuspTranslationOrbit (H.map (mapGL ℝ))) =
+      ⟦QuotientGroup.mk ((mapGL ℝ).rangeRestrict γ')⟧) :
+    H.cuspOrbitOfSL2Z γ⁻¹ = H.cuspOrbitOfSL2Z γ'⁻¹ := by
+  obtain ⟨⟨_, hg⟩, hgq⟩ := MulAction.orbitRel_apply.mp (Quotient.exact h)
+  obtain ⟨j, rfl⟩ := Subgroup.mem_zpowers_iff.mp hg
+  -- The orbit relation says `γ = Tʲ γ' h₀` for some `h₀ ∈ H`.
+  have hmk : (QuotientGroup.mk (TSL ^ j * (mapGL ℝ).rangeRestrict γ') :
+      𝒮ℒ ⧸ (H.map (mapGL ℝ)).subgroupOf 𝒮ℒ) = QuotientGroup.mk ((mapGL ℝ).rangeRestrict γ) := by
+    simpa only [Subgroup.mk_smul, MulAction.Quotient.smul_mk, smul_eq_mul] using hgq
+  obtain ⟨h₀, hh₀, he⟩ :=
+    Subgroup.mem_map.mp (Subgroup.mem_subgroupOf.mp (QuotientGroup.eq.mp hmk))
+  have hcoe : (((TSL ^ j * (mapGL ℝ).rangeRestrict γ')⁻¹ * (mapGL ℝ).rangeRestrict γ : 𝒮ℒ) :
+      GL (Fin 2) ℝ) = mapGL ℝ ((ModularGroup.T ^ j * γ')⁻¹ * γ) := by
+    simp only [coe_TSL_zpow, TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL, map_mul, map_inv,
+      Subgroup.coe_mul, InvMemClass.coe_inv, MonoidHom.coe_rangeRestrict]
+  have hγ : γ = ModularGroup.T ^ j * γ' * h₀ := by
+    rw [mapGL_injective (he.trans hcoe)]
+    group
+  refine (H.cuspOrbitOfSL2Z_eq_iff _ _).mpr ⟨h₀⁻¹, inv_mem hh₀, ?_⟩
+  have hT : γ⁻¹⁻¹ * h₀⁻¹ * γ'⁻¹ = ModularGroup.T ^ j := by
+    rw [inv_inv, hγ]
+    group
+  rw [hT]
+  simp [ModularGroup.coe_T_zpow]
 
 /-- **Constant terms at equivalent cusps agree up to sign.** If `γ • ∞` and `γ' • ∞` lie in the
 same cusp orbit of `H`, the constant-term functionals at `γ` and `γ'` on `M_k(H)` differ by the
@@ -144,3 +178,20 @@ theorem finrank_le_card_cuspOrbit_of_disjoint {V : Submodule ℂ (ModularForm (H
     (fun _ ↦ .inl ⟨_, Function.surjInv_eq H.cuspOrbitOfSL2Z_surjective _⟩) hV
 
 end TauCeti.ModularForm
+
+namespace ModularForm
+
+open TauCeti.ModularForm
+
+variable {H : Subgroup SL(2, ℤ)} [H.FiniteIndex]
+
+/-- When the weights of `f` and `g` have even sum, the product of their constant terms at a cusp
+does not depend on the representative: the signs of the two constant terms cancel. -/
+theorem constantTermAt_mul_constantTermAt_eq_of_cuspOrbitOfSL2Z_eq {k₁ k₂ : ℤ}
+    (hk : Even (k₁ + k₂)) {γ γ' : SL(2, ℤ)} (h : H.cuspOrbitOfSL2Z γ = H.cuspOrbitOfSL2Z γ')
+    (f : ModularForm (H.map (mapGL ℝ)) k₁) (g : ModularForm (H.map (mapGL ℝ)) k₂) :
+    constantTermAt γ' f * constantTermAt γ' g = constantTermAt γ f * constantTermAt γ g := by
+  simpa only [constantTermAt_mul] using
+    LinearMap.congr_fun (constantTermAt_eq_of_cuspOrbitOfSL2Z_eq hk h) (f.mul g)
+
+end ModularForm

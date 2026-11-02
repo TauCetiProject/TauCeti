@@ -46,6 +46,8 @@ unfolded by hand.
   part up to a `normSq` factor, and is an involution of `ℍ`.
 * `ModularGroup.coe_S_smul`, `ModularGroup.coe_T_smul`: `S` and `T` act on `ℍ ⊆ ℂ` by
   `τ ↦ -1 / τ` and `τ ↦ τ + 1`.
+* `ModularGroup.sq_smul_smul_eq_vadd_S_smul_vadd`: for `g = !![a, b; c, d] ∈ SL(2, ℤ)` with
+  `c ≠ 0`, `c² (g • τ) = a c - 1 / (τ + d / c)`.
 
 ## Provenance
 
@@ -180,6 +182,36 @@ lemma coe_S_smul (τ : ℍ) : ((S • τ : ℍ) : ℂ) = -1 / τ := by
 /-- The translation `T` acts on `ℍ ⊆ ℂ` by `τ ↦ τ + 1`. -/
 lemma coe_T_smul (τ : ℍ) : ((T • τ : ℍ) : ℂ) = τ + 1 := by
   rw [modular_T_smul, coe_vadd, add_comm, Complex.ofReal_one]
+
+/-- For `g = !![a, b; c, d] ∈ SL(2, ℤ)` with `c ≠ 0`, scaling `g • τ` by `c²` gives
+`a c - 1 / (τ + d / c)`: in terms of the actions on `ℍ`,
+`c² • (g • τ) = a c +ᵥ S • (d / c +ᵥ τ)`. This is an explicit form of Mathlib's
+`UpperHalfPlane.exists_SL2_smul_eq_of_apply_zero_one_ne_zero`, adapted to reading `g • τ` near
+the cusp `a / c` at the scale `c²`. -/
+theorem sq_smul_smul_eq_vadd_S_smul_vadd (g : SL(2, ℤ)) (hc : g 1 0 ≠ 0) (τ : ℍ) :
+    (⟨(g 1 0 : ℝ) ^ 2, sq_pos_of_ne_zero (Int.cast_ne_zero.mpr hc)⟩ : {r : ℝ // 0 < r}) •
+        (g • τ) =
+      ((g 0 0 * g 1 0 : ℤ) : ℝ) +ᵥ S • (((g 1 1 : ℝ) / g 1 0) +ᵥ τ) := by
+  have hdet : (g 0 0 : ℂ) * g 1 1 - g 0 1 * g 1 0 = 1 := by
+    have h := g.det_coe
+    rw [Matrix.det_fin_two] at h
+    exact_mod_cast h
+  have hc' : (g 1 0 : ℂ) ≠ 0 := Int.cast_ne_zero.mpr hc
+  have hden : (g 1 0 : ℂ) * τ + g 1 1 ≠ 0 := by
+    simpa [denom_apply] using denom_ne_zero g τ
+  have hden' : (τ : ℂ) + (g 1 1 : ℂ) / g 1 0 ≠ 0 := by
+    rw [show (τ : ℂ) + (g 1 1 : ℂ) / g 1 0 = (g 1 0 * τ + g 1 1) / g 1 0 by field_simp]
+    exact div_ne_zero hden hc'
+  have hS : ((S • (((g 1 1 : ℝ) / g 1 0) +ᵥ τ) : ℍ) : ℂ) = -((τ : ℂ) + (g 1 1 : ℂ) / g 1 0)⁻¹ := by
+    rw [modular_S_smul, coe_mk, coe_vadd, inv_neg]
+    push_cast
+    ring
+  rw [UpperHalfPlane.ext_iff, coe_pos_real_smul, coe_vadd, coe_specialLinearGroup_apply, hS]
+  simp only [algebraMap_int_eq, eq_intCast, Complex.ofReal_intCast, Complex.real_smul,
+    Complex.ofReal_pow]
+  push_cast
+  field_simp
+  linear_combination -hdet
 
 end ModularGroup
 
