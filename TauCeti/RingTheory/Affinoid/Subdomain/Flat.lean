@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Affinoid.Subdomain.Rational
+public import TauCeti.RingTheory.Affinoid.Subdomain.Rational.Basic
 public import TauCeti.RingTheory.RingHom.FaithfullyFlat
 
 import TauCeti.RingTheory.Affinoid.TopologicallyFiniteType

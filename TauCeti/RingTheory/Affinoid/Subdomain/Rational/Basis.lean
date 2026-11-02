@@ -93,14 +93,9 @@ theorem rationalInterNumerator_finProdFinEquiv (g : A) (f : Fin m → A) (g' : A
 theorem range_rationalInterNumerator (g : A) (f : Fin m → A) (g' : A) (f' : Fin n → A) :
     Set.range (rationalInterNumerator g f g' f') =
       insert g (Set.range f) * insert g' (Set.range f') := by
-  rw [← Fin.range_cons, ← Fin.range_cons]
-  ext a
-  simp only [Set.mem_range, Set.mem_mul]
-  constructor
-  · rintro ⟨k, rfl⟩
-    exact ⟨_, ⟨_, rfl⟩, _, ⟨_, rfl⟩, rfl⟩
-  · rintro ⟨_, ⟨i, rfl⟩, _, ⟨j, rfl⟩, rfl⟩
-    exact ⟨finProdFinEquiv (i, j), rationalInterNumerator_finProdFinEquiv g f g' f' i j⟩
+  rw [← Fin.range_cons, ← Fin.range_cons, ← Set.image2_mul, Set.image2_range]
+  exact finProdFinEquiv.symm.surjective.range_comp fun p ↦
+    (Fin.cons g f : Fin (m + 1) → A) p.1 * (Fin.cons g' f' : Fin (n + 1) → A) p.2
 
 /-- If `g, f₁, …, fₘ` and `g', f'₁, …, f'ₙ` generate the unit ideal, so do `g g'` and the
 numerators `ĝᵢ ĝ'ⱼ` of `R(f/g) ∩ R(f'/g')`. -/
@@ -125,6 +120,14 @@ def IsRationalDomain {A : Type*} [CommRing A] [Algebra K A] (U : Set (MaximalSpe
     Prop :=
   ∃ (m : ℕ) (g : A) (f : Fin m → A),
     Ideal.span (insert g (Set.range f)) = ⊤ ∧ U = rationalDomain K g f
+
+/-- `U` is a rational domain iff `U = R(f/g)` for some `g, f₁, …, fₘ` generating the unit
+ideal. -/
+theorem isRationalDomain_iff {A : Type*} [CommRing A] [Algebra K A]
+    {U : Set (MaximalSpectrum A)} :
+    IsRationalDomain K U ↔ ∃ (m : ℕ) (g : A) (f : Fin m → A),
+      Ideal.span (insert g (Set.range f)) = ⊤ ∧ U = rationalDomain K g f :=
+  Iff.rfl
 
 /-- `R(f/g)` is a rational domain when `g, f₁, …, fₘ` generate the unit ideal. -/
 theorem isRationalDomain_rationalDomain {A : Type*} [CommRing A] [Algebra K A] {m : ℕ} {g : A}
