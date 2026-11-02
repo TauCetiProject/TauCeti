@@ -90,6 +90,17 @@ variable {S : ObjectProperty (CochainComplex C ℤ)} [S.IsClosedUnderIsomorphism
 
 namespace KInjectiveCriterion
 
+private lemma quasiIso_mk_arrow_iff {A X : CochainComplex C ℤ} (f : A ⟶ X) [Mono f] :
+    QuasiIso (Subobject.mk f).arrow ↔ QuasiIso f := by
+  rw [← Subobject.underlyingIso_hom_comp_eq_mk, quasiIso_iff_comp_left]
+
+private lemma quasiIso_ofLE {X : CochainComplex C ℤ} {A B : Subobject X} (h : A ≤ B)
+    (hA : QuasiIso A.arrow) (hB : QuasiIso B.arrow) : QuasiIso (Subobject.ofLE A B h) := by
+  have : QuasiIso (Subobject.ofLE A B h ≫ B.arrow) := by
+    rw [Subobject.ofLE_arrow]
+    infer_instance
+  exact quasiIso_of_comp_right _ B.arrow
+
 variable (hS : ∀ M : CochainComplex C ℤ, M.Acyclic → ¬ IsZero M →
   ∃ (N : CochainComplex C ℤ) (i : N ⟶ M), Mono i ∧ ¬ IsZero N ∧ N.Acyclic ∧ S N)
 
@@ -103,9 +114,7 @@ private lemma exists_larger_subobject {X : CochainComplex C ℤ} (A : Subobject 
     ∃ (A' : Subobject X) (h : A < A'), QuasiIso A'.arrow ∧
       S.monoWithCokernel (Subobject.ofLE A A' h.le) := by
   induction A using Subobject.ind with | _ f
-  have hf : QuasiIso f := by
-    rw [← Subobject.underlyingIso_hom_comp_eq_mk] at hA'
-    exact quasiIso_of_comp_left (Subobject.underlyingIso f).hom f
+  have hf : QuasiIso f := (quasiIso_mk_arrow_iff f).1 hA'
   have hQ : (cokernel f).Acyclic := (TauCeti.cokernelSequence_shortExact f).quasiIso_f_iff.1 hf
   have hQ' : ¬ IsZero (cokernel f) := fun h ↦ hA (by
     have := Preadditive.epi_of_isZero_cokernel f h
@@ -132,8 +141,7 @@ private lemma exists_larger_subobject {X : CochainComplex C ℤ} (A : Subobject 
     exact IsZero.of_epi_eq_zero _ this)
   refine ⟨Subobject.mk (pullback.fst _ _),
     Subobject.mk_lt_mk_of_comm u (pullback.lift_fst _ _ _) hu''', ?_, ?_⟩
-  · rw [← Subobject.underlyingIso_hom_comp_eq_mk]
-    infer_instance
+  · exact (quasiIso_mk_arrow_iff _).2 inferInstance
   · refine (S.monoWithCokernel.arrow_mk_iso_iff ?_).1 ((ObjectProperty.mem_monoWithCokernel_iff u).2
       ⟨inferInstance, S.prop_of_iso
         (hu''.gIsCokernel.coconePointUniqueUpToIso (colimit.isColimit _)) hSN⟩)
@@ -247,36 +255,23 @@ private lemma quasiIso_transfiniteIterate_arrow (hA₀ : QuasiIso A₀.arrow) (j
     obtain ⟨hc⟩ := (isWellOrderContinuous_functor hS A₀ J).nonempty_isColimit m hm
     rw [quasiIso_iff]
     intro n
-    rw [quasiIsoAt_iff_isIso_homologyMap]
     let i₀ : Set.Iio m := ⟨⊥, hm.bot_lt⟩
     let H := HomologicalComplex.homologyFunctor C (ComplexShape.up ℤ) n
     have hF : ((Set.principalSegIio m).monotone.functor ⋙ functor hS A₀ J ⋙ H)
         |>.IsEventuallyConstantFrom i₀ := fun k φ ↦ by
-      have := ih _ i₀.2
-      have := ih _ k.2
-      have : QuasiIso (Subobject.ofLE _ _ (transfiniteIterate_mono hS A₀ J (leOfHom φ)) ≫
-          (transfiniteIterate (largerSubobject hS) k.1 A₀).arrow) := by
-        rw [Subobject.ofLE_arrow]
-        infer_instance
-      have hφ := quasiIso_of_comp_right
-        (Subobject.ofLE _ _ (transfiniteIterate_mono hS A₀ J (leOfHom φ)))
-        (transfiniteIterate (largerSubobject hS) k.1 A₀).arrow
-      have : QuasiIso ((functor hS A₀ J).map ((Set.principalSegIio m).monotone.functor.map φ)) := by
-        rw [functor_map]
-        exact hφ
+      have : QuasiIso ((functor hS A₀ J).map ((Set.principalSegIio m).monotone.functor.map φ)) :=
+        quasiIso_ofLE _ (ih _ i₀.2) (ih _ k.2)
       rw [Functor.comp_map, Functor.comp_map, HomologicalComplex.homologyFunctor_map]
       exact (quasiIsoAt_iff_isIso_homologyMap _ n).1 ((quasiIso_iff _).1 this n)
     have hι := hF.isIso_ι_of_isColimit (isColimitOfPreserves H hc)
     rw [Functor.mapCocone_ι_app, PrincipalSeg.cocone_ι_app, HomologicalComplex.homologyFunctor_map,
       functor_map] at hι
     have := ih _ i₀.2
-    have : IsIso (HomologicalComplex.homologyMap
-        (Subobject.ofLE _ _ (transfiniteIterate_mono hS A₀ J i₀.2.le)) n ≫
-          HomologicalComplex.homologyMap (transfiniteIterate (largerSubobject hS) m A₀).arrow
-            n) := by
-      rw [← HomologicalComplex.homologyMap_comp, Subobject.ofLE_arrow]
-      infer_instance
-    exact @IsIso.of_isIso_comp_left _ _ _ _ _ _ _ hι this
+    have : QuasiIsoAt (Subobject.ofLE _ _ (transfiniteIterate_mono hS A₀ J i₀.2.le)) n :=
+      (quasiIsoAt_iff_isIso_homologyMap _ n).2 hι
+    rw [← quasiIsoAt_iff_comp_left (Subobject.ofLE _ _ (transfiniteIterate_mono hS A₀ J i₀.2.le)),
+      Subobject.ofLE_arrow]
+    infer_instance
 
 variable {J} in
 /-- The transfinite iteration up to `j`, as a transfinite composition, provided it does not reach
@@ -338,9 +333,7 @@ theorem exists_transfiniteCompositionOfShape_of_quasiIso {A X : CochainComplex C
     [Mono f] [QuasiIso f] :
     ∃ (J : Type w) (_ : LinearOrder J) (_ : OrderBot J) (_ : SuccOrder J) (_ : WellFoundedLT J),
       Nonempty (S.monoWithCokernel.TransfiniteCompositionOfShape J f) := by
-  have hA₀ : QuasiIso (Subobject.mk f).arrow := by
-    rw [← Subobject.underlyingIso_hom_comp_eq_mk]
-    infer_instance
+  have hA₀ : QuasiIso (Subobject.mk f).arrow := (quasiIso_mk_arrow_iff f).2 inferInstance
   obtain ⟨o, j, hj⟩ := exists_ordinal hS (Subobject.mk f)
   have : Nonempty o.ToType := ⟨j⟩
   have := WellFoundedLT.toOrderBot o.ToType
@@ -360,9 +353,10 @@ theorem exists_transfiniteCompositionOfShape_of_quasiIso {A X : CochainComplex C
           (transfiniteIterate (largerSubobject hS) j₀ (Subobject.mk f)).arrow := by
     rw [Subobject.ofLE_arrow]
     simp
+  let e₀ := asIso (transfiniteIterate (largerSubobject hS) j₀ (Subobject.mk f)).arrow
   let e : Arrow.mk ((functor hS (Subobject.mk f) o.ToType).map (homOfLE bot_le : ⊥ ⟶ j₀)) ≅
       Arrow.mk f :=
-    Arrow.isoMk _ (@asIso _ _ _ _ (transfiniteIterate (largerSubobject hS) j₀ _).arrow this) hw
+    Arrow.isoMk _ e₀ hw
   exact ⟨_, inferInstance, inferInstance, inferInstance, inferInstance, ⟨h.ofArrowIso e⟩⟩
 
 /-- **Testing K-injectivity on a family of acyclic complexes.** Let `S` be a property of cochain
