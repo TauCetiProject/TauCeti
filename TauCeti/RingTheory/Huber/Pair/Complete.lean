@@ -79,7 +79,8 @@ theorem IsRingOfIntegralElements.isAdicComplete_span_singleton
 
 /-- Surjectivity of Frobenius modulo `p` in a ring of integral elements gives roots modulo
 `ϖ p` for every pseudouniformiser with `ϖ ^ p ∣ p` in that ring. -/
-theorem IsRingOfIntegralElements.exists_mul_natCast_dvd_sub_pow {p : ℕ} [Fact p.Prime]
+theorem IsRingOfIntegralElements.exists_mul_natCast_dvd_sub_pow_of_forall_exists_natCast_dvd_sub_pow
+    {p : ℕ} [Fact p.Prime]
     (h : IsRingOfIntegralElements Aplus) {ϖ : Aplus}
     (hϖ : IsPseudoUniformizer (ϖ : A)) (hdvd : ϖ ^ p ∣ (p : Aplus))
     (hs : ∀ x : Aplus, ∃ y : Aplus, (p : Aplus) ∣ x - y ^ p) (x : Aplus) :
