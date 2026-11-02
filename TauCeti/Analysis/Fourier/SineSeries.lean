@@ -19,12 +19,12 @@ orthogonal to all of them vanishes almost everywhere
 when `b ≤ a` the interval `(a, b]` is empty, so the restricted measure is zero and the conclusion
 holds trivially.
 
-For `a < b`, the proof reduces to Mathlib's completeness of the exponentials on a circle. Extend `g` oddly
-about `a` to `[2a - b, b]`. On this interval of length `2(b - a)`, the `n`-th Fourier coefficient
-of the odd extension is a nonzero multiple of `∫ g(x) sin (n π (x - a) / (b - a)) dx`, so all of
-them vanish, and Parseval's identity (`hasSum_sq_fourierCoeffOn`) forces the extension, hence `g`,
-to vanish almost everywhere. The first step is recorded separately: a square integrable function
-on `(a, b]` whose Fourier coefficients on `[a, b]` all vanish is zero almost everywhere
+For `a < b`, the proof reduces to Mathlib's completeness of the exponentials on a circle. Extend `g`
+oddly about `a` to `[2a - b, b]`. On this interval of length `2(b - a)`, the `n`-th Fourier
+coefficient of the odd extension is a nonzero multiple of `∫ g(x) sin (n π (x - a) / (b - a)) dx`,
+so all of them vanish, and Parseval's identity (`hasSum_sq_fourierCoeffOn`) forces the extension,
+hence `g`, to vanish almost everywhere. The first step is recorded separately: a square integrable
+function on `(a, b]` whose Fourier coefficients on `[a, b]` all vanish is zero almost everywhere
 (`TauCeti.ae_eq_zero_of_forall_fourierCoeffOn_eq_zero`).
 
 ## Main results
