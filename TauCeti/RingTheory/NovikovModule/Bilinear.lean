@@ -67,7 +67,8 @@ complexes.
 Composing a product with kernel maps, on either input or on the output, gives the product of the
 composite kernel (`NovikovModule.kernelMap_kernelProduct`,
 `NovikovModule.kernelProduct_kernelMap_left`, `NovikovModule.kernelProduct_kernelMap_right`), and
-the product is additive in the kernel (`NovikovModule.kernelProduct_add`). Hence a Leibniz rule
+the product is linear in the kernel (`NovikovModule.kernelProduct_add`,
+`NovikovModule.kernelProduct_smul`). Hence a Leibniz rule
 `d (a ⋆ b) = d a ⋆ b ± a ⋆ d b` for differentials given by kernels follows from the corresponding
 identity between kernels, which is what counting the ends of one-dimensional moduli spaces gives.
 
@@ -329,6 +330,18 @@ theorem kernelProduct_add {n' : S₁ → S₂ → S₀ → R}
     mul_add]
   exact finsum_add_distrib (finite_support_mul_kernel hn a b p₀)
     (finite_support_mul_kernel hn' a b p₀)
+
+/-- The product of a scalar multiple of a kernel is the scalar multiple of its product. The two
+potential bounds may have different constants. -/
+theorem kernelProduct_smul (c : R)
+    (hcn : ∀ p₁ p₂ p₀, (c • n) p₁ p₂ p₀ ≠ 0 → F₀ p₀ ≤ F₁ p₁ + F₂ p₂ + C')
+    (hcfin : ∀ p₁ p₂, (c • n) p₁ p₂ ∈ NovikovModule R F₀) :
+    kernelProduct hcn hcfin = c • kernelProduct hn hfin := by
+  ext a b p₀
+  simp only [kernelProduct_apply_val, LinearMap.smul_apply, Submodule.coe_smul, Pi.smul_apply,
+    smul_eq_mul]
+  rw [mul_finsum' _ c (finite_support_mul_kernel hn a b p₀)]
+  exact finsum_congr fun q => by ring
 
 include hn in
 /-- Fixing the second input `b` of a supported product kernel gives the one-input kernel

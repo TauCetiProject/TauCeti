@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.PowerSeries.Evaluation
+public import TauCeti.RingTheory.MvPowerSeries.Evaluation
 
 /-!
 # Evaluation of power series and division by `X - C c`
@@ -40,8 +41,12 @@ of `f` evaluable at `c`, and it already excludes the units. For a unit `c` the s
 is a unit of `A⟦X⟧`, so it divides everything, while `f(c)` need not vanish; and a unit is
 topologically nilpotent only in the zero ring.
 
+A fixed series is also continuous in a continuously varying admissible argument under a linear
+topology; `PowerSeries.continuous_eval₂_of_continuous` specializes the multivariate result.
+
 ## Main results
 
+* `PowerSeries.continuous_eval₂_of_continuous`: continuity in the admissible evaluation point.
 * `PowerSeries.algHom_coe_eq_aeval`: any algebra map out of `A⟦X⟧`, continuous or not, restricts
   on polynomials to the polynomial evaluation at the image of `X`.
 * `PowerSeries.aeval_X`, `PowerSeries.aeval_C`: the values of evaluation on the generators.
@@ -65,6 +70,18 @@ topologically nilpotent only in the zero ring.
 public section
 
 namespace PowerSeries
+
+/-- A fixed power series is continuous in a continuously varying admissible argument.
+No common ideal of definition for the arguments is required. -/
+theorem continuous_eval₂_of_continuous {R S X : Type*} [CommRing R] [UniformSpace R]
+    [IsTopologicalSemiring R] [IsUniformAddGroup R] [CommRing S] [UniformSpace S]
+    [IsUniformAddGroup S] [CompleteSpace S] [T2Space S] [IsTopologicalRing S]
+    [IsLinearTopology S S] [TopologicalSpace X] {φ : R →+* S} (hφ : Continuous φ)
+    {a : X → S} (ha : Continuous a) (heval : ∀ x, HasEval (a x)) (f : PowerSeries R) :
+    Continuous (fun x ↦ eval₂ φ (a x) f) := by
+  simp only [eval₂]
+  exact MvPowerSeries.continuous_eval₂_of_continuous hφ (fun _ ↦ ha)
+    (fun x ↦ hasEval (heval x)) f
 
 section AlgHom
 

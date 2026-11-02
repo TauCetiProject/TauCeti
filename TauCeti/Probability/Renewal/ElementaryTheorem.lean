@@ -8,6 +8,7 @@ module
 public import TauCeti.MeasureTheory.Function.DeLaValleePoussin
 public import TauCeti.Probability.Renewal.Measure
 public import TauCeti.Probability.Renewal.StrongLaw
+import TauCeti.Probability.Independence.InfinitePi
 
 /-!
 # The elementary renewal theorem
@@ -175,11 +176,9 @@ theorem tendsto_renewalFunction_div (μ : Measure ℝ≥0) [IsProbabilityMeasure
   -- Realize i.i.d. increments with law `μ` as the coordinates of the product measure.
   set P := Measure.infinitePi fun _ : ℕ ↦ μ
   have hT : ∀ n, Measurable fun w : ℕ → ℝ≥0 ↦ w n := measurable_pi_apply
-  have hindep : iIndepFun (fun n (w : ℕ → ℝ≥0) ↦ w n) P :=
-    iIndepFun_infinitePi (P := fun _ : ℕ ↦ μ) (X := fun _ x ↦ x) fun _ ↦ measurable_id
+  have hindep : iIndepFun _ P := TauCeti.Probability.iIndepFun_eval_infinitePi _
+  have hid (n : ℕ) : IdentDistrib _ _ P P := μ.identDistrib_eval_infinitePi n 0
   have hmap : ∀ n, P.map (fun w ↦ w n) = μ := fun n ↦ infinitePi_map_eval _ n
-  have hid : ∀ n, IdentDistrib (fun w : ℕ → ℝ≥0 ↦ w n) (fun w ↦ w 0) P P := fun n ↦
-    ⟨(hT n).aemeasurable, (hT 0).aemeasurable, by rw [hmap, hmap]⟩
   have hzero : P {w | w 0 = 0} < 1 := by
     rwa [← hmap 0, map_apply (hT 0) (measurableSet_singleton 0)] at hμ
   have h := TauCeti.Probability.tendsto_integral_renewalCountNat_div hT hindep hid hzero
