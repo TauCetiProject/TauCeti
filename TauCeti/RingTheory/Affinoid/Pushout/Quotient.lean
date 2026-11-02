@@ -59,16 +59,6 @@ theorem map_pushoutIdeal_comap_quotient :
     Ideal.map_comap_of_surjective (Ideal.Quotient.mkₐ A I) (Ideal.Quotient.mkₐ_surjective A I),
     Ideal.map_comap_of_surjective (Ideal.Quotient.mkₐ A J) (Ideal.Quotient.mkₐ_surjective A J)]
 
-private theorem pushoutIdeal_le_comap_quotient :
-    pushoutIdeal I J ≤
-      pushoutIdeal (L.comap (Ideal.Quotient.mkₐ A I)) (M.comap (Ideal.Quotient.mkₐ A J)) := by
-  have hI : I ≤ L.comap (Ideal.Quotient.mkₐ A I) :=
-    I.mk_ker.symm.trans_le (Ideal.ker_le_comap _)
-  have hJ : J ≤ M.comap (Ideal.Quotient.mkₐ A J) :=
-    J.mk_ker.symm.trans_le (Ideal.ker_le_comap _)
-  simp only [pushoutIdeal_def]
-  exact sup_le_sup (Ideal.map_mono hI) (Ideal.map_mono hJ)
-
 /-- Quotienting the factors of an affinoid pushout is the same as quotienting the pushout
 by the sum of the extended ideals. The target is the restricted-series presentation of the
 pushout of `B / L` and `C / M`. -/
@@ -76,7 +66,9 @@ noncomputable def quotientEquiv :
     (AffinoidPushout I J ⧸ (L.map (inl I J) ⊔ M.map (inr I J))) ≃ₐ[A]
       AffinoidPushout (L.comap (Ideal.Quotient.mkₐ A I)) (M.comap (Ideal.Quotient.mkₐ A J)) :=
   (Ideal.quotientEquivAlgOfEq A (map_pushoutIdeal_comap_quotient I J L M).symm).trans
-    (DoubleQuot.quotQuotEquivQuotOfLEₐ A (pushoutIdeal_le_comap_quotient I J L M))
+    (DoubleQuot.quotQuotEquivQuotOfLEₐ A (pushoutIdeal_mono
+      (I.mk_ker.symm.trans_le (Ideal.ker_le_comap _))
+      (J.mk_ker.symm.trans_le (Ideal.ker_le_comap _))))
 
 /-- The comparison sends the class of a restricted series to its class in the new presentation. -/
 @[simp]
@@ -84,9 +76,9 @@ theorem quotientEquiv_mk_mk
     (f : IsRestricted.subring (R := A) (fun _ : Fin (m + n) ↦ 1)) :
     quotientEquiv I J L M (Ideal.Quotient.mk _ (Ideal.Quotient.mk _ f)) =
       Ideal.Quotient.mk _ f := by
-  rw [quotientEquiv, AlgEquiv.trans_apply, Ideal.quotientEquivAlgOfEq_mk]
-  exact congr($(DoubleQuot.quotQuotEquivQuotOfLE_comp_quotQuotMkₐ A
-    (pushoutIdeal_le_comap_quotient I J L M)) f)
+  simp only [quotientEquiv, AlgEquiv.trans_apply, Ideal.quotientEquivAlgOfEq_mk,
+    DoubleQuot.coe_quotQuotEquivQuotOfLEₐ]
+  exact DoubleQuot.quotQuotEquivQuotOfLE_quotQuotMk f _
 
 /-- The inverse comparison sends a series class to its iterated quotient class. -/
 @[simp]
