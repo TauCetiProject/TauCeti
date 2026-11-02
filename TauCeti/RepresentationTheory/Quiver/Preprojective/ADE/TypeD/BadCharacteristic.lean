@@ -102,11 +102,13 @@ private theorem d4ForkQuotient_arrow (hn : 4 ≤ n) {i j : Fin 4}
     ← signlessPreprojectiveAlgebraEquiv_symm, AlgEquiv.apply_symm_apply,
     signlessPreprojectiveInducedSubgraphHom_ofArrow, dite_eq_left hi, dite_eq_left hj,
     signlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk, pathAlgebraEquiv_ofArrow]
+  -- Via Equiv.ofInjective, isoInduceRange sends each vertex i to ⟨f i, ⟨i, rfl⟩⟩;
+  -- these are the same range vertices chosen by the induced-subgraph quotient above.
   rfl
 
 /-- In characteristic two, the signless preprojective algebra of `Dₙ`, `n ≥ 4`, has a
 homogeneous element of degree four which is not a sum of commutators. -/
-theorem exists_mem_signlessPreprojectiveGrade_D_four_not_mem_commutatorSubmodule
+theorem exists_mem_signlessPreprojectiveGrade_D_four_notMem_commutatorSubmodule
     [Nontrivial k] (hn : 4 ≤ n) (h2 : (2 : k) = 0) :
     ∃ z : Π, z ∈ signlessPreprojectiveGrade k (DoubledQuiver G) 4 ∧
       z ∉ commutatorSubmodule k Π := by
@@ -133,13 +135,13 @@ theorem exists_mem_signlessPreprojectiveGrade_D_four_not_mem_commutatorSubmodule
 
 /-- In characteristic two, the additive preprojective algebra of every orientation of `Dₙ`,
 `n ≥ 4`, has a degree-four element which is not a sum of commutators. -/
-theorem exists_mem_preprojectiveGrade_D_four_not_mem_commutatorSubmodule
+theorem exists_mem_preprojectiveGrade_D_four_notMem_commutatorSubmodule
     [Nontrivial k] (hn : 4 ≤ n) (h2 : (2 : k) = 0) (o : Orientation G) :
     ∃ z : preprojectiveAlgebra k (OrientedQuiver G o),
       z ∈ preprojectiveGrade k (OrientedQuiver G o) 4 ∧
         z ∉ commutatorSubmodule k (preprojectiveAlgebra k (OrientedQuiver G o)) := by
   obtain ⟨z, hz, hz0⟩ :=
-    exists_mem_signlessPreprojectiveGrade_D_four_not_mem_commutatorSubmodule k hn h2
+    exists_mem_signlessPreprojectiveGrade_D_four_notMem_commutatorSubmodule k hn h2
   let C := dColoring n
   let E := C.signlessPreprojectiveAlgebraEquiv k o
   refine ⟨E z, C.signlessPreprojectiveAlgebraEquiv_mem_preprojectiveGrade k o hz, ?_⟩
@@ -163,7 +165,7 @@ theorem signlessPreprojectiveGrade_D_four_le_commutatorSubmodule_iff (hn : 4 ≤
       (2 : k) ≠ 0 := by
   refine ⟨fun h h2 => ?_, fun h2 => ?_⟩
   · obtain ⟨z, hz, hz0⟩ :=
-      exists_mem_signlessPreprojectiveGrade_D_four_not_mem_commutatorSubmodule k hn h2
+      exists_mem_signlessPreprojectiveGrade_D_four_notMem_commutatorSubmodule k hn h2
     exact hz0 (h hz)
   · exact signlessPreprojectiveGrade_D_le_commutatorSubmodule k
       (isUnit_iff_ne_zero.mpr h2) (by decide)
@@ -176,7 +178,7 @@ theorem preprojectiveGrade_D_four_le_commutatorSubmodule_iff (hn : 4 ≤ n)
       commutatorSubmodule k (preprojectiveAlgebra k (OrientedQuiver G o)) ↔ (2 : k) ≠ 0 := by
   refine ⟨fun h h2 => ?_, fun h2 => ?_⟩
   · obtain ⟨z, hz, hz0⟩ :=
-      exists_mem_preprojectiveGrade_D_four_not_mem_commutatorSubmodule k hn h2 o
+      exists_mem_preprojectiveGrade_D_four_notMem_commutatorSubmodule k hn h2 o
     exact hz0 (h hz)
   · exact preprojectiveGrade_D_le_commutatorSubmodule k o
       (isUnit_iff_ne_zero.mpr h2) (by decide)
