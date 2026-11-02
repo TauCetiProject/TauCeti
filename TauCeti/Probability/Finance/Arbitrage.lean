@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Probability.Martingale.Basic
 public import TauCeti.Probability.Finance.SimpleStrategy
 
 /-!
@@ -37,9 +36,10 @@ one price.
 For simple strategies the martingale property is proved rather than assumed. The gains
 `∫₀ᵗ a dX` of a simple strategy with bounded positions, each chosen at the start of its trading
 interval, from trading a `Q`-martingale `X` form a `Q`-martingale
-(`MeasureTheory.Martingale.simpleGains`). So if the discounted stock `S / β` is a `Q`-martingale,
-every self-financing simple strategy with bounded stock positions has martingale discounted gains,
-and none is an arbitrage (`TauCeti.Finance.IsSelfFinancing.not_isArbitrage`).
+(`MeasureTheory.Martingale.simpleGains`, in `TauCeti/Probability/Finance/SimpleStrategy.lean`).
+So if the discounted stock `S / β` is a `Q`-martingale, every self-financing simple strategy
+with bounded stock positions has martingale discounted gains, and none is an arbitrage
+(`TauCeti.Finance.IsSelfFinancing.not_isArbitrage`).
 
 ## Main declarations
 
@@ -48,8 +48,6 @@ and none is an arbitrage (`TauCeti.Finance.IsSelfFinancing.not_isArbitrage`).
   positive numeraire is a supermartingale under an equivalent measure.
 * `MeasureTheory.Martingale.ae_eq_mul_condExp_div`, `MeasureTheory.Martingale.ae_eq_of_ae_eq`:
   the value process of discounted martingale wealth, and the law of one price.
-* `MeasureTheory.Martingale.simpleGains`: the gains of a bounded simple strategy from trading a
-  martingale form a martingale.
 * `TauCeti.Finance.IsSelfFinancing.not_isArbitrage`: no self-financing simple strategy is an
   arbitrage when the discounted stock is a martingale under an equivalent measure.
 
@@ -172,81 +170,6 @@ theorem Martingale.ae_eq_of_ae_eq (hV : Martingale (V / N) ℱ Q) (hV' : Marting
   filter_upwards [hV.ae_eq_mul_condExp_div hPQ hN hij, hV'.ae_eq_mul_condExp_div hPQ hN hij,
     hPQ.ae_le hcond] with ω h₁ h₂ h₃
   rw [h₁, h₂, Pi.mul_apply, Pi.mul_apply, h₃]
-
-end MeasureTheory
-
-/-! ### The gains of a simple strategy from trading a martingale -/
-
-namespace MeasureTheory
-
-open TauCeti.Finance
-
-variable {Ω ι : Type*} {mΩ : MeasurableSpace Ω} {Q : Measure Ω} [LinearOrder ι]
-  {ℱ : Filtration ι mΩ} {τ : ℕ → ι} {n : ℕ} {a : ℕ → Ω → ℝ} {X : ι → Ω → ℝ}
-
-/-- **The gains of a simple strategy from trading a martingale form a martingale.** If `X` is a
-martingale and the position `a j` held on `(τ j, τ (j + 1)]` is bounded and chosen at time
-`τ j`, then the elementary integral `t ↦ ∫₀ᵗ a dX` is a martingale. -/
-theorem Martingale.simpleGains [SigmaFiniteFiltration Q ℱ] (hX : Martingale X ℱ Q)
-    (hτ : MonotoneOn τ (Set.Iic n)) (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
-    (ha_bdd : ∀ j < n, ∃ C, ∀ᵐ ω ∂Q, |a j ω| ≤ C) :
-    Martingale (TauCeti.Finance.simpleGains τ n a X) ℱ Q := by
-  -- The gains on the `j`-th interval up to time `t` are `a j * D j t`.
-  obtain ⟨D, hD⟩ :
-      ∃ D : ℕ → ι → Ω → ℝ, ∀ j t, D j t = X (min (τ (j + 1)) t) - X (min (τ j) t) :=
-    ⟨_, fun _ _ ↦ rfl⟩
-  have hDint : ∀ j t, Integrable (D j t) Q := fun j t ↦ by
-    rw [hD]
-    exact (hX.integrable _).sub (hX.integrable _)
-  -- A martingale stopped at a deterministic date `w` is a martingale, hence so is each `D j`.
-  have hstop : ∀ w s t, s ≤ t → Q[X (min w t) | ℱ s] =ᵐ[Q] X (min w s) := by
-    intro w s t hst
-    rcases le_or_gt w s with hws | hsw
-    · rw [min_eq_left (hws.trans hst), min_eq_left hws,
-        condExp_of_stronglyMeasurable (ℱ.le s) ((hX.stronglyAdapted w).mono (ℱ.mono hws))
-          (hX.integrable w)]
-    · rw [min_eq_right hsw.le]
-      exact hX.condExp_ae_eq (le_min hsw.le hst)
-  have hDmart : ∀ j s t, s ≤ t → Q[D j t | ℱ s] =ᵐ[Q] D j s := fun j s t hst ↦ by
-    rw [hD, hD]
-    exact (condExp_sub (hX.integrable _) (hX.integrable _) _).trans
-      ((hstop _ s t hst).sub (hstop _ s t hst))
-  have hmul : ∀ j < n, ∀ t, Integrable (a j * D j t) Q := fun j hj t ↦ by
-    obtain ⟨C, hC⟩ := ha_bdd j hj
-    exact (hDint j t).bdd_mul ((ha j hj).mono (ℱ.le _)).aestronglyMeasurable
-      (hC.mono fun ω hω ↦ by rwa [Real.norm_eq_abs])
-  have hterm : ∀ j < n, ∀ s t, s ≤ t → Q[a j * D j t | ℱ s] =ᵐ[Q] a j * D j s := by
-    intro j hj
-    have hjj : τ j ≤ τ (j + 1) := hτ hj.le (Nat.succ_le_of_lt hj) (Nat.le_succ j)
-    -- Before the interval starts there are no gains.
-    have hD₀ : ∀ t ≤ τ j, D j t = 0 := fun t ht ↦ by
-      rw [hD, min_eq_right ht, min_eq_right (ht.trans hjj), sub_self]
-    -- Once the position is known, it factors out of the conditional expectation.
-    have hlate : ∀ s t, τ j ≤ s → s ≤ t → Q[a j * D j t | ℱ s] =ᵐ[Q] a j * D j s :=
-      fun s t hjs hst ↦ (condExp_mul_of_stronglyMeasurable_left
-        ((ha j hj).mono (ℱ.mono hjs)) (hmul j hj t) (hDint j t)).trans
-          ((EventuallyEq.refl _ _).mul (hDmart j s t hst))
-    intro s t hst
-    rcases le_or_gt (τ j) s with hjs | hsj
-    · exact hlate s t hjs hst
-    rw [hD₀ s hsj.le, mul_zero]
-    rcases le_or_gt t (τ j) with htj | hjt
-    · rw [hD₀ t htj, mul_zero, condExp_zero]
-    -- Otherwise condition first on the information at `τ j`, where the gains still vanish.
-    calc Q[a j * D j t | ℱ s]
-        =ᵐ[Q] Q[Q[a j * D j t | ℱ (τ j)] | ℱ s] :=
-          (condExp_condExp_of_le (ℱ.mono hsj.le) (ℱ.le (τ j))).symm
-      _ =ᵐ[Q] Q[a j * D j (τ j) | ℱ s] := condExp_congr_ae (hlate (τ j) t le_rfl hjt.le)
-      _ = 0 := by rw [hD₀ _ le_rfl, mul_zero, condExp_zero]
-  have hsum : ∀ u, TauCeti.Finance.simpleGains τ n a X u = ∑ j ∈ range n, a j * D j u :=
-    fun u ↦ funext fun ω ↦ by simp [simpleGains_def, hD, Finset.sum_apply]
-  refine ⟨stronglyAdapted_simpleGains hτ ha hX.stronglyAdapted, fun s t hst ↦ ?_⟩
-  rw [hsum t, hsum s]
-  refine (condExp_finsetSum (fun j hj ↦ hmul j (mem_range.1 hj) t) _).trans ?_
-  filter_upwards [(Finset.eventually_all _).2 fun j hj ↦ hterm j (mem_range.1 hj) s t hst]
-    with ω hω
-  simp only [Finset.sum_apply]
-  exact Finset.sum_congr rfl hω
 
 end MeasureTheory
 
