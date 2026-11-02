@@ -59,7 +59,6 @@ namespace TauCeti
 namespace MarkedSSet
 
 /-- Every edge of `Δ[0]♭` is marked. -/
-@[simp]
 lemma mem_flat_stdSimplex₀_marked (e : Δ[0] _⦋1⦌) : e ∈ (flat.obj Δ[0] : MarkedSSet.{u}).marked :=
   ⟨SSet.stdSimplex.obj₀Equiv.symm 0, SSet.stdSimplex.objEquiv.injective (Subsingleton.elim _ _)⟩
 
@@ -93,6 +92,7 @@ def objEquiv {n : ℕ} : ((mapFlat X).obj Y) _⦋n⦌ ≃ (flat.obj Δ[n] ⊗ X 
   Equiv.ulift
 
 /-- The simplicial operators of `Map♭(X, Y)` act by precomposition. -/
+@[simp]
 lemma objEquiv_map {m n : ℕ} (f : ⦋m⦌ ⟶ ⦋n⦌) (φ : ((mapFlat X).obj Y) _⦋n⦌) :
     objEquiv (((mapFlat X).obj Y).map f.op φ) =
       flat.map (SSet.stdSimplex.map f) ▷ X ≫ objEquiv φ :=
@@ -123,6 +123,7 @@ def objEquiv {n : ℕ} : ((mapSharp X).obj Y) _⦋n⦌ ≃ (sharp.obj Δ[n] ⊗ 
   Equiv.ulift
 
 /-- The simplicial operators of `Map♯(X, Y)` act by precomposition. -/
+@[simp]
 lemma objEquiv_map {m n : ℕ} (f : ⦋m⦌ ⟶ ⦋n⦌) (φ : ((mapSharp X).obj Y) _⦋n⦌) :
     objEquiv (((mapSharp X).obj Y).map f.op φ) =
       sharp.map (SSet.stdSimplex.map f) ▷ X ≫ objEquiv φ :=

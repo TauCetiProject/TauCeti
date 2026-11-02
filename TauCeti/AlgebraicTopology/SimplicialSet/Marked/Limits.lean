@@ -41,7 +41,7 @@ structure on marked simplicial sets.
 * J. Lurie, *Higher Topos Theory*, §3.1.
 -/
 
-@[expose] public section
+public section
 
 open CategoryTheory Limits MonoidalCategory CartesianMonoidalCategory Opposite Simplicial
 
@@ -58,7 +58,7 @@ section limits
 /-- The cone over a diagram of marked simplicial sets given by a cone `c` over the underlying
 diagram of simplicial sets, in which an edge of `c.pt` is marked when each of its projections is
 marked. -/
-@[simps pt_toSSet]
+@[expose, simps pt_toSSet]
 def limitCone (c : Cone (F ⋙ forget)) : Cone F where
   pt :=
     { toSSet := c.pt
@@ -71,8 +71,9 @@ def limitCone (c : Cone (F ⋙ forget)) : Cone F where
 @[simp]
 lemma limitCone_π_app_hom (c : Cone (F ⋙ forget)) (j : J) :
     ((limitCone F c).π.app j).hom = c.π.app j :=
-  rfl
+  (rfl)
 
+@[simp]
 lemma mem_limitCone_marked_iff (c : Cone (F ⋙ forget)) (e : c.pt _⦋1⦌) :
     e ∈ (limitCone F c).pt.marked ↔ ∀ j, (c.π.app j).app _ e ∈ (F.obj j).marked :=
   Iff.rfl
@@ -94,18 +95,13 @@ instance [HasLimitsOfShape J SSet.{u}] : HasLimitsOfShape J MarkedSSet.{u} where
 
 instance [HasLimitsOfSize.{w', w} SSet.{u}] : HasLimitsOfSize.{w', w} MarkedSSet.{u} where
 
-instance [HasLimit (F ⋙ forget)] : PreservesLimit F forget :=
-  preservesLimit_of_preserves_limit_cone (isLimitLimitCone (limit.isLimit _))
-    (limit.isLimit (F ⋙ forget))
-
-instance [HasLimitsOfShape J SSet.{u}] : PreservesLimitsOfShape J forget.{u} where
-
-instance [HasLimitsOfSize.{w', w} SSet.{u}] : PreservesLimitsOfSize.{w', w} forget.{u} where
+instance : PreservesLimitsOfSize.{w', w} forget.{u} :=
+  flatForgetAdj.rightAdjoint_preservesLimits
 
 variable {F} in
 /-- An edge of the apex of a limit cone of marked simplicial sets is marked exactly when each of
 its projections is marked. -/
-lemma mem_marked_iff_of_isLimit [HasLimit (F ⋙ forget)] {c : Cone F} (hc : IsLimit c)
+lemma mem_marked_iff_of_isLimit {c : Cone F} (hc : IsLimit c)
     (e : c.pt.toSSet _⦋1⦌) :
     e ∈ c.pt.marked ↔ ∀ j, (c.π.app j).hom.app _ e ∈ (F.obj j).marked := by
   refine ⟨fun he j ↦ map_mem_marked _ he, fun he ↦ ?_⟩
@@ -122,7 +118,7 @@ section colimits
 /-- The cocone under a diagram of marked simplicial sets given by a cocone `c` under the
 underlying diagram of simplicial sets, in which the marked edges of `c.pt` are the degenerate
 edges and the images of the marked edges of the diagram. -/
-@[simps pt_toSSet]
+@[expose, simps pt_toSSet]
 def colimitCocone (c : Cocone (F ⋙ forget)) : Cocone F where
   pt :=
     { toSSet := c.pt
@@ -136,8 +132,9 @@ def colimitCocone (c : Cocone (F ⋙ forget)) : Cocone F where
 @[simp]
 lemma colimitCocone_ι_app_hom (c : Cocone (F ⋙ forget)) (j : J) :
     ((colimitCocone F c).ι.app j).hom = c.ι.app j :=
-  rfl
+  (rfl)
 
+@[simp]
 lemma mem_colimitCocone_marked_iff (c : Cocone (F ⋙ forget)) (e : c.pt _⦋1⦌) :
     e ∈ (colimitCocone F c).pt.marked ↔
       e ∈ Set.range (c.pt.σ 0) ∨ ∃ j, ∃ e' ∈ (F.obj j).marked, (c.ι.app j).app _ e' = e :=
@@ -164,18 +161,13 @@ instance [HasColimitsOfShape J SSet.{u}] : HasColimitsOfShape J MarkedSSet.{u} w
 
 instance [HasColimitsOfSize.{w', w} SSet.{u}] : HasColimitsOfSize.{w', w} MarkedSSet.{u} where
 
-instance [HasColimit (F ⋙ forget)] : PreservesColimit F forget :=
-  preservesColimit_of_preserves_colimit_cocone (isColimitColimitCocone (colimit.isColimit _))
-    (colimit.isColimit (F ⋙ forget))
-
-instance [HasColimitsOfShape J SSet.{u}] : PreservesColimitsOfShape J forget.{u} where
-
-instance [HasColimitsOfSize.{w', w} SSet.{u}] : PreservesColimitsOfSize.{w', w} forget.{u} where
+instance : PreservesColimitsOfSize.{w', w} forget.{u} :=
+  forgetSharpAdj.leftAdjoint_preservesColimits
 
 variable {F} in
 /-- The marked edges of the apex of a colimit cocone of marked simplicial sets are the degenerate
 edges and the images of the marked edges of the diagram. -/
-lemma mem_marked_iff_of_isColimit [HasColimit (F ⋙ forget)] {c : Cocone F} (hc : IsColimit c)
+lemma mem_marked_iff_of_isColimit {c : Cocone F} (hc : IsColimit c)
     (e : c.pt.toSSet _⦋1⦌) :
     e ∈ c.pt.marked ↔ e ∈ Set.range (c.pt.toSSet.σ 0) ∨
       ∃ j, ∃ e' ∈ (F.obj j).marked, (c.ι.app j).hom.app _ e' = e := by
@@ -195,7 +187,7 @@ section products
 
 /-- The product of marked simplicial sets: the product of the underlying simplicial sets, in
 which an edge is marked when both of its components are. -/
-@[simps toSSet]
+@[expose, simps toSSet]
 def prod (X Y : MarkedSSet.{u}) : MarkedSSet.{u} where
   toSSet := X.toSSet ⊗ Y.toSSet
   marked := {e | (fst _ _ : X.toSSet ⊗ Y.toSSet ⟶ _).app _ e ∈ X.marked ∧
@@ -203,10 +195,12 @@ def prod (X Y : MarkedSSet.{u}) : MarkedSSet.{u} where
   σ_mem_marked x := ⟨map_σ_mem_marked _ x, map_σ_mem_marked _ x⟩
 
 /-- The product cone of two marked simplicial sets. -/
+@[expose]
 def prodFan (X Y : MarkedSSet.{u}) : BinaryFan X Y :=
   BinaryFan.mk (P := prod X Y) ⟨fst _ _, fun _ he ↦ he.1⟩ ⟨snd _ _, fun _ he ↦ he.2⟩
 
 /-- The product cone of two marked simplicial sets is a limit cone. -/
+@[expose]
 def isLimitProdFan (X Y : MarkedSSet.{u}) : IsLimit (prodFan X Y) :=
   BinaryFan.IsLimit.mk _
     (fun f g ↦ ⟨lift f.hom g.hom, fun _ he ↦ ⟨f.map_mem_marked he, g.map_mem_marked he⟩⟩)
@@ -229,14 +223,15 @@ variable {X Y X' Y' : MarkedSSet.{u}}
 
 @[simp]
 lemma tensorObj_toSSet (X Y : MarkedSSet.{u}) : (X ⊗ Y).toSSet = X.toSSet ⊗ Y.toSSet :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma tensorUnit_toSSet : (𝟙_ MarkedSSet.{u}).toSSet = 𝟙_ SSet.{u} :=
-  rfl
+  (rfl)
 
 /-- An edge of a product of marked simplicial sets is marked exactly when both of its components
 are marked. -/
+@[simp]
 lemma mem_tensorObj_marked_iff (e : (X ⊗ Y).toSSet _⦋1⦌) :
     e ∈ (X ⊗ Y).marked ↔
       (fst _ _ : X.toSSet ⊗ Y.toSSet ⟶ _).app _ e ∈ X.marked ∧
@@ -251,32 +246,32 @@ lemma mem_tensorUnit_marked (e : (𝟙_ MarkedSSet.{u}).toSSet _⦋1⦌) :
 
 @[simp]
 lemma fst_hom (X Y : MarkedSSet.{u}) : (fst X Y).hom = fst X.toSSet Y.toSSet :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma snd_hom (X Y : MarkedSSet.{u}) : (snd X Y).hom = snd X.toSSet Y.toSSet :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma lift_hom {Z : MarkedSSet.{u}} (f : Z ⟶ X) (g : Z ⟶ Y) :
     (lift f g).hom = lift f.hom g.hom :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma toUnit_hom (X : MarkedSSet.{u}) : (toUnit X).hom = toUnit X.toSSet :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma tensorHom_hom (f : X ⟶ X') (g : Y ⟶ Y') : (f ⊗ₘ g).hom = f.hom ⊗ₘ g.hom :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma whiskerLeft_hom (X : MarkedSSet.{u}) (g : Y ⟶ Y') : (X ◁ g).hom = X.toSSet ◁ g.hom :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma whiskerRight_hom (f : X ⟶ X') (Y : MarkedSSet.{u}) : (f ▷ Y).hom = f.hom ▷ Y.toSSet :=
-  rfl
+  (rfl)
 
 end products
 

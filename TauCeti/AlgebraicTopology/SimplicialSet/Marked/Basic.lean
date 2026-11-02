@@ -36,7 +36,7 @@ adjoints of the forgetful functor to simplicial sets, and both are fully faithfu
 * J. Lurie, *Higher Topos Theory*, Definition 3.1.0.1.
 -/
 
-@[expose] public section
+public section
 
 open CategoryTheory Opposite Simplicial
 
@@ -78,11 +78,11 @@ lemma hom_ext {f g : X ⟶ Y} (h : f.hom = g.hom) : f = g :=
 
 @[simp]
 lemma hom_id (X : MarkedSSet.{u}) : Hom.hom (𝟙 X) = 𝟙 X.toSSet :=
-  rfl
+  (rfl)
 
 @[simp, reassoc]
 lemma hom_comp (f : X ⟶ Y) (g : Y ⟶ Z) : (f ≫ g).hom = f.hom ≫ g.hom :=
-  rfl
+  (rfl)
 
 /-- A morphism of marked simplicial sets sends marked edges to marked edges. -/
 lemma map_mem_marked (f : X ⟶ Y) {e : X.toSSet _⦋1⦌} (he : e ∈ X.marked) :
@@ -91,7 +91,6 @@ lemma map_mem_marked (f : X ⟶ Y) {e : X.toSSet _⦋1⦌} (he : e ∈ X.marked)
 
 /-- An isomorphism of marked simplicial sets from an isomorphism of the underlying simplicial sets
 which preserves and reflects the marked edges. -/
-@[simps]
 def isoMk (e : X.toSSet ≅ Y.toSSet) (he : ∀ x, e.hom.app _ x ∈ Y.marked ↔ x ∈ X.marked) :
     X ≅ Y where
   hom := ⟨e.hom, fun x hx ↦ (he x).2 hx⟩
@@ -100,6 +99,16 @@ def isoMk (e : X.toSSet ≅ Y.toSSet) (he : ∀ x, e.hom.app _ x ∈ Y.marked �
     simpa using hy⟩
   hom_inv_id := by ext : 1; exact e.hom_inv_id
   inv_hom_id := by ext : 1; exact e.inv_hom_id
+
+@[simp]
+lemma isoMk_hom_hom (e : X.toSSet ≅ Y.toSSet)
+    (he : ∀ x, e.hom.app _ x ∈ Y.marked ↔ x ∈ X.marked) : (isoMk e he).hom.hom = e.hom :=
+  (rfl)
+
+@[simp]
+lemma isoMk_inv_hom (e : X.toSSet ≅ Y.toSSet)
+    (he : ∀ x, e.hom.app _ x ∈ Y.marked ↔ x ∈ X.marked) : (isoMk e he).inv.hom = e.inv :=
+  (rfl)
 
 /-- An isomorphism of marked simplicial sets preserves and reflects the marked edges. -/
 @[simp]
@@ -112,7 +121,7 @@ lemma mem_marked_iff_of_iso (e : X ≅ Y) (x : X.toSSet _⦋1⦌) :
   simpa [hx] using map_mem_marked e.inv h
 
 /-- The forgetful functor from marked simplicial sets to simplicial sets. -/
-@[simps]
+@[expose, simps]
 def forget : MarkedSSet.{u} ⥤ SSet.{u} where
   obj X := X.toSSet
   map f := f.hom
@@ -123,7 +132,7 @@ instance : forget.{u}.Faithful where
 section flat
 
 /-- The functor `X ↦ X♭` marking only the degenerate edges of a simplicial set. -/
-@[simps obj_toSSet map_hom]
+@[expose, simps obj_toSSet map_hom]
 def flat : SSet.{u} ⥤ MarkedSSet.{u} where
   obj X :=
     { toSSet := X
@@ -134,6 +143,7 @@ def flat : SSet.{u} ⥤ MarkedSSet.{u} where
     exact ⟨f.app _ x, (SSet.σ_naturality_apply f 0 x).symm⟩⟩
 
 /-- The marked edges of `X♭` are the degenerate edges of `X`. -/
+@[simp]
 lemma mem_flat_marked_iff {X : SSet.{u}} {e : X _⦋1⦌} :
     e ∈ (flat.obj X).marked ↔ ∃ x, X.σ 0 x = e :=
   Iff.rfl
@@ -154,7 +164,7 @@ def fromFlat {X : SSet.{u}} (f : X ⟶ Y.toSSet) : flat.obj X ⟶ Y :=
 
 @[simp]
 lemma fromFlat_hom {X : SSet.{u}} (f : X ⟶ Y.toSSet) : (fromFlat f).hom = f :=
-  rfl
+  (rfl)
 
 /-- The marking `(-)♭` is left adjoint to the forgetful functor. -/
 def flatForgetAdj : flat.{u} ⊣ forget.{u} :=
@@ -168,12 +178,12 @@ def flatForgetAdj : flat.{u} ⊣ forget.{u} :=
 @[simp]
 lemma flatForgetAdj_homEquiv_apply {X : SSet.{u}} (f : flat.obj X ⟶ Y) :
     flatForgetAdj.homEquiv X Y f = f.hom :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma flatForgetAdj_homEquiv_symm_apply {X : SSet.{u}} (f : X ⟶ Y.toSSet) :
     (flatForgetAdj.homEquiv X Y).symm f = fromFlat f :=
-  rfl
+  (rfl)
 
 /-- The functor `(-)♭` is fully faithful. -/
 def fullyFaithfulFlat : flat.{u}.FullyFaithful where
@@ -190,7 +200,7 @@ end flat
 section sharp
 
 /-- The functor `X ↦ X♯` marking every edge of a simplicial set. -/
-@[simps obj_toSSet map_hom]
+@[expose, simps obj_toSSet map_hom]
 def sharp : SSet.{u} ⥤ MarkedSSet.{u} where
   obj X :=
     { toSSet := X
@@ -204,12 +214,13 @@ lemma mem_sharp_marked {X : SSet.{u}} (e : X _⦋1⦌) : e ∈ (sharp.obj X).mar
   Set.mem_univ e
 
 /-- A morphism of simplicial sets `X ⟶ Y` is a morphism of marked simplicial sets `X ⟶ Y♯`. -/
+@[expose]
 def toSharp {Y : SSet.{u}} (f : X.toSSet ⟶ Y) : X ⟶ sharp.obj Y :=
   ⟨f, fun _ _ ↦ mem_sharp_marked _⟩
 
 @[simp]
 lemma toSharp_hom {Y : SSet.{u}} (f : X.toSSet ⟶ Y) : (toSharp f).hom = f :=
-  rfl
+  (rfl)
 
 /-- The marking `(-)♯` is right adjoint to the forgetful functor. -/
 def forgetSharpAdj : forget.{u} ⊣ sharp.{u} :=
@@ -223,12 +234,12 @@ def forgetSharpAdj : forget.{u} ⊣ sharp.{u} :=
 @[simp]
 lemma forgetSharpAdj_homEquiv_apply {Y : SSet.{u}} (f : X.toSSet ⟶ Y) :
     forgetSharpAdj.homEquiv X Y f = toSharp f :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma forgetSharpAdj_homEquiv_symm_apply {Y : SSet.{u}} (f : X ⟶ sharp.obj Y) :
     (forgetSharpAdj.homEquiv X Y).symm f = f.hom :=
-  rfl
+  (rfl)
 
 /-- The functor `(-)♯` is fully faithful. -/
 def fullyFaithfulSharp : sharp.{u}.FullyFaithful where
@@ -243,12 +254,13 @@ instance : sharp.{u}.Faithful :=
 end sharp
 
 /-- The natural transformation `X♭ ⟶ X♯`, the identity on underlying simplicial sets. -/
+@[expose]
 def flatToSharp : flat.{u} ⟶ sharp.{u} where
   app X := toSharp (𝟙 X)
 
 @[simp]
 lemma flatToSharp_app_hom (X : SSet.{u}) : (flatToSharp.app X).hom = 𝟙 (flat.obj X).toSSet :=
-  rfl
+  (rfl)
 
 end MarkedSSet
 
