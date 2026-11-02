@@ -57,6 +57,7 @@ theorem cornerEmbedding_finiteInclusion_id (b : HilbertBasis ℕ 𝕜 H) (n : �
     finiteInclusion_comp_coordinateCutoff]
 
 /-- Extending the compression of an ambient operator is its existing zero-extended section. -/
+@[simp]
 theorem cornerEmbedding_finiteSection (b : HilbertBasis ℕ 𝕜 H) (n : ℕ) (T : H →L[𝕜] H) :
     (b.finiteInclusion n).cornerEmbedding (T.finiteSection b n) =
       T.zeroExtendedFiniteSection b n := by
