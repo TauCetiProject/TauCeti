@@ -11,8 +11,8 @@ public import TauCeti.RingTheory.KrullDimension.Fiber
 public import TauCeti.RingTheory.LocalRing.MaximalIdeal.Flat
 
 import Mathlib.RingTheory.Flat.Localization
-import TauCeti.RingTheory.Ideal.Quotient.Operations
 import TauCeti.RingTheory.LocalRing.ResidueField.Fiber
+import TauCeti.RingTheory.RegularLocalRing.OfQuotient
 
 /-!
 # Regularity along flat homomorphisms
@@ -100,19 +100,12 @@ theorem of_hasGoingDown_of_quotient_map_maximalIdeal [IsRegularLocalRing R] [IsL
     [IsRegularLocalRing (S ⧸ (maximalIdeal R).map (algebraMap R S))] :
     IsRegularLocalRing S := by
   set I := (maximalIdeal R).map (algebraMap R S)
-  -- `𝔪_S` needs at most as many generators as `I = 𝔪_R S` and the maximal ideal of `S ⧸ I`
-  -- together, and `I` at most as many as `𝔪_R`; by the dimension formula these numbers add up
-  -- to `dim S`.
-  have hS := Ideal.spanFinrank_le_spanFinrank_map_add_spanFinrank
-    (map_maximalIdeal_le (algebraMap R S)) (IsNoetherian.noetherian I)
-  have hI : I.spanFinrank ≤ (maximalIdeal R).spanFinrank :=
-    Ideal.spanFinrank_map_le_of_fg _ (IsNoetherian.noetherian _)
-  rw [map_maximalIdeal_of_surjective _ Ideal.Quotient.mk_surjective] at hS
-  refine .of_spanFinrank_maximalIdeal_le S ?_
-  rw [ringKrullDim_eq_ringKrullDim_add_ringKrullDim_quotient_map_maximalIdeal R,
-    ← _root_.IsRegularLocalRing.spanFinrank_maximalIdeal (R := R),
-    ← _root_.IsRegularLocalRing.spanFinrank_maximalIdeal (R := S ⧸ I), add_comm]
-  exact_mod_cast hS.trans (Nat.add_le_add_left hI _)
+  -- `I = 𝔪_R S` needs at most as many generators as `𝔪_R`, that is `dim R` of them, and by the
+  -- dimension formula `dim S ⧸ I + dim R = dim S`.
+  refine I.isRegularLocalRing_of_quotient_of_spanFinrank_le
+    (Ideal.spanFinrank_map_le_of_fg _ (IsNoetherian.noetherian _)) ?_
+  rw [ringKrullDim_eq_ringKrullDim_add_ringKrullDim_quotient_map_maximalIdeal R (S := S),
+    ← _root_.IsRegularLocalRing.spanFinrank_maximalIdeal (R := R), add_comm]
 
 end IsRegularLocalRing
 
