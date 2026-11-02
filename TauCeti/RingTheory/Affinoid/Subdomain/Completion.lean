@@ -119,6 +119,18 @@ theorem evalₐ_completionAlgEquiv {I : Ideal A}
         (evalₐ I n z) :=
   evalₐ_mapₐ φ Ideal.le_comap_map n z
 
+/-- Modulo every power, the inverse completion comparison is the inverse quotient comparison. -/
+@[simp]
+theorem evalₐ_completionAlgEquiv_symm {I : Ideal A}
+    (hI : ∀ x : MaximalSpectrum A, I ≤ x.asIdeal → x ∈ U)
+    (n : ℕ) (w : AdicCompletion (I.map φ) B) :
+    evalₐ I n ((h.completionAlgEquiv hA hI).symm w) =
+      ((h.quotientAlgEquiv hA fun x hx ↦ hI x (Ideal.IsPrime.le_of_pow_le hx)).trans
+        (Ideal.quotientEquivAlgOfEq K (Ideal.map_pow φ I n))).symm
+          (evalₐ (I.map φ) n w) := by
+  simp only [completionAlgEquiv, AlgEquiv.ofAlgHom_symm_apply, evalₐ_liftAlgHom,
+    AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, AlgHom.restrictScalars_apply]
+
 /-- At a point of an affinoid subdomain, restriction identifies the completions at the
 corresponding maximal ideals. The extended ideal is maximal by `isMaximal_map`. -/
 noncomputable def completionMaximalAlgEquiv {x : MaximalSpectrum A} (hx : x ∈ U) :
@@ -126,17 +138,13 @@ noncomputable def completionMaximalAlgEquiv {x : MaximalSpectrum A} (hx : x ∈ 
   h.completionAlgEquiv hA fun y hy ↦ by
     rwa [← MaximalSpectrum.ext (x.isMaximal.eq_of_le y.isMaximal.ne_top hy)]
 
-/-- The maximal-ideal comparison is the canonical map induced by restriction. -/
+/-- The maximal-ideal comparison specializes the supported-ideal comparison. -/
 @[simp]
-theorem toAlgHom_completionMaximalAlgEquiv {x : MaximalSpectrum A} (hx : x ∈ U) :
-    (h.completionMaximalAlgEquiv hA hx).toAlgHom = mapₐ φ Ideal.le_comap_map :=
-  h.toAlgHom_completionAlgEquiv hA _
-
-/-- The maximal-ideal completion comparison extends restriction. -/
-@[simp]
-theorem completionMaximalAlgEquiv_of {x : MaximalSpectrum A} (hx : x ∈ U) (a : A) :
-    h.completionMaximalAlgEquiv hA hx (of x.asIdeal A a) =
-      of (x.asIdeal.map φ) B (φ a) :=
-  h.completionAlgEquiv_of hA _ a
+theorem completionMaximalAlgEquiv_eq_completionAlgEquiv {x : MaximalSpectrum A}
+    (hx : x ∈ U) :
+    h.completionMaximalAlgEquiv hA hx =
+      h.completionAlgEquiv hA (fun y hy ↦ by
+        rwa [← MaximalSpectrum.ext (x.isMaximal.eq_of_le y.isMaximal.ne_top hy)]) :=
+  (rfl)
 
 end TauCeti.IsAffinoidSubdomainMap
