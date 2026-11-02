@@ -47,7 +47,9 @@ theorem isInvertedBy_tensor_comp_Q (K : CochainComplex C ℤ) [K.IsKFlat] :
         DerivedCategory.Q) := by
   intro A B f hf
   have : QuasiIso f := hf
-  exact inferInstanceAs (IsIso (DerivedCategory.Q.map (tensorHom (𝟙 K) f)))
+  simpa only [Functor.comp_map, Functor.comp_obj, curriedTensor_map₂CochainComplex_obj_obj,
+    curriedTensor_map₂CochainComplex_obj_map] using
+    (inferInstance : IsIso (DerivedCategory.Q.map (tensorHom (𝟙 K) f)))
 
 /-- Tensoring a derived object with the specified K-flat complex on the left. -/
 def kFlatTensor (K : CochainComplex C ℤ) [K.IsKFlat] :
@@ -85,6 +87,15 @@ def kFlatTensorMap {K L : CochainComplex C ℤ} [K.IsKFlat] [L.IsKFlat] (f : K �
     (whiskerRight ((CategoryTheory.MonoidalCategory.curriedTensor C).map₂CochainComplex.map f)
       DerivedCategory.Q)
 
+/-- The induced transformation is the localization lift of the ordinary tensor transformation. -/
+theorem kFlatTensorMap_eq_liftNatTrans {K L : CochainComplex C ℤ}
+    [K.IsKFlat] [L.IsKFlat] (f : K ⟶ L) :
+    kFlatTensorMap f = Localization.liftNatTrans DerivedCategory.Q (quasiIso C (.up ℤ))
+      _ _ K.kFlatTensor L.kFlatTensor
+      (whiskerRight ((CategoryTheory.MonoidalCategory.curriedTensor C).map₂CochainComplex.map f)
+        DerivedCategory.Q) := by
+  rfl
+
 /-- On a complex model, the transformation is the image of tensoring the given map with the
 identity, conjugated by the model comparisons. -/
 theorem kFlatTensorMap_app_Q {K L : CochainComplex C ℤ} [K.IsKFlat] [L.IsKFlat]
@@ -92,7 +103,9 @@ theorem kFlatTensorMap_app_Q {K L : CochainComplex C ℤ} [K.IsKFlat] [L.IsKFlat
     (kFlatTensorMap f).app (DerivedCategory.Q.obj A) =
       (K.kFlatTensorModelIso.app A).hom ≫ DerivedCategory.Q.map (tensorHom f (𝟙 A)) ≫
         (L.kFlatTensorModelIso.app A).inv := by
-  apply Localization.liftNatTrans_app
+  simp only [kFlatTensorMap, Localization.liftNatTrans_app, whiskerRight_app,
+    curriedTensor_map₂CochainComplex_map_app, kFlatTensorModelIso, Iso.app_hom, Iso.app_inv,
+    Functor.comp_obj, curriedTensor_map₂CochainComplex_obj_obj]
 
 /-- The model comparison intertwines the induced transformation with the ordinary tensor map. -/
 @[reassoc (attr := simp)]
@@ -102,9 +115,8 @@ theorem kFlatTensorMap_app_Q_comp {K L : CochainComplex C ℤ} [K.IsKFlat] [L.Is
       K.kFlatTensorModelIso.hom.app A ≫ DerivedCategory.Q.map (tensorHom f (𝟙 A)) := by
   rw [← Iso.app_hom K.kFlatTensorModelIso A, ← Iso.app_hom L.kFlatTensorModelIso A,
     kFlatTensorMap_app_Q]
-  -- Reduce the bifunctor's object projections so the tensor models have identical types.
-  dsimp only [map₂CochainComplex, map₂HomologicalComplex]
-  simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id]
+  simp only [Category.assoc, ← curriedTensor_map₂CochainComplex_obj_obj L A,
+    Iso.inv_hom_id, Category.comp_id]
 
 @[simp]
 theorem kFlatTensorMap_id (K : CochainComplex C ℤ) [K.IsKFlat] :

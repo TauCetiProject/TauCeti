@@ -30,7 +30,7 @@ public section
 
 noncomputable section
 
-open CategoryTheory HomologicalComplex
+open CategoryTheory CategoryTheory.Functor HomologicalComplex
 open scoped MonoidalCategory
 
 namespace CochainComplex
@@ -73,18 +73,18 @@ unbounded derived category, not just on bounded or K-flat right inputs. -/
 instance isIso_kFlatTensorMap
     {K L : CochainComplex (ModuleCat.{u} R) ℤ} [K.IsKFlat] [L.IsKFlat]
     (f : K ⟶ L) [QuasiIso f] : IsIso (kFlatTensorMap f) := by
-  have : DerivedCategory.Q.EssSurj :=
-    Localization.essSurj DerivedCategory.Q (quasiIso (ModuleCat.{u} R) (.up ℤ))
-  have h (A : CochainComplex (ModuleCat.{u} R) ℤ) :
-      IsIso ((kFlatTensorMap f).app (DerivedCategory.Q.obj A)) := by
-    rw [kFlatTensorMap_app_Q]
-    -- Reduce the tensor bifunctor's object projections before synthesizing the instances.
-    dsimp only [Functor.map₂CochainComplex, Functor.map₂HomologicalComplex]
+  have : IsIso (whiskerRight
+      ((CategoryTheory.MonoidalCategory.curriedTensor (ModuleCat.{u} R)).map₂CochainComplex.map f)
+      DerivedCategory.Q) := by
+    rw [NatTrans.isIso_iff_isIso_app]
+    intro A
+    simp only [whiskerRight_app, curriedTensor_map₂CochainComplex_map_app,
+      Functor.comp_obj, curriedTensor_map₂CochainComplex_obj_obj]
     infer_instance
-  rw [NatTrans.isIso_iff_isIso_app]
-  intro X
-  obtain ⟨A, ⟨e⟩⟩ := Functor.EssSurj.mem_essImage DerivedCategory.Q X
-  have := h A
-  exact IsIso.of_isIso_fac_left ((kFlatTensorMap f).naturality e.hom)
+  rw [kFlatTensorMap_eq_liftNatTrans]
+  exact (Localization.liftNatIso DerivedCategory.Q (quasiIso (ModuleCat.{u} R) (.up ℤ))
+    _ _ K.kFlatTensor L.kFlatTensor (asIso (whiskerRight
+      ((CategoryTheory.MonoidalCategory.curriedTensor (ModuleCat.{u} R)).map₂CochainComplex.map f)
+      DerivedCategory.Q))).isIso_hom
 
 end CochainComplex
