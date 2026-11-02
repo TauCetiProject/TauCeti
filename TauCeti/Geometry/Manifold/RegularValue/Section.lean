@@ -148,14 +148,16 @@ theorem IsRegularPoint.exists_contMDiffOn_section [IsManifold J n N] {f : M → 
     exact isRegularPoint_iff.1 hreg
   obtain ⟨t₀, ht₀, hxt₀, s₀, hs₀x, hs₀, hgs₀⟩ :=
     hgreg.exists_contMDiffOn_section_normedSpace hg hu'o hxu' hn
+  simp only [Function.comp_apply] at hxt₀ hs₀x hgs₀
   -- Shrink `t₀` so that `s₀` lands in `u'`, then pull it back to `N` by the chart.
   set t₁ := t₀ ∩ s₀ ⁻¹' u' with ht₁
   have ht₁o : IsOpen t₁ := hs₀.continuousOn.isOpen_inter_preimage ht₀ hu'o
-  have hxt₁ : φ (f x) ∈ t₁ := ⟨hxt₀, show s₀ ((φ ∘ f) x) ∈ u' by rw [hs₀x]; exact hxu'⟩
+  have hxt₁ : φ (f x) ∈ t₁ := ⟨hxt₀, by rw [mem_preimage, hs₀x]; exact hxu'⟩
   refine ⟨φ.source ∩ φ ⁻¹' t₁,
     (continuousOn_extChartAt _).isOpen_inter_preimage (isOpen_extChartAt_source _) ht₁o,
     ⟨mem_extChartAt_source _, hxt₁⟩, s₀ ∘ φ, hs₀x, ?_, fun y hy ↦ ?_⟩
   · exact (hs₀.mono inter_subset_left).comp (hφs.mono inter_subset_left) fun _ hy ↦ hy.2
-  · exact φ.injOn (hy.2.2.2 : f (s₀ (φ y)) ∈ φ.source) hy.1 (hgs₀ (φ y) hy.2.1)
+  · rw [Function.comp_apply]
+    exact φ.injOn (mem_preimage.1 hy.2.2.2) hy.1 (hgs₀ (φ y) hy.2.1)
 
 end TauCeti

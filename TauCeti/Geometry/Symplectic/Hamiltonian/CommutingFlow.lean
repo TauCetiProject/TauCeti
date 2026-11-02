@@ -211,7 +211,7 @@ variable {ι : Type*} [Fintype ι] {F : M → ι → ℝ} (hF : ContMDiff I 𝓘
 omit [I.Boundaryless] [T2Space M] [BoundarylessManifold I M] in
 include hF in
 /-- The Hamiltonian vector fields of the components of a smooth family of functions are smooth. -/
-theorem contMDiff_hamiltonianVectorField_apply (i : ι) :
+private theorem contMDiff_hamiltonianVectorField_apply (i : ι) :
     ContMDiff I I.tangent (⊤ : ℕ∞)
       (fun y ↦ (⟨y, σ.hamiltonianVectorField (F · i) y⟩ : TangentBundle I M)) :=
   hσ.isNondegenerate.contMDiff_hamiltonianVectorField le_rfl
@@ -355,7 +355,7 @@ theorem contMDiff_hamiltonianFlowAction_uncurry :
     ContMDiff (𝓘(ℝ, ι → ℝ).prod I) I ∞
       fun p : (ι → ℝ) × M ↦ (hσ.hamiltonianFlowAction hF hcomm hc p.1).toMul p.2 := by
   classical
-  have hv := hσ.contMDiff_hamiltonianVectorField_apply hF
+  have hv := contMDiff_hamiltonianVectorField_apply hσ hF
   -- Add the coordinate axes one at a time: on `Pi.single j (v j) + w` the action is the flow of
   -- `F j` for time `v j` after the action of `w`.
   have key (s : Finset ι) : ContMDiff (𝓘(ℝ, ι → ℝ).prod I) I ∞ fun p : (ι → ℝ) × M ↦
@@ -397,7 +397,7 @@ theorem mfderiv_hamiltonianFlowAction_apply (x : M) (v w : ι → ℝ) :
         σ.hamiltonianVectorField (F · i) ((hσ.hamiltonianFlowAction hF hcomm hc v).toMul x) := by
   classical
   set o : (ι → ℝ) → M := fun v ↦ (hσ.hamiltonianFlowAction hF hcomm hc v).toMul x with ho
-  have hv := hσ.contMDiff_hamiltonianVectorField_apply hF
+  have hv := contMDiff_hamiltonianVectorField_apply hσ hF
   have hd (u : ι → ℝ) : MDifferentiableAt 𝓘(ℝ, ι → ℝ) I o u :=
     (hσ.contMDiff_hamiltonianFlowAction_apply hF hcomm hc x).mdifferentiableAt (by simp)
   -- Along the `i`-th coordinate axis through `v`, the orbit map is the flow line of `Fᵢ`
