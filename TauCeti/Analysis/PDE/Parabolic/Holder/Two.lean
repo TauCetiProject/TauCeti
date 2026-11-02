@@ -40,6 +40,20 @@ open scoped NNReal ENNReal BoundedContinuousFunction
 variable (α : ℝ≥0) {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {a b : ℝ}
 
+omit [NormedAddCommGroup F] [NormedSpace ℝ F] in
+/-- At a fixed time `t`, the spatial derivative identity between a bounded continuous value
+field and a bounded continuous gradient field on the slab is a closed condition. -/
+theorem ParabolicSpaceTime.isClosed_setOf_hasFDerivAt_spatialSlice {G : Type*}
+    [NormedAddCommGroup G] [NormedSpace ℝ G] (t : Icc a b) :
+    IsClosed {p : (slab (E := E) a b →ᵇ G) × (slab (E := E) a b →ᵇ (E →L[ℝ] G)) |
+      ∀ x, HasFDerivAt (fun y ↦ p.1 (slabMk y t)) (p.2 (slabMk x t)) x} := by
+  simpa only [preimage_ofPred_eq, Prod.map_fst, Prod.map_snd,
+    BoundedContinuousFunction.coe_compContinuous, BoundedContinuousFunction.compContinuous_apply,
+    Function.comp_def, spatialSlice_apply] using
+    (isClosed_setOf_hasFDerivAt (𝕜 := ℝ) (E := E) (Y := G)).preimage
+      ((BoundedContinuousFunction.continuous_compContinuous (spatialSlice t)).prodMap
+        (BoundedContinuousFunction.continuous_compContinuous (spatialSlice t)))
+
 namespace ParabolicC2HolderSpace
 
 variable (E F) (a b : ℝ)
@@ -498,29 +512,19 @@ theorem norm_le_fullNorm_le (f : ParabolicC2HolderSpace α E F hab) :
 
 private theorem isClosed_spatialGraph (t : Icc a b) : IsClosed {J : Jet α E F a b |
       ∀ x, HasFDerivAt (fun y ↦ valueJetL J (slabMk y t))
-        (spatialJetL J (slabMk x t)) x} := by
-    simpa only [preimage_ofPred_eq, Function.comp_def,
-      BoundedContinuousFunction.coe_compContinuous, BoundedContinuousFunction.compContinuous_apply,
-      HolderSpace.toBoundedContinuousFunctionCLM_apply,
-      HolderSpace.toBoundedContinuousFunction_apply, spatialSlice_apply] using
-      (isClosed_setOf_hasFDerivAt (𝕜 := ℝ) (E := E) (Y := F)).preimage
-      (((BoundedContinuousFunction.continuous_compContinuous (spatialSlice t)).comp
-        valueJetL.continuous).prodMk
-          ((BoundedContinuousFunction.continuous_compContinuous (spatialSlice t)).comp
-            spatialJetL.continuous))
+        (spatialJetL J (slabMk x t)) x} :=
+  (isClosed_setOf_hasFDerivAt_spatialSlice t).preimage
+    (valueJetL.continuous.prodMk spatialJetL.continuous)
 
 private theorem isClosed_secondGraph (t : Icc a b) : IsClosed {J : Jet α E F a b |
       ∀ x, HasFDerivAt (fun y ↦ spatialJetL J (slabMk y t))
         (secondJetL J (slabMk x t)) x} := by
-    simpa only [preimage_ofPred_eq, Function.comp_def,
-      BoundedContinuousFunction.coe_compContinuous, BoundedContinuousFunction.compContinuous_apply,
-      HolderSpace.toBoundedContinuousFunctionCLM_apply,
-      HolderSpace.toBoundedContinuousFunction_apply, spatialSlice_apply] using
-      (isClosed_setOf_hasFDerivAt (𝕜 := ℝ) (E := E) (Y := E →L[ℝ] F)).preimage
-      (((BoundedContinuousFunction.continuous_compContinuous (spatialSlice t)).comp
-        spatialJetL.continuous).prodMk
-          ((BoundedContinuousFunction.continuous_compContinuous (spatialSlice t)).comp
-            (HolderSpace.toBoundedContinuousFunctionCLM.continuous.comp secondJetL.continuous)))
+  simpa only [preimage_ofPred_eq, Function.comp_def,
+    HolderSpace.toBoundedContinuousFunctionCLM_apply,
+    HolderSpace.toBoundedContinuousFunction_apply] using
+    (isClosed_setOf_hasFDerivAt_spatialSlice (G := E →L[ℝ] F) t).preimage
+      (spatialJetL.continuous.prodMk
+        (HolderSpace.toBoundedContinuousFunctionCLM.continuous.comp secondJetL.continuous))
 
 private theorem isClosed_timeGraph (x : E) : IsClosed {J : Jet α E F a b |
       ∀ t : Icc a b, HasDerivWithinAt (timeExtension hab.le (valueJetL J) x)

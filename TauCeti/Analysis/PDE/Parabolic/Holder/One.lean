@@ -263,6 +263,12 @@ theorem memHolder_timeSlice (f : ParabolicC1HolderSpace α E F a b) (x : E) :
   have hm := (timeSliceL f x).memHolder
   rwa [HolderSpace.coe_toBoundedContinuousFunction, coe_timeSliceL] at hm
 
+omit [NormedSpace ℝ E] [NormedSpace ℝ F] in
+/-- Composing with the time slice at `x` gives the time slice `t ↦ u (x, t)`. -/
+private theorem coe_compContinuous_timeSlice (u : slab (E := E) a b →ᵇ F) (x : E) :
+    (u.compContinuous (timeSlice x) : Icc a b → F) = fun t ↦ u (slabMk x t) :=
+  funext fun t ↦ by rw [BoundedContinuousFunction.compContinuous_apply, timeSlice_apply]
+
 omit [NormedSpace ℝ E] in
 /-- The norm of the Hölder time slice of `u` at `x` is at most `‖u‖_∞ + [u]_{t,(1+α)/2}`. -/
 private theorem norm_sliceHolder_le (u : slab (E := E) a b →ᵇ F)
@@ -273,15 +279,9 @@ private theorem norm_sliceHolder_le (u : slab (E := E) a b →ᵇ F)
   rw [HolderSpace.norm_def, HolderSpace.toBoundedContinuousFunction_ofBoundedContinuousFunction]
   gcongr
   · exact (BoundedContinuousFunction.norm_le (norm_nonneg u)).2 fun t ↦ u.norm_coe_le_norm _
-  · rw [← ENNReal.coe_toReal (r := nnHolderNorm _ _), hx.coe_nnHolderNorm_eq_eHolderNorm]
+  · rw [← ENNReal.coe_toReal (r := nnHolderNorm _ _), hx.coe_nnHolderNorm_eq_eHolderNorm,
+      coe_compContinuous_timeSlice]
     exact ENNReal.toReal_mono ht.ne (eHolderNorm_le_timeEHolderNorm _ _ x)
-
-omit [NormedSpace ℝ E] [NormedSpace ℝ F] in
-/-- The slices of a bounded continuous map with finite temporal seminorm are Hölder. -/
-private theorem memHolder_timeSlice_of_timeEHolderNorm_lt_top (u : slab (E := E) a b →ᵇ F)
-    (ht : timeEHolderNorm ((1 + α) / 2) (u : slab (E := E) a b → F) < ∞) (x : E) :
-    MemHolder ((1 + α) / 2) (u.compContinuous (timeSlice x) : Icc a b → F) :=
-  eHolderNorm_lt_top.1 ((eHolderNorm_le_timeEHolderNorm _ _ x).trans_lt ht)
 
 /-- The `ℓ^∞` family of Hölder time slices of a bounded continuous map with finite temporal
 seminorm. -/
@@ -289,7 +289,7 @@ private def sliceFamily (u : slab (E := E) a b →ᵇ F)
     (ht : timeEHolderNorm ((1 + α) / 2) (u : slab (E := E) a b → F) < ∞) :
     lp (fun _ : E ↦ HolderSpace ((1 + α) / 2) (Icc a b) F) ∞ :=
   ⟨fun x ↦ HolderSpace.ofBoundedContinuousFunction (u.compContinuous (timeSlice x))
-      (memHolder_timeSlice_of_timeEHolderNorm_lt_top u ht x),
+      (coe_compContinuous_timeSlice u x ▸ memHolder_timeSlice_of_timeEHolderNorm_lt_top ht x),
     memℓp_infty_iff.2 ⟨_, by
       rintro _ ⟨x, rfl⟩
       exact norm_sliceHolder_le u ht x _⟩⟩
@@ -298,7 +298,8 @@ omit [NormedSpace ℝ E] in
 private theorem sliceFamily_apply (u : slab (E := E) a b →ᵇ F)
     (ht : timeEHolderNorm ((1 + α) / 2) (u : slab (E := E) a b → F) < ∞) (x : E) (t : Icc a b) :
     sliceFamily u ht x t = u (slabMk x t) :=
-  HolderSpace.ofBoundedContinuousFunction_apply _ _ t
+  (HolderSpace.ofBoundedContinuousFunction_apply _ _ t).trans
+    (congrFun (coe_compContinuous_timeSlice u x) t)
 
 omit [NormedSpace ℝ E] in
 private theorem norm_sliceFamily_le (u : slab (E := E) a b →ᵇ F)
@@ -400,14 +401,11 @@ theorem fullNorm_le_norm_le (f : ParabolicC1HolderSpace α E F a b) :
 private theorem isClosed_spatialGraph (t : Icc a b) : IsClosed {J : Jet α E F a b |
     ∀ x, HasFDerivAt (fun y ↦ valueJetL J (slabMk y t)) (gradJetL J (slabMk x t)) x} := by
   simpa only [preimage_ofPred_eq, Function.comp_def,
-    BoundedContinuousFunction.coe_compContinuous, BoundedContinuousFunction.compContinuous_apply,
     HolderSpace.toBoundedContinuousFunctionCLM_apply,
-    HolderSpace.toBoundedContinuousFunction_apply, spatialSlice_apply] using
-    (isClosed_setOf_hasFDerivAt (𝕜 := ℝ) (E := E) (Y := F)).preimage
-      (((BoundedContinuousFunction.continuous_compContinuous (spatialSlice t)).comp
-        valueJetL.continuous).prodMk
-          ((BoundedContinuousFunction.continuous_compContinuous (spatialSlice t)).comp
-            (HolderSpace.toBoundedContinuousFunctionCLM.continuous.comp gradJetL.continuous)))
+    HolderSpace.toBoundedContinuousFunction_apply] using
+    (isClosed_setOf_hasFDerivAt_spatialSlice t).preimage
+      (valueJetL.continuous.prodMk
+        (HolderSpace.toBoundedContinuousFunctionCLM.continuous.comp gradJetL.continuous))
 
 private theorem isClosed_sliceGraph (x : E) (t : Icc a b) :
     IsClosed {J : Jet α E F a b | sliceJetL J x t = valueJetL J (slabMk x t)} := by

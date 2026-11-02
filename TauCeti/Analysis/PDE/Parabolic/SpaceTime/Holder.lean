@@ -38,8 +38,9 @@ seminorm, which enters the norm of `C^{2+α, 1+α/2}`, is controlled by the othe
   supremum of `dist (v p) (v q) / (dist x y + √|t - s|) ^ α`.
 * `TauCeti.ParabolicSpaceTime.spaceEHolderNorm`, `TauCeti.ParabolicSpaceTime.timeEHolderNorm`:
   the separate spatial and temporal seminorms.
-* `TauCeti.ParabolicSpaceTime.eHolderNorm_le_timeEHolderNorm`: each time slice is controlled by
-  the temporal seminorm.
+* `TauCeti.ParabolicSpaceTime.eHolderNorm_le_timeEHolderNorm`,
+  `TauCeti.ParabolicSpaceTime.memHolder_timeSlice_of_timeEHolderNorm_lt_top`: each time slice is
+  controlled by the temporal seminorm.
 * `TauCeti.ParabolicSpaceTime.spaceEHolderNorm_le_eHolderNorm`,
   `TauCeti.ParabolicSpaceTime.timeEHolderNorm_div_two_le_eHolderNorm`,
   `TauCeti.ParabolicSpaceTime.eHolderNorm_le_spaceEHolderNorm_add_timeEHolderNorm`: the
@@ -107,6 +108,11 @@ theorem timeEHolderNorm_le_iff {γ : ℝ≥0} {v : slab (E := E) a b → F} {C :
 theorem eHolderNorm_le_timeEHolderNorm (γ : ℝ≥0) (v : slab (E := E) a b → F) (x : E) :
     eHolderNorm γ (fun t : Icc a b => v (slabMk x t)) ≤ timeEHolderNorm γ v :=
   le_iSup (fun x => eHolderNorm γ fun t : Icc a b => v (slabMk x t)) x
+
+/-- If the temporal `γ`-seminorm is finite, then every time slice is `γ`-Hölder. -/
+theorem memHolder_timeSlice_of_timeEHolderNorm_lt_top {γ : ℝ≥0} {v : slab (E := E) a b → F}
+    (h : timeEHolderNorm γ v < ∞) (x : E) : MemHolder γ fun t : Icc a b => v (slabMk x t) :=
+  eHolderNorm_lt_top.1 ((eHolderNorm_le_timeEHolderNorm γ v x).trans_lt h)
 
 variable [MetricSpace E]
 

@@ -288,8 +288,7 @@ theorem continuous_slabTime {a b : ℝ} : Continuous (slabTime : slab (E := E) a
   (continuous_time.comp continuous_subtype_val).subtype_mk _
 
 /-- The spatial slice `x ↦ (x, t)` of a slab at the time `t`, as a continuous map. -/
--- Exposed so that composing with a slice is definitionally the sliced function.
-@[expose] def spatialSlice {a b : ℝ} (t : Icc a b) : C(E, slab (E := E) a b) :=
+def spatialSlice {a b : ℝ} (t : Icc a b) : C(E, slab (E := E) a b) :=
   ⟨fun x => slabMk x t, continuous_slabMk.comp (continuous_id.prodMk continuous_const)⟩
 
 @[simp]
@@ -297,8 +296,7 @@ theorem spatialSlice_apply {a b : ℝ} (t : Icc a b) (x : E) : spatialSlice t x 
   (rfl)
 
 /-- The time slice `t ↦ (x, t)` of a slab at the position `x`, as a continuous map. -/
--- Exposed so that composing with a slice is definitionally the sliced function.
-@[expose] def timeSlice {a b : ℝ} (x : E) : C(Icc a b, slab (E := E) a b) :=
+def timeSlice {a b : ℝ} (x : E) : C(Icc a b, slab (E := E) a b) :=
   ⟨slabMk x, continuous_slabMk.comp (continuous_const.prodMk continuous_id)⟩
 
 @[simp]
