@@ -18,15 +18,17 @@ element of `C` has a `p`-power power in `D`, the permutation module `k[C/D]`, re
 `C`-module, has exact Grothendieck class `[C : D] • [k]`. This equality uses short exact
 sequences and includes permutation modules which are not direct sums of trivial lines.
 
-For a finite cyclic subgroup `C`, its subgroup of order prime to `p` satisfies these hypotheses.
+For prime `p` and a finite cyclic subgroup `C`, its subgroup of order prime to `p` satisfies these
+hypotheses.
 
 Inducing to a finite group `G` containing `C`, and using that `Ind_C^G k[C/D] = k[G/D]`
 (`TauCeti.indK0_of_ofMulAction_quotient`), turns this into an equality of induced classes:
 `[Ind_D^G k] = [C : D] • [Ind_C^G k]` (`TauCeti.indK0_of_trivial_eq_relIndex_nsmul`). For a cyclic
-`C` this says that the `p`-part of `|C|` times the class of `Ind_C^G k` is the class induced from
-the trivial line of the subgroup of `C` of order prime to `p`
+`C` and prime `p` this says that the `p`-part of `|C|` times the class of `Ind_C^G k` is the class
+induced from the trivial line of the subgroup of `C` of order prime to `p`
 (`TauCeti.exists_coprimePart_indK0_of_trivial_eq_nsmul`); this is the input that removes the
-`p`-part of a cyclic subgroup in modular Artin induction.
+`p`-part of a cyclic subgroup in modular Artin induction. The same theorem covers characteristic
+zero, `p = 0`, where it takes `D = C` and the multiplicity is one.
 
 The class computation uses
 `TauCeti.exactK0_asModule_eq_finrank_nsmul_of_forall_pow_eq_one`; the cyclic subgroup is supplied
@@ -129,8 +131,11 @@ theorem indK0_of_trivial_eq_relIndex_nsmul [Finite G] {C D : Subgroup G} (h : D 
     indK0_of_ofMulAction_quotient k C h, indK0_of_trivial, permK0_def]
 
 omit [Fact p.Prime] in
-/-- A finite cyclic subgroup `C` has a subgroup `D` of order prime to `p` such that inducing the
-trivial line from `D` gives the `p`-part of `|C|` times the class induced from `C`. -/
+/-- Let `k` have characteristic `p`. A finite cyclic subgroup `C` has a subgroup `D` with
+`p ∤ |D|` such that inducing the trivial line from `D` gives `p ^ v_p(|C|)` times the class induced
+from `C`. For prime `p`, `D` is the subgroup of `C` of order prime to `p` and the multiplicity is
+the `p`-part of `|C|`. In characteristic zero, `p = 0`, one takes `D = C`, and the multiplicity is
+one. -/
 theorem exists_coprimePart_indK0_of_trivial_eq_nsmul [Finite G] (C : Subgroup G) [IsCyclic C] :
     ∃ D : Subgroup G, D ≤ C ∧ ¬ p ∣ Nat.card D ∧
       D.relIndex C = p ^ (Nat.card C).factorization p ∧
