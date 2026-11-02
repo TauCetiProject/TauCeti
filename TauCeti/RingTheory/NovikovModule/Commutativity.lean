@@ -52,10 +52,9 @@ remain hypotheses here: they are the geometric input from the compactified modul
 
 ## Main results
 
-* `NovikovModule.kernelProduct_eq_kernelMap_tensor_swap`: a product with exchanged inputs is a
-  kernel map out of the tensor product.
-* `NovikovModule.negOnePow_smul_kernelProduct_eq_kernelMap_tensor`: the same with the Koszul sign
-  of the exchange, for homogeneous inputs.
+* `NovikovModule.negOnePow_smul_kernelProduct_eq_kernelMap_tensor`: a product with exchanged
+  inputs and the Koszul sign of the exchange is a kernel map out of the tensor product, for
+  homogeneous inputs.
 * `NovikovModule.kernelProduct_sub_negOnePow_smul_kernelProduct`: a kernel homotopy between a
   product kernel and the signed exchanged kernel gives a chain homotopy between the products.
 * `NovikovModule.kernelProduct_sub_negOnePow_smul_kernelProduct_of_tensorDifferential`: the same
@@ -80,31 +79,6 @@ namespace TauCeti
 namespace NovikovModule
 
 variable {R S₁ S₂ S₀ : Type*} {F₁ : S₁ → ℝ} {F₂ : S₂ → ℝ} {F₀ : S₀ → ℝ}
-
-section CommSemiring
-
-variable [CommSemiring R] {C C' : ℝ} {n' : S₂ → S₁ → S₀ → R}
-  (hn' : ∀ p₂ p₁ p₀, n' p₂ p₁ p₀ ≠ 0 → F₀ p₀ ≤ F₂ p₂ + F₁ p₁ + C)
-  (hfin' : ∀ p₂ p₁, n' p₂ p₁ ∈ NovikovModule R F₀)
-
-/-- **A product with exchanged inputs factors through the tensor product.** For a product
-kernel `n'` from `S₂ × S₁`, the product `b ⋆' a` is the kernel map, out of the tensor product
-`a ⊗ b`, of the kernel `n'(q.2, q.1, ·)`. The two potential bounds may have different
-constants. -/
-theorem kernelProduct_eq_kernelMap_tensor_swap
-    (hm : ∀ (q : S₁ × S₂) p₀, n' q.2 q.1 p₀ ≠ 0 → F₀ p₀ ≤ F₁ q.1 + F₂ q.2 + C')
-    (hmfin : ∀ q : S₁ × S₂, n' q.2 q.1 ∈ NovikovModule R F₀)
-    (a : NovikovModule R F₁) (b : NovikovModule R F₂) :
-    kernelProduct hn' hfin' b a = kernelMap hm hmfin (tensor a b) := by
-  ext p₀
-  -- Reindex the sum over `S₂ × S₁` by the exchange of the two factors.
-  rw [kernelProduct_apply_val, kernelMap_apply_val,
-    ← finsum_comp_equiv (Equiv.prodComm S₁ S₂)]
-  refine finsum_congr fun q => ?_
-  simp only [Equiv.prodComm_apply, Prod.fst_swap, Prod.snd_swap, tensor_apply_val]
-  ring
-
-end CommSemiring
 
 section CommRing
 
