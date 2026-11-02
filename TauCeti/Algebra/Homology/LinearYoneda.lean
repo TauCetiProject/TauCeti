@@ -198,7 +198,7 @@ lemma linearYonedaFunctor_map_f_hom_apply {X X' : (ChainComplex C α)ᵒᵖ} (φ
 
 /-- Precomposition with a scalar multiple of the identity is scalar multiplication on
 `Hom(X, Y)`. -/
-lemma linearYonedaFunctor_map_smul_id {S : Type*} [CommRing S] [Linear S C]
+lemma _root_.ChainComplex.linearYonedaFunctor_map_smul_id {S : Type*} [CommRing S] [Linear S C]
     (X : ChainComplex C α) (r : S) :
     (linearYonedaFunctor S Y).map (r • 𝟙 X).op = r • 𝟙 (X.linearYonedaObj S Y) := by
   ext i : 1

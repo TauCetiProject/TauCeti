@@ -53,7 +53,7 @@ theorem smul_cohomology_eq_zero (m : M) (n : ℕ)
     refine { hom := h.hom, zero := h.zero, comm := fun i ↦ ?_ }
     convert! h.comm i using 1
     · exact (congrArg (fun f ↦ f.f i)
-        (ChainComplex.linearYonedaFunctor_map_smul_id N (koszulComplex φ) (φ m))).symm
+        (_root_.ChainComplex.linearYonedaFunctor_map_smul_id N (koszulComplex φ) (φ m))).symm
     · simp only [dNext, prevD, op_zero, Functor.map_zero, zero_f, add_zero]
       -- `dNext` and `prevD` use the same differentials on the functorial Hom complex
       -- and `linearYonedaObj`; only their definitionally equal object presentations differ.
