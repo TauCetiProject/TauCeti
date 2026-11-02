@@ -81,19 +81,13 @@ private theorem vecMul_JFin_dotProduct_neg_smul (v : Fin (m + m) → R) (c : R) 
   rw [dotProduct_smul, ← dotProduct_mulVec, dotProduct_JFin_mulVec_self, smul_zero, Units.val_neg,
     Units.val_one, neg_add_cancel]
 
-/-- Every vector is isotropic for the alternating form `ω`, read as a sesquilinear form for the
-identity ring homomorphism. -/
-private theorem comp_dotProduct_JFin_mulVec_self (v : Fin (m + m) → R) :
-    (RingHom.id R ∘ v) ⬝ᵥ (JFin m R *ᵥ v) = 0 :=
-  dotProduct_JFin_mulVec_self v
-
 /-- The matrix `1 + c v (vᵀ J)` preserves the standard alternating form. -/
 private theorem one_add_smul_vecMulVec_JFin_mem (v : Fin (m + m) → R) (c : R) :
     (1 + c • vecMulVec v (v ᵥ* JFin m R))ᵀ * JFin m R * (1 + c • vecMulVec v (v ᵥ* JFin m R)) =
       JFin m R := by
-  have h := transpose_map_unitaryTransvection_mul_mul_self (fun _ ↦ rfl) (ε := -1)
-    (by rw [RingHom.coe_id, map_id, JFin_transpose, neg_one_smul])
-    (comp_dotProduct_JFin_mulVec_self v) (a := c) (by rw [RingHom.id_apply, neg_one_mul,
+  have h := transpose_map_unitaryTransvection_mul_mul_self (σ := RingHom.id R) (fun _ ↦ rfl)
+    (ε := -1) (by rw [RingHom.coe_id, map_id, JFin_transpose, neg_one_smul])
+    (dotProduct_JFin_mulVec_self v) (a := c) (by rw [RingHom.id_apply, neg_one_mul,
       add_neg_cancel])
   rwa [RingHom.coe_id, map_id, unitaryTransvection_def, RingHom.coe_id, Function.id_comp] at h
 
@@ -168,7 +162,8 @@ theorem symplecticTransvection_add (v : Fin (m + m) → R) (a b : R) :
     rw [Subgroup.coe_mul, Units.val_mul, coe_symplecticTransvection_eq_unitaryTransvection,
       coe_symplecticTransvection_eq_unitaryTransvection,
       coe_symplecticTransvection_eq_unitaryTransvection,
-      unitaryTransvection_mul_unitaryTransvection (comp_dotProduct_JFin_mulVec_self v)]
+      unitaryTransvection_mul_unitaryTransvection (σ := RingHom.id R)
+        (dotProduct_JFin_mulVec_self v)]
 
 /-- Inverting a transvection negates its parameter. -/
 @[simp]
