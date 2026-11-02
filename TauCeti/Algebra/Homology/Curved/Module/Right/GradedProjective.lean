@@ -148,8 +148,7 @@ private theorem exists_comp_eq_of_injective
     ∃ a : dgRightModuleCochains (R := R) (A := A) (ℳ := P.grading) (ℳN := M.grading) p,
       ∀ x, closedHom f (a.1 x) = χ.1 x := by
   obtain ⟨a, ha, hfa⟩ := InternalGrading.exists_isHomogeneous_comp_eq_of_injective
-    (toGradedModuleCat M).grading (toGradedModuleCat N).grading
-    (InternalGrading.ofDecomposition 𝒜).opposite.piece (toGradedModuleCat P).grading hf
+    (toGradedModuleCat M).grading (toGradedModuleCat N).grading (toGradedModuleCat P).grading hf
     ((forgetDifferential (h := h)).map f).isHomogeneous
     ((isHomogeneous_toGradedModuleCat_iff _).2 χ.2)
     (by rintro _ ⟨x, rfl⟩; exact hχ x)
