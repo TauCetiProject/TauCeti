@@ -62,7 +62,9 @@ positive diagonal matrix, which is not a product of this form.
 * `TauCeti.cartanHomeomorph_mem_iff`: for a subgroup `G` as above, `u * exp x` lies in `G` exactly
   when `u` does and the whole line `exp (t x)` does.
 * `Subgroup.cartanHomeomorph`: the Cartan decomposition of such a subgroup, the
-  homeomorphism `{u ∈ unitary A | u ∈ G} × {x ∈ selfAdjoint A | ∀ t, exp (t x) ∈ G} ≃ₜ G`.
+  homeomorphism `{u ∈ unitary A | u ∈ G} × {x ∈ selfAdjoint A | ∀ t, exp (t x) ∈ G} ≃ₜ G`, with
+  `Subgroup.val_cartanHomeomorph_apply`, `Subgroup.coe_cartanHomeomorph_symm_apply_fst` and
+  `Subgroup.coe_cartanHomeomorph_symm_apply_snd` computing it and its inverse.
 
 ## References
 
@@ -279,7 +281,7 @@ def _root_.Subgroup.cartanHomeomorph (hstar : ∀ a ∈ G, star a ∈ G)
 
 /-- The Cartan decomposition of a subgroup sends `(u, x)` to `u * exp x`. -/
 @[simp]
-theorem _root_.Subgroup.coe_cartanHomeomorph_apply (hstar : ∀ a ∈ G, star a ∈ G)
+theorem _root_.Subgroup.val_cartanHomeomorph_apply (hstar : ∀ a ∈ G, star a ∈ G)
     (hexp : ∀ x : A, IsSelfAdjoint x → expUnit x ∈ G → ∀ t : ℝ, expUnit (t • x) ∈ G)
     (p : {u : unitary A // Unitary.toUnits u ∈ G} ×
       {x : selfAdjoint A // ∀ t : ℝ, expUnit (t • (x : A)) ∈ G}) :
