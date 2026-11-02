@@ -174,8 +174,11 @@ private def unitsToInfiniteDecompositionUnits :
         (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ) ⟶ infiniteDecompositionUnitsRep v w :=
   Rep.ofHom <| LinearMap.intertwiningMap_of_isIntertwiningMap _ _
     (Units.map (algebraMap L w.Completion : L →* _)).toAdditive.toIntLinearMap
-    fun d a ↦ Additive.toMul.injective <| Units.ext <|
-      (decompositionHom_algebraMap (v := v) d ((Additive.toMul a : Lˣ) : L)).symm
+    fun d a ↦ Additive.toMul.injective <| Units.ext <| by
+      change algebraMap L w.Completion ((d : L ≃ₐ[K] L) ((Additive.toMul a : Lˣ) : L)) =
+        (decompositionHom v w d) (algebraMap L w.Completion ((Additive.toMul a : Lˣ) : L))
+      simpa only [InfinitePlace.Completion.algebraMap_apply] using
+        (decompositionHom_algebraMap (v := v) d ((Additive.toMul a : Lˣ) : L)).symm
 
 omit [NumberField K] [NumberField L] in
 /-- `unitsToInfiniteDecompositionUnits` sends `a ∈ Lˣ` to its image in `L_w`. -/

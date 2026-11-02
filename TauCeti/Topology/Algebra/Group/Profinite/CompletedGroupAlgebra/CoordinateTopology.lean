@@ -103,12 +103,17 @@ section Dyadic
 
 variable {Γ : Type*} [Group Γ] [TopologicalSpace Γ]
   (e : Γ ≃ₜ* Multiplicative (ZMod 2) × Multiplicative ℤ_[2])
-  [TopologicalSpace (MonoidAlgebra ℤ_[2] (Multiplicative (ZMod 2)))]
-  [IsModuleTopology ℤ_[2] (MonoidAlgebra ℤ_[2] (Multiplicative (ZMod 2)))]
+  (coefficientTopology : TopologicalSpace (MonoidAlgebra ℤ_[2] (Multiplicative (ZMod 2))))
 
 /-- The dyadic coordinate is continuous for the module topology on `ℤ₂[C₂]`, the
 coefficientwise topology on `ℤ₂[C₂]⟦X⟧`, and the inverse-limit topology on `ℤ₂[[Γ]]`. -/
-theorem continuous_dyadicCoordinate : Continuous (dyadicCoordinate e) := by
+theorem continuous_dyadicCoordinate :
+    letI := coefficientTopology;
+    IsModuleTopology ℤ_[2] (MonoidAlgebra ℤ_[2] (Multiplicative (ZMod 2))) →
+      Continuous (dyadicCoordinate e) := by
+  let := coefficientTopology
+  intro hTopology
+  let := hTopology
   rw [dyadicCoordinate_def, AlgEquiv.coe_trans, coe_domCongr]
   exact (continuous_map ℤ_[2] (e.symm : _ →* Γ) e.symm.continuous).comp
     (continuous_prodPowerSeriesCoordinate (Multiplicative (ZMod 2))
@@ -116,14 +121,20 @@ theorem continuous_dyadicCoordinate : Continuous (dyadicCoordinate e) := by
 
 /-- The inverse dyadic coordinate is continuous, completing its identification of
 `ℤ₂[[Γ]]` with the topological power-series algebra `ℤ₂[C₂]⟦X⟧`. -/
-theorem continuous_dyadicCoordinate_symm : Continuous (dyadicCoordinate e).symm := by
+theorem continuous_dyadicCoordinate_symm :
+    letI := coefficientTopology;
+    IsModuleTopology ℤ_[2] (MonoidAlgebra ℤ_[2] (Multiplicative (ZMod 2))) →
+      Continuous (dyadicCoordinate e).symm := by
+  let := coefficientTopology
+  intro hTopology
+  let := hTopology
   have : CompactSpace (MonoidAlgebra ℤ_[2] (Multiplicative (ZMod 2))) :=
     (TauCeti.ModuleTopology.equivFunHomeomorph
       (MonoidAlgebra.basis (Multiplicative (ZMod 2)) ℤ_[2])).symm.compactSpace
   have : CompactSpace (PowerSeries (MonoidAlgebra ℤ_[2] (Multiplicative (ZMod 2)))) :=
     inferInstanceAs (CompactSpace ((Unit →₀ ℕ) → MonoidAlgebra ℤ_[2] (Multiplicative (ZMod 2))))
   exact (Continuous.homeoOfEquivCompactToT2 (f := (dyadicCoordinate e).toEquiv)
-    (continuous_dyadicCoordinate e)).symm.continuous
+    (continuous_dyadicCoordinate e coefficientTopology hTopology)).symm.continuous
 
 end Dyadic
 

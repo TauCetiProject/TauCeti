@@ -52,7 +52,7 @@ theorem ContinuousLinearMap.apply_deriv_ae_eq {E : Type*} [NormedAddCommGroup E]
     (fun t ↦ π (deriv γ t)) =ᵐ[volume.restrict (Ioc a b)] θ' := by
   filter_upwards [ae_restrict_mem measurableSet_Ioc,
     ae_restrict_of_ae ((hs.union (Set.toFinite ({a, b} : Set ℝ)).countable).ae_notMem volume),
-    hS.ae_deriv_eq_zero_on_preimage θ (volume.restrict (Ioc a b))]
+    hS.ae_deriv_eq_zero_on_preimage inferInstance θ (volume.restrict (Ioc a b))]
     with t ht hts hlevel
   have htb : t ≠ b := fun h ↦ hts (Or.inr (by simp [h]))
   have ht' : t ∈ Ioo a b \ s :=

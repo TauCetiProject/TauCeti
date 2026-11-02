@@ -99,19 +99,6 @@ end Embedding
 
 end TauCeti
 
-/-- A Gδ subset of a completely metrizable space is completely metrizable in the subspace
-topology. -/
-theorem IsGδ.isCompletelyMetrizableSpace {α : Type*} [TopologicalSpace α]
-    [IsCompletelyMetrizableSpace α] {s : Set α} (hs : IsGδ s) : IsCompletelyMetrizableSpace s := by
-  let := upgradeIsCompletelyMetrizable α
-  obtain ⟨U, hU, rfl⟩ := hs.eq_iInter_nat
-  exact (TauCeti.isClosedEmbedding_gδEmbedding hU).IsCompletelyMetrizableSpace
-
-/-- A Gδ subset of a Polish space is Polish in the subspace topology. -/
-theorem IsGδ.polishSpace {α : Type*} [TopologicalSpace α] [PolishSpace α] {s : Set α}
-    (hs : IsGδ s) : PolishSpace s where
-  __ := hs.isCompletelyMetrizableSpace
-
 namespace TauCeti
 
 variable {X : Type*} [TopologicalSpace X]

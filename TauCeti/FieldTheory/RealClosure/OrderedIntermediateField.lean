@@ -109,39 +109,60 @@ theorem le_iff (P Q : OrderedIntermediateField K L) :
     P ≤ Q ↔ P.toIntermediateField ≤ Q.toIntermediateField ∧ P.nonneg ≤ Q.nonneg := Iff.rfl
 
 /-- The positive cone viewed inside its own intermediate field. -/
-def preordering (P : OrderedIntermediateField K L) : RingPreordering P.toIntermediateField where
-  __ := P.nonneg.comap P.toIntermediateField.val.toRingHom
-  mem_of_isSquare' := by
+def preordering (P : OrderedIntermediateField K L) : Subsemiring P.toIntermediateField :=
+  P.nonneg.comap P.toIntermediateField.val.toRingHom
+
+omit [IsOrderedRing K] in
+@[simp] theorem mem_preordering (P : OrderedIntermediateField K L) (x : P.toIntermediateField) :
+    x ∈ P.preordering ↔ x.val ∈ P.nonneg := Iff.rfl
+
+omit [IsOrderedRing K] in
+/-- The positive cone on an ordered intermediate field is a preordering. -/
+theorem isPreordering (P : OrderedIntermediateField K L) : P.preordering.IsPreordering where
+  mem_of_isSquare := by
     rintro x ⟨y, rfl⟩
-    -- The inherited carrier field is still wrapped by `comap` in this constructor goal;
-    -- reducing it exposes ambient membership. `simp [mem_comap, map_mul]` does not unfold it.
     change y.val * y.val ∈ P.nonneg
     rcases P.mem_or_neg_mem y.val y.property with hy | hy
     · exact mul_mem hy hy
     · simpa only [neg_mul_neg] using mul_mem hy hy
-  neg_one_notMem' := P.neg_one_notMem
+  neg_one_notMem := P.neg_one_notMem
 
 omit [IsOrderedRing K] in
-@[simp] theorem mem_preordering (P : OrderedIntermediateField K L) (x : P.toIntermediateField) :
-    x ∈ P.preordering ↔ x.val ∈ P.nonneg := (Iff.rfl)
-
-instance (P : OrderedIntermediateField K L) : (preordering P).IsOrdering where
-  mem_or_neg_mem x := P.mem_or_neg_mem x.val x.property
-  toIsPrime := inferInstance
+/-- The positive cone on an ordered intermediate field is an ordering. -/
+theorem isOrdering (P : OrderedIntermediateField K L) : P.preordering.IsOrdering := by
+  apply P.isPreordering.isOrdering_iff.mpr
+  intro a b hab
+  by_cases ha : a ∈ P.preordering
+  · exact Or.inl ha
+  by_cases hb : b ∈ P.preordering
+  · exact Or.inr hb
+  have hna : -a ∈ P.preordering := (P.mem_or_neg_mem a.val a.property).resolve_left ha
+  have hnb : -b ∈ P.preordering := (P.mem_or_neg_mem b.val b.property).resolve_left hb
+  have hprod : a * b ∈ P.preordering := by simpa using P.preordering.mul_mem hna hnb
+  rcases mul_eq_zero.mp (P.isPreordering.isPointed.eq_zero_of_mem_of_neg_mem hprod hab)
+      with h | h
+  · exact Or.inl (h ▸ P.preordering.zero_mem)
+  · exact Or.inr (h ▸ P.preordering.zero_mem)
 
 /-- The induced linear order on the intermediate field. -/
 @[instance_reducible] noncomputable instance linearOrder (P : OrderedIntermediateField K L) :
-    LinearOrder P.toIntermediateField := RingPreordering.linearOrder P.preordering
+    LinearOrder P.toIntermediateField := by
+  classical
+  exact LinearOrder.ofAddSubmonoid P.isPreordering.isPointed P.isOrdering.isSpanning
 
 omit [IsOrderedRing K] in
 instance isStrictOrderedRing (P : OrderedIntermediateField K L) :
-    IsStrictOrderedRing P.toIntermediateField := RingPreordering.isStrictOrderedRing P.preordering
+    IsStrictOrderedRing P.toIntermediateField := by
+  have : IsOrderedRing P.toIntermediateField :=
+    IsOrderedRing.ofSubsemiring P.isPreordering.isPointed
+  infer_instance
 
 omit [IsOrderedRing K] in
 theorem nonneg_iff (P : OrderedIntermediateField K L) (x : P.toIntermediateField) :
     letI := P.linearOrder
-    0 ≤ x ↔ x.val ∈ P.nonneg :=
-  (RingPreordering.nonneg_iff P.preordering x).trans (P.mem_preordering x)
+    0 ≤ x ↔ x.val ∈ P.nonneg := by
+  change x - 0 ∈ P.preordering ↔ x.val ∈ P.nonneg
+  rw [sub_zero, P.mem_preordering]
 
 theorem algebraMap_strictMono (P : OrderedIntermediateField K L) : letI := P.linearOrder
     StrictMono (algebraMap K P.toIntermediateField) := by
