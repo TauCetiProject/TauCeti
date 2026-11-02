@@ -12,7 +12,7 @@ import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.ChevalleyRel
 # Commuting simple-root subgroups of the tripled type-D₄ carrier
 
 The numbered positive and negative simple-root subgroups of the integral tripled type-`D₄` carrier
-on `8ᵥ ⊕ 8ₛ ⊕ 8꜀` satisfy the zero-commutator Chevalley relations. Root subgroups of the same
+on `8_v ⊕ 8_s ⊕ 8_c` satisfy the zero-commutator Chevalley relations. Root subgroups of the same
 sign commute when their nodes are not joined in the Dynkin diagram, that is when the corresponding
 entry of `CartanMatrix.D 4` vanishes, and root subgroups of opposite signs commute at distinct
 nodes. These are equalities in the carrier's group of points over every commutative ring,
