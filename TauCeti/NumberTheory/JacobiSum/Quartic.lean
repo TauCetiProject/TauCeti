@@ -32,22 +32,17 @@ The proof evaluates `J(χ, χ) = ∑ t, χ (t) χ (1 - t)` term by term.
 
 So `J(χ, χ) ≡ χ (-1) + q - 3`, and `q ≡ 1 (mod 4)` with `4 ∈ ((1 + ι) ^ 3)` gives the claim.
 
-The Jacobi sum also computes the fourth power of the Gauss sum: if `χ` has order `4` and `ψ` is a
-primitive additive character of `F`, then `g(χ, ψ) ^ 2 = J(χ, χ) g(χ ^ 2, ψ)`, while `χ ^ 2` is the
-quadratic character, which is even, so `g(χ ^ 2, ψ) ^ 2 = q`. Hence `g(χ, ψ) ^ 4 = q J(χ, χ) ^ 2`.
-
 ## Main results
 
 * `TauCeti.one_add_pow_three_dvd_apply_neg_one_mul_jacobiSum_add_one`:
   `(1 + ι) ^ 3 ∣ χ (-1) J(χ, χ) + 1`.
-* `TauCeti.gaussSum_pow_four_eq_card_mul_jacobiSum_sq`: `g(χ, ψ) ^ 4 = q J(χ, χ) ^ 2` for a
-  character `χ` of order `4`.
+* `TauCeti.gaussSum_pow_four_eq_card_mul_jacobiSum_sq`: `g(χ, ψ) ^ 4 = q * J(χ, χ) ^ 2` for a
+  character `χ` of order `4` and a primitive additive character `ψ` of `F`.
 
 ## References
 
 * K. Ireland and M. Rosen, *A Classical Introduction to Modern Number Theory*, Chapter 9, §9.
-* N. Xu, *Reciprocity Laws*, §3, Propositions 3.4 and 3.6, §5, Proposition 5.9, and the proof of
-  Proposition 4.8.
+* N. Xu, *Reciprocity Laws*, §5, Proposition 5.9, and the proof of Proposition 4.8.
 * S. D. Adhikari, *The early reciprocity laws: from Gauss to Eisenstein*, §3, proof of Lemma 3.2.
 -/
 
@@ -146,21 +141,23 @@ theorem one_add_pow_three_dvd_apply_neg_one_mul_jacobiSum_add_one {χ : MulChar 
   · exact ⟨-c - d * k, by linear_combination -(k : R) * hd⟩
 
 /-- **The fourth power of a quartic Gauss sum.** If `χ` is a multiplicative character of order `4`
-on a finite field `F` and `ψ` is a primitive additive character of `F`, both with values in an
-integral domain `R`, then `g(χ, ψ) ^ 4 = #F * J(χ, χ) ^ 2`. -/
+on a finite field `F` and `ψ` is a primitive additive character of `F`, then
+`g(χ, ψ) ^ 4 = #F * J(χ, χ) ^ 2`. -/
 theorem gaussSum_pow_four_eq_card_mul_jacobiSum_sq {χ : MulChar F R} (hχ : orderOf χ = 4)
     {ψ : AddChar F R} (hψ : ψ.IsPrimitive) :
     gaussSum χ ψ ^ 4 = Fintype.card F * jacobiSum χ χ ^ 2 := by
-  -- `χ ^ 2` is a nontrivial quadratic character, and it is even.
-  have h₁ : χ * χ ≠ 1 := by
-    rw [← sq]
-    exact pow_ne_one_of_lt_orderOf two_ne_zero (by omega)
-  have h₂ : (χ * χ).IsQuadratic := by
-    rw [MulChar.isQuadratic_iff_sq_eq_one, ← sq, ← pow_mul]
-    simpa only [hχ] using pow_orderOf_eq_one χ
-  have h₃ : (χ * χ) (-1) = 1 := by
-    rw [MulChar.mul_apply, χ.apply_neg_one_mul_self]
-  rw [show gaussSum χ ψ ^ 4 = (gaussSum χ ψ * gaussSum χ ψ) ^ 2 by ring,
-    ← jacobiSum_mul_nontrivial h₁, mul_pow, gaussSum_sq h₁ h₂ hψ, h₃, one_mul]
+  -- `χ ^ 2` is a nontrivial quadratic character with `χ ^ 2 (-1) = χ (1) = 1`.
+  have h1 : χ ^ 2 ≠ 1 := fun h ↦ by
+    have := Nat.le_of_dvd two_pos (hχ ▸ orderOf_dvd_of_pow_eq_one h)
+    omega
+  have hquad : (χ ^ 2).IsQuadratic := by
+    rw [MulChar.isQuadratic_iff_sq_eq_one, ← pow_mul, show 2 * 2 = orderOf χ by omega,
+      pow_orderOf_eq_one]
+  have hneg : (χ ^ 2) (-1) = 1 := by
+    rw [MulChar.pow_apply' χ two_ne_zero, ← map_pow, neg_one_sq, map_one]
+  -- `g(χ) ^ 2 = J(χ, χ) g(χ ^ 2)` and `g(χ ^ 2) ^ 2 = #F`.
+  have hJ := jacobiSum_mul_nontrivial (by rwa [← sq]) ψ
+  rw [← sq, ← sq] at hJ
+  rw [show 4 = 2 * 2 by rfl, pow_mul, ← hJ, mul_pow, gaussSum_sq h1 hquad hψ, hneg, one_mul]
 
 end TauCeti

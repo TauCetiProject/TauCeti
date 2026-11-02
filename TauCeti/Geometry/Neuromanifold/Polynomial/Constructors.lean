@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MvPolynomial.Monad
+public import TauCeti.Algebra.MvPolynomial.Polynomial
 public import TauCeti.Geometry.Neuromanifold.Activation
 public import TauCeti.Geometry.Neuromanifold.Convolution.Basic
 public import TauCeti.Geometry.Neuromanifold.Dense
@@ -230,10 +231,8 @@ theorem polynomialRealization_polynomialActivation (p : Polynomial K) (w : W →
     polynomialRealization (polynomialActivation (W := W) (ι := ι) p) w =
       activation (fun t => p.eval t) PUnit.unit := by
   funext x i
-  rw [polynomialRealization_apply, activation_apply, polynomialActivation]
-  have h := Polynomial.aeval_algHom_apply (aeval (Sum.elim w x)) (X (Sum.inr i)) p
-  rw [aeval_X, Polynomial.coe_aeval_eq_eval, aeval_eq_eval] at h
-  exact h.symm
+  rw [polynomialRealization_apply, activation_apply, polynomialActivation,
+    eval_polynomial_aeval, eval_X, Sum.elim_inr]
 
 /-- The identity activation is the input variable. -/
 @[simp] theorem polynomialActivation_X :

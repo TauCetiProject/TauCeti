@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Matrix.Order
+public import Mathlib.Data.Matrix.ColumnRowPartitioned
+public import TauCeti.LinearAlgebra.Matrix.Block
 
 /-!
 # Positive-semidefinite matrix algebra
@@ -30,6 +32,8 @@ but do not depend on Tau Ceti's positive-definite-function theory.
   products and Schur powers.
 * `TauCeti.posSemidef_prod_union`: the matrix `(i, j) ↦ ∏_{a ∈ L i ∪ L j} w a` for weights in
   `[0, 1]`.
+* `Matrix.PosSemidef.toBlocks₁₁`, `Matrix.PosSemidef.toBlocks₂₂` and
+  `Matrix.PosSemidef.overlapping_blocks`: positivity of principal blocks.
 * `Matrix.PosSemidef.toBlocks₁₂_mulVec_eq_zero` and
   `Matrix.PosSemidef.toBlocks₂₁_mulVec_eq_zero`: block null-vector constraints.
 * `Matrix.PosSemidef.toBlocks₁₂_eq_zero_of_toBlocks₂₂_eq_zero` and
@@ -203,6 +207,38 @@ theorem Matrix.PosSemidef.hadamard_pow {α 𝕜 : Type*} [RCLike 𝕜] {K : α �
       exact heq ▸ ih.hadamard hK
 
 namespace Matrix.PosSemidef
+
+section PrincipalBlocks
+
+variable {R m n p : Type*} [Ring R] [PartialOrder R] [StarRing R]
+
+/-- The upper-left principal block of a positive-semidefinite matrix is positive semidefinite. -/
+theorem toBlocks₁₁ {M : Matrix (m ⊕ n) (m ⊕ n) R} (h : M.PosSemidef) :
+    M.toBlocks₁₁.PosSemidef := by
+  simpa only [toBlocks₁₁_eq_submatrix] using h.submatrix Sum.inl
+
+/-- The lower-right principal block of a positive-semidefinite matrix is positive semidefinite. -/
+theorem toBlocks₂₂ {M : Matrix (m ⊕ n) (m ⊕ n) R} (h : M.PosSemidef) :
+    M.toBlocks₂₂.PosSemidef := by
+  simpa only [toBlocks₂₂_eq_submatrix] using h.submatrix Sum.inr
+
+/-- Restricting a positive-semidefinite three-block matrix to the first and second blocks,
+or to the first and third blocks, gives two positive-semidefinite matrices. -/
+theorem overlapping_blocks
+    {A : Matrix m m R} {B : Matrix m n R} {C : Matrix m p R}
+    {D : Matrix n n R} {E : Matrix n p R} {F : Matrix p p R}
+    (h : (fromBlocks A (fromCols B C) (fromCols B C)ᴴ
+      (fromBlocks D E Eᴴ F)).PosSemidef) :
+    (fromBlocks A B Bᴴ D).PosSemidef ∧ (fromBlocks A C Cᴴ F).PosSemidef := by
+  constructor
+  · convert h.submatrix (Sum.map id Sum.inl) using 1
+    ext i j
+    cases i <;> cases j <;> simp [submatrix_apply, conjTranspose_apply]
+  · convert h.submatrix (Sum.map id Sum.inr) using 1
+    ext i j
+    cases i <;> cases j <;> simp [submatrix_apply, conjTranspose_apply]
+
+end PrincipalBlocks
 
 variable {α 𝕜 : Type*} [RCLike 𝕜]
 

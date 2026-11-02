@@ -21,6 +21,10 @@ The tensor product of two reduced algebras over a perfect field is therefore red
 no finite-generation hypothesis on either factor.
 This supplies the reduced tensor square needed to form reductions of affine groups.
 
+Over an arbitrary field `k`, an algebra `A` is geometrically reduced as soon as `L ⊗[k] A` is
+reduced for one algebraically closed field `L` over `k`, since the algebraic closure of `k` embeds
+in `L` and the tensor product over a field preserves injections.
+
 ## References
 
 * The Stacks Project, [Tag 030U](https://stacks.math.columbia.edu/tag/030U),
@@ -31,6 +35,20 @@ This supplies the reduced tensor square needed to form reductions of affine grou
 public section
 
 open scoped TensorProduct
+
+namespace Algebra.IsGeometricallyReduced
+
+/-- A `k`-algebra `A` is geometrically reduced as soon as `L ⊗[k] A` is reduced for one
+algebraically closed field `L` over `k`. -/
+theorem of_isReduced_tensorProduct {k A : Type*} [Field k] [Ring A] [Algebra k A]
+    (L : Type*) [Field L] [Algebra k L] [IsAlgClosed L] [IsReduced (L ⊗[k] A)] :
+    IsGeometricallyReduced k A := by
+  rw [isGeometricallyReduced_field_iff]
+  exact isReduced_of_injective
+    (Algebra.TensorProduct.map (IsAlgClosed.lift : AlgebraicClosure k →ₐ[k] L) 1)
+    (Module.Flat.rTensor_preserves_injective_linearMap _ (RingHom.injective _))
+
+end Algebra.IsGeometricallyReduced
 
 namespace TauCeti
 

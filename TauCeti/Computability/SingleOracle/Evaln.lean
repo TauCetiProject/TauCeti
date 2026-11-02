@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Computability.SingleOracle.Code
+public import Mathlib.Algebra.Notation.Indicator
 
 /-!
 # Bounded evaluation of oracle programs, with use
@@ -29,6 +30,8 @@ the program relative to every oracle extending those answers.
 
 * `TauCeti.Oracle.Single.Code.Halt`: the output and use of a successful run.
 * `TauCeti.Oracle.Single.Code.evaln`: bounded evaluation against oracle answers.
+* `TauCeti.Oracle.Single.Code.stageUse`: the use of a run, or `0` when it fails.
+* `TauCeti.Oracle.Single.Code.setAnswers`: the answers of the characteristic function of a set.
 
 ## Main results
 
@@ -46,6 +49,9 @@ the program relative to every oracle extending those answers.
 * `TauCeti.Oracle.Single.Code.mem_eval_iff_exists_evaln`: when the answers are exactly the values
   of an oracle, the values of a program relative to that oracle are exactly the outputs of its
   successful runs.
+* `TauCeti.Oracle.Single.Code.mem_eval_iff_exists_evaln_range_map`: the values of a program
+  relative to a total oracle are exactly the outputs of its successful runs against the finite
+  initial segments of the oracle.
 
 ## References
 
@@ -227,6 +233,10 @@ theorem evaln_bound : ∀ {k c n d}, evaln σ k c n = some d → n < k
       cases c <;> rw [evaln] at h <;> exact this h
     simpa [Option.bind_eq_some_iff] using Nat.lt_succ_of_le
 
+/-- A run at fuel `k` fails on every input at or above `k`. -/
+theorem evaln_eq_none_of_le {c : Code} (h : k ≤ n) : evaln σ k c n = none :=
+  Option.eq_none_iff_forall_ne_some.2 fun _ hd => (evaln_bound hd).not_ge h
+
 /-- Every input is a pairing `Nat.pair a m`, the form in which the clauses for `prec` and
 `rfind'` are stated. -/
 private theorem exists_eq_pair (n : ℕ) : ∃ a m, n = Nat.pair a m :=
@@ -303,6 +313,43 @@ theorem evaln_use_le : ∀ {k c n d}, evaln σ k c n = some d → d.use ≤ k
       obtain ⟨-, dx, hdx, ⟨-, rfl⟩ | ⟨-, d', hd', rfl⟩⟩ := evaln_succ_rfind'_eq_some.1 h
       · exact hf _ dx hdx
       · exact max_le (hf _ _ hdx) ((evaln_use_le hd').trans k.le_succ)
+
+/-- The **stage use** of the run of `c` on `n` with fuel `k` against the answers `σ`: the use of
+the run when it succeeds, and `0` when it fails. A successful run can also have use `0`, so the
+stage use does not record whether the run succeeded. -/
+def stageUse (σ : ℕ → Option ℕ) (k : ℕ) (c : Code) (n : ℕ) : ℕ :=
+  ((evaln σ k c n).map Halt.use).getD 0
+
+/-- The stage use of a successful run is its use. -/
+theorem stageUse_eq_of_evaln_eq_some {c : Code} (h : evaln σ k c n = some d) :
+    stageUse σ k c n = d.use := by
+  simp [stageUse, h]
+
+/-- The stage use of a failed run is `0`. -/
+theorem stageUse_eq_zero_of_evaln_eq_none {c : Code} (h : evaln σ k c n = none) :
+    stageUse σ k c n = 0 := by
+  simp [stageUse, h]
+
+/-- The stage use at fuel `k` is at most `k`. -/
+theorem stageUse_le {c : Code} : stageUse σ k c n ≤ k := by
+  cases h : evaln σ k c n with
+  | none => simp [stageUse_eq_zero_of_evaln_eq_none h]
+  | some d => exact (stageUse_eq_of_evaln_eq_some h).trans_le (evaln_use_le h)
+
+/-- The oracle answers of a set `A`: the values of its characteristic function, supplied at every
+address. -/
+noncomputable def setAnswers (A : Set ℕ) : ℕ → Option ℕ :=
+  fun z => some (A.indicator 1 z)
+
+@[simp]
+theorem setAnswers_apply (A : Set ℕ) (z : ℕ) : setAnswers A z = some (A.indicator 1 z) := by
+  simp [setAnswers]
+
+/-- The answers of two sets agree on `S` exactly when the sets have the same members in `S`. -/
+theorem eqOn_setAnswers_iff {A B S : Set ℕ} :
+    Set.EqOn (setAnswers A) (setAnswers B) S ↔ ∀ z ∈ S, (z ∈ A ↔ z ∈ B) := by
+  refine forall₂_congr fun z _ => ?_
+  by_cases hA : z ∈ A <;> by_cases hB : z ∈ B <;> simp [hA, hB]
 
 /-- **The use principle.** A successful run against the answers `σ` succeeds with the same output
 and use against any answers `τ` agreeing with `σ` below its use. -/
@@ -484,5 +531,21 @@ theorem mem_eval_iff_exists_evaln {O : ℕ →. ℕ} (hσ : ∀ z y, σ z = some
     {c : Code} {y : ℕ} : y ∈ eval O c n ↔ ∃ k d, evaln σ k c n = some d ∧ d.output = y :=
   ⟨exists_evaln_eq_some_of_mem_eval fun z y => (hσ z y).2, fun ⟨_, _, h, hy⟩ =>
     hy ▸ evaln_sound h fun z _ y' hy' => (hσ z y').1 hy'⟩
+
+/-- **Evaluation through finite initial segments.** For a total oracle `O`, the values of a
+program relative to `O` are exactly the outputs of its successful runs, at some fuel `k`, against
+the finite oracle string `O 0, …, O (k - 1)`. -/
+theorem mem_eval_iff_exists_evaln_range_map {O : ℕ → ℕ} {c : Code} {n y : ℕ} :
+    y ∈ eval (O : ℕ →. ℕ) c n ↔
+      ∃ k d, evaln (fun z => ((List.range k).map O)[z]?) k c n = some d ∧ d.output = y := by
+  constructor
+  · intro h
+    obtain ⟨k, d, hd, rfl⟩ := exists_evaln_eq_some_of_mem_eval (σ := fun z => some (O z))
+      (fun z y hy => by rw [PFun.coe_val, Part.mem_some_iff] at hy; rw [hy]) h
+    -- the run at fuel `k` reads only addresses below `k`, where the string is correct
+    refine ⟨k, d, evaln_eq_some_of_eqOn hd fun z hz => ?_, rfl⟩
+    simp [(Set.mem_Iio.1 hz).trans_le (evaln_use_le hd)]
+  · rintro ⟨k, d, hd, rfl⟩
+    exact evaln_sound hd fun z _ y hy => by simp_all [List.getElem?_eq_some_iff]
 
 end TauCeti.Oracle.Single.Code

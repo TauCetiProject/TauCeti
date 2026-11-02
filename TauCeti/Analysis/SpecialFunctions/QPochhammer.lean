@@ -55,6 +55,8 @@ holomorphy argument is adapted from `Mathlib.NumberTheory.ModularForms.DedekindE
 * `TauCeti.tprod_one_add_pow_mul_tprod_one_sub_pow_odd`: **Euler's identity**
   `∏_{n ≥ 1} (1 + qⁿ) ∏_{n ≥ 0} (1 - q^{2n+1}) = 1` for `‖q‖ < 1`, the analytic form of the
   equinumerosity of partitions into distinct parts and into odd parts.
+* `TauCeti.hasDerivAt_tprod_one_sub_pow_odd`: the odd product `∏_{n ≥ 0} (1 - s^{2n+1})` has
+  derivative `-1` at `s = 0`.
 * `TauCeti.hasProdLocallyUniformlyOn_one_sub_pow_mul`: for `q` and `w` continuous on an open set
   `U` with `‖q‖ < 1` there, `∏_{n ≥ 1} (1 - q(τ)ⁿ w(τ))` converges locally uniformly on `U`.
 * `TauCeti.differentiableOn_tprod_one_sub_pow_mul`: for `q` and `w` holomorphic on such a `U`,
@@ -262,6 +264,64 @@ theorem qTheta_sq_self {s : 𝕜} (hs : ‖s‖ < 1) :
   rw [h₁, h₂, sq]
 
 end NormedField
+
+section NontriviallyNormedField
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+
+open Asymptotics Filter in
+/-- Near `s = 0` the odd product is `∏_{n ≥ 0} (1 - s^{2n+1}) = 1 - s + O(s²)`: it has derivative
+`-1` at `0`. -/
+theorem hasDerivAt_tprod_one_sub_pow_odd :
+    HasDerivAt (fun s : 𝕜 ↦ ∏' n : ℕ, (1 - s ^ (2 * n + 1))) (-1) 0 := by
+  rw [hasDerivAt_iff_isLittleO_nhds_zero]
+  refine IsBigO.trans_isLittleO (g := fun s : 𝕜 ↦ s ^ 2) ?_ (isLittleO_pow_id one_lt_two)
+  refine IsBigO.of_bound 4 ?_
+  filter_upwards [Metric.closedBall_mem_nhds (0 : 𝕜) one_half_pos] with s hs
+  rw [Metric.mem_closedBall, dist_zero_right] at hs
+  have hs1 : ‖s‖ < 1 := hs.trans_lt one_half_lt_one
+  have hs2 : ‖s‖ ^ 2 < 1 := pow_lt_one₀ (norm_nonneg s) hs1 two_ne_zero
+  -- Split off the factor `1 - s`; the remaining product is `1 + O(s³)`.
+  have hsum : Summable fun n : ℕ ↦ ‖-s ^ (2 * n + 3)‖ := by
+    refine ((summable_geometric_of_lt_one (by positivity) hs2).mul_left (‖s‖ ^ 3)).congr
+      fun n ↦ ?_
+    rw [norm_neg, norm_pow, pow_add, pow_mul]
+    ring
+  have htsum : ∑' n : ℕ, ‖-s ^ (2 * n + 3)‖ ≤ 2 * ‖s‖ ^ 3 := by
+    have h : ∑' n : ℕ, ‖-s ^ (2 * n + 3)‖ = ‖s‖ ^ 3 * (1 - ‖s‖ ^ 2)⁻¹ := by
+      rw [← tsum_geometric_of_lt_one (by positivity) hs2, ← tsum_mul_left]
+      exact tsum_congr fun n ↦ by rw [norm_neg, norm_pow, pow_add, pow_mul]; ring
+    rw [h, mul_comm 2]
+    gcongr
+    rw [inv_le_comm₀ (by linarith) two_pos]
+    nlinarith [norm_nonneg s]
+  have hR : ‖∏' n : ℕ, (1 + -s ^ (2 * n + 3)) - 1‖ ≤ 4 * ‖s‖ ^ 3 := by
+    have hx : |∑' n : ℕ, ‖-s ^ (2 * n + 3)‖| ≤ 1 := by
+      rw [abs_of_nonneg (tsum_nonneg fun _ ↦ norm_nonneg _)]
+      nlinarith [pow_le_pow_left₀ (norm_nonneg s) hs 3]
+    refine (norm_tprod_one_add_sub_one_le hsum).trans ?_
+    have := Real.abs_exp_sub_one_le hx
+    rw [abs_of_nonneg (tsum_nonneg fun _ ↦ norm_nonneg _)] at this
+    linarith [le_abs_self (Real.exp (∑' n : ℕ, ‖-s ^ (2 * n + 3)‖) - 1)]
+  have hsplit : ∏' n : ℕ, (1 - s ^ (2 * n + 1)) =
+      (1 - s) * ∏' n : ℕ, (1 + -s ^ (2 * n + 3)) := by
+    rw [tprod_eq_zero_mul' (f := fun n : ℕ ↦ 1 - s ^ (2 * n + 1))
+      (by simpa [sub_eq_add_neg, mul_add, add_assoc] using
+        multipliable_one_add_of_summable hsum)]
+    simp [sub_eq_add_neg, mul_add, add_assoc]
+  have h0 : ∏' n : ℕ, (1 - (0 : 𝕜) ^ (2 * n + 1)) = 1 := by simp
+  simp only [zero_add, h0, hsplit, smul_eq_mul, mul_neg, mul_one, sub_neg_eq_add]
+  calc ‖(1 - s) * ∏' n : ℕ, (1 + -s ^ (2 * n + 3)) - 1 + s‖
+      = ‖1 - s‖ * ‖∏' n : ℕ, (1 + -s ^ (2 * n + 3)) - 1‖ := by
+        rw [← norm_mul]; congr 1; ring
+    _ ≤ 2 * (4 * ‖s‖ ^ 3) := by
+        gcongr
+        exact (norm_sub_le _ _).trans (by rw [norm_one]; linarith)
+    _ ≤ 4 * ‖s ^ 2‖ := by
+        rw [norm_pow]
+        nlinarith [mul_le_mul_of_nonneg_left hs (pow_nonneg (norm_nonneg s) 2)]
+
+end NontriviallyNormedField
 
 section LocallyUniform
 
