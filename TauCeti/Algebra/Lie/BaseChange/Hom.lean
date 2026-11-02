@@ -43,6 +43,8 @@ complex Lie algebra.
   over `A`.
 * `IsBaseChange.lieEquiv`: if `f` is a base change, the Lie algebra equivalence
   `A ⊗[R] L ≃ₗ⁅A⁆ L'` it induces.
+* `IsBaseChange.lieEquivOfCodRestrict`: if the corestriction of `f` to a Lie subalgebra `P` over
+  `A` is a base change, the Lie algebra equivalence `A ⊗[R] L ≃ₗ⁅A⁆ P` it induces.
 
 ## Main results
 
@@ -228,6 +230,63 @@ theorem toLinearEquiv_lieEquiv : h.lieEquiv.toLinearEquiv = h.equiv := by
   induction t with
   | tmul a x => simp
   | add t₁ t₂ h₁ h₂ => simp only [map_add, h₁, h₂]
+
+end IsBaseChange
+
+namespace IsBaseChange
+
+variable {f : L →ₗ⁅R⁆ L'} {P : LieSubalgebra A L'} {hfP : ∀ x, f x ∈ P}
+
+/-- The values of the extension of scalars of the corestriction of `f` to `P`, read in `L'`, are
+those of the extension of scalars of `f`. -/
+private theorem coe_liftBaseChange_codRestrict (u : A ⊗[R] L) :
+    (((f : L →ₗ[R] L').codRestrict (P.toSubmodule.restrictScalars R) hfP).liftBaseChange A u :
+      L') = f.liftBaseChange A u := by
+  induction u with
+  | tmul a x =>
+    -- The `A`-action on `P.restrictScalars R` is `P`'s action, transported by the instance
+    -- `Submodule.restrictScalars.origModule`; no simp lemma moves the coercion through it, so
+    -- `rfl` unfolds the coercion of `a • ⟨f x, _⟩` by definition.
+    rw [LinearMap.liftBaseChange_tmul, LieHom.liftBaseChange_tmul]
+    rfl
+  | add u v hu hv => simp only [map_add, Submodule.coe_add, hu, hv]
+
+variable (h : IsBaseChange A ((f : L →ₗ[R] L').codRestrict (P.toSubmodule.restrictScalars R) hfP))
+include h
+
+private theorem liftBaseChange_injective_of_codRestrict :
+    Function.Injective (f.liftBaseChange A) := fun u v huv ↦
+  h.liftBaseChange_injective (Subtype.ext (by
+    simpa only [coe_liftBaseChange_codRestrict] using huv))
+
+private theorem range_liftBaseChange_of_codRestrict : (f.liftBaseChange A).range = P := by
+  ext y
+  refine ⟨?_, fun hy ↦ ?_⟩
+  · rintro ⟨u, rfl⟩
+    exact coe_liftBaseChange_codRestrict (hfP := hfP) u ▸ Subtype.prop _
+  · obtain ⟨u, hu⟩ := h.liftBaseChange_bijective.2 ⟨y, hy⟩
+    exact ⟨u, (coe_liftBaseChange_codRestrict u).symm.trans (congrArg Subtype.val hu)⟩
+
+/-- **A base change of Lie algebras onto a Lie subalgebra.**  Let `f` be a homomorphism of Lie
+algebras over `R` into a Lie algebra `L'` over `A`, with values in a Lie subalgebra `P` over `A`.
+If the corestriction of `f` to `P` exhibits `P` as the base change of `L` along `R → A`, then
+`a ⊗ x ↦ a • f x` is an isomorphism of Lie algebras over `A` from `A ⊗[R] L` onto `P`.  This is
+how an `R`-form of a Lie subalgebra of `L'` is recognised, for instance a real form of a complex
+Lie subalgebra of a complex matrix algebra. -/
+noncomputable def lieEquivOfCodRestrict : A ⊗[R] L ≃ₗ⁅A⁆ P :=
+  (LieEquiv.ofInjective _ (liftBaseChange_injective_of_codRestrict h)).trans
+    (LieEquiv.ofEq _ _ (by rw [range_liftBaseChange_of_codRestrict h]))
+
+@[simp]
+theorem coe_lieEquivOfCodRestrict_tmul (a : A) (x : L) :
+    (h.lieEquivOfCodRestrict (a ⊗ₜ[R] x) : L') = a • f x := by
+  simp [lieEquivOfCodRestrict]
+
+@[simp]
+theorem lieEquivOfCodRestrict_symm_apply (x : L) :
+    h.lieEquivOfCodRestrict.symm ⟨f x, hfP x⟩ = 1 ⊗ₜ[R] x := by
+  rw [LieEquiv.symm_apply_eq]
+  exact Subtype.ext (by rw [coe_lieEquivOfCodRestrict_tmul, one_smul])
 
 end IsBaseChange
 
