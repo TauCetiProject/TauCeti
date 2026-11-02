@@ -146,7 +146,7 @@ theorem betaBinomialMeasure_eq_sum_dirac {a b : ℝ} (ha : 0 < a) (hb : 0 < b) (
   let _ := isProbabilityMeasure_betaBinomialMeasure ha hb n
   apply Measure.ext_of_singleton
   intro k
-  rw [betaBinomialMeasure_singleton ha hb, Measure.finsetSum_apply]
+  rw [betaBinomialMeasure_singleton ha hb, _root_.sum_apply]
   by_cases hk : k ≤ n
   · rw [Finset.sum_eq_single k]
     · simp

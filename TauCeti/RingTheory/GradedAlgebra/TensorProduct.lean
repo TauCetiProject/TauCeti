@@ -120,7 +120,7 @@ private theorem tmul_mul_mem_gradedTensorGrading {p q n : ℤ} {a : A} {b : B} {
   refine zsmul_mem ?_ _
   convert tmul_mem_gradedTensorGrading 𝒜 ℬ (SetLike.mul_mem_graded ha ha')
     (SetLike.mul_mem_graded hb hb') using 1
-  all_goals ring_nf
+  ring_nf
 
 /-- The Koszul multiplication of the graded tensor product adds degrees. -/
 instance instGradedMonoidGradedTensorGrading :
@@ -130,7 +130,7 @@ instance instGradedMonoidGradedTensorGrading :
     rw [h]
     convert tmul_mem_gradedTensorGrading 𝒜 ℬ (SetLike.one_mem_graded 𝒜)
       (SetLike.one_mem_graded ℬ) using 1
-    all_goals ring_nf
+    ring_nf
   mul_mem := by
     intro m n x y hx hy
     refine gradedTensorGrading_le 𝒜 ℬ (C := Submodule.comap
@@ -138,7 +138,7 @@ instance instGradedMonoidGradedTensorGrading :
       (fun p a ha b hb ↦ ?_) hx
     rw [Submodule.mem_comap, LinearMap.flip_apply, ← GradedTensorProduct.mul_def]
     convert tmul_mul_mem_gradedTensorGrading 𝒜 ℬ ha hb hy using 1
-    all_goals ring_nf
+    ring_nf
 
 /-- The graded tensor product of two internally `ℤ`-graded algebras is an internally `ℤ`-graded
 algebra for the total-degree grading. -/
@@ -254,7 +254,7 @@ noncomputable def gradedTensorIncludeLeft : 𝒜 →ₐᵍ[R] gradedTensorGradin
       have h : x ᵍ⊗ₜ[R] (1 : B) ∈ gradedTensorGrading 𝒜 ℬ i := by
         convert tmul_mem_gradedTensorGrading 𝒜 ℬ hx
           (SetLike.one_mem_graded ℬ) using 1
-        all_goals ring_nf
+        ring_nf
       exact h }
 
 @[simp]
@@ -268,7 +268,7 @@ noncomputable def gradedTensorIncludeRight : ℬ →ₐᵍ[R] gradedTensorGradin
       have h : (1 : A) ᵍ⊗ₜ[R] x ∈ gradedTensorGrading 𝒜 ℬ i := by
         convert tmul_mem_gradedTensorGrading 𝒜 ℬ
           (SetLike.one_mem_graded 𝒜) hx using 1
-        all_goals ring_nf
+        ring_nf
       exact h }
 
 @[simp]
