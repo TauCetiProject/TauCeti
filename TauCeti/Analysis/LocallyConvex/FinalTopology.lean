@@ -86,27 +86,33 @@ theorem le_iff (t : TopologicalSpace F) [@IsTopologicalAddGroup F t _]
 variable {G : Type*} [AddCommGroup G] [Module ℝ G] [TopologicalSpace G]
   [IsTopologicalAddGroup G] [ContinuousSMul ℝ G] [LocallyConvexSpace ℝ G]
 
-/-- The universal property of the final locally convex topology, for real-linear maps into
-locally convex real topological vector spaces. -/
-theorem continuous_iff (g : F →ₗ[ℝ] G) :
+variable {𝕜 : Type*} [Semiring 𝕜] [Algebra ℝ 𝕜]
+  [Module 𝕜 F] [IsScalarTower ℝ 𝕜 F] [Module 𝕜 G] [IsScalarTower ℝ 𝕜 G]
+
+/-- The universal property of the final locally convex topology, for linear maps over an
+ℝ-algebra into locally convex real topological vector spaces. -/
+theorem continuous_iff_continuous_comp (g : F →ₗ[𝕜] G) :
     @Continuous F G (finalLocallyConvexTopology f) inferInstance g ↔
       ∀ i, Continuous (g ∘ f i) := by
-  have : @IsTopologicalAddGroup F (induced g inferInstance) _ :=
-    isTopologicalAddGroup_induced g
-  have : @ContinuousSMul ℝ F _ _ (induced g inferInstance) := continuousSMul_induced g
-  have : @LocallyConvexSpace ℝ F _ _ _ _ (induced g inferInstance) := .induced g
+  simp_rw [← g.coe_restrictScalars ℝ]
+  have : @IsTopologicalAddGroup F (induced (g.restrictScalars ℝ) inferInstance) _ :=
+    isTopologicalAddGroup_induced (g.restrictScalars ℝ)
+  have : @ContinuousSMul ℝ F _ _ (induced (g.restrictScalars ℝ) inferInstance) :=
+    continuousSMul_induced (g.restrictScalars ℝ)
+  have : @LocallyConvexSpace ℝ F _ _ _ _ (induced (g.restrictScalars ℝ) inferInstance) :=
+    .induced (g.restrictScalars ℝ)
   rw [continuous_iff_le_induced, le_iff]
   simp only [continuous_induced_rng]
 
 /-- Construct a continuous linear map by checking continuity on each generating space. -/
-def lift (g : F →ₗ[ℝ] G) (hg : ∀ i, Continuous (g ∘ f i)) :
+def lift (g : F →ₗ[𝕜] G) (hg : ∀ i, Continuous (g ∘ f i)) :
     letI := finalLocallyConvexTopology f
-    F →L[ℝ] G :=
+    F →L[𝕜] G :=
   letI := finalLocallyConvexTopology f
-  { g with cont := (continuous_iff f g).2 hg }
+  { g with cont := (continuous_iff_continuous_comp f g).2 hg }
 
 @[simp]
-theorem lift_apply (g : F →ₗ[ℝ] G) (hg : ∀ i, Continuous (g ∘ f i)) (x : F) :
+theorem lift_apply (g : F →ₗ[𝕜] G) (hg : ∀ i, Continuous (g ∘ f i)) (x : F) :
     lift f g hg x = g x := (rfl)
 
 variable {κ : Type*} {H : κ → Type*} [∀ j, AddCommGroup (H j)]
