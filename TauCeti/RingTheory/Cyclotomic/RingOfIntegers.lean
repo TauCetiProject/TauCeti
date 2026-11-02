@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.Cyclotomic.Basic
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Basic
-import Mathlib.NumberTheory.Cyclotomic.PrimitiveRoots
+import TauCeti.NumberTheory.Cyclotomic.Aut
 
 /-!
 # Exact cyclotomic integers and the ring of integers
@@ -42,11 +42,6 @@ open NumberField Polynomial TauCeti
 namespace IsPrimitiveRoot
 
 variable {e : ℕ} [NeZero e] {K : Type*} [Field K] {ζ : K}
-
-/-- The primitive root in the ring of integers maps back to the primitive root in the field. -/
-@[simp]
-theorem algebraMap_toInteger (hζ : IsPrimitiveRoot ζ e) : algebraMap (𝓞 K) K hζ.toInteger = ζ :=
-  (rfl)
 
 /-- Evaluation of exact cyclotomic integers at the primitive root in the ring of integers. -/
 private noncomputable def evalToInteger (hζ : IsPrimitiveRoot ζ e) : Cyclotomic e →+* 𝓞 K :=
@@ -114,16 +109,6 @@ theorem coeff_cyclotomicEquivRingOfIntegers_symm (hζ : IsPrimitiveRoot ζ e) (y
     (hζ.cyclotomicEquivRingOfIntegers.symm y).coeff j = hζ.integralPowerBasis.basis.repr y j := by
   rw [← repr_cyclotomicEquivRingOfIntegers, RingEquiv.apply_symm_apply]
 
-/-- A primitive `e`-th root of unity in a cyclotomic extension of `ℚ` can be sent to any primitive
-`e`-th root of unity in a domain containing `ℚ`. -/
-theorem exists_algHom_apply_eq (hζ : IsPrimitiveRoot ζ e)
-    {C : Type*} [CommRing C] [IsDomain C] [Algebra ℚ C] {ω : C} (hω : IsPrimitiveRoot ω e) :
-    ∃ ι : K →ₐ[ℚ] C, ι ζ = ω := by
-  have hirr := cyclotomic.irreducible_rat (NeZero.pos e)
-  let ω' : primitiveRoots e C := ⟨ω, (mem_primitiveRoots (NeZero.pos e)).mpr hω⟩
-  refine ⟨(hζ.embeddingsEquivPrimitiveRoots C hirr).symm ω', ?_⟩
-  rw [← hζ.embeddingsEquivPrimitiveRoots_apply_coe C hirr, Equiv.apply_symm_apply]
-
 /-- An embedding of a cyclotomic extension into `ℂ` sending the primitive root `ζ` to the pinned
 root `TauCeti.Cyclotomic.complexRoot e` restricts to the pinned embedding of the exact ring. -/
 theorem map_cyclotomicEquivRingOfIntegers_eq_complexEmbedding (hζ : IsPrimitiveRoot ζ e)
@@ -131,7 +116,8 @@ theorem map_cyclotomicEquivRingOfIntegers_eq_complexEmbedding (hζ : IsPrimitive
     ι (algebraMap (𝓞 K) K (hζ.cyclotomicEquivRingOfIntegers x)) = Cyclotomic.complexEmbedding x :=
   DFunLike.congr_fun (Cyclotomic.ringHom_ext
     (g₁ := (ι.comp (algebraMap (𝓞 K) K)).comp hζ.cyclotomicEquivRingOfIntegers.toRingHom)
-    (g₂ := Cyclotomic.complexEmbedding) (by simpa using hι)) x
+    (g₂ := Cyclotomic.complexEmbedding)
+    (by simpa [show algebraMap (𝓞 K) K hζ.toInteger = ζ from RingOfIntegers.map_mk _ _] using hι)) x
 
 end IsPrimitiveRoot
 
@@ -160,8 +146,10 @@ theorem exists_ringOfIntegers_equiv_integralPowerBasis (e : ℕ) [NeZero e] :
   have : IsCyclotomicExtension {e} ℚ (CyclotomicField e ℚ) :=
     CyclotomicField.isCyclotomicExtension e ℚ
   intro hζ
-  obtain ⟨ι, hι⟩ := hζ.exists_algHom_apply_eq (isPrimitiveRoot_complexRoot (e := e))
-  exact ⟨hζ.cyclotomicEquivRingOfIntegers, ι, hι, by simp,
+  obtain ⟨ι, hι⟩ := hζ.exists_algHom_apply_eq (cyclotomic.irreducible_rat (NeZero.pos e))
+    (isPrimitiveRoot_complexRoot (e := e))
+  exact ⟨hζ.cyclotomicEquivRingOfIntegers, ι, hι,
+    by rw [hζ.cyclotomicEquivRingOfIntegers_zeta]; exact RingOfIntegers.map_mk _ _,
     hζ.map_cyclotomicEquivRingOfIntegers_eq_complexEmbedding hι,
     fun x k ↦ by rw [hζ.repr_cyclotomicEquivRingOfIntegers]; simp⟩
 
