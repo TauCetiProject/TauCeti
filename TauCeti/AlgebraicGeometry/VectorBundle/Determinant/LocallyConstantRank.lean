@@ -89,7 +89,7 @@ private lemma locallyConstantExteriorPower_map_comp_comp_eqToHom
 /-- The morphism of determinants induced by an isomorphism `E ≅ F` in the core: `⋀^{rank E}` of
 it, followed by the identification `⋀^{rank E} F = ⋀^{rank F} F` given by `rank E = rank F`. This
 is the action of `determinantCore` on morphisms. -/
-def determinantCoreMap {E F : Core (FiniteLocallyFreeSheaf X)} (e : E ⟶ F) :
+private def determinantCoreMap {E F : Core (FiniteLocallyFreeSheaf X)} (e : E ⟶ F) :
     det E.of ⟶ det F.of :=
   ObjectProperty.homMk <|
     (AlgebraicGeometry.locallyConstantExteriorPower E.of.rank).map e.iso.hom.hom ≫
