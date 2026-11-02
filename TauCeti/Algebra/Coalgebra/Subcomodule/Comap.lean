@@ -241,16 +241,15 @@ linear map. -/
 @[simp]
 theorem eigenspace_toSubmodule (f : Hom R C V V) (μ : R) :
     (f.eigenspace μ).toSubmodule = Module.End.eigenspace f.toLinearMap μ := by
-  rw [eigenspace, ker_toSubmodule, add_toLinearMap, smul_toLinearMap, neg_smul,
-    ← sub_eq_add_neg, Module.End.eigenspace_def]
-  rfl
+  rw [eigenspace, ker_toSubmodule, add_toLinearMap, smul_toLinearMap, id_toLinearMap,
+    ← Module.End.one_eq_id, neg_smul, ← sub_eq_add_neg, Module.End.eigenspace_def]
 
 /-- Membership in an eigenspace subcomodule. -/
 @[simp]
 theorem mem_eigenspace_iff {f : Hom R C V V} {μ : R} {v : V} :
     v ∈ f.eigenspace μ ↔ f v = μ • v := by
-  rw [← Subcomodule.mem_toSubmodule, eigenspace_toSubmodule, Module.End.mem_eigenspace_iff]
-  rfl
+  rw [← Subcomodule.mem_toSubmodule, eigenspace_toSubmodule, Module.End.mem_eigenspace_iff,
+    coe_toLinearMap]
 
 end Hom
 

@@ -100,8 +100,8 @@ noncomputable def centralizerAdHom (hJ : centralizerHopfIdeal H x ≤ J) :
     (Bialgebra.Quotient.mkBialgHom (R := k) J.toIdeal).toCoalgHom
   { toLinearMap := LieAlgebra.ad k (Module.Dual k (Bialgebra.CotangentSpace k H)) x
     map_coact := by
-      -- The quotient point lies in `C_G(x)`, so its adjoint action fixes `1 ⊗ x`; it also
-      -- preserves brackets, hence commutes with the bracket by `1 ⊗ x`, which is `ad x`.
+      -- The quotient point lies in `C_G(x)`, so its adjoint action fixes `1 ⊗ x` and hence
+      -- commutes with `ad x`.
       let g : HopfAlgebra.points (H := H) (CommAlgCat.of k (H ⧸ J.toIdeal)) :=
         toConv (Ideal.Quotient.mkₐ k J.toIdeal)
       have hfix : Comodule.endOfPoint (Module.Dual k (Bialgebra.CotangentSpace k H)) g.ofConv
@@ -115,18 +115,9 @@ noncomputable def centralizerAdHom (hJ : centralizerHopfIdeal H x ≤ J) :
         corestrictCoact_adjointComodule_eq, corestrictCoact_adjointComodule_eq,
         ← LinearMap.rTensor_def, LinearMap.rTensor_comm]
       congr 1
-      have hy : (1 : H ⧸ J.toIdeal) ⊗ₜ[k]
-          (LieAlgebra.ad k (Module.Dual k (Bialgebra.CotangentSpace k H)) x y) =
-            ⁅(1 : H ⧸ J.toIdeal) ⊗ₜ[k] x, 1 ⊗ₜ[k] y⁆ := by
-        rw [LieAlgebra.ExtendScalars.bracket_tmul, mul_one, LieAlgebra.ad_apply]
-      -- The base change of `ad x` is the bracket with `1 ⊗ x`.
-      have had (z : (H ⧸ J.toIdeal) ⊗[k] Module.Dual k (Bialgebra.CotangentSpace k H)) :
-          (LieAlgebra.ad k (Module.Dual k (Bialgebra.CotangentSpace k H)) x).baseChange
-            (H ⧸ J.toIdeal) z = ⁅(1 : H ⧸ J.toIdeal) ⊗ₜ[k] x, z⁆ :=
-        (LinearMap.congr_fun (LieModule.toEnd_baseChange k (H ⧸ J.toIdeal) _ _ x) z).symm
-      rw [hy, ← LinearMap.baseChange_eq_lTensor, had]
-      exact (congrArg (⁅·, _⁆) hfix).symm.trans
-        (Derivation.endOfPoint_adjointComodule_bracket _ g _ _).symm }
+      rw [← LinearMap.baseChange_eq_lTensor, ← LinearMap.baseChange_tmul]
+      exact (LinearMap.congr_fun
+        (Derivation.endOfPoint_adjointComodule_comp_baseChange_ad _ g x hfix) _).symm }
 
 /-- `TauCeti.centralizerAdHom` acts by the bracket with `x`. -/
 @[simp]

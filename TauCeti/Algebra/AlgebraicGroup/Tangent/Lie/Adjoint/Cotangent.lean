@@ -23,6 +23,8 @@ convolution conjugation, so it preserves the Lie bracket.
 * `Derivation.adjointAction_bracket`: the established adjoint action preserves brackets.
 * `Derivation.endOfPoint_adjointComodule_bracket`: so does the point action of the adjoint
   comodule.
+* `Derivation.endOfPoint_adjointComodule_comp_baseChange_ad`: a point fixing `x` commutes with
+  `ad x`.
 
 ## References
 
@@ -75,6 +77,28 @@ theorem endOfPoint_adjointComodule_bracket
     tangentScalarExtensionEquiv_adjointComodule_endOfPoint,
     tangentScalarExtensionEquiv_adjointComodule_endOfPoint]
   exact adDerivation_lie A (pointInCounitAlgebra A g) _ _
+
+/-- A point of the adjoint comodule that fixes `1 ⊗ x` commutes with the base change of `ad x`,
+since it preserves brackets and the base change of `ad x` is the bracket with `1 ⊗ x`. -/
+theorem endOfPoint_adjointComodule_comp_baseChange_ad
+    (A : CommAlgCat.{max u v} R) (g : HopfAlgebra.points (H := H) A)
+    (x : Module.Dual R (Bialgebra.CotangentSpace R H))
+    (hg : letI := adjointComodule (R := R) (H := H)
+      Comodule.endOfPoint (Module.Dual R (Bialgebra.CotangentSpace R H)) g.ofConv
+        (1 ⊗ₜ[R] x) = 1 ⊗ₜ[R] x) :
+    letI := adjointComodule (R := R) (H := H)
+    Comodule.endOfPoint (Module.Dual R (Bialgebra.CotangentSpace R H)) g.ofConv ∘ₗ
+        (LieAlgebra.ad R (Module.Dual R (Bialgebra.CotangentSpace R H)) x).baseChange A =
+      (LieAlgebra.ad R (Module.Dual R (Bialgebra.CotangentSpace R H)) x).baseChange A ∘ₗ
+        Comodule.endOfPoint (Module.Dual R (Bialgebra.CotangentSpace R H)) g.ofConv := by
+  let := adjointComodule (R := R) (H := H)
+  have had (z : A ⊗[R] Module.Dual R (Bialgebra.CotangentSpace R H)) :
+      (LieAlgebra.ad R (Module.Dual R (Bialgebra.CotangentSpace R H)) x).baseChange A z =
+        ⁅(1 : A) ⊗ₜ[R] x, z⁆ :=
+    (LinearMap.congr_fun (LieModule.toEnd_baseChange R A _ _ x) z).symm
+  refine LinearMap.ext fun z ↦ ?_
+  rw [LinearMap.comp_apply, LinearMap.comp_apply, had, had, endOfPoint_adjointComodule_bracket,
+    hg]
 
 /-- Every algebra-valued point acts on the scalar-extended tangent space by a Lie algebra
 automorphism. -/
