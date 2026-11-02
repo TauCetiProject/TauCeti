@@ -139,14 +139,6 @@ theorem exists_unitary_mul_mul_unitary_iff_singularValues_eq
       Matrix.mul_assoc] using
       congrArg (LinearMap.toMatrix eκ.toBasis eι.toBasis) hUV.symm
 
-/-- A diagonal matrix with one diagonal entry a unitary scalar and the others `1` is unitary. -/
-private theorem diagonal_update_one_mem_unitaryGroup {a : 𝕜} (ha : a ∈ unitary 𝕜) (i : ι) :
-    diagonal (Function.update (1 : ι → 𝕜) i a) ∈ unitaryGroup ι 𝕜 :=
-  diagonal_mem_unitaryGroup_iff.mpr fun j ↦ by
-    rcases eq_or_ne j i with rfl | h
-    · simpa using ha
-    · simp [Function.update_of_ne h]
-
 /-- The case `ι = Fin n` of `Matrix.exists_unitary_mul_mul_unitary_eq_self`, where the singular
 value decomposition is available. -/
 private theorem exists_unitary_mul_mul_unitary_eq_self_fin [NeZero n]
