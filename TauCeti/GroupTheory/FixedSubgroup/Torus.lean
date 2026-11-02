@@ -7,7 +7,6 @@ module
 
 public import TauCeti.GroupTheory.FixedSubgroup.Lang
 public import TauCeti.FieldTheory.IsAlgClosed.Units
-import TauCeti.Algebra.Group.Hom.Iterate
 
 /-!
 # Lang maps on Frobenius-twisted tori
@@ -52,7 +51,9 @@ theorem surjective_commutatorMap_of_torus_twist (f : (ι → Kˣ) →* (ι → K
   apply f.surjective_commutatorMap_of_torus_iterate_eq_pow (m := m)
     (Nat.one_lt_pow hm.ne' hq)
   intro t
-  rw [f.iterate_apply_eq_iterate_pow θ q hf m t, hθ]
+  have hcomp : ⇑f = (fun t ↦ t ^ q) ∘ ⇑θ := funext hf
+  have hcomm : Function.Commute (fun t ↦ t ^ q) ⇑θ := fun t ↦ (map_pow θ t q).symm
+  rw [hcomp, hcomm.comp_iterate, pow_iterate, Function.comp_apply, hθ]
 
 variable {G H : Type*} [Group G] [Group H]
 
