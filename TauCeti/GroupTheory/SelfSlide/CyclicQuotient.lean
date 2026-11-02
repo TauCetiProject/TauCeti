@@ -17,9 +17,10 @@ import Mathlib.Tactic.Linarith
 Let `f : H →+ ℤ` be a surjective integral coordinate and suppose `f h = d > 0`.
 Two different cyclic quotients are useful in finite-cover arguments for dynamical torsion:
 
-* `f` modulo `k`, multiplied by the inverse of `d`, sends `h` to `1` when `k`
+* `f.invMulCastZMod d k`, namely `f` modulo `k` multiplied by the inverse of `d`,
+  sends `h` to `1` when `k`
   is coprime to `d`. Its kernel meets the multiples of `h` exactly at the multiples of `k h`.
-* `f` modulo `d * k` sends `h` to `d`, for every `k`. Its kernel has the same
+* `f.castZMod (d * k)` sends `h` to `d`, for every `k`. Its kernel has the same
   intersection with the multiples of `h`, but its index is `d * k`, not `k`.
 
 Both maps kill torsion, since they factor through `ℤ`. For a nontorsion class in a
@@ -41,51 +42,52 @@ noncomputable section
 
 namespace AddMonoidHom
 
-variable {H : Type*} [AddCommGroup H] (f : H →+ ℤ) (d k : ℕ)
+variable {H : Type*} [AddCommGroup H] (f : H →+ ℤ)
 
-/-- The cyclic quotient used for norm elimination: reduce an integral coordinate modulo `d k`.
-For a class of coordinate `d`, its image has additive order `k` when `d ≠ 0`. -/
-def slideNormQuotient : H →+ ZMod (d * k) :=
-  (Int.castAddHom (ZMod (d * k))).comp f
+/-- Reduce an integer-valued additive homomorphism modulo `n`. -/
+def castZMod (n : ℕ) : H →+ ZMod n :=
+  (Int.castAddHom (ZMod n)).comp f
 
-/-- The cyclic quotient used for chain stabilization: normalize the reduction modulo `k`
-by the inverse of `d`. It sends a class of coordinate `d` to `1` when `d` and `k` are coprime. -/
-def slideStabilizationQuotient : H →+ ZMod k :=
-  (AddMonoidHom.mulLeft ((d : ZMod k)⁻¹)).comp ((Int.castAddHom (ZMod k)).comp f)
-
-@[simp]
-theorem slideNormQuotient_apply (x : H) :
-    f.slideNormQuotient d k x = (f x : ZMod (d * k)) := (rfl)
+/-- Multiply reduction modulo `k` by the inverse of `d` in `ZMod k`.
+This sends a class of coordinate `d` to `1` when `d` and `k` are coprime. -/
+def invMulCastZMod (d k : ℕ) : H →+ ZMod k :=
+  (AddMonoidHom.mulLeft ((d : ZMod k)⁻¹)).comp (f.castZMod k)
 
 @[simp]
-theorem slideStabilizationQuotient_apply (x : H) :
-    f.slideStabilizationQuotient d k x = (d : ZMod k)⁻¹ * (f x : ZMod k) := (rfl)
+theorem castZMod_apply (n : ℕ) (x : H) :
+    f.castZMod n x = (f x : ZMod n) := (rfl)
 
-/-- Reduction modulo `d k` is onto whenever the integral coordinate is onto. -/
-theorem slideNormQuotient_surjective (hf : Function.Surjective f) :
-    Function.Surjective (f.slideNormQuotient d k) :=
+@[simp]
+theorem invMulCastZMod_apply (d k : ℕ) (x : H) :
+    f.invMulCastZMod d k x = (d : ZMod k)⁻¹ * (f x : ZMod k) := (rfl)
+
+/-- Reduction modulo `n` is onto whenever the integral coordinate is onto. -/
+theorem castZMod_surjective (n : ℕ) (hf : Function.Surjective f) :
+    Function.Surjective (f.castZMod n) :=
   ZMod.intCast_surjective.comp hf
 
+variable (d k : ℕ)
+
 /-- The normalized reduction is onto when the normalizing coefficient is invertible. -/
-theorem slideStabilizationQuotient_surjective (hf : Function.Surjective f)
-    (hdk : d.Coprime k) : Function.Surjective (f.slideStabilizationQuotient d k) := by
+theorem invMulCastZMod_surjective (hf : Function.Surjective f)
+    (hdk : d.Coprime k) : Function.Surjective (f.invMulCastZMod d k) := by
   have hu : IsUnit (d : ZMod k) := (ZMod.isUnit_iff_coprime d k).2 hdk
   intro y
   obtain ⟨x, hx⟩ := (ZMod.intCast_surjective.comp hf) ((d : ZMod k) * y)
   dsimp only [Function.comp_apply] at hx
   exact ⟨x, by simp [hx, ← mul_assoc, ZMod.inv_mul_of_unit _ hu]⟩
 
-/-- An element lies in the norm-elimination kernel exactly when its coordinate is divisible
-by `d * k`. -/
-theorem mem_ker_slideNormQuotient_iff (x : H) :
-    x ∈ (f.slideNormQuotient d k).ker ↔ ((d * k : ℕ) : ℤ) ∣ f x := by
-  rw [mem_ker, slideNormQuotient_apply, ZMod.intCast_zmod_eq_zero_iff_dvd]
+/-- An element lies in the reduction kernel exactly when its coordinate is divisible
+by the modulus. -/
+theorem mem_ker_castZMod_iff (n : ℕ) (x : H) :
+    x ∈ (f.castZMod n).ker ↔ (n : ℤ) ∣ f x := by
+  rw [mem_ker, castZMod_apply, ZMod.intCast_zmod_eq_zero_iff_dvd]
 
 /-- For coprime degrees, an element lies in the stabilization kernel exactly when its
 coordinate is divisible by `k`. -/
-theorem mem_ker_slideStabilizationQuotient_iff (hdk : d.Coprime k) (x : H) :
-    x ∈ (f.slideStabilizationQuotient d k).ker ↔ (k : ℤ) ∣ f x := by
-  rw [mem_ker, slideStabilizationQuotient_apply,
+theorem mem_ker_invMulCastZMod_iff (hdk : d.Coprime k) (x : H) :
+    x ∈ (f.invMulCastZMod d k).ker ↔ (k : ℤ) ∣ f x := by
+  rw [mem_ker, invMulCastZMod_apply,
     ← ZMod.intCast_zmod_eq_zero_iff_dvd]
   have hu := (ZMod.isUnit_iff_coprime d k).2 hdk
   constructor
@@ -98,68 +100,68 @@ theorem mem_ker_slideStabilizationQuotient_iff (hdk : d.Coprime k) (x : H) :
 variable {d k} {h : H}
 
 /-- A slide of integral coordinate `d` maps to `d` in the norm-elimination quotient. -/
-theorem slideNormQuotient_apply_of_eq (hh : f h = d) :
-    f.slideNormQuotient d k h = d := by simp [hh]
+theorem castZMod_apply_of_eq (hh : f h = d) :
+    f.castZMod (d * k) h = d := by simp [hh]
 
 /-- A slide of integral coordinate `d` maps to `1` in the coprime stabilization quotient. -/
-theorem slideStabilizationQuotient_apply_of_eq (hh : f h = d) (hdk : d.Coprime k) :
-    f.slideStabilizationQuotient d k h = 1 := by
-  simp only [slideStabilizationQuotient_apply, hh, Int.cast_natCast]
+theorem invMulCastZMod_apply_of_eq (hh : f h = d) (hdk : d.Coprime k) :
+    f.invMulCastZMod d k h = 1 := by
+  simp only [invMulCastZMod_apply, hh, Int.cast_natCast]
   exact ZMod.inv_mul_of_unit _ ((ZMod.isUnit_iff_coprime d k).2 hdk)
 
 /-- The norm-elimination quotient retains exactly the `k`-divisible iterates of the slide.
 The integer multiplier may be negative. -/
-theorem zsmul_mem_ker_slideNormQuotient_iff (hh : f h = d) (hd : d ≠ 0) (n : ℤ) :
-    n • h ∈ (f.slideNormQuotient d k).ker ↔ (k : ℤ) ∣ n := by
-  rw [mem_ker_slideNormQuotient_iff, map_zsmul, hh, zsmul_eq_mul, Int.cast_id,
+theorem zsmul_mem_ker_castZMod_iff (hh : f h = d) (hd : d ≠ 0) (n : ℤ) :
+    n • h ∈ (f.castZMod (d * k)).ker ↔ (k : ℤ) ∣ n := by
+  rw [mem_ker_castZMod_iff, map_zsmul, hh, zsmul_eq_mul, Int.cast_id,
     Nat.cast_mul, mul_comm n]
   exact mul_dvd_mul_iff_left (by exact_mod_cast hd)
 
 /-- The stabilization quotient retains exactly the `k`-divisible iterates of the slide. -/
-theorem zsmul_mem_ker_slideStabilizationQuotient_iff (hh : f h = d)
+theorem zsmul_mem_ker_invMulCastZMod_iff (hh : f h = d)
     (hdk : d.Coprime k) (n : ℤ) :
-    n • h ∈ (f.slideStabilizationQuotient d k).ker ↔ (k : ℤ) ∣ n := by
-  rw [mem_ker_slideStabilizationQuotient_iff f d k hdk, map_zsmul, hh, zsmul_eq_mul]
+    n • h ∈ (f.invMulCastZMod d k).ker ↔ (k : ℤ) ∣ n := by
+  rw [mem_ker_invMulCastZMod_iff f d k hdk, map_zsmul, hh, zsmul_eq_mul]
   exact hdk.symm.isCoprime.dvd_mul_right_iff
 
 /-- The ordinary nonnegative iterates retained by norm elimination are exactly those
 whose multiplicity is divisible by `k`. -/
-theorem nsmul_mem_ker_slideNormQuotient_iff (hh : f h = d) (hd : d ≠ 0) (n : ℕ) :
-    n • h ∈ (f.slideNormQuotient d k).ker ↔ k ∣ n := by
+theorem nsmul_mem_ker_castZMod_iff (hh : f h = d) (hd : d ≠ 0) (n : ℕ) :
+    n • h ∈ (f.castZMod (d * k)).ker ↔ k ∣ n := by
   simpa only [natCast_zsmul, Int.natCast_dvd_natCast] using
-    f.zsmul_mem_ker_slideNormQuotient_iff (k := k) hh hd (n : ℤ)
+    f.zsmul_mem_ker_castZMod_iff (k := k) hh hd (n : ℤ)
 
 /-- The ordinary nonnegative iterates retained by stabilization are exactly those
 whose multiplicity is divisible by `k`. -/
-theorem nsmul_mem_ker_slideStabilizationQuotient_iff (hh : f h = d)
+theorem nsmul_mem_ker_invMulCastZMod_iff (hh : f h = d)
     (hdk : d.Coprime k) (n : ℕ) :
-    n • h ∈ (f.slideStabilizationQuotient d k).ker ↔ k ∣ n := by
+    n • h ∈ (f.invMulCastZMod d k).ker ↔ k ∣ n := by
   simpa only [natCast_zsmul, Int.natCast_dvd_natCast] using
-    f.zsmul_mem_ker_slideStabilizationQuotient_iff hh hdk (n : ℤ)
+    f.zsmul_mem_ker_invMulCastZMod_iff hh hdk (n : ℤ)
 
-/-- The norm-elimination cover has degree `d k`, not merely `k`. -/
-theorem index_ker_slideNormQuotient (hf : Function.Surjective f) :
-    (f.slideNormQuotient d k).ker.index = d * k := by
-  rw [AddSubgroup.index_ker, range_eq_top.2 (f.slideNormQuotient_surjective d k hf)]
+/-- Reduction of a surjective integral coordinate modulo `n` has kernel of index `n`. -/
+theorem index_ker_castZMod (n : ℕ) (hf : Function.Surjective f) :
+    (f.castZMod n).ker.index = n := by
+  rw [AddSubgroup.index_ker, range_eq_top.2 (f.castZMod_surjective n hf)]
   simp
 
 /-- The stabilization cover has degree `k`. -/
-theorem index_ker_slideStabilizationQuotient (hf : Function.Surjective f)
-    (hdk : d.Coprime k) : (f.slideStabilizationQuotient d k).ker.index = k := by
+theorem index_ker_invMulCastZMod (hf : Function.Surjective f)
+    (hdk : d.Coprime k) : (f.invMulCastZMod d k).ker.index = k := by
   rw [AddSubgroup.index_ker,
-    range_eq_top.2 (f.slideStabilizationQuotient_surjective d k hf hdk)]
+    range_eq_top.2 (f.invMulCastZMod_surjective d k hf hdk)]
   simp
 
-/-- Norm-elimination quotients kill the entire torsion subgroup of the deck group. -/
-theorem torsion_le_ker_slideNormQuotient :
-    AddCommGroup.torsion H ≤ (f.slideNormQuotient d k).ker := by
+/-- Reduction modulo `n` kills the entire torsion subgroup. -/
+theorem torsion_le_ker_castZMod (n : ℕ) :
+    AddCommGroup.torsion H ≤ (f.castZMod n).ker := by
   intro x hx
   have hf : f x = 0 := (isOfFinAddOrder_iff_eq_zero _).1 (f.isOfFinAddOrder hx)
   simp [mem_ker, hf]
 
 /-- Stabilization quotients kill the entire torsion subgroup of the deck group. -/
-theorem torsion_le_ker_slideStabilizationQuotient :
-    AddCommGroup.torsion H ≤ (f.slideStabilizationQuotient d k).ker := by
+theorem torsion_le_ker_invMulCastZMod :
+    AddCommGroup.torsion H ≤ (f.invMulCastZMod d k).ker := by
   intro x hx
   have hf : f x = 0 := (isOfFinAddOrder_iff_eq_zero _).1 (f.isOfFinAddOrder hx)
   simp [mem_ker, hf]
@@ -213,20 +215,20 @@ example (n : ℕ) :
 cover nevertheless detects multiples exactly by their multiplicities, for every `k`. -/
 example (k n : ℕ) :
     n • ((2, 1) : ℤ × ZMod 2) ∈
-      ((AddMonoidHom.fst ℤ (ZMod 2)).slideNormQuotient 2 k).ker ↔ k ∣ n :=
-  (AddMonoidHom.fst ℤ (ZMod 2)).nsmul_mem_ker_slideNormQuotient_iff
+      ((AddMonoidHom.fst ℤ (ZMod 2)).castZMod (2 * k)).ker ↔ k ∣ n :=
+  (AddMonoidHom.fst ℤ (ZMod 2)).nsmul_mem_ker_castZMod_iff
     (by rfl) (by decide) n
 
 /-- For the class `(2,1)`, every odd-degree stabilization quotient sends the class to `1`. -/
 example (k : ℕ) (hk : Odd k) :
-    (AddMonoidHom.fst ℤ (ZMod 2)).slideStabilizationQuotient 2 k (2, 1) = 1 := by
-  apply (AddMonoidHom.fst ℤ (ZMod 2)).slideStabilizationQuotient_apply_of_eq (by rfl)
+    (AddMonoidHom.fst ℤ (ZMod 2)).invMulCastZMod 2 k (2, 1) = 1 := by
+  apply (AddMonoidHom.fst ℤ (ZMod 2)).invMulCastZMod_apply_of_eq (by rfl)
   exact Nat.coprime_two_left.2 hk
 
 /-- The norm-elimination cover for `(2,1)` has degree `2 k`, retaining the factor of two
 coming from divisibility in the torsion-free quotient. -/
 example (k : ℕ) :
-    ((AddMonoidHom.fst ℤ (ZMod 2)).slideNormQuotient 2 k).ker.index = 2 * k :=
-  (AddMonoidHom.fst ℤ (ZMod 2)).index_ker_slideNormQuotient (fun n => ⟨(n, 0), rfl⟩)
+    ((AddMonoidHom.fst ℤ (ZMod 2)).castZMod (2 * k)).ker.index = 2 * k :=
+  (AddMonoidHom.fst ℤ (ZMod 2)).index_ker_castZMod (2 * k) (fun n => ⟨(n, 0), rfl⟩)
 
 end TauCeti
