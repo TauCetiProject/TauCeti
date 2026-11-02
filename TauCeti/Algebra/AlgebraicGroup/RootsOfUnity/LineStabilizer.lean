@@ -156,19 +156,17 @@ theorem lieSubalgebra_stabilizerHopfIdeal_projLineComodule_eq_top {n : ℕ} (hn 
     ((k ∙ (1 : Fin 2 → k)).stabilizerHopfIdeal
       (MonoidAlgebra k (Multiplicative ℤ))).lieSubalgebra (B := k) = ⊤ := by
   let : Comodule k (MonoidAlgebra k (Multiplicative ℤ)) (Fin 2 → k) := projLineComodule k n
-  -- `[1 : 1]` is the line through the sum of the two coordinate vectors.
-  rw [show (1 : Fin 2 → k) = Pi.basisFun k (Fin 2) 0 + Pi.basisFun k (Fin 2) 1 by
-    simpa [Fin.sum_univ_two] using (Finset.univ_sum_single (1 : Fin 2 → k)).symm]
   refine eq_top_iff.mpr fun d _ ↦ ?_
-  rw [Submodule.mem_lieSubalgebra_stabilizerHopfIdeal_span_singleton_add_iff
-    (FinVec.etaExpand_eq (Pi.basisFun k (Fin 2)) ▸ (Pi.basisFun k (Fin 2)).linearIndependent)
-    (projLineComodule_coact_basisFun_zero k n) (projLineComodule_coact_basisFun_one k n)]
+  -- The stabilizer ideal is spanned by `Tⁿ - 1`, so it suffices that `d (Tⁿ - 1) = 0`.
+  rw [HopfIdeal.mem_lieSubalgebra_iff_of_toIdeal_eq_span _
+    ((stabilizerHopfIdeal_projLineComodule_toIdeal n).trans
+      (ker_mapDomainRingHom_toMultiplicativeZMod k n)),
+    Set.forall_mem_singleton, map_sub, Derivation.map_one_eq_zero, sub_zero]
   -- `Tⁿ` is the `n`th power of `T`, so `d (Tⁿ) = n • Tⁿ⁻¹ • d T = 0`.
   have hT : MonoidAlgebra.single (Multiplicative.ofAdd (n : ℤ)) (1 : k) =
       MonoidAlgebra.single (Multiplicative.ofAdd (1 : ℤ)) 1 ^ n := by
     rw [MonoidAlgebra.single_pow, one_pow, ← ofAdd_nsmul, nsmul_one]
-  rw [hT, Derivation.leibniz_pow, ← Nat.cast_smul_eq_nsmul k, hn, zero_smul,
-    Derivation.map_one_eq_zero]
+  rw [hT, Derivation.leibniz_pow, ← Nat.cast_smul_eq_nsmul k, hn, zero_smul]
 
 end Field
 
