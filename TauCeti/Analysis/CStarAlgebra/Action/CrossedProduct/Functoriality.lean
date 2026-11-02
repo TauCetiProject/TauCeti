@@ -27,7 +27,8 @@ No nondegeneracy, unitality, separability or global σ-finiteness is assumed.
 * `TauCeti.CStarAction.Hom.fullCrossedProductMap_of`: its compact-support formula.
 * `TauCeti.CStarAction.Hom.fullCrossedProductMap_id` and
   `TauCeti.CStarAction.Hom.fullCrossedProductMap_comp`: the functor laws.
-* `TauCeti.CStarAction.CovariantRepresentation.integratedFull_comap`: compatibility with
+* `TauCeti.CStarAction.CovariantRepresentation.integratedFull_fullCrossedProductMap_apply`:
+  compatibility with
   integration of covariant pairs.
 
 ## References
@@ -115,9 +116,10 @@ theorem integratedFull_comp_fullCrossedProductMap :
 
 /-- The value of an integrated form after applying the induced full crossed-product map is
 the integrated form of the pulled-back pair. -/
-theorem integratedFull_comap (x : FullCrossedProduct α μ) :
-    (P.comap φ).integratedFull μ x = P.integratedFull μ (φ.fullCrossedProductMap μ x) :=
-  (DFunLike.congr_fun (P.integratedFull_comp_fullCrossedProductMap μ φ) x).symm
+@[simp]
+theorem integratedFull_fullCrossedProductMap_apply (x : FullCrossedProduct α μ) :
+    P.integratedFull μ (φ.fullCrossedProductMap μ x) = (P.comap φ).integratedFull μ x :=
+  DFunLike.congr_fun (P.integratedFull_comp_fullCrossedProductMap μ φ) x
 
 end CovariantRepresentation
 
