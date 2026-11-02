@@ -42,8 +42,6 @@ At a maximal ideal `P`, the rank of a finite flat module is the dimension of its
 
 ## Main declarations
 
-* `IsIdempotentElem.one_sub_mem_iff_notMem`: a prime ideal contains exactly one of an idempotent
-  `e` and `1 - e`.
 * `Module.mem_freeLocus_of_mem_minimalPrimes`: over a reduced ring, every module is free at the
   minimal primes.
 * `Module.iInter_freeLocus_subquotient_subset_freeLocus`: a filtered module is free wherever all
@@ -57,8 +55,8 @@ At a maximal ideal `P`, the rank of a finite flat module is the dimension of its
   flat.
 * `Module.rankAtStalk_quotient_span_one_sub`: for an idempotent `e`, `R ⧸ (1 - e)` has rank `1`
   on the basic open set of `e` and rank `0` off it.
-* `Module.exists_rankAtStalk_prod_quotient_eq_max`: adding the complement of that support gives a
-  module of positive rank at every prime.
+* `Module.exists_rankAtStalk_prod_quotient_eq_max`: adding the complement of the support of a
+  finitely presented flat module gives a module of positive rank at every prime.
 * `Module.exists_rankAtStalk_prod_pi_quotient_eq`: a finitely presented flat module of rank at
   most `n` is a direct factor of a module of constant rank `n`.
 * `Module.finrank_quotient_tensorProduct_eq_rankAtStalk`: the rank of a finite flat module at a
@@ -72,15 +70,6 @@ At a maximal ideal `P`, the rank of a finite flat module is the dimension of its
 -/
 
 public section
-
-/-- A prime ideal contains exactly one of an idempotent `e` and `1 - e`. -/
-theorem IsIdempotentElem.one_sub_mem_iff_notMem {R : Type*} [CommRing R] {e : R}
-    (he : IsIdempotentElem e) {p : Ideal R} [p.IsPrime] : 1 - e ∈ p ↔ e ∉ p := by
-  refine ⟨fun h he' ↦ Ideal.IsPrime.ne_top' ((Ideal.eq_top_iff_one _).mpr
-    (by simpa using p.add_mem he' h)), fun h ↦ ?_⟩
-  refine (Ideal.IsPrime.mem_or_mem ‹_› ?_).resolve_left h
-  rw [mul_sub, mul_one, he.eq, sub_self]
-  exact p.zero_mem
 
 namespace Module
 
@@ -195,9 +184,9 @@ theorem rankAtStalk_quotient_span_one_sub {R : Type*} [CommRing R] {e : R}
     rankAtStalk_le_one_iff_surjective.mpr Ideal.Quotient.mk_surjective p
   have h₀ : 0 < rankAtStalk (R := R) (R ⧸ Ideal.span {1 - e}) p ↔ e ∉ p.asIdeal := by
     -- `R ⧸ (1 - e)` sees exactly the primes of `V(1 - e) = D(e)`.
-    simpa [PrimeSpectrum.rankAtStalk_pos_iff_mem_range_comap,
-      range_comap_of_surjective _ _ Ideal.Quotient.mk_surjective] using
-      he.one_sub_mem_iff_notMem (p := p.asIdeal)
+    simp [PrimeSpectrum.rankAtStalk_pos_iff_mem_range_comap,
+      range_comap_of_surjective _ _ Ideal.Quotient.mk_surjective,
+      ← PrimeSpectrum.basicOpen_eq_zeroLocus_of_isIdempotentElem e he]
   split_ifs with hp
   · exact Nat.eq_zero_of_not_pos (h₀.not.mpr (not_not.mpr hp))
   · have := h₀.mpr hp
@@ -248,14 +237,16 @@ theorem exists_rankAtStalk_prod_quotient_eq_max {R : Type*} (M : Type*) [CommRin
   -- `R ⧸ (e) = R ⧸ (1 - (1 - e))` has rank `1` off `D(e)` and rank `0` on it.
   have hU := rankAtStalk_quotient_span_one_sub he.one_sub p
   rw [sub_sub_cancel] at hU
-  have hM : 0 < rankAtStalk (R := R) M p ↔ e ∉ p.asIdeal := by
-    rw [rankAtStalk_pos_iff_mem_support, ← hsupp, SetLike.mem_coe, PrimeSpectrum.mem_basicOpen]
-  have h1e := he.one_sub_mem_iff_notMem (p := p.asIdeal)
+  -- The support `D(e)` of `M` is `V(1 - e)`.
+  have hM : 0 < rankAtStalk (R := R) M p ↔ 1 - e ∈ p.asIdeal := by
+    rw [rankAtStalk_pos_iff_mem_support, ← hsupp,
+      PrimeSpectrum.basicOpen_eq_zeroLocus_of_isIdempotentElem e he, PrimeSpectrum.mem_zeroLocus,
+      Set.singleton_subset_iff, SetLike.mem_coe]
   rw [rankAtStalk_prod, Pi.add_apply, hU]
   split_ifs with hp
-  · have := hM.mpr (h1e.mp hp)
+  · have := hM.mpr hp
     omega
-  · have := hM.not.mpr (h1e.not.mp hp)
+  · have := hM.not.mpr hp
     omega
 
 open scoped TensorProduct in
