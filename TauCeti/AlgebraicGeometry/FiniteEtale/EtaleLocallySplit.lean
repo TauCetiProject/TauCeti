@@ -69,8 +69,8 @@ theorem exists_split_etaleLocally {X S : Scheme.{u}} (f : X ⟶ S) [IsFinite f] 
       _ = j (PrimeSpectrum.comap (algebraMap R T) q) :=
         congrArg j (Spec.map_apply (CommRingCat.ofHom (algebraMap R T)) q)
       _ = s := (congrArg j hq).trans hp
-  · obtain ⟨e₁⟩ :=
-      TauCeti.AlgebraicGeometry.nonempty_pullbackSpecIso_of_algEquiv R B.obj T (Fin n → T) φ
+  · let e₁ :=
+      TauCeti.AlgebraicGeometry.pullbackSpecIsoOfAlgEquiv R B.obj T (Fin n → T) φ
     exact ⟨((Over.pullbackComp t j).app (Over.mk f)) ≪≫
       ((Over.pullback t).mapIso e₀).symm ≪≫ e₁⟩
 

@@ -52,8 +52,8 @@ theorem exists_split_of_isFinite_of_etale {K : Type u} [Field K] {X : Scheme.{u}
   have hn : Module.finrank K A.obj = n := by
     rw [← Module.finrank_baseChange (R := L), a.toLinearEquiv.finrank_eq]
     simp
-  obtain ⟨e₁⟩ :=
-    TauCeti.AlgebraicGeometry.nonempty_pullbackSpecIso_of_algEquiv K A.obj L (Fin n → L) a
+  let e₁ :=
+    TauCeti.AlgebraicGeometry.pullbackSpecIsoOfAlgEquiv K A.obj L (Fin n → L) a
   exact ⟨L, inferInstance, inferInstance, inferInstance, inferInstance, n, hn ▸ hdeg,
     ⟨((Over.pullback (Spec.algebraMap K L)).mapIso e₀).symm ≪≫ e₁⟩⟩
 

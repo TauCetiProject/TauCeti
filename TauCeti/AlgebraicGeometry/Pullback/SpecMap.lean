@@ -35,7 +35,7 @@ change `X ×_k Spec K`, over `Spec K`.
   composite of pullbacks.
 * `TauCeti.AlgebraicGeometry.exists_isOpenImmersion_tensorProduct_of_isPullback`: the base change
   of an affine chart is an affine chart of the base change.
-* `TauCeti.AlgebraicGeometry.nonempty_pullbackSpecIso_of_algEquiv`: an algebra equivalence
+* `TauCeti.AlgebraicGeometry.pullbackSpecIsoOfAlgEquiv`: an algebra equivalence
   identifies an affine base change over its new base.
 -/
 
@@ -82,22 +82,34 @@ theorem exists_isOpenImmersion_tensorProduct_of_isPullback {k A K : Type u} [Com
 
 /-- An algebraic identification of a base-changed algebra induces an isomorphism over the
 new affine base. No finiteness or étaleness assumptions are needed for this transport. -/
-theorem nonempty_pullbackSpecIso_of_algEquiv (R B T C : Type u)
+noncomputable def pullbackSpecIsoOfAlgEquiv (R B T C : Type u)
     [CommRing R] [CommRing B] [CommRing T] [CommRing C]
     [Algebra R B] [Algebra R T] [Algebra T C]
     (e : T ⊗[R] B ≃ₐ[T] C) :
-    Nonempty (Over.mk (pullback.snd (Spec.algebraMap R B) (Spec.algebraMap R T)) ≅
-      Over.mk (Spec.algebraMap T C)) := by
+    Over.mk (pullback.snd (Spec.algebraMap R B) (Spec.algebraMap R T)) ≅
+      Over.mk (Spec.algebraMap T C) := by
   let e₁ : Over.mk (pullback.snd (Spec.algebraMap R B) (Spec.algebraMap R T)) ≅
       Over.mk (Spec.algebraMap T (T ⊗[R] B)) :=
     Over.isoMk (pullbackSymmetry _ _ ≪≫ pullbackSpecIso R T B) (by
       simp [Spec.algebraMap, pullbackSpecIso_hom_fst'])
-  refine ⟨e₁ ≪≫ Over.isoMk (Scheme.Spec.mapIso e.toRingEquiv.toCommRingCatIso.symm.op) ?_⟩
+  refine e₁ ≪≫ Over.isoMk (Scheme.Spec.mapIso e.toRingEquiv.toCommRingCatIso.symm.op) ?_
   simp only [Over.mk_hom, Functor.mapIso_hom, Iso.op_hom, Scheme.Spec_map,
     Spec.algebraMap, ← Spec.map_comp]
   congr 1
   ext r
   exact e.symm.commutes r
+
+/-- The underlying map of the affine base-change isomorphism is the standard pullback
+comparison followed by the spectrum map of the inverse algebra equivalence. -/
+@[simp]
+theorem pullbackSpecIsoOfAlgEquiv_hom_left (R B T C : Type u)
+    [CommRing R] [CommRing B] [CommRing T] [CommRing C]
+    [Algebra R B] [Algebra R T] [Algebra T C]
+    (e : T ⊗[R] B ≃ₐ[T] C) :
+    (pullbackSpecIsoOfAlgEquiv R B T C e).hom.left =
+      (pullbackSymmetry (Spec.algebraMap R B) (Spec.algebraMap R T)).hom ≫
+        (pullbackSpecIso R T B).hom ≫ Spec.map (CommRingCat.ofHom e.symm.toRingHom) :=
+  (rfl)
 
 end AlgebraicGeometry
 
