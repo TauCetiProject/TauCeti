@@ -15,11 +15,11 @@ import Mathlib.Topology.DiscreteSubset
 /-!
 # The scalar similarity principle
 
-A real-differentiable solution of `bar∂ f = a f`, for `Cⁿ` coefficient `a` on an open
-domain (`n ≥ 1`), becomes holomorphic near each point after multiplication by a
-nowhere-zero `Cⁿ` integrating factor depending on the point. On a preconnected domain,
+A real-differentiable solution of `bar∂ f = a f`, for `Cᵏ` coefficient `a` on an open
+domain (`k ≥ 1`), becomes holomorphic near each point after multiplication by a
+nowhere-zero `Cᵏ` integrating factor depending on the point. On a preconnected domain,
 a nonzero solution has isolated zeros and factors near each point as a nonnegative
-integral power of the complex coordinate times a factor `Cⁿ` at the point and nonzero
+integral power of the complex coordinate times a factor `Cᵏ` at the point and nonzero
 there. For a solution on the plane that is nonzero outside a compact set, the zero set
 is finite. No curvature equation or analyticity of the coefficient is needed.
 
@@ -41,7 +41,7 @@ namespace TauCeti
 
 variable {k : ℕ∞} {U : Set ℂ}
 
-/-- A `Cⁿ` integrating factor makes a solution of `bar∂ f = a f` holomorphic locally. -/
+/-- A `Cᵏ` integrating factor makes a solution of `bar∂ f = a f` holomorphic locally. -/
 theorem exists_contDiff_analyticAt_exp_neg_mul_of_conjWirtingerDeriv_apply_one_eq_mul {a f : ℂ → ℂ}
     (hn : 1 ≤ k) (hU : IsOpen U) (ha : ContDiffOn ℝ k a U)
     (hf : DifferentiableOn ℝ f U)
@@ -75,7 +75,7 @@ private theorem exists_contDiff_analyticAt_exp_neg_mul_not_eventually_eq_zero
   exact ⟨g, hg, hA, by simpa only [mul_eq_zero, exp_ne_zero, false_or] using hne⟩
 
 /-- On a preconnected open domain, a nontrivial solution of a scalar Cauchy–Riemann
-equation with `Cⁿ` coefficient, `n ≥ 1`, cannot vanish on any neighborhood. -/
+equation with `Cᵏ` coefficient, `k ≥ 1`, cannot vanish on any neighborhood. -/
 theorem not_eventually_eq_zero_of_conjWirtingerDeriv_apply_one_eq_mul {a f : ℂ → ℂ}
     (hn : 1 ≤ k) (hU : IsOpen U) (hconn : IsPreconnected U) (ha : ContDiffOn ℝ k a U)
     (hf : DifferentiableOn ℝ f U)
@@ -102,7 +102,7 @@ theorem not_eventually_eq_zero_of_conjWirtingerDeriv_apply_one_eq_mul {a f : ℂ
   obtain ⟨w, hwU, hw⟩ := hne
   exact hw (hsub hwU).self_of_nhds
 
-/-- A solution of `bar∂ f = a f` with `Cⁿ` coefficient, `n ≥ 1`, that does not vanish
+/-- A solution of `bar∂ f = a f` with `Cᵏ` coefficient, `k ≥ 1`, that does not vanish
 on any neighborhood of a point is nonzero in a punctured neighborhood of that point. -/
 theorem eventually_ne_zero_of_conjWirtingerDeriv_apply_one_eq_mul {a f : ℂ → ℂ}
     (hn : 1 ≤ k) (hU : IsOpen U) (ha : ContDiffOn ℝ k a U)
@@ -115,8 +115,9 @@ theorem eventually_ne_zero_of_conjWirtingerDeriv_apply_one_eq_mul {a f : ℂ →
   filter_upwards [hg.eventually_eq_zero_or_eventually_ne_zero.resolve_left hgn] with w hw
   exact fun h ↦ hw (by simp [h])
 
-/-- A solution of `bar∂ f = a f` with `Cⁿ` coefficient, `n ≥ 1`, whose germ is nonzero
-factors as an integral power of the coordinate times a `Cⁿ` factor nonzero at the point. -/
+/-- A solution of `bar∂ f = a f` with `Cᵏ` coefficient, `k ≥ 1`, whose germ is nonzero
+factors as a nonnegative integral power of the coordinate times a `Cᵏ` factor nonzero
+at the point. The exponent `n` may be zero. -/
 theorem exists_contDiffAt_pow_mul_of_conjWirtingerDeriv_apply_one_eq_mul {a f : ℂ → ℂ}
     (hn : 1 ≤ k) (hU : IsOpen U) (ha : ContDiffOn ℝ k a U)
     (hf : DifferentiableOn ℝ f U)
@@ -135,7 +136,7 @@ theorem exists_contDiffAt_pow_mul_of_conjWirtingerDeriv_apply_one_eq_mul {a f : 
   rw [← mul_assoc, ← exp_add, add_neg_cancel, exp_zero, one_mul] at this
   simpa only [smul_eq_mul, mul_assoc, mul_comm, mul_left_comm] using this
 
-/-- A solution of `bar∂ f = a f` with `Cⁿ` coefficient, `n ≥ 1`, that is nonzero outside a compact
+/-- A solution of `bar∂ f = a f` with `Cᵏ` coefficient, `k ≥ 1`, that is nonzero outside a compact
 set has finitely many zeros. -/
 theorem finite_setOfPred_eq_zero_of_conjWirtingerDeriv_apply_one_eq_mul {a f : ℂ → ℂ}
     (hn : 1 ≤ k) (ha : ContDiff ℝ k a) (hf : Differentiable ℝ f)
