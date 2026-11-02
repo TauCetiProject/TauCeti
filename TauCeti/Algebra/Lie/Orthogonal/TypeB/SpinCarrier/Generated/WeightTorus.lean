@@ -118,6 +118,7 @@ theorem carrierDefiningIdeal_le_weightTorusDefiningIdeal :
   exact Positive.carrierDefiningIdeal_toIdeal_le_ker_generatedCoordinateLift n R (.inr ()) hx
 
 /-- On algebra-valued points, the generated torus restriction gives the named spin weight matrix. -/
+@[simp↓]
 theorem pointsMulEquiv_mapPointsFunctor_generatedWeightTorusCoordinateMap
     (A : CommAlgCat.{v} R)
     (q : HopfAlgebra.points (R := R)
@@ -142,6 +143,8 @@ theorem pointsMulEquiv_mapPointsFunctor_generatedWeightTorusCoordinateMap
   have he := mapPointsFunctor_coordinateMap_app n R (B := A)
     ((CommHopfAlgCat.Hom.mapPointsFunctor
       (weightTorusToBaseChangeCoordinateMap n R)).app A q)
+  -- Compare the generated route with coordinateMap ≫ weightTorusToBaseChangeCoordinateMap,
+  -- then use the specialized carrier's baseChangePointsMulEquiv to identify the weight matrix.
   exact (congrArg (GeneralLinear.pointsMulEquiv (dimension n))
     ((hg.symm.trans hs).trans he)).trans (hc.symm.trans hp)
 

@@ -246,21 +246,18 @@ theorem baseChangeMap_generatedCoordinateLift_comp_generatorCoordinateAlgebraBas
         (generatorCoordinateAlgebraBaseChangeIso n k K j).hom =
       (generatedCoordinateHopfAlgebraBaseChangeIso n k K).hom ≫
         generatedCoordinateLift n K j := by
-  let F := CommHopfAlgCat.baseChangeFunctor (k := k) (K := K)
-  have := ConcreteCategory.epi_of_surjective _
-    (CommHopfAlgCat.baseChangeMap_surjective (K := K) _
-      (generatedCoordinateMap_surjective n k))
-  rw [← CommHopfAlgCat.baseChangeFunctor_map] at this ⊢
-  apply (cancel_epi (F.map (generatedCoordinateMap n k))).mp
-  rw [← Category.assoc, ← Functor.map_comp,
-    generatedCoordinateMap_comp_generatedCoordinateLift,
-    CommHopfAlgCat.baseChangeFunctor_map]
-  rw [← Category.assoc,
-    baseChangeMap_generatedCoordinateMap_comp_generatedCoordinateHopfAlgebraBaseChangeIso_hom,
-    Category.assoc, generatedCoordinateMap_comp_generatedCoordinateLift]
-  exact (Iso.inv_comp_eq
-    (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K (dimension n))).mp
-      (generatorCoordinateMap_baseChange n k K j)
+  apply CommHopfAlgCat.baseChangeMap_lift_comp_iso_hom
+    (generatedCoordinateMap n k) (generatedCoordinateMap_surjective n k)
+    (generatedCoordinateLift n k j) (generatedCoordinateMap n K)
+    (generatedCoordinateLift n K j)
+    (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K (dimension n))
+    (generatedCoordinateHopfAlgebraBaseChangeIso n k K)
+    (generatorCoordinateAlgebraBaseChangeIso n k K j)
+    (baseChangeMap_generatedCoordinateMap_comp_generatedCoordinateHopfAlgebraBaseChangeIso_hom
+      n k K)
+  rw [generatedCoordinateMap_comp_generatedCoordinateLift,
+    generatedCoordinateMap_comp_generatedCoordinateLift]
+  exact generatorCoordinateMap_baseChange n k K j
 
 end BaseChange
 
