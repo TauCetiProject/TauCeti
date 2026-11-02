@@ -200,11 +200,10 @@ private theorem eq_true_of_relIso {z z' : ℕ → Bool} (f : ⇑(blockSetoid z) 
     {k : ℕ} (hk : z k = true) : z' k = true := by
   obtain ⟨n, hn⟩ : ∃ n, block n = k := ⟨blockEquiv ⟨k, 0⟩, by simp [block]⟩
   have hf : {m | blockSetoid z' (f n) m} = f '' {m | blockSetoid z n m} := by
+    rw [← f.coe_fn_toEquiv, f.toEquiv.image_eq_preimage_symm]
     ext m
-    refine ⟨fun hm => ⟨f.symm m, f.map_rel_iff.1 ?_, f.apply_symm_apply m⟩, ?_⟩
-    · rwa [f.apply_symm_apply]
-    · rintro ⟨a, ha, rfl⟩
-      exact f.map_rel_iff.2 ha
+    simp only [mem_preimage, mem_ofPred_eq, ← f.map_rel_iff, RelIso.coe_fn_toEquiv]
+    exact iff_of_eq (congrArg _ (f.apply_symm_apply m).symm)
   have h := congrArg encard hf
   rw [f.injective.encard_image] at h
   simp only [encard_setOf_blockSetoid, hn, hk, ↓reduceIte] at h
