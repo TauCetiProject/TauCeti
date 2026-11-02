@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.Abelian
-public import Mathlib.Algebra.Category.ModuleCat.Colimits
 public import Mathlib.Analysis.Normed.Module.Basic
+public import TauCeti.Algebra.Homology.ModuleCat.Basic
 public import TauCeti.Analysis.Normed.Group.Finsupp
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Basic
 
@@ -28,8 +27,8 @@ particular space.
 
 * It is a seminorm for the integer multiples: it vanishes at `0`, is invariant under negation,
   subadditive, and `‖d • α‖₁ ≤ ‖d‖ * ‖α‖₁` for `d : ℤ`. With coefficients in a real normed
-  space, `‖d • α‖₁ = ‖d‖ * ‖α‖₁` for every `d ≠ 0` (`SSet.homologyL1Seminorm_zsmul`): the class
-  `α` is represented by the chains representing `d • α`, divided by `d`.
+  space, `‖d • α‖₁ = ‖d‖ * ‖α‖₁` for every `d : ℤ` (`SSet.homologyL1Seminorm_zsmul`): for `d ≠ 0`
+  the class `α` is represented by the chains representing `d • α`, divided by `d`.
 * A chain map multiplying the `ℓ¹`-norm of `n`-chains by at most `C ≥ 0` multiplies the seminorm
   of `n`-dimensional classes by at most `C` (`SSet.homologyL1Seminorm_homologyMap_le_mul`). In
   particular the seminorm does not increase under the maps induced by maps of simplicial sets
@@ -38,8 +37,6 @@ particular space.
 
 ## Main definitions
 
-* `SSet.chainsLinearEquivFinsupp`: the simplicial chains are the finitely supported functions on
-  simplices.
 * `SSet.chainL1Norm`: the `ℓ¹`-norm of a simplicial chain.
 * `SSet.homologyL1Seminorm`: the `ℓ¹`-seminorm of a homology class.
 
@@ -72,120 +69,6 @@ universe u
 namespace SSet
 
 variable (X : SSet.{u}) {k : Type*} [Ring k]
-
-/-! ### Simplicial chains as finitely supported functions -/
-
-section Chains
-
-variable {V W : Type u} [AddCommGroup V] [Module k V] [AddCommGroup W] [Module k W] {n : ℕ}
-
-/-- Linear maps out of the simplicial `n`-chains agree when they agree on every simplex with
-every coefficient. -/
-theorem chainComplex_linearMap_ext {U : Type u} [AddCommGroup U] [Module k U]
-    {L L' : (X.chainComplex (ModuleCat.of k V)).X n →ₗ[k] U}
-    (h : ∀ σ v, L (X.ιChainComplex (R := ModuleCat.of k V) σ v) =
-      L' (X.ιChainComplex (R := ModuleCat.of k V) σ v)) : L = L' := by
-  have : ModuleCat.ofHom L = ModuleCat.ofHom L' :=
-    chainComplex_hom_ext fun σ ↦ ModuleCat.hom_ext (LinearMap.ext (h σ))
-  exact congrArg ModuleCat.Hom.hom this
-
-variable (V n) in
-/-- The coefficient function of a simplicial chain, as a linear map. -/
-private def chainsToFinsupp : (X.chainComplex (ModuleCat.of k V)).X n →ₗ[k] (X _⦋n⦌ →₀ V) :=
-  (Cofan.IsColimit.desc (X.isColimitChainComplexXCofan (ModuleCat.of k V) n)
-    fun σ ↦ ModuleCat.ofHom (Finsupp.lsingle σ)).hom
-
-private theorem chainsToFinsupp_ιChainComplex (σ : X _⦋n⦌) (v : V) :
-    X.chainsToFinsupp V n (X.ιChainComplex (R := ModuleCat.of k V) σ v) = Finsupp.single σ v := by
-  have h := Cofan.IsColimit.fac (X.isColimitChainComplexXCofan (ModuleCat.of k V) n)
-    (fun σ ↦ ModuleCat.ofHom (Finsupp.lsingle σ)) σ
-  simp only [chainComplexXCofan, Cofan.inj, Cofan.mk_ι_app] at h
-  exact congrArg (fun g ↦ g.hom v) h
-
-variable (V n) in
-/-- The simplicial chain with a given coefficient function, as a linear map. -/
-private def finsuppToChains : (X _⦋n⦌ →₀ V) →ₗ[k] (X.chainComplex (ModuleCat.of k V)).X n :=
-  Finsupp.lsum ℕ fun σ ↦ (X.ιChainComplex (R := ModuleCat.of k V) σ).hom
-
-private theorem finsuppToChains_single (σ : X _⦋n⦌) (v : V) :
-    X.finsuppToChains V n (Finsupp.single σ v) = X.ιChainComplex (R := ModuleCat.of k V) σ v :=
-  Finsupp.sum_single_index (map_zero _)
-
-variable (V n) in
-/-- **The simplicial `n`-chains are the finitely supported functions on `n`-simplices**: the linear
-equivalence sending the chain of a simplex `σ` with coefficient `v` to the function supported at
-`σ` with value `v`. -/
-def chainsLinearEquivFinsupp :
-    (X.chainComplex (ModuleCat.of k V)).X n ≃ₗ[k] (X _⦋n⦌ →₀ V) :=
-  LinearEquiv.ofLinearMap (X.chainsToFinsupp V n) (X.finsuppToChains V n)
-    (Finsupp.lhom_ext' fun σ ↦ LinearMap.ext fun v ↦ by
-      rw [LinearMap.comp_apply, LinearMap.comp_apply, Finsupp.lsingle_apply,
-        finsuppToChains_single, chainsToFinsupp_ιChainComplex]
-      simp)
-    (X.chainComplex_linearMap_ext fun σ v ↦ by
-      rw [LinearMap.comp_apply, chainsToFinsupp_ιChainComplex, finsuppToChains_single,
-        LinearMap.id_apply])
-
-/-- The chain of a simplex `σ` with coefficient `v` is the function supported at `σ` with value
-`v`. -/
-@[simp]
-theorem chainsLinearEquivFinsupp_ιChainComplex (σ : X _⦋n⦌) (v : V) :
-    X.chainsLinearEquivFinsupp V n (X.ιChainComplex (R := ModuleCat.of k V) σ v) =
-      Finsupp.single σ v :=
-  X.chainsToFinsupp_ιChainComplex σ v
-
-/-- The function supported at a simplex `σ` with value `v` is the chain of `σ` with coefficient
-`v`. -/
-@[simp]
-theorem chainsLinearEquivFinsupp_symm_single (σ : X _⦋n⦌) (v : V) :
-    (X.chainsLinearEquivFinsupp V n).symm (Finsupp.single σ v) =
-      X.ιChainComplex (R := ModuleCat.of k V) σ v := by
-  rw [LinearEquiv.symm_apply_eq, chainsLinearEquivFinsupp_ιChainComplex]
-
-/-- The chain map induced by a map of simplicial sets pushes the coefficient functions forward
-along the map on simplices. -/
-theorem chainsLinearEquivFinsupp_chainComplexMap_f {Y : SSet.{u}} (f : X ⟶ Y)
-    (c : (X.chainComplex (ModuleCat.of k V)).X n) :
-    Y.chainsLinearEquivFinsupp V n ((chainComplexMap f (ModuleCat.of k V)).f n c) =
-      Finsupp.mapDomain (f.app _) (X.chainsLinearEquivFinsupp V n c) := by
-  have := X.chainComplex_linearMap_ext
-    (L := (Y.chainsLinearEquivFinsupp V n).toLinearMap ∘ₗ
-      ((chainComplexMap f (ModuleCat.of k V)).f n).hom)
-    (L' := Finsupp.lmapDomain V k (f.app _) ∘ₗ (X.chainsLinearEquivFinsupp V n).toLinearMap)
-    fun σ v ↦ by
-      have h : (chainComplexMap f (ModuleCat.of k V)).f n
-          (X.ιChainComplex (R := ModuleCat.of k V) σ v) =
-          Y.ιChainComplex (R := ModuleCat.of k V) (f.app _ σ) v :=
-        congrArg (fun g ↦ g.hom v) (ι_chainComplexMap_f X Y f (ModuleCat.of k V) σ)
-      rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.coe_coe,
-        h, chainsLinearEquivFinsupp_ιChainComplex,
-        chainsLinearEquivFinsupp_ιChainComplex, Finsupp.lmapDomain_apply, Finsupp.mapDomain_single]
-  exact LinearMap.congr_fun this c
-
-/-- Changing the coefficients along a linear map `ψ` applies `ψ` to the coefficient functions. -/
-theorem chainsLinearEquivFinsupp_chainComplexFunctor_map {ψ : V →ₗ[k] W}
-    (c : (X.chainComplex (ModuleCat.of k V)).X n) :
-    X.chainsLinearEquivFinsupp W n
-        ((((chainComplexFunctor (ModuleCat.{u} k)).map (ModuleCat.ofHom ψ)).app X).f n c) =
-      Finsupp.mapRange ψ ψ.map_zero (X.chainsLinearEquivFinsupp V n c) := by
-  have := X.chainComplex_linearMap_ext
-    (L := (X.chainsLinearEquivFinsupp W n).toLinearMap ∘ₗ
-      ((((chainComplexFunctor (ModuleCat.{u} k)).map (ModuleCat.ofHom ψ)).app X).f n).hom)
-    (L' := Finsupp.mapRange.linearMap ψ ∘ₗ (X.chainsLinearEquivFinsupp V n).toLinearMap)
-    fun σ v ↦ by
-      have h : (((chainComplexFunctor (ModuleCat.{u} k)).map (ModuleCat.ofHom ψ)).app X).f n
-          (X.ιChainComplex (R := ModuleCat.of k V) σ v) =
-          X.ιChainComplex (R := ModuleCat.of k W) σ (ψ v) :=
-        congrArg (fun g ↦ g.hom v)
-          (TauCeti.SSet.ιChainComplex_chainComplexFunctor_map_app_f (X := X)
-            (ModuleCat.ofHom ψ) σ)
-      rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.coe_coe,
-        h, chainsLinearEquivFinsupp_ιChainComplex,
-        chainsLinearEquivFinsupp_ιChainComplex, Finsupp.mapRange.linearMap_apply,
-        Finsupp.mapRange_single]
-  exact LinearMap.congr_fun this c
-
-end Chains
 
 /-! ### The `ℓ¹`-norm of chains -/
 
@@ -279,14 +162,15 @@ theorem homologyL1Seminorm_def (α : (X.homology (ModuleCat.of k V) n : ModuleCa
         X.chainL1Norm ((X.chainComplex (ModuleCat.of k V)).iCycles n z.1) :=
   (rfl)
 
-/-- Every homology class is represented by a cycle. -/
+/-- Every homology class is represented by a cycle
+(`HomologicalComplex.moduleCat_homologyπ_surjective`), so the infimum defining the seminorm is
+over a nonempty set. -/
 private theorem nonempty_representative
     (α : (X.homology (ModuleCat.of k V) n : ModuleCat.{u} k)) :
     Nonempty {z : (X.chainComplex (ModuleCat.of k V)).cycles n //
-      (X.chainComplex (ModuleCat.of k V)).homologyπ n z = α} := by
-  obtain ⟨z, hz⟩ := (ModuleCat.epi_iff_surjective
-    ((X.chainComplex (ModuleCat.of k V)).homologyπ n)).1 inferInstance α
-  exact ⟨⟨z, hz⟩⟩
+      (X.chainComplex (ModuleCat.of k V)).homologyπ n z = α} :=
+  let ⟨z, hz⟩ := (X.chainComplex (ModuleCat.of k V)).moduleCat_homologyπ_surjective n α
+  ⟨⟨z, hz⟩⟩
 
 /-- The seminorm of a class is at most the `ℓ¹`-norm of every cycle representing it. -/
 theorem homologyL1Seminorm_le_chainL1Norm
@@ -442,8 +326,7 @@ private theorem homologyMap_divCoeff_zsmul {d : ℤ} (hd : d ≠ 0)
     HomologicalComplex.homologyMap
       (((chainComplexFunctor (ModuleCat.{u} ℤ)).map (ModuleCat.ofHom (divCoeff d))).app X) n
         (d • α) = α := by
-  obtain ⟨z, rfl⟩ := (ModuleCat.epi_iff_surjective
-    ((X.chainComplex (ModuleCat.of ℤ V)).homologyπ n)).1 inferInstance α
+  obtain ⟨z, rfl⟩ := (X.chainComplex (ModuleCat.of ℤ V)).moduleCat_homologyπ_surjective n α
   let φ := ((chainComplexFunctor (ModuleCat.{u} ℤ)).map
     (ModuleCat.ofHom (divCoeff (V := V) d))).app X
   let K := X.chainComplex (ModuleCat.of ℤ V)
@@ -454,16 +337,18 @@ private theorem homologyMap_divCoeff_zsmul {d : ℤ} (hd : d ≠ 0)
       φ.f n (K.iCycles n (d • z)) :=
     congrArg (fun g ↦ g.hom (d • z)) (HomologicalComplex.cyclesMap_i φ n)
   have hz : HomologicalComplex.cyclesMap φ n (d • z) = z := by
-    apply (ModuleCat.mono_iff_injective (K.iCycles n)).1 inferInstance
+    apply K.moduleCat_iCycles_injective n
     rw [hi, map_zsmul]
     exact X.chainComplexFunctor_map_divCoeff_zsmul hd _
   rw [← map_zsmul, hπ, hz]
 
-/-- **Homogeneity of the `ℓ¹`-seminorm with real coefficients**: for a nonzero integer `d`,
+/-- **Homogeneity of the `ℓ¹`-seminorm with real coefficients**: for every integer `d`,
 `‖d • α‖₁ = ‖d‖ * ‖α‖₁`. -/
-theorem homologyL1Seminorm_zsmul {d : ℤ} (hd : d ≠ 0)
+theorem homologyL1Seminorm_zsmul (d : ℤ)
     (α : (X.homology (ModuleCat.of ℤ V) n : ModuleCat.{u} ℤ)) :
     X.homologyL1Seminorm (d • α) = ‖d‖ * X.homologyL1Seminorm α := by
+  rcases eq_or_ne d 0 with rfl | hd
+  · simp
   refine le_antisymm (X.homologyL1Seminorm_zsmul_le d α) ?_
   have hd' : 0 < ‖d‖ := norm_pos_iff.2 hd
   have h := X.homologyL1Seminorm_homologyMap_chainComplexFunctor_map_le (ψ := divCoeff d)

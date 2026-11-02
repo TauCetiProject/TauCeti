@@ -41,8 +41,6 @@ proportionality theorem is not proved here.
 
 ## Main definitions
 
-* `TauCeti.HomologicalOrientation.realFundamentalClass`: the image of the fundamental class in
-  `Hₙ(M; ℝ)`.
 * `TauCeti.HomologicalOrientation.simplicialVolume`: the simplicial volume `‖M‖`.
 
 ## Main results
@@ -69,16 +67,6 @@ open CategoryTheory Module AlgebraicTopology
 
 namespace TauCeti
 
-/-- The coefficient map `ℤ → ℝ`, from the integral coefficients `ULift ℤ` of the fundamental class
-to real coefficients, as a morphism of abelian groups. -/
-def intToRealCoeff : ModuleCat.of ℤ (ULift.{0} ℤ) ⟶ ModuleCat.of ℤ ℝ :=
-  ModuleCat.ofHom ((Int.castAddHom ℝ).toIntLinearMap ∘ₗ ULift.moduleEquiv.toLinearMap)
-
-/-- The coefficient map `ℤ → ℝ` is the cast of integers to reals. -/
-@[simp]
-theorem intToRealCoeff_apply (m : ULift.{0} ℤ) : intToRealCoeff m = (m.down : ℝ) :=
-  (rfl)
-
 namespace HomologicalOrientation
 
 variable {M E : Type} [TopologicalSpace M] [T2Space M]
@@ -90,26 +78,6 @@ private abbrev toReal (X : TopCat.{0}) :
     ((singularHomologyFunctor (ModuleCat.{0} ℤ) n).obj (ModuleCat.of ℤ (ULift.{0} ℤ))).obj X ⟶
       ((singularHomologyFunctor (ModuleCat.{0} ℤ) n).obj (ModuleCat.of ℤ ℝ)).obj X :=
   ((singularHomologyFunctor (ModuleCat.{0} ℤ) n).map intToRealCoeff).app X
-
-/-- The **real fundamental class** of a compact oriented manifold: the image of the fundamental
-class in the real singular homology `Hₙ(M; ℝ)`. -/
-def realFundamentalClass :
-    ((TopCat.toSSet.obj (TopCat.of M)).homology (ModuleCat.of ℤ ℝ) n : ModuleCat.{0} ℤ) :=
-  (toReal (n := n) (TopCat.of M)).hom (o.fundamentalClass hn)
-
-/-- The real fundamental class is the image of the fundamental class under the change of
-coefficients `ℤ → ℝ`. -/
-theorem realFundamentalClass_def :
-    o.realFundamentalClass hn =
-      (((singularHomologyFunctor (ModuleCat.{0} ℤ) n).map intToRealCoeff).app (TopCat.of M)).hom
-        (o.fundamentalClass hn) :=
-  (rfl)
-
-/-- Reversing the orientation negates the real fundamental class. -/
-@[simp]
-theorem realFundamentalClass_neg : (-o).realFundamentalClass hn = -o.realFundamentalClass hn := by
-  rw [realFundamentalClass, realFundamentalClass, fundamentalClass_neg]
-  exact map_neg _ _
 
 /-- The **simplicial volume** `‖M‖` of a compact oriented manifold (Gromov's norm): the
 `ℓ¹`-seminorm of its real fundamental class, that is, the infimum of `∑ |aᵢ|` over the real
@@ -147,7 +115,7 @@ private theorem homologyL1Seminorm_toReal_mapFundamentalClass_le (f : C(M, N)) :
   have h : (toReal (n := n) (TopCat.of N)).hom (o.mapFundamentalClass hn f) =
       (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom f)) (ModuleCat.of ℤ ℝ) n).hom
         (o.realFundamentalClass hn) := by
-    rw [mapFundamentalClass_def]
+    rw [mapFundamentalClass_def, realFundamentalClass_def]
     exact congrArg (fun g ↦ g.hom (o.fundamentalClass hn))
         (((singularHomologyFunctor (ModuleCat.{0} ℤ) n).map intToRealCoeff).naturality
           (TopCat.ofHom f))
@@ -159,14 +127,13 @@ class of `M` to `d` times the fundamental class of `N`, then `|d| * ‖N‖ ≤ 
 theorem abs_mul_simplicialVolume_le (f : C(M, N)) {d : ℤ}
     (hf : o.mapFundamentalClass hn f = d • o'.fundamentalClass hn') :
     |(d : ℝ)| * o'.simplicialVolume hn' ≤ o.simplicialVolume hn := by
-  rcases eq_or_ne d 0 with rfl | hd
-  · simpa using o.simplicialVolume_nonneg hn
   have h := o.homologyL1Seminorm_toReal_mapFundamentalClass_le hn f
   -- `toReal` of the fundamental class of `N` is its real fundamental class.
   have h' : (toReal (n := n) (TopCat.of N)).hom (d • o'.fundamentalClass hn') =
-      d • o'.realFundamentalClass hn' :=
-    map_zsmul _ d _
-  rwa [hf, h', SSet.homologyL1Seminorm_zsmul _ hd, Int.norm_eq_abs] at h
+      d • o'.realFundamentalClass hn' := by
+    rw [realFundamentalClass_def]
+    exact map_zsmul _ d _
+  rwa [hf, h', SSet.homologyL1Seminorm_zsmul, Int.norm_eq_abs] at h
 
 /-- **Self-maps of large degree.** If `M` has a self-map carrying its fundamental class to `d`
 times itself with `|d| > 1`, then the simplicial volume of `M` vanishes. -/
@@ -177,23 +144,14 @@ theorem simplicialVolume_eq_zero_of_one_lt_abs (f : C(M, M)) {d : ℤ}
   have hd' : (1 : ℝ) < |(d : ℝ)| := by exact_mod_cast hd
   nlinarith [o.simplicialVolume_nonneg hn]
 
-variable [ConnectedSpace N]
-
-/-- On a compact connected oriented manifold, every top-dimensional class is a multiple of the
-fundamental class. -/
-private theorem exists_mapFundamentalClass_eq_zsmul (f : C(M, N)) :
-    ∃ d : ℤ, o.mapFundamentalClass hn f = d • o'.fundamentalClass hn' := by
-  obtain ⟨d, hd⟩ := (o'.fundamentalClassEquiv hn').surjective (o.mapFundamentalClass hn f)
-  exact ⟨d, by rw [← hd, fundamentalClassEquiv_apply]⟩
-
-variable [ConnectedSpace M]
+variable [ConnectedSpace N] [ConnectedSpace M]
 
 /-- **Homotopy invariance of the simplicial volume.** Homotopy equivalent compact connected
 oriented manifolds have the same simplicial volume, whatever their orientations. -/
 theorem simplicialVolume_eq_of_homotopyEquiv (e : ContinuousMap.HomotopyEquiv M N) :
     o.simplicialVolume hn = o'.simplicialVolume hn' := by
-  obtain ⟨d, hd⟩ := o.exists_mapFundamentalClass_eq_zsmul hn o' hn' e.toFun
-  obtain ⟨d', hd'⟩ := o'.exists_mapFundamentalClass_eq_zsmul hn' o hn e.invFun
+  obtain ⟨d, hd⟩ := o'.exists_eq_zsmul_fundamentalClass hn' (o.mapFundamentalClass hn e.toFun)
+  obtain ⟨d', hd'⟩ := o.exists_eq_zsmul_fundamentalClass hn (o'.mapFundamentalClass hn' e.invFun)
   -- The composite `e.invFun ∘ e.toFun` is homotopic to the identity, so it carries the fundamental
   -- class of `M` to itself; it also carries it to `d * d'` times itself.
   have key : (d * d') • o.fundamentalClass hn = o.fundamentalClass hn := by
