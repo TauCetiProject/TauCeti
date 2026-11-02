@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.CommAlgCat.Basic
-public import Mathlib.Algebra.MvPolynomial.Rename
-public import Mathlib.Algebra.Exact.Basic
+public import TauCeti.Algebra.MvPolynomial.PolynomialPresentation
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import Mathlib.CategoryTheory.Monad.Adjunction
 public import Mathlib.CategoryTheory.Monad.Coequalizer
@@ -69,7 +68,7 @@ lemma free_map_hom {X Y : Type (max u v)} (f : X ⟶ Y) :
 
 /-- The free-polynomial / underlying-set adjunction. Its unit inserts variables and its
 counit evaluates them in the algebra. -/
-def freeForgetAdjunction : free R ⊣ forget (CommAlgCat.{max u v} R) where
+def adj : free R ⊣ forget (CommAlgCat.{max u v} R) where
   unit :=
     { app X := ↾(MvPolynomial.X : X → MvPolynomial X R)
       naturality X Y f := by ext x; simp [free] }
@@ -95,18 +94,18 @@ def freeForgetAdjunction : free R ⊣ forget (CommAlgCat.{max u v} R) where
 
 /-- The adjunction unit sends an element to the variable indexed by it. -/
 @[simp]
-lemma freeForgetAdjunction_unit_app (X : Type (max u v)) :
-    (freeForgetAdjunction R).unit.app X = ↾(MvPolynomial.X : X → MvPolynomial X R) := (rfl)
+lemma adj_unit_app (X : Type (max u v)) :
+    (adj R).unit.app X = ↾(MvPolynomial.X : X → MvPolynomial X R) := (rfl)
 
 /-- The adjunction counit is evaluation at the elements indexing the variables. -/
 @[simp]
-lemma freeForgetAdjunction_counit_app_hom (B : CommAlgCat.{max u v} R) :
-    ((freeForgetAdjunction R).counit.app B).hom = aeval (id : B → B) := (rfl)
+lemma adj_counit_app_hom (B : CommAlgCat.{max u v} R) :
+    ((adj R).counit.app B).hom = aeval (id : B → B) := (rfl)
 
 /-- The polynomial comonad `P(B) = R[B]` of the free-forgetful adjunction.
 The body is exposed so iterating it gives the corresponding iterated polynomial rings. -/
 @[expose] def polynomialComonad : Comonad (CommAlgCat.{max u v} R) :=
-  (freeForgetAdjunction R).toComonad
+  (adj R).toComonad
 
 /-- On objects, the polynomial comonad forms the polynomial ring on all elements. -/
 @[simp]
@@ -129,66 +128,79 @@ lemma polynomialComonad_δ_app_hom (B : CommAlgCat.{max u v} R) :
     ((polynomialComonad R).δ.app B).hom =
       rename (MvPolynomial.X : B → MvPolynomial B R) := (rfl)
 
+/-- The first face of the comonad resolution renames variables by the counit. -/
+@[simp]
+lemma polynomialComonad_map_ε_app (B : CommAlgCat.{max u v} R) :
+    (polynomialComonad R).map ((polynomialComonad R).ε.app B) =
+      ofHom (rename (R := R) (aeval (id : B → B))) := (rfl)
+
+/-- The second face of the comonad resolution evaluates polynomial variables. -/
+@[simp]
+lemma polynomialComonad_ε_app_obj (B : CommAlgCat.{max u v} R) :
+    (polynomialComonad R).ε.app ((polynomialComonad R).obj B) =
+      ofHom (aeval (R := R) (id : MvPolynomial B R → MvPolynomial B R)) := (rfl)
+
 variable {R} (B : CommAlgCat.{max u v} R)
 
 /-- The canonical cofork `R[R[B]] ⇉ R[B] → B`: the first arrow renames each polynomial
 variable by its value in `B`, and the second evaluates the polynomial variables in `R[B]`.
 The body is exposed so the cofork point is definitionally `B`. -/
-@[expose] def polynomialPresentation :
+@[expose] def polynomialCofork :
     Cofork (ofHom (rename (R := R) (aeval (id : B → B))))
       (ofHom (aeval (R := R) (id : MvPolynomial B R → MvPolynomial B R))) :=
   Cofork.ofπ (ofHom (aeval (id : B → B))) (by
     apply hom_ext
-    apply MvPolynomial.algHom_ext
-    intro p
-    simp)
+    exact MvPolynomial.aeval_id_comp_rename_aeval_id)
 
 /-- The augmentation in the canonical polynomial presentation is evaluation. -/
 @[simp]
-lemma polynomialPresentation_π_hom :
-    B.polynomialPresentation.π.hom = aeval (id : B → B) := (rfl)
+lemma polynomialCofork_π_hom :
+    B.polynomialCofork.π.hom = aeval (id : B → B) := (rfl)
 
 /-- The canonical polynomial presentation is split after forgetting to sets. The two
 sections insert a variable at their respective levels. -/
-def polynomialPresentationSplit :
+def polynomialSplitCoequalizer :
     IsSplitCoequalizer
       ((forget (CommAlgCat.{max u v} R)).map
         (ofHom (rename (R := R) (aeval (id : B → B)))))
       ((forget (CommAlgCat.{max u v} R)).map
         (ofHom (aeval (R := R) (id : MvPolynomial B R → MvPolynomial B R))))
-      ((forget (CommAlgCat.{max u v} R)).map B.polynomialPresentation.π) := by
-  -- Normalize the explicit polynomial maps to the maps in the Beck diagram.
-  exact Monad.beckSplitCoequalizer ((Monad.comparison (freeForgetAdjunction R)).obj B)
+      ((forget (CommAlgCat.{max u v} R)).map B.polynomialCofork.π) := by
+  -- For `T = (adj R).toMonad` and `X = (Monad.comparison (adj R)).obj B`,
+  -- unfolding `Adjunction.toMonad`, `Monad.comparison` and `forget.map` identifies
+  -- `T.map X.a`, `T.μ.app _` and `X.a` with these three underlying polynomial maps.
+  exact Monad.beckSplitCoequalizer ((Monad.comparison (adj R)).obj B)
 
 /-- The first splitting inserts variables indexed by elements of `B`. -/
 @[simp]
-lemma polynomialPresentationSplit_rightSection (b : B) :
-    B.polynomialPresentationSplit.rightSection b = MvPolynomial.X b := (rfl)
+lemma polynomialSplitCoequalizer_rightSection (b : B) :
+    B.polynomialSplitCoequalizer.rightSection b = MvPolynomial.X b := by
+  -- Beck's right section is the monad unit, definitionally the adjunction unit.
+  exact congrArg (fun f => f b) (adj_unit_app.{u, v} R (B : Type _))
 
 /-- The second splitting inserts variables indexed by polynomials. -/
 @[simp]
-lemma polynomialPresentationSplit_leftSection (p : MvPolynomial B R) :
-    B.polynomialPresentationSplit.leftSection p = MvPolynomial.X p := (rfl)
+lemma polynomialSplitCoequalizer_leftSection (p : MvPolynomial B R) :
+    B.polynomialSplitCoequalizer.leftSection p = MvPolynomial.X p := by
+  -- Beck's left section is the same unit at the underlying free algebra.
+  exact congrArg (fun f => f p) (adj_unit_app.{u, v} R (MvPolynomial B R))
 
 /-- The canonical polynomial cofork is a coequalizer in commutative `R`-algebras. -/
-def polynomialPresentationIsColimit : IsColimit B.polynomialPresentation := by
+def polynomialCoequalizer : IsColimit B.polynomialCofork := by
   refine Cofork.IsColimit.mk' _ fun s ↦ ?_
   let q : MvPolynomial B R →ₐ[R] s.pt := s.π.hom
   have hs : q.comp (rename (aeval (id : B → B))) =
       q.comp (aeval (id : MvPolynomial B R → MvPolynomial B R)) :=
     congrArg Hom.hom s.condition
-  have h (p : MvPolynomial B R) :
-      q (MvPolynomial.X (aeval (id : B → B) p)) = q p := by
-    simpa using DFunLike.congr_fun hs (MvPolynomial.X p)
   have hf : Function.Surjective (aeval (R := R) (id : B → B)) :=
     fun b ↦ ⟨MvPolynomial.X b, by simp⟩
   have hk : RingHom.ker (aeval (R := R) (id : B → B)).toRingHom ≤
       RingHom.ker q.toRingHom := by
     intro p hp
     rw [RingHom.mem_ker] at hp ⊢
-    have h0 : q (MvPolynomial.X (0 : B)) = 0 := by simpa using h 0
-    have hp' : aeval (id : B → B) p = 0 := hp
-    exact (h p).symm.trans (by simpa only [hp'] using h0)
+    obtain ⟨x, rfl⟩ := (MvPolynomial.exact_aeval_sub_rename (R := R) (S := B) p).mp hp
+    have hx := DFunLike.congr_fun hs x
+    simpa using sub_eq_zero.mpr hx.symm
   let f := AlgHom.liftOfSurjective (aeval (id : B → B)) hf q hk
   refine ⟨ofHom f, ?_, ?_⟩
   · exact hom_ext (AlgHom.liftOfSurjective_comp _ hf q hk)
@@ -199,24 +211,5 @@ def polynomialPresentationIsColimit : IsColimit B.polynomialPresentation := by
     obtain ⟨p, rfl⟩ := hf b
     have hgb : g.hom (aeval (id : B → B) p) = q p := congr($(hg).hom p)
     exact hgb.trans (AlgHom.liftOfSurjective_apply _ hf q hk p).symm
-
-/-- The difference of the two face maps has image exactly the kernel of the augmentation.
-Thus the augmented polynomial complex is exact at `R[B]`, as an `R`-module complex. -/
-theorem polynomialPresentation_exact :
-    Function.Exact
-      ((aeval (R := R) (id : MvPolynomial B R → MvPolynomial B R)).toLinearMap -
-        (rename (R := R) (aeval (R := R) (id : B → B))).toLinearMap)
-      (aeval (R := R) (id : B → B)).toLinearMap := by
-  apply LinearMap.exact_of_comp_of_mem_range
-  · apply LinearMap.ext
-    intro p
-    have h : aeval (id : B → B) (rename (aeval (id : B → B)) p) =
-        aeval (id : B → B) (aeval (id : MvPolynomial B R → MvPolynomial B R) p) :=
-      congr($(B.polynomialPresentation.condition).hom p)
-    simpa using sub_eq_zero.mpr h.symm
-  · intro p hp
-    refine ⟨MvPolynomial.X p - MvPolynomial.X (0 : MvPolynomial B R), ?_⟩
-    have hp' : aeval (R := R) (id : B → B) p = 0 := hp
-    simp [hp']
 
 end CommAlgCat
