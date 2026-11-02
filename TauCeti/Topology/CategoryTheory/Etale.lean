@@ -10,8 +10,9 @@ public import Mathlib.Combinatorics.Quiver.Subquiver
 public import Mathlib.Topology.DiscreteSubset
 public import Mathlib.Topology.IsLocalHomeomorph
 public import Mathlib.Topology.Maps.Proper.Basic
-public import Mathlib.Topology.OpenPartialHomeomorph.Basic
+public import TauCeti.CategoryTheory.Category.QuiverTotal
 public import TauCeti.CategoryTheory.Groupoid.ActionCategory.Basic
+public import TauCeti.Topology.OpenPartialHomeomorph.Constructions
 
 /-!
 # Finite local arrow charts for proper étale presentations
@@ -139,125 +140,101 @@ theorem exists_disjoint_bisections_of_proper_source_target [T2Space (Quiver.Tota
     by_contra hgf
     exact Set.disjoint_left.mp (hpair hgf) hg hf⟩
 
-/-- A local continuous section of the source through an arrow of an open set on which the
-source is an open embedding. -/
-private theorem exists_section_of_isOpenEmbedding {W : Set (Quiver.Total C)}
-    (hW : IsOpenEmbedding (W.domRestrict Quiver.Total.left)) {a : Quiver.Total C} (ha : a ∈ W) :
-    ∃ (σ : C → Quiver.Total C) (T : Set C), ContinuousOn σ T ∧ IsOpen T ∧ a.left ∈ T ∧
-      (∀ y ∈ T, σ y ∈ W ∧ (σ y).left = y) ∧ σ a.left = a := by
-  have : Nonempty W := ⟨⟨a, ha⟩⟩
-  let e := hW.toOpenPartialHomeomorph (W.domRestrict Quiver.Total.left)
-  refine ⟨fun y ↦ (e.symm y : Quiver.Total C), e.target,
-    continuous_subtype_val.comp_continuousOn e.continuousOn_symm, e.open_target, ?_,
-    fun y hy ↦ ⟨(e.symm y).2, ?_⟩, ?_⟩
-  · rw [hW.toOpenPartialHomeomorph_target]
-    exact ⟨⟨a, ha⟩, rfl⟩
-  · rw [hW.toOpenPartialHomeomorph_target] at hy
-    exact hW.toOpenPartialHomeomorph_right_inv _ hy
-  · exact congrArg Subtype.val (hW.toOpenPartialHomeomorph_left_inv (x := ⟨a, ha⟩))
-
-/-- The restriction of a local section of the source to an open set is an open embedding,
-when the section lands in an open set of arrows on which arrows are determined by their
-source. -/
-private theorem isOpenEmbedding_restrict_section {W : Set (Quiver.Total C)} (hW : IsOpen W)
-    (hl : Continuous (Quiver.Total.left : Quiver.Total C → C))
-    (hinj : ∀ b ∈ W, ∀ b' ∈ W, b.left = b'.left → b = b') {σ : C → Quiver.Total C}
-    {U : Set C} (hU : IsOpen U) (hσc : ContinuousOn σ U)
-    (hσ : ∀ y ∈ U, σ y ∈ W ∧ (σ y).left = y) : IsOpenEmbedding fun y : U ↦ σ y := by
-  refine .of_continuous_injective_isOpenMap
-    (hσc.comp_continuous continuous_subtype_val Subtype.prop)
-    (fun y y' h ↦ Subtype.ext ((hσ y y.2).2.symm.trans
-      ((congrArg Quiver.Total.left h).trans (hσ y' y'.2).2))) ?_
-  rintro _ ⟨O, hO, rfl⟩
-  -- The image of `U ∩ O` is the set of arrows of `W` with source in `U ∩ O`.
-  have himage : (fun y : U ↦ σ y) '' (Subtype.val ⁻¹' O) =
-      W ∩ Quiver.Total.left ⁻¹' (U ∩ O) := by
-    ext b
-    constructor
-    · rintro ⟨y, hy, rfl⟩
-      refine ⟨(hσ y y.2).1, ?_⟩
-      rw [Set.mem_preimage, (hσ y y.2).2]
-      exact ⟨y.2, hy⟩
-    · rintro ⟨hbW, hbU, hbO⟩
-      exact ⟨⟨b.left, hbU⟩, hbO, hinj _ (hσ _ hbU).1 _ hbW (hσ _ hbU).2⟩
-  rw [himage]
-  exact hW.inter ((hU.inter hO).preimage hl)
-
 end Quiver
 
 open CategoryTheory
 
-section Category
-
-variable {C : Type*} [Category C]
-
-/-- The composite of a composable pair of total arrows. -/
-private def compTotal (p : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left}) :
-    Quiver.Total C :=
-  ⟨p.1.1.left, p.1.2.right, p.1.1.hom ≫ eqToHom p.2 ≫ p.1.2.hom⟩
-
-private theorem compTotal_congr
-    {p q : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left}} (h : p.1 = q.1) :
-    compTotal p = compTotal q :=
-  congrArg compTotal (Subtype.ext h)
-
-/-- A total arrow with identified endpoints, read as a morphism between those endpoints. -/
-private def homOfTotal (a : Quiver.Total C) {y z : C} (hy : a.left = y) (hz : a.right = z) :
-    y ⟶ z :=
-  eqToHom hy.symm ≫ a.hom ≫ eqToHom hz
-
-private theorem mk_homOfTotal (a : Quiver.Total C) {y z : C} (hy : a.left = y)
-    (hz : a.right = z) : (⟨y, z, homOfTotal a hy hz⟩ : Quiver.Total C) = a := by
-  subst hy hz
-  simp [homOfTotal]
-
-private theorem homOfTotal_eq_of_mk_eq {a : Quiver.Total C} {y z : C} (hy : a.left = y)
-    (hz : a.right = z) {φ : y ⟶ z} (h : (⟨y, z, φ⟩ : Quiver.Total C) = a) :
-    homOfTotal a hy hz = φ := by
-  subst h
-  simp [homOfTotal]
-
-private theorem mk_homOfTotal_comp {a b : Quiver.Total C} {y z w : C} (hy : a.left = y)
-    (hz : a.right = z) (hz' : b.left = z) (hw : b.right = w) :
-    (⟨y, w, homOfTotal a hy hz ≫ homOfTotal b hz' hw⟩ : Quiver.Total C) =
-      compTotal ⟨(a, b), hz.trans hz'.symm⟩ := by
-  obtain ⟨a₁, a₂, f⟩ := a
-  obtain ⟨b₁, b₂, g⟩ := b
-  dsimp only at hy hz hz' hw
-  subst hy hz hz' hw
-  simp [homOfTotal, compTotal]
-
-end Category
-
 section Groupoid
 
-variable {C : Type*} [Groupoid C] [TopologicalSpace C] [TopologicalSpace (Quiver.Total C)]
+variable {C : Type*} [Groupoid C]
+
+/-- Fullness of the local isotropy action: if the bisection `W f` of each isotropy arrow `f` is
+injective under the source, and `σ g y` is the arrow of `W g` with source `y`, then every arrow
+from `y` lying in some bisection is `σ g y` for some `g`. -/
+private theorem exists_section_eq {x y : C} {W : (x ⟶ x) → Set (Quiver.Total C)}
+    (hinj : ∀ f, InjOn Quiver.Total.left (W f)) {σ : Aut x → C → Quiver.Total C}
+    (hσW : ∀ g : Aut x, σ g y ∈ W g.asIso.hom) (hσl : ∀ g : Aut x, (σ g y).left = y)
+    {a : Quiver.Total C} (ha : ∃ f, a ∈ W f) (hay : a.left = y) : ∃ g, σ g y = a := by
+  obtain ⟨f, hf⟩ := ha
+  let g : Aut x := .of ((Groupoid.isoEquivHom x x).symm f)
+  exact ⟨g, hinj f (hσW g) hf ((hσl g).trans hay.symm)⟩
+
+/-- Faithfulness of the local isotropy action: sections through pairwise disjoint bisections
+take different values at every point where both are defined. -/
+private theorem eq_of_section_eq {x y : C} {W : (x ⟶ x) → Set (Quiver.Total C)}
+    (hdisj : Pairwise fun f g ↦ Disjoint (W f) (W g)) {σ : Aut x → C → Quiver.Total C}
+    {g g' : Aut x} (hg : σ g y ∈ W g.asIso.hom) (hg' : σ g' y ∈ W g'.asIso.hom)
+    (h : σ g y = σ g' y) : g = g' := by
+  by_contra hne
+  exact Set.disjoint_left.mp (hdisj fun h ↦ hne (Aut.ext (Iso.ext h))) hg (h ▸ hg')
+
+variable [TopologicalSpace C] [TopologicalSpace (Quiver.Total C)]
 
 /-- If two local sections of the source compose at `x` to an arrow in an open set `O`, then
 they compose into `O` at every source near `x`. -/
-private theorem eventually_compTotal_mem
-    (hc : Continuous (compTotal (C := C)))
+private theorem eventually_comp_mem
+    (hc : Continuous fun p : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} ↦
+      p.1.1.comp p.1.2 p.2)
     (ht : Continuous (Quiver.Total.right : Quiver.Total C → C))
     {σ τ : C → Quiver.Total C} {S T : Set C} (hσ : ContinuousOn σ S) (hτ : ContinuousOn τ T)
     (hS : IsOpen S) (hT : IsOpen T) (hτl : ∀ z ∈ T, (τ z).left = z) {x : C} (hxS : x ∈ S)
     (hxT : (σ x).right ∈ T) {O : Set (Quiver.Total C)} (hO : IsOpen O)
-    (hOx : ∀ h, compTotal ⟨(σ x, τ (σ x).right), h⟩ ∈ O) :
-    ∀ᶠ y in 𝓝 x, ∀ h : (σ y).right = (τ (σ y).right).left,
-      compTotal ⟨(σ y, τ (σ y).right), h⟩ ∈ O := by
+    (hOx : ∀ h, (σ x).comp (τ (σ x).right) h ∈ O) :
+    ∀ᶠ y in 𝓝 x, ∀ h : (σ y).right = (τ (σ y).right).left, (σ y).comp (τ (σ y).right) h ∈ O := by
   have hσr : ContinuousOn (fun y ↦ (σ y).right) S := ht.comp_continuousOn hσ
   set D := S ∩ (fun y ↦ (σ y).right) ⁻¹' T
   have hD : IsOpen D := hσr.isOpen_inter_preimage hS hT
   -- On `D` both sections are defined, and their composite is continuous.
-  let Φ : D → Quiver.Total C := fun y ↦
-    compTotal ⟨(σ y, τ (σ y).right), (hτl _ y.2.2).symm⟩
+  let Φ : D → Quiver.Total C := fun y ↦ (σ y).comp (τ (σ y).right) (hτl _ y.2.2).symm
   have hΦ : Continuous Φ := hc.comp <| Continuous.subtype_mk
     ((hσ.comp_continuous continuous_subtype_val fun y ↦ y.2.1).prodMk
       (hτ.comp_continuous (hσr.comp_continuous continuous_subtype_val fun y ↦ y.2.1)
-        fun y ↦ y.2.2)) _
+        fun y ↦ y.2.2)) fun y ↦ (hτl _ y.2.2).symm
   rw [← hD.isOpenMap_subtype_val.map_nhds_eq continuous_subtype_val.continuousAt
     (x := ⟨x, hxS, hxT⟩)]
   exact Filter.eventually_map.2
     ((hΦ.continuousAt.eventually_mem (hO.mem_nhds (hOx _))).mono fun y hy _ ↦ hy)
+
+/-- Near `x`, sections `σ g` of the source through the bisections of the isotropy arrows compose
+like the isotropy group: `σ 1` is the unit section and `σ (g * h)` is the composite of `σ h`
+followed by `σ g`. -/
+private theorem exists_nhds_section_one_mul {x : C} [Finite (Aut x)]
+    {W : (x ⟶ x) → Set (Quiver.Total C)}
+    (hu : Continuous fun y : C ↦ (⟨y, y, 𝟙 y⟩ : Quiver.Total C))
+    (hc : Continuous fun p : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} ↦
+      p.1.1.comp p.1.2 p.2)
+    (ht : Continuous (Quiver.Total.right : Quiver.Total C → C)) (hWo : ∀ f, IsOpen (W f))
+    (hWx : ∀ f, (⟨x, x, f⟩ : Quiver.Total C) ∈ W f) (hinj : ∀ f, InjOn Quiver.Total.left (W f))
+    {σ : Aut x → C → Quiver.Total C} {T : Aut x → Set C} (hT : ∀ g, IsOpen (T g))
+    (hxT : ∀ g, x ∈ T g) (hσc : ∀ g, ContinuousOn (σ g) (T g))
+    (hσW : ∀ g, ∀ y ∈ T g, σ g y ∈ W g.asIso.hom) (hσl : ∀ g, ∀ y ∈ T g, (σ g y).left = y)
+    (hσx : ∀ g, σ g x = ⟨x, x, g.asIso.hom⟩) :
+    ∀ᶠ y in 𝓝 x, (∀ g, y ∈ T g) ∧ (∀ g h, (σ h y).right ∈ T g) ∧ σ 1 y = ⟨y, y, 𝟙 y⟩ ∧
+      ∀ g h, ∃ hgh, σ (g * h) y = (σ h y).comp (σ g (σ h y).right) hgh := by
+  have hσxr (g : Aut x) : (σ g x).right = x := by rw [hσx g]
+  have hact (h : Aut x) : ContinuousOn (fun y ↦ (σ h y).right) (T h) :=
+    ht.comp_continuousOn (hσc h)
+  have hT' : ∀ᶠ y in 𝓝 x, ∀ g, y ∈ T g := Filter.eventually_all.2 fun g ↦
+    (hT g).eventually_mem (hxT g)
+  have hTT : ∀ᶠ y in 𝓝 x, ∀ g h, (σ h y).right ∈ T g :=
+    Filter.eventually_all.2 fun g ↦ Filter.eventually_all.2 fun h ↦
+      ((hact h).continuousAt ((hT h).mem_nhds (hxT h))).eventually_mem
+        ((hT g).mem_nhds (by rw [hσxr]; exact hxT g))
+  have hunit : ∀ᶠ y in 𝓝 x, (⟨y, y, 𝟙 y⟩ : Quiver.Total C) ∈ W (1 : Aut x).asIso.hom :=
+    hu.continuousAt.eventually_mem ((hWo _).mem_nhds (hWx _))
+  have hcomp : ∀ᶠ y in 𝓝 x, ∀ g h (hgh : (σ h y).right = (σ g (σ h y).right).left),
+      (σ h y).comp (σ g (σ h y).right) hgh ∈ W (g * h).asIso.hom := by
+    refine Filter.eventually_all.2 fun g ↦ Filter.eventually_all.2 fun h ↦ ?_
+    refine eventually_comp_mem hc ht (hσc h) (hσc g) (hT h) (hT g) (hσl g) (hxT h)
+      (by rw [hσxr]; exact hxT g) (hWo _) fun hgh ↦ ?_
+    -- At `x` the two sections pass through `h` and `g`, which compose to `g * h`.
+    have hgx : σ g (σ h x).right = ⟨x, x, g.asIso.hom⟩ := by rw [hσxr]; exact hσx g
+    rw [Quiver.Total.comp_congr (hσx h) hgx hgh rfl, Quiver.Total.mk_comp_mk]
+    exact hWx _
+  filter_upwards [hT', hTT, hunit, hcomp] with y hyT hyTT hyunit hycomp
+  exact ⟨hyT, hyTT, hinj _ (hσW 1 y (hyT 1)) hyunit (hσl 1 y (hyT 1)), fun g h ↦
+    ⟨(hσl g _ (hyTT g h)).symm, hinj _ (hσW _ y (hyT _)) (hycomp g h _)
+      ((hσl _ y (hyT _)).trans ((Quiver.Total.comp_left _ _ _).trans (hσl h y (hyT h))).symm)⟩⟩
 
 /-- **Local isotropy actions of proper étale groupoids.** Near an object `x` of a Hausdorff
 proper étale groupoid with continuous units and composition, the groupoid is the action
@@ -273,126 +250,109 @@ theorem exists_isotropy_action_of_proper_source_target [T2Space (Quiver.Total C)
     (ht : IsLocalHomeomorph (Quiver.Total.right : Quiver.Total C → C))
     (hu : Continuous fun y : C ↦ (⟨y, y, 𝟙 y⟩ : Quiver.Total C))
     (hc : Continuous fun p : {p : Quiver.Total C × Quiver.Total C // p.1.right = p.2.left} ↦
-      (⟨p.1.1.left, p.1.2.right, p.1.1.hom ≫ eqToHom p.2 ≫ p.1.2.hom⟩ : Quiver.Total C))
+      p.1.1.comp p.1.2 p.2)
     (x : C) :
-    ∃ (U : Set C) (_ : MulAction (Aut x) U) (F : ActionCategory (Aut x) U ⥤ C),
-      IsOpen U ∧ x ∈ U ∧ (∀ g : Aut x, Continuous fun y : U ↦ g • y) ∧
+    ∃ (U : Set C) (hxU : x ∈ U) (_ : MulAction (Aut x) U) (F : ActionCategory (Aut x) U ⥤ C),
+      IsOpen U ∧ (∀ g : Aut x, Continuous fun y : U ↦ g • y) ∧
       (∀ a, F.obj a = (a.back : C)) ∧ F.Full ∧ F.Faithful ∧
       (∀ g : Aut x, IsOpenEmbedding fun y : U ↦
         (⟨_, _, F.map ((ActionCategory.totalEquiv (Aut x) U).symm (g, y)).hom⟩ :
           Quiver.Total C)) ∧
-      ∀ (hx : x ∈ U) (g : Aut x),
-        (⟨_, _, F.map ((ActionCategory.totalEquiv (Aut x) U).symm (g, ⟨x, hx⟩)).hom⟩ :
+      ∀ g : Aut x,
+        (⟨_, _, F.map ((ActionCategory.totalEquiv (Aut x) U).symm (g, ⟨x, hxU⟩)).hom⟩ :
           Quiver.Total C) = ⟨x, x, g.asIso.hom⟩ := by
-  -- Outline: take the disjoint bisections `W g` through the isotropy arrows and their source
-  -- sections `σ g`. Near `x`, continuity of units and composition forces `σ 1` to be the unit
-  -- section and `σ (g * h)` to be the composite of `σ h` and `σ g`. An invariant shrinking `U`
+  -- Outline: take the disjoint bisections `W g` through the isotropy arrows and the inverses
+  -- `σ g` of the source on them. Near `x` these compose like `Aut x`. An invariant shrinking `U`
   -- of that neighbourhood carries the action `g • y = (σ g y).right`, and `σ` gives the functor.
   obtain ⟨U₀, W, hU₀, hxU₀, hW, hdisj, hcover⟩ :=
     exists_disjoint_bisections_of_proper_source_target hp hs ht x
+  choose hWo hWx hWl _ using hW
   have := finite_hom_of_proper_source_target hp hs x x
   have : Finite (Aut x) := .of_equiv _ (Aut.isoEquiv.trans (Groupoid.isoEquivHom x x)).symm
-  have huniq (f : x ⟶ x) {b b' : Quiver.Total C} (hb : b ∈ W f) (hb' : b' ∈ W f)
-      (h : b.left = b'.left) : b = b' :=
-    congrArg Subtype.val (@(hW f).2.2.1.injective ⟨b, hb⟩ ⟨b', hb'⟩ h)
-  -- The section `σ g` of the source through the bisection of each isotropy arrow `g`.
-  choose σ T hσc hT hxT hσ hσx using fun g : Aut x ↦
-    exists_section_of_isOpenEmbedding (hW g.asIso.hom).2.2.1 (hW g.asIso.hom).2.1
+  have hinj (f : x ⟶ x) : InjOn Quiver.Total.left (W f) := fun b hb b' hb' h ↦
+    congrArg Subtype.val (@(hWl f).injective ⟨b, hb⟩ ⟨b', hb'⟩ h)
+  -- The source restricted to the bisection of each isotropy arrow `g` is a chart `e g`.
+  choose e hes hel using fun g : Aut x ↦
+    OpenPartialHomeomorph.exists_source_eq_of_isOpenEmbedding (hWo _) (hWl _) ⟨_, hWx g.asIso.hom⟩
+  let σ (g : Aut x) : C → Quiver.Total C := (e g).symm
+  let T (g : Aut x) : Set C := (e g).target
+  have hσW (g : Aut x) (y : C) (hy : y ∈ T g) : σ g y ∈ W g.asIso.hom :=
+    hes g ▸ (e g).map_target hy
+  have hσl (g : Aut x) (y : C) (hy : y ∈ T g) : (σ g y).left = y :=
+    (hel g ⟨_, hσW g y hy⟩).symm.trans ((e g).right_inv hy)
+  have hex (g : Aut x) : e g ⟨x, x, g.asIso.hom⟩ = x := hel g ⟨_, hWx _⟩
+  have hxT (g : Aut x) : x ∈ T g := hex g ▸ (e g).map_source (hes g ▸ hWx _)
+  have hσx (g : Aut x) : σ g x = ⟨x, x, g.asIso.hom⟩ := by
+    have := (e g).left_inv (hes g ▸ hWx _)
+    rwa [hex g] at this
   have hact (g : Aut x) : ContinuousOn (fun y ↦ (σ g y).right) (T g) :=
-    ht.continuous.comp_continuousOn (hσc g)
-  have hσxr (g : Aut x) : (σ g x).right = x := by rw [hσx g]
-  -- Near `x`, the sections compose like the isotropy group and the unit section is `σ 1`.
-  have hE : ∀ᶠ y in 𝓝 x, y ∈ U₀ ∧ (∀ g, y ∈ T g) ∧ (∀ g h, (σ h y).right ∈ T g) ∧
-      (⟨y, y, 𝟙 y⟩ : Quiver.Total C) ∈ W (1 : Aut x).asIso.hom ∧
-      ∀ g h (hgh : (σ h y).right = (σ g (σ h y).right).left),
-        compTotal ⟨(σ h y, σ g (σ h y).right), hgh⟩ ∈ W (g * h).asIso.hom := by
-    refine (hU₀.eventually_mem hxU₀).and
-      ((Filter.eventually_all.2 fun g ↦ (hT g).eventually_mem (hxT g)).and
-      ((Filter.eventually_all.2 fun g ↦ Filter.eventually_all.2 fun h ↦ ?_).and
-      ((hu.continuousAt.eventually_mem ((hW _).1.mem_nhds (hW _).2.1)).and
-      (Filter.eventually_all.2 fun g ↦ Filter.eventually_all.2 fun h ↦ ?_))))
-    · exact ((hact h).continuousAt ((hT h).mem_nhds (hxT h))).eventually_mem
-        ((hT g).mem_nhds (by rw [hσxr]; exact hxT g))
-    · refine eventually_compTotal_mem hc ht.continuous (hσc h) (hσc g) (hT h) (hT g)
-        (fun z hz ↦ (hσ g z hz).2) (hxT h) (by rw [hσxr]; exact hxT g) (hW _).1 fun hgh ↦ ?_
-      -- At `x` the two sections pass through `h` and `g`, which compose to `g * h`.
-      have : compTotal ⟨(σ h x, σ g (σ h x).right), hgh⟩ = ⟨x, x, (g * h).asIso.hom⟩ := by
-        refine (compTotal_congr (q := ⟨(⟨x, x, h.asIso.hom⟩, ⟨x, x, g.asIso.hom⟩), rfl⟩)
-          (Prod.ext (hσx h) ?_)).trans ?_
-        · simp only [hσxr]
-          exact hσx g
-        · simp [compTotal]
-      rw [this]
-      exact (hW _).2.1
-  obtain ⟨V, hVE, hV, hxV⟩ := mem_nhds_iff.mp hE
-  have hone (y : C) (hy : y ∈ V) : σ 1 y = ⟨y, y, 𝟙 y⟩ :=
-    huniq _ (hσ 1 y ((hVE hy).2.1 1)).1 (hVE hy).2.2.2.1 (hσ 1 y ((hVE hy).2.1 1)).2
-  have hmul (y : C) (hy : y ∈ V) (g h : Aut x) : σ (g * h) y =
-      compTotal ⟨(σ h y, σ g (σ h y).right), ((hσ g _ ((hVE hy).2.2.1 g h)).2).symm⟩ :=
-    huniq _ (hσ _ y ((hVE hy).2.1 _)).1 ((hVE hy).2.2.2.2 g h _)
-      ((hσ _ y ((hVE hy).2.1 _)).2.trans (hσ h y ((hVE hy).2.1 h)).2.symm)
+    ht.continuous.comp_continuousOn (e g).continuousOn_symm
+  obtain ⟨V, hVE, hV, hxV⟩ := mem_nhds_iff.mp ((hU₀.eventually_mem hxU₀).and
+    (exists_nhds_section_one_mul (σ := σ) (T := T) hu hc ht.continuous hWo hWx hinj
+      (fun g ↦ (e g).open_target) hxT (fun g ↦ (e g).continuousOn_symm) hσW hσl hσx))
+  simp only [Set.subset_ofPred, forall₂_and] at hVE
+  obtain ⟨hVU₀, hVT, hVTT, hone, hmul⟩ := hVE
+  choose _ hmul using hmul
   -- Shrink `V` to the neighbourhood `U` which the local action preserves.
   set U : Set C := V ∩ ⋂ g, T g ∩ (fun y ↦ (σ g y).right) ⁻¹' V
   have hUo : IsOpen U :=
-    hV.inter (isOpen_iInter_of_finite fun g ↦ (hact g).isOpen_inter_preimage (hT g) hV)
+    hV.inter (isOpen_iInter_of_finite fun g ↦ (hact g).isOpen_inter_preimage (e g).open_target hV)
   have hxU : x ∈ U := ⟨hxV, Set.mem_iInter.2 fun g ↦ ⟨hxT g, by
-    simp only [Set.mem_preimage, hσxr]; exact hxV⟩⟩
+    simp only [Set.mem_preimage, hσx]; exact hxV⟩⟩
   have hUT (y : C) (hy : y ∈ U) (g : Aut x) : y ∈ T g := (Set.mem_iInter.1 hy.2 g).1
   have hUσ (y : C) (hy : y ∈ U) (h : Aut x) : (σ h y).right ∈ U := by
-    refine ⟨(Set.mem_iInter.1 hy.2 h).2, Set.mem_iInter.2 fun g ↦ ⟨(hVE hy.1).2.2.1 g h, ?_⟩⟩
+    refine ⟨(Set.mem_iInter.1 hy.2 h).2, Set.mem_iInter.2 fun g ↦ ⟨hVTT y hy.1 g h, ?_⟩⟩
     have := (Set.mem_iInter.1 hy.2 (g * h)).2
-    rwa [Set.mem_preimage, hmul y hy.1] at this
+    rwa [Set.mem_preimage, hmul y hy.1, Quiver.Total.comp_right] at this
   let inst : MulAction (Aut x) U :=
     { smul g y := ⟨(σ g y).right, hUσ y y.2 g⟩
       one_smul y := Subtype.ext ((congrArg Quiver.Total.right (hone y y.2.1)).trans rfl)
       mul_smul g h y :=
-        Subtype.ext ((congrArg Quiver.Total.right (hmul y y.2.1 g h)).trans rfl) }
+        Subtype.ext ((congrArg Quiver.Total.right (hmul y y.2.1 g h)).trans
+          (Quiver.Total.comp_right _ _ _)) }
   let F : ActionCategory (Aut x) U ⥤ C :=
     { obj a := a.back
-      map {a b} f := homOfTotal (σ f.hom a.back) (hσ _ _ (hUT _ a.back.2 _)).2
+      map {a b} f := Quiver.homOfEq (σ f.hom a.back).hom (hσl _ _ (hUT _ a.back.2 _))
         (congrArg Subtype.val f.map_val)
-      map_id a := homOfTotal_eq_of_mk_eq _ _ (by
+      map_id a := eq_of_heq (Quiver.Total.mk.inj ((Quiver.Total.mk_homOfEq _ _ _).trans (by
         rw [ActionCategory.id_hom]
-        exact (hone _ a.back.2.1).symm)
-      map_comp {a b c} f g := homOfTotal_eq_of_mk_eq _ _ ((mk_homOfTotal_comp _ _ _ _).trans (by
-        rw [ActionCategory.comp_hom, hmul _ a.back.2.1]
-        exact compTotal_congr (Prod.ext rfl
-          (congrArg (σ g.hom) (congrArg Subtype.val f.map_val).symm)))) }
+        exact hone _ a.back.2.1))).2.2
+      map_comp {a b c} f g := eq_of_heq (Quiver.Total.mk.inj
+        ((Quiver.Total.mk_homOfEq _ _ _).trans <| Eq.trans (by
+          rw [ActionCategory.comp_hom, hmul _ a.back.2.1]
+          exact Quiver.Total.comp_congr rfl
+            (congrArg (σ g.hom) (congrArg Subtype.val f.map_val)) _ _)
+          (Quiver.Total.mk_homOfEq_comp_homOfEq _ _ _ _ _ _).symm)).2.2 }
   have hF {a b : ActionCategory (Aut x) U} (f : a ⟶ b) :
       (⟨_, _, F.map f⟩ : Quiver.Total C) = σ f.hom a.back :=
-    mk_homOfTotal _ (hσ _ _ (hUT _ a.back.2 _)).2 (congrArg Subtype.val f.map_val)
-  refine ⟨U, inst, F, hUo, hxU, fun g ↦ ((hact g).comp_continuous continuous_subtype_val
+    Quiver.Total.mk_homOfEq _ _ _
+  -- `back` is the inverse of `objEquiv`, which the arrow coordinates `totalEquiv` use.
+  have hback (y : U) : (ActionCategory.objEquiv (Aut x) U y).back = y :=
+    (ActionCategory.objEquiv (Aut x) U).left_inv y
+  refine ⟨U, hxU, inst, F, hUo, fun g ↦ ((hact g).comp_continuous continuous_subtype_val
     fun y ↦ hUT _ y.2 g).subtype_mk _, fun _ ↦ rfl, ?_, ?_, fun g ↦ ?_,
-    fun hx g ↦ (hF _).trans ?_⟩
-  · -- Every arrow between objects of `U` lies in the bisection of a unique isotropy arrow.
+    fun g ↦ (hF _).trans ?_⟩
+  · -- Every arrow between objects of `U` lies in a bisection, so it is the arrow of some label.
     refine ⟨fun {a b} φ ↦ ?_⟩
-    obtain ⟨f, hf, -⟩ := hcover ⟨_, _, φ⟩ (a.back.2.1 |> hVE |>.1) (b.back.2.1 |> hVE |>.1)
-    let g : Aut x := .of ((Groupoid.isoEquivHom x x).symm f)
-    have hg : σ g a.back = ⟨_, _, φ⟩ :=
-      huniq f (hσ g _ (hUT _ a.back.2 g)).1 hf (hσ g _ (hUT _ a.back.2 g)).2
+    obtain ⟨g, hg⟩ := exists_section_eq hinj (fun g ↦ hσW g _ (hUT _ a.back.2 g))
+      (fun g ↦ hσl g _ (hUT _ a.back.2 g))
+      (hcover ⟨_, _, φ⟩ (hVU₀ _ a.back.2.1) (hVU₀ _ b.back.2.1)).exists rfl
     let m : a ⟶ b :=
       Functor.Elements.homMk g (Subtype.ext ((congrArg Quiver.Total.right hg).trans rfl))
     exact ⟨m, eq_of_heq (Quiver.Total.mk.inj ((hF m).trans hg)).2.2⟩
   · refine ⟨fun {a b} f f' h ↦ Functor.Elements.hom_ext ?_⟩
-    have hσf : σ f.hom a.back = σ f'.hom a.back :=
-      (hF f).symm.trans ((congrArg (fun φ ↦ (⟨_, _, φ⟩ : Quiver.Total C)) h).trans (hF f'))
-    by_contra hne
-    have hne' : f.hom.asIso.hom ≠ f'.hom.asIso.hom := fun h ↦ hne (Aut.ext (Iso.ext h))
-    exact Set.disjoint_left.mp (hdisj hne') (hσ _ _ (hUT _ a.back.2 _)).1
-      (hσf ▸ (hσ _ _ (hUT _ a.back.2 _)).1)
+    exact eq_of_section_eq hdisj (hσW _ _ (hUT _ a.back.2 _)) (hσW _ _ (hUT _ a.back.2 _))
+      ((hF f).symm.trans ((congrArg (fun φ ↦ (⟨_, _, φ⟩ : Quiver.Total C)) h).trans (hF f')))
   · have hfun : (fun y : U ↦ (⟨_, _, F.map ((ActionCategory.totalEquiv (Aut x) U).symm
         (g, y)).hom⟩ : Quiver.Total C)) = fun y : U ↦ σ g y := by
       funext y
       rw [hF, ActionCategory.totalEquiv_symm_apply_hom_hom,
-        ActionCategory.totalEquiv_symm_apply_left]
-      -- The underlying point of the object `objEquiv y` is `y` by definition.
-      rfl
+        ActionCategory.totalEquiv_symm_apply_left, hback]
     rw [hfun]
-    exact isOpenEmbedding_restrict_section (hW _).1 hs.continuous
-      (fun b hb b' hb' ↦ huniq _ hb hb') hUo ((hσc g).mono fun y hy ↦ hUT y hy g)
-      fun y hy ↦ hσ g y (hUT y hy g)
-  · simp only [ActionCategory.totalEquiv_symm_apply_hom_hom,
-      ActionCategory.totalEquiv_symm_apply_left]
+    exact (e g).symm.isOpenEmbedding_restrict.comp
+      (.inclusion (fun y hy ↦ hUT y hy g) (hUo.preimage continuous_subtype_val))
+  · rw [ActionCategory.totalEquiv_symm_apply_hom_hom, ActionCategory.totalEquiv_symm_apply_left,
+      hback]
     exact hσx g
 
 end Groupoid
