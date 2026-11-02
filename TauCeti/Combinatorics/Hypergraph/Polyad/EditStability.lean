@@ -41,7 +41,7 @@ variable {κ κ₂ V : Type*} [Fintype V] [DecidableEq V] [DecidableEq κ]
 /-- Top regularity survives recoloring at most an `η`-fraction of the polyad's support.
 The new threshold `ε` must absorb the old error, the change on the whole support, and the
 change on a test of relative size at least `ε`. The rank is unchanged. -/
-theorem IsTopRegularOverPolyad.edit_of_card_editedOn_le
+theorem IsTopRegularOverPolyad.of_card_editedOn_le
     (h : H.IsTopRegularOverPolyad P δ r) (hε : 0 < ε) (hη : 0 ≤ η) (hbudget : δ + η + η / ε ≤ ε)
     (hedit : (#(H.editedOn H' P.support) : ℝ) ≤ η * #P.support) :
     H'.IsTopRegularOverPolyad P ε r := by
@@ -78,7 +78,7 @@ theorem IsTopRegularOverPolyad.edit_of_card_editedOn_le
 
 /-- A nonnegative edit fraction `η` worsens the regularity parameter by at most `2 * √η`,
 at any rank. The old parameter is positive; empty polyad supports are allowed. -/
-theorem IsTopRegularOverPolyad.edit_sqrt (h : H.IsTopRegularOverPolyad P δ r)
+theorem IsTopRegularOverPolyad.of_card_editedOn_le_sqrt (h : H.IsTopRegularOverPolyad P δ r)
     (hδ : 0 < δ) (hη : 0 ≤ η)
     (hedit : (#(H.editedOn H' P.support) : ℝ) ≤ η * #P.support) :
     H'.IsTopRegularOverPolyad P (δ + 2 * Real.sqrt η) r := by
@@ -87,7 +87,7 @@ theorem IsTopRegularOverPolyad.edit_sqrt (h : H.IsTopRegularOverPolyad P δ r)
     have hs₂ := Real.sq_sqrt hη
     have hs₁ : Real.sqrt η ≤ 1 := (Real.sqrt_le_one).2 hη₁
     have hε : 0 < δ + 2 * Real.sqrt η := by positivity
-    apply h.edit_of_card_editedOn_le hε hη ?_ hedit
+    apply h.of_card_editedOn_le hε hη ?_ hedit
     have hdiv : η / (δ + 2 * Real.sqrt η) ≤ Real.sqrt η := by
       apply (div_le_iff₀ hε).2
       nlinarith

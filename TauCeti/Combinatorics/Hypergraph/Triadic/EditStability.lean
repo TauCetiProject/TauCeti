@@ -56,7 +56,7 @@ theorem sum_card_support_not_isTopRegularOverPolyad_le_add_div (C : TriadicCompl
   · simp only [hnew, hold, not_true_eq_false, not_false_eq_true, ↓reduceIte, zero_add]
     apply (le_div_iff₀ hη).2
     have hbad : ¬(#(H.editedOn H' P.support) : ℝ) ≤ η * #P.support :=
-      fun hed ↦ hnew (hold.edit_of_card_editedOn_le hε hη.le hbudget hed)
+      fun hed ↦ hnew (hold.of_card_editedOn_le hε hη.le hbudget hed)
     linarith [lt_of_not_ge hbad]
   · simpa only [hnew, hold, not_false_eq_true, ↓reduceIte] using le_add_of_nonneg_right he
 
@@ -64,7 +64,7 @@ open Classical in
 /-- Recoloring increases exceptional polyad mass by at most the selected edit fraction
 divided by `η`, provided the new regularity parameter absorbs local edit errors. The family
 need not be a polyad decomposition, and zero total support is allowed. -/
-theorem exceptionalPolyadMass_edit_le (C : TriadicComplex3 V)
+theorem exceptionalPolyadMass_le_add_sum_card_editedOn_div (C : TriadicComplex3 V)
     (hε : 0 < ε) (hη : 0 < η) (hbudget : δ + η + η / ε ≤ ε) :
     H'.exceptionalPolyadMass C ε r ≤ H.exceptionalPolyadMass C δ r +
       (∑ P ∈ C.polyads, (#(H.editedOn H' P.support) : ℝ)) /
@@ -100,7 +100,7 @@ theorem Approximates3.exceptionalPolyadMass_le {α : ℝ} (h : H.Approximates3 H
     (hbudget : δ + η + η / ε ≤ ε) :
     H'.exceptionalPolyadMass C ε r ≤ H.exceptionalPolyadMass C δ r +
       α * (Fintype.card V : ℝ) ^ 3 / (η * ∑ P ∈ C.polyads, (#P.support : ℝ)) := by
-  refine (exceptionalPolyadMass_edit_le (H := H) C hε hη hbudget).trans
+  refine (exceptionalPolyadMass_le_add_sum_card_editedOn_div (H := H) C hε hη hbudget).trans
     (add_le_add le_rfl ?_)
   apply div_le_div_of_nonneg_right
   · exact (sum_card_editedOn_le_editDiscrepancy3 H H' C).trans
@@ -109,7 +109,7 @@ theorem Approximates3.exceptionalPolyadMass_le {α : ℝ} (h : H.Approximates3 H
 
 /-- A global edit approximation preserves top regularity over most polyads after increasing
 the local regularity parameter and charging the edit budget to exceptional mass. -/
-theorem TopRegularOverMostPolyads.edit {α ε₀ : ℝ} {C : TriadicComplex3 V}
+theorem TopRegularOverMostPolyads.of_approximates3 {α ε₀ : ℝ} {C : TriadicComplex3 V}
     (h : H.TopRegularOverMostPolyads C δ ε₀ r) (hedit : H.Approximates3 H' α)
     (hε : 0 < ε) (hη : 0 < η) (hbudget : δ + η + η / ε ≤ ε) :
     H'.TopRegularOverMostPolyads C ε
