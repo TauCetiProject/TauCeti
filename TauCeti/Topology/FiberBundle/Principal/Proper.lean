@@ -37,6 +37,8 @@ variable {B G : Type*} [TopologicalSpace B] [Group G] [TopologicalSpace G]
 
 /-- The fibrewise right action is continuous on the total space. -/
 instance continuousSMul_totalSpace [ContinuousMul G] : ContinuousSMul Gᵐᵒᵖ (TotalSpace G P) where
+  -- The total-space action is definitionally the fibrewise action in a total-space constructor;
+  -- `op (unop g) = g` definitionally identifies the scalar with the original opposite scalar.
   continuous_smul := Continuous.totalSpaceMk_smul continuous_snd
     (continuous_unop.comp continuous_fst)
 
@@ -51,6 +53,8 @@ noncomputable def actionHomeomorph :
   invFun x := (⟨x.proj, x.snd.1⟩, division G x.snd.1 x.snd.2)
   left_inv x := by simp
   right_inv x := by simp
+  -- Composing `toFun` with the fibrewise diagonal gives `(x.1, op x.2 • x.1)` definitionally:
+  -- the first component uses total-space structure eta, and the second unfolds its action.
   continuous_toFun := (FiberBundle.Prod.isInducing_diag G P G P).continuous_iff.2
     (continuous_fst.prodMk (continuous_fst.totalSpaceMk_smul continuous_snd))
   continuous_invFun := by
