@@ -55,6 +55,8 @@ on standard simplices, and `SSet.join.homEquiv` identifies its maps from `X` wit
   or is the image of a simplex of `Δ[m] ⋆ L` under `g ⋆ L` for a simplex `g : Δ[m] ⟶ K`.
 * `SSet.Subcomplex.mem_unionJoin_iff`: a simplex of `K ⋆ L` lies in `(A ⋆ L) ∪ (K ⋆ B)` exactly
   when its part in `K` lies in `A` or its part in `L` lies in `B`.
+* `SSet.Subcomplex.unionJoin_le_iff`: `(A ⋆ L) ∪ (K ⋆ B)` lies in a subcomplex exactly when the
+  images of `A ⋆ L` and `K ⋆ B` do.
 * `SSet.join.isoOfIsTerminal`: the join of two terminal simplicial sets, such as
   `Δ[0] ⋆ Δ[0]`, is `Δ[1]`.
 * `SSet.join.quasicategory`: the join of two quasicategories is a quasicategory (Joyal).
@@ -912,6 +914,24 @@ variable (A : K.Subcomplex) (B : L.Subcomplex)
 domain of the pushout-join of the inclusions of `A` and `B`. -/
 def unionJoin : (join K L).Subcomplex :=
   range (join.map A.ι (𝟙 L)) ⊔ range (join.map (𝟙 K) B.ι)
+
+/-- `(A ⋆ L) ∪ (K ⋆ B)` is the union of the images of `A ⋆ L` and `K ⋆ B` in `K ⋆ L`. -/
+lemma unionJoin_def :
+    A.unionJoin B = range (join.map A.ι (𝟙 L)) ⊔ range (join.map (𝟙 K) B.ι) := (rfl)
+
+/-- The image of `A ⋆ L` in `K ⋆ L` is contained in `(A ⋆ L) ∪ (K ⋆ B)`. -/
+lemma range_join_map_ι_id_le_unionJoin : range (join.map A.ι (𝟙 L)) ≤ A.unionJoin B :=
+  le_sup_left
+
+/-- The image of `K ⋆ B` in `K ⋆ L` is contained in `(A ⋆ L) ∪ (K ⋆ B)`. -/
+lemma range_join_map_id_ι_le_unionJoin : range (join.map (𝟙 K) B.ι) ≤ A.unionJoin B :=
+  le_sup_right
+
+/-- `(A ⋆ L) ∪ (K ⋆ B)` is contained in a subcomplex `Z` of `K ⋆ L` exactly when the images of
+`A ⋆ L` and `K ⋆ B` are. -/
+lemma unionJoin_le_iff {Z : (join K L).Subcomplex} :
+    A.unionJoin B ≤ Z ↔ range (join.map A.ι (𝟙 L)) ≤ Z ∧ range (join.map (𝟙 K) B.ι) ≤ Z :=
+  sup_le_iff
 
 /-- A simplex of `K ⋆ L` lies in `(A ⋆ L) ∪ (K ⋆ B)` exactly when its part in `K` lies in `A` or its
 part in `L` lies in `B`. -/
