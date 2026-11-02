@@ -44,6 +44,11 @@ variable {R V : Type*} [CommRing R] [AddCommGroup V] [Module R V]
 def derivative : VertexOperator R V →ₗ[R] VertexOperator R V :=
   LinearMap.compRight R (HahnModule.derivative R)
 
+/-- Applying the derivative of a field differentiates its value as a Laurent series. -/
+@[simp]
+theorem derivative_apply (A : VertexOperator R V) (v : V) :
+    derivative A v = HahnModule.derivative R (A v) := (rfl)
+
 -- As with Mathlib's coefficient API, this is not a simp lemma: the simp normal form
 -- uses normalized coefficients instead.
 /-- Differentiation shifts the unnormalized Laurent coefficients down by one. -/
@@ -78,7 +83,7 @@ theorem derivative_left (h : A.IsLocalOfOrder B N) :
       (ij.1 : ℤ) • (A[[m + ij.1 - 1]] * B[[n + ij.2]] -
         B[[n + ij.2]] * A[[m + ij.1 - 1]]) = 0 := by
     simp_rw [natCast_zsmul, smul_comm ((-1 : ℤ) ^ _) (_ : ℕ)]
-    rw [sum_antidiagonal_choose_mul_nsmul (fun i j ↦ (-1 : ℤ) ^ j •
+    rw [sum_antidiagonal_choose_succ_nsmul_nsmul (fun i j ↦ (-1 : ℤ) ^ j •
       (A[[m + i - 1]] * B[[n + j]] - B[[n + j]] * A[[m + i - 1]])) N]
     simpa only [Nat.cast_add, Nat.cast_one, ← add_assoc, add_sub_cancel_right, smul_zero] using
       congrArg (fun x ↦ (N + 1) • x) (isLocalOfOrder_iff.mp h m n)

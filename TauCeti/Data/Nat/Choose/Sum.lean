@@ -59,7 +59,7 @@ open Finset
 namespace Finset
 
 /-- Weighting a binomial antidiagonal sum by its first index lowers its order by one. -/
-theorem sum_antidiagonal_choose_mul_nsmul {M : Type*} [AddCommMonoid M]
+theorem sum_antidiagonal_choose_succ_nsmul_nsmul {M : Type*} [AddCommMonoid M]
     (f : ℕ → ℕ → M) (N : ℕ) :
     ∑ ij ∈ antidiagonal (N + 1), (N + 1).choose ij.1 • ij.1 • f ij.1 ij.2 =
       (N + 1) • ∑ ij ∈ antidiagonal N, N.choose ij.1 • f (ij.1 + 1) ij.2 := by
