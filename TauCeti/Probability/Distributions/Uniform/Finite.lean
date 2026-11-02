@@ -203,7 +203,7 @@ instance isProbabilityMeasure_uniformOfFinset_univ {α : Type*} [Fintype α] [No
     [MeasurableSpace α] :
     IsProbabilityMeasure (Measure.uniformOfFinset (Finset.univ : Finset α)) := by
   constructor
-  simp [Measure.uniformOfFinset, Measure.finsetSum_apply, Finset.sum_const, nsmul_eq_mul,
+  simp [Measure.uniformOfFinset, _root_.sum_apply, Finset.sum_const, nsmul_eq_mul,
     ENNReal.mul_inv_cancel, Fintype.card_ne_zero]
 
 /-- Two independent uniform samples from `Fin 2` differ with probability `1 / 2`. -/

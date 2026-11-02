@@ -78,9 +78,7 @@ deleted. -/
 theorem IsBridge.not_reachable_deleteEdges (he : G.IsBridge e) (h : G.IsLink e x y) :
     ¬ (G.deleteEdges {e}).Reachable x y := by
   obtain ⟨S, -, hS, hx, hy⟩ := he.isEdgeCut_singleton.exists_of_isLink h (mem_singleton e)
-  intro hr
-  refine hy (hr.mem_of_edgeCut_eq_empty ?_ hx)
-  rw [edgeCut_deleteEdges, hS, sdiff_self]
+  exact hS ▸ G.not_reachable_deleteEdges_edgeCut hx hy
 
 /-- An edge joining `x` and `y` is a bridge exactly when deleting it leaves `y` unreachable
 from `x`. -/
@@ -88,8 +86,7 @@ theorem IsLink.isBridge_iff_not_reachable_deleteEdges (h : G.IsLink e x y) :
     G.IsBridge e ↔ ¬ (G.deleteEdges {e}).Reachable x y := by
   refine ⟨fun he ↦ he.not_reachable_deleteEdges h, fun hxy ↦ ?_⟩
   refine isEdgeCut_iff.mpr ⟨{z | (G.deleteEdges {e}).Reachable x z}, subset_antisymm ?_ ?_⟩
-  · have hcut := edgeCut_setOf_reachable (G.deleteEdges {e}) x
-    rwa [edgeCut_deleteEdges, sdiff_eq_empty] at hcut
+  · exact G.edgeCut_setOf_reachable_deleteEdges_subset {e} x
   · rw [singleton_subset_iff, Graph.mem_edgeCut_iff]
     refine ⟨x, y, h, Reachable.refl ?_, hxy⟩
     rw [vertexSet_deleteEdges]

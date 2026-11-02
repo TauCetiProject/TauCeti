@@ -57,7 +57,7 @@ theorem gaussianMixtureMeasure_def (p : StdSimplex ℝ≥0 ι) (m : ι → ℝ) 
 instance isProbabilityMeasure_gaussianMixtureMeasure (p : StdSimplex ℝ≥0 ι) (m : ι → ℝ)
     (v : ι → ℝ≥0) : IsProbabilityMeasure (gaussianMixtureMeasure p m v) := by
   constructor
-  simp only [gaussianMixtureMeasure_def, Measure.finsetSum_apply, Measure.smul_apply,
+  simp only [gaussianMixtureMeasure_def, _root_.sum_apply, _root_.smul_apply,
     measure_univ, smul_eq_mul, mul_one]
   exact_mod_cast p.total_of_fintype
 
@@ -67,9 +67,9 @@ theorem gaussianMixtureMeasure_eq_bind [MeasurableSpace ι] [MeasurableSingleton
     gaussianMixtureMeasure p m v =
       (categoricalMeasure p).bind fun i ↦ gaussianReal (m i) (v i) := by
   ext s hs
-  rw [gaussianMixtureMeasure_def, Measure.finsetSum_apply,
+  rw [gaussianMixtureMeasure_def, _root_.sum_apply,
     Measure.bind_apply hs Measurable.of_discrete.aemeasurable, lintegral_fintype]
-  simp only [categoricalMeasure_singleton, Measure.smul_apply, smul_eq_mul, mul_comm]
+  simp only [categoricalMeasure_singleton, _root_.smul_apply, smul_eq_mul, mul_comm]
 
 /-- A mixture of identical Gaussian components is that Gaussian law. -/
 @[simp]
@@ -98,7 +98,7 @@ theorem measurable_gaussianMixtureMeasure :
     (measurable_pi_apply i).comp StdSimplex.measurable_toFun_comp_weights
   simp only [gaussianMixtureMeasure_def]
   refine Finset.measurable_sum _ fun i _ ↦ Measure.measurable_measure.mpr fun s hs ↦ ?_
-  simp only [Measure.smul_apply, smul_eq_mul]
+  simp only [_root_.smul_apply, smul_eq_mul]
   have hg : Measurable fun z : StdSimplex ℝ≥0 ι × (ι → ℝ) × (ι → ℝ≥0) ↦
       gaussianReal (z.2.1 i) (z.2.2 i) :=
     measurable_gaussianReal.comp

@@ -180,7 +180,7 @@ private theorem shiftAlgHom_prod_ι_unitTensor (n : ℕ) (m : Fin n → M) :
   induction n with
   | zero => simp [unitTensor, Subsingleton.elim m isEmptyElim]
   | succ n ih =>
-    rw [Fin.prod_univ_succ, map_mul, Subalgebra.coe_mul, Module.End.mul_apply, ih,
+    rw [Fin.prod_univ_succ, map_mul, Subalgebra.coe_mul, mul_apply_eq_comp, ih,
       coe_shiftAlgHom_ι, shiftMul_single, consMul_tprod, ← Fin.tail_def, Fin.cons_self_tail]
 
 /-- Extraction of the degree-`n` symmetric tensor from the symmetric algebra: a left inverse of
