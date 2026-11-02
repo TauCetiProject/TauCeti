@@ -39,6 +39,7 @@ variable {X Y S T U : Scheme.{u}} (π : X ⟶ S) (p : ℕ) [Fact p.Prime]
   (hS : (p : Γ(S, ⊤)) = 0)
 
 /-- Adding a zero twist on the right is the canonical zeroth-twist identification. -/
+@[reassoc]
 theorem iterateFrobeniusTwistAddIso_zero_right (m : ℕ) :
     (π.iterateFrobeniusTwistAddIso p hS m 0).hom ≫
         (pullback.congrHom rfl
@@ -49,6 +50,7 @@ theorem iterateFrobeniusTwistAddIso_zero_right (m : ℕ) :
   · simpa [pullback.condition] using π.iterateFrobeniusTwistAddIso_hom_snd p hS m 0
 
 /-- Adding a zero twist on the left agrees with pulling back the zeroth-twist identification. -/
+@[reassoc]
 theorem iterateFrobeniusTwistAddIso_zero_left (n : ℕ) :
     (π.iterateFrobeniusTwistAddIso p hS 0 n).hom ≫
         (pullback.congrHom rfl
@@ -60,6 +62,7 @@ theorem iterateFrobeniusTwistAddIso_zero_left (n : ℕ) :
 
 /-- Combining three successive twists is independent of parenthesization, with the target
 identified along associativity of the sum of exponents. -/
+@[reassoc]
 theorem iterateFrobeniusTwistAddIso_assoc (m n r : ℕ) :
     pullback.map _ _ _ (S.iterateFrobenius p hS r)
         (π.iterateFrobeniusTwistAddIso p hS m n).hom (𝟙 S) (𝟙 S)
@@ -73,6 +76,7 @@ theorem iterateFrobeniusTwistAddIso_assoc (m n r : ℕ) :
   apply pullback.hom_ext <;> simp [Category.assoc]
 
 /-- The comparison for a successor exponent is the addition comparison for exponent one. -/
+@[reassoc]
 theorem iterateFrobeniusTwistAddIso_one_right (n : ℕ) :
     (pullback.congrHom rfl (S.iterateFrobenius_one hS)).hom ≫
         (π.iterateFrobeniusTwistSuccIso p hS n).hom =
@@ -80,6 +84,7 @@ theorem iterateFrobeniusTwistAddIso_one_right (n : ℕ) :
   apply pullback.hom_ext <;> simp [Category.assoc]
 
 /-- The addition comparison is natural in morphisms of schemes over the base. -/
+@[reassoc]
 theorem iterateFrobeniusTwistAddIso_naturality (πY : Y ⟶ S) (g : X ⟶ Y)
     (hg : g ≫ πY = π) (m n : ℕ) :
     pullback.map _ _ _ (S.iterateFrobenius p hS n)
@@ -94,6 +99,7 @@ theorem iterateFrobeniusTwistAddIso_naturality (πY : Y ⟶ S) (g : X ⟶ Y)
 
 /-- Combining two twists commutes with arbitrary base change. Both routes project from
 the double twist of the base-changed scheme to the sum twist of the original scheme. -/
+@[reassoc]
 theorem iterateFrobeniusTwistAddIso_baseChange (m n : ℕ) (f : T ⟶ S) :
     ((pullback.snd π f).iterateFrobeniusTwistAddIso p (natCast_eq_zero_of_hom f hS)
         m n).hom ≫ π.iterateFrobeniusTwistMap p hS (m + n) f =
@@ -113,6 +119,7 @@ theorem iterateFrobeniusTwistMap_id (n : ℕ) :
 
 /-- Two successive base changes give the same twist projection as their composite. The
 source comparison is the pullback of the canonical comparison of successive base changes. -/
+@[reassoc]
 theorem iterateFrobeniusTwistMap_comp (n : ℕ) (f : T ⟶ S) (g : U ⟶ T) :
     (pullback.snd π f).iterateFrobeniusTwistMap p (natCast_eq_zero_of_hom f hS) n g ≫
         π.iterateFrobeniusTwistMap p hS n f =
