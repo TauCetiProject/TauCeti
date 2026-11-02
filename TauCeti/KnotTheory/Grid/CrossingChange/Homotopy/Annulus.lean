@@ -269,7 +269,7 @@ private theorem pentagonPair_squares {S₁ S₂ : Finset (Fin n × Fin n)} {B T 
 /-- A product over squares of the variable of the exchanged column at each `O`-marking of the
 exchanged diagram, the weight of one of its pentagons, is the product of the variables of the
 `O`-markings of `G` in those squares read in `G` by exchanging the columns `a` and `b`. -/
-private theorem prod_ite_swapColumns_OSet (S : Finset (Fin n × Fin n)) :
+theorem prod_ite_swapColumns_OSet (S : Finset (Fin n × Fin n)) :
     (∏ p ∈ S, if p ∈ (G.swapColumns a b).OSet then MvPolynomial.X (Equiv.swap a b p.1)
         else (1 : MvPolynomial (Fin n) R)) =
       ∏ c ∈ G.OColumnsOfSquares
@@ -282,7 +282,7 @@ private theorem prod_ite_swapColumns_OSet (S : Finset (Fin n × Fin n)) :
 
 /-- The weight of a pentagon of the exchanged diagram, read in `G` by exchanging the columns `a`
 and `b`. -/
-private theorem pentagonWeight_withTurnRow {u v : GridState n}
+theorem pentagonWeight_withTurnRow {u v : GridState n}
     (Q : GridPentagonBetween a t u v) :
     (G.swapColumns a b).pentagonWeight R (C.withTurnRow t) Q =
       ∏ c ∈ G.OColumnsOfSquares

@@ -76,6 +76,38 @@ private theorem initialTerminal_reverse_squares :
     Equiv.swap_apply_right, Q.mk_mem_coveredSquares_left_column,
     Q.mk_mem_coveredSquares_right_column, and_self]
 
+/-- On a column with overlapping pentagon arcs, recutting preserves both multiplicities. -/
+private theorem initialTerminal_recut_column {u v : GridState n}
+    (D : GridRectangleBetween u v) {S₁ S₂ : Finset (Fin n × Fin n)}
+    {p : Fin n × Fin n} {B s t : Fin n}
+    (ht : t ∈ Grid.cIco B D.top) (hst : t ∈ Grid.cIoo s D.top)
+    (hP : p ∈ S₁ ↔ p.2 ∈ Grid.cIoo s D.top)
+    (hQ : p ∈ S₂ ↔ p.2 ∈ Grid.cIco B t)
+    (hrect : p ∈ D.toGridRectangle.coveredSquares ↔ p.2 ∈ Grid.cIco B D.top) :
+    (p ∈ S₁ ∨ p ∈ S₂ ↔ p.2 ∈ Grid.cIoo s t ∨ p ∈ D.toGridRectangle.coveredSquares) ∧
+      (p ∈ S₁ ∧ p ∈ S₂ ↔ p.2 ∈ Grid.cIoo s t ∧ p ∈ D.toGridRectangle.coveredSquares) := by
+  have hu := Finset.ext_iff.mp (Grid.cIoo_union_cIco_eq_union_of_mem_cIoo ht hst) p.2
+  have hi := Finset.ext_iff.mp (Grid.cIoo_inter_cIco_eq_inter_of_mem_cIoo ht hst) p.2
+  simp only [Finset.mem_union, Finset.mem_inter] at hu hi
+  grind only
+
+/-- On the other column, deleting the closed turn arc leaves disjoint pentagon arcs. -/
+private theorem initialTerminal_cut_column {u v : GridState n}
+    (D : GridRectangleBetween u v) {S₁ S₂ : Finset (Fin n × Fin n)}
+    {p : Fin n × Fin n} {s t : Fin n}
+    (hs : s ∈ Grid.cIco D.bottom D.top) (hst : t ∈ Grid.cIoo s D.top)
+    (hP : p ∈ S₁ ↔ p.2 ∈ Grid.cIco D.bottom s)
+    (hQ : p ∈ S₂ ↔ p.2 ∈ Grid.cIoo t D.top)
+    (hrect : p ∈ D.toGridRectangle.coveredSquares ↔
+      p.2 ∈ Grid.cIco D.bottom D.top) :
+    (p ∈ S₁ ∨ p ∈ S₂ ↔ p ∈ D.toGridRectangle.coveredSquares ∧
+      p.2 ∉ insert t (Grid.cIco s t)) ∧ ¬(p ∈ S₁ ∧ p ∈ S₂) := by
+  have hu := Finset.ext_iff.mp (Grid.cIco_union_cIoo_eq_sdiff_of_mem_cIoo hs hst) p.2
+  have hd : p.2 ∈ Grid.cIco D.bottom s → p.2 ∉ Grid.cIoo t D.top :=
+    fun hr => Finset.disjoint_left.mp (Grid.disjoint_cIco_cIoo_of_mem_cIoo hs hst) hr
+  simp only [Finset.mem_union, Finset.mem_sdiff] at hu
+  grind only
+
 /-- The two cyclic turn orders give a hexagon composite with the same square multiplicities. -/
 private theorem exists_initialTerminal_square_match (hst : C.turnRow ≠ t) :
     ∃ F : GridHexagonCompositeDecomposition a C.turnRow t x z,
@@ -98,41 +130,25 @@ private theorem exists_initialTerminal_square_match (hst : C.turnRow ≠ t) :
       Q.toGridRectangleBetween⟩
     refine ⟨F, by simp [F, GridHexagonRectangleDecomposition.toRectangleDecomposition, H], ?_, ?_⟩
     all_goals
-      ext p
+      ext ⟨c, r⟩
+      have hrecut := initialTerminal_recut_column Q.toGridRectangleBetween ht
+        (by simpa only [htop] using hturn)
+        (by simpa only [htop] using P.mk_mem_coveredSquares_left_column r)
+        (hcol r).1 (Q.mk_mem_toGridRectangle_coveredSquares_left_column r)
+      have hcut := initialTerminal_cut_column P.toGridRectangleBetween hs hturn
+        (P.mk_mem_coveredSquares_right_column r)
+        (by simpa only [htop] using (hcol r).2)
+        (P.mk_mem_toGridRectangle_coveredSquares_right_column r)
+      have hPa := P.mk_notMem_toGridRectangle_coveredSquares_left_column r
+      have hQb := Q.mk_notMem_toGridRectangle_coveredSquares_right_column r
+      have hab := C.column_ne_next
       simp only [firstCrossingSquares, secondCrossingSquares, F,
         GridHexagonRectangleDecomposition.hexagon, GridHexagonRectangleDecomposition.rectangle,
         Sum.elim_inl, GridCommutationHexagonBetween.crossingCoveredSquares_inr,
         Finset.mem_union, Finset.mem_inter, GridInitialHexagonBetween.mem_crossingCoveredSquares]
       dsimp only [H]
-      by_cases ha : p.1 = a
-      · obtain ⟨c, r⟩ := p
-        dsimp at ha
-        subst c
-        have hQ := (hcol r).1
-        have hP := P.mk_mem_coveredSquares_left_column r
-        have hrect := P.mk_notMem_toGridRectangle_coveredSquares_left_column r
-        have hQr := Q.mk_mem_toGridRectangle_coveredSquares_left_column r
-        simp only [hQ, hP, hrect, C.column_ne_next, hQr, htop]
-        have hu := Finset.ext_iff.mp (Grid.cIoo_union_cIco_eq_union_of_mem_cIoo ht' hturn) r
-        have hi := Finset.ext_iff.mp (Grid.cIoo_inter_cIco_eq_inter_of_mem_cIoo ht' hturn) r
-        simp only [Finset.mem_union, Finset.mem_inter] at hu hi
-        grind only
-      · by_cases hb : p.1 = b
-        · obtain ⟨c, r⟩ := p
-          dsimp at hb
-          subst c
-          have hQ := (hcol r).2
-          have hP := P.mk_mem_coveredSquares_right_column r
-          have hrect := P.mk_mem_toGridRectangle_coveredSquares_right_column r
-          have hQr := Q.mk_notMem_toGridRectangle_coveredSquares_right_column r
-          simp only [hQ, hP, hrect, C.column_ne_next.symm, hQr, htop]
-          have hu := Finset.ext_iff.mp (Grid.cIco_union_cIoo_eq_sdiff_of_mem_cIoo hs hturn) r
-          have hd : r ∈ Grid.cIco P.bottom C.turnRow → r ∉ Grid.cIoo t P.top :=
-            fun hr => Finset.disjoint_left.mp (Grid.disjoint_cIco_cIoo_of_mem_cIoo hs hturn) hr
-          simp only [Finset.mem_union, Finset.mem_sdiff] at hu
-          grind only
-        · simp only [hoff p ha hb, P.mem_coveredSquares_iff_of_ne ha hb, ha, hb,
-            false_and, not_false_eq_true, and_true, or_false]
+      by_cases ha : c = a <;> by_cases hb : c = b <;>
+        grind only [P.mem_coveredSquares_iff_of_ne]
   -- In the other turn order the second rectangle, rather than the first, bears the hexagon.
   · have hturnQ : C.turnRow ∈ Grid.cIoo t Q.top := by rwa [htop]
     let H : GridHexagonBetween a t C.turnRow y z :=
@@ -141,41 +157,23 @@ private theorem exists_initialTerminal_square_match (hst : C.turnRow ≠ t) :
       P.toGridRectangleBetween, .inl H⟩
     refine ⟨F, by simp [F, GridRectangleHexagonDecomposition.toRectangleDecomposition, H], ?_, ?_⟩
     all_goals
-      ext p
+      ext ⟨c, r⟩
+      have hcut := initialTerminal_cut_column Q.toGridRectangleBetween ht hturnQ
+        (hcol r).1 (by simpa only [htop] using P.mk_mem_coveredSquares_left_column r)
+        (Q.mk_mem_toGridRectangle_coveredSquares_left_column r)
+      have hrecut := initialTerminal_recut_column P.toGridRectangleBetween hs hturn
+        (by simpa only [htop] using (hcol r).2) (P.mk_mem_coveredSquares_right_column r)
+        (P.mk_mem_toGridRectangle_coveredSquares_right_column r)
+      have hPa := P.mk_notMem_toGridRectangle_coveredSquares_left_column r
+      have hQb := Q.mk_notMem_toGridRectangle_coveredSquares_right_column r
+      have hab := C.column_ne_next
       simp only [firstCrossingSquares, secondCrossingSquares, F,
         GridRectangleHexagonDecomposition.hexagon, GridRectangleHexagonDecomposition.rectangle,
         Sum.elim_inr, GridCommutationHexagonBetween.crossingCoveredSquares_inl,
         Finset.mem_union, Finset.mem_inter, GridHexagonBetween.mem_crossingCoveredSquares]
       dsimp only [H]
-      by_cases ha : p.1 = a
-      · obtain ⟨c, r⟩ := p
-        dsimp at ha
-        subst c
-        have hQ := (hcol r).1
-        have hP := P.mk_mem_coveredSquares_left_column r
-        have hrect := P.mk_notMem_toGridRectangle_coveredSquares_left_column r
-        have hQr := Q.mk_mem_toGridRectangle_coveredSquares_left_column r
-        simp only [hQ, hP, hrect, hQr, C.column_ne_next, htop]
-        have hu := Finset.ext_iff.mp (Grid.cIco_union_cIoo_eq_sdiff_of_mem_cIoo ht' hturn) r
-        have hd : r ∈ Grid.cIco Q.bottom t → r ∉ Grid.cIoo C.turnRow P.top :=
-          fun hr => Finset.disjoint_left.mp (Grid.disjoint_cIco_cIoo_of_mem_cIoo ht' hturn) hr
-        simp only [Finset.mem_union, Finset.mem_sdiff] at hu
-        grind only
-      · by_cases hb : p.1 = b
-        · obtain ⟨c, r⟩ := p
-          dsimp at hb
-          subst c
-          have hQ := (hcol r).2
-          have hP := P.mk_mem_coveredSquares_right_column r
-          have hrect := P.mk_mem_toGridRectangle_coveredSquares_right_column r
-          have hQr := Q.mk_notMem_toGridRectangle_coveredSquares_right_column r
-          simp only [hQ, hP, hrect, hQr, C.column_ne_next.symm, htop]
-          have hu := Finset.ext_iff.mp (Grid.cIoo_union_cIco_eq_union_of_mem_cIoo hs hturn) r
-          have hi := Finset.ext_iff.mp (Grid.cIoo_inter_cIco_eq_inter_of_mem_cIoo hs hturn) r
-          simp only [Finset.mem_union, Finset.mem_inter] at hu hi
-          grind only
-        · simp only [hoff p ha hb, P.mem_coveredSquares_iff_of_ne ha hb, ha, hb,
-            false_and, not_false_eq_true, and_true, or_false]
+      by_cases ha : c = a <;> by_cases hb : c = b <;>
+        grind only [P.mem_coveredSquares_iff_of_ne]
 
 end Geometry
 
@@ -217,13 +215,8 @@ private theorem initialTerminal_counted_match {x y z : GridState n}
           if p ∈ G.OSet then MvPolynomial.X p.1 else 1) := by
     rw [← Finset.prod_union_inter (s₁ := firstCrossingSquares C t F),
       ← Finset.prod_union_inter (s₁ := P.coveredSquares), hu, hi]
-  have hQweight : (G.swapColumns a b).pentagonWeight R (C.withTurnRow t) Q =
-      ∏ p ∈ Q.coveredSquares.map σ,
-        if p ∈ G.OSet then MvPolynomial.X p.1 else (1 : MvPolynomial (Fin n) R) := by
-    rw [pentagonWeight_eq_prod_coveredSquares, Finset.prod_map]
-    refine Finset.prod_congr rfl fun p _ => ?_
-    simp
-  rw [G.rename_initialPentagonWeight, hQweight]
+  rw [G.rename_initialPentagonWeight, pentagonWeight_withTurnRow,
+    ← G.prod_ite_OSet_eq_prod_OColumnsOfSquares]
   refine ⟨?_, ?_⟩
   · cases F with
     | inl F =>
