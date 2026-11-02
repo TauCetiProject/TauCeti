@@ -17,8 +17,8 @@ norm two. The signed shell Lie algebra `Matrix.ShellLieAlgebra B` is free of fin
 with integral basis the Cartan vectors `H_(αᵢ)` and the root vectors `x_a`, `a ∈ Φ`, so its Killing
 form `κ(x, y) = tr (ad x ∘ ad y)` is the trace form of a finite free module. Finiteness of `Φ`,
 automatic for positive definite `B` (`Matrix.PosDef.finite_normTwoShell`), is taken as an instance
-argument by the results that compute a trace or use the finite basis. This file computes `κ` on that
-basis:
+argument only by the Cartan formula, whose statement sums over `Φ`; the other results derive it from
+positive definiteness. This file computes `κ` on that basis:
 
 * `κ(H_h, H_k) = ∑_(a ∈ Φ) ⟪h, a⟫ ⟪k, a⟫`, since `ad H_h ∘ ad H_k` kills the Cartan vectors and
   scales `x_a` by `⟪h, a⟫ ⟪k, a⟫`;
@@ -156,11 +156,12 @@ theorem two_mul_killingForm_root_root_of_add_eq_zero (hB : B.PosDef)
 
 /-- The Killing form of a Cartan vector of a norm-two vector with itself is at least `4`: the
 term `⟪a, a⟫² = 4` occurs in `κ(H_a, H_a) = ∑_(b ∈ Φ) ⟪a, b⟫²`. -/
-private theorem four_le_killingForm_cartan_root_self [Finite B.normTwoShell] (hB : B.PosDef)
+private theorem four_le_killingForm_cartan_root_self (hB : B.PosDef)
     (hev : ∀ i, Even (B i i)) (a : B.normTwoShell) :
     letI := lieRing hB hev
     4 ≤ killingForm ℤ (ShellLieAlgebra B) (cartan B a) (cartan B a) := by
   let _ := lieRing hB hev
+  have : Finite B.normTwoShell := hB.finite_normTwoShell.to_subtype
   have := Fintype.ofFinite B.normTwoShell
   rw [killingForm_cartan_cartan hB hev,
     ← Finset.add_sum_erase _ _ (Finset.mem_univ a), mem_normTwoShell.mp a.2]
@@ -169,7 +170,7 @@ private theorem four_le_killingForm_cartan_root_self [Finite B.normTwoShell] (hB
   omega
 
 /-- **The opposite Killing pairings are nonzero**: `κ(x_a, x_b) ≠ 0` for `a + b = 0`. -/
-theorem killingForm_root_root_ne_zero_of_add_eq_zero [Finite B.normTwoShell] (hB : B.PosDef)
+theorem killingForm_root_root_ne_zero_of_add_eq_zero (hB : B.PosDef)
     (hev : ∀ i, Even (B i i)) {a b : B.normTwoShell} (hab : (a : I → ℤ) + b = 0) :
     letI := lieRing hB hev
     killingForm ℤ (ShellLieAlgebra B) (root B a) (root B b) ≠ 0 := by
@@ -182,12 +183,13 @@ theorem killingForm_root_root_ne_zero_of_add_eq_zero [Finite B.normTwoShell] (hB
 
 /-- **The Killing form is positive definite on the Cartan vectors** when the norm-two shell spans
 the lattice: `κ(H_h, H_h) > 0` for `h ≠ 0`. -/
-theorem killingForm_cartan_self_pos [Finite B.normTwoShell] (hB : B.PosDef)
+theorem killingForm_cartan_self_pos (hB : B.PosDef)
     (hev : ∀ i, Even (B i i)) (hspan : Submodule.span ℤ B.normTwoShell = ⊤) {h : I → ℤ}
     (hh : h ≠ 0) :
     letI := lieRing hB hev
     0 < killingForm ℤ (ShellLieAlgebra B) (cartan B h) (cartan B h) := by
   let _ := lieRing hB hev
+  have : Finite B.normTwoShell := hB.finite_normTwoShell.to_subtype
   have := Fintype.ofFinite B.normTwoShell
   rw [killingForm_cartan_cartan hB hev]
   refine lt_of_le_of_ne (Finset.sum_nonneg fun a _ ↦ mul_self_nonneg _) fun h0 ↦ hh ?_
@@ -205,11 +207,12 @@ theorem killingForm_cartan_self_pos [Finite B.normTwoShell] (hB : B.PosDef)
 /-- **The signed shell Lie algebra is a Killing Lie algebra over `ℤ`** when its norm-two shell
 spans the lattice, for instance for the Cartan matrix of a simply laced Dynkin diagram: its Killing
 form is nondegenerate. -/
-theorem isKilling [Finite B.normTwoShell] (hB : B.PosDef) (hev : ∀ i, Even (B i i))
+theorem isKilling (hB : B.PosDef) (hev : ∀ i, Even (B i i))
     (hspan : Submodule.span ℤ B.normTwoShell = ⊤) :
     letI := lieRing hB hev
     IsKilling ℤ (ShellLieAlgebra B) := by
   let _ := lieRing hB hev
+  have : Finite B.normTwoShell := hB.finite_normTwoShell.to_subtype
   have := Fintype.ofFinite B.normTwoShell
   refine ⟨(LieSubmodule.eq_bot_iff _).mpr fun x hx ↦ ?_⟩
   have hx' (y : ShellLieAlgebra B) : killingForm ℤ (ShellLieAlgebra B) x y = 0 := by
@@ -246,12 +249,13 @@ in particular over `ℚ`, when its norm-two shell spans the lattice: the Killing
 extension is the scalar extension of the integral Killing form, which is nondegenerate by
 `Matrix.ShellLieAlgebra.isKilling`. -/
 theorem isKilling_baseChange (A : Type*) [CommRing A] [IsDomain A] [CharZero A]
-    [Finite B.normTwoShell] (hB : B.PosDef) (hev : ∀ i, Even (B i i))
+    (hB : B.PosDef) (hev : ∀ i, Even (B i i))
     (hspan : Submodule.span ℤ B.normTwoShell = ⊤) :
     letI := lieRing hB hev
     IsKilling A (A ⊗[ℤ] ShellLieAlgebra B) := by
   let _ := lieRing hB hev
   have : FaithfulSMul ℤ A := (faithfulSMul_iff_algebraMap_injective ℤ A).mpr Int.cast_injective
+  have : Finite B.normTwoShell := hB.finite_normTwoShell.to_subtype
   have := isKilling hB hev hspan
   exact (TauCeti.isKilling_baseChange_iff ℤ A _).mpr this
 
