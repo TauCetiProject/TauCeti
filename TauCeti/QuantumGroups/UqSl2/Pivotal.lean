@@ -45,7 +45,7 @@ def pivotalElement : GroupLike ℂ (UqSl2 q) :=
 theorem pivotalElement_val : (pivotalElement q : UqSl2 q) = kInv q := (rfl)
 
 /-- The square of the antipode is conjugation by the pivotal element. -/
-theorem antipode_antipode_pivotalElement (x : UqSl2 q) :
+theorem antipode_antipode_eq_pivotalElement_mul_mul_antipode (x : UqSl2 q) :
     HopfAlgebra.antipode ℂ (HopfAlgebra.antipode ℂ x) =
       (pivotalElement q : UqSl2 q) * x *
         HopfAlgebra.antipode ℂ (pivotalElement q : UqSl2 q) := by
@@ -65,7 +65,7 @@ def finiteModulePivotalCategory :
     letI := finiteModuleRigidCategory q
     PivotalCategory (FiniteHopfModuleCat ℂ (UqSl2 q)) :=
   FiniteHopfModuleCat.pivotalCategory (antipode_bijective q)
-    (pivotalElement q) (antipode_antipode_pivotalElement q)
+    (pivotalElement q) (antipode_antipode_eq_pivotalElement_mul_mul_antipode q)
 
 /-- The named pivotal structure specializes the group-like pivot construction at `K⁻¹`.
 This equation transports results about that construction to the named structure. -/
@@ -73,7 +73,7 @@ theorem finiteModulePivotalCategory_def :
     letI := finiteModuleRigidCategory q
     finiteModulePivotalCategory q =
       FiniteHopfModuleCat.pivotalCategory (antipode_bijective q)
-        (pivotalElement q) (antipode_antipode_pivotalElement q) :=
+        (pivotalElement q) (antipode_antipode_eq_pivotalElement_mul_mul_antipode q) :=
   (rfl)
 
 -- Keep this as a named rewrite: the generic rule simplifies it here, but does not match through
@@ -105,7 +105,7 @@ theorem rightTrace_apply {M : FiniteHopfModuleCat ℂ (UqSl2 q)} (f : M ⟶ M)
   rw [finiteModulePivotalCategory_def]
   simpa only [pivotalElement_val] using
     FiniteHopfModuleCat.rightTrace_apply (antipode_bijective q) (pivotalElement q)
-      (antipode_antipode_pivotalElement q) f c
+      (antipode_antipode_eq_pivotalElement_mul_mul_antipode q) f c
 
 /-- For the named pivotal structure, the left trace is the ordinary trace twisted by `K`.
 This formula requires only `q ≠ 0`. -/
@@ -122,6 +122,6 @@ theorem leftTrace_apply {M : FiniteHopfModuleCat ℂ (UqSl2 q)} (f : M ⟶ M)
   rw [finiteModulePivotalCategory_def]
   simpa only [pivotalElement_val, antipode_kInv] using
     FiniteHopfModuleCat.leftTrace_apply (antipode_bijective q) (pivotalElement q)
-      (antipode_antipode_pivotalElement q) f c
+      (antipode_antipode_eq_pivotalElement_mul_mul_antipode q) f c
 
 end TauCeti.UqSl2
