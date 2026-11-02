@@ -141,8 +141,11 @@ theorem isZero_cechCohomology_obj_of_locallyZero [CompactSpace X] [NormalSpace X
     ((cechComplexMap P ψ).f n (((cechComplexFunctor U.opens).obj P).iCycles n k))
   have hk : HomologicalComplex.cyclesMap (cechComplexMap P (φ ≫ ψ)) n k = 0 := by
     apply (ModuleCat.mono_iff_injective (HomologicalComplex.iCycles _ n)).1 inferInstance
-    rw [← ConcreteCategory.comp_apply, HomologicalComplex.cyclesMap_i, cechComplexMap_comp,
-      HomologicalComplex.comp_f, ConcreteCategory.comp_apply, ConcreteCategory.comp_apply, hφ,
+    have hnat := ConcreteCategory.congr_hom
+      (HomologicalComplex.cyclesMap_i (cechComplexMap P (φ ≫ ψ)) n) k
+    simp only [ConcreteCategory.comp_apply] at hnat
+    rw [hnat]
+    simp only [cechComplexMap_comp, HomologicalComplex.comp_f, ConcreteCategory.comp_apply, hφ,
       map_zero]
   have key : HomologicalComplex.homologyMap (cechComplexMap P (φ ≫ ψ)) n
       (((cechComplexFunctor U.opens).obj P).homologyπ n k) = 0 :=
