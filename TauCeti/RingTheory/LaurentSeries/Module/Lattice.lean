@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.LaurentSeries.Lattice
-public import TauCeti.RingTheory.HahnSeries.Multiplication
 public import Mathlib.Algebra.Module.Submodule.Pointwise
 
 /-!
