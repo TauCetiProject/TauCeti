@@ -99,12 +99,6 @@ theorem map_mul_val_inv_unitT (hτ : IsMarkovTrace z τ) {n : ℕ}
     hτ.map_mul_T hx, smul_eq_mul]
   ring
 
-/-- Conjugation of a braid does not change its Hecke trace. -/
-theorem map_braidHom_conj (hτ : IsMarkovTrace z τ) {n : ℕ} (b c : BraidGroup n) :
-    τ (braidHom R q n (c * b * c⁻¹)) = τ (braidHom R q n b) := by
-  simp only [map_mul, map_inv, Units.val_mul]
-  rw [hτ.map_mul_comm, ← mul_assoc, Units.inv_mul, one_mul]
-
 /-- Positive stabilization has constant `z`, independently of the strand count. -/
 theorem map_braidHom_stabilize (hτ : IsMarkovTrace z τ) {n : ℕ} (b : BraidGroup (n + 1)) :
     τ (braidHom R q (n + 2) (BraidGroup.strandIncl b * BraidGroup.sigma (Fin.last n))) =

@@ -75,9 +75,9 @@ theorem heckeTrace_def (β : MarkovBraid) (C : R) (l : Rˣ) :
 
 /-- The identity braid on `n + 1` strands has value `C ^ n`. In particular the one-strand
 unknot has value one and the two-strand unlink has value `C`. -/
-theorem heckeTrace_one (hτ : IsMarkovTrace z τ) (C : R) (l : Rˣ) :
+theorem heckeTrace_one (h₁ : τ 1 = 1) (C : R) (l : Rˣ) :
     heckeTrace ⟨n, 1⟩ τ C l = C ^ n := by
-  simp [heckeTrace_def, hτ.map_one]
+  simp [heckeTrace_def, h₁]
 
 /-- **Adding an uncrossed strand multiplies the normalized trace by `C`**: the closure gains a
 split unknot. -/
@@ -89,16 +89,16 @@ theorem heckeTrace_strandIncl (τ : InfiniteTypeAHeckeAlgebra R q →ₗ[R] R) (
 
 /-- The only braid on one strand is trivial, and its closure, the unknot, has normalized
 trace `1`. -/
-theorem heckeTrace_one_strand (hτ : IsMarkovTrace z τ) (C : R) (l : Rˣ)
+theorem heckeTrace_one_strand (h₁ : τ 1 = 1) (C : R) (l : Rˣ)
     (b : BraidGroup 1) : heckeTrace ⟨0, b⟩ τ C l = 1 := by
-  rw [eq_one_of_le_one le_rfl b, heckeTrace_one hτ, pow_zero]
+  rw [eq_one_of_le_one le_rfl b, heckeTrace_one h₁, pow_zero]
 
-/-- Conjugation preserves the normalized Hecke trace. -/
-theorem heckeTrace_conj (hτ : IsMarkovTrace z τ) (C : R) (l : Rˣ)
+/-- Conjugation preserves the normalized Hecke trace of a tracial linear functional. -/
+theorem heckeTrace_conj (htr : ∀ x y, τ (x * y) = τ (y * x)) (C : R) (l : Rˣ)
     (b c : BraidGroup (n + 1)) :
     heckeTrace ⟨n, c * b * c⁻¹⟩ τ C l = heckeTrace ⟨n, b⟩ τ C l := by
   simp only [heckeTrace_def]
-  rw [hτ.map_braidHom_conj]
+  rw [map_braidHom_conj htr]
   simp [map_mul, map_inv]
 
 /-- Positive Markov stabilization preserves the normalized Hecke trace when
@@ -191,7 +191,7 @@ theorem IsMarkovMove.heckeTrace_eq {β γ : MarkovBraid} (h : IsMarkovMove β γ
     (hneg : C * (↑l⁻¹ : R) * (z - ((q : R) - ↑q⁻¹)) = 1) :
     β.heckeTrace τ C l = γ.heckeTrace τ C l := by
   cases h with
-  | conj b c => exact MarkovBraid.heckeTrace_conj hτ C l b c
+  | conj b c => exact MarkovBraid.heckeTrace_conj hτ.map_mul_comm C l b c
   | stabilize b => exact MarkovBraid.heckeTrace_stabilize hτ C l hpos b
   | stabilizeInv b => exact MarkovBraid.heckeTrace_stabilizeInv hτ C l hneg b
 

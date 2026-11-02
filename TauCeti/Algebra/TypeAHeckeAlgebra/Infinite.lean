@@ -569,6 +569,13 @@ theorem braidHom_sigma {n : ℕ} (i : Fin (n - 1)) :
     braidHom R q n (BraidGroup.sigma i) = unitT q i :=
   BraidGroup.lift_sigma _ _ _ i
 
+/-- Conjugation of a braid does not change its Hecke trace for a tracial linear functional. -/
+theorem map_braidHom_conj {τ : InfiniteTypeAHeckeAlgebra R q →ₗ[R] R}
+    (htr : ∀ x y, τ (x * y) = τ (y * x)) {n : ℕ} (b c : BraidGroup n) :
+    τ (braidHom R q n (c * b * c⁻¹)) = τ (braidHom R q n b) := by
+  simp only [map_mul, map_inv, Units.val_mul]
+  rw [htr, ← mul_assoc, Units.inv_mul, one_mul]
+
 /-- The Hecke skein identity holds for every linear functional, without a trace hypothesis,
 and in an arbitrary braid context. -/
 theorem _root_.LinearMap.map_braidHom_skein (τ : InfiniteTypeAHeckeAlgebra R q →ₗ[R] R)
