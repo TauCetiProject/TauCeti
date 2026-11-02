@@ -246,6 +246,9 @@ theorem mapDGShiftClosure_mapDGAdditiveClosure_dgMap_shiftFunctor (n : ℤ)
       (DGShiftClosure.shiftFunctor R n).mapDGAdditiveClosure.dgMap p
         (F.mapDGShiftClosure.mapDGAdditiveClosure.dgMap p f) :=
   DGAdditiveClosure.dgHom_ext R fun i j ↦ by
+    -- `dgHomEquiv_mapDGAdditiveClosureHom` states its objects as structure literals, which match
+    -- `G.mapDGAdditiveClosure.obj M` only once `M` is given: the outer entry of the right side is
+    -- rewritten by naming its objects.
     rw [dgMap_mapDGAdditiveClosure, dgHomEquiv_mapDGAdditiveClosureHom,
       dgMap_mapDGAdditiveClosure, dgHomEquiv_mapDGAdditiveClosureHom, dgMap_mapDGShiftClosure,
       DGShiftClosure.dgMap_shiftFunctor, dgMap_mapDGAdditiveClosure,

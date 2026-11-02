@@ -27,8 +27,9 @@ preserves one-sided twisted complexes, the objects of the pretriangulated envelo
   morphisms of the images.  Its classes make `H⁰(F)` commute with the shift of the homotopy
   categories (`Functor.CommShift`).
 * **Extensions and cones.** A DG functor preserves extensions up to a closed isomorphism built
-  from the biproduct structure maps (`TauCeti.DGTwistedObject.mapExtensionIso`), for any DG
-  functor between the underlying categories, not only for functors on shift closures.  Applied to
+  from the biproduct structure maps (`CategoryTheory.EnrichedFunctor.mapExtensionIso`, in
+  `TauCeti/CategoryTheory/DG/Twisted/Extension.lean`), for any DG functor between the underlying
+  categories, not only for functors on shift closures.  Applied to
   a cone, which is an extension along `P⟦1⟧ ⟶ P ⟶ Q`, and combined with the shift isomorphism,
   this identifies the image of the cone triangle of `u` with the cone triangle of `F u`
   (`CategoryTheory.EnrichedFunctor.mapConeTriangleIso`).  Since the distinguished triangles are
@@ -39,8 +40,6 @@ along a DG functor between them, for instance along a quasi-equivalence.
 
 ## Main definitions
 
-* `TauCeti.DGTwistedObject.mapExtensionIso`: the image of an extension is isomorphic to the
-  extension of the images.
 * `CategoryTheory.EnrichedFunctor.mapDGTwistedComplex`: the DG functor induced by a DG functor on
   twisted objects of the additive closure of the shift closure.
 * `CategoryTheory.EnrichedFunctor.mapDGTwistedComplexShiftHom`: the closed isomorphism
@@ -52,7 +51,6 @@ along a DG functor between them, for instance along a quasi-equivalence.
 
 ## Main results
 
-* `TauCeti.DGTwistedObject.IsOneSided.map`: images of one-sided twisted objects are one-sided.
 * `CategoryTheory.EnrichedFunctor.dgComp_dgMap_shiftFunctor_mapDGTwistedComplexShiftHom`: the
   shift isomorphism is natural.
 * `CategoryTheory.EnrichedFunctor.dgHomEquiv_dgMap_shiftAddHom`: the induced functor preserves the
@@ -71,216 +69,6 @@ along a DG functor between them, for instance along a quasi-equivalence.
 public section
 
 open CategoryTheory Pretriangulated
-
-namespace TauCeti
-
-universe v u u₂
-
-namespace DGTwistedObject
-
-
-variable {R : Type v} [CommRing R] {E : Type u} {E' : Type u₂} [DGCategory R E]
-  [DGCategory R E'] (G : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) E E')
-
-/-! ### Images of extensions -/
-
-section extension
-
-variable {P Q : DGTwistedObject R (DGAdditiveClosure E)} {g : DGHom R 1 Q P}
-  (hg : dgDifferential R 1 g = 0)
-
-/-- The comparison `G (extension P Q g) ⟶ extension (G P) (G Q) (G g)` of the image of an
-extension under the DG functor induced by `G` with the extension of the images: the images of
-the projections followed by the inclusions of the target. -/
-noncomputable def mapExtensionHom :
-    DGHom R 0 (G.mapDGAdditiveClosure.mapDGTwistedObject.obj (extension P Q g hg))
-      (extension (G.mapDGAdditiveClosure.mapDGTwistedObject.obj P)
-        (G.mapDGAdditiveClosure.mapDGTwistedObject.obj Q)
-        (G.mapDGAdditiveClosure.mapDGTwistedObject.dgMap 1 g)
-        (G.mapDGAdditiveClosure.mapDGTwistedObject.dgDifferential_dgMap_eq_zero hg)) :=
-  dgComp R (G.mapDGAdditiveClosure.mapDGTwistedObject.dgMap 0 (extensionFst R hg))
-      (extensionInl R _) (add_zero 0) +
-    dgComp R (G.mapDGAdditiveClosure.mapDGTwistedObject.dgMap 0 (extensionSnd R hg))
-      (extensionInr R _) (add_zero 0)
-
-/-- The comparison `extension (G P) (G Q) (G g) ⟶ G (extension P Q g)`, inverse to
-`TauCeti.DGTwistedObject.mapExtensionHom`: the projections of the source followed by the images
-of the inclusions. -/
-noncomputable def mapExtensionInv :
-    DGHom R 0 (extension (G.mapDGAdditiveClosure.mapDGTwistedObject.obj P)
-        (G.mapDGAdditiveClosure.mapDGTwistedObject.obj Q)
-        (G.mapDGAdditiveClosure.mapDGTwistedObject.dgMap 1 g)
-        (G.mapDGAdditiveClosure.mapDGTwistedObject.dgDifferential_dgMap_eq_zero hg))
-      (G.mapDGAdditiveClosure.mapDGTwistedObject.obj (extension P Q g hg)) :=
-  dgComp R (extensionFst R _)
-      (G.mapDGAdditiveClosure.mapDGTwistedObject.dgMap 0 (extensionInl R hg)) (add_zero 0) +
-    dgComp R (extensionSnd R _)
-      (G.mapDGAdditiveClosure.mapDGTwistedObject.dgMap 0 (extensionInr R hg)) (add_zero 0)
-
-/-- The comparison of the image of an extension with the extension of the images is the images of
-the projections followed by the inclusions. -/
-theorem mapExtensionHom_def :
-    mapExtensionHom G hg =
-      dgComp R (G.mapDGAdditiveClosure.mapDGTwistedObject.dgMap 0 (extensionFst R hg))
-          (extensionInl R _) (add_zero 0) +
-        dgComp R (G.mapDGAdditiveClosure.mapDGTwistedObject.dgMap 0 (extensionSnd R hg))
-          (extensionInr R _) (add_zero 0) :=
-  (rfl)
-
-/-- The inverse comparison is the projections followed by the images of the inclusions. -/
-theorem mapExtensionInv_def :
-    mapExtensionInv G hg =
-      dgComp R (extensionFst R _)
-          (G.mapDGAdditiveClosure.mapDGTwistedObject.dgMap 0 (extensionInl R hg)) (add_zero 0) +
-        dgComp R (extensionSnd R _)
-          (G.mapDGAdditiveClosure.mapDGTwistedObject.dgMap 0 (extensionInr R hg)) (add_zero 0) :=
-  (rfl)
-
-/-- The comparison of the image of an extension with the extension of the images is closed. -/
-@[simp↓]
-theorem dgDifferential_mapExtensionHom : dgDifferential R 0 (mapExtensionHom G hg) = 0 := by
-  have hfst : dgDifferential R 0
-      (G.mapDGAdditiveClosure.mapDGTwistedObject.dgMap 0 (extensionFst R hg)) =
-        -dgComp R (G.mapDGAdditiveClosure.mapDGTwistedObject.dgMap 0 (extensionSnd R hg))
-          (G.mapDGAdditiveClosure.mapDGTwistedObject.dgMap 1 g) (zero_add 1) := by
-    rw [← EnrichedFunctor.dgMap_dgDifferential, dgDifferential_extensionFst, map_neg,
-      EnrichedFunctor.dgMap_dgComp]
-  rw [mapExtensionHom_def, map_add, dgDifferential_dgComp, dgDifferential_dgComp, hfst,
-    G.mapDGAdditiveClosure.mapDGTwistedObject.dgDifferential_dgMap_eq_zero
-      (dgDifferential_extensionSnd R hg)]
-  simp only [dgDifferential_extensionInl, dgDifferential_extensionInr, neg_dgComp, zero_dgComp,
-    dgComp_zero, smul_zero, add_zero, zero_add, Int.negOnePow_zero, one_smul]
-  exact neg_add_eq_zero.2 (dgComp_assoc R _ _ _ (zero_add 1) (add_zero 1) rfl)
-
-
-/-- The image of the inclusion of `P` followed by the comparison is the inclusion of `G P`. -/
-@[simp↓]
-theorem dgComp_dgMap_extensionInl_mapExtensionHom :
-    dgComp R (G.mapDGAdditiveClosure.mapDGTwistedObject.dgMap 0 (extensionInl R hg))
-      (mapExtensionHom G hg) (add_zero 0) = extensionInl R _ := by
-  rw [mapExtensionHom_def, dgComp_add,
-    EnrichedFunctor.dgMap_dgComp_dgMap_assoc_of_eq_dgId _ (dgComp_extensionInl_extensionFst R hg),
-    EnrichedFunctor.dgMap_dgComp_dgMap_assoc_of_eq_zero _ (dgComp_extensionInl_extensionSnd R hg),
-    add_zero]
-
-/-- The image of the inclusion of `Q` followed by the comparison is the inclusion of `G Q`. -/
-@[simp↓]
-theorem dgComp_dgMap_extensionInr_mapExtensionHom :
-    dgComp R (G.mapDGAdditiveClosure.mapDGTwistedObject.dgMap 0 (extensionInr R hg))
-      (mapExtensionHom G hg) (add_zero 0) = extensionInr R _ := by
-  rw [mapExtensionHom_def, dgComp_add,
-    EnrichedFunctor.dgMap_dgComp_dgMap_assoc_of_eq_zero _ (dgComp_extensionInr_extensionFst R hg),
-    EnrichedFunctor.dgMap_dgComp_dgMap_assoc_of_eq_dgId _ (dgComp_extensionInr_extensionSnd R hg),
-    zero_add]
-
-/-- The comparison followed by the projection onto `G Q` is the image of the projection onto
-`Q`. -/
-@[simp↓]
-theorem dgComp_mapExtensionHom_extensionSnd :
-    dgComp R (mapExtensionHom G hg) (extensionSnd R _) (add_zero 0) =
-      G.mapDGAdditiveClosure.mapDGTwistedObject.dgMap 0 (extensionSnd R hg) := by
-  simp only [mapExtensionHom_def, add_dgComp,
-    dgComp_assoc R _ _ (extensionSnd R _) (add_zero 0) (add_zero 0) (add_zero 0),
-    dgComp_extensionInl_extensionSnd, dgComp_extensionInr_extensionSnd, dgComp_zero, zero_add,
-    dgComp_dgId]
-
-/-- The inclusion of `G P` followed by the inverse comparison is the image of the inclusion of
-`P`. -/
-@[simp↓]
-theorem dgComp_extensionInl_mapExtensionInv :
-    dgComp R (extensionInl R _) (mapExtensionInv G hg) (add_zero 0) =
-      G.mapDGAdditiveClosure.mapDGTwistedObject.dgMap 0 (extensionInl R hg) := by
-  simp only [mapExtensionInv_def, dgComp_add, dgComp_extensionInl_extensionFst_assoc,
-    dgComp_extensionInl_extensionSnd_assoc, add_zero]
-
-/-- The inclusion of `G Q` followed by the inverse comparison is the image of the inclusion of
-`Q`. -/
-@[simp↓]
-theorem dgComp_extensionInr_mapExtensionInv :
-    dgComp R (extensionInr R _) (mapExtensionInv G hg) (add_zero 0) =
-      G.mapDGAdditiveClosure.mapDGTwistedObject.dgMap 0 (extensionInr R hg) := by
-  simp only [mapExtensionInv_def, dgComp_add, dgComp_extensionInr_extensionFst_assoc,
-    dgComp_extensionInr_extensionSnd_assoc, zero_add]
-
-/-- The comparison of the image of an extension with the extension of the images, followed by its
-inverse, is the identity. -/
-@[simp↓]
-theorem dgComp_mapExtensionHom_mapExtensionInv :
-    dgComp R (mapExtensionHom G hg) (mapExtensionInv G hg) (add_zero 0) = dgId R _ := by
-  rw [mapExtensionHom_def, add_dgComp,
-    dgComp_assoc R _ _ _ (add_zero 0) (add_zero 0) (add_zero 0),
-    dgComp_assoc R _ _ _ (add_zero 0) (add_zero 0) (add_zero 0),
-    dgComp_extensionInl_mapExtensionInv, dgComp_extensionInr_mapExtensionInv,
-    ← EnrichedFunctor.dgMap_dgComp, ← EnrichedFunctor.dgMap_dgComp, ← map_add,
-    dgComp_extensionFst_extensionInl_add_dgComp_extensionSnd_extensionInr,
-    EnrichedFunctor.dgMap_dgId]
-
-/-- The inverse comparison followed by the comparison is the identity of the extension of the
-images. -/
-@[simp↓]
-theorem dgComp_mapExtensionInv_mapExtensionHom :
-    dgComp R (mapExtensionInv G hg) (mapExtensionHom G hg) (add_zero 0) = dgId R _ := by
-  refine extension_dgHom_ext ?_ ?_
-  · rw [← dgComp_assoc R _ _ _ (add_zero 0) (add_zero 0) (add_zero 0),
-      dgComp_extensionInl_mapExtensionInv, dgComp_dgMap_extensionInl_mapExtensionHom, dgComp_dgId]
-  · rw [← dgComp_assoc R _ _ _ (add_zero 0) (add_zero 0) (add_zero 0),
-      dgComp_extensionInr_mapExtensionInv, dgComp_dgMap_extensionInr_mapExtensionHom, dgComp_dgId]
-
-/-- The inverse comparison of the extension of the images with the image of an extension is
-closed. -/
-@[simp↓]
-theorem dgDifferential_mapExtensionInv : dgDifferential R 0 (mapExtensionInv G hg) = 0 :=
-  dgDifferential_eq_zero_of_dgComp_eq_dgId R (dgDifferential_mapExtensionHom G hg) (add_zero 0)
-    (dgComp_mapExtensionHom_mapExtensionInv G hg) (dgComp_mapExtensionInv_mapExtensionHom G hg)
-
-/-- **A DG functor preserves extensions**: the image of `extension P Q g` under the DG functor
-induced by `G` is isomorphic in the homotopy category to the extension of the images along the
-image of `g`. -/
-noncomputable def mapExtensionIso :
-    DGHomotopyCategory.of R (G.mapDGAdditiveClosure.mapDGTwistedObject.obj (extension P Q g hg)) ≅
-      DGHomotopyCategory.of R (extension (G.mapDGAdditiveClosure.mapDGTwistedObject.obj P)
-        (G.mapDGAdditiveClosure.mapDGTwistedObject.obj Q)
-        (G.mapDGAdditiveClosure.mapDGTwistedObject.dgMap 1 g)
-        (G.mapDGAdditiveClosure.mapDGTwistedObject.dgDifferential_dgMap_eq_zero hg)) where
-  hom := DGHomotopyCategory.homOf R (mapExtensionHom G hg)
-    ((mem_dgCycles R).mpr (dgDifferential_mapExtensionHom G hg))
-  inv := DGHomotopyCategory.homOf R (mapExtensionInv G hg)
-    ((mem_dgCycles R).mpr (dgDifferential_mapExtensionInv G hg))
-  hom_inv_id := DGHomotopyCategory.homOf_comp_eq_id_of_dgComp_eq_dgId R _ _
-    (dgComp_mapExtensionHom_mapExtensionInv G hg)
-  inv_hom_id := DGHomotopyCategory.homOf_comp_eq_id_of_dgComp_eq_dgId R _ _
-    (dgComp_mapExtensionInv_mapExtensionHom G hg)
-
-@[simp]
-theorem mapExtensionIso_hom :
-    (mapExtensionIso G hg).hom = DGHomotopyCategory.homOf R (mapExtensionHom G hg)
-      ((mem_dgCycles R).mpr (dgDifferential_mapExtensionHom G hg)) :=
-  (rfl)
-
-@[simp]
-theorem mapExtensionIso_inv :
-    (mapExtensionIso G hg).inv = DGHomotopyCategory.homOf R (mapExtensionInv G hg)
-      ((mem_dgCycles R).mpr (dgDifferential_mapExtensionInv G hg)) :=
-  (rfl)
-
-end extension
-
-/-! ### One-sided twisted objects -/
-
-variable {G} in
-/-- The image of a one-sided twisted object under the DG functor induced by `G` is one-sided, for
-the same levels. -/
-theorem IsOneSided.map {P : DGTwistedObject R (DGAdditiveClosure E)} (hP : P.IsOneSided) :
-    (G.mapDGAdditiveClosure.mapDGTwistedObject.obj P).IsOneSided := by
-  obtain ⟨level, h⟩ := (isOneSided_iff P).mp hP
-  refine (isOneSided_iff _).mpr ⟨level, fun i j hij ↦ ?_⟩
-  dsimp only [EnrichedFunctor.mapDGTwistedObjectObj]
-  rw [EnrichedFunctor.dgMap_mapDGAdditiveClosure,
-    EnrichedFunctor.dgHomEquiv_mapDGAdditiveClosureHom, h i j hij, map_zero]
-
-end DGTwistedObject
-
-end TauCeti
 
 namespace CategoryTheory.EnrichedFunctor
 
@@ -308,6 +96,14 @@ section shift
 
 variable (P : DGTwistedObject R (DGAdditiveClosure (DGShiftClosure C))) (n : ℤ)
 
+/-- The matrix of the image of a morphism of twisted complexes under the DG functor induced by `F`
+is the image of its matrix. -/
+theorem dgHomEquiv_mapDGTwistedComplex_dgMap
+    {P Q : DGTwistedObject R (DGAdditiveClosure (DGShiftClosure C))} {p : ℤ} (f : DGHom R p P Q) :
+    DGTwistedObject.dgHomEquiv R _ _ p (F.mapDGTwistedComplex.dgMap p f) =
+      F.mapDGShiftClosure.mapDGAdditiveClosure.dgMap p (DGTwistedObject.dgHomEquiv R P Q p f) := by
+  rw [dgMap_mapDGTwistedObject, dgHomEquiv_mapDGTwistedObjectHom]
+
 /-- The DG functor induced by `F` commutes with the shift of twisted complexes: a morphism has the
 same matrix under the two composites. -/
 theorem dgHomEquiv_mapDGTwistedComplex_dgMap_shiftFunctor
@@ -317,11 +113,8 @@ theorem dgHomEquiv_mapDGTwistedComplex_dgMap_shiftFunctor
         (F.mapDGTwistedComplex.dgMap p ((DGTwistedObject.shiftFunctor R n).dgMap p f)) =
       DGTwistedObject.dgHomEquiv R _ _ p
         ((DGTwistedObject.shiftFunctor R n).dgMap p (F.mapDGTwistedComplex.dgMap p f)) := by
-  rw [dgMap_mapDGTwistedObject, dgHomEquiv_mapDGTwistedObjectHom, dgMap_mapDGTwistedObject,
-    dgHomEquiv_mapDGTwistedObjectHom, dgMap_mapDGTwistedObject,
-    dgHomEquiv_mapDGTwistedObjectHom (DGShiftClosure.shiftFunctor R n).mapDGAdditiveClosure
-      (X := F.mapDGTwistedComplex.obj P) (Y := F.mapDGTwistedComplex.obj Q),
-    dgMap_mapDGTwistedObject, dgHomEquiv_mapDGTwistedObjectHom,
+  rw [dgHomEquiv_mapDGTwistedComplex_dgMap, DGTwistedObject.dgHomEquiv_shiftFunctor_dgMap,
+    DGTwistedObject.dgHomEquiv_shiftFunctor_dgMap, dgHomEquiv_mapDGTwistedComplex_dgMap,
     mapDGShiftClosure_mapDGAdditiveClosure_dgMap_shiftFunctor]
 
 /-- The closed isomorphism `F (P⟦n⟧) ⟶ (F P)⟦n⟧` whose matrix is the identity.  The two twisted
@@ -407,6 +200,22 @@ theorem dgComp_dgMap_shiftFunctor_mapDGTwistedComplexShiftHom
       dgId_dgComp]
     exact F.dgHomEquiv_mapDGTwistedComplex_dgMap_shiftFunctor n f
 
+/-- The image of the comparison morphism `P⟦n⟧ ⟶ P` has the matrix of the comparison morphism
+`(F P)⟦n⟧ ⟶ F P`. -/
+theorem dgHomEquiv_dgMap_fromShift :
+    DGTwistedObject.dgHomEquiv R _ _ n (F.mapDGTwistedComplex.dgMap n (fromShift P n)) =
+      DGTwistedObject.dgHomEquiv R _ _ n (fromShift (F.mapDGTwistedComplex.obj P) n) := by
+  rw [dgHomEquiv_mapDGTwistedComplex_dgMap, DGTwistedObject.dgHomEquiv_fromShift,
+    DGTwistedObject.dgHomEquiv_fromShift, mapDGShiftClosure_mapDGAdditiveClosure_dgMap_fromShift]
+
+/-- The image of the comparison morphism `P ⟶ P⟦n⟧` has the matrix of the comparison morphism
+`F P ⟶ (F P)⟦n⟧`. -/
+theorem dgHomEquiv_dgMap_toShift :
+    DGTwistedObject.dgHomEquiv R _ _ (-n) (F.mapDGTwistedComplex.dgMap (-n) (toShift P n)) =
+      DGTwistedObject.dgHomEquiv R _ _ (-n) (toShift (F.mapDGTwistedComplex.obj P) n) := by
+  rw [dgHomEquiv_mapDGTwistedComplex_dgMap, DGTwistedObject.dgHomEquiv_toShift,
+    DGTwistedObject.dgHomEquiv_toShift, mapDGShiftClosure_mapDGAdditiveClosure_dgMap_toShift]
+
 /-- The image of the comparison morphism `P⟦n⟧ ⟶ P` is the isomorphism `F (P⟦n⟧) ⟶ (F P)⟦n⟧`
 followed by the comparison morphism `(F P)⟦n⟧ ⟶ F P`. -/
 theorem dgComp_mapDGTwistedComplexShiftHom_fromShift :
@@ -414,9 +223,7 @@ theorem dgComp_mapDGTwistedComplexShiftHom_fromShift :
       (zero_add n) = F.mapDGTwistedComplex.dgMap n (fromShift P n) :=
   (DGTwistedObject.dgHomEquiv R _ _ n).injective <| by
     rw [DGTwistedObject.dgHomEquiv_dgComp, dgHomEquiv_mapDGTwistedComplexShiftHom, dgId_dgComp,
-      DGTwistedObject.dgHomEquiv_fromShift, dgMap_mapDGTwistedObject,
-      dgHomEquiv_mapDGTwistedObjectHom, DGTwistedObject.dgHomEquiv_fromShift,
-      mapDGShiftClosure_mapDGAdditiveClosure_dgMap_fromShift]
+      dgHomEquiv_dgMap_fromShift]
 
 /-- The image of the comparison morphism `P ⟶ P⟦n⟧`, followed by the isomorphism
 `F (P⟦n⟧) ⟶ (F P)⟦n⟧`, is the comparison morphism `F P ⟶ (F P)⟦n⟧`. -/
@@ -426,42 +233,15 @@ theorem dgComp_dgMap_toShift_mapDGTwistedComplexShiftHom :
         toShift (F.mapDGTwistedComplex.obj P) n :=
   (DGTwistedObject.dgHomEquiv R _ _ (-n)).injective <| by
     rw [DGTwistedObject.dgHomEquiv_dgComp, dgHomEquiv_mapDGTwistedComplexShiftHom, dgComp_dgId,
-      DGTwistedObject.dgHomEquiv_toShift, dgMap_mapDGTwistedObject,
-      dgHomEquiv_mapDGTwistedObjectHom, DGTwistedObject.dgHomEquiv_toShift,
-      mapDGShiftClosure_mapDGAdditiveClosure_dgMap_toShift]
-
-/-- The image of the comparison morphism `P⟦n⟧ ⟶ P` has the matrix of the comparison morphism
-`(F P)⟦n⟧ ⟶ F P`. -/
-theorem dgHomEquiv_dgMap_fromShift :
-    DGTwistedObject.dgHomEquiv R _ _ n (F.mapDGTwistedComplex.dgMap n (fromShift P n)) =
-      DGTwistedObject.dgHomEquiv R _ _ n (fromShift (F.mapDGTwistedComplex.obj P) n) := by
-  rw [dgMap_mapDGTwistedObject, dgHomEquiv_mapDGTwistedObjectHom,
-    DGTwistedObject.dgHomEquiv_fromShift, DGTwistedObject.dgHomEquiv_fromShift,
-    mapDGShiftClosure_mapDGAdditiveClosure_dgMap_fromShift]
-
-/-- The image of the comparison morphism `P ⟶ P⟦n⟧` has the matrix of the comparison morphism
-`F P ⟶ (F P)⟦n⟧`. -/
-theorem dgHomEquiv_dgMap_toShift :
-    DGTwistedObject.dgHomEquiv R _ _ (-n) (F.mapDGTwistedComplex.dgMap (-n) (toShift P n)) =
-      DGTwistedObject.dgHomEquiv R _ _ (-n) (toShift (F.mapDGTwistedComplex.obj P) n) := by
-  rw [dgMap_mapDGTwistedObject, dgHomEquiv_mapDGTwistedObjectHom,
-    DGTwistedObject.dgHomEquiv_toShift, DGTwistedObject.dgHomEquiv_toShift,
-    mapDGShiftClosure_mapDGAdditiveClosure_dgMap_toShift]
+      dgHomEquiv_dgMap_toShift]
 
 private theorem dgHomEquiv_dgMap_shiftFunctor_dgMap_toShift (a b : ℤ) :
     DGTwistedObject.dgHomEquiv R _ _ (-a) ((DGTwistedObject.shiftFunctor R b).dgMap (-a)
         (F.mapDGTwistedComplex.dgMap (-a) (toShift P a))) =
       DGTwistedObject.dgHomEquiv R _ _ (-a) ((DGTwistedObject.shiftFunctor R b).dgMap (-a)
         (toShift (F.mapDGTwistedComplex.obj P) a)) := by
-  rw [dgMap_mapDGTwistedObject (DGShiftClosure.shiftFunctor R b).mapDGAdditiveClosure
-      (F.mapDGTwistedComplex.dgMap (-a) (toShift P a)),
-    dgHomEquiv_mapDGTwistedObjectHom (DGShiftClosure.shiftFunctor R b).mapDGAdditiveClosure
-      (F.mapDGTwistedComplex.dgMap (-a) (toShift P a)),
-    F.dgHomEquiv_dgMap_toShift P a,
-    dgMap_mapDGTwistedObject (DGShiftClosure.shiftFunctor R b).mapDGAdditiveClosure
-      (toShift (F.mapDGTwistedComplex.obj P) a),
-    dgHomEquiv_mapDGTwistedObjectHom (DGShiftClosure.shiftFunctor R b).mapDGAdditiveClosure
-      (toShift (F.mapDGTwistedComplex.obj P) a)]
+  rw [DGTwistedObject.dgHomEquiv_shiftFunctor_dgMap, DGTwistedObject.dgHomEquiv_shiftFunctor_dgMap,
+    F.dgHomEquiv_dgMap_toShift P a]
 
 /-- The image of the comparison `P⟦a + b⟧ ⟶ P⟦a⟧⟦b⟧` of iterated shifts has the matrix of the
 comparison `(F P)⟦a + b⟧ ⟶ (F P)⟦a⟧⟦b⟧`. -/
@@ -540,6 +320,15 @@ theorem mapDGTwistedComplexShiftIso_hom_app_of
         ((mem_dgCycles R).mpr (F.dgDifferential_mapDGTwistedComplexShiftHom P n)) :=
   (rfl)
 
+/-- The inverse of the component of the shift isomorphism at a twisted complex. -/
+@[simp]
+theorem mapDGTwistedComplexShiftIso_inv_app_of
+    (P : DGTwistedObject R (DGAdditiveClosure (DGShiftClosure C))) :
+    (F.mapDGTwistedComplexShiftIso n).inv.app (of R P) =
+      homOf R (F.mapDGTwistedComplexShiftInv P n)
+        ((mem_dgCycles R).mpr (F.dgDifferential_mapDGTwistedComplexShiftInv P n)) :=
+  (rfl)
+
 /-- The shift isomorphism by zero is the canonical one, given by the isomorphisms `P⟦0⟧ ≅ P`. -/
 theorem mapDGTwistedComplexShiftIso_zero :
     F.mapDGTwistedComplexShiftIso 0 =
@@ -590,14 +379,10 @@ private theorem homOf_comp_homOf_comp_homOf_comp_homOf (P : DGTwistedObject R
   rw [DGTwistedObject.dgHomEquiv_dgComp, DGTwistedObject.dgHomEquiv_dgComp,
     DGTwistedObject.dgHomEquiv_dgComp,
     F.dgHomEquiv_mapDGTwistedComplexShiftHom ((DGTwistedObject.shiftFunctor R a).obj P) b,
-    dgMap_mapDGTwistedObject (DGShiftClosure.shiftFunctor R b).mapDGAdditiveClosure
-      (F.mapDGTwistedComplexShiftHom P a),
-    dgHomEquiv_mapDGTwistedObjectHom (DGShiftClosure.shiftFunctor R b).mapDGAdditiveClosure
-      (F.mapDGTwistedComplexShiftHom P a),
-    F.dgHomEquiv_mapDGTwistedComplexShiftHom P a, dgMap_dgId, dgId_dgComp, dgId_dgComp,
-    F.dgHomEquiv_dgMap_shiftAddHom P a b, ← DGTwistedObject.dgHomEquiv_dgComp,
-    dgComp_shiftAddHom_shiftAddInv, DGTwistedObject.dgHomEquiv_dgId,
-    F.dgHomEquiv_mapDGTwistedComplexShiftHom P (a + b)]
+    DGTwistedObject.dgHomEquiv_shiftFunctor_dgMap, F.dgHomEquiv_mapDGTwistedComplexShiftHom P a,
+    dgMap_dgId, dgId_dgComp, dgId_dgComp, F.dgHomEquiv_dgMap_shiftAddHom P a b,
+    ← DGTwistedObject.dgHomEquiv_dgComp, dgComp_shiftAddHom_shiftAddInv,
+    DGTwistedObject.dgHomEquiv_dgId, F.dgHomEquiv_mapDGTwistedComplexShiftHom P (a + b)]
 
 /-- The shift isomorphism by `a + b` is obtained from those by `a` and by `b` through the
 isomorphisms `P⟦a + b⟧ ≅ P⟦a⟧⟦b⟧`. -/
@@ -644,6 +429,16 @@ theorem commShiftIso_mapDGTwistedComplex_hom_app_of
         ((mem_dgCycles R).mpr (F.dgDifferential_mapDGTwistedComplexShiftHom P n)) :=
   (rfl)
 
+/-- The inverse isomorphism `(H⁰(F) P)⟦n⟧ ≅ H⁰(F) (P⟦n⟧)` of the shift structure is the class of
+`CategoryTheory.EnrichedFunctor.mapDGTwistedComplexShiftInv`. -/
+@[simp]
+theorem commShiftIso_mapDGTwistedComplex_inv_app_of
+    (P : DGTwistedObject R (DGAdditiveClosure (DGShiftClosure C))) :
+    (F.mapDGTwistedComplex.mapDGHomotopyCategory.commShiftIso n).inv.app (of R P) =
+      homOf R (F.mapDGTwistedComplexShiftInv P n)
+        ((mem_dgCycles R).mpr (F.dgDifferential_mapDGTwistedComplexShiftInv P n)) :=
+  (rfl)
+
 end commShift
 
 /-! ### Cone triangles -/
@@ -670,27 +465,57 @@ noncomputable def mapConeIso :
     of R (F.mapDGTwistedComplex.obj (cone u hu)) ≅
       of R (cone (F.mapDGTwistedComplex.dgMap 0 u)
         (F.mapDGTwistedComplex.dgDifferential_dgMap_eq_zero hu)) :=
-  DGTwistedObject.mapExtensionIso F.mapDGShiftClosure (dgDifferential_coneMorphism hu) ≪≫
+  F.mapDGShiftClosure.mapExtensionIso (dgDifferential_coneMorphism hu) ≪≫
     extensionIsoOfIso R (F.dgDifferential_mapDGTwistedComplexShiftHom P 1)
       (F.dgComp_mapDGTwistedComplexShiftHom_mapDGTwistedComplexShiftInv P 1)
       (F.dgComp_mapDGTwistedComplexShiftInv_mapDGTwistedComplexShiftHom P 1)
       (F.dgComp_mapDGTwistedComplexShiftHom_coneMorphism u)
 
-private theorem homOf_dgMap_extensionInl_comp_mapConeIso_hom :
+/-- The isomorphism of cones is the comparison of the image of an extension with the extension of
+the images, followed by the isomorphism of extensions induced by `F (P⟦1⟧) ⟶ (F P)⟦1⟧`. -/
+@[simp]
+theorem mapConeIso_hom :
+    (F.mapConeIso hu).hom =
+      (F.mapDGShiftClosure.mapExtensionIso (dgDifferential_coneMorphism hu)).hom ≫
+        (extensionIsoOfIso R (F.dgDifferential_mapDGTwistedComplexShiftHom P 1)
+          (F.dgComp_mapDGTwistedComplexShiftHom_mapDGTwistedComplexShiftInv P 1)
+          (F.dgComp_mapDGTwistedComplexShiftInv_mapDGTwistedComplexShiftHom P 1)
+          (F.dgComp_mapDGTwistedComplexShiftHom_coneMorphism u)).hom :=
+  (rfl)
+
+/-- The inverse of the isomorphism of cones is the isomorphism of extensions induced by
+`(F P)⟦1⟧ ⟶ F (P⟦1⟧)`, followed by the comparison of the extension of the images with the image of
+an extension. -/
+@[simp]
+theorem mapConeIso_inv :
+    (F.mapConeIso hu).inv =
+      (extensionIsoOfIso R (F.dgDifferential_mapDGTwistedComplexShiftHom P 1)
+          (F.dgComp_mapDGTwistedComplexShiftHom_mapDGTwistedComplexShiftInv P 1)
+          (F.dgComp_mapDGTwistedComplexShiftInv_mapDGTwistedComplexShiftHom P 1)
+          (F.dgComp_mapDGTwistedComplexShiftHom_coneMorphism u)).inv ≫
+        (F.mapDGShiftClosure.mapExtensionIso (dgDifferential_coneMorphism hu)).inv :=
+  (rfl)
+
+/-- The image of the inclusion `Q ⟶ cone u`, followed by the isomorphism of cones, is the inclusion
+`F Q ⟶ cone (F u)`. -/
+@[reassoc]
+theorem homOf_dgMap_extensionInl_comp_mapConeIso_hom :
     homOf R (F.mapDGTwistedComplex.dgMap 0 (extensionInl R (dgDifferential_coneMorphism hu)))
         (F.mapDGTwistedComplex.dgMap_mem_dgCycles
           ((mem_dgCycles R).mpr (dgDifferential_extensionInl R _))) ≫ (F.mapConeIso hu).hom =
       homOf R (extensionInl R (dgDifferential_coneMorphism
           (F.mapDGTwistedComplex.dgDifferential_dgMap_eq_zero hu)))
-        ((mem_dgCycles R).mpr (dgDifferential_extensionInl R _)) :=
-  (Category.assoc _ _ _).symm.trans <|
-    (congrArg (· ≫ _) (homOf_comp_eq_homOf_of_dgComp_eq R _ _
-      ((mem_dgCycles R).mpr (dgDifferential_extensionInl R _))
-      (DGTwistedObject.dgComp_dgMap_extensionInl_mapExtensionHom F.mapDGShiftClosure _))).trans <|
-    (congrArg (_ ≫ ·) (extensionIsoOfIso_hom R _ _ _ _)).trans
-    (homOf_comp_eq_homOf_of_dgComp_eq R _ _ _ (dgComp_extensionInl_extensionMap R _ _ _))
+        ((mem_dgCycles R).mpr (dgDifferential_extensionInl R _)) := by
+  simp only [mapConeIso_hom, mapExtensionIso_hom, extensionIsoOfIso_hom, homOf_comp,
+    dgCompZero_def]
+  congr 1
+  rw [← dgComp_assoc R _ _ _ (add_zero 0) (add_zero 0) (add_zero 0),
+    dgComp_dgMap_extensionInl_mapExtensionHom, dgComp_extensionInl_extensionMap]
 
-private theorem mapConeIso_hom_comp_homOf_extensionSnd :
+/-- The isomorphism of cones, followed by the projection `cone (F u) ⟶ (F P)⟦1⟧`, is the image of
+the projection `cone u ⟶ P⟦1⟧` followed by the isomorphism `F (P⟦1⟧) ⟶ (F P)⟦1⟧`. -/
+@[reassoc]
+theorem mapConeIso_hom_comp_homOf_extensionSnd :
     (F.mapConeIso hu).hom ≫ homOf R (extensionSnd R (dgDifferential_coneMorphism
           (F.mapDGTwistedComplex.dgDifferential_dgMap_eq_zero hu)))
         ((mem_dgCycles R).mpr (dgDifferential_extensionSnd R _)) =
@@ -699,35 +524,13 @@ private theorem mapConeIso_hom_comp_homOf_extensionSnd :
             ((mem_dgCycles R).mpr (dgDifferential_extensionSnd R _))) ≫
         homOf R (F.mapDGTwistedComplexShiftHom P 1)
           ((mem_dgCycles R).mpr (F.dgDifferential_mapDGTwistedComplexShiftHom P 1)) := by
-  have h₁ : homOf R (DGTwistedObject.mapExtensionHom F.mapDGShiftClosure
-        (dgDifferential_coneMorphism hu))
-        ((mem_dgCycles R).mpr (DGTwistedObject.dgDifferential_mapExtensionHom _ _)) ≫
-      homOf R (extensionSnd R _) ((mem_dgCycles R).mpr (dgDifferential_extensionSnd R _)) =
-        homOf R (F.mapDGTwistedComplex.dgMap 0 (extensionSnd R (dgDifferential_coneMorphism hu)))
-          (F.mapDGTwistedComplex.dgMap_mem_dgCycles
-            ((mem_dgCycles R).mpr (dgDifferential_extensionSnd R _))) :=
-    homOf_comp_eq_homOf_of_dgComp_eq R _ _ _
-      (DGTwistedObject.dgComp_mapExtensionHom_extensionSnd F.mapDGShiftClosure _)
-  have h₂ : homOf R (extensionMap R
-        (F.mapDGTwistedComplex.dgDifferential_dgMap_eq_zero (dgDifferential_coneMorphism hu))
-        (dgDifferential_coneMorphism (F.mapDGTwistedComplex.dgDifferential_dgMap_eq_zero hu))
-        (F.mapDGTwistedComplexShiftHom P 1))
-        ((mem_dgCycles R).mpr (dgDifferential_extensionMap R _ _
-          (F.dgDifferential_mapDGTwistedComplexShiftHom P 1)
-          (F.dgComp_mapDGTwistedComplexShiftHom_coneMorphism u))) ≫
-      homOf R (extensionSnd R (dgDifferential_coneMorphism
-          (F.mapDGTwistedComplex.dgDifferential_dgMap_eq_zero hu)))
-        ((mem_dgCycles R).mpr (dgDifferential_extensionSnd R _)) =
-      homOf R (extensionSnd R
-          (F.mapDGTwistedComplex.dgDifferential_dgMap_eq_zero (dgDifferential_coneMorphism hu)))
-          ((mem_dgCycles R).mpr (dgDifferential_extensionSnd R _)) ≫
-        homOf R (F.mapDGTwistedComplexShiftHom P 1)
-          ((mem_dgCycles R).mpr (F.dgDifferential_mapDGTwistedComplexShiftHom P 1)) :=
-    (homOf_comp R _ _ _ _).trans (homOf_comp_eq_homOf_of_dgComp_eq R _ _ _
-      ((dgComp_extensionMap_extensionSnd R _ _ _).symm.trans (dgCompZero_def R _ _).symm)).symm
-  refine (congrArg (· ≫ _) (Iso.trans_hom _ _)).trans ?_
-  rw [Category.assoc, extensionIsoOfIso_hom, DGTwistedObject.mapExtensionIso_hom, h₂,
-    ← Category.assoc, h₁]
+  simp only [mapConeIso_hom, mapExtensionIso_hom, extensionIsoOfIso_hom, homOf_comp,
+    dgCompZero_def]
+  congr 1
+  rw [dgComp_assoc R _ _ _ (add_zero 0) (add_zero 0) (add_zero 0),
+    dgComp_extensionMap_extensionSnd,
+    ← dgComp_assoc R _ _ _ (add_zero 0) (add_zero 0) (add_zero 0),
+    dgComp_mapExtensionHom_extensionSnd]
 
 /-- **The image of a cone triangle is the cone triangle of the image**: the image under `H⁰(F)` of
 the cone triangle `P ⟶ Q ⟶ cone u ⟶ P⟦1⟧` is isomorphic to the cone triangle of `F u`, by the
@@ -737,13 +540,32 @@ noncomputable def mapConeTriangleIso :
       coneTriangle (F.mapDGTwistedComplex.dgMap 0 u)
         (F.mapDGTwistedComplex.dgDifferential_dgMap_eq_zero hu) :=
   Pretriangulated.Triangle.isoMk _ _ (Iso.refl _) (Iso.refl _) (F.mapConeIso hu)
-    ((Category.comp_id _).trans ((mapDGHomotopyCategory_map_homOf _ _ _).trans
-      (Category.id_comp _).symm))
-    ((congrArg (· ≫ _) (mapDGHomotopyCategory_map_homOf _ _ _)).trans
-      ((F.homOf_dgMap_extensionInl_comp_mapConeIso_hom hu).trans (Category.id_comp _).symm))
-    ((congrArg (_ ≫ ·) (Functor.map_id _ _)).trans <| (Category.comp_id _).trans <|
-      (congrArg (· ≫ _) (mapDGHomotopyCategory_map_homOf _ _ _)).trans
-        (F.mapConeIso_hom_comp_homOf_extensionSnd hu).symm)
+    -- Each square is the corresponding compatibility of the isomorphism of cones, with identities
+    -- on the first two objects.  The objects of the image of the cone triangle agree with those of
+    -- the cone triangle of `F u` only after unfolding `H⁰(F)`, so the squares cannot be rewritten
+    -- and are closed by composing with `Category.comp_id` and `Category.id_comp`.
+    (by
+      have h := F.mapDGTwistedComplex.mapDGHomotopyCategory_map_homOf u ((mem_dgCycles R).mpr hu)
+      exact (Category.comp_id _).trans (h.trans (Category.id_comp _).symm))
+    (by
+      have h := F.homOf_dgMap_extensionInl_comp_mapConeIso_hom hu
+      rw [← mapDGHomotopyCategory_map_homOf] at h
+      exact h.trans (Category.id_comp _).symm)
+    (by
+      have h := F.mapConeIso_hom_comp_homOf_extensionSnd hu
+      rw [← mapDGHomotopyCategory_map_homOf _ _
+        ((mem_dgCycles R).mpr (dgDifferential_extensionSnd R _))] at h
+      exact (congrArg (_ ≫ ·) (Functor.map_id _ _)).trans ((Category.comp_id _).trans h.symm))
+
+@[simp]
+theorem mapConeTriangleIso_hom_hom₃ :
+    (F.mapConeTriangleIso hu).hom.hom₃ = (F.mapConeIso hu).hom :=
+  (rfl)
+
+@[simp]
+theorem mapConeTriangleIso_inv_hom₃ :
+    (F.mapConeTriangleIso hu).inv.hom₃ = (F.mapConeIso hu).inv :=
+  (rfl)
 
 /-- **The functor induced by a DG functor on homotopy categories of twisted complexes is
 triangulated**: it sends cone triangles to triangles isomorphic to cone triangles. -/

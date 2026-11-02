@@ -156,6 +156,14 @@ theorem dgHomEquiv_dgMap_shiftFunctor (n : ℤ)
   exact (EnrichedFunctor.dgHomEquiv_mapDGAdditiveClosureHom _ _ i j).trans
     (DGShiftClosure.dgMap_shiftFunctor R n _)
 
+/-- The matrix of the shift of a morphism is the image of its matrix under the DG functor shifting
+every summand. -/
+theorem dgHomEquiv_shiftFunctor_dgMap (n : ℤ)
+    {P Q : DGTwistedObject R (DGAdditiveClosure (DGShiftClosure C))} {p : ℤ} (f : DGHom R p P Q) :
+    dgHomEquiv R _ _ p ((shiftFunctor R n).dgMap p f) =
+      (DGShiftClosure.shiftFunctor R n).mapDGAdditiveClosure.dgMap p (dgHomEquiv R P Q p f) := by
+  rw [EnrichedFunctor.dgMap_mapDGTwistedObject, EnrichedFunctor.dgHomEquiv_mapDGTwistedObjectHom]
+
 /-- The shift of an object of the additive closure with the zero twist is the shifted object with
 the zero twist. -/
 theorem shiftFunctor_obj_ofObj (n : ℤ) (M : DGAdditiveClosure (DGShiftClosure C)) :
