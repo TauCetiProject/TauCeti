@@ -52,6 +52,7 @@ nonincreasing step from any value `v ≥ 0` down to `0` across an interval `[a, 
 * `Real.smoothTransition.integral_deriv`: the derivative has integral one.
 * `Real.smoothTransition.lintegral_ofReal_mul_deriv`: `∫_ℝ c ψ'(c (a - t)) dt = 1` for `c > 0`.
 * `Real.smoothTransition.integral_mul_deriv_mul_sub`: `∫_ℝ c ψ'(c (y - a)) dy = 1` for `c > 0`.
+* `Real.smoothTransition.integral_deriv_mul_sub`: `∫_ℝ ψ'(c y - a) dy = |c|⁻¹`.
 * `Real.smoothTransition.integrable_mul_deriv_mul_sub_smul`: its product with a function
   integrable on `closedBall a c⁻¹` is integrable.
 * `Real.smoothTransition.tendsto_integral_mul_deriv_mul_sub_smul`: at a Lebesgue point `a` of `u`
@@ -172,6 +173,13 @@ theorem integral_mul_deriv_mul_sub (a : ℝ) {c : ℝ} (hc : 0 < c) :
   rw [integral_const_mul, integral_sub_right_eq_self (fun z => deriv smoothTransition (c * z)),
     Measure.integral_comp_mul_left, integral_deriv, abs_of_pos (inv_pos.2 hc)]
   simp [hc.ne']
+
+/-- The derivative of the smooth transition function `ψ`, composed with an affine map
+`y ↦ c y - a`, has integral `|c|⁻¹`: `∫_ℝ ψ'(c y - a) dy = |c|⁻¹`. -/
+theorem integral_deriv_mul_sub (c a : ℝ) : ∫ y, deriv smoothTransition (c * y - a) = |c|⁻¹ := by
+  rw [Measure.integral_comp_mul_left (fun y => deriv smoothTransition (y - a)),
+    integral_sub_right_eq_self (deriv smoothTransition), integral_deriv, abs_inv, smul_eq_mul,
+    mul_one]
 
 /-- The rescaled derivative `y ↦ ψ'(c (y - a))` of the smooth transition function `ψ` vanishes
 outside `closedBall a c⁻¹`; it is supported in `[a, a + c⁻¹]`. -/
