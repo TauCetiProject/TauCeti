@@ -64,9 +64,9 @@ theorem measurable_matrixNormalMeasure :
   have hvalid : MeasurableSet
       {p : (ι → κ → ℝ) × (ι → ι → ℝ) × (κ → κ → ℝ) |
         (Matrix.of p.2.1).PosSemidef ∧ (Matrix.of p.2.2).PosSemidef} :=
-    ((Matrix.posSemidef_is_closed (n := ι) (𝕜 := ℝ)).measurableSet.preimage
+    ((_root_.isClosed_setOfPred_posSemidef (n := ι) (R := ℝ)).measurableSet.preimage
         ((Matrix.measurable_of ι ι ℝ).comp measurable_snd.fst)).inter
-      ((Matrix.posSemidef_is_closed (n := κ) (𝕜 := ℝ)).measurableSet.preimage
+      ((_root_.isClosed_setOfPred_posSemidef (n := κ) (R := ℝ)).measurableSet.preimage
         ((Matrix.measurable_of κ κ ℝ).comp measurable_snd.snd))
   have hdirac : Measurable fun p : (ι → κ → ℝ) × (ι → ι → ℝ) × (κ → κ → ℝ) =>
       Measure.dirac (Matrix.of p.1) :=
