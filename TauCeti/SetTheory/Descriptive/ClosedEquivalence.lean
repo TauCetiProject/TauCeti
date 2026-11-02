@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.MeasurableSpace.CountablyGenerated
+public import Mathlib.MeasureTheory.MeasurableSpace.CountablyGenerated
 public import TauCeti.SetTheory.Descriptive.InvariantSeparation
 import Mathlib.Topology.Compactness.Lindelof
 
@@ -30,9 +30,8 @@ it suffices that open sets are measurable.
 * `Setoid.countablySeparated_quotient_of_isClosed`: the quotient of a closed equivalence relation
   on a Polish space is countably separated.
 
-Combining this with `Setoid.exists_measurable_eq_iff_of_countablySeparated` from
-`TauCeti.MeasureTheory.MeasurableSpace.CountablyGenerated` gives a measurable Cantor-valued
-classifier.
+Combining this with `Setoid.isSmooth_iff_countablySeparated` and `Setoid.isSmooth_iff` from
+`TauCeti.SetTheory.Descriptive.BorelReducibility` gives a measurable Cantor-valued classifier.
 
 ## References
 

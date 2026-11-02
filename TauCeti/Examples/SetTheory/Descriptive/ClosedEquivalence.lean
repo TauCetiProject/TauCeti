@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import TauCeti.SetTheory.Descriptive.ClosedEquivalence
+import TauCeti.SetTheory.Descriptive.BorelReducibility
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Real
 
 /-!
@@ -28,4 +29,6 @@ space. -/
 example : ∃ f : ℝ → (ℕ → Bool), Measurable f ∧ ∀ x y, f x = f y ↔ |x| = |y| := by
   let := (Setoid.ker (abs : ℝ → ℝ)).countablySeparated_quotient_of_isClosed
     (isClosed_eq (continuous_abs.comp continuous_fst) (continuous_abs.comp continuous_snd))
-  exact (Setoid.ker (abs : ℝ → ℝ)).exists_measurable_eq_iff_of_countablySeparated
+  obtain ⟨f, hf, hE⟩ := Setoid.isSmooth_iff.mp
+    ((Setoid.isSmooth_iff_countablySeparated (E := Setoid.ker (abs : ℝ → ℝ))).mpr inferInstance)
+  exact ⟨f, hf, fun x y => (hE x y).symm⟩

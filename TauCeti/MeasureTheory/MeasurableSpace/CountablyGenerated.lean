@@ -10,7 +10,7 @@ public import Mathlib.MeasureTheory.MeasurableSpace.CountablyGenerated
 public import Mathlib.MeasureTheory.MeasurableSpace.Prod
 
 /-!
-# Boolean coordinates and classifiers for measurable spaces
+# Boolean coordinates for a measurable function on a product
 
 A measurable function `f : α × β → γ` into a nonempty standard Borel space depends on only
 countably many measurable sets of each factor, so it factors through a pair of maps into the
@@ -34,10 +34,6 @@ Doob--Dynkin (`Measurable.exists_eq_measurable_comp`) then produces `g`.
 This file also records that a countable separating family pulls back along a measurable
 injection (`MeasurableSpace.CountablySeparated.of_injective`).
 
-An equivalence relation whose measurable quotient is countably separated likewise admits a
-measurable Cantor-valued classifier: compose the quotient map with Mathlib's measurable
-injection of the quotient into Cantor space.
-
 ## Main results
 
 * `MeasurableSpace.CountablySeparated.of_injective` — a space with a measurable injection into a
@@ -49,9 +45,7 @@ injection of the quotient into Cantor space.
 * `Measurable.exists_eq_measurable_comp_prodMap` — the factorization through Boolean
   coordinates of each factor;
 * `Measurable.exists_eq_measurable_comp_prodMap_self` — its diagonal form, with a single
-  coordinate map;
-* `Setoid.exists_measurable_eq_iff_of_countablySeparated` — a measurable Cantor-valued
-  classifier for any equivalence relation with a countably separated measurable quotient.
+  coordinate map.
 
 ## References
 
@@ -202,18 +196,3 @@ theorem _root_.Measurable.exists_eq_measurable_comp_prodMap_self [MeasurableSpac
 end MeasureTheory
 
 end TauCeti
-
-namespace Setoid
-
-/-- An equivalence relation with a countably separated measurable quotient is classified by a
-measurable map into Cantor space: two points have the same image exactly when they are
-equivalent. -/
-theorem exists_measurable_eq_iff_of_countablySeparated {X : Type*} [MeasurableSpace X]
-    (E : Setoid X) [MeasurableSpace.CountablySeparated (Quotient E)] :
-    ∃ f : X → (ℕ → Bool), Measurable f ∧ ∀ x y, f x = f y ↔ E x y := by
-  obtain ⟨g, hg, hinj⟩ :=
-    MeasurableSpace.measurable_injection_nat_bool_of_countablySeparated (Quotient E)
-  refine ⟨g ∘ Quotient.mk E, hg.comp measurable_quotient_mk', fun x y => ?_⟩
-  exact hinj.eq_iff.trans Quotient.eq
-
-end Setoid
