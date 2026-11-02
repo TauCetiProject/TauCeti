@@ -22,10 +22,9 @@ by coefficient change.
 
 When the augmentation cotangent module is projective, these vectors have their integral
 signed simple-root characters under the generated weight torus. Over a nontrivial ring the
-characters are nontrivial adjoint weights. In particular, opposite characters are not
-identified in characteristic two. The weight-space results use base rings in `Type`, as does
-the closed-subgroup adjoint-weight criterion; the differential results allow independent
-universes for the base ring and coefficient algebra.
+characters are nontrivial adjoint weights. The weight-space results use base rings in `Type`,
+as does the closed-subgroup adjoint-weight criterion; the differential results allow
+independent universes for the base ring and coefficient algebra.
 
 These are the root-vector normalizations needed to compare root parametrizations with a
 pinning. This does not identify root lines with full weight spaces, construct a maximal torus
@@ -67,20 +66,6 @@ variable (n : ℕ) (hn : 4 ≤ n)
 section Differential
 
 variable (R : Type u) [CommRing R]
-
-/-- The numbered root-subgroup coordinate maps of the generated spin group are surjective.
-Thus the numbered root subgroups are closed subgroups of the generated group. -/
-theorem generatedCoordinateLift_inl_surjective (k : Fin n ⊕ Fin n) :
-    Function.Surjective (generatedCoordinateLift n hn R (.inl k)).hom := by
-  have h : Function.Surjective
-      (generatedCoordinateMap n hn R ≫ generatedCoordinateLift n hn R (.inl k)).hom := by
-    rw [generatedCoordinateMap_comp_generatedCoordinateLift, generatorCoordinateMap_inl,
-      ← coordinateMap_comp_rootSubgroupToBaseChangeCoordinateMap,
-      _root_.CommHopfAlgCat.hom_comp, BialgHom.coe_comp]
-    exact (rootSubgroupToBaseChangeCoordinateMap_surjective n hn R k).comp
-      (coordinateMap_surjective n hn R)
-  rw [_root_.CommHopfAlgCat.hom_comp, BialgHom.coe_comp] at h
-  exact Function.Surjective.of_comp h
 
 private theorem map_genericMatrix_generatedCoordinateLift (k : Fin n ⊕ Fin n) :
     (GeneralLinear.genericMatrix R (dimension n)).map
