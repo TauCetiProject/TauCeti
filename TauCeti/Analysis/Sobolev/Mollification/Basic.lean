@@ -23,8 +23,10 @@ at every point `x` for which `x - tsupport rho` lies in the domain. The convolve
 whole space; zero extensions of domain `Lᵖ` functions satisfy this assumption. No weak
 derivative identity outside the domain is required.
 
-The results hold for functions with values in an arbitrary real Banach space and for any
-s-finite, left-invariant measure on a real normed space, such as an additive Haar measure.
+The derivative identities hold for functions with values in an arbitrary real Banach space and
+for any s-finite, left-invariant measure on a real normed space, such as an additive Haar measure.
+The Jensen corollary below also assumes that the measure is negation-invariant and that the space
+is second countable, as holds for an additive Haar measure on a finite-dimensional space.
 
 This identity applies successively to the derivative fields of a Sobolev function, and is the
 analytic input to local smooth approximation and Meyers--Serrin density. Combined with Jensen's
@@ -44,7 +46,8 @@ pass to mollifications.
   `TauCeti.HasWeakFDerivOn.fderiv_convolution_right`: the corresponding derivative equations.
 * `TauCeti.HasWeakFDerivOn.lintegral_ofReal_map_norm_fderiv_convolution_le`: for a whole-space
   weak derivative and a smooth compactly supported probability kernel `rho`, Jensen's bound
-  `∫ Φ(‖D(u ⋆ rho)‖) ≤ ∫ Φ(‖U‖)` for every `Φ` convex and monotone on `[0, ∞)`.
+  `∫ Φ(‖D(u ⋆ rho)‖) ≤ ∫ Φ(‖U‖)` for every `Φ` convex and monotone on `[0, ∞)`, for a
+  negation-invariant measure on a second-countable space.
 
 ## References
 

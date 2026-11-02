@@ -49,6 +49,13 @@ public section
 open MeasureTheory Set ContinuousLinearMap
 open scoped Convolution ENNReal
 
+/-- A probability kernel `ρ` has total extended mass one: `∫⁻ ofReal (ρ t) dμ = 1`. -/
+private lemma lintegral_ofReal_eq_one {α : Type*} [MeasurableSpace α] {μ : Measure α}
+    {ρ : α → ℝ} (hρ0 : 0 ≤ᵐ[μ] ρ) (hρ1 : ∫ t, ρ t ∂μ = 1) :
+    ∫⁻ t, ENNReal.ofReal (ρ t) ∂μ = 1 := by
+  rw [← ofReal_integral_eq_lintegral_ofReal (integrable_of_integral_eq_one hρ1) hρ0, hρ1,
+    ENNReal.ofReal_one]
+
 variable {G F : Type*} [MeasurableSpace G] [AddGroup G] [MeasurableAdd₂ G] [MeasurableNeg G]
   {μ : Measure G} [SFinite μ] [μ.IsAddRightInvariant]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {Φ : ℝ → ℝ} {ρ : G → ℝ}
@@ -96,7 +103,7 @@ theorem ofReal_map_norm_convolution_le_lintegral (hΦ : ConvexOn ℝ (Ici 0) Φ)
   set ν := μ.withDensity fun t => ENNReal.ofReal (ρ t)
   have : IsProbabilityMeasure ν := ⟨by
     rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ,
-      ← ofReal_integral_eq_lintegral_ofReal hρi hρ0, hρ1, ENNReal.ofReal_one]⟩
+      lintegral_ofReal_eq_one hρ0 hρ1]⟩
   set h : G → F := fun t => g (x - t)
   have hh : AEStronglyMeasurable h μ :=
     hg.comp_quasiMeasurePreserving (quasiMeasurePreserving_sub_left_of_right_invariant μ x)
@@ -142,8 +149,8 @@ theorem lintegral_ofReal_map_norm_convolution_le (hΦ : ConvexOn ℝ (Ici 0) Φ)
     (hΦm : MonotoneOn Φ (Ici 0)) (hρ0 : 0 ≤ᵐ[μ] ρ) (hρ1 : ∫ t, ρ t ∂μ = 1) {g : G → F}
     (hg : AEStronglyMeasurable g μ) :
     ∫⁻ x, ENNReal.ofReal (Φ ‖(ρ ⋆[lsmul ℝ ℝ, μ] g) x‖) ∂μ ≤ ∫⁻ x, ENNReal.ofReal (Φ ‖g x‖) ∂μ := by
-  have hρi : Integrable ρ μ := integrable_of_integral_eq_one hρ1
-  have hρm : AEMeasurable (fun t => ENNReal.ofReal (ρ t)) μ := hρi.aemeasurable.ennreal_ofReal
+  have hρm : AEMeasurable (fun t => ENNReal.ofReal (ρ t)) μ :=
+    (integrable_of_integral_eq_one hρ1).aemeasurable.ennreal_ofReal
   have hm : AEMeasurable (Function.uncurry fun x t =>
       ENNReal.ofReal (ρ t) * ENNReal.ofReal (Φ ‖g (x - t)‖)) (μ.prod μ) := by
     simp_rw [Function.uncurry_def, ← ofReal_posExt_norm (Φ := Φ)]
@@ -162,7 +169,6 @@ theorem lintegral_ofReal_map_norm_convolution_le (hΦ : ConvexOn ℝ (Ici 0) Φ)
         rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
           lintegral_sub_right_eq_self (fun x => ENNReal.ofReal (Φ ‖g x‖)) t]
     _ = ∫⁻ x, ENNReal.ofReal (Φ ‖g x‖) ∂μ := by
-        rw [lintegral_mul_const'' _ hρm, ← ofReal_integral_eq_lintegral_ofReal hρi hρ0, hρ1,
-          ENNReal.ofReal_one, one_mul]
+        rw [lintegral_mul_const'' _ hρm, lintegral_ofReal_eq_one hρ0 hρ1, one_mul]
 
 end ConvexOn
