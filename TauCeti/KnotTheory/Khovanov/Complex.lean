@@ -154,6 +154,15 @@ def khovanovComplexι {i : ℤ}
     (j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)).cubeComplexι S ≫
       eqToHom (D.khovanovComplex_X hD R j i).symm
 
+/-- The inclusion of a state vertex is its inclusion into the signed cube term of height
+`i + n₋`, which is the normalized term in degree `i`. -/
+theorem khovanovComplexι_def {i : ℤ}
+    (S : {S : Finset (Fin n) // (#S : ℤ) = i + D.negativeCrossingCount}) :
+    D.khovanovComplexι hD R j S =
+      (D.toPDCode.resolutionCube hD R
+        (j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)).cubeComplexι S ≫
+          eqToHom (D.khovanovComplex_X hD R j i).symm := (rfl)
+
 /-- The projection of a normalized cochain term onto a state vertex. -/
 def khovanovComplexπ {i : ℤ}
     (S : {S : Finset (Fin n) // (#S : ℤ) = i + D.negativeCrossingCount}) :
