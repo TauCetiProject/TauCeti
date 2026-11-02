@@ -105,9 +105,7 @@ map. -/
 example (x : A ⊗[A] M) :
     CompletedTensor.lid A M (CompletedTensor.finiteProjectiveEquiv A A M x) =
       TensorProduct.lid A M x := by
-  induction x using TensorProduct.inductionOn with
-  | tmul a m => simp
-  | add x y hx hy => simp only [map_add, hx, hy]
+  simp
 
 /-- In rank two, the comparison sends `e₀ ⊗ v - e₁ ⊗ w` to the same two completed elementary
 tensors, with their signs. -/

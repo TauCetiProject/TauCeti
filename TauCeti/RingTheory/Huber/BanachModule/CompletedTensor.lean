@@ -359,6 +359,14 @@ theorem lid_tmul (a : A) (m : M) : lid A M (tmul A A M a m) = a • m := by
 theorem lid_symm_apply (m : M) : (lid A M).symm m = tmul A A M 1 m :=
   (rfl)
 
+/-- The unit isomorphism extends Mathlib's algebraic unit map `A ⊗[A] M ≃ M`. -/
+@[simp]
+theorem lid_toCompletion (x : A ⊗[A] M) :
+    lid A M (toCompletion A A M x) = TensorProduct.lid A M x := by
+  induction x using TensorProduct.inductionOn with
+  | tmul a m => simp
+  | add x y hx hy => simp only [map_add, hx, hy]
+
 end Lid
 
 end Lift
@@ -422,8 +430,9 @@ theorem toCompletion_bijective_of_finite_projective :
   let ψ : CompletedTensor A P M →ₗ[A] P ⊗[A] M :=
     ∑ i, (TensorProduct.mk A P M (f (Pi.single i 1))).comp (c i).toLinearMap
   have hf (p : P) : ∑ i, g p i • f (Pi.single i 1) = p := by
-    simp_rw [← map_smul, ← map_sum, ← pi_eq_sum_univ', ← LinearMap.comp_apply, hfg,
-      LinearMap.id_apply]
+    have h : f (g p) = p := LinearMap.congr_fun hfg p
+    rw [pi_eq_sum_univ' (g p)] at h
+    simpa [map_sum, map_smul] using h
   have hψ (x : P ⊗[A] M) : ψ (toCompletion A P M x) = x := by
     induction x using TensorProduct.inductionOn with
     | tmul p m =>
@@ -463,6 +472,12 @@ theorem finiteProjectiveEquiv_tmul (p : P) (m : M) :
 theorem finiteProjectiveEquiv_symm_tmul (p : P) (m : M) :
     (finiteProjectiveEquiv A P M).symm (tmul A P M p m) = p ⊗ₜ m :=
   (finiteProjectiveEquiv A P M).symm_apply_eq.mpr (finiteProjectiveEquiv_tmul P M p m).symm
+
+/-- The inverse of `finiteProjectiveEquiv` sends the image of `x : P ⊗[A] M` back to `x`. -/
+@[simp]
+theorem finiteProjectiveEquiv_symm_toCompletion (x : P ⊗[A] M) :
+    (finiteProjectiveEquiv A P M).symm (toCompletion A P M x) = x :=
+  (finiteProjectiveEquiv A P M).symm_apply_apply x
 
 end FiniteProjective
 
