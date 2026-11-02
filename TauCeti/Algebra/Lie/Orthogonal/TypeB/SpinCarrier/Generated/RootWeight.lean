@@ -71,20 +71,6 @@ section Differential
 
 variable (R : Type u) [CommRing R]
 
-/-- The numbered root coordinate maps of the generated subgroup are surjective, so each
-numbered root subgroup is a closed subgroup. -/
-theorem generatedCoordinateLift_inl_surjective (k : Fin (n + 1) ⊕ Fin (n + 1)) :
-    Function.Surjective (generatedCoordinateLift n R (.inl k)).hom := by
-  have h : Function.Surjective
-      (generatedCoordinateMap n R ≫ generatedCoordinateLift n R (.inl k)).hom := by
-    rw [generatedCoordinateMap_comp_generatedCoordinateLift, generatorCoordinateMap_inl,
-      ← coordinateMap_comp_rootSubgroupToBaseChangeCoordinateMap,
-      _root_.CommHopfAlgCat.hom_comp, BialgHom.coe_comp]
-    exact (rootSubgroupToBaseChangeCoordinateMap_surjective n R k).comp
-      (coordinateMap_surjective n R)
-  rw [_root_.CommHopfAlgCat.hom_comp, BialgHom.coe_comp] at h
-  exact Function.Surjective.of_comp h
-
 private theorem map_genericMatrix_generatedCoordinateLift (k : Fin (n + 1) ⊕ Fin (n + 1)) :
     (GeneralLinear.genericMatrix R (dimension n)).map
         ((generatedCoordinateLift n R (.inl k)).hom.toAlgHom.comp
