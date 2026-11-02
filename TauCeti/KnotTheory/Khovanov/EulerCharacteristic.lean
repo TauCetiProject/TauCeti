@@ -72,16 +72,6 @@ universe u
 
 variable {n : ℕ} (D : OrientedPDCode n) (hD : D.toPDCode.IsPlanar) (R : Type u) [CommRing R]
 
-/-- The terms of the normalized Khovanov complex are free. -/
-instance (i j : ℤ) : Module.Free R ((D.khovanovComplex hD R j).X i) := by
-  rw [khovanovComplex_X]
-  infer_instance
-
-/-- The terms of the normalized Khovanov complex are finitely generated. -/
-instance (i j : ℤ) : Module.Finite R ((D.khovanovComplex hD R j).X i) := by
-  rw [khovanovComplex_X]
-  infer_instance
-
 /-- **Khovanov homology** `Khⁱʲ(D; R)` of a planar oriented code `D`: the cohomology in cochain
 degree `i` of the quantum component `j` of the normalized Khovanov complex. -/
 def khovanovHomology (i j : ℤ) : ModuleCat.{u} R :=
@@ -157,7 +147,8 @@ theorem homologyEulerChar_khovanovComplex (j : ℤ) :
     ← CochainComplex.eulerChar_eq_homologyEulerChar (D.toPDCode.khovanovBracket hD R _)
       (fun _ ↦ inferInstance) 0 n,
     ← eulerChar_khovanovComplex,
-    CochainComplex.eulerChar_eq_homologyEulerChar _ (fun _ ↦ inferInstance)
+    CochainComplex.eulerChar_eq_homologyEulerChar _
+      (fun _ ↦ by rw [khovanovComplex_X]; infer_instance)
       (-D.negativeCrossingCount) D.positiveCrossingCount]
 
 /-- **The graded Euler characteristic of Khovanov homology is the enhanced state sum**, over a
