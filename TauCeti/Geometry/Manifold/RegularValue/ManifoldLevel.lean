@@ -172,7 +172,7 @@ theorem isManifold_of_chart (hm : 1 ≤ m) (hf : ContMDiff I J m f)
 
 /-- The inclusion of a regular fibre is a `C^m` smooth embedding for the atlas constructed in
 any target chart containing its value. -/
-theorem isSmoothEmbedding_of_chart (hm : 1 ≤ m) (hf : ContMDiff I J m f)
+theorem isSmoothEmbedding_coe_of_chart (hm : 1 ≤ m) (hf : ContMDiff I J m f)
     (φ : PartialDiffeomorph J 𝓘(ℝ, F) N F m) (hc : c ∈ φ.source)
     (hreg : IsRegularValue I J f c) :
     letI := chartedSpaceOfChart hm hf φ hc hreg

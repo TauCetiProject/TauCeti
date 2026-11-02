@@ -20,8 +20,6 @@ public section
 
 open scoped ContDiff Manifold
 
-namespace Homeomorph
-
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E F V H G W : Type*}
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [TopologicalSpace H]
@@ -31,6 +29,8 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {M N P : Type*} [TopologicalSpace M] [cM : ChartedSpace H M]
   [TopologicalSpace N] [cN : ChartedSpace G N] [TopologicalSpace P] [ChartedSpace W P]
   {n : ℕ∞ω} {i : M → P} {j : N → P}
+
+namespace Homeomorph
 
 /-- A homeomorphism commuting with two immersions into a common manifold is a `C^n`
 diffeomorphism. No finite-dimensionality or separation hypotheses are required. -/
@@ -70,3 +70,17 @@ theorem diffeomorphOfImmersions_symm_apply (e : M ≃ₜ N)
   (rfl)
 
 end Homeomorph
+
+namespace ChartedSpace
+
+omit cM in
+/-- Two atlases on the same topological space are diffeomorphic by the identity whenever the
+same map into a common manifold is an immersion for both atlases. -/
+theorem exists_diffeomorph_apply_eq_self (a : ChartedSpace H M) (b : ChartedSpace G M)
+    (hi : letI := a; Manifold.IsImmersion I K n i)
+    (hj : letI := b; Manifold.IsImmersion J K n i) :
+    ∃ e : @Diffeomorph 𝕜 _ _ _ _ _ _ _ _ _ _ _ I J M _ a M _ b n, ∀ x, e x = x :=
+  ⟨Homeomorph.diffeomorphOfImmersions (cM := a) (cN := b)
+    (Homeomorph.refl _) hi hj rfl, fun _ ↦ rfl⟩
+
+end ChartedSpace
