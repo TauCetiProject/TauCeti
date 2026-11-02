@@ -7,9 +7,10 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Continuous
 public import Mathlib.Analysis.InnerProductSpace.GramSchmidtOrtho
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Family
 
 /-!
-# The Gram-Schmidt process: diagonal coefficients and continuity
+# The Gram-Schmidt process: coefficients, continuity, and projections
 
 Mathlib's `InnerProductSpace.gramSchmidt_triangular` records that, in the basis `b` it is fed,
 `gramSchmidt 𝕜 b i` has no component along `b j` for `i < j`.  This file supplies the diagonal
@@ -25,6 +26,10 @@ a continuous retraction of linearly independent frames onto orthonormal ones. Th
 fixed-space form of the sectionwise argument of Patrick Massot and Michael Rothgang in Mathlib PR
 [#26221](https://github.com/leanprover-community/mathlib4/pull/26221), which
 `ContinuousWithinAt.gramSchmidt_bundle` adapts to continuous Riemannian vector bundles.
+
+Projection onto the span of a finite family is the sum of the rank-one operators of its
+normalized Gram-Schmidt vectors, including any zero vectors. This gives a formula that
+continues to hold when the input family loses rank.
 
 ## Main results
 
@@ -130,3 +135,44 @@ theorem Continuous.gramSchmidtNormed (hv : ∀ i, Continuous (v i))
   exact ContinuousOn.gramSchmidtNormed hv (fun y _ ↦ hli y) n
 
 end Continuity
+
+section Projection
+
+open InnerProductSpace Set
+
+variable {𝕜 E ι : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [LinearOrder ι] [LocallyFiniteOrderBot ι] [Fintype ι]
+
+/-- Projection onto the span of a finite family is the sum of the rank-one operators
+associated to its normalized Gram–Schmidt vectors, including the zero vectors. -/
+theorem InnerProductSpace.starProjection_eq_sum_rankOne_gramSchmidtNormed (v : ι → E)
+    {U : Submodule 𝕜 E} [U.HasOrthogonalProjection]
+    (hU : Submodule.span 𝕜 (range v) = U) :
+    U.starProjection =
+      ∑ i, rankOne 𝕜 (gramSchmidtNormed 𝕜 v i) (gramSchmidtNormed 𝕜 v i) := by
+  classical
+  subst hU
+  have hspan : Submodule.span 𝕜
+      (range fun i : {i | gramSchmidtNormed 𝕜 v i ≠ 0} ↦ gramSchmidtNormed 𝕜 v i) =
+      Submodule.span 𝕜 (range v) := by
+    rw [← span_gramSchmidt 𝕜 v, ← span_gramSchmidtNormed_range (𝕜 := 𝕜) v]
+    apply le_antisymm
+    · exact Submodule.span_mono (by rintro _ ⟨i, rfl⟩; exact mem_range_self _)
+    · refine Submodule.span_le.mpr ?_
+      rintro _ ⟨i, rfl⟩
+      by_cases hi : gramSchmidtNormed 𝕜 v i = 0
+      · simpa only [SetLike.mem_coe, hi] using (Submodule.zero_mem
+          (Submodule.span 𝕜
+            (range fun i : {i | gramSchmidtNormed 𝕜 v i ≠ 0} ↦ gramSchmidtNormed 𝕜 v i)))
+      · exact Submodule.subset_span ⟨⟨i, hi⟩, rfl⟩
+  ext x
+  rw [(gramSchmidtNormed_orthonormal' (𝕜 := 𝕜) v).starProjection_apply_eq_sum hspan]
+  simp only [_root_.sum_apply, rankOne_apply]
+  simp only [Set.mem_ofPred_eq]
+  rw [← Finset.sum_subtype (Finset.univ.filter fun i ↦ gramSchmidtNormed 𝕜 v i ≠ 0)
+    (by simp) (fun i ↦ inner 𝕜 (gramSchmidtNormed 𝕜 v i) x • gramSchmidtNormed 𝕜 v i)]
+  exact Finset.sum_subset (Finset.filter_subset _ _) fun i _ hi ↦ by
+    have hzero : gramSchmidtNormed 𝕜 v i = 0 := by simpa using hi
+    simp [hzero]
+
+end Projection
