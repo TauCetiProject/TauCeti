@@ -46,6 +46,8 @@ caller has already done.
   action of the monoid algebra, not only with that of the group elements.
 * `Representation.IsIntertwiningMap.dualMap`: the transpose of an intertwining map intertwines
   the dual representations.
+* `Representation.isIntertwiningMap_iff_of_closure_eq_top`: equivariance may be tested on a
+  generating set of the group.
 
 -/
 
@@ -249,6 +251,27 @@ theorem IsIntertwiningMap.dualMap {A G V W : Type*} [CommSemiring A] [Group G]
     {σ : Representation A G W} {f : V →ₗ[A] W} (hf : IsIntertwiningMap ρ σ f) :
     IsIntertwiningMap σ.dual ρ.dual f.dualMap :=
   ⟨fun g φ ↦ LinearMap.ext fun v ↦ congrArg φ (hf.isIntertwining g⁻¹ v).symm⟩
+
+/-- **Equivariance may be tested on a generating set**: if `s` generates the group `G`, a linear
+map intertwines `ρ` and `σ` exactly when it commutes with the action of every element of `s`. -/
+theorem isIntertwiningMap_iff_of_closure_eq_top {A G V W : Type*} [Semiring A] [Group G]
+    [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W] (ρ : Representation A G V)
+    (σ : Representation A G W) {s : Set G} (hs : Subgroup.closure s = ⊤) (f : V →ₗ[A] W) :
+    IsIntertwiningMap ρ σ f ↔ ∀ g ∈ s, ∀ v, f (ρ g v) = σ g (f v) := by
+  refine ⟨fun hf g _ v ↦ hf.isIntertwining g v, fun h ↦ ⟨fun g ↦ ?_⟩⟩
+  induction hs.ge (Subgroup.mem_top g) using Subgroup.closure_induction with
+  | mem g hg => exact h g hg
+  | one => simp
+  | mul g g' _ _ hg hg' =>
+    intro v
+    rw [map_mul, Module.End.mul_apply, hg, hg', map_mul, Module.End.mul_apply]
+  | inv g _ hg =>
+    intro v
+    calc f (ρ g⁻¹ v) = σ g⁻¹ (σ g (f (ρ g⁻¹ v))) := by
+          rw [← Module.End.mul_apply, ← map_mul, inv_mul_cancel, map_one, Module.End.one_apply]
+      _ = σ g⁻¹ (f v) := by
+          rw [← hg, ← Module.End.mul_apply, ← map_mul, mul_inv_cancel, map_one,
+            Module.End.one_apply]
 
 end Representation
 
