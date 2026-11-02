@@ -201,10 +201,10 @@ theorem span_range_hessianQuadraticForm_comp_left {ι : Type*} {φ : E → F}
         rw [smul_apply]
         simp only [ContinuousLinearMap.hessianQuadraticForm_comp_left_apply _ hφ,
           smul_apply, RingHom.id_apply] }
-  have hΛ : range Λ = range fun ℓ : F →L[ℝ] ℝ ↦ hessianQuadraticForm (ℓ ∘ φ) x := rfl
+  have hΛ : ⇑Λ = fun ℓ : F →L[ℝ] ℝ ↦ hessianQuadraticForm (ℓ ∘ φ) x := by
+    simp only [Λ, LinearMap.coe_mk, AddHom.coe_mk]
   rw [← hΛ, ← LinearMap.coe_range, Submodule.span_eq, LinearMap.range_eq_map, ← hL,
-    Submodule.map_span, ← range_comp]
-  rfl
+    Submodule.map_span, ← range_comp, hΛ, Function.comp_def]
 
 /-- For a `C²` map into `ι → ℝ`, the Hessians of the functions `ℓ ∘ φ` span the same space as the
 Hessians of the components of `φ`. -/
