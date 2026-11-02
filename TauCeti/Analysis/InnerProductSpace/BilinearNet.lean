@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Module.RCLike.Real
 public import Mathlib.Analysis.Normed.Module.RCLike.Basic
 public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Topology.MetricSpace.Cover
+public import TauCeti.Analysis.Normed.Group.Cover
 
 /-!
 # Operator norms and sphere nets
@@ -57,14 +58,6 @@ theorem abs_real_inner_sub_le {E F : Type*} [NormedAddCommGroup E] [NormedSpace 
       add_le_add (mul_le_mul hyv hTxle (norm_nonneg _) (hxu.trans' (norm_nonneg _)))
         (mul_le_mul hv hTdiff (norm_nonneg _) zero_le_one)
     _ = 2 * η * ‖T‖ := by ring
-
-/-- A point of a set covered by `N` at radius `ε` is within `ε` of some point of `N`. -/
-theorem _root_.Metric.IsCover.exists_norm_sub_le {E : Type*} [SeminormedAddCommGroup E]
-    {ε : NNReal} {s N : Set E} (h : IsCover ε s N) {x : E} (hx : x ∈ s) :
-    ∃ u ∈ N, ‖x - u‖ ≤ ε := by
-  obtain ⟨u, hu, hxu⟩ : ∃ u : E, u ∈ N ∧ x ∈ closedBall u ε := by
-    simpa only [Set.mem_iUnion, exists_prop] using h.subset_iUnion_closedBall hx
-  exact ⟨u, hu, by simpa only [mem_closedBall, dist_eq_norm] using hxu⟩
 
 /-- A bilinear `η`-net bound for the operator norm. If `Nₙ` and `Nₚ` cover the unit spheres in
 the domain and codomain with radius `η < 1 / 2`, the points of `Nₚ` lie in the closed unit ball,
