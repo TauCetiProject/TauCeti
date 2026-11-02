@@ -117,14 +117,17 @@ def directSumι (i : ι) : DGBimoduleHom (M i).isDGBimodule (directSumObj M).isD
     exact DirectSum.lmap_lof (fun i ↦ (M i).differential) i x
   · rw [mem_dgBimoduleHomSubmodule]
     intro a x
+    -- `lof` over either scalar ring is definitionally the same single-coordinate map.
     exact map_smul (DirectSum.lof A ι (fun i ↦ M i) i) a x
 
 /-- On elements, the inclusion is the usual finitely supported single-coordinate map. -/
 @[simp]
-theorem directSumι_apply (i : ι) (x : M i) :
-    directSumι M i x = @DirectSum.of ι (fun i ↦ M i) _ (Classical.decEq ι) i x :=
-  -- Both the inclusion and the single-coordinate map use the same explicit instance.
-  (rfl)
+theorem directSumι_apply [inst : DecidableEq ι] (i : ι) (x : M i) :
+    directSumι M i x = DirectSum.of (fun i ↦ M i) i x := by
+  -- The inclusion stores `lof` with the classical instance; `lof_eq_of` is definitional.
+  -- Subsingleton elimination replaces that instance with the caller's instance.
+  exact congrArg (fun decEq ↦ @DirectSum.of ι (fun i ↦ M i) _ decEq i x)
+    (Subsingleton.elim (Classical.decEq ι) inst)
 
 variable {M}
 
@@ -177,13 +180,22 @@ def directSumDesc {N : DGBimoduleCat hA hB}
         exact (f i).map_smul_left a y)
     exact DFunLike.congr_fun h x
 
+/-- The induced map evaluates a single-coordinate element using the given component map. -/
+@[simp]
+theorem directSumDesc_of [inst : DecidableEq ι] {N : DGBimoduleCat hA hB}
+    (f : ∀ i, DGBimoduleHom (M i).isDGBimodule N.isDGBimodule) (i : ι) (x : M i) :
+    directSumDesc f (DirectSum.of (fun i ↦ M i) i x) = f i x := by
+  cases Subsingleton.elim inst (Classical.decEq ι)
+  -- The DG morphism stores `directSumDescLinearMap f` as its underlying linear map.
+  exact directSumDescLinearMap_of f i x
+
 /-- The induced map has the prescribed value on each summand. -/
--- Run before rewriting the inclusion to a single-coordinate element.
-@[simp↓]
+@[simp]
 theorem directSumDesc_ι {N : DGBimoduleCat hA hB}
     (f : ∀ i, DGBimoduleHom (M i).isDGBimodule N.isDGBimodule) (i : ι) (x : M i) :
     directSumDesc f (directSumι M i x) = f i x := by
-  exact directSumDescLinearMap_of f i x
+  classical
+  rw [directSumι_apply, directSumDesc_of]
 
 /-- Maps out of a direct sum are determined by their restrictions to the summands. -/
 @[ext]
