@@ -48,7 +48,8 @@ theorem measurable_matrixNormalMeasure :
   classical
   have hmean : Measurable fun p : (ι → κ → ℝ) × (ι → ι → ℝ) × (κ → κ → ℝ) =>
       matrixVecMeasurableEquiv 2 (Matrix.of p.1) :=
-    (matrixVecMeasurableEquiv 2).measurable.comp measurable_fst
+    (matrixVecMeasurableEquiv 2).measurable.comp
+      ((Matrix.measurable_of ι κ ℝ).comp measurable_fst)
   have hcov : Measurable fun p : (ι → κ → ℝ) × (ι → ι → ℝ) × (κ → κ → ℝ) =>
       Matrix.of p.2.2 ⊗ₖ Matrix.of p.2.1 := by
     fun_prop
@@ -64,12 +65,12 @@ theorem measurable_matrixNormalMeasure :
       {p : (ι → κ → ℝ) × (ι → ι → ℝ) × (κ → κ → ℝ) |
         (Matrix.of p.2.1).PosSemidef ∧ (Matrix.of p.2.2).PosSemidef} :=
     ((Matrix.posSemidef_is_closed (n := ι) (𝕜 := ℝ)).measurableSet.preimage
-        measurable_snd.fst).inter
+        ((Matrix.measurable_of ι ι ℝ).comp measurable_snd.fst)).inter
       ((Matrix.posSemidef_is_closed (n := κ) (𝕜 := ℝ)).measurableSet.preimage
-        measurable_snd.snd)
+        ((Matrix.measurable_of κ κ ℝ).comp measurable_snd.snd))
   have hdirac : Measurable fun p : (ι → κ → ℝ) × (ι → ι → ℝ) × (κ → κ → ℝ) =>
       Measure.dirac (Matrix.of p.1) :=
-    Measure.measurable_dirac.comp measurable_fst
+    Measure.measurable_dirac.comp ((Matrix.measurable_of ι κ ℝ).comp measurable_fst)
   have hformula :
       (fun p : (ι → κ → ℝ) × (ι → ι → ℝ) × (κ → κ → ℝ) =>
         matrixNormalMeasure (Matrix.of p.1) (Matrix.of p.2.1) (Matrix.of p.2.2)) =
