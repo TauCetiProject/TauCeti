@@ -540,7 +540,7 @@ instance instCompleteSpace : CompleteSpace (HahnModule ℤ R V) where
       refine ⟨min 0 ((of R).symm (x 0)).order, fun n hn ↦ le_of_not_gt fun h ↦ ?_⟩
       exact hn ((hc 0 n (lt_of_lt_of_le h (min_le_left _ _))).trans
         (coeff_eq_zero_of_lt_order (lt_of_lt_of_le h (min_le_right _ _))))
-    let z : HahnSeries ℤ V := ⟨c, Set.IsWF.isPWO hb.wellFoundedOn_lt⟩
+    let z : HahnSeries ℤ V := HahnSeries.ofSuppBddBelow c hb
     refine ⟨of R z, ?_⟩
     apply (tendsto_sub_nhds_zero_iff).mp
     apply (hasBasis_nhds_zero_lattice R V).tendsto_right_iff.mpr
@@ -548,7 +548,8 @@ instance instCompleteSpace : CompleteSpace (HahnModule ℤ R V) where
     filter_upwards [hx a] with y hy
     rw [SetLike.mem_coe, TauCeti.HahnModule.mem_lattice_iff R V]
     intro n hn
-    simp only [of_symm_sub, Equiv.symm_apply_apply, coeff_sub, sub_eq_zero]
+    simp only [of_symm_sub, Equiv.symm_apply_apply, coeff_sub, z, coeff_ofSuppBddBelow,
+      sub_eq_zero]
     exact (hy n hn).trans (hc a n hn).symm
 
 /-- Every lattice `U_a(V)` is open in `HahnModule ℤ R V`. -/
