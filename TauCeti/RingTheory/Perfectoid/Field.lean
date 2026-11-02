@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.Huber.Normed
 public import TauCeti.RingTheory.Perfectoid.PerfectRing
-import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.Analysis.Normed.Field.Basic
 
 /-!
 # Perfectoid fields
@@ -82,26 +82,6 @@ private theorem exists_norm_pow_eq_of_natCast_lt_norm
     simpa [sub_eq_add_neg] using powerBoundedSubring.dvd_iff_norm_le.mp hy
   refine ⟨y, ?_⟩
   rw [← norm_pow, IsUltrametricDist.norm_eq_of_add_norm_lt_max hlt, norm_neg]
-
-omit [IsUltrametricDist K] in
-/-- In a nontrivially normed field whose norms accumulate at `1` and with `‖p‖ < 1` for some
-`p ≠ 0`, some `ϖ` with `0 < ‖ϖ‖ < 1` has `‖p‖ ≤ ‖ϖ‖ ^ p`. -/
-private theorem exists_norm_natCast_le_norm_pow_of_forall_exists
-    (hpn : p ≠ 0) (hacc : ∀ ε : ℝ, 1 < ε → ∃ x : K, 1 < ‖x‖ ∧ ‖x‖ < ε) (hp : ‖(p : K)‖ < 1) :
-    ∃ ϖ : K, 0 < ‖ϖ‖ ∧ ‖ϖ‖ < 1 ∧ ‖(p : K)‖ ≤ ‖ϖ‖ ^ p := by
-  rcases eq_or_ne (p : K) 0 with h0 | h0
-  · obtain ⟨ϖ, hϖ0, hϖ1⟩ := NormedField.exists_norm_lt_one K
-    exact ⟨ϖ, hϖ0, hϖ1, by rw [h0, norm_zero]; positivity⟩
-  -- take `ϖ = x⁻¹` for `1 < ‖x‖ < ‖p‖ ^ (-1 / p)`
-  have hp0 : 0 < ‖(p : K)‖ := norm_pos_iff.mpr h0
-  obtain ⟨x, hx1, hxε⟩ := hacc (‖(p : K)‖⁻¹ ^ (p : ℝ)⁻¹)
-    (Real.one_lt_rpow ((one_lt_inv₀ hp0).mpr hp) (by simpa using Nat.pos_of_ne_zero hpn))
-  have hx0 : 0 < ‖x‖ := zero_lt_one.trans hx1
-  refine ⟨x⁻¹, by rw [norm_inv]; positivity, by rw [norm_inv]; exact inv_lt_one_of_one_lt₀ hx1,
-    ?_⟩
-  rw [norm_inv, inv_pow, le_inv_comm₀ hp0 (by positivity)]
-  calc ‖x‖ ^ p ≤ (‖(p : K)‖⁻¹ ^ (p : ℝ)⁻¹) ^ p := pow_le_pow_left₀ hx0.le hxε.le p
-    _ = ‖(p : K)‖⁻¹ := Real.rpow_inv_natCast_pow (by positivity) hpn
 
 variable [CompleteSpace K]
 
@@ -225,12 +205,13 @@ theorem isPerfectoidField_iff :
     IsPerfectoidField.norm_natCast_lt_one p K, IsPerfectoidTateRing.exists_natCast_dvd_sub_pow⟩,
     fun ⟨hacc, hp, hs⟩ ↦ ?_⟩
   obtain ⟨ϖ, hϖ0, hϖ1, hpϖ⟩ :=
-    exists_norm_natCast_le_norm_pow_of_forall_exists (Fact.out : p.Prime).ne_zero hacc hp
+    NormedField.exists_lt_norm_pow_of_forall_exists_one_lt_norm_lt hacc hp
+      (Fact.out : p.Prime).ne_zero
   refine isPerfectoidField_iff_isPerfectoidTateRing.mpr
     (isPerfectoidTateRing_iff_frobenius_surjective_modP.mpr ⟨⟨ϖ, ?_⟩, ?_, ?_, hs⟩)
   · exact mem_powerBoundedSubring.mpr (isPowerBounded_iff_norm_le_one.mpr hϖ1.le)
   · exact isPseudoUniformizer_iff_norm_lt_one.mpr ⟨norm_pos_iff.mp hϖ0, hϖ1⟩
-  · exact powerBoundedSubring.dvd_iff_norm_le.mpr (by simpa using hpϖ)
+  · exact powerBoundedSubring.dvd_iff_norm_le.mpr (by simpa using hpϖ.le)
 
 /-- **In characteristic `p`, perfectoid fields are the perfect ones**: a complete ultrametric
 nontrivially normed field of characteristic `p` is a perfectoid field exactly when it is perfect
