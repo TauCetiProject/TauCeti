@@ -35,7 +35,9 @@ If `s` has the same affine span as `t` and contains the part of `t` in an open s
 intrinsic interior points of `t` in `U` are intrinsic interior points of `s`
 (`TauCeti.intrinsicInterior_inter_subset_of_affineSpan_eq`). From an intrinsic interior point,
 every small move along the affine span stays in the set
-(`TauCeti.eventually_add_smul_mem_of_mem_intrinsicInterior`). The intrinsic frontier of a closed
+(`TauCeti.eventually_add_smul_mem_of_mem_intrinsicInterior`); in particular, so does some move
+by a positive multiple of a given direction
+(`TauCeti.exists_pos_add_smul_mem_of_mem_intrinsicInterior`). The intrinsic frontier of a closed
 set consists of its points outside its intrinsic interior (`IsClosed.sdiff_intrinsicInterior`).
 These are the tools for computing intrinsic interiors and frontiers of concrete cells, such as the
 bands of `TauCeti/Analysis/Convex/RegionBetween.lean`.
@@ -288,6 +290,14 @@ theorem eventually_add_smul_mem_of_mem_intrinsicInterior (hc : c ∈ intrinsicIn
   simpa using (hcont.tendsto' 0 0 (zero_smul ℝ _)).eventually
     (setOf_add_mem_mem_nhds_of_mem_intrinsicInterior hc)
 
+/-- From a point `c` of the intrinsic interior of `C`, some move `ε • v` with `ε > 0` along a
+direction `v` of the affine span of `C` stays in `C`. -/
+theorem exists_pos_add_smul_mem_of_mem_intrinsicInterior (hc : c ∈ intrinsicInterior ℝ C)
+    {v : E} (hv : v ∈ (affineSpan ℝ C).direction) : ∃ ε > (0 : ℝ), c + ε • v ∈ C := by
+  have h : ∀ᶠ ε in 𝓝[>] (0 : ℝ), 0 < ε ∧ c + ε • v ∈ C := eventually_mem_nhdsWithin.and
+    ((eventually_add_smul_mem_of_mem_intrinsicInterior hc hv).filter_mono nhdsWithin_le_nhds)
+  exact h.exists
+
 /-- **A closed bounded convex set is a ball around each intrinsic interior point.** For a closed
 bounded convex set `C` of a real normed space and a point `c` of its intrinsic interior, the closed
 unit ball of the direction of the affine span of `C` is homeomorphic to `C`. The homeomorphism
@@ -381,8 +391,7 @@ theorem Convex.intrinsicInterior_subset_intrinsicInterior (hs : Convex ℝ s) (h
   have hdir : x - c ∈ (affineSpan ℝ t).direction :=
     AffineSubspace.vsub_mem_direction (subset_affineSpan ℝ t (intrinsicInterior_subset hx))
       (subset_affineSpan ℝ t hct)
-  obtain ⟨ε, hεt, hε⟩ := ((TauCeti.eventually_add_smul_mem_of_mem_intrinsicInterior hx
-    hdir).filter_mono nhdsWithin_le_nhds |>.and (self_mem_nhdsWithin (s := Ioi 0))).exists
+  obtain ⟨ε, hε, hεt⟩ := TauCeti.exists_pos_add_smul_mem_of_mem_intrinsicInterior hx hdir
   -- `x` lies on the open segment from `c` to that point
   have h1ε : 1 + ε ≠ 0 := by positivity
   refine hs.openSegment_intrinsicInterior_intrinsicClosure_subset_intrinsicInterior hcs
@@ -404,6 +413,15 @@ private theorem coord_affineCombination {ι : Type*} {f : E →ᵃ[ℝ] ℝ} {u 
   rw [Finset.map_affineCombination _ _ _ hw, Finset.affineCombination_eq_linear_combination _ _ _
     hw, Finset.sum_eq_single i (fun j hj hji => by simp [hfj j hj hji]) (fun h => (h hi).elim)]
   simp [hfi]
+
+/-- An affinely independent finite set `s` has barycentric coordinate functions on the whole
+space: for each `v`, an affine function `f v` that is `1` at `v` and `0` at the other points of
+`s`. They come from `AffineIndependent.exists_continuousAffineMap_eqOn`. -/
+private theorem exists_coord (hs : AffineIndependent ℝ ((↑) : s → E)) :
+    ∃ f : E → E →ᵃ[ℝ] ℝ, ∀ v ∈ s, ∀ u ∈ s, f v u = if u = v then 1 else 0 := by
+  choose g hg using fun v : E =>
+    hs.exists_continuousAffineMap_eqOn fun u => if u = v then (1 : ℝ) else 0
+  exact ⟨fun v => (g v).toAffineMap, fun v _ u hu => hg v hu⟩
 
 omit [FiniteDimensional ℝ E] in
 /-- A barycentric coordinate function of `s` vanishes on the face opposite its vertex. -/
@@ -434,11 +452,9 @@ private theorem sum_coord_eq {f : E → E →ᵃ[ℝ] ℝ}
   have hfw (i : s) : f i (Finset.univ.affineCombination ℝ (↑) w) = w i :=
     coord_affineCombination hw1 (Finset.mem_univ i) (by simp [hf i i.2 i i.2])
       fun j _ hji => by simp [hf i i.2 j j.2, Subtype.coe_ne_coe.2 hji]
-  refine ⟨(Finset.sum_coe_sort s _).symm.trans
-    ((Finset.sum_congr rfl fun (i : s) _ => hfw i).trans hw1),
-    (Finset.sum_coe_sort s _).symm.trans ((Finset.sum_congr rfl fun (i : s) _ =>
-      congrArg (· • (i : E)) (hfw i)).trans
-        (Finset.affineCombination_eq_linear_combination _ _ _ hw1).symm)⟩
+  rw [← Finset.sum_coe_sort s, ← Finset.sum_coe_sort s]
+  simp_rw [hfw]
+  exact ⟨hw1, (Finset.affineCombination_eq_linear_combination _ _ _ hw1).symm⟩
 
 omit [FiniteDimensional ℝ E] in
 /-- A point of the affine span of `s` with nonnegative barycentric coordinates, one of which
@@ -462,10 +478,7 @@ theorem AffineIndependent.mem_intrinsicInterior_convexHull_iff
     (hs : AffineIndependent ℝ ((↑) : s → E)) :
     x ∈ intrinsicInterior ℝ (convexHull ℝ (s : Set E)) ↔
       x ∈ convexHull ℝ (s : Set E) ∧ ∀ v ∈ s, x ∉ convexHull ℝ (s.erase v : Set E) := by
-  choose g hg using fun v : E => AffineIndependent.exists_continuousAffineMap_eqOn (s := s) hs
-    fun u => if u = v then (1 : ℝ) else 0
-  obtain ⟨f, hf⟩ : ∃ f : E → E →ᵃ[ℝ] ℝ, ∀ v ∈ s, ∀ u ∈ s, f v u = if u = v then 1 else 0 :=
-    ⟨fun v => (g v).toAffineMap, fun v _ u hu => hg v hu⟩
+  obtain ⟨f, hf⟩ := exists_coord hs
   have hnonneg : ∀ v ∈ s, ∀ z ∈ convexHull ℝ (s : Set E), 0 ≤ f v z := fun v hv _ =>
     coord_nonneg_of_mem_convexHull (hf v hv)
   constructor
@@ -476,8 +489,7 @@ theorem AffineIndependent.mem_intrinsicInterior_convexHull_iff
     have hdir : x - v ∈ (affineSpan ℝ (convexHull ℝ (s : Set E))).direction :=
       AffineSubspace.vsub_mem_direction (subset_affineSpan ℝ _ hxs)
         (subset_affineSpan ℝ _ (subset_convexHull ℝ _ hv))
-    obtain ⟨ε, hεs, hε⟩ := ((TauCeti.eventually_add_smul_mem_of_mem_intrinsicInterior hx
-      hdir).filter_mono nhdsWithin_le_nhds |>.and (self_mem_nhdsWithin (s := Ioi 0))).exists
+    obtain ⟨ε, hε, hεs⟩ := TauCeti.exists_pos_add_smul_mem_of_mem_intrinsicInterior hx hdir
     have h := hnonneg v hv _ hεs
     have hcomp : f v (x + ε • (x - v)) = f v x + ε * (f v x - f v v) := by
       rw [show x + ε • (x - v) = AffineMap.lineMap v x (1 + ε) by
@@ -486,7 +498,7 @@ theorem AffineIndependent.mem_intrinsicInterior_convexHull_iff
       ring
     rw [hcomp, coord_eq_zero_of_mem_convexHull_erase (hf v hv) hxv, hf v hv v hv] at h
     simp only [↓reduceIte, zero_sub, mul_neg, mul_one, zero_add, Left.nonneg_neg_iff] at h
-    linarith [mem_Ioi.1 hε]
+    linarith
   · rintro ⟨hxs, hx⟩
     have hpos : ∀ v ∈ s, 0 < f v x := fun v hv => (hnonneg v hv x hxs).lt_of_ne' fun h0 =>
       hx v hv (mem_convexHull_erase_of_coord_eq_zero hf (convexHull_subset_affineSpan _ hxs)
@@ -513,12 +525,11 @@ theorem AffineIndependent.centroid_mem_intrinsicInterior_convexHull
     s.centroid ℝ id ∈ intrinsicInterior ℝ (convexHull ℝ (s : Set E)) := by
   classical
   refine hs.mem_intrinsicInterior_convexHull_iff.2 ⟨s.centroid_mem_convexHull hne, fun v hv h => ?_⟩
-  obtain ⟨f, hf⟩ := AffineIndependent.exists_continuousAffineMap_eqOn (s := s) hs
-    fun u => if u = v then (1 : ℝ) else 0
+  obtain ⟨f, hf⟩ := exists_coord hs
   have hcard : s.card ≠ 0 := hne.card_pos.ne'
-  have h1 := coord_eq_zero_of_mem_convexHull_erase (f := f.toAffineMap) (fun u hu => hf hu) h
+  have h1 := coord_eq_zero_of_mem_convexHull_erase (hf v hv) h
   rw [Finset.centroid_def, coord_affineCombination (s.sum_centroidWeights_eq_one_of_card_ne_zero ℝ
-    hcard) hv (by simp [hf hv]) fun u hu huv => by simp [hf hu, huv]] at h1
+    hcard) hv (by simp [hf v hv v hv]) fun u hu huv => by simp [hf v hv u hu, huv]] at h1
   simp [hcard] at h1
 
 omit [DecidableEq E] in
