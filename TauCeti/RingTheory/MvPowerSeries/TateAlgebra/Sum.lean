@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.MvPowerSeries.Equiv
-public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Module.Iterate
+public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Module.Sum
 
 /-!
 # Restricted series in two families of variables
@@ -79,18 +79,27 @@ private theorem coe_coeff_sumSlices (f : Flat) (a : σ →₀ ℕ) :
     ((coeff a (sumSlices f) : Inner) : MvPowerSeries τ R) = coeff a (sumAlgEquiv R σ τ f) :=
   (rfl)
 
+private theorem sumAddEquiv_subringLinearEquiv (f : Flat) (s : σ →₀ ℕ) :
+    IsRestrictedFamily.Gauss.sumAddEquiv
+        (IsRestrictedFamily.Gauss.ofAddSubgroup (IsRestrictedFamily.subringLinearEquiv f)) s =
+      IsRestrictedFamily.Gauss.ofAddSubgroup
+        (IsRestrictedFamily.subringLinearEquiv (coeff s (sumSlices f))) := by
+  ext t
+  simp [coe_coeff_sumSlices, coeff_coeff_sumAlgEquiv]
+
+private theorem norm_sumAddEquiv_subringLinearEquiv (f : Flat) (s : σ →₀ ℕ) :
+    ‖IsRestrictedFamily.Gauss.sumAddEquiv
+        (IsRestrictedFamily.Gauss.ofAddSubgroup (IsRestrictedFamily.subringLinearEquiv f)) s‖ =
+      ‖coeff s (sumSlices f)‖ := by
+  rw [sumAddEquiv_subringLinearEquiv, IsRestrictedFamily.Gauss.norm_subringLinearEquiv]
+
 private theorem isRestricted_sumSlices (f : Flat) : IsRestricted c (sumSlices f) := by
-  let a : IsRestrictedFamily.Gauss (Sum.elim c d) R :=
-    .ofAddSubgroup ⟨fun k ↦ coeff k (f : MvPowerSeries (σ ⊕ τ) R),
-      IsRestrictedFamily.mem_addSubgroup.mpr ((isRestrictedFamily_coeff_iff _).mpr f.2)⟩
-  have hnorm (s : σ →₀ ℕ) :
-      ‖IsRestrictedFamily.Gauss.sumSlice a s‖ = ‖coeff s (sumSlices f)‖ := by
-    rw [IsRestrictedFamily.Gauss.norm_eq_iSup, norm_eq_gaussNorm, gaussNorm]
-    simp only [IsRestrictedFamily.Gauss.sumSlice_apply, a, coe_coeff_sumSlices,
-      coeff_coeff_sumAlgEquiv]
+  have h := IsRestrictedFamily.mem_addSubgroup.mp
+    (IsRestrictedFamily.Gauss.sumAddEquiv
+      (IsRestrictedFamily.Gauss.ofAddSubgroup
+        (IsRestrictedFamily.subringLinearEquiv f))).toAddSubgroup.2
   rw [IsRestricted]
-  simpa only [hnorm] using
-    isRestrictedFamily_iff.mp (IsRestrictedFamily.Gauss.isRestrictedFamily_sumSlice a)
+  simpa only [norm_sumAddEquiv_subringLinearEquiv] using isRestrictedFamily_iff.mp h
 
 /-- Flattening a restricted series in `σ` over the restricted series in `τ` gives a restricted
 series in `σ ⊕ τ`. -/
@@ -188,9 +197,10 @@ theorem norm_restrictedSumEquiv (f : Flat) : ‖restrictedSumEquiv f‖ = ‖f�
   calc
     ‖restrictedSumEquiv f‖ = ‖IsRestrictedFamily.Gauss.sumAddEquiv
         (IsRestrictedFamily.Gauss.ofAddSubgroup (IsRestrictedFamily.subringLinearEquiv f))‖ := by
-      simp only [norm_eq_gaussNorm, gaussNorm, IsRestrictedFamily.Gauss.norm_eq_iSup,
-        IsRestrictedFamily.Gauss.sumAddEquiv_apply, IsRestrictedFamily.coe_subringLinearEquiv,
-        coeff_coeff_restrictedSumEquiv]
+      rw [← IsRestrictedFamily.Gauss.norm_subringLinearEquiv (restrictedSumEquiv f),
+        IsRestrictedFamily.Gauss.norm_eq_iSup, IsRestrictedFamily.Gauss.norm_eq_iSup]
+      simp only [IsRestrictedFamily.coe_subringLinearEquiv,
+        norm_sumAddEquiv_subringLinearEquiv, restrictedSumEquiv_apply]
     _ = ‖f‖ := by
       rw [IsRestrictedFamily.Gauss.norm_sumAddEquiv,
         IsRestrictedFamily.Gauss.norm_subringLinearEquiv]

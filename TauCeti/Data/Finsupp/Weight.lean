@@ -36,6 +36,7 @@ at `h` of the pushforward `Finsupp.mapDomain b`.
 * `Finsupp.weight_toFinsupp`: multiset multiplicities recover the sum of entry weights.
 * `Finsupp.prod_pow_eq_pow_degree`: `∏ a ^ tᵢ = a ^ degree t`.
 * `Finsupp.degree_optionElim`: extending by `y` at `none` adds `y` to the degree.
+* `Finsupp.prod_pow_sumElim`: splitting variables splits the weighted product into two factors.
 * `Finsupp.prod_pow_optionElim`, `Finsupp.sum_nsmul_optionElim`: extending by `n` at `none`
   splits off the factor `c none ^ n` from the weighted product `∏ c i ^ (f.optionElim n) i`, and
   the summand `n • c none` from the weighted sum.
@@ -102,6 +103,13 @@ theorem prod_pow_optionElim {α N : Type*} [CommMonoid N] (c : Option α → N) 
     (f.optionElim n).prod (c · ^ ·) = c none ^ n * f.prod (fun i k ↦ c (Option.some i) ^ k) := by
   rw [prod_option_index _ _ (fun _ ↦ pow_zero _) fun _ _ _ ↦ pow_add _ _ _,
     optionElim_apply_none, some_optionElim]
+
+/-- The weighted product on a disjoint union of variables is the product of the weights
+on each set of variables. -/
+theorem prod_pow_sumElim {α β N : Type*} [CommMonoid N] (a : α →₀ ℕ) (b : β →₀ ℕ)
+    (c : α → N) (d : β → N) :
+    (a.sumElim b).prod (Sum.elim c d · ^ ·) = a.prod (c · ^ ·) * b.prod (d · ^ ·) := by
+  simp only [prod_sumElim, Function.comp_def, Sum.elim_inl, Sum.elim_inr]
 
 /-- A power `a ^ degree f` is bounded by the power `b ^ degree (f.optionElim m)` of a larger
 base `b ≥ 1`, for any value `m` at `none`. -/

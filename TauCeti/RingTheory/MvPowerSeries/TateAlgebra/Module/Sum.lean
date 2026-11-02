@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Module.Norm
+import TauCeti.Data.Finsupp.Weight
 
 /-!
 # Iterating module-valued restricted series
@@ -16,10 +17,11 @@ The outer restrictedness condition concerns the Gauss norms of the slices, not j
 individual coefficients. This distinction is essential for iterating analytic operations on
 module-valued series.
 
-The construction follows the coefficient argument for
-`TauCeti.MvPowerSeries.restrictedSumEquiv`, without ring or ultrametric assumptions on the
-coefficient group. The linear isometry works over any seminormed coefficient ring acting
-boundedly on that group. Neither completeness nor finitely many variables is required.
+These lemmas generalise the scalar iteration argument, without ring or ultrametric
+assumptions on the coefficient group. The scalar equivalence
+`TauCeti.MvPowerSeries.restrictedSumEquiv` in `TateAlgebra/Sum.lean` is derived from them.
+The linear isometry works over any seminormed coefficient ring acting boundedly on the group.
+Neither completeness nor finitely many variables is required.
 
 ## References
 
@@ -43,20 +45,14 @@ instance instFactPosSumElim : ∀ k, Fact (0 < Sum.elim c d k)
   | .inl i => ‹∀ i, Fact (0 < c i)› i
   | .inr j => ‹∀ j, Fact (0 < d j)› j
 
-omit [∀ j, Fact (0 < d j)] in
-/-- Fixing the exponents in one set of variables preserves restrictedness in the others. -/
-theorem IsRestrictedFamily.comp_sumElim {a : ((σ ⊕ τ) →₀ ℕ) → E}
-    (ha : IsRestrictedFamily (Sum.elim c d) a) (s : σ →₀ ℕ) :
-    IsRestrictedFamily d (fun t ↦ a (s.sumElim t)) := by
-  have hi : Function.Injective (s.sumElim : (τ →₀ ℕ) → (σ ⊕ τ) →₀ ℕ) := fun t u h ↦ by
-    simpa using congrArg (Finsupp.comapDomain Sum.inr · Sum.inr_injective.injOn) h
-  have h := ((isRestrictedFamily_iff.mp ha).comp hi.tendsto_cofinite).const_mul
-    (s.prod (c · ^ ·))⁻¹
-  rw [mul_zero] at h
-  refine isRestrictedFamily_iff.mpr (h.congr fun t ↦ ?_)
-  simp only [Function.comp_apply, Finsupp.prod_sumElim, Function.comp_def,
-    Sum.elim_inl, Sum.elim_inr]
-  field_simp [(prod_pow_pos (c := c) s).ne']
+omit [∀ i, Fact (0 < c i)] [∀ j, Fact (0 < d j)] in
+/-- Rearranging a joint weighted coefficient norm as an inner weighted norm followed by
+an outer weight. -/
+private theorem mul_prod_sumElim (x : ℝ) (s : σ →₀ ℕ) (t : τ →₀ ℕ) :
+    x * (s.sumElim t).prod (Sum.elim c d · ^ ·) =
+      x * t.prod (d · ^ ·) * s.prod (c · ^ ·) := by
+  rw [Finsupp.prod_pow_sumElim]
+  ring
 
 namespace IsRestrictedFamily.Gauss
 
@@ -91,11 +87,7 @@ theorem isRestrictedFamily_sumSlice (a : Gauss (Sum.elim c d) E) :
   rw [← le_div_iff₀ hpos, norm_le_iff]
   intro t
   rw [le_div_iff₀ hpos, sumSlice_apply]
-  have hweight : ‖a (s.sumElim t)‖ * t.prod (d · ^ ·) * s.prod (c · ^ ·) =
-      ‖a (s.sumElim t)‖ * (s.sumElim t).prod (Sum.elim c d · ^ ·) := by
-    simp only [Finsupp.prod_sumElim, Function.comp_def, Sum.elim_inl, Sum.elim_inr]
-    ring
-  rw [hweight]
+  rw [← mul_prod_sumElim]
   by_contra hlt
   exact hns ⟨s.sumElim t, (not_le.mp hlt).le, Finsupp.comapDomain_inl_sumElim s t⟩
 
@@ -123,11 +115,9 @@ theorem isRestrictedFamily_flatten (a : Gauss c (Gauss d E)) :
   refine (houter.biUnion fun s _ ↦ (hinner s).image s.sumElim).subset fun k hk ↦ ?_
   set s := k.comapDomain Sum.inl Sum.inl_injective.injOn
   set t := k.comapDomain Sum.inr Sum.inr_injective.injOn
-  have hweight : k.prod (Sum.elim c d · ^ ·) = s.prod (c · ^ ·) * t.prod (d · ^ ·) := by
-    rw [← Finsupp.comapDomain_sumElim_comapDomain k, Finsupp.prod_sumElim]
-    rfl
   have hk' : ε ≤ ‖a s t‖ * t.prod (d · ^ ·) * s.prod (c · ^ ·) := by
-    simpa only [hweight, mul_assoc, mul_comm, mul_left_comm] using not_lt.mp hk
+    rw [← mul_prod_sumElim, Finsupp.comapDomain_sumElim_comapDomain]
+    exact not_lt.mp hk
   refine Set.mem_biUnion (x := s) ?_ ⟨t, ?_, Finsupp.comapDomain_sumElim_comapDomain k⟩
   · exact hk'.trans (mul_le_mul_of_nonneg_right
       (norm_coeff_mul_prod_le (a s) t) (prod_pow_pos s).le)
@@ -162,21 +152,16 @@ theorem sumAddEquiv_symm_apply (a : Gauss c (Gauss d E)) (s : σ →₀ ℕ) (t 
 /-- Iteration preserves the weighted Gauss norm, including at radii not realised by scalars. -/
 @[simp]
 theorem norm_sumAddEquiv (a : Gauss (Sum.elim c d) E) : ‖sumAddEquiv a‖ = ‖a‖ := by
-  have hweight (s : σ →₀ ℕ) (t : τ →₀ ℕ) :
-      ‖a (s.sumElim t)‖ * t.prod (d · ^ ·) * s.prod (c · ^ ·) =
-        ‖a (s.sumElim t)‖ * (s.sumElim t).prod (Sum.elim c d · ^ ·) := by
-    simp only [Finsupp.prod_sumElim, Function.comp_def, Sum.elim_inl, Sum.elim_inr]
-    ring
   apply le_antisymm
   · apply norm_le_iff.mpr
     intro s
     rw [← le_div_iff₀ (prod_pow_pos s), norm_le_iff]
     intro t
-    rw [le_div_iff₀ (prod_pow_pos s), sumAddEquiv_apply, hweight]
+    rw [le_div_iff₀ (prod_pow_pos s), sumAddEquiv_apply, ← mul_prod_sumElim]
     exact norm_coeff_mul_prod_le a _
   · apply norm_le_iff.mpr
     intro k
-    rw [← Finsupp.comapDomain_sumElim_comapDomain k, ← hweight, ← sumAddEquiv_apply]
+    rw [← Finsupp.comapDomain_sumElim_comapDomain k, mul_prod_sumElim, ← sumAddEquiv_apply]
     exact (mul_le_mul_of_nonneg_right (norm_coeff_mul_prod_le _ _)
       (prod_pow_pos _).le).trans (norm_coeff_mul_prod_le (sumAddEquiv a) _)
 
