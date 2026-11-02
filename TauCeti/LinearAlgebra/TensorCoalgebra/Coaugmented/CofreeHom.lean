@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Coalgebra.Comodule.Cofree
+public import TauCeti.LinearAlgebra.End.LocallyNilpotent
 public import TauCeti.LinearAlgebra.TensorCoalgebra.Coaugmented.Basic
 
 /-!
@@ -152,31 +153,9 @@ private theorem sub_mem_cofreeFiltration
 /-- A cofree comodule endomorphism fixing the empty words is bijective. -/
 private theorem bijective_of_apply_tmul_one_eq
     {G : Comodule.Hom R (TensorWords R A) (M ⊗[R] TensorWords R A) (M ⊗[R] TensorWords R A)}
-    (hG : ∀ x : M, G (x ⊗ₜ 1) = x ⊗ₜ 1) : Function.Bijective G := by
-  constructor
-  · refine (injective_iff_map_eq_zero G).2 fun z hz ↦ ?_
-    obtain ⟨n, hn⟩ := exists_mem_cofreeFiltration z
-    induction n generalizing z with
-    | zero =>
-      rw [cofreeFiltration_zero] at hn
-      exact (Submodule.mem_bot R).1 hn
-    | succ n ih =>
-      refine ih z hz ?_
-      have h := sub_mem_cofreeFiltration hG hn
-      rwa [hz, zero_sub, Submodule.neg_mem_iff] at h
-  · have key : ∀ n : ℕ, cofreeFiltration R A M n ≤ LinearMap.range G.toLinearMap := by
-      intro n
-      induction n with
-      | zero =>
-        rw [cofreeFiltration_zero]
-        exact bot_le
-      | succ n ih =>
-        intro w hw
-        obtain ⟨u, hu⟩ := ih (sub_mem_cofreeFiltration hG hw)
-        exact ⟨w - u, by rw [map_sub, hu, Comodule.Hom.coe_toLinearMap, sub_sub_cancel]⟩
-    intro w
-    obtain ⟨n, hn⟩ := exists_mem_cofreeFiltration w
-    exact key n hn
+    (hG : ∀ x : M, G (x ⊗ₜ 1) = x ⊗ₜ 1) : Function.Bijective G :=
+  Module.End.bijective_of_sub_mem_filtration cofreeFiltration_zero exists_mem_cofreeFiltration
+    fun _ _ hz ↦ sub_mem_cofreeFiltration hG hz
 
 end TensorWords
 

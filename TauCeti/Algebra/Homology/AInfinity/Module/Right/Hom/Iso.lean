@@ -29,6 +29,8 @@ module: a quasi-isomorphism between them is an isomorphism.
 
 ## Main definitions
 
+* `TauCeti.AInfinityRightModuleHom.barEquiv`: the bar map of a module morphism with bijective
+  linear part, as a linear equivalence.
 * `TauCeti.AInfinityRightModuleHom.inverse`: the inverse of a module morphism with bijective
   linear part.
 * `TauCeti.AInfinityRightModuleHom.IsIso`: a module morphism with a two-sided inverse.
@@ -82,6 +84,32 @@ theorem barMap_bijective_of_linearPart_bijective (f : AInfinityRightModuleHom MM
     (hf : Function.Bijective f.linearPart) : Function.Bijective f.barMap :=
   f.barHom.bijective_of_apply_tmul_one hf f.barMap_tmul_one
 
+/-- The bar map of a module morphism with bijective linear part, as a linear equivalence of bar
+constructions. -/
+noncomputable def barEquiv (f : AInfinityRightModuleHom MM NN)
+    (hf : Function.Bijective f.linearPart) :
+    (M ⊗[R] TensorWords R A) ≃ₗ[R] (N ⊗[R] TensorWords R A) :=
+  LinearEquiv.ofBijective f.barMap (f.barMap_bijective_of_linearPart_bijective hf)
+
+/-- The linear equivalence `barEquiv f hf` applies the bar map of `f`. -/
+@[simp]
+theorem barEquiv_apply (f : AInfinityRightModuleHom MM NN) (hf : Function.Bijective f.linearPart)
+    (z : M ⊗[R] TensorWords R A) : f.barEquiv hf z = f.barHom z := (rfl)
+
+/-- The inverse of `barEquiv f hf` undoes the bar map of `f`. -/
+@[simp]
+theorem barEquiv_symm_barMap (f : AInfinityRightModuleHom MM NN)
+    (hf : Function.Bijective f.linearPart) (z : M ⊗[R] TensorWords R A) :
+    (f.barEquiv hf).symm (f.barHom z) = z := by
+  rw [← barEquiv_apply f hf, LinearEquiv.symm_apply_apply]
+
+/-- The bar map of `f` undoes the inverse of `barEquiv f hf`. -/
+@[simp]
+theorem barMap_barEquiv_symm (f : AInfinityRightModuleHom MM NN)
+    (hf : Function.Bijective f.linearPart) (w : N ⊗[R] TensorWords R A) :
+    f.barHom ((f.barEquiv hf).symm w) = w := by
+  rw [← barEquiv_apply f hf, LinearEquiv.apply_symm_apply]
+
 /-- The inverse of a module morphism with bijective linear part: its bar map is the inverse of
 the bar map, which is again a degree-zero comodule morphism intertwining the bar differentials. -/
 noncomputable def inverse (f : AInfinityRightModuleHom MM NN)
@@ -91,21 +119,18 @@ noncomputable def inverse (f : AInfinityRightModuleHom MM NN)
     rw [Comodule.Hom.inverse_toLinearMap]
     exact LinearMap.IsHomogeneous.linearEquiv_symm f.isHomogeneous_barMap
   barDifferential_comp_barMap := by
-    have hb := f.barMap_bijective_of_linearPart_bijective hf
-    have hsymm (z : M ⊗[R] TensorWords R A) :
-        (LinearEquiv.ofBijective f.barMap hb).symm (f.barHom z) = z :=
-      LinearEquiv.ofBijective_symm_apply_apply (h := hb) f.barMap z
+    rw [Comodule.Hom.inverse_toLinearMap]
     refine LinearMap.ext fun w ↦ ?_
-    obtain ⟨z, rfl⟩ := hb.2 w
-    simp only [Comodule.Hom.inverse_toLinearMap, LinearMap.comp_apply, LinearEquiv.coe_coe]
-    rw [Comodule.Hom.coe_toLinearMap, barDifferential_barMap, hsymm, hsymm]
+    obtain ⟨z, rfl⟩ := (f.barEquiv hf).surjective w
+    -- `Comodule.Hom.inverse_toLinearMap` exhibits the inverse bar map as `(f.barEquiv hf).symm`.
+    change MM.barDifferential ((f.barEquiv hf).symm _) = (f.barEquiv hf).symm _
+    rw [barEquiv_apply, barDifferential_barMap, barEquiv_symm_barMap, barEquiv_symm_barMap]
 
 /-- The bar map of the inverse is the inverse of the bar map. -/
 @[simp]
 theorem barMap_inverse (f : AInfinityRightModuleHom MM NN)
     (hf : Function.Bijective f.linearPart) :
-    (f.inverse hf).barMap = (LinearEquiv.ofBijective f.barMap
-      (f.barMap_bijective_of_linearPart_bijective hf)).symm.toLinearMap :=
+    (f.inverse hf).barMap = (f.barEquiv hf).symm.toLinearMap :=
   Comodule.Hom.inverse_toLinearMap _ _
 
 /-- The inverse is a left inverse. -/
@@ -115,8 +140,7 @@ theorem inverse_comp_cancel (f : AInfinityRightModuleHom MM NN)
     (f.inverse hf).comp f = AInfinityRightModuleHom.id MM :=
   barMap_injective <| by
     rw [barMap_comp, barMap_id, barMap_inverse]
-    exact LinearMap.ext fun z ↦ (LinearEquiv.ofBijective f.barMap
-      (f.barMap_bijective_of_linearPart_bijective hf)).symm_apply_apply z
+    exact LinearMap.ext (f.barEquiv_symm_barMap hf)
 
 /-- The inverse is a right inverse. -/
 @[simp]
@@ -125,8 +149,7 @@ theorem comp_inverse_cancel (f : AInfinityRightModuleHom MM NN)
     f.comp (f.inverse hf) = AInfinityRightModuleHom.id NN :=
   barMap_injective <| by
     rw [barMap_comp, barMap_id, barMap_inverse]
-    exact LinearMap.ext fun z ↦ (LinearEquiv.ofBijective f.barMap
-      (f.barMap_bijective_of_linearPart_bijective hf)).apply_symm_apply z
+    exact LinearMap.ext (f.barMap_barEquiv_symm hf)
 
 /-- The linear part of the inverse is the inverse of the linear part. -/
 @[simp]
@@ -299,10 +322,11 @@ theorem isIso_iff_linearPart_bijective (f : M ⟶ N) :
     AInfinityRightModuleHom.isIso_def]
   constructor
   · intro h
-    exact ⟨CategoryTheory.inv f, CategoryTheory.IsIso.hom_inv_id f,
-      CategoryTheory.IsIso.inv_hom_id f⟩
+    refine ⟨CategoryTheory.inv f, ?_, ?_⟩
+    · rw [← comp_def, CategoryTheory.IsIso.hom_inv_id, id_def]
+    · rw [← comp_def, CategoryTheory.IsIso.inv_hom_id, id_def]
   · rintro ⟨g, hg₁, hg₂⟩
-    exact ⟨g, hg₁, hg₂⟩
+    exact ⟨g, by rw [comp_def, hg₁, id_def], by rw [comp_def, hg₂, id_def]⟩
 
 end AInfinityRightModuleCat
 
