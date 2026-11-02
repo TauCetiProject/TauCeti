@@ -181,10 +181,11 @@ theorem chainsDesc_pathClassIntegral_mextDeriv {ψ : RoughForm I M F 0} (hψ : I
       chainsDesc (fun v ↦ ψ (_root_.TopCat.toSSetObj₀Equiv v) 0) ∘ₗ
         (((singularChains ℤ).obj (.of M)).d 1 0).hom :=
   singularChains_linearMap_ext fun s ↦ by
-    rw [LinearMap.comp_apply, singularChains_d_simplexChain (n := 0), Fin.sum_univ_two,
-      map_add, map_zsmul, map_zsmul, chainsDesc_simplexChain_one, chainsDesc_simplexChain_one,
-      chainsDesc_simplexChain_one, toSSetObj₀Equiv_δ_zero, toSSetObj₀Equiv_δ_one,
-      pathClassIntegral_mextDeriv hψ]
+    -- Expand the boundary of `s` into its two vertices and evaluate the chain maps.
+    rw [LinearMap.comp_apply, singularChains_d_simplexChain (n := 0), Fin.sum_univ_two]
+    simp only [map_add, map_zsmul, chainsDesc_simplexChain_one]
+    -- Both sides are the change of `ψ` between the endpoints of `s`.
+    rw [toSSetObj₀Equiv_δ_zero, toSSetObj₀Equiv_δ_one, pathClassIntegral_mextDeriv hψ]
     simp [sub_eq_add_neg]
 
 /-! ### Periods of de Rham classes on singular homology -/
@@ -210,16 +211,6 @@ private theorem pathClassIntegral_mk_eq_of_homologyPeriodHom_eq_zero
     Path.Homotopic.Quotient.mk_symm, pathClassIntegral_trans, pathClassIntegral_symm,
     ← sub_eq_add_neg] at hl
   exact sub_eq_zero.mp hl.symm
-
-/-- A closed `C¹` form is integrated along a path inside an open set by any primitive there. -/
-private theorem pathClassIntegral_mk_eq_sub_of_isPrimitiveOn (hφ : IsSmoothForm I 1 φ)
-    (hclosed : mextDeriv φ = 0) {g : M → F} {U : Set M} (hgU : IsPrimitiveOn φ g U) {x y : M}
-    (γ : Path x y) (hγU : ∀ t, γ t ∈ U) :
-    pathClassIntegral φ (.mk γ) = g y - g x := by
-  rw [pathClassIntegral_mk_eq_sub hφ hclosed
-    ((PrimitiveSpace.continuousOn_graph hgU).comp_continuous γ.continuous hγU)
-    (fun t ↦ PrimitiveSpace.proj_graph (γ t))]
-  simp
 
 /-- **Periods on singular homology detect exactness.** A closed smooth real `1`-form is exact
 exactly when its periods on `H₁(M; ℤ)` vanish. -/

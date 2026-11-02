@@ -428,9 +428,10 @@ include hf
 private lemma imageValue_add {Y : Type} [TopologicalSpace Y] [SimplyConnectedSpace Y]
     (g : C(Y, X)) (u v w : Y) :
     imageValue f g u v + imageValue f g v w = imageValue f g u w := by
-  rw [imageValue, imageValue, ← hf, ← Path.Homotopic.Quotient.mk_map,
-    ← Path.Homotopic.Quotient.mk_map, ← Path.Homotopic.Quotient.mk_trans, ← Path.map_trans,
-    Path.Homotopic.Quotient.mk_map, map_eq_imageValue f]
+  -- Both sides are values of `f` on images of paths from `u` to `w`.
+  rw [imageValue, imageValue, ← hf, ← map_eq_imageValue f g
+    ((PathConnectedSpace.somePath u v).trans (PathConnectedSpace.somePath v w))]
+  simp only [← Path.Homotopic.Quotient.mk_map, ← Path.Homotopic.Quotient.mk_trans, Path.map_trans]
 
 /-- An additive function on path classes kills the boundaries of singular `2`-simplices: the
 three edges of a singular `2`-simplex are images of paths in the simply connected standard
