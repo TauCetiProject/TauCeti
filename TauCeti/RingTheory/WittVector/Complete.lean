@@ -31,6 +31,8 @@ with pair of definition `(A_inf, (p, [ϖ]))`.
 * `WittVector.mem_span_p_teichmuller_pow_of_pow_dvd_coeff`: conversely, if `R` is
   perfect, a Witt vector whose `i`-th coordinate is divisible by `ϖ ^ ((n - i) * p ^ i)` for
   every `i < n` lies in `(p, [ϖ]) ^ n`.
+* `WittVector.mem_span_p_teichmuller_iff`: if `R` is perfect, a Witt vector lies in `(p, [ϖ])`
+  exactly when `ϖ` divides its zeroth coordinate.
 * `WittVector.span_p_teichmuller_eq_top_iff`: if `R` has characteristic `p`, the ideal `(p, [ϖ])`
   is proper exactly when `ϖ` is not a unit.
 * `WittVector.isHausdorff_span_p_teichmuller`: if `R` has characteristic `p` and is
@@ -154,6 +156,15 @@ theorem mem_span_p_teichmuller_pow_of_pow_dvd_coeff {ϖ : R} {x : 𝕎 R} {n : �
     have hle : I ^ (n + 1 - i) * I ^ i ≤ I ^ (n + 1) := by
       rw [← pow_add, Nat.sub_add_cancel hi.le]
     exact hle (mul_mem_mul (mul_mem_right _ _ (pow_mem_pow hϖI _)) (pow_mem_pow hpI _))
+
+/-- If `R` is perfect of characteristic `p`, a Witt vector lies in `(p, [ϖ])` exactly when its
+zeroth coordinate is divisible by `ϖ`. Thus `𝕎 R ⧸ (p, [ϖ])` is `R ⧸ (ϖ)`. -/
+theorem mem_span_p_teichmuller_iff {ϖ : R} {x : 𝕎 R} :
+    x ∈ span {(p : 𝕎 R), teichmuller p ϖ} ↔ ϖ ∣ x.coeff 0 := by
+  refine ⟨fun hx ↦ ?_, fun hx ↦ ?_⟩
+  · have := mem_map_of_mem (constantCoeff : 𝕎 R →+* R) hx
+    simpa [map_span, Set.image_pair, span_insert_zero, mem_span_singleton] using this
+  · simpa using mem_span_p_teichmuller_pow_of_pow_dvd_coeff (n := 1) (by simpa using hx)
 
 /-- If `R` is perfect of characteristic `p` and `ϖ`-adically precomplete, then `𝕎 R` is
 precomplete for the `(p, [ϖ])`-adic filtration. -/
