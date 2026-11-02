@@ -97,11 +97,6 @@ theorem normalizedBurauAlexander_def (β : MarkovBraid) (s : Rˣ) :
   rw [hexp, pow_succ]
   ring
 
-/-- Adding an uncrossed strand makes the normalized Burau invariant vanish. -/
-@[simp] theorem normalizedBurauAlexander_strandIncl (s : Rˣ) (b : BraidGroup (n + 1)) :
-    normalizedBurauAlexander ⟨n + 1, strandIncl b⟩ s = 0 := by
-  rw [normalizedBurauAlexander_def, burauAlexander_strandIncl, mul_zero]
-
 /-- The trivial one-strand braid, whose closure is the unknot, has normalized value one. -/
 @[simp] theorem normalizedBurauAlexander_one_strand (s : Rˣ) :
     normalizedBurauAlexander ⟨0, 1⟩ s = 1 := by

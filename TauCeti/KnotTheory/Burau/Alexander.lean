@@ -253,17 +253,6 @@ theorem burauAlexander_conj (t : Rˣ) (b c : BraidGroup (n + 1)) :
     (Matrix.isUnit_iff_isUnit_det _ |>.mp (burau (n + 1) t c).isUnit) (by simp)
     (by simpa using t.isUnit.pow n)
 
-/-- **Adding an uncrossed strand makes the invariant vanish.** Informally, the closure of
-`strandIncl b` is the split union of the closure of `b` with an unknot. -/
-@[simp]
-theorem burauAlexander_strandIncl (t : Rˣ) (b : BraidGroup (n + 1)) :
-    burauAlexander (R := R) ⟨n + 1, BraidGroup.strandIncl b⟩ t = 0 := by
-  -- Deleting the new strand's row and column leaves `burau b - 1`, which is singular.
-  rw [burauAlexander_def]
-  simp only [Matrix.submatrix_sub, Pi.sub_apply]
-  rw [submatrix_burau_strandIncl, Matrix.submatrix_one _ (Fin.castSucc_injective _),
-    det_burau_sub_one]
-
 /-- **Markov move II, positive stabilization, multiplies the invariant by `-t`.** -/
 theorem burauAlexander_stabilize (t : Rˣ) (b : BraidGroup (n + 1)) :
     burauAlexander (R := R) ⟨n + 1, BraidGroup.strandIncl b * BraidGroup.sigma (Fin.last n)⟩ t =
