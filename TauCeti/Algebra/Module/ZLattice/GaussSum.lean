@@ -168,9 +168,7 @@ theorem gaussTerm_mk (hL : IsEven L) (a : ℤ) (c : ℕ) (m : dual L) (v : L) :
 theorem norm_gaussTerm (hL : IsEven L) (a : ℤ) (c : ℕ) (m : dual L)
     (y : L ⧸ ((c : ℝ) • L).submoduleOf L) : ‖gaussTerm L hL a c m y‖ = 1 := by
   induction y using Submodule.Quotient.induction_on with | H v
-  rw [gaussTerm_mk, norm_exp]
-  simp only [mul_re, mul_im, ofReal_re, ofReal_im, I_re, I_im, re_ofNat, im_ofNat]
-  simp
+  rw [gaussTerm_mk, norm_exp_two_pi_mul_I_mul_ofReal]
 
 /-- The twisted Gauss summand of the class of `v ∈ L` is the untwisted one times the phase
 `e(⟪v, m⟫ / c)`. -/

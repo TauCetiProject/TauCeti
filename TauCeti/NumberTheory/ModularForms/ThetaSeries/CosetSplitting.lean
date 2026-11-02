@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.Asymptotics
-import TauCeti.Analysis.Complex.UpperHalfPlane.Exp
 import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
 import TauCeti.NumberTheory.ModularForms.ThetaSeries.Functoriality
 
@@ -95,8 +94,7 @@ theorem summable_norm_gaussSumTwisted_mul_thetaTerm (a d : ℤ) (c : ℕ) [NeZer
   refine .of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun m ↦ ?_)
     (((summable_thetaSeries (dual L) τ).norm).mul_left
       (Fintype.card (L ⧸ ((c : ℝ) • L).submoduleOf L) : ℝ))
-  rw [norm_mul, norm_mul, TauCeti.UpperHalfPlane.norm_exp_two_pi_I_mul, ofReal_im, mul_zero,
-    neg_zero, Real.exp_zero, mul_one]
+  rw [norm_mul, norm_mul, norm_exp_two_pi_mul_I_mul_ofReal, mul_one]
   gcongr
   exact norm_gaussSumTwisted_le hL a c m
 
@@ -127,8 +125,7 @@ theorem thetaSeries_SL_smul (hk : finrank ℝ E = 2 * k) (A : SL(2, ℤ)) {c : �
         cexp (π * I * (‖(m : E)‖ ^ 2 : ℝ) * σ))
   have hF (y) : Summable (F y) := by
     refine .mul_left _ (.of_norm_bounded (summable_thetaSeries (dual L) σ).norm fun m ↦ ?_)
-    rw [norm_mul, TauCeti.UpperHalfPlane.norm_exp_two_pi_I_mul, ofReal_im]
-    simp
+    rw [norm_mul, norm_exp_two_pi_mul_I_mul_ofReal, one_mul]
   -- `exp (π i ‖m‖² σ) = e(d ‖m‖² / (2c)) exp (π i ‖m‖² τ)`.
   have hσm (m : dual L) : cexp (π * I * (‖(m : E)‖ ^ 2 : ℝ) * σ) =
       cexp (2 * π * I * ((A 1 1 * ‖(m : E)‖ ^ 2 / (2 * c) : ℝ) : ℂ)) *
@@ -191,8 +188,8 @@ theorem thetaSeries_SL_slash_apply (hk : finrank ℝ E = 2 * k) (A : SL(2, ℤ))
       (-I / c) ^ k := by
     rw [← inv_pow, ← mul_pow]
     congr 1
-    field_simp
-    rw [I_sq, neg_neg]
+    rw [div_mul_eq_mul_div, mul_inv_cancel₀ hden₀, div_eq_div_iff (mul_ne_zero I_ne_zero hcC) hcC]
+    linear_combination (c : ℂ) * I_sq
   rw [← h]
   ring
 
