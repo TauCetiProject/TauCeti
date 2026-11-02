@@ -16,6 +16,9 @@ norm preserves its Gauss norm and every degree attaining that norm. Consequently
 both the distinguished degree and the lowest dominant degree. These statements require only
 bounded weighted coefficients, so apply in particular to restricted power series without any
 completeness assumption.
+
+At any nonnegative radius, finite coefficient error bounds together with tail bounds on both
+series at the same tolerance bound the Gauss norm of their difference.
 -/
 
 public section

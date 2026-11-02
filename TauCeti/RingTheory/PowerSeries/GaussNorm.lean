@@ -131,11 +131,6 @@ section SeminormedRing
 
 variable {R : Type*} [SeminormedRing R] {c : ℝ} {i j s t : ℕ} {f g : PowerSeries R}
 
-/-- A bound on the tail suffices for boundedness of all weighted coefficients. -/
-theorem hasGaussNorm_of_tail_le {N : ℕ} {δ : ℝ}
-    (hf : ∀ n, N ≤ n → ‖f.coeff n‖ * c ^ n ≤ δ) : f.HasGaussNorm norm c :=
-  (isBoundedUnder_of_eventually_le (eventually_atTop.mpr ⟨N, hf⟩)).bddAbove_range
-
 /-- Coefficientwise convergence to zero implies Gauss-norm convergence when the weighted
 coefficient norms are bounded by one null sequence, uniformly over the family. -/
 theorem tendsto_gaussNorm_zero_of_coeff_bound {α : Type*} {l : Filter α}
@@ -226,6 +221,11 @@ theorem gaussNorm_mul_le (hc : 0 ≤ c) (hf : f.HasGaussNorm norm c)
     hg.hasMvGaussNorm
 
 end Ultrametric
+
+/-- A bound on the tail suffices for boundedness of all weighted coefficients. -/
+theorem hasGaussNorm_of_tail_le {S : Type*} [Semiring S] {v : S → ℝ} {a : PowerSeries S}
+    {N : ℕ} {δ : ℝ} (ha : ∀ n, N ≤ n → v (a.coeff n) * c ^ n ≤ δ) : a.HasGaussNorm v c :=
+  (isBoundedUnder_of_eventually_le (eventually_atTop.mpr ⟨N, ha⟩)).bddAbove_range
 
 /-- If the weighted coefficient in degree `s` dominates every other one, the Gauss norm is the
 value it takes there. -/

@@ -16,8 +16,8 @@ comparisons, together with a bound on the tail of a second series `g`, ensure
 the tail bound are all made at the single upper radius `s`. The cutoff and the positive
 error tolerance depend only on `f`, `r`, and `s`. Positivity of the lower radius gives
 a uniform positive tolerance. An explicit test also applies to any prescribed cutoff
-and tolerance below the lower-radius Gauss norm, assuming only bounded weighted
-coefficients for `f` at `s`.
+and tolerance below the lower-radius Gauss norm, with tail bounds on both series
+at `s`.
 
 In particular, every sufficiently long polynomial truncation preserves the Gauss norm
 and the complete set of active coefficient indices throughout the interval, including
@@ -47,11 +47,12 @@ variable {R : Type*} [SeminormedRing R] [IsUltrametricDist R]
 perturbation throughout a closed interval of nonnegative radii. The tolerance need only
 be strictly below the lower-radius Gauss norm. -/
 theorem gaussNorm_sub_lt_of_coeff_le_of_tail_le (hr : 0 ≤ r)
-    (hf : f.HasGaussNorm norm s) (hδ : δ < f.gaussNorm norm r)
+    (hδ : δ < f.gaussNorm norm r)
     (hcoeff : ∀ n < N, ‖f.coeff n - g.coeff n‖ * s ^ n ≤ δ)
     (hftail : ∀ n, N ≤ n → ‖f.coeff n‖ * s ^ n ≤ δ)
     (hgtail : ∀ n, N ≤ n → ‖g.coeff n‖ * s ^ n ≤ δ) :
     ∀ t ∈ Icc r s, (f - g).gaussNorm norm t < f.gaussNorm norm t := by
+  have hf := hasGaussNorm_of_tail_le hftail
   intro t ht
   have hterm (a : R) (n : ℕ) : ‖a‖ * t ^ n ≤ ‖a‖ * s ^ n :=
     mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (hr.trans ht.1) ht.2 n) (norm_nonneg _)
@@ -69,18 +70,19 @@ theorem gaussNorm_sub_lt_of_coeff_le_of_tail_le (hr : 0 ≤ r)
 /-- The finite coefficient-and-tail test preserves every active coefficient index uniformly
 on the radius interval, without a restrictedness assumption on either series. -/
 theorem norm_coeff_mul_pow_eq_gaussNorm_iff_of_coeff_le_of_tail_le (hr : 0 ≤ r)
-    (hf : f.HasGaussNorm norm s) (hδ : δ < f.gaussNorm norm r)
+    (hδ : δ < f.gaussNorm norm r)
     (hcoeff : ∀ n < N, ‖f.coeff n - g.coeff n‖ * s ^ n ≤ δ)
     (hftail : ∀ n, N ≤ n → ‖f.coeff n‖ * s ^ n ≤ δ)
     (hgtail : ∀ n, N ≤ n → ‖g.coeff n‖ * s ^ n ≤ δ) :
     ∀ t ∈ Icc r s, ∀ n : ℕ,
       ‖f.coeff n‖ * t ^ n = f.gaussNorm norm t ↔
         ‖g.coeff n‖ * t ^ n = g.gaussNorm norm t := by
+  have hf := hasGaussNorm_of_tail_le hftail
   intro t ht n
   exact norm_coeff_mul_pow_eq_gaussNorm_iff_of_gaussNorm_sub_lt (hr.trans ht.1)
     (hf.of_le norm_nonneg (hr.trans ht.1) ht.2)
     ((hasGaussNorm_of_tail_le hgtail).of_le norm_nonneg (hr.trans ht.1) ht.2)
-    (gaussNorm_sub_lt_of_coeff_le_of_tail_le hr hf hδ hcoeff hftail hgtail t ht) n
+    (gaussNorm_sub_lt_of_coeff_le_of_tail_le hr hδ hcoeff hftail hgtail t ht) n
 
 end TauCeti.PowerSeries
 
@@ -111,7 +113,7 @@ theorem exists_nat_exists_pos_gaussNorm_sub_lt_of_coeff_le_of_tail_le
     obtain ⟨N, hN⟩ := eventually_atTop.mp
       (((isRestricted_iff' s f).mp hf).eventually (gt_mem_nhds hδ))
     refine ⟨N, δ, hδ, fun M hM g hcoeff hg => ?_⟩
-    exact gaussNorm_sub_lt_of_coeff_le_of_tail_le hr.le hfs (half_lt_self hpos)
+    exact gaussNorm_sub_lt_of_coeff_le_of_tail_le hr.le (half_lt_self hpos)
       hcoeff (fun n hn => (hN n (hM.trans hn)).le) hg
   · refine ⟨0, 1, zero_lt_one, ?_⟩
     intro M hM g hcoeff hg t ht
