@@ -82,13 +82,6 @@ theorem isCompact_comap_unitarySubgroup :
       Set (SpecialLinearGroup ι 𝕜)) :=
   isClosedEmbedding_toGL.isCompact_preimage GeneralLinearGroup.isCompact_unitarySubgroup
 
-/-- The image in `GL ι 𝕜` of a compact subgroup of `SL ι 𝕜` is compact. -/
-private theorem isCompact_map_toGL {K : Subgroup (SpecialLinearGroup ι 𝕜)}
-    (hK : IsCompact (K : Set (SpecialLinearGroup ι 𝕜))) :
-    IsCompact ((K.map toGL : Subgroup (GL ι 𝕜)) : Set (GL ι 𝕜)) := by
-  rw [Subgroup.coe_map]
-  exact hK.image continuous_toGL
-
 /-- **The determinant-one unitary matrices form a maximal compact subgroup of `SL ι 𝕜`**, in the
 elementwise form: an element of a compact subgroup containing every determinant-one unitary matrix
 is unitary. -/
@@ -103,7 +96,7 @@ theorem mem_comap_unitarySubgroup_of_isCompact_of_le {K : Subgroup (SpecialLinea
     Units.ext (coe_GL_coe_matrix _)
   have hVK : V ∈ K := hUK (by simp [hV])
   exact GeneralLinearGroup.mem_unitarySubgroup_of_isCompact_of_polarUnitary_mem
-    (isCompact_map_toGL hK) ⟨g, hg, rfl⟩ ⟨V, hVK, hV⟩
+    (Subgroup.isCompact_map hK _ continuous_toGL) ⟨g, hg, rfl⟩ ⟨V, hVK, hV⟩
 
 /-- **The determinant-one unitary matrices form a maximal compact subgroup of `SL ι 𝕜`.** A compact
 subgroup containing every determinant-one unitary matrix is the subgroup of determinant-one
@@ -132,7 +125,8 @@ theorem exists_conj_smul_le_comap_unitarySubgroup {K : Subgroup (SpecialLinearGr
       MulAut.conj g • K ≤ (unitarySubgroup (GL ι 𝕜)).comap toGL := by
   -- Conjugate `K` into the unitary matrices by `h : GL ι 𝕜`, and write `h = c V g`. Conjugation
   -- by the scalar `c` is trivial and conjugation by the unitary `V` preserves unitarity.
-  obtain ⟨h, hh⟩ := GeneralLinearGroup.exists_conj_smul_le_unitarySubgroup (isCompact_map_toGL hK)
+  obtain ⟨h, hh⟩ := GeneralLinearGroup.exists_conj_smul_le_unitarySubgroup
+    (Subgroup.isCompact_map hK _ continuous_toGL)
   obtain ⟨c, V, hV, g, hcVg⟩ := GeneralLinearGroup.exists_scalar_mul_mul_toGL_eq h
   refine ⟨g, fun x hx ↦ ?_⟩
   obtain ⟨k, hk, rfl⟩ := (Subgroup.mem_smul_pointwise_iff_exists _ _ _).mp hx

@@ -78,7 +78,9 @@ series of a profinite group.
 * `MonoidHom.map_topologicalClosure_le`: a continuous homomorphism maps the topological closure of
   a subgroup into the topological closure of its image; `MonoidHom.map_topologicalClosure`: with
   equality when the subgroup's closure is compact and the target Hausdorff.
-  `Subgroup.isClosed_map` says that images of compact subgroups in Hausdorff groups are closed.
+  `Subgroup.isCompact_map` says that continuous homomorphisms map compact subgroups to compact
+  subgroups, and `Subgroup.isClosed_map` that images of compact subgroups in Hausdorff groups are
+  closed.
 * `ContinuousMulEquiv.map_topologicalClosure_normalClosure`: a topological group isomorphism
   carries the closed normal closure of a set onto the closed normal closure of its image.
 * `Subgroup.commutator_topologicalClosure_right_le`: a closed subgroup containing `⁅A, B⁆`
@@ -375,11 +377,17 @@ theorem _root_.MonoidHom.map_topologicalClosure_le (f : G →* H) (hf : Continuo
   exact image_closure_subset_closure_image hf
 
 omit [IsTopologicalGroup G] [IsTopologicalGroup H] in
+/-- A continuous homomorphism maps compact subgroups to compact subgroups. -/
+theorem isCompact_map {S : Subgroup G} (hS : IsCompact (S : Set G))
+    (f : G →* H) (hf : Continuous f) : IsCompact (S.map f : Set H) := by
+  rw [coe_map]
+  exact hS.image hf
+
+omit [IsTopologicalGroup G] [IsTopologicalGroup H] in
 /-- A continuous homomorphism to a Hausdorff group maps compact subgroups to closed subgroups. -/
 theorem isClosed_map [T2Space H] {S : Subgroup G} (hS : IsCompact (S : Set G))
-    (f : G →* H) (hf : Continuous f) : IsClosed (S.map f : Set H) := by
-  rw [coe_map]
-  exact (hS.image hf).isClosed
+    (f : G →* H) (hf : Continuous f) : IsClosed (S.map f : Set H) :=
+  (isCompact_map hS f hf).isClosed
 
 /-- A continuous homomorphism to a Hausdorff group maps a subgroup's compact topological
 closure onto the topological closure of its image. -/
