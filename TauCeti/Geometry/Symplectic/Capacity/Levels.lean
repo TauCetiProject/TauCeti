@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Symplectic.Capacity.HoferZehnder
 public import TauCeti.Geometry.Symplectic.Hamiltonian.AlmostExistence
 import Mathlib.Geometry.Manifold.IntegralCurve.Transform
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
-import TauCeti.Geometry.Manifold.IntegralCurve.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.Constancy
 import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
 import TauCeti.Topology.Homotopy.AddCircle
 
@@ -25,9 +25,10 @@ nonincreasing step from its maximum `v` on `(-∞, a]` down to `0` on `[b, ∞)`
 `μ ∘ F` is therefore either constant or a closed orbit of `X_F` on a level `s ∈ (a, b)`, of period
 `|μ'(s)| T`. If no level of `F` in `(a, b)` carries a nonconstant periodic orbit of `X_F` of
 period at most `τ` whose loop is contractible in `W`, then every `μ ∘ F` with `|μ'| ≤ τ` is
-`HZ°`-admissible for `W`. Such steps exist for every `v < τ (b - a)`
-(`TauCeti.exists_contDiff_antitone_cutoff_abs_deriv_le`), so the `π₁`-sensitive Hofer–Zehnder
-capacity of `W` is at least `τ (b - a)`
+`HZ°`-admissible for `W`
+(`TauCeti.SmoothTwoForm.IsNondegenerate.isContractibleHZAdmissible_comp`). Such steps exist for
+every `v < τ (b - a)` (`TauCeti.exists_contDiff_antitone_cutoff_abs_deriv_le`), so the
+`π₁`-sensitive Hofer–Zehnder capacity of `W` is at least `τ (b - a)`
 (`TauCeti.SmoothTwoForm.IsNondegenerate.ofReal_mul_sub_le_contractibleHZCapacity`).
 
 Read the other way, this is the step of the Hofer–Zehnder and Struwe argument that turns
@@ -44,6 +45,8 @@ compactness argument for the resulting orbits; neither is treated here.
 
 ## Main results
 
+* `TauCeti.SmoothTwoForm.IsNondegenerate.isContractibleHZAdmissible_comp`: in the absence of
+  short contractible closed orbits on the levels in `(a, b)`, `μ ∘ F` is `HZ°`-admissible.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.ofReal_mul_sub_le_contractibleHZCapacity`: in the
   absence of short contractible closed orbits on the levels in `(a, b)`, the capacity is at least
   `τ (b - a)`.
@@ -82,7 +85,7 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 `W` is constant as soon as, writing `c = φ'(F (γ 0))`, every periodic orbit `γ'` of `X_F` through
 `γ 0` of period at most `T |c|` whose loop is contractible in `W` is constant when `c ≠ 0`. Indeed
 `F` is constant along `γ`, and along its level `X_{φ ∘ F} = c X_F`: if `c = 0` then `γ` is an
-integral curve along which its field vanishes, and otherwise `t ↦ γ (t / c)` is such an orbit
+integral curve with zero derivative, hence constant, and otherwise `t ↦ γ (t / c)` is such an orbit
 `γ'`. -/
 private theorem IsNondegenerate.eq_of_isMIntegralCurve_comp (hσ : σ.IsNondegenerate)
     (hF : MDifferentiable I 𝓘(ℝ) F) {φ : ℝ → ℝ} (hφ : Differentiable ℝ φ) {T : ℝ} (hT : 0 < T)
@@ -109,7 +112,10 @@ private theorem IsNondegenerate.eq_of_isMIntegralCurve_comp (hσ : σ.IsNondegen
       σ.hamiltonianVectorField (φ ∘ F) (γ t) = c • σ.hamiltonianVectorField F (γ t) := by
     rw [hX, hlev]
   by_cases hc : c = 0
-  · exact fun t ↦ hγ.apply_eq_of_forall_eq_zero (fun t ↦ by rw [hXγ, hc, zero_smul]) t 0
+  · exact fun t ↦ MDifferentiable.apply_eq_of_mfderiv_eq_zero (I := 𝓘(ℝ))
+      (fun u ↦ (hγ u).mdifferentiableAt)
+      (fun u ↦ by rw [(hγ u).mfderiv, hXγ, hc, zero_smul, ContinuousLinearMap.smulRight_zero]; rfl)
+      t 0
   -- Otherwise `γ' t = γ (t / c)` is a periodic orbit of `X_F` with a contractible loop.
   obtain ⟨g', hg', hgg'⟩ := hg.exists_addCircle_comp_mul hT.ne' (inv_ne_zero hc)
   have hgγ' (t : ℝ) : (g' t : M) = γ (t * c⁻¹) := by rw [hgg', hgγ]
@@ -124,6 +130,58 @@ private theorem IsNondegenerate.eq_of_isMIntegralCurve_comp (hσ : σ.IsNondegen
     (fun t ↦ by simp only [← hgγ', AddCircle.coe_add_period]) (by simp) ⟨g', hg', hgγ'⟩
   intro t
   simpa [mul_inv_cancel_right₀ hc] using hconst (t * c)
+
+/-- **Admissibility of `μ ∘ F`.** Let `F` be smooth with `{F ≤ b}` compact and contained in the
+interiors of `W` and of `M`, taking values below `a < b` somewhere and above `b` somewhere in the
+interior of `W`. Let `μ ≥ 0` be smooth and nonincreasing, constant on `(-∞, a]` and zero on
+`[b, ∞)`, with `|μ'| ≤ τ` everywhere and `μ' = 0` outside `(a, b)`. If no level `F⁻¹(s)`,
+`s ∈ (a, b)`, carries a nonconstant `T`-periodic orbit of `X_F` with `T ≤ τ` whose loop is
+contractible in `W`, then `μ ∘ F` is `HZ°`-admissible for `W`. -/
+theorem IsNondegenerate.isContractibleHZAdmissible_comp (hσ : σ.IsNondegenerate)
+    (hF : ContMDiff I 𝓘(ℝ) ∞ F) (hcpt : IsCompact {x | F x ≤ b})
+    (hW : {x | F x ≤ b} ⊆ interior W) (hM : {x | F x ≤ b} ⊆ I.interior M)
+    (ha : ∃ x, F x < a) (hb : ∃ x ∈ interior W, b < F x) {μ : ℝ → ℝ} (hμ : ContDiff ℝ ∞ μ)
+    (hanti : Antitone μ) (hnn : ∀ r, 0 ≤ μ r) (hhigh : ∀ r, b ≤ r → μ r = 0)
+    (hlow : ∀ r ≤ a, μ r = μ a) (habs : ∀ r, |deriv μ r| ≤ τ)
+    (hzero : ∀ r ∉ Ioo a b, deriv μ r = 0)
+    (horb : ∀ (T : ℝ) (γ : ℝ → M), 0 < T → T ≤ τ →
+      IsMIntegralCurve γ (σ.hamiltonianVectorField F) → Periodic γ T → F (γ 0) ∈ Ioo a b →
+      (∃ g : C(AddCircle T, W), g.Nullhomotopic ∧ ∀ t : ℝ, (g t : M) = γ t) →
+      ∀ t, γ t = γ 0) :
+    σ.IsContractibleHZAdmissible W (μ ∘ F) := by
+  have hle (r : ℝ) : μ r ≤ μ a := by
+    rcases le_total r a with h | h
+    · exact (hlow r h).le
+    · exact hanti h
+  obtain ⟨x₀, hx₀⟩ := ha
+  have hFc : Continuous F := hF.continuous
+  -- The support of `μ ∘ F` lies in `{F ≤ b}`, since `μ` vanishes on `[b, ∞)`.
+  have hsupp : tsupport (μ ∘ F) ⊆ {x | F x ≤ b} :=
+    closure_minimal (fun x hx ↦ not_lt.1 fun h ↦ hx (hhigh _ h.le))
+      (isClosed_le hFc continuous_const)
+  exact
+    { contMDiff := hμ.comp_contMDiff hF
+      isCompact_tsupport := hcpt.of_isClosed_subset (isClosed_tsupport _) hsupp
+      tsupport_subset_interior := hsupp.trans hW
+      tsupport_subset_interior_manifold := hsupp.trans hM
+      nonneg := fun x ↦ hnn _
+      exists_isOpen_eqOn_zero := by
+        obtain ⟨x, hxW, hx⟩ := hb
+        exact ⟨interior W ∩ {x | b < F x}, isOpen_interior.inter (isOpen_lt continuous_const hFc),
+          ⟨x, hxW, hx⟩, inter_subset_left.trans interior_subset,
+          fun y hy ↦ hhigh _ (le_of_lt hy.2)⟩
+      exists_isOpen_isMaxOn := ⟨{x | F x < a}, isOpen_lt hFc continuous_const, ⟨x₀, hx₀⟩,
+        fun x hx ↦ isMaxOn_iff.2 fun y _ ↦ by simpa [hlow _ (le_of_lt hx)] using hle (F y)⟩
+      eq_of_isMIntegralCurve := by
+        rintro T γ hT hT1 hγ - ⟨g, hg, hgγ⟩
+        refine hσ.eq_of_isMIntegralCurve_comp (hF.mdifferentiable (by simp))
+          (hμ.differentiable (by simp)) hT hγ hg hgγ fun hc P γ' hP hPT hγ' hper hγ'0 hg' ↦ ?_
+        -- A nonzero slope `μ'(s)` forces `s ∈ (a, b)` and `|μ'(s)| ≤ τ`.
+        refine horb P γ' hP (hPT.trans ?_) hγ' hper ?_ hg'
+        · simpa using mul_le_mul hT1 (habs _) (abs_nonneg _) zero_le_one
+        · rw [hγ'0]
+          by_contra hs
+          exact hc (hzero _ hs) }
 
 /-- **A lower bound for the `π₁`-sensitive Hofer–Zehnder capacity from the levels of an energy
 function.** Let `F` be smooth with `{F ≤ b}` compact and contained in the interiors of `W` and of
@@ -154,34 +212,8 @@ theorem IsNondegenerate.ofReal_mul_sub_le_contractibleHZCapacity (hσ : σ.IsNon
   have hsup : ⨆ x, (μ ∘ F) x = v :=
     ciSup_eq_of_forall_le_of_forall_lt_exists_gt (fun x ↦ hle _) fun w hw ↦
       ⟨x₀, by simpa [hlow _ hx₀.le] using hw⟩
-  have hFc : Continuous F := hF.continuous
-  -- The support of `μ ∘ F` lies in `{F ≤ b}`, since `μ` vanishes on `[b, ∞)`.
-  have hsupp : tsupport (μ ∘ F) ⊆ {x | F x ≤ b} :=
-    closure_minimal (fun x hx ↦ not_lt.1 fun h ↦ hx (hhigh _ h.le))
-      (isClosed_le hFc continuous_const)
-  have hadm : σ.IsContractibleHZAdmissible W (μ ∘ F) :=
-    { contMDiff := hμ.comp_contMDiff hF
-      isCompact_tsupport := hcpt.of_isClosed_subset (isClosed_tsupport _) hsupp
-      tsupport_subset_interior := hsupp.trans hW
-      tsupport_subset_interior_manifold := hsupp.trans hM
-      nonneg := fun x ↦ hnn _
-      exists_isOpen_eqOn_zero := by
-        obtain ⟨x, hxW, hx⟩ := hb
-        exact ⟨interior W ∩ {x | b < F x}, isOpen_interior.inter (isOpen_lt continuous_const hFc),
-          ⟨x, hxW, hx⟩, inter_subset_left.trans interior_subset,
-          fun y hy ↦ hhigh _ (le_of_lt hy.2)⟩
-      exists_isOpen_isMaxOn := ⟨{x | F x < a}, isOpen_lt hFc continuous_const, ⟨x₀, hx₀⟩,
-        fun x hx ↦ isMaxOn_iff.2 fun y _ ↦ by simpa [hlow _ (le_of_lt hx)] using hle (F y)⟩
-      eq_of_isMIntegralCurve := by
-        rintro T γ hT hT1 hγ - ⟨g, hg, hgγ⟩
-        refine hσ.eq_of_isMIntegralCurve_comp (hF.mdifferentiable (by simp))
-          (hμ.differentiable (by simp)) hT hγ hg hgγ fun hc P γ' hP hPT hγ' hper hγ'0 hg' ↦ ?_
-        -- A nonzero slope `μ'(s)` forces `s ∈ (a, b)` and `|μ'(s)| ≤ τ`.
-        refine horb P γ' hP (hPT.trans ?_) hγ' hper ?_ hg'
-        · simpa using mul_le_mul hT1 (habs _) (abs_nonneg _) zero_le_one
-        · rw [hγ'0]
-          by_contra hs
-          exact hc (hzero _ hs) }
+  have hadm := hσ.isContractibleHZAdmissible_comp hF hcpt hW hM ⟨x₀, hx₀⟩ hb hμ hanti hnn hhigh
+    (fun r hr ↦ by rw [hlow r hr, hlow a le_rfl]) habs hzero horb
   calc ENNReal.ofReal v = ENNReal.ofReal (⨆ x, (μ ∘ F) x) := by rw [hsup]
     _ ≤ _ := hadm.ofReal_iSup_le_contractibleHZCapacity
 

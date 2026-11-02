@@ -17,9 +17,7 @@ This file records the correspondence between an integral curve and the solution 
 coordinate equation it becomes when read in one fixed extended chart, in both directions, and the
 uniqueness statement that comes with it: two integral curves on an open interval which agree once
 agree throughout, as soon as one of them stays in a fixed chart over which the coordinate field is
-continuously differentiable. An integral curve along which the field vanishes is constant: in a
-chart around each of its points it has zero derivative. Unlike uniqueness, this needs no
-regularity of the field, so it applies to fields that are not known to be locally Lipschitz.
+continuously differentiable.
 
 ## Main results
 
@@ -33,8 +31,6 @@ regularity of the field, so it applies to fields that are not known to be locall
   extended chart solves the coordinate equation there.
 * `IsMIntegralCurveOn.eqOn_of_contDiffOn_extChartAt`: uniqueness of integral curves on an open
   interval, with the field regular in one fixed chart only.
-* `IsMIntegralCurve.apply_eq_of_forall_eq_zero`: an integral curve along which the field vanishes
-  is constant, with no regularity assumption on the field.
 
 ## References
 
@@ -278,28 +274,3 @@ theorem IsMIntegralCurveOn.eqOn_of_contDiffOn_extChartAt
       filter_upwards [hcoord, hJ, hδsrc] with r hr hrJ hrδsrc
       exact φ.injOn (hγsrc r hrJ) hrδsrc hr
     exact (hlocal.and hJ).mono fun _ hr ↦ ⟨hr.1, hr.2⟩
-
-/-- **An integral curve along which the field vanishes is constant.** If `v (γ t) = 0` at every
-time `t`, then the integral curve `γ` of `v` is constant: read in the chart at any of its points
-it has zero derivative near that time, so it is locally constant. No regularity of `v` is used. -/
-theorem IsMIntegralCurve.apply_eq_of_forall_eq_zero
-    {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
-    {v : (x : M) → TangentSpace I x} {γ : ℝ → M} (hγ : IsMIntegralCurve γ v)
-    (hv : ∀ t, v (γ t) = 0) (t s : ℝ) : γ t = γ s := by
-  refine IsLocallyConstant.apply_eq_of_preconnectedSpace ?_ t s
-  rw [IsLocallyConstant.iff_eventually_eq]
-  intro t₀
-  -- Near `t₀`, the curve stays in the chart at `γ t₀`, where it has zero derivative.
-  obtain ⟨ε, hε, hball⟩ := Metric.eventually_nhds_iff_ball.1
-    ((hγ.isMIntegralCurveAt t₀).eventually_hasDerivAt.and
-      (hγ.continuous.continuousAt.preimage_mem_nhds (extChartAt_source_mem_nhds (I := I) (γ t₀))))
-  have hd (u : ℝ) (hu : u ∈ Metric.ball t₀ ε) :
-      HasDerivAt ((extChartAt I (γ t₀)) ∘ γ) 0 u := by
-    convert (hball u hu).1 using 1
-    rw [hv u]
-    exact (map_zero _).symm
-  filter_upwards [Metric.ball_mem_nhds t₀ hε] with u hu
-  exact (extChartAt I (γ t₀)).injOn (hball u hu).2 (mem_extChartAt_source (γ t₀))
-    (Metric.isOpen_ball.is_const_of_deriv_eq_zero (convex_ball t₀ ε).isPreconnected
-      (fun r hr ↦ (hd r hr).differentiableAt.differentiableWithinAt)
-      (fun r hr ↦ (hd r hr).deriv) hu (Metric.mem_ball_self hε))
