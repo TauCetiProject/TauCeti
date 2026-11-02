@@ -20,7 +20,8 @@ have the quotient topology from the same object space and orbit relation.
 This identifies the categorical coarse topology with the usual orbit topology without
 identifying the objects with `X` definitionally or forgetting labels of ineffective arrows.
 For a continuous discrete-group action the source is continuous and the target is open;
-properness then gives the general Hausdorff and paracompact coarse-space theorems.
+properness then gives a Hausdorff coarse space, which is also paracompact when `X` is
+locally compact and second countable.
 
 ## References
 
