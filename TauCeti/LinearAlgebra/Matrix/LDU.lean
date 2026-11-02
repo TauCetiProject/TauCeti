@@ -42,7 +42,8 @@ off a Bruhat normal form.
 
 ## Main definitions
 
-* `Matrix.BlockUnitriangular`: block triangular with identity diagonal blocks.
+* `Matrix.BlockUnitriangular`: block triangular with identity diagonal blocks, characterized by
+  `Matrix.blockUnitriangular_iff`.
 
 ## Main results
 
@@ -53,12 +54,16 @@ off a Bruhat normal form.
   `Matrix.BlockTriangular.toSquareBlockProp_mul`: on a down-closed set of indices, the square block
   of a product with a block lower triangular left factor, or a block upper triangular right factor,
   is the product of the square blocks.
+* `Matrix.mul_eq_of_blockUnitriangular_toDual`: a block diagonal matrix multiplied on the left by
+  a block lower unitriangular matrix is unchanged once the product is block upper triangular.
 * `Matrix.det_toSquareBlockProp_blockLDU`: the leading block minors of `L * D * U` are those of
   `D`.
 * `Matrix.exists_blockUnitriangular_mul_blockTriangular`: block row reduction.
 * `Matrix.exists_blockLDU`: a block `LDU` factorization exists when the leading blocks on the
   strict initial segments have unit determinants.
 * `Matrix.eq_of_blockLDU_eq`: uniqueness of the factorization with invertible middle factor.
+* `Matrix.isUnit_det_toSquareBlockProp_lt`: unit leading block minors give unit determinants of
+  the leading blocks on the strict initial segments.
 * `Matrix.exists_blockLDU_iff`: a block `LDU` factorization with invertible middle factor exists
   exactly when all leading block minors are units.
 
@@ -90,6 +95,12 @@ entry at `(i, j)` is that of the identity matrix whenever `b i = b j`. Ranking b
 instead of `b` gives the block lower unitriangular matrices. -/
 def BlockUnitriangular (M : Matrix m m R) (b : m → α) : Prop :=
   M.BlockTriangular b ∧ ∀ ⦃i j⦄, b i = b j → M i j = (1 : Matrix m m R) i j
+
+/-- A matrix is block unitriangular exactly when it is block triangular and agrees with the
+identity matrix on its diagonal blocks. -/
+theorem blockUnitriangular_iff : M.BlockUnitriangular b ↔
+    M.BlockTriangular b ∧ ∀ ⦃i j⦄, b i = b j → M i j = (1 : Matrix m m R) i j :=
+  Iff.rfl
 
 theorem BlockUnitriangular.blockTriangular (h : M.BlockUnitriangular b) : M.BlockTriangular b :=
   h.1
@@ -159,38 +170,29 @@ theorem BlockUnitriangular.mul_apply_of_eq (hA : A.BlockUnitriangular b)
     rw [hA.2 hki', one_apply_ne (Ne.symm hki), zero_mul]
   · simp
 
+/-- Block unitriangular matrices are closed under multiplication. -/
 theorem BlockUnitriangular.mul (hA : A.BlockUnitriangular b) (hB : B.BlockUnitriangular b) :
     (A * B).BlockUnitriangular b :=
   ⟨hA.1.mul hB.1, fun _ _ hij => (hA.mul_apply_of_eq hB.1 hij).trans (hB.2 hij)⟩
 
+/-- A block diagonal matrix `D`, multiplied on the left by a block lower unitriangular matrix, is
+unchanged as soon as the product is block upper triangular. -/
+theorem mul_eq_of_blockUnitriangular_toDual {Z D : Matrix m m R}
+    (hZ : Z.BlockUnitriangular (toDual ∘ b)) (hD : D.BlockTriangular b)
+    (hD' : D.BlockTriangular (toDual ∘ b)) (hZD : (Z * D).BlockTriangular b) : Z * D = D := by
+  ext i j
+  rcases lt_trichotomy (b i) (b j) with hij | hij | hij
+  · rw [(hZ.1.mul hD') (toDual_lt_toDual.mpr hij), hD' (toDual_lt_toDual.mpr hij)]
+  · exact hZ.mul_apply_of_eq hD' (congrArg toDual hij)
+  · rw [hZD hij, hD hij]
+
 end Mul
 
-section CommRing
-
-variable [Fintype m] [CommRing R] [LinearOrder α] {M : Matrix m m R} {b : m → α}
-
-theorem BlockUnitriangular.det_eq_one (h : M.BlockUnitriangular b) : M.det = 1 := by
-  rw [h.1.det]
-  refine Finset.prod_eq_one fun a _ => ?_
-  have : M.toSquareBlock b a = 1 := by
-    ext i j
-    rw [toSquareBlock_def, of_apply, h.2 (i.2.trans j.2.symm)]
-    by_cases hij : i = j
-    · subst hij
-      simp
-    · rw [one_apply_ne hij, one_apply_ne fun h => hij (Subtype.ext h)]
-  rw [this, det_one]
-
-theorem BlockUnitriangular.isUnit_det (h : M.BlockUnitriangular b) : IsUnit M.det :=
-  h.det_eq_one ▸ isUnit_one
-
-theorem BlockUnitriangular.inv (h : M.BlockUnitriangular b) : M⁻¹.BlockUnitriangular b := by
-  let := M.invertibleOfIsUnitDet h.isUnit_det
-  have hinv : M⁻¹.BlockTriangular b := blockTriangular_inv_of_blockTriangular h.1
-  refine ⟨hinv, fun i j hij => ?_⟩
-  rw [← h.mul_apply_of_eq hinv hij, mul_nonsing_inv M h.isUnit_det]
-
 /-! ### Leading blocks of products -/
+
+section LeadingBlocks
+
+variable [Fintype m] [NonUnitalNonAssocSemiring R] [LinearOrder α] {b : m → α}
 
 omit [DecidableEq m] in
 /-- **Leading blocks of a product with a block lower triangular left factor.** If `A` is block
@@ -219,6 +221,35 @@ theorem BlockTriangular.toSquareBlockProp_mul {A : Matrix m m R} (hA : A.BlockTr
   refine (Fintype.sum_subtype_add_sum_subtype p fun k => B i k * A k j).symm.trans ?_
   rw [Fintype.sum_eq_zero (fun k : {k // ¬p k} => B i k * A k j) fun k => ?_, add_zero]
   rw [hA (lt_of_not_ge fun h => k.2 (hp h j.2)), mul_zero]
+
+end LeadingBlocks
+
+section CommRing
+
+variable [Fintype m] [CommRing R] [LinearOrder α] {M : Matrix m m R} {b : m → α}
+
+/-- A block unitriangular matrix has determinant one. -/
+theorem BlockUnitriangular.det_eq_one (h : M.BlockUnitriangular b) : M.det = 1 := by
+  rw [h.1.det]
+  refine Finset.prod_eq_one fun a _ => ?_
+  have : M.toSquareBlock b a = 1 := by
+    ext i j
+    rw [toSquareBlock_def, of_apply, h.2 (i.2.trans j.2.symm)]
+    by_cases hij : i = j
+    · subst hij
+      simp
+    · rw [one_apply_ne hij, one_apply_ne fun h => hij (Subtype.ext h)]
+  rw [this, det_one]
+
+theorem BlockUnitriangular.isUnit_det (h : M.BlockUnitriangular b) : IsUnit M.det :=
+  h.det_eq_one ▸ isUnit_one
+
+/-- The inverse of a block unitriangular matrix is block unitriangular. -/
+theorem BlockUnitriangular.inv (h : M.BlockUnitriangular b) : M⁻¹.BlockUnitriangular b := by
+  let := M.invertibleOfIsUnitDet h.isUnit_det
+  have hinv : M⁻¹.BlockTriangular b := blockTriangular_inv_of_blockTriangular h.1
+  refine ⟨hinv, fun i j hij => ?_⟩
+  rw [← h.mul_apply_of_eq hinv hij, mul_nonsing_inv M h.isUnit_det]
 
 /-! ### Row reduction and existence -/
 
@@ -307,17 +338,6 @@ theorem exists_blockLDU (M : Matrix m m R)
 
 /-! ### Uniqueness -/
 
-/-- A block diagonal matrix `D`, multiplied on the left by a block lower unitriangular matrix, is
-unchanged as soon as the product is block upper triangular. -/
-private theorem mul_eq_of_blockUnitriangular_toDual {Z D : Matrix m m R}
-    (hZ : Z.BlockUnitriangular (toDual ∘ b)) (hD : D.BlockTriangular b)
-    (hD' : D.BlockTriangular (toDual ∘ b)) (hZD : (Z * D).BlockTriangular b) : Z * D = D := by
-  ext i j
-  rcases lt_trichotomy (b i) (b j) with hij | hij | hij
-  · rw [(hZ.1.mul hD') (toDual_lt_toDual.mpr hij), hD' (toDual_lt_toDual.mpr hij)]
-  · exact hZ.mul_apply_of_eq hD' (congrArg toDual hij)
-  · rw [hZD hij, hD hij]
-
 /-- **Uniqueness of the block `LDU` factorization.** Two block `LDU` factorizations of the same
 matrix with invertible middle factor coincide. -/
 theorem eq_of_blockLDU_eq {L D U L' D' U' : Matrix m m R}
@@ -371,7 +391,7 @@ theorem det_toSquareBlockProp_blockLDU {L D U : Matrix m m R}
 
 /-- If every leading block of `M` has a unit determinant, so does every leading block on a strict
 initial segment `{j | b j < b i}`: that segment is either empty or a leading segment itself. -/
-private theorem isUnit_det_toSquareBlockProp_lt (M : Matrix m m R)
+theorem isUnit_det_toSquareBlockProp_lt (M : Matrix m m R)
     (hM : ∀ i, IsUnit (M.toSquareBlockProp fun j => b j ≤ b i).det) (i : m) :
     IsUnit (M.toSquareBlockProp fun j => b j < b i).det := by
   by_cases hne : (Finset.univ.filter fun j => b j < b i).Nonempty
