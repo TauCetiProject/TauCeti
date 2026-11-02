@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 public import Mathlib.LinearAlgebra.Quotient.Basic
@@ -43,6 +44,8 @@ group of every codimension-one point of `Spec Sym(V*)`, so the residual quotient
 * `Representation.pseudoreflectionSubgroup_le_iff`: a subgroup contains the pseudoreflection
   subgroup exactly when it contains every pseudoreflection.
 * `Representation.normal_pseudoreflectionSubgroup`: the pseudoreflection subgroup is normal.
+* `Representation.sum_inv_one_sub_det_mul_two`: if no pseudoreflection has determinant `1`, then
+  `2 ∑_s (1 - det s)⁻¹`, over the pseudoreflections `s` of a finite group, is their number.
 
 ## References
 
@@ -117,5 +120,35 @@ pseudoreflection. -/
 instance normal_pseudoreflectionSubgroup : ρ.pseudoreflectionSubgroup.Normal :=
   Subgroup.closure_normal_of_forall_conj_mem fun h g hg ↦
     (ρ.finrank_quotient_fixedSubmodule_conj h g).trans hg
+
+open Finset in
+/-- **Pairing a pseudoreflection with its inverse.** If no pseudoreflection has determinant `1`,
+then `2 ∑_s (1 - det s)⁻¹`, over the pseudoreflections `s`, is their number, since `s⁻¹` is a
+pseudoreflection of determinant `(det s)⁻¹` and `(1 - λ)⁻¹ + (1 - λ⁻¹)⁻¹ = 1`. -/
+theorem sum_inv_one_sub_det_mul_two [Fintype G]
+    (hdet : ∀ g, Module.finrank K (V ⧸ (ρ g).fixedSubmodule) = 1 → LinearMap.det (ρ g) ≠ 1) :
+    (∑ g ∈ {g | Module.finrank K (V ⧸ (ρ g).fixedSubmodule) = 1}, (1 - LinearMap.det (ρ g))⁻¹) *
+      2 = #{g | Module.finrank K (V ⧸ (ρ g).fixedSubmodule) = 1} := by
+  set T := ({g | Module.finrank K (V ⧸ (ρ g).fixedSubmodule) = 1} : Finset G)
+  have hmul (g : G) : LinearMap.det (ρ g) * LinearMap.det (ρ g⁻¹) = 1 := by
+    rw [← map_mul, ← map_mul, mul_inv_cancel, map_one, map_one]
+  have hdet_inv (g : G) : LinearMap.det (ρ g⁻¹) = (LinearMap.det (ρ g))⁻¹ :=
+    eq_inv_of_mul_eq_one_right (hmul g)
+  have hT (g : G) : g ∈ T ↔ g⁻¹ ∈ T := by
+    simp only [T, mem_filter, mem_univ, true_and]
+    rw [fixedSubmodule_inv]
+  have hswap : ∑ g ∈ T, (1 - LinearMap.det (ρ g⁻¹))⁻¹ = ∑ g ∈ T, (1 - LinearMap.det (ρ g))⁻¹ :=
+    sum_equiv (Equiv.inv G) hT fun _ _ ↦ rfl
+  rw [mul_two]
+  nth_rw 2 [← hswap]
+  rw [← sum_add_distrib, card_eq_sum_ones, Nat.cast_sum, Nat.cast_one]
+  refine sum_congr rfl fun g hg ↦ ?_
+  have h1 : LinearMap.det (ρ g) ≠ 1 := hdet g (by simpa [T] using hg)
+  have h0 : LinearMap.det (ρ g) ≠ 0 := fun h0 ↦ by simpa [h0] using hmul g
+  rw [hdet_inv]
+  have : 1 - LinearMap.det (ρ g) ≠ 0 := sub_ne_zero.2 h1.symm
+  have : 1 - (LinearMap.det (ρ g))⁻¹ ≠ 0 := sub_ne_zero.2 (by simpa [eq_comm] using h1)
+  field_simp
+  ring
 
 end Representation

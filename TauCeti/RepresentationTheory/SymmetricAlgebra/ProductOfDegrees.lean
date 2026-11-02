@@ -154,36 +154,6 @@ private theorem sum_X_pow_mul_inv_mul_prod_eq {ι : Type*} [Fintype ι] {d : ι 
   rw [mul_right_comm, sum_mul, mul_comm (Fintype.card G : PowerSeries K)]
   exact hpoly
 
-omit [FiniteDimensional K M] in
-/-- **Pairing a pseudoreflection with its inverse.** If no pseudoreflection has determinant `1`,
-then `2 ∑_s (1 - det s)⁻¹`, over the pseudoreflections `s`, is their number, since `s⁻¹` is a
-pseudoreflection of determinant `(det s)⁻¹` and `(1 - λ)⁻¹ + (1 - λ⁻¹)⁻¹ = 1`. -/
-private theorem sum_inv_one_sub_det_mul_two
-    (hdet : ∀ g, finrank K (M ⧸ (ρ g).fixedSubmodule) = 1 → LinearMap.det (ρ g) ≠ 1) :
-    (∑ g ∈ {g | finrank K (M ⧸ (ρ g).fixedSubmodule) = 1}, (1 - LinearMap.det (ρ g))⁻¹) * 2 =
-      #{g | finrank K (M ⧸ (ρ g).fixedSubmodule) = 1} := by
-  set T := ({g | finrank K (M ⧸ (ρ g).fixedSubmodule) = 1} : Finset G)
-  have hmul (g : G) : LinearMap.det (ρ g) * LinearMap.det (ρ g⁻¹) = 1 := by
-    rw [← map_mul, ← map_mul, mul_inv_cancel, map_one, map_one]
-  have hdet_inv (g : G) : LinearMap.det (ρ g⁻¹) = (LinearMap.det (ρ g))⁻¹ :=
-    eq_inv_of_mul_eq_one_right (hmul g)
-  have hT (g : G) : g ∈ T ↔ g⁻¹ ∈ T := by
-    simp only [T, mem_filter, mem_univ, true_and]
-    rw [fixedSubmodule_inv]
-  have hswap : ∑ g ∈ T, (1 - LinearMap.det (ρ g⁻¹))⁻¹ = ∑ g ∈ T, (1 - LinearMap.det (ρ g))⁻¹ :=
-    sum_equiv (Equiv.inv G) hT fun _ _ ↦ rfl
-  rw [mul_two]
-  nth_rw 2 [← hswap]
-  rw [← sum_add_distrib, card_eq_sum_ones, Nat.cast_sum, Nat.cast_one]
-  refine sum_congr rfl fun g hg ↦ ?_
-  have h1 : LinearMap.det (ρ g) ≠ 1 := hdet g (by simpa [T] using hg)
-  have h0 : LinearMap.det (ρ g) ≠ 0 := fun h0 ↦ by simpa [h0] using hmul g
-  rw [hdet_inv]
-  have : 1 - LinearMap.det (ρ g) ≠ 0 := sub_ne_zero.2 h1.symm
-  have : 1 - (LinearMap.det (ρ g))⁻¹ ≠ 0 := sub_ne_zero.2 (by simpa [eq_comm] using h1)
-  field_simp
-  ring
-
 omit [Fintype G] in
 /-- On the kernel of the action, `det(1 - t g) = (1 - t) ^ dim M`. -/
 private theorem eq_one_of_mem_ker {g : G} (hg : g ∈ ρ.ker) {R : Polynomial K}
@@ -246,28 +216,6 @@ private theorem coeff_one_X_pow_mul_inv {g : G} {R : Polynomial K}
     · rw [PowerSeries.coeff_X_pow_mul', ite_eq_right]
       have := hker.not.2 hg
       omega
-
-/-- After the substitution `t = 1 - u`, the factor `(1 - t ^ d) / (1 - t) = ∑_{j < d} t ^ j` has
-linear coefficient `-d (d - 1) / 2`, so the product of these factors has linear coefficient
-`-(∏ dᵢ) ∑ (dᵢ - 1) / 2`. -/
-private theorem coeff_one_prod_sum_one_sub_X_pow_mul_two {ι : Type*} [Fintype ι] (d : ι → ℕ) :
-    PowerSeries.coeff 1 (∏ i, ∑ j ∈ range (d i), (1 - PowerSeries.X : PowerSeries K) ^ j) * 2 =
-      -((∏ i, (d i : K)) * ∑ i, ((d i : K) - 1)) := by
-  classical
-  have hc (k : ℕ) : PowerSeries.constantCoeff
-      (∑ j ∈ range k, (1 - PowerSeries.X : PowerSeries K) ^ j) = k := by
-    simp
-  have hgauss (k : ℕ) : (∑ j ∈ range k, (j : K)) * 2 = k * (k - 1) := by
-    induction k with
-    | zero => simp
-    | succ k ih => rw [sum_range_succ, add_mul, ih]; push_cast; ring
-  rw [PowerSeries.coeff_one_prod, sum_mul, mul_sum, ← sum_neg_distrib]
-  refine sum_congr rfl fun i _ ↦ ?_
-  simp only [hc, map_sum, PowerSeries.coeff_one_pow, map_sub, PowerSeries.coeff_one,
-    PowerSeries.coeff_one_X, map_one, PowerSeries.constantCoeff_X, sub_zero, one_pow,
-    one_ne_zero, ite_false, zero_sub, mul_neg, mul_one, sum_neg_distrib]
-  rw [← mul_prod_erase univ (fun j ↦ (d j : K)) (mem_univ i)]
-  linear_combination (-(∏ j ∈ univ.erase i, (d j : K))) * hgauss (d i)
 
 variable [CharZero K]
 
@@ -334,7 +282,7 @@ private theorem molien_expansion {ι : Type*} [Fintype ι] {d : ι → ℕ}
   rw [PowerSeries.coeff_one_mul, hA0, hS0, PowerSeries.coeff_C, ite_eq_right one_ne_zero] at h1
   refine ⟨hd, hr, h0, mul_left_cancel₀ hD ?_⟩
   linear_combination (-2 : K) * h1 + (∏ i, (d i : K)) * hA1 +
-    (Nat.card ρ.ker : K) * coeff_one_prod_sum_one_sub_X_pow_mul_two (K := K) d
+    (Nat.card ρ.ker : K) * PowerSeries.coeff_one_prod_sum_one_sub_X_pow_mul_two (R := K) univ d
 
 end Expansion
 
