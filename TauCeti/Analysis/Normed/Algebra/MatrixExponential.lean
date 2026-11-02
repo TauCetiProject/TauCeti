@@ -31,6 +31,9 @@ the trace under conjugation by the two exponential weights in either order, whic
 commutative entries; the half-split identity `exp A = exp (A / 2) * exp (A / 2)`; and, for a
 Hermitian matrix `K`, the positivity of `Tr (exp K)` and of `x ↦ Tr (exp K * x)`.
 
+The file also gives the commuting-matrix case of the Golden–Thompson inequality, where both sides
+are equal.
+
 ## The argument
 
 The function `f t = det (exp (t • A))` is a homomorphism from the additive group of the field to
@@ -52,6 +55,7 @@ constant `1`. Evaluating at `t = 1` gives the identity.
 * `Matrix.exp_eq_mul_exp_half`: the exponential of a matrix is the square of its half.
 * `Matrix.IsHermitian.trace_exp_mul_nonneg` and `Matrix.IsHermitian.trace_exp_pos`: positivity of
   the trace of the exponential of a Hermitian matrix and of the functional `x ↦ Tr (exp K * x)`.
+* `Matrix.trace_exp_add_of_commute`: the commuting-matrix case of Golden–Thompson, as an equality.
 
 ## References
 
@@ -203,5 +207,12 @@ theorem trace_exp_pos (hK : K.IsHermitian) :
   exact h.trace_pos
 
 end IsHermitian
+
+/-- **Golden–Thompson for commuting matrices.** When `A` and `B` commute, the trace inequality
+holds with equality. The noncommuting case is the substantive Golden–Thompson theorem. -/
+theorem trace_exp_add_of_commute {𝕜 : Type*} [RCLike 𝕜] (A B : Matrix m m 𝕜)
+    (hAB : Commute A B) :
+    (NormedSpace.exp (A + B)).trace = (NormedSpace.exp A * NormedSpace.exp B).trace := by
+  rw [Matrix.exp_add_of_commute A B hAB]
 
 end Matrix
