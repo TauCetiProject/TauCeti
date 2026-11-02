@@ -50,18 +50,18 @@ namespace TauCeti.Oracle.Single.Code
 
 variable {A C : ℕ → Finset ℕ} {r : ℕ → ℕ → Option ℕ} {e n : ℕ} {c : Code}
 
-/-- With finite injury and a live restraint covering the agreement restraint, the stage run at
-an argument eventually below or at the length of agreement stabilizes, including its use.
-The target stages need not be monotone for this conclusion. -/
+/-- With finite injury and an eventually live restraint covering the agreement restraint, the
+stage run at an argument eventually below or at the length of agreement stabilizes, including
+its use. The target stages need not be monotone for this conclusion. -/
 theorem exists_eventually_evaln_eq_of_le_agreementLength (hA : Monotone A)
-    (hr : ∀ s, ∃ b, r e s = some b ∧
+    (hr : ∀ᶠ s in atTop, ∃ b, r e s = some b ∧
       agreementRestraint (setAnswers (A s)) s c ((C s : Set ℕ).indicator 1) ≤ b)
     (hI : (injurySet A r e).Finite)
     (hn : ∀ᶠ s in atTop,
       n ≤ agreementLength (setAnswers (A s)) s c ((C s : Set ℕ).indicator 1)) :
     ∃ o, ∀ᶠ s in atTop, evaln (setAnswers (A s)) s c n = o := by
   obtain ⟨s₀, hs₀⟩ := (finite_injurySet_iff_eventually_eq_empty hA).1 hI
-  obtain ⟨s₁, hs₁⟩ := eventually_atTop.1 hn
+  obtain ⟨s₁, hs₁⟩ := eventually_atTop.1 (hn.and hr)
   by_cases h : ∃ s ≥ max s₀ s₁, (evaln (setAnswers (A s)) s c n).isSome
   · obtain ⟨s, hs, hsome⟩ := h
     obtain ⟨d, hd⟩ := Option.isSome_iff_exists.1 hsome
@@ -69,9 +69,9 @@ theorem exists_eventually_evaln_eq_of_le_agreementLength (hA : Monotone A)
     induction t, ht using Nat.le_induction with
     | base => exact hd
     | succ t ht ih =>
-      obtain ⟨b, hb, hcover⟩ := hr t
+      obtain ⟨b, hb, hcover⟩ := (hs₁ t (by omega)).2
       exact evaln_succ_eq_some_of_injuriesAt_eq_empty (hA t.le_succ) hb hcover
-        (hs₀ t (by omega)) (hs₁ t (by omega)) ih
+        (hs₀ t (by omega)) (hs₁ t (by omega)).1 ih
   · push Not at h
     exact ⟨none, eventually_atTop.2 ⟨max s₀ s₁, fun s hs =>
       Option.not_isSome_iff_eq_none.1 (h s hs)⟩⟩
@@ -80,7 +80,7 @@ theorem exists_eventually_evaln_eq_of_le_agreementLength (hA : Monotone A)
 limit program fails to return the target value. Failure includes divergence as well as a wrong
 output. No stabilization of the restraint is assumed. -/
 theorem eventually_agreementLength_eq_of_first_disagreement (hA : Monotone A) (hC : Monotone C)
-    (hr : ∀ s, ∃ b, r e s = some b ∧
+    (hr : ∀ᶠ s in atTop, ∃ b, r e s = some b ∧
       agreementRestraint (setAnswers (A s)) s c ((C s : Set ℕ).indicator 1) ≤ b)
     (hI : (injurySet A r e).Finite)
     (hbelow : ∀ x < n, (stageLimit C).indicator 1 x ∈ eval (stageLimit A).oracle c x)
@@ -124,7 +124,7 @@ and its inclusive maximum of uses are eventually constant. The restraint held by
 may be larger than that maximum; no stabilization of that larger restraint is asserted. -/
 theorem exists_eventually_agreementLength_eq_and_agreementRestraint_eq
     (hA : Monotone A) (hC : Monotone C)
-    (hr : ∀ s, ∃ b, r e s = some b ∧
+    (hr : ∀ᶠ s in atTop, ∃ b, r e s = some b ∧
       agreementRestraint (setAnswers (A s)) s c ((C s : Set ℕ).indicator 1) ≤ b)
     (hI : (injurySet A r e).Finite)
     (hne : eval (stageLimit A).oracle c ≠ (stageLimit C).oracle) :
@@ -150,16 +150,9 @@ theorem exists_eventually_agreementLength_eq_and_agreementRestraint_eq
   obtain ⟨s₀, hs₀⟩ := (hlength.and hall).exists
   refine ⟨n, agreementRestraint (setAnswers (A s₀)) s₀ c ((C s₀ : Set ℕ).indicator 1),
     (hlength.and hall).mono fun s hs => ⟨hs.1, ?_⟩⟩
-  simp only [agreementRestraint_def, hs.1, hs₀.1]
-  apply Finset.sup_congr rfl
+  apply agreementRestraint_eq_of_evaln_eq (hs.1.trans hs₀.1.symm)
   intro x hx
-  let i : Fin (n + 1) := ⟨x, Finset.mem_range.1 hx⟩
-  cases h : o i with
-  | none =>
-    rw [stageUse_eq_zero_of_evaln_eq_none ((hs.2 i).trans h),
-      stageUse_eq_zero_of_evaln_eq_none ((hs₀.2 i).trans h)]
-  | some d =>
-    rw [stageUse_eq_of_evaln_eq_some ((hs.2 i).trans h),
-      stageUse_eq_of_evaln_eq_some ((hs₀.2 i).trans h)]
+  let i : Fin (n + 1) := ⟨x, by omega⟩
+  exact (hs.2 i).trans (hs₀.2 i).symm
 
 end TauCeti.Oracle.Single.Code
