@@ -30,6 +30,8 @@ along an end lift `φ` are its values on `φ'(z)` and `φ'(z) i`. The results ar
   end `q` its pullback is the continuation datum `β(±s - 1) H_q(t) dt`.
 * `TauCeti.Floer.pairOfPantsPerturbation_cylindricalEndLift`: on the part `±s ≥ 2` of the end `q`
   its pullback is `H_q(t) dt`, that is `K_s = 0` and `K_t = H_q(t)`.
+* `TauCeti.Floer.pairOfPantsPerturbation_eq_smul_endAngularForm`: on the part `±s ≥ 2` of the
+  end `q` the perturbation itself is `H_q(t) dt_q`, in terms of the angular form of the end.
 * `TauCeti.Floer.pairOfPantsEndComponent H q v`: the component of the pullback along the tangent
   vector `v` of the cylinder, in the end coordinates of the end `q`, so that `K_s` and `K_t` are
   its components along `v = 1` and `v = i`; `TauCeti.Floer.pairOfPantsEndComponent_of_pos`
@@ -137,6 +139,26 @@ theorem pairOfPantsPerturbation_cylindricalEndLift {q : Puncture}
       v.im * H q z.im x := by
   rw [pairOfPantsPerturbation_cylindricalEndLift_of_pos hH (by linarith),
     smoothTransition.one_of_one_le (by linarith), one_mul]
+
+/-- **The perturbation is `H_r(t_r) dt_r` far out on each end.** At a point `w` of the part
+`±s ≥ 2` of the end `r`, the perturbation is the angular form of `r` scaled by the Hamiltonian
+`H_r` at the angular coordinate of `w`. -/
+theorem pairOfPantsPerturbation_eq_smul_endAngularForm {r : Puncture} {w : ℂ}
+    (hw : 2 ≤ r.endSign * (r.endCoord w).re) (x : M) :
+    pairOfPantsPerturbation H w x = H r (r.endCoord w).im x • r.endAngularForm w := by
+  rw [pairOfPantsPerturbation_def, Finset.sum_eq_single r,
+    smoothTransition.one_of_one_le (by linarith), one_mul]
+  · -- The cutoffs of the other ends vanish, since distinct ends are disjoint.
+    intro s _ hs
+    have hc : smoothTransition (s.endSign * (s.endCoord w).re - 1) = 0 := by
+      by_contra hc
+      obtain ⟨h₁, hs'⟩ := one_lt_endSign_mul_re_endCoord hc
+      have hr : w ≠ r.endCenter :=
+        r.ne_endCenter_of_re_endCoord_ne_zero fun h' => by rw [h', mul_zero] at hw; linarith
+      exact cylindricalEndLift_ne_cylindricalEndLift hs.symm (by linarith) (by linarith)
+        ((r.cylindricalEndLift_endCoord hr).trans (s.cylindricalEndLift_endCoord hs').symm)
+    simp [hc]
+  · simp
 
 variable {q : Puncture}
 

@@ -35,8 +35,9 @@ over `X'` (`AlgebraicGeometry.Scheme.IdealSheafData.blowupBaseChangeHom`).
 When `g` is a closed immersion, for instance the inclusion of a closed subscheme `Z` of `X`, the
 morphism `Bl_{I.comap g} Z ⟶ Bl_I X` is therefore a closed immersion. This closed subscheme of
 `Bl_I X`, the blowup of `Z` along the inverse image of the centre, is the *strict transform* of
-`Z` (Stacks Project, Definition 080D and Lemma 080E); the description of the strict transform as
-the scheme-theoretic closure of the inverse image of `Z ∖ V(I)` is not treated here.
+`Z` (Stacks Project, Definition 080D and Lemma 080E); its description as the scheme-theoretic
+closure of the inverse image of `Z ∖ V(I)` is in
+`TauCeti/AlgebraicGeometry/Blowup/StrictTransform.lean`.
 
 ## Main definitions
 
