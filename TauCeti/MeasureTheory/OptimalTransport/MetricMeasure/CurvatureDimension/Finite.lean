@@ -140,9 +140,9 @@ theorem distortedRenyiEntropy_zero [q.fst.HaveLebesgueDecomposition m] (hN : 0 <
     distortedRenyiEntropy β N m q 0 = renyiEntropy N m q.fst := by
   have hρ : Measurable fun x ↦ q.fst.rnDeriv m x ^ (-N⁻¹) :=
     (Measure.measurable_rnDeriv _ _).pow_const _
+  have hcoupling : IsCoupling q q.fst q.snd := ⟨rfl, rfl⟩
   rw [distortedRenyiEntropy_def, renyiEntropy_eq_neg_lintegral hN,
-    lintegral_rnDeriv_mul hq hρ.aemeasurable,
-    ← (show IsCoupling q q.fst q.snd from ⟨rfl, rfl⟩).lintegral_comp_fst hρ.aemeasurable]
+    lintegral_rnDeriv_mul hq hρ.aemeasurable, ← hcoupling.lintegral_comp_fst hρ.aemeasurable]
   congr 2
   refine lintegral_congr_ae ?_
   filter_upwards [h₁, h₀] with z hz₁ hz₀
