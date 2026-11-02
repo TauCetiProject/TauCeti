@@ -15,8 +15,9 @@ public import Mathlib.Topology.Compactness.SigmaCompact
 
 A continuous function on a product need not be measurable for the product of the Borel
 σ-algebras: that σ-algebra can be smaller than the Borel σ-algebra of the product. Nevertheless,
-a continuous function with values in a metric space is product-measurable
-when both factors are Hausdorff σ-compact spaces. Neither factor needs to be second countable.
+a continuous function with values in a metrizable space is product-measurable when both factors
+are σ-compact and the second is Hausdorff, or when the first is σ-compact and the second is compact
+without separation assumptions. Neither factor needs to be second countable.
 
 We first treat a compact second factor. Currying gives a continuous map into the metrizable
 space of continuous functions on that factor. Its σ-compact range is separable; evaluation on
@@ -34,15 +35,16 @@ public section
 
 open Set MeasureTheory TopologicalSpace
 
-/-- A continuous map from a product to a metric space is measurable for
+/-- A continuous map from a product to a metrizable space is measurable for
 the product σ-algebra if the first factor is σ-compact and the second is compact. No separation
 assumption on either factor is needed. -/
 theorem Continuous.measurable_prod_of_sigmaCompact_of_compact
     {X Y E : Type*} [TopologicalSpace X] [SigmaCompactSpace X]
     [TopologicalSpace Y] [CompactSpace Y] [MeasurableSpace X] [OpensMeasurableSpace X]
-    [MeasurableSpace Y] [OpensMeasurableSpace Y] [MetricSpace E]
+    [MeasurableSpace Y] [OpensMeasurableSpace Y] [TopologicalSpace E] [MetrizableSpace E]
     [MeasurableSpace E] [BorelSpace E]
     {f : X × Y → E} (hf : Continuous f) : Measurable f := by
+  let := TopologicalSpace.metrizableSpaceMetric E
   let F : C(X, C(Y, E)) := (⟨f, hf⟩ : C(X × Y, E)).curry
   have hsep : IsSeparable (range F) := by
     obtain ⟨K, hK, hcover⟩ := isSigmaCompact_range F.continuous
@@ -58,14 +60,14 @@ theorem Continuous.measurable_prod_of_sigmaCompact_of_compact
       (fun u => (u : C(Y, E)).continuous.measurable)
   exact heval.comp ((hF.comp measurable_fst).prodMk measurable_snd)
 
-/-- A continuous map from a product of σ-compact spaces to a metric space
+/-- A continuous map from a product of σ-compact spaces to a metrizable space
 is measurable for the product σ-algebra. Only the second factor needs to be Hausdorff. In
 particular this does not require equality of the product and Borel σ-algebras on the domain. -/
 theorem Continuous.measurable_prod_of_sigmaCompact
     {X Y E : Type*} [TopologicalSpace X] [SigmaCompactSpace X]
     [TopologicalSpace Y] [SigmaCompactSpace Y] [T2Space Y]
     [MeasurableSpace X] [OpensMeasurableSpace X]
-    [MeasurableSpace Y] [OpensMeasurableSpace Y] [MetricSpace E]
+    [MeasurableSpace Y] [OpensMeasurableSpace Y] [TopologicalSpace E] [MetrizableSpace E]
     [MeasurableSpace E] [BorelSpace E]
     {f : X × Y → E} (hf : Continuous f) : Measurable f := by
   obtain ⟨K, hK, hcover⟩ := isSigmaCompact_univ (X := Y)
