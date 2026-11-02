@@ -11,6 +11,7 @@ import Mathlib.Algebra.Category.ModuleCat.Ulift
 public import Mathlib.Algebra.Homology.Homotopy
 import Mathlib.Algebra.Homology.Additive
 import Mathlib.Algebra.Homology.HomotopyCategory.HomComplex
+import TauCeti.Algebra.Homology.HomotopyCategory.HomComplex.Basic
 public import TauCeti.LinearAlgebra.Graded.LinearMap
 public import TauCeti.LinearAlgebra.LinearMap.Comp
 
@@ -275,8 +276,7 @@ theorem gradedCochainComplexXEquiv_gradedCochainComplexHomotopy_hom_apply {f g :
     (gradedCochainComplexXEquiv q
       (((gradedCochainComplexHomotopy (hdegN := hdegN) (hsqN := hsqN) hf hg hcommf hcommg k hk
         hfg).hom p q).hom x) : N) = k (gradedCochainComplexXEquiv p x) := by
-  simp only [gradedCochainComplexHomotopy, CochainComplex.HomComplex.Cochain.equivHomotopy,
-    Equiv.coe_fn_symm_mk, dite_eq_left hpq]
+  rw [gradedCochainComplexHomotopy, equivHomotopy_symm_hom _ p q hpq]
   exact gradedCochainComplexCochain_v_apply k hk p q hpq x
 
 /-- On a homogeneous element, the components of the homotopy induced by `k` are `k`. -/

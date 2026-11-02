@@ -89,20 +89,15 @@ noncomputable def tensorCochainComplexFunctor :
     (ForgetEnrichment.to (CochainComplex (ModuleCat R) ℤ) M).isCurvedDGRightModule hN
   map f := tensorCochainComplexMap hN f
   map_id M := by
-    refine (BalancedTensorProduct.curvedCochainComplexMap_congr _ _ _ _ _ _ _ _ _ _ _ _
-      (LinearMap.ext fun x ↦ ?_) rfl).trans
-        (BalancedTensorProduct.curvedCochainComplexMap_id _ _)
+    refine (BalancedTensorProduct.curvedCochainComplexMap_congr
+      (hff' := LinearMap.ext fun x ↦ ?_) (hgg' := rfl) ..).trans
+        (BalancedTensorProduct.curvedCochainComplexMap_id ..)
     exact LinearMap.congr_fun (closedHom_id (ForgetEnrichment.to _ M)) x
   map_comp {X Y Z} f g := by
-    refine (BalancedTensorProduct.curvedCochainComplexMap_congr _ _ _ _ _ _ _ _ _ _ _ _
-      (LinearMap.ext fun x ↦ ?_) rfl).trans
-        (BalancedTensorProduct.curvedCochainComplexMap_comp _ hN _ hN _ LinearMap.id _
-          (fun _ _ ↦ rfl) (isHomogeneous_closedHom f) (LinearMap.isHomogeneous_id 𝒩)
-          (differential_comp_closedHom f) rfl
-          (ForgetEnrichment.to (CochainComplex (ModuleCat R) ℤ) Z).isCurvedDGRightModule hN
-          ((closedHom g).restrictScalars R) LinearMap.id _ (fun _ _ ↦ rfl)
-          (isHomogeneous_closedHom g) (LinearMap.isHomogeneous_id 𝒩)
-          (differential_comp_closedHom g) rfl)
+    refine (BalancedTensorProduct.curvedCochainComplexMap_congr
+      (hff' := LinearMap.ext fun x ↦ ?_) (hgg' := rfl) ..).trans
+        (BalancedTensorProduct.curvedCochainComplexMap_comp (f := (closedHom f).restrictScalars R)
+          (g := LinearMap.id) (f' := (closedHom g).restrictScalars R) (g' := LinearMap.id) ..)
     exact LinearMap.congr_fun (closedHom_comp f g) x
 
 /-- The functor sends a curved right module to its balanced tensor complex with `N`. -/
@@ -134,11 +129,11 @@ theorem homotopic_tensorCochainComplexFunctor_map {M M' : CurvedDGRightModuleCat
       ((tensorCochainComplexFunctor hN).map g)) := by
   obtain ⟨k, hk⟩ := (quotient_map_eq_iff_exists_homotopy f g).mp hfg
   exact ⟨BalancedTensorProduct.curvedCochainComplexMapHomotopy (k := k.1.restrictScalars R)
-    (hk := fun a m ↦ k.1.map_smul (op a) m) (hk₁ := dgRightModuleCochains.mem_iff.mp k.2) _ _ _
-    _ _ _ _ _ _ _ _ _ _ _ (LinearMap.ext fun x ↦ by
+    (hk := fun a m ↦ k.1.map_smul (op a) m) (hk₁ := dgRightModuleCochains.mem_iff.mp k.2)
+    (hfk := LinearMap.ext fun x ↦ by
       simpa only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.restrictScalars_apply,
         ForgetEnrichment.to_of]
-        using sub_eq_iff_eq_add.mp (hk x))⟩
+        using sub_eq_iff_eq_add.mp (hk x)) ..⟩
 
 /-- Tensoring with the curved left module `N`, descended to the curved homotopy category. -/
 noncomputable def tensorHomotopyFunctor :
