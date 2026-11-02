@@ -34,9 +34,9 @@ variable (𝕜 A : Type*) [NontriviallyNormedField 𝕜] [NonUnitalSeminormedRin
   [NormedSpace 𝕜 A] [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A]
 
 -- Prefer the direct operator instances when elaborating the curried bidual products.
-attribute [local instance] ContinuousLinearMap.arensDualSeminormedAddCommGroup
-  ContinuousLinearMap.arensDualNormedSpace
-  ContinuousLinearMap.arensBidualSeminormedAddCommGroup ContinuousLinearMap.arensBidualNormedSpace
+attribute [local instance] ContinuousLinearMap.strongDualSeminormedAddCommGroup
+  ContinuousLinearMap.strongDualNormedSpace
+  ContinuousLinearMap.strongBidualSeminormedAddCommGroup ContinuousLinearMap.strongBidualNormedSpace
 
 /-- The first Arens product, with evaluation order `F (a ↦ G (b ↦ f (a * b)))`. -/
 def arensMul : StrongDual 𝕜 (StrongDual 𝕜 A) →L[𝕜]
@@ -97,24 +97,18 @@ theorem arensMulRev_inclusionInDoubleDual (a b : A) :
   exact (ContinuousLinearMap.mul 𝕜 A).flip.arensExtension_inclusionInDoubleDual b a
 
 /-- The products agree when the first argument is in the original algebra. -/
-theorem arensMul_inclusionInDoubleDual_left (a : A) (G : StrongDual 𝕜 (StrongDual 𝕜 A)) :
+theorem arensMul_inclusionInDoubleDual_left_eq_arensMulRev
+    (a : A) (G : StrongDual 𝕜 (StrongDual 𝕜 A)) :
     arensMul 𝕜 A (inclusionInDoubleDual 𝕜 A a) G =
       arensMulRev 𝕜 A (inclusionInDoubleDual 𝕜 A a) G := by
-  ext f
-  simp only [arensMul_apply, arensMulRev_apply, dual_def, bilinearTranspose_apply]
-  congr 1
-  ext b
-  simp
+  exact (ContinuousLinearMap.mul 𝕜 A).arensExtension_inclusionInDoubleDual_left_eq_flip a G
 
 /-- The products agree when the second argument is in the original algebra. -/
-theorem arensMul_inclusionInDoubleDual_right (F : StrongDual 𝕜 (StrongDual 𝕜 A)) (b : A) :
+theorem arensMul_inclusionInDoubleDual_right_eq_arensMulRev
+    (F : StrongDual 𝕜 (StrongDual 𝕜 A)) (b : A) :
     arensMul 𝕜 A F (inclusionInDoubleDual 𝕜 A b) =
       arensMulRev 𝕜 A F (inclusionInDoubleDual 𝕜 A b) := by
-  ext f
-  simp only [arensMul_apply, arensMulRev_apply, dual_def, bilinearTranspose_apply]
-  congr 1
-  ext a
-  simp
+  exact (ContinuousLinearMap.mul 𝕜 A).arensExtension_inclusionInDoubleDual_right_eq_flip F b
 
 /-- Associativity of the first Arens product. -/
 theorem arensMul_assoc (F G H : StrongDual 𝕜 (StrongDual 𝕜 A)) :
@@ -161,17 +155,18 @@ theorem continuous_toWeakDual_arensMulRev_right (F : StrongDual 𝕜 (StrongDual
 
 /-- Left multiplication by an original algebra element is weak-star continuous for
 the first product as well. -/
-theorem continuous_toWeakDual_arensMul_right (a : A) :
+theorem continuous_toWeakDual_arensMul_inclusionInDoubleDual_right (a : A) :
     Continuous (fun G : WeakDual 𝕜 (StrongDual 𝕜 A) =>
       StrongDual.toWeakDual (arensMul 𝕜 A (inclusionInDoubleDual 𝕜 A a) G.toStrongDual)) :=
-  (ContinuousLinearMap.mul 𝕜 A).continuous_toWeakDual_arensExtension_right a
+  (ContinuousLinearMap.mul 𝕜 A).continuous_toWeakDual_arensExtension_inclusionInDoubleDual_right a
 
 /-- Right multiplication by an original algebra element is weak-star continuous for
 the second product as well. -/
-theorem continuous_toWeakDual_arensMulRev_left (b : A) :
+theorem continuous_toWeakDual_arensMulRev_inclusionInDoubleDual_left (b : A) :
     Continuous (fun F : WeakDual 𝕜 (StrongDual 𝕜 A) =>
       StrongDual.toWeakDual (arensMulRev 𝕜 A F.toStrongDual (inclusionInDoubleDual 𝕜 A b))) :=
-  (ContinuousLinearMap.mul 𝕜 A).flip.continuous_toWeakDual_arensExtension_right b
+  ContinuousLinearMap.continuous_toWeakDual_arensExtension_inclusionInDoubleDual_right
+    (ContinuousLinearMap.mul 𝕜 A).flip b
 
 end TauCeti
 
@@ -189,14 +184,7 @@ theorem precomp_precomp_arensMul (T : A →L[𝕜] B)
     (hT : ∀ a b, T (a * b) = T a * T b) (F G : StrongDual 𝕜 (StrongDual 𝕜 A)) :
     precomp 𝕜 (precomp 𝕜 T) (TauCeti.arensMul 𝕜 A F G) =
       TauCeti.arensMul 𝕜 B (precomp 𝕜 (precomp 𝕜 T) F) (precomp 𝕜 (precomp 𝕜 T) G) := by
-  ext f
-  simp only [precomp_apply, comp_apply, TauCeti.arensMul_apply]
-  congr 1
-  ext a
-  simp only [bilinearTranspose_apply, comp_apply]
-  congr 1
-  ext b
-  simp [hT]
+  exact (mul 𝕜 A).precomp_precomp_arensExtension (mul 𝕜 B) T T T hT F G
 
 /-- The second adjoint of a bounded multiplicative linear map preserves the second
 Arens product. -/
@@ -204,14 +192,8 @@ theorem precomp_precomp_arensMulRev (T : A →L[𝕜] B)
     (hT : ∀ a b, T (a * b) = T a * T b) (F G : StrongDual 𝕜 (StrongDual 𝕜 A)) :
     precomp 𝕜 (precomp 𝕜 T) (TauCeti.arensMulRev 𝕜 A F G) =
       TauCeti.arensMulRev 𝕜 B (precomp 𝕜 (precomp 𝕜 T) F) (precomp 𝕜 (precomp 𝕜 T) G) := by
-  ext f
-  simp only [precomp_apply, comp_apply, TauCeti.arensMulRev_apply]
-  congr 1
-  ext b
-  simp only [bilinearTranspose_apply, comp_apply]
-  congr 1
-  ext a
-  simp [hT]
+  exact (mul 𝕜 A).flip.precomp_precomp_arensExtension (mul 𝕜 B).flip T T T
+    (fun a b => hT b a) G F
 
 end ContinuousLinearMap
 
@@ -245,13 +227,13 @@ theorem arensMul_one_right (F : StrongDual 𝕜 (StrongDual 𝕜 A)) :
 @[simp]
 theorem arensMulRev_one_left (F : StrongDual 𝕜 (StrongDual 𝕜 A)) :
     arensMulRev 𝕜 A (inclusionInDoubleDual 𝕜 A 1) F = F := by
-  rw [← arensMul_inclusionInDoubleDual_left, arensMul_one_left]
+  rw [← arensMul_inclusionInDoubleDual_left_eq_arensMulRev, arensMul_one_left]
 
 /-- The image of the original identity is a right identity for the second Arens product. -/
 @[simp]
 theorem arensMulRev_one_right (F : StrongDual 𝕜 (StrongDual 𝕜 A)) :
     arensMulRev 𝕜 A F (inclusionInDoubleDual 𝕜 A 1) = F := by
-  rw [← arensMul_inclusionInDoubleDual_right, arensMul_one_right]
+  rw [← arensMul_inclusionInDoubleDual_right_eq_arensMulRev, arensMul_one_right]
 
 end Unital
 
