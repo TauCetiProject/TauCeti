@@ -80,7 +80,8 @@ private theorem apply_star_prod_mul_middle_mul_prod_eq_zero
     · exact hcφ
     · exact hvφ x hx
 
-open scoped Classical in
+variable [DecidableEq ι]
+
 /-- Reduced words have zero pairing unless their factor-label sequences coincide. When they
 coincide, the pairing is the product of the pairings of corresponding letters. The words may
 be empty; the empty-empty pairing is one. Positivity and traciality are unnecessary. -/
@@ -143,9 +144,8 @@ end Algebraic
 section GNS
 
 variable {A ι : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
-  {φ : A →ₚ[ℂ] ℂ} {B : ι → StarSubalgebra ℂ A}
+  [DecidableEq ι] {φ : A →ₚ[ℂ] ℂ} {B : ι → StarSubalgebra ℂ A}
 
-open scoped Classical in
 /-- In the GNS Hilbert space, centered alternating words are orthogonal for distinct label
 sequences, and have the tensor-product inner product for equal label sequences. This includes
 the vacuum and does not require the state to be faithful or tracial. -/
@@ -160,8 +160,8 @@ theorem inner_gnsStarAlgHom_prod_gnsVector
       (φ.gnsStarAlgHom (v.map Prod.snd).prod φ.gnsVector) =
       if w.map Prod.fst = v.map Prod.fst then
         (List.zipWith (fun x y => φ (star x.2 * y.2)) w v).prod else 0 := by
-  simpa [PositiveLinearMap.preGNS_inner_def] using
-    h.apply_star_prod_mul_prod hφ (fun a => map_star φ a) w v hw hv hwB hvB hwφ hvφ
+  rw [PositiveLinearMap.inner_gnsStarAlgHom_gnsVector]
+  exact h.apply_star_prod_mul_prod hφ (fun a => map_star φ a) w v hw hv hwB hvB hwφ hvφ
 
 end GNS
 
