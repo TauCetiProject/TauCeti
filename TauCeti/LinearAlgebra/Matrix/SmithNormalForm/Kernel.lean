@@ -48,12 +48,13 @@ theorem mulVec_map_eq_zero_iff_of_diagonalization (M : Matrix ι ι R)
   have he : diagonal (fun i ↦ f (d i)) *ᵥ v =
       (GeneralLinearGroup.map f U : Matrix ι ι A) *ᵥ
         (M.map f *ᵥ ((GeneralLinearGroup.map f V : Matrix ι ι A) *ᵥ v)) := by
-    rw [← hd, mulVec_mulVec, mulVec_mulVec]
-    rfl
+    simp only [← hd, mulVec_mulVec, GeneralLinearGroup.val_map_apply, Matrix.mul_assoc]
   have hz : (GeneralLinearGroup.map f U : Matrix ι ι A) *ᵥ
       (M.map f *ᵥ ((GeneralLinearGroup.map f V : Matrix ι ι A) *ᵥ v)) = 0 ↔
       M.map f *ᵥ ((GeneralLinearGroup.map f V : Matrix ι ι A) *ᵥ v) = 0 :=
-    (GeneralLinearGroup.toLin (GeneralLinearGroup.map f U)).toLinearEquiv.map_eq_zero_iff
+    by simpa only [LinearMap.GeneralLinearGroup.coe_toLinearEquiv,
+      GeneralLinearGroup.toLin_apply, mulVecLin_apply] using
+      (GeneralLinearGroup.toLin (GeneralLinearGroup.map f U)).toLinearEquiv.map_eq_zero_iff
   rw [← he] at hz
   simpa only [mulVec_diagonal, funext_iff, Pi.zero_apply] using hz.symm
 
@@ -69,7 +70,9 @@ noncomputable def kerEquivOfDiagonalization (M : Matrix ι ι R)
   classical
   let e := (GeneralLinearGroup.toLin (GeneralLinearGroup.map f V)).toLinearEquiv
   have heval (x : ι → A) :
-      e x = (GeneralLinearGroup.map f V : Matrix ι ι A) *ᵥ x := rfl
+      e x = (GeneralLinearGroup.map f V : Matrix ι ι A) *ᵥ x := by
+    simp only [e, LinearMap.GeneralLinearGroup.coe_toLinearEquiv,
+      GeneralLinearGroup.toLin_apply, mulVecLin_apply]
   have hc (v : LinearMap.ker (M.map f).mulVecLin) :
       ∀ i, f (d i) * e.symm v.val i = 0 := by
     apply (mulVec_map_eq_zero_iff_of_diagonalization M U V d h f _).mp
@@ -79,6 +82,7 @@ noncomputable def kerEquivOfDiagonalization (M : Matrix ι ι R)
       ((i : ι) → Submodule.torsionBy A A (f (d i))) :=
     { toFun := fun v i ↦ ⟨e.symm v.val i, hc v i⟩
       invFun := fun z ↦ ⟨e (fun i ↦ (z i).val), by
+        rw [heval, LinearMap.mem_ker, mulVecLin_apply]
         apply (mulVec_map_eq_zero_iff_of_diagonalization M U V d h f _).mpr
         exact fun i ↦ (z i).property⟩
       left_inv := fun v ↦ Subtype.ext (e.apply_symm_apply v.val)
@@ -111,7 +115,11 @@ theorem kerEquivOfDiagonalization_fst_apply (M : Matrix ι ι R)
       ((GeneralLinearGroup.map f V⁻¹ : Matrix ι ι A) *ᵥ v.val) i := by
   simp only [kerEquivOfDiagonalization, LinearEquiv.trans_apply,
     LinearEquiv.prodCongr_apply, LinearEquiv.piEquivPiSubtypeProd_apply,
-    LinearEquiv.piCongrRight_apply, LinearEquiv.ofTop_apply]
+    LinearEquiv.piCongrRight_apply, LinearEquiv.ofTop_apply,
+    ← LinearEquiv.coe_inv, ← LinearMap.GeneralLinearGroup.toLinearEquiv_inv,
+    ← map_inv, LinearMap.GeneralLinearGroup.coe_toLinearEquiv,
+    GeneralLinearGroup.toLin_apply, mulVecLin_apply]
+  -- Only evaluation of the locally constructed equivalence and subtype projections remains.
   rfl
 
 /-- The annihilator coordinates use the same inverse column transformation. -/
@@ -124,7 +132,11 @@ theorem kerEquivOfDiagonalization_snd_apply (M : Matrix ι ι R)
       ((GeneralLinearGroup.map f V⁻¹ : Matrix ι ι A) *ᵥ v.val) i := by
   simp only [kerEquivOfDiagonalization, LinearEquiv.trans_apply,
     LinearEquiv.prodCongr_apply, LinearEquiv.piEquivPiSubtypeProd_apply,
-    LinearEquiv.refl_apply]
+    LinearEquiv.refl_apply, ← LinearEquiv.coe_inv,
+    ← LinearMap.GeneralLinearGroup.toLinearEquiv_inv, ← map_inv,
+    LinearMap.GeneralLinearGroup.coe_toLinearEquiv,
+    GeneralLinearGroup.toLin_apply, mulVecLin_apply]
+  -- Only evaluation of the locally constructed equivalence and subtype projections remains.
   rfl
 
 open Classical in
@@ -141,7 +153,7 @@ theorem kerEquivOfDiagonalization_symm_apply (M : Matrix ι ι R)
       (GeneralLinearGroup.map f V : Matrix ι ι A) *ᵥ
         (fun i ↦ if hi : d i = 0 then z.1 ⟨i, hi⟩ else (z.2 ⟨i, hi⟩).val) := by
   classical
-  simp [kerEquivOfDiagonalization, apply_dite]
+  simp [kerEquivOfDiagonalization, LinearMap.GeneralLinearGroup.coe_toLinearEquiv, apply_dite]
 
 /-- Fixed vectors after specialization, computed from a diagonalization of `γ - 1`.
 The nonzero diagonal factors retain all torsion in the coefficient ring. -/
