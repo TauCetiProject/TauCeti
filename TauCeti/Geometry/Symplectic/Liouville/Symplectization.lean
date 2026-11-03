@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Contact.Symplectization
-public import TauCeti.Geometry.Symplectic.Liouville.Completion
 public import TauCeti.Geometry.Symplectic.Liouville.Scaling
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 
@@ -50,10 +49,6 @@ treated here.
 * `TauCeti.mpullback_globalFlow_comp_eq_symplectization`,
   `TauCeti.mpullback_globalFlow_comp_mextDerivₗ`: the same along a smooth map `ι : S → M`, with
   `ι^* α` in place of `α`.
-* `TauCeti.IsLiouvilleCompletion.bijOn_flowOf_Ioi_prod_frontier`,
-  `TauCeti.IsLiouvilleCompletion.bijOn_flowOf_Ici_prod_frontier`: the Liouville flow map of a
-  completion is a bijection from `(0, ∞) × ∂W` onto `M \ W`, and from `[0, ∞) × ∂W` onto
-  `M \ int W`.
 
 ## References
 
@@ -187,45 +182,5 @@ theorem mpullback_globalFlow_comp_mextDerivₗ (hZα : (mextDeriv α.1).interior
     mpullback_globalFlow_comp_eq_symplectization hc hZ hZα hι]
 
 end Flow
-
-namespace IsLiouvilleCompletion
-
-variable {ω : SmoothTwoForm I M} {α : SmoothForm I M ℝ 1} {W : Set M}
-
-/-- The Liouville flow map of a completion is injective on `ℝ × ∂W`. -/
-private theorem injOn_flowOf_prod_frontier (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) {s : Set ℝ} :
-    InjOn (fun p : ℝ × M ↦ flowOf Z p.1 p.2) (s ×ˢ frontier W) := by
-  intro p hp q hq hpq
-  have := h.injOn_flowOf hZ (h.isCompleteVectorField hZ) (x₁ := p.swap) (x₂ := q.swap)
-    ⟨hp.2, mem_univ _⟩ ⟨hq.2, mem_univ _⟩ hpq
-  exact Prod.swap_injective this
-
-/-- **The cylindrical end of a completion.** Let `M` be a completion of the Liouville domain `W`,
-with Liouville flow `ψ`. The map `(t, y) ↦ ψₜ(y)` is a bijection from `(0, ∞) × ∂W` onto the
-complement of `W`. -/
-theorem bijOn_flowOf_Ioi_prod_frontier (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) :
-    BijOn (fun p : ℝ × M ↦ flowOf Z p.1 p.2) (Ioi 0 ×ˢ frontier W) Wᶜ := by
-  refine ⟨fun p hp ↦ ?_, h.injOn_flowOf_prod_frontier hZ, fun x hx ↦ ?_⟩
-  · exact fun hW ↦ (not_le.2 hp.1) ((h.flowOf_mem_iff_of_mem_frontier hZ hp.2).1 hW)
-  · obtain ⟨⟨y, t⟩, ⟨hy, ht, hyx⟩, -⟩ := h.existsUnique_flowOf_eq hZ hx
-    exact ⟨(t, y), ⟨ht, hy⟩, hyx⟩
-
-/-- **The closed cylindrical end of a completion.** Let `M` be a completion of the Liouville
-domain `W`, with Liouville flow `ψ`. The map `(t, y) ↦ ψₜ(y)` is a bijection from `[0, ∞) × ∂W`
-onto the complement of the interior of `W`. -/
-theorem bijOn_flowOf_Ici_prod_frontier (h : IsLiouvilleCompletion ω α W)
-    (hZ : RoughForm.interior Z ω.1 = α.1) :
-    BijOn (fun p : ℝ × M ↦ flowOf Z p.1 p.2) (Ici 0 ×ˢ frontier W) (interior W)ᶜ := by
-  refine ⟨fun p hp ↦ ?_, h.injOn_flowOf_prod_frontier hZ, fun x hx ↦ ?_⟩
-  · rcases hp.1.eq_or_lt' with h0 | hpos
-    · simpa only [h0, h.flowOf_zero hZ, mem_compl_iff] using hp.2.2
-    · exact fun hW ↦ (not_le.2 hpos)
-        ((h.flowOf_mem_iff_of_mem_frontier hZ hp.2).1 (interior_subset hW))
-  · obtain ⟨y, hy, t, ht, hyx⟩ := h.exists_mem_frontier_flowOf_eq hZ hx
-    exact ⟨(t, y), ⟨ht, hy⟩, hyx⟩
-
-end IsLiouvilleCompletion
 
 end TauCeti
