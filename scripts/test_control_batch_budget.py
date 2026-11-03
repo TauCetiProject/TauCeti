@@ -75,6 +75,28 @@ class BatchBudget(unittest.TestCase):
         self.assertLessEqual(state.records[1]["retry_at"], time.time() + 6 * 3600)
         self.assertIn("batch_attempted_at", state.records[1])
 
+    def test_pending_label_failures_yield_to_least_recently_attempted_work(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            area = root / "PDE"
+            area.mkdir()
+            (area / "README.md").touch()
+            checkpoint = root / "state.json"
+            records = {str(n): dict(key=str(n)*64, label="roadmap/PDE", attempts=1, batch_attempted_at=at)
+                       for n, at in ((1, 20), (2, 10))}
+            checkpoint.write_text(json.dumps(dict(version=1, prs=records)))
+            order = []
+            def process(_api, args, areas, number):
+                order.append(number)
+                args._processed_key = str(number)*64
+                args._state.seen.add(number)
+                return "roadmap/PDE"
+            with patch.object(labels, "candidates", return_value=iter([1, 2])), \
+                 patch.object(labels, "run_pr", side_effect=process):
+                self.assertEqual(batch.main(["--roadmap-dir", directory, "--reconcile-open", "--apply",
+                                             "--state-in", str(checkpoint), "--state-out", str(root/'out.json')]), 0)
+            self.assertEqual(order, [2, 1])
+
     def test_corrupt_checkpoint_rebuilds_automatically_without_human_reset(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
