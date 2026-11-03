@@ -157,13 +157,8 @@ private theorem rootIntMatrix_mul_JFin_add_eq_zero (k : Fin (n + 1) ⊕ Fin (n +
 
 private theorem rootIntMatrix_mul_self_eq_zero (k : Fin (n + 1) ⊕ Fin (n + 1)) :
     rootIntMatrix n k * rootIntMatrix n k = 0 := by
-  refine Matrix.map_injective (f := ((Int.castRingHom ℚ : ℤ →+* ℚ) : ℤ → ℚ))
-    Int.cast_injective ?_
-  simp only [Matrix.map_zero _ (map_zero (Int.castRingHom ℚ))]
-  rw [← RingHom.mapMatrix_apply, map_mul]
-  simp only [RingHom.mapMatrix_apply, Int.coe_castRingHom]
-  rw [map_rootIntMatrix, Matrix.submatrix_mul_equiv, rootGenerator_mul_self_eq_zero]
-  simp
+  apply TauCeti.UniversalEnvelopingAlgebra.kostantRootGeneratorIntMatrix_mul_self
+  simpa only [pow_two] using pow_two_rep_rootGenerator_eq_zero n k
 
 /-! ### The two generator matrices preserve the form -/
 
