@@ -140,7 +140,7 @@ theorem exists_diffeotopy_eqOn_of_pairwise_disjoint [T2Space M] [Finite ι]
         (hf'0 i ▸ mem_range_self 0))
     obtain ⟨r, hr, hrsub⟩ := Euclidean.nhds_basis_ball.mem_iff.mp hmem
     exact ⟨r, hr, fun y ↦ hrsub (radialContraction_mem_ball 0 y hr)⟩
-  choose r hr0 hr using hr
+  choose r _ hr using hr
   have hκ (i : ι) : 0 ≤ (r i)⁻¹ ^ 2 := sq_nonneg _
   let shrink (h : SmoothEmbedding 𝓘(ℝ, E) 𝓘(ℝ, E) ∞ E M) (i : ι) :=
     h.compRadialContraction le_rfl (hκ i)
