@@ -28,7 +28,7 @@ Mathlib's computation of `Ext` from a projective resolution passes through `homo
 
 public section
 
-open CategoryTheory
+open CategoryTheory HomologicalComplex
 
 namespace TauCeti.HomologicalComplex
 
@@ -37,15 +37,14 @@ variable {V : Type*} [Category* V] [Limits.HasZeroMorphisms V] {ι : Type*} {c :
 /-- **`homologyUnop` is natural.** For a morphism `φ : K ⟶ L` of complexes in `Vᵒᵖ`, the square
 comparing the unopposite of `homologyMap φ` with the homology map of the unopposite morphism
 `L.unop ⟶ K.unop` commutes. -/
+@[reassoc]
 theorem homologyUnop_inv_naturality {K L : HomologicalComplex Vᵒᵖ c} (φ : K ⟶ L) (i : ι)
     [K.HasHomology i] [L.HasHomology i] :
-    (HomologicalComplex.homologyMap φ i).unop ≫ (K.homologyUnop i).inv =
-      (L.homologyUnop i).inv ≫ HomologicalComplex.homologyMap
-        ((HomologicalComplex.unopFunctor _ _).map φ.op) i := by
-  have h := (Iso.eq_comp_inv (L.unop.homologyOp i)).2
-    (HomologicalComplex.homologyOp_hom_naturality
-      ((HomologicalComplex.unopFunctor _ _).map φ.op) i)
-  exact congrArg Quiver.Hom.unop
-    ((Iso.inv_comp_eq (K.unop.homologyOp i)).2 (h.trans (Category.assoc _ _ _)))
+    (homologyMap φ i).unop ≫ (K.homologyUnop i).inv =
+      (L.homologyUnop i).inv ≫ homologyMap ((unopFunctor _ _).map φ.op) i := by
+  rw [Iso.comp_inv_eq, Category.assoc, Iso.eq_inv_comp]
+  -- `homologyUnop` is by definition the unopposite of `homologyOp` of the unopposite complex, and
+  -- applying `opFunctor` to the unopposite of `φ` gives back `φ` definitionally.
+  exact congrArg Quiver.Hom.unop (homologyOp_hom_naturality ((unopFunctor _ _).map φ.op) i)
 
 end TauCeti.HomologicalComplex
