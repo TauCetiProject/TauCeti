@@ -72,8 +72,7 @@ def d4SixPrintedDigits : Set (Fin 6 → Fin 4) :=
   {![1, 1, 1, 1, 1, 1], ![0, 0, 2, 3, 3, 2], ![0, 2, 3, 3, 2, 0], ![0, 3, 3, 2, 0, 2],
     ![0, 3, 2, 0, 2, 3], ![0, 2, 0, 2, 3, 3]}
 
-/-- The printed generators of the `D₄⁶` glue code are `[111111]` and the rotations of
-`[0(02332)]`. -/
+/-- The printed generators of `D₄⁶` are `[111111]` and the five rotations of `[0(02332)]`. -/
 theorem d4SixPrintedDigits_def :
     d4SixPrintedDigits =
       {![1, 1, 1, 1, 1, 1], ![0, 0, 2, 3, 3, 2], ![0, 2, 3, 3, 2, 0], ![0, 3, 3, 2, 0, 2],

@@ -139,7 +139,8 @@ theorem existsUnique_isIdempotentElem_mk_eq (J : Ideal S) [HenselianRing S J] {t
   obtain ⟨e, he, hea⟩ := exists_isIdempotentElem_sub_mem J
     (Ideal.Quotient.eq_zero_iff_mem.mp (by rw [map_sub, map_mul, ht.eq, sub_self]))
   refine ⟨e, ⟨he, Ideal.Quotient.eq.mpr hea⟩, fun e' ⟨he', h⟩ ↦ ?_⟩
-  exact Ideal.injOn_quotient_mk_isIdempotentElem HenselianRing.jac he' he
+  exact Ideal.injOn_quotient_mk_isIdempotentElem
+    (by simpa only [Ideal.jacobson_bot] using (HenselianRing.jac (R := S) (I := J))) he' he
     (h.trans (Ideal.Quotient.eq.mpr hea).symm)
 
 /-- **Locality from the idempotents.** A nontrivial commutative ring that is Henselian along an
@@ -148,10 +149,12 @@ theorem isLocalRing_of_forall_isIdempotentElem [Nontrivial S] (J : Ideal S) [Hen
     [IsArtinianRing (S ⧸ J)] (h : ∀ e : S, IsIdempotentElem e → e = 0 ∨ e = 1) :
     IsLocalRing S := by
   have hJ : J ≠ ⊤ := fun hJ ↦ by
-    have hjac : J ≤ Ideal.jacobson ⊥ := HenselianRing.jac
+    have hjac : J ≤ Ideal.jacobson ⊥ := by
+      simpa only [Ideal.jacobson_bot] using (HenselianRing.jac (R := S) (I := J))
     rw [hJ, top_le_iff, Ideal.jacobson_eq_top_iff] at hjac
     exact bot_ne_top hjac
-  have : IsLocalHom (Ideal.Quotient.mk J) := isLocalHom_of_le_jacobson_bot J HenselianRing.jac
+  have : IsLocalHom (Ideal.Quotient.mk J) := _root_.isLocalHom_of_le_jacobson (I :=
+    J) HenselianRing.jac
   have : Nontrivial (S ⧸ J) := Ideal.Quotient.nontrivial_iff.mpr hJ
   have : IsLocalRing (S ⧸ J) := by
     refine IsArtinianRing.isLocalRing_of_forall_isIdempotentElem fun t ht ↦ ?_
@@ -166,7 +169,8 @@ theorem isLocalRing_of_forall_isIdempotentElem [Nontrivial S] (J : Ideal S) [Hen
 @[stacks 09XI "(1) ⇒ (3), for the finite algebra `B = A` only"]
 theorem bijOn_quotient_mk_isIdempotentElem (J : Ideal S) [HenselianRing S J] :
     Set.BijOn (Ideal.Quotient.mk J) {e | IsIdempotentElem e} {t | IsIdempotentElem t} :=
-  ⟨fun _ he ↦ he.map _, Ideal.injOn_quotient_mk_isIdempotentElem HenselianRing.jac,
+  ⟨fun _ he ↦ he.map _, Ideal.injOn_quotient_mk_isIdempotentElem
+      (by simpa only [Ideal.jacobson_bot] using (HenselianRing.jac (R := S) (I := J))),
     fun _ ht ↦ (existsUnique_isIdempotentElem_mk_eq J ht).exists⟩
 
 /-- **Uniqueness of idempotent lifts in integral algebras.** If `S` is Henselian along `J` and `T`
@@ -177,7 +181,7 @@ theorem injOn_quotient_mk_map_isIdempotentElem {T : Type*} [CommRing T] [Algebra
     [Algebra.IsIntegral S T] (J : Ideal S) [HenselianRing S J] :
     Set.InjOn (Ideal.Quotient.mk (J.map (algebraMap S T))) {e | IsIdempotentElem e} :=
   Ideal.injOn_quotient_mk_isIdempotentElem (Ideal.map_le_jacobson_bot_of_isIntegral
-    HenselianRing.jac)
+    (by simpa only [Ideal.jacobson_bot] using (HenselianRing.jac (R := S) (I := J))))
 
 /-- If `γ` is idempotent modulo `JT` and `γ T ⊆ S γ + JT`, with `J` in the Jacobson radical,
 then `γ` together with `(1 - γ) gᵢ` spans `T` whenever the `gᵢ` do. -/
@@ -186,7 +190,8 @@ private theorem span_range_option_elim_eq_top {J : Ideal S} (hjac : J ≤ Ideal.
     (hcyc : ∀ c : T, ∃ s : S, γ * c - s • γ ∈ J.map (algebraMap S T)) {n : ℕ} {g : Fin n → T}
     (hg : Submodule.span S (Set.range g) = ⊤) :
     Submodule.span S (Set.range fun i : Option (Fin n) ↦ i.elim γ fun j ↦ (1 - γ) * g j) = ⊤ := by
-  refine top_le_iff.mp (Submodule.le_of_le_smul_of_le_jacobson_bot Module.Finite.fg_top hjac
+  refine top_le_iff.mp (Submodule.le_of_le_smul_of_le_jacobson Module.Finite.fg_top
+    (by simpa only [Ideal.jacobson_bot] using hjac)
     fun c _ ↦ ?_)
   obtain ⟨s, hs⟩ := hcyc c
   obtain ⟨a, ha⟩ := (Submodule.mem_span_range_iff_exists_fun S).mp (hg ▸ Submodule.mem_top :
@@ -311,7 +316,8 @@ theorem exists_isIdempotentElem_sub_mem_map (J : Ideal S) [HenselianRing S J]
     (hγ : γ * γ - γ ∈ J.map (algebraMap S T))
     (hcyc : ∀ c : T, ∃ s : S, γ * c - s • γ ∈ J.map (algebraMap S T)) :
     ∃ e : T, IsIdempotentElem e ∧ e - γ ∈ J.map (algebraMap S T) := by
-  have hjac : J ≤ Ideal.jacobson ⊥ := HenselianRing.jac
+  have hjac : J ≤ Ideal.jacobson ⊥ := by
+    simpa only [Ideal.jacobson_bot] using (HenselianRing.jac (R := S) (I := J))
   obtain ⟨p, n, hmonic, hpγ, hpmap⟩ := exists_monic_aeval_eq_zero_map_eq hjac hγ hcyc
   -- `1` is a simple root of `p` modulo `J`, so it lifts to a root `α ≡ 1` of `p`.
   have hp1 : p.eval 1 ∈ J := by
@@ -328,7 +334,8 @@ theorem exists_isIdempotentElem_sub_mem_map (J : Ideal S) [HenselianRing S J]
       rw [← Ideal.Quotient.eq, map_one] at this
       rw [this]; exact isUnit_one)
   exact exists_isIdempotentElem_sub_mem_of_isRoot hγ hpγ hα hα1
-    (Ideal.isUnit_of_sub_one_mem_jacobson_bot _ (hjac (hdp α hα1)))
+    (Ideal.isUnit_of_sub_one_mem_jacobson _
+      (by simpa only [Ideal.jacobson_bot] using hjac (hdp α hα1)))
 
 end HenselianRing
 

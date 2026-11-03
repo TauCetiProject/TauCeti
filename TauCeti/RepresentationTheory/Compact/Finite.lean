@@ -197,7 +197,7 @@ theorem eq_smul_count_of_isMulLeftInvariant (μ : Measure G) [μ.IsMulLeftInvari
     rw [← measure_preimage_mul μ g {g}, h]
   have hsmul : μ = μ {(1 : G)} • Measure.count := by
     refine Measure.ext_of_singleton fun a ↦ ?_
-    rw [Measure.smul_apply, Measure.count_singleton, smul_eq_mul, mul_one, hone a]
+    rw [_root_.smul_apply, Measure.count_singleton, smul_eq_mul, mul_one, hone a]
   have hmass : μ {(1 : G)} * (Nat.card G : ℝ≥0∞) = 1 := by
     have h := congrArg (fun ν : Measure G ↦ ν univ) hsmul
     simpa [Measure.count_univ, ENat.card_eq_coe_natCard] using h.symm
@@ -220,12 +220,12 @@ theorem haarProb_eq_smul_count :
 /-- **The normalized Haar measure of a singleton in a finite discrete group is `|G|⁻¹`.** -/
 @[simp]
 theorem haarProb_singleton (g : G) : haarProb G {g} = (Nat.card G : ℝ≥0∞)⁻¹ := by
-  rw [haarProb_eq_smul_count G, Measure.smul_apply, Measure.count_singleton, smul_eq_mul, mul_one]
+  rw [haarProb_eq_smul_count G, _root_.smul_apply, Measure.count_singleton, smul_eq_mul, mul_one]
 
 /-- The normalized Haar measure of a set in a finite discrete group is the fraction of the group it
 occupies. -/
 theorem haarProb_apply (s : Set G) : haarProb G s = (s.ncard : ℝ≥0∞) / Nat.card G := by
-  rw [haarProb_eq_smul_count G, Measure.smul_apply,
+  rw [haarProb_eq_smul_count G, _root_.smul_apply,
     Measure.count_apply_finite s s.toFinite, smul_eq_mul, ENNReal.div_eq_inv_mul,
     Set.ncard_eq_toFinset_card s s.toFinite]
 
