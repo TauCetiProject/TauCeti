@@ -26,10 +26,10 @@ tree joining vertices from different components.
 * `TauCeti.TerminalCut.exists_isCutTree_pairCutCapacity`: pair capacities admit cut trees.
 * `Graph.exists_isCutTree_edgeCutCapacity`: finite weighted multigraphs admit cut trees.
 * `Graph.exists_isUnitCutTree`: finite multigraphs admit unit-capacity cut trees.
-* `IsCutTree.reachable_deleteEdges_iff_edgeReachability`: threshold components of a unit cut
-  tree are the local edge-connectivity classes of the multigraph.
-* `IsCutTree.exists_edge_edgeConnectivity_eq_weight`: the global edge connectivity is the
-  minimum tree-edge weight.
+* `IsFlowEquivalentTree.reachable_deleteEdges_iff_edgeReachability`: threshold components of a
+  unit flow-equivalent tree are the local edge-connectivity classes of the multigraph.
+* `IsFlowEquivalentTree.exists_edge_edgeConnectivity_eq_weight`: the global edge connectivity is
+  the minimum tree-edge weight.
 
 ## References
 
@@ -81,17 +81,17 @@ theorem exists_isUnitCutTree [Fintype V(G)] [Nonempty V(G)] [Fintype E(G)] :
 
 end Graph
 
-namespace TauCeti.TerminalCut.IsCutTree
+namespace TauCeti.TerminalCut.IsFlowEquivalentTree
 
 open Graph SimpleGraph
 
-variable {α β : Type*} {G : Graph α β} [Fintype V(G)] [Fintype E(G)]
+variable {α β : Type*} {G : Graph α β} [Finite V(G)] [Fintype E(G)]
 variable {T : SimpleGraph V(G)} {w : Sym2 V(G) → ℕ}
 
-/-- On a unit-capacity multigraph cut tree, some edge on every nontrivial tree path has weight
-equal to the native local edge reachability of its endpoints. -/
+/-- On a unit-capacity multigraph flow-equivalent tree, some edge on every nontrivial tree path has
+weight equal to the native local edge reachability of its endpoints. -/
 theorem exists_weight_eq_edgeReachability
-    (hT : IsCutTree (G.edgeCutCapacity fun _ ↦ (1 : ℕ)) T w)
+    (hT : IsFlowEquivalentTree (G.edgeCutCapacity fun _ ↦ (1 : ℕ)) T w)
     {s t : V(G)} (hst : s ≠ t) {p : T.Walk s t} (hp : p.IsPath) :
     ∃ e ∈ p.edges, G.edgeReachability s t = (w e : ℕ∞) := by
   obtain ⟨e, he, hwe⟩ := hT.exists_weight_eq hst hp
@@ -101,7 +101,7 @@ theorem exists_weight_eq_edgeReachability
 /-- Deleting the tree edges of weight below `k` leaves two actual vertices connected exactly when
 they are equal or their native local edge reachability is at least `k`. -/
 theorem reachable_deleteEdges_iff_edgeReachability
-    (hT : IsCutTree (G.edgeCutCapacity fun _ ↦ (1 : ℕ)) T w) (k : ℕ) {s t : V(G)} :
+    (hT : IsFlowEquivalentTree (G.edgeCutCapacity fun _ ↦ (1 : ℕ)) T w) (k : ℕ) {s t : V(G)} :
     (T.deleteEdges {e | w e < k}).Reachable s t ↔
       s = t ∨ (k : ℕ∞) ≤ G.edgeReachability s t := by
   rw [hT.reachable_deleteEdges_iff]
@@ -110,6 +110,15 @@ theorem reachable_deleteEdges_iff_edgeReachability
   · simp only [hst, false_or]
     rw [G.edgeReachability_eq_pairMinimumValue hst]
     exact_mod_cast Iff.rfl
+
+end TauCeti.TerminalCut.IsFlowEquivalentTree
+
+namespace TauCeti.TerminalCut.IsCutTree
+
+open Graph SimpleGraph
+
+variable {α β : Type*} {G : Graph α β} [Fintype V(G)] [Fintype E(G)]
+variable {T : SimpleGraph V(G)} {w : Sym2 V(G) → ℕ}
 
 /-- A minimum-weight edge on a unit cut-tree path recovers a minimum multigraph cut, expressed as
 a subset of the original actual vertices. Its unit cut capacity equals local edge reachability. -/
@@ -124,10 +133,19 @@ theorem edgeReachability_eq_edgeCutCapacity_edgeSide
   have hst : s ≠ t := fun h ↦ ht (h ▸ hs')
   rw [G.edgeReachability_eq_pairMinimumValue hst, hcut.pairMinimumValue_eq]
 
+end TauCeti.TerminalCut.IsCutTree
+
+namespace TauCeti.TerminalCut.IsFlowEquivalentTree
+
+open Graph SimpleGraph
+
+variable {α β : Type*} {G : Graph α β} [Finite V(G)] [Fintype E(G)]
+variable {T : SimpleGraph V(G)} {w : Sym2 V(G) → ℕ}
+
 /-- The global edge connectivity of a finite multigraph with at least two actual vertices is the
-minimum weight of an edge in any unit-capacity cut tree. -/
+minimum weight of an edge in any unit-capacity flow-equivalent tree. -/
 theorem exists_edge_edgeConnectivity_eq_weight [Nontrivial V(G)]
-    (hT : IsCutTree (G.edgeCutCapacity fun _ ↦ (1 : ℕ)) T w) :
+    (hT : IsFlowEquivalentTree (G.edgeCutCapacity fun _ ↦ (1 : ℕ)) T w) :
     ∃ u v, T.Adj u v ∧ G.edgeConnectivity = (w s(u, v) : ℕ∞) := by
   have hTne : T ≠ ⊥ := by
     intro h
@@ -156,7 +174,7 @@ theorem exists_edge_edgeConnectivity_eq_weight [Nontrivial V(G)]
       rw [G.edgeReachability_eq_pairMinimumValue hxy]
       exact_mod_cast (hmin e (p.edges_subset_edgeSet he)).trans_eq hwe
 
-end TauCeti.TerminalCut.IsCutTree
+end TauCeti.TerminalCut.IsFlowEquivalentTree
 
 /-!
 ## A disconnected weighted graph
