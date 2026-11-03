@@ -83,7 +83,7 @@ theorem finiteDimensional_genEigenspace_nat (hT : IsCompactOperator T)
         (S₂ := genEigenspace T.toLinearMap μ n) ?_)
       rintro _ ⟨x, hx, rfl⟩
       rw [SetLike.mem_coe, mem_genEigenspace_nat, LinearMap.mem_ker, pow_succ,
-        Module.End.mul_apply] at hx
+        mul_apply_eq_comp] at hx
       exact mem_genEigenspace_nat.mpr hx
     · exact (Submodule.fg_iff_finiteDimensional _).mpr (Submodule.finiteDimensional_of_le
         (S₂ := eigenspace T.toLinearMap μ) (inf_le_right.trans_eq eigenspace_def.symm))

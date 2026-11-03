@@ -36,7 +36,7 @@ explicit, field-specific name because an anonymous `Fact (Irreducible …)` inst
 auto-generated name that ignores the radicand, so the analogous instances for different radicands
 would collide under one name when the whole library is loaded for the axioms audit. -/
 instance irreducible_X_sq_add_five : Fact (Irreducible (X ^ 2 - C (-5 : ℚ))) := ⟨by
-  exact (X_pow_sub_C_irreducible_iff_of_prime Nat.prime_two).mpr
+  exact (irreducible_X_pow_sub_C_iff_of_prime Nat.prime_two).mpr
     (fun q _ => by nlinarith [sq_nonneg q])⟩
 
 /-- The concrete model `AdjoinRoot (X² + 5)` of `ℚ(√-5)` carries an integral generator with minimal
