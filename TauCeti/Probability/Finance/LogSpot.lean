@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.Deriv.Second
+import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 
 /-!
@@ -106,13 +107,15 @@ theorem pde_comp_exp {C : ℝ → ℝ → ℝ} {t : ℝ} (σ r : ℝ)
   ring
 
 /-- **The pricing equation in weighted log-spot coordinates.** For a function `C(s, t)` of the
-spot, twice continuously differentiable in the spot at `e^y`, and `w(y, t) = C(e^y, t) / (1 + e^y)`,
-the operator `w_t + a w_yy + (r + a (e^y - 1) / (e^y + 1)) w_y - r / (1 + e^y) w` with
-`a = σ² / 2` at `y` equals the pricing operator `C_t + σ² s² / 2 C_ss + r (s C_s - C)` at the spot
-`s = e^y`, divided by the weight `1 + e^y`. The coefficients of the weighted operator are bounded
-whenever `σ` and `r` are. -/
+spot, differentiable in the spot near `e^y` with spot derivative differentiable at `e^y`, and
+`w(y, t) = C(e^y, t) / (1 + e^y)`, the operator
+`w_t + a w_yy + (r + a (e^y - 1) / (e^y + 1)) w_y - r / (1 + e^y) w` with `a = σ² / 2` at `y`
+equals the pricing operator `C_t + σ² s² / 2 C_ss + r (s C_s - C)` at the spot `s = e^y`, divided
+by the weight `1 + e^y`. The coefficients of the weighted operator are bounded whenever `σ` and
+`r` are. -/
 theorem pde_comp_exp_div_one_add_exp {C : ℝ → ℝ → ℝ} {t : ℝ} (σ r : ℝ)
-    (hC : ContDiffAt ℝ 2 (fun x => C x t) (exp y)) :
+    (hC : ∀ᶠ x in 𝓝 (exp y), DifferentiableAt ℝ (fun x => C x t) x)
+    (hC' : DifferentiableAt ℝ (deriv fun x => C x t) (exp y)) :
     deriv (fun t' => C (exp y) t' / (1 + exp y)) t +
         σ ^ 2 / 2 * deriv (deriv fun y => C (exp y) t / (1 + exp y)) y +
         (r + σ ^ 2 / 2 * ((exp y - 1) / (exp y + 1))) *
@@ -124,12 +127,28 @@ theorem pde_comp_exp_div_one_add_exp {C : ℝ → ℝ → ℝ} {t : ℝ} (σ r :
         (1 + exp y) := by
   set w : ℝ → ℝ := fun y => C (exp y) t / (1 + exp y)
   have hψ (z : ℝ) : 1 + exp z ≠ 0 := (add_pos one_pos (exp_pos z)).ne'
-  have hw : ContDiffAt ℝ 2 w y :=
-    (hC.comp y contDiff_exp.contDiffAt).div (contDiffAt_const.add contDiff_exp.contDiffAt) (hψ y)
-  have hwd : ∀ᶠ z in 𝓝 y, DifferentiableAt ℝ w z :=
-    (hw.eventually (by simp)).mono fun z hz => hz.differentiableAt (by norm_num)
-  have hwd' : DifferentiableAt ℝ (deriv w) y :=
-    (hw.derivWithin (m := 1) (by norm_num)).differentiableAt (by norm_num)
+  have hψd (z : ℝ) : HasDerivAt (fun z => 1 + exp z) (exp z) z := (hasDerivAt_exp z).const_add 1
+  have hCe : ∀ᶠ z in 𝓝 y, DifferentiableAt ℝ (fun x => C x t) (exp z) :=
+    continuous_exp.continuousAt.eventually hC
+  have hgd {z : ℝ} (hz : DifferentiableAt ℝ (fun x => C x t) (exp z)) :
+      HasDerivAt (fun z => C (exp z) t) (deriv (fun x => C x t) (exp z) * exp z) z :=
+    hz.hasDerivAt.comp z (hasDerivAt_exp z)
+  have hwd : ∀ᶠ z in 𝓝 y, DifferentiableAt ℝ w z := by
+    filter_upwards [hCe] with z hz
+    exact (hgd hz).differentiableAt.div (hψd z).differentiableAt (hψ z)
+  -- Near `y`, the derivative of `w` is given by the quotient rule, differentiable at `y`.
+  have hw' : deriv w =ᶠ[𝓝 y] fun z => (deriv (fun x => C x t) (exp z) * exp z * (1 + exp z) -
+      C (exp z) t * exp z) / (1 + exp z) ^ 2 := by
+    filter_upwards [hCe] with z hz
+    exact ((hgd hz).div (hψd z) (hψ z)).deriv
+  have hwd' : DifferentiableAt ℝ (deriv w) y := by
+    refine DifferentiableAt.congr_of_eventuallyEq ?_ hw'
+    have h₁ : DifferentiableAt ℝ (fun z => deriv (fun x => C x t) (exp z) * exp z) y :=
+      (hC'.comp y differentiableAt_exp).mul differentiableAt_exp
+    have h₂ : DifferentiableAt ℝ (fun z => C (exp z) t * exp z) y :=
+      (hgd hC.self_of_nhds).differentiableAt.mul differentiableAt_exp
+    exact ((h₁.mul (hψd y).differentiableAt).sub h₂).div ((hψd y).differentiableAt.pow 2)
+      (pow_ne_zero 2 (hψ y))
   -- The log-spot price `g(y) = C(e^y, t)` is the weight times `w`; differentiate the product.
   have hgw : (fun y => C (exp y) t) = fun z => (1 + exp z) * w z := by
     ext z
@@ -139,17 +158,13 @@ theorem pde_comp_exp_div_one_add_exp {C : ℝ → ℝ → ℝ} {t : ℝ} (σ r :
       fun z => exp z * w z + (1 + exp z) * deriv w z := by
     filter_upwards [hwd] with z hz
     rw [hgw]
-    exact (((hasDerivAt_exp z).const_add 1).mul hz.hasDerivAt).deriv
+    exact ((hψd z).mul hz.hasDerivAt).deriv
   have hg'' : deriv (deriv fun y => C (exp y) t) y =
       exp y * w y + exp y * deriv w y + (exp y * deriv w y + (1 + exp y) * deriv (deriv w) y) := by
     rw [hg'.deriv_eq]
     exact (((hasDerivAt_exp y).mul hwd.self_of_nhds.hasDerivAt).add
-      (((hasDerivAt_exp y).const_add 1).mul hwd'.hasDerivAt)).deriv
-  have hCd : ∀ᶠ x in 𝓝 (exp y), DifferentiableAt ℝ (fun x => C x t) x :=
-    (hC.eventually (by simp)).mono fun z hz => hz.differentiableAt (by norm_num)
-  have hCd' : DifferentiableAt ℝ (deriv fun x => C x t) (exp y) :=
-    (hC.derivWithin (m := 1) (by norm_num)).differentiableAt (by norm_num)
-  rw [← pde_comp_exp σ r hCd hCd', hg'', hg'.self_of_nhds, deriv_div_const]
+      ((hψd y).mul hwd'.hasDerivAt)).deriv
+  rw [← pde_comp_exp σ r hC hC', hg'', hg'.self_of_nhds, deriv_div_const]
   have hwy : C (exp y) t = (1 + exp y) * w y := congrFun hgw y
   rw [hwy]
   have h1 : exp y + 1 ≠ 0 := by rw [add_comm]; exact hψ y

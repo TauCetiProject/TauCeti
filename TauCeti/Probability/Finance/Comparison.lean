@@ -116,6 +116,11 @@ theorem le_of_pde_le_of_terminal_le
       DifferentiableAt ℝ (fun τ' ↦ C (exp y) (T - τ') / (1 + exp y)) τ :=
     ((hdiff (exp_pos y) (hrev hτ)).comp τ
       ((differentiableAt_const T).sub differentiableAt_id)).div_const _
+  have hCd {f : ℝ → ℝ} {x : ℝ} (hf : ContDiffAt ℝ 2 f x) :
+      ∀ᶠ z in 𝓝 x, DifferentiableAt ℝ f z :=
+    (hf.eventually (by simp)).mono fun z hz ↦ hz.differentiableAt (by norm_num)
+  have hCd' {f : ℝ → ℝ} {x : ℝ} (hf : ContDiffAt ℝ 2 f x) : DifferentiableAt ℝ (deriv f) x :=
+    (hf.derivWithin (m := 1) (by norm_num)).differentiableAt (by norm_num)
   -- Apply the comparison principle on the whole line to `v₁` and `v₂`. The coefficients
   -- `a = σ² / 2`, `b = r + a (e^y - 1) / (e^y + 1)` and `c = -r / (1 + e^y)` are bounded by
   -- `|Λ| / 2`, `|R| + |Λ| / 2` and `|R|`; `v₁ - v₂ ≤ A` by the growth bound; and the operators
@@ -163,10 +168,12 @@ theorem le_of_pde_le_of_terminal_le
     (fun τ hτ y ↦ by
       rw [deriv_comp_const_sub (f := fun t ↦ C₁ (exp y) t / (1 + exp y)),
         deriv_comp_const_sub (f := fun t ↦ C₂ (exp y) t / (1 + exp y))]
+      have hc₁ := hcd₁ (exp_pos y) (hrev hτ)
       have h₁ := pde_comp_exp_div_one_add_exp (σ (exp y) (T - τ)) (r (T - τ))
-        (hcd₁ (exp_pos y) (hrev hτ))
+        (hCd hc₁) (hCd' hc₁)
+      have hc₂ := hcd₂ (exp_pos y) (hrev hτ)
       have h₂ := pde_comp_exp_div_one_add_exp (σ (exp y) (T - τ)) (r (T - τ))
-        (hcd₂ (exp_pos y) (hrev hτ))
+        (hCd hc₂) (hCd' hc₂)
       have h := div_le_div_of_nonneg_right (hpde (exp_pos y) (hrev hτ)) (hψ y).le
       linear_combination h + h₂ - h₁)
     (fun y ↦ by
