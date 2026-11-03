@@ -157,7 +157,7 @@ private theorem rootOperator_commutator_apply (i : Fin n) (a : Fin (dimension n)
     (isSl2Triple_rep_rootGenerator n hn i).lie_e_f
   rw [(isCartanWeightVector_iff (TauCeti.serreH ℚ (CartanMatrix.D n)) (rep n hn)).mp
     (isCartanWeightVector_latticeBasis n hn a) i] at h
-  simpa only [LinearMap.sub_apply, Module.End.mul_apply,
+  simpa only [LinearMap.sub_apply, mul_apply_eq_comp,
     AddSubgroup.coe_sub, coe_kostantRootOperator_apply,
     AddSubgroupClass.coe_zsmul, Ring.lie_def, Int.cast_smul_eq_zsmul] using h
 
