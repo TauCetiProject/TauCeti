@@ -156,20 +156,22 @@ private theorem hasFDerivAt_extChartAt_hamiltonianFlowAction (x : M) :
     HasFDerivAt (fun v ↦ extChartAt I x ((hσ.hamiltonianFlowAction hF hcomm hc v).toMul x))
       (∑ i, (ContinuousLinearMap.proj i : (ι → ℝ) →L[ℝ] ℝ).smulRight
         (σ.hamiltonianVectorField (F · i) x) : (ι → ℝ) →L[ℝ] E) 0 := by
-  have ha := hσ.hasMFDerivAt_hamiltonianFlowAction_apply_zero hF hcomm hc x
   have hx0 : (hσ.hamiltonianFlowAction hF hcomm hc 0).toMul x = x := by simp
   have hsrc : (hσ.hamiltonianFlowAction hF hcomm hc 0).toMul x ∈ (chartAt H x).source := by
     rw [hx0]
     exact mem_chart_source H x
-  have he := ((contMDiffAt_extChartAt' (I := I) (n := ∞) hsrc).mdifferentiableAt
-    (by simp)).hasMFDerivAt
-  have hid : mfderiv I 𝓘(ℝ, E) (extChartAt I x)
-      ((hσ.hamiltonianFlowAction hF hcomm hc 0).toMul x) = ContinuousLinearMap.id ℝ E := by
-    rw [hx0]
-    exact mfderiv_extChartAt_self
-  rw [hid] at he
-  exact (hasMFDerivAt_iff_hasFDerivAt.1 (he.comp 0 ha)).congr_fderiv
-    (ContinuousLinearMap.id_comp _)
+  -- The tangent chart at `x`, read at `φ_0(x) = x`, is the identity.
+  have hT : (trivializationAt E (TangentSpace I) x).continuousLinearMapAt ℝ
+      ((hσ.hamiltonianFlowAction hF hcomm hc 0).toMul x) = ContinuousLinearMap.id ℝ _ := by
+    refine ContinuousLinearMap.ext fun v ↦ ?_
+    rw [TangentBundle.continuousLinearMapAt_trivializationAt_eq_core hsrc, hx0]
+    exact tangentCoordChange_self (mem_extChartAt_source x)
+  have h := (hσ.hasMFDerivAt_hamiltonianFlowAction_apply_zero hF hcomm hc x
+    ).hasFDerivAt_extChartAt_comp
+      (e := ∑ i, (ContinuousLinearMap.proj i : (ι → ℝ) →L[ℝ] ℝ).smulRight
+        (σ.hamiltonianVectorField (F · i) x)) hsrc
+  rw [hT] at h
+  exact h.congr_fderiv (ContinuousLinearMap.id_comp _)
 
 /-- In the preferred chart `e` at `x`, the map `(v, z) ↦ e(φ_v(e⁻¹ z))` has strict derivative
 `(v, z) ↦ ∑ᵢ vᵢ X_{Fᵢ}(x) + z` at `(0, e x)`. -/
@@ -182,30 +184,24 @@ private theorem hasStrictFDerivAt_extChartAt_hamiltonianFlowAction (x : M) :
   set e := extChartAt I x with he
   set B : (ι → ℝ) × E → E := fun q ↦
     e ((hσ.hamiltonianFlowAction hF hcomm hc q.1).toMul (e.symm q.2)) with hB
-  -- `B` is smooth at `(0, e x)`: it is the action read in the product chart at `(0, x)`.
-  have hBc : ContDiffAt ℝ ∞ B (0, e x) := by
-    have hsrc : (hσ.hamiltonianFlowAction hF hcomm hc 0).toMul x ∈ (chartAt H x).source := by
-      simp
-    have h := ((contMDiffAt_extChartAt' (n := ∞) hsrc).comp ((0 : ι → ℝ), x)
-      (hσ.contMDiff_hamiltonianFlowAction_uncurry hF hcomm hc).contMDiffAt
-      ).contDiffAt_comp_extChartAt_symm
-    have hsymm (q : (ι → ℝ) × E) :
-        (extChartAt (𝓘(ℝ, ι → ℝ).prod I) ((0 : ι → ℝ), x)).symm q = (q.1, e.symm q.2) := by
-      rw [extChartAt_prod, PartialEquiv.prod_symm, PartialEquiv.prod_coe,
-        extChartAt_model_space_eq_id]
-      rfl
-    have hpt : extChartAt (𝓘(ℝ, ι → ℝ).prod I) ((0 : ι → ℝ), x) ((0 : ι → ℝ), x) =
-        (0, e x) := by
-      rw [extChartAt_prod, PartialEquiv.prod_coe, extChartAt_model_space_eq_id]
-      rfl
-    rw [hpt] at h
-    convert h using 1
-    funext q
-    rw [comp_apply, hsymm]
+  -- `B` is the action read in the product chart at `(0, x)` and the chart at `φ_0(x) = x`, so it
+  -- is strictly differentiable at `(0, e x)`.
+  have hpt : extChartAt (𝓘(ℝ, ι → ℝ).prod I) ((0 : ι → ℝ), x) ((0 : ι → ℝ), x) = (0, e x) := by
+    rw [extChartAt_prod, PartialEquiv.prod_coe, extChartAt_model_space_eq_id]
     rfl
+  have hBeq : extChartAt I ((hσ.hamiltonianFlowAction hF hcomm hc 0).toMul x) ∘
+      (fun p : (ι → ℝ) × M ↦ (hσ.hamiltonianFlowAction hF hcomm hc p.1).toMul p.2) ∘
+        (extChartAt (𝓘(ℝ, ι → ℝ).prod I) ((0 : ι → ℝ), x)).symm = B := by
+    funext q
+    rw [extChartAt_prod, PartialEquiv.prod_symm, extChartAt_model_space_eq_id]
+    simp [B, he]
+  have hBs : HasStrictFDerivAt B (fderiv ℝ B (0, e x)) (0, e x) := by
+    have h := ((hσ.contMDiff_hamiltonianFlowAction_uncurry hF hcomm hc).contMDiffAt
+      (x := ((0 : ι → ℝ), x))).of_le (by simp) |>.hasStrictFDerivAt_extChartAt_conj
+    rwa [hpt, hBeq] at h
   -- Its derivative is determined by its restrictions to the two coordinate axes.
   set B' := fderiv ℝ B (0, e x) with hB'
-  have hBd : HasFDerivAt B B' (0, e x) := (hBc.differentiableAt (by simp)).hasFDerivAt
+  have hBd : HasFDerivAt B B' (0, e x) := hBs.hasFDerivAt
   have h1 (v : ι → ℝ) : B' (v, 0) = (∑ i, (ContinuousLinearMap.proj i : (ι → ℝ) →L[ℝ] ℝ).smulRight
       (σ.hamiltonianVectorField (F · i) x) : (ι → ℝ) →L[ℝ] E) v := by
     have h := (hBd.comp (0 : ι → ℝ) ((hasFDerivAt_id (0 : ι → ℝ)).prodMk
@@ -226,7 +222,7 @@ private theorem hasStrictFDerivAt_extChartAt_hamiltonianFlowAction (x : M) :
     rw [ContinuousLinearMap.coprod_apply, ContinuousLinearMap.id_apply, ← h1 q.1, ← h2 q.2,
       ← map_add, Prod.mk_add_mk, add_zero, zero_add]
   rw [← hB'eq]
-  exact hBc.hasStrictFDerivAt hBd (by simp)
+  exact hBs
 
 /-- Near a regular point `x` of a family of `n` Poisson-commuting functions on a `2n`-dimensional
 manifold, every point of the common level of `x` is `φ_v(x)` for a small vector `v`. In a chart,
