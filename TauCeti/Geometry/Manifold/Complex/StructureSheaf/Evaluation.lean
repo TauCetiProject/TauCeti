@@ -211,7 +211,7 @@ theorem pointEvaluationSequence_def : pointEvaluationSequence I X p =
 def isLimitPointEvaluationKernel : IsLimit (KernelFork.ofι
     (vanishingSheafι I X (Finsupp.single p 1))
     (vanishingSheafι_evaluationToSkyscraper I X p)) := by
-  let F := TopCat.Sheaf.forget (ModuleCat ℂ) (TopCat.of X)
+  let F := sheafToPresheaf (Opens.grothendieckTopology X) (ModuleCat ℂ)
   apply isLimitOfReflects F
   apply evaluationJointlyReflectsLimits
   intro U
@@ -219,7 +219,7 @@ def isLimitPointEvaluationKernel : IsLimit (KernelFork.ofι
   letI := Functor.preservesZeroMorphisms_evaluation_obj (C := ModuleCat ℂ) U
   have : (F ⋙ (evaluation _ (ModuleCat ℂ)).obj U).PreservesZeroMorphisms :=
     Functor.preservesZeroMorphisms_comp
-      (TopCat.Sheaf.forget (ModuleCat ℂ) (TopCat.of X)) _
+      (sheafToPresheaf (Opens.grothendieckTopology X) (ModuleCat ℂ)) _
   exact (KernelFork.isLimitMapConeEquiv
     (KernelFork.ofι (vanishingSheafι I X (Finsupp.single p 1))
       (vanishingSheafι_evaluationToSkyscraper I X p))
