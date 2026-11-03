@@ -89,8 +89,8 @@ theorem finrank_residueField_tensor_kaehlerDifferential_eq_two
     exact hI.ge.trans <| (fittingIdeal_le_maximalIdeal_pow 1).trans <|
       Ideal.pow_le_pow_right (show 2 ≤ μ - 1 by omega)
   have hbot : maximalIdeal A = ⊥ :=
-    Submodule.eq_bot_of_le_smul_of_le_jacobson_bot _ _ (IsNoetherian.noetherian _) hsq
-      (jacobson_eq_maximalIdeal ⊥ bot_ne_top).ge
+    Submodule.eq_bot_of_le_smul_of_le_jacobson _ _ (IsNoetherian.noetherian _) hsq
+      (ringJacobson_eq_maximalIdeal A).ge
   -- Then `A = A ⧸ Fitt₁(Ω[A⁄K])` is unramified over `K`, and `Ω[A⁄K] = 0`.
   have : Algebra.FormallyUnramified K A := .of_equiv
     ((Ideal.quotientEquivAlgOfEq K (hI.trans hbot)).trans (AlgEquiv.quotientBot K A))

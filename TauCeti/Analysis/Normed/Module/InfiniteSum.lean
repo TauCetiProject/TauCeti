@@ -17,6 +17,7 @@ public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 public import Mathlib.Topology.Algebra.InfiniteSum.Module
 public import Mathlib.Topology.Algebra.InfiniteSum.GroupCompletion
 public import TauCeti.Topology.MetricSpace.Ultra.Completion
+import TauCeti.Data.Int.MulPred
 
 /-!
 # Bounded bilinear maps and infinite sums in ultrametric normed modules
@@ -53,7 +54,9 @@ For bilateral Laurent series `∑ₙ f(n) uⁿ` over a field, shifting the coeff
 multiplies the sum by `uᵏ`. The Cauchy product `∑' m, f(m) g(n - m)` of the coefficients
 sums to the product of the two series over a complete normed field when both series converge
 absolutely, and over a complete ultrametric normed field whenever both series converge. In such
-an ultrametric field, multipliers of norm at most one preserve summability.
+a field the Cauchy product of two convergent bilateral series converges to the product of their
+sums, its moments `∑ n h(n)` and `∑ (n (n - 1) / 2) h(n)` obey the Leibniz rule, and multipliers
+of norm at most one preserve summability.
 -/
 
 public section
@@ -110,7 +113,7 @@ Additivity of the map is not needed for this assertion. -/
 theorem summable_sum_bilinear_antidiagonal_of_nonarchimedean [CompleteSpace G]
     {f : A → E} {g : A → F} (hf : Summable f) (hg : Summable g) :
     Summable fun n ↦ ∑ ij ∈ Finset.antidiagonal n, B (f ij.1) (g ij.2) := by
-  simp_rw [← Finset.tsum_subtype]
+  simp_rw [← Finset.tsum_subtype (L := .unconditional _)]
   have hsigma := Finset.HasAntidiagonal.sigmaAntidiagonalEquivProd.summable_iff.mpr
     (summable_bilinear_of_nonarchimedean B hB hf hg)
   exact hsigma.sigma' fun n ↦ (hasSum_fintype _).summable
@@ -392,6 +395,59 @@ theorem hasSum_laurent_mul {f g : ℤ → K} {u : K} (hu : u ≠ 0) {a b : K}
   rw [← tsum_mul_right]
   congr 1 with m
   rw [show u ^ n = u ^ m * u ^ (n - m) by rw [← zpow_add₀ hu, add_sub_cancel]]
+  ring
+
+/-- Each coefficient `∑' m, f m * g (n - m)` of the Cauchy product of two summable families is
+an unconditionally convergent sum. -/
+theorem _root_.Summable.mul_sub {f g : ℤ → K} (hf : Summable f) (hg : Summable g) (n : ℤ) :
+    Summable (fun m ↦ f m * g (n - m)) := by
+  refine NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero ?_
+  simpa using hf.tendsto_cofinite_zero.mul
+    (hg.tendsto_cofinite_zero.comp (Equiv.subLeft n).injective.tendsto_cofinite)
+
+/-- The Cauchy product of two convergent bilateral series over a complete ultrametric normed
+field: `∑ₙ ∑ₘ f(m) g(n - m) = (∑ f) (∑ g)`. -/
+theorem _root_.HasSum.tsum_mul_sub {f g : ℤ → K} {a b : K} (hf : HasSum f a) (hg : HasSum g b) :
+    HasSum (fun n ↦ ∑' m, f m * g (n - m)) (a * b) := by
+  simpa using hasSum_laurent_mul (u := (1 : K)) one_ne_zero (by simpa using hf)
+    (by simpa using hg)
+
+/-- **The Leibniz rule for first moments.** The first moment `∑ n h(n)` of the Cauchy product
+`h = f * g` is `f₁ g₀ + f₀ g₁`, where `f₀ = ∑ f(n)` and `f₁ = ∑ n f(n)`. -/
+theorem _root_.HasSum.intCast_mul_tsum_mul_sub {f g : ℤ → K} {a a₁ b b₁ : K} (hf : HasSum f a)
+    (hf₁ : HasSum (fun n : ℤ ↦ (n : K) * f n) a₁) (hg : HasSum g b)
+    (hg₁ : HasSum (fun n : ℤ ↦ (n : K) * g n) b₁) :
+    HasSum (fun n : ℤ ↦ (n : K) * ∑' m, f m * g (n - m)) (a₁ * b + a * b₁) := by
+  refine ((hf₁.tsum_mul_sub hg).add (hf.tsum_mul_sub hg₁)).congr_fun fun n ↦ ?_
+  rw [← (hf₁.summable.mul_sub hg.summable n).tsum_add
+    (hf.summable.mul_sub hg₁.summable n), ← tsum_mul_left]
+  congr 1 with m
+  push_cast
+  ring
+
+/-- **The Leibniz rule for second moments.** With the weights `n (n - 1) / 2`, the second
+moment of the Cauchy product `h = f * g` is `f₂ g₀ + f₁ g₁ + f₀ g₂`, where `f₀ = ∑ f(n)`,
+`f₁ = ∑ n f(n)` and `f₂ = ∑ (n (n - 1) / 2) f(n)`. The halved weights are integers, so this
+holds in every characteristic. -/
+theorem _root_.HasSum.intCast_mul_sub_one_ediv_two_mul_tsum_mul_sub {f g : ℤ → K}
+    {a a₁ a₂ b b₁ b₂ : K} (hf : HasSum f a) (hf₁ : HasSum (fun n : ℤ ↦ (n : K) * f n) a₁)
+    (hf₂ : HasSum (fun n : ℤ ↦ ((n * (n - 1) / 2 : ℤ) : K) * f n) a₂) (hg : HasSum g b)
+    (hg₁ : HasSum (fun n : ℤ ↦ (n : K) * g n) b₁)
+    (hg₂ : HasSum (fun n : ℤ ↦ ((n * (n - 1) / 2 : ℤ) : K) * g n) b₂) :
+    HasSum (fun n : ℤ ↦ ((n * (n - 1) / 2 : ℤ) : K) * ∑' m, f m * g (n - m))
+      (a₂ * b + a₁ * b₁ + a * b₂) := by
+  refine (((hf₂.tsum_mul_sub hg).add (hf₁.tsum_mul_sub hg₁)).add
+    (hf.tsum_mul_sub hg₂)).congr_fun fun n ↦ ?_
+  rw [← (hf₂.summable.mul_sub hg.summable n).tsum_add
+    (hf₁.summable.mul_sub hg₁.summable n),
+    ← (Summable.add (hf₂.summable.mul_sub hg.summable n)
+      (hf₁.summable.mul_sub hg₁.summable n)).tsum_add
+      (hf.summable.mul_sub hg₂.summable n), ← tsum_mul_left]
+  congr 1 with m
+  have h := Int.add_mul_add_sub_one_ediv_two m (n - m)
+  rw [add_sub_cancel] at h
+  rw [h]
+  push_cast
   ring
 
 end Laurent

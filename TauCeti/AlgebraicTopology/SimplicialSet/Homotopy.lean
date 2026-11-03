@@ -27,6 +27,10 @@ of `h i x` is the image under `f` of the initial vertex of `x`, the first edge o
 the image under `f` of the first edge of `x`, and the first edge of `h 0 x` is the track `h 0 x₀`
 of the initial vertex `x₀` of `x`.  These are what a construction transporting data along the
 initial vertices of simplices, such as twisted chains, needs to lift the combinatorial homotopy.
+
+It also provides the constructor `SSet.Homotopy.mk'` of a homotopy from a morphism on the
+cylinder `X ⊗ Δ[1]` with prescribed ends, and records that these two ends are disjoint
+(`SSet.range_ι₀_inf_range_ι₁`).
 -/
 
 @[expose] public section
@@ -37,9 +41,35 @@ open scoped Simplicial
 
 universe w
 
+namespace SSet
+
+/-- The two ends `X ⊗ {0}` and `X ⊗ {1}` of the cylinder `X ⊗ Δ[1]` are disjoint. -/
+lemma range_ι₀_inf_range_ι₁ {X : SSet.{w}} :
+    Subcomplex.range (ι₀ : X ⟶ X ⊗ Δ[1]) ⊓ Subcomplex.range ι₁ = ⊥ := by
+  ext ⟨n⟩ z
+  induction n using SimplexCategory.rec with | _ n
+  simp only [Subfunctor.min_obj, Set.mem_inter_iff, Subfunctor.range_obj, Set.mem_range,
+    Subfunctor.bot_obj, Set.mem_empty_iff_false, iff_false, not_and]
+  rintro ⟨x, rfl⟩ ⟨y, h⟩
+  have := congrArg (fun z : (X ⊗ Δ[1] : SSet.{w}) _⦋n⦌ ↦ z.2 0) h
+  simp at this
+
+end SSet
+
 namespace SSet.Homotopy
 
 variable {X Y X' Y' : SSet.{w}} {f g : X ⟶ Y} {f' g' : X' ⟶ Y'} {u : X ⟶ X'} {v : Y ⟶ Y'}
+
+/-- The simplicial homotopy from `f` to `g` given by a morphism `h : X ⊗ Δ[1] ⟶ Y` which is `f`
+on `X ⊗ {0}` and `g` on `X ⊗ {1}`. -/
+@[simps h]
+def mk' (h : X ⊗ Δ[1] ⟶ Y) (h₀ : ι₀ ≫ h = f) (h₁ : ι₁ ≫ h = g) : SSet.Homotopy f g where
+  h := h
+  h₀ := h₀
+  h₁ := h₁
+  rel := by
+    ext _ ⟨⟨_, hx⟩, _⟩
+    simp at hx
 
 /-- The combinatorial homotopy extracted from a simplicial homotopy sends an `n`-simplex `x` to
 the value of the homotopy at the pair formed by the `i`-th degeneracy of `x` and the `n + 1`-simplex

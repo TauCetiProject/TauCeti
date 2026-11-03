@@ -77,6 +77,8 @@ and `e^T - 1`.
   base change along homomorphisms of `ℚ`-algebras.
 * `FormalGroup.derivative_exp`: `exp_F'(T) = F_X(0, exp_F(T))`.
 * `FormalGroup.toPowerSeries_eq_subst_exp`: `F(X, Y) = exp_F(log_F(X) + log_F(Y))`.
+* `FormalGroup.invariantDifferential_injective`: over a `ℚ`-algebra, a formal group law is
+  determined by its invariant differential.
 * `FormalGroup.logIso`: the strict isomorphism from `F` to the additive formal group, with
   forward homomorphism `FormalGroup.logHom` and inverse `FormalGroup.expHom`.
 * `FormalGroup.eq_logIso`: this is the unique strict isomorphism to the additive formal group.
@@ -451,6 +453,14 @@ theorem subst_exp_log : PowerSeries.subst F.exp F.log = PowerSeries.X :=
 theorem subst_log_exp : PowerSeries.subst F.log F.exp = PowerSeries.X :=
   PowerSeries.subst_substInvOfIsUnit_left _ F.constantCoeff_log _
 
+/-- `exp_F(log_F(a)) = a` for every power series `a` that can be substituted. -/
+@[simp]
+theorem subst_subst_log_exp {σ : Type*} {a : MvPowerSeries σ R} (ha : PowerSeries.HasSubst a) :
+    PowerSeries.subst (PowerSeries.subst a F.log) F.exp = a := by
+  rw [← PowerSeries.subst_comp_subst_apply
+      (PowerSeries.HasSubst.of_constantCoeff_zero' F.constantCoeff_log) ha,
+    subst_log_exp, PowerSeries.subst_X ha]
+
 /-- The exponential is the only right inverse of the logarithm: if `log_F(Q(T)) = T` then
 `Q = exp_F`. -/
 theorem eq_exp_of_subst_log_eq_X {Q : PowerSeries R} (hQ : PowerSeries.HasSubst Q)
@@ -501,10 +511,23 @@ theorem derivative_exp :
 theorem toPowerSeries_eq_subst_exp :
     F.toPowerSeries =
       PowerSeries.subst (PowerSeries.subst (X 0) F.log + PowerSeries.subst (X 1) F.log) F.exp := by
-  have hF := PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff
-  have hlog := PowerSeries.HasSubst.of_constantCoeff_zero' F.constantCoeff_log
-  rw [← subst_toPowerSeries_log, ← PowerSeries.subst_comp_subst_apply hlog hF, subst_log_exp,
-    PowerSeries.subst_X hF]
+  rw [← subst_toPowerSeries_log,
+    F.subst_subst_log_exp (PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff)]
+
+/-- **A formal group law over a `ℚ`-algebra is determined by its invariant differential**: the
+invariant differential determines `log_F`, hence `exp_F`, and
+`F(X, Y) = exp_F(log_F(X) + log_F(Y))`. -/
+theorem invariantDifferential_injective :
+    Function.Injective (invariantDifferential : FormalGroup R → PowerSeries R) := by
+  intro F G h
+  have hlog : F.log = G.log := by
+    ext n
+    rw [coeff_log, coeff_log, h]
+  have hexp : F.exp = G.exp :=
+    G.eq_exp_of_subst_log_eq_X (.of_constantCoeff_zero' F.constantCoeff_exp)
+      (by rw [← hlog, subst_exp_log])
+  refine FormalGroup.ext ?_
+  rw [F.toPowerSeries_eq_subst_exp, G.toPowerSeries_eq_subst_exp, hlog, hexp]
 
 /-- The logarithm, bundled as a homomorphism to the additive formal group. -/
 noncomputable def logHom : TauCeti.FormalGroupHom F (𝔾ₐ (R := R)) where

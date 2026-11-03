@@ -101,6 +101,26 @@ noncomputable abbrev simplyBlockedBoundaries (hG : G.IsKnot) (i : Fin n) :
       (hG.simplyBlockedCycles R i) :=
   LinearMap.range (hG.simplyBlockedBoundaryMap R i)
 
+/-- A simply blocked cycle is a boundary exactly when its explicit chain lies in the range of the
+simply blocked differential. -/
+theorem mem_simplyBlockedBoundaries_iff (hG : G.IsKnot) (i : Fin n)
+    (c : hG.simplyBlockedCycles R i) :
+    c ∈ hG.simplyBlockedBoundaries R i ↔
+      G.simplyBlockedChainEquiv R i c ∈ LinearMap.range (G.simplyBlockedDifferential R i) := by
+  -- The boundary map is `ShortComplex.moduleCatToCycles`, the differential with its codomain
+  -- restricted to the cycles, so its underlying chain is the differential by definition.
+  have hd (w : (G.simplyBlockedComplex R i).X ()) :
+      G.simplyBlockedChainEquiv R i (hG.simplyBlockedBoundaryMap R i w) =
+        G.simplyBlockedDifferential R i (G.simplyBlockedChainEquiv R i w) :=
+    G.simplyBlockedChainEquiv_d R i w
+  constructor
+  · rintro ⟨w, rfl⟩
+    exact ⟨G.simplyBlockedChainEquiv R i w, (hd w).symm⟩
+  · rintro ⟨w, hw⟩
+    refine ⟨(G.simplyBlockedChainEquiv R i).symm w, Subtype.ext ?_⟩
+    apply (G.simplyBlockedChainEquiv R i).injective
+    rw [hd, LinearEquiv.apply_symm_apply, hw]
+
 /-- The concrete cycles-modulo-boundaries model of simply blocked grid homology. -/
 noncomputable abbrev simplyBlockedHomologyQuotient (hG : G.IsKnot) (i : Fin n) : Type _ :=
   let C := hG.simplyBlockedCycles R i

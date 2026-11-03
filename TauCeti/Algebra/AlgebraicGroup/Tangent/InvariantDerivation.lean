@@ -162,7 +162,7 @@ theorem comul_iterate_leftInvariantDerivation (d : Derivation R H (CounitAlgebra
   | zero => simp [Module.End.one_eq_id]
   | succ n ih =>
     rw [Function.iterate_succ_apply', comul_leftInvariantDerivation, ih, pow_succ',
-      LinearMap.lTensor_mul, Module.End.mul_apply]
+      LinearMap.lTensor_mul, mul_apply_eq_comp]
 
 /-- **Iterated invariant vector fields.** Applying `n` times the left-invariant derivation of a
 tangent vector contracts the comultiplication against `ε ∘ Dⁿ`: `Dⁿ h = ∑ h₍₁₎ ε(Dⁿ h₍₂₎)`. -/
@@ -189,7 +189,7 @@ theorem counit_iterate_add_leftInvariantDerivation
           Coalgebra.counit (R := R) ((leftInvariantDerivation d)^[j] (𝓡.right k)) := by
   rw [Function.iterate_add_apply, iterate_leftInvariantDerivation_apply d j h,
     ← 𝓡.eq, map_sum]
-  simp only [tensorComponent_tmul, LinearMap.comp_apply, Module.End.coe_pow,
+  simp only [tensorComponent_tmul, LinearMap.comp_apply, FunLike.coe_pow_eq_iterate,
     Derivation.coeFn_coe]
   rw [Derivation.iterate_sum_smul, map_sum]
   simp only [map_smul, smul_eq_mul, mul_comm]

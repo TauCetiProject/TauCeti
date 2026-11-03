@@ -84,7 +84,7 @@ theorem nonempty_linearEquiv_of_prod_linearEquiv_of_isLocalRing_end
       simp only [b, d, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearMap.inr_apply,
         LinearMap.fst_apply, LinearMap.snd_apply]
     simp only [c', d', LinearMap.add_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
-      LinearMap.inl_apply, LinearMap.inr_apply, LinearMap.snd_apply, Module.End.one_apply]
+      LinearMap.inl_apply, LinearMap.inr_apply, LinearMap.snd_apply, one_apply_eq_self]
     rw [← Prod.snd_add, ← map_add, Prod.mk_add_mk, add_zero, zero_add, ← he,
       e.symm_apply_apply]
   -- Locality makes one summand invertible: if `d` is not a unit, then `c' b` is, and so is

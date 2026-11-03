@@ -9,7 +9,7 @@ public import TauCeti.NumberTheory.Height.Arakelov.Basic
 
 import Mathlib.Analysis.Matrix.Normed
 import Mathlib.Algebra.Order.Ring.IsNonarchimedean
-import TauCeti.NumberTheory.NumberField.FinitePlace
+import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
 
 /-!
 # Arakelov height bounds for linear maps and matrix products

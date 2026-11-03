@@ -119,7 +119,7 @@ reaches the end of the chain. -/
 theorem pow_apply_basis (c : f.JordanChainBasis ι) (k : ℕ) (i : ι) (j : Fin (c.len i)) :
     (f ^ k) (c.basis ⟨i, j⟩) =
       if h : (j : ℕ) + k < c.len i then c.basis ⟨i, ⟨j + k, h⟩⟩ else 0 := by
-  simp only [basis_apply, ← mul_apply, ← pow_add]
+  simp only [basis_apply, ← _root_.mul_apply_eq_comp, ← pow_add]
   split_ifs with h
   · rw [add_comm]
   · exact pow_map_zero_of_le (by omega) (c.pow_len_apply_head i)
@@ -152,7 +152,7 @@ theorem range_pow (c : f.JordanChainBasis ι) (k : ℕ) :
     · exact zero_mem _
   · rw [span_le]
     rintro _ ⟨⟨i, j⟩, rfl⟩
-    exact ⟨c.basis ⟨i, ⟨j, by omega⟩⟩, by simp [← mul_apply, ← pow_add, add_comm]⟩
+    exact ⟨c.basis ⟨i, ⟨j, by omega⟩⟩, by simp [← _root_.mul_apply_eq_comp, ← pow_add, add_comm]⟩
 
 /-- The linear equivalence between the spaces of two Jordan-chain bases whose lengths agree under
 the reindexing `σ`, matching chain vectors at equal depths in corresponding chains. It conjugates
@@ -192,7 +192,8 @@ theorem apply_equiv (c : f.JordanChainBasis ι) (d : g.JordanChainBasis κ) (σ 
   have h : g ∘ₗ (c.equiv d σ hσ).toLinearMap = (c.equiv d σ hσ).toLinearMap ∘ₗ f := by
     refine c.basis.ext fun ⟨i, j⟩ => ?_
     simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, basis_apply, equiv_pow_apply_head]
-    rw [← mul_apply, ← pow_succ', ← mul_apply, ← pow_succ', equiv_pow_apply_head]
+    rw [← _root_.mul_apply_eq_comp, ← pow_succ', ← _root_.mul_apply_eq_comp, ← pow_succ',
+      equiv_pow_apply_head]
   exact LinearMap.congr_fun h x
 
 /-- The dimension of `V` is the sum of the lengths of the chains. -/
@@ -314,12 +315,13 @@ private theorem linearIndependent_dual_pow_apply {m : ℕ} {v : V} (φ : Dual K 
     have hsum := congrFun ha ⟨m - 1 - i, by omega⟩
     simp only [Finset.sum_apply, Pi.smul_apply, smul_eq_mul, Pi.zero_apply] at hsum
     rw [Finset.sum_eq_single i] at hsum
-    · rw [← mul_apply, ← pow_add, show m - 1 - i + i = m - 1 by omega] at hsum
+    · rw [← _root_.mul_apply_eq_comp, ← pow_add, show m - 1 - i + i = m - 1 by omega] at hsum
       exact (mul_eq_zero.1 hsum).resolve_right hφ
     · intro i' _ hi'
       rcases lt_or_gt_of_ne (Fin.val_injective.ne hi') with h | h
       · rw [ih i' h i' rfl, zero_mul]
-      · rw [← mul_apply, ← pow_add, pow_map_zero_of_le (by omega) hv, map_zero, mul_zero]
+      · rw [← _root_.mul_apply_eq_comp, ← pow_add, pow_map_zero_of_le (by omega) hv, map_zero,
+        mul_zero]
     · simp
 
 /-- Jordan chains for `f`, indexed by `ι`, whose vectors are linearly independent and span the
@@ -397,7 +399,7 @@ private theorem invariant_complement [FiniteDimensional K V] {m : ℕ} {Z : Subm
   have hsup : span K (Set.range u) ⊔ Z ⊓ LinearMap.ker Φ = Z := by
     have hCZ : span K (Set.range u) ≤ Z := by
       refine span_le.2 (Set.range_subset_iff.2 fun i => ?_)
-      simp only [u, SetLike.mem_coe, pow_apply]
+      simp only [u, SetLike.mem_coe, _root_.pow_apply_eq_iterate]
       exact Set.MapsTo.iterate hZ i hvZ
     have hrange : finrank K (LinearMap.range Φ) ≤ m := (Submodule.finrank_le _).trans (by simp)
     have h1 := Φ.finrank_range_add_finrank_ker
@@ -411,7 +413,7 @@ private theorem invariant_complement [FiniteDimensional K V] {m : ℕ} {Z : Subm
   rw [Submodule.mem_inf, LinearMap.mem_ker] at hx ⊢
   refine ⟨hZ x hx.1, funext fun j => ?_⟩
   simp only [hΦ, LinearMap.pi_apply, LinearMap.comp_apply, Pi.zero_apply]
-  rw [← mul_apply, ← pow_succ]
+  rw [← _root_.mul_apply_eq_comp, ← pow_succ]
   by_cases hj : (j : ℕ) + 1 < m
   · exact congrFun hx.2 ⟨j + 1, hj⟩
   · rw [show (j : ℕ) + 1 = m by omega, hfm x hx.1, map_zero]
@@ -514,7 +516,7 @@ theorem pow_apply_head_mem_range_pow_iff [Nontrivial K] (c : f.JordanChainBasis 
       ← basis_apply c ⟨j, ⟨c.len j - 1, by have := c.len_pos j; omega⟩⟩, Basis.coord_apply,
       Basis.repr_self, Finsupp.single_eq_same, LinearMap.zero_apply] at h
     exact one_ne_zero h
-  · rw [← mul_apply, ← pow_add]
+  · rw [← _root_.mul_apply_eq_comp, ← pow_add]
     congr 2
     omega
 
@@ -550,7 +552,7 @@ theorem joinEnds_pow_apply_head (c : f.JordanChainBasis ι) (i j : ι) :
 @[simp]
 theorem mul_joinEnds (c : f.JordanChainBasis ι) (i j : ι) : f * c.joinEnds i j = 0 := by
   ext x
-  rw [mul_apply, joinEnds_apply, map_smul, ← mul_apply, ← pow_succ',
+  rw [_root_.mul_apply_eq_comp, joinEnds_apply, map_smul, ← _root_.mul_apply_eq_comp, ← pow_succ',
     Nat.sub_add_cancel (c.len_pos j), c.pow_len_apply_head, smul_zero, LinearMap.zero_apply]
 
 /-- For distinct chains `i ≠ j`, the endomorphism `joinEnds i j` squares to zero. -/
@@ -558,7 +560,7 @@ theorem mul_joinEnds (c : f.JordanChainBasis ι) (i j : ι) : f * c.joinEnds i j
 theorem joinEnds_mul_joinEnds (c : f.JordanChainBasis ι) {i j : ι} (hij : i ≠ j) :
     c.joinEnds i j * c.joinEnds i j = 0 := by
   ext x
-  rw [mul_apply, joinEnds_apply (x := x), map_smul, joinEnds_apply,
+  rw [_root_.mul_apply_eq_comp, joinEnds_apply (x := x), map_smul, joinEnds_apply,
     ← basis_apply c ⟨j, ⟨c.len j - 1, by have := c.len_pos j; omega⟩⟩, Basis.repr_self,
     Finsupp.single_eq_of_ne, zero_smul, smul_zero, LinearMap.zero_apply]
   intro h
@@ -573,7 +575,7 @@ theorem joinEnds_mul_pow_of_le (c : f.JordanChainBasis ι) (i j : ι) {k : ℕ} 
     (p := ⟨i, ⟨c.len i - 1, by have := c.len_pos i; omega⟩⟩) (k := k)
     (by dsimp only; have := c.len_pos i; omega)) x
   rw [LinearMap.comp_apply, Basis.coord_apply, LinearMap.zero_apply] at h
-  rw [mul_apply, joinEnds_apply, h, zero_smul, LinearMap.zero_apply]
+  rw [_root_.mul_apply_eq_comp, joinEnds_apply, h, zero_smul, LinearMap.zero_apply]
 
 /-- For distinct chains `i ≠ j`, the powers of `f + t • joinEnds i j` are
 `f ^ (k + 1) + t • joinEnds i j * f ^ k`, since `f * joinEnds i j` and `joinEnds i j ^ 2`
@@ -612,13 +614,14 @@ theorem range_add_smul_joinEnds_pow (c : f.JordanChainBasis ι) {i j : ι} (hij 
   rw [zero_add] at hk ⊢
   set d := (f ^ (c.len j - 1)) (c.head j)
   have hE (x : V) : (t • (c.joinEnds i j * f ^ k)) x ∈ K ∙ d := by
-    rw [LinearMap.smul_apply, mul_apply, joinEnds_apply]
+    rw [LinearMap.smul_apply, _root_.mul_apply_eq_comp, joinEnds_apply]
     exact smul_mem _ _ (smul_mem _ _ (mem_span_singleton_self d))
   -- The vector `f ^ (len i - k - 1) (head i)` is sent to `t • d`.
   have hd : d ∈ LinearMap.range ((f + t • c.joinEnds i j) ^ (k + 1)) := by
     refine ⟨t⁻¹ • (f ^ (c.len i - (k + 1))) (c.head i), ?_⟩
     rw [map_smul, c.add_smul_joinEnds_pow_succ hij, LinearMap.add_apply, LinearMap.smul_apply,
-      mul_apply, ← mul_apply (f ^ (k + 1)), ← pow_add, ← mul_apply (f ^ k), ← pow_add,
+      _root_.mul_apply_eq_comp, ← _root_.mul_apply_eq_comp (f ^ (k + 1)), ← pow_add,
+        ← _root_.mul_apply_eq_comp (f ^ k), ← pow_add,
       Nat.add_sub_cancel' hk, show k + (c.len i - (k + 1)) = c.len i - 1 by omega,
       c.pow_len_apply_head, joinEnds_pow_apply_head, zero_add, smul_smul, inv_mul_cancel₀ ht,
       one_smul]

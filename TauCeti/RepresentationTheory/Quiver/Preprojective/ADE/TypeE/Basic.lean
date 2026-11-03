@@ -289,14 +289,16 @@ idempotent is `E`:
 * a valley word on one arm `a`, with rungs counted from the branch node, which stays at least one
   rung away from it;
 * a climb from the branch node to `j` along an arm `a`, after a product `w` of `t` backtracks at
-  the branch node and a path `D` into the branch node of length `s₀ < n`. -/
+  the branch node and a multiple of the descent from `i₀` to the branch node along an arm `b`,
+  of length `s₀`. -/
 private def ENormalForm (i₀ j L : ℕ) (E z : signlessPreprojectiveAlgebra k (DoubledQuiver G)) :
     Prop :=
   (∃ (a : Fin 3) (m s r : ℕ) (ε : ℤ), 0 < m ∧ s + r = L ∧ eArm n a (m + s) = i₀ ∧
       eArm n a (m + r) = j ∧ z = ε • (ladderValley (eUp k n a) (eDown k n a) m s r * E)) ∨
-  (∃ (a : Fin 3) (h t s₀ : ℕ) (w D : signlessPreprojectiveAlgebra k (DoubledQuiver G)),
-      w ∈ eSpan k n ^ t ∧ s₀ < n ∧ eArm n a h = j ∧ L = s₀ + 2 * t + h ∧
-      z = ladderValley (eUp k n a) (eDown k n a) 0 0 h * w * D)
+  (∃ (a b : Fin 3) (h t s₀ : ℕ) (ε : ℤ) (w : signlessPreprojectiveAlgebra k (DoubledQuiver G)),
+      w ∈ eSpan k n ^ t ∧ eArm n b s₀ = i₀ ∧ eArm n a h = j ∧ L = s₀ + 2 * t + h ∧
+      z = ladderValley (eUp k n a) (eDown k n a) 0 0 h * w *
+        (ε • (ladderValley (eUp k n b) (eDown k n b) 0 s₀ 0 * E)))
 
 variable {n} (hn : 4 ≤ n)
 include hn
@@ -342,25 +344,26 @@ private theorem eNormalForm_cons_valley {i₀ j j' L : ℕ}
     rw [hz, Nat.add_right_comm m 1 r, Nat.add_sub_cancel]
     rcases Nat.eq_zero_or_pos m with rfl | hm'
     · -- The valley reaches the branch node: a climb out of it after a descent into it.
-      refine .inr ⟨a, r, 0, s + 1, 1, (ε * (-1) ^ r) • (ladderValley (eUp k n a) (eDown k n a) 0
-        (s + 1) 0 * E), one_mem_eSpan_pow_zero k, lt_of_eArm_lt hn (by rwa [add_comm]),
-        by rw [zero_add], by omega, ?_⟩
+      refine .inr ⟨a, a, r, 0, s + 1, ε * (-1) ^ r, 1, one_mem_eSpan_pow_zero k,
+        by rw [zero_add, add_comm], by rw [zero_add], by omega, ?_⟩
       rw [mul_one, mul_smul_comm, ← mul_assoc, ladderValley_zero_mul_ladderValley]
     · exact .inl ⟨a, m, s + 1, r, ε * (-1) ^ r, hm', by omega, by congr 1; omega, rfl, rfl⟩
 
 /-- One more arrow after a climb out of the branch node. -/
 private theorem eNormalForm_cons_climb {i₀ j j' L : ℕ}
     {E z : signlessPreprojectiveAlgebra k (DoubledQuiver G)} (hj : j < n) (hadj : EAdj j j')
-    (h : ∃ (a : Fin 3) (h t s₀ : ℕ) (w D : signlessPreprojectiveAlgebra k (DoubledQuiver G)),
-      w ∈ eSpan k n ^ t ∧ s₀ < n ∧ eArm n a h = j ∧ L = s₀ + 2 * t + h ∧
-      z = ladderValley (eUp k n a) (eDown k n a) 0 0 h * w * D) :
+    (h : ∃ (a b : Fin 3) (h t s₀ : ℕ) (ε : ℤ)
+      (w : signlessPreprojectiveAlgebra k (DoubledQuiver G)),
+      w ∈ eSpan k n ^ t ∧ eArm n b s₀ = i₀ ∧ eArm n a h = j ∧ L = s₀ + 2 * t + h ∧
+      z = ladderValley (eUp k n a) (eDown k n a) 0 0 h * w *
+        (ε • (ladderValley (eUp k n b) (eDown k n b) 0 s₀ 0 * E))) :
     ENormalForm k n i₀ j' (L + 1) E (signlessArrow k G j j' * z) := by
-  obtain ⟨a, h, t, s₀, w, D, hw, hs₀, rfl, hL, rfl⟩ := h
+  obtain ⟨a, c, h, t, s₀, ε, w, hw, hs₀, rfl, hL, rfl⟩ := h
   rcases h with _ | h
   · -- From the branch node, a step into the first node of an arm.
     rw [eArm_zero] at hadj ⊢
     obtain ⟨b, rfl⟩ := exists_eq_eArm_of_eAdj n hadj
-    refine .inr ⟨b, 1, t, s₀, w, D, hw, hs₀, rfl, by omega, ?_⟩
+    refine .inr ⟨b, c, 1, t, s₀, ε, w, hw, hs₀, rfl, by omega, ?_⟩
     rw [ladderValley_zero_zero, one_mul, ← mul_assoc, ← u_mul_ladderValley, ladderValley_zero_zero,
       mul_one, zero_add, eUp, eArm_zero]
   rcases eq_eArm_of_eAdj (by omega) hj hadj with rfl | rfl
@@ -368,10 +371,10 @@ private theorem eNormalForm_cons_climb {i₀ j j' L : ℕ}
     have harr : signlessArrow k G (eArm n a (h + 1)) (eArm n a (h + 1 + 1)) =
         eUp k n a (0 + (h + 1)) := by
       rw [zero_add, eUp]
-    refine .inr ⟨a, h + 1 + 1, t, s₀, w, D, hw, hs₀, rfl, by omega, ?_⟩
+    refine .inr ⟨a, c, h + 1 + 1, t, s₀, ε, w, hw, hs₀, rfl, by omega, ?_⟩
     rw [← mul_assoc, ← mul_assoc, harr, u_mul_ladderValley]
   · -- A step towards the branch node turns the climb back: one more backtrack at the branch node.
-    refine .inr ⟨a, h, t + 1, s₀, ((-1 : ℤ) ^ h) • (eTurn k n a * w), D, ?_, hs₀,
+    refine .inr ⟨a, c, h, t + 1, s₀, ε, ((-1 : ℤ) ^ h) • (eTurn k n a * w), ?_, hs₀,
       by rw [Nat.add_sub_cancel], by omega, ?_⟩
     · rw [pow_succ']
       exact Submodule.smul_mem _ _ (Submodule.mul_mem_mul (eTurn_mem_eSpan k hn a) hw)
@@ -399,9 +402,9 @@ private theorem eNormalForm_ofPath {a b : DoubledQuiver G} (p : Path a b) :
   | nil =>
     -- The empty path is the empty valley word on an arm, or the empty word at the branch node.
     by_cases h : ((vertexEquiv G).symm a : ℕ) = 3
-    · refine .inr ⟨0, 0, 0, 0, 1, signlessPreprojectiveMk k _ (ofPath ⟨a, a, .nil⟩),
-        one_mem_eSpan_pow_zero k, by omega, by rw [h, eArm_zero], rfl, ?_⟩
-      rw [ladderValley_zero_zero, one_mul, one_mul]
+    · refine .inr ⟨0, 0, 0, 0, 0, 1, 1, one_mem_eSpan_pow_zero k, by rw [h, eArm_zero],
+        by rw [h, eArm_zero], rfl, ?_⟩
+      simp only [ladderValley_zero_zero, one_mul, one_smul]
     · obtain ⟨c, q, hq, hcq⟩ := exists_eArm_eq n h
       exact .inl ⟨c, q, 0, 0, 1, hq, rfl, hcq, hcq, by
         rw [ladderValley_zero_zero, one_mul, one_smul]⟩
@@ -422,13 +425,14 @@ private theorem signlessPreprojectiveMk_ofPath_eq_zero_of_eSpan_pow {M : ℕ}
   dsimp only at hx
   have hb := ((vertexEquiv G).symm b).2
   rcases eNormalForm_ofPath k hn p with ⟨c, m, s, r, ε, -, hL, hs, hr, -⟩ |
-    ⟨c, h, t, s₀, w, D, hw, hs₀, hh, hL, hz⟩
+    ⟨c, c', h, t, s₀, ε, w, hw, hs₀, hh, hL, hz⟩
   · -- A valley word on an arm is too short.
     have := lt_of_eArm_lt hn (hs ▸ ((vertexEquiv G).symm a).2)
     have := lt_of_eArm_lt hn (hr ▸ hb)
     omega
   · -- Otherwise the word at the branch node is long enough to vanish.
     have := lt_of_eArm_lt hn (hh ▸ hb)
+    have := lt_of_eArm_lt hn (hs₀ ▸ ((vertexEquiv G).symm a).2)
     obtain ⟨e, rfl⟩ : ∃ e, t = M + e := ⟨t - M, by omega⟩
     rw [pow_add, hM, Submodule.bot_mul, Submodule.mem_bot] at hw
     rw [hz, hw, mul_zero, zero_mul]
@@ -646,8 +650,7 @@ variable (k : Type*) [Field k]
 
 /-- The signless preprojective algebra of the Bourbaki-labelled `E₇` diagram is
 finite-dimensional over every field. -/
-instance instFiniteDimensionalSignlessPreprojectiveAlgebraE7
-    [∀ i, Fintype ((diagramGraph DynkinType.E7.cartanMatrix).neighborSet i)] :
+instance instFiniteDimensionalSignlessPreprojectiveAlgebraE7 :
     FiniteDimensional k
       (signlessPreprojectiveAlgebra k
         (DoubledQuiver (diagramGraph DynkinType.E7.cartanMatrix))) := by

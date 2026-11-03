@@ -55,6 +55,8 @@ presentation, so the geometric results about `TauCeti.FiniteSlopeData.slopeMulti
 * `Polynomial.den_dvd_card_newtonSlopes`: for a valuation taking integer values on nonzero
   elements, if every finite slope equals the rational `q`, then the denominator of `q` divides
   the number of finite slopes.
+* `Polynomial.exists_isFiniteFace_newtonPolygon`: a nonempty Newton polygon has a finite face
+  of every real slope.
 * `Polynomial.count_newtonSlopes_of_isFiniteFace`: the multiplicity of a slope `σ` is the
   width of the face of slope `σ`.
 * `Polynomial.left_eq_natTrailingDegree_add_card_filter_newtonSlopes_lt` and
@@ -65,7 +67,9 @@ presentation, so the geometric results about `TauCeti.FiniteSlopeData.slopeMulti
   `Polynomial.newtonSlopes_comp_C_mul_X` and `Polynomial.newtonSlopes_map`: multiplication by
   a scalar of finite valuation and by `X ^ k` preserves the slopes, the substitution
   `X ↦ c X` adds the valuation of `c` to every slope, and an extension of coefficients
-  compatible with the valuations preserves them.
+  compatible with the valuations preserves them. By `Polynomial.newtonSlopes_map_eq_map_mul`,
+  an extension of coefficients multiplying the valuations by a positive real factor multiplies
+  the slopes by that factor.
 * `Polynomial.newtonSlopes_reflect` and `Polynomial.newtonSlopes_reverse`: reversing the
   coefficients negates the finite slopes.
 * `Polynomial.newtonSlopes_monomial`: a monomial, in particular a constant, has no finite
@@ -177,6 +181,13 @@ theorem exists_finiteSlopeData_heights_eq_iff :
   · exact (Set.finite_Iic f.natDegree).subset fun n hn =>
       Set.mem_Iic.mpr (le_of_not_gt fun h => hn (f.newtonPolygon_eq_top_of_natDegree_lt v h))
 
+/-- A nonempty Newton polygon of a polynomial has a finite face of every real slope `σ`. The
+endpoints are absolute indices. -/
+theorem exists_isFiniteFace_newtonPolygon (hf : f.newtonPolygon v ≠ ⊤) (σ : ℝ) :
+    ∃ l u : ℕ, IsFiniteFace (f.newtonPolygon v) σ l u := by
+  obtain ⟨d, hd⟩ := (exists_finiteSlopeData_heights_eq_iff f v).2 hf
+  exact hd ▸ d.exists_isFiniteFace_heights σ
+
 /-- The multiplicity of a real slope `σ` among the finite slopes is the width `u - l` of the
 finite face of slope `σ`. The endpoints `l` and `u` are absolute indices, and a singleton face
 contributes multiplicity zero. -/
@@ -267,7 +278,7 @@ theorem den_dvd_card_newtonSlopes (hint : ∀ x, x ≠ 0 → ∃ n : ℤ, v x = 
   rcases eq_or_ne f 0 with rfl | hf₀
   · simp [card_newtonSlopes (0 : R[X]) v hv]
   obtain ⟨a, ha⟩ := hint _ (leadingCoeff_ne_zero.mpr hf₀)
-  obtain ⟨b, hb⟩ := hint _ (trailingCoeff_nonzero_iff_nonzero.mpr hf₀)
+  obtain ⟨b, hb⟩ := hint _ (Polynomial.trailingCoeff_ne_zero.mpr hf₀)
   have hsum := sum_newtonSlopes f v hv
   rw [Multiset.eq_replicate_card.mpr hf, Multiset.sum_replicate, nsmul_eq_mul,
     ha, hb, WithTop.untop₀_coe, WithTop.untop₀_coe] at hsum
@@ -357,6 +368,16 @@ preserves the finite slopes. -/
 theorem newtonSlopes_map (φ : R →+* S) {w : AddValuation S (WithTop ℝ)}
     (hφ : ∀ x, w (φ x) = v x) : (f.map φ).newtonSlopes w = f.newtonSlopes v :=
   newtonSlopes_congr (f.newtonPolygon_map v φ hφ)
+
+/-- Mapping the coefficients along a ring homomorphism that multiplies the valuations by a
+positive real factor multiplies every finite slope by that factor. -/
+theorem newtonSlopes_map_eq_map_mul (φ : R →+* S) {w : AddValuation S (WithTop ℝ)} {c : ℝ}
+    (hc : 0 < c) (hφ : ∀ x, w (φ x) = (v x).map (c * ·)) :
+    (f.map φ).newtonSlopes w = (f.newtonSlopes v).map (c * ·) := by
+  have hpoly := f.newtonPolygon_map_eq_map_mul v φ hc hφ
+  exact newtonSlopes_eq_map (φ := id) Function.injective_id.injOn
+    (by rw [hpoly, finiteEdges_map_mul, Set.image_id])
+    fun n _ => by rw [hpoly, id, unitSlope_map_mul]
 
 /-! ### Linear polynomials -/
 
