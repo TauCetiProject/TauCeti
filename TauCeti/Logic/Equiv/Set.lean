@@ -8,7 +8,10 @@ module
 public import Mathlib.Logic.Equiv.Set
 
 /-!
-# Bijections between sets from equivalences of subtypes
+# Equivalences and sets
+
+An equivalence `e : α ≃ β` carries `s` onto `t`, in the sense that `e x ∈ t ↔ x ∈ s` for every
+`x`, exactly when `e` maps `s` into `t` and `e.symm` maps `t` into `s`.
 
 A map `g : α → β` that agrees on `s` with an equivalence `s ≃ t` is a bijection from `s` onto `t`
 (`Set.BijOn.of_equiv_coe`). This is a converse to `Set.BijOn.equiv`, which turns a bijection
@@ -16,6 +19,17 @@ between sets into an equivalence of the subtypes.
 -/
 
 public section
+
+namespace Equiv
+
+/-- An equivalence carries `s` onto `t` exactly when it maps `s` into `t` and its inverse maps `t`
+into `s`. -/
+theorem forall_apply_mem_iff_iff_mapsTo {α β : Type*} (e : α ≃ β) (s : Set α) (t : Set β) :
+    (∀ x, e x ∈ t ↔ x ∈ s) ↔ Set.MapsTo e s t ∧ Set.MapsTo e.symm t s :=
+  ⟨fun h ↦ ⟨fun x hx ↦ (h x).mpr hx, fun y hy ↦ (h _).mp (by rwa [apply_symm_apply])⟩,
+    fun ⟨h, hsymm⟩ x ↦ ⟨fun hx ↦ by simpa using hsymm hx, fun hx ↦ h hx⟩⟩
+
+end Equiv
 
 namespace Set
 

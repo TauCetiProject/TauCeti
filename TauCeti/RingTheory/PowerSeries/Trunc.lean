@@ -136,7 +136,7 @@ variable {R : Type*} [Ring R]
 /-- For `n < m`, the `n`-th coefficient of `PowerSeries.inv.aux a φ` depends only on `trunc m φ`. -/
 theorem coeff_inv_aux_eq_of_trunc_eq {n m : ℕ} (a : R) {φ ψ : R⟦X⟧} (h : trunc m φ = trunc m ψ)
     (hn : n < m) : coeff n (PowerSeries.inv.aux a φ) = coeff n (PowerSeries.inv.aux a ψ) := by
-  induction n using Nat.strong_induction_on with | h n ih =>
+  induction n using Nat.strong_induction_on with | ind n ih =>
   rw [coeff_inv_aux, coeff_inv_aux]
   split_ifs with hn0
   · rfl

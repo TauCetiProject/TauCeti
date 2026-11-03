@@ -100,7 +100,7 @@ theorem nonempty_iso_rightDual_rightDual (X : C) [Simple X] : Nonempty (X ≅ (X
       rw [← (tensorRightHomEquiv X Xᘁ (Xᘁ)ᘁ (𝟙_ C)).symm_apply_apply r, h']
       simp [tensorRightHomEquiv]
     have h0 : η_ X Xᘁ ≫ r = 0 := by rw [hr, comp_zero]
-    exact id_nonzero (𝟙_ C) (by rw [← IsSplitMono.id (η_ X Xᘁ)]; exact h0)
+    exact CategoryTheory.id_ne_zero (𝟙_ C) (by rw [← IsSplitMono.id (η_ X Xᘁ)]; exact h0)
   have := isIso_of_hom_simple hg
   exact ⟨asIso g⟩
 
@@ -124,7 +124,7 @@ theorem exists_nonzero_to_tensor_rightDual_of_nonzero_from_simple {U X Y : C} [S
 theorem exists_nonzero_rightDual_of_nonzero_from_simple {U Y : C} [Simple U] {f : U ⟶ Y}
     (hf : f ≠ 0) : ∃ g : Uᘁ ⟶ Yᘁ, g ≠ 0 := by
   have := isSplitMono_of_nonzero_from_simple hf
-  refine ⟨(retraction f)ᘁ, fun h ↦ id_nonzero Uᘁ ?_⟩
+  refine ⟨(retraction f)ᘁ, fun h ↦ CategoryTheory.id_ne_zero Uᘁ ?_⟩
   rw [← rightAdjointMate_id, ← IsSplitMono.id f, comp_rightAdjointMate, h, zero_comp]
 
 end Constituents

@@ -205,10 +205,10 @@ variable {𝕜 V : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [NormedSpace 𝕜
 /-- Every point of `ℙ 𝕜 V` is spanned by a unit vector. -/
 theorem exists_norm_eq_one_mk_eq (x : ℙ 𝕜 V) :
     ∃ (v : V) (hv : v ≠ 0), ‖v‖ = 1 ∧ mk 𝕜 v hv = x := by
-  refine ⟨(‖x.rep‖⁻¹ : 𝕜) • x.rep, smul_ne_zero (by simpa using x.rep_nonzero) x.rep_nonzero,
-    norm_smul_inv_norm x.rep_nonzero, ?_⟩
+  refine ⟨(‖x.rep‖⁻¹ : 𝕜) • x.rep, smul_ne_zero (by simpa using x.rep_ne_zero) x.rep_ne_zero,
+    norm_smul_inv_norm x.rep_ne_zero, ?_⟩
   conv_rhs => rw [← x.mk_rep]
-  exact (mk_eq_mk_iff' 𝕜 _ _ _ x.rep_nonzero).2 ⟨_, rfl⟩
+  exact (mk_eq_mk_iff' 𝕜 _ _ _ x.rep_ne_zero).2 ⟨_, rfl⟩
 
 /-- **Projective space is compact** for a finite-dimensional normed space over `ℝ` or `ℂ`: it is
 the image of the compact unit sphere. -/
@@ -239,7 +239,7 @@ theorem pathConnectedSpace_of_one_lt_rank {K V : Type*} [DivisionRing K] [AddCom
     (isPathConnected_compl_singleton_of_one_lt_rank h (0 : V))
   exact Function.Surjective.pathConnectedSpace
     (f := fun v : ({0}ᶜ : Set V) ↦ mk K (v : V) (mem_compl_singleton_iff.1 v.2))
-    (fun x ↦ ⟨⟨x.rep, mem_compl_singleton_iff.2 x.rep_nonzero⟩, x.mk_rep⟩)
+    (fun x ↦ ⟨⟨x.rep, mem_compl_singleton_iff.2 x.rep_ne_zero⟩, x.mk_rep⟩)
     (continuous_mk continuous_subtype_val _)
 
 variable {𝕜 V : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
