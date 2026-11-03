@@ -63,6 +63,6 @@ theorem paradoxical_univ [Nontrivial α] : Paradoxical (FreeGroup α) (univ : Se
   obtain ⟨a, b, hab⟩ := exists_pair_ne α
   refine paradoxical_iff_exists_subset.2 ⟨univ_nonempty, _, subset_univ _, _, subset_univ _, ?_,
     equidecomposable_startsWith_union_univ a, equidecomposable_startsWith_union_univ b⟩
-  simp [disjoint_union_left, disjoint_union_right, startsWith.disjoint_iff_ne, hab]
+  simp [startsWith.disjoint_iff_ne, hab]
 
 end FreeGroup

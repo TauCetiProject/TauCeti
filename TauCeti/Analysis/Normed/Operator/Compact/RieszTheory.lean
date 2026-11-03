@@ -177,7 +177,7 @@ theorem _root_.IsCompactOperator.exists_range_pow_succ_eq_one_sub
   · intro n x hx
     obtain ⟨z, rfl⟩ := hx
     refine ⟨z, ?_⟩
-    simp [pow_succ', Module.End.mul_apply]
+    simp [pow_succ', mul_apply_eq_comp]
 
 /-- The cokernel of a compact perturbation of the identity is finite dimensional. -/
 theorem _root_.IsCompactOperator.finiteDimensional_quotient_range_one_sub

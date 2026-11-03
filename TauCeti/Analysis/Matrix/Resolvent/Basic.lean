@@ -116,7 +116,7 @@ theorem inv_sub_smul_one_apply {z : 𝕜} (hz : z ∉ spectrum 𝕜 A) (i j : n)
     (A - z • 1)⁻¹ i j =
       ∑ k, (hA.eigenvectorUnitary : Matrix n n 𝕜) i k * ((hA.eigenvalues k : 𝕜) - z)⁻¹ *
         star ((hA.eigenvectorUnitary : Matrix n n 𝕜) j k) := by
-  rw [hA.inv_sub_smul_one_eq_conjStarAlgAut_diagonal hz, conjStarAlgAut_apply, mul_apply]
+  rw [hA.inv_sub_smul_one_eq_conjStarAlgAut_diagonal hz, conjStarAlgAut_apply, Matrix.mul_apply]
   simp [mul_diagonal]
 
 /-- The conjugate transpose of the resolvent of a Hermitian matrix at `z` is the resolvent at
@@ -166,7 +166,8 @@ theorem im_inv_sub_smul_one_apply_self (z : 𝕜) (i : n) :
     rw [hA.conjTranspose_inv_sub_smul_one, inv_sub_inv (iff_of_true hu hu'),
       sub_sub_sub_cancel_left, ← sub_smul, mul_smul_one, smul_mul_assoc]
   have key := congr(RCLike.im ($hres i i))
-  simp only [sub_apply, smul_apply, conjTranspose_apply, mul_apply, smul_eq_mul, RCLike.star_def,
+  simp only [Matrix.sub_apply, Matrix.smul_apply, conjTranspose_apply, Matrix.mul_apply,
+    smul_eq_mul, RCLike.star_def,
     RCLike.mul_conj, ← RCLike.ofReal_pow, ← RCLike.ofReal_sum, RCLike.im_mul_ofReal, map_sub,
     RCLike.conj_im] at key
   linarith
@@ -189,6 +190,6 @@ theorem im_inv_sub_smul_one_apply_self_pos {z : 𝕜} (hz : 0 < RCLike.im z) (i 
       (Finset.mem_univ j)
   have h1 := congrFun (congrFun (nonsing_inv_mul _ ((isUnit_iff_isUnit_det _).1
     (hA.isUnit_sub_smul_one_of_im_ne_zero hz.ne'))) i) i
-  simp [mul_apply, hrow] at h1
+  simp [Matrix.mul_apply, hrow] at h1
 
 end Matrix.IsHermitian

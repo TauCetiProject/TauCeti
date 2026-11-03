@@ -198,7 +198,7 @@ noncomputable def weylRelabelRepEquiv (σ : Equiv.Perm (Fin μ.card)) (t : Young
     have h := congrArg (fun f : Module.End k (⨂[k]^μ.card (Fin n → k)) =>
         f (x : ⨂[k]^μ.card (Fin n → k)))
       (commute_permTensorAction_tensorPowerRep k n μ.card σ g)
-    simp only [Module.End.mul_apply] at h
+    simp only [mul_apply_eq_comp] at h
     simpa only [LinearMap.coe_comp, Function.comp_apply, LinearEquiv.coe_coe,
       weylRelabelEquiv_apply_coe, weylRep_apply_coe] using h
 
@@ -332,7 +332,7 @@ private theorem permTensorActionAlgHom_youngSymmetrizerOver_tensorPowerBasis_eq_
         (tensorPowerBasis k n μ.card p) =
       permTensorActionAlgHom k n μ.card (youngSymmetrizerOver k t)
         (tensorPowerBasis k n μ.card p) := by
-    rw [map_mul, Module.End.mul_apply, permTensorActionAlgHom_single_tensorPowerBasis, one_smul,
+    rw [map_mul, mul_apply_eq_comp, permTensorActionAlgHom_single_tensorPowerBasis, one_smul,
       hswap]
   -- a transposition of the column group has sign `-1`, and `c_t` is alternating under it
   have hneg : youngSymmetrizerOver k t * MonoidAlgebra.single (Equiv.swap a b) 1 =
