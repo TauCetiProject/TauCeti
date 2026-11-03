@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Analysis.Calculus.Deriv.Mul
+import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
@@ -25,6 +26,9 @@ vector-field pullback along a parametric family.
   `ContinuousLinearMap.isInvertible_of_norm_sub_le_half`: a continuous linear map closer to an
   invertible one than the reciprocal norm of its inverse — or than half of it — is itself
   invertible.
+* `ContinuousLinearMap.isInvertible_of_mul_norm_sub_lt`: the perturbation criterion phrased through
+  an a priori estimate `‖x‖ ≤ C * ‖L x‖`, `C * ‖M - L‖ < 1`, as used in the method of
+  continuity.
 * `HasDerivAt.clm_inverse`: differentiates `(A t)⁻¹`.
 * `HasDerivAt.clm_inverse_apply`: differentiates `(A t)⁻¹ (w t)`.
 * `DifferentiableAt.clm_inverse_of_completeSpace`: the inverse of a differentiable family between
@@ -92,6 +96,30 @@ theorem ContinuousLinearMap.isInvertible_of_norm_sub_le_half [CompleteSpace E]
   · rw [h0, zero_div, le_zero_iff, nnnorm_eq_zero, sub_eq_zero] at h
     exact h ▸ ContinuousLinearMap.isInvertible_equiv
   · exact ContinuousLinearMap.isInvertible_of_norm_sub_lt L (h.trans_lt (NNReal.half_lt_self h0))
+
+/-- **Invertibility is stable under perturbations small against an a priori estimate.** Let `E`
+be a Banach space and `L : E →L[𝕜] F` surjective with `‖x‖ ≤ C * ‖L x‖`. Then every
+`M : E →L[𝕜] F` with `C * ‖M - L‖ < 1` is invertible. -/
+theorem ContinuousLinearMap.isInvertible_of_mul_norm_sub_lt [CompleteSpace E]
+    {L M : E →L[𝕜] F} {C : ℝ} (hL : Function.Surjective L) (hC : ∀ x, ‖x‖ ≤ C * ‖L x‖)
+    (hM : C * ‖M - L‖ < 1) : M.IsInvertible := by
+  obtain ⟨e, rfl⟩ := isInvertible_of_surjective_of_forall_norm_le hL hC
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · -- On the zero space every continuous linear map agrees with `e`.
+    have hMe : M = e := ext fun x ↦ by rw [Subsingleton.elim x 0, map_zero, map_zero]
+    exact hMe ▸ isInvertible_equiv
+  -- On a nontrivial space the estimate forces `0 < C`, and `‖e⁻¹‖ ≤ C`.
+  obtain ⟨x, hx⟩ := exists_ne (0 : E)
+  have hC0 : 0 < C := pos_of_mul_pos_left ((norm_pos_iff.2 hx).trans_le (hC x)) (norm_nonneg _)
+  have hsymm : ‖(e.symm : F →L[𝕜] E)‖ ≤ C := opNorm_le_bound _ hC0.le fun y ↦ by
+    simpa using norm_inverse_apply_le_of_forall_norm_le e.surjective hC y
+  have hsymm0 : 0 < ‖(e.symm : F →L[𝕜] E)‖ :=
+    norm_pos_iff.2 fun h ↦ hx (by simpa using congr($h (e x)))
+  refine isInvertible_of_norm_sub_lt e ?_
+  rw [← NNReal.coe_lt_coe]
+  push_cast
+  calc ‖M - e‖ < C⁻¹ := by simpa using (lt_inv_mul_iff₀ hC0).2 hM
+    _ ≤ ‖(e.symm : F →L[𝕜] E)‖⁻¹ := inv_anti₀ hsymm0 hsymm
 
 end Perturbation
 
