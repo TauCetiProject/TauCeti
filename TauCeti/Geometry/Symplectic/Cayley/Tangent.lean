@@ -193,7 +193,7 @@ theorem Compatible.exists_contDiff_hasDerivAt {J : AlmostComplexStructure V}
   -- Under the inverse Cayley chart `C ↦ J (1 + C)(1 - C)⁻¹`, the line through
   -- `C = -(1/2) J Y` has velocity `2 J C = Y` at `0`.
   set C : V →L[ℝ] V := -(1 / 2 : ℝ) • (Jc * Y)
-  obtain ⟨hCT, hCs⟩ := h.mul_mem_tangentSpace_and_isSelfAdjoint hY
+  obtain ⟨hCT, hCs⟩ := h.invariant.mul_mem_tangentSpace_and_isSelfAdjoint hY
   have hCl : (C : Module.End ℝ V) = -(1 / 2 : ℝ) • (J.toLinearMap * Y) := by
     simp [C, Jc]
   obtain ⟨ε, hε, hball⟩ := h.exists_pos_smul_mem_compatibleCayleyBall (C := C)

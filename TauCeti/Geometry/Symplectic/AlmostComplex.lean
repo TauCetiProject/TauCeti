@@ -735,17 +735,18 @@ theorem mem_compatibleTangentSpace_iff_isSelfAdjoint (hY : Y ∈ J.tangentSpace)
     simp only [map_neg, AlmostComplexStructure.apply_apply, neg_neg, hY] at this
     linarith
 
-/-- For a compatible `J`, the variations in the compatible tangent space are, after composing with
-`J`, the endomorphisms anticommuting with `J` and self-adjoint for `g = ω(·, J ·)`: these are the
-coordinates of the compatible Cayley ball. -/
-theorem Compatible.mul_mem_tangentSpace_and_isSelfAdjoint (h : ω.Compatible J)
+/-- For a `J`-invariant form, the variations in the compatible tangent space are, after composing
+with `J`, the endomorphisms anticommuting with `J` and self-adjoint for `g = ω(·, J ·)`. For a
+compatible `J` these are the coordinates of the compatible Cayley ball. Only invariance is
+needed. -/
+theorem Invariant.mul_mem_tangentSpace_and_isSelfAdjoint (h : ω.Invariant J)
     (hY : Y ∈ ω.compatibleTangentSpace J) :
     J.toLinearMap * Y ∈ J.tangentSpace ∧
       (ω.associatedBilinForm J).IsSelfAdjoint (J.toLinearMap * Y) := by
   rw [mem_compatibleTangentSpace] at hY
   refine ⟨AlmostComplexStructure.mem_tangentSpace_iff_apply.2 fun v => ?_, fun v w => ?_⟩
   · simp [hY.1]
-  · have h₁ := h.invariant_apply (Y v) w
+  · have h₁ := (ω.invariant_iff J).mp h (Y v) w
     have h₂ := hY.2 v w
     simp only [associatedBilinForm_apply, mul_apply_eq_comp, AlmostComplexStructure.apply_apply]
     beta_reduce at h₁ h₂ ⊢
@@ -753,8 +754,8 @@ theorem Compatible.mul_mem_tangentSpace_and_isSelfAdjoint (h : ω.Compatible J)
     linarith
 
 /-- For `S` self-adjoint for `g = ω(·, J ·)`, the average `S + J S J` lies in the compatible
-tangent space of a compatible `J`. -/
-private theorem Compatible.add_mul_mul_mem_compatibleTangentSpace (h : ω.Compatible J)
+tangent space of `J` whenever `ω` is `J`-invariant. -/
+private theorem Invariant.add_mul_mul_mem_compatibleTangentSpace (h : ω.Invariant J)
     {S : Module.End ℝ V} (hS : (ω.associatedBilinForm J).IsSelfAdjoint S) :
     S + J.toLinearMap * S * J.toLinearMap ∈ ω.compatibleTangentSpace J := by
   have hT : S + J.toLinearMap * S * J.toLinearMap ∈ J.tangentSpace :=
@@ -765,8 +766,8 @@ private theorem Compatible.add_mul_mul_mem_compatibleTangentSpace (h : ω.Compat
   refine (mem_compatibleTangentSpace_iff_isSelfAdjoint hT).2 fun v w => ?_
   have h₀ := hS v w
   have h₁ := hS (J v) (-J w)
-  have h₂ := h.invariant_apply (S (J v)) w
-  have h₃ := h.invariant_apply v (S (J w))
+  have h₂ := (ω.invariant_iff J).mp h (S (J v)) w
+  have h₃ := (ω.invariant_iff J).mp h v (S (J w))
   simp only [associatedBilinForm_apply, LinearMap.add_apply, mul_apply_eq_comp,
     AlmostComplexStructure.apply_apply, map_neg, map_add] at h₀ h₁ ⊢
   beta_reduce at h₀ h₁ h₂ h₃ ⊢
@@ -791,7 +792,7 @@ theorem Compatible.exists_mem_compatibleTangentSpace_apply_eq (h : ω.Compatible
       h.associatedBilinForm_isSymm.eq v ζ, h.associatedBilinForm_isSymm.eq v ξ]
     ring
   refine ⟨S + J.toLinearMap * S * J.toLinearMap,
-    h.add_mul_mul_mem_compatibleTangentSpace hS, ?_⟩
+    h.invariant.add_mul_mul_mem_compatibleTangentSpace hS, ?_⟩
   have hξJ : g ξ (J ξ) = 0 := by simp [g]
   have hJξ : g (J ξ) ξ = 0 := by rw [h.associatedBilinForm_isSymm.eq, hξJ]
   have hJJ : g (J ξ) (J ξ) = g ξ ξ := ω.associatedBilinForm_apply_apply_self_eq J ξ
