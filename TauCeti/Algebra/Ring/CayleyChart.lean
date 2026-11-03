@@ -147,6 +147,11 @@ lemma one_add_mul_add_cayleyParam (hη' : η * j = -(j * η)) (hη : IsUnit (1 +
   rw [mul_add, one_add_mul_cayleyParam hη, add_mul, one_mul, mul_add, mul_one, hη']
   noncomm_ring
 
+/-- For a square root `j` of `-1` in a ring in which `2` is a unit, `2 * j` is a unit. -/
+private lemma isUnit_two_mul_of_mul_self_eq_neg_one (h2 : IsUnit (2 : A)) (hj : j * j = -1) :
+    IsUnit (2 * j) :=
+  h2.mul (isUnit_mul_self_iff.mp (hj.symm ▸ isUnit_neg_one))
+
 /-- For a square root `j` of `-1` in a ring in which `2` is a unit, and `j`-antilinear `η` with
 `1 + η` invertible, the sum `j + cayleyParam j η` is invertible. -/
 lemma isUnit_add_cayleyParam (h2 : IsUnit (2 : A)) (hj : j * j = -1)
@@ -155,7 +160,7 @@ lemma isUnit_add_cayleyParam (h2 : IsUnit (2 : A)) (hj : j * j = -1)
   obtain ⟨u, hu⟩ := hη
   rw [← hu] at h
   exact (Units.isUnit_units_mul u _).1
-    (by rw [h]; exact h2.mul (isUnit_mul_self_iff.mp (hj.symm ▸ isUnit_neg_one)))
+    (by rw [h]; exact isUnit_two_mul_of_mul_self_eq_neg_one h2 hj)
 
 /-- For `j + J` invertible, `1 + cayleyCoord j J` is `2 * j` up to the factor `j + J`. -/
 lemma one_add_cayleyCoord_mul_add (hJ : IsUnit (j + J)) :
@@ -172,7 +177,7 @@ lemma isUnit_one_add_cayleyCoord (h2 : IsUnit (2 : A)) (hj : j * j = -1)
   obtain ⟨u, hu⟩ := hJ
   rw [← hu] at h
   exact (Units.isUnit_mul_units _ u).1
-    (by rw [h]; exact h2.mul (isUnit_mul_self_iff.mp (hj.symm ▸ isUnit_neg_one)))
+    (by rw [h]; exact isUnit_two_mul_of_mul_self_eq_neg_one h2 hj)
 
 /-- For square roots `j`, `J` of `-1`, conjugation by `j + J` carries `j` to `J`. -/
 lemma add_mul_eq_mul_add_of_mul_self_eq_neg_one (hj : j * j = -1) (hJJ : J * J = -1) :
@@ -207,9 +212,11 @@ theorem cayleyParam_cayleyCoord (h2 : IsUnit (2 : A)) (hj : j * j = -1) (hJJ : J
   have h := one_add_cayleyCoord_mul_add hJ
   obtain ⟨u, hu⟩ := hJ
   -- Multiply by the unit `j + J` on the right: both sides become `2 * j * j`.
-  rw [← Units.mul_left_inj u, hu, mul_assoc, h, mul_assoc (1 + cayleyCoord j J),
-    ← add_mul_eq_mul_add_of_mul_self_eq_neg_one hj hJJ, ← mul_assoc (1 + cayleyCoord j J), h,
-    two_mul, mul_add, add_mul]
+  rw [← Units.mul_left_inj u, hu]
+  calc j * (1 + cayleyCoord j J) * (j + J)
+      = (1 + cayleyCoord j J) * (j + J) * j := by rw [mul_assoc, h, two_mul, mul_add, add_mul]
+    _ = (1 + cayleyCoord j J) * J * (j + J) := by
+        rw [mul_assoc, add_mul_eq_mul_add_of_mul_self_eq_neg_one hj hJJ, ← mul_assoc]
 
 /-- **The Cayley coordinate inverts the Cayley parametrization** on the `j`-antilinear `η`. -/
 @[simp]

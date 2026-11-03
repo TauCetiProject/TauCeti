@@ -71,23 +71,26 @@ section Continuity
 
 variable {A : Type*} [NormedRing A] [HasSummableGeomSeries A] {j : A}
 
+/-- `y ↦ (a + y)⁻¹` is continuous at every `x` with `a + x` invertible. -/
+private lemma continuousAt_inverse_const_add {a x : A} (h : IsUnit (a + x)) :
+    ContinuousAt (fun y : A ↦ Ring.inverse (a + y)) x := by
+  obtain ⟨u, hu⟩ := h
+  exact (hu ▸ NormedRing.inverse_continuousAt u).comp
+    (continuous_const.add continuous_id).continuousAt
+
 /-- The Cayley parametrization is continuous where `1 + η` is invertible. -/
 lemma continuousOn_cayleyParam : ContinuousOn (cayleyParam j) {η : A | IsUnit (1 + η)} := by
   rw [cayleyParam_eq_fun]
-  rintro η ⟨u, hu⟩
-  refine ContinuousAt.continuousWithinAt ?_
-  have hinv : ContinuousAt (fun η : A ↦ Ring.inverse (1 + η)) η :=
-    (hu ▸ NormedRing.inverse_continuousAt u).comp (continuous_const.add continuous_id).continuousAt
-  exact (hinv.mul continuousAt_const).mul (continuous_const.add continuous_id).continuousAt
+  intro η hη
+  exact (((continuousAt_inverse_const_add hη).mul continuousAt_const).mul
+    (continuous_const.add continuous_id).continuousAt).continuousWithinAt
 
 /-- The Cayley coordinate is continuous where `j + J` is invertible. -/
 lemma continuousOn_cayleyCoord : ContinuousOn (cayleyCoord j) {J : A | IsUnit (j + J)} := by
   rw [cayleyCoord_eq_fun]
-  rintro J ⟨u, hu⟩
-  refine ContinuousAt.continuousWithinAt ?_
-  have hinv : ContinuousAt (fun J : A ↦ Ring.inverse (j + J)) J :=
-    (hu ▸ NormedRing.inverse_continuousAt u).comp (continuous_const.add continuous_id).continuousAt
-  exact ((continuous_const.sub continuous_id).continuousAt).mul hinv
+  intro J hJ
+  exact ((continuous_const.sub continuous_id).continuousAt.mul
+    (continuousAt_inverse_const_add hJ)).continuousWithinAt
 
 variable (j) in
 /-- **The Cayley chart as a homeomorphism.** For a square root `j` of `-1` in a normed ring with
@@ -130,13 +133,17 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {A : Type*} [NormedRing A
 
 /-! ### Analyticity -/
 
+/-- `y ↦ (a + y)⁻¹` is analytic at every `x` with `a + x` invertible. -/
+private lemma analyticAt_inverse_const_add {a x : A} (h : IsUnit (a + x)) :
+    AnalyticAt 𝕜 (fun y : A ↦ Ring.inverse (a + y)) x := by
+  obtain ⟨u, hu⟩ := h
+  exact (hu ▸ analyticAt_inverse (𝕜 := 𝕜) u).comp (analyticAt_const.add analyticAt_id)
+
 /-- The Cayley parametrization is analytic at every `η` with `1 + η` invertible. -/
 theorem analyticAt_cayleyParam (hη : IsUnit (1 + η)) : AnalyticAt 𝕜 (cayleyParam j) η := by
   rw [cayleyParam_eq_fun]
-  obtain ⟨u, hu⟩ := hη
-  have hinv : AnalyticAt 𝕜 (fun η : A ↦ Ring.inverse (1 + η)) η :=
-    (hu ▸ analyticAt_inverse (𝕜 := 𝕜) u).comp (analyticAt_const.add analyticAt_id)
-  exact (hinv.mul analyticAt_const).mul (analyticAt_const.add analyticAt_id)
+  exact ((analyticAt_inverse_const_add hη).mul analyticAt_const).mul
+    (analyticAt_const.add analyticAt_id)
 
 /-- The Cayley parametrization is analytic on the open set where `1 + η` is invertible. -/
 theorem analyticOnNhd_cayleyParam : AnalyticOnNhd 𝕜 (cayleyParam j) {η : A | IsUnit (1 + η)} :=
@@ -145,10 +152,7 @@ theorem analyticOnNhd_cayleyParam : AnalyticOnNhd 𝕜 (cayleyParam j) {η : A |
 /-- The Cayley coordinate is analytic at every `J` with `j + J` invertible. -/
 theorem analyticAt_cayleyCoord (hJ : IsUnit (j + J)) : AnalyticAt 𝕜 (cayleyCoord j) J := by
   rw [cayleyCoord_eq_fun]
-  obtain ⟨u, hu⟩ := hJ
-  have hinv : AnalyticAt 𝕜 (fun J : A ↦ Ring.inverse (j + J)) J :=
-    (hu ▸ analyticAt_inverse (𝕜 := 𝕜) u).comp (analyticAt_const.add analyticAt_id)
-  exact (analyticAt_const.sub analyticAt_id).mul hinv
+  exact (analyticAt_const.sub analyticAt_id).mul (analyticAt_inverse_const_add hJ)
 
 /-- The Cayley coordinate is analytic on the open set where `j + J` is invertible. -/
 theorem analyticOnNhd_cayleyCoord : AnalyticOnNhd 𝕜 (cayleyCoord j) {J : A | IsUnit (j + J)} :=
