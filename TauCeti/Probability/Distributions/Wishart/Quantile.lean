@@ -52,6 +52,7 @@ variable {p : ℕ} {n u : ℝ} {S : Matrix (Fin p) (Fin p) ℝ}
 
 /-- The quantile of a Gaussian-Gram Wishart diagonal entry is its diagonal scale times the
 chi-squared quantile. The formula includes zero degrees and zero scale. -/
+@[simp]
 theorem quantile_map_coe_apply_wishartGramMeasure (hS : S.PosSemidef) (ν : ℕ) (i : Fin p)
     (hu : u ∈ Ioo 0 1) :
     ((wishartGramMeasure ν S).map
@@ -67,6 +68,7 @@ theorem quantile_map_coe_apply_wishartGramMeasure (hS : S.PosSemidef) (ν : ℕ)
 
 /-- The quantile of a nonsingular Wishart diagonal entry is its diagonal scale times the
 chi-squared quantile. -/
+@[simp]
 theorem quantile_map_coe_apply_nonsingularWishartMeasure (hS : S.PosDef)
     (hn : (p : ℝ) - 1 < n)
     (i : Fin p) (hu : u ∈ Ioo 0 1) :
@@ -88,6 +90,7 @@ theorem quantile_map_coe_apply_nonsingularWishartMeasure (hS : S.PosDef)
 
 /-- The quantile of an inverse-Wishart diagonal entry is its diagonal scale divided by twice an
 inverse regularized Gamma value at the complementary level. -/
+@[simp]
 theorem quantile_map_coe_apply_inverseWishartMeasure (hS : S.PosDef)
     (hn : (p : ℝ) - 1 < n) (i : Fin p) (hu : u ∈ Ioo 0 1) :
     ((inverseWishartMeasure n S).map
