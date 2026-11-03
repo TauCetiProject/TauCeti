@@ -153,14 +153,15 @@ theorem hasDerivAt_gaussianPDFRealEReal (v : ℝ≥0) (e : EReal) (μ : ℝ) :
   | bot => simpa using hasDerivAt_const μ (0 : ℝ)
   | top => simpa using hasDerivAt_const μ (0 : ℝ)
   | coe x =>
-    simp only [gaussianPDFRealEReal_coe, EReal.toReal_coe, gaussianPDFReal]
-    have hv' : (v : ℝ) ≠ 0 := NNReal.coe_ne_zero.2 hv
-    have hq : HasDerivAt (fun μ : ℝ => -(x - μ) ^ 2 / (2 * (v : ℝ))) ((x - μ) / v) μ := by
-      convert ((((hasDerivAt_id' μ).const_sub x).fun_pow 2).fun_neg).div_const (2 * (v : ℝ))
-        using 1
-      field_simp
+    change HasDerivAt (fun μ' => gaussianPDFReal μ' v x)
+      ((x - μ) * gaussianPDFReal μ v x / v) μ
+    have hshift (m : ℝ) : gaussianPDFReal m v x = gaussianPDFReal 0 v (x - m) := by
+      simpa only [zero_add] using (gaussianPDFReal_sub (μ := 0) (v := v) x m).symm
+    rw [hshift μ, funext hshift]
+    convert (hasDerivAt_gaussianPDFReal 0 v (x - μ)).comp μ
+      ((hasDerivAt_id μ).const_sub x) using 1
+    · simp only [Function.comp_def]
+    · field_simp
       ring
-    convert hq.exp.const_mul (√(2 * π * v))⁻¹ using 1
-    ring
 
 end TauCeti.Probability

@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Probability.Distributions.Gaussian.Real
 public import TauCeti.MeasureTheory.Function.L1Space.CenteredMoment
 public import TauCeti.Probability.Distributions.Gaussian.Basic
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
@@ -28,9 +27,9 @@ namespace TauCeti.Probability
 
 /-- **Gaussian integration by parts** for vector-valued test functions. For a differentiable
 function whose derivative and centered first moment are integrable under `gaussianReal μ v`, its
-centered first moment is the variance times the expectation of its derivative. At zero variance
-both sides vanish. -/
-theorem integral_sub_smul_eq_variance_smul_integral_deriv_gaussianReal {E : Type*}
+centered first moment is `v` times the expectation of its derivative. At zero variance both sides
+vanish. -/
+theorem integral_sub_smul_eq_smul_integral_deriv_gaussianReal {E : Type*}
     [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E] (μ : ℝ) (v : ℝ≥0) (f : ℝ → E)
     (hf : Differentiable ℝ f)
     (hxf : Integrable (fun x => (x - μ) • f x) (gaussianReal μ v))
@@ -43,7 +42,7 @@ theorem integral_sub_smul_eq_variance_smul_integral_deriv_gaussianReal {E : Type
     rw [gaussianReal_zero_var, integral_dirac' _ _ hm]
     simp
   have hv' : (v : ℝ) ≠ 0 := NNReal.coe_ne_zero.mpr hv
-  have hfi := integrable_of_integrable_sub_smul hf.continuous hxf
+  have hfi := hf.continuous.integrable_of_integrable_sub_smul hxf
   let p : ℝ → ℝ := gaussianPDFReal μ v
   have hfp : Integrable (fun x => (-(x - μ) / (v : ℝ) * p x) • f x) volume := by
     have h := Integrable.smul (-(v : ℝ)⁻¹)
@@ -79,14 +78,14 @@ theorem integral_sub_smul_eq_variance_smul_integral_deriv_gaussianReal {E : Type
     _ = (v : ℝ) • ∫ x, deriv f x ∂(gaussianReal μ v) := by rw [hgauss (deriv f)]
 
 /-- **Gaussian integration by parts** for real test functions. -/
-theorem integral_sub_mul_eq_variance_mul_integral_deriv_gaussianReal
+theorem integral_sub_mul_eq_mul_integral_deriv_gaussianReal
     (μ : ℝ) (v : ℝ≥0) (f : ℝ → ℝ)
     (hf : Differentiable ℝ f)
     (hxf : Integrable (fun x => (x - μ) * f x) (gaussianReal μ v))
     (hdf : Integrable (deriv f) (gaussianReal μ v)) :
     ∫ x, (x - μ) * f x ∂(gaussianReal μ v) =
       (v : ℝ) * ∫ x, deriv f x ∂(gaussianReal μ v) :=
-  integral_sub_smul_eq_variance_smul_integral_deriv_gaussianReal μ v f hf hxf hdf
+  integral_sub_smul_eq_smul_integral_deriv_gaussianReal μ v f hf hxf hdf
 
 /-- For the standard Gaussian, a differentiable test function satisfies Stein's identity whenever
 its derivative and `x * f x` are integrable. -/
@@ -99,7 +98,7 @@ theorem integral_mul_eq_integral_deriv_gaussianReal (f : ℝ → ℝ)
   have hxf' : Integrable (fun x => (x - 0) * f x) (gaussianReal 0 1) := by
     simpa using hxf
   simpa using
-    (integral_sub_mul_eq_variance_mul_integral_deriv_gaussianReal
+    (integral_sub_mul_eq_mul_integral_deriv_gaussianReal
       (μ := 0) (v := 1) f hf hxf' hdf)
 
 end TauCeti.Probability
