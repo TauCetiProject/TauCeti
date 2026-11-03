@@ -56,16 +56,6 @@ private theorem cartanMatrix_eq_neg_one_of_lt_two {i j : Fin 4}
     omega
   rcases hnodes with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> decide
 
-private theorem raising_lie_lie_eq_zero {i j : Fin 4}
-    (hij : CartanMatrix.F₄ j i = -1) :
-    ⁅raisingMatrix i, ⁅raisingMatrix i, raisingMatrix j⁆⁆ = 0 := by
-  simpa [hij] using isSerreSystem.ad_pow_lie_E_E i j
-
-private theorem lowering_lie_lie_eq_zero {i j : Fin 4}
-    (hij : CartanMatrix.F₄ j i = -1) :
-    ⁅loweringMatrix i, ⁅loweringMatrix i, loweringMatrix j⁆⁆ = 0 := by
-  simpa [hij] using isSerreSystem.ad_pow_lie_F_F i j
-
 /-- At the distinct long simple nodes, the positive nested commutator recovers the first
 positive root point with parameter `t * s * r`, over every commutative ring. -/
 theorem commutatorElement_commutatorElement_rootSubgroupPoints_inl_of_lt_two {i j : Fin 4}
@@ -87,8 +77,9 @@ theorem commutatorElement_commutatorElement_rootSubgroupPoints_inl_of_lt_two {i 
   exact Matrix.coe_commutatorElement_commutatorElement_eq_one_add_smul (raisingMatrix i)
     (raisingMatrix j) (loweringMatrix j) (raisingMatrix_mul_self_of_lt_two i hi)
     (raisingMatrix_mul_self_of_lt_two j hj) (loweringMatrix_mul_self_of_lt_two j hj)
-    (isSerreSystem.lie_E_F_of_ne i j hij) hABC (raising_lie_lie_eq_zero hCM)
-    (raising_lie_lie_eq_zero hCM') t s r _ _ _
+    (isSerreSystem.lie_E_F_of_ne i j hij) hABC
+    (by simpa [hCM] using isSerreSystem.ad_pow_lie_E_E i j)
+    (by simpa [hCM'] using isSerreSystem.ad_pow_lie_E_E j i) t s r _ _ _
     (by rw [coe_rootSubgroupPoints_inl_of_lt_two i hi, toAdd_ofAdd])
     (by rw [coe_rootSubgroupPoints_inl_of_lt_two j hj, toAdd_ofAdd])
     (by rw [coe_rootSubgroupPoints_inr_of_lt_two j hj, toAdd_ofAdd])
@@ -116,7 +107,9 @@ theorem commutatorElement_commutatorElement_rootSubgroupPoints_inr_of_lt_two {i 
   exact Matrix.coe_commutatorElement_commutatorElement_eq_one_add_smul (loweringMatrix i)
     (loweringMatrix j) (raisingMatrix j) (loweringMatrix_mul_self_of_lt_two i hi)
     (loweringMatrix_mul_self_of_lt_two j hj) (raisingMatrix_mul_self_of_lt_two j hj)
-    hAC hABC (lowering_lie_lie_eq_zero hCM) (lowering_lie_lie_eq_zero hCM') t s r _ _ _
+    hAC hABC
+    (by simpa [hCM] using isSerreSystem.ad_pow_lie_F_F i j)
+    (by simpa [hCM'] using isSerreSystem.ad_pow_lie_F_F j i) t s r _ _ _
     (by rw [coe_rootSubgroupPoints_inr_of_lt_two i hi, toAdd_ofAdd])
     (by rw [coe_rootSubgroupPoints_inr_of_lt_two j hj, toAdd_ofAdd])
     (by rw [coe_rootSubgroupPoints_inl_of_lt_two j hj, toAdd_ofAdd])
