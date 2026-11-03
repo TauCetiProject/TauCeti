@@ -157,6 +157,22 @@ theorem localMass_sub_le : localMass (f - g) U ≤ localMass f U + localMass g U
 theorem mass_sub_le : mass (f - g) ≤ mass f + mass g := by
   simpa [sub_eq_add_neg] using mass_add_le (f := f) (g := -g)
 
+/-- Changing the values of test functions by a linear isometric equivalence preserves mass. -/
+@[simp]
+theorem mass_comp_postcompCLM_linearIsometryEquiv {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] (f : 𝓓^{n}(Ω, F) → V) (e : G ≃ₗᵢ[ℝ] F) :
+    mass (f ∘ TestFunction.postcompCLM e.toContinuousLinearEquiv.toContinuousLinearMap) =
+      mass f := by
+  refine le_antisymm (mass_le_iff.2 fun ψ hψ => ?_) (mass_le_iff.2 fun φ hφ => ?_)
+  · exact enorm_le_mass (f := f) (by simpa using hψ)
+  · let ψ := TestFunction.postcompCLM e.symm.toContinuousLinearEquiv.toContinuousLinearMap φ
+    have hψ : ∀ x, ‖ψ x‖ ≤ 1 := by simpa [ψ] using hφ
+    have hφ' : TestFunction.postcompCLM e.toContinuousLinearEquiv.toContinuousLinearMap ψ = φ :=
+      TestFunction.ext fun x => by simp [ψ]
+    simpa [Function.comp_apply, hφ'] using
+      (enorm_le_mass (f := f ∘
+        TestFunction.postcompCLM e.toContinuousLinearEquiv.toContinuousLinearMap) hψ)
+
 end Basic
 
 section Linear
