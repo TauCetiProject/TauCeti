@@ -65,7 +65,7 @@ theorem generatorCodomainBaseChangeIso_def (j : Fin 4 ⊕ Unit) :
         | .inr u => .inr u) := (rfl)
 
 /-- Scalar extension respects the ambient coordinate map of every positive generator. -/
-theorem generatorCoordinateMap_baseChange (j : Fin 4 ⊕ Unit) :
+theorem generatedCoordinateMap_comp_generator_baseChange (j : Fin 4 ⊕ Unit) :
     (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K 24).inv ≫
         CommHopfAlgCat.baseChangeMap (generatedCoordinateMap k ≫ generator k j) ≫
         (generatorCodomainBaseChangeIso k K j).hom =

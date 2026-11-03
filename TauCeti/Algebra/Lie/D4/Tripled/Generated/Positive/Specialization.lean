@@ -55,7 +55,7 @@ theorem map_baseChangeHopfIdeal_ambientDefiningIdeal_le :
     (fun j ↦ generatedCoordinateMap R ≫ generator R j)
     (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R S 24)
     (generatorCodomainBaseChangeIso R S) (fun j ↦ generatedCoordinateMap S ≫ generator S j)
-    (fun j ↦ (Category.assoc _ _ _).trans (generatorCoordinateMap_baseChange R S j))
+    (fun j ↦ (Category.assoc _ _ _).trans (generatedCoordinateMap_comp_generator_baseChange R S j))
 
 /-- The canonical comparison from scalar-extended positive coordinates to the positive
 coordinates generated after extension. No freeness or flatness hypothesis is required. -/
@@ -132,7 +132,7 @@ theorem baseChangeMap_commonKernelLift_comp_generatorCodomainBaseChangeIso_hom
     ← CommHopfAlgCat.baseChangeFunctor_map, ← Functor.map_comp,
     coordinateMap_comp_commonKernelLift, CommHopfAlgCat.baseChangeFunctor_map]
   exact (Iso.inv_comp_eq (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R S 24)).mp
-    (generatorCoordinateMap_baseChange R S j)
+    (generatedCoordinateMap_comp_generator_baseChange R S j)
 
 /-- For free extensions the canonical comparison is the existing base-change isomorphism. -/
 theorem coordinateHopfAlgebraBaseChangeMap_eq_baseChangeIso_hom [Module.Free R S] :
