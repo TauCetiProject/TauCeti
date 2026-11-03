@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialSet.Pointed.ReducedFree
 public import TauCeti.AlgebraicTopology.Spectra.SymmetricSpectrum
+public import TauCeti.CategoryTheory.Monoidal.Mod.Algebra
 
 /-!
 # The Eilenberg–MacLane symmetric spectrum `HR`
@@ -24,14 +25,18 @@ Sending each simplex of `Sⁿ` to its generator is a morphism of commutative mon
 symmetric sequence to `HR` (`SymmetricSequence.sphereToEilenbergMacLane R`). Restricting scalars
 along it makes `HR` a symmetric spectrum (`SymmetricSpectrum.eilenbergMacLane R`). Its structure
 maps `S^p ∧ R~[S^q] ⟶ R~[S^(p+q)]` send `x ∧ Σ aᵢ yᵢ` to `Σ aᵢ (x ∧ yᵢ)`
-(`SymmetricSpectrum.eilenbergMacLane_dayStructureMap_app_smashMk`).
+(`SymmetricSpectrum.eilenbergMacLane_dayStructureMap_app_smashMk`). The multiplication of `HR`
+descends to the smash product over the sphere, making `HR` a commutative ring spectrum, a
+commutative monoid object of symmetric spectra (`Mod.monObjComapRegular`,
+`Mod.isCommMonObjComapRegular`).
 
 ## Main definitions
 
 * `SymmetricSequence.eilenbergMacLane R`: the commutative monoid `n ↦ R~[Sⁿ]` of symmetric
   sequences.
 * `SymmetricSequence.sphereToEilenbergMacLane R`: the unit morphism of monoids `S ⟶ HR`.
-* `SymmetricSpectrum.eilenbergMacLane R`: the Eilenberg–MacLane symmetric spectrum `HR`.
+* `SymmetricSpectrum.eilenbergMacLane R`: the Eilenberg–MacLane symmetric spectrum `HR`, a
+  commutative ring spectrum.
 
 ## Main statements
 
@@ -39,6 +44,9 @@ maps `S^p ∧ R~[S^q] ⟶ R~[S^(p+q)]` send `x ∧ Σ aᵢ yᵢ` to `Σ aᵢ (x 
   generator map followed by the multiplication of `HR`.
 * `SymmetricSpectrum.eilenbergMacLane_dayStructureMap_app_smashMk`: the structure maps on
   simplices.
+* `SymmetricSpectrum.tensorπ_eilenbergMacLane_mul_hom`,
+  `SymmetricSpectrum.eilenbergMacLane_one_hom`: the multiplication and unit of the ring spectrum
+  `HR`.
 
 ## References
 
@@ -100,22 +108,35 @@ namespace SymmetricSpectrum
 
 /-- The Eilenberg–MacLane symmetric spectrum `HR`: the commutative monoid `n ↦ R~[Sⁿ]` of
 symmetric sequences, regarded as a module over the sphere by restricting scalars along the unit
-`S ⟶ HR`. -/
--- Written as a structure with an explicit underlying object, exposed and implicitly reducible, so
--- that the levels of `HR` are those of the symmetric sequence `n ↦ R~[Sⁿ]`.
-@[expose, implicit_reducible]
-def eilenbergMacLane : SymmetricSpectrum :=
-  letI := ModObj.regular (SymmetricSequence.eilenbergMacLane R)
-  letI := Mod.scalarRestriction (SymmetricSequence.sphereToEilenbergMacLane R)
-    (SymmetricSequence.eilenbergMacLane R)
-  ⟨SymmetricSequence.eilenbergMacLane R⟩
+`S ⟶ HR`. It is a commutative ring spectrum, a commutative monoid for the smash product over the
+sphere, through the instances `Mod.monObjComapRegular` and `Mod.isCommMonObjComapRegular`. -/
+-- An abbreviation, so that the monoid instances for `Mod.comapRegular` apply to it.
+abbrev eilenbergMacLane : SymmetricSpectrum :=
+  Mod.comapRegular (SymmetricSequence.sphereToEilenbergMacLane R)
+
+/- The Eilenberg–MacLane spectrum is a commutative ring spectrum. -/
+example : IsCommMonObj (eilenbergMacLane R) := inferInstance
+
+/-- On representatives in `HR ⊗ HR`, the multiplication `HR ∧_S HR ⟶ HR` of the ring spectrum `HR`
+is the multiplication of the symmetric sequence `n ↦ R~[Sⁿ]`. -/
+lemma tensorπ_eilenbergMacLane_mul_hom :
+    Mod.tensorπ _ _ ≫ (MonObj.mul : eilenbergMacLane R ⊗ eilenbergMacLane R ⟶ _).hom =
+      (MonObj.mul : SymmetricSequence.eilenbergMacLane R ⊗ SymmetricSequence.eilenbergMacLane R ⟶
+        _) :=
+  Mod.tensorπ_comapRegular_mul_hom _
+
+/-- The unit `S ⟶ HR` of the ring spectrum `HR` is the generator map
+`SymmetricSequence.sphereToEilenbergMacLane R`. -/
+lemma eilenbergMacLane_one_hom :
+    (MonObj.one : 𝟙_ SymmetricSpectrum ⟶ eilenbergMacLane R).hom =
+      SymmetricSequence.sphereToEilenbergMacLane R :=
+  (rfl)
 
 lemma eilenbergMacLane_eq_comap : eilenbergMacLane R =
     (Mod.comap (SymmetricSequence.sphereToEilenbergMacLane R)).obj
       (Mod.regular (SymmetricSequence.eilenbergMacLane R)) :=
   (rfl)
 
-@[simp]
 lemma eilenbergMacLane_X : (eilenbergMacLane R).X = SymmetricSequence.eilenbergMacLane R :=
   (rfl)
 
