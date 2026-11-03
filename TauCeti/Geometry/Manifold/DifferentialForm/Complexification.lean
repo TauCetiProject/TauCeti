@@ -51,6 +51,7 @@ theorem ofReal_realPart_add_I_smul_ofReal_imaginaryPart (ω : SmoothForm I M ℂ
     Complex.re_add_im (ω.1 x v)
 
 /-- The real part of `α + i β`, for real-valued smooth forms `α` and `β`, is `α`. -/
+@[simp]
 theorem realPart_ofReal_add_I_smul_ofReal (α β : SmoothForm I M ℝ k) :
     mapCoeff Complex.reCLM
       (mapCoeff Complex.ofRealCLM α + Complex.I • mapCoeff Complex.ofRealCLM β) = α := by
@@ -60,6 +61,7 @@ theorem realPart_ofReal_add_I_smul_ofReal (α β : SmoothForm I M ℝ k) :
   simp [RoughForm.mapCoeff_apply]
 
 /-- The imaginary part of `α + i β`, for real-valued smooth forms `α` and `β`, is `β`. -/
+@[simp]
 theorem imaginaryPart_ofReal_add_I_smul_ofReal (α β : SmoothForm I M ℝ k) :
     mapCoeff Complex.imCLM
       (mapCoeff Complex.ofRealCLM α + Complex.I • mapCoeff Complex.ofRealCLM β) = β := by

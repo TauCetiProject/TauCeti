@@ -258,57 +258,49 @@ Rham complex. It is a complex vector space. -/
 abbrev complexDeRhamCohomology (k : ℕ) : Type _ :=
   (complexDeRhamComplex I M).homology k
 
-/-- A closed complex-valued form, viewed in the complex de Rham complex, is killed by the
-differential. -/
-theorem complexDeRhamComplex_d_eq_zero_of_mem_complexClosedForms (k : ℕ)
-    {φ : SmoothForm I M ℂ k} (hφ : φ ∈ complexClosedForms I M k) :
-    (complexDeRhamComplex I M).d k (k + 1) ((complexDeRhamComplexXIso I k).inv φ) = 0 := by
-  rw [complexDeRhamComplex_d_apply]
-  simp [(mem_complexClosedForms I φ).mp hφ]
+/-- A complex-valued form is closed exactly when the differential of the complex de Rham complex
+kills it. -/
+private theorem mem_complexClosedForms_iff_d_eq_zero (k : ℕ) (φ : SmoothForm I M ℂ k) :
+    φ ∈ complexClosedForms I M k ↔
+      (complexDeRhamComplex I M).d k (k + 1) ((complexDeRhamComplexXIso I k).inv φ) = 0 := by
+  rw [(complexDeRhamComplex I M).moduleCat_d_inv_eq_zero_iff (complexMextDerivₗ I)
+    (complexDeRhamComplex_d I)]
+  exact LinearMap.mem_ker
+
+/-- A complex-valued form is exact exactly when it is hit by the incoming differential of the
+complex de Rham complex. -/
+private theorem mem_complexExactForms_iff_exists_d_eq (k : ℕ) (φ : SmoothForm I M ℂ k) :
+    φ ∈ complexExactForms I M k ↔
+      ∃ y : (complexDeRhamComplex I M).X ((ComplexShape.up ℕ).prev k),
+        (complexDeRhamComplex I M).d ((ComplexShape.up ℕ).prev k) k y =
+          (complexDeRhamComplexXIso I k).inv φ :=
+  (complexDeRhamComplex I M).moduleCat_mem_iff_exists_d_eq_inv (complexExactForms I M)
+    (complexMextDerivₗ I) (complexDeRhamComplex_d I) (complexExactForms_zero I)
+    (complexExactForms_succ I) k φ
 
 namespace complexDeRhamCohomology
 
 /-- The cohomology class of a closed complex-valued form, the homology class of the corresponding
 cycle of the complex de Rham complex. This map is complex-linear. -/
 def mk (k : ℕ) : complexClosedForms I M k →ₗ[ℂ] complexDeRhamCohomology I M k :=
-  (complexDeRhamComplex I M).moduleCatHomologyClass (Z := complexClosedForms I M k)
-    (CochainComplex.next ℕ k)
-    ((complexDeRhamComplexXIso I k).inv.hom ∘ₗ (complexClosedForms I M k).subtype) fun φ ↦ by
-      rw [LinearMap.comp_apply]
-      exact complexDeRhamComplex_d_eq_zero_of_mem_complexClosedForms I k φ.2
+  (complexDeRhamComplex I M).moduleCatCohomologyClassOfIso (fun k ↦ SmoothForm I M ℂ k)
+    (complexClosedForms I M) (complexDeRhamComplexXIso I)
+    (mem_complexClosedForms_iff_d_eq_zero I) k
 
 /-- Every complex de Rham cohomology class is represented by a closed complex-valued form. -/
-theorem mk_surjective (k : ℕ) : Function.Surjective (mk I (M := M) k) := by
-  rw [mk]
-  refine (complexDeRhamComplex I M).moduleCatHomologyClass_surjective _ _ _ fun x hx ↦ ?_
-  rw [complexDeRhamComplex_d_apply] at hx
-  refine ⟨⟨(complexDeRhamComplexXIso I k).hom x, (mem_complexClosedForms I _).mpr
-    ((LinearEquiv.map_eq_zero_iff
-      (complexDeRhamComplexXIso I (M := M) (k + 1)).toLinearEquiv.symm).mp hx)⟩, ?_⟩
-  simp
+theorem mk_surjective (k : ℕ) : Function.Surjective (mk I (M := M) k) :=
+  (complexDeRhamComplex I M).moduleCatCohomologyClassOfIso_surjective
+    (fun k ↦ SmoothForm I M ℂ k) (complexClosedForms I M) (complexDeRhamComplexXIso I)
+    (mem_complexClosedForms_iff_d_eq_zero I) k
 
 /-- A closed complex-valued form represents zero precisely when it is exact. -/
 @[simp]
 theorem mk_eq_zero_iff (k : ℕ) (φ : complexClosedForms I M k) :
-    mk I k φ = 0 ↔ φ.1 ∈ complexExactForms I M k := by
-  cases k with
-  | zero =>
-    rw [mk, (complexDeRhamComplex I M).moduleCatHomologyClass_eq_zero_iff _ _ _
-        CochainComplex.prev_nat_zero, complexExactForms_zero, Submodule.mem_bot,
-      (complexDeRhamComplex I M).shape 0 0 (by simp)]
-    simp only [ModuleCat.hom_zero, LinearMap.zero_apply, exists_const, LinearMap.comp_apply,
-      Submodule.subtype_apply]
-    exact ⟨fun h ↦ by simpa using congrArg (complexDeRhamComplexXIso I (M := M) 0).hom.hom h.symm,
-      fun h ↦ by simp [h]⟩
-  | succ k =>
-    rw [mk, (complexDeRhamComplex I M).moduleCatHomologyClass_eq_zero_iff _ _ _
-        (CochainComplex.prev_nat_succ k), complexExactForms_succ, LinearMap.mem_range]
-    refine ⟨fun ⟨y, hy⟩ ↦ ⟨(complexDeRhamComplexXIso I k).hom y, ?_⟩,
-      fun ⟨ψ, hψ⟩ ↦ ⟨(complexDeRhamComplexXIso I k).inv ψ, ?_⟩⟩
-    · rw [complexDeRhamComplex_d_apply] at hy
-      simpa using congrArg (complexDeRhamComplexXIso I (M := M) (k + 1)).hom.hom hy
-    · rw [complexDeRhamComplex_d_apply]
-      simp [← hψ]
+    mk I k φ = 0 ↔ φ.1 ∈ complexExactForms I M k :=
+  (complexDeRhamComplex I M).moduleCatCohomologyClassOfIso_eq_zero_iff
+    (fun k ↦ SmoothForm I M ℂ k) (complexClosedForms I M) (complexExactForms I M)
+    (complexDeRhamComplexXIso I) (mem_complexClosedForms_iff_d_eq_zero I)
+    (mem_complexExactForms_iff_exists_d_eq I) k φ
 
 /-- The kernel of the class map is exactly the subspace of exact forms inside closed forms. -/
 theorem ker_mk (k : ℕ) :
@@ -352,14 +344,21 @@ theorem ofReal_mk (k : ℕ) (α : closedForms I M k) :
   rw [ofReal, LinearMap.equivOfSurjective_apply]
   rfl
 
+/-- The complex-linear extension of `ofReal` sends `1 ⊗ [α] + i ⊗ [β]` to `[α + i β]`. -/
+private theorem liftBaseChange_ofReal_one_tmul_mk_add_I_tmul_mk (k : ℕ)
+    (α β : closedForms I M k) :
+    (ofReal I k).liftBaseChange ℂ
+        (1 ⊗ₜ deRhamCohomology.mk I k α + Complex.I ⊗ₜ deRhamCohomology.mk I k β) =
+      mk I k (closedForms.ofReal I α + Complex.I • closedForms.ofReal I β) := by
+  simp
+
 /-- The complex-linear extension of `ofReal` sends `1 ⊗ [Re φ] + i ⊗ [Im φ]` to `[φ]`. -/
 private theorem liftBaseChange_ofReal_mk_re_add_I_tmul_mk_im (k : ℕ)
     (φ : complexClosedForms I M k) :
     (ofReal I k).liftBaseChange ℂ
         (1 ⊗ₜ deRhamCohomology.mk I k (complexClosedForms.re I φ) +
           Complex.I ⊗ₜ deRhamCohomology.mk I k (complexClosedForms.im I φ)) = mk I k φ := by
-  rw [map_add, LinearMap.liftBaseChange_tmul, LinearMap.liftBaseChange_tmul, one_smul,
-    ofReal_mk, ofReal_mk, ← map_smul, ← map_add,
+  rw [liftBaseChange_ofReal_one_tmul_mk_add_I_tmul_mk,
     complexClosedForms.ofReal_re_add_I_smul_ofReal_im]
 
 /-- The real-linear map `ofReal`, extended complex-linearly to `ℂ ⊗[ℝ] H^k_dR(M; ℝ)`, is
@@ -372,9 +371,8 @@ private theorem liftBaseChange_ofReal_bijective (k : ℕ) :
     obtain ⟨a, b, rfl⟩ := exists_one_tmul_add_I_tmul u
     obtain ⟨α, rfl⟩ := deRhamCohomology.mk_surjective I k a
     obtain ⟨β, rfl⟩ := deRhamCohomology.mk_surjective I k b
-    rw [LinearMap.mem_ker, map_add, LinearMap.liftBaseChange_tmul,
-      LinearMap.liftBaseChange_tmul, one_smul, ofReal_mk, ofReal_mk, ← map_smul, ← map_add,
-      mk_eq_zero_iff, mem_complexExactForms_iff_realPart_imaginaryPart] at hu
+    rw [LinearMap.mem_ker, liftBaseChange_ofReal_one_tmul_mk_add_I_tmul_mk, mk_eq_zero_iff,
+      mem_complexExactForms_iff_realPart_imaginaryPart] at hu
     simp only [Submodule.coe_add, Submodule.coe_smul, closedForms.coe_ofReal,
       SmoothForm.realPart_ofReal_add_I_smul_ofReal,
       SmoothForm.imaginaryPart_ofReal_add_I_smul_ofReal] at hu
