@@ -64,37 +64,6 @@ variable {n : ℕ} {G : GridDiagram n} {C : ColumnTurn n} {t : Fin n}
 local notation "a" => C.column
 local notation "b" => finRotate n C.column
 
-/-! ### Cyclic rows of a stacked pair -/
-
-/-- Let two rectangles be stacked along a grid line, the lower one with the rows from `B` up to
-`M` and the upper one with those from `M` up to `T`, with a turn row `l` of the lower and `u` of
-the upper. A rectangle spanning the rows of both contains `l` and above it `u`. -/
-private theorem sameSide_turns {B M T l u : Fin n} (hrow : M ∈ Grid.cIoo B T)
-    (hl : l ∈ Grid.cIco B M) (hu : u ∈ Grid.cIco M T) :
-    l ∈ Grid.cIco B T ∧ u ∈ Grid.cIoo l T := by
-  simp only [Grid.mem_cIco, Grid.mem_cIoo, ne_eq, ← Fin.val_inj] at *
-  split_ifs at * <;> omega
-
-/-- In the setting of `sameSide_turns`, the rows from `B` up to `l` and those strictly between `u`
-and `T` are disjoint, and together they are the rows from `B` to `T` outside the rows from `l` up
-to `u`. -/
-private theorem sameSide_rows_outer {B M T l u r : Fin n} (hrow : M ∈ Grid.cIoo B T)
-    (hl : l ∈ Grid.cIco B M) (hu : u ∈ Grid.cIco M T) :
-    (r ∈ Grid.cIco B l ∨ r ∈ Grid.cIoo u T ↔
-        r ∈ Grid.cIco B T ∧ r ∉ insert u (Grid.cIco l u)) ∧
-      ¬(r ∈ Grid.cIco B l ∧ r ∈ Grid.cIoo u T) := by
-  simp only [Grid.mem_cIco, Grid.mem_cIoo, Finset.mem_insert, ne_eq, ← Fin.val_inj] at *
-  split_ifs at * <;> omega
-
-/-- In the setting of `sameSide_turns`, the rows strictly between `l` and `M` and those from `M`
-up to `u` are disjoint, and together they are the rows strictly between `l` and `u`. -/
-private theorem sameSide_rows_inner {B M T l u r : Fin n} (hrow : M ∈ Grid.cIoo B T)
-    (hl : l ∈ Grid.cIco B M) (hu : u ∈ Grid.cIco M T) :
-    (r ∈ Grid.cIoo l M ∨ r ∈ Grid.cIco M u ↔ r ∈ Grid.cIoo l u) ∧
-      ¬(r ∈ Grid.cIoo l M ∧ r ∈ Grid.cIco M u) := by
-  simp only [Grid.mem_cIco, Grid.mem_cIoo, ne_eq, ← Fin.val_inj] at *
-  split_ifs at * <;> omega
-
 /-! ### Comparing the squares of a pair with those of a composite -/
 
 /-- Let `A₀, B₀` and `S, F₀` be two partitions of the same squares into two disjoint sets. Suppose
@@ -135,18 +104,6 @@ section TerminalPair
 
 variable {x y z : GridState n} (P : GridPentagonBetween C.column C.turnRow x y)
   (Q : GridPentagonBetween C.column t y z)
-
-/-- Two empty terminal-side pentagons with distinct initial sides are stacked along `b`: the
-second ends at the row where the first starts, and this row lies strictly between the bottom of
-the second and the top of the first. -/
-private theorem terminalPair_rows (hne : P.left ≠ Q.left) (hp : P.IsEmpty) (hq : Q.IsEmpty) :
-    P.bottom ∈ Grid.cIoo Q.bottom P.top ∧ Q.top = P.bottom := by
-  let D : GridRectangleDecomposition x z :=
-    ⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩
-  refine ⟨(D.cyclicOrder_of_isEmpty_of_right_eq_right (P.right_eq.trans Q.right_eq.symm) hne hp
-    hq).2, ?_⟩
-  rw [GridRectangleBetween.top_def, ← P.right_eq.trans Q.right_eq.symm, P.map_right,
-    GridRectangleBetween.bottom_def]
 
 /-- Let a rectangle `S` and a terminal-side hexagon `H` from `t` up to `s` cover the squares of
 the rectangles of a terminal-side pentagon pair without overlap, `H` spanning the rows of both.
@@ -202,14 +159,15 @@ private theorem terminalPair_squares {u v u' v' : GridState n} (S : GridRectangl
       Equiv.swap_apply_left, Q.mk_mem_coveredSquares_right_column, H.mem_crossingCoveredSquares,
       hHa]
     simp only [true_and, hab, false_and, or_false]
-    obtain ⟨h₁, h₂⟩ := sameSide_rows_outer (r := r) hrow ht hs
+    obtain ⟨h₁, h₂⟩ :=
+      Grid.mem_cIco_or_mem_cIoo_iff_mem_cIco_and_notMem_insert_cIco (r := r) hrow ht hs
     exact ⟨or_comm.trans h₁, fun h => h₂ h.symm⟩
   · rw [P.mk_mem_coveredSquares_right_column, Finset.mk_mem_map_swap_prodCongr_refl_iff,
       Equiv.swap_apply_right, Q.mk_mem_coveredSquares_left_column, htop,
       H.mem_crossingCoveredSquares]
     simp only [H.mem_toGridRectangle_coveredSquares, Grid.right_notMem_cIco, false_and,
       hab.symm, false_or, true_and]
-    obtain ⟨h₁, h₂⟩ := sameSide_rows_inner (r := r) hrow ht hs
+    obtain ⟨h₁, h₂⟩ := Grid.mem_cIoo_or_mem_cIco_iff_mem_cIoo (r := r) hrow ht hs
     exact ⟨or_comm.trans h₁, fun h => h₂ h.symm⟩
 
 /-- The recut of the rectangles of a counted terminal-side pentagon pair with distinct initial
@@ -233,9 +191,11 @@ private theorem terminalPair_exists (hP : P ∈ G.pentagons C x y)
   have hqX' := (G.disjoint_map_swapColumns_XSet_iff a b _).mpr hqX
   let D : GridRectangleDecomposition x z := ⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩
   have hcommon : D.first.right = D.second.right := P.right_eq.trans Q.right_eq.symm
-  obtain ⟨hrow, htop⟩ := terminalPair_rows P Q hne hp hq
+  obtain ⟨hrow, htop⟩ := P.bottom_mem_cIoo_and_top_eq_of_right_eq_right Q.toGridRectangleBetween
+    (P.right_eq.trans Q.right_eq.symm) hne hp hq
   have ht : t ∈ Grid.cIco Q.bottom P.bottom := htop ▸ Q.turn_mem_cIco_bottom_top
-  obtain ⟨hlower, hupper⟩ := sameSide_turns hrow ht P.turn_mem_cIco_bottom_top
+  obtain ⟨hlower, hupper⟩ :=
+    Grid.mem_cIco_and_mem_cIoo_of_mem_cIco_of_mem_cIco hrow ht P.turn_mem_cIco_bottom_top
   let E := D.recut hone hp hq
   have hrecut := D.isRecut_recut hone hp hq
   rw [rename_pentagonWeight, G.pentagonWeight_swapColumns R (C.withTurnRow t)]
@@ -331,7 +291,8 @@ theorem existsUnique_crossingChangeUnpairedHexagonComposite_of_terminalPentagonP
   have hne : P.left ≠ Q.left := fun h => D.sideColumns_ne_of_hasOneCommonSide hone (by
     rw [GridRectangleBetween.sideColumns, GridRectangleBetween.sideColumns]
     exact congrArg₂ (fun c d => ({c, d} : Finset (Fin n))) h hcommon)
-  obtain ⟨hrow, htop⟩ := terminalPair_rows P Q hne hp hq
+  obtain ⟨hrow, htop⟩ := P.bottom_mem_cIoo_and_top_eq_of_right_eq_right Q.toGridRectangleBetween
+    (P.right_eq.trans Q.right_eq.symm) hne hp hq
   have hdisj := Grid.disjoint_cIco_cIco_of_mem_cIoo hrow
   refine existsUnique_crossingChangeUnpairedHexagonComposite_isRecut R hX hone hp hq
     (fun F => F.toRectangleDecomposition_ne_of_notMem_cIco (fun h => ?_) (fun h => ?_))
@@ -345,16 +306,6 @@ section InitialPair
 
 variable {x y z : GridState n} (P : GridInitialPentagonBetween C.column C.turnRow x y)
   (Q : GridInitialPentagonBetween C.column t y z)
-
-/-- Two empty initial-side pentagons with distinct terminal sides are stacked along `b`: the
-second starts at the row where the first ends, and this row lies strictly between the bottom of
-the first and the top of the second. -/
-private theorem initialPair_rows (hne : P.right ≠ Q.right) (hp : P.IsEmpty) (hq : Q.IsEmpty) :
-    P.top ∈ Grid.cIoo P.bottom Q.top ∧ Q.bottom = P.top := by
-  let D : GridRectangleDecomposition x z :=
-    ⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩
-  exact ⟨(D.cyclicOrder_of_isEmpty_of_left_eq_left (P.left_eq.trans Q.left_eq.symm) hne hp
-    hq).2, D.second_bottom_eq_first_top_of_left_eq_left (P.left_eq.trans Q.left_eq.symm)⟩
 
 /-- Let a rectangle `S` and an initial-side hexagon `H` from `s` up to `t` cover the squares of
 the rectangles of an initial-side pentagon pair without overlap, `H` spanning the rows of both.
@@ -413,12 +364,12 @@ private theorem initialPair_squares {u v u' v' : GridState n} (S : GridRectangle
       Equiv.swap_apply_left, Q.mk_mem_coveredSquares_right_column, hbottom,
       H.mem_crossingCoveredSquares]
     simp only [hHa r, false_and, hab, false_or, true_and]
-    exact sameSide_rows_inner hrow hs ht
+    exact Grid.mem_cIoo_or_mem_cIco_iff_mem_cIoo hrow hs ht
   · rw [P.mk_mem_coveredSquares_right_column, Finset.mk_mem_map_swap_prodCongr_refl_iff,
       Equiv.swap_apply_right, Q.mk_mem_coveredSquares_left_column, H.mem_crossingCoveredSquares,
       hHb']
     simp only [true_and, hab.symm, false_and, or_false]
-    exact sameSide_rows_outer hrow hs ht
+    exact Grid.mem_cIco_or_mem_cIoo_iff_mem_cIco_and_notMem_insert_cIco hrow hs ht
 
 /-- The recut of the rectangles of a counted initial-side pentagon pair with distinct terminal
 sides underlies a counted composite of the weight of the pair. -/
@@ -441,9 +392,11 @@ private theorem initialPair_exists (hP : P ∈ G.initialPentagons C x y)
   have hqX' := (G.disjoint_map_swapColumns_XSet_iff a b _).mpr hqX
   let D : GridRectangleDecomposition x z := ⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩
   have hcommon : D.first.left = D.second.left := P.left_eq.trans Q.left_eq.symm
-  obtain ⟨hrow, hbottom⟩ := initialPair_rows P Q hne hp hq
+  obtain ⟨hrow, hbottom⟩ := P.top_mem_cIoo_and_bottom_eq_of_left_eq_left Q.toGridRectangleBetween
+    (P.left_eq.trans Q.left_eq.symm) hne hp hq
   have ht : t ∈ Grid.cIco P.top Q.top := hbottom ▸ Q.turn_mem_cIco_bottom_top
-  obtain ⟨hlower, hupper⟩ := sameSide_turns hrow P.turn_mem_cIco_bottom_top ht
+  obtain ⟨hlower, hupper⟩ :=
+    Grid.mem_cIco_and_mem_cIoo_of_mem_cIco_of_mem_cIco hrow P.turn_mem_cIco_bottom_top ht
   let E := D.recut hone hp hq
   have hrecut := D.isRecut_recut hone hp hq
   rw [rename_initialPentagonWeight, G.initialPentagonWeight_swapColumns R (C.withTurnRow t)]
@@ -536,7 +489,8 @@ theorem existsUnique_crossingChangeUnpairedHexagonComposite_of_initialPentagonPa
   have hne : P.right ≠ Q.right := fun h => D.sideColumns_ne_of_hasOneCommonSide hone (by
     rw [GridRectangleBetween.sideColumns, GridRectangleBetween.sideColumns]
     exact congrArg₂ (fun c d => ({c, d} : Finset (Fin n))) hcommon h)
-  obtain ⟨hrow, hbottom⟩ := initialPair_rows P Q hne hp hq
+  obtain ⟨hrow, hbottom⟩ := P.top_mem_cIoo_and_bottom_eq_of_left_eq_left Q.toGridRectangleBetween
+    (P.left_eq.trans Q.left_eq.symm) hne hp hq
   have hdisj := Grid.disjoint_cIco_cIco_of_mem_cIoo hrow
   refine existsUnique_crossingChangeUnpairedHexagonComposite_isRecut R hX hone hp hq
     (fun F => F.toRectangleDecomposition_ne_of_notMem_cIco (fun h => ?_) (fun h => ?_))

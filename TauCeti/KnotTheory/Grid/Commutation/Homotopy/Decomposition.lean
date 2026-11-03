@@ -371,6 +371,34 @@ theorem injOn_toRectangleDecomposition_of_isLeft_iff
   · exact congrArg Sum.inr
       (GridRectangleHexagonDecomposition.toRectangleDecomposition_injective hDE)
 
+/-- If the rows of the first rectangle of a decomposition miss `s'` and those of the second miss
+`s`, then the decomposition underlies no hexagon composite with turn rows `s` and `s'`: one
+rectangle of a hexagon composite contains both turn rows. -/
+theorem toRectangleDecomposition_ne_of_notMem_cIco
+    (F : GridHexagonCompositeDecomposition a s s' x z) {D : GridRectangleDecomposition x z}
+    (hs' : s' ∉ Grid.cIco D.first.bottom D.first.top)
+    (hs : s ∉ Grid.cIco D.second.bottom D.second.top) :
+    F.toRectangleDecomposition ≠ D := by
+  intro hFD
+  cases F with
+  | inl F =>
+    rw [toRectangleDecomposition_inl] at hFD
+    have hrows :=
+      congrArg (fun E : GridRectangleDecomposition x z => (E.first.bottom, E.first.top)) hFD
+    simp only [GridHexagonRectangleDecomposition.toRectangleDecomposition, Prod.mk.injEq] at hrows
+    have hturn := F.hexagon.pair_subset_cIco_bottom_top
+      (Finset.mem_insert_of_mem (Finset.mem_singleton_self s'))
+    rw [hrows.1, hrows.2] at hturn
+    exact hs' hturn
+  | inr F =>
+    rw [toRectangleDecomposition_inr] at hFD
+    have hrows :=
+      congrArg (fun E : GridRectangleDecomposition x z => (E.second.bottom, E.second.top)) hFD
+    simp only [GridRectangleHexagonDecomposition.toRectangleDecomposition, Prod.mk.injEq] at hrows
+    have hturn := F.hexagon.pair_subset_cIco_bottom_top (Finset.mem_insert_self s _)
+    rw [hrows.1, hrows.2] at hturn
+    exact hs hturn
+
 end GridHexagonCompositeDecomposition
 
 /-- A two-step domain consisting of a commutation pentagon followed by a pentagon for the reverse

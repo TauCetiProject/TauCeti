@@ -157,40 +157,6 @@ private theorem crossingCutSquares_eq_and_crossingAddedSquares_eq {u v : GridSta
 
 end GridCommutationHexagonBetween
 
-namespace GridHexagonCompositeDecomposition
-
-variable {n : ℕ} {a s s' : Fin n} {x z : GridState n}
-
-/-- If the rows of the first rectangle of a decomposition miss `s'` and those of the second miss
-`s`, then the decomposition underlies no hexagon composite with turn rows `s` and `s'`: one
-rectangle of a hexagon composite contains both turn rows. -/
-theorem toRectangleDecomposition_ne_of_notMem_cIco
-    (F : GridHexagonCompositeDecomposition a s s' x z) {D : GridRectangleDecomposition x z}
-    (hs' : s' ∉ Grid.cIco D.first.bottom D.first.top)
-    (hs : s ∉ Grid.cIco D.second.bottom D.second.top) :
-    F.toRectangleDecomposition ≠ D := by
-  intro hFD
-  cases F with
-  | inl F =>
-    rw [toRectangleDecomposition_inl] at hFD
-    have hrows :=
-      congrArg (fun E : GridRectangleDecomposition x z => (E.first.bottom, E.first.top)) hFD
-    simp only [GridHexagonRectangleDecomposition.toRectangleDecomposition, Prod.mk.injEq] at hrows
-    have hturn := F.hexagon.pair_subset_cIco_bottom_top
-      (Finset.mem_insert_of_mem (Finset.mem_singleton_self s'))
-    rw [hrows.1, hrows.2] at hturn
-    exact hs' hturn
-  | inr F =>
-    rw [toRectangleDecomposition_inr] at hFD
-    have hrows :=
-      congrArg (fun E : GridRectangleDecomposition x z => (E.second.bottom, E.second.top)) hFD
-    simp only [GridRectangleHexagonDecomposition.toRectangleDecomposition, Prod.mk.injEq] at hrows
-    have hturn := F.hexagon.pair_subset_cIco_bottom_top (Finset.mem_insert_self s _)
-    rw [hrows.1, hrows.2] at hturn
-    exact hs hturn
-
-end GridHexagonCompositeDecomposition
-
 namespace GridDiagram
 
 open MvPolynomial
@@ -447,74 +413,6 @@ theorem crossingChangeHexagonCompositeWeight_eq_of_isRepartition
   -- Cancel the variables of the `O`-markings both hexagons cut away.
   exact ((isRegular_prod_X _).right hEw).symm
 
-/-- A rectangle `S` and a crossing-change hexagon `H` covering, without overlap, the squares of two
-disjoint sets carrying no `X`-marking, carry no `X`-marking, and the product of their weights is
-the product of the variables of the `O`-markings in those two sets. -/
-theorem disjoint_XSet_and_OMonomial_mul_crossingChangeCommutationHexagonWeight_eq
-    {u v u' v' : GridState n} {A B : Finset (Fin n × Fin n)}
-    (S : GridRectangleBetween u v) (H : GridCommutationHexagonBetween a C.turnRow t u' v')
-    (hkey : A ∪ B = S.toGridRectangle.coveredSquares ∪ H.crossingCoveredSquares ∧
-      Disjoint A B ∧ Disjoint S.toGridRectangle.coveredSquares H.crossingCoveredSquares)
-    (hAX : Disjoint A G.XSet) (hBX : Disjoint B G.XSet) :
-    Disjoint S.toGridRectangle.coveredSquares G.XSet ∧ Disjoint H.crossingCoveredSquares G.XSet ∧
-      G.OMonomial R S.toGridRectangle * G.crossingChangeCommutationHexagonWeight C t R H =
-        (∏ p ∈ A, if p ∈ G.OSet then MvPolynomial.X p.1 else 1) *
-          ∏ p ∈ B, if p ∈ G.OSet then MvPolynomial.X p.1 else 1 := by
-  obtain ⟨hunion, hAB, hSH⟩ := hkey
-  have hX : Disjoint (S.toGridRectangle.coveredSquares ∪ H.crossingCoveredSquares) G.XSet := by
-    rw [← hunion]
-    exact Finset.disjoint_union_left.mpr ⟨hAX, hBX⟩
-  refine ⟨(Finset.disjoint_union_left.mp hX).1, (Finset.disjoint_union_left.mp hX).2, ?_⟩
-  rw [crossingChangeCommutationHexagonWeight_eq_prod_crossingCoveredSquares,
-    ← prod_ite_OSet_eq_prod_OColumnsOfSquares, OMonomial_eq_prod_coveredSquares,
-    ← Finset.prod_union hSH, ← hunion, Finset.prod_union hAB]
-
-/-- An empty crossing-change hexagon carrying no `X`-marking, followed by an empty rectangle
-carrying none, is a counted composite whose weight is the product of their weights. -/
-theorem exists_inl_mem_crossingChangeHexagonCompositeDecompositions {x z : GridState n}
-    {E : GridRectangleDecomposition x z}
-    (H : GridCommutationHexagonBetween a C.turnRow t x E.middle)
-    (hHE : H.toGridRectangleBetween = E.first) (hHe : E.first.IsEmpty) (hSe : E.second.IsEmpty)
-    (hHX : Disjoint H.crossingCoveredSquares G.XSet)
-    (hSX : Disjoint E.second.toGridRectangle.coveredSquares G.XSet) :
-    ∃ F : GridHexagonCompositeDecomposition a C.turnRow t x z,
-      F ∈ G.crossingChangeHexagonCompositeDecompositions C t x z ∧ F.toRectangleDecomposition = E ∧
-        G.crossingChangeHexagonCompositeWeight C t R F =
-          G.crossingChangeCommutationHexagonWeight C t R H *
-            G.OMonomial R E.second.toGridRectangle := by
-  refine ⟨.inl ⟨E.middle, H, E.second⟩, ?_, ?_, ?_⟩
-  · simp only [inl_mem_crossingChangeHexagonCompositeDecompositions,
-      mem_crossingChangeHexagonRectangleDecompositions, GridHexagonRectangleDecomposition.hexagon,
-      GridHexagonRectangleDecomposition.rectangle, mem_unblockedRectangles,
-      mem_crossingChangeCommutationHexagons, hHE]
-    exact ⟨⟨hHe, hHX⟩, hSe, hSX⟩
-  · simp only [GridHexagonCompositeDecomposition.toRectangleDecomposition_inl,
-      GridHexagonRectangleDecomposition.toRectangleDecomposition, hHE]
-  · rw [crossingChangeHexagonCompositeWeight_inl, crossingChangeHexagonRectangleWeight_def]
-
-/-- An empty rectangle carrying no `X`-marking, followed by an empty crossing-change hexagon
-carrying none, is a counted composite whose weight is the product of their weights. -/
-theorem exists_inr_mem_crossingChangeHexagonCompositeDecompositions {x z : GridState n}
-    {E : GridRectangleDecomposition x z}
-    (H : GridCommutationHexagonBetween a C.turnRow t E.middle z)
-    (hHE : H.toGridRectangleBetween = E.second) (hSe : E.first.IsEmpty) (hHe : E.second.IsEmpty)
-    (hSX : Disjoint E.first.toGridRectangle.coveredSquares G.XSet)
-    (hHX : Disjoint H.crossingCoveredSquares G.XSet) :
-    ∃ F : GridHexagonCompositeDecomposition a C.turnRow t x z,
-      F ∈ G.crossingChangeHexagonCompositeDecompositions C t x z ∧ F.toRectangleDecomposition = E ∧
-        G.crossingChangeHexagonCompositeWeight C t R F =
-          G.OMonomial R E.first.toGridRectangle *
-            G.crossingChangeCommutationHexagonWeight C t R H := by
-  refine ⟨.inr ⟨E.middle, E.first, H⟩, ?_, ?_, ?_⟩
-  · simp only [inr_mem_crossingChangeHexagonCompositeDecompositions,
-      mem_crossingChangeRectangleHexagonDecompositions, GridRectangleHexagonDecomposition.hexagon,
-      GridRectangleHexagonDecomposition.rectangle, mem_unblockedRectangles,
-      mem_crossingChangeCommutationHexagons, hHE]
-    exact ⟨⟨hSe, hSX⟩, hHe, hHX⟩
-  · simp only [GridHexagonCompositeDecomposition.toRectangleDecomposition_inr,
-      GridRectangleHexagonDecomposition.toRectangleDecomposition, hHE]
-  · rw [crossingChangeHexagonCompositeWeight_inr, crossingChangeRectangleHexagonWeight_def]
-
 /-- If the annulus squares carry no `X`-marking, a counted composite is
 determined by its underlying rectangle decomposition, including the order of its hexagon and
 rectangle. -/
@@ -633,21 +531,22 @@ theorem existsUnique_crossingChangeUnpairedHexagonComposite_isRecut
         D.IsRecut F.toRectangleDecomposition →
           G.crossingChangeHexagonCompositeWeight C t R F = w := by
   obtain ⟨F, hF, hFD, hFw⟩ := hF
-  have hrecut : D.IsRecut F.toRectangleDecomposition := hFD ▸ D.isRecut_recut hone hfirst hsecond
-  have hFone : F.toRectangleDecomposition.HasOneCommonSide :=
-    hFD ▸ D.hasOneCommonSide_recut hone hfirst hsecond
+  have hrecut := D.isRecut_recut hone hfirst hsecond
+  -- A decomposition recuts `D` exactly when it is the canonical recut of `D`.
+  have hisRecut (E : GridRectangleDecomposition x z) :
+      D.IsRecut E ↔ E = D.recut hone hfirst hsecond :=
+    ⟨fun h => (D.existsUnique_isRecut hone hfirst hsecond).unique h hrecut, fun h => h ▸ hrecut⟩
   have hunique : ∀ F' : GridHexagonCompositeDecomposition a C.turnRow t x z,
       F' ∈ G.crossingChangeUnpairedHexagonComposites C t x z ∧
         D.IsRecut F'.toRectangleDecomposition → F' = F := fun F' hF' =>
     injOn_toRectangleDecomposition_crossingChangeHexagonCompositeDecompositions hX x z
       ((G.mem_crossingChangeUnpairedHexagonComposites C t F').mp hF'.1).1 hF
-      ((D.existsUnique_isRecut hone hfirst hsecond).unique hF'.2 hrecut)
-  refine ⟨⟨F, ⟨(G.mem_crossingChangeUnpairedHexagonComposites C t F).mpr ⟨hF,
-    F.toRectangleDecomposition.not_hasDisjointSides_of_hasOneCommonSide hFone, fun E _ hE => ?_⟩,
-    hrecut⟩, hunique⟩, fun F' hF' hF'D => hunique F' ⟨hF', hF'D⟩ ▸ hFw⟩
-  -- The only recut of the composite is `D`, which underlies no composite.
-  exact hD E ((F.toRectangleDecomposition.existsUnique_isRecut hFone hrecut.isEmpty_first
-    hrecut.isEmpty_second).unique hE (hrecut.symm hone hfirst hsecond))
+      (((hisRecut _).mp hF'.2).trans hFD.symm)
+  -- The only recut of the recut of `D` is `D`, which underlies no composite.
+  refine ⟨⟨F, ⟨mem_crossingChangeUnpairedHexagonComposites_of_toRectangleDecomposition_eq
+    (D.hasOneCommonSide_recut hone hfirst hsecond) hrecut.isEmpty_first hrecut.isEmpty_second
+    (fun E _ hE => hD E (hE.trans (D.recut_recut hone hfirst hsecond))) hF hFD,
+    (hisRecut _).mpr hFD⟩, hunique⟩, fun F' hF' hF'D => hunique F' ⟨hF', hF'D⟩ ▸ hFw⟩
 
 variable [CharP R 2]
 
