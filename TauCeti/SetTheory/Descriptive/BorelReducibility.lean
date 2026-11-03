@@ -184,6 +184,11 @@ protected theorem BorelBireducible.trans (h₁ : E.BorelBireducible F)
     (h₂ : F.BorelBireducible G) : E.BorelBireducible G :=
   ⟨h₁.1.trans h₂.1, h₂.2.trans h₁.2⟩
 
+/-- Borel bireducible relations have equally many classes, allowing different universes. -/
+theorem BorelBireducible.lift_mk_quotient_eq (h : E.BorelBireducible F) :
+    lift.{v} #(Quotient E) = lift.{u} #(Quotient F) :=
+  le_antisymm h.1.lift_mk_quotient_le h.2.lift_mk_quotient_le
+
 /-! ### Reductions between equalities -/
 
 /-- Equality on `X` reduces to equality on `Y` iff there is a measurable injection `X → Y`. -/
