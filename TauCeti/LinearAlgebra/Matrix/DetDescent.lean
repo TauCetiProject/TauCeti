@@ -86,7 +86,7 @@ theorem map_algebraMap_mul {l m o F K : Type*} [Fintype m] [CommSemiring F] [Sem
     [Algebra F K] (f : K →ₗ[F] F) (C : Matrix l m F) (X : Matrix m o K) :
     (C.map (algebraMap F K) * X).map f = C * X.map f := by
   ext i j
-  simp [mul_apply, ← Algebra.smul_def]
+  simp [Matrix.mul_apply, ← Algebra.smul_def]
 
 /-- An `F`-linear functional applied entrywise commutes with right multiplication by a matrix over
 `F`. -/
@@ -95,7 +95,7 @@ theorem map_mul_algebraMap {l m o F K : Type*} [Fintype m] [CommSemiring F] [Sem
     [Algebra F K] (f : K →ₗ[F] F) (C : Matrix m o F) (X : Matrix l m K) :
     (X * C.map (algebraMap F K)).map f = X.map f * C := by
   ext i j
-  simp only [map_apply, mul_apply, map_sum]
+  simp only [map_apply, Matrix.mul_apply, map_sum]
   refine Finset.sum_congr rfl fun l _ ↦ ?_
   rw [← Algebra.commutes, ← Algebra.smul_def, map_smul, smul_eq_mul, mul_comm]
 

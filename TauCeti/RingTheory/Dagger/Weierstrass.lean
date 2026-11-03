@@ -22,7 +22,8 @@ Let `K` be a complete ultrametric normed field. A series in `K⟨X, Y⟩†`, wi
 which is distinguished of degree `s` in `Y` at unit radius and has a unit coefficient in
 degree `s`, divides every overconvergent series. The quotient is overconvergent in all
 variables and the remainder is a polynomial in `Y` of degree less than `s`, with coefficients
-in `K⟨X⟩†`. The decomposition is unique.
+in `K⟨X⟩†`. The decomposition is unique, and the quotient `q` and the coefficients of the
+remainder `r` are bounded by the dividend `f`: `‖q‖ ‖g‖ ≤ ‖f‖` and `‖r.coeff i‖ ≤ ‖f‖`.
 
 Existence uses unequal radii: first select `1 < ρ ≤ r` preserving distinguishedness, then
 apply fixed-radius division over the Banach ring `K{X/ρ}` at radius `r` in `Y`. The quotient
@@ -141,6 +142,44 @@ theorem exists_mul_add_eq_of_isDistinguished {g : W'} {s : ℕ}
   obtain ⟨q, r, hr, hqr⟩ := exists_mul_add_eq_series hg hu f
   refine ⟨q, r.trunc s, PowerSeries.degree_trunc_lt _ _, ?_⟩
   rwa [PowerSeries.coe_trunc_eq_self_of_coeff_eq_zero hr]
+
+/-- **Norm bounds in overconvergent Weierstrass division.** Under the hypotheses of
+`exists_mul_add_eq_of_isDistinguished`, the division `f = q * g + r` satisfies `‖q‖ ‖g‖ ≤ ‖f‖`,
+and every coefficient of the remainder `r` has Gauss norm at most `‖f‖`. -/
+theorem exists_mul_add_eq_and_norm_le_of_isDistinguished {g : W'} {s : ℕ}
+    (hg : PowerSeries.IsDistinguished 1 s
+      (restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))
+    (hu : IsUnit (PowerSeries.coeff s
+      (restrictedOptionEquiv (toTate _ K g) : PowerSeries Tate))) (f : W') :
+    ∃ (q : W') (r : Polynomial W), r.degree < (s : WithBot ℕ) ∧
+      f = q * g + washnitzerAlgebra.polynomialToOption r ∧ ‖q‖ * ‖g‖ ≤ ‖f‖ ∧
+      ∀ i, ‖r.coeff i‖ ≤ ‖f‖ := by
+  obtain ⟨q, r, hr, hqr⟩ := exists_mul_add_eq_of_isDistinguished hg hu f
+  have hf : f = q * g + washnitzerAlgebra.polynomialToOption r :=
+    washnitzerAlgebra.optionSeries_injective (by simpa using hqr.symm)
+  -- Map the division into the Tate algebra and apply the norm identity there.
+  set φ := (toTate σ K : W →+* Tate)
+  have hrφ : ∀ m, s ≤ m → ((r.map φ : Polynomial Tate) : PowerSeries Tate).coeff m = 0 :=
+    fun m hm ↦ by
+      rw [Polynomial.coeff_coe, Polynomial.coeff_map,
+        Polynomial.coeff_eq_zero_of_degree_lt (hr.trans_le (by exact_mod_cast hm)), map_zero]
+  have hmap : PowerSeries.map φ (optionSeries f) =
+      PowerSeries.map φ (optionSeries q) * PowerSeries.map φ (optionSeries g) + r.map φ := by
+    rw [hf]
+    simp [Polynomial.polynomial_map_coe]
+  have hnorm := hg.gaussNorm_mul_add_eq_max one_pos (fun x ↦ norm_mul _ _)
+    (restrictedOptionEquiv (toTate _ K q)).2 hrφ
+  rw [← washnitzerAlgebra.map_toTate_optionSeries, ← washnitzerAlgebra.map_toTate_optionSeries,
+    ← hmap, ← washnitzerAlgebra.norm_eq_gaussNorm_map_optionSeries,
+    ← washnitzerAlgebra.norm_eq_gaussNorm_map_optionSeries,
+    ← washnitzerAlgebra.norm_eq_gaussNorm_map_optionSeries] at hnorm
+  refine ⟨q, r, hr, hf, (le_max_left _ _).trans hnorm.ge, fun i ↦ ?_⟩
+  have hle := PowerSeries.le_gaussNorm norm 1 _
+    (TauCeti.PowerSeries.hasGaussNorm_of_isRestricted
+      (TauCeti.PowerSeries.isRestricted_of_forall_coeff_eq_zero hrφ)) i
+  rw [one_pow, mul_one, Polynomial.coeff_coe, Polynomial.coeff_map] at hle
+  exact (washnitzerAlgebra.norm_toTate (r.coeff i)).symm.trans_le
+    (hle.trans ((le_max_right _ _).trans hnorm.ge))
 
 omit [CompleteSpace K] in
 /-- **Uniqueness in overconvergent Weierstrass division.** If `q * g + r = q' * g + r'`

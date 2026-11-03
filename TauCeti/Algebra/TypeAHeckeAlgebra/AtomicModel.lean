@@ -96,7 +96,7 @@ theorem commute_productDensity_signedCheckedR (p : ι → R) (s : R) (j k : Fin 
   unfold Commute SemiconjBy
   ext w : 2
   simp only [LinearMap.coe_comp, Function.comp_apply, Finsupp.lsingle_apply,
-    Module.End.mul_apply, signedCheckedR_single_one, productDensity_single_one]
+    mul_apply_eq_comp, signedCheckedR_single_one, productDensity_single_one]
   split_ifs <;>
     simp_all only [map_smul, map_sub, map_neg, productDensity_single_one,
       signedCheckedR_single_one, ↓reduceIte] <;> module
@@ -212,7 +212,7 @@ private theorem signedChecked_strandIncl_mul_T_last_single_snoc_apply
       Fin.snoc (update w (Fin.last n) c) (w (Fin.last n)) := by
     rw [Equiv.comp_swap_eq_update]
     simp [← Fin.snoc_update, Fin.update_snoc_last]
-  simp only [map_mul, Module.End.mul_apply, signedChecked_T, hj, hk, LinearMap.smul_apply,
+  simp only [map_mul, mul_apply_eq_comp, signedChecked_T, hj, hk, LinearMap.smul_apply,
     signedCheckedR_single_one, Fin.snoc_castSucc, Fin.snoc_last, hswap]
   rcases lt_trichotomy (w (Fin.last n)) c with h | h | h
   · simp only [h.ne, h, ↓reduceIte, map_sub, map_smul, Finsupp.smul_apply, Finsupp.sub_apply,
@@ -258,7 +258,7 @@ theorem atomicTrace_eq_sum (x : TypeAHeckeAlgebra R q n) :
       ∑ w : Fin n → ι, signedChecked pos q x (single w 1) w * ∏ i, p (w i) := by
   classical
   rw [atomicTrace_apply, LinearMap.trace_eq_matrix_trace R Finsupp.basisSingleOne]
-  simp only [Matrix.trace, Matrix.diag_apply, LinearMap.toMatrix_apply, Module.End.mul_apply,
+  simp only [Matrix.trace, Matrix.diag_apply, LinearMap.toMatrix_apply, mul_apply_eq_comp,
     Finsupp.coe_basisSingleOne, productDensity_single_one, map_smul]
   simp [mul_comm]
 
@@ -267,7 +267,7 @@ theorem atomicTrace_eq_sum (x : TypeAHeckeAlgebra R q n) :
 theorem atomicTrace_one : atomicTrace pos q p n 1 = (∑ a, p a) ^ n := by
   classical
   rw [atomicTrace_eq_sum]
-  simp only [map_one, Module.End.one_apply, single_eq_same, one_mul]
+  simp only [map_one, one_apply_eq_self, single_eq_same, one_mul]
   rw [← Fintype.prod_sum]
   simp
 

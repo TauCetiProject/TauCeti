@@ -57,7 +57,7 @@ private theorem signSwitchGenerator_sq (h : P' = -P) (x : N × R) :
   have hve' (w) : v * (e * w) = -(e * (v * w)) := by rw [← mul_assoc, hve, neg_mul, mul_assoc]
   simp only [add_mul, mul_add, smul_mul_assoc, mul_smul_comm, mul_assoc, hve, hve', mul_neg, he,
     he', hv, smul_neg, smul_add]
-  simp [Algebra.smul_def, prod_apply]
+  simp [Algebra.smul_def, QuadraticMap.prod_apply]
 
 private def signSwitchTo (h : P' = -P) :
     CliffordAlgebra (P.prod QuadraticMap.sq) →ₐ[R] CliffordAlgebra (P'.prod QuadraticMap.sq) :=

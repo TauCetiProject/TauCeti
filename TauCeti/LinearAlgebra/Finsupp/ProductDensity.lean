@@ -68,6 +68,6 @@ theorem productDensity_one : productDensity (n := n) (1 : ι → R) = 1 := by
 theorem productDensity_mul (p p' : ι → R) :
     productDensity (n := n) p * productDensity p' = productDensity (p * p') := by
   refine LinearMap.ext fun v ↦ Finsupp.ext fun w ↦ ?_
-  simp [Module.End.mul_apply, ← mul_assoc, Finset.prod_mul_distrib]
+  simp [mul_apply_eq_comp, ← mul_assoc, Finset.prod_mul_distrib]
 
 end TauCeti
