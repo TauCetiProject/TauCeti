@@ -169,7 +169,7 @@ private theorem realCliffordTwoTwoEvenEquivMatrixProd_vectorEven (v : Fin 4 → 
   rw [realCliffordTwoTwoVectorEven, CliffordAlgebra.rightIotaEven_apply]
   rw [realCliffordTwoTwoEvenEquivMatrixProd_ι]
   ext i j
-  all_goals fin_cases i
+  fin_cases i
   all_goals fin_cases j
   all_goals simp [realCliffordTwoTwoLastVector,
     Matrix.mul_apply, Fin.sum_univ_two]

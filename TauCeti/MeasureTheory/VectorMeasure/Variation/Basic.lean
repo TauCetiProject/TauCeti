@@ -34,7 +34,7 @@ by at most the operator norm of the map. -/
 theorem variation_mapRangeL_le (φ : F →L[𝕜] F') (μ : VectorMeasure X F) :
     (mapRangeL φ μ).variation ≤ ‖φ‖₊ • μ.variation := by
   refine variation_le_of_forall_enorm_le fun s _ => ?_
-  rw [mapRangeL_apply, Measure.smul_apply, ENNReal.smul_def, smul_eq_mul]
+  rw [mapRangeL_apply, _root_.smul_apply, ENNReal.smul_def, smul_eq_mul]
   refine (φ.le_opENorm _).trans ?_
   rw [enorm_eq_nnnorm φ]
   gcongr

@@ -60,6 +60,8 @@ isometry classes of rational lattices, such as non-isometry, transfer to the rea
   rational model onto `L`.
 * `TauCeti.IntegralLattice.Isometry.realModelMap_ofRealModel_apply`: the induced isometry agrees
   with the real isometry on the rational vectors.
+* `TauCeti.IntegralLattice.map_realModel_ne_realModel`: if two positive definite rational lattices
+  are not isometric, no real linear isometry carries the real model of one onto that of the other.
 
 ## References
 
@@ -316,6 +318,21 @@ theorem realModelMap_ofRealModel_apply (f : M.RealModelSpace hM ≃ₗᵢ[ℝ] M
   exact LinearMap.congr_fun h x
 
 end Isometry
+
+section
+
+variable {W : Type*} [AddCommGroup W] [Module ℚ W] {M} {hM} {N : IntegralLattice W}
+  {hN : N.IsPosDef}
+
+/-- **Non-isometric lattices have non-isometric real models**: if the positive definite rational
+lattices `M` and `N` are not isometric, no real linear isometry of the ambient spaces carries the
+real model of `M` onto that of `N`. -/
+theorem map_realModel_ne_realModel (hMN : IsEmpty (M.Isometry N))
+    (f : M.RealModelSpace hM ≃ₗᵢ[ℝ] N.RealModelSpace hN) :
+    (M.realModel hM).map (f.toLinearEquiv.restrictScalars ℤ).toLinearMap ≠ N.realModel hN :=
+  fun hf ↦ hMN.false (Isometry.ofRealModel f hf)
+
+end
 
 end TauCeti.IntegralLattice
 

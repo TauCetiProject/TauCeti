@@ -142,13 +142,13 @@ theorem volume_eq_smul_hausdorffMeasure (k : ℕ) :
   · -- Isodiametric inequality: `volume s ≤ ω' ediam s ^ k`.
     have hle : ω'⁻¹ • (volume : Measure (EuclideanSpace ℝ (Fin k))) ≤ μH[k] :=
       le_hausdorffMeasure _ _ 1 one_pos fun t _ => by
-        rw [Measure.smul_apply, smul_eq_mul, ENNReal.inv_mul_le_iff hω0 hωtop, ENNReal.rpow_natCast]
+        rw [_root_.smul_apply, smul_eq_mul, ENNReal.inv_mul_le_iff hω0 hωtop, ENNReal.rpow_natCast]
         refine (TauCeti.volume_le_ediam_div_two_pow_mul_volume_ball t).trans_eq ?_
         simp only [finrank_euclideanSpace_fin, ω', div_eq_mul_inv, mul_pow, ENNReal.inv_pow]
         ring
-    rw [Measure.smul_apply, smul_eq_mul, ← ENNReal.inv_mul_le_iff hω0 hωtop]
+    rw [_root_.smul_apply, smul_eq_mul, ← ENNReal.inv_mul_le_iff hω0 hωtop]
     simpa using hle s
-  · rw [Measure.smul_apply, smul_eq_mul]
+  · rw [_root_.smul_apply, smul_eq_mul]
     exact mul_hausdorffMeasure_le_measure volume (Nat.cast_nonneg k) fun x _ =>
       (eventually_mem_nhdsWithin.mono fun r (hr : 0 < r) =>
         (volume_closedBall_eq_div_mul x hr.le).ge).frequently
@@ -174,8 +174,8 @@ theorem euclideanHausdorffMeasure_eq_smul_hausdorffMeasure (k : ℕ) :
     (ball (0 : EuclideanSpace ℝ (Fin k)) 1))
   have hvol := congr($(EuclideanSpace.volume_eq_smul_hausdorffMeasure k)
     (ball (0 : EuclideanSpace ℝ (Fin k)) 1))
-  rw [euclideanHausdorffMeasure_def, Measure.smul_apply, ENNReal.smul_def, smul_eq_mul] at hdef
-  rw [Measure.smul_apply, smul_eq_mul] at hvol
+  rw [euclideanHausdorffMeasure_def, _root_.smul_apply, ENNReal.smul_def, smul_eq_mul] at hdef
+  rw [_root_.smul_apply, smul_eq_mul] at hvol
   have hB0 : μH[k] (ball (0 : EuclideanSpace ℝ (Fin k)) 1) ≠ 0 := fun h0 =>
     (measure_ball_pos volume (0 : EuclideanSpace ℝ (Fin k)) one_pos).ne'
       (by rw [hvol, h0, mul_zero])
@@ -256,13 +256,13 @@ theorem ae_tendsto_euclideanHausdorffMeasure_inter_closedBall_div (k : ℕ) {A :
   have hωtop : ω' ≠ ∞ := EuclideanSpace.volume_ball_div_two_pow_ne_top k
   rw [euclideanHausdorffMeasure_eq_smul_hausdorffMeasure] at hA hAfin ⊢
   replace hAfin : μH[k] A ≠ ∞ := fun h => hAfin (by
-    rw [Measure.smul_apply, smul_eq_mul, h]; exact ENNReal.mul_top hω0)
+    rw [_root_.smul_apply, smul_eq_mul, h]; exact ENNReal.mul_top hω0)
   refine ae_smul_measure ?_ _
   filter_upwards [ae_tendsto_hausdorffMeasure_inter_closedBall_div (Nat.cast_nonneg k)
     (hA.mono_ac (absolutelyContinuous_smul hω0)) hAfin] with x hx hxA
   refine (hx hxA).congr' (eventually_mem_nhdsWithin.mono fun r (hr : 0 < r) => ?_)
   dsimp only
-  rw [Measure.smul_apply, smul_eq_mul, EuclideanSpace.volume_closedBall_eq_div_mul 0 hr.le,
+  rw [_root_.smul_apply, smul_eq_mul, EuclideanSpace.volume_closedBall_eq_div_mul 0 hr.le,
     ENNReal.mul_div_mul_left _ _ hω0 hωtop]
 
 end TauCeti

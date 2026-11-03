@@ -93,7 +93,7 @@ theorem apply_eq_of_apply_eq (hσ : σ.SameCycle x y) (hf : ∀ z, f (σ z) = f 
   obtain ⟨k, rfl⟩ := hσ
   have hmap := Function.Semiconj.perm_zpow_right (τ := 1) (g := fun z => PLift.up (f z))
     (fun z => congrArg PLift.up (hf z)) k x
-  exact congrArg PLift.down (by simpa only [one_zpow, Equiv.Perm.one_apply] using hmap.symm)
+  exact congrArg PLift.down (by simpa only [_root_.one_zpow, Equiv.Perm.one_apply] using hmap.symm)
 
 /-- A map intertwining two permutations carries orbits of the first permutation into orbits of
 the second. -/
@@ -155,7 +155,7 @@ namespace TauCeti
 /-- The transposition of `Fin 2` is one cycle on every fibre of a map to `Fin 1`. -/
 theorem isCycleOn_swap_fin_two_fiber (f : Fin 2 → Fin 1) (i : Fin 1) :
     (Equiv.swap (0 : Fin 2) 1).IsCycleOn {p | f p = i} := by
-  convert Equiv.Perm.isCycleOn_swap (a := (0 : Fin 2)) (b := 1) (by decide) using 1
+  convert Equiv.Perm.isCycleOn_swap (a := (0 : Fin 2)) (b := 1) using 1
   ext p
   fin_cases p <;> simp [Subsingleton.elim (f _) i]
 
@@ -226,11 +226,11 @@ theorem IsCycle.exists_mul_zpow_inv_apply_eq_of_commute [Fintype α] [DecidableE
   obtain ⟨hts, j, hj⟩ := hgc.commute_iff.1 htg
   refine ⟨j, ?_, ?_⟩
   · intro z hz
-    have hw : (g ^ j)⁻¹ z ∈ g.support := by rwa [← zpow_neg, zpow_apply_mem_support]
-    rw [Perm.mul_apply, ← ofSubtype_subtypePerm_of_mem hts hw, ← hj, ← Perm.mul_apply,
-      mul_inv_cancel, Perm.one_apply]
+    have hw : (g ^ j)⁻¹ z ∈ g.support := by rwa [← _root_.zpow_neg, zpow_apply_mem_support]
+    rw [Equiv.Perm.mul_apply, ← ofSubtype_subtypePerm_of_mem hts hw, ← hj, ← Equiv.Perm.mul_apply,
+      mul_inv_cancel, Equiv.Perm.one_apply]
   · intro z hz
-    rw [Perm.mul_apply, Perm.inv_eq_iff_eq.2 (zpow_apply_eq_self_of_apply_eq_self
+    rw [Equiv.Perm.mul_apply, Perm.inv_eq_iff_eq.2 (zpow_apply_eq_self_of_apply_eq_self
       (notMem_support.1 hz) j).symm]
 
 /-- Transporting a permutation along an equivalence transports its cycles. -/
@@ -390,7 +390,7 @@ theorem apply_eq_of_mem_closure {β : Type*} {S : Set (Perm α)} {f : α → β}
   induction hg using Subgroup.closure_induction generalizing a with
   | mem g hg => exact hS g hg a
   | one => rfl
-  | mul g g' _ _ ih ih' => rw [Perm.mul_apply, ih, ih']
+  | mul g g' _ _ ih ih' => rw [Equiv.Perm.mul_apply, ih, ih']
   | inv g _ ih => rw [← ih (g⁻¹ a), Perm.inv_def, apply_symm_apply]
 
 /-- A function invariant under every permutation in a set `S` takes a single value when the
