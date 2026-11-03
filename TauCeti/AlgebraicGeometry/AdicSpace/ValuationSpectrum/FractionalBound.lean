@@ -248,8 +248,8 @@ theorem fracPowLE_inter_fracPowLE_subset (f f' g : A) (q q' : ℚ≥0) :
   have hb := mul_ne_zero q.den_ne_zero q'.den_ne_zero
   rw [mem_fracPowLE_iff hb h₁, ← valuation_le_iff] at hv
   rw [mem_fracPowLE_iff hb h₂, ← valuation_le_iff] at hv'
-  rw [mem_fracPowLE_iff hb (NNRat.add_eq_div_den_mul_den q q'), ← valuation_le_iff, mul_pow,
-    pow_add, map_mul, map_mul]
+  rw [mem_fracPowLE_iff hb ((NNRat.add_def q q').trans (NNRat.divNat_eq_div _ _)),
+    ← valuation_le_iff, mul_pow, pow_add, map_mul, map_mul]
   exact mul_le_mul' hv hv'
 
 /-- **The product rule for lower bounds**: `|f| ≥ |g| ^ q` and `|f'| ≥ |g| ^ q'` imply
@@ -261,8 +261,8 @@ theorem fracPowGE_inter_fracPowGE_subset (f f' g : A) (q q' : ℚ≥0) :
   have hb := mul_ne_zero q.den_ne_zero q'.den_ne_zero
   rw [mem_fracPowGE_iff hb h₁, ← valuation_le_iff] at hv
   rw [mem_fracPowGE_iff hb h₂, ← valuation_le_iff] at hv'
-  rw [mem_fracPowGE_iff hb (NNRat.add_eq_div_den_mul_den q q'), ← valuation_le_iff, mul_pow,
-    pow_add, map_mul, map_mul]
+  rw [mem_fracPowGE_iff hb ((NNRat.add_def q q').trans (NNRat.divNat_eq_div _ _)),
+    ← valuation_le_iff, mul_pow, pow_add, map_mul, map_mul]
   exact mul_le_mul' hv hv'
 
 end TauCeti.ValuationSpectrum

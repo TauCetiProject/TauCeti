@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Field.Rat
-import Mathlib.Algebra.Field.Basic
 import Mathlib.Tactic.FieldSimp
 
 /-!
@@ -21,7 +20,6 @@ These let a statement phrased through `q.num` and `q.den` be checked on any frac
 * `TauCeti.NNRat.num_mul_eq_of_eq_div`: `q = a / b` gives `q.num * b = a * q.den`.
 * `TauCeti.NNRat.natCast_mul_eq_div`: `n * q` as the fraction `(n * q.num) / q.den`.
 * `NNRat.eq_div_den_mul_den`: `q` and `q'` as fractions over `q.den * q'.den`.
-* `NNRat.add_eq_div_den_mul_den`: `q + q'` as a fraction over `q.den * q'.den`.
 -/
 
 public section
@@ -56,12 +54,5 @@ theorem eq_div_den_mul_den (q q' : ℚ≥0) :
   · conv_lhs => rw [← NNRat.num_div_den q']
     push_cast
     field_simp
-
-/-- **The sum over a common denominator**: `q + q'` is the fraction
-`(q.num * q'.den + q'.num * q.den) / (q.den * q'.den)`. -/
-theorem add_eq_div_den_mul_den (q q' : ℚ≥0) :
-    q + q' = ((q.num * q'.den + q'.num * q.den : ℕ) : ℚ≥0) / ((q.den * q'.den : ℕ) : ℚ≥0) := by
-  obtain ⟨h₁, h₂⟩ := eq_div_den_mul_den q q'
-  rw [Nat.cast_add, add_div, ← h₁, ← h₂]
 
 end NNRat
