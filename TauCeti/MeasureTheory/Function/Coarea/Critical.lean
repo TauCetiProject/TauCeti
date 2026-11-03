@@ -37,7 +37,7 @@ public section
 open MeasureTheory Measure Set Filter Module
 open scoped ENNReal NNReal Topology
 
-namespace MeasureTheory
+namespace MeasureTheory.Measure
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
@@ -178,4 +178,4 @@ theorem
     · exact Or.inr ⟨hd, hx.2⟩
   · exact measure_union_null hcrit hexc
 
-end MeasureTheory
+end MeasureTheory.Measure
