@@ -199,8 +199,7 @@ theorem inf_unitarySubgroup_eq_map_real :
         GLOrthogonal n 𝕜 ⊓ unitarySubgroup (GL n 𝕜) := by
       rw [GLOrthogonal.inf_unitarySubgroup_eq_map_real]
       exact ⟨B, le_GLOrthogonal hB, rfl⟩
-    refine ⟨mem_iff.mpr ⟨hBO.1, ?_⟩, hBO.2⟩
-    rw [hdet, (mem_iff.mp hB).2, map_one]
+    exact ⟨map_mem _ hB, hBO.2⟩
 
 end GLSpecialOrthogonal
 

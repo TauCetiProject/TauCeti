@@ -60,7 +60,7 @@ averaged form makes every element of `K` an isometry. The matrix of that automor
   conjugates of the unitary subgroup.
 * `Matrix.GeneralLinearGroup.eq_inf_unitarySubgroup_of_isCompact_of_le_of_polarUnitary_mem` and
   `Matrix.GeneralLinearGroup.maximal_isCompact_unitarySubgroup_subgroupOf`: the same maximality
-  inside any subgroup `G` containing the unitary polar factors of its elements: the unitary
+  inside any closed subgroup `G` containing the unitary polar factors of its elements: the unitary
   elements of `G` form a maximal compact subgroup of `G`.
 
 ## References

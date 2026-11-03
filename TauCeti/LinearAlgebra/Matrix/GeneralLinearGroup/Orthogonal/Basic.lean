@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.UnitaryGroup
 public import Mathlib.Topology.Algebra.Group.Defs
 public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.InverseTranspose
@@ -50,8 +49,8 @@ This mirrors `TauCeti.GLSymplectic`, the units-level avatar of `Matrix.symplecti
   `TauCeti.GLSpecialOrthogonal.mem_iff_mem_specialOrthogonalGroup`: the two groups are Mathlib's
   matrix groups read on units.
 * `TauCeti.GLOrthogonal.coe_inv`: an orthogonal matrix is inverted by its transpose.
-* `TauCeti.GLOrthogonal.map_mem`: a ring homomorphism maps orthogonal matrices to orthogonal
-  matrices.
+* `TauCeti.GLOrthogonal.map_mem` and `TauCeti.GLSpecialOrthogonal.map_mem`: a ring homomorphism
+  maps orthogonal and special orthogonal matrices to orthogonal and special orthogonal matrices.
 * `TauCeti.GLOrthogonal.eq_unitarySubgroup` and `TauCeti.GLSpecialOrthogonal.eq_GLSpecialUnitary`:
   over a ring with trivial star, the orthogonal groups are the unitary ones.
 * `TauCeti.GLOrthogonal.mem_unitarySubgroup_iff_map_star_eq`: an orthogonal matrix is unitary
@@ -227,6 +226,30 @@ theorem mem_iff_mem_specialOrthogonalGroup {A : GL n R} :
 /-- The special orthogonal group is contained in the orthogonal group. -/
 theorem le_GLOrthogonal : GLSpecialOrthogonal n R ≤ GLOrthogonal n R :=
   inf_le_left
+
+section map
+
+variable {S : Type*} [CommRing S]
+
+/-- **Change of scalars preserves special orthogonality**: applying a ring homomorphism entrywise
+maps special orthogonal matrices to special orthogonal matrices. -/
+theorem map_mem (f : R →+* S) {A : GL n R} (hA : A ∈ GLSpecialOrthogonal n R) :
+    Matrix.GeneralLinearGroup.map f A ∈ GLSpecialOrthogonal n S := by
+  rw [mem_iff] at hA ⊢
+  refine ⟨GLOrthogonal.map_mem f hA.1, ?_⟩
+  have hdet : ((Matrix.GeneralLinearGroup.map f A : GL n S) : Matrix n n S).det =
+      f (A : Matrix n n R).det := by
+    rw [RingHom.map_det]
+    congr 1
+  rw [hdet, hA.2, map_one]
+
+/-- Change of scalars maps the special orthogonal group into the special orthogonal group. -/
+theorem map_le (f : R →+* S) :
+    (GLSpecialOrthogonal n R).map (Matrix.GeneralLinearGroup.map f) ≤ GLSpecialOrthogonal n S := by
+  rintro _ ⟨A, hA, rfl⟩
+  exact map_mem f hA
+
+end map
 
 /-- **Over a ring with trivial star, the special orthogonal group is the special unitary
 group.** -/
