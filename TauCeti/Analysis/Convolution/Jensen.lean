@@ -31,13 +31,6 @@ gradient `g = ∇u` of a Sobolev function this is the bound `∫ Φ(‖∇(ρ �
 makes mollification compatible with de la Vallée Poussin's criterion
 (`MeasureTheory.Integrable.exists_convexOn_superlinear_integrable`).
 
-The pointwise bound is Jensen's inequality `ConvexOn.map_integral_le` for the probability measure
-`ρ μ`, applied to the convex monotone extension `t ↦ max (Φ (max t 0)) 0` of `Φ` from
-`[0, ∞)` to the whole line, after the triangle inequality `‖∫ ρ(t) g(x - t)‖ ≤ ∫ ρ(t) ‖g(x - t)‖`.
-Where the convolution integral does not converge its Bochner value is zero, and monotonicity of
-`Φ` gives the bound directly. The integrated bound then follows from Tonelli's theorem and
-translation invariance of `μ`.
-
 ## References
 
 * L. C. Evans, R. F. Gariepy, *Measure Theory and Fine Properties of Functions*, revised edition,
@@ -60,7 +53,8 @@ variable {G F : Type*} [MeasurableSpace G] [AddGroup G] [MeasurableAdd₂ G] [Me
   {μ : Measure G} [SFinite μ] [μ.IsAddRightInvariant]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {Φ : ℝ → ℝ} {ρ : G → ℝ}
 
-/-- The extension `t ↦ max (Φ (max t 0)) 0` of a function `Φ` on `[0, ∞)` to the whole line. -/
+/-- The function `t ↦ max (Φ (max t 0)) 0`, which extends the positive part `max Φ 0` of `Φ`
+restricted to `[0, ∞)` to the whole line. -/
 private def posExt (Φ : ℝ → ℝ) (t : ℝ) : ℝ :=
   max (Φ (max t 0)) 0
 
@@ -97,6 +91,10 @@ theorem ofReal_map_norm_convolution_le_lintegral (hΦ : ConvexOn ℝ (Ici 0) Φ)
     (hg : AEStronglyMeasurable g μ) (x : G) :
     ENNReal.ofReal (Φ ‖(ρ ⋆[lsmul ℝ ℝ, μ] g) x‖) ≤
       ∫⁻ t, ENNReal.ofReal (ρ t) * ENNReal.ofReal (Φ ‖g (x - t)‖) ∂μ := by
+  -- Apply Jensen's inequality `ConvexOn.map_integral_le` for the probability measure `ρ μ` to
+  -- the convex monotone function `posExt Φ` on the whole line, after the triangle inequality
+  -- `‖∫ ρ(t) g(x - t)‖ ≤ ∫ ρ(t) ‖g(x - t)‖`. Where the convolution integral does not converge,
+  -- its Bochner value is zero and monotonicity gives the bound directly.
   have hρi : Integrable ρ μ := integrable_of_integral_eq_one hρ1
   have hρm : AEMeasurable (fun t => ENNReal.ofReal (ρ t)) μ := hρi.aemeasurable.ennreal_ofReal
   -- The kernel defines a probability measure `ν`, and the convolution is a `ν`-average.
@@ -149,6 +147,7 @@ theorem lintegral_ofReal_map_norm_convolution_le (hΦ : ConvexOn ℝ (Ici 0) Φ)
     (hΦm : MonotoneOn Φ (Ici 0)) (hρ0 : 0 ≤ᵐ[μ] ρ) (hρ1 : ∫ t, ρ t ∂μ = 1) {g : G → F}
     (hg : AEStronglyMeasurable g μ) :
     ∫⁻ x, ENNReal.ofReal (Φ ‖(ρ ⋆[lsmul ℝ ℝ, μ] g) x‖) ∂μ ≤ ∫⁻ x, ENNReal.ofReal (Φ ‖g x‖) ∂μ := by
+  -- Integrate the pointwise bound, then use Tonelli's theorem and right invariance of `μ`.
   have hρm : AEMeasurable (fun t => ENNReal.ofReal (ρ t)) μ :=
     (integrable_of_integral_eq_one hρ1).aemeasurable.ennreal_ofReal
   have hm : AEMeasurable (Function.uncurry fun x t =>
