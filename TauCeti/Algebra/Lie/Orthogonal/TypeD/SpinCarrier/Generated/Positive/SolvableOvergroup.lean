@@ -69,15 +69,16 @@ private theorem single_mem_of_raising_step
   have hcomodule : Comodule.Corestrict f.hom.toCoalgHom = standardComodule n hn k := by
     let _ := GeneralLinear.standardComodule k (dimension n)
     apply Comodule.ext
-    rw [Comodule.corestrict_coact, ← Comodule.corestrictCoact_comp (M := Fin (dimension n) → k)
-      (Bialgebra.Quotient.mkBialgHom (R := k) J.toIdeal).toCoalgHom f.hom.toCoalgHom]
-    have hcomp := congrArg (fun g : _root_.CommHopfAlgCat.Hom _ _ ↦ g.hom.toCoalgHom)
-      (CommHopfAlgCat.mkQuotient_comp_quotientMapOfLe
-        (GeneralLinear.coordinateHopfAlgebra k (dimension n)) hJ)
-    rw [show f.hom.toCoalgHom.comp
+    rw [standardComodule_coact, Comodule.corestrict_coact,
+      ← Comodule.corestrictCoact_comp (M := Fin (dimension n) → k)
+        (Bialgebra.Quotient.mkBialgHom (R := k) J.toIdeal).toCoalgHom f.hom.toCoalgHom]
+    have hcomp : f.hom.toCoalgHom.comp
         (Bialgebra.Quotient.mkBialgHom (R := k) J.toIdeal).toCoalgHom =
-        (CommHopfAlgCat.mkQuotient _ (definingIdeal n hn k)).hom.toCoalgHom from hcomp]
-    rfl
+        (CommHopfAlgCat.mkQuotient _ (definingIdeal n hn k)).hom.toCoalgHom :=
+      congrArg (fun g : _root_.CommHopfAlgCat.Hom _ _ ↦ g.hom.toCoalgHom)
+        (CommHopfAlgCat.mkQuotient_comp_quotientMapOfLe
+          (GeneralLinear.coordinateHopfAlgebra k (dimension n)) hJ)
+    rw [hcomp]
   have hraise : let _ := Comodule.Corestrict (M := Fin (dimension n) → k) f.hom.toCoalgHom
       ∀ W : Subcomodule k (coordinateHopfAlgebra n hn k) (Fin (dimension n) → k),
         Pi.single a (1 : k) ∈ W → Pi.single (basisReflection n i a) (1 : k) ∈ W := by

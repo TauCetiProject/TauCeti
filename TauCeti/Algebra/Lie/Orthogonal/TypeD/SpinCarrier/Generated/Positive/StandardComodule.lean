@@ -63,12 +63,20 @@ noncomputable section
 variable (n : ℕ) (hn : 4 ≤ n) (R : Type u) [CommRing R]
 
 /-- The spin representation of the positive subgroup generated over `R`. -/
-@[expose, instance_reducible]
+@[instance_reducible]
 def standardComodule : Comodule R (coordinateHopfAlgebra n hn R) (Fin (dimension n) → R) :=
   GeneralLinear.corestrictStandardComodule R (dimension n)
     (CommHopfAlgCat.mkQuotient _ (definingIdeal n hn R)).hom
 
 attribute [local instance] standardComodule
+
+/-- The positive spin coaction is the ambient standard coaction corestricted to its quotient. -/
+theorem standardComodule_coact :
+    Comodule.coact (R := R) (C := coordinateHopfAlgebra n hn R)
+        (M := Fin (dimension n) → R) =
+      let _ := GeneralLinear.standardComodule R (dimension n)
+      Comodule.corestrictCoact
+        (CommHopfAlgCat.mkQuotient _ (definingIdeal n hn R)).hom.toCoalgHom := (rfl)
 
 /-- The coefficient matrix is the ambient generic matrix modulo the positive subgroup's ideal. -/
 theorem coefficientMatrix_basisFun :
