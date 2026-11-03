@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Hamiltonian.Basic
-public import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
+public import TauCeti.Geometry.Symplectic.Hamiltonian.Localized.Manifold
+import TauCeti.Geometry.Manifold.ContMDiff.Prod
 
 /-!
 # Localized Hamiltonians with prescribed vector field
@@ -17,12 +17,11 @@ neighborhood of that point. The Hamiltonian itself can be chosen to vanish at th
 
 This supplies localized coefficient variations for inhomogeneous Cauchy–Riemann equations.
 Localization is in the product of the parameter and target spaces, so distinct domain points
-can be separated even when their target images coincide. This is a constant-symplectic-form
-coordinate construction, not a manifold extension or a transversality theorem.
+can be separated even when their target images coincide. This specializes the manifold
+construction to a constant symplectic form; it is not a transversality theorem.
 
-The construction multiplies the linear Hamiltonian `y ↦ ω(v, y - x)` by a smooth bump taking
-value one at `(p, x)`. Since the linear Hamiltonian vanishes at `x`, differentiating the bump
-does not alter its prescribed target derivative.
+This is the vector-space specialization of the manifold realization theorem, applied to the
+constant smooth two-form associated to `ω`.
 
 ## References
 
@@ -32,7 +31,7 @@ does not alter its prescribed target derivative.
 
 public section
 
-open Set Topology
+open Set Topology Manifold
 
 namespace TauCeti.SymplecticForm
 
@@ -48,23 +47,12 @@ theorem exists_contDiff_hamiltonianVectorField_eq (ω : SymplecticForm V)
     ∃ K : P → V → ℝ, ContDiff ℝ (⊤ : ℕ∞) (Function.uncurry K) ∧
       HasCompactSupport (Function.uncurry K) ∧ tsupport (Function.uncurry K) ⊆ U ∧
       K p x = 0 ∧ ω.hamiltonianVectorField (K p) x = v := by
-  obtain ⟨b, hbU, hbc, hbs, -, hb⟩ :=
-    exists_contDiff_tsupport_subset (n := (⊤ : ℕ∞)) hU
-  let L : V →L[ℝ] ℝ := ω.toBilinForm.toContinuousBilinearMap v
-  let K : P → V → ℝ := fun q y ↦ b (q, y) * L (y - x)
-  have hL : ContDiff ℝ (⊤ : ℕ∞) (fun w : P × V ↦ L (w.2 - x)) :=
-    L.contDiff.comp (contDiff_snd.sub contDiff_const)
-  refine ⟨K, hbs.mul hL, hbc.mul_right, tsupport_mul_subset_left.trans hbU, ?_, ?_⟩
-  · simp [K]
-  · have hbp : DifferentiableAt ℝ (fun y ↦ b (p, y)) x :=
-      (hbs.comp (contDiff_const.prodMk contDiff_id)).differentiable (by simp) x
-    have hlin : HasFDerivAt (fun y ↦ L (y - x)) L x := by
-      simpa only [Function.comp_def, ContinuousLinearMap.comp_id, id_eq] using
-        L.hasFDerivAt.comp x ((hasFDerivAt_id x).sub_const x)
-    have hd := hbp.hasFDerivAt.mul hlin
-    rw [eq_comm, ω.eq_hamiltonianVectorField_iff]
-    intro w
-    simpa [K, hb, L, Pi.mul_def] using
-      congrArg (fun A : V →L[ℝ] ℝ ↦ A w) hd.fderiv.symm
+  obtain ⟨K, hK, hKc, hKU, hK0, hKv⟩ :=
+    SmoothTwoForm.exists_contMDiff_hamiltonianVectorField_eq (J := 𝓘(ℝ, P))
+      (σ := ω.constSmooth) p x ((isNondegenerate_constSmooth ω).isInvertible_flat x) v hU
+  refine ⟨K, ?_, hKc, hKU, hK0, ?_⟩
+  · exact contMDiff_iff_contDiff.mp (contMDiff_prod_modelWithCornersSelf_iff.mp hK)
+  · rw [hamiltonianVectorField_constSmooth] at hKv
+    exact hKv
 
 end TauCeti.SymplecticForm

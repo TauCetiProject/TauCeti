@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.BaseChange.Basic
 public import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
+public import TauCeti.Algebra.AlgebraicGroup.Hopf.Map
 public import TauCeti.RingTheory.TensorProduct.Maps
 public import TauCeti.RingTheory.WeilRestriction.Basic
 import TauCeti.Algebra.AlgebraicGroup.Hopf.CentralPoint
+import TauCeti.Algebra.Coalgebra.Convolution
 
 /-!
 # Weil restriction of affine group schemes
@@ -36,6 +39,13 @@ Every Hopf axiom is an equality of algebra maps out of `W`, which is checked on 
 `pointsMulEquiv` is natural in `T` (`WeilRestriction.pointsMulEquiv_naturality`). The same
 transport shows that the Weil restriction of a commutative group is commutative.
 
+The Weil restriction is functorial for homomorphisms of affine monoid and group schemes: a
+bialgebra map `φ : H₁ →ₐc[B] H₂` induces the bialgebra map `WeilRestriction.mapBialgHom A B φ`,
+which on points is precomposition with `φ`. For an affine monoid scheme `G = Spec H` over `Spec A`,
+the diagonal `G → Res_{B/A} G_B`, sending a point `x ∈ G(T)` to its base change
+`B ⊗[A] x ∈ G_B(B ⊗[A] T)`, is a homomorphism; its coordinate map is the bialgebra map
+`WeilRestriction.diagonal A B H : WeilRestriction A B (B ⊗[A] H) →ₐc[A] H`.
+
 ## Main declarations
 
 * `TauCeti.Algebra.WeilRestriction.instBialgebra` and
@@ -50,6 +60,12 @@ transport shows that the Weil restriction of a commutative group is commutative.
   isomorphism `(Res_{B/A} G)(T) ≃* G(B ⊗[A] T)`.
 * `TauCeti.Algebra.WeilRestriction.instIsCocomm`: the Weil restriction of a cocommutative
   bialgebra is cocommutative.
+* `TauCeti.Algebra.WeilRestriction.mapBialgHom` and
+  `TauCeti.Algebra.WeilRestriction.pointsMulEquiv_mapDomain_mapBialgHom`: the bialgebra map of
+  Weil restrictions induced by a bialgebra map, and its effect on points.
+* `TauCeti.Algebra.WeilRestriction.diagonal` and
+  `TauCeti.Algebra.WeilRestriction.pointsMulEquiv_mapDomain_diagonal`: the diagonal
+  `G → Res_{B/A} G_B`, which on points is base change `x ↦ B ⊗[A] x`.
 
 ## References
 
@@ -90,6 +106,14 @@ noncomputable def counit : WeilRestriction A B H →ₐ[A] A :=
   (homEquiv A B H A).symm (1 : WithConv (H →ₐ[B] B ⊗[A] A)).ofConv
 
 variable {A B H} {T : Type*} [CommRing T] [Algebra A T]
+
+/-- The comultiplication classifies the convolution product of the points defined by the two
+tensor factors of `W ⊗[A] W`. -/
+theorem homEquiv_comul :
+    homEquiv A B H _ (comul A B H) =
+      ofConv (toConv (homEquiv A B H _ Algebra.TensorProduct.includeLeft) *
+        toConv (homEquiv A B H _ Algebra.TensorProduct.includeRight)) := by
+  rw [comul, Equiv.apply_symm_apply]
 
 /-- Post-composing the comultiplication with `f : W ⊗[A] W → T` gives the convolution product of
 the points classified by the restrictions of `f` to the two tensor factors. -/
@@ -234,7 +258,145 @@ instance instIsCocomm [Coalgebra.IsCocomm B H] : Coalgebra.IsCocomm A (WeilRestr
   simpa using (Commute.all (e (toConv Algebra.TensorProduct.includeLeft))
     (e (toConv Algebra.TensorProduct.includeRight))).map e.symm
 
+section Map
+
+variable {H₁ H₂ H₃ : Type*} [CommRing H₁] [CommRing H₂] [CommRing H₃]
+  [Bialgebra B H₁] [Bialgebra B H₂] [Bialgebra B H₃]
+  [Algebra.FinitePresentation B H₁] [Algebra.FinitePresentation B H₂]
+  [Algebra.FinitePresentation B H₃]
+
+variable (A B) in
+/-- **Functoriality of the Weil restriction of affine group schemes.** A bialgebra map
+`φ : H₁ →ₐc[B] H₂`, that is, a homomorphism `Spec H₂ → Spec H₁` of affine monoid (for Hopf
+algebras, group) schemes over `Spec B`, induces a bialgebra map of Weil restrictions, with
+underlying algebra map `WeilRestriction.map A B φ`. On points it is precomposition with `φ`, see
+`WeilRestriction.pointsMulEquiv_mapDomain_mapBialgHom`. -/
+noncomputable def mapBialgHom (φ : H₁ →ₐc[B] H₂) :
+    WeilRestriction A B H₁ →ₐc[A] WeilRestriction A B H₂ :=
+  .ofAlgHom (map A B (φ : H₁ →ₐ[B] H₂))
+    ((homEquiv A B H₁ A).injective <| by
+      -- both counits classify the identity point, and precomposing the identity point of `H₂`
+      -- with the bialgebra map `φ` gives the identity point of `H₁`
+      simp only [counitAlgHom_eq, homEquiv_comp_map, homEquiv_counit, AlgHom.convOne_def,
+        ofConv_toConv, AlgHom.comp_assoc, BialgHom.counitAlgHom_comp])
+    ((homEquiv A B H₁ _).injective <| by
+      -- both sides classify convolution products of the points defined by the two tensor
+      -- factors: on the left that of `H₂`, precomposed with `φ`; on the right that of `H₁`, of
+      -- the factor points precomposed with `φ`
+      simp only [comulAlgHom_eq, homEquiv_comp_comul, homEquiv_comp_map,
+        Algebra.TensorProduct.map_comp_includeLeft, Algebra.TensorProduct.map_comp_includeRight]
+      -- precomposition with the bialgebra map `φ` distributes over the convolution product
+      simp only [homEquiv_comul, AlgHom.convMul_comp_bialgHom_distrib])
+
+/-- The algebra map underlying `WeilRestriction.mapBialgHom φ` is `WeilRestriction.map φ`. -/
+@[simp]
+theorem mapBialgHom_toAlgHom (φ : H₁ →ₐc[B] H₂) :
+    (mapBialgHom A B φ : WeilRestriction A B H₁ →ₐ[A] WeilRestriction A B H₂) =
+      map A B (φ : H₁ →ₐ[B] H₂) := (rfl)
+
+/-- `WeilRestriction.mapBialgHom φ` agrees pointwise with `WeilRestriction.map φ`. -/
+@[simp]
+theorem mapBialgHom_apply (φ : H₁ →ₐc[B] H₂) (x : WeilRestriction A B H₁) :
+    mapBialgHom A B φ x = map A B (φ : H₁ →ₐ[B] H₂) x := (rfl)
+
+/-- The identity bialgebra map induces the identity of the Weil restriction. -/
+@[simp]
+theorem mapBialgHom_id : mapBialgHom A B (BialgHom.id B H₁) = BialgHom.id A _ :=
+  BialgHom.coe_toAlgHom_injective <| by
+    rw [mapBialgHom_toAlgHom, BialgHom.id_toAlgHom, BialgHom.id_toAlgHom, map_id]
+
+/-- `WeilRestriction.mapBialgHom` respects composition. -/
+theorem mapBialgHom_comp (ψ : H₂ →ₐc[B] H₃) (φ : H₁ →ₐc[B] H₂) :
+    mapBialgHom A B (ψ.comp φ) = (mapBialgHom A B ψ).comp (mapBialgHom A B φ) :=
+  BialgHom.coe_toAlgHom_injective <| by
+    rw [mapBialgHom_toAlgHom, BialgHom.comp_toAlgHom, BialgHom.comp_toAlgHom,
+      mapBialgHom_toAlgHom, mapBialgHom_toAlgHom, map_comp]
+
+/-- **`WeilRestriction.mapBialgHom` on points.** Under `WeilRestriction.pointsMulEquiv`,
+precomposition with `WeilRestriction.mapBialgHom φ` on the points of the Weil restrictions over
+`T` is precomposition with `φ` on the points of `H₂` and `H₁` over `B ⊗[A] T`. -/
+theorem pointsMulEquiv_mapDomain_mapBialgHom (T : Type*) [CommRing T] [Algebra A T]
+    (φ : H₁ →ₐc[B] H₂) (f : WithConv (WeilRestriction A B H₂ →ₐ[A] T)) :
+    pointsMulEquiv A B H₁ T (BialgHom.mapDomain (mapBialgHom A B φ) f) =
+      BialgHom.mapDomain φ (pointsMulEquiv A B H₂ T f) :=
+  WithConv.ofConv_injective <| by
+    rw [BialgHom.mapDomain_apply, pointsMulEquiv_apply, ofConv_toConv, mapBialgHom_toAlgHom,
+      homEquiv_comp_map, BialgHom.mapDomain_apply, ofConv_toConv, pointsMulEquiv_apply]
+
+end Map
+
 end Bialgebra
+
+section Diagonal
+
+variable [Bialgebra A H] [Algebra.FinitePresentation A H]
+
+/-- The point of the Weil restriction of `B ⊗[A] H` over `T` attached to `x : H →ₐ[A] T` is the
+base change `B ⊗[A] x`. -/
+private theorem homEquiv_comp_symm_id {T : Type*} [CommRing T] [Algebra A T] (x : H →ₐ[A] T) :
+    homEquiv A B (B ⊗[A] H) T
+        (x.comp ((homEquiv A B (B ⊗[A] H) H).symm (AlgHom.id B (B ⊗[A] H)))) =
+      Algebra.TensorProduct.lTensor B x := by
+  rw [homEquiv_comp, Equiv.apply_symm_apply, AlgHom.comp_id]
+
+variable (A B H) in
+/-- **The diagonal of the Weil restriction.** For an affine monoid (or group) scheme `G = Spec H`
+over `Spec A`, the bialgebra map `Res_{B/A} (B ⊗[A] H) → H` corresponding to the homomorphism
+`G → Res_{B/A} G_B` which on points over `T` is `x ↦ B ⊗[A] x`, from `G(T)` to
+`G_B(B ⊗[A] T)`; see `WeilRestriction.pointsMulEquiv_mapDomain_diagonal`. Its underlying algebra
+map classifies the identity of `B ⊗[A] H`, viewed as a point of `B ⊗[A] H` with values in
+`B ⊗[A] H`, so `G → Res_{B/A} G_B` is the unit of the adjunction between base change and Weil
+restriction. -/
+noncomputable def diagonal : WeilRestriction A B (B ⊗[A] H) →ₐc[A] H :=
+  .ofAlgHom ((homEquiv A B (B ⊗[A] H) H).symm (AlgHom.id B (B ⊗[A] H)))
+    ((homEquiv A B (B ⊗[A] H) A).injective <| by
+      -- the counit of `H` is the identity point, whose base change is the identity point
+      rw [homEquiv_comp_symm_id, counitAlgHom_eq, homEquiv_counit,
+        ← TauCeti.Bialgebra.ofConv_one_eq_counitAlgHom, ← TauCeti.AlgHom.ofConv_pointsLTensor,
+        map_one])
+    ((homEquiv A B (B ⊗[A] H) _).injective <| by
+      -- the left side classifies the convolution product of the base changes of the two
+      -- tensor-factor points of `H`, the right side the base change of its comultiplication point
+      simp only [comulAlgHom_eq, homEquiv_comp_comul, Algebra.TensorProduct.map_comp_includeLeft,
+        Algebra.TensorProduct.map_comp_includeRight, homEquiv_comp_symm_id]
+      -- base change of points `x ↦ B ⊗[A] x` is multiplicative for convolution
+      rw [← TauCeti.AlgHom.ofConv_pointsLTensor, ← TauCeti.AlgHom.ofConv_pointsLTensor,
+        toConv_ofConv, toConv_ofConv, ← map_mul]
+      -- the convolution product of the two tensor-factor points is the comultiplication point
+      rw [← TauCeti.Bialgebra.comulPoint_eq_include_mul, TauCeti.AlgHom.ofConv_pointsLTensor,
+        ofConv_toConv])
+
+/-- The algebra map underlying `WeilRestriction.diagonal` is the one classifying the identity of
+`B ⊗[A] H`. -/
+theorem diagonal_toAlgHom :
+    (diagonal A B H : WeilRestriction A B (B ⊗[A] H) →ₐ[A] H) =
+      (homEquiv A B (B ⊗[A] H) H).symm (AlgHom.id B (B ⊗[A] H)) := (rfl)
+
+/-- `WeilRestriction.diagonal` classifies the identity of `B ⊗[A] H`. -/
+theorem homEquiv_diagonal :
+    homEquiv A B (B ⊗[A] H) H (diagonal A B H) = AlgHom.id B (B ⊗[A] H) := by
+  rw [diagonal_toAlgHom, Equiv.apply_symm_apply]
+
+/-- **The diagonal on points.** Precomposing a point `x : H →ₐ[A] T` with
+`WeilRestriction.diagonal` gives the point of `Res_{B/A} (B ⊗[A] H)` over `T` classifying the
+base change `B ⊗[A] x : B ⊗[A] H →ₐ[B] B ⊗[A] T`. -/
+theorem homEquiv_comp_diagonal {T : Type*} [CommRing T] [Algebra A T] (x : H →ₐ[A] T) :
+    homEquiv A B (B ⊗[A] H) T (x.comp (diagonal A B H)) = Algebra.TensorProduct.lTensor B x := by
+  rw [diagonal_toAlgHom, homEquiv_comp_symm_id]
+
+/-- **The diagonal as a homomorphism of points.** Under `WeilRestriction.pointsMulEquiv`, the
+homomorphism `G(T) → (Res_{B/A} G_B)(T)` induced by `WeilRestriction.diagonal` is base change
+`x ↦ B ⊗[A] x`, from `G(T)` to `G_B(B ⊗[A] T)`. -/
+theorem pointsMulEquiv_mapDomain_diagonal (T : Type*) [CommRing T] [Algebra A T]
+    (x : WithConv (H →ₐ[A] T)) :
+    pointsMulEquiv A B (B ⊗[A] H) T (BialgHom.mapDomain (diagonal A B H) x) =
+      TauCeti.AlgHom.pointsLTensor B x :=
+  WithConv.ofConv_injective <| by
+    rw [BialgHom.mapDomain_apply, pointsMulEquiv_apply, ofConv_toConv,
+      TauCeti.AlgHom.ofConv_pointsLTensor]
+    exact homEquiv_comp_diagonal x.ofConv
+
+end Diagonal
 
 section HopfAlgebra
 

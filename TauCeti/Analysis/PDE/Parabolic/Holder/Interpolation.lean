@@ -44,7 +44,8 @@ absorb lower-order terms in parabolic Schauder estimates.
 * `TauCeti.ParabolicC2HolderSpace.valueHolderL` and
   `TauCeti.ParabolicC2HolderSpace.spatialFDerivHolderL`: the value and the spatial gradient as
   continuous linear maps into the bounded parabolic Hölder space.
-* `TauCeti.ParabolicC2HolderSpace.norm_valueHolderL_add_norm_spatialFDerivHolderL_le` and
+* `TauCeti.ParabolicC2HolderSpace.norm_valueHolderL_add_norm_spatialFDerivHolderL_le`,
+  `TauCeti.ParabolicC2HolderSpace.norm_valueHolderL_add_norm_spatialFDerivHolderL_le_mul` and
   `TauCeti.ParabolicC2HolderSpace.exists_norm_valueHolderL_add_norm_spatialFDerivHolderL_le`:
   the absorption of the lower-order parabolic Hölder norms.
 
@@ -352,6 +353,15 @@ theorem norm_valueHolderL_add_norm_spatialFDerivHolderL_le (hα : α ≤ 1)
   rw [HolderSpace.norm_def, HolderSpace.norm_def, toBoundedContinuousFunction_valueHolderL,
     toBoundedContinuousFunction_spatialFDerivHolderL, add_assoc]
   exact (add_assoc _ _ _).symm.trans_le (norm_valueL_add_nnHolderNorm_add_le hα f hε hε₁)
+
+/-- **Absorption into the order-two norm.** For `α ≤ 1`, the lower-order parabolic Hölder norms
+satisfy `‖u‖_{α,par} + ‖D_x u‖_{α,par} ≤ 24 ‖u‖`, uniformly over the spaces and the slab. -/
+theorem norm_valueHolderL_add_norm_spatialFDerivHolderL_le_mul (hα : α ≤ 1)
+    (f : ParabolicC2HolderSpace α E F hab) :
+    ‖valueHolderL hα f‖ + ‖spatialFDerivHolderL hα f‖ ≤ 24 * ‖f‖ := by
+  have h := norm_valueHolderL_add_norm_spatialFDerivHolderL_le hα f one_pos le_rfl
+  simp only [Real.one_rpow, mul_one] at h
+  linarith [norm_valueL_le f]
 
 /-- **Absorption with a prescribed small constant.** For `α < 1` and every `η > 0` there is a
 constant `C`, depending only on `α` and `η`, such that on every slab
