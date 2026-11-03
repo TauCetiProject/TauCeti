@@ -394,7 +394,9 @@ section GradedModules
 
 universe uk uA
 
-variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A]
+section CommRing
+
+variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
   {𝒜 : ℤ → Submodule k A} [HasExt.{w} (GradedModuleCat.{v} 𝒜)]
 
 /-- Any integer internal shift of a source preserves a uniform cohomological bound on its
@@ -424,6 +426,11 @@ theorem IsGradedExtBoundedBy.shiftObjTarget {X Y : GradedModuleCat.{v} 𝒜} {N 
   | pred n ih =>
       exact ih.shiftTargetInverse.of_iso (Iso.refl X)
         ((GradedModuleCat.shiftFunctorAddIso 𝒜 (- (n : ℤ)) (-1)).app Y)
+
+end CommRing
+
+variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A]
+  {𝒜 : ℤ → Submodule k A} [HasExt.{w} (GradedModuleCat.{v} 𝒜)]
 
 /-- Any integer internal shift of an Euler-admissible source remains Euler-admissible.
 No boundedness or positivity hypothesis on the algebra grading is needed. -/
