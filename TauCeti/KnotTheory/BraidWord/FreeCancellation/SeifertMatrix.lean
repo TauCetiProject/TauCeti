@@ -908,6 +908,13 @@ section Main
 
 variable (u v : BraidWord n) (i : Fin (n - 1))
 
+/-- Inserting an inverse pair on a level already in use adds exactly two Seifert loops. -/
+theorem card_seifertLoops_insert (ε : ℤˣ) (h : ∃ x ∈ u ++ v, x.1 = i) :
+    Fintype.card (u ++ (i, ε) :: (i, -ε) :: v).seifertLoops =
+      Fintype.card (u ++ v).seifertLoops + 2 := by
+  obtain ⟨e, _⟩ := insertCongruence u v i ε h
+  simpa using (Fintype.card_congr e).symm
+
 /-- **Inserting `σᵢ σᵢ⁻¹` enlarges the Seifert matrix by a row.** If the level `i` already carries
 a letter of `u ++ v`, inserting the inverse pair `σᵢ σᵢ⁻¹` changes the Seifert matrix of the
 closure, after relabelling the loops by `ι` and a unimodular change of basis `P`, into a row

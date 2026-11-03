@@ -367,7 +367,7 @@ theorem eq_one_of_ofLinearEquiv_pointsAction_eq_one_of_isFaithful
   apply pointsAction_injective_of_isFaithful hV
   rw [map_one]
   refine LinearEquiv.ext fun x ↦ ?_
-  simpa only [LinearMap.GeneralLinearGroup.ofLinearEquiv_smul, one_smul, LinearEquiv.coe_one,
+  simpa only [LinearMap.GeneralLinearGroup.ofLinearEquiv_smul, one_smul, FunLike.coe_one_eq_id,
     id_eq] using congrArg (· • x) hg
 
 section Dual

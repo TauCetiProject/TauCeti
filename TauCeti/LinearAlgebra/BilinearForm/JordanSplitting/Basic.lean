@@ -435,9 +435,9 @@ private theorem IsJordanSplitting.rank_biSup_le [IsDomain R] [IsLocalRing R] [Mo
     h'.mem_biSup_sup_smul_top (mem_nonZeroDivisors_of_ne_zero hπ)
       (h.pow_dvd_apply_of_mem_biSup hx)
   have htop : A' ⊔ C = ⊤ := by
-    refine top_le_iff.mp (Submodule.le_of_le_smul_of_le_jacobson_bot
+    refine top_le_iff.mp (Submodule.le_of_le_smul_of_le_jacobson
       (I := Ideal.span {π}) Module.Finite.fg_top ?_ ?_)
-    · rw [IsLocalRing.jacobson_eq_maximalIdeal ⊥ bot_ne_top, Ideal.span_singleton_le_iff_mem]
+    · rw [IsLocalRing.ringJacobson_eq_maximalIdeal, Ideal.span_singleton_le_iff_mem]
       exact (IsLocalRing.mem_maximalIdeal π).mpr hπ'
     · exact hAC.ge.trans
         (sup_le (hle.trans (sup_le_sup_right le_sup_left _)) (le_sup_right.trans le_sup_left))

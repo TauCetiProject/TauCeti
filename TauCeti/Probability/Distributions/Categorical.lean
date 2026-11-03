@@ -85,7 +85,7 @@ variable [MeasurableSingletonClass I]
 theorem categoricalMeasure_singleton (p : StdSimplex NNReal I) (i : I) :
     categoricalMeasure p {i} = p.weights i := by
   classical
-  rw [categoricalMeasure_def, Measure.finsetSum_apply]
+  rw [categoricalMeasure_def, _root_.sum_apply]
   simp [Pi.single_apply]
 
 /-- The real mass of a category under its categorical law is its simplex weight. -/
@@ -156,9 +156,9 @@ theorem map_categoricalMeasure (f : I → J) (p : StdSimplex NNReal I) :
   apply Measure.ext_of_singleton
   intro j
   rw [Measure.map_apply hf (MeasurableSet.singleton j),
-    categoricalMeasure_def, Measure.finsetSum_apply, categoricalMeasure_singleton,
+    categoricalMeasure_def, _root_.sum_apply, categoricalMeasure_singleton,
     StdSimplex.weights_map_apply]
-  simp only [Measure.smul_apply, Measure.dirac_apply' _ (hf (MeasurableSet.singleton j)),
+  simp only [_root_.smul_apply, Measure.dirac_apply' _ (hf (MeasurableSet.singleton j)),
     Set.indicator, Set.mem_preimage, Set.mem_singleton_iff, Pi.one_apply, smul_eq_mul, mul_ite,
     mul_one, mul_zero]
   rw [← Finset.sum_filter]
