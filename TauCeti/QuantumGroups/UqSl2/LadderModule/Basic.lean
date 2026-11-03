@@ -230,21 +230,21 @@ private def tuple (q : ℂ) [Fact (q ≠ 0)] (m : ℕ) (ε : ℤˣ) :
     simp [kOp_vec, kInvOp_vec, smul_smul, mul_mul_mul_comm, ← Int.cast_mul,
       ← zpow_add₀ (Fact.out : q ≠ 0)]
   k_mul_e := end_ext fun j => by
-    simp only [LinearMap.smul_apply, Module.End.mul_apply, kOp_vec, eOp_vec, map_smul, smul_smul]
+    simp only [LinearMap.smul_apply, mul_apply_eq_comp, kOp_vec, eOp_vec, map_smul, smul_smul]
     congr 1
     -- Split the exponent of `q` as `2 + (m - 2j)` so that `zpow_add₀` exposes the factor `q ^ 2`.
     rw [show (m : ℤ) - 2 * (j - 1) = 2 + (m - 2 * j) by ring, zpow_add₀ (Fact.out : q ≠ 0),
       zpow_two]
     ring
   k_mul_f := end_ext fun j => by
-    simp only [LinearMap.smul_apply, Module.End.mul_apply, kOp_vec, fOp_vec, map_smul, smul_smul]
+    simp only [LinearMap.smul_apply, mul_apply_eq_comp, kOp_vec, fOp_vec, map_smul, smul_smul]
     congr 1
     -- Split the exponent of `q` as `-2 + (m - 2j)` so that `zpow_add₀` exposes `q⁻¹ ^ 2`.
     rw [show (m : ℤ) - 2 * (j + 1) = -2 + (m - 2 * j) by ring, zpow_add₀ (Fact.out : q ≠ 0),
       zpow_neg, zpow_two]
     ring
   e_mul_f_sub_f_mul_e := end_ext fun j => by
-    simp only [LinearMap.sub_apply, LinearMap.smul_apply, Module.End.mul_apply, eOp_vec,
+    simp only [LinearMap.sub_apply, LinearMap.smul_apply, mul_apply_eq_comp, eOp_vec,
       fOp_vec, kOp_vec, kInvOp_vec, map_smul, smul_smul, add_sub_cancel_right, sub_add_cancel,
       ← sub_smul]
     congr 1

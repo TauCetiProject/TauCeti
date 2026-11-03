@@ -196,7 +196,7 @@ theorem totalVariationOn_iSup_le_tsum [OpensMeasurableSpace E] {ι : Type*} {Ω 
           (fun x => (hψφ i x).trans (hφ x)) (hψΩ i)
     _ ≤ ∑' i, totalVariationOn μ (Ω i) u := by
         rw [Finset.sum_coe_sort s fun i => totalVariationOn μ (Ω i) u]
-        exact ENNReal.sum_le_tsum s
+        exact _root_.sum_le_tsum s
 
 /-- **Subadditivity in the open set.** For `u` locally integrable on `Ω ∪ Ω'`,
 `|Du|(Ω ∪ Ω') ≤ |Du|(Ω) + |Du|(Ω')`. -/
@@ -233,7 +233,7 @@ theorem totalVariationOn_sup_of_disjoint [OpensMeasurableSpace E]
   let φ : 𝓓(Ω ⊔ Ω', E) := φ₁' + φ₂'
   have hφ (x : E) : φ x = φ₁ x + φ₂ x := by simp [φ, φ₁', φ₂']
   have hdiv (x : E) : divergenceCLM φ x = divergenceCLM φ₁ x + divergenceCLM φ₂ x := by
-    simp only [φ, φ₁', φ₂', map_add, add_apply, divergenceCLM_monoCLM le_sup_left,
+    simp only [φ, φ₁', φ₂', map_add, _root_.add_apply, divergenceCLM_monoCLM le_sup_left,
       divergenceCLM_monoCLM le_sup_right]
   have hφ1 (x : E) : ‖φ x‖ ≤ 1 := by
     rw [hφ]
@@ -295,7 +295,7 @@ theorem ofReal_abs_integral_le_ofReal_mul_totalVariationOn (φ : 𝓓(Ω, E)) {c
   rw [← totalVariationOn_smul_of_nonneg hc.le]
   convert ofReal_abs_integral_le_totalVariationOn (u := c • u) (c⁻¹ • φ) fun x => ?_ using 3
   · congr 1 with x
-    simp only [map_smul, smul_apply, Pi.smul_apply, smul_eq_mul]
+    simp only [map_smul, _root_.smul_apply, Pi.smul_apply, smul_eq_mul]
     field_simp
   · simpa [norm_smul, abs_of_pos hc, inv_mul_le_iff₀ hc] using hφ x
 

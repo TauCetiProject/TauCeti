@@ -37,7 +37,10 @@ For maximality, take `g` in a compact subgroup `K ⊇ U` and use its polar decom
 `K` too. The real trace is bounded on `K`, whereas powers of any eigenvalue greater than one
 would force the traces of powers of `P` to be unbounded. Applying this to `P` and `P⁻¹` forces
 `P = 1`, hence `g` is unitary. The trace-growth argument is
-`Matrix.PosSemidef.eq_one_of_mem_isCompact_subgroup`.
+`Matrix.PosSemidef.eq_one_of_mem_isCompact_subgroup`. The argument only uses that `V` lies in `K`,
+so it is stated in that form (`mem_unitarySubgroup_of_isCompact_of_polarUnitary_mem`), which also
+serves subgroups of `GL ι 𝕜` stable under taking unitary polar factors, such as the special linear
+and the real symplectic groups.
 
 For conjugacy, Weyl's unitarian trick (`ContRepresentation.exists_isUnitary_congr`) applies to the
 tautological representation of the compact group `K` on `EuclideanSpace 𝕜 ι`: averaging the inner
@@ -47,6 +50,8 @@ averaged form makes every element of `K` an isometry. The matrix of that automor
 
 ## Main results
 
+* `Matrix.GeneralLinearGroup.mem_unitarySubgroup_of_isCompact_of_polarUnitary_mem`: an element of
+  a compact subgroup that also contains its unitary polar factor is unitary.
 * `Matrix.GeneralLinearGroup.eq_unitarySubgroup_of_isCompact_of_le`: a compact subgroup containing
   the unitary subgroup is the unitary subgroup.
 * `Matrix.GeneralLinearGroup.exists_conj_smul_le_unitarySubgroup`: every compact subgroup is
@@ -70,23 +75,30 @@ variable {𝕜 : Type*} [RCLike 𝕜] {ι : Type*} [Fintype ι] [DecidableEq ι]
 namespace Matrix.GeneralLinearGroup
 
 open scoped MatrixOrder in
-/-- **The unitary subgroup is a maximal compact subgroup of `GL ι 𝕜`**, in the elementwise form:
-an element of a compact subgroup containing every unitary matrix is unitary. -/
-theorem mem_unitarySubgroup_of_isCompact_of_le {K : Subgroup (GL ι 𝕜)}
-    (hK : IsCompact (K : Set (GL ι 𝕜))) (hUK : unitarySubgroup (GL ι 𝕜) ≤ K) {g : GL ι 𝕜}
-    (hg : g ∈ K) : g ∈ unitarySubgroup (GL ι 𝕜) := by
+/-- **An element of a compact subgroup that also contains its unitary polar factor is unitary.**
+If `g` lies in a compact subgroup `K` of `GL ι 𝕜` together with the unitary factor `V` of its polar
+decomposition `g = P V`, then `g` is unitary. -/
+theorem mem_unitarySubgroup_of_isCompact_of_polarUnitary_mem {K : Subgroup (GL ι 𝕜)}
+    (hK : IsCompact (K : Set (GL ι 𝕜))) {g : GL ι 𝕜} (hg : g ∈ K)
+    (hV : Unitary.toUnits (Units.polarUnitary g) ∈ K) : g ∈ unitarySubgroup (GL ι 𝕜) := by
   let V := Units.polarUnitary g
   let P := g * (Unitary.toUnits V)⁻¹
-  have hV : Unitary.toUnits V ∈ unitarySubgroup (GL ι 𝕜) := by simp
   have hP : (P : Matrix ι ι 𝕜) = CFC.sqrt ((g : Matrix ι ι 𝕜) * star (g : Matrix ι ι 𝕜)) := by
     apply (Unitary.mul_left_inj V).mp
     rw [Units.sqrt_mul_star_mul_polarUnitary]
     exact congrArg Units.val (inv_mul_cancel_right g (Unitary.toUnits V))
   have hPone : P = 1 :=
     (hP.symm ▸ (posDef_sqrt_mul_star g).posSemidef).eq_one_of_mem_isCompact_subgroup
-      hK (K.mul_mem hg (K.inv_mem (hUK hV)))
-  have hgV : g = Unitary.toUnits V := (mul_inv_eq_one.mp hPone)
-  exact hgV ▸ hV
+      hK (K.mul_mem hg (K.inv_mem hV))
+  rw [mul_inv_eq_one.mp hPone]
+  simp
+
+/-- **The unitary subgroup is a maximal compact subgroup of `GL ι 𝕜`**, in the elementwise form:
+an element of a compact subgroup containing every unitary matrix is unitary. -/
+theorem mem_unitarySubgroup_of_isCompact_of_le {K : Subgroup (GL ι 𝕜)}
+    (hK : IsCompact (K : Set (GL ι 𝕜))) (hUK : unitarySubgroup (GL ι 𝕜) ≤ K) {g : GL ι 𝕜}
+    (hg : g ∈ K) : g ∈ unitarySubgroup (GL ι 𝕜) :=
+  mem_unitarySubgroup_of_isCompact_of_polarUnitary_mem hK hg (hUK (by simp))
 
 /-- **The unitary subgroup is a maximal compact subgroup of `GL ι 𝕜`.** A compact subgroup that
 contains every unitary matrix is the unitary subgroup. Over `ℝ` this is the orthogonal group
@@ -145,19 +157,9 @@ theorem exists_conj_smul_le_unitarySubgroup {K : Subgroup (GL ι 𝕜)}
 `U(n)`. -/
 theorem maximal_isCompact_iff {K : Subgroup (GL ι 𝕜)} :
     Maximal (fun H : Subgroup (GL ι 𝕜) ↦ IsCompact (H : Set (GL ι 𝕜))) K ↔
-      ∃ g : GL ι 𝕜, K = MulAut.conj g • unitarySubgroup (GL ι 𝕜) := by
-  constructor
-  · intro hK
-    obtain ⟨g, hg⟩ := exists_conj_smul_le_unitarySubgroup hK.1
-    have hle : K ≤ MulAut.conj g⁻¹ • unitarySubgroup (GL ι 𝕜) := by
-      rwa [map_inv, ← Subgroup.pointwise_smul_subset_iff]
-    exact ⟨g⁻¹,
-      le_antisymm hle (hK.2 (Subgroup.isCompact_conj_smul _ isCompact_unitarySubgroup) hle)⟩
-  · rintro ⟨g, rfl⟩
-    refine ⟨Subgroup.isCompact_conj_smul g isCompact_unitarySubgroup, fun L hL hle ↦ ?_⟩
-    rw [Subgroup.pointwise_smul_subset_iff] at hle
-    rw [← map_inv] at hle
-    rw [← eq_unitarySubgroup_of_isCompact_of_le (Subgroup.isCompact_conj_smul _ hL) hle, map_inv,
-      smul_inv_smul]
+      ∃ g : GL ι 𝕜, K = MulAut.conj g • unitarySubgroup (GL ι 𝕜) :=
+  Subgroup.maximal_isCompact_iff_exists_eq_conj_smul
+    ⟨isCompact_unitarySubgroup, fun _ hL hle ↦ (eq_unitarySubgroup_of_isCompact_of_le hL hle).le⟩
+    fun _ ↦ exists_conj_smul_le_unitarySubgroup
 
 end Matrix.GeneralLinearGroup

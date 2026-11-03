@@ -189,7 +189,7 @@ private theorem sub_checkerboardSpinor_mem_iff {x : Fin n → ℚ}
     (hx : ∀ i, x i = 1 / 2 ∨ x i = -(1 / 2)) :
     x - checkerboardSpinor n ∈ checkerboardCarrier n ↔ Even #{i | x i = -(1 / 2)} := by
   rw [mem_checkerboardCarrier_iff_even_sum _ (sub_checkerboardSpinor_eq hx), Finset.sum_neg_distrib,
-    even_neg, Finset.sum_boole, Int.even_coe_nat]
+    even_neg, Finset.sum_boole, Int.even_natCast]
 
 /-- A `±1/2` vector lies in the cospinor coset exactly when it has an odd number of negative
 coordinates. -/
@@ -206,7 +206,7 @@ private theorem sub_checkerboardCospinor_mem_iff [NeZero n] {x : Fin n → ℚ}
     linarith
   rw [mem_checkerboardCarrier_iff_even_sum _ hcoord, Finset.sum_add_distrib,
     Finset.sum_neg_distrib, Fintype.sum_ite_eq',
-    Finset.sum_boole, even_add_one, odd_neg, Int.odd_coe_nat]
+    Finset.sum_boole, even_add_one, odd_neg, Int.odd_natCast]
 
 /-- **Vectors of the spinor coset have norm at least `n / 4`.** -/
 theorem div_four_le_checkerboardLattice_form_self_of_sub_checkerboardSpinor_mem

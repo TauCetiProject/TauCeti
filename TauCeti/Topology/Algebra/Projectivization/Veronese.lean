@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Complex.Basic
 public import TauCeti.LinearAlgebra.Projectivization.Veronese
 public import TauCeti.Topology.Algebra.Projectivization
 
@@ -18,6 +19,13 @@ Over `ℝ` or `ℂ` projective space is compact and Hausdorff, so the Veronese m
 being injective, is a closed embedding: it identifies `ℙ 𝕜 (Fin N → 𝕜)` with its image, a closed
 subset of the target projective space.
 
+Over `ℂ` its image is the common zero locus of the quadratic binomials `y_α y_β - y_γ y_δ` with
+`α + β = γ + δ` (`Projectivization.range_veronese`). The Veronese map is therefore a homeomorphism
+`Projectivization.veroneseHomeomorph` from `ℙ ℂ (Fin N → ℂ)` onto this zero locus with its
+subspace topology. Through it, statements about the linear sections of the zero locus transport
+to statements about the degree-`d` hypersurfaces of `ℙ ℂ (Fin N → ℂ)`
+(`Projectivization.preimage_veronese_complexProjectiveZeroLocus_veroneseLinearForm`).
+
 ## Main results
 
 * `TauCeti.continuous_veroneseMonomials`: the vector of monomials of degree `d` depends
@@ -27,6 +35,8 @@ subset of the target projective space.
   degree is a closed embedding.
 * `Projectivization.isClosedEmbedding_map_comp_veronese`: the same holds for the Veronese map read
   through an injective linear map into another space of homogeneous coordinates.
+* `Projectivization.veroneseHomeomorph`: over `ℂ`, the Veronese map of positive degree as a
+  homeomorphism onto the common zero locus of the quadratic binomials.
 
 ## References
 
@@ -77,5 +87,31 @@ theorem isClosedEmbedding_map_comp_veronese {𝕜 : Type*} [RCLike 𝕜] {M d : 
     Topology.IsClosedEmbedding (map f hf ∘ veronese 𝕜 d) :=
   ((continuous_map hf (LinearMap.continuous_on_pi f)).comp
     (continuous_veronese d)).isClosedEmbedding ((map_injective f hf).comp (veronese_injective hd))
+
+/-- Over `ℂ`, the Veronese map of positive degree is a homeomorphism from `ℙ ℂ (Fin N → ℂ)` onto
+the common zero locus of the quadratic binomials `y_α y_β - y_γ y_δ` with `α + β = γ + δ`. -/
+noncomputable def veroneseHomeomorph {d : ℕ} (hd : d ≠ 0) :
+    ℙ ℂ (Fin N → ℂ) ≃ₜ complexProjectiveZeroLocus (veroneseRelation ℂ N d) :=
+  (isClosedEmbedding_veronese hd).isEmbedding.toHomeomorph.trans
+    (Homeomorph.setCongr (range_veronese hd))
+
+@[simp]
+theorem coe_veroneseHomeomorph_apply {d : ℕ} (hd : d ≠ 0) (x : ℙ ℂ (Fin N → ℂ)) :
+    (veroneseHomeomorph hd x : ℙ ℂ (Fin (veroneseDim N d) → ℂ)) = veronese ℂ d x :=
+  (rfl)
+
+/-- The Veronese map undoes the inverse of `veroneseHomeomorph`. -/
+@[simp]
+theorem veronese_veroneseHomeomorph_symm_apply {d : ℕ} (hd : d ≠ 0)
+    (y : complexProjectiveZeroLocus (veroneseRelation ℂ N d)) :
+    veronese ℂ d ((veroneseHomeomorph hd).symm y) = y := by
+  rw [← coe_veroneseHomeomorph_apply hd, Homeomorph.apply_symm_apply]
+
+/-- The inverse of `veroneseHomeomorph` recovers a point from its image under the Veronese map. -/
+@[simp]
+theorem veroneseHomeomorph_symm_apply_veronese {d : ℕ} (hd : d ≠ 0) (x : ℙ ℂ (Fin N → ℂ))
+    (hx : veronese ℂ d x ∈ complexProjectiveZeroLocus (veroneseRelation ℂ N d)) :
+    (veroneseHomeomorph hd).symm ⟨veronese ℂ d x, hx⟩ = x :=
+  (veroneseHomeomorph hd).symm_apply_eq.2 rfl
 
 end Projectivization
