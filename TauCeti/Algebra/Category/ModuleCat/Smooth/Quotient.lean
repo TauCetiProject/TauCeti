@@ -8,6 +8,8 @@ module
 public import TauCeti.Algebra.Category.ModuleCat.Smooth.Basic
 public import Mathlib.Algebra.Module.Torsion.Basic
 public import TauCeti.Topology.Algebra.Ring.TwoSidedIdeal
+public import TauCeti.Algebra.Category.ModuleCat.Twist
+public import TauCeti.CategoryTheory.Monoidal.Action.LinearFunctor
 
 /-!
 # Discrete modules over quotient rings
@@ -20,6 +22,15 @@ comparison: continuity descends because the quotient projection is a quotient ma
 The inverse uses Mathlib's `Module.IsTorsionBySet.module`; both functors keep the
 underlying abelian groups and maps. This comparison allows central-character
 conditions to be presented by quotient algebras.
+
+The comparison is equivariant for twisting by ring automorphisms. If a monoid `H` acts on `A`
+by automorphisms preserving `I` with continuous inverses, the action descends to `A ⧸ I`
+(`MonoidHom.quotientRingAut`), both sides carry twisting actions
+(`Ideal.discreteQuotientMonoidalLeftAction`, `Ideal.discreteAnnihilatedMonoidalLeftAction`), and
+both functors of `Ideal.discreteQuotientEquivalence` are left-linear for them
+(`Ideal.leftLinearDiscreteQuotientEquivalenceFunctor`,
+`Ideal.leftLinearDiscreteQuotientEquivalenceInverse`). The lineators of the restriction functor
+are identity maps of the underlying modules.
 
 ## References
 
@@ -65,6 +76,8 @@ theorem discreteModules_restrictScalars_quotient_iff (M : ModuleCat.{v} (A ⧸ I
       (s := {a : A ⧸ I | a • m = x})
 
 /-- Restriction of discrete quotient modules to modules annihilated by `I`. -/
+-- Exposed so that the underlying modules are available in the lineator formulas below.
+@[expose]
 def discreteQuotientRestriction : (discreteModules.{v} (A ⧸ I)).FullSubcategory ⥤
     (discreteAnnihilatedModules.{v} I).FullSubcategory :=
   (discreteAnnihilatedModules I).lift
@@ -262,6 +275,8 @@ theorem discreteQuotientRestrictionDescentIso_inv_app_forget
         eqToHom (discreteQuotientRestrictionDescent_obj_forget I M).symm := (rfl)
 
 /-- Discrete quotient modules are equivalent to discrete modules annihilated by the ideal. -/
+-- Exposed so that the underlying modules are available in the lineator formulas below.
+@[expose]
 def discreteQuotientEquivalence : (discreteModules.{v} (A ⧸ I)).FullSubcategory ≌
     (discreteAnnihilatedModules.{v} I).FullSubcategory where
   functor := discreteQuotientRestriction I
@@ -294,5 +309,116 @@ theorem discreteQuotientEquivalence_counitIso :
       eqToIso (by rw [discreteQuotientEquivalence_functor,
         discreteQuotientEquivalence_inverse]) ≪≫ discreteQuotientDescentRestrictionIso I := by
   rfl
+
+section Twist
+
+open MonoidalCategory MonoidalLeftAction Functor.LaxLeftLinear Functor.OplaxLeftLinear
+
+variable {H : Type*} [Monoid H] (a : H →* RingAut A) (hI : ∀ h, I.map (a h : A →+* A) = I)
+  (ha : ∀ h, Continuous (a h).symm)
+
+omit [I.IsTwoSided] in
+include hI ha in
+/-- Twisting by automorphisms that preserve `I` and have continuous inverses preserves the discrete
+modules annihilated by `I`. -/
+lemma isStableUnderLeftAction_discreteAnnihilatedModules :
+    letI := a.restrictScalarsMonoidalLeftAction.{v}
+    (discreteAnnihilatedModules.{v} I).IsStableUnderLeftAction (Discrete H) :=
+  MonoidHom.isStableUnderLeftAction_restrictScalarsMonoidalLeftAction_iff.2 fun h M hM => by
+    rw [discreteAnnihilatedModules_iff] at hM ⊢
+    refine ⟨discreteModules_restrictScalars (ha h) hM.1, fun m x => ?_⟩
+    have hx : (x : A) ∈ I.comap (a h).symm := by
+      rw [← Ideal.map_comap_of_equiv, hI h]
+      exact x.2
+    exact (ModuleCat.restrictScalars.smul_def _ _ m).trans (@hM.2 m ⟨_, hx⟩)
+
+/-- The twisting action of `H` on the discrete `A`-modules annihilated by `I`: the element `h`
+acts by restriction of scalars along `(a h)⁻¹`. -/
+-- Exposed so that the action is definitionally the restriction of the twisting action on all
+-- modules, as needed to compare it with the twisting action on other full subcategories.
+@[expose, instance_reducible]
+noncomputable def discreteAnnihilatedMonoidalLeftAction :
+    MonoidalLeftAction (Discrete H) (discreteAnnihilatedModules.{v} I).FullSubcategory :=
+  letI := a.restrictScalarsMonoidalLeftAction.{v}
+  letI := I.isStableUnderLeftAction_discreteAnnihilatedModules a hI ha
+  inferInstance
+
+/-- The twisting action of `H` on the discrete `A ⧸ I`-modules, through the automorphisms
+`a.quotientRingAut I hI` of `A ⧸ I` induced by `a`. -/
+-- Exposed so that the action is definitionally the restriction of the twisting action on all
+-- `A ⧸ I`-modules, as needed to compare it with other actions.
+@[expose, instance_reducible]
+noncomputable def discreteQuotientMonoidalLeftAction :
+    MonoidalLeftAction (Discrete H) (discreteModules.{v} (A ⧸ I)).FullSubcategory :=
+  letI := (a.quotientRingAut I hI).restrictScalarsMonoidalLeftAction.{v}
+  letI := (a.quotientRingAut I hI).isStableUnderLeftAction_discreteModules.{v}
+    fun h => a.continuous_quotientRingAut_symm I hI (ha h)
+  inferInstance
+
+/-- The quotient presentation `discreteQuotientEquivalence I` is equivariant: restricting the
+scalars of a discrete `A ⧸ I`-module along the quotient map commutes with the twisting actions of
+`H` on `A ⧸ I` and on `A`. Both twists of a module `M` are restriction of scalars along
+`Ideal.Quotient.mk I ∘ (a h)⁻¹`, and the lineators are identity maps of `M`. -/
+@[instance_reducible]
+noncomputable def leftLinearDiscreteQuotientEquivalenceFunctor :
+    letI := I.discreteQuotientMonoidalLeftAction.{v} a hI ha
+    letI := I.discreteAnnihilatedMonoidalLeftAction.{v} a hI ha
+    (discreteQuotientEquivalence.{v} I).functor.LeftLinear (Discrete H) :=
+  letI := a.restrictScalarsMonoidalLeftAction.{v}
+  letI := (a.quotientRingAut I hI).restrictScalarsMonoidalLeftAction.{v}
+  letI := (a.quotientRingAut I hI).isStableUnderLeftAction_discreteModules.{v}
+    fun h => a.continuous_quotientRingAut_symm I hI (ha h)
+  letI := I.isStableUnderLeftAction_discreteAnnihilatedModules.{v} a hI ha
+  letI := (Ideal.Quotient.mk I).leftLinearRestrictScalars.{v}
+    fun h x => (a.quotientRingAut_apply_mk I hI h x).symm
+  inferInstanceAs (((discreteAnnihilatedModules I).lift
+    ((discreteModules (A ⧸ I)).ι ⋙ ModuleCat.restrictScalars (Ideal.Quotient.mk I)) _).LeftLinear
+      (Discrete H))
+
+/-- The lineators of the quotient presentation are identity maps of the underlying modules. -/
+lemma leftLinearDiscreteQuotientEquivalenceFunctor_μₗ_hom_apply (c : Discrete H)
+    (M : (discreteModules.{v} (A ⧸ I)).FullSubcategory) (x : M.obj) :
+    letI := I.discreteQuotientMonoidalLeftAction.{v} a hI ha
+    letI := I.discreteAnnihilatedMonoidalLeftAction.{v} a hI ha
+    letI := I.leftLinearDiscreteQuotientEquivalenceFunctor.{v} a hI ha
+    (μₗ (discreteQuotientEquivalence.{v} I).functor c M).hom x = x :=
+  -- By definition the functor is `lift` of `ι ⋙ ModuleCat.restrictScalars (Ideal.Quotient.mk I)`,
+  -- and its structure is `ObjectProperty.laxLeftLinearLift` of the composite of `ι` (identity
+  -- lineators, `ObjectProperty.ι_μₗ`) with `RingHom.leftLinearRestrictScalars`. Simp cannot
+  -- rewrite with `ObjectProperty.lift_μₗ_hom` through the private body of this structure, so
+  -- the ring-level formula closes the goal up to that unfolding.
+  (Ideal.Quotient.mk I).leftLinearRestrictScalars_μₗ_apply (a := a) (b := a.quotientRingAut I hI)
+    (fun h x => (a.quotientRingAut_apply_mk I hI h x).symm) c M.obj x
+
+/-- The inverse lineators of the quotient presentation are identity maps of the underlying
+modules. -/
+lemma leftLinearDiscreteQuotientEquivalenceFunctor_δₗ_hom_apply (c : Discrete H)
+    (M : (discreteModules.{v} (A ⧸ I)).FullSubcategory) (x : M.obj) :
+    letI := I.discreteQuotientMonoidalLeftAction.{v} a hI ha
+    letI := I.discreteAnnihilatedMonoidalLeftAction.{v} a hI ha
+    letI := I.leftLinearDiscreteQuotientEquivalenceFunctor.{v} a hI ha
+    (δₗ (discreteQuotientEquivalence.{v} I).functor c M).hom x = x :=
+  -- By definition the functor is `lift` of `ι ⋙ ModuleCat.restrictScalars (Ideal.Quotient.mk I)`,
+  -- and its structure is `ObjectProperty.oplaxLeftLinearLift` of the composite of `ι` (identity
+  -- lineators, `ObjectProperty.ι_δₗ`) with `RingHom.leftLinearRestrictScalars`. Simp cannot
+  -- rewrite with `ObjectProperty.lift_δₗ_hom` through the private body of this structure, so
+  -- the ring-level formula closes the goal up to that unfolding.
+  (Ideal.Quotient.mk I).leftLinearRestrictScalars_δₗ_apply (a := a) (b := a.quotientRingAut I hI)
+    (fun h x => (a.quotientRingAut_apply_mk I hI h x).symm) c M.obj x
+
+/-- Descent of discrete modules annihilated by `I` to `A ⧸ I`-modules is equivariant for the
+twisting actions, as the inverse of the equivariant equivalence `discreteQuotientEquivalence I`.
+-/
+@[instance_reducible]
+noncomputable def leftLinearDiscreteQuotientEquivalenceInverse :
+    letI := I.discreteQuotientMonoidalLeftAction.{v} a hI ha
+    letI := I.discreteAnnihilatedMonoidalLeftAction.{v} a hI ha
+    (discreteQuotientEquivalence.{v} I).inverse.LeftLinear (Discrete H) :=
+  letI := I.discreteQuotientMonoidalLeftAction.{v} a hI ha
+  letI := I.discreteAnnihilatedMonoidalLeftAction.{v} a hI ha
+  letI := I.leftLinearDiscreteQuotientEquivalenceFunctor.{v} a hI ha
+  (discreteQuotientEquivalence I).inverseLeftLinear (Discrete H)
+
+end Twist
 
 end Ideal
