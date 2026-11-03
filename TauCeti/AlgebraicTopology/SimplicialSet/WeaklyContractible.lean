@@ -8,7 +8,9 @@ module
 public import Mathlib.AlgebraicTopology.SimplicialSet.AnodyneExtensions.PushoutProduct
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homotopy
 public import Mathlib.AlgebraicTopology.SimplicialSet.Nonempty
+public import Mathlib.CategoryTheory.SingleObj
 public import TauCeti.AlgebraicTopology.SimplicialSet.Discrete
+public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.Groupoid
 public import TauCeti.AlgebraicTopology.SimplicialSet.PiZero
 public import TauCeti.AlgebraicTopology.SimplicialSet.StdSimplex
 public import TauCeti.CategoryTheory.Monoidal.Closed.Cartesian
@@ -29,6 +31,12 @@ vertex when `K` is empty, while the empty simplicial set is a Kan complex withou
 map from it to a Kan complex is homotopic to a constant map, and testing this against its map to
 the discrete simplicial set on its connected components shows that it is connected.
 
+Connectedness does not suffice: the boundary `∂Δ[2]` is connected, but the map from it to the
+nerve of the group `ℤ`, viewed as a category with one object, which sends the edges `0 → 1` and
+`1 → 2` to `0` and the edge `0 → 2` to `1` is not homotopic to a constant map. Indeed, a homotopy
+from a constant map to a map `φ` into the nerve of a group assigns to each vertex `k` an element
+`w k` with `w b = φ (a → b) * w a` for every edge, forcing `φ (0 → 2) = φ (1 → 2) * φ (0 → 1)`.
+
 The comparison with the weak equivalences of
 `TauCeti/AlgebraicTopology/SimplicialSet/WeakEquivalence.lean`, namely that `K` is weakly
 contractible exactly when `K ⟶ Δ[0]` is a weak homotopy equivalence, needs the homotopy theory
@@ -47,6 +55,8 @@ of the Kan–Quillen model structure and is not proved here.
 * `SSet.IsWeaklyContractible.exists_homotopy_const`: maps to Kan complexes are homotopic to
   constant maps.
 * `SSet.IsWeaklyContractible.isConnected`: weakly contractible simplicial sets are connected.
+* `SSet.not_isWeaklyContractible_boundary_two`: the connected simplicial set `∂Δ[2]` is not
+  weakly contractible.
 
 ## References
 
@@ -236,5 +246,132 @@ instance isConnected : K.IsConnected where
     simpa [mapπ₀_mk, toπ₀_app_zero] using this.symm
 
 end IsWeaklyContractible
+
+section Boundary
+
+/-! ### The boundary of the `2`-simplex is not weakly contractible -/
+
+variable {G : Type u} [Group G]
+
+/-- The element of `G` assigned to the edge from `a` to `b` of `∂Δ[2]` by the map `boundaryLoop g`:
+`g` on the edge from `0` to `2`, and `1` on all other edges. -/
+private def loopCocycle (g : G) (a b : Fin 3) : G := if a = 0 ∧ b = 2 then g else 1
+
+private lemma loopCocycle_comp (g : G) {a b c : Fin 3} (hab : a ≤ b) (hbc : b ≤ c)
+    (h : ¬ (a = 0 ∧ b = 1 ∧ c = 2)) :
+    loopCocycle g a c = loopCocycle g b c * loopCocycle g a b := by
+  unfold loopCocycle
+  fin_cases a <;> fin_cases b <;> fin_cases c <;> simp_all
+
+/-- The map from `∂Δ[2]` to the nerve of `G`, viewed as a category with one object, sending the
+edge from `0` to `2` to `g` and the other edges to `1`. A simplex of `∂Δ[2]` misses a vertex, so
+it never contains all three edges at once. -/
+private noncomputable def boundaryLoop (g : G) : (∂Δ[2] : SSet.{u}) ⟶ nerve (SingleObj G) where
+  app n := ↾fun s ↦
+    { obj _ := SingleObj.star G
+      map {a b} _ := loopCocycle g (stdSimplex.asOrderHom s.1 a) (stdSimplex.asOrderHom s.1 b)
+      map_id a := by
+        rw [SingleObj.id_as_one, loopCocycle, ite_eq_right_iff]
+        rintro ⟨h₀, h₂⟩
+        exact absurd (h₀.symm.trans h₂) (by decide)
+      map_comp {a b c} hab hbc := by
+        rw [SingleObj.comp_as_mul]
+        refine loopCocycle_comp g ((stdSimplex.asOrderHom s.1).monotone (leOfHom hab))
+          ((stdSimplex.asOrderHom s.1).monotone (leOfHom hbc)) ?_
+        rintro ⟨ha, hb, hc⟩
+        apply s.2
+        intro k
+        fin_cases k
+        exacts [⟨a, ha⟩, ⟨b, hb⟩, ⟨c, hc⟩] }
+  -- The value on a simplex only depends on its vertices, so it commutes with reindexing.
+  naturality n m θ := by
+    ext s
+    exact CategoryTheory.Functor.ext (fun _ ↦ rfl)
+      (fun _ _ _ ↦ by simp only [eqToHom_refl, Category.id_comp, Category.comp_id]; rfl)
+
+/-- The element of `G` represented by an edge of the nerve of `G`. -/
+private abbrev edgeHom (x : (nerve (SingleObj G)) _⦋1⦌) : G := x.hom
+
+/-- In the nerve of `G`, the long edge of a `2`-simplex is the product of its two short edges. -/
+private lemma edgeHom_app_δ_one {K : SSet.{u}} (h : K ⟶ nerve (SingleObj G)) (x : K _⦋2⦌) :
+    edgeHom (h.app _ (K.δ 1 x)) = edgeHom (h.app _ (K.δ 0 x)) * edgeHom (h.app _ (K.δ 2 x)) := by
+  simp only [δ_naturality_apply]
+  obtain ⟨_, _, _, a, b, hx⟩ := ComposableArrows.mk₂_surjective (h.app _ x)
+  rw [hx, nerve.δ₁_mk₂_eq, nerve.δ₀_mk₂_eq, nerve.δ₂_mk₂_eq]
+  exact SingleObj.comp_as_mul _ a b
+
+/-- The edges of a constant map into the nerve of `G` represent `1`. -/
+private lemma edgeHom_const_app {K : SSet.{u}} (z : (nerve (SingleObj G)) _⦋0⦌) (x : K _⦋1⦌) :
+    edgeHom ((const z : K ⟶ _).app _ x) = 1 :=
+  (congrArg z.map (Subsingleton.elim _ _)).trans (z.map_id 0)
+
+/-- The edge `{v} × Δ[1]` of `K ⊗ Δ[1]` over a vertex `v` of `K`. -/
+private noncomputable abbrev verticalEdge {K : SSet.{u}} (v : K _⦋0⦌) : (K ⊗ Δ[1]) _⦋1⦌ :=
+  (K.σ 0 v, stdSimplex.edge 1 0 1 (by decide))
+
+/-- Let `h` be a homotopy from a constant map to `φ`, with values in the nerve of `G`. Over an edge
+`e` of `K` from `x₀ = K.δ 1 e` to `x₁ = K.δ 0 e`, the square `e × Δ[1]` is the union of two
+triangles with a common diagonal, which shows that the vertical edges over the endpoints of `e`
+satisfy `h ({x₁} × Δ[1]) = φ e * h ({x₀} × Δ[1])`. -/
+private lemma edgeHom_homotopy {K : SSet.{u}} {φ : K ⟶ nerve (SingleObj G)}
+    {z : (nerve (SingleObj G)) _⦋0⦌} (h : K ⊗ Δ[1] ⟶ nerve (SingleObj G))
+    (h₀ : ι₀ ≫ h = const z) (h₁ : ι₁ ≫ h = φ) (e : K _⦋1⦌) :
+    edgeHom (h.app _ (verticalEdge (K.δ 0 e))) =
+      edgeHom (φ.app _ e) * edgeHom (h.app _ (verticalEdge (K.δ 1 e))) := by
+  let y : Δ[1] _⦋1⦌ := stdSimplex.edge 1 0 1 (by decide)
+  -- The triangles with vertices `(x₀, 0), (x₁, 0), (x₁, 1)` and `(x₀, 0), (x₀, 1), (x₁, 1)`.
+  let P : (K ⊗ Δ[1]) _⦋2⦌ := (K.σ 1 e, Δ[1].σ 0 y)
+  let Q : (K ⊗ Δ[1]) _⦋2⦌ := (K.σ 0 e, Δ[1].σ 1 y)
+  have hP := edgeHom_app_δ_one h P
+  have hQ := edgeHom_app_δ_one h Q
+  -- `(ι₀ ≫ h).app _ e` is `h.app _ (ι₀.app _ e)` by definition of composition.
+  have hb : h.app _ (ι₀.app _ e) = (const z : K ⟶ _).app _ e := by rw [← h₀]; rfl
+  have ht : h.app _ (ι₁.app _ e) = φ.app _ e := by rw [← h₁]; rfl
+  have hPQ : (K ⊗ Δ[1]).δ 1 P = (K ⊗ Δ[1]).δ 1 Q :=
+    Prod.ext ((δ_comp_σ_self_apply 1 e).trans (δ_comp_σ_succ_apply 0 e).symm)
+      ((δ_comp_σ_succ_apply 0 y).trans (δ_comp_σ_self_apply 1 y).symm)
+  have hP₀ : (K ⊗ Δ[1]).δ 0 P = verticalEdge (K.δ 0 e) :=
+    Prod.ext (δ_comp_σ_of_le_apply (i := 0) (j := 0) le_rfl e) (δ_comp_σ_self_apply 0 y)
+  have hP₂ : (K ⊗ Δ[1]).δ 2 P = ι₀.app _ e :=
+    Prod.ext (δ_comp_σ_succ_apply 1 e) (stdSimplex.ext _ _ fun i ↦ by fin_cases i <;> rfl)
+  have hQ₀ : (K ⊗ Δ[1]).δ 0 Q = ι₁.app _ e :=
+    Prod.ext (δ_comp_σ_self_apply 0 e) (stdSimplex.ext _ _ fun i ↦ by fin_cases i <;> rfl)
+  have hQ₂ : (K ⊗ Δ[1]).δ 2 Q = verticalEdge (K.δ 1 e) :=
+    Prod.ext (δ_comp_σ_of_gt_apply (i := 1) (j := 0) (by decide) e) (δ_comp_σ_succ_apply 1 y)
+  rw [hPQ, hP₀, hP₂, hb, edgeHom_const_app, mul_one] at hP
+  rw [hQ₀, hQ₂, ht] at hQ
+  rw [← hP, hQ]
+
+/-- The boundary `∂Δ[2]` is connected (`SSet.boundary.isConnected`) but not weakly contractible:
+its map to the nerve of `ℤ` sending the edge from `0` to `2` to `1` and the other edges to `0` is
+not homotopic to a constant map. -/
+theorem not_isWeaklyContractible_boundary_two : ¬ IsWeaklyContractible (∂Δ[2] : SSet.{u}) := by
+  intro hK
+  let g : Multiplicative (ULift.{u} ℤ) := Multiplicative.ofAdd (ULift.up 1)
+  obtain ⟨z, ⟨H⟩⟩ := hK.exists_homotopy_const (boundaryLoop g)
+  obtain ⟨h, h₀, h₁⟩ : ∃ h, ι₀ ≫ h = const z ∧ ι₁ ≫ h = boundaryLoop g := ⟨H.h, H.h₀, H.h₁⟩
+  -- The edge of `∂Δ[2]` from `a` to `b`.
+  let e (a b : Fin 3) (hab : a ≤ b) : (∂Δ[2] : SSet.{u}) _⦋1⦌ :=
+    ⟨stdSimplex.edge 2 a b hab, by simp [boundary_obj_eq_univ]⟩
+  have h₀₁ := edgeHom_homotopy h h₀ h₁ (e 0 1 (by decide))
+  have h₁₂ := edgeHom_homotopy h h₀ h₁ (e 1 2 (by decide))
+  have h₀₂ := edgeHom_homotopy h h₀ h₁ (e 0 2 (by decide))
+  -- The three edges share their endpoints, and the values of `boundaryLoop g` on them are `1`,
+  -- `1` and `g`, by evaluating `loopCocycle` on their vertices.
+  have v₀ : (∂Δ[2] : SSet.{u}).δ 1 (e 0 1 (by decide)) =
+      (∂Δ[2] : SSet.{u}).δ 1 (e 0 2 (by decide)) := by decide
+  have v₁ : (∂Δ[2] : SSet.{u}).δ 0 (e 0 1 (by decide)) =
+      (∂Δ[2] : SSet.{u}).δ 1 (e 1 2 (by decide)) := by decide
+  have v₂ : (∂Δ[2] : SSet.{u}).δ 0 (e 1 2 (by decide)) =
+      (∂Δ[2] : SSet.{u}).δ 0 (e 0 2 (by decide)) := by decide
+  have c₀₁ : edgeHom ((boundaryLoop g).app _ (e 0 1 (by decide))) = 1 := rfl
+  have c₁₂ : edgeHom ((boundaryLoop g).app _ (e 1 2 (by decide))) = 1 := rfl
+  have c₀₂ : edgeHom ((boundaryLoop g).app _ (e 0 2 (by decide))) = g := rfl
+  rw [v₀, v₁, c₀₁, one_mul] at h₀₁
+  rw [v₂, c₁₂, one_mul] at h₁₂
+  rw [c₀₂, h₁₂, h₀₁] at h₀₂
+  exact absurd (mul_eq_right.1 h₀₂.symm) (by decide)
+
+end Boundary
 
 end SSet
