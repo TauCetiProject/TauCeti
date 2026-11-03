@@ -140,6 +140,30 @@ theorem mapL_comp (f₂ : E' →L[𝕜] E'') (f₁ : E →L[𝕜] E') (g₂ : F'
     mapL (f₂ ∘L f₁) (g₂ ∘L g₁) = mapL f₂ g₂ ∘L mapL f₁ g₁ :=
   continuousLinearMap_ext fun _ _ ↦ by simp
 
+/-- The induced operator is additive in the left operator. -/
+theorem mapL_add_left (f₁ f₂ : E →L[𝕜] E') (g : F →L[𝕜] F') :
+    mapL (f₁ + f₂) g = mapL f₁ g + mapL f₂ g :=
+  continuousLinearMap_ext fun _ _ ↦ by
+    simp [TensorProduct.add_tmul, ProjectiveTensor.mk_add, Completion.coe_add]
+
+/-- The induced operator is additive in the right operator. -/
+theorem mapL_add_right (f : E →L[𝕜] E') (g₁ g₂ : F →L[𝕜] F') :
+    mapL f (g₁ + g₂) = mapL f g₁ + mapL f g₂ :=
+  continuousLinearMap_ext fun _ _ ↦ by
+    simp [TensorProduct.tmul_add, ProjectiveTensor.mk_add, Completion.coe_add]
+
+/-- The induced operator is homogeneous in the left operator. -/
+theorem mapL_smul_left (a : 𝕜) (f : E →L[𝕜] E') (g : F →L[𝕜] F') :
+    mapL (a • f) g = a • mapL f g :=
+  continuousLinearMap_ext fun _ _ ↦ by
+    simp [← TensorProduct.smul_tmul', ProjectiveTensor.mk_smul, Completion.coe_smul]
+
+/-- The induced operator is homogeneous in the right operator. -/
+theorem mapL_smul_right (a : 𝕜) (f : E →L[𝕜] E') (g : F →L[𝕜] F') :
+    mapL f (a • g) = a • mapL f g :=
+  continuousLinearMap_ext fun _ _ ↦ by
+    simp [TensorProduct.tmul_smul, ProjectiveTensor.mk_smul, Completion.coe_smul]
+
 variable (𝕜 E F) in
 /-- The contraction from the completed projective to the completed injective tensor product: the
 extension of the identity of the underlying algebraic tensors. -/

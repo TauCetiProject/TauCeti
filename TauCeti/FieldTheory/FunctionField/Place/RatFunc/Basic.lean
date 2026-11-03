@@ -129,7 +129,7 @@ theorem valuation_infty_apply {f : RatFunc k} (hf : f ≠ 0) :
     (infty k).valuation f = WithZero.exp f.intDegree := by
   classical
   rw [valuation_infty, RatFunc.inftyValuation_apply,
-    RatFunc.inftyValuation_of_nonzero (F := k) hf]
+    RatFunc.inftyValuation_of_ne_zero (F := k) hf]
 
 /-- The order function of the place at infinity is minus the degree. The junk values
 `ord_∞ 0 = 0` and `RatFunc.intDegree 0 = 0` match, so no nonvanishing hypothesis is needed. -/

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.ZLattice.RationalModel
-public import TauCeti.Analysis.SpecialFunctions.Complex.Circle
+public import TauCeti.Analysis.SpecialFunctions.Complex.Circle.Basic
 
 /-!
 # Complex characters of the discriminant pairing
