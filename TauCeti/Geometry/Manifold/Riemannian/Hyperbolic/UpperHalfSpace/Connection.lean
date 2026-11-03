@@ -12,7 +12,7 @@ import TauCeti.Geometry.Manifold.VectorField.LieBracket
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import all TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.UpperHalfSpace.Basic
-import all TauCeti.Geometry.Manifold.VectorBundle.Tangent
+import all TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
 # The Levi-Civita connection in the upper half-space

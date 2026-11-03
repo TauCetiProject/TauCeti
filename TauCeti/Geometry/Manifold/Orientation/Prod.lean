@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Orientation.Basic
 public import TauCeti.LinearAlgebra.Orientation.Prod
-public import TauCeti.Geometry.Manifold.VectorBundle.Tangent
+public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
 # Orientability of product manifolds
