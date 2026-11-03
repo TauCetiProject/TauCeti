@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.Huber.AdicHom.Basic
 public import TauCeti.RingTheory.Huber.Normed
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Complete
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.UnitWeight
@@ -33,6 +34,8 @@ norms of multiplicative units of `R` are not reached by such singleton weights.
 
 Over a nontrivially normed field the Gauss-normed algebra is itself a Tate ring, at any positive
 polyradii: a constant of norm strictly between `0` and `1` is a pseudouniformiser.
+For an ultrametric normed algebra `A` over such a field, the structure map `A → A⟨X⟩ ⧸ I` to a
+quotient of the unit-radius algebra is then adic for the quotient topology.
 
 The normed series are Mathlib's `MvPowerSeries.IsRestricted.subring`, with the Gauss norm
 constructed using William Coram's `MvPowerSeries.gaussNorm` infrastructure; no second series
@@ -55,6 +58,9 @@ type or norm is introduced here.
   directions.
 * `TauCeti.Huber.IsTateRing.isRestricted_subring`: over a nontrivially normed field with an
   ultrametric norm, the Gauss-normed algebra of restricted series is a Tate ring.
+* `TauCeti.MvPowerSeries.isAdicHom_algebraMap_isRestrictedSubring_quotient`: for an ultrametric
+  normed algebra `A` over a nontrivially normed field, the structure map `A → A⟨X⟩ ⧸ I` is adic
+  for the quotient topology.
 
 ## References
 
@@ -388,3 +394,27 @@ instance IsTateRing.isRestricted_subring :
 end Tate
 
 end TauCeti.Huber
+
+namespace TauCeti.MvPowerSeries
+
+open _root_.MvPowerSeries TauCeti.Huber
+
+variable (K : Type*) [NontriviallyNormedField K] {A : Type*} [NormedCommRing A] [NormedAlgebra K A]
+  [IsUltrametricDist A] {m : ℕ}
+
+include K in
+/-- The structure map `A → A⟨X₁, …, Xₘ⟩ ⧸ I` is adic for the quotient topology. This supplies
+the adicness hypotheses under which `TauCeti.Huber.CompletedTensor` forms the completed tensor
+product of two such quotients over `A`. -/
+theorem isAdicHom_algebraMap_isRestrictedSubring_quotient
+    (I : Ideal (IsRestricted.subring (R := A) (fun _ : Fin m ↦ 1))) :
+    IsAdicHom (algebraMap A (IsRestricted.subring (R := A) (fun _ : Fin m ↦ 1) ⧸ I)) := by
+  have : IsTateRing A := IsTateRing.of_normedAlgebra K A
+  have : IsTateRing (IsRestricted.subring (R := A) (fun _ : Fin m ↦ 1)) :=
+    IsTateRing.of_normedAlgebra K _
+  rw [IsScalarTower.algebraMap_eq A (IsRestricted.subring (R := A) (fun _ : Fin m ↦ 1)),
+    Ideal.Quotient.algebraMap_eq]
+  exact (IsAdicHom.of_isOpenQuotientMap (QuotientRing.isOpenQuotientMap_mk _)).comp
+    (IsAdicHom.of_isTateRing isometry_algebraMap_isRestrictedSubring.continuous)
+
+end TauCeti.MvPowerSeries
