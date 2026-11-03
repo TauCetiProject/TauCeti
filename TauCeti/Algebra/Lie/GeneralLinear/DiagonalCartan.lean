@@ -444,7 +444,7 @@ theorem single_mem_rootSpace (i j : n) (c : R) :
   rw [LieAlgebra.rootSpace, LieModule.mem_genWeightSpace]
   refine fun A => ⟨1, ?_⟩
   simp only [pow_one, LinearMap.sub_apply, LieModule.toEnd_apply_apply, LinearMap.smul_apply,
-    Module.End.one_apply, LieSubalgebra.coe_bracket_of_module, glWeightSub_apply,
+    _root_.one_apply_eq_self, LieSubalgebra.coe_bracket_of_module, glWeightSub_apply,
     lie_single_of_mem_diagonalCartan A.2 i j c, sub_self]
 
 end TauCeti

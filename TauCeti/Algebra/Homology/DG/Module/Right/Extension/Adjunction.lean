@@ -90,7 +90,7 @@ noncomputable def toRestrictScalars (g : DGRightModuleHom (hM.extendScalars f) h
       rw [BalancedTensorProduct.smul_tmul_right, ← op_unop a, BalancedTensorProduct.balance]
       congr 1
       apply (Bimodule.of f.toGradedAlgHom.toAlgHom).symm.injective
-      simp
+      simp [Algebra.TensorProduct.smul_moduleLeft, Algebra.TensorProduct.smul_moduleRight]
     simp only [RingHom.id_apply, DGRightModule.RestrictScalars.val_smul_eq, h, map_smul,
       AlgHom.op_apply_apply, GradedAlgHom.coe_toAlgHom, DGAlgHom.coe_toGradedAlgHom]
   map_mem' {q m} hm := by
@@ -236,7 +236,7 @@ noncomputable def extendRestrictScalarsEquiv (hM : IsDGRightModule hA ℳ dM)
       BalancedTensorProduct.smul_tmul_right]
     congr 2
     apply (Bimodule.of f.toGradedAlgHom.toAlgHom).symm.injective
-    simp
+    simp [Algebra.TensorProduct.smul_moduleRight]
   right_inv φ := by
     ext m
     simp

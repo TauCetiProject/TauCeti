@@ -69,7 +69,7 @@ namespace NumberField.WorkedExamples
 /-- `X² + 5` is irreducible over `ℚ`: a monic quadratic with no rational root (a rational
 square is nonnegative, but `-5 < 0`). -/
 instance : Fact (Irreducible (X ^ 2 - C (-5 : ℚ))) := ⟨by
-  exact (X_pow_sub_C_irreducible_iff_of_prime Nat.prime_two).mpr
+  exact (irreducible_X_pow_sub_C_iff_of_prime Nat.prime_two).mpr
     (fun q hq => by nlinarith [sq_nonneg q])⟩
 
 /-- **The class-number bound on `ℚ(√-5)`.** The class number of `ℚ(√-5)`, modelled as
