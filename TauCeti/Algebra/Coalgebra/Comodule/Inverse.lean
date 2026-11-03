@@ -29,6 +29,8 @@ two comodules is a comodule morphism `TauCeti.Comodule.Hom.inverse f`.
 
 ## Main results
 
+* `TauCeti.Comodule.Hom.map_coact_of_comp_eq_id`: a two-sided linear inverse of a comodule
+  morphism commutes with the coactions.
 * `TauCeti.Comodule.Hom.ringInverse_comp_self` and `TauCeti.Comodule.Hom.comp_ringInverse`: it is
   a two-sided inverse of `f` when the underlying linear map of `f` is invertible.
 * `TauCeti.Comodule.Hom.ringInverse_of_not_isUnit`: it is zero otherwise.
@@ -57,7 +59,7 @@ variable {N : Type*} [AddCommMonoid N] [Module R N] [Comodule R C N]
 
 /-- A two-sided linear inverse `V` of a comodule morphism `f` again commutes with the coactions:
 `ρ ∘ V = (V ⊗ 1) ∘ ρ ∘ f ∘ V = (V ⊗ 1) ∘ (f ⊗ 1) ∘ ρ ∘ V = ρ ∘ V`. -/
-private theorem map_coact_of_comp_eq_id (f : Hom R C M N) {V : N →ₗ[R] M}
+theorem map_coact_of_comp_eq_id (f : Hom R C M N) {V : N →ₗ[R] M}
     (hVf : V ∘ₗ f.toLinearMap = LinearMap.id) (hfV : f.toLinearMap ∘ₗ V = LinearMap.id) :
     TensorProduct.map V LinearMap.id ∘ₗ coact (R := R) (C := C) (M := N) =
       coact (R := R) (C := C) (M := M) ∘ₗ V := by
