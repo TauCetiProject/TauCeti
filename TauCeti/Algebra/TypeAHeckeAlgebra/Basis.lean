@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 public import Mathlib.LinearAlgebra.FreeModule.Basic
 public import TauCeti.Algebra.TypeAHeckeAlgebra.ReducedWord
-public import TauCeti.GroupTheory.Coxeter.HeckeOperator
+public import TauCeti.GroupTheory.Coxeter.Hecke.Operator
 public import TauCeti.GroupTheory.Coxeter.Matrix
 
 /-!
@@ -93,6 +93,20 @@ simple reflection `s i`. -/
 theorem regularRep_T (i : Fin (n - 1)) :
     regularRep q cs (T q i) = cs.heckeLeftMul ((q : R) - ↑q⁻¹) i :=
   lift_T _ _ _ _ i
+
+/-- The regular representation commutes with every right regular Hecke operator. -/
+theorem commute_regularRep_heckeRightMul (x : TypeAHeckeAlgebra R q n)
+    (i : Fin (n - 1)) :
+    Commute (regularRep q cs x) (cs.heckeRightMul ((q : R) - ↑q⁻¹) i) := by
+  have hx : x ∈ Algebra.adjoin R (Set.range (T (n := n) q)) := by
+    rw [adjoin_range_T]; trivial
+  induction hx using Algebra.adjoin_induction with
+  | mem _ hx =>
+    obtain ⟨j, rfl⟩ := hx
+    simpa using cs.commute_heckeLeftMul_heckeRightMul ((q : R) - ↑q⁻¹) j i
+  | algebraMap r => simp only [AlgHom.commutes]; exact Algebra.commutes _ _
+  | add a b _ _ ha hb => simpa only [map_add] using ha.add_left hb
+  | mul a b _ _ ha hb => simpa only [map_mul] using ha.mul_left hb
 
 /-- In the regular representation, `T_w` takes the basis vector of `1` to that of `w`. -/
 @[simp]
