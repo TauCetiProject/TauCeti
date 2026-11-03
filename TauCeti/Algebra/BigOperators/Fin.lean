@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Intervals
+public import Mathlib.Data.Fintype.Pi
 public import TauCeti.Logic.Equiv.Fin.Basic
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
@@ -27,6 +28,8 @@ minors of a diagonal matrix with chained entries the smallest ones in divisibili
 A tuple is determined by its leading partial sums `∑_{j < k} a j`, and in a canonically ordered
 monoid each of them is at most the total. These are the facts about the dominance order of
 exponent vectors (compare leading partial sums) that triangular expansions in Hecke rings use.
+
+A product over the pairs `Fin 2 → α` is the double product over their two entries.
 -/
 
 public section
@@ -121,6 +124,18 @@ theorem prod_filter_succ_eq_of_prod_filter_eq {M : Type*} [CommMonoidWithZero M]
   · simpa only [hP, ↓reduceIte, one_mul] using h
 
 end Fin
+
+namespace Fintype
+
+/-- **A product over the pairs `Fin 2 → α`** is the double product over their two entries. -/
+@[to_additive /-- **A sum over the pairs `Fin 2 → α`** is the double sum over their two
+entries. -/]
+theorem prod_finTwoArrow {α M : Type*} [Fintype α] [CommMonoid M] (f : (Fin 2 → α) → M) :
+    ∏ w, f w = ∏ p, ∏ q, f ![p, q] := by
+  rw [← (finTwoArrowEquiv α).symm.prod_comp, Fintype.prod_prod_type]
+  rfl
+
+end Fintype
 
 namespace TauCeti
 
