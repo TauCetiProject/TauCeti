@@ -131,25 +131,15 @@ theorem ofReal_mem_slitPlane_union_zero {x : ℝ} (hx : 0 ≤ x) : (x : ℂ) ∈
   · exact Or.inr (by simp [← h])
   · exact Or.inl (ofReal_mem_slitPlane.mpr h)
 
+open scoped ComplexOrder in
 /-- A complex number lies in `slitPlane ∪ {0}` iff it does not lie on the open negative real
 half-axis: `0 ≤ z.re ∨ z.im ≠ 0`. This is the domain hypothesis of
 `Complex.continuousAt_cpow_const_of_re_pos`. -/
 theorem mem_slitPlane_union_zero_iff {z : ℂ} :
     z ∈ slitPlane ∪ {0} ↔ 0 ≤ z.re ∨ z.im ≠ 0 := by
-  rw [Set.mem_union, mem_slitPlane_iff, Set.mem_singleton_iff, Complex.ext_iff]
-  simp only [zero_re, zero_im]
-  constructor
-  · rintro ((h | h) | ⟨hre, _⟩)
-    · exact Or.inl h.le
-    · exact Or.inr h
-    · exact Or.inl hre.ge
-  · rintro (h | h)
-    · rcases h.eq_or_lt with h0 | hpos
-      · by_cases him : z.im = 0
-        · exact Or.inr ⟨h0.symm, him⟩
-        · exact Or.inl (Or.inr him)
-      · exact Or.inl (Or.inl hpos)
-    · exact Or.inl (Or.inr h)
+  rw [← Complex.not_lt_zero_iff, Set.mem_union, Complex.mem_slitPlane_iff_not_le_zero,
+    Set.mem_singleton_iff, lt_iff_le_and_ne]
+  tauto
 
 /-- On a small ball around a point of the slit plane, the distance from `w` to the point `-x`
 of the closed negative half-axis is bounded below by a fixed multiple of `1 + x`. -/

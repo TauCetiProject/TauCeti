@@ -58,7 +58,8 @@ integrals such as Carlson's elliptic integrals near both endpoints of `(0, ∞)`
 * `TauCeti.continuousOn_ofReal_add_cpow`, `TauCeti.continuousOn_ofReal_add_cpow_Ici`,
   `TauCeti.continuousOn_ofReal_add_cpow_Ici_of_re_pos` -- continuity of `t ↦ (t + x) ^ s` on
   `(0, ∞)` and `[0, ∞)`.
-* `Complex.cpow_neg_half_mul_self` -- two principal inverse square roots multiply to the inverse.
+* `Complex.cpow_neg_half_mul_self`, `Complex.cpow_neg_half_mul_self'` -- multiplying `w ^ (-1/2)`
+  by itself or by `w` gives `w⁻¹` or `w ^ (1/2)`, including at `w = 0`.
 * `Complex.tendsto_ofReal_add_cpow_neg` -- for any complex `x` and real `s > 0`,
   `(t + x) ^ (-s)` tends to `0` as the real number `t` tends to `∞`.
 -/
@@ -302,7 +303,8 @@ theorem continuousOn_ofReal_add_cpow_Ici {x : ℂ} (hx : x ∈ slitPlane) (s : �
 theorem continuousOn_ofReal_add_cpow_Ici_of_re_pos {x : ℂ} (hx : x ∈ slitPlane ∪ {0}) {s : ℂ}
     (hs : 0 < s.re) : ContinuousOn (fun t : ℝ => ((t : ℂ) + x) ^ s) (Set.Ici 0) := fun t ht => by
   have hmem : 0 ≤ ((t : ℂ) + x).re ∨ ((t : ℂ) + x).im ≠ 0 :=
-    (mem_slitPlane_union_zero_iff.mp hx).imp (fun h => by simp; linarith [ht.out]) (by simp)
+    (mem_slitPlane_union_zero_iff.mp hx).imp
+      (fun h => by simp only [Complex.add_re, Complex.ofReal_re]; linarith [ht.out]) (by simp)
   exact (ContinuousAt.comp (f := fun u : ℝ => (u : ℂ) + x)
     (Complex.continuousAt_cpow_const_of_re_pos hmem hs) (by fun_prop)).continuousWithinAt
 
@@ -316,6 +318,12 @@ theorem cpow_neg_half_mul_self (w : ℂ) : w ^ (-(1 / 2) : ℂ) * w ^ (-(1 / 2) 
   · simp
   · rw [← cpow_add _ _ hw]
     norm_num [cpow_neg_one]
+
+/-- Multiplying the principal power `w ^ (-1/2)` by `w` gives `w ^ (1/2)`, including at
+`w = 0`. -/
+theorem cpow_neg_half_mul_self' (w : ℂ) : w ^ (-(1 / 2) : ℂ) * w = w ^ (1 / 2 : ℂ) := by
+  rw [← TauCeti.cpow_add_one' (by norm_num)]
+  norm_num
 
 /-- For any complex `x` and real `s > 0`, `(t + x) ^ (-s)` tends to `0` as the real number `t`
 tends to `∞`. -/

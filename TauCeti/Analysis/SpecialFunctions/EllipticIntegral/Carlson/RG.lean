@@ -46,8 +46,9 @@ and `y, z ∈ slitPlane`,
   `Complex.integrableOn_carlsonRGIntegrand_zero_zero`,
   `Complex.integrableOn_carlsonRGIntegrand_of_mem_union` — absolute convergence of the defining
   integral.
-* `Complex.carlsonRG_comm_left`, `Complex.carlsonRG_comm_right` — `R_G` is
-  symmetric in its three arguments.
+* `Complex.carlsonRGIntegrand_comm_left`, `Complex.carlsonRGIntegrand_comm_right`,
+  `Complex.carlsonRG_comm_left`, `Complex.carlsonRG_comm_right` — `R_G` and its integrand are
+  symmetric in their three arguments.
 * `Complex.carlsonRG_ofReal_mul` — homogeneity of degree `1/2` under positive real
   scaling.
 * `Complex.carlsonRG_self` — the diagonal value `R_G(x, x, x) = x^(1/2)`.
@@ -161,20 +162,28 @@ theorem integrableOn_carlsonRGIntegrand {x y z : ℂ} (hx : x ∈ slitPlane ∪ 
 
 /-! ### Symmetry -/
 
+/-- The integrand of `R_G` is symmetric in its first two arguments. -/
+theorem carlsonRGIntegrand_comm_left (x y z : ℂ) :
+    carlsonRGIntegrand x y z = carlsonRGIntegrand y x z := by
+  funext t
+  simp only [carlsonRGIntegrand]
+  ring
+
+/-- The integrand of `R_G` is symmetric in its second and third arguments. -/
+theorem carlsonRGIntegrand_comm_right (x y z : ℂ) :
+    carlsonRGIntegrand x y z = carlsonRGIntegrand x z y := by
+  funext t
+  simp only [carlsonRGIntegrand]
+  ring
+
 /-- `R_G` is symmetric in its first two arguments. -/
 theorem carlsonRG_comm_left (x y z : ℂ) : carlsonRG x y z = carlsonRG y x z := by
-  simp only [carlsonRG_def, carlsonRGIntegrand]
-  congr 2
-  funext t
-  ring
+  rw [carlsonRG_def, carlsonRG_def, carlsonRGIntegrand_comm_left]
 
 /-- `R_G` is symmetric in its second and third arguments. Together with `carlsonRG_comm_left`,
 `R_G` is symmetric in all three arguments. -/
 theorem carlsonRG_comm_right (x y z : ℂ) : carlsonRG x y z = carlsonRG x z y := by
-  simp only [carlsonRG_def, carlsonRGIntegrand]
-  congr 2
-  funext t
-  ring
+  rw [carlsonRG_def, carlsonRG_def, carlsonRGIntegrand_comm_right]
 
 /-! ### Homogeneity -/
 
@@ -296,16 +305,6 @@ theorem integrableOn_carlsonRGIntegrand_zero_zero {z : ℂ} (hz : z ∈ slitPlan
   · exact (integrableOn_carlsonRF_integrand (Or.inl hz) hz hz).const_mul z
   · simp [Set.mem_singleton_iff.mp hz]
 
-private theorem integrableOn_carlsonRGIntegrand_comm_left {x y z : ℂ}
-    (h : IntegrableOn (carlsonRGIntegrand y x z) (Ioi 0)) :
-    IntegrableOn (carlsonRGIntegrand x y z) (Ioi 0) :=
-  h.congr_fun (fun _ _ => by simp only [carlsonRGIntegrand]; ring) measurableSet_Ioi
-
-private theorem integrableOn_carlsonRGIntegrand_comm_right {x y z : ℂ}
-    (h : IntegrableOn (carlsonRGIntegrand x z y) (Ioi 0)) :
-    IntegrableOn (carlsonRGIntegrand x y z) (Ioi 0) :=
-  h.congr_fun (fun _ _ => by simp only [carlsonRGIntegrand]; ring) measurableSet_Ioi
-
 /-- **Full-domain convergence of `R_G`.** Unlike `R_F`, `R_D`, and `R_J`, the defining integral of
 `carlsonRG x y z` converges absolutely on `(0, ∞)` for every triple `x, y, z ∈ slitPlane ∪ {0}`,
 regardless of how many arguments vanish. -/
@@ -317,22 +316,18 @@ theorem integrableOn_carlsonRGIntegrand_of_mem_union {x y z : ℂ} (hx : x ∈ s
     · exact integrableOn_carlsonRGIntegrand hx hy hz
     · rw [Set.mem_singleton_iff.mp hz]
       rcases hx with hx | hx
-      · exact integrableOn_carlsonRGIntegrand_comm_left
-          (integrableOn_carlsonRGIntegrand_comm_right
-            (integrableOn_carlsonRGIntegrand_comm_left
-              (integrableOn_carlsonRGIntegrand (Or.inr rfl) hy hx)))
-      · rw [Set.mem_singleton_iff.mp hx]
-        exact integrableOn_carlsonRGIntegrand_comm_right
-          (integrableOn_carlsonRGIntegrand_zero_zero (Or.inl hy))
+      · rw [carlsonRGIntegrand_comm_right, carlsonRGIntegrand_comm_left]
+        exact integrableOn_carlsonRGIntegrand (Or.inr rfl) hx hy
+      · rw [Set.mem_singleton_iff.mp hx, carlsonRGIntegrand_comm_right]
+        exact integrableOn_carlsonRGIntegrand_zero_zero (Or.inl hy)
   · rw [Set.mem_singleton_iff.mp hy]
     rcases hx with hx | hx
     · rcases hz with hz | hz
-      · exact integrableOn_carlsonRGIntegrand_comm_left
-          (integrableOn_carlsonRGIntegrand (Or.inr rfl) hx hz)
-      · rw [Set.mem_singleton_iff.mp hz]
-        exact integrableOn_carlsonRGIntegrand_comm_left
-          (integrableOn_carlsonRGIntegrand_comm_right
-            (integrableOn_carlsonRGIntegrand_zero_zero (Or.inl hx)))
+      · rw [carlsonRGIntegrand_comm_left]
+        exact integrableOn_carlsonRGIntegrand (Or.inr rfl) hx hz
+      · rw [Set.mem_singleton_iff.mp hz, carlsonRGIntegrand_comm_left,
+          carlsonRGIntegrand_comm_right]
+        exact integrableOn_carlsonRGIntegrand_zero_zero (Or.inl hx)
     · rw [Set.mem_singleton_iff.mp hx]
       exact integrableOn_carlsonRGIntegrand_zero_zero hz
 
@@ -342,10 +337,7 @@ theorem carlsonRG_zero_zero {z : ℂ} (hz : z ∈ slitPlane ∪ {0}) :
     carlsonRG 0 0 z = z ^ (1 / 2 : ℂ) / 2 := by
   rw [carlsonRG_zero_zero_eq_mul_carlsonRF]
   rcases hz with hz | hz
-  · rw [carlsonRF_self hz]
-    have hpow := TauCeti.cpow_add_one' (s := -(1 / 2)) (by norm_num) z
-    norm_num at hpow
-    rw [hpow]
+  · rw [carlsonRF_self hz, ← Complex.cpow_neg_half_mul_self']
     ring
   · simp [Set.mem_singleton_iff.mp hz]
 
@@ -371,11 +363,9 @@ private noncomputable def carlsonRGPrimitive (x y z : ℂ) (t : ℝ) : ℂ :=
 private theorem carlsonRGPrimitive_zero (x y z : ℂ) :
     carlsonRGPrimitive x y z 0 =
       -(x ^ (1 / 2 : ℂ) * y ^ (1 / 2 : ℂ) * z ^ (-(1 / 2) : ℂ)) := by
-  have hx := TauCeti.cpow_add_one' (s := -(1 / 2)) (by norm_num) x
-  have hy := TauCeti.cpow_add_one' (s := -(1 / 2)) (by norm_num) y
-  norm_num at hx hy
-  simp only [carlsonRGPrimitive, Complex.ofReal_zero, mul_zero, zero_add]
-  rw [hx, hy]
+  rw [carlsonRGPrimitive, ← Complex.cpow_neg_half_mul_self' x,
+    ← Complex.cpow_neg_half_mul_self' y]
+  simp only [Complex.ofReal_zero, mul_zero, zero_add]
   ring
 
 private theorem continuousWithinAt_carlsonRGPrimitive {x y z : ℂ} (hx : x ∈ slitPlane ∪ {0})
@@ -387,9 +377,7 @@ private theorem continuousWithinAt_carlsonRGPrimitive {x y z : ℂ} (hx : x ∈ 
       -((y * ((t : ℂ) + x) ^ (1 / 2 : ℂ) + x * (t : ℂ) * ((t : ℂ) + x) ^ (-(1 / 2) : ℂ)) *
         ((t : ℂ) + y) ^ (-(1 / 2) : ℂ) * ((t : ℂ) + z) ^ (-(1 / 2) : ℂ)) := by
     funext t
-    have hpow := TauCeti.cpow_add_one' (s := -(1 / 2)) (by norm_num) ((t : ℂ) + x)
-    norm_num at hpow
-    simp only [carlsonRGPrimitive, hpow]
+    rw [carlsonRGPrimitive, ← Complex.cpow_neg_half_mul_self' ((t : ℂ) + x)]
     ring
   have hxt : ContinuousOn (fun t : ℝ => x * (t : ℂ) * ((t : ℂ) + x) ^ (-(1 / 2) : ℂ)) (Ici 0) := by
     rcases hx with hx | hx
