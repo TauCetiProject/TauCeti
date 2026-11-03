@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.Belyi.Basic
 public import TauCeti.FieldTheory.FunctionField.Consequences.FirstPoleNumber
+public import TauCeti.FieldTheory.RatFunc.Map
 import TauCeti.FieldTheory.FunctionField.Consequences.HighDegree
 import TauCeti.FieldTheory.FunctionField.Place.Degree
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Degree
@@ -36,6 +37,15 @@ The normalization takes the pole order `m` of `z` at `P` to be the least positiv
 has Laurent expansion `(t - a) ^ (-m) + ⋯` in `t - a` with constant coefficient `0`, and this `z`
 generates `F` over `k(t)`.
 
+The normalization makes `z` invariant. Let `σ` be an automorphism of `k` fixing `a`, for instance
+any automorphism when `a` is rational, and let `τ` be a field automorphism of `F` acting on `k(t)`
+by the coefficient map of `σ`: an isomorphism of the conjugate pair along `σ` with the pair itself.
+If `τ` maps `P` to itself, then it fixes `t - a` and acts on Laurent coefficients at `P` by `σ`,
+so it preserves the three conditions pinning `z`, and fixes `z`. Consequently the minimal
+polynomial of `z` over `k(t)` is fixed by the coefficient map of `σ`. Over `ℂ`, the automorphisms
+`σ` admitting such a `τ` form Köck's group `U(F, t, P)`, and this invariance is the step that
+descends the pair to a finite extension of its field of moduli.
+
 ## Main results
 
 * `TauCeti.IsAlgebraicBelyiPair.exists_ord_neg_and_adjoin_simple_eq_top`: at every unmarked
@@ -48,6 +58,10 @@ generates `F` over `k(t)`.
   function `t - a` is a uniformizer.
 * `TauCeti.IsAlgebraicBelyiPair.existsUnique_laurentCoeff_eq_one_and_adjoin_simple_eq_top`: the
   normalized generator with a pole of the first pole order at a rational place over `t = a`.
+* `TauCeti.IsAlgebraicBelyiPair.apply_eq_self_of_laurentCoeff_eq_one_of_laurentCoeff_zero_eq_zero`:
+  an isomorphism of a conjugate pair with the pair that fixes `P` fixes the normalized generator.
+* `TauCeti.IsAlgebraicBelyiPair.map_minpoly_eq_of_laurentCoeff_eq_one_of_laurentCoeff_zero_eq_zero`:
+  its minimal polynomial over `k(t)` is then fixed by the coefficient map.
 
 ## References
 
@@ -156,6 +170,48 @@ theorem existsUnique_laurentCoeff_eq_one_and_adjoin_simple_eq_top (h : IsAlgebra
     exact Nat.eq_one_of_mul_eq_one_left hdeg.symm
   exact Place.adjoin_simple_eq_top_of_forall_ne_ord_nonneg (IsFunctionField.ratFunc k)
     (h.ramificationIdx_eq_one hunmarked) hf hord hreg
+
+section Invariance
+
+variable (h : IsAlgebraicBelyiPair k F) {a : k} (ha₀ : a ≠ 0) (ha₁ : a ≠ 1) {P : Place k F}
+  (hPa : P.restrict k (RatFunc k) = Place.adicOfIrreducible (Polynomial.irreducible_X_sub_C a))
+  (hP : P.degree = 1) {m : ℕ} (hm : 0 < m) (hpole : P.IsPoleNumber m)
+  (hgap : ∀ n, 0 < n → n < m → P.IsGap n) {σ : k ≃+* k} (hσa : σ a = a) {τ : F ≃+* F}
+  (hτ : ∀ x, τ (algebraMap (RatFunc k) F x) =
+    algebraMap (RatFunc k) F (RatFunc.mapRingEquiv σ x))
+  (hτP : Place.equivOfRingEquiv σ τ (apply_algebraMap_eq_of_mapRingEquiv σ τ hτ) P = P)
+  {z : F} (hz : z ∈ riemannRochSpace ((m : ℤ) • WeilDivisor.ofPoint P))
+  (h₁ : P.laurentCoeff hP (h.ord_algebraMap_X_sub_C ha₀ ha₁ hPa) (-m) z = 1)
+  (h₀ : P.laurentCoeff hP (h.ord_algebraMap_X_sub_C ha₀ ha₁ hPa) 0 z = 0)
+include hm hpole hgap hσa hτP hz h₁ h₀
+
+/-- **Isomorphisms of conjugate pairs fixing `P` fix the normalized generator.** Let `z` be the
+normalized generator of an algebraic Belyi pair `F / k(t)` at a rational place `P` over `t = a`,
+where `a ≠ 0, 1`
+(`TauCeti.IsAlgebraicBelyiPair.existsUnique_laurentCoeff_eq_one_and_adjoin_simple_eq_top`). Let
+`σ` be an automorphism of `k` fixing `a`, and `τ` an automorphism of the field `F` acting on
+`k(t)` by the coefficient map of `σ`, that is, an isomorphism from the conjugate of the pair along
+`σ` to the pair. If `τ` maps `P` to itself, then `τ z = z`. -/
+theorem apply_eq_self_of_laurentCoeff_eq_one_of_laurentCoeff_zero_eq_zero : τ z = z := by
+  have hτt : τ (algebraMap (RatFunc k) F (RatFunc.X - RatFunc.C a)) =
+      algebraMap (RatFunc k) F (RatFunc.X - RatFunc.C a) := by
+    rw [hτ, map_sub, RatFunc.mapRingEquiv_X, RatFunc.mapRingEquiv_C, hσa]
+  exact Place.apply_eq_self_of_laurentCoeff_eq_one_of_laurentCoeff_zero_eq_zero
+    ((IsFunctionField.ratFunc k).finite_extension (E := F)) h.isIntegrallyClosedIn hP _ hm hpole
+    hgap σ τ _ hτP hτt hz h₁ h₀
+
+/-- **The minimal polynomial of the normalized generator is invariant.** Under the hypotheses of
+`TauCeti.IsAlgebraicBelyiPair.apply_eq_self_of_laurentCoeff_eq_one_of_laurentCoeff_zero_eq_zero`,
+the coefficient map of `σ` fixes the minimal polynomial of the normalized generator `z` over
+`k(t)`. -/
+theorem map_minpoly_eq_of_laurentCoeff_eq_one_of_laurentCoeff_zero_eq_zero :
+    (minpoly (RatFunc k) z).map (RatFunc.mapRingEquiv σ : RatFunc k →+* RatFunc k) =
+      minpoly (RatFunc k) z := by
+  rw [minpoly.map_eq_of_equiv_equiv (g := τ) (RingHom.ext fun x ↦ (hτ x).symm),
+    h.apply_eq_self_of_laurentCoeff_eq_one_of_laurentCoeff_zero_eq_zero ha₀ ha₁ hPa hP hm hpole
+      hgap hσa hτ hτP hz h₁ h₀]
+
+end Invariance
 
 end IsAlgebraicBelyiPair
 

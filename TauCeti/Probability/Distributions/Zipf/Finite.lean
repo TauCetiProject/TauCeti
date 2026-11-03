@@ -115,8 +115,8 @@ theorem finiteZipfMeasure_apply (N : ℕ) (s : ℝ) (A : Set ℕ) :
       ∑ k ∈ (Finset.Icc 1 N).filter (· ∈ A),
         ENNReal.ofReal ((k : ℝ) ^ (-s) / finiteZipfNormalizer N s) := by
   classical
-  rw [finiteZipfMeasure_eq_sum_dirac, Measure.finsetSum_apply, Finset.sum_filter]
-  simp [Measure.smul_apply, Measure.dirac_apply' _ MeasurableSet.of_discrete,
+  rw [finiteZipfMeasure_eq_sum_dirac, _root_.sum_apply, Finset.sum_filter]
+  simp [_root_.smul_apply, Measure.dirac_apply' _ MeasurableSet.of_discrete,
     Set.indicator_apply, mul_ite]
 
 /-- There is no probability law on an empty finite Zipf support. -/

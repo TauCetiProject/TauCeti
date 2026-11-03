@@ -54,13 +54,21 @@ sum; in particular the mirror image of a connected sum of knots in `S³ ⊆ ℝ�
 unknot, is the connected sum of the mirror images
 (`TauCeti.SmoothCircleEmbedding.mirror_connectedSum`).
 
+The reverse mirror image `TauCeti.SmoothCircleEmbedding.reverseMirror ι K`, the candidate inverse
+of `K` in the concordance group, is a turned-over copy of the reverse of `K` moved by a reflection
+(`TauCeti.SmoothCircleEmbedding.reverseMirror_eq_turnOver`). For knots in the unit sphere of
+`ℝⁿ⁺¹` it is therefore smoothly concordant to the mirror image of the reverse,
+`K.reverse.mirror`, whatever the great circle `ι`
+(`TauCeti.SmoothCircleEmbedding.concordant_reverseMirror_reverse_mirror`).
+
 Concordances in connected-sum position can themselves be summed, giving a concordance between
 the connected sums (`TauCeti.KnotTheory.ConnectedSum.Concordance`), and in a sphere of dimension
 at least two every knot is concordant to one in connected-sum position
-(`TauCeti.KnotTheory.ConnectedSum.Position`). Not formalized here: that every knot is ambient
-isotopic to one in connected-sum position, and that the resulting operation on isotopy or
-concordance classes does not depend on the choices. The latter is the remaining step from this
-construction to the knot concordance group.
+(`TauCeti.KnotTheory.ConnectedSum.Position`). In fact every knot in a sphere of dimension at
+least two is smoothly ambient isotopic to one in that position
+(`TauCeti.KnotTheory.ConnectedSum.Isotopy`). Not formalized here: that the resulting operation on
+isotopy or concordance classes does not depend on the choices. The latter is the remaining step
+from this construction to the knot concordance group.
 
 ## Main definitions
 
@@ -88,6 +96,8 @@ construction to the knot concordance group.
 * `TauCeti.SmoothCircleEmbedding.transDiffeomorph_connectedSum`,
   `TauCeti.SmoothCircleEmbedding.mirror_connectedSum`: compatibility with isometries fixing `ι ℂ`,
   and with mirroring.
+* `TauCeti.SmoothCircleEmbedding.concordant_reverseMirror_reverse_mirror`: the reverse mirror
+  image is smoothly concordant to the mirror image of the reverse.
 
 ## References
 
@@ -453,7 +463,38 @@ theorem IsConnectedSumPosition.reverseMirror (h : IsConnectedSumPosition ι K) :
       inner_reflection_orthogonal_singleton, neg_neg, real_inner_comm]
     exact h.inner_pos (by simpa using hz)
 
+variable (ι) in
+/-- The reverse mirror image is the turned-over copy of the reversed knot reflected in the great
+sphere `⟪x, ι i⟫ = 0`. -/
+theorem reverseMirror_eq_turnOver (K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)) :
+    reverseMirror ι K = turnOver ι (K.reverse.transDiffeomorph
+      ((ℝ ∙ ι Complex.I)ᗮ.reflection.unitSphereDiffeomorph (n := n) (k := n) ∞)) :=
+  SmoothEmbedding.ext fun z => Subtype.ext <| by simp
+
 end General
+
+/-! ### The reverse mirror image is the mirror image of the reverse -/
+
+section ReverseMirror
+
+attribute [local instance] finrank_euclideanSpace_fin_succ_fact
+
+variable {n : ℕ} (ι : ℂ →ₗᵢ[ℝ] EuclideanSpace ℝ (Fin (n + 1)))
+
+/-- **The reverse mirror image is concordant to the mirror image of the reverse.** For a knot `K`
+in the unit sphere of `ℝⁿ⁺¹` and any great circle `ι`, the reverse mirror image `reverseMirror ι K`
+is smoothly concordant to `K.reverse.mirror`: it is a turned-over copy of `K.reverse` moved by a
+reflection, and the mirror image does not depend on the reflection up to ambient isotopy. -/
+theorem concordant_reverseMirror_reverse_mirror
+    (K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)) :
+    SmoothEmbedding.Concordant (reverseMirror ι K) K.reverse.mirror := by
+  rw [reverseMirror_eq_turnOver]
+  exact (concordant_turnOver ι _).symm.trans
+    ((K.reverse.smoothAmbientIsotopic_mirror_of_det_eq_neg_one
+      (linearEquiv_det_reflection_orthogonal_singleton
+        ((map_ne_zero_iff ι ι.injective).2 Complex.I_ne_zero))).concordant le_rfl)
+
+end ReverseMirror
 
 /-! ### Mirroring knots in `S³` -/
 

@@ -23,7 +23,7 @@ needed for the nilpotent-ideal criterion.
 
 `AlgHom.surjective_of_nilpotent_ideal` is the corresponding criterion for an algebra map:
 surjectivity modulo `I` and spanning the first ideal layer imply surjectivity. For the radical
-of an Artinian algebra, Mathlib's `IsArtinianRing.isNilpotent_jacobson_bot` supplies nilpotence.
+of an Artinian algebra, Mathlib's `IsArtinianRing.isNilpotent_jacobson` supplies nilpotence.
 
 ## References
 

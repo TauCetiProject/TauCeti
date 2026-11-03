@@ -200,7 +200,7 @@ theorem exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints
     exact absurd (h ▸ hk1) (by simp)
   have hkω : ((k : ℕ∞ω)) ≠ ∞ := by simp
   replace hf : ContDiffAt ℝ (k : ℕ∞ω) f a := hf.of_le hn
-  have hT : HasStrictFDerivAt f T a := hf.hasStrictFDerivAt hk0
+  have hT : HasStrictFDerivAt f T a := hf.hasStrictFDerivAt_fderiv hk0
   obtain ⟨pkg⟩ := hFred.nonempty_fredholmPackage
   have : CompleteSpace pkg.decDom.X₀ := pkg.decDom.isTopCompl.isClosed'.completeSpace_coe
   have : CompleteSpace pkg.decDom.X₁ := pkg.decDom.isTopCompl.isClosed.completeSpace_coe

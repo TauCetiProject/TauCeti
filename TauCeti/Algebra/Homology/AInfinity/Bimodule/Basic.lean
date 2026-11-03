@@ -102,6 +102,26 @@ theorem barGrading_piece (AA : AInfinityAlgebra R A) (BB : AInfinityAlgebra R B)
         (TensorWords.grading (BB.grading.shift 1))).piece p :=
   (rfl)
 
+/-- A pure word on each side of a homogeneous module element has the sum of their
+suspended degrees in the bar bicomodule grading. -/
+theorem tmul_of_tprod_mem_barGrading (AA : AInfinityAlgebra R A) (BB : AInfinityAlgebra R B)
+    (G : InternalGrading R M) (i j : ℕ)
+    (a : Fin i → A) (d : Fin i → ℤ)
+    (ha : ∀ k, a k ∈ (AA.grading.shift 1).piece (d k))
+    {x : M} {p : ℤ} (hx : x ∈ (G.shift 1).piece p)
+    (b : Fin j → B) (e : Fin j → ℤ)
+    (hb : ∀ k, b k ∈ (BB.grading.shift 1).piece (e k)) :
+    ((TensorWords.of R A i (PiTensorProduct.tprod R a) ⊗ₜ x) ⊗ₜ
+      TensorWords.of R B j (PiTensorProduct.tprod R b)) ∈
+      (barGrading AA BB G).piece ((∑ k, d k) + p + (∑ k, e k)) := by
+  rw [barGrading_def]
+  exact InternalGrading.tmul_mem_tensorProduct _ _
+    (InternalGrading.tmul_mem_tensorProduct _ _
+      (by simpa only [TensorWords.grading_piece] using
+        TensorWords.mem_gradedPiece_of_tprod _ a d ha) hx)
+    (by simpa only [TensorWords.grading_piece] using
+      TensorWords.mem_gradedPiece_of_tprod _ b e hb)
+
 /-- The left coaction on the bar bicomodule preserves total suspended degree. -/
 theorem isHomogeneous_leftCoact (AA : AInfinityAlgebra R A) (BB : AInfinityAlgebra R B)
     (G : InternalGrading R M) :

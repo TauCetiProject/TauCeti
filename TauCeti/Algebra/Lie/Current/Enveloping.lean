@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.Current.CentralExtension
 public import TauCeti.Algebra.Lie.UniversalEnveloping.CentralQuotient
+public import TauCeti.Algebra.Lie.Derivation.Basic
 
 /-!
 # Enveloping algebras of residue central extensions at a fixed level
@@ -55,6 +56,7 @@ than to `K`.
   of the currents on a module.
 * `TauCeti.CurrentAlgebra.adjoin_range_envelopingι`: the currents generate the algebra.
 * `TauCeti.CurrentAlgebra.algHom_ext_envelopingι`: algebra morphisms are determined on currents.
+* `TauCeti.CurrentAlgebra.derivation_ext_envelopingι`: derivations are determined on currents.
 * `TauCeti.CurrentAlgebra.envelopingι_injective`: over a field, the currents embed.
 
 ## References
@@ -194,6 +196,27 @@ theorem algHom_ext_envelopingι {g₁ g₂ : UK →ₐ[R] A}
   ext v
   obtain ⟨⟨u, z⟩, rfl⟩ := (ofProd c).surjective v
   rw [ι_ofProd, map_add, map_add, h, AlgHom.commutes, AlgHom.commutes]
+
+/-- **A derivation of `U(ĝ) / (ι K - a)` is determined by its values on the current
+generators.** -/
+theorem derivation_ext_envelopingι {D₁ D₂ : derivationLieAlgebra R UK}
+    (h : ∀ u : C, (D₁ : Module.End R UK) (envelopingι Φ hΦ hΦs a u) =
+      (D₂ : Module.End R UK) (envelopingι Φ hΦ hΦs a u)) : D₁ = D₂ := by
+  -- The elements on which `D₁` and `D₂` agree contain the scalars and are closed under sums and
+  -- products, and the current generators generate the algebra.
+  refine derivationLieAlgebra.ext fun x ↦ ?_
+  have hx : x ∈ Algebra.adjoin R (Set.range (envelopingι Φ hΦ hΦs a)) := by
+    rw [adjoin_range_envelopingι]
+    exact Algebra.mem_top
+  induction hx using Algebra.adjoin_induction with
+  | mem x hx =>
+    obtain ⟨u, rfl⟩ := hx
+    exact h u
+  | algebraMap r =>
+    rw [Algebra.algebraMap_eq_smul_one, map_smul, map_smul,
+      derivationLieAlgebra.apply_one_eq_zero, derivationLieAlgebra.apply_one_eq_zero]
+  | add x y _ _ hx hy => rw [map_add, map_add, hx, hy]
+  | mul x y _ _ hx hy => rw [derivationLieAlgebra.leibniz, derivationLieAlgebra.leibniz, hx, hy]
 
 end Generators
 
