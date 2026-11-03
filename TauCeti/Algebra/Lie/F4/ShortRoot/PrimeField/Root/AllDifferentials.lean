@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Root.Differential
 public import TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.Root.Subgroup
 public import TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.Root.Differential
 
@@ -58,18 +59,15 @@ private theorem map_genericMatrix_weylRootSubgroupCoordinateMap
   let A := CommAlgCat.of R S
   let q : HopfAlgebra.points («R» := ZMod 2) (H := AdditiveGroup.coordinateHopfAlgebra R) A :=
     toConv (AlgHom.id R S)
-  have hu : AdditiveGroup.gaPointsMulEquiv («R» := ZMod 2) q =
-      Multiplicative.ofAdd (SymmetricAlgebra.ι R R 1) := by
-    rw [← ofAdd_toAdd (AdditiveGroup.gaPointsMulEquiv («R» := ZMod 2) q),
-      AdditiveGroup.toAdd_gaPointsMulEquiv]
-    simp [q]
   have hp := coordinatePointsEquiv_weylRootSubgroupCoordinateMap l i S q
-  rw [hu] at hp
+  rw [AdditiveGroup.gaPointsMulEquiv_toConv_id] at hp
   rw [← hp]
+  -- `erw` erases the `CommAlgCat.of` wrapper of the universal point's value algebra.
   erw [coe_coordinatePointsEquiv,
     CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
     GeneralLinear.pointsMulEquiv_apply]
   rw [GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear]
+  -- Composing with the universal identity point leaves the underlying algebra map unchanged.
   rfl
 
 /-- The differential of a Weyl-transported root subgroup is the conjugate of the numbered
@@ -93,39 +91,16 @@ theorem tangentMatrix_derivationComp_weylRootSubgroupCoordinateMap
   simp only [weylRootSubgroupPoints_apply, Subgroup.coe_mul, Subgroup.coe_inv,
     Units.val_mul] at hentry
   rw [hn, ← map_inv] at hentry
-  ext a b
-  rw [GeneralLinear.tangentMatrix_apply, algEquivSelf_derivationComp_apply,
-    ← GeneralLinear.genericMatrix_apply]
-  have he := congrFun (congrFun hentry a) b
-  rw [Matrix.map_apply] at he
-  rw [he]
-  -- Only the middle root matrix varies with the additive coordinate.
-  have hd (c e : Fin 26) :
-      Bialgebra.CounitAlgebra.algEquivSelf R S B
-        (d ((rootSubgroupPoints (.inl i) S
-          (Multiplicative.ofAdd (SymmetricAlgebra.ι R R 1)) :
-            Matrix.GeneralLinearGroup (Fin 26) S) c e)) =
-        AdditiveGroup.gaTangentLinearEquiv d * (rootMatrix (.inl i) c e : B) := by
-    have h := congrFun (congrFun (tangentMatrix_derivationComp_generator_inl (.inl i) d) c) e
-    rw [GeneralLinear.tangentMatrix_apply, algEquivSelf_derivationComp_apply,
-      ← GeneralLinear.genericMatrix_apply] at h
-    have hg := congrFun (congrFun (map_genericMatrix_generator_inl (.inl i)) c) e
-    rw [Matrix.map_apply] at hg
-    rw [hg] at h
-    exact h
+  rw [← map_genericMatrix_generator_inl (.inl i)] at hentry
+  rw [GeneralLinear.tangentMatrix_derivationComp_eq_conj_of_map_genericMatrix
+    ((weylRootSubgroupCoordinateMap l i).hom.comp
+      (Bialgebra.Quotient.mkBialgHom (J).toIdeal))
+    (generator (.inl (.inl i))).hom (weylWordPoint l R) hentry d,
+    tangentMatrix_derivationComp_generator_inl]
   rw [hnB, ← map_inv]
-  simp only [Matrix.mul_apply, Matrix.smul_apply, Matrix.map_apply,
-    Matrix.GeneralLinearGroup.map_apply, AlgHom.coe_toRingHom, Algebra.ofId_apply, map_sum,
-    Bialgebra.CounitAlgebra.algEquivSelf_apply_mul,
-    Derivation.map_algebraMap, map_zero, mul_zero, add_zero, zero_add,
-    Bialgebra.counit_algebraMap, hd]
-  have hcollect (x y z t : B) : z * (x * (t * y)) = t * (x * y * z) := by ring
-  simp only [smul_eq_mul, Finset.mul_sum, Finset.sum_mul]
-  apply Finset.sum_congr rfl
-  intro c _
-  apply Finset.sum_congr rfl
-  intro e _
-  exact hcollect _ _ _ _
+  rw [Matrix.mul_smul, Matrix.smul_mul]
+  -- The underlying matrix of `GeneralLinearGroup.map` is entrywise coefficient change.
+  rfl
 
 /-- The unit tangent vector of the selected root subgroup, with values in a coefficient
 algebra. Its normalization is fixed by the selected root parametrization. -/
