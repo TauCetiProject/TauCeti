@@ -107,13 +107,13 @@ theorem exists_siegelFunction_smul_eq_mul (γ : SL(2, ℤ)) :
     obtain ⟨ε, hε, hg⟩ := hg
     obtain ⟨ε', hε', hh⟩ := hh
     exact ⟨ε * ε', by rw [mul_pow, hε, hε', one_mul], fun r τ ↦ by
-      rw [mul_smul, hg, hh, vecMul_map_mul, mul_assoc]⟩
+      rw [mul_smul, hg, hh, SpecialLinearGroup.vecMul_map_mul, mul_assoc]⟩
   | inv g _ hg =>
     obtain ⟨ε, hε, hg⟩ := hg
     have hε₀ : ε ≠ 0 := by rintro rfl; simp at hε
     refine ⟨ε⁻¹, by rw [inv_pow, hε, inv_one], fun r τ ↦ ?_⟩
     have h := hg (r ᵥ* (↑g⁻¹ : Matrix (Fin 2) (Fin 2) ℤ).map (Int.castRingHom ℝ)) (g⁻¹ • τ)
-    rw [smul_inv_smul, vecMul_map_inv_vecMul_map] at h
+    rw [smul_inv_smul, SpecialLinearGroup.vecMul_map_inv_vecMul_map] at h
     rw [h, inv_mul_cancel_left₀ hε₀]
 
 end TauCeti.ModularForm
