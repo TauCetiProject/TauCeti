@@ -31,7 +31,7 @@ branch of the section through `p`, and likewise at `q`. The transition `h` from 
 (`TauCeti.flowTransition_semiconj_eventuallyEq`), so `P_q = h ∘ P_p ∘ h⁻¹` on the section through
 `q` (`TauCeti.eventually_flowTransition_eq_conj`). The `k`-fold iterate of the return branch at
 time `T₀` is the return branch at time `k * T₀` (`TauCeti.flowTransition_iterate_eventuallyEq`), and
-`h` conjugates every positive iterate (`TauCeti.flowTransition_comp_iterate_eventuallyEq`). Hence
+`h` conjugates every iterate (`TauCeti.flowTransition_comp_iterate_eventuallyEq`). Hence
 the return germs of a periodic orbit at different sections and base points are locally conjugate,
 which makes their fixed-point and derivative data independent of these choices.
 
@@ -229,12 +229,14 @@ theorem eventually_flowTransition_eq_conj :
   rw [← comp_apply (f := flowTransition v g' T p), hconj, comp_apply, hw hwg]
 
 /-- **Transitions conjugate the iterates of return germs.** If the flow carries `p` to `q` at time
-`T` and `p` returns to itself at time `T₀`, then for `k ≠ 0` the transition `h` from a section
+`T` and `p` returns to itself at time `T₀`, then for every `k` the transition `h` from a section
 through `p` to a section through `q` satisfies `h ∘ P_p^[k] = P_q^[k] ∘ h` near `p`, where `P_p`
 and `P_q` are the return branches at time `T₀` of these sections. -/
-theorem flowTransition_comp_iterate_eventuallyEq {k : ℕ} (hk : k ≠ 0) :
+theorem flowTransition_comp_iterate_eventuallyEq (k : ℕ) :
     flowTransition v g' T p ∘ (flowTransition v g T₀ p)^[k] =ᶠ[𝓝 p]
       (flowTransition v g' T₀ q)^[k] ∘ flowTransition v g' T p := by
+  rcases eq_or_ne k 0 with rfl | hk
+  · rfl
   obtain ⟨hQ, hq'⟩ := hq ▸ flowOf_flowOf_of_flowOf_eq hv hT hP hp
   obtain ⟨hkP, hkp⟩ := flowOf_natCast_mul_of_flowOf_eq hv hP hp k
   have hh := (continuousAt_flowTransition hv hT (by rwa [hq]) (by rwa [hq])).tendsto
