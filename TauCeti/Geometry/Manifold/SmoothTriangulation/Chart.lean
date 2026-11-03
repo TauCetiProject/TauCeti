@@ -20,10 +20,10 @@ to maps into a manifold one chart at a time.
 Munkres' construction of a smooth triangulation of a manifold `M` (Theorem 10.6) starts from
 embedded rectilinear complexes in coordinate charts whose images cover `M`, and then fits them
 together. We supply the local input at interior points: every interior point `x` of a Hausdorff
-`C¹` manifold modelled on a finite-dimensional space `E` lies in the interior of the image of a
-smoothly embedded closed simplex of the top dimension `finrank ℝ E`. The simplex is the image
-under the inverse chart of a small simplex around the chart image of `x`, spanned by an affine
-basis of `E`.
+manifold which is both `Cⁿ` and `C¹`, modelled on a finite-dimensional space `E`, lies in the
+interior of the image of a closed embedding of a closed simplex of the top dimension `finrank ℝ E`
+which is a `Cⁿ` immersion of the simplex. The simplex is the image under the inverse chart of a
+small simplex around the chart image of `x`, spanned by an affine basis of `E`.
 
 ## Main results
 
