@@ -30,8 +30,9 @@ degree-`n` part of `Φ` is `r C_n` for the Lazard cocycle `C_n = ((X + Y)ⁿ - X
 * If `d_n` is a unit in `R`, replacing `g` by `g - r d_n⁻¹ Xⁿ` makes the defect vanish below
   degree `n + 1` (`FormalGroup.exists_succ_le_order_homDefect_sub_smul_X_pow`). This applies to
   every `n` that is not a power of `p` when `p = 0` in `R`.
-* If `n = pᵏ` with `k ≥ 1`, the coefficient `r` is the coefficient of `Xⁿ` in
-  `[p]_G(g(X)) - g([p]_F(X))` (`FormalGroup.homogeneousComponent_homDefect_eq_smul_lazardCocycle`).
+* If `p` is a prime with `p = 0` in `R` and `n = pᵏ` with `k ≥ 1`, the coefficient `r` is the
+  coefficient of `Xⁿ` in `[p]_G(g(X)) - g([p]_F(X))`
+  (`FormalGroup.homogeneousComponent_homDefect_eq_smul_lazardCocycle`).
   For `g = X + ⋯`, if `[p]_F` and `[p]_G` have order at least `n` and the same coefficient of `Xⁿ`,
   then `r = 0` (`FormalGroup.succ_le_order_homDefect_of_coeff_nsmulSeries_eq`).
 
@@ -51,10 +52,12 @@ equation. Those degrees are not treated in this file.
   subtracts `c ((X + Y)ⁿ - Xⁿ - Yⁿ)` from the degree-`n` part of the defect.
 * `FormalGroup.exists_succ_le_order_homDefect_sub_smul_X_pow`: in a degree `n` with `d_n` a unit,
   the defect can be removed by subtracting a multiple of `Xⁿ`.
-* `FormalGroup.succ_le_order_homDefect_of_coeff_nsmulSeries_eq`: in a degree `pᵏ` where the
-  `p`-series agree, the defect vanishes automatically.
+* `FormalGroup.succ_le_order_homDefect_of_coeff_nsmulSeries_eq`: in a degree `pᵏ` where both
+  `p`-series have order at least `pᵏ` and the same coefficient of `X^(pᵏ)`, the defect of
+  `g = X + ⋯` vanishes automatically.
 * `FormalGroup.exists_le_order_homDefect_of_coeff_nsmulSeries_eq`: commutative formal group laws
-  whose `p`-series agree up to degree `pʰ` are isomorphic up to degree `pʰ`.
+  whose `p`-series have order at least `pʰ` and the same coefficient of `X^(pʰ)` are strictly
+  isomorphic up to degree `pʰ`.
 
 ## References
 
