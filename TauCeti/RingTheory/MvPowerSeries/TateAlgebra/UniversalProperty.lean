@@ -13,7 +13,8 @@ import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PowerBounded
 /-!
 # The universal property of Gauss-normed Tate algebras at power-bounded arguments
 
-Let `R` and `S` be ultrametric normed commutative rings with `S` complete, let `φ : R →+* S` be
+Let `R` be an ultrametric normed commutative ring and `S` a complete Hausdorff nonarchimedean
+commutative ring, for instance a complete ultrametric normed ring. Let `φ : R →+* S` be
 continuous, and let `b₁, …, bₖ ∈ S` be power-bounded. Then there is exactly one continuous ring
 homomorphism `ψ : R⟨X₁, …, Xₖ⟩ → S` on the Gauss-normed ring of unit-radius restricted series
 with `ψ (C r) = φ r` and `ψ (Xᵢ) = bᵢ`.
@@ -23,8 +24,8 @@ This is Wedhorn's Proposition 5.50,
 identity comparison `TauCeti.Huber.restrictedMvPowerSeriesGaussEquiv` between the Huber model and
 the Gauss-normed model, which is continuous in both directions. Unlike
 `MvPowerSeries.restrictedEval₂`, neither `‖φ r‖ ≤ ‖r‖` nor `‖bᵢ‖ ≤ 1` is assumed. Power-boundedness
-is `TauCeti.Huber.IsPowerBounded` for the norm topology: the powers of `bᵢ` stay bounded, while
-`bᵢ` itself may have norm larger than one.
+is `TauCeti.Huber.IsPowerBounded` for the topology of `S`: for a normed `S` the powers of `bᵢ`
+stay bounded, while `bᵢ` itself may have norm larger than one.
 
 ## Main definitions
 
@@ -86,11 +87,12 @@ theorem isPowerBounded_X (i : Fin k) :
     continuous_restrictedMvPowerSeriesGaussEquiv continuous_restrictedMvPowerSeriesGaussEquiv_symm]
   exact isPowerBounded_weightedX_one_weight i
 
-variable {S : Type*} [NormedCommRing S] [IsUltrametricDist S] [CompleteSpace S] {φ : R →+* S}
-  (hφ : Continuous φ) {b : Fin k → S} (hb : ∀ i, IsPowerBounded (b i))
+variable {S : Type*} [CommRing S] [UniformSpace S] [IsUniformAddGroup S] [NonarchimedeanRing S]
+  [CompleteSpace S] [T3Space S] {φ : R →+* S} (hφ : Continuous φ) {b : Fin k → S}
+  (hb : ∀ i, IsPowerBounded (b i))
 
 /-- **The extension of `φ` to `R⟨X₁, …, Xₖ⟩` sending each `Xᵢ` to `bᵢ`**, for a continuous ring
-homomorphism `φ : R →+* S` into a complete ultrametric normed ring and power-bounded
+homomorphism `φ : R →+* S` into a complete Hausdorff nonarchimedean ring and power-bounded
 `b₁, …, bₖ ∈ S`. It is Wedhorn's evaluation homomorphism `TauCeti.Huber.weightedEvalHom`, carried
 along the Gauss comparison `TauCeti.Huber.restrictedMvPowerSeriesGaussEquiv`. -/
 noncomputable def restrictedLift : IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1) →+* S :=
@@ -122,7 +124,7 @@ theorem restrictedLift_unique {ψ : IsRestricted.subring (R := R) (fun _ : Fin k
 
 include hφ hb in
 /-- **The universal property of `R⟨X₁, …, Xₖ⟩` at power-bounded arguments.** For a continuous
-ring homomorphism `φ : R →+* S` into a complete ultrametric normed ring and power-bounded
+ring homomorphism `φ : R →+* S` into a complete Hausdorff nonarchimedean ring and power-bounded
 `b₁, …, bₖ ∈ S`, there is exactly one continuous ring homomorphism out of the Gauss-normed
 unit-radius restricted series that extends `φ` on constants and sends each `Xᵢ` to `bᵢ`, namely
 `TauCeti.MvPowerSeries.restrictedLift`. -/
@@ -153,14 +155,14 @@ noncomputable def restrictedRename (f : Fin m → Fin k) :
 @[simp]
 theorem restrictedRename_X (f : Fin m → Fin k) (i : Fin m) :
     restrictedRename (R := R) f ⟨X i, isRestricted_X _ i⟩ = ⟨X (f i), isRestricted_X _ (f i)⟩ :=
-  restrictedLift_X isometry_algebraMap_isRestrictedSubring.continuous
-    (fun i ↦ isPowerBounded_X (f i)) i
+  restrictedLift_X (φ := algebraMap R (IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1)))
+    isometry_algebraMap_isRestrictedSubring.continuous (fun i ↦ isPowerBounded_X (f i)) i
 
 /-- `restrictedRename f` is continuous. -/
 theorem continuous_restrictedRename (f : Fin m → Fin k) :
     Continuous (restrictedRename (R := R) f) :=
-  continuous_restrictedLift isometry_algebraMap_isRestrictedSubring.continuous
-    (fun i ↦ isPowerBounded_X (f i))
+  continuous_restrictedLift (φ := algebraMap R (IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1)))
+    isometry_algebraMap_isRestrictedSubring.continuous (fun i ↦ isPowerBounded_X (f i))
 
 /-- Renaming along the identity is the identity. -/
 @[simp]
