@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.ConnectedSum.Basic
 import Mathlib.Geometry.Euclidean.Inversion.Calculus
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import TauCeti.Geometry.Manifold.Instances.Quotient
+import TauCeti.Geometry.Manifold.MFDeriv.Sum
 
 /-!
 # The connected sum of two manifolds
@@ -43,6 +44,8 @@ The charts are not instances, as they depend on the hypotheses on the balls; con
 
 * `TauCeti.ConnectedSum.isManifold`: the connected sum of two `C^n` manifolds is a `C^n` manifold.
 * `TauCeti.ConnectedSum.isLocalDiffeomorph_mk`: its quotient map is a `C^n` local diffeomorphism.
+* `TauCeti.ConnectedSum.mfderiv_inl_apply`, `TauCeti.ConnectedSum.mfderiv_inr_apply`: the
+  differentials of the inclusions of the punctured summands are those of the quotient map.
 
 ## References
 
@@ -175,5 +178,29 @@ theorem isLocalDiffeomorph_mk (h₁ : IsOpenEmbedding e₁) (h₂ : IsOpenEmbedd
   (isLocalHomeomorph_mk h₁ h₂).isLocalDiffeomorph_chartedSpaceOfRightInverse
     (mk_surjective e₁ e₂).hasRightInverse.choose_spec
     (exists_contMDiffAt_deck h₁ h₂ d₁ d₂)
+
+/-- The differential of the inclusion of the first punctured summand into the connected sum is that
+of the quotient map at the corresponding point of the disjoint union. -/
+theorem mfderiv_inl_apply (h₁ : IsOpenEmbedding e₁) (h₂ : IsOpenEmbedding e₂)
+    (d₁ : IsLocalDiffeomorph 𝓘(ℝ, E) I n e₁) (d₂ : IsLocalDiffeomorph 𝓘(ℝ, E) I n e₂) (hn : n ≠ 0)
+    (x : puncture e₁) (u : TangentSpace I x) :
+    letI := chartedSpace (H := H) h₁ h₂
+    mfderiv I I (inl e₁ e₂) x u = mfderiv I I (mk e₁ e₂) (Sum.inl x) u := by
+  let := chartedSpace (H := H) h₁ h₂
+  rw [← mk_comp_inl]
+  exact TauCeti.mfderiv_comp_sumInl_apply
+    ((isLocalDiffeomorph_mk h₁ h₂ d₁ d₂ (Sum.inl x)).mdifferentiableAt (by exact_mod_cast hn)) u
+
+/-- The differential of the inclusion of the second punctured summand into the connected sum is
+that of the quotient map at the corresponding point of the disjoint union. -/
+theorem mfderiv_inr_apply (h₁ : IsOpenEmbedding e₁) (h₂ : IsOpenEmbedding e₂)
+    (d₁ : IsLocalDiffeomorph 𝓘(ℝ, E) I n e₁) (d₂ : IsLocalDiffeomorph 𝓘(ℝ, E) I n e₂) (hn : n ≠ 0)
+    (y : puncture e₂) (u : TangentSpace I y) :
+    letI := chartedSpace (H := H) h₁ h₂
+    mfderiv I I (inr e₁ e₂) y u = mfderiv I I (mk e₁ e₂) (Sum.inr y) u := by
+  let := chartedSpace (H := H) h₁ h₂
+  rw [← mk_comp_inr]
+  exact TauCeti.mfderiv_comp_sumInr_apply
+    ((isLocalDiffeomorph_mk h₁ h₂ d₁ d₂ (Sum.inr y)).mdifferentiableAt (by exact_mod_cast hn)) u
 
 end TauCeti.ConnectedSum
