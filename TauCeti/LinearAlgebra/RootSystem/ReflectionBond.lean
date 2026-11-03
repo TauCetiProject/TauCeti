@@ -80,7 +80,7 @@ theorem reflection_indexNeg_neg (β : ι) :
     letI := P.indexNeg
     P.reflection (-β) = P.reflection β := by
   ext x
-  rw [indexNeg_neg, reflection_reflectionPerm, LinearEquiv.mul_apply, LinearEquiv.mul_apply,
+  rw [indexNeg_neg, reflection_reflectionPerm, mul_apply_eq_comp, mul_apply_eq_comp,
     reflection_same]
 
 /-- The bond of two weights related by a reflection in a positive root `β` is `⟨y, β^∨⟩`. -/

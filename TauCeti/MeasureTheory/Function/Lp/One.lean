@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.LpOrder
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import TauCeti.Analysis.Normed.Order.PositiveLinearMap
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
@@ -14,7 +15,8 @@ import TauCeti.MeasureTheory.Function.Lp.Norm
 
 This file defines the constant-one element of `L∞` on an arbitrary measure space. Unlike
 `MeasureTheory.Lp.const`, the construction needs no finite-measure hypothesis because the
-essential supremum of a constant is always finite. Every real `L∞` class `f` satisfies
+essential supremum of a constant is always finite. Its integral is the total mass of the
+measure. Every real `L∞` class `f` satisfies
 `f ≤ ‖f‖ • 1` (`MeasureTheory.Lp.le_norm_smul_linftyOne`), so the constant one is an order unit,
 and a positive linear functional on `L∞` is controlled by its value at one; in particular it is
 continuous (`PositiveLinearMap.continuous_lpTop`). Conversely, a nonnegative class `f` satisfies
@@ -41,6 +43,11 @@ noncomputable def linftyOne : Lp ℝ ∞ μ :=
 theorem coeFn_linftyOne :
     (linftyOne (Ω := Ω) (μ := μ) : Ω → ℝ) =ᵐ[μ] fun _ => 1 :=
   MemLp.coeFn_toLp (memLp_top_const (1 : ℝ))
+
+/-- The integral of the constant one of `L∞` is the total mass. -/
+@[simp]
+theorem integral_linftyOne : ∫ x, (linftyOne : Lp ℝ ∞ μ) x ∂μ = μ.real Set.univ := by
+  simp [integral_congr_ae coeFn_linftyOne]
 
 end TauCeti
 

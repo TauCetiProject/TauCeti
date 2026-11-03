@@ -445,7 +445,7 @@ def stabilizer : Subring (_root_.UniversalEnvelopingAlgebra ℚ L) where
     rw [map_neg, LinearMap.neg_apply]
     exact N.neg_mem (hu v hv)
   mul_mem' := fun {u w} hu hw v hv => by
-    rw [map_mul, Module.End.mul_apply]
+    rw [map_mul, _root_.mul_apply_eq_comp]
     exact hu _ (hw v hv)
 
 @[simp]
@@ -500,10 +500,10 @@ noncomputable def kostantFormRep
       have : (↑(algebraMap ℤ (kostantForm e h) z) :
           _root_.UniversalEnvelopingAlgebra ℚ L) =
           (z : _root_.UniversalEnvelopingAlgebra ℚ L) := rfl
-      rw [this, map_intCast, Module.End.intCast_apply]
+      rw [this, map_intCast, _root_.intCast_apply_eq_smul]
     have h2 : ((algebraMap ℤ (Module.End ℤ N) z v : N) : V) = z • (v : V) := by
       have : (algebraMap ℤ (Module.End ℤ N) z) = (z : Module.End ℤ N) := rfl
-      rw [this, Module.End.intCast_apply]
+      rw [this, _root_.intCast_apply_eq_smul]
       rfl
     exact h1.trans h2.symm)
 

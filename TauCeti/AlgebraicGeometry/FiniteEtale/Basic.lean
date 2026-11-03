@@ -296,3 +296,25 @@ theorem equivOfIsSepClosedFunctorCompInclIso_hom_app_apply (K : Type u) [Field K
 end FiniteEtaleScheme
 
 end TauCeti
+
+namespace AlgebraicGeometry.Scheme.Hom
+
+/-- Every finite étale scheme over an affine base admits a finite étale coordinate algebra,
+with an isomorphism respecting the structure morphism. -/
+theorem exists_finiteEtale_algebra {R : CommRingCat.{u}} {X : Scheme.{u}}
+    (f : X ⟶ Spec R) [IsFinite f] [Etale f] :
+    ∃ B : CommAlgCat.FiniteEtale R,
+      Nonempty (Over.mk (Spec.algebraMap R B.obj) ≅ Over.mk f) := by
+  obtain ⟨B, ⟨e⟩⟩ := Functor.EssSurj.mem_essImage
+    (TauCeti.FiniteEtaleScheme.spec R) (TauCeti.FiniteEtaleScheme.ofHom f)
+  let eSpec : (algSpec R).obj (op B.unop.obj) ≅
+      Over.mk (Spec.algebraMap R B.unop.obj) :=
+    Over.isoMk (Iso.refl _) (by
+      simp only [Iso.refl_hom, algSpec_obj_hom, Over.mk_hom, Spec.algebraMap]
+      exact Category.id_comp _)
+  have e' := (TauCeti.finiteEtaleSchemeProperty (Spec R)).ι.mapIso e
+  rw [ObjectProperty.ι_obj, ObjectProperty.ι_obj, TauCeti.FiniteEtaleScheme.spec_obj_obj,
+    TauCeti.FiniteEtaleScheme.ofHom_obj] at e'
+  exact ⟨B.unop, ⟨eSpec.symm ≪≫ e'⟩⟩
+
+end AlgebraicGeometry.Scheme.Hom

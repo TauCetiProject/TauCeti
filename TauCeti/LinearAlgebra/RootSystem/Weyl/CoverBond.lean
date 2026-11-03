@@ -245,7 +245,7 @@ theorem reflectionBond_simple_mul_smul_simple_mul_smul (hlam : lam ∈ dominantC
   -- `(sᵢ y) λ` is the reflection of `(sᵢ x) λ` in the positive root `sᵢ β`.
   have hγ : P.reflection (P.reflectionPerm i β) (P.reflection i (x • lam)) =
       P.reflection i (y • lam) := by
-    rw [reflection_reflectionPerm, LinearEquiv.mul_apply, LinearEquiv.mul_apply,
+    rw [reflection_reflectionPerm, mul_apply_eq_comp, mul_apply_eq_comp,
       reflection_same, hβx]
   have hne' : P.reflection i (y • lam) ≠ P.reflection i (x • lam) :=
     fun h' ↦ hxy ((P.reflection i).injective h')
