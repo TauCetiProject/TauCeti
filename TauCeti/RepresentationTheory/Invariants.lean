@@ -229,10 +229,10 @@ theorem mem_invariants_iff_of_closure_eq_top {k G V : Type*} [CommRing k] [Group
   induction hs.ge (Subgroup.mem_top g) using Subgroup.closure_induction with
   | mem g hg => exact h g hg
   | one => simp
-  | mul g g' _ _ hg hg' => rw [map_mul, Module.End.mul_apply, hg', hg]
+  | mul g g' _ _ hg hg' => rw [map_mul, mul_apply_eq_comp, hg', hg]
   | inv g _ hg =>
     conv_lhs => rw [← hg]
-    rw [← Module.End.mul_apply, ← map_mul, inv_mul_cancel, map_one, Module.End.one_apply]
+    rw [← mul_apply_eq_comp, ← map_mul, inv_mul_cancel, map_one, one_apply_eq_self]
 
 end Representation
 

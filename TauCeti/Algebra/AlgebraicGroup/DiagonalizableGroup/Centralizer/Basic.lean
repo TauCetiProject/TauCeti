@@ -59,6 +59,8 @@ and contains `D(X)` itself. The main instance is the common kernel `D(X ⧸ S) �
   lies in the centralizer exactly when conjugation by it fixes the coordinate map `π`.
 * `BialgHom.normalizerCharacterHom_eq_one_iff_centralizerHopfIdeal_le_ker`: the rational points of
   the centralizer are the kernel of the normalizer action on characters.
+* `BialgHom.ker_normalizerCharacterHom`: the same statement as an equality of subgroups of the
+  rational normalizer.
 * `BialgHom.centralizerHopfIdeal_le_kerOfSurjective`: the diagonalizable subgroup lies in its own
   centralizer.
 * `BialgHom.centralizerHopfIdeal_eq_bot_iff_isCentral`: the centralizer is the whole group exactly
@@ -401,6 +403,26 @@ theorem normalizerCharacterHom_eq_one_iff_centralizerHopfIdeal_le_ker
     centralizerHopfIdeal_le_ker_iff_comp_pointConjugationAlgHom_eq]
   refine ⟨fun h ↦ ?_, comp_pointConjugationAlgHom_inv_eq_of_comp_eq π⟩
   simpa only [inv_inv] using comp_pointConjugationAlgHom_inv_eq_of_comp_eq π h
+
+/-- **The kernel of the normalizer action on characters is the rational centralizer** of the
+diagonalizable subgroup scheme. -/
+theorem ker_normalizerCharacterHom [ConnectedSpace (PrimeSpectrum R)]
+    (hπ : Function.Surjective π) :
+    (normalizerCharacterHom π hπ).ker =
+      (centralizerPointsSubgroup π (CommAlgCat.of R R)).subgroupOf (normalizerPoints π hπ) := by
+  ext g
+  rw [MonoidHom.mem_ker, Subgroup.mem_subgroupOf,
+    normalizerCharacterHom_eq_one_iff_centralizerHopfIdeal_le_ker,
+    CommHopfAlgCat.mem_quotientPointsSubgroup_iff]
+  exact ⟨fun h x hx ↦ h (HopfIdeal.mem_toIdeal.mpr hx),
+    fun h x hx ↦ h x (HopfIdeal.mem_toIdeal.mp hx)⟩
+
+/-- The rational centralizer is normal in the rational normalizer, being the kernel of its action
+on characters. -/
+instance normal_centralizerPointsSubgroup_subgroupOf_normalizerPoints
+    [ConnectedSpace (PrimeSpectrum R)] (hπ : Function.Surjective π) :
+    ((centralizerPointsSubgroup π (CommAlgCat.of R R)).subgroupOf (normalizerPoints π hπ)).Normal :=
+  ker_normalizerCharacterHom π hπ ▸ (normalizerCharacterHom π hπ).normal_ker
 
 /-! ## Comparison with the diagonalizable subgroup -/
 
