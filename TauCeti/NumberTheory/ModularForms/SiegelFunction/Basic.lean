@@ -335,6 +335,11 @@ theorem siegelFunction_apply_add_one (r : Fin 2 → ℝ) (τ : ℂ) :
   linear_combination (-qTheta (cexp (2 * π * I * τ))
     (cexp (2 * π * I * (r 0 * τ + ((r 0 + r 1 : ℝ) : ℂ))))) * h
 
+/-- The factor `e^{π i / 6}` in `siegelFunction_apply_add_one` is a twelfth root of unity. -/
+theorem exp_pi_mul_I_div_six_pow_twelve : cexp (π * I / 6) ^ 12 = 1 := by
+  rw [← Complex.exp_nat_mul, show ((12 : ℕ) : ℂ) * (π * I / 6) = 2 * π * I by push_cast; ring,
+    exp_two_pi_mul_I]
+
 end Translation
 
 section LevelTwo
