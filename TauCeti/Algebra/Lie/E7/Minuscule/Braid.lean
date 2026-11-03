@@ -70,6 +70,7 @@ theorem map_simpleWeylPoint {R S : Type*} [CommRing R] [CommRing S]
   simp only [toAdd_ofAdd, map_one, map_neg]
 
 /-- The matrix of the pinned representative is the Weyl matrix of the minuscule table. -/
+@[simp]
 theorem coe_simpleWeylPoint (i : Fin 7) (R : Type*) [CommRing R] :
     (((simpleWeylPoint i R : points R) : Matrix.GeneralLinearGroup (Fin 56) R) :
         Matrix (Fin 56) (Fin 56) R) = weightTable.simpleWeylMatrix i R := by
