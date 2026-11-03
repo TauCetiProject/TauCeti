@@ -275,9 +275,11 @@ theorem mem_commutatorSubmodule_of_mem_span_pair_pow_of_add_pow_four {B : Type*}
       add_zero]
     noncomm_ring
   have hneg {a : B} (h : a ∈ C) : -a ∈ C := neg_mem_commutatorSubmodule h
-  -- Rotations: a product lies in `[B, B]` exactly when its rotation does.
+  -- Rotations: a product lies in `[B, B]` exactly when its rotation does, here up to
+  -- reassociating the rotated product or the target.
   have hrot {a b : B} (h : b * a ∈ C) : a * b ∈ C := mul_mem_commutatorSubmodule_comm.2 h
   have hrotEq {a b c : B} (e : b * a = c) (h : c ∈ C) : a * b ∈ C := hrot (e ▸ h)
+  have hrotAssoc {a b c : B} (e : a * b = c) (h : b * a ∈ C) : c ∈ C := e ▸ hrot h
   have hzero {a : B} (h : a = 0) : a ∈ C := h ▸ zero_mem _
   have hcomm (a b : B) : a * b - b * a ∈ C := mul_sub_mul_mem_commutatorSubmodule k B a b
   -- Length two: twice `x y` is `(x + y) ^ 2 - y ^ 2` plus the commutator `x y - y x`.
@@ -296,7 +298,7 @@ theorem mem_commutatorSubmodule_of_mem_span_pair_pow_of_add_pow_four {B : Type*}
   have hxyy : x * y * y ∈ C := by
     have h : (3 : k) • (x * y * y) = (x + y) ^ 3 + -(x * y * x) + -(y * (x * y) - x * y * y) +
         -(y * y * x - x * (y * y)) := by
-      rw [hcube, show (3 : k) = 2 + 1 by norm_num, add_smul, two_smul, one_smul]
+      rw [hcube, ← two_add_one_eq_three, add_smul, two_smul, one_smul]
       noncomm_ring
     have hmem : (3 : k) • (x * y * y) ∈ C := by
       rw [h]
@@ -305,12 +307,8 @@ theorem mem_commutatorSubmodule_of_mem_span_pair_pow_of_add_pow_four {B : Type*}
   -- Length four: `x y y x`, `y x y y` and `y y x y` rotate into words containing `x x` or
   -- `y y y`, and then twice `y x y x` is a sum of commutators.
   have hxyyx : x * y * y * x ∈ C := hrot (hzero (by simp only [← mul_assoc, hxx, zero_mul]))
-  have hyxyy : y * x * y * y ∈ C := by
-    rw [show y * x * y * y = y * (x * y * y) by noncomm_ring]
-    exact hrot (hzero (r₁ x))
-  have hyyxy : y * y * x * y ∈ C := by
-    rw [show y * y * x * y = y * y * (x * y) by noncomm_ring]
-    exact hrot (hzero (by rw [← mul_assoc, r₁]))
+  have hyxyy : y * x * y * y ∈ C := hrotAssoc (by simp only [mul_assoc]) (hzero (r₁ x))
+  have hyyxy : y * y * x * y ∈ C := hrotAssoc (by simp only [mul_assoc]) hyxyy
   have hyxyx : y * x * y * x ∈ C := by
     have h : (2 : k) • (y * x * y * x) = -(x * (y * x * y) - y * x * y * x) + -(x * y * y * x) +
         -(y * x * y * y) + -(y * y * x * y) := by
@@ -323,12 +321,10 @@ theorem mem_commutatorSubmodule_of_mem_span_pair_pow_of_add_pow_four {B : Type*}
     exact (Submodule.smul_mem_iff_of_isUnit _ h2).1 hmem
   -- Length five: the difference of the expansion multiplied by `y` and by `x` leaves `x y y x y`
   -- up to commutators and words rotating into `x x` or `y y y`.
-  have hyyxyy : y * y * x * y * y ∈ C := by
-    rw [show y * y * x * y * y = y * y * (x * y * y) by noncomm_ring]
-    exact hrot (hzero (by simp only [← mul_assoc, r₁, zero_mul]))
-  have hxyxyx : x * y * x * y * x ∈ C := by
-    rw [show x * y * x * y * x = x * (y * x * y * x) by noncomm_ring]
-    exact hrot (hzero (r₀ _))
+  have hyyxyy : y * y * x * y * y ∈ C :=
+    hrotAssoc (by simp only [mul_assoc]) (hzero (r₁ (y * x)))
+  have hxyxyx : x * y * x * y * x ∈ C :=
+    hrotAssoc (by simp only [mul_assoc]) (hzero (r₀ (y * x * y)))
   have hxyyxy : x * y * y * x * y ∈ C := by
     have h : x * y * y * x * y = -(y * (x * y * x * y) - x * y * x * y * y) +
         -(y * (x * y * y * x) - x * y * y * x * y) + -(y * y * x * y * x - x * (y * y * x * y)) +
@@ -386,15 +382,12 @@ theorem mem_commutatorSubmodule_of_mem_span_pair_pow_of_add_pow_four {B : Type*}
           exact hrot hxyy
         · exact hrot (by rw [← mul_assoc]; exact hxyy)
       · exact ⟨hxyyx, hyxyx, hyxyy, hyyxy⟩
-      · refine ⟨hxyyxy, ?_, hrotEq (by noncomm_ring) hxyyxy, hyyxyy⟩
-        rw [show y * x * y * y * x = y * (x * y * y * x) by noncomm_ring]
-        exact hrot hxyyxy
-      · refine ⟨hrot (hzero (by simp only [← mul_assoc, hxx, zero_mul])), ?_, hyyxyyx⟩
-        rw [show y * x * y * y * x * y = y * x * (y * y * x * y) by noncomm_ring]
-        exact hrotEq (by noncomm_ring) hyyxyyx
-      · refine ⟨?_, hrot (hzero (by simp only [← mul_assoc, hyyy, zero_mul]))⟩
-        rw [show y * x * y * y * x * y * x = y * (x * y * y * x * y * x) by noncomm_ring]
-        exact hrot hxyyxyxy
+      · exact ⟨hxyyxy, hrotAssoc (by simp only [mul_assoc]) hxyyxy,
+          hrotEq (by noncomm_ring) hxyyxy, hyyxyy⟩
+      · exact ⟨hrot (hzero (by simp only [← mul_assoc, hxx, zero_mul])),
+          hrotEq (by simp only [mul_assoc]) hyyxyyx, hyyxyyx⟩
+      · exact ⟨hrotAssoc (by simp only [mul_assoc]) hxyyxyxy,
+          hrot (hzero (by simp only [← mul_assoc, hyyy, zero_mul]))⟩
       · exact hyyxyyxyx
     · obtain ⟨t, rfl⟩ : ∃ t', t = t' + 8 := ⟨t - 8, by omega⟩
       simp [quarticWords]
