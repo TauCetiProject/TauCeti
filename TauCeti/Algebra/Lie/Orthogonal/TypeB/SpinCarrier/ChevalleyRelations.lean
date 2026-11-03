@@ -188,8 +188,11 @@ private theorem nested_matrix_identity
   let f : Module.End ℤ (lattice n).toAddSubgroup →ₗ⁅ℤ⁆
       Matrix (Fin (dimension n)) (Fin (dimension n)) ℤ :=
     (LinearMap.toMatrixAlgEquiv (latticeBasis n)).toAlgHom.toLieHom
-  have hf (k : Fin (n + 1) ⊕ Fin (n + 1)) : f (rootOperator k) = rootIntMatrix n k :=
-    (rootIntMatrix_eq_toMatrix n k).symm
+  have hf (k : Fin (n + 1) ⊕ Fin (n + 1)) : f (rootOperator k) = rootIntMatrix n k := by
+    rw [rootIntMatrix_eq_toMatrix]
+    ext i j
+    simp only [f, AlgHom.toLieHom_apply, AlgEquiv.coe_toAlgHom,
+      LinearMap.toMatrixAlgEquiv_apply, LinearMap.toMatrix_apply]
   have hAC' := congrArg f (kostantRootOperator_lie_eq_zero
     (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ)) TauCeti.typeBSimpleCorootGenerator
     (rep n) (lattice n).toAddSubgroup (rep_kostantForm_mem_lattice n) hAC)
