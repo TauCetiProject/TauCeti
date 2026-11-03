@@ -37,6 +37,10 @@ direction `w`; its derivative involves the second derivative of `u`.
   `y ↦ B (u y) (∂_w u y)` at a point where `u` is `C²`.
 * `ContinuousLinearMap.contDiff_precomp_comp`: the pullback `(v, w) ↦ B (L v) (L w)` of a
   continuous bilinear map `B` along a continuous linear map `L` depends smoothly on `(B, L)`.
+* `ContinuousAt.hasFDerivAt_clm_apply_zero`: evaluating a family `A q` of continuous linear maps,
+  continuous at `p`, on a vector `x` is differentiable at `(0, p)`, with no differentiability in
+  `q`. For instance, the tube `(u, t) ↦ γ t + A t u` around a curve `γ`, built from a merely
+  continuous frame `A t` of normal vectors, is differentiable along the curve.
 -/
 
 public section
@@ -115,6 +119,36 @@ theorem _root_.ContinuousLinearMap.contDiff_precomp_comp :
   rw [h]
   exact ((ContinuousLinearMap.compL 𝕜 E F G).flip.contDiff.comp contDiff_snd).clm_comp
     (contDiff_fst.clm_comp contDiff_snd)
+
+/-- If a family `A` of continuous linear maps is continuous at `p`, then `(x, q) ↦ A q x` is
+differentiable at `(0, p)`, with derivative `(x, q) ↦ A p x`. No differentiability in `q` is
+needed. -/
+theorem _root_.ContinuousAt.hasFDerivAt_clm_apply_zero {P : Type*} [NormedAddCommGroup P]
+    [NormedSpace 𝕜 P] {A : P → E →L[𝕜] F} {p : P} (hA : ContinuousAt A p) :
+    HasFDerivAt (fun q : E × P ↦ A q.2 q.1) ((A p).comp (ContinuousLinearMap.fst 𝕜 E P))
+      (0, p) := by
+  rw [hasFDerivAt_iff_isLittleO_nhds_zero]
+  have hrem : (fun h : E × P ↦ A ((0, p) + h).2 ((0, p) + h).1 - A (0, p).2 (0, p).1 -
+      (A p).comp (ContinuousLinearMap.fst 𝕜 E P) h) = fun h ↦ (A (p + h.2) - A p) h.1 := by
+    ext h
+    simp
+  have htend : Filter.Tendsto (fun h : E × P ↦ ‖A (p + h.2) - A p‖) (nhds 0) (nhds 0) := by
+    have : Filter.Tendsto (fun h : E × P ↦ A (p + h.2)) (nhds 0) (nhds (A p)) := by
+      refine hA.tendsto.comp ?_
+      simpa using (tendsto_const_nhds (x := p)).add
+        ((continuous_snd (X := E) (Y := P)).tendsto (0 : E × P))
+    simpa using (this.sub_const (A p)).norm
+  rw [hrem]
+  refine Asymptotics.IsBigO.trans_isLittleO
+    (g := fun h : E × P ↦ ‖A (p + h.2) - A p‖ * ‖h‖) ?_ ?_
+  · refine Asymptotics.IsBigO.of_bound 1 (Filter.Eventually.of_forall fun h ↦ ?_)
+    rw [one_mul, Real.norm_of_nonneg (by positivity)]
+    exact ((A (p + h.2) - A p).le_opNorm h.1).trans
+      (mul_le_mul_of_nonneg_left (norm_fst_le h) (norm_nonneg _))
+  · have h := ((Asymptotics.isLittleO_one_iff ℝ).2 htend).mul_isBigO
+      (Asymptotics.isBigO_refl (fun h : E × P ↦ ‖h‖) (nhds 0))
+    simp only [one_mul] at h
+    exact h.trans_isBigO (Asymptotics.isBigO_norm_left.2 (Asymptotics.isBigO_refl _ _))
 
 end TauCeti
 

@@ -9,7 +9,7 @@ public import TauCeti.FieldTheory.QuadraticForm.StiefelWhitney.QuadraticExtensio
 public import TauCeti.NumberTheory.LocalField.QuadraticForm.Cup.Unramified
 
 import TauCeti.FieldTheory.QuadraticForm.StiefelWhitney.Evens.Kummer.Value
-import TauCeti.FieldTheory.Separable.Quadratic
+import TauCeti.FieldTheory.Separable.PrimeDegree
 
 /-!
 # The trace form of the unramified quadratic extension of a dyadic field

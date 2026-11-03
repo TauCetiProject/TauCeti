@@ -54,6 +54,9 @@ formula.
   period map of `f` on the symbols `{∞, 0} ⊗ P`.
 * `TauCeti.periodPolynomial_injective`: `f ↦ r_f` is injective.
 * `TauCeti.coe_evenPeriodPolynomial_add_coe_oddPeriodPolynomial`: `r_f = r_f^+ + r_f^-`.
+* `TauCeti.binaryFormMonomialBasis_repr_evenPeriodPolynomial`,
+  `TauCeti.binaryFormMonomialBasis_repr_oddPeriodPolynomial`: the coordinates of `r_f^+` and
+  `r_f^-` in the monomial basis are those of `r_f` at even and at odd exponents of `X`.
 
 ## References
 
@@ -280,5 +283,38 @@ theorem coe_evenPeriodPolynomial_add_coe_oddPeriodPolynomial (hk : k = w + 2)
       periodPolynomial hk f := by
   rw [coe_evenPeriodPolynomial, coe_oddPeriodPolynomial, ← smul_add, add_add_sub_cancel,
     ← two_smul ℂ, smul_smul, inv_mul_cancel₀ two_ne_zero, one_smul]
+
+
+/-- The coordinates of the even period polynomial `r_f^+` in the monomial basis `Xʲ Yʷ⁻ʲ`: those
+of `r_f` at even `j`, and `0` at odd `j`. -/
+theorem binaryFormMonomialBasis_repr_evenPeriodPolynomial (hk : k = w + 2) (f : CuspForm 𝒮ℒ k)
+    (j : Fin (w + 1)) :
+    (binaryFormMonomialBasis ℂ w).repr
+        (evenPeriodPolynomial hk f : homogeneousSubmodule (Fin 2) ℂ w) j =
+      if Even (j : ℕ) then (binaryFormMonomialBasis ℂ w).repr (periodPolynomial hk f) j
+      else 0 := by
+  rw [coe_evenPeriodPolynomial, _root_.map_smul, map_add, Finsupp.smul_apply, Finsupp.add_apply,
+    binaryFormMonomialBasis_repr_binaryFormRep_parity, smul_eq_mul]
+  split_ifs with hj
+  · rw [hj.neg_one_pow]
+    ring
+  · rw [(Nat.not_even_iff_odd.1 hj).neg_one_pow]
+    ring
+
+/-- The coordinates of the odd period polynomial `r_f^-` in the monomial basis `Xʲ Yʷ⁻ʲ`: those
+of `r_f` at odd `j`, and `0` at even `j`. -/
+theorem binaryFormMonomialBasis_repr_oddPeriodPolynomial (hk : k = w + 2) (f : CuspForm 𝒮ℒ k)
+    (j : Fin (w + 1)) :
+    (binaryFormMonomialBasis ℂ w).repr
+        (oddPeriodPolynomial hk f : homogeneousSubmodule (Fin 2) ℂ w) j =
+      if Even (j : ℕ) then 0
+      else (binaryFormMonomialBasis ℂ w).repr (periodPolynomial hk f) j := by
+  rw [coe_oddPeriodPolynomial, _root_.map_smul, map_sub, Finsupp.smul_apply, Finsupp.sub_apply,
+    binaryFormMonomialBasis_repr_binaryFormRep_parity, smul_eq_mul]
+  split_ifs with hj
+  · rw [hj.neg_one_pow]
+    ring
+  · rw [(Nat.not_even_iff_odd.1 hj).neg_one_pow]
+    ring
 
 end TauCeti
