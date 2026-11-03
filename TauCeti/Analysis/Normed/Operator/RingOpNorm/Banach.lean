@@ -55,6 +55,10 @@ isometries, so the inverse has operator norm one on a module with a vector of no
 * `TauCeti.RingOpNorm.isUltrametricDist`: the operator norm is ultrametric when the target is.
 * `ContinuousLinearMap.lipschitzWith_comp_comp`: composition `X ↦ g ∘ X ∘ f` with fixed operators
   is Lipschitz with constant `‖g‖ * ‖f‖`.
+* `ContinuousLinearMap.apply_comp_apply_of_mem_closure_adjoin`,
+  `ContinuousLinearMap.comp_comp_mem_closure_adjoin`: for a retract `r ∘ i = id`, operator-norm
+  limits of polynomials in the extension `i ∘ u ∘ r` commute with `i ∘ r` and compress to limits
+  of polynomials in `u`.
 * `ContinuousLinearMap.coe_oneSub_symm`: the inverse of `1 - t` is `Ring.inverse (1 - t)`,
   the sum of the Neumann series.
 * `ContinuousLinearMap.norm_oneSub_apply`, `ContinuousLinearMap.norm_oneSub_symm_apply` and
@@ -267,6 +271,68 @@ theorem lipschitzWith_comp_comp (g : G →L[R] H) (f : E →L[R] F) :
       _ = ‖g‖ * ‖f‖ * ‖X - Y‖ := by ring
 
 end Lipschitz
+
+section Retract
+
+variable {R : Type*} [NormedCommRing R] [TauCeti.NormedRing.IsTate R]
+  {M N : Type*} [SeminormedAddCommGroup M] [Module R M] [IsBoundedSMul R M]
+  [NormedAddCommGroup N] [Module R N] [IsBoundedSMul R N]
+  {i : M →L[R] N} {r : N →L[R] M} {u : M →L[R] M}
+
+omit [IsBoundedSMul R M] in
+/-- For a retract `r ∘ i = id` of `M` through `N`, every operator-norm limit of polynomials in
+the extension `i ∘ u ∘ r` of an endomorphism `u` of `M` commutes with the idempotent `i ∘ r`. -/
+theorem apply_comp_apply_of_mem_closure_adjoin (hri : r.comp i = .id R M) {X : N →L[R] N}
+    (hX : X ∈ closure (Algebra.adjoin R {i.comp (u.comp r)} : Set (N →L[R] N))) (y : N) :
+    i (r (X y)) = X (i (r y)) := by
+  have hri' (x : M) : r (i x) = x := by simpa using DFunLike.congr_fun hri x
+  have he : i.comp r ∈ Subalgebra.centralizer R {i.comp (u.comp r)} :=
+    (Subalgebra.mem_centralizer_iff R).2 fun _ hm ↦ by
+      rw [Set.mem_singleton_iff.1 hm]
+      ext y
+      simp [hri']
+  have : IsTopologicalSemiring (N →L[R] N) := inferInstance
+  rw [← Subalgebra.topologicalClosure_coe] at hX
+  have hX' := (Subalgebra.mem_centralizer_iff R).1
+    (Subalgebra.topologicalClosure_adjoin_le_centralizer_centralizer R _ hX) _ he
+  exact congr($hX' y)
+
+/-- For a retract `r ∘ i = id` of `M` through `N`, compression `X ↦ r ∘ X ∘ i` sends the
+operator-norm closure of the polynomials in the extension `i ∘ u ∘ r` of an endomorphism `u` of
+`M` into the closure of the polynomials in `u`. On the polynomials it is multiplicative, since
+they commute with the idempotent `i ∘ r`. -/
+theorem comp_comp_mem_closure_adjoin (hri : r.comp i = .id R M) {X : N →L[R] N}
+    (hX : X ∈ closure (Algebra.adjoin R {i.comp (u.comp r)} : Set (N →L[R] N))) :
+    r.comp (X.comp i) ∈ closure (Algebra.adjoin R {u} : Set (M →L[R] M)) := by
+  have hri' (x : M) : r (i x) = x := by simpa using DFunLike.congr_fun hri x
+  refine map_mem_closure (f := fun X : N →L[R] N ↦ r.comp (X.comp i))
+    (lipschitzWith_comp_comp r i).continuous hX fun Y hY ↦ ?_
+  -- Strengthen the induction by the commutation with `i ∘ r`, needed for products.
+  suffices (∀ y, i (r (Y y)) = Y (i (r y))) ∧ r.comp (Y.comp i) ∈ Algebra.adjoin R {u} from
+    this.2
+  induction hY using Algebra.adjoin_induction with
+  | mem x hx =>
+    rw [Set.mem_singleton_iff.1 hx]
+    refine ⟨fun y ↦ by simp [hri'], ?_⟩
+    convert Algebra.self_mem_adjoin_singleton R u using 1
+    ext x
+    simp [hri']
+  | algebraMap c =>
+    refine ⟨fun y ↦ by simp [Algebra.algebraMap_eq_smul_one], ?_⟩
+    convert Subalgebra.algebraMap_mem (Algebra.adjoin R {u}) c using 1
+    ext x
+    simp [Algebra.algebraMap_eq_smul_one, hri']
+  | add x y _ _ hx hy =>
+    refine ⟨fun z ↦ by simp [hx.1, hy.1], ?_⟩
+    rw [add_comp, comp_add]
+    exact add_mem hx.2 hy.2
+  | mul x y _ _ hx hy =>
+    refine ⟨fun z ↦ by simp [hx.1, hy.1], ?_⟩
+    convert mul_mem hx.2 hy.2 using 1
+    ext z
+    simp [hy.1, hri']
+
+end Retract
 
 variable {R E : Type*} [SeminormedRing R] [TauCeti.NormedRing.IsTate R]
   [NormedAddCommGroup E] [Module R E] [IsBoundedSMul R E] [CompleteSpace E]

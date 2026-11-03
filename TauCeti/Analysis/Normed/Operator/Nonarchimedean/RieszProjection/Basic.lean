@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.Resolvent
 import TauCeti.Algebra.Ring.Commute
 import TauCeti.Algebra.Ring.SpectralIdempotent
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Intertwining
 
 /-!
 # The Riesz projector of a row-compact operator at a good zero
@@ -29,6 +30,13 @@ complement `range (1 - E)` on which `C` is invertible. Such a splitting is uniqu
 these algebraic consequences make sense for an endomorphism of any seminormed module with a
 bounded scalar action, and are stated in that generality; only the construction below uses the
 model space.
+
+Riesz projections compress along continuous linear retracts `r ∘ i = id` of `M` through a normed
+module `N`: if `E` is a Riesz projection of the extension `i ∘ u ∘ r`, then `r ∘ E ∘ i` is one of
+`u` (`ContinuousLinearMap.IsRieszProjection.comp_comp_of_retract`). The idempotent `i ∘ r`
+commutes with the operator-norm closure of the polynomials in `i ∘ u ∘ r`, on which the
+compression `X ↦ r ∘ X ∘ i` is multiplicative and continuous, so it carries the defining identities
+and the closure condition to `M`.
 
 The Riesz projector is constructed from the Hasse derivatives of the Fredholm resolvent
 `V(T) = H_u(T) (1 - T u)⁻¹`: with `b = c⁻¹ • ΔʰV(a)` the differentiated resolvent identity gives
@@ -60,6 +68,8 @@ nilpotents and need not be Noetherian; over a ring the range need not be free.
 * `ContinuousLinearMap.IsRieszProjection.range_eq_ker`: the range of a Riesz projection is the
   generalised eigenspace `ker (1 - a • u) ^ h`.
 * `ContinuousLinearMap.IsRieszProjection.unique`: Riesz projections are unique.
+* `ContinuousLinearMap.IsRieszProjection.comp_comp_of_retract`: Riesz projections compress along
+  continuous linear retracts.
 * `ContinuousLinearMap.IsRowCompact.isRieszProjection_rieszProjection`: at a good zero, the
   explicit projector is a Riesz projection.
 * `ContinuousLinearMap.IsRowCompact.isRowCompact_rieszProjection`: it is row compact.
@@ -263,6 +273,48 @@ theorem unique {E' : M →L[R] M} (hE : IsRieszProjection u a h E)
 end IsRieszProjection
 
 end Module
+
+section Retract
+
+variable {M N : Type*} [SeminormedAddCommGroup M] [Module R M] [IsBoundedSMul R M]
+  [NormedAddCommGroup N] [Module R N] [IsBoundedSMul R N] {i : M →L[R] N} {r : N →L[R] M}
+  {u : M →L[R] M}
+
+/-- **Compression of Riesz projections along a retract.** Let `r ∘ i = id` present `M` as a
+retract of a normed module `N`. If `E` is a Riesz projection of the extension `i ∘ u ∘ r` at `a`
+of order `h`, then `r ∘ E ∘ i` is a Riesz projection of `u` at `a` of order `h`. -/
+theorem IsRieszProjection.comp_comp_of_retract (hri : r.comp i = .id R M) {a : R} {h : ℕ}
+    {E : N →L[R] N} (hE : IsRieszProjection (i.comp (u.comp r)) a h E) :
+    IsRieszProjection u a h (r.comp (E.comp i)) := by
+  have hri' (x : M) : r (i x) = x := by simpa using DFunLike.congr_fun hri x
+  -- `r` intertwines the extension `i ∘ u ∘ r` with `u`.
+  have hr : Function.Semiconj (r : N →ₗ[R] M) (i.comp (u.comp r)) u := fun y ↦ by simp [hri']
+  obtain ⟨w, hw₁, hw₂, hw₃, hw₄, hw⟩ := hE.exists_inverse
+  have hE' := apply_comp_apply_of_mem_closure_adjoin hri hE.mem_closure_adjoin
+  have hw' := apply_comp_apply_of_mem_closure_adjoin hri hw
+  have hEE (y : N) : E (E y) = E y := congr($hE.isIdempotentElem.eq y)
+  have hEv (y : N) : E (i (u (r y))) = i (u (r (E y))) := congr($hE.commute.eq y).symm
+  have hpow (y : N) : ((1 - a • i.comp (u.comp r)) ^ h) (E y) = 0 :=
+    congr($hE.pow_mul_eq_zero y)
+  refine ⟨?_, ?_, comp_comp_mem_closure_adjoin hri hE.mem_closure_adjoin, ?_,
+    ⟨r.comp (w.comp i), ?_, ?_, ?_, ?_, comp_comp_mem_closure_adjoin hri hw⟩⟩
+  · ext x
+    simp [hE', hri', hEE]
+  · ext x
+    simpa [hri'] using congr(r $(hEv (i x))).symm
+  · ext x
+    simpa [hpow] using (hr.one_sub_smul_pow a h (E (i x))).symm
+  · ext x
+    simpa [hri'] using
+      (hr.one_sub_smul a (w (i x))).symm.trans congr(r $(DFunLike.congr_fun hw₁ (i x)))
+  · ext x
+    simpa [hri'] using congr(r $(DFunLike.congr_fun hw₂ (i x)))
+  · ext x
+    simpa [hw', hri'] using congr(r $(DFunLike.congr_fun hw₃ (i x)))
+  · ext x
+    simpa [hE', hri'] using congr(r $(DFunLike.congr_fun hw₄ (i x)))
+
+end Retract
 
 variable [DiscreteTopology I] [DecidableEq I]
 

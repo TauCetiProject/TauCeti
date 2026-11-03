@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Normed.Operator.RowCompact
 public import TauCeti.Analysis.Normed.Operator.RowCompact.Idempotent
 import Mathlib.Topology.Homeomorph.Lemmas
 import Mathlib.Topology.MetricSpace.Ultra.Pi
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.IdempotentRange
 
 /-!
 # Row-compact maps between modules with property (Pr)
@@ -418,32 +419,6 @@ section Idempotent
 
 variable {R : Type w} [NormedCommRing R] [IsUltrametricDist R] [TauCeti.NormedRing.IsTate R]
   [CompleteSpace R] {M : Type u} [SeminormedAddCommGroup M] [Module R M]
-
-omit [TauCeti.NormedRing.IsTate R] [CompleteSpace R] in
-/-- For a retract presentation `r ∘ i = id` of `M`, the extension `i ∘ e ∘ r` of an idempotent
-`e` is an idempotent of the model space. -/
-private theorem isIdempotentElem_comp_comp_of_retract {e : M →L[R] M} (he : IsIdempotentElem e)
-    {J : Type*} [TopologicalSpace J] {i : M →L[R] C₀(J, R)} {r : C₀(J, R) →L[R] M}
-    (hri : r.comp i = .id R M) : IsIdempotentElem (i.comp (e.comp r)) := by
-  have hri' (x : M) : r (i x) = x := by simpa using DFunLike.congr_fun hri x
-  have hee (x : M) : e (e x) = e x := congr($he.eq x)
-  ext x : 1
-  simp [hri', hee]
-
-/-- For a retract presentation `r ∘ i = id` of `M`, the inclusion `i` identifies the range of an
-endomorphism `e` with the range of its extension `i ∘ e ∘ r`. -/
-private noncomputable def rangeEquivOfRetract (e : M →L[R] M) {J : Type*} [TopologicalSpace J]
-    {i : M →L[R] C₀(J, R)} {r : C₀(J, R) →L[R] M} (hri : r.comp i = .id R M) :
-    LinearMap.range (e : M →ₗ[R] M) ≃ₗ[R]
-      LinearMap.range ((i.comp (e.comp r) : C₀(J, R) →L[R] C₀(J, R)) :
-        C₀(J, R) →ₗ[R] C₀(J, R)) :=
-  have hri' (x : M) : r (i x) = x := by simpa using DFunLike.congr_fun hri x
-  (Submodule.equivMapOfInjective (i : M →ₗ[R] C₀(J, R))
-      (Function.LeftInverse.injective hri') _).trans
-    (LinearEquiv.ofEq _ _ (by
-      rw [toLinearMap_comp, toLinearMap_comp, LinearMap.range_comp,
-        LinearMap.range_comp_of_range_eq_top]
-      exact LinearMap.range_eq_top.2 (Function.LeftInverse.surjective hri')))
 
 /-- **A row-compact idempotent of a (Pr) module has finitely generated range.** -/
 theorem IsPrCompact.finite_range_of_isIdempotentElem {e : M →L[R] M} (hu : e.IsPrCompact)
