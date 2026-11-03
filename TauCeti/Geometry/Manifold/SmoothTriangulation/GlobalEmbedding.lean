@@ -43,7 +43,7 @@ variable {ι : Type*} [LinearOrder ι] {E : Type*} [NormedAddCommGroup E] [Norme
 continuous injection is a closed embedding if it is injective on the inverse image of each
 open vertex star of the original complex. In particular, local injectivity is required across
 subdivided faces, not merely on each face separately. -/
-theorem eventually_isClosedEmbedding_secantMap_edgewiseSubdivision_of_injOn_star
+theorem eventually_isClosedEmbedding_secantMap_edgewiseSubdivision_of_injOn_openStar
     (hf : Continuous f) (hinj : Injective f) (hK : K.faces.Finite) :
     ∀ᶠ k in atTop,
       (∀ v, InjOn ((K.edgewiseSubdivision k).secantMap
