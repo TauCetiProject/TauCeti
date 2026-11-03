@@ -283,7 +283,7 @@ theorem inertiaDeg_maximalIdeal :
   rw [Ideal.inertiaDeg_eq_of_isMaximal
     (maximalIdeal (Valued.v : Valuation K⸨X⸩ ℤᵐ⁰).valuationSubring)]
   let := Ideal.Quotient.field (maximalIdeal (Valued.v : Valuation K⸨X⸩ ℤᵐ⁰).valuationSubring)
-  rw [finrank_eq_one_iff_of_nonzero' 1 one_ne_zero]
+  rw [finrank_eq_one_iff_of_ne_zero' 1 one_ne_zero]
   rintro ⟨x⟩
   obtain ⟨a, ha⟩ := exists_sub_algebraMap_mem_maximalIdeal x
   refine ⟨Ideal.Quotient.mk _ a, ?_⟩

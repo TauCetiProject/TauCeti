@@ -126,16 +126,9 @@ lemma degree_const (P : PointedPrestableFamily (Spec (.of K)) n) (σ : Spec (.of
 /-- **Isomorphic prestable maps have the same degree.** -/
 theorem degree_eq_of_iso {G : PrestableMap q n} (e : F ≅ G) (a : LineBundleClass V) :
     F.degree K a = G.degree K a := by
-  -- `e` gives an isomorphism of source curves over `Spec K`, a pullback square along the
-  -- identity `Spec.map (algebraMap K K) = 𝟙 _`.
-  have H : IsPullback e.hom.curve.hom (F.curve.total ↘ Spec (.of K)) (G.curve.total ↘ Spec (.of K))
-      (Spec.map (CommRingCat.ofHom (algebraMap K K))) := by
-    have : IsIso (Spec.map (CommRingCat.ofHom (algebraMap K K))) := by
-      rw [Algebra.algebraMap_self, CommRingCat.ofHom_id, Spec.map_id]
-      infer_instance
-    exact .of_horiz_isIso ⟨by simp⟩
+  -- `e` gives an isomorphism of source curves over `Spec K`.
   rw [degree_def, degree_def, ← e.hom.hom_comp_map, ← LineBundleClass.pullback_comp]
-  exact LineBundleClass.eulerDegree_pullback H _
+  exact LineBundleClass.eulerDegree_pullback_of_isIso e.hom.curve.hom (by simp) _
 
 /-- **The degree is invariant under extension of the base field.** The degree over a field
 extension `L` of `K` of the base change of `F` to `L`, with respect to the pullback of `a` to the

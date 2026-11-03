@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Matrix.Compact
 public import TauCeti.Analysis.Matrix.Polar.Symplectic
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.MaximalCompact
 public import TauCeti.Topology.Algebra.SymplecticGroup
-public import TauCeti.Topology.Algebra.UnitaryGroup
 
 /-!
 # Maximal compact subgroups of the real and complex symplectic groups
@@ -23,11 +22,10 @@ The intersection is compact because it is a closed subgroup of the compact unita
 maximality proof is direct. For an element `A = P U` of a compact symplectic subgroup containing
 every unitary symplectic matrix, the unitary polar factor `U` is again symplectic
 (`SymplecticGroup.polarUnitary_mem`), so it lies in that subgroup. Thus the positive factor
-`P = A U⁻¹` belongs to it as well. The trace-growth obstruction
-`Matrix.PosSemidef.eq_one_of_mem_isCompact_subgroup` forces `P = 1`.
-This adapts the polar-factor argument of
-`Matrix.GeneralLinearGroup.mem_unitarySubgroup_of_isCompact_of_le`, with the symplecticity of the
-polar factors in place of the hypothesis that the subgroup contains the full unitary group.
+`P = A U⁻¹` belongs to it as well, and the trace-growth obstruction forces `P = 1`. This is the
+polar-factor argument
+`Matrix.GeneralLinearGroup.mem_unitarySubgroup_of_isCompact_of_polarUnitary_mem`, with the
+symplecticity of the polar factors supplying its hypothesis.
 
 `TauCeti.GLSymplectic.eq_inf_unitarySubgroup_of_isCompact_of_le` states maximality inside
 the ambient general linear group. `TauCeti.GLSymplectic.maximal_isCompact_unitarySubgroup`
@@ -67,21 +65,11 @@ theorem mem_inf_unitarySubgroup_of_isCompact_of_le {K : Subgroup (GL (n ⊕ n) �
     (hUK : GLSymplectic n 𝕜 ⊓ unitarySubgroup (GL (n ⊕ n) 𝕜) ≤ K)
     {A : GL (n ⊕ n) 𝕜} (hA : A ∈ K) :
     A ∈ GLSymplectic n 𝕜 ⊓ unitarySubgroup (GL (n ⊕ n) 𝕜) := by
-  let U := Units.polarUnitary A
-  let P := A * (Unitary.toUnits U)⁻¹
-  have hU : Unitary.toUnits U ∈
+  have hU : Unitary.toUnits (Units.polarUnitary A) ∈
       GLSymplectic n 𝕜 ⊓ unitarySubgroup (GL (n ⊕ n) 𝕜) :=
     ⟨mem_iff_mem_symplecticGroup.2 (SymplecticGroup.polarUnitary_mem
       (mem_iff_mem_symplecticGroup.1 (hKS hA))), by simp⟩
-  have hP : (P : Matrix (n ⊕ n) (n ⊕ n) 𝕜) =
-      CFC.sqrt ((A : Matrix (n ⊕ n) (n ⊕ n) 𝕜) * star (A : Matrix (n ⊕ n) (n ⊕ n) 𝕜)) := by
-    apply (Unitary.mul_left_inj U).mp
-    rw [Units.sqrt_mul_star_mul_polarUnitary]
-    exact congrArg Units.val (inv_mul_cancel_right A (Unitary.toUnits U))
-  have hPone : P = 1 :=
-    (hP.symm ▸ (posDef_sqrt_mul_star A).posSemidef).eq_one_of_mem_isCompact_subgroup
-      hK (K.mul_mem hA (K.inv_mem (hUK hU)))
-  exact (mul_inv_eq_one.mp hPone) ▸ hU
+  exact ⟨hKS hA, mem_unitarySubgroup_of_isCompact_of_polarUnitary_mem hK hA (hUK hU)⟩
 
 /-- **Maximal compactness in the symplectic group.** A compact subgroup of the ambient general
 linear group lying in the symplectic group and containing its unitary elements is exactly their

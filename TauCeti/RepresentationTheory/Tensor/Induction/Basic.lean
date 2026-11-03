@@ -290,6 +290,27 @@ theorem tensorInducedRepresentation_apply_tprod (U : Subgroup G) (s : U.LeftTran
   funext x
   rw [← Equiv.Perm.coe_inv, Subgroup.monomialHom_right_inv]
 
+/-- Tensor induction preserves equivariant pairings: the factorwise pairing
+`PiTensorProduct.map₂` of a `U`-equivariant bilinear map is equivariant for the tensor-induced
+actions of `G`. -/
+theorem map₂_tensorInducedRepresentation (U : Subgroup G) (s : U.LeftTransversal)
+    {M : Type w} {N : Type x} {P : Type y} [AddCommMonoid M] [Module R M] [AddCommMonoid N]
+    [Module R N] [AddCommMonoid P] [Module R P] {ρ : Representation R U M}
+    {τ : Representation R U N} {σ : Representation R U P} (f : M →ₗ[R] N →ₗ[R] P)
+    (hf : ∀ u m n, f (ρ u m) (τ u n) = σ u (f m n)) (g : G) (a : ⨂[R] _ : G ⧸ U, M)
+    (b : ⨂[R] _ : G ⧸ U, N) :
+    PiTensorProduct.map₂ (fun _ ↦ f) (U.tensorInducedRepresentation s ρ g a)
+        (U.tensorInducedRepresentation s τ g b) =
+      U.tensorInducedRepresentation s σ g (PiTensorProduct.map₂ (fun _ ↦ f) a b) := by
+  induction a using PiTensorProduct.induction_on with
+  | smul_tprod r a =>
+    induction b using PiTensorProduct.induction_on with
+    | smul_tprod t b =>
+      simp only [map_smul, LinearMap.smul_apply, tensorInducedRepresentation_apply_tprod,
+        PiTensorProduct.map₂_tprod_tprod, hf]
+    | add b c hb hc => simp only [map_add, hb, hc]
+  | add a c ha hc => simp only [map_add, LinearMap.add_apply, ha, hc]
+
 end
 
 variable [CommRing R] [Group G]
