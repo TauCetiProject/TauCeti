@@ -65,8 +65,8 @@ theorem bivector_mul_eq_smul_of_ι_mul_eq_zero_left {a : M} {c : CliffordAlgebra
   have hab : ι Q a * ι Q b = algebraMap R _ (QuadraticMap.polar Q a b) - ι Q b * ι Q a :=
     eq_sub_of_add_eq (ι_mul_ι_add_swap a b)
   have hba : ι Q b * ι Q a * c = 0 := by rw [mul_assoc, hc, mul_zero]
-  rw [bivector_def, smul_mul_assoc, sub_mul, hab, sub_mul, hba, sub_zero, sub_zero, mul_smul,
-    Algebra.algebraMap_eq_smul_one, smul_mul_assoc, one_mul]
+  rw [bivector_def, smul_mul_assoc, sub_mul, hab, sub_mul, hba]
+  simp [mul_smul, Algebra.algebraMap_eq_smul_one]
 
 /-- On an element annihilated by `ι Q b`, the bivector of `a` and `b` acts through minus half their
 polar form. -/

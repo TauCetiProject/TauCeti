@@ -70,12 +70,6 @@ section Bivector
 
 variable {x y : L} {c : CliffordAlgebra (killingQuadraticForm K L)}
 
-omit [FiniteDimensional K L] [Invertible (2 : K)] [LieAlgebra.IsKilling K L] in
-private theorem polar_killingQuadraticForm (x y : L) :
-    QuadraticMap.polar (killingQuadraticForm K L) x y = 2 * killingForm K L x y := by
-  simpa only [QuadraticMap.polarBilin_apply_apply, LinearMap.smul_apply, smul_eq_mul] using
-    LinearMap.congr_fun₂ (polarBilin_killingQuadraticForm K L) x y
-
 omit [FiniteDimensional K L] [LieAlgebra.IsKilling K L] in
 private theorem bivector_mul_eq_killingForm_smul_left
     (hc : ι (killingQuadraticForm K L) x * c = 0) (y : L) :
@@ -99,21 +93,6 @@ variable [CharZero K] [IsAlgClosed K]
 
 /-! ### The action of the quadratic lift -/
 
-omit [Invertible (2 : K)] [IsAlgClosed K] in
-/-- The Killing pairings of the two opposite projections of a basis and its dual add up to the trace
-of a root-space projection, which is one. -/
-private theorem sum_killingForm_genWeightSpaceProjection_eq_one {ι' : Type*} [Fintype ι']
-    [DecidableEq ι'] (bs : Module.Basis ι' K L) {χ : Weight K H L} (hχ : χ.IsNonZero) :
-    ∑ i, killingForm K L (genWeightSpaceProjection K H L χ (bs i))
-      (genWeightSpaceProjection K H L (-χ) (killingDualBasis bs i)) = 1 := by
-  have hcoef (i : ι') : killingForm K L (genWeightSpaceProjection K H L χ (bs i))
-      (genWeightSpaceProjection K H L (-χ) (killingDualBasis bs i)) =
-      killingForm K L (genWeightSpaceProjection K H L χ (bs i)) (killingDualBasis bs i) := by
-    rw [killingForm_genWeightSpaceProjection H χ, genWeightSpaceProjection_apply_apply,
-      ← killingForm_genWeightSpaceProjection H χ]
-  rw [Finset.sum_congr rfl fun i _ ↦ hcoef i, sum_killingForm_killingDualBasis_eq_trace,
-    trace_genWeightSpaceProjection_eq_one H hχ]
-
 /-- The Cartan subalgebra acts through `ρ` on an element annihilated by the generators of `n⁺`. -/
 private theorem adjointCliffordHom_cartan_mul_eq_smul
     (hc : ∀ y ∈ positiveNilradical H base, ι (killingQuadraticForm K L) y * c = 0) (h : H) :
@@ -127,13 +106,18 @@ private theorem adjointCliffordHom_cartan_mul_eq_smul
     rw [Finset.sum_mul, Finset.sum_congr rfl fun i _ ↦ bivector_mul_eq_killingForm_smul_left
       (hc _ (mem_positiveNilradical_of_mem_rootSpace H base
         ((mem_posRootsFinset _ base a).mp ha) (genWeightSpaceProjection_apply_mem _ _))) _,
-      ← Finset.sum_smul, sum_killingForm_genWeightSpaceProjection_eq_one bs
+      ← Finset.sum_smul, sum_killingForm_genWeightSpaceProjection_eq_one H bs
         (H.isNonZero_coe_root a), one_smul]
-  rw [adjointCliffordHom_cartan_eq_sum_posRoots H bs base h, smul_mul_assoc, Finset.sum_mul,
-    Finset.sum_congr rfl fun a ha ↦ by rw [smul_mul_assoc, hroot a ha], ← Finset.sum_smul,
-    smul_smul, weylVector_def, twoWeylVector_def, LinearMap.smul_apply, LinearMap.sum_apply,
-    invOf_eq_inv]
-  simp
+  have hsum : adjointCliffordHom K L (h : L) * c =
+      (2 : K)⁻¹ • ∑ a ∈ posRootsFinset (IsKilling.rootSystem H) base,
+        ((a : H.root) : Weight K H L) h • c := by
+    rw [adjointCliffordHom_cartan_eq_sum_posRoots H bs base h, smul_mul_assoc, Finset.sum_mul]
+    exact congrArg _ (Finset.sum_congr rfl fun a ha ↦ by rw [smul_mul_assoc, hroot a ha])
+  have hscalar : weylVector (IsKilling.rootSystem H) base h =
+      (2 : K)⁻¹ * ∑ a ∈ posRootsFinset (IsKilling.rootSystem H) base,
+        ((a : H.root) : Weight K H L) h := by
+    simp [weylVector_def, twoWeylVector_def, LinearMap.sum_apply]
+  rw [hsum, hscalar, mul_smul, Finset.sum_smul]
 
 omit [IsAlgClosed K] in
 /-- A bivector in the root-space form of the lift of a positive root vector kills an element
@@ -209,21 +193,6 @@ variable (e : H.root → L) (he : ∀ α ∈ posRoots (IsKilling.rootSystem H) b
   (he0 : ∀ α ∈ posRoots (IsKilling.rootSystem H) base, e α ≠ 0)
   {l : List H.root} (hmem : ∀ α, α ∈ l ↔ α ∈ posRoots (IsKilling.rootSystem H) base)
 
-omit [Invertible (2 : K)] [IsAlgClosed K] in
-/-- Positive root spaces are orthogonal for the Killing form, because the sum of two positive roots
-is nonzero. -/
-private theorem killingForm_eq_zero_of_mem_posRoots {α β : H.root}
-    (hα : α ∈ posRoots (IsKilling.rootSystem H) base)
-    (hβ : β ∈ posRoots (IsKilling.rootSystem H) base) {x y : L}
-    (hx : x ∈ rootSpace H (α : H → K)) (hy : y ∈ rootSpace H (β : H → K)) :
-    killingForm K L x y = 0 := by
-  refine killingForm_apply_eq_zero_of_mem_rootSpace_of_add_ne_zero K L H hx hy fun h ↦ ?_
-  have hβα : β = -α := Subtype.ext <| by
-    rw [IsKilling.val_neg_root]
-    exact Weight.ext fun z ↦ eq_neg_of_add_eq_zero_right (congrFun h z)
-  exact Set.disjoint_left.mp (disjoint_posRoots_negRoots _ base) hβ
-    (hβα ▸ neg_mem_negRoots_of_mem_posRoots base hα)
-
 include he he0 hmem in
 omit [Invertible (2 : K)] [IsAlgClosed K] in
 /-- **The generators of `n⁺` annihilate the product of the generators of positive root vectors**:
@@ -235,15 +204,9 @@ theorem ι_mul_prod_map_ι_rootVector_eq_zero {y : L} (hy : y ∈ positiveNilrad
   refine LieSubmodule.iSup_induction _ hy (motive := fun y ↦ ι (killingQuadraticForm K L) y *
     ((l.map e).map (ι (killingQuadraticForm K L))).prod = 0) (fun ⟨α, hα⟩ y hy ↦ ?_) (by simp)
     fun _ _ h₁ h₂ ↦ by rw [map_add, add_mul, h₁, h₂, add_zero]
-  have hone : Module.finrank K (rootSpace H (α : H → K)) = 1 :=
-    IsKilling.finrank_rootSpace_eq_one (α : Weight K H L) (H.isNonZero_coe_root α)
-  obtain ⟨t, rfl⟩ : ∃ t : K, y = t • e α := by
-    obtain ⟨t, ht⟩ := (finrank_eq_one_iff_of_ne_zero' (⟨e α, he α hα⟩ : rootSpace H (α : H → K))
-      fun h ↦ he0 α hα (by simpa using congrArg ((↑) : rootSpace H (α : H → K) → L) h)).mp
-      hone ⟨y, hy⟩
-    have hy' := (congrArg ((↑) : rootSpace H (α : H → K) → L) ht).symm
-    rw [Submodule.coe_smul] at hy'
-    exact ⟨t, hy'⟩
+  have hspan := IsKilling.toSubmodule_rootSpace_eq_span (α : Weight K H L)
+    (H.isNonZero_coe_root α) (e α) (he0 α hα) (he α hα)
+  obtain ⟨t, rfl⟩ := Submodule.mem_span_singleton.mp (hspan.le hy)
   have hortho : ∀ x ∈ l.map e, (killingQuadraticForm K L).IsOrtho (e α) x := by
     intro x hx
     obtain ⟨β, hβ, rfl⟩ := List.mem_map.mp hx

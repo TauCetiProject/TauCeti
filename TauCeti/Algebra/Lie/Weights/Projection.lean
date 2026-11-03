@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Lie.Killing.DualBasis
 public import TauCeti.Algebra.Lie.Weights.Diagonalizable
 public import TauCeti.Algebra.Lie.Weights.Killing
 import TauCeti.LinearAlgebra.Projection
@@ -38,6 +39,8 @@ space, which for a root is `1`.
   the `LinearMap.IsAdjointPair` form.
 * `TauCeti.trace_genWeightSpaceProjection`: the trace of a projection is the dimension of the
   weight space it projects onto.
+* `TauCeti.sum_killingForm_genWeightSpaceProjection_eq_one`: the opposite projections of a basis and
+  its Killing-dual basis pair to `1` in total, at a nonzero weight.
 
 ## Implementation notes
 
@@ -227,6 +230,20 @@ theorem isAdjointPair_genWeightSpaceProjection (χ : Weight K H L) :
 theorem trace_genWeightSpaceProjection_eq_one [CharZero K] {χ : Weight K H L}
     (hχ : χ.IsNonZero) : LinearMap.trace K L (genWeightSpaceProjection K H L χ) = 1 := by
   rw [trace_genWeightSpaceProjection, finrank_rootSpace_eq_one χ hχ, Nat.cast_one]
+
+/-- The Killing pairings of the two opposite projections of a basis and its Killing-dual basis add
+up to the trace of a root-space projection, which is one. -/
+theorem sum_killingForm_genWeightSpaceProjection_eq_one [CharZero K] {ι : Type*} [Fintype ι]
+    [DecidableEq ι] (b : Module.Basis ι K L) {χ : Weight K H L} (hχ : χ.IsNonZero) :
+    ∑ i, killingForm K L (genWeightSpaceProjection K H L χ (b i))
+      (genWeightSpaceProjection K H L (-χ) (killingDualBasis b i)) = 1 := by
+  have hcoef (i : ι) : killingForm K L (genWeightSpaceProjection K H L χ (b i))
+      (genWeightSpaceProjection K H L (-χ) (killingDualBasis b i)) =
+      killingForm K L (genWeightSpaceProjection K H L χ (b i)) (killingDualBasis b i) := by
+    rw [killingForm_genWeightSpaceProjection H χ, genWeightSpaceProjection_apply_apply,
+      ← killingForm_genWeightSpaceProjection H χ]
+  rw [Finset.sum_congr rfl fun i _ ↦ hcoef i, sum_killingForm_killingDualBasis_eq_trace,
+    trace_genWeightSpaceProjection_eq_one H hχ]
 
 end Killing
 

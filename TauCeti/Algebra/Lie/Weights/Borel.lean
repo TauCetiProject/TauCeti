@@ -57,6 +57,7 @@ function.
   they are built from.
 * `TauCeti.neg_mem_posRoots_of_mem_negRoots` and `TauCeti.neg_mem_negRoots_of_mem_posRoots` say
   that negation exchanges negative and positive roots.
+* `TauCeti.killingForm_eq_zero_of_mem_posRoots`: positive root spaces are Killing-orthogonal.
 * `TauCeti.exists_nat_root_apply_of_mem_posRoots` and
   `TauCeti.exists_nat_root_apply_eq_neg_of_mem_negRoots`: an element of `H` on which every simple
   root takes a natural value takes a natural value on every positive root, and the negative of a
@@ -230,6 +231,21 @@ theorem neg_mem_negRoots_of_mem_posRoots {i : H.root}
   rw [← IsKilling.rootSystem_reflectionPerm_self_eq_neg i]
   exact (reflectionPerm_self_mem_negRoots_iff_mem_posRoots
     (IsKilling.rootSystem H) b i).mpr hi
+
+variable {b} in
+/-- Positive root spaces are orthogonal for the Killing form, because the sum of two positive roots
+is nonzero. -/
+theorem killingForm_eq_zero_of_mem_posRoots {α β : H.root}
+    (hα : α ∈ posRoots (IsKilling.rootSystem H) b)
+    (hβ : β ∈ posRoots (IsKilling.rootSystem H) b) {x y : L}
+    (hx : x ∈ rootSpace H (α : H → K)) (hy : y ∈ rootSpace H (β : H → K)) :
+    killingForm K L x y = 0 := by
+  refine killingForm_apply_eq_zero_of_mem_rootSpace_of_add_ne_zero K L H hx hy fun h ↦ ?_
+  have hβα : β = -α := Subtype.ext <| by
+    rw [IsKilling.val_neg_root]
+    exact Weight.ext fun z ↦ eq_neg_of_add_eq_zero_right (congrFun h z)
+  exact Set.disjoint_left.mp (disjoint_posRoots_negRoots _ b) hβ
+    (hβα ▸ neg_mem_negRoots_of_mem_posRoots b hα)
 
 variable {b} in
 /-- **A dominant element takes natural values on the positive roots**, not only on the simple ones,
