@@ -78,17 +78,11 @@ theorem pbwDividedPowerBasis_eq_prod (n : ι →₀ ℕ) :
     simp only [pbwDividedPowerScale, Finsupp.prod, ← Multiset.prod_coe,
       ← Multiset.map_coe, Finset.sort_eq, Finset.prod_eq_multiset_prod]
   rw [hscale]
-  have hprod (l : List ι) :
-      ((l.map fun i ↦ invFactorialUnit (n i)).prod : ℚˣ) •
-        (l.map fun i ↦ _root_.UniversalEnvelopingAlgebra.ι ℚ (b i) ^ n i).prod =
-      (l.map fun i ↦ dividedPower (n i) (_root_.UniversalEnvelopingAlgebra.ι ℚ (b i))).prod := by
-    induction l with
-    | nil => simp
-    | cons i l ih =>
-      simp only [List.map_cons, List.prod_cons]
-      rw [← ih]
-      rw [← smul_mul_smul_comm, invFactorialUnit_smul_pow]
-  exact hprod _
+  simpa only [invFactorialUnit_smul_pow] using
+    (List.prod_hom₂ (n.support.sort (· ≤ ·)) (fun (a : ℚˣ) (x : U) ↦ a • x)
+      (fun a b c d ↦ (smul_mul_smul_comm a c b d).symm) (by simp)
+      (fun i ↦ invFactorialUnit (n i))
+      (fun i ↦ _root_.UniversalEnvelopingAlgebra.ι ℚ (b i) ^ n i)).symm
 
 @[simp]
 theorem pbwDividedPowerBasis_zero : b.pbwDividedPowerBasis 0 = 1 := by
