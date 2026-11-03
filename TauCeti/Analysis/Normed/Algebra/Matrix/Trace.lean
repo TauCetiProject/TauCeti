@@ -181,4 +181,48 @@ theorem trace_mul_mul_sq_pow_two_le (A B : Matrix m m 𝕜)
     trace_mul_mul_sq_le (A ^ (2 ^ k)) (B ^ (2 ^ k))
       (posSemidef_pow_two_pow A hA k) (posSemidef_pow_two_pow B hB k)
 
+/-- A first Frobenius-norm bound for the fourth product trace. The right-hand side is
+`‖(A * B) ^ 2‖ ^ 2`; comparing it further with `trace (A ^ 4 * B ^ 4)` is the
+fourth-power Araki–Lieb–Thirring step. -/
+theorem trace_mul_four_le_trace_sq_mul_conj (A B : Matrix m m 𝕜)
+    (hA : A.PosSemidef) (hB : B.PosSemidef) :
+    ((A * B) ^ 4).trace ≤ (A ^ 2 * (B * A * B) ^ 2).trace := by
+  have hBAB : (B * A * B).PosSemidef := by
+    apply Matrix.nonneg_iff_posSemidef.mp
+    simpa only [Matrix.star_eq_conjTranspose, hB.isHermitian.eq] using
+      star_left_conjugate_nonneg hA.nonneg B
+  have hprod : A * (B * A * B) = (A * B) ^ 2 := by
+    rw [pow_two]
+    noncomm_ring
+  have hpow : ((A * B) ^ 4) = (A * (B * A * B)) ^ 2 := by
+    rw [hprod]
+    noncomm_ring
+  rw [hpow]
+  exact trace_mul_mul_sq_le A (B * A * B) hA hBAB
+
+/-- The fourth product trace is bounded by the Frobenius norm squared of `(A * B) ^ 2`. -/
+theorem trace_mul_four_le_frobenius_norm_sq (A B : Matrix m m 𝕜)
+    (hA : A.PosSemidef) (hB : B.PosSemidef) :
+    ((A * B) ^ 4).trace ≤ ‖(A * B) ^ 2‖ ^ 2 := by
+  have hBAB : (B * A * B).PosSemidef := by
+    apply Matrix.nonneg_iff_posSemidef.mp
+    simpa only [Matrix.star_eq_conjTranspose, hB.isHermitian.eq] using
+      star_left_conjugate_nonneg hA.nonneg B
+  have hprod : A * (B * A * B) = (A * B) ^ 2 := by
+    rw [pow_two]
+    noncomm_ring
+  have hpow : ((A * B) ^ 4) = (A * (B * A * B)) ^ 2 := by
+    rw [hprod]
+    noncomm_ring
+  have hnorm : (A ^ 2 * (B * A * B) ^ 2).trace = ‖(A * B) ^ 2‖ ^ 2 := by
+    rw [trace_pow_two_mul_eq_trace_conjTranspose_mul A (B * A * B)
+      hA.isHermitian hBAB.isHermitian, hprod,
+      ← Matrix.frobenius_inner_eq_trace_conjTranspose_mul]
+    rw [inner_self_eq_norm_sq_to_K]
+  calc
+    ((A * B) ^ 4).trace ≤ (A ^ 2 * (B * A * B) ^ 2).trace := by
+      rw [hpow]
+      exact trace_mul_mul_sq_le A (B * A * B) hA hBAB
+    _ = ‖(A * B) ^ 2‖ ^ 2 := hnorm
+
 end Matrix
