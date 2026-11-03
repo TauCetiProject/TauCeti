@@ -23,7 +23,8 @@ value at `x` no longer changes, and returns `f s x`. Whether a stage is such a s
 question with a `Z`-c.e. negation, the existence of a later stage with a different value, so `Z'`
 answers it. No modulus of convergence is needed, and none need be computable in `Z`.
 
-The converse, that every function computable in `Z'` is such a limit, is not proved here.
+The converse, that every function computable in `Z'` is such a limit, is proved in
+`TauCeti.Computability.Approximation.Jump`.
 
 ## Main results
 
