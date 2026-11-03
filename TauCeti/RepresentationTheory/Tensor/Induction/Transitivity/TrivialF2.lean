@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Tensor.Induction.Transitivity.Discrete
-public import TauCeti.RepresentationTheory.Tensor.Induction.TrivialF2
+public import TauCeti.RepresentationTheory.Tensor.Induction.TrivialF2.Basic
 
 /-!
 # Trivial F₂ coefficients and tensor-induction transitivity
