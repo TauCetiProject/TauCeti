@@ -294,12 +294,15 @@ theorem exists_contMDiff_hasCompactSupport_yamabeQuotient_lt [I.Boundaryless]
       Function.support (fun y ↦ k (Ψ y)) ⊆ ball (φ p) R := fun y hy ↦
     hKR (hΨK y (by_contra fun h ↦ hy (hkz _ h)))
   have hcv (k : F → ℝ) : ∫ y, k (Ψ y) ∂μ = (ρ p)⁻¹ * (t ^ n * ∫ z, k z) := by
-    rw [integral_sub_right_eq_self (fun y ↦ k (t⁻¹ • L y)) (φ p)]
     have h := integral_map_equiv L.toHomeomorph.toMeasurableEquiv (μ := μ) fun z ↦ k (t⁻¹ • z)
     simp only [Homeomorph.toMeasurableEquiv_coe, ContinuousLinearEquiv.coe_toHomeomorph] at h
-    rw [← h, hmap, integral_smul_nnreal_measure,
-      Measure.integral_comp_inv_smul_of_nonneg _ _ ht0.le, hF, NNReal.smul_def,
-      Real.coe_toNNReal _ (by positivity), smul_eq_mul, smul_eq_mul]
+    calc ∫ y, k (Ψ y) ∂μ = ∫ z, k (t⁻¹ • z) ∂Measure.map L μ := by
+          rw [integral_sub_right_eq_self (fun y ↦ k (t⁻¹ • L y)) (φ p), h]
+      _ = (ρ p)⁻¹ * ∫ z, k (t⁻¹ • z) := by
+          rw [hmap, integral_smul_nnreal_measure]
+          simp [NNReal.smul_def, hρp.le]
+      _ = (ρ p)⁻¹ * (t ^ n * ∫ z, k z) := by
+          rw [Measure.integral_comp_inv_smul_of_nonneg _ _ ht0.le, hF, smul_eq_mul]
   have hdv0 (z : F) (hz : z ∉ tsupport v) : ‖fderiv ℝ v z‖ ^ 2 = 0 := by
     rw [image_eq_zero_of_notMem_tsupport (fun h ↦ hz (tsupport_fderiv_subset ℝ h)), norm_zero,
       sq, zero_mul]
@@ -384,9 +387,12 @@ theorem exists_contMDiff_hasCompactSupport_yamabeQuotient_lt [I.Boundaryless]
   have hden : (1 - η) ^ (2 / P) * t ^ (n - 2) * D ^ (2 / P) ≤
       (∫ x, |u x| ^ P ∂riemannianVolume I M) ^ (2 / P) := by
     have htP : (t ^ n) ^ (2 / P) = t ^ (n - 2) := by
-      rw [two_div_criticalExponent, ← Real.rpow_natCast_mul ht0.le,
-        mul_div_cancel₀ _ (by exact_mod_cast (show n ≠ 0 by omega)), ← Nat.cast_ofNat,
-        ← Nat.cast_sub hn.le, Real.rpow_natCast]
+      have hexp : (n : ℝ) * (2 / P) = (n - 2 : ℕ) := by
+        have : (n : ℝ) ≠ 0 := by positivity
+        rw [two_div_criticalExponent]
+        push_cast [hn.le]
+        field_simp
+      rw [← Real.rpow_natCast_mul ht0.le, hexp, Real.rpow_natCast]
     calc (1 - η) ^ (2 / P) * t ^ (n - 2) * D ^ (2 / P) = ((1 - η) * t ^ n * D) ^ (2 / P) := by
           rw [Real.mul_rpow (by positivity) hD.le, Real.mul_rpow hη1'.le (by positivity), htP]
       _ ≤ _ := Real.rpow_le_rpow (by positivity) hIP (by positivity)

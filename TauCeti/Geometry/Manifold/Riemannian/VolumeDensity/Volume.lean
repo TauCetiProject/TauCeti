@@ -279,11 +279,15 @@ theorem map_addHaar_eq_chartVolumeDensity_inv_smul_volume {F : Type*} [NormedAdd
     rw [← sq, Real.sqrt_sq_eq_abs]
     congr 2
   have hd : d ≠ 0 := (o.toBasis.isUnit_det b').ne_zero
-  rw [Module.Basis.map_addHaar, Module.Basis.addHaar_eq_iff, smul_apply, ENNReal.smul_def,
-    smul_eq_mul, Module.Basis.coe_parallelepiped, ← o.addHaar_eq_volume,
-    Measure.addHaar_parallelepiped, hρ, ← ENNReal.ofReal_coe_nnreal,
-    Real.coe_toNNReal _ (by positivity), ← ENNReal.ofReal_mul (by positivity),
-    inv_mul_cancel₀ (abs_ne_zero.2 hd), ENNReal.ofReal_one]
+  -- The volume of the parallelepiped spanned by `b'` is `|d|`.
+  have hvol : volume (parallelepiped b') = ENNReal.ofReal |d| := by
+    rw [← o.addHaar_eq_volume, Measure.addHaar_parallelepiped]
+  rw [Module.Basis.map_addHaar, Module.Basis.addHaar_eq_iff, smul_apply,
+    Module.Basis.coe_parallelepiped, hvol, hρ]
+  -- The scalar `|d|⁻¹.toNNReal` acts on `ℝ≥0∞` as `ENNReal.ofReal |d|⁻¹`.
+  change ENNReal.ofReal |d|⁻¹ * ENNReal.ofReal |d| = 1
+  rw [← ENNReal.ofReal_mul (by positivity)]
+  simp [hd]
 
 end Coordinates
 
