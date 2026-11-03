@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
-public import TauCeti.Geometry.Manifold.VectorBundle.FrameTrivialization
 
 /-!
 # Covariant derivatives read in a local frame
