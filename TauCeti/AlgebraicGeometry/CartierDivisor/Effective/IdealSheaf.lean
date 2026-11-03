@@ -126,35 +126,28 @@ private lemma map_sectionsIdeal_basicOpen (hD : D.IsEffective) (U : X.affineOpen
   set ρ := X.presheaf.map (homOfLE (X.basicOpen_le g)).op
   have : (-D).sheaf.IsQuasicoherent :=
     (-D).toInvertibleSheaf_obj ▸ InvertibleSheaf.isQuasicoherent_obj (-D).toInvertibleSheaf
-  have := (-D).sheaf.isLocalizedModule_basicOpenRestrict U.2 g
   -- Rewriting inside images under `𝒪_X ⟶ 𝒦_X` fails for the reason recorded at `sectionsIdeal`,
   -- so the equations between them are chained with `Eq.trans` below.
   obtain ⟨tb, htb⟩ : ∃ tb, Scheme.Modules.Hom.app (-D).sheafι (X.basicOpen g) tb =
       Scheme.Modules.Hom.app (toRationalFunctions X) (X.basicOpen g) b :=
     (Set.ext_iff.mp ((-D).range_sheafι_app (X.basicOpen g)) _).mpr hb
-  -- Write the section `b` of `𝒪_X(-D)` over `D(g)` as `t₀ / gⁿ` with `t₀` a section over `U`.
-  obtain ⟨⟨t₀, s⟩, ht⟩ := IsLocalizedModule.surj (Submonoid.powers g)
-    ((-D).sheaf.basicOpenRestrict g) tb
-  obtain ⟨n, hn⟩ := Submonoid.mem_powers_iff _ _ |>.mp s.2
+  -- Some `gⁿ b` extends to a section `t₀` of `𝒪_X(-D)` over `U`, by quasi-coherence.
+  obtain ⟨n, t₀, ht⟩ := (-D).sheaf.exists_pow_smul_eq_map U.2 g rfl (X.basicOpen_le g) tb
   obtain ⟨a₀, ha₀⟩ := hD.exists_toRationalFunctions_app_eq ((-D).sheafι_app_mem U t₀)
   have ha₀I : a₀ ∈ sectionsIdeal D U :=
     (congrArg (· ∈ (-D).sections U) ha₀).mpr ((-D).sheafι_app_mem U t₀)
   -- Then `gⁿ b` is the restriction of `a₀`, as one checks inside `𝒦_X`.
-  have hgb : ρ (g ^ n) * b = ρ a₀ := by
+  have hgb : ρ g ^ n * b = ρ a₀ := by
     refine toRationalFunctions_app_injective _ ?_
     -- `ht` says `gⁿ • b = t₀|_{D(g)}` in `𝒪_X(-D)`; its image in `𝒦_X` is the claim.
     have h := congrArg (Scheme.Modules.Hom.app (-D).sheafι (X.basicOpen g)) ht
-    rw [Submonoid.smul_def, ← hn, Scheme.Modules.basicOpenRestrict_apply,
-      Scheme.Modules.basicOpen_smul_def, Scheme.Modules.Hom.app_smul,
-      ← Scheme.Modules.mapPresheaf_app, (-D).sheafι.mapPresheaf.naturality_apply,
-      Scheme.Modules.mapPresheaf_app] at h
+    rw [Scheme.Modules.Hom.app_smul, ← Scheme.Modules.mapPresheaf_app,
+      (-D).sheafι.mapPresheaf.naturality_apply, Scheme.Modules.mapPresheaf_app] at h
     exact (Scheme.Modules.Hom.app_smul (M := SheafOfModules.unit X.ringCatSheaf) _ _ b).trans
-      ((congrArg (ρ (g ^ n) • ·) htb.symm).trans (h.trans
+      ((congrArg (ρ g ^ n • ·) htb.symm).trans (h.trans
         ((congrArg ((rationalFunctions X).presheaf.map _) ha₀.symm).trans
           (toRationalFunctions_app_map _ a₀).symm)))
-  have hu : IsUnit (ρ (g ^ n)) := by
-    rw [map_pow]
-    exact (X.toRingedSpace.isUnit_res_basicOpen g).pow n
+  have hu : IsUnit (ρ g ^ n) := (X.toRingedSpace.isUnit_res_basicOpen g).pow n
   rw [← Ideal.unit_mul_mem_iff_mem _ hu, hgb]
   exact Ideal.mem_map_of_mem _ ha₀I
 
@@ -168,6 +161,7 @@ def IsEffective.idealSheaf (hD : D.IsEffective) : X.IdealSheafData where
 
 /-- Over an affine open `U`, a regular function lies in the ideal sheaf of `D` exactly when it is a
 section of `𝒪_X(-D)`. -/
+@[simp]
 theorem IsEffective.mem_idealSheaf_ideal_iff (hD : D.IsEffective) {U : X.affineOpens}
     {a : Γ(X, U)} :
     a ∈ hD.idealSheaf.ideal U ↔
@@ -176,6 +170,7 @@ theorem IsEffective.mem_idealSheaf_ideal_iff (hD : D.IsEffective) {U : X.affineO
 
 /-- **The sections of the ideal sheaf of `D`.** Over every open subset `U`, a regular function lies
 in the ideal sheaf of `D` exactly when it is a section of `𝒪_X(-D)`. -/
+@[simp]
 theorem IsEffective.mem_sections_idealSheaf_iff (hD : D.IsEffective) {U : X.Opens}
     {a : Γ(X, U)} :
     a ∈ hD.idealSheaf.sections U ↔
