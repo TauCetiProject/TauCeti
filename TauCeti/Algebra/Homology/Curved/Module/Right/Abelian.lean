@@ -18,8 +18,9 @@ functor preserves these constructions and reflects isomorphisms. The coimage-to-
 comparison in the closed category is an isomorphism, as detected in the abelian graded module
 category. This characterizes the abelian structure on the closed category of curved modules.
 
-The graded forgetful functor preserves finite limits and colimits. This ambient abelian
-category and its forgetful functor support the graded-split exact structure on curved modules.
+The graded forgetful functor preserves finite limits and colimits, hence short exact sequences.
+This ambient abelian category and its forgetful functor support the graded-split exact structure
+on curved modules.
 
 ## References
 
@@ -62,5 +63,15 @@ noncomputable instance : PreservesFiniteLimits (forgetDifferential (h := h)) :=
 /-- The graded forgetful functor preserves finite colimits of closed curved-module diagrams. -/
 noncomputable instance : PreservesFiniteColimits (forgetDifferential (h := h)) :=
   Functor.preservesFiniteColimits_of_preservesCokernels _
+
+/-- Forgetting the differentials keeps a short exact sequence of curved modules short exact. -/
+theorem shortExact_map_forgetDifferential {S : ShortComplex
+    (ForgetEnrichment (CochainComplex (ModuleCat R) ℤ) (CurvedDGRightModuleCat.{u, u, u} h))}
+    (hS : S.ShortExact) : (S.map (forgetDifferential (h := h))).ShortExact := by
+  have := hS.mono_f
+  have := hS.epi_g
+  have : PreservesLimitsOfShape WalkingCospan (forgetDifferential (h := h)) := inferInstance
+  have : PreservesColimitsOfShape WalkingSpan (forgetDifferential (h := h)) := inferInstance
+  exact hS.map _
 
 end TauCeti.CurvedDGRightModuleCat

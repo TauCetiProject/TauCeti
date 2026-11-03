@@ -112,13 +112,6 @@ section Homogeneous
 
 variable {M N : CurvedDGRightModuleCat.{u, u, u} h}
 
-private theorem isHomogeneous_toGradedModuleCat_iff {p : ℤ} (f : M →ₗ[Aᵐᵒᵖ] N) :
-    LinearMap.IsHomogeneous f (toGradedModuleCat M).grading.piece
-        (toGradedModuleCat N).grading.piece p ↔
-      f ∈ dgRightModuleCochains (R := R) (A := A) (ℳ := M.grading) (ℳN := N.grading) p := by
-  simp only [dgRightModuleCochains.mem_iff, LinearMap.isHomogeneous_def, toGradedModuleCat_piece,
-    LinearMap.restrictScalars_apply]
-
 variable {P : CurvedDGRightModuleCat.{u, u, u} h}
 
 /-- Along a surjective closed map, a right-linear map of degree `p` out of a graded-projective
@@ -307,15 +300,6 @@ variable {S : ShortComplex
     (ForgetEnrichment (CochainComplex (ModuleCat R) ℤ) (CurvedDGRightModuleCat.{u, u, u} h))}
   (hS : S.ShortExact)
 include hS
-
-/-- Forgetting the differentials keeps a short exact sequence of curved modules short exact. -/
-private theorem shortExact_map_forgetDifferential :
-    (S.map (forgetDifferential (h := h))).ShortExact := by
-  have := hS.mono_f
-  have := hS.epi_g
-  have : PreservesLimitsOfShape WalkingCospan (forgetDifferential (h := h)) := inferInstance
-  have : PreservesColimitsOfShape WalkingSpan (forgetDifferential (h := h)) := inferInstance
-  exact hS.map _
 
 /-- For a graded-projective module `P` and a short exact sequence `K ⟶ L ⟶ M` of curved modules,
 composition with the induced map `cone(K ⟶ L) ⟶ M` is a bijection on morphisms out of `P` in the
