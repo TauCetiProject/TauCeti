@@ -36,8 +36,8 @@ fields on a product manifold.
   parameter-preserving map splits exactly when the differential of its slice splits.
 * `MDifferentiableAt.mfderiv_fst_apply` and `MDifferentiableAt.mfderiv_snd_apply`: the
   differential of a coordinate of a map into a product.
-* `TauCeti.mfderiv_snd_eq_mfderiv_fst_of_fiberProduct`: the derivative of a fibre-product
-  condition `(f y).2 = (g y).1`.
+* `MDifferentiableAt.mfderiv_snd_eq_mfderiv_fst_of_fiberProduct`: the derivative of a
+  fibre-product condition `(f y).2 = (g y).1`.
 -/
 
 public section
@@ -228,7 +228,7 @@ theorem MDifferentiableAt.mfderiv_snd_apply (hf : MDifferentiableAt I (J.prod J'
 /-- Differentiating a fibre-product condition: if the second coordinate of `f` agrees everywhere
 with the first coordinate of `g`, then so do the corresponding coordinates of their
 differentials. -/
-theorem TauCeti.mfderiv_snd_eq_mfderiv_fst_of_fiberProduct {g : M → N' × N''}
+theorem MDifferentiableAt.mfderiv_snd_eq_mfderiv_fst_of_fiberProduct {g : M → N' × N''}
     (hf : MDifferentiableAt I (J.prod J') f x) (hg : MDifferentiableAt I (J'.prod J'') g x)
     (hfg : ∀ y, (f y).2 = (g y).1) (v : TangentSpace I x) :
     (mfderiv I (J.prod J') f x v).2 = (mfderiv I (J'.prod J'') g x v).1 := by

@@ -35,6 +35,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {J : ModelWithCorners 𝕜 F H'} [TopologicalSpace N] [ChartedSpace H' N]
 
 /-- The differential of the graph `y ↦ (y, f y)` has first coordinate `v`. -/
+@[simp]
 theorem mfderiv_graph_fst_apply {f : M → N} {x : M} (hf : MDifferentiableAt I J f x)
     (v : TangentSpace I x) : (mfderiv I (I.prod J) (fun y ↦ (y, f y)) x v).1 = v := by
   have hg : MDifferentiableAt I (I.prod J) (fun y ↦ (y, f y)) x := mdifferentiableAt_id.prodMk hf
@@ -43,6 +44,7 @@ theorem mfderiv_graph_fst_apply {f : M → N} {x : M} (hf : MDifferentiableAt I 
   exact DFunLike.congr_fun (mfderiv_id (I := I) (x := x)) v
 
 /-- The differential of the graph `y ↦ (y, f y)` has second coordinate `df v`. -/
+@[simp]
 theorem mfderiv_graph_snd_apply {f : M → N} {x : M} (hf : MDifferentiableAt I J f x)
     (v : TangentSpace I x) :
     (mfderiv I (I.prod J) (fun y ↦ (y, f y)) x v).2 = mfderiv I J f x v := by

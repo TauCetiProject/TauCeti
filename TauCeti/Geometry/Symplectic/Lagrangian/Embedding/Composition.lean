@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Lagrangian.Embedding.Basic
 public import TauCeti.Geometry.Symplectic.Lagrangian.Relation
-public import TauCeti.Geometry.Symplectic.Manifold.TwistedProd
+public import TauCeti.Geometry.Symplectic.Lagrangian.TwistedProd
 import TauCeti.Geometry.Manifold.MFDeriv.Graph
 
 /-!
@@ -28,7 +28,7 @@ of `h` at `c` is the composite of the linear canonical relations `df(T L₁)` an
 (`Submodule.range_prod_eq_relComp_range`), which is Lagrangian by
 `TauCeti.SymplecticForm.IsLagrangian.relComp`. The matching condition on tangent vectors,
 `(df (da ξ)).2 = (dg (db ξ)).1`, is the derivative of the fibre-product condition
-(`TauCeti.mfderiv_snd_eq_mfderiv_fst_of_fiberProduct`). Hence:
+(`MDifferentiableAt.mfderiv_snd_eq_mfderiv_fst_of_fiberProduct`). Hence:
 
 * `TauCeti.SmoothTwoForm.IsNondegenerate.IsLagrangianMap.relComp`: the composite map is
   Lagrangian for `pr₁*σ₁ - pr₂*σ₃`, even when `h` has excess kernel and is not an immersion;
@@ -88,25 +88,6 @@ private theorem isLagrangian_range_prod_of_eq {x₁ : M₁} {y y' : M₂} {x₃ 
   rw [Submodule.range_prod_eq_relComp_range hST hsurj]
   exact hA.relComp hB
 
-/-- A Lagrangian map into a twisted product has tangent images that are linear canonical
-relations, after the canonical identification `T(M × N) = TM × TN`. -/
-private theorem isLagrangian_range_prod {E H M F G N EL HL L : Type*}
-    [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-    [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
-    [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace G] {J : ModelWithCorners ℝ F G}
-    [TopologicalSpace N] [ChartedSpace G N] [IsManifold J ∞ N]
-    [NormedAddCommGroup EL] [NormedSpace ℝ EL] [TopologicalSpace HL]
-    {K : ModelWithCorners ℝ EL HL} [TopologicalSpace L] [ChartedSpace HL L]
-    {σ : SmoothTwoForm I M} {τ : SmoothTwoForm J N} {hσ : σ.IsNondegenerate}
-    {hτ : τ.IsNondegenerate} {f : L → M × N} (hf : (hσ.twistedProd hτ).IsLagrangianMap K f)
-    (x : L) :
-    ((hσ.symplecticFormAt (f x).1).twistedProd (hτ.symplecticFormAt (f x).2)).IsLagrangian
-      (LinearMap.range ((Manifold.tangentSpaceProdEquiv (f x)).toLinearEquiv.toLinearMap ∘ₗ
-        (mfderiv K (I.prod J) f x).toLinearMap)) := by
-  rw [LinearMap.range_comp, ← symplecticFormAt_twistedProd hσ hτ,
-    SymplecticForm.isLagrangian_map_transport_iff]
-  exact isLagrangianMap_iff_forall.mp hf x
-
 variable {EL₁ HL₁ L₁ EL₂ HL₂ L₂ EC HC C : Type*}
   [NormedAddCommGroup EL₁] [NormedSpace ℝ EL₁] [TopologicalSpace HL₁]
   {K₁ : ModelWithCorners ℝ EL₁ HL₁} [TopologicalSpace L₁] [ChartedSpace HL₁ L₁]
@@ -132,8 +113,7 @@ theorem IsLagrangianMap.relComp (hfL : (hσ₁.twistedProd hσ₂).IsLagrangianM
         (mfderiv K₂ (I₂.prod I₃) g (b c) w).1 →
       ∃ ξ, mfderiv KC K₁ a c ξ = u ∧ mfderiv KC K₂ b c ξ = w) :
     (hσ₁.twistedProd hσ₃).IsLagrangianMap KC (fun c ↦ ((f (a c)).1, (g (b c)).2)) := by
-  rw [isLagrangianMap_iff_forall]
-  intro c
+  refine (isLagrangianMap_twistedProd_iff_forall hσ₁ hσ₃).mpr fun c ↦ ?_
   let e := (Manifold.tangentSpaceProdEquiv (I := I₁) (J := I₃)
     ((f (a c)).1, (g (b c)).2)).toLinearEquiv
   let A := (Manifold.tangentSpaceProdEquiv (f (a c))).toLinearEquiv.toLinearMap ∘ₗ
@@ -171,14 +151,15 @@ theorem IsLagrangianMap.relComp (hfL : (hσ₁.twistedProd hσ₂).IsLagrangianM
       -- rewrite here: it acts on the product of the coordinate tangent spaces, which is the
       -- tangent space of the product only by definition.
       exact hgb.mfderiv_snd_apply ξ
-  rw [← SymplecticForm.isLagrangian_map_transport_iff (e := e),
-    symplecticFormAt_twistedProd hσ₁ hσ₃, ← LinearMap.range_comp, hd]
+  rw [hd]
   -- The tangent image is the composite of the tangent relations of `f` and `g`.
-  refine isLagrangian_range_prod_of_eq (hσ₂ := hσ₂) (hab c) (isLagrangian_range_prod hfL (a c))
-    (isLagrangian_range_prod hgL (b c)) (fun ξ ↦ ?_) (fun u w h ↦ hfib c u w ?_)
+  refine isLagrangian_range_prod_of_eq (hσ₂ := hσ₂) (hab c)
+    ((isLagrangianMap_twistedProd_iff_forall hσ₁ hσ₂).mp hfL (a c))
+    ((isLagrangianMap_twistedProd_iff_forall hσ₂ hσ₃).mp hgL (b c)) (fun ξ ↦ ?_)
+    (fun u w h ↦ hfib c u w ?_)
   · rw [ContinuousLinearMap.coe_coe, ContinuousLinearMap.coe_coe, hA, hB,
       ← mfderiv_comp_apply c (hf (a c)) (ha c), ← mfderiv_comp_apply c (hg (b c)) (hb c)]
-    exact mfderiv_snd_eq_mfderiv_fst_of_fiberProduct hfa hgb hab ξ
+    exact hfa.mfderiv_snd_eq_mfderiv_fst_of_fiberProduct hgb hab ξ
   · rwa [hA, hB] at h
 
 /-- **Composition of Lagrangian correspondences, embedded case.** Under the hypotheses of
