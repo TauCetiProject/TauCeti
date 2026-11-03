@@ -148,18 +148,6 @@ theorem abs_mul_realPeriod_eq_of_ae_encard_eq (φ : Isogeny W₁ W₂) {c : ℝ}
 
 section Fibres
 
-/-- Over each `x` with `Ψ₂Sq(x) > 0`, an elliptic curve over `ℝ` has a real point. -/
-private theorem exists_nonsingular {W : WeierstrassCurve.Affine ℝ} [W.IsElliptic] {x : ℝ}
-    (hx : 0 < W.Ψ₂Sq.eval x) : ∃ y, W.Nonsingular x y :=
-  let ⟨y, h⟩ := exists_equation_iff_nonneg_eval_Ψ₂Sq.mpr hx.le
-  ⟨y, equation_iff_nonsingular.mp h⟩
-
-/-- A real point over an `x` with `Ψ₂Sq(x) > 0` is not of order two. -/
-private theorem neg_some_ne_some {W : WeierstrassCurve.Affine ℝ} {x y : ℝ} (h : W.Nonsingular x y)
-    (hx : 0 < W.Ψ₂Sq.eval x) : -Point.some x y h ≠ .some x y h :=
-  Point.neg_ne_self_iff_ne_zero_and_pos_eval_Ψ₂Sq.mpr
-    ⟨Point.some_ne_zero h, (Point.xCoord_some h).symm ▸ hx⟩
-
 /-- The abscissa of a real point over `P`, for `P` not of order two, lies in the fibre of
 `N / D` over `x(P)`, off the poles of `N / D`. -/
 private theorem mem_fibre_of_pointMap_eq (φ : Isogeny W₁ W₂) {P : W₂.Point} (hP : -P ≠ P)
@@ -182,7 +170,7 @@ private theorem exists_pointMap_eq_of_mem_fibre (φ : Isogeny W₁ W₂) {P : W�
     {x : ℝ} (hx : 0 < W₁.Ψ₂Sq.eval x) (hD : φ.xRatFunc.denom.eval x ≠ 0)
     (hr : φ.xRatFunc.num.eval x / φ.xRatFunc.denom.eval x = P.xCoord) :
     ∃ Q : W₁.Point, Q.xCoord = x ∧ (Hom.ofIsogeny φ).pointMap Q = P := by
-  obtain ⟨y, h⟩ := exists_nonsingular hx
+  obtain ⟨y, h⟩ := exists_nonsingular_of_nonneg_eval_Ψ₂Sq hx.le
   have h0 : (Hom.ofIsogeny φ).pointMap (.some x y h) ≠ 0 :=
     (pointMap_ofIsogeny_some_eq_zero_iff h).not.mpr hD
   -- `φ(x, y)` has the abscissa of `P`, so it is `P` or `-P`
@@ -274,7 +262,7 @@ private theorem measurableSet_setOf_xCoord_mem_range (φ : Isogeny W₁ W₂) :
       obtain ⟨hx, hD, hr⟩ :=
         mem_fibre_of_pointMap_eq φ hP ((Hom.pointMapHom_apply _ Q).symm.trans hQ)
       exact ⟨Q.xCoord, ⟨hx, hD⟩, hr.trans hPy⟩
-    · obtain ⟨y', h⟩ := exists_nonsingular hx
+    · obtain ⟨y', h⟩ := exists_nonsingular_of_nonneg_eval_Ψ₂Sq hx.le
       exact ⟨(Hom.ofIsogeny φ).pointMap (.some x y' h), ⟨_, Hom.pointMapHom_apply _ _⟩,
         (pointMap_ofIsogeny_some_eq_zero_iff h).not.mpr hD,
         (xCoord_pointMap_ofIsogeny_some h hD).trans hr⟩
@@ -300,8 +288,8 @@ private theorem encard_inter_preimage_eq_indicator (φ : Isogeny W₁ W₂) {y :
           ∃ P ∈ (Hom.ofIsogeny φ).pointMapHom.range, P ≠ 0 ∧ P.xCoord = y}.indicator
         (fun _ ↦ (Nat.card (Hom.ofIsogeny φ).pointMapHom.ker : ℕ∞)) y := by
   -- the fibre is counted at a real point `P` with abscissa `x'`
-  obtain ⟨y', h⟩ := exists_nonsingular hy
-  have hP := neg_some_ne_some h hy
+  obtain ⟨y', h⟩ := exists_nonsingular_of_nonneg_eval_Ψ₂Sq hy.le
+  have hP := (Point.neg_some_ne_some_iff_pos_eval_Ψ₂Sq h).mpr hy
   rw [inter_preimage_eq_setOf φ hy0]
   by_cases hφ : Point.some y y' h ∈ (Hom.ofIsogeny φ).pointMapHom.range
   · have he := encard_setOf_eval_div_eq_xCoord_of_mem_range φ hP hφ
@@ -360,9 +348,10 @@ theorem abs_mul_realPeriod_eq_card_ker_mul_of_surjective (φ : Isogeny W₁ W₂
     |c| * W₁.realPeriod = Nat.card (Hom.ofIsogeny φ).pointMapHom.ker * W₂.realPeriod := by
   refine abs_mul_realPeriod_eq_of_ae_encard_eq φ hc ?_
   filter_upwards [volume.ae_ne 0] with y hy0 hy
-  obtain ⟨y', h⟩ := exists_nonsingular hy
+  obtain ⟨y', h⟩ := exists_nonsingular_of_nonneg_eval_Ψ₂Sq hy.le
   rw [inter_preimage_eq_setOf φ hy0]
-  have he := encard_setOf_eval_div_eq_xCoord_of_mem_range φ (neg_some_ne_some h hy)
+  have he := encard_setOf_eval_div_eq_xCoord_of_mem_range φ
+    ((Point.neg_some_ne_some_iff_pos_eval_Ψ₂Sq h).mpr hy)
     ((hφ (.some y y' h)).imp fun Q hQ ↦ (Hom.pointMapHom_apply _ Q).trans hQ)
   rwa [Point.xCoord_some] at he
 

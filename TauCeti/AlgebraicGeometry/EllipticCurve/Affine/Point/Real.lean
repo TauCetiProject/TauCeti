@@ -29,10 +29,11 @@ integral `∫_{Ψ₂Sq(x) > 0} dx / √Ψ₂Sq(x)` be read as an integral over t
 ## Main results
 
 * `WeierstrassCurve.Affine.exists_equation_iff_nonneg_eval_Ψ₂Sq`: there is a real point with
-  abscissa `x` exactly when `Ψ₂Sq(x) ≥ 0`.
+  abscissa `x` exactly when `Ψ₂Sq(x) ≥ 0`; `exists_nonsingular_of_nonneg_eval_Ψ₂Sq` is the
+  same for a nonsingular point on an elliptic curve.
 * `WeierstrassCurve.Affine.Point.neg_ne_self_iff_ne_zero_and_pos_eval_Ψ₂Sq`: a point is not
   `2`-torsion exactly when it is affine and `Ψ₂Sq` is positive at its abscissa, over any ordered
-  field.
+  field; `Point.neg_some_ne_some_iff_pos_eval_Ψ₂Sq` is the affine case.
 
 ## References
 
@@ -57,6 +58,11 @@ theorem exists_equation_iff_nonneg_eval_Ψ₂Sq {x : ℝ} :
   convert Real.sq_sqrt hx using 2
   ring
 
+/-- Over each `x` with `Ψ₂Sq(x) ≥ 0`, an elliptic curve over `ℝ` has a real point. -/
+theorem exists_nonsingular_of_nonneg_eval_Ψ₂Sq [W.IsElliptic] {x : ℝ}
+    (hx : 0 ≤ W.Ψ₂Sq.eval x) : ∃ y, W.Nonsingular x y :=
+  (exists_equation_iff_nonneg_eval_Ψ₂Sq.mpr hx).imp fun _ ↦ equation_iff_nonsingular.mp
+
 /-- **A point is not `2`-torsion exactly when it is affine and `Ψ₂Sq` is positive at its
 abscissa**, over an ordered field such as `ℝ`. At an affine point `(x, y)`,
 `Ψ₂Sq(x) = (2y + a₁x + a₃)²`, which vanishes exactly at the points of order two. -/
@@ -69,5 +75,13 @@ theorem Point.neg_ne_self_iff_ne_zero_and_pos_eval_Ψ₂Sq {F : Type*} [Field F]
   rw [ne_eq, neg_eq_iff_add_eq_zero, Point.some_add_self_eq_zero_iff h, Point.xCoord_some,
     ← W.evalEval_ψ₂_sq h.1, WeierstrassCurve.ψ₂, sq_pos_iff]
   exact ⟨fun h0 ↦ ⟨Point.some_ne_zero h, h0⟩, And.right⟩
+
+/-- An affine point `(x, y)` is not `2`-torsion exactly when `Ψ₂Sq(x) > 0`, over an ordered field
+such as `ℝ`. -/
+theorem Point.neg_some_ne_some_iff_pos_eval_Ψ₂Sq {F : Type*} [Field F] [LinearOrder F]
+    [IsStrictOrderedRing F] {W : WeierstrassCurve.Affine F} {x y : F} (h : W.Nonsingular x y) :
+    -Point.some x y h ≠ .some x y h ↔ 0 < W.Ψ₂Sq.eval x := by
+  rw [Point.neg_ne_self_iff_ne_zero_and_pos_eval_Ψ₂Sq, Point.xCoord_some]
+  exact and_iff_right (Point.some_ne_zero h)
 
 end WeierstrassCurve.Affine

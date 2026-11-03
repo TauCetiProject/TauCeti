@@ -98,14 +98,12 @@ sides differ by `4` times the Weierstrass polynomial at `(x, y)`. This is the co
 theorem _root_.WeierstrassCurve.evalEval_ψ₂_sq_eq_iff [NoZeroDivisors R] (h2 : (2 : R) ≠ 0) :
     W.ψ₂.evalEval x y ^ 2 = (W.Ψ₂Sq).eval x ↔ W.toAffine.Equation x y := by
   refine ⟨fun h ↦ ?_, W.evalEval_ψ₂_sq⟩
-  rw [_root_.WeierstrassCurve.ψ₂, _root_.WeierstrassCurve.Affine.evalEval_polynomialY] at h
-  simp only [_root_.WeierstrassCurve.Ψ₂Sq, _root_.WeierstrassCurve.b₂,
-    _root_.WeierstrassCurve.b₄, _root_.WeierstrassCurve.b₆, eval_add, eval_mul, eval_C, eval_pow,
-    eval_X] at h
-  rw [_root_.WeierstrassCurve.Affine.equation_iff, ← sub_eq_zero]
-  have h4 : (2 * 2 : R) * (y ^ 2 + W.a₁ * x * y + W.a₃ * y -
-      (x ^ 3 + W.a₂ * x ^ 2 + W.a₄ * x + W.a₆)) = 0 := by linear_combination h
-  simpa [h2] using h4
+  -- Mathlib's `ψ₂_sq` at `(x, y)`: `ψ₂(x, y)² = Ψ₂Sq(x) + 4 · W(x, y)`
+  have hsq := congrArg (Polynomial.evalEval x y) W.ψ₂_sq
+  rw [evalEval_pow, h, evalEval_add, evalEval_C, evalEval_mul, left_eq_add] at hsq
+  refine (mul_eq_zero.mp hsq).resolve_left ?_
+  rw [show (4 : R[X][Y]) = (4 : ℕ) by norm_num, evalEval_natCast]
+  exact_mod_cast mul_ne_zero h2 h2
 
 /-- The Bézout combination exhibiting `4Δ` from `Ψ₂Sq(x)` and `Ψ₃(x)`.
 
