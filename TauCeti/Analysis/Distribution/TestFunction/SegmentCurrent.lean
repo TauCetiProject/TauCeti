@@ -92,11 +92,11 @@ private def segmentIntegralCLM (p q : E) : (E →ᵇ E [⋀^Fin 1]→L[ℝ] ℝ)
   LinearMap.mkContinuous
     { toFun f := ∫ᶜ x in .segment p q, toDual (f x)
       map_add' f g := by
-        simp only [BoundedContinuousFunction.coe_add, Pi.add_apply, map_add]
+        simp only [FunLike.coe_add, Pi.add_apply, map_add]
         exact curveIntegral_fun_add (curveIntegrable_segment_toDual f.continuous p q)
           (curveIntegrable_segment_toDual g.continuous p q)
       map_smul' c f := by
-        simp only [BoundedContinuousFunction.coe_smul, map_smul, RingHom.id_apply]
+        simp only [FunLike.coe_smul, Pi.smul_apply, map_smul, RingHom.id_apply]
         exact curveIntegral_fun_smul }
     ‖q - p‖ fun f => (norm_curveIntegral_segment_le fun z _ =>
       (toDual.norm_map (f z)).trans_le (f.norm_coe_le_norm z)).trans_eq (mul_comm _ _)
