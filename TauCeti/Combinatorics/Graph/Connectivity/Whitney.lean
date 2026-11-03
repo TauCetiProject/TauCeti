@@ -126,7 +126,7 @@ theorem vertexConnectivity_le_edgeConnectivity :
 either of two distinct actual vertices. Parallel edges are counted separately. -/
 theorem vertexConnectivity_le_nonloopIncidenceCount
     {x y : α} (hx : x ∈ V(G)) (hy : y ∈ V(G)) (hxy : x ≠ y)
-    (hfin : (G.incidenceSet x).Finite) :
+    (hfin : (G.incidenceSet x \ G.loopSet x).Finite) :
     G.vertexConnectivity ≤ G.nonloopIncidenceCount x :=
   vertexConnectivity_le_edgeConnectivity.trans
     (edgeConnectivity_le_nonloopIncidenceCount hx hy hxy hfin)
