@@ -115,6 +115,11 @@ lemma cotangentMap_augmentation (x : AugmentationIdeal R A) :
   ext
   simp [hx]
 
+/-- Every element of the cotangent space is the cotangent class of some element. -/
+lemma cotangentMap_surjective : Function.Surjective (cotangentMap R A) := fun c ↦ by
+  obtain ⟨a, rfl⟩ := (AugmentationIdeal R A).toCotangent_surjective c
+  exact ⟨a, cotangentMap_augmentation R A a⟩
+
 /-- The cotangent displacement of a product satisfies the Leibniz rule for the
 action through the counit. -/
 lemma cotangentMap_mul (a b : A) :
