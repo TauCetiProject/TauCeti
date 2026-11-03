@@ -24,7 +24,8 @@ general an infinite sum of tensor products. Its universal property concerns supp
 A product kernel `n : S₁ → S₂ → S₀ → R` with potential bound
 `F₀ p₀ ≤ F₁ p₁ + F₂ p₂ + C` is the same datum as a one-input kernel on pairs of generators with
 potential bound `C`. The bilinear product of `n` is the kernel map of that kernel precomposed with
-the tensor product (`NovikovModule.kernelProduct_eq_kernelMap_tensor`), and a kernel map out of
+the tensor product (`NovikovModule.kernelProduct_eq_kernelMap_tensor`), as is a product with
+exchanged inputs (`NovikovModule.kernelProduct_eq_kernelMap_tensor_swap`), and a kernel map out of
 the completed tensor product is determined by its values on tensor products
 (`NovikovModule.kernelMap_tensor_ext`). Kernel maps act on both factors by the tensor product of
 kernels, `m₁(p₁, q₁) m₂(p₂, q₂)` (`NovikovModule.kernelMap_kernelTensor_tensor`).
@@ -54,6 +55,8 @@ corresponding identity between kernels (`NovikovModule.kernelMap_kernelMap`).
 * `TauCeti.NovikovModule.kernelProduct_eq_kernelMap_tensor`,
   `TauCeti.NovikovModule.kernelMap_tensor_ext`: kernel products are the kernel maps out of the
   completed tensor product, composed with the tensor product.
+* `TauCeti.NovikovModule.kernelProduct_eq_kernelMap_tensor_swap`: a product with exchanged inputs
+  is also a kernel map out of the completed tensor product.
 * `TauCeti.NovikovModule.kernelMap_tensor_single_ext`: a kernel map out of the completed tensor
   product is determined by its values on tensor products of point masses.
 * `TauCeti.NovikovModule.kernelMap_kernelTensor_tensor`: kernel maps act factorwise on tensor
@@ -197,6 +200,25 @@ theorem kernelProduct_eq_kernelMap_tensor {n : S₁ → S₂ → S₀ → R}
   ext p₀
   rw [kernelProduct_apply_val, kernelMap_apply_val]
   simp only [tensor_apply_val]
+
+/-- **A product with exchanged inputs factors through the tensor product.** For a product
+kernel `n'` from `S₂ × S₁`, the product `b ⋆' a` is the kernel map, out of the tensor product
+`a ⊗ b`, of the kernel `n'(q.2, q.1, ·)`. The two potential bounds may have different
+constants. -/
+theorem kernelProduct_eq_kernelMap_tensor_swap {n' : S₂ → S₁ → S₀ → R}
+    (hn' : ∀ p₂ p₁ p₀, n' p₂ p₁ p₀ ≠ 0 → F₀ p₀ ≤ F₂ p₂ + F₁ p₁ + C)
+    (hfin' : ∀ p₂ p₁, n' p₂ p₁ ∈ NovikovModule R F₀)
+    (hm : ∀ (q : S₁ × S₂) p₀, n' q.2 q.1 p₀ ≠ 0 → F₀ p₀ ≤ F₁ q.1 + F₂ q.2 + C')
+    (hmfin : ∀ q : S₁ × S₂, n' q.2 q.1 ∈ NovikovModule R F₀)
+    (a : NovikovModule R F₁) (b : NovikovModule R F₂) :
+    kernelProduct hn' hfin' b a = kernelMap hm hmfin (tensor a b) := by
+  ext p₀
+  -- Reindex the sum over `S₂ × S₁` by the exchange of the two factors.
+  rw [kernelProduct_apply_val, kernelMap_apply_val,
+    ← finsum_comp_equiv (Equiv.prodComm S₁ S₂)]
+  refine finsum_congr fun q => ?_
+  simp only [Equiv.prodComm_apply, Prod.fst_swap, Prod.snd_swap, tensor_apply_val]
+  ring
 
 /-- **Kernel maps out of the completed tensor product are determined on tensor products of point
 masses.** Two kernel maps out of the completed tensor product that agree on the tensor products
