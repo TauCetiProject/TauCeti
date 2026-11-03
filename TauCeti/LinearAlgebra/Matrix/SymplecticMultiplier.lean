@@ -63,7 +63,7 @@ variable {l R : Type*} [DecidableEq l] [Fintype l] [Unique l] [CommRing R]
 theorem transpose_mul_J_mul_eq_det_smul (A : Matrix (l ⊕ l) (l ⊕ l) R) :
     Aᵀ * J l R * A = A.det • J l R := by
   ext (i | i) (j | j) <;>
-    simp [det_sum_unique A, J, mul_apply, Unique.eq_default i, Unique.eq_default j] <;> ring
+    simp [det_sum_unique A, J, Matrix.mul_apply, Unique.eq_default i, Unique.eq_default j] <;> ring
 
 /-- **The symplectic multiplier of a rank-two matrix is its determinant.** `A` scales the standard
 symplectic form by `d` exactly when `A.det = d`. Only `A` appears: no adjoint, and no additivity

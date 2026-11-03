@@ -586,7 +586,7 @@ private theorem toMatrix_vectorPair_baseVector_left (v : V) :
         (spinPlusAction Q P hline (vectorPair Q (baseVector P b) v)) =
       baseAfterMatrix (b.repr (creationPart P v)) (fun i ↦ annihilationPart P v (b i)) := by
   refine toMatrix_eq_baseAfterMatrix b (spinPlus_def P) _ _ _ fun s ↦ ?_
-  rw [coe_spinPlusAction_apply, coe_vectorPair, map_mul, Module.End.mul_apply,
+  rw [coe_spinPlusAction_apply, coe_vectorPair, map_mul, _root_.mul_apply_eq_comp,
     spinAction_ι_eq_fockAction P hline, spinAction_ι_eq_fockAction P hline,
     creationPart_baseVector, annihilationPart_baseVector]
 
@@ -596,7 +596,7 @@ private theorem toMatrix_vectorPair_baseVector_right (v : V) :
         (spinPlusAction Q P hline (vectorPair Q v (baseVector P b))) =
       baseBeforeMatrix (b.repr (creationPart P v)) (fun i ↦ annihilationPart P v (b i)) := by
   refine toMatrix_eq_baseBeforeMatrix b (spinPlus_def P) _ _ _ fun s ↦ ?_
-  rw [coe_spinPlusAction_apply, coe_vectorPair, map_mul, Module.End.mul_apply,
+  rw [coe_spinPlusAction_apply, coe_vectorPair, map_mul, _root_.mul_apply_eq_comp,
     spinAction_ι_eq_fockAction P hline, spinAction_ι_eq_fockAction P hline,
     creationPart_baseVector, annihilationPart_baseVector]
 
@@ -811,31 +811,31 @@ theorem toMatrix_spinPlusAction_spinSixTransvectionLift {i j : Fin 4}
   fin_cases i <;> fin_cases j
   · exact (hij rfl).elim
   · convert spinSixLiftHasMatrix_zero_one P hline b c using 1
-    all_goals rfl
+    rfl
   · convert spinSixLiftHasMatrix_zero_two P hline b c using 1
-    all_goals rfl
+    rfl
   · convert spinSixLiftHasMatrix_zero_three P hline b c using 1
-    all_goals rfl
+    rfl
   · convert spinSixLiftHasMatrix_one_zero P hline b c using 1
-    all_goals rfl
+    rfl
   · exact (hij rfl).elim
   · convert spinSixLiftHasMatrix_one_two P hline b c using 1
-    all_goals rfl
+    rfl
   · convert spinSixLiftHasMatrix_one_three P hline b c using 1
-    all_goals rfl
+    rfl
   · convert spinSixLiftHasMatrix_two_zero P hline b c using 1
-    all_goals rfl
+    rfl
   · convert spinSixLiftHasMatrix_two_one P hline b c using 1
-    all_goals rfl
+    rfl
   · exact (hij rfl).elim
   · convert spinSixLiftHasMatrix_two_three P hline b c using 1
-    all_goals rfl
+    rfl
   · convert spinSixLiftHasMatrix_three_zero P hline b c using 1
-    all_goals rfl
+    rfl
   · convert spinSixLiftHasMatrix_three_one P hline b c using 1
-    all_goals rfl
+    rfl
   · convert spinSixLiftHasMatrix_three_two P hline b c using 1
-    all_goals rfl
+    rfl
   · exact (hij rfl).elim
 
 /-- The vector action of the canonical lift is its defining Eichler transvection. -/

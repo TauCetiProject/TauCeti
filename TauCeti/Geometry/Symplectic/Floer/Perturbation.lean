@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.Linearization
-public import TauCeti.Geometry.Symplectic.Hamiltonian.Localized
+public import TauCeti.Geometry.Symplectic.Hamiltonian.Localized.Basic
 
 /-!
 # Localized coefficient directions for the Floer operator

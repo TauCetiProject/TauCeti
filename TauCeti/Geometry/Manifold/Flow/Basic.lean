@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.IntegralCurve.Flow
+public import TauCeti.Geometry.Manifold.MFDeriv.Curve
 
 /-!
 # The maximal flow of a vector field
@@ -17,8 +18,10 @@ domain-aware group law records both the value equation and the condition that th
 remains in the interval of existence.
 
 For finite-dimensional model spaces, the existing smooth-dependence theorem for maximal integral
-curves gives joint openness of the domain and joint smoothness of the flow.  The escape theorem says
-that a maximal trajectory approaching a finite right endpoint eventually leaves every compact set.
+curves gives joint openness of the domain and joint smoothness of the flow, so flowing a `C^n`
+family of points for a `C^n` family of times is again `C^n`.  Along a trajectory, a function changes
+at the rate of its derivative in the direction of the vector field.  The escape theorem says that a
+maximal trajectory approaching a finite right endpoint eventually leaves every compact set.
 
 ## Main declarations
 
@@ -26,6 +29,8 @@ that a maximal trajectory approaching a finite right endpoint eventually leaves 
 * `TauCeti.flowOf`: the maximal flow, total with junk values outside `flowDomain`.
 * `TauCeti.isOpen_flowDomain`: openness of the domain in finite dimensions.
 * `TauCeti.contMDiffOn_flowOf`: joint regularity of the flow in finite dimensions.
+* `TauCeti.contMDiffAt_flowOf_comp`: flowing `C^n` families of points for `C^n` families of times.
+* `TauCeti.hasDerivAt_comp_flowOf`: the time derivative of a function along a trajectory.
 * `TauCeti.flowOf_add`: the domain-aware group law.
 * `TauCeti.eventually_flowOf_notMem`: escape from compact sets at a finite right endpoint.
 
@@ -133,6 +138,34 @@ theorem contMDiffOn_flowOf [FiniteDimensional ℝ E] {n : ℕ∞} (hn : 1 ≤ n)
     rfl
   rw [hfun, hdomain] at h
   exact h
+
+omit [CompleteSpace E] in
+/-- In finite dimensions, flowing a `C^n` family of initial points for a `C^n` family of times is
+`C^n`, wherever the flow is defined. -/
+theorem contMDiffAt_flowOf_comp [FiniteDimensional ℝ E] {n : ℕ∞} (hn : 1 ≤ n)
+    [IsManifold I 1 M] [IsManifold I n M] {v : (x : M) → TangentSpace I x}
+    (hv : CMDiff n (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
+    {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+    {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
+    {τ : N → ℝ} {f : N → M} {z : N} (hτ : ContMDiffAt J 𝓘(ℝ) n τ z)
+    (hf : ContMDiffAt J I n f z) (hz : (τ z, f z) ∈ flowDomain v) :
+    ContMDiffAt J I n (fun y ↦ flowOf v (τ y) (f y)) z :=
+  ((contMDiffOn_flowOf hn hv).contMDiffAt
+    ((isOpen_flowDomain (hv.of_le (by exact_mod_cast hn))).mem_nhds hz)).comp z (hτ.prodMk hf)
+
+omit [CompleteSpace E] in
+/-- **Derivative along a flow line.** The derivative in time of a function `g` along the
+trajectory of `v` through `x` is the derivative of `g` in the direction of `v`. -/
+theorem hasDerivAt_comp_flowOf [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {g : M → F} {t : ℝ} {x : M}
+    (hx : (t, x) ∈ flowDomain v) (hg : MDifferentiableAt I 𝓘(ℝ, F) g (flowOf v t x)) :
+    HasDerivAt (fun s ↦ g (flowOf v s x)) (mvfderiv I g (flowOf v t x) (v (flowOf v t x))) t := by
+  have hopen : {s | (s, x) ∈ flowDomain v} ∈ 𝓝 t := by
+    simpa only [mem_flowDomain, ofPred_mem_eq] using
+      isOpen_maximalIntegralCurveInterval.mem_nhds (mem_flowDomain.mp hx)
+  exact Manifold.hasDerivAt_comp_curve hg
+    (((isMIntegralCurveOn_flowOf hv x).isMIntegralCurveAt hopen).hasMFDerivAt)
 
 omit [CompleteSpace E] in
 /-- The domain-aware group law for the maximal flow.  If time `s` is defined at `x` and time `t`

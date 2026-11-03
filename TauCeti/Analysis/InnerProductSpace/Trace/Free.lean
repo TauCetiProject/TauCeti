@@ -38,6 +38,8 @@ pairing `tr (T* U) = tr (T U)` is real.
 ## Main results
 
 * `LinearMap.trace_adjoint`, `ContinuousLinearMap.trace_adjoint`: `tr T* = conj (tr T)`.
+* `LinearMap.trace_eq_zero_of_inner_left_eq_neg`: a skew-adjoint endomorphism of a real inner
+  product space has trace zero.
 * `IsSelfAdjoint.conj_trace`, `IsSelfAdjoint.conj_trace_mul`: the trace of a self-adjoint
   endomorphism, and the trace pairing `tr (T U)` of two of them, are real.
 * `InnerProductSpace.trace_rankOne_mul`, `InnerProductSpace.trace_mul_rankOne`: the trace pairing
@@ -67,6 +69,18 @@ variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpac
 theorem trace_adjoint (T : E →ₗ[𝕜] E) : trace 𝕜 E T.adjoint = conj (trace 𝕜 E T) := by
   let b := stdOrthonormalBasis 𝕜 E
   simp [trace_eq_sum_inner _ b, adjoint_inner_right, map_sum]
+
+/-- A skew-adjoint endomorphism of a finite-dimensional real inner product space, one with
+`⟪A u, w⟫ = -⟪u, A w⟫`, has trace zero. -/
+theorem trace_eq_zero_of_inner_left_eq_neg {V : Type*} [NormedAddCommGroup V]
+    [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] {A : V →ₗ[ℝ] V}
+    (hA : ∀ u w, ⟪A u, w⟫_ℝ = -⟪u, A w⟫_ℝ) : trace ℝ V A = 0 := by
+  let b := stdOrthonormalBasis ℝ V
+  rw [trace_eq_sum_inner A b]
+  refine Finset.sum_eq_zero fun i _ ↦ ?_
+  have h := hA (b i) (b i)
+  rw [real_inner_comm] at h
+  linarith
 
 end LinearMap
 

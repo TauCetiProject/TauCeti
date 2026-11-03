@@ -165,17 +165,10 @@ theorem apply_matrixCoefficient (d : Derivation R H (Bialgebra.CounitAlgebra R H
     Bialgebra.CounitAlgebra.algEquivSelf R H R
         (d (Comodule.matrixCoefficient (R := R) (C := H) φ m)) =
       φ (Comodule.differential (R := R) (H := H) (M := M) d m) := by
-  rw [Comodule.differential_apply, Comodule.matrixCoefficient_def]
-  induction Comodule.coact (R := R) (C := H) (M := M) m with
-  | add x y hx hy => simp only [map_add, hx, hy]
-  | tmul n h =>
-    simp only [TensorProduct.map_tmul, LinearMap.id_apply, TensorProduct.lid_tmul, map_smul,
-      LinearMap.tensorComponent_tmul, LinearMap.comp_apply, AlgEquiv.toLinearMap_apply,
-      Derivation.coeFn_coe]
-    rw [LinearMap.map_smul_of_tower φ, smul_eq_mul, mul_comm]
-    -- The scalar action on the counit synonym is that of `R` on itself; the coefficient
-    -- identification is `R`-linear for it.
-    exact (Bialgebra.CounitAlgebra.algEquivSelf R H R).toLinearEquiv.map_smul (φ n) (d h)
+  simpa only [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply,
+    Derivation.coeFn_coe, Comodule.coactComponent_apply, Comodule.differential_apply] using
+    LinearMap.apply_matrixCoefficient
+      ((Bialgebra.CounitAlgebra.algEquivSelf R H R).toLinearMap ∘ₗ d.toLinearMap) φ m
 
 end Derivation
 
