@@ -536,20 +536,13 @@ noncomputable def restrictionMapComp :
         (map i (𝟙 S) (by simp) : slice (σ ≫ p) ⟶ slice (i ≫ σ ≫ p)) ⟶
       Limits.pullback (map (𝟙 L) (p ≫ r) (by simp) : slice (i ≫ σ) ⟶ slice (i ≫ σ ≫ p ≫ r))
         (map i (𝟙 Z) (by simp) : slice (σ ≫ p ≫ r) ⟶ slice (i ≫ σ ≫ p ≫ r)) :=
-  Limits.pullback.lift (Limits.pullback.fst _ _)
-    (Limits.pullback.snd _ _ ≫ map (𝟙 K) r (by simp)) (hom_ext (by
-      have h := congrArg (fun F ↦ (homEquiv F).1)
-        (Limits.pullback.condition (f := map (p := i ≫ σ) (q := i ≫ σ ≫ p) (𝟙 L) p (by simp))
-          (g := map (p := σ ≫ p) (q := i ≫ σ ≫ p) i (𝟙 S) (by simp)))
-      simp only [homEquiv_comp_map_coe, join.map_id, Category.id_comp, Category.comp_id] at h
-      rw [homEquiv_comp_map_coe, homEquiv_comp_map_coe, homEquiv_comp_map_coe]
-      simp only [join.map_id, Category.id_comp, Category.comp_id]
-      rw [reassoc_of% h]))
+  Limits.pullback.map _ _ _ _ (𝟙 _) (map (𝟙 K) r (by simp)) (map (𝟙 L) r (by simp)) (by simp)
+    (by simp)
 
 @[reassoc (attr := simp)]
 lemma restrictionMapComp_fst :
-    restrictionMapComp i p r σ ≫ Limits.pullback.fst _ _ = Limits.pullback.fst _ _ :=
-  Limits.pullback.lift_fst _ _ _
+    restrictionMapComp i p r σ ≫ Limits.pullback.fst _ _ = Limits.pullback.fst _ _ := by
+  simp [restrictionMapComp]
 
 @[reassoc (attr := simp)]
 lemma restrictionMapComp_snd :

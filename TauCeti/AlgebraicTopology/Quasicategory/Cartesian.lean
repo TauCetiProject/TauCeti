@@ -47,7 +47,7 @@ isomorphisms, base change and composition.
 * J. Lurie, *Higher Topos Theory*, Definition 2.4.1.1, Proposition 2.4.1.3, Definition 2.4.2.1
   and Proposition 2.4.2.3.
 -/
-@[expose] public section
+public section
 
 open CategoryTheory Limits MorphismProperty Simplicial
 
