@@ -242,6 +242,41 @@ theorem mul_max_nnnorm_le_nnnorm_smul_add [NormedField K] [NormedAddCommGroup M]
   · rw [IsUltrametricDist.nnnorm_add_eq_max_of_nnnorm_ne_nnnorm h.ne, max_eq_right h.le]
     exact mul_le_of_le_one_left zero_le hr
 
+/-- Adjoining a vector orthogonal to the span of a finite orthogonal family preserves
+orthogonality. Zero vectors are allowed. -/
+theorem IsTOrthogonalFamily.finCons [NormedField K] [NormedAddCommGroup M]
+    [NormedSpace K M] [IsUltrametricDist M] {n : ℕ} {e : Fin n → M}
+    (he : IsTOrthogonalFamily K 1 e) {w : M}
+    (hw : ∀ z ∈ Submodule.span K (Set.range e), ‖w‖ ≤ ‖w - z‖) :
+    IsTOrthogonalFamily K 1 (Fin.cons w e) := by
+  classical
+  have hbound (a : Fin (n + 1) → K) (i : Fin (n + 1)) :
+      ‖a i • Fin.cons (α := fun _ ↦ M) w e i‖ ≤
+        ‖∑ j, a j • Fin.cons (α := fun _ ↦ M) w e j‖ := by
+    have hz : ∑ j, a j.succ • e j ∈ Submodule.span K (Set.range e) :=
+      Submodule.sum_mem _ fun j _ ↦ Submodule.smul_mem _ _
+        (Submodule.subset_span (Set.mem_range_self j))
+    have hmax := mul_max_nnnorm_le_nnnorm_smul_add (r := 1) le_rfl
+      (fun z hz ↦ by simp only [one_mul]; exact_mod_cast hw z hz) (a 0) hz
+    simp only [one_mul] at hmax
+    have hmax' : max ‖a 0 • w‖ ‖∑ j, a j.succ • e j‖ ≤
+        ‖a 0 • w + ∑ j, a j.succ • e j‖ := by exact_mod_cast hmax
+    rw [Fin.sum_univ_succ]
+    refine Fin.cases (by simpa using (le_max_left _ _).trans hmax') (fun j ↦ ?_) i
+    have hj := he.mul_norm_smul_le (Finset.mem_univ j) (fun j ↦ a j.succ)
+    simp only [NNReal.coe_one, one_mul] at hj
+    simpa only [Fin.cons_succ, Fin.cons_zero] using
+      hj.trans ((le_max_right _ _).trans hmax')
+  intro s a
+  simp only [one_mul]
+  refine Finset.sup_le fun i hi ↦ ?_
+  have h := hbound (fun j ↦ if j ∈ s then a j else 0) i
+  have h' : ‖a i • Fin.cons (α := fun _ ↦ M) w e i‖ ≤
+      ‖∑ j ∈ s, a j • Fin.cons (α := fun _ ↦ M) w e j‖ := by
+    simpa only [hi, ite_true, ite_smul, zero_smul, Finset.sum_ite_mem,
+      Finset.univ_inter] using h
+  exact_mod_cast h'
+
 /-- If each `e N` is `T (N + 1) / T N`-orthogonal to the span of the previous vectors, for a
 non-increasing sequence `T` of positive constants at most one, then in an ultrametric space
 the vectors `e i` with `i < N` form a `T N`-orthogonal family. -/
