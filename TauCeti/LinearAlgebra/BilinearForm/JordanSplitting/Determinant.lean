@@ -8,7 +8,6 @@ module
 public import TauCeti.LinearAlgebra.BilinearForm.JordanSplitting.Basic
 import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 import TauCeti.LinearAlgebra.BilinearForm.JordanSplitting.Parity
-import TauCeti.LinearAlgebra.Matrix.Symmetric
 
 /-!
 # The determinant of the lower constituents of a Jordan splitting
@@ -26,8 +25,9 @@ the determinants of the partial sums `L₍ⱼ₎` of this kind enter O'Meara's c
 lattices over dyadic local fields (93:28). In the Conway–Sloane calculus of 2-adic symbols, sign
 walking across such a `j` multiplies the determinant of `L₍ⱼ₎` by `5`, which is `1` modulo `4`.
 
-The factor `1 + 2πR` cannot be dropped, even though the sum of the constituents of index at most
-`j` is an isometry invariant when both `N j` and `N (j + 1)` are of type II
+The factor `1 + 2πR` cannot be dropped, even though, when `R` is `π`-adically complete, the sum
+of the constituents of index at most `j` is an isometry invariant when both `N j` and `N (j + 1)`
+are of type II
 (`LinearMap.BilinForm.IsJordanSplitting.equivalent_restrict_biSup_Iic_of_equivalent`). Over
 `ℤ_[2]`, `⟨1⟩ ⊥ 2 !![0, 1; 1, 0] ≅ ⟨5⟩ ⊥ 2 !![2, 1; 1, 2]`
 (`TauCeti.equivalent_toBilin'_unary_two_hyperbolic`) has its constituent of index `1` of type II,
@@ -54,7 +54,7 @@ self-pairings modulo `2 π ^ (j + 1)` when `N (j + 1)` is of type II
 symmetric `E`, with even diagonal when `N (j + 1)` is of type II. The Gram matrix `G'` has a
 symmetric partner `H` with `G' * H = π ^ j • 1`, with even diagonal when `N j` is of type II
 (`LinearMap.BilinForm.IsJordanSplitting.exists_basis_restrict_biSup_Iic`), and
-`Matrix.IsSymm.exists_det_sub_smul_eq_mul_det` compares the determinants.
+`LinearMap.BilinForm.IsSymm.exists_sq_mul_det_toMatrix_eq_of_dvd_sub` compares the determinants.
 
 ## References
 
@@ -68,57 +68,6 @@ open Module
 open LinearMap (BilinForm)
 
 namespace LinearMap.BilinForm
-
-section Approximate
-
-variable {R A A' : Type*} [CommRing R] [Nontrivial R] [AddCommGroup A] [Module R A]
-  [AddCommGroup A'] [Module R A'] {C : BilinForm R A} {C' : BilinForm R A'}
-
-/-- **Gram determinants under approximate isometries.** Let `C` and `C'` be symmetric, and let `b₀`
-be a finite basis of the domain of `C'` whose Gram matrix times a symmetric matrix `H` is
-`π ^ j • 1`, where `π` is a non-zero-divisor with `2 ∣ π`. Let `φ` carry `C'` to `C` modulo
-`π ^ (j + 1)`, and suppose that `H` has even diagonal or that `φ` also carries the self-pairings
-modulo `2 * π ^ (j + 1)`. Then in any bases of the same size, the Gram determinants `d` of `C` and
-`d'` of `C'` satisfy `c ^ 2 * d = (1 + 2 π t) * d'` for some `c` and `t`. -/
-theorem IsSymm.exists_sq_mul_det_toMatrix_eq_of_dvd_sub (hC : C.IsSymm) (hC' : C'.IsSymm)
-    {π : R} (hπ : π ∈ nonZeroDivisors R) (h2 : 2 ∣ π) {ι₀ : Type*} [Fintype ι₀] [DecidableEq ι₀]
-    (b₀ : Basis ι₀ R A') {j : ℕ} {H : Matrix ι₀ ι₀ R} (hH : C'.toMatrix b₀ * H = π ^ j • 1)
-    (hHs : H.IsSymm) (φ : A' →ₗ[R] A) (h₁ : ∀ x y, π ^ (j + 1) ∣ C' x y - C (φ x) (φ y))
-    (hd : (∀ k, 2 ∣ H k k) ∨ ∀ x, 2 * π ^ (j + 1) ∣ C' x x - C (φ x) (φ x))
-    {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Basis ι R A) (b' : Basis ι R A') :
-    ∃ c t : R, c ^ 2 * (C.toMatrix b).det = (1 + 2 * π * t) * (C'.toMatrix b').det := by
-  have hπj : π ^ (j + 1) ∈ nonZeroDivisors R := pow_mem hπ (j + 1)
-  -- The pullback of `C` along `φ` is `G' - π ^ (j + 1) • E` for a symmetric matrix `E`.
-  choose E hE using fun k l ↦ h₁ (b₀ k) (b₀ l)
-  have hEs : (Matrix.of E).IsSymm := Matrix.IsSymm.ext fun k l ↦
-    (mul_cancel_left_mem_nonZeroDivisors hπj).mp <| by
-      rw [Matrix.of_apply, Matrix.of_apply, ← hE, ← hE, hC.eq (φ (b₀ k)), hC'.eq (b₀ k)]
-  have hcomp : (C.comp φ φ).toMatrix b₀ = C'.toMatrix b₀ - (π ^ j * π) • Matrix.of E := by
-    ext k l
-    rw [Matrix.sub_apply, Matrix.smul_apply, Matrix.of_apply, smul_eq_mul, ← pow_succ, ← hE,
-      toMatrix_apply, toMatrix_apply, comp_apply, sub_sub_cancel]
-  -- `H` or `E` has even diagonal.
-  have hd' : (∀ k, 2 ∣ H k k) ∨ ∀ k, 2 ∣ Matrix.of E k k := by
-    refine hd.imp_right fun h₂ k ↦ ?_
-    obtain ⟨m, hm⟩ := hE k k ▸ h₂ (b₀ k)
-    exact ⟨m, (mul_cancel_left_mem_nonZeroDivisors hπj).mp <| by
-      rw [Matrix.of_apply, hm]
-      ring⟩
-  obtain ⟨t, ht⟩ := hHs.exists_det_sub_smul_eq_mul_det hEs hH (pow_mem hπ j) hd' h2
-  -- Compare with the given bases, reindexed along `ι ≃ ι₀`.
-  let e : ι ≃ ι₀ := b'.indexEquiv b₀
-  have hre : (C.toMatrix (b.reindex e)).det = (C.toMatrix b).det := by
-    rw [show C.toMatrix (b.reindex e) = Matrix.reindex e e (C.toMatrix b) by
-      ext; simp [toMatrix_apply], Matrix.det_reindex_self]
-  have hre' : (C'.toMatrix (b'.reindex e)).det = (C'.toMatrix b').det := by
-    rw [show C'.toMatrix (b'.reindex e) = Matrix.reindex e e (C'.toMatrix b') by
-      ext; simp [toMatrix_apply], Matrix.det_reindex_self]
-  rw [← hcomp, det_toMatrix_comp b₀ (b.reindex e), hre] at ht
-  refine ⟨(LinearMap.toMatrix b₀ (b.reindex e) φ).det * (b₀.toMatrix (b'.reindex e)).det, t, ?_⟩
-  rw [← hre', det_toMatrix_eq_det_sq_mul_det b₀ (b'.reindex e)]
-  linear_combination (b₀.toMatrix (b'.reindex e)).det ^ 2 * ht
-
-end Approximate
 
 variable {R M M' : Type*} [CommRing R] [IsDomain R] [IsLocalRing R] [AddCommGroup M]
   [Module R M] [AddCommGroup M'] [Module R M'] {B : BilinForm R M} {N : ℕ → Submodule R M}
