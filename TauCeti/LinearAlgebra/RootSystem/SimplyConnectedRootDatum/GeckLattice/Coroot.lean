@@ -86,33 +86,6 @@ theorem geckCorootCocharacter_eq_cocharacter_coroot_simpleIndex (i : Fin t.rank)
   ext j
   simp [SplitTorus.cocharEquiv_apply, Finsupp.single_apply, Pi.single_apply, eq_comm]
 
-/-- The integral commutator of the numbered raising and lowering matrices is the diagonal
-matrix of their Cartan weights. -/
-theorem lie_geckRootIntMatrix (i : Fin t.rank) :
-    ⁅t.geckRootIntMatrix ht (.inl i), t.geckRootIntMatrix ht (.inr i)⁆ =
-      Matrix.diagonal (fun a ↦ t.geckWeightFin ht a i) := by
-  classical
-  let e := Fintype.equivFin (t.GeckIndex ht)
-  have hroot (k : Fin t.rank ⊕ Fin t.rank) :
-      (t.geckRootIntMatrix ht k).map (Int.castRingHom ℚ) =
-        Matrix.reindexLieEquiv (R := ℚ) e
-          ((t.lieBasis ht).rootGenerator k : Matrix (t.GeckIndex ht) (t.GeckIndex ht) ℚ) := by
-    ext a b
-    exact t.intCast_geckRootIntMatrix_apply ht k a b
-  apply Matrix.map_injective (f := Int.castRingHom ℚ) Int.cast_injective
-  simp only [Ring.lie_def, Matrix.map_sub _ (map_sub _), Matrix.map_mul]
-  rw [hroot, hroot, ← Ring.lie_def, ← LieEquiv.map_lie,
-    LieAlgebra.Basis.rootGenerator_inl, LieAlgebra.Basis.rootGenerator_inr,
-    ← LieSubalgebra.coe_bracket, ((t.lieBasis ht).sl2 i).lie_e_f]
-  ext a b
-  simp only [Matrix.map_apply, Matrix.diagonal_apply, Matrix.reindexLieEquiv_apply,
-    Matrix.reindex_apply, coe_lieBasis_h, RootPairing.GeckConstruction.h_eq_diagonal]
-  simp only [geckWeightFin]
-  by_cases hab : a = b
-  · subst b
-    cases hx : (e.symm a) <;> simp [e] at hx ⊢ <;> simp [hx]
-  · simp [hab, e]
-
 variable {B : Type*} [CommRing B]
 
 /-- The simple-coroot differential is the diagonal matrix of the Geck weights evaluated on

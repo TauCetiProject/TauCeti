@@ -35,6 +35,8 @@ identified with an independently pinned simply connected group scheme.
   corresponding matrix of Geck's Lie algebra.
 * `TauCeti.DynkinType.geckRootIntMatrix_eq_zero_of_weight_ne`: it vanishes off its signed
   simple-root weight difference.
+* `TauCeti.DynkinType.lie_geckRootIntMatrix`: opposite simple-root matrices bracket to the
+  diagonal matrix of their integral Cartan weights.
 * `TauCeti.DynkinType.tangentMatrix_derivationComp_geckRootSubgroupCoordinateMap`: the
   differential of a numbered root subgroup is the tangent parameter times the integral root
   matrix.
@@ -68,6 +70,7 @@ universe v
 
 noncomputable section
 
+attribute [local instance 100] LieRing.ofAssociativeRing
 attribute [local instance] TauCeti.moduleNNRat
 
 -- Use the algebra-induced integer module consistently for the counit coefficient synonyms.
@@ -122,6 +125,28 @@ theorem geckRootIntMatrix_eq_zero_of_weight_ne (i : Fin t.rank ⊕ Fin t.rank)
     (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht) (t.geckCoordinateBasisFin ht)
     (t.geckWeightFin ht) i (t.lie_lieBasis_h_rootGenerator ht i)
     (t.isCartanWeightVector_geckCoordinateBasisFin ht) hab
+
+/-- The integral commutator of the numbered raising and lowering matrices is the diagonal
+matrix of their Cartan weights. -/
+theorem lie_geckRootIntMatrix (i : Fin t.rank) :
+    ⁅t.geckRootIntMatrix ht (.inl i), t.geckRootIntMatrix ht (.inr i)⁆ =
+      Matrix.diagonal (fun a ↦ t.geckWeightFin ht a i) := by
+  classical
+  let e := Fintype.equivFin (t.GeckIndex ht)
+  have hroot (k : Fin t.rank ⊕ Fin t.rank) :
+      (t.geckRootIntMatrix ht k).map (Int.castRingHom ℚ) =
+        Matrix.reindexLieEquiv (R := ℚ) e
+          ((t.lieBasis ht).rootGenerator k : Matrix (t.GeckIndex ht) (t.GeckIndex ht) ℚ) := by
+    ext a b
+    exact t.intCast_geckRootIntMatrix_apply ht k a b
+  apply Matrix.map_injective (f := Int.castRingHom ℚ) Int.cast_injective
+  simp only [Ring.lie_def, Matrix.map_sub _ (map_sub _), Matrix.map_mul]
+  rw [hroot, hroot, ← Ring.lie_def, ← LieEquiv.map_lie,
+    LieAlgebra.Basis.rootGenerator_inl, LieAlgebra.Basis.rootGenerator_inr,
+    ← LieSubalgebra.coe_bracket, ((t.lieBasis ht).sl2 i).lie_e_f]
+  rw [Matrix.diagonal_map (map_zero (Int.castRingHom ℚ))]
+  simpa only [Matrix.reindexLieEquiv_apply, Int.coe_castRingHom] using
+    t.reindex_lieBasis_h ht i
 
 /-! ## The root differentials -/
 
