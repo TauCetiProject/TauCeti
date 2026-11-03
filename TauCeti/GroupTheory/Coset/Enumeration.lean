@@ -101,7 +101,7 @@ theorem letter_def (x : Fin n → G) (t : ℕ) :
       if h : t / 2 < n then if t % 2 = 0 then x ⟨t / 2, h⟩ else (x ⟨t / 2, h⟩)⁻¹ else 1 :=
   (rfl)
 
-theorem letter_of_le (x : Fin n → G) {t : ℕ} (ht : n ≤ t / 2) : letter x t = 1 := by
+theorem letter_eq_one_of_le (x : Fin n → G) {t : ℕ} (ht : n ≤ t / 2) : letter x t = 1 := by
   simp [letter_def, Nat.not_lt.mpr ht]
 
 @[simp]
