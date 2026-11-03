@@ -12,53 +12,42 @@ public import Mathlib.MeasureTheory.Function.L1Space.Integrable
 /-!
 # Exponential moments from bounded support
 
-This file records a small bounded-support integrability principle used by the
-`OrthogonalL2Bases` roadmap's moment-determinacy route.  If a measure is supported where the
-argument norm is essentially bounded, multiplying an integrable function by any exponential
-weight `exp (a * ‖x‖)` preserves integrability.  On `ℝ`, this gives the corresponding
-`exp (a * |x|)` form.
+If a measure is concentrated, up to a null set, on a closed ball `‖x‖ ≤ R` centred at the origin,
+then the exponential weight `exp (a * ‖x‖)` is essentially bounded by `exp (|a| * R)`, so
+multiplying an integrable function by it preserves integrability, for every rate `a : ℝ`.
 
-The Chebyshev `T` measure is supported on `[-1, 1]`, so this is the reusable bookkeeping behind
-the finite exponential moments needed before the Chebyshev Hilbert-basis construction.
+## Main results
+
+* `MeasureTheory.Integrable.exp_norm_smul_of_ae_norm_le`: the statement for a seminormed group
+  domain and a scalar weight in any `RCLike` field.
+* `MeasureTheory.Integrable.exp_abs_smul_of_ae_abs_le`: the real-line form, with `|x|` in place
+  of `‖x‖`. For instance, it applies to measures supported on `[-1, 1]` such as the Chebyshev
+  measure.
 -/
 
 public section
 
-namespace TauCeti
+namespace MeasureTheory
 
-open MeasureTheory
+variable {α 𝕜 β : Type*} [SeminormedAddGroup α] [MeasurableSpace α] [OpensMeasurableSpace α]
+variable [RCLike 𝕜] [NormedAddCommGroup β] [Module 𝕜 β] [IsBoundedSMul 𝕜 β]
+variable {μ : Measure α} {g : α → β}
 
-variable {α 𝕜 β : Type*} [NormedAddCommGroup α] [MeasurableSpace α] [OpensMeasurableSpace α]
-variable [RCLike 𝕜] [SecondCountableTopologyEither α 𝕜] [NormedAddCommGroup β]
-variable [NormedSpace 𝕜 β] {μ : Measure α} {g : α → β}
-
-/-- Multiplication by `exp (a * ‖x‖)` preserves integrability on a measure whose support is
-essentially contained in a closed ball. -/
-protected theorem _root_.MeasureTheory.Integrable.exp_norm_smul_of_ae_norm_le
-    (hg : Integrable g μ) (a R : ℝ)
+/-- Multiplication by `exp (a * ‖x‖)` preserves integrability on a measure that is essentially
+supported in the closed ball of radius `R` centred at the origin. -/
+theorem Integrable.exp_norm_smul_of_ae_norm_le (hg : Integrable g μ) (a R : ℝ)
     (hR : ∀ᵐ x ∂μ, ‖x‖ ≤ R) :
     Integrable (fun x : α => (Real.exp (a * ‖x‖) : 𝕜) • g x) μ := by
-  have h_exp : AEStronglyMeasurable (fun x : α => (Real.exp (a * ‖x‖) : 𝕜)) μ := by
-    exact (RCLike.continuous_ofReal.comp
-      (Real.continuous_exp.comp (continuous_const.mul continuous_norm))).aestronglyMeasurable
-  refine hg.bdd_smul (Real.exp (|a| * max R 0)) h_exp ?_
+  refine hg.bdd_smul (Real.exp (|a| * R)) (by fun_prop) ?_
   filter_upwards [hR] with x hx
-  have hx_nonneg : 0 ≤ ‖x‖ := norm_nonneg x
-  have hx_bound : ‖x‖ ≤ max R 0 := hx.trans (le_max_left R 0)
-  have hmul_left : a * ‖x‖ ≤ |a| * ‖x‖ :=
-    mul_le_mul_of_nonneg_right (le_abs_self a) hx_nonneg
-  have hmul_right : |a| * ‖x‖ ≤ |a| * max R 0 :=
-    mul_le_mul_of_nonneg_left hx_bound (abs_nonneg a)
-  simpa [RCLike.norm_ofReal] using
-    Real.exp_le_exp.mpr (hmul_left.trans hmul_right)
+  rw [RCLike.norm_ofReal, Real.abs_exp, Real.exp_le_exp]
+  exact (mul_le_mul_of_nonneg_right (le_abs_self a) (norm_nonneg x)).trans (by gcongr)
 
 /-- Real-line version of `Integrable.exp_norm_smul_of_ae_norm_le`, stated with `|x|`. -/
-protected theorem _root_.MeasureTheory.Integrable.exp_abs_smul_of_ae_abs_le {μ : Measure ℝ}
-    {g : ℝ → β}
+theorem Integrable.exp_abs_smul_of_ae_abs_le {μ : Measure ℝ} {g : ℝ → β}
     (hg : Integrable g μ) (a R : ℝ) (hR : ∀ᵐ x ∂μ, |x| ≤ R) :
     Integrable (fun x : ℝ => (Real.exp (a * |x|) : 𝕜) • g x) μ := by
-  simpa [Real.norm_eq_abs] using
-    (Integrable.exp_norm_smul_of_ae_norm_le (α := ℝ) hg a R
-      (by simpa [Real.norm_eq_abs] using hR))
+  simpa only [Real.norm_eq_abs] using
+    hg.exp_norm_smul_of_ae_norm_le (𝕜 := 𝕜) a R (by simpa only [Real.norm_eq_abs] using hR)
 
-end TauCeti
+end MeasureTheory

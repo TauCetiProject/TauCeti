@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.ExteriorPower.Basic
 public import TauCeti.LinearAlgebra.ExteriorPower.BaseChange
 public import Mathlib.RingTheory.Localization.BaseChange
 
@@ -43,12 +44,7 @@ namespace IsBaseChange
 /-- Exterior powers commute with a specified scalar extension. -/
 def exteriorPowerEquiv (h : IsBaseChange A f) (n : ℕ) :
     A ⊗[R] (⋀[R]^n M) ≃ₗ[A] ⋀[A]^n N :=
-  (TauCeti.exteriorPower.equivBaseChange A n).symm.trans
-    (LinearEquiv.ofLinearMap (exteriorPower.map n h.equiv.toLinearMap)
-      (exteriorPower.map n h.equiv.symm.toLinearMap)
-      (re₁₂ := RingHomInvPair.ids) (re₂₁ := RingHomInvPair.ids)
-      (by rw [← exteriorPower.map_comp]; simp)
-      (by rw [← exteriorPower.map_comp]; simp))
+  (TauCeti.exteriorPower.equivBaseChange A n).symm.trans (h.equiv.exteriorPower n)
 
 /-- The scalar-extension comparison sends a pure tensor of a wedge to the scaled wedge of
 the images. -/
@@ -57,7 +53,7 @@ theorem exteriorPowerEquiv_tmul_ιMulti (h : IsBaseChange A f) (n : ℕ) (a : A)
     (m : Fin n → M) :
     h.exteriorPowerEquiv n (a ⊗ₜ[R] exteriorPower.ιMulti R n m) =
       a • exteriorPower.ιMulti A n (fun i ↦ f (m i)) := by
-  simp [exteriorPowerEquiv, exteriorPower.map_apply_ιMulti, Function.comp_def]
+  simp [exteriorPowerEquiv, Function.comp_def]
 
 /-- The inverse comparison sends the wedge of the images to the tensor with coefficient one. -/
 @[simp]

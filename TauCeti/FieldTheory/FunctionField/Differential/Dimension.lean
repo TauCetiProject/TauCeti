@@ -248,7 +248,7 @@ theorem finrank_weilDifferentialSpace (hF : IsFunctionField k F)
     Module.finrank F ↥(weilDifferentialSpace k F) = 1 := by
   let := weilDifferentialSpaceModule hF
   obtain ⟨ω, hωmem, hω0⟩ := (Submodule.ne_bot_iff _).mp (weilDifferentialSpace_ne_bot hF hex)
-  refine (finrank_eq_one_iff_of_nonzero' (V := ↥(weilDifferentialSpace k F)) ⟨ω, hωmem⟩
+  refine (_root_.finrank_eq_one_iff_of_ne_zero' (V := ↥(weilDifferentialSpace k F)) ⟨ω, hωmem⟩
     (fun h ↦ hω0 (congrArg Subtype.val h))).mpr fun w ↦ ?_
   obtain ⟨c, hc⟩ := exists_repartitionDualMul_eq hF hex hωmem hω0 w.2
   exact ⟨c, Subtype.ext ((coe_weilDifferentialSpaceModule_smul hF c _).trans hc)⟩

@@ -19,7 +19,7 @@ public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Trivial
 Mathlib's `NumberField.Ideal.tendsto_norm_le_div_atTop₀` says that the number of nonzero integral
 ideals of `𝓞 K` of absolute norm at most `x` is asymptotic to `ρ x`, with `ρ` the positive residue
 of the Dedekind zeta function.  This file turns that single asymptotic into the *two-sided* linear
-bounds that every later estimate of the roadmap counts against, and then spends them on the exact
+bounds that later ideal-counting estimates are measured against, and then spends them on the exact
 abscissa of absolute convergence of the trivial ideal weight.
 
 Both directions are needed.  Convergence uses the upper bound alone: it makes the partial sums of
@@ -63,8 +63,8 @@ of a convergent series of nonnegative terms must become arbitrarily small.
 The counting function is Mathlib's own
 `Nat.card {I : (Ideal (𝓞 K))⁰ // (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) ≤ x}`, written out rather
 than abbreviated, so that the bounds apply to `NumberField.Ideal.tendsto_norm_le_div_atTop₀`
-without a translation lemma.  The inclusive real cutoff is the one fixed by the conventions table
-of the roadmap.
+without a translation lemma.  The cutoff `N(I) ≤ x` is real and inclusive, matching the
+summatory functions of `TauCeti/NumberTheory/ArithmeticDirichletSeries/AbelSummation.lean`.
 
 `TauCeti.NumberTheory.EffectiveBounds.IdealCount` proves the *effective* bound
 `#{I ≠ 0 | N(I) ≤ x} ≤ x² 2^[K:ℚ]`, with an explicit constant but the wrong exponent; it cannot
@@ -97,7 +97,7 @@ variable (K : Type*) [Field K] [NumberField K]
 /-- The nonzero integral ideals of absolute norm at most a real cutoff form a finite set. -/
 theorem finite_setOf_absNorm_real_le (x : ℝ) :
     {I : (Ideal (𝓞 K))⁰ | (Ideal.absNorm (I : Ideal (𝓞 K)) : ℝ) ≤ x}.Finite :=
-  (Ideal.finite_setOfPred_absNorm_le₀ ⌊x⌋₊).subset fun _ hI ↦ Nat.le_floor hI
+  (Ring.HasFiniteQuotients.finite_absNorm_le₀ ⌊x⌋₊).subset fun _ hI ↦ Nat.le_floor hI
 
 /-- The number of nonzero integral ideals of bounded absolute norm is monotone in the cutoff. -/
 theorem card_absNorm_real_le_mono {x y : ℝ} (h : x ≤ y) :

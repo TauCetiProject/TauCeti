@@ -36,6 +36,7 @@ identities are independent of the scale `t` and the centre `b`.
   `aₙ ∫ ‖dU‖² = n (n - 1) |Sⁿ|`.
 * `TauCeti.Yamabe.conformalCoefficient_mul_integral_norm_fderiv_bubble_sq_eq_sphereYamabeConstant`:
   `aₙ ∫ ‖dU‖² = Y(Sⁿ) (∫ U ^ pₙ) ^ (2 / pₙ)`.
+* `TauCeti.Yamabe.sphereYamabeConstant_eq_div`: `Y(Sⁿ) = n (n - 1) |Sⁿ| / |Sⁿ| ^ (2 / pₙ)`.
 
 ## References
 
@@ -51,6 +52,14 @@ noncomputable section
 namespace TauCeti.Yamabe
 
 open MeasureTheory Module
+
+/-- The Yamabe constant of the round sphere as the quotient of the conformal energy
+`n (n - 1) |Sⁿ|` of a bubble by the power `2 / pₙ` of its critical mass `|Sⁿ|`. -/
+theorem sphereYamabeConstant_eq_div {n : ℕ} (hn : n ≠ 0) :
+    sphereYamabeConstant n =
+      (n : ℝ) * (n - 1) * roundSphereVolume n / roundSphereVolume n ^ (2 / criticalExponent n) := by
+  rw [eq_div_iff (Real.rpow_pos_of_pos (roundSphereVolume_pos n) _).ne', two_div_criticalExponent]
+  exact sphereYamabeConstant_mul_roundSphereVolume_rpow hn
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
@@ -81,14 +90,9 @@ theorem conformalCoefficient_mul_integral_norm_fderiv_bubble_sq_eq_sphereYamabeC
       sphereYamabeConstant (finrank ℝ E) *
         (∫ x, bubble t b x ^ criticalExponent (finrank ℝ E)) ^
           (2 / criticalExponent (finrank ℝ E)) := by
-  have hp : 2 / criticalExponent (finrank ℝ E) = ((finrank ℝ E : ℝ) - 2) / finrank ℝ E := by
-    have hn₀ : finrank ℝ E ≠ 0 := by omega
-    have h₀ : (finrank ℝ E : ℝ) ≠ 0 := by exact_mod_cast hn₀
-    have h₂ : (finrank ℝ E : ℝ) - 2 ≠ 0 := sub_ne_zero.mpr (by exact_mod_cast hn.ne')
-    rw [criticalExponent_def]
-    field_simp
   rw [conformalCoefficient_mul_integral_norm_fderiv_bubble_sq_eq_roundSphereVolume hn ht b,
-    integral_bubble_rpow_criticalExponent_eq_roundSphereVolume (by omega) hn.ne' ht b, hp,
+    integral_bubble_rpow_criticalExponent_eq_roundSphereVolume (by omega) hn.ne' ht b,
+    two_div_criticalExponent,
     sphereYamabeConstant_mul_roundSphereVolume_rpow (by omega)]
 
 end TauCeti.Yamabe
