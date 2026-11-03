@@ -136,34 +136,24 @@ theorem mem_range_mapRingHom_iff_fixed (z : RatFunc K) :
         mapRingHom (Polynomial.mapRingHom σ.toRingHom)
           (nonZeroDivisors_le_comap_nonZeroDivisors_of_injective _
             (Polynomial.map_injective _ σ.injective)) z = z := by
-  constructor
-  · rintro ⟨w, rfl⟩ σ
-    have fixed (p : F[X]) : (p.map (algebraMap F K)).map σ.toRingHom =
-        p.map (algebraMap F K) := by
-      ext n
-      simp
-    rw [coe_mapRingHom_eq_coe_map, map_apply]
-    simp only [Polynomial.coe_mapRingHom, num_mapRingHom, denom_mapRingHom]
-    rw [fixed, fixed]
-    simpa only [num_mapRingHom, denom_mapRingHom] using num_div_denom
-      (mapRingHom (Polynomial.mapRingHom (algebraMap F K))
-        (nonZeroDivisors_le_comap_nonZeroDivisors_of_injective _
-          (Polynomial.map_injective _ (algebraMap F K).injective)) w)
-  · intro hz
-    have lift (p : K[X])
-        (hp : ∀ σ : K ≃ₐ[F] K, p.map σ.toRingHom = p) :
-        p ∈ lifts (algebraMap F K) :=
-      Polynomial.mem_lifts_of_forall_map_eq
-        (S := Set.range AlgEquiv.toRingEquiv)
-        (fun c hc ↦ (InfiniteGalois.mem_range_algebraMap_iff_fixed c).mpr fun σ ↦ hc _ ⟨σ, rfl⟩)
-        (by rintro _ ⟨σ, rfl⟩; exact hp σ)
-    obtain ⟨p, hp⟩ := lift z.num fun σ ↦ by
-      simpa only [num_mapRingHom] using congrArg num (hz σ)
-    obtain ⟨q, hq⟩ := lift z.denom fun σ ↦ by
-      simpa only [denom_mapRingHom] using congrArg denom (hz σ)
-    refine ⟨algebraMap F[X] (RatFunc F) p / algebraMap F[X] (RatFunc F) q, ?_⟩
-    rw [coe_mapRingHom_eq_coe_map, map_apply_div]
-    simpa only [Polynomial.coe_mapRingHom, hp, hq] using num_div_denom z
+  -- Specialize the general descent theorem to `S = Gal(K/F)` and the map induced by `F → K`.
+  let : Algebra (RatFunc F) (RatFunc K) :=
+    (mapRingHom (Polynomial.mapRingHom (algebraMap F K))
+      (nonZeroDivisors_le_comap_nonZeroDivisors_of_injective _
+        (Polynomial.map_injective _ (algebraMap F K).injective))).toAlgebra
+  have hpoly (p : F[X]) : algebraMap (RatFunc F) (RatFunc K) (algebraMap F[X] _ p) =
+      algebraMap K[X] _ (p.map (algebraMap F K)) := by
+    rw [RingHom.algebraMap_toAlgebra, coe_mapRingHom_eq_coe_map]
+    simpa using map_apply_div (Polynomial.mapRingHom (algebraMap F K)) _ p 1
+  have : IsScalarTower F (RatFunc F) (RatFunc K) := .of_algebraMap_eq fun c ↦ by
+    rw [IsScalarTower.algebraMap_apply F K (RatFunc K), algebraMap_eq_C, algebraMap_eq_C,
+      ← algebraMap_C, ← algebraMap_C, hpoly, Polynomial.map_C]
+  have hX : algebraMap (RatFunc F) (RatFunc K) X = X := by
+    rw [← algebraMap_X, hpoly, Polynomial.map_X, algebraMap_X]
+  rw [← RingHom.algebraMap_toAlgebra (mapRingHom _ _),
+    ← TauCeti.RatFunc.forall_mapRingEquiv_eq_iff_mem_range hX (S := Set.range AlgEquiv.toRingEquiv)
+      fun c ↦ by simpa using (InfiniteGalois.mem_range_algebraMap_iff_fixed c).symm]
+  simp [TauCeti.RatFunc.coe_mapRingEquiv]
 
 end RatFunc
 
