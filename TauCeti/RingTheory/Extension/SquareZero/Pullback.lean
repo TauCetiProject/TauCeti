@@ -64,15 +64,21 @@ def pullback : SquareZeroExtension.{max w v'} A T M where
   exact x := by
     constructor
     · intro hx
-      have heq : E.π x.val.1 = algebraMap T B x.val.2 := x.property
-      have hx' : x.val.2 = 0 := hx
-      obtain ⟨m, hm⟩ := (E.exact x.val.1).mp (by rw [heq, hx', map_zero])
+      -- Inside the construction, use the equalizer and projection APIs directly;
+      -- the pullback's own projection lemmas are only available after it is defined.
+      have heq := (AlgHom.mem_equalizer _ _ _).mp x.property
+      simp only [AlgHom.comp_apply, AlgHom.fst_apply, AlgHom.snd_apply,
+        IsScalarTower.toAlgHom_apply] at heq
+      simp only [AlgHom.comp_apply, Subalgebra.val_apply, AlgHom.snd_apply] at hx
+      obtain ⟨m, hm⟩ := (E.exact x.val.1).mp (by rw [heq, hx, map_zero])
       exact ⟨m, Subtype.ext (Prod.ext hm hx.symm)⟩
     · rintro ⟨m, rfl⟩
       rfl
   mul_ι x m := by
     apply Subtype.ext
-    have heq : E.π x.val.1 = algebraMap T B x.val.2 := x.property
+    have heq := (AlgHom.mem_equalizer _ _ _).mp x.property
+    simp only [AlgHom.comp_apply, AlgHom.fst_apply, AlgHom.snd_apply,
+      IsScalarTower.toAlgHom_apply] at heq
     exact Prod.ext ((E.mul_ι x.val.1 m).trans (by rw [heq, algebraMap_smul]; rfl)) (mul_zero _)
 
 /-- The projection of the pullback to the original extension ring. -/
@@ -90,13 +96,20 @@ theorem pullbackFst_ι (m : M) :
     E.pullbackFst T ((E.pullback T).ι m) = E.ι m :=
   (rfl)
 
+/-- Two elements of the pullback agree if their two projections agree. -/
+@[ext]
+theorem pullback_ext {x y : (E.pullback T).Ring}
+    (h₁ : E.pullbackFst T x = E.pullbackFst T y)
+    (h₂ : (E.pullback T).π x = (E.pullback T).π y) : x = y :=
+  Subtype.ext (Prod.ext h₁ h₂)
+
 /-- Two algebra maps to the pullback agree if their two projections agree. -/
 @[ext]
 theorem pullback_hom_ext {C : Type c} [CommRing C] [Algebra A C]
     {g h : C →ₐ[A] (E.pullback T).Ring}
     (h₁ : (E.pullbackFst T).comp g = (E.pullbackFst T).comp h)
     (h₂ : (E.pullback T).π.comp g = (E.pullback T).π.comp h) : g = h :=
-  AlgHom.ext fun x ↦ Subtype.ext (Prod.ext (AlgHom.congr_fun h₁ x) (AlgHom.congr_fun h₂ x))
+  AlgHom.ext fun x ↦ E.pullback_ext T (AlgHom.congr_fun h₁ x) (AlgHom.congr_fun h₂ x)
 
 /-- The algebra map into the pullback determined by a commuting pair of algebra maps. -/
 def pullbackLift {C : Type c} [CommRing C] [Algebra A C]
@@ -117,6 +130,20 @@ theorem π_comp_pullbackLift {C : Type c} [CommRing C] [Algebra A C]
     (g : C →ₐ[A] E.Ring) (h : C →ₐ[A] T)
     (comm : E.π.comp g = (IsScalarTower.toAlgHom A T B).comp h) :
     (E.pullback T).π.comp (E.pullbackLift T g h comm) = h :=
+  (rfl)
+
+@[simp]
+theorem pullbackFst_pullbackLift_apply {C : Type c} [CommRing C] [Algebra A C]
+    (g : C →ₐ[A] E.Ring) (h : C →ₐ[A] T)
+    (comm : E.π.comp g = (IsScalarTower.toAlgHom A T B).comp h) (x : C) :
+    E.pullbackFst T (E.pullbackLift T g h comm x) = g x :=
+  (rfl)
+
+@[simp]
+theorem π_pullbackLift_apply {C : Type c} [CommRing C] [Algebra A C]
+    (g : C →ₐ[A] E.Ring) (h : C →ₐ[A] T)
+    (comm : E.π.comp g = (IsScalarTower.toAlgHom A T B).comp h) (x : C) :
+    (E.pullback T).π (E.pullbackLift T g h comm x) = h x :=
   (rfl)
 
 /-- Splittings of the pullback are precisely lifts of `T → B` to the original extension ring. -/
@@ -155,9 +182,14 @@ def Splitting.pullback (s : E.Splitting) : (E.pullback T).Splitting :=
     ⟨s.toAlgHom.comp (IsScalarTower.toAlgHom A T B), by ext x; simp⟩
 
 @[simp]
-theorem Splitting.pullback_toAlgHom (s : E.Splitting) :
+theorem Splitting.pullbackFst_comp_pullback_toAlgHom (s : E.Splitting) :
     (E.pullbackFst T).comp (s.pullback T).toAlgHom =
       s.toAlgHom.comp (IsScalarTower.toAlgHom A T B) :=
+  (rfl)
+
+@[simp]
+theorem Splitting.pullbackFst_pullback_toAlgHom_apply (s : E.Splitting) (x : T) :
+    E.pullbackFst T ((s.pullback T).toAlgHom x) = s.toAlgHom (algebraMap T B x) :=
   (rfl)
 
 variable {F : SquareZeroExtension.{w} A B M}
@@ -175,17 +207,20 @@ theorem pullbackFst_comp_pullbackMap (g : E ⟶ F) :
   (rfl)
 
 @[simp]
+theorem pullbackFst_pullbackMap_apply (g : E ⟶ F) (x : (E.pullback T).Ring) :
+    F.pullbackFst T ((pullbackMap T g).toAlgHom x) = g.toAlgHom (E.pullbackFst T x) :=
+  (rfl)
+
+@[simp]
 theorem pullbackMap_id : pullbackMap T (𝟙 E) = 𝟙 (E.pullback T) := by
-  apply hom_ext
-  intro x
-  rfl
+  apply Hom.toAlgHom_injective
+  apply E.pullback_hom_ext T <;> ext x <;> simp
 
 @[simp]
 theorem pullbackMap_comp {G : SquareZeroExtension.{w} A B M} (g : E ⟶ F) (h : F ⟶ G) :
     pullbackMap T (g ≫ h) = pullbackMap T g ≫ pullbackMap T h := by
-  apply hom_ext
-  intro x
-  rfl
+  apply Hom.toAlgHom_injective
+  apply G.pullback_hom_ext T <;> ext x <;> simp
 
 end TauCeti.SquareZeroExtension
 
@@ -260,6 +295,7 @@ theorem pullback_self (x : Exal A B M) : pullback B x = x := by
       toAlgHom_ι m := by simp }⟩
 
 /-- Successive pullbacks agree with pullback along the composite algebra map. -/
+@[simp]
 theorem pullback_pullback (U : Type v) [CommRing U] [Algebra A U] [Algebra U T]
     [Algebra U B] [IsScalarTower A U T] [IsScalarTower A U B] [IsScalarTower U T B]
     [Module U M] [IsScalarTower U T M] [IsScalarTower U B M] (x : Exal A B M) :
@@ -274,10 +310,7 @@ theorem pullback_pullback (U : Type v) [CommRing U] [Algebra A U] [Algebra U T]
         (by ext y; simp [g, ← IsScalarTower.algebraMap_apply U T B])
       π_toAlgHom y := rfl
       toAlgHom_ι m := by
-        apply Subtype.ext
-        exact Prod.ext
-          ((congrArg (E.pullbackFst T) ((E.pullback T).pullbackFst_ι U m)).trans
-            (E.pullbackFst_ι T m)) rfl }⟩
+        apply E.pullback_ext U <;> simp [g] }⟩
 
 /-- Pullback preserves the split class. -/
 @[simp]
