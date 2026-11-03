@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
-public import Mathlib.Probability.Distributions.Bernoulli
-public import Mathlib.Probability.Moments.Variance
+public import TauCeti.Analysis.Calculus.FDeriv.Comp
+public import TauCeti.MeasureTheory.Integral.Dilation
 public import TauCeti.Probability.Distributions.Bernoulli.Basic
 
 /-!
@@ -21,17 +21,18 @@ gradient is the operator norm `‖fderiv ℝ f x‖`.
 
 ## Main definitions
 
-* `TauCeti.Probability.entropy`: the entropy `Ent_μ(g)`.
-* `TauCeti.Probability.PoincareInequality`: the Poincaré inequality with constant `C`.
-* `TauCeti.Probability.LogSobolevInequality`: the logarithmic Sobolev inequality with constant `C`.
+* `MeasureTheory.Measure.entropy`: the entropy `Ent_μ(g)`.
+* `MeasureTheory.Measure.PoincareInequality`: the Poincaré inequality with constant `C`.
+* `MeasureTheory.Measure.LogSobolevInequality`: the logarithmic Sobolev inequality with constant
+  `C`.
 
 ## Main results
 
-* `TauCeti.Probability.PoincareInequality.mono` and
-  `TauCeti.Probability.LogSobolevInequality.mono`: the inequalities persist for larger constants.
-* `TauCeti.Probability.PoincareInequality.map_smul` and
-  `TauCeti.Probability.LogSobolevInequality.map_smul`: dilating the measure by `a ≠ 0` multiplies
-  the constant by `a ^ 2`.
+* `MeasureTheory.Measure.PoincareInequality.mono` and
+  `MeasureTheory.Measure.LogSobolevInequality.mono`: the inequalities persist for larger constants.
+* `MeasureTheory.Measure.PoincareInequality.map_smul` and
+  `MeasureTheory.Measure.LogSobolevInequality.map_smul`: dilating the measure by `a ≠ 0`
+  multiplies the constant by `a ^ 2`.
 * `TauCeti.Probability.not_poincareInequality_bernoulliMeasure`: a two-point measure `p δ₁ +
   (1 - p) δ₀` on `ℝ` with `0 < p < 1` satisfies no Poincaré inequality.
 
@@ -46,12 +47,29 @@ open MeasureTheory ProbabilityTheory
 
 open scoped ContDiff unitInterval
 
-namespace TauCeti.Probability
+namespace MeasureTheory.Measure
 
 /-- The **entropy** `Ent_μ(g) = ∫ g log g dμ - (∫ g dμ) log (∫ g dμ)` of a function `g`, with the
 convention `0 log 0 = 0` of `Real.log`. -/
+@[expose]
 noncomputable def entropy {α : Type*} {mα : MeasurableSpace α} (μ : Measure α) (g : α → ℝ) : ℝ :=
   ∫ x, g x * Real.log (g x) ∂μ - (∫ x, g x ∂μ) * Real.log (∫ x, g x ∂μ)
+
+/-- The defining equation for measure entropy. -/
+theorem entropy_def {α : Type*} {mα : MeasurableSpace α} (μ : Measure α) (g : α → ℝ) :
+    entropy μ g =
+      ∫ x, g x * Real.log (g x) ∂μ - (∫ x, g x ∂μ) * Real.log (∫ x, g x ∂μ) :=
+  rfl
+
+@[simp]
+theorem entropy_zero {α : Type*} {mα : MeasurableSpace α} (μ : Measure α) :
+    entropy μ (fun _ ↦ (0 : ℝ)) = 0 := by
+  simp [entropy]
+
+@[simp]
+theorem entropy_zero_measure {α : Type*} {mα : MeasurableSpace α} (g : α → ℝ) :
+    entropy (0 : Measure α) g = 0 := by
+  simp [entropy]
 
 section Definitions
 
@@ -87,20 +105,6 @@ section Scaling
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
 
-omit [MeasurableSpace E] [BorelSpace E] in
-private lemma norm_fderiv_comp_smul {f : E → ℝ} (a : ℝ) (x : E) :
-    ‖fderiv ℝ (fun y ↦ f (a • y)) x‖ = |a| * ‖fderiv ℝ f (a • x)‖ := by
-  rw [_root_.fderiv_comp_smul a, norm_smul, Real.norm_eq_abs]
-
-private lemma integral_sq_norm_fderiv_comp_smul {μ : Measure E} {f : E → ℝ}
-    {a : ℝ} (ha : a ≠ 0) :
-    ∫ x, ‖fderiv ℝ f x‖ ^ 2 ∂μ.map (fun x ↦ a • x) =
-      (a ^ 2)⁻¹ * ∫ x, ‖fderiv ℝ (fun y ↦ f (a • y)) x‖ ^ 2 ∂μ := by
-  rw [(measurableEmbedding_const_smul₀ (α := E) ha).integral_map, ← integral_const_mul]
-  refine integral_congr_ae (Filter.Eventually.of_forall fun x ↦ ?_)
-  simp only [norm_fderiv_comp_smul a, mul_pow, sq_abs]
-  field_simp
-
 /-- Dilating a measure satisfying the Poincaré inequality with constant `C` by `a ≠ 0` gives a
 measure satisfying it with constant `a ^ 2 * C`. -/
 theorem PoincareInequality.map_smul {μ : Measure E} {C : ℝ} (h : PoincareInequality μ C) {a : ℝ}
@@ -110,17 +114,19 @@ theorem PoincareInequality.map_smul {μ : Measure E} {C : ℝ} (h : PoincareIneq
   have hg : ContDiff ℝ ∞ (fun y ↦ f (a • y)) := hf.comp (contDiff_const_smul a)
   have hgL : MemLp (fun y ↦ f (a • y)) 2 μ := (he.memLp_map_measure_iff).1 hfL
   have hdg : MemLp (fun x ↦ ‖fderiv ℝ (fun y ↦ f (a • y)) x‖) 2 μ := by
-    simp only [norm_fderiv_comp_smul a]
+    simp only [TauCeti.norm_fderiv_comp_smul a]
     exact ((he.memLp_map_measure_iff).1 hdf).const_mul |a|
   rw [variance_map hfL.aemeasurable he.measurable.aemeasurable,
-    integral_sq_norm_fderiv_comp_smul ha]
+    TauCeti.integral_sq_norm_fderiv_comp_smul ha]
   have := h _ hg hgL hdg
   have hpos : 0 < a ^ 2 := by positivity
   calc _ ≤ C * ∫ x, ‖fderiv ℝ (fun y ↦ f (a • y)) x‖ ^ 2 ∂μ := this
     _ = a ^ 2 * C * ((a ^ 2)⁻¹ * ∫ x, ‖fderiv ℝ (fun y ↦ f (a • y)) x‖ ^ 2 ∂μ) := by
       field_simp
 
-private lemma entropy_map {α β : Type*} {mα : MeasurableSpace α} {mβ : MeasurableSpace β}
+/-- Entropy is preserved by transporting both the measure and function through a measurable
+embedding. -/
+theorem entropy_map {α β : Type*} {mα : MeasurableSpace α} {mβ : MeasurableSpace β}
     {μ : Measure α} {φ : α → β} (hφ : MeasurableEmbedding φ) (g : β → ℝ) :
     entropy (μ.map φ) g = entropy μ (g ∘ φ) := by
   simp only [entropy, hφ.integral_map, Function.comp_apply]
@@ -133,9 +139,9 @@ theorem LogSobolevInequality.map_smul {μ : Measure E} {C : ℝ} (h : LogSobolev
   intro f hf hdf hf2 hf2log
   have hg : ContDiff ℝ ∞ (fun y ↦ f (a • y)) := hf.comp (contDiff_const_smul a)
   have hdg : MemLp (fun x ↦ ‖fderiv ℝ (fun y ↦ f (a • y)) x‖) 2 μ := by
-    simp only [norm_fderiv_comp_smul a]
+    simp only [TauCeti.norm_fderiv_comp_smul a]
     exact ((he.memLp_map_measure_iff).1 hdf).const_mul |a|
-  rw [entropy_map he, integral_sq_norm_fderiv_comp_smul ha]
+  rw [entropy_map he, TauCeti.integral_sq_norm_fderiv_comp_smul ha]
   have := h _ hg hdg ((he.integrable_map_iff).1 hf2) ((he.integrable_map_iff).1 hf2log)
   have hpos : 0 < a ^ 2 := by positivity
   calc _ ≤ 2 * C * ∫ x, ‖fderiv ℝ (fun y ↦ f (a • y)) x‖ ^ 2 ∂μ := this
@@ -143,6 +149,10 @@ theorem LogSobolevInequality.map_smul {μ : Measure E} {C : ℝ} (h : LogSobolev
       field_simp
 
 end Scaling
+
+end MeasureTheory.Measure
+
+namespace TauCeti.Probability
 
 section Bernoulli
 
@@ -153,15 +163,17 @@ private lemma contDiff_step : ContDiff ℝ ∞ step :=
   Real.smoothTransition.contDiff.comp (by fun_prop)
 
 private lemma fderiv_step_zero : fderiv ℝ step 0 = 0 := by
+  have hthird_lt : (0 : ℝ) < 1 / 3 := by norm_num
   have : step =ᶠ[nhds 0] fun _ ↦ (0 : ℝ) := by
-    filter_upwards [Iio_mem_nhds (show (0 : ℝ) < 1 / 3 by norm_num)] with x hx
+    filter_upwards [Iio_mem_nhds hthird_lt] with x hx
     exact Real.smoothTransition.zero_of_nonpos (by simp at hx; linarith)
   rw [this.fderiv_eq]
   simp
 
 private lemma fderiv_step_one : fderiv ℝ step 1 = 0 := by
+  have htwo_thirds_lt_one : (2 / 3 : ℝ) < 1 := by norm_num
   have : step =ᶠ[nhds 1] fun _ ↦ (1 : ℝ) := by
-    filter_upwards [Ioi_mem_nhds (show (2 / 3 : ℝ) < 1 by norm_num)] with x hx
+    filter_upwards [Ioi_mem_nhds htwo_thirds_lt_one] with x hx
     exact Real.smoothTransition.one_of_one_le (by simp at hx; linarith)
   rw [this.fderiv_eq]
   simp
@@ -171,7 +183,7 @@ private lemma fderiv_step_one : fderiv ℝ step 1 = 0 := by
 function equal to `0` near `0` and to `1` near `1` has variance `p (1 - p) > 0` and vanishing
 gradient on the support. -/
 theorem not_poincareInequality_bernoulliMeasure {p : I} (hp₀ : 0 < (p : ℝ)) (hp₁ : (p : ℝ) < 1)
-    (C : ℝ) : ¬ PoincareInequality Ber((1 : ℝ), 0, p) C := by
+    (C : ℝ) : ¬ MeasureTheory.Measure.PoincareInequality Ber((1 : ℝ), 0, p) C := by
   intro h
   have hae : ∀ᵐ x ∂Ber((1 : ℝ), 0, p), ‖fderiv ℝ step x‖ = 0 := by
     rw [bernoulliMeasure_def]

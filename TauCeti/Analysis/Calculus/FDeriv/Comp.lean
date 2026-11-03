@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Comp
+public import Mathlib.Analysis.Calculus.FDeriv.Equiv
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
@@ -42,5 +43,12 @@ theorem fderiv_comp_eq_zero_iff_of_isInvertible {f : E → G} {φ : F → E} {b 
   refine ⟨fun h ↦ ?_, fun h ↦ by rw [h]; ext u; simp⟩
   ext u
   simpa using congrArg (fun L : F →L[𝕜] G ↦ L (e.symm u)) h
+
+/-- Precomposing a real-valued function with scalar multiplication scales the norm of its
+Fréchet derivative by the absolute value of the scalar. -/
+theorem norm_fderiv_comp_smul {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {f : E → ℝ} (a : ℝ) (x : E) :
+    ‖fderiv ℝ (fun y ↦ f (a • y)) x‖ = |a| * ‖fderiv ℝ f (a • x)‖ := by
+  rw [_root_.fderiv_comp_smul a, norm_smul, Real.norm_eq_abs]
 
 end TauCeti
