@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Localization.Away.Basic
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.WedgeCircles
 public import TauCeti.RepresentationTheory.Homological.GroupHomology.DirectedUnion
 public import TauCeti.RepresentationTheory.Homological.GroupHomology.LowDegree
-public import TauCeti.RingTheory.Localization.Away.Basic
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -97,14 +97,14 @@ private noncomputable abbrev invPowGen (m : ℤ) (r : ℕ) : Multiplicative (Loc
 
 /-- The `a`-th power of the generator `m⁻ʳ` is `a m⁻ʳ`, in additive notation. -/
 private theorem toAdd_invPowGen_zpow (r : ℕ) (a : ℤ) :
-    (invPowGen m r ^ a).toAdd = (a : Localization.Away m) * invSelf m ^ r := by
-  rw [toAdd_zpow, toAdd_ofAdd, zsmul_eq_mul]
+    (invPowGen m r ^ a).toAdd = algebraMap ℤ (Localization.Away m) a * invSelf m ^ r := by
+  rw [toAdd_zpow, toAdd_ofAdd, zsmul_eq_mul, eq_intCast]
 
 private theorem invPowGen_mem_zpowers_succ (r : ℕ) :
     invPowGen m r ∈ Subgroup.zpowers (invPowGen m (r + 1)) := by
   refine Subgroup.mem_zpowers_iff.2 ⟨m, Multiplicative.toAdd.injective ?_⟩
   rw [toAdd_invPowGen_zpow, toAdd_ofAdd]
-  linear_combination invSelf m ^ r * intCast_mul_invSelf (S := Localization.Away m) m
+  linear_combination invSelf m ^ r * mul_invSelf (S := Localization.Away m) m
 
 private theorem directed_zpowers_invPowGen :
     Directed (· ≤ ·) fun r ↦ Subgroup.zpowers (invPowGen m r) :=
@@ -115,10 +115,9 @@ private theorem iSup_zpowers_invPowGen : ⨆ r, Subgroup.zpowers (invPowGen m r)
   refine eq_top_iff.2 fun y _ ↦ (Subgroup.mem_iSup_of_directed directed_zpowers_invPowGen).2 ?_
   -- every element of `ℤ[1/m]` is `a / mʳ` for some integer `a` and some `r`
   obtain ⟨r, a, h⟩ := surj m y.toAdd
-  rw [eq_intCast, eq_intCast] at h
   refine ⟨r, Subgroup.mem_zpowers_iff.2 ⟨a, Multiplicative.toAdd.injective ?_⟩⟩
-  have hr : ((m : Localization.Away m) * invSelf m) ^ r = 1 := by
-    rw [intCast_mul_invSelf, one_pow]
+  have hr : (algebraMap ℤ (Localization.Away m) m * invSelf m) ^ r = 1 := by
+    rw [mul_invSelf, one_pow]
   rw [toAdd_invPowGen_zpow]
   linear_combination -(invSelf m ^ r) * h + y.toAdd * hr
 
@@ -129,11 +128,11 @@ private theorem not_isOfFinOrder_invPowGen (hm : m ≠ 0) (r : ℕ) :
   replace hn1 := congrArg Multiplicative.toAdd hn1
   rw [toAdd_invPowGen_zpow, toAdd_one] at hn1
   -- clearing the denominator `mʳ`, the integer `n` vanishes in `ℤ[1/m]`
-  have hr : ((m : Localization.Away m) * invSelf m) ^ r = 1 := by
-    rw [intCast_mul_invSelf, one_pow]
+  have hr : (algebraMap ℤ (Localization.Away m) m * invSelf m) ^ r = 1 := by
+    rw [mul_invSelf, one_pow]
   have hn0 : algebraMap ℤ (Localization.Away m) n = 0 := by
-    rw [eq_intCast]
-    linear_combination (m : Localization.Away m) ^ r * hn1 - (n : Localization.Away m) * hr
+    linear_combination algebraMap ℤ (Localization.Away m) m ^ r * hn1 -
+      algebraMap ℤ (Localization.Away m) n * hr
   obtain ⟨⟨c, j, rfl⟩, hc⟩ := (IsLocalization.map_eq_zero_iff (Submonoid.powers m) _ n).1 hn0
   exact hn ((mul_eq_zero.1 hc).resolve_left (pow_ne_zero _ hm))
 
@@ -151,8 +150,8 @@ theorem isZero_groupHomology_one_localizationAway (hmk : (m : k) = 0) :
     IsZero (groupHomology (Rep.trivial k (Multiplicative (Localization.Away m)) k) 1) :=
   TauCeti.groupHomology.isZero_H1_of_forall_exists_zpow_eq _ m
     (fun g ↦ ⟨Multiplicative.ofAdd (invSelf m * g.toAdd), Multiplicative.toAdd.injective <| by
-      rw [toAdd_zpow, toAdd_ofAdd, zsmul_eq_mul]
-      linear_combination g.toAdd * intCast_mul_invSelf (S := Localization.Away m) m⟩)
+      rw [toAdd_zpow, toAdd_ofAdd, zsmul_eq_mul, ← eq_intCast (algebraMap ℤ (Localization.Away m))]
+      linear_combination g.toAdd * mul_invSelf (S := Localization.Away m) m⟩)
     fun c ↦ by rw [zsmul_eq_mul, hmk, zero_mul]
 
 /-- **The classifying space of `ℤ[1/m]` is acyclic modulo `m`.** For a nonzero integer `m` and a
