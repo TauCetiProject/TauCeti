@@ -34,7 +34,6 @@ public section
 
 namespace TauCeti.TypeBSpinCarrier
 
-open TauCeti.UniversalEnvelopingAlgebra
 open scoped commutatorElement
 
 attribute [local instance 100] LieRing.ofAssociativeRing
@@ -44,43 +43,14 @@ universe u
 variable {n : ℕ}
 
 local notation "rootGen" k => TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ) k
-private noncomputable abbrev rootOperator (n : ℕ) (k : Fin (n + 1) ⊕ Fin (n + 1)) :
-    Module.End ℤ (lattice n).toAddSubgroup :=
-  kostantRootOperator (TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ))
-    (TauCeti.typeBSimpleCorootGenerator (K := ℚ)) (rep n) (lattice n).toAddSubgroup
-    (rep_kostantForm_mem_lattice n) k
 
-local notation "ratOp" k => rep n (_root_.UniversalEnvelopingAlgebra.ι ℚ (rootGen k))
-
-private theorem rootOperator_lie_lie_eq_zero {i j : Fin (n + 1) ⊕ Fin (n + 1)}
-    (hij : ⁅rootGen i, ⁅rootGen i, rootGen j⁆⁆ = 0) :
-    ⁅rootOperator n i, ⁅rootOperator n i, rootOperator n j⁆⁆ = 0 := by
-  have hrat : ⁅ratOp i, ⁅ratOp i, ratOp j⁆⁆ = 0 := by
-    have hmap := congrArg ((rep n).toLieHom.comp
-      (_root_.UniversalEnvelopingAlgebra.ι ℚ)) hij
-    simpa only [LieHom.map_lie, map_zero, LieHom.comp_apply, AlgHom.toLieHom_apply] using hmap
-  apply LinearMap.ext
-  intro v
-  apply Subtype.ext
-  -- The integral operators are restrictions of the rational represented generators.
-  -- Expanding the brackets makes this restriction explicit on each lattice vector.
-  simpa only [Ring.lie_def, LinearMap.sub_apply, mul_apply_eq_comp,
-    AddSubgroup.coe_sub, coe_kostantRootOperator_apply,
-    LinearMap.zero_apply, ZeroMemClass.coe_zero] using
-    congrArg (fun f ↦ f (v : ExteriorAlgebra ℚ (polarization n).W)) hrat
-
-private theorem rootIntMatrix_lie_lie_eq_zero {i j : Fin (n + 1) ⊕ Fin (n + 1)}
-    (hij : ⁅rootGen i, ⁅rootGen i, rootGen j⁆⁆ = 0) :
-    ⁅rootIntMatrix n i, ⁅rootIntMatrix n i, rootIntMatrix n j⁆⁆ = 0 := by
-  have hop := rootOperator_lie_lie_eq_zero hij
-  -- Taking matrices transports the integral endomorphism bracket to the matrix bracket.
-  have hmap := congrArg (LinearMap.toMatrix (latticeBasis n) (latticeBasis n)) hop
-  simpa only [rootOperator, Ring.lie_def, map_sub, LinearMap.toMatrix_mul,
-    map_zero, ← rootIntMatrix_eq_toMatrix] using hmap
-
-private theorem coe_commutator_rootSubgroupPoints_of_lie_lie_eq_zero
+/-- If the numbered rational generators satisfy a double-bracket Serre relation, their root
+subgroup commutator has matrix `1 + st [X,Y] + st² YXY` over every commutative ring. -/
+theorem coe_commutatorElement_rootSubgroupPoints_of_lie_lie_eq_zero
     {i j : Fin (n + 1) ⊕ Fin (n + 1)}
-    (hij : ⁅rootGen i, ⁅rootGen i, rootGen j⁆⁆ = 0)
+    (hij : ⁅TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ) i,
+      ⁅TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ) i,
+        TauCeti.typeBSimpleRootGeneratorFamily (K := ℚ) j⁆⁆ = 0)
     (A : Type u) [CommRing A] (s t : A) :
     (((⁅rootSubgroupPoints n i A (Multiplicative.ofAdd s),
         rootSubgroupPoints n j A (Multiplicative.ofAdd t)⁆ : points n A) :
@@ -119,7 +89,7 @@ theorem coe_commutatorElement_rootSubgroupPoints_inl_inl_of_cartan_eq_neg_one
     -- The represented Serre system uses the transpose of the root-row Cartan matrix.
     simpa [TauCeti.typeBSimpleRootGeneratorFamily_inl, hji] using
       TauCeti.ad_pow_lie_typeBSimpleRootGenerator_typeBSimpleRootGenerator (K := ℚ) i j
-  exact coe_commutator_rootSubgroupPoints_of_lie_lie_eq_zero hserre A s t
+  exact coe_commutatorElement_rootSubgroupPoints_of_lie_lie_eq_zero hserre A s t
 
 /-- **Negative double-bond commutator, long root first.** The integral negative-root matrices
 give the same parameter degrees `st` and `st²`, over every commutative ring. -/
@@ -138,6 +108,6 @@ theorem coe_commutatorElement_rootSubgroupPoints_inr_inr_of_cartan_eq_neg_one
     simpa [TauCeti.typeBSimpleRootGeneratorFamily_inr, hji] using
       TauCeti.ad_pow_lie_typeBSimpleNegativeRootGenerator_typeBSimpleNegativeRootGenerator
         (K := ℚ) i j
-  exact coe_commutator_rootSubgroupPoints_of_lie_lie_eq_zero hserre A s t
+  exact coe_commutatorElement_rootSubgroupPoints_of_lie_lie_eq_zero hserre A s t
 
 end TauCeti.TypeBSpinCarrier
