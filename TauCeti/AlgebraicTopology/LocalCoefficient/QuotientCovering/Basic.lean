@@ -96,7 +96,7 @@ end Permutation
 
 section Regular
 
-variable (k : Type u) [CommRing k]
+variable (k : Type u) [Ring k]
 
 /-- A choice of sheet identifies the permutation representation on a fibre with the regular
 representation. -/
