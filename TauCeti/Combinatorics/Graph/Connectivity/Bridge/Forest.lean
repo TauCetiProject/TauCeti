@@ -273,15 +273,10 @@ private theorem Walk.reachable_bridgeForest_deleteEdges {F : Set β} {x y : α} 
     (hx : x ∈ V(G)) (hy : y ∈ V(G)) (hp : ∀ f ∈ p.edges, f ∉ F) :
     (G.bridgeForest.deleteEdges F).Reachable (G.bridgeComponentOf x hx)
       (G.bridgeComponentOf y hy) := by
-  induction p with
-  | nil => exact Reachable.refl (by simp)
-  | cons e h p ih =>
-    have hrest := ih h.right_mem hy fun f hf ↦ hp f (by simp [hf])
-    by_cases he : G.IsBridge e
-    · refine Reachable.trans (IsLink.reachable (e := e) ?_) hrest
-      exact (deleteEdges_isLink ..).mpr ⟨he.isLink_bridgeForest h, hp e (by simp)⟩
-    · rwa [(bridgeComponentOf_eq_bridgeComponentOf_iff hx h.right_mem).mpr
-        (h.reachable_deleteEdges_bridgeSet he)]
+  apply reachable_deleteEdges_iff_exists_walk.mpr
+  refine ⟨by simp, p.toBridgeForest hx hy, ?_⟩
+  intro f hf
+  exact hp f ((p.edges_toBridgeForest_sublist hx hy).subset hf)
 
 /-- A walk of the bridge forest avoiding a set `F` of bridges lifts to walks of `G` avoiding `F`
 between any vertices of its end components. -/
@@ -327,6 +322,7 @@ noncomputable def Walk.liftBridgeForest {C D : G.BridgeComponent}
   Classical.choose (q.exists_liftBridgeForest_isPath hx hy)
 
 /-- A lifted bridge-forest walk is a path. -/
+@[simp]
 theorem Walk.isPath_liftBridgeForest {C D : G.BridgeComponent}
     (q : G.bridgeForest.Walk C D) (hx : x ∈ V(C.1)) (hy : y ∈ V(D.1)) :
     (q.liftBridgeForest hx hy).IsPath :=
