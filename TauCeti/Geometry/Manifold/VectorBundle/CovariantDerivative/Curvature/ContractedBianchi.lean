@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.BilinearTensor
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Derivative
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Derivative.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar
 import Mathlib.Geometry.Manifold.BumpFunction
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
