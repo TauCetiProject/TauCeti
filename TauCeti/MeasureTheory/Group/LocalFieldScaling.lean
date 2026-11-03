@@ -337,8 +337,8 @@ theorem addHaar_image_mulVec (μ : Measure (ι → K)) [μ.IsAddHaarMeasure] [μ
   have hBtop : μ (integerBox K ι) ≠ ∞ := isCompact_integerBox.measure_lt_top.ne
   have hc : (addHaarScalarFactor (μ.map f) μ : ℝ≥0∞) = 1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ k := by
     have h := measure_image_mulVec_integerBox μ hϖ hk
-    rw [← hf, hsmul, Measure.smul_apply, ENNReal.smul_def, smul_eq_mul] at h
+    rw [← hf, hsmul, _root_.smul_apply, ENNReal.smul_def, smul_eq_mul] at h
     exact (ENNReal.mul_left_inj hB0 hBtop).1 h
-  rw [← hf, hsmul, Measure.smul_apply, ENNReal.smul_def, smul_eq_mul, hc]
+  rw [← hf, hsmul, _root_.smul_apply, ENNReal.smul_def, smul_eq_mul, hc]
 
 end MeasureTheory.Measure

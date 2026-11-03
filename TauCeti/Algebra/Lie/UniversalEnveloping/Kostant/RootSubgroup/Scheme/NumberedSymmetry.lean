@@ -154,7 +154,7 @@ theorem kostantNumberedSymmetryMatrix_pow_eq_one (A : Type v) [CommRing A] {m : 
     rw [AddEquiv.coe_toIntLinearEquiv]
     exact funext fun x => LinearEquiv.coe_addEquiv_apply θ x
   have hm' : ∀ x, (θ.toAddEquiv.toIntLinearEquiv ^ m) x = x := fun x => by
-    simpa only [LinearEquiv.pow_apply, hcoe] using hm x
+    simpa only [pow_apply_eq_iterate, hcoe] using hm x
   have hunit := AddEquiv.baseChangeInvariantRestrictUnit_pow_eq_one
     (R := A) θ.toAddEquiv M hθM hm'
   have hmatrix := congrArg

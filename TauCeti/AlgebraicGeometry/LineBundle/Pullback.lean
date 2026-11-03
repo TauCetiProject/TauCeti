@@ -56,9 +56,9 @@ instance isInvertible_pullback (M : Y.Modules) [hM : isInvertible Y M] :
     TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible_iff_exists_isOpenCover.mp hM
   refine TauCeti.AlgebraicGeometry.SheafOfModules.isInvertible_iff_exists_isOpenCover.mpr
     ⟨ι, fun i ↦ f ⁻¹ᵁ V i, ?_, fun i ↦
-      ⟨(Scheme.Modules.pullbackObjUnitIso (f ∣_ V i)).symm ≪≫
-        (Scheme.Modules.pullback (f ∣_ V i)).mapIso (e i).some ≪≫
-        (Scheme.Modules.restrictPullbackObjIso f (V i) M).symm⟩⟩
+      ⟨(Scheme.Modules.pullbackObjUnitIso (f.resLE (V i) _ le_rfl)).symm ≪≫
+        (Scheme.Modules.pullback (f.resLE (V i) _ le_rfl)).mapIso (e i).some ≪≫
+        ((Scheme.Modules.restrictPullbackIso f (V i) _ le_rfl).app M).symm⟩⟩
   rw [IsOpenCover, ← Scheme.Hom.preimage_iSup, hV.iSup_eq_top, Scheme.Hom.preimage_top]
 
 /-- **Invertibility is local**: a sheaf of modules on a scheme is invertible exactly when its

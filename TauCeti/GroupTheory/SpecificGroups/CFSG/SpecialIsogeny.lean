@@ -296,7 +296,7 @@ private theorem rootLength_eq_ite (e : SuzukiReeIndex) (i : Fin e.1.rank) :
     e.1.dynkinType.rootLength i =
       if e.1.dynkinType.IsLongSimpleRoot i then (e.1.characteristic : ℤ) else 1 := by
   obtain ⟨⟨d, hvalid⟩, hhalf⟩ := e
-  cases d <;> try simp at hhalf
+  cases d <;> simp at hhalf
   case suzuki =>
     simp only [ValidLieTypeIndex.characteristic, LieTypeIndex.characteristic_suzuki,
       Nat.cast_ofNat]
@@ -413,7 +413,7 @@ This is the check that the node convention of the upstream isogeny is the one
     e.datumSpecialIsogeny.indexEquiv (e.1.dynkinType.simpleIndex e.1.dynkinType_valid i) =
       e.1.dynkinType.simpleIndex e.1.dynkinType_valid (e.lengthPerm i) := by
   obtain ⟨⟨d, hvalid⟩, hhalf⟩ := e
-  cases d <;> try simp at hhalf
+  cases d <;> simp at hhalf
   case suzuki =>
     rw [datumSpecialIsogeny_indexEquiv_suzuki, lengthPerm_suzuki]
     exact b2SpecialIsogeny_indexEquiv_simpleIndex _ i
@@ -436,7 +436,7 @@ simple root and the characteristic to a short one. -/
     e.datumSpecialIsogeny.exponent (e.1.dynkinType.simpleIndex e.1.dynkinType_valid i) =
       e.1.dynkinType.rootLength i := by
   obtain ⟨⟨d, hvalid⟩, hhalf⟩ := e
-  cases d <;> try simp at hhalf
+  cases d <;> simp at hhalf
   case suzuki =>
     rw [datumSpecialIsogeny_exponent_suzuki]
     exact b2SpecialIsogeny_exponent_simpleIndex _ i
@@ -496,7 +496,7 @@ powers of `τ` that cut out the Suzuki, Ree and Tits groups are read off it. -/
     e.datumSpecialIsogeny * e.datumSpecialIsogeny =
       RootPairingIsogeny.smulId _ ⟨e.1.characteristic, e.1.characteristic_prime.pos⟩ := by
   obtain ⟨⟨d, hvalid⟩, hhalf⟩ := e
-  cases d <;> try simp at hhalf
+  cases d <;> simp at hhalf
   case suzuki =>
     have hc : (2 : ℕ+) = ⟨ValidLieTypeIndex.characteristic ⟨_, hvalid⟩,
         (ValidLieTypeIndex.characteristic_prime _).pos⟩ := by
