@@ -12,6 +12,7 @@ import TauCeti.Analysis.Calculus.Deriv.Projection
 import TauCeti.Analysis.Calculus.Deriv.EqLine
 import TauCeti.Geometry.Manifold.SmoothEmbedding.EqLine
 import TauCeti.Analysis.Normed.Module.Dual.Submodule
+import TauCeti.LinearAlgebra.Projection
 
 /-!
 # Smooth arcs in dimension at least four are unknotted

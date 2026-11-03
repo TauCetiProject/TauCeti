@@ -24,9 +24,7 @@ both ranges are null for Haar measure by the lower-dimensional case of Sard's le
 This is the choice of direction in Whitney's projection argument: for an injective immersion `f`,
 projecting `F` linearly along such a direction `v` onto a complementary hyperplane keeps `f`
 an injective immersion, and so does every stage of the straight-line motion
-`f - t • φ (f) • v`, for a linear form `φ` with `φ v = 1`. Moving `f` by multiples of a direction
-`d` on none of its secant lines keeps it injective (`TauCeti.injective_sub_smul`), and the
-velocity of the moved curve is computed in `HasDerivAt.sub_smul`.
+`f - t • φ (f) • v`, for a linear form `φ` with `φ v = 1`.
 
 ## Main results
 
@@ -34,8 +32,6 @@ velocity of the moved curve is computed in `HasDerivAt.sub_smul`.
   nor a tangent vector of a `C²` map, when `2 * dim E + 1 < dim F`.
 * `ContDiff.exists_forall_sub_eq_smul_and_deriv_ne`: the curve case, for an injective `C²`
   immersion of the line in dimension at least four.
-* `TauCeti.injective_sub_smul`: `x ↦ f x - a x • d` is injective when no secant of `f` is a
-  multiple of `d`.
 
 ## References
 
@@ -105,22 +101,3 @@ theorem ContDiff.exists_forall_sub_eq_smul_and_deriv_ne {γ : ℝ → F} (hγ : 
     refine htan s c⁻¹ ?_
     rw [← toSpanSingleton_deriv]
     simp [h, smul_smul, inv_mul_cancel₀ hc]
-
-namespace TauCeti
-
-omit [FiniteDimensional ℝ F]
-
-/-- Moving a map by multiples of a direction `d` on none of its secant lines keeps it injective:
-`x ↦ f x - a x • d` is injective for every coefficient function `a`. -/
-theorem injective_sub_smul {α : Type*} {f : α → F} {d : F}
-    (hsec : ∀ x y (c : ℝ), f x - f y = c • d → x = y) (a : α → ℝ) :
-    Injective fun x => f x - a x • d := by
-  intro x y h
-  dsimp only at h
-  refine hsec x y (a x - a y) ?_
-  calc f x - f y = (f x - a x • d) - (f y - a y • d) + (a x - a y) • d := by
-        rw [sub_smul]
-        abel
-    _ = _ := by rw [h, sub_self, zero_add]
-
-end TauCeti
