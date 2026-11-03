@@ -75,16 +75,10 @@ theorem continuousOn_complexMGF_of_nonneg {Ω : Type*} [MeasurableSpace Ω] {μ 
     [IsFiniteMeasure μ] {X : Ω → ℝ} (hX : AEMeasurable X μ)
     (hpos : ∀ᵐ ω ∂μ, 0 ≤ X ω) :
     ContinuousOn (complexMGF X μ) {z : ℂ | z.re ≤ 0} := by
-  apply continuousOn_of_dominated (bound := fun _ ↦ (1 : ℝ))
-  · intro z _
-    exact (by fun_prop : Measurable fun x : ℝ ↦ cexp (z * x)).comp_aemeasurable hX
-      |>.aestronglyMeasurable
-  · intro z hz
-    filter_upwards [hpos] with ω hω
-    rw [Complex.norm_exp]
-    exact Real.exp_le_one_iff.mpr (by simpa using mul_nonpos_of_nonpos_of_nonneg hz hω)
-  · exact integrable_const 1
-  · exact ae_of_all _ fun _ ↦ (by fun_prop : Continuous fun z : ℂ ↦ cexp (z * X _)).continuousOn
+  refine continuousOn_of_dominated (bound := fun _ ↦ (1 : ℝ)) (fun _ _ ↦ by fun_prop)
+    (fun z hz ↦ ?_) (integrable_const 1) (ae_of_all _ fun _ ↦ by fun_prop)
+  filter_upwards [hpos] with ω hω
+  simpa [Complex.norm_exp] using mul_nonpos_of_nonpos_of_nonneg hz hω
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω} {X : Ω → ℝ}
 
@@ -116,21 +110,14 @@ theorem eqOn_complexMGF_of_eqOn_mgf {s : Set ℝ} {g : ℂ → ℂ} (hs : IsOpen
 open. -/
 private theorem isOpen_setOf_forall_pencil_pos {ι : Type*} [Finite ι] (lam : ι → ℝ) :
     IsOpen {t : ℝ | ∀ j, 0 < 1 - 2 * t * lam j} := by
-  have : {t : ℝ | ∀ j, 0 < 1 - 2 * t * lam j}
-      = ⋂ j, (fun t : ℝ ↦ 1 - 2 * t * lam j) ⁻¹' Ioi 0 := by
-    ext t; simp
-  rw [this]
-  exact isOpen_iInter_of_finite fun j ↦ isOpen_Ioi.preimage (by fun_prop)
+  simpa only [ofPred_forall] using isOpen_iInter_of_finite fun j ↦
+    isOpen_lt continuous_const (by fun_prop : Continuous fun t : ℝ ↦ 1 - 2 * t * lam j)
 
 private theorem convex_setOf_forall_pencil_pos {ι : Type*} (lam : ι → ℝ) :
     Convex ℝ {t : ℝ | ∀ j, 0 < 1 - 2 * t * lam j} := by
-  have : {t : ℝ | ∀ j, 0 < 1 - 2 * t * lam j} = ⋂ j, {t : ℝ | 2 * lam j * t < 1} := by
-    ext t
-    simp only [Set.mem_ofPred_eq, Set.mem_iInter]
-    exact forall_congr' fun j ↦ by constructor <;> intro h <;> nlinarith
-  rw [this]
-  exact convex_iInter fun j ↦
-    convex_halfSpace_lt ⟨fun _ _ ↦ by ring, fun _ _ ↦ by simp only [smul_eq_mul]; ring⟩ 1
+  refine convex_iff_forall_pos.2 fun x hx y hy a b ha hb hab ↦ ?_
+  simp only [mem_ofPred_eq, smul_eq_mul] at hx hy ⊢
+  exact fun j ↦ by linarith [mul_pos ha (hx j), mul_pos hb (hy j)]
 
 variable {ι : Type*} [Fintype ι]
 
@@ -140,35 +127,19 @@ private theorem exp_neg_sum_mul_log_eq (lam a : ι → ℝ) {t : ℝ}
     (ht : ∀ j, 0 < 1 - 2 * t * lam j) :
     cexp (-∑ j, (a j : ℂ) * Complex.log (1 - 2 * (t : ℂ) * (lam j : ℂ)))
       = ((∏ j, (1 - 2 * t * lam j) ^ (-a j) : ℝ) : ℂ) := by
-  have hprod : Real.exp (-∑ j, a j * Real.log (1 - 2 * t * lam j))
-      = ∏ j, (1 - 2 * t * lam j) ^ (-a j) := by
-    rw [neg_eq_neg_one_mul, Finset.mul_sum, Real.exp_sum]
-    refine Finset.prod_congr rfl fun j _ ↦ ?_
-    rw [Real.rpow_def_of_pos (ht j)]
-    congr 1
-    ring
-  rw [← hprod, Complex.ofReal_exp]
-  congr 1
+  rw [← Finset.sum_neg_distrib, Complex.exp_sum, Complex.ofReal_prod]
+  refine Finset.prod_congr rfl fun j _ ↦ ?_
+  rw [Complex.ofReal_cpow (ht j).le, Complex.cpow_def_of_ne_zero (mod_cast (ht j).ne')]
   push_cast
-  refine congrArg Neg.neg (Finset.sum_congr rfl fun j _ ↦ ?_)
   congr 1
-  rw [Complex.ofReal_log (ht j).le]
-  congr 1
-  push_cast
   ring
 
 private theorem analyticOnNhd_exp_neg_sum_mul_log (lam a : ι → ℝ) :
     AnalyticOnNhd ℂ (fun z : ℂ ↦ cexp (-∑ j, (a j : ℂ) * Complex.log (1 - 2 * z * (lam j : ℂ))))
       {z : ℂ | z.re ∈ {t : ℝ | ∀ j, 0 < 1 - 2 * t * lam j}} := by
-  refine AnalyticOnNhd.cexp (AnalyticOnNhd.neg (Finset.analyticOnNhd_fun_sum _ fun j _ ↦ ?_))
-  have hlog : AnalyticOnNhd ℂ (fun z : ℂ ↦ Complex.log (1 - 2 * z * (lam j : ℂ)))
-      {z : ℂ | z.re ∈ {t : ℝ | ∀ j, 0 < 1 - 2 * t * lam j}} := by
-    refine AnalyticOnNhd.clog (by fun_prop) fun z hz ↦ ?_
-    refine Complex.mem_slitPlane_iff.2 (Or.inl ?_)
-    have hre : (1 - 2 * z * (lam j : ℂ)).re = 1 - 2 * z.re * lam j := by simp
-    rw [hre]
-    exact hz j
-  exact (analyticOnNhd_const (v := (a j : ℂ))).mul hlog
+  refine .cexp (.neg (Finset.analyticOnNhd_fun_sum _ fun j _ ↦ analyticOnNhd_const.mul
+    (AnalyticOnNhd.clog (by fun_prop) fun z hz ↦ mem_slitPlane_iff.2 (.inl ?_))))
+  simpa using hz j
 
 /-- **Continuation of a product-of-powers moment-generating function.**  If the
 moment-generating function of `X` is the product `∏ j, (1 - 2 * t * lam j) ^ (-a j)` wherever
@@ -219,7 +190,7 @@ is the vector-valued companion of `ProbabilityTheory.complexMGF_id_mul_I`, and i
 form for the moment-generating function of such a statistic turns into a characteristic function.
 No inner-product axioms are needed: both sides read off the same `Inner ℝ E` instance. -/
 theorem charFun_eq_complexMGF_inner {E : Type*} [Inner ℝ E] [MeasurableSpace E] (μ : Measure E)
-    (t : E) : charFun μ t = complexMGF (fun x ↦ ⟪x, t⟫) μ Complex.I :=
-  integral_congr_ae <| .of_forall fun x ↦ by simp only [mul_comm]
+    (t : E) : charFun μ t = complexMGF (fun x ↦ ⟪x, t⟫) μ Complex.I := by
+  simp only [charFun_apply, complexMGF, mul_comm]
 
 end MeasureTheory

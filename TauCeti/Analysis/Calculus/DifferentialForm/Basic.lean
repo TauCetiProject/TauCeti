@@ -22,7 +22,8 @@ using only within-set differentiability, with no second derivative or interior-d
 in the coefficient space, and `TauCeti.extDerivWithin_smul_field` extends `extDerivWithin_smul` to
 scalars, such as `ℂ`, that act on the coefficients but not on the domain, and
 `TauCeti.extDerivWithin_function_smul` is the Leibniz rule for multiplication by a scalar
-function.
+function. `DifferentiableAt.extDerivWithin` is the exterior-derivative version of
+`DifferentiableAt.fderivWithin`.
 -/
 
 public section
@@ -117,6 +118,12 @@ theorem extDeriv_function_smul {c : E → 𝕜} (hc : DifferentiableAt 𝕜 c x)
       hω.differentiableWithinAt
 
 end TauCeti
+
+/-- The exterior derivative within a set of a form differentiable at a point of unique
+differentiability is its exterior derivative. -/
+protected theorem DifferentiableAt.extDerivWithin (h : DifferentiableAt 𝕜 ω x)
+    (hxs : UniqueDiffWithinAt 𝕜 s x) : extDerivWithin ω s x = extDeriv ω x := by
+  rw [extDerivWithin, extDeriv, h.fderivWithin hxs]
 
 namespace ContinuousLinearMap
 

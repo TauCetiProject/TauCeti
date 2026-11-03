@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Distribution.Diffeomorph
+import TauCeti.Geometry.Manifold.Diffeomorph.NormedSpace
 
 /-!
 # Linear splitting coordinates for distributions
@@ -87,17 +88,17 @@ theorem IsContMDiffDistribution.exists_splitCoordinates {m : ℕ∞ω} {k : ℕ}
   have hD'eq : D' = Dt := by
     funext q
     exact distributionModelFiber_eq q
-  let eω : Diffeomorph 𝓘(𝕜, distributionModelFiber D p × T) 𝓘(𝕜, E)
-      (distributionModelFiber D p × T) E ω :=
-    { contMDiff_toFun := e.contDiff.contMDiff
-      contMDiff_invFun := e.symm.contDiff.contMDiff
-      toEquiv := e.toLinearEquiv.toEquiv }
+  let eω := e.toContDiffDiffeomorph ω
+  have hcoe : ⇑eω = ⇑e.toDiffeomorph :=
+    (e.coe_toContDiffDiffeomorph ω).trans e.coe_toDiffeomorph.symm
   have hsmooth : IsContMDiffDistribution 𝓘(𝕜, distributionModelFiber D p × T) m k D' := by
     rw [hD'eq]
-    exact hD.comap_mfderiv eω (by simp)
+    simp only [Dt]
+    exact hcoe ▸ hD.comap_mfderiv eω (by simp)
   have hinv' : IsInvolutiveDistribution 𝓘(𝕜, distributionModelFiber D p × T) D' := by
     rw [hD'eq]
-    exact (eω.isInvolutiveDistribution_comap_mfderiv_iff le_top D).2 hinv
+    simp only [Dt]
+    exact hcoe ▸ (eω.isInvolutiveDistribution_comap_mfderiv_iff le_top D).2 hinv
   have hfinrank : Module.finrank 𝕜 (distributionModelFiber D p) = k := by
     exact (congrArg (fun S : Submodule 𝕜 E => Module.finrank 𝕜 S)
       (distributionModelFiber_eq p)).trans (hD.finrank_eq p)
