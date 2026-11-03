@@ -58,11 +58,21 @@ theorem eq_zero_of_one_tmul_eq_zero_of_localized (m : M) (hS : (1 : S) ⊗ₜ[R]
     (coe_primaryComponentEquivTensorProduct_apply hG hfg ⟨m, hm⟩).trans hS
   exact congrArg Subtype.val (e.injective (he.trans (map_zero e).symm))
 
+/-- A module is zero if its base change and each principal localization in the
+formal-glueing cover are zero. No finite generation of the module is required. -/
+theorem subsingleton_of_baseChange_and_localized [Subsingleton (S ⊗[R] M)]
+    (hloc : ∀ g ∈ G, Subsingleton (LocalizedModule (.powers g) M)) : Subsingleton M := by
+  refine (subsingleton_iff_forall_eq 0).mpr fun m ↦ ?_
+  apply eq_zero_of_one_tmul_eq_zero_of_localized hG m (Subsingleton.elim _ _)
+  intro g hg
+  have := hloc g hg
+  exact Subsingleton.elim _ _
+
 /-- **Injectivity of the formal-glueing augmentation.** A module embeds into the product of
 its base change and its principal localizations. This is the first exactness assertion in
 Stacks 05EK, not the assertion that all compatible local elements have a global lift. -/
 @[stacks 05EK "injectivity of the first map"]
-theorem injective_formalGlueing_augmentation :
+theorem injective_mk_prod_pi_mkLinearMap :
     Injective ((TensorProduct.mk R S M 1).prod
       (LinearMap.pi fun g : G ↦ LocalizedModule.mkLinearMap (.powers (g : R)) M)) := by
   refine (injective_iff_map_eq_zero _).mpr fun m hm ↦ ?_
@@ -106,28 +116,26 @@ theorem surjective_iff_baseChange_and_localized (f : M →ₗ[R] N)
     fun g _ ↦ LocalizedModule.map_surjective _ f hf⟩, ?_⟩
   rintro ⟨hS, hloc⟩
   have hex := LinearMap.exact_map_mkQ_range f
-  have hqS : ∀ q : N ⧸ f.range, (1 : S) ⊗ₜ[R] q = 0 := by
-    intro q
+  have : Subsingleton (S ⊗[R] (N ⧸ f.range)) := by
+    refine (subsingleton_iff_forall_eq 0).mpr fun q ↦ ?_
     have he := lTensor_exact S hex (Submodule.mkQ_surjective f.range)
-    obtain ⟨n, rfl⟩ := f.range.mkQ_surjective q
-    obtain ⟨x, hx⟩ := hS (1 ⊗ₜ[R] n)
-    have hz := he.apply_apply_eq_zero x
-    rw [LinearMap.baseChange_eq_lTensor] at hx
-    simpa only [hx, LinearMap.lTensor_tmul] using hz
-  have hq (q : N ⧸ f.range) : q = 0 := by
-    apply TauCeti.eq_zero_of_one_tmul_eq_zero_of_localized hG q (hqS q)
-    intro g hg
-    have he := LocalizedModule.map_exact (.powers g) f f.range.mkQ hex
-    obtain ⟨y, rfl⟩ := f.range.mkQ_surjective q
-    have hs := (IsLocalizedModule.map_surjective_iff_localizedModuleMap_surjective
-      (LocalizedModule.mkLinearMap (.powers g) M)
-      (LocalizedModule.mkLinearMap (.powers g) N)).mpr (hloc g hg)
-    obtain ⟨x, hx⟩ := hs (LocalizedModule.mk y 1)
-    have hz := he.apply_apply_eq_zero x
-    rw [hx, IsLocalizedModule.map_LocalizedModules] at hz
-    exact hz
+    obtain ⟨n, rfl⟩ := f.range.mkQ.lTensor_surjective S (Submodule.mkQ_surjective f.range) q
+    rw [LinearMap.baseChange_eq_lTensor] at hS
+    obtain ⟨x, rfl⟩ := hS n
+    exact he.apply_apply_eq_zero x
+  have : Subsingleton (N ⧸ f.range) :=
+    TauCeti.subsingleton_of_baseChange_and_localized hG fun g hg ↦ by
+      refine (subsingleton_iff_forall_eq 0).mpr fun q ↦ ?_
+      have he := LocalizedModule.map_exact (.powers g) f f.range.mkQ hex
+      obtain ⟨y, rfl⟩ := LocalizedModule.map_surjective (.powers g) f.range.mkQ
+        (Submodule.mkQ_surjective f.range) q
+      have hs := (IsLocalizedModule.map_surjective_iff_localizedModuleMap_surjective
+        (LocalizedModule.mkLinearMap (.powers g) M)
+        (LocalizedModule.mkLinearMap (.powers g) N)).mpr (hloc g hg)
+      obtain ⟨x, rfl⟩ := hs y
+      exact he.apply_apply_eq_zero x
   intro n
-  simpa using hq (f.range.mkQ n)
+  simpa using (Subsingleton.elim (f.range.mkQ n) 0)
 
 /-- A module map is an isomorphism if and only if it is an isomorphism on every
 formal-glueing piece. -/
