@@ -133,7 +133,7 @@ theorem dividedPowers_mem_of_g2 (S : Subring A)
       (∀ k, 4 * k = N → dividedPower k v ∈ S) ∧
       (∀ k, 5 * k = N → dividedPower k s ∈ S) := by
     induction N using Nat.strong_induction_on with
-    | h N ih =>
+    | ind N ih =>
       have extract (m n : ℕ) (hmn : m + n = N) (p : ℕ × ℕ × ℕ × ℕ)
           (hp : p ∈ chainG2Index m n)
           (hlt : ∀ q ∈ chainG2Index m n, q ≠ p →
