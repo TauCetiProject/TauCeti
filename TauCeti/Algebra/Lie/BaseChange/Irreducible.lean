@@ -51,23 +51,19 @@ theorem isIrreducible_baseChange_of_representation_surjective
   -- Invariance under the Lie generators implies invariance under all enveloping operators.
   have hU (u : _root_.UniversalEnvelopingAlgebra K L) :
       ∀ m ∈ N, (representation K L M u).baseChange A m ∈ N := by
-    induction u using induction_ι with
-    | ι x =>
-        intro m hm
+    let ρ := (Module.End.baseChangeHom K A M).comp (representation K L M)
+    let := Module.compHom (A ⊗[K] M) ρ.toRingHom
+    let : IsScalarTower K (_root_.UniversalEnvelopingAlgebra K L) (A ⊗[K] M) :=
+      ⟨fun r v m => by
+        -- Unfold the local restricted action to use the algebra homomorphism's linearity.
+        change ρ (r • v) m = r • ρ v m
+        simp only [map_smul, LinearMap.smul_apply]⟩
+    exact smul_mem_of_forall_ι_smul_mem (P := N.toSubmodule.restrictScalars K)
+      (fun x m hm => by
+        -- Unfold the local action to identify the generator with the base-changed Lie action.
+        change (representation K L M (_root_.UniversalEnvelopingAlgebra.ι K x)).baseChange A m ∈ N
         rw [representation_ι, ← LieModule.toEnd_baseChange]
-        exact N.lie_mem hm
-    | algebraMap r =>
-        intro m hm
-        rw [AlgHom.commutes, Algebra.algebraMap_eq_smul_one, LinearMap.baseChange_smul,
-          LinearMap.baseChange_one, LinearMap.smul_apply, one_apply_eq_self]
-        exact N.toSubmodule.smul_of_tower_mem r hm
-    | add u v hu hv =>
-        intro m hm
-        simpa using N.add_mem (hu m hm) (hv m hm)
-    | mul u v hu hv =>
-        intro m hm
-        simpa only [map_mul, LinearMap.baseChange_mul, mul_apply_eq_comp]
-          using hu _ (hv m hm)
+        exact N.lie_mem hm) u
   -- Extended K-linear operators span all A-linear operators, since M is finite projective.
   have hEnd (f : Module.End A (A ⊗[K] M)) : ∀ m ∈ N, f m ∈ N := by
     induction f using (LinearMap.isBaseChange_baseChangeHom K A M M).inductionOn with
