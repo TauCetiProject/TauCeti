@@ -39,23 +39,38 @@ namespace ModuleCat
 variable (R : Type u) [Ring R] [Small.{v} R]
 
 /-- A linear map out of `R`, shrunk to `Type v`, is determined by the image of `1`. -/
-noncomputable def shrinkHomEquiv (M : ModuleCat.{v} R) : (of R (Shrink.{v} R) ⟶ M) ≃ M where
-  toFun f := f ((Shrink.linearEquiv R R).symm 1)
-  invFun m := ofHom ((LinearMap.toSpanSingleton R M m).comp (Shrink.linearEquiv R R).toLinearMap)
-  left_inv f := by
-    ext x
-    -- Every element of the shrunk ring is a multiple of the shrunk unit.
-    have hx : x = Shrink.linearEquiv R R x • (Shrink.linearEquiv R R).symm 1 := by
-      rw [← map_smul, smul_eq_mul, mul_one, LinearEquiv.symm_apply_apply]
-    conv_rhs => rw [hx]
-    simp
-  right_inv m := by simp
+noncomputable def shrinkHomEquiv (M : ModuleCat.{v} R) : (of R (Shrink.{v} R) ⟶ M) ≃ M :=
+  homEquiv.trans <| ((Shrink.linearEquiv R R).congrLeft M ℕ).toEquiv.trans
+    (LinearMap.ringLmapEquivSelf R ℕ M).toEquiv
+
+/-- `shrinkHomEquiv` evaluates a linear map at the shrunk unit. -/
+@[simp]
+lemma shrinkHomEquiv_apply (M : ModuleCat.{v} R) (f : of R (Shrink.{v} R) ⟶ M) :
+    shrinkHomEquiv R M f = f (equivShrink R 1) := by
+  simp [shrinkHomEquiv, homEquiv]
+
+/-- The inverse of `shrinkHomEquiv` sends `m` to the linear map `r ↦ r • m`. -/
+@[simp]
+lemma shrinkHomEquiv_symm_apply (M : ModuleCat.{v} R) (m : M) :
+    (shrinkHomEquiv R M).symm m =
+      ofHom ((LinearMap.toSpanSingleton R M m).comp (Shrink.linearEquiv R R).toLinearMap) := by
+  ext; simp [shrinkHomEquiv, homEquiv]
 
 /-- The forgetful functor `ModuleCat.{v} R ⥤ Type v` is corepresented by `R`, shrunk to
 `Type v`. -/
 noncomputable def coyonedaObjIsoForget :
     coyoneda.obj (op (of R (Shrink.{v} R))) ≅ forget (ModuleCat.{v} R) :=
   NatIso.ofComponents fun M ↦ (shrinkHomEquiv R M).toIso
+
+@[simp]
+lemma coyonedaObjIsoForget_hom_app (M : ModuleCat.{v} R) (f : of R (Shrink.{v} R) ⟶ M) :
+    dsimp% (coyonedaObjIsoForget R).hom.app M f = shrinkHomEquiv R M f := by
+  simp [coyonedaObjIsoForget]
+
+@[simp]
+lemma coyonedaObjIsoForget_inv_app (M : ModuleCat.{v} R) (m : M) :
+    dsimp% (coyonedaObjIsoForget R).inv.app M m = (shrinkHomEquiv R M).symm m := by
+  simp [coyonedaObjIsoForget]
 
 instance forget_isCorepresentable : (forget (ModuleCat.{v} R)).IsCorepresentable :=
   Functor.IsCorepresentable.mk' (coyonedaObjIsoForget R)
