@@ -236,9 +236,7 @@ noncomputable def tensorSubringCocone : Cocone (tensorSubringFunctor M hS) where
       naturality i j f := by
         ext : 1
         refine AlgebraTensorModule.ext fun r m ↦ ?_
-        change LinearMap.liftBaseChange R (LinearMap.id : M →ₗ[S j] M) (r ⊗ₜ m) =
-          LinearMap.liftBaseChange R (LinearMap.id : M →ₗ[S i] M) (r ⊗ₜ m)
-        simp }
+        simp [tensorSubringFunctor] }
 
 /-- The point of `tensorSubringCocone M hS` is `M`. -/
 @[simp]
@@ -260,6 +258,8 @@ theorem tensorSubringCocone_ι_app (n : ℕ) :
 /-- The legs of `tensorSubringCocone M hS` send `r ⊗ m` to `r • m`. -/
 private theorem tensorSubringCocone_ι_app_tmul (n : ℕ) (r : R) (m : M) :
     ((tensorSubringCocone M hS).ι.app n).hom (r ⊗ₜ[S n] m : R ⊗[S n] M) = (r • m : M) := by
+  -- The point `(tensorSubringCocone M hS).pt` is only definitionally `ModuleCat.of R M`, so
+  -- `ModuleCat.hom_ofHom` cannot fire under `rw` or `simp`; `change` exposes the underlying map.
   change LinearMap.liftBaseChange R (LinearMap.id : M →ₗ[S n] M) (r ⊗ₜ m) = r • m
   simp
 
@@ -298,6 +298,9 @@ noncomputable def isColimitTensorSubringCocone (htop : ∀ r, ∃ n, r ∈ S n) 
     refine AlgebraTensorModule.ext fun r m ↦ ?_
     have h : tensorSubringLeg s n (r ⊗ₜ m) = r • tensorSubringLeg s 0 ((1 : R) ⊗ₜ m) := by
       rw [← tensorSubringLeg_one_tmul s n, tmul_eq_smul_one_tmul, map_smul]
+    -- The composite is not type-correct at reducible transparency, since the cocone point is
+    -- only definitionally `ModuleCat.of R M`; `rw [ModuleCat.hom_comp]` and `dsimp` fail on it,
+    -- so `change` evaluates the composite and the explicit `desc` map directly.
     change tensorSubringLeg s 0 ((1 : R) ⊗ₜ ((tensorSubringCocone M hS).ι.app n).hom (r ⊗ₜ m)) =
       tensorSubringLeg s n (r ⊗ₜ m)
     rw [tensorSubringCocone_ι_app_tmul, tensorSubringLeg_one_tmul_smul htop s r m, h]
