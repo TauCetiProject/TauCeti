@@ -252,7 +252,10 @@ theorem inducedEquiv_comp {P : Type*} [AddCommMonoid P] [Module R P] [Comodule R
     letI := Corestrict (M := N) f
     letI := Corestrict (M := P) f
     inducedEquiv f (Hom.comp φ g) = Hom.comp (inducedEquiv f φ) (corestrictHom f g) :=
-  (rfl)
+  letI := Corestrict (M := N) f
+  letI := Corestrict (M := P) f
+  Hom.ext fun p ↦ by
+    simp only [inducedEquiv_apply, Hom.comp_apply, corestrictHom_apply]
 
 /-- **Functoriality of induction.** A morphism of `D`-comodules `h : M → M'` induces the morphism
 `Ind_f M → Ind_f M'` corresponding to `h ∘ inducedEval` under Frobenius reciprocity. It acts as
