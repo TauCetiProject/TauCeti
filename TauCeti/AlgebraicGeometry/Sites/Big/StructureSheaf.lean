@@ -37,8 +37,11 @@ every `n`, not only for `n` invertible on `S`.
 ## Main declarations
 
 * `CategoryTheory.GrothendieckTopology.isSheaf_Γ`: `Γ` is a sheaf for every subcanonical topology.
-* `AlgebraicGeometry.Scheme.bigStructureSheaf`: the sheaf of rings `T ↦ Γ(T, O_T)` on the big
-  fpqc site over `S`.
+* `CategoryTheory.GrothendieckTopology.hasSheafCompose_forget₂_commRingCat`: a sheaf of
+  commutative rings is a sheaf of rings, on any site.
+* `AlgebraicGeometry.Scheme.bigStructureSheaf`: the sheaf of commutative rings `T ↦ Γ(T, O_T)`
+  on the big fpqc site over `S`, and `AlgebraicGeometry.Scheme.bigRingCatSheaf`, the same sheaf
+  as a sheaf of rings, over which sheaves of modules on the big site are defined.
 * `AlgebraicGeometry.Scheme.Ga`, `AlgebraicGeometry.Scheme.Gm`, `AlgebraicGeometry.Scheme.mu`:
   the sheaves `𝔾_a`, `𝔾_m` and `μ_n`.
 * `AlgebraicGeometry.Scheme.powHom`: the `n`-th power map of `𝔾_m`.
@@ -74,6 +77,25 @@ theorem CategoryTheory.GrothendieckTopology.isSheaf_Γ (J : GrothendieckTopology
   Presieve.isSheaf_iso J R.ΓCompCoyonedaIso.symm
     (GrothendieckTopology.Subcanonical.isSheaf_of_isRepresentable _)
 
+/-- Sheaves of commutative rings are sheaves of rings, on any site. This includes large sites such
+as the big sites of schemes, on which `forget₂ CommRingCat RingCat` is not known to preserve the
+limits that the sheaf condition involves. -/
+instance CategoryTheory.GrothendieckTopology.hasSheafCompose_forget₂_commRingCat {C : Type*}
+    [Category* C] (J : GrothendieckTopology C) :
+    J.HasSheafCompose (forget₂ CommRingCat.{u} RingCat.{u}) where
+  isSheaf P hP := by
+    rw [Presheaf.isSheaf_iff_isLimit] at hP ⊢
+    refine fun X S hS ↦ (hP S hS).map fun hc ↦ ?_
+    -- The limit in `CommRingCat` is preserved by the forgetful functor to types, so its
+    -- underlying sections form a small type. Then `RingCat` has the corresponding limit, and
+    -- `forget₂ CommRingCat RingCat`, which creates it, preserves it.
+    have hc' := isLimitOfPreserves (forget₂ CommRingCat CommMonCat ⋙ forget CommMonCat) hc
+    have : Small.{u} ((S.arrows.diagram.op ⋙ P) ⋙ forget CommRingCat).sections :=
+      ⟨_, ⟨(Types.isLimitEquivSections hc').symm⟩⟩
+    have : Small.{u} (((S.arrows.diagram.op ⋙ P) ⋙ forget₂ CommRingCat RingCat) ⋙
+      forget RingCat).sections := this
+    exact isLimitOfPreserves (forget₂ CommRingCat RingCat) hc
+
 namespace AlgebraicGeometry.Scheme
 
 variable (S : Scheme.{u})
@@ -91,6 +113,17 @@ lemma bigStructureSheaf_obj (T : Over S) :
 @[simp]
 lemma bigStructureSheaf_map {T T' : Over S} (f : T ⟶ T') :
     (bigStructureSheaf S).obj.map f.op = f.left.appTop := rfl
+
+/-- The structure sheaf `T ↦ Γ(T, O_T)` of the big fpqc site over `S`, as a sheaf of rings. This is
+the ring over which sheaves of modules on the big site are defined. -/
+@[expose]
+noncomputable def bigRingCatSheaf : Sheaf (fpqcTopology.over S) RingCat.{u} :=
+  (sheafCompose (fpqcTopology.over S) (forget₂ CommRingCat.{u} RingCat.{u})).obj
+    (bigStructureSheaf S)
+
+lemma bigRingCatSheaf_obj (T : Over S) :
+    (bigRingCatSheaf S).obj.obj (op T) = (forget₂ CommRingCat RingCat).obj Γ(T.left, ⊤) :=
+  rfl
 
 /-- The value of the big structure sheaf on an affine `S`-scheme `Spec R` is the ring `R`. -/
 noncomputable def bigStructureSheafObjSpecIso (R : CommRingCat.{u}) (h : Spec R ⟶ S) :
