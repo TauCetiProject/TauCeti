@@ -46,6 +46,7 @@ theorem extendDomain_apply_subtype (f : Π₀ i : Subtype p, β i) (i : Subtype 
   simp [extendDomain_apply, i.2]
 
 /-- Off `p`, the extension by zero vanishes. -/
+@[simp]
 theorem extendDomain_apply_of_not (f : Π₀ i : Subtype p, β i) {i : ι} (hi : ¬p i) :
     f.extendDomain i = 0 := by
   simp [extendDomain_apply, hi]

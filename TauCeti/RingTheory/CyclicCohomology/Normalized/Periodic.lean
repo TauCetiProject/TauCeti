@@ -233,6 +233,7 @@ theorem normalizedPeriodicCochainsι_apply (φ : normalizedPeriodicCochains R A 
   rw [normalizedPeriodicCochainsι, DFinsupp.extendDomainLinearMap_apply]
 
 /-- In degrees of the other parity, the extension by zero vanishes. -/
+@[simp]
 theorem normalizedPeriodicCochainsι_apply_of_ne (φ : normalizedPeriodicCochains R A M i)
     {m : ℕ} (hm : (m : ZMod 2) ≠ i) : normalizedPeriodicCochainsι R A M i φ m = 0 := by
   rw [normalizedPeriodicCochainsι_apply]
@@ -256,6 +257,7 @@ variable {R A M : Type*} [Semiring R] [NonAssocSemiring A] [Module R A]
   [SMulCommClass R R M]
 
 /-- The differential `b + B` changes the parity of degrees. -/
+@[simp]
 theorem normalizedMixedDifferential_normalizedPeriodicCochainsι_apply_of_ne {i : ZMod 2}
     (φ : normalizedPeriodicCochains R A M i) {m : ℕ} (hm : (m : ZMod 2) ≠ i + 1) :
     normalizedMixedDifferential R A M (normalizedPeriodicCochainsι R A M i φ) m = 0 := by
