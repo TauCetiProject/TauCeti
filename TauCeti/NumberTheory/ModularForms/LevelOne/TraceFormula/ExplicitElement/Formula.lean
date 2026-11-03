@@ -19,22 +19,27 @@ import TauCeti.NumberTheory.ModularForms.LevelOne.TraceFormula.ExplicitElement.P
 # The closed-form trace of Popa–Zagier's explicit element
 
 Let `Tₙ` be Popa and Zagier's explicit element of `K[ℳₙ]`, defined by eq. (15) of their paper, for
-a positive integer `n` and a field `K` of characteristic zero. For even degree `w`,
+a positive integer `n` and a field `K` of characteristic zero, and write
+`TauCeti.PopaZagier.weight M` for twelve times the coefficient of `M` in `Tₙ`. For even degree `w`,
 `TauCeti.TraceFormulaMatrixModule.trace_periodAction_popaZagierElement_eq_sum_trace_fibres`
 expresses the trace of `Tₙ` on the space `V_w` of binary forms of degree `w` (and, for `w ≠ 0`, on
-the period-polynomial space `W_w`) as a finite sum over `t ∈ [-4 n, 4 n]` of the weight sums on the
-trace-`t`, determinant-`n` matrix fibres multiplied by the Eichler–Selberg Dickson weights
-`P_{w+2}(t, n) = (dickson 2 n w).eval t`.
+the period-polynomial space `W_w`) as one twelfth of the finite sum over `t ∈ [-4 n, 4 n]` of the
+weight sums on the trace-`t`, determinant-`n` matrix fibres multiplied by the Eichler–Selberg
+Dickson weights `P_{w+2}(t, n) = (dickson 2 n w).eval t`.
 
 Substituting the elliptic (`t² < 4 n`) and non-elliptic (`t² ≥ 4 n`) fibre sums from
 `ExplicitElement/ClassNumber.lean` and `ExplicitElement/NonElliptic.lean` evaluates this trace in
 closed form:
 
-* on `t² ≤ 4 n`, the elliptic fibres contribute `-H(4 n - t²) P_{w+2}(t, n)`. When `n = a²` is a
-  square (`a > 0`), the parabolic fibre `t = 2 a` has weight sum `2` (coefficient sum `1/6`) and
-  the fibre `t = -2 a` has weight sum `0`; since `P_{w+2}(-2 a, n) = P_{w+2}(2 a, n)` for even `w`
-  and `H(0) = -1/12` in Zagier's normalisation, these two boundary terms equal
-  `-H(0) P_{w+2}(2 a, n) - H(0) P_{w+2}(-2 a, n)` and are absorbed into the `t² ≤ 4 n` sum;
+* on `t² ≤ 4 n`, each elliptic fibre (`t² < 4 n`) has weight sum `-12 H(4 n - t²)` and therefore
+  contributes `((-12 H(4 n - t²)) / 12) P_{w+2}(t, n) = -H(4 n - t²) P_{w+2}(t, n)`. When `n = a²`
+  is a square (`a > 0`), the parabolic fibre `t = 2 a` has weight sum `2` and the fibre `t = -2 a`
+  has weight sum `0`; dividing these boundary weights by `12` and using
+  `P_{w+2}(-2 a, n) = P_{w+2}(2 a, n)` (for even `w`) together with `H(0) = -1/12` in Zagier's
+  normalisation gives
+  `(2 / 12) P_{w+2}(2 a, n) + (0 / 12) P_{w+2}(-2 a, n) = (1 / 6) P_{w+2}(2 a, n)`,
+  which equals `-H(0) P_{w+2}(2 a, n) - H(0) P_{w+2}(-2 a, n)` and is absorbed into the `t² ≤ 4 n`
+  sum;
 * on `t² > 4 n`, the fibres with `t < 0` or `t² - 4 n` non-square vanish, while the split
   hyperbolic fibres `t = a + d` (`a d = n`, `0 < a < d`) contribute
   `((12 (d - a)) / 12) P_{w+2}(a + d, a d) = d ^ (w + 1) - a ^ (w + 1)`, whose sum over `a < d`
@@ -57,10 +62,11 @@ and `w = 10` (weight `12`), it evaluates to `2001 = σ₁₁(2) + 2 · (-24)`.
 
 ## Main results
 
-* `TauCeti.PopaZagier.sum_Icc_le_weight_traceDetFiber_mul_dickson`: the `t² ≤ 4 n` part of the
-  trace-fibre sum equals `-∑_{|t| ≤ √(4 n)} H(4 n - t²) P_{w+2}(t, n)` for `n ≠ 0` and even `w`.
-* `TauCeti.PopaZagier.sum_Icc_gt_weight_traceDetFiber_mul_dickson`: the `t² > 4 n` part of the
-  trace-fibre sum equals `∑_{a d = n, a < d} (d ^ (w + 1) - a ^ (w + 1))` for `n ≠ 0`.
+* `TauCeti.PopaZagier.sum_Icc_le_weight_traceDetFiber_mul_dickson`: one twelfth of the `t² ≤ 4 n`
+  weighted trace-fibre sum equals `-∑_{|t| ≤ √(4 n)} H(4 n - t²) P_{w+2}(t, n)` for `n ≠ 0` and
+  even `w`.
+* `TauCeti.PopaZagier.sum_Icc_gt_weight_traceDetFiber_mul_dickson`: one twelfth of the `t² > 4 n`
+  weighted trace-fibre sum equals `∑_{a d = n, a < d} (d ^ (w + 1) - a ^ (w + 1))` for `n ≠ 0`.
 * `TauCeti.TraceFormulaMatrixModule.trace_periodAction_popaZagierElement` and
   `TauCeti.TraceFormulaMatrixModule.trace_periodActionRestrict_popaZagierElement`: the closed-form
   trace of Popa–Zagier's explicit element on `V_w` (for even `w`) and on `W_w` (for positive even
