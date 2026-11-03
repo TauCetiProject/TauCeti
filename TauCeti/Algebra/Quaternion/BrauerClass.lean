@@ -192,7 +192,7 @@ theorem quaternionClass_inv_right (a b : Kˣ) :
   calc
     quaternionClass a b⁻¹ = quaternionClass a (b * (b⁻¹) ^ 2) := by
       congr 2
-      all_goals group
+      group
     _ = quaternionClass a b := quaternionClass_mul_sq_right a b b⁻¹
 
 /-- Inverting the first argument does not change a quaternion symbol. -/

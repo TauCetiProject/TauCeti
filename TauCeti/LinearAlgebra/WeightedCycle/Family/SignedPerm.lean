@@ -59,7 +59,7 @@ theorem pow_apply_of_apply_eq_smul (f : Module.End R V) (π : Equiv.Perm ι) (s 
   induction r with
   | zero => simp
   | succ r ih =>
-    rw [pow_succ', Module.End.mul_apply, ih, map_smul, h, Equiv.Perm.cycleCoeff_succ, smul_smul,
+    rw [pow_succ', mul_apply_eq_comp, ih, map_smul, h, Equiv.Perm.cycleCoeff_succ, smul_smul,
       pow_succ', Equiv.Perm.mul_apply]
 
 end Module.End

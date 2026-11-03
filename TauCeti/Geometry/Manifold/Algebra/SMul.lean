@@ -131,7 +131,7 @@ manifold is an action by diffeomorphisms of the underlying real manifold. -/
 is an additive action by maps which are `C^n` over the smaller field `𝕜`, for the same charts. -/]
 theorem restrictScalars (h : ContMDiffConstSMul 𝓘(𝕜', E) n G M) :
     ContMDiffConstSMul 𝓘(𝕜, E) n G M :=
-  ⟨fun g ↦ (h.contMDiff_const_smul g).restrictScalars 𝕜⟩
+  ⟨fun g ↦ by simpa using (h.contMDiff_const_smul g).restrictScalars 𝕜⟩
 
 end ContMDiffConstSMul
 

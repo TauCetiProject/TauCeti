@@ -92,7 +92,8 @@ theorem natCard_eq_pow_padicValNat_of_forall_exists_nsmul_eq_zero [Finite A]
     obtain ⟨k, hk⟩ := htors a.toAdd
     exact ⟨k, by rw [← ofAdd_toAdd a, ← ofAdd_nsmul, hk, ofAdd_zero]⟩
   obtain ⟨n, hcard⟩ := IsPGroup.iff_card.mp hA
-  rw [← Nat.card_congr (Multiplicative.toAdd (α := A)), hcard, padicValNat.prime_pow]
+  rw [← Nat.card_congr (Multiplicative.toAdd (α := A)), hcard, Nat.padicValNat_def,
+    Nat.multiplicity_prime_pow]
 
 end AddGroup
 

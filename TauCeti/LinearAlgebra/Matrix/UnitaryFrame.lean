@@ -292,17 +292,17 @@ theorem frameInner_comm : F.frameInner G = G.frameInner F := by
 /-- The inner product of two-forms is additive in the first argument. -/
 @[simp]
 theorem frameInner_add_left : (F + G).frameInner H = F.frameInner H + G.frameInner H := by
-  simp only [frameInner, add_apply, add_mul, Finset.sum_add_distrib, add_div]
+  simp only [frameInner, Matrix.add_apply, add_mul, Finset.sum_add_distrib, add_div]
 
 /-- The inner product of two-forms is additive in the second argument. -/
 @[simp]
 theorem frameInner_add_right : F.frameInner (G + H) = F.frameInner G + F.frameInner H := by
-  simp only [frameInner, add_apply, mul_add, Finset.sum_add_distrib, add_div]
+  simp only [frameInner, Matrix.add_apply, mul_add, Finset.sum_add_distrib, add_div]
 
 /-- The inner product of two-forms is homogeneous in the first argument. -/
 @[simp]
 theorem frameInner_smul_left (c : ℝ) : (c • F).frameInner G = c * F.frameInner G := by
-  simp only [frameInner, smul_apply, smul_eq_mul, mul_assoc, ← Finset.mul_sum, mul_div_assoc]
+  simp only [frameInner, Matrix.smul_apply, smul_eq_mul, mul_assoc, ← Finset.mul_sum, mul_div_assoc]
 
 /-- The inner product of two-forms is homogeneous in the second argument. -/
 @[simp]
@@ -378,7 +378,7 @@ theorem transpose_frameAntiSelfDualPart_mul_frameComplexStructure (hF : Fᵀ = -
   rw [eta_fin_four_of_transpose_eq_neg hF fun _ h ↦ by linarith]
   ext i j
   fin_cases i <;> fin_cases j <;>
-    simp [frameAntiSelfDualPart, frameHodgeStar, frameComplexStructure, mul_apply,
+    simp [frameAntiSelfDualPart, frameHodgeStar, frameComplexStructure, Matrix.mul_apply,
       Fin.sum_univ_four] <;> ring
 
 /-- `F⁻ J` is trace free. -/
@@ -399,7 +399,7 @@ theorem frameAntiSelfDualPart_mul_frameComplexStructure_mul_self (hF : Fᵀ = -F
     eta_fin_four_of_transpose_eq_neg hF fun _ h ↦ by linarith]
   ext i j
   fin_cases i <;> fin_cases j <;>
-    simp [frameAntiSelfDualPart, frameHodgeStar, frameComplexStructure, mul_apply,
+    simp [frameAntiSelfDualPart, frameHodgeStar, frameComplexStructure, Matrix.mul_apply,
       Fin.sum_univ_four] <;> ring
 
 /-! ### The smallest eigenvalue of the Hermitian part -/
