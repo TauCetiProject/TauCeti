@@ -42,12 +42,10 @@ The comparison has two halves.
 * **The linear part.** The affine map `y ↦ c + f' (y - x)` is a translation, then `f'`, then a
   translation, and `f'` acts on the local homology at the origin by `sign (det f')`
   (`TauCeti.singularHomologyMap_continuousLinearMap_compl_zero`). This gives
-  `TauCeti.localHomologyMap_affine_eq_sign_det_smul`.
+  `TauCeti.localHomologyMap_affine_eq_sign_det_smul` in `LocalHomology/Linear.lean`.
 
 ## Main results
 
-* `TauCeti.localHomologyMap_affine_eq_sign_det_smul`: an affine map with linear part `f'` acts on
-  local homology by `sign (det f')`, relative to the translation.
 * `TauCeti.localHomologyMap_domRestrict_eq_affine_of_hasFDerivAt`: a map differentiable at `x`
   with antilipschitz derivative induces the same map on local homology as its affine
   linearization.
@@ -72,54 +70,6 @@ universe w v u
 namespace TauCeti
 
 variable {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A] (R : A)
-
-section Affine
-
-variable {E : Type w} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-
-/-- **Affine maps act on local homology by the sign of their determinant.** Let `U ⊆ E` contain
-`x`, let `c : E`, and let `f'` be a continuous linear map with `det f' ≠ 0`. The map
-`Hₖ(U, U ∖ {x}) ⟶ Hₖ(E, E ∖ {c})` induced by the affine map `y ↦ c + f' (y - x)` is `sign (det f')`
-times the map induced by the translation `y ↦ c + (y - x)`. -/
-theorem localHomologyMap_affine_eq_sign_det_smul {U : Set E} {x : E} (hx : x ∈ U) (c : E)
-    {f' : E →L[ℝ] E} (hdet : f'.det ≠ 0) (k : ℕ) :
-    localHomologyMap R (⟨fun y : U ↦ c + f' (y - x), by fun_prop⟩ : C(U, E))
-        (S := {⟨x, hx⟩}) (T := {c}) (by
-          rintro _ hy
-          exact Subtype.ext <| sub_eq_zero.1 <|
-            (f'.toContinuousLinearEquivOfDetNeZero hdet).map_eq_zero_iff.1 (add_eq_left.1 hy)) k =
-      (SignType.sign f'.det : ℤ) •
-        localHomologyMap R (⟨fun y : U ↦ c + (y - x), by fun_prop⟩ : C(U, E))
-          (S := {⟨x, hx⟩}) (T := {c}) (by
-            rintro _ hy
-            exact Subtype.ext <| sub_eq_zero.1 (add_eq_left.1 hy)) k := by
-  -- The affine map is `y ↦ y - x`, then `f'`, then `z ↦ c + z`; the translation omits `f'`.
-  let σ : C(U, E) := ⟨fun y ↦ (y : E) - x, by fun_prop⟩
-  let τ : C(E, E) := ⟨fun z ↦ c + z, by fun_prop⟩
-  have hσ : σ ⁻¹' {0} ⊆ {⟨x, hx⟩} := fun y hy ↦ Subtype.ext (sub_eq_zero.1 hy)
-  have hτ : τ ⁻¹' {c} ⊆ {0} := fun z hz ↦ add_eq_left.1 hz
-  have hf' : (f' : C(E, E)) ⁻¹' {0} ⊆ {0} := fun z hz ↦
-    (f'.toContinuousLinearEquivOfDetNeZero hdet).map_eq_zero_iff.1 hz
-  have hτf'σ : (τ.comp (f' : C(E, E))).comp σ = ⟨fun y : U ↦ c + f' (y - x), by fun_prop⟩ := by
-    ext y
-    simp [σ, τ]
-  have hτσ : τ.comp σ = ⟨fun y : U ↦ c + (y - x), by fun_prop⟩ := by
-    ext y
-    simp [σ, τ]
-  have hlin : localHomologyMap R (f' : C(E, E)) hf' k = (SignType.sign f'.det : ℤ) • 𝟙 _ := by
-    rw [localHomologyMap_def]
-    exact singularHomologyMap_continuousLinearMap_compl_zero R f' _ k
-  calc _ = localHomologyMap R σ hσ k ≫ localHomologyMap R (f' : C(E, E)) hf' k ≫
-          localHomologyMap R τ hτ k := by
-        rw [localHomologyMap_comp, localHomologyMap_comp]
-        simp only [hτf'σ]
-    _ = (SignType.sign f'.det : ℤ) • (localHomologyMap R σ hσ k ≫ localHomologyMap R τ hτ k) := by
-        rw [hlin, Preadditive.zsmul_comp, Category.id_comp, Preadditive.comp_zsmul]
-    _ = _ := by
-        rw [localHomologyMap_comp]
-        simp only [hτσ]
-
-end Affine
 
 section Linearization
 
