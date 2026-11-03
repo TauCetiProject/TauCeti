@@ -145,7 +145,8 @@ theorem coe_soThreeEquiv (u : Fin 3 → R) :
     (soThreeEquiv R u : Matrix (Fin 3) (Fin 3) R) = crossProductMatrix R u :=
   (rfl)
 
-/-- The inverse of the hat map reads `u` off the entries below the diagonal of `û`. -/
+/-- The inverse of the hat map reads `u` off the off-diagonal entries of `A = û`:
+`u = (A₂₁, A₀₂, A₁₀)`. -/
 theorem soThreeEquiv_symm_apply (A : so (Fin 3) R) :
     (soThreeEquiv R).symm A = ![(A : Matrix (Fin 3) (Fin 3) R) 2 1,
       (A : Matrix (Fin 3) (Fin 3) R) 0 2, (A : Matrix (Fin 3) (Fin 3) R) 1 0] :=
