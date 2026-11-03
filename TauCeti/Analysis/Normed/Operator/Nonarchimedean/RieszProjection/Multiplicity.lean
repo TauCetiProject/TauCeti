@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.RieszProjection.Splitting
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.Idempotent
-public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.PrModule
+public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.PrModule.Basic
 public import TauCeti.Algebra.Ring.SpectralIdempotent
 public import TauCeti.LinearAlgebra.Charpoly.Nilpotent
 public import TauCeti.RingTheory.PowerSeries.Entire.GoodZero
