@@ -114,7 +114,8 @@ private theorem normalizer_complexGaussianRealCovariance (hC : C.PosDef) :
   have hd : 0 < C.det.re := (Complex.pos_iff.mp hC.det_pos).1
   have him : C.det.im = 0 := (Complex.pos_iff.mp hC.det_pos).2.symm
   rw [complexGaussianRealCovariance_def, Matrix.det_smul, Matrix.det_realify]
-  simp only [Fintype.card_sum, Nat.cast_add, Complex.normSq_apply, him, mul_zero, add_zero]
+  simp only [Fintype.card_sum, Nat.cast_add, RCLike.normSq_to_complex, Complex.normSq_apply, him,
+    mul_zero, add_zero]
   rw [← pow_two]
   rw [Real.mul_rpow (by positivity) (sq_nonneg _),
     ← Real.rpow_natCast_mul (by norm_num : (0 : ℝ) ≤ 2⁻¹), ← Real.rpow_natCast_mul hd.le]
@@ -189,7 +190,7 @@ theorem properComplexGaussianMeasure_eq_withDensity (m : ι → ℂ) (hC : C.Pos
     apply hpos.posDef_iff_det_ne_zero.mpr
     rw [complexGaussianRealCovariance_def, Matrix.det_smul]
     exact mul_ne_zero (pow_ne_zero _ (by norm_num))
-      (Matrix.isUnit_det_realify (isUnit_iff_ne_zero.mpr hC.det_pos.ne')).ne_zero
+      (Matrix.isUnit_det_realify_iff.mpr (isUnit_iff_ne_zero.mpr hC.det_pos.ne')).ne_zero
   rw [properComplexGaussianMeasure_def, multivariateGaussian_eq_withDensity hS]
   let e := (complexToRealEuclidean ι).toHomeomorph.toMeasurableEquiv
   have hmap := MeasurableEquiv.map_withDensity e.symm volume
