@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.LSeries.Nonvanishing
-public import TauCeti.NumberTheory.DirichletCharacter.GaussSum
 public import TauCeti.NumberTheory.DirichletCharacter.Even
 public import TauCeti.Analysis.Meromorphic.Continuation
 public import TauCeti.Analysis.Meromorphic.Conj
