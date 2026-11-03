@@ -15,7 +15,6 @@ import TauCeti.Analysis.Calculus.Morse.Linearization
 import TauCeti.Analysis.Sobolev.Wkp.Classical
 import TauCeti.Analysis.Sobolev.Wkp.Density
 import TauCeti.Analysis.Sobolev.Wkp.Laplacian
-import TauCeti.Analysis.InnerProductSpace.Laplacian.Trace
 
 /-!
 # The Calderón–Zygmund estimate for strong solutions in `W^{2,p}` of the whole space
