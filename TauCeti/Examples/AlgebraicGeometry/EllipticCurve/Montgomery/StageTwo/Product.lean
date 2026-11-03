@@ -21,7 +21,7 @@ public section
 
 namespace TauCeti.Montgomery
 
-local instance : Fact (Nat.Prime 7) := ⟨by decide⟩
+local instance stageTwoProductPrimeSeven : Fact (Nat.Prime 7) := ⟨by decide⟩
 
 private noncomputable def point : (model (0 : ZMod 7) 1).toAffine.Point :=
   twoTorsionPoint 0 (by decide)
