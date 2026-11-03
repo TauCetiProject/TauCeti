@@ -1024,14 +1024,21 @@ theorem ReducedTensorWords.IsGradedCoderivation.isCoderivation {G : InternalGrad
     LinearMap.comp_id, ← LinearMap.add_comp] at heq
   exact heq
 
+/-- A coderivation is a graded coderivation of every even twist parameter, since the Koszul twist
+of an even parameter is the identity. -/
+theorem ReducedTensorWords.IsCoderivation.isGradedCoderivation_two_mul (G : InternalGrading R M)
+    {b : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M}
+    (hb : IsCoderivation R b) (q : ℤ) : IsGradedCoderivation G (2 * q) b := by
+  rw [isCoderivation_iff] at hb
+  simp only [IsGradedCoderivation]
+  rw [hb, InternalGrading.koszulTwist_two_mul, ReducedTensorWords.map_id, LinearMap.rTensor_id,
+    LinearMap.comp_id, ← LinearMap.add_comp]
+
 /-- A coderivation is a `0`-twisted graded coderivation. -/
 theorem ReducedTensorWords.IsCoderivation.isGradedCoderivation (G : InternalGrading R M)
     {b : ReducedTensorWords R M →ₗ[R] ReducedTensorWords R M}
     (hb : IsCoderivation R b) : IsGradedCoderivation G 0 b := by
-  rw [isCoderivation_iff] at hb
-  simp only [IsGradedCoderivation]
-  rw [hb, InternalGrading.koszulTwist_zero, ReducedTensorWords.map_id, LinearMap.rTensor_id,
-    LinearMap.comp_id, ← LinearMap.add_comp]
+  simpa using hb.isGradedCoderivation_two_mul G 0
 
 /-- At twist parameter zero the graded Taylor expansion is the ungraded one. -/
 @[simp]
@@ -1141,6 +1148,12 @@ theorem ReducedTensorWords.gradedCoderiv_smul (G : InternalGrading R M) (c : R)
     (F : ReducedTensorWords R M →ₗ[R] M) (q : ℤ) :
     gradedCoderiv G (c • F) q = c • gradedCoderiv G F q :=
   congrArg Subtype.val (map_smul (gradedCoderivEquivTaylor G q).symm c F)
+
+/-- The graded Taylor expansion of the zero Taylor map is zero. -/
+@[simp]
+theorem ReducedTensorWords.gradedCoderiv_zero_left (G : InternalGrading R M) (q : ℤ) :
+    gradedCoderiv G (0 : ReducedTensorWords R M →ₗ[R] M) q = 0 :=
+  congrArg Subtype.val (map_zero (gradedCoderivEquivTaylor G q).symm)
 
 end GradedCoderiv
 

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Measure.Mixture.Basic
 public import TauCeti.Probability.Distributions.MultivariateT.Basic
+import TauCeti.Probability.Distributions.Gamma.Measurability
 
 /-!
 # The density of a multivariate t law
@@ -38,7 +39,12 @@ Gamma integral, which produces the closed form above.
   `TauCeti.Probability.integral_multivariateTPDFReal_eq_one`: normalization;
 * `TauCeti.Probability.hasPDF_of_hasLaw_multivariateTMeasure`,
   `TauCeti.Probability.pdf_eq_multivariateTPDF_of_hasLaw_multivariateTMeasure` and
-  `TauCeti.Probability.rnDeriv_multivariateTMeasure`: the density interface.
+  `TauCeti.Probability.rnDeriv_multivariateTMeasure`: the density interface;
+* `TauCeti.Probability.gammaPDFReal_mul_multivariateGaussianPDFReal`: the Gamma–Gaussian
+  density identity;
+* `TauCeti.Probability.lintegral_gammaMeasure_lintegral_multivariateGaussian`: Gamma–Gaussian
+  conjugacy, exchanging a Gamma precision prior and the multivariate t marginal with its Gamma
+  posterior.
 
 ## References
 
@@ -296,6 +302,156 @@ theorem rnDeriv_multivariateTMeasure (m : EuclideanSpace ℝ ι) (hν : 0 < ν) 
     (multivariateTMeasure m S ν).rnDeriv volume =ᵐ[volume] multivariateTPDF m S ν := by
   rw [multivariateTMeasure_eq_withDensity m hν hS]
   exact Measure.rnDeriv_withDensity _ (measurable_multivariateTPDF m S ν)
+
+/-! ### Gamma–Gaussian conjugacy -/
+
+/-- **The Gamma–Gaussian density identity.** On the positive half-line,
+the Gamma density of the precision `τ` (shape and rate `ν / 2`) times the density of
+`N(a, τ⁻¹ • R)` at `x` factors as the multivariate t density at `x` times the Gamma density of
+shape `(ν + d) / 2` and rate `(ν + q) / 2` at `τ`, where `q` is the Mahalanobis form of `x - a`. -/
+theorem gammaPDFReal_mul_multivariateGaussianPDFReal (a : EuclideanSpace ℝ ι)
+    {R : Matrix ι ι ℝ} (hR : R.PosDef) (hν : 0 < ν) {τ : ℝ} (hτ : 0 < τ)
+    (x : EuclideanSpace ℝ ι) :
+    gammaPDFReal (ν / 2) (ν / 2) τ * multivariateGaussianPDFReal a (τ⁻¹ • R) x =
+      multivariateTPDFReal a R ν x *
+        gammaPDFReal ((ν + Fintype.card ι) / 2) ((ν + ⟪x - a, R⁻¹.toEuclideanLin (x - a)⟫) / 2)
+          τ := by
+  set q := ⟪x - a, R⁻¹.toEuclideanLin (x - a)⟫ with hq_def
+  have hq : 0 ≤ q :=
+    (Matrix.isPositive_toEuclideanLin_iff.mpr hR.inv.posSemidef).inner_nonneg_right (x - a)
+  set d : ℝ := (Fintype.card ι : ℝ) with hd_def
+  have hD := hR.det_pos
+  have hinv : (τ⁻¹ • R)⁻¹ = τ • R⁻¹ := by
+    simpa [Units.smul_def] using
+      Matrix.inv_smul' R (Units.mk0 _ (inv_pos.mpr hτ).ne') hD.ne'.isUnit
+  have hΓ : 0 < Real.Gamma (ν / 2) := Real.Gamma_pos_of_pos (by positivity)
+  have hΓ' : 0 < Real.Gamma ((ν + d) / 2) := Real.Gamma_pos_of_pos (by positivity)
+  -- Collect the powers of `τ` and the exponentials on the left.
+  have e1 : (τ⁻¹ ^ Fintype.card ι * R.det) ^ (-(1 : ℝ) / 2) =
+      τ ^ (d / 2) * R.det ^ (-(1 : ℝ) / 2) := by
+    rw [Real.mul_rpow (by positivity) hD.le, inv_pow, Real.inv_rpow (by positivity),
+      ← Real.rpow_natCast, ← Real.rpow_mul hτ.le, ← Real.rpow_neg (by positivity), ← hd_def]
+    congr 2
+    ring
+  have e2 : τ ^ (ν / 2 - 1) * τ ^ (d / 2) = τ ^ ((ν + d) / 2 - 1) := by
+    rw [← Real.rpow_add hτ]
+    congr 1
+    ring
+  have e3 : exp (-(ν / 2 * τ)) * exp (-(τ * q) / 2) = exp (-((ν + q) / 2 * τ)) := by
+    rw [← exp_add]
+    congr 1
+    ring
+  -- Split the posterior rate as `(1 + q / ν) * (ν / 2)`, which cancels the t kernel.
+  have e4 : ((ν + q) / 2) ^ ((ν + d) / 2) * (1 + q / ν) ^ (-((ν + d) / 2)) =
+      (ν / 2) ^ (ν / 2) * (ν / 2) ^ (d / 2) := by
+    have hsplit : (ν + q) / 2 = (1 + q / ν) * (ν / 2) := by field_simp
+    rw [hsplit, Real.mul_rpow (by positivity) (by positivity), Real.rpow_neg (by positivity),
+      ← Real.rpow_add (by positivity : (0 : ℝ) < ν / 2), ← add_div]
+    field_simp
+  simp only [gammaPDFReal, hτ.le, ↓reduceIte]
+  rw [multivariateGaussianPDFReal_def, multivariateTPDFReal_of_posDef a hν hR, hinv,
+    Matrix.det_smul, e1, ← hq_def, ← hd_def]
+  simp only [map_smul, LinearMap.smul_apply, inner_smul_right]
+  calc (ν / 2) ^ (ν / 2) / Real.Gamma (ν / 2) * τ ^ (ν / 2 - 1) * exp (-(ν / 2 * τ)) *
+        ((2 * π) ^ (-d / 2) * (τ ^ (d / 2) * R.det ^ (-(1 : ℝ) / 2)) * exp (-(τ * q) / 2))
+      = (ν / 2) ^ (ν / 2) * (2 * π) ^ (-d / 2) * R.det ^ (-(1 : ℝ) / 2) / Real.Gamma (ν / 2) *
+          (τ ^ (ν / 2 - 1) * τ ^ (d / 2)) * (exp (-(ν / 2 * τ)) * exp (-(τ * q) / 2)) := by
+        ring
+    _ = _ := by
+        rw [e2, e3]
+        -- Only the constant factors remain to be compared.
+        have hc : (ν / 2) ^ (ν / 2) * (2 * π) ^ (-d / 2) * R.det ^ (-(1 : ℝ) / 2) /
+              Real.Gamma (ν / 2) =
+            Real.Gamma ((ν + d) / 2) / (Real.Gamma (ν / 2) * (ν * π) ^ (d / 2) * √R.det) *
+              (1 + q / ν) ^ (-((ν + d) / 2)) *
+              (((ν + q) / 2) ^ ((ν + d) / 2) / Real.Gamma ((ν + d) / 2)) := by
+          have hre : Real.Gamma ((ν + d) / 2) /
+                (Real.Gamma (ν / 2) * (ν * π) ^ (d / 2) * √R.det) *
+                (1 + q / ν) ^ (-((ν + d) / 2)) *
+                (((ν + q) / 2) ^ ((ν + d) / 2) / Real.Gamma ((ν + d) / 2)) =
+              ((ν + q) / 2) ^ ((ν + d) / 2) * (1 + q / ν) ^ (-((ν + d) / 2)) /
+                (Real.Gamma (ν / 2) * (ν * π) ^ (d / 2) * √R.det) := by
+            field_simp
+          rw [hre, e4]
+          simp (disch := positivity) only [neg_div, Real.rpow_neg, Real.mul_rpow, Real.div_rpow,
+            Real.sqrt_eq_rpow]
+          field_simp
+        rw [hc]
+        ring
+
+/-- **Gamma–Gaussian conjugacy.** Draw a precision `τ` from the Gamma law of shape and rate
+`ν / 2` and then `x` from `N(a, τ⁻¹ • R)`. Equivalently, draw `x` from the multivariate t law
+with location `a`, scale `R` and `ν` degrees of freedom, and then `τ` from the Gamma law of shape
+`(ν + d) / 2` and rate `(ν + q) / 2`, where `q` is the Mahalanobis form of `x - a`. -/
+theorem lintegral_gammaMeasure_lintegral_multivariateGaussian (a : EuclideanSpace ℝ ι)
+    {R : Matrix ι ι ℝ} (hR : R.PosDef) (hν : 0 < ν)
+    {F : ℝ × EuclideanSpace ℝ ι → ℝ≥0∞} (hF : Measurable F) :
+    ∫⁻ τ, ∫⁻ x, F (τ, x) ∂multivariateGaussian a (τ⁻¹ • R) ∂gammaMeasure (ν / 2) (ν / 2) =
+      ∫⁻ x, ∫⁻ τ, F (τ, x) ∂gammaMeasure ((ν + Fintype.card ι) / 2)
+          ((ν + ⟪x - a, R⁻¹.toEuclideanLin (x - a)⟫) / 2) ∂multivariateTMeasure a R ν := by
+  let G : Kernel ℝ (EuclideanSpace ℝ ι) :=
+    ⟨fun τ => multivariateGaussian a (τ⁻¹ • R), measurable_multivariateGaussian_inv_smul a R⟩
+  have : IsMarkovKernel G := ⟨fun τ => inferInstanceAs (IsProbabilityMeasure
+    (multivariateGaussian a (τ⁻¹ • R)))⟩
+  have hGF : Measurable fun τ => ∫⁻ x, F (τ, x) ∂multivariateGaussian a (τ⁻¹ • R) :=
+    hF.lintegral_kernel_prod_right' (κ := G)
+  set s : ℝ := (ν + Fintype.card ι) / 2
+  set r : EuclideanSpace ℝ ι → ℝ := fun x => (ν + ⟪x - a, R⁻¹.toEuclideanLin (x - a)⟫) / 2
+    with hr_def
+  have hr : Measurable r := by fun_prop
+  -- The joint density of `(τ, x)` in its second factorization.
+  let H : ℝ → EuclideanSpace ℝ ι → ℝ≥0∞ := fun τ x => multivariateTPDF a R ν x * gammaPDF s (r x) τ
+  have hH : Measurable fun p : ℝ × EuclideanSpace ℝ ι => H p.1 p.2 :=
+    ((measurable_multivariateTPDF a R ν).comp measurable_snd).mul
+      (measurable_uncurry_gammaPDF.comp
+        ((measurable_const.prodMk (hr.comp measurable_snd)).prodMk measurable_fst))
+  calc ∫⁻ τ, ∫⁻ x, F (τ, x) ∂multivariateGaussian a (τ⁻¹ • R) ∂gammaMeasure (ν / 2) (ν / 2)
+      = ∫⁻ τ, gammaPDF (ν / 2) (ν / 2) τ * ∫⁻ x, F (τ, x) ∂multivariateGaussian a (τ⁻¹ • R) :=
+        lintegral_withDensity_eq_lintegral_mul _ (measurable_gammaPDF _ _) hGF
+    _ = ∫⁻ τ, ∫⁻ x, H τ x * F (τ, x) := by
+        refine lintegral_congr_ae ?_
+        filter_upwards [Measure.ae_ne volume 0] with τ hτ0
+        rcases hτ0.lt_or_gt with hτ | hτ
+        · simp [H, gammaPDF_of_neg hτ]
+        rw [multivariateGaussian_eq_withDensity (hR.smul (inv_pos.mpr hτ)),
+          lintegral_withDensity_eq_lintegral_mul _ (measurable_multivariateGaussianPDF _ _)
+            (g := fun x => F (τ, x)) (by fun_prop),
+          ← lintegral_const_mul _ (by fun_prop)]
+        refine lintegral_congr fun x => ?_
+        simp only [Pi.mul_apply, H, gammaPDF, multivariateGaussianPDF_def,
+          multivariateTPDF_eq_ofReal]
+        rw [← mul_assoc, ← ENNReal.ofReal_mul (gammaPDFReal_nonneg (by positivity)
+          (by positivity) τ), gammaPDFReal_mul_multivariateGaussianPDFReal a hR hν hτ x,
+          ENNReal.ofReal_mul (multivariateTPDFReal_nonneg a R ν x)]
+    _ = ∫⁻ x, ∫⁻ τ, H τ x * F (τ, x) := lintegral_lintegral_swap (hH.mul hF).aemeasurable
+    _ = ∫⁻ x, multivariateTPDF a R ν x * ∫⁻ τ, F (τ, x) ∂gammaMeasure s (r x) := by
+        refine lintegral_congr fun x => ?_
+        rw [gammaMeasure, lintegral_withDensity_eq_lintegral_mul _ (measurable_gammaPDF _ _)
+          (g := fun τ => F (τ, x)) (by fun_prop)]
+        simp only [Pi.mul_apply]
+        rw [← lintegral_const_mul _ (f := fun τ => gammaPDF s (r x) τ * F (τ, x))
+          ((measurable_gammaPDF _ _).mul (by fun_prop))]
+        simp only [H, mul_assoc]
+    _ = _ := by
+        -- The posterior Gamma laws form a Markov kernel, which gives the measurability needed
+        -- to integrate against the multivariate t density.
+        have hr_pos (x : EuclideanSpace ℝ ι) : 0 < r x := by
+          have := (Matrix.isPositive_toEuclideanLin_iff.mpr hR.inv.posSemidef).inner_nonneg_right
+            (x - a)
+          simp only [hr_def]
+          positivity
+        let Γ : Kernel (EuclideanSpace ℝ ι) ℝ :=
+          ⟨fun x => gammaMeasure s (r x), by fun_prop⟩
+        have : IsMarkovKernel Γ := ⟨fun x => isProbabilityMeasure_gammaMeasure (by positivity)
+          (hr_pos x)⟩
+        have hΓF : Measurable fun x => ∫⁻ τ, F (τ, x) ∂gammaMeasure s
+            ((ν + ⟪x - a, R⁻¹.toEuclideanLin (x - a)⟫) / 2) :=
+          Measurable.lintegral_kernel_prod_right' (κ := Γ)
+            (f := fun p : EuclideanSpace ℝ ι × ℝ => F (p.2, p.1)) (hF.comp measurable_swap)
+        rw [multivariateTMeasure_eq_withDensity a hν hR,
+          lintegral_withDensity_eq_lintegral_mul _ (measurable_multivariateTPDF a R ν) hΓF]
+        -- The sides agree by `Pi.mul_apply` and the local abbreviations `s` and `r`.
+        rfl
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → EuclideanSpace ℝ ι}
 

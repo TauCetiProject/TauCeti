@@ -20,7 +20,9 @@ record is involved; the parameter space of the composite is the full product, an
 parameter pairs may realize the same function.
 
 The realized functions of a composite are the pairwise composites of realized functions
-(`realizedFunctions_compose`). Composition is associative up to the canonical
+(`realizedFunctions_compose`); more generally, so are those of any model whose parameters
+are identified with pairs realizing such composites, possibly joined by a fixed map
+(`realizedFunctions_eq_image2_of_equiv`). Composition is associative up to the canonical
 reassociation `Equiv.prodAssoc` of parameter products, and the parameter-free identity
 model `Function.const PUnit id` is a unit on both sides up to the product projections.
 
@@ -55,6 +57,23 @@ theorem realizedFunctions_compose (f : W → X → Y) (g : V → Y → Z) :
     realizedFunctions (compose f g) =
       Set.image2 (fun a b => b ∘ a) (realizedFunctions f) (realizedFunctions g) := by
   simp only [realizedFunctions_def, Set.image2_range, ← compose_apply]
+
+/-- A model that, after an identification of its parameters with pairs, realizes the composites
+`g p₂ ∘ a ∘ f p₁` realizes the composites of functions realized by `f` and `g` joined by `a`. This
+is `realizedFunctions_compose` for the composite of `f` with `g` precomposed with `a`. -/
+theorem realizedFunctions_eq_image2_of_equiv {P Y' : Type*} {F : P → X → Z} (e : P ≃ W × V)
+    {f : W → X → Y} {g : V → Y' → Z} (a : Y → Y')
+    (h : ∀ p₁ p₂, F (e.symm (p₁, p₂)) = g p₂ ∘ a ∘ f p₁) :
+    realizedFunctions F =
+      Set.image2 (fun f' g' => g' ∘ a ∘ f') (realizedFunctions f) (realizedFunctions g) := by
+  have hc : F ∘ e.symm = compose f fun p₂ => g p₂ ∘ a := funext fun p =>
+    (h p.1 p.2).trans (compose_apply f (fun p₂ => g p₂ ∘ a) p).symm
+  have hg : realizedFunctions (fun p₂ => g p₂ ∘ a) = (· ∘ a) '' realizedFunctions g :=
+    (realizedFunctions_def _).trans ((Set.range_comp (· ∘ a) g).trans
+      (congrArg _ (realizedFunctions_def g).symm))
+  rw [realizedFunctions_def, ← e.symm.surjective.range_comp, hc, ← realizedFunctions_def,
+    realizedFunctions_compose, hg, Set.image2_image_right]
+  simp only [Function.comp_assoc]
 
 /-- Composition of models is associative up to the canonical reassociation of parameter
 products. -/

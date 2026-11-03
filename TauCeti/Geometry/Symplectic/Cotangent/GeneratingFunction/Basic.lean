@@ -306,7 +306,7 @@ theorem isInvertible_fderiv_cotangentGeneratingSource_iff
 theorem hasStrictFDerivAt_cotangentGeneratingSource (hS : ContDiffAt ℝ 2 S x) :
     HasStrictFDerivAt (cotangentGeneratingSource S)
       (fderiv ℝ (cotangentGeneratingSource S) x) x :=
-  (contDiffAt_cotangentGeneratingSource (n := 1) hS).hasStrictFDerivAt one_ne_zero
+  (contDiffAt_cotangentGeneratingSource (n := 1) hS).hasStrictFDerivAt_fderiv one_ne_zero
 
 /-- The derivative of the source projection, as a continuous linear equivalence, when the mixed
 Hessian is invertible. -/

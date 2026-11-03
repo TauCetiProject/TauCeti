@@ -38,6 +38,9 @@ regular measures follows from `MeasureTheory.Measure.OuterRegular.ext_isOpen`.
 * `TauCeti.variationMeasure μ Ω u`: the variation measure `|Du|` on `Ω`, a regular measure.
 * `TauCeti.variationMeasure_preimage_coe`: `|Du|(U) = totalVariationOn μ U u` for every open
   `U ⊆ Ω`, and `TauCeti.variationMeasure_univ`: `|Du|(Ω) = totalVariationOn μ Ω u`.
+* `TauCeti.forall_isCompact_exists_totalVariationOn_ne_top_of_tendsto_integral`: distributional
+  limits of locally BV functions with eventually bounded variation measures on compact subsets
+  have locally finite variation.
 * `TauCeti.enorm_integral_divergenceCLM_mul_le_variationMeasure`: a test vector field of norm at
   most one supported in an open `U ⊆ Ω` pairs with `u` to at most `|Du|(U)`.
 * `TauCeti.eq_variationMeasure`: an outer regular measure with these values on open sets is
@@ -64,8 +67,8 @@ noncomputable section
 
 namespace TauCeti
 
-open MeasureTheory TopologicalSpace Set TestFunction
-open scoped ENNReal Distributions
+open MeasureTheory TopologicalSpace Set TestFunction Filter
+open scoped ENNReal Distributions Topology
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] {μ : Measure E} {Ω U V : Opens E} {u v : E → ℝ}
@@ -149,6 +152,40 @@ theorem variationMeasure_preimage_coe (hu : LocallyIntegrableOn u Ω μ)
     (hU : U ≤ Ω) :
     variationMeasure μ Ω u ((↑) ⁻¹' (U : Set E)) = totalVariationOn μ U u := by
   rw [variationMeasure, dite_eq_left ⟨hu, hfin⟩, variationContent_measure_preimage_coe hu hfin hU]
+
+/-- A distributional limit of locally BV functions whose variation measures are eventually
+bounded on every compact subset of the domain has locally finite variation. -/
+theorem forall_isCompact_exists_totalVariationOn_ne_top_of_tendsto_integral
+    {ι : Type*} {l : Filter ι} [l.NeBot] {v : ι → E → ℝ}
+    (hv : ∀ i, LocallyIntegrableOn (v i) Ω μ)
+    (hvfin : ∀ i K, IsCompact K → K ⊆ Ω →
+      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U (v i) ≠ ∞)
+    (hbound : ∀ K, IsCompact K → K ⊆ Ω → ∃ C : ℝ,
+      ∀ᶠ i in l, (variationMeasure μ Ω (v i)).real (((↑) : Ω → E) ⁻¹' K) ≤ C)
+    (hconv : ∀ ψ : 𝓓(Ω, ℝ),
+      Tendsto (fun i => ∫ x, ψ x * v i x ∂μ) l (𝓝 (∫ x, ψ x * u x ∂μ))) :
+    ∀ K, IsCompact K → K ⊆ Ω →
+      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U u ≠ ∞ := by
+  intro K hK hKΩ
+  obtain ⟨L, hL, hKL, hLΩ⟩ := exists_compact_between hK Ω.isOpen hKΩ
+  let U : Opens E := ⟨interior L, isOpen_interior⟩
+  have hUΩ : U ≤ Ω := interior_subset.trans hLΩ
+  obtain ⟨C, hC⟩ := hbound L hL hLΩ
+  have hL' : IsCompact (((↑) : Ω → E) ⁻¹' L) :=
+    Ω.isOpen.isOpenEmbedding_subtypeVal.isInducing.isCompact_preimage' hL (by simpa using hLΩ)
+  have htv : ∀ᶠ i in l, totalVariationOn μ U (v i) ≤ ENNReal.ofReal C := by
+    filter_upwards [hC] with i hi
+    have hmass : variationMeasure μ Ω (v i) (((↑) : Ω → E) ⁻¹' L) ≤
+        ENNReal.ofReal C := by
+      rw [← ENNReal.ofReal_toReal hL'.measure_lt_top.ne]
+      exact ENNReal.ofReal_le_ofReal hi
+    rw [← variationMeasure_preimage_coe (hv i) (hvfin i) hUΩ]
+    exact (measure_mono (preimage_mono interior_subset)).trans hmass
+  refine ⟨U, hKL, ne_top_of_le_ne_top (b := ENNReal.ofReal C) ENNReal.ofReal_ne_top ?_⟩
+  refine (totalVariationOn_le_liminf_of_tendsto_integral (Ω := U) fun ψ => ?_).trans
+    (liminf_le_of_frequently_le' htv.frequently)
+  simpa only [monoCLM_apply, le_refl, hUΩ, and_self, ite_true] using
+    hconv (monoCLM ℝ ψ : 𝓓(Ω, ℝ))
 
 /-- A test vector field on `Ω` supported in an open set `U ⊆ Ω` with norm at most one pairs with
 `u` to at most `|Du|(U)`. -/

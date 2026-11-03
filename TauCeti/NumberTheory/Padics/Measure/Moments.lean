@@ -7,7 +7,7 @@ module
 
 public import Mathlib.NumberTheory.Padics.Measure.AmiceTransform
 public import Mathlib.RingTheory.PowerSeries.Binomial
-public import TauCeti.NumberTheory.Padics.MahlerBasis
+public import TauCeti.NumberTheory.Padics.MahlerBasis.Basic
 public import TauCeti.NumberTheory.Padics.Measure.Weight
 public import TauCeti.RingTheory.PowerSeries.MahlerDerivation
 import Mathlib.RingTheory.Polynomial.Tower

@@ -49,6 +49,8 @@ fundamental annulus `‖q‖ < ‖u‖ ≤ 1` includes the unit circle, where th
 * `TauCeti.exists_tateTheta_mul_tateTheta_eq`: `θ(a u) θ(a⁻¹ u) = α θ(u)² (X(u) - X(a))`.
 * `TauCeti.tateUniformizationX_eq_tateUniformizationX_iff`: the fibres of `X` are the cosets
   `a^{±1} q^ℤ`.
+* `TauCeti.tateQuotientCoordinates_fst_eq_iff`: the same on `Kˣ / q^ℤ`, where the fibre of a
+  nonidentity class `x` is `{x, x⁻¹}`.
 * `TauCeti.tateUniformization_eq_tateUniformization_iff`: the fibres of the uniformisation map.
 
 ## References
@@ -71,10 +73,6 @@ variable {K : Type*} [NormedField K]
 /-! ### The coefficients of `θ²` -/
 
 section Theta
-
-private theorem hasSum_tateThetaCoeff_one [CompleteSpace K] (q : Kˣ) (hq : ‖(q : K)‖ < 1) :
-    HasSum (tateThetaCoeff q) 0 := by
-  simpa [← tateThetaCoeff_def] using hasSum_tateTheta q 1 hq
 
 private theorem tateThetaCoeff_one_sub (q : Kˣ) (n : ℤ) :
     tateThetaCoeff q (1 - n) = -tateThetaCoeff q n := by
@@ -117,48 +115,14 @@ private theorem hasSum_tateThetaProductCoeff_one_one (q : Kˣ) (hq : ‖(q : K)�
 
 variable [IsUltrametricDist K]
 
-/-- The first moment `∑ n t(n)` of the coefficients of `θ²` vanishes: it is twice the product
-of the first moment of the coefficients of `θ` with `θ(1) = 0`. -/
+/-- The first moment `∑ n t(n)` of the coefficients of `θ²` vanishes: by the Leibniz rule it is
+twice the product of the first moment of the coefficients of `θ` with `θ(1) = 0`. -/
 private theorem hasSum_intCast_mul_tateThetaProductCoeff_one (q : Kˣ) (hq : ‖(q : K)‖ < 1) :
     HasSum (fun n : ℤ ↦ (n : K) * tateThetaProductCoeff q 1 n) 0 := by
   have hθ := hasSum_tateThetaCoeff_one q hq
-  have hsum (c : ℤ → K) (hc : ∀ m, ‖c m‖ ≤ 1) :
-      Summable (fun m ↦ c m * tateThetaCoeff q m) :=
-    summable_mul_of_norm_le_one hθ.summable hc
-  have hc (n m : ℤ) (k : ℤ) : ‖(k : K) * tateThetaCoeff q (n - m)‖ ≤ 1 := by
-    rw [norm_mul]
-    calc ‖(k : K)‖ * ‖tateThetaCoeff q (n - m)‖ ≤ 1 * 1 :=
-          mul_le_mul (IsUltrametricDist.norm_intCast_le_one K k)
-            (norm_tateThetaCoeff_le_one q hq _) (norm_nonneg _) zero_le_one
-      _ = 1 := one_mul 1
-  have hdθ : HasSum (fun n : ℤ ↦ ((n : K) * tateThetaCoeff q n) * (1 : K) ^ n)
-      (∑' n : ℤ, (n : K) * tateThetaCoeff q n) := by
-    simpa [mul_comm] using (hsum (fun n ↦ (n : K)) fun n ↦
-      IsUltrametricDist.norm_intCast_le_one K n).hasSum
-  have h := hasSum_laurent_mul one_ne_zero hdθ (by simpa using hθ)
-  simp only [mul_zero, one_zpow, mul_one] at h
-  convert h.mul_left 2 using 1
-  · funext n
-    have h₁ := hsum (fun m ↦ (m : K) * tateThetaCoeff q (n - m)) (fun m ↦ hc n m m)
-    have h₂ := hsum (fun m ↦ ((n - m : ℤ) : K) * tateThetaCoeff q (n - m)) (fun m ↦ hc n m _)
-    have hswap : ∑' m : ℤ, ((n - m : ℤ) : K) * tateThetaCoeff q (n - m) * tateThetaCoeff q m =
-        ∑' m : ℤ, (m : K) * tateThetaCoeff q (n - m) * tateThetaCoeff q m := by
-      rw [← (Equiv.subLeft n).tsum_eq]
-      congr 1 with m
-      simp only [Equiv.subLeft_apply, sub_sub_cancel]
-      ring
-    rw [tateThetaProductCoeff_one_eq, ← tsum_mul_left]
-    calc ∑' m : ℤ, (n : K) * (tateThetaCoeff q m * tateThetaCoeff q (n - m))
-        = ∑' m : ℤ, ((m : K) * tateThetaCoeff q (n - m) * tateThetaCoeff q m +
-            ((n - m : ℤ) : K) * tateThetaCoeff q (n - m) * tateThetaCoeff q m) := by
-          congr 1 with m
-          push_cast
-          ring
-      _ = 2 * ∑' m : ℤ, (m : K) * tateThetaCoeff q m * tateThetaCoeff q (n - m) := by
-          rw [h₁.tsum_add h₂, hswap, ← two_mul]
-          congr 2 with m
-          ring
-  · ring
+  have hθ₁ := (summable_mul_of_norm_le_one hθ.summable
+    fun n : ℤ ↦ IsUltrametricDist.norm_intCast_le_one K n).hasSum
+  simpa [tateThetaProductCoeff_one_eq] using hθ.intCast_mul_tsum_mul_sub hθ₁ hθ hθ₁
 
 end Theta
 
@@ -369,61 +333,18 @@ private theorem hasSum_tateXCoeff_of_norm (q u : Kˣ) (hu₁ : ‖(q : K)‖ < �
   apply mul_left_cancel₀ h₁
   linear_combination heq
 
-/-- The Laurent series with coefficients in `tateThetaCoefficients q 1 2` transforms like
-`θ(u)² (X(u) + 2 s₁)` under `u ↦ q u`. -/
-private theorem hasSum_tateXCoeff_iff_mul (q u : Kˣ) (hq : ‖(q : K)‖ < 1) :
-    HasSum (fun n ↦ tateXCoeff q n * (u : K) ^ n)
-        (tateTheta q u ^ 2 * (tateUniformizationX q u + 2 * divisorSumAt 1 (q : K))) ↔
-      HasSum (fun n ↦ tateXCoeff q n * ((q * u : Kˣ) : K) ^ n)
-        (tateTheta q (q * u) ^ 2 *
-          (tateUniformizationX q (q * u) + 2 * divisorSumAt 1 (q : K))) := by
-  let a : tateThetaCoefficients q 1 2 := ⟨_, tateXCoeff_mem q hq⟩
-  have hstep {s : K} (h : HasSum (fun n ↦ tateXCoeff q n * (u : K) ^ n) s) :
-      HasSum (fun n ↦ tateXCoeff q n * ((q * u : Kˣ) : K) ^ n) ((u : K) ^ (-2 : ℤ) * s) := by
-    have h' := hasSum_tateThetaCoefficients_mul q 1 2 a u
-      (by simpa only [Units.val_zpow_eq_zpow_val] using h)
-    simpa [a, Units.val_zpow_eq_zpow_val] using h'
-  have hvalue : tateTheta q (q * u) ^ 2 *
-      (tateUniformizationX q (q * u) + 2 * divisorSumAt 1 (q : K)) =
-      (u : K) ^ (-2 : ℤ) * (tateTheta q u ^ 2 *
-        (tateUniformizationX q u + 2 * divisorSumAt 1 (q : K))) := by
-    rw [tateTheta_self_mul, tateUniformizationX_self_mul, zpow_neg, zpow_two]
-    field_simp
-  rw [hvalue]
-  refine ⟨hstep, fun h ↦ ?_⟩
-  have hs := summable_tateThetaCoefficients q 1 hq two_pos a u
-  simp only [a, Units.val_zpow_eq_zpow_val] at hs
-  convert hs.hasSum using 1
-  have := (hstep hs.hasSum).unique h
-  have hu2 : (u : K) ^ (-2 : ℤ) ≠ 0 := zpow_ne_zero _ u.ne_zero
-  exact (mul_left_cancel₀ hu2 this).symm
-
 private theorem hasSum_tateXCoeff (q : Kˣ) (hq : ‖(q : K)‖ < 1) {u : Kˣ}
     (hu : u ∉ Subgroup.zpowers q) :
     HasSum (fun n ↦ tateXCoeff q n * (u : K) ^ n)
       (tateTheta q u ^ 2 * (tateUniformizationX q u + 2 * divisorSumAt 1 (q : K))) := by
-  have hzpow (k : ℤ) (v : Kˣ) :
-      HasSum (fun n ↦ tateXCoeff q n * (v : K) ^ n)
-          (tateTheta q v ^ 2 * (tateUniformizationX q v + 2 * divisorSumAt 1 (q : K))) ↔
-        HasSum (fun n ↦ tateXCoeff q n * ((q ^ k * v : Kˣ) : K) ^ n)
-          (tateTheta q (q ^ k * v) ^ 2 *
-            (tateUniformizationX q (q ^ k * v) + 2 * divisorSumAt 1 (q : K))) := by
-    induction k using Int.induction_on with
-    | zero => simp
-    | succ k ih =>
-      rw [ih, hasSum_tateXCoeff_iff_mul q (q ^ (k : ℤ) * v) hq,
-        show q * (q ^ (k : ℤ) * v) = q ^ ((k : ℤ) + 1) * v by group]
-    | pred k ih =>
-      rw [ih, hasSum_tateXCoeff_iff_mul q (q ^ (-(k : ℤ) - 1) * v) hq,
-        show q * (q ^ (-(k : ℤ) - 1) * v) = q ^ (-(k : ℤ)) * v by group]
-  obtain ⟨k, ⟨hk₁, hk₂⟩, -⟩ := existsUnique_norm_zpow_mul_mem_Ioc q u hq
-  have hk : ((q ^ k * u : Kˣ) : K) ≠ 1 := by
-    intro h
-    refine hu ⟨-k, ?_⟩
-    rw [Units.val_eq_one] at h
-    dsimp only
-    rw [zpow_neg, inv_eq_of_mul_eq_one_right h]
-  exact (hzpow k u).mpr (hasSum_tateXCoeff_of_norm q _ hk₁ hk₂ hk)
+  refine hasSum_tateThetaCoefficients_of_forall_norm q 1 hq two_pos ⟨_, tateXCoeff_mem q hq⟩
+    (f := fun u ↦ tateTheta q u ^ 2 * (tateUniformizationX q u + 2 * divisorSumAt 1 (q : K)))
+    (fun v ↦ ?_) (fun v hv₁ hv₂ hv ↦ hasSum_tateXCoeff_of_norm q v hv₁ hv₂ ?_) hu
+  · rw [inv_one, one_mul, Units.val_zpow_eq_zpow_val]
+    simp only [tateTheta_self_mul, tateUniformizationX_self_mul, Nat.cast_ofNat, zpow_neg,
+      zpow_two]
+    field_simp
+  · exact fun h ↦ hv (Units.val_eq_one.mp h)
 
 end Expansion
 
@@ -582,6 +503,26 @@ theorem tateUniformizationX_eq_tateUniformizationX_iff (q : Kˣ) (hq : ‖(q : K
   rw [← tateTheta_eq_zero_iff q _ hq, ← tateTheta_eq_zero_iff q _ hq, ← mul_eq_zero, h u hu]
   simp [hα, hθ, sub_eq_zero]
 
+/-- **The fibres of the first Tate coordinate on the quotient.** Two nonidentity classes in
+`Kˣ / q^ℤ` have the same first Tate coordinate exactly when they are equal or mutually
+inverse. -/
+theorem tateQuotientCoordinates_fst_eq_iff (q : Kˣ) (hq : ‖(q : K)‖ < 1)
+    {x y : Kˣ ⧸ Subgroup.zpowers q} (hx : x ≠ 1) (hy : y ≠ 1) :
+    (tateQuotientCoordinates q x).1 = (tateQuotientCoordinates q y).1 ↔ x = y ∨ x = y⁻¹ := by
+  refine ⟨fun h ↦ ?_, by rintro (rfl | rfl) <;> simp [tateQuotientCoordinates_inv q hq]⟩
+  induction x using QuotientGroup.induction_on with | H u => ?_
+  induction y using QuotientGroup.induction_on with | H v => ?_
+  have hu : u ∉ Subgroup.zpowers q := fun h ↦ hx ((QuotientGroup.eq_one_iff u).mpr h)
+  have hv : v ∉ Subgroup.zpowers q := fun h ↦ hy ((QuotientGroup.eq_one_iff v).mpr h)
+  rcases (tateUniformizationX_eq_tateUniformizationX_iff q hq hu hv).mp (by simpa using h) with
+    h' | h'
+  · right
+    rw [← QuotientGroup.mk_inv, eq_comm, QuotientGroup.eq, inv_inv]
+    exact h'
+  · left
+    rw [eq_comm, QuotientGroup.eq]
+    exact h'
+
 /-- **The fibres of the Tate uniformisation map.** Two parameters in `Kˣ / q^ℤ` have the same
 image on the Tate curve exactly when they are equal, or mutually inverse with a common image of
 order at most two. -/
@@ -598,26 +539,14 @@ theorem tateUniformization_eq_tateUniformization_iff (q : Kˣ) (hq : ‖(q : K)�
     · subst hy
       left
       exact (tateUniformization_eq_zero_iff q hq x).mp (h.trans (tateUniformization_one q hq))
-    induction x using QuotientGroup.induction_on with | H u => ?_
-    induction y using QuotientGroup.induction_on with | H v => ?_
-    have hu : u ∉ Subgroup.zpowers q := fun h ↦ hx ((QuotientGroup.eq_one_iff u).mpr h)
-    have hv : v ∉ Subgroup.zpowers q := fun h ↦ hy ((QuotientGroup.eq_one_iff v).mpr h)
-    have hX : tateUniformizationX q u = tateUniformizationX q v := by
+    have hX : (tateQuotientCoordinates q x).1 = (tateQuotientCoordinates q y).1 := by
       have h' := h
-      rw [tateUniformization_mk_of_notMem_zpowers q u hq hu,
-        tateUniformization_mk_of_notMem_zpowers q v hq hv] at h'
+      rw [tateUniformization_of_ne_one q hq hx, tateUniformization_of_ne_one q hq hy] at h'
       simp only [WeierstrassCurve.Affine.Point.mk, WeierstrassCurve.Affine.Point.some.injEq] at h'
       exact h'.1
-    rcases (tateUniformizationX_eq_tateUniformizationX_iff q hq hu hv).mp hX with h' | h'
-    · right
-      have hinv : (u : Kˣ ⧸ Subgroup.zpowers q) = (v : Kˣ ⧸ Subgroup.zpowers q)⁻¹ := by
-        rw [← QuotientGroup.mk_inv, QuotientGroup.eq, ← mul_inv]
-        exact inv_mem (by rwa [mul_comm])
-      refine ⟨hinv, ?_⟩
-      rw [← tateUniformization_inv, ← hinv, h]
-    · left
-      rw [QuotientGroup.eq]
-      simpa [mul_comm] using inv_mem h'
+    refine ((tateQuotientCoordinates_fst_eq_iff q hq hx hy).mp hX).imp_right fun hinv ↦
+      ⟨hinv, ?_⟩
+    rw [← tateUniformization_inv, ← hinv, h]
   · rintro (rfl | ⟨rfl, h⟩)
     · rfl
     · rwa [tateUniformization_inv]

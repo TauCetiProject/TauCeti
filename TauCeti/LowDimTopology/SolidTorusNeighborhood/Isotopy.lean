@@ -8,7 +8,12 @@ module
 public import TauCeti.Analysis.Complex.Circle
 public import TauCeti.LowDimTopology.SolidTorusNeighborhood.Basic
 public import TauCeti.Topology.Homotopy.AmbientIsotopyConj
+public import TauCeti.Topology.Homotopy.Isotopy.Basic
 public import TauCeti.Topology.Homotopy.Isotopy.Radial
+
+import Mathlib.Analysis.SpecialFunctions.Complex.Circle
+import TauCeti.Geometry.Manifold.Instances.Torus
+import TauCeti.Topology.Homotopy.Isotopy.Compact
 
 /-!
 # Isotopies of the boundary torus extend over the solid torus
@@ -30,6 +35,12 @@ on the exterior and that extension on the solid torus, so a gluing may be replac
 isotopic to it. Here the isotopy is absorbed into a collar inside the filling solid torus, so no
 collar of the exterior is needed.
 
+Since the torus is a compact connected surface, an isotopy of a homeomorphism of `S¹ × S¹` in the
+general sense of `TauCeti.Isotopic`, through embeddings, is an ambient isotopy
+(`TauCeti.isotopic_iff_ambientIsotopic`). So whenever two homeomorphisms `g`, `k` of the
+boundary torus are isotopic, `g⁻¹ ∘ k` extends over the solid torus
+(`TauCeti.SolidTorus.exists_homeomorph_boundaryInclusion_symm_apply_of_isotopic`).
+
 ## Main definitions
 
 * `TauCeti.AmbientIsotopy.solidTorusHomeomorph`: the homeomorphism of the solid torus extending
@@ -44,6 +55,9 @@ collar of the exterior is needed.
 * `TauCeti.SolidTorus.exists_homeomorph_boundaryInclusion_comp_final`: if a homeomorphism `h` of
   the boundary torus extends over the solid torus, so does `h ∘ Φ₁` for every ambient isotopy `Φ`
   of the torus.
+* `TauCeti.SolidTorus.exists_homeomorph_boundaryInclusion_symm_apply_of_isotopic`: if two
+  homeomorphisms `g`, `k` of the boundary torus are isotopic, then `g⁻¹ ∘ k` extends over the
+  solid torus.
 
 ## References
 
@@ -108,5 +122,23 @@ theorem SolidTorus.exists_homeomorph_boundaryInclusion_comp_final
       ∀ q, ψ' (SolidTorus.boundaryInclusion q) = SolidTorus.boundaryInclusion (h (Φ.final q)) :=
   ⟨Φ.solidTorusHomeomorph.trans ψ, fun q => by
     rw [Homeomorph.trans_apply, AmbientIsotopy.solidTorusHomeomorph_boundaryInclusion, hψ]⟩
+
+/-- **Isotopic torus homeomorphisms differ by a map extending over the solid torus.** If two
+homeomorphisms `g`, `k` of the boundary torus `S¹ × S¹` are isotopic, then `g⁻¹ ∘ k` is the
+restriction of a homeomorphism of the solid torus `D² × S¹`. -/
+theorem SolidTorus.exists_homeomorph_boundaryInclusion_symm_apply_of_isotopic
+    {g k : Circle × Circle ≃ₜ Circle × Circle}
+    (hgk : Isotopic (g : C(Circle × Circle, Circle × Circle)) k) :
+    ∃ ψ : SolidTorus ≃ₜ SolidTorus,
+      ∀ q, ψ (SolidTorus.boundaryInclusion q) = SolidTorus.boundaryInclusion (g.symm (k q)) := by
+  let := torusChartedSpace
+  -- The torus is a compact connected manifold, so the isotopy is ambient: `k = Φ₁ ∘ g`.
+  obtain ⟨Φ, hΦ⟩ := ambientIsotopic_def.1
+    ((isotopic_iff_ambientIsotopic (E := EuclideanSpace ℝ (Fin 2)) g k).1 hgk)
+  -- Then `g⁻¹ ∘ k = g⁻¹ ∘ Φ₁ ∘ g` is the final homeomorphism of `Φ` read through `g`.
+  refine ⟨(Φ.transport g.symm).solidTorusHomeomorph, fun q ↦ ?_⟩
+  rw [AmbientIsotopy.solidTorusHomeomorph_boundaryInclusion, AmbientIsotopy.final_transport,
+    Homeomorph.symm_symm]
+  simpa using congrArg (SolidTorus.boundaryInclusion ∘ g.symm) (DFunLike.congr_fun hΦ q)
 
 end TauCeti

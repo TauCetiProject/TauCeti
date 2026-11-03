@@ -10,6 +10,9 @@ public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 public import TauCeti.Analysis.Distribution.TestFunction.Translation
 public import TauCeti.MeasureTheory.Function.Lp.Translation
+public import TauCeti.Analysis.Distribution.TestFunction.Dilation
+public import TauCeti.MeasureTheory.Function.Lp.Dilation
+public import TauCeti.MeasureTheory.Measure.Haar.Restrict
 import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.Analysis.Normed.Module.HahnBanach
 import Mathlib.MeasureTheory.Function.L2Space
@@ -29,7 +32,10 @@ passing to the `Lᵖ` class commutes with the vector space structure of the test
 construction for the gradient. These facts make the image of `C_c^∞(Ω)` in an `Lᵖ`-based function
 space a subspace. On the whole space, passing a test function or its gradient to `Lᵖ`
 commutes with translation, as recorded by `TauCeti.testFunctionLp_translateTestFunction` and
-`TauCeti.gradientTestFunctionLp_translateTestFunction`.
+`TauCeti.gradientTestFunctionLp_translateTestFunction`, and turns dilation of test functions into
+the normalized `Lᵖ` dilation `MeasureTheory.Measure.dilateLp`, up to an explicit power of the
+factor, as recorded by `TauCeti.testFunctionLp_dilateTestFunction` and
+`TauCeti.gradientTestFunctionLp_dilateTestFunction`.
 
 On that subspace of `L²(Ω)`, a distributional derivative bounded by the `L²` norm of test functions
 extends by Hahn–Banach to a bounded functional on `L²(Ω)`, and the negative of its Riesz
@@ -349,5 +355,69 @@ theorem gradientTestFunctionLp_translateTestFunction (h : E) (phi : 𝓓((⊤ : 
     (congrArg (fderiv ℝ (phi : E → ℝ)) (sub_neg_eq_add x h))
 
 end GradientTranslation
+
+/-! ### Dilation on the whole space -/
+
+section Dilation
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure] {q : ENNReal}
+  [Fact (1 ≤ q)] {r : ℝ}
+
+open Module
+
+/-- Passing a dilated whole-space test function `φ (r⁻¹ • ·)` to `Lᵖ` gives `r ^ (n / p)` times
+the normalized dilation of its class, where `n` is the dimension of `E`. -/
+@[simp]
+theorem testFunctionLp_dilateTestFunction (hr : 0 < r)
+    (hVO : MapsTo (fun x : E ↦ r • x) (⊤ : Opens E) (⊤ : Opens E)) (phi : 𝓓((⊤ : Opens E), ℝ)) :
+    testFunctionLp (mu := mu) q (dilateTestFunction hr.ne' hVO phi) =
+      r ^ ((finrank ℝ E : ℝ) / q.toReal) •
+        (mu.restrict (⊤ : Opens E)).dilateLp q r hr (testFunctionLp q phi) := by
+  apply Lp.ext
+  filter_upwards [testFunctionLp_apply_ae (mu := mu) q (dilateTestFunction hr.ne' hVO phi),
+    Lp.coeFn_smul (r ^ ((finrank ℝ E : ℝ) / q.toReal))
+      ((mu.restrict (⊤ : Opens E)).dilateLp q r hr (testFunctionLp (mu := mu) q phi)),
+    Measure.coeFn_dilateLp hr (testFunctionLp (mu := mu) q phi),
+    (Measure.quasiMeasurePreserving_smul (mu.restrict (⊤ : Opens E))
+      (inv_ne_zero hr.ne')).ae_eq_comp (testFunctionLp_apply_ae (mu := mu) q phi)]
+    with x hx hy hz hw
+  simp only [Function.comp_apply] at hw
+  rw [hx, hy, Pi.smul_apply, hz, hw, dilateTestFunction_apply, smul_smul, ← Real.rpow_add hr,
+    add_neg_cancel, Real.rpow_zero, one_smul]
+
+end Dilation
+
+section GradientDilation
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure] {q : ENNReal}
+  [Fact (1 ≤ q)] {r : ℝ}
+
+open Module
+
+/-- Passing the gradient of a dilated whole-space test function `φ (r⁻¹ • ·)` to `Lᵖ` gives
+`r ^ (n / p - 1)` times the normalized dilation of the gradient's class, where `n` is the
+dimension of `E`. -/
+@[simp]
+theorem gradientTestFunctionLp_dilateTestFunction (hr : 0 < r)
+    (hVO : MapsTo (fun x : E ↦ r • x) (⊤ : Opens E) (⊤ : Opens E)) (phi : 𝓓((⊤ : Opens E), ℝ)) :
+    gradientTestFunctionLp (mu := mu) q (dilateTestFunction hr.ne' hVO phi) =
+      r ^ ((finrank ℝ E : ℝ) / q.toReal - 1) •
+        (mu.restrict (⊤ : Opens E)).dilateLp q r hr (gradientTestFunctionLp q phi) := by
+  apply Lp.ext
+  filter_upwards [gradientTestFunctionLp_apply_ae (mu := mu) q (dilateTestFunction hr.ne' hVO phi),
+    Lp.coeFn_smul (r ^ ((finrank ℝ E : ℝ) / q.toReal - 1))
+      ((mu.restrict (⊤ : Opens E)).dilateLp q r hr (gradientTestFunctionLp (mu := mu) q phi)),
+    Measure.coeFn_dilateLp hr (gradientTestFunctionLp (mu := mu) q phi),
+    (Measure.quasiMeasurePreserving_smul (mu.restrict (⊤ : Opens E))
+      (inv_ne_zero hr.ne')).ae_eq_comp (gradientTestFunctionLp_apply_ae (mu := mu) q phi)]
+    with x hx hy hz hw
+  simp only [Function.comp_apply] at hw
+  have hexp : (finrank ℝ E : ℝ) / q.toReal - 1 + -((finrank ℝ E : ℝ) / q.toReal) = -1 := by ring
+  rw [hx, hy, Pi.smul_apply, hz, hw, gradient_dilateTestFunction, smul_smul, ← Real.rpow_add hr,
+    hexp, Real.rpow_neg_one]
+
+end GradientDilation
 
 end TauCeti

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.ExteriorPower
+public import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Basic
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Isometry
 public import TauCeti.Geometry.Symplectic.AlmostComplex
 -- Private: orthonormal coordinates and the `4 × 4` determinant are used only in proofs.
@@ -125,7 +125,7 @@ theorem norm_kahlerForm_sq : ‖J.kahlerForm‖ ^ 2 = finrank ℝ V / 2 := by
 theorem lieMap_kahlerForm :
     exteriorPower.lieMap 2 J.toLinearMap J.kahlerForm = 0 := by
   refine ext_inner_ιMulti_two fun u w ↦ ?_
-  rw [inner_lieMap_two_left (inner_apply_left hJ), lieMap_two_apply_ιMulti]
+  rw [inner_lieMap_left (inner_apply_left hJ), lieMap_two_apply_ιMulti]
   simp [inner_add_right, inner_kahlerForm_ιMulti hJ, hJ]
 
 end Orthogonal
@@ -201,8 +201,8 @@ private theorem lieMap_lieMap_add_hodgeStar
   set D := exteriorPower.lieMap 2 J.toLinearMap
   -- Move both derivations to the right, where they act on the wedge `u ∧ w`.
   have hD (z y : ⋀[ℝ]^2 V) : ⟪D (D z), y⟫ = ⟪z, D (D y)⟫ := by
-    rw [inner_lieMap_two_left (inner_apply_left hJ),
-      inner_lieMap_two_left (inner_apply_left hJ), neg_neg]
+    rw [inner_lieMap_left (inner_apply_left hJ),
+      inner_lieMap_left (inner_apply_left hJ), neg_neg]
   have key : D ∘ₗ D ∘ₗ (LinearMap.id + (o.hodgeStar hkl).toLinearMap) =
       (4 : ℝ) • (innerₗ _ J.kahlerForm).smulRight J.kahlerForm -
         (4 : ℝ) • (LinearMap.id + (o.hodgeStar hkl).toLinearMap) := by

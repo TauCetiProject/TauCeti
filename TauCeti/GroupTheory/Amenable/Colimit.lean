@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.Grp.Colimits
+public import TauCeti.Algebra.Colimit.DirectLimit
 public import TauCeti.GroupTheory.Amenable.DirectedUnion
 
 /-!
@@ -22,12 +23,23 @@ the discrete setting every leg is continuous, and the apex may carry any group t
 directed preorder is a filtered category, so this covers colimits of directed systems of groups
 indexed by such a preorder.
 
+For Mathlib's concrete model `DirectLimit G f` of the colimit of a directed system of groups, the
+same argument applies directly: every finite subset of `DirectLimit G f` lies in the image of a
+single canonical map `DirectLimit.Monoid.of G f i`
+(`DirectLimit.Monoid.exists_subset_range_of`). This needs neither that the groups live in a common
+universe with the index set, nor that the transition maps be injective. The identification of
+`DirectLimit G f` with the colimit in `GrpCat` is `TauCeti.GrpCat.directLimitIsColimit`.
+
 ## Main results
 
 * `TauCeti.Amenable.of_isColimit`: the apex of a colimit cocone over a filtered diagram of amenable
   topological groups is amenable, provided the legs are continuous.
 * `TauCeti.Amenable.of_isColimit_of_discreteTopology`: the apex of a colimit cocone over a filtered
   diagram of discrete amenable groups is amenable for every group topology.
+* `TauCeti.Amenable.directLimit`: the direct limit of a directed system of amenable topological
+  groups is amenable, provided the canonical maps are continuous.
+* `TauCeti.Amenable.directLimit_of_discreteTopology`: the direct limit of a directed system of
+  discrete amenable groups is amenable for every group topology.
 
 ## References
 
@@ -59,5 +71,28 @@ amenable, for every group topology on the apex. -/
 theorem Amenable.of_isColimit_of_discreteTopology [∀ j, DiscreteTopology (F.obj j)]
     [∀ j, Amenable (F.obj j)] (hc : IsColimit c) : Amenable c.pt :=
   .of_isColimit hc fun _ => continuous_of_discreteTopology
+
+section DirectLimit
+
+variable {ι : Type*} [Preorder ι] [IsDirectedOrder ι] [Nonempty ι] {G : ι → Type*}
+  [∀ i, Group (G i)] {T : ∀ ⦃i j : ι⦄, i ≤ j → Type*} {f : ∀ _ _ h, T h}
+  [∀ i j (h : i ≤ j), FunLike (T h) (G i) (G j)] [∀ i j h, MonoidHomClass (T h) (G i) (G j)]
+  [DirectedSystem G (f · · ·)] [∀ i, TopologicalSpace (G i)] [TopologicalSpace (DirectLimit G f)]
+  [IsTopologicalGroup (DirectLimit G f)]
+
+/-- The direct limit of a directed system of amenable topological groups is amenable, provided
+the canonical maps from the groups of the system are continuous. -/
+theorem Amenable.directLimit [∀ i, IsTopologicalGroup (G i)] [∀ i, Amenable (G i)]
+    (hcont : ∀ i, Continuous (DirectLimit.Monoid.of G f i)) : Amenable (DirectLimit G f) :=
+  .of_forall_finset_subset_range (fun i => ⟨DirectLimit.Monoid.of G f i, hcont i⟩)
+    DirectLimit.Monoid.exists_subset_range_of
+
+/-- The direct limit of a directed system of discrete amenable groups is amenable, for every group
+topology on the direct limit. -/
+theorem Amenable.directLimit_of_discreteTopology [∀ i, DiscreteTopology (G i)]
+    [∀ i, Amenable (G i)] : Amenable (DirectLimit G f) :=
+  .directLimit fun _ => continuous_of_discreteTopology
+
+end DirectLimit
 
 end TauCeti

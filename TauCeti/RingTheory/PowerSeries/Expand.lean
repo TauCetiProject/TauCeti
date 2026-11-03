@@ -20,10 +20,12 @@ weighted antidiagonal `Finset.weightedFinsuppAntidiag s m n` of the assignments 
 `s` with `∑ c ∈ s, m c * l c = n`. When every `f c` has constant term `1`, factors with
 `n < m c` do not change the `n`-th coefficient. So if only finitely many `m c` lie below each
 bound, the infinite product converges in the coefficientwise topology
-(`PowerSeries.WithPiTopology`), and each coefficient is that of a finite product.
+(`PowerSeries.WithPiTopology`), and each coefficient is that of a finite product. Over a finite
+field with `q` elements, the iterates of `expand q` are the `q ^ j`-th power maps.
 
 ## Main declarations
 
+* `PowerSeries.expand_injective`: expansion `f ↦ f (X ^ p)` is injective.
 * `PowerSeries.rescale_expand`: rescaling `f (X ^ p)` by `a` rescales `f` by `a ^ p`.
 * `PowerSeries.subst_expand`: substituting into `f(X ^ p)` substitutes the `p`-th power.
 * `PowerSeries.toMvPowerSeries_expand`: embedding in one coordinate commutes with expansion.
@@ -38,6 +40,8 @@ bound, the infinite product converges in the coefficientwise topology
 * `PowerSeries.hasProd_expand`, `PowerSeries.multipliable_expand`,
   `PowerSeries.coeff_tprod_expand`: the infinite product of the expanded series and its
   coefficients, when `{c | m c ≤ n}` is finite for every `n`.
+* `FiniteField.PowerSeries.expand_card_pow_apply`: over a finite field `K` with `q` elements, the
+  `j`-th iterate of `expand q` is the `q ^ j`-th power map.
 -/
 
 public section
@@ -90,6 +94,13 @@ theorem order_eq_of_order_expand_eq (p : ℕ) (hp : p ≠ 0) {f : R⟦X⟧} {n :
   rw [order_expand, nsmul_eq_mul, ← coe_toNat_order hf₀, ← Nat.cast_mul] at hf
   have he : p * f.order.toNat = p * n := by exact_mod_cast hf
   rw [← coe_toNat_order hf₀, Nat.mul_left_cancel (Nat.pos_of_ne_zero hp) he]
+
+/-- Expansion `f ↦ f (X ^ p)` is injective: the coefficients of `f` reappear as the coefficients
+of `f (X ^ p)` in degrees divisible by `p`. -/
+theorem expand_injective (p : ℕ) (hp : p ≠ 0) :
+    Function.Injective (expand p hp : R⟦X⟧ → R⟦X⟧) := fun f g h ↦ by
+  ext m
+  rw [← coeff_expand_mul p hp f, h, coeff_expand_mul]
 
 /-- Rescaling an expanded series by `a` is expanding the series rescaled by `a ^ p`:
 `f ((a X) ^ p) = (f (a ^ p X)) (X ^ p)`. -/
@@ -244,5 +255,19 @@ theorem coeff_tprod_expand [T2Space R] {m : ι → ℕ+}
   have hsub : (hm n).toFinset ⊆ s := fun c hc ↦ hs c (by simpa using hc)
   refine (coeff_prod_expand_of_subset hsub (fun c _ hc ↦ ?_) fun c _ _ ↦ hf c).symm
   simpa using hc
+
+section FiniteField
+
+variable {K : Type*} [Field K] [Fintype K]
+
+/-- Over a finite field `K` with `q` elements, the `j`-th iterate of `expand q` is the
+`q ^ j`-th power map. -/
+theorem _root_.FiniteField.PowerSeries.expand_card_pow_apply (j : ℕ) (F : PowerSeries K) :
+    (expand (Fintype.card K) Fintype.card_ne_zero ^ j) F = F ^ Fintype.card K ^ j := by
+  induction j with
+  | zero => simp
+  | succ j ih => simp [pow_succ', ih, FiniteField.PowerSeries.expand_card, pow_mul']
+
+end FiniteField
 
 end PowerSeries

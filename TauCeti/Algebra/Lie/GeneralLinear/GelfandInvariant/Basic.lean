@@ -55,6 +55,8 @@ Gelfand invariants are central there.
   embedding is the trace of a power of the corresponding submatrix of `𝔼`.
 * `TauCeti.commute_map_glEmbedding_gelfandInvariant`: images of Gelfand invariants along nested
   corner embeddings commute.
+* `TauCeti.map_glEmbedding_castSuccEmb_gelfandTsetlinGenerator`: the generators below the top
+  level come from the next smaller corner.
 * `TauCeti.commute_gelfandTsetlinGenerator_map_glEmbedding`: a Gelfand-Tsetlin generator at level
   `k` commutes with the image of `U(gl (Fin k))`.
 * `TauCeti.commute_gelfandTsetlinGenerator`: the Gelfand-Tsetlin generators pairwise commute.
@@ -115,8 +117,8 @@ theorem gelfandInvariant_one : gelfandInvariant K n 1 = ι K (1 : Matrix n n K) 
 
 /-- The Gelfand invariant of degree two is the trace-form Casimir element. -/
 theorem gelfandInvariant_two : gelfandInvariant K n 2 = glCasimir K n := by
-  simp only [gelfandInvariant_def, glCasimir_def, sq, trace, diag_apply, mul_apply,
-    glGeneratorMatrix_apply]
+  simp only [glGeneratorMatrix_apply, gelfandInvariant_def, glCasimir_def, sq, trace,
+    diag_apply, Matrix.mul_apply]
 
 /-- The bracket of a matrix-unit generator with an entry of `𝔼 ^ r`:
 `⁅Eₐb, (𝔼 ^ r)ᵢⱼ⁆ = δ_{b i} (𝔼 ^ r)ₐⱼ - δ_{j a} (𝔼 ^ r)ᵢb`. -/
@@ -126,8 +128,8 @@ theorem lie_ι_single_glGeneratorMatrix_pow_apply (a b i j : n) (r : ℕ) :
         if j = a then (glGeneratorMatrix K n ^ r) i b else 0 := by
   induction r generalizing i j with
   | zero =>
-    simp only [pow_zero, one_apply, LieRing.of_associative_ring_bracket, mul_ite, ite_mul,
-      mul_one, one_mul, mul_zero, zero_mul]
+    simp only [Matrix.one_apply, mul_ite, ite_mul, mul_one, one_mul, zero_mul, pow_zero,
+      LieRing.of_associative_ring_bracket, mul_zero]
     split_ifs <;> subst_vars <;> simp_all
   | succ r ih =>
     have hleib (x y z : Ugl) : ⁅x, y * z⁆ = ⁅x, y⁆ * z + y * ⁅x, z⁆ := by
@@ -138,7 +140,7 @@ theorem lie_ι_single_glGeneratorMatrix_pow_apply (a b i j : n) (r : ℕ) :
           if j = a then glGeneratorMatrix K n k b else 0 := by
       rw [glGeneratorMatrix_apply, ← LieHom.map_lie, Matrix.lie_single_single]
       split_ifs <;> simp
-    simp only [pow_succ, mul_apply]
+    simp only [pow_succ, Matrix.mul_apply]
     rw [lie_sum]
     simp_rw [hleib, ih, hgen]
     simp only [sub_mul, mul_sub, ite_mul, mul_ite, zero_mul, mul_zero, sum_add_distrib,
@@ -236,6 +238,17 @@ theorem gelfandTsetlinGenerator_eq_trace {k : ℕ} (hk : k ≤ n) (r : ℕ) :
 theorem gelfandTsetlinGenerator_self (r : ℕ) :
     gelfandTsetlinGenerator K le_rfl r = gelfandInvariant K (Fin n) r := by
   rw [gelfandTsetlinGenerator_eq_trace, gelfandInvariant_def, Fin.castLE_rfl, submatrix_id_id]
+
+/-- The Gelfand-Tsetlin generators of `U(gl (Fin (n + 1)))` below the top level are the images of
+those of `U(gl (Fin n))` along the corner embedding. -/
+theorem map_glEmbedding_castSuccEmb_gelfandTsetlinGenerator {k : ℕ} (hk : k ≤ n) (r : ℕ) :
+    UniversalEnvelopingAlgebra.map K (glEmbedding K Fin.castSuccEmb)
+        (gelfandTsetlinGenerator K hk r) =
+      gelfandTsetlinGenerator K (hk.trans n.le_succ) r := by
+  have hemb : Fin.castLEEmb (hk.trans n.le_succ) = (Fin.castLEEmb hk).trans Fin.castSuccEmb := by
+    ext; simp
+  rw [gelfandTsetlinGenerator_def, gelfandTsetlinGenerator_def, hemb, glEmbedding_trans,
+    UniversalEnvelopingAlgebra.map_comp, AlgHom.comp_apply]
 
 /-- A Gelfand-Tsetlin generator at level `k` commutes with the image of `U(gl (Fin k))`. -/
 theorem commute_gelfandTsetlinGenerator_map_glEmbedding {k : ℕ} (hk : k ≤ n) (r : ℕ)

@@ -19,17 +19,21 @@ homeomorphisms of the torus `ℝ² / ℤ²` read in the coordinates `S¹ = ℝ /
 `(p, q)` curve `TauCeti.torusCurve p q` to the `A (p, q)` curve, so it acts on the first homology
 of the torus by `A`. Every homeomorphism of the torus is isotopic to exactly one of them, which is
 why gluings of solid tori along their boundary tori, as in Dehn filling, are normally given by such
-a matrix.
+a matrix. Up to homotopy rather than isotopy, this is
+`Homeomorph.existsUnique_homotopic_torusHomeomorph`.
 
 ## Main definitions
 
 * `Matrix.torusMap M`: the monomial self-map of `S¹ × S¹` induced by any integral matrix `M`.
+* `Matrix.torusContinuousMap M`: the same map, as a continuous map.
 * `Matrix.GeneralLinearGroup.torusHomeomorph A`: the homeomorphism of `S¹ × S¹` induced by `A`.
 
 ## Main results
 
 * `Matrix.torusMap_torusMap`, `Matrix.torusMap_one`: the integral matrices act on the torus
   through a monoid action.
+* `Matrix.torusContinuousMap_comp`, `Matrix.torusContinuousMap_one`: the same for the continuous
+  maps.
 * `Matrix.GeneralLinearGroup.torusHomeomorph_one`,
   `Matrix.GeneralLinearGroup.torusHomeomorph_mul`,
   `Matrix.GeneralLinearGroup.symm_torusHomeomorph`: the matrices act through a group action.
@@ -37,6 +41,8 @@ a matrix.
   `A (p, q)` curve.
 * `Matrix.GeneralLinearGroup.torusHomeomorph_swap`: the matrix exchanging the coordinates acts by
   exchanging the circle factors.
+* `TauCeti.exists_torusHomeomorph_eq_torusGluing`: the determinant-one gluing
+  `TauCeti.torusGluing p q s t` is induced by the matrix `[[p, -t], [q, s]]`.
 -/
 
 public section
@@ -63,7 +69,8 @@ theorem torusMap_apply (M : Matrix (Fin 2) (Fin 2) ℤ) (q : Circle × Circle) :
 self-maps. -/
 theorem torusMap_torusMap (M N : Matrix (Fin 2) (Fin 2) ℤ) (q : Circle × Circle) :
     M.torusMap (N.torusMap q) = (M * N).torusMap q := by
-  simp only [torusMap, Matrix.mul_apply, Fin.sum_univ_two, mul_zpow, ← zpow_mul', zpow_add]
+  simp only [torusMap, Matrix.mul_apply, Fin.sum_univ_two, mul_zpow, ← _root_.zpow_mul',
+    _root_.zpow_add]
   exact Prod.ext (mul_mul_mul_comm _ _ _ _) (mul_mul_mul_comm _ _ _ _)
 
 /-- The identity matrix induces the identity of the torus. -/
@@ -75,6 +82,26 @@ theorem torusMap_one (q : Circle × Circle) : torusMap 1 q = q := by
 theorem continuous_torusMap (M : Matrix (Fin 2) (Fin 2) ℤ) : Continuous M.torusMap := by
   unfold torusMap
   fun_prop
+
+/-- The monomial self-map `Matrix.torusMap M` of the torus, as a continuous map. -/
+def torusContinuousMap (M : Matrix (Fin 2) (Fin 2) ℤ) : C(Circle × Circle, Circle × Circle) :=
+  ⟨M.torusMap, M.continuous_torusMap⟩
+
+@[simp]
+theorem coe_torusContinuousMap (M : Matrix (Fin 2) (Fin 2) ℤ) :
+    ⇑M.torusContinuousMap = M.torusMap :=
+  (rfl)
+
+/-- The continuous self-map of the torus induced by a product of matrices is the composite of
+their continuous self-maps. -/
+theorem torusContinuousMap_comp (M N : Matrix (Fin 2) (Fin 2) ℤ) :
+    M.torusContinuousMap.comp N.torusContinuousMap = (M * N).torusContinuousMap :=
+  ContinuousMap.ext (torusMap_torusMap M N)
+
+/-- The identity matrix induces the identity map of the torus. -/
+@[simp]
+theorem torusContinuousMap_one : torusContinuousMap 1 = ContinuousMap.id (Circle × Circle) :=
+  ContinuousMap.ext torusMap_one
 
 namespace GeneralLinearGroup
 
@@ -98,6 +125,14 @@ theorem torusHomeomorph_apply (A : GL (Fin 2) ℤ) (q : Circle × Circle) :
 
 /-- The homeomorphism of the torus induced by an invertible matrix is its monomial self-map. -/
 theorem coe_torusHomeomorph (A : GL (Fin 2) ℤ) : ⇑A.torusHomeomorph = Matrix.torusMap A :=
+  (rfl)
+
+/-- The homeomorphism of the torus induced by an invertible matrix, as a continuous map, is the
+continuous monomial self-map of the matrix. -/
+@[simp]
+theorem toContinuousMap_torusHomeomorph (A : GL (Fin 2) ℤ) :
+    (A.torusHomeomorph : C(Circle × Circle, Circle × Circle)) =
+      (A : Matrix (Fin 2) (Fin 2) ℤ).torusContinuousMap :=
   (rfl)
 
 /-- The identity matrix acts on the torus by the identity. -/
@@ -135,3 +170,19 @@ theorem torusHomeomorph_swap :
 end GeneralLinearGroup
 
 end Matrix
+
+namespace TauCeti
+
+/-- The determinant-one gluing `(a, b) ↦ (a ^ p b ^ (-t), a ^ q b ^ s)` is the homeomorphism of the
+torus induced by the invertible matrix `[[p, -t], [q, s]]`. -/
+theorem exists_torusHomeomorph_eq_torusGluing (p q s t : ℤ) (h : s * p + t * q = 1) :
+    ∃ A : GL (Fin 2) ℤ, (A : Matrix (Fin 2) (Fin 2) ℤ) = !![p, -t; q, s] ∧
+      A.torusHomeomorph = torusGluing p q s t h := by
+  let M : Matrix.SpecialLinearGroup (Fin 2) ℤ :=
+    ⟨!![p, -t; q, s], by rw [Matrix.det_fin_two_of]; linear_combination h⟩
+  refine ⟨Matrix.SpecialLinearGroup.toGL M, rfl, Homeomorph.ext fun x ↦ ?_⟩
+  rw [Matrix.GeneralLinearGroup.torusHomeomorph_apply, Matrix.SpecialLinearGroup.coe_GL_coe_matrix,
+    Matrix.SpecialLinearGroup.coe_mk, torusGluing_apply]
+  simp
+
+end TauCeti
