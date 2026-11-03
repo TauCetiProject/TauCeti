@@ -10,7 +10,6 @@ public import TauCeti.Algebra.Bigraded.Basic
 public import TauCeti.KnotTheory.Grid.Determinant
 public import TauCeti.KnotTheory.Grid.Grading.Complex
 import Mathlib.Algebra.MonoidAlgebra.MapDomain
-import TauCeti.Algebra.Polynomial.Laurent.Basic
 
 /-!
 # The graded Euler characteristic of the grid chain module
@@ -220,6 +219,13 @@ theorem totalDim_bigradedPoincareSeries (R : Type*) [Semiring R] [StrongRankCond
 private noncomputable def doubleExponents : ℤ[T;T⁻¹] →+* ℤ[T;T⁻¹] :=
   AddMonoidAlgebra.mapDomainRingHom ℤ (nsmulAddMonoidHom 2 : ℤ →+ ℤ)
 
+/-- Doubling exponents sends a Laurent monomial in degree `a` to one in degree `2a`. -/
+private theorem doubleExponents_single (a z : ℤ) :
+    doubleExponents (AddMonoidAlgebra.single a z) = AddMonoidAlgebra.single (2 * a) z := by
+  rw [doubleExponents, AddMonoidAlgebra.mapDomainRingHom_apply,
+    AddMonoidAlgebra.mapDomain_single]
+  rfl
+
 /-- The graded Euler characteristic obtained by applying `Bigraded.euler` to the rank Poincaré
 series of the bigraded grid chain module and then doubling every Alexander exponent.
 
@@ -239,9 +245,8 @@ theorem gradedEulerChar_eq_stateSum (R : Type*) [Semiring R] [StrongRankConditio
       (t := G.bidegreeSupport) (fun x _ => (G.mem_bidegreeSupport_iff _).2 ⟨x, rfl⟩)]
   refine Finset.sum_congr rfl fun g _ => ?_
   rcases g with ⟨m, a⟩
-  rw [Bigraded.euler_single, map_mul, map_natCast, LaurentPolynomial.single_eq_C_mul_T, map_mul,
-    doubleExponents, LaurentPolynomial.mapDomainRingHom_C,
-    LaurentPolynomial.mapDomainRingHom_nsmul_T, Nat.cast_ofNat, G.finrank_bigradedChainPiece R]
+  rw [Bigraded.euler_single, map_mul, map_natCast, doubleExponents_single,
+    G.finrank_bigradedChainPiece R]
   have hconst : ∑ x ∈ Finset.univ.filter (fun x : GridState n => G.bidegree x = (m, a)),
         ((G.1.maslovOℤ x).negOnePow : ℤˣ) • (T (G.1.alexanderTwoℤ x) : ℤ[T;T⁻¹]) =
       ∑ _x ∈ Finset.univ.filter (fun x : GridState n => G.bidegree x = (m, a)),
@@ -253,7 +258,8 @@ theorem gradedEulerChar_eq_stateSum (R : Type*) [Semiring R] [StrongRankConditio
       have ha : G.1.alexanderTwoℤ x = 2 * a := by
         rw [← G.two_mul_alexanderℤ x, ← G.bidegree_snd x, hg]
       rw [hm, ha]
-  rw [hconst, Finset.sum_const, nsmul_eq_mul, Units.smul_def, zsmul_eq_mul]
+  rw [hconst, Finset.sum_const, nsmul_eq_mul, Units.smul_def, zsmul_eq_mul,
+    LaurentPolynomial.single_eq_C_mul_T]
   have hC : LaurentPolynomial.C (m.negOnePow : ℤ) =
       ((m.negOnePow : ℤ) : ℤ[T;T⁻¹]) :=
     map_intCast LaurentPolynomial.C (m.negOnePow : ℤ)

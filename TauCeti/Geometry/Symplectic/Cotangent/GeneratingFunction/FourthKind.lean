@@ -98,7 +98,7 @@ private theorem hasStrictFDerivAt_momentumDerivEquiv (hS : ContDiffAt ℝ 2 S x)
       (hH.choose : (V × W) →L[ℝ] StrongDual ℝ V × StrongDual ℝ W) x := by
   rw [hH.choose_spec, ← (hasFDerivAt_cotangentMomentumProjection
     ((hS.fderiv_right (m := 1) le_rfl).differentiableAt one_ne_zero)).fderiv]
-  exact (contDiffAt_cotangentMomentumProjection (n := 1) hS).hasStrictFDerivAt one_ne_zero
+  exact (contDiffAt_cotangentMomentumProjection (n := 1) hS).hasStrictFDerivAt_fderiv one_ne_zero
 
 section Chart
 

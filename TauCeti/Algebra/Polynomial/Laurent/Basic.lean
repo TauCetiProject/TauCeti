@@ -50,8 +50,6 @@ every `R[T;T⁻¹]`-module. That automorphism is what a shift-compatible invaria
 * `LaurentPolynomial.mapDomainAlgHom_mulRight_T` and
   `LaurentPolynomial.mapDomainAlgHom_mulRight_comp_toAlgHom`: the substitution `T ↦ Tⁿ` sends
   `Tᵐ` to `T^{mn}` and fixes constants.
-* `LaurentPolynomial.mapDomainRingHom_nsmul_T` and `LaurentPolynomial.mapDomainRingHom_C`: the
-  same for the ring map multiplying exponents by a natural number, over any coefficient semiring.
 * `TauCeti.laurentEval_unique`: an algebra map out of `R[T;T⁻¹]` is determined by its value at `T`.
 * `TauCeti.laurentEval_comp_mapDomainAlgHom_mulRight`: evaluating after `T ↦ Tⁿ` is evaluating
   at the `n`-th power.
@@ -97,19 +95,6 @@ theorem mapDomainAlgHom_mulRight_T (n m : ℤ) :
     AddMonoidAlgebra.mapDomainAlgHom R A (AddMonoidHom.mulRight n) (T m) = T (m * n) := by
   simp only [AddMonoidAlgebra.mapDomainAlgHom_apply, AddMonoidHom.coe_mulRight, T,
     AddMonoidAlgebra.mapDomain_single]
-
-/-- Multiplying every exponent by `k` sends the Laurent monomial `Tᵐ` to `T^{km}`. -/
-theorem mapDomainRingHom_nsmul_T (k : ℕ) (m : ℤ) :
-    AddMonoidAlgebra.mapDomainRingHom A (nsmulAddMonoidHom k : ℤ →+ ℤ) (T m) = T (k * m) := by
-  rw [T, AddMonoidAlgebra.mapDomainRingHom_apply, AddMonoidAlgebra.mapDomain_single,
-    nsmulAddMonoidHom_apply, nsmul_eq_mul, T]
-
-/-- Changing exponents along an additive endomorphism of `ℤ` fixes the constant Laurent
-polynomials. -/
-theorem mapDomainRingHom_C (f : ℤ →+ ℤ) (a : A) :
-    AddMonoidAlgebra.mapDomainRingHom A f (C a) = C a := by
-  rw [← single_eq_C, AddMonoidAlgebra.mapDomainRingHom_apply, AddMonoidAlgebra.mapDomain_single,
-    map_zero]
 
 /-- The substitution `T ↦ Tⁿ` fixes the constant Laurent polynomials. -/
 @[simp]

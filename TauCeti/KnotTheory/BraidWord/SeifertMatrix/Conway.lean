@@ -5,17 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.KnotTheory.BraidWord.ArtinEquivalence
-public import TauCeti.KnotTheory.BraidWord.FreeCancellation.Basic
 public import TauCeti.KnotTheory.BraidWord.SeifertMatrix.Basic
 public import TauCeti.KnotTheory.SeifertMatrix.Conway
 
 import TauCeti.Data.List.Rotate
-import TauCeti.KnotTheory.BraidWord.FreeCancellation.SeifertMatrix
-import TauCeti.KnotTheory.BraidWord.SeifertMatrix.BraidRelation
 
 /-!
-# The Seifert determinant of a closed braid: moves and the Conway skein relation
+# The Conway skein relation for the Seifert determinant of a closed braid
 
 For a braid word `w`, Seifert's algorithm on its closure gives the canonical Seifert surface whose
 Seifert matrix is `TauCeti.BraidWord.seifertMatrix w`, and `Δ(w) = det(s V - s⁻¹ Vᵀ)` is its
@@ -45,26 +41,12 @@ leaves the Seifert matrix of `v`. The skein calculation for a single diagonal en
 
 The hypothesis on the level cannot be dropped. On two strands, `σ₁` and `σ₁⁻¹` both have the empty
 Seifert matrix and determinant `1`, as does the empty word, whose canonical surface consists of two
-disjoint discs: the left side of the relation vanishes and the right side does not. A letter alone
-on its level has a sign that does not affect the Seifert matrix at all
-(`TauCeti.BraidWord.seifertConwayDeterminant_seifertMatrix_append_cons_of_not_exists`).
-
-The file also records how `Δ` behaves under the moves of braid words. Artin relations, Markov
-stabilization, and free insertion of an inverse pair on a level already in use keep it, since they
-change the Seifert matrix by relabellings, unimodular congruences and elementary enlargements. A
-free insertion on a level carrying no letter joins two components of the canonical surface, adds a
-zero row and column to the Seifert matrix, and makes `Δ` vanish.
+disjoint discs: the left side of the relation vanishes and the right side does not.
 
 ## Main results
 
 * `TauCeti.BraidWord.seifertConwayDeterminant_seifertMatrix_rotate`: cyclic rotation of a braid
   word keeps the Seifert determinant.
-* `TauCeti.BraidWord.seifertConwayDeterminant_seifertMatrix_eq_of_artinStep`,
-  `TauCeti.BraidWord.seifertConwayDeterminant_seifertMatrix_insert` and
-  `TauCeti.BraidWord.seifertConwayDeterminant_seifertMatrix_stabilize`: Artin relations, free
-  insertion on a level in use, and stabilization keep the Seifert determinant.
-* `TauCeti.BraidWord.seifertConwayDeterminant_seifertMatrix_insert_eq_zero_of_not_exists`: free
-  insertion on an unused level makes it vanish.
 * `TauCeti.BraidWord.seifertConwayDeterminant_seifertMatrix_skein`: the Seifert determinant of
   closed braids satisfies the Conway skein relation.
 
@@ -105,61 +87,6 @@ theorem seifertConwayDeterminant_seifertMatrix_rotate (w : BraidWord n) (k : ℕ
   List.apply_rotate_of_append_singleton
     (fun w : BraidWord n ↦ w.seifertMatrix.seifertConwayDeterminant)
     seifertConwayDeterminant_seifertMatrix_append_singleton w k
-
-/-! ### Moves of braid words
-
-The moves generating equality of braids, together with Markov stabilization, change the Seifert
-matrix by a relabelling, a unimodular congruence, or an elementary enlargement, none of which
-changes the Seifert determinant. The exception is a free insertion on a level carrying no letter,
-which joins two components of the canonical surface and makes the determinant vanish. -/
-
-/-- An Artin relation step keeps the Seifert determinant. -/
-theorem seifertConwayDeterminant_seifertMatrix_eq_of_artinStep {w w' : BraidWord n}
-    (h : ArtinStep w w') :
-    w.seifertMatrix.seifertConwayDeterminant = w'.seifertMatrix.seifertConwayDeterminant := by
-  obtain ⟨ι, P, hP, h⟩ := exists_seifertMatrix_of_artinStep h
-  rw [h, seifertConwayDeterminant_submatrix_equiv_self,
-    seifertConwayDeterminant_congruence_of_det_sq_eq_one _ (Int.isUnit_sq hP)]
-
-/-- Inserting an inverse pair of letters on a level already in use keeps the Seifert
-determinant. -/
-theorem seifertConwayDeterminant_seifertMatrix_insert (u v : BraidWord n) (i : Fin (n - 1))
-    (ε : ℤˣ) (h : ∃ x ∈ u ++ v, x.1 = i) :
-    (u ++ (i, ε) :: (i, -ε) :: v).seifertMatrix.seifertConwayDeterminant =
-      (u ++ v).seifertMatrix.seifertConwayDeterminant := by
-  rcases Int.units_eq_one_or ε with rfl | rfl
-  · obtain ⟨ι, P, η, hP, hPV⟩ := exists_seifertMatrix_insert_congr_enlargeRow u v i h
-    rw [← seifertConwayDeterminant_enlargeRow _ η, ← hPV,
-      seifertConwayDeterminant_congruence_of_det_sq_eq_one _ (Int.isUnit_sq hP),
-      seifertConwayDeterminant_submatrix_equiv_self]
-  · obtain ⟨ι, P, ξ, hP, hPV⟩ := exists_seifertMatrix_insert_congr_enlargeColumn u v i h
-    rw [neg_neg, ← seifertConwayDeterminant_enlargeColumn _ ξ, ← hPV,
-      seifertConwayDeterminant_congruence_of_det_sq_eq_one _ (Int.isUnit_sq hP),
-      seifertConwayDeterminant_submatrix_equiv_self]
-
-/-- Inserting an inverse pair of letters on a level carrying no letter makes the Seifert
-determinant vanish: the Seifert matrix gains a zero row and column. -/
-theorem seifertConwayDeterminant_seifertMatrix_insert_eq_zero_of_not_exists (u v : BraidWord n)
-    (i : Fin (n - 1)) (ε : ℤˣ) (h : ¬∃ x ∈ u ++ v, x.1 = i) :
-    (u ++ (i, ε) :: (i, -ε) :: v).seifertMatrix.seifertConwayDeterminant = 0 := by
-  obtain ⟨ι, hι⟩ := exists_seifertMatrix_insert_eq_fromBlocks u v i ε h
-  rw [← seifertConwayDeterminant_submatrix_equiv_self _ ι, hι,
-    seifertConwayDeterminant_fromBlocks_zero, seifertConwayDeterminant_zero, mul_zero]
-
-/-- Markov stabilization keeps the Seifert determinant. -/
-theorem seifertConwayDeterminant_seifertMatrix_stabilize (w : BraidWord (n + 1)) (ε : ℤˣ) :
-    (w.stabilize ε).seifertMatrix.seifertConwayDeterminant =
-      w.seifertMatrix.seifertConwayDeterminant := by
-  obtain ⟨ι, hι⟩ := exists_seifertMatrix_stabilize w ε
-  rw [hι, seifertConwayDeterminant_submatrix_equiv_self]
-
-/-- The sign of a letter alone on its level does not change the Seifert determinant. -/
-theorem seifertConwayDeterminant_seifertMatrix_append_cons_of_not_exists (u v : BraidWord n)
-    (i : Fin (n - 1)) (ε ε' : ℤˣ) (h : ¬∃ x ∈ u ++ v, x.1 = i) :
-    (u ++ (i, ε) :: v).seifertMatrix.seifertConwayDeterminant =
-      (u ++ (i, ε') :: v).seifertMatrix.seifertConwayDeterminant := by
-  obtain ⟨ι, hι⟩ := exists_seifertMatrix_append_cons_of_not_exists u v i ε ε' h
-  rw [hι, seifertConwayDeterminant_submatrix_equiv_self]
 
 /-! ### Appending a letter -/
 

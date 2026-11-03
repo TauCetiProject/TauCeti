@@ -77,14 +77,16 @@ Hermitian form `(1 - ω) V + (1 - conj ω) Vᵀ`, where `V` is the Seifert matri
 Seifert surface of the closure of a word representing the braid. It does not depend on the word
 (`TauCeti.MarkovBraid.tristramLevineSignature_eq_of_toBraid_eq`). -/
 noncomputable def tristramLevineSignature (β : MarkovBraid) (ω : ℂ) : ℤ :=
-  β.liftWord fun _ w ↦ KnotTheory.tristramLevineSignature (w.seifertMatrix.map ((↑) : ℤ → ℝ)) ω
+  liftWord (fun w ↦ KnotTheory.tristramLevineSignature
+    (w.seifertMatrix.map ((↑) : ℤ → ℝ)) ω) β
 
 /-- The Tristram–Levine signature of a braid is computed by any word representing it. -/
 theorem tristramLevineSignature_eq_of_toBraid_eq {β : MarkovBraid}
     {w : BraidWord (β.predStrands + 1)} (hw : w.toBraid = β.braid) (ω : ℂ) :
     β.tristramLevineSignature ω =
       KnotTheory.tristramLevineSignature (w.seifertMatrix.map ((↑) : ℤ → ℝ)) ω :=
-  liftWord_eq_of_toBraid_eq (fun h ↦ tristramLevineSignature_seifertMatrix_eq_of_toBraid_eq h ω) hw
+  liftWord_eq_of_toBraid_eq _
+    (fun h ↦ tristramLevineSignature_seifertMatrix_eq_of_toBraid_eq h ω) hw
 
 /-- The Tristram–Levine signature of the braid represented by a word is that of the word's Seifert
 matrix. -/
@@ -99,7 +101,7 @@ end MarkovBraid
 /-- A single Markov move does not change the Tristram–Levine signature. -/
 theorem IsMarkovMove.tristramLevineSignature_eq {β γ : MarkovBraid} (h : IsMarkovMove β γ)
     (ω : ℂ) : β.tristramLevineSignature ω = γ.tristramLevineSignature ω :=
-  h.liftWord_eq (fun h ↦ tristramLevineSignature_seifertMatrix_eq_of_toBraid_eq h ω)
+  h.liftWord_eq _ (fun hw ↦ tristramLevineSignature_seifertMatrix_eq_of_toBraid_eq hw ω)
     (fun w k ↦ tristramLevineSignature_seifertMatrix_rotate w k ω)
     (fun w ε ↦ tristramLevineSignature_seifertMatrix_stabilize w ε ω)
 
@@ -108,7 +110,7 @@ Tristram–Levine signature at every `ω`; by Markov's theorem, it is an invaria
 link obtained by closing the braid. -/
 theorem MarkovEquiv.tristramLevineSignature_eq {β γ : MarkovBraid} (h : MarkovEquiv β γ)
     (ω : ℂ) : β.tristramLevineSignature ω = γ.tristramLevineSignature ω :=
-  h.liftWord_eq (fun h ↦ tristramLevineSignature_seifertMatrix_eq_of_toBraid_eq h ω)
+  h.liftWord_eq _ (fun hw ↦ tristramLevineSignature_seifertMatrix_eq_of_toBraid_eq hw ω)
     (fun w k ↦ tristramLevineSignature_seifertMatrix_rotate w k ω)
     (fun w ε ↦ tristramLevineSignature_seifertMatrix_stabilize w ε ω)
 

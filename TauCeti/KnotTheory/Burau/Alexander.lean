@@ -59,8 +59,6 @@ Everything is stated over an arbitrary commutative ring `R` and an arbitrary uni
 * `TauCeti.MarkovBraid.burauAlexander_conj`,
   `TauCeti.MarkovBraid.burauAlexander_stabilize` and
   `TauCeti.MarkovBraid.burauAlexander_stabilizeInv`: the effect of each Markov move.
-* `TauCeti.MarkovBraid.burauAlexander_strandIncl`: the invariant vanishes on a braid with an
-  uncrossed strand, whose closure is split.
 * `TauCeti.MarkovEquiv.associated_burauAlexander`: Markov-equivalent braids have associated
   invariants.
 * `TauCeti.MarkovBraid.burauAlexander_sigma_pow_three`: the trefoil value `-t (t ^ 2 - t + 1)`.

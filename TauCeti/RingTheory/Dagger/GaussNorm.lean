@@ -16,7 +16,8 @@ multiplicative norm when the coefficient norm is multiplicative. Over a normed f
 a normed algebra. This is the norm used to form residue norms of dagger algebras.
 
 The inclusion `toTate` is an isometry. Coefficient bounds characterize the norm, constants
-retain their norm, and the variables have norm one. Polynomials are dense for this norm.
+retain their norm, the variables have norm one, and renaming the variables preserves the norm.
+Polynomials are dense for this norm.
 
 ## References
 
@@ -99,6 +100,16 @@ theorem norm_X [NormOneClass R] (i : σ) : ‖X σ R i‖ = 1 := by
   have h : toTate σ R (X σ R i) =
       ⟨MvPowerSeries.X i, isRestricted_X _ i⟩ := Subtype.ext (by simp)
   rw [h, MvPowerSeries.norm_X]
+
+/-- Renaming the variables preserves the Gauss norm. -/
+@[simp]
+theorem norm_renameAlgEquiv {τ : Type*} (e : σ ≃ τ) (f : washnitzerAlgebra σ R) :
+    ‖renameAlgEquiv e f‖ = ‖f‖ := by
+  rw [← norm_toTate, ← norm_toTate]
+  have h : toTate τ R (renameAlgEquiv e f) =
+      IsRestricted.renameAlgEquiv e (fun _ ↦ (1 : ℝ)) (toTate σ R f) :=
+    Subtype.ext (by simp)
+  rw [h, IsRestricted.norm_renameAlgEquiv]
 
 /-- Polynomials are dense in the Monsky–Washnitzer algebra for the Gauss norm. -/
 theorem denseRange_ofMvPolynomial : DenseRange (ofMvPolynomial σ R) := by
