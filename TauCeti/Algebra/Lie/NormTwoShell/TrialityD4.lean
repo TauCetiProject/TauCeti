@@ -82,17 +82,14 @@ theorem basis_repr_invariantRoot_inl (negative : Bool) (o : Fin 6) (i : Fin 4) :
 /-- The twelve invariant root vectors are linearly independent over the integers. -/
 theorem linearIndependent_invariantRoot :
     LinearIndependent ℤ (Function.uncurry invariantRoot) := by
-  classical
-  apply Fintype.linearIndependent_iff.mpr
-  intro c hc p
-  have h := congrArg
-    (fun x ↦ (ShellLieAlgebra.basis (CartanMatrix.D 4)).repr x
-      (.inr (root p.1 (representative p.2)))) hc
-  have hprod (q : Bool × Fin 6) : (q.1 = p.1 ∧ p.2 = q.2) ↔ q = p := by
-    constructor
-    · exact fun h ↦ Prod.ext h.1 h.2.symm
-    · rintro rfl
-      exact ⟨rfl, rfl⟩
-  simpa [Function.uncurry_def, Finsupp.sum_apply, Finset.sum_apply, hprod] using h
+  refine LinearIndependent.of_pairwise_dual_eq_zero_one _
+    (fun p ↦ (Finsupp.lapply (.inr (root p.1 (representative p.2)))).comp
+      (ShellLieAlgebra.basis (CartanMatrix.D 4)).repr.toLinearMap) ?_ ?_
+  · intro p q hpq
+    have h : ¬ (q.1 = p.1 ∧ p.2 = q.2) :=
+      fun h ↦ hpq (Prod.ext h.1.symm h.2)
+    simp [Function.uncurry_def, h]
+  · intro p
+    simp [Function.uncurry_def]
 
 end TauCeti.D4Triality
