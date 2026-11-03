@@ -189,7 +189,7 @@ theorem sub_algebraMap_algebraMapInv_mem_symmetricAlgebraHilbertIdeal
 
 /-- The representation of `G` on the **coinvariant algebra** `Sym M ⧸ A₊ · Sym M` induced by `ρ`:
 the Hilbert ideal is stable under the induced action, so each `g` descends to the quotient, where
-it acts by an algebra automorphism.
+it acts by an algebra endomorphism (an automorphism when `G` is a group).
 
 This is not Mathlib's `Representation.Coinvariants`, the largest quotient of a representation on
 which the group acts trivially. -/
