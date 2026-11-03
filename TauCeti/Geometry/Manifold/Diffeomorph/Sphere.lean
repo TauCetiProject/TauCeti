@@ -40,6 +40,8 @@ direction and the speed of a family of tangent vectors at `-u`, one level at a t
   sphere to itself and is smooth along `ℝ × Sⁿ`.
 * `TauCeti.coe_boostRotateDiffeomorph_apply_fst`, `TauCeti.boostRotateDiffeomorph_apply_snd`: the
   two components of `boostRotateDiffeomorph`.
+* `TauCeti.coe_boostRotateDiffeomorph_symm_apply_fst`,
+  `TauCeti.boostRotateDiffeomorph_symm_apply_snd`: the two components of its inverse.
 * `TauCeti.fderiv_boostRotate_apply_zero`: the derivative of `boostRotate` at its fixed point.
 -/
 
@@ -137,6 +139,22 @@ theorem coe_boostRotateDiffeomorph_apply_fst (hu : ‖u‖ = 1) (hα : ContDiff 
 theorem boostRotateDiffeomorph_apply_snd (hu : ‖u‖ = 1) (hα : ContDiff ℝ ∞ α)
     (hQ : ContDiff ℝ ∞ fun p : ℝ × E => Q p.1 p.2) (p : sphere (0 : E) 1 × ℝ) :
     (boostRotateDiffeomorph (n := n) hu hα hQ p).2 = p.2 :=
+  (rfl)
+
+/-- The sphere component of the inverse of `boostRotateDiffeomorph` is the boost of rapidity
+`-α s` followed by `(Q s)⁻¹`, at the level `s` of the point. -/
+@[simp]
+theorem coe_boostRotateDiffeomorph_symm_apply_fst (hu : ‖u‖ = 1) (hα : ContDiff ℝ ∞ α)
+    (hQ : ContDiff ℝ ∞ fun p : ℝ × E => Q p.1 p.2) (p : sphere (0 : E) 1 × ℝ) :
+    (((boostRotateDiffeomorph (n := n) hu hα hQ).symm p).1 : E) =
+      (Q p.2).symm (sphereBoost u (-α p.2) p.1) :=
+  (rfl)
+
+/-- The inverse of `boostRotateDiffeomorph` preserves the levels. -/
+@[simp]
+theorem boostRotateDiffeomorph_symm_apply_snd (hu : ‖u‖ = 1) (hα : ContDiff ℝ ∞ α)
+    (hQ : ContDiff ℝ ∞ fun p : ℝ × E => Q p.1 p.2) (p : sphere (0 : E) 1 × ℝ) :
+    ((boostRotateDiffeomorph (n := n) hu hα hQ).symm p).2 = p.2 :=
   (rfl)
 
 /-- At a point `-u` fixed by every `Q s`, the derivative of `boostRotate` in a direction `(0, ξ)`
