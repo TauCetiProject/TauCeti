@@ -298,7 +298,7 @@ private theorem quotientAction_apply_mk_one {N : ℤ} {y : UK}
     simp [← Prod.zero_eq_mk]
   | zero => simp
   | add y z _ _ hy hz => simp [hy, hz]
-  | smul r y _ hy => simp [Module.End.mul_apply, hy]
+  | smul r y _ hy => simp [mul_apply_eq_comp, hy]
 
 /-- **The preimage of `I_N` in `U_pol` is `I_N^pol`.** An element of `U(ĝ_pol) / (ι K - a)` lies in
 `I_N^pol` exactly when its image in `U(ĝ) / (ι K - a)` lies in `I_N`. -/
