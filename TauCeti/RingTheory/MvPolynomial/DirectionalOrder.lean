@@ -65,7 +65,7 @@ theorem coeff_aeval_C_mul_X (p : MvPolynomial σ R) (v : σ → R) (m : ℕ) :
   refine Finset.sum_congr rfl fun d _ ↦ ?_
   by_cases h : d.degree = m
   · simp [h]
-  · simp [h, Ne.symm h]
+  · simp [Ne.symm h]
 
 /-- Translating the polynomial first gives the restriction to an affine line. -/
 theorem aeval_C_add_C_mul_X_eq (p : MvPolynomial σ R) (a v : σ → R) :

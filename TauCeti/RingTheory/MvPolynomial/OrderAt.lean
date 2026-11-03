@@ -300,7 +300,8 @@ theorem taylor_eq_zero {a : σ → R} {p : MvPolynomial σ R} : taylor a p = 0 �
       intro q b hq
       apply (finSuccEquiv R n).injective
       rw [map_zero, ← Polynomial.taylor_eq_zero (C (b 0))]
-      apply Polynomial.ext
+      apply AddMonoidAlgebra.ext
+      apply Finsupp.ext
       intro k
       rw [Polynomial.coeff_zero]
       apply ih _ (Fin.tail b)
