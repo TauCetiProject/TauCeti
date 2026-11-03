@@ -221,6 +221,17 @@ theorem norm_le_iff {a : Gauss c E} {B : ℝ} :
     ‖a‖ ≤ B ↔ ∀ t, ‖(a : (σ →₀ ℕ) → E) t‖ * t.prod (c · ^ ·) ≤ B :=
   ⟨fun h t ↦ (norm_coeff_mul_prod_le a t).trans h, fun h ↦ ciSup_le h⟩
 
+/-- A uniform coefficient norm bound gives the same bound for the Gauss seminorm. -/
+theorem norm_le_mul_of_norm_coeff_le [SeminormedAddCommGroup F] {a : Gauss c E}
+    {b : Gauss c F} {L : ℝ} (hL : 0 ≤ L) (h : ∀ t, ‖a t‖ ≤ L * ‖b t‖) :
+    ‖a‖ ≤ L * ‖b‖ :=
+  norm_le_iff.mpr fun t ↦ calc
+    _ ≤ (L * ‖b t‖) * t.prod (c · ^ ·) :=
+      mul_le_mul_of_nonneg_right (h t) (prod_pow_pos t).le
+    _ ≤ L * ‖b‖ := by
+      rw [mul_assoc]
+      exact mul_le_mul_of_nonneg_left (norm_coeff_mul_prod_le b t) hL
+
 /-- Coefficient projections have bound the inverse of the monomial weight. -/
 theorem norm_coeff_le (a : Gauss c E) (t : σ →₀ ℕ) :
     ‖(a : (σ →₀ ℕ) → E) t‖ ≤ (t.prod (c · ^ ·))⁻¹ * ‖a‖ := by
@@ -305,14 +316,9 @@ variable [SeminormedAddCommGroup F] [Module R F] [IsBoundedSMul R F]
 theorem norm_mapLinearMap_le (φ : E →ₗ[R] F) {C : ℝ} (hC : 0 ≤ C)
     (hφ : ∀ e, ‖φ e‖ ≤ C * ‖e‖) (a : Gauss c E) :
     ‖mapLinearMap φ hφ a‖ ≤ C * ‖a‖ :=
-  norm_le_iff.mpr fun t ↦ by
+  norm_le_mul_of_norm_coeff_le hC fun t ↦ by
     rw [mapLinearMap_apply]
-    calc
-      _ ≤ (C * ‖(a : (σ →₀ ℕ) → E) t‖) * t.prod (c · ^ ·) :=
-        mul_le_mul_of_nonneg_right (hφ _) (prod_pow_pos t).le
-      _ ≤ C * ‖a‖ := by
-        rw [mul_assoc]
-        exact mul_le_mul_of_nonneg_left (norm_coeff_mul_prod_le a t) hC
+    exact hφ _
 
 /-- The map induced by a bounded coefficient linear map is uniformly continuous. -/
 theorem uniformContinuous_mapLinearMap (φ : E →ₗ[R] F) {C : ℝ} (hC : 0 ≤ C)
