@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import TauCeti.Analysis.Convex.SimplicialComplex.Subdivision
 import TauCeti.Analysis.Convex.Intrinsic
 import TauCeti.Analysis.Convex.SimplicialComplex.Carrier
+import TauCeti.Topology.LocallyFinite.Basic
 
 /-!
 # Common subdivisions of geometric simplicial complexes
@@ -95,14 +96,7 @@ theorem exists_space_eq_inter (hK : LocallyFinite fun s : K.faces => convexHull 
     let q : ι := ⟨(⟨σ', hσ'⟩, ⟨τ', hτ'⟩), x, hxσ', hxτ'⟩
     exact ⟨q, (hri q).symm ▸ ⟨hxσ', hxτ'⟩, inter_subset_inter
       (convexHull_mono (Finset.coe_subset.2 hσσ')) (convexHull_mono (Finset.coe_subset.2 hττ'))⟩
-  have hPlf : LocallyFinite P := by
-    intro x
-    obtain ⟨U, hU, hUf⟩ := hK x
-    obtain ⟨V, hV, hVf⟩ := hL x
-    refine ⟨U ∩ V, Filter.inter_mem hU hV,
-      ((hUf.prod hVf).preimage Subtype.val_injective.injOn).subset ?_⟩
-    rintro p ⟨y, ⟨hyσ, hyτ⟩, hyU, hyV⟩
-    exact ⟨⟨y, hyσ, hyU⟩, ⟨y, hyτ, hyV⟩⟩
+  have hPlf : LocallyFinite P := (hK.inter hL).comp_injective Subtype.val_injective
   have hdisj : Pairwise fun p q : ι => Disjoint (intrinsicInterior ℝ (P p))
       (intrinsicInterior ℝ (P q)) := by
     intro p q hpq
