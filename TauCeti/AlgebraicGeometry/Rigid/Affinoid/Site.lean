@@ -35,41 +35,6 @@ open CategoryTheory
 
 universe u
 
-section Order
-
-variable {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
-  {A : Type u} [CommRing A] [Algebra K A] [hA : Fact (IsAffinoidAlgebra K A)]
-
-/-- The whole spectrum and the empty set are affinoid subdomains. -/
-instance : BoundedOrder (AffinoidSubdomain K A) where
-  top := univ hA.out
-  le_top U := U.le_univ hA.out
-  bot := empty hA.out
-  bot_le U := by
-    rw [← SetLike.coe_subset_coe, coe_empty]
-    exact Set.empty_subset _
-
-@[simp]
-theorem coe_top : (↑(⊤ : AffinoidSubdomain K A) : Set (MaximalSpectrum A)) = Set.univ := by
-  -- The top subdomain is the existing `univ` construction.
-  exact coe_univ hA.out
-
-@[simp]
-theorem coe_bot : (↑(⊥ : AffinoidSubdomain K A) : Set (MaximalSpectrum A)) = ∅ := by
-  -- The bottom subdomain is the existing `empty` construction.
-  exact coe_empty hA.out
-
-/-- The order embedding of affinoid subdomains into the subsets of the classical spectrum. -/
-def setEmbedding : AffinoidSubdomain K A ↪o Set (MaximalSpectrum A) :=
-  .ofMapLEIff (↑) (fun _ _ ↦ SetLike.coe_subset_coe)
-
-omit hA in
-@[simp]
-theorem setEmbedding_apply (U : AffinoidSubdomain K A) :
-    setEmbedding U = (U : Set (MaximalSpectrum A)) := (rfl)
-
-end Order
-
 section Site
 
 variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
