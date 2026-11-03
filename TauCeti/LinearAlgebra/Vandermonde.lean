@@ -561,8 +561,8 @@ theorem prod_factorial_dvd_prod_two_mul_add_one_mul_prod_sub_mul_add_add_one (m 
 
 /-- **Nonvanishing power sums.** Let `θ` be pairwise distinct on a finite set `s` of indices of a
 domain, and let `w` be nonzero somewhere on `s`. Then one of the power sums
-`∑ i ∈ s, w i * θ i ^ k` with `k < #s` is nonzero, since the Vandermonde matrix of the nodes is
-invertible. -/
+`∑ i ∈ s, w i * θ i ^ k` with `k < #s` is nonzero, since the Vandermonde matrix of the nodes has
+nonzero determinant, so it has trivial kernel. -/
 theorem exists_lt_card_sum_mul_pow_ne_zero {ι R : Type*} [CommRing R] [IsDomain R]
     {s : Finset ι} {θ w : ι → R} (hθ : Set.InjOn θ s) (hw : ∃ i ∈ s, w i ≠ 0) :
     ∃ k < #s, ∑ i ∈ s, w i * θ i ^ k ≠ 0 := by

@@ -32,11 +32,11 @@ fails to vanish at one of these points, say at `t₀`: the number `ρ = y_r(t₀
 it satisfies Liouville's lower bound, while the vanishing of all lower derivatives gives an
 analytic upper bound for `|R⁽ʳ⁾(t₀)| = |λ| ^ r |σ ρ|`.
 
-This file proves that such `r` and `t₀` exist, with `n ≤ r < q ^ 2`, as soon as `η ≠ 0`. For each
-fixed `t`, the values `y_k(t)` are the power sums `∑ w_{ab} θ_{ab} ^ k` with weights
-`w_{ab} = η_{ab} α ^ (a t) γ ^ (b t)` and nodes `θ_{ab} = a + b β`. The nodes are pairwise distinct
-because `β` is irrational, so the Vandermonde matrix of the nodes is invertible and one of the
-first `q ^ 2` power sums is nonzero. In Lean the indices `a, b` run over `Fin q`, and the
+This file proves that such `r` and `t₀` exist, with `n ≤ r < q ^ 2`, as soon as `λ ≠ 0` and
+`η ≠ 0`. For each fixed `t`, the values `y_k(t)` are the power sums `∑ w_{ab} θ_{ab} ^ k` with
+weights `w_{ab} = η_{ab} α ^ (a t) γ ^ (b t)` and nodes `θ_{ab} = a + b β`. The nodes are pairwise
+distinct because `β` is irrational, so the Vandermonde matrix of the nodes is invertible and one of
+the first `q ^ 2` power sums is nonzero. In Lean the indices `a, b` run over `Fin q`, and the
 frequencies are written `(a + 1) + (b + 1) β`.
 
 ## Main results
