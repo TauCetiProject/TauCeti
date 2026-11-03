@@ -173,13 +173,10 @@ theorem measureReal_sum_ge_le_of_hasSubexponentialMGF (h_indep : iIndepFun X μ)
    rw [abs_of_pos hθ]
    exact hθle
  have hupperInt : Integrable (fun ω => exp (θ * (∑ i ∈ s, X i ω))) μ := by
-   have h := integrable_exp_mul_sum_of_aemeasurable
-     (h_indep.precomp Subtype.val_injective)
-     (fun i : s => (hX i.1 i.2).integrable.aestronglyMeasurable.aemeasurable)
-     (s := Finset.univ) (t := θ) (fun i _ => by
-       simpa [hmean i.1 i.2] using
-         (hX i.1 i.2).integrable_exp_mul_centered θ hθbound)
-   simpa only [Finset.sum_apply, ← Finset.sum_coe_sort s] using h
+   exact integrable_exp_mul_sum_of_aemeasurable h_indep (s := s)
+     (fun i hi => (hX i hi).integrable.aestronglyMeasurable.aemeasurable)
+     (fun i hi => by
+       simpa [hmean i hi] using (hX i hi).integrable_exp_mul_centered θ hθbound)
  have hexponent : -θ * t + V * θ ^ 2 ≤ -t ^ 2 / (4 * D) := by
    dsimp [θ, D, V]
    field_simp

@@ -133,13 +133,11 @@ theorem mgf_sum_of_aemeasurable (h_indep : iIndepFun X μ) {s : Finset ι}
 exponentials has an integrable exponential. This weakens the measurability hypothesis of
 `ProbabilityTheory.iIndepFun.integrable_exp_mul_sum`. -/
 theorem integrable_exp_mul_sum_of_aemeasurable (h_indep : iIndepFun X μ)
-    (h_meas : ∀ i, AEMeasurable (X i) μ) {s : Finset ι}
+    {s : Finset ι} (h_meas : ∀ i ∈ s, AEMeasurable (X i) μ)
     (h_int : ∀ i ∈ s, Integrable (fun ω => Real.exp (t * X i ω)) μ) :
     Integrable (fun ω => Real.exp (t * (∑ i ∈ s, X i ω))) μ := by
   rw [← mgf_pos_iff]
-  have h := h_indep.mgf_sum₀ h_meas s (t := t)
-  rw [mgf, Finset.sum_fn] at h
-  rw [mgf, h]
+  rw [h_indep.mgf_sum_of_aemeasurable h_meas (t := t)]
   exact Finset.prod_pos fun i hi => mgf_pos (h_int i hi)
 
 end ProbabilityTheory.iIndepFun
