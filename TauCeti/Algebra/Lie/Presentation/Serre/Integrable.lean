@@ -167,7 +167,7 @@ theorem iSupIndep_iInf_eigenspace_ad [IsDomain R] [CharZero R] [Module.IsTorsion
     iSupIndep fun χ : B → ℤ => ⨅ i, (ad R L (H i)).eigenspace (χ i : R) := by
   have hcomm : ∀ i j, Commute (ad R L (H i)) (ad R L (H j)) := fun i j =>
     (commute_iff_eq _ _).2 <| LinearMap.ext fun z => by
-      simp only [Module.End.mul_apply, ad_apply]
+      simp only [mul_apply_eq_comp, ad_apply]
       rw [leibniz_lie, h.lie_H_H i j, zero_lie, zero_add]
   have hindep := Module.End.independent_iInf_maxGenEigenspace_of_forall_mapsTo
     (fun i => ad R L (H i)) fun i j φ => Module.End.mapsTo_maxGenEigenspace_of_comm (hcomm j i) φ

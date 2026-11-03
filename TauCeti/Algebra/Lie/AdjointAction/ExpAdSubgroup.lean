@@ -126,17 +126,17 @@ theorem expAd_apply_sub_sub_mem {e y v : L} {k : ℕ} (hy : IsNilpotent (ad K L 
       rw [zero_add, pow_one, ad_apply]
       exact hyv
     | succ m ih =>
-      rw [pow_succ', Module.End.mul_apply, ad_apply]
+      rw [pow_succ', mul_apply_eq_comp, ad_apply]
       exact antitone_ker_inf_range_pow e (Nat.le_add_right k k)
         (lie_mem_ker_inf_range_pow_add hyk ih)
   have hpow₂ (m : ℕ) : (ad K L y ^ (m + 2)) v ∈ F (k + k) := by
-    rw [pow_succ', Module.End.mul_apply, ad_apply]
+    rw [pow_succ', mul_apply_eq_comp, ad_apply]
     exact lie_mem_ker_inf_range_pow_add hyk (hpow m)
   obtain ⟨N, hN⟩ := id hy
   rw [expAd_apply_eq_sum hy (k := N + 2) (by rw [pow_add, hN, zero_mul, LinearMap.zero_apply]),
     Finset.sum_range_succ', Finset.sum_range_succ']
   simp only [Nat.factorial_zero, Nat.factorial_one, Nat.cast_one, inv_one, pow_zero, pow_one,
-    one_smul, Module.End.one_apply, ad_apply, zero_add]
+    one_smul, one_apply_eq_self, ad_apply, zero_add]
   rw [add_sub_cancel_right, add_sub_cancel_right]
   exact Submodule.sum_mem _ fun m _ => Submodule.smul_of_tower_mem _ _ (hpow₂ m)
 

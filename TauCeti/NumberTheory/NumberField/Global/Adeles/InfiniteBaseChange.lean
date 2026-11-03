@@ -49,6 +49,7 @@ private local instance (priority := 50) :
     IsScalarTower K (InfiniteAdeleRing K) (InfiniteAdeleRing L) :=
   IsScalarTower.of_algebraMap_eq fun x ↦ by
     rw [algebraMap_infiniteAdeleExtensionAlgebra]
+    rw [IsScalarTower.algebraMap_apply K L (InfiniteAdeleRing L)]
     exact (infiniteAdeleExtension_algebraMap K L x).symm
 
 /-- The scalar-extension map of infinite adeles, using the completion maps at the places above
@@ -80,7 +81,7 @@ theorem infiniteAdeleBaseChangeHom_tmul_apply (a : InfiniteAdeleRing K) (x : L)
   change (infiniteAdeleExtension K L a) w *
     (algebraMap L (InfiniteAdeleRing L) x) w = _
   rw [infiniteAdeleExtension_apply, InfiniteAdeleRing.algebraMap_apply]
-  rfl
+  rw [InfinitePlace.Completion.algebraMap_apply]
 
 /-- **Infinite adeles grouped by places of the base field.** The infinite adeles of `L` are the
 product over the infinite places `v` of `K` of the families of components at the places of `L`
@@ -143,7 +144,7 @@ private theorem baseChangeLinearEquiv_apply (t : InfiniteAdeleRing K ⊗[K] L) :
     change _ = (infiniteAdeleExtension K L a) w *
       (algebraMap L (InfiniteAdeleRing L) x) w
     rw [infiniteAdeleExtension_apply, InfiniteAdeleRing.algebraMap_apply]
-    rfl
+    rw [InfinitePlace.Completion.algebraMap_apply, RingHom.algebraMap_toAlgebra]
   | add t u ht hu => simp [ht, hu]
 
 /-- The archimedean semilocal decompositions assemble to a bijective base-change map. -/

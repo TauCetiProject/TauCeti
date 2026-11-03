@@ -186,7 +186,7 @@ theorem tendsto_klDiv_fst_proportionalFitting [IsFiniteMeasure R] [IsFiniteMeasu
     (h : schroedingerValue R μ ν ≠ ∞) :
     Tendsto (fun n ↦ klDiv μ (proportionalFitting R μ ν n).fst) atTop (𝓝 0) :=
   ENNReal.tendsto_atTop_zero_of_tsum_ne_top <| ne_top_of_le_ne_top h <|
-    (ENNReal.tsum_le_tsum fun _ ↦ le_self_add).trans tsum_klDiv_le_schroedingerValue
+    (tsum_le_tsum fun _ ↦ le_self_add).trans tsum_klDiv_le_schroedingerValue
 
 /-- Under finite-entropy feasibility, the relative-entropy error of the second marginal halfway
 through each sweep of iterative proportional fitting tends to `0`. -/
@@ -195,7 +195,7 @@ theorem tendsto_klDiv_snd_fitLaw_proportionalFitting [IsFiniteMeasure R] [IsFini
     Tendsto (fun n ↦ klDiv ν ((proportionalFitting R μ ν n).fitLaw Prod.fst μ).snd) atTop
       (𝓝 0) :=
   ENNReal.tendsto_atTop_zero_of_tsum_ne_top <| ne_top_of_le_ne_top h <|
-    (ENNReal.tsum_le_tsum fun _ ↦ le_add_self).trans tsum_klDiv_le_schroedingerValue
+    (tsum_le_tsum fun _ ↦ le_add_self).trans tsum_klDiv_le_schroedingerValue
 
 /-- A coupling of finite relative entropy against the reference has finite relative entropy
 against every iterate, and against the measure halfway through every sweep. -/

@@ -15,7 +15,9 @@ import Mathlib.Topology.Algebra.Module.FiniteDimension
 `complexToRealEuclidean` identifies a finite complex vector with its real and imaginary
 coordinate blocks as a real continuous linear equivalence. It uses the product topology
 on complex vectors and the Euclidean topology on the real coordinates, so both directions
-are measurable for the Borel structures.
+are measurable for the Borel structures. `complexToRealPi` is the same splitting with plain
+functions `ι ⊕ ι → ℝ` as target, the coordinate spaces in which semialgebraic subsets of
+complex coordinate spaces are formed.
 -/
 
 public section
@@ -63,5 +65,26 @@ theorem complexToRealEuclidean_symm_apply_re (x : EuclideanSpace ℝ (ι ⊕ ι)
 theorem complexToRealEuclidean_symm_apply_im (x : EuclideanSpace ℝ (ι ⊕ ι)) (i : ι) :
     ((complexToRealEuclidean ι).symm x i).im = x (Sum.inr i) := by
   simp [complexToRealEuclidean_symm_apply]
+
+/-- Split a complex vector into its real and imaginary coordinate blocks, with plain functions
+`ι ⊕ ι → ℝ` as target: `Sum.inl i` is the real part and `Sum.inr i` the imaginary part of the
+`i`-th coordinate. This is `TauCeti.complexToRealEuclidean` followed by forgetting the Euclidean
+structure. -/
+noncomputable def complexToRealPi : (ι → ℂ) ≃L[ℝ] (ι ⊕ ι → ℝ) :=
+  (complexToRealEuclidean ι).trans (EuclideanSpace.equiv (ι ⊕ ι) ℝ)
+
+@[simp]
+theorem complexToRealPi_apply (z : ι → ℂ) (k : ι ⊕ ι) :
+    complexToRealPi ι z k = Sum.elim (fun i ↦ (z i).re) (fun i ↦ (z i).im) k := (rfl)
+
+/-- Forgetting the Euclidean structure of `TauCeti.complexToRealEuclidean` gives
+`TauCeti.complexToRealPi`. -/
+theorem ofLp_complexToRealEuclidean (z : ι → ℂ) :
+    (complexToRealEuclidean ι z).ofLp = complexToRealPi ι z := (rfl)
+
+/-- Recombine two real coordinate blocks into a complex vector. -/
+@[simp]
+theorem complexToRealPi_symm_apply (a : ι ⊕ ι → ℝ) (i : ι) :
+    (complexToRealPi ι).symm a i = (a (Sum.inl i) : ℂ) + (a (Sum.inr i) : ℂ) * Complex.I := (rfl)
 
 end TauCeti
