@@ -50,7 +50,8 @@ def subgroupTensorEquiv :
       (G ⧸ H →₀ N) :=
   (rightSubgroupBasis c H).balancedTensorProductEquiv
 
-/-- Subgroup tensor coordinates are the balanced tensor coordinates of the right coset basis. -/
+/-- Subgroup tensor coordinates are the balanced tensor coordinates of the
+right-module basis indexed by left cosets. -/
 theorem subgroupTensorEquiv_def :
     subgroupTensorEquiv c H N = (rightSubgroupBasis c H).balancedTensorProductEquiv := (rfl)
 
