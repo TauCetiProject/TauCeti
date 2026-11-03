@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Group.Conj.CoprimePow
+public import TauCeti.Algebra.Group.Conj
 public import TauCeti.RepresentationTheory.CharacterTable.Cyclotomic
 public import TauCeti.RepresentationTheory.CharacterTable.Cyclotomic.PowerMap
 public import TauCeti.RingTheory.Cyclotomic.Lift
