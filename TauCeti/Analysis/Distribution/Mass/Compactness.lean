@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Distribution.Mass.Basic
 public import TauCeti.Analysis.Distribution.Support
 import Mathlib.Analysis.Normed.Module.HahnBanach
-import Mathlib.Analysis.Normed.Operator.Extend
+import TauCeti.Analysis.Normed.Operator.Extend
 import Mathlib.Analysis.Normed.Module.WeakDual
 
 /-!
@@ -59,12 +59,8 @@ theorem mass_le_iff_exists_extension {𝓕 : Type*} [FunLike 𝓕 𝓓^{n}(Ω, F
     have hbound (φ : 𝓓^{n}(Ω, F)) : ‖T φ‖ ≤ C * ‖j φ‖ :=
       norm_apply_le_of_mass_le T hT φ
     let f' := (LinearMap.ofClass T).compLeftInverse j
-    have hf (x : LinearMap.range j) : ‖f' x‖ ≤ C * ‖x‖ := by
-      rcases x with ⟨x, φ, rfl⟩
-      rw [LinearMap.compLeftInverse_apply_of_bdd _ _ ⟨C, hbound⟩ φ (j φ) rfl]
-      exact hbound φ
     obtain ⟨L, hL, hnorm⟩ := exists_extension_norm_eq (LinearMap.range j) f'
-    refine ⟨L, hnorm.trans_le (f'.opNorm_le_bound C.2 hf), fun φ => ?_⟩
+    refine ⟨L, hnorm.trans_le (LinearMap.opNorm_compLeftInverse_le C.2 hbound), fun φ => ?_⟩
     calc L (φ : E →ᵇ F) = L (j φ) :=
            congrArg L (TestFunction.toBoundedContinuousFunctionCLM_apply ℝ φ).symm
          _ = f' ⟨j φ, LinearMap.mem_range_self j φ⟩ :=
