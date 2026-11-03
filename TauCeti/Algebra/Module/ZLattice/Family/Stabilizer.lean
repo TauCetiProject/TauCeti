@@ -61,6 +61,8 @@ for a rotation of a disc about its centre, only the fibre over `y₀` needs to b
 * `TauCeti.affineEquiv_torusFamilyFiber_iterate_eq_id_of_pow_eq_one`: if `g ^ m = 1`, the affine
   automorphism of `T_y` has `m`-th iterate the identity, so its linear part has period dividing
   `m` and its `m`-th partial norm vanishes.
+* `TauCeti.nsmul_torusFamilyFiberTranslationPart_eq_zero`: if moreover the linear part is the
+  identity, the translation part is an `m`-torsion point of the fibre.
 * `TauCeti.isCancelSMul_torusFamilyAffineMulAction_iff`: the affine action on the total space is
   free exactly when no nonidentity element of a base stabilizer has a fixed point on the fibre.
 * `TauCeti.isCancelSMul_torusFamilyAffineMulAction_iff_of_stabilizer_le_zpowers`: the same
@@ -140,6 +142,15 @@ theorem torusFamilyFiberLinearPart_symm_mk {g : Γ} {y : Y} (hy : g • y = y) (
     (torusFamilyFiberLinearPart R hone hmul P ρ hP hy).symm (Quotient.mk _ v) =
       Quotient.mk _ (R g⁻¹ y v) :=
   (LinearMap.range (P y)).orbitRelQuotientMap_mk _ _ _ v
+
+/-- If `R g y` is the identity at a fixed point `y` of `g`, the linear part on the fibre over `y`
+is the identity, so that `g` acts on that fibre by a translation. -/
+theorem torusFamilyFiberLinearPart_eq_refl {g : Γ} {y : Y} (hy : g • y = y)
+    (hR : ∀ v, R g y v = v) :
+    torusFamilyFiberLinearPart R hone hmul P ρ hP hy = AddEquiv.refl _ := by
+  ext x
+  induction x using Quotient.inductionOn with
+  | h v => simp [hR]
 
 variable (b : Γ → Y → letI := periodAddAction P; AddAction.orbitRel.Quotient Λ (Y × E))
   (hb : ∀ (g : Γ) (y : Y), torusFamilyProjection P (b g y) = g • y)
@@ -254,6 +265,19 @@ theorem affineEquiv_torusFamilyFiber_iterate_eq_id_of_pow_eq_one {g : Γ} {y : Y
   funext z
   apply torusFamilyFiberMap_injective P y
   rw [← pow_smul_torusFamilyFiberMap R hone hmul P ρ hP b hb hbone hbmul hy, hm, one_smul, id]
+
+include hone hmul hbone hbmul in
+/-- **Translation parts of finite order are torsion.** If `g • y = y`, `g ^ m = 1` and `R g y` is
+the identity, so that `g` acts on the fibre over `y` by the translation by `t`, then `t` is an
+`m`-torsion point of the torus `E / LinearMap.range (P y)`: `m • t = 0`. -/
+theorem nsmul_torusFamilyFiberTranslationPart_eq_zero {g : Γ} {y : Y} (hy : g • y = y)
+    (hR : ∀ v, R g y v = v) {m : ℕ} (hm : g ^ m = 1) :
+    m • torusFamilyFiberTranslationPart P b hb hy = 0 := by
+  have h := ((AddEquiv.affineEquiv_iterate_eq_id_iff _ _ m).1
+    (affineEquiv_torusFamilyFiber_iterate_eq_id_of_pow_eq_one R hone hmul P ρ hP b hb hbone hbmul
+      hy hm)).2
+  rwa [torusFamilyFiberLinearPart_eq_refl R hone hmul P ρ hP hy hR,
+    AddEquiv.partialNorm_refl] at h
 
 /-! ### Freeness of the affine action -/
 
