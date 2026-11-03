@@ -223,26 +223,39 @@ private theorem ι_smul_eq_mul {F : SquareZeroExtension.{w'} A B N} {g : E.Ring 
     F.ι.toIntLinearMap (x • n) = g.toRingHom.toIntAlgHom x * F.ι.toIntLinearMap n := by
   simp [ring_smul_def, hπ]
 
-/-- The `A`-algebra map `f_* E → F` sending the class of `(x, n)` to `g x + ι n`, induced by
+/-- The ring map `f_* E → F` sending the class of `(x, n)` to `g x + ι n`, induced by
 Mathlib's universal property `TrivSqZeroExt.lift` of `E ⊕ N`. -/
-private def descAlgHom (F : SquareZeroExtension.{w'} A B N) (g : E.Ring →ₐ[A] F.Ring)
+private def descRingHom (F : SquareZeroExtension.{w'} A B N) (g : E.Ring →ₐ[A] F.Ring)
     (hπ : ∀ x, F.π (g x) = E.π x) (hι : ∀ m, g (E.ι m) = F.ι (f m)) :
-    (E.pushout f).Ring →ₐ[A] F.Ring where
-  toRingHom := Ideal.Quotient.lift (pushoutIdeal E f)
+    PushoutRing E f →+* F.Ring :=
+  Ideal.Quotient.lift (pushoutIdeal E f)
     (TrivSqZeroExt.lift g.toRingHom.toIntAlgHom F.ι.toIntLinearMap (fun _ _ ↦ by simp)
       (ι_smul_eq_mul hπ) fun x n ↦ by rw [mul_comm]; exact ι_smul_eq_mul hπ x n).toRingHom <| by
       rintro _ ⟨m, rfl⟩
       simp [lift_def, hι]
-  commutes' a := by
-    change Ideal.Quotient.lift _ _ _ (Ideal.Quotient.mk _ (inl (algebraMap A E.Ring a))) = _
-    simp [lift_def]
+
+private theorem descRingHom_mk (F : SquareZeroExtension.{w'} A B N)
+    (g : E.Ring →ₐ[A] F.Ring) (hπ : ∀ x, F.π (g x) = E.π x) (hι : ∀ m, g (E.ι m) = F.ι (f m))
+    (z : TrivSqZeroExt E.Ring N) :
+    descRingHom F g hπ hι (Ideal.Quotient.mk _ z) = g z.fst + F.ι z.snd := by
+  rw [descRingHom, Ideal.Quotient.lift_mk]
+  simp [lift_def]
+
+/-- The `A`-algebra map `f_* E → F` sending the class of `(x, n)` to `g x + ι n`. -/
+private def descAlgHom (F : SquareZeroExtension.{w'} A B N) (g : E.Ring →ₐ[A] F.Ring)
+    (hπ : ∀ x, F.π (g x) = E.π x) (hι : ∀ m, g (E.ι m) = F.ι (f m)) :
+    (E.pushout f).Ring →ₐ[A] F.Ring where
+  toRingHom := descRingHom F g hπ hι
+  -- `algebraMap A (E.pushout f).Ring a` is the class of `inl (algebraMap A E.Ring a)`, as
+  -- recorded by `algebraMap_pushout`.
+  commutes' a := (descRingHom_mk F g hπ hι (inl (algebraMap A E.Ring a))).trans (by simp)
 
 private theorem descAlgHom_mkPushout (F : SquareZeroExtension.{w'} A B N)
     (g : E.Ring →ₐ[A] F.Ring) (hπ : ∀ x, F.π (g x) = E.π x) (hι : ∀ m, g (E.ι m) = F.ι (f m))
     (z : TrivSqZeroExt E.Ring N) :
-    descAlgHom F g hπ hι (mkPushout E f z) = g z.fst + F.ι z.snd := by
-  change Ideal.Quotient.lift _ _ _ (Ideal.Quotient.mk _ z) = _
-  simp [lift_def]
+    descAlgHom F g hπ hι (mkPushout E f z) = g z.fst + F.ι z.snd :=
+  -- `mkPushout E f` is the quotient map `Ideal.Quotient.mk (pushoutIdeal E f)`.
+  descRingHom_mk F g hπ hι z
 
 /-- The universal property of the pushout: an `A`-algebra map `g : E → F` to an extension `F`
 of `B` by `N`, compatible with the projections and restricting to `f` on the kernels, induces
