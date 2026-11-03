@@ -80,10 +80,10 @@ namespace AlgebraicGeometry.Scheme.IdealSheafData
 
 variable {S X : Scheme.{u}}
 
-/-- The fibre of an ideal sheaf over the spectrum of a field `K`, mapping to the base through the
-residue field `κ(s)`, is the base change of its fibre over `κ(s)` along the flat surjective
-morphism `Spec K ⟶ Spec κ(s)`. So the effective Cartier property passes from the fibre over `κ(s)`
-to the fibre over `K`, and back when the fibre over `κ(s)` is locally noetherian. -/
+/-- For a field-valued point `Spec K ⟶ Spec κ(s) ⟶ S` factoring through the residue field `κ(s)`,
+the fibre of an ideal sheaf over `Spec K` is an effective Cartier divisor exactly when the pullback
+of its fibre over `κ(s)` along `Spec K ⟶ Spec κ(s)` is. The two are identified by the
+associativity isomorphism `pullbackLeftPullbackSndIso` of iterated pullbacks. -/
 private theorem isEffectiveCartier_comap_fst_SpecMap_comp_fromSpecResidueField_iff
     {I : X.IdealSheafData} {f : X ⟶ S} {s : S} {K : Type u} [Field K]
     {ψ : S.residueField s ⟶ .of K} :
