@@ -7,8 +7,6 @@ module
 
 public import TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.Positive.BorelCandidate
 public import TauCeti.Algebra.Coalgebra.Comodule.Flag.Basic
-import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.StandardComodule
-import TauCeti.LinearAlgebra.Matrix.Triangular
 
 /-!
 # The highest line of the positive short-root F₄ subgroup

@@ -423,7 +423,7 @@ theorem IsUpperUnitriangular.isNilpotent_sub_one {T p : Type*} [Ring T] [Fintype
 /-- A nonzero submodule invariant under strictly upper-triangular matrices contains a nonzero
 vector annihilated by all of them. Neither a field nor commutation of the matrices is required. -/
 theorem exists_ne_zero_forall_mulVec_eq_zero_of_invariant_submodule
-    {S ι κ : Type*} [CommSemiring S] [Fintype ι] [LinearOrder ι]
+    {S ι κ : Type*} [Semiring S] [Fintype ι] [LinearOrder ι]
     (A : κ → Matrix ι ι S) (htri : ∀ j, (A j).IsUpperTriangular)
     (hdiag : ∀ j a, A j a a = 0) (N : Submodule S (ι → S)) (hN : N ≠ ⊥)
     (hstable : ∀ j v, v ∈ N → A j *ᵥ v ∈ N) :
