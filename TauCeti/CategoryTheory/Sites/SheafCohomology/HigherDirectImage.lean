@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Abelian.RightDerived
+public import TauCeti.CategoryTheory.Sites.Continuous
 public import TauCeti.CategoryTheory.Sites.Homology
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.InjectiveResolution
 
@@ -56,21 +57,8 @@ variable {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v} D] (u
 section General
 
 variable (A : Type*) [Category* A] (J : GrothendieckTopology C) (K : GrothendieckTopology D)
-  [u.IsContinuous J K]
-
-/-- The pushforward of sheaves along a continuous functor is additive. -/
-instance [Preadditive A] : (u.sheafPushforwardContinuous A J K).Additive where
-  map_add := rfl
-
-/-- The pushforward of sheaves along a continuous functor preserves finite limits, since limits
-of sheaves are computed on the underlying presheaves. -/
-instance [HasFiniteLimits A] : PreservesFiniteLimits (u.sheafPushforwardContinuous A J K) := by
-  have : PreservesFiniteLimits (u.sheafPushforwardContinuous A J K ⋙ sheafToPresheaf J A) :=
-    inferInstanceAs
-      (PreservesFiniteLimits (sheafToPresheaf K A ⋙ (whiskeringLeft _ _ _).obj u.op))
-  exact ⟨fun _ _ _ ↦ preservesLimitsOfShape_of_reflects_of_preserves _ (sheafToPresheaf J A)⟩
-
-variable [Abelian A] [HasSheafify J A] [HasSheafify K A] [HasInjectiveResolutions (Sheaf K A)]
+  [u.IsContinuous J K] [Abelian A] [HasSheafify J A] [HasSheafify K A]
+  [HasInjectiveResolutions (Sheaf K A)]
 
 /-- The higher direct images `Rⁱf_*` along a continuous functor `u : C ⥤ D` between sites: the
 right derived functors of the pushforward `F ↦ F ∘ u` from sheaves on `D` to sheaves on `C`. -/
