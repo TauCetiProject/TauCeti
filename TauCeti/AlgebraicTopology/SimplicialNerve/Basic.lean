@@ -261,16 +261,15 @@ theorem bijective_fromNerve_app {n : SimplexCategoryᵒᵖ} (hn : n.unop.len ≤
   -- `ULift.up` and `ULift.down` are inverse order isomorphisms, so `U` and `U'` cancel.
   have hU'U : U' ⋙ U = 𝟭 _ := Functor.ext (fun _ ↦ rfl) fun _ _ _ ↦ Subsingleton.elim _ _
   have hUU' : U ⋙ U' = 𝟭 _ := Functor.ext (fun _ ↦ rfl) fun _ _ _ ↦ Subsingleton.elim _ _
-  refine Function.bijective_iff_has_inverse.2
-    ⟨fun F ↦ U' ⋙ SimplicialThickening.toFunctor F, fun (G : Fin (n.unop.len + 1) ⥤ C) ↦ ?_,
-      fun (F : EnrichedFunctor SSet (SimplicialThickening (ULift.{v} (Fin (n.unop.len + 1)))) C) ↦
-        ?_⟩
-  · change U' ⋙ SimplicialThickening.functorEquiv.symm
-      (SimplicialThickening.functorEquiv (U ⋙ G)) = G
-    rw [Equiv.symm_apply_apply, ← Functor.assoc, hU'U, Functor.id_comp]
-  · change SimplicialThickening.functorEquiv
-      (U ⋙ U' ⋙ SimplicialThickening.functorEquiv.symm F) = F
-    rw [← Functor.assoc, hUU', Functor.id_comp, Equiv.apply_symm_apply]
+  have hU : Function.Bijective fun G : Fin (n.unop.len + 1) ⥤ C ↦ U ⋙ G :=
+    Function.bijective_iff_has_inverse.2 ⟨fun G ↦ U' ⋙ G,
+      fun G ↦ by dsimp only; rw [← Functor.assoc, hU'U, Functor.id_comp],
+      fun F ↦ by dsimp only; rw [← Functor.assoc, hUU', Functor.id_comp]⟩
+  have h : ⇑((fromNerve C).app n) = SimplicialThickening.functorEquiv ∘ fun G ↦ U ⋙ G :=
+    funext fun G ↦ (fromNerve_app_apply C n G).trans
+      (SimplicialThickening.functorEquiv_apply _).symm
+  rw [h]
+  exact SimplicialThickening.functorEquiv.bijective.comp hU
 
 /-- The vertices of the simplicial nerve of `C` are the objects of `C`. -/
 def vertexEquiv : SimplicialNerve C _⦋0⦌ ≃ C where
