@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.InnerProductSpace.Sphere.Trigonometric
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Exponential
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Immersion
@@ -43,21 +44,6 @@ open TauCeti.Manifold
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
   [Fact (finrank ℝ E = n + 1)]
-
-private theorem norm_cos_smul_add_sin_smul (p q : sphere (0 : E) 1)
-    (hpq : inner ℝ (p : E) (q : E) = 0) (t : ℝ) :
-    ‖Real.cos t • (p : E) + Real.sin t • (q : E)‖ = 1 := by
-  have hp : inner ℝ (p : E) p = 1 := by
-    simp [norm_eq_of_mem_sphere]
-  have hq : inner ℝ (q : E) q = 1 := by
-    simp [norm_eq_of_mem_sphere]
-  have hqp : inner ℝ (q : E) (p : E) = 0 := by rwa [real_inner_comm]
-  have hsq : ‖Real.cos t • (p : E) + Real.sin t • (q : E)‖ ^ 2 = 1 := by
-    rw [← real_inner_self_eq_norm_sq]
-    simp only [inner_add_left, inner_add_right, real_inner_smul_left,
-      real_inner_smul_right, hp, hq, hpq, hqp]
-    nlinarith [Real.cos_sq_add_sin_sq t]
-  nlinarith [norm_nonneg (Real.cos t • (p : E) + Real.sin t • (q : E))]
 
 /-- The oriented great circle through two orthogonal unit vectors, parametrized by angle. -/
 def sphereGreatCircle (p q : sphere (0 : E) 1) (hpq : inner ℝ (p : E) (q : E) = 0)
