@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Filtered.Final
-public import Mathlib.Geometry.RingedSpace.LocallyRingedSpace
+public import Mathlib.Geometry.RingedSpace.LocallyRingedSpace.ResidueField
 public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.CompletedNeighbourhood
 public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.IdealIndependence
 
@@ -185,36 +185,35 @@ namespace Spf
 
 variable {A}
 
-/-- The stalk of `Spf A` at an open prime of `A` is a local ring. This restates the locality of
-the stalks of the locally ringed space `Spf A` for points given as open primes. -/
-instance isLocalRing_stalk (p : carrier A) : IsLocalRing ((Spf A).presheaf.stalk p) :=
-  (Spf A).isLocalRing p
-
-/-- The residue field of the stalk of `Spf A` at an open prime `p` is the fraction field of
-`A ⧸ p` (EGA I, Ch. I, 10.1.6). -/
+/-- The residue field of `Spf A` at an open prime `p` is the fraction field of `A ⧸ p`
+(EGA I, Ch. I, 10.1.6). -/
 noncomputable def stalkResidueFieldEquiv (p : carrier A) :
-    IsLocalRing.ResidueField ((Spf A).presheaf.stalk p) ≃+*
-      FractionRing (A ⧸ (p : PrimeSpectrum A).asIdeal) :=
+    (Spf A).residueField p ≃+* FractionRing (A ⧸ (p : PrimeSpectrum A).asIdeal) :=
   let e : colimit (completedNeighbourhoodDiagram p) ≅ (Spf A).presheaf.stalk p :=
     completedNeighbourhoodColimitIso p (IsAdicRing.ideal_spec A).2.1 (IsAdicRing.ideal_spec A).1
+  haveI := (Spf A).isLocalRing p
   (IsLocalRing.ResidueField.mapEquiv e.commRingCatIsoToRingEquiv).symm.trans (stalkResidueIso p)
 
 /-- The residue field isomorphism sends the residue class of the germ at `p` of the section
 over `D(f)` corresponding to `a ∈ A` to the image of `a` in `Frac(A ⧸ p)`. -/
 @[simp]
 theorem stalkResidueFieldEquiv_residue_germ {p : carrier A} (f : BasicNeighbourhood p) (a : A) :
-    stalkResidueFieldEquiv p (IsLocalRing.residue _
+    stalkResidueFieldEquiv p ((Spf A).residue p
       ((Spf A).presheaf.germ (basicOpen f.elem) p (mem_basicOpen.mpr f.notMem)
         ((basicOpenSectionsIso (IsAdicRing.ideal_spec A).2.1 (IsAdicRing.ideal_spec A).1 f.elem).inv
           (algebraMap A (AdicRing.CompletedAway A f.elem) a)))) =
       algebraMap (A ⧸ (p : PrimeSpectrum A).asIdeal)
         (FractionRing (A ⧸ (p : PrimeSpectrum A).asIdeal)) (Ideal.Quotient.mk _ a) := by
-  rw [stalkResidueFieldEquiv, RingEquiv.trans_apply, IsLocalRing.ResidueField.mapEquiv.symm,
-    IsLocalRing.ResidueField.mapEquiv_apply, IsLocalRing.ResidueField.map_residue]
-  convert stalkResidueIso_coeff p f a using 3
+  let e := completedNeighbourhoodColimitIso p (IsAdicRing.ideal_spec A).2.1
+    (IsAdicRing.ideal_spec A).1
   -- the comparison of the colimit with the stalk is the germ on `A_{f}`
-  exact (RingEquiv.symm_apply_eq _).mpr
-    (ConcreteCategory.congr_hom (completedNeighbourhoodColimitIso_germ p _ _ f) _).symm
+  have h := (RingEquiv.symm_apply_eq e.commRingCatIsoToRingEquiv).mpr (ConcreteCategory.congr_hom
+    (completedNeighbourhoodColimitIso_germ p _ _ f)
+      (algebraMap A (AdicRing.CompletedAway A f.elem) a)).symm
+  -- `stalkResidueFieldEquiv` pulls the residue class back along `e` and applies
+  -- `stalkResidueIso`, so the residue class of the germ is that of `a` in the colimit
+  exact (congrArg (fun x ↦ stalkResidueIso p (IsLocalRing.residue _ x)) h).trans
+    (stalkResidueIso_coeff p f a)
 
 end Spf
 
