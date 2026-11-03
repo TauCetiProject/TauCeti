@@ -51,10 +51,12 @@ namespace TauCeti
 
 namespace Probability
 
-/-- The array `g`, extended to `ℕ × ℕ` by `1` outside its `n × n` corner. -/
+/-- The array `g`, extended to `ℕ × ℕ` by its `(0, 0)` entry outside its `n × n` corner when
+`n > 0`, and by `1` when `n = 0`. -/
 private def extendArray {Ω : Type*} (n : ℕ) (g : Fin n × Fin n → Ω → ℝ) (p : ℕ × ℕ)
     (ω : Ω) : ℝ :=
-  if h : p.1 < n ∧ p.2 < n then g (⟨p.1, h.1⟩, ⟨p.2, h.2⟩) ω else 1
+  if h : p.1 < n ∧ p.2 < n then g (⟨p.1, h.1⟩, ⟨p.2, h.2⟩) ω
+  else if hn : 0 < n then g (⟨0, hn⟩, ⟨0, hn⟩) ω else 1
 
 private theorem extendArray_apply {Ω : Type*} {n : ℕ} (g : Fin n × Fin n → Ω → ℝ) (i j : Fin n)
     (ω : Ω) : extendArray n g (i.val, j.val) ω = g (i, j) ω := by
@@ -84,6 +86,10 @@ section Entries
 
 variable {β n : ℕ} (g : Fin n × Fin n → ℝ)
 
+/-- Entry formula for `gaussianEnsemble`, with the common factor `1 / √n` outside the cases.
+For `β = 1`, diagonal entries use `√2 * g (i, i)` and off-diagonal entries use the corresponding
+upper-triangular sample symmetrically. For `β ≠ 1`, the diagonal is `g (i, i)`, the upper entries
+are `(g (i, j) + I * g (j, i)) / √2`, and the lower entries are their complex conjugates. -/
 theorem gaussianEnsemble_apply (i j : Fin n) :
     gaussianEnsemble β n g i j = ((Real.sqrt n)⁻¹ : ℂ) *
       if β = 1 then
@@ -209,26 +215,29 @@ private theorem integral_re_trace_gaussianEnsemble_sq_div_of_wigner {Ω : Type*}
 
 /-- The moments of the extended array, given those of the entries `g p` with `R p`. -/
 private theorem extendArray_sq_moments {Ω : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω}
-    [IsProbabilityMeasure μ] {n : ℕ} (g : Fin n × Fin n → Ω → ℝ) (R : Fin n × Fin n → Prop)
+    {n : ℕ} (hn : 0 < n) (g : Fin n × Fin n → Ω → ℝ) (R : Fin n × Fin n → Prop)
     (hint : ∀ p, R p → Integrable (fun ω ↦ g p ω ^ 2) μ)
-    (hvar : ∀ p, R p → ∫ ω, g p ω ^ 2 ∂μ = 1) (p : ℕ × ℕ)
+    (hvar : ∀ p, R p → ∫ ω, g p ω ^ 2 ∂μ = 1)
+    (hint00 : Integrable (fun ω ↦ g ((⟨0, hn⟩ : Fin n), ⟨0, hn⟩) ω ^ 2) μ)
+    (hvar00 : ∫ ω, g ((⟨0, hn⟩ : Fin n), ⟨0, hn⟩) ω ^ 2 ∂μ = 1) (p : ℕ × ℕ)
     (hp : ∀ h : p.1 < n ∧ p.2 < n, R (⟨p.1, h.1⟩, ⟨p.2, h.2⟩)) :
     Integrable (fun ω ↦ extendArray n g p ω ^ 2) μ ∧ ∫ ω, extendArray n g p ω ^ 2 ∂μ = 1 := by
   by_cases h : p.1 < n ∧ p.2 < n
   · simp only [extendArray, h, and_self, ↓reduceDIte]
     exact ⟨hint _ (hp h), hvar _ (hp h)⟩
-  · simp [extendArray, h]
+  · simp [extendArray, h, hn, hint00, hvar00]
 
 /-- The GOE has `E trₙ H² = 1 + 1 / n`, where `trₙ = n⁻¹ tr`: it suffices that the entries
 `g (i, j)` with `i ≤ j` have second moment `1`. The diagonal entries of the ensemble have second
 moment `2 / n` and the off-diagonal ones `1 / n`. -/
 theorem integral_re_trace_gaussianEnsemble_one_sq_div {Ω : Type*} {mΩ : MeasurableSpace Ω}
-    {μ : Measure Ω} [IsProbabilityMeasure μ] {n : ℕ} (hn : 0 < n) (g : Fin n × Fin n → Ω → ℝ)
+    {μ : Measure Ω} {n : ℕ} (hn : 0 < n) (g : Fin n × Fin n → Ω → ℝ)
     (hint : ∀ i j, i ≤ j → Integrable (fun ω ↦ g (i, j) ω ^ 2) μ)
     (hvar : ∀ i j, i ≤ j → ∫ ω, g (i, j) ω ^ 2 ∂μ = 1) :
     ∫ ω, (gaussianEnsemble 1 n (fun p ↦ g p ω) ^ 2).trace.re / n ∂μ = 1 + 1 / n := by
-  have hm := extendArray_sq_moments g (fun p ↦ p.1 ≤ p.2) (fun p hp ↦ hint p.1 p.2 hp)
-    (fun p hp ↦ hvar p.1 p.2 hp)
+  have hm := extendArray_sq_moments hn g (fun p ↦ p.1 ≤ p.2)
+    (fun p hp ↦ hint p.1 p.2 hp) (fun p hp ↦ hvar p.1 p.2 hp)
+    (hint ⟨0, hn⟩ ⟨0, hn⟩ le_rfl) (hvar ⟨0, hn⟩ ⟨0, hn⟩ le_rfl)
   have hξ (ij : StrictUpper) :
       ∀ ω, ‖ensembleUpper 1 n g ij ω‖ ^ 2 = extendArray n g ij.1 ω ^ 2 := by
     intro ω
@@ -250,10 +259,11 @@ theorem integral_re_trace_gaussianEnsemble_one_sq_div {Ω : Type*} {mΩ : Measur
 /-- The GUE has `E trₙ H² = 1`, where `trₙ = n⁻¹ tr`: it suffices that the entries of `g` have
 second moment `1`. -/
 theorem integral_re_trace_gaussianEnsemble_two_sq_div {Ω : Type*} {mΩ : MeasurableSpace Ω}
-    {μ : Measure Ω} [IsProbabilityMeasure μ] {n : ℕ} (hn : 0 < n) (g : Fin n × Fin n → Ω → ℝ)
+    {μ : Measure Ω} {n : ℕ} (hn : 0 < n) (g : Fin n × Fin n → Ω → ℝ)
     (hint : ∀ p, Integrable (fun ω ↦ g p ω ^ 2) μ) (hvar : ∀ p, ∫ ω, g p ω ^ 2 ∂μ = 1) :
     ∫ ω, (gaussianEnsemble 2 n (fun p ↦ g p ω) ^ 2).trace.re / n ∂μ = 1 := by
-  have hm := extendArray_sq_moments g (fun _ ↦ True) (fun p _ ↦ hint p) (fun p _ ↦ hvar p)
+  have hm := extendArray_sq_moments hn g (fun _ ↦ True) (fun p _ ↦ hint p)
+    (fun p _ ↦ hvar p) (hint (⟨0, hn⟩, ⟨0, hn⟩)) (hvar (⟨0, hn⟩, ⟨0, hn⟩))
   have hξ (ij : StrictUpper) : ∀ ω, ‖ensembleUpper 2 n g ij ω‖ ^ 2 =
       (extendArray n g ij.1 ω ^ 2 + extendArray n g (ij.1.2, ij.1.1) ω ^ 2) / 2 := by
     intro ω
