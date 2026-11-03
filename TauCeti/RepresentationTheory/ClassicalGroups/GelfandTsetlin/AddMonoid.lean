@@ -261,7 +261,8 @@ def rowSubset (I : Finset (Fin n)) : GTPattern n where
     omega
   interlacing' := by
     intro c j hcj hj
-    have h := card_filter_val_lt_add_one I hj
+    have h := card_filter_castSucc_lt_succ I ⟨j, hj⟩
+    simp only [Fin.lt_def, Fin.val_castSucc, Fin.val_succ] at h
     split_ifs at h <;> constructor <;> split_ifs <;> omega
 
 theorem rowSubset_apply (I : Finset (Fin n)) (c j : ℕ) :
@@ -313,10 +314,10 @@ theorem rowSubset_injective : Function.Injective (rowSubset (n := n)) := by
     rw [← card_filter_rowSubset_ne_zero I hj, ← card_filter_rowSubset_ne_zero J hj, h]
   -- A row `r` belongs to `I` exactly when the count increases from row `r` to row `r + 1`.
   ext r
-  have hI := card_filter_val_lt_add_one I r.2
-  have hJ := card_filter_val_lt_add_one J r.2
-  rw [hcount _ r.2, hcount _ r.2.le, Fin.eta] at hI
-  rw [Fin.eta] at hJ
+  have hI := card_filter_castSucc_lt_succ I r
+  have hJ := card_filter_castSucc_lt_succ J r
+  simp only [Fin.lt_def, Fin.val_castSucc, Fin.val_succ] at hI hJ
+  rw [hcount _ r.2, hcount _ r.2.le] at hI
   split_ifs at hI hJ <;> simp_all
 
 /-! ### The row-subset patterns generate the nonnegative patterns -/
@@ -386,7 +387,9 @@ private theorem exists_eq_rowSubset {Q : GTPattern n} (hQ : ∀ i j, Q i j = 0 �
     induction j with
     | zero => simp [hk]
     | succ j ih =>
-      rw [card_filter_val_lt_add_one I (by omega : j < n), ih (by omega)]
+      have h := card_filter_castSucc_lt_succ I ⟨j, by omega⟩
+      simp only [Fin.lt_def, Fin.val_castSucc, Fin.val_succ] at h
+      rw [h, ih (by omega)]
       have := hk_mono j (by omega)
       have := hk_succ j (by omega)
       split_ifs with h <;> simp only [hI] at h <;> omega

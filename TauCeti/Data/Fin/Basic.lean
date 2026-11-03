@@ -49,8 +49,7 @@ range, so the value is a `dite` rather than a plain application.
 * `Finset.sum_range_const_sub_succ`: the sum of a reversed initial segment of natural numbers.
 * `Finset.card_filter_castSucc_lt_succ`: counting the elements of a set of indices below `i.succ`
   rather than `i.castSucc` adds `1` exactly when `i` belongs to it.
-* `Finset.card_filter_val_lt_le` and `Finset.card_filter_val_lt_add_one`: at most `j` indices
-  have value below `j`, and raising the bound from `j` to `j + 1` adds the index `j` if present.
+* `Finset.card_filter_val_lt_le`: at most `j` indices have value below `j`.
 * `Fin.sum_rev_castLE`: the sum of the values of a reversed embedded finite ordinal.
 * `Fin.partialProd_last_eq_mul_tail`, `Fin.partialProd_last_eq_init_mul`: the final partial
   product of a tuple in a monoid, split at its first or its last entry.
@@ -172,19 +171,6 @@ theorem card_filter_val_lt_le {n : ℕ} (S : Finset (Fin n)) (j : ℕ) : #{s ∈
         card_le_card (filter_subset_filter _ (subset_univ S))
     _ = min n j := Fin.card_filter_val_lt
     _ ≤ j := min_le_right n j
-
-/-- Counting the elements of `S` with value below `j + 1` adds `1` to those with value below `j`
-when the index `j` belongs to `S`. -/
-theorem card_filter_val_lt_add_one {n : ℕ} (S : Finset (Fin n)) {j : ℕ} (hj : j < n) :
-    #{s ∈ S | s.val < j + 1} =
-      #{s ∈ S | s.val < j} + if (⟨j, hj⟩ : Fin n) ∈ S then 1 else 0 := by
-  have h : ({s ∈ S | s.val < j + 1} : Finset (Fin n)) =
-      {s ∈ S | s.val < j} ∪ {s ∈ S | s = ⟨j, hj⟩} := by
-    ext s
-    simp only [mem_filter, mem_union, Fin.ext_iff, Nat.lt_add_one_iff, le_iff_lt_or_eq]
-    tauto
-  rw [h, card_union_of_disjoint (disjoint_filter.mpr fun s _ h h' ↦ by simp [h'] at h)]
-  split_ifs with hi <;> simp [filter_eq', hi]
 
 end Finset
 
