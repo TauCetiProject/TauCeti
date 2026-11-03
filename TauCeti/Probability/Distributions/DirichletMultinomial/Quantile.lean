@@ -48,14 +48,15 @@ theorem quantile_map_cast_eval_dirichletMultinomialMeasure [DecidableEq ι] [Non
     ← Measure.map_map (by fun_prop) (by fun_prop),
     map_eval_dirichletMultinomialMeasure ha n i]
 
-/-- With one category, every interior coordinate quantile is the trial count. -/
+/-- With one category, every coordinate quantile at a level in `(0, 1]` is the trial count. -/
+@[simp]
 theorem quantile_map_cast_eval_dirichletMultinomialMeasure_of_card_eq_one
     (ha : ∀ i, 0 < a i) (hcard : Fintype.card ι = 1) (n : ℕ) (i : ι)
-    {u : ℝ} (hu : u ∈ Ioo 0 1) :
+    {u : ℝ} (hu : u ∈ Ioc 0 1) :
     ((dirichletMultinomialMeasure n a).map (fun k ↦ (k i : ℝ))).quantile u = n := by
   let _ : Subsingleton ι := Fintype.card_le_one_iff_subsingleton.mp hcard.le
   rw [dirichletMultinomialMeasure_eq_dirac_of_subsingleton ha n,
-    Measure.map_dirac' (by fun_prop), Measure.quantile_dirac _ hu.1 hu.2.le]
+    Measure.map_dirac' (by fun_prop), Measure.quantile_dirac _ hu.1 hu.2]
 
 /-- At level zero, a Dirichlet-multinomial coordinate quantile tends to zero, except for the
 one-category law where it remains the trial count. -/
@@ -71,7 +72,8 @@ theorem tendsto_quantile_map_cast_eval_dirichletMultinomialMeasure_nhdsGT_zero
     simp only [hcard, ite_true]
     apply tendsto_const_nhds.congr'
     filter_upwards [Ioo_mem_nhdsGT (α := ℝ) zero_lt_one] with u hu
-    rw [quantile_map_cast_eval_dirichletMultinomialMeasure_of_card_eq_one ha hcard n i hu]
+    rw [quantile_map_cast_eval_dirichletMultinomialMeasure_of_card_eq_one ha hcard n i
+      ⟨hu.1, hu.2.le⟩]
     norm_cast
   · rw [ite_eq_right (ne_of_gt Fintype.one_lt_card),
       show (fun k : ι → ℕ ↦ (k i : ℝ)) =
@@ -94,7 +96,8 @@ theorem tendsto_quantile_map_cast_eval_dirichletMultinomialMeasure_nhdsLT_one
     have hcard : Fintype.card ι = 1 := Fintype.card_unique
     apply tendsto_const_nhds.congr'
     filter_upwards [Ioo_mem_nhdsLT (α := ℝ) zero_lt_one] with u hu
-    rw [quantile_map_cast_eval_dirichletMultinomialMeasure_of_card_eq_one ha hcard n i hu]
+    rw [quantile_map_cast_eval_dirichletMultinomialMeasure_of_card_eq_one ha hcard n i
+      ⟨hu.1, hu.2.le⟩]
     norm_cast
   · rw [show (fun k : ι → ℕ ↦ (k i : ℝ)) =
         (Nat.cast : ℕ → ℝ) ∘ fun k ↦ k i by rfl,
