@@ -50,7 +50,7 @@ the torsion submodule of `M × N` is the product of the torsion submodules.
   `A[n ^ (k + 1)] ≤ ⟨y⟩`.
 * `TauCeti.Submodule.comap_torsion_le_of_comp_eq_smul`: a linear map with a left inverse up to a
   nonzerodivisor reflects torsion.
-* `TauCeti.Submodule.le_comap_torsion`: a linear map sends torsion elements to torsion elements.
+* `LinearMap.le_comap_torsion`: a linear map sends torsion elements to torsion elements.
 * `TauCeti.Submodule.prodMk_mem_torsion`: a pair of torsion elements is torsion.
 * `Module.IsTorsion.of_injective`, `Module.IsTorsion.of_surjective`, `Module.IsTorsion.prod`:
   submodules, linear images and products of torsion modules are torsion.
@@ -235,7 +235,7 @@ theorem comap_torsion_le_of_comp_eq_smul {f : M →ₗ[R] N} {g : N →ₗ[R] M}
     ← Submonoid.smul_def, hb, map_zero]
 
 /-- A linear map sends torsion elements to torsion elements. -/
-theorem le_comap_torsion (f : M →ₗ[R] N) :
+theorem _root_.LinearMap.le_comap_torsion (f : M →ₗ[R] N) :
     _root_.Submodule.torsion R M ≤ (_root_.Submodule.torsion R N).comap f := fun x hx ↦ by
   obtain ⟨a, ha⟩ := (_root_.Submodule.mem_torsion_iff x).mp hx
   exact (_root_.Submodule.mem_torsion_iff _).mpr
@@ -256,8 +256,8 @@ variable (R M N) in
 def torsionProdEquiv :
     _root_.Submodule.torsion R (M × N) ≃ₗ[R]
       _root_.Submodule.torsion R M × _root_.Submodule.torsion R N where
-  toFun x := (⟨x.1.1, le_comap_torsion (LinearMap.fst R M N) x.2⟩,
-    ⟨x.1.2, le_comap_torsion (LinearMap.snd R M N) x.2⟩)
+  toFun x := (⟨x.1.1, (LinearMap.fst R M N).le_comap_torsion x.2⟩,
+    ⟨x.1.2, (LinearMap.snd R M N).le_comap_torsion x.2⟩)
   invFun x := ⟨(x.1, x.2), prodMk_mem_torsion x.1.2 x.2.2⟩
   left_inv _ := rfl
   right_inv _ := rfl
@@ -303,7 +303,7 @@ theorem of_surjective (hM : Module.IsTorsion R M) {f : M →ₗ[R] N} (hf : Func
     Module.IsTorsion R N := fun y ↦ by
   obtain ⟨x, rfl⟩ := hf y
   exact (_root_.Submodule.mem_torsion_iff _).mp
-    (TauCeti.Submodule.le_comap_torsion f ((_root_.Submodule.mem_torsion_iff x).mpr (@hM x)))
+    (f.le_comap_torsion ((_root_.Submodule.mem_torsion_iff x).mpr (@hM x)))
 
 /-- A product of two torsion modules is torsion. -/
 theorem prod (hM : Module.IsTorsion R M) (hN : Module.IsTorsion R N) :

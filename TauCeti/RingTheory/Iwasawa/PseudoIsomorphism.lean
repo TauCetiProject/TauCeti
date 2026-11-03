@@ -198,7 +198,7 @@ torsion submodules. -/
 theorem IsPseudoIsomorphism.restrict_torsion [IsDomain A] [IsNoetherianRing A] {f : M →ₗ[A] N}
     (hf : IsPseudoIsomorphism f) :
     IsPseudoIsomorphism
-      (f.restrict (q := Submodule.torsion A N) (Submodule.le_comap_torsion f)) where
+      (f.restrict (q := Submodule.torsion A N) f.le_comap_torsion) where
   isPseudoNull_ker := by
     -- The kernel of the restriction is a submodule of the kernel of `f`.
     refine hf.isPseudoNull_ker.of_injective (LinearMap.codRestrict _

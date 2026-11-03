@@ -21,12 +21,14 @@ import TauCeti.RingTheory.PowerSeries.Ideal
 
 Let `O` be a discrete valuation ring with maximal ideal `𝔪 = (ϖ)` and let `Λ = O⟦X⟧`. The extended
 ideal `𝔪Λ = (ϖ)` is a prime of height one, the *vertical prime* of `Λ`. The *`μ`-invariant* of a
-`Λ`-module `M` is the length of the localization at `(ϖ)` of its torsion submodule `T_Λ(M)`, that
-is the multiplicity of `(ϖ)` in the characteristic divisor of `T_Λ(M)`. The torsion submodule
-matters: localizing `M` itself at `(ϖ)` would also see free summands, of infinite length.
+`Λ`-module `M` is the multiplicity of `(ϖ)` in the characteristic divisor of its torsion submodule
+`T_Λ(M)`. For finitely generated `M` this is the length of the localization of `T_Λ(M)` at `(ϖ)`.
+The torsion submodule matters: localizing `M` itself at `(ϖ)` would also see free summands, of
+infinite length.
 
-The `μ`-invariant is invariant under pseudo-isomorphism and additive on products and in short exact
-sequences of torsion modules. On an elementary module
+The `μ`-invariant is invariant under pseudo-isomorphism, and it is additive on products of finitely
+generated modules and in short exact sequences of finitely generated torsion modules. On an
+elementary module
 `Λʳ × ∏ᵢ Λ ⧸ (ϖ ^ mᵢ) × ∏ⱼ Λ ⧸ (Fⱼ ^ nⱼ)` with monic `Fⱼ` it is `Σ mᵢ`: the free part is
 torsion-free, and a monic polynomial is not divisible by `ϖ`. By the structure theorem for Iwasawa
 modules (`TauCeti.Iwasawa.exists_isPseudoIsomorphism_elementary`), the `μ`-invariant of a finitely
@@ -107,6 +109,7 @@ theorem coe_notMem_verticalPrime_of_monic {F : O[X]} (hF : F.Monic) :
     mem_verticalPrime_iff.mp h F.natDegree
 
 /-- The vertical prime has height one. -/
+@[simp]
 theorem height_verticalPrime : (verticalPrime O).asIdeal.height = 1 := by
   obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible O
   have hϖ' : Prime (C ϖ : O⟦X⟧) := prime_C_iff.mpr hϖ.prime
@@ -148,6 +151,7 @@ theorem muInvariant_eq_charDivisor (hM : Module.IsTorsion O⟦X⟧ M) :
     (eq_top_iff.mpr fun x _ ↦ (mem_torsion_iff x).mpr (@hM x))).charDivisor_eq]
 
 /-- The `μ`-invariant of a torsion-free module is zero. -/
+@[simp]
 theorem muInvariant_eq_zero_of_isTorsionFree [Module.IsTorsionFree O⟦X⟧ M] :
     muInvariant O M = 0 := by
   have := subsingleton_iff_eq_bot.mpr
