@@ -112,24 +112,6 @@ def unitriangularStabilizerGroup (w : Equiv.Perm ι) : Subgroup (GL ι R) :=
 
 variable {R}
 
-/-- An upper-triangular `g` has lower-triangular conjugate `P_w⁻¹ g P_w` exactly when its entries
-vanish at the pairs `i < j` that `w⁻¹` keeps in order. -/
-private theorem isLowerTriangular_permutationGL_inv_mul_mul_iff {w : Equiv.Perm ι} {g : GL ι R}
-    (hg : (g : Matrix ι ι R).IsUpperTriangular) :
-    (((permutationGL (k := R) w)⁻¹ * g * permutationGL (k := R) w : GL ι R) :
-        Matrix ι ι R).IsLowerTriangular ↔
-      ∀ i j, i < j → w.symm i < w.symm j → (g : Matrix ι ι R) i j = 0 := by
-  simp only [IsLowerTriangular, BlockTriangular, OrderDual.toDual_lt_toDual,
-    coe_permutationGL_inv_mul_mul_permutationGL_apply]
-  constructor
-  · intro h i j _ hw
-    simpa using h hw
-  · intro h a b hab
-    rcases lt_trichotomy (w a) (w b) with hlt | heq | hgt
-    · exact h _ _ hlt (by simpa using hab)
-    · exact absurd (w.injective heq) (OrderDual.toDual_lt_toDual.mp hab).ne
-    · exact hg hgt
-
 /-- **Membership in `U_w`**: an upper-unitriangular matrix whose entries vanish at every pair
 `i < j` that `w⁻¹` keeps in order, so that its free entries sit at the inversions of `w⁻¹`. -/
 @[simp]
