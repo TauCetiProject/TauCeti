@@ -64,17 +64,6 @@ variable (q : ℂ) [Fact (q ≠ 0)]
 theorem isGroupLikeElem_kInv : IsGroupLikeElem ℂ (kInv q) :=
   ⟨counit_kInv q, comul_kInv q⟩
 
-/-- The inverse of the unit `K` is group-like. -/
-private theorem isGroupLikeElem_kUnit_inv : IsGroupLikeElem ℂ (↑(kUnit q)⁻¹ : UqSl2 q) :=
-  kUnit_inv (q := q) ▸ isGroupLikeElem_kInv q
-
-/-- The square of the antipode is conjugation by the unit `K⁻¹`, in the form consumed by the
-pivotal structure of a group-like unit. -/
-theorem antipode_antipode_eq_kUnit_inv (x : UqSl2 q) :
-    HopfAlgebra.antipode ℂ (HopfAlgebra.antipode ℂ x) =
-      ↑(kUnit q)⁻¹ * x * ↑(kUnit q)⁻¹⁻¹ := by
-  simpa using antipode_antipode q x
-
 /-- The rigid structure on finite-dimensional `UqSl2 q`-modules: the right dual of a module is its
 contragredient through the antipode, and its left dual is its contragredient through the inverse
 of the antipode. -/
@@ -86,8 +75,8 @@ element `K⁻¹`, whose components are `v ↦ (φ ↦ φ(K⁻¹ v))`. -/
 abbrev pivotalCategory :
     letI := rigidCategory q
     PivotalCategory (FiniteHopfModuleCat ℂ (UqSl2 q)) :=
-  FiniteHopfModuleCat.pivotalCategory (g := (kUnit q)⁻¹) (antipode_antipode_eq_kUnit_inv q)
-    (kUnit_inv (q := q) ▸ isGroupLikeElem_kInv q)
+  FiniteHopfModuleCat.pivotalCategory (g := (kUnit q)⁻¹)
+    (fun x => by simpa using antipode_antipode q x) (kUnit_inv (q := q) ▸ isGroupLikeElem_kInv q)
 
 variable {q}
 
@@ -100,11 +89,8 @@ theorem dualEquiv_pivotalIsoApp_hom_apply (V : FiniteHopfModuleCat ℂ (UqSl2 q)
     BialgebraModule.dualEquiv ℂ (UqSl2 q) (Vᘁ : FiniteHopfModuleCat ℂ (UqSl2 q))
         ((pivotalIsoApp V).hom.hom.hom v) φ =
       BialgebraModule.dualEquiv ℂ (UqSl2 q) V φ (kInv q • v) := by
-  have h := FiniteHopfModuleCat.dualEquiv_unitEvalIso_hom_apply (g := (kUnit q)⁻¹)
-    (antipode_antipode_eq_kUnit_inv q) V v φ
-  rw [← FiniteHopfModuleCat.pivotalIsoApp_pivotalCategory _ (isGroupLikeElem_kUnit_inv q),
-    kUnit_inv] at h
-  exact h
+  rw [FiniteHopfModuleCat.pivotalIsoApp_pivotalCategory,
+    FiniteHopfModuleCat.dualEquiv_unitEvalIso_hom_apply, kUnit_inv]
 
 /-- The right trace of an endomorphism `f` of a finite-dimensional module `V` is the trace of
 `K⁻¹ f` on `V`. -/
@@ -114,9 +100,8 @@ theorem rightTrace_eq_smul {V : FiniteHopfModuleCat ℂ (UqSl2 q)} (f : V ⟶ V)
     rightTrace f =
       LinearMap.trace ℂ V (Algebra.lsmul ℂ ℂ V (kInv q) ∘ₗ f.hom.hom.restrictScalars ℂ) •
         𝟙 (𝟙_ (FiniteHopfModuleCat ℂ (UqSl2 q))) := by
-  rw [← kUnit_inv (q := q)]
-  exact FiniteHopfModuleCat.rightTrace_eq_smul (antipode_antipode_eq_kUnit_inv q)
-    (isGroupLikeElem_kUnit_inv q) f
+  refine (FiniteHopfModuleCat.rightTrace_eq_smul _ _ f).trans ?_
+  rw [kUnit_inv]
 
 /-- The left trace of an endomorphism `f` of a finite-dimensional module `V` is the trace of
 `K f` on `V`. -/
@@ -126,9 +111,8 @@ theorem leftTrace_eq_smul {V : FiniteHopfModuleCat ℂ (UqSl2 q)} (f : V ⟶ V) 
     leftTrace f =
       LinearMap.trace ℂ V (Algebra.lsmul ℂ ℂ V (k q) ∘ₗ f.hom.hom.restrictScalars ℂ) •
         𝟙 (𝟙_ (FiniteHopfModuleCat ℂ (UqSl2 q))) := by
-  have h := FiniteHopfModuleCat.leftTrace_eq_smul (antipode_antipode_eq_kUnit_inv q)
-    (isGroupLikeElem_kUnit_inv q) f
-  rwa [inv_inv, kUnit_val] at h
+  refine (FiniteHopfModuleCat.leftTrace_eq_smul _ _ f).trans ?_
+  rw [inv_inv, kUnit_val]
 
 variable (q) in
 /-- For `q - q⁻¹ ≠ 0`, the pivotal structure given by `K⁻¹` is spherical: the left and right
