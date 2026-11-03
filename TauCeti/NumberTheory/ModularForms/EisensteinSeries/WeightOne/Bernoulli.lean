@@ -7,10 +7,9 @@ module
 
 public import TauCeti.NumberTheory.DirichletCharacter.GeneralizedBernoulli
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightOne.QExpansion
-import TauCeti.Analysis.Fourier.ZMod
-import TauCeti.Analysis.SpecialFunctions.Trigonometric.Cotangent
 import TauCeti.Data.ZMod.Count
 import TauCeti.NumberTheory.DirichletCharacter.Conductor
+import TauCeti.NumberTheory.DirichletCharacter.LValues
 
 /-!
 # Bernoulli constant coefficients of the weight-one Eisenstein series with character
@@ -33,12 +32,13 @@ characters can contribute to the constant term. The first character `ψ` need no
 The constant coefficient is the value at `i∞`, `N⁻¹ ∑_a W(a) c_a`
 (`TauCeti.EisensteinSeries.valueAtInfty_weightedE1`), for the character weight `W`. The residues
 `a = (0, j)` carry the cotangent values `c_a = π cot (π j / N)`, and contribute only when `u = 1`.
-Their sum against `φ⁻¹(j)` is computed by the finite Fourier expansion of the cotangent
-(`TauCeti.pi_mul_cot_pi_mul_val_div_eq_sum`): the Fourier transform of `φ⁻¹` pulled back to
+Their sum against `φ⁻¹(j)` (`DirichletCharacter.IsPrimitive.sum_inv_mul_pi_mul_cot`) is computed
+by the finite Fourier expansion of the cotangent: the Fourier transform of `φ⁻¹` pulled back to
 `ZMod N` is supported on the multiples of `N / v`, where primitivity makes it a multiple of `φ` by
 the Gauss sum, leaving `∑_m m φ(m) = v B₁,φ`. The residues with `a₀ ≠ 0` carry
 `c_a = π i (2 a₀ / N - 1)`, independent of `a₁`, and the sum of `φ⁻¹(a₁)` over `a₁` vanishes unless
-`v = 1`; then they contribute `π i ∑_{a₀} ψ(a₀) (2 a₀ / N - 1) = 2π i B₁,ψ`.
+`v = 1`; then the `N` columns `a₁` contribute `π i N ∑_{a₀} ψ(a₀) (2 a₀ / N - 1) = 2π i N B₁,ψ`
+to the sum, that is `2π i B₁,ψ` after the division by `N`.
 
 ## Main results
 
@@ -89,79 +89,6 @@ private lemma sum_charWeight_cons_eq_zero [NeZero v] (huv : u * v ∣ N) (hφ : 
       MulChar.sum_eq_zero_of_ne_one (inv_ne_one.mpr hφ), smul_zero, mul_zero]
   · exact Finset.sum_const_zero
 
-/-- For primitive `φ`, the Fourier coefficient modulo `N` of `φ⁻¹` pulled back from `ZMod v`: it is
-`(N / v) φ(m / (N / v)) g(φ⁻¹)` if `N / v ∣ m`, and `0` otherwise. -/
-private lemma sum_inv_mul_stdAddChar [NeZero v] (hv : v ∣ N) (hφ : φ.IsPrimitive) (m : ZMod N) :
-    ∑ j : ZMod N, φ⁻¹ (j.val : ZMod v) * stdAddChar (m * j) =
-      if N / v ∣ m.val then
-        (N / v : ℕ) * (φ ((m.val / (N / v) : ℕ) : ZMod v) * gaussSum φ⁻¹ stdAddChar)
-      else 0 := by
-  have hsum : ∑ j : ZMod N, φ⁻¹ (j.val : ZMod v) * stdAddChar (m * j) =
-      𝓕 (fun j : ZMod N ↦ φ⁻¹ (j.val : ZMod v)) ((-(m.val : ℤ) : ℤ) : ZMod N) := by
-    rw [dft_apply]
-    refine Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [smul_eq_mul, mul_comm]
-    congr 2
-    push_cast
-    rw [natCast_zmod_val]
-    ring
-  rw [hsum, dft_comp_natCast_val hv]
-  simp only [Int.dvd_neg, Int.natCast_dvd_natCast]
-  split_ifs with h
-  · rw [Int.neg_ediv_of_dvd (Int.natCast_dvd_natCast.mpr h),
-      hφ.inv.fourierTransform_eq_inv_mul_gaussSum, inv_inv, Int.cast_neg, neg_neg, nsmul_eq_mul,
-      ← Int.natCast_div, Int.cast_natCast]
-  · rfl
-
-/-- **The cotangent row of the constant term.** For a nontrivial primitive `φ` modulo `v ∣ N`,
-`∑_{j mod N} φ⁻¹(j) π cot (π j / N) = N · 2π i g(φ⁻¹) B₁,φ / v`. -/
-private lemma sum_inv_mul_pi_mul_cot [NeZero v] (hv : v ∣ N) (hφ : φ.IsPrimitive) (hφ1 : φ ≠ 1) :
-    ∑ j : ZMod N, φ⁻¹ (j.val : ZMod v) * (π * cot (π * (j.val / N))) =
-      N * (2 * π * I / v * gaussSum φ⁻¹ stdAddChar * φ.generalizedBernoulli 1) := by
-  have : Nontrivial (ZMod v) := ZMod.nontrivial_iff.mpr fun h ↦ hφ1 (φ.level_one' h)
-  set L := N / v with hL
-  have hN : N = v * L := (Nat.mul_div_cancel' hv).symm
-  have hL0 : L ≠ 0 := fun h ↦ NeZero.ne N (by rw [hN, h, mul_zero])
-  -- expand each cotangent in its finite Fourier series; the term at `j = 0` vanishes
-  have hexp (j : ZMod N) : φ⁻¹ (j.val : ZMod v) * (π * cot (π * (j.val / N))) =
-      π * I * φ⁻¹ (j.val : ZMod v) + 2 * π * I / N *
-        ∑ m : ZMod N, (m.val : ℂ) * (φ⁻¹ (j.val : ZMod v) * stdAddChar (m * j)) := by
-    rcases eq_or_ne j 0 with rfl | hj
-    · simp [MulChar.map_zero]
-    · rw [pi_mul_cot_pi_mul_val_div_eq_sum N hj]
-      simp_rw [mul_left_comm _ (φ⁻¹ _), ← Finset.mul_sum]
-      ring
-  simp_rw [hexp]
-  rw [Finset.sum_add_distrib, ← Finset.mul_sum, ← Finset.mul_sum, Finset.sum_comm]
-  simp_rw [← Finset.mul_sum, sum_inv_mul_stdAddChar φ hv hφ, ← hL]
-  rw [sum_comp_natCast_val hv fun r ↦ φ⁻¹ r, MulChar.sum_eq_zero_of_ne_one (inv_ne_one.mpr hφ1),
-    smul_zero, mul_zero, zero_add]
-  -- only the multiples `m = L y` contribute, and `∑_y y φ(y) = v B₁,φ`
-  have hreindex : ∑ m : ZMod N, (m.val : ℂ) * (if L ∣ m.val then
-      (L : ℂ) * (φ ((m.val / L : ℕ) : ZMod v) * gaussSum φ⁻¹ stdAddChar) else 0) =
-      ∑ y : ZMod v, (L * y.val : ℕ) * ((L : ℂ) * (φ (y.val : ZMod v) *
-        gaussSum φ⁻¹ stdAddChar)) := by
-    rw [← sum_ite_dvd_val hv fun q ↦ ((L * q : ℕ) : ℂ) * ((L : ℂ) * (φ (q : ZMod v) *
-      gaussSum φ⁻¹ stdAddChar)), ← hL]
-    refine Finset.sum_congr rfl fun m _ ↦ ?_
-    split_ifs with h
-    · rw [Nat.mul_div_cancel' h]
-    · rw [mul_zero]
-  rw [hreindex]
-  simp_rw [natCast_zmod_val]
-  have hB := DirichletCharacter.natCast_mul_generalizedBernoulli_one_of_ne_one hφ1
-  have hsum : ∑ y : ZMod v, ((L * y.val : ℕ) : ℂ) * ((L : ℂ) * (φ y * gaussSum φ⁻¹ stdAddChar)) =
-      L * L * gaussSum φ⁻¹ stdAddChar * (v * φ.generalizedBernoulli 1) := by
-    rw [hB, Finset.mul_sum]
-    refine Finset.sum_congr rfl fun y _ ↦ ?_
-    push_cast
-    ring
-  rw [hsum]
-  have hv0 : (v : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne v)
-  rw [hN]
-  push_cast
-  field_simp
-
 /-- **The row `a₀ = 0` of the constant term**: the cotangent values weighted by `ψ(0) φ⁻¹(a₁)`.
 It vanishes unless `u = 1`, and then `v ≠ 1` by the parity condition. -/
 private lemma sum_charWeight_zero_mul_pi_mul_cot [NeZero v] (huv : u * v ∣ N)
@@ -177,7 +104,7 @@ private lemma sum_charWeight_zero_mul_pi_mul_cot [NeZero v] (huv : u * v ∣ N)
       rw [DirichletCharacter.modOne_eq_one', DirichletCharacter.modOne_eq_one'] at hpar
       norm_num at hpar
     simp only [DirichletCharacter.modOne_eq_one', one_mul]
-    exact sum_inv_mul_pi_mul_cot φ (dvd_of_mul_left_dvd huv) hφ (mt hφ.eq_one_iff.mp hv)
+    exact hφ.sum_inv_mul_pi_mul_cot (dvd_of_mul_left_dvd huv) (mt hφ.eq_one_iff.mp hv)
   · simp [ψ.map_zero' hu]
 
 /-- **The rows `a₀ ≠ 0` of the constant term**, where `c_a = π i (2 a₀ / N - 1)` does not depend
