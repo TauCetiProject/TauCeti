@@ -6,28 +6,26 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Torsion.Basic
+public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import TauCeti.LinearAlgebra.Matrix.ToLinearEquiv
 public import Mathlib.Algebra.Module.Submodule.Equiv
 
 /-!
-# Kernels after specialization of a diagonalization
+# Kernel coordinates from a diagonalization
 
-A specified diagonalization `U * M * V = diagonal d`, with unit determinants for `U` and `V`,
-computes the kernel of `M` over every coefficient ring. There is one free coordinate for each
-zero entry of the original diagonal, and one annihilator coordinate for each nonzero entry.
-The latter factors can become nonzero after specialization, even when the original kernel is
-zero. In particular the zero positions must be tested before applying the coefficient map.
+A specified diagonalization `L * M * Q = diagonal d` gives kernel coordinates after
+any change of coefficient rings. Zero entries of the original diagonal give free
+coordinates; each remaining entry gives its annihilator in the new ring. In
+particular, a nonzero integral entry may contribute new kernel vectors after reduction.
 
-`Matrix.kerMapEquivOfMulMulEqDiagonal` gives this equivalence with both coordinate directions.
-It does not choose a diagonalization or require a divisibility ordering of its entries.
-This is useful for fixed modules by applying it to the matrix of an endomorphism minus identity.
+The transformations are retained explicitly: coordinates are read using `Q⁻¹`, and
+vectors are reconstructed using `Q`. No flatness or injectivity of the coefficient
+map is needed. Applying this to `M = γ - 1` computes fixed vectors of a lattice action.
+The diagonal step, `RingHom.diagonalKerEquiv`, works over commutative semirings.
 
-The construction uses Mathlib's `Submodule.torsionBy`, `Matrix.toLinearEquiv` and restriction of
-linear equivalences to submodules.
-
-## References
-
-* Bourbaki, *Algebra*, Chapter VII, §4 (elementary divisors).
+We use Mathlib's `Submodule.torsionBy`, its general linear group and restriction of
+linear equivalences to submodules. See Bourbaki, *Algebra*, Chapter VII, §4,
+for elementary divisors and diagonal presentations over principal ideal domains.
 -/
 
 public section
@@ -99,76 +97,113 @@ end RingHom
 
 namespace Matrix
 
-variable {R A ι : Type*} [CommRing R] [CommRing A] [Fintype ι] [DecidableEq ι]
+variable {ι R A : Type*} [Fintype ι] [DecidableEq ι] [CommRing R] [CommRing A]
 
-/-- A unimodular diagonalization identifies the specialized kernel with its free and
-annihilator coordinates. The original vector is `V.map f` times the reconstructed diagonal
-coordinates; thus the forward coordinate change uses the inverse of `V.map f`. -/
-noncomputable def kerMapEquivOfMulMulEqDiagonal (M : Matrix ι ι R) (f : R →+* A)
-    (U V : Matrix ι ι R) (d : ι → R) (hU : IsUnit U.det) (hV : IsUnit V.det)
-    (h : U * M * V = diagonal d) :
+/-- A diagonalization tests kernel membership after any coefficient-ring map, using
+inverse right-transformation coordinates. Nonzero diagonal entries are not cancelled. -/
+theorem mulVec_eq_zero_iff_of_diagonalization (M : Matrix ι ι R)
+    (L Q : GeneralLinearGroup ι R) (d : ι → R)
+    (h : (L : Matrix ι ι R) * M * (Q : Matrix ι ι R) = diagonal d)
+    (f : R →+* A) (x : ι → A) :
+    M.map f *ᵥ x = 0 ↔
+      ∀ i, f (d i) * ((GeneralLinearGroup.map f Q⁻¹ : GeneralLinearGroup ι A) *ᵥ x) i = 0 := by
+  have hd := congrArg (fun N : Matrix ι ι R ↦ N.map f) h
+  simp only [Matrix.map_mul, diagonal_map (map_zero f)] at hd
+  have he : (GeneralLinearGroup.map f L : Matrix ι ι A) *ᵥ (M.map f *ᵥ x) =
+      diagonal (fun i ↦ f (d i)) *ᵥ
+        ((GeneralLinearGroup.map f Q⁻¹ : GeneralLinearGroup ι A) *ᵥ x) := by
+    rw [← hd]
+    rw [← mulVec_mulVec, ← mulVec_mulVec,
+      mulVec_mulVec x ((Q : Matrix ι ι R).map f)]
+    have hq : (Q : Matrix ι ι R).map f *
+        (GeneralLinearGroup.map f Q⁻¹ : Matrix ι ι A) = 1 :=
+      congrArg Units.val (GeneralLinearGroup.map_mul_map_inv f Q)
+    rw [hq, one_mulVec]
+    congr 1
+  constructor
+  · intro hx i
+    have hz := congrFun (he.symm.trans (by rw [hx, mulVec_zero])) i
+    simpa only [mulVec_diagonal, Pi.zero_apply] using hz
+  · intro hx
+    have hz : (GeneralLinearGroup.map f L : Matrix ι ι A) *ᵥ (M.map f *ᵥ x) = 0 := by
+      rw [he]
+      ext i
+      simpa only [mulVec_diagonal, Pi.zero_apply] using hx i
+    have hz' := congrArg
+      (fun y ↦ (GeneralLinearGroup.map f L⁻¹ : Matrix ι ι A) *ᵥ y) hz
+    rw [mulVec_mulVec, ← GeneralLinearGroup.coe_mul,
+      GeneralLinearGroup.map_inv_mul_map, GeneralLinearGroup.coe_one, one_mulVec] at hz'
+    simpa only [mulVec_zero] using hz'
+
+/-- Given a diagonalization, the kernel over a new coefficient ring is the product of
+free coordinates at the original zero entries and annihilators at the other entries.
+The partition is made before applying `f`, so entries killed by `f` are retained. -/
+noncomputable def kerEquivProdTorsionOfDiagonalization (M : Matrix ι ι R)
+    (L Q : GeneralLinearGroup ι R) (d : ι → R)
+    (h : (L : Matrix ι ι R) * M * (Q : Matrix ι ι R) = diagonal d)
+    (f : R →+* A) :
     LinearMap.ker (M.map f).mulVecLin ≃ₗ[A]
       ({i // d i = 0} → A) ×
         ((i : {i // d i ≠ 0}) → Submodule.torsionBy A A (f (d i))) := by
-  let e := (V.map f).toLinearEquiv (Pi.basisFun A ι) (by
-    simpa only [RingHom.map_det, RingHom.mapMatrix_apply] using hV.map f)
+  let e := (GeneralLinearGroup.map f Q : Matrix ι ι A).toLinearEquiv
+    (Pi.basisFun A ι) (isUnits_det_units _)
   have hk : LinearMap.ker (diagonal (f ∘ d)).mulVecLin =
       (LinearMap.ker (M.map f).mulVecLin).comap e.toLinearMap := by
-    have hd : U.map f * M.map f * V.map f = diagonal (f ∘ d) := by
+    have hd : (GeneralLinearGroup.map f L : Matrix ι ι A) * M.map f *
+        (GeneralLinearGroup.map f Q : Matrix ι ι A) = diagonal (f ∘ d) := by
       simpa only [Matrix.map_mul, diagonal_map f.map_zero, Function.comp_def] using
         congrArg (fun N ↦ N.map f) h
     ext x
     simp only [Submodule.mem_comap, LinearMap.mem_ker, LinearEquiv.coe_toLinearMap, e,
       toLinearEquiv_basisFun_apply, mulVecLin_apply]
     rw [← hd, ← mulVec_mulVec, ← mulVec_mulVec]
-    exact (mulVec_injective_of_isUnit
-      ((U.map f).isUnit_iff_isUnit_det.mpr (by
-        simpa only [RingHom.map_det, RingHom.mapMatrix_apply] using hU.map f))).eq_iff' (by simp)
+    exact (mulVec_injective_of_isUnit (GeneralLinearGroup.map f L).isUnit).eq_iff'
+      (by simp)
   exact ((LinearEquiv.ofEq _ _ hk).trans
     (e.ofSubmodule' (LinearMap.ker (M.map f).mulVecLin))).symm.trans
       (f.diagonalKerEquiv d)
 
-open scoped Classical in
-/-- Reconstruct an original kernel vector by applying the right diagonalizing matrix to its
-free and annihilator coordinates. -/
-@[simp]
-theorem kerMapEquivOfMulMulEqDiagonal_symm_apply (M : Matrix ι ι R) (f : R →+* A)
-    (U V : Matrix ι ι R) (d : ι → R) (hU : IsUnit U.det) (hV : IsUnit V.det)
-    (h : U * M * V = diagonal d)
-    (x : ({i // d i = 0} → A) ×
-      ((i : {i // d i ≠ 0}) → Submodule.torsionBy A A (f (d i)))) :
-    ((kerMapEquivOfMulMulEqDiagonal M f U V d hU hV h).symm x).val =
-      V.map f *ᵥ (fun i ↦ if h : d i = 0 then x.1 ⟨i, h⟩ else (x.2 ⟨i, h⟩ : A)) := by
-  classical
-  simp only [kerMapEquivOfMulMulEqDiagonal, LinearEquiv.symm_trans_apply,
-    LinearEquiv.symm_symm, LinearEquiv.trans_apply, LinearEquiv.ofSubmodule'_apply,
-    LinearEquiv.coe_ofEq_apply, toLinearEquiv_basisFun_apply]
-  rw [funext (f.diagonalKerEquiv_symm_apply d x)]
+variable (M : Matrix ι ι R) (L Q : GeneralLinearGroup ι R) (d : ι → R)
+  (h : (L : Matrix ι ι R) * M * (Q : Matrix ι ι R) = diagonal d) (f : R →+* A)
 
-/-- The free coordinates are read after applying the inverse right diagonalizing matrix. -/
+/-- Free coordinates are the entries of the inverse right transformation at the
+original zero diagonal positions. -/
 @[simp]
-theorem kerMapEquivOfMulMulEqDiagonal_fst (M : Matrix ι ι R) (f : R →+* A)
-    (U V : Matrix ι ι R) (d : ι → R) (hU : IsUnit U.det) (hV : IsUnit V.det)
-    (h : U * M * V = diagonal d) (x : LinearMap.ker (M.map f).mulVecLin)
-    (i : {i // d i = 0}) :
-    (kerMapEquivOfMulMulEqDiagonal M f U V d hU hV h x).1 i =
-      ((V.map f)⁻¹ *ᵥ x.val) i := by
-  simp only [kerMapEquivOfMulMulEqDiagonal, LinearEquiv.trans_apply,
+theorem kerEquivProdTorsionOfDiagonalization_fst_apply
+    (x : LinearMap.ker (M.map f).mulVecLin) (i : {i // d i = 0}) :
+    (kerEquivProdTorsionOfDiagonalization M L Q d h f x).1 i =
+      ((GeneralLinearGroup.map f Q⁻¹ : Matrix ι ι A) *ᵥ (x : ι → A)) i := by
+  simp only [kerEquivProdTorsionOfDiagonalization, LinearEquiv.trans_apply,
     LinearEquiv.symm_trans_apply, RingHom.diagonalKerEquiv_fst, LinearEquiv.ofEq_symm,
     LinearEquiv.coe_ofEq_apply, LinearEquiv.ofSubmodule'_symm_apply,
-    toLinearEquiv_basisFun_symm_apply]
+    toLinearEquiv_basisFun_symm_apply, map_inv, GeneralLinearGroup.coe_inv]
 
-/-- The annihilator coordinates are read after applying the same inverse coordinate change. -/
+/-- Annihilator coordinates retain the entries of the inverse right transformation
+at every originally nonzero diagonal position. -/
 @[simp]
-theorem kerMapEquivOfMulMulEqDiagonal_snd (M : Matrix ι ι R) (f : R →+* A)
-    (U V : Matrix ι ι R) (d : ι → R) (hU : IsUnit U.det) (hV : IsUnit V.det)
-    (h : U * M * V = diagonal d) (x : LinearMap.ker (M.map f).mulVecLin)
-    (i : {i // d i ≠ 0}) :
-    ((kerMapEquivOfMulMulEqDiagonal M f U V d hU hV h x).2 i : A) =
-      ((V.map f)⁻¹ *ᵥ x.val) i := by
-  simp only [kerMapEquivOfMulMulEqDiagonal, LinearEquiv.trans_apply,
+theorem kerEquivProdTorsionOfDiagonalization_snd_apply
+    (x : LinearMap.ker (M.map f).mulVecLin) (i : {i // d i ≠ 0}) :
+    ((kerEquivProdTorsionOfDiagonalization M L Q d h f x).2 i : A) =
+      ((GeneralLinearGroup.map f Q⁻¹ : Matrix ι ι A) *ᵥ (x : ι → A)) i := by
+  simp only [kerEquivProdTorsionOfDiagonalization, LinearEquiv.trans_apply,
     LinearEquiv.symm_trans_apply, RingHom.diagonalKerEquiv_snd, LinearEquiv.ofEq_symm,
     LinearEquiv.coe_ofEq_apply, LinearEquiv.ofSubmodule'_symm_apply,
-    toLinearEquiv_basisFun_symm_apply]
+    toLinearEquiv_basisFun_symm_apply, map_inv, GeneralLinearGroup.coe_inv]
+
+open scoped Classical in
+/-- Reconstruct a kernel vector by combining its free and annihilator coordinates,
+then applying the right transformation. -/
+@[simp]
+theorem kerEquivProdTorsionOfDiagonalization_symm_apply
+    (z : ({i // d i = 0} → A) ×
+      ((i : {i // d i ≠ 0}) → Submodule.torsionBy A A (f (d i)))) :
+    ((kerEquivProdTorsionOfDiagonalization M L Q d h f).symm z : ι → A) =
+      (GeneralLinearGroup.map f Q : Matrix ι ι A) *ᵥ
+        (fun i ↦ if hi : d i = 0 then z.1 ⟨i, hi⟩ else (z.2 ⟨i, hi⟩ : A)) := by
+  classical
+  simp only [kerEquivProdTorsionOfDiagonalization, LinearEquiv.symm_trans_apply,
+    LinearEquiv.symm_symm, LinearEquiv.trans_apply, LinearEquiv.ofSubmodule'_apply,
+    LinearEquiv.coe_ofEq_apply, toLinearEquiv_basisFun_apply]
+  rw [funext (f.diagonalKerEquiv_symm_apply d z)]
 
 end Matrix

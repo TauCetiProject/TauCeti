@@ -10,8 +10,10 @@ public import TauCeti.NumberTheory.BinaryQuadraticForm.PrimitiveReduced
 public import Mathlib.NumberTheory.NumberField.ClassNumber
 public import Mathlib.RingTheory.UniqueFactorizationDomain.Defs
 import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Examples
+import TauCeti.NumberTheory.Multiquadratic.Quadratic.Discriminant
 import TauCeti.NumberTheory.NumberField.ClassNumber.RingEquiv
 import TauCeti.NumberTheory.NumberField.Global.Orders.Maximal
+import TauCeti.NumberTheory.QuadraticOrder.Embedding
 import TauCeti.NumberTheory.QuadraticOrder.NormOne
 
 /-!
@@ -31,9 +33,10 @@ When `-n` is a fundamental discriminant the order is the maximal order of `ℚ(�
 (`QuadraticOrder.numberFieldOrder_eq_maximal_iff`), whose Picard group is the ideal class group
 (`GlobalNumberFields.maximalOrderPicEquiv`). The class number of
 `ℚ(√(-n))` is then the number of primitive reduced forms of discriminant `-n`, a finite set the
-kernel can enumerate. As certified examples, `ℚ(√(-4)) = ℚ(i)` has class number one, while
-`ℚ(√(-20)) = ℚ(√(-5))` has class number two, so its ring of integers is not a unique factorization
-domain.
+kernel can enumerate. Every quadratic field of discriminant `-n` is isomorphic to `ℚ(√(-n))`, by
+evaluation at `θ` or `2θ` for a square root `θ` of its squarefree radicand, so the same count is
+the class number of any such field. As a certified example, `ℚ(√(-20)) = ℚ(√(-5))` has class
+number two, so its ring of integers is not a unique factorization domain.
 
 ## Main definitions and results
 
@@ -47,6 +50,8 @@ domain.
   number, is twice the order of that Picard group divided by the number of units of the order.
 * `TauCeti.BinaryQuadraticForm.classNumber_eq_card_primitiveReducedForms`: for fundamental `-n`,
   the class number of `ℚ(√(-n))` is `#(primitiveReducedForms n)`.
+* `TauCeti.BinaryQuadraticForm.classNumber_eq_card_primitiveReducedForms_of_discr_eq`: the class
+  number of any quadratic field of discriminant `-n` is `#(primitiveReducedForms n)`.
 * `TauCeti.BinaryQuadraticForm.classNumber_neg_twenty_eq_two`: the class number of `ℚ(√(-20))` is
   `2`; `not_uniqueFactorizationMonoid_neg_twenty` records the failure of unique factorization there.
 
@@ -121,6 +126,25 @@ theorem classNumber_eq_card_primitiveReducedForms (hfund : Int.IsFundamentalDisc
     ← Nat.card_congr (maximalOrderPicEquiv _).toEquiv,
     ← (QuadraticOrder.numberFieldOrder_eq_maximal_iff _ hfund.emod_four_eq_zero_or_one).2 hfund,
     nat_card_pic]
+
+/-- **Class numbers of quadratic fields of negative discriminant from reduced forms.** A
+quadratic number field of discriminant `-n` has class number `#(primitiveReducedForms n)`, the
+count for its model `ℚ(√(-n))`. -/
+theorem classNumber_eq_card_primitiveReducedForms_of_discr_eq {K : Type*} [Field K]
+    [NumberField K] (hK : Module.finrank ℚ K = 2) {n : ℕ} (hn : NumberField.discr K = -n) :
+    NumberField.classNumber K = #(primitiveReducedForms n) := by
+  have : NeZero n := ⟨by rintro rfl; exact NumberField.discr_ne_zero K (by simpa using hn)⟩
+  obtain ⟨θ, d, hmin, hgen, hsf⟩ := NumberField.exists_minpoly_eq_X_sq_sub_C_and_adjoin_eq_top hK
+  -- The discriminant `-n` is `d` or `4 d`, so `θ` or `2 θ` is a square root of `-n` in `K`.
+  obtain ⟨δ, hδ⟩ : ∃ δ : K, δ ^ 2 = ((-n : ℤ) : K) := by
+    have hθ : (θ : K) ^ 2 = d := by simpa using NumberField.coe_gen_sq hmin
+    rw [← hn, Multiquadratic.discr_eq_fundamentalDiscriminant hmin hgen hsf,
+      Multiquadratic.fundamentalDiscriminant_def]
+    split_ifs
+    · exact ⟨θ, hθ⟩
+    · exact ⟨2 * θ, by rw [mul_pow, hθ]; push_cast; ring⟩
+  rw [← RingEquiv.classNumber_eq (QuadraticOrder.algEquivOfSqrt (-n) δ hδ hK).toRingEquiv,
+    classNumber_eq_card_primitiveReducedForms n (hn ▸ Multiquadratic.isFundamentalDiscr_discr hK)]
 
 end Fundamental
 
