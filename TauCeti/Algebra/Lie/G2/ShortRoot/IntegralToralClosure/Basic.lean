@@ -144,6 +144,26 @@ theorem lie_cartanGenerator_rootGenerator (k : Fin 2 ⊕ Fin 2) (j : Fin 2) :
         _ = ((rootWeight (.inr i) j : ℤ) : ℚ) • rootGen (.inr i) :=
           congrArg (fun z : ℤ => ((z : ℚ) • rootGen (.inr i))) hweight.symm
 
+/-- The positive simple-root generator has the character of the named Bourbaki simple root. -/
+theorem lie_cartanGenerator_rootGenerator_inl_eq_root_simpleIndex (i j : Fin 2) :
+    ⁅cartanGen j, rootGen (.inl i)⁆ =
+      (((G2.simplyConnectedRootDatum valid_G2).root (G2.simpleIndex valid_G2 i) j : ℤ) : ℚ) •
+        rootGen (.inl i) := by
+  rw [← G2.rootGeneratorWeight_inl_eq_root_simpleIndex valid_G2 i]
+  exact lie_cartanGenerator_rootGenerator (.inl i) j
+
+/-- The negative simple-root generator has the negative of the named simple-root character. -/
+theorem lie_cartanGenerator_rootGenerator_inr_eq_neg_root_simpleIndex (i j : Fin 2) :
+    ⁅cartanGen j, rootGen (.inr i)⁆ =
+      -((((G2.simplyConnectedRootDatum valid_G2).root (G2.simpleIndex valid_G2 i) j : ℤ) : ℚ) •
+        rootGen (.inr i)) := by
+  have h := lie_cartanGenerator_rootGenerator (.inr i) j
+  have hweight := G2.rootGeneratorWeight_inr_eq_neg_root_simpleIndex valid_G2 i
+  -- Normalize the character's rank-indexed domain to the represented generators' `Fin 2`.
+  dsimp (config := { instances := true }) only [DynkinType.rank] at h hweight ⊢
+  rw [hweight, Pi.neg_apply, Int.cast_neg, neg_smul] at h
+  exact h
+
 /-- The coordinate on which a numbered simple root generator makes its distinguished unit step:
 the raising generators step from the second and third weights, the lowering ones from the first
 and second. -/
