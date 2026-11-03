@@ -196,10 +196,9 @@ theorem norm_sq_eq_sum (x : DivisionOctonionReal) :
 theorem norm_toLp_tuple (x : DivisionOctonionReal) :
     ‖(!₂[x.fst.re, x.fst.imI, x.fst.imJ, x.fst.imK, x.snd.re, x.snd.imI, x.snd.imJ, x.snd.imK] :
       EuclideanSpace ℝ (Fin 8))‖ = ‖x‖ := by
-  rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), norm_sq_eq_sum, EuclideanSpace.norm_sq_eq,
-    Fin.sum_univ_eight]
-  simp only [Real.norm_eq_abs, sq_abs]
-  simp only [Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val, add_assoc]
+  rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), norm_sq_eq_sum]
+  simp [EuclideanSpace.norm_sq_eq, Fin.sum_univ_eight]
+  ring
 
 /-- **The eight-coordinate Euclidean model of the real octonions**: the coordinates
 `re, i, j, k` of the first quaternion component followed by those of the second, as a linear
@@ -210,18 +209,15 @@ noncomputable def linearIsometryEquivTuple : DivisionOctonionReal ≃ₗᵢ[ℝ]
     x.snd.re, x.snd.imI, x.snd.imJ, x.snd.imK]
   invFun v := ⟨⟨v 0, v 1, v 2, v 3⟩, ⟨v 4, v 5, v 6, v 7⟩⟩
   map_add' x y := by
-    rw [← WithLp.toLp_add]
-    simp only [Matrix.cons_add_cons, Matrix.empty_add_empty]
-    rfl
+    ext i
+    fin_cases i <;> simp
   map_smul' r x := by
-    rw [← WithLp.toLp_smul]
-    simp only [Matrix.smul_cons, Matrix.smul_empty]
-    rfl
+    ext i
+    fin_cases i <;> simp
   left_inv x := rfl
   right_inv v := by
     ext i
-    match i with
-    | 0 => rfl | 1 => rfl | 2 => rfl | 3 => rfl | 4 => rfl | 5 => rfl | 6 => rfl | 7 => rfl
+    fin_cases i <;> rfl
   norm_map' := norm_toLp_tuple
 
 @[simp]
