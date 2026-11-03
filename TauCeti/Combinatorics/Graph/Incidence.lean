@@ -337,6 +337,14 @@ instance : (Graph.ofSimpleGraph H).Loopless where
     rcases he with ⟨rfl, he⟩
     exact H.irrefl ((SimpleGraph.mem_edgeSet H).mp he)
 
+/-- An edge of `Graph.ofSimpleGraph H` is incident to a vertex exactly when it is an edge of `H`
+containing that vertex. -/
+@[simp]
+theorem inc_ofSimpleGraph {e : Sym2 α} {x : α} :
+    (Graph.ofSimpleGraph H).Inc e x ↔ e ∈ H.edgeSet ∧ x ∈ e := by
+  simp only [Graph.Inc, Graph.ofSimpleGraph_isLink, Sym2.mem_iff_exists]
+  tauto
+
 /-- The multigraph incidence set of `Graph.ofSimpleGraph H` is the usual simple-graph incidence
 set. -/
 @[simp]

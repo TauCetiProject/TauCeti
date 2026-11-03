@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Combinatorics.Graph.Subgraph
 public import Mathlib.Combinatorics.SimpleGraph.Coloring.Vertex
 public import Mathlib.Combinatorics.SimpleGraph.LineGraph
 public import TauCeti.Combinatorics.Graph.Incidence
@@ -26,11 +25,12 @@ an abbreviation for `G.lineGraph.Coloring C`, so Mathlib's colouring API (relabe
 least number of colours of a proper edge-colouring is `G.lineGraph.chromaticNumber`.
 
 The edges at a vertex form a clique of the line graph, so every proper edge-colouring uses at least
-as many colours as there are edges at any vertex, counted by `Graph.incidenceCount`. Two vertices
-joined by a set `F` of parallel edges show that this bound is attained: their line graph is
-complete, so they need exactly `F.encard` colours. The converse bound for bipartite multigraphs is
-Kőnig's edge-colouring theorem (D. Kőnig, *Gráfok és alkalmazásuk a determinánsok és a halmazok
-elméletére*, Mat. Természettud. Értesítő 34 (1916), 104--119).
+`Graph.incidenceCount` colours at any vertex; this is the number of edges at that vertex when there
+are finitely many, and zero otherwise. Two vertices joined by a set `F` of parallel edges have a
+complete line graph, so they need exactly `F.encard` colours; for finite `F` this attains the
+bound. The converse bound for bipartite multigraphs is Kőnig's edge-colouring theorem (D. Kőnig,
+*Gráfok és alkalmazásuk a determinánsok és a halmazok elméletére*, Mat. Természettud. Értesítő 34
+(1916), 104--119).
 
 ## Main definitions
 
@@ -47,8 +47,9 @@ elméletére*, Mat. Természettud. Értesítő 34 (1916), 104--119).
 
 * `Graph.isClique_lineGraph_incidenceSet`: the edges at a vertex form a clique of the line graph.
 * `Graph.EdgeColoring.incidenceCount_le_card` and
-  `Graph.incidenceCount_le_chromaticNumber_lineGraph`: a proper edge-colouring needs at least as
-  many colours as there are edges at any vertex.
+  `Graph.incidenceCount_le_chromaticNumber_lineGraph`: a proper edge-colouring needs at least
+  `Graph.incidenceCount x` colours, the number of edges at `x` when there are finitely many (and
+  zero otherwise).
 * `Graph.chromaticNumber_lineGraph_banana`: two vertices joined by a set `F` of parallel edges need
   exactly `F.encard` colours.
 * `Graph.chromaticNumber_lineGraph_ofSimpleGraph`: for a simple graph the least number of colours
@@ -119,9 +120,8 @@ def Iso.lineGraph (f : G.Iso G') : G.lineGraph ≃g G'.lineGraph where
   map_rel_iff' {e e'} := by
     simp only [lineGraph_adj, ne_eq, EmbeddingLike.apply_eq_iff_eq]
     refine and_congr_right fun _ ↦ ⟨fun ⟨y, he, he'⟩ ↦ ?_, fun ⟨x, he, he'⟩ ↦ ?_⟩
-    · obtain ⟨x, hx⟩ := f.vertexEquiv.surjective ⟨y, he.vertex_mem⟩
-      rw [← show (f.vertexEquiv x : α') = y from congrArg Subtype.val hx] at he he'
-      exact ⟨x, (f.map_inc_iff e x).1 he, (f.map_inc_iff e' x).1 he'⟩
+    · exact ⟨f.vertexEquiv.symm ⟨y, he.vertex_mem⟩, (f.map_inc_iff e _).1 (by simpa using he),
+        (f.map_inc_iff e' _).1 (by simpa using he')⟩
     · exact ⟨f.vertexEquiv ⟨x, he.vertex_mem⟩, (f.map_inc_iff e _).2 he,
         (f.map_inc_iff e' _).2 he'⟩
 
@@ -139,9 +139,8 @@ def lineGraphOfSimpleGraphIso (H : SimpleGraph α) :
   map_rel_iff' {e f} := by
     obtain ⟨e, he⟩ := e
     obtain ⟨f, hf⟩ := f
-    have hinc {g : Sym2 α} (hg : g ∈ H.edgeSet) (x : α) : (ofSimpleGraph H).Inc g x ↔ x ∈ g := by
-      simp [Inc, Sym2.mem_iff_exists, hg]
-    simp [SimpleGraph.lineGraph_adj_iff_exists, hinc he, hinc hf, Subtype.ext_iff]
+    rw [edgeSet_ofSimpleGraph] at he hf
+    simp [SimpleGraph.lineGraph_adj_iff_exists, he, hf, Subtype.ext_iff]
 
 /-- The isomorphism `Graph.lineGraphOfSimpleGraphIso` keeps each edge. -/
 @[simp]
@@ -209,8 +208,8 @@ theorem incidenceCount_le_card [Finite C] (c : G.EdgeColoring C) (x : α) :
 
 end EdgeColoring
 
-/-- The least number of colours of a proper edge-colouring is at least the number of actual edges
-at any vertex. -/
+/-- The least number of colours of a proper edge-colouring is at least `G.incidenceCount x`, the
+number of actual edges at `x` when there are finitely many (and zero otherwise). -/
 theorem incidenceCount_le_chromaticNumber_lineGraph (G : Graph α β) (x : α) :
     (G.incidenceCount x : ℕ∞) ≤ G.lineGraph.chromaticNumber := by
   rw [incidenceCount_def]
@@ -221,9 +220,7 @@ theorem incidenceCount_le_chromaticNumber_lineGraph (G : Graph α β) (x : α) :
 as colourings of Mathlib's `SimpleGraph.lineGraph`. -/
 theorem chromaticNumber_lineGraph_ofSimpleGraph (H : SimpleGraph α) :
     (ofSimpleGraph H).lineGraph.chromaticNumber = H.lineGraph.chromaticNumber :=
-  le_antisymm
-    (SimpleGraph.chromaticNumber_mono_of_hom (lineGraphOfSimpleGraphIso H).toHom)
-    (SimpleGraph.chromaticNumber_mono_of_hom (lineGraphOfSimpleGraphIso H).symm.toHom)
+  SimpleGraph.chromaticNumber_congr (lineGraphOfSimpleGraphIso H)
 
 /-! ### Parallel edges -/
 
