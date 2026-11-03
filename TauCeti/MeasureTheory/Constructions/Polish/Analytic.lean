@@ -201,7 +201,7 @@ theorem AnalyticSet.preimage_image_quotientMk_measurableSet [MeasurableSpace α]
 
 /-- An analytic set has at most continuum many points. -/
 theorem AnalyticSet.mk_le_continuum {s : Set α} (hs : AnalyticSet s) : #s ≤ 𝔠 := by
-  rw [AnalyticSet] at hs
+  rw [MeasureTheory.AnalyticSet] at hs
   obtain rfl | ⟨g, -, rfl⟩ := hs
   · simp
   · simpa [mk_arrow, aleph0_power_aleph0] using mk_range_le_lift (f := g)
