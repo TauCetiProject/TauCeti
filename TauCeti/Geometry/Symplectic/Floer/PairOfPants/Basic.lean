@@ -246,4 +246,22 @@ theorem contMDiffAt_pairOfPantsPerturbation {n : ℕ∞} (hH : ∀ q, Function.P
   exact ((contMDiffAt_smoothTransition_endCoord q hw x).smul
     (q.contMDiffAt_comp_im_endCoord (hH q) (hHs q) hw x)).smul hf
 
+/-- For a vector space target, the perturbation of period-one `C¹` Hamiltonians is `C¹` jointly
+in the point of `S = ℂ ∖ {0, 1}` and the target point. -/
+theorem contDiffAt_pairOfPantsPerturbation_prod {V : Type*} [NormedAddCommGroup V]
+    [NormedSpace ℝ V] {H : Puncture → ℝ → V → ℝ} (hH : ∀ q, Function.Periodic (H q) 1)
+    (hHs : ∀ q, ContDiff ℝ 1 (Function.uncurry (H q))) {w : ℂ} (hw : w ≠ 0 ∧ w ≠ 1) (x : V) :
+    ContDiffAt ℝ 1 (fun p : ℂ × V => pairOfPantsPerturbation H p.1 p.2) (w, x) := by
+  have hHs' : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ, ℝ) 1 (Function.uncurry (H q)) := by
+    intro q
+    have h := (hHs q).contMDiff
+    rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod] at h
+    exact h
+  have h := contMDiffAt_pairOfPantsPerturbation (n := 1) hH hHs' ⟨w, hw⟩ x
+  have h' : ContMDiffAt 𝓘(ℝ, ℂ × V) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1
+      (fun p : ℂ × V => pairOfPantsPerturbation H p.1 p.2) (w, x) := by
+    rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
+    exact h
+  exact h'.contDiffAt
+
 end TauCeti.Floer

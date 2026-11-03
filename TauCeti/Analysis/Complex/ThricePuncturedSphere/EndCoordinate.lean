@@ -8,8 +8,10 @@ module
 public import TauCeti.Analysis.Complex.ThricePuncturedSphere.CylindricalEnds
 public import Mathlib.Analysis.SpecialFunctions.Complex.Log
 public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
+public import Mathlib.Topology.Algebra.Module.Determinant
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
+import TauCeti.LinearAlgebra.Determinant.Prod
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 
 /-!
@@ -35,6 +37,13 @@ longitudinal coordinate lie in the standard punctured neighborhood of the punctu
 (`Puncture.exists_mem_neighborhood_cylindricalEndLift`), hence in the thrice-punctured sphere
 (`Puncture.cylindricalEndLift_ne_zero_and_ne_one`), and the three ends have disjoint images
 (`Puncture.cylindricalEndLift_ne_cylindricalEndLift`).
+
+In the real coordinates `ℝ × ℝ ≃ ℂ` the end lift is the end chart `Puncture.endChart`, the map in
+which integrals over the ends are computed. It is periodic in the angular coordinate
+(`Puncture.periodic_endChart`), orientation preserving (`Puncture.det_fderiv_endChart_nonneg`),
+and injective on the strip `Puncture.endStrip` of points with `±s > 1/2` and `t ∈ [-1/2, 1/2)`
+(`Puncture.injOn_endChart`), whose image is the part `±s > 1/2` of the end
+(`Puncture.mem_image_endChart`).
 
 These coordinates are what is needed to install data prescribed on the ends, such as the
 Hamiltonian terms `H(t) dt` of Floer perturbation data, as smooth data on the punctured sphere.
@@ -63,6 +72,10 @@ def endSign : Puncture → ℝ
 
 /-- The sign of an end has absolute value one. -/
 @[simp] theorem abs_endSign (q : Puncture) : |q.endSign| = 1 := by
+  cases q <;> simp
+
+/-- The sign of an end squares to one. -/
+@[simp] theorem endSign_mul_self (q : Puncture) : q.endSign * q.endSign = 1 := by
   cases q <;> simp
 
 /-- The center of an end lift: `cylindricalEndLift q z - q.endCenter` is a multiple of
@@ -189,6 +202,13 @@ theorem exists_endCoord_cylindricalEndLift (q : Puncture) (z : ℂ) :
   field_simp
   push_cast
   ring
+
+/-- The end coordinate recovers the longitudinal coordinate of a cylinder point exactly. -/
+@[simp]
+theorem re_endCoord_cylindricalEndLift (q : Puncture) (z : ℂ) :
+    (q.endCoord (q.cylindricalEndLift z)).re = z.re := by
+  obtain ⟨k, hk⟩ := q.exists_endCoord_cylindricalEndLift z
+  simp [hk]
 
 /-- The angular coordinate takes values in the period `[-1/2, 1/2)`. -/
 theorem im_endCoord_mem_Ico (q : Puncture) (w : ℂ) :
@@ -346,5 +366,110 @@ theorem cylindricalEndLift_ne_cylindricalEndLift {q r : Puncture} (hqr : q ≠ r
   intro h
   obtain rfl : p = p' := Subtype.ext (hpz.trans (h.trans hpz'.symm))
   exact Set.disjoint_left.1 (pairwise_disjoint_neighborhood hqr) hp hp'
+
+section EndChart
+
+/-! ### End charts in real coordinates -/
+
+/-- The end lift of `q`, in the real coordinates `ℝ × ℝ ≃ ℂ`: the point with cylinder coordinates
+`(s, t)` is sent to `φ_q(s + i t)`. -/
+def endChart (q : Puncture) (z : ℝ × ℝ) : ℝ × ℝ :=
+  Complex.equivRealProdCLM (q.cylindricalEndLift (Complex.equivRealProdCLM.symm z))
+
+/-- The part `±s > 1/2`, `t ∈ [-1/2, 1/2)` of the end `q` in its cylinder coordinates. The end
+chart is injective on it (`injOn_endChart`), and its image is the part `±s > 1/2` of the end
+(`mem_image_endChart`). -/
+def endStrip (q : Puncture) : Set (ℝ × ℝ) :=
+  {s | 1 / 2 < q.endSign * s} ×ˢ Ico (-1 / 2) (1 / 2)
+
+theorem endChart_def (q : Puncture) (z : ℝ × ℝ) :
+    q.endChart z =
+      Complex.equivRealProdCLM (q.cylindricalEndLift (Complex.equivRealProdCLM.symm z)) :=
+  (rfl)
+
+theorem endStrip_def (q : Puncture) :
+    q.endStrip = {s | 1 / 2 < q.endSign * s} ×ˢ Ico (-1 / 2) (1 / 2) :=
+  (rfl)
+
+theorem mem_endStrip_iff {q : Puncture} {z : ℝ × ℝ} :
+    z ∈ q.endStrip ↔ 1 / 2 < q.endSign * z.1 ∧ z.2 ∈ Ico (-1 / 2 : ℝ) (1 / 2) :=
+  Iff.rfl
+
+theorem endSign_mul_pos_of_mem_endStrip {q : Puncture} {z : ℝ × ℝ}
+    (hz : z ∈ q.endStrip) : 0 < q.endSign * z.1 := by
+  linarith [(mem_endStrip_iff.1 hz).1]
+
+/-- The derivative of the end chart is multiplication by the derivative of the end lift. -/
+theorem hasFDerivAt_endChart (q : Puncture) (z : ℝ × ℝ) :
+    HasFDerivAt q.endChart
+      ((Complex.equivRealProdCLM : ℂ →L[ℝ] ℝ × ℝ).comp
+        (((ContinuousLinearMap.toSpanSingleton ℂ
+          (deriv q.cylindricalEndLift (Complex.equivRealProdCLM.symm z))).restrictScalars ℝ).comp
+            (Complex.equivRealProdCLM.symm : ℝ × ℝ →L[ℝ] ℂ))) z := by
+  have h := ((q.hasDerivAt_cylindricalEndLift
+    (Complex.equivRealProdCLM.symm z)).differentiableAt.hasDerivAt.hasFDerivAt.restrictScalars ℝ)
+  exact Complex.equivRealProdCLM.hasFDerivAt.comp z
+    (h.comp z Complex.equivRealProdCLM.symm.hasFDerivAt)
+
+theorem fderiv_endChart_apply (q : Puncture) (z v : ℝ × ℝ) :
+    fderiv ℝ q.endChart z v = Complex.equivRealProdCLM
+      (deriv q.cylindricalEndLift (Complex.equivRealProdCLM.symm z) *
+        Complex.equivRealProdCLM.symm v) := by
+  rw [(q.hasFDerivAt_endChart z).fderiv]
+  simp [mul_comm]
+
+@[simp]
+theorem equivRealProdCLM_symm_endChart (q : Puncture) (z : ℝ × ℝ) :
+    Complex.equivRealProdCLM.symm (q.endChart z) =
+      q.cylindricalEndLift (Complex.equivRealProdCLM.symm z) := by
+  rw [endChart_def, ContinuousLinearEquiv.symm_apply_apply]
+
+/-- The end chart is periodic with period one in the angular coordinate. -/
+theorem periodic_endChart (q : Puncture) (s : ℝ) :
+    Function.Periodic (fun t : ℝ ↦ q.endChart (s, t)) 1 := by
+  intro t
+  have h := q.periodic_cylindricalEndLift s t
+  simp only [endChart_def, Complex.equivRealProdCLM_symm_apply] at h ⊢
+  rw [h]
+
+/-- The end chart is holomorphic, so it preserves orientation: its Jacobian determinant is
+`|φ_q'|² ≥ 0`. -/
+theorem det_fderiv_endChart_nonneg (q : Puncture) (z : ℝ × ℝ) :
+    0 ≤ (fderiv ℝ q.endChart z).det := by
+  have h1 : Complex.equivRealProdCLM.symm ((1, 0) : ℝ × ℝ) = 1 := by
+    simp [Complex.equivRealProdCLM_symm_apply]
+  have hI : Complex.equivRealProdCLM.symm ((0, 1) : ℝ × ℝ) = Complex.I := by
+    simp [Complex.equivRealProdCLM_symm_apply]
+  rw [ContinuousLinearMap.det, LinearMap.det_finTwoProd]
+  simp only [ContinuousLinearMap.coe_coe, fderiv_endChart_apply, h1, hI, mul_one,
+    Complex.equivRealProdCLM_apply, Complex.mul_I_re, Complex.mul_I_im]
+  nlinarith [sq_nonneg (deriv q.cylindricalEndLift (Complex.equivRealProdCLM.symm z)).re,
+    sq_nonneg (deriv q.cylindricalEndLift (Complex.equivRealProdCLM.symm z)).im]
+
+theorem contDiff_endChart (q : Puncture) {n : WithTop ℕ∞} : ContDiff ℝ n q.endChart :=
+  Complex.equivRealProdCLM.contDiff.comp
+    (((q.contDiff_cylindricalEndLift n).restrict_scalars ℝ).comp
+      Complex.equivRealProdCLM.symm.contDiff)
+
+/-- The end chart is injective on the strip `endStrip q`, whose angular coordinate ranges over
+one period. -/
+theorem injOn_endChart (q : Puncture) : InjOn q.endChart q.endStrip := by
+  intro a ha b hb hab
+  have h := q.injOn_cylindricalEndLift (by simpa using ha.2) (by simpa using hb.2)
+    (Complex.equivRealProdCLM.injective hab)
+  exact Complex.equivRealProdCLM.symm.injective h
+
+/-- Every point of `ℂ ∖ {0, 1}` where the end `q` has signed longitudinal coordinate greater than
+`1/2` is the image of a point of the strip of that end. -/
+theorem mem_image_endChart {z : ℝ × ℝ}
+    (hz : Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1)
+    {q : Puncture} (hq : 1 / 2 < q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re) :
+    z ∈ q.endChart '' q.endStrip := by
+  refine ⟨Complex.equivRealProdCLM (q.endCoord (Complex.equivRealProdCLM.symm z)),
+    ⟨by simpa using hq, by simpa using q.im_endCoord_mem_Ico _⟩, ?_⟩
+  rw [endChart_def, ContinuousLinearEquiv.symm_apply_apply,
+    q.cylindricalEndLift_endCoord (ne_endCenter hz q), ContinuousLinearEquiv.apply_symm_apply]
+
+end EndChart
 
 end TauCeti.ThricePuncturedSphere.Puncture

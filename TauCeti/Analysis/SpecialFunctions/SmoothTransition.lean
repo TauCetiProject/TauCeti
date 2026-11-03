@@ -56,6 +56,8 @@ nonincreasing step from any value `v ≥ 0` down to `0` across an interval `[a, 
   integrable on `closedBall a c⁻¹` is integrable.
 * `Real.smoothTransition.tendsto_integral_mul_deriv_mul_sub_smul`: at a Lebesgue point `a` of `u`
   with value `v`, `∫ c ψ'(c (y - a)) u y dy → v` as `c → ∞`.
+* `Real.smoothTransition.tendsto_integral_deriv_sub_smul`: the averages `∫ ψ'(σ - T) • f σ dσ`
+  of a function with a limit at `∞` tend to that limit as `T → ∞`.
 * `HasFDerivAt.smoothTransition` and `HasDerivAt.smoothTransition`: the chain rule for `ψ ∘ f`.
 * `LocallyLipschitzOn.smoothTransition_mul_sub`: `ψ (c (u - t))` is locally Lipschitz on `s`
   when `u` is.
@@ -227,6 +229,39 @@ theorem tendsto_integral_mul_deriv_mul_sub_smul {E : Type*} [NormedAddCommGroup 
     rw [Real.volume_real_closedBall (inv_pos.2 hc).le, abs_mul, abs_of_pos hc]
     calc c * |deriv smoothTransition (c * (y - a))| ≤ c * C := by gcongr; exact hC _
       _ = 2 * C / (2 * c⁻¹) := by field_simp
+
+/-- **Translated derivatives of the smooth transition function average out at infinity.** The
+weights `σ ↦ ψ'(σ - T)` have total mass one and are supported in `[T, T + 1]`, so the averages
+`∫ ψ'(σ - T) • f σ dσ` of a function `f` with limit `a` at `∞` tend to `a` as `T → ∞`. -/
+theorem tendsto_integral_deriv_sub_smul {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [CompleteSpace E]
+    {f : ℝ → E} {a : E} (hf : Tendsto f atTop (𝓝 a))
+    (hint : ∀ᶠ T in atTop, Integrable fun σ => deriv smoothTransition (σ - T) • f σ) :
+    Tendsto (fun T => ∫ σ, deriv smoothTransition (σ - T) • f σ) atTop (𝓝 a) := by
+  have hβ0 (x : ℝ) : 0 ≤ deriv smoothTransition x := smoothTransition.monotone.deriv_nonneg
+  have hmass (T : ℝ) : ∫ σ, deriv smoothTransition (σ - T) = 1 := by
+    rw [integral_sub_right_eq_self (deriv smoothTransition) T, integral_deriv]
+  refine Metric.tendsto_nhds.2 fun ε hε => ?_
+  obtain ⟨M, hM⟩ := eventually_atTop.1 (Metric.tendsto_nhds.1 hf (ε / 2) (half_pos hε))
+  filter_upwards [hint, eventually_ge_atTop M] with T hT hTM
+  -- Subtracting `a = ∫ ψ'(σ - T) • a dσ` leaves an average of `f σ - a` over `σ ≥ T ≥ M`.
+  have hsub : (∫ σ, deriv smoothTransition (σ - T) • f σ) - a =
+      ∫ σ, deriv smoothTransition (σ - T) • (f σ - a) := by
+    rw [integral_congr_ae (ae_of_all _ fun σ => smul_sub (deriv smoothTransition (σ - T)) (f σ) a),
+      integral_sub hT ((integrable_deriv.comp_sub_right T).smul_const a), integral_smul_const,
+      hmass, one_smul]
+  rw [dist_eq_norm, hsub]
+  calc ‖∫ σ, deriv smoothTransition (σ - T) • (f σ - a)‖
+      ≤ ∫ σ, deriv smoothTransition (σ - T) * (ε / 2) := by
+        refine norm_integral_le_of_norm_le ((integrable_deriv.comp_sub_right T).mul_const (ε / 2))
+          (ae_of_all _ fun σ => ?_)
+        rw [norm_smul, Real.norm_of_nonneg (hβ0 _)]
+        by_cases hσ : σ - T < 0
+        · simp [deriv_of_neg hσ]
+        · exact mul_le_mul_of_nonneg_left
+            (by simpa [dist_eq_norm] using (hM σ (by linarith)).le) (hβ0 _)
+    _ = ε / 2 := by rw [integral_mul_const, hmass, one_mul]
+    _ < ε := half_lt_self hε
 
 end Real.smoothTransition
 
