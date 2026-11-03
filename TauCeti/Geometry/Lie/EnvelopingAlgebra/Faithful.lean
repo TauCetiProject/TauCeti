@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Symmetrization
 public import TauCeti.Geometry.Lie.EnvelopingAlgebra.Basic
 public import TauCeti.Geometry.Lie.Exponential.LocalInverse
-import TauCeti.Geometry.Manifold.ContMDiffMap.Extension
 import TauCeti.LinearAlgebra.SymmetricAlgebra.Evaluation
 import TauCeti.LinearAlgebra.SymmetricAlgebra.Grading
 import TauCeti.LinearAlgebra.SymmetricAlgebra.Polarization
@@ -36,7 +35,8 @@ A left-invariant derivation `X` differentiates along the exponential lines it ge
 
 For a linear form `ℓ` on `𝔤`, cut off `exp ∘ ℓ ∘ log` near the identity to a smooth function `f`
 with `f (lieExp Y) = exp (ℓ Y)` for small `Y`
-(`TauCeti.exists_contMDiffMap_eventually_apply_lieExp_eq`). Along a line,
+(`TauCeti.exists_contMDiffMap_eventually_apply_lieExp_eq`, in
+`TauCeti.Geometry.Lie.Exponential.LocalInverse`). Along a line,
 `t ↦ f (lieExp (t • X))` is `t ↦ exp (t ℓ X)` near `0`, so `Xⁿ` acts on `f` at the identity by
 `(ℓ X)ⁿ`. The `n`-th powers span the degree-`n` symmetric tensors, so the symmetrization of a
 homogeneous polynomial `p ∈ Sⁿ(𝔤)` acts on `f` at the identity by the value of `p` at `ℓ`. Every
@@ -118,27 +118,6 @@ end LeftInvariantDerivation
 
 namespace TauCeti
 
-/-! ### Test functions -/
-
-/-- **Smooth functions with a prescribed germ along the exponential.** Every smooth function `φ`
-on the Lie algebra is, near `0`, the composite of a globally smooth function on `G` with the
-exponential. -/
-theorem exists_contMDiffMap_eventually_apply_lieExp_eq {φ : LeftInvariantDerivation I G → ℝ}
-    (hφ : ContDiff ℝ ∞ φ) :
-    ∃ f : C^∞⟮I, G; ℝ⟯, ∀ᶠ Y in 𝓝 (0 : LeftInvariantDerivation I G), f (lieExp Y) = φ Y := by
-  have hd := isLocalDiffeomorphAt_lieExp_zero (I := I) (G := G)
-  have h1 : (1 : G) ∈ hd.localInverse.source := by
-    simpa only [lieExp_zero] using hd.localInverse_mem_source
-  obtain ⟨f, hf⟩ := (hφ.contMDiff.comp_contMDiffOn
-    hd.contMDiffOn_localInverse).exists_contMDiffMap_eventuallyEq hd.localInverse_open_source h1
-  refine ⟨f, ?_⟩
-  have hexp : Tendsto (lieExp (I := I) (G := G)) (𝓝 0) (𝓝 1) := by
-    simpa only [lieExp_zero] using
-      ((contMDiff_lieExp (I := I) (G := G)).continuous.tendsto (0 : LeftInvariantDerivation I G))
-  filter_upwards [hexp.eventually hf, hd.localInverse_eventuallyEq_left] with Y hY hY'
-  rw [hY, comp_apply]
-  exact congrArg φ hY'
-
 /-! ### Faithfulness -/
 
 /-- On a function `f` with `f (lieExp Y) = exp (ℓ Y)` near `0`, the symmetrization of a
@@ -164,10 +143,8 @@ private theorem envelopingAction_pbwHomogeneousSymmetrization_apply_one
       (envelopingAction I G).toLinearMap ∘ₗ
         TauCeti.UniversalEnvelopingAlgebra.pbwHomogeneousSymmetrization ℝ _ n hn)
     (g := (SymmetricAlgebra.lift ℓ).toLinearMap ∘ₗ P.subtype) fun v ↦ by
-      change envelopingAction I G
-          (TauCeti.UniversalEnvelopingAlgebra.pbwHomogeneousSymmetrization ℝ _ n hn
-            ⟨_, hpow v⟩) f 1 =
-        SymmetricAlgebra.lift ℓ (SymmetricAlgebra.ι ℝ (LeftInvariantDerivation I G) v ^ n)
+      simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, LinearMap.applyₗ_apply_apply,
+        ContMDiffMap.coeFnLinearMap_apply, LinearMap.proj_apply, Submodule.subtype_apply]
       rw [TauCeti.UniversalEnvelopingAlgebra.pbwHomogeneousSymmetrization_ι_pow,
         LeftInvariantDerivation.envelopingAction_ι_pow_apply_one v ℓ hf, map_pow,
         SymmetricAlgebra.lift_ι_apply]) p
