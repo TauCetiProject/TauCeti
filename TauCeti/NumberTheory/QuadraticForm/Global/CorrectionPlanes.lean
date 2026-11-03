@@ -77,6 +77,7 @@ theorem nondegenerate_weightedSumSquares_neg_self_mul (a b : Kˣ) :
   nondegenerate_weightedSumSquares fun i => by fin_cases i <;> simp [isRegular_iff_ne_zero]
 
 /-- The plain discriminant of the norm plane `⟨1, -β⟩` is the square class of `-β`. -/
+@[simp]
 theorem discr_formClass_weightedSumSquares_one_neg (b : Kˣ) :
     RegularFormClass.discr
         (formClass _ (nondegenerate_weightedSumSquares_one_neg b)) = squareClass (-b) := by
