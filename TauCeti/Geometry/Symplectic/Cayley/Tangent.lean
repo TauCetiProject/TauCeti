@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Cayley.Smooth
 public import Mathlib.Analysis.Calculus.FDeriv.Mul
-public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
+public import TauCeti.Analysis.Calculus.Deriv.BoundedReparametrization
 public import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
@@ -23,13 +23,14 @@ family of complex structures through `J`. Differentiating `J² = -1` gives the l
 two conditions differ: tame variations only anticommute with `J`, while compatible variations
 are also skew-adjoint.
 
-This file defines the two linear spaces of endomorphisms,
+The two linear spaces of endomorphisms are defined algebraically in
+`TauCeti.Geometry.Symplectic.AlmostComplex`:
 
 * `TauCeti.AlmostComplexStructure.tangentSpace J`: the `Y` with `Y J + J Y = 0`;
 * `TauCeti.SymplecticForm.compatibleTangentSpace ω J`: the `Y` in it that are also
-  skew-adjoint for `ω`,
+  skew-adjoint for `ω`.
 
-and proves that they are exactly the velocities of curves of tame, respectively compatible,
+This file proves that they are exactly the velocities of curves of tame, respectively compatible,
 structures:
 
 * `TauCeti.AlmostComplexStructure.mem_tangentSpace_of_hasFDerivAt`: every directional derivative
@@ -49,10 +50,11 @@ structures:
   `TauCeti.SymplecticForm.Tames.mem_tangentSpace_iff_exists_hasDerivAt`: the resulting
   characterizations of the two tangent spaces.
 
-Among endomorphisms anticommuting with `J`, skew-adjointness for `ω` is self-adjointness for the
-form `g = ω(·, J ·)` (`TauCeti.SymplecticForm.mem_compatibleTangentSpace_iff_isSelfAdjoint`).
+The curves are defined on the whole real line by composing a line with the bounded
+reparametrization `TauCeti.exists_contDiff_hasDerivAt_abs_le`.
 
-Finally, compatible variations reach every vector at every nonzero vector: for `ξ ≠ 0` and any
+The companion algebraic statement, in `TauCeti.Geometry.Symplectic.AlmostComplex`, is that
+compatible variations reach every vector at every nonzero vector: for `ξ ≠ 0` and any
 `η` there is `Y` in the compatible tangent space with `Y ξ = η`
 (`TauCeti.SymplecticForm.Compatible.exists_mem_compatibleTangentSpace_apply_eq`). In the
 linearization of the Floer operator `∂_s u - X_{K_s} + J (∂_t u - X_{K_t})`, a variation `Y` of
@@ -75,172 +77,6 @@ public section
 open Filter Topology
 
 namespace TauCeti
-
-namespace AlmostComplexStructure
-
-variable {V : Type*} [AddCommGroup V] [Module ℝ V]
-
-/-- The tangent condition at a complex structure `J`: the endomorphisms `Y` with
-`Y J + J Y = 0`. Velocities of families of complex structures through `J` satisfy it
-(`AlmostComplexStructure.mem_tangentSpace_of_hasFDerivAt`), and for a tame `J` it is exactly the
-set of velocities of curves of tame structures
-(`SymplecticForm.Tames.mem_tangentSpace_iff_exists_hasDerivAt`). -/
-def tangentSpace (J : AlmostComplexStructure V) : Submodule ℝ (Module.End ℝ V) :=
-  LinearMap.ker (LinearMap.mulRight ℝ J.toLinearMap + LinearMap.mulLeft ℝ J.toLinearMap)
-
-/-- Membership in the tangent space at `J` is anticommutation with `J`. -/
-@[simp]
-theorem mem_tangentSpace {J : AlmostComplexStructure V} {Y : Module.End ℝ V} :
-    Y ∈ J.tangentSpace ↔ Y * J.toLinearMap + J.toLinearMap * Y = 0 := by
-  simp [tangentSpace]
-
-/-- Membership in the tangent space at `J`, pointwise: `Y (J v) = -J (Y v)`. -/
-theorem mem_tangentSpace_iff_apply {J : AlmostComplexStructure V} {Y : Module.End ℝ V} :
-    Y ∈ J.tangentSpace ↔ ∀ v, Y (J v) = -J (Y v) := by
-  rw [mem_tangentSpace, LinearMap.ext_iff]
-  refine forall_congr' fun v => ?_
-  simp only [LinearMap.add_apply, mul_apply_eq_comp, LinearMap.zero_apply]
-  exact add_eq_zero_iff_eq_neg
-
-end AlmostComplexStructure
-
-namespace SymplecticForm
-
-variable {V : Type*} [AddCommGroup V] [Module ℝ V]
-  {ω : SymplecticForm V} {J : AlmostComplexStructure V} {Y : Module.End ℝ V}
-
-variable (ω J) in
-/-- The tangent condition at an `ω`-compatible complex structure `J`: the endomorphisms that
-anticommute with `J` and are skew-adjoint for `ω`. For a compatible `J` it is exactly the set of
-velocities of curves of compatible structures
-(`SymplecticForm.Compatible.mem_compatibleTangentSpace_iff_exists_hasDerivAt`). -/
-def compatibleTangentSpace : Submodule ℝ (Module.End ℝ V) :=
-  J.tangentSpace ⊓ ω.toBilinForm.skewAdjointSubmodule
-
-/-- Membership in the compatible tangent space: `Y (J v) = -J (Y v)` and
-`ω (Y v) w + ω v (Y w) = 0`. -/
-theorem mem_compatibleTangentSpace :
-    Y ∈ ω.compatibleTangentSpace J ↔
-      (∀ v, Y (J v) = -J (Y v)) ∧ ∀ v w, ω (Y v) w + ω v (Y w) = 0 := by
-  rw [compatibleTangentSpace, Submodule.mem_inf, AlmostComplexStructure.mem_tangentSpace_iff_apply,
-    LinearMap.mem_skewAdjointSubmodule]
-  refine and_congr Iff.rfl (forall₂_congr fun v w => ?_)
-  -- `IsSkewAdjoint` unfolds to `IsAdjointPair`, which is stated pointwise by definition.
-  change ω (Y v) w = ω v (-Y w) ↔ _
-  beta_reduce
-  rw [map_neg, ← sub_eq_zero, sub_neg_eq_add]
-
-/-- The compatible tangent condition is stronger than the tangent condition. -/
-theorem compatibleTangentSpace_le_tangentSpace : ω.compatibleTangentSpace J ≤ J.tangentSpace :=
-  inf_le_left
-
-/-- Among endomorphisms anticommuting with `J`, skew-adjointness for `ω` is self-adjointness for
-the associated form `g = ω(·, J ·)`. No compatibility of `J` is needed. -/
-theorem mem_compatibleTangentSpace_iff_isSelfAdjoint (hY : Y ∈ J.tangentSpace) :
-    Y ∈ ω.compatibleTangentSpace J ↔ (ω.associatedBilinForm J).IsSelfAdjoint Y := by
-  rw [AlmostComplexStructure.mem_tangentSpace_iff_apply] at hY
-  rw [mem_compatibleTangentSpace, and_iff_right hY]
-  -- `IsSelfAdjoint` unfolds to `IsAdjointPair`, which is stated pointwise by definition.
-  change _ ↔ ∀ v w, ω (Y v) (J w) = ω v (J (Y w))
-  beta_reduce
-  constructor
-  · intro h v w
-    have := h v (J w)
-    beta_reduce at this
-    rw [hY, map_neg] at this
-    linarith
-  · intro h v w
-    have := h v (-J w)
-    beta_reduce at this
-    simp only [map_neg, AlmostComplexStructure.apply_apply, neg_neg, hY] at this
-    linarith
-
-/-- For a complex structure `J` preserving `ω`, the endomorphism `J` itself is skew-adjoint
-for `ω`. This is the form of invariance that is linear in `J`. -/
-private theorem Invariant.apply_add_apply_eq_zero (hJ : ω.Invariant J) (v w : V) :
-    ω (J v) w + ω v (J w) = 0 := by
-  have := (ω.invariant_iff J).mp hJ v (J w)
-  rw [AlmostComplexStructure.apply_apply] at this
-  beta_reduce at this ⊢
-  rw [map_neg] at this
-  linarith
-
-/-- For a compatible `J`, the variations in the compatible tangent space are, after composing with
-`J`, the endomorphisms anticommuting with `J` and self-adjoint for `g = ω(·, J ·)`: these are the
-coordinates of the compatible Cayley ball. -/
-private theorem Compatible.mul_mem_tangentSpace_and_isSelfAdjoint (h : ω.Compatible J)
-    (hY : Y ∈ ω.compatibleTangentSpace J) :
-    J.toLinearMap * Y ∈ J.tangentSpace ∧
-      (ω.associatedBilinForm J).IsSelfAdjoint (J.toLinearMap * Y) := by
-  rw [mem_compatibleTangentSpace] at hY
-  refine ⟨AlmostComplexStructure.mem_tangentSpace_iff_apply.2 fun v => ?_, fun v w => ?_⟩
-  · simp [hY.1]
-  · have h₁ := h.invariant_apply (Y v) w
-    have h₂ := hY.2 v w
-    simp only [associatedBilinForm_apply, mul_apply_eq_comp, AlmostComplexStructure.apply_apply]
-    beta_reduce at h₁ h₂ ⊢
-    rw [h₁, map_neg]
-    linarith
-
-/-- For `S` self-adjoint for `g = ω(·, J ·)`, the average `S + J S J` lies in the compatible
-tangent space of a compatible `J`. -/
-private theorem Compatible.add_mul_mul_mem_compatibleTangentSpace (h : ω.Compatible J)
-    {S : Module.End ℝ V} (hS : (ω.associatedBilinForm J).IsSelfAdjoint S) :
-    S + J.toLinearMap * S * J.toLinearMap ∈ ω.compatibleTangentSpace J := by
-  have hT : S + J.toLinearMap * S * J.toLinearMap ∈ J.tangentSpace :=
-    AlmostComplexStructure.mem_tangentSpace_iff_apply.2 fun v => by
-      simp only [LinearMap.add_apply, mul_apply_eq_comp, AlmostComplexStructure.apply_apply,
-        map_neg, map_add]
-      abel
-  refine (mem_compatibleTangentSpace_iff_isSelfAdjoint hT).2 fun v w => ?_
-  have h₀ := hS v w
-  have h₁ := hS (J v) (-J w)
-  have h₂ := h.invariant_apply (S (J v)) w
-  have h₃ := h.invariant_apply v (S (J w))
-  simp only [associatedBilinForm_apply, LinearMap.add_apply, mul_apply_eq_comp,
-    AlmostComplexStructure.apply_apply, map_neg, map_add] at h₀ h₁ ⊢
-  beta_reduce at h₀ h₁ h₂ h₃ ⊢
-  linarith
-
-/-- **Variations of compatible structures reach every vector.** For an `ω`-compatible `J`, a
-nonzero vector `ξ` and any vector `η`, some variation `Y` in the compatible tangent space at `J`
-sends `ξ` to `η`. -/
-theorem Compatible.exists_mem_compatibleTangentSpace_apply_eq (h : ω.Compatible J) {ξ : V}
-    (hξ : ξ ≠ 0) (η : V) : ∃ Y ∈ ω.compatibleTangentSpace J, Y ξ = η := by
-  set g := ω.associatedBilinForm J
-  have ha : g ξ ξ ≠ 0 := (h.tames ξ hξ).ne'
-  -- The rank-two `g`-self-adjoint map `v ↦ g(ξ, v) ζ + g(ζ, v) ξ`, averaged with `J`, sends `ξ`
-  -- to `η` for this choice of `ζ`.
-  set ζ : V := (g ξ ξ)⁻¹ •
-    (η - (g η ξ / (2 * g ξ ξ)) • ξ - (g η (J ξ) / (2 * g ξ ξ)) • J ξ)
-  set S : Module.End ℝ V := (g ξ).smulRight ζ + (g ζ).smulRight ξ
-  have hS : g.IsSelfAdjoint S := fun v w => by
-    simp only [S, LinearMap.add_apply, LinearMap.smulRight_apply, map_add, map_smul,
-      LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul]
-    rw [h.associatedBilinForm_isSymm.eq ζ w, h.associatedBilinForm_isSymm.eq ξ w,
-      h.associatedBilinForm_isSymm.eq v ζ, h.associatedBilinForm_isSymm.eq v ξ]
-    ring
-  refine ⟨S + J.toLinearMap * S * J.toLinearMap,
-    h.add_mul_mul_mem_compatibleTangentSpace hS, ?_⟩
-  have hξJ : g ξ (J ξ) = 0 := by simp [g]
-  have hJξ : g (J ξ) ξ = 0 := by rw [h.associatedBilinForm_isSymm.eq, hξJ]
-  have hJJ : g (J ξ) (J ξ) = g ξ ξ := ω.associatedBilinForm_apply_apply_self_eq J ξ
-  have hζξ : g ζ ξ = g η ξ / (2 * g ξ ξ) := by
-    simp only [ζ, map_smul, map_sub, LinearMap.smul_apply, LinearMap.sub_apply, hJξ,
-      smul_eq_mul]
-    field_simp
-    ring
-  have hζJξ : g ζ (J ξ) = g η (J ξ) / (2 * g ξ ξ) := by
-    simp only [ζ, map_smul, map_sub, LinearMap.smul_apply, LinearMap.sub_apply, hξJ, hJJ,
-      smul_eq_mul]
-    field_simp
-    ring
-  simp only [S, LinearMap.add_apply, mul_apply_eq_comp, LinearMap.smulRight_apply,
-    map_smul, hξJ, hζξ, hζJξ, zero_smul, zero_add]
-  simp only [ζ]
-  match_scalars <;> field_simp <;> ring
-
-end SymplecticForm
 
 /-! ### Velocities of families of complex structures -/
 
@@ -310,58 +146,34 @@ theorem mem_compatibleTangentSpace_of_hasFDerivAt (hJ : ∀ᶠ p in 𝓝 x, ω.I
 
 /-! ### Curves of compatible and tame structures with prescribed velocity -/
 
-/-- A bounded analytic reparametrization of the line with unit velocity at `0`. -/
-private theorem exists_contDiff_hasDerivAt_abs_le {ε : ℝ} (hε : 0 < ε) :
-    ∃ φ : ℝ → ℝ, ContDiff ℝ ⊤ φ ∧ φ 0 = 0 ∧ HasDerivAt φ 1 0 ∧ ∀ t, |φ t| ≤ ε := by
-  refine ⟨fun t => ε * Real.sin (t / ε),
-    contDiff_const.mul (Real.contDiff_sin.comp (contDiff_id.div_const ε)), by simp, ?_,
-    fun t => ?_⟩
-  · have := ((Real.hasDerivAt_sin (0 / ε)).comp 0 ((hasDerivAt_id 0).div_const ε)).const_mul ε
-    simpa [hε.ne'] using this
-  · rw [abs_mul, abs_of_pos hε]
-    exact mul_le_of_le_one_right hε.le (Real.abs_sin_le_one _)
-
-/-- The diagonal of the associated form of a tame structure is bounded below by a positive
-multiple of the squared norm. -/
-private theorem Tames.exists_pos_mul_norm_sq_le {J : AlmostComplexStructure V} (h : ω.Tames J) :
-    ∃ c > 0, ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J v) := by
-  obtain ⟨c, hc, hcv⟩ := IsCompact.exists_pos_forall_mul_norm_sq_le (K := (Set.univ : Set Unit))
-    isCompact_univ (b := fun _ => (ω.associatedBilinForm J).toContinuousBilinearMap)
-    continuousOn_const fun _ _ v hv => by simpa using h v hv
-  exact ⟨c, hc, fun v => by simpa using hcv () trivial v⟩
-
 /-- Small multiples of a coordinate of the compatible Cayley ball of a compatible `J` lie in
 that ball. -/
 private theorem Compatible.exists_pos_smul_mem_compatibleCayleyBall
     {J : AlmostComplexStructure V} (h : ω.Compatible J) {C : Module.End ℝ V}
     (hC : C ∈ J.tangentSpace) (hCs : (ω.associatedBilinForm J).IsSelfAdjoint C) :
     ∃ ε > 0, ∀ s : ℝ, |s| ≤ ε → s • C ∈ ω.compatibleCayleyBall J := by
-  -- `ω(v, J v)` is bounded below, and `ω(C v, J C v)` above, by multiples of `‖v‖²`.
-  obtain ⟨c, hc, hcv⟩ := h.tames.exists_pos_mul_norm_sq_le
+  -- The forms `g - s² B`, with `g = ω(·, J ·)` and `B = g(C ·, C ·)`, are positive at `s = 0`, and
+  -- positivity is open.
+  set g := (ω.associatedBilinForm J).toContinuousBilinearMap
   set B := ((ω.associatedBilinForm J).compl₁₂ C C).toContinuousBilinearMap
-  set M := ‖B‖
-  have hM0 : 0 ≤ M := B.opNorm_nonneg
-  have hM (v : V) : |B v v| ≤ M * ‖v‖ ^ 2 := by
-    simpa [sq, mul_assoc, Real.norm_eq_abs] using B.le_opNorm₂ v v
-  refine ⟨min 1 (c / (2 * (M + 1))), lt_min one_pos (by positivity), fun s hs => ?_⟩
-  have hs1 : |s| ≤ 1 := hs.trans (min_le_left _ _)
-  have hs2 : |s| * (2 * (M + 1)) ≤ c :=
-    (le_div_iff₀ (by positivity)).1 (hs.trans (min_le_right _ _))
-  have hsq : s ^ 2 * (M + 1) ≤ c / 2 := by
-    rw [← sq_abs]
-    nlinarith [abs_nonneg s]
+  -- Supply the existing topological instance for the nested operator space explicitly.
+  let : ContinuousAdd (V →L[ℝ] V →L[ℝ] ℝ) :=
+    ContinuousLinearMap.isTopologicalAddGroup.toContinuousAdd
+  have hf : Continuous fun s : ℝ => g + -s ^ 2 • B := by fun_prop
+  have hev : ∀ᶠ s in 𝓝 (0 : ℝ), ∀ v, v ≠ 0 → 0 < (g + -s ^ 2 • B) v v :=
+    hf.continuousAt.preimage_mem_nhds (isOpen_setOf_forall_bilinear_apply_self_pos.mem_nhds
+      fun v hv => by simpa [g] using h.tames v hv)
+  obtain ⟨r, hr, hball⟩ := Metric.eventually_nhds_iff.1 hev
+  refine ⟨r / 2, half_pos hr, fun s hs => ?_⟩
+  have hpos := hball (show dist s 0 < r by rw [Real.dist_eq, sub_zero]; linarith)
   refine mem_compatibleCayleyBall.2 ⟨mem_cayleyBall.2 ⟨?_, fun v hv => ?_⟩, fun v w => ?_⟩
   · rw [smul_mul_assoc, mul_smul_comm, ← smul_neg,
       eq_neg_of_add_eq_zero_left (AlmostComplexStructure.mem_tangentSpace.1 hC)]
-  · have hv2 : 0 < ‖v‖ ^ 2 := by positivity
+  · have h₁ := hpos v hv
+    simp only [g, B, add_apply, smul_apply,
+      LinearMap.toContinuousBilinearMap_apply, LinearMap.compl₁₂_apply, associatedBilinForm_apply,
+      smul_eq_mul] at h₁
     simp only [LinearMap.smul_apply, map_smul, smul_eq_mul]
-    have h₁ := hcv v
-    have h₂ := mul_le_mul_of_nonneg_left ((le_abs_self _).trans (hM v)) (sq_nonneg s)
-    have h₃ : s ^ 2 * M * ‖v‖ ^ 2 ≤ c / 2 * ‖v‖ ^ 2 :=
-      mul_le_mul_of_nonneg_right (by nlinarith [sq_nonneg s]) hv2.le
-    simp only [B, LinearMap.toContinuousBilinearMap_apply, LinearMap.compl₁₂_apply,
-      associatedBilinForm_apply] at h₂
-    beta_reduce at h₁ h₂ ⊢
     nlinarith
   · have := hCs v w
     simp only [associatedBilinForm_apply] at this
@@ -444,6 +256,7 @@ theorem Compatible.mem_compatibleTangentSpace_iff_exists_hasDerivAt
     simpa using mem_compatibleTangentSpace_of_hasFDerivAt
       (Eventually.of_forall fun t => (hc t).invariant) hd.hasFDerivAt 1
 
+
 /-- Conjugating a tame structure by an endomorphism close to the identity keeps it tame: for
 small multiples `s Z` of a fixed `Z`, the endomorphism `1 + s Z` is invertible (`‖s Z‖ < 1`) and
 `ω((1 + s Z) w, (1 + s Z) J w)` is positive for `w ≠ 0`. -/
@@ -451,49 +264,37 @@ private theorem Tames.exists_pos_norm_smul_lt_one_and_pos {J : AlmostComplexStru
     (h : ω.Tames J) (Z : V →L[ℝ] V) :
     ∃ ε > 0, ∀ s : ℝ, |s| ≤ ε → ‖s • Z‖ < 1 ∧
       ∀ w, w ≠ 0 → 0 < ω ((1 + s • Z) w) ((1 + s • Z) (J w)) := by
-  obtain ⟨c, hc, hcv⟩ := h.exists_pos_mul_norm_sq_le
-  -- The cross term and the quadratic term of the conjugated form are bounded by `‖w‖²`.
+  -- The conjugated form is the polynomial family `g + s B₁ + s² B₂` with `g = ω(·, J ·)`. It is
+  -- positive at `s = 0`, and positivity is open.
+  set g := (ω.associatedBilinForm J).toContinuousBilinearMap
   set B₁ := (ω.toBilinForm.compl₁₂ Z.toLinearMap J.toLinearMap +
     ω.toBilinForm.compl₂ (Z.toLinearMap * J.toLinearMap)).toContinuousBilinearMap
   set B₂ := (ω.toBilinForm.compl₁₂ Z.toLinearMap
     (Z.toLinearMap * J.toLinearMap)).toContinuousBilinearMap
-  set M₁ := ‖B₁‖
-  set M₂ := ‖B₂‖
-  have hM₁0 : 0 ≤ M₁ := B₁.opNorm_nonneg
-  have hM₂0 : 0 ≤ M₂ := B₂.opNorm_nonneg
-  have hM₁ (w : V) : |B₁ w w| ≤ M₁ * ‖w‖ ^ 2 := by
-    simpa [sq, mul_assoc, Real.norm_eq_abs] using B₁.le_opNorm₂ w w
-  have hM₂ (w : V) : |B₂ w w| ≤ M₂ * ‖w‖ ^ 2 := by
-    simpa [sq, mul_assoc, Real.norm_eq_abs] using B₂.le_opNorm₂ w w
-  set ε := min (min 1 (c / (2 * (M₁ + M₂ + 1)))) (1 / (2 * (‖Z‖ + 1)))
-  have hε : 0 < ε := lt_min (lt_min one_pos (by positivity)) (by positivity)
-  refine ⟨ε, hε, fun s hs => ⟨?_, fun w hw => ?_⟩⟩
-  · have hsZ : |s| * (2 * (‖Z‖ + 1)) ≤ 1 :=
-      (le_div_iff₀ (by positivity)).1 (hs.trans (min_le_right _ _))
-    rw [norm_smul, Real.norm_eq_abs]
-    nlinarith [norm_nonneg Z, abs_nonneg s]
-  · have hs1 : |s| ≤ 1 := (hs.trans (min_le_left _ _)).trans (min_le_left _ _)
-    have hs2 : |s| * (2 * (M₁ + M₂ + 1)) ≤ c :=
-      (le_div_iff₀ (by positivity)).1 ((hs.trans (min_le_left _ _)).trans (min_le_right _ _))
-    have hw2 : 0 < ‖w‖ ^ 2 := by positivity
-    have hss : s ^ 2 ≤ |s| := by rw [← sq_abs]; nlinarith [abs_nonneg s]
-    -- For small `s`, both terms are small compared with `c ‖w‖²`.
-    have hA := mul_le_mul_of_nonneg_left (hM₁ w) (abs_nonneg s)
-    have hB := mul_le_mul_of_nonneg_left (hM₂ w) (sq_nonneg s)
-    rw [← abs_mul] at hA
-    rw [← abs_of_nonneg (sq_nonneg s), ← abs_mul, abs_of_nonneg (sq_nonneg s)] at hB
-    have hA' := (abs_le.1 hA).1
-    have hB' := (abs_le.1 hB).1
-    have hc' := mul_le_mul_of_nonneg_right hs2 hw2.le
-    have h₀ := hcv w
-    simp only [B₁, B₂, LinearMap.toContinuousBilinearMap_apply, LinearMap.add_apply,
-      LinearMap.compl₁₂_apply, LinearMap.compl₂_apply, ContinuousLinearMap.coe_coe,
-      mul_apply_eq_comp] at hA' hB'
-    simp only [add_apply, one_apply_eq_self, smul_apply, map_add, map_smul, LinearMap.add_apply,
-      LinearMap.smul_apply, smul_eq_mul]
-    beta_reduce at h₀ ⊢
-    nlinarith [mul_nonneg hM₁0 hw2.le, mul_nonneg hM₂0 hw2.le, abs_nonneg s,
-      mul_le_mul_of_nonneg_right hss (mul_nonneg hM₂0 hw2.le)]
+  -- Supply the existing topological instance for the nested operator space explicitly.
+  let : ContinuousAdd (V →L[ℝ] V →L[ℝ] ℝ) :=
+    ContinuousLinearMap.isTopologicalAddGroup.toContinuousAdd
+  have hf₁ : Continuous fun s : ℝ => g + s • B₁ := by fun_prop
+  have hf : Continuous fun s : ℝ => g + s • B₁ + s ^ 2 • B₂ := hf₁.add (by fun_prop)
+  have hev : ∀ᶠ s in 𝓝 (0 : ℝ),
+      ‖s • Z‖ < 1 ∧ ∀ w, w ≠ 0 → 0 < (g + s • B₁ + s ^ 2 • B₂) w w :=
+    ((continuous_id.smul continuous_const).norm.continuousAt.eventually_lt continuousAt_const
+      (by simp)).and
+      (hf.continuousAt.preimage_mem_nhds (isOpen_setOf_forall_bilinear_apply_self_pos.mem_nhds
+        fun w hw => by simpa [g] using h w hw))
+  obtain ⟨r, hr, hball⟩ := Metric.eventually_nhds_iff.1 hev
+  refine ⟨r / 2, half_pos hr, fun s hs => ?_⟩
+  obtain ⟨hn, hpos⟩ := hball (show dist s 0 < r by rw [Real.dist_eq, sub_zero]; linarith)
+  refine ⟨hn, fun w hw => ?_⟩
+  have h₁ := hpos w hw
+  simp only [g, B₁, B₂, add_apply, smul_apply,
+    LinearMap.toContinuousBilinearMap_apply, LinearMap.add_apply, LinearMap.compl₁₂_apply,
+    LinearMap.compl₂_apply, ContinuousLinearMap.coe_coe, mul_apply_eq_comp,
+    associatedBilinForm_apply, smul_eq_mul] at h₁
+  simp only [add_apply, one_apply_eq_self, smul_apply, map_add, map_smul, LinearMap.add_apply,
+    LinearMap.smul_apply, smul_eq_mul]
+  nlinarith
+
 
 /-- **Every tame variation is a velocity.** For an `ω`-tame `J` and a continuous endomorphism
 `Y` anticommuting with `J`, there is a curve of `ω`-tame structures through `J`, defined and
