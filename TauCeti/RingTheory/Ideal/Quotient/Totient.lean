@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import Mathlib.SetTheory.Cardinal.Finite
-import Mathlib.GroupTheory.Coset.Card
+import Mathlib.GroupTheory.Index
 import Mathlib.RingTheory.Ideal.Quotient.Nilpotent
 
 /-!
@@ -47,9 +47,9 @@ theorem card_units_quotient_pow_mul_card_quotient (P : Ideal R) [P.IsMaximal] {e
     rw [Ideal.Quotient.isUnit_mk_pow_iff_notMem P he]
     simp [f, Ideal.Quotient.eq_zero_iff_mem]
   have hA : Nat.card (R ⧸ P ^ e) = Nat.card (R ⧸ P) * Nat.card f.toAddMonoidHom.ker := by
-    rw [AddSubgroup.card_eq_card_quotient_mul_card_addSubgroup f.toAddMonoidHom.ker]
-    exact congrArg (· * _) (Nat.card_congr (QuotientAddGroup.quotientKerEquivOfSurjective
-      f.toAddMonoidHom (Ideal.Quotient.factor_surjective (pow_le_self he))).toEquiv)
+    rw [mul_comm]
+    exact (AddSubgroup.card_ker_mul_card_of_surjective (f := f.toAddMonoidHom)
+      (Ideal.Quotient.factor_surjective (pow_le_self he))).symm
   obtain hfin | hinf := finite_or_infinite (R ⧸ P ^ e)
   · have hU : Nat.card (R ⧸ P ^ e)ˣ + Nat.card f.toAddMonoidHom.ker = Nat.card (R ⧸ P ^ e) := by
       rw [Nat.card_congr (Equiv.sumCompl fun x : R ⧸ P ^ e ↦ IsUnit x).symm, Nat.card_sum,
