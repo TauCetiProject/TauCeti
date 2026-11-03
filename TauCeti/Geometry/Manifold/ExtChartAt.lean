@@ -21,6 +21,9 @@ measurability in each preferred chart. When the chart space `H` is locally compa
 admit finite open chart covers whose coordinate images lie in compact subsets of the chart targets,
 even without Hausdorffness.
 
+The extended chart of a product manifold has the product of the targets of the factor charts as
+its target (`TauCeti.extChartAt_prod_target`).
+
 Coordinate changes transport images of subsets of chart overlaps and are injective there,
 without differentiability assumptions; for a boundaryless model, their domains are open. On an
 open subset, extended charts are restrictions of the ambient ones, so near a chart point the
@@ -69,6 +72,15 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+
+/-- The target of the extended chart of a product manifold at `x` is the product of the targets
+of the extended charts of the factors at the components of `x`. -/
+theorem extChartAt_prod_target {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+    {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M'] (x : M × M') :
+    (extChartAt (I.prod I') x).target =
+      (extChartAt I x.1).target ×ˢ (extChartAt I' x.2).target := by
+  rw [extChartAt_prod, PartialEquiv.prod_target]
 
 /-- Near the center of an extended chart, composing a chart representative with the chart
 recovers the original function. No continuity of the function is needed. -/
