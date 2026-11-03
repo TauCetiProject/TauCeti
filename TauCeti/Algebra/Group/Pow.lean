@@ -18,6 +18,8 @@ import Mathlib.Algebra.Group.Nat.Defs
 * `TauCeti.pow_pow_eq_self_of_pow_sq_eq_self`: if `a ^ (q ^ 2) = a` then `(a ^ q) ^ q = a`.
 * `TauCeti.mul_zpow_mul_mul_zpow`: in a commutative group, integer powers of monomials
   `a ^ i * b ^ j` multiply by adding their exponent vectors.
+* `TauCeti.eq_mul_zpow_sub_of_mul_zpow_eq`: an equation `a * h ^ D = b * h ^ e` can be solved for
+  `a`, as `a = b * h ^ (e - D)`.
 -/
 
 public section
@@ -47,5 +49,11 @@ theorem mul_zpow_mul_mul_zpow {G : Type*} [CommGroup G] (a b : G) (i j k i' j' k
       a ^ (i * k + i' * k') * b ^ (j * k + j' * k') := by
   simp only [mul_zpow, ← zpow_mul, zpow_add]
   ac_rfl
+
+/-- Moving a power of `h` across an equation: if `a * h ^ D = b * h ^ e` then
+`a = b * h ^ (e - D)`. -/
+theorem eq_mul_zpow_sub_of_mul_zpow_eq {G : Type*} [Group G] {a b h : G} {D e : ℤ}
+    (H : a * h ^ D = b * h ^ e) : a = b * h ^ (e - D) := by
+  rw [zpow_sub, ← mul_assoc, ← H, mul_inv_cancel_right]
 
 end TauCeti

@@ -13,6 +13,7 @@ public import Mathlib.Data.ZMod.QuotientGroup
 public import Mathlib.GroupTheory.Index
 public import Mathlib.GroupTheory.OrderOfElement
 import Mathlib.Algebra.Pointwise.Stabilizer
+import TauCeti.Algebra.Group.Pow
 
 /-!
 # Replaying coset enumeration over a cyclic subgroup
@@ -431,11 +432,6 @@ private structure Valid (st : State) : Prop where
 
 variable {x h parents}
 
-/-- Moving a power of `h` across an equation. -/
-private theorem eq_mul_zpow_sub {a b : G} {D e : ℤ} (H : a * h ^ D = b * h ^ e) :
-    a = b * h ^ (e - D) := by
-  rw [zpow_sub, ← mul_assoc, ← H, mul_inv_cancel_right]
-
 private theorem edge_setEdge {m : ℕ} {st : State} {t j q t' j' q' : ℕ} {e e' : ℤ}
     (H : (st.setEdge m t j q e).edge m t' j' = some (q', e')) :
     (t' = t ∧ j' = j ∧ q' = q ∧ e' = e) ∨ st.edge m t' j' = some (q', e') := by
@@ -512,7 +508,7 @@ private theorem Valid.identify {st : State} (hv : Valid x h parents st) {a b : �
   have key : pt x parents (st.root st.n a).1 = pt x parents (st.root st.n b).1 *
       h ^ ((st.root st.n b).2 + d - (st.root st.n a).2) := by
     rw [hv.root st.n a, hv.mul_zpow_root b d] at H
-    exact eq_mul_zpow_sub H
+    exact eq_mul_zpow_sub_of_mul_zpow_eq H
   unfold State.identify
   simp only
   split_ifs with h₁ h₂
@@ -533,7 +529,7 @@ private theorem Valid.addOne {st : State} (hv : Valid x h parents st) {t j q : �
   split
   · exact hv.setEdge hq
   · next s f hs =>
-    exact hv.identify (eq_mul_zpow_sub ((hv.edge t j s f hs).symm.trans hq))
+    exact hv.identify (eq_mul_zpow_sub_of_mul_zpow_eq ((hv.edge t j s f hs).symm.trans hq))
 
 private theorem Valid.add {st : State} (hv : Valid x h parents st) {t j q : ℕ} {e : ℤ}
     (H : letter x t * pt x parents j = pt x parents q * h ^ e) :
@@ -569,7 +565,7 @@ private theorem Valid.transfer {st : State} (hv : Valid x h parents st) (p : ℕ
     · next q e hqe =>
       have H := hs.edge t p q e hqe
       rw [hp, ← mul_assoc] at H
-      exact hs.add (eq_mul_zpow_sub H)
+      exact hs.add (eq_mul_zpow_sub_of_mul_zpow_eq H)
 
 private theorem Valid.withPending {st : State} (hv : Valid x h parents st) (ps : List ℕ) :
     Valid x h parents { st with pending := ps } :=
@@ -614,7 +610,7 @@ private theorem Valid.close {st : State} (hv : Valid x h parents st) {i : ℕ} {
     · exact hv
     · next j E hw =>
       rw [wordValue_cons, mul_assoc, hv.walk i u hw, ← mul_assoc] at H
-      exact hv.add (eq_mul_zpow_sub H)
+      exact hv.add (eq_mul_zpow_sub_of_mul_zpow_eq H)
 
 private theorem Valid.define {st : State} (hv : Valid x h parents st) :
     Valid x h parents (st.define (2 * n)) := by
