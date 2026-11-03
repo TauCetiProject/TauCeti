@@ -11,10 +11,7 @@ public import TauCeti.RingTheory.Dagger.WeakCompletion.Map
 # Weak completion preserves surjections
 
 A surjective map of finitely generated algebras induces a surjection of their
-Monsky–Washnitzer weak completions. Lift a finite generating family of the target, then lift
-an expansion using exactly the same polynomials and degree bound. Its partial sums define an
-adic Cauchy sequence in the source. Thus the lift belongs to the weak completion, not merely
-to the ambient adic completion.
+Monsky–Washnitzer weak completions.
 
 In particular, a polynomial presentation of an algebra gives a surjection from the weak
 completion of the polynomial algebra. This is the first step in presenting weak completions
@@ -40,10 +37,11 @@ variable {O S T : Type*} [CommRing O] [CommRing S] [CommRing T]
   [Algebra O S] [Algebra O T] (π : O)
   [Algebra.FiniteType O S] [Algebra.FiniteType O T]
 
-/-- A surjection of finitely generated algebras induces a surjection of weak completions.
-The lift is obtained by lifting generators while retaining the degree-growth expansion. -/
+/-- A surjection of finitely generated algebras induces a surjection of weak completions. -/
 theorem map_surjective (f : S →ₐ[O] T) (hf : Function.Surjective f) :
     Function.Surjective (map π f) := by
+  -- Lift a finite target generating family and retain the same polynomials and degree bound.
+  -- The lifted partial sums form an adic Cauchy sequence whose limit lies in the weak completion.
   classical
   obtain ⟨t, ht⟩ := Algebra.FiniteType.out (R := O) (A := T)
   have ht' : Algebra.adjoin O (Set.range ((↑) : t → T)) = ⊤ := by
