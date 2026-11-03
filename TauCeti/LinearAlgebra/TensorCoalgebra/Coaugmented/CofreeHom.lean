@@ -43,7 +43,7 @@ namespace TauCeti
 
 universe uR uA uM uN
 
-variable {R : Type uR} {A : Type uA} {M : Type uM} {N : Type uN} [CommRing R]
+variable {R : Type uR} {A : Type uA} {M : Type uM} {N : Type uN} [CommSemiring R]
   [AddCommMonoid A] [Module R A] [AddCommGroup M] [Module R M] [AddCommMonoid N] [Module R N]
 
 attribute [local instance] Comodule.cofree
