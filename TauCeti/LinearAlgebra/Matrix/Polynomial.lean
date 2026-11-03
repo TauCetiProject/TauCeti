@@ -95,7 +95,7 @@ theorem reflect_det_X_smul_transpose_add (S : Matrix n n R) :
     reflect (Fintype.card n) (det ((X : R[X]) • Sᵀ.map C + S.map C)) =
       det ((X : R[X]) • Sᵀ.map C + S.map C) := by
   have hP (i j : n) : ((X : R[X]) • Sᵀ.map C + S.map C) i j = C (S j i) * X + C (S i j) := by
-    simp only [add_apply, smul_apply, transpose_apply, map_apply, smul_eq_mul]
+    simp only [Matrix.add_apply, Matrix.smul_apply, transpose_apply, map_apply, smul_eq_mul]
     ring
   have h := reflect_det_sum_eq_of_natDegree_le ((X : R[X]) • Sᵀ.map C + S.map C) (fun _ ↦ 1)
     fun i j ↦ by rw [hP]; compute_degree

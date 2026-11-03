@@ -88,7 +88,7 @@ theorem prod_map_demazureOperator_apply_eq_self_of_mem_parabolic {J : Set b.supp
   induction ν with
   | nil => simp
   | cons a ν ih =>
-    rw [List.map_cons, List.prod_cons, Module.End.mul_apply,
+    rw [List.map_cons, List.prod_cons, mul_apply_eq_comp,
       ih fun i hi ↦ hletter i (List.mem_cons_of_mem a hi), hletter a List.mem_cons_self]
 
 /-- The Demazure operator along a reduced word of `w` agrees, on a `W_J`-invariant element, with
@@ -113,7 +113,7 @@ private theorem prod_map_demazureOperator_apply_eq_of_isMinimalCosetRep {J : Set
     rw [mul_inv_cancel_left] at hlen
     rw [CoxeterSystem.IsReduced, hprod, hlen, hνv, hμ.eq, hν.eq, List.length_append]
   rw [← P.prod_map_demazureOperator_eq_of_wordProd_eq b hred hω hprod, List.map_append,
-    List.prod_append, Module.End.mul_apply,
+    List.prod_append, mul_apply_eq_comp,
     P.prod_map_demazureOperator_apply_eq_self_of_mem_parabolic b hf hν (hνv ▸ h)]
 
 /-- **Demazure operators on cosets.** On an element of `ℤ[M]` invariant under the standard
@@ -185,7 +185,7 @@ theorem demazureOperator_prod_map_demazureOperator_single_of_coroot'_nonneg
   · -- Then `⟨w λ, αᵢ^∨⟩ = 0`, so `sᵢ` fixes `w λ` and `Dᵢ` is absorbed into `D_w`.
     have hzero : P.coroot' i (cs.wordProd ω • lam) = 0 :=
       le_antisymm (coroot'_smul_nonpos_of_isLeftDescent hlam hdesc) hi
-    rw [← Module.End.mul_apply,
+    rw [← mul_apply_eq_comp,
       P.demazureOperator_mul_prod_map_demazureOperator_of_isLeftDescent b hω hdesc]
     refine prod_map_demazureOperator_single_eq_of_smul_eq hlam c hω hω' ?_
     rw [h, reflection_apply, hzero, zero_smul, sub_zero]
@@ -194,7 +194,7 @@ theorem demazureOperator_prod_map_demazureOperator_single_of_coroot'_nonneg
       rw [CoxeterSystem.IsReduced, cs.wordProd_cons, cs.not_isLeftDescent_iff.mp hdesc, hω.eq,
         List.length_cons]
     have key := prod_map_demazureOperator_single_eq_of_smul_eq hlam c hred hω' ?_
-    · rwa [List.map_cons, List.prod_cons, Module.End.mul_apply] at key
+    · rwa [List.map_cons, List.prod_cons, mul_apply_eq_comp] at key
     rw [h, cs.wordProd_cons, mul_smul, weylCoxeterSystem_simple, weylGroup.ofIdx_smul,
       Equiv.reflection_smul]
 
@@ -207,7 +207,7 @@ theorem demazureOperator_prod_map_demazureOperator_single_of_coroot'_nonpos
     P.demazureOperator i ((ω.map fun m : b.support ↦ P.demazureOperator m).prod (single lam c)) =
       (ω.map fun m : b.support ↦ P.demazureOperator m).prod (single lam c) := by
   by_cases hdesc : (weylCoxeterSystem P b).IsLeftDescent ((weylCoxeterSystem P b).wordProd ω) i
-  · rw [← Module.End.mul_apply,
+  · rw [← mul_apply_eq_comp,
       P.demazureOperator_mul_prod_map_demazureOperator_of_isLeftDescent b hω hdesc]
   · -- Then `⟨w λ, αᵢ^∨⟩ = 0`, so `sᵢ` fixes `w λ`.
     have hzero : P.coroot' i ((weylCoxeterSystem P b).wordProd ω • lam) = 0 :=

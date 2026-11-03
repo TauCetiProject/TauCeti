@@ -183,7 +183,7 @@ theorem typeDSpinRep_serreE_exteriorBasis_singleton {i : Fin n}
         (b.ExteriorAlgebra {⟨(i : ℕ) + 1, hnext⟩}) =
       b.ExteriorAlgebra {i} := by
   rw [P.typeDSpinRep_serreE_eq_spinAction b hn,
-    P.typeDSimpleRootBivector_def b, dite_eq_left hnext, map_mul, Module.End.mul_apply,
+    P.typeDSimpleRootBivector_def b, dite_eq_left hnext, map_mul, mul_apply_eq_comp,
     TauCeti.spinAction_ι_wedge, TauCeti.spinAction_ι_contract, P.pairingEquiv_dualVector,
     TauCeti.ExteriorAlgebra.basis_singleton, CliffordAlgebra.contractLeft_ι]
   simp [TauCeti.ExteriorAlgebra.basis_singleton]
@@ -198,7 +198,7 @@ theorem typeDSpinRep_serreF_exteriorBasis_singleton {i : Fin n}
       b.ExteriorAlgebra {⟨(i : ℕ) + 1, hnext⟩} := by
   rw [P.typeDSpinRep_serreF_eq_spinAction b hn,
     P.typeDSimpleNegativeRootBivector_def b, dite_eq_left hnext, map_mul,
-    Module.End.mul_apply, TauCeti.spinAction_ι_wedge, TauCeti.spinAction_ι_contract,
+    mul_apply_eq_comp, TauCeti.spinAction_ι_wedge, TauCeti.spinAction_ι_contract,
     P.pairingEquiv_dualVector, TauCeti.ExteriorAlgebra.basis_singleton,
     CliffordAlgebra.contractLeft_ι]
   simp [TauCeti.ExteriorAlgebra.basis_singleton]
@@ -214,7 +214,7 @@ theorem typeDSpinRep_serreE_exteriorBasis_empty {i : Fin n}
           {(⟨n - 2, by omega⟩ : Fin n), (⟨n - 1, by omega⟩ : Fin n)} •
         b.ExteriorAlgebra {⟨n - 2, by omega⟩, ⟨n - 1, by omega⟩} := by
   rw [P.typeDSpinRep_serreE_eq_spinAction b hn,
-    P.typeDSimpleRootBivector_def b, dite_eq_right hlast, map_mul, Module.End.mul_apply,
+    P.typeDSimpleRootBivector_def b, dite_eq_right hlast, map_mul, mul_apply_eq_comp,
     TauCeti.spinAction_ι_wedge, TauCeti.spinAction_ι_wedge]
   have hEmpty : b.ExteriorAlgebra (∅ : Finset (Fin n)) = 1 := by
     rw [ExteriorAlgebra.basis_apply]
@@ -245,7 +245,7 @@ theorem typeDSpinRep_serreF_exteriorBasis_pair {i : Fin n}
           {(⟨n - 1, by omega⟩ : Fin n)}) • b.ExteriorAlgebra ∅ := by
   rw [P.typeDSpinRep_serreF_eq_spinAction b hn,
     P.typeDSimpleNegativeRootBivector_def b, dite_eq_right hlast, map_mul,
-    Module.End.mul_apply, TauCeti.spinAction_ι_contract, P.pairingEquiv_dualVector,
+    mul_apply_eq_comp, TauCeti.spinAction_ι_contract, P.pairingEquiv_dualVector,
     TauCeti.spinAction_ι_contract, P.pairingEquiv_dualVector,
     TauCeti.ExteriorAlgebra.contractLeft_coord_basis]
   rw [ite_eq_left (by simp), Finset.erase_insert (by

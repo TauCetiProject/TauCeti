@@ -327,8 +327,9 @@ instance isLocalHom_restrictedReduction :
     IsLocalHom (restrictedReduction (σ := σ) (K := K)) := by
   have hker :
       IsLocalHom (Ideal.Quotient.mk (RingHom.ker (restrictedReduction (σ := σ) (K := K)))) :=
-    isLocalHom_of_le_jacobson_bot _ (ker_restrictedReduction.le.trans
-      (unitBallIdeal_le_jacobson_bot T))
+    isLocalHom_of_le_jacobson (by
+      simpa only [Ideal.jacobson_bot] using
+        ker_restrictedReduction.le.trans (unitBallIdeal_le_jacobson_bot T))
   have h : restrictedReduction (σ := σ) (K := K) =
       (restrictedReductionQuotientEquiv (σ := σ) (K := K) : _ →+* _).comp
         (Ideal.Quotient.mk (RingHom.ker (restrictedReduction (σ := σ) (K := K)))) :=
