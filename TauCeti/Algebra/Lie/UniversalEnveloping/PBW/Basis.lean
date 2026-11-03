@@ -211,6 +211,29 @@ theorem pbwBasis_eq_prod_pow (n : ι →₀ ℕ) :
           Function.comp_apply]
   rw [← hprod, ← b.pbwBasisMonomial_toFinsupp hword, hmult, pbwBasis_apply_aux]
 
+/-- For a finite ordered basis, zero exponents may be retained in the ordered PBW product. -/
+theorem pbwBasis_eq_prod_ofFn_pow {n : ℕ} (b : Basis (Fin n) R L) (a : Fin n →₀ ℕ) :
+    b.pbwBasis a = (List.ofFn fun i => _root_.UniversalEnvelopingAlgebra.ι R (b i) ^ a i).prod := by
+  classical
+  have hs : a.support.sort = (List.finRange n).filter (fun i => a i ≠ 0) := by
+    apply (Finset.sortedLT_sort _).pairwise.eq_of_mem_iff
+      ((List.sortedLT_finRange n).pairwise.filter _)
+    simp
+  have hf (l : List (Fin n)) :
+      ((l.filter fun i => a i ≠ 0).map
+        (fun i => _root_.UniversalEnvelopingAlgebra.ι R (b i) ^ a i)).prod =
+      (l.map fun i => _root_.UniversalEnvelopingAlgebra.ι R (b i) ^ a i).prod := by
+    induction l with
+    | nil => rfl
+    | cons i l ih =>
+      by_cases hi : a i = 0
+      · simpa only [List.filter_cons, hi, ne_eq, not_true_eq_false, decide_false,
+          Bool.false_eq_true, ↓reduceIte, List.map_cons, List.prod_cons, pow_zero, one_mul] using ih
+      · simpa only [List.filter_cons, hi, ne_eq, not_false_eq_true, decide_true,
+          ↓reduceIte, List.map_cons, List.prod_cons] using
+          congrArg (_root_.UniversalEnvelopingAlgebra.ι R (b i) ^ a i * ·) ih
+  rw [pbwBasis_eq_prod_pow, hs, hf, List.ofFn_eq_map]
+
 @[simp]
 theorem pbwBasis_single (i : ι) (k : ℕ) :
     b.pbwBasis (Finsupp.single i k) = _root_.UniversalEnvelopingAlgebra.ι R (b i) ^ k := by
