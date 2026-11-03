@@ -12,6 +12,7 @@ public import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
 public import TauCeti.MeasureTheory.Measure.AbsolutelyContinuous
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 
+import TauCeti.Analysis.Sobolev.W1p.CompactSupport
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
@@ -36,7 +37,9 @@ smooth on `V` this pair is the classical value and gradient of `u ∘ Φ`, so it
 `W^{1,p}(U)`. Since `W^{1,p}(U)` is closed in the space of jets and the smooth elements are dense
 in `W^{1,p}(V)` (Meyers–Serrin, `TauCeti.Wkp.dense_contDiffOn_representatives` at order one),
 the same holds for every `u ∈ W^{1,p}(V)`. Neither continuity of `DΦ` nor differentiability of
-the inverse map is needed.
+the inverse map is needed. When `U = Φ⁻¹(V)` and `Φ` is proper, for instance a homeomorphism,
+precomposition also preserves zero boundary values: a test function on `V` composed with `Φ`
+vanishes off the compact set `Φ⁻¹(tsupport φ) ⊆ U`.
 
 Such changes of variables are the standard tool for flattening the boundary of a domain that is
 locally the region above a graph, which reduces trace and extension problems there to the
@@ -49,6 +52,7 @@ half-space, where `TauCeti.W1p.halfSpaceTrace` and `TauCeti.W1p.extendByReflecti
 * `TauCeti.W1p.value_compL_ae`, `TauCeti.W1p.gradient_compL_ae`: its value is `u ∘ Φ` and its
   weak gradient is `DΦ* (∇u ∘ Φ)`, almost everywhere on `U`.
 * `TauCeti.W1p.norm_compL_le`, `TauCeti.W1p.opNorm_compL_le`: the norm bound.
+* `TauCeti.W1p.compL_mem_w1p0Submodule`: precomposition maps `W^{1,p}_0(V)` into `W^{1,p}_0(U)`.
 
 ## References
 
@@ -340,6 +344,27 @@ theorem W1p.opNorm_compL_le :
       max 1 L * c⁻¹ ^ (1 / p).toReal :=
   ContinuousLinearMap.opNorm_le_bound _ (by positivity)
     (W1p.norm_compL_le Φ hp hΦ hinj hmaps hL hc hdet)
+
+/-- **Zero boundary values are preserved.** If `Φ` is proper and `U = Φ⁻¹(V)`, then
+precomposition with `Φ` maps `W^{1,p}_0(V)` into `W^{1,p}_0(U)`. -/
+theorem W1p.compL_mem_w1p0Submodule (hΦp : IsProperMap Φ) (hUV : (U : Set E) = Φ ⁻¹' V)
+    {u : W1p mu V p} (hu : u ∈ w1p0Submodule mu V p) :
+    W1p.compL Φ hp hΦ hinj hmaps hL hc hdet u ∈ w1p0Submodule mu U p := by
+  refine w1p0Submodule_subset_of_isClosed (p := p)
+    ((w1p0Submodule mu U p).isClosed.preimage
+      (W1p.compL Φ hp hΦ hinj hmaps hL hc hdet).continuous)
+    (fun φ => ?_) hu
+  -- A test function `φ` on `V` composed with `Φ` vanishes off the compact `Φ⁻¹(tsupport φ) ⊆ U`.
+  have hK : IsCompact (Φ ⁻¹' tsupport φ) := hΦp.isCompact_preimage φ.hasCompactSupport.isCompact
+  have hKU : Φ ⁻¹' tsupport φ ⊆ U := hUV ▸ preimage_mono φ.tsupport_subset
+  refine W1p.mem_w1p0Submodule_of_isCompact hp hK hKU ?_
+  filter_upwards [W1p.value_compL_ae Φ hp hΦ hinj hmaps hL hc hdet _,
+    ae_comp_of_map_absolutelyContinuous (hΦ.continuousOn.aemeasurable U.isOpen.measurableSet)
+      (Measure.absolutelyContinuous_of_le_smul
+        (map_restrict_le_smul_restrict_of_differentiableOn mu U.isOpen hΦ hinj hmaps hc hdet))
+      (W1p.value_ofTestFunctionₗ_ae (mu := mu) (p := p) φ)] with x h1 h2 hxK
+  rw [h1, h2]
+  exact image_eq_zero_of_notMem_tsupport hxK
 
 end ChangeOfVariables
 
