@@ -21,9 +21,9 @@ along object equalities.
 ## Main results
 
 * `TauCeti.eqToHom_tensorHom_eqToHom`: `eqToHom h ⊗ₘ eqToHom h' = eqToHom _`.
-* `TauCeti.eqToHom_conjugate_inv_δ_comp_map`: transporting `inv (δ F M N) ≫ F.map φ` along
-  equalities `M = M'`, `N = N'` and `P = P'` gives `inv (δ F M' N') ≫ F.map ψ`, where `ψ` is the
-  transport of `φ`.
+* `CategoryTheory.Functor.eqToHom_conjugate_inv_δ_comp_map`: transporting
+  `inv (δ F M N) ≫ F.map φ` along equalities `M = M'`, `N = N'` and `P = P'` gives
+  `inv (δ F M' N') ≫ F.map ψ`, where `ψ` is the transport of `φ`.
 -/
 
 public section
@@ -44,6 +44,12 @@ theorem eqToHom_tensorHom_eqToHom {X X' Y Y' : C} (h : X = X') (h' : Y = Y') :
   subst h h'
   simp
 
+end TauCeti
+
+namespace CategoryTheory.Functor
+
+variable {C : Type u} [Category.{v} C] [MonoidalCategory C]
+
 /-- The inverse tensor comparison of an oplax monoidal functor `F`, followed by the image under `F`
 of a morphism `φ : M ⊗ N ⟶ P`, is unchanged when `M`, `N` and `P` are transported along object
 equalities: transporting `φ` to `ψ : M' ⊗ N' ⟶ P'` transports `inv (δ F M N) ≫ F.map φ` to
@@ -52,10 +58,10 @@ theorem eqToHom_conjugate_inv_δ_comp_map {D : Type*} [Category* D] [MonoidalCat
     (F : C ⥤ D) [F.OplaxMonoidal] {M M' N N' P P' : C} (hM : M = M') (hN : N = N') (hP : P = P')
     [IsIso (δ F M N)] [IsIso (δ F M' N')] (φ : M ⊗ N ⟶ P) (ψ : M' ⊗ N' ⟶ P')
     (hψ : ψ = (eqToHom hM.symm ⊗ₘ eqToHom hN.symm) ≫ φ ≫ eqToHom hP) :
-    (eqToHom (congrArg F.obj hM) ⊗ₘ eqToHom (congrArg F.obj hN)) ≫ inv (δ F M' N') ≫ F.map ψ ≫
-        eqToHom (congrArg F.obj hP).symm =
-      inv (δ F M N) ≫ F.map φ := by
+    (eqToHom (congrArg F.obj hM) ⊗ₘ eqToHom (congrArg F.obj hN)) ≫
+        CategoryTheory.inv (δ F M' N') ≫ F.map ψ ≫ eqToHom (congrArg F.obj hP).symm =
+      CategoryTheory.inv (δ F M N) ≫ F.map φ := by
   subst hM hN hP hψ
   simp
 
-end TauCeti
+end CategoryTheory.Functor

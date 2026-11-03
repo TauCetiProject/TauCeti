@@ -116,7 +116,7 @@ private lemma pullbackMul_def (i j : ℕ) :
   have := @Scheme.Modules.isIso_pullback_δ_of_isQuasicoherent _ _ f _
     ((degree j).obj A).obj ((degree i).obj A).property
   -- `pullbackQ f` acts on morphisms of quasicoherent sheaves by pullback of the underlying maps.
-  exact eqToHom_conjugate_inv_δ_comp_map (C := X.Modules) _ (degree_obj_obj A i).symm
+  exact Functor.eqToHom_conjugate_inv_δ_comp_map (C := X.Modules) _ (degree_obj_obj A i).symm
     (degree_obj_obj A j).symm (degree_obj_obj A (i + j)).symm _ _ (A.mul_hom i j)
 
 /-- The homogeneous components `f^* Aₙ` of the pullback of a graded quasicoherent algebra. -/
