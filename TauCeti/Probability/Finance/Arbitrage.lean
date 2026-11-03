@@ -19,8 +19,9 @@ profit with positive probability:
 This notion depends on `P` only through its null sets, so it is the same under every equivalent
 measure `Q` (`TauCeti.Finance.isArbitrage_congr_measure`), and it does not depend on the unit of
 account: dividing the cost and the wealth by a positive numeraire preserves it
-(`TauCeti.Finance.IsArbitrage.div`). Under `Q` an arbitrage has strictly positive expected
-profit (`TauCeti.Finance.IsArbitrage.integral_lt_integral`). Hence, whenever the wealth of a
+(`TauCeti.Finance.IsArbitrage.div`). Under `Q` an arbitrage whose terminal wealth is
+`Q`-integrable has strictly positive expected profit
+(`TauCeti.Finance.IsArbitrage.integral_lt_integral`). Hence, whenever the wealth of a
 trading strategy measured in units of a positive numeraire `N`, such as the bond, is a
 supermartingale under a measure `Q` equivalent to `P`, the strategy is not an arbitrage between
 any two dates (`MeasureTheory.Supermartingale.not_isArbitrage`). In particular this applies when
@@ -31,7 +32,8 @@ Discounted martingale wealth is also determined by its terminal value: it is the
 price `V_t = N_t E_Q[V_T / N_T | ℱ_t]` (`MeasureTheory.Martingale.ae_eq_mul_condExp_div`), so two
 such strategies with the same terminal wealth have the same wealth at every earlier date, and in
 particular the same initial cost (`MeasureTheory.Martingale.ae_eq_of_ae_eq_of_div`). This is the
-law of one price.
+law of one price. Both statements are general facts about martingales and are proved in
+`TauCeti/Probability/Martingale/Basic.lean`.
 
 For simple strategies the martingale property is proved rather than assumed. The gains
 `∫₀ᵗ a dX` of a simple strategy with bounded positions, each chosen at the start of its trading
@@ -46,9 +48,6 @@ with bounded stock positions has martingale discounted gains, and none is an arb
 * `TauCeti.Finance.IsArbitrage`: an arbitrage, given by its initial cost and terminal wealth.
 * `MeasureTheory.Supermartingale.not_isArbitrage`: no arbitrage when the wealth in units of a
   positive numeraire is a supermartingale under an equivalent measure.
-* `MeasureTheory.Martingale.ae_eq_mul_condExp_div`,
-  `MeasureTheory.Martingale.ae_eq_of_ae_eq_of_div`: the value process of discounted martingale
-  wealth, and the law of one price.
 * `TauCeti.Finance.IsSelfFinancing.not_isArbitrage`: no self-financing simple strategy is an
   arbitrage when the discounted stock is a martingale under an equivalent measure.
 
@@ -119,8 +118,8 @@ theorem IsArbitrage.integral_lt_integral (h : IsArbitrage P v X) (hX : Integrabl
   rw [integral_pos_iff_support_of_nonneg_ae h.2 hX]
   exact h.3.trans_le (measure_mono fun ω (hω : 0 < X ω) ↦ hω.ne')
 
-/-- A trade whose terminal wealth has, under a measure `Q` equivalent to `P`, at most the
-expected value of its cost is not an arbitrage under `P`. -/
+/-- A trade whose terminal wealth is integrable under a measure `Q` equivalent to `P`, with at
+most the expected value of its cost, is not an arbitrage under `P`. -/
 theorem not_isArbitrage_of_integral_le (hPQ : P ≪ Q) (hQP : Q ≪ P) (hX : Integrable X Q)
     (hle : ∫ ω, X ω ∂Q ≤ ∫ ω, v ω ∂Q) : ¬IsArbitrage P v X := fun h ↦
   (((isArbitrage_congr_measure hPQ hQP).1 h).integral_lt_integral hX).not_ge hle
@@ -134,7 +133,7 @@ namespace MeasureTheory
 open TauCeti.Finance
 
 variable {Ω ι : Type*} {mΩ : MeasurableSpace Ω} {P Q : Measure Ω} [Preorder ι]
-  {ℱ : Filtration ι mΩ} {V V' N : ι → Ω → ℝ} {i j : ι}
+  {ℱ : Filtration ι mΩ} {V N : ι → Ω → ℝ} {i j : ι}
 
 /-- **No arbitrage under an equivalent supermartingale measure.** If the wealth `V` of a strategy,
 measured in units of a numeraire `N` that is positive at the later date `j`, is a supermartingale
@@ -145,32 +144,6 @@ theorem Supermartingale.not_isArbitrage [SigmaFiniteFiltration Q ℱ]
     (hij : i ≤ j) : ¬IsArbitrage P (V i) (V j) := fun h ↦ by
   refine not_isArbitrage_of_integral_le hPQ hQP (hV.integrable j) ?_ (h.div hN (N i))
   simpa only [setIntegral_univ, Pi.div_apply] using hV.setIntegral_le hij MeasurableSet.univ
-
-/-- The wealth `V` of a strategy whose value in units of a numeraire `N` is a martingale under a
-measure `Q` with `P ≪ Q` is determined by its value at a later date `j`: at every date `i ≤ j`
-at which the numeraire does not vanish, `V_i = N_i E_Q[V_j / N_j | ℱ_i]`, `P`-almost surely. -/
-theorem Martingale.ae_eq_mul_condExp_div (hV : Martingale (V / N) ℱ Q) (hPQ : P ≪ Q)
-    (hN : ∀ᵐ ω ∂P, N i ω ≠ 0) (hij : i ≤ j) :
-    V i =ᵐ[P] N i * Q[V j / N j | ℱ i] := by
-  filter_upwards [hPQ.ae_le (hV.condExp_ae_eq hij), hN] with ω hω hNω
-  simp only [Pi.mul_apply, Pi.div_apply] at hω ⊢
-  rw [hω]
-  field_simp
-
-/-- **The law of one price.** Two strategies whose wealth in units of a common numeraire `N` is a
-martingale under a measure `Q` equivalent to `P`, and whose wealth agrees at a date `j`, have the
-same wealth at every earlier date `i` at which the numeraire does not vanish; in particular the
-same initial cost. -/
-theorem Martingale.ae_eq_of_ae_eq_of_div (hV : Martingale (V / N) ℱ Q)
-    (hV' : Martingale (V' / N) ℱ Q) (hPQ : P ≪ Q) (hQP : Q ≪ P) (hN : ∀ᵐ ω ∂P, N i ω ≠ 0)
-    (hij : i ≤ j) (hj : V j =ᵐ[P] V' j) : V i =ᵐ[P] V' i := by
-  have hcond : Q[V j / N j | ℱ i] =ᵐ[Q] Q[V' j / N j | ℱ i] := by
-    refine condExp_congr_ae ?_
-    filter_upwards [hQP.ae_le hj] with ω hω
-    simp only [Pi.div_apply, hω]
-  filter_upwards [hV.ae_eq_mul_condExp_div hPQ hN hij, hV'.ae_eq_mul_condExp_div hPQ hN hij,
-    hPQ.ae_le hcond] with ω h₁ h₂ h₃
-  rw [h₁, h₂, Pi.mul_apply, Pi.mul_apply, h₃]
 
 end MeasureTheory
 

@@ -8,7 +8,7 @@ module
 public import Mathlib.Probability.Martingale.Basic
 
 /-!
-# Martingales frozen at a date, and bounded positions taken at a date
+# Martingales frozen at a date, bounded positions taken at a date, and division by a process
 
 Two closure properties of martingales indexed by a linear order, the building blocks of the
 elementary stochastic integral:
@@ -20,6 +20,13 @@ elementary stochastic integral:
 
 Together they show that a bounded position chosen at `r`, times the change of a martingale over
 `(r, r']`, is a martingale.
+
+If `V / N` is a martingale under `Q` for a real process `N`, then `V` is recovered from its value
+at a later date `j` as `V i = N i * Q[V j / N j | ℱ i]` wherever `N i` does not vanish
+(`MeasureTheory.Martingale.ae_eq_mul_condExp_div`), so two such processes agreeing at `j` agree at
+every earlier date (`MeasureTheory.Martingale.ae_eq_of_ae_eq_of_div`). In finance `N` is a
+numeraire, the first statement is the conditional pricing formula and the second the law of one
+price.
 -/
 
 public section
@@ -29,6 +36,40 @@ noncomputable section
 open Filter
 
 namespace MeasureTheory
+
+section Div
+
+variable {Ω ι : Type*} {mΩ : MeasurableSpace Ω} {P Q : Measure Ω} [Preorder ι]
+  {ℱ : Filtration ι mΩ} {V V' N : ι → Ω → ℝ} {i j : ι}
+
+/-- If `V / N` is a martingale under a measure `Q` with `P ≪ Q`, then `V` is determined by its
+value at a later date `j`: at every date `i ≤ j` at which `N` does not vanish,
+`V_i = N_i E_Q[V_j / N_j | ℱ_i]`, `P`-almost surely. For the wealth `V` of a strategy and a
+numeraire `N`, this is the conditional pricing formula. -/
+theorem Martingale.ae_eq_mul_condExp_div (hV : Martingale (V / N) ℱ Q) (hPQ : P ≪ Q)
+    (hN : ∀ᵐ ω ∂P, N i ω ≠ 0) (hij : i ≤ j) :
+    V i =ᵐ[P] N i * Q[V j / N j | ℱ i] := by
+  filter_upwards [hPQ.ae_le (hV.condExp_ae_eq hij), hN] with ω hω hNω
+  simp only [Pi.mul_apply, Pi.div_apply] at hω ⊢
+  rw [hω]
+  field_simp
+
+/-- If `V / N` and `V' / N` are martingales under a measure `Q` equivalent to `P`, and `V` and
+`V'` agree at a date `j`, then they agree at every earlier date `i` at which `N` does not
+vanish. For the wealth of two strategies and a common numeraire `N`, this is the law of one
+price: in particular the two strategies have the same initial cost. -/
+theorem Martingale.ae_eq_of_ae_eq_of_div (hV : Martingale (V / N) ℱ Q)
+    (hV' : Martingale (V' / N) ℱ Q) (hPQ : P ≪ Q) (hQP : Q ≪ P) (hN : ∀ᵐ ω ∂P, N i ω ≠ 0)
+    (hij : i ≤ j) (hj : V j =ᵐ[P] V' j) : V i =ᵐ[P] V' i := by
+  have hcond : Q[V j / N j | ℱ i] =ᵐ[Q] Q[V' j / N j | ℱ i] := by
+    refine condExp_congr_ae ?_
+    filter_upwards [hQP.ae_le hj] with ω hω
+    simp only [Pi.div_apply, hω]
+  filter_upwards [hV.ae_eq_mul_condExp_div hPQ hN hij, hV'.ae_eq_mul_condExp_div hPQ hN hij,
+    hPQ.ae_le hcond] with ω h₁ h₂ h₃
+  rw [h₁, h₂, Pi.mul_apply, Pi.mul_apply, h₃]
+
+end Div
 
 variable {Ω ι E : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω} [LinearOrder ι]
   [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
