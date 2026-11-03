@@ -97,12 +97,13 @@ private theorem map_torus_carrierPointsHom :
         (weightTorusDefiningIdeal k) (CommAlgCat.of k k)).map (carrierPointsHom k) =
       (weightTorusPoints k).range := by
   apply Subgroup.map_injective (points k).subtype_injective
-  rw [Subgroup.map_map]
-  convert map_quotientPointsSubgroup_weightTorusDefiningIdeal k (CommAlgCat.of k k) using 1
-  congr 1
-  apply MonoidHom.ext
-  intro g
-  exact coe_carrierPointsHom k g
+  have hcomp : (points k).subtype.comp (carrierPointsHom k) =
+      (GeneralLinear.pointsMulEquiv 24).toMonoidHom.comp
+        ((CommHopfAlgCat.Hom.mapPointsFunctor (generatedCoordinateMap k)).app
+          (CommAlgCat.of k k)).hom := MonoidHom.ext (coe_carrierPointsHom k)
+  rw [Subgroup.map_map, hcomp]
+  -- The underlying algebra of `CommAlgCat.of k k` is `k`, so their matrix subgroups agree.
+  exact map_quotientPointsSubgroup_weightTorusDefiningIdeal k (CommAlgCat.of k k)
 
 /-- Over an algebraically closed field, a reduced commutative closed subgroup containing the
 weight torus of the generated tripled D₄ group is that torus. -/
