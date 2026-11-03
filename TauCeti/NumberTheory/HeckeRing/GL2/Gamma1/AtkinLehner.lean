@@ -128,7 +128,8 @@ lemma atkinLehnerAntiInvolutionGamma1_bar_eq {x : GL (Fin 2) ℚ} (hx : x ∈ De
 /-- The anti-involution acts by conjugating the transpose by `w = diag(1, N)`. -/
 @[simp] lemma atkinLehnerAntiInvolutionGamma1_bar {x : GL (Fin 2) ℚ} (hx : x ∈ Delta0 N) :
     (atkinLehnerAntiInvolutionGamma1 N).bar x hx =
-      natDiagGL 2 ![1, N] * (transposeGLEquiv 2 x).unop * (natDiagGL 2 ![1, N])⁻¹ := by
+      natDiagGL 2 ![1, N] * (GeneralLinearGroup.transposeMulEquiv (Fin 2) x).unop *
+        (natDiagGL 2 ![1, N])⁻¹ := by
   rw [atkinLehnerAntiInvolutionGamma1_bar_eq, atkinLehnerAntiInvolution_bar]
 
 /-- **The anti-involution fixes the `Γ₁(N)` double coset of a primitive element of `Δ₀(N)`.**
