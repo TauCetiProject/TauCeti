@@ -46,7 +46,7 @@ private noncomputable def mackeySelfTwistIso (hs : s ∈ H) (B : Rep.{u} k H) :
         group
       ext a
       simpa only [Rep.coe_res_obj_ρ', MonoidHom.comp_apply, Subgroup.subtype_apply, map_mul,
-        Module.End.mul_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
+        mul_apply_eq_comp, LinearMap.comp_apply, LinearEquiv.coe_coe,
         LinearEquiv.ofBijective_apply] using
         congrArg (fun f : Module.End k B ↦ f a) (congrArg B.ρ h)
 
