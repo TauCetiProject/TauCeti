@@ -9,7 +9,8 @@ public import TauCeti.Geometry.Polygon.DeltaMove
 public import TauCeti.Geometry.Polygon.Subdivision
 public import TauCeti.KnotTheory.GaussCode.Polygon.Basic
 import TauCeti.Analysis.Convex.Combination
-import TauCeti.LinearAlgebra.AffineSpace.TriangleExit
+import TauCeti.LinearAlgebra.AffineSpace.Triangle.Exit
+import TauCeti.Order.Monotone.Basic
 
 /-!
 # Δ-moves that do not change the Gauss code
@@ -364,9 +365,11 @@ theorem gaussCode_insertVertex_of_crossing (hs : poly.IsSimple ℝ)
       · rw [hτ, Fin.finRotate_castSucc, insertVertex_apply_succ_self,
           insertVertex_apply_castSucc_self]
         -- `ρ L (c - a) = r L (a' - a)`, since `L` vanishes on `y - x`.
-        have h := hLyx hπy
-        rw [hxxdef, lineMap_apply, lineMap_apply, vadd_vsub_vadd_cancel_right, map_sub,
-          map_smul, map_smul, smul_eq_mul, smul_eq_mul, sub_eq_zero] at h
+        have h : ρ * L (c -ᵥ poly i) = r * L (poly (finRotate n i) -ᵥ poly i) := by
+          have h := hLyx hπy
+          simp only [hxxdef, lineMap_vsub_lineMap_eq_vsub_add_smul_sub_smul, vsub_self,
+            map_add, map_sub, map_smul, map_zero, smul_eq_mul] at h
+          linear_combination h
         rw [← hsignmul hρ.1, h, hsignmul hr.1]
     · -- `y'` lies over the side `CB`.
       set t := f 1 s₁
@@ -386,10 +389,13 @@ theorem gaussCode_insertVertex_of_crossing (hs : poly.IsSimple ℝ)
       · rw [boundaryParam_natCast_add _ _ ⟨ht.1.le, ht.2.le⟩, edgePath_insertVertex_succ_self]
       · rw [hτ, insertVertex_apply_finRotate_succ_self, insertVertex_apply_succ_self]
         -- `(1 - t) L (a' - c) = (1 - r) L (a' - a)`, since `L` vanishes on `y - x`.
-        have h := hLyx hπy
-        rw [← vsub_add_vsub_cancel _ (poly (finRotate n i)) xx, hxxdef, lineMap_vsub_right,
-          right_vsub_lineMap, ← neg_vsub_eq_vsub_rev (poly (finRotate n i)) c, map_add,
-          map_smul, map_smul, map_neg, smul_eq_mul, smul_eq_mul, mul_neg, neg_add_eq_zero] at h
+        have h : (1 - t) * L (poly (finRotate n i) -ᵥ c) =
+            (1 - r) * L (poly (finRotate n i) -ᵥ poly i) := by
+          have h := hLyx hπy
+          have hca := congrArg L (vsub_sub_vsub_cancel_left c (poly i) (poly (finRotate n i)))
+          simp only [hxxdef, lineMap_vsub_lineMap_eq_vsub_add_smul_sub_smul, map_add, map_sub,
+            map_smul, smul_eq_mul] at h hca
+          linear_combination -h - hca
         rw [← hsignmul (sub_pos.2 ht.2), h, hsignmul (sub_pos.2 hr.2)]
   /- The double points: `xx`, on edge `i`, and its partner `x'` cross before the move, `y`, on the
   new edges, and its partner `y'` cross after it, and no other crossing changes. -/
@@ -611,12 +617,12 @@ theorem gaussCode_insertVertex_of_crossing (hs : poly.IsSimple ℝ)
     have := hDPj hsu (hbp ▸ (mem_crossingTimes.1 ht).2)
     rw [hτx'def, ← this, add_sub_cancel]
   -- Move the crossing time `τx'` to the time `j + s₁` of `y'`; then apply `ψ`, except at `τx`.
-  set θ : ℝ → ℝ := fun t ↦ if t = τx' then ((j : ℕ) : ℝ) + s₁ else t with hθdef
-  have hθx' : θ τx' = ((j : ℕ) : ℝ) + s₁ := by rw [hθdef]; simp
-  have hθo {t : ℝ} (h : t ≠ τx') : θ t = t := by rw [hθdef]; simp [h]
-  set φ : ℝ → ℝ := fun t ↦ if t = τx then τy else ψ (θ t) with hφdef
-  have hφx : φ τx = τy := by rw [hφdef]; simp
-  have hφo {t : ℝ} (h : t ≠ τx) : φ t = ψ (θ t) := by rw [hφdef]; simp [h]
+  set θ : ℝ → ℝ := update id τx' (((j : ℕ) : ℝ) + s₁)
+  have hθx' : θ τx' = ((j : ℕ) : ℝ) + s₁ := update_self ..
+  have hθo {t : ℝ} (h : t ≠ τx') : θ t = t := update_of_ne h ..
+  set φ : ℝ → ℝ := update (ψ ∘ θ) τx τy
+  have hφx : φ τx = τy := update_self ..
+  have hφo {t : ℝ} (h : t ≠ τx) : φ t = ψ (θ t) := update_of_ne h ..
   have hji' : (j : ℕ) ≠ (i : ℕ) := fun h ↦ hji (Fin.ext h)
   have hθside {t : ℝ} (ht : t ∈ poly.crossingTimes p₀ d) (htx : t ≠ τx) :
       (θ t < (i : ℕ) ∧ t < (i : ℕ)) ∨ (((i : ℕ) : ℝ) + 1 ≤ θ t ∧ ((i : ℕ) : ℝ) + 1 ≤ t) := by
@@ -631,39 +637,27 @@ theorem gaussCode_insertVertex_of_crossing (hs : poly.IsSimple ℝ)
     · rw [hθo htx']
       rcases hCTside ht htx with h | h
       exacts [.inl ⟨h, h⟩, .inr ⟨h, h⟩]
-  have hθmono {t t' : ℝ} (ht : t ∈ poly.crossingTimes p₀ d) (ht' : t' ∈ poly.crossingTimes p₀ d)
-      (htt' : t < t') : θ t < θ t' := by
-    by_cases h : t = τx'
-    · subst h
-      have h' : t' ≠ τx' := htt'.ne'
-      rw [hθx', hθo h']
-      by_contra! hle
-      exact h' (hgap ht' (mem_uIcc.2 (.inl ⟨by linarith, hle⟩)))
-    by_cases h' : t' = τx'
-    · subst h'
-      rw [hθx', hθo h]
-      by_contra! hle
-      exact h (hgap ht (mem_uIcc.2 (.inr ⟨hle, htt'.le⟩)))
-    rwa [hθo h, hθo h']
-  have hφmono : StrictMonoOn φ (poly.crossingTimes p₀ d) := by
-    intro t ht t' ht' htt'
-    by_cases hx : t = τx
-    · subst hx
-      have hx' : t' ≠ τx := htt'.ne'
-      rw [hφx, hφo hx']
-      rcases hθside ht' hx' with h | h
-      · linarith [h.2, hr.1]
-      · rw [hψge _ h.1]
-        linarith [hτy.2, h.1]
-    by_cases hx' : t' = τx
-    · subst hx'
-      rw [hφx, hφo hx]
-      rcases hθside ht hx with h | h
-      · rw [hψle _ h.1.le]
-        linarith [hτy.1, h.1]
-      · linarith [h.2, hr.2]
-    rw [hφo hx, hφo hx']
-    exact hψ (hθmono ht ht' htt')
+  -- No crossing time lies between `τx'` and its new position; none but `τx` lies on edge `i`.
+  have hθmono : StrictMonoOn θ (poly.crossingTimes p₀ d) :=
+    (strictMono_id.strictMonoOn _).update
+      (fun t ht htlt ↦ by
+        by_contra! hle
+        exact htlt.ne (hgap ht (mem_uIcc.2 (.inr ⟨hle, htlt.le⟩))))
+      (fun t ht htgt ↦ by
+        by_contra! hle
+        exact htgt.ne' (hgap ht (mem_uIcc.2 (.inl ⟨htgt.le, hle⟩))))
+  have hφmono : StrictMonoOn φ (poly.crossingTimes p₀ d) :=
+    ((hψ.comp_strictMonoOn hθmono).mono sdiff_subset).update
+      (fun t ht htlt ↦ by
+        rcases hθside ht htlt.ne with h | h
+        · rw [Function.comp_apply, hψle _ h.1.le]
+          linarith [hτy.1, h.1]
+        · linarith [h.2, hr.2])
+      (fun t ht htgt ↦ by
+        rcases hθside ht htgt.ne' with h | h
+        · linarith [h.2, hr.1]
+        · rw [Function.comp_apply, hψge _ h.1]
+          linarith [hτy.2, h.1])
   -- At every crossing time other than `τx`, the shifted time runs along an edge other than `i`.
   have hθgood {t : ℝ} (ht : t ∈ poly.crossingTimes p₀ d) (htx : t ≠ τx) :
       θ t ∈ Ico (0 : ℝ) n ∧ edgeIndexAt n (θ t) ≠ i ∧

@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.AffineSpace.AffineMap
 public import Mathlib.Order.Interval.Set.UnorderedInterval
+public import TauCeti.LinearAlgebra.AffineSpace.Ordered
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Push
@@ -14,9 +14,6 @@ import Mathlib.Tactic.Ring
 
 /-!
 # Leaving a triangle along a segment
-
-An affine function `f` on the line is determined by its values at `0` and `1`:
-`f s = f 0 + s * (f 1 - f 0)` (`AffineMap.apply_eq_add_mul_sub`).
 
 Read a segment `s ↦ σ s`, `s ∈ [0, 1]`, in the barycentric coordinates `f₀`, `f₁`, `f₂` of a
 triangle `ABC`: these are affine functions of the parameter with sum `1`, and the triangle is
@@ -29,8 +26,6 @@ two new edges exactly once.
 
 ## Main results
 
-* `AffineMap.apply_eq_add_mul_sub`: an affine function on the line is
-  `s ↦ f 0 + s * (f 1 - f 0)`.
 * `TauCeti.exists_triangle_exit`: a segment crossing one side of a triangle, with endpoints outside
   it and avoiding its vertices, leaves it across one of the other two sides, at a single point.
 
@@ -44,67 +39,9 @@ public section
 
 open Set AffineMap
 
-/-- An affine function on the line is determined by its values at `0` and `1`. -/
-theorem AffineMap.apply_eq_add_mul_sub {k : Type*} [CommRing k] (f : k →ᵃ[k] k) (s : k) :
-    f s = f 0 + s * (f 1 - f 0) := by
-  have h := f.apply_lineMap (0 : k) 1 s
-  rw [lineMap_apply_ring', lineMap_apply_ring'] at h
-  simp only [sub_zero, mul_one, add_zero] at h
-  rw [h]
-  ring
-
 namespace TauCeti
 
 variable {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
-
-/-- The zero of an affine function `g` on the line positive at `s₀ < 1`, if it lies in
-`[s₀, 1]`, and `2` otherwise. On `[s₀, 1]`, `g` is positive before this point and vanishes only
-there. -/
-private theorem exists_firstZero (g : 𝕜 →ᵃ[𝕜] 𝕜) {s₀ : 𝕜} (hs₀ : s₀ < 1) (hg : 0 < g s₀) :
-    ∃ z, s₀ < z ∧ (z ≤ 1 ↔ g 1 ≤ 0) ∧ ∀ s ∈ Icc s₀ 1, (0 < g s ↔ s < z) ∧ (g s = 0 ↔ s = z) := by
-  have hgs := g.apply_eq_add_mul_sub
-  by_cases h1 : g 1 ≤ 0
-  · -- `g s = m * (s - z)` with negative slope `m`.
-    set m := g 1 - g 0
-    have hm : m < 0 := by
-      have h₀ := hgs s₀
-      have h₁ := hgs 1
-      nlinarith
-    refine ⟨s₀ - g s₀ / m, ?_, ⟨fun _ ↦ h1, fun _ ↦ ?_⟩, fun s _ ↦ ?_⟩
-    · have : g s₀ / m < 0 := div_neg_of_pos_of_neg hg hm
-      linarith
-    · rw [sub_le_iff_le_add, ← sub_le_iff_le_add', le_div_iff_of_neg hm]
-      nlinarith [hgs s₀, hgs 1]
-    · have hlin : g s = m * (s - (s₀ - g s₀ / m)) := by
-        have hm0 : m ≠ 0 := hm.ne
-        rw [hgs s, hgs s₀]
-        field_simp
-        ring
-      rw [hlin]
-      constructor
-      · constructor
-        · intro h; nlinarith
-        · intro h; nlinarith
-      · rw [mul_eq_zero]
-        exact ⟨fun h ↦ sub_eq_zero.1 (h.resolve_left hm.ne),
-          fun h ↦ Or.inr (sub_eq_zero.2 h)⟩
-  · push Not at h1
-    refine ⟨2, by linarith, ⟨fun h ↦ by linarith, fun h ↦ by linarith⟩, fun s hs ↦ ?_⟩
-    have hpos : 0 < g s := by
-      have hcomb : (1 - s₀) * g s = (1 - s) * g s₀ + (s - s₀) * g 1 := by
-        rw [hgs s, hgs s₀]
-        ring
-      have h1s : 0 < 1 - s₀ := by linarith
-      have : 0 < (1 - s) * g s₀ + (s - s₀) * g 1 := by
-        rcases eq_or_lt_of_le hs.2 with rfl | hlt
-        · simp only [sub_self, zero_mul, zero_add]
-          exact mul_pos h1s h1
-        · exact add_pos_of_pos_of_nonneg (mul_pos (by linarith) hg)
-            (mul_nonneg (by linarith [hs.1]) h1.le)
-      rw [← hcomb] at this
-      exact pos_of_mul_pos_right this h1s.le
-    exact ⟨⟨fun _ ↦ by linarith [hs.2], fun _ ↦ hpos⟩,
-      ⟨fun h ↦ (hpos.ne' h).elim, fun h ↦ by linarith [hs.2]⟩⟩
 
 /-- A segment entering a triangle across one side, along which the barycentric coordinate `f₂`
 opposite that side increases, leaves it across one of the other two sides. -/
@@ -114,8 +51,8 @@ private theorem exists_exit_of_pos {f₀ f₁ f₂ : 𝕜 →ᵃ[𝕜] 𝕜} {s�
     ∃ s₁ ∈ Ioo s₀ 1, 0 < f₂ s₁ ∧ ((f₁ s₁ = 0 ∧ 0 < f₀ s₁) ∨ (f₀ s₁ = 0 ∧ 0 < f₁ s₁)) ∧
       (∀ s ∈ Icc (0 : 𝕜) 1, 0 ≤ f₂ s → (f₁ s = 0 ∧ 0 ≤ f₀ s ∨ f₀ s = 0 ∧ 0 ≤ f₁ s) → s = s₁) ∧
       ∀ s ∈ Icc s₀ s₁, 0 ≤ f₀ s ∧ 0 ≤ f₁ s ∧ 0 ≤ f₂ s := by
-  obtain ⟨z₀, hz₀, hz₀1, hz₀s⟩ := exists_firstZero f₀ hs₀.2 h₀
-  obtain ⟨z₁, hz₁, hz₁1, hz₁s⟩ := exists_firstZero f₁ hs₀.2 h₁
+  obtain ⟨z₀, hz₀, hz₀1, hz₀s⟩ := f₀.exists_forall_pos_iff_lt_of_pos hs₀.2 h₀
+  obtain ⟨z₁, hz₁, hz₁1, hz₁s⟩ := f₁.exists_forall_pos_iff_lt_of_pos hs₀.2 h₁
   -- `f₂` increases, from `0` at `s₀`.
   have hf₂ := f₂.apply_eq_add_mul_sub
   have hκ : 0 < f₂ 1 - f₂ 0 := by nlinarith [hf₂ s₀, hs₀.1, hs₀.2]
