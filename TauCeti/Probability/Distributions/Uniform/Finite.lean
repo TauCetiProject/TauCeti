@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Probability.CDF
 public import Mathlib.Probability.Distributions.Uniform
 public import Mathlib.Probability.UniformOn
 public import Mathlib.MeasureTheory.Measure.Prod
@@ -16,7 +17,10 @@ public import Mathlib.MeasureTheory.Measure.Support
 This file develops uniform probability measures on finite discrete spaces.  It identifies the
 conditional counting measure `ProbabilityTheory.uniformOn` with Mathlib's finite Dirac-sum
 measure, computes its masses and Bochner integrals, and shows that embeddings transport finite
-uniform measures to uniform measures on their images.
+uniform measures to uniform measures on their images. For labels in a measurable space, it
+computes masses by counting inputs, retaining multiplicities of repeated labels; for real labels,
+it also computes the cdf. Quantile formulas and endpoint limits are in
+`TauCeti.Probability.Distributions.Uniform.Quantile`.
 
 ## Main results
 
@@ -26,6 +30,8 @@ uniform measures to uniform measures on their images.
   uniform law is its finite set.
 * `Finset.integral_uniformOn_finset`: integration against a finite uniform law is a
   normalized finite sum.
+* `Finset.measureReal_map_uniformOn_apply` and `Finset.cdf_map_uniformOn`: label masses and
+  cumulative masses are proportions of inputs.
 * `Set.BijOn.map_uniformOn`: a bijection between sets pushes a uniform law to
   the uniform law on its target, with no finiteness restriction.
 * `TauCeti.Probability.uniformOfFinset_univ_fin_two_prod_offDiagonal`: two independent uniform
@@ -215,3 +221,55 @@ theorem uniformOfFinset_univ_fin_two_prod_offDiagonal :
   rw [← mul_two, mul_assoc, ENNReal.inv_mul_cancel (by norm_num) (by norm_num), mul_one]
 
 end TauCeti.Probability
+
+namespace Finset
+
+variable {α β : Type*} [MeasurableSpace α] [MeasurableSingletonClass α] [MeasurableSpace β]
+
+open Classical in
+/-- The real mass of a set of labels under finite uniform sampling is the proportion of inputs
+with labels in that set. Repeated labels are counted with their multiplicities. -/
+theorem measureReal_map_uniformOn_apply (s : Finset α) (f : α → β)
+    {t : Set β} (ht : MeasurableSet t) :
+    ((uniformOn (s : Set α)).map f).real t =
+      ((s.filter fun i ↦ f i ∈ t).card : ℝ) / s.card := by
+  rw [← integral_indicator_one ht,
+    integral_map (s.aemeasurable_uniformOn_finset f) (by fun_prop), integral_uniformOn_finset]
+  simp [Set.indicator, sum_boole, div_eq_mul_inv, mul_comm]
+
+open Classical in
+/-- The cdf of a finitely labeled uniform sample counts inputs with label at most the argument. -/
+theorem cdf_map_uniformOn (s : Finset α) (hs : s.Nonempty) (f : α → ℝ) (x : ℝ) :
+    cdf ((uniformOn (s : Set α)).map f) x =
+      ((s.filter fun i ↦ f i ≤ x).card : ℝ) / s.card := by
+  let _ := isProbabilityMeasure_uniformOn s.finite_toSet hs
+  rw [cdf_eq_real, measureReal_map_uniformOn_apply s f measurableSet_Iic]
+  simp only [Set.mem_Iic]
+
+open Classical in
+/-- A labeled finite uniform sample lies in the finite image of its sampling set almost surely.
+The labeling function need not be globally measurable. -/
+theorem ae_mem_image_map_uniformOn [MeasurableSingletonClass β] (s : Finset α) (f : α → β) :
+    ∀ᵐ x ∂(uniformOn (s : Set α)).map f, x ∈ s.image f := by
+  classical
+  apply (ae_map_iff (s.aemeasurable_uniformOn_finset f) (s.image f).measurableSet).2
+  rw [s.uniformOn_coe_finset_eq_uniformOfFinset, Measure.uniformOfFinset,
+    ae_finsetSum_measure_iff]
+  intro i hi
+  apply Measure.ae_smul_measure
+  simpa using s.mem_image_of_mem f hi
+
+open Classical in
+/-- Every label attained by a finite uniform sample has nonzero mass. -/
+theorem map_uniformOn_singleton_ne_zero [MeasurableSingletonClass β] (s : Finset α) (f : α → β)
+    {x : β} (hx : x ∈ s.image f) : (uniformOn (s : Set α)).map f {x} ≠ 0 := by
+  classical
+  obtain ⟨i, hi, rfl⟩ := mem_image.mp hx
+  rw [Measure.map_apply_of_aemeasurable (s.aemeasurable_uniformOn_finset f)
+    (measurableSet_singleton _)]
+  apply ne_of_gt
+  calc
+    0 < uniformOn (s : Set α) {i} := by simp [hi]
+    _ ≤ uniformOn (s : Set α) (f ⁻¹' {f i}) := measure_mono (by simp)
+
+end Finset
