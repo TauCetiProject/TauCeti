@@ -36,7 +36,7 @@ This is the smooth-dependence input for smoothness of the exponential map on its
   initial data and on time.
 * `TauCeti.Manifold.contMDiffAt_maximalGeodesic_comp`: a curve of initial states gives a
   jointly Cⁿ geodesic variation at each point of the central maximal interval.
-* `TauCeti.Manifold.exists_contMDiffOn_maximalGeodesic_of_isCompact`: nearby initial states
+* `TangentBundle.exists_contMDiffOn_maximalGeodesic_of_isCompact`: nearby initial states
   share a smooth flow domain around any compact subset of a maximal geodesic interval.
 * `TauCeti.Manifold.exists_contMDiffOn_maximalGeodesic_comp_of_isCompact`: a curve of initial
   states gives a geodesic variation on a common domain around a compact time subset.
@@ -146,7 +146,7 @@ theorem contMDiffAt_maximalGeodesic_comp
 valid for every nearby initial state, on which the geodesic flow is jointly smooth.
 In particular a prescribed compact geodesic segment admits variations on a common time domain,
 even when the metric is incomplete. -/
-theorem exists_contMDiffOn_maximalGeodesic_of_isCompact (z : TangentBundle I M)
+theorem _root_.TangentBundle.exists_contMDiffOn_maximalGeodesic_of_isCompact (z : TangentBundle I M)
     {K : Set ℝ} (hK : IsCompact K) (hsub : K ⊆ geodesicInterval I M z.proj z.2) :
     ∃ (U : Set (TangentBundle I M)) (V : Set ℝ),
       IsOpen U ∧ IsOpen V ∧ z ∈ U ∧ K ⊆ V ∧
@@ -175,7 +175,7 @@ theorem exists_contMDiffOn_maximalGeodesic_comp_of_isCompact
         (fun z : ℝ × ℝ ↦ maximalGeodesic I M (σ z.1).proj (σ z.1).2 z.2) (U ×ˢ V) ∧
       ∀ q ∈ U, IsGeodesicCurveOn I (maximalGeodesic I M (σ q).proj (σ q).2) V := by
   obtain ⟨A, V, hA, hV, hσA, hKV, hdom, hflow⟩ :=
-    exists_contMDiffOn_maximalGeodesic_of_isCompact (σ 0) hK hsub
+    (σ 0).exists_contMDiffOn_maximalGeodesic_of_isCompact hK hsub
   obtain ⟨W, hW, hσW⟩ := (contMDiffAt_iff_contMDiffOn_nhds (by simp)).1 hσ
   let U := interior W ∩ interior (σ ⁻¹' A)
   have h0 : 0 ∈ U := ⟨mem_interior_iff_mem_nhds.2 hW,
