@@ -478,7 +478,7 @@ theorem finrank_ker_coprod_add_finrank_range_parameterToCoker
 
 /-- The extended cokernel is smaller by the rank of the parameter map
 into the old cokernel. No finiteness of the parameter space is needed. -/
-theorem finrank_coker_coprod_add_finrank_range_parameterToCoker
+theorem finrank_quotient_range_coprod_add_finrank_range_parameterToCoker
     [FiniteDimensional 𝕜 (F ⧸ D₁.range)] :
     finrank 𝕜 (F ⧸ (D₁.coprod D₂).range) +
       finrank 𝕜 (LinearMap.range (parameterToCoker D₁ D₂)) = finrank 𝕜 (F ⧸ D₁.range) := by
@@ -495,7 +495,7 @@ theorem index_coprod [FiniteDimensional 𝕜 D₁.ker]
     (D₁.coprod D₂).index = D₁.index + finrank 𝕜 Λ := by
   have := finiteDimensional_ker_coprod D₁ D₂
   have hker := finrank_ker_coprod_add_finrank_range_parameterToCoker D₁ D₂
-  have hcoker := finrank_coker_coprod_add_finrank_range_parameterToCoker D₁ D₂
+  have hcoker := finrank_quotient_range_coprod_add_finrank_range_parameterToCoker D₁ D₂
   rw [index_eq_finrank_sub, index_eq_finrank_sub]
   omega
 
