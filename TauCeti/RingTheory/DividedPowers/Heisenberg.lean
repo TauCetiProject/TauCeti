@@ -17,8 +17,11 @@ The order is `y, v, z, w, s`. The multiplication coefficients are integers, incl
 when either commutator constant is not a unit.
 
 For the positive type-G₂ root vectors, take `y, v, z, w, s` at the roots
-`β, 3α + β, α + β, 2α + β, 3α + 2β`, with `α` short. Then `k = -1` and
-`l = 3`. These five roots form a parabolic nilradical. Their multiplication table
+`β, 3α + β, α + β, 2α + β, 3α + 2β`, with `α` short. Under the normalization
+of `TauCeti.RingTheory.DividedPowers.RootString.G2.Basic`, namely
+`y * v = v * y + s` and `w * z = z * w + 3 • s`, we have `k = -1` and `l = 3`.
+In general their values are `k = ±1` and `l = ±3`, depending on the root-vector signs.
+These five roots form a parabolic nilradical. Their multiplication table
 is the tail calculation needed when collecting the short simple-root factor in the
 six-root positive algebra. The result is an identity in a rational algebra with
 integral coefficients, not a definition by factorial division in positive characteristic.
