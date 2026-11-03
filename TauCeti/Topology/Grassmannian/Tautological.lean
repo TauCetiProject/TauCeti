@@ -33,6 +33,9 @@ They are topological vector bundles of ranks `r` and `N - r`, with model fibres 
 `finiteGrassmannian 𝕜 r N × EuclideanSpace 𝕜 (Fin N)`. Adding the two components identifies their
 direct sum with that trivial bundle
 (`TauCeti.finiteGrassmannian.tautologicalProdOrthogonalHomeomorph`): `γ ⊕ γ⊥ ≅ 𝕜ᴺ`.
+A frame spanning `V` is a basis of the fibre over `V`
+(`TauCeti.finiteGrassmannian.frameBasis`), and its vectors vary continuously with the frame in
+the total space (`TauCeti.finiteGrassmannian.continuous_mk_frameBasis`).
 These are the bundles whose pullbacks along maps into finite Grassmannians represent vector
 bundles in the classification of bundles over compact bases; that classification is not proved
 here.
@@ -49,6 +52,8 @@ continuous family of projections.
 * `TauCeti.finiteGrassmannian.TautologicalOrthogonal`: its orthogonal complement `γ⊥`.
 * `TauCeti.finiteGrassmannian.tautologicalProdOrthogonalHomeomorph`: `γ ⊕ γ⊥` is homeomorphic to
   the trivial bundle with fibre `EuclideanSpace 𝕜 (Fin N)`, linearly on each fibre.
+* `TauCeti.finiteGrassmannian.frameBasis`: the basis of a fibre of `γ` given by a frame spanning
+  it.
 
 ## References
 
@@ -227,6 +232,55 @@ theorem tautologicalProdOrthogonalHomeomorph_symm_apply
       ⟨q.1, (q.1.toEuclidean.starProjection.rangeRestrict q.2,
         (1 - q.1.toEuclidean.starProjection).rangeRestrict q.2)⟩ :=
   rangeProdRangeOneSubHomeomorph_symm_apply _ _ _ _ q
+
+/-- A frame `f` spanning `V` is a basis of the fibre of the tautological bundle over `V`. The
+point `V` is a parameter, with a proof `hV` that `f` spans it, so that frames with the same
+span give bases of the same fibre type. -/
+noncomputable def frameBasis (f : finiteFullRankFrame 𝕜 r N) {V : finiteGrassmannian 𝕜 r N}
+    (hV : frameSpan f = V) : Basis (Fin r) 𝕜 (Tautological 𝕜 r N V) :=
+  basisOfLinearIndependentOfCardEqFinrank'
+    (fun i ↦ ⟨WithLp.toLp 2 (f.1 i), by
+      rw [Submodule.range_starProjection, ← hV, toEuclidean_frameSpan]
+      exact Submodule.subset_span ⟨i, rfl⟩⟩)
+    (.of_comp (Submodule.subtype _) f.linearIndependent_toLp) <| (Fintype.card_fin r).trans <|
+      (finrank_toEuclidean V).symm.trans
+        (LinearEquiv.ofEq _ _ (Submodule.range_starProjection _)).finrank_eq.symm
+
+/-- The vectors of `frameBasis f hV` are the vectors of the frame `f`. -/
+@[simp]
+theorem coe_frameBasis_apply (f : finiteFullRankFrame 𝕜 r N) {V : finiteGrassmannian 𝕜 r N}
+    (hV : frameSpan f = V) (i : Fin r) :
+    (frameBasis f hV i : EuclideanSpace 𝕜 (Fin N)) = WithLp.toLp 2 (f.1 i) := by
+  simp [frameBasis]
+
+/-- Acting on a frame by a matrix `A` changes the basis of the tautological fibre by `A`. -/
+theorem frameBasis_smul_apply (A : GL (Fin r) 𝕜) (f : finiteFullRankFrame 𝕜 r N)
+    {V : finiteGrassmannian 𝕜 r N} (hV : frameSpan f = V) (hV' : frameSpan (A • f) = V)
+    (j : Fin r) :
+    frameBasis (A • f) hV' j = ∑ i, (A : Matrix (Fin r) (Fin r) 𝕜) j i • frameBasis f hV i := by
+  ext1
+  simp [WithLp.toLp_sum, WithLp.toLp_smul]
+
+/-- The determinant of the basis given by `A • f` against the basis given by `f` is the
+determinant of `A`. -/
+theorem det_frameBasis_smul (A : GL (Fin r) 𝕜) (f : finiteFullRankFrame 𝕜 r N)
+    {V : finiteGrassmannian 𝕜 r N} (hV : frameSpan f = V) (hV' : frameSpan (A • f) = V) :
+    (frameBasis f hV).det (frameBasis (A • f) hV') = (A : Matrix (Fin r) (Fin r) 𝕜).det := by
+  rw [Basis.det_apply, ← Matrix.det_transpose]
+  congr 1
+  ext i j
+  rw [Matrix.transpose_apply, Basis.toMatrix_apply, frameBasis_smul_apply A f hV hV',
+    Basis.repr_sum_self]
+
+/-- Each vector of a frame, as a point of the total space of the tautological bundle over the
+span of the frame, depends continuously on the frame. -/
+theorem continuous_mk_frameBasis (i : Fin r) :
+    Continuous fun f : finiteFullRankFrame 𝕜 r N ↦
+      (⟨frameSpan f, frameBasis f rfl i⟩ : TotalSpace (Fin r → 𝕜) (Tautological 𝕜 r N)) :=
+  (isEmbedding_totalSpace_range _ _).continuous_iff.2 <| by
+    simp only [Function.comp_def, coe_frameBasis_apply]
+    exact continuous_frameSpan.prodMk <| (PiLp.continuous_toLp 2 _).comp <|
+      (continuous_apply i).comp continuous_subtype_val
 
 end finiteGrassmannian
 

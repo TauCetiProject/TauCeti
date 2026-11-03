@@ -35,6 +35,8 @@ because a change of basis between orthonormal families is unitary
 (`Orthonormal.orthonormal_sum_smul_iff`). Hence the finite Grassmannian is homeomorphic to the
 orbit space of orthonormal frames under the unitary group
 (`TauCeti.finiteGrassmannian.unitaryOrbitHomeomorph`); for `𝕜 = ℝ` this is the orthogonal group.
+The special unitary group, the special orthogonal group when `𝕜 = ℝ`, acts through its inclusion
+into the unitary group.
 
 The comparison of the frame-quotient description of Grassmannians with orthonormal frames follows
 J. Milnor and J. Stasheff, *Characteristic Classes*, §5.
@@ -132,6 +134,18 @@ instance : ContinuousConstSMul (Matrix.unitaryGroup (Fin r) 𝕜) (finiteOrthono
     isEmbedding_toFullRankFrame.continuous_iff.2 <| by
       simpa only [Function.comp_def, toFullRankFrame_smul] using
         (continuous_const_smul (Unitary.toUnits A)).comp continuous_toFullRankFrame
+
+/-- The special unitary group acts on orthonormal frames through its inclusion into the unitary
+group. For `𝕜 = ℝ` this is the action of the special orthogonal group. -/
+instance : MulAction (Matrix.specialUnitaryGroup (Fin r) 𝕜) (finiteOrthonormalFrame 𝕜 r N) :=
+  .compHom _ (Submonoid.inclusion Matrix.specialUnitaryGroup_le_unitaryGroup)
+
+/-- A special unitary matrix acts on orthonormal frames as the same matrix in the unitary
+group. -/
+theorem specialUnitaryGroup_smul_def (A : Matrix.specialUnitaryGroup (Fin r) 𝕜)
+    (f : finiteOrthonormalFrame 𝕜 r N) :
+    A • f = Submonoid.inclusion Matrix.specialUnitaryGroup_le_unitaryGroup A • f :=
+  (rfl)
 
 end finiteOrthonormalFrame
 
