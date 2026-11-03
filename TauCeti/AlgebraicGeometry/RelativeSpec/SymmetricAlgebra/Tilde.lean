@@ -266,6 +266,22 @@ lemma relativeSpecSymmetricAlgebraTildeIso_hom_left_appTop_ι (m : M) :
   (ConcreteCategory.congr_hom (ΓSpecIso_inv_comp_toSpecLeft_appTop M)
     (SymmetricAlgebra.ι R M m)).trans (toSpecRingHom_ι M m)
 
+/-- The linear functional of a point of `Spec_{Spec R} (Sym M~)` is obtained by pulling back
+the generators of `Sym_R M` through the affine comparison. -/
+theorem relativeSpecSymmetricAlgebraTildeHomEquiv_eq_appTop {T : Over (Spec R)}
+    (t : T ⟶ (MorphismProperty.Over.forget _ _ _).obj ((relativeSpec (Spec R)).obj
+      (op ((symmetricAlgebra (Spec R)).obj ((tildeEquiv (R := R)).functor.obj M))))) (m : M) :
+    relativeSpecSymmetricAlgebraTildeHomEquiv M T t m =
+      (t.left ≫ (relativeSpecSymmetricAlgebraTildeIso M).hom.left).appTop
+        ((Scheme.ΓSpecIso _).inv (SymmetricAlgebra.ι R M m)) := by
+  have ht := relativeSpecSymmetricAlgebraTildeHomEquiv_comp M t (𝟙 _) m
+  have hi := congrArg (fun s ↦ relativeSpecSymmetricAlgebraTildeHomEquiv M T s m)
+    (Category.comp_id t)
+  exact hi.symm.trans (ht.trans ((congrArg t.left.appTop
+    (relativeSpecSymmetricAlgebraTildeIso_hom_left_appTop_ι M m)).symm.trans
+      (ConcreteCategory.congr_hom
+        (Scheme.Hom.comp_appTop t.left (relativeSpecSymmetricAlgebraTildeIso M).hom.left) _).symm))
+
 /-- The inverse isomorphism `Spec (Sym_R M) ⟶ Spec_{Spec R} (Sym M~)`, as a point of
 `Spec_{Spec R} (Sym M~)` over `Spec R`, is the linear map sending `m` to the generator `m` of
 `Sym_R M`, viewed as a global function on `Spec (Sym_R M)`. -/
