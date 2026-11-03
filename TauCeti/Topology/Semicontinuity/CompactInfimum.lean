@@ -50,8 +50,7 @@ theorem exists_iInf_eq [CompactSpace X] [Nonempty X] {f : X → β}
     (hf : LowerSemicontinuous f) : ∃ x₀, ⨅ x, f x = f x₀ := by
   obtain ⟨x₀, -, hx₀⟩ :=
     (hf.lowerSemicontinuousOn univ).exists_isMinOn univ_nonempty isCompact_univ
-  exact ⟨x₀, ciInf_eq_of_forall_ge_of_forall_gt_exists_lt (fun x => hx₀ (mem_univ x))
-    fun _ hw => ⟨x₀, hw⟩⟩
+  exact ⟨x₀, (Equiv.Set.univ X).iInf_comp.symm.trans (hx₀.iInf_eq (mem_univ x₀))⟩
 
 /-- The infimum of a jointly lower semicontinuous function over a compact first factor is a lower
 semicontinuous function of the second variable.
@@ -63,10 +62,11 @@ theorem iInf_of_compactSpace [CompactSpace X] {f : X × Y → β}
   rcases isEmpty_or_nonempty X with hX | hX
   · simpa only [iInf_of_isEmpty] using lowerSemicontinuous_const
   intro y₀ b hb
-  -- The infimum over the slice `X × {y₀}` is a minimum, so it bounds `f` there from below.
-  obtain ⟨x₁, -, hmin⟩ := ((hf.comp (Continuous.prodMk_left y₀)).lowerSemicontinuousOn
-    univ).exists_isMinOn univ_nonempty isCompact_univ
-  have hbdd : BddBelow (range fun x => f (x, y₀)) := image_univ ▸ hmin.bddBelow
+  -- `f` is bounded below on the compact slice `X × {y₀}`, so its infimum there bounds it.
+  have : Nonempty β := ⟨b⟩
+  have hbdd : BddBelow (range fun x => f (x, y₀)) :=
+    image_univ ▸ ((hf.comp (Continuous.prodMk_left y₀)).lowerSemicontinuousOn
+      univ).bddBelow_of_isCompact isCompact_univ
   -- Hence the strict lower bound `b` holds on the whole compact slice.
   have hsub : (univ : Set X) ×ˢ ({y₀} : Set Y) ⊆ f ⁻¹' Ioi b := by
     rintro ⟨x, y⟩ ⟨-, rfl : y = y₀⟩
