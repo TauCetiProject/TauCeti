@@ -221,13 +221,8 @@ theorem exists_isClosed_isSeparable_not_surjective_inclusionInDoubleDual [Comple
   apply not_surjective_inclusionInDoubleDual_of_exists_seq_dual_triangular
     (x := fun n ↦ (⟨x n, hxS n⟩ : S)) (f := fun n ↦ (f n).comp S.subtypeL)
     (by exact_mod_cast hθ.ne' : (θ : 𝕜) ≠ 0) ⟨1, hx⟩ ?_ hdiag hzero
-  refine ⟨1, ?_⟩
-  intro n
-  apply ContinuousLinearMap.opNorm_le_bound _ zero_le_one
-  intro z
-  calc
-    ‖((f n).comp S.subtypeL) z‖ ≤ ‖f n‖ * ‖(z : E)‖ := (f n).le_opNorm _
-    _ ≤ 1 * ‖z‖ := mul_le_mul_of_nonneg_right (hf n) (norm_nonneg _)
+  exact ⟨1, fun n ↦ ((f n).opNorm_comp_le _).trans
+    ((mul_le_of_le_one_left (norm_nonneg _) (hf n)).trans S.norm_subtypeL_le)⟩
 
 end Normed
 
