@@ -100,14 +100,9 @@ theorem tangentMatrix_derivationComp_geckCorootCocharacter (i : Fin t.rank)
           (derivationComp (t.geckCorootCocharacter ht i) d)) =
       Matrix.diagonal (fun a ↦ t.geckWeightFin ht a i •
         MultiplicativeGroup.tangentLinearEquiv d) := by
-  have hπ : (t.geckWeightTorusIntegralCoordinateMap ht).hom.comp
-      (Bialgebra.Quotient.mkBialgHom (t.geckDefiningIdeal ht).toIdeal) =
-        GeneralLinear.weightTorusCoordinateBialgHom (S := ℤ) (t.geckWeightFin ht) := by
-    rw [← CommHopfAlgCat.hom_mkQuotient, ← CommHopfAlgCat.hom_comp,
-      mkQuotient_comp_geckWeightTorusIntegralCoordinateMap,
-      GeneralLinear.hom_weightTorusCoordinateMap]
   rw [HopfIdeal.quotientLieHom_apply, geckCorootCocharacter_def,
-    GeneralLinear.tangentMatrix_derivationComp_cocharacter_of_weightTorus _ _ _ hπ]
+    GeneralLinear.tangentMatrix_derivationComp_cocharacter_of_weightTorus _ _ _
+      (t.geckWeightTorusIntegralCoordinateMap_hom_comp_mkBialgHom ht)]
   simp
 
 /-- The bracket of the normalized opposite simple-root vectors is the differential of the

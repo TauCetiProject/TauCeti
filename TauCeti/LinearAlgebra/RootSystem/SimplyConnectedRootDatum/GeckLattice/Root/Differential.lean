@@ -113,6 +113,17 @@ theorem intCast_geckRootIntMatrix_apply (i : Fin t.rank ⊕ Fin t.rank)
     coe_kostantRootOperator_apply, coe_geckCoordinateBasisFin, geckRepresentation_ι_apply,
     Matrix.mulVec_single_one, Matrix.col_apply]
 
+/-- Casting an integral root matrix to the rationals recovers the reindexed Geck root
+generator. -/
+theorem map_intCast_geckRootIntMatrix (i : Fin t.rank ⊕ Fin t.rank) :
+    (t.geckRootIntMatrix ht i).map (Int.castRingHom ℚ) =
+      Matrix.reindexLieEquiv (R := ℚ) (Fintype.equivFin (t.GeckIndex ht))
+        ((t.lieBasis ht).rootGenerator i : Matrix (t.GeckIndex ht) (t.GeckIndex ht) ℚ) := by
+  ext a b
+  simp only [Matrix.map_apply, Int.coe_castRingHom, Matrix.reindexLieEquiv_apply,
+    Matrix.reindex_apply, Matrix.submatrix_apply]
+  exact t.intCast_geckRootIntMatrix_apply ht i a b
+
 /-- **A numbered integral root matrix has no entries outside its signed simple-root weight
 difference.** The weights are the integral Geck coordinate weights, before any change of
 coefficient ring. -/
@@ -132,16 +143,10 @@ theorem lie_geckRootIntMatrix (i : Fin t.rank) :
     ⁅t.geckRootIntMatrix ht (.inl i), t.geckRootIntMatrix ht (.inr i)⁆ =
       Matrix.diagonal (fun a ↦ t.geckWeightFin ht a i) := by
   classical
-  let e := Fintype.equivFin (t.GeckIndex ht)
-  have hroot (k : Fin t.rank ⊕ Fin t.rank) :
-      (t.geckRootIntMatrix ht k).map (Int.castRingHom ℚ) =
-        Matrix.reindexLieEquiv (R := ℚ) e
-          ((t.lieBasis ht).rootGenerator k : Matrix (t.GeckIndex ht) (t.GeckIndex ht) ℚ) := by
-    ext a b
-    exact t.intCast_geckRootIntMatrix_apply ht k a b
   apply Matrix.map_injective (f := Int.castRingHom ℚ) Int.cast_injective
   simp only [Ring.lie_def, Matrix.map_sub _ (map_sub _), Matrix.map_mul]
-  rw [hroot, hroot, ← Ring.lie_def, ← LieEquiv.map_lie,
+  rw [map_intCast_geckRootIntMatrix, map_intCast_geckRootIntMatrix,
+    ← Ring.lie_def, ← LieEquiv.map_lie,
     LieAlgebra.Basis.rootGenerator_inl, LieAlgebra.Basis.rootGenerator_inr,
     ← LieSubalgebra.coe_bracket, ((t.lieBasis ht).sl2 i).lie_e_f]
   rw [Matrix.diagonal_map (map_zero (Int.castRingHom ℚ))]
