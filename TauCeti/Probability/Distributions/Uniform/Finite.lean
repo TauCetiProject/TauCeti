@@ -25,6 +25,8 @@ uniform measures to uniform measures on their images.
   finite Dirac-sum constructions agree.
 * `Finset.support_uniformOn_coe_finset`: in a T₁ space, the topological support of a finite
   uniform law is its finite set.
+* `Finset.uniformOn_univ_real_finset`: the real mass of a finite set under the uniform law on a
+  finite type is its normalized cardinality.
 * `Finset.integral_uniformOn_finset`: integration against a finite uniform law is a
   normalized finite sum.
 * `TauCeti.Probability.quantile_map_uniformOn_univ_eq_iff` characterizes quantiles after
@@ -92,6 +94,14 @@ theorem support_uniformOn_coe_finset [TopologicalSpace α] [T1Space α] (s : Fin
       exact ENNReal.inv_pos.mpr (ENNReal.natCast_ne_top _)
     exact hatom.trans_le (measure_mono (Set.singleton_subset_iff.mpr (mem_of_mem_nhds hU)))
 
+/-- The real mass of a finite set under the uniform law on a finite type is its cardinality
+divided by the cardinality of the type. -/
+theorem uniformOn_univ_real_finset [Fintype α] (s : Finset α) :
+    (uniformOn (Set.univ : Set α)).real s = (s.card : ℝ) / Fintype.card α := by
+  classical
+  rw [measureReal_def, ← Finset.coe_univ, uniformOn_apply_finset]
+  simp [ENNReal.toReal_div]
+
 end Finset
 
 namespace TauCeti.Probability
@@ -103,26 +113,18 @@ theorem uniformOn_univ_apply_singleton [Fintype α] (a : α) :
     uniformOn (Set.univ : Set α) {a} = (Fintype.card α : ℝ≥0∞)⁻¹ := by
   simpa using Finset.uniformOn_coe_finset_apply_singleton (Finset.univ : Finset α) a
 
-/-- The real mass of a finite set under the uniform law on a finite type is its cardinality
-divided by the cardinality of the type. -/
-theorem uniformOn_univ_real_finset [Fintype α] (s : Finset α) :
-    (uniformOn (Set.univ : Set α)).real s = (s.card : ℝ) / Fintype.card α := by
-  classical
-  rw [measureReal_def, ← Finset.coe_univ, uniformOn_apply_finset]
-  simp [ENNReal.toReal_div]
-
 /-- The cdf after assigning real labels to a uniform sample from a nonempty finite type is the
 proportion of labels no larger than the cutoff. Equal labels are counted with their full
 multiplicity. -/
 theorem cdf_map_uniformOn_univ [Fintype α] [Nonempty α] (label : α → ℝ) (x : ℝ) :
     cdf ((uniformOn (Set.univ : Set α)).map label) x =
       ((Finset.univ.filter fun i ↦ label i ≤ x).card : ℝ) / Fintype.card α := by
-  rw [Measure.cdf_map_finite]
+  rw [Measure.cdf_map _ label (measurable_of_finite label)]
   have hpreimage : label ⁻¹' Set.Iic x =
       (Finset.univ.filter fun i ↦ label i ≤ x : Finset α) := by
     ext i
     simp
-  rw [hpreimage, uniformOn_univ_real_finset]
+  rw [hpreimage, Finset.uniformOn_univ_real_finset]
 
 /-- A real number is the quantile of a uniformly sampled finite collection of supplied labels
 exactly when the level strictly exceeds the proportion of smaller labels and is at most the
@@ -142,8 +144,8 @@ theorem quantile_map_uniformOn_univ_eq_iff [Fintype α] [Nonempty α] (label : �
       (Finset.univ.filter fun i ↦ label i ≤ x : Finset α) := by
     ext i
     simp
-  rw [hpreimage_lt, hpreimage_le, uniformOn_univ_real_finset,
-    uniformOn_univ_real_finset]
+  rw [hpreimage_lt, hpreimage_le, Finset.uniformOn_univ_real_finset,
+    Finset.uniformOn_univ_real_finset]
 
 /-- As the level tends to zero from above, labelled finite-uniform quantiles tend to a least
 supplied label. -/

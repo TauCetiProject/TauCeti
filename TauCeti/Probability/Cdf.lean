@@ -28,6 +28,7 @@ nonnegative point `x` it is the mass `μ` gives to the initial segment below the
 ## Main results
 
 * `MeasureTheory.Measure.cdf_conv` computes the cdf of a convolution;
+* `MeasureTheory.Measure.cdf_map` computes the cdf of a measurable pushforward;
 * `MeasureTheory.Measure.continuous_cdf_of_noAtoms` proves continuity for atomless real laws;
 * `MeasureTheory.Measure.cdf_eq_zero_of_measure_Iio_eq_zero` shows that an atomless law with no
   mass below a point has cdf zero there;
@@ -113,6 +114,13 @@ theorem cdf_zero (x : ℝ) : cdf (0 : Measure ℝ) x = if 0 ≤ x then 1 else 0 
 end ProbabilityTheory
 
 namespace MeasureTheory.Measure
+
+/-- The cdf of a measurable pushforward is the real mass of the preimage of the corresponding
+closed ray. -/
+theorem cdf_map {I : Type*} [MeasurableSpace I] (μ : Measure I) [IsProbabilityMeasure μ]
+    (label : I → ℝ) (hlabel : Measurable label) (x : ℝ) :
+    cdf (μ.map label) x = μ.real (label ⁻¹' Iic x) := by
+  rw [cdf_eq_real, map_measureReal_apply hlabel measurableSet_Iic]
 
 /-- The cdf of a convolution is the average of the translated cdfs of its second factor. -/
 theorem cdf_conv (μ ν : Measure ℝ) [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]

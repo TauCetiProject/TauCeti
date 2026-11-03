@@ -42,11 +42,11 @@ connect them to the existing multinomial API.
 * `TauCeti.Probability.map_categoricalMeasure` aggregates categories;
 * `TauCeti.Probability.map_piSingle_categoricalMeasure` identifies one-hot encoding with a
   one-trial multinomial law.
-* `TauCeti.Probability.cdf_map_categoricalMeasure` and
-  `TauCeti.Probability.quantile_map_categoricalMeasure_eq_iff` compute the cdf and characterize
+* `Convexity.StdSimplex.cdf_map_categoricalMeasure` and
+  `Convexity.StdSimplex.quantile_map_categoricalMeasure_eq_iff` compute the cdf and characterize
   the quantile after assigning real labels to the categories;
-* `TauCeti.Probability.tendsto_quantile_map_categoricalMeasure_nhdsGT_zero` and
-  `TauCeti.Probability.tendsto_quantile_map_categoricalMeasure_nhdsLT_one` give its endpoint
+* `Convexity.StdSimplex.tendsto_quantile_map_categoricalMeasure_nhdsGT_zero` and
+  `Convexity.StdSimplex.tendsto_quantile_map_categoricalMeasure_nhdsLT_one` give its endpoint
   limits at the extreme labels of positive weight.
 
 ## References
@@ -174,6 +174,12 @@ theorem map_categoricalMeasure (f : I → J) (p : StdSimplex NNReal I) :
 
 end Aggregation
 
+end TauCeti.Probability
+
+namespace Convexity.StdSimplex
+
+open TauCeti.Probability
+
 section Quantile
 
 variable [Fintype I] [MeasurableSpace I] [MeasurableSingletonClass I]
@@ -185,14 +191,12 @@ theorem map_categoricalMeasure_real_Iio (p : StdSimplex NNReal I) (label : I →
     ((categoricalMeasure p).map label).real (Iio x) =
       ∑ i with label i < x, (p.weights i : ℝ) := by
   classical
-  rw [measureReal_def, Measure.map_apply (measurable_of_finite label) measurableSet_Iio,
-    categoricalMeasure_def, _root_.sum_apply]
-  simp only [_root_.smul_apply, Measure.dirac_apply' _ (measurableSet_Iio.preimage
-    (measurable_of_finite label)), Set.indicator, Set.mem_preimage, Set.mem_Iio, Pi.one_apply,
-    smul_eq_mul, mul_ite, mul_one, mul_zero]
-  rw [← Finset.sum_filter]
-  rw [ENNReal.toReal_sum (by simp)]
-  simp
+  rw [map_measureReal_apply (measurable_of_finite label) measurableSet_Iio]
+  have hpreimage : label ⁻¹' Iio x = (Finset.univ.filter fun i ↦ label i < x : Finset I) := by
+    ext i
+    simp
+  rw [hpreimage, ← sum_measureReal_singleton]
+  simp only [categoricalMeasure_real_singleton]
 
 /-- The cdf after assigning real labels to categorical outcomes is the sum of the weights of all
 categories whose labels are at most the cutoff. Equal labels are aggregated automatically. -/
@@ -200,15 +204,12 @@ theorem cdf_map_categoricalMeasure (p : StdSimplex NNReal I) (label : I → ℝ)
     cdf ((categoricalMeasure p).map label) x =
       ∑ i with label i ≤ x, (p.weights i : ℝ) := by
   classical
-  rw [cdf_eq_real, measureReal_def,
-    Measure.map_apply (measurable_of_finite label) measurableSet_Iic,
-    categoricalMeasure_def, _root_.sum_apply]
-  simp only [_root_.smul_apply, Measure.dirac_apply' _ (measurableSet_Iic.preimage
-    (measurable_of_finite label)), Set.indicator, Set.mem_preimage, Set.mem_Iic, Pi.one_apply,
-    smul_eq_mul, mul_ite, mul_one, mul_zero]
-  rw [← Finset.sum_filter]
-  rw [ENNReal.toReal_sum (by simp)]
-  simp
+  rw [Measure.cdf_map _ label (measurable_of_finite label)]
+  have hpreimage : label ⁻¹' Iic x = (Finset.univ.filter fun i ↦ label i ≤ x : Finset I) := by
+    ext i
+    simp
+  rw [hpreimage, ← sum_measureReal_singleton]
+  simp only [categoricalMeasure_real_singleton]
 
 /-- A real number is the quantile of a categorical law with supplied real labels exactly when
 the level strictly exceeds the total weight of smaller labels and is at most the total weight of
@@ -220,8 +221,8 @@ theorem quantile_map_categoricalMeasure_eq_iff (p : StdSimplex NNReal I) (label 
         u ≤ ∑ i with label i ≤ x, (p.weights i : ℝ) := by
   rw [Measure.quantile_map_finite_eq_iff _ label hu,
     ← map_measureReal_apply (measurable_of_finite label) measurableSet_Iio,
-    map_categoricalMeasure_real_Iio,
-    ← Measure.cdf_map_finite, cdf_map_categoricalMeasure]
+    p.map_categoricalMeasure_real_Iio,
+    ← Measure.cdf_map _ label (measurable_of_finite label), p.cdf_map_categoricalMeasure]
 
 /-- As the level tends to zero from above, categorical quantiles tend to any least label whose
 category has positive weight. Zero-weight categories do not affect the endpoint. -/
@@ -246,6 +247,10 @@ theorem tendsto_quantile_map_categoricalMeasure_nhdsLT_one
     exact hmax j (by simpa only [categoricalMeasure_real_singleton] using hj)
 
 end Quantile
+
+end Convexity.StdSimplex
+
+namespace TauCeti.Probability
 
 section Multinomial
 

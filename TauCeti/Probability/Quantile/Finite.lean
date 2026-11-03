@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Quantile
+import TauCeti.MeasureTheory.Measure.FiniteMeasure
 
 /-!
 # Quantiles of finite labelled laws
@@ -17,7 +18,6 @@ aggregates outcomes carrying equal labels.
 
 ## Main results
 
-* `MeasureTheory.Measure.cdf_map_finite` computes the cdf of a finite labelled law;
 * `MeasureTheory.Measure.quantile_map_finite_eq_iff` characterizes the quantile by the strict
   cumulative crossing below a label and the weak crossing at it;
 * `MeasureTheory.Measure.tendsto_quantile_map_finite_nhdsGT_zero` and
@@ -34,13 +34,6 @@ open Filter MeasureTheory ProbabilityTheory Set Topology
 namespace MeasureTheory.Measure
 
 variable {I : Type*} [Finite I] [MeasurableSpace I] [MeasurableSingletonClass I]
-
-/-- The cdf of a probability measure on a finite labelled type is its native mass on the
-preimage of the corresponding closed ray. -/
-theorem cdf_map_finite (μ : Measure I) [IsProbabilityMeasure μ] (label : I → ℝ) (x : ℝ) :
-    cdf (μ.map label) x = μ.real (label ⁻¹' Iic x) := by
-  rw [cdf_eq_real, measureReal_def, Measure.map_apply (measurable_of_finite label)
-    measurableSet_Iic, measureReal_def]
 
 /-- A real number is the interior quantile of a probability measure on a finite labelled type
 exactly when the level lies strictly above the mass below that label and at most the mass at or
@@ -78,30 +71,24 @@ theorem quantile_map_finite_eq_iff (μ : Measure I) [IsProbabilityMeasure μ] (l
         · intro hi
           exact Finset.le_max' labelsBelow (label i) (by simp [labelsBelow, hi])
       have hlevel : u ≤ cdf (μ.map label) y := by
-        rw [cdf_map_finite, hpreimage]
+        rw [cdf_map _ label (measurable_of_finite label), hpreimage]
         exact hleft
       have hquantile_le : (μ.map label).quantile u ≤ y :=
         (quantile_le_iff _ hu.1 hu.2).2 hlevel
       exact (not_lt_of_ge hquantile_le) hylt
     · have hlevel := le_cdf_quantile (μ.map label) hu.2
-      rwa [cdf_map_finite] at hlevel
+      rwa [cdf_map _ label (measurable_of_finite label)] at hlevel
   · rintro ⟨hleft, hright⟩
     apply le_antisymm
-    · rw [quantile_le_iff _ hu.1 hu.2, cdf_map_finite]
+    · rw [quantile_le_iff _ hu.1 hu.2, cdf_map _ label (measurable_of_finite label)]
       exact hright
     · by_contra! hquantile_lt
       have hcdf := le_cdf_quantile (μ.map label) hu.2
       have hmono : cdf (μ.map label) ((μ.map label).quantile u) ≤
           μ.real (label ⁻¹' Iio x) := by
-        rw [cdf_map_finite]
+        rw [cdf_map _ label (measurable_of_finite label)]
         exact measureReal_mono fun i hi ↦ hi.trans_lt hquantile_lt
       exact (not_lt_of_ge (hcdf.trans hmono)) hleft
-
-omit [Finite I] in
-private theorem measureReal_finset_eq_zero (μ : Measure I) [IsFiniteMeasure μ]
-    (s : Finset I) (hzero : ∀ i ∈ s, μ.real {i} = 0) : μ.real s = 0 := by
-  rw [← sum_measureReal_singleton]
-  exact Finset.sum_eq_zero hzero
 
 /-- For a finite labelled law, quantiles tend to any least label of positive mass as the level
 tends to zero from above. Labels of zero mass do not affect the endpoint. -/
