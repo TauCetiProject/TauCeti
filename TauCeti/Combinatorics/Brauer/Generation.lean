@@ -65,19 +65,6 @@ section Reconnect
 variable (hcap : D.val (Sum.inl a) = Sum.inl b) (hcup : D.val (Sum.inr c) = Sum.inr d)
 include hcap hcup
 
-/-- An arc of `D` with one end off the four points `a`, `b`, `c`, `d` has its other end off them
-too: the four points are joined among themselves by the cap `a`–`b` and the cup `c`–`d`. -/
-private theorem val_ne_of_ne {x : Fin k ⊕ Fin k} (hxa : x ≠ Sum.inl a)
-    (hxb : x ≠ Sum.inl b) (hxc : x ≠ Sum.inr c) (hxd : x ≠ Sum.inr d) :
-    D.val x ≠ Sum.inl a ∧ D.val x ≠ Sum.inl b ∧ D.val x ≠ Sum.inr c ∧ D.val x ≠ Sum.inr d := by
-  have hba : D.val (Sum.inl b) = Sum.inl a := D.apply_eq_of_apply_eq hcap
-  have hdc : D.val (Sum.inr d) = Sum.inr c := D.apply_eq_of_apply_eq hcup
-  refine ⟨fun h => ?_, fun h => ?_, fun h => ?_, fun h => ?_⟩
-  · exact hxb (by rw [← D.apply_eq_of_apply_eq h, hcap])
-  · exact hxa (by rw [← D.apply_eq_of_apply_eq h, hba])
-  · exact hxd (by rw [← D.apply_eq_of_apply_eq h, hcup])
-  · exact hxc (by rw [← D.apply_eq_of_apply_eq h, hdc])
-
 /-- **The reconnected diagram has one cap fewer**: it caps exactly the bottom points capped by `D`
 other than `a` and `b`. -/
 theorem bottomCap_reconnect :
@@ -157,7 +144,7 @@ theorem composeDiagram_capCup_reconnect :
     exact composeDiagram_val_inr_eq_inr_of_cup_upper _ _ (capCup_val_inr_right hcd)
   have hX : X.val x = D.val x :=
     PerfectMatching.reconnect_val_of_ne hxc hxa (hcup ▸ hxd) (hcap ▸ hxb)
-  obtain ⟨hya, hyb, hyc, hyd⟩ := val_ne_of_ne hcap hcup hxa hxb hxc hxd
+  obtain ⟨hyc, hyd⟩ := (D.apply_ne_and_ne_iff hcup x).mpr ⟨hxc, hxd⟩
   rcases x with i | j <;> rcases hy : D.val _ with i' | j'
   · exact composeDiagram_val_inl_eq_inl_of_cap_lower _ _ (hX.trans hy)
   · rw [hy] at hyc hyd
