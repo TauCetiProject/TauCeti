@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Affinoid.MaximumModulus
-public import TauCeti.RingTheory.Dagger.IntegralWashnitzer
 public import TauCeti.RingTheory.Dagger.MaximalSpectrum
-public import TauCeti.RingTheory.Huber.Normed
 
 /-!
 # The supremum seminorm of Monsky–Washnitzer and dagger algebras
@@ -22,9 +20,9 @@ On `W` the supremum seminorm is the Gauss norm, and it is attained at a classica
 classical points of `W` are those of the Tate algebra `T = K⟨X₁, …, Xₙ⟩`, with the same residue
 fields (`TauCeti.Dagger.washnitzerAlgebra.maximalSpectrumComap_toTate_bijective`), so this is the
 maximum modulus principle for `T` (`TauCeti.MvPowerSeries.supSeminorm_eq_norm`) read through the
-isometric inclusion `W ⊆ T`. Consequently an overconvergent series is power-bounded for the Gauss
-norm exactly when its supremum seminorm is at most one, exactly when its coefficients lie in the
-valuation ring `K°`: the ring `K°⟨X⟩†` is the ring of power-bounded elements of `W`.
+isometric inclusion `W ⊆ T`. Since the power-bounded elements of `W` are its Gauss unit ball
+(`TauCeti.Dagger.washnitzerAlgebra.isPowerBounded_iff_norm_le_one`), an overconvergent series is
+power-bounded exactly when its supremum seminorm is at most one.
 
 For a surjection `φ : W ↠ A`, every classical point of `A` pulls back to one of `W` with the same
 values, so `|φ f|sup ≤ ‖f‖`: the supremum seminorm of a dagger algebra is bounded by the residue
@@ -36,11 +34,8 @@ seminorm of every presentation. In particular its values at classical points are
 * `TauCeti.Dagger.washnitzerAlgebra.supSeminorm_eq_norm`: on `W` the supremum seminorm is the
   Gauss norm, which is attained at a classical point
   (`TauCeti.Dagger.washnitzerAlgebra.exists_pointNorm_eq_norm`).
-* `TauCeti.Dagger.washnitzerAlgebra.isPowerBounded_iff_norm_le_one` and
-  `TauCeti.Dagger.washnitzerAlgebra.isPowerBounded_iff_supSeminorm_le_one`: the power-bounded
-  elements of `W` are its Gauss unit ball, equivalently the elements with `|f|sup ≤ 1`.
-* `TauCeti.Dagger.mem_intWashnitzerAlgebra_iff_isPowerBounded`: an
-  overconvergent series has coefficients in `K°` iff it is power-bounded.
+* `TauCeti.Dagger.washnitzerAlgebra.isPowerBounded_iff_supSeminorm_le_one`: the power-bounded
+  elements of `W` are the elements with `|f|sup ≤ 1`.
 * `TauCeti.Dagger.washnitzerAlgebra.supSeminorm_map_le_norm`: `|φ f|sup ≤ ‖f‖` for every
   surjection `φ : W ↠ A`.
 * `TauCeti.Dagger.IsDaggerAlgebra.pointNorm_le_supSeminorm`: on a dagger algebra the supremum
@@ -68,12 +63,6 @@ local notation "W " σ:max => washnitzerAlgebra σ K
 local notation "T " σ:max => IsRestricted.subring (R := K) (fun _ : σ ↦ (1 : ℝ))
 
 namespace washnitzerAlgebra
-
-/-- **The power-bounded overconvergent series are the Gauss unit ball**: `f ∈ W` is power-bounded
-for the Gauss norm topology iff `‖f‖ ≤ 1`. -/
-theorem isPowerBounded_iff_norm_le_one {f : W σ} : Huber.IsPowerBounded f ↔ ‖f‖ ≤ 1 := by
-  obtain ⟨ϖ, hϖ⟩ := (Huber.IsTateRing.of_normedAlgebra K (W σ)).exists_isPseudoUniformizer
-  exact hϖ.isPowerBounded_iff_norm_le_one fun x n _ ↦ norm_pow x n
 
 variable [CompleteSpace K] [Finite σ]
 
@@ -132,12 +121,6 @@ theorem supSeminorm_map_le_norm {φ : W σ →ₐ[K] A} (hφ : Function.Surjecti
   supSeminorm_le (norm_nonneg f) fun x ↦ pointNorm_map_le_norm hφ x f
 
 end washnitzerAlgebra
-
-/-- **The integral Monsky–Washnitzer algebra is the ring of power-bounded elements**: an
-overconvergent series has all its coefficients in `K°` iff it is power-bounded. -/
-theorem mem_intWashnitzerAlgebra_iff_isPowerBounded {f : W σ} :
-    (f : MvPowerSeries σ K) ∈ intWashnitzerAlgebra σ K ↔ Huber.IsPowerBounded f := by
-  rw [mem_intWashnitzerAlgebra_iff_norm_le_one, washnitzerAlgebra.isPowerBounded_iff_norm_le_one]
 
 namespace IsDaggerAlgebra
 
