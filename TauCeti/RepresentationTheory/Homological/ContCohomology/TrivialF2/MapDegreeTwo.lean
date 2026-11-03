@@ -34,8 +34,6 @@ along `φ` and the identity of `𝔽₂`, read through the identification
 
 ## Main results
 
-* `TauCeti.trivialF2_map_smul`: every map of trivial `𝔽₂` carriers is equivariant along every
-  map of the groups.
 * `TauCeti.trivialF2Map2Equiv_eqToHom`: on the discrete model it is
   `TauCeti.ContCohomology.continuousCohomologyMap2` along `φ` and the identity of `𝔽₂`.
 * `TauCeti.trivialF2Map2Equiv_symm`: its inverse is the transport along `φ.symm`.
@@ -78,13 +76,6 @@ private theorem modelEquiv_apply {G : Type u} [Group G] [TopologicalSpace G]
     modelEquiv G y =
       (eqToHom (congrArg (continuousCohomology 2) (ofDiscreteModule_trivialF2 G))).hom y :=
   (rfl)
-
-/-- Every map between the carriers of two trivial `𝔽₂` objects is equivariant along every map
-of the groups, both actions being trivial. -/
-theorem trivialF2_map_smul {G : Type u} [Group G] {H : Type v} [Group H] (φ : H → G)
-    (f : (trivialF2 G).V → (trivialF2 H).V) (h : H) (m : (trivialF2 G).V) :
-    f (φ h • m) = h • f m := by
-  simp only [TopRep.distribMulAction_smul, trivialF2_ρ_apply_apply]
 
 variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [LocallyCompactSpace G]
   {H : Type v} [Group H] [TopologicalSpace H] [IsTopologicalGroup H] [LocallyCompactSpace H]
