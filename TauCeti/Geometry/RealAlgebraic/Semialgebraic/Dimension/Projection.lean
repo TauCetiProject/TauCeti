@@ -54,12 +54,10 @@ variable {m n : ℕ}
 
 /-- A change of coordinates `x ↦ x ∘ ι` with `ι` surjective, such as a coordinate permutation,
 does not change the dimension: it embeds `ℝ ^ n` into `ℝ ^ m`. -/
+@[simp]
 theorem semialgebraicDim_image_comp_of_surjective {ι : Fin m → Fin n} (hι : Surjective ι)
     (s : Set (Fin n → ℝ)) : semialgebraicDim ((fun x ↦ x ∘ ι) '' s) = semialgebraicDim s :=
-  semialgebraicDim_image_of_isEmbedding
-    (IsEmbedding.of_leftInverse (f := fun y ↦ y ∘ surjInv hι)
-      (fun x ↦ by simp [comp_assoc, (rightInverse_surjInv hι).comp_eq_id]) (by fun_prop)
-      (by fun_prop)) s
+  semialgebraicDim_image_of_isEmbedding (hι.isEmbedding_comp ι) s
 
 /-- **Projection does not increase dimension.** Forgetting coordinate `0` does not increase the
 dimension of a semialgebraic set. -/

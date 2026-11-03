@@ -112,6 +112,7 @@ theorem semialgebraicDim_le_of_isEmbedding {m : ℕ} {t : Set (Fin m → ℝ)} {
       ((range_comp_subset_range _ _).trans hgs) hf
 
 /-- Dimension is invariant under embeddings of the ambient space. -/
+@[simp]
 theorem semialgebraicDim_image_of_isEmbedding {m : ℕ} {f : (Fin n → ℝ) → Fin m → ℝ}
     (hf : IsEmbedding f) (s : Set (Fin n → ℝ)) :
     semialgebraicDim (f '' s) = semialgebraicDim s := by

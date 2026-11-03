@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Dimension.Projection
 import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Topology
-import TauCeti.Topology.LocallyClosed
 
 /-!
 # Dimension of the closure of a semialgebraic set
@@ -16,8 +15,7 @@ The closure of a semialgebraic set has the same dimension as the set
 (`TauCeti.IsSemialgebraic.semialgebraicDim_closure`).
 
 The top-dimensional case is that a semialgebraic subset of `ℝ ^ n` with empty interior is nowhere
-dense (`TauCeti.IsSemialgebraic.isNowhereDense_iff`): it is a finite union of locally closed
-cells, each with empty interior and hence nowhere dense. This fails for arbitrary sets, as the
+dense (`TauCeti.IsSemialgebraic.isNowhereDense_iff`), which fails for arbitrary sets, as the
 rationals in `ℝ` show. The general case reduces to it through the characterization of dimension
 by coordinate projections. If the closure of `s` has dimension `d`, some projection onto `d`
 coordinates maps it onto a set with nonempty interior. That image lies in the closure of the
@@ -26,8 +24,6 @@ and `s` has dimension at least `d`.
 
 ## Main declarations
 
-* `TauCeti.IsSemialgebraic.isNowhereDense_iff`: a semialgebraic set is nowhere dense exactly when
-  its interior is empty.
 * `TauCeti.IsSemialgebraic.semialgebraicDim_closure`: the closure of a semialgebraic set has the
   same dimension.
 
@@ -45,19 +41,9 @@ namespace TauCeti
 
 variable {n : ℕ} {s : Set (Fin n → ℝ)}
 
-/-- A semialgebraic set is nowhere dense exactly when its interior is empty. -/
-theorem IsSemialgebraic.isNowhereDense_iff (hs : IsSemialgebraic s) :
-    IsNowhereDense s ↔ interior s = ∅ := by
-  refine ⟨fun h ↦ subset_empty_iff.1 (h ▸ interior_mono subset_closure), fun h ↦ ?_⟩
-  -- `s` is a finite union of locally closed sets with empty interior.
-  obtain ⟨𝒮, h𝒮, rfl, hl⟩ := hs.exists_finite_sUnion_eq
-  have := h𝒮.to_subtype
-  rw [sUnion_eq_iUnion]
-  exact IsNowhereDense.iUnion fun u ↦ (hl u u.2).1.isNowhereDense_iff.2 <|
-    subset_empty_iff.1 (h ▸ interior_mono (subset_sUnion_of_mem u.2))
-
 /-- **Dimension of the closure.** The closure of a semialgebraic set has the same dimension as
 the set. -/
+@[simp]
 theorem IsSemialgebraic.semialgebraicDim_closure (hs : IsSemialgebraic s) :
     semialgebraicDim (closure s) = semialgebraicDim s := by
   refine le_antisymm ?_ (semialgebraicDim_mono subset_closure)
