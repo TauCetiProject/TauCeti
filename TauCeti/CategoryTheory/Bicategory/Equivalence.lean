@@ -45,6 +45,31 @@ lemma trans_hom (e : a ≌ b) (e' : b ≌ c) : (e.trans e').hom = e.hom ≫ e'.h
 @[simp]
 lemma trans_inv (e : a ≌ b) (e' : b ≌ c) : (e.trans e').inv = e'.inv ≫ e.inv := (rfl)
 
+/-- The unit of the composite equivalence whiskers the unit of `e'` into the unit of `e`. -/
+@[simp]
+lemma trans_unit (e : a ≌ b) (e' : b ≌ c) :
+    (e.trans e').unit =
+      e.unit ≪≫ whiskerLeftIso e.hom ((λ_ e.inv).symm ≪≫ whiskerRightIso e'.unit e.inv ≪≫
+        α_ e'.hom e'.inv e.inv) ≪≫ (α_ e.hom e'.hom (e'.inv ≫ e.inv)).symm ≪≫
+        eqToIso (congrArg₂ (· ≫ ·) (trans_hom e e') (trans_inv e e')).symm :=
+  Iso.ext <| by
+    simp only [Iso.trans_hom, eqToIso.hom]
+    exact congrArg (e.unit.hom ≫ ·) (congrArg (_ ≫ ·) (Category.comp_id _)).symm
+
+/-- The counit of the composite equivalence is the adjointification of the counit obtained by
+whiskering the counit of `e` into the counit of `e'`. -/
+@[simp]
+lemma trans_counit (e : a ≌ b) (e' : b ≌ c) :
+    (e.trans e').counit =
+      eqToIso (congrArg₂ (· ≫ ·) (trans_inv e e') (trans_hom e e')) ≪≫
+        adjointifyCounit
+          (e.unit ≪≫ whiskerLeftIso e.hom ((λ_ e.inv).symm ≪≫ whiskerRightIso e'.unit e.inv ≪≫
+            α_ e'.hom e'.inv e.inv) ≪≫ (α_ e.hom e'.hom (e'.inv ≫ e.inv)).symm)
+          (α_ e'.inv e.inv (e.hom ≫ e'.hom) ≪≫ whiskerLeftIso e'.inv
+            ((α_ e.inv e.hom e'.hom).symm ≪≫ whiskerRightIso e.counit e'.hom ≪≫ λ_ e'.hom) ≪≫
+            e'.counit) :=
+  Iso.ext (Category.id_comp _).symm
+
 end Equivalence
 
 end CategoryTheory.Bicategory

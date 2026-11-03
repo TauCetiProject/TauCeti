@@ -39,7 +39,8 @@ two notions agree with equivalence of categories.
 * `SSet.QCat.IsCategoricalEquivalence.isEquivalence_mapHomotopyCategory`: a categorical
   equivalence induces an equivalence of homotopy categories.
 * `CategoryTheory.Iso.nerveMap`: a natural isomorphism of functors gives an invertible natural
-  transformation between their nerves.
+  transformation between their nerves, with components computed by
+  `CategoryTheory.Iso.nerveMap_hom_base` and `CategoryTheory.Iso.nerveMap_inv_base`.
 * `SSet.QCat.isCategoricalEquivalence_homMk_nerveMap_iff`: a functor between categories is an
   equivalence exactly when its nerve is a categorical equivalence.
 
@@ -177,6 +178,34 @@ noncomputable def nerveMap {F G : C ⥤ D} (α : F ≅ G) :
     inv := .mk β.inv
     hom_inv_id := CatEnrichedOrdinary.Hom.ext _ _ β.hom_inv_id
     inv_hom_id := CatEnrichedOrdinary.Hom.ext _ _ β.inv_hom_id }
+
+/-- The `2`-cell `α.nerveMap.hom` is the image under the comparison `N(C ⥤ D) ⟶ Fun(N C, N D)`
+of the edge of `N(C ⥤ D)` given by `α.hom`. -/
+@[simp]
+lemma nerveMap_hom_base {F G : C ⥤ D} (α : F ≅ G) :
+    α.nerveMap.hom.base =
+      eqToHom (congrArg HomotopyCategory.mk
+          (TauCeti.nerveFunctorCategoryToIhom_app_nerveEquiv_symm F)).symm ≫
+        HomotopyCategory.homMk ((nerve.edgeMk α.hom).map (TauCeti.nerveFunctorCategoryToIhom C D)) ≫
+        eqToHom (congrArg HomotopyCategory.mk
+          (TauCeti.nerveFunctorCategoryToIhom_app_nerveEquiv_symm G)) := by
+  change _ ≫ (mapHomotopyCategory _).map α.toNerveHomotopyCategory.hom ≫ _ = _
+  rw [toNerveHomotopyCategory_hom]
+  rfl
+
+/-- The `2`-cell `α.nerveMap.inv` is the image under the comparison `N(C ⥤ D) ⟶ Fun(N C, N D)`
+of the edge of `N(C ⥤ D)` given by `α.inv`. -/
+@[simp]
+lemma nerveMap_inv_base {F G : C ⥤ D} (α : F ≅ G) :
+    α.nerveMap.inv.base =
+      eqToHom (congrArg HomotopyCategory.mk
+          (TauCeti.nerveFunctorCategoryToIhom_app_nerveEquiv_symm G)).symm ≫
+        HomotopyCategory.homMk ((nerve.edgeMk α.inv).map (TauCeti.nerveFunctorCategoryToIhom C D)) ≫
+        eqToHom (congrArg HomotopyCategory.mk
+          (TauCeti.nerveFunctorCategoryToIhom_app_nerveEquiv_symm F)) := by
+  change (_ ≫ (mapHomotopyCategory _).map α.toNerveHomotopyCategory.inv) ≫ _ = _
+  rw [toNerveHomotopyCategory_inv]
+  exact Category.assoc _ _ _
 
 end CategoryTheory.Iso
 

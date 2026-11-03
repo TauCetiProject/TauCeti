@@ -6,14 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SimplicialSet.HoFunctorMonoidal
+public import Mathlib.CategoryTheory.Category.Cat.CartesianClosed
 public import Mathlib.CategoryTheory.Monoidal.Closed.FunctorToTypes
+public import Mathlib.CategoryTheory.Monoidal.Closed.Functor
 
 /-!
 # The homotopy category of an internal hom
 
-For simplicial sets `A` and `B`, the evaluation map `A ⊗ Fun(A, B) ⟶ B` and the fact that the
-homotopy category functor preserves binary products give a functor
-`ho Fun(A, B) ⥤ (ho A ⥤ ho B)`. A vertex of `Fun(A, B)`, that is a map `f : A ⟶ B`, is sent to
+For simplicial sets `A` and `B`, the homotopy category functor preserves binary products, so
+Mathlib's exponential comparison `expComparison hoFunctor A` gives a functor
+`ho Fun(A, B) ⥤ (ho A ⥤ ho B)`, adjoint to the image `ho A × ho Fun(A, B) ⥤ ho B` of the
+evaluation map `A ⊗ Fun(A, B) ⟶ B`. A vertex of `Fun(A, B)`, that is a map `f : A ⟶ B`, is sent to
 the induced functor `ho f`, and an edge, that is a homotopy, to a natural transformation.
 
 This describes how the homotopy category functor acts on the hom-categories `ho Fun(A, B)` of
@@ -43,18 +46,35 @@ namespace SSet
 variable {A B : SSet.{u}}
 
 /-- The functor `ho Fun(A, B) ⥤ (ho A ⥤ ho B)` induced by the evaluation map
-`A ⊗ Fun(A, B) ⟶ B`, using that the homotopy category functor preserves binary products. -/
+`A ⊗ Fun(A, B) ⟶ B`: the component at `B` of the exponential comparison of the homotopy category
+functor, which preserves binary products. -/
 noncomputable def ihomHoFunctor (A B : SSet.{u}) :
     hoFunctor.obj ((ihom A).obj B) ⥤ hoFunctor.obj A ⥤ hoFunctor.obj B :=
-  (Functor.curry.obj ((Functor.LaxMonoidal.μ hoFunctor A ((ihom A).obj B)).toFunctor ⋙
-    (hoFunctor.map ((ihom.ev A).app B)).toFunctor)).flip
+  ((expComparison hoFunctor A).app B).toFunctor
+
+/-- The exponential comparison is the currying of the image of the evaluation map under the
+homotopy category functor, precomposed with the binary product structure of that functor. -/
+private lemma ihomHoFunctor_eq (A B : SSet.{u}) :
+    ihomHoFunctor A B =
+      (Functor.curry.obj ((Functor.LaxMonoidal.μ hoFunctor A ((ihom A).obj B)).toFunctor ⋙
+        (hoFunctor.map ((ihom.ev A).app B)).toFunctor)).flip := by
+  have hμ : Functor.LaxMonoidal.μ hoFunctor A ((ihom A).obj B) =
+      inv (CartesianMonoidalCategory.prodComparison hoFunctor A ((ihom A).obj B)) := by
+    rw [Functor.Monoidal.μ_of_cartesianMonoidalCategory]
+    exact IsIso.eq_inv_of_hom_inv_id (CartesianMonoidalCategory.prodComparisonIso _ _ _).hom_inv_id
+  refine congrArg Cat.Hom.toFunctor (MonoidalClosed.uncurry_injective
+    ((uncurry_expComparison hoFunctor A B).trans ?_))
+  rw [← hμ]
+  ext1
+  exact (Functor.uncurry_obj_curry_obj _).symm
 
 /-- The functor induced by a vertex `f` of `Fun(A, B)` sends a vertex `a` of `A` to the
 evaluation of `f` at `a`. -/
 @[simp]
 lemma ihomHoFunctor_obj_mk_obj_mk (f : ((ihom A).obj B) _⦋0⦌) (a : A _⦋0⦌) :
-    ((ihomHoFunctor A B).obj (.mk f)).obj (.mk a) = .mk (((ihom.ev A).app B).app _ (a, f)) :=
-  (rfl)
+    ((ihomHoFunctor A B).obj (.mk f)).obj (.mk a) = .mk (((ihom.ev A).app B).app _ (a, f)) := by
+  rw [ihomHoFunctor_eq]
+  rfl
 
 /-- The component at a vertex `a` of `A` of the natural transformation induced by an edge `h`
 of `Fun(A, B)` is the edge of `B` obtained by evaluating `h` at `a`, that is, the image of the
@@ -67,11 +87,15 @@ lemma ihomHoFunctor_map_homMk_app {f g : ((ihom A).obj B) _⦋0⦌} (h : Edge f 
           (A.σ 0 a, h.edge) (Prod.ext (Edge.id a).src_eq h.src_eq)
           (Prod.ext (Edge.id a).tgt_eq h.tgt_eq)).map ((ihom.ev A).app B)) ≫
         eqToHom (ihomHoFunctor_obj_mk_obj_mk g a).symm := by
-  exact ((Category.id_comp _).trans (Category.comp_id _)).symm
+  rw [Functor.congr_hom (ihomHoFunctor_eq A B), NatTrans.comp_app, NatTrans.comp_app,
+    eqToHom_app, eqToHom_app]
+  rfl
 
 private lemma ihomHoFunctor_obj_mk_map_homMk (φ : 𝟙_ SSet ⟶ (ihom A).obj B) {x y : A _⦋0⦌}
     (e : Edge x y) :
-    ((ihomHoFunctor A B).obj (.mk (unitHomEquiv _ φ))).map (HomotopyCategory.homMk e) =
+    ((Functor.curry.obj ((Functor.LaxMonoidal.μ hoFunctor A ((ihom A).obj B)).toFunctor ⋙
+      (hoFunctor.map ((ihom.ev A).app B)).toFunctor)).flip.obj
+        (.mk (unitHomEquiv _ φ))).map (HomotopyCategory.homMk e) =
       HomotopyCategory.homMk (e.map (MonoidalClosed.uncurry' φ)) := by
   have h : ((ihom A).obj B).σ 0 (unitHomEquiv _ φ) = φ.app _ PUnit.unit :=
     (NatTrans.naturality_apply φ _ PUnit.unit).symm
@@ -89,6 +113,7 @@ lemma ihomHoFunctor_obj_mk (φ : 𝟙_ SSet ⟶ (ihom A).obj B) :
     (ihomHoFunctor A B).obj (.mk (unitHomEquiv _ φ)) =
       mapHomotopyCategory (MonoidalClosed.uncurry' φ) := by
   -- Both functors agree on objects by definition; on edges this is the previous lemma.
+  rw [ihomHoFunctor_eq]
   refine Functor.ext_of_iso (Truncated.HomotopyCategory.mkNatIso (fun _ ↦ Iso.refl _)
     (fun x y e ↦ ?_)) (fun _ ↦ rfl)
   obtain ⟨e, rfl⟩ : ∃ e' : Edge x y, e'.toTruncated = e := ⟨⟨e.edge, e.src_eq, e.tgt_eq⟩, rfl⟩
