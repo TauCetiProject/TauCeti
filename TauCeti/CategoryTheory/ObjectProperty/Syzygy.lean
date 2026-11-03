@@ -54,6 +54,7 @@ def IsSyzygy : ℕ → ObjectProperty C
       IsSyzygy k S.X₃
 
 /-- Every object is a `0`-th syzygy. -/
+@[simp]
 theorem isSyzygy_zero (X : C) : P.IsSyzygy 0 X :=
   trivial
 

@@ -15,15 +15,12 @@ Let `A` be a right Noetherian ring and `M` a left `A`-module with a presentation
 by finitely generated projective modules, with transpose `Tr M`. Following Auslander and Bridger,
 `M` is **`k`-torsionfree** when `Ext^i(Tr M, A) = 0` for `1 ≤ i ≤ k`. This file proves that a
 `k`-torsionfree module is a `k`-th syzygy: there is an exact sequence `0 ⟶ M ⟶ Q₁ ⟶ ⋯ ⟶ Q_k` with
-every `Qᵢ` finitely generated projective (`CategoryTheory.ObjectProperty.IsSyzygy`).
-
-The proof is by induction on `k`. A `1`-torsionfree module is torsionless
-(`TauCeti.opDualEval_injective_iff_ext_one_eq_zero`). Since `A` is right Noetherian, the right
-module `M*` is finitely generated, and finitely many generators `φ₁, …, φₙ` give an embedding
-`j : M ⟶ Aⁿ` whose dual `(Aⁿ)* ⟶ M*` is surjective. The cokernel `N` of `j` has the presentation
-`P₀ ⟶ Aⁿ ⟶ N ⟶ 0`, whose transpose is the image `K` of `P₀* ⟶ P₁*`; and the short exact sequence
-`0 ⟶ K ⟶ P₁* ⟶ Tr M ⟶ 0` with projective middle term shifts `Ext^i(K, A)` to
-`Ext^{i+1}(Tr M, A)`. So `N` is `(k - 1)`-torsionfree, hence a `(k - 1)`-st syzygy.
+every `Qᵢ` finitely generated projective (`CategoryTheory.ObjectProperty.IsSyzygy`). So vanishing of
+`Ext^i(Tr M, A)` in degrees `1, …, k`, which does not depend on the presentation since `Tr M` is
+determined up to projective summands, produces `k` steps of a finite projective coresolution of
+`M`. For `k = 1` this says
+that torsionless modules embed in finitely generated free modules, and for `k = 2` that reflexive
+modules (`TauCeti.opDualEval_bijective_iff_ext_eq_zero`) are second syzygies.
 
 ## Main results
 
@@ -87,6 +84,9 @@ private lemma ext_transpose_comp_eq_zero [Module.Finite A P₁] [Module.Projecti
     e = 0 := by
   obtain ⟨m, rfl⟩ : ∃ m, i = m + 1 := ⟨i - 1, by lia⟩
   let eq := transposeCompEquiv hexact hπ j hj
+  -- `LinearEquiv.toModuleIso` does not apply: the module structure of the transpose is stated over
+  -- `MulOpposite.instSemiring`, and `AuslanderReitenTranspose` is not exposed, so it cannot be
+  -- identified with the structure over `Ring.toSemiring` that `ModuleCat.of` uses.
   let φ : ModuleCat.of Aᵐᵒᵖ (AuslanderReitenTranspose (j ∘ₗ π)) ≅
       ModuleCat.of Aᵐᵒᵖ (LinearMap.range (p.lcomp Aᵐᵒᵖ A)) :=
     { hom := ModuleCat.ofHom eq.toLinearMap
@@ -115,6 +115,10 @@ private lemma isSyzygy_of_ext_eq_zero_aux [IsNoetherianRing Aᵐᵒᵖ] (k : ℕ
   induction k with
   | zero => exact fun _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ↦ ObjectProperty.isSyzygy_zero _ _
   | succ k ih =>
+    -- Embed `M` into `Aⁿ` through generators of `M*`. The cokernel `N` has the presentation
+    -- `P₀ ⟶ Aⁿ ⟶ N ⟶ 0`, whose transpose is the image `K` of `P₀* ⟶ P₁*`; the sequence
+    -- `0 ⟶ K ⟶ P₁* ⟶ Tr M ⟶ 0` shifts `Ext^i(K, A)` to `Ext^{i+1}(Tr M, A)`, so `N` is
+    -- `k`-torsionfree and the induction applies.
     intro P₀ P₁ M _ _ _ _ _ _ _ _ _ _ p π hexact hπ hext
     -- `M` is torsionless, and `M*` is finitely generated since `A` is right Noetherian.
     have hinj : Function.Injective (opDualEval A M) :=
