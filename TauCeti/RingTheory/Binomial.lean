@@ -216,9 +216,7 @@ theorem ringChooseSpan_nsmul_le (n : ℕ) (r : R) :
   | succ n ih =>
       rw [ringChooseSpan_le_iff] at ih ⊢
       intro j
-      have hcomm : Commute (n • r) r := by
-        change (n • r) * r = r * (n • r)
-        simp only [smul_mul_assoc, mul_smul_comm]
+      have hcomm : Commute (n • r) r := (Commute.refl r).smul_left n
       rw [succ_nsmul, Ring.add_choose_eq j hcomm]
       exact sum_mem fun ij _ => mul_mem_ringChooseSpan r
         (ih ij.1) (ringChoose_mem_ringChooseSpan r ij.2)
