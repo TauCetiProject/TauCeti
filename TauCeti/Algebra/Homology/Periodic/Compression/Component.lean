@@ -128,6 +128,7 @@ noncomputable def compressionComponentHomotopy (k : ℤ)
 variable {n} in
 /-- The component of degree `k'` of the compression of `f : K ⟶ L⟦k⟧`, followed by the
 periodicity isomorphism, vanishes unless `k' = k`. -/
+@[simp]
 lemma compressionComponent_compressionMap_comp_compressionPeriodicityIso_hom_of_ne
     {k k' : ℤ} (hk : (k : ZMod n) = 0) (f : K ⟶ L⟦k⟧) (hkk' : k' ≠ k) :
     compressionComponent n k'

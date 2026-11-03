@@ -86,9 +86,10 @@ lemma exists_periodicityZPow_hom_app_eq (j : ℤ) :
   | succ j ih =>
     obtain ⟨ε, hε⟩ := ih
     refine ⟨ε * ((n : ℤ) * (n * j)).negOnePow, fun X ↦ ?_⟩
-    rw [Iso.periodicityZPow_succ φ j (j + 1) rfl, Iso.shiftComp_hom_app, hε,
-      Linear.units_smul_comp, Linear.comp_units_smul, ← Iso.shiftComp_hom_app, step j (j + 1) rfl,
-      smul_smul]
+    have h := step j (j + 1) rfl X
+    rw [Iso.shiftComp_hom_app] at h
+    simp only [Iso.periodicityZPow_succ φ j (j + 1) rfl, Iso.shiftComp_hom_app, hε,
+      Linear.units_smul_comp, Linear.comp_units_smul, h, smul_smul]
   | pred j ih =>
     obtain ⟨ε, hε⟩ := ih
     set s := ((n : ℤ) * (n * (-j - 1))).negOnePow
@@ -103,9 +104,9 @@ lemma exists_periodicityZPow_hom_app_eq (j : ℤ) :
       rw [Iso.shiftComp_hom_app] at h'
       rw [← cancel_epi ((homotopyCompressionFunctor n).map
           ((CategoryTheory.shiftFunctorAdd' _ (n : ℤ) (n * (-j - 1)) (n * -j)
-            (by ring)).hom.app Y)), ← cancel_mono (φ.hom.app Y), Category.assoc, h,
-        Category.assoc, Linear.units_smul_comp, Linear.comp_units_smul, h', smul_smul,
-        mul_assoc, Int.units_mul_self, mul_one]
+            (by ring)).hom.app Y)), ← cancel_mono (φ.hom.app Y)]
+      simp only [χ, s, Category.assoc, h, Linear.units_smul_comp, Linear.comp_units_smul, h',
+        smul_smul, mul_assoc, Int.units_mul_self, mul_one]
     -- It transports to every object along `X ≅ X⟦-n⟧⟦n⟧`.
     let e : X⟦-(n : ℤ)⟧⟦(n : ℤ)⟧ ≅ X :=
       (shiftFunctorCompIsoId (HomotopyCategory.Bounded C) (-(n : ℤ)) n (neg_add_cancel _)).app X
@@ -160,8 +161,8 @@ private lemma orbitCompressionFunctor_map_sum_homOf {K L : CochainComplex.Bounde
         (quotientCompHomotopyCompressionFunctorIso n).inv.app L) := by
   rw [Functor.map_sum, Functor.map_sum, Preadditive.sum_comp, Preadditive.comp_sum]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
-  rw [orbitCompressionFunctor_map_homOf (hε j) (f j), Units.smul_def, Units.smul_def,
-    Functor.map_zsmul, Preadditive.zsmul_comp, Preadditive.comp_zsmul]
+  rw [orbitCompressionFunctor_map_homOf (hε j) (f j)]
+  simp [Functor.map_units_smul]
 
 variable {n} in
 /-- If the class of a finite signed sum of the compressions of maps `f j : K ⟶ L⟦n * j⟧` of bounded
@@ -177,11 +178,11 @@ private lemma quotient_map_eq_zero_of_quotient_map_sum_eq_zero [NeZero n]
     {j : ℤ} (hj : j ∈ S) : (quotient C).map (f j) = 0 := by
   have hq := HomotopyCategory.eq_of_homotopy _ _ (compressionComponentHomotopy n ((n : ℤ) * j)
     (HomotopyCategory.homotopyOfEq _ 0 (by rw [h, Functor.map_zero])))
-  rw [map_sum, Finset.sum_eq_single_of_mem j hj fun l _ hlj ↦ ?_, map_zero, Units.smul_def,
-    map_zsmul, compressionComponent_compressionMap_comp_compressionPeriodicityIso_hom,
-    Functor.map_zero, Functor.map_zsmul, ← Units.smul_def, smul_eq_zero_iff_eq,
-    Functor.map_comp] at hq
-  · refine ObjectProperty.hom_ext _ ?_
+  rw [map_sum, Finset.sum_eq_single_of_mem j hj fun l _ hlj ↦ ?_] at hq
+  · simp only [Units.smul_def, map_zsmul, map_zero, Functor.map_zero, Functor.map_zsmul,
+      compressionComponent_compressionMap_comp_compressionPeriodicityIso_hom] at hq
+    rw [← Units.smul_def, smul_eq_zero_iff_eq, Functor.map_comp] at hq
+    refine ObjectProperty.hom_ext _ ?_
     rw [HomotopyCategory.Bounded.quotient_map_hom, ObjectProperty.zero_hom,
       (cancel_mono _).mp (hq.trans Limits.zero_comp.symm)]
     simp
@@ -282,9 +283,9 @@ instance full_orbitCompressionFunctor [NeZero n] :
       simp only [ObjectProperty.homMk_hom, Category.assoc, Iso.inv_hom_id_app, Functor.comp_obj,
         ObjectProperty.ι_obj, Category.comp_id] at hX
       -- The sign of the piece cancels the sign of the power of the periodicity isomorphism.
-      dsimp only [f]
-      rw [Units.smul_def, Units.smul_def, Functor.map_zsmul, Preadditive.zsmul_comp, smul_smul,
-        ← Units.val_mul, Int.units_mul_self, Units.val_one, one_smul, ← hX]
+      simp only [f, Units.smul_def, Functor.map_zsmul, Preadditive.zsmul_comp, smul_smul,
+        Int.units_coe_mul_self, one_smul]
+      rw [← hX]
       simp
     rw [hsum, Functor.map_comp, Functor.map_comp, hg]
     simp [eqToHom_map]
