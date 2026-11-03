@@ -16,7 +16,7 @@ import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 
 The Laplacian of a compactly supported twice continuously differentiable function has integral
 zero. More generally, an integrable `C²` scalar function whose Laplacian is bounded below by an
-integrable continuous function has an integrable Laplacian. Dilated cutoffs turn the one-sided
+integrable function has an integrable Laplacian. Dilated cutoffs turn the one-sided
 bound into a global mass bound. These statements allow integrated Bochner estimates without
 assuming derivative decay at infinity.
 -/
@@ -50,17 +50,19 @@ theorem integral_laplacian_eq_zero_of_hasCompactSupport (hf : ContDiff ℝ 2 f)
   exact integral_fderiv_apply_eq_zero_of_hasCompactSupport
     (hd.clm_apply contDiff_const) (hc.fderiv_apply (𝕜 := ℝ) (b i)) (b i)
 
-/-- An integrable `C²` function with a continuous integrable lower bound on its Laplacian has
+/-- An integrable `C²` function with an integrable lower bound on its Laplacian has
 an integrable Laplacian. No bounds on its first derivatives at infinity are required. -/
 theorem integrable_laplacian_of_integrable_of_le {f g : E → ℝ} (hf : ContDiff ℝ 2 f)
-    (hfi : Integrable f μ) (hg : Continuous g) (hgi : Integrable g μ)
+    (hfi : Integrable f μ) (hgi : Integrable g μ)
     (hle : ∀ x, -g x ≤ Δ f x) : Integrable (Δ f) μ := by
   obtain ⟨C, hC⟩ := exists_forall_contDiff_cutoff_ball_norm_laplacian_le (E := E)
   have hC0 : 0 ≤ C := by
     obtain ⟨χ, -, -, -, -, -, hΔ, -⟩ := hC 1 zero_lt_one
     simpa using (norm_nonneg (Δ χ 0)).trans (hΔ 0)
   let k := fun x ↦ Δ f x + g x
-  have hk : Continuous k := hf.continuous_laplacian.add hg
+  have hk (r : ℝ) : IntegrableOn k (ball 0 r) μ :=
+    ((hf.continuous_laplacian.continuousOn.integrableOn_compact
+      (isCompact_closedBall 0 r)).mono_set ball_subset_closedBall).add hgi.integrableOn
   have hk0 : ∀ x, 0 ≤ k x := fun x ↦ by dsimp [k]; linarith [hle x]
   have hR : Tendsto (fun n : ℕ ↦ (n : ℝ) + 1) atTop atTop :=
     tendsto_atTop_add_const_right _ _ tendsto_natCast_atTop_atTop
@@ -68,17 +70,18 @@ theorem integrable_laplacian_of_integrable_of_le {f g : E → ℝ} (hf : ContDif
   have hki : Integrable k μ := by
     apply (aecover_ball (μ := μ) (x := (0 : E)) hR).integrable_of_integral_bounded_of_nonneg_ae
         (C * (∫ x, ‖f x‖ ∂μ) + ∫ x, ‖g x‖ ∂μ)
-        (fun n ↦ (hk.continuousOn.integrableOn_compact (isCompact_closedBall 0 (n + 1))).mono_set
-          ball_subset_closedBall) (ae_of_all μ hk0)
+        (fun n ↦ hk (n + 1)) (ae_of_all μ hk0)
     apply Filter.Eventually.of_forall
     intro n
     obtain ⟨χ, hχ, hχc, hχ1, -, -, hΔ, hχrange⟩ := hC (n + 1) (by positivity)
-    have hχk : Integrable (fun x ↦ χ x * k x) μ :=
-      (hχ.continuous.mul hk).integrable_of_hasCompactSupport hχc.mul_right
     have hχg : Integrable (fun x ↦ χ x * g x) μ :=
-      (hχ.continuous.mul hg).integrable_of_hasCompactSupport hχc.mul_right
+      hgi.bdd_mul hχ.continuous.aestronglyMeasurable (ae_of_all μ fun x ↦ by
+        rw [Real.norm_eq_abs, abs_of_nonneg (hχrange x).1]
+        exact (hχrange x).2)
     have hχΔ : Integrable (fun x ↦ χ x * Δ f x) μ :=
       (hχ.continuous.mul hf.continuous_laplacian).integrable_of_hasCompactSupport hχc.mul_right
+    have hχk : Integrable (fun x ↦ χ x * k x) μ := by
+      simpa only [k, mul_add, Pi.add_def] using hχΔ.add hχg
     have hΔf : Integrable (fun x ↦ Δ χ x * f x) μ :=
       ((hχ.of_le (by simp)).continuous_laplacian.mul hf.continuous)
         |>.integrable_of_hasCompactSupport hχc.laplacian.mul_right
@@ -99,8 +102,7 @@ theorem integrable_laplacian_of_integrable_of_le {f g : E → ℝ} (hf : ContDif
       ∫ x in Metric.ball 0 (n + 1), k x ∂μ ≤ ∫ x, χ x * k x ∂μ := by
         rw [← integral_indicator measurableSet_ball]
         apply integral_mono
-          (((hk.continuousOn.integrableOn_compact (isCompact_closedBall 0 (n + 1))).mono_set
-            ball_subset_closedBall).integrable_indicator measurableSet_ball) hχk
+          ((hk (n + 1)).integrable_indicator measurableSet_ball) hχk
         intro x
         by_cases hx : x ∈ Metric.ball (0 : E) (n + 1)
         · simp only [Set.indicator_of_mem hx,

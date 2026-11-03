@@ -125,9 +125,9 @@ theorem integrable_covariantDerivative_norm_sq
   have hΔ : Integrable (Δ (fun z ↦ s z - 1)) μ :=
     integrable_laplacian_of_integrable_of_le (hs.sub contDiff_const)
       (by simpa only [Pi.neg_def, neg_sub] using hsi.neg)
-      ((continuous_const.sub hs.continuous).div_const 4) (hsi.div_const 4) (fun z ↦ by
+      (hsi.div_const 4) (fun z ↦ by
         simp only [← Pi.sub_def, hs.contDiffAt.laplacian_sub contDiffAt_const,
-          laplacian_const, Pi.zero_apply, sub_zero, Pi.sub_apply]
+          laplacian_const, Pi.zero_apply, sub_zero]
         dsimp only [s] at hid ⊢
         nlinarith [hid z, sq_nonneg (1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)),
           sq_nonneg ‖covariantDerivative x z 1‖, sq_nonneg ‖covariantDerivative x z I‖])
