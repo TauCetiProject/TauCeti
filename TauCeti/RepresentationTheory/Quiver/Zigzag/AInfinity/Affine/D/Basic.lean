@@ -23,7 +23,7 @@ intrinsically formal, by the two-branch-vertex criterion
 `TauCeti.not_isIntrinsicallyFormal_zigzagStrictAInfinityAlgebra_of_three_le_degree` of
 `TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.NonFormal`. The affine `D₄` graph, whose
 only branch node has four neighbours, is treated in
-`TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.AffineD.Four`.
+`TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Affine.D.Four`.
 
 ## Main results
 
