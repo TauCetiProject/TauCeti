@@ -39,11 +39,21 @@ open scoped ENNReal Topology
 
 namespace TauCeti
 
-/-- In the Liouville condition with nonnegative exponent, one may replace the denominator by
-`max |m| n`, even for fractions that are not reduced. -/
-theorem liouvilleWith_iff_frequently_max {p ξ : ℝ} (hp : 0 ≤ p) :
+/-- In the Liouville condition, one may replace the denominator by `max |m| n`, even for
+fractions that are not reduced. -/
+theorem liouvilleWith_iff_frequently_max {p ξ : ℝ} :
     LiouvilleWith p ξ ↔ ∃ C > 0, ∃ᶠ n : ℕ in atTop, 0 < n ∧
       ∃ m : ℤ, ξ ≠ m / n ∧ |ξ - m / n| < C / (max |(m : ℝ)| (n : ℝ)) ^ p := by
+  wlog hp : 0 ≤ p generalizing p
+  · refine iff_of_true ((liouvilleWith_one ξ).mono (by linarith)) ?_
+    obtain ⟨C, hC, hf⟩ := (this (p := 0) le_rfl).mp
+      ((liouvilleWith_one ξ).mono zero_le_one)
+    refine ⟨C, hC, hf.mono ?_⟩
+    rintro n ⟨hn, m, hne, hlt⟩
+    refine ⟨hn, m, hne, hlt.trans_le ?_⟩
+    have hn' : (1 : ℝ) ≤ n := by exact_mod_cast hn
+    exact div_le_div_of_nonneg_left hC.le (by positivity)
+      (Real.rpow_le_rpow_of_exponent_le (hn'.trans (le_max_right _ _)) (by linarith))
   constructor
   · intro h
     obtain ⟨C, hC, hf⟩ := h.exists_pos
