@@ -43,10 +43,8 @@ indefinite form, which takes values of both signs, has surjective spinor norm on
 * `CliffordAlgebra.orthogonalSpinorNorm_surjective_of_negValue` and
   `CliffordAlgebra.spinorNorm_surjective_of_indefinite`: surjectivity on `O(Q)` as soon as the form
   takes a negative value, and on `SO(Q)` for an indefinite form.
-* `CliffordAlgebra.spinToSpecialOrthogonal_surjective_of_negDef` and
-  `CliffordAlgebra.index_range_spinToSpecialOrthogonal_of_indefinite`: since the Spin image is the
-  kernel of the spinor norm, the Spin action is onto `SO(Q)` for a negative definite form, and its
-  image has index two in `SO(Q)` for an indefinite form.
+* `CliffordAlgebra.index_range_spinToSpecialOrthogonal_of_indefinite`: since the Spin image is the
+  kernel of the spinor norm, it has index two in `SO(Q)` for an indefinite form.
 
 ## References
 
@@ -204,15 +202,6 @@ theorem spinorNorm_surjective_of_indefinite (Q : QuadraticForm ℝ V) (hQ : Q.No
     refine ⟨⟨(QuadraticMap.reflectionOrthogonal Q v * QuadraticMap.reflectionOrthogonal Q w :
       V ≃ₗ[ℝ] V), hso⟩, ?_⟩
     rw [spinorNorm_apply, hkey, h, hval]
-
-/-- For a negative definite real quadratic form the Spin action is onto `SO(Q)`: the spinor norm
-is trivial on `SO(Q)`. -/
-theorem spinToSpecialOrthogonal_surjective_of_negDef (Q : QuadraticForm ℝ V)
-    (hneg : (-Q).PosDef) :
-    Function.Surjective (spinToSpecialOrthogonal Q) := by
-  rw [← MonoidHom.range_eq_top, range_spinToSpecialOrthogonal_eq_ker_spinorNorm Q
-    ((QuadraticMap.nondegenerate_neg Q).mp hneg.anisotropic.nondegenerate),
-    spinorNorm_eq_one_of_negDef Q hneg, MonoidHom.ker_one]
 
 /-- **The real Spin image has index two in `SO(Q)`** for an indefinite form: the spinor norm is
 then onto the two real square classes. -/
