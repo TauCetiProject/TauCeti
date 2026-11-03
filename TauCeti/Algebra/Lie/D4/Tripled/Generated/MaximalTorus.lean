@@ -47,28 +47,6 @@ noncomputable section
 
 variable (k : Type u) [Field k]
 
-private theorem carrierPointsHom_injective :
-    Function.Injective (carrierPointsHom k (CommAlgCat.of k k)) := by
-  intro g h heq
-  apply CommHopfAlgCat.Hom.mapPointsFunctor_app_injective_of_surjective
-    (generatedCoordinateMap k) (generatedCoordinateMap_surjective k) (CommAlgCat.of k k)
-  apply (GeneralLinear.pointsMulEquiv 24).injective
-  rw [← coe_carrierPointsHom, ← coe_carrierPointsHom, heq]
-
-private theorem map_torus_carrierPointsHom :
-    (CommHopfAlgCat.quotientPointsSubgroup (generatedCoordinateHopfAlgebra k)
-        (weightTorusDefiningIdeal k) (CommAlgCat.of k k)).map
-        (carrierPointsHom k (CommAlgCat.of k k)) =
-      (weightTorusPoints k).range := by
-  apply Subgroup.map_injective (points k).subtype_injective
-  have hcomp : (points k).subtype.comp (carrierPointsHom k (CommAlgCat.of k k)) =
-      (GeneralLinear.pointsMulEquiv 24).toMonoidHom.comp
-        ((CommHopfAlgCat.Hom.mapPointsFunctor (generatedCoordinateMap k)).app
-          (CommAlgCat.of k k)).hom := MonoidHom.ext (coe_carrierPointsHom k (CommAlgCat.of k k))
-  rw [Subgroup.map_map, hcomp]
-  -- The underlying algebra of `CommAlgCat.of k k` is `k`, so their matrix subgroups agree.
-  exact map_quotientPointsSubgroup_weightTorusDefiningIdeal k (CommAlgCat.of k k)
-
 /-- Over an algebraically closed field, a reduced commutative closed subgroup containing the
 weight torus of the generated tripled D₄ group is that torus. -/
 theorem eq_weightTorusDefiningIdeal_of_le_of_isCocomm [IsAlgClosed k]
@@ -88,9 +66,9 @@ theorem eq_weightTorusDefiningIdeal_of_le_of_isCocomm [IsAlgClosed k]
   have hmap : GI.map (carrierPointsHom k A) = GT.map (carrierPointsHom k A) := by
     rw [map_torus_carrierPointsHom]
     apply eq_range_weightTorusPoints_of_le_of_isMulCommutative
-    rw [← map_torus_carrierPointsHom k]
+    rw [← map_torus_carrierPointsHom k A]
     exact Subgroup.map_mono hTG
-  have hpoints : GI = GT := Subgroup.map_injective (carrierPointsHom_injective k) hmap
+  have hpoints : GI = GT := Subgroup.map_injective (carrierPointsHom_injective k A) hmap
   exact le_antisymm hI (HopfIdeal.le_of_quotientPointsSubgroup_le hpoints.le)
 
 private theorem isMaximalTorus_weightTorusDefiningIdeal_of_isAlgClosed [IsAlgClosed k] :

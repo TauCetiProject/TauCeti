@@ -171,6 +171,20 @@ theorem map_quotientPointsSubgroup_weightTorusDefiningIdeal (A : CommAlgCat.{v} 
     · rw [MulEquiv.apply_symm_apply]
       rfl
 
+/-- The carrier inclusion sends the generated weight torus onto the integral carrier's
+weight torus over every value algebra. -/
+theorem map_torus_carrierPointsHom (A : CommAlgCat.{v} R) :
+    (CommHopfAlgCat.quotientPointsSubgroup (generatedCoordinateHopfAlgebra R)
+        (weightTorusDefiningIdeal R) A).map (carrierPointsHom R A) =
+      (weightTorusPoints A).range := by
+  apply Subgroup.map_injective (points A).subtype_injective
+  have hcomp : (points A).subtype.comp (carrierPointsHom R A) =
+      (GeneralLinear.pointsMulEquiv 24).toMonoidHom.comp
+        ((CommHopfAlgCat.Hom.mapPointsFunctor (generatedCoordinateMap R)).app A).hom :=
+    MonoidHom.ext (coe_carrierPointsHom R A)
+  rw [Subgroup.map_map, hcomp]
+  exact map_quotientPointsSubgroup_weightTorusDefiningIdeal R A
+
 variable (K : Type max u w) [CommRing K] [Algebra R K] [Module.Free R K]
 
 /-- Free scalar extension carries the intrinsic torus ideal to the intrinsic torus ideal of

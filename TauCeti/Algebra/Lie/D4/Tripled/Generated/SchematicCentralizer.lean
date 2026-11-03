@@ -60,32 +60,15 @@ theorem mem_quotientPointsSubgroup_weightTorusDefiningIdeal_iff_isDiag
       (GeneralLinear.pointsMulEquiv 24
         (BialgHom.mapDomain (generatedCoordinateMap R).hom g) :
           Matrix (Fin 24) (Fin 24) A).IsDiag := by
-  let f := (GeneralLinear.pointsMulEquiv (R := R) 24).toMonoidHom.comp
-    ((CommHopfAlgCat.Hom.mapPointsFunctor (generatedCoordinateMap R)).app A).hom
-  have hf : Function.Injective f :=
-    (GeneralLinear.pointsMulEquiv 24).injective.comp
-      (CommHopfAlgCat.Hom.mapPointsFunctor_app_injective_of_surjective
-        (generatedCoordinateMap R) (generatedCoordinateMap_surjective R) A)
-  have hfg : f g = GeneralLinear.pointsMulEquiv 24
-      (BialgHom.mapDomain (generatedCoordinateMap R).hom g) := by
-    dsimp only [f]
-    -- The categorical source and the explicit convolution-point type use different wrappers.
-    erw [BialgHom.mapDomain_apply, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-      CommHopfAlgCat.Hom.mapPointsFunctor_app_apply]
-  have hmem := Subgroup.mem_map_iff_mem hf
+  have hmem := Subgroup.mem_map_iff_mem (carrierPointsHom_injective R A)
     (K := CommHopfAlgCat.quotientPointsSubgroup (generatedCoordinateHopfAlgebra R)
       (weightTorusDefiningIdeal R) A) (x := g)
-  rw [map_quotientPointsSubgroup_weightTorusDefiningIdeal R A] at hmem
-  let p : points A :=
-    ⟨f g, coe_carrierPointsHom R A g ▸ (carrierPointsHom R A g).property⟩
+  rw [map_torus_carrierPointsHom R A] at hmem
   refine hmem.symm.trans ?_
-  have hp : f g ∈ ((weightTorusPoints A).range).map (points A).subtype ↔
-      p ∈ (weightTorusPoints A).range :=
-    Subgroup.mem_map_iff_mem (points A).subtype_injective
-      (K := (weightTorusPoints A).range) (x := p)
-  refine hp.trans ((mem_range_weightTorusPoints_iff_isDiag p).trans ?_)
-  exact Iff.of_eq (congrArg (fun m : Matrix.GeneralLinearGroup (Fin 24) A ↦
-    (m : Matrix (Fin 24) (Fin 24) A).IsDiag) hfg)
+  have hdiag := mem_range_weightTorusPoints_iff_isDiag (carrierPointsHom R A g)
+  rw [coe_carrierPointsHom] at hdiag
+  simpa only [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
+    BialgHom.mapDomain_apply] using hdiag
 
 /-- The schematic centralizer of the generated tripled D₄ weight torus is the torus itself,
 over every commutative ground ring, including its infinitesimal structure. -/

@@ -195,6 +195,15 @@ theorem coe_carrierPointsHom (A : CommAlgCat.{v} R)
       (baseChangeDefiningIdeal R) (carrierRestriction R) (generatedCoordinateMap R)
       (coordinateMap_comp_carrierRestriction R) A g).symm
 
+/-- The inclusion of generated-carrier points is injective over every value algebra. -/
+theorem carrierPointsHom_injective (A : CommAlgCat.{v} R) :
+    Function.Injective (carrierPointsHom R A) := by
+  intro g h heq
+  apply CommHopfAlgCat.Hom.mapPointsFunctor_app_injective_of_surjective
+    (generatedCoordinateMap R) (generatedCoordinateMap_surjective R) A
+  apply (GeneralLinear.pointsMulEquiv 24).injective
+  rw [← coe_carrierPointsHom, ← coe_carrierPointsHom, heq]
+
 end Generated
 
 variable (k : Type u) [Field k]
