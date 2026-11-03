@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Category.Basic
 public import Mathlib.Combinatorics.Quiver.Subquiver
 public import Mathlib.Topology.DiscreteSubset
 public import Mathlib.Topology.IsLocalHomeomorph
@@ -24,6 +25,12 @@ This is the finite retained-arrow neighborhood needed to reconstruct local finit
 different isotropy arrows remain separate, even if their induced object maps coincide.
 The result does not yet assert the multiplication identities of a local action.
 
+For a category with continuous units, the identity arrows are open when the source is a local
+homeomorphism, as the image of a continuous section of the source (`TauCeti.isOpen_range_unit`),
+and closed when the source is continuous and the arrow space Hausdorff, as a retract of the arrow
+space (`TauCeti.isClosed_range_unit`). So they are clopen in an étale category with Hausdorff
+arrow space (`TauCeti.isClopen_range_unit`).
+
 No new groupoid carrier or topology on individual hom types is introduced. The results apply
 to native categorical groupoids through `Quiver.Total`, and only use the displayed topological
 hypotheses; composition and inversion are not needed for these neighborhood statements.
@@ -39,6 +46,8 @@ public section
 open Set Topology
 
 namespace TauCeti
+
+section Quiver
 
 variable {C : Type*} [Quiver C] [TopologicalSpace C] [TopologicalSpace (Quiver.Total C)]
 
@@ -123,5 +132,40 @@ theorem exists_disjoint_bisections_of_proper_source_target [T2Space (Quiver.Tota
   exact ⟨f, hf, fun g hg ↦ by
     by_contra hgf
     exact Set.disjoint_left.mp (hpair hgf) hg hf⟩
+
+end Quiver
+
+section Category
+
+open CategoryTheory
+
+variable {C : Type*} [Category C] [TopologicalSpace C] [TopologicalSpace (Quiver.Total C)]
+  (hu : Continuous fun x : C ↦ (⟨x, x, 𝟙 x⟩ : Quiver.Total C))
+include hu
+
+/-- In a topological category with continuous units and locally homeomorphic source, the identity
+arrows form an open set: they are the image of a continuous section of the source. -/
+theorem isOpen_range_unit (hs : IsLocalHomeomorph (Quiver.Total.left : Quiver.Total C → C)) :
+    IsOpen (Set.range fun x : C ↦ (⟨x, x, 𝟙 x⟩ : Quiver.Total C)) :=
+  (hs.isOpenEmbedding_of_comp (f := fun x : C ↦ (⟨x, x, 𝟙 x⟩ : Quiver.Total C))
+    IsOpenEmbedding.id hu).isOpen_range
+
+/-- In a topological category with continuous units, continuous source and Hausdorff arrow
+space, the identity arrows form a closed set: they are a retract of the arrow space. -/
+theorem isClosed_range_unit [T2Space (Quiver.Total C)]
+    (hl : Continuous (Quiver.Total.left : Quiver.Total C → C)) :
+    IsClosed (Set.range fun x : C ↦ (⟨x, x, 𝟙 x⟩ : Quiver.Total C)) :=
+  Function.LeftInverse.isClosed_range (f := Quiver.Total.left) (fun _ ↦ rfl) hl hu
+
+variable [T2Space (Quiver.Total C)]
+  (hs : IsLocalHomeomorph (Quiver.Total.left : Quiver.Total C → C))
+include hs
+
+/-- In a topological category with continuous units, locally homeomorphic source and Hausdorff
+arrow space, the identity arrows form a clopen set. -/
+theorem isClopen_range_unit : IsClopen (Set.range fun x : C ↦ (⟨x, x, 𝟙 x⟩ : Quiver.Total C)) :=
+  ⟨isClosed_range_unit hu hs.continuous, isOpen_range_unit hu hs⟩
+
+end Category
 
 end TauCeti
