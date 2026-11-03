@@ -7,6 +7,8 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.Four.JacobiSum
 
+import Mathlib.NumberTheory.LegendreSymbol.Complex
+
 /-!
 # The fourth power of the quartic Gauss sum
 
@@ -104,16 +106,23 @@ variable {K : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {4} ℚ K]
   (hP : P = span {((-1 : ℤ) : 𝓞 K) + (2 : ℤ) * hζ.toInteger})
 include hP
 
-/- For the primary element `π = -1 + 2i` of norm `5` and a primitive additive character `ψ` with
-values in `𝓞 K`, the fourth power of the Gauss sum at `P = π 𝓞 K` is
-`5 (-1 + 2i) ^ 2 = -15 - 20i`. -/
-example {ψ : AddChar (𝓞 K ⧸ P) (𝓞 K)} (hψ : ψ.IsPrimitive) :
-    gaussSum ((powerResidueSymbol P 4).ringHomComp (RingHom.id _)) ψ ^ 4 =
-      ((-15 : ℤ) : 𝓞 K) + (-20 : ℤ) * hζ.toInteger := by
+/- For the primary element `π = -1 + 2i` of norm `5`, an embedding `f` of `𝓞 K` into `ℂ` and the
+primitive additive character `AddChar.FiniteField.primitiveChar_to_Complex` of the residue field,
+the fourth power of the Gauss sum at `P = π 𝓞 K` is `f (5 (-1 + 2i) ^ 2) = f (-15 - 20i)`. The
+coefficients are complex because `ℤ[i]` contains no nontrivial fifth root of unity, so it admits
+no primitive additive character of a field with `5` elements. -/
+example {f : 𝓞 K →+* ℂ} (hf : Function.Injective f) :
+    letI := Ideal.Quotient.field P
+    gaussSum ((powerResidueSymbol P 4).ringHomComp f)
+        (AddChar.FiniteField.primitiveChar_to_Complex (𝓞 K ⧸ P)) ^ 4 =
+      f (((-15 : ℤ) : 𝓞 K) + (-20 : ℤ) * hζ.toInteger) := by
+  let _ := Ideal.Quotient.field P
   rw [gaussSum_powerResidueSymbol_four_pow_four_eq hP
-      (by rw [hζ.isPrimaryGaussian_add_mul_iff]; decide) Function.injective_id hψ,
-    hP, absNorm_span_singleton, hζ.norm_intCast_add_intCast_mul_toInteger_of_four,
-    RingHom.id_apply]
+      (by rw [hζ.isPrimaryGaussian_add_mul_iff]; decide) hf
+      (AddChar.FiniteField.primitiveChar_to_Complex_isPrimitive _),
+    hP, absNorm_span_singleton, hζ.norm_intCast_add_intCast_mul_toInteger_of_four, ← map_natCast f,
+    ← map_pow, ← map_mul]
+  congr 1
   linear_combination (20 : 𝓞 K) * hζ.toInteger_isPrimitiveRoot.sq_eq_neg_one
 
 end Examples
