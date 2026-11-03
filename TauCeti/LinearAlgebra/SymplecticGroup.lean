@@ -44,6 +44,7 @@ specialisation of `SymplecticGroup.fromBlocks_mem_iff`.
   the latter, `tr (J * Jᵀ) = 2 * card l`.
 * `Matrix.sum_J_mul_J_eq_ite`: the columns of `J` are orthonormal, `Jᵀ * J = 1` read entrywise.
 * `Matrix.eq_J_conj_iff_mul_J_eq`: cancelling a conjugation by `J`.
+* `Matrix.J_mul_mul_J_mul_J`: sandwiching twice by `J` is the identity.
 * `SymplecticGroup.transpose_eq_J_conj_inv`: the transpose of a symplectic matrix is the
   `J`-conjugate of its inverse.
 * `SymplecticGroup.mem_iff_neg_J_mul_transpose_mul_J_mul_eq_one`: the symplectic matrices are the
@@ -143,6 +144,14 @@ theorem eq_J_conj_iff_mul_J_eq (X Y : Matrix (l ⊕ l) (l ⊕ l) R) :
     X = J l R * Y * (J l R)⁻¹ ↔ X * J l R = J l R * Y := by
   have : Invertible (J l R) := ⟨-J l R, neg_J_mul_J l R, J_mul_neg_J l R⟩
   rw [eq_comm, mul_inv_eq_iff_eq_mul_of_invertible, eq_comm]
+
+/-- Sandwiching twice by the standard symplectic matrix is the identity:
+`J * (J * M * J) * J = M`, since `J * J = -1`. -/
+theorem J_mul_mul_J_mul_J (M : Matrix (l ⊕ l) (l ⊕ l) R) :
+    J l R * (J l R * M * J l R) * J l R = M := by
+  calc J l R * (J l R * M * J l R) * J l R = (J l R * J l R) * M * (J l R * J l R) := by
+        noncomm_ring
+    _ = M := by simp [J_squared]
 
 end Matrix
 

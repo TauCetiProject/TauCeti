@@ -38,7 +38,6 @@ matrix past `J`.
   is negative transpose.
 * `Matrix.mem_symplecticLieAlgebra_iff`: the entrywise block criterion, with symmetric
   off-diagonal blocks and opposite transposed diagonal blocks.
-* `Matrix.J_mul_mul_J_mul_J`: sandwiching twice by `J` is the identity.
 * `Matrix.J_mulVec`: the action of the standard symplectic matrix on a vector.
 * `LieAlgebra.Symplectic.trace_eq_zero_of_mem_sp`: symplectic Lie matrices have trace zero.
 -/
@@ -46,20 +45,6 @@ matrix past `J`.
 public section
 
 open Matrix
-
-namespace Matrix
-
-variable {l : Type*} [DecidableEq l] [Fintype l] {R : Type*} [CommRing R]
-
-/-- Sandwiching twice by the standard symplectic matrix is the identity:
-`J * (J * M * J) * J = M`, since `J * J = -1`. -/
-theorem J_mul_mul_J_mul_J (M : Matrix (l ⊕ l) (l ⊕ l) R) :
-    J l R * (J l R * M * J l R) * J l R = M := by
-  calc J l R * (J l R * M * J l R) * J l R = (J l R * J l R) * M * (J l R * J l R) := by
-        noncomm_ring
-    _ = M := by simp [J_squared]
-
-end Matrix
 
 namespace LieAlgebra.Symplectic
 
