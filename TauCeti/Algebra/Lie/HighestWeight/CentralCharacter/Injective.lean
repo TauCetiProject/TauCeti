@@ -39,7 +39,8 @@ restriction theorem is injective on the invariants
 (`LieSubalgebra.lieCartanRestriction_injOn_lieInvariants`), so `p = 0` and `z` has degree below `m`.
 
 Injectivity is one half of the Harish-Chandra isomorphism `Z(U(L)) ≃ S(H)^{W·}`, the other being
-that the projection is onto the dot-invariants. Since the projection records the central characters
+that the projection is onto the dot-invariants (`TauCeti.range_hcProjection`, over an
+algebraically closed field). Since the projection records the central characters
 `χ_λ`, a central element is determined by its central characters
 (`TauCeti.eq_of_forall_vermaCentralCharacter_eq`).
 
