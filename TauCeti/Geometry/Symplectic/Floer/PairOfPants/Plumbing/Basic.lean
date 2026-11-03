@@ -161,9 +161,9 @@ theorem plumbedPerturbation_plumbingMap (hq : q ≠ inf) (hab : Hb q = Ha inf) {
     exact pairOfPantsPerturbation_plumbingMap hab (by linarith)
       (by rw [endSign_eq_one hq]; linarith) x v
 
-/-- Near a point of the end `q` with longitudinal coordinate `> 2`, the plumbed perturbation is
-the pushforward of the perturbation of the inserted pair of pants. -/
-private theorem plumbedPerturbation_eq_comp (hq : q ≠ inf) (hab : Hb q = Ha inf) {w : ℂ}
+/-- On the open region of the end `q` with longitudinal coordinate `> 2`, the plumbed
+perturbation is the pushforward of the inserted datum. This region is independent of length. -/
+theorem plumbedPerturbation_eq_comp (hq : q ≠ inf) (hab : Hb q = Ha inf) {w : ℂ}
     (hw : 2 < (q.endCoord w).re) (x : M) :
     plumbedPerturbation Ha Hb q L w x =
       (pairOfPantsPerturbation Ha ((w - q.endCenter) / q.plumbingFactor L) x).comp
