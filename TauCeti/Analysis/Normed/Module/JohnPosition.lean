@@ -46,9 +46,9 @@ norm at most `1` (`ContinuousLinearMap.norm_det_le_opNorm_pow`).
 * `IsCompact.exists_isMaxOn_norm_det`: a compact neighbourhood `K` of `0` contains an image `T(B)`
   of the unit ball under a linear equivalence `T` maximizing `‖det T‖` among all linear maps
   sending `B` into `K`.
-* `TauCeti.isJohnPosition_preimage_iff`: the preimage `T⁻¹(K)` is in John's position exactly when
-  `T(B)` is contained in `K` and `‖det T‖` is maximal among the linear images of `B` contained
-  in `K`.
+* `ContinuousLinearEquiv.isJohnPosition_preimage_iff`: the preimage `T⁻¹(K)` is in John's position
+  exactly when `T(B)` is contained in `K` and `‖det T‖` is maximal among the linear images of `B`
+  contained in `K`.
 * `IsCompact.exists_isJohnPosition_preimage`: every compact neighbourhood of `0` is moved into
   John's position by a linear equivalence.
 * `TauCeti.isJohnPosition_closedBall`: over an `RCLike` field, the unit ball of a
@@ -93,7 +93,7 @@ variable {𝕜}
 /-- The preimage of `K` under a linear equivalence `T` is in John's position exactly when the
 image of the unit ball under `T` is contained in `K` and `‖det T‖` is maximal among the linear
 maps sending the unit ball into `K`. -/
-theorem isJohnPosition_preimage_iff {K : Set E} (T : E ≃L[𝕜] E) :
+theorem _root_.ContinuousLinearEquiv.isJohnPosition_preimage_iff {K : Set E} (T : E ≃L[𝕜] E) :
     IsJohnPosition 𝕜 (T ⁻¹' K) ↔ MapsTo T (closedBall 0 1) K ∧
       IsMaxOn (fun S : E →L[𝕜] E ↦ ‖S.det‖) {S | MapsTo S (closedBall 0 1) K}
         (T : E →L[𝕜] E) := by
@@ -161,7 +161,7 @@ John's position. -/
 theorem _root_.IsCompact.exists_isJohnPosition_preimage {K : Set E} (hK : IsCompact K)
     (hK0 : K ∈ 𝓝 (0 : E)) : ∃ T : E ≃L[𝕜] E, IsJohnPosition 𝕜 (T ⁻¹' K) := by
   obtain ⟨T, hT, hmax⟩ := hK.exists_isMaxOn_norm_det (𝕜 := 𝕜) hK0
-  exact ⟨T, (isJohnPosition_preimage_iff T).2 ⟨hT, hmax⟩⟩
+  exact ⟨T, T.isJohnPosition_preimage_iff.2 ⟨hT, hmax⟩⟩
 
 end Normed
 
