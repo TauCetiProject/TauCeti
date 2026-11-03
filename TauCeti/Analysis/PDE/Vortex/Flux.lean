@@ -155,8 +155,8 @@ private theorem exists_contDiff_laplacian_eq_log_normSq_add
     (hsol : ∀ z, equation x z = 0) (hfin : {z | sectionValue x z = 0}.Finite) {n : ℂ → ℕ}
     (hn : ∀ z, ∃ v : ℂ → ℂ, ContinuousAt v z ∧ v z ≠ 0 ∧
       ∀ᶠ w in 𝓝 z, sectionValue x w = (w - z) ^ n z * v w) :
-    ∃ ũ : ℂ → ℝ, ContDiff ℝ 2 ũ ∧ Δ ũ = (fun w ↦ (4 * (x w 2 ^ 2 + x w 3 ^ 2) - 1) / 4) ∧
-      ∀ w, sectionValue x w ≠ 0 → ũ w = Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2)) +
+    ∃ g : ℂ → ℝ, ContDiff ℝ 2 g ∧ Δ g = (fun w ↦ (4 * (x w 2 ^ 2 + x w 3 ^ 2) - 1) / 4) ∧
+      ∀ w, sectionValue x w ≠ 0 → g w = Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2)) +
         4 * π * ∑ z ∈ hfin.toFinset, (n z : ℝ) * planarNewtonianKernel (w - z) := by
   set L : ℂ → ℝ := fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))
   set K : ℂ → ℝ := fun w ↦ ∑ z ∈ hfin.toFinset, (n z : ℝ) * planarNewtonianKernel (w - z)
@@ -173,26 +173,26 @@ private theorem exists_contDiff_laplacian_eq_log_normSq_add
           (c := (n z : ℝ))).const_smul (c := 4 * π)
   have huc : ∀ w, sectionValue x w ≠ 0 → ContDiffAt ℝ 2 (fun y ↦ L y + 4 * π * K y) w :=
     fun w hw ↦ (hs.contDiffAt.log (hsne hw)).add (hKh w hw).1
-  obtain ⟨ũ, hũ, hũu⟩ := exists_contDiff_eq_of_eventuallyEq_nhdsNE
+  obtain ⟨g, hg, hgu⟩ := exists_contDiff_eq_of_eventuallyEq_nhdsNE
     (exists_contDiffAt_eventuallyEq_log_normSq_add hb₁ hb₂ hp hq hsol hfin hn)
-  have hũu' : ∀ w, sectionValue x w ≠ 0 → ũ =ᶠ[𝓝 w] fun y ↦ L y + 4 * π * K y :=
+  have hgu' : ∀ w, sectionValue x w ≠ 0 → g =ᶠ[𝓝 w] fun y ↦ L y + 4 * π * K y :=
     fun w hw ↦ Filter.eventually_of_mem (hfin.isClosed.isOpen_compl.mem_nhds hw)
-      fun w' hw' ↦ hũu w' (huc w' hw').continuousAt
-  -- The Laplacian of `ũ` is `(|α|² - 1) / 4` everywhere: off the zeros by the scalar equation,
+      fun w' hw' ↦ hgu w' (huc w' hw').continuousAt
+  -- The Laplacian of `g` is `(|α|² - 1) / 4` everywhere: off the zeros by the scalar equation,
   -- since the kernel terms are harmonic there, and at the zeros by continuity.
-  have hΔ : Δ ũ = fun w ↦ (4 * (x w 2 ^ 2 + x w 3 ^ 2) - 1) / 4 := by
-    refine Continuous.ext_on (Set.Countable.dense_compl ℝ hfin.countable) hũ.continuous_laplacian
+  have hΔ : Δ g = fun w ↦ (4 * (x w 2 ^ 2 + x w 3 ^ 2) - 1) / 4 := by
+    refine Continuous.ext_on (Set.Countable.dense_compl ℝ hfin.countable) hg.continuous_laplacian
       ((hs.continuous.sub continuous_const).div_const 4) fun w hw ↦ ?_
     have hw' : sectionValue x w ≠ 0 := hw
     have hα : x w 2 ^ 2 + x w 3 ^ 2 ≠ 0 := fun h ↦ hsne hw' (by rw [h, mul_zero])
-    rw [(laplacian_congr_nhds (hũu' w hw')).eq_of_nhds]
+    rw [(laplacian_congr_nhds (hgu' w hw')).eq_of_nhds]
     -- Write `L + 4π K` as a sum of functions to apply additivity of the Laplacian.
     change Δ (L + fun y ↦ 4 * π * K y) w = _
     rw [ContDiffAt.laplacian_add (hs.contDiffAt.log (hsne hw')) (hKh w hw').1,
       laplacian_log_normSq_of_equation_eq_zero ((hb₁.differentiable (by norm_num)) w)
         ((hb₂.differentiable (by norm_num)) w) hp.contDiffAt hq.contDiffAt hα
         (Eventually.of_forall hsol), (hKh w hw').2.self_of_nhds, Pi.zero_apply, add_zero]
-  exact ⟨ũ, hũ, hΔ, fun w hw ↦ hũu w (huc w hw).continuousAt⟩
+  exact ⟨g, hg, hΔ, fun w hw ↦ hgu w (huc w hw).continuousAt⟩
 
 /-- **The distributional scalar equation of a plane vortex.** Let `x` be a `C²` vortex whose
 section `α` has finitely many zeros, and let `n z` be the multiplicity of the zero `z`, in the
@@ -209,7 +209,7 @@ theorem integral_laplacian_mul_log_normSq
     ∫ z, Δ (φ : ℂ → ℝ) z * Real.log (4 * (x z 2 ^ 2 + x z 3 ^ 2)) =
       (∫ z, φ z * ((4 * (x z 2 ^ 2 + x z 3 ^ 2) - 1) / 4)) +
         4 * π * ∑ᶠ z, (n z : ℝ) * φ z := by
-  obtain ⟨ũ, hũ, hΔ, hũu⟩ :=
+  obtain ⟨g, hg, hΔ, hgu⟩ :=
     exists_contDiff_laplacian_eq_log_normSq_add hb₁ hb₂ hp hq hsol hfin hn
   set S := hfin.toFinset
   set K : ℂ → ℝ := fun w ↦ ∑ z ∈ S, (n z : ℝ) * planarNewtonianKernel (w - z) with hK
@@ -218,8 +218,8 @@ theorem integral_laplacian_mul_log_normSq
   have hΦc : Continuous Φ := (φ.contDiff.of_le (by simp)).continuous_laplacian
   have hΦs : HasCompactSupport Φ :=
     φ.hasCompactSupport.mono' ((subset_tsupport _).trans (tsupport_laplacian_subset _))
-  have hint₁ : Integrable (fun z ↦ Φ z * ũ z) :=
-    (hΦc.mul hũ.continuous).integrable_of_hasCompactSupport hΦs.mul_right
+  have hint₁ : Integrable (fun z ↦ Φ z * g z) :=
+    (hΦc.mul hg.continuous).integrable_of_hasCompactSupport hΦs.mul_right
   have hintG : ∀ y, Integrable (fun z ↦ Φ z * planarNewtonianKernel (z - y)) := fun y ↦ by
     have hc : Continuous fun z ↦ Φ (z + y) := hΦc.comp (continuous_id.add continuous_const)
     have hcs : HasCompactSupport fun z ↦ Φ (z + y) := hΦs.comp_homeomorph (Homeomorph.addRight y)
@@ -234,13 +234,13 @@ theorem integral_laplacian_mul_log_normSq
     simp_rw [hΦK]
     exact integrable_finsetSum _ fun y _ ↦ (hintG y).const_mul _
   have hLae : (fun z ↦ Φ z * Real.log (4 * (x z 2 ^ 2 + x z 3 ^ 2))) =ᵐ[volume]
-      fun z ↦ Φ z * ũ z - 4 * π * (Φ z * K z) := by
+      fun z ↦ Φ z * g z - 4 * π * (Φ z * K z) := by
     filter_upwards [measure_eq_zero_iff_ae_notMem.mp (hfin.measure_zero volume)] with z hz
-    rw [hũu z hz]
+    rw [hgu z hz]
     ring
   have hGreen :
-      ∫ z, Φ z * ũ z = ∫ z, φ z * ((4 * (x z 2 ^ 2 + x z 3 ^ 2) - 1) / 4) := by
-    have := hũ.contDiffOn.integral_laplacian_smul_eq_integral_smul_laplacian (μ := volume) φ
+      ∫ z, Φ z * g z = ∫ z, φ z * ((4 * (x z 2 ^ 2 + x z 3 ^ 2) - 1) / 4) := by
+    have := hg.contDiffOn.integral_laplacian_smul_eq_integral_smul_laplacian (μ := volume) φ
     simpa only [smul_eq_mul, hΔ] using this
   have hKint : ∫ z, Φ z * K z = -∑ y ∈ S, (n y : ℝ) * φ y := by
     simp_rw [hΦK]
