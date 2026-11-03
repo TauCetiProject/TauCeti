@@ -49,26 +49,16 @@ variable (R A L M : Type*) [CommRing R] [CommRing A] [Algebra R A]
 /-- **The extension of an invariant vector is invariant**, over any coefficient algebra. -/
 theorem baseChange_maxTrivSubmodule_le :
     (maxTrivSubmodule R L M).baseChange A ≤ maxTrivSubmodule A (A ⊗[R] L) (A ⊗[R] M) := by
-  have hR : weightSpace M (0 : Module.Dual R L) = maxTrivSubmodule R L M := by
-    ext m
-    simp [mem_weightSpace, mem_maxTrivSubmodule]
-  have hA : weightSpace (A ⊗[R] M) (Module.Dual.baseChange A (0 : Module.Dual R L)) =
-      maxTrivSubmodule A (A ⊗[R] L) (A ⊗[R] M) := by
-    ext m
-    simp [mem_weightSpace, mem_maxTrivSubmodule]
-  simpa only [hR, hA] using baseChange_weightSpace_le (A := A) (M := M) (0 : Module.Dual R L)
+  simpa only [map_zero, (LinearMap.coe_zero_iff (0 : Module.Dual R L)).mpr rfl,
+    (LinearMap.coe_zero_iff (0 : Module.Dual A (A ⊗[R] L))).mpr rfl, weightSpace_zero] using
+    baseChange_weightSpace_le (A := A) (M := M) (0 : Module.Dual R L)
 
 /-- **Over a flat coefficient algebra, extension of scalars commutes with taking invariants**, for
 a Lie algebra that is finitely generated as a module. -/
 theorem maxTrivSubmodule_baseChange [Module.Flat R A] [Module.Finite R L] :
     maxTrivSubmodule A (A ⊗[R] L) (A ⊗[R] M) = (maxTrivSubmodule R L M).baseChange A := by
-  have hR : weightSpace M (0 : Module.Dual R L) = maxTrivSubmodule R L M := by
-    ext m
-    simp [mem_weightSpace, mem_maxTrivSubmodule]
-  have hA : weightSpace (A ⊗[R] M) (Module.Dual.baseChange A (0 : Module.Dual R L)) =
-      maxTrivSubmodule A (A ⊗[R] L) (A ⊗[R] M) := by
-    ext m
-    simp [mem_weightSpace, mem_maxTrivSubmodule]
-  simpa only [hR, hA] using weightSpace_baseChange (A := A) (M := M) (0 : Module.Dual R L)
+  simpa only [map_zero, (LinearMap.coe_zero_iff (0 : Module.Dual R L)).mpr rfl,
+    (LinearMap.coe_zero_iff (0 : Module.Dual A (A ⊗[R] L))).mpr rfl, weightSpace_zero] using
+    weightSpace_baseChange (A := A) (M := M) (0 : Module.Dual R L)
 
 end LieModule

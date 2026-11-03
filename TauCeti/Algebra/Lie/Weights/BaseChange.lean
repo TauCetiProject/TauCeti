@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Lie.BaseChange
-public import Mathlib.Algebra.Lie.Weights.Basic
+public import TauCeti.Algebra.Lie.Weights.Basic
 public import Mathlib.LinearAlgebra.Dual.BaseChange
 public import Mathlib.RingTheory.Flat.Basic
 import Mathlib.LinearAlgebra.TensorProduct.Pi
@@ -36,8 +36,8 @@ that do not descend to the original coefficient ring.
 * N. Bourbaki, *Lie Groups and Lie Algebras*, Chapters VII–IX, Chapter VII, §1.
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §20.
 
-The finite spanning-family kernel argument follows
-`LieModule.maxTrivSubmodule_baseChange` in `TauCeti.Algebra.Lie.BaseChange.MaxTrivSubmodule`.
+The finite spanning-family kernel argument generalizes the earlier invariant-vector proof of
+`LieModule.maxTrivSubmodule_baseChange`, which is now derived as the zero-weight case.
 -/
 
 public section
