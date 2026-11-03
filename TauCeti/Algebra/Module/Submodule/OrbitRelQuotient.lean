@@ -47,6 +47,8 @@ linear maps.
 * `Submodule.orbitRelQuotient_mk_add`, `Submodule.orbitRelQuotient_mk_zero`,
   `Submodule.orbitRelQuotient_mk_neg`, `Submodule.orbitRelQuotient_mk_sub`: the orbit projection
   is additive.
+* `Submodule.orbitRelQuotient_mk_eq_mk_iff`: two points have the same orbit exactly when their
+  difference lies in `p`.
 * `Submodule.orbitRelQuotient_mk_eq_zero_iff`: its kernel is `p`.
 * `Submodule.orbitRelQuotientMkHom`: the orbit projection as an additive map.
 * `LinearMap.exact_orbitRelQuotientMkHom_range`: for a linear map `f`, the sequence
@@ -140,6 +142,13 @@ def Submodule.orbitRelQuotientMkHom : M →+ AddAction.orbitRel.Quotient p M whe
 theorem Submodule.coe_orbitRelQuotientMkHom :
     ⇑p.orbitRelQuotientMkHom = _root_.Quotient.mk (AddAction.orbitRel p M) :=
   (rfl)
+
+/-- Two points of `M` have the same image in the orbit space of translation by `p` exactly when
+their difference lies in `p`. -/
+theorem Submodule.orbitRelQuotient_mk_eq_mk_iff {x y : M} :
+    _root_.Quotient.mk (AddAction.orbitRel p M) x = _root_.Quotient.mk (AddAction.orbitRel p M) y ↔
+      x - y ∈ p :=
+  _root_.Quotient.eq.trans p.orbitRel_apply_iff_sub_mem
 
 /-- A point of `M` projects to `0` in the orbit space of translation by `p` exactly when it lies
 in `p`. -/
