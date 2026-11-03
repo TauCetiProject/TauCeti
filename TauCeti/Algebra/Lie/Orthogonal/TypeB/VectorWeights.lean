@@ -22,13 +22,14 @@ the root lattice of type `B`, whose short roots are the `±εᵢ`. Having only v
 preserved by the constructions that add weights or forget them: a tensor product of two
 finite-dimensional triangularizable modules whose weights are vector weights again has only vector
 weights (`TauCeti.exists_mem_weight_tensorProduct`), and so does every module that embeds in one of
-them (`TauCeti.exists_mem_weight_of_injective`). Both hold for any additively closed set of linear
-forms in place of the vector weights. Starting from the standard module,
-this covers every tensor power of the standard module and every module that embeds in a tensor
-power, such as the exterior and symmetric powers in characteristic zero.
+them (`LieModuleHom.exists_mem_weight_of_injective`). Both hold for any additively closed set of
+linear forms in place of the vector weights. Starting from the standard module, this covers every
+tensor power of the standard module and every module that embeds in a tensor power, such as the
+exterior and symmetric powers in characteristic zero.
 
-The point of the lattice is what lies outside it: the weights `½(±ε₁ ± ⋯ ± εₗ)` of the spin
-module are not vector weights, so the spin module occurs in no such construction.
+The point of the lattice is what lies outside it: in characteristic zero and positive rank, the
+weights `½(±ε₁ ± ⋯ ± εₗ)` of the spin module are not vector weights, so the spin module occurs in
+no such construction.
 
 ## Main definitions
 
@@ -44,8 +45,8 @@ module are not vector weights, so the spin module occurs in no such construction
 * `TauCeti.genWeightSpace_typeBStandard_ne_bot_iff`: the weights of the standard module are `0`
   and the `±εᵢ`.
 * `TauCeti.typeBCoordinateWeight_mem_typeBVectorWeightLattice`: they are vector weights.
-* `TauCeti.exists_mem_typeBVectorWeightLattice_standard`: every weight of the standard module is
-  a vector weight.
+* `LieModule.Weight.exists_mem_typeBVectorWeightLattice_standard`: every weight of the standard
+  module is a vector weight.
 
 ## References
 
@@ -140,6 +141,18 @@ instance instIsTriangularizableTypeBStandard :
     (μ := typeBCoordinateWeight) fun j A ↦ by
       simpa only [Pi.basisFun_apply] using lie_typeBDiagonalCartan_single A j
 
+end Field
+
+end TauCeti
+
+namespace LieModule.Weight
+
+open TauCeti
+
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+variable {K : Type*} [Field K] {ι : Type*} [Fintype ι] [DecidableEq ι]
+
 /-- Every weight of the standard module is a vector weight. -/
 theorem exists_mem_typeBVectorWeightLattice_standard
     (χ : Weight K (typeBDiagonalCartan K ι) (Unit ⊕ ι ⊕ ι → K)) :
@@ -148,6 +161,4 @@ theorem exists_mem_typeBVectorWeightLattice_standard
     (Weight.genWeightSpace_ne_bot _ χ)
   exact ⟨_, typeBCoordinateWeight_mem_typeBVectorWeightLattice j, hj⟩
 
-end Field
-
-end TauCeti
+end LieModule.Weight

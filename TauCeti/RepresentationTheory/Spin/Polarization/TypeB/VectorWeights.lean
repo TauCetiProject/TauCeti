@@ -19,9 +19,9 @@ vectors, so **the spin module has no nonzero map to any module whose weights are
 
 The modules whose weights are vector weights include the standard module and are closed under
 tensor products and under passing to Lie submodules
-(`TauCeti.exists_mem_typeBVectorWeightLattice_standard`,
-`TauCeti.exists_mem_weight_tensorProduct` and `TauCeti.exists_mem_weight_of_injective`). So the
-spin module embeds in no tensor power of the standard module and in no module embedding in one,
+(`LieModule.Weight.exists_mem_typeBVectorWeightLattice_standard`,
+`TauCeti.exists_mem_weight_tensorProduct` and `LieModuleHom.exists_mem_weight_of_injective`). So
+the spin module embeds in no tensor power of the standard module and in no module embedding in one,
 such as its exterior powers in characteristic zero. This is the classical reason the spin
 representations are not found among the tensor constructions on the vector representation of
 `so(2l + 1)`.

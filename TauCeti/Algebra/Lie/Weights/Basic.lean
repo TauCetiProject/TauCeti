@@ -38,8 +38,8 @@ weight-space theory. The transport and finrank identities hold over any commutat
   submodule's generalized weight space.
 * `TauCeti.Weight.coe_neg_eq_add_of_coe_eq_add`: reading a vanishing sum of four weights as an
   equation between opposite pair sums.
-* `TauCeti.exists_mem_weight_of_injective`: if the weights of `N` lie in a set of linear forms,
-  then so do the weights of any module embedding in `N`.
+* `LieModuleHom.exists_mem_weight_of_injective`: if the weights of `N` lie in a set of linear
+  forms, then so do the weights of any module embedding in `N`.
 
 ## References
 
@@ -214,6 +214,12 @@ theorem Weight.coe_neg_eq_add_of_coe_eq_add {μ : Weight K H L} {a b c d : H →
   simp only [Weight.coe_neg, hμ, Pi.add_apply, Pi.neg_apply, Pi.zero_apply] at hy ⊢
   linear_combination -hy
 
+end TauCeti
+
+namespace LieModuleHom
+
+open LieModule
+
 section Injective
 
 variable {R L M N S : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [LieRing.IsNilpotent L]
@@ -236,4 +242,4 @@ theorem exists_mem_weight_of_injective {s : S} (f : M →ₗ⁅R,L⁆ N) (hf : F
 
 end Injective
 
-end TauCeti
+end LieModuleHom
