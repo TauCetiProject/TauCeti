@@ -118,6 +118,9 @@ private theorem exists_character_of_root_relations {A : Type*} [CommRing A]
         d c = d a * d b)
     (h12 : d 12 = 1) (h13 : d 13 = 1) :
     ∃ s : Fin 4 → Aˣ, ∀ a, d a = torusCharacter s (f4ShortRootWeight a) := by
+  -- Write wₐ = f4ShortRootWeight a. Inverting the first four weights gives
+  -- ϖ₄ = w₀, ϖ₃ = w₀ + w₁, ϖ₂ = w₀ + w₁ + w₂, ϖ₁ = w₂ + w₃.
+  -- Thus s i is the prescribed character value at the fundamental weight ϖᵢ₊₁.
   let s : Fin 4 → Aˣ := ![d 2 * d 3, d 0 * d 1 * d 2, d 0 * d 1, d 0]
   let r (a : Fin 26) := d a / torusCharacter s (f4ShortRootWeight a)
   have hr (a b c : Fin 26) (hw : f4ShortRootWeight a ≠ 0 ∧
@@ -125,10 +128,16 @@ private theorem exists_character_of_root_relations {A : Type*} [CommRing A]
       f4ShortRootWeight c = f4ShortRootWeight a + f4ShortRootWeight b) :
       r c = r a * r b := by
     simp only [r, h a b c hw, hw.2.2.2, torusCharacter_add, div_mul_div_comm]
+  -- Only the four basis weights enter the character calculation below.
+  have hw : ∀ i : Fin 4, f4ShortRootWeight (Fin.castAdd 22 i) =
+      ![Pi.single 3 1, Pi.single 2 1 - Pi.single 3 1,
+        Pi.single 1 1 - Pi.single 2 1,
+        Pi.single 0 1 - Pi.single 1 1 + Pi.single 2 1] i := by decide
   have hbase (i : Fin 4) : r (Fin.castAdd 22 i) = 1 := by
+    simp only [r, hw]
     fin_cases i <;>
-      norm_num [r, s, torusCharacter_def, f4ShortRootWeight, Fin.prod_univ_succ] <;>
-      simp [mul_assoc, mul_left_comm, mul_comm]
+      simp [s, torusCharacter_add, torusCharacter_sub, div_eq_mul_inv,
+        mul_assoc, mul_left_comm, mul_comm]
   refine ⟨s, fun a ↦ div_eq_one.mp ?_⟩
   exact eq_one_of_root_relations r hr (hbase 0) (hbase 1) (hbase 2) (hbase 3)
     (by simp [r, h12, (by decide : f4ShortRootWeight 12 = 0)])
