@@ -18,14 +18,15 @@ import TauCeti.Topology.Homotopy.AddCircle
 
 Let `σ` be a nondegenerate two-form on a finite-dimensional manifold `M`, `W ⊆ M`, and
 `F : M → ℝ` a smooth function whose sublevel set `{F ≤ b}` is compact and lies in the interiors of
-`W` and of `M`. For `a < b`, consider the Hamiltonians `μ ∘ F`, where `μ` is a smooth
-nonincreasing step from its maximum `v` on `(-∞, a]` down to `0` on `[b, ∞)`. Since
-`X_{μ ∘ F} = μ'(F) X_F`, the function `F` is constant along the orbits of `μ ∘ F`, and on the level
-`F⁻¹(s)` these orbits are those of `X_F` run at the constant speed `μ'(s)`. A `T`-periodic orbit of
-`μ ∘ F` is therefore either constant or a closed orbit of `X_F` on a level `s ∈ (a, b)`, of period
-`|μ'(s)| T`. If no level of `F` in `(a, b)` carries a nonconstant periodic orbit of `X_F` of
-period at most `τ` whose loop is contractible in `W`, then every `μ ∘ F` with `|μ'| ≤ τ` is
-`HZ°`-admissible for `W`
+`W` and of `M`. Let `a < b`, and assume that `F` takes a value below `a` somewhere and a value above
+`b` somewhere in the interior of `W`; all results below rely on these assumptions. Consider the
+Hamiltonians `μ ∘ F`, where `μ` is a smooth nonincreasing step from its maximum `v` on `(-∞, a]`
+down to `0` on `[b, ∞)`. Since `X_{μ ∘ F} = μ'(F) X_F`, the function `F` is constant along the
+orbits of `μ ∘ F`, and on the level `F⁻¹(s)` these orbits are those of `X_F` run at the constant
+speed `μ'(s)`. A `T`-periodic orbit of `μ ∘ F` is therefore either constant or a closed orbit of
+`X_F` on a level `s ∈ (a, b)`, of period `|μ'(s)| T`. If no level of `F` in `(a, b)` carries a
+nonconstant periodic orbit of `X_F` of period at most `τ` whose loop is contractible in `W`, then
+every `μ ∘ F` with `|μ'| ≤ τ` is `HZ°`-admissible for `W`
 (`TauCeti.SmoothTwoForm.IsNondegenerate.isContractibleHZAdmissible_comp`). Such steps exist for
 every `v < τ (b - a)` (`TauCeti.exists_contDiff_antitone_cutoff_abs_deriv_le`), so the
 `π₁`-sensitive Hofer–Zehnder capacity of `W` is at least `τ (b - a)`
@@ -35,10 +36,11 @@ Read the other way, this is the step of the Hofer–Zehnder and Struwe argument 
 finiteness of the capacity into periodic orbits: if `c°_HZ(W) < τ (b - a)`, some level of `F`
 in `(a, b)` carries a nonconstant periodic orbit of `X_F` of period at most `τ`, contractible in
 `W` (`TauCeti.SmoothTwoForm.IsNondegenerate.exists_isMIntegralCurve_of_contractibleHZCapacity_lt`).
-In particular, if `c°_HZ(W)` is finite, every interval of levels `(a, b)` as above contains a
-level carrying a closed characteristic contractible in `W`
+In particular, if `c°_HZ(W)` is finite, every interval of levels `(a, b)` satisfying the
+assumptions above contains a level carrying a closed characteristic contractible in `W`
 (`TauCeti.SmoothTwoForm.IsNondegenerate.exists_mem_Ioo_hasContractibleClosedCharacteristic`):
-closed characteristics exist on a dense set of levels. Passing from a dense set of levels to
+since subintervals of such an interval again satisfy these assumptions, closed characteristics
+exist on a dense subset of the union of such intervals. Passing from a dense set of levels to
 almost every level, as in the Hofer–Zehnder–Struwe theorem, additionally needs the monotonicity of
 a capacity in the level, to bound the periods `τ` on shrinking intervals of levels, and a
 compactness argument for the resulting orbits; neither is treated here.
@@ -54,7 +56,8 @@ compactness argument for the resulting orbits; neither is treated here.
   if the capacity is less than `τ (b - a)`, a level in `(a, b)` carries a nonconstant contractible
   closed orbit of period at most `τ`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.exists_mem_Ioo_hasContractibleClosedCharacteristic`:
-  finite capacity gives closed characteristics on a dense set of levels.
+  finite capacity gives a closed characteristic on some level in every interval `(a, b)`
+  satisfying the assumptions above.
 
 ## References
 
