@@ -23,13 +23,6 @@ public noncomputable section
 
 namespace ContRepresentation
 
-/-- Forgetting continuity does not change the action on vectors. -/
--- An explicit rewrite lemma: simp's normal form unfolds the underlying monoid-hom composition.
-lemma toRepresentation_apply {R M V : Type*} [Ring R] [Monoid M] [AddCommGroup V]
-    [TopologicalSpace V] [IsTopologicalAddGroup V] [Module R V]
-    (ρ : ContRepresentation R M V) (g : M) (v : V) :
-    toRepresentation R M V ρ g v = ρ g v := rfl
-
 variable {𝕜 G E F : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   [Group G] [Fintype G] [Invertible (Fintype.card G : 𝕜)]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E]
@@ -46,8 +39,7 @@ theorem exists_fixed_rightInverse (ρ : ContRepresentation 𝕜 G E) (q : E →L
   let A : E →L[𝕜] E := ⅟(Fintype.card G : 𝕜) • ∑ g : G, ρ g
   have hA (v : E) : A v = ρ.toRepresentation.averageMap v := by
     rw [Representation.averageMap_eq_invOf_card_smul_norm]
-    simp only [A, smul_apply, sum_apply,
-      LinearMap.smul_apply, Representation.norm, LinearMap.sum_apply, toRepresentation_apply]
+    simp [A, Representation.norm, toMonoidHom_apply]
   refine ⟨A.comp s₀, ?_, fun g v ↦ ?_⟩
   · ext v
     have hqs (g : G) : q (ρ g (s₀ v)) = v := by
@@ -57,7 +49,7 @@ theorem exists_fixed_rightInverse (ρ : ContRepresentation 𝕜 G E) (q : E →L
     simp only [ContinuousLinearMap.comp_apply, A, smul_apply,
       sum_apply, map_smul, map_sum, hqs, ContinuousLinearMap.id_apply]
     exact Fintype.invOf_card_smul_sum_const v
-  · simpa only [ContinuousLinearMap.comp_apply, hA, toRepresentation_apply] using
+  · simpa [hA, toMonoidHom_apply] using
       ρ.toRepresentation.averageMap_invariant (s₀ v) g
 
 end ContRepresentation

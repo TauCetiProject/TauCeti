@@ -99,7 +99,7 @@ theorem exists_equivariant_straightening (ρ : ContRepresentation 𝕜 G E)
   -- Use the existing invariant restriction for the action underlying the representation.
   let : MulAction G E := MulAction.compHom E ρ.toRepresentation
   have hsmul (g : G) (y : E) : g • y = ρ g y := by
-    simp only [MulAction.compHom_smul_def, Module.End.smul_def, toRepresentation_apply]
+    simp [MulAction.compHom_smul_def, Module.End.smul_def, toMonoidHom_apply]
   let : ContinuousConstSMul G E := ⟨fun g ↦ by
     simpa only [hsmul] using (ρ g).continuous⟩
   have hfeq (g : G) {y : E} (hy : y ∈ Θ.source) : f (ρ g y) = ρ g (f y) := by
