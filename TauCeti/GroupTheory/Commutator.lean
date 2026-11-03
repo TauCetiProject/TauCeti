@@ -41,6 +41,8 @@ which quantifies over both subgroups. Neither reduces a comparison to generators
   representatives lies in `N`.
 * `MonoidHom.commutatorElement_mem_ker_iff`: the images of two elements under a homomorphism
   into a monoid commute exactly when their commutator lies in the kernel.
+* `MonoidHom.commutator_top_ker_comp_le_ker`: if `p` has central kernel, then `φ` kills the
+  commutators of arbitrary elements with the kernel of `p ∘ φ`.
 * `TauCeti.commutatorElement_pow_right_mem_iff`: when `⁅a, y⁆` commutes with `y` modulo a normal
   `N`, the commutator `⁅a, y ^ n⁆` lies in `N` exactly when `⁅a, y⁆ ^ n` does.
 * `TauCeti.commutatorElement_mul_mul_eq_mul_of_commute`: the commutator of two paired products
@@ -355,6 +357,14 @@ theorem _root_.MonoidHom.commutatorElement_mem_ker_iff {M : Type*} [Monoid M] (f
   rw [← MonoidHom.ker_toHomUnits, MonoidHom.mem_ker, map_commutatorElement,
     commutatorElement_eq_one_iff_commute, ← Commute.units_val_iff, MonoidHom.coe_toHomUnits,
     MonoidHom.coe_toHomUnits]
+
+/-- If `p` has central kernel, then a homomorphism `φ` kills the commutators of arbitrary elements
+with the elements of the kernel of `p ∘ φ`. -/
+theorem _root_.MonoidHom.commutator_top_ker_comp_le_ker {E F : Type*} [Group E] [Group F]
+    {p : E →* G} (hp : p.ker ≤ center E) (φ : F →* E) :
+    ⁅(⊤ : Subgroup F), (p.comp φ).ker⁆ ≤ φ.ker := by
+  rw [commutator_le]
+  exact fun f _ r hr ↦ φ.commutatorElement_mem_ker_iff.mpr (mem_center_iff.mp (hp hr) (φ f))
 
 /-- **Homomorphisms into a commutative monoid separate elements only in a commutative group.** If
 for every `g ≠ 1` some homomorphism `φ : G →* A` into a commutative monoid has `φ g ≠ 1`, then `G`

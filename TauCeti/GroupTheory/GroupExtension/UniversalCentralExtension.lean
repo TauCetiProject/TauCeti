@@ -92,13 +92,6 @@ namespace MonoidHom
 
 variable {E : Type*} [Group E] {F : Type*} [Group F] {G : Type*} [Group G]
 
-/-- If `p` has central kernel, then a homomorphism `φ` kills the commutators of arbitrary elements
-with the elements of the kernel of `p ∘ φ`. -/
-theorem commutator_top_ker_comp_le_ker {p : E →* G} (hp : p.ker ≤ center E) (φ : F →* E) :
-    ⁅(⊤ : Subgroup F), (p.comp φ).ker⁆ ≤ φ.ker := by
-  rw [commutator_le]
-  exact fun f _ r hr ↦ φ.commutatorElement_mem_ker_iff.mpr (mem_center_iff.mp (hp hr) (φ f))
-
 /-- **Two homomorphisms from a perfect group which agree modulo a central subgroup are equal.**
 Their pointwise quotient takes central values, so it is a homomorphism to an abelian group, and it
 is trivial on commutators. -/
@@ -173,9 +166,11 @@ def mk : commutator F →* π.CentralCover :=
 theorem mk_surjective : Function.Surjective (mk π) :=
   QuotientGroup.mk'_surjective _
 
+@[simp]
 theorem ker_mk : (mk π).ker = (⁅(⊤ : Subgroup F), π.ker⁆).subgroupOf (commutator F) :=
   QuotientGroup.ker_mk' _
 
+@[simp]
 theorem mk_eq_one_iff {x : commutator F} :
     mk π x = 1 ↔ (x : F) ∈ ⁅(⊤ : Subgroup F), π.ker⁆ := by
   rw [← mem_ker, ker_mk, mem_subgroupOf]
@@ -217,15 +212,8 @@ theorem projection_surjective (hπ : Function.Surjective π) [Group.IsPerfect G]
 
 /-- The kernel of the projection is the image of `R ∩ [F, F]`. -/
 theorem ker_projection :
-    (projection π).ker = (π.ker.subgroupOf (commutator F)).map (mk π) := by
-  ext u
-  obtain ⟨x, rfl⟩ := mk_surjective π u
-  rw [mem_ker, projection_mk, mem_map]
-  constructor
-  · exact fun hx ↦ ⟨x, mem_subgroupOf.mpr hx, rfl⟩
-  · rintro ⟨y, hy, hyx⟩
-    rw [mk_eq_mk_iff] at hyx
-    simpa using mul_mem (mem_subgroupOf.mp hy) (commutator_le_right ⊤ π.ker hyx)
+    (projection π).ker = (π.ker.subgroupOf (commutator F)).map (mk π) :=
+  (QuotientGroup.ker_lift _ _ _).trans (congrArg (map (mk π)) (ker_domRestrict _ _))
 
 /-- **The kernel of the projection is central.** The commutator of an element of `R` with any
 element of `F` lies in `[F, R]`. -/
