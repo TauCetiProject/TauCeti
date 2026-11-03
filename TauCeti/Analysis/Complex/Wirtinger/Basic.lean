@@ -49,7 +49,7 @@ Their comparison with the Levi form is in `TauCeti.Analysis.Complex.Wirtinger.Le
 
 public section
 
-open Complex ComplexConjugate
+open Complex ComplexConjugate Topology
 
 namespace TauCeti
 
@@ -125,6 +125,29 @@ theorem coe_conjWirtingerDeriv_eq_complexAntilinearPart :
   ext v
   simp only [conjWirtingerDeriv_apply, complexAntilinearPart_apply, ContinuousLinearMap.coe_coe,
     DistribSMul.toLinearMap_apply]
+  module
+
+/-- The conjugate Wirtinger derivative only depends on the germ of the function. -/
+theorem _root_.Filter.EventuallyEq.conjWirtingerDeriv_eq {g₁ g : V → W} {x : V}
+    (h : g₁ =ᶠ[𝓝 x] g) : conjWirtingerDeriv g₁ x = conjWirtingerDeriv g x := by
+  ext v
+  simp only [conjWirtingerDeriv_apply, h.fderiv_eq]
+
+/-- The conjugate Wirtinger derivative is additive on real-differentiable functions. -/
+theorem conjWirtingerDeriv_add {g₁ g₂ : V → W} {x : V} (h₁ : DifferentiableAt ℝ g₁ x)
+    (h₂ : DifferentiableAt ℝ g₂ x) :
+    conjWirtingerDeriv (g₁ + g₂) x = conjWirtingerDeriv g₁ x + conjWirtingerDeriv g₂ x := by
+  ext v
+  simp only [conjWirtingerDeriv_apply, fderiv_add h₁ h₂, add_apply]
+  module
+
+/-- The conjugate Wirtinger derivative commutes with subtraction of real-differentiable
+functions. -/
+theorem conjWirtingerDeriv_sub {g₁ g₂ : V → W} {x : V} (h₁ : DifferentiableAt ℝ g₁ x)
+    (h₂ : DifferentiableAt ℝ g₂ x) :
+    conjWirtingerDeriv (g₁ - g₂) x = conjWirtingerDeriv g₁ x - conjWirtingerDeriv g₂ x := by
+  ext v
+  simp only [conjWirtingerDeriv_apply, fderiv_sub h₁ h₂, sub_apply]
   module
 
 /-- For complex differentiable `g`, the conjugate Wirtinger derivative vanishes: this is the
