@@ -167,6 +167,27 @@ theorem pairOfPantsAlmostComplex_cylindricalEndLift (h₀ : ω.Compatible J₀)
   rw [cayley_pairOfPantsAlmostComplex_cylindricalEndLift_of_pos h₀ hJp (by linarith),
     smoothTransition.one_of_one_le (by linarith), one_smul]
 
+/-- At a point far out on an end, the structure is the prescribed end structure evaluated at
+its angular coordinate. -/
+theorem pairOfPantsAlmostComplex_eq_endStructure (h₀ : ω.Compatible J₀)
+    {w : ℂ} (hw : 2 ≤ q.endSign * (q.endCoord w).re) (x : M) :
+    pairOfPantsAlmostComplex h₀ J hJ w x = J q (q.endCoord w).im x := by
+  have hne : w ≠ q.endCenter :=
+    q.ne_endCenter_of_re_endCoord_ne_zero (by
+      intro h
+      simp only [h, mul_zero] at hw
+      norm_num at hw)
+  refine h₀.eq_of_cayley_eq (tames_pairOfPantsAlmostComplex h₀ w x)
+    (hJ q (q.endCoord w).im x) ?_
+  rw [cayley_pairOfPantsAlmostComplex, Finset.sum_eq_single q]
+  · rw [smoothTransition.one_of_one_le (by linarith), one_smul]
+  · intro r _ hr
+    have hr' := smoothTransition_endCoord_cylindricalEndLift_eq_zero hr
+      (z := q.endCoord w) (by linarith)
+    rw [q.cylindricalEndLift_endCoord hne] at hr'
+    simp [hr']
+  · simp
+
 /-- The pair-of-pants structure differs from `J₀` only on the parts `±s > 1` of the three ends. -/
 theorem exists_cylindricalEndLift_of_pairOfPantsAlmostComplex_ne (h₀ : ω.Compatible J₀)
     {w : ℂ} {x : M} (h : pairOfPantsAlmostComplex h₀ J hJ w x ≠ J₀) :

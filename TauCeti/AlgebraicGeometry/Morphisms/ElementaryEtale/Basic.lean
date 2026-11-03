@@ -42,7 +42,7 @@ additional conclusions give the residue field isomorphism at `u`, the uniqueness
 through `Ideal.ResidueField.bijective_map_includeRight`, the residue field isomorphism at `v`.
 
 The Stacks lemma adds that the conclusion persists under further elementary étale neighbourhoods
-of `(U, u)`; that persistence is not proved here.
+of `(U, u)`; this is proved in `TauCeti.AlgebraicGeometry.Morphisms.ElementaryEtale.BaseChange`.
 
 ## References
 
@@ -65,7 +65,7 @@ an open `V` of `X ×[S] U`, finite over `U`, containing a point `v` over `x` and
 `κ(x) ≅ κ(v)`, which is the only point of `V` over `u`.
 
 The persistence clause of 02LK, that the conclusion survives further elementary étale
-neighbourhoods of `(U, u)`, is not included. -/
+neighbourhoods of `(U, u)`, is supplied by `Scheme.Hom.exists_finite_open_baseChange`. -/
 @[stacks 02LK "without the persistence clause"]
 theorem Scheme.Hom.exists_elementaryEtale_finite_of_isolated {X S : Scheme.{u}} (f : X ⟶ S)
     [LocallyOfFiniteType f] {x : X} (hx : f.QuasiFiniteAt x) :
