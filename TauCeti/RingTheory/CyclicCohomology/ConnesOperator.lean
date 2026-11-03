@@ -105,10 +105,10 @@ theorem cyclicOperator_pow_apply (k : ℕ) (φ : MultilinearMap R (fun _ : Fin (
       (-1 : ℤ) ^ (n * k) • φ (a ∘ (finRotate (n + 1) ^ k).symm) := by
   induction k generalizing a with
   | zero =>
-    simp only [pow_zero, Module.End.one_apply, mul_zero, one_smul, Equiv.Perm.one_def,
+    simp only [pow_zero, _root_.one_apply_eq_self, mul_zero, one_smul, Equiv.Perm.one_def,
       Equiv.refl_symm, Equiv.coe_refl, comp_id]
   | succ k ih =>
-    rw [pow_succ', Module.End.mul_apply, cyclicOperator_apply, ih, smul_smul, ← pow_add,
+    rw [pow_succ', _root_.mul_apply_eq_comp, cyclicOperator_apply, ih, smul_smul, ← pow_add,
       mul_add_one, add_comm (n * k), pow_succ, Equiv.Perm.mul_def, Equiv.symm_trans,
       Equiv.coe_trans, comp_assoc]
 
@@ -119,7 +119,7 @@ theorem cyclicOperator_pow_eq_one (n : ℕ) : cyclicOperator R A M n ^ (n + 1) =
       rw [Fin.coe_finRotate_pow, Nat.add_mod_right, Nat.mod_eq_of_lt c.isLt, Equiv.Perm.one_apply]
   ext φ a
   rw [cyclicOperator_pow_apply, hrot, (Nat.even_mul_succ_self n).neg_one_pow, one_smul,
-    Equiv.Perm.one_def, Equiv.refl_symm, Equiv.coe_refl, comp_id, Module.End.one_apply]
+    Equiv.Perm.one_def, Equiv.refl_symm, Equiv.coe_refl, comp_id, _root_.one_apply_eq_self]
 
 /-- The cyclic cochains are the fixed points of the cyclic operator. -/
 theorem mem_cyclicCochains_iff_cyclicOperator_apply_eq_self
@@ -188,7 +188,7 @@ theorem cyclicNorm_mul_cyclicOperator_pow (k : ℕ) :
 /-- The cyclic norm of any cochain is a cyclic cochain. -/
 theorem cyclicNorm_mem_cyclicCochains (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) :
     cyclicNorm R A M n φ ∈ cyclicCochains R A M n := by
-  rw [mem_cyclicCochains_iff_cyclicOperator_apply_eq_self, ← Module.End.mul_apply,
+  rw [mem_cyclicCochains_iff_cyclicOperator_apply_eq_self, ← _root_.mul_apply_eq_comp,
     cyclicOperator_mul_cyclicNorm]
 
 /-- On a cyclic cochain, the cyclic norm is multiplication by the number of arguments. -/
@@ -197,7 +197,7 @@ theorem cyclicNorm_apply_of_mem_cyclicCochains
     (hφ : φ ∈ cyclicCochains R A M n) :
     cyclicNorm R A M n φ = (n + 1 : R) • φ := by
   have hfix := mem_cyclicCochains_iff_cyclicOperator_apply_eq_self.1 hφ
-  simp only [cyclicNorm_def, LinearMap.sum_apply, Module.End.pow_apply,
+  simp only [cyclicNorm_def, LinearMap.sum_apply, _root_.pow_apply_eq_iterate,
     Function.iterate_fixed hfix]
   rw [Finset.sum_const, Finset.card_range, ← Nat.cast_smul_eq_nsmul R,
     Nat.cast_add, Nat.cast_one]
@@ -206,7 +206,7 @@ theorem cyclicNorm_apply_of_mem_cyclicCochains
 theorem ker_one_sub_cyclicOperator :
     LinearMap.ker (1 - cyclicOperator R A M n) = cyclicCochains R A M n := by
   ext φ
-  simp only [LinearMap.mem_ker, LinearMap.sub_apply, Module.End.one_apply, sub_eq_zero,
+  simp only [LinearMap.mem_ker, LinearMap.sub_apply, _root_.one_apply_eq_self, sub_eq_zero,
     mem_cyclicCochains_iff_cyclicOperator_apply_eq_self]
   exact eq_comm
 
@@ -260,7 +260,7 @@ theorem cyclicOperator_hochschildCoface_succ (i : Fin (n + 1))
       -hochschildCoface R A M i.castSucc (cyclicOperator R A M n φ) := by
   ext a
   simp only [cyclicOperator_apply, hochschildCoface_apply, hochschildFace_succ_comp_finRotate_symm,
-    neg_apply, pow_succ' (-1 : ℤ) n, neg_one_mul, neg_smul]
+    _root_.neg_apply, pow_succ' (-1 : ℤ) n, neg_one_mul, neg_smul]
 
 /-- The `k`-th power of the cyclic operator moves the `k`-th coface to the zeroth one:
 `λᵏ (δₖ φ) = (-1)ᵏ δ₀ (λᵏ φ)`. -/
@@ -274,8 +274,8 @@ theorem cyclicOperator_pow_hochschildCoface (k : ℕ) (hk : k < n + 2)
     have h := cyclicOperator_hochschildCoface_succ (R := R) (A := A) (M := M) (n := n)
       ⟨k, by omega⟩ φ
     rw [Fin.succ_mk, Fin.castSucc_mk] at h
-    rw [pow_succ, Module.End.mul_apply, h, map_neg, ih (Nat.lt_of_succ_lt hk),
-      ← Module.End.mul_apply _ (cyclicOperator R A M n), ← pow_succ, pow_succ (-1 : ℤ),
+    rw [pow_succ, _root_.mul_apply_eq_comp, h, map_neg, ih (Nat.lt_of_succ_lt hk),
+      ← _root_.mul_apply_eq_comp _ (cyclicOperator R A M n), ← pow_succ, pow_succ (-1 : ℤ),
       mul_neg_one, neg_smul]
 
 end Coface
@@ -345,7 +345,7 @@ theorem one_sub_cyclicOperator_comp_hochschildCoboundary :
       barCoboundary R A M n ∘ₗ (1 - cyclicOperator R A M n) := by
   ext φ : 1
   rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.sub_apply, LinearMap.sub_apply,
-    Module.End.one_apply, Module.End.one_apply, cyclicOperator_hochschildCoboundary,
+    _root_.one_apply_eq_self, _root_.one_apply_eq_self, cyclicOperator_hochschildCoboundary,
     hochschildCoboundary_eq_barCoboundary_add, map_sub]
   abel
 
@@ -360,7 +360,7 @@ private theorem cyclicNorm_barCoboundary (φ : MultilinearMap R (fun _ : Fin (n 
           (hochschildCoface R A M 0 ((cyclicOperator R A M n ^ (i : ℕ)) φ)) := by
     rcases i with ⟨i, hi⟩
     conv_lhs => rw [← cyclicNorm_mul_cyclicOperator_pow i]
-    rw [Module.End.mul_apply, Fin.castSucc_mk, cyclicOperator_pow_hochschildCoface, map_zsmul,
+    rw [_root_.mul_apply_eq_comp, Fin.castSucc_mk, cyclicOperator_pow_hochschildCoface, map_zsmul,
       smul_smul, ← pow_add, ← two_mul, pow_mul, neg_one_sq, one_pow, one_smul]
   rw [barCoboundary, LinearMap.sum_apply, map_sum]
   simp only [LinearMap.smul_apply, map_zsmul, hface]
@@ -383,9 +383,10 @@ private theorem hochschildCoboundary_cyclicNorm (φ : MultilinearMap R (fun _ : 
         cyclicOperator R A M (n + 1) ^ i = 1 := by
       rw [← pow_add, show n + 1 - i + 1 + i = n + 1 + 1 by omega, cyclicOperator_pow_eq_one]
     conv_lhs =>
-      rw [← Module.End.one_apply (R := R) (hochschildCoface R A M ⟨i, hi⟩ (cyclicNorm R A M n φ)),
+      rw [← _root_.one_apply_eq_self (F := Module.End R _) (hochschildCoface R A M ⟨i,
+        hi⟩ (cyclicNorm R A M n φ)),
         ← hpow]
-    rw [Module.End.mul_apply, cyclicOperator_pow_hochschildCoface, ← Module.End.mul_apply _
+    rw [_root_.mul_apply_eq_comp, cyclicOperator_pow_hochschildCoface, ← _root_.mul_apply_eq_comp _
       (cyclicNorm R A M n), cyclicOperator_pow_mul_cyclicNorm, map_zsmul, smul_smul, ← pow_add,
       ← two_mul, pow_mul, neg_one_sq, one_pow, one_smul]
   -- the resulting powers `λ¹, …, λⁿ⁺²` run once through the cyclic group generated by `λ`
@@ -422,7 +423,7 @@ variable {R A M : Type*} [Semiring R] [NonUnitalSemiring A] [Module R A]
 theorem barCoboundary_barCoboundary (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) :
     barCoboundary R A M (n + 1) (barCoboundary R A M n φ) = 0 := by
   ext a
-  simp only [barCoboundary_apply, ← hochschildFace_castSucc, zero_apply]
+  simp only [barCoboundary_apply, ← hochschildFace_castSucc, _root_.zero_apply]
   cases n with
   | zero =>
     have h := hochschildFace_hochschildFace (le_refl (0 : Fin 2)) a
@@ -531,7 +532,7 @@ theorem barCoboundary_barContraction_add_barContraction_barCoboundary
     barCoboundary R A M n (barContraction R A M n φ) +
       barContraction R A M (n + 1) (barCoboundary R A M (n + 1) φ) = φ := by
   ext a
-  simp only [add_apply, barCoboundary_apply, barContraction_apply]
+  simp only [_root_.add_apply, barCoboundary_apply, barContraction_apply]
   rw [Fin.sum_univ_succ (n := n + 1)]
   simp only [← hochschildFace_castSucc, hochschildFace_succ_castSucc_cons, Fin.val_zero,
     Fin.val_succ, pow_zero, one_smul, pow_succ, mul_neg_one, neg_smul, Finset.sum_neg_distrib]
@@ -547,10 +548,10 @@ theorem hochschildCoboundary_connesB_add_connesB_hochschildCoboundary
     (barContraction R A M n (φ - cyclicOperator R A M (n + 1) φ))
   have hcyc :=
     LinearMap.congr_fun (one_sub_cyclicOperator_comp_hochschildCoboundary R A M (n + 1)) φ
-  simp only [LinearMap.comp_apply, LinearMap.sub_apply, Module.End.one_apply] at hN hcyc
+  simp only [LinearMap.comp_apply, LinearMap.sub_apply, _root_.one_apply_eq_self] at hN hcyc
   rw [connesB_apply, connesB_apply, hN, hcyc, ← map_add,
     barCoboundary_barContraction_add_barContraction_barCoboundary, map_sub,
-    ← Module.End.mul_apply, cyclicNorm_mul_cyclicOperator, sub_self]
+    ← _root_.mul_apply_eq_comp, cyclicNorm_mul_cyclicOperator, sub_self]
 
 variable (R A M n) in
 /-- Connes' operator `B` anticommutes with the Hochschild coboundary, as linear maps:

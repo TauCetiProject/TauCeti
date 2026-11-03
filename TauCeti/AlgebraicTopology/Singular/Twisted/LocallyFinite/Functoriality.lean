@@ -186,7 +186,9 @@ section Coefficients
 
 variable {L K J : LocalCoefficientSystem.{u, v, max v w} R X}
 
-private lemma isProperlySupported_twistedChainComplexCoefficientMap_f (η : L ⟶ K) (k : ℕ) :
+/-- Changing coefficients does not move the underlying simplices, so each component is properly
+supported. -/
+lemma isProperlySupported_twistedChainComplexCoefficientMap_f (η : L ⟶ K) (k : ℕ) :
     IsProperlySupported ((twistedChainComplexCoefficientMap η).f k) := by
   refine .of_movesAlong (g := 𝟙 X) isProperMap_id (movesAlong_iff.2 fun ρ σ x hx ↦ ?_)
   obtain rfl : σ = ρ := by
@@ -256,6 +258,13 @@ lemma toLocallyFiniteChainComplex_comp_locallyFiniteChainComplexCoefficientMap (
       twistedChainComplexCoefficientMap η ≫ toLocallyFiniteChainComplex K :=
   toLocallyFiniteChainComplex_comp_extendLocallyFiniteChainMap _ _
 
+/-- Change of coefficients on locally finite chains is the extension of change of coefficients
+on finite chains. -/
+lemma locallyFiniteChainComplexCoefficientMap_eq_extendLocallyFiniteChainMap (η : L ⟶ K) :
+    locallyFiniteChainComplexCoefficientMap η =
+      extendLocallyFiniteChainMap (twistedChainComplexCoefficientMap η)
+        (isProperlySupported_twistedChainComplexCoefficientMap_f η) := (rfl)
+
 /-- The map on Borel–Moore homology induced by a morphism of local coefficient systems. -/
 abbrev borelMooreHomologyCoefficientMap (η : L ⟶ K) (k : ℕ) :
     borelMooreHomology L k ⟶ borelMooreHomology K k :=
@@ -281,7 +290,8 @@ section Map
 variable (f : X ⟶ Y) (hf : IsProperMap f.hom) (L : LocalCoefficientSystem.{u, v, max v w} R Y)
 
 include hf in
-private lemma isProperlySupported_twistedChainComplexMap_f (k : ℕ) :
+/-- Pushforward along a proper map has properly supported components on twisted chains. -/
+lemma isProperlySupported_twistedChainComplexMap_f (k : ℕ) :
     IsProperlySupported ((twistedChainComplexMap f L).f k) := by
   refine .of_movesAlong hf (movesAlong_iff.2 fun ρ σ x hx ↦ ?_)
   obtain rfl : (TopCat.toSSet.map f).app _ σ = ρ := by
@@ -326,6 +336,13 @@ lemma locallyFiniteChainComplexMap_f :
         ModuleCat.ofHom (locallyFiniteChainsMap f hf L k) ≫
           eqToHom (locallyFiniteChainComplex_X L k).symm :=
   (rfl)
+
+/-- Proper pushforward on locally finite chains is the extension of pushforward on finite
+chains. -/
+lemma locallyFiniteChainComplexMap_eq_extendLocallyFiniteChainMap :
+    locallyFiniteChainComplexMap f hf L =
+      extendLocallyFiniteChainMap (twistedChainComplexMap f L)
+        (isProperlySupported_twistedChainComplexMap_f f hf L) := (rfl)
 
 /-- Regarding finite chains as locally finite chains commutes with pushing forward along a proper
 map. -/

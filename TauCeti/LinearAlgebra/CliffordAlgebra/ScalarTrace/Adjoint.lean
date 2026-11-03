@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.Analysis.Matrix.Order
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import TauCeti.LinearAlgebra.CliffordAlgebra.ScalarTrace.Positivity
@@ -42,6 +43,8 @@ On the Spin group of `Q_ℂ` the adjoint is the inverse of the complex conjugate
   `complexConj (reverse a)` is the conjugate transpose of the matrix of left multiplication by `a`.
 * `CliffordAlgebra.posDef_toMatrix_mulLeft_complexConj_reverse_mul_self`: for a unit `g`, the
   matrix of left multiplication by `complexConj (reverse g) * g` is positive definite.
+* `CliffordAlgebra.isStrictlyPositive_leftMulMatrix_complexConj_reverse_mul_self`: the same
+  matrix is strictly positive for the matrix order.
 
 ## References
 
@@ -50,7 +53,7 @@ On the Spin group of `Q_ℂ` the adjoint is the inverse of the complex conjugate
 
 public section
 
-open scoped ComplexConjugate ComplexOrder Matrix
+open scoped ComplexConjugate ComplexOrder Matrix MatrixOrder
 
 namespace CliffordAlgebra
 
@@ -118,6 +121,15 @@ theorem posDef_toMatrix_mulLeft_complexConj_reverse_mul_self [Fintype I]
     toMatrix_mulLeft_complexConj_reverse hb hQ]
   exact Matrix.PosDef.conjTranspose_mul_self _ (Matrix.mulVec_injective_of_isUnit
     ((LinearMap.isUnit_toMatrix_iff _).2 (Algebra.lmul_isUnit_iff.2 hg)))
+
+/-- The matrix of `g† * g` is strictly positive for a unit `g`, where `g† = complexConj (reverse g)`
+and the matrix is taken in the ordered-product basis of a real orthonormal basis. -/
+theorem isStrictlyPositive_leftMulMatrix_complexConj_reverse_mul_self [Fintype I]
+    (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (hQ : ∀ i, Q (b i) = 1)
+    {g : CliffordAlgebra (Q.baseChange ℂ)} (hg : IsUnit g) :
+    IsStrictlyPositive (Algebra.leftMulMatrix (basis (Q.baseChange ℂ) (b.baseChange ℂ))
+      (complexConj Q (reverse g) * g)) :=
+  (posDef_toMatrix_mulLeft_complexConj_reverse_mul_self hb hQ hg).isStrictlyPositive
 
 end Basis
 

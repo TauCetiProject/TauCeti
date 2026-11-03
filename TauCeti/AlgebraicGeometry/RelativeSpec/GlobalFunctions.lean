@@ -63,8 +63,8 @@ private theorem relativeSpecGlobalSections_baseMap :
   -- The two presentations carry definitionally equal section-ring instances;
   -- record that identification here rather than repeating it in the main proof.
   convert h using 1
-  all_goals simp only [CommMon.toSectionsPresheaf_app]
-  all_goals rfl
+  simp only [CommMon.toSectionsPresheaf_app]
+  rfl
 
 /-- The affine global-function comparison respects the algebra structures over the
 global functions on the base. -/

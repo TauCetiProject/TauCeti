@@ -70,7 +70,7 @@ theorem sesqForm_map_eq_map_conjStar (H : S →ₗ⋆[ℂ] S →ₗ[ℂ] ℂ)
     | add w w' hw hw' => simp only [map_add, LinearMap.add_apply, hw, hw']
   | add a b ha hb => simp only [map_add, LinearMap.add_apply, ha, hb]
   | mul a b ha hb =>
-    simp only [map_mul, Module.End.mul_apply, conjStar_mul, ha, hb]
+    simp only [map_mul, mul_apply_eq_comp, conjStar_mul, ha, hb]
 
 end SesquilinearForm
 
