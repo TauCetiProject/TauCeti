@@ -75,16 +75,7 @@ theorem isMIntegralCurve_planarRotation (ω : ℝ) (p : ℝ × ℝ) :
   have hs := ((hasDerivAt_id t).const_mul ω).sin
   have hfst := (hc.mul_const p.1).sub (hs.mul_const p.2)
   have hsnd := (hs.mul_const p.1).add (hc.mul_const p.2)
-  have hvelocity :
-      (-Real.sin (ω * t) * ω * p.1 - Real.cos (ω * t) * ω * p.2,
-        Real.cos (ω * t) * ω * p.1 + -Real.sin (ω * t) * ω * p.2) =
-      (-(ω * (Real.sin (ω * t) * p.1 + Real.cos (ω * t) * p.2)),
-        ω * (Real.cos (ω * t) * p.1 - Real.sin (ω * t) * p.2)) := by
-    ext <;> ring
-  have hcurve := hfst.prodMk hsnd
-  simp only [id_eq, mul_one] at hcurve
-  rw [hvelocity] at hcurve
-  exact hcurve.hasFDerivAt.hasMFDerivAt
+  exact ((hfst.prodMk hsnd).congr_deriv (by ext <;> simp <;> ring)).hasFDerivAt.hasMFDerivAt
 
 /-- The rotation field is a smooth tangent section, at every regularity. -/
 theorem contMDiff_planarRotation (ω : ℝ) (n : WithTop ENat) :
