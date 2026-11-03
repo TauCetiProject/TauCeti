@@ -189,8 +189,15 @@ lemma nerveMap_hom_base {F G : C ⥤ D} (α : F ≅ G) :
         HomotopyCategory.homMk ((nerve.edgeMk α.hom).map (TauCeti.nerveFunctorCategoryToIhom C D)) ≫
         eqToHom (congrArg HomotopyCategory.mk
           (TauCeti.nerveFunctorCategoryToIhom_app_nerveEquiv_symm G)) := by
+  -- `Hom.base (Hom.mk β.hom) = β.hom` holds by `CatEnrichedOrdinary.base_mk`, but `rw`/`simp`
+  -- cannot rewrite the resulting `Iso.trans` and `Functor.mapIso` projections: the objects of
+  -- `QCat` only become objects of `CatEnrichedOrdinary QCat` (as `homEquiv` expects) after
+  -- unfolding, so the goal is not type-correct at implicit transparency. The `change` unfolds
+  -- `nerveMap`, `Hom.base ∘ Hom.mk`, `Iso.trans_hom`, `eqToIso.hom` and `Functor.mapIso_hom`
+  -- definitionally, leaving the middle factor `(mapHomotopyCategory _).map _`.
   change _ ≫ (mapHomotopyCategory _).map α.toNerveHomotopyCategory.hom ≫ _ = _
   rw [toNerveHomotopyCategory_hom]
+  -- The remaining step is `mapHomotopyCategory_map_homMk`, which holds by `rfl`.
   rfl
 
 /-- The `2`-cell `α.nerveMap.inv` is the image under the comparison `N(C ⥤ D) ⟶ Fun(N C, N D)`
@@ -203,8 +210,13 @@ lemma nerveMap_inv_base {F G : C ⥤ D} (α : F ≅ G) :
         HomotopyCategory.homMk ((nerve.edgeMk α.inv).map (TauCeti.nerveFunctorCategoryToIhom C D)) ≫
         eqToHom (congrArg HomotopyCategory.mk
           (TauCeti.nerveFunctorCategoryToIhom_app_nerveEquiv_symm F)) := by
+  -- As in `nerveMap_hom_base`, `change` unfolds `nerveMap`, `Hom.base ∘ Hom.mk`,
+  -- `Iso.trans_inv`, `eqToIso.inv` and `Functor.mapIso_inv` definitionally, since the goal is not
+  -- type-correct at implicit transparency for `rw`/`simp`. `Iso.trans_inv` reverses the order,
+  -- so the composite is left-associated.
   change (_ ≫ (mapHomotopyCategory _).map α.toNerveHomotopyCategory.inv) ≫ _ = _
   rw [toNerveHomotopyCategory_inv]
+  -- After `mapHomotopyCategory_map_homMk` (definitional), only reassociation remains.
   exact Category.assoc _ _ _
 
 end CategoryTheory.Iso
