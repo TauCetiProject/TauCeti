@@ -49,16 +49,19 @@ lemma isZero_homology_cokernel_of_eq_top (S : Subobject K) (hS : S = ⊤)
 
 section QuasiIso
 
-variable [CategoryWithHomology C]
+variable [∀ i, K.HasHomology i]
 
 /-- The inclusion of `Subobject.mk f` is a quasi-isomorphism exactly when `f` is. -/
-lemma quasiIso_mk_arrow_iff {A : HomologicalComplex C c} (f : A ⟶ K) [Mono f] :
+lemma quasiIso_mk_arrow_iff {A : HomologicalComplex C c} (f : A ⟶ K) [Mono f]
+    [∀ i, A.HasHomology i] [∀ i, (Subobject.mk f : HomologicalComplex C c).HasHomology i] :
     QuasiIso (Subobject.mk f).arrow ↔ QuasiIso f := by
   rw [← underlyingIso_hom_comp_eq_mk, quasiIso_iff_comp_left]
 
 /-- If the inclusions of subcomplexes `A ≤ B` are quasi-isomorphisms, then so is the inclusion
 `A ⟶ B`. -/
-lemma quasiIso_ofLE {A B : Subobject K} (h : A ≤ B) (hA : QuasiIso A.arrow)
+lemma quasiIso_ofLE {A B : Subobject K} (h : A ≤ B)
+    [∀ i, (A : HomologicalComplex C c).HasHomology i]
+    [∀ i, (B : HomologicalComplex C c).HasHomology i] (hA : QuasiIso A.arrow)
     (hB : QuasiIso B.arrow) : QuasiIso (ofLE A B h) := by
   have : QuasiIso (ofLE A B h ≫ B.arrow) := by
     rw [ofLE_arrow]
