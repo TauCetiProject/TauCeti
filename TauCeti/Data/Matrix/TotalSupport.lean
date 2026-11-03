@@ -58,7 +58,7 @@ theorem not_hasTotalSupport_zero : ¬HasTotalSupport (0 : Matrix n n R) := by
 theorem hasTotalSupport_congr (h : ∀ i j, K i j = 0 ↔ L i j = 0) :
     HasTotalSupport K ↔ HasTotalSupport L := by
   have hz : K = 0 ↔ L = 0 := by
-    simp only [← Matrix.ext_iff, zero_apply, h]
+    simp only [← Matrix.ext_iff, Matrix.zero_apply, h]
   simp only [hasTotalSupport_iff, ne_eq, hz, h]
 
 end Zero
@@ -86,7 +86,7 @@ theorem HasTotalSupport.exists_mem_doublyStochastic (hK : HasTotalSupport K) :
   -- Check the average's marginal sums directly: Convex.sum_mem requires a field.
   have hP : P ∈ doublyStochastic R n := by
     apply mem_doublyStochastic_iff_sum.2
-    simp only [P, Matrix.sum_apply, smul_apply, smul_eq_mul]
+    simp only [P, Matrix.sum_apply, Matrix.smul_apply, smul_eq_mul]
     refine ⟨?_, ?_, ?_⟩
     · intro i j
       exact Finset.sum_nonneg fun σ _ ↦
@@ -104,7 +104,7 @@ theorem HasTotalSupport.exists_mem_doublyStochastic (hK : HasTotalSupport K) :
   -- Every supported entry receives a positive contribution; unsupported entries receive zero.
   refine ⟨P, hP, fun i j ↦ ?_⟩
   have hentry : P i j = ∑ σ ∈ s, (s.card : R)⁻¹ * σ.permMatrix R i j := by
-    simp only [P, Matrix.sum_apply, smul_apply, smul_eq_mul]
+    simp only [P, Matrix.sum_apply, Matrix.smul_apply, smul_eq_mul]
   constructor
   · intro hzero
     by_contra hij
@@ -141,7 +141,7 @@ theorem exists_perm_ne_zero_of_mem_doublyStochastic (hK : K ∈ doublyStochastic
     ∃ σ : Equiv.Perm n, σ i = j ∧ ∀ k, K k (σ k) ≠ 0 := by
   obtain ⟨w, hw, -, hsum⟩ := exists_eq_sum_perm_of_mem_doublyStochastic hK
   have hentry (i j : n) : ∑ σ, w σ * σ.permMatrix R i j = K i j := by
-    simpa only [Matrix.sum_apply, smul_apply, smul_eq_mul] using
+    simpa only [Matrix.sum_apply, Matrix.smul_apply, smul_eq_mul] using
       congrArg (fun M : Matrix n n R ↦ M i j) hsum
   have hpos : 0 < ∑ σ, w σ * σ.permMatrix R i j := by
     rw [hentry]

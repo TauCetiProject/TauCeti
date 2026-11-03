@@ -148,12 +148,19 @@ instance instGradedMonoid : SetLike.GradedMonoid (homogeneousSubmodule (R := R) 
   one_mem := one_mem_homogeneousSubmodule (R := R) (M := M)
   mul_mem _ _ := mul_mem_homogeneousSubmodule
 
+/-- A product `∏_{j ∈ F} dp R kⱼ mⱼ` over a finite set belongs to the homogeneous piece of its
+total degree. -/
+theorem prod_dp_mem_homogeneousSubmodule_of_sum_finset_eq {ι : Type*} (F : Finset ι) {d : ℕ}
+    (m : ι → M) (k : ι → ℕ) (hk : ∑ j ∈ F, k j = d) :
+    ∏ j ∈ F, dp R (k j) (m j) ∈ homogeneousSubmodule (R := R) (M := M) d :=
+  hk ▸ SetLike.prod_mem_graded _ _ _ fun j _ ↦ dp_mem_homogeneousSubmodule (k j) (m j)
+
 /-- A finite product of divided-power generators belongs to the homogeneous piece of its
 total degree. -/
 theorem prod_dp_mem_homogeneousSubmodule_of_sum_eq {ι : Type*} [Fintype ι] {d : ℕ}
     (m : ι → M) (k : ι → ℕ) (hk : ∑ j, k j = d) :
     ∏ j, dp R (k j) (m j) ∈ homogeneousSubmodule (R := R) (M := M) d :=
-  hk ▸ SetLike.prod_mem_graded _ _ _ fun j _ ↦ dp_mem_homogeneousSubmodule (k j) (m j)
+  prod_dp_mem_homogeneousSubmodule_of_sum_finset_eq Finset.univ m k hk
 
 /-- Linear maps from a homogeneous piece agree if they agree on every product
 `∏ⱼ dp R kⱼ mⱼ` of a finite family whose indices sum to `d`. -/

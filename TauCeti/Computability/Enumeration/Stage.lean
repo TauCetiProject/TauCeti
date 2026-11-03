@@ -32,6 +32,8 @@ is fresh at most once: it has a unique entry stage.
   the first stage is fresh at some stage.
 * `TauCeti.Enumeration.finite_prefix_stabilizes`: under monotone stages, the stages eventually
   agree with the limit below any bound.
+* `TauCeti.Enumeration.agrees_of_no_fresh_below`: under monotone stages, if nothing below `u`
+  enters between stages `s` and `t`, then `A s` and `A t` agree below `u`.
 * `TauCeti.Enumeration.limit_agrees_of_no_fresh_below`: under monotone stages, if nothing below
   `u` enters after stage `s`, the limit agrees with `A s` below `u`.
 * `TauCeti.Enumeration.stageLimit_comp_of_cofinal`: under monotone stages, reindexing by a clock
@@ -138,6 +140,20 @@ limit. -/
 theorem stageLimit_shift {A : ℕ → Finset ℕ} (hA : Monotone A) (k : ℕ) :
     stageLimit (fun s => A (s + k)) = stageLimit A :=
   Monotone.iUnion_nat_add (f := fun s => (A s : Set ℕ)) (fun _ _ h => Finset.coe_subset.2 (hA h)) k
+
+/-- **No new entries below `u` between two stages.** Under monotone stages, if nothing below `u`
+enters from stage `s` up to a later stage `t`, then below `u` the stages `A s` and `A t` agree. -/
+theorem agrees_of_no_fresh_below {A : ℕ → Finset ℕ} (hA : Monotone A) {s t u : ℕ} (hst : s ≤ t)
+    (h : ∀ t', s ≤ t' → t' < t → ∀ z, z < u → z ∉ fresh A t') :
+    ∀ z, z < u → (z ∈ A s ↔ z ∈ A t) := by
+  intro z hz
+  refine ⟨fun hzs => hA hst hzs, fun hzt => ?_⟩
+  induction t, hst using Nat.le_induction with
+  | base => exact hzt
+  | succ t hst ih =>
+    by_contra hzs
+    exact h t hst t.lt_succ_self z hz <| mem_fresh.2 ⟨hzt, fun hzt' =>
+      hzs <| ih (fun t' h₁ h₂ => h t' h₁ (h₂.trans t.lt_succ_self)) hzt'⟩
 
 /-- **No new entries below `u`.** Under monotone stages, if nothing below `u` enters after stage
 `s`, then below `u` the limit agrees with `A s`. -/
