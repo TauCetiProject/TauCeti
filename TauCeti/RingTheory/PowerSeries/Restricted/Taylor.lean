@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.PowerSeries.Entire.Taylor
-public import TauCeti.RingTheory.PowerSeries.HasseDeriv.GaussNorm
+public import TauCeti.RingTheory.PowerSeries.HasseDeriv.Eval
+public import TauCeti.RingTheory.PowerSeries.Taylor
 import TauCeti.Analysis.Normed.Ring.Basic
 import TauCeti.RingTheory.PowerSeries.GaussNorm
 import TauCeti.RingTheory.PowerSeries.Restricted
@@ -72,22 +72,6 @@ open Filter Finset TauCeti.PowerSeries
 open scoped Topology
 
 variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] {c : ℝ} {f g : R⟦X⟧} {a b : R}
-
-/-- If `ε ≥ 0` bounds the weighted coefficient norms `‖aₖ‖ cᵏ` of `f` in every degree `k ≥ n`,
-then it bounds `‖(Δⁿ f)(a)‖ cⁿ` at every point `a` with `‖a‖ ≤ c`. -/
-private theorem norm_evalAt_hasseDeriv_mul_pow_le_of_forall (hc : 0 < c) (ha : ‖a‖ ≤ c)
-    {ε : ℝ} (hε : 0 ≤ ε) (n : ℕ) (h : ∀ m, ‖coeff (m + n) f‖ * c ^ (m + n) ≤ ε) :
-    ‖(hasseDeriv n f).evalAt a‖ * c ^ n ≤ ε := by
-  have hcn : 0 < c ^ n := pow_pos hc n
-  rw [← le_div_iff₀ hcn, evalAt_def]
-  refine IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg (by positivity) fun m ↦ ?_
-  rw [smul_eq_mul, le_div_iff₀ hcn]
-  calc ‖coeff m (hasseDeriv n f) * a ^ m‖ * c ^ n ≤ ‖coeff (m + n) f‖ * c ^ m * c ^ n := by
-        gcongr
-        exact (TauCeti.norm_mul_pow_le _ a m).trans
-          (mul_le_mul (norm_coeff_hasseDeriv_le f n m) (by gcongr) (by positivity) (norm_nonneg _))
-    _ = ‖coeff (m + n) f‖ * c ^ (m + n) := by ring
-    _ ≤ ε := h m
 
 /-- **Coefficients of the expansion at a point.** Over an ultrametric normed ring, for a series
 with a Gauss norm at a radius `c > 0` and a point `a` with `‖a‖ ≤ c`, the `n`-th coefficient
