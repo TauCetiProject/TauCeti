@@ -37,6 +37,7 @@ variable {I Y : Type*} [Fintype I] [LinearOrder I] [AddCommGroup Y]
   {B : Matrix I I ℤ} (D : Matrix.ShellCartanDatum B Y)
 
 /-- Bracketing with a Cartan vector multiplies each root coordinate by its root weight. -/
+@[simp]
 theorem equivProd_cartan_lie_snd (y : Y) (x : FullShellLieAlgebra D)
     (a : B.normTwoShell) :
     (equivProd D ⁅cartan D y, x⁆).2 a = D.weight a y * (equivProd D x).2 a := by
