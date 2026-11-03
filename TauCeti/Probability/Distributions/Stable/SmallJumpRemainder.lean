@@ -357,13 +357,4 @@ theorem tendsto_integral_sq_stableSmallJumpRemainderMeasure_zero {α β : ℝ}
   filter_upwards [hε] with r hr
   exact (integral_sq_stableSmallJumpRemainderMeasure hα hβ hr.1 hr.2).symm
 
-/-- Splitting a compensated stable approximation at `r` isolates its named small-jump
-remainder. -/
-theorem stableCompensatedPoissonMeasure_eq_smallJumpRemainder_conv (α β : ℝ) {ε r : ℝ}
-    (hε : 0 < ε) (hεr : ε ≤ r) :
-    stableCompensatedPoissonMeasure α β ε =
-      stableSmallJumpRemainderMeasure α β ε r ∗
-        stableCompensatedPoissonMeasure α β r :=
-  stableCompensatedPoissonMeasure_split α β hε hεr
-
 end TauCeti.Probability
