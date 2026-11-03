@@ -149,8 +149,9 @@ theorem pointNorm_comap (φ : A →ₐ[K] B) (x : MaximalSpectrum B)
     pointNorm K ⟨_, hx⟩ a = pointNorm K x (φ a) := by
   let := Ideal.Quotient.field x.asIdeal
   let q := Ideal.Quotient.mkₐ K x.asIdeal
-  rw [pointNorm_eq_spectralNorm (ψ := q.comp φ) fun b hb ↦ (Ideal.Quotient.mkₐ_ker K _).ge hb,
-    pointNorm_eq_spectralNorm (x := x) (ψ := q) (Ideal.Quotient.mkₐ_ker K _).ge, AlgHom.comp_apply]
+  have hq : x.asIdeal ≤ RingHom.ker q := (Ideal.Quotient.mkₐ_ker K _).ge
+  rw [pointNorm_eq_spectralNorm (ψ := q.comp φ) ((Ideal.comap_mono hq).trans_eq (q.comap_ker φ)),
+    pointNorm_eq_spectralNorm (x := x) (ψ := q) hq, AlgHom.comp_apply]
 
 /-- The absolute value at a classical point is unchanged by pulling the point back along an
 algebra map into an affinoid algebra. -/
