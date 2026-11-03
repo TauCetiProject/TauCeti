@@ -52,10 +52,10 @@ quotient `Spec A ⟶ Spec Aᴳ` for arbitrary target schemes.
   finitely many compatible ring endomorphisms are the localization of the fixed elements.
 * `TauCeti.FixedPoints.isLocalization`: for finite `G`, `(M⁻¹A)ᴳ` is the localization of `Aᴳ`
   at `M`.
-* `TauCeti.FixedPoints.exists_mem_forall_smul_notMem`: for finite `G`, prime avoidance for the
-  translates `g⁻¹ • Q` of a prime `Q`.
-* `TauCeti.FixedPoints.exists_notMem_dvd_of_forall_smul_notMem`: for finite `G`, an element
-  outside every `g⁻¹ • Q` divides an invariant outside `Q`.
+* `Ideal.exists_mem_forall_smul_notMem`: for finite `G`, prime avoidance for the translates
+  `g⁻¹ • Q` of a prime `Q`.
+* `Ideal.exists_notMem_dvd_of_forall_smul_notMem`: for finite `G`, an element outside every
+  `g⁻¹ • Q` divides an invariant outside `Q`.
 * `TauCeti.FixedPoints.localRingHom_injective`: for finite `G`, `(Aᴳ)_P → A_Q` is injective.
 
 ## References
@@ -228,7 +228,7 @@ variable [Finite G]
 /-- **Prime avoidance for the translates of a prime.** For a finite group `G`, if an ideal `I`
 of `A` is contained in no translate `g⁻¹ • Q` of a prime `Q`, then some `u ∈ I` satisfies
 `g • u ∉ Q` for every `g`. -/
-theorem exists_mem_forall_smul_notMem (Q : Ideal A) [Q.IsPrime] {I : Ideal A}
+theorem _root_.Ideal.exists_mem_forall_smul_notMem (Q : Ideal A) [Q.IsPrime] {I : Ideal A}
     (hI : ∀ g : G, ¬ I ≤ Q.comap (MulSemiringAction.toRingHom G A g)) :
     ∃ u ∈ I, ∀ g : G, g • u ∉ Q := by
   have := Fintype.ofFinite G
@@ -244,7 +244,7 @@ theorem exists_mem_forall_smul_notMem (Q : Ideal A) [Q.IsPrime] {I : Ideal A}
 /-- **Norms of elements avoiding every translate of a prime.** For a finite group `G`, if
 `g • u ∉ Q` for every `g`, then the invariant norm `∏ g, g • u` lies outside `Q` and is divisible
 by `u`. -/
-theorem exists_notMem_dvd_of_forall_smul_notMem (Q : Ideal A) [Q.IsPrime] {u : A}
+theorem _root_.Ideal.exists_notMem_dvd_of_forall_smul_notMem (Q : Ideal A) [Q.IsPrime] {u : A}
     (hu : ∀ g : G, g • u ∉ Q) : ∃ r : FixedPoints.subring A G, (r : A) ∉ Q ∧ u ∣ r := by
   have := Fintype.ofFinite G
   refine ⟨⟨∏ g : G, g • u, fun g ↦ Finset.smul_prod_perm u g⟩, fun hmem ↦ ?_, ?_⟩
@@ -261,12 +261,12 @@ theorem exists_mul_eq_zero_of_mul_eq_zero (Q : Ideal A) [Q.IsPrime] (x : FixedPo
   set I : Ideal A := (Ideal.span {(x : A)}).annihilator
   have hI (u : A) : u ∈ I ↔ u * x = 0 := by
     rw [Submodule.mem_annihilator_span_singleton, smul_eq_mul]
-  obtain ⟨u, huI, hu⟩ := exists_mem_forall_smul_notMem (G := G) Q (I := I) fun g hg ↦ by
+  obtain ⟨u, huI, hu⟩ := Q.exists_mem_forall_smul_notMem (G := G) (I := I) fun g hg ↦ by
     -- The annihilator of `x` is `G`-stable, so it contains `g⁻¹ • t`, and then `t ∈ Q`.
     have hmem : g⁻¹ • t ∈ I := by
       rw [hI, ← x.2 g⁻¹, ← smul_mul', htx, smul_zero]
     exact htQ (by simpa using hg hmem)
-  obtain ⟨r, hrQ, c, hc⟩ := exists_notMem_dvd_of_forall_smul_notMem Q hu
+  obtain ⟨r, hrQ, c, hc⟩ := Q.exists_notMem_dvd_of_forall_smul_notMem hu
   exact ⟨r, r.2, hrQ, by rw [hc, mul_comm u, mul_assoc, (hI u).mp huI, mul_zero]⟩
 
 /-- **Invariants inject into stalks.** For a finite group `G`, a prime `Q` of `A` and the prime
