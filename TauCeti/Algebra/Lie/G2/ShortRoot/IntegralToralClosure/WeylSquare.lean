@@ -48,15 +48,14 @@ theorem rootSubgroupPoints_weylWord_sq (i : Fin 2) (A : Type*) [CommRing A] (u :
   have hpos (j : Fin 2) :
       ⁅TauCeti.serreH ℚ CartanMatrix.G₂ j, TauCeti.serreRootGenerator CartanMatrix.G₂ (.inl i)⁆ =
         ((CartanMatrix.G₂ j i : ℤ) : ℚ) •
-          TauCeti.serreRootGenerator CartanMatrix.G₂ (.inl i) := by
-    simpa only [TauCeti.serreRootGenerator_inl, Int.cast_smul_eq_zsmul] using
-      TauCeti.lie_serreH_serreE ℚ CartanMatrix.G₂ j i
+          TauCeti.serreRootGenerator CartanMatrix.G₂ (.inl i) :=
+    TauCeti.lie_serreH_serreRootGenerator_inl CartanMatrix.G₂ i j
   have hneg (j : Fin 2) :
       ⁅TauCeti.serreH ℚ CartanMatrix.G₂ j, TauCeti.serreRootGenerator CartanMatrix.G₂ (.inr i)⁆ =
         -(((CartanMatrix.G₂ j i : ℤ) : ℚ) •
           TauCeti.serreRootGenerator CartanMatrix.G₂ (.inr i)) := by
-    simpa only [TauCeti.serreRootGenerator_inr, Int.cast_smul_eq_zsmul] using
-      TauCeti.lie_serreH_serreF ℚ CartanMatrix.G₂ j i
+    simpa only [Int.cast_neg, neg_smul] using
+      TauCeti.lie_serreH_serreRootGenerator_inr CartanMatrix.G₂ i j
   have hsq := kostantToralRootSubgroupPoints_weylWord_sq
       (TauCeti.serreRootGenerator CartanMatrix.G₂) (TauCeti.serreH ℚ CartanMatrix.G₂)
       rep lattice.toAddSubgroup rep_kostantForm_mem_lattice
