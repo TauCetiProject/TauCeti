@@ -167,28 +167,6 @@ pairs `(aᵢ, eᵢ)`. -/
 private def conjProd (u : G) (k : ℕ) (L : List (G × ℤ)) : G :=
   (L.map fun p => p.1 * u ^ ((k : ℤ) * p.2) * p.1⁻¹).prod
 
-/-- Conjugates of nontrivial powers of `u ≠ 1` by elements of different cosets of `C_G(u)` do not
-commute in a torsion-free CSA group. -/
-private theorem not_commute_conj_zpow (hG : IsCSA G) [IsMulTorsionFree G] {u : G} (hu : u ≠ 1)
-    {a b : G} {e f : ℤ} (he : e ≠ 0) (hf : f ≠ 0) (hab : a⁻¹ * b ∉ centralizer {u}) :
-    ¬Commute (a * u ^ e * a⁻¹) (b * u ^ f * b⁻¹) := by
-  intro h
-  have h₁ : Commute (u ^ e) (((a⁻¹ * b) * u * (a⁻¹ * b)⁻¹) ^ f) := by
-    have := h.map (MulAut.conj a⁻¹).toMonoidHom
-    rw [conj_zpow]
-    rwa [MulEquiv.coe_toMonoidHom, MulAut.conj_apply, MulAut.conj_apply,
-      show a⁻¹ * (a * u ^ e * a⁻¹) * a⁻¹⁻¹ = u ^ e by group,
-      show a⁻¹ * (b * u ^ f * b⁻¹) * a⁻¹⁻¹ = (a⁻¹ * b) * u ^ f * (a⁻¹ * b)⁻¹ by group] at this
-  have hT := (isCommTransitive_iff G).1 hG.isCommTransitive
-  have h₂ : Commute u (((a⁻¹ * b) * u * (a⁻¹ * b)⁻¹) ^ f) :=
-    hT _ _ _ (by simpa [IsMulTorsionFree.zpow_eq_one_iff] using ⟨hu, he⟩)
-      ((Commute.refl u).zpow_right e) h₁
-  have h₃ : Commute u ((a⁻¹ * b) * u * (a⁻¹ * b)⁻¹) :=
-    hT _ _ _ (by rw [Ne, IsMulTorsionFree.zpow_eq_one_iff, conj_eq_one_iff]; tauto)
-      h₂ ((Commute.refl _).zpow_left f)
-  exact hab (mem_centralizer_singleton_iff.2
-    ((isCSA_iff_isCommTransitive_and_commute_conj.1 hG).2 u _ hu h₃).symm.eq)
-
 /-- The big powers property for products `∏ᵢ aᵢ * u ^ (k * eᵢ) * aᵢ⁻¹` in which consecutive
 conjugators lie in different cosets of `C_G(u)`. -/
 private theorem exists_forall_conjProd_ne_one (hBP : IsBP G) (hG : IsCSA G) {u : G} (hu : u ≠ 1)
@@ -203,7 +181,7 @@ private theorem exists_forall_conjProd_ne_one (hBP : IsBP G) (hG : IsCSA G) {u :
     (fun i => by
       simpa [w, conj_eq_one_iff, IsMulTorsionFree.zpow_eq_one_iff] using
         ⟨hu, he _ (List.getElem_mem _)⟩)
-    (fun i => not_commute_conj_zpow hG hu (he _ (List.getElem_mem _))
+    (fun i => hG.not_commute_conj_zpow hu (he _ (List.getElem_mem _))
       (he _ (List.getElem_mem _)) (List.isChain_iff_getElem.1 hc i.1 (by omega)))
   refine ⟨N, fun k hk => ?_⟩
   have h := hN (fun _ => k) (fun _ => hk)
@@ -264,11 +242,15 @@ private theorem exists_conjProd_eq (u : G) {L : List (G × ℤ)} (he : ∀ p ∈
         refine ⟨fun h => hp ?_, fun r hr => he' r (List.mem_cons_of_mem _ hr)⟩
         rw [← Int.sign_eq_zero_iff_zero, ← hsum, h, Int.sign_zero]
       · refine List.isChain_cons.2 ⟨fun r hr hpr => hq'c r hr ?_, hR'c⟩
+        -- Factor `q.1⁻¹ * r.1` through `p.1`, so that it is a product of two elements of
+        -- `C_G(u)`: the inverse of `hm` and `hpr`.
         rw [hq₁, show q.1⁻¹ * r.1 = (p.1⁻¹ * q.1)⁻¹ * (p.1⁻¹ * r.1) by group]
         exact mul_mem (inv_mem hm) hpr
       · simp [hsum]
       · have hcomm : Commute (p.1⁻¹ * q.1) (u ^ ((k : ℤ) * q'.2)) :=
           Commute.zpow_right (mem_centralizer_singleton_iff.1 hm : Commute _ u) _
+        -- Rewrite the conjugate by `q.1` as a conjugate by `p.1` of a conjugate by
+        -- `p.1⁻¹ * q.1 ∈ C_G(u)`; the inner conjugation then cancels by `hcomm`.
         rw [conjProd_cons, conjProd_cons u k p (q :: R), ← hprod, conjProd_cons, hq₁, mul_add,
           zpow_add,
           show q.1 * u ^ ((k : ℤ) * q'.2) * q.1⁻¹ =
@@ -302,6 +284,7 @@ private theorem isChain_append_reverse {u : G} {L : List (G × ℤ)}
   · -- `c` and the last conjugator of `L`, which heads the reversed list.
     simp only [List.head?_append, List.head?_map, List.head?_reverse, hℓ, Option.map_some,
       Option.some_or, Option.mem_def, Option.some.injEq] at hr
+    -- The coset condition is symmetric: `c⁻¹ * ℓ.1` is the inverse of `ℓ.1⁻¹ * c`.
     rw [← hr, show c⁻¹ * ℓ.1 = (ℓ.1⁻¹ * c)⁻¹ by group]
     exact fun h => hcℓ (inv_mem_iff.1 h)
   · -- The reversed list inherits the coset condition, which is symmetric.
@@ -402,6 +385,8 @@ private theorem mul_prod_eq_conjProd (u : G) (k : ℕ) (a : G) (l : List (ℤ ×
   | nil => simp [conjugators, conjProd]
   | cons p l ih =>
     simp only [List.map_cons, List.prod_cons, conjugators, conjProd_cons]
+    -- Split off the first conjugate `a * u ^ (k * e₁) * a⁻¹`, leaving the tail in the form
+    -- `(a * g₁) * ⋯` required by the induction hypothesis for the conjugator `a * g₁`.
     rw [show a * (u ^ ((k : ℤ) * p.1) * p.2 *
         (l.map fun p => u ^ ((k : ℤ) * p.1) * p.2).prod) =
       a * u ^ ((k : ℤ) * p.1) * a⁻¹ * ((a * p.2) *
