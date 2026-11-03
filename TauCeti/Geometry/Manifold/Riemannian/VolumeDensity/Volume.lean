@@ -193,6 +193,22 @@ theorem lintegral_riemannianVolume_eq_of_support_subset (α : M) {Ω : Set E} (h
   rw [← setLIntegral_riemannianVolume_inter_preimage α hΩ hΩt,
     setLIntegral_eq_of_support_subset hφ]
 
+/-- **Real integrals of nonnegative functions supported in a chart, in coordinates**: if a
+nonnegative integrable `f` vanishes outside the chart preimage of an open set `Ω` of the chart
+target, then `ENNReal.ofReal (∫ f dV)` is the lower integral over `Ω` of the chart density times
+`f` read in the chart. -/
+theorem ofReal_integral_riemannianVolume_eq_of_support_subset (α : M) {Ω : Set E}
+    (hΩ : IsOpen Ω) (hΩt : Ω ⊆ (extChartAt I α).target) {f : M → ℝ} (hf0 : 0 ≤ f)
+    (hfi : Integrable f (riemannianVolume I M))
+    (hf : Function.support f ⊆ (extChartAt I α).source ∩ extChartAt I α ⁻¹' Ω) :
+    ENNReal.ofReal (∫ x, f x ∂riemannianVolume I M) =
+      ∫⁻ y in Ω, ENNReal.ofReal (chartVolumeDensity (I := I) α ((extChartAt I α).symm y) *
+        f ((extChartAt I α).symm y)) ∂(Module.finBasis ℝ E).addHaar := by
+  simp_rw [ENNReal.ofReal_mul (chartVolumeDensity_nonneg _ _)]
+  rw [ofReal_integral_eq_lintegral_ofReal hfi (ae_of_all _ hf0),
+    lintegral_riemannianVolume_eq_of_support_subset α hΩ hΩt fun x hx ↦
+      hf fun h ↦ hx (by simp [h])]
+
 /-- **Upper bounds in coordinates for Riemannian integrals**: if a nonnegative integrable `f`
 vanishes outside the chart preimage of an open set `Ω` of the chart target, and on `Ω` the
 density times `f` read in the chart is at most `c k` for a nonnegative integrable `k`, then
@@ -207,14 +223,11 @@ theorem integral_riemannianVolume_le_mul_integral_of_support_subset (α : M) {Ω
         c * k y) :
     ∫ x, f x ∂riemannianVolume I M ≤ c * ∫ y, k y ∂(Module.finBasis ℝ E).addHaar := by
   rw [← ENNReal.ofReal_le_ofReal_iff (mul_nonneg hc (integral_nonneg hk0)),
-    ofReal_integral_eq_lintegral_ofReal hfi (ae_of_all _ hf0), ← integral_const_mul,
-    ofReal_integral_eq_lintegral_ofReal (hki.const_mul c)
-      (ae_of_all _ fun y ↦ mul_nonneg hc (hk0 y)),
-    lintegral_riemannianVolume_eq_of_support_subset α hΩ hΩt fun x hx ↦
-      hf fun h ↦ hx (by simp [h])]
-  refine (setLIntegral_mono' hΩ.measurableSet fun y hy ↦ ?_).trans (setLIntegral_le_lintegral _ _)
-  rw [← ENNReal.ofReal_mul (chartVolumeDensity_nonneg _ _)]
-  exact ENNReal.ofReal_le_ofReal (hfk y hy)
+    ofReal_integral_riemannianVolume_eq_of_support_subset α hΩ hΩt hf0 hfi hf,
+    ← integral_const_mul, ofReal_integral_eq_lintegral_ofReal (hki.const_mul c)
+      (ae_of_all _ fun y ↦ mul_nonneg hc (hk0 y))]
+  exact (setLIntegral_mono' hΩ.measurableSet fun y hy ↦
+    ENNReal.ofReal_le_ofReal (hfk y hy)).trans (setLIntegral_le_lintegral _ _)
 
 /-- **Lower bounds in coordinates for Riemannian integrals**: if a nonnegative integrable `f`
 vanishes outside the chart preimage of an open set `Ω` of the chart target, and on `Ω` the
@@ -230,15 +243,11 @@ theorem mul_integral_le_integral_riemannianVolume_of_support_subset (α : M) {Ω
         chartVolumeDensity (I := I) α ((extChartAt I α).symm y) * f ((extChartAt I α).symm y)) :
     c * ∫ y, k y ∂(Module.finBasis ℝ E).addHaar ≤ ∫ x, f x ∂riemannianVolume I M := by
   rw [← ENNReal.ofReal_le_ofReal_iff (integral_nonneg hf0),
-    ofReal_integral_eq_lintegral_ofReal hfi (ae_of_all _ hf0), ← integral_const_mul,
-    ofReal_integral_eq_lintegral_ofReal (hki.const_mul c)
+    ofReal_integral_riemannianVolume_eq_of_support_subset α hΩ hΩt hf0 hfi hf,
+    ← integral_const_mul, ofReal_integral_eq_lintegral_ofReal (hki.const_mul c)
       (ae_of_all _ fun y ↦ mul_nonneg hc (hk0 y)),
-    lintegral_riemannianVolume_eq_of_support_subset α hΩ hΩt fun x hx ↦
-      hf fun h ↦ hx (by simp [h]),
     ← setLIntegral_eq_of_support_subset (s := Ω) fun y hy ↦ hk fun h ↦ hy (by simp [h])]
-  refine setLIntegral_mono' hΩ.measurableSet fun y hy ↦ ?_
-  rw [← ENNReal.ofReal_mul (chartVolumeDensity_nonneg _ _)]
-  exact ENNReal.ofReal_le_ofReal (hfk y hy)
+  exact setLIntegral_mono' hΩ.measurableSet fun y hy ↦ ENNReal.ofReal_le_ofReal (hfk y hy)
 
 omit [MeasurableSpace M] [BorelSpace M] [LindelofSpace M]
   [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] in

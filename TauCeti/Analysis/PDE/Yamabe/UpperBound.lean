@@ -271,9 +271,7 @@ theorem exists_contMDiff_hasCompactSupport_yamabeQuotient_lt [I.Boundaryless]
     have hcomp : (fderiv ℝ w y ∘L e.continuousLinearMapAt ℝ p : TangentSpace I p →L[ℝ] ℝ) =
         (t⁻¹ • fderiv ℝ v (Ψ y)) ∘L (O : TangentSpace I p →L[ℝ] F) := by
       ext ξ
-      rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply, hfd,
-        ContinuousLinearMap.comp_apply, smul_apply, ContinuousLinearEquiv.coe_coe, hLO, map_smul,
-        smul_apply, ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv]
+      simp [hfd, ← hLO]
     rw [heq.fderiv_eq, hcomp, ContinuousLinearMap.opNorm_comp_linearIsometryEquiv, norm_smul,
       Real.norm_of_nonneg (inv_nonneg.2 ht0.le)]
   /- Step 5: integrals over `M` of functions supported in `tsupport u` are computed in the ball,
