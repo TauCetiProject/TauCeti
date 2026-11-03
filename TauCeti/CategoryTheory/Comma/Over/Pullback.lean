@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Comma.Over.Pullback
+public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.EqToHom
 
 /-!
 # Coherence of base change in over categories
@@ -34,20 +35,6 @@ namespace Over
 variable {C : Type u} [Category.{v} C]
 
 attribute [local instance] hasPullback_of_right_iso
-
-/-- Rewriting the right-hand map `g'` of a pullback to an equal map `g` transports the first
-projection along the resulting `eqToHom`. -/
-private theorem eqToHom_comp_pullback_fst {X Y Z : C} (f : X ⟶ Z) {g g' : Y ⟶ Z} (e : g' = g)
-    [HasPullback f g] [HasPullback f g'] (e' : Limits.pullback f g' = Limits.pullback f g) :
-    eqToHom e' ≫ pullback.fst f g = pullback.fst f g' := by
-  subst e; simp
-
-/-- Rewriting the right-hand map `g'` of a pullback to an equal map `g` transports the second
-projection along the resulting `eqToHom`. -/
-private theorem eqToHom_comp_pullback_snd {X Y Z : C} (f : X ⟶ Z) {g g' : Y ⟶ Z} (e : g' = g)
-    [HasPullback f g] [HasPullback f g'] (e' : Limits.pullback f g' = Limits.pullback f g) :
-    eqToHom e' ≫ pullback.snd f g = pullback.snd f g' := by
-  subst e; simp
 
 /-- Base change along `f : X ⟶ Y` of the identification `pullbackId` of base change along the
 identity is the composition isomorphism `pullbackComp f (𝟙 Y)`, up to the equality
