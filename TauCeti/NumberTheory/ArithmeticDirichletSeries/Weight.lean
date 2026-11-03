@@ -281,7 +281,7 @@ theorem one_apply (I : Ideal (𝓞 K)) :
 @[simp]
 theorem badPrimes_one : (1 : MultiplicativeIdealWeight K).badPrimes = ∅ := by
   ext 𝔭
-  simp [badPrimes, one_apply, 𝔭.ne_bot]
+  simp [badPrimes, TauCeti.MultiplicativeIdealWeight.one_apply, 𝔭.ne_bot]
 
 @[simp]
 theorem badPrimes_mul (χ ψ : MultiplicativeIdealWeight K) :
@@ -298,12 +298,12 @@ noncomputable instance : CommMonoid (MultiplicativeIdealWeight K) where
     ext I
     rcases eq_or_ne I ⊥ with rfl | hI
     · simp
-    · simp [one_apply, hI]
+    · simp [TauCeti.MultiplicativeIdealWeight.one_apply, hI]
   mul_one χ := by
     ext I
     rcases eq_or_ne I ⊥ with rfl | hI
     · simp
-    · simp [one_apply, hI]
+    · simp [TauCeti.MultiplicativeIdealWeight.one_apply, hI]
   mul_comm χ ψ := by ext I; simp [mul_comm]
 
 /-- A positive power of a weight is computed pointwise. The exponent must be nonzero: `χ ^ 0` is
@@ -316,7 +316,7 @@ theorem pow_apply (χ : MultiplicativeIdealWeight K) {n : ℕ} (hn : n ≠ 0) (I
   | succ n ih =>
     rcases eq_or_ne n 0 with rfl | h
     · rw [zero_add, pow_one, pow_one]
-    · rw [pow_succ, pow_succ, mul_apply, ih h]
+    · rw [pow_succ, pow_succ, TauCeti.MultiplicativeIdealWeight.mul_apply, ih h]
 
 /-- A nonzero power of a weight kills exactly the primes the weight kills, so it has the same
 good ideals. -/
@@ -324,7 +324,7 @@ good ideals. -/
 theorem badPrimes_pow (χ : MultiplicativeIdealWeight K) {n : ℕ} (hn : n ≠ 0) :
     (χ ^ n).badPrimes = χ.badPrimes := by
   ext 𝔭
-  simp [pow_apply χ hn, hn]
+  simp [TauCeti.MultiplicativeIdealWeight.pow_apply χ hn, hn]
 
 @[simp]
 theorem isGood_one_iff {I : Ideal (𝓞 K)} :
@@ -445,8 +445,7 @@ theorem normTwist_apply (z : ℂ) (χ : MultiplicativeIdealWeight K) (I : Ideal 
 theorem badPrimes_normTwist (z : ℂ) (χ : MultiplicativeIdealWeight K) :
     (normTwist z χ).badPrimes = χ.badPrimes := by
   ext 𝔭
-  have h := Ideal.absNorm_eq_zero_iff.not.mpr 𝔭.ne_bot
-  simp [badPrimes, mul_eq_zero, Complex.cpow_eq_zero_iff, h]
+  simp [badPrimes, mul_eq_zero, Complex.cpow_eq_zero_iff, 𝔭.ne_bot]
 
 @[simp]
 theorem normTwist_zero (χ : MultiplicativeIdealWeight K) : normTwist 0 χ = χ := by
@@ -475,7 +474,8 @@ theorem normTwist_mul_normTwist (z w : ℂ) (χ ψ : MultiplicativeIdealWeight K
   · simp
   · have h : ((Ideal.absNorm I : ℕ) : ℂ) ≠ 0 := by
       exact_mod_cast Ideal.absNorm_eq_zero_iff.not.mpr hI
-    rw [mul_apply, normTwist_apply, normTwist_apply, normTwist_apply, mul_apply, neg_add,
+    rw [TauCeti.MultiplicativeIdealWeight.mul_apply, normTwist_apply, normTwist_apply,
+      normTwist_apply, TauCeti.MultiplicativeIdealWeight.mul_apply, neg_add,
       Complex.cpow_add _ _ h]
     ring
 
@@ -529,7 +529,7 @@ theorem isNormTwistOnGood_zero_iff (χ : MultiplicativeIdealWeight K) :
 
 /-- The trivial weight is trivial on its good ideals, which are all the nonzero ideals. -/
 theorem isTrivialOnGood_one : (1 : MultiplicativeIdealWeight K).IsTrivialOnGood :=
-  fun _ hI ↦ by rw [one_apply]; simp [hI.ne_bot]
+  fun _ hI ↦ by rw [TauCeti.MultiplicativeIdealWeight.one_apply]; simp [hI.ne_bot]
 
 /-- The indicator of the ideals prime to a finite set `S` of primes is trivial on its good
 ideals, which are exactly those ideals. -/
@@ -606,7 +606,7 @@ theorem IsNormTwistOnGood.mul {χ ψ : MultiplicativeIdealWeight K} {u v : ℝ}
   have hψI : ψ.IsGood I := hI.mono (by rw [badPrimes_mul]; exact Set.subset_union_right)
   have hN : ((Ideal.absNorm I : ℕ) : ℂ) ≠ 0 := by
     exact_mod_cast Ideal.absNorm_eq_zero_iff.not.mpr hχI.ne_bot
-  rw [mul_apply, hχ I hχI, hψ I hψI, ← Complex.cpow_add _ _ hN]
+  rw [TauCeti.MultiplicativeIdealWeight.mul_apply, hχ I hχI, hψ I hψI, ← Complex.cpow_add _ _ hN]
   congr 1
   push_cast
   ring
@@ -679,7 +679,7 @@ theorem toIdealArithmeticFunction_one :
     (1 : MultiplicativeIdealWeight K).toIdealArithmeticFunction = 1 := by
   ext I
   have hI : (I : Ideal (𝓞 K)) ≠ ⊥ := mem_nonZeroDivisors_iff_ne_zero.mp I.2
-  simp [one_apply, hI]
+  simp [TauCeti.MultiplicativeIdealWeight.one_apply, hI]
 
 @[simp]
 theorem toIdealArithmeticFunction_mul (χ ψ : MultiplicativeIdealWeight K) :
@@ -768,7 +768,8 @@ theorem map_one (e : K ≃+* L) : map e (1 : MultiplicativeIdealWeight K) = 1 :=
 theorem map_mul (e : K ≃+* L) (χ ψ : MultiplicativeIdealWeight K) :
     map e (χ * ψ) = map e χ * map e ψ := by
   ext I
-  rw [map_apply, mul_apply, mul_apply, map_apply, map_apply]
+  rw [map_apply, TauCeti.MultiplicativeIdealWeight.mul_apply,
+    TauCeti.MultiplicativeIdealWeight.mul_apply, map_apply, map_apply]
 
 /-- **Transport along an isomorphism of fields, as a multiplicative equivalence** of the two
 carriers, with inverse the transport along `e.symm`. -/
@@ -887,7 +888,7 @@ noncomputable instance : Mul (UnitaryIdealWeight K) where
   mul χ ψ :=
     ⟨χ.1 * ψ.1, fun 𝔭 h𝔭 ↦ by
       rw [MultiplicativeIdealWeight.badPrimes_mul, Set.mem_union, not_or] at h𝔭
-      rw [MultiplicativeIdealWeight.mul_apply, norm_mul, χ.2 𝔭 h𝔭.1, ψ.2 𝔭 h𝔭.2,
+      rw [TauCeti.MultiplicativeIdealWeight.mul_apply, norm_mul, χ.2 𝔭 h𝔭.1, ψ.2 𝔭 h𝔭.2,
         one_mul]⟩
 
 @[simp]

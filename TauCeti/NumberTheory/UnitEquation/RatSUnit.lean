@@ -202,7 +202,7 @@ private theorem rpow_neg_le_zpow_neg (hS : ∀ p ∈ S, p.Prime) {C : ℝ} (hC :
       field_simp
       linarith
     have hvN : padicValRat p (x : ℚ) = -(N : ℤ) := by omega
-    rwa [hsub, padicNorm.neg, padicNorm.eq_zpow_of_nonzero (inv_ne_zero hy0), padicValRat.inv,
+    rwa [hsub, padicNorm.neg, padicNorm.eq_zpow_of_ne_zero (inv_ne_zero hy0), padicValRat.inv,
       neg_neg, hyx, hvN, Rat.cast_zpow, Rat.cast_natCast] at h
   · -- `v_p(x) > 0`: then `v_p(y) = 0`, and `z = y` has `z - 1 = -x`
     have hy1 : (y : ℚ) ≠ 1 := fun h ↦ hx0 (by linarith)
@@ -210,7 +210,7 @@ private theorem rpow_neg_le_zpow_neg (hS : ∀ p ∈ S, p.Prime) {C : ℝ} (hC :
       (padicValRat.eq_zero_of_add_eq_one_of_pos hxy hpos) hy1 hNy
     have hsub : (y : ℚ) - 1 = -x := by linarith
     have hvN : padicValRat p (x : ℚ) = (N : ℤ) := by omega
-    rwa [hsub, padicNorm.neg, padicNorm.eq_zpow_of_nonzero hx0, hvN, Rat.cast_zpow,
+    rwa [hsub, padicNorm.neg, padicNorm.eq_zpow_of_ne_zero hx0, hvN, Rat.cast_zpow,
       Rat.cast_natCast] at h
 
 /-- **The exponent bound for the rational `S`-unit equation** (Evertse, Theorem 5.17). Let `S` be

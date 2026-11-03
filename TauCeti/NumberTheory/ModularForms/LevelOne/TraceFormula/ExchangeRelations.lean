@@ -120,7 +120,7 @@ private theorem ExchangeRelations.mapDomain_orbitRel_mk_coeff_S_smul {ξ : k[ℳ
   have hsum : ∑ i ∈ Finset.range 3, ρR (.op ((T : PSL(2, ℤ)) * S) ^ i) ξ = (1 + ρL S) η := by
     simp [Finset.sum_range_succ, hη]
   rw [hsum]
-  simp [← Module.End.mul_apply, ← sq, add_comm]
+  simp [← mul_apply_eq_comp, ← sq, add_comm]
 
 private theorem ExchangeRelations.mapDomain_orbitRel_mk_coeff_T_mul_S_smul {ξ : k[ℳ n]}
     (hξ : ExchangeRelations k n ξ) (h2 : IsSMulRegular k 2) (x : ℳ n) :
@@ -137,7 +137,7 @@ private theorem ExchangeRelations.mapDomain_orbitRel_mk_coeff_T_mul_S_smul {ξ :
     rw [hη]
     simp [Finset.sum_range_succ]
   have hU : ρL (T * S) ^ 3 = 1 := by simp
-  rw [hsum, ← Module.End.mul_apply, mul_add, mul_add, mul_one, ← sq, ← pow_succ', hU,
+  rw [hsum, ← mul_apply_eq_comp, mul_add, mul_add, mul_one, ← sq, ← pow_succ', hU,
     ← add_rotate]
 
 /-- **Popa–Zagier, §3 Theorem 2(a).** If `ξ` satisfies the exchange relations (B) and `2`, `3` are
@@ -200,8 +200,8 @@ private theorem PeriodRelation.apply_mem_sup [Invertible (2 : k)] [Invertible (3
     f ξ ∈ LinearMap.range (1 + ρL S) ⊔ LinearMap.range (1 + ρL (T * S) + ρL (T * S) ^ 2) := by
   have hr : LinearMap.range (1 - ρL T) ∈ f.invtSubmodule :=
     Function.Semiconj.mapsTo_range (LinearMap.congr_fun ((Commute.one_left f).sub_left (hf T)).eq)
-  rw [← one_sub_S_apply_mem_range_one_sub_T_iff hn, ← Module.End.mul_apply,
-    ((Commute.one_left f).sub_left (hf S)).eq, Module.End.mul_apply]
+  rw [← one_sub_S_apply_mem_range_one_sub_T_iff hn, ← mul_apply_eq_comp,
+    ((Commute.one_left f).sub_left (hf S)).eq, mul_apply_eq_comp]
   simpa using add_mem (hr (periodRelation_iff.1 h)) hfT
 
 /-- **Solutions of (A) lie in `𝒜`, the relation for `S`** (Popa–Zagier, §3): for `n ≠ 0` and `2`,
@@ -213,7 +213,7 @@ theorem PeriodRelation.one_add_S_apply_mem_sup [Invertible (2 : k)] [Invertible 
       LinearMap.range (1 + ρL S) ⊔ LinearMap.range (1 + ρL (T * S) + ρL (T * S) ^ 2) :=
   -- on the right, `(1 + S) (1 - S) = 1 - S² = 0`
   h.apply_mem_sup hn (commute_ofMulAction_one_add · _)
-    (by rw [← Module.End.mul_apply, one_add_mul_one_sub_of_sq_eq_one ofMulAction_op_S_sq,
+    (by rw [← mul_apply_eq_comp, one_add_mul_one_sub_of_sq_eq_one ofMulAction_op_S_sq,
       LinearMap.zero_apply]; exact zero_mem _)
 
 /-- **Solutions of (A) lie in `𝒜`, the relation for `U`** (Popa–Zagier, §3): for `n ≠ 0` and `2`,
@@ -227,9 +227,9 @@ theorem PeriodRelation.one_add_U_add_U_sq_apply_mem_sup [Invertible (2 : k)] [In
   have hc (g : SL(2, ℤ)) : Commute (ρL g) _ := commute_ofMulAction_one_add_add_sq g (↑T * ↑S)
   refine h.apply_mem_sup hn hc ?_
   -- on the right, `(1 + U + U²) (1 - S) = -((1 + U + U²) S) (1 - T)`, as `S U = T`
-  rw [← Module.End.mul_apply, one_add_add_sq_mul_one_sub ofMulAction_op_S_sq
+  rw [← mul_apply_eq_comp, one_add_add_sq_mul_one_sub ofMulAction_op_S_sq
     (by simp : ρR (.op ((T : PSL(2, ℤ)) * S)) ^ 3 = 1), ← map_mul, ← MulOpposite.op_mul,
-    mul_assoc, ← sq, ModularGroup.coe_S_sq, mul_one, Module.End.mul_apply]
+    mul_assoc, ← sq, ModularGroup.coe_S_sq, mul_one, mul_apply_eq_comp]
   have hr {f g : Module.End k k[ℳ n]} (h : Commute f g) : LinearMap.range f ∈ g.invtSubmodule :=
     Function.Semiconj.mapsTo_range (LinearMap.congr_fun h.eq)
   refine hr (((Commute.one_left _).sub_left (hc T)).mul_right ((Commute.one_left _).sub_left
