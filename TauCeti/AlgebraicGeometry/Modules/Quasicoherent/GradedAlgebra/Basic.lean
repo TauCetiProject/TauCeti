@@ -213,7 +213,7 @@ protected theorem mul_hom (i j : ℕ) :
 
 /-- The unit of a graded quasicoherent algebra is a left identity for homogeneous
 multiplication, up to the identification of the degrees `0 + n` and `n`. -/
-@[reassoc (attr := simp)]
+@[reassoc]
 protected theorem one_mul (n : ℕ) :
     (A.one ▷ (degree n).obj A) ≫ A.mul 0 n =
       (λ_ ((degree n).obj A)).hom ≫
@@ -226,7 +226,7 @@ protected theorem one_mul (n : ℕ) :
 
 /-- The unit of a graded quasicoherent algebra is a right identity for homogeneous
 multiplication, up to the identification of the degrees `n + 0` and `n`. -/
-@[reassoc (attr := simp)]
+@[reassoc]
 protected theorem mul_one (n : ℕ) :
     ((degree n).obj A ◁ A.one) ≫ A.mul n 0 =
       (ρ_ ((degree n).obj A)).hom ≫
