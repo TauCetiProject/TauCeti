@@ -104,6 +104,13 @@ variable (hN) in
 noncomputable def quotientHomologyClass (m : M) (hm : d m ∈ N) : d.quotientHomology hd N hN :=
   Submodule.Quotient.mk ⟨Submodule.Quotient.mk m, (Submodule.mk_mem_ker_mapQ_iff m).mpr hm⟩
 
+/-- The class of `m` is the class of the cycle `Submodule.Quotient.mk m` of `M ⧸ N`. -/
+@[simp]
+theorem quotientHomologyClass_def (m : M) (hm : d m ∈ N) :
+    quotientHomologyClass hd hN m hm =
+      Submodule.Quotient.mk ⟨Submodule.Quotient.mk m, (Submodule.mk_mem_ker_mapQ_iff m).mpr hm⟩ :=
+  (rfl)
+
 /-- Every class in `d.quotientHomology hd N hN` is the class of some `m` with `d m ∈ N`. -/
 theorem exists_quotientHomologyClass_eq (x : d.quotientHomology hd N hN) :
     ∃ m hm, quotientHomologyClass hd hN m hm = x := by
