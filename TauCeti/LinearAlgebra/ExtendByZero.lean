@@ -10,11 +10,12 @@ public import Mathlib.LinearAlgebra.Pi
 /-!
 # Linear extension of coordinate functions by zero
 
-Mathlib's `Function.ExtendByZero.linearMap` along an injective index map is injective. Along
-`Fin.castSucc` it views `R^N` as the coordinate hyperplane of `R^(N + 1)` with vanishing last
-coordinate, and `Fin.init` inverts it. Along `Fin.succ` it is the coordinate shift
-`e_i ↦ e_(i + 1)`, which together with the first basis vector `e₀ = Pi.single 0 1` splits
-`R^(N + 1)`: every vector is its first coordinate times `e₀` plus the shift of its tail.
+Mathlib's `Function.ExtendByZero.linearMap` along an injective index map `e` evaluates at `e i`
+to the `i`-th coordinate. Along `Fin.castSucc` it views `R^N` as the coordinate hyperplane of
+`R^(N + 1)` with vanishing last coordinate, and `Fin.init` inverts it. Along `Fin.succ` it is
+the coordinate shift `e_i ↦ e_(i + 1)`, which together with the first basis vector
+`e₀ = Pi.single 0 1` splits `R^(N + 1)`: every vector is its first coordinate times `e₀` plus
+the shift of its tail.
 -/
 
 public section
@@ -22,11 +23,6 @@ public section
 namespace Function.ExtendByZero
 
 variable {R : Type*} [Semiring R]
-
-/-- Extension by zero along an injective index map is injective. -/
-theorem linearMap_injective {ι κ : Type*} {e : ι → κ} (he : Injective e) :
-    Injective (linearMap R R e) :=
-  extend_injective he (0 : κ → R)
 
 /-- Extension by zero along an injective index map evaluates at `e i` to the `i`-th
 coordinate. -/

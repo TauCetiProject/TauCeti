@@ -118,7 +118,7 @@ theorem rankStabilization_injective :
 noncomputable def ambientStabilization (V : finiteGrassmannian 𝕜 r N) :
     finiteGrassmannian 𝕜 r (N + 1) :=
   map (Function.ExtendByZero.linearMap 𝕜 𝕜 Fin.castSucc)
-    (Function.ExtendByZero.linearMap_injective (Fin.castSucc_injective N)) V
+    (Function.extend_injective (Fin.castSucc_injective N) 0) V
 
 /-- Ambient stabilization is exactly the image under extension along `Fin.castSucc`.
 Use `mem_ambientStabilization` for membership simplification. -/
