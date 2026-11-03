@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.AffineGroupScheme.HopfSpec
 public import TauCeti.AlgebraicGeometry.Grassmannian.FiniteLocallyFree
-public import TauCeti.AlgebraicGeometry.GroupScheme.CentralIsogeny.BaseChange
+public import TauCeti.AlgebraicGeometry.GroupScheme.BaseChange
 public import TauCeti.AlgebraicGeometry.GroupScheme.ClosedSubgroup.Criterion
 public import TauCeti.AlgebraicGeometry.Morphisms.Flat.Rank
 
@@ -452,9 +452,15 @@ theorem ker_schemeHopfIdealLocusFamilyToGrp_left_le_mul :
   have h : pullback.lift (Spec.map (CommRingCat.ofHom (y₁ : H →+* C)))
       (Spec.map (CommRingCat.ofHom (y₂ : H →+* C))) ((hw y₁).trans (hw y₂).symm) ≫
         μ[((hopfSpec (CommRingCat.of R)).obj (op (CommHopfAlgCat.of R H))).X].left =
-      Spec.map (CommRingCat.ofHom ((WithConv.toConv y₁ * WithConv.toConv y₂).ofConv : H →+* C)) :=
-    (congrArg Over.Hom.left (map_mul (Spec.mapMulEquiv (R := R) (S := H) (T := C))
-      (WithConv.toConv y₁) (WithConv.toConv y₂))).symm
+      Spec.map (CommRingCat.ofHom
+        ((WithConv.toConv y₁ * WithConv.toConv y₂).ofConv : H →+* C)) := by
+    have hmul := congrArg Over.Hom.left (map_mul (Spec.mapMulEquiv (R := R) (S := H) (T := C))
+      (WithConv.toConv y₁) (WithConv.toConv y₂))
+    rw [Hom.mul_def, Over.comp_left, Over.lift_left] at hmul
+    -- the underlying morphism of `Spec.mapMulEquiv f` is `Spec.map f` by definition, and the
+    -- multiplication of `(Spec H).asOver (Spec R)` is that of `hopfSpec` by definition; the points
+    -- cannot be rewritten inside `pullback.lift`, whose compatibility proof mentions them
+    exact hmul.symm
   refine (congrArg (g ≫ ·) (mul_left_fst _ _)).trans
     (((Category.assoc _ _ _).symm.trans (congrArg (· ≫ _) ?_)).trans h)
   refine pullback.hom_ext ?_ ?_
