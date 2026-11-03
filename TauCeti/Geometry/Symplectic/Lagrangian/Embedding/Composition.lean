@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Lagrangian.Embedding.Basic
 public import TauCeti.Geometry.Symplectic.Lagrangian.Relation
 public import TauCeti.Geometry.Symplectic.Manifold.TwistedProd
+import TauCeti.Geometry.Manifold.MFDeriv.Graph
 
 /-!
 # Composition of Lagrangian correspondences
@@ -27,12 +28,12 @@ of `h` at `c` is the composite of the linear canonical relations `df(T L₁)` an
 (`Submodule.range_prod_eq_relComp_range`), which is Lagrangian by
 `TauCeti.SymplecticForm.IsLagrangian.relComp`. The matching condition on tangent vectors,
 `(df (da ξ)).2 = (dg (db ξ)).1`, is the derivative of the fibre-product condition
-(`TauCeti.SmoothTwoForm.IsNondegenerate.mfderiv_snd_eq_mfderiv_fst_of_fiberProduct`). Hence:
+(`TauCeti.mfderiv_snd_eq_mfderiv_fst_of_fiberProduct`). Hence:
 
 * `TauCeti.SmoothTwoForm.IsNondegenerate.IsLagrangianMap.relComp`: the composite map is
   Lagrangian for `pr₁*σ₁ - pr₂*σ₃`, even when `h` has excess kernel and is not an immersion;
-* `TauCeti.SmoothTwoForm.IsNondegenerate.IsLagrangianEmbedding.relComp`: when moreover `h` is a
-  smooth embedding, the composite is a Lagrangian correspondence `M₁ ⇝ M₃`.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.IsLagrangianMap.isLagrangianEmbedding_relComp`: when
+  moreover `h` is a smooth embedding, the composite is a Lagrangian correspondence `M₁ ⇝ M₃`.
 
 The composite of the graphs of maps `φ : M₁ → M₂` and `ψ : M₂ → M₃` is the graph of `ψ ∘ φ`,
 presented by `C = M₁`, `a = id` and `b = φ`
@@ -115,60 +116,6 @@ variable {EL₁ HL₁ L₁ EL₂ HL₂ L₂ EC HC C : Type*}
   {KC : ModelWithCorners ℝ EC HC} [TopologicalSpace C] [ChartedSpace HC C]
   {f : L₁ → M₁ × M₂} {g : L₂ → M₂ × M₃} {a : C → L₁} {b : C → L₂}
 
-omit [FiniteDimensional ℝ E₁] [FiniteDimensional ℝ E₂] [IsManifold I₁ ∞ M₁]
-  [IsManifold I₂ ∞ M₂] in
-/-- The differential of `c ↦ (f (a c)).1` is the first coordinate of `df (da ξ)`. -/
-private theorem mfderiv_fst_comp_apply (hf : MDifferentiable K₁ (I₁.prod I₂) f)
-    (ha : MDifferentiable KC K₁ a) (c : C) (ξ : TangentSpace KC c) :
-    mfderiv KC I₁ (fun c ↦ (f (a c)).1) c ξ =
-      (mfderiv K₁ (I₁.prod I₂) f (a c) (mfderiv KC K₁ a c ξ)).1 := by
-  rw [show (fun c ↦ (f (a c)).1) = Prod.fst ∘ f ∘ a from rfl,
-    mfderiv_comp_apply c mdifferentiableAt_fst ((hf (a c)).comp c (ha c)), mfderiv_fst,
-    mfderiv_comp_apply c (hf (a c)) (ha c)]
-  rfl
-
-omit [FiniteDimensional ℝ E₁] [FiniteDimensional ℝ E₂] [IsManifold I₁ ∞ M₁]
-  [IsManifold I₂ ∞ M₂] in
-/-- The differential of `c ↦ (f (a c)).2` is the second coordinate of `df (da ξ)`. -/
-private theorem mfderiv_snd_comp_apply (hf : MDifferentiable K₁ (I₁.prod I₂) f)
-    (ha : MDifferentiable KC K₁ a) (c : C) (ξ : TangentSpace KC c) :
-    mfderiv KC I₂ (fun c ↦ (f (a c)).2) c ξ =
-      (mfderiv K₁ (I₁.prod I₂) f (a c) (mfderiv KC K₁ a c ξ)).2 := by
-  rw [show (fun c ↦ (f (a c)).2) = Prod.snd ∘ f ∘ a from rfl,
-    mfderiv_comp_apply c mdifferentiableAt_snd ((hf (a c)).comp c (ha c)), mfderiv_snd,
-    mfderiv_comp_apply c (hf (a c)) (ha c)]
-  rfl
-
-omit [FiniteDimensional ℝ E₁] [FiniteDimensional ℝ E₂] [FiniteDimensional ℝ E₃]
-  [IsManifold I₁ ∞ M₁] [IsManifold I₂ ∞ M₂] [IsManifold I₃ ∞ M₃] in
-/-- The differential of the outer composite `c ↦ ((f (a c)).1, (g (b c)).2)` reads off the outer
-coordinates of `df (da ξ)` and `dg (db ξ)`. -/
-private theorem mfderiv_relComp_apply (hf : MDifferentiable K₁ (I₁.prod I₂) f)
-    (hg : MDifferentiable K₂ (I₂.prod I₃) g) (ha : MDifferentiable KC K₁ a)
-    (hb : MDifferentiable KC K₂ b) (c : C) (ξ : TangentSpace KC c) :
-    mfderiv KC (I₁.prod I₃) (fun c ↦ ((f (a c)).1, (g (b c)).2)) c ξ =
-      ((mfderiv K₁ (I₁.prod I₂) f (a c) (mfderiv KC K₁ a c ξ)).1,
-        (mfderiv K₂ (I₂.prod I₃) g (b c) (mfderiv KC K₂ b c ξ)).2) := by
-  have h₁ : MDifferentiableAt KC I₁ (fun c ↦ (f (a c)).1) c :=
-    mdifferentiableAt_fst.comp c ((hf (a c)).comp c (ha c))
-  have h₃ : MDifferentiableAt KC I₃ (fun c ↦ (g (b c)).2) c :=
-    mdifferentiableAt_snd.comp c ((hg (b c)).comp c (hb c))
-  rw [mfderiv_prodMk h₁ h₃]
-  exact Prod.ext (mfderiv_fst_comp_apply hf ha c ξ) (mfderiv_snd_comp_apply hg hb c ξ)
-
-omit [FiniteDimensional ℝ E₁] [FiniteDimensional ℝ E₂] [FiniteDimensional ℝ E₃]
-  [IsManifold I₁ ∞ M₁] [IsManifold I₂ ∞ M₂] [IsManifold I₃ ∞ M₃] in
-/-- Differentiating the fibre-product condition `(f (a c)).2 = (g (b c)).1`: the middle
-coordinates of `df (da ξ)` and `dg (db ξ)` agree. -/
-theorem mfderiv_snd_eq_mfderiv_fst_of_fiberProduct (hf : MDifferentiable K₁ (I₁.prod I₂) f)
-    (hg : MDifferentiable K₂ (I₂.prod I₃) g) (ha : MDifferentiable KC K₁ a)
-    (hb : MDifferentiable KC K₂ b) (hab : ∀ c, (f (a c)).2 = (g (b c)).1) (c : C)
-    (ξ : TangentSpace KC c) :
-    (mfderiv K₁ (I₁.prod I₂) f (a c) (mfderiv KC K₁ a c ξ)).2 =
-      (mfderiv K₂ (I₂.prod I₃) g (b c) (mfderiv KC K₂ b c ξ)).1 := by
-  rw [← mfderiv_snd_comp_apply hf ha c ξ, ← mfderiv_fst_comp_apply hg hb c ξ]
-  exact congrArg (fun φ : C → M₂ ↦ (mfderiv KC I₂ φ c ξ : E₂)) (funext hab)
-
 /-- **Composition of Lagrangian correspondences.** Let `f : L₁ → M₁ × M₂` and
 `g : L₂ → M₂ × M₃` be Lagrangian maps for the twisted products, and let `a : C → L₁`,
 `b : C → L₂` land in their fibre product, `(f (a c)).2 = (g (b c)).1`. If `(da, db)` maps each
@@ -189,31 +136,56 @@ theorem IsLagrangianMap.relComp (hfL : (hσ₁.twistedProd hσ₂).IsLagrangianM
   intro c
   let e := (Manifold.tangentSpaceProdEquiv (I := I₁) (J := I₃)
     ((f (a c)).1, (g (b c)).2)).toLinearEquiv
+  let A := (Manifold.tangentSpaceProdEquiv (f (a c))).toLinearEquiv.toLinearMap ∘ₗ
+    (mfderiv K₁ (I₁.prod I₂) f (a c)).toLinearMap
+  let B := (Manifold.tangentSpaceProdEquiv (g (b c))).toLinearEquiv.toLinearMap ∘ₗ
+    (mfderiv K₂ (I₂.prod I₃) g (b c)).toLinearMap
+  -- `e`, `A` and `B` only change the types of tangent vectors.
+  have he : ∀ v, e v = v := fun v ↦ Manifold.tangentSpaceProdEquiv_apply _ v
+  have hA : ∀ u, A u = mfderiv K₁ (I₁.prod I₂) f (a c) u :=
+    fun u ↦ Manifold.tangentSpaceProdEquiv_apply _ _
+  have hB : ∀ w, B w = mfderiv K₂ (I₂.prod I₃) g (b c) w :=
+    fun w ↦ Manifold.tangentSpaceProdEquiv_apply _ _
+  have hfa : MDifferentiableAt KC (I₁.prod I₂) (f ∘ a) c := (hf (a c)).comp c (ha c)
+  have hgb : MDifferentiableAt KC (I₂.prod I₃) (g ∘ b) c := (hg (b c)).comp c (hb c)
+  have hh : MDifferentiableAt KC (I₁.prod I₃) (fun c ↦ ((f (a c)).1, (g (b c)).2)) c :=
+    hfa.fst.prodMk hgb.snd
+  -- The tangent map of the composite reads off the outer coordinates of `df (da ξ)` and
+  -- `dg (db ξ)`.
+  have hd : e.toLinearMap ∘ₗ
+      (mfderiv KC (I₁.prod I₃) (fun c ↦ ((f (a c)).1, (g (b c)).2)) c).toLinearMap =
+      (LinearMap.fst ℝ _ _ ∘ₗ A ∘ₗ (mfderiv KC K₁ a c).toLinearMap).prod
+        (LinearMap.snd ℝ _ _ ∘ₗ B ∘ₗ (mfderiv KC K₂ b c).toLinearMap) := by
+    ext ξ
+    · simp only [LinearMap.comp_apply, LinearMap.prod_apply, Function.prod_apply,
+        ContinuousLinearMap.coe_coe, LinearEquiv.coe_coe, he, hA]
+      rw [← hh.mfderiv_fst_apply, ← mfderiv_comp_apply c (hf (a c)) (ha c)]
+      -- `LinearMap.fst` is the projection by definition, but `LinearMap.fst_apply` does not
+      -- rewrite here: it acts on the product of the coordinate tangent spaces, which is the
+      -- tangent space of the product only by definition.
+      exact hfa.mfderiv_fst_apply ξ
+    · simp only [LinearMap.comp_apply, LinearMap.prod_apply, Function.prod_apply,
+        ContinuousLinearMap.coe_coe, LinearEquiv.coe_coe, he, hB]
+      rw [← hh.mfderiv_snd_apply, ← mfderiv_comp_apply c (hg (b c)) (hb c)]
+      -- `LinearMap.snd` is the projection by definition, but `LinearMap.snd_apply` does not
+      -- rewrite here: it acts on the product of the coordinate tangent spaces, which is the
+      -- tangent space of the product only by definition.
+      exact hgb.mfderiv_snd_apply ξ
   rw [← SymplecticForm.isLagrangian_map_transport_iff (e := e),
-    symplecticFormAt_twistedProd hσ₁ hσ₃, ← LinearMap.range_comp]
+    symplecticFormAt_twistedProd hσ₁ hσ₃, ← LinearMap.range_comp, hd]
   -- The tangent image is the composite of the tangent relations of `f` and `g`.
-  convert isLagrangian_range_prod_of_eq (hσ₂ := hσ₂) (hab c) (isLagrangian_range_prod hfL (a c))
-    (isLagrangian_range_prod hgL (b c)) (S := (mfderiv KC K₁ a c).toLinearMap)
-    (T := (mfderiv KC K₂ b c).toLinearMap)
-    (fun ξ ↦ by
-      simp only [LinearMap.comp_apply, ContinuousLinearMap.coe_coe, LinearEquiv.coe_coe,
-        ContinuousLinearEquiv.coe_toLinearEquiv, Manifold.tangentSpaceProdEquiv_apply]
-      exact mfderiv_snd_eq_mfderiv_fst_of_fiberProduct hf hg ha hb hab c ξ)
-    (fun u w h ↦ hfib c u w (by
-      simp only [LinearMap.comp_apply, ContinuousLinearMap.coe_coe, LinearEquiv.coe_coe,
-        ContinuousLinearEquiv.coe_toLinearEquiv, Manifold.tangentSpaceProdEquiv_apply] at h
-      exact h)) using 2
-  ext ξ <;>
-  · simp only [e, LinearMap.comp_apply, ContinuousLinearMap.coe_coe, LinearEquiv.coe_coe,
-      ContinuousLinearEquiv.coe_toLinearEquiv, Manifold.tangentSpaceProdEquiv_apply]
-    simp [mfderiv_relComp_apply hf hg ha hb c ξ]
-    -- The two sides differ only in the elaborated types of the middle tangent spaces.
-    rfl
+  refine isLagrangian_range_prod_of_eq (hσ₂ := hσ₂) (hab c) (isLagrangian_range_prod hfL (a c))
+    (isLagrangian_range_prod hgL (b c)) (fun ξ ↦ ?_) (fun u w h ↦ hfib c u w ?_)
+  · rw [ContinuousLinearMap.coe_coe, ContinuousLinearMap.coe_coe, hA, hB,
+      ← mfderiv_comp_apply c (hf (a c)) (ha c), ← mfderiv_comp_apply c (hg (b c)) (hb c)]
+    exact mfderiv_snd_eq_mfderiv_fst_of_fiberProduct hfa hgb hab ξ
+  · rwa [hA, hB] at h
 
 /-- **Composition of Lagrangian correspondences, embedded case.** Under the hypotheses of
 `IsLagrangianMap.relComp`, if the composite `c ↦ ((f (a c)).1, (g (b c)).2)` is moreover a smooth
 embedding, it is a Lagrangian correspondence `M₁ ⇝ M₃`. -/
-theorem IsLagrangianEmbedding.relComp (hfL : (hσ₁.twistedProd hσ₂).IsLagrangianMap K₁ f)
+theorem IsLagrangianMap.isLagrangianEmbedding_relComp
+    (hfL : (hσ₁.twistedProd hσ₂).IsLagrangianMap K₁ f)
     (hgL : (hσ₂.twistedProd hσ₃).IsLagrangianMap K₂ g) (hf : MDifferentiable K₁ (I₁.prod I₂) f)
     (hg : MDifferentiable K₂ (I₂.prod I₃) g) (ha : MDifferentiable KC K₁ a)
     (hb : MDifferentiable KC K₂ b) (hab : ∀ c, (f (a c)).2 = (g (b c)).1)
@@ -226,23 +198,6 @@ theorem IsLagrangianEmbedding.relComp (hfL : (hσ₁.twistedProd hσ₂).IsLagra
   (isLagrangianEmbedding_iff_of_isSmoothEmbedding hemb).mpr
     (hfL.relComp (hσ₁ := hσ₁) (hσ₂ := hσ₂) (hσ₃ := hσ₃) hgL hf hg ha hb hab hfib)
 
-omit [FiniteDimensional ℝ E₁] [FiniteDimensional ℝ E₂] [IsManifold I₁ ∞ M₁]
-  [IsManifold I₂ ∞ M₂] in
-/-- The differential of the graph `x ↦ (x, φ x)` has first coordinate `u`. -/
-private theorem mfderiv_graph_fst_apply {φ : M₁ → M₂} (hφ : MDifferentiable I₁ I₂ φ) (x : M₁)
-    (u : TangentSpace I₁ x) : (mfderiv I₁ (I₁.prod I₂) (fun x ↦ (x, φ x)) x u).1 = u := by
-  rw [mfderiv_prodMk (f := fun x : M₁ ↦ x) mdifferentiableAt_id (hφ x)]
-  exact DFunLike.congr_fun (mfderiv_id (I := I₁) (x := x)) u
-
-omit [FiniteDimensional ℝ E₁] [FiniteDimensional ℝ E₂] [IsManifold I₁ ∞ M₁]
-  [IsManifold I₂ ∞ M₂] in
-/-- The differential of the graph `x ↦ (x, φ x)` has second coordinate `dφ u`. -/
-private theorem mfderiv_graph_snd_apply {φ : M₁ → M₂} (hφ : MDifferentiable I₁ I₂ φ) (x : M₁)
-    (u : TangentSpace I₁ x) :
-    (mfderiv I₁ (I₁.prod I₂) (fun x ↦ (x, φ x)) x u).2 = mfderiv I₁ I₂ φ x u := by
-  rw [mfderiv_prodMk (f := fun x : M₁ ↦ x) mdifferentiableAt_id (hφ x)]
-  rfl
-
 /-- **Composition of graphs.** If the graphs of smooth maps `φ : M₁ → M₂` and `ψ : M₂ → M₃` are
 Lagrangian for the twisted products, so is the graph of `ψ ∘ φ`. This is the composite of the two
 graph correspondences, presented over `C = M₁` by `a = id` and `b = φ`. -/
@@ -254,7 +209,7 @@ theorem isLagrangianMap_graph_comp {φ : M₁ → M₂} {ψ : M₂ → M₃} (h�
   h₁.relComp (hσ₁ := hσ₁) (hσ₂ := hσ₂) (hσ₃ := hσ₃) (a := id) (b := φ) h₂
     (mdifferentiable_id.prodMk hφ) (mdifferentiable_id.prodMk hψ)
     mdifferentiable_id hφ (fun _ ↦ rfl) fun x u w h ↦ ⟨u, by simp, by
-      rw [mfderiv_graph_snd_apply hφ, mfderiv_graph_fst_apply hψ] at h
+      rw [Manifold.mfderiv_graph_snd_apply (hφ _), Manifold.mfderiv_graph_fst_apply (hψ _)] at h
       exact h⟩
 
 end TauCeti.SmoothTwoForm.IsNondegenerate
