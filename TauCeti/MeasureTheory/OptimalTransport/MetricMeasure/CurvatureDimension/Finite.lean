@@ -37,7 +37,7 @@ curvature-dimension condition `CD*(K, N)` of Bacher and Sturm is the same inequa
 coefficient `σ_{K,N'}` (`TauCeti.distortionSigma`) in place of `τ_{K,N'}`. Both are instances of
 one condition for a general family of coefficients, stated once with its monotonicity and diameter
 bound. By theorems of Sturm and of Bacher–Sturm, not formalized here, on an `n`-dimensional
-weighted Riemannian manifold both conditions are equivalent to the lower bound
+weighted Riemannian manifold with `N > n` both conditions are equivalent to the lower bound
 `Ric + Hess V - dV ⊗ dV / (N - n) ≥ K` on the Bakry–Émery Ricci tensor; on general
 metric-measure spaces they are two distinct predicates. Full support follows the convention of
 `TauCeti.MetricMeasureSpace.CurvatureDimensionInfinity`; a reference measure without full support
@@ -51,7 +51,6 @@ farther apart, the uniform laws on two small balls about them would have
 
 ## Main definitions
 
-* `TauCeti.distortedRenyiEntropy β N m q t`: the distorted Rényi entropy `T_β^{(t)}(q | m)`.
 * `TauCeti.MetricMeasureSpace.DistortedCurvatureDimension M β N`: the curvature-dimension
   condition for a family `β` of distortion coefficients.
 * `TauCeti.MetricMeasureSpace.CurvatureDimension M K N`: the condition `CD(K, N)`.
@@ -59,9 +58,6 @@ farther apart, the uniform laws on two small balls about them would have
 
 ## Main statements
 
-* `TauCeti.distortedRenyiEntropy_zero`: at time `0`, below the critical distance, the distorted
-  Rényi entropy of `q` is the Rényi entropy of its first marginal, so both conditions hold with
-  equality at the initial endpoint.
 * `TauCeti.MetricMeasureSpace.DistortedCurvatureDimension.mono`,
   `TauCeti.MetricMeasureSpace.DistortedCurvatureDimension.dist_le`: the general condition weakens
   for smaller coefficients and larger `N`, and bounds distances by any `D` beyond which the
@@ -94,70 +90,6 @@ open MeasureTheory ProbabilityTheory Set Metric
 open scoped ENNReal Real
 
 namespace TauCeti
-
-section DistortedRenyiEntropy
-
-variable {X : Type*} [PseudoMetricSpace X] [MeasurableSpace X] {β β' : ℝ → ℝ → ℝ≥0∞} {N t : ℝ}
-  {m : Measure X} {q : Measure (X × X)}
-
-/-- The *distorted Rényi entropy* `T_β^{(t)}(q | m)` of a plan `q` on `X × X` relative to a
-reference measure `m`, for a family `β s θ = β^{(s)}(θ)` of distortion coefficients indexed by a
-time `s` and a distance `θ`:
-
-`T_β^{(t)}(q | m) = -∫ [β^{(1-t)}(d(x₀, x₁)) ρ₀(x₀)^{-1/N} + β^{(t)}(d(x₀, x₁)) ρ₁(x₁)^{-1/N}] dq`,
-
-where `ρ₀` and `ρ₁` are the densities with respect to `m` of the two marginals of `q`. With
-`β = τ_{K,N}` it is the right-hand side of the condition `CD(K, N)`, with `β = σ_{K,N}` that of
-`CD*(K, N)`. The integral is in `[0, ∞]`, so the value lies in `[-∞, 0]`. -/
-def distortedRenyiEntropy (β : ℝ → ℝ → ℝ≥0∞) (N : ℝ) (m : Measure X) (q : Measure (X × X))
-    (t : ℝ) : EReal :=
-  -((∫⁻ z, (β (1 - t) (dist z.1 z.2) * q.fst.rnDeriv m z.1 ^ (-N⁻¹) +
-    β t (dist z.1 z.2) * q.snd.rnDeriv m z.2 ^ (-N⁻¹)) ∂q : ℝ≥0∞) : EReal)
-
-/-- The distorted Rényi entropy, unfolded. -/
-theorem distortedRenyiEntropy_def :
-    distortedRenyiEntropy β N m q t =
-      -((∫⁻ z, (β (1 - t) (dist z.1 z.2) * q.fst.rnDeriv m z.1 ^ (-N⁻¹) +
-        β t (dist z.1 z.2) * q.snd.rnDeriv m z.2 ^ (-N⁻¹)) ∂q : ℝ≥0∞) : EReal) :=
-  (rfl)
-
-/-- Larger distortion coefficients give a smaller distorted Rényi entropy. -/
-theorem distortedRenyiEntropy_anti (h : ∀ θ, β (1 - t) θ ≤ β' (1 - t) θ)
-    (h' : ∀ θ, β t θ ≤ β' t θ) :
-    distortedRenyiEntropy β' N m q t ≤ distortedRenyiEntropy β N m q t := by
-  rw [distortedRenyiEntropy_def, distortedRenyiEntropy_def, EReal.neg_le_neg_iff,
-    EReal.coe_ennreal_le_coe_ennreal_iff]
-  gcongr with z
-  exacts [h _, h' _]
-
-/-- **The distorted Rényi entropy at time `0`.** If `q`-almost every pair is below the critical
-distance, in the sense that `β^{(1)} = 1` and `β^{(0)} = 0` there, and the first marginal of `q` is
-absolutely continuous with respect to `m`, then `T_β^{(0)}(q | m) = S_N(q.fst | m)` is the Rényi
-entropy of that marginal. So the curvature-dimension inequalities hold with equality at time `0`.
--/
-theorem distortedRenyiEntropy_zero [q.fst.HaveLebesgueDecomposition m] (hN : 0 < N) (hq : q.fst ≪ m)
-    (h₁ : ∀ᵐ z ∂q, β 1 (dist z.1 z.2) = 1) (h₀ : ∀ᵐ z ∂q, β 0 (dist z.1 z.2) = 0) :
-    distortedRenyiEntropy β N m q 0 = renyiEntropy N m q.fst := by
-  have hρ : Measurable fun x ↦ q.fst.rnDeriv m x ^ (-N⁻¹) :=
-    (Measure.measurable_rnDeriv _ _).pow_const _
-  have hcoupling : IsCoupling q q.fst q.snd := ⟨rfl, rfl⟩
-  rw [distortedRenyiEntropy_def, renyiEntropy_eq_neg_lintegral hN,
-    lintegral_rnDeriv_mul hq hρ.aemeasurable, ← hcoupling.lintegral_comp_fst hρ.aemeasurable]
-  congr 2
-  refine lintegral_congr_ae ?_
-  filter_upwards [h₁, h₀] with z hz₁ hz₀
-  rw [sub_zero, hz₁, hz₀, one_mul, zero_mul, add_zero]
-
-/-- If the integrand of `T_β^{(t)}(q | m)` is infinite `q`-almost everywhere and `q ≠ 0`, the
-distorted Rényi entropy is `-∞`. -/
-theorem distortedRenyiEntropy_eq_bot_of_ae (hq : q ≠ 0)
-    (h : ∀ᵐ z ∂q, β (1 - t) (dist z.1 z.2) * q.fst.rnDeriv m z.1 ^ (-N⁻¹) +
-      β t (dist z.1 z.2) * q.snd.rnDeriv m z.2 ^ (-N⁻¹) = ⊤) :
-    distortedRenyiEntropy β N m q t = ⊥ := by
-  rw [distortedRenyiEntropy_def, lintegral_congr_ae h, lintegral_const,
-    ENNReal.top_mul (Measure.measure_univ_ne_zero.2 hq), EReal.coe_ennreal_top, EReal.neg_top]
-
-end DistortedRenyiEntropy
 
 namespace MetricMeasureSpace
 
