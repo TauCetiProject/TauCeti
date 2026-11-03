@@ -305,20 +305,19 @@ theorem borelBireducible_bot_quotient [Countable (Quotient E)]
     exact ⟨fun h => h ▸ E.refl _, fun h => Quotient.out_equiv_out.1 h⟩
 
 /-- Borel reducibility to a relation with countably many classes is exactly comparison of the
-cardinalities of the quotients, provided all classes of both relations are measurable. -/
+cardinalities of the quotients, provided all classes of the source relation are measurable. -/
 theorem borelReducible_iff_lift_mk_quotient_le_of_countable [Countable (Quotient F)]
-    (hE : ∀ x, MeasurableSet {y | E x y}) (hF : ∀ x, MeasurableSet {y | F x y}) :
+    (hE : ∀ x, MeasurableSet {y | E x y}) :
     E.BorelReducible F ↔ lift.{v} #(Quotient E) ≤ lift.{u} #(Quotient F) := by
   refine ⟨BorelReducible.lift_mk_quotient_le, fun h ↦ ?_⟩
   obtain ⟨f⟩ := lift_mk_le'.1 h
   have : Countable (Quotient E) := f.injective.countable
   have := measurableSingletonClass_quotient hE
-  have := measurableSingletonClass_quotient hF
-  have hquot : (⊥ : Setoid (Quotient E)).BorelReducible (⊥ : Setoid (Quotient F)) :=
-    borelReducible_bot_bot_iff_lift_mk_le.2 h
-  obtain ⟨hE', -⟩ := borelBireducible_iff.1 (borelBireducible_bot_quotient hE)
-  obtain ⟨-, hF'⟩ := borelBireducible_iff.1 (borelBireducible_bot_quotient hF)
-  exact hE'.trans (hquot.trans hF')
+  refine ⟨fun x => (f (Quotient.mk E x)).out,
+    (measurable_of_countable (fun q : Quotient E => (f q).out)).comp measurable_quotient_mk'',
+    fun x y => ?_⟩
+  exact ⟨fun hxy => Quotient.out_equiv_out.2 (congrArg f (Quotient.sound hxy)),
+    fun hxy => Quotient.exact (f.injective (Quotient.out_equiv_out.1 hxy))⟩
 
 /-- Two relations with measurable classes, one with countably many classes, are Borel
 bireducible exactly when their quotients have the same cardinality. -/
@@ -329,8 +328,8 @@ theorem borelBireducible_iff_lift_mk_quotient_eq_of_countable [Countable (Quotie
   obtain ⟨e⟩ := lift_mk_eq'.1 h
   have : Countable (Quotient E) := Countable.of_equiv (Quotient F) e.symm
   exact borelBireducible_iff.2
-    ⟨(borelReducible_iff_lift_mk_quotient_le_of_countable hE hF).2 h.le,
-      (borelReducible_iff_lift_mk_quotient_le_of_countable hF hE).2 h.ge⟩
+    ⟨(borelReducible_iff_lift_mk_quotient_le_of_countable hE).2 h.le,
+      (borelReducible_iff_lift_mk_quotient_le_of_countable hF).2 h.ge⟩
 
 /-- A relation with measurable classes is Borel bireducible with equality on a countable
 discrete measurable space precisely when its quotient bijects with that space. No countability
