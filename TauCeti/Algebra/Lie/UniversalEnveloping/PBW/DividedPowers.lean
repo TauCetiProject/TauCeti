@@ -44,15 +44,28 @@ variable {L : Type u} {ι : Type v} [LieRing L] [LieAlgebra ℚ L] [LinearOrder 
 
 local notation "U" => _root_.UniversalEnvelopingAlgebra ℚ L
 
-private noncomputable def pbwInvFactorial (n : ℕ) : ℚˣ :=
-  Units.mk0 (n.factorial : ℚ)⁻¹ (inv_ne_zero (by exact_mod_cast n.factorial_ne_zero))
-
 private noncomputable def pbwDividedPowerScale (n : ι →₀ ℕ) : ℚˣ :=
-  ((n.support.sort (· ≤ ·)).map fun i ↦ pbwInvFactorial (n i)).prod
+  n.prod fun _ k ↦ invFactorialUnit k
 
 /-- The rational PBW basis normalized as increasing products of divided powers. -/
 noncomputable def pbwDividedPowerBasis : Basis (ι →₀ ℕ) ℚ U :=
   b.pbwBasis.unitsSMul pbwDividedPowerScale
+
+/-- A divided-power PBW vector is the ordinary PBW vector scaled by the inverse product of
+its exponent factorials. -/
+theorem pbwDividedPowerBasis_eq_smul_pbwBasis (n : ι →₀ ℕ) :
+    b.pbwDividedPowerBasis n =
+      (n.prod fun _ k ↦ (k.factorial : ℚ))⁻¹ • b.pbwBasis n := by
+  simp [pbwDividedPowerBasis, unitsSMul_apply, Units.smul_def, pbwDividedPowerScale,
+    Finsupp.prod, Units.coe_prod, ← Finset.prod_inv_distrib]
+
+/-- Divided-power PBW coordinates are ordinary PBW coordinates multiplied by the product of
+the exponent factorials. -/
+theorem pbwDividedPowerBasis_repr (x : U) (n : ι →₀ ℕ) :
+    b.pbwDividedPowerBasis.repr x n =
+      (n.prod fun _ k ↦ (k.factorial : ℚ)) * b.pbwBasis.repr x n := by
+  simp [pbwDividedPowerBasis, repr_unitsSMul, Units.smul_def, pbwDividedPowerScale,
+    Finsupp.prod, Units.coe_prod, ← Finset.prod_inv_distrib]
 
 /-- A normalized PBW vector is the increasing product of the divided powers specified by its
 finitely supported exponent vector. -/
@@ -60,8 +73,13 @@ theorem pbwDividedPowerBasis_eq_prod (n : ι →₀ ℕ) :
     b.pbwDividedPowerBasis n = ((n.support.sort (· ≤ ·)).map
       (fun i ↦ dividedPower (n i) (_root_.UniversalEnvelopingAlgebra.ι ℚ (b i)))).prod := by
   rw [pbwDividedPowerBasis, unitsSMul_apply, b.pbwBasis_eq_prod_pow]
+  have hscale : pbwDividedPowerScale n =
+      ((n.support.sort (· ≤ ·)).map fun i ↦ invFactorialUnit (n i)).prod := by
+    simp only [pbwDividedPowerScale, Finsupp.prod, ← Multiset.prod_coe,
+      ← Multiset.map_coe, Finset.sort_eq, Finset.prod_eq_multiset_prod]
+  rw [hscale]
   have hprod (l : List ι) :
-      ((l.map fun i ↦ pbwInvFactorial (n i)).prod : ℚˣ) •
+      ((l.map fun i ↦ invFactorialUnit (n i)).prod : ℚˣ) •
         (l.map fun i ↦ _root_.UniversalEnvelopingAlgebra.ι ℚ (b i) ^ n i).prod =
       (l.map fun i ↦ dividedPower (n i) (_root_.UniversalEnvelopingAlgebra.ι ℚ (b i))).prod := by
     induction l with
@@ -69,8 +87,7 @@ theorem pbwDividedPowerBasis_eq_prod (n : ι →₀ ℕ) :
     | cons i l ih =>
       simp only [List.map_cons, List.prod_cons]
       rw [← ih]
-      simp only [Units.smul_def, Units.val_mul, pbwInvFactorial, Units.val_mk0,
-        dividedPower_def, smul_mul_smul_comm]
+      rw [← smul_mul_smul_comm, invFactorialUnit_smul_pow]
   exact hprod _
 
 @[simp]
@@ -151,16 +168,7 @@ theorem map_pbwDividedPowerBasis (b : Basis ι ℚ L) (c : Basis κ ℚ M)
     (f : L →ₗ⁅ℚ⁆ M) (e : ι ↪o κ) (h : ∀ i, f (b i) = c (e i)) (n : ι →₀ ℕ) :
     map ℚ f (b.pbwDividedPowerBasis n) =
       c.pbwDividedPowerBasis (n.embDomain e.toEmbedding) := by
-  have hsort : (n.support.sort (· ≤ ·)).map e =
-      (n.support.map e.toEmbedding).sort (· ≤ ·) :=
-    Finset.map_sort _ _ _ _ (fun _ _ _ _ ↦ e.le_iff_le.symm)
-  rw [b.pbwDividedPowerBasis_eq_prod, c.pbwDividedPowerBasis_eq_prod,
-    Finsupp.support_embDomain, ← hsort, List.map_map, map_list_prod]
-  simp only [List.map_map, Function.comp_def, map_dividedPower, map_ι, h]
-  congr 1
-  apply List.map_congr_left
-  intro i _
-  congr 1
-  exact (Finsupp.embDomain_apply_self e.toEmbedding n i).symm
+  simp only [pbwDividedPowerBasis, unitsSMul_apply, Units.smul_def, map_smul,
+    b.map_pbwBasis c f e h n, pbwDividedPowerScale, Finsupp.prod_embDomain]
 
 end Module.Basis
