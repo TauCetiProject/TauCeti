@@ -128,7 +128,7 @@ noncomputable abbrev baseChangePointsEquiv (k : Type) [CommRing k] [Algebra (ZMo
     (R := k)).symm.trans (pointsMulEquiv (CommAlgCat.of (ZMod 3) k))
 
 /-- A common-kernel quotient point is its underlying general-linear point read as a matrix. -/
-private theorem coe_pointsMulEquiv_apply (A : CommAlgCat.{v} (ZMod 3))
+theorem coe_pointsMulEquiv_apply (A : CommAlgCat.{v} (ZMod 3))
     (q : HopfAlgebra.points
       (R := ZMod 3) (H := CommHopfAlgCat.quotient
         (TauCeti.GeneralLinear.coordinateHopfAlgebra (ZMod 3) 7)
@@ -452,8 +452,9 @@ theorem coe_weightTorusPoints_pointsMulEquiv (A : Type v) [CommRing A] [Algebra 
   rw [weightTorusPoints]
   exact congrArg _ (congrArg _ (MulEquiv.symm_apply_apply _ q))
 
-private theorem pointsMulEquiv_commonKernelLift_root (k : Fin 2 ⊕ Fin 2)
-    (A : Type) [CommRing A] [Algebra (ZMod 3) A]
+/-- The numbered root-coordinate lift induces the named matrix-valued root parametrization. -/
+theorem pointsMulEquiv_commonKernelLift_root (k : Fin 2 ⊕ Fin 2)
+    (A : Type v) [CommRing A] [Algebra (ZMod 3) A]
     (q : HopfAlgebra.points (R := ZMod 3)
       (H := AdditiveGroup.coordinateHopfAlgebra (ZMod 3)) (CommAlgCat.of (ZMod 3) A)) :
     pointsMulEquiv (CommAlgCat.of (ZMod 3) A)
