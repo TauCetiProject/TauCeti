@@ -79,21 +79,16 @@ theorem inner_fderiv_coe_comp_stereographic'_symm (v : sphere (0 : E) 1)
     inner ℝ (fderiv ℝ (((↑) : sphere (0 : E) 1 → E) ∘ (stereographic' n v).symm) y a)
         (fderiv ℝ (((↑) : sphere (0 : E) 1 → E) ∘ (stereographic' n v).symm) y b) =
       (4 / (‖y‖ ^ 2 + 4)) ^ 2 * inner ℝ a b := by
-  set U := (OrthonormalBasis.fromOrthogonalSpanSingleton (𝕜 := ℝ) n
-    (ne_zero_of_mem_unit_sphere v)).repr
-  have hL : HasFDerivAt (((↑) : (ℝ ∙ (v : E))ᗮ → E) ∘ U.symm)
-      ((ℝ ∙ (v : E))ᗮ.subtypeL.comp U.symm.toContinuousLinearEquiv.toContinuousLinearMap) y :=
-    ((ℝ ∙ (v : E))ᗮ.subtypeL.comp
-      U.symm.toContinuousLinearEquiv.toContinuousLinearMap).hasFDerivAt
-  rw [coe_comp_stereographic'_symm v,
-    (((contDiff_stereoInvFunAux (m := 1)).differentiable one_ne_zero _).hasFDerivAt.comp y
-      hL).fderiv]
-  simp only [ContinuousLinearMap.coe_comp, Function.comp_apply,
-    ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
-    Submodule.subtypeL_apply]
-  rw [inner_fderiv_stereoInvFunAux (norm_eq_of_mem_sphere v) (U.symm y).2 (U.symm a).2 (U.symm b).2,
-    Submodule.norm_coe, LinearIsometryEquiv.norm_map, ← Submodule.coe_inner,
-    LinearIsometryEquiv.inner_map_map]
+  have hsymm : MDifferentiableAt (𝓡 n) (𝓡 n) (stereographic' n v).symm y :=
+    mdifferentiableAt_atlas_symm (e := stereographic' n v) (Exists.intro v rfl) (by simp)
+  have hd (c : TangentSpace (𝓡 n) y) :
+      mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) ((stereographic' n v).symm y)
+          (mfderiv (𝓡 n) (𝓡 n) (stereographic' n v).symm y c) =
+        fderiv ℝ (((↑) : sphere (0 : E) 1 → E) ∘ (stereographic' n v).symm) y c := by
+    rw [← mvfderiv_comp_apply y ((contMDiff_coe_sphere (m := 1)).mdifferentiableAt one_ne_zero)
+      hsymm, mvfderiv_eq_fderiv, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe]
+    exact congrArg _ (NormedSpace.fromTangentSpace_apply y c)
+  rw [← inner_mfderiv_stereographic'_symm v y a b, inner_tangentSpace_sphere, hd a, hd b]
 
 /-- **Jacobian of inverse stereographic projection.** Read in the ambient space `E`, the inverse of
 the stereographic chart `stereographic' n v` has Euclidean Jacobian `(4 / (‖y‖² + 4)) ^ n` at
@@ -125,15 +120,6 @@ section SphereVolume
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {n : ℕ} [Fact (finrank ℝ E = n + 1)]
 
-omit [FiniteDimensional ℝ E] in
-/-- The differential of the unit-sphere inclusion preserves inner products from the round tangent
-spaces to the standard Riemannian tangent spaces of `E`. -/
-private theorem inner_mfderiv_coe_sphere (x : sphere (0 : E) 1) (a b : TangentSpace (𝓡 n) x) :
-    inner ℝ (mfderiv (𝓡 n) 𝓘(ℝ, E) ((↑) : sphere (0 : E) 1 → E) x a)
-      (mfderiv (𝓡 n) 𝓘(ℝ, E) ((↑) : sphere (0 : E) 1 → E) x b) = inner ℝ a b := by
-  rw [TauCeti.Manifold.inner_tangentSpace_vectorSpace, inner_tangentSpace_sphere]
-  rfl
-
 section AmbientMeasure
 
 variable [MeasurableSpace E] [BorelSpace E]
@@ -147,7 +133,8 @@ theorem riemannianVolume_sphere_eq_comap_euclideanHausdorffMeasure :
     (I := 𝓡 n) (M := sphere (0 : E) 1) (E := E)
     (MeasurableEmbedding.subtype_coe isClosed_sphere.measurableSet)
     ((contMDiff_coe_sphere (m := 1)).mdifferentiable one_ne_zero)
-    inner_mfderiv_coe_sphere
+    (fun x a b ↦ (Manifold.inner_tangentSpace_vectorSpace _ _).trans
+      (inner_tangentSpace_sphere x a b).symm)
   rwa [finrank_euclideanSpace_fin] at h
 
 /-- On the unit sphere of a finite-dimensional real inner product space, the Riemannian volume
@@ -223,7 +210,8 @@ theorem lintegral_riemannianVolume_sphere_eq_stereographic' (hn : 1 ≤ n) (v : 
     setLIntegral_riemannianVolume_eq_lintegral_normDet_of_subset hsrc
       isOpen_compl_singleton.measurableSet
       (fun x _ ↦ (contMDiff_coe_sphere (m := 1)).mdifferentiable one_ne_zero x)
-      (fun x _ ↦ inner_mfderiv_coe_sphere x)
+      (fun x _ a b ↦ (Manifold.inner_tangentSpace_vectorSpace _ _).trans
+        (inner_tangentSpace_sphere x a b).symm)
       φ]
   rw [extChartAt_coe, modelWithCornersSelf_coe, id_comp, extChartAt_coe_symm,
     modelWithCornersSelf_coe_symm, comp_id, chartAt_sphere, neg_neg,
@@ -247,7 +235,8 @@ theorem integral_riemannianVolume_sphere_eq_stereographic' {G : Type*} [NormedAd
     setIntegral_riemannianVolume_eq_integral_normDet_of_subset hsrc
       isOpen_compl_singleton.measurableSet
       (fun x _ ↦ (contMDiff_coe_sphere (m := 1)).mdifferentiable one_ne_zero x)
-      (fun x _ ↦ inner_mfderiv_coe_sphere x)
+      (fun x _ a b ↦ (Manifold.inner_tangentSpace_vectorSpace _ _).trans
+        (inner_tangentSpace_sphere x a b).symm)
       φ]
   rw [extChartAt_coe, modelWithCornersSelf_coe, id_comp, extChartAt_coe_symm,
     modelWithCornersSelf_coe_symm, comp_id, chartAt_sphere, neg_neg,
