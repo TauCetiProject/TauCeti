@@ -187,7 +187,7 @@ private theorem norm_kernelStep_sub_kernelStep_le (q u u' : Kˣ) (hq : ‖(q : K
       |>.trans (norm_kernelErr_sub_le q u' u hq hc₁.le hc.le hu₁' hu₁)
   · rw [mul_comm]
     exact mul_le_mul (norm_kernelErr_le q u hq hc₁.le hc.le hu₁)
-      (norm_one_sub_pow_three_div_sub_one_sub_pow_three_div_le hu₁' hu₁) (norm_nonneg _)
+      (norm_one_sub_cube_div_sub_one_sub_cube_div_le hu₁' hu₁) (norm_nonneg _)
       (norm_nonneg _)
 
 omit [IsUltrametricDist K] [CompleteSpace K] in
@@ -258,13 +258,7 @@ theorem exists_tateUniformizationX_eq_and_tateUniformizationY_eq_of_one_lt_norm 
       tateUniformizationX q u = x ∧ tateUniformizationY q u = y := by
   have hA₄ := (norm_tateCurveA₄_le (q : K) hq).trans_lt hq
   have hA₆ := (norm_tateCurveA₆ (q : K) hq).trans_lt hq
-  have heq {a b : K} (h : (tateCurveAt q hq).toAffine.Equation a b) :
-      b ^ 2 + a * b = a ^ 3 + tateCurveA₄ (q : K) hq * a + tateCurveA₆ (q : K) hq := by
-    rw [WeierstrassCurve.Affine.equation_iff] at h
-    simp only [tateCurveAt_a₁, tateCurveAt_a₂, tateCurveAt_a₃, tateCurveAt_a₄,
-      tateCurveAt_a₆] at h
-    linear_combination h
-  have hxy := norm_lt_norm_add_of_equation hA₄ hA₆ hx (heq h)
+  have hxy := norm_lt_norm_add_of_equation hA₄ hA₆ hx ((tateCurveAt_equation_iff q hq).mp h)
   have hxy₀ : x + y ≠ 0 := norm_pos_iff.mp ((one_pos.trans hx).trans hxy)
   have hx₀ : x ≠ 0 := norm_pos_iff.mp (one_pos.trans hx)
   -- `c = y / (x + y)` is the parameter of `(x, y)` on the nodal cubic `y² + xy = x³`
@@ -290,8 +284,9 @@ theorem exists_tateUniformizationX_eq_and_tateUniformizationY_eq_of_one_lt_norm 
   have hu₁ : ‖(u : K)‖ = 1 := norm_eq_one_of_norm_one_sub_lt_one hu
   have hnot : u ∉ Subgroup.zpowers q :=
     notMem_zpowers_of_norm_eq_one hq hu₁ fun h ↦ hu1 (by rw [h, Units.val_one])
-  obtain ⟨hX, hY⟩ := eq_of_mul_eq_mul_of_one_lt_norm hA₄ hA₆ hx hXu (heq h)
-    (heq (equation_tateUniformizationX_tateUniformizationY_of_notMem_zpowers q u hq hnot)) hcross
+  obtain ⟨hX, hY⟩ := eq_of_mul_eq_mul_of_one_lt_norm hA₄ hA₆ hx hXu
+    ((tateCurveAt_equation_iff q hq).mp h) ((tateCurveAt_equation_iff q hq).mp
+      (equation_tateUniformizationX_tateUniformizationY_of_notMem_zpowers q u hq hnot)) hcross
   exact ⟨u, fun h ↦ hu1 (by rw [h, Units.val_one]), hu, hX, hY⟩
 
 /-- **The Tate uniformisation is onto the kernel of reduction.** An affine point `(x, y)` of

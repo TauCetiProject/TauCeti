@@ -48,7 +48,7 @@ Integer casts have norm at most `‖1‖`, without requiring the seminorm to be 
 * `TauCeti.norm_tsum_sub_tsum_le_norm_mul`: for `f` vanishing at zero and `1`-Lipschitz on the
   open unit ball, `∑_{n ≥ 1} f(qⁿ w)` and `∑_{n ≥ 1} f(qⁿ w')` differ by at most `‖q (w - w')‖`.
 * `TauCeti.norm_div_one_sub_sq_sub_div_one_sub_sq_le`: `t ↦ t / (1 - t)²` is `1`-Lipschitz on the
-  open unit ball; `TauCeti.norm_one_sub_pow_three_div_sub_one_sub_pow_three_div_le`:
+  open unit ball; `TauCeti.norm_one_sub_cube_div_sub_one_sub_cube_div_le`:
   `(1 - v)³ / v` is `1`-Lipschitz on the unit sphere.
 * `TauCeti.one_le_norm_one_sub_of_norm_ne_one`: subtracting an element whose norm is not one
   from one gives norm at least one.
@@ -241,7 +241,7 @@ theorem norm_div_one_sub_sq_sub_div_one_sub_sq_le {t t' : K} (ht : ‖t‖ < 1) 
     mul_le_of_le_one_right (norm_nonneg (t - t')) (Subring.mem_unitClosedBall.mp hP)
 
 /-- `v ↦ (1 - v)³ / v` is `1`-Lipschitz on the unit sphere of an ultrametric field. -/
-theorem norm_one_sub_pow_three_div_sub_one_sub_pow_three_div_le {v w : K} (hv : ‖v‖ = 1)
+theorem norm_one_sub_cube_div_sub_one_sub_cube_div_le {v w : K} (hv : ‖v‖ = 1)
     (hw : ‖w‖ = 1) :
     ‖(1 - v) ^ 3 / v - (1 - w) ^ 3 / w‖ ≤ ‖v - w‖ := by
   have h₀ : v ≠ 0 := norm_ne_zero_iff.mp (by rw [hv]; exact one_ne_zero)

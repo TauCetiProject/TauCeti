@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Basic
 public import Mathlib.Analysis.Normed.Field.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.Basic
 public import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Evaluation
@@ -18,7 +19,8 @@ This remains true in residue characteristics `2` and `3`: the sixth coefficient 
 its integral coefficients, with no division in the target ring.
 
 For a unit parameter in the open unit ball of a complete non-archimedean normed commutative ring,
-these sums give a nonsingular Tate equation. The discriminant and the coefficient `a₆` have the
+these sums give a nonsingular Tate equation, whose affine points are the solutions of
+`y² + xy = x³ + a₄(q) x + a₆(q)`. The discriminant and the coefficient `a₆` have the
 same norm as the parameter, even when the ring norm is only submultiplicative, and the coefficient
 `a₄` has norm at most that of the parameter. The invariant `c₄` has norm one under `NormOneClass`
 (`‖1‖ = 1`). Over a field, `|j| = 1 / |q| > 1`. Point uniformisation requires further arguments.
@@ -97,6 +99,15 @@ theorem tateCurveAt_def (q : Kˣ) (hq : ‖(q : K)‖ < 1) :
 @[simp] theorem tateCurveAt_a₆ (q : Kˣ) (hq : ‖(q : K)‖ < 1) :
     (tateCurveAt q hq).a₆ = tateCurveA₆ (q : K) hq := by
   simp only [tateCurveAt, WeierstrassCurve.map, tateCurveA₆]
+
+/-- A point lies on `tateCurveAt q hq` exactly when it solves the Tate equation
+`y² + xy = x³ + a₄(q) x + a₆(q)`. -/
+theorem tateCurveAt_equation_iff (q : Kˣ) (hq : ‖(q : K)‖ < 1) {x y : K} :
+    (tateCurveAt q hq).toAffine.Equation x y ↔
+      y ^ 2 + x * y = x ^ 3 + tateCurveA₄ (q : K) hq * x + tateCurveA₆ (q : K) hq := by
+  rw [WeierstrassCurve.Affine.equation_iff]
+  simp only [tateCurveAt_a₁, tateCurveAt_a₂, tateCurveAt_a₃, tateCurveAt_a₄, tateCurveAt_a₆]
+  constructor <;> intro h <;> linear_combination h
 
 /-- The discriminant of the specialized Tate equation is the evaluation of the formal
 discriminant of the Tate curve. -/
