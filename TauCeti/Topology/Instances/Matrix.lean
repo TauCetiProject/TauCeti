@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Action
-public import Mathlib.LinearAlgebra.Matrix.Block
 public import Mathlib.LinearAlgebra.Matrix.Kronecker
 public import Mathlib.Topology.Algebra.GroupWithZero
 public import Mathlib.Topology.Instances.Matrix
@@ -46,9 +45,6 @@ hypothesis on `R` cannot be dropped: over the adeles, inversion is not continuou
 for the subspace topology, already for `n = 1`.
 
 The Kronecker product of two continuously varying matrices is continuous in the product topology.
-
-Block triangular matrices, in particular upper and lower triangular ones, form a closed set
-(`Matrix.isClosed_setOf_blockTriangular`): each condition `M i j = 0` is closed.
 
 ## References
 
@@ -143,14 +139,6 @@ instance instIsOpenUnits : IsOpenUnits (Matrix n n R) where
         exact isUnit_iff_isUnit_det A
       rw [hrange]
       exact IsOpenUnits.isOpenEmbedding_unitsVal.isOpen_range.preimage continuous_id.matrix_det
-
-/-- The block triangular matrices form a closed set, since each vanishing condition `M i j = 0` is
-closed. In particular the upper and the lower triangular matrices form closed sets. -/
-theorem isClosed_setOf_blockTriangular {m α R : Type*} [LT α] [Zero R] [TopologicalSpace R]
-    [T1Space R] (b : m → α) : IsClosed {M : Matrix m m R | M.BlockTriangular b} := by
-  simp only [BlockTriangular, Set.ofPred_forall]
-  exact isClosed_iInter fun i => isClosed_iInter fun j => isClosed_iInter fun _ =>
-    isClosed_singleton.preimage (continuous_apply_apply i j)
 
 end Matrix
 
