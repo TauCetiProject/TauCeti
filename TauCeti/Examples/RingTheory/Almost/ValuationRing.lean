@@ -83,7 +83,12 @@ example : (ofValuationRing (TauCeti.PadicComplexInt.not_fg_maximalIdeal p)).IsAl
 example : ¬ (ofValuationRing (TauCeti.PadicComplexInt.not_fg_maximalIdeal p)).IsAlmostZero
     (𝓞_ℂ_[p] ⧸ Ideal.span {(p : 𝓞_ℂ_[p])}) := by
   rw [ofValuationRing_isAlmostZero_quotient_span_singleton_iff]
-  exact (mem_maximalIdeal _).mp (TauCeti.PadicComplexInt.natCast_mem_maximalIdeal p)
+  have hp : (1 : NNReal) < p := by exact_mod_cast (Fact.out : p.Prime).one_lt
+  have hpv : Valued.v ((p : 𝓞_ℂ_[p]) : ℂ_[p]) < 1 := by
+    rw [SubringClass.coe_natCast, PadicComplex.valuation_p]
+    exact (div_lt_one (zero_lt_one.trans hp)).mpr hp
+  exact (mem_maximalIdeal _).mp
+    ((Valuation.mem_maximalIdeal_iff (v := (PadicComplex.valued p).v)).mpr hpv)
 
 -- Multiplication `m ⊗ m → m` is bijective for `𝓞_ℂ_[p]`.
 example : Function.Bijective
