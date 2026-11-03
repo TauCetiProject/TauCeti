@@ -327,7 +327,9 @@ private theorem level_eq_and_coe_eq_primitiveTwist_primitiveTwist [NeZero M] {M'
   · rw [primitiveTwist_χ_comp_unitsMap g ψ' hTL hRL hM'L, primitiveTwist_χ_comp_unitsMap f ψ hRL hNL
       hML]
     ext u
-    simp [← ZMod.unitsMap_comp hM hM''L, ← ZMod.unitsMap_comp hM' hM''L, MulChar.coeToFun_mul]
+    simp [← ZMod.unitsMap_comp hM hM''L, ← ZMod.unitsMap_comp hM' hM''L, MulChar.coeToFun_mul,
+      DirichletCharacter.changeLevel_eq_cast_of_dvd, ← ZMod.unitsMap_val hM,
+      ← ZMod.unitsMap_val hM']
     ring
   · have hpM'' := hpL.coprime_dvd_right hM''L
     rw [qExpansion_coeff_primitiveTwist g ψ' hp (hpL.coprime_dvd_right hRL)
