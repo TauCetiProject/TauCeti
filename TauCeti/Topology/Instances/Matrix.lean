@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Action
+public import Mathlib.LinearAlgebra.Matrix.Charpoly.Univ
 public import Mathlib.LinearAlgebra.Matrix.Kronecker
 public import Mathlib.Topology.Algebra.GroupWithZero
+public import Mathlib.Topology.Algebra.MvPolynomial
 public import Mathlib.Topology.Instances.Matrix
 public import Mathlib.Topology.MetricSpace.Pseudo.Defs
 public import Mathlib.Topology.Metrizable.Basic
@@ -44,6 +46,10 @@ open units because it is a Hausdorff topological field, this says that `GL_n(E)`
 topology of the unit group is the open subspace `{det ≠ 0}` of the matrices `M_n(E)`. The
 hypothesis on `R` cannot be dropped: over the adeles, inversion is not continuous on the units
 for the subspace topology, already for `n = 1`.
+
+Each characteristic coefficient is continuous over a commutative topological ring
+(`Matrix.continuous_charpoly_coeff`). The proof uses Mathlib's universal characteristic polynomial
+`Matrix.charpoly.univ`, whose coefficients are multivariate polynomials in the matrix entries.
 
 The Kronecker product of two continuously varying matrices is continuous in the product topology.
 In particular the ⋆-algebra homomorphisms `A ↦ A ⊗ₖ 1` and `B ↦ 1 ⊗ₖ B` are continuous.
@@ -124,7 +130,22 @@ end Inverse
 namespace Matrix
 
 variable {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R] [TopologicalSpace R]
-  [IsTopologicalRing R] [IsOpenUnits R]
+  [IsTopologicalRing R]
+
+/-- Every characteristic coefficient is continuous for the entrywise matrix topology. -/
+@[continuity, fun_prop]
+theorem continuous_charpoly_coeff (k : ℕ) :
+    Continuous (fun A : Matrix n n R => A.charpoly.coeff k) := by
+  have h : Continuous (fun A : Matrix n n R =>
+      MvPolynomial.eval (Function.uncurry A) ((charpoly.univ R n).coeff k)) :=
+    (MvPolynomial.continuous_eval (p := (charpoly.univ R n).coeff k)).comp
+      (continuous_pi fun ij => continuous_id.matrix_elem ij.1 ij.2)
+  have hmatrix (A : Matrix n n R) : of (Function.curry (Function.uncurry A)) = A := by
+    ext i j
+    rfl
+  simpa only [MvPolynomial.eval, charpoly.univ_coeff_eval₂Hom, hmatrix] using h
+
+variable [IsOpenUnits R]
 
 /-- Square matrices over a commutative topological ring with open units have open units: the
 invertible matrices form an open set on which inversion is continuous. -/
