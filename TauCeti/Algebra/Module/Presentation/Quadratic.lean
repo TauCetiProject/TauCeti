@@ -230,10 +230,14 @@ def ofExact {m : ℕ} (hm : 0 < m) (b₁ : Basis (Fin m) R P₁) (b₀ : Basis (
   gen := π ∘ₗ b₀.equivFun.symm.toLinearMap
   gen_surjective := hπ.comp b₀.equivFun.symm.surjective
   range_rel_eq_ker := by
-    rw [LinearMap.toMatrix, LinearEquiv.trans_apply, Matrix.toLin'_toMatrix',
-      show LinearEquiv.arrowCongr b₁.equivFun b₀.equivFun f =
-        b₀.equivFun.toLinearMap ∘ₗ f ∘ₗ b₁.equivFun.symm.toLinearMap from rfl,
-      LinearMap.range_comp,
+    -- In coordinates, the relation matrix acts as `f` conjugated by the basis equivalences.
+    have hrel : Matrix.toLin' (LinearMap.toMatrix b₁ b₀ f) =
+        b₀.equivFun.toLinearMap ∘ₗ f ∘ₗ b₁.equivFun.symm.toLinearMap :=
+      LinearMap.ext fun x ↦ by
+        simpa only [Matrix.toLin'_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
+          ← Basis.equivFun_apply, LinearEquiv.apply_symm_apply] using
+          LinearMap.toMatrix_mulVec_repr b₁ b₀ f (b₁.equivFun.symm x)
+    rw [hrel, LinearMap.range_comp,
       LinearMap.range_comp_of_range_eq_top _ (LinearEquiv.range _), LinearMap.ker_comp,
       LinearMap.exact_iff.1 hf, Submodule.map_equiv_eq_comap_symm]
 
