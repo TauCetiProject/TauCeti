@@ -51,6 +51,12 @@ it is a Kan complex. For `p = 𝟙 B` there is exactly one functor over `f`, and
 ## References
 
 * J. Lurie, *Higher Topos Theory*, Warning 1.2.2.2, Notation 1.2.7.2 and Corollary 3.3.3.2.
+
+The quasicategory and Kan complex statements are deduced from the Mathlib results that
+postcomposition `(ihom K).map p` with an inner (resp. Kan) fibration `p` is an inner (resp. Kan)
+fibration, proved by Jack McKoen and Joël Riou in
+`Mathlib.AlgebraicTopology.SimplicialSet.AnodyneExtensions.Inner.PushoutProduct` and
+`Mathlib.AlgebraicTopology.SimplicialSet.AnodyneExtensions.PushoutProduct`.
 -/
 
 public section

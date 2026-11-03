@@ -7,7 +7,6 @@ module
 
 public import Mathlib.AlgebraicTopology.Quasicategory.Nerve
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homotopy
-public import Mathlib.AlgebraicTopology.SimplicialSet.Monoidal
 public import Mathlib.AlgebraicTopology.SimplicialSet.PiZero
 
 /-!
