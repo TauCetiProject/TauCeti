@@ -103,7 +103,7 @@ theorem _root_.ContinuousLinearMap.separatingLeft_toBilinForm_iff_injective (L :
 the map takes symmetric values. -/
 theorem _root_.ContinuousLinearMap.isSymm_toBilinForm_iff {L : E →L[𝕜] E →L[𝕜] 𝕜} :
     L.toBilinForm.IsSymm ↔ ∀ v w, L v w = L w v :=
-  LinearMap.isSymm_def
+  LinearMap.BilinForm.isSymm_def
 
 /-- The kernel of the bilinear form of a continuous linear map into the dual space is the kernel of
 the map. -/
@@ -220,7 +220,7 @@ theorem isVonNBounded_setOfPred_lt_one_of_le {g h : V →L[ℝ] V →L[ℝ] ℝ}
   refine (hg.image (r⁻¹ • ContinuousLinearMap.id ℝ V)).subset ?_
   intro v hv
   refine ⟨r • v, ?_, by simp [smul_smul, mul_inv_cancel₀ hr.ne']⟩
-  simp only [mem_ofPred_eq, map_smul, smul_apply, smul_eq_mul] at hv ⊢
+  simp only [mem_ofPred_eq, map_smul, _root_.smul_apply, smul_eq_mul] at hv ⊢
   calc r * (r * g v v) = c * g v v := by rw [← mul_assoc, Real.mul_self_sqrt hc.le]
     _ ≤ h v v := hle v
     _ < 1 := hv
@@ -328,7 +328,7 @@ theorem _root_.IsCompact.exists_pos_forall_mul_norm_sq_le
     simp [norm_smul, hn.ne']
   have hh := hle (x, ‖v‖⁻¹ • v) ⟨hx, hu⟩
   have heq : b x (‖v‖⁻¹ • v) (‖v‖⁻¹ • v) = (‖v‖ ^ 2)⁻¹ * b x v v := by
-    simp only [map_smul, smul_apply, smul_eq_mul]
+    simp only [map_smul, _root_.smul_apply, smul_eq_mul]
     ring
   rw [heq, le_inv_mul_iff₀ (by positivity)] at hh
   linarith

@@ -231,7 +231,7 @@ theorem IsMinimalPairNF.eq_of_intCast_eq_pow_mul {W' : WeierstrassCurve ℤ}
       (by simpa [Rat.num_pow] using (q ^ 4).num_dvd_of_intCast_eq_mul_intCast h₄)
       (by simpa [Rat.num_pow] using (q ^ 6).num_dvd_of_intCast_eq_mul_intCast h₆))
   have hq : q = 1 ∨ q = -1 := by
-    rw [← Rat.coe_int_num_of_den_eq_one hden]
+    rw [← Rat.intCast_num_of_den_eq_one hden]
     rcases hnum with h | h <;> simp [h]
   have hq4 : q ^ 4 = 1 := by rcases hq with rfl | rfl <;> norm_num
   have hq6 : q ^ 6 = 1 := by rcases hq with rfl | rfl <;> norm_num

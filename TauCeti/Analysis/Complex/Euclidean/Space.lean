@@ -77,6 +77,11 @@ noncomputable def complexToRealPi : (ι → ℂ) ≃L[ℝ] (ι ⊕ ι → ℝ) :
 theorem complexToRealPi_apply (z : ι → ℂ) (k : ι ⊕ ι) :
     complexToRealPi ι z k = Sum.elim (fun i ↦ (z i).re) (fun i ↦ (z i).im) k := (rfl)
 
+/-- Forgetting the Euclidean structure of `TauCeti.complexToRealEuclidean` gives
+`TauCeti.complexToRealPi`. -/
+theorem ofLp_complexToRealEuclidean (z : ι → ℂ) :
+    (complexToRealEuclidean ι z).ofLp = complexToRealPi ι z := (rfl)
+
 /-- Recombine two real coordinate blocks into a complex vector. -/
 @[simp]
 theorem complexToRealPi_symm_apply (a : ι ⊕ ι → ℝ) (i : ι) :

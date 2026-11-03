@@ -74,7 +74,7 @@ private def shearFirst : ZMod 2 × ZMod 2 ≃+ ZMod 2 × ZMod 2 where
   map_add' x y := by
     ext
     all_goals dsimp
-    all_goals ring
+    ring
 
 /-- The shear `(a, b) ↦ (a, a + b)` of the Klein four-group. -/
 private def shearSecond : ZMod 2 × ZMod 2 ≃+ ZMod 2 × ZMod 2 where
@@ -89,7 +89,7 @@ private def shearSecond : ZMod 2 × ZMod 2 ≃+ ZMod 2 × ZMod 2 where
   map_add' x y := by
     ext
     all_goals dsimp
-    all_goals ring
+    ring
 
 /-- An additive equivalence matching the three nonzero values of `u⁽²⁾(2)` gives an
 isometry from `u⁽²⁾(2)`. -/
