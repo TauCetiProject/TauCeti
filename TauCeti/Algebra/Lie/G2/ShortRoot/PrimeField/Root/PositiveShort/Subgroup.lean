@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Lie.G2.ShortRoot.PrimeField.PointsFunctor
 public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.Matrix
-import TauCeti.LinearAlgebra.RootSystem.RankTwo
 
 /-!
 # Positive nonsimple short-root homomorphisms of the short-root G₂ carrier
@@ -40,15 +39,9 @@ universe v w
 
 noncomputable section
 
-private def shortRootWord (j : Fin 2) (A : Type v) [CommRing A] [Algebra (ZMod 3) A] :
-    points A :=
-  rootSubgroupPoints (.inr j) A (Multiplicative.ofAdd 1) *
-    rootSubgroupPoints (.inl j) A (Multiplicative.ofAdd (-1)) *
-      rootSubgroupPoints (.inr j) A (Multiplicative.ofAdd 1)
-
 private def shortRootConjugator (i : Fin 2) (A : Type v) [CommRing A]
     [Algebra (ZMod 3) A] : points A :=
-  if i = 0 then shortRootWord 1 A else shortRootWord 0 A * shortRootWord 1 A
+  if i = 0 then rankOneWord 1 A else rankOneWord 0 A * rankOneWord 1 A
 
 /-- The additive root homomorphism at `α₁ + α₂` (index zero) or `2α₁ + α₂` (index one).
 Its normalization is fixed by the displayed matrix formula. -/
@@ -59,10 +52,7 @@ def positiveShortRootSubgroupPoints (i : Fin 2) (A : Type v) [CommRing A]
 /-- The two root homomorphisms are conjugates by explicit words in the numbered root groups. -/
 theorem positiveShortRootSubgroupPoints_eq_conjugate (i : Fin 2) (A : Type v) [CommRing A]
     [Algebra (ZMod 3) A] (u : Multiplicative A) :
-    let n := fun j : Fin 2 =>
-      rootSubgroupPoints (.inr j) A (Multiplicative.ofAdd 1) *
-        rootSubgroupPoints (.inl j) A (Multiplicative.ofAdd (-1)) *
-          rootSubgroupPoints (.inr j) A (Multiplicative.ofAdd 1)
+    let n := fun j : Fin 2 => rankOneWord j A
     let g := if i = 0 then n 1 else n 0 * n 1
     positiveShortRootSubgroupPoints i A u = g * rootSubgroupPoints (.inl 0) A u * g⁻¹ :=
   (rfl)
@@ -71,7 +61,7 @@ private theorem pointsMap_shortRootConjugator {A : Type v} {B : Type w}
     [CommRing A] [CommRing B] [Algebra (ZMod 3) A] [Algebra (ZMod 3) B]
     (f : A →ₐ[ZMod 3] B) (i : Fin 2) :
     pointsMap f (shortRootConjugator i A) = shortRootConjugator i B := by
-  fin_cases i <;> simp [shortRootConjugator, shortRootWord, map_mul]
+  fin_cases i <;> simp [shortRootConjugator, rankOneWord_def, map_mul]
 
 private def shortRootConjugatorMatrix (i : Fin 2) : Matrix (Fin 7) (Fin 7) ℤ :=
   if i = 0 then
@@ -95,20 +85,12 @@ private theorem coe_shortRootConjugator_prime (i : Fin 2) :
     ((shortRootConjugator i (ZMod 3) : Matrix.GeneralLinearGroup (Fin 7) (ZMod 3)) :
       Matrix (Fin 7) (Fin 7) (ZMod 3)) =
         (shortRootConjugatorMatrix i).map (Int.cast : ℤ → ZMod 3) := by
-  unfold shortRootConjugator
-  split_ifs with hi
-  · subst i
-    simp only [shortRootWord, Subgroup.coe_mul, Units.val_mul,
+  unfold shortRootConjugator shortRootConjugatorMatrix
+  split_ifs <;>
+    simp only [rankOneWord_def, Subgroup.coe_mul, Units.val_mul,
       coe_rootSubgroupPoints, IntegralToralClosure.coe_rootSubgroupPoints,
       toAdd_ofAdd, rootMatrix_inr, rootMatrix_inl,
-      rootDividedSquareMatrix_inl, rootDividedSquareMatrix_inr]
-    decide +kernel
-  · have hi1 : i = 1 := by omega
-    subst i
-    simp only [shortRootWord, Subgroup.coe_mul, Units.val_mul,
-      coe_rootSubgroupPoints, IntegralToralClosure.coe_rootSubgroupPoints,
-      toAdd_ofAdd, rootMatrix_inr, rootMatrix_inl,
-      rootDividedSquareMatrix_inl, rootDividedSquareMatrix_inr]
+      rootDividedSquareMatrix_inl, rootDividedSquareMatrix_inr] <;>
     decide +kernel
 
 private theorem shortRootConjugatorMatrix_mul_transpose (i : Fin 2) :
@@ -169,13 +151,7 @@ theorem positiveShortRootWeight_eq_simpleRoots (i : Fin 2) :
       (if i = 0 then 1 else 2) •
           DynkinType.G2.rootGeneratorWeight DynkinType.valid_G2 (.inl (0 : Fin 2)) +
         DynkinType.G2.rootGeneratorWeight DynkinType.valid_G2 (.inl (1 : Fin 2)) := by
-  have hr (k : Fin 2) :
-      DynkinType.G2.rootGeneratorWeight DynkinType.valid_G2 (.inl k) =
-        fun j : Fin 2 => (!![2, -1; -3, 2] : Matrix (Fin 2) (Fin 2) ℤ) k j := by
-    funext j
-    simpa only [DynkinType.rank_G2, DynkinType.cartanMatrix_G2_eq] using
-      DynkinType.G2.rootGeneratorWeight_inl DynkinType.valid_G2 k j
-  rw [hr, hr]
+  rw [DynkinType.G2.rootGeneratorWeight_inl_eq, DynkinType.G2.rootGeneratorWeight_inl_eq]
   simp only [funext_iff]
   fin_cases i <;> decide
 
@@ -216,9 +192,7 @@ private theorem coe_positiveShortRootSubgroupPoints_polynomial (i : Fin 2) (A : 
     (shortRootConjugator_coefficients i).2.2,
     Matrix.map_one _ (map_zero (Int.castRingHom A)) (map_one (Int.castRingHom A))]
 
-/-- Exact polynomial matrices of the two positive nonsimple short-root homomorphisms.
-In particular the quadratic terms must not be discarded in characteristic three. -/
-theorem coe_positiveShortRootSubgroupPoints (i : Fin 2) (A : Type v) [CommRing A]
+private theorem coe_positiveShortRootSubgroupPoints_explicit (i : Fin 2) (A : Type v) [CommRing A]
     [Algebra (ZMod 3) A] (t : A) :
     ((positiveShortRootSubgroupPoints i A (Multiplicative.ofAdd t) :
         Matrix.GeneralLinearGroup (Fin 7) A) : Matrix (Fin 7) (Fin 7) A) =
@@ -242,16 +216,52 @@ theorem coe_positiveShortRootSubgroupPoints (i : Fin 2) (A : Type v) [CommRing A
   fin_cases i <;> ext a b <;> fin_cases a <;> fin_cases b <;>
     simp [shortRootLinearMatrix, shortRootQuadraticMatrix, Matrix.single, smul_eq_mul, mul_comm]
 
-/-- Each root parameter is recovered from a single matrix entry: `(0,2)` for the first root,
-`(1,4)` for the second. -/
-@[simp]
-theorem positiveShortRootSubgroupPoints_parameter (i : Fin 2) (A : Type v) [CommRing A]
+/-- Exact polynomial matrix at `α₁ + α₂`, including its quadratic term. -/
+theorem coe_positiveShortRootSubgroupPoints_zero (A : Type v) [CommRing A]
     [Algebra (ZMod 3) A] (t : A) :
-    ((positiveShortRootSubgroupPoints i A (Multiplicative.ofAdd t) :
-        Matrix.GeneralLinearGroup (Fin 7) A) : Matrix (Fin 7) (Fin 7) A)
-      (if i = 0 then 0 else 1) (if i = 0 then 2 else 4) = t := by
-  rw [coe_positiveShortRootSubgroupPoints]
-  fin_cases i <;> simp
+    ((positiveShortRootSubgroupPoints 0 A (Multiplicative.ofAdd t) :
+        Matrix.GeneralLinearGroup (Fin 7) A) : Matrix (Fin 7) (Fin 7) A) =
+      !![1, 0, t, 0, 0, 0, 0;
+         0, 1, 0, -2 * t, 0, -t ^ 2, 0;
+         0, 0, 1, 0, 0, 0, 0;
+         0, 0, 0, 1, 0, t, 0;
+         0, 0, 0, 0, 1, 0, -t;
+         0, 0, 0, 0, 0, 1, 0;
+         0, 0, 0, 0, 0, 0, 1] := by
+  simpa only [↓reduceIte] using coe_positiveShortRootSubgroupPoints_explicit 0 A t
+
+/-- Exact polynomial matrix at `2α₁ + α₂`, including its quadratic term. -/
+theorem coe_positiveShortRootSubgroupPoints_one (A : Type v) [CommRing A]
+    [Algebra (ZMod 3) A] (t : A) :
+    ((positiveShortRootSubgroupPoints 1 A (Multiplicative.ofAdd t) :
+        Matrix.GeneralLinearGroup (Fin 7) A) : Matrix (Fin 7) (Fin 7) A) =
+      !![1, 0, 0, -2 * t, 0, 0, t ^ 2;
+         0, 1, 0, 0, t, 0, 0;
+         0, 0, 1, 0, 0, t, 0;
+         0, 0, 0, 1, 0, 0, -t;
+         0, 0, 0, 0, 1, 0, 0;
+         0, 0, 0, 0, 0, 1, 0;
+         0, 0, 0, 0, 0, 0, 1] := by
+  simpa only [Fin.one_eq_zero_iff, Nat.reduceEqDiff, ↓reduceIte] using
+    coe_positiveShortRootSubgroupPoints_explicit 1 A t
+
+/-- The parameter at `α₁ + α₂` is recovered from matrix entry `(0,2)`. -/
+@[simp]
+theorem positiveShortRootSubgroupPoints_zero_parameter (A : Type v) [CommRing A]
+    [Algebra (ZMod 3) A] (u : Multiplicative A) :
+    ((positiveShortRootSubgroupPoints 0 A u :
+        Matrix.GeneralLinearGroup (Fin 7) A) : Matrix (Fin 7) (Fin 7) A) 0 2 = u.toAdd := by
+  rw [← ofAdd_toAdd u, coe_positiveShortRootSubgroupPoints_zero]
+  simp
+
+/-- The parameter at `2α₁ + α₂` is recovered from matrix entry `(1,4)`. -/
+@[simp]
+theorem positiveShortRootSubgroupPoints_one_parameter (A : Type v) [CommRing A]
+    [Algebra (ZMod 3) A] (u : Multiplicative A) :
+    ((positiveShortRootSubgroupPoints 1 A u :
+        Matrix.GeneralLinearGroup (Fin 7) A) : Matrix (Fin 7) (Fin 7) A) 1 4 = u.toAdd := by
+  rw [← ofAdd_toAdd u, coe_positiveShortRootSubgroupPoints_one]
+  simp
 
 /-- The positive nonsimple short-root homomorphisms are injective over every value algebra. -/
 theorem positiveShortRootSubgroupPoints_injective (i : Fin 2) (A : Type v) [CommRing A]
@@ -260,13 +270,8 @@ theorem positiveShortRootSubgroupPoints_injective (i : Fin 2) (A : Type v) [Comm
   have he := congrArg (fun g : points A =>
     ((g : Matrix.GeneralLinearGroup (Fin 7) A) : Matrix (Fin 7) (Fin 7) A)
       (if i = 0 then 0 else 1) (if i = 0 then 2 else 4)) huv
-  have hparam (x : Multiplicative A) :
-      ((positiveShortRootSubgroupPoints i A x : Matrix.GeneralLinearGroup (Fin 7) A) :
-        Matrix (Fin 7) (Fin 7) A)
-          (if i = 0 then 0 else 1) (if i = 0 then 2 else 4) = x.toAdd :=
-    positiveShortRootSubgroupPoints_parameter i A x.toAdd
-  rw [hparam, hparam] at he
-  exact Multiplicative.toAdd.injective he
+  apply Multiplicative.toAdd.injective
+  fin_cases i <;> simpa using he
 
 /-- Changing the coefficient algebra changes the root parameter by that algebra map. -/
 @[simp↓]
@@ -281,12 +286,15 @@ theorem pointsMap_positiveShortRootSubgroupPoints {A : Type v} {B : Type w}
 
 /-- Conjugation by the weight torus rescales the two short-root parameters through their
 integral characters, not merely through their reductions modulo three. -/
+@[simp]
 theorem weightTorusPoints_conj_positiveShortRootSubgroupPoints (i : Fin 2) (A : Type v)
-    [CommRing A] [Algebra (ZMod 3) A] (s : Fin 2 → Aˣ) (t : A) :
-    weightTorusPoints A s * positiveShortRootSubgroupPoints i A (Multiplicative.ofAdd t) *
+    [CommRing A] [Algebra (ZMod 3) A] (s : Fin 2 → Aˣ) (u : Multiplicative A) :
+    weightTorusPoints A s * positiveShortRootSubgroupPoints i A u *
         (weightTorusPoints A s)⁻¹ =
       positiveShortRootSubgroupPoints i A (Multiplicative.ofAdd
-        ((torusCharacter s (positiveShortRootWeight i) : A) * t)) := by
+        ((torusCharacter s (positiveShortRootWeight i) : A) * u.toAdd)) := by
+  rw [← ofAdd_toAdd u]
+  simp only [toAdd_ofAdd]
   apply (mul_inv_eq_iff_eq_mul).2
   apply Subtype.ext
   apply Units.ext
