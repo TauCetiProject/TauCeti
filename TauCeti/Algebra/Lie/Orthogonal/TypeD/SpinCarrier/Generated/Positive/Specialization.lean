@@ -26,8 +26,8 @@ with a Borel subgroup of the pinned simply connected group scheme.
   surjective coordinate comparison under arbitrary scalar extension.
 * `TauCeti.TypeDSpinCarrier.Generated.Positive.coordinateHopfAlgebraBaseChangeMap_unique`: its
   characterization by the ambient coordinate square.
-* `baseChangeMap_commonKernelLift_comp_baseChangeIso_hom`: compatibility with the positive root
-  subgroups and weight torus.
+* `baseChangeMap_commonKernelLift_comp_generatorCoordinateAlgebraBaseChangeIso_hom`:
+  compatibility with the positive root subgroups and weight torus.
 
 ## References
 
@@ -51,18 +51,6 @@ noncomputable section
 
 variable (n : ℕ) (hn : 4 ≤ n) (k : Type v) (K : Type max v w)
   [CommRing k] [CommRing K] [Algebra k K]
-
-private theorem generator_baseChange (j : Fin n ⊕ Unit) :
-    (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K (dimension n)).inv ≫
-        CommHopfAlgCat.baseChangeMap (generator n hn k j) ≫
-        (generatorCoordinateAlgebraBaseChangeIso n k K (generatorIndex n j)).hom =
-      generator n hn K j := by
-  rcases j with i | u
-  · simpa only [generator_inl, generatorIndex, Category.assoc] using
-      generatorCoordinateMap_baseChange n hn k K (.inl (.inl i))
-  · cases u
-    simpa only [generator_inr, generatorIndex, Category.assoc] using
-      generatorCoordinateMap_baseChange n hn k K (.inr ())
 
 /-- The transported base-changed defining ideal is contained in the defining ideal of the
 positive subgroup generated over the extension ring. No flatness hypothesis is needed. -/
@@ -105,7 +93,7 @@ def coordinateHopfAlgebraBaseChangeMap :
 
 /-- The arbitrary-extension comparison commutes with the ambient general-linear coordinate maps. -/
 @[reassoc (attr := simp)]
-theorem baseChangeMap_mkQuotient_comp_baseChangeMap :
+theorem baseChangeMap_mkQuotient_comp_coordinateHopfAlgebraBaseChangeMap :
     CommHopfAlgCat.baseChangeMap (K := K)
         (CommHopfAlgCat.mkQuotient _ (definingIdeal n hn k)) ≫
         coordinateHopfAlgebraBaseChangeMap n hn k K =
@@ -135,7 +123,7 @@ theorem coordinateHopfAlgebraBaseChangeMap_unique
     f = coordinateHopfAlgebraBaseChangeMap n hn k K := by
   apply (cancel_epi (CommHopfAlgCat.baseChangeMap (K := K)
     (CommHopfAlgCat.mkQuotient _ (definingIdeal n hn k)))).mp
-  rw [hf, baseChangeMap_mkQuotient_comp_baseChangeMap]
+  rw [hf, baseChangeMap_mkQuotient_comp_coordinateHopfAlgebraBaseChangeMap]
 
 /-- The coordinate comparison is surjective, so the corresponding subgroup map is a closed
 immersion for every extension of commutative rings. -/
@@ -147,12 +135,13 @@ theorem coordinateHopfAlgebraBaseChangeMap_surjective :
     (CommHopfAlgCat.mkQuotient_surjective _ (definingIdeal n hn K)).comp
       (ConcreteCategory.bijective_of_isIso
         (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K (dimension n)).hom).2
-  rw [← baseChangeMap_mkQuotient_comp_baseChangeMap n hn k K] at h
+  rw [← baseChangeMap_mkQuotient_comp_coordinateHopfAlgebraBaseChangeMap n hn k K] at h
   exact Function.Surjective.of_comp h
 
 /-- The comparison respects each positive numbered root subgroup and the weight torus. -/
 @[reassoc (attr := simp)]
-theorem baseChangeMap_commonKernelLift_comp_baseChangeIso_hom (j : Fin n ⊕ Unit) :
+theorem baseChangeMap_commonKernelLift_comp_generatorCoordinateAlgebraBaseChangeIso_hom
+    (j : Fin n ⊕ Unit) :
     CommHopfAlgCat.baseChangeMap (K := K)
         (CommHopfAlgCat.commonKernelLift (generator n hn k) j) ≫
         (generatorCoordinateAlgebraBaseChangeIso n k K (generatorIndex n j)).hom =
@@ -162,7 +151,7 @@ theorem baseChangeMap_commonKernelLift_comp_baseChangeIso_hom (j : Fin n ⊕ Uni
     (CommHopfAlgCat.mkQuotient _ (definingIdeal n hn k)))).mp
   rw [← Category.assoc, ← (CommHopfAlgCat.baseChangeFunctor (K := K)).map_comp,
     CommHopfAlgCat.mkQuotient_comp_commonKernelLift]
-  rw [baseChangeMap_mkQuotient_comp_baseChangeMap_assoc,
+  rw [baseChangeMap_mkQuotient_comp_coordinateHopfAlgebraBaseChangeMap_assoc,
     CommHopfAlgCat.mkQuotient_comp_commonKernelLift]
   exact (Iso.inv_comp_eq _).mp (generator_baseChange n hn k K j)
 
