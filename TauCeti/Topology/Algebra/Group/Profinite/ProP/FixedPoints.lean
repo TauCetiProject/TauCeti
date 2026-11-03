@@ -76,7 +76,7 @@ theorem exists_ne_zero_invariant_of_isProP_of_isOpen_ker (hG : IsProP p G) [Nont
     rintro ⟨_, g, rfl⟩
     simp [Subgroup.smul_def, Equiv.Perm.smul_def]
   obtain ⟨m, hm, hne⟩ := hQ.exists_fixed_point_of_prime_dvd_card_of_fixed_point M
-    (prime_dvd_natCard_of_forall_exists_nsmul_eq_zero htors) h0
+    htors.prime_dvd_natCard_of_forall_exists_nsmul_eq_zero h0
   refine ⟨m, hne.symm, fun g ↦ ?_⟩
   simpa [Subgroup.smul_def, Equiv.Perm.smul_def] using hm ⟨MulAction.toPermHom G M g, g, rfl⟩
 

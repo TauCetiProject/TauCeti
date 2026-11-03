@@ -112,7 +112,7 @@ private theorem natCard_filtrationChain :
     have hne : (filtrationChain hG htors i).1 ≠ ⊤ := by
       intro htop
       rw [htop, AddSubgroup.card_top,
-        natCard_eq_pow_padicValNat_of_forall_exists_nsmul_eq_zero htors] at hcard
+        htors.natCard_eq_pow_padicValNat_of_forall_exists_nsmul_eq_zero] at hcard
       have := Nat.pow_right_injective hp.out.two_le hcard
       omega
     obtain ⟨x, hx, hxN, hpx, -⟩ := filtrationStep_of_ne_top hG htors hne
@@ -137,12 +137,12 @@ theorem exists_filtration_of_isProP :
     monotone_filtrationChain hG htors, filtrationChain_eq_top_of_le hG htors ?_,
     fun i ↦ (filtrationChain hG htors i).2, hcard, fun i hi ↦ ?_⟩
   · rw [← AddSubgroup.card_eq_iff_eq_top, hcard _ le_rfl]
-    exact (natCard_eq_pow_padicValNat_of_forall_exists_nsmul_eq_zero htors).symm
+    exact htors.natCard_eq_pow_padicValNat_of_forall_exists_nsmul_eq_zero.symm
   · have hne : (filtrationChain hG htors i).1 ≠ ⊤ := by
       intro htop
       have := hcard i hi.le
       rw [htop, AddSubgroup.card_top,
-        natCard_eq_pow_padicValNat_of_forall_exists_nsmul_eq_zero htors] at this
+        htors.natCard_eq_pow_padicValNat_of_forall_exists_nsmul_eq_zero] at this
       have := Nat.pow_right_injective hp.out.two_le this
       omega
     obtain ⟨x, hx, hxN, hpx, hgx⟩ := filtrationStep_of_ne_top hG htors hne

@@ -21,9 +21,9 @@ effect on cardinality of adjoining to a subgroup `N` an element `x ∉ N` with `
 
 ## Main results
 
-* `TauCeti.prime_dvd_natCard_of_forall_exists_nsmul_eq_zero`: `p ∣ Nat.card A` for a nontrivial
+* `IsAddPGroup.prime_dvd_natCard_of_forall_exists_nsmul_eq_zero`: `p ∣ Nat.card A` for a nontrivial
   finite `p`-primary additive group `A`.
-* `TauCeti.natCard_eq_pow_padicValNat_of_forall_exists_nsmul_eq_zero`:
+* `IsAddPGroup.natCard_eq_pow_padicValNat_of_forall_exists_nsmul_eq_zero`:
   `Nat.card A = p ^ padicValNat p (Nat.card A)` for a finite `p`-primary additive group `A`.
 * `TauCeti.forall_exists_nsmul_eq_zero_of_addEquiv_zmod`: an additive monoid additively
   equivalent to `ZMod p` is `p`-primary.
@@ -51,6 +51,12 @@ theorem forall_exists_nsmul_eq_zero_of_addEquiv_zmod (e : A ≃+ ZMod p) :
 
 end AddMonoid
 
+end TauCeti
+
+namespace IsAddPGroup
+
+variable {p : ℕ}
+
 section AddGroup
 
 variable [hp : Fact p.Prime] {A : Type*} [AddGroup A]
@@ -72,6 +78,12 @@ theorem natCard_eq_pow_padicValNat_of_forall_exists_nsmul_eq_zero [Finite A]
   rw [hcard, Nat.padicValNat_def, Nat.multiplicity_prime_pow]
 
 end AddGroup
+
+end IsAddPGroup
+
+namespace TauCeti
+
+variable {p : ℕ}
 
 section AddCommGroup
 
