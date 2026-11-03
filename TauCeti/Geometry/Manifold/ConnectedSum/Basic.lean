@@ -45,6 +45,8 @@ manifolds, is the disc theorem of Palais and is not part of this file.
 
 * `TauCeti.ConnectedSum e₁ e₂`: the connected sum of `M` and `N` along `e₁` and `e₂`.
 * `TauCeti.ConnectedSum.puncture e`: the complement of the centre of the ball `e`, as an open set.
+* `TauCeti.ConnectedSum.punctureMap`: the restriction of a map preserving the centres to the
+  punctured summands.
 * `TauCeti.ConnectedSum.mk`, `TauCeti.ConnectedSum.inl`, `TauCeti.ConnectedSum.inr`: the quotient
   map from the disjoint union of the punctured summands and its two components.
 
@@ -58,6 +60,7 @@ manifolds, is the disc theorem of Palais and is not part of this file.
 * `TauCeti.ConnectedSum.isLocalHomeomorph_mk`: the quotient map is a local homeomorphism.
 * `TauCeti.ConnectedSum.isOpenEmbedding_inl`, `TauCeti.ConnectedSum.isOpenEmbedding_inr`: each
   punctured summand is an open subspace.
+* `TauCeti.ConnectedSum.t1Space`: the connected sum of `T1` spaces is `T1`.
 * `TauCeti.ConnectedSum.t2Space`: the connected sum of Hausdorff spaces along finite-dimensional
   balls is Hausdorff.
 
@@ -97,6 +100,34 @@ theorem apply_mem_puncture {M' : Type*} [TopologicalSpace M'] [T1Space M'] {e : 
     {e' : E → M'} {φ : M → M'} (hφ : Injective φ) (h0 : φ (e 0) = e' 0) {x : M}
     (hx : x ∈ puncture e) : φ x ∈ puncture e' :=
   mem_puncture.2 (h0 ▸ hφ.ne hx)
+
+section punctureMap
+
+variable {M' : Type*} [TopologicalSpace M'] [T1Space M'] {e : E → M} {e' : E → M'} {φ : M → M'}
+  (hφ : Injective φ) (h0 : φ (e 0) = e' 0)
+
+variable (φ) in
+/-- The restriction of an injective map carrying the centre of the ball `e` to the centre of the
+ball `e'` to the punctured summands `M ∖ {e 0} → M' ∖ {e' 0}`. -/
+def punctureMap : puncture e → puncture e' :=
+  MapsTo.restrict φ (puncture e) (puncture e') fun _ hx ↦ apply_mem_puncture hφ h0 hx
+
+@[simp]
+theorem coe_punctureMap (x : puncture e) : (punctureMap φ hφ h0 x : M') = φ x :=
+  (rfl)
+
+theorem subtypeVal_comp_punctureMap : Subtype.val ∘ punctureMap φ hφ h0 = φ ∘ Subtype.val :=
+  (rfl)
+
+@[simp]
+theorem punctureMap_id (h0 : id (e 0) = e 0) (x : puncture e) :
+    punctureMap id injective_id h0 x = x :=
+  (rfl)
+
+theorem continuous_punctureMap (hφc : Continuous φ) : Continuous (punctureMap φ hφ h0) :=
+  hφc.restrict _
+
+end punctureMap
 
 /-- An injective ball does not meet its centre at the inversion of a nonzero vector. -/
 theorem apply_inversion_mem_puncture [InnerProductSpace ℝ E] {e : E → M} (he : Injective e)
@@ -385,6 +416,27 @@ theorem isOpenEmbedding_inr (h₁ : IsOpenEmbedding e₁) (h₂ : IsOpenEmbeddin
   .of_continuous_injective_isOpenMap (continuous_inr e₁ e₂)
     (inr_injective h₁.injective h₂.injective)
     ((isOpenQuotientMap_mk h₁ h₂).isOpenMap.comp isOpenMap_inr)
+
+/-- A point of an open subspace given by an open embedding of a `T1` space is separated from
+every other point of the space by an open set. -/
+private theorem exists_isOpen_mem_notMem {X Y : Type*} [TopologicalSpace X] [T1Space X]
+    [TopologicalSpace Y] {j : X → Y} (hj : IsOpenEmbedding j) {x : X} {q : Y} (hq : q ≠ j x) :
+    ∃ U : Set Y, IsOpen U ∧ j x ∈ U ∧ q ∉ U := by
+  by_cases hqr : q ∈ range j
+  · obtain ⟨y, rfl⟩ := hqr
+    exact ⟨j '' {y}ᶜ, hj.isOpenMap _ isOpen_compl_singleton,
+      mem_image_of_mem _ (mem_compl_singleton_iff.2 fun h ↦ hq (h ▸ rfl)),
+      fun ⟨y', hy', hyy'⟩ ↦ hy' (hj.injective hyy')⟩
+  · exact ⟨range j, hj.isOpen_range, mem_range_self x, hqr⟩
+
+/-- **The connected sum of `T1` spaces is `T1`**: each point lies in one of the two punctured
+summands, open subspaces which are `T1`. -/
+theorem t1Space (h₁ : IsOpenEmbedding e₁) (h₂ : IsOpenEmbedding e₂) :
+    T1Space (ConnectedSum e₁ e₂) := by
+  refine t1Space_iff_exists_open.2 fun p q hpq ↦ ?_
+  obtain ⟨x | y, rfl⟩ := mk_surjective e₁ e₂ p
+  · exact exists_isOpen_mem_notMem (isOpenEmbedding_inl h₁ h₂) (Ne.symm hpq)
+  · exact exists_isOpen_mem_notMem (isOpenEmbedding_inr h₁ h₂) (Ne.symm hpq)
 
 /-- The quotient map of the connected sum is a local homeomorphism: on each punctured summand, an
 open subset of the disjoint union, it restricts to an open embedding. -/
