@@ -35,11 +35,11 @@ but not at `x`, contradicting the hypothesis.
 
 Routing through `Frac R` needs `R` to be a domain, which is a hypothesis Wedhorn's statement
 does not carry. It is removed by **reducing modulo a prime**: by
-`TauCeti.isIntegral_of_forall_isPrime_map` it is enough to be integral over the image of `B` in
-`R ⧸ J` for every prime `J`, and each `R ⧸ J` is a domain, so the domain case applies there. Its
-hypothesis is met because a valuation of `R ⧸ J` pulls back along `Ideal.Quotient.mk J`, by
-`ValuativeRel.comap`, to one of `R`, which the hypothesis on `R` bounds. So the criterion
-holds for `R` in general.
+`TauCeti.isIntegral_of_forall_isMinimalPrime_map` it is enough to be integral over the image of
+`B` in `R ⧸ J` for every minimal prime `J`, and each `R ⧸ J` is a domain, so the domain case
+applies there. Its hypothesis is met because a valuation of `R ⧸ J` pulls back along
+`Ideal.Quotient.mk J`, by `ValuativeRel.comap`, to one of `R`, which the hypothesis on `R` bounds.
+So the criterion holds for `R` in general.
 
 ## Main results
 
@@ -107,12 +107,13 @@ satisfying `v b ≤ 1` for all `b ∈ B`, then `x` is integral over `B`.
 
 This is the hard direction of Wedhorn's Proposition 7.18, for an arbitrary commutative ring —
 the generality he states it in. The proof of the domain case goes through `Frac R`, and the
-general case is reduced to it by `isIntegral_of_forall_isPrime_map`, which asks only that `x`
-become integral in every prime quotient. -/
+general case is reduced to it by `isIntegral_of_forall_isMinimalPrime_map`, which asks only that
+`x` become integral in every minimal prime quotient. -/
 theorem isIntegral_of_forall_valuation_le_one {R : Type*} [CommRing R] {B : Subring R} {x : R}
     (hvle : ∀ v : ValuativeRel R, (∀ b ∈ B, v.vle b 1) → v.vle x 1) : IsIntegral B x := by
   -- it is enough to be integral in each prime quotient, and `R ⧸ J` is then a domain
-  refine isIntegral_of_forall_isPrime_map fun J hJ ↦
+  refine isIntegral_of_forall_isMinimalPrime_map fun J hJ ↦
+    have := hJ.isPrime
     isIntegral_of_forall_valuation_le_one_of_isDomain fun w hw ↦ ?_
   -- No `ValuativeRel` instance on `R ⧸ J` is installed, and none is needed: the domain case
   -- quantifies over every `w : ValuativeRel (R ⧸ J)`, so the relation arrives here as a bound
