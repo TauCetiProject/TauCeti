@@ -57,6 +57,12 @@ noncomputable def tensorInducedGradedResolutionCupPairing :
         ⨂[R] _ : G ⧸ U, Z.gradedResolutionModule :=
   PiTensorProduct.map₂ fun _ ↦ P.gradedResolutionCupPairing
 
+/-- The induced cup is the factorwise pairing `PiTensorProduct.map₂` of the total cup. -/
+theorem tensorInducedGradedResolutionCupPairing_def :
+    P.tensorInducedGradedResolutionCupPairing (G := G) (U := U) =
+      PiTensorProduct.map₂ fun _ ↦ P.gradedResolutionCupPairing :=
+  (rfl)
+
 /-- On pure tensors the induced cup applies the total cup in every coset factor. -/
 @[simp]
 theorem tensorInducedGradedResolutionCupPairing_tprod
@@ -75,26 +81,8 @@ theorem tensorInducedGradedResolutionCupPairing_ρ (s : U.LeftTransversal) (g : 
         (U.tensorInducedRepresentation s X.gradedResolutionRepresentation g a)
         (U.tensorInducedRepresentation s Y.gradedResolutionRepresentation g b) =
       U.tensorInducedRepresentation s Z.gradedResolutionRepresentation g
-        (P.tensorInducedGradedResolutionCupPairing a b) := by
-  induction a using PiTensorProduct.induction_on with
-  | smul_tprod r a =>
-    induction b using PiTensorProduct.induction_on with
-    | smul_tprod t b =>
-      suffices h : P.tensorInducedGradedResolutionCupPairing
-          (U.tensorInducedRepresentation s X.gradedResolutionRepresentation g
-            (PiTensorProduct.tprod R a))
-          (U.tensorInducedRepresentation s Y.gradedResolutionRepresentation g
-            (PiTensorProduct.tprod R b)) =
-          U.tensorInducedRepresentation s Z.gradedResolutionRepresentation g
-            (P.tensorInducedGradedResolutionCupPairing
-              (PiTensorProduct.tprod R a) (PiTensorProduct.tprod R b)) by
-        simpa only [map_smul, LinearMap.smul_apply] using congrArg (t • r • ·) h
-      simp only [Subgroup.tensorInducedRepresentation_apply_tprod,
-        tensorInducedGradedResolutionCupPairing_tprod]
-      exact congrArg (PiTensorProduct.tprod R) (funext fun _ ↦
-        P.gradedResolutionCupPairing_ρ _ _ _)
-    | add b c hb hc => simp only [map_add, hb, hc]
-  | add a c ha hc => simp only [map_add, LinearMap.add_apply, ha, hc]
+        (P.tensorInducedGradedResolutionCupPairing a b) :=
+  U.map₂_tensorInducedRepresentation s _ P.gradedResolutionCupPairing_ρ g a b
 
 /-- The induced cup extends the factorwise coefficient pairing along the tensor powers
 of the augmentations. -/
