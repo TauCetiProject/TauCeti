@@ -99,7 +99,7 @@ theorem normalizedCharE1MF_mem_modFormCharSpace (huv : u * v ∣ N) :
 
 /-- Exchanging primitive characters of opposite parity does not change the normalized
 weight-one Eisenstein series. This equality includes the constant coefficient. -/
-theorem normalizedCharE1MF_swap (huv : u * v ∣ N)
+theorem normalizedCharE1MF_comm (huv : u * v ∣ N)
     (hpar : ψ (-1) * φ (-1) = -1) (hψ : ψ.IsPrimitive) (hφ : φ.IsPrimitive) :
     normalizedCharE1MF ψ φ huv = normalizedCharE1MF φ ψ (by rwa [mul_comm]) := by
   apply TauCeti.ModularForm.eq_of_forall_pos_qExpansion_coeff_eq one_pos
@@ -166,6 +166,18 @@ theorem qExpansion_normalizedCharE1MFRaise (htuv : t * (u * v) ∣ N) :
     (TauCeti.one_mem_strictPeriods_Gamma1_map (u * v))
     (TauCeti.one_mem_strictPeriods_Gamma1_map N) _ _
 
+/-- The `q`-expansion of a raised normalized weight-one Eisenstein series is supported on the
+multiples of `t`, without primitivity or parity assumptions. -/
+theorem isSupportedOnDvd_qExpansion_normalizedCharE1MFRaise (htuv : t * (u * v) ∣ N) :
+    PowerSeries.IsSupportedOnDvd t (qExpansion 1 (normalizedCharE1MFRaise ψ φ t htuv)) := by
+  let _ : NeZero t := NeZero.of_dvd (dvd_of_mul_right_dvd htuv)
+  let _ : NeZero (u * v) := NeZero.of_dvd (dvd_of_mul_left_dvd htuv)
+  rw [normalizedCharE1MFRaise]
+  exact ModularForm.isSupportedOnDvd_qExpansion_levelRaise
+    (TauCeti.one_mem_strictPeriods_Gamma1_map (u * v))
+    (TauCeti.one_mem_strictPeriods_Gamma1_map N)
+    (Gamma1_map_le_conjAct_scaleGL_of_dvd htuv) _
+
 /-- The positive coefficients of the raised series are the twisted divisor sums at `n / t`
 when `t ∣ n`, and zero otherwise. -/
 theorem qExpansion_normalizedCharE1MFRaise_coeff (htuv : t * (u * v) ∣ N)
@@ -208,7 +220,7 @@ theorem normalizedCharE1MFRaise_mem_modFormCharSpace (htuv : t * (u * v) ∣ N) 
   exact (modFormCharSpace 1 _).smul_mem _ (charE1MFRaise_mem_modFormCharSpace ψ φ htuv)
 
 /-- The character-exchange relation persists under every level raise. -/
-theorem normalizedCharE1MFRaise_swap (htuv : t * (u * v) ∣ N)
+theorem normalizedCharE1MFRaise_comm (htuv : t * (u * v) ∣ N)
     (hpar : ψ (-1) * φ (-1) = -1) (hψ : ψ.IsPrimitive) (hφ : φ.IsPrimitive) :
     normalizedCharE1MFRaise ψ φ t htuv =
       normalizedCharE1MFRaise φ ψ t (by rwa [mul_comm v u]) := by
