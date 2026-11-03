@@ -45,7 +45,7 @@ theorem PosSemidef.eval_rpow_eq_zero_of_forall_pow {A : Matrix n n 𝕜}
       (A ^ s) i j = ∑ k, algebraMap ℝ 𝕜 (hA.isHermitian.eigenvalues k ^ s) *
         (U i k * star (U j k)) := by
     rw [CFC.rpow_eq_cfc_real hA.nonneg, hA.isHermitian.cfc_eq]
-    rw [IsHermitian.cfc, Unitary.conjStarAlgAut_apply, mul_apply]
+    rw [IsHermitian.cfc, Unitary.conjStarAlgAut_apply, Matrix.mul_apply]
     simp [mul_diagonal, U, mul_comm, mul_left_comm, mul_assoc]
   have heval (s : ℝ) : MvPolynomial.eval (fun ij ↦ (A ^ s) ij.1 ij.2) p =
       MvPolynomial.eval (fun ij ↦ ∑ k,

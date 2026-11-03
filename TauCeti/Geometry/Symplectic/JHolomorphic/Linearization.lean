@@ -113,7 +113,7 @@ theorem cauchyRiemannLinearization_add (j : U →L[ℝ] U) (J : V → V →L[ℝ
     cauchyRiemannLinearization j J u (ξ + η) x =
       cauchyRiemannLinearization j J u ξ x + cauchyRiemannLinearization j J u η x := by
   ext v
-  simp only [cauchyRiemannLinearization_apply, fderiv_add hξ hη, add_apply,
+  simp only [cauchyRiemannLinearization_apply, fderiv_add hξ hη, _root_.add_apply,
     Pi.add_apply, map_add]
   abel
 
@@ -125,7 +125,7 @@ theorem cauchyRiemannLinearization_smul (j : U →L[ℝ] U) (J : V → V →L[�
     cauchyRiemannLinearization j J u (c • ξ) x = c • cauchyRiemannLinearization j J u ξ x := by
   ext v
   simp only [cauchyRiemannLinearization_apply, fderiv_const_smul_field c,
-    smul_apply, Pi.smul_apply, map_smul, smul_sub]
+    _root_.smul_apply, Pi.smul_apply, map_smul, smul_sub]
 
 /-- The nonlinear defect is differentiable along jointly `C²` map families and differentiable
 endomorphism families. This is a derivative in the parameter normed space. -/
@@ -166,8 +166,8 @@ theorem fderiv_cauchyRiemannOperator_apply
   simp only [Function.comp_def, Function.uncurry_def, id_eq, Pi.sub_def] at hresF
   simp only [cauchyRiemannOperator]
   rw [hresF]
-  simp only [cauchyRiemannLinearization_apply, sub_apply, add_apply, comp_apply,
-    compL_apply, flip_apply, zero_apply, map_zero, zero_add]
+  simp only [cauchyRiemannLinearization_apply, _root_.sub_apply, _root_.add_apply, comp_apply,
+    compL_apply, flip_apply, _root_.zero_apply, map_zero, zero_add]
   rw [hξ.fderiv]
   simp only [flip_apply]
   have hJp := hJ.hasFDerivAt.comp p
@@ -179,10 +179,10 @@ theorem fderiv_cauchyRiemannOperator_apply
   have euP := huP.fderiv
   simp only [Function.comp_def, Function.uncurry_def] at eJp eJx euP
   rw [eJp, eJx, euP]
-  simp only [comp_apply, inl_apply, inr_apply, prod_apply, id_apply]
+  simp only [comp_apply, inl_apply, inr_apply, ContinuousLinearMap.prod_apply, id_apply]
   have hsplit (a : V) : (h, a) = (0, a) + (h, (0 : V)) := by simp
   rw [hsplit, map_add]
-  simp only [add_apply]
+  simp only [_root_.add_apply]
   abel
 
 end TauCeti

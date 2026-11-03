@@ -77,7 +77,7 @@ theorem mk_mem_affineOpen_iff (i : ι) (v : ι → K) (hv : v ≠ 0) :
 
 /-- Every point of projective space lies in some standard affine open. -/
 theorem exists_mem_affineOpen (x : ℙ K (ι → K)) : ∃ i, x ∈ affineOpen i :=
-  Function.ne_iff.1 x.rep_nonzero
+  Function.ne_iff.1 x.rep_ne_zero
 
 /-- The standard affine opens cover projective space. -/
 theorem iUnion_affineOpen : ⋃ i, affineOpen (K := K) (ι := ι) i = univ :=

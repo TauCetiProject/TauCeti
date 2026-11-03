@@ -83,10 +83,10 @@ theorem hilbertSymbol_unit_eq_quadraticChar_of_odd (h2 : IsUnit (2 : 𝒪[K]))
   by_cases hs : IsSquare (Units.map (residue 𝒪[K] : 𝒪[K] →* 𝓀[K]) u)
   · simp only [hs, ↓reduceIte]
     exact ((quadraticChar_one_iff_isSquare (Units.ne_zero _)).mpr
-      (isSquare_units_val_iff.mpr hs)).symm
+      (Units.isSquare_coe_iff.mpr hs)).symm
   · simp only [hs, ↓reduceIte]
     exact (quadraticChar_neg_one_iff_not_isSquare.mpr
-      (isSquare_units_val_iff.not.mpr hs)).symm
+      (Units.isSquare_coe_iff.not.mpr hs)).symm
 
 open Classical in
 /-- The symbol of a unit and a uniformizer is positive exactly when the unit has square residue.
@@ -152,10 +152,10 @@ theorem oddResidueSign_int (u : 𝒪[K]ˣ) :
   by_cases hs : IsSquare (Units.map (residue 𝒪[K] : 𝒪[K] →* 𝓀[K]) u)
   · simp only [oddResidueSign, hs, ↓reduceIte, Units.val_one]
     exact ((quadraticChar_one_iff_isSquare (Units.ne_zero _)).mpr
-      (isSquare_units_val_iff.mpr hs)).symm
+      (Units.isSquare_coe_iff.mpr hs)).symm
   · simp only [oddResidueSign, hs, ↓reduceIte, Units.val_neg, Units.val_one]
     exact (quadraticChar_neg_one_iff_not_isSquare.mpr
-      (isSquare_units_val_iff.not.mpr hs)).symm
+      (Units.isSquare_coe_iff.not.mpr hs)).symm
 
 /-- The residue sign is multiplicative on integral units. -/
 @[simp]
