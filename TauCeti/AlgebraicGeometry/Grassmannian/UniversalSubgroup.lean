@@ -194,6 +194,16 @@ theorem schemeHopfIdealLocusFamilyToGrp_left_fst :
         pullback.snd _ _ :=
   familyToPullback_fst
 
+/-- The component in `L` of the inclusion of the universal family into `Spec H ×_{Spec R} L` is
+the projection of the universal family to `L`. -/
+@[simp, reassoc]
+theorem schemeHopfIdealLocusFamilyToGrp_left_snd :
+    (schemeHopfIdealLocusFamilyToGrp R H k).left ≫
+        pullback.snd (Spec.map (CommRingCat.ofHom (algebraMap R H)))
+          ((schemeHopfIdealLocus R H k).subschemeι ≫ toSpec R H k) =
+      schemeHopfIdealLocusFamilyHom R H k :=
+  familyToPullback_snd
+
 /-- The inclusion of the universal family into `Spec H ×_{Spec R} L` is a closed immersion. -/
 instance isClosedImmersion_schemeHopfIdealLocusFamilyToGrp_left :
     IsClosedImmersion (schemeHopfIdealLocusFamilyToGrp R H k).left :=
@@ -262,8 +272,7 @@ private theorem baseChangePointMulEquiv_left {T : Over (schemeHopfIdealLocus R H
         ((hopfSpec (CommRingCat.of R)).obj (op (CommHopfAlgCat.of R H))) T p).left =
       p.left ≫ pullback.fst (Spec.map (CommRingCat.ofHom (algebraMap R H)))
         ((schemeHopfIdealLocus R H k).subschemeι ≫ toSpec R H k) :=
-  -- the inverse hom-equivalence of `Over.mapPullbackAdj` composes with the first projection
-  (congrArg Over.Hom.left (TauCeti.GroupScheme.baseChangePointMulEquiv_apply _ _ _ p)).trans rfl
+  TauCeti.GroupScheme.baseChangePointMulEquiv_apply_left _ _ _ p
 
 /-- The product of two points of `Spec H ×_{Spec R} L` projects to the product in `Spec H` of
 their projections. -/
@@ -405,8 +414,9 @@ theorem ker_schemeHopfIdealLocusFamilyToGrp_left_le_one :
         (schemeHopfIdealLocusGrp R H k).X) := by
     rw [Hom.one_def, toUnit_unit, Category.id_comp]
   rw [h1]
-  have : QuasiCompact (𝟙_ (Over (schemeHopfIdealLocus R H k).subscheme)).hom :=
-    inferInstanceAs (QuasiCompact (𝟙 _))
+  have : QuasiCompact (𝟙_ (Over (schemeHopfIdealLocus R H k).subscheme)).hom := by
+    rw [Over.tensorUnit_hom]
+    exact inferInstanceAs (QuasiCompact (𝟙 _))
   have := quasiCompact_left (1 : 𝟙_ (Over (schemeHopfIdealLocus R H k).subscheme) ⟶
     (schemeHopfIdealLocusGrp R H k).X)
   rw [schemeHopfIdealLocusFamilyToGrp_left_eq]
@@ -414,8 +424,8 @@ theorem ker_schemeHopfIdealLocusFamilyToGrp_left_le_one :
     ⟨(Algebra.ofId R C).comp (Bialgebra.counitAlgHom R H), ?_, evalIdeal_counit_eq_bot N hN⟩
   refine (congrArg (g ≫ ·) one_left_fst).trans ?_
   -- the structure morphism of the unit object of `Over L` is the identity of `L`
-  have hg₀ : g = (schemeHopfIdealLocusHomEquiv R H k C ⟨N, hN⟩).1 :=
-    (Category.comp_id g).symm.trans hg
+  have hg₀ : g = (schemeHopfIdealLocusHomEquiv R H k C ⟨N, hN⟩).1 := by
+    simpa [Over.tensorUnit_hom] using hg
   refine (congrArg (g ≫ ·) (Category.id_comp _)).trans ?_
   rw [hg₀, reassoc_of% (schemeHopfIdealLocusHomEquiv R H k C ⟨N, hN⟩).2, ← Spec.map_comp,
     ← CommRingCat.ofHom_comp, AlgHom.comp_toRingHom, Algebra.toRingHom_ofId]
@@ -445,8 +455,9 @@ theorem ker_schemeHopfIdealLocusFamilyToGrp_left_le_mul :
       schemeHopfIdealLocusFamilyToGrp R H k) ≫ μ[(schemeHopfIdealLocusGrp R H k).X]).left.ker := by
   rw [← lift_fst_comp_snd_comp, ← Hom.mul_def]
   have : QuasiCompact (Over.mk (schemeHopfIdealLocusFamilyHom R H k) ⊗
-      Over.mk (schemeHopfIdealLocusFamilyHom R H k)).hom :=
-    inferInstanceAs (QuasiCompact (pullback.fst (schemeHopfIdealLocusFamilyHom R H k)
+      Over.mk (schemeHopfIdealLocusFamilyHom R H k)).hom := by
+    rw [Over.tensorObj_hom]
+    exact inferInstanceAs (QuasiCompact (pullback.fst (schemeHopfIdealLocusFamilyHom R H k)
       (schemeHopfIdealLocusFamilyHom R H k) ≫ schemeHopfIdealLocusFamilyHom R H k))
   have := quasiCompact_left (fst _ _ ≫ schemeHopfIdealLocusFamilyToGrp R H k *
     snd _ _ ≫ schemeHopfIdealLocusFamilyToGrp R H k)
@@ -495,6 +506,11 @@ instance isMonHom_schemeHopfIdealLocusFamilyToGrp :
     IsMonHom (schemeHopfIdealLocusFamilyToGrp R H k) :=
   TauCeti.GroupScheme.isMonHom_grpObjOfClosedImmersion _ _ _ _
 
+private instance : IsClosedImmersion (Grp.homMk
+    (A := Grp.mk (Over.mk (schemeHopfIdealLocusFamilyHom R H k)))
+    (schemeHopfIdealLocusFamilyToGrp R H k)).hom.hom.left :=
+  isClosedImmersion_schemeHopfIdealLocusFamilyToGrp_left
+
 variable (R H k) in
 /-- **The universal subgroup over the Hopf-ideal locus.** The universal family over the closed
 subscheme `L` of Hopf ideals of `G(k, H)`, as a closed subgroup scheme of the base change
@@ -504,9 +520,6 @@ point `N` of `L` is the subgroup scheme `Spec ((A ⊗[R] H) ⧸ N)`
 rank `k` over `L` (`Module.Grassmannian.finrank_universalSubgroup`). -/
 noncomputable def universalSubgroup :
     TauCeti.ClosedSubgroupScheme (schemeHopfIdealLocusGrp R H k) :=
-  haveI : IsClosedImmersion (Grp.homMk (A := Grp.mk (Over.mk (schemeHopfIdealLocusFamilyHom R H k)))
-      (schemeHopfIdealLocusFamilyToGrp R H k)).hom.hom.left :=
-    isClosedImmersion_schemeHopfIdealLocusFamilyToGrp_left
   TauCeti.ClosedSubgroupScheme.mk
     (Grp.homMk (A := Grp.mk (Over.mk (schemeHopfIdealLocusFamilyHom R H k)))
       (schemeHopfIdealLocusFamilyToGrp R H k))
@@ -517,9 +530,6 @@ structure. -/
 noncomputable def universalSubgroupIso :
     ((universalSubgroup R H k).1 : Grp (Over (schemeHopfIdealLocus R H k).subscheme)) ≅
       Grp.mk (Over.mk (schemeHopfIdealLocusFamilyHom R H k)) :=
-  haveI : IsClosedImmersion (Grp.homMk (A := Grp.mk (Over.mk (schemeHopfIdealLocusFamilyHom R H k)))
-      (schemeHopfIdealLocusFamilyToGrp R H k)).hom.hom.left :=
-    isClosedImmersion_schemeHopfIdealLocusFamilyToGrp_left
   TauCeti.ClosedSubgroupScheme.mkIso _
 
 /-- Under `Module.Grassmannian.universalSubgroupIso`, the inclusion of the universal subgroup is
@@ -528,9 +538,6 @@ the inclusion of the universal family. -/
 theorem universalSubgroupIso_inv_arrow :
     (universalSubgroupIso R H k).inv ≫ (universalSubgroup R H k).1.arrow =
       Grp.homMk (schemeHopfIdealLocusFamilyToGrp R H k) :=
-  haveI : IsClosedImmersion (Grp.homMk (A := Grp.mk (Over.mk (schemeHopfIdealLocusFamilyHom R H k)))
-      (schemeHopfIdealLocusFamilyToGrp R H k)).hom.hom.left :=
-    isClosedImmersion_schemeHopfIdealLocusFamilyToGrp_left
   TauCeti.ClosedSubgroupScheme.mkIso_inv_comp_arrow _
 
 /-- The universal subgroup is finite locally free of rank `k`, read off from the universal family

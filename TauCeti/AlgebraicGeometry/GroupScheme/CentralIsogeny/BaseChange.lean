@@ -163,6 +163,14 @@ theorem baseChangePointMulEquiv_symm_apply
     (baseChangePointMulEquiv s G T).symm p =
       (Over.mapPullbackAdj s).homEquiv T G.X p := (rfl)
 
+/-- The underlying morphism of the point of `G` attached to a point of the base change is
+postcomposition with the first pullback projection. -/
+theorem baseChangePointMulEquiv_apply_left
+    (s : Y ⟶ X) (G : Grp (Over X)) (T : Over Y)
+    (p : T ⟶ ((Over.pullback s).mapGrp.obj G).X) :
+    (baseChangePointMulEquiv s G T p).left = p.left ≫ Limits.pullback.fst G.X.hom s :=
+  mapPullbackAdj_homEquiv_symm_left s G T p
+
 /-- The point-group identification intertwines a base-changed morphism with the original
 morphism. -/
 theorem baseChangePointMulEquiv_pointMap

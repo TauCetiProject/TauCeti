@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.BaseChange.Basic
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Basic
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.Kernel
+public import TauCeti.RingTheory.Grassmannian.EvalIdeal
 public import TauCeti.RingTheory.Grassmannian.HopfIdeal
 
 /-!
@@ -37,6 +40,14 @@ the description of the base change of `N` as the kernel of `Module.Grassmannian.
 ideal inside `B ⊗[A] (A ⊗[R] H)`; here the ambient algebra is `B ⊗[R] H`, where the Grassmannian
 functor places the base change of `N`, and `H` need not be commutative.
 
+When `H` is commutative, the evaluation ideal `N.evalIdeal x` at an `A`-point `x` of `Spec H`
+vanishes exactly when the base change `a ⊗ h ↦ a * x h` of `x`, an `A`-point of the `A`-Hopf
+algebra `A ⊗[R] H`, kills the Hopf ideal `N.hopfIdeal hN`, that is, lies in the subgroup of points
+it cuts out (`Module.Grassmannian.evalIdeal_eq_bot_iff_mem_quotientPointsSubgroup`). So the
+`A`-points `x` of `Spec H` with `N.evalIdeal x = ⊥` contain the identity and are stable under the
+convolution product and the antipode. These are the point-level group axioms of the universal
+subgroup over the Hopf-ideal locus.
+
 ## Main definitions
 
 * `Module.Grassmannian.hopfIdeal N hN`: a point `N` of the Hopf-ideal locus as a two-sided Hopf
@@ -53,6 +64,12 @@ functor places the base change of `N`, and `H` need not be commutative.
   `A`-submodule `N`.
 * `Module.Grassmannian.rankAtStalk_quotient_hopfIdeal`: the quotient Hopf algebra has constant rank
   `k` over `A`.
+* `Module.Grassmannian.evalIdeal_eq_bot_iff_mem_quotientPointsSubgroup`: for commutative `H`,
+  `N.evalIdeal x` vanishes exactly when the base change of `x` lies in the subgroup of points cut
+  out by `N.hopfIdeal hN`.
+* `Module.Grassmannian.evalIdeal_counit_eq_bot`, `Module.Grassmannian.evalIdeal_convMul_eq_bot` and
+  `Module.Grassmannian.evalIdeal_comp_antipode_eq_bot`: on the Hopf-ideal locus, the points at
+  which `N.evalIdeal` vanishes form a subgroup.
 
 ## References
 
@@ -300,5 +317,55 @@ theorem quotHopfIdealMapBialgEquiv_symm_tmul_mk (b : B) (x : A ⊗[R] H) :
   simp [smul_tmul']
 
 end BaseChange
+
+end Module.Grassmannian
+
+namespace Module.Grassmannian
+
+open WithConv Algebra.TensorProduct
+
+variable {R : Type u} [CommRing R] {H : Type v} [CommRing H] [HopfAlgebra R H] {k : ℕ}
+  {A : Type w} [CommRing A] [Algebra R A] (N : G(k, A ⊗[R] H; A)) (hN : N.hopfIdealLocus = ⊥)
+
+/-- On the Hopf-ideal locus, `N.evalIdeal x` vanishes exactly when the base change
+`a ⊗ h ↦ a * x h` of the point `x` to the `A`-Hopf algebra `A ⊗[R] H`
+(`TauCeti.AlgHom.baseChangePointsMulEquiv`) lies in the subgroup of points cut out by the Hopf
+ideal `N.hopfIdeal hN`. -/
+theorem evalIdeal_eq_bot_iff_mem_quotientPointsSubgroup (x : H →ₐ[R] A) :
+    N.evalIdeal x = ⊥ ↔ TauCeti.AlgHom.baseChangePointsMulEquiv (K := A) (toConv x) ∈
+      TauCeti.CommHopfAlgCat.quotientPointsSubgroup (CommHopfAlgCat.of A (A ⊗[R] H))
+        (TauCeti.HopfIdeal.ofIsHopfIdeal A (N.hopfIdeal hN)) (CommAlgCat.of A A) := by
+  have h : ((TauCeti.AlgHom.baseChangePointsMulEquiv (K := A) (R := A)
+      (toConv x)).ofConv.restrictScalars R : A ⊗[R] H →ₐ[R] A) = productMap (AlgHom.id R A) x :=
+    Algebra.TensorProduct.ext' fun a h ↦ by simp [productMap_apply_tmul]
+  rw [evalIdeal_eq_bot_iff, TauCeti.CommHopfAlgCat.mem_quotientPointsSubgroup_iff, ← h]
+  simp
+
+include hN
+
+/-- On the Hopf-ideal locus, `N.evalIdeal` vanishes at the identity point
+`h ↦ algebraMap R A (ε h)` of `Spec H`. -/
+theorem evalIdeal_counit_eq_bot :
+    N.evalIdeal ((Algebra.ofId R A).comp (Bialgebra.counitAlgHom R H)) = ⊥ := by
+  rw [evalIdeal_eq_bot_iff_mem_quotientPointsSubgroup N hN, ← AlgHom.convOne_def, map_one]
+  exact Subgroup.one_mem _
+
+/-- On the Hopf-ideal locus, the points of `Spec H` at which `N.evalIdeal` vanishes are stable
+under the convolution product. -/
+theorem evalIdeal_convMul_eq_bot {x y : H →ₐ[R] A} (hx : N.evalIdeal x = ⊥)
+    (hy : N.evalIdeal y = ⊥) : N.evalIdeal (toConv x * toConv y).ofConv = ⊥ := by
+  rw [evalIdeal_eq_bot_iff_mem_quotientPointsSubgroup N hN] at hx hy ⊢
+  rw [toConv_ofConv, map_mul]
+  exact Subgroup.mul_mem _ hx hy
+
+/-- On the Hopf-ideal locus, the points of `Spec H` at which `N.evalIdeal` vanishes are stable
+under the antipode. -/
+theorem evalIdeal_comp_antipode_eq_bot {x : H →ₐ[R] A} (hx : N.evalIdeal x = ⊥) :
+    N.evalIdeal (x.comp (HopfAlgebra.antipodeAlgHom R H)) = ⊥ := by
+  have h : toConv (x.comp (HopfAlgebra.antipodeAlgHom R H)) = (toConv x)⁻¹ :=
+    ofConv_injective (AlgHom.ext fun h ↦ by simp)
+  rw [evalIdeal_eq_bot_iff_mem_quotientPointsSubgroup N hN] at hx ⊢
+  rw [h, map_inv]
+  exact Subgroup.inv_mem _ hx
 
 end Module.Grassmannian
