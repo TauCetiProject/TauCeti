@@ -71,7 +71,7 @@ theorem preimage_puncturedSpectrum
     Spec.map (CommRingCat.ofHom (algebraMap A A')) ⁻¹ᵁ puncturedSpectrum A =
       puncturedSpectrum A' := by
   have : IsLocalHom (algebraMap A A') :=
-    ((local_hom_TFAE (algebraMap A A')).out 1 3).mpr (h ▸ Ideal.le_radical)
+    ((local_hom_tfae (algebraMap A A')).out 1 3).mpr (h ▸ Ideal.le_radical)
   -- A point `x` of `Spec A'` maps to the point `PrimeSpectrum.comap (algebraMap A A') x`.
   have key (x : PrimeSpectrum A') :
       PrimeSpectrum.comap (algebraMap A A') x = closedPoint A ↔ x = closedPoint A' := by
@@ -144,7 +144,7 @@ theorem extends_iff_extends_pullback_of_flat [IsNoetherianRing A']
           (puncturedSpectrum A) (puncturedSpectrum A') (preimage_puncturedSpectrum h).ge)).obj
           V) := by
   have : IsLocalHom (algebraMap A A') :=
-    ((local_hom_TFAE (algebraMap A A')).out 1 3).mpr (h ▸ Ideal.le_radical)
+    ((local_hom_tfae (algebraMap A A')).out 1 3).mpr (h ▸ Ideal.le_radical)
   have : Module.FaithfullyFlat A A' := .of_flat_of_isLocalHom
   have hdepth' : 2 ≤ depth (ModuleCat.of A' A') := by
     rw [depth_eq_add_of_flat (R := A)]
