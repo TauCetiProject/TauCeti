@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.TypeAHeckeAlgebra.BalancedProjection
 public import TauCeti.Algebra.TypeAHeckeAlgebra.Complement
 public import Mathlib.Analysis.Complex.Trigonometric
+import TauCeti.Analysis.SpecialFunctions.Hyperbolic
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
@@ -129,13 +130,6 @@ theorem hyperbolicStabilization_sub_hyperbolicStabilizationInv (α θ η : ℂ) 
   have hb := exp_ne_zero θ
   field_simp
   ring
-
-/-- `cosh (α - θ) / (2 * cosh α * cosh θ) = (1 - tanh α * tanh θ) / 2`. -/
-theorem cosh_sub_div_eq_one_sub_tanh_mul_tanh_div_two {α θ : ℂ} (hα : cosh α ≠ 0)
-    (hθ : cosh θ ≠ 0) :
-    cosh (α - θ) / (2 * cosh α * cosh θ) = (1 - tanh α * tanh θ) / 2 := by
-  rw [cosh_sub, tanh_eq_sinh_div_cosh, tanh_eq_sinh_div_cosh]
-  field_simp
 
 /-- **Equality of the stabilization constants.** For `cosh α * cosh θ ≠ 0`, the positive and
 negative stabilization constants agree exactly when
