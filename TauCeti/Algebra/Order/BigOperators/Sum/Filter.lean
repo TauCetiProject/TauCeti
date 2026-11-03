@@ -34,7 +34,7 @@ variable {ι α M : Type*} [DecidableEq α] [AddCommMonoid M] {a : ι → α} {e
 
 /-- If all nonzero terms of a finite family have indices at or to the left of `p`, then its sum
 over the terms indexed by `q` vanishes whenever `q ≤ p` fails, for instance when `p < q`. -/
-theorem sum_filter_eq_zero_of_forall_ne_zero_le [Preorder α] (s : Finset ι) (hqp : ¬q ≤ p)
+theorem sum_filter_eq_zero_of_forall_ne_zero_le [LE α] (s : Finset ι) (hqp : ¬q ≤ p)
     (ha : ∀ i ∈ s, e i ≠ 0 → a i ≤ p) :
     ∑ i ∈ s with a i = q, e i = 0 :=
   sum_eq_zero fun i hi ↦ by_contra fun hei ↦
