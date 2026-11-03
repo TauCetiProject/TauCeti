@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.GroupTheory.SpecificGroups.CFSG.Assembly.LieType
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.SymplecticFrobenius
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeC.Agreement
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Simple
 
 /-!
-# The Steinberg fixed points of the type-`C` groups on the classification list
+# The Steinberg fixed points and simplicity of the type-`C` groups on the classification list
 
 The type-`C` carrier of `TauCeti.TypeCLieIndex` is the explicit full-weight standard symplectic
 carrier, and `TauCeti.TypeCLieIndex.carrierEquivSymplectic` identifies it with the standard
@@ -27,8 +29,15 @@ symplectic group `Sp_{2r}(𝔽_q)` of
 and the fixed points `TauCeti.TypeCLieIndex.FixedPoints` of the index. Through
 `TauCeti.DerivedCentralQuotient.congr` it identifies the candidate group
 `TauCeti.TypeCLieIndex.Group` with the derived subgroup of `Sp_{2r}(𝔽_q)` modulo its centre, so
-properties of `C_r(q)` can be proved on the finite matrix group itself. Nothing here asserts that
-the candidate group is nontrivial, perfect or simple.
+properties of `C_r(q)` can be proved on the finite matrix group itself.
+
+A valid `C_r(q)` has rank `r ≥ 3`, so `Sp_{2r}(𝔽_q)` is perfect by
+`TauCeti.GLSymplecticFin.commutator_eq_top_of_three_le`, over every finite field. Its derived
+subgroup is then the whole group, and the candidate group of `C_r(q)` is the projective symplectic
+group `PSp_{2r}(𝔽_q) = Sp_{2r}(𝔽_q) ⧸ Z(Sp_{2r}(𝔽_q))`, which is simple by Iwasawa's criterion
+(`TauCeti.GLSymplecticFin.isSimpleGroup_quotient_center_of_commutator_eq_top`). This is the
+simplicity of every `C_r(q)` on the classification list, read both on the type-`C` index and on the
+assembled carrier `TauCeti.ValidLieTypeIndex.Group`.
 
 `TauCeti.SpStd.pointsMulEquivFixedSubgroupFrobenius` describes the same fixed points as the
 carrier's own points over the Frobenius-fixed subring of the closure. The isomorphism here lands
@@ -41,6 +50,11 @@ subgroups `TauCeti.GLSymplecticFin.RootSubgroupIndex.hom` available over that fi
   type-`C` index of rank `r` and field order `q` are the finite symplectic group `Sp_{2r}(𝔽_q)`.
 * `TauCeti.TypeCLieIndex.coe_symplecticEquivFixedPoints`: the isomorphism extends the coefficients
   of a finite-field symplectic matrix to the closure.
+* `TauCeti.TypeCLieIndex.commutator_symplectic_eq_top`: `Sp_{2r}(𝔽_q)` is perfect.
+* `TauCeti.TypeCLieIndex.projectiveSymplecticEquivGroup`: the group attached to `C_r(q)` is
+  `PSp_{2r}(𝔽_q)`.
+* `TauCeti.TypeCLieIndex.isSimpleGroup_group` and `TauCeti.ValidLieTypeIndex.isSimpleGroup_C`: the
+  group attached to `C_r(q)` is simple.
 
 ## References
 
@@ -90,6 +104,60 @@ theorem coe_symplecticEquivFixedPoints
     coe_carrierEquivSymplectic_symm_apply,
     ValidLieTypeIndex.coe_symplecticEquivFrobeniusFixedPoints]
 
+/-- **The finite symplectic group of `C_r(q)` is perfect**, because the rank `r` of a valid index
+is at least three. -/
+theorem commutator_symplectic_eq_top :
+    commutator (GLSymplecticFin (d.carrierRank + 1)
+      (GaloisField d.1.characteristic d.1.fieldExponent)) = ⊤ :=
+  GLSymplecticFin.commutator_eq_top_of_three_le (by
+    rw [carrierRank_add_one]
+    exact d.three_le_rank)
+
+/-- **The group attached to `C_r(q)` is the projective symplectic group `PSp_{2r}(𝔽_q)`.**
+
+The fixed points are `Sp_{2r}(𝔽_q)` by `TauCeti.TypeCLieIndex.symplecticEquivFixedPoints`. That
+group is perfect, so its derived subgroup is the whole group and the derived central quotient is
+its quotient by the centre. -/
+def projectiveSymplecticEquivGroup :
+    GLSymplecticFin (d.carrierRank + 1) (GaloisField d.1.characteristic d.1.fieldExponent) ⧸
+        Subgroup.center (GLSymplecticFin (d.carrierRank + 1)
+          (GaloisField d.1.characteristic d.1.fieldExponent)) ≃* d.Group :=
+  DerivedCentralQuotient.quotientCenterEquivOfPerfect d.commutator_symplectic_eq_top
+    d.symplecticEquivFixedPoints
+
+/-- The isomorphism with `PSp_{2r}(𝔽_q)` sends the class of a matrix in the derived subgroup to the
+class of the corresponding fixed point. -/
+@[simp]
+theorem projectiveSymplecticEquivGroup_mk
+    (x : commutator (GLSymplecticFin (d.carrierRank + 1)
+      (GaloisField d.1.characteristic d.1.fieldExponent))) :
+    d.projectiveSymplecticEquivGroup (QuotientGroup.mk (s := Subgroup.center _)
+        (x : GLSymplecticFin (d.carrierRank + 1)
+          (GaloisField d.1.characteristic d.1.fieldExponent))) =
+      ((MulEquiv.commutatorCongr d.symplecticEquivFixedPoints x :
+          commutator d.FixedPoints) : d.Group) :=
+  DerivedCentralQuotient.quotientCenterEquivOfPerfect_mk _ _ x
+
+/-- **The group attached to `C_r(q)` is simple**, for every valid index: it is `PSp_{2r}(𝔽_q)`,
+which is simple by Iwasawa's criterion because `Sp_{2r}(𝔽_q)` is perfect. -/
+theorem isSimpleGroup_group : IsSimpleGroup d.Group :=
+  have := GLSymplecticFin.isSimpleGroup_quotient_center_of_commutator_eq_top
+    d.commutator_symplectic_eq_top
+  d.projectiveSymplecticEquivGroup.symm.isSimpleGroup
+
 end TauCeti.TypeCLieIndex
+
+namespace TauCeti.ValidLieTypeIndex
+
+/-- **Every `C_r(q)` on the classification list is simple.** On the constructor `C r q` the
+Steinberg endomorphism of the assembly is that of the type-`C` family, so the assembled candidate
+is the type-`C` one. -/
+theorem isSimpleGroup_C {r : ℕ} {q : PrimePower} (hv : (LieTypeIndex.C r q).Valid) :
+    IsSimpleGroup (ValidLieTypeIndex.Group ⟨_, hv⟩) := by
+  unfold ValidLieTypeIndex.Group
+  rw [steinberg_C, GraphTwistedIndex.steinberg_C]
+  exact TypeCLieIndex.isSimpleGroup_group ⟨⟨_, hv⟩, trivial⟩
+
+end TauCeti.ValidLieTypeIndex
 
 end
