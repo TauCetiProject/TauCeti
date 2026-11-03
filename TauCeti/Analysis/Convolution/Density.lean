@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Analysis.Convolution.Basic
-public import TauCeti.MeasureTheory.Measure.WithDensity
+public import Mathlib.MeasureTheory.Measure.WithDensity
 
 /-!
 # Convolution of real densities

@@ -6,6 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Analysis.Convolution.Density
+public import TauCeti.MeasureTheory.Measure.WithDensity
 public import TauCeti.Probability.Distributions.Stable.Operations
 public import TauCeti.Probability.Distributions.Stable.PDF
 
