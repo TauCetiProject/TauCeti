@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.BigOperators.Ring.Finset
 public import Mathlib.Algebra.Module.BigOperators
 public import Mathlib.Algebra.Module.Torsion.Free
 public import Mathlib.Algebra.Ring.Idempotent
+public import TauCeti.Algebra.Ring.Commute
 
 /-!
 # Eigenvalues of sums of commuting idempotents
@@ -20,9 +20,6 @@ requiring finite-dimensionality or a simultaneous eigenspace decomposition.
 
 ## Main results
 
-* `Finset.sum_smul_smul_eq_smul_smul`: each member of a pairwise commuting family preserves the
-  eigenvalue equation of the family's sum: if the sum scales `x` by `μ`, it scales `p a • x` by
-  `μ`. The vector `p a • x` may be zero.
 * `Finset.exists_eq_natCast_of_sum_smul_eq_smul`: an eigenvalue of a finite sum of
   commuting idempotents is a bounded natural-number cast.
 * `Finset.sum_smul_eq_card_smul_iff`: in characteristic zero, that sum acts on a vector by the
@@ -32,17 +29,6 @@ requiring finite-dimensionality or a simultaneous eigenspace decomposition.
 public section
 
 namespace Finset
-
-/-- If the sum of a pairwise commuting family scales `x` by `μ`, it also scales `p a • x` by `μ`
-for each member `p a` of the family, since `p a` commutes with the sum. -/
-theorem sum_smul_smul_eq_smul_smul {K A M ι : Type*} [Semiring A] [MulAction A M] [SMul K M]
-    [SMulCommClass A K M] (s : Finset ι) (p : ι → A)
-    (hcomm : (s : Set ι).Pairwise fun i j => Commute (p i) (p j)) {a : ι} (ha : a ∈ s)
-    {x : M} {μ : K} (heigen : (∑ i ∈ s, p i) • x = μ • x) :
-    (∑ i ∈ s, p i) • p a • x = μ • p a • x := by
-  have hsumcomm : Commute (∑ i ∈ s, p i) (p a) := .sum_left _ _ _ fun i hi =>
-    (eq_or_ne i a).elim (fun hia => hia ▸ .refl _) (hcomm hi ha)
-  rw [smul_smul, hsumcomm.eq, mul_smul, heigen, smul_comm]
 
 variable {K A M ι : Type*} [Ring K] [IsDomain K] [Semiring A]
   [AddCommGroup M] [Module K M] [Module A M] [SMulCommClass A K M]
