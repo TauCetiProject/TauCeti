@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Cayley.Smooth
 public import Mathlib.Analysis.Calculus.FDeriv.Mul
 public import TauCeti.Analysis.Calculus.Deriv.BoundedReparametrization
 public import TauCeti.Topology.Algebra.Module.BilinearForm
+import TauCeti.Geometry.Symplectic.Transport
 
 /-!
 # Tangent conditions for variations of tame and compatible complex structures
@@ -326,19 +327,12 @@ theorem Tames.exists_contDiff_hasDerivAt {J : AlmostComplexStructure V} (h : ω.
   have hKP (t : ℝ) : K t * P t = P t * Jc := by
     simp only [K]
     rw [mul_assoc, Ring.inverse_mul_cancel _ (hPu t), mul_one]
-  have hKK (t : ℝ) : K t * K t = -1 := by
-    obtain ⟨u, hu⟩ := hPu t
-    simp only [K, ← hu, Ring.inverse_unit]
-    calc (u : V →L[ℝ] V) * Jc * ↑u⁻¹ * (↑u * Jc * ↑u⁻¹) = ↑u * (Jc * Jc) * ↑u⁻¹ := by
-          simp only [mul_assoc, Units.inv_mul_cancel_left]
-      _ = -1 := by rw [hJJ, mul_neg_one, neg_mul, Units.mul_inv]
   set c : ℝ → AlmostComplexStructure V := fun t =>
-    ⟨(K t).toLinearMap, by
-      ext v
-      simpa using congrArg (fun A : V →L[ℝ] V => A v) (hKK t)⟩
+    J.transport (ContinuousLinearEquiv.ofUnit (hPu t).unit).toLinearEquiv
   have hcK : (fun t => LinearMap.toContinuousLinearMap (c t).toLinearMap) = K := by
     funext t
     ext v
+    simp only [K, Ring.inverse_of_isUnit (hPu t)]
     rfl
   have hP0 : P 0 = 1 := by simp [P, hφ0]
   have hK0 : K 0 = Jc := by simp [K, hP0]
@@ -365,11 +359,11 @@ theorem Tames.exists_contDiff_hasDerivAt {J : AlmostComplexStructure V} (h : ω.
     have hKv : K t v = P t (J w) := by
       simp only [K, ← hu, Ring.inverse_unit, mul_apply_eq_comp, w]
       rfl
-    have hcv : c t v = K t v := rfl
+    have hcv : c t v = K t v := congrArg (fun A : V →L[ℝ] V => A v) (congrFun hcK t)
     rw [hcv, hKv, hvw]
     exact (hsmall _ (hφ t)).2 w hw
   · ext v
-    simp [c, hK0, Jc]
+    simpa [hK0, Jc] using congrArg (fun A : V →L[ℝ] V => A v) (congrFun hcK 0)
   -- Differentiate the identity `K t * P t = P t * J` at `0`.
   rw [hcK]
   have hK : HasDerivAt K (deriv K 0) 0 := ((hKs.differentiable (by simp)) 0).hasDerivAt
