@@ -18,17 +18,19 @@ concurrency:
 
 jobs:
   python-tests:
-    runs-on: ubuntu-latest
+    runs-on:
+      - nscloud-ubuntu-24.04-amd64-2x4-with-features
+      - namespace-features:github.run-id=${{ github.run_id }}
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@a8b16c3dd0c0730a1963052cb520808e161222ef
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ac879910a87ec1605cbb52191cee551fafeddb0c
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: a8b16c3dd0c0730a1963052cb520808e161222ef
+          tools-ref: ac879910a87ec1605cbb52191cee551fafeddb0c
           project-directory: .
       - name: Restore project-owned workflow tests after shared setup
         # The deployed shared overlay contains older copies of these workflow tests.
@@ -62,17 +64,19 @@ jobs:
           python3 scripts/test_stack_checkpoint_restore.py
 
   lean-fixtures:
-    runs-on: ubuntu-latest
+    runs-on:
+      - nscloud-ubuntu-24.04-amd64-4x8-with-features
+      - namespace-features:github.run-id=${{ github.run_id }}
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@a8b16c3dd0c0730a1963052cb520808e161222ef
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ac879910a87ec1605cbb52191cee551fafeddb0c
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: a8b16c3dd0c0730a1963052cb520808e161222ef
+          tools-ref: ac879910a87ec1605cbb52191cee551fafeddb0c
           project-directory: .
       - name: Restore the project-owned Lake workflow test
         run: git restore --source=HEAD -- scripts/test_lake_cache_reuse.py
@@ -105,17 +109,19 @@ jobs:
           python3 scripts/test_lake_cache_publish.py --integration
 
   header-fixtures:
-    runs-on: ubuntu-latest
+    runs-on:
+      - nscloud-ubuntu-24.04-amd64-4x8-with-features
+      - namespace-features:github.run-id=${{ github.run_id }}
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@a8b16c3dd0c0730a1963052cb520808e161222ef
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ac879910a87ec1605cbb52191cee551fafeddb0c
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: a8b16c3dd0c0730a1963052cb520808e161222ef
+          tools-ref: ac879910a87ec1605cbb52191cee551fafeddb0c
           project-directory: .
       - name: Install elan (pinned + checksum) and the toolchain
         env:
