@@ -206,7 +206,7 @@ theorem lie_glIrreducible_fin_one (mu : Fin 1 → K) (A : Matrix (Fin 1) (Fin 1)
 theorem finrank_glIrreducible_fin_one (mu : Fin 1 → K) : finrank K (glIrreducible 1 mu) = 1 := by
   -- The line through the generator is a Lie submodule, and the generator generates.
   have hmu := isGlDominantIntegral_of_le_one le_rfl mu
-  refine (finrank_eq_one_iff_of_nonzero' _
+  refine (finrank_eq_one_iff_of_ne_zero' _
     (isGlHighestWeightVector_glIrreducibleGenerator hmu).ne_zero).mpr fun w => ?_
   let P : LieSubmodule K (Matrix (Fin 1) (Fin 1) K) (glIrreducible 1 mu) :=
     { K ∙ glIrreducibleGenerator 1 mu with
