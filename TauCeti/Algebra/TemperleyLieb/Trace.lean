@@ -23,8 +23,8 @@ Together with the tower normal form
 compatibilities determine a Markov trace on `n + 2` strands from its values on `n + 1` strands,
 and the normalization determines it on at most one strand, where the algebra is the base ring.
 So there is at most one Markov trace at each loop parameter
-(`TauCeti.TemperleyLieb.IsMarkovTrace.unique`), over every commutative ring. This file does not
-assert the existence of a Markov trace at every loop parameter.
+(`TauCeti.TemperleyLieb.IsMarkovTrace.unique`), over every commutative semiring. This file does
+not assert the existence of a Markov trace at every loop parameter.
 
 ## Main results
 
@@ -49,7 +49,7 @@ namespace TauCeti.TemperleyLieb
 with `tr n 1 = δ ^ n`, traciality, strand-inclusion compatibility, and the Markov property.
 The normalization is specified in every degree, including degrees zero and one, since
 `strandIncl` starts at one strand. -/
-structure IsMarkovTrace (R : Type*) [CommRing R] (δ : R)
+structure IsMarkovTrace (R : Type*) [CommSemiring R] (δ : R)
     (tr : ∀ n : ℕ, TemperleyLieb R δ n →ₗ[R] R) : Prop where
   map_one : ∀ n, tr n 1 = δ ^ n
   map_mul_comm : ∀ n (x y : TemperleyLieb R δ n), tr n (x * y) = tr n (y * x)
@@ -58,7 +58,7 @@ structure IsMarkovTrace (R : Type*) [CommRing R] (δ : R)
   map_strandIncl_mul_e_last : ∀ n (x : TemperleyLieb R δ (n + 1)),
     tr (n + 2) (strandIncl x * e δ (Fin.last n)) = tr (n + 1) x
 
-variable {R : Type*} [CommRing R] {δ : R}
+variable {R : Type*} [CommSemiring R] {δ : R}
   {tr : ∀ n : ℕ, TemperleyLieb R δ n →ₗ[R] R}
 
 namespace IsMarkovTrace
@@ -81,7 +81,7 @@ private theorem eq_of_le_one {tr' : ∀ n : ℕ, TemperleyLieb R δ n →ₗ[R] 
   rw [← (algEquivOfLeOne δ hn).symm_apply_apply x, algEquivOfLeOne_symm_apply,
     Algebra.algebraMap_eq_smul_one, map_smul, map_smul, htr.map_one, htr'.map_one]
 
-/-- **Uniqueness of the Markov trace.** Over every commutative ring and at every loop parameter
+/-- **Uniqueness of the Markov trace.** Over every commutative semiring and at every loop parameter
 there is at most one unnormalized Markov trace on the Temperley–Lieb tower: on `n + 2` strands it
 is determined on the spanning elements `strandIncl a` and
 `strandIncl a * e δ (Fin.last n) * strandIncl b` by its values on `n + 1` strands. -/

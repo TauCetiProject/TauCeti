@@ -76,12 +76,8 @@ private theorem span_towerSpanningSet_eq_top_of_sandwich
     Submodule.subset_span (Or.inr ⟨(a, b), rfl⟩)
   -- Right multiplication by `y` preserves `M` as soon as it maps the spanning set into `M`.
   have hright (y : TemperleyLieb R δ (n + 2)) (hy : ∀ s ∈ towerSpanningSet R δ n, s * y ∈ M)
-      (m : TemperleyLieb R δ (n + 2)) (hm : m ∈ M) : m * y ∈ M := by
-    induction hm using Submodule.span_induction with
-    | mem s hs => exact hy s hs
-    | zero => simp
-    | add x z _ _ hx hz => simpa [add_mul] using M.add_mem hx hz
-    | smul r x _ hx => simpa [smul_mul_assoc] using M.smul_mem r hx
+      (m : TemperleyLieb R δ (n + 2)) (hm : m ∈ M) : m * y ∈ M :=
+    (Submodule.image_span_subset (LinearMap.mulRight R y) _ M).2 hy ⟨m, hm, rfl⟩
   have hstrand (c : TemperleyLieb R δ (n + 1)) (m : TemperleyLieb R δ (n + 2)) (hm : m ∈ M) :
       m * strandIncl c ∈ M := by
     refine hright _ ?_ m hm
