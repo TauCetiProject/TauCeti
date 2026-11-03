@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.Fan
+import TauCeti.Combinatorics.SimpleGraph.Connectivity.PrescribedCycle
 import Mathlib.SetTheory.Cardinal.NatCard
 
 /-!
@@ -34,20 +35,13 @@ variable {V : Type u} {G : SimpleGraph V}
 /-- Two distinct vertices of a two-vertex-connected finite graph lie on a common cycle. -/
 theorem IsVertexConnected.exists_isCycle_mem_support [Finite V] (hG : G.IsVertexConnected 2)
     {u v : V} (huv : u ≠ v) : ∃ c : G.Walk u u, c.IsCycle ∧ v ∈ c.support := by
-  have hcard : 2 < Nat.card V := by
-    have hcard' : 2 + 1 ≤ Nat.card V := hG.add_one_le_natCard
-    omega
-  obtain ⟨P, hPinj, hP, hPdisj⟩ :=
-    (isVertexConnected_iff_forall_exists_paths hcard).1 hG u v huv
-  let p := P 0
-  let q := P 1
-  have hp : p.IsPath := hP 0
-  have hq : q.IsPath := hP 1
-  have hpq : p.InternallyDisjoint q := hPdisj (by decide)
-  refine ⟨p.append q.reverse, ?_, by simp [p, q]⟩
-  apply hpq.isCycle_append_reverse hp hq
-  intro hpqeq
-  exact (by decide : (0 : Fin 2) ≠ 1) (hPinj hpqeq)
+  classical
+  obtain ⟨w, c, hc, hmem⟩ :=
+    hG.exists_isCycle_forall_mem_support (k := 2) (by omega) (S := {u, v})
+      (Finset.card_pair huv).le
+  have hu : u ∈ c.support := hmem u (by simp)
+  refine ⟨c.rotate u hu, hc.rotate hu, ?_⟩
+  simpa using (c.mem_support_rotate_iff u hu).2 (hmem v (by simp))
 
 /-- On a finite vertex type with at least three vertices, two-vertex-connectivity is equivalent to
 every pair of distinct vertices lying on a common cycle. -/
@@ -100,30 +94,21 @@ private theorem IsVertexConnected.exists_isCycle_mem_edges_of_notMem [Finite V]
     have hadj : G.Adj (u 0) (u 1) := by
       rw [← G.mem_edgeSet, heq]
       exact he
-    have hu0P1 : u 0 ∉ (P 1).support := by
-      intro hmem
-      have := hint 1 (u 0) hmem hu01
-      exact this (huU 0)
-    let q : G.Walk v (u 0) := (P 1).concat hadj.symm
-    have hq : q.IsPath := (hP 1).concat hu0P1 hadj.symm
-    have hpq : (P 0).InternallyDisjoint q := by
-      rw [Walk.internallyDisjoint_def]
-      intro x hx0 hxq
-      obtain hx1 | rfl : x ∈ (P 1).support ∨ x = u 0 := by simpa [q] using hxq
-      · exact .inl (hdisj (by decide : (0 : Fin 2) ≠ 1) x hx0 hx1)
-      · exact .inr rfl
-    have hu1P0 : u 1 ∉ (P 0).support :=
-      fun hmem ↦ hint 0 (u 1) hmem hu01.symm (huU 1)
-    have hpq_ne : P 0 ≠ q := by
-      intro hpq_eq
-      apply hu1P0
-      rw [hpq_eq]
-      simp [q]
-    refine ⟨(P 0).append q.reverse, hpq.isCycle_append_reverse (hP 0) hq hpq_ne, ?_⟩
-    rw [Walk.edges_append, List.mem_append]
-    right
-    rw [← heq]
-    simp [q]
+    have hcycle := (hP 0).isCycle_append_append_reverse (hP 1) hadj.symm.isPath_toWalk
+      hu01 (hdisj (by decide))
+      (fun x hxP hxE ↦ by
+        obtain rfl | rfl : x = u 1 ∨ x = u 0 := by simpa using hxE
+        · exact (hint 0 (u 1) hxP hu01.symm (huU 1)).elim
+        · rfl)
+      (fun x hxP hxE ↦ by
+        obtain rfl | rfl : x = u 1 ∨ x = u 0 := by simpa using hxE
+        · rfl
+        · exact (hint 1 (u 0) hxP hu01 (huU 0)).elim)
+    refine ⟨((P 1).append hadj.symm.toWalk).append (P 0).reverse, hcycle, ?_⟩
+    rw [Walk.edges_append, List.mem_append, Walk.edges_append, List.mem_append]
+    refine .inl (.inr ?_)
+    rw [hadj.symm.edges_toWalk, List.mem_singleton]
+    exact heq.symm.trans Sym2.eq_swap
 
 /-- Every vertex and every edge of a two-vertex-connected finite graph lie on a common cycle. -/
 theorem IsVertexConnected.exists_isCycle_mem_edges [Finite V]

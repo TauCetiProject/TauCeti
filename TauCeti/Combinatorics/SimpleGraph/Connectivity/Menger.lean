@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Combinatorics.Network.Menger.SetToSet
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.ArrowWalk
-import TauCeti.Combinatorics.SimpleGraph.Paths
 
 /-!
 # Menger's theorem for vertex-disjoint paths in simple graphs
@@ -110,22 +109,6 @@ theorem InternallyDisjoint.symm (h : p.InternallyDisjoint q) : q.InternallyDisjo
 
 theorem internallyDisjoint_comm : p.InternallyDisjoint q ↔ q.InternallyDisjoint p :=
   ⟨.symm, .symm⟩
-
-/-- Two distinct internally disjoint paths form a cycle when one is traversed in reverse. -/
-theorem InternallyDisjoint.isCycle_append_reverse (h : p.InternallyDisjoint q) (hp : p.IsPath)
-    (hq : q.IsPath) (hpq : p ≠ q) : (p.append q.reverse).IsCycle := by
-  refine hp.isCycle_append (Walk.isPath_reverse_iff q |>.2 hq) ?_ ?_
-  · rw [List.disjoint_left]
-    intro x hxp hxq
-    have hxq' : x ∈ q.support := List.mem_of_mem_dropLast (by simpa using hxq)
-    obtain hxs | hxt := h x (List.mem_of_mem_tail hxp) hxq'
-    · subst x
-      exact hp.start_notMem_tail_support hxp
-    · subst x
-      exact (Walk.isPath_reverse_iff q |>.2 hq).start_notMem_tail_support hxq
-  · by_contra hlength
-    push Not at hlength
-    exact hpq (Walk.eq_of_length_le_one hlength.1 (by simpa using hlength.2))
 
 /-- The two arcs obtained by splitting a cycle at a vertex are internally disjoint walks with the
 same endpoints. -/
