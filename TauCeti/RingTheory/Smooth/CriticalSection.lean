@@ -8,21 +8,21 @@ module
 public import Mathlib.RingTheory.Etale.Basic
 public import Mathlib.RingTheory.Kaehler.Basic
 public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
-import Mathlib.LinearAlgebra.TensorProduct.RightExactness
-import Mathlib.RingTheory.Unramified.Finite
 import TauCeti.RingTheory.Ideal.Operations
 import TauCeti.RingTheory.Kaehler.FormallyEtale
 import TauCeti.RingTheory.Kaehler.Hypersurface
 import TauCeti.RingTheory.Kaehler.UnramifiedBase
-import TauCeti.RingTheory.MvPolynomial.Ideal
 import TauCeti.RingTheory.Spectrum.Prime.Point
+import TauCeti.RingTheory.TensorProduct.ResidueField
+import TauCeti.RingTheory.Unramified.Diagonal
 
 /-!
 # Functions critical along a section of étale coordinates
 
 Let `W` be a smooth `A`-algebra and `x : ι → W` étale coordinates: finitely many elements whose
 differentials form a basis of `Ω[W⁄A]`. Their common zero locus `W ⧸ (x)` is étale over `A`, as
-the base change of the étale map `A[Xᵢ] → W`, `Xᵢ ↦ xᵢ`, along `Xᵢ ↦ 0`.
+the base change of the étale map `A[Xᵢ] → W`, `Xᵢ ↦ xᵢ`, along `Xᵢ ↦ 0`
+(`Module.Basis.etale_quotient_span_range`).
 
 Let `f ∈ W` be critical along this section, in the sense that `df ∈ (x) • Ω[W⁄A]`. Then, étale
 locally on the base and on `W` around any point `P` of the section, `f` is a function on the base
@@ -40,13 +40,11 @@ One may take `A' = W ⧸ (x)`. As it is unramified over `A`, the diagonal of
 (`Algebra.FormallyUnramified.iff_exists_tensorProduct`). Let `W'` be `A' ⊗[A] W` with a lift of
 `t` inverted. There the two images of `f` in the section agree, so `f - h ∈ (x)` for
 `h = f mod (x) ∈ A'`. As `d(f - h) = df ∈ (x) • Ω`, this forces
-`f - h ∈ (x) ^ 2` (`TauCeti.mem_span_range_sq_of_D_mem`).
+`f - h ∈ (x) ^ 2` (`Module.Basis.mem_span_range_sq_of_D_mem`).
 
 ## Main results
 
-* `TauCeti.etale_quotient_span_range_of_basis`: the common zero locus of étale coordinates of a
-  smooth algebra is étale over the base.
-* `TauCeti.exists_etale_sub_algebraMap_mem_span_range_sq`: étale locally, a function critical
+* `Module.Basis.exists_etale_sub_algebraMap_mem_span_range_sq`: étale locally, a function critical
   along the section of étale coordinates is a function on the base plus an element of `(x) ^ 2`.
 
 ## References
@@ -62,129 +60,13 @@ public section
 
 noncomputable section
 
-open KaehlerDifferential MvPolynomial TensorProduct
-
-namespace TauCeti
-
-section
-
-variable {A W : Type*} [CommRing A] [CommRing W] [Algebra A W]
-
-/-- **The common zero locus of étale coordinates is étale over the base.** If `W` is smooth over
-`A` and the differentials of `x : ι → W` form a basis of `Ω[W⁄A]`, then `W ⧸ (x)` is étale over
-`A`. It is the base change of the étale map `A[Xᵢ] → W`, `Xᵢ ↦ xᵢ`, along `A[Xᵢ] → A`,
-`Xᵢ ↦ 0`. -/
-theorem etale_quotient_span_range_of_basis [Algebra.Smooth A W] {ι : Type*} [Finite ι] {x : ι → W}
-    (b : Module.Basis ι W Ω[W⁄A]) (hb : ∀ i, b i = D A W (x i)) :
-    Algebra.Etale A (W ⧸ Ideal.span (Set.range x)) := by
-  set I := Ideal.span (Set.range x)
-  let R := MvPolynomial ι A
-  let _ : Algebra R W := (aeval x).toRingHom.toAlgebra
-  have : Algebra.Etale R W := RingHom.etale_algebraMap.mp (etale_aeval_of_basis x b hb)
-  let _ : Algebra R A := (constantCoeff : R →+* A).toAlgebra
-  -- `A ⊗[R] W` is the base change of `W` along `R → R ⧸ (X) = A`, that is, `W ⧸ (x)`.
-  have hR (r : R) : Ideal.Quotient.mk I (aeval x r) =
-      Ideal.Quotient.mk I (algebraMap A W (constantCoeff r)) := by
-    rw [Ideal.Quotient.eq, ← aeval_C (R := A) x, ← map_sub]
-    have : r - C (constantCoeff r) ∈ idealOfVars ι A := by
-      rw [← ker_constantCoeff, RingHom.mem_ker]; simp
-    have := Ideal.mem_map_of_mem (aeval x : R →ₐ[A] W) this
-    rw [Ideal.map_span, ← Set.range_comp] at this
-    convert this using 4
-    ext i; simp
-  have : IsScalarTower R A (W ⧸ I) := .of_algebraMap_eq fun r ↦ by
-    rw [← Ideal.Quotient.mk_algebraMap, ← Ideal.Quotient.mk_algebraMap]
-    exact hR r
-  let f : A ⊗[R] W →ₐ[A] W ⧸ I :=
-    Algebra.TensorProduct.lift (Algebra.ofId A (W ⧸ I)) (Ideal.Quotient.mkₐ R I)
-      fun _ _ ↦ .all _ _
-  let g₀ : W →ₐ[A] A ⊗[R] W :=
-    { (Algebra.TensorProduct.includeRight : W →ₐ[R] A ⊗[R] W) with
-      commutes' a := by
-        simp only [RingHom.toMonoidHom_eq_coe, OneHom.toFun_eq_coe, MonoidHom.toOneHom_coe,
-          MonoidHom.coe_ofClass, Algebra.TensorProduct.algebraMap_apply]
-        have h₁ : algebraMap A W a = (C a : R) • (1 : W) := by
-          rw [Algebra.smul_def, mul_one]; exact (aeval_C x a).symm
-        have h₂ : (C a : R) • (1 : A) = a := by
-          rw [Algebra.smul_def, mul_one]; exact constantCoeff_C ι a
-        rw [AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom,
-          Algebra.TensorProduct.includeRight_apply, h₁, ← TensorProduct.smul_tmul, h₂,
-          Algebra.algebraMap_self, RingHom.id_apply] }
-  have hg₀w (w : W) : g₀ w = 1 ⊗ₜ w := rfl
-  have hg₀ : I ≤ RingHom.ker g₀ := by
-    rw [Ideal.span_le]
-    rintro _ ⟨i, rfl⟩
-    have h₁ : x i = (X i : R) • (1 : W) := by
-      rw [Algebra.smul_def, mul_one]; exact (aeval_X x i).symm
-    have h₂ : (X i : R) • (1 : A) = 0 := by
-      rw [Algebra.smul_def, mul_one]; exact constantCoeff_X A i
-    rw [SetLike.mem_coe, RingHom.mem_ker, hg₀w, h₁, ← TensorProduct.smul_tmul, h₂,
-      TensorProduct.zero_tmul]
-  let g : W ⧸ I →ₐ[A] A ⊗[R] W := Ideal.Quotient.liftₐ I g₀ hg₀
-  have hg (w : W) : g (Ideal.Quotient.mk I w) = 1 ⊗ₜ w := rfl
-  let e : A ⊗[R] W ≃ₐ[A] W ⧸ I := AlgEquiv.ofAlgHom f g (by
-    refine Ideal.Quotient.algHom_ext _ (AlgHom.ext fun w ↦ ?_)
-    simp [f, hg]) (by
-    ext w
-    simp [f, hg])
-  exact Algebra.Etale.of_equiv e
-
-end
+open KaehlerDifferential TensorProduct
 
 universe u
 
+namespace Module.Basis
+
 open Algebra.TensorProduct
-
-section Diagonal
-
-variable {A W : Type*} [CommRing A] [CommRing W] [Algebra A W] (I : Ideal W)
-
-/-- For a quotient `S = W ⧸ I` unramified over `A`, some `t ∈ S ⊗[A] W` maps to `1` on the
-diagonal and makes the two images `1 ⊗ w` and `(w mod I) ⊗ 1` of every `w ∈ W` congruent modulo
-`I`. -/
-private theorem exists_mul_tmul_sub_mem_map_includeRight
-    [Algebra.FormallyUnramified A (W ⧸ I)] [Algebra.EssFiniteType A (W ⧸ I)] :
-    ∃ t : (W ⧸ I) ⊗[A] W,
-      lmul' A (map (AlgHom.id A (W ⧸ I)) (Ideal.Quotient.mkₐ A I) t) = 1 ∧
-      ∀ w : W, ((1 : W ⧸ I) ⊗ₜ[A] w - Ideal.Quotient.mk I w ⊗ₜ[A] (1 : W)) * t ∈
-        I.map (includeRight : W →ₐ[A] (W ⧸ I) ⊗[A] W) := by
-  obtain ⟨t, ht, ht₁⟩ := Algebra.FormallyUnramified.iff_exists_tensorProduct.mp
-    (inferInstance : Algebra.FormallyUnramified A (W ⧸ I))
-  obtain ⟨t, rfl⟩ := Algebra.TensorProduct.map_surjective (f := AlgHom.id A (W ⧸ I))
-    (g := Ideal.Quotient.mkₐ A I) Function.surjective_id Ideal.Quotient.mk_surjective t
-  refine ⟨t, ht₁, fun w ↦ ?_⟩
-  -- The kernel of `W ⧸ I ⊗[A] W → W ⧸ I ⊗[A] W ⧸ I` is generated by `I`.
-  have hker := Algebra.TensorProduct.lTensor_ker (A := W ⧸ I) (Ideal.Quotient.mkₐ A I)
-    Ideal.Quotient.mk_surjective
-  have hI : RingHom.ker (Ideal.Quotient.mkₐ A I) = I := Ideal.Quotient.mkₐ_ker A I
-  rw [hI] at hker
-  rw [← hker, RingHom.mem_ker, map_mul, map_sub, Algebra.TensorProduct.map_tmul,
-    Algebra.TensorProduct.map_tmul]
-  simpa using ht (Ideal.Quotient.mk I w)
-
-attribute [local instance] Algebra.TensorProduct.rightAlgebra
-
-/-- The diagonal point of `(W ⧸ I) ⊗[A] W` over a prime `P ⊇ I`: the `W`-algebra map to `κ(P)`
-sending `s ⊗ w` to `s(P) w(P)`. It factors through multiplication on `(W ⧸ I) ⊗[A] (W ⧸ I)`. -/
-private theorem exists_algHom_residueField_eq_lmul' (P : Ideal W) [P.IsPrime] (hIP : I ≤ P) :
-    ∃ ψ : (W ⧸ I) ⊗[A] W →ₐ[W] P.ResidueField, ∀ z,
-      ψ z = Ideal.Quotient.liftₐ I (IsScalarTower.toAlgHom A W P.ResidueField)
-        (fun _ hw ↦ Ideal.algebraMap_residueField_eq_zero.mpr (hIP hw))
-        (lmul' A (map (AlgHom.id A (W ⧸ I)) (Ideal.Quotient.mkₐ A I) z)) := by
-  let φW : W →ₐ[A] P.ResidueField := IsScalarTower.toAlgHom A W P.ResidueField
-  let φS : W ⧸ I →ₐ[A] P.ResidueField := Ideal.Quotient.liftₐ I φW fun _ hw ↦
-    Ideal.algebraMap_residueField_eq_zero.mpr (hIP hw)
-  refine ⟨{ productMap φS φW with
-    commutes' w := (productMap_apply_tmul φS φW 1 w).trans (by rw [map_one, one_mul]; rfl) },
-    fun z ↦ ?_⟩
-  induction z using TensorProduct.inductionOn with
-  | tmul s w =>
-    obtain ⟨s, rfl⟩ := Ideal.Quotient.mk_surjective s
-    rw [Algebra.TensorProduct.map_tmul, lmul'_apply_tmul, map_mul]
-    exact productMap_apply_tmul φS φW _ w
-  | add z z' hz hz' => simp only [map_add, hz, hz']
-
-end Diagonal
 
 attribute [local instance] Algebra.TensorProduct.rightAlgebra in
 /-- **Étale locally, a function critical along a section of étale coordinates is a function on
@@ -210,10 +92,11 @@ theorem exists_etale_sub_algebraMap_mem_span_range_sq {A W : Type u} [CommRing A
   set I := Ideal.span (Set.range x)
   have hIP : I ≤ P := Ideal.span_le.mpr (Set.range_subset_iff.mpr hx)
   let S := W ⧸ I
-  have : Algebra.Etale A S := etale_quotient_span_range_of_basis b hb
+  have : Algebra.Etale A S := b.etale_quotient_span_range hb
   let T := S ⊗[A] W
-  obtain ⟨t, ht₁, ht⟩ := exists_mul_tmul_sub_mem_map_includeRight (A := A) I
-  obtain ⟨ψ₀, hψ₀⟩ := exists_algHom_residueField_eq_lmul' (A := A) I P hIP
+  obtain ⟨t, ht₁, ht⟩ :=
+    TauCeti.Algebra.FormallyUnramified.exists_mul_tmul_sub_mem_map_includeRight A I
+  obtain ⟨ψ₀, hψ₀⟩ := Ideal.ResidueField.exists_algHom_tensorProduct_eq_lmul' A I P hIP
   have hψ₀t : IsUnit (ψ₀ t) := by
     rw [hψ₀, ht₁, map_one]
     exact isUnit_one
@@ -225,13 +108,14 @@ theorem exists_etale_sub_algebraMap_mem_span_range_sq {A W : Type u} [CommRing A
   have : Algebra.Etale W W' := .comp W T W'
   have : Algebra.Smooth S W' := .comp S T W'
   -- The basis `dx` of `Ω[W⁄A]` gives one of `Ω[W'⁄A]`, which is `Ω[W'⁄S]` as `S` is étale over `A`.
-  let b' := (kaehlerBasisOfFormallyEtale A W W' b).map (equivOfFormallyUnramifiedBase A S W')
+  let b' := (TauCeti.kaehlerBasisOfFormallyEtale A W W' b).map
+    (equivOfFormallyUnramifiedBase A S W')
   have hb' (i : ι) : b' i = D S W' (algebraMap W W' (x i)) := by
     simp [b', hb, equivOfFormallyUnramifiedBase_apply]
   have hrepr (w : W) (i : ι) :
       b'.repr (D S W' (algebraMap W W' w)) i = algebraMap W W' (b.repr (D A W w) i) := by
     rw [Module.Basis.map_repr, LinearEquiv.trans_apply, equivOfFormallyUnramifiedBase_symm_D,
-      ← map_D A A W W', kaehlerBasisOfFormallyEtale_repr_map]
+      ← map_D A A W W', TauCeti.kaehlerBasisOfFormallyEtale_repr_map]
   -- `t (1 ⊗ f - h ⊗ 1) ∈ (x) T` for `h = f mod (x)`, so `f - h ∈ (x) W'` after inverting `t`.
   let h : S := Ideal.Quotient.mk I f
   set J := Ideal.span (Set.range (algebraMap W W' ∘ x))
@@ -256,6 +140,6 @@ theorem exists_etale_sub_algebraMap_mem_span_range_sq {A W : Type u} [CommRing A
   exact ⟨S, inferInstance, inferInstance, inferInstance, W', inferInstance, inferInstance,
     inferInstance, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance, b',
     P', RingHom.ker_isPrime _, ψ.comap_ker_eq_of_residueField.symm, h, hb',
-    ψ.residueFieldMap_bijective, mem_span_range_sq_of_D_mem b' hb' hfh hD⟩
+    ψ.residueFieldMap_bijective, b'.mem_span_range_sq_of_D_mem hb' hfh hD⟩
 
-end TauCeti
+end Module.Basis
