@@ -112,19 +112,20 @@ theorem tangentMatrix_apply
         (Derivation.cotangentLinearEquiv (B := ZMod 3) x)) :=
   (rfl)
 
-/-- Conjugation by a carrier point on the dual of the augmentation cotangent space. -/
-def conjugateTangent (g : points (ZMod 3))
-    (x : Module.Dual (ZMod 3) (Bialgebra.CotangentSpace (ZMod 3) carrierAlgebra)) :
-    Module.Dual (ZMod 3) (Bialgebra.CotangentSpace (ZMod 3) carrierAlgebra) :=
-  (Derivation.cotangentLinearEquiv (B := ZMod 3)).symm
-    (Derivation.adDerivation (ZMod 3)
+/-- Conjugation by a carrier point as a linear map on the dual of the augmentation
+cotangent space. -/
+def conjugateTangent (g : points (ZMod 3)) :
+    Module.Dual (ZMod 3) (Bialgebra.CotangentSpace (ZMod 3) carrierAlgebra) →ₗ[ZMod 3]
+      Module.Dual (ZMod 3) (Bialgebra.CotangentSpace (ZMod 3) carrierAlgebra) :=
+  (Derivation.cotangentLinearEquiv (B := ZMod 3)).symm.toLinearMap.comp
+    ((Derivation.adRepresentation (ZMod 3)
       ((Bialgebra.CounitAlgebra.pointsMulEquiv (ZMod 3) carrierAlgebra (ZMod 3)).symm
-        ((pointsMulEquiv (CommAlgCat.of (ZMod 3) (ZMod 3))).symm g))
-      (Derivation.cotangentLinearEquiv (B := ZMod 3) x))
+        ((pointsMulEquiv (CommAlgCat.of (ZMod 3) (ZMod 3))).symm g))).comp
+      (Derivation.cotangentLinearEquiv (B := ZMod 3)).toLinearMap)
 
 /-- Transporting a carrier point to counit coefficients and then along the closed embedding
 recovers its matrix in `GL₇`. -/
-theorem counitPointsMulEquiv_map_carrierPoint (g : points (ZMod 3)) :
+private theorem counitPointsMulEquiv_map_carrierPoint (g : points (ZMod 3)) :
     GeneralLinear.counitPointsMulEquiv 7
       (BialgHom.mapDomain (A := Bialgebra.CounitAlgebra (ZMod 3)
         (GeneralLinear.coordinateHopfAlgebra (ZMod 3) 7) (ZMod 3))
@@ -156,11 +157,12 @@ theorem tangentMatrix_conjugateTangent (g : points (ZMod 3))
         tangentMatrix x *
         (((g⁻¹ : points (ZMod 3)) : Matrix.GeneralLinearGroup (Fin 7) (ZMod 3)) :
           Matrix (Fin 7) (Fin 7) (ZMod 3)) := by
-  rw [conjugateTangent, tangentMatrix_apply, LinearEquiv.apply_symm_apply,
+  simp only [conjugateTangent, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    Derivation.adRepresentation_apply]
+  rw [tangentMatrix_apply, LinearEquiv.apply_symm_apply,
     HopfIdeal.quotientLieHom_adDerivation, GeneralLinear.tangentMatrix_adDerivation,
     counitPointsMulEquiv_map_carrierPoint, ← tangentMatrix_apply]
-  -- The subgroup inclusion preserves inverse by definition.
-  rfl
+  simp only [Subgroup.coe_inv]
 
 /-- A tangent vector of the carrier is determined by its matrix. -/
 theorem tangentMatrix_injective : Function.Injective tangentMatrix := by
@@ -170,6 +172,27 @@ theorem tangentMatrix_injective : Function.Injective tangentMatrix := by
     ← GeneralLinear.tangentLinearEquivMatrix_apply] at h
   exact (Derivation.cotangentLinearEquiv (B := ZMod 3)).injective
     (HopfIdeal.quotientLieHom_injective _ ((GeneralLinear.tangentLinearEquivMatrix 7).injective h))
+
+/-- The identity carrier point acts trivially on tangent vectors. -/
+@[simp]
+theorem conjugateTangent_one : conjugateTangent 1 = LinearMap.id := by
+  apply LinearMap.ext
+  intro x
+  apply tangentMatrix_injective
+  rw [tangentMatrix_conjugateTangent]
+  simp
+
+/-- Conjugation by a product is the composite of the two tangent conjugations. -/
+theorem conjugateTangent_mul (g h : points (ZMod 3)) :
+    conjugateTangent (g * h) = (conjugateTangent g).comp (conjugateTangent h) := by
+  apply LinearMap.ext
+  intro x
+  apply tangentMatrix_injective
+  change tangentMatrix (conjugateTangent (g * h) x) =
+    tangentMatrix (conjugateTangent g (conjugateTangent h x))
+  rw [tangentMatrix_conjugateTangent, tangentMatrix_conjugateTangent,
+    tangentMatrix_conjugateTangent]
+  simp [Matrix.mul_assoc]
 
 /-- **The carrier tangent matrix carries brackets to commutators.** The matrix in `𝔤𝔩₇(𝔽₃)` of the
 bracket of two tangent vectors of the carrier, read as counit-valued derivations, is the
@@ -443,6 +466,38 @@ theorem mem_adjointWeightSpace_iff (α : Multiplicative (Fin 2 →₀ ℤ))
       GeneralLinear.weightTorusBaseChangeCoordinateMap_eq]
   exact HopfIdeal.mem_adjointWeightSpace_iff_of_weightTorus _ weight _ hπ α x
 
+/-- For an integral weight, the carrier weight-space criterion is support on that exact
+weight difference. -/
+theorem mem_adjointWeightSpace_weightCharacter_iff (μ : Fin 2 → ℤ)
+    (x : Module.Dual (ZMod 3) (Bialgebra.CotangentSpace (ZMod 3) carrierAlgebra)) :
+    x ∈ Derivation.adjointWeightSpace weightTorusCoordinateMap.hom
+        (SplitTorus.weightCharacter μ) ↔
+      ∀ i j, weight i - weight j ≠ μ → tangentMatrix x i j = 0 := by
+  rw [mem_adjointWeightSpace_iff]
+  simp only [ne_eq, SplitTorus.weightCharacter_injective.eq_iff]
+
+/-- A supported tangent vector spans its weight space if every cross-product derivation
+supported on that weight is a scalar multiple of its matrix. -/
+theorem adjointWeightSpace_weightCharacter_eq_span_of (μ : Fin 2 → ℤ)
+    (v : Module.Dual (ZMod 3) (Bialgebra.CotangentSpace (ZMod 3) carrierAlgebra))
+    (hv : ∀ i j, weight i - weight j ≠ μ → tangentMatrix v i j = 0)
+    (h : ∀ X : Matrix (Fin 7) (Fin 7) (ZMod 3),
+      (∀ c, X * crossOperatorPrime c =
+        ConstantMultiplication.imageStructureMatrix (ZMod 3) 7 crossOperatorPrime X c +
+          crossOperatorPrime c * X) →
+      (∀ i j, weight i - weight j ≠ μ → X i j = 0) →
+      ∃ t : ZMod 3, X = t • tangentMatrix v) :
+    Derivation.adjointWeightSpace weightTorusCoordinateMap.hom
+        (SplitTorus.weightCharacter μ) = (ZMod 3) ∙ v := by
+  apply le_antisymm
+  · intro x hx
+    obtain ⟨t, ht⟩ := h (tangentMatrix x) (tangentMatrix_mul_crossOperatorPrime x)
+      ((mem_adjointWeightSpace_weightCharacter_iff μ x).mp hx)
+    refine Submodule.mem_span_singleton.mpr ⟨t, tangentMatrix_injective ?_⟩
+    rw [map_smul, ht]
+  · rw [Submodule.span_singleton_le_iff_mem, mem_adjointWeightSpace_weightCharacter_iff]
+    exact hv
+
 /-- In the standard lifted torus coordinates, adjoint weight-space membership is characterized
 by the short-root module's matrix weight differences. -/
 theorem mem_adjointWeightSpace_splitMaximalTorus_iff
@@ -506,23 +561,12 @@ theorem adjointWeightSpace_rootGeneratorWeight_eq_span (k : Fin 2 ⊕ Fin 2) :
     Derivation.adjointWeightSpace weightTorusCoordinateMap.hom
         (SplitTorus.weightCharacter (G2.rootGeneratorWeight valid_G2 k)) =
       (ZMod 3) ∙ rootVector k := by
-  apply le_antisymm
-  · intro x hx
-    have hsupp : ∀ i j, weight i - weight j ≠ G2.rootGeneratorWeight valid_G2 k →
-        tangentMatrix x i j = 0 := by
-      have hinj : ∀ μ ν : Fin 2 → ℤ,
-          SplitTorus.weightCharacter μ = SplitTorus.weightCharacter ν → μ = ν :=
-        fun μ ν hμν => funext fun l => by
-          simpa only [SplitTorus.toAdd_weightCharacter] using
-            congrArg (fun χ : Multiplicative (Fin 2 →₀ ℤ) => Multiplicative.toAdd χ l) hμν
-      intro i j h
-      exact (mem_adjointWeightSpace_iff _ x).mp hx i j fun hw => h (hinj _ _ hw)
-    obtain ⟨t, ht⟩ := exists_eq_smul_rootMatrix k (tangentMatrix x)
-      (tangentMatrix_mul_crossOperatorPrime x) hsupp
-    refine Submodule.mem_span_singleton.mpr ⟨t, tangentMatrix_injective ?_⟩
-    rw [map_smul, tangentMatrix_rootVector, ht]
-  · rw [Submodule.span_singleton_le_iff_mem]
-    exact rootVector_mem_adjointWeightSpace k
+  apply adjointWeightSpace_weightCharacter_eq_span_of
+  · exact (mem_adjointWeightSpace_weightCharacter_iff _ _).mp
+      (rootVector_mem_adjointWeightSpace k)
+  · intro X hX hsupp
+    rw [tangentMatrix_rootVector]
+    exact exists_eq_smul_rootMatrix k X hX hsupp
 
 /-- The numbered positive simple-root character in the lifted coordinates of the chosen split
 maximal torus. Its underlying root is the corresponding Bourbaki root of the simply connected
