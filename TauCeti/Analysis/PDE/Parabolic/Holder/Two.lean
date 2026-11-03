@@ -152,22 +152,22 @@ supremum-plus-Hölder norms. -/
       add_mem' := by
         rintro J K ⟨hJ, hJ', hJt⟩ ⟨hK, hK', hKt⟩
         refine ⟨fun t x ↦ ?_, fun t x ↦ ?_, fun x t ↦ ?_⟩
-        · simpa only [map_add, BoundedContinuousFunction.add_apply, Pi.add_def] using
+        · simpa only [map_add, _root_.add_apply, Pi.add_def] using
             (hJ t x).add (hK t x)
-        · simpa only [map_add, BoundedContinuousFunction.add_apply,
+        · simpa only [map_add, _root_.add_apply,
             HolderSpace.add_apply, Pi.add_def] using
             (hJ' t x).add (hK' t x)
-        · simpa only [map_add, timeExtension_def, BoundedContinuousFunction.add_apply,
+        · simpa only [map_add, timeExtension_def, _root_.add_apply,
             HolderSpace.add_apply, Pi.add_def] using (hJt x t).add (hKt x t)
       smul_mem' := by
         rintro c J ⟨hJ, hJ', hJt⟩
         refine ⟨fun t x ↦ ?_, fun t x ↦ ?_, fun x t ↦ ?_⟩
-        · simpa only [map_smul, BoundedContinuousFunction.smul_apply, Pi.smul_def] using
+        · simpa only [map_smul, _root_.smul_apply, Pi.smul_def] using
             (hJ t x).const_smul c
-        · simpa only [map_smul, BoundedContinuousFunction.smul_apply,
+        · simpa only [map_smul, _root_.smul_apply,
             HolderSpace.smul_apply, Pi.smul_def] using
             (hJ' t x).const_smul c
-        · simpa only [map_smul, timeExtension_def, BoundedContinuousFunction.smul_apply,
+        · simpa only [map_smul, timeExtension_def, _root_.smul_apply,
             HolderSpace.smul_apply, Pi.smul_def] using (hJt x t).const_smul c }
   graph
 
@@ -210,28 +210,28 @@ theorem valueL_apply (f : ParabolicC2HolderSpace α E F hab) (p : slab (E := E) 
 
 theorem zero_apply (p : slab (E := E) a b) :
     (0 : ParabolicC2HolderSpace α E F hab) p = 0 := by
-  simpa only [valueL_apply, BoundedContinuousFunction.coe_zero, Pi.zero_apply] using
+  simpa only [valueL_apply, FunLike.coe_zero, Pi.zero_apply] using
     congrArg (fun g : slab (E := E) a b →ᵇ F ↦ g p)
       (valueL (α := α) (E := E) (F := F) (hab := hab)).map_zero
 
 theorem add_apply (f g : ParabolicC2HolderSpace α E F hab) (p : slab (E := E) a b) :
     (f + g) p = f p + g p := by
-  simpa only [valueL_apply, BoundedContinuousFunction.add_apply] using
+  simpa only [valueL_apply, _root_.add_apply] using
     congrArg (fun g : slab (E := E) a b →ᵇ F ↦ g p) (valueL.map_add f g)
 
 theorem neg_apply (f : ParabolicC2HolderSpace α E F hab) (p : slab (E := E) a b) :
     (-f) p = -f p := by
-  simpa only [valueL_apply, BoundedContinuousFunction.neg_apply] using
+  simpa only [valueL_apply, _root_.neg_apply] using
     congrArg (fun g : slab (E := E) a b →ᵇ F ↦ g p) (valueL.map_neg f)
 
 theorem sub_apply (f g : ParabolicC2HolderSpace α E F hab) (p : slab (E := E) a b) :
     (f - g) p = f p - g p := by
-  simpa only [valueL_apply, BoundedContinuousFunction.sub_apply] using
+  simpa only [valueL_apply, _root_.sub_apply] using
     congrArg (fun g : slab (E := E) a b →ᵇ F ↦ g p) (valueL.map_sub f g)
 
 theorem smul_apply (c : ℝ) (f : ParabolicC2HolderSpace α E F hab) (p : slab (E := E) a b) :
     (c • f) p = c • f p := by
-  simpa only [valueL_apply, BoundedContinuousFunction.smul_apply] using
+  simpa only [valueL_apply, _root_.smul_apply] using
     congrArg (fun g : slab (E := E) a b →ᵇ F ↦ g p) (valueL.map_smul c f)
 
 /-- The spatial gradient is the actual Fréchet derivative of every time slice. -/
@@ -410,6 +410,13 @@ theorem norm_timeDerivL_le (f : ParabolicC2HolderSpace α E F hab) :
   rw [norm_eq]
   linarith [norm_nonneg (valueL f), norm_nonneg (spatialFDerivL f),
     norm_nonneg (spatialSecondFDerivL f)]
+
+/-- The Hölder norms of the Hessian and time-derivative fields together are bounded by the reduced
+parabolic norm. -/
+theorem norm_spatialSecondFDerivL_add_norm_timeDerivL_le (f : ParabolicC2HolderSpace α E F hab) :
+    ‖spatialSecondFDerivL f‖ + ‖timeDerivL f‖ ≤ ‖f‖ := by
+  rw [norm_eq]
+  linarith [norm_nonneg (valueL f), norm_nonneg (spatialFDerivL f)]
 
 /-- The time-derivative projection has operator norm at most one. -/
 theorem norm_timeDerivL_le_one :

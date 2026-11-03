@@ -107,7 +107,7 @@ theorem exists_isManifold_sectionZero_of_contMDiff {n : ℕ} (hm : m ≠ 0)
   have hf (z : ↥{y | s y = 0}) : HasStrictFDerivAt
       (fun y ↦ (e z ⟨b ((chartAt X z.1).symm y), s ((chartAt X z.1).symm y)⟩).2)
       (D z) (chartAt X z.1 z.1) :=
-    (hchart z z (mem_chart_source X z.1) (he z)).hasStrictFDerivAt hm
+    (hchart z z (mem_chart_source X z.1) (he z)).hasStrictFDerivAt_fderiv hm
   have hmd (z : ↥{y | s y = 0}) :
       MDifferentiableAt 𝓘(𝕜, X) 𝓘(𝕜, F) (fun y ↦ (e z ⟨b y, s y⟩).2) z.1 :=
     (hcoord z z (he z)).mdifferentiableAt hm

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.HahnSeries.Primitive
 public import TauCeti.RingTheory.LaurentSeries.Primitive
-public import TauCeti.RingTheory.LaurentSeries.Puiseux.Derivative
+public import TauCeti.RingTheory.LaurentSeries.Puiseux.ContinuousDerivation
 
 /-!
 # Residues and primitives of Puiseux series
@@ -27,6 +27,13 @@ exactly when its residue vanishes, and then `y` is its primitive up to a constan
 `t⁻¹ dt` is not exact. On level `n` integration in `t` is integration in `u` of `n u ^ (n - 1) f`,
 the substitution `t = u ^ n`.
 
+The residue of the logarithmic derivative `x⁻¹ dx` is the rational order of `x`. Together with
+the primitive criterion and the chain rule this gives the finite-map formula: for a continuous
+`K`-algebra endomorphism `ρ` of the Puiseux field, with `e` the rational order of `ρ t`,
+`Res (ρ (x) d(ρ t)) = e Res (x dt)`. Writing `x = a t⁻¹ + dy/dt`, the exact part stays exact and
+`a t⁻¹ dt` becomes `a (ρ t)⁻¹ d(ρ t)`. In particular a change of parameter `t ↦ ρ t` of order one
+preserves residues, as for Laurent series.
+
 ## Main definitions
 
 * `TauCeti.puiseuxField.residue K`: the residue of Puiseux forms, the coefficient of `t ^ (-1)`.
@@ -43,6 +50,10 @@ the substitution `t = u ^ n`.
   series.
 * `TauCeti.puiseuxField.derivation_eq_iff_eq_primitive_add_algebraMap`: primitives are unique up
   to a constant.
+* `TauCeti.puiseuxField.residue_derivation_mul_inv`: the residue of `x⁻¹ dx` is the order of `x`.
+* `TauCeti.puiseuxField.residue_map_mul_derivation_eq_mul` and
+  `TauCeti.puiseuxField.residue_map_mul_derivation`: the residue of `ρ (x) d(ρ t)` is the order of
+  `ρ t` times the residue of `x dt`, and equals it when `ρ t` has order one.
 * `TauCeti.puiseuxField.primitive_levelEmbedding`: integration on level `n` by substitution;
   on level one, `TauCeti.puiseuxField.primitive_algebraMap_laurentSeries`, it extends termwise
   integration of `K⸨X⸩`.
@@ -246,6 +257,49 @@ theorem primitive_algebraMap_laurentSeries (f : K⸨X⸩) :
       algebraMap K⸨X⸩ (puiseuxField K) (laurentSeriesPrimitive K f) := by
   rw [algebraMap_laurentSeries_apply, algebraMap_laurentSeries_apply, primitive_levelEmbedding]
   simp
+
+/-- **The residue of a logarithmic derivative is the order.** The residue of `x⁻¹ dx` is the
+rational order of the Puiseux series `x`. -/
+theorem residue_derivation_mul_inv (x : puiseuxField K) :
+    residue K (derivation K x * x⁻¹) = ((x : HahnSeries ℚ K).order : K) := by
+  -- On level `n`, with `u = t ^ (1 / n)`, `x⁻¹ dx/dt` is `(1 / n) u ^ (1 - n) f⁻¹ df/du`.
+  obtain ⟨n, hn⟩ := exists_mem_range_levelEmbedding x
+  obtain ⟨f, rfl⟩ := (AlgHom.mem_range _).mp hn
+  rw [derivation_levelEmbedding, ← map_inv₀, ← map_mul, residue_levelEmbedding,
+    coe_levelEmbedding, order_ramifiedEmbedding]
+  simp [-derivative_apply, mul_assoc, coeff_single_mul, show -(n : ℤ) - (1 - n) = -1 by ring,
+    LaurentSeries.coeff_neg_one_derivative_mul_inv, div_eq_inv_mul]
+
+/-- **The residue under a continuous endomorphism.** Let `ρ` be a continuous `K`-algebra
+endomorphism of the Puiseux field, and let `e` be the rational order of `ρ t`. Then the residue of
+`ρ (x) d(ρ t)` is `e` times the residue of `x dt`. -/
+theorem residue_map_mul_derivation_eq_mul (ρ : puiseuxField K →ₐ[K] puiseuxField K)
+    (hρ : Continuous ρ) (x : puiseuxField K) :
+    residue K (ρ x * derivation K (ρ (single K 1 1))) =
+      ((ρ (single K 1 1) : HahnSeries ℚ K).order : K) * residue K x := by
+  set a := residue K x
+  set s := ρ (single K 1 1)
+  -- Split `x = a t⁻¹ + dy/dt` with `a` the residue of `x`.
+  have hx : x = algebraMap K (puiseuxField K) a * (single K 1 1)⁻¹ +
+      derivation K (primitive K x) := by
+    rw [derivation_primitive, inv_single, inv_one, algebraMap_mul_single, mul_one, add_sub_cancel]
+  -- By the chain rule the exact part `dy/dt` becomes the exact form `d(ρ y)`, of residue zero.
+  have hexact : residue K (ρ (derivation K (primitive K x)) * derivation K s) = 0 := by
+    rw [← derivation_algHom_apply ρ hρ, residue_derivation]
+  -- The part `a t⁻¹` becomes `a (ρ t)⁻¹ d(ρ t)`, whose residue is `a` times the order of `ρ t`.
+  have hlog : residue K (ρ (algebraMap K _ a * (single K 1 1)⁻¹) * derivation K s) =
+      a * ((s : HahnSeries ℚ K).order : K) := by
+    rw [map_mul ρ, map_inv₀ ρ, AlgHom.commutes, mul_assoc, ← Algebra.smul_def, map_smul,
+      mul_comm _ (derivation K s), residue_derivation_mul_inv, smul_eq_mul]
+  rw [hx, map_add, add_mul, map_add, hlog, hexact, add_zero, mul_comm]
+
+/-- **Residues are invariant under a change of parameter of order one.** If a continuous
+`K`-algebra endomorphism `ρ` of the Puiseux field sends `t` to a series of order one, then the
+residue of `ρ (x) d(ρ t)` is the residue of `x dt`. -/
+theorem residue_map_mul_derivation (ρ : puiseuxField K →ₐ[K] puiseuxField K) (hρ : Continuous ρ)
+    (h : (ρ (single K 1 1) : HahnSeries ℚ K).order = 1) (x : puiseuxField K) :
+    residue K (ρ x * derivation K (ρ (single K 1 1))) = residue K x := by
+  rw [residue_map_mul_derivation_eq_mul ρ hρ, h, Rat.cast_one, one_mul]
 
 end puiseuxField
 

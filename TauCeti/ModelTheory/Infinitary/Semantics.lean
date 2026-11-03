@@ -262,6 +262,12 @@ theorem SentenceInf.realize_inf {M : Type w} [L.Structure M] {φ ψ : L.Sentence
     SentenceInf.Realize (φ ⊓ ψ) M ↔ φ.Realize M ∧ ψ.Realize M := by
   simp only [SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_inf]
 
+/-- A disjunction of sentences holds exactly when one of the sentences holds. -/
+@[simp]
+theorem SentenceInf.realize_sup {M : Type w} [L.Structure M] {φ ψ : L.SentenceInf ι} :
+    SentenceInf.Realize (φ ⊔ ψ) M ↔ φ.Realize M ∨ ψ.Realize M := by
+  simp only [SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_sup]
+
 /-- An infinitary conjunction of sentences holds exactly when every sentence holds. -/
 @[simp]
 theorem SentenceInf.realize_iInf {M : Type w} [L.Structure M] {φs : ι → L.SentenceInf ι} :

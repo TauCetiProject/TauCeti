@@ -51,6 +51,8 @@ group for even `n`.
   `glueAlphabetIsometry_E7_apply`: the isometry agrees with the family-specific identifications.
 * `TauCeti.DynkinType.typeA1GlueAlphabetZModStandardIsometry`: the `A₁` glue alphabet is the
   binary coordinate alphabet `ℤ/2` with quadratic map `x ↦ x² / 4`.
+* `TauCeti.DynkinType.glueAlphabet_congr`, `glueAlphabetIsometry_ofEq`: equal types have equal
+  alphabets, compatibly with the glue isometries and `rootLatticeIsometryOfEq`.
 * `TauCeti.DynkinType.isNondegenerate_glueAlphabet`, `natCard_glueAlphabet`: the alphabet is
   nondegenerate, of order `|det t.cartanMatrix|`.
 
@@ -278,6 +280,28 @@ theorem glueAlphabetIsometry_E7_apply (hv : E7.Valid) (ht : E7.IsSimplyLaced) (x
         (typeE₇DiscriminantGroupEquiv x) :=
   (Isometry.discriminantQuadraticIsometry_apply _ _ _).trans
     (congrArg _ (typeE₇DiscriminantQuadraticIsometry_apply x))
+
+/-- Equal Dynkin types have equal glue alphabets. -/
+theorem glueAlphabet_congr {t s : DynkinType} (h : t = s) (ht : t.IsSimplyLaced)
+    (hs : s.IsSimplyLaced) : t.glueAlphabet ht = s.glueAlphabet hs := by
+  subst h
+  rfl
+
+/-- **The glue isometry is natural along equal types**: identifying the glue alphabets of equal
+types `t = s` corresponds, through the glue isometries, to the discriminant isometry of
+`TauCeti.DynkinType.rootLatticeIsometryOfEq`. -/
+theorem glueAlphabetIsometry_ofEq {t s : DynkinType} (h : t = s) (hv : t.Valid) (hvs : s.Valid)
+    (ht : t.IsSimplyLaced) (hs : s.IsSimplyLaced) (x : t.glueAlphabet ht) :
+    s.glueAlphabetIsometry hvs hs
+        (FiniteQuadraticModule.Isometry.ofEq (glueAlphabet_congr h ht hs) x) =
+      (t.rootLatticeIsometryOfEq ht h hs).discriminantQuadraticIsometry (t.isEven_rootLattice ht)
+        (t.glueAlphabetIsometry hv ht x) := by
+  subst h
+  rw [FiniteQuadraticModule.Isometry.ofEq_rfl, rootLatticeIsometryOfEq_rfl]
+  refine Eq.trans ?_ (Isometry.discriminantQuadraticIsometry_apply _ _ _).symm
+  rw [Isometry.discriminantGroupEquiv_refl]
+  -- Both sides are `t.glueAlphabetIsometry hv ht x`, the validity proofs being equal.
+  rfl
 
 /-- **The glue alphabet of a valid simply-laced type is nondegenerate**, being isometric to the
 discriminant form of a nondegenerate lattice. -/
