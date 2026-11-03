@@ -18,10 +18,10 @@ A *coupling*, or *transport plan*, of a measure `μ` on `X` and a measure `ν` o
 transport: the primal transport problem minimises a cost over the couplings of two fixed
 measures, so every statement about that problem is a statement about the set defined here.
 
-Nothing in this file needs a topology, a metric, a density, or a normalisation, and the two
-factors may be different measurable spaces. The relation is therefore stated for arbitrary
-measures, and the probability case is packaged separately as a subtype of
-`MeasureTheory.ProbabilityMeasure (X × Y)`.
+Apart from one closing lemma on metric spaces, nothing in this file needs a topology, a
+metric, a density, or a normalisation, and the two factors may be different measurable spaces.
+The relation is therefore stated for arbitrary measures, and the probability case is packaged
+separately as a subtype of `MeasureTheory.ProbabilityMeasure (X × Y)`.
 
 ## Main definitions
 
@@ -68,7 +68,9 @@ measures, and the probability case is packaged separately as a subtype of
   as the pair of equations for the two marginal pushforwards;
 * `TauCeti.IsCoupling.eq_map_prodMk` — a coupling out of a Dirac measure is the
   pushforward of its target along `y ↦ (x, y)`, so it is unique; `IsCoupling.eq_dirac`
-  specialises this to a pair of Dirac measures.
+  specialises this to a pair of Dirac measures;
+* `TauCeti.IsCoupling.ae_lt_dist` — a coupling of measures carried by two balls whose centres are
+  far apart only pairs points that are far apart.
 
 ## Implementation notes
 
@@ -455,6 +457,24 @@ protected theorem map_prod {H : Type*} [MeasurableSpace H] (hπ : IsCoupling π 
       Measure.map_prod_map π η measurable_id η.measurePreserving_diagonal.measurable
   rwa [hprod, Measure.map_map (by fun_prop) (by fun_prop),
     Measure.map_map (by fun_prop) (by fun_prop)] at h
+
+section Metric
+
+variable {Z : Type*} [PseudoMetricSpace Z] [MeasurableSpace Z] {q : Measure (Z × Z)}
+  {μ' ν' : Measure Z} {x y : Z} {r r' D : ℝ}
+
+/-- If the marginals of a coupling `q` are carried by the balls `B(x, r)` and `B(y, r')`, whose
+centres are at distance at least `D + r + r'`, then `q`-almost every pair is at distance more
+than `D`. -/
+theorem ae_lt_dist (hq : IsCoupling q μ' ν') (hμ : ∀ᵐ x' ∂μ', x' ∈ Metric.ball x r)
+    (hν : ∀ᵐ y' ∂ν', y' ∈ Metric.ball y r') (hxy : D + r + r' ≤ dist x y) :
+    ∀ᵐ z ∂q, D < dist z.1 z.2 := by
+  filter_upwards [hq.measurePreserving_fst.quasiMeasurePreserving.ae hμ,
+    hq.measurePreserving_snd.quasiMeasurePreserving.ae hν] with z hz₀ hz₁
+  rw [Metric.mem_ball] at hz₀ hz₁
+  linarith [dist_triangle x z.1 y, dist_triangle z.1 z.2 y, dist_comm x z.1]
+
+end Metric
 
 end IsCoupling
 

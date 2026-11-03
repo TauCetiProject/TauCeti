@@ -159,24 +159,6 @@ theorem distortedRenyiEntropy_eq_bot_of_ae (hq : q ≠ 0)
 
 end DistortedRenyiEntropy
 
-section Coupling
-
-variable {X : Type*} [PseudoMetricSpace X] [MeasurableSpace X] {q : Measure (X × X)}
-  {μ ν : Measure X} {x y : X} {r r' D : ℝ}
-
-/-- If the marginals of a coupling `q` are carried by the balls `B(x, r)` and `B(y, r')`, whose
-centres are at distance at least `D + r + r'`, then `q`-almost every pair is at distance more
-than `D`. -/
-theorem IsCoupling.ae_lt_dist (hq : IsCoupling q μ ν) (hμ : ∀ᵐ x' ∂μ, x' ∈ ball x r)
-    (hν : ∀ᵐ y' ∂ν, y' ∈ ball y r') (hxy : D + r + r' ≤ dist x y) :
-    ∀ᵐ z ∂q, D < dist z.1 z.2 := by
-  filter_upwards [hq.measurePreserving_fst.quasiMeasurePreserving.ae hμ,
-    hq.measurePreserving_snd.quasiMeasurePreserving.ae hν] with z hz₀ hz₁
-  rw [mem_ball] at hz₀ hz₁
-  linarith [dist_triangle x z.1 y, dist_triangle z.1 z.2 y, dist_comm x z.1]
-
-end Coupling
-
 namespace MetricMeasureSpace
 
 variable {X : Type*} [MetricSpace X] [MeasurableSpace X] [CompleteSpace X]
