@@ -102,8 +102,11 @@ private theorem isUnit_one_sub_pantsCayley (w : ℂ) (x : M) :
 private theorem pantsEnd_eq (w : ℂ) (x : M) :
     pantsEnd h₀ J hJ w x = J₀.toEndomorphism x * (1 + pantsCayley J J₀ w x) *
       Ring.inverse (1 - pantsCayley J J₀ w x) := by
+  let : NormedAddCommGroup (TangentSpace I x) := inferInstanceAs (NormedAddCommGroup E)
+  let : NormedSpace ℝ (TangentSpace I x) := inferInstanceAs (NormedSpace ℝ E)
   have hc := pantsCayley_mem h₀ J hJ w x
-  have h := (h₀.compatibleAt x).cayleyEquiv_symm_apply_toLinearMap ⟨_, hc⟩
+  have h := (h₀.compatibleAt x).cayleyEquiv_symm_apply_toContinuousLinearMap
+    (V := TangentSpace I x) (pantsCayley J J₀ w x) hc
   let P := Floer.pairOfPantsAlmostComplex (V := TangentSpace I x) (h₀.compatibleAt x)
     (fun q t (_ : Unit) => (J q t).almostComplexStructureAt x)
     (fun q t _ => h₀.isNondegenerate.tames_iff.mp (hJ q t) x) w ()
@@ -115,14 +118,12 @@ private theorem pantsEnd_eq (w : ℂ) (x : M) :
     rw [SymplecticForm.Compatible.cayleyEquiv_apply_coe]
     exact pantsCayley_toLinearMap h₀ J hJ w x
   rw [heq] at h
-  have hinv := (isUnit_one_sub_pantsCayley h₀ J hJ w x).map_ringInverse
-    (ContinuousLinearMap.toLinearMapRingHom (R₁ := ℝ))
-  simp only [ContinuousLinearMap.toLinearMapRingHom_apply,
-    ContinuousLinearMap.toLinearMap_sub, ContinuousLinearMap.toLinearMap_one] at hinv
-  apply ContinuousLinearMap.coe_injective
-  simp only [pantsEnd, LinearMap.coe_toContinuousLinearMap, ContinuousLinearMap.toLinearMap_mul,
-    ContinuousLinearMap.toLinearMap_add, ContinuousLinearMap.toLinearMap_one]
-  rw [h, ← hinv, SmoothAlmostComplexStructure.almostComplexStructureAt_toLinearMap]
+  have hbase : LinearMap.toContinuousLinearMap (J₀.almostComplexStructureAt x).toLinearMap =
+      J₀.toEndomorphism x :=
+    ContinuousLinearMap.coe_injective (J₀.almostComplexStructureAt_toLinearMap x)
+  exact h.trans (congrArg
+    (fun A : TangentSpace I x →L[ℝ] TangentSpace I x =>
+      A * (1 + pantsCayley J J₀ w x) * Ring.inverse (1 - pantsCayley J J₀ w x)) hbase)
 
 variable (hJp : ∀ q, Function.Periodic (J q) 1)
   (hJs : ∀ q, ContMDiff (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E)) (⊤ : ℕ∞)
