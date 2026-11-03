@@ -19,7 +19,8 @@ import TauCeti.RingTheory.Ideal.Norm.AbsNorm
 
 This file defines `TauCeti.normCoeff`, the ordinary arithmetic function obtained by summing an
 `IdealArithmeticFunction` over each fibre of the absolute norm.  These fibres are finite by
-`Ideal.finite_setOfPred_absNorm_eq`, so the coefficients are honest finite sums.  The resulting
+`Ring.HasFiniteQuotients.finite_absNorm_eq`,
+  so the coefficients are honest finite sums.  The resulting
 function has value zero at `0`, as required by Mathlib's `ArithmeticFunction` carrier; that value
 is available from `ArithmeticFunction.map_zero`.
 
@@ -37,11 +38,8 @@ and `1` at two distinct ideals of the same norm, is `TauCeti.normCoeff_ite_eq_ze
 rejection test that forbids weakening the nonnegativity hypothesis of the converse regrouping
 theorem to nonnegativity of the coefficients themselves.
 
-## Roadmap role
-
-This is the finite-norm-fibre part of Layer **1.1** of
-`TauCetiRoadmap/ArithmeticDirichletSeries/README.md`.  The next layer step uses these coefficients
-to regroup an absolutely convergent series over nonzero ideals into a Mathlib `LSeries`.
+`TauCeti/NumberTheory/ArithmeticDirichletSeries/Regroup.lean` uses these coefficients to regroup an
+absolutely convergent series over nonzero ideals into a Mathlib `LSeries`.
 
 ## References
 
@@ -60,7 +58,7 @@ variable (K : Type*) [Field K] [NumberField K]
 /-- The fibre of nonzero integral ideals with a fixed absolute norm is finite. -/
 theorem finite_normFiber (n : ℕ) :
     {I : (Ideal (𝓞 K))⁰ | Ideal.absNorm (I : Ideal (𝓞 K)) = n}.Finite := by
-  exact (Ideal.finite_setOfPred_absNorm_eq n).preimage Subtype.val_injective.injOn
+  exact (Ring.HasFiniteQuotients.finite_absNorm_eq n).preimage Subtype.val_injective.injOn
 
 /-- The finite set of nonzero integral ideals with a fixed absolute norm. -/
 noncomputable def normFiber (n : ℕ) : Finset ((Ideal (𝓞 K))⁰) :=
@@ -214,7 +212,7 @@ theorem normCoeff_ite_eq_zero {A B : (Ideal (𝓞 K))⁰} (hAB : A ≠ B)
     (hN : Ideal.absNorm (A : Ideal (𝓞 K)) = Ideal.absNorm (B : Ideal (𝓞 K))) :
     normCoeff K (fun I ↦ if I = A then -1 else if I = B then 1 else 0) = 0 := by
   ext n
-  rw [normCoeff_eq_sum_normFiber, ArithmeticFunction.zero_apply]
+  rw [normCoeff_eq_sum_normFiber, _root_.zero_apply]
   have hf0 : ∀ I, I ≠ A → I ≠ B →
       (if I = A then (-1 : ℂ) else if I = B then 1 else 0) = 0 := by
     intro I h₁ h₂

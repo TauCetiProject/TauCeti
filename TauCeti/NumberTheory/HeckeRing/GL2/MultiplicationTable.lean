@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.HeckeRing.GL2.Degree
 -- `Matrix.invariant_factor_zero_dvd_entries`, used only inside a proof below, so private.
-import TauCeti.LinearAlgebra.Matrix.SmithNormalForm
+import TauCeti.LinearAlgebra.Matrix.SmithNormalForm.Int
 
 /-!
 # The `GL₂` multiplication table: telescoping identities

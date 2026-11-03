@@ -294,7 +294,7 @@ theorem coe_stabilizerRotation (Γ : Subgroup PSL(2, ℝ)) (z : ℍ) (q : stabil
 theorem coe_stabilizerRotation_eq_denom_zpow {Γ : Subgroup PSL(2, ℝ)} {z : ℍ}
     (q : stabilizer Γ z) {g : SL(2, ℝ)} (hg : (g : PSL(2, ℝ)) = ((q : Γ) : PSL(2, ℝ))) :
     ((stabilizerRotation Γ z q : ℂˣ) : ℂ) = denom (mapGL ℝ g) z ^ (-2 : ℤ) := by
-  rw [coe_stabilizerRotation, stabilizerDeriv_apply, ← hg, smulDeriv_coe, zpow_neg, zpow_two,
+  rw [coe_stabilizerRotation, stabilizerDeriv_apply, ← hg, smulDeriv_coe, _root_.zpow_neg, zpow_two,
     sq]
 
 /-- A lift to `SL(2, ℝ)` of an element of the stabilizer of `z` fixes `z`. -/
@@ -317,10 +317,10 @@ theorem denom_zpow_eq_one_of_dvd {Γ : Subgroup PSL(2, ℝ)} {z : ℍ} {g : SL(2
   have hroot : ((stabilizerRotation Γ z q : ℂˣ) : ℂ) ^ Nat.card (stabilizer Γ z) = 1 := by
     rw [← Units.val_pow_eq_pow_val,
       (mem_rootsOfUnity _ _).mp (stabilizerRotation Γ z q).2, Units.val_one]
-  rw [coe_stabilizerRotation_eq_denom_zpow q rfl, ← zpow_natCast, ← zpow_mul] at hroot
+  rw [coe_stabilizerRotation_eq_denom_zpow q rfl, ← zpow_natCast, ← _root_.zpow_mul] at hroot
   obtain ⟨t, ht⟩ := hdvd
   rw [ht, show (2 * Nat.card (stabilizer Γ z) : ℤ) * t = (-2 * Nat.card (stabilizer Γ z)) * -t by
-    ring, zpow_mul, hroot, one_zpow]
+    ring, _root_.zpow_mul, hroot, _root_.one_zpow]
 
 theorem stabilizerRotation_injective (Γ : Subgroup PSL(2, ℝ)) (z : ℍ) :
     Function.Injective (stabilizerRotation Γ z) := fun q₁ q₂ h ↦

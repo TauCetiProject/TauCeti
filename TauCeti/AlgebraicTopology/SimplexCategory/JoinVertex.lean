@@ -147,6 +147,28 @@ theorem joinVertexInr_comp_δ_castSucc {n : ℕ} (i : Fin (n + 2)) :
     joinVertexInr ⦋n⦌ ≫ δ i.castSucc = joinVertexInr ⦋n + 1⦌ :=
   (congrArg _ (joinVertex_map_δ i)).symm.trans (joinVertexInr_comp_joinVertex_map (δ i))
 
+/-- Collapsing `⦋n⦌` to its last vertex fixes the edge of `⦋n⦌ ⋆ ⦋0⦌` from that vertex to the
+final vertex. -/
+theorem mkOfSucc_last_comp_joinVertex_map {n : ℕ} :
+    mkOfSucc (Fin.last n) ≫
+        joinVertex.map (const ⦋n⦌ ⦋0⦌ 0 ≫ const ⦋0⦌ ⦋n⦌ (Fin.last n)) =
+      mkOfSucc (Fin.last n) := by
+  ext k : 3
+  fin_cases k
+  · exact (joinVertex_map_castSucc (m := ⦋n⦌) (n := ⦋n⦌) _ (Fin.last n) :)
+  · exact (joinVertex_map_last (m := ⦋n⦌) (n := ⦋n⦌) _ :)
+
+/-- Collapsing `⦋n⦌` to its last vertex sends an edge between two of the first `n + 1` vertices
+of `⦋n⦌ ⋆ ⦋0⦌` to the last of these vertices. -/
+theorem mkOfSucc_castSucc_comp_joinVertex_map {n : ℕ} (j : Fin n) :
+    mkOfSucc j.castSucc ≫
+        joinVertex.map (const ⦋n⦌ ⦋0⦌ 0 ≫ const ⦋0⦌ ⦋n⦌ (Fin.last n)) =
+      const ⦋1⦌ ⦋n⦌ (Fin.last n) ≫ δ (Fin.last (n + 1)) := by
+  ext k : 3
+  fin_cases k
+  · exact (joinVertex_map_castSucc (m := ⦋n⦌) (n := ⦋n⦌) _ j.castSucc :).trans (by simp [δ]; rfl)
+  · exact (joinVertex_map_castSucc (m := ⦋n⦌) (n := ⦋n⦌) _ j.succ :).trans (by simp [δ]; rfl)
+
 end SimplexCategory
 
 namespace CategoryTheory.SimplicialObject

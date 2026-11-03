@@ -60,7 +60,7 @@ private abbrev permutationRep (μ : YoungDiagram) :=
 private theorem youngSymmetrizer_tabloid_mem (t : YoungTableau μ) :
     (permutationRep μ).asAlgebraHom (youngSymmetrizer t)
         (MonoidAlgebra.single (tabloid t) 1) ∈ spechtSubrepresentation μ := by
-  rw [youngSymmetrizer_def, map_mul, Module.End.mul_apply, ← polytabloid_def]
+  rw [youngSymmetrizer_def, map_mul, mul_apply_eq_comp, ← polytabloid_def]
   exact Representation.asAlgebraHom_mem_of_forall_mem _
     (spechtSubrepresentation μ).toSubmodule
     (fun g _ hx => (spechtSubrepresentation μ).apply_mem_toSubmodule g hx)
@@ -72,7 +72,7 @@ private theorem spechtIdeal_apply_tabloid_mem (t : YoungTableau μ) (x : spechtI
     (permutationRep μ).asAlgebraHom (x : MonoidAlgebra ℚ (Equiv.Perm (Fin μ.card)))
         (MonoidAlgebra.single (tabloid t) 1) ∈ spechtSubrepresentation μ := by
   obtain ⟨a, ha⟩ := (mem_spechtIdeal_iff t x).mp x.property
-  rw [← ha, map_mul, Module.End.mul_apply]
+  rw [← ha, map_mul, mul_apply_eq_comp]
   exact Representation.asAlgebraHom_mem_of_forall_mem _
     (spechtSubrepresentation μ).toSubmodule
     (fun g _ hx => (spechtSubrepresentation μ).apply_mem_toSubmodule g hx)
@@ -109,7 +109,7 @@ def spechtIdealToSubrepresentation (t : YoungTableau μ) :
             (x : MonoidAlgebra ℚ (Equiv.Perm (Fin μ.card)))
             (MonoidAlgebra.single (tabloid t) 1))
     rw [spechtIdealRep_ρ_apply_coe, map_mul,
-      Representation.asAlgebraHom_single_one, Module.End.mul_apply]
+      Representation.asAlgebraHom_single_one, mul_apply_eq_comp]
 
 /-- The canonical comparison map is evaluation of an ideal element on the tabloid `{t}`. -/
 @[simp]
@@ -129,7 +129,7 @@ theorem youngSymmetrizer_smul_tabloid_coeff_tabloid (t : YoungTableau μ) :
         (MonoidAlgebra.single (tabloid t) 1)).coeff (tabloid t) =
       (Nat.card (rowSubgroup t) : ℚ) := by
   classical
-  rw [youngSymmetrizer_def, map_mul, Module.End.mul_apply, ← polytabloid_def,
+  rw [youngSymmetrizer_def, map_mul, mul_apply_eq_comp, ← polytabloid_def,
     rowSymmetrizer_def, map_sum, LinearMap.sum_apply, MonoidAlgebra.coeff_sum,
     Finsupp.finsetSum_apply]
   simp_rw [Representation.asAlgebraHom_of]

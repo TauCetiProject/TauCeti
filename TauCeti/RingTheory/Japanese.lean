@@ -8,12 +8,15 @@ module
 public import Mathlib.FieldTheory.Perfect
 public import Mathlib.FieldTheory.PurelyInseparable.Basic
 public import Mathlib.RingTheory.DedekindDomain.IntegralClosure
+public import Mathlib.RingTheory.Etale.Basic
 
 import Mathlib.Algebra.Algebra.Shrink
 import Mathlib.Algebra.Field.Shrink
 import Mathlib.FieldTheory.Normal.Closure
+import Mathlib.RingTheory.Etale.Field
 import Mathlib.RingTheory.FractionalIdeal.Operations
 import Mathlib.RingTheory.Finiteness.Small
+import TauCeti.Algebra.Module.LocalizedModule.Submodule
 import TauCeti.FieldTheory.Normal.FixedField
 import TauCeti.RingTheory.IntegralClosure.Transfer
 import TauCeti.RingTheory.Localization.Away.FractionRing
@@ -59,6 +62,11 @@ need to be tested.
 * `TauCeti.Ring.IsN1.exists_isIntegrallyClosed_localization_away`: an N-1 domain becomes
   integrally closed after inverting a single nonzero element, so the normal locus of its spectrum
   contains a nonempty open.
+* `TauCeti.Ring.isN1_iff_exists_isIntegrallyClosed_localization_away_and_isN1_localization_atPrime`:
+  the N-1 local criterion, a Noetherian domain is N-1 if and only if it becomes integrally closed
+  after inverting a single nonzero element and its localizations at maximal ideals are N-1
+  (Stacks, Lemma 10.161.15 (0333)). The substantive direction is
+  `TauCeti.Ring.IsN1.of_isIntegrallyClosed_localization_away_of_isN1_localization_atPrime`.
 * `TauCeti.Ring.IsN1.of_span_eq_top`, `TauCeti.Ring.IsJapanese.of_span_eq_top`: being N-1,
   respectively Japanese, is local on `Spec R`: a domain is N-1, respectively Japanese, as soon as
   its localizations `R_{f_i}` are, for elements `f_i` generating the unit ideal (Stacks,
@@ -67,6 +75,9 @@ need to be tested.
   closure in a finite extension `M` of the fraction field is finite, the integral closure in every
   finite separable extension of `M` is finite (Stacks, Lemma 10.161.8 (032L), applied to the
   normalization); for `M` the fraction field this covers every Noetherian N-1 domain.
+* `TauCeti.Ring.finite_integralClosure_of_etale`: the integral closure of a Noetherian N-1 domain
+  in a finite étale algebra over its fraction field, a finite product of finite separable
+  extensions, is finite.
 * `TauCeti.Ring.isJapanese_iff_isN1`: a Noetherian domain with perfect fraction field is Japanese
   if and only if it is N-1 (Stacks, Lemma 10.161.11 (032M), in characteristic zero).
 * `TauCeti.Ring.isJapanese_iff_isPurelyInseparable`: a Noetherian domain is Japanese if and only
@@ -84,6 +95,12 @@ every fraction field and every universe.
 ## References
 
 * [Stacks Project, Section 10.161 (032E)](https://stacks.math.columbia.edu/tag/032E)
+* The proof of `TauCeti.Ring.finite_integralClosure_of_etale` through the field factors follows
+  T. Dupuy, T. Tucker and Z. Wang,
+  [pcfawd-formalization](https://github.com/tdupu/pcfawd-formalization) at commit
+  `9a20b3f351446d64e6015d704198bc71c7002008` (Apache-2.0),
+  `lean/Pcf/Stacks/Purity/FiniteNormalModel.lean`, where the base is integrally closed
+  (`finiteEtaleAlgebra_integralClosure_finite`).
 -/
 
 public section
@@ -269,6 +286,34 @@ theorem finite_integralClosure_of_isSeparable [IsDomain R] [IsNoetherianRing R]
   exact .equiv (IsIntegralClosure.equiv R (integralClosure B E) E
     (integralClosure R E)).toLinearEquiv
 
+/-- **Finiteness of the integral closure in a finite étale algebra.** Let `R` be a Noetherian N-1
+domain with fraction field `K`, for instance an integrally closed Noetherian domain. Then the
+integral closure of `R` in a finite étale `K`-algebra `L`, that is, in a finite product of finite
+separable extensions of `K`, is a finite `R`-module. -/
+theorem finite_integralClosure_of_etale [IsDomain R] [IsNoetherianRing R] [IsN1 R]
+    (K : Type*) (L : Type*) [Field K] [Algebra R K] [IsFractionRing R K] [CommRing L]
+    [Algebra K L] [Algebra R L] [IsScalarTower R K L] [Algebra.Etale K L] :
+    Module.Finite R (integralClosure R L) := by
+  -- `L` is a finite product of finite separable field extensions `Lᵢ` of `K`.
+  obtain ⟨I, _, Li, _, _, e, hsep⟩ :=
+    (Algebra.FormallyEtale.iff_exists_algEquiv_prod K L).mp inferInstance
+  have : Module.Finite K L := Algebra.FormallyUnramified.finite_of_free K L
+  let (i : I) : Algebra R (Li i) := ((algebraMap K (Li i)).comp (algebraMap R K)).toAlgebra
+  have (i : I) : IsScalarTower R K (Li i) := .of_algebraMap_eq' rfl
+  have (i : I) : FiniteDimensional K (Li i) :=
+    .of_surjective ((LinearMap.proj i).comp e.toLinearEquiv.toLinearMap)
+      ((Function.surjective_eval i).comp e.surjective)
+  have (i : I) : Module.Finite R (integralClosure R (Li i)) :=
+    have := hsep i
+    finite_integralClosure_of_isSeparable K K (Li i)
+  -- The integral closure in `L` embeds into the product of the integral closures in the `Lᵢ`.
+  let φ : integralClosure R L →ₐ[R] ∀ i, integralClosure R (Li i) :=
+    AlgHom.pi fun i ↦ ((Pi.evalAlgHom R Li i).comp (e.restrictScalars R).toAlgHom)
+      |>.mapIntegralClosure
+  refine Module.Finite.of_injective φ.toLinearMap fun x y h ↦ Subtype.ext (e.injective ?_)
+  funext i
+  exact congrArg Subtype.val (congrFun h i)
+
 /-- A Noetherian domain whose fraction field is perfect, for instance of characteristic zero, is
 Japanese if and only if it is N-1. Stacks, Lemma 10.161.11 (032M), stated there in characteristic
 zero. -/
@@ -417,5 +462,176 @@ instance IsN1.localization_atPrime [IsDomain R] [IsN1 R] (p : Ideal R) [p.IsPrim
 instance IsJapanese.localization_atPrime [IsDomain R] [IsJapanese R] (p : Ideal R) [p.IsPrime] :
     IsJapanese (Localization.AtPrime p) :=
   isJapanese_of_isLocalization p.primeCompl _
+
+section LocalCriterion
+
+/-! ### The N-1 local criterion
+
+Let `R` be a Noetherian domain with fraction field `K` and let `f : R` be nonzero with `R_f`
+integrally closed. Every element `x` of `K` integral over `R` then lies in `R_f`, so `f ^ n • x ∈ R`
+for some `n`: the integral closure is the increasing union of the finite `R`-modules
+`integralPow f n` of integral `x` with `f ^ n • x ∈ R`. Multiplication by `f` embeds each quotient
+`integralPow f (n + 2) / integralPow f (n + 1)` into the previous one, so the annihilators
+`integralPowColon f n` of these quotients form an ascending chain of ideals, which stabilizes. If
+`R_𝔪` is N-1, finitely many generators of its integral closure, after clearing denominators
+outside `𝔪`, lie in some `integralPow f n`, so `integralPowColon f n` is not contained in `𝔪`.
+When this holds at every maximal ideal the stable value of the chain is `R`, the chain
+`integralPow f n` is eventually constant, and the integral closure is finite.
+-/
+
+variable {K : Type v} [Field K] [Algebra R K]
+
+/-- The elements of `K` integral over `R` which `f ^ n` carries into `R`. -/
+private def integralPow (f : R) (n : ℕ) : Submodule R K :=
+  (integralClosure R K).toSubmodule ⊓
+    (1 : Submodule R K).comap (f ^ n • LinearMap.id)
+
+private theorem mem_integralPow {f : R} {n : ℕ} {x : K} :
+    x ∈ integralPow f n ↔ IsIntegral R x ∧ ∃ r : R, algebraMap R K r = f ^ n • x := by
+  simp [integralPow, Submodule.mem_one, mem_integralClosure_iff]
+
+private theorem smul_mem_integralPow {f : R} {n : ℕ} {x : K} (hx : x ∈ integralPow f (n + 1)) :
+    f • x ∈ integralPow f n := by
+  obtain ⟨hx, r, hr⟩ := mem_integralPow.mp hx
+  exact mem_integralPow.mpr ⟨hx.smul f, r, by rw [hr, smul_smul, ← pow_succ]⟩
+
+private theorem integralPow_mono (f : R) : Monotone (integralPow (K := K) f) :=
+  monotone_nat_of_le_succ fun n x hx ↦ by
+    obtain ⟨hx, r, hr⟩ := mem_integralPow.mp hx
+    exact mem_integralPow.mpr ⟨hx, f * r, by rw [pow_succ', mul_smul, ← hr, Algebra.smul_def,
+      map_mul]⟩
+
+private theorem fg_integralPow [IsDomain R] [IsNoetherianRing R] [IsFractionRing R K] {f : R}
+    (hf : f ≠ 0) (n : ℕ) : (integralPow (K := K) f n).FG := by
+  refine (Submodule.fg_span_singleton ((algebraMap R K f ^ n)⁻¹)).of_le fun x hx ↦ ?_
+  obtain ⟨-, r, hr⟩ := mem_integralPow.mp hx
+  have : algebraMap R K f ≠ 0 := IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors
+    (mem_nonZeroDivisors_of_ne_zero hf)
+  refine Submodule.mem_span_singleton.mpr ⟨r, ?_⟩
+  rw [Algebra.smul_def, hr, Algebra.smul_def, map_pow]
+  field_simp
+
+/-- The ideal of `r : R` with `r • integralPow f (n + 1) ⊆ integralPow f n`. -/
+private def integralPowColon (f : R) (n : ℕ) : Ideal R :=
+  (integralPow (K := K) f n).colon (integralPow (K := K) f (n + 1))
+
+private theorem integralPowColon_mono (f : R) : Monotone (integralPowColon (K := K) f) :=
+  monotone_nat_of_le_succ fun n r hr ↦ Submodule.mem_colon.mpr fun x hx ↦ by
+    obtain ⟨hxi, -⟩ := mem_integralPow.mp hx
+    obtain ⟨-, s, hs⟩ := mem_integralPow.mp
+      (Submodule.mem_colon.mp hr _ (smul_mem_integralPow hx))
+    exact mem_integralPow.mpr ⟨hxi.smul r, s, by
+      rw [hs, smul_comm r f x, smul_smul, ← pow_succ]⟩
+
+/-- **The local step.** If the integral closure of `R_𝔭` in `K` is finite, then some ideal
+`integralPowColon f n` is not contained in `𝔭`, provided every element of `K` integral over `R`
+lies in some `integralPow f n`. -/
+private theorem exists_not_integralPowColon_le [IsDomain R] [IsNoetherianRing R]
+    [IsFractionRing R K] {f : R} (hf : f ≠ 0) (p : Ideal R) [p.IsPrime]
+    [Algebra (Localization.AtPrime p) K] [IsScalarTower R (Localization.AtPrime p) K]
+    [Module.Finite (Localization.AtPrime p) (integralClosure (Localization.AtPrime p) K)]
+    (hfK : ∀ x : K, IsIntegral R x → ∃ n, x ∈ integralPow f n) :
+    ∃ n, ¬ integralPowColon (K := K) f n ≤ p := by
+  classical
+  let Rₚ := Localization.AtPrime p
+  -- A finite set `T` of elements integral over `R` whose `Rₚ`-span contains every element
+  -- integral over `R`: clear the denominators of finitely many generators over `Rₚ`.
+  obtain ⟨Y, hY⟩ := Module.Finite.fg_top (R := Rₚ) (M := integralClosure Rₚ K)
+  choose s hs using fun y : integralClosure Rₚ K ↦
+    y.2.exists_multiple_integral_of_isLocalization p.primeCompl (y : K)
+  let T : Finset K := Y.image fun y ↦ (s y : R) • (y : K)
+  have hspan (z : K) (hz : IsIntegral R z) : z ∈ Submodule.span Rₚ (T : Set K) := by
+    have hz' : (⟨z, hz.tower_top⟩ : integralClosure Rₚ K) ∈ Submodule.span Rₚ (Y : Set _) :=
+      hY ▸ Submodule.mem_top
+    have := Submodule.mem_map_of_mem (f := (integralClosure Rₚ K).val.toLinearMap) hz'
+    rw [← Submodule.span_image] at this
+    refine Submodule.span_le.mpr ?_ this
+    rintro _ ⟨y, hy, rfl⟩
+    -- `y = (1 / s y) • (s y • y)` with `s y • y ∈ T`.
+    have hmem : ((s y : R) • (y : K)) ∈ Submodule.span Rₚ (T : Set K) :=
+      Submodule.subset_span (Finset.mem_image_of_mem _ hy)
+    have heq : (y : K) = IsLocalization.mk' Rₚ (1 : R) (s y) • ((s y : R) • (y : K)) := by
+      rw [← algebraMap_smul Rₚ (s y : R) (y : K), smul_smul, IsLocalization.mk'_spec, map_one,
+        one_smul]
+    simp only [AlgHom.toLinearMap_apply, Subalgebra.coe_val, SetLike.mem_coe]
+    rw [heq]
+    exact Submodule.smul_mem _ _ hmem
+  -- Some `integralPow f n` contains `T`, hence spans every element integral over `R` over `Rₚ`.
+  obtain ⟨n, hn⟩ : ∃ n, (T : Set K) ⊆ (integralPow f n : Submodule R K) := by
+    choose! N hN using fun t (ht : t ∈ T) ↦ hfK t <| by
+      obtain ⟨y, -, rfl⟩ := Finset.mem_image.mp ht
+      simpa only [Submonoid.smul_def] using hs y
+    exact ⟨T.sup N, fun t ht ↦ integralPow_mono f (Finset.le_sup ht) (hN t ht)⟩
+  -- Clearing denominators uniformly, one factor outside `p` carries the finitely generated
+  -- `integralPow f (n + 1)` into `integralPow f n`.
+  obtain ⟨u, hu, hzu⟩ := (fg_integralPow (K := K) hf (n + 1)).exists_smul_mem_of_le_span
+    p.primeCompl fun z hz ↦ Submodule.span_mono hn (hspan z (mem_integralPow.mp hz).1)
+  exact ⟨n, fun hle ↦ Ideal.mem_primeCompl_iff.mp hu (hle (Submodule.mem_colon.mpr hzu))⟩
+
+/-- **The N-1 local criterion.** A Noetherian domain `R` is N-1 as soon as `R_f` is integrally
+closed for some nonzero `f : R` and the localization `R_𝔪` is N-1 at every maximal ideal `𝔪`.
+Stacks, Lemma 10.161.15 (0333); the equivalence is
+`isN1_iff_exists_isIntegrallyClosed_localization_away_and_isN1_localization_atPrime`. -/
+theorem IsN1.of_isIntegrallyClosed_localization_away_of_isN1_localization_atPrime [IsDomain R]
+    [IsNoetherianRing R] {f : R} (hf : f ≠ 0) (hfn : IsIntegrallyClosed (Localization.Away f))
+    (H : ∀ (m : Ideal R) [m.IsMaximal], IsN1 (Localization.AtPrime m)) : IsN1 R := by
+  let K := FractionRing R
+  -- Every element of `K` integral over `R` lies in `R_f`, so a power of `f` carries it into `R`.
+  have hfK (x : K) (hx : IsIntegral R x) : ∃ n, x ∈ integralPow f n := by
+    let := Localization.Away.algebraOfIsFractionRing K hf
+    have := Localization.Away.isScalarTower_of_isFractionRing K hf
+    have := Localization.Away.isFractionRing K hf
+    obtain ⟨y, rfl⟩ :=
+      (IsIntegrallyClosed.isIntegral_iff (R := Localization.Away f) (K := K)).mp hx.tower_top
+    obtain ⟨⟨r, s⟩, hy⟩ := IsLocalization.surj (Submonoid.powers f) y
+    obtain ⟨n, hn⟩ := (Submonoid.mem_powers_iff _ _).mp s.2
+    refine ⟨n, mem_integralPow.mpr ⟨hx, r, ?_⟩⟩
+    rw [Algebra.smul_def, IsScalarTower.algebraMap_apply R (Localization.Away f) K r,
+      IsScalarTower.algebraMap_apply R (Localization.Away f) K (f ^ n), ← map_mul, mul_comm, hn,
+      hy]
+  -- The colon ideals form an ascending chain, which stabilizes at some `N`.
+  have hmono := integralPowColon_mono (K := K) f
+  obtain ⟨N, hN⟩ := monotone_stabilizes_iff_noetherian.mpr (inferInstance : IsNoetherian R R)
+    ⟨integralPowColon (K := K) f, hmono⟩
+  -- Locally at every maximal ideal the chain eventually leaves it, so its limit is `R`.
+  have htop : integralPowColon (K := K) f N = ⊤ := by
+    by_contra h
+    obtain ⟨m, hm, hle⟩ := Ideal.exists_le_maximal _ h
+    obtain ⟨n, hn⟩ := exists_not_integralPowColon_le hf m hfK
+    exact hn ((hmono (le_max_left n N)).trans ((hN _ (le_max_right n N)).symm.le.trans hle))
+  -- Hence the chain `integralPow f n` is constant from `N` on, and it exhausts the closure.
+  have hA (n : ℕ) : integralPow (K := K) f n ≤ integralPow f N := by
+    rcases le_total n N with h | h
+    · exact integralPow_mono f h
+    induction n, h using Nat.le_induction with
+    | base => exact le_rfl
+    | succ n hn ih =>
+      intro x hx
+      have h1 : (1 : R) ∈ integralPowColon (K := K) f n := by
+        have : integralPowColon (K := K) f N = integralPowColon f n := hN n hn
+        rw [← this, htop]
+        exact Submodule.mem_top
+      exact ih (by simpa using Submodule.mem_colon.mp h1 x hx)
+  have hfg : (integralClosure R K).toSubmodule.FG := by
+    have : (integralClosure R K).toSubmodule = integralPow f N :=
+      le_antisymm (fun x hx ↦ (hfK x hx).elim fun n hn ↦ hA n hn) inf_le_left
+    rw [this]
+    exact fg_integralPow hf N
+  have := Module.Finite.iff_fg.mpr hfg
+  exact IsN1.of_finite_integralClosure K
+
+end LocalCriterion
+
+/-- **The N-1 local criterion.** A Noetherian domain `R` is N-1 if and only if `R_f` is integrally
+closed for some nonzero `f : R` and the localization `R_𝔪` is N-1 at every maximal ideal `𝔪`.
+Stacks, Lemma 10.161.15 (0333). -/
+@[stacks 0333]
+theorem isN1_iff_exists_isIntegrallyClosed_localization_away_and_isN1_localization_atPrime
+    [IsDomain R] [IsNoetherianRing R] :
+    IsN1 R ↔ (∃ f : R, f ≠ 0 ∧ IsIntegrallyClosed (Localization.Away f)) ∧
+      ∀ (m : Ideal R) [m.IsMaximal], IsN1 (Localization.AtPrime m) :=
+  ⟨fun _ ↦ ⟨IsN1.exists_isIntegrallyClosed_localization_away, fun _ _ ↦ inferInstance⟩,
+    fun ⟨⟨_, hf, hfn⟩, H⟩ ↦
+      .of_isIntegrallyClosed_localization_away_of_isN1_localization_atPrime hf hfn H⟩
 
 end TauCeti.Ring

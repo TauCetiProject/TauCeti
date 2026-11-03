@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Algebra.Monoid
+public import Mathlib.Topology.Algebra.Monoid.Defs
 public import Mathlib.Topology.Order.OrderClosed
 
 /-!
@@ -30,8 +30,10 @@ open Filter Topology
 /-- **A bound holding up to a vanishing correction holds outright.**  If `v ≤ K + e i` for all `i`
 in some set of the filter `l`, and `e` tends to `0` along `l`, then `v ≤ K`.
 
-No sign condition on `v`, `K` or `e` is required. -/
+No sign condition on `v`, `K` or `e` is required, and addition need only be continuous in each
+argument separately. -/
 theorem Filter.Tendsto.le_of_eventually_le_add {ι α : Type*} [TopologicalSpace α] [Preorder α]
-    [ClosedIciTopology α] [AddZeroClass α] [ContinuousAdd α] {l : Filter ι} [l.NeBot] {e : ι → α}
+    [ClosedIciTopology α] [AddZeroClass α] [SeparatelyContinuousAdd α] {l : Filter ι} [l.NeBot]
+    {e : ι → α}
     (he : Tendsto e l (𝓝 0)) {v K : α} (h : ∀ᶠ i in l, v ≤ K + e i) : v ≤ K :=
-  ge_of_tendsto (by simpa using tendsto_const_nhds.add he) h
+  ge_of_tendsto (by simpa using he.const_add K) h

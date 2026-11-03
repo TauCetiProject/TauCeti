@@ -83,6 +83,13 @@ theorem contentFromCol_def (T : SemistandardYoungTableau μ) (j k : ℕ) :
     T.contentFromCol j k = #{c ∈ μ.cells | j ≤ c.2 ∧ T c.1 c.2 = k} :=
   (rfl)
 
+/-- The content of `T_{≥j}` as a sum over the rows, for any number `N` of rows covering the
+shape. -/
+theorem contentFromCol_eq_sum (T : SemistandardYoungTableau μ) (j k : ℕ) {N : ℕ}
+    (hN : μ.colLen 0 ≤ N) :
+    T.contentFromCol j k = ∑ r ∈ range N, #{c ∈ range (μ.rowLen r) | j ≤ c ∧ T r c = k} := by
+  rw [contentFromCol_def, YoungDiagram.card_filter_cells μ _ hN]
+
 /-- All the columns together carry the whole content. -/
 @[simp]
 theorem contentFromCol_zero (T : SemistandardYoungTableau μ) (k : ℕ) :

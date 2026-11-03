@@ -66,6 +66,8 @@ trivialization of the family built from it is in
   same parameter `y` and differ by a period at `y`.
 * `TauCeti.continuous_torusFamilyProjection`, `TauCeti.isOpenMap_torusFamilyProjection`: the
   projection of the family of tori is continuous and open.
+* `TauCeti.secondCountableTopology_torusFamily`: the total space is second countable over a
+  second-countable base.
 
 ## References
 
@@ -121,6 +123,14 @@ omit [TopologicalSpace Y] in
   have h := Basis.ofZLatticeBasis_repr_apply ℝ (LinearMap.range (P y))
     (b.map (LinearEquiv.ofInjective (P y) (hinj y))) (LinearEquiv.ofInjective (P y) (hinj y) l) i
   rwa [Basis.map_repr, LinearEquiv.trans_apply, LinearEquiv.symm_apply_apply] at h
+
+omit [TopologicalSpace Y] in
+/-- The coordinate vector of a period `P y l` in the period basis at `y` is the integer coordinate
+vector of `l` in `b`. -/
+theorem periodBasis_equivFun_period {ι : Type*} [Finite ι] (b : Basis ι ℤ Λ)
+    (hinj : ∀ y, Injective (P y)) (y : Y) (l : Λ) :
+    (periodBasis P b hinj y).equivFun (P y l) = fun i ↦ (b.repr l i : ℝ) :=
+  funext fun i ↦ by simp
 
 /-- **Uniform bound for inverse period maps.** For a basis `b` of `Λ`, the real linear maps
 `x ↦ ∑ i, x i • P y (b i)` are bounded below by one constant `c > 0` as `y` ranges over a
@@ -294,6 +304,19 @@ theorem isOpenMap_torusFamilyProjection [TopologicalSpace Y] [TopologicalSpace E
     IsOpenMap (torusFamilyProjection P) :=
   let _ := periodAddAction P
   IsOpenMap.of_comp continuous_quot_mk Quotient.mk_surjective isOpenMap_fst
+
+/-- **A family of tori over a second-countable base is second countable.** If the periods depend
+continuously on the parameter, the orbit space `(Y × E)/Λ` of the period translation action is
+second countable whenever `Y` and `E` are, since its orbit map is open. No lattice hypothesis on
+the periods is needed. -/
+theorem secondCountableTopology_torusFamily [TopologicalSpace Y] [SecondCountableTopology Y]
+    [TopologicalSpace E] [ContinuousAdd E] [SecondCountableTopology E]
+    (hcont : ∀ l, Continuous fun y ↦ P y l) :
+    letI := periodAddAction P
+    SecondCountableTopology (AddAction.orbitRel.Quotient Λ (Y × E)) :=
+  letI := periodAddAction P
+  haveI := continuousConstVAdd_periodAddAction P hcont
+  ContinuousConstVAdd.secondCountableTopology
 
 end Action
 

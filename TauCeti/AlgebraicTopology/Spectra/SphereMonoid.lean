@@ -94,6 +94,9 @@ abbrev SphereModule (k : ℕ) := Mod SymmetricSequence.{0} (SymmetricSequence.sp
 `S^(k)`. -/
 noncomputable example (k : ℕ) : MonoidalCategory (SphereModule k) := inferInstance
 
+/- Function spectra are the internal hom for the smash product over each higher sphere monoid. -/
+noncomputable example (k : ℕ) : MonoidalClosed (SphereModule k) := inferInstance
+
 /- The smash product over each sphere monoid `S^(k)` is symmetric monoidal. -/
 noncomputable example (k : ℕ) : SymmetricCategory (SphereModule k) := inferInstance
 

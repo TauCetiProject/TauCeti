@@ -54,7 +54,7 @@ theorem aeval_comp_eq_comp_aeval {R M F : Type*} [CommSemiring R] [AddCommMonoid
     ext x
     have hx := congr($(Module.End.commute_pow_left_of_commute hg k) x)
     simp only [LinearMap.comp_apply] at hx
-    simp [aeval_monomial, Module.End.mul_apply, hx]
+    simp [aeval_monomial, hx]
 
 /-- If `(x - c) e` lies in an ideal `K`, then so does `(p(x) - p(c)) e` for every polynomial `p`,
 since `x - c` divides `p(x) - p(c)`. -/
