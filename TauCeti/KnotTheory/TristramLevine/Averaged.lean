@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.Complex.Circle
+public import TauCeti.Analysis.SpecialFunctions.Complex.Circle.Basic
 public import TauCeti.KnotTheory.TristramLevine.Continuity
 public import TauCeti.KnotTheory.TristramLevine.Metabolic
 public import TauCeti.KnotTheory.TristramLevine.SEquivalence
