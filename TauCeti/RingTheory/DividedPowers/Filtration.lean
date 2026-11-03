@@ -11,7 +11,6 @@ public import Mathlib.Algebra.Algebra.Operations
 public import Mathlib.Algebra.Module.Torsion.Field
 public import Mathlib.LinearAlgebra.FreeModule.PID
 public import Mathlib.RingTheory.FiniteType
-public import Mathlib.LinearAlgebra.LinearIndependent.Basic
 
 /-!
 # The integral degree filtration of one root factor
