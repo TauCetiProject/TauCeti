@@ -129,8 +129,11 @@ theorem ae_eq_setOf_inner_lt_of_ae_outerNormal_eq
   refine ae_eq_setOf_inner_lt_of_forall_integral_divergenceCLM_mul_indicator_nonneg
     ((aemeasurable_indicator_const_iff (1 : ℝ)).1 hu.aestronglyMeasurable.aemeasurable)
     fun φ hφ => ?_
-  rw [integral_divergenceCLM_mul_indicator_eq_integral_inner_outerNormal (hu.locallyIntegrableOn _)
-    (fun K hK _ => by simpa [perimeter_def] using hfin K hK)]
+  rw [show ∫ y, divergenceCLM φ y * s.indicator 1 y ∂μ = _ by
+    simpa only [divergenceCLM_apply] using
+      integral_trace_fderiv_mul_indicator_eq_integral_inner_outerNormal
+        (hu.locallyIntegrableOn _) (fun K hK _ => by simpa [perimeter_def] using hfin K hK)
+        (φ.contDiff.of_le (by simp)) φ.hasCompactSupport φ.tsupport_subset]
   refine integral_nonneg_of_ae (hν.mono fun y hy => ?_)
   simpa only [Pi.zero_apply, hy] using hφ y
 
