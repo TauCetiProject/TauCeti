@@ -245,9 +245,8 @@ theorem isLeftAlmostSplit_op_iff : IsLeftAlmostSplit f.op ↔ IsRightAlmostSplit
 split.** -/
 theorem IsRightAlmostSplit.comp_iso (hf : IsRightAlmostSplit f) {Y' : C} (e : Y ≅ Y') :
     IsRightAlmostSplit (f ≫ e.hom) := by
-  refine ⟨fun _ ↦ hf.not_isSplitEpi (isSplitEpi_of_isSplitEpi_comp_iso f e), fun Z g hg ↦ ?_⟩
-  have hg' : ¬ IsSplitEpi (g ≫ e.symm.hom) :=
-    fun _ ↦ hg (isSplitEpi_of_isSplitEpi_comp_iso g e.symm)
+  refine ⟨by simpa using hf.not_isSplitEpi, fun Z g hg ↦ ?_⟩
+  have hg' : ¬ IsSplitEpi (g ≫ e.symm.hom) := by simpa using hg
   obtain ⟨h, hh⟩ := hf.factors Z (g ≫ e.symm.hom) hg'
   exact ⟨h, by simp [reassoc_of% hh]⟩
 
