@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.FreeProbability.Cumulant.Multilinear
-public import TauCeti.Probability.FreeProbability.Cumulant.Product
 public import TauCeti.Probability.FreeProbability.Variables
 
 /-!
@@ -248,10 +247,7 @@ theorem IsFreelyIndependent.freeCumulant_sum (h : IsFreelyIndependent φ B) (hφ
   -- Relabel the positions by `Fin #s` and expand by multilinearity: the free cumulant of the sum
   -- is the sum over all label assignments `r` of the cumulants of the words `x ↦ a (r x) x`.
   have : Nonempty (Fin #s) := ⟨⟨0, card_pos.2 hs⟩⟩
-  have he : ∀ b : α → A, freeCumulant φ b s = freeCumulant φ (b ∘ s.orderEmbOfFin rfl) univ :=
-    fun b => by rw [freeCumulant_comp_of_strictMonoOn φ
-      ((s.orderEmbOfFin rfl).strictMono.strictMonoOn _), image_orderEmbOfFin_univ]
-  simp_rw [he, ← freeCumulantMultilinear_apply,
+  simp_rw [freeCumulant_eq_freeCumulantMultilinear_comp_orderEmbOfFin φ,
     comp_def, MultilinearMap.map_sum_finset, freeCumulantMultilinear_apply]
   -- Only the constant assignments contribute: a non-constant one gives a mixed cumulant.
   refine (sum_subset (s₁ := T.image (const (Fin #s))) (fun r hr => ?_)
