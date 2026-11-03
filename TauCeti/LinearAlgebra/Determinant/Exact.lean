@@ -7,8 +7,8 @@ module
 
 public import TauCeti.LinearAlgebra.Determinant.Line
 public import TauCeti.LinearAlgebra.ExteriorPower.ShortExact
-import Mathlib.LinearAlgebra.Contraction
 import TauCeti.LinearAlgebra.Exact
+import TauCeti.RingTheory.PicardGroup.Contraction
 
 /-!
 # Determinant lines of exact sequences
@@ -33,10 +33,10 @@ image `range g = ker h` into two short exact sequences `0 → A → B → range 
 `0 → range g → C → D → 0`, each of which identifies determinant lines through
 `TauCeti.detLineShortExactEquiv`, subspace factor first. The two copies of
 `det (range g)` then cancel by the contraction `det (range g) ⊗ (det (range g))^* ≃ K` of the
-line with its dual.
+line with its dual (`Module.Invertible.leftCancelDualEquiv`).
 
 Explicitly, for `u₁, …, uₐ` in `A`, `v₁, …, vₖ` in `B` with `k = dim (range g)`, and lifts
-`z₁, …, z_d` in `C` of elements of `D`, the isomorphism sends
+`z₁, …, z_d` in `C` of a basis of `D`, the isomorphism sends
 `(f u₁ ∧ ⋯ ∧ f uₐ ∧ v₁ ∧ ⋯ ∧ vₖ) ⊗ φ` to `(u₁ ∧ ⋯ ∧ uₐ) ⊗ ψ`, where the functional `ψ` on
 `det D` takes the value `φ (g v₁ ∧ ⋯ ∧ g vₖ ∧ z₁ ∧ ⋯ ∧ z_d)` at `h z₁ ∧ ⋯ ∧ h z_d`
 (`TauCeti.detLineFourTermEquiv_tmul`). The wedge products of different lengths are compared as
@@ -65,31 +65,6 @@ open Module TensorProduct
 namespace TauCeti
 
 variable {K : Type*} [Field K]
-
-section Contraction
-
-variable (K) (L X : Type*) [AddCommGroup L] [Module K L] [Module.Invertible K L]
-  [AddCommGroup X] [Module K X]
-
-/-- Cancel an invertible module `L` against its dual in `L ⊗ (L^* ⊗ X^*)`, by the contraction
-`ℓ ⊗ ξ ↦ ξ ℓ`. -/
-private def cancelLine : L ⊗[K] (Dual K L ⊗[K] Dual K X) ≃ₗ[K] Dual K X :=
-  Module.Invertible.leftCancelEquiv _
-    (TensorProduct.comm K L (Dual K L) ≪≫ₗ Module.Invertible.linearEquiv K L)
-
-variable {K L X} [Module.Finite K X]
-
-/-- Cancelling a line against its dual evaluates the tensor product of functionals on `ℓ ⊗ x`. -/
-private theorem cancelLine_apply (ℓ : L) (t : Dual K L ⊗[K] Dual K X) (x : X) :
-    cancelLine K L X (ℓ ⊗ₜ t) x = dualDistribEquiv K L X t (ℓ ⊗ₜ x) := by
-  induction t using TensorProduct.inductionOn with
-  | tmul ξ η =>
-    simp [cancelLine, Module.Invertible.linearEquiv, mul_comm]
-  | add t₁ t₂ h₁ h₂ =>
-    rw [TensorProduct.tmul_add, map_add, LinearMap.add_apply, h₁, h₂, map_add,
-      LinearMap.add_apply]
-
-end Contraction
 
 section ShortExact
 
@@ -143,14 +118,15 @@ def detLineFourTermEquiv :
         hh).dualMap ≪≫ₗ
     (dualDistribEquiv K _ _).symm.lTensor _ ≪≫ₗ
     TensorProduct.assoc K _ _ _ ≪≫ₗ
-    (cancelLine K _ _).lTensor _
+    (Module.Invertible.leftCancelDualEquiv K _ _).lTensor _
 
 /-- **The value of `TauCeti.detLineFourTermEquiv` on exterior products.** Let `u` be a family of
 `dim A` vectors of `A`, `v` a family of `dim (range g)` vectors of `B`, and `z` a family of
 `dim D` vectors of `C`. Let `β ∈ det B` be the exterior product of `f ∘ u` followed by `v`, and
 `γ ∈ det C` that of `g ∘ v` followed by `z`. Then the isomorphism sends `β ⊗ φ` to `α ⊗ ψ`,
 with `α` the exterior product of `u` and `ψ` the functional taking the value `φ γ` at the exterior
-product of `h ∘ z`. Since `det D` is a line, this determines `ψ`. -/
+product of `h ∘ z`. When `h ∘ z` is a basis of `D`, its exterior product spans the line `det D`,
+so this determines `ψ`; otherwise that exterior product is zero and both sides vanish. -/
 theorem detLineFourTermEquiv_tmul (u : Fin (finrank K A) → A)
     (v : Fin (finrank K (LinearMap.range g)) → B) (z : Fin (finrank K D) → C)
     {β : detLine K B} (hβ : (β : ExteriorAlgebra K B) =
@@ -174,7 +150,7 @@ theorem detLineFourTermEquiv_tmul (u : Fin (finrank K A) → A)
       ← LinearMap.coe_comp, LinearMap.subtype_comp_rangeRestrict])
   simp only [detLineFourTermEquiv, LinearEquiv.trans_apply, TensorProduct.congr_tmul, hβ',
     LinearEquiv.lTensor_tmul, TensorProduct.assoc_tmul, LinearMap.lTensor_tmul,
-    TensorProduct.rid_tmul, Dual.eval_apply, cancelLine_apply,
+    TensorProduct.rid_tmul, Dual.eval_apply, Module.Invertible.leftCancelDualEquiv_tmul_apply,
     LinearEquiv.apply_symm_apply, LinearEquiv.dualMap_apply, hγ']
 
 end TauCeti
