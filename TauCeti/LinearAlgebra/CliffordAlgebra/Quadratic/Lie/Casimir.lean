@@ -360,7 +360,7 @@ theorem representation_casimirElement_kostant_apply [NeZero (3 : K)]
   rw [casimirElement_eq_sum b, map_sum, LinearMap.sum_apply, Algebra.smul_def,
     ← sum_adjointCliffordHom_mul_adjointCliffordHom_killingDualBasis b, Finset.sum_mul]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [map_mul, Module.End.mul_apply, UniversalEnvelopingAlgebra.representation_ι,
+  rw [map_mul, mul_apply_eq_comp, UniversalEnvelopingAlgebra.representation_ι,
     UniversalEnvelopingAlgebra.representation_ι, LieModule.toEnd_apply_apply,
     LieModule.toEnd_apply_apply, kostant_lie_def, kostant_lie_def, mul_assoc]
 
