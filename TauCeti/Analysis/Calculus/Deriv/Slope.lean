@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.LinearAlgebra.AffineSpace.Slope
+import Mathlib.Analysis.SpecificLimits.Basic
 
 /-!
 # Convergence of slopes in topological modules
@@ -15,6 +16,17 @@ For a function with a derivative along a filter at a fixed base point, its slope
 that derivative after removing the base point from the filter. This applies to topological
 modules, including seminormed spaces where distinct points can have zero distance, and supplies
 the difference-quotient limit used to identify metric speed with the norm of a derivative.
+
+Sampling these slopes along `x + t / n` gives the sequential form: if `f` has derivative `f'` at
+`x`, then `n • (f (x + t / n) - f x)` tends to `t • f'`. The scalar field has characteristic
+zero and continuous nonnegative-rational scalar multiplication, so that `t / n` tends to zero;
+both real and complex scalars qualify. This limit feeds the exponential power limit behind the
+Trotter product formula.
+
+## Main results
+
+* `HasDerivAtFilter.tendsto_slope`: slopes converge to the derivative away from the base point.
+* `HasDerivAt.tendsto_nsmul_sub_add_div`: `n • (f (x + t / n) - f x)` tends to `t • f'`.
 -/
 
 public section
@@ -35,3 +47,21 @@ theorem HasDerivAtFilter.tendsto_slope {𝕜 E : Type*} [NontriviallyNormedField
   simp only [zero_add] at hlim'
   refine hlim'.congr' <| eventually_inf_principal.2 <| Eventually.of_forall fun s hs ↦ ?_
   simp [slope_def_module, smul_sub, inv_smul_smul₀ (sub_ne_zero.2 hs)]
+
+/-- If `f` has derivative `f'` at `x`, then the rescaled increments `n • (f (x + t / n) - f x)`
+tend to `t • f'` as `n → ∞`. -/
+theorem HasDerivAt.tendsto_nsmul_sub_add_div {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
+    [CharZero 𝕜] [ContinuousSMul ℚ≥0 𝕜]
+    [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E] [SeparatelyContinuousAdd E]
+    [ContinuousSMul 𝕜 E] {f : 𝕜 → E} {f' : E} {x : 𝕜} (hf : HasDerivAt f f' x) (t : 𝕜) :
+    Tendsto (fun n : ℕ ↦ n • (f (x + t / n) - f x)) atTop (𝓝 (t • f')) := by
+  rcases eq_or_ne t 0 with rfl | ht
+  · simpa using tendsto_const_nhds
+  have hlim : Tendsto (fun n : ℕ ↦ x + t / n) atTop (𝓝[≠] x) := by
+    refine tendsto_nhdsWithin_iff.2 ⟨?_, (eventually_ne_atTop 0).mono fun n hn ↦ ?_⟩
+    · simpa using tendsto_const_nhds.add (tendsto_const_div_atTop_nhds_zero_nat t)
+    · simp [ht, hn]
+  -- `HasDerivAt` and `𝓝[≠] x` are by definition the filter forms used by `tendsto_slope`.
+  refine (((HasDerivAtFilter.tendsto_slope hf).comp hlim).const_smul t).congr' ?_
+  filter_upwards [eventually_ne_atTop 0] with n hn
+  simp [slope_def_module, smul_smul, mul_div_cancel₀ _ ht, Nat.cast_smul_eq_nsmul]
