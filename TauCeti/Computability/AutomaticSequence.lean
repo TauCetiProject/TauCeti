@@ -10,7 +10,7 @@ public import Mathlib.Data.Fintype.Defs
 public import TauCeti.Computability.DFAO
 import Mathlib.Data.Fintype.Prod
 import Mathlib.Data.ZMod.Basic
-import TauCeti.Data.Nat.Periodic
+import TauCeti.Data.Nat.Periodic.Basic
 
 /-!
 # Automatic sequences
