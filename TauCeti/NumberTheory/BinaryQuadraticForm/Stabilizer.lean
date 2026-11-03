@@ -34,10 +34,12 @@ The same argument works with coefficients in any commutative ring `R` in which `
 divisor, such as `ℤ_p`, `ℚ_p`, `ℝ` or `ℚ`. Reading `f` over `R`, its automorphs in `SL(2, R)` are
 the norm-one elements of `R ⊗ 𝒪_D`, in the integral model
 `R[ω]/(ω² - D ω + (D² - D)/4)` of `𝒪_D` with coefficients in `R`. This is the group of `R`-points of
-the norm-one torus of `𝒪_D`, and the identification is natural in `R`: a ring homomorphism
-`R →+* S` maps automorphs entrywise exactly as it maps the coordinates of norm-one elements. The
-hypothesis on `2` cannot be dropped: over `𝔽₂` the coordinate swap is an automorph of `x y` of
-determinant one, but `x y` corresponds to the order `𝔽₂ × 𝔽₂`, whose only norm-one element is `1`.
+the norm-one group scheme of `𝒪_D`. This group scheme is a torus over `R` only when `D` is
+invertible in `R`: for `f = x²`, of discriminant `0`, it is `μ₂ × 𝔾ₐ` over `ℚ`. The identification
+is natural in `R`: a ring homomorphism `R →+* S` maps automorphs entrywise exactly as it maps the
+coordinates of norm-one elements. The hypothesis on `2` cannot be dropped: over `𝔽₂` the coordinate
+swap is an automorph of `x y` of determinant one, but `x y` corresponds to the order `𝔽₂ × 𝔽₂`,
+whose only norm-one element is `1`.
 
 The isomorphism holds for every primitive form, including those of square or zero discriminant.
 The discriminant is a parameter `D` with a proof of `f.discrim = D`, so that the target needs no
