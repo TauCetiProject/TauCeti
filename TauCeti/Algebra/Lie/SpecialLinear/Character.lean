@@ -17,8 +17,9 @@ Let `H = TauCeti.specialLinearDiagonalCartan r A` be the trace-zero diagonal mat
 * the **coordinate weights** `εₖ = TauCeti.specialLinearEpsilon r A k`, the `k`-th diagonal entry,
   which sum to zero on `H`;
 * the **fundamental weights** `ωᵢ = TauCeti.specialLinearFundamentalWeight r A i`, the basis dual
-  to the simple coroots `hᵢ = Eᵢᵢ - Eᵢ₊₁,ᵢ₊₁`, so that `ωᵢ (hⱼ) = δᵢⱼ`. In coordinates
-  `ωᵢ = ε₀ + ⋯ + εᵢ` (`TauCeti.specialLinearFundamentalWeight_eq_sum`).
+  to the simple coroots `hᵢ = Eᵢᵢ - Eᵢ₊₁,ᵢ₊₁` (`TauCeti.specialLinearDiagonalCartanBasis`), so that
+  `ωᵢ (hⱼ) = δᵢⱼ`. In coordinates `ωᵢ = ε₀ + ⋯ + εᵢ`
+  (`TauCeti.specialLinearFundamentalWeight_eq_sum`).
 
 The three basic modules have bases of `H`-weight vectors, so their formal characters
 (`TauCeti.formalCharacter`, the generating function of the weight multiplicities) can be read off:
@@ -35,8 +36,8 @@ for `sl₂` (`r = 1`) with `2 = 0` one has `ε₀ = ε₁`.
 For `sl₃` (`r = 2`) this gives the classical weight diagrams in terms of the fundamental weights,
 indexed from zero as `ω₀, ω₁`. The standard module has the triangle of weights
 `ω₀, ω₁ - ω₀, -ω₁`, and its dual has their negatives. The adjoint module has the six roots
-`±(2ω₀ - ω₁)`, `±(2ω₁ - ω₀)`, `±(ω₀ + ω₁)` together with the weight `0`, of multiplicity `2` once
-`2 ≠ 0`. The six roots are distinct, forming a hexagon, exactly when `2 ≠ 0` and `3 ≠ 0`: if
+`±(2ω₀ - ω₁)`, `±(2ω₁ - ω₀)`, `±(ω₀ + ω₁)` together with the weight `0`, of multiplicity `2` over
+every field. The six roots are distinct, forming a hexagon, exactly when `2 ≠ 0` and `3 ≠ 0`: if
 `2 = 0` each root equals its negative, and if `3 = 0` they collapse to `±(ω₀ + ω₁)`. In
 characteristic zero these three modules are the irreducible modules classically denoted `V(ω₀)`,
 `V(ω₁)` and `V(ω₀ + ω₁)`; if `3 = 0` the adjoint module is reducible, as it contains the scalar
@@ -45,8 +46,6 @@ matrices.
 ## Main definitions
 
 * `TauCeti.specialLinearEpsilon`: the coordinate weight `εₖ` on the diagonal Cartan.
-* `TauCeti.specialLinearDiagonalCartanBasis`: the simple coroots, as a basis of the diagonal
-  Cartan subalgebra.
 * `TauCeti.specialLinearFundamentalWeight`: the fundamental weights, dual to the simple coroots.
 * `TauCeti.specialLinearRootBasisWeight`: the weights of the vectors of
   `TauCeti.specialLinearRootBasis`.
@@ -61,7 +60,7 @@ matrices.
   `TauCeti.coe_support_formalCharacter_specialLinear_dual` and
   `TauCeti.coe_support_formalCharacter_specialLinear_adjoint`.
 * `TauCeti.coeff_formalCharacter_specialLinear_adjoint_zero`: the weight `0` of the adjoint module
-  has multiplicity the rank `r`, as soon as `2 ≠ 0`.
+  has multiplicity the rank `r`, unless `r = 1` and `2 = 0`.
 * `TauCeti.formalCharacter_slThree_pi`, `TauCeti.formalCharacter_slThree_dual` and
   `TauCeti.formalCharacter_slThree_adjoint`, with the supports
   `TauCeti.coe_support_formalCharacter_slThree_pi`,
@@ -113,21 +112,6 @@ theorem sum_specialLinearEpsilon : ∑ k, specialLinearEpsilon r A k = 0 := by
   simpa [LinearMap.sum_apply] using hz
 
 variable (r A)
-
-/-- The **simple coroots** `hᵢ = Eᵢᵢ - Eᵢ₊₁,ᵢ₊₁`, as a basis of the diagonal Cartan subalgebra of
-`sl (Fin (r + 1)) A`: `TauCeti.specialLinearCorootBasis` read on the Lie subalgebra. -/
-noncomputable def specialLinearDiagonalCartanBasis :
-    Basis (Fin r) A (specialLinearDiagonalCartan r A) :=
-  (specialLinearCorootBasis r A).map
-    (LinearEquiv.ofEq _ _ (specialLinearDiagonalCartan_toSubmodule r A).symm)
-
-/-- The simple coroot `hᵢ` is the difference `Eᵢᵢ - Eᵢ₊₁,ᵢ₊₁` of diagonal matrix units. -/
-@[simp]
-theorem specialLinearDiagonalCartanBasis_apply (i : Fin r) :
-    ((specialLinearDiagonalCartanBasis r A i : specialLinearDiagonalCartan r A) :
-      sl (Fin (r + 1)) A) = singleSubSingle i.castSucc i.succ 1 := by
-  rw [specialLinearDiagonalCartanBasis, Basis.map_apply]
-  exact specialLinearCorootBasis_apply r A i
 
 /-- The **fundamental weights** `ωᵢ` of `sl (Fin (r + 1)) A`: the basis of linear forms on the
 diagonal Cartan subalgebra dual to the simple coroots, `ωᵢ (hⱼ) = δᵢⱼ`. -/
@@ -331,22 +315,38 @@ theorem coe_support_formalCharacter_specialLinear_adjoint (hr : r ≠ 0) :
   ext χ
   simp [Sum.exists, eq_comm]
 
-/-- **The weight `0` of the adjoint module has multiplicity the rank.** Once `2 ≠ 0`, no root
-`εᵢ - εⱼ` vanishes, since it takes the value `2` on `Eᵢᵢ - Eⱼⱼ`, so only the `r` simple coroots
-have weight `0`. -/
-theorem coeff_formalCharacter_specialLinear_adjoint_zero [NeZero (2 : K)] :
+/-- **The weight `0` of the adjoint module has multiplicity the rank**, unless `r = 1` and
+`2 = 0`. Then no root `εᵢ - εⱼ` vanishes, so only the `r` simple coroots have weight `0`: in rank
+at least two the root takes the value `1` on `Eᵢᵢ - Eₖₖ` for a third index `k`, and once `2 ≠ 0` it
+takes the value `2` on `Eᵢᵢ - Eⱼⱼ`. For `sl₂` with `2 = 0` the root `ε₀ - ε₁` vanishes and the
+weight `0` has multiplicity `3`. -/
+theorem coeff_formalCharacter_specialLinear_adjoint_zero (hr : r ≠ 1 ∨ (2 : K) ≠ 0) :
     (formalCharacter K (specialLinearDiagonalCartan r K) (sl (Fin (r + 1)) K)).coeff 0 = r := by
   classical
   have hroot (p : {p : Fin (r + 1) × Fin (r + 1) // p.1 ≠ p.2}) :
       specialLinearEpsilon r K p.val.1 - specialLinearEpsilon r K p.val.2 ≠ 0 := by
+    obtain ⟨⟨i, j⟩, hij⟩ := p
     intro h
-    have hmem : singleSubSingle p.val.1 p.val.2 (1 : K) ∈ specialLinearDiagonalCartan r K :=
-      (mem_specialLinearDiagonalCartan_iff r K _).mpr
-        ((mem_specialLinearDiagonal_iff r K _).mp
-          (singleSubSingle_mem_specialLinearDiagonal r K _ _ _))
-    have h2 := LinearMap.congr_fun h ⟨_, hmem⟩
-    norm_num [val_singleSubSingle, p.property, Ne.symm p.property] at h2
-    exact two_ne_zero h2
+    rcases hr with hr | h2
+    · obtain ⟨k, hki, hkj⟩ : ∃ k : Fin (r + 1), k ≠ i ∧ k ≠ j := by
+        refine Fin.exists_ne_and_ne_of_two_lt i j ?_
+        have : r ≠ 0 := by
+          rintro rfl
+          exact hij (Fin.ext (by have := i.isLt; have := j.isLt; omega))
+        omega
+      have hmem : singleSubSingle i k (1 : K) ∈ specialLinearDiagonalCartan r K :=
+        (mem_specialLinearDiagonalCartan_iff r K _).mpr
+          ((mem_specialLinearDiagonal_iff r K _).mp
+            (singleSubSingle_mem_specialLinearDiagonal r K _ _ _))
+      have h1 := LinearMap.congr_fun h ⟨_, hmem⟩
+      simp [val_singleSubSingle, hij, hki, hkj] at h1
+    · have hmem : singleSubSingle i j (1 : K) ∈ specialLinearDiagonalCartan r K :=
+        (mem_specialLinearDiagonalCartan_iff r K _).mpr
+          ((mem_specialLinearDiagonal_iff r K _).mp
+            (singleSubSingle_mem_specialLinearDiagonal r K _ _ _))
+      have h2' := LinearMap.congr_fun h ⟨_, hmem⟩
+      norm_num [val_singleSubSingle, hij, Ne.symm hij] at h2'
+      exact h2 h2'
   rw [formalCharacter_specialLinear_adjoint]
   simp [AddMonoidAlgebra.coeff_sum, AddMonoidAlgebra.coeff_single, hroot]
 
@@ -548,10 +548,11 @@ theorem coe_support_formalCharacter_slThree_adjoint :
     specialLinearEpsilon_two_two_sub_one, specialLinearEpsilon_two_two_sub_zero, or_assoc,
     eq_comm]
 
-/-- **The weight `0` of the adjoint module of `sl₃` has multiplicity two**, once `2 ≠ 0`. -/
-theorem coeff_formalCharacter_slThree_adjoint_zero [NeZero (2 : K)] :
+/-- **The weight `0` of the adjoint module of `sl₃` has multiplicity two**, over every field: no
+root of `sl₃` vanishes, even in characteristic `2`. -/
+theorem coeff_formalCharacter_slThree_adjoint_zero :
     (formalCharacter K (specialLinearDiagonalCartan 2 K) (sl (Fin 3) K)).coeff 0 = 2 :=
-  coeff_formalCharacter_specialLinear_adjoint_zero 2 K
+  coeff_formalCharacter_specialLinear_adjoint_zero 2 K (.inl (by decide))
 
 end SlThree
 

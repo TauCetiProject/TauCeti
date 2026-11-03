@@ -20,7 +20,8 @@ and uses the existing partial-sum linear equivalence.
 
 The same matrices form the Lie subalgebra `TauCeti.specialLinearDiagonalCartan`, which is abelian
 and, once multiplication by `2` is injective, self-normalizing: it is the standard Cartan
-subalgebra of `sl (Fin (r + 1))`, the one against which weights of `sl` are read.
+subalgebra of `sl (Fin (r + 1))`, the one against which weights of `sl` are read. The simple
+coroots form its basis `TauCeti.specialLinearDiagonalCartanBasis`.
 -/
 
 public section
@@ -236,6 +237,21 @@ theorem mem_specialLinearDiagonalCartan_iff (X : sl (Fin (r + 1)) A) :
 theorem specialLinearDiagonalCartan_toSubmodule :
     (specialLinearDiagonalCartan r A).toSubmodule = specialLinearDiagonal r A :=
   (rfl)
+
+/-- The **simple coroots** `hᵢ = Eᵢᵢ - Eᵢ₊₁,ᵢ₊₁`, as a basis of the diagonal Cartan subalgebra of
+`sl (Fin (r + 1)) A`: `TauCeti.specialLinearCorootBasis` read on the Lie subalgebra. -/
+noncomputable def specialLinearDiagonalCartanBasis :
+    Module.Basis (Fin r) A (specialLinearDiagonalCartan r A) :=
+  (specialLinearCorootBasis r A).map
+    (LinearEquiv.ofEq _ _ (specialLinearDiagonalCartan_toSubmodule r A).symm)
+
+/-- The simple coroot `hᵢ` is the difference `Eᵢᵢ - Eᵢ₊₁,ᵢ₊₁` of diagonal matrix units. -/
+@[simp]
+theorem specialLinearDiagonalCartanBasis_apply (i : Fin r) :
+    ((specialLinearDiagonalCartanBasis r A i : specialLinearDiagonalCartan r A) :
+      sl (Fin (r + 1)) A) = singleSubSingle i.castSucc i.succ 1 := by
+  rw [specialLinearDiagonalCartanBasis, Module.Basis.map_apply]
+  exact specialLinearCorootBasis_apply r A i
 
 instance : IsLieAbelian (specialLinearDiagonalCartan r A) where
   trivial X Y := Subtype.ext <| Subtype.ext <| by
