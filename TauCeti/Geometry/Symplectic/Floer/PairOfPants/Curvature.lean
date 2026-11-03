@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Pullback
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
-import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy
+import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Basic
 import Mathlib.Geometry.Manifold.ContMDiff.Constructions
 
 /-!
@@ -43,6 +43,10 @@ components of `K` are its values on the tangent vectors `1` and `i`.
 * `TauCeti.SymplecticForm.lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le`: the
   integrated curvature of the pair-of-pants perturbation along any map is at most the sum of
   bounds for the three end Hamiltonians.
+* `TauCeti.SymplecticForm.integrable_hamiltonianCurvature_pairOfPantsPerturbation` and
+  `TauCeti.SymplecticForm.abs_integral_hamiltonianCurvature_pairOfPantsPerturbation_le`: along a
+  map continuous on `S` the curvature is integrable, and its integral along any map is at most
+  that sum in absolute value.
 
 ## References
 
@@ -285,6 +289,61 @@ theorem lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le (ω : Sy
     _ ≤ _ := lintegral_iUnion_le _ _
     _ = _ := tsum_fintype _
     _ ≤ _ := Finset.sum_le_sum fun q _ ↦ setLIntegral_image_endChart_le ω hH hHs hB u q
+
+/-- **The curvature of the pair-of-pants perturbation is integrable.** Along a map `u` continuous
+on `S = ℂ ∖ {0, 1}`, the curvature `R_K(z, u(z))` of the pair-of-pants perturbation of bounded
+period-one `C¹` Hamiltonians is integrable over the plane. -/
+theorem integrable_hamiltonianCurvature_pairOfPantsPerturbation (ω : SymplecticForm V)
+    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
+    {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q) {u : ℝ × ℝ → V}
+    (hu : ContinuousOn u {(0, 0), (1, 0)}ᶜ) :
+    Integrable fun z ↦ ω.hamiltonianCurvature
+      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+      z (u z) := by
+  set U : Set (ℝ × ℝ) := {(0, 0), (1, 0)}ᶜ
+  have hU : IsOpen U := (Set.toFinite _).isClosed.isOpen_compl
+  have hUmem {z : ℝ × ℝ} (hz : z ∈ U) :
+      Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1 := by
+    rcases z with ⟨a, b⟩
+    simpa [U, Complex.ext_iff, Complex.equivRealProdCLM_symm_apply, and_comm] using hz
+  -- The components of the perturbation in real coordinates are `C¹` on `U × V`.
+  have hK (v : ℂ) : ContDiffOn ℝ 1
+      (uncurry fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x v)
+      (U ×ˢ univ) := fun p hp ↦
+    (((contDiffAt_pairOfPantsPerturbation_prod hH hHs (hUmem hp.1) p.2).comp p
+      ((Complex.equivRealProdCLM.symm.contDiff.contDiffAt.comp _ contDiffAt_fst).prodMk
+        contDiffAt_snd)).clm_apply contDiffAt_const).contDiffWithinAt
+  have hc := ω.continuousOn_hamiltonianCurvature_comp hU hu (hK 1) (hK Complex.I)
+  -- Lebesgue measure on `ℝ × ℝ` is the product measure, an additive Haar measure.
+  have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
+  have hae : ∀ᵐ z : ℝ × ℝ, z ∈ U := compl_mem_ae_iff.2 ((Set.toFinite _).measure_zero _)
+  have hfin : ∑ q, ENNReal.ofReal (B q) < ⊤ := by
+    simp [ENNReal.sum_lt_top]
+  refine ⟨?_, (ω.lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le hH hHs hB
+    u).trans_lt hfin⟩
+  rw [← Measure.restrict_eq_self_of_ae_mem hae]
+  exact hc.aestronglyMeasurable hU.measurableSet
+
+/-- **The integral of the curvature of the pair-of-pants perturbation.** For the pair-of-pants
+perturbation of period-one `C¹` Hamiltonians `H_q` with `|H_q| ≤ B_q`, the integral of the
+curvature `R_K(z, u(z))` along any map `u` is at most `B₀ + B₁ + B_∞` in absolute value. -/
+theorem abs_integral_hamiltonianCurvature_pairOfPantsPerturbation_le (ω : SymplecticForm V)
+    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
+    {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q) (u : ℝ × ℝ → V) :
+    |∫ z, ω.hamiltonianCurvature
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+        z (u z)| ≤ ∑ q, B q := by
+  have hbound := ω.lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le hH hHs hB u
+  have hfin : ∑ q, ENNReal.ofReal (B q) ≠ ⊤ := by
+    simp [ENNReal.sum_eq_top]
+  rw [← Real.norm_eq_abs]
+  refine (norm_integral_le_lintegral_norm _).trans ?_
+  simp only [ofReal_norm]
+  refine (ENNReal.toReal_mono hfin hbound).trans_eq ?_
+  rw [ENNReal.toReal_sum fun q _ ↦ ENNReal.ofReal_ne_top]
+  exact Finset.sum_congr rfl fun q _ ↦ ENNReal.toReal_ofReal ((abs_nonneg _).trans (hB q 0 0))
 
 end SymplecticForm
 

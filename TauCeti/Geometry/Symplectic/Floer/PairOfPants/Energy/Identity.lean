@@ -576,6 +576,15 @@ private theorem abs_det_mul_collarDensity_endChart (hu : ContDiffOn ℝ 2 u pant
     ContinuousLinearEquiv.symm_apply_apply, hI, smul_apply, endAngularForm_cylindricalEndLift]
   simp [Complex.equivRealProdCLM_symm_apply, hHk]
 
+/-- For a period-one function, the integral over `[-1/2, 1/2)` is the integral over the period
+`[0, 1]`. -/
+private theorem setIntegral_Ico_eq_intervalIntegral_of_periodic {f : ℝ → ℝ} (hf : Periodic f 1) :
+    ∫ t in Ico (-1 / 2 : ℝ) (1 / 2), f t = ∫ t in (0 : ℝ)..1, f t := by
+  have h := hf.intervalIntegral_add_eq (-1 / 2) 0
+  rw [show (-1 / 2 : ℝ) + 1 = 1 / 2 by norm_num, zero_add] at h
+  rw [integral_Ico_eq_integral_Ioo, ← integral_Ioc_eq_integral_Ioo,
+    ← intervalIntegral.integral_of_le (by norm_num), h]
+
 /-- **The loop integral of the action density.** For `±s > 0`, the integral over one period of
 the action density `½ ω(x, x') + H_q(t, x)` of the loop `x = u(s, ·)` on the end `q` is its
 Hamiltonian action. -/
@@ -604,13 +613,9 @@ private theorem setIntegral_Ico_eq_hamiltonianAction (hu : ContDiffOn ℝ 2 u pa
   set f : ℝ → ℝ := fun t ↦ (1 / 2 : ℝ) * ω (x t) (deriv x t) + H q t (x t)
   have hper : Periodic f 1 := fun t ↦ by
     simp only [f, hxper t, hdper t, (hH q) t]
-  have hshift : ∫ t in (-1 / 2 : ℝ)..(1 / 2), f t = ∫ t in (0 : ℝ)..1, f t := by
-    have h := hper.intervalIntegral_add_eq (-1 / 2) 0
-    rwa [show (-1 / 2 : ℝ) + 1 = 1 / 2 by norm_num, zero_add] at h
   -- `set` does not fold the integrand under the binder, so name it `f` explicitly.
   change ∫ t in Ico (-1 / 2 : ℝ) (1 / 2), f t = _
-  rw [integral_Ico_eq_integral_Ioo, ← integral_Ioc_eq_integral_Ioo,
-    ← intervalIntegral.integral_of_le (by norm_num), hshift,
+  rw [setIntegral_Ico_eq_intervalIntegral_of_periodic hper,
     intervalIntegral.integral_add ((hc₁.const_mul _).intervalIntegrable _ _)
       (hc₂.intervalIntegrable _ _), intervalIntegral.integral_const_mul, hamiltonianAction_def,
     loopArea_def]
@@ -625,6 +630,12 @@ private theorem endAction_endSign_mul (q : Puncture) (s : ℝ) :
     endAction ω H u q (q.endSign * s) =
       ω.hamiltonianAction (H q) (fun t ↦ u (q.endChart (s, t))) := by
   rw [endAction, ← mul_assoc, endSign_mul_self, one_mul]
+
+/-- Substituting the signed longitudinal coordinate `σ = ±s` of the end `q` preserves integrals
+over the line. -/
+private theorem integral_comp_endSign_mul (q : Puncture) (f : ℝ → ℝ) :
+    ∫ s, f (q.endSign * s) = ∫ σ, f σ := by
+  rw [Measure.integral_comp_mul_left f, abs_inv, abs_endSign, inv_one, one_smul]
 
 /-- **The collar term of one end.** Its integral is `∓` the average of the actions of the loops
 of the end against the weight `β'(σ - T)`, of total mass one and supported in `[T, T + 1]`. -/
@@ -699,12 +710,20 @@ private theorem integral_image_endChart_collarDensity (hu : ContDiffOn ℝ 2 u p
     refine h.congr (Eventually.of_forall fun σ ↦ ?_)
     rw [hgh]
     simp only [← mul_assoc, endSign_mul_self, one_mul]
-  · rw [integral_image_eq_integral_abs_det_fderiv_smul volume hmeas hder q.injOn_endChart,
-      setIntegral_congr_fun hmeas hF, hstrip, Measure.volume_eq_prod, setIntegral_prod F hFint,
-      setIntegral_congr_fun hmeasA hinner, integral_neg, integral_const_mul,
-      setIntegral_eq_integral_of_forall_compl_eq_zero hg0, hgh,
-      Measure.integral_comp_mul_left (fun σ ↦ deriv smoothTransition (σ - T) * endAction ω H u q σ),
-      abs_inv, abs_endSign, inv_one, one_smul]
+  · calc ∫ z in q.endChart '' q.endStrip, collarDensity ω K u T z
+        = ∫ z in q.endStrip, F z := by
+          -- Change variables along the end chart.
+          rw [integral_image_eq_integral_abs_det_fderiv_smul volume hmeas hder q.injOn_endChart]
+          exact setIntegral_congr_fun hmeas hF
+      _ = ∫ s in A, ∫ t in B, F (s, t) := by
+          -- Fubini on the strip `A ×ˢ B`.
+          rw [hstrip, Measure.volume_eq_prod, setIntegral_prod F hFint]
+      _ = -(q.endSign * ∫ s, g s) := by
+          rw [setIntegral_congr_fun hmeasA hinner, integral_neg, integral_const_mul,
+            setIntegral_eq_integral_of_forall_compl_eq_zero hg0]
+      _ = _ := by
+          rw [hgh, integral_comp_endSign_mul q
+            (fun σ ↦ deriv smoothTransition (σ - T) * endAction ω H u q σ)]
 
 /-- **The collar term.** The integral of `dχ_T ∧ α` over the plane is `-∑ ±` the averages of the
 actions of the loops of the three ends against the weight `β'(σ - T)`. -/
@@ -963,39 +982,6 @@ theorem integral_hamiltonianCurvature_le_of_tendsto_hamiltonianAction_endChart
     exact mul_nonneg (cutoff_mem_Icc n.cast_nonneg z).1 (he z hz))
   linarith
 
-/-- The curvature of the pair-of-pants perturbation along a map continuous on `S` is integrable,
-with integral at most `B₀ + B₁ + B_∞` in absolute value. -/
-private theorem integrable_hamiltonianCurvature_pairOfPantsPerturbation
-    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) {B : Puncture → ℝ}
-    (hB : ∀ q t x, |H q t x| ≤ B q) {u : ℝ × ℝ → V} (hu : ContinuousOn u pantsDomain) :
-    Integrable (fun z ↦ ω.hamiltonianCurvature
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-        z (u z)) ∧
-      |∫ z, ω.hamiltonianCurvature
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-        z (u z)| ≤ ∑ q, B q := by
-  have hbound := ω.lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le hH hHs hB u
-  have hB0 (q : Puncture) : 0 ≤ B q := (abs_nonneg _).trans (hB q 0 0)
-  have hc := continuousOn_hamiltonianCurvature_pantsDomain (ω := ω) hu fun _ hw₀ hw₁ x ↦
-    contDiffAt_pairOfPantsPerturbation_prod hH hHs ⟨hw₀, hw₁⟩ x
-  have hmeas : AEStronglyMeasurable (fun z ↦ ω.hamiltonianCurvature
-      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-      z (u z)) := by
-    rw [← Measure.restrict_eq_self_of_ae_mem ae_mem_pantsDomain]
-    exact hc.aestronglyMeasurable isOpen_pantsDomain.measurableSet
-  have hfin : ∑ q, ENNReal.ofReal (B q) ≠ ⊤ := by
-    simp [ENNReal.sum_eq_top]
-  refine ⟨⟨hmeas, (hbound.trans_lt hfin.lt_top)⟩, ?_⟩
-  rw [← Real.norm_eq_abs]
-  refine (norm_integral_le_lintegral_norm _).trans ?_
-  simp only [ofReal_norm]
-  refine (ENNReal.toReal_mono hfin hbound).trans_eq ?_
-  rw [ENNReal.toReal_sum fun q _ ↦ ENNReal.ofReal_ne_top]
-  exact Finset.sum_congr rfl fun q _ ↦ ENNReal.toReal_ofReal (hB0 q)
-
 /-- **The energy identity for the pair-of-pants perturbation.** For the perturbation
 `Floer.pairOfPantsPerturbation H` of bounded period-one `C¹` Hamiltonians `H_q`, a `C²` map `u`
 on `S = ℂ ∖ {0, 1}` with nonnegative Floer energy density whose end loops have actions tending to
@@ -1020,7 +1006,7 @@ theorem lintegral_floerEnergyDensity_pairOfPantsPerturbation_eq_of_tendsto
     (fun _ hw₀ hw₁ x ↦ contDiffAt_pairOfPantsPerturbation_prod hH hHs ⟨hw₀, hw₁⟩ x)
     (fun _ _ x hw ↦ pairOfPantsPerturbation_eq_smul_endAngularForm hw x) hH
     (fun q ↦ (hHs q).continuous) hu he
-    (integrable_hamiltonianCurvature_pairOfPantsPerturbation ω hH hHs hB hu.continuousOn).1 ha
+    (ω.integrable_hamiltonianCurvature_pairOfPantsPerturbation hH hHs hB hu.continuousOn) ha
 
 /-- **The energy bound for the pair-of-pants product.** Under the hypotheses of
 `SymplecticForm.lintegral_floerEnergyDensity_pairOfPantsPerturbation_eq_of_tendsto`, with
@@ -1039,8 +1025,7 @@ theorem lintegral_floerEnergyDensity_pairOfPantsPerturbation_le_of_tendsto
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u z) ≤
       ENNReal.ofReal (a zero + a one - a inf + ∑ q, B q) := by
   rw [ω.lintegral_floerEnergyDensity_pairOfPantsPerturbation_eq_of_tendsto hH hHs hB hu he ha]
-  have h := (integrable_hamiltonianCurvature_pairOfPantsPerturbation ω hH hHs hB
-    hu.continuousOn).2
+  have h := ω.abs_integral_hamiltonianCurvature_pairOfPantsPerturbation_le hH hHs hB u
   exact ENNReal.ofReal_le_ofReal (by linarith [neg_abs_le (∫ z, ω.hamiltonianCurvature
     (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
     (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z))])
@@ -1063,9 +1048,8 @@ theorem action_inf_le_of_tendsto_pairOfPantsPerturbation
     (fun _ hw₀ hw₁ x ↦ contDiffAt_pairOfPantsPerturbation_prod hH hHs ⟨hw₀, hw₁⟩ x)
     (fun _ _ x hw ↦ pairOfPantsPerturbation_eq_smul_endAngularForm hw x) hH
     (fun q ↦ (hHs q).continuous) hu he
-    (integrable_hamiltonianCurvature_pairOfPantsPerturbation ω hH hHs hB hu.continuousOn).1 ha
-  have h' := (integrable_hamiltonianCurvature_pairOfPantsPerturbation ω hH hHs hB
-    hu.continuousOn).2
+    (ω.integrable_hamiltonianCurvature_pairOfPantsPerturbation hH hHs hB hu.continuousOn) ha
+  have h' := ω.abs_integral_hamiltonianCurvature_pairOfPantsPerturbation_le hH hHs hB u
   linarith [neg_abs_le (∫ z, ω.hamiltonianCurvature
     (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
     (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z))]

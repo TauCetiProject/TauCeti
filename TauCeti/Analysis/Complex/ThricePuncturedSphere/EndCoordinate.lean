@@ -391,6 +391,7 @@ theorem endStrip_def (q : Puncture) :
     q.endStrip = {s | 1 / 2 < q.endSign * s} ×ˢ Ico (-1 / 2) (1 / 2) :=
   (rfl)
 
+@[simp]
 theorem mem_endStrip_iff {q : Puncture} {z : ℝ × ℝ} :
     z ∈ q.endStrip ↔ 1 / 2 < q.endSign * z.1 ∧ z.2 ∈ Ico (-1 / 2 : ℝ) (1 / 2) :=
   Iff.rfl
