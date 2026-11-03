@@ -667,34 +667,6 @@ end Refinement
 
 section AmbientIsotopy
 
-/-- Two parameter intervals `[j h, j h + h]` and `[k h, k h + h]` of a uniform mesh with `n` steps,
-`j ≠ k`, have disjoint interiors, also after shifting the first by a multiple of the period
-`n h`. -/
-private theorem shift_add_le_or_le {n j k : ℕ} (hj : j < n) (hk : k < n) (hjk : j ≠ k) {h : ℝ}
-    (hh : 0 < h) (m : ℤ) :
-    j * h + m * (n * h) + h ≤ k * h ∨ k * h + h ≤ j * h + m * (n * h) := by
-  have key : (j : ℤ) + m * n + 1 ≤ k ∨ (k : ℤ) + 1 ≤ j + m * n := by
-    rcases lt_trichotomy ((j : ℤ) + m * n) k with h1 | h1 | h1
-    · omega
-    · exfalso
-      rcases lt_trichotomy m 0 with hm | rfl | hm
-      · have : m * (n : ℤ) ≤ -n := by nlinarith
-        omega
-      · simp only [zero_mul, add_zero, Nat.cast_inj] at h1
-        exact hjk h1
-      · have : (n : ℤ) ≤ m * n := by nlinarith
-        omega
-    · omega
-  rcases key with h1 | h1
-  · left
-    have h1' : ((j : ℝ) + m * n + 1) * h ≤ k * h :=
-      mul_le_mul_of_nonneg_right (by exact_mod_cast h1) hh.le
-    linarith
-  · right
-    have h1' : ((k : ℝ) + 1) * h ≤ (j + m * n) * h :=
-      mul_le_mul_of_nonneg_right (by exact_mod_cast h1) hh.le
-    linarith
-
 /-- While the arc of `γ` over `[k h, k h + h]` is straightened, the other pieces stay put: for a
 uniform mesh `h = T / n` of a `T`-periodic curve, fine compared with the window `4 δ` on which
 `φ ∘ γ` is strictly increasing and with the separation constant `η` of `γ`, no point of the arc
@@ -739,7 +711,24 @@ private theorem notMem_straightenRegion {n j k : ℕ} (hj : j < n) (hk : k < n) 
     have hk₁ : k * h + h ∈ Icc (k * h - 2 * δ) (k * h + 2 * δ) := ⟨by linarith, by linarith⟩
     have hc₀ : c ∈ Icc c (c + h) := left_mem_Icc.2 (by linarith)
     have hc₁ : c + h ∈ Icc c (c + h) := right_mem_Icc.2 (by linarith)
-    rcases shift_add_le_or_le hj hk hjk hh m with hle | hle
+    -- Distinct steps `j ≠ k < n` stay distinct modulo `n`, so the shifted parameter interval
+    -- `[c, c + h]` and `[k h, k h + h]` overlap at most at an endpoint.
+    have hne : (j : ℤ) + m * n ≠ k := fun he ↦ hjk <| by
+      have h0 := Int.eq_zero_of_abs_lt_dvd (m := n) (x := k - j) ⟨m, by rw [← he]; ring⟩
+        (abs_sub_lt_iff.2 ⟨by omega, by omega⟩)
+      omega
+    have hle : c + h ≤ k * h ∨ k * h + h ≤ c := by
+      rw [hc]
+      rcases hne.lt_or_gt with hlt | hlt
+      · left
+        have : ((j : ℝ) + m * n + 1) * h ≤ k * h :=
+          mul_le_mul_of_nonneg_right (by exact_mod_cast hlt) hh.le
+        linarith
+      · right
+        have : ((k : ℝ) + 1) * h ≤ (j + m * n) * h :=
+          mul_le_mul_of_nonneg_right (by exact_mod_cast hlt) hh.le
+        linarith
+    rcases hle with hle | hle
     · have hbelow : ∀ s ∈ Icc c (c + h), φ (γ s) ≤ φ (γ (k * h)) := fun s hs ↦
         hφ.monotoneOn (hW hs) hk₀ (by linarith [hs.2])
       have : φ x ≤ φ (γ (k * h)) := by

@@ -351,9 +351,9 @@ theorem exists_final_image_eq_segment {γ : ℝ → E} {a b : ℝ} (hab : a < b)
   have hf_bij : Function.Bijective f := by
     refine ⟨fun s s' h ↦ Subtype.ext (hφ.injOn s.2 s'.2 ?_), fun r ↦ ?_⟩
     · simpa [f] using congrArg Subtype.val h
-    · obtain ⟨s, hs, hsr⟩ := intermediate_value_Icc hab.le
-        (φ.continuous.comp_continuousOn hγ) (show φ p + r ∈ Icc (φ (γ a)) (φ (γ b)) from
-          ⟨by linarith [r.2.1], by linarith [r.2.2]⟩)
+    · have hr : φ p + r ∈ Icc (φ (γ a)) (φ (γ b)) := ⟨by linarith [r.2.1], by linarith [r.2.2]⟩
+      obtain ⟨s, hs, hsr⟩ := intermediate_value_Icc hab.le
+        (φ.continuous.comp_continuousOn hγ) hr
       exact ⟨⟨s, hs⟩, Subtype.ext (by simp only [Function.comp_apply] at hsr; simp [f, hsr])⟩
   let F : Icc a b ≃ₜ Icc (0 : ℝ) L :=
     hf_cont.homeoOfEquivCompactToT2 (f := Equiv.ofBijective f hf_bij)
