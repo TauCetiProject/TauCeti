@@ -84,11 +84,15 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpa
   [IsManifold I 2 M] {n : ℕ∞ω} {D : Π x : M, Submodule ℝ (TangentSpace I x)}
 
 variable (I n) in
-/-- A distribution `D` is a **contact distribution**, or contact structure, of class `C^n` when it
-is a `C^n` field of hyperplanes, of rank `dim E - 1`, whose Levi form is nondegenerate: at every
-point `x`, the map `u ↦ L_D (u, ·)` is an isomorphism from `D x` onto `Hom(D x, T_x M ⧸ D x)`.
-No defining one-form or coorientation is part of the data. -/
-structure IsContactDistribution (D : Π x : M, Submodule ℝ (TangentSpace I x)) : Prop where
+/-- A distribution `D` on a finite-dimensional manifold is a **contact distribution**, or contact
+structure, of class `C^n` when it is a `C^n` field of hyperplanes, of rank `dim E - 1`, whose Levi
+form is nondegenerate: at every point `x`, the map `u ↦ L_D (u, ·)` is an isomorphism from `D x`
+onto `Hom(D x, T_x M ⧸ D x)`. No defining one-form or coorientation is part of the data.
+
+The model space `E` is required to be finite-dimensional: otherwise `finrank ℝ E - 1 = 0`, and the
+zero distribution would satisfy every field without being a hyperplane field. -/
+structure IsContactDistribution [FiniteDimensional ℝ E]
+    (D : Π x : M, Submodule ℝ (TangentSpace I x)) : Prop where
   /-- A contact distribution is a `C^n` distribution of rank `dim E - 1`. -/
   isContMDiffDistribution : IsContMDiffDistribution I n (finrank ℝ E - 1) D
   /-- A contact distribution is a proper subspace at each point, hence a hyperplane. -/
