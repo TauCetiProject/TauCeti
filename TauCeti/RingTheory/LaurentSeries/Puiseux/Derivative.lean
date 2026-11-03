@@ -100,7 +100,8 @@ theorem derivation_levelEmbedding (n : ℕ+) (f : K⸨X⸩) :
     ratHahnSeriesDerivation_ramifiedEmbedding, eq_ratCast, Rat.cast_inv, Rat.cast_natCast]
 
 /-- The derivative `d/dt` of Puiseux series extends the derivative of `K⸨X⸩`. -/
-@[simp]
+-- Apply the chain rule while the Laurent-series embedding is still an algebraMap.
+@[simp↓]
 theorem derivation_algebraMap_laurentSeries (f : K⸨X⸩) :
     derivation K (algebraMap K⸨X⸩ (puiseuxField K) f) =
       algebraMap K⸨X⸩ (puiseuxField K) (derivative K f) := by

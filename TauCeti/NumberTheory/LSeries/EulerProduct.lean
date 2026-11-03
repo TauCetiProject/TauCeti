@@ -8,6 +8,8 @@ module
 public import Mathlib.NumberTheory.EulerProduct.Basic
 public import Mathlib.NumberTheory.LSeries.Basic
 public import TauCeti.Topology.Algebra.InfiniteSum.LinearRecurrence
+import Mathlib.Analysis.SpecialFunctions.Log.Summable
+import Mathlib.Data.Nat.Prime.Int
 
 /-!
 # Euler products with quadratic local factors
@@ -27,6 +29,11 @@ factor is nonzero, and its inverse is the local contribution to the Euler produc
 This is the shape of the L-function of a normalized Hecke eigenform, where `c p = χ(p) p^(k-1)`
 (Diamond–Shurman, Theorem 5.9.2), and it covers the completely multiplicative case `c = 0`.
 
+Where the L-series converges absolutely and no local factor vanishes, `L(a, s) ≠ 0`: the Euler
+product is then an absolutely convergent product of nonzero factors. Under the recurrence the
+local factors never vanish, so the L-series is nonzero throughout its region of absolute
+convergence.
+
 ## Main results
 
 * `TauCeti.LSeries.localFactor_mul_tsum_term_prime_pow_eq_one_of_recurrence`: the factor
@@ -40,6 +47,10 @@ This is the shape of the L-function of a normalized Hecke eigenform, where `c p 
   `∏'`.
 * `TauCeti.LSeries.LSeries_eulerProduct_of_recurrence`: the same, as convergence of the finite
   partial products over `Nat.primesBelow n`.
+* `TauCeti.LSeries.LSeries_ne_zero_of_tsum_term_prime_pow_ne_zero`: for a multiplicative `a` with
+  absolutely convergent L-series, `L(a, s) ≠ 0` as soon as no local factor vanishes.
+* `TauCeti.LSeries.LSeries_ne_zero_of_recurrence`: under the recurrence, `L(a, s) ≠ 0` wherever
+  the L-series converges absolutely.
 
 ## References
 
@@ -162,5 +173,51 @@ theorem LSeries_eulerProduct_of_recurrence (h₁ : a 1 = 1)
   have hp := prime_of_mem_primesBelow hp
   exact tsum_term_prime_pow_eq_inv_of_recurrence (p := ⟨p, hp⟩) h₁ (hrec p hp)
     (hs.comp_injective (Nat.pow_right_injective hp.two_le))
+
+/-! ### Nonvanishing -/
+
+/-- **An absolutely convergent Euler product of nonzero local factors does not vanish.** Let
+`a : ℕ → ℂ` satisfy `a 1 = 1`, be multiplicative on nonzero coprime arguments, and have an
+absolutely convergent L-series at `s`. If no local factor `∑' e, a (p ^ e) p ^ (-e s)` vanishes,
+then `L(a, s) ≠ 0`. -/
+theorem LSeries_ne_zero_of_tsum_term_prime_pow_ne_zero (h₁ : a 1 = 1)
+    (hmul : ∀ {m n : ℕ}, m ≠ 0 → n ≠ 0 → m.Coprime n → a (m * n) = a m * a n)
+    (hs : LSeriesSummable a s) (hloc : ∀ p : Primes, ∑' e : ℕ, term a s (p ^ e) ≠ 0) :
+    LSeries a s ≠ 0 := by
+  -- A convergent product of nonzero factors may still be zero. Here the local factor at `p` is
+  -- `1 + g p` with `∑_p ‖g p‖ ≤ ∑_{n ≥ 2} ‖a n n ^ (-s)‖` finite, which rules this out.
+  -- The terms at the positive powers of the primes are summable, since `(p, e) ↦ p ^ (e + 1)` is
+  -- injective.
+  have hpow : Summable fun x : Primes × ℕ ↦ ‖term a s (x.1 ^ (x.2 + 1))‖ :=
+    hs.norm.comp_injective fun x y h ↦ by
+      obtain ⟨hp, he⟩ := Nat.Prime.pow_inj x.1.prop y.1.prop h
+      exact Prod.ext (Subtype.ext hp) he
+  -- so the local factor at `p` is `1 + g p` for a summable `g`.
+  have hfactor (p : Primes) : ∑' e : ℕ, term a s (p ^ e) =
+      1 + ∑' e : ℕ, term a s (p ^ (e + 1)) := by
+    have hp : Summable fun e : ℕ ↦ term a s (p ^ e) :=
+      hs.comp_injective (Nat.pow_right_injective p.prop.two_le)
+    rw [hp.tsum_eq_zero_add]
+    simp [h₁]
+  have hg : Summable fun p : Primes ↦ ‖∑' e : ℕ, term a s (p ^ (e + 1))‖ :=
+    hpow.prod.of_nonneg_of_le (fun _ ↦ norm_nonneg _) fun p ↦
+      norm_tsum_le_tsum_norm (hpow.prod_factor p)
+  have H := EulerProduct.eulerProduct_hasProd (by simp [h₁]) (term_mul_of_coprime hmul) hs.norm
+    (term_zero a s)
+  rw [LSeries, ← H.tprod_eq, funext hfactor]
+  exact tprod_one_add_ne_zero_of_summable (fun p ↦ hfactor p ▸ hloc p) hg
+
+/-- **An Euler product with quadratic local factors does not vanish.** Under the hypotheses of
+`TauCeti.LSeries.LSeries_eulerProduct_hasProd_of_recurrence`, `L(a, s) ≠ 0` wherever the L-series
+of `a` converges absolutely. -/
+theorem LSeries_ne_zero_of_recurrence (h₁ : a 1 = 1)
+    (hmul : ∀ {m n : ℕ}, m ≠ 0 → n ≠ 0 → m.Coprime n → a (m * n) = a m * a n)
+    (hrec : ∀ p : ℕ, p.Prime → ∀ r : ℕ,
+      a (p ^ (r + 2)) = a p * a (p ^ (r + 1)) - c p * a (p ^ r))
+    (hs : LSeriesSummable a s) :
+    LSeries a s ≠ 0 :=
+  LSeries_ne_zero_of_tsum_term_prime_pow_ne_zero h₁ hmul hs fun p ↦
+    right_ne_zero_of_mul_eq_one (localFactor_mul_tsum_term_prime_pow_eq_one_of_recurrence h₁ p
+      (hrec p p.prop) (hs.comp_injective (Nat.pow_right_injective p.prop.two_le)))
 
 end TauCeti.LSeries

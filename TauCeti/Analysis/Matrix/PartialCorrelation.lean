@@ -247,7 +247,7 @@ theorem injOn_partialCorrelationCholesky :
       partialCorrelationRow z i j = partialCorrelationRow w i j := by
     intro n
     induction n using Nat.strong_induction_on with
-    | h n ih =>
+    | ind n ih =>
       intro j hj i
       by_cases hji : j < i
       · have hprod : (∏ k ∈ Finset.Iio j, Real.sqrt (1 - partialCorrelationRow z i k ^ 2)) =

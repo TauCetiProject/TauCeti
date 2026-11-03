@@ -24,6 +24,10 @@ simplices of `K` and every simplex of `K` lies in a cell
 (`Geometry.SimplicialComplex.exists_subdivision`). The complex is locally finite, by the
 criterion `Geometry.SimplicialComplex.locallyFinite_convexHull_of_finite_restrict`.
 
+The file also defines the subdivision relation between complexes: `K'` is a subdivision of `K`
+(`Geometry.SimplicialComplex.IsSubdivision K' K`) when both have the same underlying space and
+every simplex of `K'` lies in a simplex of `K`. It is reflexive and transitive.
+
 The construction retains a prescribed triangulation `L` of part of the frontiers of the cells
 (`Geometry.SimplicialComplex.exists_subdivision_extending`): it suffices that `L` meets every cell
 in a finite subcomplex, avoids the intrinsic interiors of the cells, and covers whatever part of
@@ -42,6 +46,11 @@ interior. These cones are glued to the complex built so far
 The hypotheses imply that two cells meet in a union of points of `|L|` and of cells contained in
 both of them (`TauCeti.mem_intrinsicInterior_or_of_mem`); for two distinct cells of the same
 dimension these common cells are smaller. So this need not be assumed.
+
+## Main definitions
+
+* `Geometry.SimplicialComplex.IsSubdivision K' K`: `K'` is a subdivision of `K`, with the same
+  underlying space and each simplex of `K'` lying in a simplex of `K`.
 
 ## Main results
 
@@ -67,6 +76,35 @@ public section
 open Finset Set
 
 namespace Geometry.SimplicialComplex
+
+section IsSubdivision
+
+variable {𝕜 E : Type*} [Ring 𝕜] [PartialOrder 𝕜] [AddCommGroup E] [Module 𝕜 E]
+  {K K' K'' : SimplicialComplex 𝕜 E}
+
+/-- A geometric simplicial complex `K'` is a **subdivision** of `K` when both have the same
+underlying space and every simplex of `K'` lies in a simplex of `K`. -/
+structure IsSubdivision (K' K : SimplicialComplex 𝕜 E) : Prop where
+  /-- The two complexes have the same underlying space. -/
+  space_eq : K'.space = K.space
+  /-- Every simplex of the subdivision lies in a simplex of the subdivided complex. -/
+  exists_convexHull_subset : ∀ ⦃s⦄, s ∈ K'.faces →
+    ∃ t ∈ K.faces, convexHull 𝕜 (s : Set E) ⊆ convexHull 𝕜 (t : Set E)
+
+/-- Every complex is a subdivision of itself. -/
+@[refl]
+theorem IsSubdivision.refl (K : SimplicialComplex 𝕜 E) : K.IsSubdivision K :=
+  ⟨rfl, fun s hs => ⟨s, hs, subset_rfl⟩⟩
+
+/-- A subdivision of a subdivision of `K` is a subdivision of `K`. -/
+theorem IsSubdivision.trans (h' : K''.IsSubdivision K') (h : K'.IsSubdivision K) :
+    K''.IsSubdivision K := by
+  refine ⟨h'.space_eq.trans h.space_eq, fun s hs => ?_⟩
+  obtain ⟨t, ht, hst⟩ := h'.exists_convexHull_subset hs
+  obtain ⟨u, hu, htu⟩ := h.exists_convexHull_subset ht
+  exact ⟨u, hu, hst.trans htu⟩
+
+end IsSubdivision
 
 variable {E ι J : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
 

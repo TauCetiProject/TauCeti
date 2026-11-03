@@ -127,7 +127,7 @@ symmetry to be proved. Where a proof does pass through the ring — to use the l
 The identification of `jacobsonRadical X X` with Mathlib's `Ring.jacobson (End X)` goes through
 `TauCeti.Ring.mem_jacobson_iff_isUnit_one_add_mul_left`: `Ring.jacobson` is defined as the infimum
 of the maximal left ideals, and Mathlib's quasi-regularity characterization of it
-(`Ideal.mem_jacobson_bot`) is available only over a commutative ring, whereas `End X` is not
+(`Ring.mem_jacobson_iff`) is available only over a commutative ring, whereas `End X` is not
 commutative. The noncommutative characterization is the one Tau Ceti proves for the left-right
 symmetry of the radical, and it is exactly the defining condition used here.
 

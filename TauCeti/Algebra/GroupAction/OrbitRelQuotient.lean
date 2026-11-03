@@ -58,6 +58,10 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
   a group isomorphism induces an equivalence of orbit spaces.
 * `TauCeti.MulAction.orbitRelQuotientLift`: a `G`-invariant map descends to the orbit space,
   uniquely (`TauCeti.MulAction.eq_orbitRelQuotientLift_iff`).
+* `TauCeti.MulAction.orbitRelQuotientRec`: a `G`-invariant section of the pullback of a family
+  `V` over the orbit space descends to a section of `V`, uniquely
+  (`TauCeti.MulAction.eq_orbitRelQuotientRec_iff`), and every section of `V` is the descent of its
+  pullback (`TauCeti.MulAction.orbitRelQuotientRec_apply_mk`).
 * `MulActionHom.orbitRelQuotientMap`: an equivariant map induces a map of orbit spaces,
   functorially, and descent is natural along it
   (`MulActionHom.orbitRelQuotientLift_comp_orbitRelQuotientMap`).
@@ -201,10 +205,7 @@ theorem MulAction.card_orbitRelQuotient_anti {H K : Subgroup G} (hHK : H ≤ K)
     Nat.card (MulAction.orbitRel.Quotient K X) ≤
       Nat.card (MulAction.orbitRel.Quotient H X) := by
   let f := Setoid.map_of_le (MulAction.orbitRel_le_of_subgroup_le (G := G) (X := X) hHK)
-  apply Nat.card_le_card_of_surjective f
-  intro q
-  induction q using Quotient.inductionOn'
-  exact ⟨Quotient.mk'' _, rfl⟩
+  exact Nat.card_le_card_of_surjective f (Setoid.map_of_le_surjective _)
 
 /-- The map from the bottom-subgroup quotient to the `H`-quotient is the `H`-orbit class map
 under the bottom quotient equivalence. -/
@@ -809,6 +810,55 @@ theorem MulAction.orbitRelQuotientLift_prodMk {f' : X → Z}
   funext fun q ↦ Quotient.inductionOn q fun _ ↦ rfl
 
 end Lift
+
+section Rec
+
+variable {V : MulAction.orbitRel.Quotient G X → Sort*}
+
+/-- **Descent of an invariant section to the orbit space.** Let `t` assign to each `x : X` an
+element of the fibre `V` over the orbit of `x`, that is, let `t` be a section of the pullback of
+`V` along the orbit projection. If `t` is invariant under `G`, in the sense that `t (g • x)` and
+`t x` agree as elements of the fibres over the equal orbits of `g • x` and `x` (a heterogeneous
+equality), then `t` descends to a section of `V` over the orbit space. -/
+def MulAction.orbitRelQuotientRec (t : ∀ x : X, V (Quotient.mk (MulAction.orbitRel G X) x))
+    (ht : ∀ (g : G) (x : X), t (g • x) ≍ t x) (q : MulAction.orbitRel.Quotient G X) : V q :=
+  Quotient.hrecOn q t <| by
+    rintro _ x ⟨g, rfl⟩
+    exact ht g x
+
+variable {t : ∀ x : X, V (Quotient.mk (MulAction.orbitRel G X) x)}
+  {ht : ∀ (g : G) (x : X), t (g • x) ≍ t x}
+
+/-- The descent of `t` takes the value `t x` at the orbit of `x`. -/
+@[simp]
+theorem MulAction.orbitRelQuotientRec_mk (x : X) :
+    MulAction.orbitRelQuotientRec t ht (Quotient.mk (MulAction.orbitRel G X) x) = t x :=
+  (rfl)
+
+/-- **Uniqueness of the descent of a section**: a section over the orbit space is the descent of
+`t` exactly when its value at the orbit of every `x` is `t x`. -/
+theorem MulAction.eq_orbitRelQuotientRec_iff {s : ∀ q : MulAction.orbitRel.Quotient G X, V q} :
+    s = MulAction.orbitRelQuotientRec t ht ↔
+      ∀ x, s (Quotient.mk (MulAction.orbitRel G X) x) = t x := by
+  refine ⟨fun h x ↦ h ▸ MulAction.orbitRelQuotientRec_mk x, fun h ↦ funext fun q ↦ ?_⟩
+  induction q using Quotient.inductionOn with
+  | h x => exact h x
+
+/-- The pullback of a section `s` over the orbit space along the orbit projection is invariant
+under `G`. -/
+theorem MulAction.apply_mk_smul_heq (s : ∀ q : MulAction.orbitRel.Quotient G X, V q) (g : G)
+    (x : X) :
+    s (Quotient.mk (MulAction.orbitRel G X) (g • x)) ≍ s (Quotient.mk (MulAction.orbitRel G X) x) :=
+  congr_arg_heq s (Quotient.sound ⟨g, rfl⟩)
+
+/-- A section over the orbit space is the descent of its pullback along the orbit projection. -/
+@[simp]
+theorem MulAction.orbitRelQuotientRec_apply_mk (s : ∀ q : MulAction.orbitRel.Quotient G X, V q) :
+    MulAction.orbitRelQuotientRec (fun x ↦ s (Quotient.mk (MulAction.orbitRel G X) x))
+      (MulAction.apply_mk_smul_heq s) = s :=
+  (MulAction.eq_orbitRelQuotientRec_iff.2 fun _ ↦ rfl).symm
+
+end Rec
 
 end TauCeti
 

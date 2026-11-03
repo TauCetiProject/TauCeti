@@ -171,7 +171,7 @@ theorem isEdgeReachable_iff_exists_paths [Finite V(G)] [Finite E(G)] (hs : s ∈
   refine ⟨fun h ↦ ?_, fun ⟨P, _, hP⟩ ↦ isEdgeReachable_def.2 fun F hF ↦ ?_⟩
   · -- Between equal endpoints, the trivial path may be repeated.
     obtain rfl | hst := eq_or_ne s t
-    · exact ⟨fun _ ↦ .nil, fun _ ↦ Walk.isPath_nil, fun _ _ _ ↦ by simp⟩
+    · exact ⟨fun _ ↦ .nil, fun _ ↦ by simp, fun _ _ _ ↦ by simp⟩
     obtain ⟨m, P, F, hP, hdisj, -, hF, hFm⟩ := exists_paths_edgeSeparator_card_eq (G := G) hst
     have hkm : k ≤ m := hFm ▸ not_lt.1 fun hlt ↦ hF (isEdgeReachable_def.1 h (by simpa using hlt))
     exact ⟨fun i ↦ P (Fin.castLE hkm i), fun i ↦ hP _,

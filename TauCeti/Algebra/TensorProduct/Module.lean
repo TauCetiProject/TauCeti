@@ -15,6 +15,9 @@ A module over `A ⊗[k] B` has commuting actions of `A` and `B`, obtained by res
 along `Algebra.TensorProduct.includeLeft` and `Algebra.TensorProduct.includeRight`.
 These actions are explicit definitions, since an existing action of a factor may be different.
 For `B = Aᵐᵒᵖ`, they are the left and right actions of an ordinary bimodule.
+The factor-action identities are explicit rewrite rules: their tensor-product parameters are
+carried by the chosen scalar instance, so global simp would try to infer hidden factors for
+unrelated scalar actions.
 
 The factor actions agree with the ground-ring action. This supplies the restriction needed for
 balanced tensor products of enveloping-algebra modules; it uses Mathlib's scalar restriction
@@ -49,13 +52,11 @@ abbrev moduleRight : Module B M :=
   Module.compHom M (includeRight : B →ₐ[k] A ⊗[k] B).toRingHom
 
 /-- The first-factor action is the action of `a ⊗ 1`. -/
-@[simp]
 theorem smul_moduleLeft (a : A) (m : M) :
     letI := moduleLeft (k := k) (A := A) (B := B) M
     a • m = (a ⊗ₜ[k] (1 : B)) • m := rfl
 
 /-- The second-factor action is the action of `1 ⊗ b`. -/
-@[simp]
 theorem smul_moduleRight (b : B) (m : M) :
     letI := moduleRight (k := k) (A := A) (B := B) M
     b • m = ((1 : A) ⊗ₜ[k] b) • m := rfl

@@ -34,6 +34,10 @@ boundary point along almost every radius ending in an arc of the circle.
   `τ` its trailing coefficient there.
 * `AnalyticOnNhd.exists_forall_le_circleAverage_log_norm` — a uniform lower bound for these
   averages on circles with radii in `[s, R)`.
+* `TauCeti.eqOn_zero_ball_of_tendsto_circleMap_of_circleAverage_posLog_le` — the sequential form:
+  a function whose circle averages of `log⁺ ‖f‖` are bounded on a sequence of circles with radii in
+  `[s, R)`, and whose values on these circles tend to `0` at every angle of a set of positive
+  measure, vanishes on the disc.
 * `TauCeti.eqOn_zero_ball_of_tendsto_circleMap_of_frequently_circleAverage_posLog_le` — a function
   whose circle averages of `log⁺ ‖f‖` are bounded on circles with radii accumulating at `R`, and
   whose radial limit is `0` on a set of angles of positive measure, vanishes on the disc.
@@ -96,13 +100,13 @@ theorem AnalyticOnNhd.le_circleAverage_log_norm (hf : AnalyticOnNhd ℂ f (close
 
 namespace TauCeti
 
-/-- The angles at which `f` has a given radial limit form a `2π`-periodic set, so if they have
-positive measure then so do those in one period `(0, 2π]`. -/
-private lemma volume_setOf_tendsto_circleMap_inter_Ioc_ne_zero {l : Filter ℝ} {a : ℂ} {E : Set ℝ}
-    (hE : volume E ≠ 0) (hlim : ∀ θ ∈ E, Tendsto (fun r ↦ f (circleMap c r θ)) l (𝓝 a)) :
-    volume ({θ | Tendsto (fun r ↦ f (circleMap c r θ)) l (𝓝 a)} ∩ Ioc 0 (2 * π)) ≠ 0 := by
+/-- The angles at which `f` tends to a given value along the circles of radii `ρ n` form a
+`2π`-periodic set, so if they have positive measure then so do those in one period `(0, 2π]`. -/
+private lemma volume_setOf_tendsto_circleMap_inter_Ioc_ne_zero {ρ : ℕ → ℝ} {a : ℂ} {E : Set ℝ}
+    (hE : volume E ≠ 0) (hlim : ∀ θ ∈ E, Tendsto (fun n ↦ f (circleMap c (ρ n) θ)) atTop (𝓝 a)) :
+    volume ({θ | Tendsto (fun n ↦ f (circleMap c (ρ n) θ)) atTop (𝓝 a)} ∩ Ioc 0 (2 * π)) ≠ 0 := by
   intro h0
-  refine hE (measure_mono_null (t := {θ | Tendsto (fun r ↦ f (circleMap c r θ)) l (𝓝 a)})
+  refine hE (measure_mono_null (t := {θ | Tendsto (fun n ↦ f (circleMap c (ρ n) θ)) atTop (𝓝 a)})
     (fun θ hθ ↦ hlim θ hθ) ?_)
   refine (isAddFundamentalDomain_Ioc two_pi_pos 0).measure_zero_of_invariant _
     (fun g ↦ ?_) (by simpa using h0)
@@ -126,6 +130,44 @@ theorem _root_.AnalyticOnNhd.exists_forall_le_circleAverage_log_norm
   · rw [abs_of_pos (hs.trans_le hr.1)]
     exact closedBall_subset_ball hr.2
 
+/-- **F. and M. Riesz uniqueness theorem, sequential form.** Let `f` be holomorphic on the disc
+`ball c R`, and let `ρ n ∈ [s, R)` be radii, with `s > 0`, on whose circles about `c` the averages
+of `log⁺ ‖f‖` are at most `C`. If `f (circleMap c (ρ n) θ)` tends to `0` for every angle `θ` of a
+set `E` of positive measure, then `f` vanishes on the disc.
+
+The radii need not converge. This form applies to boundary values that are only reached along a
+sequence of circles almost everywhere, as for limits in `L²` of the circle restrictions. -/
+theorem eqOn_zero_ball_of_tendsto_circleMap_of_circleAverage_posLog_le
+    {ρ : ℕ → ℝ} {s C : ℝ} {E : Set ℝ} (hf : DifferentiableOn ℂ f (ball c R)) (hs : 0 < s)
+    (hρ : ∀ n, ρ n ∈ Ico s R) (hC : ∀ n, circleAverage (fun z ↦ log⁺ ‖f z‖) c (ρ n) ≤ C)
+    (hE : volume E ≠ 0) (hlim : ∀ θ ∈ E, Tendsto (fun n ↦ f (circleMap c (ρ n) θ)) atTop (𝓝 0)) :
+    EqOn f 0 (ball c R) := by
+  by_contra hne
+  obtain ⟨w, hw, hfw⟩ : ∃ w ∈ ball c R, f w ≠ 0 := by
+    simpa [EqOn] using hne
+  have han : AnalyticOnNhd ℂ f (ball c R) := hf.analyticOnNhd isOpen_ball
+  -- By Jensen's inequality the averages of `log ‖f‖` are at least `L` on the circles.
+  obtain ⟨L, hL⟩ := han.exists_forall_le_circleAverage_log_norm hs
+  have hρ0 : ∀ n, 0 < ρ n := fun n ↦ hs.trans_le (hρ n).1
+  have hsphere : ∀ n, sphere c |ρ n| ⊆ ball c R := fun n ↦ by
+    rw [abs_of_pos (hρ0 n)]
+    exact sphere_subset_ball (hρ n).2
+  -- Up to the zeros of `f` on the circles, the angles in one period with limit `0` are angles
+  -- along which `f` tends to `0` through nonzero values; Fatou's lemma makes these null, as the
+  -- averages of `log⁺ ‖f‖⁻¹ = log⁺ ‖f‖ - log ‖f‖` on the circles are at most `C - L`.
+  refine volume_setOf_tendsto_circleMap_inter_Ioc_ne_zero hE hlim <| measure_mono_null ?_ <|
+    measure_union_null (measure_iUnion_null fun n ↦
+      han.volume_setOf_circleMap_eq_zero hw hfw (hρ0 n) (hρ n).2)
+    (volume_setOf_tendsto_circleMap_nhdsNE_zero (B := C - L)
+      (fun n ↦ (han.mono (hsphere n)).meromorphicOn.circleIntegrable_posLog_inv_norm)
+      fun n ↦ ?_)
+  · rintro θ ⟨hθ, hθI⟩
+    refine or_iff_not_imp_left.2 fun hθN ↦ ⟨hθI, ?_⟩
+    exact tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _ hθ
+      (.of_forall fun n h ↦ hθN (mem_iUnion.2 ⟨n, h⟩))
+  · rw [(han.mono (hsphere n)).meromorphicOn.circleAverage_posLog_inv_norm]
+    linarith [hC n, hL (ρ n) (hρ n)]
+
 /-- **F. and M. Riesz uniqueness theorem.** Let `f` be holomorphic on the disc `ball c R`, with
 circle averages of `log⁺ ‖f‖` at most `C` on circles about `c` whose radii accumulate at `R` from
 below. If the radial limit of `f` is `0` at every angle of a set `E` of positive measure, then `f`
@@ -140,35 +182,14 @@ theorem eqOn_zero_ball_of_tendsto_circleMap_of_frequently_circleAverage_posLog_l
     (hE : volume E ≠ 0)
     (hlim : ∀ θ ∈ E, Tendsto (fun r ↦ f (circleMap c r θ)) (𝓝[<] R) (𝓝 0)) :
     EqOn f 0 (ball c R) := by
-  by_contra hne
-  obtain ⟨w, hw, hfw⟩ : ∃ w ∈ ball c R, f w ≠ 0 := by
-    simpa [EqOn] using hne
-  have hR : 0 < R := pos_of_mem_ball hw
-  have han : AnalyticOnNhd ℂ f (ball c R) := hf.analyticOnNhd isOpen_ball
-  -- By Jensen's inequality the averages of `log ‖f‖` are at least `L` on circles near the boundary.
-  obtain ⟨L, hL⟩ := han.exists_forall_le_circleAverage_log_norm (half_pos hR)
+  rcases le_or_gt R 0 with hR | hR
+  · simp [ball_eq_empty.2 hR]
   -- Radii `ρ n ∈ (R / 2, R)` tending to `R` along which the averages of `log⁺ ‖f‖` are at most `C`.
   obtain ⟨ρ, hρlim, hρ⟩ := exists_seq_forall_of_frequently
     (hC.and_eventually (Ioo_mem_nhdsLT (half_lt_self hR)))
-  have hρ0 : ∀ n, 0 < ρ n := fun n ↦ (half_pos hR).trans (hρ n).2.1
-  have hsphere : ∀ n, sphere c |ρ n| ⊆ ball c R := fun n ↦ by
-    rw [abs_of_pos (hρ0 n)]
-    exact sphere_subset_ball (hρ n).2.2
-  -- Up to the zeros of `f` on the circles, the angles in one period with radial limit `0` are
-  -- angles along which `f` tends to `0` through nonzero values; Fatou's lemma makes these null, as
-  -- the averages of `log⁺ ‖f‖⁻¹ = log⁺ ‖f‖ - log ‖f‖` on the circles are at most `C - L`.
-  refine volume_setOf_tendsto_circleMap_inter_Ioc_ne_zero hE hlim <| measure_mono_null ?_ <|
-    measure_union_null (measure_iUnion_null fun n ↦
-      han.volume_setOf_circleMap_eq_zero hw hfw (hρ0 n) (hρ n).2.2)
-    (volume_setOf_tendsto_circleMap_nhdsNE_zero (B := C - L)
-      (fun n ↦ (han.mono (hsphere n)).meromorphicOn.circleIntegrable_posLog_inv_norm)
-      fun n ↦ ?_)
-  · rintro θ ⟨hθ, hθI⟩
-    refine or_iff_not_imp_left.2 fun hθN ↦ ⟨hθI, ?_⟩
-    exact tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _ (hθ.comp hρlim)
-      (.of_forall fun n h ↦ hθN (mem_iUnion.2 ⟨n, h⟩))
-  · rw [(han.mono (hsphere n)).meromorphicOn.circleAverage_posLog_inv_norm]
-    linarith [(hρ n).1, hL (ρ n) ⟨(hρ n).2.1.le, (hρ n).2.2⟩]
+  exact eqOn_zero_ball_of_tendsto_circleMap_of_circleAverage_posLog_le hf (half_pos hR)
+    (fun n ↦ ⟨(hρ n).2.1.le, (hρ n).2.2⟩) (fun n ↦ (hρ n).1) hE
+    fun θ hθ ↦ (hlim θ hθ).comp hρlim
 
 /-- **F. and M. Riesz uniqueness theorem, bounded form.** A bounded holomorphic function on the
 disc `ball c R` whose radial limit is `a` at every angle of a set of positive measure is the

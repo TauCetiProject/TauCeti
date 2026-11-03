@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.LocallyFlat.Segment
-public import TauCeti.Topology.PL.Map
+public import TauCeti.Geometry.Manifold.PLGroupoid.Map
 
 /-!
 # Piecewise-linear graphs and curves are locally flat
@@ -27,7 +27,10 @@ at `g t` (`TauCeti.exists_isSliceChart_of_inter_eq_union_affineSegment`). Since 
 embedding, no other part of the curve comes near the point. For knots, with `N` the circle
 `AddCircle p` and `M` a piecewise-linear `3`-manifold such as `ℝ³`, this says that
 piecewise-linear knots are locally flat, generalizing the polygonal case
-`TauCeti.SimplePolygon.isLocallyFlat_realize`.
+`TauCeti.SimplePolygon.isLocallyFlat_realize`. The same holds for curves which are PL maps
+(`TauCeti.IsPLMap`), the maps whose readings in charts are piecewise linear for the PL structure
+groupoid (`TauCeti.PLGroupoid`); on PL manifolds that condition does not depend on the charts of
+the maximal PL atlases used to read it.
 
 The restriction to curves is essential. A piecewise-linear embedding of a manifold of dimension at
 least two need not be locally flat in codimension two: the cone on a knotted circle in `S³` is a
@@ -41,6 +44,9 @@ link of a point is a pair of points in a sphere, which is never knotted.
   piecewise linear in charts is locally flat.
 * `TauCeti.IsLocallyFlat.of_isPLOn_comp_chartAt_symm`: the same for a curve in the model space
   itself, such as a piecewise-linear knot in `ℝ³`.
+* `TauCeti.IsLocallyFlat.of_isPLMap`: the same for a curve which is a PL map
+  (`TauCeti.IsPLMap`) into a manifold modelled on a real normed space, a condition which on PL
+  manifolds may be checked in any charts of the maximal PL atlases.
 
 ## References
 
@@ -161,5 +167,30 @@ theorem IsLocallyFlat.of_isPLOn_comp_chartAt_symm (e : V ≃L[ℝ] ℝ × F') {f
   .of_isPLOn_chartAt e hf (by simpa using hPL)
 
 end Curve
+
+section PLMap
+
+open Set Topology
+open scoped Manifold
+
+variable {N M V F' : Type*} [TopologicalSpace N] [ChartedSpace ℝ N]
+  [NormedAddCommGroup V] [NormedSpace ℝ V] [TopologicalSpace M] [ChartedSpace V M]
+  [AddCommGroup F'] [Module ℝ F'] [TopologicalSpace F']
+
+/-- **PL curves are locally flat, against the PL groupoid.** A topological embedding `f : N → M`
+of a manifold modelled on `ℝ` into one modelled on a real normed space `V ≃L[ℝ] ℝ × F'` which is a
+PL map (`TauCeti.IsPLMap`) is locally flat with complementary model `F'`. When `N` and `M` are PL
+manifolds, being a PL map may be checked in any charts of their maximal PL atlases
+(`TauCeti.isPLMapAt_iff_of_mem_maximalAtlas`). -/
+theorem IsLocallyFlat.of_isPLMap (e : V ≃L[ℝ] ℝ × F') {f : N → M} (hf : IsEmbedding f)
+    (hPL : IsPLMap 𝓘(ℝ) 𝓘(ℝ, V) f) : IsLocallyFlat ℝ F' f := by
+  refine .of_isPLOn_chartAt e hf fun x => ?_
+  have h := (isPLMapAt_iff.1 (hPL.isPLMapAt x)).2
+  simp only [modelWithCornersSelf_coe, modelWithCornersSelf_coe_symm, range_id,
+    Function.id_comp, Function.comp_id, id_eq] at h
+  obtain ⟨W, hW, hPA⟩ := isPLWithinAt_univ.1 h
+  exact ⟨W, hW, hPA.isPLOn⟩
+
+end PLMap
 
 end TauCeti
