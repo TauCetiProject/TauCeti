@@ -28,7 +28,7 @@ the factorial identity holds even when the factorial vanishes in the coefficient
 
 * `TauCeti.Associative.dividedPowerIntegralForm`: the integral divided-power subalgebra.
 * `TauCeti.Associative.dividedPowerIntegralForm_eq_adjoin`: its generated-algebra description.
-* `TauCeti.Associative.dividedPowerIntegralBasis`: its integral basis.
+* `TauCeti.Associative.dividedPowerLatticeBasis`: the existing integral basis of its carrier.
 * `TauCeti.Associative.dividedPowerSpecializationBasis`: its basis after arbitrary base change.
 * `TauCeti.Associative.dividedPowerSpecialization_mul`: the specialized multiplication law.
 * `TauCeti.Associative.factorial_smul_dividedPowerSpecialization`: the factorial identity.
@@ -122,19 +122,6 @@ theorem dividedPowerIntegral_mul (x : A) (m n : ℕ) :
   ext
   simp [mul_dividedPower]
 
-/-- Independent divided powers give the integral basis of their algebra. -/
-def dividedPowerIntegralBasis (x : A)
-    (h : LinearIndependent ℤ (fun n => dividedPower n x)) :
-    Module.Basis ℕ ℤ (dividedPowerIntegralForm x) :=
-  dividedPowerLatticeBasis x h
-
-@[simp]
-theorem dividedPowerIntegralBasis_apply (x : A)
-    (h : LinearIndependent ℤ (fun n => dividedPower n x)) (n : ℕ) :
-    dividedPowerIntegralBasis x h n = dividedPowerIntegral x n := by
-  apply Subtype.ext
-  exact coe_dividedPowerLatticeBasis_apply x h n
-
 variable (R : Type*) [CommRing R]
 
 /-- A specialized divided power is the scalar extension of the integral symbol, not division
@@ -177,14 +164,19 @@ theorem factorial_smul_dividedPowerSpecialization (x : A) (n : ℕ) :
 def dividedPowerSpecializationBasis (x : A)
     (h : LinearIndependent ℤ (fun n => dividedPower n x)) :
     Module.Basis ℕ R (R ⊗[ℤ] dividedPowerIntegralForm x) :=
-  (dividedPowerIntegralBasis x h).baseChange R
+  Module.Basis.baseChange (M := dividedPowerIntegralForm x) R (dividedPowerLatticeBasis x h)
 
 @[simp]
 theorem dividedPowerSpecializationBasis_apply (x : A)
     (h : LinearIndependent ℤ (fun n => dividedPower n x)) (n : ℕ) :
     dividedPowerSpecializationBasis R x h n = dividedPowerSpecialization R x n := by
-  simp [dividedPowerSpecializationBasis, Module.Basis.baseChange_apply,
-    dividedPowerSpecialization_def]
+  change (dividedPowerLatticeBasis x h).baseChange R n =
+    (1 : R) ⊗ₜ[ℤ] (⟨dividedPower n x, dividedPower_mem_dividedPowerLattice x n⟩ :
+      dividedPowerLattice x)
+  rw [Module.Basis.baseChange_apply]
+  congr 1
+  apply Subtype.ext
+  exact coe_dividedPowerLatticeBasis_apply x h n
 
 /-- Over a nonzero coefficient ring, no specialized basis divided power vanishes. This includes
 indices whose factorial is zero in that ring. -/
