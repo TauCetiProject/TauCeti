@@ -176,7 +176,7 @@ theorem not_isOpen_ker_orthogonalSpinorNorm_of_indiscreteTopology (Q : Quadratic
     SetLike.mem_coe.mp (h ▸ Set.mem_univ _)
   rw [MonoidHom.mem_ker, orthogonalSpinorNorm_reflectionOrthogonal,
     squareClassHom_eq_one_iff] at hmem
-  simpa using isSquare_units_val_iff.mpr hmem
+  simpa using Units.isSquare_coe_iff.mpr hmem
 
 end Indiscrete
 

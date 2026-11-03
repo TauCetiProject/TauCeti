@@ -152,26 +152,26 @@ theorem isLongSimpleRoot_lengthPerm (e : SuzukiReeIndex) (i : Fin e.1.rank) :
       ¬e.1.dynkinType.IsLongSimpleRoot i := by
   simp only [ValidLieTypeIndex.dynkinType, ValidLieTypeIndex.rank] at i ⊢
   obtain ⟨⟨d, hvalid⟩, hhalf⟩ := e
-  cases d <;> try simp at hhalf
+  cases d <;> simp at hhalf
   case suzuki =>
     convert isLongSimpleRoot_reindexPerm (LieTypeIndex.dynkinType_suzuki _)
       lengthPermRankTwo isLongSimpleRoot_lengthPermRankTwo_iff_not_isLongSimpleRoot_B2 i using 1
-    all_goals simp only [lengthPerm_suzuki]
+    simp only [lengthPerm_suzuki]
     rfl
   case reeG2 =>
     convert isLongSimpleRoot_reindexPerm (LieTypeIndex.dynkinType_reeG2 _)
       lengthPermRankTwo isLongSimpleRoot_lengthPermRankTwo_iff_not_isLongSimpleRoot_G2 i using 1
-    all_goals simp only [lengthPerm_reeG2]
+    simp only [lengthPerm_reeG2]
     rfl
   case reeF4 =>
     convert isLongSimpleRoot_reindexPerm (LieTypeIndex.dynkinType_reeF4 _)
       lengthPermF4 isLongSimpleRoot_lengthPermF4_iff_not_isLongSimpleRoot_F4 i using 1
-    all_goals simp only [lengthPerm_reeF4]
+    simp only [lengthPerm_reeF4]
     rfl
   case tits =>
     convert isLongSimpleRoot_reindexPerm LieTypeIndex.dynkinType_tits lengthPermF4
       isLongSimpleRoot_lengthPermF4_iff_not_isLongSimpleRoot_F4 i using 1
-    all_goals simp only [lengthPerm_tits]
+    simp only [lengthPerm_tits]
     rfl
 
 /-- The exponent attached to a numbered simple root subgroup by the exceptional isogeny: `1` on a
@@ -259,7 +259,7 @@ theorem lengthPerm_lengthPerm (e : SuzukiReeIndex) (i : Fin e.1.rank) :
     e.lengthPerm (e.lengthPerm i) = i := by
   simp only [ValidLieTypeIndex.rank] at i ⊢
   obtain ⟨⟨d, hvalid⟩, hhalf⟩ := e
-  cases d <;> try simp at hhalf
+  cases d <;> simp at hhalf
   case suzuki =>
     rw [lengthPerm_suzuki]
     exact involutive_reindexPerm (LieTypeIndex.dynkinType_suzuki _) lengthPermRankTwo
@@ -291,7 +291,7 @@ theorem cartanMatrix_lengthPerm (e : SuzukiReeIndex) (i j : Fin e.1.rank) :
       e.1.dynkinType.cartanMatrix j i := by
   simp only [ValidLieTypeIndex.dynkinType, ValidLieTypeIndex.rank] at i j ⊢
   obtain ⟨⟨d, hvalid⟩, hhalf⟩ := e
-  cases d <;> try simp at hhalf
+  cases d <;> simp at hhalf
   case suzuki =>
     rw [lengthPerm_suzuki]
     exact cartanMatrix_reindexPerm (LieTypeIndex.dynkinType_suzuki _) lengthPermRankTwo

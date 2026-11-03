@@ -110,8 +110,8 @@ theorem poissonBinomialMeasure_apply (p : ι → unitInterval) (S : Set ℕ) :
     poissonBinomialMeasure p S =
       ∑ s : Finset ι with s.card ∈ S, (poissonBinomialWeight p s : ℝ≥0∞) := by
   classical
-  rw [poissonBinomialMeasure, Measure.finsetSum_apply]
-  simp only [Measure.smul_apply, Measure.dirac_apply' _ MeasurableSet.of_discrete,
+  rw [poissonBinomialMeasure, _root_.sum_apply]
+  simp only [_root_.smul_apply, Measure.dirac_apply' _ MeasurableSet.of_discrete,
     ENNReal.smul_def, smul_eq_mul,
     Set.indicator, Pi.one_apply]
   rw [Finset.sum_filter]

@@ -99,11 +99,11 @@ noncomputable def ofAlgHom (F : Algebra c →ₐ[k] Module.End k M)
   operator_smul g d m := by
     have h := congrArg (fun f : Module.End k M ↦ f m)
       (congrArg F (Algebra.basis_mul_inc (c := c) g d))
-    simpa only [map_mul, Module.End.mul_apply, hF, _root_.Algebra.lsmul_apply] using h
+    simpa only [map_mul, mul_apply_eq_comp, hF, _root_.Algebra.lsmul_apply] using h
   operator_mul g h m := by
     have he := congrArg (fun f : Module.End k M ↦ f m)
       (congrArg F (Algebra.basis_mul_basis (c := c) g h))
-    simpa only [map_mul, Module.End.mul_apply, hF, _root_.Algebra.lsmul_apply] using he
+    simpa only [map_mul, mul_apply_eq_comp, hF, _root_.Algebra.lsmul_apply] using he
 
 /-- The recovered operator is the action of the basis element. -/
 @[simp]
