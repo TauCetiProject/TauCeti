@@ -203,8 +203,8 @@ private theorem coeff_one_X_pow_mul_inv {g : G} {R : Polynomial K}
   have hq := Submodule.finrank_quotient_add_finrank (ρ g).fixedSubmodule
   have hker := finrank_fixedSubmodule_eq_iff_mem_ker ρ (g := g)
   by_cases hps : finrank K (M ⧸ (ρ g).fixedSubmodule) = 1
-  · rw [show finrank K M - finrank K (ρ g).fixedSubmodule = 0 + 1 by omega,
-      eq_one_sub_det_mul_X ρ hps hR]
+  · have h1 : finrank K M - finrank K (ρ g).fixedSubmodule = 1 := by omega
+    rw [h1, pow_one, eq_one_sub_det_mul_X ρ hps hR]
     simp [hps, PowerSeries.coeff_succ_X_mul]
   · rw [ite_eq_right hps]
     by_cases hg : g ∈ ρ.ker
