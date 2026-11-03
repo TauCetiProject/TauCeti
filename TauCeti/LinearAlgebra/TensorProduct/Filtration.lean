@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.GradedMonoid
-public import Mathlib.RingTheory.TensorProduct.Basic
+public import TauCeti.LinearAlgebra.TensorProduct.Submodule
 
 /-!
 # Total-degree filtrations on tensor products
@@ -107,28 +107,28 @@ theorem one_mem_filtration [SetLike.GradedOne F] [SetLike.GradedOne G] (n : ℕ)
     (filtration_le_iff F G).1 le_rfl 0 0 (Nat.zero_le n)
       1 (SetLike.one_mem_graded F) 1 (SetLike.one_mem_graded G)
 
+/-- The product of total tensor steps is contained in the step of summed degree. -/
+theorem filtration_mul_le [SetLike.GradedMul F] [SetLike.GradedMul G] (m n : ℕ) :
+    filtration F G m * filtration F G n ≤ filtration F G (m + n) := by
+  rw [filtration_def F G m, filtration_def F G n]
+  simp only [Submodule.iSup_mul, Submodule.mul_iSup, iSup_le_iff]
+  intro k l hkl i j hij
+  have hF : F i * F k ≤ F (i + k) :=
+    Submodule.mul_le.2 fun _ ha _ hc => SetLike.mul_mem_graded ha hc
+  have hG : G j * G l ≤ G (j + l) :=
+    Submodule.mul_le.2 fun _ hb _ hd => SetLike.mul_mem_graded hb hd
+  have hdegree : (i + k) + (j + l) ≤ m + n := by omega
+  refine (Submodule.map₂_tmul_mul_le (F i) (F k) (G j) (G l)).trans
+    ((Submodule.map₂_le_map₂ hF hG).trans ?_)
+  rw [filtration_def]
+  exact le_iSup_of_le (i + k) (le_iSup_of_le (j + l) (le_iSup_of_le hdegree le_rfl))
+
 /-- Multiplication adds total degrees for multiplicative factor filtrations. -/
 theorem mul_mem_filtration [SetLike.GradedMul F] [SetLike.GradedMul G]
     {m n : ℕ} {x y : A ⊗[R] B}
     (hx : x ∈ filtration F G m) (hy : y ∈ filtration F G n) :
-    x * y ∈ filtration F G (m + n) := by
-  have hleft : filtration F G m ≤
-      (filtration F G (m + n)).comap ((LinearMap.mul R (A ⊗[R] B)).flip y) := by
-    refine (filtration_le_iff F G).2 fun i j hij a ha b hb => ?_
-    have hright : filtration F G n ≤
-        (filtration F G (m + n)).comap (LinearMap.mul R (A ⊗[R] B) (a ⊗ₜ[R] b)) := by
-      refine (filtration_le_iff F G).2 fun k l hkl c hc d hd => ?_
-      simp only [Submodule.mem_comap, LinearMap.mul_apply', Algebra.TensorProduct.tmul_mul_tmul]
-      have hdegree : (i + k) + (j + l) ≤ m + n := by omega
-      exact filtration_mono F G hdegree
-        (tmul_mem_filtration F G (SetLike.mul_mem_graded ha hc) (SetLike.mul_mem_graded hb hd))
-    exact hright hy
-  exact hleft hx
-
-/-- The product of total tensor steps is contained in the step of summed degree. -/
-theorem filtration_mul_le [SetLike.GradedMul F] [SetLike.GradedMul G] (m n : ℕ) :
-    filtration F G m * filtration F G n ≤ filtration F G (m + n) :=
-  Submodule.mul_le.2 fun _ hx _ hy => mul_mem_filtration F G hx hy
+    x * y ∈ filtration F G (m + n) :=
+  (filtration_mul_le F G m n) (Submodule.mul_mem_mul hx hy)
 
 end Algebra
 
