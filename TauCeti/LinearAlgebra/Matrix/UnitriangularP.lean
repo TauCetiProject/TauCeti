@@ -6,119 +6,131 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.CharP.Lemmas
-public import Mathlib.Algebra.Field.ZMod
+public import Mathlib.Algebra.Ring.GeomSum
 public import Mathlib.Data.Matrix.Basic
 public import Mathlib.GroupTheory.PGroup
 public import Mathlib.LinearAlgebra.Matrix.CharP
 
 /-!
-# Finite upper unitriangular matrix groups over `ZMod p`
+# Upper unitriangular matrix groups in prime characteristic
 
-Upper unitriangular matrices over `ZMod p` form a `p`-group of units. A bound on their orders
-comes from nilpotence of strictly upper triangular matrices.
+The upper unitriangular `n × n` matrices over a ring `R` form a subgroup of the units of the
+matrix ring: a strictly upper triangular matrix `N` has vanishing `n`th power, so an upper
+unitriangular matrix `1 + N` has the finite Neumann series `∑ k < n, (-N) ^ k` as its inverse.
+When `R` has prime characteristic `p`, the same nilpotence gives `(1 + N) ^ p ^ n = 1`, so this
+subgroup is a `p`-group.
 -/
 
 public section
 
 namespace Matrix
 
-variable (D : ℕ) {p : ℕ}
+variable {n : ℕ} {R : Type*}
 
-/-- A strictly upper triangular matrix raised to the power `j` is supported on entries `(a, b)`
-with `a + j ≤ b`. -/
-theorem pow_apply_ne_zero_le {R : Type*} [Semiring R]
-    {N : Matrix (Fin (D + 1)) (Fin (D + 1)) R} (hN : ∀ a b, b ≤ a → N a b = 0) (j : ℕ)
-    (a b : Fin (D + 1)) (h : (N ^ j) a b ≠ 0) : (a : ℕ) + j ≤ b := by
+/-- A power `N ^ j` of a strictly upper triangular matrix vanishes at every entry `(a, b)` with
+`b < a + j`. -/
+theorem pow_apply_eq_zero_of_lt_add [Semiring R] {N : Matrix (Fin n) (Fin n) R}
+    (hN : ∀ a b, b ≤ a → N a b = 0) (j : ℕ) {a b : Fin n} (h : (b : ℕ) < a + j) :
+    (N ^ j) a b = 0 := by
   induction j generalizing b with
-  | zero =>
-    rw [pow_zero, Matrix.one_apply] at h
-    split_ifs at h with hab
-    · subst hab; simp
-    · exact absurd rfl h
+  | zero => exact one_apply_ne (Fin.ne_of_gt h)
   | succ j ih =>
-    rw [pow_succ, Matrix.mul_apply] at h
-    obtain ⟨c, -, hc⟩ := Finset.exists_ne_zero_of_sum_ne_zero h
-    have h₁ := ih c (left_ne_zero_of_mul hc)
-    have h₂ : c < b := lt_of_not_ge fun hbc ↦ right_ne_zero_of_mul hc (hN c b hbc)
-    have : (c : ℕ) < b := h₂
-    omega
+    rw [pow_succ, Matrix.mul_apply]
+    refine Finset.sum_eq_zero fun c _ ↦ ?_
+    rcases lt_or_ge (c : ℕ) (a + j) with hc | hc
+    · rw [ih hc, zero_mul]
+    · rw [hN c b (Fin.le_iff_val_le_val.2 (by omega)), mul_zero]
 
-/-- Upper unitriangularity of a square matrix over `ZMod p`. -/
-def IsUnitri (p D : ℕ) (M : Matrix (Fin (D + 1)) (Fin (D + 1)) (ZMod p)) : Prop :=
-  ∀ a b, b ≤ a → M a b = (1 : Matrix (Fin (D + 1)) (Fin (D + 1)) (ZMod p)) a b
+/-- A square matrix is upper unitriangular if it agrees with the identity matrix on and below
+the diagonal. -/
+def IsUpperUnitriangular [Zero R] [One R] (M : Matrix (Fin n) (Fin n) R) : Prop :=
+  ∀ a b, b ≤ a → M a b = (1 : Matrix (Fin n) (Fin n) R) a b
 
 /-- A matrix is upper unitriangular iff its diagonal entries are `1` and its entries below the
 diagonal are `0`. -/
-theorem isUnitri_iff {M : Matrix (Fin (D + 1)) (Fin (D + 1)) (ZMod p)} :
-    IsUnitri p D M ↔ (∀ a, M a a = 1) ∧ ∀ a b, b < a → M a b = 0 := by
+theorem isUpperUnitriangular_iff [Zero R] [One R] {M : Matrix (Fin n) (Fin n) R} :
+    M.IsUpperUnitriangular ↔ (∀ a, M a a = 1) ∧ ∀ a b, b < a → M a b = 0 := by
   refine ⟨fun h ↦ ⟨fun a ↦ by rw [h a a le_rfl, one_apply_eq],
     fun a b hab ↦ by rw [h a b hab.le, one_apply_ne hab.ne']⟩, fun ⟨hd, hl⟩ a b hab ↦ ?_⟩
   rcases hab.lt_or_eq with hab | rfl
   · rw [hl a b hab, one_apply_ne hab.ne']
   · rw [hd, one_apply_eq]
 
+/-- The identity matrix is upper unitriangular. -/
+theorem isUpperUnitriangular_one [Zero R] [One R] :
+    (1 : Matrix (Fin n) (Fin n) R).IsUpperUnitriangular :=
+  fun _ _ _ ↦ rfl
+
 /-- The product of upper unitriangular matrices is upper unitriangular. -/
-theorem IsUnitri.mul {M M' : Matrix (Fin (D + 1)) (Fin (D + 1)) (ZMod p)}
-    (hM : IsUnitri p D M) (hM' : IsUnitri p D M') : IsUnitri p D (M * M') := by
+theorem IsUpperUnitriangular.mul [NonAssocSemiring R] {M M' : Matrix (Fin n) (Fin n) R}
+    (hM : M.IsUpperUnitriangular) (hM' : M'.IsUpperUnitriangular) :
+    (M * M').IsUpperUnitriangular := by
   intro a b hab
   rw [Matrix.mul_apply, Fintype.sum_eq_single a]
-  · rw [hM a a le_rfl, hM' a b hab, Matrix.one_apply_eq, one_mul]
+  · rw [hM a a le_rfl, hM' a b hab, one_apply_eq, one_mul]
   · intro c hca
     rcases lt_or_gt_of_ne hca with h | h
-    · rw [hM a c h.le, Matrix.one_apply_ne (Ne.symm hca), zero_mul]
-    · rw [hM' c b (hab.trans h.le), Matrix.one_apply_ne (ne_of_gt (lt_of_le_of_lt hab h)),
-        mul_zero]
+    · rw [hM a c h.le, one_apply_ne hca.symm, zero_mul]
+    · rw [hM' c b (hab.trans h.le), one_apply_ne (hab.trans_lt h).ne', mul_zero]
 
 /-- Every natural power of an upper unitriangular matrix is upper unitriangular. -/
-theorem IsUnitri.pow {M : Matrix (Fin (D + 1)) (Fin (D + 1)) (ZMod p)}
-    (hM : IsUnitri p D M) (k : ℕ) : IsUnitri p D (M ^ k) := by
+theorem IsUpperUnitriangular.pow [Semiring R] {M : Matrix (Fin n) (Fin n) R}
+    (hM : M.IsUpperUnitriangular) (k : ℕ) : (M ^ k).IsUpperUnitriangular := by
   induction k with
-  | zero => exact fun _ _ _ ↦ rfl
-  | succ k ih => rw [pow_succ]; exact ih.mul D hM
+  | zero => exact isUpperUnitriangular_one
+  | succ k ih => rw [pow_succ]; exact ih.mul hM
 
-variable [hp : Fact p.Prime]
-
-/-- An upper unitriangular matrix over `ZMod p` of size `D + 1` has order dividing
-`p ^ (D + 1)`. -/
-theorem IsUnitri.pow_eq_one {M : Matrix (Fin (D + 1)) (Fin (D + 1)) (ZMod p)}
-    (hM : IsUnitri p D M) : M ^ p ^ (D + 1) = 1 := by
+/-- An upper unitriangular matrix of size `n` over a ring of prime characteristic `p` has order
+dividing `p ^ n`. -/
+theorem IsUpperUnitriangular.pow_eq_one [Ring R] {p : ℕ} [Fact p.Prime] [CharP R p]
+    {M : Matrix (Fin n) (Fin n) R} (hM : M.IsUpperUnitriangular) : M ^ p ^ n = 1 := by
+  obtain _ | n := n
+  · exact Subsingleton.elim _ _
   have hN : ∀ a b, b ≤ a → (M - 1) a b = 0 := fun a b hab ↦ by
     rw [Matrix.sub_apply, hM a b hab, sub_self]
-  have hnil : (M - 1) ^ (D + 1) = 0 := by
+  have hnil : (M - 1) ^ p ^ (n + 1) = 0 := by
     ext a b
-    by_contra h
-    have := pow_apply_ne_zero_le D hN (D + 1) a b h
-    omega
-  calc M ^ p ^ (D + 1) = (1 + (M - 1)) ^ p ^ (D + 1) := by rw [add_sub_cancel]
-    _ = 1 := by
-      rw [add_pow_char_pow_of_commute p (D + 1) (Commute.one_left _), one_pow,
-        pow_eq_zero_of_le (Nat.lt_pow_self hp.out.one_lt).le hnil, add_zero]
+    have := Nat.lt_pow_self (n := n + 1) (Fact.out : p.Prime).one_lt
+    exact pow_apply_eq_zero_of_lt_add hN _ (by omega)
+  rw [← add_sub_cancel 1 M, add_pow_char_pow_of_commute p (n + 1) (Commute.one_left _), one_pow,
+    hnil, add_zero]
 
-/-- The subgroup of upper unitriangular matrices over `ZMod p`. -/
-def unitriangular : Subgroup (Matrix (Fin (D + 1)) (Fin (D + 1)) (ZMod p))ˣ where
-  carrier := {u | IsUnitri p D u}
-  one_mem' := fun _ _ _ ↦ rfl
-  mul_mem' {u v} hu hv := by
-    rw [Set.mem_ofPred, Units.val_mul]
-    exact hu.mul D hv
+variable (n R) in
+/-- The subgroup of upper unitriangular matrices among the units of the matrix ring. -/
+def upperUnitriangular [Ring R] :
+    Subgroup (Matrix (Fin n) (Fin n) R)ˣ where
+  carrier := {u | IsUpperUnitriangular (u : Matrix (Fin n) (Fin n) R)}
+  one_mem' := isUpperUnitriangular_one
+  mul_mem' hu hv := by
+    rw [Set.mem_ofPred_eq, Units.val_mul]
+    exact hu.mul hv
   inv_mem' {u} hu := by
-    have hpow : u ^ p ^ (D + 1) = 1 := Units.ext (by
-      rw [Units.val_pow_eq_pow_val, Units.val_one]; exact hu.pow_eq_one D)
-    have hinv : u⁻¹ = u ^ (p ^ (D + 1) - 1) := by
-      rw [eq_comm, ← mul_eq_one_iff_eq_inv, ← pow_succ,
-        Nat.sub_add_cancel (Nat.one_le_pow _ _ hp.out.pos), hpow]
-    rw [hinv, Set.mem_ofPred, Units.val_pow_eq_pow_val]
-    exact hu.pow D _
+    -- Writing `u = 1 - N`, the inverse is the finite Neumann series `∑ k < n, N ^ k`.
+    have hN : ∀ a b, b ≤ a → (1 - (u : Matrix (Fin n) (Fin n) R)) a b = 0 := fun a b hab ↦ by
+      rw [Matrix.sub_apply, hu a b hab, sub_self]
+    have hinv : ((u⁻¹ : (Matrix (Fin n) (Fin n) R)ˣ) : Matrix (Fin n) (Fin n) R) =
+        ∑ k ∈ Finset.range n, (1 - (u : Matrix (Fin n) (Fin n) R)) ^ k := by
+      have hnil : (1 - (u : Matrix (Fin n) (Fin n) R)) ^ n = 0 := by
+        ext a b
+        exact pow_apply_eq_zero_of_lt_add hN n (by omega)
+      refine Units.inv_eq_of_mul_eq_one_right ?_
+      simpa [hnil] using mul_neg_geom_sum (1 - (u : Matrix (Fin n) (Fin n) R)) n
+    intro a b hab
+    rw [hinv, Matrix.sum_apply, Finset.sum_eq_single 0, pow_zero]
+    · exact fun k _ hk ↦ pow_apply_eq_zero_of_lt_add hN k (by omega)
+    · exact fun h ↦ absurd (Finset.mem_range.2 a.pos) h
 
-/-- A unit lies in `unitriangular D` iff its underlying matrix is upper unitriangular. -/
-@[simp] theorem mem_unitriangular {u : (Matrix (Fin (D + 1)) (Fin (D + 1)) (ZMod p))ˣ} :
-    u ∈ unitriangular D ↔ IsUnitri p D u :=
+/-- A unit lies in `upperUnitriangular n R` iff its underlying matrix is upper unitriangular. -/
+@[simp] theorem mem_upperUnitriangular [Ring R] {u : (Matrix (Fin n) (Fin n) R)ˣ} :
+    u ∈ upperUnitriangular n R ↔ IsUpperUnitriangular (u : Matrix (Fin n) (Fin n) R) :=
   Iff.rfl
 
-/-- The group of upper unitriangular matrices over `ZMod p` is a `p`-group. -/
-theorem isPGroup_unitriangular : IsPGroup p (unitriangular (p := p) D) := fun u ↦
-  ⟨D + 1, Subtype.ext (Units.ext (by
+/-- Over a ring of prime characteristic `p`, the group of upper unitriangular matrices is a
+`p`-group. -/
+theorem isPGroup_upperUnitriangular [Ring R] {p : ℕ} [Fact p.Prime] [CharP R p] :
+    IsPGroup p (upperUnitriangular n R) := fun u ↦
+  ⟨n, Subtype.ext (Units.ext (by
     rw [Subgroup.coe_pow, Units.val_pow_eq_pow_val]
-    exact ((mem_unitriangular D).1 u.2).pow_eq_one D))⟩
+    exact (mem_upperUnitriangular.1 u.2).pow_eq_one))⟩
 
 end Matrix

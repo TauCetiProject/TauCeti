@@ -120,8 +120,9 @@ private theorem one_add_shift_pow_apply (x : X) (n : ℕ) (a b : Fin (D + 1)) :
       rw [Nat.choose_eq_zero_of_lt (by omega), Nat.cast_zero, ite_self]
   · exact Finset.sum_eq_zero fun j _ ↦ ite_eq_right fun h' ↦ h ⟨by omega, h'.2⟩
 
-private theorem isUnitri_one_add_shift (x : X) : IsUnitri p D (1 + shift ℓ D x) := by
-  refine (isUnitri_iff D).2 ⟨fun a ↦ by simp [shift], fun a b hab ↦ ?_⟩
+private theorem isUpperUnitriangular_one_add_shift (x : X) :
+    (1 + shift (p := p) ℓ D x).IsUpperUnitriangular := by
+  refine isUpperUnitriangular_iff.2 ⟨fun a ↦ by simp [shift], fun a b hab ↦ ?_⟩
   have : ¬ ((b : ℕ) = a + 1 ∧ ℓ b = some x) := fun h ↦ by
     have : (b : ℕ) < a := hab
     omega
@@ -130,31 +131,31 @@ private theorem isUnitri_one_add_shift (x : X) : IsUnitri p D (1 + shift ℓ D x
 variable [hp : Fact p.Prime]
 
 /-- The generator `x` as the unitriangular matrix `1 + Nₓ`. -/
-private def generator (x : X) : unitriangular (p := p) D :=
-  ⟨Units.ofPowEqOne _ (p ^ (D + 1)) ((isUnitri_one_add_shift ℓ D x).pow_eq_one D)
+private def generator (x : X) : upperUnitriangular (D + 1) (ZMod p) :=
+  ⟨Units.ofPowEqOne _ (p ^ (D + 1)) ((isUpperUnitriangular_one_add_shift ℓ D x).pow_eq_one)
       (pow_pos hp.out.pos _).ne',
-    (mem_unitriangular D).2 (isUnitri_one_add_shift ℓ D x)⟩
+    mem_upperUnitriangular.2 (isUpperUnitriangular_one_add_shift ℓ D x)⟩
 
 private theorem generator_val (x : X) :
-    (((generator (p := p) ℓ D x : unitriangular (p := p) D) :
+    (((generator (p := p) ℓ D x : upperUnitriangular (D + 1) (ZMod p)) :
         (Matrix (Fin (D + 1)) (Fin (D + 1)) (ZMod p))ˣ) :
         Matrix (Fin (D + 1)) (Fin (D + 1)) (ZMod p)) = 1 + shift ℓ D x := by
   simp only [generator, Units.val_ofPowEqOne]
 
 /-- The representation of the free group by upper unitriangular matrices. -/
-private def rep : FreeGroup X →* unitriangular (p := p) D :=
+private def rep : FreeGroup X →* upperUnitriangular (D + 1) (ZMod p) :=
   lift (generator ℓ D)
 
 /-- The image of `x ^ e` is a natural power of `1 + Nₓ`, with exponent `e` reduced modulo
 `p ^ (D + 1)`. -/
 private theorem coe_rep_of_zpow (x : X) (e : ℤ) :
-    (((rep (p := p) ℓ D (of x ^ e) : unitriangular (p := p) D) :
+    (((rep (p := p) ℓ D (of x ^ e) : upperUnitriangular (D + 1) (ZMod p)) :
         (Matrix (Fin (D + 1)) (Fin (D + 1)) (ZMod p))ˣ) :
         Matrix (Fin (D + 1)) (Fin (D + 1)) (ZMod p)) =
       (1 + shift ℓ D x) ^ (e % (p ^ (D + 1) : ℕ)).toNat := by
   have hpow : generator (p := p) ℓ D x ^ p ^ (D + 1) = 1 := Subtype.ext (Units.ext (by
     rw [Subgroup.coe_pow, Units.val_pow_eq_pow_val]
-    exact ((mem_unitriangular D).1 (generator ℓ D x).2).pow_eq_one D))
+    exact (mem_upperUnitriangular.1 (generator ℓ D x).2).pow_eq_one))
   rw [rep, map_zpow, lift_apply_of, zpow_eq_zpow_emod' e hpow,
     ← Int.toNat_of_nonneg (Int.emod_nonneg _ (Nat.cast_ne_zero.2 (pow_pos hp.out.pos _).ne')),
     zpow_natCast, Subgroup.coe_pow, Units.val_pow_eq_pow_val, generator_val]
@@ -254,7 +255,7 @@ the positions after `L`. -/
 private theorem RowInv.mul_rep (s : List (X × ℤ)) (hs : IsSyllableNormal s) (L : ℕ)
     (hL : Spells (p := p) ℓ D L s) (R : Matrix (Fin (D + 1)) (Fin (D + 1)) (ZMod p))
     (hR : RowInv D R L) (hprev : ∀ a ∈ s.head?, L = 0 ∨ ℓ L ≠ some a.1) :
-    RowInv D (R * (((rep (p := p) ℓ D (syllableProd s) : unitriangular (p := p) D) :
+    RowInv D (R * (((rep (p := p) ℓ D (syllableProd s) : upperUnitriangular (D + 1) (ZMod p)) :
       (Matrix (Fin (D + 1)) (Fin (D + 1)) (ZMod p))ˣ) :
       Matrix (Fin (D + 1)) (Fin (D + 1)) (ZMod p))) D := by
   induction s generalizing L R with
@@ -329,7 +330,7 @@ theorem exists_normal_isPGroup_quotient_notMem {w : FreeGroup X} (hw : w ≠ 1) 
   let D := totalWeight p s
   let ρ := rep (p := p) (letters p s) D
   refine ⟨ρ.ker, inferInstance, inferInstance,
-    (isPGroup_unitriangular D).of_injective _ (QuotientGroup.kerLift_injective ρ), fun hmem ↦ ?_⟩
+    isPGroup_upperUnitriangular.of_injective _ (QuotientGroup.kerLift_injective ρ), fun hmem ↦ ?_⟩
   have hD : 0 < D := by
     obtain ⟨a, s', rfl⟩ := List.exists_cons_of_ne_nil hs₀
     have := one_le_weight (p := p) a.2
