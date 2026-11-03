@@ -38,8 +38,8 @@ The argument is adapted from the original proofs of
 `TauCeti.norm_map_of_pseudoHyperbolicExpr_map_eq` and
 `TauCeti.real_inner_map_map_of_pseudoHyperbolicExpr_map_eq` in
 `TauCeti/Analysis/Complex/Conformal/Poincare/Isometry/Classification.lean`, with the unit disc of
-`ℂ` relaxed to an arbitrary set `s` containing the origin. Those lemmas now derive from the
-results here.
+`ℂ` relaxed to an arbitrary set `s` containing the origin. The second of those lemmas now derives
+from `TauCeti.real_inner_map_map_of_dist_map_eq`.
 -/
 
 public section
