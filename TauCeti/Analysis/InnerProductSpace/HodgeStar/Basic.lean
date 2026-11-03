@@ -11,7 +11,7 @@ public import Mathlib.LinearAlgebra.CliffordAlgebra.Contraction
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.LinearAlgebra.ExteriorPower.HodgeStar
 public import Mathlib.LinearAlgebra.Trace
-public import TauCeti.Analysis.InnerProductSpace.ExteriorPower
+public import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Basic
 public import TauCeti.Analysis.InnerProductSpace.Nondegenerate
 public import TauCeti.LinearAlgebra.Trace.Idempotent
 -- Private: `stdOrthonormalBasis`, `InnerProductSpace.ext_inner_right_basis`,
