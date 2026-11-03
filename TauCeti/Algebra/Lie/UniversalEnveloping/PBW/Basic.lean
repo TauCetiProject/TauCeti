@@ -154,15 +154,16 @@ theorem ι_mem_pbwFiltration_one (x : L) :
   rw [← LieHom.coe_toLinearMap]
   exact TauCeti.Algebra.apply_mem_wordFiltration_one _ x
 
+/-- Taking powers multiplies PBW filtration degrees. -/
+theorem pow_mem_pbwFiltration {i : ℕ} {a : U} (ha : a ∈ pbwFiltration R L i) (n : ℕ) :
+    a ^ n ∈ pbwFiltration R L (n * i) := by
+  rw [pbwFiltration_def] at ha ⊢
+  simpa only [smul_eq_mul] using SetLike.pow_mem_graded n ha
+
 /-- The `n`-th power of a canonical Lie generator has PBW degree at most `n`. -/
 theorem ι_pow_mem_pbwFiltration (x : L) (n : ℕ) :
     (_root_.UniversalEnvelopingAlgebra.ι R x) ^ n ∈ pbwFiltration R L n := by
-  have hx : _root_.UniversalEnvelopingAlgebra.ι R x ∈
-      TauCeti.Algebra.wordFiltration
-        (_root_.UniversalEnvelopingAlgebra.ι R).toLinearMap 1 :=
-    ι_mem_pbwFiltration_one R L x
-  rw [pbwFiltration_def]
-  simpa using SetLike.pow_mem_graded n hx
+  simpa only [mul_one] using pow_mem_pbwFiltration R L (ι_mem_pbwFiltration_one R L x) n
 
 /-- The range of the canonical Lie map lies in the first PBW filtration step. -/
 theorem ι_range_le_pbwFiltration_one :
@@ -194,9 +195,8 @@ theorem mul_mem_pbwFiltrationPrevious_right {i j : ℕ} {x y : U}
 /-- An ordered product of filtered factors has degree at most the sum of their degrees. -/
 theorem prod_map_mem_pbwFiltration {α : Type*} (l : List α) {f : α → U} {n : α → ℕ}
     (hf : ∀ p ∈ l, f p ∈ pbwFiltration R L (n p)) :
-    (l.map f).prod ∈ pbwFiltration R L (l.map n).sum := by
-  rw [pbwFiltration_def]
-  exact SetLike.list_prod_map_mem_graded l n f hf
+    (l.map f).prod ∈ pbwFiltration R L (l.map n).sum :=
+  TauCeti.Algebra.prod_map_mem_wordFiltration' _ l hf
 
 /-- Replacing filtered factors by factors with the same leading terms changes their ordered
 product only in strictly smaller total PBW degree. -/
@@ -204,23 +204,8 @@ theorem prod_map_sub_prod_map_mem_pbwFiltrationPrevious {α : Type*} (l : List �
     {f g : α → U} {n : α → ℕ}
     (hf : ∀ p ∈ l, f p ∈ pbwFiltration R L (n p))
     (hfg : ∀ p ∈ l, f p - g p ∈ pbwFiltrationPrevious R L (n p)) :
-    (l.map f).prod - (l.map g).prod ∈ pbwFiltrationPrevious R L (l.map n).sum := by
-  have hg (p : α) (hp : p ∈ l) : g p ∈ pbwFiltration R L (n p) := by
-    simpa only [sub_sub_cancel] using (pbwFiltration R L (n p)).sub_mem
-      (hf p hp) (pbwFiltrationPrevious_le R L (n p) (hfg p hp))
-  induction l with
-  | nil => simp
-  | cons p l ih =>
-    simp only [List.map_cons, List.prod_cons, List.sum_cons]
-    have hleft := mul_mem_pbwFiltrationPrevious_left R L
-      (hfg p List.mem_cons_self)
-      (prod_map_mem_pbwFiltration R L l fun q hq ↦ hg q (List.mem_cons_of_mem p hq))
-    have hright := mul_mem_pbwFiltrationPrevious_right R L (hf p List.mem_cons_self)
-      (ih (fun q hq ↦ hf q (List.mem_cons_of_mem p hq))
-        (fun q hq ↦ hfg q (List.mem_cons_of_mem p hq))
-        (fun q hq ↦ hg q (List.mem_cons_of_mem p hq)))
-    simpa only [mul_sub, sub_mul, sub_add_sub_cancel] using
-      (pbwFiltrationPrevious R L (n p + (l.map n).sum)).add_mem hright hleft
+    (l.map f).prod - (l.map g).prod ∈ pbwFiltrationPrevious R L (l.map n).sum :=
+  TauCeti.Algebra.prod_map_sub_prod_map_mem_wordFiltrationPrevious _ l hf hfg
 
 /-- Iterating `pbwFiltration_mul`: the `n`-th submodule power of the `i`-th step is the `i * n`-th
 step. -/
