@@ -114,6 +114,7 @@ theorem pairDividedPower_one (a : ι × ι → R) (P : Finset (ι × ι)) :
   simp
 
 /-- The divided power `u^[k]` vanishes when `k` exceeds the number of pairs in `P`. -/
+@[simp]
 theorem pairDividedPower_eq_zero_of_card_lt (a : ι × ι → R) {P : Finset (ι × ι)} {k : ℕ}
     (hk : P.card < k) : pairDividedPower hν a P k = 0 := by
   rw [pairDividedPower_def, Finset.powersetCard_eq_empty.2 hk, Finset.sum_empty]
