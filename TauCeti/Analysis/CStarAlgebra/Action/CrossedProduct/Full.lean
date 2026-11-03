@@ -42,6 +42,8 @@ assumed.
   C⋆-algebra.
 * `TauCeti.CStarAction.FullCrossedProduct.of`: the canonical ⋆-homomorphism from the twisted
   convolution algebra, with dense range.
+* `TauCeti.CStarAction.FullCrossedProduct.lift`: extension of a ⋆-homomorphism bounded by the
+  full seminorm to the full crossed product.
 * `TauCeti.CStarAction.CovariantRepresentation.integratedFull`: the extension of the integrated
   form of a covariant representation to the full crossed product.
 
@@ -343,6 +345,52 @@ theorem starAlgHom_ext {B : Type*} [NonUnitalCStarAlgebra B]
   NonUnitalStarAlgHom.ext fun x => induction_on x (isClosed_eq (map_continuous φ)
     (map_continuous ψ)) fun f => congr($h f)
 
+variable {D : Type*} [NonUnitalCStarAlgebra D]
+  (ρ : ConvolutionAlgebra α μ →⋆ₙₐ[ℂ] D)
+  (hρ : ∀ f, ‖ρ f‖ ≤ ConvolutionAlgebra.fullSeminorm α μ f)
+
+/-- A ⋆-homomorphism bounded by the full seminorm is continuous for that seminorm. -/
+private def liftCLM : FullConvolutionAlgebra α μ →L[ℂ] D :=
+  ((ρ : ConvolutionAlgebra α μ →ₗ[ℂ] D).comp
+    ((toFullStarAlgEquiv α μ).symm :
+      FullConvolutionAlgebra α μ →ₗ[ℂ] ConvolutionAlgebra α μ)).mkContinuous 1 fun f => by
+      simpa [norm_def] using hρ (ofFull f)
+
+private theorem fromCompletion_liftCLM_of (f : ConvolutionAlgebra α μ) :
+    (liftCLM ρ hρ).fromCompletion (of α μ f) = ρ f := by
+  simpa [liftCLM] using
+    ContinuousLinearMap.fromCompletion_apply_coe (liftCLM ρ hρ) (toFull f)
+
+/-- Extend a ⋆-homomorphism bounded by the full seminorm to the full crossed product.
+Its values on compactly supported coefficients are given by `lift_of`, and these determine
+it uniquely by `starAlgHom_ext`. -/
+def lift : FullCrossedProduct α μ →⋆ₙₐ[ℂ] D where
+  toFun := (liftCLM ρ hρ).fromCompletion
+  map_smul' := map_smul _
+  map_zero' := map_zero _
+  map_add' := map_add _
+  map_mul' x y := by
+    induction x using induction_on with
+    | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
+    | ih f =>
+      induction y using induction_on with
+      | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
+      | ih g => simp only [← map_mul, fromCompletion_liftCLM_of]
+  map_star' x := by
+    induction x using induction_on with
+    | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
+    | ih f => simp only [← map_star, fromCompletion_liftCLM_of]
+
+/-- The extension agrees with the original ⋆-homomorphism on compactly supported coefficients. -/
+@[simp]
+theorem lift_of (f : ConvolutionAlgebra α μ) : lift ρ hρ (of α μ f) = ρ f :=
+  fromCompletion_liftCLM_of ρ hρ f
+
+/-- Composing the extension with the canonical map recovers the original ⋆-homomorphism. -/
+@[simp]
+theorem lift_comp_of : (lift ρ hρ).comp (of α μ) = ρ :=
+  NonUnitalStarAlgHom.ext (lift_of ρ hρ)
+
 end FullCrossedProduct
 
 namespace CovariantRepresentation
@@ -353,45 +401,17 @@ variable {H : Type (max u v)} [NormedAddCommGroup H] [InnerProductSpace ℂ H]
   [CompleteSpace H] (P : CovariantRepresentation α H)
 
 variable (μ) in
-/-- The integrated form `π ⋊ U` as a continuous linear map on the twisted convolution algebra
-with the full seminorm, for which it is a contraction. -/
-private def integratedFullCLM : FullConvolutionAlgebra α μ →L[ℂ] (H →L[ℂ] H) :=
-  ((P.integratedStarAlgHom μ : ConvolutionAlgebra α μ →ₗ[ℂ] (H →L[ℂ] H)).comp
-    ((toFullStarAlgEquiv α μ).symm :
-      FullConvolutionAlgebra α μ →ₗ[ℂ] ConvolutionAlgebra α μ)).mkContinuous 1 fun f => by
-      simpa [norm_def] using ConvolutionAlgebra.norm_integratedStarAlgHom_le_fullSeminorm P
-        (ofFull f)
-
-private theorem fromCompletion_integratedFullCLM_of (f : ConvolutionAlgebra α μ) :
-    (integratedFullCLM μ P).fromCompletion (of α μ f) = P.integratedStarAlgHom μ f := by
-  simpa [integratedFullCLM] using
-    ContinuousLinearMap.fromCompletion_apply_coe (integratedFullCLM μ P) (toFull f)
-
-variable (μ) in
 /-- The integrated form `π ⋊ U` of a covariant representation on a Hilbert space in the universe
 `max u v`, extended by continuity to a ⋆-homomorphism on the full crossed product. -/
-def integratedFull : FullCrossedProduct α μ →⋆ₙₐ[ℂ] (H →L[ℂ] H) where
-  toFun := (integratedFullCLM μ P).fromCompletion
-  map_smul' := map_smul _
-  map_zero' := map_zero _
-  map_add' := map_add _
-  map_mul' x y := by
-    induction x using induction_on with
-    | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
-    | ih f =>
-      induction y using induction_on with
-      | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
-      | ih g => simp only [← map_mul, fromCompletion_integratedFullCLM_of]
-  map_star' x := by
-    induction x using induction_on with
-    | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
-    | ih f => simp only [← map_star, fromCompletion_integratedFullCLM_of]
+def integratedFull : FullCrossedProduct α μ →⋆ₙₐ[ℂ] (H →L[ℂ] H) :=
+  lift (P.integratedStarAlgHom μ)
+    (ConvolutionAlgebra.norm_integratedStarAlgHom_le_fullSeminorm P)
 
 /-- On the twisted convolution algebra, the extended integrated form is the integrated form. -/
 @[simp]
 theorem integratedFull_of (f : ConvolutionAlgebra α μ) :
     P.integratedFull μ (of α μ f) = P.integratedStarAlgHom μ f :=
-  fromCompletion_integratedFullCLM_of P f
+  lift_of _ _ f
 
 @[simp]
 theorem integratedFull_comp_of :

@@ -11,6 +11,7 @@ public import Mathlib.Geometry.Manifold.Diffeomorph
 import Mathlib.Geometry.Manifold.BumpFunction
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import TauCeti.Topology.VectorBundle.Coordinates
+import TauCeti.Data.Bundle
 import TauCeti.Geometry.Manifold.ContMDiff.FiniteDimension
 
 /-!
@@ -42,7 +43,9 @@ Combined with fibrewise inversion, a `C^n` family of fibrewise linear equivalenc
 induces a `C^n` diffeomorphism of total spaces, `TauCeti.bundleDiffeomorph`, whose inverse is
 automatically `C^n`. Over the model `𝓘(ℂ, EB)` with `n = ∞`, these are the holomorphic bundle
 morphisms and equivalences of holomorphic vector bundles. They are the `C^n` counterparts of
-`TauCeti.continuous_hom_bundle_iff` and `TauCeti.bundleHomeomorph`.
+`TauCeti.continuous_hom_bundle_iff` and `TauCeti.bundleHomeomorph`. A family of fibrewise linear
+maps is realized by a `C^n` diffeomorphism of total spaces exactly when its total-space map is
+`C^n` and its fibre maps are bijective (`TauCeti.exists_bundleDiffeomorph_iff`).
 -/
 
 public section
@@ -378,6 +381,26 @@ theorem bundleDiffeomorph_symm_apply (p : TotalSpace F₂ E₂) :
 theorem toHomeomorph_bundleDiffeomorph :
     (bundleDiffeomorph e he).toHomeomorph = bundleHomeomorph e he.continuous :=
   Homeomorph.ext fun p ↦ by simp
+
+/-- For a finite-dimensional model source, a family of fibrewise linear maps is realized by a
+`C^n` diffeomorphism of total spaces exactly when the induced map of total spaces is `C^n` and
+every fibre map is bijective. -/
+theorem exists_bundleDiffeomorph_iff (ϕ : ∀ x, E₁ x →L[𝕜] E₂ x) :
+    (∃ Φ : TotalSpace F₁ E₁ ≃ₘ^n⟮IB.prod 𝓘(𝕜, F₁), IB.prod 𝓘(𝕜, F₂)⟯ TotalSpace F₂ E₂,
+        ⇑Φ = fun p ↦ TotalSpace.mk' F₂ p.proj (ϕ p.proj p.2)) ↔
+      ContMDiff (IB.prod 𝓘(𝕜, F₁)) (IB.prod 𝓘(𝕜, F₂)) n
+          (fun p : TotalSpace F₁ E₁ ↦ TotalSpace.mk' F₂ p.proj (ϕ p.proj p.2)) ∧
+        ∀ x, Function.Bijective (ϕ x) := by
+  refine ⟨fun ⟨Φ, hΦ⟩ ↦ ⟨hΦ ▸ Φ.contMDiff, bijective_totalSpace_map_iff.1 (hΦ ▸ Φ.bijective)⟩,
+    fun ⟨hϕ, hbij⟩ ↦ ?_⟩
+  -- A bijective fibre map is an isomorphism, since the fibres are finite-dimensional.
+  have h (x : B) : ∃ e : E₁ x ≃L[𝕜] E₂ x, ⇑e = ϕ x := by
+    let := FiberBundle.t2Space F₁ E₁ x
+    let := FiberBundle.t2Space F₂ E₂ x
+    let := VectorBundle.finiteDimensional 𝕜 F₁ E₁ x
+    exact ⟨(LinearEquiv.ofBijective (ϕ x).toLinearMap (hbij x)).toContinuousLinearEquiv, rfl⟩
+  choose e he using h
+  exact ⟨bundleDiffeomorph e (hϕ.congr fun p ↦ by simp [he]), funext fun p ↦ by simp [he]⟩
 
 end BundleMap
 
