@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Contact.Levi
 public import TauCeti.Geometry.Symplectic.Lagrangian.Exact
 import TauCeti.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Geometry.Contact.Pullback
-import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 import TauCeti.Geometry.Manifold.Immersion.Differential
 
 /-!
@@ -111,8 +110,9 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
 
 variable (J) in
 /-- A map `f : N → M` is **isotropic** for a one-form `α` when every tangent image
-`df_y(T_y N)` lies in the kernel `ξ = ker α`. For a contact form `α` these are the isotropic
-immersed submanifolds of the contact manifold `(M, ξ)`; the condition only depends on `ξ`
+`df_y(T_y N)` lies in the kernel `ξ = ker α`. For a contact form `α`, smooth immersions satisfying
+this predicate parametrize the isotropic immersed submanifolds of the contact manifold `(M, ξ)`;
+the condition only depends on `ξ`
 (`TauCeti.SmoothForm.isIsotropicMap_iff_of_eq_smul`).
 
 The tangent image is taken with `mfderiv`, which is `0` at points where `f` is not
@@ -206,7 +206,7 @@ section ExtDeriv
 variable [IsManifold J ∞ N]
 
 /-- **Isotropic maps are isotropic for `dα`.** A smooth map which pulls `α` back to zero also pulls
-`dα = d(f^*α)` back to zero. -/
+`dα` back to zero, since `f^*(dα) = d(f^*α) = 0`. -/
 theorem IsIsotropicMap.mpullback_mextDerivₗ_eq_zero (h : α.IsIsotropicMap J f)
     (hf : ContMDiff J I ∞ f) : SmoothForm.mpullback f hf (mextDerivₗ I 1 α) = 0 := by
   have h₀ : SmoothForm.mpullback f hf α = 0 := Subtype.ext <| by
