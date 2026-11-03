@@ -8,7 +8,7 @@ module
 public import Mathlib.Topology.Algebra.Monoid
 public import Mathlib.Topology.Algebra.MulAction
 public import Mathlib.Topology.FiberBundle.Basic
-public import TauCeti.Topology.FiberBundle.Principal
+public import TauCeti.Topology.FiberBundle.Principal.Basic
 
 /-!
 # Fiber bundles from group-valued transition functions
