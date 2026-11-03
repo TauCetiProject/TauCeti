@@ -138,9 +138,8 @@ theorem rootIntMatrix_eq_zero_of_weight_ne (k : Fin 6 ⊕ Fin 6) {a b : Fin 54}
     rootIntMatrix k a b = 0 := by
   rw [rootIntMatrix_eq_toMatrix, LinearMap.toMatrix_apply]
   exact repr_eq_zero_of_isCartanWeightVector
-    (TauCeti.serreRootGenerator (CartanMatrix.E 6)ᵀ)
     (TauCeti.serreH ℚ (CartanMatrix.E 6)ᵀ) rep lattice.toAddSubgroup
-    rep_kostantForm_mem_lattice matrixBasis matrixWeight isCartanWeightVector_matrixBasis
+    matrixBasis matrixWeight isCartanWeightVector_matrixBasis
     (isCartanWeightVector_coe_kostantRootOperator
       (TauCeti.serreRootGenerator (CartanMatrix.E 6)ᵀ)
       (TauCeti.serreH ℚ (CartanMatrix.E 6)ᵀ) rep lattice.toAddSubgroup

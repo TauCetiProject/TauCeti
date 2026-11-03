@@ -263,7 +263,7 @@ every nonzero prime of `𝓞 L`, and at an unramified prime it generates the dec
 theorem isCyclic_stabilizer_of_isUnramifiedAt (Q : Ideal (𝓞 L)) [Q.IsPrime] (hQ : Q ≠ ⊥)
     [Algebra.IsUnramifiedAt (𝓞 K) Q] : IsCyclic (MulAction.stabilizer (L ≃ₐ[K] L) Q) := by
   obtain ⟨σ, hσ⟩ := NumberField.exists_isArithFrobAt K Q hQ
-  exact (Subgroup.isCyclic_iff_exists_zpowers_eq_top _).mpr
+  exact (Subgroup.isCyclic_iff_exists_zpowers_eq _).mpr
     ⟨σ, zpowers_eq_stabilizer_of_isArithFrobAt Q hQ hσ⟩
 
 /-! ### The decomposition group at a possibly ramified prime -/

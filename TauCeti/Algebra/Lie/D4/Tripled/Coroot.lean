@@ -189,8 +189,9 @@ theorem derivationCompLieHom_weightTorusIntegralCoordinateMap_injective :
 
 /-- The four numbered Cartan vectors are independent, including in characteristic two. -/
 theorem linearIndependent_cartanVector : LinearIndependent B (cartanVector (B := B)) := by
-  convert SplitTorus.linearIndependent_derivationCompLieHom_cocharacter
-    (B := B) derivationCompLieHom_weightTorusIntegralCoordinateMap_injective using 1
+  convert SplitTorus.linearIndependent_derivationComp_cocharacter
+    (B := B) weightTorusIntegralCoordinateMap.hom
+    derivationCompLieHom_weightTorusIntegralCoordinateMap_injective using 1
   funext i
   rw [cartanVector_eq_derivationComp_corootCocharacter, corootCocharacter_def,
     derivationCompLieHom_apply]

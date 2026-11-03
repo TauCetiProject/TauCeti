@@ -196,18 +196,6 @@ theorem derivationCompLieHom_tangentBasis [Finite I] (π : H →ₐc[R] A) (i : 
   rw [tangentBasis_apply, ← LieHom.comp_apply, ← derivationCompLieHom_comp,
     BialgHom.cocharacter_id_comp]
 
-/-- An injective split-torus differential sends the coordinate cocharacter differentials
-to a linearly independent family over the coefficient algebra. -/
-theorem linearIndependent_derivationCompLieHom_cocharacter [Finite I] {π : H →ₐc[R] A}
-    (hinj : Function.Injective (derivationCompLieHom (B := B) π)) :
-    LinearIndependent B (fun i : I ↦
-      derivationCompLieHom (π.cocharacter (Finsupp.applyAddHom i).toMultiplicative)
-        ((MultiplicativeGroup.tangentLinearEquiv (R := R) (B := B)).symm 1)) := by
-  simpa only [LieHom.coe_toLinearMap, Function.comp_def,
-    derivationCompLieHom_tangentBasis] using
-    (tangentBasis (R := R) (B := B) (I := I)).linearIndependent.map'
-      (derivationCompLieHom (B := B) π).toLinearMap (LinearMap.ker_eq_bot.mpr hinj)
-
 /-- The tangent image of a finite split torus is the span of the differentials of its
 coordinate cocharacters. The map from the torus need not be an immersion. -/
 theorem range_derivationCompLieHom [Finite I] (π : H →ₐc[R] A) :
@@ -220,6 +208,18 @@ theorem range_derivationCompLieHom [Finite I] (π : H →ₐc[R] A) :
   rw [Submodule.map_span, Submodule.map_top] at h
   rw [← h, ← Set.range_comp']
   simp only [LieHom.coe_toLinearMap, derivationCompLieHom_tangentBasis]
+
+/-- The coordinate-cocharacter differentials are independent whenever the torus differential
+is injective. -/
+theorem linearIndependent_derivationComp_cocharacter [Finite I] (π : H →ₐc[R] A)
+    (hπ : Function.Injective (derivationCompLieHom (B := B) π)) :
+    LinearIndependent B (fun i : I ↦
+      derivationCompLieHom (π.cocharacter (Finsupp.applyAddHom i).toMultiplicative)
+        ((MultiplicativeGroup.tangentLinearEquiv (R := R) (B := B)).symm 1)) := by
+  simpa only [Function.comp_def, LieHom.coe_toLinearMap,
+    derivationCompLieHom_tangentBasis] using
+    (tangentBasis (R := R) (B := B) (I := I)).linearIndependent.map_injOn
+      (derivationCompLieHom (B := B) π).toLinearMap hπ.injOn
 
 end
 

@@ -245,7 +245,7 @@ def evenPeriodPolynomial (hk : k = w + 2) : CuspForm 𝒮ℒ k →ₗ[ℂ] evenP
     refine mem_evenPeriodPolynomials_iff.2 ⟨Submodule.smul_mem _ _ (Submodule.add_mem _
       (periodPolynomial hk f).2 (binaryFormRep_parity_periodPolynomial_mem hk f)), ?_⟩
     simp only [LinearMap.comp_apply, LinearMap.smul_apply, LinearMap.add_apply,
-      Module.End.one_apply]
+      one_apply_eq_self]
     rw [_root_.map_smul, map_add, binaryFormRep_parity_involutive, add_comm]
 
 /-- **The odd period polynomial** `r_f^-(X, Y) = (r_f(X, Y) - r_f(-X, Y)) / 2` of a cusp form `f`
@@ -256,7 +256,7 @@ def oddPeriodPolynomial (hk : k = w + 2) : CuspForm 𝒮ℒ k →ₗ[ℂ] oddPer
     refine mem_oddPeriodPolynomials_iff.2 ⟨Submodule.smul_mem _ _ (Submodule.sub_mem _
       (periodPolynomial hk f).2 (binaryFormRep_parity_periodPolynomial_mem hk f)), ?_⟩
     simp only [LinearMap.comp_apply, LinearMap.smul_apply, LinearMap.sub_apply,
-      Module.End.one_apply]
+      one_apply_eq_self]
     rw [_root_.map_smul, map_sub, binaryFormRep_parity_involutive, ← neg_sub, smul_neg]
 
 /-- The even period polynomial is `r_f^+ = (r_f + r_f ∣ ε) / 2`, with `ε = !![-1, 0; 0, 1]`. -/

@@ -161,7 +161,7 @@ theorem exists_nonneg_tsupport_subset_integral_eq_one [TopologicalSpace α] [R1S
   obtain ⟨f, hf1, hfc, hfU, hf01⟩ := exists_continuousMap_one_of_isCompact_subset_isOpen
     isCompact_singleton isOpen_interior (singleton_subset_iff.2 (mem_interior_iff_mem_nhds.2 hU))
   have hf0 : 0 ≤ (f : α → ℝ) := fun x ↦ (hf01 x).1
-  have hpos : 0 < ∫ x, f x ∂μ := f.continuous.integral_pos_of_hasCompactSupport_nonneg_nonzero
+  have hpos : 0 < ∫ x, f x ∂μ := f.continuous.integral_pos_of_hasCompactSupport_nonneg_ne_zero
     hfc hf0 (x := x₀) (by simp [hf1 (mem_singleton x₀)])
   set g : C_c(α, ℝ) := ⟨f, hfc⟩
   have hg : ⇑g = f := CompactlySupportedContinuousMap.coe_mk _ _
