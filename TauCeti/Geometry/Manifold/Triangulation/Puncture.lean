@@ -8,7 +8,6 @@ module
 public import TauCeti.Topology.Triangulable.Vertices
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Complement
 public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Configuration
-import TauCeti.Topology.Triangulable.FiniteCWType
 import TauCeti.Geometry.Manifold.Connected
 
 /-!
