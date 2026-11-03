@@ -14,7 +14,7 @@ public import Mathlib.Topology.Sequences
 In a Hausdorff Fréchet–Urysohn space, for instance a metric space, every point of the closure of
 a set `s` is the limit of a sequence in `s`, and that limit is unique. So the closure of `s` is
 the image of the type of convergent sequences in `s` under the limit map, and it is `w`-small
-whenever `s` is, `small_closure`.
+whenever `s` is, `Set.small_closure`.
 
 This bounds the size of the closed subspace of a Hilbert space spanned by a small set of vectors,
 which is how a representation on a large Hilbert space is reduced to subrepresentations on
@@ -27,7 +27,7 @@ universe w
 
 open Filter Topology
 
-namespace TauCeti
+namespace Set
 
 /-- In a Hausdorff Fréchet–Urysohn space, the closure of a `w`-small set is `w`-small. -/
 theorem small_closure {X : Type*} [TopologicalSpace X] [FrechetUrysohnSpace X] [T2Space X]
@@ -38,4 +38,4 @@ theorem small_closure {X : Type*} [TopologicalSpace X] [FrechetUrysohnSpace X] [
   obtain ⟨u, hu, hux⟩ := mem_closure_iff_seq_limit.1 hx
   exact ⟨⟨fun n => ⟨u n, hu n⟩, x, hux⟩, hux.limUnder_eq⟩
 
-end TauCeti
+end Set

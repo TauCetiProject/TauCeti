@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Intertwiner
 import Mathlib.Logic.Small.List
 import Mathlib.RingTheory.Finiteness.Small
+import TauCeti.Analysis.InnerProductSpace.Compression
 import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Small
 import TauCeti.Analysis.InnerProductSpace.PartialIsometry
 import TauCeti.Topology.Sequences.Small
@@ -51,13 +52,7 @@ namespace TauCeti.CStarAction.CovariantRepresentation
 variable {G A H K : Type*} [Group G] [TopologicalSpace G] [NonUnitalCStarAlgebra A]
   [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
   [NormedAddCommGroup K] [InnerProductSpace ℂ K] [CompleteSpace K]
-  {α : CStarAction G A} (P : CovariantRepresentation α H) (V : K →ₗᵢ[ℂ] H)
-
-/-- The compression `V† T V` of an operator by a linear isometry. -/
-private abbrev compress (T : H →L[ℂ] H) : K →L[ℂ] K :=
-  ContinuousLinearMap.adjoint V.toContinuousLinearMap ∘L T ∘L V.toContinuousLinearMap
-
-variable {P V}
+  {α : CStarAction G A} {P : CovariantRepresentation α H} {V : K →ₗᵢ[ℂ] H}
 
 /-- The covariant representation on `K` obtained by compressing `(π, U)` along a linear isometry
 `V : K → H` whose range is invariant under every `π(a)` and every `U_g`. -/
@@ -65,39 +60,43 @@ def restrict (hπ : ∀ a, Set.MapsTo (P.coefficient a) (Set.range V) (Set.range
     (hU : ∀ g, Set.MapsTo (P.group g) (Set.range V) (Set.range V)) :
     CovariantRepresentation α K where
   coefficient :=
-    { toFun a := compress V (P.coefficient a)
-      map_smul' c a := by ext; simp
-      map_zero' := by ext; simp
-      map_add' a b := by ext; simp
+    { toFun a := (P.coefficient a).compression V.toContinuousLinearMap
+      map_smul' c a := by simp
+      map_zero' := by simp
+      map_add' a b := by simp
       map_mul' a b := by
-        rw [map_mul, ContinuousLinearMap.mul_def]
+        simp only [map_mul, ContinuousLinearMap.mul_def, ContinuousLinearMap.compression_def]
         exact V.isPartialIsometry_toContinuousLinearMap.adjoint_comp_comp_comp_of_mapsTo _ (hπ b)
       map_star' a := by
-        rw [map_star]
-        simp only [ContinuousLinearMap.star_eq_adjoint, ContinuousLinearMap.adjoint_comp,
-          ContinuousLinearMap.adjoint_adjoint, ContinuousLinearMap.comp_assoc] }
+        simp only [map_star, ContinuousLinearMap.star_eq_adjoint,
+          ContinuousLinearMap.adjoint_compression] }
   group := .ofMonoidHom
-    { toFun g := compress V (P.group g)
+    { toFun g := (P.group g).compression V.toContinuousLinearMap
       map_one' := by
         ext x
-        simpa only [map_one, ContinuousLinearMap.comp_apply, one_apply_eq_self,
-          LinearIsometry.coe_toContinuousLinearMap] using congr($(V.adjoint_comp_self) x)
+        simpa only [map_one, ContinuousLinearMap.compression_apply, ContinuousLinearMap.comp_apply,
+          one_apply_eq_self, LinearIsometry.coe_toContinuousLinearMap] using
+          congr($(V.adjoint_comp_self) x)
       map_mul' g h := by
-        rw [map_mul, ContinuousLinearMap.mul_def]
+        simp only [map_mul, ContinuousLinearMap.mul_def, ContinuousLinearMap.compression_def]
         exact V.isPartialIsometry_toContinuousLinearMap.adjoint_comp_comp_comp_of_mapsTo _ (hU h) }
   isUnitary := (ContRepresentation.isUnitary_iff_norm_map _).2 fun g x => by
     -- The group operators of `ContRepresentation.ofMonoidHom` are the given compressions.
-    change ‖ContinuousLinearMap.adjoint V.toContinuousLinearMap (P.group g (V x))‖ = ‖x‖
-    rw [← V.norm_map, V.apply_adjoint_apply_of_mem_range (hU g ⟨x, rfl⟩), P.isUnitary.norm_map,
+    change ‖(P.group g).compression V.toContinuousLinearMap x‖ = ‖x‖
+    rw [ContinuousLinearMap.compression_apply, LinearIsometry.coe_toContinuousLinearMap,
+      ← V.norm_map, V.apply_adjoint_apply_of_mem_range (hU g ⟨x, rfl⟩), P.isUnitary.norm_map,
       V.norm_map]
   continuous_orbit x :=
-    (ContinuousLinearMap.adjoint V.toContinuousLinearMap).continuous.comp
-      (P.continuous_orbit (V x))
+    ((ContinuousLinearMap.adjoint V.toContinuousLinearMap).continuous.comp
+      (P.continuous_orbit (V x))).congr fun g =>
+        ((P.group g).compression_apply V.toContinuousLinearMap x).symm
   covariance g a x := by
     -- The operators of the restricted pair are, by construction, the given compressions.
-    change compress V (P.group g) (compress V (P.coefficient a) x) =
-      compress V (P.coefficient (α g a)) (compress V (P.group g) x)
-    simp only [ContinuousLinearMap.comp_apply, LinearIsometry.coe_toContinuousLinearMap]
+    change (P.group g).compression V.toContinuousLinearMap
+        ((P.coefficient a).compression V.toContinuousLinearMap x) =
+      (P.coefficient (α g a)).compression V.toContinuousLinearMap
+        ((P.group g).compression V.toContinuousLinearMap x)
+    simp only [ContinuousLinearMap.compression_apply, LinearIsometry.coe_toContinuousLinearMap]
     rw [V.apply_adjoint_apply_of_mem_range (hπ a ⟨x, rfl⟩),
       V.apply_adjoint_apply_of_mem_range (hU g ⟨_, rfl⟩), P.covariance]
 
@@ -108,13 +107,15 @@ variable (hπ : ∀ a, Set.MapsTo (P.coefficient a) (Set.range V) (Set.range V))
 @[simp]
 theorem restrict_coefficient_apply (a : A) (x : K) :
     V ((P.restrict hπ hU).coefficient a x) = P.coefficient a (V x) :=
-  V.apply_adjoint_apply_of_mem_range (hπ a ⟨x, rfl⟩)
+  (congrArg V ((P.coefficient a).compression_apply V.toContinuousLinearMap x)).trans
+    (V.apply_adjoint_apply_of_mem_range (hπ a ⟨x, rfl⟩))
 
 /-- The isometry intertwines the restricted group representation with the original one. -/
 @[simp]
 theorem restrict_group_apply (g : G) (x : K) :
     V ((P.restrict hπ hU).group g x) = P.group g (V x) :=
-  V.apply_adjoint_apply_of_mem_range (hU g ⟨x, rfl⟩)
+  (congrArg V ((P.group g).compression_apply V.toContinuousLinearMap x)).trans
+    (V.apply_adjoint_apply_of_mem_range (hU g ⟨x, rfl⟩))
 
 /-- The isometry intertwines the integrated forms of the restricted and the original covariant
 representations. -/
@@ -144,11 +145,12 @@ theorem exists_isometry_mapsTo_mem_range {G : Type u} {A : Type v} {H : Type w} 
   let S := Submodule.span ℂ ((fun T : H →L[ℂ] H => T ξ) '' M)
   let W := S.topologicalClosure
   have hS {T : H →L[ℂ] H} (hT : T ∈ M) : Set.MapsTo T S S := by
-    refine fun x hx => (show S.map (T : H →ₗ[ℂ] H) ≤ S from ?_) ⟨x, hx, rfl⟩
-    rw [Submodule.map_span]
-    refine Submodule.span_mono ?_
-    rintro _ ⟨_, ⟨b, hb, rfl⟩, rfl⟩
-    exact ⟨T * b, M.mul_mem hT hb, rfl⟩
+    have hmap : S.map (T : H →ₗ[ℂ] H) ≤ S := by
+      rw [Submodule.map_span]
+      refine Submodule.span_mono ?_
+      rintro _ ⟨_, ⟨b, hb, rfl⟩, rfl⟩
+      exact ⟨T * b, M.mul_mem hT hb, rfl⟩
+    exact fun x hx => hmap ⟨x, hx, rfl⟩
   have hW {T : H →L[ℂ] H} (hT : T ∈ M) : Set.MapsTo T W W := by
     simpa [W, Submodule.topologicalClosure_coe] using (hS hT).closure T.continuous
   have : Small.{max u v} A := small_max.{u} A
@@ -156,12 +158,15 @@ theorem exists_isometry_mapsTo_mem_range {G : Type u} {A : Type v} {H : Type w} 
   have : Small.{max u v} (M : Set (H →L[ℂ] H)) := by
     have : Small.{max u v} (FreeMonoid ↥(Set.range P.coefficient ∪ Set.range P.group)) :=
       small_map FreeMonoid.toListEquiv
-    rw [show M = _ from Submonoid.closure_eq_mrange _, MonoidHom.coe_mrange]
+    have hM : M = MonoidHom.mrange
+        (FreeMonoid.lift ((↑) : ↥(Set.range P.coefficient ∪ Set.range P.group) → H →L[ℂ] H)) :=
+      Submonoid.closure_eq_mrange _
+    rw [hM, MonoidHom.coe_mrange]
     exact small_range _
   have : Small.{max u v} S := Submodule.small_span _
   have : Small.{max u v} (W : Set H) := by
     rw [Submodule.topologicalClosure_coe]
-    exact TauCeti.small_closure _
+    exact Set.small_closure _
   have : Small.{max u v} W := this
   obtain ⟨ι, ⟨b⟩⟩ := TauCeti.exists_hilbertBasis_of_small.{max u v} ℂ W
   let V := W.subtypeₗᵢ.comp b.repr.symm.toLinearIsometry
