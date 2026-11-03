@@ -199,4 +199,17 @@ theorem FiniteQuadraticModule.Isometry.coordinatePowerDiscriminant_apply {hL : L
       (L.discriminantQuadraticIsometryCoordinatePower ι hL).symm (f.coordinatePower ι x) := by
   rw [coordinatePowerDiscriminant, trans_apply]
 
+/-- In each coordinate of `(A_L)^ι`, the coordinatewise quadratic alphabet isometry is the
+alphabet isometry applied to that coordinate. -/
+@[simp]
+theorem FiniteQuadraticModule.Isometry.discriminantGroupPiEquiv_coordinatePowerDiscriminant_apply
+    {hL : L.IsEven} {ι : Type v} [Fintype ι] {A : FiniteQuadraticModule.{w}}
+    (f : Isometry A (L.discriminantQuadraticModule hL)) (x : ι → A) (i : ι) :
+    discriminantGroupPiEquiv (fun _ : ι ↦ L) (f.coordinatePowerDiscriminant ι x) i = f (x i) :=
+  (congrFun (L.discriminantQuadraticIsometryCoordinatePower_apply ι hL _).symm i).trans <|
+    (congrFun (congrArg (L.discriminantQuadraticIsometryCoordinatePower ι hL)
+      (coordinatePowerDiscriminant_apply f x)) i).trans <|
+      (congrFun ((L.discriminantQuadraticIsometryCoordinatePower ι hL).apply_symm_apply _) i).trans
+        (coordinatePower_apply f ι x i)
+
 end TauCeti
