@@ -165,8 +165,8 @@ theorem range_derivationCompLieHom_weightTorusIntegralCoordinateMap_eq_span :
   congr 1
   apply congrArg Set.range
   funext i
-  rw [cartanVector_eq_derivationComp_corootCocharacter, corootCocharacter_def,
-    derivationCompLieHom_apply]
+  rw [← SplitTorus.derivationCompLieHom_tangentBasis,
+    derivationCompLieHom_weightTorusIntegralCoordinateMap_tangentBasis]
 
 /-- The integral weight-torus differential is injective over every coefficient ring. -/
 theorem derivationCompLieHom_weightTorusIntegralCoordinateMap_injective :
@@ -184,8 +184,8 @@ theorem linearIndependent_cartanVector : LinearIndependent B (cartanVector (B :=
     (B := B) weightTorusIntegralCoordinateMap.hom
     derivationCompLieHom_weightTorusIntegralCoordinateMap_injective using 1
   funext i
-  rw [cartanVector_eq_derivationComp_corootCocharacter, corootCocharacter_def,
-    derivationCompLieHom_apply]
+  rw [← SplitTorus.derivationCompLieHom_tangentBasis,
+    derivationCompLieHom_weightTorusIntegralCoordinateMap_tangentBasis]
 
 /-- The normalized Cartan vectors form a basis of their span, the toral tangent image. -/
 def cartanBasis : Module.Basis (Fin 4) B (Submodule.span B (Set.range (cartanVector (B := B)))) :=

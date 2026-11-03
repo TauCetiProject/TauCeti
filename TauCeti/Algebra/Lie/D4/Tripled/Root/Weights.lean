@@ -114,10 +114,9 @@ theorem mem_adjointWeightSpace_iff
           (HopfIdeal.quotientLieHom definingIdeal
             (Derivation.cotangentLinearEquiv (B := ℤ) x)) a b = 0 := by
   let := projectiveCotangent
-  exact HopfIdeal.mem_adjointWeightSpace_iff_of_weightTorus definingIdeal d4TripledWeight
-    weightTorusIntegralCoordinateMap.hom
-    (by simpa only [GeneralLinear.hom_weightTorusCoordinateMap] using
-      weightTorusIntegralCoordinateMap_comp_quotient) α x
+  exact HopfIdeal.mem_adjointWeightSpace_iff_of_weightTorusCoordinateBialgHom
+    definingIdeal d4TripledWeight weightTorusIntegralCoordinateMap.hom
+    weightTorusIntegralCoordinateMap_comp_quotient α x
 
 /-- A normalized root differential, viewed in the cotangent dual of the integral carrier, has
 its prescribed signed simple-root character. -/
