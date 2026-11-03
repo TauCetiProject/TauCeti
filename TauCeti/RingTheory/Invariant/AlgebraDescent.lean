@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.IsTensorProduct
 public import TauCeti.RingTheory.Invariant.Basic
+public import TauCeti.RingTheory.IsTensorProduct.Pushout
 public import TauCeti.RingTheory.Invariant.ModuleDescent
 
 /-!
@@ -97,13 +98,10 @@ theorem algHom_ext_fixedPoints
     (hG : ∀ g : G, g ≠ 1 → Ideal.span (Set.range fun b : B ↦ g • b - b) = ⊤)
     {D : Type*} [Semiring D] [Algebra A D] [Algebra B D] [IsScalarTower A B D] {f f' : C →ₐ[B] D}
     (h : ∀ x : FixedPoints.subalgebra A C G, f x = f' x) : f = f' := by
-  have := isPushout_fixedPoints A B G C hG
-  refine AlgHom.restrictScalars_injective A <| Algebra.IsPushout.algHom_ext (R := A) (S := B)
-    (R' := FixedPoints.subalgebra A C G) (S' := C) ?_ ?_
-  · ext x
-    exact h x
-  · ext b
-    simp
+  have := (isPushout_fixedPoints A B G C hG).symm
+  exact Algebra.IsPushout.algHom_ext' (R := A) (S := FixedPoints.subalgebra A C G) (by
+    ext x
+    exact h x)
 
 /-- **Descent of morphisms.** For a free action of a finite group `G` on `B` with ring of
 invariants `A`, and `B`-algebras `C`, `C'` with semilinear actions of `G`, every `A`-algebra map
@@ -115,15 +113,11 @@ theorem existsUnique_algHom_extend_fixedPoints
     (φ : FixedPoints.subalgebra A C G →ₐ[A] FixedPoints.subalgebra A C' G) :
     ∃! f : C →ₐ[B] C', (∀ x : FixedPoints.subalgebra A C G, f x = φ x) ∧
       ∀ (g : G) (c : C), f (g • c) = g • f c := by
-  have := isPushout_fixedPoints A B G C hG
-  -- The extension `C = B ⊗[A] Cᴳ → B ⊗[A] C'ᴳ → C'`.
-  let f : C →ₐ[B] C' := (Algebra.TensorProduct.lift (Algebra.ofId B C')
-    ((FixedPoints.subalgebra A C' G).val.comp φ) fun _ _ ↦ Commute.all _ _).comp
-      (Algebra.IsPushout.equiv A B (FixedPoints.subalgebra A C G) C).symm.toAlgHom
-  have hf (x : FixedPoints.subalgebra A C G) : f x = φ x := by
-    have hx : (Algebra.IsPushout.equiv A B (FixedPoints.subalgebra A C G) C).symm x = 1 ⊗ₜ x :=
-      Algebra.IsPushout.equiv_symm_algebraMap_right A B _ C x
-    simp [f, hx]
+  have hC := isPushout_fixedPoints A B G C hG
+  have := hC.symm
+  let f : C →ₐ[B] C' := Algebra.IsPushout.lift B ((FixedPoints.subalgebra A C' G).val.comp φ)
+  have hf (x : FixedPoints.subalgebra A C G) : f x = φ x :=
+    Algebra.IsPushout.lift_algebraMap (R := A) _ x
   refine ⟨f, ⟨hf, fun g ↦ ?_⟩, fun f' hf' ↦ algHom_ext_fixedPoints hG fun x ↦ by rw [hf'.1, hf]⟩
   -- Both `c ↦ f (g • c)` and `c ↦ g • f c` are `A`-algebra maps; they agree on `B` and on `Cᴳ`.
   suffices ((f.restrictScalars A).comp (MulSemiringAction.toAlgHom A C g)) =

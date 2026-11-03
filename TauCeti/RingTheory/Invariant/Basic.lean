@@ -425,14 +425,26 @@ noncomputable def fixedPointsAlgHom (f : C →ₐ[B] C') (hf : ∀ (g : G) (c : 
   ((f.restrictScalars A).comp (FixedPoints.subalgebra A C G).val).codRestrict _ fun x g ↦ by
     simp [← hf, FixedPoints.mem_subalgebra.mp x.2 g]
 
+end FixedPoints
+
+end TauCeti.MulSemiringAction
+
+namespace AlgHom
+
+open TauCeti.MulSemiringAction
+
+variable {A B G C C' : Type*} [CommSemiring A] [CommSemiring B] [Algebra A B] [Monoid G]
+  [Semiring C] [Algebra A C] [Algebra B C] [IsScalarTower A B C] [MulSemiringAction G C]
+  [SMulCommClass G A C]
+  [Semiring C'] [Algebra A C'] [Algebra B C'] [IsScalarTower A B C'] [MulSemiringAction G C']
+  [SMulCommClass G A C']
+
 @[simp]
 theorem coe_fixedPointsAlgHom_apply (f : C →ₐ[B] C') (hf : ∀ (g : G) (c : C), f (g • c) = g • f c)
     (x : FixedPoints.subalgebra A C G) : (fixedPointsAlgHom A G f hf x : C') = f x :=
   (rfl)
 
-end FixedPoints
-
-end TauCeti.MulSemiringAction
+end AlgHom
 
 namespace TauCeti.MulSemiringAction
 
