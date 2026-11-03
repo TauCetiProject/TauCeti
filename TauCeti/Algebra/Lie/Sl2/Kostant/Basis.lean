@@ -8,8 +8,8 @@ module
 public import TauCeti.Algebra.Lie.Sl2.Kostant.Span
 public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Basis
 public import TauCeti.RingTheory.Polynomial.BinomialBasis
+public import TauCeti.RingTheory.DividedPowers.Basis
 import Mathlib.LinearAlgebra.TensorProduct.Basis
-import Mathlib.Algebra.Polynomial.Basis
 
 /-!
 # The integral PBW basis of the rank-one Kostant form
@@ -76,18 +76,8 @@ private theorem pbwBasis_exponent (b : Basis (Fin 3) ℚ L) (a d c : ℕ) :
       _root_.UniversalEnvelopingAlgebra.ι ℚ (b 0) ^ a *
         _root_.UniversalEnvelopingAlgebra.ι ℚ (b 1) ^ d *
           _root_.UniversalEnvelopingAlgebra.ι ℚ (b 2) ^ c := by
-  let word : List (Fin 3) := List.replicate a 0 ++ List.replicate d 1 ++ List.replicate c 2
-  have hword : word.Pairwise (· ≤ ·) := by
-    simp [word, List.pairwise_append, List.pairwise_replicate,
-      List.mem_replicate]
-  have hcount : Multiset.toFinsupp (word : Multiset (Fin 3)) =
-      exponentEquiv ((a, d), c) := by
-    ext i
-    fin_cases i <;> simp [word, Multiset.toFinsupp_apply, exponentEquiv, List.count_append,
-      List.count_replicate]
-  rw [← hcount, b.pbwBasis_apply, Multiset.toFinsupp_toMultiset, Multiset.coe_sort,
-    List.mergeSort_eq_self (· ≤ ·) hword]
-  simp [UniversalEnvelopingAlgebra.pbwMonomial_def, word, mul_assoc]
+  simpa [exponentEquiv, List.finRange_succ, mul_assoc] using
+    b.pbwBasis_eq_prod_pow_fin ![a, d, c]
 
 private theorem polynomialMul_bijective (b : Basis (Fin 3) ℚ L) :
     Function.Bijective (polynomialMul
@@ -108,15 +98,6 @@ private theorem polynomialMul_bijective (b : Basis (Fin 3) ℚ L) :
       ← Polynomial.C_mul_X_pow_eq_monomial]
   exact he ▸ e.bijective
 
-private def dividedPolynomialBasis : Basis ℕ ℚ ℚ[X] :=
-  (basisMonomials ℚ).unitsSMul
-    (fun n ↦ Units.mk0 (n.factorial : ℚ)⁻¹ (inv_ne_zero (by exact_mod_cast n.factorial_ne_zero)))
-
-private theorem dividedPolynomialBasis_apply (n : ℕ) :
-    dividedPolynomialBasis n = Associative.dividedPower n (X : ℚ[X]) := by
-  simp [dividedPolynomialBasis, Basis.unitsSMul_apply, Units.smul_def,
-    Associative.dividedPower_def, coe_basisMonomials, ← Polynomial.C_mul_X_pow_eq_monomial]
-
 end
 
 end TauCeti.Sl2
@@ -136,8 +117,8 @@ Its indices are `((a, b), c)`, the lowering, Cartan and raising exponents, respe
 The rational basis does not require the `sl₂` bracket relations. -/
 def orderedKostantBasis (b : Basis (Fin 3) ℚ L) :
     Basis ((ℕ × ℕ) × ℕ) ℚ (_root_.UniversalEnvelopingAlgebra ℚ L) :=
-  (((dividedPolynomialBasis.tensorProduct (binomialPolynomialBasis ℚ)).tensorProduct
-    dividedPolynomialBasis).map
+  (((dividedPowerBasis.tensorProduct (binomialPolynomialBasis ℚ)).tensorProduct
+    dividedPowerBasis).map
       (LinearEquiv.ofBijective _ (polynomialMul_bijective b)))
 
 /-- The ordered rational basis vector is `f⁽ᵃ⁾ (h choose b) e⁽ᶜ⁾`. -/
@@ -148,7 +129,7 @@ theorem orderedKostantBasis_apply (b : Basis (Fin 3) ℚ L) (p : (ℕ × ℕ) ×
       (_root_.UniversalEnvelopingAlgebra.ι ℚ (b 2))
       (_root_.UniversalEnvelopingAlgebra.ι ℚ (b 0)) p.1.1 p.1.2 p.2 := by
   simp [orderedKostantBasis, Basis.tensorProduct_apply', LinearEquiv.ofBijective_apply,
-    polynomialMul_tmul, dividedPolynomialBasis_apply, orderedKostantMonomial_def,
+    polynomialMul_tmul, orderedKostantMonomial_def,
     Ring.map_choose, Associative.map_dividedPower]
 
 private theorem toAddSubgroup_kostantForm_eq_closure (b : Basis (Fin 3) ℚ L)
