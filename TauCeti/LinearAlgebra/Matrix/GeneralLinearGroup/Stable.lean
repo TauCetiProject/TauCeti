@@ -406,7 +406,7 @@ theorem stabilizeGL_map {m n : ℕ} (h : m ≤ n) (f : A →+* B) (u : GL (Fin m
     stabilizeGL B h (Units.map (f.mapMatrix (m := Fin m)).toMonoidHom u) =
       Units.map (f.mapMatrix (m := Fin n)).toMonoidHom (stabilizeGL A h u) := by
   ext i j
-  simp [coe_stabilizeGL_apply, apply_dite f, apply_ite f, one_apply]
+  simp [coe_stabilizeGL_apply, apply_dite f, apply_ite f, Matrix.one_apply]
 
 namespace AlgebraicK1
 
