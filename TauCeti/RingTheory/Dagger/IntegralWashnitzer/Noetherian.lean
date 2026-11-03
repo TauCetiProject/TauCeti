@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Dagger.IntegralWashnitzer
+public import TauCeti.RingTheory.Dagger.IntegralWashnitzer.Basic
 public import Mathlib.RingTheory.Noetherian.Defs
 import Mathlib.Algebra.Polynomial.Lifts
 import Mathlib.RingTheory.Polynomial.Basic
