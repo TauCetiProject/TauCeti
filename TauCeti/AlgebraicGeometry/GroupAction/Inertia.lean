@@ -66,6 +66,9 @@ data; install it locally to select this action. -/
 @[instance_reducible]
 def pointMulAction : MulAction G Y where
   smul g y := (σ g).asIso.hom y
+  -- The `•` in these goals is the `smul` field under construction, which `simp` cannot unfold
+  -- (plain `by simp` makes no progress); `show` restates each law through that field's
+  -- definition, where `simp` closes it since `σ` is a monoid homomorphism.
   one_smul y := show (σ 1).asIso.hom y = y by simp
   mul_smul a b y := show (σ (a * b)).asIso.hom y = (σ a).asIso.hom ((σ b).asIso.hom y) by simp
 
