@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Homotopy.LusternikSchnirelmann
+public import TauCeti.Topology.Homotopy.LusternikSchnirelmann.Basic
 
 /-!
 # Normalized Lusternik–Schnirelmann category
@@ -17,7 +17,7 @@ The definition is totalized to zero on empty spaces, whose unnormalized count re
 the formula recovering the unnormalized count by adding one requires nonemptiness.
 
 Compact locally contractible spaces have finite normalized category, by finiteness of the
-categorical-cover count established in `TauCeti.Topology.Homotopy.LusternikSchnirelmann`.
+categorical-cover count established in `TauCeti.Topology.Homotopy.LusternikSchnirelmann.Basic`.
 
 ## References
 

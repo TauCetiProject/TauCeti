@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
-public import TauCeti.Topology.Homotopy.LusternikSchnirelmann
+public import TauCeti.Topology.Homotopy.LusternikSchnirelmann.Basic
 import TauCeti.Geometry.Manifold.LocallyContractible
 import TauCeti.Geometry.Manifold.Morse.Deformation
 
