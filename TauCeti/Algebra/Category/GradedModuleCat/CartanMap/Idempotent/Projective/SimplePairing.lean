@@ -128,11 +128,8 @@ def gradedProjectiveSimplePairing :
       →ₛₗ[(LaurentPolynomial.invert (R := ℤ)).toRingEquiv.toRingHom]
       LaurentK0.{uA} (gradedFiniteModulesExactStructure 𝒜) →ₗ[LaurentPolynomial ℤ]
         LaurentPolynomial ℤ :=
-  LinearMap.mk₂'ₛₗ _ _ (fun x y ↦ ∑ i, invert ((bP).repr x i) * (bS).repr y i)
-    (fun x x' y ↦ by simp [add_mul, Finset.sum_add_distrib])
-    (fun c x y ↦ by simp [Finset.mul_sum, mul_assoc])
-    (fun x y y' ↦ by simp [mul_add, Finset.sum_add_distrib])
-    (fun c x y ↦ by simp [Finset.mul_sum, mul_left_comm])
+  open scoped Classical in
+  Matrix.toLinearMapₛₗ₂ _ (bP) (bS) 1
 
 /-- In coordinates, the graded multiplicity pairing multiplies the conjugated projective-basis
 coordinates of its first argument with the head-basis coordinates of its second. -/
@@ -140,8 +137,10 @@ theorem gradedProjectiveSimplePairing_apply
     (x : LaurentK0.{uA} (gradedFiniteProjectiveModulesExactStructure 𝒜))
     (y : LaurentK0.{uA} (gradedFiniteModulesExactStructure 𝒜)) :
     gradedProjectiveSimplePairing hneg he he₀ hprim hnoniso x y =
-      ∑ i, invert ((bP).repr x i) * (bS).repr y i :=
-  (rfl)
+      ∑ i, invert ((bP).repr x i) * (bS).repr y i := by
+  classical
+  rw [gradedProjectiveSimplePairing, Matrix.toLinearMapₛₗ₂_apply]
+  simp [Matrix.one_apply]
 
 /-- **Pairing with `[A eᵢ]` reads the graded multiplicity of `Sᵢ`**: it is the `i`th coordinate
 in the basis of graded heads. -/
