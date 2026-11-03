@@ -31,6 +31,11 @@ is finitely generated, and it spans over `ℝ` exactly when `Λ` spans over `K`.
 
 * `NumberField.mixedEmbedding.mem_span_pi_latticeBasis`: the `ℤ`-span of
   `Pi.basis fun _ ↦ latticeBasis K` is the coordinatewise image of `ι → 𝓞 K`.
+* `NumberField.mixedEmbedding.sum_mixedEmbedding_mul_mixedEmbedding`: a `K`-linear form on
+  `ι → K`, acting on `ι → mixedSpace K` through its coefficients as `z ↦ ∑ j, l eⱼ * zⱼ`, sends the
+  image of `x` to the image of `l x`; `sum_mixedEmbedding_sum_smul_mul` and
+  `sum_mixedEmbedding_proj_mul` record that this action is linear in the form and that coordinate
+  forms read off coordinates.
 * `Submodule.discreteTopology_mixedImage_iff`: the mixed image is discrete exactly when the
   module is finitely generated; the instance form takes `[Module.Finite (𝓞 K) Λ]`.
 * `Submodule.span_real_mixedImage_eq_top_iff`: the mixed image spans `ι → mixedSpace K` over `ℝ`
@@ -76,6 +81,35 @@ theorem mem_span_pi_latticeBasis [NumberField K] [Fintype ι] {z : ι → mixedS
   refine ⟨fun h ↦ ?_, fun ⟨x, hx⟩ i ↦ ⟨x i, by simp [← hx]⟩⟩
   choose x hx using h
   exact ⟨x, funext fun i ↦ by simpa using hx i⟩
+
+variable [Fintype ι]
+
+/-- A `K`-linear form on `ι → K` acting through its coefficients on the coordinatewise mixed
+embedding of a point is the mixed embedding of its value there. -/
+theorem sum_mixedEmbedding_mul_mixedEmbedding (l : (ι → K) →ₗ[K] K) (x : ι → K) :
+    ∑ j, mixedEmbedding K (l (Pi.basisFun K ι j)) * mixedEmbedding K (x j) =
+      mixedEmbedding K (l x) := by
+  simp_rw [← map_mul, ← map_sum]
+  conv_rhs => rw [← (Pi.basisFun K ι).sum_repr x]
+  simp [mul_comm]
+
+/-- The action through coefficients of `K`-linear forms on `ι → mixedSpace K` is linear in the
+form. -/
+theorem sum_mixedEmbedding_sum_smul_mul {κ : Type*} [Fintype κ] (a : κ → K)
+    (l : κ → (ι → K) →ₗ[K] K) (z : ι → mixedSpace K) :
+    ∑ j, mixedEmbedding K ((∑ k, a k • l k) (Pi.basisFun K ι j)) * z j =
+      ∑ k, mixedEmbedding K (a k) * ∑ j, mixedEmbedding K (l k (Pi.basisFun K ι j)) * z j := by
+  simp only [LinearMap.sum_apply, LinearMap.smul_apply, smul_eq_mul, map_sum,
+    map_mul, Finset.sum_mul, Finset.mul_sum, mul_assoc]
+  exact Finset.sum_comm
+
+/-- A coordinate form acting through its coefficients on `ι → mixedSpace K` reads off the
+coordinate. -/
+theorem sum_mixedEmbedding_proj_mul (j₀ : ι) (z : ι → mixedSpace K) :
+    ∑ j, mixedEmbedding K (LinearMap.proj (R := K) (φ := fun _ : ι ↦ K) j₀ (Pi.basisFun K ι j)) *
+      z j = z j₀ := by
+  classical
+  simp [Pi.basisFun_apply, Pi.single_apply]
 
 end NumberField.mixedEmbedding
 
@@ -228,11 +262,10 @@ theorem span_real_mixedImage_eq_top_iff {Λ : Submodule (𝓞 K) (ι → K)} :
     (span K (Λ : Set (ι → K))).exists_le_ker_of_lt_top (lt_top_iff_ne_top.mpr hne)
   -- The real-linear map `z ↦ ∑ i, f eᵢ * zᵢ` on the mixed side, which reads `f` off the image.
   let F : (ι → mixedSpace K) →ₗ[ℝ] mixedSpace K :=
-    ∑ i, LinearMap.mulLeft ℝ (mixedEmbedding K (f fun j ↦ if i = j then 1 else 0)) ∘ₗ
-      LinearMap.proj i
+    ∑ i, LinearMap.mulLeft ℝ (mixedEmbedding K (f (Pi.basisFun K ι i))) ∘ₗ LinearMap.proj i
   have hF (x : ι → K) : F (fun i ↦ mixedEmbedding K (x i)) = mixedEmbedding K (f x) := by
-    rw [LinearMap.pi_apply_eq_sum_univ f x, map_sum]
-    simp [F, map_mul, mul_comm]
+    rw [← sum_mixedEmbedding_mul_mixedEmbedding]
+    simp [F]
   have hker : span ℝ (Λ.mixedImage : Set (ι → mixedSpace K)) ≤ LinearMap.ker F := by
     rw [span_le]
     intro z hz
