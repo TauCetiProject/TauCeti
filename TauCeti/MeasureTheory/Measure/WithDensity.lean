@@ -277,7 +277,7 @@ namespace MeasureTheory
 
 /-- Continuous nonnegative real densities that present the same measure are equal pointwise. -/
 theorem continuous_eq_of_withDensity_ofReal_eq {X : Type*} [TopologicalSpace X]
-    [MeasurableSpace X] [BorelSpace X] {ν : Measure X} [SigmaFinite ν]
+    [MeasurableSpace X] [OpensMeasurableSpace X] {ν : Measure X} [SigmaFinite ν]
     [ν.IsOpenPosMeasure] {p q : X → ℝ} (hp : Continuous p) (hq : Continuous q)
     (hp0 : 0 ≤ p) (hq0 : 0 ≤ q)
     (h : ν.withDensity (fun x ↦ ENNReal.ofReal (p x)) =

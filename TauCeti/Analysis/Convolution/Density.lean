@@ -24,6 +24,8 @@ continuity and strict positivity, to be combined with measure-level convolution 
 
 * `MeasureTheory.lconvolution_ofReal_eq_ofReal_convolution` identifies the lower-integral and
   Bochner convolutions of nonnegative real functions.
+* `MeasureTheory.lconvolution_ofReal_apply_eq_ofReal_convolution` is the pointwise version when
+  the Bochner convolution exists only at the chosen point.
 * `MeasureTheory.conv_withDensity_ofReal_eq_withDensity_convolution` computes the convolution of
   two measures presented by nonnegative real densities.
 -/
@@ -37,7 +39,9 @@ namespace MeasureTheory
 
 variable {G : Type*} [AddCommGroup G] [MeasurableSpace G] {μ : Measure G} {f g : G → ℝ}
 
-private theorem lconvolution_ofReal_apply_eq_ofReal_convolution (hf0 : 0 ≤ f) (hg0 : 0 ≤ g)
+/-- At a point where the Bochner convolution of two nonnegative real functions exists, the
+lower-integral convolution of their `ENNReal.ofReal` lifts is its `ENNReal.ofReal` lift. -/
+theorem lconvolution_ofReal_apply_eq_ofReal_convolution (hf0 : 0 ≤ f) (hg0 : 0 ≤ g)
     (x : G) (hfg : ConvolutionExistsAt f g x (mul ℝ ℝ) μ) :
     ((fun y ↦ ENNReal.ofReal (f y)) ⋆ₗ[μ] (fun y ↦ ENNReal.ofReal (g y))) x =
       ENNReal.ofReal ((f ⋆[mul ℝ ℝ, μ] g) x) := by
