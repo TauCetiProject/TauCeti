@@ -71,6 +71,8 @@ That theorem factors an element along the standard parabolic subgroup on a pair 
   in `J`.
 * `CoxeterSystem.existsUnique_isMinimalCosetRep_mul`: the unique factorization of an element of `W`
   as a minimal coset representative times a parabolic element.
+* `CoxeterSystem.minimalCosetRepProdParabolicEquiv`: the same factorization, as an equivalence
+  `{u // cs.IsMinimalCosetRep J u} × cs.parabolic J ≃ W`.
 * `CoxeterSystem.IsMinimalCosetRep.eq_of_inv_mul_mem`: each left coset has only one minimal
   coset representative.
 * `CoxeterSystem.IsMinimalCosetRep.simple_mul_of_isLeftDescent` and
@@ -80,7 +82,8 @@ That theorem factors an element along the standard parabolic subgroup on a pair 
 * `CoxeterSystem.parabolic_le_iff`: the universal property of a standard parabolic subgroup.
 * `CoxeterSystem.length_mul_of_forall_not_isLeftDescent` and
   `CoxeterSystem.existsUnique_mem_parabolic_mul`: the same length additivity and unique
-  factorization, on the other side, with the left-descent form of the minimality condition.
+  factorization, on the other side, with the left-descent form of the minimality condition;
+  `CoxeterSystem.parabolicProdEquiv` is that factorization as an equivalence.
 
 ## References
 
@@ -363,6 +366,28 @@ theorem existsUnique_isMinimalCosetRep_mul (J : Set B) (w : W) :
   rw [Prod.mk.injEq]
   exact ⟨hXu.symm, hvv⟩
 
+/-- **The factorization along a standard parabolic subgroup, as an equivalence.** Multiplication
+`(u, v) ↦ u * v` identifies pairs of a minimal coset representative `u` and an element `v` of
+`cs.parabolic J` with `W`, by `CoxeterSystem.existsUnique_isMinimalCosetRep_mul`. -/
+noncomputable def minimalCosetRepProdParabolicEquiv (J : Set B) :
+    {u : W // cs.IsMinimalCosetRep J u} × cs.parabolic J ≃ W :=
+  Equiv.ofBijective (fun p ↦ p.1.1 * p.2.1) <| by
+    refine ⟨fun ⟨u, v⟩ ⟨u', v'⟩ h ↦ ?_, fun w ↦ ?_⟩
+    · obtain ⟨_, -, huniq⟩ := cs.existsUnique_isMinimalCosetRep_mul J (u.1 * v.1)
+      have h₁ := huniq (u.1, v.1) ⟨u.2, v.2, rfl⟩
+      have h₂ := huniq (u'.1, v'.1) ⟨u'.2, v'.2, h⟩
+      rw [← h₂, Prod.mk.injEq] at h₁
+      exact Prod.ext (Subtype.ext h₁.1) (Subtype.ext h₁.2)
+    · obtain ⟨⟨u, v⟩, ⟨hu, hv, hw⟩, -⟩ := cs.existsUnique_isMinimalCosetRep_mul J w
+      exact ⟨(⟨u, hu⟩, ⟨v, hv⟩), hw.symm⟩
+
+/-- `CoxeterSystem.minimalCosetRepProdParabolicEquiv` multiplies the two factors. -/
+@[simp]
+theorem minimalCosetRepProdParabolicEquiv_apply (J : Set B)
+    (p : {u : W // cs.IsMinimalCosetRep J u} × cs.parabolic J) :
+    cs.minimalCosetRepProdParabolicEquiv J p = p.1.1 * p.2.1 :=
+  (rfl)
+
 /-- **Minimal coset representatives are unique.** Two minimal representatives of the same left
 coset of `cs.parabolic J` are equal. -/
 theorem IsMinimalCosetRep.eq_of_inv_mul_mem {J : Set B} {u v : W} (hu : cs.IsMinimalCosetRep J u)
@@ -435,5 +460,27 @@ theorem existsUnique_mem_parabolic_mul (J : Set B) (w : W) :
   rw [Prod.mk.injEq] at h
   rw [Prod.mk.injEq]
   exact ⟨by rw [← h.2, inv_inv], by rw [← h.1, inv_inv]⟩
+
+/-- **The factorization on the other side, as an equivalence.** Multiplication `(x, v) ↦ x * v`
+identifies pairs of an element `x` of `cs.parabolic J` and an element `v` with no left descent in
+`J` with `W`, by `CoxeterSystem.existsUnique_mem_parabolic_mul`. -/
+noncomputable def parabolicProdEquiv (J : Set B) :
+    cs.parabolic J × {v : W // ∀ i ∈ J, ¬ cs.IsLeftDescent v i} ≃ W :=
+  Equiv.ofBijective (fun p ↦ p.1.1 * p.2.1) <| by
+    refine ⟨fun ⟨x, v⟩ ⟨x', v'⟩ h ↦ ?_, fun w ↦ ?_⟩
+    · obtain ⟨_, -, huniq⟩ := cs.existsUnique_mem_parabolic_mul J (x.1 * v.1)
+      have h₁ := huniq (x.1, v.1) ⟨x.2, v.2, rfl⟩
+      have h₂ := huniq (x'.1, v'.1) ⟨x'.2, v'.2, h⟩
+      rw [← h₂, Prod.mk.injEq] at h₁
+      exact Prod.ext (Subtype.ext h₁.1) (Subtype.ext h₁.2)
+    · obtain ⟨⟨x, v⟩, ⟨hx, hv, hw⟩, -⟩ := cs.existsUnique_mem_parabolic_mul J w
+      exact ⟨(⟨x, hx⟩, ⟨v, hv⟩), hw.symm⟩
+
+/-- `CoxeterSystem.parabolicProdEquiv` multiplies the two factors. -/
+@[simp]
+theorem parabolicProdEquiv_apply (J : Set B)
+    (p : cs.parabolic J × {v : W // ∀ i ∈ J, ¬ cs.IsLeftDescent v i}) :
+    cs.parabolicProdEquiv J p = p.1.1 * p.2.1 :=
+  (rfl)
 
 end CoxeterSystem
