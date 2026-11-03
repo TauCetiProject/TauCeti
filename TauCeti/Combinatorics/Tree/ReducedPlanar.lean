@@ -8,7 +8,6 @@ module
 public import Mathlib.Data.Fintype.BigOperators
 public import Mathlib.Basic.Finite.Sum
 public import Mathlib.Basic.Finite.Sigma
-public import Mathlib.Basic.Finite.Prod
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 
 /-!
@@ -82,13 +81,9 @@ is essential for this strict inequality. -/
 theorem numLeaves_child_lt (n : ℕ) (children : Fin (n + 2) → ReducedPlanarTree)
     (i : Fin (n + 2)) : (children i).numLeaves < (node n children).numLeaves := by
   obtain ⟨j, hji⟩ := exists_ne i
-  have h := Finset.sum_le_sum_of_subset_of_nonneg
-    (show ({i, j} : Finset (Fin (n + 2))) ⊆ Finset.univ from Finset.subset_univ _)
-    (fun k _ _ ↦ Nat.zero_le (children k).numLeaves)
-  simp only [Finset.sum_pair hji.symm] at h
-  have hj := (children j).numLeaves_pos
-  simp only [numLeaves_node]
-  omega
+  simpa only [numLeaves_node] using Finset.single_lt_sum (f := fun k ↦ (children k).numLeaves) hji
+    (Finset.mem_univ i) (Finset.mem_univ j) (children j).numLeaves_pos
+    (fun k _ _ ↦ Nat.zero_le _)
 
 /-- Internal vertices are bounded by arity minus one. This also bounds the number
 of homotopy-labelled internal edges in a transfer tree. -/
@@ -115,6 +110,9 @@ theorem numLeaves_eq_one_iff (t : ReducedPlanarTree) : t.numLeaves = 1 ↔ t = l
 
 /-- The corolla with `n + 2` inputs, consisting of a single internal vertex. -/
 def corolla (n : ℕ) : ReducedPlanarTree := node n (fun _ ↦ leaf)
+
+/-- A corolla has a single root whose children are all leaves. -/
+theorem corolla_def (n : ℕ) : corolla n = node n (fun _ ↦ leaf) := (rfl)
 
 @[simp] theorem numLeaves_corolla (n : ℕ) : (corolla n).numLeaves = n + 2 := by
   simp [corolla]
