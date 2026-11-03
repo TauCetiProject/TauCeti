@@ -13,7 +13,6 @@ public import TauCeti.AlgebraicGeometry.Scheme.CodimensionOnePoint
 public import TauCeti.AlgebraicGeometry.Scheme.Regular.Scheme
 import Mathlib.AlgebraicGeometry.Properties
 import Mathlib.RingTheory.Ideal.UFD
-import TauCeti.AlgebraicGeometry.AffineScheme
 import TauCeti.AlgebraicGeometry.IdealSheaf.Affine
 import TauCeti.AlgebraicGeometry.Scheme.StalkSpecializes
 import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Order
