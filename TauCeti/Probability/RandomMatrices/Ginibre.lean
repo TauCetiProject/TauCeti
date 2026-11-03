@@ -211,9 +211,11 @@ instance (m n : ℕ) : IsProbabilityMeasure (ginibreReal m n) := by
   unfold ginibreReal
   infer_instance
 
-instance (m n : ℕ) : IsProbabilityMeasure (ginibreComplex m n) :=
-  (Measure.isProbabilityMeasure_map_iff measurable_matrix_of_curry.aemeasurable).2
-    inferInstance
+instance (m n : ℕ) : IsProbabilityMeasure (ginibreComplex m n) := by
+  have hreshape : Measurable
+      (fun z : Fin m × Fin n → ℂ ↦ Matrix.of fun i j ↦ z (i, j)) :=
+    (Matrix.ofMeasurableEquiv (Fin m) (Fin n) ℂ).measurable.comp measurable_curry
+  exact (Measure.isProbabilityMeasure_map_iff hreshape.aemeasurable).2 inferInstance
 
 instance (m n : ℕ) : IsProbabilityMeasure (gaussianGramReal m n) :=
   (Measure.isProbabilityMeasure_map_iff measurable_subtype_coe.aemeasurable).2 inferInstance
@@ -234,7 +236,7 @@ theorem map_apply_ginibreReal (m n : ℕ) (i : Fin m) (j : Fin n) :
 /-- Every complex Ginibre entry has the standard scalar proper complex Gaussian law. -/
 theorem map_apply_ginibreComplex (m n : ℕ) (i : Fin m) (j : Fin n) :
     (ginibreComplex m n).map (fun X ↦ X i j) = properComplexGaussianScalar := by
-  rw [ginibreComplex_def, Measure.map_map (by fun_prop) measurable_matrix_of_curry]
+  rw [ginibreComplex_def, Measure.map_map (by fun_prop) (by fun_prop)]
   exact (measurePreserving_eval
     (fun _ : Fin m × Fin n ↦ properComplexGaussianScalar) (i, j)).map_eq
 
@@ -249,7 +251,7 @@ theorem iIndepFun_apply_ginibreComplex (m n : ℕ) :
     change AEMeasurable (fun X : Fin m → Fin n → ℂ ↦ X p.1 p.2) _
     exact ((measurable_pi_apply p.2).comp (measurable_pi_apply p.1)).aemeasurable
   apply (iIndepFun_iff_map_fun_eq_pi_map hmeas).2
-  rw [ginibreComplex_def, Measure.map_map (by fun_prop) measurable_matrix_of_curry]
+  rw [ginibreComplex_def, Measure.map_map (by fun_prop) (by fun_prop)]
   calc
     _ = Measure.pi (fun _ : Fin m × Fin n ↦ properComplexGaussianScalar) := by
       have hfun :
@@ -371,11 +373,15 @@ theorem integral_trace_re_gaussianGramComplex (m n : ℕ) :
   have he : ∀ X : Matrix (Fin m) (Fin n) ℂ,
       (X * Xᴴ).trace.re = ∑ i, ∑ j, ‖X i j‖ ^ 2 := fun X ↦ by
     simpa using re_trace_mul_conjTranspose_self X
+  have hreshape : Measurable
+      (fun z : Fin m × Fin n → ℂ ↦ Matrix.of fun i j ↦ z (i, j)) :=
+    (Matrix.ofMeasurableEquiv (Fin m) (Fin n) ℂ).measurable.comp measurable_curry
   rw [gaussianGramComplex, integral_map measurable_matrix_mul_conjTranspose.aemeasurable
     (Continuous.aestronglyMeasurable (by fun_prop)), ginibreComplex_def,
-    integral_map measurable_matrix_of_curry.aemeasurable
+    integral_map hreshape.aemeasurable
       (Continuous.aestronglyMeasurable (by fun_prop))]
-  simp_rw [he, of_apply]
+  simp_rw [he]
+  simp_rw [Matrix.of_apply]
   rw [integral_finsetSum _ fun i _ ↦ integrable_finsetSum _ fun j _ ↦ hint i j]
   simp_rw [integral_finsetSum _ fun j _ ↦ hint _ j, hval]
   simp
