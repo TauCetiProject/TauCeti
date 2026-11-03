@@ -71,11 +71,11 @@ theorem coe_commutatorElement_rootSubgroupPoints_of_lie_lie_eq_zero
   rw [map_commutatorElement]
   exact h
 
-/-- **Positive double-bond commutator, long root first.** If the Cartan entry with short-root
-row `j` and long-root column `i` is `-1`, its commutator matrix has parameters `st` and `st²`.
-The statement also applies to a single bond; there the cubic matrix term vanishes. -/
-theorem coe_commutatorElement_rootSubgroupPoints_inl_inl_of_cartan_eq_neg_one
-    {i j : Fin (n + 1)} (hji : CartanMatrix.B (n + 1) j i = -1)
+/-- **Positive double-bond commutator, long root first.** If `-1 ≤ B j i`, the commutator
+matrix has parameters `st` and `st²`. This includes single bonds, nonadjacent nodes and
+coincident nodes; in those cases the cubic matrix term vanishes. -/
+theorem coe_commutatorElement_rootSubgroupPoints_inl_inl_of_neg_one_le_cartan
+    {i j : Fin (n + 1)} (hji : -1 ≤ CartanMatrix.B (n + 1) j i)
     (A : Type u) [CommRing A] (s t : A) :
     (((⁅rootSubgroupPoints n (.inl i) A (Multiplicative.ofAdd s),
         rootSubgroupPoints n (.inl j) A (Multiplicative.ofAdd t)⁆ : points n A) :
@@ -86,15 +86,23 @@ theorem coe_commutatorElement_rootSubgroupPoints_inl_inl_of_cartan_eq_neg_one
         (s * t ^ 2) • (rootIntMatrix n (.inl j) * rootIntMatrix n (.inl i) *
           rootIntMatrix n (.inl j)).map (Int.cast : ℤ → A) := by
   have hserre : ⁅rootGen (.inl i), ⁅rootGen (.inl i), rootGen (.inl j)⁆⁆ = 0 := by
-    -- The represented Serre system uses the transpose of the root-row Cartan matrix.
-    simpa [TauCeti.typeBSimpleRootGeneratorFamily_inl, hji] using
-      TauCeti.ad_pow_lie_typeBSimpleRootGenerator_typeBSimpleRootGenerator (K := ℚ) i j
+    -- The transposed Cartan convention gives a Serre exponent of zero or one.
+    have h := TauCeti.ad_pow_lie_typeBSimpleRootGenerator_typeBSimpleRootGenerator
+      (K := ℚ) i j
+    have hexp : (-CartanMatrix.B (n + 1) j i).toNat = 0 ∨
+        (-CartanMatrix.B (n + 1) j i).toNat = 1 := by omega
+    rcases hexp with hzero | hone
+    · have hcomm : ⁅rootGen (.inl i), rootGen (.inl j)⁆ = 0 := by
+        simpa [TauCeti.typeBSimpleRootGeneratorFamily_inl, hzero] using h
+      rw [hcomm, lie_zero]
+    · simpa [TauCeti.typeBSimpleRootGeneratorFamily_inl, hone] using h
   exact coe_commutatorElement_rootSubgroupPoints_of_lie_lie_eq_zero hserre A s t
 
-/-- **Negative double-bond commutator, long root first.** The integral negative-root matrices
-give the same parameter degrees `st` and `st²`, over every commutative ring. -/
-theorem coe_commutatorElement_rootSubgroupPoints_inr_inr_of_cartan_eq_neg_one
-    {i j : Fin (n + 1)} (hji : CartanMatrix.B (n + 1) j i = -1)
+/-- **Negative double-bond commutator, long root first.** Under `-1 ≤ B j i`, the integral
+negative-root matrices give the same parameter degrees `st` and `st²` over every commutative
+ring, including single bonds, nonadjacent nodes and coincident nodes. -/
+theorem coe_commutatorElement_rootSubgroupPoints_inr_inr_of_neg_one_le_cartan
+    {i j : Fin (n + 1)} (hji : -1 ≤ CartanMatrix.B (n + 1) j i)
     (A : Type u) [CommRing A] (s t : A) :
     (((⁅rootSubgroupPoints n (.inr i) A (Multiplicative.ofAdd s),
         rootSubgroupPoints n (.inr j) A (Multiplicative.ofAdd t)⁆ : points n A) :
@@ -105,9 +113,15 @@ theorem coe_commutatorElement_rootSubgroupPoints_inr_inr_of_cartan_eq_neg_one
         (s * t ^ 2) • (rootIntMatrix n (.inr j) * rootIntMatrix n (.inr i) *
           rootIntMatrix n (.inr j)).map (Int.cast : ℤ → A) := by
   have hserre : ⁅rootGen (.inr i), ⁅rootGen (.inr i), rootGen (.inr j)⁆⁆ = 0 := by
-    simpa [TauCeti.typeBSimpleRootGeneratorFamily_inr, hji] using
-      TauCeti.ad_pow_lie_typeBSimpleNegativeRootGenerator_typeBSimpleNegativeRootGenerator
-        (K := ℚ) i j
+    have h := TauCeti.ad_pow_lie_typeBSimpleNegativeRootGenerator_typeBSimpleNegativeRootGenerator
+      (K := ℚ) i j
+    have hexp : (-CartanMatrix.B (n + 1) j i).toNat = 0 ∨
+        (-CartanMatrix.B (n + 1) j i).toNat = 1 := by omega
+    rcases hexp with hzero | hone
+    · have hcomm : ⁅rootGen (.inr i), rootGen (.inr j)⁆ = 0 := by
+        simpa [TauCeti.typeBSimpleRootGeneratorFamily_inr, hzero] using h
+      rw [hcomm, lie_zero]
+    · simpa [TauCeti.typeBSimpleRootGeneratorFamily_inr, hone] using h
   exact coe_commutatorElement_rootSubgroupPoints_of_lie_lie_eq_zero hserre A s t
 
 end TauCeti.TypeBSpinCarrier
