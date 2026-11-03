@@ -25,8 +25,6 @@ connected group scheme of type `F₄` is asserted.
 
 ## Main declarations
 
-* `Matrix.isDiag_of_preserves_f4ShortRootBracket_of_weight_support`: bracket preservation refines
-  the weight-block condition to diagonality over any commutative `𝔽₂`-algebra.
 * `mem_centralizer_range_weightTorusPoints_iff_isDiag`: over an infinite field, a carrier point
   centralizes the weight torus exactly when its matrix is diagonal.
 * `centralizer_range_weightTorusPoints_eq_comap_diagonalTorus`: the subgroup form.
@@ -41,52 +39,6 @@ connected group scheme of type `F₄` is asserted.
 public section
 
 open Matrix
-
-namespace Matrix
-
-open TauCeti TauCeti.DynkinType
-
-universe u
-
-/-- A bracket-preserving matrix with no entries between distinct short-root weights is
-diagonal. The two zero-weight basis vectors are brackets of opposite simple-root vectors,
-so their lines are preserved individually, without a reducedness or invertibility assumption. -/
-theorem isDiag_of_preserves_f4ShortRootBracket_of_weight_support
-    {A : Type u} [CommRing A] [Algebra (ZMod 2) A]
-    (M : Matrix (Fin 26) (Fin 26) A)
-    (hM : ConstantMultiplication.Preserves (ZMod 2) 26 f4ShortRootBracketMatrix M)
-    (hweight : ∀ i j, f4ShortRootWeight i ≠ f4ShortRootWeight j → M i j = 0) :
-    M.IsDiag := by
-  have hcol (a : Fin 26) (ha : f4ShortRootWeight a ≠ 0) :
-      M.col a = M a a • Pi.single a 1 := by
-    ext i
-    by_cases hi : i = a
-    · subst i
-      simp
-    · have hne : f4ShortRootWeight i ≠ f4ShortRootWeight a := by
-        intro h
-        exact hi (f4ShortRootWeight_injOn (fun hi0 ↦ ha (h.symm.trans hi0)) ha h)
-      simp only [col_apply, Pi.smul_apply, Pi.single_apply, hi, ite_false, smul_eq_mul, mul_zero]
-      exact hweight i a hne
-  have h12 : M.col 12 = (M 11 11 * M 14 14) • Pi.single 12 1 :=
-    ConstantMultiplication.Preserves.col_eq_smul_single (ZMod 2) 26 f4ShortRootBracketMatrix
-      hM (hcol 11 (by decide)) (hcol 14 (by decide))
-      f4ShortRootBracketMatrix_col_fourteen_eleven
-  have h13 : M.col 13 = (M 10 10 * M 15 15) • Pi.single 13 1 :=
-    ConstantMultiplication.Preserves.col_eq_smul_single (ZMod 2) 26 f4ShortRootBracketMatrix
-      hM (hcol 10 (by decide)) (hcol 15 (by decide))
-      f4ShortRootBracketMatrix_col_fifteen_ten
-  intro i j hij
-  obtain ⟨s, hs⟩ : ∃ s : A, M.col j = s • Pi.single j 1 := by
-    by_cases hj : f4ShortRootWeight j = 0
-    · rcases (f4ShortRootWeight_eq_zero_iff j).mp hj with rfl | rfl
-      · exact ⟨_, h12⟩
-      · exact ⟨_, h13⟩
-    · exact ⟨_, hcol j hj⟩
-  simpa only [col_apply, Pi.smul_apply, Pi.single_apply, hij, ite_false, smul_eq_mul,
-    mul_zero] using congrFun hs i
-
-end Matrix
 
 namespace TauCeti.F4ShortRoot.PrimeField
 
