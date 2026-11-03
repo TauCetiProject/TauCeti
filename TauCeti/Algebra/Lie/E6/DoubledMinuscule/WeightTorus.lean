@@ -208,8 +208,10 @@ theorem mem_quotientPointsSubgroup_weightTorusDefiningIdeal_iff_isDiag
       (GeneralLinear.pointsMulEquiv 54
         ((CommHopfAlgCat.Hom.mapPointsFunctor (coordinateMap R)).app A g) :
           Matrix (Fin 54) (Fin 54) A).IsDiag := by
-  let f := (GeneralLinear.pointsMulEquiv (R := R) 54).toMonoidHom.comp
-    ((CommHopfAlgCat.Hom.mapPointsFunctor (coordinateMap R)).app A).hom
+  let f : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R) A →*
+      Matrix.GeneralLinearGroup (Fin 54) A :=
+    (GeneralLinear.pointsMulEquiv (R := R) 54).toMonoidHom.comp
+      ((CommHopfAlgCat.Hom.mapPointsFunctor (coordinateMap R)).app A).hom
   have hf : Function.Injective f := (GeneralLinear.pointsMulEquiv 54).injective.comp
     (CommHopfAlgCat.Hom.mapPointsFunctor_app_injective_of_surjective
       (coordinateMap R) (coordinateMap_surjective R) A)
@@ -217,15 +219,20 @@ theorem mem_quotientPointsSubgroup_weightTorusDefiningIdeal_iff_isDiag
       (CommHopfAlgCat.quotientPointsHom (GeneralLinear.coordinateHopfAlgebra R 54)
         (baseChangeDefiningIdeal R) A g) :=
     congrArg (GeneralLinear.pointsMulEquiv 54) (mapPointsFunctor_coordinateMap_app R g)
-  -- `erw` reconciles the point functor's categorical object wrapper with the explicit
-  -- convolution-point type in the quotient subgroup.
-  erw [← Subgroup.mem_map_iff_mem hf,
-    map_quotientPointsSubgroup_weightTorusDefiningIdeal]
+  have hmap : (CommHopfAlgCat.quotientPointsSubgroup (coordinateHopfAlgebra R)
+      (weightTorusDefiningIdeal R) A).map f =
+      ((weightTorusPoints A).range).map (points A).subtype :=
+    map_quotientPointsSubgroup_weightTorusDefiningIdeal R A
+  have hmem : g ∈ CommHopfAlgCat.quotientPointsSubgroup (coordinateHopfAlgebra R)
+      (weightTorusDefiningIdeal R) A ↔
+      f g ∈ ((weightTorusPoints A).range).map (points A).subtype := by
+    rw [← hmap, Subgroup.mem_map_iff_mem hf]
+  have hf_apply : f g = GeneralLinear.pointsMulEquiv 54
+      ((CommHopfAlgCat.Hom.mapPointsFunctor (coordinateMap R)).app A g) := rfl
+  rw [hmem, ← hf_apply]
   constructor
   · rintro ⟨_, ⟨s, rfl⟩, he⟩
-    -- `erw` unfolds the local `f` and its categorical point-map wrapper so that
-    -- the equation `he` matches the explicit ambient matrix in the goal.
-    erw [← he]
+    rw [← he]
     rw [Subgroup.subtype_apply, coe_weightTorusPoints,
       UniversalEnvelopingAlgebra.kostantTorusMatrix_apply, diagGL_coe]
     exact Matrix.isDiag_diagonal _
