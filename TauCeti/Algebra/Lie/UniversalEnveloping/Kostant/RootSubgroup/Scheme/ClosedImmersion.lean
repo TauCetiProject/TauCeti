@@ -256,18 +256,10 @@ theorem lie_kostantRootGeneratorIntMatrix_lie_eq_zero {j k : ι}
       ⁅kostantRootGeneratorIntMatrix e h ρ M hM j b,
         kostantRootGeneratorIntMatrix e h ρ M hM k b⁆⁆ = 0 := by
   classical
-  have hop : ⁅rootOp i, ⁅rootOp j, rootOp k⁆⁆ = 0 := by
-    refine LinearMap.ext fun m => Subtype.ext ?_
-    have hr : ⁅rootRep (e i), ⁅rootRep (e j), rootRep (e k)⁆⁆ = 0 := by
-      rw [← LieHom.map_lie, ← LieHom.map_lie, hijk, map_zero]
-    have hm := congrArg (fun f => f (m : V)) hr
-    simpa only [Ring.lie_def, LinearMap.sub_apply, mul_apply_eq_comp,
-      AddSubgroupClass.coe_sub, LinearMap.map_sub, LinearMap.zero_apply,
-      ZeroMemClass.coe_zero, coe_kostantRootOperator_apply,
-      LieHom.comp_apply, AlgHom.toLieHom_apply] using hm
-  simpa only [Ring.lie_def, map_sub, LinearMap.toMatrix_mul, map_zero,
-    kostantRootGeneratorIntMatrix_eq_toMatrix] using
-    congrArg (LinearMap.toMatrix b b) hop
+  have hleft : ⁅⁅e j, e k⁆, e i⁆ = (0 : ℤ) • e i := by
+    rw [← lie_skew, hijk, neg_zero, zero_smul]
+  have hm := lie_lie_kostantRootGeneratorIntMatrix_eq_smul e h ρ M hM j b 0 hleft
+  rwa [zero_smul, ← lie_skew, neg_eq_zero] at hm
 
 end MatrixRelations
 
