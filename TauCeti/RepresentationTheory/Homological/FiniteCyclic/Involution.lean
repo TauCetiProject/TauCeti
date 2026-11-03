@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Category.ModuleCat.Int
 public import TauCeti.RepresentationTheory.Cyclic.Affine
 public import Mathlib.RepresentationTheory.Homological.FiniteCyclic
 
@@ -67,12 +68,14 @@ for an automorphism of any finite order. -/
 theorem subCompNormHom_cyclicRep_f :
     (subCompNormHom (A.cyclicRep hA) (.ofAdd 1)).f =
       -ModuleCat.ofHom (A.oneSubPow 1).toIntLinearMap :=
+  -- Both arrows are definitionally the underlying map of ρ(g) - 𝟙.
   A.normHomCompSub_cyclicRep_g hA
 
 /-- The second map in the other periodic short complex is the bundled partial norm. -/
 theorem subCompNormHom_cyclicRep_g :
     (subCompNormHom (A.cyclicRep hA) (.ofAdd 1)).g =
       ModuleCat.ofHom (A.cyclicNormHom m).toIntLinearMap :=
+  -- Both arrows are definitionally the underlying norm map.
   A.normHomCompSub_cyclicRep_f hA
 
 end FiniteOrder
@@ -88,7 +91,7 @@ theorem oneSubPow_comp_cyclicNormHom {m : ℕ} (hA : (⇑A)^[m] = id) :
   have hz := (normHomCompSub (A.cyclicRep hA) (.ofAdd 1)).zero
   rw [A.normHomCompSub_cyclicRep_f hA, A.normHomCompSub_cyclicRep_g hA,
     Preadditive.comp_neg, neg_eq_zero] at hz
-  exact congrArg (fun f : ModuleCat.of ℤ T ⟶ ModuleCat.of ℤ T ↦ f.hom.toAddMonoidHom) hz
+  exact (AddMonoidHom.ofHom_toIntLinearMap_comp_eq_zero_iff _ _).mp hz
 
 /-- For a periodic automorphism, the cyclic norm annihilates `1 - A`.
 For nonzero period this is the zero-composite law of Mathlib's difference-then-norm complex. -/
@@ -101,7 +104,7 @@ theorem cyclicNormHom_comp_oneSubPow {m : ℕ} (hA : (⇑A)^[m] = id) :
   have hz := (subCompNormHom (A.cyclicRep hA) (.ofAdd 1)).zero
   rw [A.subCompNormHom_cyclicRep_f hA, A.subCompNormHom_cyclicRep_g hA,
     Preadditive.neg_comp, neg_eq_zero] at hz
-  exact congrArg (fun f : ModuleCat.of ℤ T ⟶ ModuleCat.of ℤ T ↦ f.hom.toAddMonoidHom) hz
+  exact (AddMonoidHom.ofHom_toIntLinearMap_comp_eq_zero_iff _ _).mp hz
 
 variable (hA : (⇑A)^[2] = id)
 
@@ -113,7 +116,7 @@ noncomputable def normHomCompSubCyclicRepTwoIso :
       ShortComplex.mk
         (ModuleCat.ofHom (A.cyclicNormHom 2).toIntLinearMap)
         (ModuleCat.ofHom (A.oneSubPow 1).toIntLinearMap)
-        (congrArg (fun f : T →+ T ↦ ModuleCat.ofHom f.toIntLinearMap)
+        ((AddMonoidHom.ofHom_toIntLinearMap_comp_eq_zero_iff _ _).mpr
           (A.oneSubPow_comp_cyclicNormHom hA)) :=
   ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (-(Iso.refl _))
     (by simpa only [Iso.refl_hom, Category.id_comp, Category.comp_id] using
@@ -129,7 +132,7 @@ noncomputable def subCompNormHomCyclicRepTwoIso :
       ShortComplex.mk
         (ModuleCat.ofHom (A.oneSubPow 1).toIntLinearMap)
         (ModuleCat.ofHom (A.cyclicNormHom 2).toIntLinearMap)
-        (congrArg (fun f : T →+ T ↦ ModuleCat.ofHom f.toIntLinearMap)
+        ((AddMonoidHom.ofHom_toIntLinearMap_comp_eq_zero_iff _ _).mpr
           (A.cyclicNormHom_comp_oneSubPow hA)) :=
   ShortComplex.isoMk (-(Iso.refl _)) (Iso.refl _) (Iso.refl _)
     (by simpa only [Preadditive.neg_iso_hom, Iso.refl_hom, Preadditive.neg_comp,
