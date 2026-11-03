@@ -57,7 +57,7 @@ theorem antitranspose_zero [Zero α] : (0 : Matrix (Fin m) (Fin m) α).antitrans
 theorem antitranspose_one [Zero α] [One α] :
     (1 : Matrix (Fin m) (Fin m) α).antitranspose = 1 := by
   ext i j
-  simp [one_apply, eq_comm]
+  simp [Matrix.one_apply, eq_comm]
 
 @[simp]
 theorem antitranspose_add [Add α] (A B : Matrix (Fin m) (Fin m) α) :

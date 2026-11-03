@@ -250,16 +250,13 @@ private theorem isUnit_apply_one_zero_of_mem_doubleCoset_modularGroup_S {g : SL(
     mul_zero, mul_one, zero_add] using
     (IsUnit.of_mul_eq_one_right _ hxdet).mul (IsUnit.of_mul_eq_one _ hydet)
 
-/-- **The Bruhat factorization.** An element `g = !![a, b; c, d]` of `SL₂(R)` whose lower-left
-entry `c` is a unit is `mk 1 (a c⁻¹) * S * mk c d`, so it lies in the big cell. The public
-interface is the two-way `TauCeti.SL2Borel.mem_doubleCoset_modularGroup_S_iff`. -/
-private theorem mem_doubleCoset_modularGroup_S_of_isUnit_apply_one_zero {g : SL(2, R)}
-    (hg : IsUnit (g 1 0)) :
-    g ∈ DoubleCoset.doubleCoset (((ModularGroup.S : SL(2, ℤ)) : SL(2, R)))
-      (SL2Borel R : Set SL(2, R)) (SL2Borel R : Set SL(2, R)) := by
-  obtain ⟨c, hc⟩ := hg
-  refine DoubleCoset.mem_doubleCoset.mpr
-    ⟨mk 1 (g 0 0 * ((c⁻¹ : Rˣ) : R)), (mk _ _).2, mk c (g 1 1), (mk _ _).2, ?_⟩
+/-- **The normalized Bruhat factorization.** If the lower-left entry of `g` is the unit `c`,
+then its left unipotent parameter is `g 0 0 / c`, and its right Borel factor has diagonal `c`
+and upper-right entry `g 1 1`. -/
+theorem mk_mul_modularGroup_S_mul_mk (g : SL(2, R)) (c : Rˣ) (hc : (c : R) = g 1 0) :
+    (mk 1 (g 0 0 * ((c⁻¹ : Rˣ) : R)) : SL(2, R)) *
+      ((ModularGroup.S : SL(2, ℤ)) : SL(2, R)) * mk c (g 1 1) = g := by
+  symm
   have hdet := g.2
   rw [Matrix.det_fin_two] at hdet
   have hcg : ((c⁻¹ : Rˣ) : R) * g 1 0 = 1 := by
@@ -276,6 +273,16 @@ private theorem mem_doubleCoset_modularGroup_S_of_isUnit_apply_one_zero {g : SL(
     linear_combination (-((c⁻¹ : Rˣ) : R)) * hdet - g 0 1 * hcg
   · simp [hc]
   · simp
+
+/-- An invertible lower-left entry supplies the normalized Bruhat factorization. -/
+private theorem mem_doubleCoset_modularGroup_S_of_isUnit_apply_one_zero {g : SL(2, R)}
+    (hg : IsUnit (g 1 0)) :
+    g ∈ DoubleCoset.doubleCoset (((ModularGroup.S : SL(2, ℤ)) : SL(2, R)))
+      (SL2Borel R : Set SL(2, R)) (SL2Borel R : Set SL(2, R)) := by
+  obtain ⟨c, hc⟩ := hg
+  exact DoubleCoset.mem_doubleCoset.mpr
+    ⟨mk 1 (g 0 0 * ((c⁻¹ : Rˣ) : R)), (mk _ _).2, mk c (g 1 1), (mk _ _).2,
+      (mk_mul_modularGroup_S_mul_mk g c hc).symm⟩
 
 /-- **The lower-left entry detects the big cell.** An element of `SL₂(R)` lies in the double
 coset of `ModularGroup.S` by the standard Borel exactly when its lower-left entry is a unit.

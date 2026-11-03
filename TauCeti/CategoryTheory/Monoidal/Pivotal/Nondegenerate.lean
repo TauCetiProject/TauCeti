@@ -57,7 +57,7 @@ theorem rightDim_ne_zero_of_simple (X : C) [Simple X] [FiniteDimensional k (X �
     exact IsSplitMono.id _
   intro hz
   rw [hz, smul_zero] at h
-  exact id_nonzero (𝟙_ C) h.symm
+  exact CategoryTheory.id_ne_zero (𝟙_ C) h.symm
 
 include k in
 /-- The left dimension of a split simple object in a finite semisimple pivotal category with
@@ -75,7 +75,7 @@ theorem leftDim_ne_zero_of_simple (X : C) [Simple X] [FiniteDimensional k (X ⟶
     exact IsSplitMono.id _
   intro hz
   rw [hz, smul_zero] at h
-  exact id_nonzero (𝟙_ C) h.symm
+  exact CategoryTheory.id_ne_zero (𝟙_ C) h.symm
 
 section Pairing
 

@@ -305,7 +305,7 @@ noncomputable def simplyBlockedHomologyδ :
     (ModuleCat.restrictScalars (simplyBlockedRingHom R i)).obj
         ((G.simplyBlockedComplex R i).homology ()) ⟶ G.unblockedHomology R :=
   (G.simplyBlockedHomologyRestrictScalarsIso R i).inv ≫
-    (G.simplyBlockedShortComplex_shortExact R i).δ () () (ComplexShape.refl_rel ())
+    (G.simplyBlockedShortComplex_shortExact R i).δ () () (ComplexShape.refl_rel_self ())
 
 /-- Multiplication by `V_i` on the unblocked complex induces multiplication by `V_i` on its
 homology. -/
@@ -341,7 +341,7 @@ from `GH⁻(G)`. -/
 theorem exact_simplyBlockedHomologyMap_δ :
     Function.Exact (G.simplyBlockedHomologyMap R i).hom (G.simplyBlockedHomologyδ R i).hom := by
   have h := (G.simplyBlockedShortComplex_shortExact R i).homology_exact₃ () ()
-    (ComplexShape.refl_rel ())
+    (ComplexShape.refl_rel_self ())
   rw [ShortComplex.ShortExact.moduleCat_exact_iff_function_exact] at h
   unfold simplyBlockedShortComplex at h
   simp only [simplyBlockedHomologyMap, simplyBlockedHomologyδ, ModuleCat.hom_comp]
@@ -354,7 +354,7 @@ theorem exact_simplyBlockedHomologyδ_X_smul :
     Function.Exact (G.simplyBlockedHomologyδ R i).hom
       (fun x : G.unblockedHomology R => (MvPolynomial.X i : MvPolynomial (Fin n) R) • x) := by
   have h := (G.simplyBlockedShortComplex_shortExact R i).homology_exact₁ () ()
-    (ComplexShape.refl_rel ())
+    (ComplexShape.refl_rel_self ())
   rw [ShortComplex.ShortExact.moduleCat_exact_iff_function_exact] at h
   unfold simplyBlockedShortComplex at h
   simp only [G.homologyMap_X_smul_id R i] at h

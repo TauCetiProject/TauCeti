@@ -72,7 +72,7 @@ private theorem integral_polarizedComplexMeasure_ofSimpleFunc (P : ProjValMeasur
     rw [hs, VectorMeasure.integral_indicator_const _ hB, h]
     simp [integral_indicator, inner_smul_right, polarizedComplexMeasure_apply _ _ _ _ hB]
   | @add s t _ hs ht =>
-    rw [SimpleFunc.coe_add, VectorMeasure.integral_add (SimpleFunc.integrable_of_isFiniteMeasure s)
+    rw [FunLike.coe_add, VectorMeasure.integral_add (SimpleFunc.integrable_of_isFiniteMeasure s)
       (SimpleFunc.integrable_of_isFiniteMeasure t), hs, ht]
     simp [inner_add_right]
 
