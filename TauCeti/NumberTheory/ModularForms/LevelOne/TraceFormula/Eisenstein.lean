@@ -124,7 +124,7 @@ private theorem infinityEval_smul (hn : n ≠ 0) (hw : Even w) (g : SL(2, ℤ))
     infinityEval (R := R) (w := w) hn (g • A) = infinityEval hn A := by
   ext P
   simp only [infinityEval, LinearMap.comp_apply, toGL_smul, mul_smul, FixedDetMatrices.smul_coe,
-    map_mul, Module.End.mul_apply, binaryFormAdjugateRep_coe, evalCusp_mapGL_smul hw]
+    map_mul, mul_apply_eq_comp, binaryFormAdjugateRep_coe, evalCusp_mapGL_smul hw]
 
 /-- On an upper-triangular representative `(a b; 0 d)`, `infinityEval` is `P ↦ dʷ P(1, 0)`. -/
 private theorem infinityEval_of_mem_reps (hn : n ≠ 0) (A : TraceFormulaMatrix n)
@@ -187,7 +187,7 @@ private theorem evalCusp_toGL_smul_zero (hn : n ≠ 0) (A : TraceFormulaMatrix n
         binaryFormRep R w (op (S : Matrix (Fin 2) (Fin 2) ℤ)) := by
   ext P
   simp only [infinityEval, LinearMap.comp_apply, toGL_traceFormulaMatrixRight, inv_inv, mul_smul,
-    mapGL_S_smul_infty, val_traceFormulaMatrixRight, map_mul, Module.End.mul_apply,
+    mapGL_S_smul_infty, val_traceFormulaMatrixRight, map_mul, mul_apply_eq_comp,
     binaryFormAdjugateRep_coe, binaryFormSLRep_binaryFormRep]
 
 /-- The values at the cusps `a0` sum to `σ_{w+1}(|n|)` times the value at `0`. -/
@@ -201,7 +201,7 @@ private theorem sum_reps_evalCusp_toGL_smul_zero (hn : n ≠ 0) (hw : Even w) :
         (upperTriangularSum R n)) = infinityEvalAction hn hw (upperTriangularSum R n) := by
     have h := infinityEvalAction_eq_zero_of_mem (w := w) hn hw
       (one_sub_ofMulAction_op_upperTriangularSum_mem (k := R) (n := n) (S : PSL(2, ℤ)))
-    rw [LinearMap.sub_apply, Module.End.one_apply, map_sub, sub_eq_zero] at h
+    rw [LinearMap.sub_apply, one_apply_eq_self, map_sub, sub_eq_zero] at h
     exact h.symm
   have hsum : infinityEvalAction (w := w) hn hw
       (ofMulAction R PSL(2, ℤ)ᵐᵒᵖ (TraceFormulaMatrixModule n) (op (S : PSL(2, ℤ)))
