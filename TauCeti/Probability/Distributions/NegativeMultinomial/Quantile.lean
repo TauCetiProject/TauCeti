@@ -50,24 +50,6 @@ private theorem map_cast_sum_negativeMultinomialMeasure (r p₀ : ℝ) (p : ι �
   rw [Measure.map_map (by fun_prop) (by fun_prop)]
   rfl
 
-omit [Fintype ι] in
-private lemma coordinateSuccessProbability_pos_le_one {p₀ : ℝ} (hp₀ : 0 < p₀) (p : ι → ℝ≥0)
-    (i : ι) : 0 < p₀ / (p₀ + p i) ∧ p₀ / (p₀ + p i) ≤ 1 := by
-  have hden : 0 < p₀ + (p i : ℝ) := by positivity
-  exact ⟨div_pos hp₀ hden,
-    (div_le_one hden).2 (le_add_of_nonneg_right (p i).coe_nonneg)⟩
-
-omit [Fintype ι] in
-private lemma coordinateSuccessProbability_eq_one_iff {p₀ : ℝ} (hp₀ : 0 < p₀) (p : ι → ℝ≥0)
-    (i : ι) : p₀ / (p₀ + p i) = 1 ↔ p i = 0 := by
-  have hden : p₀ + (p i : ℝ) ≠ 0 := (by positivity)
-  simp only [div_eq_one_iff_eq hden, left_eq_add, NNReal.coe_eq_zero]
-
-private lemma successWeight_le_one {p₀ : ℝ} {p : ι → ℝ≥0}
-    (hp : p₀ + ∑ i, (p i : ℝ) = 1) : p₀ ≤ 1 := by
-  have hsum : 0 ≤ ∑ i, (p i : ℝ) := Finset.sum_nonneg fun _ _ ↦ (p _).coe_nonneg
-  linarith
-
 /-- The real-cast quantile of a negative-multinomial coordinate is the quantile of its
 negative-binomial marginal. This includes shape zero and zero category weights. -/
 theorem quantile_map_cast_eval_negativeMultinomialMeasure {r p₀ : ℝ} (hr : 0 ≤ r)
@@ -94,9 +76,9 @@ theorem tendsto_quantile_map_cast_eval_negativeMultinomialMeasure_nhdsGT_zero
     Tendsto ((negativeMultinomialMeasure r p₀ p).map
       (fun x ↦ (x i : ℝ))).quantile (𝓝[>] 0) (𝓝 0) := by
   rw [map_cast_eval_negativeMultinomialMeasure, map_eval_negativeMultinomialMeasure hr hp₀ hp i]
+  have hden : 0 < p₀ + (p i : ℝ) := by positivity
   exact tendsto_quantile_map_cast_negativeBinomialMeasure_nhdsGT_zero hr
-    (coordinateSuccessProbability_pos_le_one hp₀ p i).1
-    (coordinateSuccessProbability_pos_le_one hp₀ p i).2
+    (div_pos hp₀ hden) ((div_le_one hden).2 (le_add_of_nonneg_right (p i).coe_nonneg))
 
 /-- The upper support endpoint of a valid real-cast coordinate is positive infinity exactly
 when both the shape and that category's weight are positive. -/
@@ -107,10 +89,10 @@ theorem tendsto_quantile_map_cast_eval_negativeMultinomialMeasure_nhdsLT_one
       (fun x ↦ (x i : ℝ))).quantile u : EReal)) (𝓝[<] 1)
       (𝓝 (if r = 0 ∨ p i = 0 then (0 : EReal) else ⊤)) := by
   rw [map_cast_eval_negativeMultinomialMeasure, map_eval_negativeMultinomialMeasure hr hp₀ hp i]
-  simpa only [coordinateSuccessProbability_eq_one_iff hp₀ p i] using
+  have hden : 0 < p₀ + (p i : ℝ) := by positivity
+  simpa only [div_eq_one_iff_eq hden.ne', left_eq_add, NNReal.coe_eq_zero] using
     tendsto_quantile_map_cast_negativeBinomialMeasure_nhdsLT_one hr
-      (coordinateSuccessProbability_pos_le_one hp₀ p i).1
-      (coordinateSuccessProbability_pos_le_one hp₀ p i).2
+      (div_pos hp₀ hden) ((div_le_one hden).2 (le_add_of_nonneg_right (p i).coe_nonneg))
 
 /-- Every valid real-cast total count has lower support endpoint zero. -/
 theorem tendsto_quantile_map_cast_sum_negativeMultinomialMeasure_nhdsGT_zero
@@ -119,8 +101,12 @@ theorem tendsto_quantile_map_cast_sum_negativeMultinomialMeasure_nhdsGT_zero
     Tendsto ((negativeMultinomialMeasure r p₀ p).map
       (fun x ↦ ((∑ i, x i : ℕ) : ℝ))).quantile (𝓝[>] 0) (𝓝 0) := by
   rw [map_cast_sum_negativeMultinomialMeasure, map_sum_negativeMultinomialMeasure hr hp₀ hp]
+  have hp₀_le : p₀ ≤ 1 := calc
+    p₀ ≤ p₀ + ∑ i, (p i : ℝ) :=
+      le_add_of_nonneg_right (Finset.sum_nonneg fun _ _ ↦ (p _).coe_nonneg)
+    _ = 1 := hp
   exact tendsto_quantile_map_cast_negativeBinomialMeasure_nhdsGT_zero hr hp₀
-    (successWeight_le_one hp)
+    hp₀_le
 
 /-- The upper support endpoint of a valid real-cast total is positive infinity exactly away
 from the shape-zero and success-weight-one Dirac boundaries. -/
@@ -131,7 +117,11 @@ theorem tendsto_quantile_map_cast_sum_negativeMultinomialMeasure_nhdsLT_one
       (fun x ↦ ((∑ i, x i : ℕ) : ℝ))).quantile u : EReal)) (𝓝[<] 1)
       (𝓝 (if r = 0 ∨ p₀ = 1 then (0 : EReal) else ⊤)) := by
   rw [map_cast_sum_negativeMultinomialMeasure, map_sum_negativeMultinomialMeasure hr hp₀ hp]
+  have hp₀_le : p₀ ≤ 1 := calc
+    p₀ ≤ p₀ + ∑ i, (p i : ℝ) :=
+      le_add_of_nonneg_right (Finset.sum_nonneg fun _ _ ↦ (p _).coe_nonneg)
+    _ = 1 := hp
   exact tendsto_quantile_map_cast_negativeBinomialMeasure_nhdsLT_one hr hp₀
-    (successWeight_le_one hp)
+    hp₀_le
 
 end TauCeti.Probability
