@@ -96,6 +96,14 @@ and its inverse if `t` is odd. Letters beyond `2 * n` denote `1`. -/
 def letter (x : Fin n → G) (t : ℕ) : G :=
   if h : t / 2 < n then if t % 2 = 0 then x ⟨t / 2, h⟩ else (x ⟨t / 2, h⟩)⁻¹ else 1
 
+theorem letter_def (x : Fin n → G) (t : ℕ) :
+    letter x t =
+      if h : t / 2 < n then if t % 2 = 0 then x ⟨t / 2, h⟩ else (x ⟨t / 2, h⟩)⁻¹ else 1 :=
+  (rfl)
+
+theorem letter_of_le (x : Fin n → G) {t : ℕ} (ht : n ≤ t / 2) : letter x t = 1 := by
+  simp [letter_def, Nat.not_lt.mpr ht]
+
 @[simp]
 theorem letter_two_mul (x : Fin n → G) (i : Fin n) : letter x (2 * i) = x i := by
   simp [letter]
@@ -129,6 +137,9 @@ theorem letter_signedLetter (x : Fin n → G) (i : Fin n) (b : Bool) :
 def wordValue (x : Fin n → G) (w : List ℕ) : G :=
   (w.map (letter x)).prod
 
+theorem wordValue_def (x : Fin n → G) (w : List ℕ) : wordValue x w = (w.map (letter x)).prod :=
+  (rfl)
+
 @[simp]
 theorem wordValue_nil (x : Fin n → G) : wordValue x [] = 1 := by
   simp [wordValue]
@@ -136,6 +147,14 @@ theorem wordValue_nil (x : Fin n → G) : wordValue x [] = 1 := by
 @[simp]
 theorem wordValue_cons (x : Fin n → G) (t : ℕ) (w : List ℕ) :
     wordValue x (t :: w) = letter x t * wordValue x w := by
+  simp [wordValue]
+
+theorem wordValue_singleton (x : Fin n → G) (t : ℕ) : wordValue x [t] = letter x t := by
+  simp [wordValue]
+
+@[simp]
+theorem wordValue_append (x : Fin n → G) (u w : List ℕ) :
+    wordValue x (u ++ w) = wordValue x u * wordValue x w := by
   simp [wordValue]
 
 /-- A cyclic rotation of a word with value `1` has value `1`. -/
@@ -478,15 +497,19 @@ private theorem Valid.root {st : State} (hv : Valid x h parents st) :
     · next i d hc =>
       rw [hv.coin j i d hc, hv.root fuel i, mul_assoc, ← zpow_add]
 
+/-- Moving a point of an equation to its representative. -/
+private theorem Valid.mul_zpow_root {st : State} (hv : Valid x h parents st) (q : ℕ) (e : ℤ) :
+    pt x parents q * h ^ e =
+      pt x parents (st.root st.n q).1 * h ^ ((st.root st.n q).2 + e) := by
+  rw [hv.root st.n q, mul_assoc, ← zpow_add]
+
 private theorem Valid.identify {st : State} (hv : Valid x h parents st) {a b : ℕ} {d : ℤ}
     (H : pt x parents a = pt x parents b * h ^ d) :
     Valid x h parents (st.identify a b d) := by
-  have ha := hv.root st.n a
-  have hb := hv.root st.n b
   -- In terms of the representatives, `w_{ra} = w_{rb} * h ^ x`.
   have key : pt x parents (st.root st.n a).1 = pt x parents (st.root st.n b).1 *
       h ^ ((st.root st.n b).2 + d - (st.root st.n a).2) := by
-    rw [ha, hb, mul_assoc, ← zpow_add] at H
+    rw [hv.root st.n a, hv.mul_zpow_root b d] at H
     exact eq_mul_zpow_sub H
   unfold State.identify
   simp only
@@ -503,9 +526,7 @@ private theorem Valid.identify {st : State} (hv : Valid x h parents st) {a b : �
 private theorem Valid.addOne {st : State} (hv : Valid x h parents st) {t j q : ℕ} {e : ℤ}
     (H : letter x t * pt x parents j = pt x parents q * h ^ e) :
     Valid x h parents (st.addOne (2 * n) t j q e) := by
-  have hq : letter x t * pt x parents j =
-      pt x parents (st.root st.n q).1 * h ^ ((st.root st.n q).2 + e) := by
-    rw [H, hv.root st.n q, mul_assoc, ← zpow_add]
+  have hq := H.trans (hv.mul_zpow_root q e)
   unfold State.addOne
   split
   · exact hv.setEdge hq
@@ -519,9 +540,7 @@ private theorem Valid.add {st : State} (hv : Valid x h parents st) {t j q : ℕ}
   split_ifs with ht
   swap
   · exact hv
-  have hq : letter x t * pt x parents j =
-      pt x parents (st.root st.n q).1 * h ^ ((st.root st.n q).2 + e) := by
-    rw [H, hv.root st.n q, mul_assoc, ← zpow_add]
+  have hq := H.trans (hv.mul_zpow_root q e)
   refine (hv.addOne hq).addOne ?_
   rw [letter_invLetter x ht, inv_mul_eq_iff_eq_mul, ← mul_assoc, hq, zpow_neg,
     mul_inv_cancel_right]
@@ -578,7 +597,7 @@ private theorem Valid.walk {st : State} (hv : Valid x h parents st) (i : ℕ) :
     dsimp only at hw
     obtain ⟨rfl, rfl⟩ := Prod.mk.inj hw
     rw [wordValue_cons, mul_assoc, hv.walk i u hw₀, ← mul_assoc, hv.edge t j₀ q e hq,
-      hv.root st.n q, mul_assoc, mul_assoc, ← zpow_add, ← zpow_add]
+      hv.mul_zpow_root q e, mul_assoc, ← zpow_add]
     congr 2
     omega
 
@@ -680,8 +699,8 @@ private theorem Valid.exists_mem_roots {st : State} (hv : Valid x h parents st)
     · next q e hq =>
       simp only [Bool.and_eq_true, decide_eq_true_eq, Option.isNone_iff_eq_none] at this
       refine ⟨(st.root st.n q).1, by simp [State.roots, this.1, this.2], ?_⟩
-      rw [MulAction.Quotient.smul_mk, smul_eq_mul, hv.edge t r q e hq, hv.root st.n q,
-        mul_assoc, ← zpow_add, QuotientGroup.mk_mul_of_mem _ (Subgroup.zpow_mem_zpowers h _)]
+      rw [MulAction.Quotient.smul_mk, smul_eq_mul, hv.edge t r q e hq,
+        hv.mul_zpow_root q e, QuotientGroup.mk_mul_of_mem _ (Subgroup.zpow_mem_zpowers h _)]
   have key : ∀ y ∈ Submonoid.closure (Set.range x ∪ (Set.range x)⁻¹), ∀ r ∈ st.roots,
       ∃ r' ∈ st.roots, y • (QuotientGroup.mk (pt x parents r) : G ⧸ Subgroup.zpowers h) =
         QuotientGroup.mk (pt x parents r') := by
