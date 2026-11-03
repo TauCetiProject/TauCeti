@@ -119,6 +119,12 @@ theorem measurable_stableLevyDensity :
   exact Measurable.ite (by measurability)
     ((hcoeff.mul hsign).mul (by fun_prop)) measurable_const
 
+/-- For fixed shapes, the Lévy density is measurable in the jump size. -/
+@[fun_prop]
+theorem measurable_stableLevyDensity_apply (α β : ℝ) : Measurable (stableLevyDensity α β) :=
+  measurable_stableLevyDensity.comp
+    (measurable_const.prodMk measurable_id : Measurable (fun x : ℝ ↦ ((α, β), x)))
+
 /-- The full totalized Lévy measure family is Giry measurable. -/
 @[fun_prop]
 theorem measurable_stableLevyMeasure :
@@ -232,10 +238,8 @@ theorem ae_mul_nonpos_stableLevyMeasure {t : ℝ} (hβ : |β| = 1) (ht : β * t 
       · have hx0 : 0 < x := by nlinarith
         simp [hx0]
     · exact stableLevyDensity_eq_zero_of_not (fun h ↦ hα ⟨h.1, h.2.1⟩) x
-  have hmeas : Measurable fun x ↦ ENNReal.ofReal (stableLevyDensity α β x) :=
-    (measurable_stableLevyDensity.comp
-      ((measurable_const (a := (α, β))).prodMk measurable_id)).ennreal_ofReal
-  rw [stableLevyMeasure_def, ae_withDensity_iff hmeas]
+  rw [stableLevyMeasure_def,
+    ae_withDensity_iff (measurable_stableLevyDensity_apply α β).ennreal_ofReal]
   refine ae_of_all _ fun x hx ↦ not_lt.mp fun h ↦ hx ?_
   rw [hzero x h, ENNReal.ofReal_zero]
 
@@ -299,9 +303,7 @@ theorem integrable_stableLevyDensity_smul_iff {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] (α β : ℝ) {g : ℝ → E} :
     Integrable g (stableLevyMeasure α β) ↔
       Integrable (fun x ↦ stableLevyDensity α β x • g x) := by
-  have hd : Measurable (stableLevyDensity α β) :=
-    measurable_stableLevyDensity.comp
-      (measurable_const.prodMk measurable_id : Measurable (fun x : ℝ ↦ ((α, β), x)))
+  have hd := measurable_stableLevyDensity_apply α β
   rw [stableLevyMeasure_def, integrable_withDensity_iff_integrable_smul' hd.ennreal_ofReal
     (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top)]
   simp only [ENNReal.toReal_ofReal (stableLevyDensity_nonneg _ _ _)]
@@ -315,9 +317,7 @@ theorem integral_stableLevyMeasure_eq {E : Type*} [NormedAddCommGroup E] [Normed
           (∫ x in Ioi (0 : ℝ), x ^ (-(α + 1)) • g x) +
         (Gamma (1 + α) * sin (π * α / 2) / π * (1 - β)) •
           ∫ x in Ioi (0 : ℝ), x ^ (-(α + 1)) • g (-x) := by
-  have hd : Measurable (stableLevyDensity α β) :=
-    measurable_stableLevyDensity.comp
-      (measurable_const.prodMk measurable_id : Measurable (fun x : ℝ ↦ ((α, β), x)))
+  have hd := measurable_stableLevyDensity_apply α β
   have hint := (integrable_stableLevyDensity_smul_iff α β).mp hg
   rw [stableLevyMeasure_def, integral_withDensity_eq_integral_toReal_smul hd.ennreal_ofReal
     (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top)]

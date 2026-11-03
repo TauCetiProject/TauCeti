@@ -111,13 +111,14 @@ theorem mgf_compoundPoissonMeasure_cond (hf : Measurable f) {s : Set α} (hs0 : 
     (hs : μ s ≠ ∞) {t : ℝ} (ht : IntegrableOn (fun x ↦ exp (t * f x)) s μ) :
     mgf f (compoundPoissonMeasure (μ s).toNNReal μ[|s]) t =
       exp (∫ x in s, exp (t * f x) ∂μ - μ.real s) := by
-  have hcond : Integrable (fun x ↦ exp (t * f x)) μ[|s] :=
-    ht.smul_measure (ENNReal.inv_ne_top.mpr hs0)
+  have hcond : Integrable (fun x ↦ exp (t * f x)) μ[|s] := by
+    rw [ProbabilityTheory.cond]
+    exact ht.smul_measure (ENNReal.inv_ne_top.mpr hs0)
   rw [mgf_compoundPoissonMeasure _ hf (integrable_exp_mul_compoundPoissonMeasure _ hf hcond)]
   congr 1
   have hreal : μ.real s ≠ 0 := ENNReal.toReal_ne_zero.mpr ⟨hs0, hs⟩
-  rw [mgf, ProbabilityTheory.cond, integral_smul_measure, ENNReal.toReal_inv,
-    ENNReal.coe_toNNReal_eq_toReal, smul_eq_mul, ← measureReal_def]
+  simp only [mgf, ProbabilityTheory.cond, integral_smul_measure, ENNReal.toReal_inv,
+    ENNReal.coe_toNNReal_eq_toReal, ← measureReal_def, smul_eq_mul]
   field_simp
 
 /-- On the compound Poisson exponential-integrability domain, its cgf is its intensity times

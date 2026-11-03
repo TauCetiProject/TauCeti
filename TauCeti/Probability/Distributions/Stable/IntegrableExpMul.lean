@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Probability.Distributions.Stable.Basic
 public import Mathlib.Probability.Moments.IntegrableExpMul
-import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 import TauCeti.MeasureTheory.Measure.LowerSemicontinuousLintegral
 import TauCeti.Probability.Distributions.CompoundPoisson.Transforms
 import TauCeti.Probability.Distributions.Stable.Operations
@@ -76,14 +75,6 @@ theorem integrable_exp_mul_sub_one_sub_mul_sin_stableLevyMeasure
   simpa only [mul_one, RCLike.re_to_complex, Complex.sub_re, Complex.exp_ofReal_re,
     Complex.one_re, Complex.ofReal_re] using h.re
 
-/-- Under a finite measure carried by `{x | t * x ≤ 0}`, the exponential `exp (t * x)` is
-bounded by one and hence integrable. -/
-private theorem integrable_exp_mul_of_ae_mul_nonpos {μ : Measure ℝ} [IsFiniteMeasure μ]
-    (ht : ∀ᵐ x ∂μ, t * x ≤ 0) : Integrable (fun x ↦ exp (t * x)) μ :=
-  Integrable.of_bound (by fun_prop) 1 (ht.mono fun x hx ↦ by
-    rw [Real.norm_of_nonneg (exp_pos _).le]
-    exact exp_le_one_iff.mpr hx)
-
 /-- If `t * x ≤ 0` for almost every jump `x` of the stable Lévy measure, then `exp (t * x)` is
 integrable under the normalized jump law, which is absolutely continuous with respect to the
 Lévy measure. -/
@@ -96,7 +87,8 @@ private theorem integrable_exp_mul_cond_stableLevyMeasure
   · rw [cond_eq_zero.mpr h]
     exact integrable_zero_measure
   have := cond_isProbabilityMeasure_of_finite (not_or.mp h).2 (not_or.mp h).1
-  exact integrable_exp_mul_of_ae_mul_nonpos (cond_absolutelyContinuous.ae_le ht)
+  simpa only [one_mul, AddMonoidHom.id_apply] using integrable_exp_mul_of_le
+    (X := fun x ↦ t * x) 1 0 zero_le_one (by fun_prop) (cond_absolutelyContinuous.ae_le ht)
 
 /-- If `t * x ≤ 0` for almost every jump `x` of the stable Lévy measure, then the exponential
 `exp (t * x)` is integrable under every compensated stable approximation. -/
@@ -125,8 +117,9 @@ theorem mgf_stableCompensatedPoissonMeasure (hα : α ∈ Ioo 0 2) (hβ : |β| �
   have hm0 : ν s ≠ 0 := (stableLevyMeasure_abs_gt_pos hα hβ hε).ne'
   have hm_top : ν s ≠ ∞ := stableLevyMeasure_abs_gt_ne_top hε
   have := isFiniteMeasure_stableLevyMeasure_restrict_abs_gt (α := α) (β := β) hε
-  have hexp : IntegrableOn (fun x ↦ exp (t * x)) s ν :=
-    integrable_exp_mul_of_ae_mul_nonpos (ae_restrict_of_ae ht)
+  have hexp : IntegrableOn (fun x ↦ exp (t * x)) s ν := by
+    simpa only [IntegrableOn, one_mul] using integrable_exp_mul_of_le
+      (X := fun x ↦ t * x) 1 0 zero_le_one (by fun_prop) (ae_restrict_of_ae ht)
   have hsin : IntegrableOn (fun x ↦ t * sin x) s ν :=
     Integrable.of_bound (by fun_prop) |t| (ae_of_all _ fun x ↦ by
       rw [Real.norm_eq_abs, abs_mul]
@@ -136,25 +129,17 @@ theorem mgf_stableCompensatedPoissonMeasure (hα : α ∈ Ioo 0 2) (hβ : |β| �
   have hcp : mgf id (compoundPoissonMeasure (ν s).toNNReal (cond ν s)) t =
       exp (∫ x in s, exp (t * x) ∂ν - ν.real s) :=
     mgf_compoundPoissonMeasure_cond (f := AddMonoidHom.id ℝ) measurable_id hm0 hm_top hexp
-  -- Translation by the sine compensator contributes the factor `exp (-(t * c))`.
-  have htrans : ∫ x, exp (t * id (x - ∫ y in s, sin y ∂ν))
-        ∂compoundPoissonMeasure (ν s).toNNReal (cond ν s) =
-      exp (-(t * ∫ y in s, sin y ∂ν)) *
-        mgf id (compoundPoissonMeasure (ν s).toNNReal (cond ν s)) t := by
-    rw [mgf, ← integral_const_mul]
-    congr with x
-    simp only [id, ← exp_add]
-    ring_nf
   -- Split the compensated integral into its exponential, constant and sine parts.
   have hsplit : ∫ x in s, exp (t * x) - 1 - t * sin x ∂ν =
       ∫ x in s, exp (t * x) ∂ν - ν.real s - t * ∫ y in s, sin y ∂ν := by
     have hsub₁ := integral_sub (hexp.sub hone) hsin
     have hsub₂ := integral_sub hexp hone
     simp only [Pi.sub_apply] at hsub₁ hsub₂
-    rw [hsub₁, hsub₂, integral_const, integral_const_mul, smul_eq_mul, mul_one,
-      measureReal_restrict_apply_univ]
-  rw [mgf, stableCompensatedPoissonMeasure_def, integral_map (by fun_prop) (by fun_prop),
-    htrans, hcp, ← exp_add, hsplit]
+    simp [hsub₁, hsub₂, integral_const_mul]
+  -- Translation by the sine compensator contributes the factor `exp (-(t * c))`.
+  rw [stableCompensatedPoissonMeasure_def, mgf_id_map (by fun_prop)]
+  conv_lhs => simp only [sub_eq_add_neg]
+  rw [mgf_add_const, ← Function.id_def, hcp, ← exp_add, hsplit]
   congr 1
   ring
 
@@ -211,10 +196,10 @@ theorem integrable_exp_mul_stableMeasure (hβ : |β| = 1) (s : ℝ≥0) (m : ℝ
   · rw [stableMeasure_zero_scale hα hβ.le]
     exact integrable_dirac' (by fun_prop) (by simp)
   -- A positive scale and a location are an affine image of the standardized law.
-  have hmap := stableMeasure_map_affine (α := α) (β := β) (s := 1) (m := 0) (a := m) (b := s)
-    (Or.inl (NNReal.coe_ne_zero.mpr hs.ne'))
-  rw [Real.sign_of_pos (NNReal.coe_pos.mpr hs), one_mul, NNReal.nnnorm_eq, mul_one, mul_zero,
-    add_zero] at hmap
+  have hmap : (stableMeasure α β 1 0).map (fun x ↦ m + s * x) = stableMeasure α β s m := by
+    simpa [Real.sign_of_pos (NNReal.coe_pos.mpr hs)] using
+      stableMeasure_map_affine (α := α) (β := β) (s := 1) (m := 0) (a := m) (b := s)
+        (Or.inl (NNReal.coe_ne_zero.mpr hs.ne'))
   rw [← hmap, integrable_map_measure (by fun_prop) (by fun_prop)]
   have hts : β * (t * s) ≤ 0 := by
     rw [← mul_assoc]; exact mul_nonpos_of_nonpos_of_nonneg ht s.2
