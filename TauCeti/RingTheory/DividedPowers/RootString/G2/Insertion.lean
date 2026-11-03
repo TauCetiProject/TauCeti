@@ -67,10 +67,7 @@ private theorem collect_tails (hwz : w * z = z * w + 3 • s)
     ← mul_assoc (dividedPower c w), hmove]
   simp only [mul_sum, sum_mul]
   refine sum_congr rfl fun t _ => ?_
-  have hscale : dividedPower t (3 • s) = (3 ^ t : ℕ) • dividedPower t s := by
-    simpa only [← Nat.cast_smul_eq_nsmul ℚ, Nat.cast_pow, Nat.cast_ofNat] using
-      dividedPower_smul (3 : ℚ) t s
-  rw [hscale]
+  rw [dividedPower_nsmul]
   simp only [mul_smul_comm, smul_mul_assoc, mul_assoc]
   rw [(commute_dividedPower_dividedPower hws.symm t (c - t)).left_comm,
     (commute_dividedPower_dividedPower hws.symm t C).left_comm,
@@ -116,10 +113,7 @@ private theorem insert_tail (hxz : x * z = z * x + 2 • w)
   rw [← mul_assoc (dividedPower (n - q.1 - 2 * q.2.1 - q.2.2) x), hmove]
   simp only [mul_sum, sum_mul, Finset.smul_sum]
   refine sum_congr rfl fun r _ => ?_
-  have hscale : dividedPower r (3 • v) = (3 ^ r : ℕ) • dividedPower r v := by
-    simpa only [← Nat.cast_smul_eq_nsmul ℚ, Nat.cast_pow, Nat.cast_ofNat] using
-      dividedPower_smul (3 : ℚ) r v
-  rw [hscale]
+  rw [dividedPower_nsmul]
   simp only [mul_smul_comm, smul_mul_assoc, mul_assoc]
   rw [(commute_dividedPower_dividedPower hws.symm q.2.2 (c - r)).left_comm,
     (commute_dividedPower_dividedPower hwv.symm q.2.1 (c - r)).left_comm,
