@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
 public import TauCeti.Analysis.CStarAlgebra.Action.CrossedProduct.Full
 
 /-!
