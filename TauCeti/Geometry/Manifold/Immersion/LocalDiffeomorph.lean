@@ -149,19 +149,12 @@ theorem isImmersionAtOfComplement_comp_isLocalDiffeomorphAt_iff [IsManifold I n 
     [IsManifold I n M'] {g : M' → M} {x : M'} (hg : IsLocalDiffeomorphAt I I n g x) :
     IsImmersionAtOfComplement F I J n (f ∘ g) x ↔ IsImmersionAtOfComplement F I J n f (g x) := by
   refine ⟨fun h ↦ ?_, isImmersionAtOfComplement_comp_isLocalDiffeomorphAt hg⟩
-  -- Near `g x`, `f` is `f ∘ g` composed with the local inverse `Φ⁻¹` of `g`, itself a local
+  -- Near `g x`, `f` is `f ∘ g` composed with the local inverse of `g`, itself a local
   -- diffeomorphism.
-  obtain ⟨Φ, hxΦ, hgΦ⟩ := hg
-  have hgx : g x ∈ Φ.target := hgΦ hxΦ ▸ Φ.map_source hxΦ
-  have hΦ : IsLocalDiffeomorphAt I I n Φ.symm (g x) := ⟨Φ.symm, hgx, fun _ _ ↦ rfl⟩
-  have hx : Φ.symm (g x) = x := by rw [hgΦ hxΦ]; exact Φ.left_inv hxΦ
-  refine (isImmersionAtOfComplement_comp_isLocalDiffeomorphAt hΦ (hx ▸ h)).congr_of_eventuallyEq
-    <| Filter.eventuallyEq_of_mem (Φ.open_target.mem_nhds hgx) fun y hy ↦ ?_
-  -- On the target of `Φ`, the local inverse `Φ⁻¹` is a right inverse of `g = Φ`.
-  have hy' : Φ.symm.toPartialEquiv y ∈ Φ.source := Φ.toPartialEquiv.map_target hy
-  simp only [Function.comp_apply]
-  rw [hgΦ hy']
-  exact congrArg f (Φ.toPartialEquiv.right_inv hy)
+  rw [← hg.localInverse_left_inv hg.localInverse_mem_target] at h
+  exact (isImmersionAtOfComplement_comp_isLocalDiffeomorphAt
+    hg.localInverse_isLocalDiffeomorphAt h).congr_of_eventuallyEq
+    (hg.localInverse_eventuallyEq_right.fun_comp f)
 
 /-- Precomposing with a local diffeomorphism of the source neither creates nor destroys
 immersions at a point: `f ∘ g` is an immersion at `x` exactly when `f` is one at `g x`. -/

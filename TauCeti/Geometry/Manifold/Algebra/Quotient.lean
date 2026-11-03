@@ -64,7 +64,7 @@ a subspace `V` of `E` with a closed complement, the inclusion of `V` is an immer
 instance when `L ∩ V` is a full lattice in `V`, this map is a `C^n` embedding. For a complex
 linear map `f : E → E'` carrying a full lattice `L` into a discrete subgroup `L'`, this embeds the
 complex torus `ker f / (L ∩ ker f)` holomorphically into `E / L`, with image the identity
-component of the kernel `f⁻¹(L') / L` of the induced homomorphism of complex tori
+component of the kernel `f⁻¹(L') / L` of the induced homomorphism of complex Lie groups
 (`Submodule.range_orbitRelQuotientMap_ker_subtype`).
 
 ## Main results
