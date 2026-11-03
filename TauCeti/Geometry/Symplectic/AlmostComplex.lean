@@ -699,6 +699,7 @@ def compatibleTangentSpace : Submodule ℝ (Module.End ℝ V) :=
 
 /-- Membership in the compatible tangent space: `Y (J v) = -J (Y v)` and
 `ω (Y v) w + ω v (Y w) = 0`. -/
+@[simp]
 theorem mem_compatibleTangentSpace :
     Y ∈ ω.compatibleTangentSpace J ↔
       (∀ v, Y (J v) = -J (Y v)) ∧ ∀ v w, ω (Y v) w + ω v (Y w) = 0 := by
