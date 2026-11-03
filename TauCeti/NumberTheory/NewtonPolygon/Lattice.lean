@@ -110,7 +110,7 @@ Hodge slopes are `0` and `2 v p`. -/
 example (p : R) :
     !![1, 0; -p, 1] * !![p, 1; 0, p] * !![0, 1; 1, -p] = diagonal ![1, -p ^ 2] := by
   ext i j
-  fin_cases i <;> fin_cases j <;> simp [mul_apply, Fin.sum_univ_two, sq]
+  fin_cases i <;> fin_cases j <;> simp [sq]
 
 /-- The Fredholm determinant of `[[p, 1], [0, p]]` is `(1 - p X) ^ 2`, the same as that of
 `diag(p, p)`, whose Hodge slopes are `v p` and `v p`. -/

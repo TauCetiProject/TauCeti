@@ -30,12 +30,12 @@ open scoped Matrix
 
 namespace TauCeti.MinusculeWeightTable
 
-variable {B ι R : Type*} [Fintype ι] [DecidableEq ι] [CommRing R]
+variable {B ι R : Type*} [Fintype ι] [DecidableEq ι]
     (T : MinusculeWeightTable B ι)
 
 /-- If each weight other than `h` has a negative simple coordinate, every vector killed by
 all raising matrices is supported at `h`. -/
-theorem eq_smul_single_of_raisingMatrix_mulVec_eq_zero (h : ι)
+theorem eq_smul_single_of_raisingMatrix_mulVec_eq_zero [NonAssocRing R] (h : ι)
     (hhighest : ∀ a, a ≠ h → ∃ i, T.weight a i = -1) (v : ι → R)
     (hv : ∀ i, (T.raisingMatrix i).map (Int.cast : ℤ → R) *ᵥ v = 0) :
     v = v h • Pi.single h 1 := by
@@ -47,6 +47,8 @@ theorem eq_smul_single_of_raisingMatrix_mulVec_eq_zero (h : ι)
     have hz := congrFun (hv i) (T.reflection i a)
     rw [T.raisingMatrix_map_mulVec_reflection i a hi v] at hz
     simpa [Pi.single_apply, ha] using hz
+
+variable [CommRing R]
 
 private theorem mulVec_single_reflection (M : Matrix ι ι R) (c : R) (i : B) (a : ι)
     (hE : Commute M ((T.raisingMatrix i).map (Int.cast : ℤ → R)))

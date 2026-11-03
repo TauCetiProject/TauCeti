@@ -277,7 +277,7 @@ private theorem finrank_compactlySupportedDeRhamCohomology_innerProductSpace {n 
   obtain ⟨v₀, hv₀⟩ := compactlySupportedDeRhamCohomology.exists_integral_ne_zero_normedSpace
     (Manifold.Orientation.model (Module.finBasisOfFinrankEq ℝ E hE).orientation hn)
   replace hv₀ : v₀ ≠ 0 := fun h ↦ hv₀ (by rw [h, map_zero])
-  refine (finrank_eq_one_iff_of_nonzero' v₀ hv₀).mpr fun w ↦ ?_
+  refine (finrank_eq_one_iff_of_ne_zero' v₀ hv₀).mpr fun w ↦ ?_
   -- Read `w` and `v₀` on the open subset `⊤`, where any two top classes are dependent.
   let e := compactlySupportedDeRhamCohomology.equivOfDiffeomorph
     (Diffeomorph.ofTop (I := 𝓘(ℝ, E)) (n := ∞) (⊤ : Opens E) rfl) (n + 2)

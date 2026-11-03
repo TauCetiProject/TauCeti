@@ -82,7 +82,8 @@ theorem rootSubgroupPoints_mem_commutator {R : Type*} [CommRing R] (H : Subgroup
         (⟨_, hu⟩ : H) := by
       apply H.subtype_injective
       simp only [map_commutatorElement, Subgroup.subtype_apply]
-      exact commutatorElement_commutatorElement_rootSubgroupPoints_inl hij R u
+      simpa only [mul_one] using
+        commutatorElement_commutatorElement_rootSubgroupPoints_inl hij R u 1 1
     exact heq ▸ hmem _ _ _
   | inr i =>
     obtain ⟨j, hij⟩ := hadj i
@@ -90,7 +91,8 @@ theorem rootSubgroupPoints_mem_commutator {R : Type*} [CommRing R] (H : Subgroup
         (⟨_, hu⟩ : H) := by
       apply H.subtype_injective
       simp only [map_commutatorElement, Subgroup.subtype_apply]
-      exact commutatorElement_commutatorElement_rootSubgroupPoints_inr hij R u
+      simpa only [mul_one] using
+        commutatorElement_commutatorElement_rootSubgroupPoints_inr hij R u 1 1
     exact heq ▸ hmem _ _ _
 
 private theorem mem_center_iff_eq_smul_one_of_range {R G : Type*} [CommRing R] [Group G]

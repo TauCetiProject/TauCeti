@@ -297,6 +297,10 @@ theorem reflection_apply_apply (i : B) (a : ι) : T.reflection i (T.reflection i
     T.weight_reflection_self]
   ring
 
+/-- A simple reflection is an involutive map of the weight table. -/
+theorem reflection_involutive (i : B) : Function.Involutive (T.reflection i) :=
+  T.reflection_apply_apply i
+
 /-- A simple reflection fixes exactly the weights whose coordinate at its node is zero. -/
 @[simp]
 theorem reflection_eq_self_iff (i : B) (a : ι) : T.reflection i a = a ↔ T.weight a i = 0 := by
@@ -497,41 +501,35 @@ theorem loweringMatrix_map_col {R : Type*} [AddGroupWithOne R]
   ext b
   simp [Matrix.col_apply, Pi.single_apply, ite_and, ite_apply]
 
+private theorem matrix_map_row_reflection {R : Type*} [AddGroupWithOne R]
+    (i : B) (c : ℤ) (M : Matrix ι ι ℤ)
+    (hM : ∀ a b, M a b = if T.weight b i = c ∧ a = T.reflection i b then 1 else 0)
+    (a : ι) (ha : T.weight a i = c) :
+    (M.map (Int.cast : ℤ → R)).row (T.reflection i a) = Pi.single a 1 := by
+  funext b
+  by_cases hb : b = a
+  · subst b
+    simp [Matrix.row_apply, hM, ha]
+  · have hs := (T.reflection_involutive i).injective.ne (Ne.symm hb)
+    simp [Matrix.row_apply, hM, hs, hb]
+
 /-- At the reflection of a weight of coordinate `-1`, a raising matrix applied to a vector reads
 off the coordinate of that vector at the weight. -/
-theorem raisingMatrix_map_mulVec_reflection [Fintype ι] {R : Type*} [CommRing R] (i : B) (a : ι)
-    (ha : T.weight a i = -1) (v : ι → R) :
+theorem raisingMatrix_map_mulVec_reflection [Fintype ι] {R : Type*} [NonAssocRing R]
+    (i : B) (a : ι) (ha : T.weight a i = -1) (v : ι → R) :
     ((T.raisingMatrix i).map (Int.cast : ℤ → R) *ᵥ v) (T.reflection i a) = v a := by
-  have hrow : ((T.raisingMatrix i).map (Int.cast : ℤ → R)).row (T.reflection i a) =
-      Pi.single a 1 := by
-    funext b
-    by_cases hb : b = a
-    · subst b
-      simp [Matrix.row_apply, ha]
-    · have hs : T.reflection i a ≠ T.reflection i b := by
-        intro h
-        apply hb
-        simpa only [T.reflection_apply_apply] using (congrArg (T.reflection i) h).symm
-      simp [Matrix.row_apply, hs, hb]
-  rw [Matrix.mulVec_apply, hrow, single_one_dotProduct]
+  rw [Matrix.mulVec_apply,
+    T.matrix_map_row_reflection i (-1) _ (T.raisingMatrix_apply i) a ha,
+    single_one_dotProduct]
 
 /-- At the reflection of a weight of coordinate `1`, a lowering matrix applied to a vector reads
 off the coordinate of that vector at the weight. -/
-theorem loweringMatrix_map_mulVec_reflection [Fintype ι] {R : Type*} [CommRing R] (i : B) (a : ι)
-    (ha : T.weight a i = 1) (v : ι → R) :
+theorem loweringMatrix_map_mulVec_reflection [Fintype ι] {R : Type*} [NonAssocRing R]
+    (i : B) (a : ι) (ha : T.weight a i = 1) (v : ι → R) :
     ((T.loweringMatrix i).map (Int.cast : ℤ → R) *ᵥ v) (T.reflection i a) = v a := by
-  have hrow : ((T.loweringMatrix i).map (Int.cast : ℤ → R)).row (T.reflection i a) =
-      Pi.single a 1 := by
-    funext b
-    by_cases hb : b = a
-    · subst b
-      simp [Matrix.row_apply, ha]
-    · have hs : T.reflection i a ≠ T.reflection i b := by
-        intro h
-        apply hb
-        simpa only [T.reflection_apply_apply] using (congrArg (T.reflection i) h).symm
-      simp [Matrix.row_apply, hs, hb]
-  rw [Matrix.mulVec_apply, hrow, single_one_dotProduct]
+  rw [Matrix.mulVec_apply,
+    T.matrix_map_row_reflection i 1 _ (T.loweringMatrix_apply i) a ha,
+    single_one_dotProduct]
 
 /-- The entry formula for a simple Cartan generator matrix. -/
 @[simp]

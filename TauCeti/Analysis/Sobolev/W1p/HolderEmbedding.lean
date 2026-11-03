@@ -70,7 +70,7 @@ private def W1p.morreyEmbeddingLinearMap (hp : (finrank ℝ E : ℝ≥0) < p) :
     intro x
     rw [HolderSpace.toBoundedContinuousFunction_add]
     simp only [HolderSpace.toBoundedContinuousFunction_apply, W1p.morreyHolderSpace_apply,
-      W1p.morreyRepresentative_add, Pi.add_apply, BoundedContinuousFunction.add_apply]
+      W1p.morreyRepresentative_add, Pi.add_apply, _root_.add_apply]
   map_smul' c u := by
     apply HolderSpace.toBoundedContinuousFunction_injective
     apply BoundedContinuousFunction.ext
@@ -78,7 +78,7 @@ private def W1p.morreyEmbeddingLinearMap (hp : (finrank ℝ E : ℝ≥0) < p) :
     rw [HolderSpace.toBoundedContinuousFunction_smul]
     simp only [HolderSpace.toBoundedContinuousFunction_apply, W1p.morreyHolderSpace_apply,
       W1p.morreyRepresentative_smul, Pi.smul_apply, smul_eq_mul,
-      BoundedContinuousFunction.smul_apply, RingHom.id_apply]
+      _root_.smul_apply, RingHom.id_apply]
 
 private theorem W1p.norm_morreyHolderSpace_le_aux
     (hp : (finrank ℝ E : ℝ≥0) < p) (u : W1p mu ⊤ (p : ℝ≥0∞)) :

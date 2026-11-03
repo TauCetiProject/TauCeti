@@ -16,8 +16,8 @@ import Mathlib.Tactic.NoncommRing
 Let `A`, `B` and `C` be square-zero integral matrices with `⁅A, C⁆ = 0`, `⁅⁅A, B⁆, C⁆ = A`,
 `⁅A, ⁅A, B⁆⁆ = 0` and `⁅B, ⁅B, A⁆⁆ = 0`, the relations between the root vectors `e_α`, `e_β` and
 `e_{-β}` of two adjacent simple roots acting on a minuscule weight basis. Over every commutative
-ring `R`, the unipotent units `x = 1 + u • A`, `y = 1 + B` and `z = 1 + C` of `Matrix ι ι R` then
-satisfy `⁅⁅x, y⁆, z⁆ = x`.
+ring `R`, the unipotent units `x = 1 + u • A`, `y = 1 + v • B` and `z = 1 + w • C` then satisfy
+`↑⁅⁅x, y⁆, z⁆ = 1 + (u * v * w) • A`. In particular, taking `v = w = 1` gives `⁅⁅x, y⁆, z⁆ = x`.
 
 The hypotheses are stated over `ℤ`, where the identity `⁅A, ⁅A, B⁆⁆ = -2 (A * B * A)` for a
 square-zero `A` can be divided by two, so the conclusion also holds in characteristic two.
@@ -27,7 +27,7 @@ square-zero `A` can be divided by two, so the conclusion also holds in character
 * `Matrix.mul_mul_eq_zero_of_mul_self_eq_zero_of_lie_lie_eq_zero`: for integral matrices,
   `A * A = 0` and `⁅A, ⁅A, B⁆⁆ = 0` give `A * B * A = 0`.
 * `Matrix.coe_commutatorElement_commutatorElement_eq_one_add_smul`: the nested commutator
-  identity `⁅⁅x, y⁆, z⁆ = x` for the unipotent units above.
+  identity `↑⁅⁅x, y⁆, z⁆ = 1 + (u * v * w) • A` for the unipotent units above.
 -/
 
 public section
@@ -79,17 +79,17 @@ private theorem mul_eq_zero_relations_of_lie_lie_eq_zero (A B C : Matrix ι ι �
 
 /-- **Nested commutator of square-zero unipotents.** Let `A`, `B` and `C` be square-zero integral
 matrices with `⁅A, C⁆ = 0`, `⁅⁅A, B⁆, C⁆ = A`, `⁅A, ⁅A, B⁆⁆ = 0` and `⁅B, ⁅B, A⁆⁆ = 0`. Over any
-commutative ring, the units `x = 1 + u • A`, `y = 1 + B` and `z = 1 + C` satisfy
-`⁅⁅x, y⁆, z⁆ = x`, that is, the matrix of `⁅⁅x, y⁆, z⁆` is `1 + u • A`. -/
+commutative ring, the units `x = 1 + u • A`, `y = 1 + v • B` and `z = 1 + w • C` satisfy
+`↑⁅⁅x, y⁆, z⁆ = 1 + (u * v * w) • A`. -/
 theorem coe_commutatorElement_commutatorElement_eq_one_add_smul (A B C : Matrix ι ι ℤ)
     (hA : A * A = 0) (hB : B * B = 0) (hC : C * C = 0)
     (hAC : ⁅A, C⁆ = 0) (hABC : ⁅⁅A, B⁆, C⁆ = A)
     (hAAB : ⁅A, ⁅A, B⁆⁆ = 0) (hBBA : ⁅B, ⁅B, A⁆⁆ = 0)
-    {R : Type*} [CommRing R] (u : R) (x y z : (Matrix ι ι R)ˣ)
+    {R : Type*} [CommRing R] (u v w : R) (x y z : (Matrix ι ι R)ˣ)
     (hx : (x : Matrix ι ι R) = 1 + u • A.map (Int.cast : ℤ → R))
-    (hy : (y : Matrix ι ι R) = 1 + B.map (Int.cast : ℤ → R))
-    (hz : (z : Matrix ι ι R) = 1 + C.map (Int.cast : ℤ → R)) :
-    (↑⁅⁅x, y⁆, z⁆ : Matrix ι ι R) = 1 + u • A.map (Int.cast : ℤ → R) := by
+    (hy : (y : Matrix ι ι R) = 1 + v • B.map (Int.cast : ℤ → R))
+    (hz : (z : Matrix ι ι R) = 1 + w • C.map (Int.cast : ℤ → R)) :
+    (↑⁅⁅x, y⁆, z⁆ : Matrix ι ι R) = 1 + (u * v * w) • A.map (Int.cast : ℤ → R) := by
   let f : Matrix ι ι ℤ →+* Matrix ι ι R := (Int.castRingHom R).mapMatrix
   have hf (X : Matrix ι ι ℤ) : f X = X.map (Int.cast : ℤ → R) := by
     ext a b
@@ -110,17 +110,18 @@ theorem coe_commutatorElement_commutatorElement_eq_one_add_smul (A B C : Matrix 
   have hCDC' : f C * f ⁅A, B⁆ * f C = 0 := by
     rw [← map_mul, ← map_mul, hCDC, map_zero]
   have hDC : ⁅f ⁅A, B⁆, f C⁆ = f A := by rw [← hlie, hABC]
-  have hcomm : (↑⁅x, y⁆ : Matrix ι ι R) = 1 + u • f ⁅A, B⁆ := by
-    rw [Units.val_commutatorElement_eq_one_add_lie x y (u • f A) (f B) hx hy]
-    · rw [smul_lie, ← hlie]
+  have hcomm : (↑⁅x, y⁆ : Matrix ι ι R) = 1 + (u * v) • f ⁅A, B⁆ := by
+    rw [Units.val_commutatorElement_eq_one_add_lie x y (u • f A) (v • f B) hx hy]
+    · rw [smul_lie, lie_smul, smul_smul, ← hlie]
     · simp only [smul_mul_assoc, mul_smul_comm, hAA, smul_zero]
-    · exact hBB
+    · simp only [smul_mul_assoc, mul_smul_comm, hBB, smul_zero]
     · simp only [smul_mul_assoc, mul_smul_comm, hABA', smul_zero]
     · simp only [smul_mul_assoc, mul_smul_comm, hBAB', smul_zero]
-  rw [Units.val_commutatorElement_eq_one_add_lie ⁅x, y⁆ z (u • f ⁅A, B⁆) (f C) hcomm hz]
-  · rw [smul_lie, hDC, hf]
+  rw [Units.val_commutatorElement_eq_one_add_lie ⁅x, y⁆ z
+    ((u * v) • f ⁅A, B⁆) (w • f C) hcomm hz]
+  · rw [smul_lie, lie_smul, smul_smul, hDC, hf]
   · simp only [smul_mul_assoc, mul_smul_comm, hDD, smul_zero]
-  · exact hCC
+  · simp only [smul_mul_assoc, mul_smul_comm, hCC, smul_zero]
   · simp only [smul_mul_assoc, mul_smul_comm, hDCD', smul_zero]
   · simp only [smul_mul_assoc, mul_smul_comm, hCDC', smul_zero]
 
