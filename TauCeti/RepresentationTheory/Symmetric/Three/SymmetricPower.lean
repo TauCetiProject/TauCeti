@@ -365,7 +365,7 @@ private noncomputable def equivOfFinRotateSwap {W W' : Type*} [AddCommMonoid W] 
       closure_finRotate_three_swap_eq_top f.toLinearMap).2
         (by rintro g (rfl | rfl); exacts [hτ, hσ])).isIntertwining g)
 
-/-! ### The symmetric square: `Sym² V₃ ≃ 1 ⊕ V₃` -/
+/-! ### The symmetric square: `1 ⊕ V₃ ≃ Sym² V₃` -/
 
 /-- The linear map `1 ⊕ V₃ → Sym² V₃` sending the generator of the trivial line to `αβ`, and `α`
 and `β` to `β²` and `α²`. -/
@@ -491,28 +491,28 @@ theorem symmetricGroupThreeSymSqEquiv_apply_zero_beta :
   rw [symmetricGroupThreeSymSqEquiv_apply, symSqMap_beta]
   exact symmetricPower_symmetricGroupThreeBasis_ofFn hω fun i => by fin_cases i <;> rfl
 
-/-- The inverse of `Sym² V₃ ≃ 1 ⊕ V₃` sends `αβ` to the generator `1` of the trivial line. -/
+/-- The inverse of `1 ⊕ V₃ ≃ Sym² V₃` sends `αβ` to the generator `1` of the trivial line. -/
 @[simp]
 theorem symmetricGroupThreeSymSqEquiv_symm_tprod_alpha_beta :
     (symmetricGroupThreeSymSqEquiv hω).symm
         (⨂ₛ[k] i, ![symmetricGroupThreeAlpha hω, symmetricGroupThreeBeta hω] i) = (1, 0) := by
   rw [← symmetricGroupThreeSymSqEquiv_apply_one_zero, Representation.Equiv.symm_apply_apply]
 
-/-- The inverse of `Sym² V₃ ≃ 1 ⊕ V₃` sends `α²` to `β`. -/
+/-- The inverse of `1 ⊕ V₃ ≃ Sym² V₃` sends `α²` to `β`. -/
 @[simp]
 theorem symmetricGroupThreeSymSqEquiv_symm_tprod_alpha :
     (symmetricGroupThreeSymSqEquiv hω).symm (⨂ₛ[k] _ : Fin 2, symmetricGroupThreeAlpha hω) =
       (0, symmetricGroupThreeBeta hω) := by
   rw [← symmetricGroupThreeSymSqEquiv_apply_zero_beta, Representation.Equiv.symm_apply_apply]
 
-/-- The inverse of `Sym² V₃ ≃ 1 ⊕ V₃` sends `β²` to `α`. -/
+/-- The inverse of `1 ⊕ V₃ ≃ Sym² V₃` sends `β²` to `α`. -/
 @[simp]
 theorem symmetricGroupThreeSymSqEquiv_symm_tprod_beta :
     (symmetricGroupThreeSymSqEquiv hω).symm (⨂ₛ[k] _ : Fin 2, symmetricGroupThreeBeta hω) =
       (0, symmetricGroupThreeAlpha hω) := by
   rw [← symmetricGroupThreeSymSqEquiv_apply_zero_alpha, Representation.Equiv.symm_apply_apply]
 
-/-! ### The symmetric cube: `Sym³ V₃ ≃ 1 ⊕ sgn ⊕ V₃` -/
+/-! ### The symmetric cube: `1 ⊕ sgn ⊕ V₃ ≃ Sym³ V₃` -/
 
 /-- The linear map `1 ⊕ sgn ⊕ V₃ → Sym³ V₃` sending the generators of the trivial and sign lines to
 `α³ + β³` and `α³ - β³`, and `α` and `β` to `α²β` and `αβ²`. -/
@@ -736,7 +736,7 @@ theorem symmetricGroupThreeSymCubeEquiv_apply_zero_zero_beta (h2 : (2 : k) ≠ 0
   rw [symmetricGroupThreeSymCubeEquiv_apply, symCubeMap_beta]
   exact symmetricPower_symmetricGroupThreeBasis_ofFn hω fun i => by fin_cases i <;> rfl
 
-/-- The inverse of `Sym³ V₃ ≃ 1 ⊕ sgn ⊕ V₃` sends `α³` to `(1/2, 1/2, 0)`. -/
+/-- The inverse of `1 ⊕ sgn ⊕ V₃ ≃ Sym³ V₃` sends `α³` to `(1/2, 1/2, 0)`. -/
 @[simp]
 theorem symmetricGroupThreeSymCubeEquiv_symm_tprod_alpha (h2 : (2 : k) ≠ 0) :
     (symmetricGroupThreeSymCubeEquiv hω h2).symm
@@ -744,7 +744,7 @@ theorem symmetricGroupThreeSymCubeEquiv_symm_tprod_alpha (h2 : (2 : k) ≠ 0) :
   rw [← symmetricPower_symmetricGroupThreeBasis_three_alpha, ← (symCubeMap_inv_two hω h2).1,
     ← symmetricGroupThreeSymCubeEquiv_apply hω h2, Representation.Equiv.symm_apply_apply]
 
-/-- The inverse of `Sym³ V₃ ≃ 1 ⊕ sgn ⊕ V₃` sends `β³` to `(1/2, -1/2, 0)`. -/
+/-- The inverse of `1 ⊕ sgn ⊕ V₃ ≃ Sym³ V₃` sends `β³` to `(1/2, -1/2, 0)`. -/
 @[simp]
 theorem symmetricGroupThreeSymCubeEquiv_symm_tprod_beta (h2 : (2 : k) ≠ 0) :
     (symmetricGroupThreeSymCubeEquiv hω h2).symm
@@ -752,7 +752,7 @@ theorem symmetricGroupThreeSymCubeEquiv_symm_tprod_beta (h2 : (2 : k) ≠ 0) :
   rw [← symmetricPower_symmetricGroupThreeBasis_three_beta, ← (symCubeMap_inv_two hω h2).2,
     ← symmetricGroupThreeSymCubeEquiv_apply hω h2, Representation.Equiv.symm_apply_apply]
 
-/-- The inverse of `Sym³ V₃ ≃ 1 ⊕ sgn ⊕ V₃` sends `α²β` to `α`. -/
+/-- The inverse of `1 ⊕ sgn ⊕ V₃ ≃ Sym³ V₃` sends `α²β` to `α`. -/
 @[simp]
 theorem symmetricGroupThreeSymCubeEquiv_symm_tprod_alpha_alpha_beta (h2 : (2 : k) ≠ 0) :
     (symmetricGroupThreeSymCubeEquiv hω h2).symm
@@ -761,7 +761,7 @@ theorem symmetricGroupThreeSymCubeEquiv_symm_tprod_alpha_alpha_beta (h2 : (2 : k
   rw [← symmetricGroupThreeSymCubeEquiv_apply_zero_zero_alpha hω h2,
     Representation.Equiv.symm_apply_apply]
 
-/-- The inverse of `Sym³ V₃ ≃ 1 ⊕ sgn ⊕ V₃` sends `αβ²` to `β`. -/
+/-- The inverse of `1 ⊕ sgn ⊕ V₃ ≃ Sym³ V₃` sends `αβ²` to `β`. -/
 @[simp]
 theorem symmetricGroupThreeSymCubeEquiv_symm_tprod_alpha_beta_beta (h2 : (2 : k) ≠ 0) :
     (symmetricGroupThreeSymCubeEquiv hω h2).symm
@@ -1002,7 +1002,7 @@ theorem trace_symmetricPower_three_standardRepresentation_finRotate :
 /-- **The character of `Sym³ V₃` is `1 + sgn + χ_{V₃}`**, the character of `1 ⊕ sgn ⊕ V₃`
 (compare `TauCeti.symmetricGroupThreeSymCubeEquiv`). Both sides are class functions, so it
 suffices to compare them at the identity, at `σ = (0 1)` and at `τ = (0 1 2)`. Unlike the
-isomorphism `Sym³ V₃ ≃ 1 ⊕ sgn ⊕ V₃`, this holds over every field. -/
+isomorphism `1 ⊕ sgn ⊕ V₃ ≃ Sym³ V₃`, this holds over every field. -/
 theorem trace_symmetricPower_three_standardRepresentation (g : Equiv.Perm (Fin 3)) :
     LinearMap.trace k _ ((standardRepresentation k (Fin 3)).symmetricPower 3 g) =
       1 + (Equiv.Perm.sign g : ℤ) + (standardRepresentation k (Fin 3)).character g := by
@@ -1023,20 +1023,6 @@ theorem trace_symmetricPower_three_standardRepresentation (g : Equiv.Perm (Fin 3
     norm_num
 
 /-! ### Comparison with the character table of the dihedral group of order six -/
-
-/-- The rotation `r 2` goes to the conjugate `σ τ σ⁻¹` of `τ`. -/
-private theorem dihedralGroupThreeMulEquivPerm_r_two :
-    dihedralGroupThreeMulEquivPerm (.r 2) =
-      Equiv.swap 0 1 * finRotate 3 * (Equiv.swap 0 1)⁻¹ := by
-  rw [dihedralGroupThreeMulEquivPerm_r]
-  decide
-
-/-- The reflection `sr 2` goes to the conjugate `(1 2) σ (1 2)⁻¹` of `σ`. -/
-private theorem dihedralGroupThreeMulEquivPerm_sr_two :
-    dihedralGroupThreeMulEquivPerm (.sr 2) =
-      Equiv.swap 1 2 * Equiv.swap 0 1 * (Equiv.swap 1 2)⁻¹ := by
-  rw [dihedralGroupThreeMulEquivPerm_sr]
-  decide
 
 /-- **The displayed character table of the dihedral group of order six is that of `S₃`.**
 Through `TauCeti.dihedralGroupThreeMulEquivPerm`, the rows of
