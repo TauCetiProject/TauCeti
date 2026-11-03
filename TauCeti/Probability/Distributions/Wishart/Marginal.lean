@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.Wishart.Bartlett
 public import TauCeti.Probability.Distributions.Wishart.Congruence
+public import TauCeti.Probability.Distributions.Wishart.LowDimension
 
 import TauCeti.Analysis.Matrix.OrthogonalRows
 import TauCeti.LinearAlgebra.Matrix.Rank
@@ -30,6 +31,10 @@ reads off the principal `q × q` submatrix at those coordinates, by
 matrix is again Wishart, of the same degree and with the corresponding submatrix of `S` as its
 scale: the Wishart family is closed under marginalisation.
 
+Taking a principal submatrix of size one identifies each diagonal entry with a scaled
+chi-squared variable. This also applies to the Gaussian-Gram construction, including zero degree
+and singular scales, by its congruence law and the one-dimensional identification.
+
 The two statements are proved together, by reducing an arbitrary full-row-rank congruence to a
 coordinate selection at the standard scale. Write `S = R * Rᵀ` and `M * S * Mᵀ = T * Tᵀ` with `R`
 and `T` invertible. Then `M * R` has Gram matrix `T * Tᵀ`, so by its `LQ` decomposition
@@ -48,7 +53,11 @@ positions.
   of full row rank carries the law of scale `S` to the law of scale `M * S * Mᵀ`;
 * `TauCeti.Probability.map_symmetricCongruenceLinearMap_submatrix_one_nonsingularWishartMeasure` — a
   principal `q × q` submatrix of a nonsingular Wishart matrix has the nonsingular Wishart law of
-  the corresponding submatrix of the scale.
+  the corresponding submatrix of the scale;
+* `TauCeti.Probability.map_coe_apply_wishartGramMeasure` — a diagonal entry of a Gaussian-Gram
+  Wishart matrix is a scaled chi-squared variable;
+* `TauCeti.Probability.map_coe_apply_nonsingularWishartMeasure` — a diagonal entry of a
+  nonsingular Wishart matrix is a scaled chi-squared variable.
 
 ## References
 
@@ -258,5 +267,87 @@ theorem map_symmetricCongruenceLinearMap_submatrix_one_nonsingularWishartMeasure
       _ ≤ _ := Matrix.rank_mul_le_left _ _
   rw [map_symmetricCongruenceLinearMap_nonsingularWishartMeasure _ hrank hS hn,
     Matrix.transpose_submatrix, Matrix.transpose_one, Matrix.submatrix_one_mul_mul_submatrix_one]
+
+/-! ### Diagonal marginals -/
+
+private def coordinateRow (i : Fin p) : Matrix (Fin 1) (Fin p) ℝ :=
+  (1 : Matrix (Fin p) (Fin p) ℝ).submatrix (fun _ ↦ i) id
+
+private theorem coordinateRow_injective (i : Fin p) :
+    Function.Injective (fun _ : Fin 1 ↦ i) :=
+  fun _ _ _ ↦ Subsingleton.elim _ _
+
+private theorem coordinateRow_mul_mul_transpose (i : Fin p) :
+    coordinateRow i * S * (coordinateRow i)ᵀ = S.submatrix (fun _ ↦ i) (fun _ ↦ i) := by
+  rw [coordinateRow, Matrix.transpose_submatrix, Matrix.transpose_one,
+    Matrix.submatrix_one_mul_mul_submatrix_one]
+
+private theorem symmetricFinOneEquiv_coordinateCongruence (i : Fin p) :
+    symmetricFinOneEquiv ∘ Matrix.symmetricCongruenceLinearMap (coordinateRow i) =
+      fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
+        (A : Matrix (Fin p) (Fin p) ℝ) i i := by
+  funext A
+  rw [Function.comp_apply, symmetricFinOneEquiv_apply,
+    Matrix.coe_symmetricCongruenceLinearMap_apply, coordinateRow_mul_mul_transpose]
+  rfl
+
+/-- A diagonal entry of a Gaussian-Gram Wishart matrix is its diagonal scale times a
+chi-squared variable. This includes zero degrees and zero diagonal scale. -/
+theorem map_coe_apply_wishartGramMeasure (hS : S.PosSemidef) (ν : ℕ) (i : Fin p) :
+    (wishartGramMeasure ν S).map
+        (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
+          (A : Matrix (Fin p) (Fin p) ℝ) i i) =
+      (chiSquaredMeasure ν).map (S i i * ·) := by
+  let f : Fin 1 → Fin p := fun _ ↦ i
+  have hmap := map_symmetricCongruenceLinearMap_wishartGramMeasure ν (coordinateRow i) hS
+  rw [coordinateRow_mul_mul_transpose] at hmap
+  calc
+    (wishartGramMeasure ν S).map
+        (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
+          (A : Matrix (Fin p) (Fin p) ℝ) i i) =
+        ((wishartGramMeasure ν S).map
+          (Matrix.symmetricCongruenceLinearMap (coordinateRow i))).map
+            symmetricFinOneEquiv := by
+              rw [Measure.map_map symmetricFinOneEquiv.continuous.measurable
+                (LinearMap.continuous_of_finiteDimensional _).measurable,
+                symmetricFinOneEquiv_coordinateCongruence]
+    _ = (wishartGramMeasure ν (S.submatrix f f)).map symmetricFinOneEquiv := by
+      rw [hmap]
+    _ = (chiSquaredMeasure ν).map ((S.submatrix f f) 0 0 * ·) :=
+      map_symmetricFinOneEquiv_wishartGramMeasure ν (hS.submatrix f).diag_nonneg
+    _ = (chiSquaredMeasure ν).map (S i i * ·) := by rfl
+
+/-- A diagonal entry of a nonsingular Wishart matrix is its diagonal scale times a
+chi-squared variable with the same real degree. -/
+theorem map_coe_apply_nonsingularWishartMeasure (hS : S.PosDef)
+    (hn : (p : ℝ) - 1 < n) (i : Fin p) :
+    (nonsingularWishartMeasure n S).map
+        (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
+          (A : Matrix (Fin p) (Fin p) ℝ) i i) =
+      (chiSquaredMeasure n).map (S i i * ·) := by
+  let f : Fin 1 → Fin p := fun _ ↦ i
+  have hf : Function.Injective f := coordinateRow_injective i
+  have hp : 1 ≤ p := Nat.one_le_iff_ne_zero.2 fun hp ↦ by
+    simpa [hp] using i.isLt
+  have hp' : (1 : ℝ) ≤ p := by exact_mod_cast hp
+  have hn0 : 0 < n := by linarith
+  have hmap :=
+    map_symmetricCongruenceLinearMap_submatrix_one_nonsingularWishartMeasure
+      (n := n) (S := S) f hf hS hn
+  calc
+    (nonsingularWishartMeasure n S).map
+        (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
+          (A : Matrix (Fin p) (Fin p) ℝ) i i) =
+        ((nonsingularWishartMeasure n S).map
+          (Matrix.symmetricCongruenceLinearMap (coordinateRow i))).map
+            symmetricFinOneEquiv := by
+              rw [Measure.map_map symmetricFinOneEquiv.continuous.measurable
+                (LinearMap.continuous_of_finiteDimensional _).measurable,
+                symmetricFinOneEquiv_coordinateCongruence]
+    _ = (nonsingularWishartMeasure n (S.submatrix f f)).map symmetricFinOneEquiv := by
+      simpa [coordinateRow] using congrArg (Measure.map symmetricFinOneEquiv) hmap
+    _ = (chiSquaredMeasure n).map ((S.submatrix f f) 0 0 * ·) :=
+      map_symmetricFinOneEquiv_nonsingularWishartMeasure hn0 (hS.submatrix hf).diag_pos
+    _ = (chiSquaredMeasure n).map (S i i * ·) := by rfl
 
 end TauCeti.Probability
