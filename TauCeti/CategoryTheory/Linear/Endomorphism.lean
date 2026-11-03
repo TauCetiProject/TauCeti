@@ -23,7 +23,8 @@ The native precomposition action of `(End X)ᵐᵒᵖ` on `X ⟶ Y` respects the
 scalar tower.
 
 An additive linear functor induces an algebra homomorphism on endomorphisms,
-`Functor.mapEndAlgHom`, which is injective when the functor is faithful.
+`Functor.mapEndAlgHom`, which is injective when the functor is faithful and bijective
+when the functor is bijective on the object's endomorphisms.
 -/
 
 public section
@@ -118,5 +119,20 @@ theorem mapEndAlgHom_injective [F.Faithful] (X : C) :
   apply End.ext
   apply F.map_injective
   simpa only [mapEndAlgHom_asHom] using congrArg End.asHom h
+
+/-- An additive linear functor bijective on an object's endomorphisms induces a
+bijective algebra homomorphism on its endomorphism algebra. -/
+theorem mapEndAlgHom_bijective (X : C)
+    (h : Function.Bijective (F.map : (X ⟶ X) → (F.obj X ⟶ F.obj X))) :
+    Function.Bijective (F.mapEndAlgHom R X) := by
+  constructor
+  · intro f g hfg
+    apply End.ext
+    apply h.injective
+    simpa only [mapEndAlgHom_asHom] using congrArg End.asHom hfg
+  · intro g
+    obtain ⟨f, hf⟩ := h.surjective g.asHom
+    refine ⟨End.of f, End.ext ?_⟩
+    simpa only [mapEndAlgHom_asHom] using hf
 
 end CategoryTheory.Functor
