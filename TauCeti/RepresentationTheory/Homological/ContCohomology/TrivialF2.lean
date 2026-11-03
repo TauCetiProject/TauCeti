@@ -66,6 +66,9 @@ is required for the induced cohomology maps.
   `TauCeti.eqToHom_ofDiscreteModule_trivialF2_apply` and
   `TauCeti.eqToHom_ofDiscreteModule_trivialF2_symm_apply` its carrier-level reading.
 * `TauCeti.res_trivialF2_hom`: restriction preserves the coefficient object on the nose.
+* `TauCeti.smoothResFunctor_trivialF2`: smooth restriction along a continuous monoid
+  homomorphism preserves trivial `𝔽₂` coefficients, with
+  `TauCeti.eqToHom_smoothResFunctor_trivialF2_apply` its value rule.
 * `TauCeti.trivialF2Map_subgroupSubtype`: the general pullback recovers subgroup restriction.
 * `TauCeti.trivialF2Map_id`, `TauCeti.trivialF2Map_comp`: the functoriality laws.
 * `TauCeti.trivialF2Map_eq_of_conj`: over a locally compact target, pullbacks along two
