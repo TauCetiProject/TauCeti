@@ -44,7 +44,7 @@ def parseCyclePartition (n : ℕ) (s : String) : Option (Multiset ℕ) :=
 
 /-- A cycle partition is accepted exactly when its tokens are canonical decimal spellings
 of positive parts summing to the degree. This includes both soundness and completeness. -/
-theorem parseCyclePartition_eq_some_iff {n : ℕ} {s : String} {m : Multiset ℕ} :
+@[simp] theorem parseCyclePartition_eq_some_iff {n : ℕ} {s : String} {m : Multiset ℕ} :
     parseCyclePartition n s = some m ↔
       ∃ parts : List ℕ,
         (s.toList.splitOn '.').map String.ofList = parts.map toString ∧
@@ -84,7 +84,7 @@ def parsePassportLabel (n : ℕ) (s : String) : Option (PassportLabel n) :=
   | _ => none
 
 /-- Exact grammar and componentwise acceptance criterion for a passport label. -/
-theorem parsePassportLabel_eq_some_iff {n : ℕ} {s : String} {L : PassportLabel n} :
+@[simp] theorem parsePassportLabel_eq_some_iff {n : ℕ} {s : String} {L : PassportLabel n} :
     parsePassportLabel n s = some L ↔
       ∃ group partitions s0 s1 sinf,
         (s.toList.splitOn '-').map String.ofList = [group, partitions] ∧
@@ -129,14 +129,14 @@ def parseMapLabel (n : ℕ) (s : String) : Option (PassportLabel n × String) :=
 
 /-- A map label is accepted exactly when its passport component is accepted and its external
 orbit identifier is a nonempty string of lowercase letters. -/
-theorem parseMapLabel_eq_some_iff {n : ℕ} {s orbit : String} {L : PassportLabel n} :
+@[simp] theorem parseMapLabel_eq_some_iff {n : ℕ} {s orbit : String} {L : PassportLabel n} :
     parseMapLabel n s = some (L, orbit) ↔
       ∃ group partitions,
         (s.toList.splitOn '-').map String.ofList = [group, partitions, orbit] ∧
         orbit ≠ "" ∧ (∀ c ∈ orbit.toList, 'a' ≤ c ∧ c ≤ 'z') ∧
         parsePassportLabel n (group ++ "-" ++ partitions) = some L := by
   unfold parseMapLabel
-  split <;> simp_all [Option.map_eq_some_iff]
+  split <;> simp_all [-parsePassportLabel_eq_some_iff, Option.map_eq_some_iff]
   grind
 
 end TauCeti.PermutationTriple.LMFDB
