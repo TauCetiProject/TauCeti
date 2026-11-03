@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Logarithm.Deriv
 
 import Mathlib.NumberTheory.EulerProduct.ExpLog
-import TauCeti.Analysis.Calculus.BoundedOfBoundedDeriv
+import TauCeti.Analysis.Calculus.Deriv.Bounded
 import TauCeti.Analysis.SpecialFunctions.Log.NegLogOneSub
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convergence
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Estimates
