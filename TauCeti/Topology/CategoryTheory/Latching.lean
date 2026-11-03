@@ -17,7 +17,8 @@ public import TauCeti.Topology.Homotopy.Extension.Basic
 An `n + 1`-simplex of the nerve of a category, a string `x₀ ⟶ x₁ ⟶ ⋯ ⟶ xₙ₊₁` of composable
 arrows, lies in the image of the `i`-th degeneracy exactly when its `i`-th arrow `xᵢ ⟶ xᵢ₊₁` is
 an identity arrow (`CategoryTheory.nerve.mem_range_σ_iff`, in `Set.range` form
-`CategoryTheory.nerve.range_σ_eq_preimage`, both in `TauCeti.Topology.CategoryTheory.Nerve`).
+`CategoryTheory.nerve.range_σ_eq_preimage`, both in
+`TauCeti.AlgebraicTopology.SimplicialSet.Nerve.Basic`).
 The degenerate simplices, the union of these images, form the latching object of the nerve in
 each degree.
 
