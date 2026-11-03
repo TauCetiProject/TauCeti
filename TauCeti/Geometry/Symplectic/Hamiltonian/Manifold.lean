@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Geometry.Manifold.IntegralCurve.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Interior
 public import TauCeti.Geometry.Manifold.VectorField.Prod
@@ -36,7 +37,9 @@ inverse flat maps makes the Hamiltonian vector field of a `C^(n+1)` function a `
 (`TauCeti.SmoothTwoForm.IsNondegenerate.contMDiff_hamiltonianVectorField`), which is the regularity
 needed to integrate it to a Hamiltonian flow. Rescaling the form by `c ≠ 0` rescales the
 Hamiltonian vector field by `c⁻¹`
-(`TauCeti.SmoothTwoForm.IsNondegenerate.hamiltonianVectorField_smul`).
+(`TauCeti.SmoothTwoForm.IsNondegenerate.hamiltonianVectorField_smul`), and post-composing the
+Hamiltonian with a real function `φ` rescales it pointwise by `φ'`, `X_{φ ∘ f} = φ'(f) X_f`
+(`TauCeti.SmoothTwoForm.hamiltonianVectorField_comp`).
 
 Since `σ` is alternating, `df(X) = σ(X, X) = 0` for a Hamiltonian vector field `X` of `f`: the
 Hamiltonian is constant along the integral curves of `X`, which is conservation of energy
@@ -202,22 +205,24 @@ theorem hamiltonianVectorField_neg (x : M) :
   simp [hamiltonianVectorField_def, mvfderiv_neg]
 
 /-- The Hamiltonian vector field commutes with multiplication by a real constant. -/
+@[simp]
 theorem hamiltonianVectorField_const_smul (c : ℝ) (x : M) :
     σ.hamiltonianVectorField (c • f) x = c • σ.hamiltonianVectorField f x := by
-  rcases eq_or_ne c 0 with rfl | hc
-  · rw [zero_smul, zero_smul]
-    exact congrFun (hamiltonianVectorField_const σ 0) x
-  by_cases hf : MDifferentiableAt I 𝓘(ℝ) f x
-  · have hd := mvfderiv_smul (a := fun _ : M ↦ c) mdifferentiableAt_const hf
-    simp only [mvfderiv_const, ContinuousLinearMap.zero_smulRight, add_zero] at hd
-    -- `c • f` is, pointwise, the product of `f` with the constant function `c`.
-    have hcf : c • f = (fun _ : M ↦ c) • f := rfl
-    rw [hamiltonianVectorField_def, hamiltonianVectorField_def, hcf, hd, map_smul]
-  · -- Neither `f` nor `c • f` is differentiable at `x`, so both derivatives vanish.
-    have hcf : ¬MDifferentiableAt I 𝓘(ℝ) (c • f) x := fun hcf ↦
-      hf (by simpa [smul_smul, inv_mul_cancel₀ hc] using hcf.const_smul c⁻¹)
-    simp [hamiltonianVectorField_def, mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hf,
-      mfderiv_zero_of_not_mdifferentiableAt hcf]
+  rw [hamiltonianVectorField_def, hamiltonianVectorField_def, mvfderiv_const_smul_field, map_smul]
+
+/-- **The chain rule for Hamiltonian vector fields.** Post-composing the Hamiltonian with a real
+function `φ` differentiable at `f x` rescales the Hamiltonian vector field at `x` by `φ'(f x)`:
+`X_{φ ∘ f}(x) = φ'(f x) X_f(x)`. -/
+theorem hamiltonianVectorField_comp {φ : ℝ → ℝ} {x : M} (hφ : DifferentiableAt ℝ φ (f x))
+    (hf : MDifferentiableAt I 𝓘(ℝ) f x) :
+    σ.hamiltonianVectorField (φ ∘ f) x = deriv φ (f x) • σ.hamiltonianVectorField f x := by
+  have hd : mvfderiv I (φ ∘ f) x = deriv φ (f x) • mvfderiv I f x := by
+    ext v
+    rw [mvfderiv_comp_apply_of_differentiableAt hφ hf, fderiv_eq_smul_deriv,
+      smul_apply]
+    -- Both sides are products of two reals, the first read in the tangent space of `ℝ`.
+    exact mul_comm _ _
+  rw [hamiltonianVectorField_def, hamiltonianVectorField_def, hd, map_smul]
 
 namespace IsNondegenerate
 

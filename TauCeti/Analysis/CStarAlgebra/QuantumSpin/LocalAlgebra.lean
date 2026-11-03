@@ -158,7 +158,7 @@ theorem inclusion_apply (h : Λ ⊆ Λ') (x : Matrix (Λ → S) (Λ → S) R) (�
   have hagree : (configurationEquiv h σ).2 = (configurationEquiv h τ).2 ↔
       ∀ i : Λ', (i : L) ∉ Λ → σ i = τ i := by
     simp [funext_iff]
-  simp [inclusion, one_apply, hagree]
+  simp [inclusion, Matrix.one_apply, hagree]
 
 @[simp]
 theorem inclusion_self : inclusion (subset_refl Λ) = StarAlgHom.id R (Matrix (Λ → S) _ R) := by
@@ -224,7 +224,7 @@ private theorem inclusion_mul_inclusion_apply {Λ₁ Λ₂ : Finset L} (h₁ : �
     by_cases hi₁ : (i : L) ∈ Λ₁
     · simp [ρ, hi₁]
     · simpa [ρ, hi₁] using H i hi₁ hi₂
-  rw [mul_apply, Finset.sum_eq_single ρ]
+  rw [Matrix.mul_apply, Finset.sum_eq_single ρ]
   · simp only [inclusion_apply, hρ₁, hρ₂, eq_true hσρ, ↓reduceIte, mul_ite, mul_zero]
     exact if_congr hρτ rfl rfl
   · intro ρ' _ hne

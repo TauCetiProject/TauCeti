@@ -12,22 +12,20 @@ import TauCeti.Topology.Circle.Metric
 /-!
 # A circular crosscut with a short image
 
-`Conformal/LengthArea.lean` proves Wolff's lemma — among the circles `‖z - ζ‖ = ρ` with
-`r < ρ < R`, one has small `TauCeti.circleImageLength f s ζ ρ` — and the chord bound
+`Conformal/LengthArea.lean` proves Wolff's lemma — among the circles `‖z - ζ‖ = ρ` with `r < ρ < R`,
+one has small `TauCeti.circleImageLength f s ζ ρ` — and the chord bound
 `TauCeti.ofReal_dist_le_circleImageLength`, which controls the distance between the images of the
-two endpoints of an *arc of angles*. It leaves open, in its own words, the step of "turning that
-into a crosscut of small diameter at a boundary point". This file takes that step: it reads the
-intersection `ball c r ∩ sphere ζ ρ` of the circle `sphere ζ ρ` with the disc — at a boundary
-point, `dist ζ c = r`, the **circular crosscut** of `Conformal/Crosscut/Basic.lean` when
-`ρ < 2 * r`, and empty otherwise — as an arc of angles, and concludes that its image under a
-conformal map has small diameter at suitable radii `ρ`.
+two endpoints of an *arc of angles*. It does not turn that into a crosscut of small diameter at a
+boundary point. This file takes that step: it reads the intersection `ball c r ∩ sphere ζ ρ` of the
+circle `sphere ζ ρ` with the disc — at a boundary point, `dist ζ c = r`, the **circular crosscut**
+of `Conformal/Crosscut/Basic.lean` when `ρ < 2 * r`, and empty otherwise — as an arc of angles, and
+concludes that its image under a conformal map has small diameter at suitable radii `ρ`.
 
 That is the first of the two geometric inputs
 `TauCeti.exists_continuousOn_closure_eqOn_of_forall_exists_diam_union_le` of
-`Conformal/CutDiameter.lean` runs on, and hence of layer **L5** of
-`TauCetiRoadmap/ConformalMapping/README.md`, Carathéodory's boundary correspondence. The second —
-a small set `E` enclosing the boundary points of the image domain that cling to the piece the
-crosscut cuts off — is a matter of local connectedness of that boundary and is not treated here.
+`Conformal/CutDiameter.lean` runs on, and hence of Carathéodory's boundary correspondence. The
+second — a small set `E` enclosing the boundary points of the image domain that cling to the piece
+the crosscut cuts off — is a matter of local connectedness of that boundary and is not treated here.
 
 ## The intersection is an arc
 
@@ -71,13 +69,12 @@ needed for the estimates themselves, whose statements cover every centre and rad
 
 ## Generality
 
-In accordance with the generality bar of `ConformalMapping/README.md`, which fixes scalar `ℂ` for
-every theorem added in layers L0–L6, everything below is stated for maps of `ℂ`. The disc is a
-general `ball c r` rather than the unit disc, since nothing is cheaper in the normalised case, and
-the centre `ζ` of the cutting circle is unrestricted, since the arc description that carries the
-chord bound never uses `dist ζ c = r`. The radius `ρ` of that circle is unrestricted as well, the
-three estimates on `ball c r ∩ sphere ζ ρ` asking nothing of it: `sphere ζ ρ` is empty for `ρ < 0`
-and the single point `ζ` for `ρ = 0`, so both degenerate cases hold for want of a second point.
+Everything below is stated for maps of `ℂ`. The disc is a general `ball c r` rather than the unit
+disc, since nothing is cheaper in the normalised case, and the centre `ζ` of the cutting circle is
+unrestricted, since the arc description that carries the chord bound never uses `dist ζ c = r`. The
+radius `ρ` of that circle is unrestricted as well, the three estimates on `ball c r ∩ sphere ζ ρ`
+asking nothing of it: `sphere ζ ρ` is empty for `ρ < 0` and the single point `ζ` for `ρ = 0`, so
+both degenerate cases hold for want of a second point.
 
 ## References
 

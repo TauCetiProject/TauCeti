@@ -27,6 +27,10 @@ fixes `0` and `± 1`.
 * `TauCeti.deriv_normalizedArsinh_pos`, `TauCeti.deriv_normalizedArsinh_le_two`,
   `TauCeti.abs_mul_deriv_normalizedArsinh_le_one`: the derivative satisfies `0 < β' s ≤ 2` and
   `|s| * β' s ≤ 1`, that is, `|β' s| ≤ min 2 (1 / |s|)` for `s ≠ 0`.
+* `TauCeti.lipschitzWith_normalizedArsinh`,
+  `TauCeti.abs_normalizedArsinh_mul_sub_normalizedArsinh_mul_le`: the integrated forms of these
+  bounds, `|β s - β s'| ≤ 2 * |s - s'|` and `|β (a * s) - β (b * s)| ≤ |log a - log b|` for
+  `a, b > 0`.
 
 Where it is used: `TauCeti/Analysis/Analytic/HeightCompression.lean` compresses the height of
 a cylinder `E × ℝ` by `β`, following S. Łojasiewicz, *Triangulation of semi-analytic sets*,
@@ -133,5 +137,28 @@ theorem abs_mul_deriv_normalizedArsinh_le_one (s : ℝ) : |s| * deriv normalized
   calc |s| * deriv normalizedArsinh s = |sinh 1 * s| / √(1 + (sinh 1 * s) ^ 2) := by
         rw [deriv_normalizedArsinh, abs_mul, abs_of_pos h1]; ring
     _ ≤ 1 := div_le_one_of_le₀ (abs_le_sqrt (le_add_of_nonneg_left zero_le_one)) (sqrt_nonneg _)
+
+/-- `β` is `2`-Lipschitz, since its derivative is positive and at most `2`. -/
+theorem lipschitzWith_normalizedArsinh : LipschitzWith 2 normalizedArsinh := by
+  refine lipschitzWith_of_nnnorm_deriv_le
+    (fun s ↦ (hasDerivAt_normalizedArsinh s).differentiableAt) fun s ↦ ?_
+  rw [← NNReal.coe_le_coe, coe_nnnorm, norm_eq_abs, abs_of_pos (deriv_normalizedArsinh_pos s)]
+  exact_mod_cast deriv_normalizedArsinh_le_two s
+
+/-- Rescaling the argument of `β` by positive factors `a` and `b` changes its value by at most
+`|log a - log b|`. This is the integrated form of the bound `|s| * β' s ≤ 1`: the function
+`x ↦ β (exp x * s)` is `1`-Lipschitz. -/
+theorem abs_normalizedArsinh_mul_sub_normalizedArsinh_mul_le {a b : ℝ} (ha : 0 < a) (hb : 0 < b)
+    (s : ℝ) : |normalizedArsinh (a * s) - normalizedArsinh (b * s)| ≤ |log a - log b| := by
+  have hd (x : ℝ) : HasDerivAt (fun x ↦ normalizedArsinh (exp x * s))
+      (deriv normalizedArsinh (exp x * s) * (exp x * s)) x := by
+    rw [deriv_normalizedArsinh]
+    exact (hasDerivAt_normalizedArsinh _).comp x ((hasDerivAt_exp x).mul_const s)
+  have hL : LipschitzWith 1 fun x ↦ normalizedArsinh (exp x * s) := by
+    refine lipschitzWith_of_nnnorm_deriv_le (fun x ↦ (hd x).differentiableAt) fun x ↦ ?_
+    rw [(hd x).deriv, ← NNReal.coe_le_coe, coe_nnnorm, norm_eq_abs, abs_mul,
+      abs_of_pos (deriv_normalizedArsinh_pos _), mul_comm, NNReal.coe_one]
+    exact abs_mul_deriv_normalizedArsinh_le_one _
+  simpa [Real.dist_eq, exp_log ha, exp_log hb] using hL.dist_le_mul (log a) (log b)
 
 end TauCeti

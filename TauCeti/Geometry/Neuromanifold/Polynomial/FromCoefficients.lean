@@ -22,7 +22,7 @@ of the bounded-degree polynomial tuple having the prescribed coefficients.
 the possibly smaller inferred degree bound, extraction returns that same tuple.
 The final theorem applies this to any supplied coefficient map whose coordinates are polynomial.
 All statements hold over commutative semirings; faithfulness of evaluation over infinite domains
-is provided separately by `MvPolynomial.boundedEvaluation_injective`.
+is provided separately by `MvPolynomial.tupleEvaluation_injective`.
 
 The coefficient/function viewpoint follows Marchetti–Shahverdi–Mereta–Trager–Kohn,
 *Algebra Unveils Deep Learning — An Invitation to Neuroalgebraic Geometry*,
@@ -96,11 +96,11 @@ theorem map_inputPolynomial_polynomialFromCoefficients
 theorem polynomialRealization_polynomialFromCoefficients
     (Q : J × {a : X →₀ ℕ // a.degree ≤ d} → MvPolynomial W K) :
     polynomialRealization (polynomialFromCoefficients Q) =
-      fun w => boundedEvaluation X K J d
+      fun w => tupleEvaluation J (restrictTotalDegree X K d)
         ((boundedCoefficientEquiv X K J d).symm (fun i => eval w (Q i))) := by
   funext w x j
   rw [← eval₂_inputPolynomial, ← eval_map,
-    map_inputPolynomial_polynomialFromCoefficients, boundedEvaluation_apply]
+    map_inputPolynomial_polynomialFromCoefficients, tupleEvaluation_apply]
 
 /-- Extraction after assembly returns the supplied coefficient tuple. The coercion forgets
 only the inferred degree bound, which can be smaller than `d`. -/
@@ -118,7 +118,7 @@ theorem exists_polynomialRealization_of_coefficients [Fintype J]
     (Q : J × {a : X →₀ ℕ // a.degree ≤ d} → MvPolynomial W K)
     (hQ : ∀ w i, eval w (Q i) = boundedCoefficientEquiv X K J d (c w) i) :
     ∃ P : J → MvPolynomial (W ⊕ X) K,
-      polynomialRealization P = boundedEvaluation X K J d ∘ c ∧
+      polynomialRealization P = tupleEvaluation J (restrictTotalDegree X K d) ∘ c ∧
         ∀ w j, (polynomialCoefficientMap P w j : MvPolynomial X K) = c w j := by
   have hcoords (w : W → K) : (fun i => eval w (Q i)) =
       boundedCoefficientEquiv X K J d (c w) := funext (hQ w)

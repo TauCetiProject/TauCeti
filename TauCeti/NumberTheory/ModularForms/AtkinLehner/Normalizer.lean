@@ -32,6 +32,7 @@ of `(·) ^ (2 - k)` has to be chosen.
 
 ## Main results
 
+* `TauCeti.natCast_eq_ofReal_sqrt_zpow_two`: `Q` is the square of `√Q` in `ℂ`.
 * `TauCeti.atkinLehnerNormalizer_sq`: it squares to `Q ^ (2 - k)`.
 * `TauCeti.atkinLehnerNormalizer_sq_mul`: consequently it cancels the scalar `Q ^ (k - 2)` that
   the raw slash squares to.
@@ -70,15 +71,20 @@ theorem atkinLehnerNormalizer_ne_zero (hQ : Q ≠ 0) (k : ℤ) : atkinLehnerNorm
   zpow_ne_zero _ <| Complex.ofReal_ne_zero.mpr <|
     Real.sqrt_ne_zero'.mpr (Nat.cast_pos.mpr (Nat.pos_of_ne_zero hQ))
 
+/-- `Q` is the square of the real square root `√Q`, cast to `ℂ`. Rewriting `Q` this way turns
+powers of `Q` into powers of `√Q`, the base of `atkinLehnerNormalizer`. -/
+theorem natCast_eq_ofReal_sqrt_zpow_two (Q : ℕ) :
+    (Q : ℂ) = ((Real.sqrt Q : ℝ) : ℂ) ^ (2 : ℤ) := by
+  rw [zpow_two, ← Complex.ofReal_mul, Real.mul_self_sqrt (Nat.cast_nonneg Q),
+    Complex.ofReal_natCast]
+
 /-- **The normalizer squares to `Q ^ (2 - k)`.** -/
 theorem atkinLehnerNormalizer_sq (hQ : Q ≠ 0) (k : ℤ) :
     atkinLehnerNormalizer Q k ^ 2 = (Q : ℂ) ^ (2 - k) := by
   have hs0 : ((Real.sqrt Q : ℝ) : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr <|
     Real.sqrt_ne_zero'.mpr (Nat.cast_pos.mpr (Nat.pos_of_ne_zero hQ))
-  have hs : (Q : ℂ) = ((Real.sqrt Q : ℝ) : ℂ) ^ (2 : ℤ) := by
-    rw [zpow_two, ← Complex.ofReal_mul, Real.mul_self_sqrt (Nat.cast_nonneg Q),
-      Complex.ofReal_natCast]
-  rw [atkinLehnerNormalizer_def, hs, ← zpow_mul, pow_two, ← zpow_add₀ hs0, two_mul]
+  rw [atkinLehnerNormalizer_def, natCast_eq_ofReal_sqrt_zpow_two Q, ← zpow_mul, pow_two,
+    ← zpow_add₀ hs0, two_mul]
 
 /-- **The normalization cancels the scalar the raw slash squares to.** Multiplying
 `Q ^ (k - 2)` by the square of the normalizer leaves `1`; this single identity is the whole

@@ -46,7 +46,7 @@ finite sums of monomials, `TauCeti.HahnModule.continuousLinearMap_ext_single`.
 
 * `HahnModule.lattice_le_ker_residueDual_iff`: the functional attached to `g` vanishes on
   `U_a(V)` exactly when `g ∈ U_(-a)(V*)`.
-* `LinearMap.residueDual_of_map`: compatibility with coefficientwise linear maps.
+* `LinearMap.residueDual_hahnModuleMap`: compatibility with coefficientwise linear maps.
 * `ContinuousLinearMap.coeff_hahnModule_residueDualEquiv_symm`: the coefficients of the series
   representing a continuous functional `ℓ` are `v ↦ ℓ(v t⁻¹⁻ⁿ)`.
 
@@ -220,10 +220,10 @@ variable {R V W : Type*} [CommRing R] [AddCommGroup V] [Module R V] [AddCommGrou
 /-- **Compatibility with linear maps.** For `u : V →ₗ[R] W`, pairing `g ∈ W*((t))` with the
 coefficientwise image of `f ∈ V((t))` is pairing the coefficientwise transpose image of `g` in
 `V*((t))` with `f`. -/
-theorem residueDual_of_map (u : V →ₗ[R] W) (g : HahnModule ℤ R (Module.Dual R W))
-    (f : HahnModule ℤ R V) : residueDual g (of R (((of R).symm f).map u)) =
-      residueDual (of R (((of R).symm g).map u.dualMap)) f := by
-  simp only [residueDual_apply, Equiv.symm_apply_apply, map_coeff, LinearMap.dualMap_apply]
+theorem residueDual_hahnModuleMap (u : V →ₗ[R] W) (g : HahnModule ℤ R (Module.Dual R W))
+    (f : HahnModule ℤ R V) : residueDual g (u.hahnModuleMap f) =
+      residueDual (u.dualMap.hahnModuleMap g) f := by
+  simp only [residueDual_apply, coeff_hahnModuleMap, LinearMap.dualMap_apply]
 
 end LinearMap
 

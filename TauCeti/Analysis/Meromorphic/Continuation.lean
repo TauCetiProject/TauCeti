@@ -111,6 +111,13 @@ theorem meromorphicContinuation_of_not_exists
   classical
   simp only [meromorphicContinuation, dite_eq_right h]
 
+/-- Conversion of a whole-plane meromorphic function to normal form preserves its value
+at every analytic point. -/
+theorem toMeromorphicNFOn_apply_of_analyticAt (hf : Meromorphic f) {z : ℂ}
+    (hz : AnalyticAt ℂ f z) : toMeromorphicNFOn f univ z = f z := by
+  rw [toMeromorphicNFOn_eq_toMeromorphicNFAt hf.meromorphicOn (mem_univ z),
+    toMeromorphicNFAt_eq_self.mpr hz.meromorphicNFAt]
+
 /-- A meromorphic continuation analytic on the initial half-plane gives the canonical
 continuation after conversion to normal form. This is how non-normalized analytic
 presentations identify the canonical function. -/
@@ -119,8 +126,7 @@ theorem meromorphicContinuation_eq_toMeromorphicNFOn (hg : Meromorphic g)
     meromorphicContinuation σ f = toMeromorphicNFOn g univ := by
   apply meromorphicContinuation_eq (meromorphicNFOn_toMeromorphicNFOn g univ)
   intro s hs
-  rw [toMeromorphicNFOn_eq_toMeromorphicNFAt hg.meromorphicOn (mem_univ s),
-    toMeromorphicNFAt_eq_self.mpr (hga s hs).meromorphicNFAt]
+  rw [toMeromorphicNFOn_apply_of_analyticAt hg (hga s hs)]
   exact hgf hs
 
 /-- The canonical continuation has the same punctured germs as any meromorphic
@@ -137,8 +143,7 @@ theorem meromorphicContinuation_apply (hg : Meromorphic g)
     (hga : AnalyticOnNhd ℂ g {s | σ < s.re}) (hgf : EqOn g f {s | σ < s.re})
     {z : ℂ} (hgz : AnalyticAt ℂ g z) : meromorphicContinuation σ f z = g z := by
   rw [meromorphicContinuation_eq_toMeromorphicNFOn hg hga hgf,
-    toMeromorphicNFOn_eq_toMeromorphicNFAt hg.meromorphicOn (mem_univ z),
-    toMeromorphicNFAt_eq_self.mpr hgz.meromorphicNFAt]
+    toMeromorphicNFOn_apply_of_analyticAt hg hgz]
 
 /-- Restricting the initial half-plane does not change an existing continuation. -/
 theorem meromorphicContinuation_eq_of_le {τ : ℝ} (hστ : σ ≤ τ)
@@ -216,10 +221,9 @@ theorem meromorphicContinuation_smul_apply {c : ℂ → ℂ} (hc : Meromorphic c
     (hca : AnalyticOnNhd ℂ c {s | σ < s.re}) (hc0 : ∀ s : ℂ, σ < s.re → c s ≠ 0)
     (hf : AnalyticOnNhd ℂ f {s | σ < s.re}) {s : ℂ} (hs : σ < s.re) :
     meromorphicContinuation σ (c • f) s = c s • meromorphicContinuation σ f s := by
-  rw [meromorphicContinuation_smul hc hca hc0 hf, toMeromorphicNFOn_eq_toMeromorphicNFAt
-      (hc.smul (meromorphicOn_univ.mp (meromorphicNFOn_meromorphicContinuation σ f
-        ).meromorphicOn)).meromorphicOn (mem_univ s),
-    toMeromorphicNFAt_eq_self.mpr ((hca s hs).smul
-      (analyticOnNhd_meromorphicContinuation hf s hs)).meromorphicNFAt, Pi.smul_apply']
+  rw [meromorphicContinuation_smul hc hca hc0 hf,
+    toMeromorphicNFOn_apply_of_analyticAt
+      (hc.smul (meromorphicOn_univ.mp (meromorphicNFOn_meromorphicContinuation σ f).meromorphicOn))
+      ((hca s hs).smul (analyticOnNhd_meromorphicContinuation hf s hs)), Pi.smul_apply']
 
 end TauCeti

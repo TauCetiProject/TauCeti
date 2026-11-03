@@ -151,7 +151,7 @@ private theorem hasStrictFDerivAt_coord (hf : ∀ x, f x = c → ContMDiffAt I �
         ⟨(fun _ ↦ (0 : ℝ)) ((chartAt E z.1).symm y), sec I f c ((chartAt E z.1).symm y)⟩).2)
       (linearization z) (chartAt E z.1 z.1) := by
   rw [coord_eq, chartAt_self]
-  exact ((hf _ (zeroHomeomorph I f c z).2).contDiffAt_comp_extChartAt_symm.hasStrictFDerivAt
+  exact ((hf _ (zeroHomeomorph I f c z).2).contDiffAt_comp_extChartAt_symm.hasStrictFDerivAt_fderiv
     one_ne_zero).sub_const c
 
 private theorem surjective_linearization (hreg : IsRegularValue I 𝓘(ℝ, F) f c)
@@ -180,7 +180,7 @@ private theorem implicit_coord_eq (hf : ∀ x, f x = c → ContMDiffAt I 𝓘(�
     let x := (zeroHomeomorph I f c z : M)
     let hD : HasStrictFDerivAt (fun y ↦ f ((extChartAt I x).symm y) - c) (linearization z)
         (extChartAt I x x) :=
-      ((hf x (zeroHomeomorph I f c z).2).contDiffAt_comp_extChartAt_symm.hasStrictFDerivAt
+      ((hf x (zeroHomeomorph I f c z).2).contDiffAt_comp_extChartAt_symm.hasStrictFDerivAt_fderiv
         one_ne_zero).sub_const c
     let hD' := LinearMap.range_eq_top.2 (surjective_linearization hreg z)
     let hker := (isFredholm_linearization z).closedComplemented_ker
@@ -297,7 +297,8 @@ theorem regularLevelChartAt_source (x : {x : M // f x = c}) :
       let D := fderiv ℝ (f ∘ (extChartAt I (x : M)).symm) (extChartAt I (x : M) x)
       let hD : HasStrictFDerivAt (fun y ↦ f ((extChartAt I (x : M)).symm y) - c) D
           (extChartAt I (x : M) x) :=
-        ((hf x x.2).contDiffAt_comp_extChartAt_symm.hasStrictFDerivAt one_ne_zero).sub_const c
+        ((hf x x.2).contDiffAt_comp_extChartAt_symm.hasStrictFDerivAt_fderiv
+          one_ne_zero).sub_const c
       let hD' := LinearMap.range_eq_top.2
         (hreg.isRegularPoint x.2).surjective_fderiv_comp_extChartAt_symm
       let hker := D.isFredholm_of_finiteDimensional.closedComplemented_ker
@@ -326,7 +327,8 @@ theorem mem_regularLevelChartAt_target_iff (x : {x : M // f x = c}) (k : Fin n �
       let D := fderiv ℝ (f ∘ (extChartAt I (x : M)).symm) (extChartAt I (x : M) x)
       let hD : HasStrictFDerivAt (fun y ↦ f ((extChartAt I (x : M)).symm y) - c) D
           (extChartAt I (x : M) x) :=
-        ((hf x x.2).contDiffAt_comp_extChartAt_symm.hasStrictFDerivAt one_ne_zero).sub_const c
+        ((hf x x.2).contDiffAt_comp_extChartAt_symm.hasStrictFDerivAt_fderiv
+          one_ne_zero).sub_const c
       let hD' := LinearMap.range_eq_top.2
         (hreg.isRegularPoint x.2).surjective_fderiv_comp_extChartAt_symm
       let hker := D.isFredholm_of_finiteDimensional.closedComplemented_ker
@@ -356,7 +358,8 @@ theorem coe_regularLevelChartAt_symm_apply (x : {x : M // f x = c}) {k : Fin n �
       let D := fderiv ℝ (f ∘ (extChartAt I (x : M)).symm) (extChartAt I (x : M) x)
       let hD : HasStrictFDerivAt (fun y ↦ f ((extChartAt I (x : M)).symm y) - c) D
           (extChartAt I (x : M) x) :=
-        ((hf x x.2).contDiffAt_comp_extChartAt_symm.hasStrictFDerivAt one_ne_zero).sub_const c
+        ((hf x x.2).contDiffAt_comp_extChartAt_symm.hasStrictFDerivAt_fderiv
+          one_ne_zero).sub_const c
       let hD' := LinearMap.range_eq_top.2
         (hreg.isRegularPoint x.2).surjective_fderiv_comp_extChartAt_symm
       let hker := D.isFredholm_of_finiteDimensional.closedComplemented_ker

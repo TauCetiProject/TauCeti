@@ -42,6 +42,10 @@ discriminant bilinear form replaces the quadratic one.
 
 ## Main declarations
 
+* `TauCeti.IntegralLattice.exists_one_tmul_eq_add_localCarrierToDual` and
+  `TauCeti.IntegralLattice.exists_form_eq_completedRationalForm_add_algebraMap`: a representative
+  in `Lᵛ` of a `p`-primary class agrees with a local representative up to `L_p`, so their pairings
+  agree up to `ℤ_p`.
 * `TauCeti.IntegralLattice.primaryDiscriminantBilinearIsometry`: an isometry `L_p ≃ M_p` induces
   an isometry of the `p`-primary components of the discriminant bilinear modules.
 * `TauCeti.IntegralLattice.primaryDiscriminantQuadraticIsometry`: for even lattices, it induces an
@@ -118,6 +122,46 @@ private theorem completedRationalForm_localizationDualToCompletion_one_tmul (x y
   simp
 
 variable [L.IsNondegenerate] [M.IsNondegenerate]
+
+/-! ### Local representatives of `p`-primary classes -/
+
+omit [M.IsNondegenerate] in
+/-- A representative `x ∈ Lᵛ` of the `p`-primary class corresponding to a local dual vector `z`
+agrees with `z` up to a vector of `L_p`. -/
+theorem exists_one_tmul_eq_add_localCarrierToDual {z : L.LocalDualCarrier p} {x : L.dualCarrier}
+    (hx : (Submodule.Quotient.mk x : L.DiscriminantGroup) =
+      ((L.primaryComponentEquivLocalDiscriminantGroup p).symm (Submodule.Quotient.mk z) :
+        L.DiscriminantGroup)) :
+    ∃ m : L.LocalCarrier p, (1 : ℤ_[p]) ⊗ₜ x = z + L.localCarrierToDual p m := by
+  set a := (L.primaryComponentEquivLocalDiscriminantGroup p).symm (Submodule.Quotient.mk z) with ha
+  have h := (L.primaryComponentEquivLocalDiscriminantGroup p).apply_symm_apply
+    (Submodule.Quotient.mk z)
+  have hmem : (Submodule.Quotient.mk x : L.DiscriminantGroup) ∈
+      primaryComponent L.DiscriminantGroup p := hx ▸ a.2
+  rw [← ha, show a = ⟨_, hmem⟩ from Subtype.ext hx.symm,
+    primaryComponentEquivLocalDiscriminantGroup_apply_mk, Submodule.Quotient.eq] at h
+  obtain ⟨m, hm⟩ := h
+  exact ⟨m, by rw [hm, add_sub_cancel]⟩
+
+omit [M.IsNondegenerate] in
+/-- If `x, x' ∈ Lᵛ` agree with local dual vectors `z, z'` up to vectors of `L_p`, then the rational
+pairing `B(x, x')` and the completed pairing of `z` and `z'` differ by a `p`-adic integer. -/
+theorem exists_form_eq_completedRationalForm_add_algebraMap {x x' : L.dualCarrier}
+    {z z' : L.LocalDualCarrier p} {m m' : L.LocalCarrier p}
+    (hm : (1 : ℤ_[p]) ⊗ₜ x = z + L.localCarrierToDual p m)
+    (hm' : (1 : ℤ_[p]) ⊗ₜ x' = z' + L.localCarrierToDual p m') :
+    ∃ w : ℤ_[p], ((L.form x x' : ℚ) : ℚ_[p]) =
+      L.completedRationalForm p (L.localizationDualToCompletion p z)
+        (L.localizationDualToCompletion p z') + algebraMap ℤ_[p] ℚ_[p] w := by
+  refine ⟨L.localDualPairingEquiv p z m' + L.localDualPairingEquiv p z' m +
+    L.localIntegralForm p m m', ?_⟩
+  rw [← completedRationalForm_localizationDualToCompletion_one_tmul, hm, hm']
+  simp only [map_add, LinearMap.add_apply, localizationDualToCompletion_localCarrierToDual,
+    completedRationalForm_localizationDualToCompletion,
+    completedRationalForm_localizationToCompletion]
+  rw [(L.isSymm_completedRationalForm p).eq (L.localizationToCompletion p m),
+    completedRationalForm_localizationDualToCompletion]
+  ring
 
 /-! ### Transport along an isometry of localizations -/
 
@@ -234,16 +278,8 @@ private theorem exists_form_eq_add_algebraMap
     (hn : (1 : ℤ_[p]) ⊗ₜ y' = localDualCarrierEquiv φ (1 ⊗ₜ y) + M.localCarrierToDual p n) :
     ∃ z : ℤ_[p], ((M.form x' y' : ℚ) : ℚ_[p]) =
       ((L.form x y : ℚ) : ℚ_[p]) + algebraMap ℤ_[p] ℚ_[p] z := by
-  have hψ := completedRationalForm_localDualCarrierEquiv_one_tmul φ x y
-  refine ⟨M.localDualPairingEquiv p (localDualCarrierEquiv φ (1 ⊗ₜ y)) m +
-    M.localDualPairingEquiv p (localDualCarrierEquiv φ (1 ⊗ₜ x)) n + M.localIntegralForm p m n, ?_⟩
-  rw [← completedRationalForm_localizationDualToCompletion_one_tmul, hm, hn]
-  simp only [map_add, LinearMap.add_apply, localizationDualToCompletion_localCarrierToDual, hψ,
-    completedRationalForm_localizationDualToCompletion,
-    completedRationalForm_localizationToCompletion]
-  rw [(M.isSymm_completedRationalForm p).eq (M.localizationToCompletion p m),
-    completedRationalForm_localizationDualToCompletion]
-  ring
+  rw [← completedRationalForm_localDualCarrierEquiv_one_tmul φ x y]
+  exact exists_form_eq_completedRationalForm_add_algebraMap hm hn
 
 /-- For an even lattice `M`, the half-norm on a transported dual vector shifted by a vector of
 `M_p` differs from the half-norm on the original dual vector by an element of `ℤ_p`. -/

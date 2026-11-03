@@ -210,14 +210,14 @@ attribute [local instance] Matrix.seminormedAddCommGroup
 /-- The matrix with rows `(1, 0, -1)` and `(0, 1, -1)` has largest entry `1` in absolute value. -/
 theorem norm_diff : ‖!![(1 : ℤ), 0, -1; 0, 1, -1]‖ = 1 :=
   le_antisymm ((norm_le_iff zero_le_one).2 fun i j ↦ by fin_cases i <;> fin_cases j <;> simp)
-    (by simpa using norm_entry_le_entrywise_sup_norm !![(1 : ℤ), 0, -1; 0, 1, -1] (i := 0) (j := 0))
+    (by simpa using norm_apply_le_norm !![(1 : ℤ), 0, -1; 0, 1, -1] (i := 0) (j := 0))
 
 /-- The matrix with rows `(1, 1, -2)` and `(0, 1, -1)` has largest entry `2` in absolute value. -/
 theorem norm_shear_mul_diff : ‖!![(1 : ℤ), 1, -2; 0, 1, -1]‖ = 2 :=
   le_antisymm ((norm_le_iff zero_le_two).2 fun i j ↦ by
       fin_cases i <;> fin_cases j <;> norm_num [Int.norm_eq_abs])
     (by simpa [Int.norm_eq_abs] using
-      norm_entry_le_entrywise_sup_norm !![(1 : ℤ), 1, -2; 0, 1, -1] (i := 0) (j := 2))
+      norm_apply_le_norm !![(1 : ℤ), 1, -2; 0, 1, -1] (i := 0) (j := 2))
 
 /-- Siegel's bound `(n · max 1 ‖A‖) ^ (p / (n - p))` of `Int.Matrix.exists_ne_zero_int_vec_norm_le`
 for the matrix with rows `(1, 0, -1)` and `(0, 1, -1)` is `9`. -/

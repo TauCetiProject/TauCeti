@@ -252,6 +252,19 @@ theorem self_le_legendreF {φ k : ℝ} (hk : k ^ 2 < 1) (hφ : 0 ≤ φ) : φ �
     (intervalIntegrable_legendreF_integrand hk 0 φ) fun θ _ ↦ one_le_legendreF_integrand hk θ
   simpa [legendreF_def] using h
 
+/-- An elementary upper bound for the incomplete elliptic integral of the first kind
+at nonnegative amplitude, valid for either sign of the modulus. -/
+theorem legendreF_le_div_sqrt {φ k : ℝ} (hk : k ^ 2 < 1) (hφ : 0 ≤ φ) :
+    legendreF φ k ≤ φ / √(1 - k ^ 2) := by
+  have h := integral_mono_on hφ
+    (intervalIntegrable_legendreF_integrand hk 0 φ) intervalIntegrable_const
+    (fun θ _ ↦ legendreF_integrand_le hk θ)
+  have hr : (1 - k ^ 2) ^ (-1 / 2 : ℝ) = (√(1 - k ^ 2))⁻¹ := by
+    rw [inv_sqrt_eq_rpow]
+    norm_num
+  rw [hr] at h
+  simpa [legendreF_def, div_eq_mul_inv] using h
+
 /-- `F(φ, k)` is odd in the amplitude. -/
 @[simp]
 theorem legendreF_neg (φ k : ℝ) : legendreF (-φ) k = -legendreF φ k :=
@@ -313,6 +326,13 @@ theorem legendreF_zero_modulus (φ : ℝ) : legendreF φ 0 = φ := by
 /-- For `k ^ 2 < 1`, the complete integral of the first kind `K(k)` is positive. -/
 theorem legendreK_pos {k : ℝ} (hk : k ^ 2 < 1) : 0 < legendreK k :=
   legendreF_pos hk (by positivity)
+
+/-- An elementary upper bound for the complete elliptic integral of the first kind,
+valid for either sign of the modulus. -/
+theorem legendreK_le_pi_div_two_div_sqrt {k : ℝ} (hk : k ^ 2 < 1) :
+    legendreK k ≤ π / 2 / √(1 - k ^ 2) := by
+  simpa [legendreK_def] using
+    legendreF_le_div_sqrt hk (by positivity : (0 : ℝ) ≤ π / 2)
 
 @[simp]
 theorem legendreK_neg (k : ℝ) : legendreK (-k) = legendreK k := legendreF_neg_modulus _ k
