@@ -107,6 +107,12 @@ theorem squareClass_zpow (u : Kˣ) (n : ℤ) : squareClass (u ^ n) = n • squar
 theorem squareClass_pow (u : Kˣ) (n : ℕ) : squareClass (u ^ n) = n • squareClass u := by
   simpa using squareClass_zpow (u := u) (n := (n : ℤ))
 
+/-- Every element of the square-class group is its own negative: twice a square class is the class
+of a square. -/
+@[simp]
+theorem SquareClassGroup.add_self_eq_zero (x : SquareClassGroup K) : x + x = 0 := by
+  rw [← two_smul (ZMod 2) x, show (2 : ZMod 2) = 0 from rfl, zero_smul]
+
 private theorem zmod_two_eq_zero_or_one : ∀ t : ZMod 2, t = 0 ∨ t = 1 := by decide
 
 /-- A `ZMod 2`-linear combination of square classes is the class of the corresponding subset
