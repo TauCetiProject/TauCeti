@@ -361,6 +361,26 @@ theorem edgewiseSubdivisionRealizationMap_surjective (hk : k ≠ 0) :
           sum_preimageCoord_mul_card y hk (p := (· < i)) antitone_lt, ← mul_sub, hy, ← mul_assoc,
           inv_mul_cancel₀ (Nat.cast_ne_zero.mpr hk), one_mul]
 
+open Set TauCeti.SetLike in
+/-- The geometric simplices of a nonzero edgewise subdivision cover precisely the original
+polyhedron, expressed in its original coordinate space. -/
+theorem iUnion_convexHull_range_edgewisePoint (K : AbstractSimplicialComplex ι) (hk : k ≠ 0) :
+    (⋃ ρ : Face (K.edgewiseSubdivision k),
+      convexHull ℝ (range fun a : ρ.1 => (edgewisePoint a.1.1 : ι → ℝ))) =
+      range (fun x : Realization K => (x.1 : ι → ℝ)) := by
+  simp_rw [← range_edgewiseSubdivisionRealizationMap_faceInclusion]
+  ext z
+  constructor
+  · intro hz
+    obtain ⟨ρ, x, rfl⟩ := mem_iUnion.mp hz
+    exact ⟨edgewiseSubdivisionRealizationMap K k (faceInclusion _ ρ x), rfl⟩
+  · rintro ⟨x, rfl⟩
+    obtain ⟨y, rfl⟩ := edgewiseSubdivisionRealizationMap_surjective (K := K) hk x
+    let ρ := carrier _ y
+    let t : StandardSimplex ρ.1 := ⟨y.1, mem_convexHull_carrier _ y⟩
+    have ht : faceInclusion _ ρ t = y := Subtype.ext (faceInclusion_val _ _ _)
+    exact mem_iUnion.mpr ⟨ρ, t, by simp only [ht]⟩
+
 /-- The edgewise realization map is bijective for `k ≠ 0`. -/
 theorem edgewiseSubdivisionRealizationMap_bijective (hk : k ≠ 0) :
     Function.Bijective (edgewiseSubdivisionRealizationMap K k) :=

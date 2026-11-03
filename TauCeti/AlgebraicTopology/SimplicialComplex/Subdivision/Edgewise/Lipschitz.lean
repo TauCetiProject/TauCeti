@@ -36,57 +36,6 @@ public section
 open Set AbstractSimplicialComplex PreAbstractSimplicialComplex TauCeti TauCeti.SetLike
 open scoped NNReal
 
-namespace AbstractSimplicialComplex
-
-variable {ι : Type*} [LinearOrder ι] {K : AbstractSimplicialComplex ι} {k : ℕ}
-
-/-- In the original coordinates, the image of a closed subdivided simplex is the convex hull
-of the points assigned to its vertices. This statement does not require finitely many original
-vertices. -/
-theorem range_edgewiseSubdivisionRealizationMap_faceInclusion
-    (ρ : Face (K.edgewiseSubdivision k)) :
-    range (fun x : StandardSimplex ρ.1 =>
-      ((edgewiseSubdivisionRealizationMap K k (faceInclusion _ ρ x)).1 : ι → ℝ)) =
-      convexHull ℝ (range fun a : ρ.1 => (edgewisePoint a.1.1 : ι → ℝ)) := by
-  classical
-  let L : (K.EdgewiseVertex k →₀ ℝ) →ₗ[ℝ] (ι → ℝ) :=
-    (Finsupp.lcoeFun : (ι →₀ ℝ) →ₗ[ℝ] (ι → ℝ)).comp
-      (Finsupp.linearCombination ℝ fun a : K.EdgewiseVertex k => edgewisePoint a.1)
-  have hformula : (fun x : StandardSimplex ρ.1 =>
-      ((edgewiseSubdivisionRealizationMap K k (faceInclusion _ ρ x)).1 : ι → ℝ)) =
-      L ∘ Subtype.val := by
-    funext x
-    simp [L]
-  simp only [hformula, range_comp, Subtype.range_coe]
-  rw [L.image_convexHull]
-  congr 1
-  have hsingle (a : K.EdgewiseVertex k) :
-      L (Finsupp.single a 1) = (edgewisePoint a.1 : ι → ℝ) := by simp [L]
-  simp only [Finset.coe_image, image_image]
-  simp only [hsingle, image_eq_range]
-  rfl
-
-/-- The geometric simplices of a nonzero edgewise subdivision cover precisely the original
-polyhedron, expressed in its original coordinate space. -/
-theorem iUnion_convexHull_range_edgewisePoint (K : AbstractSimplicialComplex ι) (hk : k ≠ 0) :
-    (⋃ ρ : Face (K.edgewiseSubdivision k),
-      convexHull ℝ (range fun a : ρ.1 => (edgewisePoint a.1.1 : ι → ℝ))) =
-      range (fun x : Realization K => (x.1 : ι → ℝ)) := by
-  simp_rw [← range_edgewiseSubdivisionRealizationMap_faceInclusion]
-  ext z
-  constructor
-  · intro hz
-    obtain ⟨ρ, x, rfl⟩ := mem_iUnion.mp hz
-    exact ⟨edgewiseSubdivisionRealizationMap K k (faceInclusion _ ρ x), rfl⟩
-  · rintro ⟨x, rfl⟩
-    obtain ⟨y, rfl⟩ := edgewiseSubdivisionRealizationMap_surjective (K := K) hk x
-    let ρ := carrier _ y
-    let t : StandardSimplex ρ.1 := ⟨y.1, mem_convexHull_carrier _ y⟩
-    have ht : faceInclusion _ ρ t = y := Subtype.ext (faceInclusion_val _ _ _)
-    exact mem_iUnion.mpr ⟨ρ, t, by simp only [ht]⟩
-
-end AbstractSimplicialComplex
-
 namespace TauCeti
 
 /-- A common Lipschitz bound on the geometric faces of a nonzero edgewise subdivision of the
