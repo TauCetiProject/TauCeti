@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Probability.Distributions.Uniform.Sphere.Coordinate
 public import TauCeti.Probability.Distributions.Uniform.Sphere.OneDimensional
-import Mathlib.Analysis.Normed.Module.Normalize
 
 /-!
 # Cdfs and quantile endpoints of uniform sphere projections
@@ -54,23 +53,6 @@ theorem cdf_map_inner_uniformSphereMeasure (hd : 2 ≤ Module.finrank ℝ E) {v 
       fun y ↦ -‖v‖ + (2 * ‖v‖) * y := by ext y; ring
   rw [map_inner_uniformSphereMeasure hd v, hfun,
     cdf_map_affine_of_pos (by positivity), cdf_betaMeasure_eq ha ha, sub_neg_eq_add]
-
-/-- In dimension one, any real linear observable of a uniform sphere point has a
-Rademacher law scaled by the norm of its representing vector, including the zero vector. -/
-theorem map_inner_uniformSphereMeasure_eq_map_rademacher_of_finrank_eq_one
-    (hd : Module.finrank ℝ E = 1) (v : E) :
-    (uniformSphereMeasure E).map (fun u : sphere (0 : E) 1 ↦ ⟪v, (u : E)⟫) =
-      rademacherMeasure.map (fun y ↦ ‖v‖ * y) := by
-  have : Nontrivial E := Module.nontrivial_of_finrank_pos (by omega : 0 < Module.finrank ℝ E)
-  by_cases hv : v = 0
-  · simp [hv, Measure.map_const]
-  let e : sphere (0 : E) 1 :=
-    ⟨NormedSpace.normalize v, mem_sphere_zero_iff_norm.mpr (NormedSpace.norm_normalize hv)⟩
-  have h := congrArg (Measure.map (fun y : ℝ ↦ ‖v‖ * y))
-    (map_inner_uniformSphereMeasure_of_finrank_eq_one hd e)
-  rw [Measure.map_map (by fun_prop) (by fun_prop)] at h
-  simpa only [Function.comp_def, ← real_inner_smul_left, e,
-    NormedSpace.norm_smul_normalize] using h
 
 /-- In dimension one, projection cdfs have two equally weighted atoms at the extreme
 values. For the zero observable these coincide and give the Dirac cdf at zero. -/
@@ -143,21 +125,3 @@ theorem tendsto_quantile_map_inner_uniformSphereMeasure_nhdsLT_one
   exact (quantile_map_inner_uniformSphereMeasure hd2 v hu).symm
 
 end TauCeti.Probability
-
-namespace ProbabilityTheory.HasLaw
-
-open TauCeti.Probability
-
-variable {E Ω : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-  [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [MeasurableSpace Ω]
-  {P : Measure Ω} {X : Ω → sphere (0 : E) 1}
-
-/-- Every real linear observable of a uniform random unit vector in dimension one has a
-Rademacher law scaled by the norm of its representing vector. -/
-theorem inner_uniformSphereMeasure_eq_map_rademacher_of_finrank_eq_one
-    (hX : HasLaw X (uniformSphereMeasure E) P) (hd : Module.finrank ℝ E = 1) (v : E) :
-    HasLaw (fun ω ↦ ⟪v, (X ω : E)⟫) (rademacherMeasure.map (fun y ↦ ‖v‖ * y)) P :=
-  (HasLaw.mk (by fun_prop)
-    (map_inner_uniformSphereMeasure_eq_map_rademacher_of_finrank_eq_one hd v)).comp hX
-
-end ProbabilityTheory.HasLaw
