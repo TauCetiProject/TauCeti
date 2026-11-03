@@ -114,10 +114,11 @@ root `TauCeti.Cyclotomic.complexRoot e` restricts to the pinned embedding of the
 theorem map_cyclotomicEquivRingOfIntegers_eq_complexEmbedding (hζ : IsPrimitiveRoot ζ e)
     {ι : K →+* ℂ} (hι : ι ζ = Cyclotomic.complexRoot e) (x : Cyclotomic e) :
     ι (algebraMap (𝓞 K) K (hζ.cyclotomicEquivRingOfIntegers x)) = Cyclotomic.complexEmbedding x :=
+  have hmk : algebraMap (𝓞 K) K hζ.toInteger = ζ := RingOfIntegers.map_mk _ _
   DFunLike.congr_fun (Cyclotomic.ringHom_ext
     (g₁ := (ι.comp (algebraMap (𝓞 K) K)).comp hζ.cyclotomicEquivRingOfIntegers.toRingHom)
     (g₂ := Cyclotomic.complexEmbedding)
-    (by simpa [show algebraMap (𝓞 K) K hζ.toInteger = ζ from RingOfIntegers.map_mk _ _] using hι)) x
+    (by simpa [hmk] using hι)) x
 
 end IsPrimitiveRoot
 
