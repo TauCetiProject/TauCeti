@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Global.AdmissibleModulus.Bas
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.LocalArtin.Compatibility
 public import TauCeti.NumberTheory.ClassFieldTheory.Local.Conductor.Basic
 public import TauCeti.NumberTheory.NumberField.Discriminant.RamifiedSupport.Basic
+import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Norm
 
 /-!
 # Admissible moduli and ramification
@@ -37,6 +38,16 @@ modulus contains the primes dividing the relative discriminant
 (`IsAdmissibleModulus.ramifiedSupport_subset_support`); this applies in particular to the conductor
 `abelianConductor K L`, which is admissible.
 
+The infinite places behave in the same way. If `v` is a real place of `K` outside the infinite part
+of `𝔪`, the idele class concentrated at `v` with component `-1` is a ray class for `𝔪`
+(`ofCompletion_mem_raySubgroup`), so by admissibility and local–global compatibility at `v`
+(`globalArtinMap_infiniteLocal`) its local Artin symbol is trivial. If a place `w` of `L` above `v`
+were ramified, that is, complex, then `-1` would be a norm from `L_w ≅ ℂ`, which it is not. Hence
+a real place of `K` below a ramified infinite place of `L` lies in the infinite part of every
+admissible modulus (`IsAdmissibleModulus.mem_infinitePart_of_isRamified`), and every infinite
+place of `L` above a place outside that infinite part is unramified
+(`IsAdmissibleModulus.isUnramified_of_notMem_infinitePart`).
+
 The abelian hypothesis cannot be dropped. By norm limitation, the norm group of `ℚ(∛2)/ℚ` is the
 whole idele class group, so the trivial modulus is admissible for it, although `2` and `3` ramify.
 
@@ -54,6 +65,10 @@ whole idele class group, so the trivial modulus is admissible for it, although `
   same, for every prime of `L` above a prime ideal of `K` prime to `𝔪`.
 * `TauCeti.ClassFieldTheory.IsAdmissibleModulus.ramifiedSupport_subset_support`: the ramified
   support of `L/K` is contained in the support of every admissible modulus.
+* `TauCeti.ClassFieldTheory.IsAdmissibleModulus.mem_infinitePart_of_isRamified`: a real place of
+  `K` below a ramified infinite place of `L` lies in the infinite part of every admissible modulus.
+* `TauCeti.ClassFieldTheory.IsAdmissibleModulus.isUnramified_of_notMem_infinitePart`: an infinite
+  place of `L` over a place outside the infinite part of an admissible modulus is unramified.
 
 ## References
 
@@ -147,6 +162,36 @@ theorem ramifiedSupport_subset_support (h : IsAdmissibleModulus K L 𝔪) :
     dvd_relDiscr_iff_exists_not_isUnramifiedAt v.ne_bot] at hv
   obtain ⟨⟨Q, _, _⟩, hQ⟩ := hv
   exact h.mem_support_of_ramified v Q hQ
+
+/-- **Ramified infinite places lie in every admissible modulus.** For an abelian extension `L/K`
+and a modulus `𝔪` admissible for `L/K`, a real place `v` of `K` below an infinite place of `L`
+ramified over `K`, that is, a complex place over `v`, lies in the infinite part of `𝔪`. -/
+theorem mem_infinitePart_of_isRamified (h : IsAdmissibleModulus K L 𝔪)
+    (v : {v : InfinitePlace K // v.IsReal}) (w : InfinitePlace L) [w.LiesOver v.1]
+    (hw : w.IsRamified K) : v ∈ 𝔪.infinitePart := by
+  by_contra hv
+  -- The idele class concentrated at `v` with component `-1` is a ray class for `𝔪`, so it is a
+  -- norm from `C_L` and its global Artin symbol vanishes.
+  have hray := ofCompletion_mem_raySubgroup (𝔪 := 𝔪) (w := v.1)
+    (fun w' hw' heq ↦ hv (Subtype.ext heq ▸ hw')) (-1)
+  rw [IdeleClassGroup.ofCompletion_apply] at hray
+  have hArt := (globalArtinMap_eq_zero_iff K L IsSepClosed.lift _).2
+    (isAdmissibleModulus_iff.1 h hray)
+  -- By local–global compatibility, `-1` is then a local norm from `L_w ≅ ℂ`, so it is positive.
+  rw [globalArtinMap_infiniteLocal, ofMul_eq_zero,
+    infiniteLocalArtinAt_eq_one_iff_mem_normGroup v.1 w,
+    InfinitePlace.Completion.mem_normGroup_iff_of_isRamified hw v.2] at hArt
+  norm_num at hArt
+
+/-- **Infinite places outside an admissible modulus are unramified.** For an abelian extension
+`L/K` and a modulus `𝔪` admissible for `L/K`, every infinite place of `L` above an infinite place
+`v` of `K` that is not one of the real places of `𝔪` is unramified over `K`. -/
+theorem isUnramified_of_notMem_infinitePart (h : IsAdmissibleModulus K L 𝔪)
+    {v : InfinitePlace K} (hv : ∀ v' ∈ 𝔪.infinitePart, (v' : InfinitePlace K) ≠ v)
+    (w : InfinitePlace L) [w.LiesOver v] :
+    w.IsUnramified K :=
+  (w.isUnramified_or_isRamified K).resolve_right fun hw ↦
+    hv _ (h.mem_infinitePart_of_isRamified ⟨v, hw.liesOver_isReal_under w v⟩ w hw) rfl
 
 end IsAdmissibleModulus
 

@@ -23,8 +23,10 @@ ray-class reciprocity.
 * Its norm group is the kernel of the ring-class quotient
   (`range_ideleClassNormMap_ringClassField`). That kernel contains the ray subgroup of `𝔣`, so the
   conductor modulus of `O` is admissible for the ring class field
-  (`isAdmissibleModulus_ringClassField`). Hence the ring class field is unramified at every prime
-  of `K` not dividing `𝔣` (`isUnramifiedAt_ringClassField`).
+  (`isAdmissibleModulus_ringClassField`), that is, the conductor of the ring class field divides
+  `𝔣` (`abelianConductor_ringClassField_dvd`). Hence the ring class field is unramified at every
+  prime of `K` not dividing `𝔣` (`isUnramifiedAt_ringClassField`) and, `𝔣` having no infinite
+  part, at every infinite place (`isUnramified_ringClassField`).
 * The ray-class Artin map of the ring class field at `𝔣` therefore exists; it is surjective, and
   its kernel is the image of the norm group in `Cl_𝔣`, which is the kernel of the congruence
   description `Cl_𝔣 → Pic O` (`ker_rayClassArtinMap_ringClassField`). Both maps out of `Cl_𝔣`
@@ -33,7 +35,8 @@ ray-class reciprocity.
   Artin map (`ringClassArtinEquiv_ringClassIdeleQuotient`), and it obeys the **splitting law**: the
   Picard class of the contraction to `O` of a prime `𝔭` of `𝓞 K` prime to `𝔣` maps to an
   arithmetic Frobenius at every prime above `𝔭` (`isArithFrobAt_ringClassArtinEquiv_picClass`).
-  Hence `[ringClassField O : K] = #Pic O` (`finrank_ringClassField`), and the decomposition of
+  Hence `Gal(ringClassField O / K) ≃* Pic O` (`gal_ringClassField_equiv_pic`) and
+  `[ringClassField O : K] = #Pic O` (`finrank_ringClassField`), and the decomposition of
   such a prime `𝔭` is read off `Pic O`: its residue degree in the ring class field is the order
   `f` of the Picard class of `𝔭 ∩ O` (`orderOf_picClass_eq_inertiaDeg`), and it has `#Pic O / f`
   primes above it (`ncard_primesOver_ringClassField_mul_orderOf_picClass`). In particular `𝔭`
@@ -65,9 +68,14 @@ one, cut out by ideals with a generator congruent to a rational integer modulo `
   admissible for its ring class field.
 * `TauCeti.ClassFieldTheory.ringClassArtinEquiv_ringClassIdeleQuotient`: on idele classes the
   isomorphism is the global Artin map.
-* `TauCeti.ClassFieldTheory.isUnramifiedAt_ringClassField`: the ring class field is unramified
-  outside the conductor.
+* `TauCeti.ClassFieldTheory.abelianConductor_ringClassField_dvd`: the conductor of the ring class
+  field divides the conductor of the order.
+* `TauCeti.ClassFieldTheory.isUnramifiedAt_ringClassField`,
+  `TauCeti.ClassFieldTheory.isUnramified_ringClassField`: the ring class field is unramified
+  outside the conductor, including at every infinite place.
 * `TauCeti.ClassFieldTheory.isArithFrobAt_ringClassArtinEquiv_picClass`: the splitting law.
+* `TauCeti.ClassFieldTheory.gal_ringClassField_equiv_pic`: the Galois group of the ring class
+  field is the Picard group of the order.
 * `TauCeti.ClassFieldTheory.finrank_ringClassField`: the degree is the order of `Pic O`.
 * `TauCeti.ClassFieldTheory.orderOf_picClass_eq_inertiaDeg`,
   `TauCeti.ClassFieldTheory.ncard_primesOver_ringClassField_mul_orderOf_picClass`: the
@@ -159,6 +167,18 @@ theorem isUnramifiedAt_ringClassField {v : IsDedekindDomain.HeightOneSpectrum (�
   (isAdmissibleModulus_ringClassField O).isUnramifiedAway v
     (by rwa [Modulus.mem_support_iff, conductorModulus_finitePart]) Q
 
+/-- **The ring class field is unramified at the infinite places**: the conductor modulus of an
+order has no infinite part, so no real place of `K` becomes complex in the ring class field. -/
+theorem isUnramified_ringClassField (w : InfinitePlace (ringClassField O)) : w.IsUnramified K :=
+  (isAdmissibleModulus_ringClassField O).isUnramified_of_notMem_infinitePart
+    (v := w.comap (algebraMap K (ringClassField O))) (by simp [conductorModulus_infinitePart]) w
+
+/-- **The conductor of the ring class field divides the conductor of the order**, viewed as a
+modulus with no infinite part. -/
+theorem abelianConductor_ringClassField_dvd :
+    abelianConductor K (ringClassField O) ∣ O.conductorModulus :=
+  (isAdmissibleModulus_iff_abelianConductor_dvd _).1 (isAdmissibleModulus_ringClassField O)
+
 /-! ### Reciprocity for the ring class field -/
 
 /-- **The kernel of ray-class reciprocity for the ring class field** is the kernel of the
@@ -217,6 +237,11 @@ theorem isArithFrobAt_ringClassArtinEquiv_picClass
     IsArithFrobAt (𝓞 K) (ringClassArtinEquiv O (O.picClass J)) Q := by
   rw [ringClassArtinEquiv_picClass]
   exact isArithFrobAt_rayClassArtinMap_idealClass _ J Q
+
+/-- The Galois group of the ring class field of `O` is the Picard group of `O`, through the inverse
+of `ringClassArtinEquiv O`. -/
+theorem gal_ringClassField_equiv_pic : Nonempty (Gal(ringClassField O/K) ≃* Pic O) :=
+  ⟨(ringClassArtinEquiv O).symm⟩
 
 /-- **The degree of the ring class field of `O` is the order of the Picard group of `O`.** -/
 theorem finrank_ringClassField :
