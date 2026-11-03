@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Manifold.ConnectedSum.Smooth
 public import TauCeti.Geometry.Manifold.Orientation.OpenSubset
 public import TauCeti.Geometry.Manifold.Orientation.Inversion
 import TauCeti.Geometry.Manifold.Orientation.Glue
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.Sum
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 
 /-!
@@ -77,25 +76,10 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   (h₁ : IsOpenEmbedding e₁) (h₂ : IsOpenEmbedding e₂)
   (d₁ : IsLocalDiffeomorph 𝓘(ℝ, E) I 1 e₁) (d₂ : IsLocalDiffeomorph 𝓘(ℝ, E) I 1 e₂)
 
-omit [FiniteDimensional ℝ E] in
-include d₁ d₂ in
-/-- The first punctured summand is included in the connected sum by a local diffeomorphism. -/
-private theorem isLocalDiffeomorph_inl :
-    letI := chartedSpace (H := H) h₁ h₂
-    IsLocalDiffeomorph I I 1 (inl e₁ e₂) := by
-  let := chartedSpace (H := H) h₁ h₂
-  rw [← mk_comp_inl]
-  exact fun x ↦ (isLocalDiffeomorph_sumInl x).comp (hg := isLocalDiffeomorph_mk h₁ h₂ d₁ d₂ _)
-
-omit [FiniteDimensional ℝ E] in
-include d₁ d₂ in
-/-- The second punctured summand is included in the connected sum by a local diffeomorphism. -/
-private theorem isLocalDiffeomorph_inr :
-    letI := chartedSpace (H := H) h₁ h₂
-    IsLocalDiffeomorph I I 1 (inr e₁ e₂) := by
-  let := chartedSpace (H := H) h₁ h₂
-  rw [← mk_comp_inr]
-  exact fun y ↦ (isLocalDiffeomorph_sumInr y).comp (hg := isLocalDiffeomorph_mk h₁ h₂ d₁ d₂ _)
+/-- `TauCeti.ConnectedSum.isLocalDiffeomorph_inl` and `isLocalDiffeomorph_inr` are stated at a
+smoothness `n : ℕ∞`, so at `n = 1` their smoothness is the cast of `1 : ℕ∞`; the orientation API
+needs it nonzero. -/
+private local instance : NeZero ((1 : ℕ∞) : WithTop ℕ∞) := ⟨one_ne_zero⟩
 
 variable (o₁ : Manifold.Orientation I M ι) (o₂ : Manifold.Orientation I N ι)
   (oE : Manifold.Orientation 𝓘(ℝ, E) E ι)

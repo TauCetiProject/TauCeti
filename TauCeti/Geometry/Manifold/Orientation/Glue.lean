@@ -34,6 +34,7 @@ cobordisms, are oriented.
 * `TauCeti.Manifold.Orientation.isOrientationPreservingAt_glue_left`,
   `TauCeti.Manifold.Orientation.isOrientationPreservingAt_glue_right`: the two local
   diffeomorphisms preserve orientation from the glued orientation.
+* `TauCeti.Manifold.Orientation.eq_glue_iff`: this property characterizes the glued orientation.
 * `TauCeti.Manifold.Orientation.map_orientationAt_eq_of_comp_eventuallyEq`: the hypothesis of
   `glue` at a point of the overlap, when both pieces are read off a common oriented source by
   orientation-preserving maps.
@@ -152,6 +153,20 @@ theorem isOrientationPreservingAt_glue_right (y : N) :
     ((hg y).mfderivToContinuousLinearEquiv (NeZero.ne n)) rfl).2 ?_
   rw [glue, orientationAt_ofVectorBundleOrientation]
   exact (glueAt_right hf hg hg' h y).symm
+
+/-- **The glued orientation is characterized by the pieces.** An orientation of `X` is the glued
+orientation exactly when `f` and `g` preserve orientation from `o₁` and `o₂` to it. -/
+theorem eq_glue_iff {o : Orientation I X ι} :
+    o = glue hf hg hf' hg' hfg h ↔
+      (∀ x, IsOrientationPreservingAt o₁ o f x) ∧ ∀ y, IsOrientationPreservingAt o₂ o g y := by
+  refine ⟨?_, fun ⟨hl, hr⟩ ↦ ?_⟩
+  · rintro rfl
+    exact ⟨isOrientationPreservingAt_glue_left hf hg hf' hg' hfg h,
+      isOrientationPreservingAt_glue_right hf hg hf' hg' hfg h⟩
+  ext p
+  obtain ⟨x, rfl⟩ | ⟨y, rfl⟩ := hfg.symm ▸ mem_univ p
+  · exact (hl x).orientationAt_eq (isOrientationPreservingAt_glue_left hf hg hf' hg' hfg h x)
+  · exact (hr y).orientationAt_eq (isOrientationPreservingAt_glue_right hf hg hf' hg' hfg h y)
 
 omit [IsManifold I 1 X] in
 /-- **Agreement through a common source.** Let `ρ₁ : P → M` and `ρ₂ : P → N` be differentiable at
