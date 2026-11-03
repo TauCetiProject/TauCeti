@@ -10,6 +10,7 @@ public import Mathlib.AlgebraicGeometry.Noetherian
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Relative
 import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Stalk
+import TauCeti.AlgebraicGeometry.Noetherian
 import TauCeti.AlgebraicGeometry.ResidueField
 import TauCeti.RingTheory.Flat.PrincipalQuotient
 
@@ -34,8 +35,10 @@ residue field `κ(s)` of its image along the flat surjective morphism `Spec K �
 fibre over `κ(s)` is effective Cartier exactly when the fibre over `K` is
 (`Scheme.IdealSheafData.IsEffectiveCartier.comap_fst_of_comap_fiberι`, and
 `Scheme.IdealSheafData.IsEffectiveCartier.comap_fiberι_of_comap_fst` when the fibre over `κ(s)`
-is locally noetherian, by descent along flat surjective morphisms). Hence, for `f` locally of
-finite type, relative effective Cartier divisors are also characterized by their geometric fibres
+is locally noetherian, by descent along flat surjective morphisms). The fibres over residue fields
+of a locally noetherian `X` are locally noetherian
+(`AlgebraicGeometry.Scheme.Hom.isLocallyNoetherian_fiber`), so relative effective Cartier
+divisors are also characterized by their geometric fibres
 (`isRelativeEffectiveCartier_iff_forall_isEffectiveCartier_comap_fst_of_isAlgClosed`).
 
 The proof of the residue-field criterion works at a point `x` of `X` over `s`. For affine opens
@@ -55,8 +58,7 @@ Cartier divisor (`Scheme.IdealSheafData.isEffectiveCartier_of_exists_map_germ_eq
 * `Scheme.IdealSheafData.isRelativeEffectiveCartier_iff_forall_isEffectiveCartier_comap_fiberι`:
   the fibre criterion for relative effective Cartier divisors over residue fields.
 * `isRelativeEffectiveCartier_iff_forall_isEffectiveCartier_comap_fst_of_isAlgClosed`: the fibre
-  criterion for relative effective Cartier divisors over geometric points, for `f` locally of
-  finite type.
+  criterion for relative effective Cartier divisors over geometric points.
 * `Scheme.IdealSheafData.IsEffectiveCartier.comap_fst_of_comap_fiberι`: effective Cartier
   residue-field fibres give effective Cartier fibres over every field-valued point.
 * `Scheme.IdealSheafData.IsEffectiveCartier.comap_fiberι_of_comap_fst`: conversely, an effective
@@ -228,21 +230,20 @@ theorem isRelativeEffectiveCartier_iff_forall_isEffectiveCartier_comap_fiberι
       ⟨isEffectiveCartier_of_isEffectiveCartier_comap_fiberι h, inferInstance⟩⟩
 
 /-- **The fibre criterion for relative effective Cartier divisors over geometric points.** Let
-`f : X ⟶ S` be flat and locally of finite type with `X` locally noetherian, and let `I` be an ideal
-sheaf on `X` whose closed subscheme is flat over `S`. Then `I` is a relative effective Cartier
-divisor if and only if its fibre over every geometric point `Spec K ⟶ S`, with `K` algebraically
-closed, is an effective Cartier divisor. -/
+`f : X ⟶ S` be flat with `X` locally noetherian, and let `I` be an ideal sheaf on `X` whose closed
+subscheme is flat over `S`. Then `I` is a relative effective Cartier divisor if and only if its
+fibre over every geometric point `Spec K ⟶ S`, with `K` algebraically closed, is an effective
+Cartier divisor. -/
 theorem isRelativeEffectiveCartier_iff_forall_isEffectiveCartier_comap_fst_of_isAlgClosed
-    [IsLocallyNoetherian X] {I : X.IdealSheafData} {f : X ⟶ S} [Flat f] [LocallyOfFiniteType f]
+    [IsLocallyNoetherian X] {I : X.IdealSheafData} {f : X ⟶ S} [Flat f]
     [Flat (I.subschemeι ≫ f)] :
     I.IsRelativeEffectiveCartier f ↔ ∀ (K : Type u) [Field K] [IsAlgClosed K]
       (g : Spec (.of K) ⟶ S), (I.comap (pullback.fst f g)).IsEffectiveCartier := by
   refine ⟨fun hI K _ _ g ↦ hI.isEffectiveCartier_comap_of_field g, fun h ↦ ?_⟩
   rw [isRelativeEffectiveCartier_iff_forall_isEffectiveCartier_comap_fiberι]
   intro s
-  -- The fibres of `f` are locally of finite type over fields, hence locally noetherian.
-  have (t : S) : IsLocallyNoetherian (f.fiber t) :=
-    inferInstanceAs (IsLocallyNoetherian (pullback f (S.fromSpecResidueField t)))
+  -- The fibre of `f` over `κ(s)` is locally noetherian since `X` is
+  -- (`Scheme.Hom.isLocallyNoetherian_fiber`).
   have hs := IsEffectiveCartier.comap_fiberι_of_comap_fst (S.fromSpecAlgebraicClosure s) (h _ _)
   -- The geometric point over `s` maps to `s`.
   convert hs using 3 <;> exact (S.fromSpecAlgebraicClosure_apply s _).symm
