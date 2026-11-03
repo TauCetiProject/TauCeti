@@ -31,7 +31,7 @@ linear functional `ℓ` with `ℓ (w a) = 1` and set
 The flow law gives `ψ (z + s • w a) = Φ (ψ z) s`, so differentiating in `s` shows that `dψ z`
 sends `w a` to `g (ψ z)`. At `z = 0` the derivative of `ψ` is the identity, so by the inverse
 function theorem with `C^n` inverse
-(`TauCeti.ContDiffOn.exists_openPartialHomeomorph_fderiv_symm_apply_eq`) `ψ` is a local
+(`ContDiffOn.exists_openPartialHomeomorph_fderiv_symm_apply_eq`) `ψ` is a local
 diffeomorphism near `0` whose inverse sends `g` to `w a`; restricted to where `g = w`, that inverse
 is the required `φ`.
 
