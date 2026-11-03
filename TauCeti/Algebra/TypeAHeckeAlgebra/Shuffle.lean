@@ -248,11 +248,6 @@ theorem restIndex_lt_sub_one {S : ShuffleMask k l} {a b : Fin (k + l)} (hab : a 
   have := restIndex_add_two_le hab le_rfl ha hb
   omega
 
-/-- Exchanging the same two positions is an involution on masks. -/
-theorem swap_involutive (a b : Fin (k + l)) :
-    Function.Involutive (swap a b : ShuffleMask k l → ShuffleMask k l) :=
-  swap_swap a b
-
 /-- The **length** of a mask `S`: the number of pairs of a rest position and a later selected
 position. It is the length of the shortest permutation of the positions carrying the initial mask
 onto `S`, the minimal-length representative of the coset of `S_k × S_l` in `S_(k + l)`
@@ -652,7 +647,7 @@ private theorem shuffleRep_T_single_apply_of_ne {i : Fin (k + l - 1)} {S M : Shu
     (hM : M ≠ S) (hM' : M ≠ S.swap (BraidGroup.strand i) (BraidGroup.strandSucc i)) (u : U) :
     shuffleRep k ρ (T q i) (Pi.single S u) M = 0 := by
   have hM'' : M.swap (BraidGroup.strand i) (BraidGroup.strandSucc i) ≠ S := by
-    rwa [ne_eq, (ShuffleMask.swap_involutive _ _).eq_iff]
+    rwa [ne_eq, Function.Involutive.eq_iff (ShuffleMask.swap_swap _ _)]
   simp only [shuffleRep_T, shuffleOp_apply, Pi.single_eq_of_ne hM, Pi.single_eq_of_ne hM'']
   split_ifs <;> simp
 
@@ -750,7 +745,7 @@ private theorem ShuffleMask.IsShufflePath.shuffleRep_prod_T_single_initial
     -- have length at least `S.length` and differ from `S`.
     have hM' : M ≠ S := by rintro rfl; omega
     have hswap : M.swap (BraidGroup.strand i) (BraidGroup.strandSucc i) ≠ S := by
-      rwa [ne_eq, (ShuffleMask.swap_involutive _ _).eq_iff]
+      rwa [ne_eq, Function.Involutive.eq_iff (ShuffleMask.swap_swap _ _)]
     by_cases ha' : BraidGroup.strand i ∈ M.1 <;> by_cases hb' : BraidGroup.strandSucc i ∈ M.1
     · rw [shuffleRep_T_apply_of_mem_of_mem ρ ha' hb', ih₂ M (by omega) hM', smul_zero]
     · rw [shuffleRep_T_apply_of_mem_of_notMem ρ ha' hb', ih₂ M (by omega) hM',
