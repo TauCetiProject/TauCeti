@@ -25,8 +25,10 @@ or require the Cartan vectors to commute. In particular this is a collection sta
 integral PBW basis theorem. It applies to a positive or negative root family separately as well
 as to the family of all roots.
 
-## Main result
+## Main results
 
+* `exists_mem_closure_kostantCartanGenerators_mul_dividedPower_eq`: move a Cartan subring element
+  past a root divided power within the same Cartan subring.
 * `TauCeti.UniversalEnvelopingAlgebra.toAddSubgroup_kostantForm_eq_closure_root_mul_cartan`:
   the exact integral root–Cartan spanning statement.
 
@@ -46,9 +48,10 @@ local notation "U" => _root_.UniversalEnvelopingAlgebra ℚ L
 
 attribute [local instance] TauCeti.moduleNNRat
 
--- A root divided power semiconjugates the entire Cartan subring, not just its generators.
--- The translated binomial coefficients remain integral, so the witness stays in that subring.
-private theorem exists_cartan_mul_dividedPower_eq
+/-- If every designated root vector has integral weight under every designated Cartan vector,
+a Cartan subring element can be moved past any root divided power. The translated factor remains
+in the same Cartan subring. -/
+theorem exists_mem_closure_kostantCartanGenerators_mul_dividedPower_eq
     (e : ι → L) (h : κ → L) (w : κ → ι → ℤ)
     (hw : ∀ j i, ⁅h j, e i⁆ = w j i • e i) (i : ι) (n : ℕ)
     {c : U} (hc : c ∈ Subring.closure (kostantCartanGenerators h)) :
@@ -101,7 +104,8 @@ theorem toAddSubgroup_kostantForm_eq_closure_root_mul_cartan
     refine ((AddSubgroup.closure_le
       (P.comap (AddMonoidHom.mulRight _))).2 ?_) hp
     rintro _ ⟨a, ha, b, hb, rfl⟩
-    obtain ⟨b', hb', heq⟩ := exists_cartan_mul_dividedPower_eq e h w hw i n hb
+    obtain ⟨b', hb', heq⟩ :=
+      exists_mem_closure_kostantCartanGenerators_mul_dividedPower_eq e h w hw i n hb
     -- Expose preimage membership so associativity can rewrite the product.
     change (a * b) * _ ∈ P
     rw [mul_assoc, heq, ← mul_assoc]
