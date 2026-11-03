@@ -29,6 +29,9 @@ The Eisenstein coefficients are `240 σ₃(n)` and `-504 σ₅(n)` (Mathlib's
 
 ## Main results
 
+* `TauCeti.ModularForm.E_twelve_qExpansion_coeff`: `E₁₂ = 1 + (65520/691) ∑ σ₁₁(m) qᵐ`.
+* `ModularForm.qExpansion_add_smul_discriminant`: the `q`-expansion of `f + c Δ` in
+  weight `12`.
 * `TauCeti.ModularForm.qExpansion_E_mem_range_map`: the `q`-expansion of a normalised Eisenstein
   series has rational coefficients.
 * `TauCeti.ModularForm.qExpansion_discriminant_eq_E₄_cube_sub_E₆_sq`: the `q`-expansion of `Δ`
@@ -59,6 +62,8 @@ neither `norm_num` nor elaborator-side `decide` can evaluate it; the kernel can.
 private theorem bernoulli_four : bernoulli 4 = -1 / 30 := by decide +kernel
 
 private theorem bernoulli_six : bernoulli 6 = 1 / 42 := by decide +kernel
+
+private theorem bernoulli_twelve : bernoulli 12 = -691 / 2730 := by decide +kernel
 
 /-- The `q²`-coefficient of `E₄` is `240 σ₃(2) = 2160`. -/
 theorem E₄_qExpansion_coeff_two : (qExpansion 1 E₄).coeff 2 = 2160 := by
@@ -95,6 +100,33 @@ theorem E₆_qExpansion_coeff_three : (qExpansion 1 E₆).coeff 3 = -122976 := b
   norm_num [E_qExpansion_coeff _ ⟨3, rfl⟩, bernoulli_six, ArithmeticFunction.sigma_apply,
     Nat.prime_three.divisors]
 
+/-- The `q`-coefficients of the normalised Eisenstein series of weight `12`: the constant term is
+`1`, and for `m ≥ 1` the coefficient of `qᵐ` is `-(24 / B₁₂) σ₁₁(m) = (65520/691) σ₁₁(m)`. -/
+theorem E_twelve_qExpansion_coeff (m : ℕ) :
+    (qExpansion 1 (E (by norm_num : 3 ≤ 12))).coeff m =
+      if m = 0 then 1 else (65520 / 691 : ℂ) * σ 11 m := by
+  rw [E_qExpansion_coeff _ ⟨6, rfl⟩, bernoulli_twelve]
+  norm_num
+
+end TauCeti.ModularForm
+
+namespace ModularForm
+
+/-- The `q`-expansion of a weight-`12` level-one form plus a multiple of `Δ` is the
+corresponding linear combination of power series. -/
+theorem qExpansion_add_smul_discriminant (f : ModularForm 𝒮ℒ 12) (c : ℂ) :
+    qExpansion 1 (f + c • CuspForm.toModularFormₗ CuspForm.discriminant : ModularForm 𝒮ℒ 12) =
+      qExpansion 1 f + c • qExpansion 1 ModularForm.discriminant := by
+  have hΔ : ⇑(CuspForm.toModularFormₗ CuspForm.discriminant) =
+      ModularForm.discriminant := (funext (CuspForm.toModularFormₗ_apply _)).trans
+        CuspForm.coe_discriminant
+  rw [FunLike.coe_add, ModularForm.qExpansion_add one_pos one_mem_strictPeriods_SL,
+    FunLike.coe_smul, ModularForm.qExpansion_smul one_pos one_mem_strictPeriods_SL, hΔ]
+
+end ModularForm
+
+namespace TauCeti.ModularForm
+
 /-- The `q`-expansion of the weight-`12` form `E₄³ + c Δ` is the corresponding linear
 combination of power series. -/
 theorem qExpansion_E₄_cube_add_smul_discriminant (c : ℂ) :
@@ -102,12 +134,8 @@ theorem qExpansion_E₄_cube_add_smul_discriminant (c : ℂ) :
       (ModularForm.mcast (by norm_num) (E₄.pow 3) +
         c • CuspForm.toModularFormₗ CuspForm.discriminant : ModularForm 𝒮ℒ 12) =
       qExpansion 1 E₄ ^ 3 + c • qExpansion 1 ModularForm.discriminant := by
-  have hΔ : ⇑(CuspForm.toModularFormₗ CuspForm.discriminant) =
-      ModularForm.discriminant := (funext (CuspForm.toModularFormₗ_apply _)).trans
-        CuspForm.coe_discriminant
-  rw [FunLike.coe_add, ModularForm.qExpansion_add one_pos one_mem_strictPeriods_SL,
-    FunLike.coe_smul, ModularForm.qExpansion_smul one_pos one_mem_strictPeriods_SL]
-  simp only [coe_mcast, ModularForm.qExpansion_pow one_pos one_mem_strictPeriods_SL, hΔ]
+  rw [qExpansion_add_smul_discriminant, coe_mcast,
+    ModularForm.qExpansion_pow one_pos one_mem_strictPeriods_SL]
 
 /-- The `q`-expansion of a normalised Eisenstein series of even weight `k ≥ 3` has rational
 coefficients, so it is the image of a power series over `K` under every ring homomorphism
