@@ -89,21 +89,6 @@ private theorem exists_inverse_candidate [Algebra.FinitePresentation A T] (φ : 
       map_tmul, map_one, AlgHom.id_apply] using hs''.trans hs'
   exact ⟨i, Ψ, hT, hS⟩
 
--- An equality at one stage persists after any further transition.
-omit [IsDirectedOrder ι] [Nonempty ι] in
-private theorem rTensor_comp_eq_of_le {X Y : Type*} [Semiring X] [Algebra A X]
-    [Semiring Y] [Algebra A Y] {i j l : ι} {hij : i ≤ j}
-    {g h : Y →ₐ[A] B i ⊗[A] X}
-    (heq : (rTensor X (f i j hij)).comp g = (rTensor X (f i j hij)).comp h)
-    (hjl : j ≤ l) :
-    (rTensor X (f i l (hij.trans hjl))).comp g =
-      (rTensor X (f i l (hij.trans hjl))).comp h := by
-  ext y
-  have hy := congrArg (rTensor X (f j l hjl)) (congr($heq y))
-  simp only [AlgHom.comp_apply] at hy ⊢
-  simpa only [DirectedSystem.map_map' (F := fun i ↦ B i ⊗[A] X)
-    (fun i j h ↦ rTensor (R := A) X (f i j h)) hij hjl] using hy
-
 /-- A map whose scalar extension to a directed colimit is bijective is bijective after scalar
 extension to some stage. Finite presentation is needed only for the target; the source need
 only be of finite type. No flatness of the transition maps is required. -/
@@ -127,12 +112,12 @@ theorem exists_bijective_lTensor_of_finitePresentation
   let Ψl := AlgHom.liftEquiv A (B l) T (B l ⊗[A] S) ψl
   have hlT : ((lTensor (S := B l) (B l) φ).restrictScalars A).comp ψl = includeRight := by
     ext t
-    have ht := congr($(rTensor_comp_eq_of_le (f := f) hj hjl) t)
+    have ht := congr($(TauCeti.rTensor_comp_eq_of_le (f := f) hj hjl) t)
     simpa only [ψl, ψ, AlgHom.comp_apply, AlgHom.coe_restrictScalars', φ.lTensor_rTensor_comm,
       includeRight_apply, map_tmul, AlgHom.id_apply, map_one] using ht
   have hlS : (Ψl.restrictScalars A).comp (includeRight.comp φ) = includeRight := by
     ext s
-    have hs := congr($(rTensor_comp_eq_of_le (f := f) hk hkl) s)
+    have hs := congr($(TauCeti.rTensor_comp_eq_of_le (f := f) hk hkl) s)
     simpa only [Ψl, ψl, ψ, AlgHom.comp_apply, AlgHom.coe_restrictScalars',
       includeRight_apply, AlgHom.liftEquiv_tmul, one_smul, map_tmul, map_one,
       AlgHom.id_apply] using hs
