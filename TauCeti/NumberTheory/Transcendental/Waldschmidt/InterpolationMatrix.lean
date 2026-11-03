@@ -31,23 +31,19 @@ degree at most `T₀` in `d` coordinates, and `∂/∂z₀` is a derivative alon
 matrix on these columns is determined by such a restricted polynomial and by `t`. Hence these
 columns span a space of dimension at most
 
-`L_d = (T₀ + d choose d) (2 T₁ + 1)`,
+`L_d = (T₀ + d choose d) (2 T₁ + 1)`
 
-which is the number of rows of the residual interpolation matrix: a nonvanishing minor of the
-matrix on these columns has size at most `L_d`, and the rank estimate of the proof is that size
-`L_d` is attained.
+when `|t| ≤ T₁`. This file proves only this upper bound on the rank, for arbitrary families of
+rows and columns. That the bound `L_d` is attained, for the monomial rows and under the additional
+hypotheses of Waldschmidt's zero estimate, is a separate result not proved here.
 
 ## Main definitions
 
 * `TauCeti.waldschmidtInterpolationMatrix α b F t P s`: the matrix of entries
   `waldschmidtOperatorEntry α b (t r) (s c) (F r) (P c)`.
-* `TauCeti.waldschmidtPointMap b`: the linear map `v ↦ v · y` on `Rᵐ`, extending the grid points
-  `s ↦ s · y` from `ℤᵐ`.
 
 ## Main results
 
-* `TauCeti.waldschmidtPointMap_snoc`: the coefficient vector `(β₁, …, β_{m-1}, -1)` is
-  sent to `-β₀ e₀`.
 * `TauCeti.rank_waldschmidtInterpolationMatrix_le_of_mem`: if the grid points and `e₀` lie in a
   subspace `W`, the rank is at most `(T₀ + dim W choose dim W) · #{t}`.
 * `TauCeti.rank_waldschmidtInterpolationMatrix_le`: if the column indices `s` lie in a subspace
@@ -84,49 +80,6 @@ theorem waldschmidtInterpolationMatrix_apply {ι κ : Type*} (α b : Fin (n + 1)
     waldschmidtInterpolationMatrix α b F t P s r c =
       waldschmidtOperatorEntry α b (t r) (s c) (F r) (P c) :=
   (rfl)
-
-section PointMap
-
-variable {R : Type*} [CommRing R]
-
-/-- The linear map `v ↦ v · y = v₁ y₁ + ⋯ + vₘ yₘ` on `Rᵐ`, where `yⱼ = e_j` for `1 ≤ j < m` and
-`yₘ = b = (β₀, β₁, …, β_{m-1})`; on integral vectors it is the grid point map
-`TauCeti.waldschmidtPoint b`. -/
-def waldschmidtPointMap (b : Fin (n + 1) → R) : (Fin (n + 1) → R) →ₗ[R] Fin (n + 1) → R where
-  toFun v := Fin.cons (v (Fin.last n) * b 0) fun k ↦ v k.castSucc + v (Fin.last n) * b k.succ
-  map_add' v w := by
-    ext i
-    cases i using Fin.cases <;> simp <;> ring
-  map_smul' a v := by
-    ext i
-    cases i using Fin.cases <;> simp <;> ring
-
-@[simp]
-theorem waldschmidtPointMap_apply_zero (b v : Fin (n + 1) → R) :
-    waldschmidtPointMap b v 0 = v (Fin.last n) * b 0 :=
-  (rfl)
-
-@[simp]
-theorem waldschmidtPointMap_apply_succ (b v : Fin (n + 1) → R) (k : Fin n) :
-    waldschmidtPointMap b v k.succ = v k.castSucc + v (Fin.last n) * b k.succ :=
-  (rfl)
-
-/-- On integral vectors, `TauCeti.waldschmidtPointMap b` is the grid point map. -/
-@[simp]
-theorem waldschmidtPointMap_intCast (b : Fin (n + 1) → R) (s : Fin (n + 1) → ℤ) :
-    waldschmidtPointMap b (fun i ↦ (s i : R)) = waldschmidtPoint b s := by
-  ext i
-  cases i using Fin.cases <;> simp
-
-/-- The coefficient vector `(β₁, …, β_{m-1}, -1)` of the normalized linear form, as a vector of
-the space of the indices `s`, is sent to `-β₀ e₀`. In particular it lies in the kernel of
-`TauCeti.waldschmidtPointMap b` when `β₀ = 0`. -/
-theorem waldschmidtPointMap_snoc (b : Fin (n + 1) → R) :
-    waldschmidtPointMap b (Fin.snoc (fun k : Fin n ↦ b k.succ) (-1)) = Pi.single 0 (-b 0) := by
-  ext i
-  cases i using Fin.cases <;> simp
-
-end PointMap
 
 /-- On columns whose grid points lie in a subspace `W` containing `e₀`, the row of the interpolation
 matrix with polynomial `F` and exponent `t'` is the image under a linear map `Φ t'` of the
@@ -181,10 +134,7 @@ private theorem exists_row_waldschmidtInterpolationMatrix_mem_map {ι κ : Type*
       funext i
       simpa [f, u, mul_comm] using hrepr ⟨_, hs c⟩ i
     rw [← hpt]
-    induction G using MvPolynomial.induction_on with
-    | C a => simp
-    | add p q hp hq => simp [hp, hq]
-    | mul_X p i hp => simp [hp]
+    simpa only [aeval_eq_eval] using comp_aeval_apply (f := f) (aeval (u c)) G
   -- The rows with exponent `t'`, as a linear map of the restricted polynomial.
   refine ⟨fun t' ↦ LinearMap.pi fun c ↦ (∏ j, α j ^ (t' * s c j)) •
     ∑ k ∈ range ((P c).natDegree + 1), (Polynomial.hasseDeriv k (P c)).eval (t' : K) •
