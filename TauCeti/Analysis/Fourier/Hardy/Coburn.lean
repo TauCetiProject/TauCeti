@@ -29,8 +29,6 @@ everywhere, which forces `a = 0`.
 
 ## Main results
 
-* `TauCeti.toeplitz_apply_eq_zero_iff`: `T_a f = 0` exactly when `a f` lies in the orthogonal
-  complement of Hardy space.
 * `TauCeti.eq_zero_of_toeplitz_apply_eq_zero_of_toeplitz_star_apply_eq_zero`: if `T_a` and
   `T_ā` both have nonzero kernel vectors, then `a = 0`.
 * `TauCeti.ker_toeplitz_eq_bot_or_ker_adjoint_toeplitz_eq_bot`: **Coburn's alternative**: for
@@ -55,16 +53,6 @@ open MeasureTheory
 open scoped ENNReal InnerProductSpace
 
 namespace TauCeti
-
-/-- A Hardy function `f` lies in the kernel of the Toeplitz operator `T_a` exactly when the
-product `a f` lies in the orthogonal complement of Hardy space, that is, when `a f` has only
-negative Fourier modes. -/
-theorem toeplitz_apply_eq_zero_iff (a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1)))
-    (f : HardySpace) :
-    toeplitz a f = 0 ↔
-      a • (f : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))) ∈ hardySubmoduleᗮ := by
-  simp only [toeplitz_apply, ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply,
-    Lp.multiplicationOperator_apply, Submodule.orthogonalProjectionOnto_eq_zero_iff]
 
 /-- If `T_a f = 0`, then for every Hardy function `g` the product `a f conj g` has no Fourier modes
 `n ≥ 0`: the factor `a f` has only negative modes and `conj g` only nonpositive ones. -/
