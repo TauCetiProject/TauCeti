@@ -13,7 +13,7 @@ import Mathlib.Algebra.EuclideanDomain.Int
 -- below.
 import TauCeti.LinearAlgebra.Matrix.Divisibility
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Equivalence
-import TauCeti.LinearAlgebra.Matrix.SmithNormalForm.Basic
+import TauCeti.LinearAlgebra.Matrix.SmithNormalForm.Diagonal
 -- `prod_eq_det_of_mul_mul_eq_diagonal`, `exists_SL_mul_mul_eq_of_mul_mul_eq` and
 -- `TauCeti.fin_two_eq_of_normalize_eq_of_dvd_of_dvd_of_mul_eq_mul`, used only inside the `2 × 2`
 -- classification below.

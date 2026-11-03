@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.SmithNormalForm.Basic
+public import TauCeti.LinearAlgebra.Matrix.SmithNormalForm.Diagonal
 public import Mathlib.RingTheory.OrderOfVanishing.Basic
 import Mathlib.LinearAlgebra.Quotient.Pi
 

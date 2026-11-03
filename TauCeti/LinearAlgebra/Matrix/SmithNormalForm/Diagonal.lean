@@ -7,12 +7,14 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import Mathlib.RingTheory.Ideal.Span
+import Mathlib.Algebra.Exact.Basic
 import Mathlib.Algebra.Module.Projective
 import Mathlib.LinearAlgebra.FreeModule.PID
 import Mathlib.LinearAlgebra.Basis.Prod
 import Mathlib.LinearAlgebra.Matrix.Basis
 import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 import Mathlib.Logic.Equiv.Fintype
+import TauCeti.LinearAlgebra.Matrix.Diagonal
 
 /-!
 # Diagonalization of possibly singular matrices over a PID
@@ -28,7 +30,8 @@ image's diagonal positions. Thus zero diagonal positions are retained, as requir
 when computing fixed modules of integral automorphisms after scalar extension.
 
 The basis-level Smith form is due to Mathlib's finite-free PID development. The
-matrix conversion uses its change-of-basis identities and
+kernel/image splitting uses `Function.Exact.splitSurjectiveEquiv`. The matrix
+conversion uses `Module.Basis.toMatrix_eq_diagonal_iff`, change-of-basis identities and
 `Equiv.Perm.exists_extending_pair` to align the nonzero diagonal positions.
 -/
 
@@ -49,55 +52,36 @@ theorem exists_mul_mul_eq_diagonal {R ι : Type*} [CommRing R] [IsDomain R]
   obtain ⟨n, snf⟩ := (LinearMap.range f).smithNormalForm e₀
   -- Split the map onto its free image, keeping the kernel as a separate summand.
   obtain ⟨s, hs⟩ := f.rangeRestrict.exists_rightInverse_of_surjective f.range_rangeRestrict
-  have hs_apply (x : LinearMap.range f) : f (s x) = x :=
-    congrArg Subtype.val (LinearMap.congr_fun hs x)
-  let ψ : LinearMap.range f × LinearMap.ker f →ₗ[R] (ι → R) :=
-    s.coprod (LinearMap.ker f).subtype
-  have hψ (x : LinearMap.range f × LinearMap.ker f) : f (ψ x) = x.1 := by
-    simp [ψ, hs_apply, LinearMap.mem_ker.mp x.2.property]
-  have hbij : Function.Bijective ψ := by
-    constructor
-    · apply LinearMap.ker_eq_bot.mp
-      rw [Submodule.eq_bot_iff]
-      intro x hx
-      have hx₁ : x.1 = 0 := by
-        apply Subtype.ext
-        simpa only [LinearMap.mem_ker.mp hx, map_zero, Submodule.coe_zero] using (hψ x).symm
-      have hx₂ : x.2 = 0 := by
-        apply Subtype.ext
-        simpa [ψ, hx₁] using LinearMap.mem_ker.mp hx
-      exact Prod.ext hx₁ hx₂
-    · intro x
-      let y : LinearMap.range f := f.rangeRestrict x
-      refine ⟨(y, ⟨x - s y, ?_⟩), ?_⟩
-      · simp [LinearMap.mem_ker, hs_apply, y]
-      · simp [ψ]
+  let K := LinearMap.ker f.rangeRestrict
+  let split := (LinearMap.exact_subtype_ker_map f.rangeRestrict).splitSurjectiveEquiv
+    K.injective_subtype ⟨s, hs⟩
   -- Align the lifted image basis with the target Smith positions; the remaining
   -- source basis vectors lie in the kernel and therefore have diagonal entry zero.
-  let bK := Module.Free.chooseBasis R (LinearMap.ker f)
-  let b := (snf.bN.prod bK).map (LinearEquiv.ofBijective ψ hbij)
+  let bK := Module.Free.chooseBasis R K
+  let b := (bK.prod snf.bN).map split.1.symm
+  have hb (j) : f (b j) = ((bK.prod snf.bN j).2 : ι → R) := by
+    have h : f.rangeRestrict (b j) = (bK.prod snf.bN j).2 := by
+      simpa [b] using LinearMap.congr_fun split.2.2 (b j)
+    exact congrArg Subtype.val h
   let e := b.indexEquiv e₀
   obtain ⟨σ, hσ⟩ := Equiv.Perm.exists_extending_pair
-    (fun j : Fin n ↦ e (Sum.inl j)) snf.f (e.injective.comp Sum.inl_injective)
+    (fun j : Fin n ↦ e (Sum.inr j)) snf.f (e.injective.comp Sum.inr_injective)
     snf.f.injective
   let r := b.reindex e
   let c := snf.bM.reindex σ.symm
-  let d : ι → R := fun i ↦ Sum.elim snf.a (fun _ ↦ 0) (e.symm i)
-  have hr (i : ι) : f (r i) = d i • c i := by
+  let d : ι → R := fun i ↦ Sum.elim (fun _ ↦ 0) snf.a (e.symm i)
+  have hr (j) : r (e j) = b j := by simp [r]
+  have hc (j) : c (e (Sum.inr j)) = snf.bM (snf.f j) := by simp [c, hσ]
+  have hdK (j) : d (e (Sum.inl j)) = 0 := by simp [d]
+  have hdN (j) : d (e (Sum.inr j)) = snf.a j := by simp [d]
+  have hscale (i : ι) : f (r i) = d i • c i := by
     obtain ⟨j, rfl⟩ := e.surjective i
+    rw [hr, hb]
     cases j with
-    | inl j =>
-      simpa [r, b, ψ, d, c, hσ, hs_apply] using snf.snf j
-    | inr j =>
-      simp [r, b, ψ, d, LinearMap.mem_ker.mp (bK j).property]
+    | inl j => simp [hdK]
+    | inr j => simpa only [Module.Basis.prod_apply_inr_snd, hdN, hc] using snf.snf j
   -- Convert the diagonal basis equations to unimodular matrix transformations.
-  have hdiag : LinearMap.toMatrix r c f = diagonal d := by
-    ext i j
-    rw [LinearMap.toMatrix_apply, hr, map_smul, c.repr_self, diagonal_apply]
-    by_cases hij : i = j
-    · subst hij
-      simp
-    · simp [hij]
+  have hdiag := (Module.Basis.toMatrix_eq_diagonal_iff r c f d).2 hscale
   refine ⟨c.toMatrix e₀, e₀.toMatrix r, d, ?_, ?_, ?_⟩
   · exact isUnit_det_of_right_inverse (c.toMatrix_mul_toMatrix_flip e₀)
   · exact isUnit_det_of_right_inverse (e₀.toMatrix_mul_toMatrix_flip r)
