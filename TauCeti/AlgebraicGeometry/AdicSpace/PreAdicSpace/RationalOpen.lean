@@ -468,7 +468,7 @@ theorem spaBasicOpen_mem_affinoidOpens {T : Finset A} {s : A}
   let S' : Pair (UniformSpace.Completion (Localization.Away s)) :=
     ⟨completedPlusSubring P Aplus T s _ hden, isRingOfIntegralElements_completedPlusSubring P Aplus
       (fun j _ ↦ hP j.2) hAplus T s _ hden⟩
-  exact ObjectProperty.prop_of_iso PreAdicSpace.isAffinoid
+  exact (PreAdicSpace.mem_propOpens_iff _).mpr <| ObjectProperty.prop_of_iso PreAdicSpace.isAffinoid
     (restrictSpaBasicOpenIso P Aplus T s _ hden hAplus hP hT).symm
     (PreAdicSpace.isAffinoid_presentationLimitPreAdicSpace S' (completionLocalization P T s _ hden)
       (completionLocalization_ringOfDefinition_le_completedPlusSubring P Aplus hP T s _ hden))

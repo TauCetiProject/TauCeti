@@ -37,13 +37,11 @@ Affinoid pre-adic spaces are locally affinoid, and being locally affinoid is inv
 isomorphism in `𝒱^pre`, since an isomorphism carries the restriction to an open isomorphically
 onto the restriction to its image (`TauCeti.PreAdicSpace.restrictIso`). This transport works for
 the opens on which the restriction satisfies any isomorphism-closed object property `P`
-(`TauCeti.PreAdicSpace.propOpens`), and is proved at that generality; the open affinoid subspaces
-are the case `P = isAffinoid`.
+(`TauCeti.PreAdicSpace.propOpens`, with the restriction API); the open affinoid subspaces are the
+case `P = isAffinoid`.
 
 ## Main definitions
 
-* `TauCeti.PreAdicSpace.propOpens`: the opens of an object of `𝒱^pre` on which the restriction
-  satisfies a given object property.
 * `TauCeti.PreAdicSpace.affinoidOpens`: the open affinoid subspaces of an object of `𝒱^pre`.
 * `TauCeti.PreAdicSpace.isLocallyAffinoid`: the locally affinoid objects of `𝒱^pre`.
 * `TauCeti.PreAdicSpace.isPreAdic`: Wedhorn's pre-adic spaces.
@@ -79,57 +77,7 @@ universe u
 
 namespace PreAdicSpace
 
-/-! ### Opens with a property -/
-
 variable (X : PreAdicSpace.{u})
-
-/-- The opens `U` of an object `X` of `𝒱^pre` such that `X` restricted to `U` satisfies the
-object property `P`. For `P = isAffinoid` these are the open affinoid subspaces. -/
-@[expose] def propOpens (P : ObjectProperty PreAdicSpace.{u}) : Set (Opens X) :=
-  {U | P (X.restrict U.isOpenEmbedding)}
-
-variable {X} in
-/-- Unfolding lemma for `TauCeti.PreAdicSpace.propOpens`. -/
-theorem mem_propOpens_iff (P : ObjectProperty PreAdicSpace.{u}) {U : Opens X} :
-    U ∈ X.propOpens P ↔ P (X.restrict U.isOpenEmbedding) :=
-  Iff.rfl
-
-/-- The whole space is in `X.propOpens P` exactly when `X` satisfies `P`. -/
-@[simp]
-theorem top_mem_propOpens_iff (P : ObjectProperty PreAdicSpace.{u})
-    [P.IsClosedUnderIsomorphisms] : ⊤ ∈ X.propOpens P ↔ P X :=
-  ObjectProperty.prop_iff_of_iso P X.restrictTopIso
-
-variable {X} in
-/-- An open `U` of `Y` is in `Y.propOpens P` exactly when its preimage under an isomorphism
-`e : X ≅ Y` is in `X.propOpens P`: `e` carries `X` restricted to `e⁻¹(U)` isomorphically onto `Y`
-restricted to `U`. -/
-@[simp]
-theorem map_hom_base_mem_propOpens_iff (P : ObjectProperty PreAdicSpace.{u})
-    [P.IsClosedUnderIsomorphisms] {Y : PreAdicSpace.{u}} (e : X ≅ Y) {U : Opens Y} :
-    (Opens.map e.hom.base).obj U ∈ X.propOpens P ↔ U ∈ Y.propOpens P := by
-  -- `restrictIso e` lands in `Y` restricted to the image of `e⁻¹(U)` under `e`, which is `U`
-  have key := Opens.map_inv_obj_map_hom_obj (forgetToTop.mapIso e) U
-  simp only [Functor.mapIso_hom, Functor.mapIso_inv, forgetToTop_map] at key
-  refine ⟨fun hU ↦ key ▸ ObjectProperty.prop_of_iso P (restrictIso e _) hU, fun hU ↦ ?_⟩
-  -- `e.symm.inv` is `e.hom`
-  exact ObjectProperty.prop_of_iso P (restrictIso e.symm U) hU
-
-variable {X} in
-/-- Being covered by opens in `propOpens P` is invariant under isomorphism: an isomorphism
-`e : X ≅ Y` pulls such opens of `Y` back to such opens of `X`. -/
-theorem exists_mem_propOpens_of_iso (P : ObjectProperty PreAdicSpace.{u})
-    [P.IsClosedUnderIsomorphisms] {Y : PreAdicSpace.{u}} (e : X ≅ Y)
-    (hY : ∀ y : Y, ∃ V ∈ Y.propOpens P, y ∈ V) (x : X) : ∃ U ∈ X.propOpens P, x ∈ U :=
-  let ⟨_, hV, hxV⟩ := hY (e.hom.base x)
-  ⟨_, (map_hom_base_mem_propOpens_iff P e).mpr hV, hxV⟩
-
-variable {X} in
-/-- If `X.propOpens P` is a basis of the topology, it covers `X`. -/
-theorem exists_mem_propOpens_of_isBasis {P : ObjectProperty PreAdicSpace.{u}}
-    (hB : Opens.IsBasis (X.propOpens P)) (x : X) : ∃ U ∈ X.propOpens P, x ∈ U :=
-  let ⟨U, hU, hx, _⟩ := Opens.isBasis_iff_nbhd.mp hB (Opens.mem_top x)
-  ⟨U, hU, hx⟩
 
 /-! ### Open affinoid subspaces and locally affinoid objects -/
 

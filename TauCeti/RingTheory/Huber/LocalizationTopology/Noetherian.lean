@@ -33,8 +33,9 @@ uncompleted rational localisations forming the terms of Huber's Čech complex.
 
 The strongly noetherian Tate analogue is
 `TauCeti.Huber.PairOfDefinition.isStronglyNoetherian_completion`. The two cases together say that
-rational localisation preserves noetherian type, for a numerator set spanning an open ideal; this
-is what makes the open affinoids of noetherian type a basis of a locally noetherian adic space.
+rational localisation preserves noetherian type, for numerators and denominator spanning an open
+ideal; this is what makes the open affinoids of noetherian type a basis of a locally noetherian
+adic space.
 
 ## Main results
 
@@ -46,7 +47,7 @@ is what makes the open affinoids of noetherian type a basis of a locally noether
 * `TauCeti.Huber.PairOfDefinition.exists_noetherianPairOfDefinition_completionLocObj`: the complete
   separated topological ring `A⟨T/s⟩` has a pair of definition with noetherian ring of definition.
 * `TauCeti.Huber.PairOfDefinition.isNoetherianType_completion_locTopology_of_isNoetherianType`: if
-  `A` is of noetherian type and `T` spans an open ideal, then `A⟨T/s⟩` is of noetherian type.
+  `A` is of noetherian type and `T ∪ {s}` spans an open ideal, then `A⟨T/s⟩` is of noetherian type.
 
 ## References
 
@@ -127,13 +128,13 @@ theorem exists_noetherianPairOfDefinition_completionLocObj (P : PairOfDefinition
     P.isNoetherianRing_completionLocalization T.finite_toSet s S hden⟩
 
 /-- **Rational localisation preserves noetherian type.** If `A` is a Huber ring of noetherian type
-and `T` spans an open ideal, then `A⟨T/s⟩` is of noetherian type, whatever pair of definition `P`
-its topology is built from: `A → A⟨T/s⟩` is topologically of finite type
+and `T ∪ {s}` spans an open ideal, then `A⟨T/s⟩` is of noetherian type, whatever pair of
+definition `P` its topology is built from: `A → A⟨T/s⟩` is topologically of finite type
 (`isTopologicallyFiniteType_toCompletionLoc`), and noetherian type ascends along such maps
 (`IsNoetherianType.of_isTopologicallyFiniteType`). -/
 theorem isNoetherianType_completion_locTopology_of_isNoetherianType [IsHuberRing A]
-    [IsNoetherianType A] (P : PairOfDefinition A) {T : Finset A}
-    (hT : IsOpen (Ideal.span (T : Set A) : Set A)) (s : A) (S : Type*) [CommRing S] [Algebra A S]
+    [IsNoetherianType A] (P : PairOfDefinition A) {T : Finset A} {s : A}
+    (hT : IsOpen (Ideal.span (insert s (T : Set A)) : Set A)) (S : Type*) [CommRing S] [Algebra A S]
     [IsLocalization.Away s S] (hden : HasDenominatorPower P T s S) :
     letI := locUniformSpace P T s S hden
     letI := isUniformAddGroup_locUniformSpace P T s S hden
@@ -144,7 +145,6 @@ theorem isNoetherianType_completion_locTopology_of_isNoetherianType [IsHuberRing
   letI := isUniformAddGroup_locUniformSpace P T s S hden
   letI := isTopologicalRing_locUniformSpace P T s S hden
   letI := isHuberRing_completion_locTopology P T s S hden
-  .of_isTopologicallyFiniteType (P.isTopologicallyFiniteType_toCompletionLoc T s S hden
-    (Ideal.isOpen_of_isOpen_subideal (Ideal.span_mono (Set.subset_insert _ _)) hT))
+  .of_isTopologicallyFiniteType (P.isTopologicallyFiniteType_toCompletionLoc T s S hden hT)
 
 end TauCeti.Huber.PairOfDefinition

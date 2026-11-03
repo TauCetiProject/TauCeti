@@ -138,7 +138,8 @@ variable {X}
 /-- An open affinoid of noetherian type is an open affinoid subspace. -/
 theorem noetherianAffinoidOpens_subset_affinoidOpens :
     X.noetherianAffinoidOpens ⊆ X.affinoidOpens :=
-  fun _ hU ↦ isNoetherianAffinoid.isAffinoid hU
+  fun _ hU ↦
+    (mem_propOpens_iff _).mpr (isNoetherianAffinoid.isAffinoid ((mem_propOpens_iff _).mp hU))
 
 end PreAdicSpace
 
@@ -163,11 +164,13 @@ theorem spaBasicOpen_mem_noetherianAffinoidOpens {T : Finset A} {s : A}
   have _ := isUniformAddGroup_locUniformSpace P T s _ hden
   have _ := isTopologicalRing_locUniformSpace P T s _ hden
   have _ := isHuberRing_completion_locTopology P T s _ hden
-  have _ := isNoetherianType_completion_locTopology_of_isNoetherianType P hT s _ hden
+  have _ := isNoetherianType_completion_locTopology_of_isNoetherianType P
+    (Ideal.isOpen_of_isOpen_subideal (Ideal.span_mono (Set.subset_insert _ _)) hT) _ hden
   let S' : Pair (UniformSpace.Completion (Localization.Away s)) :=
     ⟨completedPlusSubring P Aplus T s _ hden, isRingOfIntegralElements_completedPlusSubring P
       Aplus (fun j _ ↦ hP j.2) hAplus T s _ hden⟩
-  exact ObjectProperty.prop_of_iso PreAdicSpace.isNoetherianAffinoid
+  exact (PreAdicSpace.mem_propOpens_iff _).mpr <|
+    ObjectProperty.prop_of_iso PreAdicSpace.isNoetherianAffinoid
     (restrictSpaBasicOpenIso P Aplus T s _ hden hAplus hP hT).symm
     (PreAdicSpace.isNoetherianAffinoid_presentationLimitPreAdicSpace S'
       (completionLocalization P T s _ hden)
