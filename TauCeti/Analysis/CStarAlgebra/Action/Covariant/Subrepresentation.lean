@@ -155,7 +155,7 @@ theorem exists_isometry_mapsTo_mem_range {G : Type u} {A : Type v} {H : Type w} 
   have : Small.{max u v} G := small_lift.{u, v} G
   have : Small.{max u v} (M : Set (H →L[ℂ] H)) := by
     have : Small.{max u v} (FreeMonoid ↥(Set.range P.coefficient ∪ Set.range P.group)) :=
-      small_map FreeMonoid.toList
+      small_map FreeMonoid.toListEquiv
     rw [show M = _ from Submonoid.closure_eq_mrange _, MonoidHom.coe_mrange]
     exact small_range _
   have : Small.{max u v} S := Submodule.small_span _
