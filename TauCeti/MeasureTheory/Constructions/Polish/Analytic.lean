@@ -56,6 +56,8 @@ Borel, hence analytic.
   `MeasureTheory.AnalyticSet.preimage_image_quotientMk_measurableSet`: the saturation of an analytic
   set (in a Hausdorff space) or of a Borel set under an equivalence relation with analytic graph is
   analytic.
+* `MeasureTheory.AnalyticSet.eq_empty_or_exists_nat_nat`: an analytic set is empty or the range of
+  a continuous map from `ℕ → ℕ`.
 * `MeasureTheory.AnalyticSet.mk_le_continuum`: an analytic set has at most `𝔠` points.
 
 ## References
@@ -199,10 +201,18 @@ theorem AnalyticSet.preimage_image_quotientMk_measurableSet [MeasurableSpace α]
   rw [E.preimage_image_quotientMk_eq_relPreimage]
   exact hE.relPreimage_measurableSet hs
 
+/-- An analytic set is empty or the range of a continuous map from the Baire space `ℕ → ℕ`. -/
+theorem AnalyticSet.eq_empty_or_exists_nat_nat {s : Set α} (hs : AnalyticSet s) :
+    s = ∅ ∨ ∃ f : (ℕ → ℕ) → α, Continuous f ∧ range f = s := by
+  obtain ⟨γ, _, _, f, hf, rfl⟩ := analyticSet_iff_exists_polishSpace_range.1 hs
+  rcases isEmpty_or_nonempty γ with _ | _
+  · exact Or.inl (range_eq_empty f)
+  · obtain ⟨g, hg, hsurj⟩ := PolishSpace.exists_nat_nat_continuous_surjective γ
+    exact Or.inr ⟨f ∘ g, hf.comp hg, hsurj.range_comp f⟩
+
 /-- An analytic set has at most continuum many points. -/
 theorem AnalyticSet.mk_le_continuum {s : Set α} (hs : AnalyticSet s) : #s ≤ 𝔠 := by
-  rw [AnalyticSet_def] at hs
-  obtain rfl | ⟨g, -, rfl⟩ := hs
+  obtain rfl | ⟨g, -, rfl⟩ := hs.eq_empty_or_exists_nat_nat
   · simp
   · simpa [mk_arrow, aleph0_power_aleph0] using mk_range_le_lift (f := g)
 
