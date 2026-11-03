@@ -187,6 +187,7 @@ theorem exists_perm_of_occCount_eq [Finite X] {u v : X → S}
 
 /-- Deleting the indices at which a family takes the value `z` does not change the occurrence
 counts of the other values. -/
+@[simp]
 theorem occCount_subtype_ne (f : X → S) {z a : S} (ha : a ≠ z) :
     occCount (fun x : {x // f x ≠ z} => f x) a = occCount f a := by
   rw [occCount_def, occCount_def]
