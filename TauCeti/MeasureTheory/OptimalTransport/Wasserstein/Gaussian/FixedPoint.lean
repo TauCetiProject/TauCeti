@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Gaussian.Barycenter
 public import TauCeti.MeasureTheory.OptimalTransport.MultiMarginal.Barycenter
+public import TauCeti.MeasureTheory.OptimalTransport.MultiMarginal.Moments
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.Barycenter.Uniqueness.Euclidean
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.FrechetMean
 public import TauCeti.Probability.Moments.Covariance
@@ -81,65 +82,6 @@ variable {J : Type*} [Fintype J]
 variable {w : J → ℝ≥0} {μ : J → Measure (EuclideanSpace ℝ ι)} {S : Matrix ι ι ℝ}
   {γ : Measure (J → EuclideanSpace ℝ ι)}
 
-/-- A weighted sum of the centred coordinates of a multi-coupling of laws with finite second
-moments is square-integrable. -/
-private theorem memLp_sum_smul_sub [IsFiniteMeasure γ] (hμ : ∀ j, MemLp id 2 (μ j))
-    (hγ : Measure.IsMultiCoupling γ μ) (a : J → ℝ) (c : J → EuclideanSpace ℝ ι) :
-    MemLp (fun x ↦ ∑ j, a j • (x j - c j)) 2 γ :=
-  memLp_finsetSum _ fun j _ ↦
-    ((hγ.memLp_comp_eval j (hμ j)).sub (memLp_const (c j))).const_smul (a j)
-
-/-- The multi-marginal cost `∑ i, w i * ‖∑ j, w j • x j - x i‖ ^ 2` of a multi-coupling of laws
-with finite second moments is integrable. -/
-private theorem integrable_sum_mul_norm_sum_smul_sub_sq (hμ : ∀ j, MemLp id 2 (μ j))
-    (hγ : Measure.IsMultiCoupling γ μ) :
-    Integrable (fun x ↦ ∑ i, (w i : ℝ) * ‖∑ j, (w j : ℝ) • x j - x i‖ ^ 2) γ :=
-  integrable_finsetSum _ fun i _ ↦ by
-    have hi : MemLp (fun x : J → EuclideanSpace ℝ ι ↦ ∑ j, (w j : ℝ) • x j - x i) 2 γ :=
-      (memLp_finsetSum _ fun j _ ↦ (hγ.memLp_comp_eval j (hμ j)).const_smul (w j : ℝ)).sub
-        (hγ.memLp_comp_eval i (hμ i))
-    exact ((memLp_two_iff_integrable_sq_norm hi.aestronglyMeasurable).1 hi).const_mul _
-
-/-- **The weighted variance decomposition of a multi-coupling.** For weights summing to `1`, the
-multi-marginal cost `∑ i, w i * ‖∑ j, w j • x j - x i‖ ^ 2` of a multi-coupling of laws with
-finite second moments, means `m i` and covariance matrices `C i` has mean
-`∑ i, w i * (‖m i - mbar‖ ^ 2 + tr C i)` minus the second moment of the centred weighted mean
-`∑ j, w j • (x j - m j)`, where `mbar = ∑ j, w j • m j`. -/
-private theorem integral_sum_mul_norm_sum_smul_sub_sq (hw : ∑ j, w j = 1)
-    [∀ j, IsProbabilityMeasure (μ j)] (hμ : ∀ j, MemLp id 2 (μ j))
-    (hγ : Measure.IsMultiCoupling γ μ) :
-    ∫ x, ∑ i, (w i : ℝ) * ‖∑ j, (w j : ℝ) • x j - x i‖ ^ 2 ∂γ =
-      ∑ i, (w i : ℝ) * (‖∫ y, y ∂μ i - ∑ j, (w j : ℝ) • ∫ y, y ∂μ j‖ ^ 2 +
-        (covMatrix (μ i)).trace) - ∫ x, ‖∑ j, (w j : ℝ) • (x j - ∫ y, y ∂μ j)‖ ^ 2 ∂γ := by
-  obtain ⟨j₀, -, -⟩ := Finset.exists_ne_zero_of_sum_ne_zero (hw.trans_ne one_ne_zero)
-  have := hγ.isProbabilityMeasure j₀
-  set m : J → EuclideanSpace ℝ ι := fun j ↦ ∫ y, y ∂μ j
-  set mbar := ∑ i, (w i : ℝ) • m i
-  set W : (J → EuclideanSpace ℝ ι) → EuclideanSpace ℝ ι := fun x ↦ ∑ j, (w j : ℝ) • (x j - m j)
-  have hw' : ∑ j, (w j : ℝ) = 1 := by exact_mod_cast hw
-  -- The pointwise weighted variance decomposition about `mbar`.
-  have hF (x : J → EuclideanSpace ℝ ι) : ∑ i, (w i : ℝ) * ‖∑ j, (w j : ℝ) • x j - x i‖ ^ 2 =
-      ∑ i, (w i : ℝ) * ‖x i - mbar‖ ^ 2 - ‖W x‖ ^ 2 := by
-    have h := Finset.univ.sum_mul_norm_sub_sq_eq hw' mbar x
-    have hWx : W x = ∑ j, (w j : ℝ) • x j - mbar := by
-      simp only [W, mbar, smul_sub, Finset.sum_sub_distrib]
-    simp only [norm_sub_rev mbar] at h
-    rw [hWx]
-    linarith
-  have hsq (i : J) : Integrable (fun x : J → EuclideanSpace ℝ ι ↦ ‖x i - mbar‖ ^ 2) γ :=
-    have hi := (hγ.memLp_comp_eval i (hμ i)).sub (memLp_const mbar)
-    (memLp_two_iff_integrable_sq_norm hi.aestronglyMeasurable).1 hi
-  have hW : MemLp W 2 γ := memLp_sum_smul_sub hμ hγ _ m
-  have hWsq : Integrable (fun x ↦ ‖W x‖ ^ 2) γ :=
-    (memLp_two_iff_integrable_sq_norm hW.aestronglyMeasurable).1 hW
-  rw [integral_congr_ae (.of_forall hF), integral_sub
-    (integrable_finsetSum _ fun i _ ↦ (hsq i).const_mul _) hWsq,
-    integral_finsetSum _ fun i _ ↦ (hsq i).const_mul _]
-  congr 1
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [integral_const_mul, hγ.integral_comp_eval i (f := fun y ↦ ‖y - mbar‖ ^ 2)
-    (by fun_prop), integral_norm_sub_sq_eq_norm_integral_sub_sq_add_trace_covMatrix _ (hμ i)]
-
 open scoped Classical in
 /-- **The variance of the weighted mean of a multi-coupling.** Let `μ j` be probability laws on
 `ℝⁿ` with finite second moments, means `m j` and covariance matrices `C j`, let `w j` be
@@ -166,15 +108,16 @@ theorem integral_norm_sum_smul_sub_integral_sq_le [∀ j, IsProbabilityMeasure (
   have hcoord (j : J) : MemLp (fun x : J → EuclideanSpace ℝ ι ↦ x j) 2 γ :=
     hγ.memLp_comp_eval j (hμ j)
   have hmean (j : J) : ∫ x, x j ∂γ = m j := hγ.integral_comp_eval j aestronglyMeasurable_id
-  have hW : MemLp W 2 γ := memLp_sum_smul_sub hμ hγ _ m
+  have hW : MemLp W 2 γ := hγ.memLp_sum_smul_sub hμ _ m
   -- The quadratic Fenchel–Young inequality for the `j`th coordinate against `W`.
   have hFY (j : J) : ∫ x, ⟪x j - m j, W x⟫ ∂γ ≤
       (∫ x, ⟪(A j).toEuclideanLin (W x), W x⟫ ∂γ + (A j * S).trace) / 2 := by
-    have hcov : covMatrix (γ.map fun x ↦ x j) = A j * S * A j := by
-      rw [show (γ.map fun x ↦ x j) = μ j from hγ.marginal_eq j,
+    have hcov : covMatrix (γ.map (Function.eval j)) = A j * S * A j := by
+      rw [hγ.marginal_eq j,
         geometricMean_ringInverse_mul_mul_geometricMean_ringInverse hS.isStrictlyPositive
           (posSemidef_covMatrix _ (hμ j)).nonneg]
-    simpa only [hmean] using integral_inner_sub_integral_le (hcoord j) hW (hA j) hcov
+    simpa only [Function.eval_apply, hmean] using
+      integral_inner_sub_integral_le (X := Function.eval j) (hcoord j) hW (hA j) hcov
   have hint (j : J) : Integrable (fun x ↦ ⟪x j - m j, W x⟫) γ :=
     ((hcoord j).sub (memLp_const _)).integrable_inner hW
   have hAint (j : J) : Integrable (fun x ↦ ⟪(A j).toEuclideanLin (W x), W x⟫) γ :=
@@ -186,10 +129,12 @@ theorem integral_norm_sum_smul_sub_integral_sq_le [∀ j, IsProbabilityMeasure (
   have hquad (x : J → EuclideanSpace ℝ ι) :
       ∑ j, (w j : ℝ) * ⟪(A j).toEuclideanLin (W x), W x⟫ = ‖W x‖ ^ 2 := by
     rw [← real_inner_self_eq_norm_sq]
-    simpa [map_sum, map_smul, sum_inner, real_inner_smul_left] using
+    simpa only [map_sum, map_smul, Matrix.toLpLin_one, LinearMap.sum_apply,
+      LinearMap.smul_apply, LinearMap.id_apply, sum_inner, real_inner_smul_left] using
       congrArg (fun M : Matrix ι ι ℝ ↦ ⟪M.toEuclideanLin (W x), W x⟫) hAone
   have htrace : ∑ j, (w j : ℝ) * (A j * S).trace = S.trace := by
-    simpa [Finset.sum_mul, Matrix.trace_sum, Matrix.trace_smul] using
+    simpa only [Finset.sum_mul, Matrix.smul_mul, Matrix.one_mul, Matrix.trace_sum,
+      Matrix.trace_smul, smul_eq_mul] using
       congrArg (fun M : Matrix ι ι ℝ ↦ (M * S).trace) hAone
   have hle : ∫ x, ‖W x‖ ^ 2 ∂γ ≤ (∫ x, ‖W x‖ ^ 2 ∂γ + S.trace) / 2 := by
     calc ∫ x, ‖W x‖ ^ 2 ∂γ = ∑ j, (w j : ℝ) * ∫ x, ⟪x j - m j, W x⟫ ∂γ := by
@@ -261,14 +206,16 @@ theorem sum_mul_ofReal_gaussianWassersteinSq_le (hw : ∑ j, w j = 1)
   -- The multi-marginal cost of `γ` as a real integral.
   have hlint : ∫⁻ x, ∑ i, (w i : ℝ≥0∞) * edist (∑ j, (w j : ℝ) • x j) (x i) ^ 2 ∂γ =
       ENNReal.ofReal (∫ x, F x ∂γ) := by
-    rw [ofReal_integral_eq_lintegral_ofReal (integrable_sum_mul_norm_sum_smul_sub_sq hμ hγ)
+    rw [ofReal_integral_eq_lintegral_ofReal
+      (hγ.integrable_sum_mul_norm_sum_smul_sub_sq hμ (fun i ↦ (w i : ℝ)) fun j ↦ (w j : ℝ))
       (.of_forall fun x ↦ by positivity)]
     refine lintegral_congr fun x ↦ ?_
     rw [ENNReal.ofReal_sum_of_nonneg fun i _ ↦ by positivity]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
     rw [edist_dist, dist_eq_norm, ← ENNReal.ofReal_pow (norm_nonneg _),
       ← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul (w i).coe_nonneg]
-  have hIF := integral_sum_mul_norm_sum_smul_sub_sq hw hμ hγ
+  have hIF := hγ.integral_sum_mul_norm_sum_smul_sub_sq hμ (w := fun j ↦ (w j : ℝ))
+    (by exact_mod_cast hw)
   have hg := sum_mul_gaussianWassersteinSq_eq hw m (fun j ↦ covMatrix (μ j)) hfix
   have hvar := integral_norm_sum_smul_sub_integral_sq_le hμ hS hfix hγ
   rw [hlint]

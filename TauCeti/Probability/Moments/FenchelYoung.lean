@@ -119,9 +119,8 @@ theorem integral_inner_sub_integral_le (hX : MemLp X 2 P) (hY : MemLp Y 2 P)
       real_inner_comm (A.toEuclideanLin v) y] at h0
     linarith
   have htrace : (D * (A * T * A)).trace = (A * T).trace := by
-    rw [Matrix.trace_mul_comm D, show A * T * A * D = A * T * (A * D) by noncomm_ring,
-      Matrix.trace_mul_comm (A * T), show A * D * (A * T) = A * D * A * T by noncomm_ring,
-      Matrix.mul_covariancePseudoInverse_mul hA]
+    rw [Matrix.trace_mul_comm D, Matrix.mul_assoc (A * T) A D, Matrix.trace_mul_comm (A * T),
+      ← Matrix.mul_assoc (A * D) A T, Matrix.mul_covariancePseudoInverse_mul hA]
   have hAY := hY.integrable_inner_toEuclideanLin A
   have hDU := hU.integrable_inner_toEuclideanLin D
   calc ∫ ω, ⟪X ω - m, Y ω⟫ ∂P
