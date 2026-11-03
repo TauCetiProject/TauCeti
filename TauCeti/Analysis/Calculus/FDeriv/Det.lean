@@ -101,8 +101,9 @@ theorem hasFDerivAt_det_one :
       ⟨traceLinearMap n 𝕜 𝕜, continuous_id.matrix_trace⟩ 1 := by
   refine ((differentiable_det (𝕜 := 𝕜) (n := n) 1).hasFDerivAt).congr_fderiv ?_
   ext H
-  change fderiv 𝕜 det 1 H = H.trace
-  simp only [fderiv_det_apply_adjugate, adjugate_one, one_mul]
+  rw [fderiv_det_apply_adjugate, adjugate_one, one_mul]
+  exact ((congrFun (ContinuousLinearMap.coe_mk' (traceLinearMap n 𝕜 𝕜)
+    continuous_id.matrix_trace) H).trans (traceLinearMap_apply n 𝕜 𝕜 H)).symm
 
 /-- **Jacobi's inverse formula.** At a matrix with invertible determinant, the differential is
 `H ↦ det A * trace (A⁻¹ * H)`. -/
@@ -112,6 +113,7 @@ theorem hasFDerivAt_det {A : Matrix n n 𝕜} (hA : IsUnit A.det) :
         (ContinuousLinearMap.mul 𝕜 (Matrix n n 𝕜) A⁻¹)) A := by
   refine (differentiable_det A).hasFDerivAt.congr_fderiv ?_
   ext H
+  -- At H, the scaled composition evaluates to A.det * trace (A⁻¹ * H).
   exact fderiv_det_apply hA H
 
 end Matrix
