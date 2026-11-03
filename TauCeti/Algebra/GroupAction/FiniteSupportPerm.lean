@@ -14,7 +14,7 @@ public import Mathlib.Order.Interval.Finset.Nat
 public import Mathlib.Logic.Equiv.Fintype
 public import Mathlib.Logic.Embedding.Set
 public import Mathlib.Data.Finset.Sort
-import Mathlib.Algebra.Group.Pointwise.Set.Finite
+import Mathlib.Algebra.Group.Action.Pointwise.Set.Finite
 import Mathlib.Logic.Equiv.Fin.Basic
 -- Non-public: `Finset.countable`, the index of the covering used for countability of `finitary`.
 import Mathlib.Logic.Equiv.List
@@ -43,36 +43,39 @@ public section
 
 namespace TauCeti
 
-/-- Constructor for Mathlib's finite-support predicate from an eventual fixedness bound. -/
-theorem finite_compl_fixedBy_of_eventually_eq_self {π : Equiv.Perm ℕ}
-    (hπ : ∃ N, ∀ n, N ≤ n → π n = n) : (MulAction.fixedBy ℕ π)ᶜ.Finite := by
-  rcases hπ with ⟨N, hN⟩
-  exact (Set.finite_Iio N).subset fun n hn => by
-    by_contra hnN
-    have hfixed : n ∈ MulAction.fixedBy ℕ π := by
-      simpa [MulAction.mem_fixedBy, Equiv.Perm.smul_def] using hN n (not_lt.mp hnN)
-    exact hn hfixed
+/-- Constructor for Mathlib's finite-support predicate from an eventual fixedness bound: in a
+linear order whose initial segments are finite, such as `ℕ`, a permutation fixing every point from
+some `N` on moves only finitely many points. -/
+theorem finite_compl_fixedBy_of_eventually_eq_self {α : Type*} [LinearOrder α]
+    [LocallyFiniteOrderBot α] {π : Equiv.Perm α} (hπ : ∃ N, ∀ n, N ≤ n → π n = n) :
+    (MulAction.fixedBy α π)ᶜ.Finite := by
+  obtain ⟨N, hN⟩ := hπ
+  exact (Set.finite_Iio N).subset fun n hn => not_le.mp fun hNn => hn (by simpa using hN n hNn)
 
-/-- A permutation of `ℕ` with finite Mathlib support fixes every sufficiently large index. -/
-theorem finite_compl_fixedBy_eventually_eq_self {π : Equiv.Perm ℕ}
-    (hπ : (MulAction.fixedBy ℕ π)ᶜ.Finite) : ∃ N, ∀ n, N ≤ n → π n = n := by
-  rcases hπ.bddAbove with ⟨N, hN⟩
-  refine ⟨N + 1, fun n hn => ?_⟩
-  by_contra hne
-  have hn_support : n ∈ (MulAction.fixedBy ℕ π)ᶜ := by
-    simpa [MulAction.mem_fixedBy, Equiv.Perm.smul_def] using hne
-  exact (not_lt_of_ge hn) (Nat.lt_succ_of_le (hN hn_support))
+/-- A finitely supported permutation of a nonempty directed order without maximal elements, such
+as `ℕ` or `ℤ`, fixes every point from some `N` on. -/
+theorem eventually_eq_self_of_finite_compl_fixedBy {α : Type*} [Preorder α]
+    [IsDirectedOrder α] [Nonempty α] [NoMaxOrder α] {π : Equiv.Perm α}
+    (hπ : (MulAction.fixedBy α π)ᶜ.Finite) : ∃ N, ∀ n, N ≤ n → π n = n := by
+  obtain ⟨M, hM⟩ := hπ.bddAbove
+  obtain ⟨N, hMN⟩ := exists_gt M
+  exact ⟨N, fun n hNn => by_contra fun hn => (hMN.trans_le hNn).not_ge (hM (by simpa using hn))⟩
 
-/-- A permutation of `ℕ` is finitely supported iff it fixes all sufficiently large indices. -/
-theorem finite_compl_fixedBy_iff_eventually_eq_self {π : Equiv.Perm ℕ} :
-    (MulAction.fixedBy ℕ π)ᶜ.Finite ↔ ∃ N, ∀ n, N ≤ n → π n = n :=
-  ⟨finite_compl_fixedBy_eventually_eq_self, finite_compl_fixedBy_of_eventually_eq_self⟩
+/-- A permutation of a nonempty linear order without maximal elements whose initial segments are
+finite (that is, of order type `ω`, such as `ℕ`) is finitely supported iff it fixes every point
+from some `N` on. -/
+theorem finite_compl_fixedBy_iff_eventually_eq_self {α : Type*} [LinearOrder α]
+    [LocallyFiniteOrderBot α] [Nonempty α] [NoMaxOrder α] {π : Equiv.Perm α} :
+    (MulAction.fixedBy α π)ᶜ.Finite ↔ ∃ N, ∀ n, N ≤ n → π n = n :=
+  ⟨eventually_eq_self_of_finite_compl_fixedBy, finite_compl_fixedBy_of_eventually_eq_self⟩
 
-/-- Conjugating a group element preserves Mathlib's finite-support predicate
-`(MulAction.fixedBy α ·)ᶜ.Finite`; in particular this applies to conjugation of permutations. -/
-theorem finite_compl_fixedBy_conj {G α : Type*} [Group G] [MulAction G α] {g h : G}
-    (hh : (MulAction.fixedBy α h)ᶜ.Finite) : (MulAction.fixedBy α (g⁻¹ * h * g))ᶜ.Finite := by
-  simpa [Set.smul_set_compl, MulAction.smul_fixedBy] using hh.smul_set (a := g⁻¹)
+/-- Mathlib's finite-support predicate `(MulAction.fixedBy α ·)ᶜ.Finite` is invariant under
+conjugation; in particular this applies to conjugation of permutations. -/
+@[simp]
+theorem finite_compl_fixedBy_conj {G α : Type*} [Group G] [MulAction G α] {g h : G} :
+    (MulAction.fixedBy α (g⁻¹ * h * g))ᶜ.Finite ↔ (MulAction.fixedBy α h)ᶜ.Finite := by
+  simpa [Set.smul_set_compl, MulAction.smul_fixedBy] using
+    Set.finite_smul_set (a := g⁻¹) (s := (MulAction.fixedBy α h)ᶜ)
 
 /-! ## The block swap -/
 
@@ -80,30 +83,28 @@ theorem finite_compl_fixedBy_conj {G α : Type*} [Group G] [MulAction G α] {g h
 pointwise and fixes everything from `2 * N` on: Mathlib's half-swap `finAddFlip` on `Fin (N + N)`,
 transported to `ℕ` along the value embedding. -/
 def _root_.Nat.blockSwap (N : ℕ) : Equiv.Perm ℕ :=
-  Equiv.Perm.viaFintypeEmbedding (finAddFlip (m := N) (n := N)) ⟨Fin.val, Fin.val_injective⟩
+  Equiv.Perm.viaFintypeEmbedding (finAddFlip (m := N) (n := N)) Fin.valEmbedding
 
 /-- On `[0, N)`, `N.blockSwap` shifts by `N`. -/
 @[simp]
 theorem _root_.Nat.blockSwap_apply_of_lt {N i : ℕ} (hi : i < N) : N.blockSwap i = N + i := by
-  have h : (⟨Fin.val, Fin.val_injective⟩ : Fin (N + N) ↪ ℕ)
-      (Fin.castAdd N ⟨i, hi⟩) = i := rfl
-  rw [Nat.blockSwap, ← h, Equiv.Perm.viaFintypeEmbedding_apply_image, finAddFlip_apply_castAdd]
-  rfl
+  simpa only [Nat.blockSwap, finAddFlip_apply_castAdd, Fin.valEmbedding_apply, Fin.val_castAdd,
+    Fin.val_natAdd] using
+    Equiv.Perm.viaFintypeEmbedding_apply_image finAddFlip Fin.valEmbedding (Fin.castAdd N ⟨i, hi⟩)
 
 /-- On `[N, 2N)`, `N.blockSwap` shifts back by `N`. -/
 @[simp]
 theorem _root_.Nat.blockSwap_apply_add_of_lt {N i : ℕ} (hi : i < N) : N.blockSwap (N + i) = i := by
-  have h : (⟨Fin.val, Fin.val_injective⟩ : Fin (N + N) ↪ ℕ)
-      (Fin.natAdd N ⟨i, hi⟩) = N + i := rfl
-  rw [Nat.blockSwap, ← h, Equiv.Perm.viaFintypeEmbedding_apply_image, finAddFlip_apply_natAdd]
-  rfl
+  simpa only [Nat.blockSwap, finAddFlip_apply_natAdd, Fin.valEmbedding_apply, Fin.val_castAdd,
+    Fin.val_natAdd] using
+    Equiv.Perm.viaFintypeEmbedding_apply_image finAddFlip Fin.valEmbedding (Fin.natAdd N ⟨i, hi⟩)
 
 /-- From `2 * N` on, `N.blockSwap` is the identity. -/
 @[simp]
 theorem _root_.Nat.blockSwap_apply_of_le {N n : ℕ} (hn : N + N ≤ n) : N.blockSwap n = n := by
   refine Equiv.Perm.viaFintypeEmbedding_apply_notMem_range _ _ ?_
   rintro ⟨j, rfl⟩
-  exact absurd j.isLt (not_lt.mpr hn)
+  exact j.isLt.not_ge hn
 
 /-- `N.blockSwap` carries any index set inside `[0, N)` off itself: the moved copy lands in
 `[N, 2N)`. -/
@@ -138,7 +139,6 @@ theorem _root_.Nat.blockSwap_symm (N : ℕ) : N.blockSwap.symm = N.blockSwap :=
   Equiv.ext fun i => by
     rw [Equiv.symm_apply_eq]
     exact (Nat.blockSwap_blockSwap N i).symm
-
 
 /-- The self-maps of a countable type that move only finitely many points form a countable set:
 such a map is determined by the finite set it moves together with its values there. -/
@@ -293,32 +293,17 @@ theorem exists_prodCongrRight_mem_finitary_apply_eq_on_finset {ι β : Type*}
       Equiv.prodCongrRight τ ∈ finitary (ι × β) ∧
       ∀ p ∈ F, τ p.1 p.2 = π p.1 p.2 := by
   classical
+  -- match `π a` on the points of row `a` listed in `F`, and use the identity on unlisted rows
+  choose σ hσfin hσ using fun a =>
+    exists_finite_compl_fixedBy_apply_eq_on_finset (π a) ((F.filter (·.1 = a)).image Prod.snd)
   let rows : Finset ι := F.image Prod.fst
-  have hexists : ∀ a : ι, ∃ σ : Equiv.Perm β,
-      (MulAction.fixedBy β σ)ᶜ.Finite ∧
-        ∀ b ∈ (F.filter fun q => q.1 = a).image Prod.snd, σ b = π a b := by
-    intro a
-    exact exists_finite_compl_fixedBy_apply_eq_on_finset (π a) _
-  choose σ hσ using hexists
-  let τ : ι → Equiv.Perm β := fun a => if a ∈ rows then σ a else 1
-  refine ⟨τ, mem_finitary_prodCongrRight_iff.mpr ⟨?_, ?_⟩, ?_⟩
-  · refine rows.finite_toSet.subset fun a ha => ?_
-    by_contra hnot
-    have hnot' : a ∉ rows := by simpa using hnot
-    have hτ : τ a = 1 := by simp only [τ, hnot', ↓reduceIte]
-    exact ha hτ
-  · intro a
-    rw [mem_finitary]
-    by_cases ha : a ∈ rows
-    · simpa [τ, ha] using (hσ a).1
-    · simp [τ, ha]
-  · intro p hp
-    have hrow : p.1 ∈ rows := Finset.mem_image.2 ⟨p, hp, rfl⟩
-    have hpfilter : p ∈ F.filter fun q => q.1 = p.1 := Finset.mem_filter.2 ⟨hp, rfl⟩
-    have hmem : p.2 ∈ (F.filter fun q => q.1 = p.1).image Prod.snd :=
-      Finset.mem_image.2 ⟨p, hpfilter, rfl⟩
-    simpa [τ, hrow] using (hσ p.1).2 p.2 hmem
-
+  refine ⟨fun a => if a ∈ rows then σ a else 1,
+    mem_finitary_prodCongrRight_iff.mpr ⟨rows.finite_toSet.subset fun a ha =>
+      Finset.mem_coe.2 (by_contra fun h => ha (by simp [h])), fun a => ?_⟩, fun p hp => ?_⟩
+  · split_ifs
+    exacts [mem_finitary.mpr (hσfin a), one_mem _]
+  · simpa [rows, Finset.mem_image_of_mem _ hp] using
+      hσ p.1 p.2 (Finset.mem_image.2 ⟨p, Finset.mem_filter.2 ⟨hp, rfl⟩, rfl⟩)
 
 /-- Two disjoint finite sets of cardinalities `k` and `l` are the images of the two windows of
 `Fin (k + l)` under a finitely supported permutation of `ℕ`. -/
