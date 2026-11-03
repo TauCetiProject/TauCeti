@@ -349,7 +349,7 @@ private theorem euclideanHausdorffMeasure_image_le_and_lintegral_le_of_one_lt
     exact disjoint_left.1 (hPd hpq) hx (hf (hPs q hy) (hPs p hx) hxy ▸ hy)
   rw [← hPU, image_iUnion, measure_iUnion himg_disj himg_meas, lintegral_iUnion hPm hPd,
     ← ENNReal.tsum_mul_left, ← ENNReal.tsum_mul_left]
-  exact ⟨ENNReal.tsum_le_tsum fun p => (hpiece p).1, ENNReal.tsum_le_tsum fun p => (hpiece p).2⟩
+  exact ⟨tsum_le_tsum fun p => (hpiece p).1, tsum_le_tsum fun p => (hpiece p).2⟩
 
 /-- **The area formula** for injective maps with injective derivative. Let `U` and `V` be
 finite-dimensional real inner product spaces and let `f : U → V` be injective on a measurable set
