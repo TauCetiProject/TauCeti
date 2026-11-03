@@ -108,6 +108,37 @@ private theorem intCast_localMultiplicity_sub_one_ne_zero_iff (f : FiniteHolomor
 
 variable [CompactSpace X]
 
+/-- The local ramification orders of a finite holomorphic map from a compact connected Riemann
+surface have finite support. -/
+theorem FiniteHolomorphicMap.finite_support_localMultiplicity_sub_one
+    (f : FiniteHolomorphicMap X Y) : (support fun x ↦ localMultiplicity f x - 1).Finite := by
+  refine f.finite_setOf_one_lt_localMultiplicity.subset ?_
+  intro x hx
+  simpa only [mem_support, Nat.sub_ne_zero_iff_lt, mem_ofPred_eq] using hx
+
+/-- In any ring, the local ramification orders of a finite holomorphic map from a compact
+connected Riemann surface have finite support. -/
+theorem FiniteHolomorphicMap.finite_support_cast_localMultiplicity_sub_one
+    {R : Type*} [Ring R] (f : FiniteHolomorphicMap X Y) :
+    (support fun x ↦ (localMultiplicity f x : R) - 1).Finite := by
+  have hcast : (support fun x ↦ ((localMultiplicity f x - 1 : ℕ) : R)).Finite := by
+    refine f.finite_support_localMultiplicity_sub_one.subset ?_
+    intro x hx
+    simp only [mem_support] at hx ⊢
+    exact fun h ↦ hx (by rw [h, Nat.cast_zero])
+  simpa only [Nat.cast_sub (localMultiplicity_pos f _), Nat.cast_one] using hcast
+
+/-- In any ring, the ramification degree of a finite holomorphic map from a compact connected
+Riemann surface is the sum of the local multiplicities minus one, with subtraction in the ring. -/
+theorem cast_ramificationDegree {R : Type*} [Ring R] (f : FiniteHolomorphicMap X Y) :
+    (ramificationDegree f : R) = ∑ᶠ x, ((localMultiplicity f x : R) - 1) := by
+  have hcast := map_finsum (Nat.castAddMonoidHom R) f.finite_support_localMultiplicity_sub_one
+  simp only [Nat.coe_castAddMonoidHom] at hcast
+  rw [ramificationDegree_def, hcast]
+  apply finsum_congr
+  intro x
+  rw [Nat.cast_sub (localMultiplicity_pos f x), Nat.cast_one]
+
 /-- The **ramification divisor** `∑ₓ (e_x - 1) [x]` of a finite holomorphic map from a compact
 connected Riemann surface, where `e_x` is the local multiplicity at `x`. Its support is the finite
 set of ramification points (`TauCeti.RiemannSurface.support_ramificationDivisor`). -/
