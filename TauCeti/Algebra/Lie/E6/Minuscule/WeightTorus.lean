@@ -158,28 +158,19 @@ theorem pointsMulEquiv_mapPointsFunctor_weightTorusToBaseChangeCoordinateMap
             q)) =
       (weightTorusPoints A (SplitTorus.pointsMulEquiv q) :
         Matrix.GeneralLinearGroup (Fin 27) A) := by
-  -- The categorical weight-torus point formula requires the base ring and torus index in one
-  -- universe. The direct bialgebra map allows arbitrary `R : Type u` with weights in `Fin 6`.
   have hcomp : (weightTorusToBaseChangeCoordinateMap R).hom.comp (coordinateMap R).hom =
       GeneralLinear.weightTorusCoordinateBialgHom (S := R) weightTable.weight := by
     rw [← _root_.CommHopfAlgCat.hom_comp,
       coordinateMap_comp_weightTorusToBaseChangeCoordinateMap,
       GeneralLinear.hom_weightTorusBaseChangeCoordinateMap]
-  have hp := CommHopfAlgCat.Hom.mapPointsFunctor_app_apply
-    (coordinateMap R ≫ weightTorusToBaseChangeCoordinateMap R) A q
-  simp only [_root_.CommHopfAlgCat.hom_comp, hcomp] at hp
-  have he := (CommHopfAlgCat.Hom.mapPointsFunctor_comp_app_apply
-    (coordinateMap R) (weightTorusToBaseChangeCoordinateMap R) A q).symm.trans hp
+  rw [← CommHopfAlgCat.Hom.mapPointsFunctor_comp_app_apply,
+    CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, _root_.CommHopfAlgCat.hom_comp, hcomp]
+  have h := GeneralLinear.pointsMulEquiv_mapDomain_weightTorusCoordinateBialgHom
+    weightTable.weight A q
   apply Units.ext
-  rw [coe_weightTorusPoints, UniversalEnvelopingAlgebra.kostantTorusMatrix_apply, diagGL_coe]
-  refine (congrArg (fun g ↦
-    (GeneralLinear.pointsMulEquiv 27 g : Matrix (Fin 27) (Fin 27) A)) he).trans ?_
-  rw [GeneralLinear.pointsMulEquiv_apply, GeneralLinear.weightTorusCoordinateBialgHom_def,
-    DiagonalizableGroup.pointToGeneralLinear_comp_diagonalCoordinateMap]
-  congr 1
-  funext i
-  exact congrArg (fun s : Aˣ ↦ (s : A))
-    (SplitTorus.charOfPoint_weightCharacter q (weightTable.weight i))
+  simpa only [BialgHom.mapDomain_apply, coe_weightTorusPoints,
+    UniversalEnvelopingAlgebra.kostantTorusMatrix_apply, diagGL_coe] using
+    congrArg (fun g : GL (Fin 27) A ↦ (g : Matrix (Fin 27) (Fin 27) A)) h
 
 /-- The points defined by the intrinsic torus ideal, mapped into `GL₂₇`, are exactly the named
 weight-torus matrix points. The value algebra need not be reduced or a field. -/
