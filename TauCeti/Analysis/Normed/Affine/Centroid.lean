@@ -22,6 +22,8 @@ faces, hence lie within `k / (k + 1) * d` of each other.
 
 ## Main results
 
+* `Finset.centroid_vsub_eq_smul_sum_vsub`: the vector from a point to the centroid is the average
+  of the vectors from that point to the members of the family.
 * `Finset.dist_centroid_le_sum_dist`: distance to the centroid is bounded by the average distance.
 * `Finset.dist_centroid_le`: the centroid lies in every closed ball containing the points.
 * `Finset.dist_centroid_apply_le`: the distance from the centroid to one of the points.
@@ -44,13 +46,21 @@ variable {ι : Type*} {s t : Finset ι}
 variable {V P : Type*} [SeminormedAddCommGroup V] [NormedSpace ℝ V] [PseudoMetricSpace P]
   [NormedAddTorsor V P] {p : ι → P}
 
+/-- The vector from any point to the centroid of a nonempty family is the average of the vectors
+from that point to the members of the family. -/
+theorem centroid_vsub_eq_smul_sum_vsub (hs : s.Nonempty) (q : P) :
+    s.centroid ℝ p -ᵥ q = (#s : ℝ)⁻¹ • ∑ i ∈ s, (p i -ᵥ q) := by
+  rw [s.centroid_vsub_const ℝ hs, centroid_def,
+    affineCombination_eq_linear_combination (hw := s.sum_centroidWeights_eq_one_of_nonempty ℝ hs)]
+  simp [smul_sum]
+
 /-- Distance to the centroid is at most the average distance to the points. -/
 theorem dist_centroid_le_sum_dist (hs : s.Nonempty) (q : P) :
     dist (s.centroid ℝ p) q ≤ (#s : ℝ)⁻¹ * ∑ i ∈ s, dist (p i) q := by
-  rw [dist_eq_norm_vsub V, s.centroid_vsub_const ℝ hs, centroid_def,
-    affineCombination_eq_linear_combination (hw := s.sum_centroidWeights_eq_one_of_nonempty ℝ hs)]
-  refine (norm_sum_le _ _).trans_eq ?_
-  simp [norm_smul, dist_eq_norm_vsub V, ← mul_sum]
+  rw [dist_eq_norm_vsub V, centroid_vsub_eq_smul_sum_vsub hs, norm_smul,
+    Real.norm_of_nonneg (by positivity)]
+  gcongr
+  exact (norm_sum_le _ _).trans_eq (by simp [dist_eq_norm_vsub V])
 
 /-- The centroid of a nonempty family of points lies in every closed ball containing all of
 them. -/
@@ -68,19 +78,15 @@ theorem dist_centroid_centroid_le_of_subset [DecidableEq ι] {d : ℝ}
     dist (t.centroid ℝ p) (s.centroid ℝ p) ≤ (1 - (#t : ℝ) / #s) * d := by
   have hs := ht.mono hts
   have hcard : (#s : ℝ) ≠ 0 := by simpa using hs.ne_empty
-  -- Displacements from a centroid of a nonempty family are averages of those to its points.
-  have hvsub {u : Finset ι} (hu : u.Nonempty) (q : P) :
-      u.centroid ℝ p -ᵥ q = (#u : ℝ)⁻¹ • ∑ i ∈ u, (p i -ᵥ q) := by
-    rw [u.centroid_vsub_const ℝ hu, centroid_def, affineCombination_eq_linear_combination
-      (hw := u.sum_centroidWeights_eq_one_of_nonempty ℝ hu)]
-    simp [smul_sum]
   -- The displacements within the smaller family sum to zero at its own centroid.
   have htzero : ∑ i ∈ t, (p i -ᵥ t.centroid ℝ p) = 0 := by
-    simpa [eq_comm (a := (0 : V)), ht.ne_empty] using hvsub ht (t.centroid ℝ p)
+    simpa [eq_comm (a := (0 : V)), ht.ne_empty] using
+      centroid_vsub_eq_smul_sum_vsub (p := p) ht (t.centroid ℝ p)
   calc
     dist (t.centroid ℝ p) (s.centroid ℝ p)
         = ‖(#s : ℝ)⁻¹ • ∑ i ∈ s \ t, (p i -ᵥ t.centroid ℝ p)‖ := by
-      rw [dist_comm, dist_eq_norm_vsub V, hvsub hs, ← sum_sdiff hts, htzero, add_zero]
+      rw [dist_comm, dist_eq_norm_vsub V, centroid_vsub_eq_smul_sum_vsub hs, ← sum_sdiff hts,
+        htzero, add_zero]
     _ ≤ (#s : ℝ)⁻¹ * (#(s \ t) * d) := by
       rw [norm_smul, Real.norm_of_nonneg (by positivity)]
       gcongr
