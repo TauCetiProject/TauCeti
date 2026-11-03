@@ -34,6 +34,8 @@ This is the smooth-dependence input for smoothness of the exponential map on its
   smooth on its domain.
 * `TauCeti.Manifold.contMDiffOn_maximalGeodesic`: maximal geodesics depend smoothly on their
   initial data and on time.
+* `TauCeti.Manifold.exists_contMDiffOn_maximalGeodesic_of_isCompact`: nearby initial states
+  share a smooth flow domain around any compact subset of a maximal geodesic interval.
 
 ## References
 
@@ -120,6 +122,26 @@ theorem contMDiffOn_maximalGeodesic :
       {q | q.2 ∈ geodesicInterval I M q.1.proj q.1.2} :=
   ((Bundle.contMDiff_proj (fun x : M ↦ TangentSpace I x) (n := ∞)).comp_contMDiffOn
     contMDiffOn_maximalIntegralCurve_geodesicSpray).congr fun _ _ ↦ maximalGeodesic_def _ _ _
+
+/-- Around a compact subset of a maximal geodesic interval there is one open time domain
+valid for every nearby initial state, on which the geodesic flow is jointly smooth.
+In particular a prescribed compact geodesic segment admits variations on a common time domain,
+even when the metric is incomplete. -/
+theorem exists_contMDiffOn_maximalGeodesic_of_isCompact (z : TangentBundle I M)
+    {K : Set ℝ} (hK : IsCompact K) (hsub : K ⊆ geodesicInterval I M z.proj z.2) :
+    ∃ (U : Set (TangentBundle I M)) (V : Set ℝ),
+      IsOpen U ∧ IsOpen V ∧ z ∈ U ∧ K ⊆ V ∧
+        (∀ w ∈ U, V ⊆ geodesicInterval I M w.proj w.2) ∧
+        ContMDiffOn (I.tangent.prod 𝓘(ℝ, ℝ)) I ∞
+          (fun q : TangentBundle I M × ℝ ↦ maximalGeodesic I M q.1.proj q.1.2 q.2)
+          (U ×ˢ V) := by
+  obtain ⟨U, V, hU, hV, hz, hKV, hUV⟩ := generalized_tube_lemma
+    (isCompact_singleton (x := z)) hK
+    (isOpen_setOfPred_mem_geodesicInterval (I := I) (M := M))
+    (by rintro ⟨w, t⟩ ⟨hw, ht⟩; rcases mem_singleton_iff.mp hw with rfl; exact hsub ht)
+  exact ⟨U, V, hU, hV, hz (mem_singleton z), hKV,
+    fun w hw t ht ↦ hUV (a := (w, t)) ⟨hw, ht⟩,
+    contMDiffOn_maximalGeodesic.mono hUV⟩
 
 end TauCeti.Manifold
 
