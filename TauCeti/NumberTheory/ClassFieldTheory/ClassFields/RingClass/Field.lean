@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.ClassFieldTheory.ClassFields.RayClassField
 public import TauCeti.NumberTheory.ClassFieldTheory.ClassFields.RingClass.Quotient
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.AdmissibleModulus.Reciprocity
 public import TauCeti.NumberTheory.ClassFieldTheory.GlobalExistence.Correspondence
@@ -42,6 +43,11 @@ ray-class reciprocity.
 * Composed with the Picard class map, it is the ideal form of reciprocity on invertible fractional
   ideals of `O`, `ringClassArtinMap O`, which is surjective and kills exactly the principal ideals
   (`ringClassArtinMap_eq_one_iff`).
+* Ring class fields shrink as the order grows: `ringClassField O' ≤ ringClassField O` when
+  `O ⊆ O'` (`ringClassField_le_ringClassField`), since the kernel of the ring-class quotient grows
+  with the order. The ring class field of the maximal order is the Hilbert class field
+  (`ringClassField_maximal`), so the Hilbert class field lies in every ring class field
+  (`hilbertClassField_le_ringClassField`).
 
 No hypothesis on the degree of `K` is needed: the congruence description
 `NumberFieldOrder.rayClassToPic` of `Pic O` as a quotient of `Cl_𝔣` holds for every order
@@ -76,6 +82,10 @@ one, cut out by ideals with a generator congruent to a rational integer modulo `
   completely in the ring class field exactly when it has a generator in `O`.
 * `TauCeti.ClassFieldTheory.ringClassArtinMap_eq_one_iff`: the ideal form of reciprocity kills
   exactly the principal ideals.
+* `TauCeti.ClassFieldTheory.ringClassField_le_ringClassField`: ring class fields shrink as the
+  order grows.
+* `TauCeti.ClassFieldTheory.ringClassField_maximal`: the ring class field of the maximal order is
+  the Hilbert class field.
 
 ## References
 
@@ -279,5 +289,41 @@ theorem ringClassArtinMap_eq_one_iff (I : O.invertibleProperFractionalIdeals) :
 /-- The ideal form of ring-class reciprocity is surjective. -/
 theorem ringClassArtinMap_surjective : Function.Surjective (ringClassArtinMap O) :=
   (ringClassArtinEquiv O).surjective.comp O.mkPic_surjective
+
+/-! ### Comparison across orders -/
+
+variable {O}
+
+/-- **Inclusions of ring class fields are inclusions of the kernels of the ring-class quotients**,
+reversed. -/
+theorem ringClassField_le_ringClassField_iff {O' : NumberFieldOrder K} :
+    ringClassField O ≤ ringClassField O' ↔
+      (ringClassIdeleQuotient O').ker ≤ (ringClassIdeleQuotient O).ker :=
+  (globalClassField_orderReversing (ringClassNormSubgroup O') (ringClassNormSubgroup O)).symm.trans
+    (Subtype.coe_le_coe.symm.trans OpenSubgroup.toSubgroup_le.symm)
+
+/-- **Ring class fields shrink as the order grows**: if `O ⊆ O'`, the ring class field of `O'`
+lies in that of `O`. -/
+theorem ringClassField_le_ringClassField {O' : NumberFieldOrder K}
+    (h : O.toSubalgebra ≤ O'.toSubalgebra) : ringClassField O' ≤ ringClassField O :=
+  ringClassField_le_ringClassField_iff.mpr (ker_ringClassIdeleQuotient_mono h)
+
+/-- **The ring class field of the maximal order is the Hilbert class field**: an order with trivial
+conductor is the maximal order, whose ring-class quotient has kernel the ray subgroup of the
+trivial modulus. -/
+theorem ringClassField_maximal (hO : O.conductor = ⊤) : ringClassField O = hilbertClassField K := by
+  rw [conductor_eq_top_iff] at hO
+  subst hO
+  have hN : ringClassNormSubgroup (maximalNumberFieldOrder K) = rayNormSubgroup (Modulus.one K) :=
+    Subtype.ext <| OpenSubgroup.toSubgroup_injective <| by
+      rw [ringClassNormSubgroup_toSubgroup, rayNormSubgroup_toSubgroup,
+        ker_ringClassIdeleQuotient_maximalNumberFieldOrder]
+  rw [ringClassField_def, hN, hilbertClassField, rayClassField_def]
+
+variable (O) in
+/-- **The Hilbert class field lies in every ring class field.** -/
+theorem hilbertClassField_le_ringClassField : hilbertClassField K ≤ ringClassField O :=
+  (ringClassField_maximal conductor_maximal).symm.trans_le <| ringClassField_le_ringClassField <|
+    O.le_ringOfIntegers.trans_eq (maximalNumberFieldOrder_toSubalgebra K).symm
 
 end TauCeti.ClassFieldTheory
