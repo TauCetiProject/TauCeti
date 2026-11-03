@@ -82,7 +82,7 @@ theorem opNorm_le_of_isCover_sphere {E F : Type*} [NormedAddCommGroup E]
         simpa only [y, RCLike.ofReal_real_eq_id, id_eq] using
           norm_smul_inv_norm (𝕜 := ℝ) hTx
       have hinner : Inner.inner ℝ y (T x) = ‖T x‖ := by
-        change Inner.inner ℝ (‖T x‖⁻¹ • T x) (T x) = ‖T x‖
+        dsimp only [y]
         rw [real_inner_smul_self_left]
         have hnormpos : 0 < ‖T x‖ := norm_pos_iff.mpr hTx
         field_simp
