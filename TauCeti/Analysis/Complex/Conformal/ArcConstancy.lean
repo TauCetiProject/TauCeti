@@ -252,10 +252,10 @@ private lemma not_eqOn_const_ball_of_injOn (hr : 0 < r) (hinj : InjOn f (ball c 
 `ball c r` and continuous up to a nonempty boundary arc `V ∩ sphere c r`, it takes no value
 constantly on that arc.
 
-This is the roadmap-facing corollary of
-`TauCeti.not_eqOn_const_inter_sphere_of_not_eqOn_const_ball`, an injective map being constant
-nowhere. It is the boundary non-degeneracy that layer L5 of the conformal-mapping roadmap needs;
-see the module docstring for what still separates it from boundary injectivity. -/
+This is the corollary of `TauCeti.not_eqOn_const_inter_sphere_of_not_eqOn_const_ball` for a
+conformal map, an injective map being constant nowhere. It is the boundary non-degeneracy that
+Carathéodory's boundary correspondence needs; see the module docstring for what separates it from
+boundary injectivity. -/
 theorem not_eqOn_const_inter_sphere_of_injOn (hr : 0 < r) (hV : IsOpen V)
     (hcont : ContinuousOn f (V ∩ closedBall c r)) (hdiff : DifferentiableOn ℂ f (ball c r))
     (hinj : InjOn f (ball c r)) (hne : (V ∩ sphere c r).Nonempty) (a : ℂ) :
@@ -267,8 +267,8 @@ theorem not_eqOn_const_inter_sphere_of_injOn (hr : 0 < r) (hV : IsOpen V)
 `ball c r` and continuous on the closed disc, the set of boundary points at which `f` takes a fixed
 value has empty interior in the circle.
 
-This is the roadmap-facing corollary of
-`TauCeti.interior_setOf_eq_eq_empty_of_not_eqOn_const_ball`. -/
+This is the corollary of `TauCeti.interior_setOf_eq_eq_empty_of_not_eqOn_const_ball` for a
+conformal map. -/
 theorem interior_setOf_eq_eq_empty_of_injOn (hr : 0 < r) (hcont : ContinuousOn f (closedBall c r))
     (hdiff : DifferentiableOn ℂ f (ball c r)) (hinj : InjOn f (ball c r)) (a : ℂ) :
     interior {z : sphere c r | f (z : ℂ) = a} = ∅ :=

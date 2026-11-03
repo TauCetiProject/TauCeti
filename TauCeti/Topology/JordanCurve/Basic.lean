@@ -70,15 +70,13 @@ transporting the property back to a compact set from an image already known to b
 
 ## Motivation
 
-This is the vocabulary layer **L5** of the conformal-mapping roadmap
-(`TauCetiRoadmap/ConformalMapping/README.md`) is stated in: its milestone, the Carathéodory
-boundary correspondence, is about the Riemann map of a *Jordan domain*, and the roadmap records
-that the pinned Mathlib has no Jordan-curve vocabulary to state it against. The complex-analytic
-half — Jordan domains, the discs among them, and the boundary of a domain that a conformal map
-carries onto a disc — is in `TauCeti/Analysis/Complex/Conformal/Jordan/Domain.lean`.
+This is the vocabulary the Carathéodory boundary correspondence is stated in: it is about the
+Riemann map of a *Jordan domain*. The complex-analytic half — Jordan domains, the discs among them,
+and the boundary of a domain that a conformal map carries onto a disc — is in
+`TauCeti/Analysis/Complex/Conformal/Jordan/Domain.lean`.
 
-Local connectedness of a Jordan curve is what that milestone needs of the *hypothesis* side: the
-route to the extension theorem for a Jordan domain `Ω` runs through Carathéodory's continuity
+Local connectedness of a Jordan curve is what Carathéodory's theorem needs of the *hypothesis* side:
+the route to the extension theorem for a Jordan domain `Ω` runs through Carathéodory's continuity
 theorem, whose hypothesis is that `frontier Ω` be locally connected, and
 `TauCeti.IsJordanCurve.locallyConnectedSpace` is what discharges it (as
 `TauCeti.IsJordanDomain.locallyConnectedSpace_frontier`). Mathlib knows the circle is compact,
@@ -331,8 +329,8 @@ instance locallyConnectedSpace_circle : LocallyConnectedSpace Circle :=
 /-- **A Jordan curve is locally connected**, being homeomorphic to the circle.
 
 This is the form in which the hypothesis of Carathéodory's continuity theorem — that the boundary
-of the domain be locally connected — is met by a Jordan domain, which is what layer **L5** of the
-conformal-mapping roadmap is about; see `TauCeti.IsJordanDomain.locallyConnectedSpace_frontier`. -/
+of the domain be locally connected — is met by a Jordan domain; see
+`TauCeti.IsJordanDomain.locallyConnectedSpace_frontier`. -/
 theorem IsJordanCurve.locallyConnectedSpace (h : IsJordanCurve C) : LocallyConnectedSpace C :=
   (isJordanCurve_iff.mp h).elim fun e => e.locallyConnectedSpace
 
