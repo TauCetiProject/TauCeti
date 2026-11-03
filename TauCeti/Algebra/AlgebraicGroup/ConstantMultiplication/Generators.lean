@@ -109,11 +109,11 @@ theorem preserves_one_add_smul {X : Matrix (Fin n) (Fin n) R}
     smul_add]
   abel
 
-/-- **One round of propagation along a multiplication.** Let `f` take values in a commutative
-group and satisfy `fᵢ = fₖ fⱼ` whenever the structure constant `c k i j` is nonzero. If `f` is
-trivial on a set `T` of indices, it is trivial at every index occurring in a nonzero structure
-constant together with two indices of `T`. -/
-theorem eq_one_of_eq_mul_of_ne_zero {ι M G : Type*} [Zero M] [CommGroup G] {c : ι → ι → ι → M}
+/-- **One round of propagation along a multiplication.** Let `f` take values in a type with a
+multiplication and a two-sided unit `1`, and satisfy `fᵢ = fₖ fⱼ` whenever the structure constant
+`c k i j` is nonzero. If `f` is trivial on a set `T` of indices, it is trivial at every index
+occurring in a nonzero structure constant together with two indices of `T`. -/
+theorem eq_one_of_eq_mul_of_ne_zero {ι M G : Type*} [Zero M] [MulOneClass G] {c : ι → ι → ι → M}
     {f : ι → G} (hf : ∀ k i j, c k i j ≠ 0 → f i = f k * f j) {T : Set ι}
     (hT : ∀ a ∈ T, f a = 1) {x : ι}
     (hx : ∃ k ∈ T, ∃ j ∈ T, c k x j ≠ 0 ∨ c x k j ≠ 0 ∨ c k j x ≠ 0) : f x = 1 := by
