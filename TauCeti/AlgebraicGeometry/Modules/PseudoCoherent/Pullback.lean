@@ -65,20 +65,7 @@ theorem HasFiniteFreeResolution.pullback (h : M.HasFiniteFreeResolution)
   · cases n with
     | zero =>
       -- Right exactness preserves the cokernel presentation of the augmentation.
-      rw [ChainComplex.quasiIsoAt₀_iff, ShortComplex.quasiIso_iff_of_zeros' _
-        (Q.shape 0 0 (by simp))
-        (single_obj_d (ComplexShape.down ℕ) ..) (single_obj_d (ComplexShape.down ℕ) ..)]
-      have hcolim := P.isColimitCokernelCoforkOfQuasiIsoAt π
-      have hepi : Epi (π.f 0) := Cofork.IsColimit.epi hcolim
-      have hexact := ShortComplex.exact_of_g_is_cokernel
-        (ShortComplex.mk (P.d 1 0) (π.f 0)
-          (by rw [← π.comm 1 0, single_obj_d, comp_zero])) hcolim
-      have hmapped := hexact.map_of_epi_of_preservesCokernel (Modules.pullback f)
-        inferInstance inferInstance
-      constructor
-      · simpa only [shortComplexFunctor'_obj_f, shortComplexFunctor'_map_τ₂, hρ] using! hmapped
-      · simpa only [shortComplexFunctor'_map_τ₂, hρ] using!
-          (inferInstance : Epi ((Modules.pullback f).map (π.f 0)))
+      exact P.quasiIsoAt₀_of_map π (Modules.pullback f) ρ hρ
     | succ n =>
       -- In positive degrees both adjacent resolving terms are quasi-coherent.
       rw [quasiIsoAt_iff_exactAt' ρ (n + 1) (ChainComplex.exactAt_succ_single_obj _ _),
