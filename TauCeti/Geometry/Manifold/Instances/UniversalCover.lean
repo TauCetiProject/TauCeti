@@ -7,17 +7,19 @@ module
 
 public import Mathlib.Geometry.Manifold.Algebra.LieGroup
 public import TauCeti.AlgebraicTopology.UniversalCover.Group
+public import TauCeti.AlgebraicTopology.UniversalCover.Classification.Existence
 public import TauCeti.Geometry.Manifold.Instances.Comap
 
 /-!
-# The universal cover of a manifold and of a Lie group
+# Universal covers of Lie groups and subgroup covers of manifolds
 
 Let `X` be a charted space that is locally path-connected and semilocally simply connected. The
 endpoint projection `UniversalCover.proj : UniversalCover x₀ → X` is a covering map, hence a local
 homeomorphism, and pulling the charts of `X` back along it makes the universal cover a charted space
 over the same model. When `X` is a `C^n` manifold, so is its universal cover, and the projection is
 a `C^n` local diffeomorphism. A map into the universal cover is `C^n` exactly when it is continuous
-and its composite with the projection is `C^n`.
+and its composite with the projection is `C^n`. The same pulled-back atlas makes every
+subgroup cover a `C^n` manifold, with a `C^n` local diffeomorphism to the base.
 
 For a Lie group `G`, the universal cover `UniversalCover (1 : G)` based at the identity is a group
 under pointwise multiplication of paths, and its multiplication and inversion lie over those of
@@ -32,6 +34,11 @@ Lie group.
   cover of a `C^n` manifold is a `C^n` manifold over the same model.
 * `TauCeti.UniversalCover.isLocalDiffeomorph_proj`: the projection is a `C^n` local
   diffeomorphism.
+* `TauCeti.UniversalCover.instChartedSpaceSubgroupQuotient`,
+  `TauCeti.UniversalCover.instIsManifoldSubgroupQuotient`: the analogous atlas and manifold
+  structure for an arbitrary subgroup cover.
+* `TauCeti.UniversalCover.isLocalDiffeomorph_subgroupQuotientProj`: every subgroup-cover
+  projection is a `C^n` local diffeomorphism.
 * `TauCeti.UniversalCover.contMDiff_iff`: a map into the universal cover is `C^n` if and only if it
   is continuous and its composite with the projection is `C^n`.
 * `TauCeti.UniversalCover.instLieGroup`: the universal cover of a Lie group is a Lie group.
@@ -104,6 +111,27 @@ theorem contMDiff_iff :
   (isCoveringMap x₀).isLocalHomeomorph.contMDiff_chartedSpaceComap_iff
 
 end Manifold
+
+section SubgroupQuotient
+
+variable {X : Type*} [TopologicalSpace X] [ChartedSpace H X] [LocallyPathConnectedSpace X]
+  [SemilocallySimplyConnectedSpace X] (x₀ : X) (K : Subgroup (FundamentalGroup X x₀))
+
+/-- A subgroup cover carries the atlas pulled back from the base along its projection. -/
+noncomputable instance instChartedSpaceSubgroupQuotient : ChartedSpace H (SubgroupQuotient x₀ K) :=
+  (isCoveringMap_subgroupQuotientProj x₀ K).isLocalHomeomorph.chartedSpaceComap
+
+/-- A subgroup cover of a `C^n` manifold is a `C^n` manifold. -/
+instance instIsManifoldSubgroupQuotient [IsManifold I n X] :
+    IsManifold I n (SubgroupQuotient x₀ K) :=
+  (isCoveringMap_subgroupQuotientProj x₀ K).isLocalHomeomorph.isManifold_chartedSpaceComap
+
+/-- The subgroup-cover projection is a `C^n` local diffeomorphism for the lifted atlas. -/
+theorem isLocalDiffeomorph_subgroupQuotientProj :
+    IsLocalDiffeomorph I I n (subgroupQuotientProj x₀ K) :=
+  (isCoveringMap_subgroupQuotientProj x₀ K).isLocalHomeomorph.isLocalDiffeomorph_chartedSpaceComap
+
+end SubgroupQuotient
 
 section LieGroup
 
