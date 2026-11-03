@@ -17,8 +17,8 @@ unknown. The parameter space may have dimension zero.
 
 `TauCeti.IsNashAt.exists_isNashAt_eventually_eq_zero_iff` constructs the root and identifies
 its graph with the zero set near the given point. `TauCeti.IsNashAt.implicit` applies to an
-already specified analytic solution. These results allow analytic simple-root sections to be
-used as Nash functions, without requiring the defining equation to be polynomial.
+already specified solution continuous at the base point. These results allow simple-root sections
+to be used as Nash functions, without requiring the defining equation to be polynomial.
 
 The graph argument shrinks to a semialgebraic ball where the equation has semialgebraic
 graph and the local uniqueness assertion holds. A smaller parameter ball keeps the entire
@@ -134,11 +134,11 @@ theorem IsNashAt.exists_isNashAt_eventually_eq_zero_iff
   exact IsNashAt.of_eventually_eq_zero_iff (f := f)
     (by simpa only [hgz] using hf) hg (by simpa only [hgz] using hiff')
 
-/-- Any analytic solution germ of a Nash scalar equation is Nash if the derivative in the
-unknown variable is nonzero at its central value. -/
+/-- Any solution germ of a Nash scalar equation that is continuous at the base point is Nash
+if the derivative in the unknown variable is nonzero at its central value. -/
 theorem IsNashAt.implicit
     {f : (σ ⊕ Unit → ℝ) → ℝ} {g : (σ → ℝ) → ℝ} {x : σ → ℝ}
-    (hf : IsNashAt f (Sum.elim x (fun _ ↦ g x))) (hg : AnalyticAt ℝ g x)
+    (hf : IsNashAt f (Sum.elim x (fun _ ↦ g x))) (hg : ContinuousAt g x)
     (hroot : ∀ᶠ y in 𝓝 x, f (Sum.elim y (fun _ ↦ g y)) = 0)
     (hd : deriv (fun t ↦ f (Sum.elim x (fun _ ↦ t))) (g x) ≠ 0) :
     IsNashAt g x := by
@@ -149,7 +149,7 @@ theorem IsNashAt.implicit
     intro i
     cases i with
     | inl i => exact (continuous_apply i).continuousAt
-    | inr i => exact hg.continuousAt
+    | inr i => exact hg
   apply hψ.congr
   filter_upwards [hcont.tendsto.eventually hiff, hroot] with y hy hfy
   exact hy.mp hfy
