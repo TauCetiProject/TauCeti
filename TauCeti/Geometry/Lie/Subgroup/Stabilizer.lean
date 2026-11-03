@@ -77,6 +77,28 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [MulAction G M]
 
+/-- **Isotropy algebras along an orbit are conjugate.** `Ad_g ξ` lies in the isotropy algebra of
+`g • x` exactly when `ξ` lies in that of `x`, matching the conjugation `G_{g • x} = g G_x g⁻¹` of
+the stabilizers. This follows from the equivariance `g_* ξ_M = (Ad_g ξ)_M` of fundamental vector
+fields (`TauCeti.mfderiv_smul_fundamentalVectorField`). -/
+theorem adjointContinuousLinearMap_mem_isotropy_smul_iff [CompleteSpace E] [CompleteSpace E']
+    [IsManifold I' ∞ M] [ContMDiffSMul I I' ∞ G M] {g : G} {ξ : GroupLieAlgebra I G} {x : M} :
+    adjointContinuousLinearMap (I := I) g ξ ∈
+        (InfinitesimalAction.fundamental I G I' M).isotropy (g • x) ↔
+      ξ ∈ (InfinitesimalAction.fundamental I G I' M).isotropy x := by
+  have : ContMDiffSMul I I' 1 G M := ContMDiffSMul.of_le (M := M) ENat.LEInfty.out
+  -- The forward implication for every `g`, pushing `ξ_M(x) = 0` forward along `y ↦ g • y`.
+  have key (g : G) (ξ : GroupLieAlgebra I G) (x : M)
+      (h : ξ ∈ (InfinitesimalAction.fundamental I G I' M).isotropy x) :
+      adjointContinuousLinearMap (I := I) g ξ ∈
+        (InfinitesimalAction.fundamental I G I' M).isotropy (g • x) := by
+    rw [InfinitesimalAction.mem_isotropy_iff, InfinitesimalAction.fundamental_apply] at h ⊢
+    rw [← mfderiv_smul_fundamentalVectorField, h, map_zero]
+  refine ⟨fun h ↦ ?_, key g ξ x⟩
+  have := key g⁻¹ _ _ h
+  rwa [inv_smul_smul, ← ContinuousLinearMap.comp_apply, ← adjointContinuousLinearMap_mul,
+    inv_mul_cancel, adjointContinuousLinearMap_one, ContinuousLinearMap.id_apply] at this
+
 variable [FiniteDimensional ℝ E]
 
 variable (I) in
@@ -115,20 +137,6 @@ theorem lieSubalgebraOfSubgroup_stabilizer [CompleteSpace E'] (h₁ : I.IsInteri
     LieSubalgebra.mem_comap, LieEquiv.coe_toLieHom,
     leftInvariantDerivationLieEquivGroupLieAlgebra_apply, mem_isotropy_fundamental_iff]
   simp only [lieExp_eq_mulInvariantExp, map_smul]
-
-/-- **Isotropy algebras along an orbit are conjugate.** `Ad_g ξ` lies in the isotropy algebra of
-`g • x` exactly when `ξ` lies in that of `x`, matching the conjugation `G_{g • x} = g G_x g⁻¹` of
-the stabilizers. -/
-theorem adjointContinuousLinearMap_mem_isotropy_smul_iff [CompleteSpace E'] {g : G}
-    {ξ : GroupLieAlgebra I G} {x : M} :
-    adjointContinuousLinearMap (I := I) g ξ ∈
-        (InfinitesimalAction.fundamental I G I' M).isotropy (g • x) ↔
-      ξ ∈ (InfinitesimalAction.fundamental I G I' M).isotropy x := by
-  have : CompleteSpace E := FiniteDimensional.complete ℝ E
-  simp only [mem_isotropy_fundamental_iff, MulAction.mem_stabilizer_iff]
-  refine forall_congr' fun t ↦ ?_
-  rw [← map_smul, ← tangentAd_apply, ← conj_mulInvariantExp, mul_smul, mul_smul, inv_smul_smul,
-    smul_left_cancel_iff]
 
 /-- **Locally free points.** The stabilizer of `x` is discrete exactly when the isotropy algebra
 `𝔤_x` is trivial, that is, when `ξ ↦ ξ_M(x)` is injective
