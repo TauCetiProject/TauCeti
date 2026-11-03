@@ -27,7 +27,8 @@ pullback bundle `q *ᵖ V`. The continuous analogue,
 projection is a surjective `C^n` local diffeomorphism (`TauCeti.isLocalDiffeomorph_quotientMk`),
 so regularity can be tested after composing with it. This extends the descent of invariant maps
 (`TauCeti.contMDiff_orbitRelQuotientLift_iff`) from maps into a fixed manifold to sections of a
-bundle over the quotient.
+bundle over the quotient. Likewise, a section of `V` is `C^m` exactly when its pullback along
+the orbit projection is (`IsLocalDiffeomorph.contMDiff_section_iff_pullback`).
 
 Over `𝓘(ℂ, E)` with `n = m = ∞` this is holomorphic descent of sections: the holomorphic sections
 of a holomorphic vector bundle over a quotient of a complex manifold by a free properly
@@ -38,7 +39,8 @@ discontinuous group of biholomorphisms are the invariant holomorphic sections of
 * `TauCeti.contMDiffAt_section_orbitRelQuotientRec_iff`,
   `TauCeti.contMDiff_section_orbitRelQuotientRec_iff`: the descended section is `C^m`, at the orbit
   of a point or globally, exactly when the invariant section upstairs is.
-* `TauCeti.contMDiff_pullback_section_iff_orbitRelQuotientRec`: the same, with the invariant
+* `TauCeti.contMDiffAt_pullback_section_iff_orbitRelQuotientRec`,
+  `TauCeti.contMDiff_pullback_section_iff_orbitRelQuotientRec`: the same, with the invariant
   section read as a section of the pullback bundle along the orbit projection.
 
 ## References
@@ -94,6 +96,23 @@ theorem contMDiff_section_orbitRelQuotientRec_iff (hm : m ≤ n) :
   simp only [Function.comp_def, MulAction.orbitRelQuotientRec_mk]
 
 /-- For a free properly discontinuous action by `C^n` maps on a `C^n` manifold and `m ≤ n`, an
+invariant section of the pullback bundle of `V` along the orbit projection is `C^m` at `x` exactly
+when its descent to a section of `V` is `C^m` at the orbit of `x`. -/
+theorem contMDiffAt_pullback_section_iff_orbitRelQuotientRec [∀ q, Nonempty (V q)] (hm : m ≤ n)
+    {x : M} :
+    ContMDiffAt I (I.prod 𝓘(𝕜, F)) m
+        (fun y ↦ TotalSpace.mk' F
+          (E := ⇑(⟨Quotient.mk _, continuous_quotient_mk'⟩ :
+            C(M, MulAction.orbitRel.Quotient G M)) *ᵖ V) y (t y)) x ↔
+      ContMDiffAt I (I.prod 𝓘(𝕜, F)) m
+        (fun q ↦ TotalSpace.mk' F q (MulAction.orbitRelQuotientRec t ht q))
+        (Quotient.mk (MulAction.orbitRel G M) x) := by
+  refine Iff.trans ?_ ((isLocalDiffeomorph_quotientMk (I := I) (n := n) (G := G) x)
+    |>.contMDiffAt_section_iff_pullback (f := (⟨Quotient.mk _, continuous_quotient_mk'⟩ :
+      C(M, MulAction.orbitRel.Quotient G M))) hm (σ := MulAction.orbitRelQuotientRec t ht)).symm
+  simp only [ContinuousMap.coe_mk, MulAction.orbitRelQuotientRec_mk]
+
+/-- For a free properly discontinuous action by `C^n` maps on a `C^n` manifold and `m ≤ n`, an
 invariant section of the pullback bundle of `V` along the orbit projection is `C^m` exactly when
 its descent to a section of `V` is. -/
 theorem contMDiff_pullback_section_iff_orbitRelQuotientRec [∀ q, Nonempty (V q)] (hm : m ≤ n) :
@@ -103,9 +122,10 @@ theorem contMDiff_pullback_section_iff_orbitRelQuotientRec [∀ q, Nonempty (V q
             C(M, MulAction.orbitRel.Quotient G M)) *ᵖ V) x (t x)) ↔
       ContMDiff I (I.prod 𝓘(𝕜, F)) m
         (fun q ↦ TotalSpace.mk' F q (MulAction.orbitRelQuotientRec t ht q)) := by
-  rw [Pullback.contMDiff_iff _
-      ((isLocalDiffeomorph_quotientMk (I := I) (n := n) (G := G)).contMDiff.of_le hm),
-    contMDiff_section_orbitRelQuotientRec_iff hm]
-  exact and_iff_right contMDiff_id
+  refine Iff.trans ?_ ((isLocalDiffeomorph_quotientMk (I := I) (n := n) (G := G))
+    |>.contMDiff_section_iff_pullback (f := (⟨Quotient.mk _, continuous_quotient_mk'⟩ :
+      C(M, MulAction.orbitRel.Quotient G M))) Quotient.mk_surjective hm
+      (σ := MulAction.orbitRelQuotientRec t ht)).symm
+  simp only [ContinuousMap.coe_mk, MulAction.orbitRelQuotientRec_mk]
 
 end TauCeti

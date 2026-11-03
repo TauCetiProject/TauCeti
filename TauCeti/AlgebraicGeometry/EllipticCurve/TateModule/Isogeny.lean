@@ -56,8 +56,9 @@ arithmetic Frobenius lift `σ` satisfies `σ (σ P) = a_q • σ P - q • P` on
 of each curve (`WeierstrassCurve.Affine.Point.map_map_eq_of_isArithFrobeniusLift`). If `P` is a
 point of `E₁` of prime order `ℓ ≠ p`, applying `φ` to the relation for `E₁` and comparing with the
 relation for `E₂` at `φ P` gives `(a₁ - a₂) • φ P = 0`, so `deg φ · (a₁ - a₂)` kills `P`. Taking
-`ℓ` larger than this integer forces `a₁ = a₂`. The local polynomial is `1 - a_q T + q T²` at good
-reduction, so isogenous curves have the same local polynomial there. At bad reduction that is
+`ℓ` larger than this integer forces `a₁ = a₂`, so the reductions have the same number
+`q + 1 - a_q` of points. The local polynomial is `1 - a_q T + q T²` at good reduction, so isogenous
+curves have the same local polynomial there. At bad reduction that is
 potentially good the local polynomial is `1`
 (`WeierstrassCurve.localPolynomial_eq_one_of_hasPotentialGoodReduction_of_not_hasGoodReduction`),
 so **isogenous curves have the same local polynomial wherever they have potential good
@@ -78,6 +79,7 @@ of reduction that is not potentially good.
   potential good reduction together.
 * `TauCeti.Isogeny.frobeniusTrace_reduction_eq`: isogenous minimal equations with good reduction
   have reductions with the same Frobenius trace.
+* `TauCeti.Isogeny.natCard_point_reduction_eq`: their reductions have the same number of points.
 * `TauCeti.Isogeny.localPolynomial_eq_of_hasGoodReduction`: at good reduction, isogenous curves
   have the same local polynomial.
 * `TauCeti.Isogeny.localPolynomial_eq_of_hasPotentialGoodReduction`: at potential good reduction,
@@ -238,6 +240,19 @@ theorem frobeniusTrace_reduction_eq [IsMinimal 𝒪[K] W₁] [IsMinimal 𝒪[K] 
     rw [← addOrderOf_eq_prime hℓP hP0]
     exact addOrderOf_dvd_iff_zsmul_eq_zero.mpr hNP
   exact hN (Int.eq_zero_of_dvd_of_natAbs_lt_natAbs hdvd (by simpa using hNℓ))
+
+/-- **Isogenous curves have reductions with the same number of points** at good reduction. Let
+`W₁` and `W₂` be elliptic curves over a nonarchimedean local field `K`, given by minimal equations,
+and let `W₁` have good reduction. If there is an isogeny `W₁ → W₂`, the reductions of `W₁` and `W₂`
+have the same number `q + 1 - a_q` of points over the residue field. -/
+theorem natCard_point_reduction_eq [IsMinimal 𝒪[K] W₁] [IsMinimal 𝒪[K] W₂]
+    (φ : Isogeny W₁.toAffine W₂.toAffine) (h : W₁.HasGoodReduction 𝒪[K]) :
+    Nat.card (W₁.reduction 𝒪[K]).toAffine.Point = Nat.card (W₂.reduction 𝒪[K]).toAffine.Point := by
+  have := (hasGoodReduction_iff_isElliptic_reduction 𝒪[K]).mp h
+  have := (hasGoodReduction_iff_isElliptic_reduction 𝒪[K]).mp (φ.hasGoodReduction_iff.mp h)
+  have h' := φ.frobeniusTrace_reduction_eq h
+  rw [frobeniusTrace_eq_card_point, frobeniusTrace_eq_card_point] at h'
+  omega
 
 /-- **Isogenous curves have the same local factor at good reduction.** If there is an isogeny
 `W₁ → W₂` of elliptic curves over a nonarchimedean local field `K` and the minimal equation of `W₁`

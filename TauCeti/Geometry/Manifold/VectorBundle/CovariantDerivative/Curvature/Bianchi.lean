@@ -83,9 +83,9 @@ Levi-Civita connection, which has zero torsion. -/
 theorem curvatureTensor_cyclic_eq_zero (ht : cov.torsion = 0)
     (x : M) (u v w : TangentSpace I x) :
     tensor x u v w + tensor x v w u + tensor x w u v = 0 := by
-  obtain ⟨X, hX, rfl⟩ := exists_contMDiff_section_eq I E u
-  obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E v
-  obtain ⟨Z, hZ, rfl⟩ := exists_contMDiff_section_eq I E w
+  obtain ⟨X, hX, rfl⟩ := exists_contMDiff_section_eq I E ∞ u
+  obtain ⟨Y, hY, rfl⟩ := exists_contMDiff_section_eq I E ∞ v
+  obtain ⟨Z, hZ, rfl⟩ := exists_contMDiff_section_eq I E ∞ w
   rw [curvatureTensor_apply cov x hX hY hZ,
     curvatureTensor_apply cov x hY hZ hX,
     curvatureTensor_apply cov x hZ hX hY]

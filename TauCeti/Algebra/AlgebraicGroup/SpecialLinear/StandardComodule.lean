@@ -235,7 +235,7 @@ theorem scalar_pow_eq_one_of_basePointsRepresentation_eq_smul {R : Type u} [Comm
     have hv := LinearMap.congr_fun hc v
     rw [basePointsRepresentation_eq_mulVec] at hv
     simpa only [Matrix.toLin'_apply, Matrix.smul_mulVec, Matrix.one_mulVec,
-      LinearMap.smul_apply, Module.End.one_apply] using hv
+      LinearMap.smul_apply, one_apply_eq_self] using hv
   have hd := Matrix.SpecialLinearGroup.det_coe (pointsMulEquiv (R := R) (A := R) n g)
   rw [hm, Matrix.det_smul] at hd
   simpa using hd

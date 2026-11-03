@@ -57,7 +57,7 @@ theorem orthogonalSpinorNorm_reflectionTransport_of_sub_eq_zero (x y : V)
       polar_neg_right, hxy] at hdifference ⊢
     linear_combination -hdifference
   have hsquare : IsSquare (unitOfInvertible (Q y) * unitOfInvertible (Q (x + y))) := by
-    apply isSquare_units_val_iff.mp
+    apply Units.isSquare_coe_iff.mp
     refine ⟨2 * Q y, ?_⟩
     simp only [Units.val_mul, val_unitOfInvertible, hsum]
     ring

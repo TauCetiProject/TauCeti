@@ -137,7 +137,7 @@ theorem coinvariantsKer_eq_map_ker_augmentation_smul_top :
       Submodule.smul_mem_smul hgen Submodule.mem_top
     refine Submodule.mem_map.2 ⟨_, hmem, ?_⟩
     simp only [LinearEquiv.coe_coe, asModuleEquiv_map_smul, LinearEquiv.apply_symm_apply,
-      map_sub, asAlgebraHom_single_one, map_one, LinearMap.sub_apply, Module.End.one_apply]
+      map_sub, asAlgebraHom_single_one, map_one, LinearMap.sub_apply, one_apply_eq_self]
   · rw [Submodule.map_le_iff_le_comap]
     intro x hx
     apply (Coinvariants.mk_eq_zero ρ).1

@@ -172,8 +172,9 @@ lemma abelJacobiMapOfDegreeToPicZero_app_apply_val (d : ℕ) {T : (Over S)ᵒᵖ
     (D : ((relativeEffectiveCartierDegreeSubfunctor f d).toFunctor ⋙
       uliftFunctor.{u + 1}).obj T) :
     (ConcreteCategory.hom (C := Type (u + 1))
-      (X := uliftFunctor.{u + 1}.obj ((relativeEffectiveCartierDegreeSubfunctor f d).obj T))
-      (Y := (relativePicardDegreeZeroSubfunctor f).obj T)
+      (X := ULift.{u + 1} ((relativeEffectiveCartierDegreeSubfunctor f d).obj T))
+      (Y := {z : ToType ((relativePicardPresheaf f).obj T) //
+        z ∈ (relativePicardDegreeZeroSubfunctor f).obj T})
       ((abelJacobiMapOfDegreeToPicZero f hx₀ d).app T) D).1 =
         (abelJacobiMapOfDegree f hx₀ d).app T D := by
   have h := ConcreteCategory.congr_hom
@@ -216,8 +217,9 @@ presheaf. -/
 lemma abelJacobiMapToPicZero_app_apply_val {T : (Over S)ᵒᵖ}
     (x : (yoneda.obj (Over.mk f) ⋙ uliftFunctor.{u + 1}).obj T) :
     (ConcreteCategory.hom (C := Type (u + 1))
-      (X := uliftFunctor.{u + 1}.obj (T.unop ⟶ Over.mk f))
-      (Y := (relativePicardDegreeZeroSubfunctor f).obj T)
+      (X := ULift.{u + 1} (T.unop ⟶ Over.mk f))
+      (Y := {z : ToType ((relativePicardPresheaf f).obj T) //
+        z ∈ (relativePicardDegreeZeroSubfunctor f).obj T})
       ((abelJacobiMapToPicZero f hx₀).app T) x).1 =
         (abelJacobiMap f hx₀).app T x := by
   have h := ConcreteCategory.congr_hom
@@ -232,8 +234,9 @@ identity.** -/
 @[simp]
 theorem abelJacobiMapToPicZero_app_basePoint_val (T : (Over S)ᵒᵖ) :
     (ConcreteCategory.hom (C := Type (u + 1))
-      (X := uliftFunctor.{u + 1}.obj (T.unop ⟶ Over.mk f))
-      (Y := (relativePicardDegreeZeroSubfunctor f).obj T)
+      (X := ULift.{u + 1} (T.unop ⟶ Over.mk f))
+      (Y := {z : ToType ((relativePicardPresheaf f).obj T) //
+        z ∈ (relativePicardDegreeZeroSubfunctor f).obj T})
       ((abelJacobiMapToPicZero f hx₀).app T)
       (ULift.up (basePoint hx₀ T.unop))).1 = 1 := by
   calc

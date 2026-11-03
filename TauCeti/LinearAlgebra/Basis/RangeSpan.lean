@@ -12,7 +12,9 @@ public import Mathlib.LinearAlgebra.Matrix.Basis
 
 A semilinear map has the same scalar-extended image span when evaluated on a basis as when evaluated
 on its entire domain. Over a coefficient algebra `A` of the scalars, the `A`-span of one basis lies
-in that of another when the change-of-basis matrix has entries in the image of `A`. Through a
+in that of another when the change-of-basis matrix has entries in the image of `A`, and a linear
+endomorphism maps the `A`-span of a basis into itself exactly when its matrix has entries in the
+image of `A`. Through a
 linear equivalence `L : M ≃ₗ[R] M₁ × M₂`, the vectors `L⁻¹ (0, bᵢ)` for a basis `b` of `M₂` span
 the kernel of `u ↦ (L u).1`.
 -/
@@ -56,6 +58,44 @@ theorem span_range_le_span_range_of_forall_toMatrix_mem
   dsimp only
   rw [← ha, IsScalarTower.algebraMap_smul]
   exact Submodule.smul_mem _ a (Submodule.subset_span (Set.mem_range_self i))
+
+/-- A linear endomorphism maps the `A`-span of a basis `b` into itself exactly when every entry of
+its matrix in `b` lies in the image of `A`. -/
+theorem mapsTo_span_range_iff_forall_toMatrix_mem
+    {A S N ι : Type*} [CommSemiring A] [CommSemiring S] [Algebra A S]
+    [AddCommMonoid N] [Module S N] [Module A N] [IsScalarTower A S N]
+    [Fintype ι] [DecidableEq ι] (b : Module.Basis ι S N) (f : N →ₗ[S] N) :
+    Set.MapsTo f (Submodule.span A (Set.range b)) (Submodule.span A (Set.range b)) ↔
+      ∀ i j, LinearMap.toMatrix b b f i j ∈ Set.range (algebraMap A S) := by
+  -- Every vector of the `A`-span has its coordinates in the image of `A`.
+  have hrepr {x : N} (hx : x ∈ Submodule.span A (Set.range b)) (i : ι) :
+      b.repr x i ∈ (algebraMap A S).rangeS := by
+    induction hx using Submodule.span_induction with
+    | mem _ hy =>
+      obtain ⟨j, rfl⟩ := hy
+      rw [repr_self, Finsupp.single_apply]
+      split_ifs
+      exacts [one_mem _, zero_mem _]
+    | zero => simp
+    | add _ _ _ _ hx hy => simpa using add_mem hx hy
+    | smul a _ _ hx =>
+      rw [← algebraMap_smul S, map_smul, Finsupp.smul_apply, smul_eq_mul]
+      exact mul_mem (RingHom.mem_rangeS_self _ a) hx
+  simp only [LinearMap.toMatrix_apply]
+  refine ⟨fun h i j ↦ hrepr (h (Submodule.subset_span ⟨j, rfl⟩)) i, fun h ↦ ?_⟩
+  -- The span is mapped into itself as soon as its generators are, and the image of a generator
+  -- is the sum of its coordinates times the basis vectors.
+  have hle : Submodule.span A (Set.range b) ≤
+      (Submodule.span A (Set.range b)).comap (f.restrictScalars A) := by
+    rw [Submodule.span_le]
+    rintro _ ⟨j, rfl⟩
+    rw [SetLike.mem_coe, Submodule.mem_comap, LinearMap.restrictScalars_apply,
+      ← b.sum_repr (f (b j))]
+    refine Submodule.sum_mem _ fun i _ ↦ ?_
+    obtain ⟨a, ha⟩ := h i j
+    rw [← ha, algebraMap_smul]
+    exact Submodule.smul_mem _ a (Submodule.subset_span ⟨i, rfl⟩)
+  exact fun x hx ↦ hle hx
 
 /-- Through a linear equivalence `L : M ≃ₗ[R] M₁ × M₂`, the vectors `L⁻¹ (0, bᵢ)` for a basis `b`
 of `M₂` span the kernel of the first component `u ↦ (L u).1`. -/
