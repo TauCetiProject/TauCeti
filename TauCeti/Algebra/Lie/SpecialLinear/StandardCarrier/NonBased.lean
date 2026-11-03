@@ -83,8 +83,8 @@ theorem coe_rankOneWeylFrobenius (g : points 1 A) :
     simp [Matrix.mul_apply, Matrix.vecMul, dotProduct, Fin.sum_univ_two,
       coe_frobenius_apply, iterateFrobenius_def]
 
-/-- Two applications of the Weyl-conjugated Frobenius give ordinary Frobenius: the square
-of the conjugating Weyl representative is central. -/
+/-- The square of the Weyl-conjugated `p ^ k`-Frobenius is the `p ^ (k + k)`-power
+Frobenius. -/
 theorem rankOneWeylFrobenius_comp_self :
     (rankOneWeylFrobenius p k A).comp (rankOneWeylFrobenius p k A) =
       frobenius 1 p (k + k) A := by
@@ -100,28 +100,25 @@ theorem rankOneWeylFrobenius_comp_self :
 /-- The positive root element is sent into the negative root subgroup, with negated
 Frobenius parameter. -/
 @[simp]
-theorem rankOneWeylFrobenius_positive (u : A) :
+theorem rankOneWeylFrobenius_rootSubgroupPoints_inl (u : A) :
     rankOneWeylFrobenius p k A (rootSubgroupPoints 1 (.inl 0) A (.ofAdd u)) =
       rootSubgroupPoints 1 (.inr 0) A (.ofAdd (-iterateFrobenius A p k u)) := by
   rw [rankOneWeylFrobenius_apply, frobenius_rootSubgroupPoints,
     simpleWeylPoint_conj_rootSubgroupPoints]
-  rfl
+  simp only [toAdd_ofAdd, iterateFrobenius_def]
 
 /-- The negative root element is sent into the positive root subgroup, with negated
 Frobenius parameter. -/
 @[simp]
-theorem rankOneWeylFrobenius_negative (u : A) :
+theorem rankOneWeylFrobenius_rootSubgroupPoints_inr (u : A) :
     rankOneWeylFrobenius p k A (rootSubgroupPoints 1 (.inr 0) A (.ofAdd u)) =
       rootSubgroupPoints 1 (.inl 0) A (.ofAdd (-iterateFrobenius A p k u)) := by
-  apply Subtype.ext
-  apply Units.ext
-  rw [coe_rankOneWeylFrobenius]
-  simp only [coe_rootSubgroupPoints_eq_transvectionUnit, coe_transvectionUnit]
-  ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [rootTarget_inl, rootSource_inl, rootTarget_inr, rootSource_inr, Matrix.transvection]
+  rw [rankOneWeylFrobenius_apply, frobenius_rootSubgroupPoints,
+    simpleWeylPoint_conj_rootSubgroupPoints_inr]
+  simp only [toAdd_ofAdd, iterateFrobenius_def]
 
-/-- On the rank-one weight torus this endomorphism acts by inverse Frobenius. -/
+/-- On the rank-one weight torus this endomorphism sends `s` to `(s ^ p ^ k)⁻¹`,
+the group inverse of its `p ^ k`-th power. -/
 @[simp]
 theorem rankOneWeylFrobenius_weightTorusPoints (s : Fin 1 → Aˣ) :
     rankOneWeylFrobenius p k A (weightTorusPoints 1 A s) =
@@ -147,7 +144,7 @@ theorem isCharacterMap_rankOneWeylFrobenius :
 
 /-- Over a ring with divisible units, in particular an algebraically closed field, the
 Weyl-conjugated Frobenius maps the weight torus onto itself. -/
-theorem map_weightTorus_rankOneWeylFrobenius [RootableBy Aˣ ℕ] :
+theorem map_rankOneWeylFrobenius_range_weightTorusPoints [RootableBy Aˣ ℕ] :
     (weightTorusPoints 1 A).range.map (rankOneWeylFrobenius p k A) =
       (weightTorusPoints 1 A).range := by
   apply (isCharacterMap_rankOneWeylFrobenius p k A).map_range_eq
@@ -155,52 +152,56 @@ theorem map_weightTorus_rankOneWeylFrobenius [RootableBy Aˣ ℕ] :
   apply nsmul_right_injective (pow_ne_zero k (expChar_ne_zero A p))
   simpa only [LinearMap.neg_apply, LinearMap.smul_apply, one_apply_eq_self, neg_inj] using h
 
-/-- Over a perfect ring the image of the positive root subgroup is exactly the negative
-root subgroup. -/
-theorem map_positive_rankOneWeylFrobenius [PerfectRing A p] :
-    (rootSubgroupPoints 1 (.inl 0) A).range.map (rankOneWeylFrobenius p k A) =
-      (rootSubgroupPoints 1 (.inr 0) A).range := by
+private theorem map_rankOneWeylFrobenius_range_rootSubgroupPoints [PerfectRing A p]
+    (i j : Fin 1 ⊕ Fin 1)
+    (h : ∀ u : A, rankOneWeylFrobenius p k A (rootSubgroupPoints 1 i A (.ofAdd u)) =
+      rootSubgroupPoints 1 j A (.ofAdd (-iterateFrobenius A p k u))) :
+    (rootSubgroupPoints 1 i A).range.map (rankOneWeylFrobenius p k A) =
+      (rootSubgroupPoints 1 j A).range := by
   ext g
   simp only [MonoidHom.mem_range, Subgroup.mem_map]
   constructor
   · rintro ⟨_, ⟨u, rfl⟩, rfl⟩
-    exact ⟨.ofAdd (-iterateFrobenius A p k u.toAdd), (rankOneWeylFrobenius_positive p k A _).symm⟩
+    exact ⟨.ofAdd (-iterateFrobenius A p k u.toAdd), (h _).symm⟩
   · rintro ⟨u, rfl⟩
     obtain ⟨v, hv⟩ := (bijective_iterateFrobenius A p k).surjective (-u.toAdd)
-    refine ⟨rootSubgroupPoints 1 (.inl 0) A (.ofAdd v), ⟨.ofAdd v, rfl⟩, ?_⟩
-    simp [hv]
+    refine ⟨rootSubgroupPoints 1 i A (.ofAdd v), ⟨.ofAdd v, rfl⟩, ?_⟩
+    simp [h, hv]
+
+/-- Over a perfect ring the image of the positive root subgroup is exactly the negative
+root subgroup. -/
+theorem map_rankOneWeylFrobenius_range_rootSubgroupPoints_inl [PerfectRing A p] :
+    (rootSubgroupPoints 1 (.inl 0) A).range.map (rankOneWeylFrobenius p k A) =
+      (rootSubgroupPoints 1 (.inr 0) A).range := by
+  exact map_rankOneWeylFrobenius_range_rootSubgroupPoints p k A _ _
+    (rankOneWeylFrobenius_rootSubgroupPoints_inl p k A)
 
 /-- Over a perfect ring the image of the negative root subgroup is exactly the positive
 root subgroup. -/
-theorem map_negative_rankOneWeylFrobenius [PerfectRing A p] :
+theorem map_rankOneWeylFrobenius_range_rootSubgroupPoints_inr [PerfectRing A p] :
     (rootSubgroupPoints 1 (.inr 0) A).range.map (rankOneWeylFrobenius p k A) =
       (rootSubgroupPoints 1 (.inl 0) A).range := by
-  ext g
-  simp only [MonoidHom.mem_range, Subgroup.mem_map]
-  constructor
-  · rintro ⟨_, ⟨u, rfl⟩, rfl⟩
-    exact ⟨.ofAdd (-iterateFrobenius A p k u.toAdd), (rankOneWeylFrobenius_negative p k A _).symm⟩
-  · rintro ⟨u, rfl⟩
-    obtain ⟨v, hv⟩ := (bijective_iterateFrobenius A p k).surjective (-u.toAdd)
-    refine ⟨rootSubgroupPoints 1 (.inr 0) A (.ofAdd v), ⟨.ofAdd v, rfl⟩, ?_⟩
-    simp [hv]
+  exact map_rankOneWeylFrobenius_range_rootSubgroupPoints p k A _ _
+    (rankOneWeylFrobenius_rootSubgroupPoints_inr p k A)
 
 /-- The positive root element at one is an explicit obstruction to preservation of the
 standard upper-triangular subgroup. In particular this endomorphism is not based. -/
-theorem rankOneWeylFrobenius_positive_one_not_upperTriangular [Nontrivial A] :
+theorem rankOneWeylFrobenius_rootSubgroupPoints_inl_one_notMem_upperTriangularPoints
+    [Nontrivial A] :
     (rankOneWeylFrobenius p k A (rootSubgroupPoints 1 (.inl 0) A (.ofAdd 1)) :
       Matrix.GeneralLinearGroup (Fin 2) A) ∉ upperTriangularPoints 1 A := by
-  rw [rankOneWeylFrobenius_positive, rootSubgroupPoints_negative_mem_upperTriangularPoints_iff]
+  rw [rankOneWeylFrobenius_rootSubgroupPoints_inl,
+    rootSubgroupPoints_negative_mem_upperTriangularPoints_iff]
   simp
 
 /-- Even though its square is Frobenius and it preserves the torus, this endomorphism does
 not preserve the standard Borel subgroup. -/
-theorem map_upperTriangular_rankOneWeylFrobenius_not_le [Nontrivial A] :
+theorem not_map_rankOneWeylFrobenius_upperTriangularPoints_le [Nontrivial A] :
     ¬ ((upperTriangularPoints 1 A).subgroupOf (points 1 A)).map
         (rankOneWeylFrobenius p k A) ≤
       (upperTriangularPoints 1 A).subgroupOf (points 1 A) := by
   intro h
-  apply rankOneWeylFrobenius_positive_one_not_upperTriangular p k A
+  apply rankOneWeylFrobenius_rootSubgroupPoints_inl_one_notMem_upperTriangularPoints p k A
   exact h (Subgroup.mem_map.mpr
     ⟨rootSubgroupPoints 1 (.inl 0) A (.ofAdd 1),
       rootSubgroupPoints_positive_mem_upperTriangularPoints 1 A 0 (.ofAdd 1), rfl⟩)
