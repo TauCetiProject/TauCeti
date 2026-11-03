@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.VectorBundle.Hom
+public import TauCeti.Geometry.Manifold.VectorBundle.Hom
 public import TauCeti.Topology.VectorBundle.DoubleDual
 
 /-!
@@ -64,16 +64,11 @@ theorem contMDiff_bundleDoubleDual :
         (bundleDoubleDual (𝕜 := 𝕜) (F := F) V x)) := by
   let : NormedAddCommGroup (StrongDual 𝕜 (StrongDual 𝕜 F)) := inferInstance
   let : NormedSpace 𝕜 (StrongDual 𝕜 (StrongDual 𝕜 F)) := inferInstance
-  intro a
-  rw [contMDiffAt_hom_bundle (F₁ := F) (E₁ := V)
-    (F₂ := StrongDual 𝕜 (StrongDual 𝕜 F))
-    (E₂ := fun x ↦ StrongDual 𝕜 (StrongDual 𝕜 (V x)))]
-  refine ⟨contMDiffAt_id,
-    (contMDiffAt_const (c := NormedSpace.inclusionInDoubleDual 𝕜 F)
-      ).congr_of_eventuallyEq ?_⟩
-  filter_upwards [(trivializationAt F V a).open_baseSet.mem_nhds
-    (mem_baseSet_trivializationAt F V a)] with x hx
-  exact bundleDoubleDual_inCoordinates V a hx
+  exact contMDiff_hom_bundle_of_inCoordinates_eq_const
+    (F₁ := F) (F₂ := StrongDual 𝕜 (StrongDual 𝕜 F))
+    (V := V) (W := fun x ↦ StrongDual 𝕜 (StrongDual 𝕜 (V x)))
+    (c := fun _ ↦ NormedSpace.inclusionInDoubleDual 𝕜 F)
+    (fun a x hx _ ↦ bundleDoubleDual_inCoordinates V a hx)
 
 variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F]
   [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul 𝕜 (V x)]
@@ -94,14 +89,10 @@ theorem contMDiff_bundleDoubleDualEquiv_symm :
         (bundleDoubleDualEquiv (𝕜 := 𝕜) (F := F) V x).symm.toContinuousLinearMap) := by
   let : NormedAddCommGroup (StrongDual 𝕜 (StrongDual 𝕜 F)) := inferInstance
   let : NormedSpace 𝕜 (StrongDual 𝕜 (StrongDual 𝕜 F)) := inferInstance
-  intro a
-  rw [contMDiffAt_hom_bundle (F₁ := StrongDual 𝕜 (StrongDual 𝕜 F))
-    (E₁ := fun x ↦ StrongDual 𝕜 (StrongDual 𝕜 (V x))) (F₂ := F) (E₂ := V)]
-  refine ⟨contMDiffAt_id,
-    (contMDiffAt_const (c := (NormedSpace.inclusionInDoubleDual 𝕜 F).inverse)
-      ).congr_of_eventuallyEq ?_⟩
-  filter_upwards [(trivializationAt F V a).open_baseSet.mem_nhds
-    (mem_baseSet_trivializationAt F V a)] with x hx
-  exact bundleDoubleDualEquiv_symm_inCoordinates V a hx
+  exact contMDiff_hom_bundle_of_inCoordinates_eq_const
+    (F₁ := StrongDual 𝕜 (StrongDual 𝕜 F)) (F₂ := F)
+    (V := fun x ↦ StrongDual 𝕜 (StrongDual 𝕜 (V x))) (W := V)
+    (c := fun _ ↦ (NormedSpace.inclusionInDoubleDual 𝕜 F).inverse)
+    (fun a x _ hx ↦ bundleDoubleDualEquiv_symm_inCoordinates V a hx)
 
 end TauCeti
