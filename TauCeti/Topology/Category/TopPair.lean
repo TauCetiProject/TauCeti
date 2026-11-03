@@ -300,3 +300,13 @@ theorem liftSnd_apply_eq_iff (g : C(Z, X.fst)) (hg : ∀ z, g z ∈ Set.range X.
 end liftSnd
 
 end TopPair
+
+namespace IsCompact
+
+/-- The complement of the subspace of the pair `(X, X \ A)` is compact when `A` is. -/
+lemma compl_range_ofSubset_compl_map {X : TopCat.{u}} {A : Set X} (hA : IsCompact A) :
+    IsCompact (Set.range (TopPair.ofSubset Aᶜ).map)ᶜ := by
+  rw [TopPair.range_ofSubset_map]
+  exact (compl_compl A).symm ▸ hA
+
+end IsCompact

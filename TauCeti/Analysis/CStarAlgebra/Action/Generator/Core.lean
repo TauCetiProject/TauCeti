@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.GaussianSmearing
+import TauCeti.Topology.Algebra.Module.LinearPMap.GraphCore
 
 /-!
 # Entire analytic elements form a core for the generator
@@ -70,23 +71,16 @@ theorem tendsto_gaussianSmear_graph (a : α.generator.domain) :
 /-- The entire analytic subalgebra is a core for the closed infinitesimal generator. -/
 theorem generator_hasCore_entireAnalytic :
     α.generator.HasCore α.entireAnalytic.toSubmodule := by
-  refine ⟨fun a ha => (mem_entireAnalytic.mp ha).mem_generator_domain, ?_⟩
-  have hle : α.generator.domRestrict α.entireAnalytic.toSubmodule ≤ α.generator :=
-    LinearPMap.domRestrict_le
-  have hclosable := α.isClosed_generator.isClosable.leIsClosable hle
-  apply LinearPMap.eq_of_eq_graph
-  rw [← hclosable.graph_closure_eq_closure_graph]
-  apply le_antisymm
-  · exact Submodule.topologicalClosure_minimal _ (LinearPMap.le_graph_of_le hle)
-      α.isClosed_generator
-  · intro p hp
-    obtain ⟨a, rfl⟩ := (α.generator.mem_graph_iff').mp hp
-    apply mem_closure_of_tendsto (α.tendsto_gaussianSmear_graph a)
-    refine .of_forall fun c => ?_
-    let b : (α.generator.domRestrict α.entireAnalytic.toSubmodule).domain :=
-      ⟨α.gaussianSmear c a, mem_entireAnalytic.mpr (α.isEntireAnalytic_gaussianSmear c a),
-        (α.isEntireAnalytic_gaussianSmear c a).mem_generator_domain⟩
-    exact (α.generator.domRestrict α.entireAnalytic.toSubmodule).mem_graph_iff'.mpr
-      ⟨b, Prod.ext rfl (LinearPMap.domRestrict_apply rfl)⟩
+  refine .of_graph_subset_closure α.isClosed_generator
+    (fun a ha => (mem_entireAnalytic.mp ha).mem_generator_domain) ?_
+  intro p hp
+  obtain ⟨a, rfl⟩ := (α.generator.mem_graph_iff').mp hp
+  apply mem_closure_of_tendsto (α.tendsto_gaussianSmear_graph a)
+  refine .of_forall fun c => ?_
+  let b : (α.generator.domRestrict α.entireAnalytic.toSubmodule).domain :=
+    ⟨α.gaussianSmear c a, mem_entireAnalytic.mpr (α.isEntireAnalytic_gaussianSmear c a),
+      (α.isEntireAnalytic_gaussianSmear c a).mem_generator_domain⟩
+  exact (α.generator.domRestrict α.entireAnalytic.toSubmodule).mem_graph_iff'.mpr
+    ⟨b, Prod.ext rfl (LinearPMap.domRestrict_apply rfl)⟩
 
 end TauCeti.CStarAction
