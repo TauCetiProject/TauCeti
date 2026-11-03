@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Contractible
+public import TauCeti.AlgebraicTopology.ClassifyingSpace.Functoriality
 public import TauCeti.AlgebraicTopology.Cohomology.Twisted.GroupCohomology
 public import TauCeti.AlgebraicTopology.Singular.Twisted.GroupHomology
 
@@ -41,6 +42,15 @@ sequence in homology with local coefficients. Its connecting map `Hₙ(BG; A₃)
 with the naturality in the coefficients, this identifies the long exact sequence of homology of
 `BG` with local coefficients with that of group homology.
 
+The identification is natural in the group as well. A group homomorphism `φ : G →* H` and a
+compatible morphism of representations `α : A ⟶ Res(φ)(A')` induce a morphism
+`MonoidHom.classifyingSpaceLocalSystemMap φ k α` from the local system on `BG` associated to `A`
+to the pullback along the strictly functorial map `MonoidHom.classifyingSpaceMap φ` of the local
+system on `BH` associated to `A'`. The induced map `Hₙ(BG; A) ⟶ Hₙ(BH; A')` corresponds to
+Mathlib's change-of-group map `groupHomology.map φ α`
+(`MonoidHom.classifyingSpaceTwistedHomologyIsoGroupHomology_hom_naturality`). No hypothesis on
+`φ` is needed.
+
 Dually, for a `k`-module `N`, the cohomology of `classifyingSpace G` with coefficients in the same
 local system and values in `N` is the group cohomology of `G` with coefficients in the internal
 hom `Homₖ(A, N)`, where `N` carries the trivial action
@@ -69,6 +79,9 @@ map `Homₖ(A, N) ⟶ Homₖ(A, N')`
   of representations.
 * `TauCeti.classifyingSpaceLocalSystemFunctor`: the associated local systems as a functor of the
   representation.
+* `MonoidHom.classifyingSpaceLocalSystemMap`: the morphism of local systems on `BG` induced by a
+  group homomorphism `φ : G →* H` and a compatible morphism of representations, into the pullback
+  along `MonoidHom.classifyingSpaceMap φ`.
 * `TauCeti.classifyingSpaceTwistedHomologyIsoGroupHomology`: the isomorphism
   `Hₙ(BG; A) ≅ Hₙ(G, A)`.
 * `TauCeti.classifyingSpaceTwistedCohomologyIsoGroupCohomology`: the isomorphism
@@ -79,6 +92,9 @@ map `Homₖ(A, N) ⟶ Homₖ(A, N')`
 * `TauCeti.classifyingSpaceTwistedHomologyIsoGroupHomology_hom_naturality`,
   `TauCeti.classifyingSpaceTwistedHomologyIsoGroupHomology_inv_naturality`: the isomorphism is
   natural in the coefficients.
+* `MonoidHom.classifyingSpaceTwistedHomologyIsoGroupHomology_hom_naturality`,
+  `MonoidHom.classifyingSpaceTwistedHomologyIsoGroupHomology_inv_naturality`: the isomorphism is
+  natural in the group.
 * `TauCeti.shortExact_map_classifyingSpaceLocalSystemFunctor`,
   `TauCeti.twistedHomologyδ_comp_classifyingSpaceTwistedHomologyIsoGroupHomology_hom`,
   `TauCeti.groupHomology_δ_comp_classifyingSpaceTwistedHomologyIsoGroupHomology_inv`: the
@@ -282,3 +298,74 @@ theorem classifyingSpaceTwistedCohomologyIsoGroupCohomology_hom_naturality_right
     (isQuotientCoveringMap_classifyingSpaceProj G) k A N g n
 
 end TauCeti
+
+namespace MonoidHom
+
+open TauCeti TauCeti.LocalCoefficientSystem
+
+universe u
+
+variable {G H : Type u} [Group G] [Group H] (φ : G →* H) (k : Type u) [CommRing k]
+  {A : Rep.{u} k G} {A' : Rep.{u} k H}
+
+/-- The morphism of local coefficient systems on Milnor's classifying space `BG` induced by a group
+homomorphism `φ : G →* H` and a compatible morphism of representations `α : A ⟶ Res(φ)(A')`, from
+the local system associated to `A` to the pullback along `MonoidHom.classifyingSpaceMap φ` of the
+local system on `BH` associated to `A'`: on the fibre over `x` it sends the class of `a ⊗ e` to
+the class of `α a ⊗ φ_* e`, where `φ_*` is `MonoidHom.universalGSpaceMap φ`. -/
+abbrev classifyingSpaceLocalSystemMap (α : A ⟶ Rep.res φ A') :
+    classifyingSpaceLocalSystem k A ⟶
+      (pullback φ.classifyingSpaceMap).obj (classifyingSpaceLocalSystem k A') :=
+  IsQuotientCoveringMap.associatedLocalSystemPullbackMap (E := TopCat.of (universalGSpace G))
+    (p := TopCat.ofHom ⟨classifyingSpaceProj G, continuous_classifyingSpaceProj G⟩)
+    (isQuotientCoveringMap_classifyingSpaceProj G) k
+    (q := TopCat.ofHom ⟨classifyingSpaceProj H, continuous_classifyingSpaceProj H⟩)
+    (isQuotientCoveringMap_classifyingSpaceProj H) (TopCat.ofHom φ.universalGSpaceMap)
+    (fun g x ↦ φ.universalGSpaceMap_smul g x) (TopCat.ofHom φ.classifyingSpaceMap)
+    (ConcreteCategory.hom_ext _ _ fun x ↦ φ.classifyingSpaceMap_proj x) α
+
+/-- **The homology of the classifying space with local coefficients is naturally group homology,
+in the group**: for a group homomorphism `φ : G →* H` and a compatible morphism of
+representations `α : A ⟶ Res(φ)(A')`, the identifications `Hₙ(BG; A) ≅ Hₙ(G, A)` and
+`Hₙ(BH; A') ≅ Hₙ(H, A')` carry the map on homology with local coefficients induced by
+`MonoidHom.classifyingSpaceLocalSystemMap φ k α` and `MonoidHom.classifyingSpaceMap φ` to
+Mathlib's change-of-group map `groupHomology.map φ α`. -/
+@[reassoc]
+theorem classifyingSpaceTwistedHomologyIsoGroupHomology_hom_naturality
+    (α : A ⟶ Rep.res φ A') (n : ℕ) :
+    twistedHomologyCoefficientMap.{u, u, u} (φ.classifyingSpaceLocalSystemMap k α) n ≫
+        twistedHomologyMap.{u, u, u} (TopCat.ofHom φ.classifyingSpaceMap)
+          (classifyingSpaceLocalSystem k A') n ≫
+        (classifyingSpaceTwistedHomologyIsoGroupHomology k A' n).hom =
+      (classifyingSpaceTwistedHomologyIsoGroupHomology k A n).hom ≫ groupHomology.map φ α n :=
+  IsQuotientCoveringMap.twistedHomologyIsoGroupHomology_hom_naturality_map
+    (E := TopCat.of (universalGSpace G))
+    (p := TopCat.ofHom ⟨classifyingSpaceProj G, continuous_classifyingSpaceProj G⟩)
+    (isQuotientCoveringMap_classifyingSpaceProj G) k
+    (F := TopCat.of (universalGSpace H))
+    (q := TopCat.ofHom ⟨classifyingSpaceProj H, continuous_classifyingSpaceProj H⟩)
+    (isQuotientCoveringMap_classifyingSpaceProj H) (TopCat.ofHom φ.universalGSpaceMap)
+    (fun g x ↦ φ.universalGSpaceMap_smul g x) _
+    (ConcreteCategory.hom_ext _ _ fun x ↦ φ.classifyingSpaceMap_proj x) α n
+
+/-- The inverse identification of group homology with the homology of the classifying space with
+local coefficients is natural in the group. -/
+@[reassoc]
+theorem classifyingSpaceTwistedHomologyIsoGroupHomology_inv_naturality
+    (α : A ⟶ Rep.res φ A') (n : ℕ) :
+    groupHomology.map φ α n ≫ (classifyingSpaceTwistedHomologyIsoGroupHomology k A' n).inv =
+      (classifyingSpaceTwistedHomologyIsoGroupHomology k A n).inv ≫
+        twistedHomologyCoefficientMap.{u, u, u} (φ.classifyingSpaceLocalSystemMap k α) n ≫
+        twistedHomologyMap.{u, u, u} (TopCat.ofHom φ.classifyingSpaceMap)
+          (classifyingSpaceLocalSystem k A') n :=
+  IsQuotientCoveringMap.twistedHomologyIsoGroupHomology_inv_naturality_map
+    (E := TopCat.of (universalGSpace G))
+    (p := TopCat.ofHom ⟨classifyingSpaceProj G, continuous_classifyingSpaceProj G⟩)
+    (isQuotientCoveringMap_classifyingSpaceProj G) k
+    (F := TopCat.of (universalGSpace H))
+    (q := TopCat.ofHom ⟨classifyingSpaceProj H, continuous_classifyingSpaceProj H⟩)
+    (isQuotientCoveringMap_classifyingSpaceProj H) (TopCat.ofHom φ.universalGSpaceMap)
+    (fun g x ↦ φ.universalGSpaceMap_smul g x) _
+    (ConcreteCategory.hom_ext _ _ fun x ↦ φ.classifyingSpaceMap_proj x) α n
+
+end MonoidHom

@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.LocalCoefficient.Covering
 public import Mathlib.RepresentationTheory.Coinvariants
 public import Mathlib.Topology.Covering.Quotient
+public import TauCeti.RepresentationTheory.Rep.CoinvariantsTensor
 
 /-!
 # Local coefficient systems associated to representations
@@ -25,6 +26,15 @@ For a representation `A` of `G`, composing with `(A ⊗ -)_G` gives the local co
 `(A ⊗ k[p⁻¹ x])_G`; since `G` acts simply transitively on `p⁻¹ x`, a choice of point in the fibre
 identifies it with `A`. This is the system of local coefficients of the bundle `E ×_G A` over `B`.
 
+The construction is functorial in the cover as well. Let `q : F ⟶ C` be the quotient covering
+map of an action of a group `H`, `f : E ⟶ F` a map equivariant along `φ : G →* H` lying over
+`b : B ⟶ C`, and `α : A ⟶ Res(φ)(A')` a compatible morphism of representations. Then `f`
+carries the fibre of `p` over `x` into the fibre of `q` over `b x`, compatibly with monodromy
+(`IsCoveringMap.coe_monodromy_map`), and induces a morphism from the local system associated to
+`A` to the pullback along `b` of the local system associated to `A'`
+(`IsQuotientCoveringMap.associatedLocalSystemPullbackMap`), sending the class of `a ⊗ e` to the
+class of `α a ⊗ f e`.
+
 ## Main definitions
 
 * `IsQuotientCoveringMap.fiberRepresentation`: the permutation representation on the free module
@@ -35,6 +45,9 @@ identifies it with `A`. This is the system of local coefficients of the bundle `
   representation.
 * `IsQuotientCoveringMap.associatedLocalSystemMap`: the morphism of associated local systems
   induced by a morphism of representations.
+* `IsQuotientCoveringMap.associatedLocalSystemPullbackMap`: the morphism of associated local
+  systems induced by an equivariant map of quotient covers and a compatible morphism of
+  representations.
 
 ## References
 
@@ -151,6 +164,8 @@ theorem associatedLocalSystem_map_coinvariantsTensorMk {x y : FundamentalGroupoi
         (Finsupp.lmapDomain k k (hG.isCoveringMap.monodromy γ) v) :=
   (rfl)
 
+section CoefficientMap
+
 variable {A} {A' A'' : Rep.{u} k G}
 
 /-- The morphism of associated local coefficient systems induced by a morphism of
@@ -201,5 +216,86 @@ lemma associatedLocalSystemFunctor_obj (A : Rep.{u} k G) :
 lemma associatedLocalSystemFunctor_map {A A' : Rep.{u} k G} (f : A ⟶ A') :
     (hG.associatedLocalSystemFunctor k).map f = hG.associatedLocalSystemMap k f :=
   (rfl)
+
+end CoefficientMap
+
+section Map
+
+variable {F C : TopCat.{u}} {q : F ⟶ C} {H : Type u} [Group H] [MulAction H F]
+  (hH : IsQuotientCoveringMap q H) {φ : G →* H} (f : E ⟶ F)
+  (hf : ∀ g x, f (g • x) = φ g • f x) (b : B ⟶ C) (hb : p ≫ b = f ≫ q) {A} {A' : Rep.{u} k H}
+
+include hb in
+/-- A map of total spaces lying over a map of bases sends the fibre over `x` into the fibre over
+`b x`. -/
+private lemma map_mem_fiber (x : B) (e : p ⁻¹' {x}) : f e ∈ q ⁻¹' {b x} := by
+  have h : b (p e) = q (f e) := ConcreteCategory.congr_hom hb e
+  have he : p e = x := e.2
+  exact h.symm.trans (congrArg b he)
+
+include hf in
+/-- The map of permutation representations `k[p⁻¹ x] ⟶ Res(φ)(k[q⁻¹ (b x)])` induced by an
+equivariant map of total spaces lying over `b`. -/
+private def fiberRepresentationMap (x : B) :
+    Rep.of (hG.fiberRepresentation k x) ⟶
+      Rep.res φ (Rep.of (hH.fiberRepresentation k (b x))) :=
+  Rep.ofHom
+    { toLinearMap := Finsupp.lmapDomain k k fun e ↦ ⟨f e, map_mem_fiber f b hb x e⟩
+      isIntertwining' g := Finsupp.lhom_ext fun e r ↦ by
+        let := hG.mulActionFiber x
+        let := hH.mulActionFiber (b x)
+        simp only [LinearMap.comp_apply, Finsupp.lmapDomain_apply, Finsupp.mapDomain_single,
+          MonoidHom.comp_apply, fiberRepresentation_single]
+        exact congrArg (Finsupp.single · r) (Subtype.ext (hf g e)) }
+
+include hf in
+/-- The maps of permutation representations induced by `f` commute with monodromy. -/
+private lemma fiberRepresentationMap_naturality {x y : FundamentalGroupoid B} (γ : x ⟶ y) :
+    (hG.permutationRepFunctor k).map γ ≫ fiberRepresentationMap hG k hH f hf b hb y.as =
+      fiberRepresentationMap hG k hH f hf b hb x.as ≫
+        (Rep.resFunctor φ).map
+          ((hH.permutationRepFunctor k).map ((FundamentalGroupoid.map b.hom).map γ)) := by
+  refine Rep.hom_ext (Representation.IntertwiningMap.ext (Finsupp.lhom_ext fun e r ↦ ?_))
+  -- The fibres of the permutation functors are the permutation representations only up to
+  -- unfolding, so the composites are evaluated by stating their components explicitly.
+  change (fiberRepresentationMap hG k hH f hf b hb y.as).hom.toLinearMap
+      (Finsupp.lmapDomain k k (hG.isCoveringMap.monodromy γ) (Finsupp.single e r)) =
+    Finsupp.lmapDomain k k (hH.isCoveringMap.monodromy (Path.Homotopic.Quotient.map γ b.hom))
+      ((fiberRepresentationMap hG k hH f hf b hb x.as).hom.toLinearMap (Finsupp.single e r))
+  simp only [fiberRepresentationMap, Rep.hom_ofHom, Finsupp.lmapDomain_apply,
+    Finsupp.mapDomain_single]
+  -- The image under `f` of the lift of `γ` through `e` is the lift of `b ∘ γ` through `f e`.
+  exact congrArg (Finsupp.single · r) (Subtype.ext (hG.isCoveringMap.coe_monodromy_map
+    hH.isCoveringMap (g := f.hom) (f := b.hom)
+    (funext fun z ↦ (ConcreteCategory.congr_hom hb z).symm) γ e _ rfl).symm)
+
+/-- **The morphism of associated local systems along an equivariant map of quotient covers**: for
+quotient covers `p : E ⟶ B` and `q : F ⟶ C` of actions of `G` and `H`, a map `f : E ⟶ F`
+equivariant along `φ : G →* H` and lying over `b : B ⟶ C`, and a compatible map of
+representations `α : A ⟶ Res(φ)(A')`, the morphism from the local system on `B` associated to `A`
+to the pullback along `b` of the local system on `C` associated to `A'`. On the fibre over `x` it
+sends the class of `a ⊗ e` to the class of `α a ⊗ f e`. -/
+def associatedLocalSystemPullbackMap (α : A ⟶ Rep.res φ A') :
+    hG.associatedLocalSystem k A ⟶
+      (LocalCoefficientSystem.pullback b.hom).obj (hH.associatedLocalSystem k A') where
+  app x := φ.coinvariantsTensorMap α (fiberRepresentationMap hG k hH f hf b hb x.as)
+  naturality _ _ γ :=
+    φ.coinvariantsTensorMap_naturality α _ _ _ _
+      (fiberRepresentationMap_naturality hG k hH f hf b hb γ).symm
+
+/-- The morphism of associated local systems along `f` sends the class of `a ⊗ e` to the class of
+`α a ⊗ f e`. -/
+theorem associatedLocalSystemPullbackMap_app_coinvariantsTensorMk_single (α : A ⟶ Rep.res φ A')
+    (x : FundamentalGroupoid B) (a : A) (e : p ⁻¹' {x.as}) (e' : q ⁻¹' {b x.as})
+    (he : f e = e') (r : k) :
+    ((hG.associatedLocalSystemPullbackMap k hH f hf b hb α).app x).hom
+        (Rep.coinvariantsTensorMk A (Rep.of (hG.fiberRepresentation k x.as)) a
+          (Finsupp.single e r)) =
+      Rep.coinvariantsTensorMk A' (Rep.of (hH.fiberRepresentation k (b x.as))) (α.hom a)
+        (Finsupp.single e' r) := by
+  obtain rfl : e' = ⟨f e, map_mem_fiber f b hb x.as e⟩ := Subtype.ext he.symm
+  exact (φ.coinvariantsTensorMap_mk α _ a _).trans (congrArg _ (Finsupp.mapDomain_single ..))
+
+end Map
 
 end IsQuotientCoveringMap

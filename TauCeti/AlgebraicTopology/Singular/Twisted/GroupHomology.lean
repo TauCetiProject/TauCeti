@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.LocalCoefficient.QuotientCovering.Exact
 public import TauCeti.AlgebraicTopology.Singular.Coinvariants
+public import TauCeti.AlgebraicTopology.Singular.ModuleChains.EquivariantMap
 public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Resolution
 public import TauCeti.AlgebraicTopology.Singular.Transfer.PermutationLocalSystem
 public import Mathlib.RepresentationTheory.Homological.GroupHomology.Basic
@@ -55,6 +56,18 @@ On chains the identification is induced by a chain map from the inhomogeneous ch
 twisted chains, natural in `A`, so it is a morphism between the two short exact sequences of chain
 complexes whose connecting maps these are.
 
+Both identifications are also natural in the group. Let `q : F ⟶ C` be the quotient covering map
+of an action of `H`, `f : E ⟶ F` a map equivariant along `φ : G →* H` and lying over `b : B ⟶ C`,
+and `α : A ⟶ Res(φ)(A')` a compatible morphism of representations. On coinvariant chains, the
+change-of-group map sending the class of `a ⊗ c` to the class of `α a ⊗ f_* c` corresponds to the
+map of twisted chains induced by the morphism of local systems
+`IsQuotientCoveringMap.associatedLocalSystemPullbackMap` followed by pushforward along `b`
+(`IsQuotientCoveringMap.coinvariantsTensorSingularChainsRepIsoTwisted_hom_naturality_map`). For
+contractible total spaces, the induced map `Hₙ(B; A) ⟶ Hₙ(C; A')` corresponds to Mathlib's
+change-of-group map `groupHomology.map φ α`
+(`IsQuotientCoveringMap.twistedHomologyIsoGroupHomology_hom_naturality_map`). No hypothesis on
+`φ` is needed.
+
 ## Main definitions
 
 * `IsQuotientCoveringMap.coinvariantsTensorSingularChainsRepIsoTwisted`: the chains of `B` with
@@ -68,6 +81,10 @@ complexes whose connecting maps these are.
   `IsQuotientCoveringMap.twistedHomologyIsoGroupHomology_hom_naturality`,
   `IsQuotientCoveringMap.twistedHomologyIsoGroupHomology_inv_naturality`: the comparisons of
   chains and of homology are natural in the coefficients.
+* `IsQuotientCoveringMap.coinvariantsTensorSingularChainsRepIsoTwisted_hom_naturality_map`,
+  `IsQuotientCoveringMap.twistedHomologyIsoGroupHomology_hom_naturality_map`,
+  `IsQuotientCoveringMap.twistedHomologyIsoGroupHomology_inv_naturality_map`: the comparisons of
+  chains and of homology are natural in the group, for equivariant maps of quotient covers.
 * `IsQuotientCoveringMap.twistedHomologyδ_comp_twistedHomologyIsoGroupHomology_hom`,
   `IsQuotientCoveringMap.groupHomology_δ_comp_twistedHomologyIsoGroupHomology_inv`: the comparison
   of homology carries the coefficient connecting map of twisted homology to the connecting map of
@@ -570,5 +587,173 @@ theorem twistedHomologyδ_comp_twistedHomologyIsoGroupHomology_hom (n m : ℕ) (
     groupHomology_δ_comp_twistedHomologyIsoGroupHomology_inv]
 
 end LongExactSequence
+
+end IsQuotientCoveringMap
+
+namespace IsQuotientCoveringMap
+
+/-! ### Naturality in the group
+
+A map of quotient covers equivariant along a group homomorphism `φ : G →* H` and a compatible map
+of representations `α : A ⟶ Res(φ)(A')` induce a morphism from the local system on the base of the
+first cover associated to `A` to the pullback of the local system associated to `A'`
+(`IsQuotientCoveringMap.associatedLocalSystemPullbackMap`). The induced map on twisted homology
+corresponds to Mathlib's change-of-group map `groupHomology.map φ α`. -/
+
+variable {E B : _root_.TopCat.{u}} {p : E ⟶ B} {G : Type u} [Group G] [MulAction G E]
+  (hG : IsQuotientCoveringMap p G) (k : Type u) [CommRing k] {A : Rep.{u} k G}
+  {F C : _root_.TopCat.{u}} {q : F ⟶ C} {H : Type u} [Group H] [MulAction H F]
+  (hH : IsQuotientCoveringMap q H) {φ : G →* H} (f : E ⟶ F)
+  (hf : ∀ g x, f (g • x) = φ g • f x) (b : B ⟶ C) (hb : p ≫ b = f ≫ q) {A' : Rep.{u} k H}
+
+/-- The summands of equal simplices of the base agree on the classes of `a ⊗ e` for the same
+point `e` of the total space. -/
+private lemma ιTwistedChainComplex_coinvariantsTensorMk_single_congr {n : ℕ}
+    {σ σ' : (TopCat.toSSet.obj B) _⦋n⦌} (h : σ = σ') (a : A)
+    {e : p ⁻¹' {(initialVertex σ).as}} {e' : p ⁻¹' {(initialVertex σ').as}} (he : (e : E) = e') :
+    (ιTwistedChainComplex.{u, u, u} (hG.associatedLocalSystem k A) n σ).hom
+        (Rep.coinvariantsTensorMk A ((hG.permutationRepFunctor k).obj (initialVertex σ)) a
+          (Finsupp.single e 1)) =
+      (ιTwistedChainComplex.{u, u, u} (hG.associatedLocalSystem k A) n σ').hom
+        (Rep.coinvariantsTensorMk A ((hG.permutationRepFunctor k).obj (initialVertex σ')) a
+          (Finsupp.single e' 1)) := by
+  subst h
+  obtain rfl := Subtype.ext he
+  rfl
+
+/-- **The comparison of twisted chains with coinvariant chains is natural in the group**: for
+quotient covers `p : E ⟶ B` and `q : F ⟶ C` of actions of `G` and `H`, a map `f : E ⟶ F`
+equivariant along `φ : G →* H` and lying over `b : B ⟶ C`, and a compatible map of
+representations `α : A ⟶ Res(φ)(A')`, the change-of-group map `(A ⊗ C(E; k))_G ⟶ (A' ⊗ C(F; k))_H`
+sending the class of `a ⊗ c` to the class of `α a ⊗ f_* c` corresponds to the map of twisted
+chains induced by `IsQuotientCoveringMap.associatedLocalSystemPullbackMap` followed by
+pushforward along `b`. -/
+@[reassoc]
+theorem coinvariantsTensorSingularChainsRepIsoTwisted_hom_naturality_map
+    (α : A ⟶ Rep.res φ A') :
+    haveI := hG.toContinuousConstSMul
+    haveI := hH.toContinuousConstSMul
+    φ.coinvariantsTensorChainMap α (singularChainsRepResMap k f hf) ≫
+        (hH.coinvariantsTensorSingularChainsRepIsoTwisted k A').hom =
+      (hG.coinvariantsTensorSingularChainsRepIsoTwisted k A).hom ≫
+        twistedChainComplexCoefficientMap.{u, u, u}
+          (hG.associatedLocalSystemPullbackMap k hH f hf b hb α) ≫
+        twistedChainComplexMap.{u, u, u} b (hH.associatedLocalSystem k A') := by
+  have := hG.toContinuousConstSMul
+  have := hH.toContinuousConstSMul
+  refine HomologicalComplex.hom_ext _ _ fun n ↦ Rep.coinvariantsTensor_hom_ext
+    (LinearMap.ext fun a ↦ singularChains_linearMap_ext fun τ ↦ ?_)
+  -- Both composites send the class of `a ⊗ τ` to the class of `α a ⊗ f e` in the summand of
+  -- `q ∘ f ∘ τ = b ∘ p ∘ τ`, where `e` is the initial sheet of `τ`.
+  have h₁ : ((hH.coinvariantsTensorSingularChainsRepIsoTwisted k A').hom.f n).hom
+      (((φ.coinvariantsTensorChainMap α (singularChainsRepResMap k f hf)).f n).hom
+        (Rep.coinvariantsTensorMk A ((singularChainsRep k E G).X n) a (simplexChain τ 1))) =
+      (ιTwistedChainComplex.{u, u, u} (hH.associatedLocalSystem k A') n
+        ((TopCat.toSSet.map q).app _ ((TopCat.toSSet.map f).app _ τ))).hom
+          (Rep.coinvariantsTensorMk A' ((hH.permutationRepFunctor k).obj
+            (initialVertex ((TopCat.toSSet.map q).app _ ((TopCat.toSSet.map f).app _ τ))))
+            (α.hom a) (Finsupp.single (initialSheet ((TopCat.toSSet.map f).app _ τ)) 1)) :=
+    (congrArg ((hH.coinvariantsTensorSingularChainsRepIsoTwisted k A').hom.f n).hom
+      ((φ.coinvariantsTensorChainMap_f_mk α _ n a _).trans
+        (congrArg (Rep.coinvariantsTensorMk A' _ (α.hom a))
+          ((singularChainsRepResMap_f_hom_apply k f hf n _).trans
+            (singularChains_map_f_simplexChain f τ 1))))).trans
+      (hH.coinvariantsTensorSingularChainsRepIsoTwisted_hom_f_mk k n (α.hom a) _)
+  -- The initial sheet of `τ` lies over the initial vertex of `p ∘ τ`, so its image under `f`
+  -- lies over the image of that vertex under `b`.
+  let e' : q ⁻¹' {b (initialVertex ((TopCat.toSSet.map p).app _ τ)).as} :=
+    ⟨f (initialSheet (p := p) τ), by
+      have h : b (p (initialSheet (p := p) τ)) = q (f (initialSheet (p := p) τ)) :=
+        ConcreteCategory.congr_hom hb _
+      exact h.symm⟩
+  have h₂ : ((twistedChainComplexMap.{u, u, u} b (hH.associatedLocalSystem k A')).f n).hom
+      (((twistedChainComplexCoefficientMap.{u, u, u}
+        (hG.associatedLocalSystemPullbackMap k hH f hf b hb α)).f n).hom
+        (((hG.coinvariantsTensorSingularChainsRepIsoTwisted k A).hom.f n).hom
+          (Rep.coinvariantsTensorMk A ((singularChainsRep k E G).X n) a (simplexChain τ 1)))) =
+      (ιTwistedChainComplex.{u, u, u} (hH.associatedLocalSystem k A') n
+        ((TopCat.toSSet.map b).app _ ((TopCat.toSSet.map p).app _ τ))).hom
+          (Rep.coinvariantsTensorMk A' ((hH.permutationRepFunctor k).obj
+            (initialVertex ((TopCat.toSSet.map b).app _ ((TopCat.toSSet.map p).app _ τ))))
+            (α.hom a) (Finsupp.single e' 1)) :=
+    (congrArg (fun c ↦ ((twistedChainComplexMap.{u, u, u} b (hH.associatedLocalSystem k A')).f
+        n).hom (((twistedChainComplexCoefficientMap.{u, u, u}
+          (hG.associatedLocalSystemPullbackMap k hH f hf b hb α)).f n).hom c))
+      (hG.coinvariantsTensorSingularChainsRepIsoTwisted_hom_f_mk k n a τ)).trans <|
+    (congrArg ((twistedChainComplexMap.{u, u, u} b (hH.associatedLocalSystem k A')).f n).hom
+      ((twistedChainComplexCoefficientMap_f_ι_apply _ n _ _).trans
+        (congrArg (ιTwistedChainComplex.{u, u, u} _ n _).hom
+          (hG.associatedLocalSystemPullbackMap_app_coinvariantsTensorMk_single k hH f hf b hb α _ a
+            _ e' rfl 1)))).trans
+      (twistedChainComplexMap_f_ι_apply b _ n _ _)
+  have hσ : (TopCat.toSSet.map b).app _ ((TopCat.toSSet.map p).app _ τ) =
+      (TopCat.toSSet.map q).app _ ((TopCat.toSSet.map f).app _ τ) := by
+    simpa only [Functor.map_comp, NatTrans.comp_app, ConcreteCategory.comp_apply] using
+      congrArg (fun g ↦ (TopCat.toSSet.map g).app _ τ) hb
+  exact h₁.trans ((hH.ιTwistedChainComplex_coinvariantsTensorMk_single_congr k hσ.symm _
+    rfl).trans h₂.symm)
+
+/-- **The identification of twisted homology with group homology is natural in the group**: for
+quotient covers `p : E ⟶ B` and `q : F ⟶ C` of actions of `G` and `H` with contractible total
+spaces, a map `f : E ⟶ F` equivariant along `φ : G →* H` and lying over `b : B ⟶ C`, and a
+compatible map of representations `α : A ⟶ Res(φ)(A')`, the identifications
+`Hₙ(B; A) ≅ Hₙ(G, A)` and `Hₙ(C; A') ≅ Hₙ(H, A')` carry the map on twisted homology induced by
+`IsQuotientCoveringMap.associatedLocalSystemPullbackMap` and `b` to Mathlib's change-of-group map
+`groupHomology.map φ α`. -/
+@[reassoc]
+theorem twistedHomologyIsoGroupHomology_hom_naturality_map [ContractibleSpace E]
+    [ContractibleSpace F] (α : A ⟶ Rep.res φ A') (n : ℕ) :
+    twistedHomologyCoefficientMap.{u, u, u}
+        (hG.associatedLocalSystemPullbackMap k hH f hf b hb α) n ≫
+        twistedHomologyMap.{u, u, u} b (hH.associatedLocalSystem k A') n ≫
+        (hH.twistedHomologyIsoGroupHomology k A' n).hom =
+      (hG.twistedHomologyIsoGroupHomology k A n).hom ≫ groupHomology.map φ α n := by
+  have := hG.toContinuousConstSMul
+  have := hH.toContinuousConstSMul
+  have := hG.isCancelSMul
+  have := hH.isCancelSMul
+  let := Classical.decEq G
+  let := Classical.decEq H
+  have hchains : twistedChainComplexCoefficientMap.{u, u, u}
+        (hG.associatedLocalSystemPullbackMap k hH f hf b hb α) ≫
+        twistedChainComplexMap.{u, u, u} b (hH.associatedLocalSystem k A') ≫
+        (hH.coinvariantsTensorSingularChainsRepIsoTwisted k A').inv =
+      (hG.coinvariantsTensorSingularChainsRepIsoTwisted k A).inv ≫
+        φ.coinvariantsTensorChainMap α (singularChainsRepResMap k f hf) := by
+    rw [Iso.eq_inv_comp, ← Category.assoc, ← Category.assoc, Iso.comp_inv_eq, Category.assoc,
+      hG.coinvariantsTensorSingularChainsRepIsoTwisted_hom_naturality_map k hH f hf b hb α]
+  have e₁ : (hG.twistedHomologyIsoGroupHomology k A n).hom =
+      HomologicalComplex.homologyMap (hG.coinvariantsTensorSingularChainsRepIsoTwisted k A).inv n ≫
+        (groupHomologyIso A n (singularChainsResolution k E G)).inv :=
+    (rfl)
+  have e₂ : (hH.twistedHomologyIsoGroupHomology k A' n).hom =
+      HomologicalComplex.homologyMap (hH.coinvariantsTensorSingularChainsRepIsoTwisted k A').inv
+          n ≫ (groupHomologyIso A' n (singularChainsResolution k F H)).inv :=
+    (rfl)
+  rw [e₁, e₂]
+  -- The complexes of `singularChainsResolution` are `singularChainsRep` only up to unfolding, so
+  -- the chain-level square `hchains` and the naturality of `groupHomologyIso` are pasted in term
+  -- mode.
+  exact ((congrArg (_ ≫ ·) (HomologicalComplex.homologyMap_comp_assoc _ _ n _).symm).trans
+    (HomologicalComplex.homologyMap_comp_assoc _ _ n _).symm).trans <|
+    (congrArg (fun χ ↦ HomologicalComplex.homologyMap χ n ≫ _) hchains).trans <|
+    (HomologicalComplex.homologyMap_comp_assoc _ _ n _).trans <|
+    (congrArg (_ ≫ ·) (φ.groupHomologyIso_inv_naturality α
+      (singularChainsResolution k E G) (singularChainsResolution k F H)
+      (singularChainsRepResMap k f hf) (singularChainsRepResMap_f_zero_comp_augmentation k f hf)
+      n)).trans (Category.assoc _ _ _).symm
+
+/-- The inverse identification of group homology with twisted homology is natural in the group. -/
+@[reassoc]
+theorem twistedHomologyIsoGroupHomology_inv_naturality_map [ContractibleSpace E]
+    [ContractibleSpace F] (α : A ⟶ Rep.res φ A') (n : ℕ) :
+    groupHomology.map φ α n ≫ (hH.twistedHomologyIsoGroupHomology k A' n).inv =
+      (hG.twistedHomologyIsoGroupHomology k A n).inv ≫
+        twistedHomologyCoefficientMap.{u, u, u}
+          (hG.associatedLocalSystemPullbackMap k hH f hf b hb α) n ≫
+        twistedHomologyMap.{u, u, u} b (hH.associatedLocalSystem k A') n := by
+  rw [Iso.comp_inv_eq, Category.assoc, Category.assoc,
+    hG.twistedHomologyIsoGroupHomology_hom_naturality_map k hH f hf b hb α n,
+    Iso.inv_hom_id_assoc]
 
 end IsQuotientCoveringMap
