@@ -17,12 +17,12 @@ from `C_b^{2+α,1+α/2}` (`ParabolicC2HolderSpace`) to `C_b^{α,α/2}`, and show
 turns backward problems with terminal data into forward problems with initial data.
 
 Let `R (x, s) = (x, T - s)`, mapping `E × [T - b, T - a]` onto `E × [a, b]`, and put `v = u ∘ R`,
-`Ã = A ∘ R`, `B̃ = B ∘ R`, `C̃ = C ∘ R`. Since `R` keeps the spatial derivatives and negates the
-time derivative, the forward operator `P̃ = ∂ₜ - Ã·D_x² - B̃·D_x - C̃` satisfies
-`P̃ v = -(P_back u) ∘ R`. Hence `P_back u = g` if and only if `P̃ v = -g ∘ R`, and the initial
+`A_R = A ∘ R`, `B_R = B ∘ R`, `C_R = C ∘ R`. Since `R` keeps the spatial derivatives and negates the
+time derivative, the forward operator `P_R = ∂ₜ - A_R·D_x² - B_R·D_x - C_R` satisfies
+`P_R v = -(P_back u) ∘ R`. Hence `P_back u = g` if and only if `P_R v = -g ∘ R`, and the initial
 trace of `v` at `T - b` is the terminal trace of `u` at `b`. Consequently the terminal-data map
 `u ↦ (P_back u, u(·, b))` is bijective exactly when the initial-data map
-`v ↦ (P̃ v, v(·, T - b))` of the reversed forward problem is.
+`v ↦ (P_R v, v(·, T - b))` of the reversed forward problem is.
 
 On `ℝⁿ = EuclideanSpace ℝ ι` with scalar coefficients `aⁱʲ`, `bⁱ`, `c`, the forward comparison
 principle then yields the backward one: for degenerate elliptic `a` and `c ≤ γ` with `0 ≤ γ`,
@@ -32,9 +32,9 @@ two-sided bound and uniqueness for the terminal-value problem.
 ## Main declarations
 
 * `TauCeti.ParabolicC2HolderSpace.backwardParabolicOperatorL`: the operator `P_back = ∂ₜ + L`.
-* `TauCeti.ParabolicC2HolderSpace.parabolicOperatorL_timeReverseLIE`: `P̃ v = -(P_back u) ∘ R`.
+* `TauCeti.ParabolicC2HolderSpace.parabolicOperatorL_timeReverseLIE`: `P_R v = -(P_back u) ∘ R`.
 * `TauCeti.ParabolicC2HolderSpace.backwardParabolicOperatorL_eq_iff`:
-  `P_back u = g ↔ P̃ v = -g ∘ R`.
+  `P_back u = g ↔ P_R v = -g ∘ R`.
 * `TauCeti.ParabolicC2HolderSpace.spatialTrace_timeReverseLIE`: traces of `v` are traces of `u`.
 * `TauCeti.ParabolicC2HolderSpace.bijective_backwardParabolicOperatorL_prod_spatialTraceL_iff`: the
   terminal-data map is bijective iff the reversed initial-data map is.
@@ -156,7 +156,7 @@ variable {a b a' b' T : ℝ} {hab : a < b} {ha : a' = T - b} {hb : b' = T - a} (
 
 /-- **Time reversal of the backward operator.** With `R (x, s) = (x, T - s)` and `v = u ∘ R`,
 the forward operator with the reversed coefficients `A ∘ R`, `B ∘ R`, `C ∘ R` satisfies
-`P̃ v = -(P_back u) ∘ R`. -/
+`P_R v = -(P_back u) ∘ R`. -/
 theorem parabolicOperatorL_timeReverseLIE (u : ParabolicC2HolderSpace α E F hab) :
     parabolicOperatorL hα
         (HolderSpace.compLipschitzL _ (slabTimeReverse T ha hb).isometry.lipschitzWith A)
@@ -173,7 +173,7 @@ theorem parabolicOperatorL_timeReverseLIE (u : ParabolicC2HolderSpace α E F hab
 
 /-- **Backward problems are reversed forward problems.** With `R (x, s) = (x, T - s)`,
 `P_back u = g` holds if and only if the time reversal `v = u ∘ R` solves the forward equation
-`P̃ v = -g ∘ R` with the reversed coefficients `A ∘ R`, `B ∘ R`, `C ∘ R`. -/
+`P_R v = -g ∘ R` with the reversed coefficients `A ∘ R`, `B ∘ R`, `C ∘ R`. -/
 theorem backwardParabolicOperatorL_eq_iff (u : ParabolicC2HolderSpace α E F hab)
     (g : HolderSpace α (slab (E := E) a b) F) :
     backwardParabolicOperatorL hα A B C u = g ↔
@@ -192,7 +192,7 @@ theorem backwardParabolicOperatorL_eq_iff (u : ParabolicC2HolderSpace α E F hab
 
 /-- **Solvability of the terminal-value problem by time reversal.** With
 `R (x, s) = (x, T - s)`, the terminal-data map `u ↦ (P_back u, u(·, b))` of the backward problem
-on `E × [a, b]` is bijective if and only if the initial-data map `v ↦ (P̃ v, v(·, T - b))` of
+on `E × [a, b]` is bijective if and only if the initial-data map `v ↦ (P_R v, v(·, T - b))` of
 the forward problem on `E × [T - b, T - a]` with the reversed coefficients `A ∘ R`, `B ∘ R`,
 `C ∘ R` is bijective. -/
 theorem bijective_backwardParabolicOperatorL_prod_spatialTraceL_iff :
@@ -318,7 +318,7 @@ theorem euclideanBackwardParabolicOperatorL_apply
 
 /-- **Time reversal of the Euclidean backward operator.** With `R (x, s) = (x, T - s)` and
 `v = u ∘ R`, the forward operator with the reversed coefficients `aⁱʲ ∘ R`, `bⁱ ∘ R`, `c ∘ R`
-satisfies `P̃ v = -(P_back u) ∘ R`. -/
+satisfies `P_R v = -(P_back u) ∘ R`. -/
 theorem euclideanParabolicOperatorL_timeReverseLIE {a b a' b' T : ℝ} {hab : a < b}
     {ha : a' = T - b} {hb : b' = T - a}
     {A : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) a b) ℝ}
