@@ -55,15 +55,15 @@ theorem linearIndependent_of_isRightRegular_leadingCoeff
     rw [Finset.add_sum_erase s (fun j => f j • S j) hms,
       Finset.add_sum_erase s (fun j => g j • S j) hms]
     exact hsum
-  have h_coeff := congrArg (Polynomial.coeff · m) h_split
-  rw [Polynomial.coeff_add, Polynomial.coeff_smul, Polynomial.coeff_add,
-    Polynomial.coeff_smul] at h_coeff
+  have h_coeff := congrArg (fun p : R[X] ↦ p.coeff m) h_split
+  rw [AddMonoidAlgebra.coeff_add, Finsupp.add_apply, AddMonoidAlgebra.coeff_smul_apply,
+    AddMonoidAlgebra.coeff_add, Finsupp.add_apply, AddMonoidAlgebra.coeff_smul_apply] at h_coeff
   have h_m_coeff : (S m).coeff m = (S m).leadingCoeff := by
     rw [Polynomial.leadingCoeff, S.natDegree_eq m]
   have h_erase_eq :
       (∑ j ∈ s.erase m, f j • S j).coeff m =
         (∑ j ∈ s.erase m, g j • S j).coeff m := by
-    simp only [Polynomial.finsetSum_coeff, Polynomial.coeff_smul]
+    simp only [Polynomial.finsetSum_coeff, AddMonoidAlgebra.coeff_smul_apply]
     apply Finset.sum_congr rfl
     intro j hj
     have hj_s := Finset.mem_of_mem_erase hj

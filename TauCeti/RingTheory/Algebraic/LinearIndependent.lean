@@ -128,8 +128,9 @@ theorem exists_natDegree_le_aeval_eq_zero_of_sum_smul_pow_pow_eq_zero [NoZeroDiv
   have hQ : Q ≠ 0 := by
     intro hQ
     apply hi
-    have := congrArg (Polynomial.coeff · (q ^ (i : ℕ) - 1)) hQ
-    simpa [Q, Polynomial.finsetSum_coeff, Polynomial.coeff_monomial, hinj.eq_iff] using this
+    have := congrArg (fun p : Polynomial R ↦ p.coeff (q ^ (i : ℕ) - 1)) hQ
+    simpa [Q, Polynomial.finsetSum_coeff, Polynomial.coeff_monomial, Finsupp.single_apply,
+      hinj.eq_iff] using this
   have hQdeg : Q.natDegree ≤ q ^ m - 1 :=
     Polynomial.natDegree_sum_le_of_forall_le _ _ fun j _ ↦
       (Polynomial.natDegree_monomial_le _).trans <|

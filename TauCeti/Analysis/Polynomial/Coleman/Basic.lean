@@ -284,7 +284,7 @@ theorem norm_coeff_colemanDBounded_le {ρ β : ℕ → ℝ}
   have hprod : 0 ≤ ∏ t ∈ range k, β t := prod_nonneg fun t _ ↦ hβ₀ t
   rw [colemanDBounded_def, resultant, Matrix.det_apply, finsetSum_coeff]
   refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg hprod fun σ _ ↦ ?_
-  rw [coeff_smul, norm_units_zsmul, coeff_prod_sylvester_colemanDBounded hB₀]
+  rw [AddMonoidAlgebra.coeff_smul_apply, norm_units_zsmul, coeff_prod_sylvester_colemanDBounded hB₀]
   split_ifs with h
   swap
   · rw [norm_zero]
@@ -321,8 +321,9 @@ theorem norm_coeff_colemanDBounded_sub_le {B' P' : R[X]} {L k : ℕ} {ρ β γ :
     sum_nonneg fun r _ ↦ mul_nonneg (hγ₀ r) (prod_nonneg fun t _ ↦ hβ₀ t)
   simp only [colemanDBounded_def, resultant, Matrix.det_apply, finsetSum_coeff, ← sum_sub_distrib]
   refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg hsum₀ fun σ _ ↦ ?_
-  rw [coeff_smul, coeff_smul, ← smul_sub, norm_units_zsmul,
-    coeff_prod_sylvester_colemanDBounded hB₀, coeff_prod_sylvester_colemanDBounded hB₀']
+  rw [AddMonoidAlgebra.coeff_smul_apply, AddMonoidAlgebra.coeff_smul_apply, ← smul_sub,
+    norm_units_zsmul, coeff_prod_sylvester_colemanDBounded hB₀,
+    coeff_prod_sylvester_colemanDBounded hB₀']
   split_ifs with h
   swap
   · rw [sub_zero, norm_zero]

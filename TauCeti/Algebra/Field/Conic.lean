@@ -53,7 +53,7 @@ theorem exists_sq_add_sq_mul_eq_one {K : Type*} [Field K] [Infinite K] [NeZero (
   have hp : (X * (1 - C δ * X ^ 2) * (1 + C δ * X ^ 2) : K[X]) ≠ 0 := by
     refine mul_ne_zero (mul_ne_zero X_ne_zero ?_) ?_ <;>
     · intro h
-      simpa using congrArg (coeff · 0) h
+      simpa using congrArg (fun p : K[X] ↦ p.coeff 0) h
   obtain ⟨t, ht⟩ := (finite_setOfPred_isRoot hp).infinite_compl.nonempty
   simp only [Set.mem_compl_iff, Set.mem_ofPred_eq, IsRoot.def, eval_mul, eval_X, eval_sub, eval_add,
     eval_one, eval_C, eval_pow, mul_eq_zero, not_or] at ht

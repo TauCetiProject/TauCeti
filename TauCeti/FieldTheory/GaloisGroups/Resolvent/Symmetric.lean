@@ -306,8 +306,7 @@ theorem existsUnique_orbitProduct {n : ℕ} (Φ : MvPolynomial (Fin n) ℤ) :
     (MvPolynomial.esymmAlgHom (Fin n) ℤ n).toRingHom
     (MvPolynomial.esymmAlgHom_fin_bijective ℤ n).2 P
   have hD' : D.map (TauCeti.esymmSubst n) = universalResolvent Φ := by
-    apply Polynomial.ext
-    intro k
+    refine AddMonoidAlgebra.ext <| Finsupp.ext fun k ↦ ?_
     have hk := congrArg (fun p : S.toSubring[X] => p.coeff k) hD
     rw [Polynomial.coeff_map] at hk
     rw [Polynomial.coeff_map, TauCeti.esymmSubst_apply]

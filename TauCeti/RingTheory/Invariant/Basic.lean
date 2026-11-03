@@ -186,8 +186,8 @@ theorem pow_card_mem_map_under {J : Ideal B} (hJ : ∀ g : G, ∀ b ∈ J, g •
   have hr (i : ℕ) : (MulSemiringAction.charpoly G b - X ^ Nat.card G).coeff i ∈
       (J.under A).map (algebraMap A B) := by
     obtain ⟨a, ha⟩ := Algebra.IsInvariant.isInvariant (A := A) (G := G) _ fun g ↦ by
-      rw [← coeff_smul g (MulSemiringAction.charpoly G b - X ^ Nat.card G), smul_sub,
-        MulSemiringAction.smul_charpoly, smul_pow', smul_X]
+      rw [← AddMonoidAlgebra.coeff_smul_apply g (MulSemiringAction.charpoly G b - X ^ Nat.card G),
+        smul_sub, MulSemiringAction.smul_charpoly, smul_pow', smul_X]
     have hJi : (MulSemiringAction.charpoly G b - X ^ Nat.card G).coeff i ∈ J := by
       rw [← Quotient.eq_zero_iff_mem, ← coeff_map]
       simp [MulSemiringAction.charpoly_eq, Polynomial.map_prod,

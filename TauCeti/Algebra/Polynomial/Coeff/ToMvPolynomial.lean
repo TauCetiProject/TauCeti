@@ -26,16 +26,15 @@ variable {R σ : Type*} [CommSemiring R]
 corresponding single-coordinate exponent embedding. -/
 theorem coeff_toMvPolynomial_eq_embDomain (p : Polynomial R) (i : σ) :
     AddMonoidAlgebra.coeff (p.toMvPolynomial i) =
-      p.toFinsupp.coeff.embDomain ⟨Finsupp.single i, Finsupp.single_injective i⟩ := by
+      p.coeff.embDomain ⟨Finsupp.single i, Finsupp.single_injective i⟩ := by
   classical
   induction p using Polynomial.induction_on' with
   | add p q hp hq =>
-    simp only [_root_.map_add, AddMonoidAlgebra.coeff_add, Polynomial.toFinsupp_add,
-      Finsupp.embDomain_add, hp, hq]
+    simp only [_root_.map_add, AddMonoidAlgebra.coeff_add, Finsupp.embDomain_add, hp, hq]
   | monomial n c =>
+    rw [Polynomial.coeff_monomial, Finsupp.embDomain_single]
     simp [← Polynomial.C_mul_X_pow_eq_monomial, MvPolynomial.C_mul_X_pow_eq_monomial,
-      ← MvPolynomial.single_eq_monomial,
-      AddMonoidAlgebra.coeff_single, Finsupp.embDomain_single]
+      ← MvPolynomial.single_eq_monomial, AddMonoidAlgebra.coeff_single]
 
 /-- Placement in the coordinate `Xᵢ` turns the degree into the partial degree in `Xᵢ`. -/
 @[simp]
