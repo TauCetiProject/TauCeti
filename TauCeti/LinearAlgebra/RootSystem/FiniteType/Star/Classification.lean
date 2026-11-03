@@ -91,26 +91,26 @@ private theorem starCartanMatrix_zero_eq_submatrix_A (b c : ℕ) :
   rcases v with _ | ⟨i, s⟩ <;> rcases w with _ | ⟨j, t⟩
   · simp [Matrix.submatrix_apply, starAEmbedding, CartanMatrix.A]
   · fin_cases j <;> simp [Matrix.submatrix_apply, starAEmbedding, CartanMatrix.A] at t ⊢ <;>
-      try split_ifs <;> try omega
+      split_ifs <;> omega
   · fin_cases i <;> simp [Matrix.submatrix_apply, starAEmbedding, CartanMatrix.A] at s ⊢ <;>
-      try split_ifs <;> try omega
+      split_ifs <;> omega
   · fin_cases i
     · exact Fin.elim0 s
     · fin_cases j
       · exact Fin.elim0 t
       · simp [Matrix.submatrix_apply, starAEmbedding, CartanMatrix.A] at s t ⊢
-        all_goals split_ifs
+        split_ifs
         all_goals omega
       · simp [Matrix.submatrix_apply, starAEmbedding, CartanMatrix.A] at s t ⊢
-        all_goals split_ifs
+        split_ifs
         all_goals omega
     · fin_cases j
       · exact Fin.elim0 t
       · simp [Matrix.submatrix_apply, starAEmbedding, CartanMatrix.A] at s t ⊢
-        all_goals split_ifs
+        split_ifs
         all_goals omega
       · simp [Matrix.submatrix_apply, starAEmbedding, CartanMatrix.A] at s t ⊢
-        all_goals split_ifs
+        split_ifs
         all_goals omega
 
 private theorem isFiniteType_starCartanMatrix_zero (b c : ℕ) :
@@ -125,16 +125,16 @@ private def starDEmbedding (c : ℕ) : StarIndex ![1, 1, c] → Fin (c + 3)
   | some ⟨i, s⟩ =>
       ⟨if i.val = 0 then c + 1 else if i.val = 1 then c + 2 else c - 1 - s, by
         fin_cases i <;> simp at s ⊢
-        all_goals omega⟩
+        omega⟩
 
 private theorem starDEmbedding_injective (c : ℕ) : Function.Injective (starDEmbedding c) := by
   intro v w h
   rcases v with _ | ⟨i, s⟩ <;> rcases w with _ | ⟨j, t⟩
   · rfl
   · fin_cases j <;> simp [starDEmbedding] at h t
-    all_goals omega
+    omega
   · fin_cases i <;> simp [starDEmbedding] at h s
-    all_goals omega
+    omega
   · fin_cases i <;> fin_cases j <;>
       simp [starDEmbedding] at h s t ⊢ <;> try omega
     all_goals congr 1
@@ -156,11 +156,11 @@ private theorem starCartanMatrix_one_one_eq_submatrix_D (c : ℕ) :
   · simp [Matrix.submatrix_apply, starIndexEquivD, starDEmbedding, CartanMatrix.D]
   · fin_cases j <;>
       simp [Matrix.submatrix_apply, starIndexEquivD, starDEmbedding, CartanMatrix.D] at t ⊢
-    all_goals split_ifs
+    split_ifs
     all_goals omega
   · fin_cases i <;>
       simp [Matrix.submatrix_apply, starIndexEquivD, starDEmbedding, CartanMatrix.D] at s ⊢
-    all_goals split_ifs
+    split_ifs
     all_goals omega
   · fin_cases i <;> fin_cases j <;>
       simp [Matrix.submatrix_apply, starIndexEquivD, starDEmbedding, CartanMatrix.D] at s t ⊢ <;>

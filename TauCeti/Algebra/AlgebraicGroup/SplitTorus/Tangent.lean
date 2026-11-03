@@ -24,8 +24,8 @@ The coordinate vectors are the differentials of its coordinate cocharacters.
 * `tangentBasis_apply`: the basis vectors are the coordinate-cocharacter differentials.
 * `tangentLinearEquiv_symm_apply`: the finite coordinate decomposition.
 * `range_derivationCompLieHom`: the tangent image is spanned by the cocharacter differentials.
-* `linearIndependent_derivationCompLieHom_cocharacter`: those differentials are linearly
-  independent when the coordinate-ring map is surjective.
+* `linearIndependent_derivationComp_cocharacter`: those differentials are linearly
+  independent when the torus differential is injective.
 -/
 
 public section
@@ -211,18 +211,17 @@ theorem range_derivationCompLieHom [Finite I] (π : H →ₐc[R] A) :
   rw [← h, ← Set.range_comp']
   simp only [LieHom.coe_toLinearMap, derivationCompLieHom_tangentBasis]
 
-/-- A surjective coordinate-ring map from a target to a finite split torus makes the
-coordinate-cocharacter differentials linearly independent over every coefficient algebra. -/
-theorem linearIndependent_derivationCompLieHom_cocharacter [Finite I]
-    (π : H →ₐc[R] A) (hπ : Function.Surjective π) :
+/-- The coordinate-cocharacter differentials are independent whenever the torus differential
+is injective. -/
+theorem linearIndependent_derivationComp_cocharacter [Finite I] (π : H →ₐc[R] A)
+    (hπ : Function.Injective (derivationCompLieHom (B := B) π)) :
     LinearIndependent B (fun i : I ↦
       derivationCompLieHom (π.cocharacter (Finsupp.applyAddHom i).toMultiplicative)
         ((MultiplicativeGroup.tangentLinearEquiv (R := R) (B := B)).symm 1)) := by
-  have h := (tangentBasis (R := R) (B := B) (I := I)).linearIndependent
-    |>.map_injOn (derivationCompLieHom (B := B) π).toLinearMap
-      (derivationCompLieHom_injective_of_surjective π hπ).injOn
   simpa only [Function.comp_def, LieHom.coe_toLinearMap,
-    derivationCompLieHom_tangentBasis] using h
+    derivationCompLieHom_tangentBasis] using
+    (tangentBasis (R := R) (B := B) (I := I)).linearIndependent.map_injOn
+      (derivationCompLieHom (B := B) π).toLinearMap hπ.injOn
 
 end
 

@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.ModularForms.QExpansion.Laurent
 import Mathlib.NumberTheory.ModularForms.RamanujanFormula
 import TauCeti.Analysis.Complex.UpperHalfPlane.Manifold
 import TauCeti.NumberTheory.ModularForms.EllipticPoints
+import TauCeti.RingTheory.PowerSeries.SubringCoeff
 
 /-!
 # The level-one modular invariant
@@ -63,6 +64,9 @@ of which vanishes because `Δ = (E₄³ - E₆²) / 1728` has no zeros.
   `cₘ` the coefficients of `q j`.
 * `TauCeti.ModularForm.qExpansion_qParam_mul_j_coeff_one`,
   `TauCeti.ModularForm.qExpansion_qParam_mul_j_coeff_two`: the coefficients `744` and `196884`.
+* `TauCeti.ModularForm.exists_qExpansion_qParam_mul_j_coeff_eq_intCast`,
+  `TauCeti.ModularForm.exists_laurentQExpansion_j_coeff_eq_intCast`: these coefficients are
+  integers.
 * `TauCeti.ModularForm.laurentQExpansion_j` and
   `TauCeti.ModularForm.orderTop_laurentQExpansion_j`: the Laurent `q`-expansion of `j`, of
   order `-1`, with first coefficients `TauCeti.ModularForm.laurentQExpansion_j_coeff_neg_one`,
@@ -457,5 +461,39 @@ theorem laurentQExpansion_j_coeff_zero : (UpperHalfPlane.laurentQExpansion 1 j).
 theorem laurentQExpansion_j_coeff_one :
     (UpperHalfPlane.laurentQExpansion 1 j).coeff 1 = 196884 := by
   simpa [qExpansion_qParam_mul_j_coeff_two] using laurentQExpansion_j_coeff_natCast_sub_one 2
+
+/-- **The `q`-expansion of `q j` has integer coefficients.** It is the quotient of `q E₄³` by
+`Δ = q + ⋯`, and both have integer coefficients. -/
+theorem exists_qExpansion_qParam_mul_j_coeff_eq_intCast (n : ℕ) :
+    ∃ m : ℤ, (qExpansion 1 (fun τ : ℍ ↦ 𝕢 1 τ * j τ)).coeff n = m := by
+  have hE : qExpansion 1 E₄ ∈ (PowerSeries.map (Int.castRingHom ℂ)).range :=
+    (PowerSeries.mem_map_range _).mpr fun n ↦ by
+      obtain ⟨m, hm⟩ := exists_E₄_qExpansion_coeff_eq_intCast n
+      exact ⟨m, hm.symm⟩
+  have hE₃ := (PowerSeries.mem_map_range _).mp (pow_mem hE 3)
+  have h := PowerSeries.coeff_mem_of_coeff_mul_mem (R := (Int.castRingHom ℂ).range) (m := 1)
+    (D := qExpansion 1 discriminant) (by simp [discriminant_qExpansion_coeff_zero])
+    discriminant_qExpansion_coeff_one
+    (fun i ↦ by
+      obtain ⟨m, hm⟩ := exists_discriminant_qExpansion_coeff_eq_intCast i
+      exact ⟨m, hm.symm⟩)
+    (fun i ↦ by
+      rw [qExpansion_qParam_mul_j_mul_qExpansion_discriminant]
+      cases i with
+      | zero => simp
+      | succ i => simpa [PowerSeries.coeff_succ_X_mul] using hE₃ i) n
+  obtain ⟨m, hm⟩ := h
+  exact ⟨m, hm.symm⟩
+
+/-- **The Laurent `q`-expansion of `j` has integer coefficients.** -/
+theorem exists_laurentQExpansion_j_coeff_eq_intCast (n : ℤ) :
+    ∃ m : ℤ, (UpperHalfPlane.laurentQExpansion 1 j).coeff n = m := by
+  rcases lt_or_ge n (-1) with hn | hn
+  · refine ⟨0, ?_⟩
+    have h : ((n : ℤ) : WithTop ℤ) < ((-1 : ℤ) : WithTop ℤ) := WithTop.coe_lt_coe.mpr hn
+    rw [HahnSeries.coeff_eq_zero_of_lt_orderTop (by simpa using h), Int.cast_zero]
+  · obtain ⟨k, rfl⟩ : ∃ k : ℕ, n = k - 1 := ⟨(n + 1).toNat, by omega⟩
+    rw [laurentQExpansion_j_coeff_natCast_sub_one]
+    exact exists_qExpansion_qParam_mul_j_coeff_eq_intCast k
 
 end TauCeti.ModularForm

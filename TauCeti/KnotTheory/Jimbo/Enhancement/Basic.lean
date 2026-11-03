@@ -115,7 +115,7 @@ theorem jimboEnhancement_one : jimboEnhancement (N := N) (n := n) (1 : Rˣ) = 1 
 theorem jimboEnhancement_mul_inv (q : Rˣ) :
     jimboEnhancement (N := N) (n := n) q * jimboEnhancement q⁻¹ = 1 := by
   refine LinearMap.ext fun v ↦ Finsupp.ext fun w ↦ ?_
-  simp [Module.End.mul_apply, ← mul_assoc, ← Finset.prod_mul_distrib]
+  simp [mul_apply_eq_comp, ← mul_assoc, ← Finset.prod_mul_distrib]
 
 /-- The enhancement is an invertible operator. -/
 theorem isUnit_jimboEnhancement (q : Rˣ) :
@@ -139,7 +139,7 @@ theorem jimboEnhancement_commute_generator (q : Rˣ) (j k : Fin n) :
   unfold Commute SemiconjBy
   ext w : 2
   simp only [LinearMap.coe_comp, Function.comp_apply, Finsupp.lsingle_apply,
-    Module.End.mul_apply, jimboGenerator_single_one, jimboEnhancement_single_one]
+    mul_apply_eq_comp, jimboGenerator_single_one, jimboEnhancement_single_one]
   split_ifs <;>
     simp_all only [map_smul, map_add, jimboEnhancement_single_one, jimboGenerator_single_one,
       ↓reduceIte] <;> module
@@ -256,7 +256,7 @@ theorem sum_jimboUnit_inv_coeff_mul_weight (q : Rˣ) (a b : Fin N) :
       if a = b then ↑((q⁻¹) ^ N) else 0 := by
   classical
   rw [jimboUnit_inv_val]
-  simp only [LinearMap.add_apply, LinearMap.smul_apply, Module.End.one_apply,
+  simp only [LinearMap.add_apply, LinearMap.smul_apply, one_apply_eq_self,
     Finsupp.add_apply, Finsupp.smul_apply, smul_eq_mul, add_mul]
   rw [Finset.sum_add_distrib]
   have hstrand : BraidGroup.strand (0 : Fin (2 - 1)) = 0 := by ext; simp

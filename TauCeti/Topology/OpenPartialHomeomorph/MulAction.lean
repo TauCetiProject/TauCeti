@@ -21,7 +21,8 @@ conjugates (`OpenPartialHomeomorph.conj_mul_smul_eventuallyEq`). These are the l
 behind the chain-rule computation of the derivative representation at a fixed point.
 
 `OpenPartialHomeomorph.restrInvariant` restricts a chart to the largest invariant open subset
-of its source for a finite monoid action.
+of its source for a finite monoid action. An equivariant chart with invariant source also has
+invariant target and equivariant inverse (`OpenPartialHomeomorph.symm_map_smul_of_map_smul`).
 -/
 
 public section
@@ -55,6 +56,23 @@ theorem conj_mul_smul_eventuallyEq [ContinuousConstSMul G X] {x : X} (hx : x ∈
     exact χ.open_source.mem_nhds hhx
   filter_upwards [hmem] with w hw
   simp [χ.left_inv hw, mul_smul]
+
+/-- An equivariant open partial homeomorphism with invariant source has invariant target and
+an equivariant inverse. No continuity or monoid laws for the scalar actions are needed. -/
+theorem symm_map_smul_of_map_smul {M : Type*} [SMul M X] [SMul M E]
+    (e : OpenPartialHomeomorph X E)
+    (hequiv : ∀ (g : M) (x : X), x ∈ e.source →
+      g • x ∈ e.source ∧ e (g • x) = g • e x)
+    (g : M) (z : E) (hz : z ∈ e.target) :
+    g • z ∈ e.target ∧ e.symm (g • z) = g • e.symm z := by
+  have hg := hequiv g (e.symm z) (e.map_target hz)
+  have hz' : g • z ∈ e.target := by
+    rw [← e.right_inv hz, ← hg.2]
+    exact e.map_source hg.1
+  refine ⟨hz', ?_⟩
+  calc
+    e.symm (g • z) = e.symm (e (g • e.symm z)) := by rw [hg.2, e.right_inv hz]
+    _ = g • e.symm z := e.left_inv hg.1
 
 section InvariantRestriction
 

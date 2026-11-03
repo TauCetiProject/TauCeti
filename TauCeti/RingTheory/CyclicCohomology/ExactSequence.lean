@@ -269,7 +269,7 @@ theorem injective_homologyMap_cyclicTotalComplexToHochschild_one :
   · have hlam : cyclicOperator R A M 0 = 1 := by
       simpa using cyclicOperator_pow_eq_one (R := R) (A := A) (M := M) 0
     have hN : cyclicNorm R A M 0 = 1 := by simp [cyclicNorm_def, hlam]
-    rw [hN, Module.End.one_apply] at hD
+    rw [hN, one_apply_eq_self] at hD
     simp [w, hlam, hD]
   · simp [w, hχ]
   · simp [coe_cyclicTotalCochains_apply_of_lt _ hq]
