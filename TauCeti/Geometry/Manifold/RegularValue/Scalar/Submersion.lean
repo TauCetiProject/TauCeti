@@ -81,7 +81,7 @@ preferred-chart derivative of `f`. -/
 private theorem hasStrictFDerivAt_coord (hf : ContMDiffAt I 𝓘(ℝ) 1 f x) :
     HasStrictFDerivAt (fun y ↦ f ((extChartAt I x).symm y) - f x)
       (fderiv ℝ (f ∘ (extChartAt I x).symm) (extChartAt I x x)) (extChartAt I x x) :=
-  (hf.contDiffAt_comp_extChartAt_symm.hasStrictFDerivAt one_ne_zero).sub_const _
+  (hf.contDiffAt_comp_extChartAt_symm.hasStrictFDerivAt_fderiv one_ne_zero).sub_const _
 
 private theorem range_eq_top (hx : IsRegularPoint I 𝓘(ℝ) f x) :
     (fderiv ℝ (f ∘ (extChartAt I x).symm) (extChartAt I x x)).range = ⊤ :=
@@ -288,7 +288,7 @@ theorem scalarSubmersionChartAt_source :
       let D := fderiv ℝ (f ∘ (extChartAt I x).symm) (extChartAt I x x)
       let hD : HasStrictFDerivAt (fun y ↦ f ((extChartAt I x).symm y) - f x) D
           (extChartAt I x x) :=
-        (hf.contDiffAt_comp_extChartAt_symm.hasStrictFDerivAt one_ne_zero).sub_const _
+        (hf.contDiffAt_comp_extChartAt_symm.hasStrictFDerivAt_fderiv one_ne_zero).sub_const _
       let hD' : D.range = ⊤ := LinearMap.range_eq_top.2 hx.surjective_fderiv_comp_extChartAt_symm
       let hker := D.isFredholm_of_finiteDimensional.closedComplemented_ker
       {w : M | w ∈ (chartAt H x).source ∧ extChartAt I x w ∈
@@ -322,7 +322,7 @@ theorem scalarSubmersionChartAt_extend_symm_apply (v : E) :
       let D := fderiv ℝ (f ∘ (extChartAt I x).symm) (extChartAt I x x)
       let hD : HasStrictFDerivAt (fun y ↦ f ((extChartAt I x).symm y) - f x) D
           (extChartAt I x x) :=
-        (hf.contDiffAt_comp_extChartAt_symm.hasStrictFDerivAt one_ne_zero).sub_const _
+        (hf.contDiffAt_comp_extChartAt_symm.hasStrictFDerivAt_fderiv one_ne_zero).sub_const _
       let hD' : D.range = ⊤ := LinearMap.range_eq_top.2 hx.surjective_fderiv_comp_extChartAt_symm
       let hker := D.isFredholm_of_finiteDimensional.closedComplemented_ker
       (extChartAt I x).symm ((hD.implicitToOpenPartialHomeomorphOfComplemented _ D hD' hker).symm
@@ -338,7 +338,7 @@ theorem mem_scalarSubmersionChartAt_extend_target_iff (v : E) :
       let D := fderiv ℝ (f ∘ (extChartAt I x).symm) (extChartAt I x x)
       let hD : HasStrictFDerivAt (fun y ↦ f ((extChartAt I x).symm y) - f x) D
           (extChartAt I x x) :=
-        (hf.contDiffAt_comp_extChartAt_symm.hasStrictFDerivAt one_ne_zero).sub_const _
+        (hf.contDiffAt_comp_extChartAt_symm.hasStrictFDerivAt_fderiv one_ne_zero).sub_const _
       let hD' : D.range = ⊤ := LinearMap.range_eq_top.2 hx.surjective_fderiv_comp_extChartAt_symm
       let hker := D.isFredholm_of_finiteDimensional.closedComplemented_ker
       let L := D.implicitCoordEquiv hD' hker

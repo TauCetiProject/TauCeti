@@ -227,6 +227,13 @@ theorem IsDestabilization.toGridLink_eq {G : GridDiagram n} {G' : GridDiagram (n
     (h : IsDestabilization G' G) : G'.toGridLink = G.toGridLink :=
   IsMove.toGridLink_eq (.destabilization h)
 
+/-- Transporting a grid diagram along an equality of grid numbers does not change the represented
+grid link. -/
+@[simp]
+theorem toGridLink_cast (h : n = m) : (G.cast h).toGridLink = G.toGridLink := by
+  subst h
+  rw [cast_rfl]
+
 end GridDiagram
 
 namespace GridLink

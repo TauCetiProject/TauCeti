@@ -175,7 +175,7 @@ private theorem ofTensorProductComponents_tensorProductComponents
                 (TauCeti.Bialgebra.TensorProduct.includeRight
                   (R := R) (H₁ := H₁) (H₂ := H₂)) d)) (h₁ ⊗ₜ[R] h₂) =
           d (h₁ ⊗ₜ[R] h₂)
-      rw [Derivation.add_apply, derivationComp_apply, derivationComp_apply,
+      rw [_root_.add_apply, derivationComp_apply, derivationComp_apply,
         derivationComp_apply, derivationComp_apply]
       simp only [BialgHom.coe_toAlgHom, TauCeti.Bialgebra.TensorProduct.projectLeft_tmul,
         TauCeti.Bialgebra.TensorProduct.projectRight_tmul]
@@ -256,7 +256,7 @@ theorem tensorProductLieEquiv_symm_apply_tmul
           Bialgebra.CounitAlgebra.algEquivSelf R H₁ B (d.1 h₁) +
         Coalgebra.counit (R := R) h₁ •
           Bialgebra.CounitAlgebra.algEquivSelf R H₂ B (d.2 h₂) := by
-  simp only [tensorProductLieEquiv_symm_apply, Derivation.add_apply, derivationComp_apply,
+  simp only [tensorProductLieEquiv_symm_apply, _root_.add_apply, derivationComp_apply,
     BialgHom.coe_toAlgHom, TauCeti.Bialgebra.TensorProduct.projectLeft_tmul,
     TauCeti.Bialgebra.TensorProduct.projectRight_tmul, Derivation.map_smul, map_smul,
     Bialgebra.CounitAlgebra.algEquivSelf_apply]
