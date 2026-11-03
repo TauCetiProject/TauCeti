@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: The Tau Ceti contributors
 -/
 module
-public import TauCeti.Analysis.Calculus.RescaledDerivative
+public import TauCeti.Analysis.Calculus.Deriv.Slope
 public import TauCeti.Geometry.Lie.Exponential.Derivative.Log
 public import TauCeti.Geometry.Lie.Interior
 
@@ -68,10 +68,13 @@ theorem tendsto_pow_div_of_hasDerivAt_mulInvariantLog [FiniteDimensional ℝ E]
   dsimp only
   intro hf hlog t
   let _ : CompleteSpace E := FiniteDimensional.complete ℝ E
-  have hlog0 : (show E from mulInvariantLog (I := I) (G := G) (f 0)) = 0 := by
-    rw [hf0]
-    exact mulInvariantLog_one (I := I) (G := G)
-  have hseq := tendsto_nsmul_apply_div_of_hasDerivAt hlog hlog0 t
+  have hseq : Tendsto (fun n : ℕ => n • (show E from mulInvariantLog (I := I) (G := G)
+      (f (t / n)))) atTop (nhds (t • (show E from X))) :=
+    (hlog.tendsto_nsmul_sub_add_div t).congr fun n => by
+      rw [zero_add, hf0, mulInvariantLog_one (I := I) (G := G)]
+      -- The Lie algebra is the tangent space at `1`, a type synonym of `E` that `simp` does not
+      -- see through, so `sub_zero` is applied by unification at default transparency.
+      exact congrArg (n • ·) (sub_zero _)
   have hexp :=
     (contMDiff_mulInvariantExp (I := I) (G := G)).continuous.continuousAt.tendsto.comp hseq
   have hs : Tendsto (fun n : ℕ => t / (n : ℝ)) atTop (nhds 0) :=
