@@ -120,10 +120,7 @@ theorem norm_eq_normUnits (u : (k' ⊗[k] k)ˣ) :
   -- read `k ⊗[k] k'` as `k'` through `lid`, along which `comm` becomes `rid`
   rw [coe_norm, ← Algebra.norm_eq_of_algEquiv (Algebra.TensorProduct.lid k k'),
     Algebra.coe_normUnits, Units.coe_map, MonoidHom.coe_ofClass]
-  congr 1
-  induction (u : k' ⊗[k] k) using TensorProduct.inductionOn with
-  | tmul a r => simp
-  | add x y hx hy => simp [hx, hy]
+  exact congrArg _ (TensorProduct.lid_comm (R := k) (M := k') _)
 
 /-- **Naturality of the norm.** For `k'` free of finite rank over `k` and a `k`-algebra map
 `h : R →ₐ[k] R'`, applying `k' ⊗ h` and then the norm over `R'` is applying the norm over `R` and
@@ -134,13 +131,10 @@ theorem norm_unitsMap_lTensor [Module.Free k k'] [Module.Finite k k'] {R' : Type
         u) = Units.map (h : R →* R') (norm k k' R u) := by
   ext
   -- after commuting the factors, `k' ⊗ h` becomes `h ⊗ k'`, along which the norm is natural
-  have hcomm : Algebra.TensorProduct.comm k k' R'
-      (Algebra.TensorProduct.lTensor (S := k') k' h u) =
-        Algebra.TensorProduct.rTensor k' h (Algebra.TensorProduct.comm k k' R u) := by
-    induction (u : k' ⊗[k] R) using TensorProduct.inductionOn with
-    | tmul a r => simp
-    | add x y hx hy => simp only [map_add, hx, hy]
-  rw [coe_norm, Units.coe_map, MonoidHom.coe_ofClass, hcomm, Algebra.norm_rTensor]
+  rw [coe_norm, Units.coe_map, MonoidHom.coe_ofClass,
+    show Algebra.TensorProduct.lTensor (S := k') k' h (u : k' ⊗[k] R) =
+      Algebra.TensorProduct.map (AlgHom.id k k') h u from rfl,
+    Algebra.TensorProduct.comm_comp_map_apply, Algebra.norm_rTensor]
   simp
 
 /-- **The norm for the trivial extension.** For `k' = k`, the norm on `(k ⊗[k] R)ˣ` is the
@@ -152,9 +146,7 @@ theorem norm_self (u : (k ⊗[k] R)ˣ) :
   -- read `R ⊗[k] k` as `R` through `rid`, along which `comm` becomes `lid`
   rw [coe_norm, ← Algebra.norm_eq_of_algEquiv (Algebra.TensorProduct.rid k R R),
     Algebra.norm_self, MonoidHom.id_apply, Units.coe_map, MonoidHom.coe_ofClass]
-  induction (u : k ⊗[k] R) using TensorProduct.inductionOn with
-  | tmul a r => simp
-  | add x y hx hy => simp [hx, hy]
+  exact TensorProduct.rid_comm (R := k) (M := R) _
 
 section NormOne
 
@@ -213,14 +205,6 @@ noncomputable def normHom : k[T;T⁻¹] →ₐ[k] Algebra.WeilRestriction k k' k
 
 variable {k k'}
 
-/-- The point `g ∘ laurentEval u` of `𝔾ₘ` is the image of the unit `u` under `g`. -/
-private theorem pointsMulEquiv_comp_laurentEval {A B : Type*} [CommRing A] [Algebra k A]
-    [CommRing B] [Algebra k B] (g : A →ₐ[k] B) (u : Aˣ) :
-    MultiplicativeGroup.pointsMulEquiv (toConv (g.comp (laurentEval (R := k) u))) =
-      Units.map (g : A →* B) u := by
-  rw [MultiplicativeGroup.pointsMulEquiv_apply, ofConv_toConv, comp_laurentEval,
-    laurentEvalEquiv_symm_laurentEval]
-
 /-- **The norm morphism on points.** For a point `f` of `Res_{k'/k} 𝔾ₘ` over a commutative
 `k`-algebra `R`, the point `f ∘ normHom` of `𝔾ₘ` is the norm of the unit of `k' ⊗[k] R`
 attached to `f`. -/
@@ -230,7 +214,8 @@ theorem pointsMulEquiv_comp_normHom
       norm k k' R (Algebra.WeilRestriction.multiplicativeGroupPoints k k' R f) := by
   -- `f` is the image of the universal point under `f`, so this is the naturality of the norm
   have hf : f = toConv (f.ofConv.comp (AlgHom.id k _)) := by rw [AlgHom.comp_id, toConv_ofConv]
-  rw [normHom, pointsMulEquiv_comp_laurentEval, ← norm_unitsMap_lTensor,
+  rw [normHom, ← AlgHom.mapValue_apply, ← MultiplicativeGroup.pointsMulEquiv_symm_apply,
+    MultiplicativeGroup.pointsMulEquiv_mapValue, MulEquiv.apply_symm_apply, ← norm_unitsMap_lTensor,
     ← Algebra.WeilRestriction.multiplicativeGroupPoints_naturality, ← hf]
 
 end NormHom
