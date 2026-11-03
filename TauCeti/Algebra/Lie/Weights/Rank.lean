@@ -11,6 +11,7 @@ import Mathlib.Algebra.Module.Submodule.Union
 public import Mathlib.Algebra.Lie.Weights.RootSystem
 public import Mathlib.LinearAlgebra.RootSystem.Base
 import TauCeti.Algebra.Lie.AdjointAction.RootExponential
+import TauCeti.Algebra.Lie.Subalgebra.Engel
 import TauCeti.Algebra.Lie.Weights.Dimension
 
 /-!
@@ -49,8 +50,6 @@ exact divisions by the parity identity `dim L = rank L + 2 · #Δ⁺`.
 * `LieSubalgebra.exists_engel_eq_cartan`: a Cartan subalgebra is the Engel subalgebra of one of its
   elements.
 * `LieSubalgebra.rank_le_finrank_cartan`: the rank of `L` is at most the dimension of `H`.
-* `LieSubalgebra.le_engel_of_isNilpotent`: a nilpotent subalgebra lies in the Engel subalgebra of
-  each of its elements.
 * `LieSubalgebra.rank_eq_finrank_cartan`: for non-degenerate Killing form in characteristic zero,
   the rank of `L` is the dimension of every splitting Cartan subalgebra.
 * `LieSubalgebra.finrank_eq_rank_add_two_mul_card_isPos`: the parity identity
@@ -137,17 +136,6 @@ theorem rank_le_finrank_cartan [Infinite K] [LieModule.LinearWeights K H L]
   obtain ⟨h, hh⟩ := exists_engel_eq_cartan H
   rw [← hh]
   exact LieAlgebra.rank_le_finrank_engel K (h : L)
-
-omit [FiniteDimensional K L] in
-/-- A nilpotent subalgebra lies in the Engel subalgebra of each of its elements. -/
-theorem le_engel_of_isNilpotent (U : LieSubalgebra K L) [LieRing.IsNilpotent U] (h : U) :
-    U ≤ engel K (h : L) := by
-  intro y hy
-  have hy₀ : y ∈ rootSpace U (0 : U → K) := toLieSubmodule_le_rootSpace_zero K L U hy
-  have := genWeightSpace_le_genWeightSpaceOf L h (0 : U → K) hy₀
-  rw [LieModule.mem_genWeightSpaceOf] at this
-  simpa only [mem_engel_iff, zero_smul, sub_zero, LieAlgebra.ad, LieSubalgebra.toEnd_eq,
-    Pi.zero_apply] using this
 
 /-- **The dimension of a splitting Cartan subalgebra is at most the rank**, for a Lie algebra with
 non-degenerate Killing form over a field of characteristic zero. This is the converse of
