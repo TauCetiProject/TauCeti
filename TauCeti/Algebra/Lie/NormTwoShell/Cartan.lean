@@ -76,22 +76,26 @@ theorem basis_baseChange_repr_one_tmul_cartan_lie_inr (h : I → ℤ)
   simpa only [LinearMap.comp_apply, LinearMap.smul_apply, LieAlgebra.ad_apply,
     Int.cast_smul_eq_zsmul, Basis.coord_apply, b] using congrArg (fun f => f x) heq
 
+private theorem lie_eq_zero_of_mem_range_cartan_basis :
+    ∀ x ∈ Set.range (fun i : I => ((basis B).baseChange A) (.inl i)),
+      ∀ y ∈ Set.range (fun i : I => ((basis B).baseChange A) (.inl i)), ⁅x, y⁆ = 0 := by
+  rintro - ⟨i, rfl⟩ - ⟨j, rfl⟩
+  simp [Basis.baseChange_apply]
+
 /-- The abelian subalgebra spanned by the scalar-extended integral Cartan vectors. -/
 def cartanSubalgebra : LieSubalgebra A (A ⊗[ℤ] ShellLieAlgebra B) :=
   LieSubalgebra.lieSpan A _ (Set.range fun i : I => ((basis B).baseChange A) (.inl i))
 
 instance : IsLieAbelian (cartanSubalgebra B A) := by
   rw [cartanSubalgebra, LieSubalgebra.isLieAbelian_lieSpan_iff]
-  rintro - ⟨i, rfl⟩ - ⟨j, rfl⟩
-  simp [Basis.baseChange_apply]
+  exact lie_eq_zero_of_mem_range_cartan_basis B A
 
 /-- The underlying module of the Cartan subalgebra is the span of the Cartan basis vectors. -/
 theorem toSubmodule_cartanSubalgebra :
     (cartanSubalgebra B A).toSubmodule =
       Submodule.span A (Set.range fun i : I => ((basis B).baseChange A) (.inl i)) := by
-  apply LieSubalgebra.coe_lieSpan_eq_span_of_forall_lie_eq_zero
-  rintro - ⟨i, rfl⟩ - ⟨j, rfl⟩
-  simp [Basis.baseChange_apply]
+  exact LieSubalgebra.coe_lieSpan_eq_span_of_forall_lie_eq_zero
+    (lie_eq_zero_of_mem_range_cartan_basis B A)
 
 /-- A vector belongs to the Cartan subalgebra precisely when all its root coordinates vanish. -/
 @[simp]
