@@ -9,7 +9,7 @@ public import TauCeti.NumberTheory.LocalField.Different.Hilbert
 public import TauCeti.NumberTheory.LocalField.Discriminant.Basic
 public import TauCeti.NumberTheory.LocalField.Eisenstein.TotallyRamified
 public import TauCeti.NumberTheory.LocalField.AbsoluteRamificationIndex
-public import TauCeti.RingTheory.AdjoinRoot
+public import TauCeti.RingTheory.AdjoinRoot.Basic
 import TauCeti.FieldTheory.Galois.SquareRoot
 import TauCeti.FieldTheory.Kummer.Extension
 
@@ -115,7 +115,7 @@ def sqrtTwo : DyadicSqrtTwo := AdjoinRoot.root (X ^ 2 - C 2 : ℚ_[2][X])
 /-- The defining equation of the generator `√2`. -/
 @[simp]
 theorem sqrtTwo_sq : sqrtTwo ^ 2 = 2 :=
-  (TauCeti.AdjoinRoot.root_sq (2 : ℚ_[2])).trans (map_ofNat _ 2)
+  (AdjoinRoot.root_X_pow_sub_C_pow 2 (2 : ℚ_[2])).trans (map_ofNat _ 2)
 
 /-- The minimal polynomial of `√2` over `ℚ₂` is `X² - 2`. -/
 @[simp]

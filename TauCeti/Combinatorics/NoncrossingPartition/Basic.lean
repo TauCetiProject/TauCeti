@@ -142,7 +142,7 @@ theorem IsNoncrossing.inf (hP : P.IsNoncrossing) (hQ : Q.IsNoncrossing) :
   simp only [parts_inf, mem_erase, mem_image, mem_product, Prod.exists] at hB hC
   obtain ⟨-, B₁, B₂, ⟨hB₁, hB₂⟩, rfl⟩ := hB
   obtain ⟨-, C₁, C₂, ⟨hC₁, hC₂⟩, rfl⟩ := hC
-  rw [inf_eq_inter, mem_inter] at ha hb hc hd
+  rw [mem_inter] at ha hb hc hd
   rw [hP B₁ hB₁ C₁ hC₁ a ha.1 b hb.1 c hc.1 d hd.1 hab hbc hcd,
     hQ B₂ hB₂ C₂ hC₂ a ha.2 b hb.2 c hc.2 d hd.2 hab hbc hcd]
 
@@ -154,7 +154,7 @@ theorem IsNoncrossing.restrict (hP : P.IsNoncrossing) (hts : t ≤ s) :
   simp only [parts_restrict, mem_erase, mem_image] at hB hC
   obtain ⟨-, B, hB, rfl⟩ := hB
   obtain ⟨-, C, hC, rfl⟩ := hC
-  rw [inf_eq_inter, mem_inter] at ha hb hc hd
+  rw [mem_inter] at ha hb hc hd
   rw [hP B hB C hC a ha.1 b hb.1 c hc.1 d hd.1 hab hbc hcd]
 
 /-- Juxtaposing noncrossing partitions of the parts of a noncrossing partition gives a noncrossing
@@ -534,7 +534,7 @@ noncomputable def singletonPartEquiv {i : α} (hi : i ∈ s) :
   toFun π := ⟨π.1.1.restrict (s.erase_subset i), π.1.2.restrict _⟩
   invFun τ :=
     ⟨⟨τ.1.extend (singleton_ne_empty i) (disjoint_singleton_right.2 (s.notMem_erase i))
-        (by rw [sup_eq_union, union_singleton, insert_erase hi]),
+        (by rw [union_singleton, insert_erase hi]),
       τ.2.extend_singleton _ _ _⟩, mem_insert_self _ _⟩
   left_inv π := Subtype.ext <| Subtype.ext <| Finpartition.ext <| by
     rw [Finpartition.extend_parts, Finpartition.parts_restrict_erase_of_singleton_mem π.2,

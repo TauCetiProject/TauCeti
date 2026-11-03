@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.Action
 public import Mathlib.LinearAlgebra.Matrix.Kronecker
 public import Mathlib.Topology.Algebra.GroupWithZero
 public import Mathlib.Topology.Instances.Matrix
 public import Mathlib.Topology.MetricSpace.Pseudo.Defs
 public import Mathlib.Topology.Metrizable.Basic
+public import TauCeti.Topology.Algebra.IsOpenUnits
 
 /-!
 # Topological properties of matrices
@@ -21,6 +23,10 @@ matrix norm.
 
 Matrices with countably many rows and columns are second countable when their entries are.
 
+Square matrices act jointly continuously on column vectors by `Matrix.mulVec`, the action of
+`Mathlib.LinearAlgebra.Matrix.Action`; through the unit group, so does `GL n R`
+(`Units.continuousSMul`).
+
 The same product topology gives entrywise control of a real matrix-valued map near a point of
 continuity, again without a matrix norm
 (`ContinuousAt.exists_ball_subset_forall_abs_sub_le`).
@@ -29,7 +35,21 @@ Over a topological field, the inverse of a matrix-valued function that is contin
 with invertible value is continuous there (`ContinuousAt.matrix_inv`), and so are its entries
 (`ContinuousAt.matrix_inv_apply`).
 
+Square matrices over a commutative topological ring `R` with open units again have open units
+(`Matrix.instIsOpenUnits`). The invertible matrices are the preimage of the open set of units of
+`R` under the continuous determinant, and the inverse `A⁻¹ = (det A)⁻¹ • adj A` is continuous on
+them because the inverse of the determinant is. Over a nonarchimedean local field `E`, which has
+open units because it is a Hausdorff topological field, this says that `GL_n(E)` with the
+topology of the unit group is the open subspace `{det ≠ 0}` of the matrices `M_n(E)`. The
+hypothesis on `R` cannot be dropped: over the adeles, inversion is not continuous on the units
+for the subspace topology, already for `n = 1`.
+
 The Kronecker product of two continuously varying matrices is continuous in the product topology.
+
+## References
+
+* B. Conrad, *Weil and Grothendieck approaches to adelic points*, Enseign. Math. (2) 58 (2012),
+  §3, pp. 3–4.
 -/
 
 public section
@@ -49,6 +69,11 @@ second countable. -/
 instance {m n α : Type*} [Countable m] [Countable n] [TopologicalSpace α]
     [SecondCountableTopology α] : SecondCountableTopology (Matrix m n α) :=
   inferInstanceAs (SecondCountableTopology (m → n → α))
+
+/-- Square matrices act jointly continuously on column vectors by `Matrix.mulVec`. -/
+instance {n R : Type*} [Fintype n] [DecidableEq n] [Semiring R] [TopologicalSpace R]
+    [ContinuousAdd R] [ContinuousMul R] : ContinuousSMul (Matrix n n R) (n → R) :=
+  ⟨continuous_fst.matrix_mulVec continuous_snd⟩
 
 end TauCeti
 
@@ -93,6 +118,29 @@ theorem ContinuousAt.matrix_inv_apply (hA : ContinuousAt A x) (hdet : (A x).det 
   (continuous_apply_apply k l).continuousAt.comp (hA.matrix_inv hdet)
 
 end Inverse
+
+namespace Matrix
+
+variable {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R] [TopologicalSpace R]
+  [IsTopologicalRing R] [IsOpenUnits R]
+
+/-- Square matrices over a commutative topological ring with open units have open units: the
+invertible matrices form an open set on which inversion is continuous. -/
+instance instIsOpenUnits : IsOpenUnits (Matrix n n R) where
+  isOpenEmbedding_unitsVal := by
+    refine ⟨Units.isEmbedding_val_mk' (f := Inv.inv) (fun A hA ↦ ?_)
+      fun u ↦ (coe_units_inv u).symm, ?_⟩
+    · obtain ⟨u, hu⟩ := (isUnit_iff_isUnit_det A).1 hA
+      exact (continuousAt_matrix_inv A
+        (hu ▸ IsOpenUnits.continuousAt_ringInverse u)).continuousWithinAt
+    · have hrange : Set.range (Units.val : (Matrix n n R)ˣ → Matrix n n R) =
+          det ⁻¹' Set.range (Units.val : Rˣ → R) := by
+        ext A
+        exact isUnit_iff_isUnit_det A
+      rw [hrange]
+      exact IsOpenUnits.isOpenEmbedding_unitsVal.isOpen_range.preimage continuous_id.matrix_det
+
+end Matrix
 
 open scoped Kronecker
 

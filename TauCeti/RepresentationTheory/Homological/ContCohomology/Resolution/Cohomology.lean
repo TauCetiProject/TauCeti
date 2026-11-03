@@ -34,6 +34,10 @@ canonical:
 
 * they do not depend on the contraction, only on its augmentation
   (`TopRep.ResolutionContraction.cohomologyMap_eq_of_ι_eq`);
+* more generally, two maps of degree `n` from `J` into the coinduced resolution of any `Z`,
+  commuting with the differentials and agreeing on the augmentation, give an invariant cocycle the
+  same class (`TopRep.ResolutionContraction.cochainClass_eq_of_ι_comp_eq`); such maps carry
+  invariant cocycles to homogeneous cocycles (`TopRep.d_mapInvariants_apply_of_comm`);
 * they are natural in chain maps of contracted complexes lying over a coefficient morphism
   (`TopRep.ResolutionContraction.cohomologyMap_comp_coeffMap`); in particular a chain map over
   the identity of `X` preserves classes (`TopRep.ResolutionContraction.cohomologyClass_map`);
@@ -63,6 +67,9 @@ of that invariant vector (`TopRep.ResolutionContraction.cohomologyClass_eq_degre
   degree-zero classes of invariant vectors.
 * `TopRep.ResolutionContraction.cohomologyMap_eq_of_ι_eq` and
   `TopRep.ResolutionContraction.cohomologyClass_eq_of_ι_eq`: independence of the contraction.
+* `TopRep.ResolutionContraction.cochainClass_eq_of_ι_comp_eq`: maps of degree `n` from a
+  contracted complex into the coinduced resolution, commuting with the differentials and agreeing
+  on the augmentation, give invariant cocycles the same class.
 * `TopRep.ResolutionContraction.cohomologyMap_comp_coeffMap`,
   `TopRep.ResolutionContraction.homologyMap_comp_cohomologyMap`,
   `TopRep.ResolutionContraction.coeffMap_cohomologyClass` and
@@ -86,6 +93,45 @@ universe u v w
 
 variable {k : Type u} [Ring k] [TopologicalSpace k] {G : Type v} [Group G]
   [TopologicalSpace G] [IsTopologicalGroup G]
+
+section Shift
+
+variable {Z : TopRep.{max v w} k G} {J : CochainComplex (TopRep.{max v w} k G) ℕ}
+
+/-- The coinduced resolution of `Z` with its degrees lowered by `n`: its degree-`p` term is the
+degree-`(p + n)` term `C(G, Cᵖ⁺ⁿ)` of `TopRep.resolution' Z`. -/
+private noncomputable abbrev shiftedResolution (Z : TopRep.{max v w} k G) (n : ℕ) :
+    CochainComplex (TopRep.{max v w} k G) ℕ :=
+  CochainComplex.of (fun p ↦ coind₁ (resolutionX Z (p + n)))
+    (fun p ↦ (resolution' Z).d (p + n) (p + 1 + n))
+    (fun _ ↦ (resolution' Z).d_comp_d _ _ _)
+
+/-- A family of maps of degree `n` commuting with the differentials, as a chain map into the
+shifted resolution. -/
+private noncomputable def shiftedHom {n : ℕ} (φ : ∀ p, J.X p ⟶ (resolution' Z).X (p + n))
+    (hφ : ∀ p, φ p ≫ (resolution' Z).d (p + n) (p + 1 + n) = J.d p (p + 1) ≫ φ (p + 1)) :
+    J ⟶ shiftedResolution Z n where
+  f := φ
+  comm' i j hij := by
+    obtain rfl : i + 1 = j := hij
+    simpa only [shiftedResolution, CochainComplex.of_d] using hφ i
+
+/-- A family of maps `Jᵖ ⟶ C^{p + n}` into the coinduced resolution of `Z`, raising degrees by
+`n` and commuting with the differentials, carries an invariant cocycle of `J` to a homogeneous
+cocycle of `Z`. -/
+theorem d_mapInvariants_apply_of_comm {n : ℕ} (φ : ∀ p, J.X p ⟶ (resolution' Z).X (p + n))
+    (hφ : ∀ p, φ p ≫ (resolution' Z).d (p + n) (p + 1 + n) = J.d p (p + 1) ≫ φ (p + 1))
+    {p : ℕ} (a : (J.X p).ρ.invariants) (ha : (J.d p (p + 1)).hom (a : (J.X p).V) = 0) :
+    ((homogeneousCochains Z).d (p + n) (p + n + 1)).hom ((φ p).hom.mapInvariants a) = 0 := by
+  have h := d_mapInvariants_f_apply (shiftedHom φ hφ) a ha
+  simp only [shiftedResolution, shiftedHom, CochainComplex.of_d] at h
+  rw [show p + n + 1 = p + 1 + n by omega]
+  exact Subtype.ext (by
+    rw [Functor.mapHomologicalComplex_obj_d, invariantsFunctor_map_hom,
+      ContIntertwiningMap.mapInvariants_apply]
+    exact h)
+
+end Shift
 
 namespace ResolutionContraction
 
@@ -280,6 +326,47 @@ theorem coeffMap_cohomologyClass {Y : TopRep.{max v w} k G}
     c.cohomologyMap_comp_coeffMap c' g f hf n, ConcreteCategory.comp_apply,
     HomologicalComplex.homologyMap_homologyπ_cyclesMkOfEq]
   simp only [Functor.mapHomologicalComplex_map_f, invariantsFunctor_map_hom (f.f n)]
+
+/-- **Uniqueness of comparisons of degree `n`.** Let `φ` and `ψ` be families of equivariant maps
+`Jᵖ ⟶ C^{p + n}` into the coinduced resolution of `Z`, raising degrees by `n` and commuting with
+the differentials, that agree on the augmentation of a contraction `c` of `J`. Then they carry an
+invariant cocycle of `J` to cohomologous homogeneous cocycles of `Z`. -/
+theorem cochainClass_eq_of_ι_comp_eq {Z : TopRep.{max v w} k G} {n : ℕ}
+    (φ ψ : ∀ p, J.X p ⟶ (resolution' Z).X (p + n))
+    (hφ : ∀ p, φ p ≫ (resolution' Z).d (p + n) (p + 1 + n) = J.d p (p + 1) ≫ φ (p + 1))
+    (hψ : ∀ p, ψ p ≫ (resolution' Z).d (p + n) (p + 1 + n) = J.d p (p + 1) ≫ ψ (p + 1))
+    (h : c.ι ≫ φ 0 = c.ι ≫ ψ 0) {p : ℕ} (a : (J.X p).ρ.invariants)
+    (ha : (J.d p (p + 1)).hom (a : (J.X p).V) = 0) :
+    Z.cochainClass (p + n) ((φ p).hom.mapInvariants a) (d_mapInvariants_apply_of_comm φ hφ a ha) =
+      Z.cochainClass (p + n) ((ψ p).hom.mapInvariants a)
+        (d_mapInvariants_apply_of_comm ψ hψ a ha) := by
+  cases p with
+  | zero =>
+    -- a degree-zero cocycle is augmented, where `φ` and `ψ` agree
+    congr 1
+    refine Subtype.ext ?_
+    have ha' := c.ι_proj_of_d_eq_zero ha
+    simp only [ContIntertwiningMap.mapInvariants_apply]
+    rw [← ha', ← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply, h]
+  | succ p =>
+    let H := c.nullHomotopy (shiftedHom φ hφ - shiftedHom ψ hψ) (by
+      rw [HomologicalComplex.sub_f_apply, Preadditive.comp_sub]
+      exact sub_eq_zero.2 h)
+    refine cochainClass_eq_of_sub_eq_d (j := p + n) (by omega) _ _
+      ((H.hom (p + 1) p).hom.mapInvariants a) (Subtype.ext ?_)
+    have hc := H.comm (p + 1)
+    rw [dNext_eq H.hom (show (ComplexShape.up ℕ).Rel (p + 1) (p + 2) from rfl),
+      prevD_eq H.hom (show (ComplexShape.up ℕ).Rel p (p + 1) from rfl)] at hc
+    have ha' : (J.d (p + 1) (p + 2)).hom (a : (J.X (p + 1)).V) = 0 := ha
+    have hca := congrArg (fun f ↦ f.hom (a : (J.X (p + 1)).V)) hc
+    simp only [HomologicalComplex.sub_f_apply, HomologicalComplex.zero_f, add_zero, hom_sub,
+      hom_add, ContIntertwiningMap.sub_apply, ContIntertwiningMap.add_apply,
+      ConcreteCategory.comp_apply, ha', map_zero, zero_add, shiftedHom,
+      CochainComplex.of_d] at hca
+    rw [Functor.mapHomologicalComplex_obj_d, invariantsFunctor_map_hom, Submodule.coe_sub,
+      ContIntertwiningMap.mapInvariants_apply, ContIntertwiningMap.mapInvariants_apply,
+      ContIntertwiningMap.mapInvariants_apply, ContIntertwiningMap.mapInvariants_apply]
+    exact hca
 
 end Homotopy
 

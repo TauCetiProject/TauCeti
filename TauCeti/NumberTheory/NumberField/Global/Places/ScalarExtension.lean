@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.TensorProduct.Basic
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.Basic
-public import TauCeti.NumberTheory.NumberField.FinitePlace
+public import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
 
 /-!
 # Scalar extension at places of a number field

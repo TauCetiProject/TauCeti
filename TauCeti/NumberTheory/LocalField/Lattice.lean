@@ -29,14 +29,17 @@ units of the monoid of endomorphisms mapping `L` into itself, which is already c
 `Module.End E V`: an endomorphism is determined by the images of an `E`-basis of `V` contained
 in `L`, and it maps `L` into itself as soon as it maps a finite generating set of `L` into `L`.
 
-Openness only uses that `𝒪[E]` is open in `E`, so it is proved for any field with a valuative
-topology; compactness uses that `𝒪[E]` is compact.
+Openness, and the fact that the subspace topology on a lattice is its `𝒪[E]`-module topology,
+only use that `𝒪[E]` is open in `E`, so they are proved for any field with a valuative topology;
+compactness uses that `𝒪[E]` is compact.
 
 ## Main results
 
 * `Module.Basis.isOpen_span_range`: the `𝒪[E]`-span of a finite `E`-basis is open.
 * `Submodule.IsLattice.isOpen`, `Submodule.IsLattice.isClosed`, `Submodule.IsLattice.isCompact`:
   a lattice is open, closed and compact.
+* `Submodule.IsLattice.isModuleTopology`: the subspace topology on a lattice is its
+  `𝒪[E]`-module topology.
 * `Submodule.IsLattice.isOpen_setOf_mapsTo`, `Submodule.IsLattice.isCompact_setOf_mapsTo`: the
   endomorphisms mapping a lattice into itself form a compact open subset of `Module.End E V`.
 * `Submodule.IsLattice.isOpen_stabilizer`, `Submodule.IsLattice.isCompact_stabilizer`: the
@@ -89,6 +92,46 @@ theorem IsLattice.isOpen : IsOpen (L : Set V) := by
 theorem IsLattice.isClosed : IsClosed (L : Set V) := by
   have : IsTopologicalAddGroup V := IsModuleTopology.isTopologicalAddGroup E V
   exact AddSubgroup.isClosed_of_isOpen L.toAddSubgroup (IsLattice.isOpen L)
+
+/-- **A lattice carries the module topology.** The subspace topology on a lattice `L ⊆ V` is its
+`𝒪[E]`-module topology. -/
+instance IsLattice.isModuleTopology : IsModuleTopology 𝒪[E] L := by
+  -- For a finite generating set `s`, the map `𝒪[E] ^ s → L` is a quotient map for the subspace
+  -- topology: it is the restriction of the open surjection `E ^ s → V` to the open `𝒪[E] ^ s`.
+  have : IsTopologicalAddGroup V := IsModuleTopology.isTopologicalAddGroup E V
+  have : ContinuousSMul 𝒪[E] V := ⟨((continuous_subtype_val.comp continuous_fst).smul
+    continuous_snd).congr fun p => algebraMap_smul E p.1 p.2⟩
+  obtain ⟨s, hs⟩ := IsLattice.fg (A := E) (M := L)
+  -- `L` is the image of `𝒪[E] ^ s` under `φ`, and `V` is the image of `E ^ s` under `Φ`.
+  let φ : (s → 𝒪[E]) →ₗ[𝒪[E]] L :=
+    Fintype.linearCombination 𝒪[E] fun i : s => ⟨i, hs ▸ subset_span i.2⟩
+  let Φ : (s → E) →ₗ[E] V := Fintype.linearCombination E fun i : s => (i : V)
+  have hΦ : Function.Surjective Φ := by
+    rw [← LinearMap.range_eq_top, Fintype.range_linearCombination, Subtype.range_coe_subtype,
+      Finset.setOfPred_mem, ← span_span_of_tower 𝒪[E], hs, IsLattice.span_eq_top]
+  have hcomm (w : s → 𝒪[E]) : (φ w : V) = Φ fun i => (w i : E) := by
+    simp only [φ, Φ, Fintype.linearCombination_apply, coe_sum, coe_smul]
+    exact Finset.sum_congr rfl fun i _ => (algebraMap_smul E (w i) (i : V)).symm
+  have hφ : Function.Surjective φ := by
+    rintro ⟨x, hx⟩
+    obtain ⟨f, -, rfl⟩ := mem_span_finset.mp (hs ▸ hx)
+    refine ⟨fun i => f i, Subtype.ext ?_⟩
+    simp [φ, Fintype.linearCombination_apply, Finset.sum_attach s fun i => f i • i]
+  -- An open set `W` of `𝒪[E] ^ s` has open image `φ W = L ∩ Φ W` in the subspace `L`.
+  refine IsModuleTopology.of_continuous_id ?_
+  rw [ModuleTopology.eq_coinduced_of_surjective hφ, continuous_def]
+  intro U hU
+  rw [isOpen_coinduced] at hU
+  rw [preimage_id, ← image_preimage_eq U hφ]
+  have hopen : IsOpen (Φ '' ((fun w : s → 𝒪[E] => fun i => (w i : E)) '' (φ ⁻¹' U))) :=
+    IsModuleTopology.isOpenMap_of_surjective hΦ _
+      ((Topology.IsOpenEmbedding.piMap fun _ =>
+        Valuation.isOpen_integer.isOpenEmbedding_subtypeVal).isOpenMap _ hU)
+  refine isOpen_induced_iff.mpr ⟨_, hopen, Set.ext fun x => ⟨?_, ?_⟩⟩
+  · rintro ⟨-, ⟨w, hw, rfl⟩, hx⟩
+    exact ⟨w, hw, Subtype.ext ((hcomm w).trans hx)⟩
+  · rintro ⟨w, hw, rfl⟩
+    exact ⟨_, ⟨w, hw, rfl⟩, (hcomm w).symm⟩
 
 /-- **The endomorphisms preserving a lattice form an open set** of `Module.End E V`. -/
 theorem IsLattice.isOpen_setOf_mapsTo : IsOpen {f : Module.End E V | MapsTo f L L} := by
