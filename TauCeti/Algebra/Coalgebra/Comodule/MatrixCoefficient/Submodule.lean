@@ -30,6 +30,8 @@ These are the coordinate descriptions of subcomodules and of the stabilizer of a
 * `Submodule.coact_mem_range_iff_forall_matrixCoefficient_eq_zero`: over a field, the coaction
   of `m` lies in `W ⊗ C` exactly when `m` has no matrix coefficient against a functional
   vanishing on `W`.
+* `Submodule.coact_mem_range_of_forall_coactComponent_mem`: a subspace stable under every
+  contraction of the coaction contains the full coaction in its tensor-product image.
 * `Submodule.matrixCoefficient_eq_zero_of_mem_dualAnnihilator`: over any commutative semiring, if
   the coaction of `m` lies in `W ⊗ C`, then `m` has no matrix coefficient against a functional
   vanishing on `W`.
@@ -98,6 +100,20 @@ theorem coact_mem_range_iff_forall_matrixCoefficient_eq_zero (W : Submodule k M)
     intro ψ
     apply (TensorProduct.lid k C).injective
     simpa only [map_zero, hcontract] using h ψ
+
+/-- A subspace stable under every contraction of the coaction is a subcomodule. -/
+theorem coact_mem_range_of_forall_coactComponent_mem (W : Submodule k M)
+    (hW : ∀ (f : Module.Dual k C) {m : M}, m ∈ W →
+      Comodule.coactComponent (R := k) (C := C) f m ∈ W)
+    {m : M} (hm : m ∈ W) :
+    Comodule.coact (R := k) (C := C) m ∈
+      LinearMap.range (TensorProduct.map W.subtype (LinearMap.id : C →ₗ[k] C)) := by
+  rw [W.coact_mem_range_iff_forall_matrixCoefficient_eq_zero]
+  intro ψ
+  apply (Module.forall_dual_apply_eq_zero_iff k _).mp
+  intro f
+  rw [LinearMap.apply_matrixCoefficient, LinearMap.comp_apply, W.mkQ_apply,
+    (Submodule.Quotient.mk_eq_zero W).mpr (hW f hm), map_zero]
 
 end Coalgebra
 

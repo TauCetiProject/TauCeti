@@ -164,7 +164,7 @@ theorem coalgHom_subword_mem_degenerateWords (f : ReducedTensorWords R M →ₗ[
       coalgHom R f (subword R x a b) ∈ degenerateWords R N e' from hblock b a n x hab hx
   intro b
   induction b using Nat.strong_induction_on with
-  | h b ih =>
+  | ind b ih =>
     intro a n x hab hx
     obtain ⟨i, hai, hib, hi⟩ := hx
     have hb : 0 < b := by omega
