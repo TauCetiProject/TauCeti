@@ -25,7 +25,9 @@ No finiteness of the set of cells is required.
 ## References
 
 * J. J. Graham and G. I. Lehrer, *Cellular algebras*, Invent. Math. 123 (1996), 1–34,
-  Definition 2.1, Proposition 2.4 and Theorem 3.4.
+  Definition 2.1 and Proposition 2.4. The cell modules and simple radical quotients constructed
+  here lead to the classification in Theorem 3.4; this file does not prove completeness or
+  pairwise non-isomorphism.
 -/
 
 public section
