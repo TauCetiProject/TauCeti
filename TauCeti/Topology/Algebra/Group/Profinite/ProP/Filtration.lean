@@ -39,7 +39,7 @@ variable {p : ℕ} [hp : Fact p.Prime]
 
 section Filtration
 
-variable (hG : IsProP p G) (htors : ∀ m : M, ∃ k : ℕ, p ^ k • m = 0)
+variable (hG : IsProP p G) (htors : IsAddPGroup p M)
 
 open scoped Classical in
 /-- One step of the trivial filtration: adjoin to a `G`-stable subgroup an element as in
@@ -155,7 +155,7 @@ whose successive quotients are additively equivalent to `ZMod p` and have trivia
 action. Only indices below the composition length contribute a factor; the chain is constant
 at `⊤` thereafter. -/
 theorem exists_filtration_with_trivial_factors_of_isProP (hG : IsProP p G)
-    (htors : ∀ m : M, ∃ k : ℕ, p ^ k • m = 0) :
+    (htors : IsAddPGroup p M) :
     ∃ (N : ℕ → AddSubgroup M) (hN : ∀ i, ∀ g : G, ∀ x ∈ N i, g • x ∈ N i),
       N 0 = ⊥ ∧ Monotone N ∧
       (∀ i, padicValNat p (Nat.card M) ≤ i → N i = ⊤) ∧
