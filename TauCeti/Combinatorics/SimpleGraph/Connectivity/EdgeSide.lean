@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Combinatorics.SimpleGraph.Acyclic
 public import Mathlib.Data.Fintype.Card
+public import TauCeti.Data.Finset.Laminar
+import TauCeti.Data.Sym.Sym2
 
 /-!
 # The two sides of an edge
@@ -20,6 +22,12 @@ sides of that edge: its fundamental partition.
 In an acyclic graph the unique path between two vertices uses an edge exactly when that edge
 separates them, so a path from a vertex on the side of `u` crosses `s(u, v)` exactly when it ends
 off that side. These are the facts used to read off minimum cuts from weighted trees.
+
+The side of `u` can also be recognized without walks: in a preconnected graph it is the unique set
+containing `u` but not `v` that no other edge leaves (`SimpleGraph.edgeSide_eq_of_forall_adj`).
+This identifies the sides of a tree after local changes to its edges. In a tree, the bipartitions
+given by the sides of two edges never cross (`SimpleGraph.IsTree.not_crosses_edgeSide`), so the
+edges of a tree determine a non-crossing family of cuts.
 -/
 
 public section
@@ -132,6 +140,130 @@ theorem IsBridge.compl_edgeSide [DecidableEq V] (hG : G.Preconnected) (h : G.IsB
   rw [Finset.mem_compl]
   refine ⟨fun hx ↦ ((hG u x).mem_edgeSide_or_mem_edgeSide).resolve_left hx, fun hx hu ↦ ?_⟩
   exact Finset.disjoint_left.mp h.disjoint_edgeSide hu hx
+
+/-- An edge other than `s(u, v)` has both of its ends on the side of `u`, or neither. -/
+theorem Adj.mem_edgeSide_iff {y z : V} (h : G.Adj y z) (he : s(y, z) ≠ s(u, v)) :
+    y ∈ G.edgeSide u v ↔ z ∈ G.edgeSide u v := by
+  have hadj : (G.deleteEdges {s(u, v)}).Adj y z := deleteEdges_adj.mpr ⟨h, he⟩
+  exact ⟨fun hy ↦ mem_edgeSide.mpr ((mem_edgeSide.mp hy).trans hadj.reachable),
+    fun hz ↦ mem_edgeSide.mpr ((mem_edgeSide.mp hz).trans hadj.reachable.symm)⟩
+
+/-- An edge whose ends both differ from `v` has both ends on the side of `u` for `s(u, v)`, or
+neither. -/
+theorem Adj.mem_edgeSide_iff_of_ne {y z : V} (h : G.Adj y z) (hy : y ≠ v) (hz : z ≠ v) :
+    y ∈ G.edgeSide u v ↔ z ∈ G.edgeSide u v :=
+  h.mem_edgeSide_iff <| (Sym2.ne_of_mem_notMem (Sym2.mem_mk_right u v) <| by
+    simpa only [Sym2.mem_iff, not_or] using ⟨hy.symm, hz.symm⟩).symm
+
+/-- The side of `u` for `s(u, v)` is contained in every set that contains `u` and that no edge
+other than `s(u, v)` leaves. -/
+theorem edgeSide_subset {S : Finset V} (hu : u ∈ S)
+    (hS : ∀ ⦃y z : V⦄, G.Adj y z → s(y, z) ≠ s(u, v) → y ∈ S → z ∈ S) : G.edgeSide u v ⊆ S := by
+  intro x hx
+  have h := (reachable_iff_reflTransGen _ _).mp (mem_edgeSide.mp hx)
+  clear hx
+  induction h with
+  | refl => exact hu
+  | tail _ hyz ih =>
+    obtain ⟨hyz, hne⟩ := deleteEdges_adj.mp hyz
+    exact hS hyz hne ih
+
+/-- In a preconnected graph, a set containing `u` but not `v`, such that no edge other than
+`s(u, v)` has exactly one end in it, is the side of `u` for `s(u, v)`. -/
+theorem edgeSide_eq_of_forall_adj (hG : G.Preconnected) {S : Finset V} (hu : u ∈ S) (hv : v ∉ S)
+    (hS : ∀ ⦃y z : V⦄, G.Adj y z → s(y, z) ≠ s(u, v) → (y ∈ S ↔ z ∈ S)) :
+    G.edgeSide u v = S := by
+  classical
+  refine (edgeSide_subset hu fun _ _ hyz hne ↦ (hS hyz hne).mp).antisymm fun x hx ↦ ?_
+  refine ((hG u x).mem_edgeSide_or_mem_edgeSide (v := v)).resolve_right fun hxv ↦ ?_
+  -- The side of `v` stays outside `S`, since only `s(u, v)` leaves `S`.
+  have hsub : G.edgeSide v u ⊆ Sᶜ := by
+    refine edgeSide_subset (by simpa using hv) fun y z hyz hne hy ↦ ?_
+    rw [Sym2.eq_swap (a := v)] at hne
+    exact Finset.mem_compl.mpr fun hz ↦ Finset.mem_compl.mp hy ((hS hyz hne).mpr hz)
+  simpa [hx] using hsub hxv
+
+/-- If `s(y, r)` is a bridge, every other neighbour of `r` lies off the side of `y`. -/
+theorem IsBridge.notMem_edgeSide_of_adj {r y z : V} (h : G.IsBridge s(y, r)) (hz : G.Adj r z)
+    (hzy : z ≠ y) : z ∉ G.edgeSide y r := by
+  have hne : s(z, r) ≠ s(r, y) :=
+    Sym2.ne_of_mem_notMem (Sym2.mem_mk_left z r) <| by
+      simpa only [Sym2.mem_iff, not_or] using ⟨hz.ne.symm, hzy⟩
+  exact fun hz' ↦ Finset.disjoint_left.mp h.disjoint_edgeSide hz'
+    ((hz.symm.mem_edgeSide_iff hne).mpr (self_mem_edgeSide G r y))
+
+/-- Every vertex `z ≠ r` reachable from `r` lies on the side of some neighbour `y` of `r` for the
+edge `s(y, r)`. -/
+theorem Reachable.exists_adj_mem_edgeSide {r z : V} (h : G.Reachable r z) (hz : z ≠ r) :
+    ∃ y, G.Adj r y ∧ z ∈ G.edgeSide y r := by
+  have hr := (reachable_iff_reflTransGen r z).mp h
+  clear h
+  induction hr with
+  | refl => exact absurd rfl hz
+  | @tail a b _ hab ih =>
+    by_cases ha : a = r
+    · exact ⟨b, ha ▸ hab, self_mem_edgeSide G b r⟩
+    obtain ⟨y, hy, hay⟩ := ih ha
+    exact ⟨y, hy, (hab.mem_edgeSide_iff_of_ne ha hz).mp hay⟩
+
+/-- In a tree, the sides of two edges never cross: the bipartitions obtained by deleting tree
+edges form a non-crossing family. -/
+theorem IsTree.not_crosses_edgeSide (hG : G.IsTree) {a b c d : V} (hab : G.Adj a b)
+    (hcd : G.Adj c d) : ¬(G.edgeSide a b).Crosses (G.edgeSide c d) := by
+  classical
+  have hbr := isAcyclic_iff_forall_adj_isBridge.mp hG.isAcyclic
+  have hcompl {y z : V} (h : G.Adj y z) : (G.edgeSide y z)ᶜ = G.edgeSide z y :=
+    (hbr h).compl_edgeSide hG.connected.preconnected
+  -- If the second edge lies on the side of `a` and the first on the side of `c`, the two sides
+  -- cover every vertex.
+  have key {a b c d : V} (hab : G.Adj a b) (hcd : G.Adj c d) (hne : s(a, b) ≠ s(c, d))
+      (hc : c ∈ G.edgeSide a b) (ha : a ∈ G.edgeSide c d) :
+      ¬(G.edgeSide a b).Crosses (G.edgeSide c d) := by
+    have hd : d ∈ G.edgeSide a b := (hcd.mem_edgeSide_iff hne.symm).mp hc
+    have hb : b ∈ G.edgeSide c d := (hab.mem_edgeSide_iff hne).mp ha
+    have hsub : G.edgeSide b a ⊆ G.edgeSide a b ∪ G.edgeSide c d := by
+      refine edgeSide_subset (Finset.mem_union_right _ hb) fun y z hyz hne' hy ↦ ?_
+      rw [Sym2.eq_swap (a := b)] at hne'
+      rcases Finset.mem_union.mp hy with hy | hy
+      · exact Finset.mem_union_left _ ((hyz.mem_edgeSide_iff hne').mp hy)
+      · by_cases hyab : y ∈ G.edgeSide a b
+        · exact Finset.mem_union_left _ ((hyz.mem_edgeSide_iff hne').mp hyab)
+        · have hne'' : s(y, z) ≠ s(c, d) := by
+            rintro h
+            rcases Sym2.eq_iff.mp h with ⟨rfl, -⟩ | ⟨rfl, -⟩
+            exacts [hyab hc, hyab hd]
+          exact Finset.mem_union_right _ ((hyz.mem_edgeSide_iff hne'').mp hy)
+    intro h
+    obtain ⟨-, -, -, x, hxab, hxcd⟩ := Finset.crosses_def.mp h
+    rcases (hG.connected.preconnected a x).mem_edgeSide_or_mem_edgeSide (v := b) with hx | hx
+    · exact hxab hx
+    · rcases Finset.mem_union.mp (hsub hx) with hx | hx
+      exacts [hxab hx, hxcd hx]
+  by_cases hsame : s(a, b) = s(c, d)
+  · -- The two sides are equal or complementary.
+    rcases Sym2.eq_iff.mp hsame with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+    · intro h
+      obtain ⟨-, ⟨x, hx, hx'⟩, -⟩ := Finset.crosses_def.mp h
+      exact hx' hx
+    · intro h
+      obtain ⟨⟨x, hx, hx'⟩, -⟩ := Finset.crosses_def.mp h
+      exact Finset.disjoint_left.mp (hbr hab).disjoint_edgeSide hx hx'
+  have hne₁ : s(a, b) ≠ s(d, c) := by rwa [Sym2.eq_swap (a := d)]
+  have hne₂ : s(b, a) ≠ s(c, d) := by rwa [Sym2.eq_swap (a := b)]
+  have hne₃ : s(b, a) ≠ s(d, c) := by rwa [Sym2.eq_swap (a := b), Sym2.eq_swap (a := d)]
+  rcases (hG.connected.preconnected a c).mem_edgeSide_or_mem_edgeSide (v := b) with hc | hc <;>
+    rcases (hG.connected.preconnected c a).mem_edgeSide_or_mem_edgeSide (v := d) with ha | ha
+  · exact key hab hcd hsame hc ha
+  · have hd : d ∈ G.edgeSide a b := (hcd.mem_edgeSide_iff (Ne.symm hsame)).mp hc
+    rw [← Finset.crosses_compl_right, hcompl hcd]
+    exact key hab hcd.symm hne₁ hd ha
+  · have hb : b ∈ G.edgeSide c d := (hab.mem_edgeSide_iff hsame).mp ha
+    rw [← Finset.crosses_compl_left, hcompl hab]
+    exact key hab.symm hcd hne₂ hc hb
+  · have hd : d ∈ G.edgeSide b a := (hcd.mem_edgeSide_iff (Ne.symm hne₂)).mp hc
+    have hb : b ∈ G.edgeSide d c := (hab.mem_edgeSide_iff hne₁).mp ha
+    rw [← Finset.crosses_compl_left, ← Finset.crosses_compl_right, hcompl hab, hcompl hcd]
+    exact key hab.symm hcd.symm hne₃ hd hb
 
 namespace Walk
 
