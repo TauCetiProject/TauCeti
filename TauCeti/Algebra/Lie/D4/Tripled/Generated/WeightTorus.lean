@@ -137,21 +137,14 @@ theorem pointsMulEquiv_mapPointsFunctor_generatedWeightTorusCoordinateMap
     rw [← _root_.CommHopfAlgCat.hom_comp,
       generatedCoordinateMap_comp_generatedWeightTorusCoordinateMap,
       GeneralLinear.hom_weightTorusBaseChangeCoordinateMap]
-  have hp := CommHopfAlgCat.Hom.mapPointsFunctor_app_apply
-    (generatedCoordinateMap R ≫ generatedWeightTorusCoordinateMap R) A q
-  simp only [_root_.CommHopfAlgCat.hom_comp, hcomp] at hp
-  have he := (CommHopfAlgCat.Hom.mapPointsFunctor_comp_app_apply
-    (generatedCoordinateMap R) (generatedWeightTorusCoordinateMap R) A q).symm.trans hp
+  rw [← CommHopfAlgCat.Hom.mapPointsFunctor_comp_app_apply,
+    CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, _root_.CommHopfAlgCat.hom_comp, hcomp]
+  have h := GeneralLinear.pointsMulEquiv_mapDomain_weightTorusCoordinateBialgHom
+    d4TripledWeight A q
   apply Units.ext
-  rw [coe_weightTorusPoints, UniversalEnvelopingAlgebra.kostantTorusMatrix_apply, diagGL_coe]
-  refine (congrArg (fun g ↦
-    (GeneralLinear.pointsMulEquiv 24 g : Matrix (Fin 24) (Fin 24) A)) he).trans ?_
-  rw [GeneralLinear.pointsMulEquiv_apply, GeneralLinear.weightTorusCoordinateBialgHom_def,
-    DiagonalizableGroup.pointToGeneralLinear_comp_diagonalCoordinateMap]
-  congr 1
-  funext i
-  exact congrArg (fun s : Aˣ ↦ (s : A))
-    (SplitTorus.charOfPoint_weightCharacter q (d4TripledWeight i))
+  simpa only [BialgHom.mapDomain_apply, coe_weightTorusPoints,
+    UniversalEnvelopingAlgebra.kostantTorusMatrix_apply, diagGL_coe] using
+    congrArg (fun g : GL (Fin 24) A ↦ (g : Matrix (Fin 24) (Fin 24) A)) h
 
 /-- The closed torus's points in `GL₂₄` are precisely the named weight-torus matrices, over
 arbitrary commutative value algebras. -/
