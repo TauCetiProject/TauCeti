@@ -21,10 +21,10 @@ into limits of normalized functions, and conversely recovers error estimates fro
 The quotient is right division: multiplication need not be commutative. For ordered fields,
 the ratio formulation also supports order arguments.
 
-If `(σ - a) • f(σ)` has a limit as the real variable `σ` tends to `a` from the right, then
-`f(σ) = O((σ - a)⁻¹)` there. For `a = 1` this is the growth bound near `s = 1` of a Dedekind zeta
-function or an `L`-series with a simple pole there, read off from the limit of `(s - 1) L(s)`
-along the real axis.
+If `(σ - a) • f(σ)` has a limit along a filter on the real line that eventually avoids `a`, then
+`f(σ) = O((σ - a)⁻¹)` along it. For `a = 1` and the right-sided limit `σ → 1⁺` this is the growth
+bound near `s = 1` of a Dedekind zeta function or an `L`-series with a simple pole there, read off
+from the limit of `(s - 1) L(s)` along the real axis.
 
 A map `u` whose differences satisfy `u y - u y' = O(y - y')` near `(x, x)`, the difference
 estimate of a strictly differentiable map, is continuous at `x`. Only this Lipschitz-type
@@ -58,8 +58,8 @@ evaluations of elliptic integrals.
 
 * `Asymptotics.isLittleO_sub_mul_iff_tendsto_div`: `f - a g = o(g)` if and only if
   `f / g → a`, for an eventually nonzero `g`.
-* `Asymptotics.isBigO_inv_sub_of_tendsto_sub_smul`: if `(σ - a) • f(σ)` converges as `σ → a⁺`,
-  then `f(σ) = O((σ - a)⁻¹)` as `σ → a⁺`.
+* `Asymptotics.isBigO_inv_sub_of_tendsto_sub_smul`: if `(σ - a) • f(σ)` converges along a filter
+  on which eventually `σ ≠ a`, then `f(σ) = O((σ - a)⁻¹)` along it.
 * `Asymptotics.isBigO_norm_pow_norm_pow_nhds_zero_of_le`: `‖x‖ ^ m = O(‖x‖ ^ n)` at the origin
   whenever `n ≤ m`.
 * `Asymptotics.IsBigO.comp_const_mul_rpow`: `F = O(x ^ r)` at infinity implies
@@ -98,17 +98,18 @@ theorem isLittleO_sub_mul_iff_tendsto_div {α 𝕜 : Type*} [NormedDivisionRing 
   refine (tendsto_congr' (hg.mono fun x hx ↦ ?_)).trans tendsto_sub_nhds_zero_iff
   rw [sub_div, mul_div_cancel_right₀ _ hx]
 
-/-- **A one-sided limit of `(σ - a) • f(σ)` bounds `f` by `(σ - a)⁻¹`.** If `(σ - a) • f(σ)` has
-a limit as the real variable `σ` tends to `a` from the right, then `f(σ) = O((σ - a)⁻¹)` there.
-For `a = 1` this is how such a bound is usually obtained for a Dedekind zeta function or an
+/-- **A limit of `(σ - a) • f(σ)` bounds `f` by `(σ - a)⁻¹`.** If `(σ - a) • f(σ)` has a limit
+along a filter `l` on the real line on which eventually `σ ≠ a`, then `f(σ) = O((σ - a)⁻¹)` along
+`l`. Typical choices of `l` are the one-sided and punctured neighbourhoods of `a`. For `a = 1` and
+`l = 𝓝[>] 1` this is how such a bound is usually obtained for a Dedekind zeta function or an
 `L`-series near `s = 1`, from the limit of `(s - 1) L(s)` along the real axis. -/
 theorem isBigO_inv_sub_of_tendsto_sub_smul {E : Type*} [SeminormedAddCommGroup E]
-    [NormedSpace ℝ E] {f : ℝ → E} {a : ℝ} {r : E}
-    (h : Tendsto (fun σ ↦ (σ - a) • f σ) (𝓝[>] a) (𝓝 r)) :
-    f =O[𝓝[>] a] fun σ ↦ (σ - a)⁻¹ := by
+    [NormedSpace ℝ E] {l : Filter ℝ} {f : ℝ → E} {a : ℝ} {r : E} (hne : ∀ᶠ σ in l, σ ≠ a)
+    (h : Tendsto (fun σ ↦ (σ - a) • f σ) l (𝓝 r)) :
+    f =O[l] fun σ ↦ (σ - a)⁻¹ := by
   refine ((isBigO_refl (fun σ ↦ (σ - a)⁻¹) _).smul (h.isBigO_one ℝ)).congr' ?_ (by simp)
-  filter_upwards [self_mem_nhdsWithin] with σ (hσ : a < σ)
-  rw [smul_smul, inv_mul_cancel₀ (sub_ne_zero.2 hσ.ne'), one_smul]
+  filter_upwards [hne] with σ hσ
+  rw [smul_smul, inv_mul_cancel₀ (sub_ne_zero.2 hσ), one_smul]
 
 /-- **At the origin a higher power of the norm is dominated by a lower one.** The norm is at most
 one near `0`, so `‖x‖ ^ m = O(‖x‖ ^ n)` whenever `n ≤ m`. -/

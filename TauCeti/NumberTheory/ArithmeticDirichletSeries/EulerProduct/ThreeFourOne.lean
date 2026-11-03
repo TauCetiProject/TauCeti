@@ -177,8 +177,9 @@ theorem ne_zero_of_eqOn_LSeries (χ : UnitaryIdealWeight K) {s : ℂ} (hs : s.re
   · filter_upwards [self_mem_nhdsWithin] with σ (hσ : 1 < σ)
     rw [hfL (by simpa using hσ), hf₂L (by simpa using hσ)]
     exact χ.norm_dedekindZeta_threeFourOne_ge_one hσ s.im
-  · exact Asymptotics.isBigO_inv_sub_of_tendsto_sub_smul <| by
-      simpa using tendsto_sub_one_mul_dedekindZeta_nhdsGT K
+  · exact Asymptotics.isBigO_inv_sub_of_tendsto_sub_smul
+      (eventually_nhdsWithin_of_forall fun _ ↦ ne_of_gt) <| by
+        simpa using tendsto_sub_one_mul_dedekindZeta_nhdsGT K
 
 end UnitaryIdealWeight
 
