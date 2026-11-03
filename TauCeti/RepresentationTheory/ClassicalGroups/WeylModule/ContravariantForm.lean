@@ -5,17 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.RCLike.Basic
+public import TauCeti.RepresentationTheory.ClassicalGroups.TensorPowerForm
 public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Rational
 
 /-!
 # The contravariant Hermitian form on a rational Weyl module
 
-The tensor power `(𝕜ⁿ)^{⊗d}` over `𝕜 = ℝ` or `ℂ` carries the positive definite Hermitian form
-`TauCeti.tensorPowerForm` for which the monomial basis is orthonormal; on pure tensors it is the
-product of the standard Hermitian forms of the factors. It is **contravariant**: the adjoint of the
-action of `g : GL n 𝕜` is the action of the conjugate transpose `star g`. Restricting it to the Weyl
-module of a shape gives the positive definite Hermitian form `TauCeti.weylForm`, which stays
+Restricting the standard Hermitian form `TauCeti.tensorPowerForm` of the ambient tensor power to
+the Weyl module of a shape gives the positive definite Hermitian form `TauCeti.weylForm`. It is
 contravariant for the determinant twists `TauCeti.rationalWeylRep`, because the determinant of the
 conjugate transpose is the conjugate of the determinant.
 
@@ -26,86 +23,23 @@ basis is orthonormal.
 
 ## Main definitions
 
-* `TauCeti.tensorPowerForm`: the standard Hermitian form on `(𝕜ⁿ)^{⊗d}`.
-* `TauCeti.weylForm`: its restriction to the Weyl module of a shape.
+* `TauCeti.weylForm`: the restriction of the standard form to the Weyl module of a shape.
 
 ## Main results
 
-* `TauCeti.tensorPowerForm_tprod_tprod`: its value on pure tensors.
-* `TauCeti.tensorPowerForm_tensorPowerRep_apply` and `TauCeti.weylForm_rationalWeylRep_apply`:
-  contravariance.
+* `TauCeti.isSymm_weylForm`, `TauCeti.weylForm_apply_self_pos`, `TauCeti.separatingRight_weylForm`:
+  it is Hermitian, positive definite and separating.
+* `TauCeti.weylForm_rationalWeylRep_apply`: contravariance.
 -/
 
 public section
 
-open Matrix Module
+open Matrix
 open scoped ComplexOrder TensorProduct
 
 namespace TauCeti
 
-variable {𝕜 : Type*} [RCLike 𝕜] (n d : ℕ)
-
-/-- **The standard Hermitian form on a tensor power**: the form on `(𝕜ⁿ)^{⊗d}` for which the
-monomial basis `TauCeti.tensorPowerBasis` is orthonormal. By `TauCeti.tensorPowerForm_tprod_tprod`
-it is the product of the standard Hermitian forms of the tensor factors, so it does not depend on
-the basis. -/
-noncomputable def tensorPowerForm :
-    (⨂[𝕜]^d (Fin n → 𝕜)) →ₗ⋆[𝕜] (⨂[𝕜]^d (Fin n → 𝕜)) →ₗ[𝕜] 𝕜 :=
-  LinearMap.mk₂'ₛₗ _ _
-    (fun x y ↦ ∑ w, star ((tensorPowerBasis 𝕜 n d).repr x w) * (tensorPowerBasis 𝕜 n d).repr y w)
-    (by simp [add_mul, Finset.sum_add_distrib])
-    (by simp [Finset.mul_sum, mul_assoc])
-    (by simp [mul_add, Finset.sum_add_distrib])
-    (by simp [Finset.mul_sum, mul_left_comm])
-
-variable {n d}
-
-/-- The value of the standard Hermitian form in the coordinates of the monomial basis. -/
-theorem tensorPowerForm_apply (x y : ⨂[𝕜]^d (Fin n → 𝕜)) :
-    tensorPowerForm n d x y =
-      ∑ w, star ((tensorPowerBasis 𝕜 n d).repr x w) * (tensorPowerBasis 𝕜 n d).repr y w :=
-  (rfl)
-
-/-- On pure tensors, the standard Hermitian form of a tensor power is the product of the standard
-Hermitian forms of the factors. -/
-@[simp]
-theorem tensorPowerForm_tprod_tprod (x y : Fin d → Fin n → 𝕜) :
-    tensorPowerForm n d (PiTensorProduct.tprod 𝕜 x) (PiTensorProduct.tprod 𝕜 y) =
-      ∏ i, star (x i) ⬝ᵥ y i := by
-  simp only [tensorPowerForm_apply, tensorPowerBasis_def, Basis.piTensorProduct_repr_tprod_apply,
-    dotProduct, Finset.prod_univ_sum, Fintype.piFinset_univ, star_prod, ← Finset.prod_mul_distrib]
-  simp
-
-/-- The standard form of a tensor power is Hermitian. -/
-theorem isSymm_tensorPowerForm : (tensorPowerForm (𝕜 := 𝕜) n d).IsSymm where
-  eq x y := by
-    simp [tensorPowerForm_apply, mul_comm]
-
-/-- The standard form of a tensor power is positive definite. -/
-theorem tensorPowerForm_apply_self_pos {x : ⨂[𝕜]^d (Fin n → 𝕜)} (hx : x ≠ 0) :
-    0 < tensorPowerForm n d x x := by
-  obtain ⟨w, hw⟩ : ∃ w, (tensorPowerBasis 𝕜 n d).repr x w ≠ 0 := by
-    contrapose! hx
-    exact (tensorPowerBasis 𝕜 n d).repr.map_eq_zero_iff.mp (Finsupp.ext hx)
-  rw [tensorPowerForm_apply]
-  exact Finset.sum_pos' (fun _ _ ↦ star_mul_self_nonneg _)
-    ⟨w, Finset.mem_univ w, by
-      rw [RCLike.star_def, RCLike.conj_mul]
-      exact_mod_cast pow_pos (norm_pos_iff.mpr hw) 2⟩
-
-/-- **Contravariance of the standard form.** The adjoint of the action of `g` on a tensor power is
-the action of the conjugate transpose `star g`. -/
-theorem tensorPowerForm_tensorPowerRep_apply (g : GL (Fin n) 𝕜) (x y : ⨂[𝕜]^d (Fin n → 𝕜)) :
-    tensorPowerForm n d (tensorPowerRep 𝕜 n d g x) y =
-      tensorPowerForm n d x (tensorPowerRep 𝕜 n d (star g) y) := by
-  have h : (tensorPowerForm n d).comp (tensorPowerRep 𝕜 n d g) =
-      (tensorPowerForm n d).compl₂ (tensorPowerRep 𝕜 n d (star g)) := by
-    refine (tensorPowerBasis 𝕜 n d).ext fun u ↦ (tensorPowerBasis 𝕜 n d).ext fun v ↦ ?_
-    simp [Representation.tensorPower_apply, PiTensorProduct.map_tprod, star_eq_conjTranspose,
-      Units.coe_star]
-  exact LinearMap.congr_fun₂ h x y
-
-variable (n)
+variable {𝕜 : Type*} [RCLike 𝕜] (n : ℕ)
 
 /-- **The contravariant Hermitian form on the Weyl module of a shape**: the restriction of the
 standard Hermitian form `TauCeti.tensorPowerForm` of the ambient tensor power. -/
@@ -128,6 +62,10 @@ theorem isSymm_weylForm (μ : YoungDiagram) : (weylForm (𝕜 := 𝕜) n μ).IsS
 theorem weylForm_apply_self_pos {μ : YoungDiagram} {x : (weylModuleOfShape 𝕜 n μ).toSubmodule}
     (hx : x ≠ 0) : 0 < weylForm n μ x x :=
   tensorPowerForm_apply_self_pos fun h ↦ hx (Subtype.ext h)
+
+/-- The form on a Weyl module is separating: a vector pairing to zero with everything vanishes. -/
+theorem separatingRight_weylForm (μ : YoungDiagram) : (weylForm (𝕜 := 𝕜) n μ).SeparatingRight :=
+  fun y hy ↦ by_contra fun hy0 ↦ (weylForm_apply_self_pos hy0).ne' (hy y)
 
 /-- **Contravariance of the form on a rational Weyl module.** The adjoint of the action of `g` on
 `V_λ` is the action of the conjugate transpose `star g`. The determinant twist is compatible with

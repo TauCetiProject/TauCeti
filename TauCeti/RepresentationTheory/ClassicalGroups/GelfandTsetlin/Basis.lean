@@ -24,12 +24,10 @@ The form determines each vector up to a complex scalar of absolute value one
 vectors are chosen generators, and the characteristic properties of the basis are the ones stated
 below.
 
-The orthogonality is proved by induction on `n`. The restriction of `V_λ` to `GL (n - 1) ℂ` is a sum
-of pairwise nonisomorphic irreducibles `V_μ`, and the adjoint of an intertwiner is again an
-intertwiner because the form is contravariant. So Schur's lemma says that the images of `V_μ` and
-`V_ν` for `μ ≠ ν` are orthogonal (`TauCeti.weylForm_intertwiningMap_apply_eq_zero`), and that an
-intertwiner from `V_μ` scales the form (`TauCeti.exists_forall_weylForm_intertwiningMap_apply_eq`),
-which carries the orthogonality of the lines of `V_μ` to their images.
+The branching embeddings of the constituents of `V_λ` preserve orthogonality: the images of
+distinct constituents are orthogonal (`TauCeti.weylForm_intertwiningMap_apply_eq_zero`), and an
+embedding of one constituent scales the form
+(`TauCeti.exists_forall_weylForm_intertwiningMap_apply_eq`).
 
 ## Main definitions
 
@@ -102,7 +100,7 @@ theorem weylForm_intertwiningMap_apply_eq_zero (hm : m ≠ m')
     (rationalWeylRep ℂ n m) (rationalWeylRep ℂ n m')
     (B := weylForm n m.detShiftShape)
     (S := ((weylForm (n + 1) l.detShiftShape).comp f.toLinearMap).compl₂ h.toLinearMap)
-    (isSymm_weylForm _) (fun _ hx ↦ weylForm_apply_self_pos hx) (weylForm_rationalWeylRep_apply m)
+    (separatingRight_weylForm _) (weylForm_rationalWeylRep_apply m)
     (weylForm_intertwiningMap_contravariant f h) hE
   exact LinearMap.congr_fun₂ hS x y
 
@@ -117,7 +115,7 @@ theorem exists_forall_weylForm_intertwiningMap_apply_eq
     (V := (weylModuleOfShape ℂ n m.detShiftShape).toSubmodule) (rationalWeylRep ℂ n m)
     (B := weylForm n m.detShiftShape)
     (S := ((weylForm (n + 1) l.detShiftShape).comp f.toLinearMap).compl₂ h.toLinearMap)
-    (isSymm_weylForm _) (fun _ hx ↦ weylForm_apply_self_pos hx) (weylForm_rationalWeylRep_apply m)
+    (separatingRight_weylForm _) (weylForm_rationalWeylRep_apply m)
     (weylForm_intertwiningMap_contravariant f h)
 
 end Branching
@@ -129,6 +127,9 @@ theorem weylForm_eq_zero_of_mem_gtLine : ∀ {n : ℕ} (l : DominantWeight n)
       x ∈ gtLine l P → y ∈ gtLine l Q → weylForm n _ x y = 0
   | 0, _, P, Q, hPQ, _, _, _, _ => absurd (Subsingleton.elim P Q) hPQ
   | n + 1, l, P, Q, hPQ, x, y, hx, hy => by
+    -- Induct on `n`. The restriction of `V_l` to `GL n ℂ` is a sum of pairwise nonisomorphic
+    -- irreducibles, and Schur's lemma says that the images of distinct ones are orthogonal and that
+    -- an embedding of one scales the form, carrying the orthogonality of its lines to their images.
     -- The weights of the second rows are arbitrary below, which allows the case of equal weights
     -- to be separated without transporting along their equality.
     have key : ∀ {m m' : DominantWeight n}
@@ -198,19 +199,6 @@ private theorem gtVector_ne_zero (P : {P : GTPattern n // P.topWeight = l}) :
   have := weylForm_gtVector l P
   simp [h] at this
 
-/-- A nonzero vector of a Gelfand–Tsetlin line spans it. -/
-theorem span_singleton_eq_gtLine {P : {P : GTPattern n // P.topWeight = l}}
-    {v : (weylModuleOfShape ℂ n l.detShiftShape).toSubmodule} (hv : v ∈ gtLine l P) (hv0 : v ≠ 0) :
-    Submodule.span ℂ {v} = gtLine l P := by
-  refine le_antisymm ((Submodule.span_singleton_le_iff_mem _ _).mpr hv) fun w hw ↦ ?_
-  -- Fix the additive groups of the carrier and the line before applying the one-dimensional lemma.
-  let _ : AddCommGroup (weylModuleOfShape ℂ n l.detShiftShape).toSubmodule := inferInstance
-  let _ : AddCommGroup (gtLine l P) := inferInstance
-  have hv0' : (⟨v, hv⟩ : gtLine l P) ≠ 0 := fun h ↦ hv0 (Subtype.ext_iff.mp h)
-  obtain ⟨c, hc⟩ := exists_smul_eq_of_finrank_eq_one (finrank_gtLine l P) hv0'
-    (⟨w, hw⟩ : gtLine l P)
-  exact Submodule.mem_span_singleton.mpr ⟨c, Subtype.ext_iff.mp hc⟩
-
 open scoped Classical in
 private theorem linearIndependent_gtVector : LinearIndependent ℂ (gtVector l) :=
   (isInternal_gtLine l).submodule_iSupIndep.linearIndependent (R := ℂ)
@@ -257,6 +245,7 @@ theorem weylForm_gtBasis_self (P : {P : GTPattern n // P.topWeight = l}) :
   exact weylForm_gtVector l P
 
 /-- Distinct vectors of the Gelfand–Tsetlin basis are orthogonal for the contravariant form. -/
+@[simp]
 theorem weylForm_gtBasis_of_ne {P Q : {P : GTPattern n // P.topWeight = l}} (h : P ≠ Q) :
     weylForm n _ (gtBasis l P) (gtBasis l Q) = 0 :=
   weylForm_eq_zero_of_mem_gtLine l h (gtBasis_mem_gtLine l P) (gtBasis_mem_gtLine l Q)
