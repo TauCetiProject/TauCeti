@@ -166,24 +166,6 @@ analogue of Mathlib's `ModularForm.mcast_apply`, which Mathlib does not yet prov
 lemma _root_.CuspForm.mcast_apply {a b : ℤ} {Γ Γ' : Subgroup (GL (Fin 2) ℝ)} (h : a = b)
     (f : CuspForm Γ a) (hΓ : Γ' = Γ := by rfl) (z : ℍ) : CuspForm.mcast h f hΓ z = f z := (rfl)
 
-/-- The weight-`k` slash action of `-I` is multiplication by `(-1) ^ k`: `-I` acts trivially
-on `ℍ` and has determinant `1`, so the only surviving factor is its automorphy factor
-`denom (-I) z ^ (-k) = (-1) ^ (-k) = (-1) ^ k`.
-
-This is the source of every parity constraint on weights and nebentypus characters. -/
-@[simp]
-theorem _root_.ModularForm.slash_neg_one (k : ℤ) (f : ℍ → ℂ) :
-    f ∣[k] (-1 : GL (Fin 2) ℝ) = (-1 : ℂ) ^ k • f := by
-  have hzpow : (-1 : ℂ) ^ (-k) = (-1 : ℂ) ^ k := by
-    rw [zpow_neg, ← inv_zpow]
-    norm_num
-  have hdet : (-1 : GL (Fin 2) ℝ).det = 1 := by
-    ext
-    simp [Matrix.det_neg]
-  funext z
-  rw [ModularForm.slash_apply, σ_eq_refl_of_det_pos (by simp [Matrix.det_neg])]
-  simp [hzpow, hdet, mul_comm]
-
 /-- **The weight-`k` slash formula at a positive-determinant matrix**, free of the `σ` twist:
 
 `f ∣[k] g = fun τ ↦ f (g • τ) * |det g| ^ (k - 1) * denom g τ ^ (-k)`.
@@ -238,7 +220,7 @@ theorem _root_.ModularForm.slash_scalar (k : ℤ) (u : ℝˣ) (f : ℍ → ℂ) 
   rw [ModularForm.slash_apply_of_det_pos k hdetpos, UpperHalfPlane.glScalar_smul,
     UpperHalfPlane.denom_scalar, hdet, abs_of_nonneg (sq_nonneg (u : ℝ))]
   push_cast
-  rw [← zpow_natCast (((u : ℝ) : ℂ)) 2, ← zpow_mul]
+  rw [← zpow_natCast (((u : ℝ) : ℂ)) 2, ← _root_.zpow_mul]
   simp only [Pi.smul_apply, smul_eq_mul]
   rw [mul_assoc, ← zpow_add₀ (by exact_mod_cast u.ne_zero), mul_comm]
   congr 1
@@ -271,7 +253,7 @@ theorem _root_.SlashInvariantForm.slash_action_eqn_of_det_pos {F : Type*} [FunLi
   have hden : denom γ (τ : ℂ) ^ (-k) ≠ 0 := zpow_ne_zero _ (denom_ne_zero γ τ)
   have hpow : ((|(γ.det : ℝ)| : ℝ) : ℂ) ^ (k - 1) ≠ 0 := zpow_ne_zero _ hdet_ne
   rw [(eq_mul_inv_iff_mul_eq₀ hpow).mpr ((eq_mul_inv_iff_mul_eq₀ hden).mpr h),
-    ← zpow_neg, ← zpow_neg, neg_neg, neg_sub]
+    ← _root_.zpow_neg, ← _root_.zpow_neg, neg_neg, neg_sub]
   ring
 
 /-! ### Translation by positive-determinant matrices -/
@@ -523,12 +505,12 @@ theorem eq_zero_of_eq_const_of_weight_ne_zero
   have hdetpos : 0 < γ.val.det := by
     simp [← GeneralLinearGroup.val_det_apply, hdet]
   have h := SlashInvariantForm.slash_action_eqn_of_det_pos f hγ hdetpos z
-  simp only [hdet, Units.val_one, abs_one, Complex.ofReal_one, one_zpow, one_mul] at h
+  simp only [hdet, Units.val_one, abs_one, Complex.ofReal_one, _root_.one_zpow, one_mul] at h
   rw [hf, Function.const_apply, Function.const_apply] at h
   have hd : denom γ z ^ k = 1 := mul_right_cancel₀ hc0 (by simpa using h.symm)
   have hnorm : ‖denom γ z‖ = 1 := by
     apply (zpow_left_inj₀ (norm_nonneg _) zero_le_one hk).mp
-    simpa only [norm_zpow, norm_one, one_zpow] using congrArg norm hd
+    simpa only [norm_zpow, norm_one, _root_.one_zpow] using congrArg norm hd
   have him : |(denom γ z).im| = 2 := by
     simp [denom, z, Complex.mul_im, abs_mul, abs_div, abs_abs]
     field_simp

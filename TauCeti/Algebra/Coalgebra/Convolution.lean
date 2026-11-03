@@ -43,6 +43,7 @@ group with `D` valued in `I`, this controls the binomial expansion of the powers
   algebra-hom points of a commutative bialgebra.
 * `TauCeti.Bialgebra.toConv_comp_comulAlgHom`: the functorial form of the previous identity,
   after post-composing with an arbitrary algebra map out of the tensor square.
+* `TauCeti.Bialgebra.ofConv_one_eq_counitAlgHom`: the identity base-valued point is the counit.
 * `WithConv.mulTensor`: the exterior convolution product, with its
   normalization rules and `WithConv.mulTensor_convMul`.
 * `AlgHom.toConv_toLinearMap_comp_mul'`: an algebra map composed with
@@ -130,6 +131,11 @@ theorem toConv_comp_comulAlgHom {A : Type*} [CommSemiring A] [Algebra R A]
     simp
   simp only [AlgHom.comp_toLinearMap, hcomul]
   exact congrArg WithConv.toConv (LinearMap.algHom_comp_convMul_distrib phi _ _)
+
+/-- The identity of the convolution monoid of base-valued points `H →ₐ[R] R` is the counit. -/
+theorem ofConv_one_eq_counitAlgHom :
+    (1 : WithConv (H →ₐ[R] R)).ofConv = Bialgebra.counitAlgHom R H := by
+  rw [AlgHom.convOne_def, ofConv_toConv, Algebra.ofId_self, AlgHom.id_comp]
 
 end Semiring
 

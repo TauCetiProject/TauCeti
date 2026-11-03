@@ -80,6 +80,8 @@ structural step used when a Cartan--Dieudonne argument enlarges a fixed subspace
 * `LinearMap.BilinForm.finrank_le_finrank_add_finrank_orthogonal` and
   `LinearMap.BilinForm.finrank_le_two_mul_finrank_of_orthogonal_le`: dimension lower bounds for
   orthogonal complements of an arbitrary bilinear form.
+* `LinearMap.BilinForm.two_mul_finrank_le_finrank_of_le_orthogonal`: a totally isotropic subspace
+  of a nondegenerate bilinear space has at most half the ambient dimension.
 
 ## References
 
@@ -575,6 +577,15 @@ theorem finrank_le_two_mul_finrank_of_orthogonal_le {W : Submodule K V}
     (h : B.orthogonal W ≤ W) : finrank K V ≤ 2 * finrank K W := by
   have hle := B.finrank_le_finrank_add_finrank_orthogonal W
   have hmono := Submodule.finrank_mono h
+  omega
+
+/-- A totally isotropic subspace of a nondegenerate bilinear space, one contained in its
+orthogonal complement, has at most half the dimension of the ambient space. -/
+theorem two_mul_finrank_le_finrank_of_le_orthogonal (hB : B.Nondegenerate) {W : Submodule K V}
+    (h : W ≤ B.orthogonal W) : 2 * finrank K W ≤ finrank K V := by
+  have horth := B.finrank_orthogonal hB W
+  have hmono := Submodule.finrank_mono h
+  have hle := Submodule.finrank_le W
   omega
 
 variable [Invertible (2 : K)]

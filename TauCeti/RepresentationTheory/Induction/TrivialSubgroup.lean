@@ -361,7 +361,7 @@ theorem rightInverse_indBotCounit (A : Rep k G) :
     Function.RightInverse
       (IndV.mk (⊥ : Subgroup G).subtype (Representation.trivial k (⊥ : Subgroup G) A.V) 1)
       (indBotCounit A).hom := fun a ↦ by
-  rw [indBotCounit_hom_mk, inv_one, map_one, Module.End.one_apply]
+  rw [indBotCounit_hom_mk, inv_one, map_one, one_apply_eq_self]
 
 /-- The projection from the induced representation is an epimorphism. -/
 instance indBotCounit_epi (A : Rep k G) : Epi (indBotCounit A) :=

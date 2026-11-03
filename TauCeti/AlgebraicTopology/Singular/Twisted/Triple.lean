@@ -39,6 +39,7 @@ noncomputable section
 
 open CategoryTheory Limits
 open TauCeti.LocalCoefficientSystem
+open scoped Simplicial
 
 universe u v w
 
@@ -99,6 +100,23 @@ lemma twistedChainComplexπ_comp_totalToOuter :
   simp only [Iso.inv_hom_id_app, Functor.id_obj,
     LocalCoefficientSystem.twistedChainComplexCoefficientMap_id,
     Category.id_comp]
+
+/-- On a simplex whose image does not lie in `A`, the quotient from `(X,B)` to `(X,A)` preserves
+the coefficient. -/
+@[simp]
+lemma twistedChainComplexCoeff_twistedChainComplexTotalToOuter_f_apply {k : ℕ}
+    (σ : (TopCat.toSSet.obj T.fst) _⦋k⦌)
+    (hσ : ¬Set.range (TopCat.simplexMap σ) ⊆ Set.range T.outerMap)
+    (y : ((totalPair.obj T).twistedChainComplex L).X k) :
+    ((outerPair.obj T).twistedChainComplexCoeff L σ hσ).hom
+        (((T.twistedChainComplexTotalToOuter L).f k).hom y) =
+      ((totalPair.obj T).twistedChainComplexCoeff L σ
+        fun h ↦ hσ (h.trans T.range_totalMap_subset_range_outerMap)).hom y := by
+  obtain ⟨a, rfl⟩ := (totalPair.obj T).twistedChainComplexπ_f_surjective L y
+  have h := congrArg (fun g ↦ (g.f k).hom a) (T.twistedChainComplexπ_comp_totalToOuter L)
+  simp only [HomologicalComplex.comp_f, ModuleCat.hom_comp, LinearMap.comp_apply] at h
+  rw [h, TopPair.twistedChainComplexCoeff_twistedChainComplexπ_f_apply,
+    TopPair.twistedChainComplexCoeff_twistedChainComplexπ_f_apply]
 
 @[reassoc (attr := simp)]
 lemma twistedChainComplexMap_innerToTotal_comp_totalToOuter :

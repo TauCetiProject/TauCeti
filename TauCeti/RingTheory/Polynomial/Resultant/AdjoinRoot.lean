@@ -215,7 +215,7 @@ theorem det_sylvesterBlock (hg : g.Monic) (p : R[X]) (hp : p.natDegree ≤ n) :
       simp
     · rw [toMatrix_apply, hinl, Basis.prod_repr_inr, fromBlocks_apply₂₁, of_apply]
     · rw [toMatrix_apply, hinr, hz, Basis.prod_repr_inr, fromBlocks_apply₂₂,
-        Basis.repr_self, one_apply, Finsupp.single_apply]
+        Basis.repr_self, Matrix.one_apply, Finsupp.single_apply]
       exact if_congr eq_comm rfl rfl
   rw [hmat, det_fromBlocks_zero₁₂, det_one, mul_one]
 
