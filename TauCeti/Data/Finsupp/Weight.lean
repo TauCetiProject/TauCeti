@@ -119,6 +119,14 @@ theorem prod_pow_sumElim {α β N : Type*} [CommMonoid N] (a : α →₀ ℕ) (b
     (a.sumElim b).prod (Sum.elim c d · ^ ·) = a.prod (c · ^ ·) * b.prod (d · ^ ·) := by
   simp only [prod_sumElim, Function.comp_def, Sum.elim_inl, Sum.elim_inr]
 
+/-- A weighted product on disjoint variables, multiplied by `x`, can be evaluated with the
+inner weight first and the outer weight last. -/
+theorem mul_prod_pow_sumElim {α β N : Type*} [CommMonoid N] (x : N)
+    (a : α →₀ ℕ) (b : β →₀ ℕ) (c : α → N) (d : β → N) :
+    x * (a.sumElim b).prod (Sum.elim c d · ^ ·) =
+      x * b.prod (d · ^ ·) * a.prod (c · ^ ·) := by
+  rw [prod_pow_sumElim, mul_comm (a.prod (c · ^ ·)) (b.prod (d · ^ ·)), ← mul_assoc]
+
 /-- A power `a ^ degree f` is bounded by the power `b ^ degree (f.optionElim m)` of a larger
 base `b ≥ 1`, for any value `m` at `none`. -/
 theorem pow_degree_le_pow_degree_optionElim {σ R : Type*} [Semiring R] [PartialOrder R]

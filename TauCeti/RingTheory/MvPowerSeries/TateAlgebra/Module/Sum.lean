@@ -40,15 +40,6 @@ open scoped Topology
 variable {σ τ E R : Type*} [SeminormedAddCommGroup E] {c : σ → ℝ} {d : τ → ℝ}
   [∀ i, Fact (0 < c i)] [∀ j, Fact (0 < d j)]
 
-omit [∀ i, Fact (0 < c i)] [∀ j, Fact (0 < d j)] in
-/-- Rearranging a joint weighted coefficient norm as an inner weighted norm followed by
-an outer weight. -/
-private theorem mul_prod_sumElim (x : ℝ) (s : σ →₀ ℕ) (t : τ →₀ ℕ) :
-    x * (s.sumElim t).prod (Sum.elim c d · ^ ·) =
-      x * t.prod (d · ^ ·) * s.prod (c · ^ ·) := by
-  rw [Finsupp.prod_pow_sumElim]
-  ring
-
 namespace IsRestrictedFamily.Gauss
 
 /-- A slice of a jointly restricted family, with the exponents in `σ` fixed. -/
@@ -82,7 +73,7 @@ theorem isRestrictedFamily_sumSlice (a : Gauss (Sum.elim c d) E) :
   rw [← le_div_iff₀ hpos, norm_le_iff]
   intro t
   rw [le_div_iff₀ hpos, sumSlice_apply]
-  rw [← mul_prod_sumElim]
+  rw [← Finsupp.mul_prod_pow_sumElim]
   by_contra hlt
   exact hns ⟨s.sumElim t, (not_le.mp hlt).le, Finsupp.comapDomain_inl_sumElim s t⟩
 
@@ -111,7 +102,7 @@ theorem isRestrictedFamily_flatten (a : Gauss c (Gauss d E)) :
   set s := k.comapDomain Sum.inl Sum.inl_injective.injOn
   set t := k.comapDomain Sum.inr Sum.inr_injective.injOn
   have hk' : ε ≤ ‖a s t‖ * t.prod (d · ^ ·) * s.prod (c · ^ ·) := by
-    rw [← mul_prod_sumElim, Finsupp.comapDomain_sumElim_comapDomain]
+    rw [← Finsupp.mul_prod_pow_sumElim, Finsupp.comapDomain_sumElim_comapDomain]
     exact not_lt.mp hk
   refine Set.mem_biUnion (x := s) ?_ ⟨t, ?_, Finsupp.comapDomain_sumElim_comapDomain k⟩
   · exact hk'.trans (mul_le_mul_of_nonneg_right
@@ -152,11 +143,12 @@ theorem norm_sumAddEquiv (a : Gauss (Sum.elim c d) E) : ‖sumAddEquiv a‖ = �
     intro s
     rw [← le_div_iff₀ (prod_pow_pos s), norm_le_iff]
     intro t
-    rw [le_div_iff₀ (prod_pow_pos s), sumAddEquiv_apply, ← mul_prod_sumElim]
+    rw [le_div_iff₀ (prod_pow_pos s), sumAddEquiv_apply, ← Finsupp.mul_prod_pow_sumElim]
     exact norm_coeff_mul_prod_le a _
   · apply norm_le_iff.mpr
     intro k
-    rw [← Finsupp.comapDomain_sumElim_comapDomain k, mul_prod_sumElim, ← sumAddEquiv_apply]
+    rw [← Finsupp.comapDomain_sumElim_comapDomain k, Finsupp.mul_prod_pow_sumElim,
+      ← sumAddEquiv_apply]
     exact (mul_le_mul_of_nonneg_right (norm_coeff_mul_prod_le _ _)
       (prod_pow_pos _).le).trans (norm_coeff_mul_prod_le (sumAddEquiv a) _)
 
