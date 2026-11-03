@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Probability.Exchangeability.CondExp
 public import TauCeti.Probability.Exchangeability.L2.TailMeasurability
-import TauCeti.MeasureTheory.Function.BoundedMemLp
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 
@@ -145,8 +144,8 @@ theorem Contractable.tendsto_integral_abs_blockAverage_sub_condExp {μ : Measure
       atTop (𝓝 0) :=
   let ⟨C, hC⟩ := hf_bdd
   hX.tendsto_integral_abs_blockAverage_sub_condExp_of_memLp hX_meas hf
-    (memLp_comp_of_bound hf (hX_meas 0).aemeasurable C
-      (Eventually.of_forall fun ω => hC (X 0 ω)) 2) k hk
+    (MemLp.of_bound (hf.comp (hX_meas 0)).aestronglyMeasurable C
+      (Eventually.of_forall fun ω => hC (X 0 ω))) k hk
 
 /-- **Any `L¹` limit of the block averages is the conditional expectation.** The identification
 form: along any eventually injective selection, an `L¹` limit is a.e. unique, so it must be the
