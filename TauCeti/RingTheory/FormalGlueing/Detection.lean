@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.FormalGlueing.Torsion
-public import Mathlib.Algebra.Module.LocalizedModule.Exact
 public import Mathlib.Algebra.Module.LocalizedModule.Submodule
 public import TauCeti.Algebra.Module.Torsion.PrimaryComponent
 public import TauCeti.LinearAlgebra.TensorProduct.Quotient
