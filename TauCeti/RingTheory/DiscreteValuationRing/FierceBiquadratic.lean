@@ -122,7 +122,7 @@ theorem irreducible_map_residue_quadratic [IsLocalRing R] {t s : R} (ht : t ∈ 
     (hs : ∀ a : ResidueField R, a ^ 2 ≠ residue R s) :
     Irreducible ((quadratic t s).map (residue R)) := by
   simpa [quadratic, (residue_eq_zero_iff t).mpr ht] using
-    X_pow_sub_C_irreducible_of_prime Nat.prime_two hs
+    irreducible_X_pow_sub_C_of_prime Nat.prime_two hs
 
 variable {A : Type*} [CommRing A]
 
@@ -390,7 +390,7 @@ theorem maximalIdeal_ringYZ [IsLocalRing (RingYZ t s u)] :
 /-- `A → B` is a local homomorphism. -/
 theorem isLocalHom_algebraMap_ringYZ [IsLocalRing (RingYZ t s u)] :
     IsLocalHom (algebraMap A (RingYZ t s u)) :=
-  ((local_hom_TFAE _).out 1 3).mpr (maximalIdeal_ringYZ ht hs hu).ge
+  ((local_hom_tfae _).out 1 3).mpr (maximalIdeal_ringYZ ht hs hu).ge
 
 /-- **The residue field of `B` has degree `4` over that of `A`.** -/
 theorem finrank_residueField_ringYZ [IsLocalRing (RingYZ t s u)]
