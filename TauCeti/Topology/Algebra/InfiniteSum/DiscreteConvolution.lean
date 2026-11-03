@@ -7,7 +7,8 @@ module
 
 public import Mathlib.Topology.Algebra.InfiniteSum.DiscreteConvolution
 public import Mathlib.Topology.Algebra.Ring.Basic
-public import Mathlib.Topology.Algebra.InfiniteSum.Real
+public import Mathlib.Analysis.Normed.Ring.Basic
+import Mathlib.Analysis.Normed.Group.InfiniteSum
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
 import Mathlib.Topology.Algebra.InfiniteSum.Ring
 
@@ -45,7 +46,8 @@ groupings agree.
   `DiscreteConvolution.addRingConvolution_eq_tsum_neg_add`: on an additive group,
   `(f ⋆₊[L] g) x = ∑' y, L (f y) (g (-y + x))`.
 * `DiscreteConvolution.hasSum_tsum_mul_sub`: on an additive group, the convolution
-  `x ↦ ∑' y, f y * g (x - y)` of two summable real families sums to `(∑ f) (∑ g)`.
+  `x ↦ ∑' y, f y * g (x - y)` of two absolutely summable families in a complete normed ring
+  sums to `(∑ f) (∑ g)`.
 -/
 
 public section
@@ -202,9 +204,10 @@ theorem addRingConvolution_eq_tsum_neg_add [NonUnitalNonAssocSemiring R] [Topolo
     (f ⋆ᵣ₊ g) x = ∑' y, f y * g (-y + x) :=
   addConvolution_eq_tsum_neg_add _ f g x
 
-/-- On an additive group, the convolution `x ↦ ∑' y, f y * g (x - y)` of two summable real
-families sums to `(∑ f) (∑ g)`. -/
-theorem hasSum_tsum_mul_sub {f g : M → ℝ} (hf : Summable f) (hg : Summable g) :
+/-- On an additive group, the convolution `x ↦ ∑' y, f y * g (x - y)` of two absolutely summable
+families in a complete normed ring sums to `(∑ f) (∑ g)`. -/
+theorem hasSum_tsum_mul_sub [NormedRing R] [CompleteSpace R] {f g : M → R}
+    (hf : Summable fun y ↦ ‖f y‖) (hg : Summable fun z ↦ ‖g z‖) :
     HasSum (fun x ↦ ∑' y, f y * g (x - y)) ((∑' y, f y) * ∑' z, g z) := by
   -- reindex the product `∑ (y, z), f y g z` by `(x, y) = (z + y, y)`
   let e : M × M ≃ M × M :=
@@ -214,11 +217,7 @@ theorem hasSum_tsum_mul_sub {f g : M → ℝ} (hf : Summable f) (hg : Summable g
       right_inv q := by simp }
   have hF : HasSum (fun p : M × M ↦ f p.2 * g (p.1 - p.2)) ((∑' y, f y) * ∑' z, g z) := by
     rw [← e.hasSum_iff]
-    -- summable real families are absolutely summable
-    have hfg : Summable fun p : M × M ↦ f p.1 * g p.2 :=
-      summable_mul_of_summable_norm (hf.abs.congr fun _ ↦ (Real.norm_eq_abs _).symm)
-        (hg.abs.congr fun _ ↦ (Real.norm_eq_abs _).symm)
-    convert hf.hasSum.mul hg.hasSum hfg using 1
+    convert hf.of_norm.hasSum.mul hg.of_norm.hasSum (summable_mul_of_summable_norm hf hg) using 1
     ext p
     simp [e]
   exact hF.prod_fiberwise fun x ↦ (hF.summable.prod_factor x).hasSum
