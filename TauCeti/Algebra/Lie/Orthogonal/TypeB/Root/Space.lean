@@ -224,7 +224,7 @@ theorem rootSpace_typeBDiagonalCartan_apply_eq_zero_of_isRegular
       ev.comp (LieModule.toEnd K (typeBDiagonalCartan K ι)
         (LieAlgebra.Orthogonal.typeB ι K) A) := by
     ext Y
-    simp only [LinearMap.comp_apply, LinearMap.smul_apply, Module.End.one_apply,
+    simp only [LinearMap.comp_apply, LinearMap.smul_apply, one_apply_eq_self,
       ev_apply, smul_eq_mul, LieModule.toEnd_apply_apply,
       LieSubalgebra.coe_bracket_of_module, LieSubalgebra.coe_bracket,
       typeBDiagonalCartan_lie_apply]
@@ -236,7 +236,7 @@ theorem rootSpace_typeBDiagonalCartan_apply_eq_zero_of_isRegular
   rw [← sub_smul (typeBMatrixWeight a b A) (χ A) (1 : Module.End K K), smul_pow] at hk
   have hab : (typeBMatrixWeight a b A - χ A) ^ k *
       (X : Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) a b = 0 := by
-    simpa only [one_pow, LinearMap.smul_apply, Module.End.one_apply, smul_eq_mul,
+    simpa only [one_pow, LinearMap.smul_apply, one_apply_eq_self, smul_eq_mul,
       ev_apply] using hk
   exact (isRegular_iff_eq_zero_of_mul.mp (hreg.pow k)).1 _ hab
 

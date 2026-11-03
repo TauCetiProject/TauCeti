@@ -280,7 +280,7 @@ theorem mem_closedStar_inf_deletion_iff_sdiff (hσ : σ ∈ K) :
       ρ.Nonempty ∧ ρ ∩ σ ⊂ σ ∧ (ρ \ σ = ∅ ∨ ρ \ σ ∈ link K σ) := by
   rw [mem_inf, mem_closedStar_iff_sdiff hσ, mem_deletion]
   have hproper : ρ ∩ σ ⊂ σ ↔ ¬ σ ⊆ ρ := by
-    simp [ssubset_iff_subset_ne, inter_eq_right]
+    simp [ssubset_iff_subset_ne]
   rw [hproper]
   constructor
   · rintro ⟨⟨hne, hlink⟩, -, hnot⟩

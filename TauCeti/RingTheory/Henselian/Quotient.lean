@@ -33,9 +33,12 @@ variable {R S : Type*} [CommRing R] [CommRing S]
 condition on its kernel relative to the henselian ideal. -/
 theorem henselianRing_of_surjective (φ : R →+* S) (hφ : Function.Surjective φ)
     (I : Ideal R) [HenselianRing R I] : HenselianRing S (I.map φ) := by
-  have hJac : I.map φ ≤ Ideal.jacobson ⊥ := by
-    rw [Ideal.map_le_iff_le_comap, Ideal.comap_jacobson_of_surjective hφ]
-    exact HenselianRing.jac.trans (Ideal.jacobson_mono bot_le)
+  have hJac : I.map φ ≤ Ring.jacobson S := by
+    rw [← Ideal.jacobson_bot, Ideal.map_le_iff_le_comap,
+      Ideal.comap_jacobson_of_surjective hφ]
+    have hI : I ≤ Ideal.jacobson ⊥ := by
+      simpa only [Ideal.jacobson_bot] using (HenselianRing.jac (R := R) (I := I))
+    exact hI.trans (Ideal.jacobson_mono bot_le)
   refine ⟨hJac, fun f _ a₀ ha₀ hd => ?_⟩
   /- A polynomial over S lifts to a polynomial g over R, but its approximate root and
   invertible derivative need not lift with the same properties. Multiplying g by a
@@ -43,7 +46,7 @@ theorem henselianRing_of_surjective (φ : R →+* S) (hφ : Function.Surjective 
   ker φ gives a polynomial with value in I and derivative exactly one. Apply
   Polynomial.exists_isRoot_sub_mem, the nonmonic form of Hensel's lemma, to this
   corrected polynomial. -/
-  have := isLocalHom_of_le_jacobson_bot (I.map φ) hJac
+  have := _root_.isLocalHom_of_le_jacobson hJac
   obtain ⟨u, hu⟩ := isUnit_of_map_unit (Ideal.Quotient.mk (I.map φ)) _ hd
   obtain ⟨b, hb⟩ := hφ (↑u⁻¹ : S)
   obtain ⟨a, rfl⟩ := hφ a₀
