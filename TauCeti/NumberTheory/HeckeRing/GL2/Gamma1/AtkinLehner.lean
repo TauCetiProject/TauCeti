@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.HeckeRing.GL2.Gamma0.AtkinLehner
 public import TauCeti.NumberTheory.HeckeRing.GL2.Gamma1.Basic
 import TauCeti.Data.ZMod.Units
+import TauCeti.NumberTheory.HeckeRing.GL2.AntiInvolution
 import TauCeti.NumberTheory.HeckeRing.GL2.Gamma0.ElementaryDivisors
 import TauCeti.NumberTheory.HeckeRing.GL2.Gamma1.CoprimeMul
 import TauCeti.NumberTheory.HeckeRing.Multiplicity.Equiv

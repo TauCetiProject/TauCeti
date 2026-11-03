@@ -15,6 +15,7 @@ import TauCeti.NumberTheory.HeckeRing.GL2.Gamma0.BadPrimeCoset
 import TauCeti.NumberTheory.HeckeRing.GL2.Gamma0.ElementaryDivisors
 import TauCeti.NumberTheory.HeckeRing.GL2.Gamma0.CosetMap
 import TauCeti.NumberTheory.HeckeRing.GL2.Gamma0.Diagonal.Coset
+import TauCeti.NumberTheory.HeckeRing.GL2.AntiInvolution
 import TauCeti.LinearAlgebra.Matrix.SmithNormalForm.Int
 import TauCeti.Data.ZMod.Units
 import Mathlib.Data.Nat.Prime.Int
@@ -84,9 +85,6 @@ commutative semiring.
 * `HeckeRing.GL2.atkinLehnerAntiInvolution_bar_natDiagGL_const`: it fixes the scalars.
 * `HeckeRing.GL2.atkinLehnerAntiInvolution_bar_mem_doubleCoset_of_smul`: the criterion survives
   scaling, the scalar's positivity and coprimality to the level being automatic.
-* `HeckeRing.GL2.bar_mem_doubleCoset_of_forall_primitive`: an anti-involution of a Hecke pair
-  `(Δ₀(N), H)` fixing the scalars fixes every double coset once it fixes those of primitive
-  witnesses.
 * `HeckeRing.GL2.atkinLehnerAntiInvolution_bar_mem_doubleCoset_of_primitive`: it fixes the
   double coset of a witness no prime divides entrywise, with no hypothesis on the determinant.
 * `HeckeRing.GL2.atkinLehnerAntiInvolution_bar_mem_doubleCoset`: for nonzero level `N`, it fixes
@@ -642,68 +640,6 @@ theorem atkinLehnerAntiInvolution_bar_mem_doubleCoset_of_primitive [NeZero N]
     rcases Int.isUnit_iff.mp hu with h | h <;> omega
   refine hprim p hp ⟨h00, ?_, hc ▸ dvd_mul_of_dvd_right h01 _, h11⟩
   exact ((Nat.prime_iff_prime_int.mp hp).dvd_or_dvd h10).resolve_left hpN
-
-/-- **The primitive case suffices.** An anti-involution `ι` of a Hecke pair `(Δ₀(N), H)` that
-fixes the scalars `diag(d, d)` fixes the `H`-double coset of every `x ∈ Δ₀(N)`, as soon as it
-fixes those of the elements of `Δ₀(N)` with an integral witness no prime divides entrywise.
-
-Dividing an integral witness of `x` by the gcd `d` of its four entries leaves a primitive one
-(`exists_primitive_content_quotient`), and `d` is positive and coprime to the level. The scalar
-`diag(d, d)` is central, so it splits off by
-`HeckeAntiInvolution.bar_mem_doubleCoset_self_mul_of_mem_centralizer`. Nothing is asked of
-`H`, so the same reduction serves the levels `Γ₀(N)` and `Γ₁(N)`. -/
-theorem bar_mem_doubleCoset_of_forall_primitive {H : Subgroup (GL (Fin 2) ℚ)}
-    (ι : HeckeAntiInvolution (Delta0 N) H)
-    (hscalar : ∀ d : ℕ, 0 < d → ∀ hs : natDiagGL 2 (fun _ ↦ d) ∈ Delta0 N,
-      ι.bar _ hs = natDiagGL 2 (fun _ ↦ d))
-    (hprim : ∀ (x₀ : GL (Fin 2) ℚ) (hx₀ : x₀ ∈ Delta0 N) (A : Matrix (Fin 2) (Fin 2) ℤ),
-      (x₀ : Matrix (Fin 2) (Fin 2) ℚ) = A.map (Int.cast : ℤ → ℚ) →
-      (∀ p : ℕ, p.Prime → ¬((p : ℤ) ∣ A 0 0 ∧ (p : ℤ) ∣ A 0 1 ∧ (p : ℤ) ∣ A 1 0 ∧
-        (p : ℤ) ∣ A 1 1)) →
-      ι.bar x₀ hx₀ ∈ DoubleCoset.doubleCoset x₀ H H)
-    (x : GL (Fin 2) ℚ) (hx : x ∈ Delta0 N) :
-    ι.bar x hx ∈ DoubleCoset.doubleCoset x H H := by
-  obtain ⟨A, hA, hxdet, hAN, hAunit⟩ := (mem_Delta0_iff N).mp hx
-  have hAco : Int.gcd (A 0 0) N = 1 := Int.isUnit_intCast_iff_gcd_eq_one.mp hAunit
-  have hA_det_pos : 0 < A.det := by
-    rw [← Int.cast_pos (R := ℚ), Int.cast_det, ← hA]
-    exact hxdet
-  -- divide the witness by the gcd `d` of its four entries
-  set d : ℕ := Nat.gcd (Nat.gcd (A 0 0).natAbs (A 0 1).natAbs)
-    (Nat.gcd (A 1 0).natAbs (A 1 1).natAbs) with hd_def
-  obtain ⟨A₀, hA₀_eq, hA₀_det_pos, hA₀N, hA₀co, hA₀_prim⟩ :=
-    exists_primitive_content_quotient N A hA_det_pos hAN hAco d hd_def
-  have hd : 0 < d := Nat.pos_of_ne_zero fun h ↦ by
-    have hA0 : A = 0 := Matrix.ext fun i j ↦ by simpa [h] using hA₀_eq i j
-    simp [hA0] at hA_det_pos
-  have hdN : Nat.Coprime d N :=
-    Nat.Coprime.coprime_dvd_left ((Nat.gcd_dvd_left _ _).trans (Nat.gcd_dvd_left _ _)) hAco
-  have hA₀_det_ne : (A₀.map (Int.cast : ℤ → ℚ)).det ≠ 0 := by
-    rw [← Int.cast_det]
-    exact_mod_cast hA₀_det_pos.ne'
-  set x₀ : GL (Fin 2) ℚ := Matrix.GeneralLinearGroup.mkOfDetNeZero _ hA₀_det_ne
-  have hx₀_val : (x₀ : Matrix (Fin 2) (Fin 2) ℚ) = A₀.map (Int.cast : ℤ → ℚ) := by simp [x₀]
-  have hx₀ : x₀ ∈ Delta0 N := (mem_Delta0_iff N).mpr ⟨A₀, hx₀_val,
-    by rw [hx₀_val, ← Int.cast_det]; exact_mod_cast hA₀_det_pos, hA₀N,
-    Int.isUnit_intCast_iff_gcd_eq_one.mpr hA₀co⟩
-  -- the scalar `d` lies in `Δ₀(N)` and is central
-  let s : GL (Fin 2) ℚ := natDiagGL 2 (fun _ ↦ d)
-  have hs : s ∈ Delta0 N := natDiagGL_mem_Delta0_of_coprime N _ fun _ ↦ hdN
-  have hs_wit : (s : Matrix (Fin 2) (Fin 2) ℚ) =
-      (Matrix.diagonal (fun _ ↦ (d : ℤ))).map (Int.cast : ℤ → ℚ) :=
-    natDiagGL_coe_eq_map_intCast 2 _ fun _ ↦ hd
-  have hs_central : s ∈ Subgroup.center (GL (Fin 2) ℚ) :=
-    Subgroup.mem_center_iff.mpr fun g ↦ (natDiagGL_const_comm 2 d g).symm
-  have hxeq : x = s * x₀ := by
-    apply Units.ext
-    rw [Units.val_mul, hA, hs_wit, hx₀_val]
-    ext i j
-    fin_cases i <;> fin_cases j <;>
-      simp [Matrix.mul_apply, Matrix.diagonal, hA₀_eq]
-  subst hxeq
-  exact ι.bar_mem_doubleCoset_self_mul_of_mem_centralizer hs hx₀
-    (Subgroup.center_le_centralizer _ hs_central) (hscalar d hd hs)
-    (hprim x₀ hx₀ A₀ hx₀_val hA₀_prim)
 
 /-- **The Atkin-Lehner bar fixes every `Γ₀(N)`-double coset in `Δ₀(N)`**, for nonzero level `N`
 and with no further hypothesis on `x`. This is exactly the hypothesis Shimura's commutativity
