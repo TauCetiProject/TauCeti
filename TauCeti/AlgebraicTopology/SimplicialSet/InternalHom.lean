@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicTopology.SimplicialSet.AnodyneExtensions.Inner.PushoutProduct
 public import Mathlib.AlgebraicTopology.SimplicialSet.AnodyneExtensions.PushoutProduct
 public import TauCeti.AlgebraicTopology.SimplicialSet.Fiber
+public import TauCeti.AlgebraicTopology.SimplicialSet.StdSimplex
 
 /-!
 # Simplices of internal homs and functors over a base
@@ -93,13 +94,6 @@ lemma ihomObjEquiv_ihom_map_app {n : ℕ} (g : X ⟶ Y) (x : ((ihom K).obj X) _�
     ihomObjEquiv K Y (((ihom K).map g).app _ x) = ihomObjEquiv K X x ≫ g := by
   rw [ihomObjEquiv_apply, ihomObjEquiv_apply, ← yonedaEquiv_symm_comp, uncurry_natural_right]
 
-/-- The projection `K ⊗ Δ[0] ⟶ K` is an isomorphism, `Δ[0]` being terminal. -/
-private def fstStdSimplexZeroIso : K ⊗ Δ[0] ≅ K where
-  hom := fst K Δ[0]
-  inv := lift (𝟙 K) (stdSimplex.isTerminalObj₀.from K)
-  hom_inv_id :=
-    CartesianMonoidalCategory.hom_ext _ _ (by simp) (stdSimplex.isTerminalObj₀.hom_ext _ _)
-
 /-- The vertices of the internal hom `K ⟶[SSet] X` are the maps `K ⟶ X`. -/
 def ihomObj₀Equiv (X : SSet.{u}) : ((ihom K).obj X) _⦋0⦌ ≃ (K ⟶ X) :=
   (ihomObjEquiv K X).trans (fstStdSimplexZeroIso K).homFromEquiv
@@ -109,7 +103,7 @@ def ihomObj₀Equiv (X : SSet.{u}) : ((ihom K).obj X) _⦋0⦌ ≃ (K ⟶ X) :=
 @[simp]
 lemma ihomObjEquiv_ihomObj₀Equiv_symm (g : K ⟶ X) :
     ihomObjEquiv K X ((ihomObj₀Equiv K X).symm g) = fst K Δ[0] ≫ g := by
-  simp [ihomObj₀Equiv, fstStdSimplexZeroIso]
+  simp [ihomObj₀Equiv]
 
 /-- A vertex `x` of `K ⟶[SSet] X`, viewed as a map `K ⊗ Δ[0] ⟶ X`, factors through the projection
 to `K` by the map `K ⟶ X` it corresponds to. -/
@@ -123,7 +117,6 @@ postcomposition. -/
 @[simp]
 lemma ihomObj₀Equiv_ihom_map_app (g : X ⟶ Y) (x : ((ihom K).obj X) _⦋0⦌) :
     ihomObj₀Equiv K Y (((ihom K).map g).app _ x) = ihomObj₀Equiv K X x ≫ g := by
-  have : IsIso (fst K Δ[0]) := (fstStdSimplexZeroIso K).isIso_hom
   rw [← cancel_epi (fst K Δ[0]), fst_comp_ihomObj₀Equiv, fst_comp_ihomObj₀Equiv_assoc,
     ihomObjEquiv_ihom_map_app]
 
@@ -177,7 +170,6 @@ lemma mem_ihomOver_iff {n : ℕ} (σ : ((ihom K).obj E) _⦋n⦌) :
 lies over `f`. -/
 lemma mem_ihomOver_obj₀_iff (σ : ((ihom K).obj E) _⦋0⦌) :
     σ ∈ (ihomOver p f).obj _ ↔ ihomObj₀Equiv K E σ ≫ p = f := by
-  have : IsIso (fst K Δ[0]) := (fstStdSimplexZeroIso K).isIso_hom
   rw [mem_ihomOver_iff, ← fst_comp_ihomObj₀Equiv, Category.assoc, cancel_epi]
 
 namespace ihomOver
@@ -259,6 +251,28 @@ def fstIso (C : SSet.{u}) : (ihomOver (fst B C) f : SSet) ≅ (ihom K).obj C whe
   inv_hom_id := by
     rw [homEquiv_symm_apply_ι_assoc, ← curry_natural_right, lift_snd,
       ← uncurry_id_eq_ev, curry_uncurry]
+
+/-- The comparison `Fun_B(K, B ⊗ C) ⟶ Fun(K, C)` is the inclusion into `K ⟶[SSet] (B ⊗ C)`
+followed by postcomposition with the second projection. -/
+@[simp]
+lemma fstIso_hom (C : SSet.{u}) :
+    (fstIso f C).hom = (ihomOver (fst B C) f).ι ≫ (ihom K).map (snd B C) :=
+  (rfl)
+
+/-- The comparison `Fun(K, C) ⟶ Fun_B(K, B ⊗ C)` corresponds to the map `K ⊗ Fun(K, C) ⟶ B ⊗ C`
+whose components are the projection to `K` followed by `f`, and the evaluation map. -/
+@[simp]
+lemma homEquiv_fstIso_inv_coe (C : SSet.{u}) :
+    (homEquiv (fstIso f C).inv).1 = lift (fst K _ ≫ f) ((ihom.ev K).app C) := by
+  simp [fstIso]
+
+/-- The comparison `Fun(K, C) ⟶ Fun_B(K, B ⊗ C)`, followed by the inclusion into
+`K ⟶[SSet] (B ⊗ C)`, is the curried form of the map with components the projection to `K`
+followed by `f`, and the evaluation map. -/
+@[reassoc (attr := simp)]
+lemma fstIso_inv_ι (C : SSet.{u}) :
+    (fstIso f C).inv ≫ (ihomOver (fst B C) f).ι = curry (lift (fst K _ ≫ f) ((ihom.ev K).app C)) :=
+  (rfl)
 
 end ihomOver
 

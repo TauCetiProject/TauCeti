@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.Quasicategory.Nerve
+public import Mathlib.AlgebraicTopology.SimplicialSet.Monoidal
 
 /-!
 # Complements on standard simplices
@@ -24,11 +25,12 @@ an initial and a final segment.
   to the constant simplex at that vertex.
 * `SSet.stdSimplex.quasicategory`: standard simplices are quasicategories.
 * `SSet.horn_one_ι_eq_const`: each horn `Λ[1, i]` of `Δ[1]` is the vertex `i`.
+* `SSet.fstStdSimplexZeroIso`: the projection `K ⊗ Δ[0] ⟶ K` is an isomorphism.
 -/
 
 public section
 
-open CategoryTheory Simplicial
+open CategoryTheory Simplicial MonoidalCategory CartesianMonoidalCategory
 
 universe u
 
@@ -70,5 +72,25 @@ lemma horn_one_ι_eq_const (i : Fin 2) : Λ[1, i].ι = const (stdSimplex.obj₀E
   rw [stdSimplex.obj₀Equiv_symm_apply]
   -- The inclusion `Λ[1, i].ι` sends `⟨σ, hσ⟩` to `σ`.
   exact (by omega : σ k = i).trans (stdSimplex.const_app_apply i _ k).symm
+
+/-- The projection `K ⊗ Δ[0] ⟶ K` is an isomorphism, `Δ[0]` being terminal. -/
+def fstStdSimplexZeroIso (K : SSet.{u}) : K ⊗ Δ[0] ≅ K where
+  hom := fst K Δ[0]
+  inv := lift (𝟙 K) (stdSimplex.isTerminalObj₀.from K)
+  hom_inv_id :=
+    CartesianMonoidalCategory.hom_ext _ _ (by simp) (stdSimplex.isTerminalObj₀.hom_ext _ _)
+
+@[simp]
+lemma fstStdSimplexZeroIso_hom (K : SSet.{u}) : (fstStdSimplexZeroIso K).hom = fst K Δ[0] :=
+  (rfl)
+
+@[simp]
+lemma fstStdSimplexZeroIso_inv (K : SSet.{u}) :
+    (fstStdSimplexZeroIso K).inv = lift (𝟙 K) (stdSimplex.isTerminalObj₀.from K) :=
+  (rfl)
+
+/-- The projection `K ⊗ Δ[0] ⟶ K` is an isomorphism. -/
+instance (K : SSet.{u}) : IsIso (fst K Δ[0]) :=
+  (fstStdSimplexZeroIso K).isIso_hom
 
 end SSet
