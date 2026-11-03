@@ -61,7 +61,7 @@ theorem killingForm_slFinTwoBasis (i j : Fin 3) :
       ![![0, 4, 0], ![4, 0, 0], ![0, 0, 8]] i j := by
   rw [killingForm_slFinTwo_apply, slFinTwoBasis_apply, slFinTwoBasis_apply]
   fin_cases i <;> fin_cases j <;> simp [Matrix.trace_fin_two, Matrix.mul_apply, Fin.sum_univ_two]
-  all_goals norm_num
+  norm_num
 
 end CommRing
 
