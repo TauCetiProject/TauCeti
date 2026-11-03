@@ -52,25 +52,14 @@ variable (R c) in
 seminorm and the maximum product seminorm. -/
 def piLinearIsometryEquiv : Gauss c (∀ i, E i) ≃ₗᵢ[R] ∀ i, Gauss c (E i) where
   toLinearEquiv :=
-    { toFun a i := ofAddSubgroup (IsRestrictedFamily.piLinearEquiv R c a.toAddSubgroup i)
-      invFun a := ofAddSubgroup ((IsRestrictedFamily.piLinearEquiv R c).symm
-        (fun i ↦ (a i).toAddSubgroup))
-      left_inv a := by
-        ext t i
-        simp
-      right_inv a := by
-        ext i t
-        simp
-      map_add' a b := by
-        ext i t
-        simp
-      map_smul' r a := by
-        ext i t
-        simp }
+    (toAddSubgroupLinearEquiv R).trans
+      ((IsRestrictedFamily.piLinearEquiv R c).trans
+        (LinearEquiv.piCongrRight fun _ ↦ (toAddSubgroupLinearEquiv R).symm))
   norm_map' a := by
-    simp only [LinearEquiv.coe_mk, LinearMap.coe_mk, AddHom.coe_mk]
-    let b : ∀ i, Gauss c (E i) := fun i ↦
-      ofAddSubgroup (IsRestrictedFamily.piLinearEquiv R c a.toAddSubgroup i)
+    simp only [LinearEquiv.trans_apply, toAddSubgroupLinearEquiv_apply]
+    let b : ∀ i, Gauss c (E i) :=
+      (LinearEquiv.piCongrRight fun _ ↦ (toAddSubgroupLinearEquiv R).symm)
+        (IsRestrictedFamily.piLinearEquiv R c a.toAddSubgroup)
     have hb (i : ι) (t : σ →₀ ℕ) : b i t = a t i := by
       simp [b]
     apply le_antisymm
@@ -137,40 +126,38 @@ section Convolution
 variable [NormedRing R] [IsUltrametricDist R] [∀ i, IsUltrametricDist (E i)]
   [∀ i, Module R (E i)] [∀ i, IsBoundedSMul R (E i)]
 
-/-- The Gauss coordinate comparison respects the convolution action of scalar series. -/
-theorem piLinearIsometryEquiv_isRestrictedSubring_smul
-    (f : IsRestricted.subring (R := R) c) (a : Gauss c (∀ i, E i)) :
-    piLinearIsometryEquiv R c (f • a) = f • piLinearIsometryEquiv R c a := by
-  ext i t
-  have hcoeff : ((piLinearIsometryEquiv R c a i).toAddSubgroup : (σ →₀ ℕ) → E i) =
-      (LinearMap.proj (R := R) i) ∘ (a : (σ →₀ ℕ) → ∀ i, E i) := by
-    funext u
-    simp
-  simp only [piLinearIsometryEquiv_apply, isRestrictedSubring_smul_apply,
-    Pi.smul_apply]
-  rw [hcoeff]
-  exact (congrFun (convSMul_comp (LinearMap.proj i) (f : MvPowerSeries σ R)
-    (a : (σ →₀ ℕ) → ∀ i, E i)) t).symm
-
 variable (R c) in
 /-- The coordinate isometry is linear over the restricted-series ring acting by convolution. -/
 def piSeriesLinearIsometryEquiv :
     Gauss c (∀ i, E i) ≃ₗᵢ[IsRestricted.subring (R := R) c] ∀ i, Gauss c (E i) where
   toLinearEquiv :=
-    { (piLinearIsometryEquiv (E := E) R c).toLinearEquiv.toAddEquiv with
-      map_smul' := piLinearIsometryEquiv_isRestrictedSubring_smul }
-  norm_map' := (piLinearIsometryEquiv (E := E) R c).norm_map
+    (toAddSubgroupAddEquiv.linearEquiv (IsRestricted.subring (R := R) c)).trans
+      ((IsRestrictedFamily.piSeriesLinearEquiv R c).trans
+        (LinearEquiv.piCongrRight fun _ ↦
+          (toAddSubgroupAddEquiv.linearEquiv (IsRestricted.subring (R := R) c)).symm))
+  norm_map' a := by
+    convert (piLinearIsometryEquiv (E := E) R c).norm_map a using 2
+    ext i t
+    simp [piLinearIsometryEquiv]
 
 /-- The restricted-series bundling has the same coordinate map. -/
 @[simp]
 theorem coe_piSeriesLinearIsometryEquiv :
-    ⇑(piSeriesLinearIsometryEquiv (E := E) R c) = piLinearIsometryEquiv R c := (rfl)
+    ⇑(piSeriesLinearIsometryEquiv (E := E) R c) = piLinearIsometryEquiv R c := by
+  funext a
+  ext i t
+  simp [piSeriesLinearIsometryEquiv]
 
 /-- The inverse restricted-series bundling assembles the same coordinates. -/
 @[simp]
 theorem coe_piSeriesLinearIsometryEquiv_symm :
     ⇑(piSeriesLinearIsometryEquiv (E := E) R c).symm =
-      (piLinearIsometryEquiv (E := E) R c).symm := (rfl)
+      (piLinearIsometryEquiv (E := E) R c).symm := by
+  funext a
+  apply (piLinearIsometryEquiv (E := E) R c).injective
+  rw [LinearIsometryEquiv.apply_symm_apply]
+  simpa only [coe_piSeriesLinearIsometryEquiv] using
+    (piSeriesLinearIsometryEquiv (E := E) R c).apply_symm_apply a
 
 end Convolution
 
