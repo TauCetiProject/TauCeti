@@ -153,8 +153,7 @@ private theorem circle_mixed_power_rotation_factor {p q : ℕ} (hpq : p ≠ q) :
       calc
         ((u : ℂ) ^ q * (u : ℂ) ^ d) * ((u : ℂ) ^ q)⁻¹ = (u : ℂ) ^ d := by field_simp
         _ = -1 := huk
-  change (u : ℂ) ^ p * conj (u : ℂ) ^ q = -1
-  exact hfactor
+  simpa only [u, d] using hfactor
 
 /-- The mixed moments of the circular law: unequal powers integrate to zero, while the
 diagonal moment of order `p` is `1 / (p + 1)`. -/
