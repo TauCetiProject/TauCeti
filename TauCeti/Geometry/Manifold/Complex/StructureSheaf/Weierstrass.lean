@@ -439,13 +439,7 @@ theorem order_map_residue_verticalPowerSeries {x₀ : E} {w₀ : ℂ}
       residueFieldEquiv_residue,
       eval_eq_of_toFilterGerm_eq (toFilterGerm_coeff_verticalPowerSeries hgG i), mul_eq_zero,
       or_iff_right (inv_ne_zero (Nat.cast_ne_zero.2 i.factorial_ne_zero))]
-  have haux {a b : ℕ∞} (H : ∀ n : ℕ, (n : ℕ∞) ≤ a → (n : ℕ∞) ≤ b) : a ≤ b := by
-    cases a <;> cases b
-    · exact le_rfl
-    · exact absurd (ENat.natCast_le_natCast.1 (H (_ + 1) le_top)) (Nat.lt_succ_self _).not_ge
-    · exact le_top
-    · exact H _ le_rfl
-  exact le_antisymm (haux fun n ↦ (hle_iff n).1) (haux fun n ↦ (hle_iff n).2)
+  exact ENat.eq_of_forall_natCast_le_iff hle_iff
 
 /-- The residue-field reduction of `verticalPowerSeries x₀ w₀ g` is nonzero if and only if the
 vertical slice `w ↦ G (x₀, w)` has finite analytic order at `w₀`. -/

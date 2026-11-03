@@ -27,6 +27,7 @@ import TauCeti.Analysis.Contour.Residue.LogDeriv
 import TauCeti.Analysis.Contour.Residue.Theorem
 import TauCeti.Analysis.Meromorphic.Divisor
 import TauCeti.Analysis.Polynomial.Order
+import TauCeti.Analysis.Polynomial.SimpleRoots.Basic
 
 /-!
 # The complex analytic Weierstrass preparation and division theorems
@@ -303,14 +304,6 @@ private theorem sub_mul_sum_divKernelCoeff {d : ℕ} (c : Fin d → ℂ) (ζ w :
     Polynomial.eval_monicOfCoeff, mul_sub, Finset.sum_sub_distrib]
   ring
 
-private theorem analyticAt_eval_monicOfCoeff {B : Type*} [NormedAddCommGroup B] [NormedSpace ℂ B]
-    {d : ℕ} {c : Fin d → B → ℂ} {z : B → ℂ} {b₀ : B}
-    (hc : ∀ i, AnalyticAt ℂ (c i) b₀) (hz : AnalyticAt ℂ z b₀) :
-    AnalyticAt ℂ (fun b ↦ (Polynomial.monicOfCoeff (fun i ↦ c i b)).eval (z b)) b₀ := by
-  simp only [Polynomial.eval_monicOfCoeff]
-  exact (hz.fun_pow d).fun_add <|
-    Finset.analyticAt_fun_sum _ fun i _ ↦ (hc i).fun_mul (hz.fun_pow (i : ℕ))
-
 end Aux
 
 end TauCeti
@@ -427,8 +420,9 @@ theorem exists_weierstrassPreparation {f : E × ℂ → ℂ} {x₀ : E} {w₀ : 
     refine ((analyticAt_snd.fun_sub (analyticAt_snd.comp_of_eq analyticAt_fst rfl)).inv
       (sub_ne_zero.2 hζ0)).fun_mul (((hF0_an ζ (sphere_subset_closedBall hζ)).comp_of_eq
       ((analyticAt_fst.comp_of_eq analyticAt_fst rfl).prod analyticAt_snd) rfl).fun_div
-      (analyticAt_eval_monicOfCoeff (fun i ↦ (hC_an i 0 (mem_ball_self hδ)).comp_of_eq
-        (analyticAt_fst.comp_of_eq analyticAt_fst rfl) rfl) analyticAt_snd) ?_)
+      ((TauCeti.Polynomial.analyticAt_eval_monicOfCoeff _).comp
+        ((AnalyticAt.pi fun i ↦ (hC_an i 0 (mem_ball_self hδ)).comp_of_eq
+          (analyticAt_fst.comp_of_eq analyticAt_fst rfl) rfl).prod analyticAt_snd)) ?_)
     simp [TauCeti.Polynomial.eval_monicOfCoeff, hC_zero, pow_ne_zero d hζ0]
   have hFU_slice {x : E} (hx : x ∈ ball 0 δ) :
       (∀ w ∈ ball 0 R,
@@ -485,7 +479,8 @@ theorem exists_weierstrassDivision_monicOfCoeff {d : ℕ} {c : Fin d → E → �
   have hG0_an : ∀ w ∈ closedBall (0 : ℂ) R, AnalyticAt ℂ G (0, w) := fun w hw ↦
     hball₁ (by simp [Prod.dist_eq, (mem_closedBall_zero_iff.1 hw).trans_lt (half_lt_self hr₁)])
   have hP_an0 (ζ : ℂ) : AnalyticAt ℂ (fun p : E × ℂ ↦ P_eval p.1 p.2) (0, ζ) :=
-    analyticAt_eval_monicOfCoeff (fun i ↦ (hC i).comp_of_eq analyticAt_fst rfl) analyticAt_snd
+    (TauCeti.Polynomial.analyticAt_eval_monicOfCoeff _).comp
+      ((AnalyticAt.pi fun i ↦ (hC i).comp_of_eq analyticAt_fst rfl).prod analyticAt_snd)
   have hP0_sphere {ζ : ℂ} (hζ : ζ ∈ sphere (0 : ℂ) R) : P_eval 0 ζ ≠ 0 := by
     simp [P_eval, TauCeti.Polynomial.eval_monicOfCoeff, hC0,
       pow_ne_zero d (ne_of_mem_sphere hζ hR.ne')]

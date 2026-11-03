@@ -13,14 +13,15 @@ import Mathlib.Analysis.Calculus.FDeriv.Analytic
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 
 /-!
-# Analyticity of iterated derivatives and vertical slice derivatives
+# Analyticity of iterated vertical slice derivatives
 
 Mathlib proves that the `n`-fold iterate `deriv^[n] f` of an analytic function `f : 𝕜 → F` into a
-complete normed space is analytic (`AnalyticAt.iterated_deriv`). This file records the spelling for
-`iteratedDeriv n f` and proves the parametric two-variable version: if `f : E × 𝕜 → F` is jointly
-analytic at `p`, then `(q : E × 𝕜) ↦ iteratedDeriv n (fun y ↦ f (q.1, y)) q.2` is jointly analytic
-at `p`, and in particular the vertical Taylor coefficient `x ↦ iteratedDeriv n (fun y ↦ f (x, y))
-p.2` is analytic at `p.1`.
+complete normed space is analytic (`AnalyticAt.iterated_deriv`). This file proves the parametric
+two-variable version for `iteratedDeriv`: if `f : E × 𝕜 → F` is jointly analytic at `p`, then
+`(q : E × 𝕜) ↦ iteratedDeriv n (fun y ↦ f (q.1, y)) q.2` is jointly analytic at `p`
+(`AnalyticAt.iteratedDeriv_snd`), and in particular the vertical Taylor coefficient
+`x ↦ iteratedDeriv n (fun y ↦ f (x, y)) p.2` is analytic at `p.1`
+(`AnalyticAt.curry_left_iteratedDeriv_snd`).
 -/
 
 public section
@@ -32,14 +33,6 @@ namespace AnalyticAt
 variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
-
-/-- If `f : 𝕜 → F` is analytic at `z` and `F` is complete, then `iteratedDeriv n f` is analytic at
-`z`. -/
-@[fun_prop]
-protected theorem iteratedDeriv {f : 𝕜 → F} {z : 𝕜} (hf : AnalyticAt 𝕜 f z) (n : ℕ) :
-    AnalyticAt 𝕜 (iteratedDeriv n f) z := by
-  rw [iteratedDeriv_eq_iterate]
-  exact hf.iterated_deriv n
 
 /-- If `f : E × 𝕜 → F` is jointly analytic at `p` and `F` is complete, then the `n`-th iterated
 derivative in the second variable `(q : E × 𝕜) ↦ iteratedDeriv n (fun y ↦ f (q.1, y)) q.2` is
