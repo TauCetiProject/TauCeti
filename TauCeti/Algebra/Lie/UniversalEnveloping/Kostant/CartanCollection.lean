@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Form
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Commutation
+public import TauCeti.Algebra.Ring.Subgroup
+public import Mathlib.Algebra.Ring.Subring.MulOpposite
 
 /-!
 # Integral root–Cartan collection
@@ -96,60 +98,47 @@ theorem toAddSubgroup_kostantForm_eq_closure_root_mul_cartan
   have hroot {r : U} (hr : r ∈ kostantRootGenerators e) {p : U} (hp : p ∈ P) :
       p * r ∈ P := by
     obtain ⟨i, n, rfl⟩ := mem_kostantRootGenerators_iff.mp hr
-    induction hp using AddSubgroup.closure_induction with
-    | mem p hp =>
-        obtain ⟨a, ha, b, hb, rfl⟩ := hp
-        obtain ⟨b', hb', heq⟩ := exists_cartan_mul_dividedPower_eq e h w hw i n hb
-        rw [mul_assoc, heq, ← mul_assoc]
-        exact hprod (R.mul_mem ha (Subring.subset_closure
-          (dividedPower_mem_kostantRootGenerators e i n))) hb'
-    | zero => simpa only [zero_mul] using P.zero_mem
-    | add a b _ _ ha hb => simpa only [add_mul] using P.add_mem ha hb
-    | neg a _ ha => simpa only [neg_mul] using P.neg_mem ha
+    refine ((AddSubgroup.closure_le
+      (P.comap (AddMonoidHom.mulRight _))).2 ?_) hp
+    rintro _ ⟨a, ha, b, hb, rfl⟩
+    obtain ⟨b', hb', heq⟩ := exists_cartan_mul_dividedPower_eq e h w hw i n hb
+    -- Expose preimage membership so associativity can rewrite the product.
+    change (a * b) * _ ∈ P
+    rw [mul_assoc, heq, ← mul_assoc]
+    exact hprod (R.mul_mem ha (Subring.subset_closure
+      (dividedPower_mem_kostantRootGenerators e i n))) hb'
   have hcartan {c : U} (hc : c ∈ C) {p : U} (hp : p ∈ P) : p * c ∈ P := by
-    induction hp using AddSubgroup.closure_induction with
-    | mem p hp =>
-        obtain ⟨a, ha, b, hb, rfl⟩ := hp
-        rw [mul_assoc]
-        exact hprod ha (C.mul_mem hb hc)
-    | zero => simpa only [zero_mul] using P.zero_mem
-    | add a b _ _ ha hb => simpa only [add_mul] using P.add_mem ha hb
-    | neg a _ ha => simpa only [neg_mul] using P.neg_mem ha
+    refine ((AddSubgroup.closure_le
+      (P.comap (AddMonoidHom.mulRight c))).2 ?_) hp
+    rintro _ ⟨a, ha, b, hb, rfl⟩
+    -- Expose preimage membership so associativity can rewrite the product.
+    change (a * b) * c ∈ P
+    rw [mul_assoc]
+    exact hprod ha (C.mul_mem hb hc)
   apply le_antisymm
   · intro u hu
-    rw [Subring.mem_toAddSubgroup, kostantForm_def] at hu
-    -- Right multiplication by each generator preserves the collected span. Subring induction
-    -- extends this to arbitrary words, with no induction on a chosen presentation of `u`.
-    have hstable : ∀ p ∈ P, p * u ∈ P := by
-      induction hu using Subring.closure_induction with
-      | mem u hu =>
-          rcases (mem_kostantGenerators_iff.mp hu) with hroot' | hcartan'
-          · exact fun p hp => hroot (mem_kostantRootGenerators_iff.mpr hroot') hp
-          · exact fun p hp => hcartan (Subring.subset_closure
-              (mem_kostantCartanGenerators_iff.mpr hcartan')) hp
-      | zero => intro p _; simpa only [mul_zero] using P.zero_mem
-      | one => intro p hp; simpa only [mul_one] using hp
-      | add a b _ _ ha hb =>
-          intro p hp
-          simpa only [mul_add] using P.add_mem (ha p hp) (hb p hp)
-      | neg a _ ha =>
-          intro p hp
-          simpa only [mul_neg] using P.neg_mem (ha p hp)
-      | mul a b _ _ ha hb =>
-          intro p hp
-          simpa only [mul_assoc] using hb (p * a) (ha p hp)
+    -- Left multipliers on the opposite ring are right multipliers on the original ring.
+    let M := (P.comap (MulOpposite.opAddEquiv.symm.toAddMonoidHom)).multiplierRing.unop
+    have hM {x : U} : x ∈ M ↔ ∀ p ∈ P, p * x ∈ P := by
+      rw [Subring.mem_unop, AddSubgroup.mem_multiplierRing]
+      -- Reindex the opposite-ring condition by the original ring's elements.
+      exact MulOpposite.op_surjective.forall
+    have hstable : kostantForm e h ≤ M := by
+      apply (kostantForm_le_iff e h M).2
+      constructor
+      · intro i n
+        exact hM.mpr fun p hp => hroot (dividedPower_mem_kostantRootGenerators e i n) hp
+      · intro j n
+        exact hM.mpr fun p hp => hcartan (Subring.subset_closure
+          (ringChoose_mem_kostantCartanGenerators h j n)) hp
     have hone : (1 : U) ∈ P := by simpa only [mul_one] using hprod R.one_mem C.one_mem
-    simpa only [one_mul] using hstable 1 hone
+    simpa only [one_mul] using hM.mp (hstable hu) 1 hone
   · have hR : R ≤ kostantForm e h := by
-      apply Subring.closure_le.mpr
-      intro u hu
-      obtain ⟨i, n, rfl⟩ := mem_kostantRootGenerators_iff.mp hu
-      exact dividedPower_mem_kostantForm e h i n
+      rw [kostantForm_def]
+      exact Subring.closure_mono Set.subset_union_left
     have hC : C ≤ kostantForm e h := by
-      apply Subring.closure_le.mpr
-      intro u hu
-      obtain ⟨j, m, rfl⟩ := mem_kostantCartanGenerators_iff.mp hu
-      exact ringChoose_mem_kostantForm e h j m
+      rw [kostantForm_def]
+      exact Subring.closure_mono Set.subset_union_right
     apply (AddSubgroup.closure_le _).mpr
     rintro u ⟨a, ha, b, hb, rfl⟩
     exact (kostantForm e h).mul_mem (hR ha) (hC hb)

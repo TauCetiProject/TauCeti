@@ -127,7 +127,7 @@ noncomputable def kostantForm (e : ι → L) (h : κ → L) :
 
 /-- The Kostant form is the subring closure of its root and Cartan generators. -/
 theorem kostantForm_def (e : ι → L) (h : κ → L) :
-    kostantForm e h = Subring.closure (kostantGenerators e h) :=
+    kostantForm e h = Subring.closure (kostantRootGenerators e ∪ kostantCartanGenerators h) :=
   (rfl)
 
 /-- A divided power of a designated root vector is one of the root-generator elements. -/
