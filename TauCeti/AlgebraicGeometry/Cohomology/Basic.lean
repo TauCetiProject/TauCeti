@@ -129,8 +129,8 @@ lemma cohomologyOnRes_comp (n : ℕ) {U V W : Opens X} (hUV : U ≤ V) (hVW : V 
 
 /-- Restricting twice in cohomology is restricting along the composite inclusion. -/
 @[simp]
-lemma cohomologyOnRes_comp_apply (n : ℕ) {U V W : Opens X} (hUV : U ≤ V) (hVW : V ≤ W)
-    (x : cohomologyOn M n W) :
+lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnRes_comp_apply (n : ℕ)
+    {U V W : Opens X} (hUV : U ≤ V) (hVW : V ≤ W) (x : cohomologyOn M n W) :
     cohomologyOnRes M n hUV (cohomologyOnRes M n hVW x) =
       cohomologyOnRes M n (hUV.trans hVW) x := by
   rw [← ConcreteCategory.comp_apply, cohomologyOnRes_comp]

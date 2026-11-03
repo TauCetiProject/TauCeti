@@ -50,13 +50,14 @@ open TauCeti.CategoryTheory
 variable {X : Scheme.{u}} (M : X.Modules)
 
 /-- The map `Hⁿ(U, M) ⟶ Hⁿ(U, N)` induced by a morphism `f : M ⟶ N` of sheaves of modules. -/
-private abbrev cohomologyOnMap {N : X.Modules} (f : M ⟶ N) (n : ℕ) (U : X.Opens) :
+private abbrev _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnMap {N : X.Modules}
+    (f : M ⟶ N) (n : ℕ) (U : X.Opens) :
     cohomologyOn M n U →+ cohomologyOn N n U :=
   (((_root_.CategoryTheory.Sheaf.cohomologyPresheafFunctor _ n).map
     ((toSheaf X).map f)).app (op U)).hom
 
-private lemma H'AddEquivExt_cohomologyOnMap {N : X.Modules} (f : M ⟶ N) (n : ℕ) (U : X.Opens)
-    (x : cohomologyOn M n U) :
+private lemma _root_.AlgebraicGeometry.Scheme.Modules.H'AddEquivExt_cohomologyOnMap
+    {N : X.Modules} (f : M ⟶ N) (n : ℕ) (U : X.Opens) (x : cohomologyOn M n U) :
     _root_.CategoryTheory.Sheaf.H'AddEquivExt ((toSheaf X).obj N) n U (cohomologyOnMap M f n U x) =
       (_root_.CategoryTheory.Sheaf.H'AddEquivExt ((toSheaf X).obj M) n U x).comp
         (Abelian.Ext.mk₀ ((toSheaf X).map f)) (add_zero n) :=
