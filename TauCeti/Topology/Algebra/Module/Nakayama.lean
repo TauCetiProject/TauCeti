@@ -18,7 +18,7 @@ public import Mathlib.Topology.Algebra.TopologicallyNilpotent
 Let `R` be a commutative topological semiring and `I` a finitely generated ideal of `R` all of
 whose elements are topologically nilpotent. For a topological `R`-module `M`, compactness takes
 over the role that finite generation plays in the algebraic Nakayama lemma
-(`Submodule.le_of_le_smul_of_le_jacobson_bot`): if `P` is a compact submodule and `N` a closed
+(`Submodule.le_of_le_smul_of_le_jacobson`): if `P` is a compact submodule and `N` a closed
 submodule with `P ≤ N ⊔ I • P`, then `P ≤ N`. No finiteness of `P` and no Jacobson radical
 hypothesis is needed.
 
@@ -106,7 +106,7 @@ private theorem le_of_le_sup_span_singleton_smul {a : R} (ha : IsTopologicallyNi
 /-- **The topological Nakayama lemma.** Let `I` be a finitely generated ideal of topologically
 nilpotent elements. If `P` is a compact submodule and `N` a closed submodule of a topological
 module with `P ≤ N ⊔ I • P`, then `P ≤ N`. Compactness of `P` replaces the finite generation
-hypothesis of `Submodule.le_of_le_smul_of_le_jacobson_bot`. -/
+hypothesis of `Submodule.le_of_le_smul_of_le_jacobson`. -/
 theorem le_of_le_smul_of_isCompact {I : Ideal R} {N P : Submodule R M} (hI : I.FG)
     (hInil : ∀ a ∈ I, IsTopologicallyNilpotent a) (hN : IsClosed (N : Set M))
     (hP : IsCompact (P : Set M)) (hNP : P ≤ N ⊔ I • P) : P ≤ N := by

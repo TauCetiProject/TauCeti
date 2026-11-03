@@ -95,7 +95,7 @@ private noncomputable def implementerTensorRepresentation :
   map_mul' p q := by
     apply BalancedTensorProduct.hom_ext
     intro f x
-    erw [Module.End.mul_apply, implementerTensorMap_tmul, implementerTensorMap_tmul,
+    erw [mul_apply_eq_comp, implementerTensorMap_tmul, implementerTensorMap_tmul,
       implementerTensorMap_tmul, QuotientGroup.mk_mul, map_mul]
     rfl
 
@@ -105,7 +105,7 @@ private theorem implementerTensorRepresentation_kernelLift (d : (End A)ˣ) :
   intro f x
   erw [implementerTensorRepresentation, implementerTensorMap_tmul,
     cliffordMultiplicityRepresentation_mk_kernelLift, BalancedTensorProduct.balance]
-  rw [Module.End.one_apply]
+  rw [one_apply_eq_self]
   erw [(F).endModule_smul A, kernelLift_snd_apply]
   exact congrArg (BalancedTensorProduct.tmul k (End A) (N := V) f)
     (congrArg (fun a : End A => a.asHom.hom.hom.hom x) d.inv_val)

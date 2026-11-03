@@ -39,7 +39,10 @@ example : 𝔠 ≤ #(Quotient ((⊥ : Setoid (ℕ → Bool)).comap
     ((↑) : {x : ℕ → Bool | x 0 = true} → ℕ → Bool))) := by
   refine Setoid.HasCantorAntichainOn.continuum_le_mk_quotient_comap
     (Setoid.hasCantorAntichainOn_iff.2 ⟨fun a n => Nat.casesOn n true a, ?_, fun _ => rfl, ?_⟩)
-  · exact continuous_pi fun n => by cases n <;> fun_prop
+  · exact continuous_pi fun n => by
+      cases n with
+      | zero => exact continuous_const
+      | succ n => exact continuous_apply n
   · intro a b hab h
     have h' : (fun n => Nat.casesOn n true a : ℕ → Bool) = fun n => Nat.casesOn n true b := by
       simpa [Setoid.bot_def] using h

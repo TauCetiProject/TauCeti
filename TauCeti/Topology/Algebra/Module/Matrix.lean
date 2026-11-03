@@ -55,13 +55,13 @@ theorem smulVecHom_self_apply [TopologicalSpace R] [ContinuousAdd R] [Continuous
 theorem smulVecHom_one [DecidableEq ι] :
     (1 : Matrix ι ι R).smulVecHom M = ContinuousAddMonoidHom.id _ := by
   ext x i
-  simp [one_apply, ite_smul]
+  simp [Matrix.one_apply, ite_smul]
 
 /-- The map induced by a product of matrices is the composite of the maps they induce. -/
 theorem smulVecHom_mul [Fintype κ] (B : Matrix μ κ R) :
     (B * A).smulVecHom M = (B.smulVecHom M).comp (A.smulVecHom M) := by
   ext x m
-  simp only [smulVecHom_apply, ContinuousAddMonoidHom.comp_toFun, mul_apply, Finset.sum_smul,
+  simp only [smulVecHom_apply, ContinuousAddMonoidHom.comp_toFun, Matrix.mul_apply, Finset.sum_smul,
     Finset.smul_sum, mul_smul]
   exact Finset.sum_comm
 
