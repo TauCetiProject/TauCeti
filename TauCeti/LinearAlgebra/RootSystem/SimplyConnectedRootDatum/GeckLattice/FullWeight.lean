@@ -40,6 +40,8 @@ admissible lattice is needed before the same two statements can hold.
 * `TauCeti.DynkinType.range_geckWeightFin`: the finite-ordinal reindexing does not change the set
   of Geck weights, so the two spanning conditions agree
   (`TauCeti.DynkinType.span_range_geckWeightFin_eq_top_iff`).
+* `TauCeti.DynkinType.span_range_geckWeightFin_eq_rootSpan`: the finite-ordinal Geck weights
+  span the root lattice.
 * `TauCeti.DynkinType.isClosedImmersion_geckWeightTorus_E8`, and the analogous `F4` and `G2`
   instances, imported from `GeckLattice.Torus`: the weight torus is a closed subgroup scheme
   of the carrier.
@@ -80,6 +82,13 @@ theorem span_range_geckWeightFin_eq_top_iff :
     Submodule.span ℤ (Set.range (t.geckWeightFin ht)) = ⊤ ↔
       Submodule.span ℤ (Set.range (t.geckWeight ht)) = ⊤ := by
   rw [range_geckWeightFin]
+
+/-- The finite-ordinal Geck weights span the root lattice. -/
+theorem span_range_geckWeightFin_eq_rootSpan :
+    Submodule.span ℤ (Set.range (t.geckWeightFin ht)) =
+      (t.simplyConnectedRootDatum ht).rootSpan ℤ :=
+  (congrArg (Submodule.span ℤ) (t.range_geckWeightFin ht)).trans
+    (t.span_range_geckWeight_eq_span_range_root ht)
 
 /-! ## The three unimodular types -/
 

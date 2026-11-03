@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Datum
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.Basic
-import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.FullWeight
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.FullWeight
 
 /-!
 # The Geck module as a Chevalley datum
@@ -52,13 +52,6 @@ namespace TauCeti.DynkinType
 noncomputable section
 
 variable (t : DynkinType) (ht : t.Valid)
-
-/-- The finite-ordinal Geck weights span the root lattice. -/
-theorem span_range_geckWeightFin_eq_rootSpan :
-    Submodule.span ℤ (Set.range (t.geckWeightFin ht)) =
-      (t.simplyConnectedRootDatum ht).rootSpan ℤ :=
-  (congrArg (Submodule.span ℤ) (t.range_geckWeightFin ht)).trans
-    (t.span_range_geckWeight_eq_span_range_root ht)
 
 /-- **The Geck module as a Chevalley datum.** The representation is Geck's matrix representation
 of the pinned Lie algebra, the lattice is the integral coordinate lattice with its standard basis,
