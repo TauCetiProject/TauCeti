@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.SpecificGroups.Sporadic.HigmanSims.Basic
-public import Mathlib.GroupTheory.Index
+public import TauCeti.GroupTheory.GroupAction.Stabilizer.Chain
 public import Mathlib.GroupTheory.GroupAction.Transitive
 
 /-!
@@ -161,9 +161,19 @@ instance : IsPretransitive HS (Fin 100) :=
   (isPretransitive_iff_base (0 : Fin 100)).mpr fun x =>
     ⟨⟨wordValue (orbitWords x), wordValue_mem _⟩, orbitWords_apply x⟩
 
+/-- The point sequence `0, 1, 2, …` (modulo 100) used for the Higman--Sims stabilizer chain.
+The first five points are the prescribed points for the order calculation. -/
+def pointSequence (i : ℕ) : Fin 100 := Fin.ofNat 100 i
+
+/-- Evaluation of the point sequence modulo 100. -/
+@[simp]
+theorem pointSequence_apply (i : ℕ) : pointSequence i = Fin.ofNat 100 i := (rfl)
+
 /-- The first basic orbit of the Higman--Sims model has length 100. -/
 @[simp]
-theorem ncard_orbit_zero : (orbit HS (0 : Fin 100)).ncard = 100 := by
+theorem ncard_orbit_stabilizerChain_zero :
+    (orbit (HS.stabilizerChain pointSequence 0) (0 : Fin 100)).ncard = 100 := by
+  rw [Subgroup.stabilizerChain_zero]
   simp [orbit_eq_univ]
 
 /-! ### An invariant relation bounds the second orbit -/
@@ -303,6 +313,13 @@ private def suborbit : Finset (Fin 100) :=
     62, 63, 64, 65, 68, 69, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86,
     87, 88, 89, 90, 92, 93, 94, 95, 96, 97, 98, 99}
 
+private theorem suborbit_eq : (suborbit : Set (Fin 100)) =
+    (↑({1, 2, 3, 5, 6, 7, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 27, 29, 30,
+      31, 33, 34, 35, 36, 37, 41, 42, 43, 45, 46, 48, 51, 53, 54, 55, 56, 57, 58, 59, 60,
+      61, 62, 63, 64, 65, 68, 69, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85,
+      86, 87, 88, 89, 90, 92, 93, 94, 95, 96, 97, 98, 99} :
+      Finset (Fin 100)) : Set (Fin 100)) := (rfl)
+
 private theorem related_zero : ∀ x, related 0 x = true ↔ x ∈ suborbit := by
   decide +kernel
 
@@ -414,15 +431,14 @@ private theorem stabilizerWords_apply : ∀ x ∈ suborbit,
   decide +kernel
 
 /-- The complete orbit of `1` under the stabilizer of `0` in the ATLAS model. -/
-theorem orbit_stabilizer_zero_one :
-    orbit ↥(HS ⊓ stabilizer (Equiv.Perm (Fin 100)) (0 : Fin 100)) (1 : Fin 100) =
+theorem orbit_stabilizerChain_one :
+    orbit (HS.stabilizerChain pointSequence 1) (1 : Fin 100) =
       (↑({1, 2, 3, 5, 6, 7, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 27, 29, 30,
         31, 33, 34, 35, 36, 37, 41, 42, 43, 45, 46, 48, 51, 53, 54, 55, 56, 57, 58, 59, 60,
         61, 62, 63, 64, 65, 68, 69, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85,
         86, 87, 88, 89, 90, 92, 93, 94, 95, 96, 97, 98, 99} :
         Finset (Fin 100)) : Set (Fin 100)) := by
-  suffices h : orbit ↥(HS ⊓ stabilizer (Equiv.Perm (Fin 100)) (0 : Fin 100)) (1 : Fin 100) =
-      (suborbit : Set (Fin 100)) from h
+  rw [← suborbit_eq, Subgroup.stabilizerChain_succ, Subgroup.stabilizerChain_zero]
   ext x
   constructor
   · rintro ⟨g, rfl⟩
@@ -437,29 +453,20 @@ theorem orbit_stabilizer_zero_one :
 
 /-- The second basic orbit along `0, 1` has length 77, not 99. -/
 @[simp]
-theorem ncard_orbit_stabilizer_zero_one :
-    (orbit ↥(HS ⊓ stabilizer (Equiv.Perm (Fin 100)) (0 : Fin 100)) (1 : Fin 100)).ncard = 77 := by
-  rw [orbit_stabilizer_zero_one, Set.ncard_coe_finset]
+theorem ncard_orbit_stabilizerChain_one :
+    (orbit (HS.stabilizerChain pointSequence 1) (1 : Fin 100)).ncard = 77 := by
+  rw [orbit_stabilizerChain_one, Set.ncard_coe_finset]
   decide +kernel
 
 /-- The order of the ATLAS Higman--Sims model is 7700 times the order of its two-point
 stabilizer. In particular, determining that remaining order to be 5760 gives order 44352000. -/
-theorem card_eq_7700_mul_card_fixingSubgroup :
-    Nat.card HS = 7700 * Nat.card ↥(HS ⊓ fixingSubgroup (Equiv.Perm (Fin 100))
-      ({0, 1} : Set (Fin 100))) := by
-  have h0 := Subgroup.relIndex_mul_card (stabilizer (Equiv.Perm (Fin 100)) (0 : Fin 100)) HS
-  have h1 := Subgroup.relIndex_mul_card (stabilizer (Equiv.Perm (Fin 100)) (1 : Fin 100))
-    (HS ⊓ stabilizer (Equiv.Perm (Fin 100)) (0 : Fin 100))
-  rw [Subgroup.relIndex, stabilizer_subgroupOf, index_stabilizer, ncard_orbit_zero,
-    inf_comm] at h0
-  rw [Subgroup.relIndex, stabilizer_subgroupOf, index_stabilizer,
-    ncard_orbit_stabilizer_zero_one, inf_comm] at h1
-  have hfix : HS ⊓ stabilizer (Equiv.Perm (Fin 100)) (0 : Fin 100) ⊓
-      stabilizer (Equiv.Perm (Fin 100)) (1 : Fin 100) =
-      HS ⊓ fixingSubgroup (Equiv.Perm (Fin 100)) ({0, 1} : Set (Fin 100)) := by
-    ext g
-    simp [mem_fixingSubgroup_iff, mem_stabilizer_iff, and_assoc]
-  rw [← h0, ← h1, hfix]
-  ring
+theorem card_eq_7700_mul_card_stabilizerChain :
+    Nat.card HS = 7700 * Nat.card (HS.stabilizerChain pointSequence 2) := by
+  have h0 : pointSequence 0 = 0 := rfl
+  have h1 : pointSequence 1 = 1 := rfl
+  simpa only [Finset.prod_range_succ, Finset.range_zero, Finset.prod_empty, one_mul,
+    h0, h1, ncard_orbit_stabilizerChain_zero, ncard_orbit_stabilizerChain_one,
+    Nat.reduceMul] using
+    (HS.prod_ncard_orbit_mul_card_stabilizerChain pointSequence 2).symm
 
 end TauCeti.Sporadic.HS
