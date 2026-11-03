@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Pullback
 import TauCeti.LinearAlgebra.Determinant.Prod
-import Mathlib.Geometry.Manifold.ContMDiff.Constructions
 
 /-!
 # The end charts of the pair of pants in real coordinates
@@ -38,8 +37,6 @@ perturbation pulls back to its components in the end coordinates.
   coordinate greater than `1/2` on some end.
 * `TauCeti.Floer.perturbationPullback_endChart`: the pullback of the pair-of-pants perturbation
   along the end chart is its component in the end coordinates.
-* `TauCeti.Floer.contDiffAt_pairOfPantsPerturbation_prod`: for a vector space target and `Cⁿ`
-  Hamiltonians, the perturbation is `Cⁿ` jointly in the domain and target points.
 
 ## References
 
@@ -76,27 +73,18 @@ theorem endStrip_def (q : Puncture) :
     endStrip q = {s | 1 / 2 < q.endSign * s} ×ˢ Ico (-1 / 2) (1 / 2) :=
   (rfl)
 
+/-- A point lies in the strip of the end `q` when its signed longitudinal coordinate exceeds `1/2`
+and its angular coordinate lies in `[-1/2, 1/2)`. -/
+@[simp]
+theorem mem_endStrip_iff {q : Puncture} {z : ℝ × ℝ} :
+    z ∈ endStrip q ↔ 1 / 2 < q.endSign * z.1 ∧ z.2 ∈ Ico (-1 / 2) (1 / 2) :=
+  Iff.rfl
+
 /-- Points of the strip of an end have positive signed longitudinal coordinate. -/
 theorem endSign_mul_pos_of_mem_endStrip {q : Puncture} {z : ℝ × ℝ}
     (hz : z ∈ endStrip q) : 0 < q.endSign * z.1 := by
   have h : 1 / 2 < q.endSign * z.1 := hz.1
   linarith
-
-/-- The perturbation is `Cⁿ` jointly in the domain point of `S` and the target point, for
-`Cⁿ` Hamiltonians. -/
-theorem contDiffAt_pairOfPantsPerturbation_prod {n : ℕ∞} (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContDiff ℝ n (uncurry (H q))) {w : ℂ} (hw : w ≠ 0 ∧ w ≠ 1) (x : V) :
-    ContDiffAt ℝ n (fun p : ℂ × V => pairOfPantsPerturbation H p.1 p.2) (w, x) := by
-  have hHs' : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ, ℝ) n (uncurry (H q)) := fun q => by
-    have h := (hHs q).contMDiff
-    rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod] at h
-    exact h
-  have h := contMDiffAt_pairOfPantsPerturbation (n := n) hH hHs' ⟨w, hw⟩ x
-  have h' : ContMDiffAt 𝓘(ℝ, ℂ × V) 𝓘(ℝ, ℂ →L[ℝ] ℝ) n
-      (fun p : ℂ × V => pairOfPantsPerturbation H p.1 p.2) (w, x) := by
-    rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
-    exact h
-  exact h'.contDiffAt
 
 /-- The derivative of the end chart is multiplication by the derivative of the end lift. -/
 theorem hasFDerivAt_endChart (q : Puncture) (z : ℝ × ℝ) :

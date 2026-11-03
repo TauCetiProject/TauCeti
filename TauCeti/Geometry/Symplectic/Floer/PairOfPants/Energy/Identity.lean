@@ -7,11 +7,13 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Action
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.EndChart
+import TauCeti.Analysis.Calculus.Bilinear
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.LinearAlgebra.Determinant.Prod
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.Calculus.Deriv.Prod
+import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 
 /-!
 # The energy identity on the pair of pants
@@ -298,30 +300,21 @@ private theorem differentiableAt_uncurry_pairOfPantsPerturbation (hH : ∀ q, Pe
     ((Complex.equivRealProdCLM.symm.contDiff.comp contDiff_fst).prodMk
       contDiff_snd).contDiffAt).clm_apply contDiffAt_const).differentiableAt one_ne_zero
 
-private theorem contDiffAt_symplecticForm_fderiv (ω : SymplecticForm V) {z : ℝ × ℝ}
-    (hu : ContDiffAt ℝ 2 u z) (v : ℝ × ℝ) :
-    ContDiffAt ℝ 1 (fun w ↦ ω (u w) (fderiv ℝ u w v)) z := by
-  let B : V →L[ℝ] V →L[ℝ] ℝ := LinearMap.toContinuousLinearMap
-    (LinearMap.toContinuousLinearMap.toLinearMap.comp ω.toBilinForm)
-  have hB (x y : V) : B x y = ω x y := by simp [B]
-  have h : ContDiffAt ℝ 1 (fun w ↦ B (u w) (fderiv ℝ u w v)) z :=
-    (B.contDiff.contDiffAt.comp z (hu.of_le one_le_two)).clm_apply
-      ((hu.fderiv_right (m := 1) (by norm_num)).clm_apply contDiffAt_const)
-  simpa only [hB] using h
-
 private theorem contDiffOn_primitiveS (ω : SymplecticForm V) (hH : ∀ q, Periodic (H q) 1)
     (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) (hu : ContDiffOn ℝ 2 u puncturedPlane) :
     ContDiffOn ℝ 1 (primitiveS ω H u) puncturedPlane := fun z hz ↦ by
   have hu' := hu.contDiffAt (isOpen_puncturedPlane.mem_nhds hz)
   exact ((contDiffAt_pairOfPantsPerturbation_comp hH hHs hz (hu'.of_le one_le_two) 1).add
-    (contDiffAt_const.mul (ω.contDiffAt_symplecticForm_fderiv hu' _))).contDiffWithinAt
+    (contDiffAt_const.mul (ω.toBilinForm.toContinuousBilinearMap.contDiffAt_bilinear_fderiv_apply
+      hu' _))).contDiffWithinAt
 
 private theorem contDiffOn_primitiveT (ω : SymplecticForm V) (hH : ∀ q, Periodic (H q) 1)
     (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) (hu : ContDiffOn ℝ 2 u puncturedPlane) :
     ContDiffOn ℝ 1 (primitiveT ω H u) puncturedPlane := fun z hz ↦ by
   have hu' := hu.contDiffAt (isOpen_puncturedPlane.mem_nhds hz)
   exact ((contDiffAt_pairOfPantsPerturbation_comp hH hHs hz (hu'.of_le one_le_two) _).add
-    (contDiffAt_const.mul (ω.contDiffAt_symplecticForm_fderiv hu' _))).contDiffWithinAt
+    (contDiffAt_const.mul (ω.toBilinForm.toContinuousBilinearMap.contDiffAt_bilinear_fderiv_apply
+      hu' _))).contDiffWithinAt
 
 /-- On the thrice-punctured sphere, the energy density plus the curvature of the pair-of-pants
 perturbation is the exterior derivative of `α = K(u) + λ(u)`. -/
