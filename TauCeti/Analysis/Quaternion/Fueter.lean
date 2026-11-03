@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.FDeriv.Basic
 public import Mathlib.Analysis.Normed.Operator.Mul
 public import Mathlib.Analysis.Quaternion
+public import TauCeti.Analysis.Quaternion.Forms
 import Mathlib.Analysis.Calculus.Deriv.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Add
 import Mathlib.Analysis.Calculus.FDeriv.Mul
@@ -101,6 +102,22 @@ theorem fueterLeft_apply (D : ℍ →L[ℝ] ℍ) :
 theorem fueterRight_apply (D : ℍ →L[ℝ] ℍ) :
     fueterRight D = D 1 + D ⟨0, 1, 0, 0⟩ * ⟨0, 1, 0, 0⟩ + D ⟨0, 0, 1, 0⟩ * ⟨0, 0, 1, 0⟩ +
       D ⟨0, 0, 0, 1⟩ * ⟨0, 0, 0, 1⟩ := (rfl)
+
+/-- The left Fueter operator is the sum of left multiplication by the coordinate units
+against the corresponding directional derivatives. -/
+theorem fueterLeft_eq_sum (D : ℍ →L[ℝ] ℍ) :
+    fueterLeft D =
+      ∑ i : Fin 4, Quaternion.dq (Pi.single i 1) * D (Quaternion.dq (Pi.single i 1)) := by
+  have h1 : (QuaternionAlgebra.mk 1 0 0 0 : ℍ) = 1 := rfl
+  simp [fueterLeft_apply, Fin.sum_univ_four, Quaternion.dq_apply, Pi.single_apply, h1]
+
+/-- The right Fueter operator is the sum of the directional derivatives multiplied on
+the right by their coordinate units. -/
+theorem fueterRight_eq_sum (D : ℍ →L[ℝ] ℍ) :
+    fueterRight D =
+      ∑ i : Fin 4, D (Quaternion.dq (Pi.single i 1)) * Quaternion.dq (Pi.single i 1) := by
+  have h1 : (QuaternionAlgebra.mk 1 0 0 0 : ℍ) = 1 := rfl
+  simp [fueterRight_apply, Fin.sum_univ_four, Quaternion.dq_apply, Pi.single_apply, h1]
 
 /-- The left Fueter equation in real components. Writing `K, L, M, N` for the `re, imI, imJ, imK`
 components of the output and `t, x, y, z` for the input directions `1, i, j, k`, so that
