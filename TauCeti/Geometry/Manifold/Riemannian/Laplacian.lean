@@ -14,7 +14,9 @@ public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
 public import TauCeti.Topology.Algebra.Module.Trace
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita
+import Mathlib.Algebra.Order.Chebyshev
 import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.ChainRule
@@ -606,6 +608,28 @@ theorem laplaceBeltrami_eq_sum_hessian (I : ModelWithCorners ℝ E H) {M : Type*
   rw [laplaceBeltrami, divergence, LinearMap.trace_eq_sum_inner _ b]
   simp only [hessian, real_inner_comm]
   rfl
+
+/-- The squared trace of the Hessian is at most the dimension times its squared norm,
+expressed in any orthonormal basis. This includes dimension zero. -/
+theorem laplaceBeltrami_sq_le_finrank_mul_sum_hessian_sq
+    {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M]
+    [ChartedSpace H M] [IsManifold I 2 M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+    (f : M → ℝ) (x : M) {ι : Type*} [Fintype ι]
+    (b : OrthonormalBasis ι ℝ (TangentSpace I x)) :
+    laplaceBeltrami I f x ^ 2 ≤ (Module.finrank ℝ E : ℝ) *
+      ∑ i, ∑ j, hessian I f x (b i) (b j) ^ 2 := by
+  classical
+  have hcard : Fintype.card ι = Module.finrank ℝ E := by
+    rw [← Module.finrank_eq_card_basis b.toBasis, finrank_tangentSpace]
+  have hcs := sq_sum_le_card_mul_sum_sq (s := Finset.univ)
+    (f := fun i ↦ hessian I f x (b i) (b i))
+  rw [Finset.card_univ, hcard] at hcs
+  rw [laplaceBeltrami_eq_sum_hessian I f x b]
+  refine hcs.trans (mul_le_mul_of_nonneg_left ?_ (Nat.cast_nonneg _))
+  exact Finset.sum_le_sum fun i _ ↦ Finset.single_le_sum
+    (f := fun j ↦ hessian I f x (b i) (b j) ^ 2) (fun j _ ↦ sq_nonneg _) (Finset.mem_univ i)
 
 /-! ### The flat model -/
 
