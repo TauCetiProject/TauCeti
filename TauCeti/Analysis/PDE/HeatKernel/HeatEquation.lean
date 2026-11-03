@@ -11,6 +11,7 @@ public import TauCeti.Analysis.PDE.HeatKernel.Bounds
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Convolution
 import TauCeti.Analysis.PDE.HeatKernel.ApproximateIdentity
 import TauCeti.Analysis.PDE.HeatKernel.Derivatives
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # The heat convolution solves the heat equation
@@ -27,8 +28,10 @@ discontinuous no such limit is asserted. This file proves the equation:
 * `u(t, ·)` is smooth for every `t > 0`, however rough `g` is, and its derivatives are
   `D^m u(t, ·) = D^m K_t ⋆ g`, bounded by `‖D^m K_t‖_{L¹}` times the bound of `g`; for `m ≥ 1`,
   since `∫ D^m K_t = 0`, an `α`-Hölder datum gives the sharper bound
-  `H ∫ ‖D^m K_t(z)‖ ‖z‖^α dz`, and its time increments satisfy
-  `‖D^m u(t', x) - D^m u(t, x)‖ ≤ C H (t' - t) t^((α - m - 2) / 2)` for `0 < t ≤ t' ≤ 2t`;
+  `H ∫ ‖D^m K_t(z)‖ ‖z‖^α dz = O(H t^((α - m) / 2))`, and its time increments satisfy
+  `‖D^m u(t', x) - D^m u(t, x)‖ ≤ C H (t' - t) t^((α - m - 2) / 2)` for `0 < t ≤ t' ≤ 2t`, and
+  hence, for `α ≤ m`, `‖D^m u(t', x) - D^m u(t, x)‖ ≤ C H t^((α - m - 1) / 2) √(t' - t)` for all
+  `0 < t ≤ t'`;
 * `Δu(t, ·) = ΔK_t ⋆ g`, and `∂ₜu(t, x) = (ΔK_t ⋆ g)(x)`, so `∂ₜu = Δu` for `t > 0`.
 
 Both derivatives are taken under the integral sign. In space, every derivative of `K_t` is
@@ -46,8 +49,11 @@ smoothness theorem `MeasureTheory.contDiff_convolution_left_of_dominated`. In ti
 * `TauCeti.norm_iteratedFDeriv_heatKernel_convolution_le`,
   `TauCeti.norm_iteratedFDeriv_heatKernel_convolution_le_of_holderWith`: bounds on these
   derivatives for bounded and for Hölder data.
-* `TauCeti.exists_norm_iteratedFDeriv_heatKernel_convolution_sub_le`: the bound on their time
-  increments for Hölder data.
+* `TauCeti.exists_norm_iteratedFDeriv_heatKernel_convolution_le_of_holderWith`: the
+  scale-invariant form `C H t^((α - m) / 2)` of the Hölder bound.
+* `TauCeti.exists_norm_iteratedFDeriv_heatKernel_convolution_sub_le`,
+  `TauCeti.exists_norm_iteratedFDeriv_heatKernel_convolution_sub_le_sqrt`: bounds on their time
+  increments for Hölder data, near `t` and in terms of the parabolic distance `√(t' - t)`.
 * `TauCeti.laplacian_heatKernel_convolution`: `Δ (K_t ⋆ g) = ΔK_t ⋆ g`.
 * `TauCeti.hasDerivAt_heatKernel_convolution`: **the heat equation**
   `∂ₜ (K_t ⋆ g)(x) = Δ (K_t ⋆ g)(x)` for `t > 0`.
@@ -206,6 +212,22 @@ theorem norm_iteratedFDeriv_heatKernel_convolution_le_of_holderWith [CompleteSpa
   have := hH.dist_le (x - z) x
   rwa [dist_eq_norm, dist_eq_norm, sub_sub_cancel_left, norm_neg] at this
 
+/-- **Scale-invariant Hölder bounds on the derivatives of a heat convolution.** For `m ≥ 1` and
+`α ≥ 0` there is a constant `C ≥ 0`, depending only on `m`, `α` and the dimension, such that
+`‖D^m (K_t ⋆ g)(x)‖ ≤ C H t^((α - m) / 2)` for `t > 0` whenever `g` is essentially bounded and
+`α`-Hölder with constant `H`. The bound on `g` does not enter the estimate. -/
+theorem exists_norm_iteratedFDeriv_heatKernel_convolution_le_of_holderWith [CompleteSpace F]
+    {m : ℕ} (hm : m ≠ 0) (α : ℝ≥0) :
+    ∃ C ≥ 0, ∀ {g : E → F} {M : ℝ} {H : ℝ≥0}, AEStronglyMeasurable g → (∀ᵐ y, ‖g y‖ ≤ M) →
+      HolderWith H α g → ∀ {t : ℝ}, 0 < t → ∀ x,
+        ‖iteratedFDeriv ℝ m (heatKernel t ⋆ g) x‖ ≤ C * H * t ^ (((α : ℝ) - m) / 2) := by
+  obtain ⟨C, hC₀, hC⟩ :=
+    exists_integral_norm_iteratedFDeriv_heatKernel_mul_rpow_le (E := E) m α.coe_nonneg
+  refine ⟨C, hC₀.le, fun {g M H} hg hM hH t ht x => ?_⟩
+  refine (norm_iteratedFDeriv_heatKernel_convolution_le_of_holderWith ht hg hM hH hm x).trans ?_
+  have := mul_le_mul_of_nonneg_left (hC t ht) H.coe_nonneg
+  linarith
+
 /-- **Time increments of the derivatives of a heat convolution.** For `m ≥ 1` and `α ≥ 0` there is
 a constant `C ≥ 0`, depending only on `m`, `α` and the dimension, such that whenever `g` is
 essentially bounded and `α`-Hölder with constant `H`,
@@ -268,6 +290,66 @@ theorem exists_norm_iteratedFDeriv_heatKernel_convolution_sub_le [CompleteSpace 
     ring_nf
   rw [← hpow]
   ring
+
+/-- **Parabolic time increments of the derivatives of a heat convolution.** For `m ≥ 1` and
+`0 ≤ α ≤ m` there is a constant `C ≥ 0`, depending only on `m`, `α` and the dimension, such that
+whenever `g` is essentially bounded and `α`-Hölder with constant `H`, for `0 < t ≤ t'` the
+increment `‖D^m (K_{t'} ⋆ g)(x) - D^m (K_t ⋆ g)(x)‖` is at most both `C H t^((α - m) / 2)` and
+`C H t^((α - m - 1) / 2) √(t' - t)`. Unlike
+`TauCeti.exists_norm_iteratedFDeriv_heatKernel_convolution_sub_le`, `t'` is not restricted to
+`[t, 2t]`: the time increment enters through the parabolic distance `√(t' - t)`. -/
+theorem exists_norm_iteratedFDeriv_heatKernel_convolution_sub_le_sqrt [CompleteSpace F] {m : ℕ}
+    (hm : m ≠ 0) {α : ℝ≥0} (hαm : (α : ℝ) ≤ m) :
+    ∃ C ≥ 0, ∀ {g : E → F} {M : ℝ} {H : ℝ≥0}, AEStronglyMeasurable g → (∀ᵐ y, ‖g y‖ ≤ M) →
+      HolderWith H α g → ∀ {t t' : ℝ}, 0 < t → t ≤ t' → ∀ x,
+        ‖iteratedFDeriv ℝ m (heatKernel t' ⋆ g) x - iteratedFDeriv ℝ m (heatKernel t ⋆ g) x‖ ≤
+            C * H * t ^ (((α : ℝ) - m) / 2) ∧
+          ‖iteratedFDeriv ℝ m (heatKernel t' ⋆ g) x - iteratedFDeriv ℝ m (heatKernel t ⋆ g) x‖ ≤
+            C * H * t ^ (((α : ℝ) - m - 1) / 2) * √(t' - t) := by
+  obtain ⟨C₁, hC₁0, hC₁⟩ :=
+    exists_norm_iteratedFDeriv_heatKernel_convolution_le_of_holderWith (E := E) (F := F) hm α
+  obtain ⟨C₂, hC₂0, hC₂⟩ :=
+    exists_norm_iteratedFDeriv_heatKernel_convolution_sub_le (E := E) (F := F) hm α
+  refine ⟨C₂ + 2 * C₁, by positivity, fun {g M H} hg hM hH t t' ht htt' x => ?_⟩
+  set p : ℝ := ((α : ℝ) - m - 1) / 2 with hp_def
+  set d := t' - t with hd_def
+  have hd : 0 ≤ d := sub_nonneg.2 htt'
+  -- The bound on each term.
+  have hA : ‖iteratedFDeriv ℝ m (heatKernel t' ⋆ g) x - iteratedFDeriv ℝ m (heatKernel t ⋆ g) x‖ ≤
+      2 * C₁ * H * t ^ (((α : ℝ) - m) / 2) := by
+    have hmono : t' ^ (((α : ℝ) - m) / 2) ≤ t ^ (((α : ℝ) - m) / 2) :=
+      rpow_le_rpow_of_nonpos ht htt' (by linarith)
+    calc _ ≤ ‖iteratedFDeriv ℝ m (heatKernel t' ⋆ g) x‖ +
+          ‖iteratedFDeriv ℝ m (heatKernel t ⋆ g) x‖ := norm_sub_le _ _
+      _ ≤ C₁ * H * t ^ (((α : ℝ) - m) / 2) + C₁ * H * t ^ (((α : ℝ) - m) / 2) :=
+          add_le_add ((hC₁ hg hM hH (ht.trans_le htt') x).trans
+            (mul_le_mul_of_nonneg_left hmono (by positivity))) (hC₁ hg hM hH ht x)
+      _ = _ := by ring
+  refine ⟨hA.trans ?_, ?_⟩
+  · have : 0 ≤ C₂ * H * t ^ (((α : ℝ) - m) / 2) := by positivity
+    linarith
+  have hsq : 0 ≤ √d * t ^ p := by positivity
+  rcases le_or_gt d t with hdt | htd
+  · -- For `t' ≤ 2t`: the time increment of the heat kernel.
+    calc _ ≤ C₂ * H * (d * t ^ (p - 1 / 2)) := by
+          refine (hC₂ hg hM hH ht htt' (by linarith) x).trans_eq ?_
+          rw [show ((α : ℝ) - m - 2) / 2 = p - 1 / 2 by rw [hp_def]; ring]
+          ring
+      _ ≤ C₂ * H * (√d * t ^ p) :=
+          mul_le_mul_of_nonneg_left (mul_rpow_sub_half_le_sqrt_mul_rpow ht hd hdt p)
+            (by positivity)
+      _ ≤ (C₂ + 2 * C₁) * H * t ^ p * √d := by
+          have : 0 ≤ 2 * C₁ * H * (√d * t ^ p) := by positivity
+          linarith
+  · -- For `t' > 2t`: the bound on each term.
+    calc _ ≤ 2 * C₁ * H * t ^ (p + 1 / 2) := by
+          refine hA.trans_eq ?_
+          rw [show ((α : ℝ) - m) / 2 = p + 1 / 2 by rw [hp_def]; ring]
+      _ ≤ 2 * C₁ * H * (√d * t ^ p) :=
+          mul_le_mul_of_nonneg_left (rpow_add_half_le_sqrt_mul_rpow ht htd.le p) (by positivity)
+      _ ≤ (C₂ + 2 * C₁) * H * t ^ p * √d := by
+          have : 0 ≤ C₂ * H * (√d * t ^ p) := by positivity
+          linarith
 
 /-- **The Laplacian of a heat convolution.** For `t > 0` and `g` measurable and essentially
 bounded, `Δ (K_t ⋆ g) = ΔK_t ⋆ g`. -/

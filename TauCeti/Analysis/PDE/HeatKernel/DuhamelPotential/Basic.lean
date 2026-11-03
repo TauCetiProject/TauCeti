@@ -264,17 +264,13 @@ private theorem exists_ae_norm_iteratedFDeriv_heatKernel_convolution_le {α : �
         ‖iteratedFDeriv ℝ m (heatKernel (t - s) ⋆ f s) x‖ ≤
           C * H * (t - s) ^ (((α : ℝ) - m) / 2) := by
   obtain ⟨C, hC₀, hC⟩ :=
-    exists_integral_norm_iteratedFDeriv_heatKernel_mul_rpow_le (E := E) m α.coe_nonneg
-  refine ⟨C, hC₀.le, fun {f M t H} hf hfM hH ht => ?_⟩
+    exists_norm_iteratedFDeriv_heatKernel_convolution_le_of_holderWith (E := E) (F := F) hm α
+  refine ⟨C, hC₀, fun {f M t H} hf hfM hH ht => ?_⟩
   have hH' : ∀ᵐ s ∂volume.restrict (Ι 0 t), HolderWith H α (f s) := by
     rwa [uIoc_of_le ht.le, ← restrict_Ioo_eq_restrict_Ioc]
   filter_upwards [ae_mem_Ioo_and_ae_norm_le ht.le hfM, hH'] with s hs hsH x
-  have hts : 0 < t - s := sub_pos.2 hs.1.2
-  refine (norm_iteratedFDeriv_heatKernel_convolution_le_of_holderWith hts
-    (hf.comp_measurable measurable_prodMk_left).aestronglyMeasurable
-    hs.2 hsH hm x).trans ?_
-  have := mul_le_mul_of_nonneg_left (hC (t - s) hts) H.coe_nonneg
-  linarith
+  exact hC (hf.comp_measurable measurable_prodMk_left).aestronglyMeasurable hs.2 hsH
+    (sub_pos.2 hs.1.2) x
 
 /-- Integrable bounds on the time slices and their derivatives up to order two, for forcing
 `α`-Hölder in space with `α > 0`. -/

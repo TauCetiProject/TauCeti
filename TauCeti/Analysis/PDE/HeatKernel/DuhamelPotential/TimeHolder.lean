@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.HeatKernel.DuhamelPotential.Basic
-import TauCeti.Analysis.PDE.HeatKernel.Derivatives
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
-import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -32,14 +30,14 @@ Write `A_u(r) = D² (K_{u-r} ⋆ f(r, ·))(x)`, so that `D² w(u, x) = ∫₀ᵘ
 
 `D² w(t, x) - D² w(s, x) = ∫ₛᵗ A_t(r) dr + ∫₀ˢ (A_t(r) - A_s(r)) dr`.
 
-Since `∫ D²K = 0`, the Hölder continuity of `f(r, ·)` gives `‖A_u(r)‖ = O(H (u - r)^((α - 2)/2))`,
-which integrates over `[s, t]` to `O(H d^(α/2))`. In the second integral put `τ = s - r`. For
-`τ ≥ d` the time increment of the heat kernel
-(`TauCeti.exists_norm_iteratedFDeriv_heatKernel_convolution_sub_le`) gives
-`‖A_t(r) - A_s(r)‖ = O(H d τ^((α - 4)/2)) ≤ O(H √d τ^((α - 3)/2))`, and for `τ < d` the bound
-`O(H τ^((α - 2)/2))` on each term is again `O(H √d τ^((α - 3)/2))`. Splitting the integral at
-`τ = d` (`TauCeti.norm_integral_le_of_ae_norm_le_rpow`, with `√d` in the role of the spatial
-distance) bounds it by `O(H (√d)^α) = O(H d^(α/2))`; this step uses `α < 1`.
+Since `∫ D²K = 0`, the Hölder continuity of `f(r, ·)` gives `‖A_u(r)‖ = O(H (u - r)^((α - 2)/2))`
+(`TauCeti.exists_norm_iteratedFDeriv_heatKernel_convolution_le_of_holderWith`), which integrates
+over `[s, t]` to `O(H d^(α/2))`. In the second integral put `τ = s - r`. The time increment of the
+heat convolution (`TauCeti.exists_norm_iteratedFDeriv_heatKernel_convolution_sub_le_sqrt`) gives
+`‖A_t(r) - A_s(r)‖ = O(H τ^((α - 2)/2))` and `‖A_t(r) - A_s(r)‖ = O(H √d τ^((α - 3)/2))`.
+Splitting the integral at `τ = d` (`TauCeti.norm_integral_le_of_ae_norm_le_rpow`, with `√d` in
+the role of the spatial distance) bounds it by `O(H (√d)^α) = O(H d^(α/2))`; this step uses
+`α < 1`.
 
 ## Main declarations
 
@@ -82,27 +80,20 @@ theorem exists_holderOnWith_iteratedFDeriv_two_heatDuhamelPotential_Icc {α : �
   have hα₁' : (α : ℝ) < 1 := hα₁
   have h1α : 0 < 1 - (α : ℝ) := by linarith
   obtain ⟨C₂, hC₂0, hC₂⟩ :=
-    exists_integral_norm_iteratedFDeriv_heatKernel_mul_rpow_le (E := E) 2 α.coe_nonneg
+    exists_norm_iteratedFDeriv_heatKernel_convolution_le_of_holderWith (E := E) (F := F)
+      two_ne_zero α
   obtain ⟨C₄, hC₄0, hC₄⟩ :=
-    exists_norm_iteratedFDeriv_heatKernel_convolution_sub_le (E := E) (F := F) two_ne_zero α
-  set K : ℝ := 2 / α * C₂ + 2 / α * (2 * C₂) + 2 / (1 - α) * (C₄ + 2 * C₂) with hK_def
+    exists_norm_iteratedFDeriv_heatKernel_convolution_sub_le_sqrt (E := E) (F := F) two_ne_zero
+      (α := α) (by push_cast; linarith)
+  set K : ℝ := 2 / α * C₂ + 2 / α * C₄ + 2 / (1 - α) * C₄ with hK_def
   refine ⟨K.toNNReal, fun {f M T H} hf hfM hH x => ?_⟩
-  -- The time integrand `A_u(r) = D² (K_{u-r} ⋆ f(r, ·))(x)` and its slice bound.
+  -- The time integrand `A_u(r) = D² (K_{u-r} ⋆ f(r, ·))(x)`.
   set A : ℝ → ℝ → ContinuousMultilinearMap ℝ (fun _ : Fin 2 => E) F :=
     fun u r => iteratedFDeriv ℝ 2 (heatKernel (u - r) ⋆ f r) x with hA_def
   have hmeas : ∀ r, AEStronglyMeasurable (f r) := fun r =>
     (hf.comp_measurable measurable_prodMk_left).aestronglyMeasurable
   have hslice : ∀ᵐ r, r ∈ Ioo 0 T → (∀ᵐ y, ‖f r y‖ ≤ M) ∧ HolderWith H α (f r) :=
     (ae_restrict_iff' measurableSet_Ioo).1 (hfM.and hH)
-  have hAle : ∀ r, (∀ᵐ y, ‖f r y‖ ≤ M) → HolderWith H α (f r) → ∀ u, r < u →
-      ‖A u r‖ ≤ C₂ * H * (u - r) ^ (((α : ℝ) - 2) / 2) := by
-    intro r hrM hrH u hru
-    have hur : 0 < u - r := sub_pos.2 hru
-    refine (norm_iteratedFDeriv_heatKernel_convolution_le_of_holderWith hur (hmeas r) hrM hrH
-      two_ne_zero x).trans ?_
-    have := mul_le_mul_of_nonneg_left (hC₂ (u - r) hur) H.coe_nonneg
-    rw [Nat.cast_ofNat] at this
-    exact this.trans_eq (by ring)
   -- The representation `D² w(u, x) = ∫₀ᵘ A_u` and integrability, for `0 < u ≤ T`.
   have hres : ∀ u ≤ T, (∀ᵐ s ∂volume.restrict (Ioo 0 u), ∀ᵐ y, ‖f s y‖ ≤ M) ∧
       ∀ᵐ s ∂volume.restrict (Ioo 0 u), HolderWith H α (f s) := fun u hu =>
@@ -123,7 +114,9 @@ theorem exists_holderOnWith_iteratedFDeriv_two_heatDuhamelPotential_Icc {α : �
     filter_upwards [hslice, Measure.ae_ne volume u] with r hr hru hrI
     have hlt : r < u := lt_of_le_of_ne hrI.2 hru
     obtain ⟨hrM, hrH⟩ := hr ⟨ha.trans_lt hrI.1, hlt.trans_le huT⟩
-    exact (hAle r hrM hrH u hlt).trans_eq (by ring)
+    have := hC₂ (hmeas r) hrM hrH (sub_pos.2 hlt) x
+    rw [Nat.cast_ofNat] at this
+    exact this.trans_eq (by ring)
   -- The increment bound for `0 ≤ s ≤ t ≤ T`.
   have hdiff : ∀ s t, 0 ≤ s → s ≤ t → t ≤ T →
       ‖iteratedFDeriv ℝ 2 (heatDuhamelPotential f t) x -
@@ -142,7 +135,7 @@ theorem exists_holderOnWith_iteratedFDeriv_two_heatDuhamelPotential_Icc {α : �
       rw [show 2 / (α : ℝ) * (C₂ * H) = 2 / α * C₂ * H by ring]
       gcongr
       rw [hK_def]
-      have : 0 ≤ 2 / (α : ℝ) * (2 * C₂) + 2 / (1 - α) * (C₄ + 2 * C₂) := by positivity
+      have : 0 ≤ 2 / (α : ℝ) * C₄ + 2 / (1 - α) * C₄ := by positivity
       linarith
     have hsT : s ≤ T := hst.le.trans htT
     have hsmem : s ∈ [[0, t]] := mem_uIcc_of_le hs.le hst.le
@@ -154,47 +147,14 @@ theorem exists_holderOnWith_iteratedFDeriv_two_heatDuhamelPotential_Icc {α : �
     set d := t - s with hd_def
     have hd : 0 < d := sub_pos.2 hst
     -- Pointwise bounds on `A_t(r) - A_s(r)` for almost every `0 < r < s`.
-    have hpt : ∀ᵐ r, r ∈ Ioc 0 s → ‖A t r - A s r‖ ≤ 2 * C₂ * H * (s - r) ^ (((α : ℝ) - 2) / 2) ∧
-        ‖A t r - A s r‖ ≤ (C₄ + 2 * C₂) * H * (s - r) ^ (((α : ℝ) - 3) / 2) * √d := by
+    have hpt : ∀ᵐ r, r ∈ Ioc 0 s → ‖A t r - A s r‖ ≤ C₄ * H * (s - r) ^ (((α : ℝ) - 2) / 2) ∧
+        ‖A t r - A s r‖ ≤ C₄ * H * (s - r) ^ (((α : ℝ) - 3) / 2) * √d := by
       filter_upwards [hslice, Measure.ae_ne volume s] with r hr hrs hrI
       have hlt : r < s := lt_of_le_of_ne hrI.2 hrs
-      have hτ : 0 < s - r := sub_pos.2 hlt
       obtain ⟨hrM, hrH⟩ := hr ⟨hrI.1, hlt.trans (hst.trans_le htT)⟩
-      have hA : ‖A t r - A s r‖ ≤ 2 * C₂ * H * (s - r) ^ (((α : ℝ) - 2) / 2) := by
-        have hmono : (t - r) ^ (((α : ℝ) - 2) / 2) ≤ (s - r) ^ (((α : ℝ) - 2) / 2) :=
-          rpow_le_rpow_of_nonpos hτ (by linarith) (by linarith)
-        have h₁ := hAle r hrM hrH t (hlt.trans hst)
-        have h₂ := hAle r hrM hrH s hlt
-        have hCH : 0 ≤ C₂ * H := by positivity
-        calc ‖A t r - A s r‖ ≤ ‖A t r‖ + ‖A s r‖ := norm_sub_le _ _
-          _ ≤ C₂ * H * (s - r) ^ (((α : ℝ) - 2) / 2) +
-                C₂ * H * (s - r) ^ (((α : ℝ) - 2) / 2) :=
-              add_le_add (h₁.trans (mul_le_mul_of_nonneg_left hmono hCH)) h₂
-          _ = _ := by ring
-      refine ⟨hA, ?_⟩
-      have hsq : 0 ≤ √d * (s - r) ^ (((α : ℝ) - 3) / 2) := by positivity
-      rcases le_or_gt d (s - r) with hdτ | hτd
-      · -- Away from the diagonal: the time increment of the heat kernel.
-        have h := hC₄ (hmeas r) hrM hrH (t := s - r) (t' := t - r) hτ (by linarith) (by linarith) x
-        rw [show t - r - (s - r) = d by ring, Nat.cast_ofNat] at h
-        calc ‖A t r - A s r‖ ≤ C₄ * H * (d * (s - r) ^ (((α : ℝ) - 2 - 2) / 2)) :=
-              h.trans_eq (by ring)
-          _ ≤ C₄ * H * (√d * (s - r) ^ (((α : ℝ) - 3) / 2)) :=
-              mul_le_mul_of_nonneg_left (by
-                rw [show ((α : ℝ) - 2 - 2) / 2 = ((α : ℝ) - 3) / 2 - 1 / 2 by ring]
-                exact mul_rpow_sub_half_le_sqrt_mul_rpow hτ hd.le hdτ _) (by positivity)
-          _ ≤ (C₄ + 2 * C₂) * H * (s - r) ^ (((α : ℝ) - 3) / 2) * √d := by
-              have : 0 ≤ 2 * C₂ * H * (√d * (s - r) ^ (((α : ℝ) - 3) / 2)) := by positivity
-              nlinarith
-      · -- Near the diagonal: the bound on each term.
-        calc ‖A t r - A s r‖ ≤ 2 * C₂ * H * (s - r) ^ (((α : ℝ) - 2) / 2) := hA
-          _ ≤ 2 * C₂ * H * (√d * (s - r) ^ (((α : ℝ) - 3) / 2)) :=
-              mul_le_mul_of_nonneg_left (by
-                rw [show ((α : ℝ) - 2) / 2 = ((α : ℝ) - 3) / 2 + 1 / 2 by ring]
-                exact rpow_add_half_le_sqrt_mul_rpow hτ hτd.le _) (by positivity)
-          _ ≤ (C₄ + 2 * C₂) * H * (s - r) ^ (((α : ℝ) - 3) / 2) * √d := by
-              have : 0 ≤ C₄ * H * (√d * (s - r) ^ (((α : ℝ) - 3) / 2)) := by positivity
-              nlinarith
+      have h := hC₄ (hmeas r) hrM hrH (t := s - r) (t' := t - r) (sub_pos.2 hlt) (by linarith) x
+      rwa [show t - r - (s - r) = d by ring, Nat.cast_ofNat,
+        show ((α : ℝ) - 2 - 1) / 2 = ((α : ℝ) - 3) / 2 by ring] at h
     have hfar := norm_integral_le_of_ae_norm_le_rpow (Φ := fun r => A t r - A s r) hα₀' hα₁' hs
       (sqrt_pos.2 hd) (by positivity) (by positivity) (hAts.sub (hint s hs hsT))
       (hpt.mono fun r hr hrI => (hr hrI).1) (hpt.mono fun r hr hrI => (hr hrI).2)
@@ -203,7 +163,7 @@ theorem exists_holderOnWith_iteratedFDeriv_two_heatDuhamelPotential_Icc {α : �
       ring_nf
     calc ‖(∫ r in 0..s, A t r - A s r) + ∫ r in s..t, A t r‖
         ≤ ‖∫ r in 0..s, A t r - A s r‖ + ‖∫ r in s..t, A t r‖ := norm_add_le _ _
-      _ ≤ (2 / α * (2 * C₂ * H) + 2 / (1 - α) * ((C₄ + 2 * C₂) * H)) * √d ^ (α : ℝ) +
+      _ ≤ (2 / α * (C₄ * H) + 2 / (1 - α) * (C₄ * H)) * √d ^ (α : ℝ) +
             2 / α * (C₂ * H) * (t - s) ^ ((α : ℝ) / 2) :=
           add_le_add hfar (hnear s t hs.le hst.le htT)
       _ = K * H * d ^ ((α : ℝ) / 2) := by
