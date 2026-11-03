@@ -11,8 +11,8 @@ public import Mathlib.Topology.Algebra.ContinuousAffineMap
 import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
 import TauCeti.LinearAlgebra.Matrix.Triangular
 import Mathlib.Analysis.Convex.Measure
+import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.FDeriv.Mul
-import Mathlib.Analysis.Calculus.FDeriv.Prod
 import Mathlib.Analysis.Matrix.Order
 import Mathlib.LinearAlgebra.Determinant
 import Mathlib.Order.Prod.Lex.Basic
@@ -588,6 +588,21 @@ private theorem partialCorrelationCholesky_line_of_lt_col
   exact partialCorrelationPrefix_add_single_of_not_mem z kl t _ _
     (fun h ↦ (not_lt_of_ge hk.le) h.2)
 
+private theorem sum_partialCorrelationCholesky_line_of_le_col
+    (z : strictLowerTriangle p → ℝ) (kl : strictLowerTriangle p) (t : ℝ)
+    {i j : Fin p} (hji : j < i) (hjle : j ≤ kl.1.2) :
+    (∑ k ∈ Finset.Iio j,
+      partialCorrelationCholesky (partialCorrelationLine z kl t) i k *
+        partialCorrelationCholesky (partialCorrelationLine z kl t) j k) =
+      ∑ k ∈ Finset.Iio j,
+        partialCorrelationCholesky z i k * partialCorrelationCholesky z j k := by
+  apply Finset.sum_congr rfl
+  intro k hk
+  have hkj := Finset.mem_Iio.1 hk
+  have hkkl : k < kl.1.2 := hkj.trans_le hjle
+  rw [partialCorrelationCholesky_line_of_lt_col z kl t (hkj.trans hji) hkkl,
+    partialCorrelationCholesky_line_of_lt_col z kl t hkj hkkl]
+
 private theorem correlationCoordinatesOfPartialCorrelation_add_single_self
     (z : strictLowerTriangle p → ℝ) (ij : strictLowerTriangle p) (t : ℝ) :
     correlationCoordinatesOfPartialCorrelation (partialCorrelationLine z ij t) ij =
@@ -596,18 +611,8 @@ private theorem correlationCoordinatesOfPartialCorrelation_add_single_self
           partialCorrelationPrefix z ij.1.2 ij.1.2) := by
   rw [correlationCoordinatesOfPartialCorrelation_apply_eq,
     correlationCoordinatesOfPartialCorrelation_apply_eq]
-  have hsum :
-      (∑ k ∈ Finset.Iio ij.1.2,
-        partialCorrelationCholesky (partialCorrelationLine z ij t) ij.1.1 k *
-          partialCorrelationCholesky (partialCorrelationLine z ij t) ij.1.2 k) =
-      ∑ k ∈ Finset.Iio ij.1.2,
-        partialCorrelationCholesky z ij.1.1 k * partialCorrelationCholesky z ij.1.2 k := by
-    apply Finset.sum_congr rfl
-    intro k hk
-    have hkj := Finset.mem_Iio.1 hk
-    rw [partialCorrelationCholesky_line_of_lt_col z ij t (hkj.trans ij.2) hkj,
-      partialCorrelationCholesky_line_of_lt_col z ij t hkj hkj]
-  rw [hsum, add_single_apply_self,
+  rw [sum_partialCorrelationCholesky_line_of_le_col z ij t ij.2 le_rfl,
+    add_single_apply_self,
     partialCorrelationPrefix_add_single_of_not_mem z ij t ij.1.1 ij.1.2
       (fun h ↦ (lt_irrefl _) h.2),
     partialCorrelationPrefix_add_single_of_not_mem z ij t ij.1.2 ij.1.2
@@ -649,20 +654,12 @@ private theorem hasDerivAt_correlationCoordinatesOfPartialCorrelation_partialCor
     convert (hasDerivAt_const (x := (0 : ℝ)) z).add
       ((hasDerivAt_id (x := (0 : ℝ))).smul_const e) using 1 <;>
       ext ab <;> simp [partialCorrelationLine, e]
-  have hcomp : HasDerivAt
-      (fun t : ℝ ↦ correlationCoordinatesOfPartialCorrelation (partialCorrelationLine z kl t))
-      (fderiv ℝ (correlationCoordinatesOfPartialCorrelation (p := p)) z e) 0 := by
-    convert (differentiableAt_correlationCoordinatesOfPartialCorrelation hz).hasFDerivAt
-      |>.comp_hasDerivAt_of_eq 0 hline (by simp [partialCorrelationLine]) using 1
-    rfl
-  let proj : (strictLowerTriangle p → ℝ) →L[ℝ] ℝ := ContinuousLinearMap.proj ij
-  have hactual : HasDerivAt
-      (fun t : ℝ ↦
-        correlationCoordinatesOfPartialCorrelation (partialCorrelationLine z kl t) ij)
-      (fderiv ℝ (correlationCoordinatesOfPartialCorrelation (p := p)) z e ij) 0 := by
-    convert proj.hasFDerivAt.comp_hasDerivAt 0 hcomp using 1 <;> rfl
-  simpa only [LinearMap.toMatrix_apply, Pi.basisFun_repr, Pi.basisFun_apply, e,
-    ContinuousLinearMap.coe_coe] using hactual
+  have hcomp :=
+    (differentiableAt_correlationCoordinatesOfPartialCorrelation hz).hasFDerivAt
+      |>.comp_hasDerivAt_of_eq 0 hline (by simp [partialCorrelationLine])
+  convert hasDerivAt_pi.1 hcomp ij using 1 <;>
+    simp only [Function.comp_apply, LinearMap.toMatrix_apply, Pi.basisFun_repr,
+      Pi.basisFun_apply, e, ContinuousLinearMap.coe_coe]
 
 private theorem toMatrix_fderiv_correlationCoordinatesOfPartialCorrelation_diag
     {z : strictLowerTriangle p → ℝ} (hz : ∀ ij, |z ij| < 1)
@@ -687,14 +684,9 @@ private theorem toMatrix_fderiv_correlationCoordinatesOfPartialCorrelation_diag
         partialCorrelationPrefix z ij.1.2 ij.1.2))
       (partialCorrelationPrefix z ij.1.1 ij.1.2 *
         partialCorrelationPrefix z ij.1.2 ij.1.2) 0 := by
-    convert (hasDerivAt_const (x := (0 : ℝ))
-      (correlationCoordinatesOfPartialCorrelation z ij)).add
-        ((hasDerivAt_id (x := (0 : ℝ))).mul_const
-          (partialCorrelationPrefix z ij.1.1 ij.1.2 *
-            partialCorrelationPrefix z ij.1.2 ij.1.2)) using 1
-    · funext t
-      rfl
-    · ring
+    exact (hasDerivAt_mul_const (partialCorrelationPrefix z ij.1.1 ij.1.2 *
+      partialCorrelationPrefix z ij.1.2 ij.1.2)).const_add
+        (correlationCoordinatesOfPartialCorrelation z ij)
   exact hactual.unique hexpected
 
 private theorem correlationCoordinatesOfPartialCorrelation_add_single_of_key_lt
@@ -710,19 +702,8 @@ private theorem correlationCoordinatesOfPartialCorrelation_add_single_of_key_lt
   have hjle : ij.1.2 ≤ kl.1.2 := hkey.elim (fun h ↦ h.le) (fun h ↦ h.1.le)
   rw [correlationCoordinatesOfPartialCorrelation_apply_eq,
     correlationCoordinatesOfPartialCorrelation_apply_eq]
-  have hsum :
-      (∑ k ∈ Finset.Iio ij.1.2,
-        partialCorrelationCholesky (partialCorrelationLine z kl t) ij.1.1 k *
-          partialCorrelationCholesky (partialCorrelationLine z kl t) ij.1.2 k) =
-      ∑ k ∈ Finset.Iio ij.1.2,
-        partialCorrelationCholesky z ij.1.1 k * partialCorrelationCholesky z ij.1.2 k := by
-    apply Finset.sum_congr rfl
-    intro k hk
-    have hkj := Finset.mem_Iio.1 hk
-    have hkkl : k < kl.1.2 := hkj.trans_le hjle
-    rw [partialCorrelationCholesky_line_of_lt_col z kl t (hkj.trans ij.2) hkkl,
-      partialCorrelationCholesky_line_of_lt_col z kl t hkj hkkl]
-  rw [hsum, add_single_apply_of_ne z kl ij t hne,
+  rw [sum_partialCorrelationCholesky_line_of_le_col z kl t ij.2 hjle,
+    add_single_apply_of_ne z kl ij t hne,
     partialCorrelationPrefix_add_single_of_not_mem z kl t ij.1.1 ij.1.2
       (fun h ↦ (not_lt_of_ge hjle) h.2),
     partialCorrelationPrefix_add_single_of_not_mem z kl t ij.1.2 ij.1.2
