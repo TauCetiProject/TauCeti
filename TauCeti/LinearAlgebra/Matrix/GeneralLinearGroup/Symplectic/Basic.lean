@@ -61,6 +61,7 @@ symplectic coordinate Hopf algebra and group scheme live in
   `TauCeti.GLSymplecticFin.mulEquivGLSymplectic` identifying the two presentations. The
   `Fin`-indexed form is what the symplectic coordinate Hopf algebra cuts out of `GLₘ₊ₘ`, whose
   coordinate ring is `Fin`-indexed.
+* `TauCeti.GLSymplecticFin.det_eq_one`: a `Fin`-indexed symplectic matrix has determinant one.
 * `TauCeti.GLSymplecticFin.positiveLongRootTransvectionHom` and
   `negativeLongRootTransvectionHom`: the two families of long-root one-parameter subgroups.
 * `TauCeti.GLSymplecticFin.differenceShortRootHom`, `positiveSumShortRootHom`, and
@@ -493,6 +494,16 @@ theorem coe_mulEquivGLSymplectic (M : GLSymplecticFin m R) :
     ((mulEquivGLSymplectic m R M : GLSymplectic (Fin m) R) : GL (Fin m ⊕ Fin m) R) =
       Equiv.reindexGL finSumFinEquiv.symm R (M : GL (Fin (m + m)) R) := by
   simp [mulEquivGLSymplectic]
+
+variable {m R} in
+/-- **A `Fin`-indexed symplectic matrix has determinant one**: reindexing along `finSumFinEquiv`
+preserves the determinant, and Mathlib's `SymplecticGroup.det_eq_one` applies in sum
+coordinates. -/
+theorem det_eq_one (M : GLSymplecticFin m R) :
+    ((M : GL (Fin (m + m)) R) : Matrix (Fin (m + m)) (Fin (m + m)) R).det = 1 := by
+  have h := GLSymplectic.mem_iff_mem_symplecticGroup.mp (mulEquivGLSymplectic m R M).2
+  rw [coe_mulEquivGLSymplectic, Equiv.coe_reindexGL, Equiv.symm_symm] at h
+  rw [← SymplecticGroup.det_eq_one h, Matrix.det_submatrix_equiv_self]
 
 /-- A ring morphism carries `Fin`-indexed symplectic matrices to symplectic matrices. -/
 def map {S : Type*} [CommRing S] (f : R →+* S) :
