@@ -77,7 +77,7 @@ the images of the generators of the Lazard ring in a polynomial ring.
   exponents `w` of `P` have `A w ≼ e`, then the coefficient of `X^e` in `aeval c P` is the sum of
   the coefficients of `P` at the `w` with `A w = e`, and `aeval c P` has leading exponent at
   most `e`.
-* `MonomialOrder.induction_on_weight_support`: well-founded descent on the largest weight
+* `MonomialOrder.induction_weight_support`: well-founded descent on the largest weight
   `∑ i, w i • a i` of an exponent `w` of a polynomial, compared by a monomial order.
 * `MonomialOrder.weight_lt_of_mem_support_sub_weightedHomogeneousComponent`: removing the
   weighted homogeneous component of the largest weight `d` leaves only exponents of weight
@@ -467,17 +467,18 @@ section WeightDescent
 variable {ι : Type*} {m}
 
 /-- **Descent on the largest weight of an exponent.** Write `A w = ∑ i, w i • a i` and compare
-these weights by the monomial order `m`. To prove `p P` for every polynomial `P`, it suffices to
-prove `p 0`, and `p P` for every `P` whose exponents all have `A`-degree at most `d`, assuming
-`p P'` for every `P'` whose exponents all have `A`-degree strictly below `d`. -/
-theorem induction_on_weight_support [CommSemiring R] (a : ι → σ →₀ ℕ)
-    {p : MvPolynomial ι R → Prop} (h0 : p 0) (h : ∀ (d : σ →₀ ℕ) (P : MvPolynomial ι R),
+these weights by the monomial order `m`. To prove `motive P` for every polynomial `P`, it
+suffices to prove `motive 0`, and `motive P` for every `P` whose exponents all have `A`-degree at
+most `d`, assuming `motive P'` for every `P'` whose exponents all have `A`-degree strictly below
+`d`. -/
+theorem induction_weight_support [CommSemiring R] (a : ι → σ →₀ ℕ)
+    {motive : MvPolynomial ι R → Prop} (h0 : motive 0) (h : ∀ (d : σ →₀ ℕ) (P : MvPolynomial ι R),
       (∀ w ∈ P.support, Finsupp.linearCombination ℕ a w ≼[m] d) →
       (∀ P' : MvPolynomial ι R,
-        (∀ w ∈ P'.support, Finsupp.linearCombination ℕ a w ≺[m] d) → p P') → p P)
-    (P : MvPolynomial ι R) : p P := by
+        (∀ w ∈ P'.support, Finsupp.linearCombination ℕ a w ≺[m] d) → motive P') → motive P)
+    (P : MvPolynomial ι R) : motive P := by
   suffices H : ∀ e : m.syn, ∀ P : MvPolynomial ι R,
-      (∀ w ∈ P.support, m.toSyn (Finsupp.linearCombination ℕ a w) ≤ e) → p P by
+      (∀ w ∈ P.support, m.toSyn (Finsupp.linearCombination ℕ a w) ≤ e) → motive P by
     rcases P.support.eq_empty_or_nonempty with hP | hP
     · rwa [support_eq_empty.1 hP]
     · obtain ⟨w₀, -, hw₀⟩ := P.support.exists_max_image
