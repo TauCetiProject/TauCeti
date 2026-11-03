@@ -210,6 +210,7 @@ theorem form_mulVec_apply (x : ι → R) (a : ι) :
   simp [Matrix.mulVec, dotProduct, form_apply, ite_mul]
 
 /-- The form is alternating even when two is not invertible. -/
+@[simp]
 theorem dotProduct_form_mulVec_self (x : ι → R) :
     dotProduct x ((s.form R).mulVec x) = 0 := by
   simp_rw [dotProduct, s.form_mulVec_apply]

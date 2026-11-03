@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Symplectic.Basic
 public import TauCeti.Algebra.Lie.Symplectic.Basic
 public import TauCeti.Algebra.Lie.Symplectic.StandardCarrier.Scheme
-public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.ConstantMultiplication
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.ConstantForm
 public import TauCeti.LinearAlgebra.Matrix.SkewAdjoint
 
 /-!

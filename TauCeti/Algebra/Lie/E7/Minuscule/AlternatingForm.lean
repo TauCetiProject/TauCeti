@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.E7.Minuscule.Carrier
 public import TauCeti.Algebra.Lie.Presentation.MinusculeWeightTable.AlternatingForm
-public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.ConstantMultiplication
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.ConstantForm
 public import TauCeti.Algebra.AlgebraicGroup.ConstantForm.Basic
 
 /-!
@@ -138,6 +138,7 @@ theorem isUnit_alternatingForm : IsUnit (alternatingForm R) := by
   exact signedNegation.isUnit_form R
 
 /-- The minuscule form is alternating, including in characteristic two. -/
+@[simp]
 theorem dotProduct_alternatingForm_mulVec_self (x : Fin 56 → R) :
     dotProduct x ((alternatingForm R).mulVec x) = 0 :=
   signedNegation.dotProduct_form_mulVec_self R x

@@ -143,14 +143,14 @@ jobs:
           fetch-depth: 1
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@a8b16c3dd0c0730a1963052cb520808e161222ef
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ac879910a87ec1605cbb52191cee551fafeddb0c
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: a8b16c3dd0c0730a1963052cb520808e161222ef
+          tools-ref: ac879910a87ec1605cbb52191cee551fafeddb0c
           project-directory: gate
       - name: Select CI API credentials
         id: ci-api
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@a8b16c3dd0c0730a1963052cb520808e161222ef
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@ac879910a87ec1605cbb52191cee551fafeddb0c
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}
@@ -1211,7 +1211,7 @@ jobs:
       - name: Refresh CI reporting credentials after the build
         id: report-ci-api
         if: always()
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@a8b16c3dd0c0730a1963052cb520808e161222ef
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@ac879910a87ec1605cbb52191cee551fafeddb0c
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}
@@ -1472,6 +1472,26 @@ jobs:
           if-no-files-found: ignore
           retention-days: 30
 
+      - name: Prepare raw failure logs
+        timeout-minutes: 1
+        if: ${{ always() && steps.build.outcome == 'failure' }}
+        continue-on-error: true
+        run: |
+          python3 gate/scripts/ci_failure_logs.py --candidate pr --runner-temp "$RUNNER_TEMP" \
+            --out "$RUNNER_TEMP/ci-failure-logs"
+
+      - name: Upload raw failure logs
+        if: ${{ always() && steps.build.outcome == 'failure' }}
+        continue-on-error: true
+        timeout-minutes: 3
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ci-failure-logs-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/ci-failure-logs
+          if-no-files-found: warn
+          retention-days: 7
+          compression-level: 0
+
       - name: Retain unpublished CI statuses
         if: always()
         uses: actions/upload-artifact@v4
@@ -1546,14 +1566,14 @@ jobs:
           persist-credentials: false
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@a8b16c3dd0c0730a1963052cb520808e161222ef
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@ac879910a87ec1605cbb52191cee551fafeddb0c
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: a8b16c3dd0c0730a1963052cb520808e161222ef
+          tools-ref: ac879910a87ec1605cbb52191cee551fafeddb0c
           project-directory: .
       - name: Select CI API credentials
         id: ci-api
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@a8b16c3dd0c0730a1963052cb520808e161222ef
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@ac879910a87ec1605cbb52191cee551fafeddb0c
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}

@@ -5,34 +5,30 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.ConstantForm.Basic
 public import TauCeti.Algebra.AlgebraicGroup.ConstantMultiplication.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ClosedImmersion
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Points
 
 /-!
-# The toral Kostant carrier inside a constant-multiplication or constant-form subgroup scheme
+# The toral Kostant carrier inside a constant-multiplication subgroup scheme
 
 Fix a bilinear multiplication on `ℤⁿ` given by constant structure matrices
 `C : Fin n → Matrix (Fin n) (Fin n) ℤ`, and let `TauCeti.ConstantMultiplication.definingHopfIdeal`
 be the Hopf ideal cutting out the subgroup scheme of `GLₙ` whose points are the invertible
-matrices multiplicative for that product. Alternatively, fix a constant matrix
-`C : Matrix (Fin n) (Fin n) ℤ` and let `TauCeti.ConstantForm.definingHopfIdeal` be the Hopf ideal
-cutting out the subgroup scheme of `GLₙ` whose points `M` preserve `C` by congruence,
-`M C Mᵀ = C`.
+matrices multiplicative for that product.
 
 The toral Kostant carrier is the smallest closed subgroup scheme of `GLₙ` containing the
-represented root subgroups and the represented weight torus, so it lies inside either subgroup
+represented root subgroups and the represented weight torus, so it lies inside this subgroup
 scheme as soon as its generators do. Since the defining ideal of the carrier is the largest Hopf
 ideal killed by the root-subgroup and weight-torus coordinate maps, the containment of Hopf
 ideals reduces to evaluating the defining relations on the generic matrix of each generating
-coordinate map — equivalently, to checking multiplicativity, or preservation of the form, for the
+coordinate map — equivalently, to checking multiplicativity for the
 divided-power exponential matrices and the weight-diagonal matrices over every commutative ring.
 On points, the constant-multiplication containment says that every matrix point of the carrier is
 multiplicative for the product.
 
 Only the containments are proved. Nothing here asserts that the carrier exhausts the points of the
-constant-multiplication or constant-form subgroup scheme, or that any group scheme in sight is
+constant-multiplication subgroup scheme, or that any group scheme in sight is
 reductive or smooth.
 
 ## Main results
@@ -45,8 +41,6 @@ In the namespace `TauCeti.UniversalEnvelopingAlgebra`:
 * `constantMultiplicationDefiningHopfIdeal_le_kostantToralDefiningIdeal_of_generators` and
   `preserves_of_mem_kostantToralPointsSubgroup_of_generators`: the same two statements from
   multiplicativity of the generator matrices over every commutative ring.
-* `constantFormDefiningHopfIdeal_le_kostantToralDefiningIdeal`: the containment of Hopf ideals
-  for a constant form, from the generic matrices of the generating coordinate maps.
 
 ## References
 
@@ -55,7 +49,7 @@ In the namespace `TauCeti.UniversalEnvelopingAlgebra`:
 * J. E. Humphreys, *Linear Algebraic Groups*, §§26--27.
 
 The statements below package the reduction of a containment of Hopf ideals to the generating
-coordinate maps once, for an arbitrary constant multiplication or constant form and an arbitrary
+coordinate maps once, for an arbitrary constant multiplication and an arbitrary
 toral Kostant carrier.
 -/
 
@@ -129,32 +123,6 @@ theorem preserves_of_mem_kostantToralPointsSubgroup
     (CommHopfAlgCat.mem_quotientPointsSubgroup_iff _ _ _ _).mpr hsub
   rw [ConstantMultiplication.mem_definingPointsSubgroup_iff, MulEquiv.apply_symm_apply] at hmem
   exact hmem
-
-/-- **The generators of the toral Kostant carrier cut out a form they preserve.** If the generic
-matrix of every represented root-subgroup coordinate map and of the represented weight-torus
-coordinate map preserves the constant form `C` by congruence, then the Hopf ideal cutting out the
-subgroup scheme preserving `C` is contained in the toral defining ideal. Equivalently, the toral
-carrier is a closed subgroup scheme of the group scheme preserving the form. -/
-theorem constantFormDefiningHopfIdeal_le_kostantToralDefiningIdeal
-    (C : Matrix (Fin n) (Fin n) ℤ)
-    (hroot : ∀ i, (GeneralLinear.genericMatrix ℤ n).map
-          (kostantRootSubgroupCoordinateMap e h ρ M hM i (hnil i) b).hom.toAlgHom *
-        C.map (algebraMap ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ)) *
-        ((GeneralLinear.genericMatrix ℤ n).map
-          (kostantRootSubgroupCoordinateMap e h ρ M hM i (hnil i) b).hom.toAlgHom)ᵀ =
-        C.map (algebraMap ℤ (AdditiveGroup.coordinateHopfAlgebra ℤ)))
-    (htorus : (GeneralLinear.genericMatrix ℤ n).map
-          (GeneralLinear.weightTorusCoordinateMap (R := ℤ) wt).hom.toAlgHom *
-        C.map (algebraMap ℤ
-          (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj) *
-        ((GeneralLinear.genericMatrix ℤ n).map
-          (GeneralLinear.weightTorusCoordinateMap (R := ℤ) wt).hom.toAlgHom)ᵀ =
-        C.map (algebraMap ℤ
-          (DiagonalizableGroup.coordinateRing ℤ (SplitTorus.characterGroup κ)).obj)) :
-    ConstantForm.definingHopfIdeal ℤ n C ≤ kostantToralDefiningIdeal e h ρ M hM hnil b wt := by
-  rw [le_kostantToralDefiningIdeal_iff]
-  exact ⟨fun i ↦ (ConstantForm.definingHopfIdeal_toIdeal_le_ker_iff ℤ n C _).2 (hroot i),
-    (ConstantForm.definingHopfIdeal_toIdeal_le_ker_iff ℤ n C _).2 htorus⟩
 
 /-! ### The criterion on the generator matrices -/
 

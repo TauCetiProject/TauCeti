@@ -40,11 +40,11 @@ inverse; and a scalar matrix `c • 1` can only preserve an invertible `J` when 
 * `Matrix.one_add_smul_mul_mul_transpose`: a square-zero matrix `Y` with `Y * J + J * Yᵀ = 0`
   gives form-preserving unipotents.
 * `Matrix.diagonal_mul_mul_transpose_diagonal`: a diagonal matrix preserving `J` entrywise
-  preserves it.
+  preserves it over any semiring.
 * `Matrix.transpose_mul_mul_eq_of_mul_mul_transpose_eq`: for `J * J = -1`, a matrix with a left
-  inverse preserving `J` in the row convention preserves it in the column convention.
+  inverse preserving `J` in the row convention preserves it in the column convention over any ring.
 * `Matrix.sq_eq_one_of_smul_one_mul_mul_transpose_eq`: for invertible `J` over a nonempty index
-  type, a scalar matrix preserving `J` has scalar of square one.
+  type and a commutative semiring, a scalar matrix preserving `J` has scalar of square one.
 -/
 
 public section
@@ -57,6 +57,8 @@ variable {n R : Type*} [Fintype n]
 theorem isUnit_of_mul_self_eq_neg_one [Ring R] [DecidableEq n] {J : Matrix n n R}
     (hJ : J * J = -1) : IsUnit J :=
   isUnit_iff_exists.2 ⟨-J, by rw [mul_neg, hJ, neg_neg], by rw [neg_mul, hJ, neg_neg]⟩
+
+section
 
 variable [CommRing R]
 
@@ -111,9 +113,13 @@ theorem one_add_smul_mul_mul_transpose (J Y : Matrix n n R) (t : R)
   rw [hcube, smul_zero, add_zero, hYJ, smul_neg]
   abel
 
-/-- A diagonal matrix preserves a form `J` as soon as it does so entrywise:
+end
+
+variable [DecidableEq n]
+
+/-- Over any semiring, a diagonal matrix preserves a form `J` as soon as it does so entrywise:
 `d i * J i j * d j = J i j` for all `i` and `j`. -/
-theorem diagonal_mul_mul_transpose_diagonal (d : n → R) (J : Matrix n n R)
+theorem diagonal_mul_mul_transpose_diagonal [Semiring R] (d : n → R) (J : Matrix n n R)
     (hd : ∀ i j, d i * J i j * d j = J i j) :
     diagonal d * J * (diagonal d)ᵀ = J := by
   ext i j
@@ -121,8 +127,8 @@ theorem diagonal_mul_mul_transpose_diagonal (d : n → R) (J : Matrix n n R)
   exact hd i j
 
 /-- **For a form `J` with `J * J = -1`, the row and column conventions agree**: a matrix `M` with
-a left inverse and `M * J * Mᵀ = J` satisfies `Mᵀ * J * M = J`. -/
-theorem transpose_mul_mul_eq_of_mul_mul_transpose_eq {J M N : Matrix n n R}
+a left inverse and `M * J * Mᵀ = J` satisfies `Mᵀ * J * M = J`, over any ring. -/
+theorem transpose_mul_mul_eq_of_mul_mul_transpose_eq [Ring R] {J M N : Matrix n n R}
     (hJ : J * J = -1) (hNM : N * M = 1) (h : M * J * Mᵀ = J) : Mᵀ * J * M = J := by
   have hleft : J * Mᵀ = N * J := by
     calc J * Mᵀ = N * M * J * Mᵀ := by rw [hNM, Matrix.one_mul]
@@ -136,8 +142,8 @@ theorem transpose_mul_mul_eq_of_mul_mul_transpose_eq {J M N : Matrix n n R}
     _ = J := by rw [Matrix.mul_assoc, hNM, Matrix.mul_one]
 
 /-- **A scalar matrix preserving an invertible form `J` has scalar of square one**, over a
-nonempty index type. -/
-theorem sq_eq_one_of_smul_one_mul_mul_transpose_eq [Nonempty n] {J : Matrix n n R}
+nonempty index type and a commutative semiring. -/
+theorem sq_eq_one_of_smul_one_mul_mul_transpose_eq [CommSemiring R] [Nonempty n] {J : Matrix n n R}
     (hJ : IsUnit J) {c : R} (h : (c • 1) * J * (c • 1)ᵀ = J) : c ^ 2 = 1 := by
   have hJ' : c ^ 2 • J = J := by
     simpa only [transpose_smul, transpose_one, smul_mul, Matrix.one_mul, Matrix.mul_smul,
