@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Basic
 public import Mathlib.AlgebraicGeometry.OrderOfVanishing
+public import TauCeti.AlgebraicGeometry.Morphisms.Dominant
 import Mathlib.RingTheory.SimpleModule.Basic
 import TauCeti.AlgebraicGeometry.Scheme.StalkSpecializes
 import TauCeti.RingTheory.OrderOfVanishing
@@ -25,7 +26,8 @@ that map also requires the separate global theorem that a nonzero rational funct
 order at only finitely many codimension-one points; no finiteness assumption is hidden here.
 
 Elementary facts about `Scheme.ord` itself are recorded first: the order of one vanishes
-(`Scheme.ord_one`), the order of an inverse is the negative of the order (`Scheme.ord_inv`), and a
+(`Scheme.ord_one`), the order of an inverse is the negative of the order (`Scheme.ord_inv`), orders
+are invariant under isomorphisms of schemes (`Scheme.ord_functionFieldMap`), and a
 function regular on `U` has nonnegative order at every point of `U`
 (`Scheme.ord_germToFunctionField_nonneg`), that is, it has no poles where it is defined. On an
 element of the local ring at a codimension-one point, the order is the length `Ring.ord` of its
@@ -77,6 +79,37 @@ lemma ord_inv (f : X.functionField) {x : X} : X.ord f⁻¹ x = -X.ord f x := by
   · have h := X.ord_mul (x := x) hf (inv_ne_zero hf)
     rw [mul_inv_cancel₀ hf, ord_one] at h
     omega
+
+open CategoryTheory in
+/-- **Orders of vanishing are invariant under isomorphisms.** For an isomorphism `f : W ⟶ X` of
+locally Noetherian integral schemes, the order of the pullback `f^* g` of a rational function `g`
+at a point `w` is the order of `g` at `f w`: the map of local rings `𝒪_{X,f w} ⟶ 𝒪_{W,w}` is an
+isomorphism compatible with `f^*`, and lengths are invariant under ring isomorphisms
+(`TauCeti.Ring.ordFrac_map_of_ringEquiv`). -/
+@[simp]
+lemma ord_functionFieldMap {W : Scheme.{u}} [IsIntegral W] [IsLocallyNoetherian W] (f : W ⟶ X)
+    [IsIso f] (g : X.functionField) (w : W) :
+    W.ord (f.functionFieldMap g) w = X.ord g (f w) := by
+  by_cases hw : Order.coheight w = 1
+  · have hfw : Order.coheight (f w) = 1 := (coheight_eq_of_isOpenImmersion f).trans hw
+    rw [AlgebraicGeometry.Scheme.ord_eq_ordHom_of_coheight_eq_one hw,
+      AlgebraicGeometry.Scheme.ord_eq_ordHom_of_coheight_eq_one hfw]
+    congr 2
+    have := krullDimLE_of_coheight_le hw.le
+    have := krullDimLE_of_coheight_le hfw.le
+    refine TauCeti.Ring.ordFrac_map_of_ringEquiv
+      (asIso (f.stalkMap w)).commRingCatIsoToRingEquiv f.functionFieldMap.hom (fun a ↦ ?_) g
+    -- Every element of the stalk at `f w` is a germ, and `f^*` sends germs to germs.
+    obtain ⟨U, hU, s, rfl⟩ := X.presheaf.exists_germ_eq a
+    have : Nonempty U := ⟨⟨_, hU⟩⟩
+    have : Nonempty (f ⁻¹ᵁ U) := ⟨⟨w, hU⟩⟩
+    rw [← RingEquiv.coe_toRingHom, Iso.commRingCatIsoToRingEquiv_toRingHom, asIso_hom,
+      Scheme.algebraMap_germ_eq_germToFunctionField, Scheme.Hom.germ_stalkMap_apply]
+    exact congr($(f.germToFunctionField_functionFieldMap U).hom s).trans
+      (W.algebraMap_germ_eq_germToFunctionField (U := f ⁻¹ᵁ U) hU _).symm
+  · rw [AlgebraicGeometry.Scheme.ord_eq_zero_of_coheight_neq_one hw,
+      AlgebraicGeometry.Scheme.ord_eq_zero_of_coheight_neq_one
+        (by rwa [coheight_eq_of_isOpenImmersion f])]
 
 /-- A regular function on `U` has nonnegative order at every point of `U`: it has no poles where
 it is defined. -/

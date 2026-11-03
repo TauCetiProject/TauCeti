@@ -20,7 +20,9 @@ at `x` (`TauCeti.topologicalKrullDimAt`):
 * `dim {x}⁻ = trdeg_k κ(x)`;
 * `dim_x X = dim O_{X,x} + trdeg_k κ(x) = dim O_{X,x} + dim {x}⁻`;
 * `dim_x X` is the supremum of `dim Z` over the irreducible components `Z` of `X` through `x`,
-  that is, of `trdeg_k κ(ξ)` over their generic points `ξ`.
+  that is, of `trdeg_k κ(ξ)` over their generic points `ξ`;
+* for `X` irreducible, `dim O_{X,x} + dim {x}⁻ = dim X`: the codimension of `x` and the dimension
+  of its closure add up to the dimension of `X`.
 
 The first two statements are local on `X`. On an affine chart `Spec A ⟶ X` through `x`, with `A` a
 finitely generated `k`-algebra and `x` corresponding to a prime `p`, they are the affine statements
@@ -48,6 +50,7 @@ All in the namespace `TauCeti.AlgebraicGeometry`:
   supremum of the dimensions of the irreducible components through `x`.
 * `topologicalKrullDimAt_eq_iSup_toNat_trdeg_residueField`: `dim_x X` is the supremum of
   `trdeg_k κ(ξ)` over the generic points `ξ` of the irreducible components through `x`.
+* `coheight_add_height_eq_topologicalKrullDim`: for `X` irreducible, `codim x + dim {x}⁻ = dim X`.
 
 ## References
 
@@ -160,6 +163,20 @@ theorem topologicalKrullDimAt_eq_iSup_topologicalKrullDim_irreducibleComponents 
     rw [← topologicalKrullDim_inter_eq_of_locallyOfFiniteType (X ↘ Spec (.of k)) hZ.1
       (isClosed_of_mem_irreducibleComponents Z hZ) U.2.1 ⟨x, hxZ, U.2.2⟩]
     exact (IsEmbedding.inclusion Set.inter_subset_right).isInducing.topologicalKrullDim_le
+
+include k in
+/-- **Dimension formula.** On an irreducible scheme `X` locally of finite type over a field, the
+codimension and the dimension of the closure of any point add up to the dimension of `X`:
+`coheight x + height x = dim X`, where `height x = dim {x}⁻` for the specialization order. -/
+theorem coheight_add_height_eq_topologicalKrullDim [IrreducibleSpace X] (x : X) :
+    (Order.coheight x : WithBot ℕ∞) + Order.height x = topologicalKrullDim X := by
+  -- `X` is its only irreducible component, so the local dimension at `x` is the dimension of `X`.
+  have hx := topologicalKrullDimAt_eq_ringKrullDim_stalk_add_topologicalKrullDim_closure k x
+  rw [topologicalKrullDimAt_eq_iSup_topologicalKrullDim_irreducibleComponents k,
+    irreducibleComponents_eq_singleton, iSup_singleton, iSup_pos (Set.mem_univ x),
+    (Homeomorph.Set.univ X).isHomeomorph.topologicalKrullDim_eq, ringKrullDim_stalk_eq_coheight,
+    ← height_eq_topologicalKrullDim_closure_singleton] at hx
+  exact hx.symm
 
 /-- **Local dimension via generic points.** On a scheme `X` locally of finite type over a field
 `k`, the local Krull dimension at a point `x` is the supremum of the transcendence degrees over `k`
