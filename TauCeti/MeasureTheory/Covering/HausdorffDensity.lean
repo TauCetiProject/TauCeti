@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Measure.Hausdorff
 public import Mathlib.MeasureTheory.Measure.Regular
 import Mathlib.MeasureTheory.Covering.Vitali
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
+import TauCeti.MeasureTheory.Measure.InterBall
 import TauCeti.MeasureTheory.Measure.Hausdorff
 
 /-!
@@ -43,9 +44,6 @@ place of `(2 r) ^ k`, are in `TauCeti.Geometry.Euclidean.Volume.Measure`.
 * `MeasureTheory.Measure.mul_hausdorffMeasure_le_measure_of_isOpen` and
   `MeasureTheory.Measure.mul_hausdorffMeasure_le_measure`: a measure whose upper density is at
   least `c` on `A` dominates `c • μH[d]` on `A`.
-* `MeasureTheory.Measure.measure_closedBall_le_of_frequently_le`: a bound
-  `μ (closedBall x r) ≤ f r` for radii `r` arbitrarily close to `ρ` from the right holds at `ρ`
-  when `f` is right-continuous at `ρ`.
 * `MeasureTheory.Measure.measure_le_mul_hausdorffMeasure`: a measure with
   `μ (closedBall x r) ≤ c (2 r) ^ d` for all small `r` at every point `x` of `A`, where
   `c ≠ 0, ∞`, is at most `2 ^ d c • μH[d]` on `A`.
@@ -243,16 +241,6 @@ theorem mul_hausdorffMeasure_le_measure (μ : Measure X) [μ.OuterRegular] {d : 
   refine le_of_forall_gt fun b hb => ?_
   obtain ⟨U, hAU, hU, hUb⟩ := A.exists_isOpen_lt_of_lt b hb
   exact (mul_hausdorffMeasure_le_measure_of_isOpen μ hd hU hAU h).trans_lt hUb
-
-omit [BorelSpace X] in
-/-- A bound `μ (closedBall x r) ≤ f r` holding for radii `r` arbitrarily close to `ρ` from the
-right extends to the radius `ρ` itself when the gauge `f` is right-continuous at `ρ`, since
-`closedBall x ρ ⊆ closedBall x r` for `ρ ≤ r`. -/
-theorem measure_closedBall_le_of_frequently_le (μ : Measure X) {f : ℝ → ℝ≥0∞} {x : X} {ρ : ℝ}
-    (hf : ContinuousWithinAt f (Ioi ρ) ρ) (h : ∃ᶠ r in 𝓝[>] ρ, μ (closedBall x r) ≤ f r) :
-    μ (closedBall x ρ) ≤ f ρ :=
-  isClosed_Ici.mem_of_frequently_of_tendsto (h.mp (eventually_nhdsWithin_of_forall
-    fun r (hr : ρ < r) hle => (measure_mono (closedBall_subset_closedBall hr.le)).trans hle)) hf
 
 /-- **Upper density comparison for Hausdorff measure.** If at every point `x` of `A` all small
 closed balls satisfy `μ (closedBall x r) ≤ c (2 r) ^ d`, where `c ≠ 0, ∞`, then
