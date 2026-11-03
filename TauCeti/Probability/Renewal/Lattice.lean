@@ -7,8 +7,6 @@ module
 
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.MeasureTheory.Measure.Dirac.Basic
-public import Mathlib.MeasureTheory.Measure.Typeclasses.NullSingletonClass
-public import Mathlib.MeasureTheory.Measure.Typeclasses.Probability
 public import Mathlib.NumberTheory.FrobeniusNumber
 
 /-!
@@ -39,9 +37,10 @@ therefore no greatest one.
 ## Main statements
 
 * `MeasureTheory.Measure.IsLattice.isLatticeSpan_iff`: for a lattice measure, `b` is a span
-  exactly when every atom of `μ` is a multiple of `b`.
-* `MeasureTheory.Measure.IsLatticeSpan.isGreatest_setGcd_mul`: if `a` is a span, `d * a` is the
-  greatest span, where `d` is the gcd of the positive `n` with `μ {n * a} > 0`.
+  exactly when `b > 0` and every atom of `μ` is a multiple of `b`.
+* `MeasureTheory.Measure.IsLatticeSpan.isGreatest_setGcd_mul`: if `a` is a span and
+  `μ {0}ᶜ ≠ 0`, then `d * a` is the greatest span, where `d` is the gcd of the positive `n` with
+  `μ {n * a} > 0`.
 * `MeasureTheory.Measure.isGreatest_setOf_isLatticeSpan_iff`: a span is greatest exactly when
   this gcd is one.
 * `MeasureTheory.Measure.IsLattice.exists_isGreatest`: a lattice measure not concentrated at `0`
