@@ -9,17 +9,21 @@ public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Topology.VectorBundle.Constructions
 
 /-!
-# Algebraic and normed fibres of pullback bundles
+# Fibres and linear charts of pullback bundles
 
 The fibres of `f *ᵖ E` inherit their additive group, topological module, normed and inner product
 structures from `E (f x)`. Mathlib supplies the additive monoid and module structures. The
 topological group structures let fibrewise linear equivalences between pullbacks, such as the
 pullback `x ↦ e (f x)` of a family of fibrewise linear equivalences `e`, induce maps of total
 spaces with continuous inverses. The normed instances allow the orthonormal frame bundle of a
-pullback to use exactly the original fibre metrics, with no transport or renorming.
+pullback to use exactly the original fibre metrics, with no transport or renorming. A
+pulled-back linear trivialization also induces the original fibre equivalence at the image point
+(`Bundle.Trivialization.linearEquivAt_pullback`).
 -/
 
 public section
+
+open Bundle
 
 namespace Bundle.Pullback
 
@@ -59,3 +63,23 @@ instance instInnerProductSpace {𝕜 : Type*} [RCLike 𝕜]
   inferInstanceAs (InnerProductSpace 𝕜 (E (f x)))
 
 end Bundle.Pullback
+
+namespace Bundle.Trivialization
+
+variable {𝕜 B B' F : Type*} [NontriviallyNormedField 𝕜]
+  [TopologicalSpace B] [TopologicalSpace B'] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {E : B → Type*} [TopologicalSpace (TotalSpace F E)]
+  [∀ b, AddCommMonoid (E b)] [∀ b, Module 𝕜 (E b)]
+  {K : Type*} [FunLike K B' B] [ContinuousMapClass K B' B]
+
+/-- A pulled-back linear chart gives the original fibre equivalence at the image point. -/
+@[simp]
+theorem linearEquivAt_pullback (e : Trivialization F (π F E)) [e.IsLinear 𝕜]
+    (f : K) (b : B') (hb : b ∈ (e.pullback f).baseSet) :
+    (e.pullback f).linearEquivAt 𝕜 b hb =
+      e.linearEquivAt 𝕜 (f b) (by simpa only [pullback_baseSet, Set.mem_preimage] using hb) := by
+  apply LinearEquiv.ext
+  intro v
+  exact congrArg Prod.snd (e.pullback_apply f ⟨b, v⟩)
+
+end Bundle.Trivialization
