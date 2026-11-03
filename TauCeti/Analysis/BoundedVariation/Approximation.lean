@@ -599,7 +599,7 @@ private theorem exists_contDiffOn_lintegral_le_totalVariationOn_le
         ∑ k ∈ Finset.range m, (mollifiedPiece μ u ζ n k x - ζ k x * u x) := by
       rw [hwx, Finset.sum_sub_distrib, hux]
     rw [hsum]
-    exact (enorm_sum_le _ _).trans (ENNReal.sum_le_tsum _)
+    exact (enorm_sum_le _ _).trans (sum_le_tsum _)
   calc ∫⁻ x in Ω, ‖∑' k, mollifiedPiece μ u ζ n k x - u x‖ₑ ∂μ
       ≤ ∫⁻ x in Ω, ∑' k, ‖mollifiedPiece μ u ζ n k x - ζ k x * u x‖ₑ ∂μ :=
         setLIntegral_mono' Ω.isOpen.measurableSet hpt
@@ -609,7 +609,7 @@ private theorem exists_contDiffOn_lintegral_le_totalVariationOn_le
         lintegral_tsum fun k => ((hf k).continuous.aestronglyMeasurable.sub
           (hv k).aestronglyMeasurable).enorm
     _ ≤ ∑' k, ENNReal.ofReal (δ / 2 / 2 ^ k) :=
-        ENNReal.tsum_le_tsum fun k => by simpa only [mollifiedPiece] using hnv k
+        tsum_le_tsum fun k => by simpa only [mollifiedPiece] using hnv k
     _ = ENNReal.ofReal δ := by
         rw [← ENNReal.ofReal_tsum_of_nonneg (fun k => (hε k).le) (summable_geometric_two' δ),
           tsum_geometric_two']
