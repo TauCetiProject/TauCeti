@@ -293,10 +293,10 @@ variable {P : ℤ[X]}
 
 private theorem mulHeight_map_intCast_eq_finsupp (P : ℤ[X]) :
     (P.map (Int.castRingHom ℚ)).mulHeight =
-      (P.toFinsupp.coeff.mapRange ((↑) : ℤ → ℚ) Int.cast_zero).mulHeight := by
+      (P.coeff.mapRange ((↑) : ℤ → ℚ) Int.cast_zero).mulHeight := by
   rw [mulHeight_eq_finsupp]
   refine congrArg Finsupp.mulHeight (Finsupp.ext fun n ↦ ?_)
-  simp [toFinsupp_apply, coeff_map]
+  simp [coeff_map]
 
 /-- The height over `ℚ` of a nonzero integer polynomial is at most the largest absolute value of
 its coefficients. -/
@@ -338,7 +338,7 @@ theorem logHeight_map_intCast_le_log (hP : P ≠ 0) {B : ℝ}
   refine Real.log_le_log (mulHeight_pos _) ?_
   rw [mulHeight_map_intCast_eq_finsupp]
   exact Finsupp.mulHeight_mapRange_intCast_le_of_abs_le (by simpa using hP)
-    fun n ↦ by simpa [toFinsupp_apply] using hB n
+    hB
 
 end Polynomial
 

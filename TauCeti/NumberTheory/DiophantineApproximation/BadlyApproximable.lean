@@ -298,7 +298,8 @@ example : simultaneousExponent ![√2, √3] ≤ 1 := by
 
 example : BadlyApproximable Real.goldenRatio :=
   Real.goldenRatio_irrational.badlyApproximable_of_aeval_eq_zero (f := X ^ 2 - X - 1)
-    (by intro h; simpa [coeff_X, coeff_one] using congr_arg (coeff · 2) h) (by compute_degree!)
+    (by intro h; simpa [coeff_X, coeff_one] using congr_arg (AddMonoidAlgebra.coeff · 2) h)
+    (by compute_degree!)
     (by simp [Real.goldenRatio_sq])
 
 example : ¬BadlyApproximable (liouvilleNumber 10) := fun h ↦

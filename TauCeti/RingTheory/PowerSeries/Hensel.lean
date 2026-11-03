@@ -328,7 +328,7 @@ instance henselianLocalRing : HenselianLocalRing K⟦X⟧ where
     obtain ⟨b, rfl⟩ : ∃ b, G = Polynomial.X + Polynomial.C b := ⟨_, hG.eq_X_add_C hdeg⟩
     -- The constant coefficient of `b` is `-c`, read off from the reduction of `X + C b`.
     have hb : constantCoeff b = -constantCoeff a₀ := by
-      simpa using congrArg (Polynomial.coeff · 0) hGg
+      simpa using congrArg (AddMonoidAlgebra.coeff · 0) hGg
     refine ⟨-b, ?_, ?_⟩
     · rw [← hGH, Polynomial.IsRoot, Polynomial.eval_mul]
       simp
