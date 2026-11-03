@@ -33,8 +33,6 @@ cover bond `b_λ(x, y)` of Chirivì–Fang–Littelmann, studied in
 * `RootPairing.reflectionBond_reflection`: the bond of `x` and `s_β x` is `-⟨x, β^∨⟩`.
 * `RootPairing.reflectionBond_dvd_sub`: when `y = s_β x` for a positive root `β`, the bond of `x`
   and `y` divides `f x - f y` for every linear form `f`.
-* `RootPairing.reflection_weylGroupToPerm_smul` and `RootPairing.reflection_indexNeg_neg`: the
-  reflection in `w β` sends `w x` to `w (s_β x)`, and the reflection in `-β` is that in `β`.
 * `RootPairing.abs_reflectionBond_smul_smul`: the bond is invariant under the Weyl group, up to
   sign.
 
@@ -65,23 +63,6 @@ noncomputable def reflectionBond (x y : M) : R :=
   if h : ∃ β, b.IsPos β ∧ P.reflection β x = y then P.coroot' h.choose y else 0
 
 variable {P b}
-
-omit [CharZero R] in
-/-- **Transporting a reflection by the Weyl group.** The reflection in the image `w β` of a root
-index `β` sends `w x` to `w (s_β x)`. -/
-theorem reflection_weylGroupToPerm_smul (w : P.weylGroup) (β : ι) (x : M) :
-    P.reflection (P.weylGroupToPerm w β) (w • x) = w • P.reflection β x := by
-  rw [← Equiv.reflection_smul, ← weylGroup.ofIdx_smul, weylGroup.ofIdx_weylGroupToPerm_eq_conj,
-    mul_smul, mul_smul, inv_smul_smul, weylGroup.ofIdx_smul, Equiv.reflection_smul]
-
-omit [CharZero R] in
-/-- The reflection in the negative `-β = s_β β` of a root is the reflection in `β`. -/
-theorem reflection_indexNeg_neg (β : ι) :
-    letI := P.indexNeg
-    P.reflection (-β) = P.reflection β := by
-  ext x
-  rw [indexNeg_neg, reflection_reflectionPerm, mul_apply_eq_comp, mul_apply_eq_comp,
-    reflection_same]
 
 /-- The bond of two weights related by a reflection in a positive root `β` is `⟨y, β^∨⟩`. -/
 theorem reflectionBond_eq_coroot' [P.IsReduced] {β : ι} (hβ : b.IsPos β) {x y : M}

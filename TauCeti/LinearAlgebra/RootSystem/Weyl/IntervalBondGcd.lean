@@ -33,8 +33,8 @@ bonds `|⟨x λ, αᵢ^∨⟩|` and `|⟨z λ, αᵢ^∨⟩|` of `sᵢ x ⋖ x` 
 Second, a chain `x ⋗ sᵢ x ⋗ ⋯ ⋗ y` with `sᵢ y < y` is compared with the chain obtained from its
 tail by appending `sᵢ y ⋖ y`: the two simple bonds `|⟨x λ, αᵢ^∨⟩|` and `|⟨y λ, αᵢ^∨⟩|` are
 congruent modulo the bond gcd of the tail, which divides `⟨sᵢ x λ - y λ, αᵢ^∨⟩`
-(`TauCeti.bondGcd_dvd_sub`). Every chain is moved by these steps onto one through `sᵢ x`, or onto
-the chain from `sᵢ x` to `sᵢ y`, according as `sᵢ` is a left descent of `y` or not; the lifting
+(`TauCeti.bondGcd_dvd_sub`). Every chain is moved by these steps onto one from `sᵢ x` to `sᵢ y`
+when `sᵢ` is a left descent of `y`, and onto one through `sᵢ x` when it is not; the lifting
 property of the Bruhat order provides the required comparisons.
 
 ## Main definitions
