@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.Algebra.Order.BigOperators.Ring.Finset
-public import Mathlib.Analysis.SpecialFunctions.Sqrt
+public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.Topology.MetricSpace.ProperSpace
 
 /-!
@@ -200,32 +201,32 @@ theorem dist_le_sqrt_discreteEnergy_cons_snoc {t : Fin (n + 2) → ℝ}
 
 /-- The set of interior vertex tuples `x` with fixed endpoints `p,q` whose energy
 `discreteEnergy t (Fin.cons p (Fin.snoc x q))` is strictly less than `c`. -/
-def discreteEnergySublevel (t : Fin (n + 2) → ℝ) (p q : M) (c : ℝ) :
+def discreteEnergyStrictSublevel (t : Fin (n + 2) → ℝ) (p q : M) (c : ℝ) :
     Set (Fin n → M) :=
   {x | discreteEnergy t (Fin.cons p (Fin.snoc x q)) < c}
 
 @[simp]
-theorem mem_discreteEnergySublevel {t : Fin (n + 2) → ℝ} {p q : M} {c : ℝ}
+theorem mem_discreteEnergyStrictSublevel {t : Fin (n + 2) → ℝ} {p q : M} {c : ℝ}
     {x : Fin n → M} :
-    x ∈ discreteEnergySublevel t p q c ↔
+    x ∈ discreteEnergyStrictSublevel t p q c ↔
       discreteEnergy t (Fin.cons p (Fin.snoc x q)) < c := Iff.rfl
 
 /-- Strict energy sublevels are open in the full interior-vertex product. -/
-theorem isOpen_discreteEnergySublevel (t : Fin (n + 2) → ℝ) (p q : M) (c : ℝ) :
-    IsOpen (discreteEnergySublevel t p q c) := by
+theorem isOpen_discreteEnergyStrictSublevel (t : Fin (n + 2) → ℝ) (p q : M) (c : ℝ) :
+    IsOpen (discreteEnergyStrictSublevel t p q c) := by
   exact isOpen_lt (continuous_discreteEnergy_cons_snoc t p q) continuous_const
 
 /-- Decreasing the cutoff gives the canonical inclusion of energy carriers. -/
-theorem discreteEnergySublevel_mono (t : Fin (n + 2) → ℝ) (p q : M)
+theorem discreteEnergyStrictSublevel_mono (t : Fin (n + 2) → ℝ) (p q : M)
     {a c : ℝ} (hac : a ≤ c) :
-    discreteEnergySublevel t p q a ⊆ discreteEnergySublevel t p q c :=
+    discreteEnergyStrictSublevel t p q a ⊆ discreteEnergyStrictSublevel t p q c :=
   fun _ hx => hx.trans_le hac
 
 /-- Every interior vertex in a strict energy sublevel lies in the corresponding
 open ball. -/
-theorem dist_lt_sqrt_of_mem_discreteEnergySublevel {t : Fin (n + 2) → ℝ}
+theorem dist_lt_sqrt_of_mem_discreteEnergyStrictSublevel {t : Fin (n + 2) → ℝ}
     (ht : StrictMono t) {p q : M} {c : ℝ} {x : Fin n → M}
-    (hx : x ∈ discreteEnergySublevel t p q c) (j : Fin n) :
+    (hx : x ∈ discreteEnergyStrictSublevel t p q c) (j : Fin n) :
     dist p (x j) < √(2 * (t (Fin.last (n + 1)) - t 0) * c) := by
   have hT : 0 < t (Fin.last (n + 1)) - t 0 := sub_pos.mpr (ht Fin.last_pos')
   exact (dist_le_sqrt_discreteEnergy_cons_snoc ht p q x j).trans_lt (Real.sqrt_lt_sqrt
@@ -256,10 +257,10 @@ theorem isCompact_discreteEnergy_le [ProperSpace M] {t : Fin (n + 2) → ℝ}
     (dist_le_sqrt_of_discreteEnergy_le ht hx j))
 
 /-- For `a < c`, the closed energy sublevel `{E ≤ a}` is compact as a subset of
-the subtype `discreteEnergySublevel t p q c`. -/
-theorem isCompact_discreteEnergySublevel_le [ProperSpace M] {t : Fin (n + 2) → ℝ}
+the subtype `discreteEnergyStrictSublevel t p q c`. -/
+theorem isCompact_discreteEnergyStrictSublevel_le [ProperSpace M] {t : Fin (n + 2) → ℝ}
     (ht : StrictMono t) (p q : M) {a c : ℝ} (hac : a < c) :
-    IsCompact {x : discreteEnergySublevel t p q c |
+    IsCompact {x : discreteEnergyStrictSublevel t p q c |
       discreteEnergy t (Fin.cons p (Fin.snoc (x : Fin n → M) q)) ≤ a} := by
   exact Topology.IsInducing.subtypeVal.isCompact_preimage'
     (isCompact_discreteEnergy_le ht p q a)
