@@ -45,6 +45,6 @@ theorem exp_two_pi_mul_I_mul_add_intCast (z : ℂ) (k : ℤ) :
 /-- `‖e(x)‖ = 1` for `e(x) = exp (2 π i x)` and real `x`. -/
 @[simp]
 theorem norm_exp_two_pi_mul_I_mul_ofReal (x : ℝ) : ‖cexp (2 * π * I * x)‖ = 1 := by
-  rw [show 2 * π * I * x = ((2 * π * x : ℝ) : ℂ) * I by push_cast; ring, norm_exp_ofReal_mul_I]
+  simp [norm_exp]
 
 end Complex
