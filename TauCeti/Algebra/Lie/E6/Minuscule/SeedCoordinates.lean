@@ -1,0 +1,50 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.Basic
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.E6.MinusculeWeight
+
+/-!
+# Recovering E₆ torus coordinates from six minuscule weights
+
+The minuscule weights at indices `0`, `1`, `2`, `4`, `5`, `11` form an integral basis of the
+character lattice. This file reads the fundamental-weight torus coordinates from values on
+those six weights and verifies that evaluation recovers the seed values. It shares the
+coordinate calculation used for the minuscule cubic stabilizer and the doubled carrier's torus.
+
+Writing `μₐ` for the minuscule weights, the coordinate change is
+`ϖ₁ = μ₀`, `ϖ₂ = μ₂ + μ₅ + μ₁₁`, `ϖ₃ = μ₀ + μ₁`, `ϖ₄ = μ₀ + μ₁ + μ₂`,
+`ϖ₅ = μ₂ + μ₄ + μ₅ + μ₁₁` and `ϖ₆ = μ₄ + μ₅`.
+
+The calculation is extracted from `TauCeti.Algebra.Lie.E6.DoubledMinuscule.MaximalTorus`.
+-/
+
+public section
+
+namespace TauCeti.E6Minuscule
+
+open TauCeti.DynkinType
+
+/-- Fundamental-weight torus coordinates obtained from values on the six seed minuscule
+weights at indices `0`, `1`, `2`, `4`, `5`, `11`. Values at the other indices are unused. -/
+def torusParameterOfSeedValues {G : Type*} [CommGroup G] (t : Fin 27 → G) : Fin 6 → G :=
+  ![t 0, t 2 * t 5 * t 11, t 0 * t 1, t 0 * t 1 * t 2,
+    t 2 * t 4 * t 5 * t 11, t 4 * t 5]
+
+/-- Evaluating the torus parameter recovered from seed values returns those values on each
+of the six seed minuscule weights. -/
+theorem torusCharacter_torusParameterOfSeedValues {A : Type*} [CommRing A]
+    (t : Fin 27 → Aˣ) :
+    ∀ a ∈ ({0, 1, 2, 4, 5, 11} : Finset (Fin 27)),
+      torusCharacter (torusParameterOfSeedValues t) (e6MinusculeWeight a) = t a := by
+  simp only [Finset.mem_insert, Finset.mem_singleton]
+  rintro a (rfl | rfl | rfl | rfl | rfl | rfl) <;>
+    simp only [torusParameterOfSeedValues, torusCharacter_def, Fin.prod_univ_six] <;>
+    apply Additive.ofMul.injective <;>
+    simp [e6MinusculeWeight, ofMul_mul, ofMul_inv] <;> abel
+
+end TauCeti.E6Minuscule

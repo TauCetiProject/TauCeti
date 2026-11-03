@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.E6.DoubledMinuscule.CrossProduct
-public import TauCeti.Algebra.Lie.E6.Minuscule.GroupScheme
+public import TauCeti.Algebra.Lie.E6.Minuscule.SeedCoordinates
 
 /-!
 # The diagonal stabilizer of the E₆ cubic coefficients
@@ -88,17 +88,8 @@ theorem existsUnique_torusCharacter_iff_cubicForm {A : Type*} [CommRing A] (t : 
   · rintro ⟨s, hs, _⟩ a b c h
     simpa only [hs] using hchar s a b c h
   · intro ht
-    -- These are the fundamental-weight coordinates expressed in the six seed weights.
-    let s : Fin 6 → Aˣ :=
-      ![t 0, t 2 * t 5 * t 11, t 0 * t 1, t 0 * t 1 * t 2,
-        t 2 * t 4 * t 5 * t 11, t 4 * t 5]
-    have hseed : ∀ a ∈ ({0, 1, 2, 4, 5, 11} : Finset (Fin 27)),
-        torusCharacter s (e6MinusculeWeight a) = t a := by
-      simp only [Finset.mem_insert, Finset.mem_singleton]
-      rintro a (rfl | rfl | rfl | rfl | rfl | rfl) <;>
-        simp only [s, torusCharacter_def, Fin.prod_univ_six] <;>
-        apply Additive.ofMul.injective <;>
-        simp [e6MinusculeWeight, ofMul_mul, ofMul_inv] <;> abel
+    let s := torusParameterOfSeedValues t
+    have hseed := torusCharacter_torusParameterOfSeedValues t
     have heq := E6DoubledMinuscule.eq_of_eq_mul_of_crossProductMatrix_ne_zero
       (doubledValues_multiplicative (hchar s)) (doubledValues_multiplicative ht)
       (by simpa only [doubledValues, Equiv.symm_apply_apply, Sum.elim_inl] using hseed)
