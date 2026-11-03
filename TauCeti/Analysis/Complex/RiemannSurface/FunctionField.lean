@@ -74,6 +74,9 @@ neighbourhood and its inverse is a multiplicative inverse.
 * `TauCeti.RiemannSurface.MeromorphicFunction.exists_algebraMap_eq_of_forall_ne_infty`: the maximum
   principle, a meromorphic function without poles on a compact connected Riemann surface is
   constant.
+* `MeromorphicFunction.exists_algebraMap_eq_of_forall_ne_ne_infty_of_forall_ne_ne_zero`: a
+  meromorphic function with neither zeros nor poles off one point of a compact connected Riemann
+  surface is constant.
 
 ## References
 
@@ -653,6 +656,23 @@ theorem sum_apply {ι : Type*} {s : Finset ι} {f : ι → MeromorphicFunction X
     (hf : ∀ i ∈ s, f i x ≠ ∞) : (∑ i ∈ s, f i) x = ↑(∑ i ∈ s, (f i).finitePart x) :=
   sum_apply_of_eq_coe fun i hi ↦ (coe_finitePart (hf i hi)).symm
 
+/-- If `f` takes the value `a` at `x`, then the polynomial `p` evaluated at `f` takes the value
+`p(a)` at `x`. -/
+theorem aeval_apply_of_eq_coe {a : ℂ} (hf : f x = a) (p : Polynomial ℂ) :
+    Polynomial.aeval f p x = ↑(p.eval a) := by
+  induction p using Polynomial.induction_on with
+  | C c => simp
+  | add p q hp hq => rw [map_add, add_apply_of_eq_coe hp hq, Polynomial.eval_add]
+  | monomial n c h =>
+    rw [pow_succ, ← mul_assoc, map_mul, Polynomial.aeval_X, mul_apply_of_eq_coe h hf]
+    simp [mul_assoc]
+
+/-- At a point where `f` is finite, a polynomial evaluated at `f` takes the value of the
+polynomial at `f.finitePart x`. -/
+theorem aeval_apply (hf : f x ≠ ∞) (p : Polynomial ℂ) :
+    Polynomial.aeval f p x = ↑(p.eval (f.finitePart x)) :=
+  aeval_apply_of_eq_coe (coe_finitePart hf).symm p
+
 /-- **The inverse vanishes at the poles.** At a pole of `f`, the meromorphic function `f⁻¹`
 takes the value `0`. -/
 theorem inv_apply_of_eq_infty (hf : f x = ∞) : f⁻¹ x = ((0 : ℂ) : OnePoint ℂ) := by
@@ -704,6 +724,22 @@ theorem exists_algebraMap_eq_of_forall_ne_infty (h : ∀ x, f x ≠ ∞) :
   obtain ⟨c, hc⟩ := MDifferentiable.exists_eq_const_of_compactSpace hmd
   refine ⟨c, ext fun x ↦ ?_⟩
   rw [coe_algebraMap, ← coe_finitePart (h x), hc, Function.const_apply]
+
+/-- **A meromorphic function with neither zeros nor poles off one point is constant** on a
+compact connected Riemann surface. -/
+theorem exists_algebraMap_eq_of_forall_ne_ne_infty_of_forall_ne_ne_zero (x₀ : X)
+    (hinf : ∀ x ≠ x₀, f x ≠ ∞) (h0 : ∀ x ≠ x₀, f x ≠ ((0 : ℂ) : OnePoint ℂ)) :
+    ∃ c : ℂ, algebraMap ℂ (MeromorphicFunction X) c = f := by
+  by_cases hf : f x₀ = ∞
+  · obtain ⟨c, hc⟩ := exists_algebraMap_eq_of_forall_ne_infty (f := f⁻¹) fun x ↦ by
+      by_cases hx : x = x₀
+      · simp [hx, inv_apply_of_eq_infty hf]
+      · simp [inv_apply (hinf x hx) (h0 x hx)]
+    exact ⟨c⁻¹, by rw [map_inv₀, hc, inv_inv]⟩
+  · exact exists_algebraMap_eq_of_forall_ne_infty fun x ↦ by
+      by_cases hx : x = x₀
+      · rwa [hx]
+      · exact hinf x hx
 
 end Compact
 

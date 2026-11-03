@@ -13,12 +13,10 @@ public import TauCeti.Analysis.Complex.UnitDisc.Basic
 /-!
 # The isometries of the Poincaré disc are the disc automorphisms and their conjugates
 
-The two objects layer **L2** of the conformal-mapping roadmap
-(`TauCetiRoadmap/ConformalMapping/README.md`) asks for — "the **hyperbolic / Poincaré metric** on
-`𝔻`" and "the disc automorphism group `Aut(𝔻) = {e^{iθ}(z−a)/(1−āz)}`" — are already on `main`,
-and `Conformal/Poincare/MetricSpace.lean` records the one implication relating them: every
-standard automorphism is a Poincaré isometry. This file proves the converse, which is what makes
-`Aut(𝔻)` the *right* group for that metric:
+For the hyperbolic (Poincaré) metric on `𝔻` and the disc automorphism group
+`Aut(𝔻) = {e^{iθ}(z−a)/(1−āz)}`, `Conformal/Poincare/MetricSpace.lean` records the one implication
+relating them: every standard automorphism is a Poincaré isometry. This file proves the converse,
+which is what makes `Aut(𝔻)` the *right* group for that metric:
 
 > a map of the open unit disc into itself that preserves the hyperbolic distance is
 > `z ↦ u * (z - b) / (1 - conj b * z)` or `z ↦ u * (conj z - b) / (1 - conj b * conj z)`,
@@ -80,16 +78,6 @@ Mathlib's own, `ℂ` carrying the `InnerProductSpace ℝ ℂ` instance with `⟪
   `TauCeti.bijOn_ball_of_hyperbolicDist_map_eq` and
   `TauCeti.PoincareDisc.bijective_of_isometry` — an isometric self-embedding of the Poincaré disc
   is a bijection.
-
-## Coordination with upstream Mathlib
-
-Mathlib has no Poincaré metric on the disc at all — its hyperbolic material lives on
-`UpperHalfPlane` — so it has no classification of the isometries of one, and this file is new Lean
-formalization rather than a temporary shim. The in-progress human-curated Riemann-mapping effort
-[mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505), together with the
-preceding `Analysis/Complex/RiemannMapping.lean` and `Analysis/Complex/BranchLogRoot.lean`, stops
-at the mapping theorem and contains nothing of this; should a human-curated Poincaré metric and
-its isometry group land upstream, this file is to be refactored onto it.
 
 ## References
 

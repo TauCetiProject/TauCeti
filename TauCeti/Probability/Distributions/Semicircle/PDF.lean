@@ -15,7 +15,8 @@ The unit-radius semicircle law has the continuous density `2 / π * √(1 - x²)
 The real square root makes this expression zero outside the open interval `(-1, 1)`,
 in particular at the endpoints `±1`.
 The affine Beta realization gives the density-measure equality and the random-variable
-and Radon–Nikodym interfaces.
+and Radon–Nikodym interfaces, and expresses integration against the law as an interval
+integral against the semicircle height.
 
 ## References
 
@@ -105,6 +106,38 @@ theorem semicircleMeasure_eq_withDensity :
   simp only [betaPDF, abs_of_pos (by norm_num : (0 : ℝ) < 2),
     show x - -1 = x + 1 by ring]
   norm_num
+
+/-- Integration against the unit-radius semicircle law, as an interval integral against the
+semicircle height. -/
+theorem integral_semicircleMeasure_eq_intervalIntegral {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] (f : ℝ → E) :
+    ∫ x, f x ∂semicircleMeasure = (2 / π) • ∫ x in -1..1, √(1 - x ^ 2) • f x := by
+  rw [semicircleMeasure_eq_withDensity, integral_withDensity_eq_integral_toReal_smul
+    measurable_semicirclePDF (.of_forall fun _ ↦ by simp),
+    intervalIntegral.integral_of_le (by norm_num), ← MeasureTheory.integral_smul,
+    ← setIntegral_eq_integral_of_forall_compl_eq_zero (s := Ioc (-1) 1)]
+  · refine setIntegral_congr_fun measurableSet_Ioc fun x _ ↦ ?_
+    rw [semicirclePDF_apply, ENNReal.toReal_ofReal (semicirclePDFReal_nonneg x),
+      semicirclePDFReal_apply, smul_smul]
+  · intro x hx
+    have hx' : 1 - x ^ 2 ≤ 0 := by
+      simp only [mem_Ioc, not_and_or, not_lt, not_le] at hx
+      rcases hx with hx | hx <;> nlinarith
+    simp [semicirclePDFReal_apply, sqrt_eq_zero_of_nonpos hx']
+
+/-- Reflection preserves the unit-radius semicircle law. -/
+@[simp]
+theorem map_neg_semicircleMeasure : semicircleMeasure.map Neg.neg = semicircleMeasure := by
+  rw [semicircleMeasure_eq_withDensity]
+  calc
+    _ = volume.withDensity (affineDensity 0 (-1) semicirclePDF) := by
+      simpa using
+        (map_affine_withDensity_volume (a := 0) (b := -1) semicirclePDF (by norm_num))
+    _ = _ := by
+      congr 1
+      ext x
+      simp only [affineDensity_apply, semicirclePDF_apply, semicirclePDFReal_apply]
+      norm_num [div_neg, div_one]
 
 /-- The semicircle law has no atoms. -/
 instance nullSingletonClass_semicircleMeasure : NullSingletonClass semicircleMeasure := by

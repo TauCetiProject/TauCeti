@@ -135,6 +135,20 @@ lemma relativeSpecSymmetricAlgebraHomAddEquiv_symm_apply (T : Over X)
       (relativeSpecSymmetricAlgebraHomEquiv F T).symm φ :=
   (rfl)
 
+/-- The module map of a sum of points of `Spec_X (Sym F)` is the sum of their module maps. -/
+lemma relativeSpecSymmetricAlgebraHomEquiv_add (T : Over X)
+    (t₁ t₂ : T ⟶ (MorphismProperty.Over.forget _ _ X).obj
+      ((relativeSpec X).obj (op ((symmetricAlgebra X).obj F)))) :
+    relativeSpecSymmetricAlgebraHomEquiv F T (t₁ + t₂) =
+      -- the sum is taken in the group `Hom(F, q_* 𝒪_T)` of `linearFunctionalsPresheaf`: instance
+      -- search finds no addition on these morphisms, whose source is a `SheafOfModules` and whose
+      -- target is an object of `X.Modules`
+      HAdd.hAdd (α := ToType (((linearFunctionalsPresheaf X).obj (op F)).obj (op T)))
+        (β := ToType (((linearFunctionalsPresheaf X).obj (op F)).obj (op T)))
+        (relativeSpecSymmetricAlgebraHomEquiv F T t₁)
+        (relativeSpecSymmetricAlgebraHomEquiv F T t₂) :=
+  map_add (relativeSpecSymmetricAlgebraHomAddEquiv F T) t₁ t₂
+
 /-- The isomorphism `relativeSpecSymmetricAlgebraHomAddEquiv` is natural in the scheme over `X`:
 composing with `g : T' ⟶ T` over `X` corresponds to composing the module map with pullback of
 regular functions along `g`. -/

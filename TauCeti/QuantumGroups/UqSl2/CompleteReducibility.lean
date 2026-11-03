@@ -7,7 +7,7 @@ module
 
 public import TauCeti.QuantumGroups.UqSl2.Casimir.Basic
 public import TauCeti.QuantumGroups.UqSl2.HighestWeight
-public import TauCeti.QuantumGroups.UqSl2.LadderModule
+public import TauCeti.QuantumGroups.UqSl2.LadderModule.Basic
 public import Mathlib.RingTheory.SimpleModule.Basic
 import TauCeti.Algebra.Ring.Int.Units
 import Mathlib.Tactic

@@ -191,7 +191,7 @@ theorem isUnipotent_pointsAction
     (standardScalarExtensionEquiv R n)
     (LinearMap.GeneralLinearGroup.ofLinearEquiv
       (Comodule.pointsAction (Fin n → R) g))).mp
-  rw [congrLinearEquiv_pointsAction_eq_toLin]
+  rw [LinearMap.GeneralLinearGroup.congrLinearEquiv_apply, congrLinearEquiv_pointsAction_eq_toLin]
   exact UpperUnitriangularGroup.isUnipotent_toLin (pointToUpperUnitriangular R (Fin n) g)
 
 end PointAction

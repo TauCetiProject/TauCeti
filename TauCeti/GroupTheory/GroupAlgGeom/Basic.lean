@@ -159,6 +159,10 @@ theorem symmOfBijective_apply_apply (φ : GHom ιH ιK) (hφ : Function.Bijectiv
     φ.symmOfBijective hφ (φ x) = x := by
   exact (MulEquiv.ofBijective φ.toMonoidHom hφ).symm_apply_apply x
 
+theorem symmOfBijective_injective (φ : GHom ιH ιK) (hφ : Function.Bijective φ) :
+    Function.Injective (φ.symmOfBijective hφ) :=
+  Function.LeftInverse.injective (g := φ) (φ.apply_symmOfBijective_apply hφ)
+
 @[simp]
 theorem comp_symmOfBijective (φ : GHom ιH ιK) (hφ : Function.Bijective φ) :
     φ.comp (φ.symmOfBijective hφ) = GHom.id ιK := by

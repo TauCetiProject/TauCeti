@@ -668,6 +668,15 @@ theorem homOf_neg {X Y : C} (f : DGHom R 0 X Y) (hf : f ∈ dgCycles R X Y) :
   congr 1
   exact neg_add_cancel f
 
+/-- Taking a morphism to the homotopy category preserves multiplication by a sign. -/
+@[simp]
+theorem homOf_units_smul {X Y : C} (u : ℤˣ) (f : DGHom R 0 X Y) (hf : f ∈ dgCycles R X Y) :
+    homOf R (u • f) ((dgCycles R X Y).toAddSubgroup.zsmul_mem hf (u : ℤ)) = u • homOf R f hf := by
+  rcases Int.units_eq_one_or u with rfl | rfl
+  · simp only [one_smul]
+  · simp only [Units.neg_smul, one_smul]
+    exact homOf_neg R f hf
+
 /-- A closed degree-zero DG morphism represents zero precisely when it is a boundary. -/
 @[simp]
 theorem homOf_eq_zero_iff {X Y : C} {f : DGHom R 0 X Y} (hf : f ∈ dgCycles R X Y) :

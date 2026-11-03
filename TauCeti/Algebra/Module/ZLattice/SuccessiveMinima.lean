@@ -100,7 +100,14 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- The successive minima of a `ℤ`-submodule `L` of `E` with respect to a convex body `K`, indexed
 from zero: `successiveMin L K i` is the infimum of the dilation factors `t ≥ 0` for which `t • K`
-contains `i + 1` vectors of `L` that are linearly independent over `ℝ`. -/
+contains `i + 1` vectors of `L` that are linearly independent over `ℝ`.
+
+When no dilate of `K` contains `i + 1` independent vectors of `L` (for instance when `L` has rank
+at most `i`, or when `K` is a segment containing `0` and `1 ≤ i`), the infimum is over the empty
+set and `successiveMin L K i` takes the junk value `sInf ∅ = 0`; the minima then need not be
+positive or monotone. For a discrete spanning lattice `L` and `0` in the interior of `K`, the
+hypotheses of the main results, the set is nonempty and the infimum is attained
+(`ZLattice.successiveMin_isLeast`). -/
 noncomputable def successiveMin (L : Submodule ℤ E) (K : ConvexBody E) (i : Fin (finrank ℝ E)) :
     ℝ :=
   sInf {t : ℝ | 0 ≤ t ∧ ∃ v : Fin (i + 1) → E,
@@ -228,7 +235,10 @@ section successiveMinNat
 /-- The successive minima of `L` with respect to `K` extended to all natural indices: below the
 dimension `n` of `E` this is `successiveMin L K i`, still indexed from zero, and from `n` on it
 is `0`. It is used where an index bound is a proved equality rather than a definitional one.
-Unlike the minima themselves, the extension need not be monotone. -/
+The minima themselves are positive and nondecreasing for a discrete spanning lattice `L` and `0`
+in the interior of `K` (`ZLattice.successiveMin_pos`, `ZLattice.monotone_successiveMin`), though
+not in general (see `ZLattice.successiveMin`); even then the extension need not be monotone, since
+it vanishes from `n` on. -/
 noncomputable def successiveMinNat (L : Submodule ℤ E) (K : ConvexBody E) (i : ℕ) : ℝ :=
   if hi : i < finrank ℝ E then successiveMin L K ⟨i, hi⟩ else 0
 

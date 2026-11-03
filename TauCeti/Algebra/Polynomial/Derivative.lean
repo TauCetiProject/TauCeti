@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Polynomial.Derivation
 public import Mathlib.Algebra.Polynomial.Reverse
+public import Mathlib.Algebra.Polynomial.Roots
 import Mathlib.Algebra.Polynomial.Eval.Degree
 
 /-!
@@ -15,6 +16,7 @@ import Mathlib.Algebra.Polynomial.Eval.Degree
 This file records auxiliary results relating Mathlib's polynomial derivative APIs, computing
 iterated derivatives after a linear change of variables, and controlling degrees of derivatives
 under coefficient maps.
+The roots of all nonzero iterated derivatives of a polynomial form a finite set.
 
 The derivation `Polynomial.derivative'` has `Polynomial.derivative` as its underlying function,
 and every scalar multiple of it is locally nilpotent.
@@ -39,6 +41,22 @@ iterates preserve the degree of a polynomial and have trivial kernel.
 
 public section
 
+namespace Polynomial
+
+open Set
+
+variable {R : Type*} [CommRing R] [IsDomain R]
+
+/-- The roots of the nonzero derivatives of `p`, of every order, form a finite set. -/
+theorem finite_setOfPred_isRoot_iterate_derivative (p : R[X]) :
+    {z | ∃ k, derivative^[k] p ≠ 0 ∧ (derivative^[k] p).IsRoot z}.Finite := by
+  have hk : {k | derivative^[k] p ≠ 0}.Finite := (finite_Iic p.natDegree).subset
+    fun k hk ↦ not_lt.1 fun h ↦ hk (iterate_derivative_eq_zero h)
+  exact (hk.biUnion fun k hk ↦ finite_setOfPred_isRoot hk).subset
+    fun z ⟨k, hk, hz⟩ ↦ mem_biUnion hk hz
+
+end Polynomial
+
 namespace TauCeti
 
 open Polynomial
@@ -56,8 +74,8 @@ polynomial. -/
 theorem _root_.Polynomial.exists_iterate_smul_derivative'_apply_eq_zero [CommSemiring R] (r : R)
     (p : R[X]) : ∃ n, (r • derivative' : Derivation R R[X] R[X])^[n] p = 0 := by
   refine ⟨p.natDegree + 1, ?_⟩
-  rw [← Derivation.coeFn_coe, ← Module.End.coe_pow, Derivation.coe_smul_linearMap, smul_pow,
-    LinearMap.smul_apply, Module.End.pow_apply, Derivation.coeFn_coe, coe_derivative',
+  rw [← Derivation.coeFn_coe, ← FunLike.coe_pow_eq_iterate, Derivation.coe_smul_linearMap, smul_pow,
+    LinearMap.smul_apply, _root_.pow_apply_eq_iterate, Derivation.coeFn_coe, coe_derivative',
     iterate_derivative_eq_zero (Nat.lt_succ_self _), smul_zero]
 
 /-- The `k`-th derivative of `p (a X + b)` is `a ^ k p⁽ᵏ⁾ (a X + b)`. -/

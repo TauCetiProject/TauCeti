@@ -84,7 +84,7 @@ private theorem haarFinite_toMeasure : (haarFinite G : Measure G) = Measure.haar
   rfl
 
 private theorem haarFinite_ne_zero : haarFinite G ≠ 0 := by
-  rw [← FiniteMeasure.mass_nonzero_iff]
+  rw [← MeasureTheory.FiniteMeasure.mass_ne_zero_iff]
   apply ENNReal.coe_ne_zero.mp
   rw [FiniteMeasure.ennreal_mass, haarFinite_toMeasure]
   exact haar_univ_ne_zero G
@@ -98,10 +98,11 @@ theorem haarProb_def :
     haarProb G = ((Measure.haar : Measure G) univ)⁻¹ • Measure.haar :=
   by
     rw [haarProb,
-      FiniteMeasure.toMeasure_normalize_eq_of_nonzero (haarFinite G) (haarFinite_ne_zero G)]
+      MeasureTheory.FiniteMeasure.toMeasure_normalize_eq_of_ne_zero
+        (haarFinite G) (haarFinite_ne_zero G)]
     rw [← haarFinite_toMeasure, ← FiniteMeasure.ennreal_mass, ← ENNReal.coe_inv]
     · rfl
-    · exact (FiniteMeasure.mass_nonzero_iff (haarFinite G)).mpr (haarFinite_ne_zero G)
+    · exact (MeasureTheory.FiniteMeasure.mass_ne_zero_iff (haarFinite G)).mpr (haarFinite_ne_zero G)
 
 instance isProbabilityMeasure_haarProb : IsProbabilityMeasure (haarProb G) := by
   exact (haarFinite G).normalize.property

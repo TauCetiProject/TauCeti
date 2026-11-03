@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.DualNumber
 public import TauCeti.Algebra.Category.ModuleCat.DerivationExtension.Basic
-public import TauCeti.Algebra.Lie.Derivation.Center
-public import TauCeti.RingTheory.Derivation.DualNumber
+public import TauCeti.Algebra.Lie.Derivation.OuterCenter
+public import TauCeti.RingTheory.Derivation.TrivSqZeroExt
 
 /-!
 # Central characters of derivation self-extensions
@@ -20,10 +21,11 @@ when all the infinitesimal scalar actions vanish. For a faithful scalar action t
 equivalent to the deformed character being constant.
 
 The character uses `derivationLieAlgebra.restrictCenter` and the existing
-`derivationToDualNumberEquivLift` dictionary. No commutativity of `A` or continuity of its
+`derivationToTrivSqZeroExtEquivLift` dictionary. No commutativity of `A` or continuity of its
 derivation is needed for this algebraic calculation. For continuous derivations on topological
-algebras, `DerivationExtension.discreteShortComplex` already supplies the corresponding
-extension in the category of discrete modules.
+algebras, `DerivationExtension.discreteShortComplex` supplies the corresponding extension in
+the category of discrete modules. The character deformation depends only on the continuous
+outer class, through `ContinuousOuterDerivation.restrictCenter`.
 
 ## References
 
@@ -45,7 +47,7 @@ namespace derivationLieAlgebra
 noncomputable def characterDeformation (δ : derivationLieAlgebra R A)
     (χ : Subalgebra.center R A →ₐ[R] R) : Subalgebra.center R A →ₐ[R] DualNumber R := by
   letI := χ.toRingHom.toAlgebra
-  exact (derivationToDualNumberEquivLift R (Subalgebra.center R A) R
+  exact (derivationToTrivSqZeroExtEquivLift R (Subalgebra.center R A) R
     ((Algebra.linearMap (Subalgebra.center R A) R).compDer (restrictCenter R A δ))).val
 
 /-- The classical component is the original character. -/
@@ -53,14 +55,16 @@ noncomputable def characterDeformation (δ : derivationLieAlgebra R A)
 theorem fst_characterDeformation (δ : derivationLieAlgebra R A)
     (χ : Subalgebra.center R A →ₐ[R] R) (z : Subalgebra.center R A) :
     TrivSqZeroExt.fst (characterDeformation δ χ z) = χ z := by
-  simp [characterDeformation, RingHom.algebraMap_toAlgebra]
+  simp only [characterDeformation, derivationToTrivSqZeroExtEquivLift_apply_fst]
+  simp [RingHom.algebraMap_toAlgebra]
 
 /-- The infinitesimal component is evaluation of the restricted derivation. -/
 @[simp]
 theorem snd_characterDeformation (δ : derivationLieAlgebra R A)
     (χ : Subalgebra.center R A →ₐ[R] R) (z : Subalgebra.center R A) :
     TrivSqZeroExt.snd (characterDeformation δ χ z) = χ (restrictCenter R A δ z) := by
-  simp [characterDeformation, Algebra.linearMap_apply, RingHom.algebraMap_toAlgebra]
+  simp only [characterDeformation, derivationToTrivSqZeroExtEquivLift_apply_snd]
+  simp [Algebra.linearMap_apply, RingHom.algebraMap_toAlgebra]
 
 /-- The deformed character is constant precisely when its infinitesimal component vanishes. -/
 theorem characterDeformation_eq_inl_comp_iff (δ : derivationLieAlgebra R A)
@@ -91,6 +95,24 @@ theorem characterDeformation_add_innerDerivation (δ : derivationLieAlgebra R A)
   ext z <;> simp
 
 end derivationLieAlgebra
+
+namespace continuousDerivationLieAlgebra
+
+variable [TopologicalSpace A] [IsTopologicalAddGroup A] [SeparatelyContinuousMul A]
+  [ContinuousConstSMul R A]
+
+/-- The infinitesimal motion of a central character depends only on the continuous outer
+class, through its canonical action on the center. -/
+theorem characterDeformation_eq_of_mkQ_eq (D E : continuousDerivationLieAlgebra R A)
+    (h : (LieIdeal.mkQ _ D : ContinuousOuterDerivation R A) = LieIdeal.mkQ _ E)
+    (χ : Subalgebra.center R A →ₐ[R] R) :
+    derivationLieAlgebra.characterDeformation (D : derivationLieAlgebra R A) χ =
+      derivationLieAlgebra.characterDeformation (E : derivationLieAlgebra R A) χ := by
+  have hcenter := congrArg (ContinuousOuterDerivation.restrictCenter R A) h
+  simp only [ContinuousOuterDerivation.restrictCenter_mkQ] at hcenter
+  ext z <;> simp [hcenter]
+
+end continuousDerivationLieAlgebra
 
 namespace DerivationExtension
 

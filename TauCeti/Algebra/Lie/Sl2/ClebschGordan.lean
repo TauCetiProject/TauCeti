@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Lie.TensorProduct
 public import TauCeti.Algebra.Lie.Sl2.Generated
 -- Used only to show that the explicit Clebsch-Gordan vector has a nonzero coordinate.
 import Mathlib.LinearAlgebra.TensorProduct.Basis
+import TauCeti.Algebra.BigOperators.Finset.Range
 
 /-!
 # The Clebsch-Gordan rule for `sl₂`
@@ -267,29 +268,6 @@ theorem finrank_cgSummand (k : Fin (min m n + 1)) :
     (toLieSubalgebra_isSl2Triple_single_eq_top (R := K) (zero_ne_one : (0 : Fin 2) ≠ 1))
     (hasPrimitiveVectorWith_cgVector (by omega) (by omega))
 
-private theorem sum_range_add_two_mul (D J : ℕ) :
-    ∑ j ∈ Finset.range (J + 1), (D + 2 * j + 1) = (J + 1) * (D + J + 1) := by
-  induction J with
-  | zero => simp
-  | succ J ih => rw [Finset.sum_range_succ, ih]; ring
-
-/-- The dimensions of the Clebsch-Gordan summands add up to `dim (V(m) ⊗ V(n))`. Reflecting the
-sum turns the descending weights into the ascending arithmetic progression starting at
-`|m - n|`. -/
-private theorem sum_finrank_cgSummand (m n : ℕ) :
-    ∑ k : Fin (min m n + 1), (m + n - 2 * (k : ℕ) + 1) = (m + 1) * (n + 1) := by
-  rw [Fin.sum_univ_eq_sum_range (fun k ↦ m + n - 2 * k + 1) (min m n + 1),
-    ← Finset.sum_range_reflect]
-  have hrw : ∀ j ∈ Finset.range (min m n + 1),
-      m + n - 2 * (min m n + 1 - 1 - j) + 1 = (m + n - 2 * min m n) + 2 * j + 1 := by
-    intro j hj
-    have hj' : j ≤ min m n := by simpa [Nat.lt_succ_iff] using hj
-    omega
-  rw [Finset.sum_congr rfl hrw, sum_range_add_two_mul]
-  rcases Nat.le_total m n with h | h
-  · rw [Nat.min_eq_left h, show m + n - 2 * m + m + 1 = n + 1 by omega]
-  · rw [Nat.min_eq_right h, show m + n - 2 * n + n + 1 = m + 1 by omega, mul_comm]
-
 /-- **The Clebsch-Gordan rule.** The submodules `TauCeti.Sl2Std.cgSummand`, one for each
 `k ≤ min m n`, are an internal direct sum decomposition of `V(m) ⊗ V(n)`; together with
 `TauCeti.Sl2Std.nonempty_lieModuleEquiv_cgSummand` this is
@@ -316,7 +294,9 @@ theorem isInternal_cgSummand :
   have hrank : finrank K (⨁ k : Fin (min m n + 1), ↥((cgSummand K m n k).toSubmodule))
       = finrank K (Sl2Std K m ⊗[K] Sl2Std K n) := by
     rw [Module.finrank_directSum, Module.finrank_tensorProduct, finrank_eq, finrank_eq]
-    exact (Finset.sum_congr rfl fun k _ ↦ finrank_cgSummand k).trans (sum_finrank_cgSummand m n)
+    exact (Finset.sum_congr rfl fun k _ ↦ finrank_cgSummand k).trans <| by
+      rw [Fin.sum_univ_eq_sum_range (fun k ↦ m + n - 2 * k + 1),
+        Finset.sum_range_min_add_one_sub_two_mul]
   exact ⟨hindep.dfinsupp_lsum_injective,
     (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hrank).1
       hindep.dfinsupp_lsum_injective⟩

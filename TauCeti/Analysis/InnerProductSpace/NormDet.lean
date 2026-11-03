@@ -43,6 +43,8 @@ identity.
   Jacobian.
 * `LinearMap.normDet_adjoint_eq_normDet_comp_subtype`: the Jacobian of the adjoint of a surjective
   map is the Jacobian of its restriction to the orthogonal complement of the kernel.
+* `LinearMap.normDet_coprod_of_orthogonal`: the Jacobian of a sum of maps with orthogonal ranges
+  on a Euclidean product is the product of their Jacobians.
 * `ContinuousLinearMap.exists_ball_antilipschitzWith_normDet_le`: around an injective linear map
   there is a ball with a uniform antilipschitz constant on which `normDet` varies by a factor at
   most `τ`.
@@ -97,6 +99,36 @@ theorem normDet_adjoint_eq_normDet_comp_subtype {𝕜 U W : Type*} [RCLike 𝕜]
     simp [adjoint_inner_left]
   rw [← normDet_codRestrict hmem, hM,
     normDet_adjoint _ (f.finrank_orthogonal_ker_of_surjective hf)]
+
+/-- The norm determinant of `(u, w) ↦ A u + B w` on the Euclidean product is the product of the
+norm determinants of `A` and `B` when their ranges are orthogonal. The codomain need not be
+finite dimensional. -/
+theorem normDet_coprod_of_orthogonal {𝕜 U W V : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup U] [InnerProductSpace 𝕜 U] [FiniteDimensional 𝕜 U]
+    [NormedAddCommGroup W] [InnerProductSpace 𝕜 W] [FiniteDimensional 𝕜 W]
+    [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] (A : U →ₗ[𝕜] V) (B : W →ₗ[𝕜] V)
+    (horth : ∀ u w, inner 𝕜 (A u) (B w) = 0) :
+    (A.coprod B ∘ₗ (WithLp.linearEquiv 2 𝕜 (U × W)).toLinearMap).normDet =
+      A.normDet * B.normDet := by
+  classical
+  let C := A.coprod B ∘ₗ (WithLp.linearEquiv 2 𝕜 (U × W)).toLinearMap
+  let bU := stdOrthonormalBasis 𝕜 U
+  let bW := stdOrthonormalBasis 𝕜 W
+  have horth' (w : W) (u : U) : inner 𝕜 (B w) (A u) = 0 := by
+    rw [← inner_conj_symm, horth, map_zero]
+  have hgram : Matrix.gram 𝕜 (fun i => C (bU.prod bW i)) =
+      Matrix.fromBlocks (Matrix.gram 𝕜 (fun i => A (bU i))) 0 0
+        (Matrix.gram 𝕜 (fun i => B (bW i))) := by
+    ext i j
+    cases i <;> cases j <;>
+      simp [C, OrthonormalBasis.prod_apply, horth, horth']
+  have hsq : C.normDet ^ 2 = A.normDet ^ 2 * B.normDet ^ 2 := by
+    apply RCLike.ofReal_injective (K := 𝕜)
+    rw [RCLike.ofReal_mul, C.normDet_sq_eq_det_gram (bU.prod bW), hgram,
+      Matrix.det_fromBlocks_zero₂₁, ← A.normDet_sq_eq_det_gram bU,
+      ← B.normDet_sq_eq_det_gram bW]
+  exact (sq_eq_sq₀ C.normDet_nonneg (mul_nonneg A.normDet_nonneg B.normDet_nonneg)).mp
+    (by simpa [mul_pow] using hsq)
 
 end LinearMap
 
@@ -158,26 +190,16 @@ namespace LinearMap
 
 open scoped RealInnerProductSpace
 
+omit [FiniteDimensional ℝ V] in
 /-- Extending `T : U →ₗ[ℝ] V` to the Euclidean product `WithLp 2 (ℝ × U)` by a unit vector `e`
 orthogonal to the range of `T`, `(a, u) ↦ a • e + T u`, does not change the Jacobian `normDet`. -/
 theorem normDet_toSpanSingleton_coprod {e : V} (he : ‖e‖ = 1) {T : U →ₗ[ℝ] V}
     (hT : ∀ u, ⟪e, T u⟫ = 0) :
     ((toSpanSingleton ℝ V e).coprod T ∘ₗ (WithLp.linearEquiv 2 ℝ (ℝ × U)).toLinearMap).normDet =
       T.normDet := by
-  set P := WithLp.linearEquiv 2 ℝ (ℝ × U)
-  set L := (toSpanSingleton ℝ V e).coprod T ∘ₗ P.toLinearMap
-  -- The Gram operator of `L` is block diagonal: `1` on `ℝ` and `T† T` on `U`.
-  have hL : L.adjoint ∘ₗ L = P.symm.conj ((LinearMap.id : ℝ →ₗ[ℝ] ℝ).prodMap (T.adjoint ∘ₗ T)) := by
-    refine LinearMap.ext fun x => ext_inner_right ℝ fun y => ?_
-    rw [LinearMap.comp_apply, LinearMap.adjoint_inner_left]
-    simp [L, P, LinearEquiv.conj_apply, WithLp.prod_inner_apply, inner_add_left, inner_add_right,
-      inner_smul_left, inner_smul_right, hT, he, LinearMap.adjoint_inner_left, real_inner_comm e]
-  have h₁ := L.normDet_sq
-  have h₂ := T.normDet_sq
-  simp only [RCLike.ofReal_real_eq_id, id_eq] at h₁ h₂
-  refine (sq_eq_sq₀ L.normDet_nonneg T.normDet_nonneg).1 ?_
-  rw [h₁, h₂, hL, LinearEquiv.conj_apply, LinearMap.comp_assoc, LinearMap.det_conj,
-    LinearMap.det_prodMap, LinearMap.det_id, one_mul]
+  rw [normDet_coprod_of_orthogonal _ _ (by simp [inner_smul_left, hT]),
+    normDet_eq_norm_apply_one]
+  simp [he]
 
 end LinearMap
 

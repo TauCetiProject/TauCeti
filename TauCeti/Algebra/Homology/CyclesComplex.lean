@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.HomologySequence
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
+public import TauCeti.Algebra.Homology.HomologicalComplex.ZeroDifferential
 
 /-!
 # The short exact sequence of cycles of a complex
@@ -65,16 +66,12 @@ variable {C : Type*} [Category* C] [Abelian C] {ι : Type*} {c : ComplexShape ι
   (K : HomologicalComplex C c)
 
 /-- The complex of cycles of `K`, with zero differential. -/
-@[simps]
-abbrev cyclesComplex : HomologicalComplex C c where
-  X i := K.cycles i
-  d _ _ := 0
+abbrev cyclesComplex : HomologicalComplex C c :=
+  graded c fun i ↦ K.cycles i
 
 /-- The complex of cokernels of the inclusions of the cycles of `K`, with zero differential. -/
-@[simps]
-abbrev cyclesCokernelComplex : HomologicalComplex C c where
-  X i := cokernel (K.iCycles i)
-  d _ _ := 0
+abbrev cyclesCokernelComplex : HomologicalComplex C c :=
+  graded c fun i ↦ cokernel (K.iCycles i)
 
 /-- The short exact sequence of complexes `0 ⟶ Z(K) ⟶ K ⟶ K / Z(K) ⟶ 0` given by the inclusions
 of the cycles and the projections onto their cokernels. -/

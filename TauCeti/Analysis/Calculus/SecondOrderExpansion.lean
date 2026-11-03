@@ -7,10 +7,22 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Symmetric
 public import Mathlib.Analysis.Asymptotics.Defs
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 import Mathlib.Analysis.Asymptotics.Lemmas
+import Mathlib.Analysis.Calculus.FDeriv.Symmetric
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.DistLEIntegral
+import TauCeti.Analysis.Calculus.Bilinear
 
 /-!
-# Uniqueness of the second-order term of a Taylor expansion
+# Second-order Taylor expansions
+
+A map `f` between real normed spaces which is `C³` at `x` has the second-order Taylor expansion
+
+  `f x' = f x + Df(x) (x' - x) + ½ D²f(x) (x' - x) (x' - x) + O(‖x' - x‖ ^ 3)`.
+
+The remainder vanishes at `x`, and since the second derivative is symmetric its derivative is
+`Df(x') - Df(x) - D²f(x) (x' - x) = O(‖x' - x‖ ^ 2)`, so the estimate is two applications of the
+mean value inequality.
 
 Let `u` be a real function on a real inner product space `E`. A second-order Taylor expansion of
 `u` at `x` is an expansion
@@ -26,6 +38,8 @@ convex function.
 
 ## Main statements
 
+* `ContDiffAt.isBigO_sub_taylor_two` — the second-order Taylor expansion of a `C³` map, with
+  cubic remainder.
 * `TauCeti.eq_of_isSymmetric_of_isLittleO` — the symmetric second-order term of a Taylor
   expansion is unique.
 -/
@@ -36,6 +50,67 @@ namespace TauCeti
 
 open Filter Asymptotics Function
 open scoped Topology InnerProductSpace
+
+section Existence
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- **The second-order Taylor expansion of a `C³` map.** If `f` is `C³` at `x`, then
+`f x' = f x + Df(x) (x' - x) + ½ D²f(x) (x' - x) (x' - x) + O(‖x' - x‖ ^ 3)`. -/
+theorem _root_.ContDiffAt.isBigO_sub_taylor_two {f : E → F} {x : E} (hf : ContDiffAt ℝ 3 f x) :
+    (fun x' ↦ f x' - f x - fderiv ℝ f x (x' - x) -
+        (2⁻¹ : ℝ) • fderiv ℝ (fderiv ℝ f) x (x' - x) (x' - x))
+      =O[𝓝 x] fun x' ↦ ‖x' - x‖ ^ 3 := by
+  let L := fderiv ℝ f x
+  let S := fderiv ℝ (fderiv ℝ f) x
+  have hev : ∀ᶠ y in 𝓝 x, ContDiffAt ℝ 3 f y := hf.eventually (by simp)
+  have hdf : ∀ {y}, ContDiffAt ℝ 3 f y → DifferentiableAt ℝ (fderiv ℝ f) y := fun hy ↦
+    (hy.fderiv_right (m := 2) (by norm_num)).differentiableAt (by norm_num)
+  have hsymm : ∀ v w, S v w = S w v :=
+    (hf.isSymmSndFDerivAt (by norm_num [minSmoothness_of_isRCLikeNormedField])).eq
+  -- The derivative of the remainder, `Df(y) - Df(x) - D²f(x) (y - x)`, is `O(‖y - x‖ ^ 2)`.
+  let h : E → E →L[ℝ] F := fun y ↦ fderiv ℝ f y - L - S (y - x)
+  have hS : ∀ y, HasFDerivAt (fun y ↦ S (y - x)) S y := fun y ↦
+    S.hasFDerivAt.comp y ((hasFDerivAt_id y).sub_const x)
+  have hh : h =O[𝓝 x] fun y ↦ ‖y - x‖ ^ ((1 : ℝ) + 1) := by
+    refine isBigO_norm_rpow_add_one_of_fderiv_of_apply_eq_zero zero_le_one ?_ ?_ ?_
+    · filter_upwards [hev] with y hy
+      exact ((hdf hy).sub_const L).sub (hS y).differentiableAt
+    · have hfd : ∀ᶠ y in 𝓝 x, fderiv ℝ h y = fderiv ℝ (fderiv ℝ f) y - S := by
+        filter_upwards [hev] with y hy
+        exact (((hdf hy).hasFDerivAt.sub_const L).sub (hS y)).fderiv
+      have h2 : DifferentiableAt ℝ (fderiv ℝ (fderiv ℝ f)) x :=
+        ((hf.fderiv_right (m := 2) (by norm_num)).fderiv_right (m := 1)
+          (by norm_num)).differentiableAt (by norm_num)
+      refine (h2.isBigO_sub.congr' (hfd.mono fun y hy ↦ hy.symm) EventuallyEq.rfl).trans ?_
+      simpa using (isBigO_refl (fun y : E ↦ y - x) (𝓝 x)).norm_right
+    · simp [h, L]
+  -- The remainder vanishes at `x` and has derivative `h`.
+  let g : E → F := fun y ↦ f y - f x - L (y - x) - (2⁻¹ : ℝ) • S (y - x) (y - x)
+  have hg' : ∀ {y}, ContDiffAt ℝ 3 f y → HasFDerivAt g (h y) y := by
+    intro y hy
+    have hq : HasFDerivAt (fun y ↦ (2⁻¹ : ℝ) • S (y - x) (y - x)) (S (y - x)) y := by
+      refine (((S.hasFDerivAt_apply_self (y - x)).comp y
+        ((hasFDerivAt_id y).sub_const x)).const_smul (2⁻¹ : ℝ)).congr_fderiv
+          (ContinuousLinearMap.ext fun v ↦ ?_)
+      simp only [smul_apply, ContinuousLinearMap.comp_apply, add_apply,
+        ContinuousLinearMap.flip_apply, ContinuousLinearMap.id_apply, hsymm v (y - x)]
+      module
+    exact ((((hy.differentiableAt (by norm_num)).hasFDerivAt.sub_const (f x)).sub
+      (L.hasFDerivAt.comp y ((hasFDerivAt_id y).sub_const x))).sub hq).congr_fderiv
+        (by ext v; simp [h])
+  have hg : g =O[𝓝 x] fun y ↦ ‖y - x‖ ^ ((1 : ℝ) + 1 + 1) := by
+    refine isBigO_norm_rpow_add_one_of_fderiv_of_apply_eq_zero (by norm_num) ?_ ?_ ?_
+    · filter_upwards [hev] with y hy
+      exact (hg' hy).differentiableAt
+    · refine hh.congr' ?_ EventuallyEq.rfl
+      filter_upwards [hev] with y hy
+      exact (hg' hy).fderiv.symm
+    · simp [g]
+  exact hg.congr' EventuallyEq.rfl (.of_forall fun y ↦ by norm_num)
+
+end Existence
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 

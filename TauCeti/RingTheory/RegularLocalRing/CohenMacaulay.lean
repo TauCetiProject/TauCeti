@@ -7,6 +7,8 @@ module
 
 public import TauCeti.RingTheory.CohenMacaulay.Basic
 public import TauCeti.RingTheory.RegularLocalRing.Basic
+import TauCeti.Algebra.Module.SpanRank
+import TauCeti.RingTheory.CohenMacaulay.Height
 import TauCeti.RingTheory.LocalRing.MaximalIdeal.Square
 
 /-!
@@ -69,10 +71,7 @@ private theorem isRegular_of_ofList_eq_maximalIdeal_aux (n : ℕ) :
       simp [mk]
     -- a list spans an ideal with at most as many generators as its length
     have hrank : (ofList (rs.map mk)).spanFinrank ≤ rs.length := by
-      classical
-      refine (Submodule.spanFinrank_span_le_ncard_of_finite (rs.map mk).finite_toSet).trans ?_
-      rw [← List.coe_toFinset, Set.ncard_coe_finset, ← List.length_map (f := mk)]
-      exact List.toFinset_card_le _
+      exact (Submodule.spanFinrank_span_list_le_length (rs.map mk)).trans_eq (List.length_map _)
     rw [List.length_cons] at hlen
     -- the first entry is a parameter: otherwise `𝔪` would need no more than `rs.length` generators
     have hx2 : x ∉ maximalIdeal R ^ 2 := fun hx2 ↦ by
@@ -128,3 +127,9 @@ theorem isCohenMacaulay : Module.IsCohenMacaulay R R := by
   exact depth_eq_ringKrullDim
 
 end TauCeti.IsRegularLocalRing
+
+/-- In particular, every prime `p` of a regular local ring satisfies
+`ht p + dim (R ⧸ p) = dim R`. -/
+example {R : Type u} [CommRing R] [IsRegularLocalRing R] (p : Ideal R) [p.IsPrime] :
+    p.height + ringKrullDim (R ⧸ p) = ringKrullDim R :=
+  TauCeti.IsRegularLocalRing.isCohenMacaulay.height_add_ringKrullDim_quotient p

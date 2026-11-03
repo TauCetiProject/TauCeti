@@ -263,7 +263,7 @@ theorem weightL2Isometry_gaussianHermiteHilbertBasis (n : ℕ) :
     rw [gaussianReal_of_var_ne_zero 0 one_ne_zero, gaussianPDF_def]
   refine Filter.EventuallyEq.trans ?_ (sqrt_gaussianPDFReal_smul_gaussianHermiteHilbertBasis 𝕜 n)
   exact Filter.Eventually.of_forall fun x => by
-    simp only [coeFn_cast_lp hγ (gaussianHermiteHilbertBasis 𝕜 n) x]
+    simp only [coeFn_cast_Lp hγ (gaussianHermiteHilbertBasis 𝕜 n) x]
 
 end Basis
 

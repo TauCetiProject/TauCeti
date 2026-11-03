@@ -165,7 +165,7 @@ theorem prime_dvd_squarefreePart_iff {u : ℚ} (hu : u ≠ 0) {p : ℕ} [hp : Fa
     exact (Nat.prime_iff_prime_int.mp hp.out).not_isUnit (hsf _ (by simpa [sq] using hp2))
   have hdvd : (p : ℤ) ∣ d ↔ 1 ≤ padicValInt p d := by
     simpa [hd] using padicValInt_dvd_iff (p := p) 1 d
-  rw [hdvd, hval, Int.odd_add, Int.odd_coe_nat]
+  rw [hdvd, hval, Int.odd_add, Int.odd_natCast]
   simp only [even_two, Even.mul_right, iff_true]
   rw [Nat.odd_iff]
   omega

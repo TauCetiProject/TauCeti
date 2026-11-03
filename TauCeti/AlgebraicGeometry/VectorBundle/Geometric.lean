@@ -13,9 +13,23 @@ public import TauCeti.AlgebraicGeometry.VectorBundle.TotalSpace
 
 A geometric vector bundle over a scheme `X` is a linear scheme over `X`, that is an affine scheme
 `p : V ⟶ X` with a grading `p_* 𝒪_V ≅ ⨁ₙ Aₙ` freely generated in degree one, whose degree-one
-component `A₁` is finite locally free. They form the full subcategory `GeometricVectorBundle X`
-of `QuasicoherentLinearScheme X`; as the morphisms of linear schemes preserve the gradings, the
-morphisms of geometric vector bundles are the fibrewise linear morphisms of schemes over `X`.
+component `A₁` is finite locally free. This is the definition of a vector bundle in the Stacks
+Project ([Tag 062M](https://stacks.math.columbia.edu/tag/062M): `A₀ = 𝒪_X` and the maps
+`Symⁿ A₁ ⟶ Aₙ` are isomorphisms), restricted to finite locally free `A₁`; no rank is fixed.
+Geometric vector bundles form the full subcategory `GeometricVectorBundle X` of
+`QuasicoherentLinearScheme X`, so, as in the Stacks Project, their morphisms are the morphisms of
+schemes over `X` that preserve the gradings. Over an open set where the degree-one components of
+source and target are free, such a morphism is given in linear coordinates by a matrix of
+functions on `X`. Over a non-reduced base this is stronger than being linear on every fibre: over
+`ℚ[ε]/(ε²)`, the automorphism `t ↦ t + εt²` of the affine line is the identity on the only fibre
+but does not preserve the grading.
+
+Hartshorne (Exercise II.5.18) instead defines a geometric vector bundle of rank `n` by local
+trivialisations `p⁻¹(Uᵢ) ≅ 𝔸ⁿ_{Uᵢ}` whose transition automorphisms are linear. The geometric
+vector bundles of constant rank `n` here are the same objects: locally, a trivialisation of `A₁`
+identifies `Sym A₁` with a polynomial algebra over `𝒪_X`, and the graded automorphisms of a
+polynomial algebra are exactly its linear changes of coordinates. This comparison with the chart
+definition is not formalised.
 
 Restricting the anti-equivalence `linearSpecEquiv X` between quasicoherent sheaves and linear
 schemes to finite locally free sheaves gives an anti-equivalence
@@ -33,6 +47,15 @@ bundle to the dual of its degree-one component. Forgetting the grading, `totalSp
 total-space functor `totalSpaceScheme X` to affine schemes over `X` (`totalSpaceForgetIso X`),
 whose points are the sections of `E` (`totalSpaceHomEquiv`).
 
+## Notation
+
+In this file, as for `totalSpaceScheme X`, `𝕍(E)` denotes the total space `Spec_X (Sym E^∨)` of a
+finite locally free sheaf `E`, which is covariant in `E`. Following the Stacks Project
+([Tag 01M2](https://stacks.math.columbia.edu/tag/01M2)) and EGA II, the docstrings of
+`linearSpec X` instead write `𝕍(F) = Spec_X (Sym F)`, which is contravariant in `F`. In that
+notation the total space of `E` is `𝕍(E^∨)`, and `linearSpecFiniteLocallyFreeEquiv X` sends `E`
+to `𝕍(E)`.
+
 ## Main declarations
 
 * `TauCeti.AlgebraicGeometry.GeometricVectorBundle X`: linear schemes over `X` whose degree-one
@@ -48,9 +71,12 @@ whose points are the sections of `E` (`totalSpaceHomEquiv`).
 
 ## References
 
-* The Stacks Project, [Tag 01M1](https://stacks.math.columbia.edu/tag/01M1) (vector bundles).
+* The Stacks Project, [Tag 01M1](https://stacks.math.columbia.edu/tag/01M1) (vector bundles);
+  the definition used here is [Tag 062M](https://stacks.math.columbia.edu/tag/062M).
 * A. Grothendieck and J. Dieudonné, *Éléments de géométrie algébrique II*, §1.7.
-* R. Hartshorne, *Algebraic Geometry*, Exercise II.5.18.
+* R. Hartshorne, *Algebraic Geometry*, Exercise II.5.18 (geometric vector bundles of rank `n`
+  defined by linear transition maps, and their bijection with locally free sheaves of rank `n` on
+  isomorphism classes; this chart definition is not the one used here).
 -/
 
 public section
@@ -84,9 +110,11 @@ instance : (isGeometricVectorBundle X).IsClosedUnderIsomorphisms :=
   inferInstanceAs ((QuasicoherentSheaf.isFiniteLocallyFree X).op.inverseImage
     (QuasicoherentLinearScheme.degreeOne X)).IsClosedUnderIsomorphisms
 
-/-- The category of geometric vector bundles over `X`: linear schemes over `X` whose degree-one
-component is finite locally free. Morphisms are the morphisms of linear schemes, that is the
-morphisms of schemes over `X` preserving the gradings. -/
+/-- The category of geometric vector bundles over `X`: linear schemes over `X` (the vector
+bundles of the Stacks Project, [Tag 062M](https://stacks.math.columbia.edu/tag/062M)) whose
+degree-one component is finite locally free. Morphisms are the morphisms of linear schemes, that
+is the morphisms of schemes over `X` preserving the gradings. The comparison with Hartshorne's
+definition by local trivialisations with linear transition maps is not formalised. -/
 abbrev GeometricVectorBundle : Type (u + 1) :=
   (isGeometricVectorBundle X).FullSubcategory
 
@@ -187,7 +215,7 @@ variable (X)
 
 /-- The geometric total space `𝕍(E) = Spec_X (Sym E^∨)` of a finite locally free sheaf `E`, as a
 geometric vector bundle: the linear scheme of the dual `E^∨ = 𝓗om(E, 𝒪_X)`. It is covariant in
-`E`. -/
+`E`. In the notation `𝕍(F) = Spec_X (Sym F)` of `linearSpec X`, it is `𝕍(E^∨)`. -/
 -- Exposed, like `linearSpec`, so that its objects and morphisms are computed by unfolding.
 @[expose]
 def totalSpace : FiniteLocallyFreeSheaf X ⥤ GeometricVectorBundle X :=

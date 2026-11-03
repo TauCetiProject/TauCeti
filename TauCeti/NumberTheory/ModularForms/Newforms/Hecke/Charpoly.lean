@@ -107,9 +107,9 @@ theorem heckeTCuspNewCharEnd_pow_basisCharSpace (n : ℕ+) (j : ℕ)
     (heckeTCuspNewCharEnd k χ n ^ j) (basisCharSpace N k χ f) =
       (qExpansion 1 f.1.toCuspForm).coeff n ^ j • basisCharSpace N k χ f := by
   induction j with
-  | zero => rw [pow_zero, pow_zero, Module.End.one_apply, one_smul]
+  | zero => rw [pow_zero, pow_zero, one_apply_eq_self, one_smul]
   | succ j ih =>
-    rw [pow_succ (heckeTCuspNewCharEnd k χ n), Module.End.mul_apply,
+    rw [pow_succ (heckeTCuspNewCharEnd k χ n), mul_apply_eq_comp,
       heckeTCuspNewCharEnd_basisCharSpace, map_smul, ih, smul_smul, pow_succ']
 
 /-- **The Hecke characteristic polynomial of a newspace.** The characteristic polynomial of `Tₙ`

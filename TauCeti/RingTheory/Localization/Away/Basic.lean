@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Algebra.Subalgebra.Lattice
 public import Mathlib.RingTheory.IntegralClosure.Algebra.Basic
 public import Mathlib.RingTheory.Localization.Away.Basic
+public import Mathlib.Algebra.GroupWithZero.Action.Regular
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # The fraction `t/s` in an away localisation
@@ -15,7 +17,8 @@ public import Mathlib.RingTheory.Localization.Away.Basic
 A localisation `S` of `A` away from `s` inverts `s`, so it contains `t/s` for every `t : A`.
 Mathlib names the inverse itself — `IsLocalization.Away.invSelf s` is `1/s` — but not the general
 fraction; this file names it and gives the identities that manipulating it needs: scaling `1/s`
-by `t`, and clearing the denominator on either side.
+by `t`, and clearing the denominator on either side. It also records, over commutative rings,
+when the image of an element is a nonzerodivisor in a localisation away from another element.
 
 Nothing here is topological or Huber-specific — it is `IsLocalization` algebra over an arbitrary
 commutative semiring, for an arbitrary localisation away from `s` — so it is stated outside the
@@ -59,6 +62,8 @@ Huber namespace, alongside `TauCeti/RingTheory/Localization/DenIdeal.lean`.
   `TauCeti.Localization.map_integralClosure_adjoin_divBy_le`: that map carries `R[T/s]`, and its
   integral closure in the localisation, into `R'[T'/f(s)]` and its integral closure, as soon as
   `f` carries `R` into `R'` and `T` into `T'`.
+* `IsLocalization.Away.isSMulRegular_algebraMap`: an element whose annihilator is killed by `r`
+  becomes a nonzerodivisor after inverting `r`.
 
 ## Provenance
 
@@ -86,6 +91,10 @@ source never states.
 
 `mk'_pow_eq_invSelf_pow_mul` is **also a later addition with no AINTLIB analogue**, proved here
 directly from Mathlib's `mk'` API.
+
+`IsLocalization.Away.isSMulRegular_algebraMap`, which says when an element stays a
+nonzerodivisor in the localisation, is **also a later addition with no AINTLIB analogue**, proved
+here directly from Mathlib's `mk'` API.
 
 `map_divBy_eq_mul_inv` is a **generalisation of an AINTLIB statement**, checked against the same
 commit. There, `awayLift_divByS_one_eq_unit_inv` in
@@ -441,3 +450,22 @@ theorem map_integralClosure_adjoin_divBy_le (hT : ∀ t ∈ T, f t ∈ T')
   exact IsIntegral.map_of_comp_eq φ _ (by ext; rfl) hx
 
 end TauCeti.Localization
+
+namespace IsLocalization.Away
+
+variable {A B : Type*} [CommRing A] [CommRing B] [Algebra A B]
+
+/-- If `r` kills every element killed by `a`, then the image of `a` is a nonzerodivisor in the
+localization away from `r`. -/
+theorem isSMulRegular_algebraMap {r a : A} [IsLocalization.Away r B]
+    (h : ∀ b, a * b = 0 → r * b = 0) : IsSMulRegular B (algebraMap A B a) := by
+  refine IsSMulRegular.of_right_eq_zero_of_smul fun y hy ↦ ?_
+  obtain ⟨⟨c, s⟩, rfl⟩ := IsLocalization.mk'_surjective (Submonoid.powers r) y
+  rw [smul_eq_mul, IsLocalization.mul_mk'_eq_mk'_of_mul, IsLocalization.mk'_eq_zero_iff] at hy
+  obtain ⟨⟨_, n, rfl⟩, hn⟩ := hy
+  rw [IsLocalization.mk'_eq_zero_iff]
+  refine ⟨⟨r ^ (n + 1), n + 1, rfl⟩, ?_⟩
+  have := h (r ^ n * c) (by linear_combination hn)
+  linear_combination this
+
+end IsLocalization.Away

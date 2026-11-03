@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Semisimple.Center.Isogeny
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.CentralIsogeny
-public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Semisimple
+public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Semisimple.Basic
 public import TauCeti.Algebra.AlgebraicGroup.ProjectiveGeneralLinear.Center
 import TauCeti.AlgebraicGeometry.GroupScheme.CentralIsogeny.Isomorphism
 

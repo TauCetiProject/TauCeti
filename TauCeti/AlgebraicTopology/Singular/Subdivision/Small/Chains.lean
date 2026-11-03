@@ -73,6 +73,12 @@ lemma mem_smallSingularSubcomplex_iff (U : ι → Set X) {n : SimplexCategoryᵒ
       ∃ i, Set.range (X.toSSetObjEquiv n σ) ⊆ U i :=
   Iff.rfl
 
+/-- Shrinking the members of the family shrinks the small singular subcomplex. -/
+lemma smallSingularSubcomplex_mono {U U' : ι → Set X} (h : ∀ i, U i ⊆ U' i) :
+    X.smallSingularSubcomplex U ≤ X.smallSingularSubcomplex U' := by
+  rintro n σ ⟨i, hi⟩
+  exact ⟨i, hi.trans (h i)⟩
+
 variable {X} {κ : Type*} {Y : TopCat.{w}} (U : ι → Set X) (V : κ → Set Y)
 
 /-- A map carrying each member of one family into a member of another restricts to a map of the

@@ -28,13 +28,13 @@ normed field, it is approximation in the operator norm `ContinuousLinearMap.ring
 (`ContinuousLinearMap.isCompletelyContinuous_iff_ringOpNorm`).
 
 Completely continuous maps are closed under addition, scalar multiplication and uniform
-approximation, and over Tate scalars under composition on either side with continuous linear
-maps. The identity of a complete normed
-module is completely continuous exactly when the module is finitely generated: an approximant
-of finite rank within distance `1 / 2` of the identity is surjective
-(`TauCeti.surjective_of_norm_sub_apply_le`), so its range, which lies in a finitely
-generated submodule, is everything. Consequently a completely
-continuous `u` with `(1 - u) ^ n = 0` forces the module to be finitely generated.
+approximation, under composition on either side with bounded continuous linear maps, and over
+Tate scalars under composition on either side with arbitrary continuous linear maps. The
+identity of a complete normed module is completely continuous exactly when the module is finitely
+generated: an approximant of finite rank within distance `1 / 2` of the identity is surjective
+(`TauCeti.surjective_of_norm_sub_apply_le`), so its range, which lies in a finitely generated
+submodule, is everything. Consequently a completely continuous `u` with `(1 - u) ^ n = 0` forces
+the module to be finitely generated.
 
 ## Main definitions
 
@@ -52,6 +52,9 @@ continuous `u` with `(1 - u) ^ n = 0` forces the module to be finitely generated
   over a nontrivially normed field.
 * `ContinuousLinearMap.IsCompletelyContinuous.clm_comp`,
   `ContinuousLinearMap.IsCompletelyContinuous.comp_clm`: the ideal property over Tate scalars.
+* `ContinuousLinearMap.IsCompletelyContinuous.clm_comp_of_bound`,
+  `ContinuousLinearMap.IsCompletelyContinuous.comp_clm_of_bound`: composition on either side with
+  a bounded continuous linear map, over any ring.
 * `ContinuousLinearMap.isCompletelyContinuous_id_iff`: the identity of a complete normed module is
   completely continuous if and only if the module is finitely generated.
 * `ContinuousLinearMap.IsCompletelyContinuous.finite_of_one_sub_pow_eq_zero`: a completely
@@ -163,6 +166,33 @@ theorem IsCompletelyContinuous.smul {S : Type*} [SeminormedRing S] [DistribMulAc
         mul_le_mul (by linarith) (huv x) (norm_nonneg _) (by positivity)
     _ = ε * ‖x‖ := by field_simp
 
+/-- Postcomposing a completely continuous map with a continuous linear map bounded by `C`, that is
+with `‖g y‖ ≤ C * ‖y‖`, gives a completely continuous map. Over Tate scalars every continuous
+linear map is bounded (`ContinuousLinearMap.IsCompletelyContinuous.clm_comp`). -/
+theorem IsCompletelyContinuous.clm_comp_of_bound {P : Type*} [SeminormedAddCommGroup P]
+    [Module R P] {u : M →L[R] N} (hu : u.IsCompletelyContinuous) (g : N →L[R] P) {C : ℝ}
+    (hC : 0 < C) (hg : ∀ y, ‖g y‖ ≤ C * ‖y‖) : (g.comp u).IsCompletelyContinuous := by
+  intro ε hε
+  obtain ⟨v, hv, huv⟩ := hu (ε / C) (div_pos hε hC)
+  refine ⟨g.comp v, by simpa using hv.comp_left (g : N →ₗ[R] P), fun x ↦ ?_⟩
+  calc ‖g.comp u x - g.comp v x‖ = ‖g (u x - v x)‖ := by rw [comp_apply, comp_apply, map_sub]
+    _ ≤ C * ‖u x - v x‖ := hg _
+    _ ≤ C * (ε / C * ‖x‖) := by gcongr; exact huv x
+    _ = ε * ‖x‖ := by field_simp
+
+/-- Precomposing a completely continuous map with a continuous linear map bounded by `C`, that is
+with `‖f x‖ ≤ C * ‖x‖`, gives a completely continuous map. Over Tate scalars every continuous
+linear map is bounded (`ContinuousLinearMap.IsCompletelyContinuous.comp_clm`). -/
+theorem IsCompletelyContinuous.comp_clm_of_bound {L : Type*} [SeminormedAddCommGroup L]
+    [Module R L] {u : M →L[R] N} (hu : u.IsCompletelyContinuous) (f : L →L[R] M) {C : ℝ}
+    (hC : 0 < C) (hf : ∀ x, ‖f x‖ ≤ C * ‖x‖) : (u.comp f).IsCompletelyContinuous := by
+  intro ε hε
+  obtain ⟨v, hv, huv⟩ := hu (ε / C) (div_pos hε hC)
+  refine ⟨v.comp f, by simpa using hv.comp_right (f : L →ₗ[R] M), fun x ↦ ?_⟩
+  calc ‖u.comp f x - v.comp f x‖ ≤ ε / C * ‖f x‖ := huv (f x)
+    _ ≤ ε / C * (C * ‖x‖) := by gcongr; exact hf x
+    _ = ε * ‖x‖ := by field_simp
+
 end Ring
 
 section Tate
@@ -200,28 +230,17 @@ omit [IsBoundedSMul R M] in
 /-- Over Tate scalars, postcomposing a completely continuous map with a continuous linear map
 gives a completely continuous map. -/
 theorem IsCompletelyContinuous.clm_comp {u : M →L[R] N} (hu : u.IsCompletelyContinuous)
-    (g : N →L[R] P) : (g.comp u).IsCompletelyContinuous := by
-  obtain ⟨C, hC, hg⟩ := ringOpNorm_bound g
-  intro ε hε
-  obtain ⟨v, hv, huv⟩ := hu (ε / C) (div_pos hε hC)
-  refine ⟨g.comp v, by simpa using hv.comp_left (g : N →ₗ[R] P), fun x ↦ ?_⟩
-  calc ‖g.comp u x - g.comp v x‖ = ‖g (u x - v x)‖ := by rw [comp_apply, comp_apply, map_sub]
-    _ ≤ C * ‖u x - v x‖ := hg _
-    _ ≤ C * (ε / C * ‖x‖) := by gcongr; exact huv x
-    _ = ε * ‖x‖ := by field_simp
+    (g : N →L[R] P) : (g.comp u).IsCompletelyContinuous :=
+  have ⟨_, hC, hg⟩ := ringOpNorm_bound g
+  hu.clm_comp_of_bound g hC hg
 
 omit [IsBoundedSMul R N] in
 /-- Over Tate scalars, precomposing a completely continuous map with a continuous linear map
 gives a completely continuous map. -/
 theorem IsCompletelyContinuous.comp_clm {u : M →L[R] N} (hu : u.IsCompletelyContinuous)
-    (f : L →L[R] M) : (u.comp f).IsCompletelyContinuous := by
-  obtain ⟨C, hC, hf⟩ := ringOpNorm_bound f
-  intro ε hε
-  obtain ⟨v, hv, huv⟩ := hu (ε / C) (div_pos hε hC)
-  refine ⟨v.comp f, by simpa using hv.comp_right (f : L →ₗ[R] M), fun x ↦ ?_⟩
-  calc ‖u.comp f x - v.comp f x‖ ≤ ε / C * ‖f x‖ := huv (f x)
-    _ ≤ ε / C * (C * ‖x‖) := by gcongr; exact hf x
-    _ = ε * ‖x‖ := by field_simp
+    (f : L →L[R] M) : (u.comp f).IsCompletelyContinuous :=
+  have ⟨_, hC, hf⟩ := ringOpNorm_bound f
+  hu.comp_clm_of_bound f hC hf
 
 end Tate
 

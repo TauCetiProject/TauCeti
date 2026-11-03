@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Integral
 public import TauCeti.Analysis.InnerProductSpace.ProjValMeasure.Variation
+public import TauCeti.MeasureTheory.VectorMeasure.WithDensity
 
 /-!
 # Matrix elements of the integral against a projection-valued measure
@@ -71,7 +72,7 @@ private theorem integral_polarizedComplexMeasure_ofSimpleFunc (P : ProjValMeasur
     rw [hs, VectorMeasure.integral_indicator_const _ hB, h]
     simp [integral_indicator, inner_smul_right, polarizedComplexMeasure_apply _ _ _ _ hB]
   | @add s t _ hs ht =>
-    rw [SimpleFunc.coe_add, VectorMeasure.integral_add (SimpleFunc.integrable_of_isFiniteMeasure s)
+    rw [FunLike.coe_add, VectorMeasure.integral_add (SimpleFunc.integrable_of_isFiniteMeasure s)
       (SimpleFunc.integrable_of_isFiniteMeasure t), hs, ht]
     simp [inner_add_right]
 
@@ -107,13 +108,7 @@ measure. -/
 theorem integral_polarizedComplexMeasure_self (P : ProjValMeasure X H) (f : X → ℂ) (ξ : H) :
     ∫ᵛ x, f x ∂[ContinuousLinearMap.mul ℝ ℂ; P.polarizedComplexMeasure ξ ξ] =
       ∫ x, f x ∂(P.diag ξ) := by
-  -- Following the proof of Mathlib's `MeasureTheory.VectorMeasure.integral_toSignedMeasure`.
-  rw [VectorMeasure.integral_eq_setToFun, MeasureTheory.integral_eq_setToFun]
-  simp only [variation_polarizedComplexMeasure_self]
-  refine setToFun_congr_left' _ _ (fun B hB _ => ?_) f
-  ext x
-  simp [transpose_eq_cbmApplyMeasure, polarizedComplexMeasure_diag _ _ _ hB, weightedSMul_apply,
-    measureReal_def, mul_comm]
+  rw [polarizedComplexMeasure_self_eq_withDensityᵥ, VectorMeasure.integral_mul_withDensityᵥ_one]
 
 end ProjValMeasure
 end TauCeti

@@ -60,7 +60,9 @@ the double right dual functor is a monoidal autoequivalence.
 * `TauCeti.doubleRightDualFunctor` and the instance `TauCeti.doubleRightDualFunctorMonoidal`: the
   strong monoidal double right dual functor, with structure morphisms given by
   `TauCeti.doubleRightDualFunctor_ε`, `TauCeti.doubleRightDualFunctor_η`,
-  `TauCeti.doubleRightDualFunctor_μ` and `TauCeti.doubleRightDualFunctor_δ`;
+  `TauCeti.doubleRightDualFunctor_μ` and `TauCeti.doubleRightDualFunctor_δ` (the unit
+  comparison is also given in terms of a right adjoint mate by
+  `TauCeti.doubleRightDualFunctor_ε_eq_rightAdjointMate`);
 * `TauCeti.doubleRightDualFunctor_map_evaluation` and
   `TauCeti.doubleRightDualFunctor_map_coevaluation`: the double right dual functor carries the
   evaluation and coevaluation of `(X, Xᘁ)` to those of `(Xᘁᘁ, Xᘁᘁᘁ)`;
@@ -364,6 +366,18 @@ theorem doubleRightDualFunctor_ε :
           (rightDualIso (RightRigidCategory.rightDual (𝟙_ C)).exact exactPairingUnit).hom :=
   (Category.id_comp _ =≫ _).trans
     (_ ≫= @rightAdjointMate_eq_rightMate C _ _ _ _ _ (RightRigidCategory.rightDual (𝟙_ C)) _)
+
+/-- The unit comparison of the double right dual functor, with the mate written as the right
+adjoint mate `fᘁ` for the duals chosen by the rigid structure rather than as an
+`ExactPairing.rightMate`, so that lemmas about right adjoint mates apply to it directly. The
+instances are explicit because instance search would pick `hasRightDualUnit` for `𝟙_ C`. -/
+theorem doubleRightDualFunctor_ε_eq_rightAdjointMate :
+    ε (doubleRightDualFunctor C) =
+      (rightDualIso (RightRigidCategory.rightDual (𝟙_ C)).exact exactPairingUnit).inv ≫
+        @rightAdjointMate C _ _ _ _ (RightRigidCategory.rightDual _)
+          (RightRigidCategory.rightDual (𝟙_ C))
+          (rightDualIso (RightRigidCategory.rightDual (𝟙_ C)).exact exactPairingUnit).hom :=
+  Category.id_comp _ =≫ _
 
 /-- The inverse unit comparison `(𝟙_ C)ᘁᘁ ⟶ 𝟙_ C` of the double right dual functor. -/
 theorem doubleRightDualFunctor_η :

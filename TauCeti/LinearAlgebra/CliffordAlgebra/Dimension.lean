@@ -13,7 +13,10 @@ public import TauCeti.LinearAlgebra.ExteriorAlgebra.Dimension
 import TauCeti.LinearAlgebra.CliffordAlgebra.ParitySwap
 -- Private: the ordered exterior-basis formula proves the empty and singleton basis identities.
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
--- Private: `Module.finrank_linearMap` counts the endomorphisms of a spinor module.
+-- Private: `Module.Finite.of_finite_end` shows that a spinor module is finite-dimensional.
+import TauCeti.LinearAlgebra.Dual.Lemmas
+-- Private: `Module.Basis.map_exteriorAlgebra` proves the naturality of the basis.
+import TauCeti.LinearAlgebra.ExteriorAlgebra.Subspace
 import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
 
 /-!
@@ -70,12 +73,13 @@ isomorphism `gr (CliffordAlgebra Q) ≅ ExteriorAlgebra R M` for the degree filt
 
 * `CliffordAlgebra.basis_empty` and `CliffordAlgebra.basis_singleton`: for every basis, the basis
   vectors indexed by `∅` and by `{i}` are `1` and the generator `ι Q (b i)`.
+* `CliffordAlgebra.map_basis`: the basis is natural under isometric equivalences.
 * `CliffordAlgebra.rank_eq_rank_exteriorAlgebra` and
   `CliffordAlgebra.finrank_eq_finrank_exteriorAlgebra`: the rank of `CliffordAlgebra Q`
   is the rank of `ExteriorAlgebra R M`. The right-hand sides do not mention `Q`, so this is the
   statement that the size of a Clifford algebra does not depend on the quadratic form.
 * `CliffordAlgebra.instFree` and `CliffordAlgebra.instFinite`: the Clifford algebra
-  of a free module is free, and of a finite free module is finite.
+  of a free module is free, and of a finite module is finite.
 * `CliffordAlgebra.finrank_eq_two_pow`: `finrank R (CliffordAlgebra Q) = 2 ^ finrank R M`,
   with `CliffordAlgebra.finrank_eq_sum_choose` the same count as a sum of binomial
   coefficients.
@@ -93,6 +97,8 @@ isomorphism `gr (CliffordAlgebra Q) ≅ ExteriorAlgebra R M` for the degree filt
 * `CliffordAlgebra.finrank_eq_two_pow_of_bijective_lsmul`: a finite-dimensional module on which
   the Clifford algebra of a `2l`-dimensional space acts as its whole endomorphism algebra has
   dimension `2 ^ l`.
+* `CliffordAlgebra.even_finrank_of_algEquiv_end`: if a module's endomorphism algebra is
+  isomorphic to the Clifford algebra, the underlying space has even dimension.
 
 ## References
 
@@ -159,14 +165,25 @@ theorem equivExterior_basis {I : Type w} [LinearOrder I] (b : Basis I R M) (s : 
     equivExterior Q (basis Q b s) = b.ExteriorAlgebra s := by
   rw [basis_apply, LinearEquiv.apply_symm_apply]
 
+variable {Q} in
+/-- **The basis is natural under isometric equivalences**: the algebra map induced by an isometric
+equivalence `e : Q ≃ Q'` sends the basis vector of `b` indexed by `s` to the basis vector of the
+transported basis `b.map e` indexed by `s`. -/
+theorem map_basis {M' : Type*} [AddCommGroup M'] [Module R M'] {Q' : QuadraticForm R M'}
+    (e : Q.IsometryEquiv Q') {I : Type w} [LinearOrder I] (b : Basis I R M) (s : Finset I) :
+    map e.toIsometry (basis Q b s) = basis Q' (b.map e.toLinearEquiv) s := by
+  apply (equivExterior Q').injective
+  rw [equivExterior_map, equivExterior_basis, equivExterior_basis]
+  exact b.map_exteriorAlgebra s e.toLinearEquiv
+
 /-- The Clifford algebra of a free module is a free module, over a ring in which `2` is
 invertible. -/
 instance instFree [Module.Free R M] : Module.Free R (CliffordAlgebra Q) :=
   Module.Free.of_equiv (equivExterior Q).symm
 
-/-- The Clifford algebra of a finite free module is a finite module, over a ring in which `2` is
+/-- The Clifford algebra of a finite module is a finite module, over a ring in which `2` is
 invertible. -/
-instance instFinite [Module.Free R M] [Module.Finite R M] :
+instance instFinite [Module.Finite R M] :
     Module.Finite R (CliffordAlgebra Q) :=
   Module.Finite.equiv (equivExterior Q).symm
 
@@ -292,6 +309,20 @@ theorem finrank_eq_two_pow_of_bijective_lsmul [Invertible (2 : K)] [Module.Finit
   rw [finrank_eq_two_pow, Module.finrank_linearMap, ← Nat.div_two_mul_two_of_even hV, pow_mul,
     sq] at hdim
   exact Nat.mul_self_inj.1 hdim.symm
+
+/-- **Only even-dimensional spaces have spinor modules.** If `CliffordAlgebra Q` is isomorphic to
+the endomorphism algebra of `S`, then `finrank K V` is even: comparing dimensions gives
+`2 ^ finrank K V = (finrank K S) ^ 2`. -/
+theorem even_finrank_of_algEquiv_end [Invertible (2 : K)] [Module.Finite K V] {S : Type*}
+    [AddCommGroup S] [Module K S] (ρ : CliffordAlgebra Q ≃ₐ[K] Module.End K S) :
+    Even (finrank K V) := by
+  have : Module.Finite K (Module.End K S) := Module.Finite.equiv ρ.toLinearEquiv
+  have := Module.Finite.of_finite_end K S
+  have hdim := ρ.toLinearEquiv.finrank_eq
+  rw [finrank_eq_two_pow, Module.finrank_linearMap] at hdim
+  obtain ⟨k, -, hk⟩ := (Nat.dvd_prime_pow Nat.prime_two).1 (Dvd.intro _ hdim.symm)
+  rw [hk, ← pow_add] at hdim
+  exact ⟨k, Nat.pow_right_injective le_rfl hdim⟩
 
 end Field
 

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.List.Rotate
 public import Mathlib.GroupTheory.Perm.List
+public import Mathlib.Logic.Equiv.Fin.Rotate
 
 import TauCeti.Data.Fin.Basic
 
@@ -33,6 +34,11 @@ rotated braid words.
 * `List.formPerm_append_apply_of_mem_right` and `List.formPerm_append_apply_getLast_left`: the
   permutation formed by `T ++ V` on the entries of `V`, and on the last entry of `T`.
 * `List.IsRotated.filter`: filtering preserves cyclic rotation of lists.
+* `List.IsRotated.apply_prod_eq`: a function `φ` with `φ (x * y) = φ (y * x)`, such as a trace,
+  takes the same value on the products of cyclically rotated lists.
+* `List.ofFn_comp_finRotate_pow`: precomposing with a power of `finRotate` rotates `List.ofFn`.
+* `List.apply_rotate_of_append_singleton`: a function of lists that is unchanged by moving the
+  first entry to the end is invariant under every rotation.
 -/
 
 public section
@@ -153,5 +159,39 @@ theorem IsRotated.filter {α : Type*} {l l' : List α} (h : l ~r l') (p : α →
     (l := (l.take (k % l.length)).filter p)
     (l' := (l.drop (k % l.length)).filter p)
   simpa only [← List.filter_append, List.take_append_drop] using hrot
+
+/-- A function `φ` on a monoid with `φ (x * y) = φ (y * x)`, such as a trace, takes the same value
+on the products of cyclically rotated lists. -/
+theorem IsRotated.apply_prod_eq {M R : Type*} [Monoid M] {φ : M → R}
+    (hφ : ∀ x y, φ (x * y) = φ (y * x)) {l l' : List M} (h : l ~r l') : φ l.prod = φ l'.prod := by
+  obtain ⟨k, rfl⟩ := h
+  rw [List.rotate_eq_drop_append_take_mod, List.prod_append, hφ, ← List.prod_append,
+    List.take_append_drop]
+
+/-- Precomposing a tuple with a power of the cyclic permutation `finRotate n` rotates the list of
+its entries by the same amount. -/
+theorem ofFn_comp_finRotate_pow {α : Type*} {n : ℕ} (f : Fin n → α) (k : ℕ) :
+    ofFn (f ∘ ⇑(finRotate n ^ k)) = (ofFn f).rotate k := by
+  apply ext_getElem
+  · simp
+  · intro i hi _
+    simp only [length_ofFn] at hi
+    simp only [List.getElem_ofFn, Function.comp_apply, getElem_rotate, length_ofFn]
+    congr 1
+    exact Fin.ext (Fin.coe_finRotate_pow k ⟨i, hi⟩)
+
+/-- A function of lists that does not change when the first entry is moved to the end is invariant
+under every rotation. -/
+theorem apply_rotate_of_append_singleton {α β : Type*} (f : List α → β)
+    (hf : ∀ x l, f (l ++ [x]) = f (x :: l)) (l : List α) (k : ℕ) : f (l.rotate k) = f l := by
+  induction k with
+  | zero => rw [rotate_zero]
+  | succ k ih =>
+    rw [← rotate_rotate]
+    rcases h : l.rotate k with _ | ⟨y, u⟩
+    · rw [h] at ih
+      rw [rotate_nil, ih]
+    · rw [h] at ih
+      rw [rotate_cons_succ, rotate_zero, hf, ih]
 
 end List

@@ -288,6 +288,19 @@ private theorem graphOperator_mem_lattice_iff :
   fun x => (polarization n).typeDGraphOperator_mem_integralLattice_iff
     (polarizationBasis n) (by omega)
 
+/-- The graph operator carries each weight component of the spin lattice to the component of the
+weight relabelled by the fork exchange. -/
+private theorem basisWeight_of_repr_ne_zero (i j : Fin (dimension n))
+    (hij : (latticeBasis n).repr ((graphOperator n (by omega)).toAddEquiv.invariantRestrict
+      (lattice n).toAddSubgroup (graphOperator_mem_lattice_iff n hn) (latticeBasis n j)) i ≠ 0)
+    (k : Fin n) :
+    basisWeight n i (graphPermD n (by omega) k) = basisWeight n j k := by
+  obtain rfl := AddEquiv.eq_of_repr_invariantRestrict_basis_ne_zero_of_monomial
+    (graphOperator n (by omega)).toAddEquiv (lattice n).toAddSubgroup
+    (graphOperator_mem_lattice_iff n hn) (latticeBasis n) (graphBasisPerm n (by omega))
+    (graphBasisScale n (by omega)) (graphOperator_latticeBasis n (by omega)) hij
+  exact basisWeight_graphBasisPerm n (by omega) j k
+
 /-- The numbered symmetry of the Kostant toral closure attached to the fork exchange. -/
 private def toralGraphAut :
     Aut (kostantToralGroupScheme
@@ -304,9 +317,7 @@ private def toralGraphAut :
     (graphOperator_mem_lattice_iff n hn)
     (graphOperator_rep_rootGenerator n hn)
     (graphRootPerm n (by omega)).surjective
-    (graphBasisPerm n (by omega)) (graphBasisScale n (by omega))
-    (graphOperator_latticeBasis n (by omega))
-    (graphPermD n (by omega)) (basisWeight_graphBasisPerm n (by omega))
+    (graphPermD n (by omega)) (basisWeight_of_repr_ne_zero n hn)
 
 /-- **The graph automorphism of the type-`Dₙ` spin carrier**: the automorphism realizing the fork
 exchange of the two final Bourbaki nodes. It renumbers the pinned root subgroups by that exchange
@@ -368,7 +379,7 @@ theorem graphAut_sq : graphAut n hn ^ 2 = 1 := by
     funext k
     rw [Function.iterate_succ_apply, Function.iterate_one, graphRootPerm_apply_apply, id_eq]
   have htoral : toralGraphAut n hn ^ 2 = 1 :=
-    kostantToralNumberedSymmetryIso_pow_eq_one _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 2
+    kostantToralNumberedSymmetryIso_pow_eq_one _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 2
       hrootIter (graphPermD_sq n (by omega))
   rw [graphAut, ← map_pow, htoral, map_one]
 
@@ -480,9 +491,7 @@ theorem map_points_conj_graphAutMatrix (A : Type v) [CommRing A] :
     (graphOperator_mem_lattice_iff n hn)
     (graphOperator_rep_rootGenerator n hn)
     (graphRootPerm n (by omega)).surjective
-    (graphBasisPerm n (by omega)) (graphBasisScale n (by omega))
-    (graphOperator_latticeBasis n (by omega))
-    (graphPermD n (by omega)) (basisWeight_graphBasisPerm n (by omega)) A
+    (graphPermD n (by omega)) (basisWeight_of_repr_ne_zero n hn) A
 
 /-- The graph matrix, as an element of the normalizer of the carrier points. -/
 private def graphAutNormalizer (A : Type v) [CommRing A] :
@@ -544,9 +553,7 @@ theorem schemePointsMulEquiv_graphAut_comp_carrierι (A : Type) [CommRing A]
       (graphOperator_mem_lattice_iff n hn)
       (graphOperator_rep_rootGenerator n hn)
       (graphRootPerm n (by omega)).surjective
-      (graphBasisPerm n (by omega)) (graphBasisScale n (by omega))
-      (graphOperator_latticeBasis n (by omega))
-      (graphPermD n (by omega)) (basisWeight_graphBasisPerm n (by omega)) A
+      (graphPermD n (by omega)) (basisWeight_of_repr_ne_zero n hn) A
       (p ≫ (eqToHom (groupScheme_eq_kostantToralGroupScheme n hn)).hom.hom)
 
 /-- **The graph automorphism renumbers the pinned root subgroups on matrix-valued points**,
@@ -591,7 +598,7 @@ theorem graphAutPoints_weightTorusPoints (A : Type v) [CommRing A] (s : Fin n �
   refine Subtype.ext ?_
   rw [coe_graphAutPoints, coe_weightTorusPoints, coe_weightTorusPoints, kostantTorusMatrix_apply,
     kostantTorusMatrix_apply, graphAutMatrix,
-    kostantNumberedSymmetryMatrix_conj_diagGL (lattice n).toAddSubgroup (latticeBasis n)
+    kostantNumberedSymmetryMatrix_conj_diagGL_of_monomial (lattice n).toAddSubgroup (latticeBasis n)
       (graphOperator n (by omega)) (graphOperator_mem_lattice_iff n hn)
       (graphBasisPerm n (by omega)) (graphBasisScale n (by omega))
       (graphOperator_latticeBasis n (by omega)) A]

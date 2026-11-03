@@ -55,7 +55,7 @@ theorem genWeightSpace_eq_weightSpace_of_weight_basis (χ : L → R) :
     induction n with
     | zero => simp
     | succ n ih =>
-      rw [pow_succ', Module.End.mul_apply, b.repr_apply_of_apply_basis hf, ih,
+      rw [pow_succ', mul_apply_eq_comp, b.repr_apply_of_apply_basis hf, ih,
         pow_succ', mul_assoc]
   obtain ⟨n, hn⟩ := hm x
   have hcoord (i : ι) : (μ i x - χ x) * b.repr m i = 0 := by
@@ -141,7 +141,7 @@ theorem formalCharacter_eq_sum_single_of_weight_basis :
   classical
   refine AddMonoidAlgebra.ext (Finsupp.ext fun χ => ?_)
   rw [TauCeti.formalCharacter_coeff,
-    b.genWeightSpace_eq_weightSpace_of_weight_basis hb, ← TauCeti.finrank_toSubmodule]
+    b.genWeightSpace_eq_weightSpace_of_weight_basis hb, ← LieSubmodule.finrank_toSubmodule]
   have hspace : (weightSpace M (χ : L → K)).toSubmodule =
       Submodule.span K (b '' {i | μ i = χ}) := by
     refine le_antisymm (fun m hm => ?_) (Submodule.span_le.mpr ?_)

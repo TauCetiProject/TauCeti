@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.ChartedSpace
+public import Mathlib.Geometry.Manifold.IsManifold.Basic
 
 /-!
 # Disjoint unions of charted spaces
@@ -26,9 +26,11 @@ exterior, has its boundary presented as one charted space.
   the open embedding `Sigma.mk i`.
 * `ChartedSpace.sigma_chartAt_mk_apply`: on the copy of `M i` it agrees with the chart of `M i`.
 * `ChartedSpace.mem_atlas_sigma`: the atlas consists of lifted charts of the components.
+* `IsManifold.sigma`: the disjoint union of `C^n` manifolds is a `C^n` manifold.
 
 The construction follows Mathlib's `ChartedSpace.sumOfNonempty` and `ChartedSpace.sum` in
 `Mathlib.Geometry.Manifold.ChartedSpace`.
+The compatibility proof follows Mathlib's `IsManifold.disjointUnion`.
 -/
 
 public section
@@ -103,3 +105,31 @@ lemma mem_atlas_sigma [h : Nonempty H] {e : OpenPartialHomeomorph (Σ i, M i) H}
   exact ⟨i, f, hf, rfl⟩
 
 end ChartedSpace
+
+namespace IsManifold
+
+open scoped ContDiff
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {I : ModelWithCorners 𝕜 E H} {n : ℕ∞ω} [∀ i, IsManifold I n (M i)]
+
+/-- A disjoint union of `C^n` manifolds on a common model is a `C^n` manifold on that model. -/
+instance sigma : IsManifold I n (Σ i, M i) where
+  compatible {e} e' he he' := by
+    obtain h | h := isEmpty_or_nonempty H
+    · exact ContDiffGroupoid.mem_of_source_eq_empty _ (eq_empty_of_isEmpty _)
+    obtain ⟨i, f, hf, rfl⟩ := ChartedSpace.mem_atlas_sigma he
+    obtain ⟨j, g, hg, rfl⟩ := ChartedSpace.mem_atlas_sigma he'
+    by_cases hij : i = j
+    · subst j
+      rw [f.lift_openEmbedding_trans g IsOpenEmbedding.sigmaMk]
+      exact (contDiffGroupoid n I).compatible hf hg
+    · apply ContDiffGroupoid.mem_of_source_eq_empty
+      ext x
+      constructor
+      · rintro ⟨hx, y, hy, hxy⟩
+        exact hij (by simpa using (congrArg Sigma.fst hxy).symm)
+      · exact fun hx ↦ hx.elim
+
+end IsManifold

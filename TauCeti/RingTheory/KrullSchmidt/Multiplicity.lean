@@ -157,7 +157,11 @@ noncomputable def indecomposableMultiplicity [IsArtinian A M]
     (N : Type w) [AddCommGroup N] [Module A N] : ℕ :=
   decompositionMultiplicity (exists_isInternal_isIndecomposableModule (A := A) (M := M)).choose N
 
-variable [IsNoetherian A M] [IsArtinian A M]
+variable [IsArtinian A M]
+
+section
+
+variable [IsNoetherian A M]
 
 /-- **Every indecomposable decomposition computes the multiplicity.** -/
 theorem decompositionMultiplicity_eq_indecomposableMultiplicity {s : Finset (Submodule A M)}
@@ -179,12 +183,6 @@ theorem decompositionMultiplicity_eq_indecomposableMultiplicity_of_supIndep
     (DirectSum.isInternal_submodule_iff_iSupIndep_and_iSup_eq_top _).mpr
       ⟨hsi.independent, by simpa only [Finset.sup_eq_iSup, iSup_subtype, id_eq] using hsup⟩
 
-omit [IsNoetherian A M] in
-/-- The multiplicity depends on `N` only through its isomorphism class. -/
-theorem indecomposableMultiplicity_congr (e : N ≃ₗ[A] N') :
-    indecomposableMultiplicity A M N = indecomposableMultiplicity A M N' :=
-  decompositionMultiplicity_congr _ e
-
 /-- **The multiplicity depends on the ambient module only through its isomorphism class.** -/
 theorem indecomposableMultiplicity_eq_of_linearEquiv (f : M ≃ₗ[A] M') :
     indecomposableMultiplicity A M N =
@@ -204,7 +202,13 @@ theorem indecomposableMultiplicity_eq_of_linearEquiv (f : M ≃ₗ[A] M') :
   · rw [LinearMap.sup_image_map_eq_range_of_sup_eq_top _ hsup]
     exact LinearMap.range_eq_top.mpr f.surjective
 
-omit [IsNoetherian A M] in
+end
+
+/-- The multiplicity depends on `N` only through its isomorphism class. -/
+theorem indecomposableMultiplicity_congr (e : N ≃ₗ[A] N') :
+    indecomposableMultiplicity A M N = indecomposableMultiplicity A M N' :=
+  decompositionMultiplicity_congr _ e
+
 private theorem indecomposableDecomposition_eq_empty [Subsingleton M] :
     (exists_isInternal_isIndecomposableModule (A := A) (M := M)).choose = ∅ := by
   rw [Finset.eq_empty_iff_forall_notMem]
@@ -212,7 +216,6 @@ private theorem indecomposableDecomposition_eq_empty [Subsingleton M] :
   exact not_nontrivial P
     ((exists_isInternal_isIndecomposableModule (A := A) (M := M)).choose_spec.1 P hP).nontrivial
 
-omit [IsNoetherian A M] in
 /-- A zero module has no indecomposable summands. -/
 @[simp]
 theorem indecomposableMultiplicity_eq_zero_of_subsingleton [Subsingleton M] :
@@ -221,7 +224,6 @@ theorem indecomposableMultiplicity_eq_zero_of_subsingleton [Subsingleton M] :
     decompositionMultiplicity_def]
   simp
 
-omit [IsNoetherian A M] in
 /-- **Only an indecomposable module has a nonzero multiplicity**: the summands counted are
 indecomposable by construction. -/
 theorem isIndecomposableModule_of_indecomposableMultiplicity_ne_zero
@@ -235,7 +237,6 @@ theorem isIndecomposableModule_of_indecomposableMultiplicity_ne_zero
   exact IsIndecomposableModule.of_linearEquiv
     ((exists_isInternal_isIndecomposableModule (A := A) (M := M)).choose_spec.1 P hP) e
 
-omit [IsNoetherian A M] in
 /-- A non-indecomposable module has zero multiplicity in every Artinian module. -/
 @[simp]
 theorem indecomposableMultiplicity_eq_zero_of_not_isIndecomposableModule
@@ -248,7 +249,6 @@ section Indecomposable
 variable (hM : IsIndecomposableModule A M)
 include hM
 
-omit [IsNoetherian A M] in
 /-- The chosen indecomposable decomposition of an indecomposable module is the one-member
 decomposition by the whole module. -/
 private theorem indecomposableDecomposition_eq_singleton_top :
@@ -278,13 +278,11 @@ private theorem indecomposableDecomposition_eq_singleton_top :
     simpa [hPtop P hP] using hP
   exact Finset.eq_singleton_iff_unique_mem.mpr ⟨htop, hPtop⟩
 
-omit [IsNoetherian A M] in
 /-- The one-member decomposition of an indecomposable module. -/
 private theorem decompositionMultiplicity_top :
     decompositionMultiplicity {(⊤ : Submodule A M)} N = indecomposableMultiplicity A M N :=
   by rw [indecomposableMultiplicity, indecomposableDecomposition_eq_singleton_top hM]
 
-omit [IsNoetherian A M] in
 /-- **An indecomposable module occurs exactly once in itself.** -/
 theorem indecomposableMultiplicity_self (e : M ≃ₗ[A] N) :
     indecomposableMultiplicity A M N = 1 := by
@@ -293,7 +291,6 @@ theorem indecomposableMultiplicity_self (e : M ≃ₗ[A] N) :
     ⟨⟨⊤, by simp, ⟨Submodule.topEquiv.trans e⟩⟩⟩⟩
   rw [Finset.mem_singleton.mp P.2.1, Finset.mem_singleton.mp Q.2.1]
 
-omit [IsNoetherian A M] in
 /-- **A nonisomorphic module does not occur in an indecomposable module.** -/
 theorem indecomposableMultiplicity_eq_zero_of_isEmpty_linearEquiv (he : IsEmpty (M ≃ₗ[A] N)) :
     indecomposableMultiplicity A M N = 0 := by
@@ -321,6 +318,8 @@ theorem indecomposableMultiplicity_eq_ite {I : Type*} [DecidableEq I] {P : I →
       indecomposableMultiplicity_eq_zero_of_isEmpty_linearEquiv (hind j) (hnoniso hji)
 
 /-! ### Additivity -/
+
+variable [IsNoetherian A M]
 
 /-- **Multiplicity is additive on direct sums.** -/
 @[simp]

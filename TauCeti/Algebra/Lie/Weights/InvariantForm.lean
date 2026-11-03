@@ -65,6 +65,8 @@ be stated.
 * `TauCeti.killingExtend_apply_cartan` and `TauCeti.killingExtend_apply_eq_zero`: the extension of
   a weight is the weight itself on `H` and vanishes on every root space of a nonzero weight, so it
   sees the zero-weight component of a vector and nothing else.
+* `TauCeti.cartanEquivDual_apply_apply_eq_killingForm`: on `H`, `cartanEquivDual` is the Killing
+  form of `L`.
 
 The compatibility with `LieAlgebra.IsKilling.rootSystem_pairing_apply` — that a Cartan integer is
 `2 ⟨α, β⟩ / ⟨β, β⟩` — and the orthogonality criterion and reflection invariance of the form are not
@@ -204,6 +206,12 @@ theorem killingExtend_apply_cartan (lam : Module.Dual K H) (x : H) :
   rw [killingExtend_apply, hres]
   conv_rhs => rw [← (cartanEquivDual H).apply_symm_apply lam]
   rw [cartanEquivDual_apply_apply, traceForm_apply_apply, Module.End.mul_eq_comp]
+
+/-- On `H`, the duality `cartanEquivDual` is the Killing form of `L`: `cartanEquivDual H x` is the
+linear form `y ↦ κ(x, y)` on `H`. -/
+theorem cartanEquivDual_apply_apply_eq_killingForm (x y : H) :
+    cartanEquivDual H x y = killingForm K L x y := by
+  rw [← killingExtend_apply_cartan, killingExtend_apply, LinearEquiv.symm_apply_apply]
 
 /-- The extension of a weight vanishes on the root space of a nonzero weight, the Cartan
 subalgebra being the zero root space. -/

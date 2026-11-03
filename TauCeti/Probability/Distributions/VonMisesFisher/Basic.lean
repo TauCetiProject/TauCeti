@@ -8,6 +8,7 @@ module
 public import TauCeti.MeasureTheory.Measure.Tilted
 public import TauCeti.Probability.Distributions.Uniform.Sphere.Basic
 public import Mathlib.Probability.Moments.IntegrableExpMul
+public import TauCeti.MeasureTheory.Measure.Typeclasses.Probability
 
 /-!
 # Von Mises–Fisher laws as tilts of the uniform sphere
@@ -96,7 +97,7 @@ theorem isProbabilityMeasure_vonMisesFisherMeasure_iff (m : sphere (0 : E) 1) (�
     IsProbabilityMeasure (vonMisesFisherMeasure m κ) ↔ 0 ≤ κ := by
   refine ⟨fun h ↦ not_lt.1 fun hκ ↦ ?_, isProbabilityMeasure_vonMisesFisherMeasure m⟩
   rw [vonMisesFisherMeasure_of_neg m hκ] at h
-  exact IsProbabilityMeasure.ne_zero (0 : Measure (sphere (0 : E) 1)) rfl
+  exact not_isProbabilityMeasure_zero h
 
 /-- The natural-parameter law has the normalized exponential density relative to the uniform
 sphere law, including the empty-sphere case. -/
@@ -139,6 +140,13 @@ theorem measurable_vonMisesFisherMeasure :
   unfold vonMisesFisherMeasure
   exact Measurable.ite (measurableSet_le measurable_const measurable_snd)
     (measurable_vonMisesFisherNaturalMeasure.comp (by fun_prop)) measurable_const
+
+/-- The unit-sphere embedding has every finite moment and is essentially bounded under
+every natural-parameter von Mises–Fisher law. -/
+@[simp]
+theorem memLp_coe_vonMisesFisherNaturalMeasure (η : E) (p : ℝ≥0∞) :
+    MemLp ((↑) : sphere (0 : E) 1 → E) p (vonMisesFisherNaturalMeasure η) := by
+  exact MemLp.of_bound (by fun_prop) 1 (by filter_upwards with x; simp)
 
 /-- Every linear observable of a natural-parameter sphere law has all finite moments. -/
 theorem memLp_inner_vonMisesFisherNaturalMeasure (η θ : E) (p : ℝ≥0∞) :

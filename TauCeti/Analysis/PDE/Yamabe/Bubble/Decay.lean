@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Yamabe.Bubble.Basic
+import TauCeti.Algebra.Order.Field.Basic
 
 /-!
 # Pointwise decay of Yamabe bubbles
@@ -20,6 +21,12 @@ localized Dirichlet energies; no support or integrability assumption on the cuto
 
 The estimates include dimension two, where the bubble is constant and its differential vanishes.
 Only first derivatives are treated here.
+
+Outside the ball of radius `r` about the centre, the critical power, the square and the squared
+differential of the bubble of scale `t` are bounded by `(2 t / r) ^ n`, `(2 t / r) ^ (n - 2)` and
+`4 (2 t / r) ^ (n - 2)` times the same quantities for the bubble of scale `r`. Integrating these
+comparisons bounds annular errors by the integrable bubble of scale `r`, with the sharp power of
+`t` and no radial integration.
 
 ## References
 
@@ -153,5 +160,48 @@ theorem norm_fderiv_mul_bubble_le (hn : 2 ≤ finrank ℝ E) {t R : ℝ} (ht : 0
         (mul_le_mul_of_nonneg_left (norm_fderiv_bubble_le_of_le_norm_sub hn ht hR hx)
           (abs_nonneg _))
     _ = _ := by rw [hrpow]; ring
+
+/-! ### Comparison with a bubble of fixed scale -/
+
+/-- Outside the ball of radius `r` about the centre, the critical power of the bubble of scale
+`t` is at most `(2 t / r) ^ n` times that of the bubble of scale `r`. This holds for every
+positive scale `t`. -/
+theorem bubble_rpow_criticalExponent_le_mul_of_le_norm_sub (hn : finrank ℝ E ≠ 2) {t r : ℝ}
+    (ht : 0 < t) (hr : 0 < r) {b x : E} (hx : r ≤ ‖x - b‖) :
+    bubble t b x ^ criticalExponent (finrank ℝ E) ≤
+      (2 * t / r) ^ finrank ℝ E * bubble r b x ^ criticalExponent (finrank ℝ E) := by
+  rw [bubble_rpow_criticalExponent hn ht, bubble_rpow_criticalExponent hn hr, ← mul_pow]
+  exact pow_le_pow_left₀ (by positivity) (two_mul_div_add_sq_le_mul ht hr hx) _
+
+/-- Outside the ball of radius `r` about the centre, the square of the bubble of scale `t` is at
+most `(2 t / r) ^ (n - 2)` times that of the bubble of scale `r`. -/
+theorem bubble_sq_le_mul_of_le_norm_sub (hn : 2 ≤ finrank ℝ E) {t r : ℝ}
+    (ht : 0 < t) (hr : 0 < r) {b x : E} (hx : r ≤ ‖x - b‖) :
+    bubble t b x ^ 2 ≤ (2 * t / r) ^ (finrank ℝ E - 2) * bubble r b x ^ 2 := by
+  rw [bubble_sq hn ht.le, bubble_sq hn hr.le, ← mul_pow]
+  exact pow_le_pow_left₀ (by positivity) (two_mul_div_add_sq_le_mul ht hr hx) _
+
+/-- Outside the ball of radius `r` about the centre, the squared norm of the differential of the
+bubble of scale `t` is at most `4 (2 t / r) ^ (n - 2)` times that of the bubble of scale `r`. -/
+theorem norm_fderiv_bubble_sq_le_mul_of_le_norm_sub (hn : 2 ≤ finrank ℝ E) {t r : ℝ}
+    (ht : 0 < t) (hr : 0 < r) {b x : E} (hx : r ≤ ‖x - b‖) :
+    ‖fderiv ℝ (bubble t b) x‖ ^ 2 ≤
+      4 * (2 * t / r) ^ (finrank ℝ E - 2) * ‖fderiv ℝ (bubble r b) x‖ ^ 2 := by
+  have hpow := pow_le_pow_left₀ (by positivity) (two_mul_div_add_sq_le_mul ht hr hx)
+    (finrank ℝ E)
+  rw [mul_pow] at hpow
+  have hcoef : (((finrank ℝ E : ℝ) - 2) / (2 * t)) ^ 2 * (2 * t / r) ^ 2 =
+      4 * (((finrank ℝ E : ℝ) - 2) / (2 * r)) ^ 2 := by
+    field_simp
+    ring
+  rw [norm_fderiv_bubble_sq ht, norm_fderiv_bubble_sq hr]
+  calc
+    _ ≤ (((finrank ℝ E : ℝ) - 2) / (2 * t)) ^ 2 * ‖x - b‖ ^ 2 *
+        ((2 * t / r) ^ finrank ℝ E * (2 * r / (r ^ 2 + ‖x - b‖ ^ 2)) ^ finrank ℝ E) :=
+      mul_le_mul_of_nonneg_left hpow (by positivity)
+    _ = _ := by
+      rw [← pow_mul_pow_sub _ hn]
+      linear_combination ‖x - b‖ ^ 2 * (2 * t / r) ^ (finrank ℝ E - 2) *
+        (2 * r / (r ^ 2 + ‖x - b‖ ^ 2)) ^ finrank ℝ E * hcoef
 
 end TauCeti.Yamabe

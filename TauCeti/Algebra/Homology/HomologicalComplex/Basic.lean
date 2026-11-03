@@ -7,7 +7,10 @@ module
 
 public import Mathlib.Algebra.Homology.HomologicalComplex
 public import Mathlib.Algebra.Homology.HomologicalComplexLimits
+public import Mathlib.Algebra.Homology.HomologySequence
+public import Mathlib.Algebra.Homology.QuasiIso
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
+public import Mathlib.Algebra.Homology.ShortComplex.PreservesHomology
 public import Mathlib.Algebra.Homology.ShortComplex.Preadditive
 public import Mathlib.Algebra.Homology.ShortComplex.ShortExact
 
@@ -19,8 +22,10 @@ complex endomorphism, and the existence of coproducts of complexes, computed deg
 records the basic properties of the maps
 `K.toCycles i j : K.X i ⟶ K.cycles j` induced by the differentials: they kill the cycles in degree
 `i`, commute with morphisms of complexes, vanish after a morphism from a complex concentrated in
-degree `i`, and are epimorphisms in degrees where the complex is exact. In a degree with no nonzero
-differential into it, the identification of the homology with the cycles is natural
+degree `i`, and are epimorphisms in degrees where the complex is exact; consequently, a morphism of
+complexes which is an epimorphism in degree `i` induces an epimorphism on cycles in degree `j` when
+its target is exact at `j` (`HomologicalComplex.epi_cyclesMap_of_exactAt`). In a degree with no
+nonzero differential into it, the identification of the homology with the cycles is natural
 (`HomologicalComplex.isoHomologyπ_inv_naturality`). The sequence
 `Zᵢ ⟶ Kᵢ ⟶ Zⱼ` of cycles is exact when `j = c.next i`
 (`HomologicalComplex.cyclesShortComplex_exact`). For adjacent degrees `i` and `j`, the cycles of a
@@ -28,9 +33,13 @@ complex exact in degree `j` fit into a short exact sequence `0 ⟶ Zᵢ ⟶ Kᵢ
 (`HomologicalComplex.cyclesShortComplex_shortExact`), which stays short exact when its outer terms
 are replaced by isomorphic objects (`HomologicalComplex.cyclesShortComplex_shortExact_of_iso`);
 likewise a monomorphism onto the kernel of the differential `Kᵢ ⟶ Kⱼ` gives a short exact sequence
-`0 ⟶ A ⟶ Kᵢ ⟶ Zⱼ ⟶ 0` (`HomologicalComplex.shortExact_toCycles`). Constructing the bundled cycle
+`0 ⟶ A ⟶ Kᵢ ⟶ Zⱼ ⟶ 0` (`HomologicalComplex.shortExact_toCycles`). A morphism of complexes
+vanishing in some degree induces zero on homology there
+(`HomologicalComplex.homologyMap_eq_zero_of_f_eq_zero`). Constructing the bundled cycle
 sequence requires homology only in the two selected degrees.
 The exactness results additionally require homology of the cycle sequence itself.
+In an abelian category, the map from the opcycles in degree `i` to the cycles in degree `j` is an
+isomorphism when the complex is exact in both degrees (`HomologicalComplex.isIso_opcyclesToCycles`).
 For chain complexes indexed by the natural numbers, the identification of zero chains with
 cycles is natural (`ChainComplex.cycles₀Iso_inv_naturality`), and so is the passage from zero
 chains to zeroth homology (`ChainComplex.pOpcycles_comp_isoHomologyι₀_inv_comp_homologyMap`).
@@ -38,6 +47,11 @@ The isomorphisms `homologyIsoSc'`
 are natural (`HomologicalComplex.homologyMap_comp_homologyIsoSc'_hom`), and exactness in a degree
 is the vanishing of the homology of the short complex `sc'` there
 (`HomologicalComplex.exactAt_iff_isZero_homology_sc'`).
+Homology of complexes commutes with an additive functor preserving homology
+(`CategoryTheory.Functor.mapHomologicalComplexCompHomologyFunctorIso`), the complex-level form of
+Mathlib's `CategoryTheory.ShortComplex.homologyFunctorIso`.
+Every morphism between acyclic complexes is a quasi-isomorphism
+(`HomologicalComplex.quasiIso_of_acyclic`).
 -/
 
 public section
@@ -205,6 +219,15 @@ lemma epi_toCycles_of_exactAt {i j : ι} [K.HasHomology j]
     K.toCycles_cyclesIsoSc'_hom]
   exact h.epi_toCycles
 
+/-- A morphism of complexes which is an epimorphism in degree `i` induces an epimorphism on the
+cycles in degree `j`, for a relation `i → j`, when its target is exact at `j`. -/
+lemma epi_cyclesMap_of_exactAt {L : HomologicalComplex C c} (φ : K ⟶ L) {i j : ι}
+    [K.HasHomology j] [L.HasHomology j] (hij : c.Rel i j) [Epi (φ.f i)] (hL : L.ExactAt j) :
+    Epi (cyclesMap φ j) := by
+  have := epi_toCycles_of_exactAt hL (c.prev_eq' hij)
+  refine epi_of_epi_fac (f := K.toCycles i j) (h := φ.f i ≫ L.toCycles i j) ?_
+  simp [← cancel_mono (L.iCycles j)]
+
 /-- The cycle sequence `Zᵢ(K) ⟶ Kᵢ ⟶ Zⱼ(K)` is short exact when `i` and `j` are adjacent
 and `K` is exact in degree `j`. -/
 lemma cyclesShortComplex_shortExact (i j : ι) [K.HasHomology i] [K.HasHomology j]
@@ -234,6 +257,39 @@ lemma shortExact_toCycles {A : C} {i j : ι} [K.HasHomology j] (a : A ⟶ K.X i)
     (ShortComplex.mk a (K.toCycles i j) (comp_toCycles_eq_zero j a ha)).ShortExact :=
   have := epi_toCycles_of_exactAt hK hij
   { exact := exact_toCycles j a ha hex }
+
+end HomologicalComplex
+
+namespace HomologicalComplex
+
+variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C] {ι : Type*} {c : ComplexShape ι}
+  {K L : HomologicalComplex C c}
+
+/-- A morphism of complexes that vanishes in degree `i` induces zero on homology in degree `i`. -/
+lemma homologyMap_eq_zero_of_f_eq_zero (φ : K ⟶ L) (i : ι) [K.HasHomology i] [L.HasHomology i]
+    (h : φ.f i = 0) : homologyMap φ i = 0 := by
+  have hc : cyclesMap φ i = 0 := by
+    rw [← cancel_mono (L.iCycles i), cyclesMap_i, h, comp_zero, zero_comp]
+  rw [← cancel_epi (K.homologyπ i), homologyπ_naturality, hc, zero_comp, comp_zero]
+
+end HomologicalComplex
+
+namespace HomologicalComplex
+
+variable {C : Type u} [Category.{v} C] [Abelian C] {ι : Type*} {c : ComplexShape ι}
+  (K : HomologicalComplex C c)
+
+/-- If a complex is exact in degrees `i` and `j`, with `c.Rel i j`, the map from the opcycles in
+degree `i` to the cycles in degree `j` is an isomorphism, by the exact sequence
+`Hⁱ ⟶ opcyclesⁱ ⟶ Zʲ ⟶ Hʲ`. -/
+lemma isIso_opcyclesToCycles {i j : ι} (hij : c.Rel i j) (hi : K.ExactAt i) (hj : K.ExactAt j) :
+    IsIso (K.opcyclesToCycles i j) := by
+  have h := HomologySequence.composableArrows₃_exact K i j hij
+  have : Mono (K.opcyclesToCycles i j) :=
+    (h.exact 0).mono_g (hi.isZero_homology.eq_of_src _ _)
+  have : Epi (K.opcyclesToCycles i j) :=
+    (h.exact 1).epi_f (hj.isZero_homology.eq_of_tgt _ _)
+  exact isIso_of_mono_of_epi _
 
 end HomologicalComplex
 
@@ -332,4 +388,32 @@ lemma homologyMap_comp_eqToHom (ψ : L ⟶ L') (hM : M = L) (hM' : M' = L')
 
 end HomologyTransport
 
+variable {C : Type*} [Category* C] [HasZeroMorphisms C] {ι : Type*} {c : ComplexShape ι}
+
+/-- A morphism between acyclic homological complexes is a quasi-isomorphism. -/
+lemma quasiIso_of_acyclic {K L : HomologicalComplex C c} (f : K ⟶ L) [∀ i, K.HasHomology i]
+    [∀ i, L.HasHomology i] (hK : K.Acyclic) (hL : L.Acyclic) : QuasiIso f :=
+  (quasiIso_iff f).2 fun i ↦ (quasiIsoAt_iff_exactAt f i (hK i)).2 (hL i)
+
 end HomologicalComplex
+
+namespace CategoryTheory.Functor
+
+variable {C : Type*} [Category* C] {D : Type*} [Category* D]
+  [Preadditive C] [Preadditive D] [CategoryWithHomology C] [CategoryWithHomology D]
+  (F : C ⥤ D) [F.Additive] [F.PreservesHomology] {ι : Type*} (c : ComplexShape ι) (i : ι)
+
+/-- Homology of homological complexes commutes with a functor preserving homology. -/
+noncomputable def mapHomologicalComplexCompHomologyFunctorIso :
+    F.mapHomologicalComplex c ⋙ HomologicalComplex.homologyFunctor D c i ≅
+      HomologicalComplex.homologyFunctor C c i ⋙ F :=
+  -- the short complex of `F` applied to `K` in degree `i` is `F` applied to that of `K`
+  isoWhiskerLeft (HomologicalComplex.shortComplexFunctor C c i) (ShortComplex.homologyFunctorIso F)
+
+@[simp]
+lemma mapHomologicalComplexCompHomologyFunctorIso_hom_app (K : HomologicalComplex C c) :
+    (F.mapHomologicalComplexCompHomologyFunctorIso c i).hom.app K =
+      ((K.sc i).mapHomologyIso F).hom :=
+  (rfl)
+
+end CategoryTheory.Functor

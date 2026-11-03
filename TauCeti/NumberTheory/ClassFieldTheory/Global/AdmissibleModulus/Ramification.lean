@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.AdmissibleModulus.Basic
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.LocalArtin.Compatibility
-public import TauCeti.NumberTheory.ClassFieldTheory.Local.Conductor
+public import TauCeti.NumberTheory.ClassFieldTheory.Local.Conductor.Basic
 public import TauCeti.NumberTheory.NumberField.Discriminant.RamifiedSupport.Basic
 
 /-!
@@ -48,6 +48,10 @@ whole idele class group, so the trivial modulus is admissible for it, although `
   over a place outside the support of an admissible modulus is unramified.
 * `TauCeti.ClassFieldTheory.IsAdmissibleModulus.mem_support_of_ramified`: a prime of `K` below a
   ramified prime of `L` lies in the support of every admissible modulus.
+* `TauCeti.ClassFieldTheory.IsAdmissibleModulus.isUnramifiedAway`: the same, for every prime of
+  `L` above a place outside the support, in the form taken by the ideal-theoretic Artin map.
+* `TauCeti.ClassFieldTheory.IsAdmissibleModulus.isUnramifiedAt_of_integralIdealsPrimeTo`: the
+  same, for every prime of `L` above a prime ideal of `K` prime to `𝔪`.
 * `TauCeti.ClassFieldTheory.IsAdmissibleModulus.ramifiedSupport_subset_support`: the ramified
   support of `L/K` is contained in the support of every admissible modulus.
 
@@ -112,6 +116,27 @@ theorem mem_support_of_ramified (h : IsAdmissibleModulus K L 𝔪) (v : HeightOn
   by_contra hv
   exact hQ (h.isUnramifiedAt_of_notMem_support hv
     ⟨Q, inferInstance, Ideal.ne_bot_of_liesOver_of_ne_bot v.ne_bot Q⟩)
+
+/-- **An admissible modulus bounds the ramification.** For an abelian extension `L/K` and a
+modulus `𝔪` admissible for `L/K`, every prime of `L` above a finite place of `K` outside the
+support of `𝔪` is unramified over `K`. This is the unramifiedness hypothesis of the
+ideal-theoretic Artin map `NumberFieldArithmetic.artinHomAway` for the excluded set `𝔪.support`. -/
+theorem isUnramifiedAway (h : IsAdmissibleModulus K L 𝔪) :
+    ∀ v : HeightOneSpectrum (𝓞 K), v ∉ 𝔪.support →
+      ∀ (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver v.asIdeal], Algebra.IsUnramifiedAt (𝓞 K) Q :=
+  fun v hv Q _ _ ↦ not_not.1 fun hQ ↦ hv (h.mem_support_of_ramified v Q hQ)
+
+/-- **Primes prime to an admissible modulus are unramified.** For an abelian extension `L/K` and a
+modulus `𝔪` admissible for `L/K`, every prime of `L` above a prime ideal of `K` prime to `𝔪` is
+unramified over `K`. -/
+theorem isUnramifiedAt_of_integralIdealsPrimeTo (h : IsAdmissibleModulus K L 𝔪)
+    (I : integralIdealsPrimeTo 𝔪) [(I : Ideal (𝓞 K)).IsMaximal]
+    (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver (I : Ideal (𝓞 K))] :
+    Algebra.IsUnramifiedAt (𝓞 K) Q := by
+  obtain ⟨hI, hS⟩ := Modulus.isCoprimeTo_iff.mp (Modulus.mem_integralIdealsPrimeTo.mp I.2)
+  let v : HeightOneSpectrum (𝓞 K) := ⟨I, inferInstance, hI⟩
+  have : Q.LiesOver v.asIdeal := ‹Q.LiesOver (I : Ideal (𝓞 K))›
+  exact h.isUnramifiedAway v (fun hv ↦ hS v hv dvd_rfl) Q
 
 /-- **The ramified support lies in the support of every admissible modulus.** For an abelian
 extension `L/K`, every prime of `K` dividing the relative discriminant of `L/K` divides every

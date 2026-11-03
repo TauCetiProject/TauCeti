@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
+public import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import TauCeti.Analysis.Calculus.ParametricFDeriv
 
 /-!
@@ -18,7 +19,8 @@ jointly smooth on `𝕜 × M`. This file proves the two facts needed to differen
 built from `F` and its manifold differentials in the parameter:
 
 * the parameter derivative `y ↦ ∂ᵣ F (t, y)` at a fixed parameter `t` loses one derivative of
-  joint regularity;
+  joint regularity, and so does the field of velocities of the curves of a two-parameter family
+  of points of `M`;
 * for a jointly `C²` family, the parameter derivative and the manifold differential commute:
   `∂ₜ (d (F t) x v) = d (∂ₜ F t) x v`.
 
@@ -30,13 +32,16 @@ boundary points.
 
 * `TauCeti.Manifold.contMDiffAt_deriv_of_contMDiffAt_uncurry`: the parameter derivative of a
   jointly `C^n` family is `C^m` for `m + 1 ≤ n`.
+* `ContMDiffAt.contMDiffAt_curveVelocity_snd`: for a jointly `C^n` map `f : 𝕜 → 𝕜 → M`, the
+  velocities of the curves `f q`, as a map of both parameters to the tangent bundle, are `C^m`
+  for `m + 1 ≤ n`.
 * `TauCeti.Manifold.hasDerivAt_mvfderiv_apply`: the parameter derivative of the differential of a
   jointly `C²` family is the differential of its parameter derivative.
 -/
 
 public section
 
-open Function Set
+open Bundle Function Set
 open scoped ContDiff Manifold Topology
 
 namespace TauCeti.Manifold
@@ -80,6 +85,30 @@ theorem contMDiffAt_deriv_of_contMDiffAt_uncurry
   erw [inTangentCoordinates_model_space]
   rw [mfderiv_eq_fderiv, ← fderiv_apply_one_eq_deriv]
   rfl
+
+/-- **Regularity of the velocity field of a two-parameter family.** If `f : 𝕜 → 𝕜 → M` is jointly
+`C^n` at `(u, v)`, then the velocities of its curves `f q`, as a map of both parameters to the
+tangent bundle, are `C^m` at `(u, v)` for every `m` with `m + 1 ≤ n`. -/
+theorem _root_.ContMDiffAt.contMDiffAt_curveVelocity_snd {f : 𝕜 → 𝕜 → M} {u v : 𝕜}
+    (hf : ContMDiffAt 𝓘(𝕜, 𝕜 × 𝕜) I n (fun z : 𝕜 × 𝕜 ↦ f z.1 z.2) (u, v)) (hmn : m + 1 ≤ n) :
+    ContMDiffAt 𝓘(𝕜, 𝕜 × 𝕜) I.tangent m
+      (fun z : 𝕜 × 𝕜 ↦ TotalSpace.mk' E (f z.1 z.2) (curveVelocity I (f z.1) z.2)) (u, v) := by
+  let ι : 𝕜 × 𝕜 → TangentBundle 𝓘(𝕜, 𝕜 × 𝕜) (𝕜 × 𝕜) := fun z ↦ TotalSpace.mk' (𝕜 × 𝕜) z (0, 1)
+  have hι : ContMDiff 𝓘(𝕜, 𝕜 × 𝕜) 𝓘(𝕜, 𝕜 × 𝕜).tangent m ι := by
+    intro z
+    rw [contMDiffAt_totalSpace]
+    refine ⟨contMDiffAt_id, ?_⟩
+    refine (contMDiffAt_const (c := ((0 : 𝕜), (1 : 𝕜)))).congr_of_eventuallyEq ?_
+    filter_upwards with r
+    rw [trivializationAt_model_space_apply]
+  have htangent := (hf.contMDiffAt_tangentMap (X := ι (u, v)) hmn).comp (u, v) (hι (u, v))
+  have hone : (1 : WithTop ℕ∞) ≤ n := le_trans le_add_self hmn
+  have hnear : ∀ᶠ z in 𝓝 (u, v), MDifferentiableAt 𝓘(𝕜, 𝕜 × 𝕜) I (fun z : 𝕜 × 𝕜 ↦ f z.1 z.2) z :=
+    ((contMDiffAt_iff_contMDiffAt_nhds (by simp)).mp (hf.of_le hone)).mono fun z hz ↦
+      hz.mdifferentiableAt one_ne_zero
+  refine htangent.congr_of_eventuallyEq ?_
+  filter_upwards [hnear] with z hz
+  simp only [Function.comp_apply, ι, tangentMap, curveVelocity_eq_mfderiv_snd hz]
 
 /-- **Mixed derivatives on a manifold.** If a family `F : 𝕜 → M → F'` is jointly `C²` at `(t, x)`
 (analytic, over a field other than `ℝ` or `ℂ`), then the parameter derivative at `t` of the

@@ -49,7 +49,8 @@ self-adjoint for the Hermitian form making the basis orthonormal.
 * `LinearMap.rank_toMatrix`: the rank of the matrix of a linear map is the dimension of its range.
 * `Matrix.natCard_range_mulVec_eq_pow_rank`: the column space of a matrix over a field `K` has
   `|K| ^ rank` elements.
-* `Matrix.rank_conjAct_smul`: conjugation by an invertible matrix preserves the rank.
+* `Matrix.rank_conjAct_smul` and `Matrix.rank_neg`: conjugation by an invertible matrix and
+  negation preserve the rank.
 * `Matrix.exists_eq_mul_fin_rank`: a rectangular matrix factors through `Fin A.rank`.
 * `Matrix.exists_eq_mul_of_rank_le` and `Matrix.rank_le_iff_exists_eq_mul`: a matrix has rank at
   most `r` exactly when it factors through `Fin r`.
@@ -245,6 +246,12 @@ theorem rank_conjAct_smul {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R]
     (g : ConjAct (GL n R)) (A : Matrix n n R) : (g • A).rank = A.rank := by
   rw [ConjAct.units_smul_def, rank_mul_eq_left_of_isUnit_det _ _ (isUnits_det_units _),
     rank_mul_eq_right_of_isUnit_det _ _ (isUnits_det_units _)]
+
+/-- Negation preserves the rank. -/
+@[simp]
+theorem rank_neg {m n R : Type*} [Fintype n] [CommRing R] (A : Matrix m n R) :
+    (-A).rank = A.rank := by
+  simpa using rank_smul_of_mem_nonZeroDivisors A (isUnit_one (M := R)).neg.mem_nonZeroDivisors
 
 end Conjugation
 

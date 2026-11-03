@@ -113,7 +113,7 @@ theorem isAdjointPair_heckeTCuspNat (hn : n.Coprime N) :
         heckeTCuspNat (N := N) k n) := by
   intro f g
   simp only [LinearMap.flip_apply, TauCeti.CuspForm.peterssonInnerCosetsₛₗ_apply_apply,
-    Module.End.mul_apply]
+    mul_apply_eq_comp]
   exact peterssonInnerCosets_heckeTCuspNat_right k hn g f
 
 /-! ### Normality -/
@@ -128,7 +128,7 @@ theorem commute_peterssonAdjoint_heckeTCuspNat (hn : n.Coprime N) :
     Commute (diamondOpCusp (N := N) k (ZMod.unitOfCoprime n hn)⁻¹ *
         heckeTCuspNat (N := N) k n)
       (heckeTCuspNat (N := N) k n) :=
-  (commute_heckeTCuspNat_diamondOpCusp k hn (ZMod.unitOfCoprime n hn)⁻¹).symm.mul_left
+  (commute_heckeTCuspNat_diamondOpCusp k n (ZMod.unitOfCoprime n hn)⁻¹).symm.mul_left
     (Commute.refl (heckeTCuspNat (N := N) k n))
 
 /-! ### Normality on a fixed nebentypus space -/

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.FGModuleCat.Abelian
+public import Mathlib.CategoryTheory.Preadditive.Opposite
 public import Mathlib.RingTheory.Finiteness.Small
 public import Mathlib.RepresentationTheory.Character
 public import Mathlib.RepresentationTheory.Rep.Res
@@ -88,6 +89,7 @@ of `Representation.Equiv` apply to isomorphic objects.
   it takes a tensor product to the tensor product of the forgotten objects, on the nose.
 * `FDRep.hom_hom_hom_comm`: a morphism intertwines the actions, read on the underlying linear
   maps.
+* `FDRep.op_smul_apply`: the opposite-endomorphism action is precomposition on underlying vectors.
 * `FDRep.tensorUnit_ρ` and `FDRep.tensor_ρ`: the actions on the tensor unit and on a tensor
   product, read on the underlying linear maps.
 * `FDRep.of_ρ_eq_self`: rebundling the representation carried by an object returns that object.
@@ -112,7 +114,7 @@ theorem char_trivial {k : Type u} {G : Type v} {V : Type w} [Field k] [Monoid G]
     [Module k V] [FiniteDimensional k V] (g : G) :
     (trivial k G V).character g = Module.finrank k V := by
   have hone : trivial k G V g = 1 :=
-    LinearMap.ext fun v => by rw [trivial_apply, Module.End.one_apply]
+    LinearMap.ext fun v => by rw [trivial_apply, _root_.one_apply_eq_self]
   rw [character, hone, LinearMap.trace_one]
 
 /-- **The character is additive on products of representations.** This is the unbundled counterpart
@@ -185,6 +187,23 @@ theorem _root_.MonoidHom.forget₂_map_actionRes {k : Type u} [Ring k]
       (Rep.resFunctor f).map ((forget₂ (FDRep k K) (Rep k K)).map g) :=
   rfl
 
+/-- The inverse of the forgetful Hom equivalence is the forgetful functor on morphisms. -/
+@[simp]
+theorem forget₂HomLinearEquiv_symm_apply {R : Type u} {G : Type v} [CommRing R] [Monoid G]
+    (X Y : FDRep R G) (f : X ⟶ Y) :
+    (forget₂HomLinearEquiv X Y).symm f =
+      (forget₂ (FDRep R G) (Rep R G)).map f :=
+  (rfl)
+
+/-- Forgetting after applying the Hom equivalence recovers the original intertwiner. -/
+@[simp]
+theorem forget₂_map_forget₂HomLinearEquiv {R : Type u} {G : Type v}
+    [CommRing R] [Monoid G] (X Y : FDRep R G)
+    (f : (forget₂ (FDRep R G) (Rep R G)).obj X ⟶
+      (forget₂ (FDRep R G) (Rep R G)).obj Y) :
+    (forget₂ (FDRep R G) (Rep R G)).map (forget₂HomLinearEquiv X Y f) = f :=
+  (forget₂HomLinearEquiv X Y).symm_apply_apply f
+
 /-- Forgetting finite generation keeps the finite-generation instance on the carrier. -/
 instance moduleFinite_forget₂_obj {R : Type u} {G : Type v} [Ring R] [Monoid G]
     (A : FDRep R G) : Module.Finite R ((forget₂ (FDRep R G) (Rep R G)).obj A) :=
@@ -237,7 +256,7 @@ instance forget₂_additive {R : Type u} {G : Type v} [Ring R] [Monoid G] :
 
 /-- Forgetting finite generation preserves scalar multiplication of intertwiners. -/
 instance forget₂_linear {R : Type u} {G : Type v} [CommRing R] [Monoid G] :
-    Functor.Linear R (forget₂ (FDRep R G) (Rep R G)) where
+    CategoryTheory.Functor.Linear R (forget₂ (FDRep R G) (Rep R G)) where
   -- As for additivity, the forgetful functor keeps the underlying linear map.
   map_smul := by intros; rfl
 
@@ -260,6 +279,14 @@ and of `ModuleCat R`, stripped away. -/
 theorem hom_hom_hom_comm {R : Type u} {G : Type v} [CommRing R] [Monoid G] {X Y : FDRep R G}
     (φ : X ⟶ Y) (g : G) : φ.hom.hom.hom ∘ₗ X.ρ g = Y.ρ g ∘ₗ φ.hom.hom.hom := by
   simpa using congrArg (fun t : X.V ⟶ Y.V => t.hom.hom) (φ.comm g)
+
+/-- The native opposite-endomorphism action is precomposition on underlying vectors. -/
+-- Evaluate the scalar action before unfolding the opposite-representation wrapper.
+@[simp↓]
+theorem op_smul_apply {R : Type u} {G : Type v} [CommRing R] [Monoid G] (A : FDRep R G)
+    {B : FDRep R G} (d : End A) (f : A ⟶ B) (x : A) :
+    (MulOpposite.op d • f).hom.hom.hom x = f.hom.hom.hom (d.asHom.hom.hom.hom x) := by
+  simp [End.smul_left]
 
 open MonoidalCategory in
 /-- **The tensor unit of `FDRep R G` carries the trivial action**, read on the underlying linear
@@ -455,6 +482,33 @@ noncomputable def isoToEquiv {V W : FDRep R G} (i : V ≅ W) : Representation.Eq
 @[simp]
 theorem toLinearEquiv_isoToEquiv {V W : FDRep R G} (i : V ≅ W) :
     (isoToEquiv i).toLinearEquiv = isoToLinearEquiv i :=
+  (rfl)
+
+/-- The linear equivalence underlying the identity isomorphism is the identity. -/
+@[simp]
+theorem isoToLinearEquiv_refl (V : FDRep R G) :
+    isoToLinearEquiv (Iso.refl V) = LinearEquiv.refl R V :=
+  (rfl)
+
+/-- The linear equivalence underlying the inverse isomorphism is the inverse linear
+equivalence. -/
+@[simp]
+theorem isoToLinearEquiv_symm {V W : FDRep R G} (i : V ≅ W) :
+    isoToLinearEquiv i.symm = (isoToLinearEquiv i).symm :=
+  (rfl)
+
+/-- The linear equivalence underlying a composite isomorphism is the composite of the
+underlying linear equivalences. -/
+@[simp]
+theorem isoToLinearEquiv_trans {V W X : FDRep R G} (i : V ≅ W) (j : W ≅ X) :
+    isoToLinearEquiv (i ≪≫ j) = (isoToLinearEquiv i).trans (isoToLinearEquiv j) :=
+  (rfl)
+
+/-- Conjugating an endomorphism by an isomorphism of representations conjugates its underlying
+linear map by `FDRep.isoToLinearEquiv`. -/
+theorem Iso.conj_apply_asHom_apply {V W : FDRep R G} (i : V ≅ W) (f : End V) (w : W) :
+    (i.conj f).asHom.hom.hom.hom w =
+      isoToLinearEquiv i (f.asHom.hom.hom.hom ((isoToLinearEquiv i).symm w)) :=
   (rfl)
 
 end IsoToEquiv

@@ -19,8 +19,8 @@ number of standard Young tableaux. This file proves the **multiplicative hook-le
 
 `f^μ * ∏ c ∈ μ.cells, hookLength μ c = n !`
 
-(`TauCeti.standardCount_mul_prod_hookLength`), the milestone of Layer 5 of the Schur--Weyl
-roadmap. It carries no division obligation. The familiar quotient form `f^μ = n ! / ∏ hooks` is
+(`TauCeti.standardCount_mul_prod_hookLength`). It carries no division obligation. The familiar
+quotient form `f^μ = n ! / ∏ hooks` is
 derived from it at the end of the file, over `ℕ` in
 `TauCeti.standardCount_eq_factorial_div_prod_hookLength` and over a semifield of characteristic
 zero in `TauCeti.cast_standardCount_eq_factorial_div_prod_hookLength`; the `ℕ`-division is exact
@@ -77,8 +77,6 @@ lengths sum to `n` and the shifts `r - 1 - i` are a reflection of `0, 1, …, r 
 * [I. G. Macdonald, *Symmetric Functions and Hall Polynomials*][macdonald1995], Chapter I, Section
   1, Example 1, and Section 7, Example 6, for the beta-number route to the hook-length formula.
 * [B. E. Sagan, *The Symmetric Group*][sagan2001], Section 3.10.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 5, whose `hookLengthFormula` milestone this closes.
 -/
 
 public section

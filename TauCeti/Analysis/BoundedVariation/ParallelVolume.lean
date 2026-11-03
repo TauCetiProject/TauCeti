@@ -12,7 +12,11 @@ public import TauCeti.Analysis.BoundedVariation.Perimeter
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Metric
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.Analysis.BoundedVariation.Coarea
+import TauCeti.Analysis.BoundedVariation.Convex
+import TauCeti.Analysis.BoundedVariation.Dilation
+import TauCeti.Analysis.BoundedVariation.Translation
 import TauCeti.Analysis.Calculus.FDeriv.InfDist
 import TauCeti.Analysis.Normed.Module.Ball
 import TauCeti.Topology.MetricSpace.Thickening
@@ -41,6 +45,13 @@ parallel sets has right derivative `P(K)` at `t = 0`
 compact set. Some hypothesis of this kind is needed: a segment in the plane has perimeter zero,
 while its parallel perimeters tend to twice its length.
 
+Compact convex sets with nonempty interior satisfy this hypothesis, so their parallel volume has
+right derivative `P(K)` at `t = 0` (`Convex.hasDerivWithinAt_measureReal_add_smul_closedBall`).
+If the closed ball of radius `ρ` about `x₀` lies in `K`, then convexity puts
+`K + t • closedBall 0 1` inside the image of `K` under the homothety with centre `x₀` and ratio
+`1 + t / ρ`. Perimeter is monotone under inclusion of convex sets
+(`Convex.perimeter_le_of_subset`) and scales by `(1 + t / ρ)^(n - 1)` under this homothety.
+
 The shell formula is the coarea formula
 `LocallyLipschitzOn.lintegral_perimeter_eq_setLIntegral_enorm_fderiv` for the truncated distance
 `x ↦ min (infDist x s) r`. Its superlevel sets at levels `0 ≤ t < r` are the complements of the
@@ -57,6 +68,8 @@ derivative statement is then the fundamental theorem of calculus at a point of c
 * `IsCompact.hasDerivWithinAt_measureReal_add_smul_closedBall`: the right derivative at zero of
   the parallel volume of a compact set is its perimeter, when the parallel perimeters are upper
   semicontinuous at zero.
+* `Convex.hasDerivWithinAt_measureReal_add_smul_closedBall`: the right derivative at zero of the
+  parallel volume of a compact convex set with nonempty interior is its perimeter.
 
 ## References
 
@@ -293,5 +306,73 @@ theorem _root_.IsCompact.hasDerivWithinAt_measureReal_add_smul_closedBall {K : S
     exact measureReal_cthickening_eq_add_integral_perimeter hK ht
   exact (hderiv.congr (fun t ht => hvol ht) (hvol self_mem_Ici)).congr_deriv
     (congrArg ENNReal.toReal hf0)
+
+/-- If a convex set `K` contains the closed ball of radius `ρ > 0` about `x₀`, then for `t ≥ 0`
+the parallel set `K + t • closedBall 0 1` lies in the image of `K` under the homothety with centre
+`x₀` and ratio `(ρ + t) / ρ`, so its perimeter is at most `(ρ + t) / ρ` to the power `n - 1` times
+that of `K`. The factor is written as `a / a ^ n` for the inverse ratio `a = ρ / (ρ + t)`. -/
+private theorem _root_.Convex.perimeter_add_smul_closedBall_le {K : Set E} (hKc : Convex ℝ K)
+    (hK : IsCompact K) {x₀ : E} {ρ t : ℝ} (hρ : 0 < ρ) (hρK : closedBall x₀ ρ ⊆ K) (ht : 0 ≤ t) :
+    perimeter μ ⊤ (K + t • closedBall (0 : E) 1) ≤
+      ENNReal.ofReal (ρ / (ρ + t) / (ρ / (ρ + t)) ^ Module.finrank ℝ E) * perimeter μ ⊤ K := by
+  set a := ρ / (ρ + t)
+  have ha : 0 < a := div_pos hρ (by positivity)
+  -- `L` is the preimage of `K` under the inverse homothety `y ↦ a • (y - x₀) + x₀`.
+  set L : Set E := (· + -x₀) ⁻¹' ((a • ·) ⁻¹' ((· + x₀) ⁻¹' K))
+  have hsub : K + t • closedBall (0 : E) 1 ⊆ L := by
+    rintro _ ⟨k, hk, _, ⟨b, hb, rfl⟩, rfl⟩
+    have hxb : x₀ + ρ • b ∈ K := hρK <| by
+      rw [mem_closedBall_zero_iff] at hb
+      rw [mem_closedBall, dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_of_nonneg hρ.le]
+      exact mul_le_of_le_one_right hρ.le hb
+    have ha1 : a ≤ 1 := (div_le_one (by positivity)).2 (by linarith)
+    have hrel : (1 - a) * ρ = a * t := by simp only [a]; field_simp; ring
+    -- The image of `k + t • b` is the convex combination `a • k + (1 - a) • (x₀ + ρ • b)`.
+    have hmem := hKc hk hxb ha.le (sub_nonneg.2 ha1) (add_sub_cancel _ _)
+    simp only [L, mem_preimage]
+    convert hmem using 1
+    linear_combination (norm := module) hrel.symm • b
+  have hLc : IsClosed L :=
+    ((hK.isClosed.preimage (by fun_prop : Continuous (· + x₀))).preimage
+      (by fun_prop : Continuous (a • ·))).preimage (by fun_prop : Continuous (· + -x₀))
+  have hLμ : μ L ≠ ∞ := by
+    rw [measure_preimage_add_right, Measure.addHaar_preimage_smul μ ha.ne',
+      measure_preimage_add_right]
+    exact ENNReal.mul_ne_top ENNReal.ofReal_ne_top hK.measure_lt_top.ne
+  have htop {f : E → E} : MapsTo f (⊤ : Opens E) (⊤ : Opens E) := fun _ _ => Opens.mem_top _
+  calc perimeter μ ⊤ (K + t • closedBall (0 : E) 1) ≤ perimeter μ ⊤ L :=
+        (hKc.add ((convex_closedBall 0 1).smul t)).perimeter_le_of_subset hsub
+          hLc.measurableSet.nullMeasurableSet hLμ
+    _ = _ := by
+        rw [perimeter_preimage_add_right htop htop, perimeter_preimage_smul ha htop htop,
+          perimeter_preimage_add_right htop htop]
+
+/-- **The first variation of the parallel volume of a convex body is its perimeter.** Against an
+additive Haar measure, a compact convex set `K` with nonempty interior has outer parallel volume
+`t ↦ μ (K + t • closedBall 0 1)` with right derivative `P(K)` at `t = 0`. The interior hypothesis
+cannot be dropped: a segment in the plane has perimeter zero, while the right derivative of its
+parallel area is twice its length. -/
+theorem _root_.Convex.hasDerivWithinAt_measureReal_add_smul_closedBall {K : Set E}
+    (hKc : Convex ℝ K) (hK : IsCompact K) (hKi : (interior K).Nonempty) :
+    HasDerivWithinAt (fun t : ℝ => μ.real (K + t • closedBall (0 : E) 1))
+      (perimeter μ ⊤ K).toReal (Ici 0) 0 := by
+  obtain ⟨x₀, hx₀⟩ := hKi
+  obtain ⟨ρ, hρ, hρK⟩ := nhds_basis_closedBall.mem_iff.1 (mem_interior_iff_mem_nhds.1 hx₀)
+  have hP : perimeter μ ⊤ K ≠ ∞ := (hKc.perimeter_lt_top hK.isBounded).ne
+  refine hK.hasDerivWithinAt_measureReal_add_smul_closedBall hP ?_
+  -- The homothety factor bounding the parallel perimeters tends to `1` as `t → 0⁺`.
+  set c : ℝ → ℝ := fun t => ρ / (ρ + t) / (ρ / (ρ + t)) ^ Module.finrank ℝ E
+  have hc : Tendsto (fun t => ENNReal.ofReal (c t)) (𝓝[>] 0) (𝓝 1) := by
+    have hcont : ContinuousAt c 0 := by
+      simp only [c]
+      fun_prop (disch := simp [hρ.ne'])
+    simpa [c, hρ.ne'] using
+      (ENNReal.tendsto_ofReal hcont.tendsto).mono_left (nhdsWithin_le_nhds (s := Ioi 0))
+  have hle : ∀ᶠ t in 𝓝[>] (0 : ℝ),
+      perimeter μ ⊤ (K + t • closedBall (0 : E) 1) ≤ ENNReal.ofReal (c t) * perimeter μ ⊤ K := by
+    filter_upwards [self_mem_nhdsWithin] with t ht
+    exact hKc.perimeter_add_smul_closedBall_le hK hρ hρK ht.le
+  exact (limsup_le_limsup hle).trans
+    (by simpa using (ENNReal.Tendsto.mul_const hc (Or.inr hP)).limsup_eq.le)
 
 end TauCeti

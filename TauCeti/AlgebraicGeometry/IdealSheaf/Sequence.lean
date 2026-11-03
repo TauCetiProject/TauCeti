@@ -8,7 +8,8 @@ module
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Module
 public import TauCeti.AlgebraicGeometry.Modules.Sheaf
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Kernels
-public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.Affine
+public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.QuasiSeparated
+public import Mathlib.AlgebraicGeometry.Morphisms.Separated
 public import TauCeti.AlgebraicGeometry.Modules.TensorProduct
 public import Mathlib.Algebra.Homology.ShortComplex.ShortExact
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.PullbackFree
@@ -118,7 +119,7 @@ instance isQuasicoherent_sheaf : I.sheaf.IsQuasicoherent := by
   -- Mathlib's `SheafOfModules.pushforward` to it.
   have : ((Scheme.Modules.pushforward I.subschemeι).obj
       (SheafOfModules.unit I.subscheme.ringCatSheaf)).IsQuasicoherent :=
-    TauCeti.AlgebraicGeometry.isQuasicoherent_pushforward_of_isAffineHom I.subschemeι _
+    Scheme.Modules.isQuasicoherent_pushforward _ I.subschemeι
   exact (SheafOfModules.isQuasicoherent X.ringCatSheaf).prop_of_iso
     (IsLimit.conePointUniqueUpToIso (kernelIsKernel _) I.isLimitKernelForkSheafι)
     (Scheme.Modules.isQuasicoherent_kernel (N := (Scheme.Modules.pushforward I.subschemeι).obj

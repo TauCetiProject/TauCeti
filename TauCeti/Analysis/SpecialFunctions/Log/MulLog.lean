@@ -20,6 +20,8 @@ up a small amount of its value is bounded by that same tangent line.
 
 * `Real.mul_log_sub_mul_log_ge`: for `0 < a` and `0 ≤ u`,
   `u * log u - a * log a ≥ (u - a) * (log a + 1)`.
+* `Real.sub_le_mul_log_sub_mul_log`: for `0 ≤ a, b` with `a = 0` whenever `b = 0`,
+  `a - b ≤ a * log a - a * log b`, the scalar form of Klein's inequality.
 * `Real.sub_mul_log_le`: for `0 ≤ t` and `t ≤ x / 2`,
   `(x - t) * log (x - t) - x * log x ≤ -t * (log x - log 2 + 1)`.
 * `TauCeti.sq_sqrt_sub_sqrt_le_mul_log_sub_mul_log_sub`: for `0 < a` and `0 ≤ u`, the gap
@@ -68,6 +70,15 @@ theorem mul_log_sub_mul_log_ge (a u : ℝ) (ha : 0 < a) (hu : 0 ≤ u) :
   · subst hu0
     simp only [Real.log_zero, zero_mul]
     linarith
+
+/-- The scalar form of Klein's inequality: `a - b ≤ a * log a - a * log b` for `0 ≤ a, b`,
+provided `a = 0` whenever `b = 0`. For `0 < b` it is the supporting line
+`Real.mul_log_sub_mul_log_ge` at `b`; the proviso excludes `b = 0 < a`, where it fails. -/
+theorem sub_le_mul_log_sub_mul_log {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) (hab : b = 0 → a = 0) :
+    a - b ≤ a * Real.log a - a * Real.log b := by
+  rcases hb.eq_or_lt with rfl | hb
+  · simp [hab rfl]
+  nlinarith [mul_log_sub_mul_log_ge b a hb ha]
 
 /-- The loss of the function `u ↦ u * log u` at a value `x` that gives up an amount `t`, where
 `0 ≤ t` and `t ≤ x / 2`, is at most `-t * (log x - log 2 + 1)`: the supporting line

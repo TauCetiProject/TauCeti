@@ -10,6 +10,8 @@ public import Mathlib.NumberTheory.LSeries.Basic
 public import TauCeti.Analysis.SpecialFunctions.Log.NatCastAdd
 public import TauCeti.NumberTheory.LSeries.BoundaryConvergence.StepCorrection
 public import TauCeti.NumberTheory.LSeries.Newman.Tauberian
+import Mathlib.NumberTheory.LSeries.Deriv
+import TauCeti.Analysis.Complex.ClosedHalfPlane
 
 /-!
 # Ordered boundary convergence of bounded Dirichlet series at `s = 1`
@@ -38,6 +40,10 @@ function `t ↦ a ⌊exp t⌋₊`, which is bounded by `M` on `[0, ∞)`:
 At `z = 0` the truncated transform at `log (N + 1)` is
 `∑ n ≤ N, (a n / n + stepCorrectionTerm a n 0)`; subtracting the absolutely convergent step
 correction gives the theorem.
+
+Where the Dirichlet series converges absolutely it is holomorphic, so the continuation hypothesis
+only concerns the boundary line: `boundedDirichlet_tendsto_ordered_at_one_of_analyticAt` asks
+instead that `F` be analytic at each point of `re s = 1`.
 
 ## References
 
@@ -171,5 +177,28 @@ theorem boundedDirichlet_tendsto_ordered_at_one (hbound : ∀ n, 1 ≤ n → ‖
   refine Finset.sum_congr rfl fun n hn ↦ ?_
   rw [LSeries.term_of_ne_zero (Nat.one_le_iff_ne_zero.mp (Finset.mem_Icc.mp hn).1),
     Complex.cpow_one]
+
+/-- **Bounded Dirichlet series converge in order at `s = 1`, with a pointwise continuation
+hypothesis.** Let `a : ℕ → ℂ` be bounded from `n = 1` on, and let `F` satisfy
+`LSeriesHasSum a s (F s)` for `1 < re s` and be analytic at every point of the line `re s = 1`.
+Then the ordered partial sums `∑ n ∈ Finset.Icc 1 N, a n / n` converge to `F 1`.
+
+Since `F` is holomorphic on `1 < re s`, where it is the sum of the Dirichlet series, this hypothesis
+on `F` is equivalent to holomorphy on an open set containing the closed half-plane `1 ≤ re s`, as
+in `boundedDirichlet_tendsto_ordered_at_one`. -/
+theorem boundedDirichlet_tendsto_ordered_at_one_of_analyticAt (hbound : ∀ n, 1 ≤ n → ‖a n‖ ≤ M)
+    {F : ℂ → ℂ} (hF : ∀ s : ℂ, s.re = 1 → AnalyticAt ℂ F s)
+    (hseries : ∀ s : ℂ, 1 < s.re → LSeriesHasSum a s (F s)) :
+    Tendsto (fun N : ℕ ↦ ∑ n ∈ Finset.Icc 1 N, a n / (n : ℂ)) atTop (𝓝 (F 1)) := by
+  -- `F` is holomorphic on `1 < re s`, where it agrees with `LSeries a`.
+  have habs : LSeries.abscissaOfAbsConv a ≤ (1 : ℝ) :=
+    LSeries.abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable fun y hy ↦
+      (hseries y (by simpa using hy)).LSeriesSummable
+  have hF' : DifferentiableOn ℂ F {s | (1 : ℝ) < s.re} :=
+    ((LSeries_differentiableOn a).mono (s := {s | (1 : ℝ) < s.re}) fun _ hs ↦
+      habs.trans_lt (EReal.coe_lt_coe_iff.mpr hs)).congr fun s hs ↦ (hseries s hs).LSeries_eq.symm
+  obtain ⟨Ω, hΩ, hcover, hFΩ⟩ :=
+    (TauCeti.exists_isOpen_differentiableOn_iff_analyticAt hF').mpr hF
+  exact boundedDirichlet_tendsto_ordered_at_one hbound hΩ hcover hFΩ hseries
 
 end TauCeti.LSeries

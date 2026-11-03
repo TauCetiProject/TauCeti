@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.TensorProduct.Free
 public import TauCeti.RingTheory.Invariant.EquivalenceRelation.Basic
+public import TauCeti.RingTheory.TensorProduct.Free
 
 /-!
 # Equivalence relations with a basis coming from the base
@@ -161,24 +161,21 @@ theorem coe_basis_repr_apply (x : A) (i : ι) : ((h.basis b hb).repr x i : A) = 
 form a basis of `B` over `A`, then `x ⊗ y ↦ s x * t y` is an isomorphism of `A`-algebras
 `A ⊗[C] A ≃ₐ[A] B`, where `C = {a : s a = t a}` is the ring of invariants. -/
 noncomputable def tensorProductEquiv : A ⊗[(algebraMap A B).eqLocus t] A ≃ₐ[A] B :=
-  let f := Algebra.TensorProduct.lift (Algebra.ofId A B)
-    (AlgHom.mk t fun c ↦ by
-      simpa [IsScalarTower.algebraMap_apply _ A B, Algebra.algebraMap_ofSubsemiring_apply] using
-        (mem_eqLocus.mp c.2).symm) fun _ _ ↦ .all _ _
-  .ofBijective f <| by
-    -- `f` carries the basis `1 ⊗ aᵢ` of `A ⊗[C] A` over `A` to the basis `t aᵢ` of `B`
-    let bA := Algebra.TensorProduct.basis A (h.basis b hb)
-    have hf : f.toLinearMap = (bA.equiv b (Equiv.refl ι)).toLinearMap :=
-      bA.ext fun i ↦ by
-        rw [LinearEquiv.coe_coe, Module.Basis.equiv_apply]
-        simp [bA, f, hb]
-    rw [← AlgHom.coe_toLinearMap, hf]
-    exact (bA.equiv b (Equiv.refl ι)).bijective
+  -- `tensorProductMap t` carries the basis `1 ⊗ aᵢ` of `A ⊗[C] A` over `A` to the basis `t aᵢ` of
+  -- `B`
+  .ofBijective (tensorProductMap t) <| tensorProductMap_def t ▸
+    lift_bijective_of_basis _ (h.basis b hb) b (by simp [hb])
+
+/-- The isomorphism `RingHom.IsSpecEquivRel.tensorProductEquiv` is
+`RingHom.IsSpecEquivRel.tensorProductMap`. -/
+theorem coe_tensorProductEquiv : ⇑(h.tensorProductEquiv b hb) = tensorProductMap t := by
+  rw [tensorProductEquiv]
+  exact AlgEquiv.coe_ofBijective _ _
 
 /-- The isomorphism `A ⊗[C] A ≃ₐ[A] B` sends `x ⊗ y` to `s x * t y`. -/
 @[simp]
 theorem tensorProductEquiv_tmul (x y : A) :
     h.tensorProductEquiv b hb (x ⊗ₜ y) = algebraMap A B x * t y := by
-  simp [tensorProductEquiv]
+  simp [coe_tensorProductEquiv]
 
 end RingHom.IsSpecEquivRel

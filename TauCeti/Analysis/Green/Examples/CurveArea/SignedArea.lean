@@ -13,7 +13,8 @@ public import TauCeti.Analysis.Green.Examples.CurveArea.Basic
 For a plane curve `γ = x + i y : ℝ → ℂ` on `[a, b]`, its **signed area** is the boundary integral
 `½ ∫ₐᵇ (x y' - y x')` (`TauCeti.signedArea`), the circulation of the area form
 `(x dy - y dx) / 2` along `γ` (`TauCeti.signedArea_eq_integral_circulationFun`). For a circle
-traversed once counterclockwise it is the area of the disc (`TauCeti.signedArea_circleMap_zero`).
+traversed once counterclockwise, from any initial angle, it is the area of the disc
+(`TauCeti.signedArea_circleMap`).
 
 The area–energy inequality bounding the signed area of a closed curve by its energy is in
 `TauCeti.Analysis.Fourier.AreaEnergy`.
@@ -78,11 +79,28 @@ theorem signedArea_eq_integral_circulationFun (γ : ℝ → ℂ) (a b : ℝ) :
   simp only [Green.circulationFun, Green.Examples.areaP_apply, Green.Examples.areaQ_apply]
   ring
 
-/-- A circle of radius `R` about the origin, traversed once counterclockwise, has signed area
-`π R²`. -/
+/-- A circle of radius `R`, traversed once counterclockwise from any initial angle `θ`, has signed
+area `π R²`. -/
 @[simp]
-theorem signedArea_circleMap_zero (R : ℝ) : signedArea (circleMap 0 R) 0 (2 * π) = π * R ^ 2 := by
-  rw [signedArea_eq_integral_circulationFun,
-    Green.Examples.integral_circulationFun_area_circleMap]
+theorem signedArea_circleMap (c : ℂ) (R θ : ℝ) :
+    signedArea (circleMap c R) θ (θ + 2 * π) = π * R ^ 2 := by
+  rw [signedArea_eq_of_ae_hasDerivAt (γ' := fun t ↦ circleMap 0 R t * Complex.I)
+    (Filter.Eventually.of_forall fun t _ ↦ hasDerivAt_circleMap c R t)]
+  -- The integrand is `R² + R (c.re cos t + c.im sin t)`; the trigonometric part has zero
+  -- integral over a full period.
+  have h (t : ℝ) : (circleMap c R t).re * (circleMap 0 R t * Complex.I).im -
+      (circleMap c R t).im * (circleMap 0 R t * Complex.I).re =
+      R ^ 2 + R * c.re * Real.cos t + R * c.im * Real.sin t := by
+    simp [circleMap, Complex.exp_ofReal_mul_I_re, Complex.exp_ofReal_mul_I_im]
+    nlinarith [Real.sin_sq_add_cos_sq t]
+  simp_rw [h]
+  rw [intervalIntegral.integral_add (by apply Continuous.intervalIntegrable; fun_prop)
+      (by apply Continuous.intervalIntegrable; fun_prop),
+    intervalIntegral.integral_add (by apply Continuous.intervalIntegrable; fun_prop)
+      (by apply Continuous.intervalIntegrable; fun_prop),
+    intervalIntegral.integral_const_mul, intervalIntegral.integral_const_mul, integral_cos,
+    integral_sin, Real.sin_add_two_pi, Real.cos_add_two_pi]
+  simp
+  ring
 
 end TauCeti

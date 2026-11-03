@@ -31,6 +31,8 @@ equal `F^p`.
   derivation is exactly `F^p`.
 * `TauCeti.IsFunctionField.isSeparable_adjoin_iff_notMem_fieldRange_frobenius`: `x` is separating
   exactly when it lies outside `F^p`.
+* `TauCeti.IsFunctionField.transcendental_and_isSeparable_adjoin_of_notMem_fieldRange_frobenius`:
+  an element outside `F^p` is transcendental and separating.
 * `TauCeti.IsFunctionField.exists_pow_eq_and_adjoin_eq_top_of_finrank_prime_of_not_isSeparable`:
   an inseparable subextension `F / k(x)` of prime degree has `x = y ^ p` with `F = k(y)`.
 * `TauCeti.IsFunctionField.transcendental_and_isSeparable_adjoin_of_not_dvd_ord`: the
@@ -205,6 +207,16 @@ theorem isSeparable_adjoin_iff_notMem_fieldRange_frobenius [PerfectField k]
     Algebra.IsSeparable k⟮x⟯ F ↔ x ∉ (frobenius F p).fieldRange := by
   rw [hF.isSeparable_adjoin_iff_D_ne_zero, ne_eq, hF.D_eq_zero_iff_mem_fieldRange_frobenius p x]
 
+/-- **An element outside `F^p` is separating** (Stichtenoth, Proposition 3.10.2(a)): in a
+one-variable function field over a perfect field of characteristic `p`, an element that is not a
+`p`-th power in `F` is transcendental over `k`, and `F / k(x)` is separable. -/
+theorem transcendental_and_isSeparable_adjoin_of_notMem_fieldRange_frobenius [PerfectField k]
+    (hF : TauCeti.IsFunctionField k F) (p : ℕ) [ExpChar F p] [Fact p.Prime] {x : F}
+    (hx : x ∉ (frobenius F p).fieldRange) :
+    Transcendental k x ∧ Algebra.IsSeparable k⟮x⟯ F := by
+  have hDx : D k F x ≠ 0 := fun h ↦ hx ((hF.D_eq_zero_iff_mem_fieldRange_frobenius p x).mp h)
+  exact ⟨transcendental_of_D_ne_zero hDx, hF.isSeparable_adjoin_iff_D_ne_zero.mpr hDx⟩
+
 /-- **An inseparable subextension of prime degree comes from a `p`-th root.** Over a perfect
 field of exponential characteristic `p`, if `x` is transcendental, `[F : k(x)]` is prime and
 `F / k(x)` is not separable, then `x = y ^ p` for an element `y` that generates `F` over `k`. So
@@ -249,9 +261,7 @@ theorem transcendental_and_isSeparable_adjoin_of_not_dvd_ord [PerfectField k]
       rw [← iterateFrobenius_one (R := F) p]
       apply v.not_mem_fieldRange_iterateFrobenius_of_not_natCast_pow_dvd_ord p 1
       simpa using hx
-    have hDx : D k F x ≠ 0 := fun h ↦
-      hnotmem ((hF.D_eq_zero_iff_mem_fieldRange_frobenius p x).mp h)
-    exact ⟨transcendental_of_D_ne_zero hDx, hF.isSeparable_adjoin_iff_D_ne_zero.mpr hDx⟩
+    exact hF.transcendental_and_isSeparable_adjoin_of_notMem_fieldRange_frobenius p hnotmem
 
 end IsFunctionField
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Homological.ContCohomology.Basic
+public import Mathlib.RepresentationTheory.Homological.ContCohomology.Functoriality
 public import TauCeti.Algebra.Category.ModuleCat.Topology.Homology
 
 /-!
@@ -58,6 +59,8 @@ it, and two such cocycles have the same class exactly when they differ by a homo
 * `TopRep.cochainClass_eq_cochainClass_iff`: two homogeneous cocycles of positive degree have the
   same class exactly when their difference is a coboundary, and `TopRep.cochainClass_eq_of_sub_eq_d`
   is the direction that compares two explicit representatives.
+* `TauCeti.ContinuousCohomology.map_cochainClass`: the map of a compatible pair on the class of a
+  homogeneous cocycle.
 -/
 
 public section
@@ -279,3 +282,28 @@ theorem cochainClass_eq_of_sub_eq_d {j : ℕ} (hj : j + 1 = n)
   (cochainClass_eq_cochainClass_iff hj ha hb).2 ⟨c, hc⟩
 
 end TopRep
+
+namespace TauCeti.ContinuousCohomology
+
+open CategoryTheory TopRep
+
+universe u v w
+
+variable {k : Type u} [Ring k] [TopologicalSpace k]
+  {G H : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [Group H] [TopologicalSpace H] [IsTopologicalGroup H] (φ : H →ₜ* G)
+  {X : TopRep.{max v w} k G} {Y : TopRep.{max v w} k H}
+
+/-- The map of a compatible pair carries the class of a homogeneous cocycle `a` to the class of
+its image under Mathlib's cochain map `ContinuousCohomology.cochainsMap φ f`. -/
+@[simp]
+theorem map_cochainClass (f : TopRep.res (φ : H →* G) X ⟶ Y) {n : ℕ}
+    (a : (homogeneousCochains X).X n) (ha : ((homogeneousCochains X).d n (n + 1)).hom a = 0) :
+    _root_.ContinuousCohomology.map φ f n (X.cochainClass n a ha) =
+      Y.cochainClass n (((_root_.ContinuousCohomology.cochainsMap φ f).f n).hom a) (by
+        rw [← ConcreteCategory.comp_apply, HomologicalComplex.Hom.comm,
+          ConcreteCategory.comp_apply, ha, map_zero]) := by
+  rw [cochainClass_def, cochainClass_def]
+  exact HomologicalComplex.homologyMap_homologyπ_cyclesMkOfEq _ _ _ _ _
+
+end TauCeti.ContinuousCohomology

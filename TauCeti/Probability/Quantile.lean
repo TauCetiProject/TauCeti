@@ -212,6 +212,18 @@ theorem quantile_of_one_lt (μ : Measure ℝ) (ht : 1 < t) : μ.quantile t = 0 :
     eq_empty_of_forall_notMem fun x hx ↦ absurd (hx.trans (cdf_le_one μ x)) (not_le.2 ht)
   rw [quantile_def, hset, Real.sInf_empty]
 
+/-- The zero measure has quantile zero at every level, including the endpoint levels. -/
+@[simp]
+theorem quantile_zero (t : ℝ) : (0 : Measure ℝ).quantile t = 0 := by
+  rcases le_or_gt t 0 with h0 | h0
+  · exact quantile_of_nonpos 0 h0
+  rcases le_or_gt t 1 with h1 | h1
+  · have hset : {x : ℝ | t ≤ cdf (0 : Measure ℝ) x} = Ici 0 := by
+      ext x
+      by_cases hx : 0 ≤ x <;> simp [cdf_zero, hx, h0, h1]
+    rw [quantile_def, hset, csInf_Ici]
+  · exact quantile_of_one_lt 0 h1
+
 /-- The cumulative distribution function at the quantile reaches every level strictly below
 `1`. -/
 theorem le_cdf_quantile (μ : Measure ℝ) (h1 : t < 1) : t ≤ cdf μ (μ.quantile t) := by
@@ -564,6 +576,20 @@ end Set.OrdConnected
 
 namespace MeasureTheory.Measure
 
+/-- For a law with continuous cdf, strictly increasing on an interval of full mass, the
+quantile is the unique point of that interval at the requested interior cdf level. -/
+theorem quantile_eq_iff_of_ae_mem_of_strictMonoOn (μ : Measure ℝ) [IsProbabilityMeasure μ]
+    {s : Set ℝ} {u x : ℝ} (hs : s.OrdConnected) (hμs : ∀ᵐ y ∂μ, y ∈ s)
+    (hμ : Continuous (cdf μ)) (hmono : StrictMonoOn (cdf μ) s) (hu : u ∈ Ioo 0 1) :
+    μ.quantile u = x ↔ x ∈ s ∧ cdf μ x = u := by
+  have hq := hs.quantile_mem hμs hu.1 hu.2
+  have hroot := cdf_quantile μ hμ hu.1 hu.2
+  constructor
+  · rintro rfl
+    exact ⟨hq, hroot⟩
+  · rintro ⟨hx, hxu⟩
+    exact hmono.injOn hq hx (hroot.trans hxu.symm)
+
 /-- For a law carried by `[c, ∞)` whose cdf is positive above `c`, quantiles tend to `c` as
 the level decreases to zero. An atom at `c` is allowed. -/
 theorem tendsto_quantile_nhdsGT_zero_of_ae_le_of_cdf_pos (μ : Measure ℝ)
@@ -896,7 +922,7 @@ private theorem ae_not_of_lt_of_cdf_eq {ν : Measure ℝ} [IsProbabilityMeasure 
       -- constant at the level `cdf ν y` throughout `(y, b)`.
       calc ν (Ioo y b) ≤ ν (⋃ n : ℕ, Ioc y (b - (b - y) / (n + 2))) := measure_mono hsub
         _ ≤ ∑' n : ℕ, ν (Ioc y (b - (b - y) / (n + 2))) := measure_iUnion_le _
-        _ = 0 := ENNReal.tsum_eq_zero.2 fun n ↦ by
+        _ = 0 := tsum_eq_zero_iff.2 fun n ↦ by
           have h1div : (1 : ℝ) / (n + 2) < 1 :=
             (div_lt_iff₀ (by positivity : (0 : ℝ) < n + 2)).2 (by
               have _h : (1 : ℝ) ≤ n + 1 := by

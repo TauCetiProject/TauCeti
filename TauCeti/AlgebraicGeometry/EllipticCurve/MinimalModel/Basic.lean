@@ -37,6 +37,8 @@ have the same `c₄` valuation too.
   discriminant is not divisible by `ϖ ^ 12` is minimal.
 * `WeierstrassCurve.exists_smul_eq_minimal`: Mathlib's chosen minimal equation is obtained by a
   change of variables.
+* `WeierstrassCurve.isElliptic_minimal`: so the chosen minimal equation of an elliptic curve is
+  elliptic.
 * `WeierstrassCurve.exists_smul_minimal_eq_of_smul_eq`: Mathlib's chosen minimal equation reaches
   every equation in its orbit by a change of variables.
 * `WeierstrassCurve.exists_smul_minimal_eq_minimal`: chosen minimal equations of isomorphic
@@ -232,6 +234,12 @@ theorem isMinimal_baseChange_of_not_pow_twelve_dvd_Δ (W : WeierstrassCurve R) {
 theorem exists_smul_eq_minimal (W : WeierstrassCurve K) :
     ∃ C : VariableChange K, C • W = W.minimal R :=
   ⟨_, rfl⟩
+
+/-- **The chosen minimal equation of an elliptic curve is elliptic**, being a change of variables
+of it. -/
+instance isElliptic_minimal (W : WeierstrassCurve K) [W.IsElliptic] : (W.minimal R).IsElliptic :=
+  have ⟨_, hC⟩ := W.exists_smul_eq_minimal R
+  hC ▸ inferInstance
 
 /-- **Mathlib's chosen minimal equation reaches every equation in its orbit.** If a change of
 variables carries `W` to `W'`, then some change of variables carries `W.minimal R` to `W'`. -/
@@ -464,8 +472,6 @@ theorem valuation_c₄_minimal_smul (D : VariableChange K) (W : WeierstrassCurve
     [W.IsElliptic] :
     valuation K (maximalIdeal R) ((D • W).minimal R).c₄ =
       valuation K (maximalIdeal R) (W.minimal R).c₄ := by
-  obtain ⟨C₀, hC₀⟩ := W.exists_smul_eq_minimal R
-  have : (W.minimal R).IsElliptic := hC₀ ▸ inferInstance
   obtain ⟨C, hC⟩ := exists_smul_minimal_eq_minimal R D W
   exact valuation_c₄_eq_of_isMinimal_smul R C hC
 

@@ -75,7 +75,7 @@ orbit–stabilizer (`MulAction.index_stabilizer`), on its inertia count
 (`Ideal.card_inertia_eq_ramificationIdxIn`), on its conjugation formula for inertia subgroups
 (`Ideal.inertia_smul`) and on its transitivity statement
 (`Ideal.exists_smul_eq_of_isGaloisGroup`), together with the transport of unramifiedness along
-algebra isomorphisms `AlgEquiv.isUnramifiedAt_of_eq_comap`.
+algebra isomorphisms `AlgEquiv.isUnramifiedAt_iff_of_eq_comap`.
 -/
 
 public section
@@ -183,13 +183,9 @@ variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
 `R`-algebra action automorphism preserves unramifiedness over `R`. -/
 @[simp]
 theorem isUnramifiedAt_pointwise_smul_iff (Q : Ideal S) [Q.IsPrime] (g : G) :
-    Algebra.IsUnramifiedAt R (g • Q) ↔ Algebra.IsUnramifiedAt R Q := by
-  have key (g : G) (Q : Ideal S) [Q.IsPrime] [Algebra.IsUnramifiedAt R Q] :
-      Algebra.IsUnramifiedAt R (g • Q) :=
-    (MulSemiringAction.toAlgEquiv R S g).symm.isUnramifiedAt_of_eq_comap
-      (pointwise_smul_eq_comap Q)
-  refine ⟨fun _ ↦ ?_, fun _ ↦ key g Q⟩
-  simpa using key g⁻¹ (g • Q)
+    Algebra.IsUnramifiedAt R (g • Q) ↔ Algebra.IsUnramifiedAt R Q :=
+  (MulSemiringAction.toAlgEquiv R S g).symm.isUnramifiedAt_iff_of_eq_comap
+    (pointwise_smul_eq_comap Q)
 
 end Unramified
 

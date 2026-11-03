@@ -36,6 +36,7 @@ restricted at a fixed radius.
 
 * `PowerSeries.IsEntire`: `f` is restricted at every real radius.
 * `PowerSeries.IsEntire.subring`: the subring of entire series.
+* `PowerSeries.IsEntire.polynomialHom`: the inclusion of polynomials into that subring.
 
 ## Main results
 
@@ -199,15 +200,9 @@ theorem IsEntire.hasseDeriv (hf : f.IsEntire) (k : ℕ) :
 
 /-- For an entire series `f = ∑ aₙ Xⁿ`, the series `∑ ‖aₙ‖ tⁿ` converges for every real `t`. -/
 theorem IsEntire.summable_norm_coeff_mul_pow (hf : f.IsEntire) (t : ℝ) :
-    Summable fun n ↦ ‖coeff n f‖ * t ^ n := by
-  -- restrictedness at the radius `2 |t|` bounds the terms by a multiple of `2⁻ⁿ`
-  obtain ⟨B, hB⟩ := ((isRestricted_iff' (2 * |t|) f).mp (hf.isRestricted _)).bddAbove_range
-  refine Summable.of_norm_bounded (summable_geometric_two.mul_left B) fun n ↦ ?_
-  have hn : ‖coeff n f‖ * (2 * |t|) ^ n ≤ B := hB ⟨n, rfl⟩
-  calc ‖‖coeff n f‖ * t ^ n‖ = ‖coeff n f‖ * (2 * |t|) ^ n * (1 / 2) ^ n := by
-        simp [mul_pow]
-        field_simp
-    _ ≤ B * (1 / 2) ^ n := by gcongr
+    Summable fun n ↦ ‖coeff n f‖ * t ^ n :=
+  (hf.isRestricted (|t| + 1)).summable_norm_coeff_mul_pow
+    (by rw [abs_of_pos (by positivity : 0 < |t| + 1)]; exact lt_add_one _)
 
 /-- The series `∑ aₙ₊₁ Xⁿ` obtained from an entire series by dropping the constant term and
 dividing by `X` is entire. -/
@@ -234,6 +229,17 @@ protected noncomputable def IsEntire.subring : Subring R⟦X⟧ where
 @[simp]
 theorem IsEntire.mem_subring : f ∈ IsEntire.subring R ↔ f.IsEntire :=
   Iff.rfl
+
+/-- The inclusion of polynomials into entire series. -/
+noncomputable def IsEntire.polynomialHom : Polynomial R →+* IsEntire.subring R :=
+  Polynomial.coeToPowerSeries.ringHom.codRestrict _ fun p ↦
+    IsEntire.mem_subring.mpr (isEntire_coe p)
+
+/-- Polynomial inclusion has the usual underlying formal power series. -/
+@[simp]
+theorem IsEntire.coe_polynomialHom (p : Polynomial R) :
+    (IsEntire.polynomialHom p : R⟦X⟧) = p :=
+  RingHom.codRestrict_apply _ _ _ p
 
 /-- Over an ultrametric ring, every entire series is restricted at each radius `r`, so the
 subring of entire series lies in the restricted subring at `r`. -/

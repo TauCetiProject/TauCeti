@@ -8,9 +8,13 @@ module
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Ideal.PicEquivalence
 public import TauCeti.NumberTheory.BinaryQuadraticForm.PrimitiveReduced
 public import Mathlib.NumberTheory.NumberField.ClassNumber
-public import Mathlib.RingTheory.DedekindDomain.PID
+public import Mathlib.RingTheory.UniqueFactorizationDomain.Defs
 import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Examples
+import TauCeti.NumberTheory.Multiquadratic.Quadratic.Discriminant
+import TauCeti.NumberTheory.NumberField.ClassNumber.RingEquiv
 import TauCeti.NumberTheory.NumberField.Global.Orders.Maximal
+import TauCeti.NumberTheory.QuadraticOrder.Embedding
+import TauCeti.NumberTheory.QuadraticOrder.NormOne
 
 /-!
 # Class numbers of imaginary quadratic orders from reduced forms
@@ -21,14 +25,18 @@ such class contains exactly one primitive reduced form
 (`posDefProperClass_mk_primitiveReducedForms_bijective`). Composing the two, the ideals
 `aℤ + ((-b + √(-n))/2)ℤ` of the primitive reduced forms `(a, b, c)` represent every Picard class
 exactly once, and the order of the Picard group is the number of primitive reduced forms.
+Weighting each primitive reduced form as in the Hurwitz class number gives `2 h / w`, for `h` the
+order of the Picard group and `w` the number of units of the order, so that `w` accounts for the
+exceptional weights at the discriminants `-3` and `-4`.
 
 When `-n` is a fundamental discriminant the order is the maximal order of `ℚ(√(-n))`
 (`QuadraticOrder.numberFieldOrder_eq_maximal_iff`), whose Picard group is the ideal class group
 (`GlobalNumberFields.maximalOrderPicEquiv`). The class number of
 `ℚ(√(-n))` is then the number of primitive reduced forms of discriminant `-n`, a finite set the
-kernel can enumerate. As certified examples, `ℚ(√(-4)) = ℚ(i)` has class number one, while
-`ℚ(√(-20)) = ℚ(√(-5))` has class number two, so its ring of integers is not a unique factorization
-domain.
+kernel can enumerate. Every quadratic field of discriminant `-n` is isomorphic to `ℚ(√(-n))`, by
+evaluation at `θ` or `2θ` for a square root `θ` of its squarefree radicand, so the same count is
+the class number of any such field. As a certified example, `ℚ(√(-20)) = ℚ(√(-5))` has class
+number two, so its ring of integers is not a unique factorization domain.
 
 ## Main definitions and results
 
@@ -37,12 +45,15 @@ domain.
   discriminant `-n` without repetition.
 * `TauCeti.BinaryQuadraticForm.nat_card_pic`: that Picard group has
   `#(primitiveReducedForms n)` elements.
+* `sum_reducedFormWeight_primitiveReducedForms_eq_card_pic_div_card_units`: the weighted count of
+  the primitive reduced forms of discriminant `-n`, their contribution to the Hurwitz class
+  number, is twice the order of that Picard group divided by the number of units of the order.
 * `TauCeti.BinaryQuadraticForm.classNumber_eq_card_primitiveReducedForms`: for fundamental `-n`,
   the class number of `ℚ(√(-n))` is `#(primitiveReducedForms n)`.
-* `TauCeti.BinaryQuadraticForm.classNumber_neg_four_eq_one` and
-  `TauCeti.BinaryQuadraticForm.classNumber_neg_twenty_eq_two`: the class numbers of `ℚ(√(-4))` and
-  `ℚ(√(-20))` are `1` and `2`; `not_uniqueFactorizationMonoid_neg_twenty` records the failure of
-  unique factorization in the latter.
+* `TauCeti.BinaryQuadraticForm.classNumber_eq_card_primitiveReducedForms_of_discr_eq`: the class
+  number of any quadratic field of discriminant `-n` is `#(primitiveReducedForms n)`.
+* `TauCeti.BinaryQuadraticForm.classNumber_neg_twenty_eq_two`: the class number of `ℚ(√(-20))` is
+  `2`; `not_uniqueFactorizationMonoid_neg_twenty` records the failure of unique factorization there.
 
 ## References
 
@@ -83,6 +94,22 @@ theorem nat_card_pic :
   (Nat.card_eq_of_bijective _ (picClass_primitiveReducedForms_bijective n hn)).symm.trans
     (Nat.card_eq_finsetCard _)
 
+/-- **The weighted count of the primitive reduced forms as class number over units.** The
+weighted count of the primitive reduced forms of discriminant `-n` is `2 h / w`, for `h` the order
+of the Picard group and `w` the number of units of the quadratic order of discriminant `-n`: the
+weights `1/3` of `x² + x y + y²` and `1/2` of `x² + y²` are the exceptional unit counts `6` and `4`
+at `n = 3` and `n = 4`. This is the term of discriminant `-n` in
+`TauCeti.hurwitzClassNumber_eq_sum_card_primitiveReducedForms`. -/
+theorem sum_reducedFormWeight_primitiveReducedForms_eq_card_pic_div_card_units :
+    ∑ f ∈ primitiveReducedForms n, reducedFormWeight f =
+      2 * Nat.card (Pic (QuadraticOrder.numberFieldOrder (-n) hn)) /
+        Nat.card (QuadraticOrder.numberFieldOrder (-n) hn).toSubalgebraˣ := by
+  rw [sum_reducedFormWeight_primitiveReducedForms, nat_card_pic,
+    QuadraticOrder.numberFieldOrder_toSubalgebra,
+    QuadraticOrder.card_units_of_neg _ _ (by simpa using NeZero.pos n)]
+  simp only [neg_inj, Nat.cast_ite, Nat.cast_ofNat]
+  norm_cast
+
 end Order
 
 section Fundamental
@@ -100,19 +127,28 @@ theorem classNumber_eq_card_primitiveReducedForms (hfund : Int.IsFundamentalDisc
     ← (QuadraticOrder.numberFieldOrder_eq_maximal_iff _ hfund.emod_four_eq_zero_or_one).2 hfund,
     nat_card_pic]
 
+/-- **Class numbers of quadratic fields of negative discriminant from reduced forms.** A
+quadratic number field of discriminant `-n` has class number `#(primitiveReducedForms n)`, the
+count for its model `ℚ(√(-n))`. -/
+theorem classNumber_eq_card_primitiveReducedForms_of_discr_eq {K : Type*} [Field K]
+    [NumberField K] (hK : Module.finrank ℚ K = 2) {n : ℕ} (hn : NumberField.discr K = -n) :
+    NumberField.classNumber K = #(primitiveReducedForms n) := by
+  have : NeZero n := ⟨by rintro rfl; exact NumberField.discr_ne_zero K (by simpa using hn)⟩
+  obtain ⟨θ, d, hmin, hgen, hsf⟩ := NumberField.exists_minpoly_eq_X_sq_sub_C_and_adjoin_eq_top hK
+  -- The discriminant `-n` is `d` or `4 d`, so `θ` or `2 θ` is a square root of `-n` in `K`.
+  obtain ⟨δ, hδ⟩ : ∃ δ : K, δ ^ 2 = ((-n : ℤ) : K) := by
+    have hθ : (θ : K) ^ 2 = d := by simpa using NumberField.coe_gen_sq hmin
+    rw [← hn, Multiquadratic.discr_eq_fundamentalDiscriminant hmin hgen hsf,
+      Multiquadratic.fundamentalDiscriminant_def]
+    split_ifs
+    · exact ⟨θ, hθ⟩
+    · exact ⟨2 * θ, by rw [mul_pow, hθ]; push_cast; ring⟩
+  rw [← RingEquiv.classNumber_eq (QuadraticOrder.algEquivOfSqrt (-n) δ hδ hK).toRingEquiv,
+    classNumber_eq_card_primitiveReducedForms n (hn ▸ Multiquadratic.isFundamentalDiscr_discr hK)]
+
 end Fundamental
 
 section Examples
-
-/-- **`ℚ(i)` has class number one**, certified by its single primitive reduced form `x² + y²` of
-discriminant `-4`. -/
-theorem classNumber_neg_four_eq_one :
-    NumberField.classNumber (QuadraticAlgebra ℚ ((-(4 : ℕ) : ℤ) : ℚ) 0) = 1 := by
-  have hfund : Int.IsFundamentalDiscr (-(4 : ℕ) : ℤ) := by
-    simpa using (Int.isFundamentalDiscr_four_mul (m := -1)).mpr
-      ⟨isUnit_neg_one.squarefree, by decide⟩
-  rw [classNumber_eq_card_primitiveReducedForms 4 hfund]
-  decide +kernel
 
 /-- **`ℚ(√(-5))` has class number two**, certified by its two primitive reduced forms
 `x² + 5 y²` and `2 x² + 2 x y + 3 y²` of discriminant `-20`. -/
@@ -126,13 +162,9 @@ theorem classNumber_neg_twenty_eq_two :
 not a unique factorization domain. -/
 theorem not_uniqueFactorizationMonoid_neg_twenty :
     ¬ UniqueFactorizationMonoid (𝓞 (QuadraticAlgebra ℚ ((-(20 : ℕ) : ℤ) : ℚ) 0)) := by
-  intro h
-  -- a Dedekind domain with unique factorization is a principal ideal domain, of class number one
-  have h1 := NumberField.classNumber_eq_one_iff.mpr <|
-    IsPrincipalIdealRing.of_isDedekindDomain_of_uniqueFactorizationMonoid
-      (𝓞 (QuadraticAlgebra ℚ ((-(20 : ℕ) : ℤ) : ℚ) 0))
-  rw [classNumber_neg_twenty_eq_two] at h1
-  exact absurd h1 (by decide)
+  rw [← NumberField.classNumber_eq_one_iff_uniqueFactorizationMonoid,
+    classNumber_neg_twenty_eq_two]
+  decide
 
 end Examples
 
