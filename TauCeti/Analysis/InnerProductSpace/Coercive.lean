@@ -5,17 +5,15 @@ Authors: Jon Crall, Claude Fable 5, OpenAI GPT-5.6 Thinking, Claude Opus 5, Open
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Adjoint
-public import Mathlib.Analysis.Normed.Operator.Banach
-public import Mathlib.Analysis.Normed.Algebra.Spectrum
-import Mathlib.Analysis.InnerProductSpace.LaxMilgram
+public import Mathlib.Analysis.InnerProductSpace.Positive
 
 /-!
 # Coercive bounded operators
 
 A uniformly coercive real part of the quadratic form makes a bounded operator
 on a real or complex Hilbert space invertible. Self-adjointness is not needed.
-The inverse follows from the real Lax–Milgram theorem after restricting scalars.
+The inverse follows from Mathlib’s operator invertibility criterion for a
+uniform lower bound on the norm of the quadratic form.
 For complex operators the same argument applied to a scalar shift bounds the
 real part of every spectral value below by the coercivity constant.
 
@@ -29,8 +27,8 @@ Adapted from `ForTauCeti/Analysis/InnerProductSpace/CoerciveUnit.lean`
 `DavisKahan/InfiniteDimensional/TanTwoTheta/QuarterAcuteFormGap.lean`
 (Jon Crall, OpenAI GPT-5.6 Thinking, Claude Opus 5), in the
 [Kitware DKPS formalization](https://github.com/AIQ-Kitware/aiq-dkps-formalization),
-Apache-2.0, copyright 2026 Kitware, Inc. The invertibility proof here reuses
-Mathlib's real Lax–Milgram equivalence instead of reproducing its range argument.
+Apache-2.0, copyright 2026 Kitware, Inc. The invertibility proof here applies
+Mathlib's `ContinuousLinearMap.isUnit_of_forall_le_norm_inner_map` directly.
 -/
 
 public section
@@ -42,7 +40,7 @@ namespace ContinuousLinearMap
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 
 /-- A quadratic-form lower bound yields the corresponding norm lower bound. -/
-theorem norm_smul_le_norm_apply_of_coercive (N : E →L[𝕜] E) {c : ℝ}
+theorem mul_norm_le_norm_apply_of_coercive (N : E →L[𝕜] E) {c : ℝ}
     (hcoer : ∀ z, c * ‖z‖ ^ 2 ≤ RCLike.re ⟪N z, z⟫_𝕜) (z : E) :
     c * ‖z‖ ≤ ‖N z‖ := by
   rcases eq_or_ne z 0 with rfl | hz
@@ -53,18 +51,9 @@ theorem norm_smul_le_norm_apply_of_coercive (N : E →L[𝕜] E) {c : ℝ}
 /-- A bounded operator with a uniformly coercive real quadratic form is a unit. -/
 theorem isUnit_of_coercive [CompleteSpace E] (N : E →L[𝕜] E) {c : ℝ}
     (hc : 0 < c) (hcoer : ∀ z, c * ‖z‖ ^ 2 ≤ RCLike.re ⟪N z, z⟫_𝕜) : IsUnit N := by
-  let := InnerProductSpace.rclikeToReal 𝕜 E
-  let B : E →L[ℝ] E →L[ℝ] ℝ := (innerSL ℝ).comp (N.restrictScalars ℝ)
-  have hB : IsCoercive B := ⟨c, hc, fun z ↦ by
-    simpa [B, real_inner_eq_re_inner, pow_two, mul_assoc] using hcoer z⟩
-  have hNB (z : E) : hB.continuousLinearEquivOfBilin z = N z := by
-    apply ext_inner_right ℝ
-    intro w
-    simp [B, hB.continuousLinearEquivOfBilin_apply]
-  rw [isUnit_iff_bijective]
-  have hfun : ⇑hB.continuousLinearEquivOfBilin = ⇑N := funext hNB
-  rw [← hfun]
-  exact hB.continuousLinearEquivOfBilin.bijective
+  apply isUnit_of_forall_le_norm_inner_map N (c := ⟨c, hc.le⟩) hc
+  intro x
+  exact (mul_comm _ _).le.trans ((hcoer x).trans (RCLike.re_le_norm _))
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E] [CompleteSpace E]
 
