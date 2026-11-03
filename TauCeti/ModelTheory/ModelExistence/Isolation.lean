@@ -94,18 +94,6 @@ theorem IsolatesIn.isSatisfiable (h : IsolatesIn A T p) : T.IsSatisfiable :=
   let ⟨_, _, hs, _⟩ := h
   hs.mono (Set.subset_insert _ _)
 
-/-- A structure satisfying `φ.exs` and every sentence `(φ.imp ψ).alls` with `ψ ∈ p` realizes `p`: a
-tuple satisfying `φ` satisfies all of `p`. -/
-private theorem not_omitsType_of_realize {M : Type w} [L.Structure M]
-    {φ : L.BoundedFormulaω Empty n} (hφ : SentenceInf.Realize φ.exs M)
-    (hp : ∀ ψ ∈ p, SentenceInf.Realize (φ.imp ψ).alls M) : ¬OmitsType M p := by
-  simp only [SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_exs,
-    BoundedFormulaInf.realize_alls, BoundedFormulaInf.realize_imp] at hφ hp
-  obtain ⟨a, ha⟩ := hφ
-  intro hM
-  obtain ⟨ψ, hψ, hψa⟩ := omitsType_iff.1 hM a
-  exact hψa (hp ψ hψ a ha)
-
 /-- **Isolated types are realized.** A partial type isolated over `T` is realized in some nonempty
 model of `T` in the universe `max u v`. -/
 theorem IsolatesIn.exists_model_not_omitsType (h : IsolatesIn A T p) :
