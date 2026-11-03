@@ -50,8 +50,6 @@ power only in strictly smaller PBW degree. -/
 theorem factorial_smul_ringChoose_ι_sub_pow_mem_pbwFiltrationPrevious (x : L) (n : ℕ) :
     (n.factorial : ℚ) • Ring.choose (ι x) n - (ι x) ^ n ∈
       pbwFiltrationPrevious ℚ L n := by
-  have hpow (k : ℕ) : (ι x) ^ k ∈ pbwFiltration ℚ L k := by
-    simpa using prod_map_ι_mem_pbwFiltration ℚ L (l := List.replicate k x) (by simp)
   have hpoch (k : ℕ) : (descPochhammer ℤ k).smeval (ι x) =
       (k.factorial : ℚ) • Ring.choose (ι x) k := by
     simpa only [Nat.cast_smul_eq_nsmul] using Ring.descPochhammer_eq_factorial_smul_choose (ι x) k
@@ -65,10 +63,8 @@ theorem factorial_smul_ringChoose_ι_sub_pow_mem_pbwFiltrationPrevious (x : L) (
     have hdrop := mul_mem_pbwFiltrationPrevious_left ℚ L ih (ι_mem_pbwFiltration_one ℚ L x)
     rw [pbwFiltrationPrevious_succ] at hdrop
     have htop : (descPochhammer ℤ n).smeval (ι x) ∈ pbwFiltration ℚ L n := by
-      have hle : pbwFiltrationPrevious ℚ L n ≤ pbwFiltration ℚ L n := by
-        rw [pbwFiltrationPrevious_def, pbwFiltration_def]
-        exact Algebra.wordFiltrationPrevious_le _ n
-      simpa only [sub_add_cancel] using (pbwFiltration ℚ L n).add_mem (hle ih) (hpow n)
+      simpa only [sub_add_cancel] using (pbwFiltration ℚ L n).add_mem
+        (pbwFiltrationPrevious_le ℚ L n ih) (ι_pow_mem_pbwFiltration ℚ L x n)
     have hscalar := mul_mem_pbwFiltration ℚ L htop
       (algebraMap_mem_pbwFiltration ℚ L (n : ℚ) 0)
     simp only [add_zero, map_natCast] at hscalar
@@ -78,26 +74,18 @@ theorem factorial_smul_ringChoose_ι_sub_pow_mem_pbwFiltrationPrevious (x : L) (
 /-- A Cartan binomial lies in the PBW filtration step given by its lower index. -/
 theorem ringChoose_ι_mem_pbwFiltration (x : L) (n : ℕ) :
     Ring.choose (ι x) n ∈ pbwFiltration ℚ L n := by
-  have hpow : (ι x) ^ n ∈ pbwFiltration ℚ L n := by
-    simpa using prod_map_ι_mem_pbwFiltration ℚ L (l := List.replicate n x) (by simp)
-  have hle : pbwFiltrationPrevious ℚ L n ≤ pbwFiltration ℚ L n := by
-    rw [pbwFiltrationPrevious_def, pbwFiltration_def]
-    exact Algebra.wordFiltrationPrevious_le _ n
-  have h := hle (factorial_smul_ringChoose_ι_sub_pow_mem_pbwFiltrationPrevious x n)
-  have hs := (pbwFiltration ℚ L n).add_mem h hpow
+  have h := pbwFiltrationPrevious_le ℚ L n
+    (factorial_smul_ringChoose_ι_sub_pow_mem_pbwFiltrationPrevious x n)
+  have hs := (pbwFiltration ℚ L n).add_mem h (ι_pow_mem_pbwFiltration ℚ L x n)
   rw [sub_add_cancel] at hs
   have hi := (pbwFiltration ℚ L n).smul_mem ((n.factorial : ℚ)⁻¹) hs
   simpa [smul_smul, Nat.factorial_ne_zero] using hi
 
 /-- An ordered product of Cartan binomials has PBW degree at most the sum of its indices. -/
-theorem list_prod_ringChoose_ι_mem_pbwFiltration (l : List (L × ℕ)) :
+theorem prod_map_ringChoose_ι_mem_pbwFiltration (l : List (L × ℕ)) :
     (l.map (fun p ↦ Ring.choose (ι p.1) p.2)).prod ∈
-      pbwFiltration ℚ L (l.map Prod.snd).sum := by
-  induction l with
-  | nil => simpa using one_mem_pbwFiltration ℚ L 0
-  | cons p l ih =>
-    simpa only [List.map_cons, List.prod_cons, List.sum_cons] using
-      mul_mem_pbwFiltration ℚ L (ringChoose_ι_mem_pbwFiltration p.1 p.2) ih
+      pbwFiltration ℚ L (l.map Prod.snd).sum :=
+  prod_map_mem_pbwFiltration ℚ L l fun p _ ↦ ringChoose_ι_mem_pbwFiltration p.1 p.2
 
 /-- A Cartan binomial and a divided power have the same leading PBW term. -/
 theorem ringChoose_ι_sub_dividedPower_mem_pbwFiltrationPrevious (x : L) (n : ℕ) :
@@ -107,42 +95,32 @@ theorem ringChoose_ι_sub_dividedPower_mem_pbwFiltrationPrevious (x : L) (n : �
     (factorial_smul_ringChoose_ι_sub_pow_mem_pbwFiltrationPrevious x n)
   simpa [smul_sub, smul_smul, Nat.factorial_ne_zero, Associative.dividedPower_def] using h
 
+/-- A divided power of a canonical Lie generator has PBW degree at most its exponent. -/
+theorem dividedPower_ι_mem_pbwFiltration (x : L) (n : ℕ) :
+    Associative.dividedPower n (ι x) ∈ pbwFiltration ℚ L n := by
+  rw [Associative.dividedPower_def]
+  exact Submodule.smul_mem _ _ (ι_pow_mem_pbwFiltration ℚ L x n)
+
 /-- An ordered product of divided powers has PBW degree at most the sum of its exponents. -/
-theorem list_prod_dividedPower_ι_mem_pbwFiltration (l : List (L × ℕ)) :
+theorem prod_map_dividedPower_ι_mem_pbwFiltration (l : List (L × ℕ)) :
     (l.map (fun p ↦ Associative.dividedPower p.2 (ι p.1))).prod ∈
-      pbwFiltration ℚ L (l.map Prod.snd).sum := by
-  induction l with
-  | nil => simpa using one_mem_pbwFiltration ℚ L 0
-  | cons p l ih =>
-    simp only [List.map_cons, List.prod_cons, List.sum_cons]
-    apply mul_mem_pbwFiltration ℚ L _ ih
-    rw [Associative.dividedPower_def]
-    apply Submodule.smul_mem
-    simpa using prod_map_ι_mem_pbwFiltration ℚ L
-      (l := List.replicate p.2 p.1) (by simp)
+      pbwFiltration ℚ L (l.map Prod.snd).sum :=
+  prod_map_mem_pbwFiltration ℚ L l fun p _ ↦ dividedPower_ι_mem_pbwFiltration p.1 p.2
 
 /-- Replacing every binomial in an ordered toral block by its divided power changes the product
 only in strictly smaller total PBW degree. No commutativity of the Lie vectors is required. -/
-theorem list_prod_ringChoose_ι_sub_list_prod_dividedPower_mem_pbwFiltrationPrevious
+theorem prod_map_ringChoose_ι_sub_prod_map_dividedPower_ι_mem_pbwFiltrationPrevious
     (l : List (L × ℕ)) :
     (l.map (fun p ↦ Ring.choose (ι p.1) p.2)).prod -
         (l.map (fun p ↦ Associative.dividedPower p.2 (ι p.1))).prod ∈
-      pbwFiltrationPrevious ℚ L (l.map Prod.snd).sum := by
-  induction l with
-  | nil => simp
-  | cons p l ih =>
-    simp only [List.map_cons, List.prod_cons, List.sum_cons]
-    have hleft := mul_mem_pbwFiltrationPrevious_left ℚ L
-      (ringChoose_ι_sub_dividedPower_mem_pbwFiltrationPrevious p.1 p.2)
-      (list_prod_dividedPower_ι_mem_pbwFiltration l)
-    have hright := mul_mem_pbwFiltrationPrevious_right ℚ L
-      (ringChoose_ι_mem_pbwFiltration p.1 p.2) ih
-    convert (pbwFiltrationPrevious ℚ L (p.2 + (l.map Prod.snd).sum)).add_mem
-      hleft hright using 1; noncomm_ring
+      pbwFiltrationPrevious ℚ L (l.map Prod.snd).sum :=
+  prod_map_sub_prod_map_mem_pbwFiltrationPrevious ℚ L l
+    (fun p _ ↦ ringChoose_ι_mem_pbwFiltration p.1 p.2)
+    (fun p _ ↦ ringChoose_ι_sub_dividedPower_mem_pbwFiltrationPrevious p.1 p.2)
 
 /-- The leading-term replacement of the toral block remains valid inside a mixed filtered
 product, including the negative-root and positive-root blocks of a Kostant monomial. -/
-theorem mul_list_prod_ringChoose_ι_mul_sub_mem_pbwFiltrationPrevious
+theorem mul_prod_map_ringChoose_ι_mul_sub_mem_pbwFiltrationPrevious
     (l : List (L × ℕ)) {a c : U} {r s : ℕ}
     (ha : a ∈ pbwFiltration ℚ L r) (hc : c ∈ pbwFiltration ℚ L s) :
     a * (l.map (fun p ↦ Ring.choose (ι p.1) p.2)).prod * c -
@@ -150,7 +128,7 @@ theorem mul_list_prod_ringChoose_ι_mul_sub_mem_pbwFiltrationPrevious
       pbwFiltrationPrevious ℚ L (r + (l.map Prod.snd).sum + s) := by
   have h := mul_mem_pbwFiltrationPrevious_left ℚ L
     (mul_mem_pbwFiltrationPrevious_right ℚ L ha
-      (list_prod_ringChoose_ι_sub_list_prod_dividedPower_mem_pbwFiltrationPrevious l)) hc
+      (prod_map_ringChoose_ι_sub_prod_map_dividedPower_ι_mem_pbwFiltrationPrevious l)) hc
   simpa only [mul_sub, sub_mul] using h
 
 end
