@@ -15,16 +15,22 @@ import TauCeti.Topology.LocallyFinite.Basic
 For a closed immersion `i : Z ⟶ X` of locally Noetherian schemes, Mathlib's pushforward of
 algebraic cycles with height weights sends `k`-cycles on `Z` to `k`-cycles on `X` by transporting
 coefficients, and sends cycles rationally equivalent to zero on `Z` to cycles rationally
-equivalent to zero on `X`. It therefore induces a pushforward `i_* : CH_k(Z) → CH_k(X)`, the
-first map of the localization sequence `CH_k(Z) → CH_k(X) → CH_k(X \ Z) → 0`
+equivalent to zero on `X`. It therefore induces a pushforward `i_* : CH_k(Z) → CH_k(X)`
 ([Stacks, Lemma 42.19.3](https://stacks.math.columbia.edu/tag/02RX); Fulton, *Intersection
-Theory*, Proposition 1.8).
+Theory*, Proposition 1.8). This construction needs only local Noetherianity. For schemes locally
+of finite type over a field, where restriction to the open complement `X \ Z` preserves the
+dimension grading, it is the first map of the localization sequence
+`CH_k(Z) → CH_k(X) → CH_k(X \ Z) → 0`; in general restriction to an open subscheme need not
+preserve the grading by `Order.height`, and that sequence is not constructed here.
 
 * `Chow.cyclesPushforward i`: the pushforward `Z_k(Z) →+ Z_k(X)` of `k`-cycles. It is injective
   (`Chow.cyclesPushforward_injective`), and its image consists of the `k`-cycles supported on
   the image of `i` (`Chow.mem_range_cyclesPushforward_iff`).
 * `Chow.RatEquivFamily.pushforward i F`: a family of integral closed subschemes of `Z` with
-  rational functions, viewed on `X`. Its cycle is the pushforward of the cycle of `F`
+  rational functions, viewed on `X`. It keeps the indices, subschemes and rational functions of
+  `F` and composes the embeddings with `i` (`Chow.RatEquivFamily.pushforward_ι`,
+  `Chow.RatEquivFamily.pushforward_W`, `Chow.RatEquivFamily.pushforward_i`,
+  `Chow.RatEquivFamily.pushforward_r`). Its cycle is the pushforward of the cycle of `F`
   (`Chow.RatEquivFamily.cycle_pushforward`).
 * `Chow.ChowGroup.pushforward i`: the induced map `CH_k(Z) →+ CH_k(X)`, functorial in `i`
   (`Chow.ChowGroup.pushforward_id`, `Chow.ChowGroup.pushforward_comp`).
@@ -118,8 +124,10 @@ namespace RatEquivFamily
 variable {k : ℤ}
 
 /-- A family of integral closed subschemes of `Z` with rational functions, viewed as a family on
-`X` by composing with the closed immersion `i`. -/
-noncomputable def pushforward (F : RatEquivFamily Z k) : RatEquivFamily X k where
+`X` by composing with the closed immersion `i`. It is exposed because the data of the family
+depends on its index type: the lemmas `pushforward_W`, `pushforward_i` and `pushforward_r` below
+are stated over `F.ι`. -/
+@[expose] noncomputable def pushforward (F : RatEquivFamily Z k) : RatEquivFamily X k where
   ι := F.ι
   W := F.W
   i j := F.i j ≫ i
@@ -129,6 +137,25 @@ noncomputable def pushforward (F : RatEquivFamily Z k) : RatEquivFamily X k wher
     simpa only [Scheme.Hom.comp_base, TopCat.hom_comp, ContinuousMap.coe_comp,
       Set.range_comp] using F.locallyFinite.image_of_isClosedMap i.isClosedEmbedding.isClosedMap
         fun _ ↦ (Set.subsingleton_singleton.preimage i.isClosedEmbedding.injective).isCompact
+
+/-- The pushforward of a family has the same index type. -/
+lemma pushforward_ι (F : RatEquivFamily Z k) : (F.pushforward i).ι = F.ι :=
+  rfl
+
+/-- The pushforward of a family has the same integral closed subschemes. -/
+@[simp]
+lemma pushforward_W (F : RatEquivFamily Z k) (j : F.ι) : (F.pushforward i).W j = F.W j :=
+  rfl
+
+/-- The embeddings of the pushforward of a family are those of the family followed by `i`. -/
+@[simp]
+lemma pushforward_i (F : RatEquivFamily Z k) (j : F.ι) : (F.pushforward i).i j = F.i j ≫ i :=
+  rfl
+
+/-- The pushforward of a family has the same rational functions. -/
+@[simp]
+lemma pushforward_r (F : RatEquivFamily Z k) (j : F.ι) : (F.pushforward i).r j = F.r j :=
+  rfl
 
 variable [IsLocallyNoetherian Z] [IsLocallyNoetherian X] (F : RatEquivFamily Z k)
 
