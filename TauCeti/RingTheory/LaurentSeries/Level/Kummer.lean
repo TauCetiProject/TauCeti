@@ -124,18 +124,14 @@ theorem kummer_surjective : Function.Surjective (kummer K d) := by
   have hw : w ^ (d : ℕ) = 1 := by
     rw [hw_def, ← map_pow, div_pow, ← map_pow, parameter_pow, AlgEquiv.commutes, ← parameter_pow,
       div_self (pow_ne_zero _ hu), map_one]
-  obtain ⟨c, hc⟩ := IsIntegrallyClosedIn.isIntegral_iff.mp
-    (IsIntegral.of_pow (R := K) d.pos (hw ▸ isIntegral_one))
-  have hcd : c ^ (d : ℕ) = 1 :=
-    (Algebra.algebraMap K K⸨X⸩).injective (by rw [map_pow, hc, hw, map_one])
-  refine ⟨rootsOfUnity.mkOfPowEq c hcd, ?_⟩
+  obtain ⟨η, hη⟩ := exists_rootsOfUnity_algebraMap_eq hw
+  refine ⟨η, ?_⟩
   -- both automorphisms are determined by their value on the generator `u`
   apply AlgEquiv.coe_toAlgHom_injective
   apply (powerBasis K d).algHom_ext
-  rw [powerBasis_gen, AlgEquiv.coe_toAlgHom, AlgEquiv.coe_toAlgHom, kummer_parameter,
-    rootsOfUnity.coe_mkOfPowEq]
+  rw [powerBasis_gen, AlgEquiv.coe_toAlgHom, AlgEquiv.coe_toAlgHom, kummer_parameter]
   apply (ringEquivLaurentSeries K d).injective
-  rw [map_mul, algebraMap_apply, AlgHom.commutes, hc, hw_def, ← map_mul, div_mul_cancel₀ _ hu]
+  rw [map_mul, algebraMap_apply, AlgHom.commutes, hη, hw_def, ← map_mul, div_mul_cancel₀ _ hu]
 
 section Galois
 
