@@ -250,7 +250,7 @@ theorem eigenvalueMeasure_apply (A : Matrix n n ℂ) {s : Set ℂ} [DecidablePre
     (hs : MeasurableSet s) :
     (A.eigenvalueMeasure : Measure ℂ) s =
       ((Fintype.card n : ℕ) : ℝ≥0∞)⁻¹ * Multiset.card (A.charpoly.roots.filter (· ∈ s)) := by
-  rw [eigenvalueMeasure_toMeasure, Measure.smul_apply, smul_eq_mul]
+  rw [eigenvalueMeasure_toMeasure, _root_.smul_apply, smul_eq_mul]
   congr 1
   induction A.charpoly.roots using Multiset.induction_on with
   | empty => simp

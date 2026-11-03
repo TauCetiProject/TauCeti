@@ -138,7 +138,7 @@ private theorem representation_ι_single_mul_pow_apply (a b i j : n) (r : ℕ) (
   have h := congrArg (fun u => ρ u w)
     (lie_ι_single_glGeneratorMatrix_pow_apply K n a b i j r)
   simp only [LieRing.of_associative_ring_bracket, map_sub, map_mul,
-    LinearMap.sub_apply, Module.End.mul_apply,
+    LinearMap.sub_apply, mul_apply_eq_comp,
     UniversalEnvelopingAlgebra.representation_ι_apply] at h
   rw [map_sub, LinearMap.sub_apply]
   exact (eq_add_of_sub_eq h).trans (add_comm _ _)
@@ -154,7 +154,7 @@ theorem representation_glGeneratorMatrix_pow_apply_eq_zero
     rw [pow_succ', Matrix.mul_apply, map_sum, LinearMap.sum_apply]
     apply Finset.sum_eq_zero
     intro k _
-    rw [map_mul, Module.End.mul_apply, glGeneratorMatrix_apply,
+    rw [map_mul, mul_apply_eq_comp, glGeneratorMatrix_apply,
       UniversalEnvelopingAlgebra.representation_ι_apply]
     -- A raising entry on the right kills the vector. Otherwise commute the raising
     -- generator past the power entry and use the commutator identity.
@@ -180,7 +180,7 @@ theorem representation_glGeneratorMatrix_pow_apply_eq_smul
           if i = j then (μ i * gelfandEigenvalueEntry μ r i) • v else
             if i < j then (gelfandEigenvalueEntry μ r i -
               gelfandEigenvalueEntry μ r j) • v else 0 := by
-      rw [map_mul, Module.End.mul_apply, glGeneratorMatrix_apply,
+      rw [map_mul, mul_apply_eq_comp, glGeneratorMatrix_apply,
         UniversalEnvelopingAlgebra.representation_ι_apply]
       rcases lt_trichotomy i j with hij | rfl | hji
       · rw [representation_ι_single_mul_pow_apply, hv.lie_single_eq_zero hij, map_zero]

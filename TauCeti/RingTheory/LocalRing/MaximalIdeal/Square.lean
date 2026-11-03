@@ -102,8 +102,9 @@ theorem spanFinrank_map_maximalIdeal_quotient_of_le_sq (hfg : (maximalIdeal R).F
     rw [Ideal.map_span, Finset.coe_image, ← Set.image_comp]
     exact congrArg span ((Set.image_congr hgq).trans (Set.image_id _))
   have hle : maximalIdeal R ≤ span (s.image g : Set R) := by
-    refine Submodule.le_of_le_smul_of_le_jacobson_bot hfg
-      (jacobson_eq_maximalIdeal ⊥ bot_ne_top).ge fun x hx ↦ ?_
+    refine Submodule.le_of_le_smul_of_le_jacobson hfg
+      (by simpa only [Ideal.jacobson_bot] using
+        (jacobson_eq_maximalIdeal (R := R) ⊥ bot_ne_top).ge) fun x hx ↦ ?_
     have hx' : x ∈ ((span (s.image g : Set R)).map q).comap q := by
       rw [mem_comap, hmap, ← Ideal.submodule_span_eq, hspan]
       exact mem_map_of_mem q hx
@@ -161,9 +162,10 @@ theorem exists_mem_maximalIdeal_notMem_sq_mem_nonZeroDivisors [IsNoetherianRing 
   have hsq : ¬maximalIdeal R ≤ maximalIdeal R ^ 2 := fun hle ↦ by
     -- `𝔪 = 𝔪²` forces `𝔪 = 0` by Nakayama's lemma; then every associated prime of `R` is `𝔪`
     have hm : maximalIdeal R = ⊥ :=
-      Submodule.eq_bot_of_le_smul_of_le_jacobson_bot (maximalIdeal R) (maximalIdeal R)
+      Submodule.eq_bot_of_le_smul_of_le_jacobson (maximalIdeal R) (maximalIdeal R)
         (maximalIdeal R).fg_of_isNoetherianRing (by rwa [smul_eq_mul, ← pow_two])
-        (jacobson_eq_maximalIdeal ⊥ bot_ne_top).ge
+        (by simpa only [Ideal.jacobson_bot] using
+        (jacobson_eq_maximalIdeal (R := R) ⊥ bot_ne_top).ge)
     obtain ⟨p, hp⟩ := associatedPrimes.nonempty R R
     obtain rfl : p = maximalIdeal R := le_antisymm (le_maximalIdeal hp.isPrime.ne_top) (hm ▸ bot_le)
     exact h hp

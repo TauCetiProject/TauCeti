@@ -86,12 +86,13 @@ theorem iteratedDeriv_eval_update_mul_cexp {ι : Type*} [DecidableEq ι] (F : Mv
       fun w ↦ eval (update x i w) (((D + a • 1) ^ σ) F) * Complex.exp (a * w + b) := by
     induction σ with
     | zero => simp
-    | succ σ ih => rw [iteratedDeriv_succ, ih, hderiv, pow_succ', Module.End.mul_apply]
+    | succ σ ih => rw [iteratedDeriv_succ, ih, hderiv, pow_succ', _root_.mul_apply_eq_comp]
   rw [hop, ((Commute.one_right D).smul_right a).add_pow]
   funext w
-  simp only [LinearMap.sum_apply, Module.End.mul_apply, Module.End.natCast_apply, smul_pow,
-    one_pow, LinearMap.smul_apply, Module.End.one_apply, map_nsmul, map_smul, map_sum,
+  simp only [LinearMap.sum_apply, _root_.mul_apply_eq_comp, _root_.natCast_apply_eq_smul, smul_pow,
+    one_pow, LinearMap.smul_apply, _root_.one_apply_eq_self, map_nsmul, map_smul, map_sum,
     Finset.sum_mul]
-  simp only [Module.End.pow_apply, D, Derivation.coeFn_coe, smul_eval, nsmul_eq_mul, mul_assoc]
+  simp only [_root_.pow_apply_eq_iterate, D, Derivation.coeFn_coe, smul_eval, nsmul_eq_mul,
+    mul_assoc]
 
 end MvPolynomial

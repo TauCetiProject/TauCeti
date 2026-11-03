@@ -130,7 +130,7 @@ theorem heckeTNat_mul_of_primeFactors_subset {n m : ℕ} [NeZero n] [NeZero m]
     heckeTNat (N := N) k (n * m) = heckeTNat (N := N) k n * heckeTNat (N := N) k m :=
   LinearMap.ext fun f ↦ DFunLike.ext' <| by
     rw [coe_heckeTNat_of_primeFactors_subset k _ (primeFactors_mul_subset hn hm),
-      Module.End.mul_apply, coe_heckeTNat_of_primeFactors_subset k n hn,
+      mul_apply_eq_comp, coe_heckeTNat_of_primeFactors_subset k n hn,
       coe_heckeTNat_of_primeFactors_subset k m hm, heckeSlashUpperTri_heckeSlashUpperTri,
       mul_comm m n]
 
@@ -141,7 +141,7 @@ theorem heckeTCuspNat_mul_of_primeFactors_subset {n m : ℕ} [NeZero n] [NeZero 
     heckeTCuspNat (N := N) k (n * m) = heckeTCuspNat (N := N) k n * heckeTCuspNat (N := N) k m :=
   LinearMap.ext fun f ↦ DFunLike.ext' <| by
     rw [coe_heckeTCuspNat_of_primeFactors_subset k _ (primeFactors_mul_subset hn hm),
-      Module.End.mul_apply, coe_heckeTCuspNat_of_primeFactors_subset k n hn,
+      mul_apply_eq_comp, coe_heckeTCuspNat_of_primeFactors_subset k n hn,
       coe_heckeTCuspNat_of_primeFactors_subset k m hm, heckeSlashUpperTri_heckeSlashUpperTri,
       mul_comm m n]
 
