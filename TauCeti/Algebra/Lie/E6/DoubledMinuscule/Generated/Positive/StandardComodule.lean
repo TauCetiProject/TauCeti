@@ -68,6 +68,16 @@ def standardComodule : Comodule R (coordinateHopfAlgebra R) (Fin 54 → R) :=
 
 attribute [local instance] standardComodule
 
+/-- The coefficient matrix is the ambient generic matrix modulo the positive subgroup's ideal. -/
+theorem coefficientMatrix_basisFun :
+    Comodule.coefficientMatrix (C := coordinateHopfAlgebra R) (Pi.basisFun R (Fin 54)) =
+      (GeneralLinear.genericMatrix R 54).map
+        (CommHopfAlgCat.mkQuotient _ (definingIdeal R)).hom := by
+  let _ := GeneralLinear.standardComodule R 54
+  rw [Comodule.coefficientMatrix_corestrict, GeneralLinear.coefficientMatrix_basisFun]
+  ext a b
+  simp only [Matrix.map_apply, BialgHom.toCoalgHom_apply]
+
 /-- Restriction to the weight torus splits the representation into its fifty-four weight lines. -/
 theorem torusCorestrict_eq_ofWeights :
     Comodule.Corestrict (CommHopfAlgCat.commonKernelLift (generator R) (.inr ())).hom.toCoalgHom =
@@ -123,11 +133,7 @@ theorem single_reflection_mem
         Pi.single a 1) - Pi.single a 1 =
       (summandSign (matrixIndexEquiv.symm a) : R) •
         Pi.single (matrixIndexEquiv (reflection i (matrixIndexEquiv.symm a))) 1 := by
-    rw [coe_rootSubgroupPoints_eq_one_add_smul, Matrix.add_mulVec, Matrix.one_mulVec,
-      Matrix.smul_mulVec]
-    simp only [toAdd_ofAdd, one_smul, add_sub_cancel_left, Matrix.mulVec_single_one]
-    ext b
-    simp [Matrix.map_apply, rootIntMatrix_apply, ha, Pi.single_apply]
+    simpa using root_mulVec_single_sub R (.inl i) a ha
   rw [hmatrix] at h
   obtain ⟨a, rfl⟩ := matrixIndexEquiv.surjective a
   cases a <;> simpa only [Equiv.symm_apply_apply, summandSign_inl, summandSign_inr,
@@ -208,13 +214,7 @@ theorem toSubmodule_eq_span
       {a | Pi.single a (1 : k) ∈ N}) := by
   apply Subcomodule.toSubmodule_eq_span_of_corestrict_eq_ofWeights
     (CommHopfAlgCat.commonKernelLift (generator k) (.inr ())).hom.toCoalgHom
-    minusculeCharacter _ (torusCorestrict_eq_ofWeights k) N
-  intro a b h
-  apply matrixIndexEquiv.symm.injective
-  apply e6DoubledMinusculeWeight_injective
-  funext i
-  simpa only [minusculeCharacter, SplitTorus.toAdd_weightCharacter, matrixWeight_apply] using
-    congrArg (fun χ : Multiplicative (Fin 6 →₀ ℤ) ↦ Multiplicative.toAdd χ i) h
+    minusculeCharacter minusculeCharacter_injective (torusCorestrict_eq_ofWeights k) N
 
 /-- **Invariant-subspace classification for the positive doubled E₆ subgroup.** A subspace
 is invariant precisely when it is a coordinate span closed under positive simple-root steps. -/
