@@ -11,6 +11,7 @@ import Mathlib.Analysis.Calculus.InverseFunctionTheorem.FDeriv
 import TauCeti.Analysis.Calculus.ContDiff.LocalInjectivity
 import TauCeti.Geometry.Manifold.MFDeriv.Chart
 import TauCeti.Geometry.Manifold.MFDeriv.LocalInjectivity
+import TauCeti.Topology.Algebra.Module.CompactQuotient
 
 /-!
 # Orbits of the Hamiltonian flow action and Liouville tori
@@ -493,12 +494,9 @@ theorem span_hamiltonianFlowStabilizer_eq_top
     (hdim : 2 * Fintype.card ι = finrank ℝ E)
     (hK : IsCompact (connectedComponentIn (F ⁻¹' {F x}) x)) :
     Submodule.span ℝ (hσ.hamiltonianFlowStabilizer hF hcomm hc x : Set (ι → ℝ)) = ⊤ := by
-  have := hσ.discreteTopology_hamiltonianFlowStabilizer hF hcomm hc
-    (hreg x (mem_connectedComponentIn (by simp)))
   have := isCompact_iff_compactSpace.1 hK
   have := (hσ.hamiltonianFlowQuotientHomeomorph hF hcomm hc hreg hdim).symm.compactSpace
-  exact (AddSubgroup.isZLattice_toIntSubmodule_of_compactSpace
-    (hσ.hamiltonianFlowStabilizer hF hcomm hc x)).span_top
+  exact AddSubgroup.span_eq_top_of_compactSpace_quotient _
 
 include hσ hF hcomm hc in
 /-- **Compact regular components are tori** (the topological part of the Liouville–Arnold

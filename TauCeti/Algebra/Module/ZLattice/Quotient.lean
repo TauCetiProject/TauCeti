@@ -42,8 +42,6 @@ for `c ≠ 0` a `ℤ`-basis of `L` identifies it with `(ℤ / c)^n` by reducing 
 
 * `Submodule.instCompactSpaceOrbitRelQuotient`: the translation orbit space is compact.
 * `QuotientAddGroup.instCompactSpaceOfIsZLattice`: the additive quotient is compact.
-* `AddSubgroup.isZLattice_toIntSubmodule_of_compactSpace`: conversely, a discrete subgroup with
-  compact quotient is a full lattice.
 * `Module.Basis.latticeCircleCoordinates`: the continuous homomorphism of circle coordinates.
 * `Module.Basis.quotientLatticeEquiv`: the quotient is a product of additive circles.
 * `Module.Basis.orbitRelQuotientLatticeEquiv`: the same circle coordinates on the orbit space.
@@ -80,26 +78,6 @@ instance QuotientAddGroup.instCompactSpaceOfIsZLattice {E : Type*} [NormedAddCom
   -- by L: toIntSubmodule retains L as its underlying additive subgroup.
   L.toIntSubmodule.orbitRelQuotientContinuousAddEquiv.surjective.compactSpace
     (map_continuous L.toIntSubmodule.orbitRelQuotientContinuousAddEquiv)
-
-/-- **A discrete subgroup with compact quotient is a full lattice.** A discrete additive subgroup
-`L` of a finite-dimensional real normed space `E` with `E ⧸ L` compact spans `E` over `ℝ`, so it is
-a full lattice; this is the converse of `QuotientAddGroup.instCompactSpaceOfIsZLattice`. A nonzero
-linear functional vanishing on `L` would descend to a continuous surjection from the compact
-quotient onto `ℝ`. -/
-theorem AddSubgroup.isZLattice_toIntSubmodule_of_compactSpace {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] [FiniteDimensional ℝ E] (L : AddSubgroup E) [DiscreteTopology L]
-    [CompactSpace (E ⧸ L)] :
-    IsZLattice ℝ L.toIntSubmodule := by
-  refine ⟨by_contra fun h ↦ ?_⟩
-  obtain ⟨f, hf, hle⟩ := Submodule.exists_le_ker_of_lt_top _ (lt_top_iff_ne_top.2 h)
-  obtain ⟨v, hv⟩ : ∃ v, f v ≠ 0 := not_forall.1 fun h' ↦ hf (LinearMap.ext h')
-  have hfL : L ≤ f.toAddMonoidHom.ker := fun y hy ↦ hle (Submodule.subset_span hy)
-  let g := QuotientAddGroup.lift L f.toAddMonoidHom hfL
-  have hg : Continuous g := (QuotientAddGroup.isQuotientMap_mk L).continuous_iff.2
-    f.continuous_of_finiteDimensional
-  have hsurj : Function.Surjective g := fun t ↦
-    ⟨QuotientAddGroup.mk ((t / f v) • v), by simp [g, hv]⟩
-  exact noncompact_univ ℝ (hsurj.range_eq ▸ isCompact_range hg)
 
 noncomputable section
 
