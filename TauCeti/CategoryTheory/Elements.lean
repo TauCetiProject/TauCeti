@@ -51,6 +51,12 @@ theorem act_obj
     (q : (Quiver.Total.left : Quiver.Total C → C).Pullback (Functor.Elements.obj (F := F))) :
     (act F q).obj = q.1.1.right := (rfl)
 
+/-- The translate of a point `z` over `x` by an arrow `g : x ⟶ y` is `F.map g z`. -/
+@[simp]
+theorem act_mk {x y : C} (g : x ⟶ y) (z : F.obj x) :
+    act F ⟨(⟨x, y, g⟩, .mk z), rfl⟩ = .mk (F.map g z) := by
+  simp [act]
+
 /-- The total arrows of the category of elements are the pairs of an arrow of `C` and a point
 of the total space lying over its source. -/
 def totalEquiv : Quiver.Total F.Elements ≃

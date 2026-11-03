@@ -126,8 +126,8 @@ theorem _root_.IsLocalHomeomorph.pullback_snd {f : X → Y} {g : Z → Y} (hf : 
       invFun w := ⟨⟨(e.symm (g w), w), hfW w⟩, e.map_target w.2⟩
       left_inv p := by
         refine Subtype.ext (Subtype.ext (Prod.ext ?_ rfl))
-        change e.symm (g p.1.snd) = p.1.fst
-        rw [← hpb, e.left_inv p.2]
+        -- The first component of the round trip is `e.symm (g p.1.snd)` by definition of `φ`.
+        exact (congrArg e.symm (hpb p.1)).symm.trans (e.left_inv p.2)
       right_inv _ := rfl
       continuous_toFun := (hsnd.comp continuous_subtype_val).subtype_mk _
       continuous_invFun :=

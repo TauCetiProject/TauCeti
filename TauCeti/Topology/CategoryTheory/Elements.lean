@@ -45,8 +45,10 @@ The hypotheses of a Hausdorff proper étale presentation pass from `Γ` to `Γ �
 
 Natural transformations between such functors are the equivariant maps of families; when they
 are continuous on total spaces they are continuous on arrows
-(`CategoryTheory.NatTrans.continuous_total_mapElements`). Every arrow of `Γ` is retained in
-`Γ ⋉ Z`, including isotropy acting trivially on the fibers.
+(`CategoryTheory.NatTrans.continuous_total_mapElements`). For each point `z`, every arrow of `Γ`
+whose source is the anchor of `z` gives an arrow of `Γ ⋉ Z` from `z`; distinct isotropy arrows
+give distinct arrows even when they act trivially on the fibers. Arrows of `Γ` whose source has
+an empty fiber have no lift.
 
 ## References
 
