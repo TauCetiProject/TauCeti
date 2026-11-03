@@ -13,7 +13,7 @@ import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 # Dilated cutoffs with Laplacian bounds
 
 In a finite-dimensional real inner product space, dilating a fixed smooth bump by `R` gives cutoffs
-`χ_R`, equal to `1` on `ball 0 R` and to `0` off `closedBall 0 (2R)`, with
+`χ_R`, with values in `[0, 1]`, equal to `1` on `ball 0 R` and to `0` off `closedBall 0 (2R)`, with
 `‖Dχ_R‖ = O(1/R)` and `|Δχ_R| = O(1/R²)` uniformly in `R`
 (`TauCeti.exists_forall_contDiff_cutoff_ball_norm_laplacian_le`). These are the truncations used
 to localize solutions of the Poisson equation: the error `Δ(χ_R u) - χ_R Δu` lives on the annulus
@@ -30,15 +30,15 @@ open scoped ContDiff Laplacian
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
 
 /-- **Dilated cutoffs with Laplacian bounds.** There is a constant `C` such that for every `R > 0`
-some smooth compactly supported `χ` equals `1` near every point of `ball 0 R`, equals `0` near
-every point outside `closedBall 0 (2R)`, and satisfies `‖Dχ‖ ≤ C / R` and `|Δχ| ≤ C / R²`. The
-cutoff is `x ↦ b (R⁻¹ • x)` for a fixed smooth bump `b` equal to `1` on `closedBall 0 1` and
-supported in `closedBall 0 2`. -/
+some smooth compactly supported `χ` with values in `[0, 1]` equals `1` near every point of
+`ball 0 R`, equals `0` near every point outside `closedBall 0 (2R)`, and satisfies `‖Dχ‖ ≤ C / R`
+and `|Δχ| ≤ C / R²`. The cutoff is `x ↦ b (R⁻¹ • x)` for a fixed smooth bump `b` equal to `1` on
+`closedBall 0 1` and supported in `closedBall 0 2`. -/
 theorem exists_forall_contDiff_cutoff_ball_norm_laplacian_le :
     ∃ C : ℝ, ∀ R : ℝ, 0 < R → ∃ χ : E → ℝ,
       ContDiff ℝ ∞ χ ∧ HasCompactSupport χ ∧ (∀ x, ‖x‖ < R → χ =ᶠ[𝓝 x] fun _ => 1) ∧
         (∀ x, 2 * R < ‖x‖ → χ =ᶠ[𝓝 x] fun _ => 0) ∧ (∀ x, ‖fderiv ℝ χ x‖ ≤ C / R) ∧
-          ∀ x, ‖Δ χ x‖ ≤ C / R ^ 2 := by
+          (∀ x, ‖Δ χ x‖ ≤ C / R ^ 2) ∧ ∀ x, χ x ∈ Set.Icc 0 1 := by
   let b : ContDiffBump (0 : E) := ⟨1, 2, zero_lt_one, one_lt_two⟩
   have hb : ContDiff ℝ ∞ b := b.contDiff
   obtain ⟨C₁, hC₁⟩ := (hb.continuous_fderiv (by simp)).bounded_above_of_compact_support
@@ -48,7 +48,7 @@ theorem exists_forall_contDiff_cutoff_ball_norm_laplacian_le :
       (b.hasCompactSupport.mono' ((subset_tsupport _).trans (tsupport_laplacian_subset _)))
   refine ⟨max C₁ C₂, fun R hR => ⟨fun x => b (R⁻¹ • x), hb.comp (contDiff_id.const_smul R⁻¹),
     b.hasCompactSupport.comp_smul (inv_ne_zero hR.ne'), fun x hx => ?_, fun x hx => ?_,
-    fun x => ?_, fun x => ?_⟩⟩
+    fun x => ?_, fun x => ?_, fun x => ⟨b.nonneg, b.le_one⟩⟩⟩
   · filter_upwards [isOpen_ball.mem_nhds (mem_ball_zero_iff.2 hx)] with y hy
     refine b.one_of_mem_closedBall (mem_closedBall_zero_iff.2 ?_)
     rw [norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos hR, inv_mul_le_iff₀ hR, mul_one]

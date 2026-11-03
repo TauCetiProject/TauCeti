@@ -62,6 +62,13 @@ def sectionValue (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) : ℂ :=
 theorem sectionValue_apply (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
     sectionValue x z = 2 * ((x z 2 : ℂ) + (x z 3 : ℂ) * I) := (rfl)
 
+/-- The squared modulus of the section is `|α|² = 4 (p² + q²)`. -/
+theorem norm_sectionValue_sq (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    ‖sectionValue x z‖ ^ 2 = 4 * (x z 2 ^ 2 + x z 3 ^ 2) := by
+  simp only [Complex.sq_norm, sectionValue_apply, Complex.normSq_apply, mul_re, mul_im, add_re,
+    add_im, ofReal_re, ofReal_im, I_re, I_im, re_ofNat, im_ofNat]
+  ring
+
 /-- The covariant derivative `d_a α`, with the charge-one connection `a = i(b₁ ds + b₂ dt)`.
 The argument `v` is an actual real tangent vector to the plane. -/
 def covariantDerivative (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z v : ℂ) : ℂ :=
