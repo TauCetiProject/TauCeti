@@ -15,7 +15,6 @@ import Mathlib.MeasureTheory.Measure.Prokhorov
 import Mathlib.MeasureTheory.Measure.TightNormed
 import Mathlib.Topology.MetricSpace.Equicontinuity
 import Mathlib.Topology.Metrizable.Basic
-import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Positivity
 
 /-!
