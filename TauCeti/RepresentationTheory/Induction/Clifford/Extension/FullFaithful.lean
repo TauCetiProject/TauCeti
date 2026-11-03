@@ -78,7 +78,7 @@ private theorem multiplicityMap_operator {W W' : FDRep k (inertia A)}
     rw [hd]
     group
   rw [hc]
-  simp only [map_mul, Module.End.mul_apply]
+  simp only [map_mul, mul_apply_eq_comp]
   rw [inl_apply, cliffordMultiplicityRepresentation_mk_kernelLift,
     cliffordMultiplicityRepresentation_mk_kernelLift, multiplicityMap_smul, hsection]
 

@@ -143,7 +143,7 @@ theorem representedSerreAlgebra_eq_lieSpan :
         ← lieSpan_serreGenerators_eq_top R CartanMatrix.F₄ᵀ, LieSubalgebra.map_lieSpan]
       simp only [Set.image_union]
       congr 1
-      all_goals ext x; simp
+      ext x; simp
     _ = LieSubalgebra.lieSpan R (Matrix (Fin 26) (Fin 26) R)
         (Set.range (raisingMatrixBaseChange R) ∪ Set.range (loweringMatrixBaseChange R)) := by
       apply le_antisymm

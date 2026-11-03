@@ -43,6 +43,9 @@ continuous linear map commutes with precomposition.
 `BoundedContinuousFunction.exists_finite_range_dist_lt` says that on a discrete space every bounded
 real function is a uniform limit of finite-valued bounded functions.
 
+`BoundedContinuousFunction.norm_norm_smul_one_sub_le_of_nonneg` says that a nonnegative real
+bounded continuous function `f` lies within `‖f‖` of the constant `‖f‖`.
+
 `BoundedContinuousFunction.dilate` is the dilation `n ↦ f (n / k)` of a bounded sequence, with
 natural-number division; dilations compose multiplicatively and commute with the pointwise
 operations. They are the operators under which Dixmier's generalized limits are invariant, see
@@ -215,6 +218,18 @@ theorem exists_finite_range_dist_lt {X : Type*} [TopologicalSpace X] [DiscreteTo
     rw [Int.fract, mul_sub, mul_div_cancel₀ _ hδ.ne']
   rw [mkOfDiscrete_apply, Real.dist_eq, h, abs_of_nonneg (mul_nonneg hδ.le (Int.fract_nonneg _))]
   exact mul_le_of_le_one_right hδ.le (Int.fract_lt_one _).le
+
+/-- A nonnegative real bounded continuous function `f` lies within `‖f‖` of the constant `‖f‖`. -/
+theorem norm_norm_smul_one_sub_le_of_nonneg {X : Type*} [TopologicalSpace X] {f : X →ᵇ ℝ}
+    (hf : 0 ≤ f) : ‖‖f‖ • (1 : X →ᵇ ℝ) - f‖ ≤ ‖f‖ :=
+  (norm_le (norm_nonneg f)).2 fun x => by
+    have h₁ := f.apply_le_norm x
+    have h₀ : 0 ≤ f x := hf x
+    simp only [FunLike.coe_sub, FunLike.coe_smul, FunLike.coe_one, Pi.sub_apply, Pi.smul_apply,
+      Pi.one_apply, smul_eq_mul, mul_one,
+      Real.norm_eq_abs]
+    rw [abs_of_nonneg (by linarith)]
+    linarith
 
 section Dilate
 

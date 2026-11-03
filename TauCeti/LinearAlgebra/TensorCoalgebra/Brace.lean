@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.NatAntidiagonal
 public import TauCeti.LinearAlgebra.TensorCoalgebra.OddSquare
 import Mathlib.Tactic.LinearCombination
 
@@ -36,7 +37,10 @@ bracket is graded antisymmetric and satisfies the graded Jacobi identity.
 For a Taylor map `F` of odd degree, `F{F}` is the letter component of the square `D F ∘ D F`,
 which is an ordinary coderivation; so `D F` squares to zero exactly when `F{F} = 0`.  In degree one
 this identifies square-zero bar differentials, that is `A∞` structures, with solutions of the
-brace equation `m{m} = 0`.
+brace equation `m{m} = 0`.  More generally, for a family `φ` of Taylor maps of odd degree the
+composites `D φᵢ ∘ D φⱼ` are not coderivations, but their sums over the antidiagonals `i + j = k`
+are: the terms for `(i, j)` and `(j, i)` combine to a graded commutator and the diagonal terms are
+squares.  This is the expansion of the brace equation for a formal power series of Taylor maps.
 
 ## Main definitions
 
@@ -47,8 +51,12 @@ brace equation `m{m} = 0`.
 
 * `TauCeti.ReducedTensorWords.gradedCoderiv_gerstenhaberBracket`: the coderivation of a
   Gerstenhaber bracket is the graded commutator of the coderivations.
+* `TauCeti.ReducedTensorWords.gradedCoderiv_brace_self`: for odd degree, the coderivation of
+  `F{F}` is the square of the coderivation of `F`.
 * `TauCeti.ReducedTensorWords.gradedCoderiv_comp_self_eq_zero_iff`: for odd degree, the
   coderivation squares to zero exactly when the brace equation `F{F} = 0` holds.
+* `TauCeti.ReducedTensorWords.gradedCoderiv_sum_antidiagonal_brace`: for a family of Taylor maps
+  of odd degree, the coderivation of `∑_{i + j = k} φᵢ{φⱼ}` is `∑_{i + j = k} D φᵢ ∘ D φⱼ`.
 * `TauCeti.ReducedTensorWords.brace_brace_sub_smul_brace_brace`: the graded right pre-Lie identity
   `F{g}{h} - (-1)^(q * r) • F{h}{g} = F{[g, h]}`.
 * `TauCeti.ReducedTensorWords.gerstenhaberBracket_swap`: graded antisymmetry of the bracket.
@@ -229,6 +237,19 @@ theorem gradedCoderiv_gerstenhaberBracket {F g : ReducedTensorWords R M →ₗ[R
     letter_comp_gradedCoderiv_comp_gradedCoderiv, letter_comp_gradedCoderiv_comp_gradedCoderiv,
     gerstenhaberBracket_def]
 
+/-- For a Taylor map `F` of odd degree `q`, the graded Taylor expansion of the brace `F{F}` is the
+square of the graded Taylor expansion of `F`. -/
+theorem gradedCoderiv_brace_self {F : ReducedTensorWords R M →ₗ[R] M} {q : ℤ}
+    (hF : LinearMap.IsHomogeneous F (gradedPiece G) G.piece q) (hq : Odd q) :
+    gradedCoderiv G (brace G F F q) (q + q) = gradedCoderiv G F q ∘ₗ gradedCoderiv G F q := by
+  -- The square of an odd graded coderivation is an ordinary coderivation, and its letter
+  -- component is the brace.
+  have hsq := (isGradedCoderivation_gradedCoderiv G F q).isCoderivation_comp_self_of_isHomogeneous
+    (isHomogeneous_gradedCoderiv G F q q hF) (by rw [Int.negOnePow_odd _ (hq.mul hq)]; simp)
+  refine IsGradedCoderivation.eq_of_letter_comp_eq (isGradedCoderivation_gradedCoderiv G _ _)
+    (by rw [← two_mul]; exact hsq.isGradedCoderivation_two_mul G q) ?_
+  rw [letter_comp_gradedCoderiv, letter_comp_gradedCoderiv_comp_gradedCoderiv]
+
 /-- **The square-zero equation is the brace equation.**  For a Taylor map `F` of odd degree `q`,
 the graded Taylor expansion of `F` squares to zero exactly when `F{F} = 0`. -/
 theorem gradedCoderiv_comp_self_eq_zero_iff {F : ReducedTensorWords R M →ₗ[R] M} {q : ℤ}
@@ -236,13 +257,73 @@ theorem gradedCoderiv_comp_self_eq_zero_iff {F : ReducedTensorWords R M →ₗ[R
     gradedCoderiv G F q ∘ₗ gradedCoderiv G F q = 0 ↔ brace G F F q = 0 := by
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · rw [← letter_comp_gradedCoderiv_comp_gradedCoderiv, h, LinearMap.comp_zero]
-  · -- The square of an odd graded coderivation is an ordinary coderivation, and its letter
-    -- component is the brace.
-    have hsq := (isGradedCoderivation_gradedCoderiv G F q).isCoderivation_comp_self_of_isHomogeneous
-      (isHomogeneous_gradedCoderiv G F q q hF) (by rw [Int.negOnePow_odd _ (hq.mul hq)]; simp)
-    refine IsGradedCoderivation.eq_of_letter_comp_eq (hsq.isGradedCoderivation G)
-      ((mem_gradedCoderivations G).1 (gradedCoderivations G 0).zero_mem) ?_
-    rw [letter_comp_gradedCoderiv_comp_gradedCoderiv, h, LinearMap.comp_zero]
+  · rw [← gradedCoderiv_brace_self hF hq, h, gradedCoderiv_zero_left]
+
+/-- **Brace squares of a family of odd Taylor maps.**  If `φ i` has odd degree `q` for every
+`i ≤ k`, the graded Taylor expansion of `∑_{i + j = k} φ i {φ j}` is
+`∑_{i + j = k} D (φ i) ∘ D (φ j)`.  This is the coefficient of `tᵏ` in the square of the
+coderivation of a formal power series `∑ tⁱ φ i`. -/
+theorem gradedCoderiv_sum_antidiagonal_brace {φ : ℕ → ReducedTensorWords R M →ₗ[R] M} {q : ℤ}
+    {k : ℕ} (hφ : ∀ i ≤ k, LinearMap.IsHomogeneous (φ i) (gradedPiece G) G.piece q)
+    (hq : Odd q) :
+    gradedCoderiv G (∑ x ∈ Finset.antidiagonal k, brace G (φ x.1) (φ x.2) q) (q + q) =
+      ∑ x ∈ Finset.antidiagonal k, gradedCoderiv G (φ x.1) q ∘ₗ gradedCoderiv G (φ x.2) q := by
+  set D := fun i ↦ gradedCoderiv G (φ i) q with hD
+  have hle {x : ℕ × ℕ} (hx : x ∈ Finset.antidiagonal k) : x.1 ≤ k ∧ x.2 ≤ k := by
+    rw [Finset.mem_antidiagonal] at hx
+    omega
+  -- The terms for `(i, j)` and `(j, i)` add up to a graded commutator of odd coderivations.
+  have hpair {x : ℕ × ℕ} (hx : x ∈ Finset.antidiagonal k) :
+      D x.1 ∘ₗ D x.2 + D x.2 ∘ₗ D x.1 ∈ gradedCoderivations G (q + q) := by
+    have h := (isGradedCoderivation_gradedCoderiv G (φ x.1) q).comp_sub_smul_comp
+      (isHomogeneous_gradedCoderiv G _ q q (hφ _ (hle hx).1))
+      (isGradedCoderivation_gradedCoderiv G (φ x.2) q)
+      (isHomogeneous_gradedCoderiv G _ q q (hφ _ (hle hx).2))
+    rw [negOnePowCast_odd (hq.mul hq)] at h
+    convert (mem_gradedCoderivations G).2 h using 1
+    module
+  -- The diagonal terms are squares of odd coderivations.
+  have hdiag (i : ℕ) (hi : i ≤ k) : D i ∘ₗ D i ∈ gradedCoderivations G (q + q) := by
+    rw [hD, ← gradedCoderiv_brace_self (hφ i hi) hq]
+    exact (mem_gradedCoderivations G).2 (isGradedCoderivation_gradedCoderiv G _ _)
+  -- Split the antidiagonal into the pairs below the diagonal, their mirror images, and the
+  -- diagonal itself.
+  have hsplit : ∑ x ∈ Finset.antidiagonal k, D x.1 ∘ₗ D x.2 =
+      ∑ x ∈ Finset.antidiagonal k,
+          (if x.1 < x.2 then D x.1 ∘ₗ D x.2 + D x.2 ∘ₗ D x.1 else 0) +
+        ∑ x ∈ Finset.antidiagonal k, (if x.1 = x.2 then D x.1 ∘ₗ D x.2 else 0) := by
+    have hswap : ∑ x ∈ Finset.antidiagonal k, (if x.1 < x.2 then D x.2 ∘ₗ D x.1 else 0) =
+        ∑ x ∈ Finset.antidiagonal k, (if x.2 < x.1 then D x.1 ∘ₗ D x.2 else 0) :=
+      Finset.Nat.sum_antidiagonal_swap (f := fun x ↦ if x.2 < x.1 then D x.1 ∘ₗ D x.2 else 0)
+    have hadd : ∑ x ∈ Finset.antidiagonal k,
+          (if x.1 < x.2 then D x.1 ∘ₗ D x.2 + D x.2 ∘ₗ D x.1 else 0) =
+        ∑ x ∈ Finset.antidiagonal k, (if x.1 < x.2 then D x.1 ∘ₗ D x.2 else 0) +
+          ∑ x ∈ Finset.antidiagonal k, (if x.1 < x.2 then D x.2 ∘ₗ D x.1 else 0) := by
+      rw [← Finset.sum_add_distrib]
+      exact Finset.sum_congr rfl fun x _ ↦ by split_ifs <;> simp
+    rw [hadd, hswap, ← Finset.sum_add_distrib, ← Finset.sum_add_distrib]
+    refine Finset.sum_congr rfl fun x _ ↦ ?_
+    rcases lt_trichotomy x.1 x.2 with h | h | h
+    · simp [h, h.ne, h.not_gt]
+    · simp [h]
+    · simp [h, h.ne', h.not_gt]
+  have hmem : ∑ x ∈ Finset.antidiagonal k, D x.1 ∘ₗ D x.2 ∈ gradedCoderivations G (q + q) := by
+    rw [hsplit]
+    refine add_mem (Submodule.sum_mem _ fun x hx ↦ ?_) (Submodule.sum_mem _ fun x hx ↦ ?_)
+    · split_ifs
+      exacts [hpair hx, zero_mem _]
+    · split_ifs with h
+      · rw [← h]
+        exact hdiag x.1 (hle hx).1
+      · exact zero_mem _
+  refine IsGradedCoderivation.eq_of_letter_comp_eq (isGradedCoderivation_gradedCoderiv G _ _)
+    ((mem_gradedCoderivations G).1 hmem) ?_
+  have hsum := map_sum (LinearMap.llcomp R _ _ _ (letter R M)) (fun x ↦ D x.1 ∘ₗ D x.2)
+    (Finset.antidiagonal k)
+  simp only [LinearMap.llcomp_apply'] at hsum
+  rw [letter_comp_gradedCoderiv, hsum]
+  exact Finset.sum_congr rfl fun x _ ↦
+    (letter_comp_gradedCoderiv_comp_gradedCoderiv (φ x.1) (φ x.2) q q).symm
 
 /-- The Gerstenhaber bracket is graded antisymmetric:
 `[g, F] = -(-1)^(p * q) • [F, g]` for `F` of degree `p` and `g` of degree `q`. -/

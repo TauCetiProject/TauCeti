@@ -11,6 +11,7 @@ public import TauCeti.RingTheory.Dagger.Weierstrass
 public import Mathlib.RingTheory.Finiteness.Basic
 import Mathlib.RingTheory.Finiteness.Ideal
 import Mathlib.RingTheory.Polynomial.Basic
+import TauCeti.RingTheory.Ideal.Quotient.Finite
 
 /-!
 # Monsky–Washnitzer algebras are noetherian
@@ -150,11 +151,8 @@ private theorem fg_of_isDistinguished_mem [IsNoetherianRing W] {I : Ideal W'} {g
     (A := W' ⧸ J) (π := π) hsur hg hu hz
   have : Module.Finite W (W' ⧸ J) :=
     (RingHom.finite_algebraMap (A := W) (B := W' ⧸ J)).mp hfin
-  have : IsNoetherian W' (W' ⧸ J) :=
-    isNoetherian_of_tower W (isNoetherian_of_isNoetherianRing_of_finite W (W' ⧸ J))
-  refine Submodule.fg_of_fg_map_of_fg_inf_ker J.mkQ (IsNoetherian.noetherian _) ?_
-  rw [Submodule.ker_mkQ, inf_eq_right.mpr (Ideal.span_le.mpr (Set.singleton_subset_iff.mpr hgI))]
-  exact ⟨{g}, by simp [Ideal.span]⟩
+  exact Ideal.fg_of_le_of_finite_quotient (A := W) (Submodule.fg_span_singleton g)
+    (Ideal.span_le.mpr (Set.singleton_subset_iff.mpr hgI))
 
 /-- If `K⟨X⟩†` is noetherian, so is `K⟨X, Y⟩†`. -/
 private theorem isNoetherianRing_option [Finite σ] [IsNoetherianRing W] : IsNoetherianRing W' := by

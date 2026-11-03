@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Noetherian.Defs
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic
 import TauCeti.Analysis.Normed.Group.Ultra
+import TauCeti.Analysis.Normed.Module.StrictGenerators
 import TauCeti.Analysis.Normed.Ring.Approximation
 import Mathlib.Data.Finsupp.MonomialOrder
 import Mathlib.Data.Finsupp.PWO
@@ -35,6 +36,15 @@ noetherian. A complete nonarchimedean division ring satisfies the
 hypotheses with `deg = 0`, so its Tate algebras at arbitrary radii are left noetherian
 (`TauCeti.MvPowerSeries.isNoetherianRing_isRestricted_subring`).
 
+The argument gives more than finite generation. Every left ideal `H` has finitely many nonzero
+elements `x` such that each `y ∈ H` is a combination `∑ a x * x` with `‖a x‖ * ‖x‖ ≤ ‖y‖`
+(`TauCeti.MvPowerSeries.exists_finset_eq_sum_mul_isRestricted_subring_of_division`): no
+cancellation between the terms is needed to represent `y`. For Tate algebras at unit polyradius
+the generators can be normalised to Gauss norm one, and the coefficients are then bounded by
+`‖y‖` (`Ideal.exists_finset_norm_eq_one_isRestricted_subring`). In particular, the map
+`(a x)ₓ ↦ ∑ a x * x` from the finite free module with the maximum norm onto `H` induces on `H`
+exactly its Gauss norm as quotient norm.
+
 ## Proof
 
 The argument is a Gröbner-basis argument. Fix a monomial order on the exponents. The *leading
@@ -52,9 +62,10 @@ of weighted norm at most `ε M`. It changes coefficients at larger indices only 
 which by the compatibility of `deg` with the norm keeps the degrees of the large ones.
 Recording, at each index, one more than the degree of each coefficient of weighted norm above
 `ε M`, reduction strictly decreases in the colexicographic order. That order is well founded,
-so after finitely many steps `y` is within `ε ‖y‖` of a combination of the chosen elements with
-coefficients bounded by `‖y‖`. Iterating gives a convergent expansion of `y`
-(`Ideal.le_span_of_approx`).
+so after finitely many steps `y` is within `ε ‖y‖` of a combination `∑ b x * x` of the chosen
+elements with `‖b x‖ * ‖x‖ ≤ ‖y‖`. Iterating gives a convergent expansion of `y`, and since the
+norm is ultrametric its coefficients satisfy the same bound
+(`TauCeti.exists_eq_sum_mul_of_approx`).
 
 This follows Kedlaya's proof, with two reorganisations: Dickson's lemma is applied directly to
 the pairs above instead of to Kedlaya's minimal leading degrees `d_I`, and his argument by
@@ -62,6 +73,12 @@ contradiction on an infinite reduction sequence is replaced by the well-founded 
 
 ## Main results
 
+* `TauCeti.MvPowerSeries.exists_finset_eq_sum_mul_isRestricted_subring_of_division`: every left
+  ideal of restricted power series over a complete ring with a multiplicative ultrametric norm
+  and a compatible Euclidean degree has a finite strict generating system.
+* `Ideal.exists_finset_eq_sum_mul_isRestricted_subring` and
+  `Ideal.exists_finset_norm_eq_one_isRestricted_subring`: the same for Tate algebras over a
+  complete nonarchimedean division ring, with generators of Gauss norm one at unit polyradius.
 * `TauCeti.MvPowerSeries.isNoetherianRing_isRestricted_subring_of_division`: restricted power
   series at arbitrary positive radii in finitely many variables over a complete ring with a
   multiplicative ultrametric norm and a compatible Euclidean degree form a left noetherian ring.
@@ -347,6 +364,34 @@ private theorem exists_approx (m : MonomialOrder σ) (deg : R → ℕ)
         simp [add_mul, Finset.sum_add_distrib, ite_mul, hx₀]
       rwa [this, ← sub_sub, sub_right_comm]
 
+/-- **Strict generators of ideals of restricted power series**, from the argument of Kedlaya's
+Theorem 3.2 for an abstract Euclidean normed ring.
+Let `R` be a complete ring with a multiplicative ultrametric norm, and `deg : R → ℕ`
+a degree such that `deg y = deg x` whenever `‖x - y‖ < ‖x‖`, and such that for `x ≠ 0` every `y`
+can be divided as `y = z * x + w` with `‖w‖ ≤ ‖y‖` and either `w = 0` or `deg w < deg x`. Then
+for finitely many variables and all positive radii `c`, every left ideal `H` of the ring of
+restricted power series has a finite set `F` of nonzero elements such that every `y ∈ H` is a
+combination `∑ x ∈ F, a x * x` with `‖a x‖ * ‖x‖ ≤ ‖y‖`. In particular `F` generates `H`, and
+`F` is empty when `H = ⊥`. -/
+theorem exists_finset_eq_sum_mul_isRestricted_subring_of_division [CompleteSpace R]
+    [Finite σ] (deg : R → ℕ) (hdeg : ∀ x y : R, ‖x - y‖ < ‖x‖ → deg y = deg x)
+    (hdiv : ∀ x y : R, x ≠ 0 → ∃ z w, y = z * x + w ∧ ‖w‖ ≤ ‖y‖ ∧ (w = 0 ∨ deg w < deg x))
+    (H : Ideal (IsRestricted.subring (R := R) c)) :
+    ∃ F : Finset (IsRestricted.subring (R := R) c), (∀ x ∈ F, x ∈ H ∧ x ≠ 0) ∧
+      ∀ y ∈ H, ∃ a : IsRestricted.subring (R := R) c → IsRestricted.subring (R := R) c,
+        y = ∑ x ∈ F, a x * x ∧ ∀ x ∈ F, ‖a x‖ * ‖x‖ ≤ ‖y‖ := by
+  let _ : LinearOrder σ := LinearOrder.lift' (Finite.equivFin σ) (Finite.equivFin σ).injective
+  let m : MonomialOrder σ := MonomialOrder.lex
+  obtain ⟨F, hFH, hF⟩ := exists_finset_isLeadingIndex m deg H
+  obtain ⟨ε, hε0, hε1, hε⟩ := exists_gap F
+  refine ⟨F, hFH, fun y hy ↦ TauCeti.exists_eq_sum_mul_of_approx (S := H) hε0.le hε1
+    (fun y hy ↦ ?_) hy⟩
+  rcases eq_or_ne y 0 with rfl | hy0
+  · exact ⟨0, fun x _ ↦ by simp, by simp, by simp⟩
+  obtain ⟨b, hb, hbε⟩ :=
+    exists_approx m deg hdeg hdiv hFH hF hε0 hε (mul_pos hε0 (norm_pos_iff.mpr hy0)) y hy le_rfl
+  exact ⟨b, hb, H.sub_mem hy (H.sum_mem fun x hx ↦ H.mul_mem_left _ (hFH x hx).1), hbε⟩
+
 /-- **Kedlaya's Hilbert basis theorem for restricted power series**, the argument of Kedlaya's
 Theorem 3.2 for an abstract Euclidean normed ring.
 Let `R` be a complete ring with a multiplicative ultrametric norm, and `deg : R → ℕ`
@@ -358,25 +403,58 @@ theorem isNoetherianRing_isRestricted_subring_of_division [CompleteSpace R] [Fin
     (deg : R → ℕ) (hdeg : ∀ x y : R, ‖x - y‖ < ‖x‖ → deg y = deg x)
     (hdiv : ∀ x y : R, x ≠ 0 → ∃ z w, y = z * x + w ∧ ‖w‖ ≤ ‖y‖ ∧ (w = 0 ∨ deg w < deg x)) :
     IsNoetherianRing (IsRestricted.subring (R := R) c) := by
-  let _ : LinearOrder σ := LinearOrder.lift' (Finite.equivFin σ) (Finite.equivFin σ).injective
-  let m : MonomialOrder σ := MonomialOrder.lex
   refine (isNoetherianRing_iff_ideal_fg _).mpr fun H ↦ ?_
-  obtain ⟨F, hFH, hF⟩ := exists_finset_isLeadingIndex m deg H
-  obtain ⟨ε, hε0, hε1, hε⟩ := exists_gap F
-  refine ⟨F, le_antisymm (Ideal.span_le.mpr fun x hx ↦ (hFH x hx).1)
-    (Ideal.le_span_of_approx (fun x hx ↦ (hFH x hx).1) hε0.le hε1 fun y hy ↦ ?_)⟩
-  rcases eq_or_ne y 0 with rfl | hy0
-  · exact ⟨0, fun x _ ↦ by simp, by simp⟩
-  exact exists_approx m deg hdeg hdiv hFH hF hε0 hε (mul_pos hε0 (norm_pos_iff.mpr hy0)) y hy le_rfl
+  obtain ⟨F, hFH, hF⟩ :=
+    exists_finset_eq_sum_mul_isRestricted_subring_of_division deg hdeg hdiv H
+  refine ⟨F, le_antisymm (Ideal.span_le.mpr fun x hx ↦ (hFH x hx).1) fun y hy ↦ ?_⟩
+  obtain ⟨a, rfl, -⟩ := hF y hy
+  exact _root_.sum_mem fun x hx ↦ Ideal.mul_mem_left _ _ (Ideal.subset_span hx)
+
+section DivisionRing
+
+variable {K : Type*} [NormedDivisionRing K] [IsUltrametricDist K] [CompleteSpace K] [Finite σ]
+
+omit [IsUltrametricDist K] [CompleteSpace K] in
+/-- A division ring is Euclidean for every degree: division leaves no remainder. -/
+private theorem exists_eq_mul_add_of_divisionRing {deg : K → ℕ} (x y : K) (hx : x ≠ 0) :
+    ∃ z w, y = z * x + w ∧ ‖w‖ ≤ ‖y‖ ∧ (w = 0 ∨ deg w < deg x) :=
+  ⟨y * x⁻¹, 0, by rw [add_zero, inv_mul_cancel_right₀ hx], by simp, Or.inl rfl⟩
 
 /-- **Tate algebras are left noetherian.** Over a complete nonarchimedean division ring `K`,
 the ring of restricted power series in finitely many variables at arbitrary positive radii `c` is
 left noetherian: `K` satisfies the hypotheses of
 `isNoetherianRing_isRestricted_subring_of_division` with the zero degree. -/
-theorem isNoetherianRing_isRestricted_subring {K : Type*} [NormedDivisionRing K]
-    [IsUltrametricDist K] [CompleteSpace K] [Finite σ] :
+theorem isNoetherianRing_isRestricted_subring :
     IsNoetherianRing (IsRestricted.subring (R := K) c) :=
   isNoetherianRing_isRestricted_subring_of_division (fun _ ↦ 0) (fun _ _ _ ↦ rfl)
-    fun x y hx ↦ ⟨y * x⁻¹, 0, by rw [add_zero, inv_mul_cancel_right₀ hx], by simp, Or.inl rfl⟩
+    exists_eq_mul_add_of_divisionRing
+
+/-- **Strict generators of ideals of Tate algebras.** Over a complete nonarchimedean division ring
+`K`, in finitely many variables and at arbitrary positive radii `c`, every left ideal `H` of the
+Tate algebra has a finite set `F` of nonzero elements such that every `y ∈ H` is a combination
+`∑ x ∈ F, a x * x` with `‖a x‖ * ‖x‖ ≤ ‖y‖`. -/
+theorem _root_.Ideal.exists_finset_eq_sum_mul_isRestricted_subring
+    (H : Ideal (IsRestricted.subring (R := K) c)) :
+    ∃ F : Finset (IsRestricted.subring (R := K) c), (∀ x ∈ F, x ∈ H ∧ x ≠ 0) ∧
+      ∀ y ∈ H, ∃ a : IsRestricted.subring (R := K) c → IsRestricted.subring (R := K) c,
+        y = ∑ x ∈ F, a x * x ∧ ∀ x ∈ F, ‖a x‖ * ‖x‖ ≤ ‖y‖ :=
+  exists_finset_eq_sum_mul_isRestricted_subring_of_division (fun _ ↦ 0) (fun _ _ _ ↦ rfl)
+    exists_eq_mul_add_of_divisionRing H
+
+/-- **Strict generators of norm one.** Over a complete nonarchimedean division ring `K`, every
+left ideal `H` of the Tate algebra `K⟨X⟩` at unit polyradius in finitely many variables has a
+finite set `F` of generators of Gauss norm one such that every `y ∈ H` is a combination
+`∑ x ∈ F, a x * x` with `‖a x‖ ≤ ‖y‖`. The set `F` is empty when `H = ⊥`. -/
+theorem _root_.Ideal.exists_finset_norm_eq_one_isRestricted_subring
+    (H : Ideal (IsRestricted.subring (R := K) (fun _ : σ ↦ 1))) :
+    ∃ F : Finset (IsRestricted.subring (R := K) (fun _ : σ ↦ 1)), (∀ x ∈ F, x ∈ H ∧ ‖x‖ = 1) ∧
+      ∀ y ∈ H, ∃ a : IsRestricted.subring (R := K) (fun _ : σ ↦ 1) →
+          IsRestricted.subring (R := K) (fun _ : σ ↦ 1),
+        y = ∑ x ∈ F, a x * x ∧ ∀ x ∈ F, ‖a x‖ ≤ ‖y‖ := by
+  simpa only [smul_eq_mul] using H.exists_finset_norm_eq_one_of_exists_finset_eq_sum_smul
+    (fun _ _ hx ↦ exists_isUnit_and_norm_eq hx)
+    (by simpa only [smul_eq_mul] using H.exists_finset_eq_sum_mul_isRestricted_subring)
+
+end DivisionRing
 
 end TauCeti.MvPowerSeries
