@@ -23,6 +23,8 @@ Interval integrals of elementary functions in closed form or as series, continui
   `∫ x in a..b, (b - x)^r = (b - a)^(r + 1) / (r + 1)` for `r > -1`.
 * `TauCeti.integral_sub_rpow_le_of_lt_neg_one`: `∫ x in a..b - c, (b - x)^r ≤ c^(r + 1) / -(r + 1)`
   for `r < -1`.
+* `TauCeti.norm_integral_le_of_ae_norm_le_sub_rpow`: an integral over `[a, t]` with an integrable
+  power-weight bound `(t - s)^((α - 2)/2)` is `O((t - a)^(α/2))`.
 * `TauCeti.norm_integral_le_of_ae_norm_le_rpow`: an integral over `[0, t]` with two power-weight
   bounds near and away from `s = t`, split at `t - δ²`, is `O(δ^α)`.
 * `TauCeti.integral_one_div_sqrt_one_sub_sq`: `∫ x in a..b, 1 / √(1 - x²) = arcsin b - arcsin a`
@@ -79,6 +81,19 @@ theorem integral_sub_rpow_le_of_lt_neg_one {r a b c : ℝ} (hr : r < -1) (hc : 0
   exact sub_le_self _ (Real.rpow_nonneg (hc.le.trans hcb) _)
 
 open MeasureTheory Real Set in
+/-- Near its singular endpoint, an integrand bounded by `A (t - s)^((α - 2)/2)`, which is
+integrable for `α > 0`, has integral over `[a, t]` at most `(2A/α) (t - a)^(α/2)`. -/
+theorem norm_integral_le_of_ae_norm_le_sub_rpow {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {Φ : ℝ → F} {α a t A : ℝ} (hα : 0 < α) (hat : a ≤ t)
+    (hΦ : ∀ᵐ s, s ∈ Ioc a t → ‖Φ s‖ ≤ A * (t - s) ^ ((α - 2) / 2)) :
+    ‖∫ s in a..t, Φ s‖ ≤ 2 / α * A * (t - a) ^ (α / 2) := by
+  refine (intervalIntegral.norm_integral_le_of_norm_le hat hΦ
+    ((intervalIntegrable_sub_rpow (r := (α - 2) / 2) (by linarith) a t).const_mul A)).trans_eq ?_
+  rw [intervalIntegral.integral_const_mul, integral_sub_rpow (by linarith),
+    show (α - 2) / 2 + 1 = α / 2 by ring]
+  field_simp
+
+open MeasureTheory Real Set in
 open scoped Interval in
 /-- Splitting a singular integral at distance `δ²` from its singular endpoint. If the integrand
 is `O(A (t - s)^((α - 2)/2))`, which is integrable, and also `O(B δ (t - s)^((α - 3)/2))`, which is
@@ -97,14 +112,9 @@ theorem norm_integral_le_of_ae_norm_le_rpow {F : Type*} [NormedAddCommGroup F]
     push_cast
     ring
   -- Near `s = t`, the first bound integrates to `(2A/α) (t - a)^(α/2)`.
-  have hnear : ∀ a, 0 ≤ a → a ≤ t → ‖∫ s in a..t, Φ s‖ ≤ 2 / α * A * (t - a) ^ (α / 2) := by
-    intro a ha hat
-    refine (intervalIntegral.norm_integral_le_of_norm_le hat ?_
-      ((intervalIntegrable_sub_rpow (r := (α - 2) / 2) (by linarith) a t).const_mul A)).trans_eq ?_
-    · filter_upwards [hΦA] with s hs hsI using hs (Ioc_subset_Ioc ha le_rfl hsI)
-    · rw [intervalIntegral.integral_const_mul, integral_sub_rpow (by linarith),
-        show (α - 2) / 2 + 1 = α / 2 by ring]
-      field_simp
+  have hnear : ∀ a, 0 ≤ a → a ≤ t → ‖∫ s in a..t, Φ s‖ ≤ 2 / α * A * (t - a) ^ (α / 2) :=
+    fun a ha hat => norm_integral_le_of_ae_norm_le_sub_rpow hα₀ hat
+      (hΦA.mono fun s hs hsI => hs (Ioc_subset_Ioc ha le_rfl hsI))
   have hB' : 0 ≤ 2 / (1 - α) * B * δ ^ α := by
     have : 0 < 1 - α := by linarith
     positivity

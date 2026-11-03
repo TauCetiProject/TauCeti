@@ -51,6 +51,11 @@ An exponential upper bound on a nonnegative base passes to its nonnegative real 
 `0 ≤ A ≤ e^{-t}` and `0 ≤ c`, then `A ^ c ≤ e^{-c t}`. This is how a bound `|q| ≤ e^{-t}` on a
 nome is turned into bounds on the fractional powers `|q| ^ c` in a product estimate.
 
+A factor `d` can be traded for `√d` at the cost of half a power of `τ`: for `0 ≤ d ≤ τ`,
+`d τ ^ (p - 1/2) ≤ √d τ ^ p`, and for `0 < τ ≤ d`, `τ ^ (p + 1/2) ≤ √d τ ^ p`. These are the two
+comparisons used on either side of the split `τ = d` when a time increment `d` of a parabolic
+kernel is estimated by `√d`, the parabolic distance.
+
 ## Main results
 
 * `Real.inv_sqrt_eq_rpow`: `(√x)⁻¹ = x ^ (-2⁻¹)` for every real `x`.
@@ -67,6 +72,9 @@ nome is turned into bounds on the fractional powers `|q| ^ c` in a product estim
 * `Real.image_rpow_Ioo_zero_one`: a positive power maps the open unit interval onto itself.
 * `Real.le_one_of_forall_pow_le_mul_rpow`: `r ≤ 1` when `r ^ n ≤ C * (1 + n) ^ s` for all `n`.
 * `Real.rpow_le_exp_neg_mul`: `A ^ c ≤ e^{-c t}` when `0 ≤ A ≤ e^{-t}` and `0 ≤ c`.
+* `Real.mul_rpow_sub_half_le_sqrt_mul_rpow`: `d τ ^ (p - 1/2) ≤ √d τ ^ p` when `0 ≤ d ≤ τ`,
+  `0 < τ`.
+* `Real.rpow_add_half_le_sqrt_mul_rpow`: `τ ^ (p + 1/2) ≤ √d τ ^ p` when `0 < τ ≤ d`.
 * `Function.HasFiniteSupport.hasFiniteMulSupport_fun_rpow`: real powers with finitely supported
   exponents have finite multiplicative support.
 * `Real.rpow_finsum_of_pos`: `a ^ (∑ᶠ i, f i) = ∏ᶠ i, a ^ f i` for `0 < a` and finitely supported
@@ -159,6 +167,25 @@ theorem rpow_le_exp_neg_mul {A t c : ℝ} (hA : 0 ≤ A) (hAt : A ≤ exp (-t)) 
   refine (rpow_le_rpow hA hAt hc).trans_eq ?_
   rw [← exp_mul]
   ring_nf
+
+/-- If `0 ≤ d ≤ τ` with `0 < τ`, then `d τ ^ (p - 1/2) ≤ √d τ ^ p`: trading the factor `d` for
+`√d` costs at most half a power of `τ`. -/
+theorem mul_rpow_sub_half_le_sqrt_mul_rpow {d τ : ℝ} (hτ : 0 < τ) (hd : 0 ≤ d) (hdτ : d ≤ τ)
+    (p : ℝ) : d * τ ^ (p - 1 / 2) ≤ √d * τ ^ p := by
+  have h : τ ^ p = √τ * τ ^ (p - 1 / 2) := by
+    rw [sqrt_eq_rpow, ← rpow_add hτ]
+    congr 1
+    ring
+  rw [h, ← mul_assoc]
+  refine mul_le_mul_of_nonneg_right ?_ (rpow_nonneg hτ.le _)
+  calc d = √d * √d := (mul_self_sqrt hd).symm
+    _ ≤ √d * √τ := mul_le_mul_of_nonneg_left (sqrt_le_sqrt hdτ) (sqrt_nonneg d)
+
+/-- If `0 < τ ≤ d`, then `τ ^ (p + 1/2) ≤ √d τ ^ p`. -/
+theorem rpow_add_half_le_sqrt_mul_rpow {d τ : ℝ} (hτ : 0 < τ) (hτd : τ ≤ d) (p : ℝ) :
+    τ ^ (p + 1 / 2) ≤ √d * τ ^ p := by
+  rw [rpow_add hτ, ← sqrt_eq_rpow, mul_comm]
+  exact mul_le_mul_of_nonneg_right (sqrt_le_sqrt hτd) (rpow_nonneg hτ.le _)
 
 end Real
 
