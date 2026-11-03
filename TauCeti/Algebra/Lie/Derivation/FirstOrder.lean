@@ -8,8 +8,7 @@ module
 public import TauCeti.Algebra.Lie.Derivation.Basic
 public import Mathlib.Algebra.Group.Commutator
 public import Mathlib.Algebra.Ring.Action.ConjAct
-import Mathlib.Tactic.LinearCombination
-import Mathlib.Tactic.Module
+import TauCeti.Algebra.Ring.Commutator
 
 /-!
 # First-order automorphisms of derivations
@@ -104,6 +103,7 @@ theorem firstOrderAlgEquiv_symm_apply (D : derivationLieAlgebra K B) (x : B) :
   (rfl)
 
 /-- As a linear map, the first-order automorphism of `D` is `1 + e • D`. -/
+@[simp]
 theorem firstOrderAlgEquiv_toLinearMap (D : derivationLieAlgebra K B) :
     (firstOrderAlgEquiv e he D).toLinearMap = 1 + e • (D : Module.End K B) := by
   ext x
@@ -163,9 +163,8 @@ whose value is `1 + e • b`. Such units exist, since `e • b` squares to zero
 theorem firstOrderAlgEquiv_innerDerivation (b : B) (u : Bˣ) (hu : (u : B) = 1 + e • b) :
     firstOrderAlgEquiv e he (innerDerivation K b) =
       MulSemiringAction.toAlgEquiv K B (ConjAct.toConjAct u) := by
-  have hinv : ((u⁻¹ : Bˣ) : B) = 1 - e • b := by
-    refine Units.inv_eq_of_mul_eq_one_right ?_
-    simp [hu, add_mul, mul_sub, smul_smul, he]
+  have hinv : ((u⁻¹ : Bˣ) : B) = 1 - e • b :=
+    Units.val_inv_eq_one_sub u (e • b) hu (by rw [smul_mul_smul_comm, he, zero_smul])
   ext x
   rw [firstOrderAlgEquiv_innerDerivation_apply, MulSemiringAction.toAlgEquiv_apply,
     ConjAct.units_smul_def, ConjAct.ofConjAct_toConjAct, hinv, hu]
@@ -185,15 +184,25 @@ theorem commutatorElement_firstOrderAlgEquiv {f : K} (hf : f * f = 0)
     (D E : derivationLieAlgebra K B) :
     ⁅firstOrderAlgEquiv e he D, firstOrderAlgEquiv f hf E⁆ =
       firstOrderAlgEquiv (e * f) (by rw [mul_mul_mul_comm, he, zero_mul]) ⁅D, E⁆ := by
-  ext x
-  simp only [commutatorElement_def, AlgEquiv.mul_apply, AlgEquiv.aut_inv,
-    firstOrderAlgEquiv_apply, firstOrderAlgEquiv_symm_apply, map_add, map_sub, map_smul,
-    smul_add, smul_sub, smul_smul, LieSubalgebra.coe_bracket, Ring.lie_def, LinearMap.sub_apply,
-    _root_.mul_apply_eq_comp]
+  -- Compute in the units of `Module.End K B`, where the commutator of `1 + e • D` and
+  -- `1 + f • E` is given by `Units.val_commutatorElement_eq_one_add_lie`.
+  let φ := (Units.map (AlgEquiv.toLinearMapHom K B)).comp (toUnits : (B ≃ₐ[K] B) ≃* _).toMonoidHom
+  have hφ (σ : B ≃ₐ[K] B) : (φ σ : Module.End K B) = σ.toLinearMap := by
+    ext
+    simp [φ]
   set d := (D : Module.End K B)
   set d' := (E : Module.End K B)
-  linear_combination (norm := module)
-    he • (f • d (d (d' x)) - d (d x) - f • d (d' (d x)) + (f * f) • d (d' (d (d' x)))) +
-      hf • (e • d' (d (d' x)) - d' (d' x) - e • d (d' (d' x)))
+  have h := Units.val_commutatorElement_eq_one_add_lie (φ (firstOrderAlgEquiv e he D))
+    (φ (firstOrderAlgEquiv f hf E)) (e • d) (f • d')
+    ((hφ _).trans (firstOrderAlgEquiv_toLinearMap e he D))
+    ((hφ _).trans (firstOrderAlgEquiv_toLinearMap f hf E))
+    (by rw [smul_mul_smul_comm, he, zero_smul]) (by rw [smul_mul_smul_comm, hf, zero_smul])
+    (by rw [smul_mul_smul_comm, smul_mul_smul_comm, mul_right_comm, he, zero_mul, zero_smul])
+    (by rw [smul_mul_smul_comm, smul_mul_smul_comm, mul_right_comm, hf, zero_mul, zero_smul])
+  rw [← map_commutatorElement, Ring.lie_def, smul_mul_smul_comm, smul_mul_smul_comm,
+    mul_comm f e, hφ] at h
+  apply AlgEquiv.toLinearMap_injective
+  rw [firstOrderAlgEquiv_toLinearMap, LieSubalgebra.coe_bracket, Ring.lie_def, smul_sub]
+  exact h
 
 end TauCeti.derivationLieAlgebra
