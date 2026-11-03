@@ -51,6 +51,8 @@ The construction uses `MultilinearMap.compLinearMap` and `Matrix.entryLinearMap`
 * `TauCeti.matrixCochainExtension_hochschildCoface`,
   `TauCeti.matrixCochainExtension_hochschildCoboundary`: compatibility with the cofaces and the
   Hochschild coboundary.
+* `TauCeti.cyclicCohomology.matrixExtension_map`: on cyclic cohomology, matrix extension is natural
+  for algebra homomorphisms.
 -/
 
 public section
@@ -507,6 +509,24 @@ theorem matrixExtension_mk (φ : cyclicCocycles R A M n) :
       mk R (Matrix ι ι A) M n ⟨matrixCyclicCochainExtension ι n φ,
         matrixCyclicCochainExtension_mem_cyclicCocycles φ.2⟩ :=
   desc_mk _ _ _ φ
+
+/-- Matrix extension is natural: it commutes with pullback along an algebra homomorphism
+`f : A →ₐ[R] B` and along its entrywise extension `Matrix ι ι A →ₐ[R] Matrix ι ι B`. -/
+theorem matrixExtension_map {B : Type _} [Ring B] [Algebra R B] (f : A →ₐ[R] B)
+    (c : cyclicCohomology R B M n) :
+    matrixExtension M ι n (map M (f : A →ₙₐ[R] B) n c) =
+      map M ((f.mapMatrix : Matrix ι ι A →ₐ[R] Matrix ι ι B) : Matrix ι ι A →ₙₐ[R] Matrix ι ι B) n
+        (matrixExtension M ι n c) := by
+  obtain ⟨φ, rfl⟩ := mk_surjective R B M n c
+  simp only [map_mk, matrixExtension_mk]
+  congr 2
+  apply Subtype.ext
+  simp only [coe_matrixCyclicCochainExtension_apply, coe_cyclicCochainsMap_apply]
+  -- The goal reads `f` and `f.mapMatrix` as linear maps through the coercion to `→ₙₐ[R]`. Both are
+  -- definitionally `f.toLinearMap` and its entrywise extension `LinearMap.mapMatrix f.toLinearMap`,
+  -- the linear maps in `matrixCochainExtension_compLinearMap`. Mathlib has no simp lemma for the
+  -- underlying function of `NonUnitalAlgHomClass.toNonUnitalAlgHom`, so this is closed by `exact`.
+  exact matrixCochainExtension_compLinearMap ι n (f : A →ₗ[R] B) φ.1.1
 
 end cyclicCohomology
 
