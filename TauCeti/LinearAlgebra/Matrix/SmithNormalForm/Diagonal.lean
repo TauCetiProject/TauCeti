@@ -7,13 +7,12 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import Mathlib.RingTheory.Ideal.Span
-import Mathlib.Algebra.Exact.Basic
 import Mathlib.Algebra.Module.Projective
 import Mathlib.LinearAlgebra.FreeModule.PID
-import Mathlib.LinearAlgebra.Basis.Prod
 import Mathlib.LinearAlgebra.Matrix.Basis
 import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 import Mathlib.Logic.Equiv.Fintype
+import TauCeti.LinearAlgebra.Basis.Exact
 import TauCeti.LinearAlgebra.Matrix.Diagonal
 
 /-!
@@ -30,7 +29,7 @@ image's diagonal positions. Thus zero diagonal positions are retained, as requir
 when computing fixed modules of integral automorphisms after scalar extension.
 
 The basis-level Smith form is due to Mathlib's finite-free PID development. The
-kernel/image splitting uses `Function.Exact.splitSurjectiveEquiv`. The matrix
+kernel/image basis assembly uses `Module.Basis.ofExactLift`. The matrix
 conversion uses `Module.Basis.toMatrix_eq_diagonal_iff`, change-of-basis identities and
 `Equiv.Perm.exists_extending_pair` to align the nonzero diagonal positions.
 -/
@@ -53,16 +52,12 @@ theorem exists_mul_mul_eq_diagonal {R ι : Type*} [CommRing R] [IsDomain R]
   -- Split the map onto its free image, keeping the kernel as a separate summand.
   obtain ⟨s, hs⟩ := f.rangeRestrict.exists_rightInverse_of_surjective f.range_rangeRestrict
   let K := LinearMap.ker f.rangeRestrict
-  let split := (LinearMap.exact_subtype_ker_map f.rangeRestrict).splitSurjectiveEquiv
-    K.injective_subtype ⟨s, hs⟩
   -- Align the lifted image basis with the target Smith positions; the remaining
   -- source basis vectors lie in the kernel and therefore have diagonal entry zero.
   let bK := Module.Free.chooseBasis R K
-  let b := (bK.prod snf.bN).map split.1.symm
-  have hb (j) : f (b j) = ((bK.prod snf.bN j).2 : ι → R) := by
-    have h : f.rangeRestrict (b j) = (bK.prod snf.bN j).2 := by
-      simpa [b] using LinearMap.congr_fun split.2.2 (b j)
-    exact congrArg Subtype.val h
+  let b := Module.Basis.ofExactLift K.injective_subtype
+    (LinearMap.exact_subtype_ker_map f.rangeRestrict) bK snf.bN
+    (fun j ↦ s (snf.bN j)) (fun j ↦ LinearMap.congr_fun hs (snf.bN j))
   let e := b.indexEquiv e₀
   obtain ⟨σ, hσ⟩ := Equiv.Perm.exists_extending_pair
     (fun j : Fin n ↦ e (Sum.inr j)) snf.f (e.injective.comp Sum.inr_injective)
@@ -76,10 +71,14 @@ theorem exists_mul_mul_eq_diagonal {R ι : Type*} [CommRing R] [IsDomain R]
   have hdN (j) : d (e (Sum.inr j)) = snf.a j := by simp [d]
   have hscale (i : ι) : f (r i) = d i • c i := by
     obtain ⟨j, rfl⟩ := e.surjective i
-    rw [hr, hb]
+    rw [hr]
     cases j with
-    | inl j => simp [hdK]
-    | inr j => simpa only [Module.Basis.prod_apply_inr_snd, hdN, hc] using snf.snf j
+    | inl j =>
+      simp only [b, Module.Basis.ofExactLift_inl, hdK, zero_smul]
+      exact congrArg Subtype.val (bK j).property
+    | inr j =>
+      simp only [b, Module.Basis.ofExactLift_inr, hdN, hc]
+      exact (congrArg Subtype.val (LinearMap.congr_fun hs (snf.bN j))).trans (snf.snf j)
   -- Convert the diagonal basis equations to unimodular matrix transformations.
   have hdiag := (Module.Basis.toMatrix_eq_diagonal_iff r c f d).2 hscale
   refine ⟨c.toMatrix e₀, e₀.toMatrix r, d, ?_, ?_, ?_⟩
