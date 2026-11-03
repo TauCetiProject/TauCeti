@@ -411,9 +411,9 @@ theorem cottonTensor_add_weylTensor_eq_zero_of_eventually_hessian_eq {φ : M →
     (u v w : TangentSpace I x) :
     letI cov := CovariantDerivative.leviCivitaConnection I M
     cov.cottonTensor x u v w + cov.weylTensor x w v u (mgradient I φ x) = 0 := by
-  obtain ⟨X, hX, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E u
-  obtain ⟨Y, hY, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E v
-  obtain ⟨Z, hZ, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E w
+  obtain ⟨X, hX, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ u
+  obtain ⟨Y, hY, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ v
+  obtain ⟨Z, hZ, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ w
   -- The defect of the equation vanishes near `x`, so its derivatives at `x` vanish.
   have hzero {V : Π x : M, TangentSpace I x} :
       (fun y ↦ hessian I φ y (X y) (V y) -

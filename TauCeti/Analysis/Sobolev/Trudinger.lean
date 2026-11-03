@@ -271,7 +271,7 @@ private theorem lintegral_exp_norm_div_rpow_le_of_eLpNorm_le (hf : AEStronglyMea
         simp_rw [lintegral_mul_const' _ _ ENNReal.ofReal_ne_top]
     _ ≤ ∑' k : ℕ, ENNReal.ofReal ((1 + (n : ℝ) ^ n) / k ! +
           Real.exp 1 * (((k : ℝ) + 1) * (1 / 2) ^ k)) * ν univ :=
-        ENNReal.tsum_le_tsum (lintegral_ofReal_norm_div_rpow_pow_mul_le hf hn hS h hc)
+        tsum_le_tsum (lintegral_ofReal_norm_div_rpow_pow_mul_le hf hn hS h hc)
     _ = _ := by
         rw [ENNReal.tsum_mul_right, ← ENNReal.ofReal_tsum_of_nonneg (fun k => by positivity)
           hsum.summable, hsum.tsum_eq]

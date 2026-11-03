@@ -16,6 +16,8 @@ zero-slice subgroup charts use it after translating an ambient chart. Continuous
 inverse on open sets also give an open partial homeomorphism on their mutual restrictions
 (`ContinuousOn.toOpenPartialHomeomorph`). Composing with an open partial homeomorphism preserves
 open embeddings whose ranges lie in its source (`OpenPartialHomeomorph.isOpenEmbedding_comp`).
+An open embedding of a nonempty open subset extends to an open partial homeomorphism with that
+source (`OpenPartialHomeomorph.exists_source_eq_of_isOpenEmbedding`).
 Finite products of open partial homeomorphisms commute with inverses and composition
 (`OpenPartialHomeomorph.pi_symm`, `OpenPartialHomeomorph.pi_trans`), as for partial equivalences.
 
@@ -51,6 +53,17 @@ theorem isOpenEmbedding_comp (e : OpenPartialHomeomorph X Y) {g : Z → X}
   have hgc : IsOpenEmbedding (e.source.codRestrict g hgs') :=
     .of_isEmbedding_isOpenMap (hg.isEmbedding.codRestrict _ _) (hg.isOpenMap.codRestrict _)
   simpa only [Set.domRestrict_comp_codRestrict] using e.isOpenEmbedding_restrict.comp hgc
+
+/-- An open embedding of a nonempty open subset `U` of `X` into `Y` is the restriction of an open
+partial homeomorphism of `X` into `Y` with source `U`, obtained from
+`OpenPartialHomeomorph.lift_openEmbedding`. -/
+theorem exists_source_eq_of_isOpenEmbedding {U : Set X} (hU : IsOpen U) {g : U → Y}
+    (hg : IsOpenEmbedding g) (x : U) :
+    ∃ c : OpenPartialHomeomorph X Y, c.source = U ∧ ∀ y : U, c y = g y := by
+  have : Nonempty U := ⟨x⟩
+  have : Nonempty Y := ⟨g x⟩
+  have hi := hU.isOpenEmbedding_subtypeVal
+  exact ⟨(hg.toOpenPartialHomeomorph g).lift_openEmbedding hi, by simp, fun y ↦ by simp⟩
 
 open scoped Classical in
 /-- Restrict an open partial homeomorphism to a subtype represented by a parametrized coordinate

@@ -12,6 +12,7 @@ public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Analysis.Calculus.Hadamard
+import TauCeti.Geometry.Manifold.MFDeriv.Localized
 
 /-!
 # Tangent vectors as point derivations
@@ -131,29 +132,14 @@ theorem tangentToPointDerivation_injective
   change v = w
   rw [SeparatingDual.eq_iff_forall_dual_eq (R := ℝ)]
   intro φ
-  obtain ⟨F, hF⟩ := exists_contMDiffMap_eventuallyEq_extChartAt (I := I) x
-  let f : C^∞⟮I, M; ℝ⟯ := ⟨fun y ↦ φ (F y), φ.contMDiff.comp F.contMDiff⟩
-  have hlocal : (f : M → ℝ) =ᶠ[𝓝 x] φ ∘ extChartAt I x := hF.fun_comp φ
-  have hfv : mvfderiv I f x v = mvfderiv I f x w := by
-    have h := congrArg (fun D ↦ D f) hvw
-    -- Unbundle the comparison map after evaluating the two point derivations at `f`.
-    change mvfderiv I f x v = mvfderiv I f x w at h
-    exact h
-  have hderiv (u : TangentSpace I x) : mvfderiv I f x u = φ u := by
-    have hφ : mfderiv 𝓘(ℝ, E) 𝓘(ℝ, ℝ) φ (extChartAt I x x) = φ :=
-      φ.hasFDerivAt.hasMFDerivAt.mfderiv
-    rw [mvfderiv, hlocal.mfderiv_eq,
-      mfderiv_comp x φ.mdifferentiableAt
-        (mdifferentiableAt_extChartAt (I := I) (mem_chart_source H x)),
-      hφ, mfderiv_extChartAt_self]
-    -- Unwrap the tangent-space synonym and apply the resulting identity linear map; there is no
-    -- separate simplification lemma for this final coercion boundary.
-    change φ u = φ u
-    rfl
-  -- The separating-dual goal is stated on the model space after the tangent-space synonym was
-  -- exposed above, so return to the corresponding scalar equality before using `hderiv`.
+  obtain ⟨f, hf, -, -, -, hd⟩ :=
+    TauCeti.exists_contMDiff_hasCompactSupport_mvfderiv_eq (I := I) x (0 : ℝ) φ Filter.univ_mem
+  have hfv := congrArg (fun D ↦ D (⟨f, hf⟩ : C^∞⟮I, M; ℝ⟯)) hvw
+  -- Unbundle evaluation of the smooth function before rewriting its prescribed derivative.
+  change mvfderiv I f x v = mvfderiv I f x w at hfv
+  -- Return from the separating-dual formulation to equality of the underlying scalars.
   change φ v = φ w
-  rw [← hderiv v, ← hderiv w]
+  rw [hd] at hfv
   exact hfv
 
 /-- **Hadamard's lemma in coordinates.** Subtracting its value at `x` writes a smooth real

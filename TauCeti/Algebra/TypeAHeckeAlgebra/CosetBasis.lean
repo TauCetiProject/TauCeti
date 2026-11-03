@@ -144,6 +144,18 @@ theorem cosetRep_mul_T_succ {n m j : ℕ} (hm : m ≤ j) (hj : j + 2 ≤ n) :
     rw [cosetRep_succ (by omega), mul_assoc, ih, ← mul_assoc, ← mul_assoc,
       (commute_T (Or.inr (by omega))).eq]
 
+/-- The strand shift by `k` of the descending product from `T (n - 1)` down to `T m` is the
+descending product from `T (n + k - 1)` down to `T (m + k)`. -/
+@[simp]
+theorem shift_cosetRep (k n m : ℕ) :
+    shift R q k (cosetRep q n m) = cosetRep q (n + k) (m + k) := by
+  induction n with
+  | zero => rw [cosetRep_of_le (Nat.zero_le m), cosetRep_of_le (by omega), map_one]
+  | succ n ih =>
+    rcases le_or_gt m n with h | h
+    · rw [cosetRep_succ h, map_mul, shift_T, ih, Nat.add_right_comm, cosetRep_succ (by omega)]
+    · rw [cosetRep_of_le h, cosetRep_of_le (by omega), map_one]
+
 end CosetRep
 
 section CosetEquiv
