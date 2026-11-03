@@ -53,7 +53,7 @@ theorem exists_bound_of_module_finite (f : M →ₗ[R] N) :
     (f.comp q) (f.comp q).continuous_on_pi
   refine ⟨B * A, mul_pos hB hA, fun x ↦ ?_⟩
   obtain ⟨c, hc, hcnorm⟩ := hlift x
-  have hqc : q c = x := hc
+  have hqc : q c = x := (Fintype.linearCombination_apply R v c).trans hc
   calc
     ‖f x‖ = ‖(f.comp q) c‖ := by rw [LinearMap.comp_apply, hqc]
     _ ≤ B * ‖c‖ := hbound c
