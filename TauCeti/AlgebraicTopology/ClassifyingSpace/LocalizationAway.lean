@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RingTheory.Localization.Away.Basic
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.WedgeCircles
-public import TauCeti.RepresentationTheory.Homological.GroupHomology.DirectedUnion
 public import TauCeti.RepresentationTheory.Homological.GroupHomology.LowDegree
 import Mathlib.Tactic.LinearCombination
 
@@ -18,16 +17,15 @@ For a nonzero integer `m`, the additive group of `ℤ[1/m] = Localization.Away m
 union of its infinite cyclic subgroups `m⁻ʳ ℤ`. Each of these is a free group, whose group homology
 with trivial coefficients vanishes in degrees `n ≥ 2` (`TauCeti.isZero_groupHomology_freeGroup`).
 Every class of a directed union of subgroups comes from a member, so its homology vanishes if it
-vanishes on each member (`TauCeti.groupHomology.isZero_groupHomology_of_directed`). Hence
+vanishes on each member (`TauCeti.groupHomology.isZero_groupHomology_of_directed`); for directed
+unions of infinite cyclic subgroups this is `TauCeti.isZero_groupHomology_of_directed_zpowers`.
+Hence
 
 * `Hₙ(ℤ[1/m], k) = 0` for `n ≥ 2` and every commutative ring `k`
   (`TauCeti.isZero_groupHomology_localizationAway`);
 * `H₁(ℤ[1/m], k) = ℤ[1/m] ⊗ k` vanishes when `m = 0` in `k`, since `ℤ[1/m]` is `m`-divisible
   (`TauCeti.isZero_groupHomology_one_localizationAway`, an instance of
   `TauCeti.groupHomology.isZero_H1_of_forall_exists_zpow_eq`).
-
-More generally, a group which is the directed union of infinite cyclic subgroups has vanishing
-homology in degrees `n ≥ 2` (`TauCeti.isZero_groupHomology_of_directed_zpowers`).
 
 Through the identification of the singular homology of Milnor's classifying space `BG` with the
 group homology of `G`, the classifying space `K(ℤ[1/m], 1)` has the homology of a point with
@@ -38,8 +36,6 @@ the reduced mod-two homology of `K(A, 1)` for every uniquely two-divisible abeli
 
 ## Main results
 
-* `TauCeti.isZero_groupHomology_of_directed_zpowers`: a directed union of infinite cyclic
-  subgroups has no group homology in degrees `n ≥ 2`.
 * `TauCeti.isZero_groupHomology_localizationAway`: `Hₙ(ℤ[1/m], k) = 0` for `n ≥ 2`.
 * `TauCeti.isZero_groupHomology_one_localizationAway`: `H₁(ℤ[1/m], k) = 0` when `m = 0` in `k`.
 * `TauCeti.isZero_classifyingSpace_singularHomology_localizationAway`: the classifying space
@@ -59,31 +55,6 @@ open CategoryTheory Limits groupHomology
 namespace TauCeti
 
 variable (k : Type) [CommRing k]
-
-/-- An infinite cyclic subgroup has no group homology with trivial coefficients in degrees
-`n ≥ 2`, since it is free on one generator. -/
-theorem isZero_groupHomology_res_zpowers {G : Type} [Group G] {g : G} (hg : ¬IsOfFinOrder g)
-    {n : ℕ} (hn : 2 ≤ n) :
-    IsZero (groupHomology (Rep.res (Subgroup.zpowers g).subtype (Rep.trivial k G k)) n) := by
-  have hinj : Function.Injective (zpowersHom G g) :=
-    injective_zpow_iff_not_isOfFinOrder.2 hg
-  let e : FreeGroup Unit ≃* Subgroup.zpowers g :=
-    FreeGroup.mulEquivIntOfUnique.trans (MonoidHom.ofInjective hinj)
-  refine (isZero_groupHomology_freeGroup Unit k hn).of_iso
-    (groupHomology.mapIso e (LinearEquiv.refl k k) (fun _ ↦ ?_) n).symm
-  ext
-  simp
-
-/-- **Homology of a directed union of infinite cyclic subgroups.** If `G` is the union of a
-directed family of infinite cyclic subgroups, then its group homology with trivial coefficients
-vanishes in degrees `n ≥ 2`. -/
-theorem isZero_groupHomology_of_directed_zpowers {G : Type} [Group G] {ι : Type*} [Nonempty ι]
-    {g : ι → G} (hg : ∀ i, ¬IsOfFinOrder (g i))
-    (hS : Directed (· ≤ ·) fun i ↦ Subgroup.zpowers (g i))
-    (hG : ⨆ i, Subgroup.zpowers (g i) = ⊤) {n : ℕ} (hn : 2 ≤ n) :
-    IsZero (groupHomology (Rep.trivial k G k) n) :=
-  groupHomology.isZero_groupHomology_of_directed hS hG fun i ↦
-    isZero_groupHomology_res_zpowers k (hg i) hn
 
 section LocalizationAway
 
