@@ -50,14 +50,14 @@ theorem coeff_formalCharacter (μ : X) :
   simp [formalCharacter_def, AddMonoidAlgebra.coeff_sum,
     Finsupp.single_apply, Nat.card_eq_fintype_card, Fintype.card_subtype]
 
-/-- The finite character is invariant under each simple-root reflection, by string reversal. -/
+/-- Each coefficient of the formal character is unchanged when its weight is reflected by a
+simple reflection. -/
 theorem coeff_formalCharacter_reflection (i : b.support) (μ : X) :
     c.formalCharacter.coeff (P.reflection i μ) = c.formalCharacter.coeff μ := by
   simp only [coeff_formalCharacter, c.card_weightFiber_reflection i μ]
 
-/-- **Weyl invariance of the character of a finite normal crystal.** No braid relations on the
-string-reversal permutations are needed: the simple reflections generate the Weyl group on
-weights. -/
+/-- The formal character of a finite normal crystal is invariant under the Weyl group of a
+finite reduced root datum. -/
 theorem isWeylInvariant_formalCharacter [Finite ι] [P.IsReduced] :
     IsWeylInvariant P c.formalCharacter := by
   apply isWeylInvariant_of_forall_coeff_reflection P b

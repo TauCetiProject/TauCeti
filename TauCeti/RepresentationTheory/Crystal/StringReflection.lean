@@ -112,14 +112,14 @@ theorem stringReflectionEquiv_symm :
 @[simp]
 theorem wt_stringReflection (x : B) :
     c.wt (c.stringReflection i x) = P.reflection i (c.wt x) := by
-  rw [P.reflection_apply]
-  simp only [RootPairing.coroot', LinearMap.flip_apply]
-  rw [← c.φ_sub_ε i x]
+  have hpair := c.φ_sub_ε i x
+  simp only [P.reflection_apply, LinearMap.flip_apply, ← hpair]
   by_cases h : c.ε i x ≤ c.φ i x
-  · rw [c.wt_of_fIter_eq_some (c.fIter_eq_some_stringReflection i h),
-      ← Nat.cast_smul_eq_nsmul ℤ, Int.ofNat_sub h]
-  · rw [c.wt_of_eIter_eq_some (c.eIter_eq_some_stringReflection i (le_of_not_ge h)),
-      ← Nat.cast_smul_eq_nsmul ℤ, Int.ofNat_sub (le_of_not_ge h)]
+  · rw [c.wt_of_fIter_eq_some (c.fIter_eq_some_stringReflection i h)]
+    push_cast [Nat.cast_sub h, ← Nat.cast_smul_eq_nsmul ℤ]
+    module
+  · rw [c.wt_of_eIter_eq_some (c.eIter_eq_some_stringReflection i (le_of_not_ge h))]
+    push_cast [Nat.cast_sub (le_of_not_ge h), ← Nat.cast_smul_eq_nsmul ℤ]
     module
 
 /-- String reversal fixes an element exactly when its weight lies on the simple wall. -/
@@ -139,11 +139,9 @@ theorem stringReflection_eq_self_iff (x : B) :
 
 /-- String reversal identifies the weight fibres at `μ` and `sᵢ μ`. -/
 noncomputable def weightFiberReflectionEquiv (μ : X) :
-    {x : B // c.wt x = μ} ≃ {x : B // c.wt x = P.reflection i μ} where
-  toFun x := ⟨c.stringReflection i x, by simp [x.property]⟩
-  invFun x := ⟨c.stringReflection i x, by simp [x.property]⟩
-  left_inv x := Subtype.ext (c.stringReflection_stringReflection i x)
-  right_inv x := Subtype.ext (c.stringReflection_stringReflection i x)
+    {x : B // c.wt x = μ} ≃ {x : B // c.wt x = P.reflection i μ} :=
+  (c.stringReflectionEquiv i).subtypeEquiv fun x => by
+    simp [(P.reflection i).injective.eq_iff]
 
 @[simp]
 theorem weightFiberReflectionEquiv_apply (μ : X) (x : {x : B // c.wt x = μ}) :
