@@ -87,18 +87,6 @@ def GabaiZeroSurgeryGenusTheorem : Prop :=
       Y →
     ∀ c : secondHomology Y, Submodule.span ℤ {c} = ⊤ → minimalGenus c = seifertGenus K
 
-/-- The longitude of the preferred framing of the standard solid torus neighbourhood of the unknot
-is its longitude: the framing number is `0`. -/
-private theorem preferredFramedBoundaryTorus_unknotSolidTorus_longitude :
-    (isSolidTorusNeighborhood_unknotSolidTorus.preferredFramedBoundaryTorus
-        (isZero_reducedSingularHomologyFunctor_one_sphere_euclideanSpace_fin_four _)
-        (isZero_reducedSingularHomologyFunctor_two_sphere_euclideanSpace_fin_four _)).longitude =
-      isSolidTorusNeighborhood_unknotSolidTorus.framedBoundaryTorus.longitude :=
-  -- The two framings are equal, and `preferredFramedBoundaryTorus` is reducible to a framing of
-  -- the same torus, so their slope types agree and the heterogeneous equality is an equality.
-  eq_of_heq <| congr_arg_heq FramedBoundaryTorus.longitude <|
-    preferredFramedBoundaryTorus_unknotSolidTorus _ _
-
 /-- **Under Gabai's theorem, a generator of `H₂(S¹ × S²; ℤ)` has minimal genus `0`**: `S¹ × S²` is
 the `0`-surgery on the unknot, which has Seifert genus `0`. -/
 theorem GabaiZeroSurgeryGenusTheorem.minimalGenus_circle_prod_sphere
@@ -106,7 +94,10 @@ theorem GabaiZeroSurgeryGenusTheorem.minimalGenus_circle_prod_sphere
     {c : secondHomology (Circle × sphere (0 : EuclideanSpace ℝ (Fin 3)) 1)}
     (hc : Submodule.span ℤ {c} = ⊤) : minimalGenus c = 0 := by
   rw [hG unknot isSolidTorusNeighborhood_unknotSolidTorus _
-    (preferredFramedBoundaryTorus_unknotSolidTorus_longitude ▸ unknotZeroDehnFilling) c hc,
+    (preferredFramedBoundaryTorus_unknotSolidTorus_longitude
+      (isZero_reducedSingularHomologyFunctor_one_sphere_euclideanSpace_fin_four _)
+      (isZero_reducedSingularHomologyFunctor_two_sphere_euclideanSpace_fin_four _) ▸
+        unknotZeroDehnFilling) c hc,
     seifertGenus_unknot]
 
 end TauCeti
