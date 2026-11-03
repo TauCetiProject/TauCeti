@@ -7,6 +7,7 @@ module
 
 public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
 public import Mathlib.RingTheory.Unramified.Field
+public import TauCeti.RingTheory.Idempotents.Connected.Spectrum
 
 /-!
 # The tensor square of a purely inseparable extension
@@ -26,6 +27,8 @@ that the tensor square is reduced, and no finiteness of `L / K` is assumed.
   `L ⊗[K] L`.
 * `TauCeti.IsPurelyInseparable.surjective_algebraMap_of_isReduced_tensorProduct`: if `L ⊗[K] L` is
   reduced, then `algebraMap K L` is surjective.
+* `TauCeti.IsPurelyInseparable.connectedSpace_primeSpectrum_tensorProduct`: the tensor square
+  has connected prime spectrum, including for infinite purely inseparable extensions.
 -/
 
 public section
@@ -48,6 +51,24 @@ theorem isNilpotent_one_tmul_sub_tmul_one (x : L) :
   rw [sub_pow_expChar_pow]
   simp [Algebra.TensorProduct.tmul_pow, ← hr, Algebra.algebraMap_eq_smul_one,
     TensorProduct.smul_tmul]
+
+/-- The tensor square of a purely inseparable field extension has connected prime spectrum.
+Every idempotent lies in the left coefficient field by the positive-power range theorem. -/
+theorem connectedSpace_primeSpectrum_tensorProduct :
+    ConnectedSpace (PrimeSpectrum (L ⊗[K] L)) := by
+  let : Nontrivial (L ⊗[K] L) :=
+    (Algebra.TensorProduct.lmul' K (S := L)).toRingHom.domain_nontrivial
+  rw [TauCeti.connectedSpace_primeSpectrum_iff_idempotent_eq_zero_or_one]
+  intro e he
+  obtain ⟨n, hn, hr⟩ := IsPurelyInseparable.exists_pow_mem_range_tensorProduct e
+  rw [he.pow_eq (Nat.ne_of_gt hn)] at hr
+  obtain ⟨a, ha⟩ := hr
+  have haid : IsIdempotentElem a := by
+    apply (algebraMap L (L ⊗[K] L)).injective
+    simpa only [map_mul, ha] using (show e * e = e from he)
+  rcases IsIdempotentElem.iff_eq_zero_or_one.mp haid with rfl | rfl
+  · exact Or.inl (by simpa only [map_zero] using ha.symm)
+  · exact Or.inr (by simpa only [map_one] using ha.symm)
 
 /-- A purely inseparable extension `L / K` whose tensor square `L ⊗[K] L` is reduced is trivial:
 `algebraMap K L` is surjective. -/
