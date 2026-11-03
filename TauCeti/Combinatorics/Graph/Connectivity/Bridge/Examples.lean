@@ -30,6 +30,15 @@ def joinedTrianglesWithIsolate : SimpleGraph (Fin 7) :=
   SimpleGraph.fromEdgeSet
     {s(0, 1), s(1, 2), s(2, 0), s(2, 3), s(3, 4), s(4, 5), s(5, 3)}
 
+/-- Adjacency in `joinedTrianglesWithIsolate` is given by its seven listed edges. -/
+@[simp]
+theorem joinedTrianglesWithIsolate_adj (u v : Fin 7) :
+    joinedTrianglesWithIsolate.Adj u v ↔
+      s(u, v) ∈
+        ({s(0, 1), s(1, 2), s(2, 0), s(2, 3), s(3, 4), s(4, 5), s(5, 3)} :
+          Set (Sym2 (Fin 7))) ∧ u ≠ v := by
+  simp only [joinedTrianglesWithIsolate, SimpleGraph.fromEdgeSet_adj]
+
 private instance : DecidableRel joinedTrianglesWithIsolate.Adj := by
   intro x y
   simp only [joinedTrianglesWithIsolate, SimpleGraph.fromEdgeSet_adj]
@@ -42,6 +51,15 @@ abbrev joinedTrianglesWithIsolateGraph : Graph (Fin 7) (Sym2 (Fin 7)) :=
 /-- Two triangles sharing exactly their vertex `0`. -/
 def trianglesSharingVertex : SimpleGraph (Fin 5) :=
   SimpleGraph.fromEdgeSet {s(0, 1), s(1, 2), s(2, 0), s(0, 3), s(3, 4), s(4, 0)}
+
+/-- Adjacency in `trianglesSharingVertex` is given by its six listed edges. -/
+@[simp]
+theorem trianglesSharingVertex_adj (u v : Fin 5) :
+    trianglesSharingVertex.Adj u v ↔
+      s(u, v) ∈
+        ({s(0, 1), s(1, 2), s(2, 0), s(0, 3), s(3, 4), s(4, 0)} :
+          Set (Sym2 (Fin 5))) ∧ u ≠ v := by
+  simp only [trianglesSharingVertex, SimpleGraph.fromEdgeSet_adj]
 
 private instance : DecidableRel trianglesSharingVertex.Adj := by
   intro x y
