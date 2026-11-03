@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 public import TauCeti.Algebra.Polynomial.Laurent.Coeff
-public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Projective
+public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Projective.Basic
 public import TauCeti.RepresentationTheory.Quiver.PathAlgebra.GradedSimple
 
 /-!
