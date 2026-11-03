@@ -293,15 +293,16 @@ theorem mixedMonomialMap_comp (B : MixedExponent k' l' k'' l'') (A : MixedExpone
   have hy : ∀ b, z.2 b ≠ 0 := hz
   refine Prod.ext (funext fun c ↦ ?_) (funext fun c ↦ ?_)
   · have hbb := prod_prod_pow univ univ z.1 A.boundaryBoundary (B.boundaryBoundary c)
-    have hbt := prod_prod_zpow_pow univ univ (fun b _ ↦ hy b) A.boundaryTorus
+    have hbt := prod_prod_zpow_pow univ univ (fun b _ ↦ (hy b).isUnit) A.boundaryTorus
       (B.boundaryBoundary c)
-    have htt := prod_prod_zpow univ univ (fun b _ ↦ hy b) A.torusTorus (B.boundaryTorus c)
+    have htt := prod_prod_zpow univ univ (fun b _ ↦ (hy b).isUnit) A.torusTorus
+      (B.boundaryTorus c)
     simp only [mixedMonomialMap_fst_apply, mixedMonomialMap_snd_apply, mul_pow,
       prod_mul_distrib, MixedExponent.comp_boundaryBoundary, MixedExponent.comp_boundaryTorus,
       Matrix.mul_apply, Matrix.add_apply, Matrix.map_apply]
     rw [hbb, hbt, htt, mul_assoc, ← prod_mul_distrib]
     exact congrArg _ (prod_congr rfl fun b _ ↦ zpow_add₀ (hy b) _ _)
-  · have htt := prod_prod_zpow univ univ (fun b _ ↦ hy b) A.torusTorus (B.torusTorus c)
+  · have htt := prod_prod_zpow univ univ (fun b _ ↦ (hy b).isUnit) A.torusTorus (B.torusTorus c)
     simp only [mixedMonomialMap_snd_apply, MixedExponent.comp_torusTorus, Matrix.mul_apply]
     rw [htt]
 
