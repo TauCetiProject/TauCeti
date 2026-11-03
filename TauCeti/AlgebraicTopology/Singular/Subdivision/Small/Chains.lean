@@ -73,6 +73,17 @@ lemma mem_smallSingularSubcomplex_iff (U : ι → Set X) {n : SimplexCategoryᵒ
       ∃ i, Set.range (X.toSSetObjEquiv n σ) ⊆ U i :=
   Iff.rfl
 
+/-- Every affine subsimplex of a small singular simplex lies in a member of the same family. -/
+lemma exists_range_comp_affineMapMk_subset_of_mem_smallSingularSubcomplex
+    (U : ι → Set X) {m k : ℕ} {σ : (TopCat.toSSet.obj X) _⦋m⦌}
+    (hσ : σ ∈ (X.smallSingularSubcomplex U).obj _)
+    (a : Fin (k + 1) → StdSimplex ℝ (Fin (m + 1))) :
+    ∃ i, Set.range ((X.toSSetObjEquiv _ σ).comp (StdSimplex.continuousAffineMapMk a)) ⊆ U i := by
+  obtain ⟨i, hi⟩ := (mem_smallSingularSubcomplex_iff X U σ).1 hσ
+  refine ⟨i, ?_⟩
+  rw [ContinuousMap.coe_comp]
+  exact (Set.range_comp_subset_range _ _).trans hi
+
 /-- Shrinking the members of the family shrinks the small singular subcomplex. -/
 lemma smallSingularSubcomplex_mono {U U' : ι → Set X} (h : ∀ i, U i ⊆ U' i) :
     X.smallSingularSubcomplex U ≤ X.smallSingularSubcomplex U' := by
@@ -205,8 +216,9 @@ def smallSingularChain {m : ℕ} (σ : (X.smallSingularSubcomplex U : SSet) _⦋
   linearCombination ℤ fun v ↦ (X.smallSingularSubcomplex U : SSet).ιChainComplex
     ⟨(X.toSSetObjEquiv _).symm
       ((X.toSSetObjEquiv _ σ.val).comp (StdSimplex.continuousAffineMapMk v)), by
-      obtain ⟨i, hi⟩ := σ.property
-      exact ⟨i, fun _ ⟨z, hz⟩ ↦ hi ⟨StdSimplex.continuousAffineMapMk v z, hz⟩⟩⟩
+      rw [TopCat.mem_smallSingularSubcomplex_iff, Equiv.apply_symm_apply]
+      exact TopCat.exists_range_comp_affineMapMk_subset_of_mem_smallSingularSubcomplex
+        X U σ.property v⟩
 
 @[simp]
 lemma smallSingularChain_single {m k : ℕ}
@@ -216,8 +228,9 @@ lemma smallSingularChain_single {m k : ℕ}
       (X.smallSingularSubcomplex U : SSet).ιChainComplex
         ⟨(X.toSSetObjEquiv _).symm
           ((X.toSSetObjEquiv _ σ.val).comp (StdSimplex.continuousAffineMapMk v)), by
-          obtain ⟨i, hi⟩ := σ.property
-          exact ⟨i, fun _ ⟨z, hz⟩ ↦ hi ⟨StdSimplex.continuousAffineMapMk v z, hz⟩⟩⟩ := by
+          rw [TopCat.mem_smallSingularSubcomplex_iff, Equiv.apply_symm_apply]
+          exact TopCat.exists_range_comp_affineMapMk_subset_of_mem_smallSingularSubcomplex
+            X U σ.property v⟩ := by
   simp [smallSingularChain]
 
 /-- The small-chain push-forward agrees with the ordinary push-forward after inclusion. -/
