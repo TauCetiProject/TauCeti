@@ -186,14 +186,14 @@ theorem exists_isProjectiveInertiaExtension :
     have hs1 : ((s 1 : inertia A) : G) ∈ N := Subgroup.mem_subgroupOf.1 (by simpa using hs 1)
     obtain ⟨u, hu⟩ : ∃ u : N, ι u = s 1 := ⟨⟨_, hs1⟩, Subtype.ext rfl⟩
     have hmu : m 1 = u⁻¹ := Subtype.ext (by simp [hm, ← hu, hι])
-    rw [hρ, hmu, ← hu, hres', ← Module.End.mul_apply, ← map_mul, mul_inv_cancel, map_one]
+    rw [hρ, hmu, ← hu, hres', ← mul_apply_eq_comp, ← map_mul, mul_inv_cancel, map_one]
     rfl
   have hρmul (t : inertia A) (n : N) (x : A) : ρ (t * ι n) x = ρ t (A.ρ n x) := by
     have hst : s (t * ι n) = s t := hsmul t _ (hιM n)
     have hmt : m (t * ι n) = m t * n := Subtype.ext (by
       rw [hm, hst]
       simp [hm, hι, mul_assoc])
-    rw [hρ, hρ, hst, hmt, map_mul, Module.End.mul_apply]
+    rw [hρ, hρ, hst, hmt, map_mul, mul_apply_eq_comp]
   have hρι (n : N) (x : A) : ρ (ι n) x = A.ρ n x := by
     simpa [hρ1] using hρmul 1 n x
   have hρconj (t : inertia A) (n : N) (x : A) :
@@ -203,7 +203,7 @@ theorem exists_isProjectiveInertiaExtension :
       Subtype.ext (by simp [hm, mul_assoc])
     rw [hρ, hρ, hconj, ← hinter]
     congr 1
-    rw [← Module.End.mul_apply, ← map_mul, ← Module.End.mul_apply, ← map_mul,
+    rw [← mul_apply_eq_comp, ← map_mul, ← mul_apply_eq_comp, ← map_mul,
       inv_mul_cancel_right]
   have hιmul (n : N) (t : inertia A) (x : A) : ρ (ι n * t) x = A.ρ n (ρ t x) := by
     have hn : ι n * t = t * ι (MulAut.conjNormal ((t : G)⁻¹) n) :=

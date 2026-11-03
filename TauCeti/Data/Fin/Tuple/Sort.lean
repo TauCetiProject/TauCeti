@@ -33,7 +33,7 @@ theorem Monotone.eq_of_card_filter_eq (hf : Monotone f) (hg : Monotone g)
   refine List.ofFn_injective ((List.perm_iff_count.2 fun a ↦ ?_).eq_of_sortedLE
     hf.sortedLE_ofFn hg.sortedLE_ofFn)
   have hcount (u : Fin n → α) : #{i | u i = a} = (List.ofFn u).count a := by
-    simpa using Fin.card_filter_univ_eq_vector_get_eq_count a (List.Vector.ofFn u)
+    simp
   rw [← hcount, ← hcount, h]
 
 /-- Two antitone tuples in which every value occurs equally often are equal. -/

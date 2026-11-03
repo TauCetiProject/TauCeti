@@ -76,9 +76,6 @@ theorem infinite_fixingSubgroup_of_encard_le_two [ProperSpace 𝕜]
     (e : M ≃ₘ^n⟮I, 𝓘(𝕜)⟯ OnePoint 𝕜) {s : Set M} (hs : s.encard ≤ 2) :
     Infinite (fixingSubgroup (I := I) (n := n) s) := by
   classical
-  -- Möbius transformations are analytic, hence `C^n`.
-  have : ContMDiffConstSMul 𝓘(𝕜) n (GL (Fin 2) 𝕜) (OnePoint 𝕜) :=
-    ⟨fun g ↦ (contMDiff_const_smul (I := 𝓘(𝕜)) (n := ω) g).of_le le_top⟩
   -- Move two distinct points containing `e '' s` to `0` and `∞`.
   obtain ⟨_, hsub, -, h2⟩ := exists_superset_subset_encard_eq (subset_univ (e '' s))
     ((e.injective.encard_image s).le.trans hs)
