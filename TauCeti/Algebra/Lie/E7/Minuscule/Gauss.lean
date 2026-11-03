@@ -44,9 +44,10 @@ private theorem positive_mulVec_single (i : Fin 7) (a c : A) (w : Fin 56) :
         Matrix (Fin 56) (Fin 56) A) *ᵥ Pi.single w c =
       Pi.single w c + if e7MinusculeWeight w i = -1 then
         Pi.single (e7MinusculeReflection i w) (a * c) else 0 := by
-  rw [coe_rootSubgroupPoints_inl, toAdd_ofAdd, add_mulVec, one_mulVec,
-    smul_mulVec, ← weightTable_raisingMatrix, mulVec_single,
-    weightTable.raisingMatrix_map_col, weightTable_weight, weightTable_reflection]
+  rw [coe_rootSubgroupPoints_inl, ← weightTable_raisingMatrix]
+  simp only [toAdd_ofAdd, add_mulVec, one_mulVec, smul_mulVec]
+  simp only [mulVec_single, weightTable.raisingMatrix_map_col,
+    weightTable_weight, weightTable_reflection]
   split <;> simp [← Pi.single_smul', smul_eq_mul]
 
 private theorem negative_mulVec_single (i : Fin 7) (b c : A) (w : Fin 56) :
@@ -54,9 +55,10 @@ private theorem negative_mulVec_single (i : Fin 7) (b c : A) (w : Fin 56) :
         Matrix (Fin 56) (Fin 56) A) *ᵥ Pi.single w c =
       Pi.single w c + if e7MinusculeWeight w i = 1 then
         Pi.single (e7MinusculeReflection i w) (b * c) else 0 := by
-  rw [coe_rootSubgroupPoints_inr, toAdd_ofAdd, add_mulVec, one_mulVec,
-    smul_mulVec, ← weightTable_loweringMatrix, mulVec_single,
-    weightTable.loweringMatrix_map_col, weightTable_weight, weightTable_reflection]
+  rw [coe_rootSubgroupPoints_inr, ← weightTable_loweringMatrix]
+  simp only [toAdd_ofAdd, add_mulVec, one_mulVec, smul_mulVec]
+  simp only [mulVec_single, weightTable.loweringMatrix_map_col,
+    weightTable_weight, weightTable_reflection]
   split <;> simp [← Pi.single_smul', smul_eq_mul]
 
 private theorem coroot_mulVec_single (i : Fin 7) (u : Aˣ) (c : A) (w : Fin 56) :
