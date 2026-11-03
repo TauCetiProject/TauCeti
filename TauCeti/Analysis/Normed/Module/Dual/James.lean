@@ -176,6 +176,21 @@ section Normed
 
 variable [NormedAddCommGroup E] [NormedSpace 𝕜 E]
 
+/-- A norm-bounded triangular array with uniformly bounded functionals and a fixed
+nonzero entry forces nonreflexivity. No completeness assumption is needed. -/
+theorem not_surjective_inclusionInDoubleDual_of_exists_seq_dual_triangular
+    {θ : 𝕜} (hθ : θ ≠ 0) {x : ℕ → E} {f : ℕ → StrongDual 𝕜 E}
+    (hx : ∃ C, ∀ n, ‖x n‖ ≤ C) (hf : ∃ C, ∀ n, ‖f n‖ ≤ C)
+    (hdiag : ∀ i j, i ≤ j → f i (x j) = θ)
+    (hzero : ∀ i j, j < i → f i (x j) = 0) :
+    ¬ Surjective (inclusionInDoubleDual 𝕜 E) := by
+  intro hE
+  obtain ⟨C, hx⟩ := hx
+  obtain ⟨_, ⟨y, -, rfl⟩, σ, hσ, hlim⟩ :=
+    isSeqCompact_toWeakSpace_of_isCompact (isCompact_toWeakSpace_closedBall hE 0 C)
+      (fun n ↦ mem_image_of_mem _ (mem_closedBall_zero_iff.2 (hx n)))
+  exact not_tendsto_subseq_toWeakSpace_of_dual_triangular hθ hf hdiag hzero hσ y hlim
+
 /-- **Triangular sequence criterion for nonreflexivity.** A Banach space is nonreflexive
 if and only if its unit ball and dual unit ball admit an exact triangular evaluation
 array with a fixed positive entry. -/
@@ -186,12 +201,9 @@ theorem not_surjective_inclusionInDoubleDual_iff_exists_seq_dual_triangular [Com
         (∀ i j, i ≤ j → f i (x j) = (θ : 𝕜)) ∧
         (∀ i j, j < i → f i (x j) = 0) := by
   refine ⟨exists_seq_dual_triangular_of_not_surjective_inclusionInDoubleDual, ?_⟩
-  rintro ⟨θ, x, f, hθ, hx, hf, hdiag, hzero⟩ hE
-  obtain ⟨_, ⟨y, -, rfl⟩, σ, hσ, hlim⟩ :=
-    isSeqCompact_toWeakSpace_of_isCompact (isCompact_toWeakSpace_closedBall hE 0 1)
-      (fun n ↦ mem_image_of_mem _ (mem_closedBall_zero_iff.2 (hx n)))
-  exact not_tendsto_subseq_toWeakSpace_of_dual_triangular
-    (by exact_mod_cast hθ.ne' : (θ : 𝕜) ≠ 0) ⟨1, hf⟩ hdiag hzero hσ y hlim
+  rintro ⟨θ, x, f, hθ, hx, hf, hdiag, hzero⟩
+  exact not_surjective_inclusionInDoubleDual_of_exists_seq_dual_triangular
+    (by exact_mod_cast hθ.ne' : (θ : 𝕜) ≠ 0) ⟨1, hx⟩ ⟨1, hf⟩ hdiag hzero
 
 /-- **Separable reduction of nonreflexivity.** Every nonreflexive Banach space contains
 a closed separable subspace which is itself nonreflexive. -/
@@ -205,11 +217,11 @@ theorem exists_isClosed_isSeparable_not_surjective_inclusionInDoubleDual [Comple
   have hxS (n : ℕ) : x n ∈ S :=
     Submodule.le_topologicalClosure _ (Submodule.subset_span (mem_range_self n))
   have hclosed : IsClosed (S : Set E) := Submodule.isClosed_topologicalClosure _
-  let : CompleteSpace S := hclosed.completeSpace_coe
   refine ⟨S, hclosed, (countable_range x).isSeparable.span.closure, ?_⟩
-  apply not_surjective_inclusionInDoubleDual_iff_exists_seq_dual_triangular.2
-  refine ⟨θ, fun n ↦ ⟨x n, hxS n⟩, fun n ↦ (f n).comp S.subtypeL, hθ,
-    hx, ?_, hdiag, hzero⟩
+  apply not_surjective_inclusionInDoubleDual_of_exists_seq_dual_triangular
+    (x := fun n ↦ (⟨x n, hxS n⟩ : S)) (f := fun n ↦ (f n).comp S.subtypeL)
+    (by exact_mod_cast hθ.ne' : (θ : 𝕜) ≠ 0) ⟨1, hx⟩ ?_ hdiag hzero
+  refine ⟨1, ?_⟩
   intro n
   apply ContinuousLinearMap.opNorm_le_bound _ zero_le_one
   intro z
