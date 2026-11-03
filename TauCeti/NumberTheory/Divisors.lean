@@ -6,9 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Divisors
+import Mathlib.Algebra.Order.Ring.Abs
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.NormNum
 
 /-!
-# Divisor equivalences and sums picking out a shifted index
+# Divisor equivalences, factor pairs, and shifted-index sums
 
 For `N ≠ 0`, the divisors `d` of `N` with `a = N + d` (respectively `a = N - d`) are at most one,
 and such a divisor exists exactly when `a - N` divides `N` (respectively `N - a` divides `a`).
@@ -21,6 +24,11 @@ restricted to `a ∣ m`, as a sum over the divisors of `gcd(m, n)`.
 `Int.prodMk_toNat_mem_divisorsAntidiagonal_toNat` identify the pairs of
 `n.toNat.divisorsAntidiagonal`, for an integer `n`, with the factorisations of `n` into two positive
 integers.
+
+`Nat.sum_divisorsAntidiagonal_filter_sub` evaluates differences over the factor pairs with
+strictly increasing factors. `Nat.injOn_add_divisorsAntidiagonal_filter_lt` and
+`Int.isSquare_sq_sub_four_mul_iff_exists_mem_divisorsAntidiagonal` identify those factor pairs
+by their sum and by a positive square discriminant.
 
 `TauCeti.nontrivialDivisorEquiv` identifies divisors greater than one with the subtype of
 `N.divisors` omitting the unit divisor.
@@ -90,6 +98,36 @@ theorem sum_divisorsAntidiagonal_ite_dvd {n : ℕ} (hn : n ≠ 0) (m : ℕ) (f :
   have ha' := Nat.dvd_gcd_iff.mp (Nat.dvd_of_mem_divisors ha)
   rw [Nat.div_mul_div_comm ha'.2 ha'.1, ← sq, mul_comm n m]
 
+/-- On the factor pairs with increasing factors, subtracting the value at the smaller factor
+from that at the larger factor is the full divisor sum minus the sum at the minimum factor. -/
+theorem sum_divisorsAntidiagonal_filter_sub {A : Type*} [AddCommGroup A]
+    (n : ℕ) (f : ℕ → A) :
+    (∑ p ∈ n.divisorsAntidiagonal with p.1 < p.2, (f p.2 - f p.1)) =
+      (∑ d ∈ n.divisors, f d) - ∑ p ∈ n.divisorsAntidiagonal, f (min p.1 p.2) := by
+  classical
+  rw [← sum_divisorsAntidiagonal' (fun _ d ↦ f d), ← Finset.sum_sub_distrib, Finset.sum_filter]
+  apply Finset.sum_congr rfl
+  intro p _
+  by_cases h : p.1 < p.2
+  · simp [h, min_eq_left h.le]
+  · simp [h, min_eq_right (by omega : p.2 ≤ p.1)]
+
+/-- A factor pair with strictly increasing factors is determined by its sum. -/
+theorem injOn_add_divisorsAntidiagonal_filter_lt (n : ℕ) :
+    Set.InjOn (fun p : ℕ × ℕ ↦ p.1 + p.2)
+      ↑(n.divisorsAntidiagonal.filter (fun p ↦ p.1 < p.2)) := by
+  intro p hp q hq hsum
+  obtain ⟨hp, hplt⟩ := Finset.mem_filter.mp hp
+  obtain ⟨hq, hqlt⟩ := Finset.mem_filter.mp hq
+  dsimp only at hsum
+  have hmul : (p.1 : ℤ) * p.2 = (q.1 : ℤ) * q.2 := by
+    exact_mod_cast (mem_divisorsAntidiagonal.mp hp).1.trans
+      (mem_divisorsAntidiagonal.mp hq).1.symm
+  have hprod : ((p.1 : ℤ) - q.1) * ((p.1 : ℤ) - q.2) = 0 := by nlinarith
+  rcases _root_.mul_eq_zero.mp hprod with h | h
+  · exact Prod.ext (by omega) (by omega)
+  · omega
+
 end Nat
 
 namespace Int
@@ -116,6 +154,41 @@ theorem prodMk_toNat_mem_divisorsAntidiagonal_toNat {u v : ℤ} (hu : 0 < u) (hv
     push_cast
     rw [Int.toNat_of_nonneg hu.le, Int.toNat_of_nonneg hv.le, Int.toNat_of_nonneg hn.le, h]
   exact Nat.mem_divisorsAntidiagonal.mpr ⟨by exact_mod_cast h', by omega⟩
+
+/-- At positive discriminant and determinant, a square discriminant is equivalent to a
+positive factorisation with increasing factors and sum equal to the absolute trace. -/
+theorem isSquare_sq_sub_four_mul_iff_exists_mem_divisorsAntidiagonal
+    (n : ℕ) (hn : 0 < n) (t : ℤ) (hD : 4 * (n : ℤ) < t ^ 2) :
+    IsSquare (t ^ 2 - 4 * (n : ℤ)) ↔
+      ∃ p ∈ n.divisorsAntidiagonal, p.1 < p.2 ∧ |t| = (p.1 : ℤ) + p.2 := by
+  constructor
+  · rintro ⟨u, hu⟩
+    have hu' : t ^ 2 - 4 * (n : ℤ) = |u| ^ 2 := by nlinarith [sq_abs u]
+    -- The trace and the square root have the same parity, so both roots are integral.
+    have hpar : (|t| - |u|) % 2 = 0 := by
+      have he : Even (|t| ^ 2 - |u| ^ 2) := ⟨2 * n, by nlinarith [sq_abs t]⟩
+      have heq : Even |t| ↔ Even |u| := by
+        simpa only [Int.even_pow' (by decide : (2 : ℕ) ≠ 0)] using Int.even_sub.mp he
+      exact Int.even_iff.mp (Int.even_sub.mpr heq)
+    let a := (|t| - |u|) / 2
+    let d := (|t| + |u|) / 2
+    have hprod : (|t| - |u|) * (|t| + |u|) = 4 * n := by nlinarith [sq_abs t]
+    have htu : |u| < |t| := by nlinarith [abs_nonneg t, abs_nonneg u, sq_abs t]
+    have hu0 : 0 < |u| := by nlinarith [abs_nonneg u]
+    have ha : 0 < a := by dsimp [a]; omega
+    have had : a < d := by dsimp [a, d]; omega
+    have hadd : a + d = |t| := by dsimp [a, d]; omega
+    have hmul : a * d = n := by
+      have ha2 : 2 * a = |t| - |u| := by dsimp [a]; omega
+      have hd2 : 2 * d = |t| + |u| := by dsimp [d]; omega
+      nlinarith
+    refine ⟨(a.toNat, d.toNat), ?_, by omega, by omega⟩
+    simpa only [Int.toNat_natCast] using
+      prodMk_toNat_mem_divisorsAntidiagonal_toNat ha (by omega) hmul
+  · rintro ⟨p, hp, _, ht⟩
+    have hm : (p.1 : ℤ) * p.2 = n := by exact_mod_cast (Nat.mem_divisorsAntidiagonal.mp hp).1
+    refine ⟨(p.2 : ℤ) - p.1, ?_⟩
+    nlinarith [sq_abs t]
 
 end Int
 
