@@ -305,12 +305,12 @@ private theorem isSheaf_principalPartsPresheaf (D : SchemeWeilDivisor X) :
         Subtype.val).preimage Subtype.val_injective.injOn).subset fun x hx ↦ ?_
     obtain ⟨i, hit, hi⟩ := Set.mem_iUnion₂.mp (ht x.2)
     exact Set.mem_biUnion hit ⟨⟨x.1, hi⟩, by rwa [Set.mem_ofPred_eq, ← hg x hi], rfl⟩
-  refine ⟨(principalPartsPresheafSectionsEquiv D (iSup U)).symm (dfinsuppOfFiniteSupport g hfin),
+  refine ⟨(principalPartsPresheafSectionsEquiv D (iSup U)).symm (DFinsupp.ofSupportFinite g hfin),
     fun i ↦ (principalPartsPresheafSectionsEquiv D (U i)).injective (DFinsupp.ext fun y ↦ ?_),
     fun s hs ↦ (principalPartsPresheafSectionsEquiv D (iSup U)).injective (DFinsupp.ext fun x ↦ ?_)⟩
   · refine (principalPartsPresheafSectionsEquiv_map_apply D (Opens.leSupr U i) _ y).trans ?_
-    simpa only [AddEquiv.apply_symm_apply, dfinsuppOfFiniteSupport_apply] using hg ⟨y.1, _⟩ y.2
-  · simp only [AddEquiv.apply_symm_apply, dfinsuppOfFiniteSupport_apply, hg x (hj x), ← hs (j x),
+    simpa only [AddEquiv.apply_symm_apply, DFinsupp.ofSupportFinite_apply] using hg ⟨y.1, _⟩ y.2
+  · simp only [AddEquiv.apply_symm_apply, DFinsupp.ofSupportFinite_apply, hg x (hj x), ← hs (j x),
       principalPartsPresheafSectionsEquiv_map_apply]
 
 /-- The sheaf of `𝒪_X`-modules of principal parts of a Weil divisor `D` on a Noetherian integral
@@ -361,13 +361,13 @@ instance (D : SchemeWeilDivisor X) : (principalParts D).presheaf.IsFlasque where
     refine (AddCommGrpCat.epi_iff_surjective _).mpr fun t ↦ ?_
     let t' := principalPartsSectionsEquiv D V.unop t
     -- Extend `t'` by zero to `U`; the restriction map forgets the points outside `V`.
-    refine ⟨(principalPartsSectionsEquiv D U.unop).symm (dfinsuppOfFiniteSupport
+    refine ⟨(principalPartsSectionsEquiv D U.unop).symm (DFinsupp.ofSupportFinite
         (fun x ↦ if h : (x.1 : X) ∈ V.unop then t' ⟨x.1, h⟩ else 0) ?_),
       (principalPartsSectionsEquiv D V.unop).injective <| DFinsupp.ext fun y ↦ ?_⟩
     · exact (t'.finite_support.image fun y ↦ ⟨y.1, i.unop.le y.2⟩).subset fun x hx ↦
         (dite_ne_right_iff.mp hx).elim fun h ht ↦ ⟨⟨x.1, h⟩, ht, rfl⟩
     · refine (principalParts_presheaf_map_apply D i.unop _ y).trans ?_
-      rw [AddEquiv.apply_symm_apply, dfinsuppOfFiniteSupport_apply, dite_eq_left y.2]
+      rw [AddEquiv.apply_symm_apply, DFinsupp.ofSupportFinite_apply, dite_eq_left y.2]
 
 /-- The principal part at a codimension-one point `x` of `U` of a section of `𝒦_X` over `U`. -/
 def principalPartAt (D : SchemeWeilDivisor X) {U : X.Opens} (s : Γ(Scheme.rationalFunctions X, U))
@@ -417,7 +417,7 @@ lemma finite_setOf_principalPartAt_ne_zero (D : SchemeWeilDivisor X) {U : X.Open
 
 private def toPrincipalPartsFamily (D : SchemeWeilDivisor X) (U : X.Opens) :
     Γ(Scheme.rationalFunctions X, U) →+ principalPartsSections D U where
-  toFun s := dfinsuppOfFiniteSupport (principalPartAt D s)
+  toFun s := DFinsupp.ofSupportFinite (principalPartAt D s)
     (finite_setOf_principalPartAt_ne_zero D s)
   map_zero' := by
     apply DFinsupp.ext
@@ -441,7 +441,7 @@ private lemma toPrincipalPartsApp_apply (D : SchemeWeilDivisor X) (U : X.Opens)
     (s : Γ(Scheme.rationalFunctions X, U)) (x : {x : CodimensionOnePoint X // (x : X) ∈ U}) :
     principalPartsSectionsEquiv D U (toPrincipalPartsApp D U s) x = principalPartAt D s x := by
   simp only [toPrincipalPartsApp, AddMonoidHom.comp_apply]
-  exact dfinsuppOfFiniteSupport_apply _ _ _
+  exact DFinsupp.ofSupportFinite_apply _ _ _
 
 /-- The principal parts of `r • s` are those of `s` multiplied by the germs of `r`. -/
 lemma principalPartAt_smul (D : SchemeWeilDivisor X) {U : X.Opens} (r : Γ(X, U))

@@ -5,36 +5,30 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.DFinsupp.Module
+public import Mathlib.Data.DFinsupp.Defs
 
 /-!
 # Dependent finitely supported functions
 
-Construct a `DFinsupp` from a dependent function with finite support.
+Construct a `DFinsupp` from a dependent function with finite support: the dependent analogue of
+`Finsupp.ofSupportFinite`.
 -/
 
 public section
 
-namespace TauCeti
+namespace DFinsupp
 
-/-- A dependent function with finite support, regarded as a dependent finitely supported
-function. -/
-noncomputable def dfinsuppOfFiniteSupport {I : Type*} {β : I → Type*} [∀ i, Zero (β i)]
-    (f : ∀ i, β i) (hf : {i | f i ≠ 0}.Finite) : Π₀ i, β i := by
-  classical
-  exact DFinsupp.mk hf.toFinset fun i ↦ f i
+variable {ι : Type*} {β : ι → Type*} [∀ i, Zero (β i)]
 
-/-- Evaluating `dfinsuppOfFiniteSupport f hf` returns the original function `f`. -/
+/-- The dependent finitely supported function induced by a dependent function `f` whose support
+`{i | f i ≠ 0}` is finite. This is the dependent analogue of `Finsupp.ofSupportFinite`. -/
+noncomputable def ofSupportFinite (f : ∀ i, β i) (hf : {i | f i ≠ 0}.Finite) : Π₀ i, β i :=
+  ⟨f, Trunc.mk ⟨hf.toFinset.val, fun _ ↦ or_iff_not_imp_right.2 hf.mem_toFinset.2⟩⟩
+
+/-- Evaluating `DFinsupp.ofSupportFinite f hf` returns the original function `f`. -/
 @[simp]
-lemma dfinsuppOfFiniteSupport_apply {I : Type*} {β : I → Type*} [∀ i, Zero (β i)]
-    (f : ∀ i, β i) (hf : {i | f i ≠ 0}.Finite) (i : I) :
-    dfinsuppOfFiniteSupport f hf i = f i := by
-  classical
-  simp only [dfinsuppOfFiniteSupport, DFinsupp.mk_apply]
-  split_ifs with hi
-  · rfl
-  · have : f i = 0 := not_ne_iff.mp (by
-      simpa only [Set.Finite.mem_toFinset, Set.mem_ofPred_eq] using hi)
-    exact this.symm
+lemma ofSupportFinite_apply (f : ∀ i, β i) (hf : {i | f i ≠ 0}.Finite) (i : ι) :
+    ofSupportFinite f hf i = f i :=
+  (rfl)
 
-end TauCeti
+end DFinsupp
