@@ -5,6 +5,7 @@ Authors: Claude
 -/
 module
 
+import Mathlib.RingTheory.Finiteness.Nilpotent
 import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Basic
 public import Mathlib.LinearAlgebra.FreeModule.PID
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus.Basic
@@ -59,8 +60,12 @@ choice is confined to one weight space at a time.
 
 * `TauCeti.UniversalEnvelopingAlgebra.map_mem_iSup_jointWeightSpace`: a morphism of Lie modules
   maps the span of the integral joint weight spaces into that of its target.
-* `TauCeti.UniversalEnvelopingAlgebra.eq_zero_of_isCartanWeightVector_of_sum_eq_zero`: vectors of
-  pairwise distinct integral weights are independent.
+* `TauCeti.UniversalEnvelopingAlgebra.iSupIndep_jointWeightSpace` and
+  `TauCeti.UniversalEnvelopingAlgebra.eq_zero_of_isCartanWeightVector_of_sum_eq_zero`: the integral
+  joint weight spaces are independent, so vectors of pairwise distinct integral weights are
+  independent.
+* `TauCeti.UniversalEnvelopingAlgebra.isNilpotent_of_iSup_jointWeightSpace_eq_top`: a root vector of
+  nonzero weight acts nilpotently on a finite-dimensional sum of integral weight spaces.
 * `TauCeti.UniversalEnvelopingAlgebra.isInternal_weightSublattice`: a Kostant-stable subgroup lying
   in the span of the integral joint weight spaces is their internal direct sum.
 * `TauCeti.UniversalEnvelopingAlgebra.mem_range_kostantWeightFin_iff`: the weights recorded by the
@@ -133,25 +138,25 @@ theorem mem_weightSublattice_iff {μ : κ → ℤ} {x : M} :
 
 /-! ## Independence of weight vectors -/
 
+/-- **The integral joint weight spaces are independent.** This is generic independence of joint
+eigenspaces, restricted along the injective cast of integral weights to rational ones. -/
+theorem iSupIndep_jointWeightSpace : iSupIndep (jointWeightSpace h ρ) := by
+  have hind : iSupIndep fun μ : κ → ℚ =>
+      ⨅ j : κ, Module.End.eigenspace (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (h j))) (μ j) :=
+    iSupIndep_iInf_eigenspace fun j => ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (h j))
+  suffices iSupIndep (fun μ : κ → ℤ => jointWeightSpace h ρ μ) by simpa only
+  simpa only [jointWeightSpace, Function.comp_def] using
+    hind.comp fun μ ν hμν => by
+      ext j
+      exact_mod_cast congr_fun hμν j
+
 /-- **Weight vectors of pairwise distinct weights are independent.** If a finite family of joint
 eigenvectors of the designated Cartan operators, indexed by pairwise distinct integral weights, sums
 to zero, then every member of the family is zero. -/
 theorem eq_zero_of_isCartanWeightVector_of_sum_eq_zero {s : Finset (κ → ℤ)} {w : (κ → ℤ) → V}
     (hw : ∀ l ∈ s, IsCartanWeightVector h ρ l (w l)) (hsum : ∑ l ∈ s, w l = 0)
-    {l₀ : κ → ℤ} (hl₀ : l₀ ∈ s) : w l₀ = 0 := by
-  -- Restrict generic joint-eigenspace independence along the injective cast of integral weights.
-  have hind : iSupIndep (jointWeightSpace h ρ) := by
-    have hind' : iSupIndep fun μ : κ → ℚ =>
-        ⨅ j : κ, Module.End.eigenspace
-          (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (h j))) (μ j) :=
-      iSupIndep_iInf_eigenspace fun j =>
-        ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (h j))
-    suffices iSupIndep (fun μ : κ → ℤ => jointWeightSpace h ρ μ) by simpa only
-    simpa only [jointWeightSpace, Function.comp_def] using
-      hind'.comp fun μ ν hμν => by
-        ext j
-        exact_mod_cast congr_fun hμν j
-  exact (iSupIndep_iff_finsetSum_eq_zero_imp_eq_zero _).1 hind s w
+    {l₀ : κ → ℤ} (hl₀ : l₀ ∈ s) : w l₀ = 0 :=
+  (iSupIndep_iff_finsetSum_eq_zero_imp_eq_zero _).1 (iSupIndep_jointWeightSpace h ρ) s w
     (fun l hl => (mem_jointWeightSpace_iff h ρ).2 (hw l hl)) hsum l₀ hl₀
 
 /-- **The weight sublattices of a subgroup are independent.** -/
@@ -164,6 +169,42 @@ theorem iSupIndep_weightSublattice : iSupIndep (weightSublattice h ρ M) := by
     (fun ν hν => (mem_weightSublattice_iff h ρ M).1 (hw ν hν))
     (by simpa only [AddSubmonoidClass.coe_finsetSum, ZeroMemClass.coe_zero] using
       congr_arg (fun x : M => (x : V)) hsum) hμ
+
+/-! ## Nilpotency of root vectors -/
+
+/-- **A root vector acts nilpotently on a finite-dimensional sum of integral weight spaces.** If
+`V` is finite-dimensional and spanned by the joint weight spaces of the designated Cartan operators,
+and `eᵢ` has a nonzero weight `α` under them, then `eᵢ` acts nilpotently: it carries the weight
+space of `μ` into that of `μ + α`, and only finitely many weight spaces are nonzero. This is the
+nilpotency hypothesis of the divided-power root subgroups. -/
+theorem isNilpotent_of_iSup_jointWeightSpace_eq_top [FiniteDimensional ℚ V]
+    (hV : ⨆ μ : κ → ℤ, jointWeightSpace h ρ μ = ⊤) {i : ι} {α : κ → ℤ}
+    (hα : ∀ j, ⁅h j, e i⁆ = (α j : ℚ) • e i) (hα₀ : α ≠ 0) :
+    IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) := by
+  have hfin : {μ | jointWeightSpace h ρ μ ≠ ⊥}.Finite :=
+    WellFoundedGT.finite_ne_bot_of_iSupIndep (iSupIndep_jointWeightSpace h ρ)
+  refine Module.End.isNilpotent_iff_of_finite.mpr fun m => ?_
+  have hm : m ∈ ⨆ μ : κ → ℤ, jointWeightSpace h ρ μ := hV ▸ Submodule.mem_top
+  induction hm using Submodule.iSup_induction' with
+  | mem μ m hm =>
+    -- The weights `μ + n α` are pairwise distinct, so one of them is not a weight of `V`.
+    obtain ⟨j, hj⟩ : ∃ j, α j ≠ 0 := by simpa [funext_iff] using hα₀
+    have hinj : Function.Injective fun n : ℕ => μ + n • α := fun a b hab => by
+      have hab' : (a : ℤ) * α j = b * α j := by simpa using congr_fun hab j
+      exact_mod_cast mul_right_cancel₀ hj hab'
+    obtain ⟨-, ⟨n, rfl⟩, hn⟩ :=
+      (Set.infinite_range_of_injective hinj).exists_notMem_finite hfin
+    refine ⟨n, ?_⟩
+    have hpow := ((mem_jointWeightSpace_iff h ρ).1 hm).pow_rootVector e hα n
+    rw [← mem_jointWeightSpace_iff h ρ, not_not.1 hn] at hpow
+    exact (Submodule.mem_bot ℚ).1 hpow
+  | zero => exact ⟨0, map_zero _⟩
+  | add m₁ m₂ _ _ hm₁ hm₂ =>
+    obtain ⟨n₁, hn₁⟩ := hm₁
+    obtain ⟨n₂, hn₂⟩ := hm₂
+    refine ⟨max n₁ n₂, ?_⟩
+    rw [map_add, Module.End.pow_map_zero_of_le le_sup_left hn₁,
+      Module.End.pow_map_zero_of_le le_sup_right hn₂, add_zero]
 
 /-- **A Kostant-stable subgroup is spanned by its weight sublattices**, provided each of its
 elements lies in the span of the joint weight spaces. -/
