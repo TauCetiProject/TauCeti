@@ -52,8 +52,16 @@ leaf `n - 1` and the backtrack through the leaf `0`, acts at node `1` by `E₂�
 trace one. Since the trace of a representation vanishes on commutators, the class of this walk in
 the cyclic quotient is nonzero.
 
+## Main definitions
+
+* `TauCeti.affineDMatrix`: the matrices of the representation.
+
 ## Main results
 
+* `TauCeti.affineDMatrix_eq_zero_of_not_adj`: the matrices vanish off the edges.
+* `TauCeti.sum_affineDMatrix_mul_affineDMatrix`: the representation satisfies the signless
+  relations.
+* `TauCeti.trace_affineDMatrix_backtracks`: the walk `1 → 0 → 1 → (n - 1) → 1` acts with trace one.
 * `TauCeti.exists_mem_signlessPreprojectiveGrade_four_notMem_commutatorSubmodule`: if `G`
   contains a copy of the affine diagram `Dₙ`, some element of path degree four of `Π⁺(G)` does not
   lie in `[Π⁺(G), Π⁺(G)]`.
@@ -82,7 +90,7 @@ variable (k : Type w) [CommRing k]
 /-- The matrix assigned to the arrow `i → j` of the doubled affine diagram `Dₙ` by the
 representation of this file, with nodes given as natural numbers in the labelling of
 `TauCeti.AffineDynkinType.graph`; it is zero unless `i` and `j` are adjacent. -/
-private noncomputable def affineDMatrix (n i j : ℕ) : Matrix (Fin 2) (Fin 2) k :=
+noncomputable def affineDMatrix (n i j : ℕ) : Matrix (Fin 2) (Fin 2) k :=
   if i = 0 ∧ j = 1 then !![1, 0; 0, 0]
   else if i = 1 ∧ j = 0 then !![0, 1; 0, 0]
   else if i = n - 1 ∧ j = 1 then !![0, 0; 0, 1]
@@ -145,9 +153,19 @@ private theorem affineDMatrix_pred (hj : 1 ≤ j) (hi : j + 1 = i) (hin : i ≤ 
 
 end Evaluation
 
+/-- The affine `Dₙ` matrices vanish off the edges of the diagram. -/
+@[simp]
+theorem affineDMatrix_eq_zero_of_not_adj {n : ℕ} (hn : 4 ≤ n)
+    {i j : Fin (AffineDynkinType.D n).nodes} (h : ¬(AffineDynkinType.D n).graph.Adj i j) :
+    affineDMatrix k n i j = 0 := by
+  replace h := mt (AffineDynkinType.graph_D_adj hn (i := i) (j := j)).2 h
+  -- Every condition of the definition names an edge, so every branch is skipped.
+  rw [affineDMatrix]
+  repeat rw [ite_eq_right (by omega)]
+
 /-- **The affine `Dₙ` matrices satisfy the signless relations**: at every node `v` of `Dₙ`, the
 backtracks `β w v * β v w` over the neighbours `w` of `v` sum to zero. -/
-private theorem sum_affineDMatrix_mul_affineDMatrix {n : ℕ} (hn : 4 ≤ n)
+theorem sum_affineDMatrix_mul_affineDMatrix {n : ℕ} (hn : 4 ≤ n)
     (v : Fin (AffineDynkinType.D n).nodes) :
     ∑ w ∈ (AffineDynkinType.D n).graph.neighborFinset v,
       affineDMatrix k n w v * affineDMatrix k n v w = 0 := by
@@ -202,6 +220,15 @@ private theorem sum_affineDMatrix_mul_affineDMatrix {n : ℕ} (hn : 4 ≤ n)
     ext i j
     fin_cases i <;> fin_cases j <;> simp
 
+/-- In the affine `Dₙ` representation, the product of the backtracks at the branch node `1`
+through the leaf `n - 1` and then through the leaf `0` has trace one. -/
+theorem trace_affineDMatrix_backtracks {n : ℕ} (hn : 4 ≤ n) :
+    trace (affineDMatrix k n (n - 1) 1 * affineDMatrix k n 1 (n - 1) *
+      (affineDMatrix k n 0 1 * affineDMatrix k n 1 0)) = 1 := by
+  rw [affineDMatrix_last_one hn rfl rfl, affineDMatrix_one_last hn rfl rfl,
+    affineDMatrix_zero_one hn rfl rfl, affineDMatrix_one_zero hn rfl rfl]
+  simp [Matrix.trace_fin_two]
+
 variable {k} {V : Type u} [Fintype V] {G : SimpleGraph V} [DecidableRel G.Adj]
 
 /-- **Graphs containing an affine `Dₙ` have nonzero cyclic classes in degree four.** If `G`
@@ -226,9 +253,6 @@ theorem exists_mem_signlessPreprojectiveGrade_four_notMem_commutatorSubmodule [N
   refine exists_mem_signlessPreprojectiveGrade_notMem_commutatorSubmodule_of_trace_ne_zero f
     (fun i j => affineDMatrix k n i j) (sum_affineDMatrix_mul_affineDMatrix k hn)
     [⟨_, h₂⟩, ⟨_, h₁⟩] (by simp) ?_
-  simp (disch := omega) only [List.map_cons, List.map_nil, List.prod_cons, List.prod_nil,
-    mul_one, c, affineDMatrix_zero_one hn, affineDMatrix_one_zero hn, affineDMatrix_last_one hn,
-    affineDMatrix_one_last hn]
-  simp [Matrix.trace_fin_two]
+  simp [c, trace_affineDMatrix_backtracks k hn]
 
 end TauCeti
