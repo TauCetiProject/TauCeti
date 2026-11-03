@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Sl2.SquareZero
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Diagonal.Basic
 import Mathlib.Tactic.Module
 
