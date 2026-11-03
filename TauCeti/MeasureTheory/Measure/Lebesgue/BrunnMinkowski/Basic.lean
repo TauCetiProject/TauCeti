@@ -7,6 +7,8 @@ module
 
 public import TauCeti.MeasureTheory.Integral.PrekopaLeindler
 public import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
+import Mathlib.MeasureTheory.Measure.Real
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Brunn–Minkowski in finite-dimensional Euclidean spaces
@@ -21,6 +23,11 @@ geometric mean of volumes. The additive formulation bounds its dimension root by
 weighted sum of dimension roots, for arbitrary nonnegative coefficients. Real-valued
 versions assume finite outer volume of the weighted sum. These inequalities support
 convex isoperimetric estimates and concavity of outer parallel volumes.
+
+If a nonempty set `C` thickened by the open ball of radius `t` stays inside a set `U` of finite
+volume, the shell `U \ C` has volume at least `n ω_n^(1/n) |C|^(1 - 1/n) t`, where
+`ω_n = volume (ball 0 1)`
+(`TauCeti.mul_volume_real_rpow_mul_le_volume_real_sub_of_add_ball_subset`).
 
 ## References
 
@@ -201,5 +208,41 @@ theorem volume_real_rpow_add_volume_real_rpow_le {A B : Set E}
   simpa only [one_mul, one_smul] using
     mul_volume_real_rpow_add_mul_volume_real_rpow_le hn hAn hA hBn hB
       (c := 1) (d := 1) zero_le_one zero_le_one (by simpa only [one_smul] using hfin)
+
+/-- **Brunn–Minkowski for inner parallel sets.** If a nonempty set `C` satisfies
+`C + ball 0 t ⊆ U` for some `t > 0` and a set `U` of finite volume, then in dimension `n ≥ 1`
+`n ω_n^(1/n) |C|^(1 - 1/n) t ≤ |U| - |C|`, where `ω_n = volume (ball 0 1)`. -/
+theorem mul_volume_real_rpow_mul_le_volume_real_sub_of_add_ball_subset {C U : Set E}
+    (hn : Module.finrank ℝ E ≠ 0) (hCne : C.Nonempty) (hC : NullMeasurableSet C volume)
+    (hU : volume U ≠ ∞) {t : ℝ} (ht : 0 < t) (hCU : C + Metric.ball (0 : E) t ⊆ U) :
+    Module.finrank ℝ E * volume.real (Metric.ball (0 : E) 1) ^ (Module.finrank ℝ E : ℝ)⁻¹ *
+        volume.real C ^ (1 - (Module.finrank ℝ E : ℝ)⁻¹) * t ≤
+      volume.real U - volume.real C := by
+  set n := Module.finrank ℝ E
+  have hreal := (volume_real_rpow_add_volume_real_rpow_le hn hCne hC
+    (Metric.nonempty_ball.2 ht) measurableSet_ball.nullMeasurableSet
+    (ne_top_of_le_ne_top hU (measure_mono hCU))).trans
+      (Real.rpow_le_rpow measureReal_nonneg (measureReal_mono hCU hU) (by positivity))
+  -- `|ball 0 t|^(1/n) = t ω_n^(1/n)`.
+  rw [Measure.addHaar_real_ball_of_pos _ _ ht, Real.mul_rpow (by positivity) measureReal_nonneg,
+    Real.pow_rpow_inv_natCast ht.le hn] at hreal
+  set a := volume.real C ^ (n : ℝ)⁻¹
+  set b := t * volume.real (Metric.ball (0 : E) 1) ^ (n : ℝ)⁻¹
+  -- Bernoulli's inequality `a ^ n + n a ^ (n - 1) b ≤ (a + b) ^ n`.
+  have hbern := pow_add_mul_le_add_pow (by positivity : 0 ≤ a) (by positivity : 0 ≤ 2 * a + b) n
+  have hpow : (a + b) ^ n ≤ volume.real U :=
+    (pow_le_pow_left₀ (by positivity) hreal n).trans_eq
+      (Real.rpow_inv_natCast_pow measureReal_nonneg hn)
+  have han1 : a ^ (n - 1) = volume.real C ^ (1 - (n : ℝ)⁻¹) := by
+    rw [← Real.rpow_natCast, ← Real.rpow_mul measureReal_nonneg,
+      Nat.cast_sub (Nat.one_le_iff_ne_zero.2 hn), Nat.cast_one]
+    congr 1
+    field_simp
+  rw [Real.rpow_inv_natCast_pow measureReal_nonneg hn, han1] at hbern
+  have : n * volume.real (Metric.ball (0 : E) 1) ^ (n : ℝ)⁻¹ *
+      volume.real C ^ (1 - (n : ℝ)⁻¹) * t = n * volume.real C ^ (1 - (n : ℝ)⁻¹) * b := by
+    simp only [b]
+    ring
+  linarith
 
 end TauCeti
