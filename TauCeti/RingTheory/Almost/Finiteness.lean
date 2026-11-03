@@ -255,7 +255,7 @@ theorem AlmostFG.of_isAlmostZero_quotient_range (h : S.AlmostFG M)
   rw [almostFG_iff_exists_fg] at h ⊢
   intro m₀ hm hfg
   obtain ⟨K, hKfg, hK, hm₀⟩ :=
-    Ideal.exists_fg_le_pow_of_isIdempotentElem S.isIdempotentElem hfg hm two_ne_zero
+    Ideal.exists_fg_le_pow_of_isIdempotentElem S.isIdempotentElem hfg hm 2
   obtain ⟨P, hPfg, hP⟩ := h K hK hKfg
   exact ⟨P.map f, hPfg.map f,
     (smul_mono_left hm₀).trans (pow_two_smul_top_le_map hf hK hP)⟩
@@ -266,7 +266,7 @@ theorem AlmostFG.of_isAlmostIso (h : S.AlmostFG N) (hf : S.IsAlmostIso f) : S.Al
   rw [almostFG_iff_exists_fg] at h ⊢
   intro m₀ hm hfg
   obtain ⟨K, hKfg, hK, hm₀⟩ :=
-    Ideal.exists_fg_le_pow_of_isIdempotentElem S.isIdempotentElem hfg hm three_ne_zero
+    Ideal.exists_fg_le_pow_of_isIdempotentElem S.isIdempotentElem hfg hm 3
   obtain ⟨P, hPfg, hP⟩ := h K hK hKfg
   have hKP := Submodule.FG.smul hKfg hPfg
   -- Lift a finite family generating `K • P ≤ range f` along `f`.
@@ -287,7 +287,7 @@ theorem UniformlyAlmostFG.of_isAlmostZero_quotient_range {n : ℕ} (h : S.Unifor
     (hf : S.IsAlmostZero (N ⧸ range f)) : S.UniformlyAlmostFG N n := by
   intro m₀ hm hfg
   obtain ⟨K, hKfg, hK, hm₀⟩ :=
-    Ideal.exists_fg_le_pow_of_isIdempotentElem S.isIdempotentElem hfg hm two_ne_zero
+    Ideal.exists_fg_le_pow_of_isIdempotentElem S.isIdempotentElem hfg hm 2
   obtain ⟨φ, hφ⟩ := h K hK hKfg
   refine ⟨f ∘ₗ φ, (smul_mono_left hm₀).trans ?_⟩
   rw [range_comp]
@@ -300,7 +300,7 @@ theorem UniformlyAlmostFG.iff_of_isAlmostIso (hS : S.IsFilteredPrincipal) (hf : 
   obtain ⟨hker, hcoker⟩ := isAlmostIso_iff.mp hf
   refine ⟨fun h ↦ h.of_isAlmostZero_quotient_range hcoker, fun h m₀ hm hfg ↦ ?_⟩
   obtain ⟨K, hKfg, hK, hm₀⟩ :=
-    Ideal.exists_fg_le_pow_of_isIdempotentElem S.isIdempotentElem hfg hm three_ne_zero
+    Ideal.exists_fg_le_pow_of_isIdempotentElem S.isIdempotentElem hfg hm 3
   obtain ⟨z, hz, hKz⟩ := hS.exists_le_span_singleton hKfg hK
   have hzm : Ideal.span {z} ≤ S.ideal := by simpa [Ideal.span_le]
   obtain ⟨φ, hφ⟩ := h _ hzm (Submodule.fg_span_singleton z)
