@@ -53,9 +53,8 @@ theorem IsAdmissible.exists_hilbertSymbol_eq_of_rank_eq_two
     rcases Int.units_eq_one_or (I.realHasse w) with h | h <;>
       simp only [hT, h] <;> norm_num
   have heven : Even (S.card + T.card) := by
-    have hp := hI.hasseProduct_eq_one
-    rw [I.hasseProduct_eq_prod_of_mulSupport_subset
-      (S := S) (fun v hv => (hS v).mpr hv)] at hp
+    have hp := hI.prod_finiteHasse_mul_prod_realHasse_eq_one
+      (S := S) (fun v hv => (hS v).mpr hv)
     have hpS : (∏ v ∈ S, I.finiteHasse v) = (-1 : ℤˣ) ^ S.card := by
       simp_rw [hs]
       simp
@@ -82,7 +81,7 @@ theorem IsAdmissible.exists_hilbertSymbol_eq_of_rank_eq_two
       · norm_num [realHasse_def, realNegativeIndex_def, hn, h] at hne
       · norm_num [realHasse_def, realNegativeIndex_def, hn, h] at hne
     have hdisc := hI.discrAtRealPlace_eq w
-    have hdpos : squareClass (unitAtRealPlace w d) = 0 := by
+    have hdpos : squareClass (Units.map (embedding_of_isReal w.2).toMonoidHom d) = 0 := by
       simpa [discrAtRealPlace_def, ← hd, realNegativeIndex_def, hn, hzero,
         ← squareClass_pow] using hdisc
     have hpos := (Units.squareClass_eq_zero_iff_pos _).mp hdpos
@@ -90,78 +89,8 @@ theorem IsAdmissible.exists_hilbertSymbol_eq_of_rank_eq_two
   obtain ⟨a, haS, haT⟩ := exists_hilbertSymbol_eq_ite (-d) S T hfinite hreal heven
   exact ⟨a, fun v => (haS v).trans (hs v).symm, fun w => (haT w).trans (ht w).symm⟩
 
--- This calculation identifies the signature of the plane used in the construction below.
-private theorem realPositiveIndex_plane_eq (hI : I.IsAdmissible) (hn : I.rank = 2)
-    (a d : Kˣ) (hd : squareClass d = I.discr) (w : {w : InfinitePlace K // w.IsReal})
-    (hsign : hilbertSymbol (unitAtRealPlace w a) (unitAtRealPlace w (-d)) = I.realHasse w) :
-    _root_.QuadraticForm.realPositiveIndex
-      (weightedSumSquares K ![(a : K), -(a * (-d) : K)]) w =
-      I.realPositiveIndex w := by
-    classical
-    rw [_root_.QuadraticForm.realPositiveIndex_weightedSumSquares]
-    have hp : I.realPositiveIndex w ≤ 2 := hn ▸ hI.realPositiveIndex_le_rank w
-    have hdisc := hI.discrAtRealPlace_eq w
-    have hdpos (heven : Even (I.realNegativeIndex w)) :
-        0 < embedding_of_isReal w.2 (d : K) := by
-      have heq : squareClass (Units.map (embedding_of_isReal w.2).toMonoidHom d) =
-          I.realNegativeIndex w • squareClass (-1) := by
-        simpa only [discrAtRealPlace_def, ← hd, RingHom.squareClassMap_apply] using hdisc
-      have hzero : squareClass (Units.map (embedding_of_isReal w.2).toMonoidHom d) = 0 := by
-        rw [heq, ← squareClass_pow, heven.neg_one_pow, squareClass_one]
-      exact (Units.squareClass_eq_zero_iff_pos _).mp hzero
-    have ha0 : embedding_of_isReal w.2 (a : K) ≠ 0 :=
-      (map_ne_zero _).mpr a.ne_zero
-    -- The three allowed positive indices are separated by discriminant sign and Hasse sign.
-    interval_cases h : I.realPositiveIndex w
-    · have hdp := hdpos (by simp [realNegativeIndex_def, hn, h])
-      have han : embedding_of_isReal w.2 (a : K) < 0 := by
-        have hh : hilbertSymbol (unitAtRealPlace w a) (unitAtRealPlace w (-d)) = -1 := by
-          simpa [realHasse_def, realNegativeIndex_def, hn, h] using hsign
-        exact ((hilbertSymbol_unitAtRealPlace_eq_neg_one_iff _ _ _).mp hh).1
-      have hprod : embedding_of_isReal w.2 (a : K) * embedding_of_isReal w.2 (d : K) < 0 :=
-        mul_neg_of_neg_of_pos han hdp
-      have hset : {i | 0 < embedding_of_isReal w.2
-          (![(a : K), -(a * (-d) : K)] i)} = ∅ := by
-        ext i
-        fin_cases i <;> simp [han.not_gt, hprod.not_gt]
-      rw [hset, Set.ncard_empty]
-    · have hdn : embedding_of_isReal w.2 (d : K) < 0 := by
-        have heq : squareClass (Units.map (embedding_of_isReal w.2).toMonoidHom d) =
-            squareClass (-1) := by
-          simpa only [discrAtRealPlace_def, ← hd, RingHom.squareClassMap_apply,
-            realNegativeIndex_def, hn, h, Nat.reduceSub, one_nsmul] using hdisc
-        exact (Units.squareClass_eq_squareClass_neg_one_iff_neg _).mp heq
-      rcases ha0.lt_or_gt with han | hap
-      · have hprod := mul_pos_of_neg_of_neg han hdn
-        have hset : {i | 0 < embedding_of_isReal w.2
-            (![(a : K), -(a * (-d) : K)] i)} = {1} := by
-          ext i
-          fin_cases i <;> simp [han.not_gt, hprod]
-        rw [hset, Set.ncard_singleton]
-      · have hprod := mul_neg_of_pos_of_neg hap hdn
-        have hset : {i | 0 < embedding_of_isReal w.2
-            (![(a : K), -(a * (-d) : K)] i)} = {0} := by
-          ext i
-          fin_cases i <;> simp [hap, hprod.not_gt]
-        rw [hset, Set.ncard_singleton]
-    · have hdp := hdpos (by simp [realNegativeIndex_def, hn, h])
-      have hap : 0 < embedding_of_isReal w.2 (a : K) := by
-        have hh : hilbertSymbol (unitAtRealPlace w a) (unitAtRealPlace w (-d)) = 1 := by
-          simpa [realHasse_def, realNegativeIndex_def, hn, h] using hsign
-        rcases (hilbertSymbol_unitAtRealPlace_eq_one_iff _ _ _).mp hh with ha | hb
-        · exact ha
-        · simp only [Units.val_neg, map_neg] at hb
-          linarith
-      have hprod := mul_pos hap hdp
-      have hset : {i | 0 < embedding_of_isReal w.2
-          (![(a : K), -(a * (-d) : K)] i)} = Set.univ := by
-        ext i
-        fin_cases i <;> simp [hap, hprod]
-      rw [hset, Set.ncard_univ, Nat.card_eq_fintype_card, Fintype.card_fin]
-
-/-- Every admissible system of rank two is the invariant system of a regular binary form.
-No local-global principle for isotropy or representation is needed. -/
-theorem IsAdmissible.exists_globalForm_of_rank_eq_two
+/-- Every admissible system of rank two is the invariant system of a regular binary form. -/
+theorem IsAdmissible.exists_form_globalInvariants_eq_of_rank_eq_two
     (hI : I.IsAdmissible) (hn : I.rank = 2) :
     ∃ (Q : _root_.QuadraticForm K (Fin 2 → K)) (hQ : Q.Nondegenerate),
       Q.globalInvariants hQ = I := by
@@ -170,12 +99,13 @@ theorem IsAdmissible.exists_globalForm_of_rank_eq_two
   let d : Kˣ := Additive.toMul (Quotient.out I.discr)
   have hd : squareClass d = I.discr := squareClass_toMul_out _
   obtain ⟨a, haS, haT⟩ := hI.exists_hilbertSymbol_eq_of_rank_eq_two hn d hd
-  let Q := weightedSumSquares K ![(a : K), -(a * (-d) : K)]
+  let Q : _root_.QuadraticForm K (Fin 2 → K) :=
+    weightedSumSquares K ![(a : K), -(a * (-d) : K)]
   have hQ : Q.Nondegenerate :=
     _root_.QuadraticForm.nondegenerate_weightedSumSquares_neg_self_mul a (-d)
-  refine ⟨Q, hQ, GlobalFormInvariants.ext (by simp [hn]) ?_ (funext fun v => ?_)
-    (funext fun w => ?_)⟩
-  · have hplane := _root_.QuadraticForm.discr_formClass_weightedSumSquares_neg_self_mul a (-d)
+  -- The scaled norm plane has the prescribed discriminant and finite Hasse signs.
+  have hdiscr : (Q.globalInvariants hQ).discr = I.discr := by
+    have hplane := _root_.QuadraticForm.discr_formClass_weightedSumSquares_neg_self_mul a (-d)
     simp only [Units.val_neg] at hplane
     rw [_root_.QuadraticForm.globalInvariants_discr, hplane]
     have hc : ![1, -((-d : Kˣ) : K)] = fun i => ((![1, d] : Fin 2 → Kˣ) i : K) := by
@@ -187,15 +117,46 @@ theorem IsAdmissible.exists_globalForm_of_rank_eq_two
     simp only [Units.val_neg] at hequiv
     rw [discr_formClass _ _ ⟨2, ![1, d]⟩ hequiv, Fin.prod_univ_two]
     simpa using hd
+  refine ⟨Q, hQ, GlobalFormInvariants.ext (by simp [hn]) hdiscr (funext fun v => ?_)
+    (funext fun w => ?_)⟩
   · rw [_root_.QuadraticForm.globalInvariants_finiteHasse]
     exact (_root_.QuadraticForm.finiteHasse_weightedSumSquares_neg_self_mul a (-d) hQ v).trans
       (haS v)
-  · rw [_root_.QuadraticForm.globalInvariants_realPositiveIndex]
-    exact realPositiveIndex_plane_eq hI hn a d hd w (haT w)
+  · have hdiag : Q.Equivalent
+        (weightedSumSquares K fun i => ((![(a : Kˣ), -(a * (-d))] : Fin 2 → Kˣ) i : K)) := by
+      have hc : (fun i => ((![(a : Kˣ), -(a * (-d))] : Fin 2 → Kˣ) i : K)) =
+          ![(a : K), -(a * (-d) : K)] := by
+        ext i
+        fin_cases i <;> simp
+      rw [hc]
+    have hhasse := Q.globalInvariants_realHasse_eq_prod_hilbertSymbol hQ hdiag w
+    have hneg : unitAtRealPlace w (-(a * (-d))) =
+        -(unitAtRealPlace w a) * unitAtRealPlace w (-d) := Units.ext (by simp)
+    have hIoi0 : Finset.Ioi (0 : Fin 2) = {1} := by decide
+    have hIoi1 : Finset.Ioi (1 : Fin 2) = ∅ := by decide
+    rw [Fin.prod_univ_two, hIoi0, hIoi1] at hhasse
+    simp only [Finset.prod_singleton, Finset.prod_empty, mul_one,
+      Matrix.cons_val_zero, Matrix.cons_val_one, hneg, hilbertSymbol_real_mul_right,
+      hilbertSymbol_neg_self, one_mul, haT w] at hhasse
+    have hJ := Q.isAdmissible_globalInvariants hQ (by simp)
+    have hdisc := hJ.discrAtRealPlace_eq w
+    rw [discrAtRealPlace_def, hdiscr, ← discrAtRealPlace_def,
+      hI.discrAtRealPlace_eq w] at hdisc
+    have hp : I.realPositiveIndex w ≤ 2 := hn ▸ hI.realPositiveIndex_le_rank w
+    have hq : (Q.globalInvariants hQ).realPositiveIndex w ≤ 2 := by
+      simpa using hJ.realPositiveIndex_le_rank w
+    have hnr : (Q.globalInvariants hQ).rank = 2 := by simp
+    simp only [realHasse_def, realNegativeIndex_def, hn, hnr] at hhasse hdisc
+    -- In rank two the Hasse sign separates index zero, and the discriminant separates one and two.
+    interval_cases I.realPositiveIndex w <;>
+      interval_cases (Q.globalInvariants hQ).realPositiveIndex w <;> solve
+      | rfl
+      | norm_num at hhasse
+      | norm_num [← squareClass_pow, eq_comm] at hdisc
 
 /-- In rank two, admissibility is equivalent to global realization with the prescribed local
 isometries. The local forms may be any realization of the given invariant system. -/
-theorem isAdmissible_iff_exists_globalForm_equivalent_at_places_of_rank_eq_two
+theorem isAdmissible_iff_exists_form_globalInvariants_eq_equivalent_at_places_of_rank_eq_two
     (hn : I.rank = 2)
     {U : ∀ v : HeightOneSpectrum (𝓞 K),
       _root_.QuadraticForm (v.adicCompletion K) (Fin I.rank → v.adicCompletion K)}
@@ -207,7 +168,7 @@ theorem isAdmissible_iff_exists_globalForm_equivalent_at_places_of_rank_eq_two
       ∀ w, (Q.atRealPlace w).Equivalent (R w) := by
   constructor
   · intro hI
-    obtain ⟨Q, hQ, hQI⟩ := hI.exists_globalForm_of_rank_eq_two hn
+    obtain ⟨Q, hQ, hQI⟩ := hI.exists_form_globalInvariants_eq_of_rank_eq_two hn
     exact ⟨Q, hQ, hQI, hL.equivalent_atFinitePlace hQI, hL.equivalent_atRealPlace hQI⟩
   · rintro ⟨Q, hQ, hQI, -, -⟩
     rw [← hQI]
