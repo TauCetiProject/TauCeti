@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.Instances.AddCircle
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Descent
-public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
 
 /-!
 # The standard almost complex structure on a product of two circles
