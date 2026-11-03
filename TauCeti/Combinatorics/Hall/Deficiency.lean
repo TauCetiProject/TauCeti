@@ -67,14 +67,7 @@ theorem exists_card_sub_card_biUnion_eq_hallDeficiency (t : ι → Finset α) :
 theorem hallDeficiency_def (t : ι → Finset α) :
     hallDeficiency t = univ.powerset.sup fun S ↦ #S - #(S.biUnion t) := by
   classical
-  apply le_antisymm
-  · obtain ⟨S, hS⟩ := exists_card_sub_card_biUnion_eq_hallDeficiency t
-    rw [← hS]
-    exact Finset.le_sup (f := fun T ↦ #T - #(T.biUnion t))
-      (mem_powerset.mpr (subset_univ S))
-  · apply Finset.sup_le
-    intro S _
-    exact card_sub_card_biUnion_le_hallDeficiency t S
+  rfl
 
 /-- The Hall deficiency is at most `k` exactly when every subfamily has at most `k` more
 indices than available choices. -/
@@ -240,16 +233,7 @@ theorem exists_partialInjective_card_eq_card_sub_hallDeficiency (t : ι → Fins
 /-- The Hall deficiency vanishes exactly when the usual Hall cardinality inequalities hold. -/
 theorem hallDeficiency_eq_zero_iff (t : ι → Finset α) :
     hallDeficiency t = 0 ↔ ∀ S : Finset ι, #S ≤ #(S.biUnion t) := by
-  constructor
-  · intro h S
-    have hle := card_sub_card_biUnion_le_hallDeficiency t S
-    rw [h] at hle
-    omega
-  · intro h
-    apply Nat.eq_zero_of_le_zero
-    apply Finset.sup_le
-    intro S hS
-    exact (Nat.sub_eq_zero_of_le (h S)).le
+  simpa using (hallDeficiency_le_iff t 0)
 
 /-- Vanishing Hall deficiency is equivalent to the existence of a full system of distinct
 representatives. -/
