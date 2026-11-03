@@ -7,20 +7,19 @@ module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Duality
 public import TauCeti.Algebra.Category.GradedModuleCat.LinearResolution.Basic
-public import TauCeti.Algebra.Category.GradedModuleCat.MinimalResolution
-public import TauCeti.Algebra.Category.GradedModuleCat.Concentrated
 
 /-!
 # Projective coordinates of linear resolution terms
 
-In a projective basis `[Aeᵢ]` dual to degree-zero simples `Sᵢ`, a finite term `Pₙ` of a
-linear resolution has coordinate
+For a projective basis `[Aeᵢ]` and finite degree-zero targets `Sᵢ` with vanishing off-diagonal
+idempotent dimensions, a finite term `Pₙ` of a linear resolution satisfies
 
-`dim_k Extⁿ(M,Sᵢ{n}) qⁿ`.
+`dᵢ · coordinate_i(Pₙ) = dim_k Extⁿ(M,Sᵢ{n}) qⁿ`, where `dᵢ = dim_k(eᵢSᵢ)`.
 
-Over a nonsplitting field the coordinate is multiplied by `dim_k End(Sᵢ)`; we retain this
-factor as the idempotent dimension of the simple. The normalized formula is derived only when
-these dimensions are one. The calculation includes homological degree zero and does not require
+The unweighted coordinate formula requires `dᵢ = 1`. When the `Sᵢ` are simple and the
+canonical maps `Aeᵢ → Sᵢ` are projective covers, `dᵢ = dim_k End_A(Sᵢ)`; this interpretation
+is not assumed for the arbitrary finite targets accepted here. The calculation includes
+homological degree zero and requires neither a nonnegative algebra grading nor
 termination or Euler-admissibility of the resolved module. Together with degreewise Euler
 cancellation it supplies the resolution-term multiplicities in Cartan--Poincaré identities for
 infinite linear resolutions.
@@ -33,8 +32,8 @@ infinite linear resolutions.
   division-endomorphism dimension factor in projective/simple pairings.
 
 The coordinate calculation uses `TauCeti.gradedProjectiveExtEuler_simple_eq_mul_invert_repr`
-and the minimal-resolution Ext equivalence
-`TauCeti.GradedProjectiveResolution.IsMinimal.extLinearEquiv`.
+and the linear-resolution Ext equivalence
+`TauCeti.GradedProjectiveResolution.IsLinear.extLinearEquivShiftObj`.
 -/
 
 public section
@@ -97,7 +96,6 @@ include he₀ hne hbP in
 The diagonal idempotent dimension retains the nonsplitting-field correction. There is no
 cohomological boundedness assumption, and `n = 0` is included. -/
 theorem IsLinear.smulGradedDimension_mul_repr_finiteProjectiveTerm (hr : r.IsLinear)
-    (hneg : ∀ p < 0, 𝒜 p = ⊥)
     (hconc : ∀ i p, p ≠ 0 → (S i).obj.grading.piece p = ⊥) (n : ℕ)
     [Module.Finite A (r.X n)] (i : I) :
     (S i).obj.smulGradedDimension (e i) *
@@ -107,17 +105,31 @@ theorem IsLinear.smulGradedDimension_mul_repr_finiteProjectiveTerm (hr : r.IsLin
     (isLinear_iff.mp hr) n
   rw [smulGradedDimension_mul_repr_of_isGeneratedInDegree S he he₀ hI hne bP hbP
     (r.finiteProjectiveTerm n) hgen hconc i]
-  have htarget : (⨆ (p : ℤ) (_ : 0 < p), 𝒜 p) •
-      (⊤ : Submodule k ((S i).obj.shiftObj n)) = ⊥ :=
-    ((S i).obj.shiftObj n).positive_smul_top_eq_bot_of_concentrated n fun p hp ↦ by
-      simpa [sub_eq_add_neg] using hconc i (p - n) (sub_ne_zero.mpr hp)
-  rw [finiteProjectiveTerm_obj, ((hr.isMinimal hneg).extLinearEquiv htarget n).finrank_eq]
+  rw [finiteProjectiveTerm_obj]
+  suffices Module.finrank k (r.termObj n ⟶ (S i).obj.shiftObj n) =
+      Module.finrank k (Ext.{uA} M ((S i).obj.shiftObj n) n) by rw [this]
+  cases n with
+  | zero =>
+      have : Epi r.augmentation :=
+        (GradedModuleCat.epi_iff_surjective _).mpr r.surjective_π
+      let aug : (M ⟶ (S i).obj.shiftObj 0) ≃ₗ[k]
+          (r.termObj 0 ⟶ (S i).obj.shiftObj 0) :=
+        LinearEquiv.ofBijective (Linear.leftComp k _ r.augmentation) ⟨
+          fun _ _ h ↦ (cancel_epi r.augmentation).mp h, fun f ↦ by
+            let c := ShortComplex.mk (r.differential 0) r.augmentation
+              r.differential_zero_comp_augmentation
+            have hc : c.Exact := (GradedModuleCat.exact_iff).mpr r.exact_d_π
+            exact hc.desc' f (hr.hom_eq_zero 1 (by
+              simpa [sub_eq_add_neg] using hconc i 1 (by omega))
+              (r.differential 0 ≫ f))⟩
+      exact (aug.symm.trans (Ext.linearEquiv₀ (R := k)).symm).finrank_eq
+  | succ n =>
+      exact (hr.extLinearEquivShiftObj (hconc i) n).finrank_eq
 
 include he₀ hne hbP in
 /-- Over normalized projective/simple bases, the `i`th coordinate of `Pₙ` is
 `dim_k Extⁿ(M,Sᵢ{n}) qⁿ`. -/
 theorem IsLinear.repr_finiteProjectiveTerm (hr : r.IsLinear)
-    (hneg : ∀ p < 0, 𝒜 p = ⊥)
     (hconc : ∀ i p, p ≠ 0 → (S i).obj.grading.piece p = ⊥)
     (hself : ∀ i, (S i).obj.smulGradedDimension (e i) = 1)
     (n : ℕ) [Module.Finite A (r.X n)] (i : I) :
@@ -125,14 +137,13 @@ theorem IsLinear.repr_finiteProjectiveTerm (hr : r.IsLinear)
       C (Module.finrank k (Ext.{uA} M ((S i).obj.shiftObj n) n) : ℤ) * T n := by
   simpa only [hself, one_mul] using
     hr.smulGradedDimension_mul_repr_finiteProjectiveTerm
-      S he he₀ hI hne bP hbP hneg hconc n i
+      S he he₀ hI hne bP hbP hconc n i
 
 omit [Finite I] in
 include he₀ hne hbP in
 /-- The class of a finite term of a linear resolution is the sum of its projective basis
 classes with coefficients given by diagonal Ext dimensions and the internal shift `qⁿ`. -/
 theorem IsLinear.of_finiteProjectiveTerm_eq_sum [Fintype I] (hr : r.IsLinear)
-    (hneg : ∀ p < 0, 𝒜 p = ⊥)
     (hconc : ∀ i p, p ≠ 0 → (S i).obj.grading.piece p = ⊥)
     (hself : ∀ i, (S i).obj.smulGradedDimension (e i) = 1)
     (n : ℕ) [Module.Finite A (r.X n)] :
@@ -140,7 +151,7 @@ theorem IsLinear.of_finiteProjectiveTerm_eq_sum [Fintype I] (hr : r.IsLinear)
       ∑ i, (C (Module.finrank k (Ext.{uA} M ((S i).obj.shiftObj n) n) : ℤ) * T n) • bP i := by
   classical
   conv_lhs => rw [← bP.sum_repr (LaurentK0.of.{uA} _ (r.finiteProjectiveTerm n))]
-  simp only [hr.repr_finiteProjectiveTerm S he he₀ hI hne bP hbP hneg hconc hself]
+  simp only [hr.repr_finiteProjectiveTerm S he he₀ hI hne bP hbP hconc hself]
 
 end GradedProjectiveResolution
 
