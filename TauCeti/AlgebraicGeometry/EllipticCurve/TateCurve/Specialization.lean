@@ -27,7 +27,7 @@ same norm as the parameter, even when the ring norm is only submultiplicative, a
 (`‖1‖ = 1`). Over a field, `|j| = 1 / |q| > 1`. Point uniformisation requires further arguments.
 
 Over an ultrametric field, a solution of an equation `y² + xy = x³ + A₄x + A₆` with
-`‖A₄‖, ‖A₆‖ < 1` whose first coordinate has norm above one satisfies `‖x‖ < ‖x + y‖`
+`‖A₄‖, ‖A₆‖ ≤ 1` whose first coordinate has norm above one satisfies `‖x‖ < ‖x + y‖`
 (`TauCeti.norm_lt_norm_add_of_equation`), and a line through the origin meets such a curve in at
 most one point whose first coordinate has norm above one
 (`TauCeti.eq_of_mul_eq_mul_of_one_lt_norm`).
@@ -185,9 +185,9 @@ variable {K : Type*} [NormedField K] [IsUltrametricDist K]
 
 /-! ### Solutions of the Tate equation with a pole -/
 
-/-- On a curve `y² + xy = x³ + A₄x + A₆` with `‖A₄‖, ‖A₆‖ < 1`, a solution with `‖x‖ > 1` has
+/-- On a curve `y² + xy = x³ + A₄x + A₆` with `‖A₄‖, ‖A₆‖ ≤ 1`, a solution with `‖x‖ > 1` has
 `‖x‖ < ‖x + y‖`. -/
-theorem norm_lt_norm_add_of_equation {A₄ A₆ x y : K} (hA₄ : ‖A₄‖ < 1) (hA₆ : ‖A₆‖ < 1)
+theorem norm_lt_norm_add_of_equation {A₄ A₆ x y : K} (hA₄ : ‖A₄‖ ≤ 1) (hA₆ : ‖A₆‖ ≤ 1)
     (hx : 1 < ‖x‖) (h : y ^ 2 + x * y = x ^ 3 + A₄ * x + A₆) : ‖x‖ < ‖x + y‖ := by
   have hx₀ : 0 < ‖x‖ := one_pos.trans hx
   have hx₃ : ‖x‖ < ‖x‖ ^ 3 := lt_self_pow₀ hx (by norm_num)
@@ -211,10 +211,10 @@ theorem norm_lt_norm_add_of_equation {A₄ A₆ x y : K} (hA₄ : ‖A₄‖ < 1
   nlinarith [mul_lt_mul_of_pos_left hx (mul_pos hx₀ hx₀)]
 
 /-- **A line through the origin meets the curve in at most one point with a pole.** If `(x, y)`
-and `(X, Y)` solve `y² + xy = x³ + A₄x + A₆` with `‖A₄‖, ‖A₆‖ < 1`, both first coordinates have
+and `(X, Y)` solve `y² + xy = x³ + A₄x + A₆` with `‖A₄‖, ‖A₆‖ ≤ 1`, both first coordinates have
 norm above one and `x Y = y X`, then the two points are equal. -/
-theorem eq_of_mul_eq_mul_of_one_lt_norm {A₄ A₆ x y X Y : K} (hA₄ : ‖A₄‖ < 1)
-    (hA₆ : ‖A₆‖ < 1) (hx : 1 < ‖x‖) (hX : 1 < ‖X‖) (h₁ : y ^ 2 + x * y = x ^ 3 + A₄ * x + A₆)
+theorem eq_of_mul_eq_mul_of_one_lt_norm {A₄ A₆ x y X Y : K} (hA₄ : ‖A₄‖ ≤ 1)
+    (hA₆ : ‖A₆‖ ≤ 1) (hx : 1 < ‖x‖) (hX : 1 < ‖X‖) (h₁ : y ^ 2 + x * y = x ^ 3 + A₄ * x + A₆)
     (h₂ : Y ^ 2 + X * Y = X ^ 3 + A₄ * X + A₆) (h : x * Y = y * X) : X = x ∧ Y = y := by
   have key : (x - X) * (x ^ 2 * X ^ 2 - (A₄ * x * X + A₆ * (x + X))) = 0 := by
     linear_combination x ^ 2 * h₂ - X ^ 2 * h₁ - (x * Y + y * X + x * X) * h
@@ -227,13 +227,13 @@ theorem eq_of_mul_eq_mul_of_one_lt_norm {A₄ A₆ x y X Y : K} (hA₄ : ‖A₄
     rw [norm_mul, norm_pow, norm_pow]
     refine (IsUltrametricDist.norm_add_le_max _ _).trans_lt (max_lt ?_ ?_)
     · rw [norm_mul, norm_mul, mul_assoc]
-      exact (mul_lt_of_lt_one_left (mul_pos hx₀ hX₀) hA₄).trans hxX
+      exact (mul_le_of_le_one_left (mul_pos hx₀ hX₀).le hA₄).trans_lt hxX
     · have hsum : ‖x + X‖ ≤ ‖x‖ * ‖X‖ :=
         (IsUltrametricDist.norm_add_le_max _ _).trans
           (max_le (le_mul_of_one_le_right hx₀.le hX.le) (le_mul_of_one_le_left hX₀.le hx.le))
       rw [norm_mul]
       calc ‖A₆‖ * ‖x + X‖ ≤ ‖A₆‖ * (‖x‖ * ‖X‖) := by gcongr
-        _ < ‖x‖ * ‖X‖ := mul_lt_of_lt_one_left (mul_pos hx₀ hX₀) hA₆
+        _ ≤ ‖x‖ * ‖X‖ := mul_le_of_le_one_left (mul_pos hx₀ hX₀).le hA₆
         _ < ‖x‖ ^ 2 * ‖X‖ ^ 2 := hxX
   have hne : x ^ 2 * X ^ 2 - (A₄ * x * X + A₆ * (x + X)) ≠ 0 := fun h₀ ↦ by
     rw [sub_eq_zero.mp h₀] at hlt

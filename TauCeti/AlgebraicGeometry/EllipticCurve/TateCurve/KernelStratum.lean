@@ -195,8 +195,8 @@ theorem exists_tateUniformizationX_eq_and_tateUniformizationY_eq_of_one_lt_norm 
     (hx : 1 < ‖x‖) :
     ∃ u : Kˣ, u ≠ 1 ∧ ‖1 - (u : K)‖ < 1 ∧
       tateUniformizationX q u = x ∧ tateUniformizationY q u = y := by
-  have hA₄ := (norm_tateCurveA₄_le (q : K) hq).trans_lt hq
-  have hA₆ := (norm_tateCurveA₆ (q : K) hq).trans_lt hq
+  have hA₄ := (norm_tateCurveA₄_le (q : K) hq).trans hq.le
+  have hA₆ := (norm_tateCurveA₆ (q : K) hq).trans_le hq.le
   have hxy := norm_lt_norm_add_of_equation hA₄ hA₆ hx ((tateCurveAt_equation_iff q hq).mp h)
   have hxy₀ : x + y ≠ 0 := norm_pos_iff.mp ((one_pos.trans hx).trans hxy)
   have hx₀ : x ≠ 0 := norm_pos_iff.mp (one_pos.trans hx)
