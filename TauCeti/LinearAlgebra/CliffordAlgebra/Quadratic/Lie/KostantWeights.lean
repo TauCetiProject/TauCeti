@@ -218,7 +218,7 @@ private theorem exists_forall_rootInvolution_mul_eq {c : CliffordAlgebra (killin
   have : Nontrivial W := ⟨⟨c, hmem.2 hmu⟩, 0, fun h ↦ hc (congrArg Subtype.val h)⟩
   obtain ⟨t, v, hv0, hv⟩ := exists_jointEigenvector_of_pairwise_commute_of_isAlgClosed f
     fun a b _ ↦ LinearMap.ext fun w ↦ Subtype.ext <| by
-      simp only [Module.End.mul_apply, hf, ← mul_assoc,
+      simp only [mul_apply_eq_comp, hf, ← mul_assoc,
         (commute_rootInvolution_of_mem_posRootsFinset base a.2 b.2).eq]
   refine ⟨v, fun h ↦ hv0 (Subtype.ext h), hmem.1 v.2, fun a ha ↦ ?_⟩
   have heig : rootInvolution H (a : Weight K H L) * v = t ⟨a, ha⟩ • (v : _) := by
