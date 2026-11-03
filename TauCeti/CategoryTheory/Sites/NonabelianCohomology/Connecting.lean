@@ -91,8 +91,8 @@ its sections over `U` are the sections `b` of `B` over `U` with `π b = q|_U`. -
 private def liftsSubfunctor (q : (Q.obj ⋙ forget GrpCat).sections) :
     Subfunctor (B.obj ⋙ forget GrpCat) where
   obj U := {b | π.hom.app U b = q.1 U}
-  map {U V} f b (hb : π.hom.app U b = q.1 U) := show π.hom.app V _ = _ from
-    (NatTrans.naturality_apply π.hom f b).trans ((congrArg _ hb).trans (q.2 f))
+  map f b hb := Set.mem_preimage.2 <| Set.mem_ofPred.2 <|
+    (NatTrans.naturality_apply π.hom f b).trans ((congrArg _ (Set.mem_ofPred.1 hb)).trans (q.2 f))
 
 variable (π) in
 /-- The presheaf of lifts of a global section `q` of `Q`: its sections over `U` are the sections
@@ -135,12 +135,13 @@ with lifts of `q` to `B`. -/
 def lifts (q : (Q.obj ⋙ forget GrpCat).sections) : Torsor A where
   sheaf := ⟨liftsPresheaf π q, isSheaf_liftsPresheaf π q⟩
   mulAction U :=
-    { smul a b := ⟨i.hom.app U a * show B.obj.obj U from b.1, show π.hom.app U _ = _ by
-        rw [map_mul, hE.app_app_eq_one, one_mul]; exact b.2⟩
-      one_smul b := Subtype.ext ((congrArg (· * show B.obj.obj U from b.1) (map_one _)).trans
-        (one_mul _))
-      mul_smul a a' b := Subtype.ext
-        ((congrArg (· * show B.obj.obj U from b.1) (map_mul _ a a')).trans (mul_assoc _ _ _)) }
+    { smul a b := (liftsPresheafObjEquiv π q U).symm
+        ⟨i.hom.app U a * (liftsPresheafObjEquiv π q U b).1, by
+          rw [map_mul, hE.app_app_eq_one, one_mul, (liftsPresheafObjEquiv π q U b).2]⟩
+      one_smul b := (liftsPresheafObjEquiv π q U).symm_apply_eq.2 <| Subtype.ext <|
+        (congrArg (· * _) (map_one _)).trans (one_mul _)
+      mul_smul a a' b := congrArg (liftsPresheafObjEquiv π q U).symm <| Subtype.ext <|
+        (congrArg (· * _) (map_mul _ a a')).trans (mul_assoc _ _ _) }
   map_smul U V f a b := Subtype.ext <| (map_mul (ConcreteCategory.hom (B.obj.map f)) _ b.1).trans
     (congrArg (· * B.obj.map f b.1) (NatTrans.naturality_apply i.hom f a).symm)
   coversTop X := by
@@ -152,13 +153,11 @@ def lifts (q : (Q.obj ⋙ forget GrpCat).sections) : Torsor A where
     refine ⟨fun ⟨a, b⟩ ⟨a', b'⟩ h ↦ ?_, fun ⟨c, b⟩ ↦ ?_⟩
     · obtain ⟨h₁, rfl⟩ := Prod.ext_iff.1 h
       exact Prod.ext (hE.injective U (mul_right_cancel (congrArg Subtype.val h₁))) rfl
-    · obtain ⟨a, ha⟩ := hE.exists_app_eq
-        (b := (show B.obj.obj U from c.1) * (show B.obj.obj U from b.1)⁻¹) (by
-          rw [map_mul, map_inv, show π.hom.app U c.1 = q.1 U from c.2,
-            show π.hom.app U b.1 = q.1 U from b.2, mul_inv_cancel])
-      exact ⟨(a, b), Prod.ext
-        (Subtype.ext ((congrArg (· * show B.obj.obj U from b.1) ha).trans
-          (inv_mul_cancel_right _ _))) rfl⟩
+    · let e := liftsPresheafObjEquiv π q U
+      obtain ⟨a, ha⟩ := hE.exists_app_eq (b := (e c).1 * (e b).1⁻¹) (by
+        rw [map_mul, map_inv, (e c).2, (e b).2, mul_inv_cancel])
+      exact ⟨(a, b), Prod.ext (e.injective (Subtype.ext ((congrArg (· * (e b).1) ha).trans
+        (inv_mul_cancel_right _ _)))) rfl⟩
 
 variable (q : (Q.obj ⋙ forget GrpCat).sections)
 
@@ -207,6 +206,8 @@ private def liftsMulRight (q' : (Q.obj ⋙ forget GrpCat).sections)
     (c : (B.obj ⋙ forget GrpCat).sections) (h : ∀ U, π.hom.app U (c.1 U) = (q.1 U)⁻¹ * q'.1 U) :
     hE.lifts q ⟶ hE.lifts q' where
   hom := ObjectProperty.homMk
+    -- `c.1 U` has type `(B.obj ⋙ forget GrpCat).obj U`, for which no `HMul` instance is found,
+    -- so the multiplication of the group `B.obj.obj U` is given explicitly.
     { app U := ↾fun b ↦ (hE.liftsObjEquiv q' U).symm
         ⟨@HMul.hMul (B.obj.obj U) (B.obj.obj U) _ _ (hE.liftsObjEquiv q U b).1 (c.1 U), by
           rw [map_mul, (hE.liftsObjEquiv q U b).2, h, mul_inv_cancel_left]⟩
