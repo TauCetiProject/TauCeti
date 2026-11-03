@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.Affinoid.PowerBounded
 public import TauCeti.RingTheory.Affinoid.RationalFraction
 public import TauCeti.RingTheory.Affinoid.Subdomain.Basic
 
+import TauCeti.RingTheory.Affinoid.Restricted.PointNorm
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.ClosedIdeal
 
 /-!
@@ -119,13 +120,8 @@ variable {A : Type*} [NormedCommRing A] [IsUltrametricDist A] [NormedAlgebra K A
 include hA in
 /-- The ratio `fᵢ/g` has absolute value at most one at every classical point of `A⟨f/g⟩`. -/
 theorem pointNorm_ratio_le_one (x : MaximalSpectrum (RationalFraction g f)) (i : Fin m) :
-    pointNorm K x (ratio g f i) ≤ 1 := by
-  -- The ratio is the image of the power-bounded variable `Xᵢ` of `A⟨X₁, …, Xₘ⟩`.
-  have hT := hA.isRestricted_subring (τ := Fin m)
-  rw [← mk_X, ← Ideal.Quotient.mkₐ_eq_mk K,
-    ← (isAffinoidAlgebra hA g f).pointNorm_maximalSpectrumComap]
-  exact (hT.pointNorm_le_supSeminorm _ _).trans
-    (hT.isPowerBounded_iff_supSeminorm_le_one.mp (isPowerBounded_X i))
+    pointNorm K x (ratio g f i) ≤ 1 :=
+  mk_X (g := g) (f := f) i ▸ hA.pointNorm_quotientMk_X_le_one x i
 
 include hA hB in
 /-- **The universal property of `A⟨f/g⟩` in terms of classical points.** Let `A` and `B` be affinoid
