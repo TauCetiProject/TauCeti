@@ -55,8 +55,7 @@ theorem forall_fixed_cartan_lie_eq_zero_iff (hB : B.PosDef) (hev : ∀ i, Even (
     have heq := (equivProd_snd_eq_zero_iff B x).mp hx
     rw [heq, cartan_lie_cartan]
 
-/-- The zero-weight part inside the diagram-fixed shell algebra is precisely the fixed Cartan.
-The Cartan coordinate vector is recovered uniquely as the first component of `equivProd`. -/
+/-- The zero-weight part inside the diagram-fixed shell algebra is precisely the fixed Cartan. -/
 theorem exists_fixed_cartan_eq_iff (hB : B.PosDef) (hev : ∀ i, Even (B i i))
     (hoff : ∀ i j, i ≠ j → B i j ≤ 0) (σ : Equiv.Perm I) (hσ : B.reindex σ σ = B)
     (x : ShellLieAlgebra B) (hx : reindex σ hσ x = x) :

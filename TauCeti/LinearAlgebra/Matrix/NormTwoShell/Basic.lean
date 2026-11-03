@@ -251,8 +251,7 @@ theorem sum_ne_zero_of_mem_normTwoShell (hB : B.PosDef) (hev : ∀ i, Even (B i 
       (Finset.sum_eq_zero_iff_of_nonpos (fun j _ ↦ hneg j)).mp hsum i (Finset.mem_univ i)
 
 /-- A permutation preserving the Gram matrix fixes an integral vector pairing nontrivially with
-every norm-two vector. Cramer's rule constructs it without dividing by the determinant or the
-permutation order. -/
+every norm-two vector. -/
 theorem exists_invariant_pairing_ne_zero (hB : B.PosDef) (hev : ∀ i, Even (B i i))
     (hoff : ∀ i j, i ≠ j → B i j ≤ 0) (σ : Equiv.Perm I) (hσ : B.reindex σ σ = B) :
     ∃ h : I → ℤ, h ∘ σ.symm = h ∧

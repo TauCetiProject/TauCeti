@@ -269,7 +269,7 @@ theorem equivProd_cartan_lie_snd (h : I → ℤ) (x : ShellLieAlgebra B)
       · subst b
         simp [c, basis_inr, cartan_lie_root]
       · simp [c, basis_inr, cartan_lie_root, hab]
-  exact congrArg (fun f : ShellLieAlgebra B →ₗ[ℤ] ℤ ↦ f x) key
+  simpa [c] using congr($key x)
 
 /-- The bracket `⁅x_a, H_k⁆ = -⟪k, a⟫ x_a`. -/
 @[simp]
