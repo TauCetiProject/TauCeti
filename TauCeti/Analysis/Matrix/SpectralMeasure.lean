@@ -14,8 +14,9 @@ public import TauCeti.Analysis.Matrix.Eigenvalues.Continuous
 public import TauCeti.Analysis.Matrix.Resolvent.Basic
 public import TauCeti.Analysis.Matrix.Spectrum
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.Roots
-public import TauCeti.LinearAlgebra.Matrix.Trace.Basic
 public import TauCeti.Probability.Process.EmpiricalMeasure
+
+import Mathlib.LinearAlgebra.Matrix.Trace
 
 /-!
 # Empirical spectral measures of matrices
@@ -70,8 +71,6 @@ spectral measures of a sample covariance matrix `X * Xᴴ / n` and of its compan
   nullity;
 * `Matrix.charpoly_roots_filter_ne_zero_mul_eq` — rectangular products have the same nonzero
   characteristic roots, counted with multiplicity;
-* `Matrix.trace_pow_mul_eq_trace_pow_mul` — positive powers of rectangular products have equal
-  traces;
 * `Matrix.gram_spectralMeasure_moments_mul_card_eq` — their positive spectral moments agree after
   weighting by the matrix dimensions;
 * `Matrix.PosSemidef.ae_mem_Ici_spectralMeasure` — the spectral measure of a positive-semidefinite
@@ -316,7 +315,7 @@ theorem gram_spectralMeasure_moments_mul_card_eq {p q : Type*} [Fintype p] [Deci
         ∫ x, x ^ k ∂((X * Xᴴ).spectralMeasure
           (isHermitian_mul_conjTranspose_self X) : Measure ℝ) := by
   rw [integral_pow_spectralMeasure, integral_pow_spectralMeasure,
-    ← Matrix.trace_pow_mul_eq_trace_pow_mul Xᴴ X hk]
+    ← Matrix.trace_mul_pow_comm_of_ne_zero Xᴴ X hk]
   have hp : (Fintype.card p : ℝ) ≠ 0 := by
     exact_mod_cast (Fintype.card_pos : 0 < Fintype.card p).ne'
   have hq : (Fintype.card q : ℝ) ≠ 0 := by
