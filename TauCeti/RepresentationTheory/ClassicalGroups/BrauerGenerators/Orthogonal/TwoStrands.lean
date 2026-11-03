@@ -7,6 +7,8 @@ module
 
 public import TauCeti.RepresentationTheory.ClassicalGroups.BrauerGenerators.Orthogonal.Equivariance
 import Mathlib.GroupTheory.GroupAction.MultipleTransitivity
+import TauCeti.LinearAlgebra.Matrix.KroneckerPower.OrthogonalCommutant
+import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.PlaneRotation
 import TauCeti.RepresentationTheory.ClassicalGroups.BrauerGenerators.Orthogonal.Faithful
 
 /-!
@@ -36,15 +38,18 @@ In the monomial basis an operator on `V ⊗ V` is a matrix `M` whose rows and co
 pairs of labels, and commuting with `g ⊗ g` is commuting with the Kronecker square of `g`.
 
 * **Signed permutations.** The diagonal sign matrix negating one label is orthogonal, so an entry
-  of `M` vanishes as soon as some label occurs an odd number of times among its four indices.
-  Permutation matrices are orthogonal, so an entry depends only on the pattern of equalities among
-  its indices. The surviving patterns are those of the identity, the crossing and the cap-cup
-  diagram, together with the pattern in which all four indices agree. So `M` is a combination of
-  the three diagram matrices and of the projection `D` onto the span of the tensors `e_a ⊗ e_a`.
+  of `M` vanishes as soon as some label occurs an odd number of times among its four indices
+  (`Matrix.apply_eq_zero_of_commute_kroneckerPower`). Permutation matrices are orthogonal, so an
+  entry depends only on the pattern of equalities among its indices
+  (`Matrix.apply_comp_comp_of_commute_kroneckerPower`). The surviving patterns are those of the
+  identity, the crossing and the cap-cup diagram, together with the pattern in which all four
+  indices agree. So `M` is a combination of the three diagram matrices and of the projection `D`
+  onto the span of the tensors `e_a ⊗ e_a`.
 * **A rotation.** The diagram matrices commute with every orthogonal matrix, but `D` does not
-  commute with the plane rotation `A` through `(c, s)`: the two products with its Kronecker square
-  differ at the entry `(e_a ⊗ e_a, e_a ⊗ e_b)` by `A a a * A a b = -c * s ≠ 0`. So the coefficient
-  of `D` vanishes.
+  commute with the plane rotation `A` through `(c, s)`
+  (`TauCeti.exists_orthogonal_apply_mul_apply_ne_zero`): the two products with its Kronecker
+  square differ at the entry `(e_a ⊗ e_a, e_a ⊗ e_b)` by `A a a * A a b = -c * s ≠ 0`. So the
+  coefficient of `D` vanishes.
 
 In dimension at most one the tensor square has rank at most one, and every operator is a scalar.
 In dimension at least two the action of `B₂(n)` is faithful
@@ -76,79 +81,12 @@ namespace TauCeti
 
 universe u
 
-/-! ### Invariance under signed permutation matrices -/
-
-section SignedPermutation
-
-variable {R : Type u} [CommRing R] {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ]
-  [DecidableEq κ] {M : Matrix (κ → ι) (κ → ι) R}
-
-/-- A matrix commuting with the Kronecker powers of all orthogonal matrices is invariant under the
-signed permutation matrix sending `e_j` to `d j • e_(σ j)`. -/
-private theorem apply_comp_mul_prod_of_commute
-    (hM : ∀ A : Matrix ι ι R, Aᵀ * A = 1 → Commute M (A.kroneckerPower κ))
-    (σ : Equiv.Perm ι) {d : ι → R} (hd : ∀ i, d i * d i = 1) (v u : κ → ι) :
-    M (σ ∘ v) (σ ∘ u) * ∏ i, d (u i) = (∏ i, d (v i)) * M v u := by
-  set A : Matrix ι ι R := Matrix.of fun i j => if i = σ j then d j else 0 with hAdef
-  have hA : Aᵀ * A = 1 := by
-    ext j j'
-    simp only [hAdef, Matrix.mul_apply, Matrix.transpose_apply, Matrix.of_apply, ite_mul,
-      zero_mul, mul_ite, mul_zero, Finset.sum_ite_eq', Finset.mem_univ, ite_true,
-      σ.injective.eq_iff, Matrix.one_apply]
-    split_ifs with h <;> simp_all
-  have hK : ∀ w x : κ → ι, A.kroneckerPower κ w x = if w = σ ∘ x then ∏ i, d (x i) else 0 := by
-    intro w x
-    simp [hAdef, Finset.prod_ite_zero, funext_iff]
-  have h := congrFun (congrFun (hM A hA).eq (σ ∘ v)) u
-  have hinj : ∀ w : κ → ι, (σ ∘ v = σ ∘ w) ↔ v = w := fun w => σ.injective.comp_left.eq_iff
-  simp only [Matrix.mul_apply, hK, mul_ite, mul_zero, ite_mul, zero_mul, hinj] at h
-  simpa using h
-
-/-- A matrix commuting with the Kronecker powers of all orthogonal matrices is invariant under
-relabelling by a permutation. -/
-private theorem apply_comp_comp_of_commute
-    (hM : ∀ A : Matrix ι ι R, Aᵀ * A = 1 → Commute M (A.kroneckerPower κ))
-    (σ : Equiv.Perm ι) (v u : κ → ι) : M (σ ∘ v) (σ ∘ u) = M v u := by
-  simpa using apply_comp_mul_prod_of_commute hM σ (d := fun _ => 1) (fun _ => one_mul 1) v u
-
-end SignedPermutation
-
 /-! ### The matrices commuting with the orthogonal group on two strands -/
 
 section TwoStrands
 
 variable {R : Type u} [CommRing R] {ι : Type*} [Fintype ι] [DecidableEq ι]
   {M : Matrix (Fin 2 → ι) (Fin 2 → ι) R}
-
-/-- **The sign constraint.** An entry of a matrix commuting with the orthogonal group on two
-strands vanishes when some label occurs an odd number of times among its four indices: the
-diagonal sign matrix negating that label acts on the row and on the column with opposite signs. -/
-private theorem apply_eq_zero_of_commute [NoZeroDivisors R]
-    (hM : ∀ A : Matrix ι ι R, Aᵀ * A = 1 → Commute M (A.kroneckerPower (Fin 2)))
-    (h2 : (2 : R) ≠ 0) {v u : Fin 2 → ι} (a : ι)
-    (h : ¬((v 0 = a ↔ v 1 = a) ↔ (u 0 = a ↔ u 1 = a))) : M v u = 0 := by
-  have key := apply_comp_mul_prod_of_commute hM (Equiv.refl ι)
-    (d := fun i => if i = a then -1 else 1) (fun i => by split_ifs <;> simp) v u
-  simp only [Equiv.coe_refl, Function.id_comp, Fin.prod_univ_two] at key
-  have hneg : M v u = -M v u → M v u = 0 := fun hz => by
-    have : (2 : R) * M v u = 0 := by linear_combination hz
-    exact (mul_eq_zero.mp this).resolve_left h2
-  by_cases h0 : v 0 = a <;> by_cases h1 : v 1 = a <;> by_cases h2' : u 0 = a <;>
-    by_cases h3 : u 1 = a <;> simp only [h0, h1, h2', h3, ite_true, ite_false] at key h <;>
-    first
-    | exact (h (by tauto)).elim
-    | exact hneg (by linear_combination key)
-    | exact hneg (by linear_combination -key)
-
-/-- Relabelling the four indices of a two-strand entry by a permutation does not change it. -/
-private theorem apply_vecCons_of_commute
-    (hM : ∀ A : Matrix ι ι R, Aᵀ * A = 1 → Commute M (A.kroneckerPower (Fin 2)))
-    (σ : Equiv.Perm ι) (x₀ x₁ y₀ y₁ : ι) :
-    M ![σ x₀, σ x₁] ![σ y₀, σ y₁] = M ![x₀, x₁] ![y₀, y₁] := by
-  have hc : ∀ a b : ι, ![σ a, σ b] = σ ∘ ![a, b] := fun a b => by
-    ext i; fin_cases i <;> rfl
-  rw [hc, hc]
-  exact apply_comp_comp_of_commute hM σ _ _
 
 variable (R ι) in
 /-- The combination `x • 1 + y • s + z • e` of the matrices of the identity, the crossing and the
@@ -176,24 +114,34 @@ private theorem eq_diagramCombination_add_smul [NoZeroDivisors R]
         (M ![a₀, a₁] ![a₀, a₁] + M ![a₀, a₁] ![a₁, a₀] + M ![a₀, a₀] ![a₁, a₁])) •
         diagonalTensorMatrix R ι := by
   -- Relabelling moves each pattern to a normal form at the labels `a₀` and `a₁`.
+  have hσ (σ : Equiv.Perm ι) (x₀ x₁ y₀ y₁ : ι) :
+      M ![σ x₀, σ x₁] ![σ y₀, σ y₁] = M ![x₀, x₁] ![y₀, y₁] := by
+    have hc : ∀ a b : ι, ![σ a, σ b] = σ ∘ ![a, b] := fun a b => by
+      ext i; fin_cases i <;> rfl
+    rw [hc, hc]
+    exact apply_comp_comp_of_commute_kroneckerPower hM σ _ _
   have hτ (a : ι) : M ![a, a] ![a, a] = M ![a₀, a₀] ![a₀, a₀] := by
-    simpa using (apply_vecCons_of_commute hM (Equiv.swap a a₀) a a a a).symm
+    simpa using (hσ (Equiv.swap a a₀) a a a a).symm
   have hpair {a b : ι} (hab : a ≠ b) : ∃ σ : Equiv.Perm ι, σ a = a₀ ∧ σ b = a₁ := by
     simpa only [Equiv.Perm.smul_def] using
       MulAction.is_two_pretransitive_iff.mp (Equiv.Perm.isMultiplyPretransitive ι 2) hab h01
   have hβ {a b : ι} (hab : a ≠ b) : M ![a, b] ![a, b] = M ![a₀, a₁] ![a₀, a₁] := by
     obtain ⟨σ, ha, hb⟩ := hpair hab
-    rw [← apply_vecCons_of_commute hM σ, ha, hb]
+    rw [← hσ σ, ha, hb]
   have hγ {a b : ι} (hab : a ≠ b) : M ![a, b] ![b, a] = M ![a₀, a₁] ![a₁, a₀] := by
     obtain ⟨σ, ha, hb⟩ := hpair hab
-    rw [← apply_vecCons_of_commute hM σ, ha, hb]
+    rw [← hσ σ, ha, hb]
   have hα {a b : ι} (hab : a ≠ b) : M ![a, a] ![b, b] = M ![a₀, a₀] ![a₁, a₁] := by
     obtain ⟨σ, ha, hb⟩ := hpair hab
-    rw [← apply_vecCons_of_commute hM σ, ha, hb]
+    rw [← hσ σ, ha, hb]
   -- A label occurring an odd number of times forces the entry to vanish.
+  have hpar (w : Fin 2 → ι) (a : ι) :
+      Even (Finset.univ.filter fun i => w i = a).card ↔ (w 0 = a ↔ w 1 = a) := by
+    rw [Finset.card_filter, Fin.sum_univ_two]
+    by_cases h0 : w 0 = a <;> by_cases h1 : w 1 = a <;> simp [h0, h1]
   have hz {a : ι} {v u : Fin 2 → ι} (h : ¬((v 0 = a ↔ v 1 = a) ↔ (u 0 = a ↔ u 1 = a))) :
       M v u = 0 :=
-    apply_eq_zero_of_commute hM h2 a h
+    apply_eq_zero_of_commute_kroneckerPower hM h2 a (by rwa [hpar, hpar])
   ext v u
   obtain ⟨x₀, x₁, rfl⟩ : ∃ x₀ x₁ : ι, v = ![x₀, x₁] := ⟨v 0, v 1, by ext i; fin_cases i <;> rfl⟩
   obtain ⟨y₀, y₁, rfl⟩ : ∃ y₀ y₁ : ι, u = ![y₀, y₁] := ⟨u 0, u 1, by ext i; fin_cases i <;> rfl⟩
@@ -270,29 +218,6 @@ section Duality
 
 variable (R : Type u) [CommRing R] (n : ℕ)
 
-/-- In dimension at least two, a plane rotation through `c` and `s` is an orthogonal matrix with
-`A a a * A a b ≠ 0` for two distinct labels `a` and `b`, as soon as `c * s ≠ 0`. -/
-private theorem exists_orthogonal_mul_ne_zero {n : ℕ} (hn : 2 ≤ n)
-    (hrot : ∃ c s : R, c ^ 2 + s ^ 2 = 1 ∧ c * s ≠ 0) :
-    ∃ A : Matrix (Fin n) (Fin n) R, Aᵀ * A = 1 ∧ ∃ a b, a ≠ b ∧ A a a * A a b ≠ 0 := by
-  obtain ⟨c, s, hcs, hcs0⟩ := hrot
-  obtain ⟨m, rfl⟩ : ∃ m, n = 2 + m := ⟨n - 2, by omega⟩
-  set e : Fin 2 ⊕ Fin m ≃ Fin (2 + m) := finSumFinEquiv
-  set B : Matrix (Fin 2) (Fin 2) R := !![c, -s; s, c]
-  have hB : Bᵀ * B = 1 := by
-    ext i j
-    fin_cases i <;> fin_cases j <;>
-      simp only [B, Fin.zero_eta, Fin.isValue, Fin.mk_one, Matrix.mul_apply, transpose_apply,
-        of_apply, cons_val', cons_val_zero, cons_val_one, cons_val_fin_one, Fin.sum_univ_two,
-        mul_neg, neg_mul, neg_neg, ne_eq, zero_ne_one, one_ne_zero, not_false_eq_true, one_apply_eq,
-        one_apply_ne] <;>
-      first | linear_combination hcs | ring1
-  refine ⟨reindex e e (fromBlocks B 0 0 1), ?_, e (.inl 0), e (.inl 1), by simp, ?_⟩
-  · rw [transpose_reindex, ← coe_reindexAlgEquiv R R, ← map_mul, fromBlocks_transpose,
-      fromBlocks_multiply]
-    simp [hB]
-  · simpa [B] using hcs0
-
 /-- **Brauer duality for the orthogonal group on two strands.** Over a commutative ring without
 zero divisors in which `2 ≠ 0` and which contains a point `(c, s)` of the unit circle with
 `c * s ≠ 0`, the operators on `Rⁿ ⊗ Rⁿ` commuting with the diagonal action of the orthogonal
@@ -335,7 +260,8 @@ theorem range_brauerActionOrth_two_eq_centralizer [NoZeroDivisors R] (h2 : (2 : 
         M ![a₀, a₁] ![a₁, a₀] • .of (permToBrauer (Equiv.swap 0 1)) +
         M ![a₀, a₀] ![a₁, a₁] • .of (capCup 0 1), ?_⟩
       simp only [map_add, map_smul, brauerActionOrth_of, ← hb, LinearMap.toMatrix_toLin]
-      exact (eq_diagramCombination hM h2 h01 (exists_orthogonal_mul_ne_zero R hn hrot)).symm
+      exact (eq_diagramCombination hM h2 h01
+        (exists_orthogonal_apply_mul_apply_ne_zero hn hrot)).symm
   exact ⟨x, (LinearMap.toMatrix b b).injective hx⟩
 
 /-- **The commutant of the orthogonal group on `Rⁿ ⊗ Rⁿ` has rank three** when `n ≥ 2`, under the
