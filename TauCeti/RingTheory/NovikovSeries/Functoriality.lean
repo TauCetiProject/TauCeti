@@ -62,7 +62,8 @@ covering and of its base.
 * `TauCeti.NovikovSeries.continuous_mapNonnegSubring` and
   `TauCeti.NovikovSeries.mapNonnegSubring_injective`: the pushforward on the nonnegative subrings
   is continuous, and injective along injective coefficient and exponent maps.
-* `TauCeti.NovikovSeries.mapNonnegSubring_comp_algebraMap` and
+* `TauCeti.NovikovSeries.mapNonnegSubring_algebraMap`,
+  `TauCeti.NovikovSeries.mapNonnegSubring_comp_algebraMap` and
   `TauCeti.NovikovSeries.mapNonnegSubring_smul`: the pushforward on the nonnegative subrings is
   compatible with constants and semilinear over the coefficient map.
 * `TauCeti.NovikovSeries.mapNonnegSubring_mem_posIdeal`: the pushforward maps the positive ideal
@@ -354,17 +355,24 @@ variable [AddMonoid H] [AddMonoid H'] {N : H →+ ℝ} {N' : H' →+ ℝ} [CommR
   (ρ : R →+* S) (φ : H →+ H') (hφ : ∃ c > 0, ∀ h, N' (φ h) = c * N h)
 
 /-- The pushforward on the nonnegative subrings sends the constant `r` to the constant `ρ r`. -/
-theorem mapNonnegSubring_comp_algebraMap :
-    (mapNonnegSubring ρ φ hφ).comp (algebraMap R (nonnegSubring R N)) =
-      (algebraMap S (nonnegSubring S N')).comp ρ := by
-  ext r
+@[simp]
+theorem mapNonnegSubring_algebraMap (r : R) :
+    mapNonnegSubring ρ φ hφ (algebraMap R (nonnegSubring R N) r) =
+      algebraMap S (nonnegSubring S N') (ρ r) := by
+  ext : 1
   simp [algebraMap_apply, map_single]
 
+/-- The pushforward on the nonnegative subrings commutes with the constant embeddings. -/
+theorem mapNonnegSubring_comp_algebraMap :
+    (mapNonnegSubring ρ φ hφ).comp (algebraMap R (nonnegSubring R N)) =
+      (algebraMap S (nonnegSubring S N')).comp ρ :=
+  RingHom.ext <| mapNonnegSubring_algebraMap ρ φ hφ
+
 /-- The pushforward on the nonnegative subrings is semilinear over `ρ`. -/
+@[simp]
 theorem mapNonnegSubring_smul (r : R) (a : nonnegSubring R N) :
     mapNonnegSubring ρ φ hφ (r • a) = ρ r • mapNonnegSubring ρ φ hφ a := by
-  rw [Algebra.smul_def, Algebra.smul_def, _root_.map_mul, ← RingHom.comp_apply,
-    mapNonnegSubring_comp_algebraMap, RingHom.comp_apply]
+  rw [Algebra.smul_def, Algebra.smul_def, _root_.map_mul, mapNonnegSubring_algebraMap]
 
 end AlgebraMap
 
