@@ -146,6 +146,6 @@ theorem sq_eq_one_of_smul_one_mul_mul_transpose_eq [Nonempty n] {J : Matrix n n 
   have h1 : c ^ 2 • (1 : Matrix n n R) = 1 := by
     rw [← mul_invOf_self J, ← Matrix.smul_mul, hJ']
   have h2 := congrFun (congrFun h1 (Classical.arbitrary n)) (Classical.arbitrary n)
-  simpa only [smul_apply, one_apply_eq, smul_eq_mul, mul_one] using h2
+  simpa only [Matrix.smul_apply, one_apply_eq, smul_eq_mul, mul_one] using h2
 
 end Matrix
