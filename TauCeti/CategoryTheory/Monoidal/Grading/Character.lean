@@ -83,7 +83,7 @@ private theorem simpleAutScalar_eq_of_iso (a : Aut (LaxMonoidalFunctor.of (𝟭 
     {X Y : C} [Simple X] [Simple Y] (e : X ≅ Y) :
     simpleAutScalar (hfin := hfin) k a X = simpleAutScalar (hfin := hfin) k a Y := by
   apply Units.ext
-  apply smul_left_injective k (id_nonzero X)
+  apply smul_left_injective k (CategoryTheory.id_ne_zero X)
   have h := (LaxMonoidalFunctor.forgetAut (𝟭 C) a).asIso.hom.naturality e.hom
   simp only [Functor.id_map] at h
   rw [← simpleAutScalar_smul_id (hfin := hfin) k a X,

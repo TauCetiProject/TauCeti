@@ -171,9 +171,9 @@ theorem mfderiv_eq_zero_of_curvatureTensor_eq_smul_inner_sub
       obtain ⟨j, hj, k, hk, hjk⟩ := Finset.one_lt_card.1 h1
       simp only [Finset.mem_compl, Finset.mem_singleton] at hj hk
       exact ⟨j, k, Ne.symm hj, Ne.symm hk, hjk⟩
-    obtain ⟨X, hX, hXx⟩ := FiberBundle.exists_contMDiff_section_eq I E (b i)
-    obtain ⟨Y, hY, hYx⟩ := FiberBundle.exists_contMDiff_section_eq I E (b j)
-    obtain ⟨Z, hZ, hZx⟩ := FiberBundle.exists_contMDiff_section_eq I E (b k)
+    obtain ⟨X, hX, hXx⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ (b i)
+    obtain ⟨Y, hY, hYx⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ (b j)
+    obtain ⟨Z, hZ, hZx⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ (b k)
     have h := covariantDerivative_curvatureOperator_cyclic_eq_zero cov cov
       ((isTorsionFree_iff_torsion_eq_zero cov).2 ht) hX hY hZ hY x
     rw [hcov.covariantDerivative_curvatureOperator_eq_mvfderiv_smul hκ hX hY hZ hY hκx,

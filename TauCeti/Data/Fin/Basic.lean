@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Fintype.Perm
+
 public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.Algebra.Group.End
 public import Mathlib.Algebra.Ring.Parity
@@ -702,7 +704,7 @@ theorem exists_foldl_eq_of_parent {n : ℕ} {J : Type*}
       ∃ l : List J, l.foldl step 0 = (⟨m, hm⟩ : Fin (n + 1)) := by
     intro m hm
     induction m using Nat.strong_induction_on with
-    | h m ih =>
+    | ind m ih =>
         by_cases hzero : m = 0
         · subst m
           exact ⟨[], rfl⟩
@@ -829,7 +831,7 @@ theorem eq_one_or_swap_fin_two (e : Equiv.Perm (Fin 2)) :
       simpa using h1
 
 /-- The permutations of `Fin 2`, as a finite set, are the identity and the transposition. -/
-theorem univ_fin_two [Fintype (Equiv.Perm (Fin 2))] :
+theorem univ_fin_two :
     (Finset.univ : Finset (Equiv.Perm (Fin 2))) =
     {1, Equiv.swap 0 1} := by
   classical

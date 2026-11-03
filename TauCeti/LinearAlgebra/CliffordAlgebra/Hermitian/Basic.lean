@@ -63,7 +63,7 @@ theorem map_ι_mul_map_ι (v : M) : ρ (ι Q v) * ρ (ι Q v) = ((Q v : ℝ) : �
 @[simp]
 theorem map_ι_apply_map_ι_apply (v : M) (ψ : W) :
     ρ (ι Q v) (ρ (ι Q v) ψ) = ((Q v : ℝ) : ℂ) • ψ := by
-  rw [← Module.End.mul_apply, map_ι_mul_map_ι, LinearMap.smul_apply, Module.End.one_apply]
+  rw [← mul_apply_eq_comp, map_ι_mul_map_ι, LinearMap.smul_apply, one_apply_eq_self]
 
 /-- Clifford multiplication by a vector `v` with `Q v ≠ 0` is injective. -/
 theorem map_ι_injective {v : M} (hv : Q v ≠ 0) : Function.Injective (ρ (ι Q v)) := by

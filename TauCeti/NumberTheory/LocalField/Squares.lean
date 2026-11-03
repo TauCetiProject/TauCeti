@@ -352,7 +352,7 @@ theorem not_isSquare_one_add_pow_odd (h2 : (2 : K) ≠ 0) {π : 𝒪[K]}
   -- Proof irrelevance identifies the nonzero proof in the statement with the named proof `hu0`.
   change ¬IsSquare (Units.mk0 (1 + (π : K) ^ (2 * k + 1)) hu0)
   intro hsq
-  obtain ⟨ξ, hξ⟩ := isSquare_units_val_iff.mpr hsq
+  obtain ⟨ξ, hξ⟩ := Units.isSquare_coe_iff.mpr hsq
   apply valuation_sq_sub_one_ne_pow_odd h2 hπ hk ξ
   have hξ' : ((Units.mk0 (1 + (π : K) ^ (2 * k + 1)) hu0 : Kˣ) : K) = ξ ^ 2 := by
     simpa [pow_two] using hξ

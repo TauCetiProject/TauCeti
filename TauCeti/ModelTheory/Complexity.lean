@@ -16,6 +16,11 @@ quantifier-free when every member of the family is.
 
 In an algebraic language, every atomic formula holds in a subsingleton structure: atomic
 formulas can only assert equality of terms.
+
+Translating a formula along a language homomorphism (`FirstOrder.Language.LHom.onBoundedFormula`)
+keeps it atomic, quantifier-free or universal, and quantifying all bound variables of a universal
+formula (`FirstOrder.Language.BoundedFormula.alls`) gives a universal formula. These let universal
+sentences of a language be read in an extension by constants.
 -/
 
 public section
@@ -62,5 +67,37 @@ theorem realize_of_isAtomic_subsingleton {L : Language} [L.IsAlgebraic]
   cases hφ with
   | equal _ _ => exact Subsingleton.elim _ _
   | rel r _ => exact isEmptyElim r
+
+variable {L L' : Language} {α : Type*} {n : ℕ} {φ : L.BoundedFormula α n}
+
+/-- Translating an atomic formula along a language homomorphism gives an atomic formula. -/
+theorem IsAtomic.onBoundedFormula (h : φ.IsAtomic) (ϕ : L →ᴸ L') :
+    (ϕ.onBoundedFormula φ).IsAtomic := by
+  cases h with
+  | equal t₁ t₂ => exact IsAtomic.equal _ _
+  | rel R ts => exact IsAtomic.rel _ _
+
+/-- Translating a quantifier-free formula along a language homomorphism gives a quantifier-free
+formula. -/
+theorem IsQF.onBoundedFormula (h : φ.IsQF) (ϕ : L →ᴸ L') :
+    (ϕ.onBoundedFormula φ).IsQF := by
+  induction h with
+  | falsum => exact IsQF.falsum
+  | of_isAtomic h => exact (h.onBoundedFormula ϕ).isQF
+  | imp _ _ ih₁ ih₂ => exact ih₁.imp ih₂
+
+/-- Translating a universal formula along a language homomorphism gives a universal formula. -/
+theorem IsUniversal.onBoundedFormula (h : φ.IsUniversal) (ϕ : L →ᴸ L') :
+    (ϕ.onBoundedFormula φ).IsUniversal := by
+  induction h with
+  | of_isQF h => exact (h.onBoundedFormula ϕ).isUniversal
+  | all _ ih => exact ih.all
+
+/-- Universally quantifying all bound variables of a universal formula gives a universal
+formula. -/
+theorem IsUniversal.alls (h : φ.IsUniversal) : φ.alls.IsUniversal := by
+  induction n with
+  | zero => exact h
+  | succ n ih => exact ih h.all
 
 end FirstOrder.Language.BoundedFormula

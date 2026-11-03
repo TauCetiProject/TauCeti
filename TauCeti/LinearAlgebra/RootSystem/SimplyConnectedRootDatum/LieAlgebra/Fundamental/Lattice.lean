@@ -5,13 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.Lattice
+public import TauCeti.Algebra.Lie.HighestWeight.Lattice
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Basic
-public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.HighestWeight
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.KostantForm
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Fundamental.Basic
--- Non-public: this supplies an input of the proofs, never the vocabulary of a statement.
-import TauCeti.Algebra.Lie.UniversalEnveloping.Module
 
 /-!
 # The admissible lattices of the fundamental modules
@@ -64,29 +61,30 @@ variable (t : DynkinType) (ht : t.Valid)
 fundamental module `L(ϖᵢ)` under the simple-generator Kostant form of the pinned rational Lie
 algebra, acting through the enveloping-algebra representation of `L(ϖᵢ)`. -/
 def fundamentalLattice (i : Fin t.rank) : Submodule ℤ (t.fundamentalModule ht i) :=
-  Subring.orbitOfRep (t.kostantForm ht)
-    (representation ℚ (t.lieAlgebra ht) (t.fundamentalModule ht i))
-    {t.fundamentalModuleGenerator ht i}
+  (t.lieBasis ht).highestWeightLattice (t.fundamentalWeight ht i)
 
 /-- The fundamental lattice is the represented orbit of the highest weight vector. -/
 theorem fundamentalLattice_def (i : Fin t.rank) :
     t.fundamentalLattice ht i = Subring.orbitOfRep (t.kostantForm ht)
       (representation ℚ (t.lieAlgebra ht) (t.fundamentalModule ht i))
-      {t.fundamentalModuleGenerator ht i} :=
-  (rfl)
+      {t.fundamentalModuleGenerator ht i} := by
+  rw [fundamentalLattice, LieAlgebra.Basis.highestWeightLattice_def, t.kostantForm_def ht]
 
 /-- The highest weight vector `v⁺ᵢ` lies in the fundamental lattice. -/
 theorem fundamentalModuleGenerator_mem_fundamentalLattice (i : Fin t.rank) :
-    t.fundamentalModuleGenerator ht i ∈ t.fundamentalLattice ht i :=
-  Subring.subset_orbitOfRep _ _ _ (mem_singleton _)
+    t.fundamentalModuleGenerator ht i ∈ t.fundamentalLattice ht i := by
+  rw [fundamentalLattice]
+  exact (t.lieBasis ht).irreducibleQuotientGenerator_mem_highestWeightLattice _
 
 /-- **The fundamental lattice is stable under the Kostant form.** -/
 theorem representation_mem_fundamentalLattice {i : Fin t.rank}
     {u : _root_.UniversalEnvelopingAlgebra ℚ (t.lieAlgebra ht)} (hu : u ∈ t.kostantForm ht)
     {x : t.fundamentalModule ht i} (hx : x ∈ t.fundamentalLattice ht i) :
     representation ℚ (t.lieAlgebra ht) (t.fundamentalModule ht i) u x ∈
-      t.fundamentalLattice ht i :=
-  Subring.apply_mem_orbitOfRep_of_mem _ _ _ hu hx
+      t.fundamentalLattice ht i := by
+  rw [fundamentalLattice] at hx ⊢
+  exact (t.lieBasis ht).representation_mem_highestWeightLattice _
+    (by rwa [← t.kostantForm_def ht]) hx
 
 /-- `v⁺ᵢ` is a weight vector of weight `Pi.single i 1 = (δᵢⱼ)ⱼ` for the Cartan generators `hⱼ`:
 in the coordinates `μ ↦ (μ(hⱼ))ⱼ`, the fundamental weight `ϖᵢ` is the `i`-th standard basis
@@ -102,48 +100,24 @@ theorem isCartanWeightVector_fundamentalModuleGenerator (i : Fin t.rank) :
     simp
   · simp [hji]
 
-/-- The raising generators kill `v⁺ᵢ`. -/
-private theorem representation_e_fundamentalModuleGenerator (i j : Fin t.rank) :
-    representation ℚ (t.lieAlgebra ht) (t.fundamentalModule ht i)
-        (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).e j))
-        (t.fundamentalModuleGenerator ht i) = 0 := by
-  rw [representation_ι_apply, lie_lieBasis_e_fundamentalModuleGenerator]
-
 /-- **The fundamental lattice is spanned by the lowering words applied to `v⁺ᵢ`**: it is the
 `ℤ`-span of the vectors `fⱼ₁⁽ⁿ¹⁾ ⋯ fⱼₖ⁽ⁿᵏ⁾ v⁺ᵢ` (Steinberg's `U_ℤ v⁺ = U⁻_ℤ v⁺`). -/
 theorem fundamentalLattice_eq_span_loweringWord (i : Fin t.rank) :
     t.fundamentalLattice ht i = Submodule.span ℤ (range fun l =>
       representation ℚ (t.lieAlgebra ht) (t.fundamentalModule ht i)
         ((t.lieBasis ht).loweringWord l) (t.fundamentalModuleGenerator ht i)) := by
-  have h := (t.lieBasis ht).orbitOfRep_kostantForm_singleton_eq_span_loweringWord _
-    (t.isCartanWeightVector_fundamentalModuleGenerator ht i)
-    (t.representation_e_fundamentalModuleGenerator ht i)
-  rwa [← t.kostantForm_def ht] at h
-
-/-- The fundamental lattice spans `L(ϖᵢ)` over `ℚ`, since `v⁺ᵢ` generates `L(ϖᵢ)` as a module over
-the enveloping algebra and the Kostant form spans the enveloping algebra. -/
-private theorem span_fundamentalLattice_eq_top (i : Fin t.rank) :
-    Submodule.span ℚ (t.fundamentalLattice ht i : Set (t.fundamentalModule ht i)) = ⊤ := by
-  have h := Subring.span_orbitOfRep_eq_span (t.kostantForm ht)
-    (representation ℚ (t.lieAlgebra ht) (t.fundamentalModule ht i))
-    {t.fundamentalModuleGenerator ht i} (t.span_kostantForm_eq_top ht)
-  refine top_unique fun x _ => ?_
-  obtain ⟨u, hu⟩ := exists_representation_apply_eq_of_lieSpan_eq_top
-    (lieSpan_irreducibleQuotientGenerator_eq_top _ _) x
-  rw [fundamentalLattice_def, h]
-  exact Submodule.subset_span ⟨u, _, mem_singleton _, hu⟩
+  rw [fundamentalLattice]
+  exact (t.lieBasis ht).highestWeightLattice_eq_span_loweringWord _
+    (t.isDominantIntegral_fundamentalWeight ht i).isIntegralWeight
 
 /-- **The fundamental lattice is a full lattice in `L(ϖᵢ)`**: it is finitely generated over `ℤ`
 and spans `L(ϖᵢ)` over `ℚ`. Finite generation comes from finite-dimensionality of `L(ϖᵢ)`:
 only lowering words of bounded degree survive on `v⁺ᵢ`. -/
 instance instIsLatticeFundamentalLattice (i : Fin t.rank) :
-    Submodule.IsLattice ℚ (t.fundamentalLattice ht i) where
-  fg := by
-    rw [fundamentalLattice_def, t.kostantForm_def ht]
-    exact (t.lieBasis ht).fg_orbitOfRep_kostantForm_singleton _
-      (t.isCartanWeightVector_fundamentalModuleGenerator ht i)
-      (t.representation_e_fundamentalModuleGenerator ht i)
-  span_eq_top := t.span_fundamentalLattice_eq_top ht i
+    Submodule.IsLattice ℚ (t.fundamentalLattice ht i) := by
+  rw [fundamentalLattice]
+  exact (t.lieBasis ht).isLattice_highestWeightLattice _
+    (t.isDominantIntegral_fundamentalWeight ht i)
 
 /-- **The fundamental lattice lies in the span of the integral weight spaces** of the Cartan
 generators. With finite generation and stability under the Kostant form, this is what
@@ -153,10 +127,9 @@ theorem mem_iSup_jointWeightSpace_of_mem_fundamentalLattice {i : Fin t.rank}
     {x : t.fundamentalModule ht i} (hx : x ∈ t.fundamentalLattice ht i) :
     x ∈ ⨆ μ : Fin t.rank → ℤ, jointWeightSpace (t.lieBasis ht).h
       (representation ℚ (t.lieAlgebra ht) (t.fundamentalModule ht i)) μ := by
-  rw [fundamentalLattice_def, t.kostantForm_def ht] at hx
-  exact (t.lieBasis ht).mem_iSup_jointWeightSpace_of_mem_orbitOfRep_kostantForm_singleton _
-    (t.isCartanWeightVector_fundamentalModuleGenerator ht i)
-    (t.representation_e_fundamentalModuleGenerator ht i) hx
+  rw [fundamentalLattice] at hx
+  exact (t.lieBasis ht).mem_iSup_jointWeightSpace_of_mem_highestWeightLattice _
+    (t.isDominantIntegral_fundamentalWeight ht i).isIntegralWeight hx
 
 end
 
