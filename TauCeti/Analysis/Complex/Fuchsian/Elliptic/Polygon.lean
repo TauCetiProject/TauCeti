@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Fuchsian.Elliptic.Finite
+public import TauCeti.Analysis.Complex.Fuchsian.Elliptic.Meridian
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.Vertex.Stabilizer
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.Elliptic
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.Vertex.Orbit
 public import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
@@ -22,6 +24,9 @@ The classification is an equivalence with the actual elliptic-orbit subtype of t
 quotient. Its characteristic equations recover the orbit representatives and their stabilizer
 orders, so it supplies both the number and the orders of the elliptic points in an orbifold
 signature. Discreteness and compactness are not additional hypotheses.
+
+The finite vertex-cycle transformation is also identified with the positive stabilizer generator.
+Thus a positive meridian lifts to that cycle transformation, with no inversion.
 
 ## References
 
@@ -326,5 +331,53 @@ theorem natCard_ellipticOrbits
     Nat.card Γ.ellipticOrbits =
       Nat.card σ.EllipticVertexCycle + Nat.card {i : Fin n // σ.pair i = i} := by
   rw [← Nat.card_congr (σ.ellipticOrbitEquiv hmap hcover hdisj), Nat.card_sum]
+
+section Meridian
+
+open _root_.Subgroup
+
+variable {N : ℕ} [NeZero N] {P : ConvexPolygon N} (σ : P.SidePairing)
+  {Γ : Subgroup PSL(2, ℝ)} {j : Fin N} {z : ℍ} [Finite (stabilizer Γ z)]
+
+/-- The finite vertex-cycle transformation of a fundamental polygon is the positive stabilizer
+generator, not its inverse. Only disjointness of translated interiors is needed. -/
+theorem cycleMap_eq_positiveStabilizerGenerator (hz : P.vertex j = .inl z)
+    (hmap : ∀ i, σ.map i ∈ Γ)
+    (hdisj : ∀ γ : Γ, γ ≠ 1 →
+      Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier)) :
+    σ.cycleMap j = ((Γ.positiveStabilizerGenerator z : Γ) : PSL(2, ℝ)) := by
+  have hfix : σ.cycleMap j • z = z := by
+    simpa only [hz, Sum.smul_inl, Sum.inl.injEq] using σ.cycleMap_smul_vertex j
+  -- View the same cycle transformation as an element of the vertex stabilizer so that the
+  -- faithful derivative character compares it with the positive generator.
+  let q : stabilizer Γ z := ⟨⟨σ.cycleMap j, σ.cycleMap_mem hmap j⟩, hfix⟩
+  have hangle : ((σ.cycleAngleSum j : ℝ) : ℂ) * Complex.I =
+      2 * Real.pi * Complex.I / Nat.card (stabilizer Γ z) := by
+    rw [σ.cycleAngleSum_eq_two_pi_div hz hmap hdisj,
+      ← σ.natCard_stabilizer_eq_orderOf_cycleMap hz hmap hdisj]
+    push_cast
+    ring
+  have hq : q = Γ.positiveStabilizerGenerator z := by
+    apply stabilizerDeriv_injective Γ z
+    rw [stabilizerDeriv_apply, stabilizerDeriv_apply,
+      σ.smulDeriv_cycleMap hz, smulDeriv_positiveStabilizerGenerator, hangle]
+  exact congrArg (fun g : stabilizer Γ z ↦ ((g : Γ) : PSL(2, ℝ))) hq
+
+/-- A positive meridian in the finite vertex quotient lifts to the polygon's cycle
+transformation. Signed multiple turns give the corresponding signed power of that cycle,
+including for the constant lift at the fixed point. -/
+theorem ellipticMeridian_lift_endpoint_eq_cycleMap_zpow_smul (hz : P.vertex j = .inl z)
+    (hmap : ∀ i, σ.map i ∈ Γ)
+    (hdisj : ∀ γ : Γ, γ ≠ 1 →
+      Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier))
+    (n : ℤ) {τ : ℍ} {f : unitInterval → ℍ}
+    (hf : Continuous f) (h₀ : f 0 = τ)
+    (hq : ∀ t, discCoordinate z (f t) ^ Nat.card (stabilizer Γ z) =
+      Γ.ellipticMeridian z n τ t) : f 1 = σ.cycleMap j ^ n • τ := by
+  rw [σ.cycleMap_eq_positiveStabilizerGenerator hz hmap hdisj]
+  -- Powers and actions in the stabilizer are restrictions of the ambient projective ones.
+  exact Γ.ellipticMeridian_lift_endpoint z n hf h₀ hq
+
+end Meridian
 
 end TauCeti.UpperHalfPlane.ConvexPolygon.SidePairing

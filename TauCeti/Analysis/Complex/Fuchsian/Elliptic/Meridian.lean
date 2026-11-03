@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Complex.Fuchsian.Elliptic.Basic
 public import Mathlib.Topology.Path
-public import TauCeti.Analysis.Complex.UpperHalfPlane.Polygon.SidePairing.Vertex.Stabilizer
 import Mathlib.Analysis.Complex.CoveringMap
 
 /-!
@@ -20,11 +19,11 @@ More generally, `n` signed turns end at the `n`th power of the positive generato
 
 The explicit lifts stay at constant hyperbolic distance from the fixed point. Consequently they
 stay in any invariant disc containing their starting point, and the quotient-chart formula
-applies throughout the path. Away from the fixed point these lifts are unique. Reversing the
-meridian inverts its endpoint transformation. These conventions specify the elliptic peripheral
-elements used alongside cusp meridians in oriented quotient presentations. For a side-paired
-fundamental polygon, its finite vertex-cycle transformation is exactly this positive generator;
-thus a positive meridian lifts to the cycle transformation, with no inversion.
+applies throughout the path. These lifts are unique, including at the fixed point where they
+are constant. Reversing the meridian inverts its endpoint transformation. These conventions
+specify the elliptic peripheral elements used alongside cusp meridians in oriented quotient
+presentations. The comparison with finite vertex-cycle transformations of side-paired polygons
+is in `TauCeti.Analysis.Complex.Fuchsian.Elliptic.Polygon`.
 
 ## References
 
@@ -41,48 +40,6 @@ open scoped Complex.UnitDisc MatrixGroups Topology
 namespace Subgroup
 
 variable (Γ : Subgroup PSL(2, ℝ)) (z : ℍ) [Finite (stabilizer Γ z)]
-
-/-- The generator of a finite point stabilizer whose rotation in the disc coordinate is
-`exp (2πi/m)`, where `m` is the order of the stabilizer. -/
-def positiveStabilizerGenerator : stabilizer Γ z :=
-  (stabilizerRotationEquiv Γ z).symm
-    (Complex.isPrimitiveRoot_exp (Nat.card (stabilizer Γ z)) (NeZero.ne _)).toRootsOfUnity
-
-/-- The derivative of the positive generator is the counterclockwise primitive root. -/
-@[simp]
-theorem smulDeriv_positiveStabilizerGenerator :
-    ((positiveStabilizerGenerator Γ z : Γ) : PSL(2, ℝ)).smulDeriv z =
-      Complex.exp (2 * Real.pi * Complex.I / Nat.card (stabilizer Γ z)) := by
-  rw [← stabilizerDeriv_apply Γ z (positiveStabilizerGenerator Γ z),
-    ← coe_stabilizerRotation, ← coe_stabilizerRotationEquiv]
-  simp [positiveStabilizerGenerator]
-
-/-- The positive generator has exactly the order of the point stabilizer. -/
-@[simp]
-theorem orderOf_positiveStabilizerGenerator :
-    orderOf (positiveStabilizerGenerator Γ z) = Nat.card (stabilizer Γ z) := by
-  rw [← orderOf_injective (stabilizerDeriv Γ z) (stabilizerDeriv_injective Γ z),
-    stabilizerDeriv_apply, smulDeriv_positiveStabilizerGenerator]
-  exact (Complex.isPrimitiveRoot_exp _ (NeZero.ne _)).eq_orderOf.symm
-
-/-- The powers of the positive generator exhaust the full stabilizer. -/
-@[simp]
-theorem zpowers_positiveStabilizerGenerator : zpowers (positiveStabilizerGenerator Γ z) = ⊤ := by
-  rw [← card_eq_iff_eq_top, Nat.card_zpowers, orderOf_positiveStabilizerGenerator]
-
-/-- Signed powers of the positive generator rotate the disc coordinate through `2πn/m`. -/
-theorem discCoordinate_positiveStabilizerGenerator_zpow (n : ℤ) (τ : ℍ) :
-    discCoordinate z (positiveStabilizerGenerator Γ z ^ n • τ) =
-      discCoordinate z τ * Complex.exp
-        (((2 * Real.pi * n / Nat.card (stabilizer Γ z) : ℝ) : ℂ) * Complex.I) := by
-  have hangle : (n : ℂ) * (2 * Real.pi * Complex.I / Nat.card (stabilizer Γ z)) =
-      ((2 * Real.pi * n / Nat.card (stabilizer Γ z) : ℝ) : ℂ) * Complex.I := by
-    push_cast
-    ring
-  rw [discCoordinate_smul_eq_rotation_smul, rootsOfUnity.smul_eq_mul, coe_stabilizerRotation,
-    map_zpow, stabilizerDeriv_apply, smulDeriv_positiveStabilizerGenerator,
-    ← Complex.exp_int_mul, hangle,
-    mul_comm]
 
 /-- The lift of `n` signed turns about an elliptic orbit. Its disc coordinate rotates through
 `2πn/m`, where `m` is the stabilizer order. -/
@@ -171,12 +128,20 @@ theorem stabilizerBallQuotientChart_ellipticMeridianLift {ε : ℝ} (hε : 0 < �
   rw [stabilizerBallQuotientChart_mk hε hopen (by simpa using hτ)]
   exact (ellipticMeridian_apply Γ z n τ t).symm
 
-/-- Away from the fixed point, the explicit elliptic lift is the unique continuous lift of the
-local meridian with the specified starting point. -/
-theorem eq_ellipticMeridianLift_of_pow_eq (n : ℤ) {τ : ℍ} (hτ : τ ≠ z)
+/-- The explicit elliptic lift is the unique continuous lift of the local meridian with the
+specified starting point, including the constant lift at the fixed point. -/
+theorem eq_ellipticMeridianLift_of_pow_eq (n : ℤ) {τ : ℍ}
     {f : unitInterval → ℍ} (hf : Continuous f) (h₀ : f 0 = τ)
     (hq : ∀ t, discCoordinate z (f t) ^ Nat.card (stabilizer Γ z) =
       ellipticMeridian Γ z n τ t) : f = ellipticMeridianLift Γ z n τ := by
+  by_cases hτ : τ = z
+  · funext t
+    apply discCoordinate_injective z
+    have hzero : discCoordinate z (f t) ^ Nat.card (stabilizer Γ z) = 0 := by
+      simpa only [ellipticMeridian_eq_exp, hτ, discCoordinate_self, zero_pow (NeZero.ne _),
+        zero_mul] using hq t
+    simpa only [discCoordinate_ellipticMeridianLift, hτ, discCoordinate_self, zero_mul]
+      using eq_zero_of_pow_eq_zero hzero
   have hτ0 : discCoordinate z τ ≠ 0 := discCoordinate_eq_zero_iff.not.mpr hτ
   have hmer (t : unitInterval) : ellipticMeridian Γ z n τ t ≠ 0 := by
     rw [ellipticMeridian_eq_exp]
@@ -206,13 +171,13 @@ theorem eq_ellipticMeridianLift_of_pow_eq (n : ℤ) {τ : ℍ} (hτ : τ ≠ z)
   funext t
   exact discCoordinate_injective z (congrArg Subtype.val (congrFun hFL t))
 
-/-- A continuous lift of an elliptic meridian starting away from the fixed point ends at the
-corresponding signed power of the positive stabilizer generator. -/
-theorem ellipticMeridian_lift_endpoint (n : ℤ) {τ : ℍ} (hτ : τ ≠ z)
+/-- A continuous lift of an elliptic meridian ends at the corresponding signed power of the
+positive stabilizer generator, including when the lift is constant at the fixed point. -/
+theorem ellipticMeridian_lift_endpoint (n : ℤ) {τ : ℍ}
     {f : unitInterval → ℍ} (hf : Continuous f) (h₀ : f 0 = τ)
     (hq : ∀ t, discCoordinate z (f t) ^ Nat.card (stabilizer Γ z) =
       ellipticMeridian Γ z n τ t) : f 1 = positiveStabilizerGenerator Γ z ^ n • τ := by
-  rw [eq_ellipticMeridianLift_of_pow_eq Γ z n hτ hf h₀ hq]
+  rw [eq_ellipticMeridianLift_of_pow_eq Γ z n hf h₀ hq]
   exact (ellipticMeridianLift Γ z n τ).target
 
 /-- Negating the turns reverses the lifted path and translates it back by the inverse endpoint
@@ -231,9 +196,9 @@ theorem ellipticMeridianLift_neg_apply (n : ℤ) (τ : ℍ) (t : unitInterval) :
     push_cast
     ring
   apply discCoordinate_injective z
-  rw [Path.symm_apply, Function.comp_apply, discCoordinate_positiveStabilizerGenerator_zpow,
-    discCoordinate_ellipticMeridianLift, discCoordinate_ellipticMeridianLift, hangle,
-    Complex.exp_add]
+  simp only [Path.symm_apply, Function.comp_apply,
+    discCoordinate_positiveStabilizerGenerator_zpow, discCoordinate_ellipticMeridianLift]
+  rw [hangle, Complex.exp_add]
   exact (mul_assoc _ _ _).symm
 
 /-- Reversing the meridian negates its turns, hence inverts its endpoint generator. -/
@@ -257,51 +222,3 @@ theorem ellipticMeridian_zero (τ : ℍ) :
   simp
 
 end Subgroup
-
-namespace TauCeti.UpperHalfPlane.ConvexPolygon.SidePairing
-
-open _root_.Subgroup
-open scoped Pointwise
-
-variable {N : ℕ} [NeZero N] {P : ConvexPolygon N} (σ : P.SidePairing)
-  {Γ : Subgroup PSL(2, ℝ)} {j : Fin N} {z : ℍ} [Finite (stabilizer Γ z)]
-
-/-- The finite vertex-cycle transformation of a fundamental polygon is the positive stabilizer
-generator, not its inverse. Only disjointness of translated interiors is needed. -/
-theorem cycleMap_eq_positiveStabilizerGenerator (hz : P.vertex j = .inl z)
-    (hmap : ∀ i, σ.map i ∈ Γ)
-    (hdisj : ∀ γ : Γ, γ ≠ 1 →
-      Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier)) :
-    σ.cycleMap j = ((Γ.positiveStabilizerGenerator z : Γ) : PSL(2, ℝ)) := by
-  have hfix : σ.cycleMap j • z = z := by
-    simpa only [hz, Sum.smul_inl, Sum.inl.injEq] using σ.cycleMap_smul_vertex j
-  -- View the same cycle transformation as an element of the vertex stabilizer so that the
-  -- faithful derivative character compares it with the positive generator.
-  let q : stabilizer Γ z := ⟨⟨σ.cycleMap j, σ.cycleMap_mem hmap j⟩, hfix⟩
-  have hangle : ((σ.cycleAngleSum j : ℝ) : ℂ) * Complex.I =
-      2 * Real.pi * Complex.I / Nat.card (stabilizer Γ z) := by
-    rw [σ.cycleAngleSum_eq_two_pi_div hz hmap hdisj,
-      ← σ.natCard_stabilizer_eq_orderOf_cycleMap hz hmap hdisj]
-    push_cast
-    ring
-  have hq : q = Γ.positiveStabilizerGenerator z := by
-    apply stabilizerDeriv_injective Γ z
-    rw [stabilizerDeriv_apply, stabilizerDeriv_apply,
-      σ.smulDeriv_cycleMap hz, smulDeriv_positiveStabilizerGenerator, hangle]
-  exact congrArg (fun g : stabilizer Γ z ↦ ((g : Γ) : PSL(2, ℝ))) hq
-
-/-- A positive meridian in the finite vertex quotient lifts to the polygon's cycle
-transformation. Signed multiple turns give the corresponding signed power of that cycle. -/
-theorem ellipticMeridian_lift_endpoint_eq_cycleMap_zpow_smul (hz : P.vertex j = .inl z)
-    (hmap : ∀ i, σ.map i ∈ Γ)
-    (hdisj : ∀ γ : Γ, γ ≠ 1 →
-      Disjoint ((γ : PSL(2, ℝ)) • interior P.carrier) (interior P.carrier))
-    (n : ℤ) {τ : ℍ} (hτ : τ ≠ z) {f : unitInterval → ℍ}
-    (hf : Continuous f) (h₀ : f 0 = τ)
-    (hq : ∀ t, discCoordinate z (f t) ^ Nat.card (stabilizer Γ z) =
-      Γ.ellipticMeridian z n τ t) : f 1 = σ.cycleMap j ^ n • τ := by
-  rw [σ.cycleMap_eq_positiveStabilizerGenerator hz hmap hdisj]
-  -- Powers and actions in the stabilizer are restrictions of the ambient projective ones.
-  exact Γ.ellipticMeridian_lift_endpoint z n hτ hf h₀ hq
-
-end TauCeti.UpperHalfPlane.ConvexPolygon.SidePairing
