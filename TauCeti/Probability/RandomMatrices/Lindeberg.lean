@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Integral.Prod
 public import TauCeti.Analysis.Calculus.Taylor
 public import TauCeti.MeasureTheory.Integral.Pi
 
@@ -14,7 +13,8 @@ public import TauCeti.MeasureTheory.Integral.Pi
 
 Finite-dimensional Lindeberg replacement: swapping the independent coordinates of a product of
 probability measures on `ℝ` one at a time, for a test function that is `C^(r+1)` in each
-coordinate, when the first `r` moments agree.
+coordinate, when the first `r` moments agree. The one-variable replacement bound also holds for
+finite measures.
 
 ## Main results
 
@@ -41,21 +41,11 @@ namespace TauCeti.Probability
 
 open MeasureTheory
 
-private theorem integrable_pow_of_integrable_abs_pow {μ : Measure ℝ} {m : ℕ}
-    (h : Integrable (fun t : ℝ ↦ |t| ^ m) μ) [IsFiniteMeasure μ] {k : ℕ} (hk : k ≤ m) :
-    Integrable (fun t : ℝ ↦ t ^ k) μ := by
-  have hpow : Integrable (fun t : ℝ ↦ ‖t‖ ^ m) μ := by
-    simpa [Real.norm_eq_abs] using h
-  have hpow' : Integrable (fun t : ℝ ↦ ‖t‖ ^ k) μ :=
-    integrable_norm_pow_of_le aestronglyMeasurable_id hk hpow
-  apply (integrable_norm_iff (by fun_prop : AEStronglyMeasurable (fun t : ℝ ↦ t ^ k) μ)).1
-  simpa only [norm_pow] using hpow'
-
-/-- Two probability measures on `ℝ` with the same moments up to order `r` and a finite absolute
+/-- Two finite measures on `ℝ` with the same moments up to order `r` and a finite absolute
 moment of order `r + 1` give expectations of a `C^(r+1)` function that differ by at most the
 `(r+1)`st derivative bound times the two absolute moments over `(r+1)!`. -/
-theorem abs_integral_sub_integral_le {μ ν : Measure ℝ} [IsProbabilityMeasure μ]
-    [IsProbabilityMeasure ν] {g : ℝ → ℝ} {r : ℕ} (hg : ContDiff ℝ (r + 1) g) {M : ℝ}
+theorem abs_integral_sub_integral_le {μ ν : Measure ℝ} [IsFiniteMeasure μ]
+    [IsFiniteMeasure ν] {g : ℝ → ℝ} {r : ℕ} (hg : ContDiff ℝ (r + 1) g) {M : ℝ}
     (hM : ∀ t, |iteratedDeriv (r + 1) g t| ≤ M)
     (hμ : Integrable (fun t : ℝ ↦ |t| ^ (r + 1)) μ)
     (hν : Integrable (fun t : ℝ ↦ |t| ^ (r + 1)) ν)
@@ -78,9 +68,15 @@ theorem abs_integral_sub_integral_le {μ ν : Measure ℝ} [IsProbabilityMeasure
     intro ρ _ h k hk
     have hklt : k < r + 1 := Finset.mem_range.mp hk
     have hkle : k ≤ r + 1 := (Nat.le_of_lt_succ hklt).trans (Nat.le_succ r)
-    have hterm :=
-      ((integrable_pow_of_integrable_abs_pow h hkle).const_mul
-        (iteratedDeriv k g 0)).div_const (k !)
+    have hpow : Integrable (fun t : ℝ ↦ ‖t‖ ^ (r + 1)) ρ := by
+      simpa [Real.norm_eq_abs] using h
+    have hlow : Integrable (fun t : ℝ ↦ ‖t‖ ^ k) ρ :=
+      integrable_norm_pow_of_le aestronglyMeasurable_id hkle hpow
+    have hpoly : Integrable (fun t : ℝ ↦ t ^ k) ρ := by
+      apply (integrable_norm_iff
+        (by fun_prop : AEStronglyMeasurable (fun t : ℝ ↦ t ^ k) ρ)).1
+      simpa only [norm_pow] using hlow
+    have hterm := (hpoly.const_mul (iteratedDeriv k g 0)).div_const (k !)
     simpa [smul_eq_mul, sub_zero, div_eq_mul_inv, mul_comm, mul_left_comm, mul_assoc] using hterm
   have hPint : ∀ (ρ : Measure ℝ) [IsFiniteMeasure ρ],
       Integrable (fun t : ℝ ↦ |t| ^ (r + 1)) ρ → Integrable T ρ := by
@@ -92,8 +88,7 @@ theorem abs_integral_sub_integral_le {μ ν : Measure ℝ} [IsProbabilityMeasure
       Integrable (fun t ↦ g t - T t) ρ := fun ρ h ↦
     Integrable.mono' (h.const_mul _) hRc.aestronglyMeasurable (Filter.Eventually.of_forall hRb)
   have hPeq : ∫ t, T t ∂μ = ∫ t, T t ∂ν := by
-    change ∫ t, taylorWithinEval g r Set.univ 0 t ∂μ =
-      ∫ t, taylorWithinEval g r Set.univ 0 t ∂ν
+    dsimp only [T]
     simp only [taylor_within_apply, iteratedDerivWithin_univ]
     rw [integral_finsetSum _ fun k hk ↦ hPterm μ hμ k hk,
       integral_finsetSum _ fun k hk ↦ hPterm ν hν k hk]
@@ -125,8 +120,8 @@ theorem abs_integral_sub_integral_le {μ ν : Measure ℝ} [IsProbabilityMeasure
         abs_sub _ _
     _ ≤ _ := by rw [mul_add]; exact add_le_add (hb μ hμ) (hb ν hν)
 
-/-- Replacing the first factor of a product measure, with the other factor held fixed, is
-controlled by the one-variable replacement bound. -/
+/-- Replacing one coordinate of a product of probability measures is controlled by the
+one-variable replacement bound. -/
 private theorem abs_integral_prod_sub_integral_prod_le {μ ν : Measure ℝ}
     [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] {β : Type*} [MeasurableSpace β]
     (κ : Measure β) [IsProbabilityMeasure κ] {r : ℕ} {g : ℝ × β → ℝ} (M : ℝ)
