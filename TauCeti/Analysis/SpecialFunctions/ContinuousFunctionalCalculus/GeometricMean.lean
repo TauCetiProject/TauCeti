@@ -155,6 +155,7 @@ theorem geometricMean_ringInverse_self (ha : IsStrictlyPositive a := by cfc_tac)
 
 /-- For strictly positive `a`, the geometric mean of `a` and `b` is strictly positive exactly when
 `b` is. -/
+@[simp, grind =]
 theorem isStrictlyPositive_geometricMean_iff (ha : IsStrictlyPositive a := by cfc_tac) :
     IsStrictlyPositive (geometricMean a b) ↔ IsStrictlyPositive b := by
   rw [geometricMean_def, isStrictlyPositive_conjSqrt_iff a _ ha,
