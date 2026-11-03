@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.ConnectedSum.Congr
 public import TauCeti.Geometry.Manifold.ConnectedSum.Sphere
 
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.Ball
+import TauCeti.Geometry.Manifold.ContMDiff.Parametrization
 
 /-!
 # Connected-sum decompositions and prime manifolds
@@ -195,7 +195,7 @@ variable {n : ℕ} {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
 theorem isConnectedSumOf_sphere [Nonempty M] :
     IsConnectedSumOf (𝓡 n) k M M (sphere (0 : F) 1) := by
   obtain ⟨e, -, he, de⟩ := exists_isOpenEmbedding_isLocalDiffeomorph
-    (E := EuclideanSpace ℝ (Fin n)) (n := k) (Classical.arbitrary M)
+    (F := EuclideanSpace ℝ (Fin n)) (n := k) (Classical.arbitrary M)
   have : Nontrivial F := Module.nontrivial_of_finrank_eq_succ (R := ℝ) (n := n) Fact.out
   obtain ⟨v⟩ : Nonempty (sphere (0 : F) 1) :=
     (NormedSpace.sphere_nonempty.2 zero_le_one).to_subtype
