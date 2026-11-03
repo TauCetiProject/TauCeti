@@ -40,8 +40,6 @@ not a unit, the free module `⊕_ℕ R` is not derived `f`-complete, although `R
 ## Main definitions
 
 * `TauCeti.telescope M f`: the map `(xₙ) ↦ (xₙ - f • xₙ₊₁)` on `ℕ → M`.
-* `TauCeti.ModuleTower.smulTower M f`: the tower `M ←f M ←f ⋯`, whose shift map is
-  `TauCeti.telescope M f`.
 * `TauCeti.IsDerivedComplete I M`: `M` is derived `I`-complete.
 
 ## Main results
@@ -119,26 +117,13 @@ theorem eq_sum_range_add_pow_smul_of_telescope_eq {f : R} {z c : ℕ → M}
       rw [← h, telescope_apply, sub_add_cancel]
     rw [ih, hn, smul_add, smul_smul, ← pow_succ, sum_range_succ, add_assoc, add_assoc]
 
-variable (M) in
-/-- The tower `M ←f M ←f ⋯` whose transition maps are multiplication by `f`. -/
-@[expose] def ModuleTower.smulTower (f : R) : ModuleTower R :=
-  CategoryTheory.Functor.ofOpSequence (X := fun _ ↦ ModuleCat.of R M) fun _ ↦
-    ModuleCat.ofHom (f • LinearMap.id)
-
-/-- The transition maps of `M ←f M ←f ⋯` are multiplication by `f`. -/
-@[simp]
-theorem ModuleTower.smulTower_transition (f : R) (n : ℕ) :
-    (ModuleTower.smulTower M f).transition n = (f • LinearMap.id : M →ₗ[R] M) := by
-  simp only [ModuleTower.smulTower, ModuleTower.transition_def,
-    CategoryTheory.Functor.ofOpSequence_map_homOfLE_succ]
-  -- `ModuleCat.hom_ofHom`, stated for the carrier `M` rather than `ModuleCat.of R M`
-  rfl
-
 /-- The telescope map of `f` is the shift map of the tower `M ←f M ←f ⋯`. -/
 theorem ModuleTower.shift_smulTower (f : R) :
     (ModuleTower.smulTower M f).shift = telescope M f := by
   ext x n
   rw [ModuleTower.shift_apply, ModuleTower.smulTower_transition]
+  -- `x` is a sequence in the carrier of `ModuleCat.of R M`, which is `M` by definition; the
+  -- `LinearMap.smul_apply` and `telescope_apply` rewrites do not fire across this identification
   rfl
 
 end Telescope
