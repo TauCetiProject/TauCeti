@@ -25,6 +25,18 @@ theorem measurable_gammaPDF (a r : ℝ) : Measurable (gammaPDF a r) := by
   unfold gammaPDF
   exact (measurable_gammaPDFReal a r).ennreal_ofReal
 
+/-- The real Gamma density is continuous on the positive half-line for all shape and rate
+parameters. -/
+@[fun_prop]
+theorem continuousOn_gammaPDFReal (a r : ℝ) :
+    ContinuousOn (gammaPDFReal a r) (Set.Ioi 0) := by
+  apply ContinuousOn.congr (f := fun x ↦ r ^ a / Real.Gamma a * x ^ (a - 1) *
+    Real.exp (-(r * x)))
+  · exact (continuousOn_const.mul (continuousOn_id.rpow_const fun x hx ↦
+      Or.inl (ne_of_gt hx))).mul (by fun_prop)
+  · intro x hx
+    rw [gammaPDFReal, ite_eq_left (le_of_lt hx)]
+
 /-- The Gamma density at a natural shape is the corresponding Erlang density formula. -/
 theorem gammaPDFReal_nat_eq {k : ℕ} (hk : 1 ≤ k) {r x : ℝ} (hx : 0 ≤ x) :
     gammaPDFReal k r x = r ^ k / (k - 1).factorial * x ^ (k - 1) * Real.exp (-(r * x)) := by

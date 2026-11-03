@@ -13,8 +13,7 @@ import Mathlib.Data.Set.Card.Arithmetic
 # The open-mapping degree
 
 The local mapping theorem: near a point `z₀` at which `f - f z₀` vanishes to order `n`, every
-value `w` close enough to `f z₀` is attained exactly `n` times, counted with multiplicity. This is
-the third target of layer **L0 (the local-mapping engine)** of the conformal-mapping roadmap.
+value `w` close enough to `f z₀` is attained exactly `n` times, counted with multiplicity.
 
 This strengthens the open mapping theorem quantitatively. That theorem says the image of an open
 set is open — every nearby value is attained *at least* once. The degree says how many times:
