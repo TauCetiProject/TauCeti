@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.FiniteEtale.PuncturedSpectrum
-public import Mathlib.RingTheory.Etale.Locus
 import TauCeti.AlgebraicGeometry.Morphisms.StalkMap
 import TauCeti.AlgebraicGeometry.PuncturedSpectrum.Sections
 
