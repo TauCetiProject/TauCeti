@@ -132,6 +132,16 @@ lemma IsNondegenerate.symplecticFormAt_apply (h : form.IsNondegenerate) (x : M)
     h.symplecticFormAt x v w = SmoothBundleForm.eval₂ form x v w :=
   SmoothForm.bilinFormAt_apply form x v w
 
+/-- A fiberwise nondegenerate two-form is nondegenerate on the tangent space at each point. -/
+lemma IsNondegenerate.nondegenerate_bilinFormAt (h : form.IsNondegenerate) (x : M) :
+    (form.bilinFormAt x).Nondegenerate :=
+  h x
+
+/-- The bilinear form underlying the tangent-space symplectic form is the value of the two-form. -/
+lemma IsNondegenerate.toBilinForm_symplecticFormAt (h : form.IsNondegenerate) (x : M) :
+    (h.symplecticFormAt x).toBilinForm = form.bilinFormAt x :=
+  (rfl)
+
 section Transport
 
 variable {E₂ H₂ : Type*} [NormedAddCommGroup E₂] [NormedSpace ℝ E₂] [TopologicalSpace H₂]
