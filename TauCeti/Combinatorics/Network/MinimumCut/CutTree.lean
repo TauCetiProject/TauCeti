@@ -55,6 +55,26 @@ section FlowEquivalent
 
 variable [Finite V] [Zero K] [LinearOrder K]
 
+omit [Zero K] in
+/-- A weighted tree on a nontrivial finite vertex type has an edge of minimum weight. -/
+theorem _root_.SimpleGraph.IsTree.exists_minimum_weight_edge
+    {T : SimpleGraph V} (hT : T.IsTree) (w : Sym2 V → K)
+    [Nontrivial V] : ∃ u v, T.Adj u v ∧ ∀ e ∈ T.edgeSet, w s(u, v) ≤ w e := by
+  classical
+  let _ := Fintype.ofFinite V
+  have hedge : T.edgeFinset.Nonempty := by
+    rw [SimpleGraph.edgeFinset_nonempty]
+    intro h
+    rw [h] at hT
+    exact SimpleGraph.not_preconnected_bot hT.connected.preconnected
+  obtain ⟨e, he, hmin⟩ := Finset.exists_min_image T.edgeFinset w hedge
+  induction e using Sym2.inductionOn with
+  | _ u v =>
+      refine ⟨u, v, ?_, fun e he' ↦ hmin e ?_⟩
+      · rw [← SimpleGraph.mem_edgeSet]
+        simpa only [SimpleGraph.mem_edgeFinset] using he
+      · simpa only [SimpleGraph.mem_edgeFinset] using he'
+
 /-- A tree `T` on the vertex type with edge weights `w` is flow-equivalent for `f` when the minimum
 cut value between any two distinct vertices is the minimum weight on the tree path between them.
 Only the weights of tree edges matter. -/
@@ -209,6 +229,19 @@ theorem apply_edgeSide_le (hT : IsCutTree f T w) {u v : V} (huv : T.Adj u v)
   obtain ⟨e, he, hle⟩ := hT.exists_weight_le hs ht
   rw [hT.apply_edgeSide huv]
   exact (hmin e he).trans hle
+
+/-- A minimum-weight edge of a cut tree leaves a side minimizing the set function among all
+nonempty proper vertex sets. -/
+theorem exists_edgeSide_apply_le (hT : IsCutTree f T w) [Nontrivial V] :
+    ∃ u v, T.Adj u v ∧ ∀ S : Finset V, S.Nonempty → S ≠ univ →
+      f (T.edgeSide u v) ≤ f S := by
+  obtain ⟨u, v, huv, hmin⟩ := hT.isTree.exists_minimum_weight_edge w
+  refine ⟨u, v, huv, fun S hS hSuniv ↦ ?_⟩
+  obtain ⟨s, hs⟩ := hS
+  obtain ⟨t, ht⟩ : ∃ t, t ∉ S := by
+    by_contra! h
+    exact hSuniv (eq_univ_iff_forall.mpr h)
+  exact hT.apply_edgeSide_le huv hmin hs ht
 
 end IsCutTree
 
