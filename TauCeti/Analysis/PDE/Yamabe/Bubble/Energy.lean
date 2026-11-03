@@ -65,16 +65,16 @@ open Filter InnerProductSpace MeasureTheory Metric Module Real Set Topology
 open scoped ENNReal Gradient
 
 /-- The critical exponent, viewed in `ℝ≥0∞`, is Sobolev conjugate to `2`. -/
-theorem ofReal_criticalExponent_inv_add_inv {n : ℕ} (hn : 2 < n) :
+theorem inv_ofReal_criticalExponent_add_inv_eq_inv {n : ℕ} (hn : 2 < n) :
     (ENNReal.ofReal (criticalExponent n))⁻¹ + (n : ℝ≥0∞)⁻¹ = (2 : ℝ≥0∞)⁻¹ := by
   have hn0 : n ≠ 0 := by omega
   have hp0 : ENNReal.ofReal (criticalExponent n) ≠ 0 :=
     (ENNReal.ofReal_pos.mpr (criticalExponent_pos hn)).ne'
   apply (ENNReal.toReal_eq_toReal_iff' (by finiteness) (by finiteness)).mp
-  rw [ENNReal.toReal_add (by finiteness) (by finiteness), ENNReal.toReal_inv,
-    ENNReal.toReal_ofReal (criticalExponent_pos hn).le,
-    ENNReal.toReal_inv, ENNReal.toReal_natCast, ENNReal.toReal_inv, ENNReal.toReal_ofNat,
-    criticalExponent_def]
+  rw [ENNReal.toReal_add (by finiteness) (by finiteness)]
+  simp only [ENNReal.toReal_inv, ENNReal.toReal_ofReal (criticalExponent_pos hn).le,
+    ENNReal.toReal_natCast, ENNReal.toReal_ofNat]
+  rw [criticalExponent_def]
   have hnr : (n : ℝ) ≠ 0 := by exact_mod_cast hn0
   field_simp
   ring
