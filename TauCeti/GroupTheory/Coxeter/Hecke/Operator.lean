@@ -132,6 +132,21 @@ theorem heckeLeftMul_mul_self (i : B) :
     simp only [heckeLeftMul_single_of_not_isLeftDescent h, heckeLeftMul_single_of_isLeftDescent h',
       cs.simple_mul_simple_cancel_left]
 
+/-- **The quadratic relation** for the right operators:
+`heckeRightMul cs c i ^ 2 = c • heckeRightMul cs c i + 1`. -/
+theorem heckeRightMul_mul_self (i : B) :
+    cs.heckeRightMul c i * cs.heckeRightMul c i = c • cs.heckeRightMul c i + 1 := by
+  refine Finsupp.lhom_ext fun w r ↦ ?_
+  simp only [mul_apply_eq_comp, LinearMap.add_apply, LinearMap.smul_apply,
+    one_apply_eq_self]
+  by_cases h : cs.IsRightDescent w i
+  · have h' := cs.isRightDescent_iff_not_isRightDescent_mul.mp h
+    simp [h, h', map_add]
+  · have h' : cs.IsRightDescent (w * s i) i := by
+      rwa [cs.isRightDescent_iff_not_isRightDescent_mul,
+        cs.simple_mul_simple_cancel_right]
+    simp [h, h']
+
 /-- **Left and right operators commute**: `heckeLeftMul cs c i` and `heckeRightMul cs c j`
 commute for all `i` and `j`. -/
 theorem commute_heckeLeftMul_heckeRightMul (i j : B) :
