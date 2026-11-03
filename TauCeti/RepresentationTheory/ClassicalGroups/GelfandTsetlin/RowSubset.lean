@@ -6,17 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Data.Fin.Basic
-public import TauCeti.RepresentationTheory.ClassicalGroups.GelfandTsetlin.AddMonoid
 public import TauCeti.RepresentationTheory.ClassicalGroups.GelfandTsetlin.Shift
 public import Mathlib.Algebra.Order.Monoid.Submonoid
 public import Mathlib.GroupTheory.Finiteness
 
 /-!
 # Row-subset patterns generate the polynomial Gelfand-Tsetlin patterns
-
-The determinant translation `TauCeti.GTPattern.shift` of Gelfand-Tsetlin patterns is addition of
-the constant pattern `TauCeti.GTPattern.const` in the entrywise additive monoid of patterns, and
-every pattern becomes a polynomial pattern, one with nonnegative entries, after such a shift.
 
 The **row-subset pattern** `TauCeti.GTPattern.rowSubset I` of a set `I` of rows of an `n × n`
 matrix has row `j` equal to `(1, …, 1, 0, …, 0)`, with as many ones as there are elements of `I`
@@ -31,14 +26,10 @@ determinant shift `TauCeti.GTPattern.shift 1`.
 
 ## Main definitions
 
-* `TauCeti.GTPattern.const n m`: the pattern all of whose informative entries equal `m`.
 * `TauCeti.GTPattern.rowSubset I`: the row-subset pattern of `I : Finset (Fin n)`.
 
 ## Main results
 
-* `TauCeti.GTPattern.shift_eq_add_const`: the determinant shift by `m` adds `const n m`.
-* `TauCeti.GTPattern.exists_zero_le_shift`: every pattern becomes nonnegative after a determinant
-  shift by a natural number.
 * `TauCeti.GTPattern.rowSubset_univ`: the pattern of all rows is the constant pattern `1`.
 * `TauCeti.GTPattern.rowSubset_injective`: distinct row subsets give distinct patterns.
 * `TauCeti.GTPattern.mem_range_rowSubset`: the row-subset patterns are exactly the patterns with
@@ -63,72 +54,6 @@ namespace TauCeti
 namespace GTPattern
 
 variable {n : ℕ}
-
-/-! ### Constant patterns and determinant shifts -/
-
-/-- The constant pattern: every informative entry equals `m`.  Adding it to a pattern is the
-determinant shift by `m` (`TauCeti.GTPattern.shift_eq_add_const`). -/
-def const (n : ℕ) (m : ℤ) : GTPattern n :=
-  (0 : GTPattern n).shift m
-
-theorem const_apply (m : ℤ) (i j : ℕ) : const n m i j = if i < j ∧ j ≤ n then m else 0 := by
-  rw [const, shift_apply, zero_apply, zero_add]
-
-@[simp]
-theorem const_apply_of_lt_of_le (m : ℤ) {i j : ℕ} (hij : i < j) (hj : j ≤ n) :
-    const n m i j = m := by
-  rw [const_apply, ite_eq_left_iff.2 fun h => absurd ⟨hij, hj⟩ h]
-
-@[simp]
-theorem topRow_const (m : ℤ) : (const n m).topRow = fun _ => m := by
-  funext i
-  rw [topRow_apply]
-  exact const_apply_of_lt_of_le m i.2 le_rfl
-
-@[simp]
-theorem const_zero : const n 0 = 0 :=
-  shift_zero 0
-
-theorem const_add (m m' : ℤ) : const n (m + m') = const n m + const n m' := by
-  ext i j
-  rw [add_apply, const_apply, const_apply, const_apply]
-  split_ifs <;> simp
-
-/-- **The determinant shift is addition of a constant pattern.** -/
-theorem shift_eq_add_const (P : GTPattern n) (m : ℤ) : P.shift m = P + const n m := by
-  ext i j
-  rw [add_apply, shift_apply, const_apply]
-  split_ifs with h
-  · rfl
-  · rw [P.entry_eq_zero (by omega), add_zero]
-
-/-- Every entry of a pattern is bounded in absolute value by the sum of the absolute values of
-the entries `λ_{i,j}` with `i, j ≤ n`, which contain all the informative ones. -/
-private theorem abs_le_sum_abs (P : GTPattern n) (i j : ℕ) :
-    |P i j| ≤ ∑ i' ∈ range (n + 1), ∑ j' ∈ range (n + 1), |P i' j'| := by
-  have hnn : ∀ i', 0 ≤ ∑ j' ∈ range (n + 1), |P i' j'| := fun _ =>
-    sum_nonneg fun _ _ => abs_nonneg _
-  by_cases h : i < j ∧ j ≤ n
-  · calc |P i j| ≤ ∑ j' ∈ range (n + 1), |P i j'| :=
-          single_le_sum (f := fun j' => |P i j'|) (fun _ _ => abs_nonneg _)
-            (mem_range.2 (by omega))
-      _ ≤ _ := single_le_sum (f := fun i' => ∑ j' ∈ range (n + 1), |P i' j'|)
-            (fun i' _ => hnn i') (mem_range.2 (by omega))
-  · rw [P.entry_eq_zero (by omega), abs_zero]
-    exact sum_nonneg fun i' _ => hnn i'
-
-/-- **Every pattern is a polynomial pattern up to a determinant shift**: some shift by a natural
-number makes all of its entries nonnegative. -/
-theorem exists_zero_le_shift (P : GTPattern n) : ∃ m : ℕ, 0 ≤ P.shift m := by
-  refine ⟨(∑ i ∈ range (n + 1), ∑ j ∈ range (n + 1), |P i j|).toNat,
-    zero_le_iff.2 fun i j => ?_⟩
-  rw [shift_apply]
-  split_ifs
-  · have := abs_le_sum_abs P i j
-    have := neg_abs_le (P i j)
-    have := Int.self_le_toNat (∑ i ∈ range (n + 1), ∑ j ∈ range (n + 1), |P i j|)
-    omega
-  · exact le_rfl
 
 /-! ### Row-subset patterns -/
 

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RepresentationTheory.ClassicalGroups.GelfandTsetlin.AddMonoid
 public import TauCeti.RepresentationTheory.ClassicalGroups.GelfandTsetlin.Tableau
 
 /-!
@@ -25,6 +26,10 @@ with the bounded semistandard Young tableaux of that normalized shape.  It is th
 bridge between the Gelfand-Tsetlin pattern count and the existing pattern-tableau correspondence;
 the determinant twist changes no pattern-fiber cardinality.
 
+In the entrywise additive monoid of patterns the shift by `m` is addition of the constant pattern
+`TauCeti.GTPattern.const n m`, and every pattern becomes a polynomial pattern, one with
+nonnegative entries, after a shift by a natural number.
+
 ## Main definitions
 
 * `TauCeti.GTPattern.shift`: add an integer to every informative entry of a pattern.
@@ -32,6 +37,7 @@ the determinant twist changes no pattern-fiber cardinality.
 * `TauCeti.GTPattern.shiftTopWeightEquiv`: translation between the fibers over `l` and `l.shift m`.
 * `TauCeti.GTPattern.detShiftEquivBoundedSSYT`: patterns over an arbitrary dominant weight are
   equivalent to bounded semistandard tableaux of its determinant-normalized shape.
+* `TauCeti.GTPattern.const n m`: the pattern all of whose informative entries equal `m`.
 
 ## Main results
 
@@ -39,6 +45,9 @@ the determinant twist changes no pattern-fiber cardinality.
 * `TauCeti.GTPattern.card_topWeight_shift`: determinant translation preserves the pattern count.
 * `TauCeti.GTPattern.card_topWeight_eq_card_boundedSSYT_detShiftShape`: the corresponding pattern
   and tableau fibers have the same cardinality.
+* `TauCeti.GTPattern.shift_eq_add_const`: the determinant shift by `m` adds `const n m`.
+* `TauCeti.GTPattern.exists_zero_le_shift`: every pattern becomes nonnegative after a determinant
+  shift by a natural number.
 
 ## References
 
@@ -283,6 +292,57 @@ determinant-normalized shape `l.detShiftShape`. -/
 theorem card_topWeight_eq_card_boundedSSYT_detShiftShape (l : DominantWeight n) :
     Nat.card {P : GTPattern n // P.topWeight = l} = Nat.card (BoundedSSYT n l.detShiftShape) :=
   Nat.card_congr (detShiftEquivBoundedSSYT l)
+
+/-! ### Constant patterns and determinant shifts -/
+
+/-- The constant pattern: every informative entry equals `m`.  Adding it to a pattern is the
+determinant shift by `m` (`TauCeti.GTPattern.shift_eq_add_const`). -/
+def const (n : ℕ) (m : ℤ) : GTPattern n :=
+  (0 : GTPattern n).shift m
+
+theorem const_apply (m : ℤ) (i j : ℕ) : const n m i j = if i < j ∧ j ≤ n then m else 0 := by
+  rw [const, shift_apply, zero_apply, zero_add]
+
+@[simp]
+theorem const_apply_of_lt_of_le (m : ℤ) {i j : ℕ} (hij : i < j) (hj : j ≤ n) :
+    const n m i j = m := by
+  rw [const_apply, ite_eq_left_iff.2 fun h => absurd ⟨hij, hj⟩ h]
+
+@[simp]
+theorem topRow_const (m : ℤ) : (const n m).topRow = fun _ => m := by
+  funext i
+  rw [topRow_apply]
+  exact const_apply_of_lt_of_le m i.2 le_rfl
+
+@[simp]
+theorem const_zero : const n 0 = 0 :=
+  shift_zero 0
+
+theorem const_add (m m' : ℤ) : const n (m + m') = const n m + const n m' := by
+  ext i j
+  rw [add_apply, const_apply, const_apply, const_apply]
+  split_ifs <;> simp
+
+/-- **The determinant shift is addition of a constant pattern.** -/
+theorem shift_eq_add_const (P : GTPattern n) (m : ℤ) : P.shift m = P + const n m := by
+  ext i j
+  rw [add_apply, shift_apply, const_apply]
+  split_ifs with h
+  · rfl
+  · rw [P.entry_eq_zero (by omega), add_zero]
+
+/-- **Every pattern is a polynomial pattern up to a determinant shift**: some shift by a natural
+number makes all of its entries nonnegative. -/
+theorem exists_zero_le_shift (P : GTPattern n) : ∃ m : ℕ, 0 ≤ P.shift m := by
+  refine ⟨(∑ i ∈ Finset.range (n + 1), ∑ j ∈ Finset.range (n + 1), |P i j|).toNat,
+    zero_le_iff.2 fun i j => ?_⟩
+  rw [shift_apply]
+  split_ifs
+  · have := abs_le_sum_abs P i j
+    have := neg_abs_le (P i j)
+    have := Int.self_le_toNat (∑ i ∈ Finset.range (n + 1), ∑ j ∈ Finset.range (n + 1), |P i j|)
+    omega
+  · exact le_rfl
 
 end GTPattern
 
