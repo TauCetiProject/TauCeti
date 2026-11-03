@@ -7,9 +7,10 @@ module
 
 public import Mathlib.Topology.Connected.LocallyPathConnected
 public import Mathlib.Topology.IsLocalHomeomorph
+public import Mathlib.Topology.OpenPartialHomeomorph.Constructions
 
 /-!
-# Local homeomorphisms: local path-connectedness and local inverses
+# Local homeomorphisms: local path-connectedness, local inverses and products
 
 A local homeomorphism `p : E → B` identifies a neighbourhood of each point of `E` with an open
 subset of `B`, so `E` inherits any property of `B` that is local and stable under passing to open
@@ -31,6 +32,7 @@ into the target of `L`. This is what identifies the transition maps of charts pu
 * `IsLocalHomeomorph.localInverseAt_comp_eventuallyEq`: near `z`, a local inverse composed with
   `p` agrees with any continuous local deck transformation sending `z` into the target of that
   local inverse.
+* `IsLocalHomeomorph.prodMap`: the product of two local homeomorphisms is a local homeomorphism.
 -/
 
 public section
@@ -78,5 +80,21 @@ theorem _root_.IsLocalHomeomorph.localInverseAt_comp_eventuallyEq {p : E → B}
   have hL : L (L.symm (φ w)) = φ w := L.right_inv hw
   rw [hp.localInverseAt_symm] at hL
   rwa [Function.comp_apply, ← hpw]
+
+section Prod
+
+variable {X Y Z W : Type*} [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z]
+  [TopologicalSpace W]
+
+/-- **The product of two local homeomorphisms is a local homeomorphism**, with the product of
+local charts as local charts. -/
+theorem _root_.IsLocalHomeomorph.prodMap {f : X → Y} {g : Z → W} (hf : IsLocalHomeomorph f)
+    (hg : IsLocalHomeomorph g) : IsLocalHomeomorph (Prod.map f g) := by
+  refine IsLocalHomeomorph.mk _ fun p ↦ ?_
+  obtain ⟨e, he, rfl⟩ := hf p.1
+  obtain ⟨e', he', rfl⟩ := hg p.2
+  exact ⟨e.prod e', ⟨he, he'⟩, fun _ _ ↦ rfl⟩
+
+end Prod
 
 end TauCeti

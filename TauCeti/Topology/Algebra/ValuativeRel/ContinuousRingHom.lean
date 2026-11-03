@@ -173,6 +173,6 @@ variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K] [IsValuat
 relation of `L` restricts to that of `K`. -/
 theorem ValuativeExtension.of_continuous_algebraMap [Algebra K L]
     (hf : Continuous (algebraMap K L)) : ValuativeExtension K L :=
-  ⟨(algebraMap K L).map_vle_map_iff_of_continuous hf⟩
+  ⟨fun {a b} ↦ (algebraMap K L).map_vle_map_iff_of_continuous hf a b⟩
 
 end Algebra

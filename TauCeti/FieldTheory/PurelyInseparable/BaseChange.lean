@@ -99,7 +99,7 @@ theorem isNilpotent_maximalIdeal_tensorProduct [IsPurelyInseparable k K] [Finite
     IsNilpotent (maximalIdeal (L ⊗[k] K)) := by
   have : IsArtinianRing (L ⊗[k] K) := IsArtinianRing.of_finite L (L ⊗[k] K)
   rw [← nilradical_tensorProduct]
-  exact IsArtinianRing.isNilpotent_nilradical
+  exact IsArtinianRing.isNilpotent_nilradical (L ⊗[k] K)
 
 /-- The filtration of `1 + 𝔪` by the principal unit groups of the powers of the maximal ideal `𝔪`
 of `L ⊗[k] K` reaches the trivial group, for a finite purely inseparable extension `K / k`. -/

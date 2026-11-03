@@ -461,7 +461,7 @@ theorem measurable_variationMeasure_indicator_setOf_lt [IsLocallyFiniteMeasure �
     · rw [indicator_of_mem ht, variationMeasure_indicator_preimage_coe
         (nullMeasurableSet_lt aemeasurable_const hu) ((hlf _).2 (by simpa [G] using ht)) hU]
     · rw [indicator_of_notMem ht, variationMeasure_eq_zero_of_not fun h => ht ?_,
-        Measure.coe_zero, Pi.zero_apply]
+        FunLike.coe_zero, Pi.zero_apply]
       simpa [G] using (hlf _).1 (by simpa only [perimeter_def] using h.2)
   -- Each open subset of `Ω` is the trace of an open subset of `E` contained in `Ω`.
   have hopen' {W : Set Ω} (hW : IsOpen W) :

@@ -131,6 +131,25 @@ theorem coactComponent_apply (phi : C →ₗ[R] R) (m : M) :
       _root_.LinearMap.tensorComponent (R := R) (M := M) phi (coact m) :=
   by rw [coactComponent, LinearMap.coe_comp, Function.comp_apply]
 
+/-- The coaction of a component: `ρ (∑ m₀ φ(m₁)) = ∑ m₀ ⊗ m₁ φ(m₂)`, that is, the coaction
+followed by the right contraction of the comultiplication with `φ`. -/
+theorem coact_coactComponent (phi : C →ₗ[R] R) (m : M) :
+    coact (coactComponent (R := R) (C := C) (M := M) phi m) =
+      (_root_.LinearMap.tensorComponent phi ∘ₗ Coalgebra.comul).lTensor M (coact m) := by
+  rw [coactComponent_apply, ← tensorComponent_rTensor_coact,
+    ← (TensorProduct.assoc R M C C).symm_apply_apply ((coact (C := C)).rTensor C (coact m)),
+    coassoc_apply, _root_.LinearMap.tensorComponent_assoc_symm, LinearMap.lTensor_comp_apply]
+
+/-- A component applied to the first factor of a coaction: `∑ m₀ φ(m₁) ⊗ m₂`, that is, the
+coaction followed by the left contraction of the comultiplication with `φ`. -/
+theorem rTensor_coactComponent_coact (phi : C →ₗ[R] R) (m : M) :
+    (coactComponent (R := R) (C := C) (M := M) phi).rTensor C (coact m) =
+      (TensorProduct.lid R C ∘ₗ phi.rTensor C ∘ₗ Coalgebra.comul).lTensor M (coact m) := by
+  rw [coactComponent, LinearMap.rTensor_comp_apply,
+    ← (TensorProduct.assoc R M C C).symm_apply_apply ((coact (C := C)).rTensor C (coact m)),
+    coassoc_apply, _root_.LinearMap.rTensor_tensorComponent_assoc_symm,
+    ← LinearMap.lTensor_comp_apply, LinearMap.comp_assoc]
+
 /-- Coassociativity read off by two linear functionals on the coalgebra. -/
 theorem coactComponent_coactComponent (phi psi : C →ₗ[R] R) (m : M) :
     coactComponent (R := R) (C := C) (M := M) phi
