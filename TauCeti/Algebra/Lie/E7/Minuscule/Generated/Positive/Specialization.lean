@@ -121,15 +121,10 @@ theorem coordinateHopfAlgebraBaseChangeMap_unique
 schemes, without any flatness hypothesis. -/
 theorem coordinateHopfAlgebraBaseChangeMap_surjective :
     Function.Surjective (coordinateHopfAlgebraBaseChangeMap R S).hom := by
-  have h : Function.Surjective
-      ((GeneralLinear.coordinateHopfAlgebraBaseChangeIso R S 56).hom ≫
-        CommHopfAlgCat.mkQuotient _ (definingIdeal S)).hom := by
-    rw [_root_.CommHopfAlgCat.hom_comp, BialgHom.coe_comp]
-    exact Function.Surjective.comp (CommHopfAlgCat.mkQuotient_surjective _ (definingIdeal S))
-      (ConcreteCategory.bijective_of_isIso
-        (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R S 56).hom).2
-  rw [← baseChangeMap_mkQuotient_comp_coordinateHopfAlgebraBaseChangeMap] at h
-  exact Function.Surjective.of_comp h
+  rw [coordinateHopfAlgebraBaseChangeMap, _root_.CommHopfAlgCat.hom_comp,
+    BialgHom.coe_comp]
+  exact (CommHopfAlgCat.quotientMapOfLe_surjective _ _).comp
+    (ConcreteCategory.bijective_of_isIso _).2
 
 /-- Every numbered positive root and the weight torus commute with the comparison. -/
 @[reassoc (attr := simp)]
