@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.MeasureTheory.Constructions.Polish.Analytic
 public import TauCeti.SetTheory.Descriptive.CantorScheme
 public import TauCeti.Topology.MetricSpace.Perfect
 
@@ -37,9 +38,9 @@ closure-antitone scheme of vanishing diameter in a complete metric on the domain
   space to a Hausdorff space with uncountable range has a Cantor antichain for its kernel.
 * `MeasureTheory.AnalyticSet.exists_nat_bool_injection_of_not_countable`: **the perfect set
   theorem for analytic sets**.
-* `MeasureTheory.AnalyticSet.mk_le_continuum`: an analytic set has at most `𝔠` points.
 * `MeasureTheory.AnalyticSet.mk_eq_continuum_of_not_countable`: an uncountable analytic subset of
-  a Hausdorff space has exactly `𝔠` points.
+  a Hausdorff space has exactly `𝔠` points; the upper bound is
+  `MeasureTheory.AnalyticSet.mk_le_continuum`.
 
 ## References
 
@@ -108,13 +109,6 @@ theorem AnalyticSet.exists_nat_bool_injection_of_not_countable [T2Space X] {s : 
       hg hunc)
   exact ⟨g ∘ h, range_comp_subset_range h g, hg.comp hh,
     fun a b hab => by_contra fun hne => hker a b hne hab⟩
-
-/-- An analytic set has at most continuum many points. -/
-theorem AnalyticSet.mk_le_continuum {s : Set X} (hs : AnalyticSet s) : #s ≤ 𝔠 := by
-  rw [AnalyticSet] at hs
-  obtain rfl | ⟨g, -, rfl⟩ := hs
-  · simp
-  · simpa [mk_arrow, aleph0_power_aleph0] using mk_range_le_lift (f := g)
 
 /-- **Analytic sets satisfy the continuum hypothesis.** An uncountable analytic subset of a
 Hausdorff space has exactly continuum many points. -/

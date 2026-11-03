@@ -22,10 +22,10 @@ open sets of small diameter whose closures stay inside it: the open-set counterp
 `Perfect.small_diam_splitting`, used to build Cantor schemes of open sets.
 
 The same split holds for an open set with uncountable image under a continuous map `f` from a
-second countable pseudometric space into a Hausdorff space, with uncountable and disjoint images:
-the points with a neighbourhood of countable image have countable image by second countability,
-so the open set contains two condensation points of `f` with distinct values. This is the step
-of the perfect set theorem for analytic sets.
+second countable extended pseudometric space into a Hausdorff space, with uncountable and disjoint
+images: the points with a neighbourhood of countable image have countable image by second
+countability, so the open set contains two condensation points of `f` with distinct values. This
+is the step of the perfect set theorem for analytic sets.
 
 ## Main results
 
@@ -35,8 +35,8 @@ of the perfect set theorem for analytic sets.
 * `IsOpen.exists_disjoint_closure_subset`: in a perfect extended metric space, a nonempty open set
   contains two disjoint nonempty open sets of small diameter, with closures inside it.
 * `Continuous.exists_split_of_not_countable_image`: for a continuous map from a second countable
-  pseudometric space into a Hausdorff space, an open set with uncountable image contains two open
-  sets of small diameter, with closures inside it, with uncountable and disjoint images.
+  extended pseudometric space into a Hausdorff space, an open set with uncountable image contains
+  two open sets of small diameter, with closures inside it, with uncountable and disjoint images.
 
 ## References
 
@@ -116,10 +116,10 @@ section SplitImage
 variable {Y : Type*}
 
 /-- **Splitting an open set with uncountable image**: an open set `U` with uncountable image
-under a continuous map `f` from a second countable pseudometric space into a Hausdorff space
-contains two open sets of diameter at most `ε`, with closures inside `U`, with uncountable images
-under `f`, and whose images under `f` are disjoint. -/
-theorem Continuous.exists_split_of_not_countable_image [PseudoMetricSpace Y]
+under a continuous map `f` from a second countable extended pseudometric space into a Hausdorff
+space contains two open sets of diameter at most `ε`, with closures inside `U`, with uncountable
+images under `f`, and whose images under `f` are disjoint. -/
+theorem Continuous.exists_split_of_not_countable_image [PseudoEMetricSpace Y]
     [SecondCountableTopology Y] [T2Space X] {f : Y → X} (hf : Continuous f) {U : Set Y}
     (hU : IsOpen U) (hfU : ¬(f '' U).Countable) {ε : ℝ≥0∞} (hε : 0 < ε) :
     ∃ W : Bool → Set Y, (∀ b, IsOpen (W b) ∧ ¬(f '' W b).Countable ∧ closure (W b) ⊆ U ∧

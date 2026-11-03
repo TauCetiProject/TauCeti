@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Constructions.Polish.Basic
+public import Mathlib.SetTheory.Cardinal.Continuum
 import TauCeti.Data.Setoid.Basic
 
 /-!
-# Closure properties of analytic sets
+# Closure properties and the cardinality bound of analytic sets
 
 Mathlib's analytic sets (`MeasureTheory.AnalyticSet`) are closed under countable unions and
 intersections, continuous images and continuous preimages from Polish spaces. This file adds the
@@ -25,6 +26,9 @@ with analytic graph is analytic, and so is the neighbourhood
 Lusin separation (`MeasureTheory.AnalyticSet.measurablySeparable`), these are the inputs of
 separation arguments that alternate between Borel separators and their saturations or
 neighbourhoods.
+
+As the continuous image of the Baire space `ℕ → ℕ`, an analytic set has at most continuum many
+points (`MeasureTheory.AnalyticSet.mk_le_continuum`).
 
 Binary intersections are proved in a Hausdorff ambient space, as Mathlib's
 `MeasureTheory.AnalyticSet.iInter` is. Intersection with a Borel set needs no separation axiom: an
@@ -52,6 +56,7 @@ Borel, hence analytic.
   `MeasureTheory.AnalyticSet.preimage_image_quotientMk_measurableSet`: the saturation of an analytic
   set (in a Hausdorff space) or of a Borel set under an equivalence relation with analytic graph is
   analytic.
+* `MeasureTheory.AnalyticSet.mk_le_continuum`: an analytic set has at most `𝔠` points.
 
 ## References
 
@@ -65,7 +70,7 @@ Borel, hence analytic.
 
 public section
 
-open Set
+open Set Cardinal
 
 namespace MeasureTheory
 
@@ -193,5 +198,12 @@ theorem AnalyticSet.preimage_image_quotientMk_measurableSet [MeasurableSpace α]
     AnalyticSet (Quotient.mk E ⁻¹' (Quotient.mk E '' s)) := by
   rw [E.preimage_image_quotientMk_eq_relPreimage]
   exact hE.relPreimage_measurableSet hs
+
+/-- An analytic set has at most continuum many points. -/
+theorem AnalyticSet.mk_le_continuum {s : Set α} (hs : AnalyticSet s) : #s ≤ 𝔠 := by
+  rw [AnalyticSet] at hs
+  obtain rfl | ⟨g, -, rfl⟩ := hs
+  · simp
+  · simpa [mk_arrow, aleph0_power_aleph0] using mk_range_le_lift (f := g)
 
 end MeasureTheory
