@@ -38,7 +38,7 @@ coordinates the matrix of Amice's map has
 * finite columns.
 
 Such a matrix defines an isometric automorphism of `C₀(ℕ, E)`
-(`Matrix.isometry_toZeroAtInftySMulCLM`, `Matrix.surjective_toZeroAtInftySMulCLM`).
+(`Matrix.toZeroAtInftySMulLinearIsometryEquiv`).
 
 ## Main definitions
 
@@ -190,12 +190,11 @@ private theorem norm_amiceMatrix_le_of_lt (h : ℕ) {k l : ℕ} (hlk : l < k) :
 private theorem amiceBound_lt_one : (p : ℝ) ^ (-1 : ℤ) < 1 :=
   zpow_lt_one_of_neg₀ (by exact_mod_cast hp.out.one_lt) (by norm_num)
 
-variable {E : Type*} [NormedAddCommGroup E] [Module ℤ_[p] E] [IsBoundedSMul ℤ_[p] E]
-
-/-- A `p`-adic integer of norm one acts isometrically under a contractive action. -/
-private theorem norm_smul_of_norm_eq_one {u : ℤ_[p]} (hu : ‖u‖ = 1) (e : E) : ‖u • e‖ = ‖e‖ := by
-  obtain ⟨v, rfl⟩ := PadicInt.isUnit_iff.mpr hu
-  rw [NormedRing.norm_units_smul_of_norm_mul (hu ▸ one_pos) (fun x ↦ norm_mul _ _), hu, one_mul]
+/-- The diagonal entries of `amiceMatrix` act isometrically under a contractive action. -/
+private theorem norm_amiceMatrix_self_smul {E : Type*} [NormedAddCommGroup E] [Module ℤ_[p] E]
+    [IsBoundedSMul ℤ_[p] E] (h k : ℕ) (e : E) : ‖amiceMatrix p h k k • e‖ = ‖e‖ :=
+  NormedRing.norm_smul_of_isUnit_of_norm_eq_one
+    (PadicInt.isUnit_iff.mpr (norm_amiceMatrix_self h k)) (norm_amiceMatrix_self h k) e
 
 end Matrix
 
@@ -224,41 +223,33 @@ private theorem amiceMap_eq_congrLeft (c : C₀(ℕ, E)) :
   simp [amicePerm, amiceMatrix_eq]
 
 variable (p h) in
-/-- **Amice's theorem: isometry.** Amice's map `(cₙ) ↦ ∑ₙ e_{h,n} • cₙ` preserves norms. -/
-theorem norm_amiceMap (c : C₀(ℕ, E)) : ‖amiceMap p h S c‖ = ‖c‖ := by
-  rw [amiceMap_eq_congrLeft, LinearIsometryEquiv.norm_map,
-    Matrix.norm_toZeroAtInftySMulCLM_apply S _ _ (norm_amiceMatrix_le h)
-      (fun k ↦ norm_smul_of_norm_eq_one (norm_amiceMatrix_self h k))
-      (fun k l hlk ↦ (norm_amiceMatrix_le_of_lt h hlk).trans_lt amiceBound_lt_one),
-    LinearIsometryEquiv.norm_map]
-
-variable (p h) in
-/-- **Amice's theorem: surjectivity.** Every coefficient vector of `LA_h(E)` is the expansion of
-a series `∑ₙ e_{h,n} • cₙ` with `cₙ → 0`. -/
-theorem surjective_amiceMap : Function.Surjective (amiceMap p h S (E := E)) := by
-  intro v
-  obtain ⟨x, hx⟩ := Matrix.surjective_toZeroAtInftySMulCLM S (amiceMatrix p h)
-    (tendsto_amiceMatrix h) (norm_amiceMatrix_le h)
-    (fun k ↦ PadicInt.isUnit_iff.mpr (norm_amiceMatrix_self h k))
-    (fun k ↦ norm_smul_of_norm_eq_one (norm_amiceMatrix_self h k))
-    amiceBound_lt_one (fun k l hlk ↦ norm_amiceMatrix_le_of_lt h hlk)
-    ((ZeroAtInftyContinuousMap.congrLeft S E (amiceCoord p h).toHomeomorphOfDiscrete).symm v)
-  refine ⟨(ZeroAtInftyContinuousMap.congrLeft S E (amicePerm p h).toHomeomorphOfDiscrete).symm x,
-    ?_⟩
-  rw [amiceMap_eq_congrLeft, LinearIsometryEquiv.apply_symm_apply, hx,
-    LinearIsometryEquiv.apply_symm_apply]
-
-variable (p h) in
 /-- **Amice's theorem.** Amice's map `(cₙ) ↦ ∑ₙ e_{h,n} • cₙ`, with
 `e_{h,n}(x) = ⌊n / pʰ⌋! (x choose n)`, is an isometric isomorphism `C₀(ℕ, E) ≃ₗᵢ[S] LA_h(E)`.
 For `E = ℤ_p` this is Amice's basis theorem `isOrthonormalBasis_amiceTerm`. -/
 noncomputable def amiceEquiv : C₀(ℕ, E) ≃ₗᵢ[S] AnalyticStage p h E :=
-  .ofSurjective ⟨(amiceMap p h S).toLinearMap, norm_amiceMap p h S⟩ (surjective_amiceMap p h S)
+  ((ZeroAtInftyContinuousMap.congrLeft S E (amicePerm p h).toHomeomorphOfDiscrete).trans
+    ((amiceMatrix p h).toZeroAtInftySMulLinearIsometryEquiv S (tendsto_amiceMatrix h)
+      (norm_amiceMatrix_le h) (fun k ↦ PadicInt.isUnit_iff.mpr (norm_amiceMatrix_self h k))
+      (norm_amiceMatrix_self_smul h) amiceBound_lt_one
+      (fun _ _ hlk ↦ norm_amiceMatrix_le_of_lt h hlk))).trans
+    (ZeroAtInftyContinuousMap.congrLeft S E (amiceCoord p h).toHomeomorphOfDiscrete)
 
 /-- Amice's isomorphism is Amice's map. -/
 @[simp]
-theorem amiceEquiv_apply (c : C₀(ℕ, E)) : amiceEquiv p h S c = amiceMap p h S c :=
-  (rfl)
+theorem amiceEquiv_apply (c : C₀(ℕ, E)) : amiceEquiv p h S c = amiceMap p h S c := by
+  rw [amiceMap_eq_congrLeft, amiceEquiv, LinearIsometryEquiv.trans_apply,
+    LinearIsometryEquiv.trans_apply, Matrix.toZeroAtInftySMulLinearIsometryEquiv_apply]
+
+variable (p h) in
+/-- **Amice's theorem: isometry.** Amice's map `(cₙ) ↦ ∑ₙ e_{h,n} • cₙ` preserves norms. -/
+theorem norm_amiceMap (c : C₀(ℕ, E)) : ‖amiceMap p h S c‖ = ‖c‖ := by
+  rw [← amiceEquiv_apply, LinearIsometryEquiv.norm_map]
+
+variable (p h) in
+/-- **Amice's theorem: surjectivity.** Every coefficient vector of `LA_h(E)` is the expansion of
+a series `∑ₙ e_{h,n} • cₙ` with `cₙ → 0`. -/
+theorem surjective_amiceMap : Function.Surjective (amiceMap p h S (E := E)) := fun v ↦
+  ⟨(amiceEquiv p h S).symm v, by rw [← amiceEquiv_apply, LinearIsometryEquiv.apply_symm_apply]⟩
 
 /-- The inverse of Amice's isomorphism sends Amice's vector `e_{h,n} • e` to the coordinate vector
 `single n e`. -/
