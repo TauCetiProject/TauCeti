@@ -66,6 +66,11 @@ through the coreflections, preserves it and moves each of its points by an eleme
 lattice (`RootPairing.sub_mem_corootSpan_of_mem_closure_range_coreflection`). This is the lattice
 of translations of the extended affine Weyl group `P∨ ⋊ W`.
 
+Over a linearly ordered ring the coroot lattice of a crystallographic pairing with finitely many
+roots contains no nonzero minuscule element, no nonzero `v` at which every root takes one of the
+values `-1`, `0` and `1` (`RootPairing.eq_zero_of_mem_corootSpan_of_forall_abs_root'_lt_two`).
+This is what makes the affine Weyl group `Q∨ ⋊ W` act freely on the alcoves.
+
 ## Main definitions
 
 * `RootPairing.toDualRootSpan`: the restriction of the pairing to the root span, as a linear map
@@ -96,6 +101,8 @@ of translations of the extended affine Weyl group `P∨ ⋊ W`.
   coweight lattice and moves each of its points by an element of the coroot lattice.
 * `RootPairing.corootSpan_map_toDualRootSpan_eq_top`: if the roots and the coroots both span, the
   coroot lattice is the whole coweight lattice.
+* `RootPairing.eq_zero_of_mem_corootSpan_of_forall_abs_root'_lt_two`: a minuscule element of the
+  coroot lattice is zero.
 
 ## References
 
@@ -352,5 +359,104 @@ lemma sub_mem_corootSpan_of_mem_closure_range_coreflection {w : N ≃ₗ[R] N}
     have h := add_mem (h₁ (P.mem_coweightLattice_of_mem_closure_range_coreflection hw₂ hx))
       (h₂ hx)
     rwa [sub_add_sub_cancel] at h
+
+/-- The coroot form `B` computes a root functional:
+`2 B(αₖ^∨, v) = B(αₖ^∨, αₖ^∨) ⟨αₖ, v⟩`. -/
+lemma two_mul_corootForm_coroot_apply [Fintype ι] (k : ι) (v : N) :
+    2 * P.CorootForm (P.coroot k) v =
+      P.CorootForm (P.coroot k) (P.coroot k) * P.root' k v := by
+  have := congr(P.toLinearMap $(P.corootForm_self_smul_root k) v)
+  rw [map_smul, map_nsmul, toLinearMap_apply_CoPolarization] at this
+  simpa [two_mul, mul_comm] using this.symm
+
+/-! ### Minuscule elements of the coroot lattice -/
+
+section Minuscule
+
+variable [LinearOrder R] [IsStrictOrderedRing R]
+
+/-- A combination `v = ∑ⱼ cⱼ αⱼ^∨` with `cⱼ ⟨αⱼ, v⟩ ≤ 0` for all `j` is zero: the coroot form `B`
+satisfies `2 B(v, v) = ∑ⱼ cⱼ B(αⱼ^∨, αⱼ^∨) ⟨αⱼ, v⟩ ≤ 0`, and it is positive semidefinite and
+anisotropic on the coroot lattice. `P.CorootForm` is `P.flip.RootForm` by definition, so Mathlib's
+root-form facts for `P.flip` apply to it. -/
+private lemma sum_zsmul_coroot_eq_zero_of_forall_mul_root'_nonpos [Fintype ι] (c : ι → ℤ)
+    (h : ∀ k, (c k : R) * P.root' k (∑ j, c j • P.coroot j) ≤ 0) :
+    ∑ j, c j • P.coroot j = 0 := by
+  set v := ∑ j, c j • P.coroot j with hv
+  have hB : 2 * P.CorootForm v v ≤ 0 := by
+    conv_lhs => enter [2, 1]; rw [hv]
+    simp only [map_sum, map_zsmul, LinearMap.sum_apply, LinearMap.smul_apply, zsmul_eq_mul,
+      Finset.mul_sum, mul_left_comm (2 : R), two_mul_corootForm_coroot_apply]
+    refine Finset.sum_nonpos fun k _ ↦ ?_
+    have hkk : 0 ≤ P.CorootForm (P.coroot k) (P.coroot k) := P.flip.zero_le_rootForm _
+    nlinarith [h k]
+  have h0 : P.CorootForm v v = 0 := le_antisymm (by linarith) (P.flip.zero_le_rootForm v)
+  exact P.flip.eq_zero_of_mem_rootSpan_of_rootForm_self_eq_zero
+    (Submodule.sum_mem _ fun k _ ↦ Submodule.smul_of_tower_mem _ _ (subset_span ⟨k, rfl⟩)) h0
+
+variable [P.IsCrystallographic]
+
+/-- The induction behind `RootPairing.eq_zero_of_mem_corootSpan_of_forall_abs_root'_lt_two`, on
+the size `∑ⱼ |cⱼ|` of the coefficients of `v = ∑ⱼ cⱼ αⱼ^∨`. If `cⱼ ⟨αⱼ, v⟩ > 0` for some `j`,
+then `⟨αⱼ, v⟩ = ±1` has the sign of `cⱼ`, and the reflection `s_{αⱼ} v = v - ⟨αⱼ, v⟩ αⱼ^∨`, which
+is again minuscule, has a smaller combination. Otherwise `v = 0` by
+`RootPairing.sum_zsmul_coroot_eq_zero_of_forall_mul_root'_nonpos`. -/
+private lemma sum_zsmul_coroot_eq_zero [Fintype ι] (n : ℕ) (c : ι → ℤ)
+    (hn : ∑ j, (c j).natAbs = n) (h : ∀ j, |P.root' j (∑ k, c k • P.coroot k)| < 2) :
+    ∑ k, c k • P.coroot k = 0 := by
+  induction n using Nat.strong_induction_on generalizing c with
+  | _ n ih =>
+  classical
+  set v := ∑ k, c k • P.coroot k with hv
+  have hvQ : v ∈ P.corootSpan ℤ :=
+    Submodule.sum_mem _ fun k _ ↦ Submodule.smul_mem _ _ (Submodule.subset_span ⟨k, rfl⟩)
+  choose z hz using P.mem_coweightLattice.1 (P.corootSpan_le_coweightLattice hvQ)
+  by_cases hpos : ∃ j, 0 < c j * z j
+  · -- Reflecting in a coroot `αⱼ^∨` with `cⱼ ⟨αⱼ, v⟩ > 0` removes one copy of `αⱼ^∨`.
+    obtain ⟨j, hj⟩ := hpos
+    have hzj : |z j| < 2 := by exact_mod_cast hz j ▸ h j
+    set c' := c - Pi.single j (z j)
+    have hc' : ∑ k, (c' k).natAbs < n := by
+      rw [← hn, ← Finset.add_sum_erase _ _ (Finset.mem_univ j),
+        ← Finset.add_sum_erase _ _ (Finset.mem_univ j)]
+      have herase : ∑ k ∈ Finset.univ.erase j, (c' k).natAbs =
+          ∑ k ∈ Finset.univ.erase j, (c k).natAbs :=
+        Finset.sum_congr rfl fun k hk ↦ by simp [c', Finset.ne_of_mem_erase hk]
+      rw [herase, add_lt_add_iff_right]
+      simp only [c', Pi.sub_apply, Pi.single_eq_same]
+      have hz0 : z j ≠ 0 := by
+        rintro h0
+        simp [h0] at hj
+      rw [abs_lt] at hzj
+      rcases (by omega : z j = 1 ∨ z j = -1) with h1 | h1 <;> rw [h1] at hj ⊢ <;> omega
+    have hu : ∑ k, c' k • P.coroot k = P.coreflection j v := by
+      simp [c', sub_smul, Finset.sum_sub_distrib, coreflection_apply, ← hv, hz j,
+        Int.cast_smul_eq_zsmul, Pi.single_apply, ite_smul]
+    have h0 := ih _ hc' c' rfl fun k ↦ by
+      rw [hu, root'_coreflection]
+      exact h _
+    rw [hu, map_eq_zero_iff _ (P.coreflection j).injective] at h0
+    have := hz j
+    rw [h0, map_zero, eq_comm, Int.cast_eq_zero] at this
+    simp [this] at hj
+  · simp only [not_exists, not_lt] at hpos
+    refine P.sum_zsmul_coroot_eq_zero_of_forall_mul_root'_nonpos c fun k ↦ ?_
+    rw [← hv, hz k]
+    exact_mod_cast hpos k
+
+/-- **A minuscule element of the coroot lattice is zero.** If every root takes a value of absolute
+value less than `2` at a point `v` of the coroot lattice `Q∨`, then `v = 0`. These values are
+integers, so the hypothesis says that `v` is minuscule: every root takes one of the values `-1`,
+`0` and `1` at `v`. Classically, the nonzero dominant minuscule coweights of a reduced irreducible
+root system are the fundamental coweights of its special nodes, and they represent the nontrivial
+classes of `P∨ / Q∨`; this theorem says that no nonzero minuscule coweight, dominant or not, lies
+in `Q∨`. -/
+theorem eq_zero_of_mem_corootSpan_of_forall_abs_root'_lt_two [Finite ι] {v : N}
+    (hv : v ∈ P.corootSpan ℤ) (h : ∀ j, |P.root' j v| < 2) : v = 0 := by
+  have := Fintype.ofFinite ι
+  obtain ⟨c, rfl⟩ := (Submodule.mem_span_range_iff_exists_fun ℤ).1 hv
+  exact P.sum_zsmul_coroot_eq_zero _ c rfl h
+
+end Minuscule
 
 end RootPairing

@@ -278,7 +278,7 @@ theorem exists_isChain_of_mem_closure_stableSet_inter_stableSet
         l.length + morseIndex f q ≤ morseIndex f x := by
     intro n
     induction n using Nat.strong_induction_on with
-    | h n ih =>
+    | ind n ih =>
         intro x hxn hx hqx hy
         obtain ⟨y, hy⟩ := hy
         obtain ⟨a, z, ha, hax, hzq, hza⟩ :=
@@ -362,7 +362,7 @@ theorem exists_isChain_of_mem_closure_unstableSet_inter_unstableSet
         l.length + morseIndex f x ≤ morseIndex f p := by
     intro n
     induction n using Nat.strong_induction_on with
-    | h n ih =>
+    | ind n ih =>
         intro x hxn hx hpx hy
         obtain ⟨y, hy⟩ := hy
         obtain ⟨a, z, ha, hax, hzp, hza⟩ :=

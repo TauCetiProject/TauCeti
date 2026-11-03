@@ -495,10 +495,10 @@ noncomputable def amiceMap : C₀(ℕ, E) →L[S] AnalyticStage p h E :=
   let L : C₀(ℕ, E) →ₗ[S] AnalyticStage p h E :=
     { toFun c := ∑' n, amiceTerm p h n (c n)
       map_add' c d := by
-        simp only [ZeroAtInftyContinuousMap.coe_add, Pi.add_apply, amiceTerm_add]
+        simp only [FunLike.coe_add, Pi.add_apply, amiceTerm_add]
         exact (summable_amiceTerm c).tsum_add (summable_amiceTerm d)
       map_smul' s c := by
-        simp only [ZeroAtInftyContinuousMap.coe_smul, Pi.smul_apply, amiceTerm_smul,
+        simp only [FunLike.coe_smul, Pi.smul_apply, amiceTerm_smul,
           RingHom.id_apply]
         exact (summable_amiceTerm c).tsum_const_smul s }
   { L with
