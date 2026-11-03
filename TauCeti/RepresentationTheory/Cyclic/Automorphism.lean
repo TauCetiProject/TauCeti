@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Group.TypeTags.Finite
 public import Mathlib.Algebra.Module.Equiv.Basic
 public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.RepresentationTheory.Rep.Basic
+public import TauCeti.Algebra.Group.Prod
 public import TauCeti.Data.ZMod.MonoidHomEquiv
 import Mathlib.Tactic.Abel
 
@@ -240,12 +241,6 @@ open CategoryTheory Limits
 
 variable {T M : Type u} [AddCommGroup T] [AddCommGroup M] {m : ℕ} {A : T ≃+ T} {B : M ≃+ M}
   (hA : (⇑A)^[m] = id) (hB : (⇑B)^[m] = id)
-
-include hA hB in
-/-- If the automorphisms `A` and `B` have order dividing `m`, so does the product automorphism
-`A × B` of `T × M`. -/
-theorem iterate_prodCongr_eq_id : (⇑(A.prodCongr B))^[m] = id :=
-  (Prod.map_iterate A B m).trans (by rw [hA, hB, Prod.map_id])
 
 variable [NeZero m]
 

@@ -5,6 +5,7 @@ Authors: Claude
 -/
 module
 
+public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Functoriality
 
@@ -89,47 +90,40 @@ section Biproduct
 
 variable {A B : Rep k G} {c : BinaryBicone A B}
 
+attribute [local instance] preservesBinaryBiproducts_of_preservesBiproducts
+
 /-- **Cohomology of a biproduct.** If `c` is a biproduct bicone of the representations `A` and
 `B`, the maps induced by its projections identify `Hⁿ(G, c.pt)` with `Hⁿ(G, A) × Hⁿ(G, B)`. The
 inverse sends `(a, b)` to the sum of the images of `a` and `b` under the maps induced by the
-inclusions of `c`. -/
+inclusions of `c`. It is the comparison of the image of `c` under the additive functor
+`Hⁿ(G, -)`, a biproduct by `isBinaryBilimitOfPreserves`, with the product of modules. -/
 noncomputable def prodEquivOfIsBilimit (hc : c.IsBilimit) (n : ℕ) :
-    groupCohomology c.pt n ≃ₗ[k] groupCohomology A n × groupCohomology B n where
-  toFun x := (map (MonoidHom.id G) c.fst n x, map (MonoidHom.id G) c.snd n x)
-  map_add' x y := by simp
-  map_smul' a x := by simp
-  invFun y := map (MonoidHom.id G) c.inl n y.1 + map (MonoidHom.id G) c.inr n y.2
-  left_inv x := by
-    have h := congr((map (MonoidHom.id G) $(IsBilimit.binary_total hc) n).hom x)
-    simpa [map_id_comp] using h
-  right_inv y := by
-    have h₁ := congr((map (MonoidHom.id G) $(c.inl_fst) n).hom y.1)
-    have h₂ := congr((map (MonoidHom.id G) $(c.inr_fst) n).hom y.2)
-    have h₃ := congr((map (MonoidHom.id G) $(c.inl_snd) n).hom y.1)
-    have h₄ := congr((map (MonoidHom.id G) $(c.inr_snd) n).hom y.2)
-    simp only [map_id_comp, map_id, map_id_zero, ModuleCat.comp_apply, ModuleCat.id_apply,
-      ModuleCat.hom_zero, LinearMap.zero_apply] at h₁ h₂ h₃ h₄
-    simp [h₁, h₂, h₃, h₄]
+    groupCohomology c.pt n ≃ₗ[k] groupCohomology A n × groupCohomology B n :=
+  (IsLimit.conePointUniqueUpToIso (isBinaryBilimitOfPreserves (functor k G n) hc).isLimit
+    (ModuleCat.binaryProductLimitCone _ _).isLimit).toLinearEquiv
 
 /-- The identification of the cohomology of a biproduct with a product is given by the maps
 induced by the projections. -/
 @[simp]
 theorem prodEquivOfIsBilimit_apply (hc : c.IsBilimit) (n : ℕ) (x : groupCohomology c.pt n) :
     prodEquivOfIsBilimit hc n x =
-      (map (MonoidHom.id G) c.fst n x, map (MonoidHom.id G) c.snd n x) :=
-  (rfl)
+      (map (MonoidHom.id G) c.fst n x, map (MonoidHom.id G) c.snd n x) := by
+  have h := IsLimit.conePointUniqueUpToIso_hom_comp
+    (isBinaryBilimitOfPreserves (functor k G n) hc).isLimit
+    (ModuleCat.binaryProductLimitCone _ _).isLimit
+  exact Prod.ext congr(($(h ⟨.left⟩)).hom x) congr(($(h ⟨.right⟩)).hom x)
 
 /-- The first component of the identification of the cohomology of a biproduct with a product is
 the map induced by the first projection. -/
 theorem prodEquivOfIsBilimit_apply_fst (hc : c.IsBilimit) (n : ℕ) (x : groupCohomology c.pt n) :
     (prodEquivOfIsBilimit hc n x).1 = map (MonoidHom.id G) c.fst n x :=
-  (rfl)
+  congrArg Prod.fst (prodEquivOfIsBilimit_apply hc n x)
 
 /-- The second component of the identification of the cohomology of a biproduct with a product
 is the map induced by the second projection. -/
 theorem prodEquivOfIsBilimit_apply_snd (hc : c.IsBilimit) (n : ℕ) (x : groupCohomology c.pt n) :
     (prodEquivOfIsBilimit hc n x).2 = map (MonoidHom.id G) c.snd n x :=
-  (rfl)
+  congrArg Prod.snd (prodEquivOfIsBilimit_apply hc n x)
 
 /-- The inverse of the identification of the cohomology of a biproduct with a product is the sum
 of the maps induced by the inclusions. -/
@@ -137,8 +131,15 @@ of the maps induced by the inclusions. -/
 theorem prodEquivOfIsBilimit_symm_apply (hc : c.IsBilimit) (n : ℕ)
     (y : groupCohomology A n × groupCohomology B n) :
     (prodEquivOfIsBilimit hc n).symm y =
-      map (MonoidHom.id G) c.inl n y.1 + map (MonoidHom.id G) c.inr n y.2 :=
-  (rfl)
+      map (MonoidHom.id G) c.inl n y.1 + map (MonoidHom.id G) c.inr n y.2 := by
+  rw [LinearEquiv.symm_apply_eq, prodEquivOfIsBilimit_apply]
+  have h₁ := congr((map (MonoidHom.id G) $(c.inl_fst) n).hom y.1)
+  have h₂ := congr((map (MonoidHom.id G) $(c.inr_fst) n).hom y.2)
+  have h₃ := congr((map (MonoidHom.id G) $(c.inl_snd) n).hom y.1)
+  have h₄ := congr((map (MonoidHom.id G) $(c.inr_snd) n).hom y.2)
+  simp only [map_id_comp, map_id, map_id_zero, ModuleCat.comp_apply, ModuleCat.id_apply,
+    ModuleCat.hom_zero, LinearMap.zero_apply] at h₁ h₂ h₃ h₄
+  simp [h₁, h₂, h₃, h₄]
 
 end Biproduct
 
