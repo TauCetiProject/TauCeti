@@ -26,6 +26,8 @@ the base, stalk, and function-field algebra structures form a scalar tower.
   over the base ring.
 * `Scheme.baseRingToStalk`: the canonical map from the base ring to a stalk.
 * `Scheme.fromSpecStalk_comp_over`: the spectrum of a stalk maps to `X` over the affine base.
+* `Scheme.fromSpecResidueField_comp_over`: the spectrum of a residue field maps to `X` over the
+  affine base.
 * `Scheme.specMap_comp_fromSpecStalk_genericPoint_comp_over`: a `k`-algebra map of function fields
   gives a morphism over the affine base between the spectra of the function fields.
 * `Scheme.Hom.functionFieldAlgHom`: conversely, the pullback of rational functions along a
@@ -217,6 +219,17 @@ theorem _root_.AlgebraicGeometry.Scheme.fromSpecStalk_comp_over (x : X) :
   rw [hbase, ← Category.assoc, Scheme.fromSpecStalk_toSpecΓ, ← Spec.map_comp, Spec.map_inj,
     Scheme.algebraMap_stalk_eq_baseRingToStalk, Scheme.baseRingToStalk,
     CommRingCat.ofHom_comp, CommRingCat.ofHom_hom]
+
+/-- The canonical morphism from the spectrum of a residue field to a scheme over `Spec k` is a
+morphism over `Spec k`; on rings, its composite with the structure morphism is the algebra map
+from `k` to the residue field. -/
+theorem _root_.AlgebraicGeometry.Scheme.fromSpecResidueField_comp_over (x : X) :
+    X.fromSpecResidueField x ≫ (X ↘ Spec (.of k)) =
+      Spec.map (CommRingCat.ofHom (algebraMap k (X.residueField x))) := by
+  rw [Scheme.fromSpecResidueField, Category.assoc, X.fromSpecStalk_comp_over (k := k),
+    ← Spec.map_comp, IsScalarTower.algebraMap_eq k (X.presheaf.stalk x) (X.residueField x),
+    CommRingCat.ofHom_comp, Scheme.algebraMap_stalk_residueField_eq_residue,
+    CommRingCat.ofHom_hom]
 
 /-- At the generic point of an integral scheme, `fromSpecStalk` is a morphism from the spectrum
 of the function field over the affine base. -/

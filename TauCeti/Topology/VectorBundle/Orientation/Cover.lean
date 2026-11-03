@@ -329,6 +329,21 @@ theorem eq_or_eq_deck (hι : Fintype.card ι = finrank ℝ F) {p q : VectorBundl
     obtain rfl := hinj h
     exact .inr rfl
 
+/-- Every fibre of the orientation double cover has exactly two points, provided `ι` has
+cardinality the rank of the bundle. -/
+@[simp]
+theorem ncard_fiber (hι : Fintype.card ι = finrank ℝ F) (b : B) :
+    ((proj : VectorBundleOrientationCover F E ι → B) ⁻¹' {b}).ncard = 2 := by
+  rw [← Nat.card_coe_set_eq]
+  obtain ⟨p, hp⟩ := surjective_proj (F := F) (E := E) hι b
+  let p₀ : (proj : VectorBundleOrientationCover F E ι → B) ⁻¹' {b} := ⟨p, hp⟩
+  refine (Nat.card_eq_two_iff' p₀).mpr ⟨⟨deck p, hp⟩, ?_, ?_⟩
+  · exact fun h ↦ deck_ne_self p (congrArg Subtype.val h)
+  · intro q hq
+    apply Subtype.ext
+    exact (eq_or_eq_deck hι (q.2.trans hp.symm)).resolve_left
+      fun h ↦ hq (Subtype.ext h)
+
 /-- Over a preconnected base, a clopen subset of the orientation double cover that is invariant
 under the deck involution is empty or the whole cover, provided `ι` has cardinality the rank of
 the bundle. -/

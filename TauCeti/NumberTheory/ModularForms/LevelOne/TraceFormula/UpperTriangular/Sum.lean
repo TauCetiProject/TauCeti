@@ -70,6 +70,12 @@ upper-triangular representatives `ℳₙ^∞` of `Γ \ ℳₙ`. -/
 noncomputable def upperTriangularSum (n : ℤ) : k[TraceFormulaMatrixModule n] :=
   ∑ x ∈ (upperTriangularReps n).toFinite.toFinset, single x 1
 
+variable (k n) in
+/-- Definition of `Tₙ^∞`: the formal sum of the elements of `ℳₙ^∞`. -/
+theorem upperTriangularSum_def :
+    upperTriangularSum k n = ∑ x ∈ (upperTriangularReps n).toFinite.toFinset, single x 1 := by
+  rw [upperTriangularSum]
+
 /-- The coefficients of `Tₙ^∞` are the indicator function of `ℳₙ^∞`. -/
 @[simp]
 theorem coeff_upperTriangularSum (x : TraceFormulaMatrixModule n) :
@@ -167,7 +173,7 @@ theorem one_sub_ofMulAction_op_upperTriangularSum_mem [CommRing k] (g : PSL(2, �
   rcases eq_or_ne n 0 with rfl | hn
   · simp
   -- `Tₙ^∞` and `Tₙ^∞ · g` have the same orbit sums, all equal to `1`
-  simp only [coinvariantsKer_ofMulAction_eq_ker, LinearMap.sub_apply, Module.End.one_apply,
+  simp only [coinvariantsKer_ofMulAction_eq_ker, LinearMap.sub_apply, one_apply_eq_self,
     LinearMap.sub_mem_ker_iff]
   ext q
   simp [hn]

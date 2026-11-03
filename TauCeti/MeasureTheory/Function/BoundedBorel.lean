@@ -285,7 +285,7 @@ theorem indicator_mul_indicator (s t : Set X) (hs : MeasurableSet s) (ht : Measu
     (f g : BoundedBorelFunction X) :
     indicator s hs f * indicator t ht g = indicator (s ∩ t) (hs.inter ht) (f * g) := by
   ext x
-  simp only [mul_apply, indicator_apply]
+  simp only [TauCeti.BoundedBorelFunction.mul_apply, indicator_apply]
   exact (Set.inter_indicator_mul _ _ x).symm
 
 /-- Pullback commutes with restriction and extension by zero. -/
