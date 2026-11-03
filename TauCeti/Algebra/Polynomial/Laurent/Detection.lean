@@ -51,7 +51,7 @@ theorem laurent_eval₂_family_injective {ι : Type*} (f : R →+* S)
   apply LaurentPolynomial.eq_of_infinite_smeval_eq (S := S)
   refine hu.mono ?_
   rintro x ⟨i, rfl⟩
-  change p.smeval (u i) = q.smeval (u i)
+  rw [Set.mem_ofPred_eq]
   simpa only [← LaurentPolynomial.eval₂_eq_smeval,
     RingHom.algebraMap_toAlgebra] using congrFun hpq i
 
@@ -68,9 +68,8 @@ theorem eq_id_of_forall_eval₂_eq {K : Type*} [Field K] (σ : K →+* K)
   have hp : p = T 1 := by
     refine LaurentPolynomial.eq_of_infinite_smeval_eq (S := K) (hfix.mono ?_)
     intro u hu
-    change p.smeval u = (T 1).smeval u
-    simpa only [← LaurentPolynomial.eval₂_eq_smeval] using (show
-      eval₂ (algebraMap K K) u p = eval₂ (algebraMap K K) u (T 1) by simp [h, hu.out])
+    rw [Set.mem_ofPred_eq, ← eval₂_eq_smeval, ← eval₂_eq_smeval]
+    simp [h, hu.out]
   ext x
   rcases eq_or_ne x 0 with rfl | hx
   · simp
