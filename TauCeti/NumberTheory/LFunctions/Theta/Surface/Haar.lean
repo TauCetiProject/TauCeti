@@ -7,7 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Measure.Haar.MultHaar
 public import TauCeti.MeasureTheory.Measure.PiWithDensity
-public import TauCeti.NumberTheory.LFunctions.Theta.SurfaceCoordinates
+public import TauCeti.NumberTheory.LFunctions.Theta.Surface.Coordinates
 
 /-!
 # The Haar measures of the archimedean parameters and of the norm-one hypersurface
@@ -22,8 +22,10 @@ the measures of that decomposition:
   `TauCeti.multHaar = dt / t` of `(0, ∞)`; it is Lebesgue measure on the positive orthant with
   density `∏_w y_w⁻¹` (`archHaar_eq_withDensity`), and it is invariant under the dilations
   `y ↦ c y`, `c > 0` (`map_archHaar_smul`).
-* `surfaceHaar K` is Neukirch's `d*x` on `S`: the mass of `A ⊆ S` is the `dy / y`-mass of the
-  parameters with surface part in `A` and norm in `[1, e]` (`surfaceHaar_apply`). It is σ-finite.
+* `surfaceHaar K` is the measure `d*x` on `S` induced by the product-over-places normalization of
+  `dy / y`: the mass of `A ⊆ S` is the `dy / y`-mass of the parameters with surface part in `A`
+  and norm in `[1, e]` (`surfaceHaar_apply`). It is σ-finite. Neukirch's canonical surface measure
+  is `2 ^ r₂` times `surfaceHaar K`.
 * `archHaar_eq_map`: `dy / y` is the image of the product measure `d*x × dt / t` under
   `(x, t) ↦ x t^(1/n)`.
 
@@ -102,10 +104,12 @@ theorem map_archHaar_smul {c : ℝ} (hc : 0 < c) : (archHaar K).map (c • ·) =
 /-! ### The Haar measure of the norm-one hypersurface -/
 
 variable (K) in
-/-- Neukirch's `d*x` on the norm-one hypersurface `S`: the Haar measure for which `dy / y` is the
-product `d*x × dt / t` along `(x, t) ↦ x t^(1/n)` (`archHaar_eq_map`). Since `dt / t` gives
-`[1, e]` mass one, the mass of `A ⊆ S` is the `dy / y`-mass of the parameters with surface part in
-`A` and norm in `[1, e]` (`surfaceHaar_apply`). -/
+/-- The measure `d*x` on the norm-one hypersurface `S` induced by the product-over-places
+normalization `archHaar K` of `dy / y`: the Haar measure for which `dy / y` is the product
+`d*x × dt / t` along `(x, t) ↦ x t^(1/n)` (`archHaar_eq_map`). Since `dt / t` gives `[1, e]` mass
+one, the mass of `A ⊆ S` is the `dy / y`-mass of the parameters with surface part in `A` and norm
+in `[1, e]` (`surfaceHaar_apply`). Neukirch's canonical surface measure is `2 ^ r₂` times this
+measure, as his `dy / y` is `2 ^ r₂` times `archHaar K`. -/
 def surfaceHaar : Measure (normOneSurface K) :=
   comap Subtype.val
     (map surfacePart ((archHaar K).restrict (archNorm ⁻¹' Icc 1 (Real.exp 1))))
@@ -260,7 +264,8 @@ private theorem normImage_Icc_one_exp_one {A : Set (normOneSurface K)} (hA : Mea
   filter_upwards [ae_archHaar_pos] with y hy
   refine and_congr_left' ⟨fun h ↦ ⟨_, h, toSurface_of_pos hy⟩, ?_⟩
   rintro ⟨x, hx, hxy⟩
-  rwa [mem_preimage, show toSurface y = x from Subtype.ext ((toSurface_of_pos hy).trans hxy.symm)]
+  have hEq : toSurface y = x := Subtype.ext ((toSurface_of_pos hy).trans hxy.symm)
+  rwa [mem_preimage, hEq]
 
 /-- For a measurable `A ⊆ S` of finite `d*x`-mass and a measurable set of norms `B`, the
 `dy / y`-mass of the parameters with surface part in `A` and norm in `B` is
