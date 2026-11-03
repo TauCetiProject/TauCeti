@@ -22,8 +22,8 @@ ordered monomials.
 ## Main results
 
 * `Matrix.ShellLieAlgebra.isSl2Triple_normalizedRoot`: the normalized opposite-root triple.
-* `Matrix.ShellLieAlgebra.dividedPower_normalizedRoot_mul_opposite`: the integral
-  opposite-root straightening identity in any associative rational algebra.
+* `Matrix.ShellLieAlgebra.dividedPower_normalizedRoot_mul_dividedPower_normalizedRoot_neg`:
+  the integral opposite-root straightening identity in any associative rational algebra.
 
 ## References
 
@@ -73,7 +73,7 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 /-- Opposite normalized root divided powers collect into lowering, Cartan-binomial, raising
 order, with no extra sign. The identity holds under any integral Lie homomorphism into an
 associative rational algebra, without nilpotence or injectivity hypotheses. -/
-theorem dividedPower_normalizedRoot_mul_opposite
+theorem dividedPower_normalizedRoot_mul_dividedPower_normalizedRoot_neg
     {A : Type*} [Ring A] [Algebra ℚ A]
     (φ : letI := lieRing hB hev; ShellLieAlgebra B →ₗ⁅ℤ⁆ A)
     (a : B.normTwoShell) (m n : ℕ) :
@@ -87,14 +87,7 @@ theorem dividedPower_normalizedRoot_mul_opposite
             dividedPower (m - k) (φ (normalizedRoot B a)) := by
   let _ := lieRing hB hev
   have ht := isSl2Triple_normalizedRoot hB hev hoff a
-  apply TauCeti.Sl2.dividedPower_e_mul_dividedPower_f
-  · simpa only [LieRing.of_associative_ring_bracket, ht.lie_e_f] using
-      (φ.map_lie (normalizedRoot B a)
-        (normalizedRoot B ⟨-(a : I → ℤ), neg_mem_normTwoShell.mpr a.2⟩)).symm
-  · simpa only [LieRing.of_associative_ring_bracket, ht.lie_h_e_nsmul, map_nsmul] using
-      (φ.map_lie (cartan B a) (normalizedRoot B a)).symm
-  · simpa only [LieRing.of_associative_ring_bracket, ht.lie_h_f_nsmul, map_neg, map_nsmul] using
-      (φ.map_lie (cartan B a)
-        (normalizedRoot B ⟨-(a : I → ℤ), neg_mem_normTwoShell.mpr a.2⟩)).symm
+  exact φ.dividedPower_map_e_mul_dividedPower_map_f
+    ht.lie_e_f ht.lie_h_e_nsmul ht.lie_h_f_nsmul m n
 
 end Matrix.ShellLieAlgebra
