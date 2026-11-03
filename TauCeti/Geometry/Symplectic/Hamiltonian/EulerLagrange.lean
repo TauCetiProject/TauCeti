@@ -36,16 +36,20 @@ the energy `E_L(q, v) = ∂_v L(q, v)(v) - L(q, v)` expressed in the momentum
 (`TauCeti.legendreHamiltonian_linearLegendreMap`). At a point where `w` and `L` are
 differentiable and `w` solves for the velocity, the derivative of `w` drops out of the derivative
 of `H`, which is `(δq, δp) ↦ -∂_q L(q, w) δq + δp(w)`
-(`TauCeti.hasFDerivAt_legendreHamiltonian`). With the convention `ι_{X_H} ω = dH`, the Hamiltonian
-vector field of `H` is therefore
+(`TauCeti.hasFDerivAt_legendreHamiltonian`). These results, and energy conservation below, hold
+for an arbitrary real normed space `E`. The Hamiltonian vector field and the trajectory results
+that follow assume in addition that `E` is finite-dimensional, as the Hamiltonian vector field
+API on `E × E'` does. With the convention `ι_{X_H} ω = dH`, the Hamiltonian vector field of `H` is
+therefore
 
 `X_H(q, p) = (w(q, p), ∂_q L(q, w(q, p)))`
 
 (`TauCeti.hamiltonianVectorField_legendreHamiltonian`): Hamilton's equations `q' = ∂_p H`,
 `p' = -∂_q H` read `q' = w(q, p)` and `p' = ∂_q L(q, w(q, p))`.
 
-This gives the equivalence of the Lagrangian and Hamiltonian descriptions of the motion. A curve
-`q` with velocity `v` satisfies the **Euler–Lagrange equations**
+For finite-dimensional `E`, this gives the equivalence of the Lagrangian and Hamiltonian
+descriptions of the motion. A curve `q` with velocity `v` satisfies the **Euler–Lagrange
+equations**
 
 `d/dt ∂_v L(q, v) = ∂_q L(q, v)`
 
@@ -180,7 +184,9 @@ theorem energy_eq_of_eulerLagrange {L : E × E → ℝ} {q v : ℝ → E}
   exact is_const_of_deriv_eq_zero (fun r ↦ (hderiv r).differentiableAt)
     (fun r ↦ (hderiv r).deriv) s t
 
-/-! ### Hamilton's equations -/
+/-! ### Hamilton's equations
+
+From here on `E` is finite-dimensional, as the Hamiltonian vector field API requires. -/
 
 variable [FiniteDimensional ℝ E]
 
