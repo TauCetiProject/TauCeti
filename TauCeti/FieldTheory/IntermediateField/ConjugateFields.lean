@@ -10,7 +10,7 @@ public import Mathlib.FieldTheory.IntermediateField.Basic
 /-!
 # Conjugate intermediate fields
 
-A monoid acting on `L` by `K`-algebra automorphisms acts on the intermediate fields of `L / K`
+A monoid acting on `L` by `K`-algebra endomorphisms acts on the intermediate fields of `L / K`
 by mapping their elements, in parallel with `Subalgebra.pointwiseMulAction`. In particular the
 automorphism group of the extension acts this way, and the conjugates of a field form its orbit
 under that action.
@@ -25,6 +25,8 @@ under that action.
 ## Main results
 
 * `IntermediateField.pointwise_smul_def`: the action is `IntermediateField.map`.
+* `IntermediateField.coe_pointwise_smul`, `IntermediateField.mem_smul_pointwise_iff_exists`:
+  the underlying set and the elements of a translated intermediate field.
 * `AlgEquiv.smul_intermediateField_def`: an automorphism acts by mapping along it.
 * `IntermediateField.mem_conjugateFields_iff`: orbit membership is an automorphism image.
 -/
@@ -57,6 +59,18 @@ scoped[Pointwise] attribute [instance] IntermediateField.pointwiseMulAction
 theorem pointwise_smul_def (g : G) (E : IntermediateField K L) :
     g • E = E.map (MulSemiringAction.toAlgHom K L g) :=
   (rfl)
+
+/-- The underlying set of a translated intermediate field is the translated set. -/
+@[simp, norm_cast]
+theorem coe_pointwise_smul (g : G) (E : IntermediateField K L) :
+    ((g • E : IntermediateField K L) : Set L) = g • (E : Set L) :=
+  (rfl)
+
+/-- The elements of `g • E` are the translates of the elements of `E`. -/
+@[simp]
+theorem mem_smul_pointwise_iff_exists (g : G) (x : L) (E : IntermediateField K L) :
+    x ∈ g • E ↔ ∃ y ∈ E, g • y = x :=
+  Set.mem_smul_set
 
 end Pointwise
 
