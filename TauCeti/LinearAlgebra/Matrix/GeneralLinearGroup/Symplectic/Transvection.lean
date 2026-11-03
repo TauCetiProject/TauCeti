@@ -239,7 +239,7 @@ private theorem single_inl_vecMul_JFin (i : Fin m) :
   rw [single_one_vecMul, row_apply, JFin_eq_submatrix m R, submatrix_apply, Equiv.symm_apply_apply,
     Equiv.symm_apply_apply, Pi.neg_apply, Pi.single_apply]
   simp only [EmbeddingLike.apply_eq_iff_eq]
-  cases b <;> simp [J, one_apply, eq_comm]
+  cases b <;> simp [J, Matrix.one_apply, eq_comm]
 
 /-- The row of `J` at a lower coordinate. -/
 private theorem single_inr_vecMul_JFin (i : Fin m) :
@@ -250,7 +250,7 @@ private theorem single_inr_vecMul_JFin (i : Fin m) :
   rw [single_one_vecMul, row_apply, JFin_eq_submatrix m R, submatrix_apply, Equiv.symm_apply_apply,
     Equiv.symm_apply_apply, Pi.single_apply]
   simp only [EmbeddingLike.apply_eq_iff_eq]
-  cases b <;> simp [J, one_apply, eq_comm]
+  cases b <;> simp [J, Matrix.one_apply, eq_comm]
 
 /-- The positive long-root element `x_{2eᵢ}(c)` is the transvection along the `i`-th upper
 coordinate vector with parameter `-c`. -/

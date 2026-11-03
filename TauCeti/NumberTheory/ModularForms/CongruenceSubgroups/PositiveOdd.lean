@@ -99,6 +99,6 @@ theorem dvd_and_eq_T_zpow_or_eq_neg_T_zpow_of_mem_Gamma_of_c_eq_zero {N : ℕ} {
     have hmem := (Gamma1 N).mul_mem (Gamma_le_Gamma1 N hA)
       (T_zpow_mem_Gamma1 N (A 0 1))
     nth_rw 1 [h] at hmem
-    simpa only [neg_mul, ← zpow_add, neg_add_cancel, zpow_zero] using hmem
+    simpa only [neg_mul, ← _root_.zpow_add, neg_add_cancel, _root_.zpow_zero] using hmem
 
 end CongruenceSubgroup
