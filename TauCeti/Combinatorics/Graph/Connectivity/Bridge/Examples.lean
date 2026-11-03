@@ -76,9 +76,7 @@ theorem joinedTrianglesWithIsolate_bridgeComponent_card :
   have hcard : joinedTrianglesWithIsolateGraph.bridgeSet.ncard = 1 := by
     rw [joinedTrianglesWithIsolate_bridgeSet]
     simp
-  change Nat.card (joinedTrianglesWithIsolateGraph.deleteEdges
-    joinedTrianglesWithIsolateGraph.bridgeSet).ConnectedComponent = 3
-  rw [← Graph.componentCount_def]
+  rw [Graph.BridgeComponent, ← Graph.componentCount_def]
   rw [Graph.componentCount_deleteEdges_bridgeSet]
   rw [joinedTrianglesWithIsolate_componentCount, hcard]
 
@@ -118,9 +116,7 @@ theorem trianglesSharingVertex_bridgeComponent_card :
   have hcard : trianglesSharingVertexGraph.bridgeSet.ncard = 0 := by
     rw [trianglesSharingVertex_bridgeSet]
     simp
-  change Nat.card (trianglesSharingVertexGraph.deleteEdges
-    trianglesSharingVertexGraph.bridgeSet).ConnectedComponent = 1
-  rw [← Graph.componentCount_def]
+  rw [Graph.BridgeComponent, ← Graph.componentCount_def]
   rw [Graph.componentCount_deleteEdges_bridgeSet]
   rw [trianglesSharingVertex_componentCount, hcard]
 
