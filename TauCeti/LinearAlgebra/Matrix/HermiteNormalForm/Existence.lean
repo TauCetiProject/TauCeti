@@ -163,12 +163,6 @@ theorem exists_isHermiteNormalForm_range_mulVecLin_eq :
         simp
     · exact ⟨k + 1, exists_isHermiteNormalForm_of_pos hp htail hvL hv hd₀ hd⟩
 
-/-- A matrix in Hermite normal form has as many columns as its rank, the rank of its column
-lattice. -/
-theorem IsHermiteNormalForm.rank_eq {H : Matrix (Fin m) (Fin k) ℤ} (hH : H.IsHermiteNormalForm) :
-    H.rank = k := by
-  rw [rank_eq_finrank_span_cols, finrank_span_eq_card hH.linearIndependent_cols, Fintype.card_fin]
-
 /-- **Every sublattice of `ℤ^m` has a unique Hermite basis.** For every sublattice `L` of `ℤ^m`
 there is exactly one pair `⟨k, H⟩` of a number `k` and a matrix `H` with `m` rows and `k` columns
 in Hermite normal form whose column lattice is `L`. -/
@@ -223,9 +217,8 @@ variable {L}
 basis of `L`, with unique coefficients. -/
 theorem mem_iff_hermite {x : Fin m → ℤ} : x ∈ L ↔ ∃! c, L.hermiteBasis *ᵥ c = x := by
   conv_lhs => rw [← L.range_mulVecLin_hermiteBasis]
-  refine ⟨fun ⟨c, hc⟩ ↦ ⟨c, hc, fun c' hc' ↦ ?_⟩, fun ⟨c, hc, _⟩ ↦ ⟨c, hc⟩⟩
-  exact mulVec_injective_iff.mpr L.isHermiteNormalForm_hermiteBasis.linearIndependent_cols
-    (hc'.trans hc.symm)
+  exact (mulVec_injective_iff.mpr
+    L.isHermiteNormalForm_hermiteBasis.linearIndependent_cols).mem_range_iff_existsUnique
 
 /-- **Characterisation of the Hermite basis.** A matrix `H` with `k` columns is, together with
 `k`, the Hermite basis of `L` if and only if it is in Hermite normal form with column lattice
@@ -254,6 +247,7 @@ theorem sigma_mk_hermiteBasis_inj :
   simp [eq_comm]
 
 /-- The zero sublattice has the empty Hermite basis. -/
+@[simp]
 theorem sigma_mk_hermiteBasis_bot :
     (⟨_, (⊥ : Submodule ℤ (Fin m → ℤ)).hermiteBasis⟩ : Σ k, Matrix (Fin m) (Fin k) ℤ) = ⟨0, 0⟩ :=
   sigma_mk_hermiteBasis_eq_iff.mpr ⟨isHermiteNormalForm_of_fin_zero _, by
@@ -261,6 +255,7 @@ theorem sigma_mk_hermiteBasis_bot :
     simp⟩
 
 /-- The full lattice `ℤ^m` has the identity matrix as its Hermite basis. -/
+@[simp]
 theorem sigma_mk_hermiteBasis_top :
     (⟨_, (⊤ : Submodule ℤ (Fin m → ℤ)).hermiteBasis⟩ : Σ k, Matrix (Fin m) (Fin k) ℤ) = ⟨m, 1⟩ :=
   sigma_mk_hermiteBasis_eq_iff.mpr ⟨IsHermiteNormalForm.one, by simp⟩
