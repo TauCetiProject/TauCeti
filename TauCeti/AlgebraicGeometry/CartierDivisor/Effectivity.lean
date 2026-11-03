@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.CartierDivisor.Effective
+public import TauCeti.AlgebraicGeometry.CartierDivisor.Effective.Basic
 public import TauCeti.AlgebraicGeometry.CartierDivisor.WeilComparison
 
 /-!
