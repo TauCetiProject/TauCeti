@@ -65,15 +65,15 @@ union is itself a fundamental domain for `Γ`.
 * `UpperHalfPlane.peterssonInner_slash_left_of_det_pos` and
   `UpperHalfPlane.peterssonInner_slash_right_of_det_pos`: the adjoint formula, moving a slash
   from one argument of the pairing to the other.
-* `UpperHalfPlane.peterssonInner_slash_left_adjugateGL` and
-  `UpperHalfPlane.peterssonInner_slash_right_adjugateGL`: the same adjoint formulas written with
+* `UpperHalfPlane.peterssonInner_slash_left_adjugate` and
+  `UpperHalfPlane.peterssonInner_slash_right_adjugate`: the same adjoint formulas written with
   the main involution `α^ι` in place of `α⁻¹`, where no determinant factor remains.
-* `UpperHalfPlane.peterssonInner_sum_slash_left_adjugateGL` and
-  `UpperHalfPlane.peterssonInner_sum_slash_right_adjugateGL`: the same, for a *finite family* of
+* `UpperHalfPlane.peterssonInner_sum_slash_left_adjugate` and
+  `UpperHalfPlane.peterssonInner_sum_slash_right_adjugate`: the same, for a *finite family* of
   slashes at once — the shape a Hecke operator presents, being a slash sum over coset
   representatives.
-* `UpperHalfPlane.peterssonInner_sum_slash_left_adjugateGL_biUnion` and
-  `UpperHalfPlane.peterssonInner_sum_slash_right_adjugateGL_biUnion`: when the slashed arguments
+* `UpperHalfPlane.peterssonInner_sum_slash_left_adjugate_biUnion` and
+  `UpperHalfPlane.peterssonInner_sum_slash_right_adjugate_biUnion`: when the slashed arguments
   all coincide, that finite sum is a *single* pairing over the union of the translated domains.
 * `UpperHalfPlane.peterssonInner_slash_slash_SL`: the determinant-one case, where the scalar
   disappears and only the domain moves.
@@ -150,18 +150,18 @@ theorem peterssonInner_slash_left_of_det_pos (k : ℤ)
 This is the shape the classical adjoint theory uses (Diamond–Shurman §5.5, Miyake §4.5), and
 the shape the Hecke adjoint `Tₙ* = ⟨n⟩⁻¹Tₙ` is assembled in: the main involution `α^ι` preserves
 the integral matrices, so it acts on the Hecke cosets, where `α⁻¹` does not. The determinant
-factor of `peterssonInner_slash_left_of_det_pos` has not gone away — `ModularForm.slash_adjugateGL`
+factor of `peterssonInner_slash_left_of_det_pos` has not gone away — `ModularForm.slash_adjugate`
 says it is exactly what the involution contributes over the inverse.
 
 Ported from AINTLIB (github.com/CBirkbeck/AINTLIB @ `6d87d596a537`, Apache-2.0),
 `projects/LeanModularForms/LeanModularForms/HeckeRIngs/GL2/AdjointTheory.lean`:
 `peterssonInner_slash_adjoint` (:412), stated over its `peterssonAdj` (:322) — which is
-`TauCeti.adjugateGL` specialised to `GL (Fin 2) ℝ`. -/
-theorem peterssonInner_slash_left_adjugateGL (k : ℤ)
+`Matrix.GeneralLinearGroup.adjugate` specialised to `GL (Fin 2) ℝ`. -/
+theorem peterssonInner_slash_left_adjugate (k : ℤ)
     (hg : 0 < (g : Matrix (Fin 2) (Fin 2) ℝ).det)
     (S : Set ℍ) (f h : ℍ → ℂ) :
-    peterssonInner k S (f ∣[k] g) h = peterssonInner k (g • S) f (h ∣[k] TauCeti.adjugateGL g) := by
-  rw [ModularForm.slash_adjugateGL, peterssonInner_smul_right,
+    peterssonInner k S (f ∣[k] g) h = peterssonInner k (g • S) f (h ∣[k] g.adjugate) := by
+  rw [ModularForm.slash_adjugate, peterssonInner_smul_right,
     peterssonInner_slash_left_of_det_pos k hg]
 
 /-- **The adjoint of a slash, on the right argument**:
@@ -178,13 +178,13 @@ theorem peterssonInner_slash_right_of_det_pos (k : ℤ)
 
 /-- **The adjoint of a slash on the right, in involution form**:
 `⟪f, h ∣[k] α⟫_S = ⟪f ∣[k] α^ι, h⟫_{α • S}`. The mirror of
-`peterssonInner_slash_left_adjugateGL`, and like it free of the determinant factor. -/
-theorem peterssonInner_slash_right_adjugateGL (k : ℤ)
+`peterssonInner_slash_left_adjugate`, and like it free of the determinant factor. -/
+theorem peterssonInner_slash_right_adjugate (k : ℤ)
     (hg : 0 < (g : Matrix (Fin 2) (Fin 2) ℝ).det)
     (S : Set ℍ) (f h : ℍ → ℂ) :
     peterssonInner k S f (h ∣[k] g) =
-      peterssonInner k (g • S) (f ∣[k] TauCeti.adjugateGL g) h := by
-  rw [ModularForm.slash_adjugateGL, peterssonInner_smul_left, map_zpow₀, Complex.conj_ofReal,
+      peterssonInner k (g • S) (f ∣[k] g.adjugate) h := by
+  rw [ModularForm.slash_adjugate, peterssonInner_smul_left, map_zpow₀, Complex.conj_ofReal,
     peterssonInner_slash_right_of_det_pos k hg]
 
 /-! ### A finite family of slashes -/
@@ -216,41 +216,41 @@ SummandAdjoint.lean`: `peterssonInner_T_p_family_sum_slashes_eq_aggregate_of_int
 translate, pairwise a.e.-disjointness across the family, and integrability over the union — none
 of which the identity needs. Here the domains are left where the change of variables puts them
 and reassembling them is a separate step, so the only side condition is integrability of each
-summand. The same citation covers `peterssonInner_sum_slash_right_adjugateGL` below. -/
-theorem peterssonInner_sum_slash_left_adjugateGL (k : ℤ) {ι : Type*} (s : Finset ι)
+summand. The same citation covers `peterssonInner_sum_slash_right_adjugate` below. -/
+theorem peterssonInner_sum_slash_left_adjugate (k : ℤ) {ι : Type*} (s : Finset ι)
     (α : ι → GL (Fin 2) ℝ)
     (hα : ∀ i ∈ s, 0 < ((α i : Matrix (Fin 2) (Fin 2) ℝ)).det) (S : Set ℍ) (f h : ℍ → ℂ)
     (hint : ∀ i ∈ s,
       IntegrableOn (fun τ ↦ petersson k (f ∣[k] α i) h τ) S (volume : Measure ℍ)) :
     peterssonInner k S (∑ i ∈ s, f ∣[k] α i) h =
-      ∑ i ∈ s, peterssonInner k (α i • S) f (h ∣[k] TauCeti.adjugateGL (α i)) := by
+      ∑ i ∈ s, peterssonInner k (α i • S) f (h ∣[k] (α i).adjugate) := by
   rw [peterssonInner_sum_left k S s (fun i ↦ f ∣[k] α i) h hint]
   exact Finset.sum_congr rfl fun i hi ↦
-    peterssonInner_slash_left_adjugateGL k (hα i hi) S f h
+    peterssonInner_slash_left_adjugate k (hα i hi) S f h
 
 /-- **The summand-level adjoint, on the right argument**: the mirror of
-`peterssonInner_sum_slash_left_adjugateGL`,
+`peterssonInner_sum_slash_left_adjugate`,
 
 ```text
 ⟪f, ∑ᵢ h ∣[k] αᵢ⟫_S = ∑ᵢ ⟪f ∣[k] αᵢ^ι, h⟫_{αᵢ • S}.
 ```
 -/
-theorem peterssonInner_sum_slash_right_adjugateGL (k : ℤ) {ι : Type*} (s : Finset ι)
+theorem peterssonInner_sum_slash_right_adjugate (k : ℤ) {ι : Type*} (s : Finset ι)
     (α : ι → GL (Fin 2) ℝ)
     (hα : ∀ i ∈ s, 0 < ((α i : Matrix (Fin 2) (Fin 2) ℝ)).det) (S : Set ℍ) (f h : ℍ → ℂ)
     (hint : ∀ i ∈ s,
       IntegrableOn (fun τ ↦ petersson k f (h ∣[k] α i) τ) S (volume : Measure ℍ)) :
     peterssonInner k S f (∑ i ∈ s, h ∣[k] α i) =
-      ∑ i ∈ s, peterssonInner k (α i • S) (f ∣[k] TauCeti.adjugateGL (α i)) h := by
+      ∑ i ∈ s, peterssonInner k (α i • S) (f ∣[k] (α i).adjugate) h := by
   rw [peterssonInner_sum_right k S s f (fun i ↦ h ∣[k] α i) hint]
   exact Finset.sum_congr rfl fun i hi ↦
-    peterssonInner_slash_right_adjugateGL k (hα i hi) S f h
+    peterssonInner_slash_right_adjugate k (hα i hi) S f h
 
 /-! ### Reassembling the translated domains -/
 
 /-- **The aggregate adjoint identity, on the left argument.** When all the translated right
 arguments coincide — `h ∣[k] αᵢ^ι = h'` for every `i` — the sum produced by
-`peterssonInner_sum_slash_left_adjugateGL` is a *single* pairing, over the union of the
+`peterssonInner_sum_slash_left_adjugate` is a *single* pairing, over the union of the
 translated domains:
 
 ```text
@@ -268,10 +268,10 @@ whose involution is `![![1, -b], ![0, 1]] * ![![p, 0], ![0, 1]]` with the first 
 The union is not asserted to be a fundamental domain — that is a separate statement about the
 family, and once it is available `peterssonInner_eq_of_isFundamentalDomain` moves the pairing to
 any other fundamental domain. -/
-theorem peterssonInner_sum_slash_left_adjugateGL_biUnion (k : ℤ) {ι : Type*} (s : Finset ι)
+theorem peterssonInner_sum_slash_left_adjugate_biUnion (k : ℤ) {ι : Type*} (s : Finset ι)
     (α : ι → GL (Fin 2) ℝ)
     (hα : ∀ i ∈ s, 0 < ((α i : Matrix (Fin 2) (Fin 2) ℝ)).det) (S : Set ℍ) (f h h' : ℍ → ℂ)
-    (hadj : ∀ i ∈ s, h ∣[k] TauCeti.adjugateGL (α i) = h')
+    (hadj : ∀ i ∈ s, h ∣[k] (α i).adjugate = h')
     (hint : ∀ i ∈ s,
       IntegrableOn (fun τ ↦ petersson k (f ∣[k] α i) h τ) S (volume : Measure ℍ))
     (hd : Set.Pairwise (↑s) (AEDisjoint (volume : Measure ℍ) on fun i ↦ α i • S))
@@ -279,21 +279,21 @@ theorem peterssonInner_sum_slash_left_adjugateGL_biUnion (k : ℤ) {ι : Type*} 
     (hfi : IntegrableOn (fun τ ↦ petersson k f h' τ) (⋃ i ∈ s, α i • S) (volume : Measure ℍ)) :
     peterssonInner k S (∑ i ∈ s, f ∣[k] α i) h =
       peterssonInner k (⋃ i ∈ s, α i • S) f h' := by
-  rw [peterssonInner_sum_slash_left_adjugateGL k s α hα S f h hint, peterssonInner_def,
+  rw [peterssonInner_sum_slash_left_adjugate k s α hα S f h hint, peterssonInner_def,
     TauCeti.MeasureTheory.integral_biUnion_finset₀ s hd hm hfi]
   exact Finset.sum_congr rfl fun i hi ↦ by rw [peterssonInner_def, hadj i hi]
 
 /-- **The aggregate adjoint identity, on the right argument**: the mirror of
-`peterssonInner_sum_slash_left_adjugateGL_biUnion`,
+`peterssonInner_sum_slash_left_adjugate_biUnion`,
 
 ```text
 ⟪f, ∑ᵢ h ∣[k] αᵢ⟫_S = ⟪f', h⟫_{⋃ᵢ αᵢ • S}    whenever f ∣[k] αᵢ^ι = f' for every i.
 ```
 -/
-theorem peterssonInner_sum_slash_right_adjugateGL_biUnion (k : ℤ) {ι : Type*} (s : Finset ι)
+theorem peterssonInner_sum_slash_right_adjugate_biUnion (k : ℤ) {ι : Type*} (s : Finset ι)
     (α : ι → GL (Fin 2) ℝ)
     (hα : ∀ i ∈ s, 0 < ((α i : Matrix (Fin 2) (Fin 2) ℝ)).det) (S : Set ℍ) (f f' h : ℍ → ℂ)
-    (hadj : ∀ i ∈ s, f ∣[k] TauCeti.adjugateGL (α i) = f')
+    (hadj : ∀ i ∈ s, f ∣[k] (α i).adjugate = f')
     (hint : ∀ i ∈ s,
       IntegrableOn (fun τ ↦ petersson k f (h ∣[k] α i) τ) S (volume : Measure ℍ))
     (hd : Set.Pairwise (↑s) (AEDisjoint (volume : Measure ℍ) on fun i ↦ α i • S))
@@ -301,7 +301,7 @@ theorem peterssonInner_sum_slash_right_adjugateGL_biUnion (k : ℤ) {ι : Type*}
     (hfi : IntegrableOn (fun τ ↦ petersson k f' h τ) (⋃ i ∈ s, α i • S) (volume : Measure ℍ)) :
     peterssonInner k S f (∑ i ∈ s, h ∣[k] α i) =
       peterssonInner k (⋃ i ∈ s, α i • S) f' h := by
-  rw [peterssonInner_sum_slash_right_adjugateGL k s α hα S f h hint, peterssonInner_def,
+  rw [peterssonInner_sum_slash_right_adjugate k s α hα S f h hint, peterssonInner_def,
     TauCeti.MeasureTheory.integral_biUnion_finset₀ s hd hm hfi]
   exact Finset.sum_congr rfl fun i hi ↦ by rw [peterssonInner_def, hadj i hi]
 
