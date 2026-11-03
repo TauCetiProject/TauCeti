@@ -84,11 +84,7 @@ theorem map_singularValueMeasure_sq (A : Matrix m n 𝕜) :
     map_empiricalMeasureOfFintype (by fun_prop)]
   congr 1
   funext i
-  exact Real.sq_sqrt (by
-    -- The sorted enumeration is a reindexing of the nonnegative Gram eigenvalues.
-    simpa only [IsHermitian.eigenvalues, Equiv.symm_apply_apply] using
-      (posSemidef_conjTranspose_mul_self A).eigenvalues_nonneg
-        (Fintype.equivOfCardEq (Fintype.card_fin _) i))
+  exact Real.sq_sqrt ((posSemidef_conjTranspose_mul_self A).eigenvalues₀_nonneg i)
 
 /-- The singular-value measure is weakly continuous as a function of the matrix entries. -/
 @[fun_prop]
