@@ -10,14 +10,13 @@ public import TauCeti.RepresentationTheory.Cyclic.Affine
 public import Mathlib.RepresentationTheory.Homological.FiniteCyclic
 
 /-!
-# The periodic short complexes of an involution
+# The periodic short complexes of a finite-order automorphism
 
-For an additive involution `A`, the norm of its cyclic representation is `1 + A`.
-Mathlib's periodic short complexes use the other differential `A - 1`. We identify
+For an additive automorphism `A` of period dividing `m`, Mathlib's periodic short
+complexes have differentials `cyclicNormHom m` and `-oneSubPow 1`. We identify
 their maps and give isomorphisms to the convention with differential `1 - A` by
-negating one end of each short complex. Both composites of `1 + A` and `1 - A`
-vanish. For period dividing `m`, the differentials are `cyclicNormHom m` and
-`-oneSubPow 1`; their comparisons and zero-composite laws are given for arbitrary finite order.
+negating one end of each short complex. Both composites of the norm and `1 - A`
+vanish. For period two, the norm is `1 + A`.
 
 The shared complexes are `Rep.FiniteCyclicGroup.normHomCompSub` and
 `Rep.FiniteCyclicGroup.subCompNormHom` from Mathlib's finite-cyclic resolution.
@@ -106,15 +105,14 @@ theorem cyclicNormHom_comp_oneSubPow {m : ℕ} (hA : (⇑A)^[m] = id) :
     Preadditive.neg_comp, neg_eq_zero] at hz
   exact (AddMonoidHom.ofHom_toIntLinearMap_comp_eq_zero_iff _ _).mp hz
 
-variable (hA : (⇑A)^[2] = id)
+variable {m : ℕ} [NeZero m] (hA : (⇑A)^[m] = id)
 
-/-- Negating the last object changes the periodic short complex `1 + A, A - 1`
-to the convention `1 + A, 1 - A`. Its zero-composite law is inherited from
-Mathlib's short complex. -/
-noncomputable def normHomCompSubCyclicRepTwoIso :
+/-- Negating the last object changes the periodic short complex `N_A, A - 1`
+to the convention `N_A, 1 - A`, where `N_A = cyclicNormHom m`. -/
+noncomputable def normHomCompSubCyclicRepIso :
     normHomCompSub (A.cyclicRep hA) (.ofAdd 1) ≅
       ShortComplex.mk
-        (ModuleCat.ofHom (A.cyclicNormHom 2).toIntLinearMap)
+        (ModuleCat.ofHom (A.cyclicNormHom m).toIntLinearMap)
         (ModuleCat.ofHom (A.oneSubPow 1).toIntLinearMap)
         ((AddMonoidHom.ofHom_toIntLinearMap_comp_eq_zero_iff _ _).mpr
           (A.oneSubPow_comp_cyclicNormHom hA)) :=
@@ -125,13 +123,13 @@ noncomputable def normHomCompSubCyclicRepTwoIso :
         Preadditive.comp_neg, Category.comp_id, neg_neg] using
       congrArg Neg.neg (A.normHomCompSub_cyclicRep_g hA).symm)
 
-/-- Negating the first object changes the periodic short complex `A - 1, 1 + A`
-to the convention `1 - A, 1 + A`, retaining Mathlib's shared source complex. -/
-noncomputable def subCompNormHomCyclicRepTwoIso :
+/-- Negating the first object changes the periodic short complex `A - 1, N_A`
+to the convention `1 - A, N_A`, where `N_A = cyclicNormHom m`. -/
+noncomputable def subCompNormHomCyclicRepIso :
     subCompNormHom (A.cyclicRep hA) (.ofAdd 1) ≅
       ShortComplex.mk
         (ModuleCat.ofHom (A.oneSubPow 1).toIntLinearMap)
-        (ModuleCat.ofHom (A.cyclicNormHom 2).toIntLinearMap)
+        (ModuleCat.ofHom (A.cyclicNormHom m).toIntLinearMap)
         ((AddMonoidHom.ofHom_toIntLinearMap_comp_eq_zero_iff _ _).mpr
           (A.cyclicNormHom_comp_oneSubPow hA)) :=
   ShortComplex.isoMk (-(Iso.refl _)) (Iso.refl _) (Iso.refl _)
@@ -142,51 +140,51 @@ noncomputable def subCompNormHomCyclicRepTwoIso :
       (A.subCompNormHom_cyclicRep_g hA).symm)
 
 @[simp]
-theorem normHomCompSubCyclicRepTwoIso_hom_τ₁ :
-    (A.normHomCompSubCyclicRepTwoIso hA).hom.τ₁ = 𝟙 (ModuleCat.of ℤ T) := (rfl)
+theorem normHomCompSubCyclicRepIso_hom_τ₁ :
+    (A.normHomCompSubCyclicRepIso hA).hom.τ₁ = 𝟙 (ModuleCat.of ℤ T) := (rfl)
 
 @[simp]
-theorem normHomCompSubCyclicRepTwoIso_hom_τ₂ :
-    (A.normHomCompSubCyclicRepTwoIso hA).hom.τ₂ = 𝟙 (ModuleCat.of ℤ T) := (rfl)
+theorem normHomCompSubCyclicRepIso_hom_τ₂ :
+    (A.normHomCompSubCyclicRepIso hA).hom.τ₂ = 𝟙 (ModuleCat.of ℤ T) := (rfl)
 
 @[simp]
-theorem normHomCompSubCyclicRepTwoIso_hom_τ₃ :
-    (A.normHomCompSubCyclicRepTwoIso hA).hom.τ₃ = -𝟙 (ModuleCat.of ℤ T) := (rfl)
+theorem normHomCompSubCyclicRepIso_hom_τ₃ :
+    (A.normHomCompSubCyclicRepIso hA).hom.τ₃ = -𝟙 (ModuleCat.of ℤ T) := (rfl)
 
 @[simp]
-theorem normHomCompSubCyclicRepTwoIso_inv_τ₁ :
-    (A.normHomCompSubCyclicRepTwoIso hA).inv.τ₁ = 𝟙 (ModuleCat.of ℤ T) := (rfl)
+theorem normHomCompSubCyclicRepIso_inv_τ₁ :
+    (A.normHomCompSubCyclicRepIso hA).inv.τ₁ = 𝟙 (ModuleCat.of ℤ T) := (rfl)
 
 @[simp]
-theorem normHomCompSubCyclicRepTwoIso_inv_τ₂ :
-    (A.normHomCompSubCyclicRepTwoIso hA).inv.τ₂ = 𝟙 (ModuleCat.of ℤ T) := (rfl)
+theorem normHomCompSubCyclicRepIso_inv_τ₂ :
+    (A.normHomCompSubCyclicRepIso hA).inv.τ₂ = 𝟙 (ModuleCat.of ℤ T) := (rfl)
 
 @[simp]
-theorem normHomCompSubCyclicRepTwoIso_inv_τ₃ :
-    (A.normHomCompSubCyclicRepTwoIso hA).inv.τ₃ = -𝟙 (ModuleCat.of ℤ T) := (rfl)
+theorem normHomCompSubCyclicRepIso_inv_τ₃ :
+    (A.normHomCompSubCyclicRepIso hA).inv.τ₃ = -𝟙 (ModuleCat.of ℤ T) := (rfl)
 
 @[simp]
-theorem subCompNormHomCyclicRepTwoIso_hom_τ₁ :
-    (A.subCompNormHomCyclicRepTwoIso hA).hom.τ₁ = -𝟙 (ModuleCat.of ℤ T) := (rfl)
+theorem subCompNormHomCyclicRepIso_hom_τ₁ :
+    (A.subCompNormHomCyclicRepIso hA).hom.τ₁ = -𝟙 (ModuleCat.of ℤ T) := (rfl)
 
 @[simp]
-theorem subCompNormHomCyclicRepTwoIso_hom_τ₂ :
-    (A.subCompNormHomCyclicRepTwoIso hA).hom.τ₂ = 𝟙 (ModuleCat.of ℤ T) := (rfl)
+theorem subCompNormHomCyclicRepIso_hom_τ₂ :
+    (A.subCompNormHomCyclicRepIso hA).hom.τ₂ = 𝟙 (ModuleCat.of ℤ T) := (rfl)
 
 @[simp]
-theorem subCompNormHomCyclicRepTwoIso_hom_τ₃ :
-    (A.subCompNormHomCyclicRepTwoIso hA).hom.τ₃ = 𝟙 (ModuleCat.of ℤ T) := (rfl)
+theorem subCompNormHomCyclicRepIso_hom_τ₃ :
+    (A.subCompNormHomCyclicRepIso hA).hom.τ₃ = 𝟙 (ModuleCat.of ℤ T) := (rfl)
 
 @[simp]
-theorem subCompNormHomCyclicRepTwoIso_inv_τ₁ :
-    (A.subCompNormHomCyclicRepTwoIso hA).inv.τ₁ = -𝟙 (ModuleCat.of ℤ T) := (rfl)
+theorem subCompNormHomCyclicRepIso_inv_τ₁ :
+    (A.subCompNormHomCyclicRepIso hA).inv.τ₁ = -𝟙 (ModuleCat.of ℤ T) := (rfl)
 
 @[simp]
-theorem subCompNormHomCyclicRepTwoIso_inv_τ₂ :
-    (A.subCompNormHomCyclicRepTwoIso hA).inv.τ₂ = 𝟙 (ModuleCat.of ℤ T) := (rfl)
+theorem subCompNormHomCyclicRepIso_inv_τ₂ :
+    (A.subCompNormHomCyclicRepIso hA).inv.τ₂ = 𝟙 (ModuleCat.of ℤ T) := (rfl)
 
 @[simp]
-theorem subCompNormHomCyclicRepTwoIso_inv_τ₃ :
-    (A.subCompNormHomCyclicRepTwoIso hA).inv.τ₃ = 𝟙 (ModuleCat.of ℤ T) := (rfl)
+theorem subCompNormHomCyclicRepIso_inv_τ₃ :
+    (A.subCompNormHomCyclicRepIso hA).inv.τ₃ = 𝟙 (ModuleCat.of ℤ T) := (rfl)
 
 end AddEquiv
