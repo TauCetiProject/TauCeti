@@ -97,9 +97,9 @@ theorem isIso_cechCohomology_map_toSheafify (P : (Opens X)ᵒᵖ ⥤ ModuleCat.{
     IsIso ((cechCohomology X (ModuleCat.{u} R) n).map
       (toSheafify (Opens.grothendieckTopology X) P)) := by
   have : IsIso ((presheafToSheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)).map
-      (toSheafify (Opens.grothendieckTopology X) P)) :=
-    inferInstanceAs (IsIso ((presheafToSheaf _ _).map
-      ((sheafificationAdjunction _ _).unit.app P)))
+      (toSheafify (Opens.grothendieckTopology X) P)) := by
+    rw [← sheafificationAdjunction_unit_app]
+    infer_instance
   exact isIso_cechCohomology_map_of_isIso_sheafification _ hP
     ((isZero_zero _).of_iso ((isZero_zero _).isoIsTerminal
       (TopCat.Sheaf.isTerminalOfEqEmpty
