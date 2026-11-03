@@ -76,12 +76,14 @@ theorem tendsto_law_inv_sqrt_smul_sum_of_apply_pow_eq
         φ.isProbabilityMeasure_law hφ
           ((IsSelfAdjoint.all _).smul (isSelfAdjoint_sum _ fun j _ => ha j))⟩) atTop
       (𝓝 (Probability.semicircleReal 0 v).toProbabilityMeasure) := by
-  refine h.tendsto_law_inv_sqrt_smul_sum_semicircleReal hφ ha
-    (fun j => by simpa [hcen] using hid j 1)
-    (fun k => ⟨‖φ (a 0 ^ k)‖, fun j => (congrArg norm (hid j k)).le⟩) ?_
-  refine tendsto_const_nhds.congr' ?_
-  filter_upwards [eventually_ne_atTop 0] with N hN
-  rw [sum_congr rfl fun j _ => (hid j 2).trans hv, sum_const, card_range, nsmul_eq_mul,
-    inv_mul_cancel_left₀ (Nat.cast_ne_zero.2 hN)]
+  apply PositiveLinearMap.tendsto_law_of_tendsto_apply_pow (fun _ => φ) (fun _ => hφ)
+    (fun N : ℕ => (Real.sqrt N)⁻¹ • ∑ j ∈ range N, a j)
+    (fun _ => (IsSelfAdjoint.all _).smul (isSelfAdjoint_sum _ fun j _ => ha j))
+    (K := Set.Icc (0 - 2 * Real.sqrt v) (0 + 2 * Real.sqrt v)) isCompact_Icc
+  · exact ae_iff.mp (Probability.ae_mem_Icc_semicircleReal 0 v)
+  · intro n
+    simpa only [RCLike.real_smul_eq_coe_smul (K := ℂ), RCLike.ofReal_eq_complex_ofReal,
+      Complex.ofReal_inv, Measure.coe_toProbabilityMeasure, PositiveLinearMap.coe_toLinearMap] using
+      h.tendsto_apply_inv_sqrt_smul_sum_pow_of_apply_pow_eq hφ hid hcen hv n
 
 end TauCeti.IsFreelyIndependentElements
