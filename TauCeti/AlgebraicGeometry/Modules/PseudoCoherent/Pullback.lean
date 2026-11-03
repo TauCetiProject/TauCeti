@@ -97,8 +97,9 @@ theorem IsPseudoCoherent.pullback (h : M.IsPseudoCoherent) (f : X ⟶ Y) [Flat f
   apply isPseudoCoherent_iff.mpr
   intro x
   obtain ⟨U, hx, hU⟩ := isPseudoCoherent_iff.mp h (f x)
-  exact ⟨f ⁻¹ᵁ U, hx, (hU.pullback (f ∣_ U)).of_iso
-    (restrictPullbackObjIso f U M).symm⟩
+  have e := (restrictPullbackIso f U (f ⁻¹ᵁ U) le_rfl).app M
+  rw [Scheme.Hom.resLE_eq_morphismRestrict] at e
+  exact ⟨f ⁻¹ᵁ U, hx, (hU.pullback (f ∣_ U)).of_iso e.symm⟩
 
 end
 
