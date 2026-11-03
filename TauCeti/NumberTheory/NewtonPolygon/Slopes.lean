@@ -126,7 +126,7 @@ theorem mem_newtonSlopes {m : ℝ} :
 variable {f v}
 
 /-- Transport of finite slopes along a matching of finite unit edges. -/
-private theorem newtonSlopes_eq_map {g : S[X]} {w : AddValuation S (WithTop ℝ)}
+theorem newtonSlopes_eq_map {g : S[X]} {w : AddValuation S (WithTop ℝ)}
     {φ : ℕ → ℕ} (hφ : Set.InjOn φ (finiteEdges (f.newtonPolygon v))) {t : ℝ → ℝ}
     (hedges : finiteEdges (g.newtonPolygon w) = φ '' finiteEdges (f.newtonPolygon v))
     (hslope : ∀ n ∈ finiteEdges (f.newtonPolygon v),
