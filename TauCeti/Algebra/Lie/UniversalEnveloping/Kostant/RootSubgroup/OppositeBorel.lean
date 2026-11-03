@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Borel
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.PositiveSubsystem
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Basic
 
 /-!
 # A positive Kostant subsystem group meets the opposite Borel-type group trivially
@@ -116,24 +115,6 @@ private theorem isCartanWeightVector_reindex_toDual
       ((b.reindex OrderDual.toDual y : M) : V) := by
   simpa using hwt (OrderDual.ofDual y)
 
-omit [Module ℚ V] in
-/-- An automorphism of `A ⊗ M` whose matrix is upper unitriangular in the ordered weight basis and
-upper triangular in the reversed order is the identity. -/
-private theorem eq_one_of_upperUnitriangular_of_upperTriangular_reindex_toDual [Fintype η]
-    (A : Type v) [CommRing A] {g : LinearMap.GeneralLinearGroup A (A ⊗[ℤ] M)}
-    (hX : Units.map (LinearMap.toMatrixAlgEquiv (b.baseChange A)).toMulEquiv g ∈
-      upperUnitriangularGroup η A)
-    (hY : Units.map (LinearMap.toMatrixAlgEquiv
-        ((b.reindex OrderDual.toDual).baseChange A)).toMulEquiv g ∈ upperTriangularGroup ηᵒᵈ A) :
-    g = 1 := by
-  -- Base change commutes with reindexing the basis.
-  have hbasis : (b.reindex OrderDual.toDual).baseChange A =
-      (b.baseChange A).reindex OrderDual.toDual :=
-    Module.Basis.eq_of_apply_eq fun y => by
-      simp [Module.Basis.baseChange_apply, Module.Basis.reindex_apply]
-  rw [hbasis] at hY
-  exact (b.baseChange A).eq_one_of_toMatrix_mem_upperUnitriangularGroup_of_reindex_toDual hX hY
-
 /-- **A positive subsystem group meets the opposite Borel-type group trivially:**
 `U_S(A) ∩ B_{S'}(A) = 1`, when the root vectors indexed by `S` move weights strictly towards the
 beginning of the ordered weight basis and those indexed by `S'` strictly towards its end.
@@ -171,13 +152,14 @@ theorem kostantSubsystemSubgroup_inf_kostantTorusSubsystemSubgroup_eq_bot [Finit
   rw [hB] at hgB
   -- The matrix of `g` is upper unitriangular in the original order and upper triangular in the
   -- reversed order.
-  exact Subgroup.mem_bot.2 <| eq_one_of_upperUnitriangular_of_upperTriangular_reindex_toDual M b A
-    (map_kostantSubsystemSubgroup_le_upperUnitriangular e h ρ M hM hnil b wt α S hwt hα hpos A
-      ⟨g, hgU, rfl⟩)
-    (map_kostantTorusSubsystemSubgroup_le_upperTriangular e h ρ M hM hnil
-      (b.reindex OrderDual.toDual) (wt ∘ OrderDual.toDual.symm) α
-      (isCartanWeightVector_reindex_toDual h ρ M b wt hwt) S' hα'
-      hneg' A ⟨g, hgB, rfl⟩)
+  have hY := map_kostantTorusSubsystemSubgroup_le_upperTriangular e h ρ M hM hnil
+    (b.reindex OrderDual.toDual) (wt ∘ OrderDual.toDual.symm) α
+    (isCartanWeightVector_reindex_toDual h ρ M b wt hwt) S' hα' hneg' A ⟨g, hgB, rfl⟩
+  rw [Module.Basis.baseChange_reindex] at hY
+  exact Subgroup.mem_bot.2 <|
+    (b.baseChange A).eq_one_of_toMatrix_mem_upperUnitriangularGroup_of_reindex_toDual
+      (map_kostantSubsystemSubgroup_le_upperUnitriangular e h ρ M hM hnil b wt α S hwt hα hpos A
+        ⟨g, hgU, rfl⟩) hY
 
 omit [Fintype κ] in
 /-- **Opposite subsystem groups meet trivially:** `U_S(A) ∩ U_{S'}(A) = 1` when the root vectors
@@ -202,14 +184,15 @@ theorem kostantSubsystemSubgroup_inf_kostantSubsystemSubgroup_eq_bot [Finite η]
     fun i hi _ _ _ hm hrs => hneg i hi hm hrs
   rw [eq_bot_iff]
   rintro g ⟨hgU, hgU'⟩
-  exact Subgroup.mem_bot.2 <| eq_one_of_upperUnitriangular_of_upperTriangular_reindex_toDual M b A
-    (map_kostantSubsystemSubgroup_le_upperUnitriangular e h ρ M hM hnil b wt α S hwt hα hpos A
-      ⟨g, hgU, rfl⟩)
-    (UpperTriangularGroup.upperUnitriangularGroup_le_upperTriangularGroup <|
-      map_kostantSubsystemSubgroup_le_upperUnitriangular e h ρ M hM hnil
-        (b.reindex OrderDual.toDual) (wt ∘ OrderDual.toDual.symm) α S'
-        (isCartanWeightVector_reindex_toDual h ρ M b wt hwt) hα'
-        hneg' A ⟨g, hgU', rfl⟩)
+  have hY := UpperTriangularGroup.upperUnitriangularGroup_le_upperTriangularGroup <|
+    map_kostantSubsystemSubgroup_le_upperUnitriangular e h ρ M hM hnil
+      (b.reindex OrderDual.toDual) (wt ∘ OrderDual.toDual.symm) α S'
+      (isCartanWeightVector_reindex_toDual h ρ M b wt hwt) hα' hneg' A ⟨g, hgU', rfl⟩
+  rw [Module.Basis.baseChange_reindex] at hY
+  exact Subgroup.mem_bot.2 <|
+    (b.baseChange A).eq_one_of_toMatrix_mem_upperUnitriangularGroup_of_reindex_toDual
+      (map_kostantSubsystemSubgroup_le_upperUnitriangular e h ρ M hM hnil b wt α S hwt hα hpos A
+        ⟨g, hgU, rfl⟩) hY
 
 /-- **A positive subsystem group meets the torus trivially:** `U_S(A) ∩ T(A) = 1` when the root
 vectors indexed by `S` move weights strictly towards the beginning of an ordered weight basis. -/
