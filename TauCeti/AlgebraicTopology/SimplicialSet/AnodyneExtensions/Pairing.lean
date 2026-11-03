@@ -52,11 +52,6 @@ lemma index_congr {x' y' : X.S} (hxy' : IsUniquelyCodimOneFace x' y') (hx : x = 
   subst hx hy
   rfl
 
-lemma index_mk_eq_iff {d : ℕ} {x₀ : X _⦋d⦌} {y₀ : X _⦋d + 1⦌}
-    (h : IsUniquelyCodimOneFace (S.mk x₀) (S.mk y₀)) (i : Fin (d + 2)) :
-    h.index rfl = i ↔ X.δ i y₀ = x₀ :=
-  eq_comm.trans (h.δ_eq_iff rfl i).symm
-
 /-- In the opposite simplicial set, the index of a codimension one face is reversed. -/
 lemma index_op {d : ℕ} (hd : x.dim = d) (hd' : (S.opEquiv.symm x).dim = d) :
     hxy.op.index hd' = (hxy.index hd).rev := by
@@ -66,8 +61,8 @@ lemma index_op {d : ℕ} (hd : x.dim = d) (hd' : (S.opEquiv.symm x).dim = d) :
   obtain rfl : d' = d := hd
   have h : IsUniquelyCodimOneFace (S.mk (opObjEquiv.symm x)) (S.mk (opObjEquiv.symm y)) :=
     hxy.op
-  rw [index_congr hxy.op h rfl rfl hd' rfl, index_mk_eq_iff, op_δ, Fin.rev_rev,
-    Equiv.apply_symm_apply, (hxy.index_mk_eq_iff _).1 rfl]
+  rw [index_congr hxy.op h rfl rfl hd' rfl, eq_comm, ← h.δ_eq_iff rfl, cast_simplex_rfl,
+    cast_simplex_rfl, op_δ, Fin.rev_rev, Equiv.apply_symm_apply, dsimp% hxy.δ_index rfl]
 
 end S.IsUniquelyCodimOneFace
 
