@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.Basic
 public import Mathlib.Topology.Homotopy.Affine
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Linear
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.OpenEmbedding
+public import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
 # Differentiable maps act on local homology by the sign of their Jacobian
@@ -125,25 +126,6 @@ section Linearization
 variable {E F : Type w} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
   [NormedSpace ℝ F]
 
-/-- If the remainder `f y - f x - f' (y - x)` is at most `ε * ‖y - x‖`, where `‖v‖ ≤ C * ‖f' v‖`
-for all `v` and `C * ε < 1`, then for `y ≠ x` no point of the segment from `f y` to
-`f x + f' (y - x)` is `f x`. -/
-private lemma segment_ne_of_norm_remainder_le {f : E → F} {f' : E →L[ℝ] F} {x y : E} {C ε : ℝ}
-    (hC : ∀ v, ‖v‖ ≤ C * ‖f' v‖) (hC0 : 0 ≤ C) (hCε : C * ε < 1)
-    (hy : ‖f y - f x - f' (y - x)‖ ≤ ε * ‖y - x‖) (hyx : y ≠ x) {t : ℝ} (ht₀ : 0 ≤ t)
-    (ht₁ : t ≤ 1) : (1 - t) • f y + t • (f x + f' (y - x)) ≠ f x := by
-  intro h
-  -- The point of the segment is `f x + f' (y - x) + (1 - t) • (f y - f x - f' (y - x))`.
-  have hsum : f' (y - x) + (1 - t) • (f y - f x - f' (y - x)) = 0 := by
-    rw [← sub_eq_zero.2 h]
-    module
-  have hle : ‖f' (y - x)‖ ≤ ε * ‖y - x‖ := by
-    rw [eq_neg_of_add_eq_zero_left hsum, norm_neg, norm_smul, Real.norm_of_nonneg (by linarith)]
-    exact (mul_le_of_le_one_left (norm_nonneg _) (by linarith)).trans hy
-  have hpos : 0 < ‖y - x‖ := norm_pos_iff.2 (sub_ne_zero.2 hyx)
-  have := (hC (y - x)).trans (mul_le_mul_of_nonneg_left hle hC0)
-  nlinarith
-
 /-- **A map with antilipschitz derivative induces the same map on local homology as its affine
 linearization.** Let `U ⊆ E` be a neighbourhood of `x` and `f : E → F` a map continuous on `U` and
 differentiable at `x`, with an antilipschitz derivative `f'`, such that `x` is the only point of `U`
@@ -162,7 +144,7 @@ theorem localHomologyMap_domRestrict_eq_affine_of_hasFDerivAt {f : E → F} {f' 
           exact Subtype.ext <| sub_eq_zero.1 <| hf'.injective <|
             (add_eq_left.1 hy).trans (map_zero f').symm) k := by
   have hx := mem_of_mem_nhds hU
-  have hC : ∀ v, ‖v‖ ≤ K * ‖f' v‖ := fun v ↦ by simpa using hf'.le_mul_dist 0 v
+  have hC := f'.bound_of_antilipschitz hf'
   -- On a ball `B` about `x` inside `U`, the remainder is at most `ε * ‖y - x‖` with `K * ε < 1`.
   set ε : ℝ := (2 * (K + 1))⁻¹
   have hε : 0 < ε := by positivity
@@ -189,9 +171,16 @@ theorem localHomologyMap_domRestrict_eq_affine_of_hasFDerivAt {f : E → F} {f' 
   have hfι : (⟨U.domRestrict f, hfU.domRestrict⟩ : C(U, F)).comp ι y = f y := by
     simp only [ι, ContinuousMap.comp_apply, ContinuousMap.coe_mk, Set.domRestrict_apply]
   have hrem : ‖f y - f x - f' (y - x)‖ ≤ ε * ‖(y : E) - x‖ := (hrU y.2).2
+  -- The point of the segment is `f x + f' (y - x) + (1 - t) • (f y - f x - f' (y - x))`.
+  have hseg : (1 - (t : ℝ)) • f y + (t : ℝ) • (f x + f' (y - x)) - f x =
+      f' (y - x) + (1 - (t : ℝ)) • (f y - f x - f' (y - x)) := by
+    module
   rw [ContinuousMap.Homotopy.affine_apply, AffineMap.lineMap_apply_module, hfι]
-  exact segment_ne_of_norm_remainder_le hC K.coe_nonneg hKε hrem
-    (fun h ↦ hy (Subtype.ext h)) t.2.1 t.2.2
+  refine fun h ↦ f'.apply_add_ne_zero_of_forall_norm_le hC hKε
+    (sub_ne_zero.2 fun h ↦ hy (Subtype.ext h)) ?_
+    (hseg.symm.trans (sub_eq_zero.2 (Set.mem_singleton_iff.1 h)))
+  rw [norm_smul, Real.norm_of_nonneg (by linarith [t.2.2])]
+  exact (mul_le_of_le_one_left (norm_nonneg _) (by linarith [t.2.1])).trans hrem
 
 end Linearization
 
