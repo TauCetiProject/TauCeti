@@ -158,7 +158,7 @@ variable [Fintype m] [NonAssocSemiring R] [LinearOrder α] {A B : Matrix m m R} 
 unitriangular one leaves its entries unchanged. -/
 theorem BlockUnitriangular.mul_apply_of_eq (hA : A.BlockUnitriangular b)
     (hB : B.BlockTriangular b) {i j : m} (hij : b i = b j) : (A * B) i j = B i j := by
-  rw [mul_apply, Finset.sum_eq_single i]
+  rw [Matrix.mul_apply, Finset.sum_eq_single i]
   · rw [hA.2 rfl, one_apply_eq, one_mul]
   · intro k _ hki
     by_cases hk : b k < b i
@@ -203,7 +203,7 @@ theorem BlockTriangular.toSquareBlockProp_mul_of_toDual {A : Matrix m m R}
     (hp : ∀ ⦃i j⦄, b j ≤ b i → p i → p j) (B : Matrix m m R) :
     (A * B).toSquareBlockProp p = A.toSquareBlockProp p * B.toSquareBlockProp p := by
   ext i j
-  simp only [toSquareBlockProp_def, of_apply, mul_apply]
+  simp only [toSquareBlockProp_def, of_apply, Matrix.mul_apply]
   refine (Fintype.sum_subtype_add_sum_subtype p fun k => A i k * B k j).symm.trans ?_
   rw [Fintype.sum_eq_zero (fun k : {k // ¬p k} => A i k * B k j) fun k => ?_, add_zero]
   have hik : b i < b k := lt_of_not_ge fun h => k.2 (hp h i.2)
@@ -217,7 +217,7 @@ theorem BlockTriangular.toSquareBlockProp_mul {A : Matrix m m R} (hA : A.BlockTr
     {p : m → Prop} [DecidablePred p] (hp : ∀ ⦃i j⦄, b j ≤ b i → p i → p j) (B : Matrix m m R) :
     (B * A).toSquareBlockProp p = B.toSquareBlockProp p * A.toSquareBlockProp p := by
   ext i j
-  simp only [toSquareBlockProp_def, of_apply, mul_apply]
+  simp only [toSquareBlockProp_def, of_apply, Matrix.mul_apply]
   refine (Fintype.sum_subtype_add_sum_subtype p fun k => B i k * A k j).symm.trans ?_
   rw [Fintype.sum_eq_zero (fun k : {k // ¬p k} => B i k * A k j) fun k => ?_, add_zero]
   rw [hA (lt_of_not_ge fun h => k.2 (hp h j.2)), mul_zero]
@@ -275,9 +275,9 @@ private theorem blockUnitriangular_one_add_rowMultiplier (M : Matrix m m R) :
     (1 + rowMultiplier b M).BlockUnitriangular (toDual ∘ b) := by
   refine ⟨fun i k hik => ?_, fun i k hik => ?_⟩
   · have hik' : b i < b k := toDual_lt_toDual.mp hik
-    rw [add_apply, rowMultiplier_apply_of_not_lt M hik'.not_gt, add_zero,
+    rw [Matrix.add_apply, rowMultiplier_apply_of_not_lt M hik'.not_gt, add_zero,
       one_apply_ne fun h => hik'.ne (congrArg b h)]
-  · rw [add_apply, rowMultiplier_apply_of_not_lt M (toDual_inj.mp hik).symm.not_lt, add_zero]
+  · rw [Matrix.add_apply, rowMultiplier_apply_of_not_lt M (toDual_inj.mp hik).symm.not_lt, add_zero]
 
 private theorem blockTriangular_one_add_rowMultiplier_mul (M : Matrix m m R)
     (hM : ∀ i, IsUnit (M.toSquareBlockProp fun j => b j < b i).det) :
@@ -294,7 +294,7 @@ private theorem blockTriangular_one_add_rowMultiplier_mul (M : Matrix m m R)
   have hsum := congrFun hx ⟨j, hij⟩
   rw [vecMul, dotProduct, Pi.neg_apply] at hsum
   simp only [hN, Pi.neg_apply] at hsum
-  rw [Matrix.add_mul, Matrix.one_mul, add_apply, mul_apply,
+  rw [Matrix.add_mul, Matrix.one_mul, Matrix.add_apply, Matrix.mul_apply,
     ← Fintype.sum_subtype_add_sum_subtype fun k => b k < b i,
     Fintype.sum_eq_zero (fun k : {k // ¬b k < b i} => rowMultiplier b M i k * M k j) fun k => by
       rw [rowMultiplier_apply_of_not_lt M k.2, zero_mul], add_zero,
