@@ -57,6 +57,8 @@ The root sublattice of a glued lattice is computed from the coset minima of the 
 * `TauCeti.DynkinType.gluedLatticePiIsometry`, `TauCeti.DynkinType.gluedLatticePiCongrLeftIsometry`:
   the isometries of glued lattices induced by componentwise isometries of the root lattices and by
   permutations of the components.
+* `TauCeti.DynkinType.gluedLatticeIsometryOfEq`: the isometry between the lattices glued from two
+  families of components that agree after reindexing.
 
 ## References
 
@@ -405,6 +407,62 @@ theorem gluedLatticePiIsometry_apply
   rw [gluedLatticePiIsometry, gluedLatticeIsometry_apply, Isometry.pi_apply]
 
 end Pi
+
+section OfEq
+
+variable {κ : Type*} [Fintype κ] {s : κ → DynkinType} {hs : ∀ k, (s k).IsSimplyLaced}
+  (hvs : ∀ k, (s k).Valid)
+  {H' : AddSubgroup (FiniteQuadraticModule.pi fun k ↦ (s k).glueAlphabet (hs k))}
+  (hH' : (FiniteQuadraticModule.pi fun k ↦ (s k).glueAlphabet (hs k)).IsIsotropic H')
+  (σ : κ ≃ ι) (h : ∀ k, t (σ k) = s k)
+
+/-- **Glued lattices of equal families of components.**  If the components `s k` are the
+components `t (σ k)` for an equivalence `σ : κ ≃ ι`, and the glue word
+`TauCeti.DynkinType.piGlueAlphabetCongr t ht σ h w` lies in `H'` exactly when `w` lies in `H`,
+then the lattice glued from `t` along `H` is isometric to the lattice glued from `s` along `H'`,
+by the isometry moving the coordinates of component `σ k` to component `k`.  This compares a
+family of components read off by position from a list with an explicitly given family. -/
+noncomputable def gluedLatticeIsometryOfEq
+    (hHH' : ∀ w, piGlueAlphabetCongr t ht σ h w ∈ H' ↔ w ∈ H) :
+    IntegralLattice.Isometry (gluedLattice t ht hv H hH) (gluedLattice s hs hvs H' hH') :=
+  gluedLatticeIsometry t ht hv H hH hvs hH'
+    ((Isometry.piCongrLeft (fun i ↦ (t i).rootLattice (ht i)) σ).symm.trans
+      (Isometry.pi fun k ↦ (t (σ k)).rootLatticeIsometryOfEq (ht (σ k)) (h k) (hs k)))
+    (piGlueAlphabetCongr t ht σ h)
+    (fun w ↦ by
+      obtain ⟨v, rfl⟩ := (Equiv.piCongrLeft (fun i ↦ (t i).glueAlphabet (ht i)) σ).surjective w
+      have hσ := (Isometry.discriminantQuadraticIsometry_apply _ _ _).symm.trans
+        (discriminantQuadraticIsometry_piCongrLeft_glueWordIsometry t ht hv σ v)
+      have hpi := (Isometry.discriminantQuadraticIsometry_apply _ _ _).symm.trans
+        (discriminantQuadraticIsometry_pi_glueWordIsometry (fun k ↦ t (σ k))
+          (fun k ↦ ht (σ k)) (fun k ↦ hv (σ k)) hvs
+          (fun k ↦ (t (σ k)).rootLatticeIsometryOfEq (ht (σ k)) (h k) (hs k))
+          (fun k ↦ FiniteQuadraticModule.Isometry.ofEq
+            (glueAlphabet_congr (h k) (ht (σ k)) (hs k)))
+          (fun k x ↦ glueAlphabetIsometry_ofEq (h k) (hv (σ k)) (hvs k) (ht (σ k)) (hs k) x) v)
+      -- Undo the reindexing to reach the word `v` of `k ↦ t (σ k)`, then change the alphabets.
+      refine (Isometry.discriminantQuadraticIsometry_apply _ _ _).trans ?_
+      rw [Isometry.discriminantGroupEquiv_trans]
+      refine (LinearEquiv.trans_apply ..).trans ?_
+      have hsymm := (DFunLike.congr_fun (Isometry.discriminantGroupEquiv_symm
+        (Isometry.piCongrLeft (fun i ↦ (t i).rootLattice (ht i)) σ)) _).trans
+        ((congrArg _ hσ.symm).trans (LinearEquiv.symm_apply_apply _ _))
+      refine (congrArg _ hsymm).trans (hpi.trans (congrArg _ (funext fun k ↦ ?_)))
+      rw [piGlueAlphabetCongr_apply, Equiv.piCongrLeft_apply_apply])
+    hHH'
+
+/-- The isometry of glued lattices of equal families of components reads the coordinates of
+component `k` from those of component `σ k`. -/
+@[simp]
+theorem gluedLatticeIsometryOfEq_apply
+    (hHH' : ∀ w, piGlueAlphabetCongr t ht σ h w ∈ H' ↔ w ∈ H)
+    (x : ∀ i, Fin (t i).rank → ℚ) (k : κ) (j : Fin (s k).rank) :
+    gluedLatticeIsometryOfEq t ht hv H hH hvs hH' σ h hHH' x k j =
+      x (σ k) (Fin.cast (congrArg rank (h k)).symm j) := by
+  rw [gluedLatticeIsometryOfEq, gluedLatticeIsometry_apply, Isometry.trans_apply,
+    Isometry.pi_apply, rootLatticeIsometryOfEq_apply, Isometry.piCongrLeft_symm_apply]
+
+end OfEq
 
 section PiCongrLeft
 

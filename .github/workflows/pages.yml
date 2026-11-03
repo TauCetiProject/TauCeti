@@ -48,7 +48,7 @@ on:
       - 'scripts/roadmap_links.json'
       - '.github/workflows/pages.yml'
   schedule:
-    - cron: "23 */3 * * *"   # Every three hours (UTC): refresh the charts and pick up the latest API docs
+    - cron: "31 */3 * * *"   # Every three hours (UTC): refresh the charts and pick up the latest API docs
   workflow_dispatch:
 
 permissions:
@@ -89,7 +89,10 @@ jobs:
   # will not compile can no longer make the published data stale by itself, and a data outage
   # shows up in minutes rather than after the whole site build has run.
   build-data:
-    runs-on: ubuntu-latest
+    # Data and publication must not wait behind the hosted build backlog.
+    runs-on:
+      - nscloud-ubuntu-24.04-amd64-4x8-with-features;job.priority=0
+      - namespace-features:github.run-id=${{ github.run_id }}
     outputs:
       # Which of the generated data assets could not be regenerated this run. The steps that
       # produce them are deliberately non-fatal -- a GitHub hiccup should cost a stale chart, not
@@ -456,7 +459,12 @@ jobs:
     # this job wants from build-data is the artifact, and it copes with that being absent.
     needs: build-data
     if: ${{ !cancelled() }}
-    runs-on: ubuntu-latest
+    runs-on:
+      - nscloud-ubuntu-24.04-amd64-8x16-with-features;job.priority=1
+      - namespace-features:github.run-id=${{ github.run_id }}
+    env:
+      # Preserve the four-worker setting of the previous hosted build shape.
+      LEAN_NUM_THREADS: "4"
     outputs:
       # The commit the /docs actually being deployed were generated from, read from the tree itself.
       # This is what `advance-docgen-ref` follows; there is deliberately no output for whether a
@@ -742,7 +750,9 @@ jobs:
     # an unexplained skip must not authorize publishing an old site over the live one. And
     # `!cancelled()`, so cancelling the run stops here rather than deploying on the way out.
     if: ${{ !cancelled() && needs.build-site.result == 'failure' }}
-    runs-on: ubuntu-latest
+    runs-on:
+      - nscloud-ubuntu-24.04-amd64-4x8-with-features;job.priority=0
+      - namespace-features:github.run-id=${{ github.run_id }}
     outputs:
       # Which cached site was republished. report-data-freshness compares it against this run's
       # own key, because "the site could not be built" and "the site built and then the upload
@@ -828,7 +838,9 @@ jobs:
     # Skipped only when neither produced anything, which is the case where there is genuinely
     # nothing to publish.
     if: ${{ !cancelled() && (needs.build-site.result == 'success' || needs.fallback-site.result == 'success') }}
-    runs-on: ubuntu-latest
+    runs-on:
+      - nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0
+      - namespace-features:github.run-id=${{ github.run_id }}
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -863,7 +875,9 @@ jobs:
     # there is anything worth reporting is a question for the step, which can see the deploy result.
     # It is not a question the `if:` has the information to answer.
     if: always()
-    runs-on: ubuntu-latest
+    runs-on:
+      - nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0
+      - namespace-features:github.run-id=${{ github.run_id }}
     steps:
       - name: Report what is serving stale data
         env:
@@ -945,7 +959,9 @@ jobs:
     if: ${{ !cancelled()
         && needs.build-site.result == 'success' && needs.deploy.result == 'success'
         && needs.build-site.outputs.docs-source-sha != '' && github.ref == 'refs/heads/main' }}
-    runs-on: ubuntu-latest
+    runs-on:
+      - nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0
+      - namespace-features:github.run-id=${{ github.run_id }}
     permissions:
       contents: write
     steps:
