@@ -159,7 +159,7 @@ theorem conductor_genusCharAtLevel
       IsEvenPrimeDiscriminant P → IsEvenPrimeDiscriminant Q → P = Q) :
     (genusCharAtLevel s hs t).conductor = ∏ P ∈ t, P.val.natAbs := by
   let _ := neZero_natAbs_prod_of_forall_isPrimeDiscriminant hs
-  rw [genusCharAtLevel_def, TauCeti.conductor_prod_eq_prod_of_pairwise_coprime]
+  rw [genusCharAtLevel_def, DirichletCharacter.conductor_prod_of_pairwise_coprime]
   · simp
   · intro P hPt Q hQt hPQ
     simp only [conductor_primeDiscriminantCharAtLevel]
