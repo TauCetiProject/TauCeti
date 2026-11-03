@@ -384,11 +384,8 @@ private theorem restrSliceChart_source (z : s) :
 private theorem isSliceChart_restrSliceChart (z : s) :
     IsSliceChart (restrSliceChart hp hV hs hrank z)
       ((univ : Set (Fin (n - Fintype.card ι) → ℂ)) ×ˢ ({0} : Set (ι → ℂ))) s := by
-  refine isSliceChart_iff.2 fun w hw ↦ ?_
-  rw [restrSliceChart_source] at hw
-  have hws : w ∈ s ↔ w ∈ complexProjectiveZeroLocus p := by
-    rw [hs, mem_inter_iff, and_iff_left hw.2]
-  exact hws.trans ((isSliceChart_complexProjectiveZeroLocusSliceChart hp _ _ _).mem_iff hw.1)
+  simpa only [restrSliceChart, ← hs] using
+    (isSliceChart_complexProjectiveZeroLocusSliceChart hp _ _ _).restrOpen hV
 
 private theorem mem_restrSliceChart_source (z : s) : (z : ℙ ℂ (Fin (n + 1) → ℂ)) ∈
     (restrSliceChart hp hV hs hrank z).source := by
