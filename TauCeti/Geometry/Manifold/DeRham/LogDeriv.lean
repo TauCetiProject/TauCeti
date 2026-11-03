@@ -33,10 +33,10 @@ that differ by a period, so `u` is well defined. Near each point `u` is a consta
 the multiplicative form of the line-integral primitive of
 `TauCeti.exists_mextDeriv_eq_of_forall_pathIntegral_eq_zero`.
 
-On a connected manifold, a nowhere-vanishing function whose logarithmic derivative is imaginary
-has constant modulus (`TauCeti.norm_eq_of_re_mlogDeriv_apply_eq_zero`). Together with
-`TauCeti.re_mlogDeriv_apply_eq_zero`, imaginary closed `1`-forms with periods in `2πiℤ` are
-exactly the logarithmic derivatives of circle-valued functions.
+Together with `TauCeti.re_mlogDeriv_apply_eq_zero` and
+`TauCeti.norm_eq_of_re_mlogDeriv_apply_eq_zero` (in
+`TauCeti.Geometry.Manifold.DifferentialForm.LogDeriv`), imaginary closed `1`-forms with periods
+in `2πiℤ` are exactly the logarithmic derivatives of circle-valued functions.
 
 ## Main declarations
 
@@ -44,8 +44,6 @@ exactly the logarithmic derivatives of circle-valued functions.
   periods of `dlog u` lie in `2πiℤ`.
 * `TauCeti.exists_mlogDeriv_eq_of_forall_pathIntegral_eq_int_mul`: a closed `1`-form with periods
   in `2πiℤ` is the logarithmic derivative of a nowhere-vanishing function.
-* `TauCeti.norm_eq_of_re_mlogDeriv_apply_eq_zero`: an imaginary logarithmic derivative forces
-  constant modulus.
 
 ## References
 
@@ -103,29 +101,6 @@ theorem exists_pathIntegral_mlogDeriv_eq_int_mul {u : M → ℂ} (hu : ContMDiff
     (hab : γ a = γ b) : ∃ n : ℤ, pathIntegral (mlogDeriv I u) γ a b = n * (2 * π * Complex.I) := by
   rw [← exp_eq_one_iff, exp_pathIntegral_mlogDeriv hu hγ hu₀, hab,
     div_self (hu₀ b right_mem_uIcc)]
-
-/-! ### Logarithmic derivatives of circle-valued functions -/
-
-/-- **A nowhere-vanishing function with imaginary logarithmic derivative has constant modulus**
-on a connected manifold. -/
-theorem norm_eq_of_re_mlogDeriv_apply_eq_zero [IsManifold I 2 M] [PreconnectedSpace M]
-    {u : M → ℂ} (hu : ContMDiff I 𝓘(ℝ, ℂ) 1 u) (hu₀ : ∀ x, u x ≠ 0)
-    (hre : ∀ x v, (mlogDeriv I u x v).re = 0) (x y : M) : ‖u x‖ = ‖u y‖ := by
-  obtain ⟨γ, hγ, hγ₀, hγ₁⟩ := exists_contMDiff_curve (I := I) (n := 2) x y
-  replace hγ : ContMDiff 𝓘(ℝ, ℝ) I 1 γ := hγ.of_le one_le_two
-  have he := exp_pathIntegral_mlogDeriv hu hγ (a := 0) (b := 1) fun t _ ↦ hu₀ _
-  rw [hγ₀ 0 le_rfl, hγ₁ 1 le_rfl] at he
-  -- The integral of an imaginary form is imaginary.
-  have hcont := (isSmoothForm_mlogDeriv (n := 0) (by simpa using hu)
-    hu₀).continuous_apply_curveVelocity hγ
-  have hre0 : (pathIntegral (mlogDeriv I u) γ 0 1).re = 0 := by
-    rw [pathIntegral_def, ← Complex.reCLM_apply,
-      ← Complex.reCLM.intervalIntegral_comp_comm (hcont.intervalIntegrable 0 1)]
-    simp only [Complex.reCLM_apply, hre, intervalIntegral.integral_zero]
-  have h := congrArg norm he
-  rw [norm_exp, hre0, Real.exp_zero, norm_div, eq_comm, div_eq_one_iff_eq
-    (norm_ne_zero_iff.mpr (hu₀ x))] at h
-  exact h.symm
 
 /-! ### Closed forms with periods in `2πiℤ` -/
 

@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
--- Private: the square-zero property of the exterior derivative is used only inside proofs.
+-- Private: the derivative of the squared norm and the square-zero property of the exterior
+-- derivative are used only inside proofs.
+import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Geometry.Manifold.DifferentialForm.Squared
 
 /-!
@@ -19,7 +21,9 @@ of a branch of `log u`, so it is closed (`TauCeti.mextDeriv_mlogDeriv`) and as r
 (`TauCeti.isSmoothForm_mlogDeriv`). The logarithmic derivative turns products into sums
 (`TauCeti.mlogDeriv_mul`) and is the differential of the exponent on exponentials
 (`TauCeti.mlogDeriv_exp`). A function of modulus one, a `U(1)` gauge transformation, has an
-imaginary logarithmic derivative (`TauCeti.re_mlogDeriv_apply_eq_zero`).
+imaginary logarithmic derivative (`TauCeti.re_mlogDeriv_apply_eq_zero`). Conversely, on a
+connected manifold a differentiable function with imaginary logarithmic derivative has constant
+modulus (`TauCeti.norm_eq_of_re_mlogDeriv_apply_eq_zero`).
 
 The periods of `dlog u` and the construction of `u` from a closed form with periods in `2πiℤ` are
 in `TauCeti.Geometry.Manifold.DeRham.LogDeriv`.
@@ -35,6 +39,8 @@ in `TauCeti.Geometry.Manifold.DeRham.LogDeriv`.
 * `TauCeti.mextDeriv_mlogDeriv`: `dlog u` is closed for a nowhere-vanishing `C²` function `u`.
 * `TauCeti.re_mlogDeriv_apply_eq_zero`: functions of modulus one have imaginary logarithmic
   derivatives.
+* `TauCeti.norm_eq_of_re_mlogDeriv_apply_eq_zero`: an imaginary logarithmic derivative forces
+  constant modulus.
 
 ## References
 
@@ -48,7 +54,7 @@ public section
 noncomputable section
 
 open Set Filter Complex
-open scoped Manifold Topology
+open scoped Manifold Topology ComplexConjugate
 
 namespace TauCeti
 
@@ -199,5 +205,28 @@ theorem re_mlogDeriv_apply_eq_zero {u : M → ℂ} {x : M} (hu : MDifferentiable
   rw [hre.mvfderiv_eq, h0, Complex.reCLM.fderiv, Complex.reCLM_apply] at h
   simpa using h.symm
 
+/-- **A function with imaginary logarithmic derivative has constant modulus** on a connected
+manifold. The differential `2 Re (du * conj u)` of `‖u‖²` is `2 ‖u‖² Re (dlog u)`, which
+vanishes; this also holds at the zeros of `u`. -/
+theorem norm_eq_of_re_mlogDeriv_apply_eq_zero [IsManifold I 1 M] [PreconnectedSpace M]
+    {u : M → ℂ} (hu : MDifferentiable I 𝓘(ℝ, ℂ) u)
+    (hre : ∀ x v, (mlogDeriv I u x v).re = 0) (x y : M) : ‖u x‖ = ‖u y‖ := by
+  have hsq := (contDiff_norm_sq ℝ (E := ℂ) (n := 1)).differentiable one_ne_zero
+  have hd (x : M) : mfderiv I 𝓘(ℝ, ℝ) (fun y ↦ ‖u y‖ ^ 2) x = 0 := by
+    rw [← mvfderiv_eq_zero_iff]
+    ext w
+    have h : mvfderiv I u x w * conj (u x) = normSq (u x) * mlogDeriv I u x fun _ ↦ w := by
+      rw [mlogDeriv_apply, ← mul_conj]
+      rcases eq_or_ne (u x) 0 with hx | hx
+      · simp only [hx, map_zero, inv_zero, zero_mul]
+        exact mul_zero (M₀ := ℂ) _
+      · field_simp
+    have hc := mvfderiv_comp_apply_of_differentiableAt (hsq (u x)) (hu x) w
+    rw [Function.comp_def] at hc
+    rw [hc, fderiv_norm_sq_apply, smul_apply, innerSL_apply_apply, Complex.inner, h,
+      re_ofReal_mul, hre, mul_zero, smul_zero, zero_apply]
+  exact (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).mp
+    (MDifferentiable.apply_eq_of_mfderiv_eq_zero
+      (fun x ↦ (hsq (u x)).comp_mdifferentiableAt (hu x)) hd x y)
 
 end TauCeti
