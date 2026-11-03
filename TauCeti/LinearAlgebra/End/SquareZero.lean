@@ -80,10 +80,10 @@ theorem exists_linearIndependent_of_mul_self_eq_zero (f : Module.End K V)
       exact h (LinearMap.ext h')
     refine ⟨v, f v, LinearIndependent.pair_iff.2 fun s t hst ↦ ?_, ?_, 1, (one_smul _ _).symm⟩
     · have hs : s • f v = 0 := by
-        simpa [← Module.End.mul_apply, hf] using congrArg f hst
+        simpa [← mul_apply_eq_comp, hf] using congrArg f hst
       have hs0 : s = 0 := (smul_eq_zero.1 hs).resolve_right hv
       subst hs0
       exact ⟨rfl, (smul_eq_zero.1 (by simpa using hst)).resolve_right hv⟩
-    · rw [← Module.End.mul_apply, hf, LinearMap.zero_apply]
+    · rw [← mul_apply_eq_comp, hf, LinearMap.zero_apply]
 
 end Module.End

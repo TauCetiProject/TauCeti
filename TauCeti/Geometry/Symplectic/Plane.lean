@@ -89,7 +89,7 @@ theorem eq_zero_of_smul_one_mem (hV : finrank ℝ V = 2) {c : ℝ}
     exact hv (ω.nondegenerate.1 v h)
   have h := skewAdjointLieSubalgebra.apply_left ⟨_, hc⟩ v w
   beta_reduce at h
-  simp only [LinearMap.smul_apply, Module.End.one_apply, map_smul, LinearMap.smul_apply,
+  simp only [LinearMap.smul_apply, one_apply_eq_self, map_smul, LinearMap.smul_apply,
     smul_eq_mul] at h
   have : 2 * c * ω v w = 0 := by linarith
   simpa [hw] using this
@@ -101,7 +101,7 @@ theorem exists_mul_self_eq_smul_one (hV : finrank ℝ V = 2)
   refine exists_eq_smul_one_of_apply_left (ω := ω) hV fun v w ↦ ?_
   have h₁ := skewAdjointLieSubalgebra.apply_left A ((A : Module.End ℝ V) v) w
   have h₂ := skewAdjointLieSubalgebra.apply_left A v ((A : Module.End ℝ V) w)
-  simp only [Module.End.mul_apply]
+  simp only [mul_apply_eq_comp]
   beta_reduce at h₁ h₂ ⊢
   rw [h₁, h₂, neg_neg]
 
@@ -128,12 +128,12 @@ theorem exists_eq_smul_of_commute (hV : finrank ℝ V = 2)
     refine b.ext fun i ↦ ?_
     fin_cases i
     · simp only [Fin.zero_eta, hb0, LinearMap.sub_apply, LinearMap.smul_apply,
-        Module.End.one_apply]
+        one_apply_eq_self]
       rw [← hBv]
       abel
     · simp only [Fin.mk_one, hb1, LinearMap.sub_apply, LinearMap.smul_apply,
-        Module.End.one_apply]
-      rw [← Module.End.mul_apply, ← hAB.eq, Module.End.mul_apply, ← hBv]
+        one_apply_eq_self]
+      rw [← mul_apply_eq_comp, ← hAB.eq, mul_apply_eq_comp, ← hBv]
       simp only [map_add, map_smul]
       abel
   have ha : a = 0 := eq_zero_of_smul_one_mem hV (by
@@ -180,13 +180,13 @@ theorem engel_le_lieSpan_singleton (hV : finrank ℝ V = 2)
     | zero => intro B hB; simpa using hB
     | succ n ih =>
       intro B hB
-      rw [pow_succ, Module.End.mul_apply] at hB
+      rw [pow_succ, mul_apply_eq_comp] at hB
       exact lie_eq_zero_of_lie_lie_eq_zero hV hA0 hc hA (by simpa using ih _ hB)
   intro B hB
   obtain ⟨n, hn⟩ := (mem_engel_iff ℝ A B).1 hB
   rw [← LieSubalgebra.mem_toSubmodule, coe_lieSpan_eq_span_of_forall_lie_eq_zero (by simp)]
   cases n with
-  | zero => simp only [pow_zero, Module.End.one_apply] at hn; simp [hn]
+  | zero => simp only [pow_zero, one_apply_eq_self] at hn; simp [hn]
   | succ n =>
     obtain ⟨t, rfl⟩ := exists_eq_smul_of_commute hV hA0 (commute_coe_iff.2 (hpow n B hn))
     exact Submodule.smul_mem _ t (Submodule.subset_span rfl)

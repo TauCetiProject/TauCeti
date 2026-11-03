@@ -149,14 +149,14 @@ theorem isNondegenerateQuadraticFamily_const_iff [Nonempty ι] (hV : finrank ℝ
     · exact zero_smul _ _
     · refine absurd (fun v w hvw ↦ ?_) hinj
       have := congrArg (A : Module.End ℝ V) hvw
-      rw [← Module.End.mul_apply, ← Module.End.mul_apply, hc] at this
+      rw [← mul_apply_eq_comp, ← mul_apply_eq_comp, hc] at this
       simpa [hc0] using this
   · intro hinj
     have hc0 : c ≠ 0 := by
       rintro rfl
       obtain ⟨v, hv⟩ := exists_ne (0 : V)
       refine hv ((hinj.comp hinj) ?_)
-      simp only [Function.comp_apply, ← Module.End.mul_apply, hc, zero_smul, map_zero,
+      simp only [Function.comp_apply, ← mul_apply_eq_comp, hc, zero_smul, map_zero,
         LinearMap.zero_apply]
     have : IsLieAbelian (lieSpan ℝ (skewAdjointLieSubalgebra ω.toBilinForm) {A}) := by simp
     exact ⟨inferInstance,
