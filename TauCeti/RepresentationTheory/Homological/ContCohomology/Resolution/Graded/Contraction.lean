@@ -9,7 +9,7 @@ public import TauCeti.RepresentationTheory.Continuous.TopRep.GradedCochainComple
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.DegreeCast
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Cochain
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Cohomology
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Graded
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Graded.Basic
 
 /-!
 # Contractions of graded representations and classes of homogeneous cocycles

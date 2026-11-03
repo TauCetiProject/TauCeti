@@ -71,6 +71,9 @@ makes the monotone rearrangement of two real laws a transport plan between them.
 * `MeasureTheory.Measure.tendsto_quantile_nhdsGT_zero_of_cdf_pos` and
   `MeasureTheory.Measure.tendsto_quantile_nhdsLT_one_of_cdf_lt_one` — the infinite endpoint
   limits when the cdf is everywhere positive or everywhere less than one, respectively;
+* `MeasureTheory.Measure.tendsto_quantile_nhdsGT_zero` and
+  `MeasureTheory.Measure.tendsto_quantile_nhdsLT_one` — the one-sided limits are the infimum and
+  supremum of the topological support, including unbounded supports;
 * `MeasureTheory.Measure.tendsto_quantile_nhdsGT_zero_of_ae_le_of_cdf_pos` and
   `MeasureTheory.Measure.tendsto_quantile_nhdsLT_one_of_ae_le_of_cdf_lt_one` — the finite endpoint
   limits from almost-sure bounds and strict cdf inequalities toward the support interior;
@@ -615,6 +618,76 @@ theorem tendsto_quantile_nhdsLT_one_of_ae_le_of_cdf_lt_one (μ : Measure ℝ)
     exact (lt_quantile_iff μ ((cdf_nonneg μ a).trans_lt hu.1) hu.2).2 hu.1
   · filter_upwards [Ioo_mem_nhdsLT zero_lt_one] with u hu
     exact (ordConnected_Iic.quantile_mem hbound hu.1 hu.2).trans_lt hb
+
+/-- The lower quantile tends at zero to the infimum of the topological support. The infimum is
+taken in `EReal`, so this also states convergence to minus infinity for support unbounded below. -/
+theorem tendsto_quantile_nhdsGT_zero (μ : Measure ℝ) [IsProbabilityMeasure μ] :
+    Tendsto (fun u ↦ (μ.quantile u : EReal)) (𝓝[>] 0)
+      (𝓝 (⨅ x : μ.support, (x.1 : EReal))) := by
+  let a := ⨅ x : μ.support, (x.1 : EReal)
+  -- Fold the displayed support infimum into the abbreviation used throughout the proof.
+  change Tendsto (fun u ↦ (μ.quantile u : EReal)) (𝓝[>] 0) (𝓝 a)
+  have hs : μ.support.Nonempty := μ.nonempty_support (IsProbabilityMeasure.ne_zero μ)
+  have ha_top : a ≠ ⊤ := by
+    obtain ⟨x, hx⟩ := hs
+    exact ne_of_lt ((iInf_le (fun y : μ.support ↦ (y.1 : EReal)) ⟨x, hx⟩).trans_lt
+      (EReal.coe_lt_top x))
+  by_cases ha_bot : a = ⊥
+  · rw [ha_bot]
+    apply tendsto_quantile_nhdsGT_zero_of_cdf_pos
+    intro x
+    have hax : a < (x : EReal) := ha_bot.symm ▸ EReal.bot_lt_coe x
+    obtain ⟨y, hy⟩ := iInf_lt_iff.mp hax
+    exact cdf_pos_of_mem_support_of_lt μ y.2 (EReal.coe_lt_coe_iff.mp hy)
+  · have ha_coe : (a.toReal : EReal) = a := EReal.coe_toReal ha_top ha_bot
+    rw [← ha_coe]
+    apply tendsto_quantile_nhdsGT_zero_of_ae_le_of_cdf_pos
+    · filter_upwards [μ.support_mem_ae] with x hx
+      have hle : a ≤ (x : EReal) :=
+        iInf_le (fun y : μ.support ↦ (y.1 : EReal)) ⟨x, hx⟩
+      rw [← ha_coe] at hle
+      exact EReal.coe_le_coe_iff.mp hle
+    · intro x hax
+      have hlt : a < (x : EReal) := by
+        rw [← ha_coe, EReal.coe_lt_coe_iff]
+        exact hax
+      obtain ⟨y, hy⟩ := iInf_lt_iff.mp hlt
+      exact cdf_pos_of_mem_support_of_lt μ y.2 (EReal.coe_lt_coe_iff.mp hy)
+
+/-- The lower quantile tends at one to the supremum of the topological support. The supremum is
+taken in `EReal`, so this also states convergence to plus infinity for support unbounded above. -/
+theorem tendsto_quantile_nhdsLT_one (μ : Measure ℝ) [IsProbabilityMeasure μ] :
+    Tendsto (fun u ↦ (μ.quantile u : EReal)) (𝓝[<] 1)
+      (𝓝 (⨆ x : μ.support, (x.1 : EReal))) := by
+  let b := ⨆ x : μ.support, (x.1 : EReal)
+  -- Fold the displayed support supremum into the abbreviation used throughout the proof.
+  change Tendsto (fun u ↦ (μ.quantile u : EReal)) (𝓝[<] 1) (𝓝 b)
+  have hs : μ.support.Nonempty := μ.nonempty_support (IsProbabilityMeasure.ne_zero μ)
+  have hb_bot : b ≠ ⊥ := by
+    obtain ⟨x, hx⟩ := hs
+    exact ne_of_gt ((EReal.bot_lt_coe x).trans_le
+      (le_iSup (fun y : μ.support ↦ (y.1 : EReal)) ⟨x, hx⟩))
+  by_cases hb_top : b = ⊤
+  · rw [hb_top]
+    apply tendsto_quantile_nhdsLT_one_of_cdf_lt_one
+    intro x
+    have hxb : (x : EReal) < b := hb_top.symm ▸ EReal.coe_lt_top x
+    obtain ⟨y, hy⟩ := lt_iSup_iff.mp hxb
+    exact cdf_lt_one_of_mem_support_of_lt μ y.2 (EReal.coe_lt_coe_iff.mp hy)
+  · have hb_coe : (b.toReal : EReal) = b := EReal.coe_toReal hb_top hb_bot
+    rw [← hb_coe]
+    apply tendsto_quantile_nhdsLT_one_of_ae_le_of_cdf_lt_one
+    · filter_upwards [μ.support_mem_ae] with x hx
+      have hle : (x : EReal) ≤ b :=
+        le_iSup (fun y : μ.support ↦ (y.1 : EReal)) ⟨x, hx⟩
+      rw [← hb_coe] at hle
+      exact EReal.coe_le_coe_iff.mp hle
+    · intro x hxb
+      have hlt : (x : EReal) < b := by
+        rw [← hb_coe, EReal.coe_lt_coe_iff]
+        exact hxb
+      obtain ⟨y, hy⟩ := lt_iSup_iff.mp hlt
+      exact cdf_lt_one_of_mem_support_of_lt μ y.2 (EReal.coe_lt_coe_iff.mp hy)
 
 /-- The cumulative distribution function at the upper quantile is exactly the level when the law
 has no atom at the upper quantile. -/
