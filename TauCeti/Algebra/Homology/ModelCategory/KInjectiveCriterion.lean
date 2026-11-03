@@ -12,6 +12,7 @@ public import Mathlib.CategoryTheory.MorphismProperty.TransfiniteComposition
 public import TauCeti.Algebra.Homology.CochainComplex.AcyclicSubcomplex
 public import TauCeti.CategoryTheory.MorphismProperty.Cokernel
 
+import Mathlib.Algebra.Homology.ShortComplex.Pullback
 import Mathlib.CategoryTheory.Abelian.GrothendieckCategory.Subobject
 import Mathlib.CategoryTheory.Limits.Constructions.EventuallyConstant
 import Mathlib.CategoryTheory.SmallObject.TransfiniteCompositionLifting
@@ -111,33 +112,26 @@ private lemma exists_larger_subobject {X : CochainComplex C ℤ} (A : Subobject 
     have := isIso_of_mono_of_epi f
     exact (Subobject.isIso_iff_mk_eq_top f).1 this)
   obtain ⟨N, j, _, hN, hN', hSN⟩ := hS _ hQ hQ'
-  let u : _ ⟶ pullback (cokernel.π f) j := pullback.lift f 0 (by simp)
-  have hu : u ≫ pullback.snd _ _ = 0 := by simp [u]
-  have : Mono u := mono_of_mono_fac (pullback.lift_fst _ _ _)
-  have hu' : IsLimit (KernelFork.ofι u hu) := by
-    let hf' := Abelian.monoIsKernelOfCokernel _ (cokernelIsCokernel f)
-    refine KernelFork.IsLimit.ofι' _ _ fun g hg ↦ ?_
-    obtain ⟨k, hk⟩ := KernelFork.IsLimit.lift' hf' (g ≫ pullback.fst _ _)
-      (by simp [pullback.condition, reassoc_of% hg])
-    exact ⟨k, pullback.hom_ext (by simpa [u] using hk) (by simp [u, hg])⟩
-  have hu'' : (ShortComplex.mk u _ hu).ShortExact :=
-    { exact := ShortComplex.exact_of_f_is_kernel _ hu' }
-  have : QuasiIso u := hu''.quasiIso_f_iff.2 hN'
-  have : QuasiIso (pullback.fst (cokernel.π f) j) := by
-    have : QuasiIso (u ≫ pullback.fst _ _) := by rwa [pullback.lift_fst]
+  have hE := (TauCeti.cokernelSequence_shortExact f).pull j
+  let u : _ ⟶ pullback j (cokernel.π f) := pullback.lift 0 f (by simp)
+  have : Mono u := hE.mono_f
+  have : Epi (pullback.fst j (cokernel.π f)) := hE.epi_g
+  have hu : u ≫ pullback.snd j (cokernel.π f) = f := pullback.lift_snd _ _ _
+  have : QuasiIso u := hE.quasiIso_f_iff.2 hN'
+  have : QuasiIso (pullback.snd j (cokernel.π f)) := by
+    have : QuasiIso (u ≫ pullback.snd _ _) := by rwa [hu]
     exact quasiIso_of_comp_left u _
-  have hu''' : ¬ IsIso u := fun _ ↦ hN (by
-    have : pullback.snd (cokernel.π f) j = 0 := by rw [← cancel_epi u, hu, comp_zero]
+  have hu' : ¬ IsIso u := fun _ ↦ hN (by
+    have : pullback.fst j (cokernel.π f) = 0 := by simp [← cancel_epi u, u]
     exact IsZero.of_epi_eq_zero _ this)
-  refine ⟨Subobject.mk (pullback.fst _ _),
-    Subobject.mk_lt_mk_of_comm u (pullback.lift_fst _ _ _) hu''', ?_, ?_⟩
+  refine ⟨Subobject.mk (pullback.snd j (cokernel.π f)), Subobject.mk_lt_mk_of_comm u hu hu', ?_, ?_⟩
   · exact (Subobject.quasiIso_mk_arrow_iff _).2 inferInstance
   · refine (S.monoWithCokernel.arrow_mk_iso_iff ?_).1 ((ObjectProperty.mem_monoWithCokernel_iff u).2
       ⟨inferInstance, S.prop_of_iso
-        (hu''.gIsCokernel.coconePointUniqueUpToIso (colimit.isColimit _)) hSN⟩)
+        (hE.gIsCokernel.coconePointUniqueUpToIso (colimit.isColimit _)) hSN⟩)
     refine Arrow.isoMk (Subobject.underlyingIso f).symm
-      (Subobject.underlyingIso (pullback.fst _ _)).symm ?_
-    simp [← cancel_mono (Subobject.mk (pullback.fst (cokernel.π f) j)).arrow, u]
+      (Subobject.underlyingIso (pullback.snd _ _)).symm ?_
+    simp [← cancel_mono (Subobject.mk (pullback.snd j (cokernel.π f))).arrow, hu]
 
 variable {X : CochainComplex C ℤ}
 
