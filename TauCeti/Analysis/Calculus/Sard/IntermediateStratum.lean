@@ -103,7 +103,7 @@ theorem exists_parametrization_iteratedFDeriv_eq_zero
   have hiter : ContDiffAt 𝕜 r (iteratedFDeriv 𝕜 i f) a := hf.iteratedFDeriv_right le_rfl
   have hg : ContDiffAt 𝕜 r g a := ℓ.contDiff.contDiffAt.comp a hiter
   have hstrict : HasStrictFDerivAt g g' a :=
-    hg.hasStrictFDerivAt' (ℓ.hasFDerivAt.comp a (hiter.differentiableAt hr).hasFDerivAt) hr
+    hg.hasStrictFDerivAt (ℓ.hasFDerivAt.comp a (hiter.differentiableAt hr).hasFDerivAt) hr
   have hzero : ∀ x, iteratedFDeriv 𝕜 i f x = 0 → g x = 0 := fun x hx ↦ by simp [g, hx]
   -- The implicit function theorem for `g`, with kernel coordinate `x ↦ π (x - a)` for a
   -- projection `π` onto `ker g'`; `θ` parametrizes the level set `g = 0` near `a`. This is the

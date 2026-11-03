@@ -212,7 +212,7 @@ theorem cliffordOperator_sq (v : V) :
   rw [hc, P.quadraticForm_coe_add_coe_add_coe, ← P.lineCoordinate_sq z]
   apply LinearMap.ext
   intro s
-  simp only [Module.End.mul_apply, LinearMap.add_apply, Module.algebraMap_end_apply,
+  simp only [mul_apply_eq_comp, LinearMap.add_apply, Module.algebraMap_end_apply,
     wedge_apply, contract_apply, lineOperator_apply, map_add, map_smul, mul_add,
     ← mul_assoc, ExteriorAlgebra.ι_sq_zero, zero_mul,
     CliffordAlgebra.contractLeft_ι_mul, CliffordAlgebra.contractLeft_contractLeft,

@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
 import TauCeti.Algebra.Lie.UniversalEnveloping.Basic
+import TauCeti.Algebra.Lie.UniversalEnveloping.Module
 
 /-!
 # The split maximal torus of a Kostant elementary group
@@ -65,6 +66,8 @@ subgroup is the root rather than a difference `εᵢ - εⱼ` of coordinates.
 
 * `TauCeti.UniversalEnvelopingAlgebra.IsCartanWeightVector.integralDividedPower`: a divided power
   of a root vector of weight `α` raises the weight of a weight vector by a multiple of `α`.
+* `TauCeti.UniversalEnvelopingAlgebra.IsCartanWeightVector.map`: a morphism of Lie modules
+  preserves weight vectors and their weights.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantTorusPoints_tmul_of_isCartanWeightVector`: a torus
   point acts on a weight vector by the value of its character.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantCoordinateCocharacter_tmul_basis`: the coordinate
@@ -190,12 +193,12 @@ theorem pow_rootVector {i : ι} {α μ : κ → ℤ} {m : V}
       have hpow : (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) ^ (n + 1)) m =
           ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))
             ((ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) ^ n) m) := by
-        rw [pow_succ', Module.End.mul_apply]
+        rw [pow_succ', mul_apply_eq_comp]
       have hbrj := hbr j
       rw [LieRing.of_associative_ring_bracket] at hbrj
       have happ := congrArg (fun f : Module.End ℚ V =>
         f ((ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) ^ n) m)) hbrj
-      simp only [LinearMap.sub_apply, Module.End.mul_apply, LinearMap.smul_apply] at happ
+      simp only [LinearMap.sub_apply, mul_apply_eq_comp, LinearMap.smul_apply] at happ
       rw [ih j, map_smul, sub_eq_iff_eq_add, ← add_smul] at happ
       have hstep : (μ + (n + 1) • α) j = α j + (μ + n • α) j := by
         simp only [Pi.add_apply, Pi.smul_apply, succ_nsmul]
@@ -213,6 +216,15 @@ theorem integralDividedPower {i : ι} {α μ : κ → ℤ} {m : V}
       (Associative.dividedPower n (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) • m) := by
   rw [Associative.dividedPower_def, smul_assoc]
   exact (pow_rootVector e hα hm n).smul _
+
+/-- **A morphism of Lie modules preserves weight vectors**: it carries a joint eigenvector of the
+designated Cartan vectors to one of the same integral weight. -/
+theorem map {M N : Type*} [AddCommGroup M] [Module ℚ M] [LieRingModule L M]
+    [LieModule ℚ L M] [AddCommGroup N] [Module ℚ N] [LieRingModule L N] [LieModule ℚ L N]
+    {μ : κ → ℤ} {m : M} (hm : IsCartanWeightVector h (representation ℚ L M) μ m)
+    (f : M →ₗ⁅ℚ,L⁆ N) : IsCartanWeightVector h (representation ℚ L N) μ (f m) :=
+  (isCartanWeightVector_iff _ _).2 fun j => by
+    rw [← map_representation, (isCartanWeightVector_iff _ _).1 hm j, map_smul]
 
 end IsCartanWeightVector
 
@@ -603,7 +615,7 @@ theorem kostantTorusPoints_mul_kostantRootSubgroupPoints
     kostantTorusPoints M b wt A s * kostantRootSubgroupPoints e h ρ M hM i hnil f =
       kostantRootSubgroupPoints e h ρ M hM i hnil g * kostantTorusPoints M b wt A s := by
   refine Units.ext (Module.Basis.ext (b.baseChange A) fun x => ?_)
-  simp only [Units.val_mul, Module.End.mul_apply, Module.Basis.baseChange_apply,
+  simp only [Units.val_mul, mul_apply_eq_comp, Module.Basis.baseChange_apply,
     kostantRootSubgroupPoints_tmul, kostantTorusPoints_tmul_basis, map_sum]
   refine Finset.sum_congr rfl fun n _ => ?_
   have hw : IsCartanWeightVector h ρ (wt x + n • α)
@@ -657,9 +669,9 @@ theorem kostantTorusPoints_mul_baseChange_kostantRootOperator
         ((kostantRootOperator e h ρ M hM i).baseChange A *
           (kostantTorusPoints M b wt A s).val) := by
   refine (b.baseChange A).ext fun x => ?_
-  rw [Module.End.mul_apply, Module.Basis.baseChange_apply,
+  rw [mul_apply_eq_comp, Module.Basis.baseChange_apply,
     kostantTorusPoints_baseChange_kostantRootOperator_tmul_basis e h ρ M hM b wt i hwt hα]
-  simp only [LinearMap.smul_apply, Module.End.mul_apply, kostantTorusPoints_tmul_basis,
+  simp only [LinearMap.smul_apply, mul_apply_eq_comp, kostantTorusPoints_tmul_basis,
     LinearMap.baseChange_tmul, smul_tmul', smul_eq_mul]
 
 include e hM in

@@ -81,7 +81,7 @@ theorem eval₂_conwayPolynomial_eq_mul_alexander {S : Type*} [CommRing S]
   have hmatrix : (s : S) • V.map f - (s⁻¹ : Sˣ).val • (V.map f)ᵀ =
       (s⁻¹ : Sˣ).val • ((s ^ 2 : Sˣ).val • V.map f - (V.map f)ᵀ) := by
     ext i j
-    simp only [sub_apply, smul_apply, smul_eq_mul, transpose_apply,
+    simp only [Matrix.sub_apply, Matrix.smul_apply, smul_eq_mul, transpose_apply,
       Units.val_pow_eq_pow_val, mul_sub]
     have hs := s.inv_mul
     linear_combination -(s : S) * V.map f i j * hs

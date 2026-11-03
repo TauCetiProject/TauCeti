@@ -124,7 +124,7 @@ private theorem representation_casimirElement_apply {ι : Type*} [DecidableEq ι
       ∑ i, casimirBilin K v (bs i) (killingDualBasis bs i) := by
   rw [casimirElement_eq_sum bs, map_sum, LinearMap.sum_apply]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [map_mul, Module.End.mul_apply, UniversalEnvelopingAlgebra.representation_ι,
+  rw [map_mul, mul_apply_eq_comp, UniversalEnvelopingAlgebra.representation_ι,
     UniversalEnvelopingAlgebra.representation_ι, casimirBilin_apply]
   simp
 
