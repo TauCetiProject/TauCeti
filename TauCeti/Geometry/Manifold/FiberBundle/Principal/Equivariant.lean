@@ -128,6 +128,7 @@ theorem diffeomorphOfEquivariant_symm_apply (q : TotalSpace G Q) :
 
 /-- Reading the induced diffeomorphism in the original total space gives the fibre equivalence
 at any point of the charted total space. -/
+@[simp]
 theorem homeomorph_symm_diffeomorphOfEquivariant_apply (x : ManifoldTotalSpace G P) :
     (ManifoldTotalSpace.homeomorph G Q).symm (diffeomorphOfEquivariant G e he hf x) =
       ⟨((ManifoldTotalSpace.homeomorph G P).symm x).proj,
@@ -136,6 +137,7 @@ theorem homeomorph_symm_diffeomorphOfEquivariant_apply (x : ManifoldTotalSpace G
 
 /-- Reading the inverse diffeomorphism in the original total space gives the inverse fibre
 equivalence at any point of the charted total space. -/
+@[simp]
 theorem homeomorph_symm_diffeomorphOfEquivariant_symm_apply (y : ManifoldTotalSpace G Q) :
     (ManifoldTotalSpace.homeomorph G P).symm ((diffeomorphOfEquivariant G e he hf).symm y) =
       ⟨((ManifoldTotalSpace.homeomorph G Q).symm y).proj,
@@ -143,14 +145,12 @@ theorem homeomorph_symm_diffeomorphOfEquivariant_symm_apply (y : ManifoldTotalSp
   homeomorph_symm_fiberwiseMap (fun b ↦ (e b).symm) y
 
 /-- The induced diffeomorphism lies over the identity on the base. -/
-@[simp]
 theorem diffeomorphOfEquivariant_proj (x : ManifoldTotalSpace G P) :
     ((ManifoldTotalSpace.homeomorph G Q).symm (diffeomorphOfEquivariant G e he hf x)).proj =
       ((ManifoldTotalSpace.homeomorph G P).symm x).proj := by
   rw [homeomorph_symm_diffeomorphOfEquivariant_apply]
 
 /-- The inverse diffeomorphism lies over the identity on the base. -/
-@[simp]
 theorem diffeomorphOfEquivariant_symm_proj (y : ManifoldTotalSpace G Q) :
     ((ManifoldTotalSpace.homeomorph G P).symm ((diffeomorphOfEquivariant G e he hf).symm y)).proj =
       ((ManifoldTotalSpace.homeomorph G Q).symm y).proj := by
