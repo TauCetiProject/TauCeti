@@ -46,36 +46,7 @@ universe u v w
 variable {L : Type u} [LieRing L] [LieAlgebra ℚ L]
 variable {ι : Type v} {κ : Type w}
 
-local notation "U" => _root_.UniversalEnvelopingAlgebra ℚ L
-
 attribute [local instance] TauCeti.moduleNNRat
-
-/-- A designated root divided power or Cartan binomial, as an element of the integral
-Kostant form. Left indices select roots; right indices select Cartan vectors. -/
-noncomputable def kostantGenerator (e : ι → L) (h : κ → L) :
-    ι ⊕ κ → ℕ → kostantForm e h
-  | .inl i, n => ⟨Associative.dividedPower n (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)),
-      dividedPower_mem_kostantForm e h i n⟩
-  | .inr j, n => ⟨Ring.choose (_root_.UniversalEnvelopingAlgebra.ι ℚ (h j)) n,
-      ringChoose_mem_kostantForm e h j n⟩
-
-/-- A left-indexed generator is the divided power of the designated root vector. -/
-@[simp]
-theorem coe_kostantGenerator_inl (e : ι → L) (h : κ → L) (i : ι) (n : ℕ) :
-    (kostantGenerator e h (.inl i) n : U) =
-      Associative.dividedPower n (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) := (rfl)
-
-/-- A right-indexed generator is the binomial coefficient of the designated Cartan vector. -/
-@[simp]
-theorem coe_kostantGenerator_inr (e : ι → L) (h : κ → L) (j : κ) (n : ℕ) :
-    (kostantGenerator e h (.inr j) n : U) =
-      Ring.choose (_root_.UniversalEnvelopingAlgebra.ι ℚ (h j)) n := (rfl)
-
-/-- Every degree-zero generator is the unit of the integral form. -/
-@[simp]
-theorem kostantGenerator_zero (e : ι → L) (h : κ → L) (i : ι ⊕ κ) :
-    kostantGenerator e h i 0 = 1 := by
-  cases i <;> apply Subtype.ext <;> simp
 
 /-- Root divided powers and Cartan binomials share the coefficient-one integral coproduct. -/
 @[simp]
@@ -84,8 +55,20 @@ theorem kostantFormComul_generator (e : ι → L) (h : κ → L) (i : ι ⊕ κ)
       ∑ p ∈ Finset.antidiagonal n,
         kostantGenerator e h i p.1 ⊗ₜ[ℤ] kostantGenerator e h i p.2 := by
   cases i with
-  | inl i => exact kostantFormComul_dividedPower e h i n
-  | inr j => exact kostantFormComul_ringChoose e h j n
+  | inl i =>
+    have hgen (m : ℕ) : kostantGenerator e h (.inl i) m =
+        ⟨Associative.dividedPower m (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)),
+          dividedPower_mem_kostantForm e h i m⟩ :=
+      Subtype.ext (coe_kostantGenerator_inl e h i m)
+    simpa only [hgen, _root_.UniversalEnvelopingAlgebra.ι_apply] using
+      kostantFormComul_dividedPower e h i n
+  | inr j =>
+    have hgen (m : ℕ) : kostantGenerator e h (.inr j) m =
+        ⟨Ring.choose (_root_.UniversalEnvelopingAlgebra.ι ℚ (h j)) m,
+          ringChoose_mem_kostantForm e h j m⟩ :=
+      Subtype.ext (coe_kostantGenerator_inr e h j m)
+    simpa only [hgen, _root_.UniversalEnvelopingAlgebra.ι_apply] using
+      kostantFormComul_ringChoose e h j n
 
 /-- **The integral coproduct of an ordered mixed Kostant monomial.** Split each exponent
 independently into two nonnegative parts and retain the original order in each tensor leg.
