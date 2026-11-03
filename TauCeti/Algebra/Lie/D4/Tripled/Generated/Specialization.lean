@@ -16,9 +16,10 @@ subgroup generated over `R`. This file constructs its surjective coordinate comp
 its compatibility with the ambient general-linear coordinates and all generators, and identifies
 it with the existing base-change isomorphism when `S` is free over `R`.
 
-In particular this constructs the comparison from the integral generated subgroup to the subgroup
-generated in any field, including positive characteristic. It does not prove that comparison an
-isomorphism for non-free extensions: generation may impose additional equations after
+In particular this constructs a surjection from the scalar-extended coordinate algebra of the
+integral generated subgroup to the coordinate algebra of the subgroup generated over any field,
+including positive characteristic. It does not prove that comparison an isomorphism for non-free
+extensions: generation may impose additional equations after
 specialization. Equality with the specialized integral toral closure, and identification with an
 independently pinned simply connected group, are not asserted.
 
