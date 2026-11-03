@@ -72,12 +72,8 @@ variable [TopologicalSpace G]
 open embedding on total arrows. In label-source coordinates it is the product of the inclusions
 of the subgroup and of the subset. Every subgroup of a discrete group is open. -/
 theorem isOpenEmbedding_inclusion_total (hH : IsOpen (H : Set G)) (hS : IsOpen (S : Set X)) :
-    IsOpenEmbedding (fun f : Quiver.Total (ActionCategory H S) =>
-      (⟨(inclusion S).obj f.left, (inclusion S).obj f.right, (inclusion S).map f.hom⟩ :
-        Quiver.Total (ActionCategory G X))) := by
-  have : (fun f : Quiver.Total (ActionCategory H S) =>
-      (⟨(inclusion S).obj f.left, (inclusion S).obj f.right, (inclusion S).map f.hom⟩ :
-        Quiver.Total (ActionCategory G X))) =
+    IsOpenEmbedding (inclusion S).toPrefunctor.mapTotal := by
+  have : (inclusion S).toPrefunctor.mapTotal =
       (arrowHomeomorph G X).symm ∘ Prod.map Subtype.val Subtype.val ∘ arrowHomeomorph H S := by
     funext f
     apply (arrowHomeomorph G X).injective
