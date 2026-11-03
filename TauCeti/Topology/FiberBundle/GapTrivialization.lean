@@ -40,6 +40,18 @@ private def gapChart (n : ℕ) (S : {S : Finset ι // S.Nonempty ∧ S.card = n}
     (isOpen_lt continuous_const (ρ.continuous_gap S.1))
 
 omit [Nonempty F] [∀ b, Nonempty (E b)] in
+private theorem gapChart_apply (n : ℕ) (S : {S : Finset ι // S.Nonempty ∧ S.card = n})
+    (p : TotalSpace F E) : gapChart ρ e n S p = e S.2.1.choose p :=
+  rfl
+
+omit [Nonempty F] [∀ b, Nonempty (E b)] in
+private theorem gapChart_symm_apply (n : ℕ) (S : {S : Finset ι // S.Nonempty ∧ S.card = n})
+    (p : B × F) :
+    (gapChart ρ e n S).toOpenPartialHomeomorph.symm p =
+      (e S.2.1.choose).toOpenPartialHomeomorph.symm p :=
+  rfl
+
+omit [Nonempty F] [∀ b, Nonempty (E b)] in
 include he in
 private theorem gapChart_baseSet (n : ℕ) (S : {S : Finset ι // S.Nonempty ∧ S.card = n}) :
     (gapChart ρ e n S).baseSet = {b | 0 < ρ.gap S.1 b} := by
@@ -80,18 +92,27 @@ theorem gapTrivialization_baseSet (n : ℕ) :
 theorem gapTrivialization_apply {S : Finset ι} (hS : S.Nonempty) {b : B}
     (hb : 0 < ρ.gap S b) (v : E b) :
     ρ.gapTrivialization e he S.card ⟨b, v⟩ = e hS.choose ⟨b, v⟩ := by
-  exact Trivialization.iUnion_apply (gapChart ρ e S.card)
-    (pairwise_disjoint_gapChart ρ e he S.card)
-    (i := ⟨S, hS, rfl⟩) (by rw [gapChart_baseSet ρ e he]; exact hb)
+  calc
+    ρ.gapTrivialization e he S.card ⟨b, v⟩ =
+        gapChart ρ e S.card ⟨S, hS, rfl⟩ ⟨b, v⟩ :=
+      Trivialization.iUnion_apply (gapChart ρ e S.card)
+        (pairwise_disjoint_gapChart ρ e he S.card)
+        (i := ⟨S, hS, rfl⟩) (by rw [gapChart_baseSet ρ e he]; exact hb)
+    _ = e hS.choose ⟨b, v⟩ := gapChart_apply ρ e S.card ⟨S, hS, rfl⟩ ⟨b, v⟩
 
 /-- The inverse glued chart on a positive gap stratum is the chosen original inverse. -/
 theorem gapTrivialization_symm_apply {S : Finset ι} (hS : S.Nonempty) {b : B}
     (hb : 0 < ρ.gap S b) (v : F) :
     (ρ.gapTrivialization e he S.card).toOpenPartialHomeomorph.symm (b, v) =
       (e hS.choose).toOpenPartialHomeomorph.symm (b, v) := by
-  exact Trivialization.iUnion_symm_apply (gapChart ρ e S.card)
-    (pairwise_disjoint_gapChart ρ e he S.card)
-    (i := ⟨S, hS, rfl⟩) (by rw [gapChart_baseSet ρ e he]; exact hb)
+  calc
+    (ρ.gapTrivialization e he S.card).toOpenPartialHomeomorph.symm (b, v) =
+        (gapChart ρ e S.card ⟨S, hS, rfl⟩).toOpenPartialHomeomorph.symm (b, v) :=
+      Trivialization.iUnion_symm_apply (gapChart ρ e S.card)
+        (pairwise_disjoint_gapChart ρ e he S.card)
+        (i := ⟨S, hS, rfl⟩) (by rw [gapChart_baseSet ρ e he]; exact hb)
+    _ = (e hS.choose).toOpenPartialHomeomorph.symm (b, v) :=
+      gapChart_symm_apply ρ e S.card ⟨S, hS, rfl⟩ (b, v)
 
 /-- The countably many glued charts cover the set on which the supplied partition sums to one. -/
 theorem subset_iUnion_gapTrivialization_baseSet :
