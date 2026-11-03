@@ -37,10 +37,9 @@ and `f.finiteProjectiveModulesK0Extend`.
 
 ## Main definitions
 
-* `RingHom.finiteProjectiveModulesExtendScalars`: extension of scalars as a functor between the
-  categories of finitely generated projective modules.
-* `RingHom.finiteProjectiveModulesK0Extend`: the induced homomorphism
-  `K₀(proj R) →+ K₀(proj S)`.
+* `RingHom.finiteProjectiveModulesK0Extend`: the homomorphism `K₀(proj R) →+ K₀(proj S)`
+  induced by the extension-of-scalars functor `RingHom.finiteProjectiveModulesExtendScalars`
+  of `TauCeti.Algebra.Category.ModuleCat.FiniteProjective.ScalarChange`.
 
 ## Main results
 
@@ -72,39 +71,6 @@ universe u
 namespace RingHom
 
 variable {R S T : Type u} [Ring R] [Ring S] [Ring T] (f : R →+* S)
-
-/-- **Extension of scalars on finitely generated projective modules.** A ring homomorphism
-`f : R →+* S` induces a functor from the finitely generated projective `R`-modules to the
-finitely generated projective `S`-modules, sending `P` to `S ⊗_R P`. -/
-noncomputable def finiteProjectiveModulesExtendScalars :
-    (finiteProjectiveModules R).FullSubcategory ⥤ (finiteProjectiveModules S).FullSubcategory :=
-  (finiteProjectiveModules S).lift
-    ((finiteProjectiveModules R).ι ⋙ BalancedExtension.functor.{u, u, u} f)
-    fun P ↦ BalancedExtension.finiteProjectiveModules_le_inverseImage_functor f P.obj P.property
-
-instance : f.finiteProjectiveModulesExtendScalars.Additive := by
-  -- Instance search does not find Mathlib's additivity instance for `ObjectProperty.lift` here,
-  -- so additivity is read off the composite with the faithful inclusion, which is the additive
-  -- functor `ι ⋙ BalancedExtension.functor f`.
-  have : (f.finiteProjectiveModulesExtendScalars ⋙ (finiteProjectiveModules S).ι).Additive :=
-    inferInstanceAs ((finiteProjectiveModules R).ι ⋙ BalancedExtension.functor.{u, u, u} f).Additive
-  exact Functor.additive_of_comp_faithful _ (finiteProjectiveModules S).ι
-
-@[simp]
-theorem finiteProjectiveModulesExtendScalars_obj_obj
-    (P : (finiteProjectiveModules R).FullSubcategory) :
-    (f.finiteProjectiveModulesExtendScalars.obj P).obj =
-      ModuleCat.of S (BalancedExtension f P.obj) :=
-  (rfl)
-
-@[simp]
-theorem finiteProjectiveModulesExtendScalars_map_hom
-    {P Q : (finiteProjectiveModules R).FullSubcategory} (g : P ⟶ Q) :
-    (f.finiteProjectiveModulesExtendScalars.map g).hom =
-      eqToHom (f.finiteProjectiveModulesExtendScalars_obj_obj P) ≫
-        ModuleCat.ofHom (BalancedExtension.map f g.hom.hom) ≫
-          eqToHom (f.finiteProjectiveModulesExtendScalars_obj_obj Q).symm :=
-  (rfl)
 
 /-- Extension of scalars on finitely generated projective modules is conflation-exact: every
 conflation of finitely generated projective modules splits, and the additive functor preserves
