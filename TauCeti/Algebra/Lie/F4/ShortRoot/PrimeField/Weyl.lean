@@ -124,6 +124,13 @@ theorem weylWordPoint_cons (i : Fin 4) (l : List (Fin 4)) (A : Type v) [CommRing
     weylWordPoint (i :: l) A = simpleWeylPoint i A * weylWordPoint l A := by
   simp [weylWordPoint]
 
+/-- Concatenation of words multiplies their representatives. -/
+@[simp]
+theorem weylWordPoint_append (l l' : List (Fin 4)) (A : Type v) [CommRing A]
+    [Algebra (ZMod 2) A] :
+    weylWordPoint (l ++ l') A = weylWordPoint l A * weylWordPoint l' A := by
+  simp only [weylWordPoint, List.map_append, List.prod_append]
+
 /-- The prime-field Weyl word has the matrix of the integral Weyl word. -/
 @[simp]
 theorem coe_weylWordPoint (l : List (Fin 4)) (A : Type v) [CommRing A]
@@ -133,6 +140,27 @@ theorem coe_weylWordPoint (l : List (Fin 4)) (A : Type v) [CommRing A]
   induction l with
   | nil => simp
   | cons i l ih => simp [ih]
+
+/-- Conjugation by a Weyl word realizes its abstract action on the weight torus. -/
+@[simp]
+theorem weylWordPoint_conj_weightTorusPoints (l : List (Fin 4)) (A : Type v) [CommRing A]
+    [Algebra (ZMod 2) A] (s : Fin 4 → Aˣ) :
+    weylWordPoint l A * weightTorusPoints A s * (weylWordPoint l A)⁻¹ =
+      weightTorusPoints A
+        (DynkinType.F4.geckWeylWordTorusAction DynkinType.valid_F4 l A s) := by
+  apply Subtype.ext
+  simpa (config := { instances := true }) only [DynkinType.rank,
+    Subgroup.coe_mul, Subgroup.coe_inv, coe_weylWordPoint,
+    coe_weightTorusPoints] using
+    congrArg Subtype.val (F4ShortRoot.weylWordPoint_conj_weightTorusPoints l A s)
+
+/-- Every prime-field Weyl word normalizes the weight torus. -/
+theorem weylWordPoint_mem_normalizer_weightTorusPoints (l : List (Fin 4))
+    (A : Type v) [CommRing A] [Algebra (ZMod 2) A] :
+    weylWordPoint l A ∈ Subgroup.normalizer (weightTorusPoints A).range := by
+  rw [weylWordPoint]
+  exact Subgroup.list_prod_mem _ (List.forall_mem_map.2 fun i _ ↦
+    simpleWeylPoint_mem_normalizer_weightTorusPoints i A)
 
 /-- Weyl words commute with change of coefficient algebra. -/
 @[simp↓]

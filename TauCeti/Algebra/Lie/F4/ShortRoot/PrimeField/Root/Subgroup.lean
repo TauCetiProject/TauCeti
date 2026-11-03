@@ -81,6 +81,14 @@ theorem weylRootSubgroupPoints_nil (i : Fin 4) (A : Type v) [CommRing A]
   ext u
   simp
 
+/-- Prepending a node conjugates by its simple Weyl representative. -/
+theorem weylRootSubgroupPoints_cons (j : Fin 4) (l : List (Fin 4)) (i : Fin 4)
+    (A : Type v) [CommRing A] [Algebra (ZMod 2) A] (u : Multiplicative A) :
+    weylRootSubgroupPoints (j :: l) i A u =
+      simpleWeylPoint j A * weylRootSubgroupPoints l i A u * (simpleWeylPoint j A)⁻¹ := by
+  simp only [weylRootSubgroupPoints_apply, weylWordPoint_cons]
+  group
+
 /-- The transported point has the same matrix as its integral counterpart. -/
 -- Preserve the integral root homomorphism before the pointwise conjugation formula expands.
 @[simp↓]
@@ -141,13 +149,6 @@ theorem weylRootSubgroupCoordinateMap_surjective (l : List (Fin 4)) (i : Fin 4) 
             ((coordinatePointsEquiv (ZMod 2)).symm
               (weylWordPoint l (ZMod 2))))).surjective)
 
-private theorem coordinatePointsEquiv_extendPoint (g : points (ZMod 2))
-    (A : Type v) [CommRing A] [Algebra (ZMod 2) A] :
-    coordinatePointsEquiv A (HopfAlgebra.extendPoint Q (CommAlgCat.of (ZMod 2) A)
-      ((coordinatePointsEquiv (ZMod 2)).symm g)) = pointsMap (Algebra.ofId (ZMod 2) A) g := by
-  rw [HopfAlgebra.extendPoint_apply, coordinatePointsEquiv_mapPoints,
-    MulEquiv.apply_symm_apply]
-
 /-- The coordinate map represents exactly the displayed Weyl conjugation on every value algebra. -/
 theorem coordinatePointsEquiv_weylRootSubgroupCoordinateMap (l : List (Fin 4)) (i : Fin 4)
     (A : Type v) [CommRing A] [Algebra (ZMod 2) A]
@@ -156,20 +157,16 @@ theorem coordinatePointsEquiv_weylRootSubgroupCoordinateMap (l : List (Fin 4)) (
     coordinatePointsEquiv A ((CommHopfAlgCat.Hom.mapPointsFunctor
       (weylRootSubgroupCoordinateMap l i)).app (CommAlgCat.of (ZMod 2) A) q) =
         weylRootSubgroupPoints l i A (AdditiveGroup.gaPointsMulEquiv q) := by
-  -- Work with algebra maps so that composition does not alter the point functor's group instances.
-  rw [weylRootSubgroupCoordinateMap, CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
-    CommHopfAlgCat.hom_comp, BialgHom.comp_toAlgHom,
-    CommHopfAlgCat.innerConjugationIso_hom_toAlgHom, ← AlgHom.comp_assoc,
-    HopfAlgebra.comp_pointConjugationAlgHom, map_mul, map_mul, map_inv]
-  have hext := coordinatePointsEquiv_extendPoint (weylWordPoint l (ZMod 2)) A
-  rw [HopfAlgebra.extendPoint_apply, pointsMap_weylWordPoint] at hext
-  rw [AlgHom.mapValue_apply, hext]
+  rw [weylRootSubgroupCoordinateMap, CommHopfAlgCat.Hom.mapPointsFunctor_comp_app_apply,
+    CommHopfAlgCat.mapPointsFunctor_innerConjugationIso_hom]
+  -- Composition changes the presentation of the point functor's group instances.
+  erw [HopfAlgebra.innerConjugationPointNatIso_hom_app_apply, map_mul, map_mul, map_inv]
+  erw [HopfAlgebra.extendPoint_apply, coordinatePointsEquiv_mapPoints,
+    MulEquiv.apply_symm_apply, pointsMap_weylWordPoint]
   apply Subtype.ext
-  rw [weylRootSubgroupPoints_apply]
-  simp only [Subgroup.coe_mul, Subgroup.coe_inv]
-  congr 2
-  rw [← CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
-    coe_coordinatePointsEquiv_commonKernelLift, coe_rootSubgroupPoints_gaPointsMulEquiv]
+  simp only [weylRootSubgroupPoints_apply, Subgroup.coe_mul, Subgroup.coe_inv]
+  erw [coe_coordinatePointsEquiv_commonKernelLift,
+    coe_rootSubgroupPoints_gaPointsMulEquiv]
 
 /-- A closed root subgroup at each of the forty-eight named roots. The chosen Weyl presentation
 is shared with the integral carrier and is empty at positive simple roots. -/
@@ -177,6 +174,13 @@ def rootSubgroupCoordinateMapAt (k : Fin F4.numRoots) :
     Q ⟶ AdditiveGroup.coordinateHopfAlgebra (ZMod 2) :=
   weylRootSubgroupCoordinateMap (F4ShortRoot.rootSubgroupPresentation k).1
     (F4ShortRoot.rootSubgroupPresentation k).2
+
+/-- The selected coordinate map uses the chosen integral Weyl presentation. -/
+theorem rootSubgroupCoordinateMapAt_def (k : Fin F4.numRoots) :
+    rootSubgroupCoordinateMapAt k =
+      weylRootSubgroupCoordinateMap (F4ShortRoot.rootSubgroupPresentation k).1
+        (F4ShortRoot.rootSubgroupPresentation k).2 :=
+  (rfl)
 
 /-- At a positive simple root the selected coordinate map is the pinned generator. -/
 @[simp]
@@ -227,6 +231,14 @@ def rootSubgroupPointsAt (k : Fin F4.numRoots) (A : Type v) [CommRing A]
     [Algebra (ZMod 2) A] : Multiplicative A →* points A :=
   weylRootSubgroupPoints (F4ShortRoot.rootSubgroupPresentation k).1
     (F4ShortRoot.rootSubgroupPresentation k).2 A
+
+/-- The selected point homomorphism uses the chosen integral Weyl presentation. -/
+theorem rootSubgroupPointsAt_def (k : Fin F4.numRoots) (A : Type v) [CommRing A]
+    [Algebra (ZMod 2) A] :
+    rootSubgroupPointsAt k A =
+      weylRootSubgroupPoints (F4ShortRoot.rootSubgroupPresentation k).1
+        (F4ShortRoot.rootSubgroupPresentation k).2 A :=
+  (rfl)
 
 /-- The root-indexed coordinate map represents the selected matrix-valued homomorphism. -/
 theorem coordinatePointsEquiv_rootSubgroupCoordinateMapAt (k : Fin F4.numRoots)
