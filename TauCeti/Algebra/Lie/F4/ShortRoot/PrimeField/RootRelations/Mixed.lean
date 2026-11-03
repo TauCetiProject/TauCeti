@@ -46,9 +46,9 @@ theorem commutatorElement_rootSubgroupPoints_long_short (A : Type v) [CommRing A
         rootSubgroupPoints (.inl 2) A (Multiplicative.ofAdd b)⁆ =
       weylRootSubgroupPoints [1] 2 A (Multiplicative.ofAdd (a * b)) *
         weylRootSubgroupPoints [2] 1 A (Multiplicative.ofAdd (a * b ^ 2)) := by
+  have hsign₂ : -(1 : ZMod 2) = 1 := by decide
   have hsign : -(1 : A) = 1 := by
-    simpa only [map_neg, map_one] using
-      congrArg (algebraMap (ZMod 2) A) (show -(1 : ZMod 2) = 1 by decide)
+    simpa only [map_neg, map_one] using congrArg (algebraMap (ZMod 2) A) hsign₂
   have hparam : -(a * b ^ 2) = a * b ^ 2 := by rw [← neg_one_mul, hsign, one_mul]
   apply Subtype.ext
   simpa only [commutatorElement_def, Subgroup.subtype_apply, Subgroup.coe_mul,
@@ -64,9 +64,9 @@ theorem commutatorElement_rootSubgroupPoints_short_long (A : Type v) [CommRing A
         rootSubgroupPoints (.inl 1) A (Multiplicative.ofAdd a)⁆ =
       weylRootSubgroupPoints [2] 1 A (Multiplicative.ofAdd (a * b ^ 2)) *
         weylRootSubgroupPoints [1] 2 A (Multiplicative.ofAdd (a * b)) := by
+  have hsign₂ : -(1 : ZMod 2) = 1 := by decide
   have hsign : -(1 : A) = 1 := by
-    simpa only [map_neg, map_one] using
-      congrArg (algebraMap (ZMod 2) A) (show -(1 : ZMod 2) = 1 by decide)
+    simpa only [map_neg, map_one] using congrArg (algebraMap (ZMod 2) A) hsign₂
   have hparam : -(a * b) = a * b := by rw [← neg_one_mul, hsign, one_mul]
   apply Subtype.ext
   simpa only [commutatorElement_def, Subgroup.subtype_apply, Subgroup.coe_mul,
