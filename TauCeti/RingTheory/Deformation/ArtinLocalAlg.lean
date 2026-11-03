@@ -364,8 +364,8 @@ theorem isArtinianRing_pullback (hg : Function.Surjective g.hom.left.hom) :
   set P := AlgHom.pullback f.hom.left.hom g.hom.left.hom
   have hP := pullbackAugmentation_surjective (f := f) hg
   have hnil (B : ArtinLocalAlg Λ k) : IsNilpotent (maximalIdeal B.obj.left) := by
-    rw [← jacobson_eq_maximalIdeal ⊥ bot_ne_top]
-    exact IsArtinianRing.isNilpotent_jacobson_bot
+    rw [← ringJacobson_eq_maximalIdeal]
+    exact IsArtinianRing.isNilpotent_jacobson _
   let : Algebra P A'.obj.left := (AlgHom.pullbackFst _ _).toRingHom.toAlgebra
   let : Algebra P A''.obj.left := (AlgHom.pullbackSnd _ _).toRingHom.toAlgebra
   have : IsArtinian P A'.obj.left :=
