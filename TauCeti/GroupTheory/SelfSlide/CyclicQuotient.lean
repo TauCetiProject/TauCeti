@@ -166,13 +166,9 @@ theorem torsion_le_ker_invMulCastZMod :
   have hf : f x = 0 := (isOfFinAddOrder_iff_eq_zero _).1 (f.isOfFinAddOrder hx)
   simp [mem_ker, hf]
 
-end AddMonoidHom
-
-namespace TauCeti
-
 /-- For an additive real-valued potential `N` with `N h > 0` and a positive `d`, the
 coprime stabilization cutoffs `N (k • h)` with `k ≥ 2` exceed any prescribed real bound. -/
-theorem exists_coprime_slide_cutoff {H : Type*} [AddCommGroup H] (N : H →+ ℝ)
+theorem exists_coprime_lt_map_nsmul {H : Type*} [AddCommGroup H] (N : H →+ ℝ)
     {h : H} (hh : 0 < N h) {d : ℕ} (hd : 0 < d) (C : ℝ) :
     ∃ k : ℕ, d.Coprime k ∧ 2 ≤ k ∧ C < N (k • h) := by
   obtain ⟨m, hm⟩ := exists_nat_gt (max 1 (C / N h))
@@ -187,6 +183,10 @@ theorem exists_coprime_slide_cutoff {H : Type*} [AddCommGroup H] (N : H →+ ℝ
     push_cast
     apply (div_lt_iff₀ hh).1
     nlinarith
+
+end AddMonoidHom
+
+namespace TauCeti
 
 /-- The class `(2,1)` has divisibility exactly two in the quotient by the full torsion
 subgroup, even though it is not twice any element of `ℤ × ZMod 2`. -/
