@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Abelian.SerreClass.Localization
-public import Mathlib.CategoryTheory.Localization.CalculusOfFractions.Preadditive
 public import Mathlib.CategoryTheory.Localization.Linear
 public import TauCeti.RingTheory.Almost.Firm
 
