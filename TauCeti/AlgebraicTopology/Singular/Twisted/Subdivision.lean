@@ -303,6 +303,27 @@ lemma map_vertexTransport_comp_twistedSingularChain {m : ℕ}
     rw [twistedSingularChain_single, AffineChain.map_single, twistedSingularChain_single,
       Preadditive.comp_zsmul, map_vertexTransport_comp_twistedAffineSimplex]
 
+/-- Pushing an affine chain forward inside `σ` has zero coefficient on every singular simplex
+whose image is not contained in the image of `σ`. This support control applies to both
+barycentric subdivision and its prism operator. -/
+lemma twistedSingularChain_comp_twistedChainComplexCoeff_eq_zero
+    (σ : (TopCat.toSSet.obj X).obj n) (z : toTop.{v}.obj n.unop) {k : ℕ}
+    (c : (Fin (k + 1) → StdSimplex ℝ (Fin (n.unop.len + 1))) →₀ ℤ)
+    (ρ : (TopCat.toSSet.obj X) _⦋k⦌)
+    (h : ¬ Set.range (TopCat.simplexMap ρ) ⊆ Set.range (TopCat.simplexMap σ)) :
+    twistedSingularChain L σ z k c ≫ twistedChainComplexCoeff L ρ = 0 := by
+  induction c using Finsupp.induction_linear with
+  | zero => simp
+  | add c d hc hd => simp [Preadditive.add_comp, hc, hd]
+  | single v a =>
+    have hne : affineSimplex σ v ≠ ρ := by
+      rintro rfl
+      apply h
+      rintro _ ⟨p, rfl⟩
+      exact ⟨affineToTop v p, rfl⟩
+    simp [twistedAffineSimplex,
+      ιTwistedChainComplex_twistedChainComplexCoeff_of_ne L hne]
+
 open BarycentricSubdivision AffineChain
 
 /-- The barycentric subdivision of twisted singular `k`-chains: the summand of a singular simplex

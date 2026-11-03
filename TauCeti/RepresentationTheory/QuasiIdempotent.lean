@@ -115,7 +115,7 @@ private noncomputable def intertwiningOfVector (hκ : IsUnit κ) (v : V) :
     ext x
     simp only [LinearMap.coe_comp, LinearMap.coe_mk, AddHom.coe_mk, Function.comp_apply,
       TauCeti.Representation.ofModule'_apply, Submodule.coe_smul, smul_eq_mul, map_mul,
-      Module.End.mul_apply, asAlgebraHom_single_one, map_smul]
+      mul_apply_eq_comp, asAlgebraHom_single_one, map_smul]
 
 private theorem intertwiningOfVector_apply (hκ : IsUnit κ) (v : V)
     (x : (Ideal.span {a} : Ideal k[G])) :
@@ -138,7 +138,7 @@ noncomputable def spanSingletonHomEquivRange (hκ : IsUnit κ) (ha : a * a = κ 
     rw [IntertwiningMap.toLinearMap_apply, IntertwiningMap.toLinearMap_apply,
       intertwiningOfVector_apply,
       intertwining_apply_smul_generator, Submodule.coe_smul, smul_eq_mul,
-      coe_spanSingletonGenerator, map_mul, Module.End.mul_apply]
+      coe_spanSingletonGenerator, map_mul, mul_apply_eq_comp]
     -- `a` applied to the value at `a` is the value at `a • a = κ • a`, so `κ⁻¹` cancels
     rw [← intertwining_apply_smul_generator, smul_spanSingletonGenerator_self ha, map_smul,
       map_smul, smul_smul, hκ.val_inv_mul, one_smul]
@@ -146,7 +146,7 @@ noncomputable def spanSingletonHomEquivRange (hκ : IsUnit κ) (ha : a * a = κ 
     rintro ⟨_, u, rfl⟩
     refine Subtype.ext ?_
     dsimp only
-    rw [intertwiningOfVector_apply, coe_spanSingletonGenerator, ← Module.End.mul_apply,
+    rw [intertwiningOfVector_apply, coe_spanSingletonGenerator, ← mul_apply_eq_comp,
       ← map_mul, ha, map_smul, LinearMap.smul_apply, smul_smul, hκ.val_inv_mul, one_smul]
 
 /-- The dictionary evaluates an intertwining map at the generator `a`. -/

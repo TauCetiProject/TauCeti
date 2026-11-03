@@ -347,7 +347,7 @@ theorem IsFiberwiseInjective.pointsDivisor_eq_iInf_ker [Fintype A]
   intro a b hab
   apply disjoint_iff.mpr
   apply SetLike.coe_injective
-  simpa only [Set.inf_eq_inter, Set.bot_eq_empty, TopologicalSpace.Closeds.coe_inf,
+  simpa only [Set.bot_eq_empty, TopologicalSpace.Closeds.coe_inf,
     TopologicalSpace.Closeds.coe_bot, coe_support_ker_left] using
     (hφ.disjoint_range hab).eq_bot
 

@@ -44,14 +44,15 @@ jobs:
           && (github.event.action != 'edited' || github.event.changes.base != null))
         || (github.event_name == 'workflow_run'
             && ((github.event.workflow_run.name == 'pr-build'
-                 && github.event.workflow_run.event == 'pull_request_target')
+                 && contains(fromJSON('["pull_request_target", "workflow_dispatch", "repository_dispatch"]'),
+                      github.event.workflow_run.event))
                 || (github.event.workflow_run.name == 'Review' && github.event.action == 'completed')))
         || (github.event_name == 'issue_comment'
             && github.event.issue.pull_request != null
             && (contains(github.event.comment.body, 'tauceti-scoreboard')
                 || contains(github.event.changes.body.from, 'tauceti-scoreboard')))
       )
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(format('["nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0","namespace-features:github.run-id={0}"]', github.run_id)) }}
     timeout-minutes: 30
     # On the job, not the workflow: a workflow-level group admits runs before the `if` above is
     # evaluated, so an irrelevant event could displace the one pending run that mattered and then
@@ -93,10 +94,10 @@ jobs:
             .github/actions/checkout-merge-policy
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@a8b16c3dd0c0730a1963052cb520808e161222ef
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@f158c060cecb4689509f5d0eaba994204ffa3512
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: a8b16c3dd0c0730a1963052cb520808e161222ef
+          tools-ref: f158c060cecb4689509f5d0eaba994204ffa3512
           project-directory: .
       - name: Checkout the pinned merge policy (read-only)
         uses: ./.github/actions/checkout-merge-policy

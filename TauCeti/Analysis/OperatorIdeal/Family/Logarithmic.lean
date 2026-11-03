@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Equivalence
 public import TauCeti.Analysis.OperatorIdeal.Family.KyFan.Dominance
+public import Mathlib.Topology.ContinuousMap.Bounded.Normed
+public import TauCeti.Analysis.SpecialFunctions.Log.NatCastAdd
 
 /-!
 # The logarithmic operator ideal `L^(1,∞)`
@@ -39,6 +42,9 @@ lie in the ideal.
   `K_N(T) ≤ C log (1 + N)` for every `N`.
 * `TauCeti.OperatorIdealFamily.mem_finiteSubmodule_logarithmic_iff`: membership in `L^(1,∞)` is
   logarithmic growth of the Ky Fan sums.
+* `ContinuousLinearMap.kyFanLogMean`: the logarithmic Ky Fan means `(log (N + 2))⁻¹ K_(N+1)(T)`.
+* `TauCeti.OperatorIdealFamily.mem_finiteSubmodule_logarithmic_iff_bddAbove`: membership in
+  `L^(1,∞)` is boundedness of the logarithmic means.
 * `TauCeti.OperatorIdealFamily.isCompactOperator_of_mem_finiteSubmodule_logarithmic`: members of
   `L^(1,∞)` are compact.
 * `TauCeti.OperatorIdealFamily.finiteSubmodule_traceClass_le_logarithmic`: trace-class operators
@@ -56,18 +62,99 @@ public section
 
 open Filter Topology
 
-open scoped ENNReal NNReal
+open scoped ENNReal NNReal BoundedContinuousFunction
 
 universe u v w
+
+namespace ContinuousLinearMap
+
+section Seminormed
+
+variable {𝕜 E F G H : Type*} [NontriviallyNormedField 𝕜]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [SeminormedAddCommGroup G] [NormedSpace 𝕜 G] [SeminormedAddCommGroup H] [NormedSpace 𝕜 H]
+
+/-- The **logarithmic Ky Fan means** of `T`. The value at `N` is `(log (N + 2))⁻¹ K_(N+1)(T)`,
+the mean `(log (1 + M))⁻¹ ∑_(j < M) aⱼ(T)` at `M = N + 1 ≥ 1`. -/
+noncomputable def kyFanLogMean (T : E →L[𝕜] F) (N : ℕ) : ℝ :=
+  T.kyFanGauge (N + 1) / Real.log (N + 2)
+
+/-- Unfolding lemma for `ContinuousLinearMap.kyFanLogMean`. -/
+theorem kyFanLogMean_def (T : E →L[𝕜] F) (N : ℕ) :
+    T.kyFanLogMean N = T.kyFanGauge (N + 1) / Real.log (N + 2) :=
+  (rfl)
+
+/-- The logarithmic means are nonnegative. -/
+theorem kyFanLogMean_nonneg (T : E →L[𝕜] F) (N : ℕ) : 0 ≤ T.kyFanLogMean N :=
+  div_nonneg (NNReal.coe_nonneg _) (Real.log_natCast_add_pos one_lt_two N).le
+
+/-- The logarithmic means are homogeneous: those of `c T` are `‖c‖` times those of `T`. -/
+@[simp]
+theorem kyFanLogMean_smul (c : 𝕜) (T : E →L[𝕜] F) (N : ℕ) :
+    (c • T).kyFanLogMean N = ‖c‖ * T.kyFanLogMean N := by
+  simp [kyFanLogMean_def, mul_div_assoc]
+
+/-- The logarithmic means of the zero operator vanish. -/
+@[simp]
+theorem kyFanLogMean_zero : (0 : E →L[𝕜] F).kyFanLogMean = 0 :=
+  funext fun N ↦ by simpa using kyFanLogMean_smul (0 : 𝕜) (0 : E →L[𝕜] F) N
+
+/-- Ky Fan domination `Kₖ(S) ≤ Kₖ(T)` passes to the logarithmic means. -/
+theorem kyFanLogMean_le_of_forall_kyFanGauge_le {S : G →L[𝕜] H} {T : E →L[𝕜] F}
+    (h : ∀ k, S.kyFanGauge k ≤ T.kyFanGauge k) (N : ℕ) : S.kyFanLogMean N ≤ T.kyFanLogMean N := by
+  rw [kyFanLogMean_def, kyFanLogMean_def]
+  gcongr
+  · exact (Real.log_natCast_add_pos one_lt_two N).le
+  · exact h (N + 1)
+
+/-- Operators with the same approximation numbers have the same logarithmic means. -/
+theorem SameSingularValues.kyFanLogMean_eq {S : G →L[𝕜] H} {T : E →L[𝕜] F}
+    (h : SameSingularValues S T) : S.kyFanLogMean = T.kyFanLogMean :=
+  funext fun N ↦ by rw [kyFanLogMean_def, kyFanLogMean_def, h.kyFanGauge_eq]
+
+/-- The two-sided ideal inequality for the logarithmic means. -/
+theorem kyFanLogMean_comp_comp_le (A : G →L[𝕜] H) (T : F →L[𝕜] G) (B : E →L[𝕜] F) (N : ℕ) :
+    (A ∘L T ∘L B).kyFanLogMean N ≤ ‖A‖ * T.kyFanLogMean N * ‖B‖ := by
+  rw [kyFanLogMean_def, kyFanLogMean_def, mul_div_assoc', div_mul_eq_mul_div]
+  gcongr
+  · exact (Real.log_natCast_add_pos one_lt_two N).le
+  · exact_mod_cast kyFanGauge_comp_comp_le A T B (N + 1)
+
+/-- The logarithmic means of a trace-class operator tend to zero: its Ky Fan sums are bounded by
+`∑ⱼ aⱼ(T)` while `log (N + 2)` tends to infinity. -/
+theorem tendsto_kyFanLogMean_of_summable {T : E →L[𝕜] F} (hT : Summable T.singularValue) :
+    Tendsto T.kyFanLogMean atTop (𝓝 0) := by
+  have hlim := (Real.tendsto_log_natCast_add_atTop 2).inv_tendsto_atTop.const_mul
+    (∑' j, (T.singularValue j : ℝ))
+  rw [mul_zero] at hlim
+  refine squeeze_zero T.kyFanLogMean_nonneg (fun N ↦ ?_) hlim
+  rw [kyFanLogMean_def, div_eq_mul_inv]
+  refine mul_le_mul_of_nonneg_right ?_ (inv_nonneg.2 (Real.log_natCast_add_pos one_lt_two N).le)
+  rw [kyFanGauge_def, NNReal.coe_sum]
+  exact (NNReal.summable_coe.2 hT).sum_le_tsum _ fun j _ ↦ NNReal.coe_nonneg _
+
+end Seminormed
+
+/-- The logarithmic means are subadditive: `(S + T)` has means at most the sum of those of `S`
+and `T`, by the Ky Fan triangle inequality. -/
+theorem kyFanLogMean_add_le {𝕜 E F : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
+    [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] (S T : E →L[𝕜] F) (N : ℕ) :
+    (S + T).kyFanLogMean N ≤ S.kyFanLogMean N + T.kyFanLogMean N := by
+  rw [kyFanLogMean_def, kyFanLogMean_def, kyFanLogMean_def, ← add_div]
+  gcongr
+  · exact (Real.log_natCast_add_pos one_lt_two N).le
+  · exact_mod_cast kyFanGauge_add_le S T (N + 1)
+
+end ContinuousLinearMap
 
 namespace TauCeti
 
 namespace OperatorIdealFamily
 
 /-- The weights `log (N + 2)` of the logarithmic gauge are nonzero. -/
-private theorem ofReal_log_add_two_ne_zero (N : ℕ) : ENNReal.ofReal (Real.log (N + 2)) ≠ 0 := by
-  have h : (1 : ℝ) < N + 2 := by linarith [N.cast_nonneg (α := ℝ)]
-  simpa using Real.log_pos h
+private theorem ofReal_log_add_two_ne_zero (N : ℕ) : ENNReal.ofReal (Real.log (N + 2)) ≠ 0 :=
+  (ENNReal.ofReal_pos.2 (Real.log_natCast_add_pos one_lt_two N)).ne'
 
 variable (𝕜 : Type u) [RCLike 𝕜]
 
@@ -176,6 +263,55 @@ theorem mem_finiteSubmodule_logarithmic_iff (T : E →L[𝕜] F) :
     refine (gauge_logarithmic_le_iff.2 fun N ↦ ?_).trans_lt (ENNReal.ofReal_lt_top (r := C))
     rw [← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul' (hlog N)]
     exact ENNReal.ofReal_le_ofReal (hC N)
+
+/-- Each logarithmic mean is bounded by the logarithmic gauge. -/
+theorem ofReal_kyFanLogMean_le_gauge_logarithmic (T : E →L[𝕜] F) (N : ℕ) :
+    ENNReal.ofReal (T.kyFanLogMean N) ≤ (logarithmic 𝕜).gauge T := by
+  rw [gauge_logarithmic, ContinuousLinearMap.kyFanLogMean_def,
+    ENNReal.ofReal_div_of_pos (Real.log_natCast_add_pos one_lt_two N),
+    ENNReal.ofReal_coe_nnreal]
+  exact le_iSup (fun N : ℕ ↦ (T.kyFanGauge (N + 1) : ℝ≥0∞) /
+    ENNReal.ofReal (Real.log (N + 2))) N
+
+/-- For `T` in `L^(1,∞)`, each logarithmic mean is at most `‖T‖_(1,∞)`. -/
+theorem kyFanLogMean_le_toReal_gauge_logarithmic {T : E →L[𝕜] F}
+    (hT : T ∈ ((logarithmic 𝕜).operatorGauge E F).finiteSubmodule) (N : ℕ) :
+    T.kyFanLogMean N ≤ ((logarithmic 𝕜).gauge T).toReal := by
+  rw [OperatorGauge.mem_finiteSubmodule, operatorGauge_apply] at hT
+  exact (ENNReal.ofReal_le_iff_le_toReal hT.ne).1 (ofReal_kyFanLogMean_le_gauge_logarithmic T N)
+
+/-- **Membership in `L^(1,∞)` by the logarithmic means.** An operator lies in the logarithmic
+ideal exactly when its logarithmic Ky Fan means are bounded. -/
+theorem mem_finiteSubmodule_logarithmic_iff_bddAbove (T : E →L[𝕜] F) :
+    T ∈ ((logarithmic 𝕜).operatorGauge E F).finiteSubmodule ↔
+      BddAbove (Set.range T.kyFanLogMean) := by
+  refine ⟨fun hT ↦ ⟨_, Set.forall_mem_range.2 (kyFanLogMean_le_toReal_gauge_logarithmic hT)⟩,
+    fun ⟨C, hC⟩ ↦ (mem_finiteSubmodule_logarithmic_iff T).2 ⟨C, fun N ↦ ?_⟩⟩
+  cases N with
+  | zero => simp
+  | succ N =>
+    have hN := Set.forall_mem_range.1 hC N
+    rw [ContinuousLinearMap.kyFanLogMean_def,
+      div_le_iff₀ (Real.log_natCast_add_pos one_lt_two N)] at hN
+    convert hN using 3
+    push_cast
+    ring
+
+/-- An operator whose logarithmic means are bounded by a bounded sequence lies in `L^(1,∞)`. -/
+theorem mem_finiteSubmodule_logarithmic_of_forall_kyFanLogMean_le {T : E →L[𝕜] F} (g : ℕ →ᵇ ℝ)
+    (h : ∀ N, T.kyFanLogMean N ≤ g N) :
+    T ∈ ((logarithmic 𝕜).operatorGauge E F).finiteSubmodule :=
+  (mem_finiteSubmodule_logarithmic_iff_bddAbove T).2 ⟨‖g‖, Set.forall_mem_range.2 fun N ↦
+    (h N).trans ((le_abs_self _).trans (g.norm_coe_le_norm N))⟩
+
+/-- The logarithmic means of a member of `L^(1,∞)` form a bounded sequence. -/
+theorem exists_coe_eq_kyFanLogMean {T : E →L[𝕜] F}
+    (hT : T ∈ ((logarithmic 𝕜).operatorGauge E F).finiteSubmodule) :
+    ∃ f : ℕ →ᵇ ℝ, ⇑f = T.kyFanLogMean :=
+  ⟨BoundedContinuousFunction.ofNormedAddCommGroupDiscrete T.kyFanLogMean
+    ((logarithmic 𝕜).gauge T).toReal fun N ↦ by
+      rw [Real.norm_of_nonneg (T.kyFanLogMean_nonneg N)]
+      exact kyFanLogMean_le_toReal_gauge_logarithmic hT N, rfl⟩
 
 /-- **Members of `L^(1,∞)` are compact.** Their approximation numbers are `O(log N / N)`, so they
 tend to zero. -/

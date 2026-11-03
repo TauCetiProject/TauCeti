@@ -44,7 +44,7 @@ theorem hasSum_cdf_noncentralChiSquaredMeasure (hk : 0 ≤ k) (l : ℝ≥0) (x :
         cdf (chiSquaredMeasure (k + 2 * n)) x)
       (cdf (noncentralChiSquaredMeasure k l) x) := by
   have := isProbabilityMeasure_noncentralChiSquaredMeasure hk l
-  have hsum := (ENNReal.summable.hasSum_iff.mpr
+  have hsum := (CompleteLattice.summable.hasSum_iff.mpr
     (noncentralChiSquaredMeasure_apply hk l (Iic x)).symm).toReal (measure_ne_top _ _)
   rw [← measureReal_def, ← cdf_eq_real] at hsum
   convert hsum using 1

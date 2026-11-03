@@ -36,9 +36,9 @@ The factors of two are then pinned once and for all on the matrix units. Writing
 `ι (Eᵢⱼ)`, the Clifford relation `ι v * ι v = Q v` polarizes to the anticommutation relations
 `d_ij d_kl + d_kl d_ij = 2 δ_jk δ_li`, `d_ij d_ij = δ_ij`.
 These are relations in the Clifford algebra of the trace form, and nothing beyond that is claimed of
-them here. Reading them, as the roadmap does, as the relations of a CAR algebra would need a
-splitting of the generators into creation and annihilation operators, an involution, and an
-identification of this Clifford algebra with a CAR algebra; none of that is supplied.
+them here. Reading them as the relations of a CAR algebra would need a splitting of the generators
+into creation and annihilation operators, an involution, and an identification of this Clifford
+algebra with a CAR algebra; none of that is supplied.
 
 ## Main definitions
 
@@ -54,7 +54,7 @@ identification of this Clifford algebra with a CAR algebra; none of that is supp
 * `TauCeti.traceBilinForm_nondegenerate`: it is nondegenerate over any commutative semiring, a
   matrix being determined by the traces of its products.
 * `TauCeti.polarBilin_traceQuadraticForm`: the polar form of the trace quadratic form is
-  `2 * trace (X * Y)`, the normalization the roadmap pins;
+  `2 * trace (X * Y)`;
   `TauCeti.polarBilin_traceQuadraticForm_eq_two_smul` is the same statement as an equality of
   bilinear forms, `2 • traceBilinForm`.
 * `TauCeti.traceQuadraticForm_nondegenerate`: the quadratic form is nondegenerate when `2` is
@@ -69,8 +69,8 @@ identification of this Clifford algebra with a CAR algebra; none of that is supp
 
 ## Implementation notes
 
-The roadmap pins these declarations over `ℂ` for `Matrix (Fin N) (Fin N) ℂ`. Nothing in the
-statements or proofs asks for that: the form, its symmetry and its nondegeneracy are stated over an
+The motivating case is `Matrix (Fin N) (Fin N) ℂ`, but nothing in the statements or proofs asks
+for it: the form, its symmetry and its nondegeneracy are stated over an
 arbitrary commutative semiring and an arbitrary finite index type, exactly as for the Killing form
 in `TauCeti/Algebra/Lie/SkewAdjoint.lean`. Additive inverses are assumed only where the
 construction being made needs them: the commutator bracket, `QuadraticMap.polarBilin` and
@@ -96,15 +96,6 @@ counterparts in `TauCeti/Algebra/Lie/SkewAdjoint.lean` are applications of them.
 
 Mathlib does not register `LieRing.ofAssociativeRing` as a global instance, so, as in
 `Mathlib/Algebra/Lie/Matrix.lean`, it is a local instance here.
-
-## References
-
-This is the opening of the `gl_N` worked instance ("the CAR algebra") of Layer 9 of
-`TauCetiRoadmap/RepresentationTheory/SpinRepresentations/README.md`: *"its form is the trace form
-`Q X = tr (X²)` (nondegenerate where the Killing form is not) ... the generators `d_ab = ι (E_ab)`
-satisfy the CAR relations `d_ab d_cd + d_cd d_ab = 2 δ_bc δ_ad` (pinned as the polar-form
-equation)"*, together with the trace-form instance of the layer's adjoint homomorphism
-`ad : 𝔤 →ₗ⁅K⁆ 𝔰𝔬(𝔤, B)`.
 -/
 
 public section
@@ -188,8 +179,8 @@ def traceQuadraticForm : QuadraticForm R (Matrix n n R) :=
 
 variable {R n}
 
-/-- The trace quadratic form evaluates at `X` to `trace (X * X)`. This is the equation the roadmap
-pins `TauCeti.traceQuadraticForm` by. -/
+/-- The trace quadratic form evaluates at `X` to `trace (X * X)`. This is the equation that
+characterizes `TauCeti.traceQuadraticForm`. -/
 @[simp]
 theorem traceQuadraticForm_apply (X : Matrix n n R) :
     traceQuadraticForm R n X = (X * X).trace :=
@@ -221,7 +212,7 @@ section
 variable {R n}
 
 /-- **The polar form of the trace quadratic form, read pointwise**: `2 * trace (X * Y)`. This is the
-normalization the roadmap pins, and the equation from which the anticommutation relations follow;
+equation from which the anticommutation relations follow;
 `TauCeti.polarBilin_traceQuadraticForm_eq_two_smul` is the same statement for the forms
 themselves. -/
 theorem polarBilin_traceQuadraticForm (X Y : Matrix n n R) :

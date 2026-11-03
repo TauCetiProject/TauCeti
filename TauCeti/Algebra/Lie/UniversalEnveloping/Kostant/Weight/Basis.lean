@@ -57,10 +57,14 @@ choice is confined to one weight space at a time.
 
 ## Main results
 
+* `TauCeti.UniversalEnvelopingAlgebra.map_mem_iSup_jointWeightSpace`: a morphism of Lie modules
+  maps the span of the integral joint weight spaces into that of its target.
 * `TauCeti.UniversalEnvelopingAlgebra.eq_zero_of_isCartanWeightVector_of_sum_eq_zero`: vectors of
   pairwise distinct integral weights are independent.
 * `TauCeti.UniversalEnvelopingAlgebra.isInternal_weightSublattice`: a Kostant-stable subgroup lying
   in the span of the integral joint weight spaces is their internal direct sum.
+* `TauCeti.UniversalEnvelopingAlgebra.mem_range_kostantWeightFin_iff`: the weights recorded by the
+  numbered weight basis are exactly those whose weight sublattice is nonzero.
 
 ## References
 
@@ -99,6 +103,20 @@ def jointWeightSpace (μ : κ → ℤ) : Submodule ℚ V :=
 theorem mem_jointWeightSpace_iff {μ : κ → ℤ} {x : V} :
     x ∈ jointWeightSpace h ρ μ ↔ IsCartanWeightVector h ρ μ x := by
   rw [jointWeightSpace, Submodule.mem_iInf, isCartanWeightVector_iff_mem_eigenspace]
+
+/-- **A morphism of Lie modules respects the integral weight spaces**: it maps a vector in the span
+of the integral joint weight spaces of `M` into the span of those of `N`. -/
+theorem map_mem_iSup_jointWeightSpace {M N : Type*} [AddCommGroup M] [Module ℚ M]
+    [LieRingModule L M] [LieModule ℚ L M] [AddCommGroup N] [Module ℚ N] [LieRingModule L N]
+    [LieModule ℚ L N] {m : M} (hm : m ∈ ⨆ μ : κ → ℤ, jointWeightSpace h (representation ℚ L M) μ)
+    (f : M →ₗ⁅ℚ,L⁆ N) : f m ∈ ⨆ μ : κ → ℤ, jointWeightSpace h (representation ℚ L N) μ := by
+  have hle : (⨆ μ : κ → ℤ, jointWeightSpace h (representation ℚ L M) μ).map
+      (f : M →ₗ[ℚ] N) ≤ ⨆ μ : κ → ℤ, jointWeightSpace h (representation ℚ L N) μ := by
+    rw [Submodule.map_iSup]
+    refine iSup_mono fun μ => Submodule.map_le_iff_le_comap.mpr fun v hv => ?_
+    rw [Submodule.mem_comap, mem_jointWeightSpace_iff]
+    exact ((mem_jointWeightSpace_iff h _).1 hv).map f
+  exact hle (Submodule.mem_map_of_mem hm)
 
 /-- The **weight sublattice** of weight `μ` of a subgroup `M ≤ V`: the part of `M` on which every
 designated Cartan vector `h j` acts by the scalar `μ j`. -/
@@ -294,6 +312,20 @@ theorem isCartanWeightVector_kostantWeightBasisFin
       ((kostantWeightBasisFin e h ρ M hM hV x : M) : V) := by
   rw [kostantWeightBasisFin_apply]
   exact isCartanWeightVector_kostantWeightBasis e h ρ M hM hV _
+
+/-- **The weights recorded by the `Fin`-indexed weight basis are exactly the weights of the
+lattice**: an integral weight is carried by some vector of the basis if and only if its weight
+sublattice is nonzero. -/
+theorem mem_range_kostantWeightFin_iff {μ : κ → ℤ} :
+    μ ∈ Set.range (kostantWeightFin e h ρ M hM hV) ↔ weightSublattice h ρ M μ ≠ ⊥ := by
+  refine ⟨?_, fun hμ => ?_⟩
+  · rintro ⟨x, rfl⟩
+    rw [Submodule.ne_bot_iff]
+    exact ⟨_, kostantWeightBasis_mem e h ρ M hM hV _, (kostantWeightBasis e h ρ M hM hV).ne_zero _⟩
+  · have := Submodule.nontrivial_iff_ne_bot.mpr hμ
+    obtain ⟨j⟩ := (Module.Free.chooseBasis ℤ (weightSublattice h ρ M μ)).index_nonempty
+    exact ⟨kostantWeightBasisIndexEquivFin e h ρ M hM hV ⟨μ, j⟩, by
+      simp only [kostantWeightFin, Equiv.symm_apply_apply]⟩
 
 end WeightBasis
 

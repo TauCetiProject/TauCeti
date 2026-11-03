@@ -94,7 +94,7 @@ local instance factPrimeEleven : Fact (Nat.Prime 11) := ⟨by decide⟩
 /-- The reduction of `X⁵ - 2` modulo `11` is irreducible: `2` is not a fifth power in `𝔽₁₁`. -/
 theorem irreducible_X_pow_five_sub_two_zmod_eleven : Irreducible (X ^ 5 - 2 : (ZMod 11)[X]) := by
   rw [← C_ofNat]
-  exact X_pow_sub_C_irreducible_of_prime Nat.prime_five (by decide)
+  exact irreducible_X_pow_sub_C_of_prime Nat.prime_five (by decide)
 
 /-- `X⁵ - 2` has a single irreducible factor of degree five modulo `11`. -/
 @[simp] theorem factorDegrees_X_pow_five_sub_two_eleven :
