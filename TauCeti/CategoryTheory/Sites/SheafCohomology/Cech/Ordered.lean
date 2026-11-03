@@ -115,19 +115,6 @@ private abbrev cechD (P : Cᵒᵖ ⥤ A) (n : ℕ) :
       ∏ᶜ fun a : Fin (n + 2) → ι ↦ P.obj (op (∏ᶜ fun j ↦ U (a j))) :=
   ((cechComplexFunctor U).obj P).d n (n + 1)
 
-omit [Preorder ι] in
-/-- `cechComplexFunctor_obj_d_comp_π`, stated through `cechD`. -/
-private lemma cechD_π (P : Cᵒᵖ ⥤ A) (n : ℕ) (k : Fin (n + 2) → ι) :
-    cechD U P n ≫ Pi.π _ k = ∑ m : Fin (n + 2), (-1 : ℤ) ^ (m : ℕ) •
-      (Pi.π _ (k ∘ m.succAbove) ≫
-        P.map (Pi.lift fun x ↦ Pi.π (fun j ↦ U (k j)) (m.succAbove x)).op) :=
-  cechComplexFunctor_obj_d_comp_π U P n k
-
-omit [Preorder ι] in
-@[reassoc]
-private lemma cechD_comp_cechD (P : Cᵒᵖ ⥤ A) (n : ℕ) : cechD U P n ≫ cechD U P (n + 1) = 0 :=
-  HomologicalComplex.d_comp_d _ _ _ _
-
 /-- The differential of the ordered Čech complex `Čₒ(U, P)` from degree `n` to degree `n + 1`.
 Its factor indexed by a strictly increasing tuple `k` is the alternating sum, over the entries `m`
 of `k`, of the factor indexed by `k ∘ m.succAbove`, restricted along the projection
@@ -158,7 +145,8 @@ private lemma toStrictMonoCechX_comp_strictMonoCechComplexD (P : Cᵒᵖ ⥤ A) 
   refine Pi.hom_ext _ _ fun k ↦ ?_
   simp only [toStrictMonoCechX, Category.assoc, Pi.map'_comp_π, Category.comp_id,
     strictMonoCechComplexD_π, Preadditive.comp_sum, Preadditive.comp_zsmul, Pi.map'_comp_π_assoc,
-    Category.id_comp, cechD_π]
+    Category.id_comp]
+  exact (cechComplexFunctor_obj_d_comp_π U P n k.1).symm
 
 /-- The differential of the ordered Čech complex squares to zero. -/
 private lemma strictMonoCechComplexD_comp_strictMonoCechComplexD (P : Cᵒᵖ ⥤ A) (n : ℕ) :
@@ -166,7 +154,8 @@ private lemma strictMonoCechComplexD_comp_strictMonoCechComplexD (P : Cᵒᵖ �
   have := isSplitEpi_toStrictMonoCechX U P n
   rw [← cancel_epi (toStrictMonoCechX U P n), comp_zero,
     toStrictMonoCechX_comp_strictMonoCechComplexD_assoc,
-    toStrictMonoCechX_comp_strictMonoCechComplexD, cechD_comp_cechD_assoc, zero_comp]
+    toStrictMonoCechX_comp_strictMonoCechComplexD]
+  exact (HomologicalComplex.d_comp_d_assoc _ _ _ _ _).trans zero_comp
 
 /-- The map of products induced by a morphism of presheaves commutes with the differentials of
 the ordered Čech complexes. -/
