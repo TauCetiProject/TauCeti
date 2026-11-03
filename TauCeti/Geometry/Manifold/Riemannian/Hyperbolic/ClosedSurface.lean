@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.CurvatureEquation
 public import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.Volume
 public import TauCeti.Geometry.Manifold.Riemannian.WithMetric
 import TauCeti.Geometry.Manifold.ContMDiff.Log
-import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.TotalCurvature
+import TauCeti.Geometry.Manifold.Riemannian.TotalCurvature
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.WithMetric
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Polarization
 

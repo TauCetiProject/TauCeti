@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.Hyperbolic.CurvatureEquation
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Conformal
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Conformal
 import TauCeti.Geometry.Manifold.ContMDiff.Log
 import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.WithMetric
