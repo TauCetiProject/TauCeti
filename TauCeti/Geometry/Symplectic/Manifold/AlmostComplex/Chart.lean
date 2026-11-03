@@ -45,10 +45,18 @@ variable (J : SmoothAlmostComplexStructure I M) (x : M)
 
 /-- The almost complex structure read in the trivialization of the tangent bundle at `x`, along
 the inverse of the extended chart at `x`. -/
-@[expose] def inChart (z : E) : E →L[ℝ] E :=
+def inChart (z : E) : E →L[ℝ] E :=
   ContinuousLinearMap.inCoordinates E (TangentSpace I) E (TangentSpace I) x
     ((extChartAt I x).symm z) x ((extChartAt I x).symm z)
       (J.toEndomorphism ((extChartAt I x).symm z))
+
+/-- The defining formula of `inChart`: `J` at `(extChartAt I x).symm z`, written in the
+coordinates of the trivialization of the tangent bundle at `x`. -/
+theorem inChart_def (z : E) :
+    J.inChart x z = ContinuousLinearMap.inCoordinates E (TangentSpace I) E (TangentSpace I) x
+      ((extChartAt I x).symm z) x ((extChartAt I x).symm z)
+        (J.toEndomorphism ((extChartAt I x).symm z)) :=
+  (rfl)
 
 private theorem mem_baseSet_of_mem_target {z : E} (hz : z ∈ (extChartAt I x).target) :
     (extChartAt I x).symm z ∈ (trivializationAt E (TangentSpace I) x).baseSet := by

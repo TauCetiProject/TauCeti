@@ -551,6 +551,7 @@ private theorem IsOfType.fderivCompContinuousLinearMap_inChartAt (hφ : φ.IsOfT
   simp only [Pi.smul_apply, (extChartAt I x).right_inv hz] at h₂
   rw [(extChartAt I x).right_inv hz] at h₃
   rw [h₃] at h₁
+  rw [J.inChart_def]
   exact h₁.symm.trans h₂
 
 /-- **Differentiating the type equation in a chart.** The coordinate expression `φ'` of a form of
