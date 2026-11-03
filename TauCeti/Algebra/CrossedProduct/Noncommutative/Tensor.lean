@@ -17,7 +17,7 @@ module for each left coset. The equivalence `subgroupTensorEquiv` uses the actua
 subgroup algebra inclusion and the right basis `rightSubgroupBasis`. Its inverse
 sends the coefficient at a coset to the tensor with the chosen representative.
 
-For finite subgroup index this proves finite generation over the ground ring.
+At finite subgroup index, extension of scalars preserves ground-ring finite generation.
 The natural-number rank is the index times the original natural-number rank,
 with infinite ranks and indices represented by zero. The index group and the
 coefficient algebra may be infinite and noncommutative, respectively.
