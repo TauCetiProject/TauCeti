@@ -52,6 +52,8 @@ The charts are not instances, as they depend on the hypotheses on the balls; con
   `TauCeti.ConnectedSum.isLocalDiffeomorph_inrBall`: a ball of a summand avoiding the centre of
   the ball of the connected sum which is a `C^n` local diffeomorphism stays one as a ball of the
   punctured summand and of the connected sum.
+* `TauCeti.ConnectedSum.isLocalDiffeomorph_punctureMap`: the restriction of a `C^n` local
+  diffeomorphism to the punctured summands is a `C^n` local diffeomorphism.
 
 ## References
 
@@ -74,8 +76,24 @@ theorem isLocalDiffeomorph_punctureBall {E : Type*} [NormedAddCommGroup E] [Norm
     {M : Type*} [TopologicalSpace M] [T1Space M] [ChartedSpace H M] {e f : E → M}
     (h : e 0 ∉ range f) (df : IsLocalDiffeomorph 𝓘(ℝ, E) I n f) :
     IsLocalDiffeomorph 𝓘(ℝ, E) I n (punctureBall e f h) := fun w ↦
-  IsLocalDiffeomorphAt.of_comp_left (df w) (isLocalDiffeomorph_subtype_val _)
-    (df.contMDiff.continuous.subtype_mk _).continuousAt
+  IsLocalDiffeomorphAt.of_comp_left ((subtypeVal_comp_punctureBall h).symm ▸ df w)
+    (isLocalDiffeomorph_subtype_val _)
+    (continuous_induced_rng.2
+      ((subtypeVal_comp_punctureBall h).symm ▸ df.contMDiff.continuous)).continuousAt
+
+/-- The restriction of a `C^n` local diffeomorphism to the punctured summands is a `C^n` local
+diffeomorphism. -/
+theorem isLocalDiffeomorph_punctureMap {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} {n : ℕ∞}
+    {M : Type*} [TopologicalSpace M] [T1Space M] [ChartedSpace H M]
+    {M' : Type*} [TopologicalSpace M'] [T1Space M'] [ChartedSpace H M']
+    {e : E → M} {e' : E → M'} {φ : M → M'} (hφ : Injective φ) (h0 : φ (e 0) = e' 0)
+    (dφ : IsLocalDiffeomorph I I n φ) :
+    IsLocalDiffeomorph I I n (punctureMap φ hφ h0) :=
+  fun x ↦ IsLocalDiffeomorphAt.of_comp_left
+    (subtypeVal_comp_punctureMap hφ h0 ▸ (isLocalDiffeomorph_subtype_val x).comp (hg := dφ x))
+    (isLocalDiffeomorph_subtype_val _)
+    (continuous_punctureMap hφ h0 dφ.contMDiff.continuous).continuousAt
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
@@ -226,7 +244,7 @@ theorem isLocalDiffeomorph_inlBall (h : e₁ 0 ∉ range f)
     letI := chartedSpace (H := H) h₁ h₂
     IsLocalDiffeomorph 𝓘(ℝ, E) I n (inlBall e₁ e₂ f h) := fun w ↦
   letI := chartedSpace (H := H) h₁ h₂
-  (isLocalDiffeomorph_punctureBall h df w).comp
+  inl_comp_punctureBall e₁ e₂ h ▸ (isLocalDiffeomorph_punctureBall h df w).comp
     (hg := isLocalDiffeomorph_inl h₁ h₂ d₁ d₂ _)
 
 include d₁ d₂ in
@@ -237,7 +255,7 @@ theorem isLocalDiffeomorph_inrBall (h : e₂ 0 ∉ range g)
     letI := chartedSpace (H := H) h₁ h₂
     IsLocalDiffeomorph 𝓘(ℝ, E) I n (inrBall e₁ e₂ g h) := fun w ↦
   letI := chartedSpace (H := H) h₁ h₂
-  (isLocalDiffeomorph_punctureBall h dg w).comp
+  inr_comp_punctureBall e₁ e₂ h ▸ (isLocalDiffeomorph_punctureBall h dg w).comp
     (hg := isLocalDiffeomorph_inr h₁ h₂ d₁ d₂ _)
 
 end Ball

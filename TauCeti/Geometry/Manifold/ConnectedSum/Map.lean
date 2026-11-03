@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.ConnectedSum.Smooth
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Sum
 
 /-!
@@ -194,15 +193,6 @@ section Smooth
 
 variable {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} {n : ℕ∞}
   [ChartedSpace H M] [ChartedSpace H M'] [ChartedSpace H N] [ChartedSpace H N']
-
-/-- The restriction of a `C^n` local diffeomorphism to the punctured summands is a `C^n` local
-diffeomorphism. -/
-theorem isLocalDiffeomorph_punctureMap (h0 : φ (e₁ 0) = e₁' 0) (dφ : IsLocalDiffeomorph I I n φ) :
-    IsLocalDiffeomorph I I n (punctureMap φ hφ h0) :=
-  fun x ↦ IsLocalDiffeomorphAt.of_comp_left
-    (subtypeVal_comp_punctureMap hφ h0 ▸ (isLocalDiffeomorph_subtype_val x).comp (hg := dφ x))
-    (isLocalDiffeomorph_subtype_val _)
-    (continuous_punctureMap hφ h0 dφ.contMDiff.continuous).continuousAt
 
 variable [IsManifold I n M] [IsManifold I n M'] [IsManifold I n N] [IsManifold I n N']
 

@@ -148,7 +148,6 @@ section punctureBall
 
 /-- A ball `f : E → M` whose image avoids the centre of the ball `e`, as a ball of the punctured
 summand `M ∖ {e 0}`. -/
-@[expose]
 def punctureBall (e f : E → M) (h : e 0 ∉ range f) : E → puncture e :=
   codRestrict f (puncture e) fun w ↦ mem_puncture.2 fun hw ↦ h ⟨w, hw⟩
 
@@ -470,13 +469,11 @@ variable (e₁ e₂) {f : E → M} {g : E → N}
 
 /-- A ball `f : E → M` of the first summand avoiding the centre of `e₁`, as a ball of the
 connected sum along `e₁` and `e₂`, through the first punctured summand. -/
-@[expose]
 def inlBall (f : E → M) (h : e₁ 0 ∉ range f) : E → ConnectedSum e₁ e₂ :=
   inl e₁ e₂ ∘ punctureBall e₁ f h
 
 /-- A ball `g : E → N` of the second summand avoiding the centre of `e₂`, as a ball of the
 connected sum along `e₁` and `e₂`, through the second punctured summand. -/
-@[expose]
 def inrBall (g : E → N) (h : e₂ 0 ∉ range g) : E → ConnectedSum e₁ e₂ :=
   inr e₁ e₂ ∘ punctureBall e₂ g h
 

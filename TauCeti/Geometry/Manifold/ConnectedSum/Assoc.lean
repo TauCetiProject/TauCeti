@@ -117,14 +117,14 @@ private theorem rightIncl_inr (y : puncture c) :
 as a point of the punctured first summand of `(N ∖ {b 0}) # P`. -/
 private def leftToRight (y : puncture (punctureBall b' b hbb')) :
     puncture (punctureBall b b' hb'b) :=
-  ⟨⟨y.1.1, mem_puncture.2 fun h ↦ mem_puncture.1 y.2 (Subtype.ext h)⟩,
+  ⟨⟨y.1.1, mem_puncture.2 fun h ↦ mem_puncture.1 y.2 (Subtype.ext (by rwa [coe_punctureBall]))⟩,
     mem_puncture.2 fun h ↦ mem_puncture.1 y.1.2 (by simpa using congrArg Subtype.val h)⟩
 
 /-- A point of `N ∖ {b 0, b' 0}`, read in the punctured first summand of `(N ∖ {b 0}) # P`, as a
 point of the punctured second summand of `M # (N ∖ {b' 0})`. -/
 private def rightToLeft (x : puncture (punctureBall b b' hb'b)) :
     puncture (punctureBall b' b hbb') :=
-  ⟨⟨x.1.1, mem_puncture.2 fun h ↦ mem_puncture.1 x.2 (Subtype.ext h)⟩,
+  ⟨⟨x.1.1, mem_puncture.2 fun h ↦ mem_puncture.1 x.2 (Subtype.ext (by rwa [coe_punctureBall]))⟩,
     mem_puncture.2 fun h ↦ mem_puncture.1 x.1.2 (by simpa using congrArg Subtype.val h)⟩
 
 variable (ha : IsOpenEmbedding a) (hb : IsOpenEmbedding b) (hb' : IsOpenEmbedding b')
@@ -308,7 +308,8 @@ private theorem leftHomeomorph_symm_inrBall {v : E} (hv : v ≠ 0)
         mem_puncture.2 fun h ↦ hb'b ⟨v, by simpa using congrArg Subtype.val h⟩⟩ := by
   refine leftHomeomorph_symm_apply hbb' hb'b ha hb _ _ ?_
   rw [leftIncl_inr]
-  exact inrBall_apply a b hb'b v
+  exact (inrBall_apply a b hb'b v).trans
+    (congrArg _ (Subtype.ext (coe_punctureBall _ _)))
 
 /-- The point `b w` of the punctured first summand of `N # P`, read in `(N ∖ {b 0}) # P`. -/
 private theorem rightHomeomorph_symm_inlBall {w : E} (hw : w ≠ 0)
@@ -318,7 +319,8 @@ private theorem rightHomeomorph_symm_inlBall {w : E} (hw : w ≠ 0)
         mem_puncture.2 fun h ↦ hbb' ⟨w, by simpa using congrArg Subtype.val h⟩⟩ := by
   refine rightHomeomorph_symm_apply hbb' hb'b hb' hc _ _ ?_
   rw [rightIncl_inl]
-  exact inlBall_apply b' c hbb' w
+  exact (inlBall_apply b' c hbb' w).trans
+    (congrArg _ (Subtype.ext (coe_punctureBall _ _)))
 
 /-- The map `(M # N) # P → M # (N # P)`: the identity on `M ∖ {a 0}`, `N ∖ {b 0, b' 0}` and
 `P ∖ {c 0}`. -/
@@ -485,14 +487,15 @@ theorem assocHomeomorph_inl_inr (y : puncture b)
     haveI := t1Space hb' hc
     assocHomeomorph hbb' hb'b ha hb hb' hc (inl _ c ⟨inr a b y, hy⟩) =
       inr a _ ⟨inl b' c ⟨y, mem_puncture.2 fun h ↦ mem_puncture.1 hy
-        (by rw [inrBall_apply]; exact congrArg _ (Subtype.ext h))⟩,
+        (by rw [inrBall_apply]; exact congrArg _ (Subtype.ext (by rwa [coe_punctureBall])))⟩,
         mem_puncture.2 fun h ↦ mem_puncture.1 y.2 (by
-          simpa using congrArg Subtype.val (inl_injective hb'.injective hc.injective h))⟩ := by
+          simpa using congrArg Subtype.val
+            (inl_injective hb'.injective hc.injective (h.trans (inlBall_apply b' c hbb' 0))))⟩ := by
   have := t1Space ha hb
   have := t1Space hb' hc
   rw [coe_assocHomeomorph]
   have hy' : (y : N) ∈ puncture b' := mem_puncture.2 fun h ↦ mem_puncture.1 hy
-    (by rw [inrBall_apply]; exact congrArg _ (Subtype.ext h))
+    (by rw [inrBall_apply]; exact congrArg _ (Subtype.ext (by rwa [coe_punctureBall])))
   rw [assocFun_inl, leftHomeomorph_symm_apply hbb' hb'b ha hb
     (inr a _ ⟨⟨y, hy'⟩, mem_puncture.2 fun h ↦ mem_puncture.1 y.2 (by
       simpa using congrArg Subtype.val h)⟩) _ (by rw [leftIncl_inr]), leftMap_inr]
@@ -527,9 +530,10 @@ theorem assocHomeomorph_symm_inr_inl (x : puncture b')
     haveI := t1Space hb' hc
     (assocHomeomorph hbb' hb'b ha hb hb' hc).symm (inr a _ ⟨inl b' c x, hx⟩) =
       inl _ c ⟨inr a b ⟨x, mem_puncture.2 fun h ↦ mem_puncture.1 hx
-        (by rw [inlBall_apply]; exact congrArg _ (Subtype.ext h))⟩,
+        (by rw [inlBall_apply]; exact congrArg _ (Subtype.ext (by rwa [coe_punctureBall])))⟩,
         mem_puncture.2 fun h ↦ mem_puncture.1 x.2 (by
-          simpa using congrArg Subtype.val (inr_injective ha.injective hb.injective h))⟩ := by
+          simpa using congrArg Subtype.val
+            (inr_injective ha.injective hb.injective (h.trans (inrBall_apply a b hb'b 0))))⟩ := by
   have := t1Space ha hb
   have := t1Space hb' hc
   rw [Homeomorph.symm_apply_eq, assocHomeomorph_inl_inr]
