@@ -90,8 +90,9 @@ theorem race_eq_some_iff :
         subst t
         exact Or.inr ⟨race_eq_none_iff.2 fun u hu => hbefore u (by omega), htval⟩
 
-/-- A left result is retained exactly when it was seen before any earlier observation on
-either side. Simultaneous discovery on the right does not prevent a left win. -/
+/-- A left result is retained exactly when the left stream succeeds at some stage `t ≤ s`
+at which neither stream had succeeded earlier. Simultaneous discovery on the right does not
+prevent a left win. -/
 @[simp]
 theorem race_eq_some_inl_iff {a : α} :
     race l r s = some (Sum.inl a) ↔ ∃ t ≤ s,

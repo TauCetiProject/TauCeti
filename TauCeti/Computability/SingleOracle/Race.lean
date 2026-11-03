@@ -60,14 +60,30 @@ theorem raceStage_eq_none_iff :
   rw [raceStage_def, Staged.race_eq_none_iff]
   constructor
   · exact fun h => h s le_rfl
-  · intro h t hts
-    constructor
-    · cases ht : evalStage σ t c x with
-      | none => rfl
-      | some a => have := evalStage_mono hts ht; simp [h.1] at this
-    · cases ht : evalStage σ t d x with
-      | none => rfl
-      | some a => have := evalStage_mono hts ht; simp [h.2] at this
+  · exact fun h t hts => ⟨evalStage_eq_none_of_le hts h.1, evalStage_eq_none_of_le hts h.2⟩
+
+/-- The left program wins exactly when it succeeds at a stage with no earlier success on
+either side. A simultaneous right success does not prevent a left win. -/
+@[simp]
+theorem raceStage_eq_some_inl_iff {a : Halt} :
+    raceStage σ s c d x = some (Sum.inl a) ↔ ∃ t ≤ s,
+      (∀ u < t, evalStage σ u c x = none ∧ evalStage σ u d x = none) ∧
+        evalStage σ t c x = some a := by
+  rw [raceStage_def, Staged.race_eq_some_inl_iff]
+
+/-- The right program wins exactly when it first succeeds while the left program is still
+absent. Persistence makes earlier failures on the left redundant. -/
+@[simp]
+theorem raceStage_eq_some_inr_iff {b : Halt} :
+    raceStage σ s c d x = some (Sum.inr b) ↔ ∃ t ≤ s,
+      evalStage σ t c x = none ∧ (∀ u < t, evalStage σ u d x = none) ∧
+        evalStage σ t d x = some b := by
+  rw [raceStage_def, Staged.race_eq_some_inr_iff]
+  constructor
+  · rintro ⟨t, hts, hbefore, hc, hd⟩
+    exact ⟨t, hts, hc, fun u hu => (hbefore u hu).2, hd⟩
+  · rintro ⟨t, hts, hc, hbefore, hd⟩
+    exact ⟨t, hts, fun u hu => ⟨evalStage_eq_none_of_le hu.le hc, hbefore u hu⟩, hc, hd⟩
 
 /-- Once the race has a winner, increasing the stage preserves its side, output and use. -/
 theorem raceStage_mono (hst : s ≤ t) (h : raceStage σ s c d x = some z) :
@@ -81,26 +97,28 @@ theorem evalStage_eq_some_of_raceStage_eq_some (h : raceStage σ s c d x = some 
     z.elim (fun a => evalStage σ s c x = some a) (fun b => evalStage σ s d x = some b) := by
   cases z with
   | inl a =>
-    obtain ⟨t, hts, -, ht⟩ := Staged.race_eq_some_inl_iff.1 (raceStage_def σ s c d x ▸ h)
+    obtain ⟨t, hts, -, ht⟩ := raceStage_eq_some_inl_iff.1 h
     exact evalStage_mono hts ht
   | inr b =>
-    obtain ⟨t, hts, -, -, ht⟩ := Staged.race_eq_some_inr_iff.1 (raceStage_def σ s c d x ▸ h)
+    obtain ⟨t, hts, -, -, ht⟩ := raceStage_eq_some_inr_iff.1 h
     exact evalStage_mono hts ht
 
 /-- A winner is a genuine partial computation of the indicated program. The supplied answers
-must be sound for the same fixed oracle throughout the race. -/
-theorem raceStage_sound {O : ℕ →. ℕ} (hσ : ∀ q y, σ q = some y → y ∈ O q)
+need only be sound below the winner's recorded use for the same fixed oracle. -/
+theorem raceStage_sound {O : ℕ →. ℕ}
+    (hσ : ∀ q < z.elim Halt.use Halt.use, ∀ y, σ q = some y → y ∈ O q)
     (h : raceStage σ s c d x = some z) :
     z.elim (fun a => a.output ∈ eval O c x) (fun b => b.output ∈ eval O d x) := by
   have hz := evalStage_eq_some_of_raceStage_eq_some h
-  cases z <;> exact evalStage_sound hz fun q _ y hy => hσ q y hy
+  cases z <;> exact evalStage_sound hz hσ
 
 /-- The race eventually discovers a winner exactly when at least one of the partial
 computations converges. Completeness requires all defined oracle answers to be supplied. -/
 theorem exists_raceStage_eq_some_iff {O : ℕ →. ℕ}
     (hσ : ∀ q y, σ q = some y ↔ y ∈ O q) :
     (∃ s z, raceStage σ s c d x = some z) ↔ (eval O c x).Dom ∨ (eval O d x).Dom := by
-  simp only [raceStage_def, Staged.exists_race_eq_some_iff, Part.dom_iff_mem,
+  simp only [← Option.ne_none_iff_exists', ne_eq, raceStage_eq_none_iff, not_and_or, exists_or]
+  simp only [← ne_eq, Option.ne_none_iff_exists', Part.dom_iff_mem,
     mem_eval_iff_exists_evalStage hσ]
   aesop
 

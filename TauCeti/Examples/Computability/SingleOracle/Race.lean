@@ -37,11 +37,10 @@ example (σ : ℕ → Option ℕ) : ∃ s t, s < t ∧
   have hc' : evalStage σ t (comp zero zero) 0 = some ⟨0, 0⟩ :=
     evalStage_eq_some_of_evaln (k := 1) (by simp) (by omega) (by omega) (by simp [t])
   refine ⟨s, t, hst, by simp [hc, hd], by simp [hc'], fun u hu => raceStage_mono hu ?_⟩
-  rw [raceStage_def, race_eq_some_inr_iff]
-  refine ⟨s, le_rfl, ?_, hc, hd⟩
+  rw [raceStage_eq_some_inr_iff]
+  refine ⟨s, le_rfl, hc, ?_, hd⟩
   intro u hu
-  exact ⟨evalStage_eq_none_of_le_encode (by omega),
-    evalStage_eq_none_of_le_encode (by omega)⟩
+  exact evalStage_eq_none_of_le_encode (by omega)
 
 -- Negative oracle answers are successful queries, and their use is retained across a tie.
 example (s : ℕ) (hs : 1 ≤ s) :
