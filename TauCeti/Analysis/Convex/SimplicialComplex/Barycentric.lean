@@ -72,11 +72,7 @@ theorem exists_subdivision_centroid_mem (K : SimplicialComplex ℝ E)
     intro s
     have : Nonempty s.1 := (K.nonempty_of_mem_faces s.2).coe_sort
     -- the centroid of `s` is that of the affinely independent inclusion `s → E`
-    have he : s.1.centroid ℝ id = Finset.univ.centroid ℝ ((↑) : s.1 → E) := by
-      conv_lhs => rw [← Finset.attach_map_val (s := s.1)]
-      rw [Finset.centroid_map, Finset.univ_eq_attach]
-      rfl
-    rw [he, ← Finset.setOfPred_mem, ← Subtype.range_coe_subtype]
+    rw [← Finset.centroid_univ, ← Finset.setOfPred_mem, ← Subtype.range_coe_subtype]
     exact (K.indep s.2).centroid_mem_intrinsicInterior_convexHull
   -- a point of the frontier of a simplex lies in the open simplex of a proper face
   have hfr : ∀ s : K.faces, intrinsicFrontier ℝ (convexHull ℝ (s : Set E)) ⊆
