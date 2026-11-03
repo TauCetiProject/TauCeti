@@ -22,11 +22,6 @@ public section
 
 namespace DirichletCharacter
 
-/-- Inversion preserves primitivity of a Dirichlet character. -/
-theorem IsPrimitive.inv {R : Type*} [CommMonoidWithZero R] {n : ℕ}
-    {χ : DirichletCharacter R n} (hχ : χ.IsPrimitive) : χ⁻¹.IsPrimitive := by
-  rwa [isPrimitive_def, conductor_inv]
-
 /-- A primitive character is principal exactly when its level is one. -/
 theorem IsPrimitive.eq_one_iff {R : Type*} [CommMonoidWithZero R] {n : ℕ} [NeZero n]
     {χ : DirichletCharacter R n} (hχ : χ.IsPrimitive) : χ = 1 ↔ n = 1 := by

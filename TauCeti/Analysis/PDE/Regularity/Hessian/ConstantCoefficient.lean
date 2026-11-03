@@ -146,7 +146,8 @@ theorem exists_eLpNorm_iteratedFDeriv_two_le_eLpNorm_sum_smul_fderiv_fderiv
           ENNReal.ofReal (C / lam) * eLpNorm (fun x => ∑ i, ∑ j, A i j •
             fderiv ℝ (fderiv ℝ ⇑u) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1))
               p volume := by
-  obtain ⟨C, hC⟩ := exists_eLpNorm_iteratedFDeriv_two_le_eLpNorm_laplacian (F := F) hp hp_top
+  obtain ⟨C, hC⟩ := exists_eLpNorm_iteratedFDeriv_two_le_eLpNorm_laplacian
+    (V := EuclideanSpace ℝ (Fin n)) (F := F) hp hp_top
   exact ⟨C, fun hlam hA u =>
     eLpNorm_iteratedFDeriv_two_le_eLpNorm_sum_smul_fderiv_fderiv_of_laplacian hlam hA hC u⟩
 
@@ -166,7 +167,8 @@ theorem exists_eLpNorm_iteratedFDeriv_two_le_eLpNorm_sum_smul_fderiv_fderiv_real
           ENNReal.ofReal (C / lam) * eLpNorm (fun x => ∑ i, ∑ j, A i j •
             fderiv ℝ (fderiv ℝ ⇑u) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1))
               p volume := by
-  obtain ⟨C, hC⟩ := exists_eLpNorm_iteratedFDeriv_two_le_eLpNorm_laplacian_real hp hp_top
+  obtain ⟨C, hC⟩ := exists_eLpNorm_iteratedFDeriv_two_le_eLpNorm_laplacian_real
+    (V := EuclideanSpace ℝ (Fin n)) hp hp_top
   exact ⟨C, fun hlam hA u =>
     eLpNorm_iteratedFDeriv_two_le_eLpNorm_sum_smul_fderiv_fderiv_of_laplacian hlam hA hC u⟩
 

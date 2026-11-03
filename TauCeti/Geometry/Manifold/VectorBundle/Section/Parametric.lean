@@ -169,7 +169,7 @@ private theorem exists_section_badParameter_neighborhood {n : ℕ∞ω} {x : M} 
   let D₂ := (fderiv ℝ f (φ x, l)).comp (ContinuousLinearMap.inr ℝ X Λ)
   have hstrict : HasStrictFDerivAt f (D₁.coprod D₂) (φ x, l) := by
     simpa only [D₁, D₂, ContinuousLinearMap.coprod_comp_inl_inr] using
-      hfn.hasStrictFDerivAt hn0
+      hfn.hasStrictFDerivAt_fderiv hn0
   have hsurj : Surjective (D₁.coprod D₂) := by
     rw [ContinuousLinearMap.coprod_comp_inl_inr, ← hfeq, ← hpt,
       ← hcd.mvfderiv_eq_fderiv_comp_extChartAt_symm]

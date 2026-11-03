@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Noetherian.Defs
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Basic
 import TauCeti.Analysis.Normed.Group.Ultra
+import TauCeti.Analysis.Normed.Module.StrictGenerators
 import TauCeti.Analysis.Normed.Ring.Approximation
 import Mathlib.Data.Finsupp.MonomialOrder
 import Mathlib.Data.Finsupp.PWO
@@ -450,39 +451,9 @@ theorem _root_.Ideal.exists_finset_norm_eq_one_isRestricted_subring
       ∀ y ∈ H, ∃ a : IsRestricted.subring (R := K) (fun _ : σ ↦ 1) →
           IsRestricted.subring (R := K) (fun _ : σ ↦ 1),
         y = ∑ x ∈ F, a x * x ∧ ∀ x ∈ F, ‖a x‖ ≤ ‖y‖ := by
-  classical
-  obtain ⟨F, hFH, hF⟩ := H.exists_finset_eq_sum_mul_isRestricted_subring
-  -- At unit polyradius the Gauss norm of each generator `x` is the norm of a coefficient `u x`,
-  -- and dividing `x` by the constant `u x` normalises it to Gauss norm one.
-  choose! t ht using fun x : IsRestricted.subring (R := K) (fun _ : σ ↦ 1) ↦
-    exists_norm_coeff_eq_norm x
-  let C' : K → IsRestricted.subring (R := K) (fun _ : σ ↦ 1) := fun u ↦ ⟨C u, isRestricted_C _ u⟩
-  let u x := coeff (t x) (x : MvPowerSeries σ K)
-  have hu (x) (hx : x ∈ F) : u x ≠ 0 := by
-    rw [← norm_pos_iff, ht]
-    exact norm_pos_iff.mpr (hFH x hx).2
-  have hC' (x) (hx : x ∈ F) : C' (u x) * C' (u x)⁻¹ = 1 :=
-    Subtype.ext <| by simp [C', ← map_mul, mul_inv_cancel₀ (hu x hx)]
-  let g x := C' (u x)⁻¹ * x
-  refine ⟨F.image g, ?_, fun y hy ↦ ?_⟩
-  · simp only [Finset.mem_image, forall_exists_index, and_imp]
-    rintro _ x hx rfl
-    refine ⟨H.mul_mem_left _ (hFH x hx).1, ?_⟩
-    rw [norm_mul, norm_C, norm_inv, ← ht, inv_mul_cancel₀ (norm_ne_zero_iff.mpr (hu x hx))]
-  obtain ⟨a, rfl, ha⟩ := hF y hy
-  refine ⟨fun z ↦ ∑ x ∈ F with g x = z, a x * C' (u x), ?_, fun z _ ↦ ?_⟩
-  · simp only [Finset.sum_mul]
-    calc ∑ x ∈ F, a x * x = ∑ x ∈ F, a x * C' (u x) * g x :=
-          Finset.sum_congr rfl fun x hx ↦ by
-            rw [mul_assoc, ← mul_assoc (C' (u x)), hC' x hx, one_mul]
-      _ = ∑ z ∈ F.image g, ∑ x ∈ F with g x = z, a x * C' (u x) * g x :=
-          (Finset.sum_fiberwise_of_maps_to (fun x hx ↦ Finset.mem_image_of_mem g hx) _).symm
-      _ = ∑ z ∈ F.image g, ∑ x ∈ F with g x = z, a x * C' (u x) * z :=
-          Finset.sum_congr rfl fun z _ ↦ Finset.sum_congr rfl fun x hx ↦ by
-            rw [(Finset.mem_filter.mp hx).2]
-  · refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (norm_nonneg _) fun x hx ↦ ?_
-    rw [norm_mul, norm_C, ht]
-    exact ha x (Finset.mem_filter.mp hx).1
+  simpa only [smul_eq_mul] using H.exists_finset_norm_eq_one_of_exists_finset_eq_sum_smul
+    (fun _ _ hx ↦ exists_isUnit_and_norm_eq hx)
+    (by simpa only [smul_eq_mul] using H.exists_finset_eq_sum_mul_isRestricted_subring)
 
 end DivisionRing
 

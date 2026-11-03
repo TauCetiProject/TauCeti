@@ -181,8 +181,12 @@ theorem norm_tateUniformizationY_sub_sub_le (q u u' : Kˣ) (hq : ‖(q : K)‖ <
       a + A + B + s - a - (a' + A' + B' + s - a') = (A - A') + (B - B') := by ring
   rw [tateUniformizationY_eq_tsum_nat q hq u, tateUniformizationY_eq_tsum_nat q hq u', e]
   exact norm_tsum_sub_tsum_add_tsum_sub_tsum_le hq hu hu' (fun w ↦ w ^ 2 / (1 - w) ^ 3)
-    (fun w ↦ -w / (1 - w) ^ 3) (fun _ _ ↦ norm_sq_div_one_sub_cube_sub_sq_div_one_sub_cube_le)
-    (fun _ _ ↦ norm_neg_div_one_sub_cube_sub_neg_div_one_sub_cube_le)
+    (fun w ↦ -w / (1 - w) ^ 3)
+    (fun _ _ ht ht' ↦ (norm_sq_div_one_sub_cube_sub_sq_div_one_sub_cube_le_max_mul ht ht').trans
+      (mul_le_of_le_one_left (norm_nonneg _) (max_le ht.le ht'.le)))
+    (fun _ _ ht ht' ↦ by
+      rw [neg_div, neg_div, neg_sub_neg]
+      exact (norm_div_one_sub_cube_sub_div_one_sub_cube_le ht' ht).trans_eq (norm_sub_rev _ _))
     (summable_tateUniformizationY_nat _ hq _) (summable_tateUniformizationY_nat _ hq _)
     (summable_tateUniformizationY_nat_neg _ hq _) (summable_tateUniformizationY_nat_neg _ hq _)
 
@@ -231,14 +235,10 @@ theorem norm_tateUniformizationY_eq_one (q u : Kˣ) (hq : ‖(q : K)‖ < 1)
 theorem norm_tateUniformizationX_add_tateUniformizationY (q u : Kˣ) (hq : ‖(q : K)‖ < 1)
     (hu : ‖(u : K)‖ = 1) (h : ‖1 - (u : K)‖ = 1) :
     ‖tateUniformizationX q u + tateUniformizationY q u‖ = 1 := by
-  have h0 : (1 - (u : K)) ≠ 0 := norm_ne_zero_iff.mp (by rw [h]; exact one_ne_zero)
-  have hsum : (u : K) / (1 - u) ^ 2 + (u : K) ^ 2 / (1 - u) ^ 3 = u / (1 - u) ^ 3 := by
-    field_simp
-    ring
   have hmain : ‖(u : K) / (1 - u) ^ 3‖ = 1 := by rw [norm_div, norm_pow, hu, h, one_pow, div_one]
   rw [← hmain]
   refine (IsUltrametricDist.norm_eq_of_norm_sub_lt_left ?_).symm
-  rw [norm_sub_rev, hmain, ← hsum, add_sub_add_comm]
+  rw [norm_sub_rev, hmain, ← div_one_sub_sq_add_sq_div_one_sub_cube (u : K), add_sub_add_comm]
   exact ((IsUltrametricDist.norm_add_le_max _ _).trans (max_le
     (norm_tateUniformizationX_sub_le_of_norm_eq_one q u hq hu)
     (norm_tateUniformizationY_sub_le_of_norm_eq_one q u hq hu))).trans_lt hq

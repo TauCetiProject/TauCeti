@@ -14,7 +14,8 @@ This file develops basic facts about a real seminormed inner-product space with 
 right action by the quaternions. Right multiplication by quaternions scales inner products. For a
 unit vector in a seminormed module, it gives a linear isometry from the quaternions onto the
 corresponding quaternionic line, without requiring an inner product. The file also records the
-real dimension of a finite quaternionic coordinate space.
+real dimension of a finite quaternionic coordinate space, and packages the standard basis
+`1, i, j, k` of the quaternions as an orthonormal basis.
 
 ## Main declarations
 
@@ -27,12 +28,37 @@ real dimension of a finite quaternionic coordinate space.
   families of quaternions to orthonormal families.
 * `TauCeti.finrank_piLp_quaternion`: a finite quaternionic coordinate space has real dimension
   four times the number of coordinates.
+* `Quaternion.orthonormalBasisOneIJK`: the basis `1, i, j, k` of `ℍ` as an orthonormal basis.
 -/
 
 public section
 
 open Module MulOpposite Quaternion
 open scoped RealInnerProductSpace RightActions ENNReal
+
+/-- The basis `1, i, j, k` of the quaternions, as an orthonormal basis for the real inner
+product. Its coordinate isometry is `Quaternion.linearIsometryEquivTuple`. -/
+noncomputable def Quaternion.orthonormalBasisOneIJK : OrthonormalBasis (Fin 4) ℝ ℍ :=
+  .ofRepr linearIsometryEquivTuple
+
+@[simp]
+theorem Quaternion.orthonormalBasisOneIJK_repr :
+    orthonormalBasisOneIJK.repr = linearIsometryEquivTuple :=
+  (rfl)
+
+@[simp]
+theorem Quaternion.coe_orthonormalBasisOneIJK :
+    (orthonormalBasisOneIJK : Fin 4 → ℍ) = ![1, ⟨0, 1, 0, 0⟩, ⟨0, 0, 1, 0⟩, ⟨0, 0, 0, 1⟩] := by
+  ext n : 1
+  rw [← orthonormalBasisOneIJK.repr_symm_single, orthonormalBasisOneIJK_repr]
+  fin_cases n <;> ext <;> simp
+
+@[simp]
+theorem Quaternion.toBasis_orthonormalBasisOneIJK :
+    orthonormalBasisOneIJK.toBasis = QuaternionAlgebra.basisOneIJK (-1 : ℝ) 0 (-1) := by
+  refine Module.Basis.eq_of_apply_eq fun n ↦ ?_
+  rw [OrthonormalBasis.coe_toBasis, coe_orthonormalBasisOneIJK]
+  fin_cases n <;> ext <;> simp [QuaternionAlgebra.basisOneIJK, Module.Basis.coe_ofEquivFun]
 
 namespace TauCeti
 
