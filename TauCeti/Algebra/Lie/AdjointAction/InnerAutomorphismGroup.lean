@@ -40,6 +40,8 @@ restriction to the Cartan subalgebra.
 
 ## Main results
 
+* `TauCeti.coe_ofLinearEquiv_expAd`: the generator `exp (ad x)` of `Int L` is the exponential of
+  `ad x`, as a linear map.
 * `TauCeti.intLieAlgebra_le_iff`: the universal property of `TauCeti.intLieAlgebra`.
 * `TauCeti.map_lie_of_mem_intLieAlgebra`: elements of `Int L` preserve the bracket.
 * `LieEquiv.map_conj_intLieAlgebra`: conjugation by an automorphism of `L` maps `Int L` onto
@@ -73,6 +75,13 @@ def intLieAlgebra : Subgroup (LinearMap.GeneralLinearGroup K L) :=
 theorem ofLinearEquiv_expAd_mem_intLieAlgebra (x : L) (hx : IsNilpotent (ad K L x)) :
     ofLinearEquiv (expAd x hx).toLinearEquiv ∈ intLieAlgebra K L :=
   Subgroup.subset_closure ⟨x, hx, rfl⟩
+
+/-- The linear map underlying the generator `exp (ad x)` of `Int L` is the exponential of
+`ad x`. -/
+theorem coe_ofLinearEquiv_expAd (x : L) (hx : IsNilpotent (ad K L x)) :
+    ((ofLinearEquiv (expAd x hx).toLinearEquiv : LinearMap.GeneralLinearGroup K L) :
+      Module.End K L) = IsNilpotent.exp (ad K L x) :=
+  LinearMap.ext (expAd_apply x hx)
 
 /-- `Int L` lies in a subgroup `G` if and only if every generator `exp (ad x)` does. -/
 theorem intLieAlgebra_le_iff {G : Subgroup (LinearMap.GeneralLinearGroup K L)} :

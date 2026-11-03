@@ -5,16 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Algebra.Group.Basic
+public import Mathlib.Topology.Algebra.ConstMulAction
 public import Mathlib.Topology.Bases
 
 /-!
 # A group with countably generated neighbourhoods of the identity is first countable
 
 `FirstCountableTopology` asks every point's neighbourhood filter to be countably generated. In a
-group whose multiplication is separately continuous it is enough to ask it at the identity: left
-translation is a homeomorphism, so `𝓝 a` is the image of `𝓝 1` under it, and the image of a
-countably generated filter is countably generated.
+group whose left translations are continuous it is enough to ask it at the identity: left
+translation by `a` is then a homeomorphism, so `𝓝 a` is the image of `𝓝 1` under it, and the image
+of a countably generated filter is countably generated.
 
 This matters because countable generation at the identity is what the *proofs* in this area
 assume — Henkel's open mapping theorem and
@@ -41,8 +41,8 @@ the class. That route is a theorem rather than an instance and needs a `UniformS
 
 ## Main results
 
-* `SeparatelyContinuousMul.toFirstCountableTopology`, with its additive form
-  `SeparatelyContinuousAdd.toFirstCountableTopology`.
+* `ContinuousConstSMul.toFirstCountableTopology`, with its additive form
+  `ContinuousConstVAdd.toFirstCountableTopology`.
 -/
 
 namespace TauCeti
@@ -56,17 +56,16 @@ translation by `a` is a homeomorphism carrying `𝓝 1` to `𝓝 a`, and `Filter
 countable generation.
 
 Only the identity is assumed, because that is the form the surrounding theory states — see the
-module docstring. Only separate continuity of multiplication is needed: the argument runs through
-left translation alone and never uses continuity of inversion. -/
-@[to_additive SeparatelyContinuousAdd.toFirstCountableTopology]
+module docstring. Only continuity of left translations is needed (`ContinuousConstSMul G G`, which
+`SeparatelyContinuousMul G` and hence `ContinuousMul G` provide); neither continuity of right
+translations nor continuity of inversion is used. -/
+@[to_additive ContinuousConstVAdd.toFirstCountableTopology]
 -- see Note [lower instance priority]
-instance (priority := 100) SeparatelyContinuousMul.toFirstCountableTopology {G : Type*} [Group G]
-    [TopologicalSpace G] [SeparatelyContinuousMul G] [(𝓝 (1 : G)).IsCountablyGenerated] :
+instance (priority := 100) ContinuousConstSMul.toFirstCountableTopology {G : Type*} [Group G]
+    [TopologicalSpace G] [ContinuousConstSMul G G] [(𝓝 (1 : G)).IsCountablyGenerated] :
     FirstCountableTopology G :=
   ⟨fun a ↦ by
-    have h : 𝓝 a = Filter.map (a * ·) (𝓝 (1 : G)) := by
-      simpa using ((Homeomorph.mulLeft a).map_nhds_eq (1 : G)).symm
-    rw [h]
+    rw [← mul_one a, ← smul_eq_mul, nhds_smul, ← Filter.map_smul]
     infer_instance⟩
 
 end

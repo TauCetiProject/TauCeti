@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvatu
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Conformal
 public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Weyl
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Weyl.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Cotton
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Hessian
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
@@ -409,9 +409,9 @@ theorem curvatureTensor_leviCivitaConnection_rescale
     simpa only [hfφ, Real.log_exp, mul_div_cancel_left₀ _ (two_ne_zero' ℝ)] using
       (hf.log fun y ↦ (hf_pos y).ne').div_const 2
   obtain rfl : f = fun y ↦ Real.exp (2 * φ y) := funext hfφ
-  obtain ⟨X, hX, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E u
-  obtain ⟨Y, hY, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E v
-  obtain ⟨Z, hZ, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E w
+  obtain ⟨X, hX, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ u
+  obtain ⟨Y, hY, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ v
+  obtain ⟨Z, hZ, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ w
   have h₁ : (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
         ⟨(g.rescale _ hf hf_pos).toRiemannianMetric⟩;
       (CovariantDerivative.leviCivitaConnection I M).curvatureTensor x (X x) (Y x) (Z x)) =
@@ -677,9 +677,9 @@ private theorem cottonTensor_leviCivitaConnection_rescale_of_three_le
       (hf.log fun y ↦ (hf_pos y).ne').div_const 2
   have hP := schoutenTensor_leviCivitaConnection_rescale g hf hf_pos hfφ hn
   obtain rfl : f = fun y ↦ Real.exp (2 * φ y) := funext hfφ
-  obtain ⟨X, hX, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E u
-  obtain ⟨Y, hY, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E v
-  obtain ⟨Z, hZ, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E w
+  obtain ⟨X, hX, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ u
+  obtain ⟨Y, hY, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ v
+  obtain ⟨Z, hZ, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ w
   have hXx : MDiffAt (T% X) x := hX.mdifferentiableAt (by simp)
   have hYx : MDiffAt (T% Y) x := hY.mdifferentiableAt (by simp)
   have hZx : MDiffAt (T% Z) x := hZ.mdifferentiableAt (by simp)

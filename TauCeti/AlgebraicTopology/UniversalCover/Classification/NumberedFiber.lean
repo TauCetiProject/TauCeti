@@ -14,6 +14,7 @@ import TauCeti.Topology.Covering.Clopen
 import TauCeti.AlgebraicTopology.UniversalCover.Deck.Connected.Basic
 import TauCeti.AlgebraicTopology.UniversalCover.Deck.Fiber.Monodromy
 import TauCeti.AlgebraicTopology.FundamentalGroup.BasepointChange
+import TauCeti.AlgebraicTopology.UniversalCover.Classification.Pointed
 
 /-!
 # Numbered, pointed and bare connected covers of degree `n`
@@ -351,6 +352,25 @@ theorem ConnectedFiberNumberedCoverClass.mk_eq_mk_iff {c c' : ConnectedFiberNumb
 theorem ConnectedPointedCoverClass.mk_eq_mk_iff {c c' : ConnectedPointedCover x n} :
     mk c = mk c' ↔ ConnectedPointedCoverIso c c' :=
   Quotient.eq
+
+/-- Pointed connected covers of a locally path-connected base have the same class when
+their recovered fundamental-group subgroups agree. -/
+theorem ConnectedPointedCoverClass.mk_eq_mk_of_range_eq [LocallyPathConnectedSpace X]
+    (c c' : ConnectedPointedCover x n)
+    (h : (FundamentalGroup.mapOfEq
+        ⟨c.cover.proj, c.cover.isCoveringMap_proj.continuous⟩ c.e.2).range =
+      (FundamentalGroup.mapOfEq
+        ⟨c'.cover.proj, c'.cover.isCoveringMap_proj.continuous⟩ c'.e.2).range) :
+    mk c = mk c' := by
+  obtain ⟨e, he, hp⟩ := (IsCoveringMap.exists_homeomorph_comp_eq_iff_range_eq
+    c.cover.isCoveringMap_proj c'.cover.isCoveringMap_proj c.e.2 c'.e.2).2 h
+  apply mk_eq_mk_iff.2
+  apply connectedPointedCoverIso_def.2
+  let f : c.cover ≅ c'.cover := CoveringSpace.FullSubcategory.isoMk (TopCat.isoOfHomeo e)
+    (by ext x : 1; exact congrFun hp x)
+  refine ⟨f, ?_⟩
+  rw [CoveringSpace.FullSubcategory.isoMk_hom_hom_left]
+  exact he
 
 /-- Two covers have the same class exactly when their underlying covers are isomorphic. -/
 @[simp]

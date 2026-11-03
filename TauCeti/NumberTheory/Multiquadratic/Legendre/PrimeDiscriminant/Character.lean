@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.Multiquadratic.Legendre.EvenPrimeDiscriminant
 public import TauCeti.NumberTheory.Multiquadratic.Legendre.PrimeDiscriminant.Basic
+public import TauCeti.NumberTheory.Multiquadratic.Legendre.PrimeDiscriminant.Even
 public import TauCeti.NumberTheory.Multiquadratic.Prime.Discriminants
 public import TauCeti.NumberTheory.LegendreSymbol.KroneckerSymbol
 public import Mathlib.NumberTheory.LegendreSymbol.JacobiSymbol
@@ -225,7 +225,7 @@ coprime to it. -/
 /-- The character attached to a prime discriminant `P` agrees at an odd prime `q` with the
 Legendre symbol `legendreSym q P`, the splitting symbol of `P` at `q` studied in
 `TauCeti.NumberTheory.Multiquadratic.Legendre.PrimeDiscriminant.Basic` and
-`TauCeti.NumberTheory.Multiquadratic.Legendre.EvenPrimeDiscriminant`. -/
+`TauCeti.NumberTheory.Multiquadratic.Legendre.PrimeDiscriminant.Even`. -/
 theorem primeDiscriminantCharFun_eq_legendreSym {P : ℤ} (hP : IsPrimeDiscriminant P) {q : ℕ}
     [Fact q.Prime] (hq : q ≠ 2) : primeDiscriminantCharFun P q = legendreSym q P := by
   rcases isPrimeDiscriminant_iff.mp hP with hev | ⟨p, hp, hodd, rfl⟩

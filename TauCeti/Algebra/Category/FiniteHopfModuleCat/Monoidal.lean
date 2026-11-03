@@ -35,6 +35,9 @@ product with the native one. The monoidal structure is preadditive and `k`-linea
 * `(TauCeti.FiniteHopfModuleCat.forgetToModule k H).Monoidal`: the forgetful functor is monoidal.
 * `TauCeti.FiniteHopfModuleCat.tensor_ext`, `tensorHom_tmul`, `associator_hom_tmul`,
   `leftUnitor_hom_tmul`, `rightUnitor_hom_tmul`: the monoidal structure on pure tensors.
+* `TauCeti.FiniteHopfModuleCat.whiskerLeft_hom_hom`, `associator_hom_hom`,
+  `leftUnitor_hom_hom`, and their companions: the underlying intertwiners of the monoidal
+  structure, as module-level maps of `BialgebraModule`.
 
 ## References
 
@@ -73,24 +76,42 @@ section Struct
 variable {k H}
 variable {M M' N N' P : FiniteHopfModuleCat k H}
 
-private theorem associator_hom_hom :
+/-- The tensor product of morphisms is the tensor product of the underlying intertwiners. -/
+theorem tensorHom_hom_hom (f : M ⟶ M') (g : N ⟶ N') :
+    (f ⊗ₘ g).hom.hom = tensorMap k H f.hom.hom g.hom.hom := (rfl)
+
+/-- Left whiskering tensors the underlying intertwiner with the identity on the left. -/
+theorem whiskerLeft_hom_hom (g : N ⟶ N') :
+    (M ◁ g).hom.hom = tensorMap k H LinearMap.id g.hom.hom := (rfl)
+
+/-- Right whiskering tensors the underlying intertwiner with the identity on the right. -/
+theorem whiskerRight_hom_hom (f : M ⟶ M') :
+    (f ▷ N).hom.hom = tensorMap k H f.hom.hom LinearMap.id := (rfl)
+
+/-- The associator is the reassociation equivalence `BialgebraModule.assoc`. -/
+theorem associator_hom_hom :
     (α_ M N P).hom.hom.hom = (assoc k H M N P).toLinearMap :=
   LinearEquiv.toFiniteHopfModuleCatIso_hom_hom _
 
-private theorem associator_inv_hom :
+/-- The inverse associator is the inverse reassociation equivalence. -/
+theorem associator_inv_hom :
     (α_ M N P).inv.hom.hom = (assoc k H M N P).symm.toLinearMap :=
   LinearEquiv.toFiniteHopfModuleCatIso_inv_hom _
 
-private theorem leftUnitor_hom_hom : (λ_ M).hom.hom.hom = (lid k H M).toLinearMap :=
+/-- The left unitor is the left unit equivalence `BialgebraModule.lid`. -/
+theorem leftUnitor_hom_hom : (λ_ M).hom.hom.hom = (lid k H M).toLinearMap :=
   LinearEquiv.toFiniteHopfModuleCatIso_hom_hom _
 
-private theorem leftUnitor_inv_hom : (λ_ M).inv.hom.hom = (lid k H M).symm.toLinearMap :=
+/-- The inverse left unitor is the inverse left unit equivalence. -/
+theorem leftUnitor_inv_hom : (λ_ M).inv.hom.hom = (lid k H M).symm.toLinearMap :=
   LinearEquiv.toFiniteHopfModuleCatIso_inv_hom _
 
-private theorem rightUnitor_hom_hom : (ρ_ M).hom.hom.hom = (rid k H M).toLinearMap :=
+/-- The right unitor is the right unit equivalence `BialgebraModule.rid`. -/
+theorem rightUnitor_hom_hom : (ρ_ M).hom.hom.hom = (rid k H M).toLinearMap :=
   LinearEquiv.toFiniteHopfModuleCatIso_hom_hom _
 
-private theorem rightUnitor_inv_hom : (ρ_ M).inv.hom.hom = (rid k H M).symm.toLinearMap :=
+/-- The inverse right unitor is the inverse right unit equivalence. -/
+theorem rightUnitor_inv_hom : (ρ_ M).inv.hom.hom = (rid k H M).symm.toLinearMap :=
   LinearEquiv.toFiniteHopfModuleCatIso_inv_hom _
 
 /-- Morphisms out of a tensor product are determined by their values on pure tensors. -/

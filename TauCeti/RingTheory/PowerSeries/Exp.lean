@@ -33,9 +33,13 @@ the coefficients (the augmentation), and the higher coefficients are the moments
 ## Main results
 
 * `PowerSeries.constantCoeff_rescale`: rescaling the variable keeps the constant coefficient.
+* `PowerSeries.rescale_exp_mul_rescale_neg_exp`, `PowerSeries.rescale_exp_mul_self`:
+  `e^{aX} e^{-aX} = 1` and `e^{aX} e^{aX} = e^{2aX}`.
 * `AddMonoidAlgebra.expAlgHom_single`: `e^m ↦ e^{φ(m) X}`.
 * `AddMonoidAlgebra.constantCoeff_expAlgHom`: the constant coefficient of the exponential
   specialization is the sum of the coefficients.
+* `TauCeti.sum_antidiagonal_inv_factorial_mul_neg_one_pow`: the coefficients of `e^X e^{-X} = 1`,
+  `∑_{i + j = n} (-1)ʲ / (i! j!) = 0` for `n > 0`.
 -/
 
 public section
@@ -59,6 +63,16 @@ noncomputable def expMonoidHom : Multiplicative R →* R⟦X⟧ where
   map_mul' a b := by simp [exp_mul_exp_eq_exp_add]
 
 variable {R}
+
+/-- `e^{aX} e^{-aX} = 1`. -/
+theorem rescale_exp_mul_rescale_neg_exp (a : R) :
+    rescale a (exp R) * rescale (-a) (exp R) = 1 := by
+  rw [exp_mul_exp_eq_exp_add, add_neg_cancel, rescale_zero_apply, constantCoeff_exp, map_one]
+
+/-- `e^{aX} e^{aX} = e^{2aX}`. -/
+theorem rescale_exp_mul_self (a : R) :
+    rescale a (exp R) * rescale a (exp R) = rescale (2 * a) (exp R) := by
+  rw [exp_mul_exp_eq_exp_add, two_mul]
 
 private theorem expMonoidHom_apply_def (a : Multiplicative R) :
     expMonoidHom R a = rescale a.toAdd (exp R) :=
@@ -114,3 +128,20 @@ theorem constantCoeff_expAlgHom (φ : M →+ R) (f : k[M]) :
   simp [Algebra.algebraMap_eq_smul_one]
 
 end AddMonoidAlgebra
+
+namespace TauCeti
+
+open Finset
+
+open scoped Nat
+
+/-- The coefficients of `e^X e^{-X} = 1`: `∑_{i + j = n} (-1)ʲ / (i! j!)` is `1` for `n = 0` and
+`0` otherwise. -/
+theorem sum_antidiagonal_inv_factorial_mul_neg_one_pow (n : ℕ) :
+    ∑ ij ∈ antidiagonal n, (ij.1 ! : ℚ)⁻¹ * ((-1) ^ ij.2 * (ij.2 ! : ℚ)⁻¹) =
+      if n = 0 then 1 else 0 := by
+  have h := congr(PowerSeries.coeff n $(PowerSeries.exp_mul_exp_neg_eq_one (A := ℚ)))
+  rw [PowerSeries.coeff_mul, PowerSeries.coeff_one] at h
+  simpa [PowerSeries.evalNegHom, PowerSeries.coeff_rescale, PowerSeries.coeff_exp] using h
+
+end TauCeti

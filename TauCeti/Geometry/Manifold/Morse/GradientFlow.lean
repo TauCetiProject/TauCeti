@@ -32,7 +32,7 @@ positive time, every cluster point of `γ t` as `t → ∞` is a critical point 
 contains only finitely many critical points the trajectory converges to one of them
 (`TauCeti.exists_tendsto_maximalIntegralCurve_neg_mgradient`). This is the manifold counterpart,
 for an arbitrary Riemannian metric, of the vector-space theorem
-`TauCeti.IsIntegralCurveOn.exists_tendsto_atTop`. The ω-limit set of the trajectory is nonempty,
+`IsIntegralCurveOn.exists_tendsto_atTop`. The ω-limit set of the trajectory is nonempty,
 connected and invariant under the local flow, and `f` is constant on it, so the gradient vanishes
 there.
 

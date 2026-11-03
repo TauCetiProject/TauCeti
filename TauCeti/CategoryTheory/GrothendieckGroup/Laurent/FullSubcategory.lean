@@ -25,6 +25,8 @@ exact category.
 * `TauCeti.GradedExactStructure.forgetGrading_foldAlternating`: at `q = 1`, forgetting the grading
   carries the graded Euler class of a finite resolution to the Euler class of its image
   resolution.
+* `TauCeti.LaurentK0.mapEquiv_congrFullSubcategory_of`: a graded exact equivalence restricted to
+  full subcategories induces the isomorphism of graded Grothendieck groups `[X] ↦ [e X]`.
 -/
 
 public section
@@ -134,5 +136,49 @@ theorem forgetGrading_foldAlternating {X : C} (r : E.toExactStructure.FiniteReso
 end ForgetGrading
 
 end GradedExactStructure
+
+namespace LaurentK0
+
+variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C] [HasBinaryBiproducts C]
+  [LocallySmall.{w} C] {D : Type u'} [Category.{v'} D] [Preadditive D] [HasZeroObject D]
+  [HasBinaryBiproducts D] [LocallySmall.{w'} D]
+  {E : GradedExactStructure C} {E' : GradedExactStructure D}
+  {P : ObjectProperty C} [ObjectProperty.EssentiallySmall.{w} P]
+  [P.ContainsZero] [P.IsClosedUnderBinaryProducts]
+  {Q : ObjectProperty D} [ObjectProperty.EssentiallySmall.{w'} Q]
+  [Q.ContainsZero] [Q.IsClosedUnderBinaryProducts]
+  (e : GradedExactEquiv E E') (hP : E.toExactStructure.IsExtensionClosed P)
+  (hQ : E'.toExactStructure.IsExtensionClosed Q)
+  (hPshift : P.inverseImage E.shift.functor = P) (hQshift : Q.inverseImage E'.shift.functor = Q)
+  (h : Q.inverseImage e.equiv.functor = P)
+
+local instance : P.IsClosedUnderIsomorphisms :=
+  ObjectProperty.isClosedUnderIsomorphisms_of_containsZero P
+
+local instance : Q.IsClosedUnderIsomorphisms :=
+  ObjectProperty.isClosedUnderIsomorphisms_of_containsZero Q
+
+/-- The isomorphism of graded Grothendieck groups induced by a graded exact equivalence restricted
+to full subcategories sends `[X]` to the class of its image under Mathlib's restricted
+equivalence `CategoryTheory.Equivalence.congrFullSubcategory`. -/
+theorem mapEquiv_congrFullSubcategory_of (X : P.FullSubcategory) :
+    mapEquiv.{w, w'} (e.congrFullSubcategory hP hQ hPshift hQshift h)
+        (of (E.fullSubcategory P hP hPshift) X) =
+      of (E'.fullSubcategory Q hQ hQshift) ((e.equiv.congrFullSubcategory h).functor.obj X) :=
+  (mapEquiv_of _ X).trans <|
+    congrArg (fun F ↦ of (E'.fullSubcategory Q hQ hQshift) (F.functor.obj X))
+      (GradedExactEquiv.congrFullSubcategory_equiv _ _ _ _ _ h)
+
+/-- The inverse of the isomorphism in `TauCeti.LaurentK0.mapEquiv_congrFullSubcategory_of` sends
+`[Y]` to the class of its image under the inverse of Mathlib's restricted equivalence. -/
+theorem mapEquiv_congrFullSubcategory_symm_of (Y : Q.FullSubcategory) :
+    (mapEquiv.{w, w'} (e.congrFullSubcategory hP hQ hPshift hQshift h)).symm
+        (of (E'.fullSubcategory Q hQ hQshift) Y) =
+      of (E.fullSubcategory P hP hPshift) ((e.equiv.congrFullSubcategory h).inverse.obj Y) :=
+  (mapEquiv_symm_of _ Y).trans <|
+    congrArg (fun F ↦ of (E.fullSubcategory P hP hPshift) (F.inverse.obj Y))
+      (GradedExactEquiv.congrFullSubcategory_equiv _ _ _ _ _ h)
+
+end LaurentK0
 
 end TauCeti

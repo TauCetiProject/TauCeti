@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.Hypergraph.Basic
+public import Mathlib.Combinatorics.SimpleGraph.Clique
 public import Mathlib.Data.Finset.Slice
 public import Mathlib.Algebra.Order.Field.Rat
 import Mathlib.Tactic.Positivity
@@ -33,6 +34,7 @@ vertex type.
 * `TauCeti.UniformHypergraph.edgeDensity`: the rational edge density.
 * `TauCeti.UniformHypergraph.blockDensity`: the rational density of the edges inside a finite
   block of vertices.
+* `SimpleGraph.toUniformHypergraph`: the edges of a simple graph as a `2`-uniform hypergraph.
 
 ## Main results
 
@@ -250,5 +252,37 @@ theorem blockDensity_univ [Fintype V] (H : UniformHypergraph r V) :
 end BlockDensity
 
 end UniformHypergraph
+
+/-! ### Simple graphs as `2`-uniform hypergraphs -/
+
+section SimpleGraph
+
+variable {V : Type*} [Fintype V] [DecidableEq V] (G : SimpleGraph V) [DecidableRel G.Adj]
+
+/-- The edges of a simple graph on a finite vertex type as a `2`-uniform hypergraph: the
+`2`-cliques `G.cliqueFinset 2` of `G`. -/
+def _root_.SimpleGraph.toUniformHypergraph : UniformHypergraph 2 V where
+  edges := G.cliqueFinset 2
+  edge_card _ he := (G.mem_cliqueFinset_iff.1 he).card_eq
+
+variable {G}
+
+/-- The edges of `G.toUniformHypergraph` are the `2`-cliques of `G`. -/
+theorem _root_.SimpleGraph.mem_toUniformHypergraph_edges {e : Finset V} :
+    e ∈ G.toUniformHypergraph.edges ↔ G.IsNClique 2 e :=
+  G.mem_cliqueFinset_iff
+
+/-- A pair `{u, v}` is an edge of `G.toUniformHypergraph` exactly when `u` and `v` are adjacent
+in `G`. -/
+@[simp]
+theorem _root_.SimpleGraph.insert_mem_toUniformHypergraph_edges {u v : V} :
+    {u, v} ∈ G.toUniformHypergraph.edges ↔ G.Adj u v := by
+  rw [SimpleGraph.mem_toUniformHypergraph_edges, SimpleGraph.isNClique_iff, coe_pair,
+    SimpleGraph.isClique_pair]
+  refine ⟨fun ⟨hadj, hcard⟩ ↦ hadj ?_, fun h ↦ ⟨fun _ ↦ h, card_pair h.ne⟩⟩
+  rintro rfl
+  simp at hcard
+
+end SimpleGraph
 
 end TauCeti

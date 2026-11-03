@@ -7,9 +7,11 @@ module
 
 public import Mathlib.RingTheory.FormalGroup.Basic
 public import TauCeti.RingTheory.FormalGroup.Hom
+public import TauCeti.RingTheory.FormalGroup.NSMul.Basic
 public import TauCeti.RingTheory.PowerSeries.Coordinate.Basic
 import TauCeti.Algebra.Ring.GeomSum
 import TauCeti.RingTheory.FormalGroup.AddInv
+import TauCeti.RingTheory.FormalGroup.ZSMul
 import TauCeti.RingTheory.MvPowerSeries.Substitution
 import TauCeti.RingTheory.PowerSeries.Substitution
 
@@ -46,8 +48,12 @@ representable by a polynomial ring over the Lazard ring.
   to `φ • F`, that is `φ(F(X, Y)) = (φ • F)(φ(X), φ(Y))`.
 * `FormalGroup.isStrict_smulIso_iff`: the isomorphism `φ` is strict exactly when its linear
   coefficient is `1`.
+* `TauCeti.FormalGroupHom.smul_eq`: if `φ` is a homomorphism from `F` to `G`, then `φ • F = G`.
 * `FormalGroup.instIsCommSMul`: changing coordinates preserves commutativity.
 * `FormalGroup.map_smul`: changing coordinates commutes with base change.
+* `FormalGroup.nsmulSeries_smul_eq_zero_iff`: changing coordinates preserves `[n](X) = 0`.
+* `FormalGroup.nsmulSeries_smul_𝔾ₐ_eq_zero`: if `n = 0` in `R`, then `[n](X) = 0` for every
+  transport `φ • 𝔾ₐ` of the additive formal group law.
 * `FormalGroup.ofStrictCoeffs_single_smul_𝔾ₐ_toPowerSeries`: if `e² = 0`, transporting the
   additive law along `X + e X^(n + 1)` gives `X + Y + e ((X + Y)^(n + 1) - X^(n + 1) - Y^(n + 1))`.
 
@@ -255,12 +261,44 @@ theorem smulIso_invHom_toPowerSeries (φ : FormalCoordinate R) (F : FormalGroup 
     (smulIso φ F).invHom.toPowerSeries = φ⁻¹.toPowerSeries := by
   simp [smulIso, FormalCoordinate.toPowerSeries_inv]
 
+/-- **A coordinate that is a homomorphism changes the source into the target**: if the series of
+the formal coordinate `φ` underlies a homomorphism of formal group laws from `F` to `G`, then
+`φ • F = G`. Thus every isomorphism of formal group laws is, up to equality of the target, one of
+the isomorphisms `FormalGroup.smulIso`. -/
+theorem _root_.TauCeti.FormalGroupHom.smul_eq {F G : FormalGroup R} (f : FormalGroupHom F G)
+    {φ : FormalCoordinate R} (h : f.toPowerSeries = φ.toPowerSeries) : φ • F = G := by
+  have hφ (i : Fin 2) := φ⁻¹.hasSubst_subst (PowerSeries.HasSubst.X (S := R) i)
+  refine FormalGroup.ext ?_
+  -- `φ(φ⁻¹(Xᵢ)) = Xᵢ`, so the right side is `G(X₀, X₁) = G`.
+  have hX : (fun i ↦ PowerSeries.subst
+      (![PowerSeries.subst (X 0 : MvPowerSeries (Fin 2) R) φ⁻¹.toPowerSeries,
+        PowerSeries.subst (X 1 : MvPowerSeries (Fin 2) R) φ⁻¹.toPowerSeries] i)
+      φ.toPowerSeries) = X := by
+    funext i
+    fin_cases i <;> exact φ.subst_subst_inv (PowerSeries.HasSubst.X _)
+  rw [smul_toPowerSeries, ← h, f.hom_subst (hasSubst_finTwo (hφ 0) (hφ 1)), h, hX, subst_self,
+    id]
+
 /-- The isomorphism `φ` from `F` to `φ • F` is strict exactly when `φ` has linear coefficient
 `1`. -/
 theorem isStrict_smulIso_iff (φ : FormalCoordinate R) (F : FormalGroup R) :
     (smulIso φ F).IsStrict ↔ FormalCoordinate.linearCoeff φ = 1 := by
   rw [← Units.val_eq_one, FormalCoordinate.val_linearCoeff, ← smulIso_toHom_toPowerSeries φ F]
   exact ⟨fun h ↦ h.coeff_one, fun h ↦ ⟨h⟩⟩
+
+/-- **Changing coordinates preserves exponents**: `φ • F` is killed by `n` exactly when `F` is. -/
+@[simp]
+theorem nsmulSeries_smul_eq_zero_iff (φ : FormalCoordinate R) (F : FormalGroup R) {n : ℕ} :
+    (φ • F).nsmulSeries n = 0 ↔ F.nsmulSeries n = 0 :=
+  ((smulIso φ F).nsmulSeries_eq_zero_iff n).symm
+
+/-- **Transporting the additive formal group law kills `n` when `n = 0`**: if `n = 0` in `R`, then
+`[n](X) = 0` for the formal group law `φ • 𝔾ₐ = φ(φ⁻¹(X) + φ⁻¹(Y))`. This is a converse of
+`FormalGroup.natCast_eq_zero_of_nsmulSeries_eq_zero`. -/
+theorem nsmulSeries_smul_𝔾ₐ_eq_zero (φ : FormalCoordinate R) {n : ℕ} (hn : (n : R) = 0) :
+    (φ • (𝔾ₐ : FormalGroup R)).nsmulSeries n = 0 := by
+  rw [nsmulSeries_smul_eq_zero_iff, nsmulSeries_𝔾ₐ, ← map_natCast PowerSeries.C, hn, map_zero,
+    zero_mul]
 
 /-- If `e² = 0`, transporting the additive formal group law along `X + e X^(n + 1)` gives
 `X + Y + e ((X + Y)^(n + 1) - X^(n + 1) - Y^(n + 1))`. For instance, over the dual numbers this is

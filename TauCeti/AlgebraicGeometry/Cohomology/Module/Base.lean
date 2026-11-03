@@ -14,8 +14,10 @@ For a scheme over a base commutative ring, restricting the global-functions acti
 `TauCeti.AlgebraicGeometry.Cohomology.Module.Basic` along the induced map on global functions gives
 the corresponding actions of the base ring: the module structure on cohomology, the linearity
 of the maps induced by morphisms of coefficient sheaves (and the linear equivalences induced by
-isomorphisms), the compatibility of the two actions (`Scheme.Modules.isScalarTower_cohomology`),
-and the degree-zero identification with global sections.
+isomorphisms), the compatibility of the two actions (`Scheme.Modules.isScalarTower_cohomology`), the
+compatibility of the actions of two base rings `R → S` over which the scheme lies compatibly
+(`Scheme.Modules.isScalarTower_cohomology_of_comp_eq`), and the degree-zero identification with
+global sections.
 
 The base-ring statements live in their own file, rather than alongside the global-functions
 ones, to keep each file's kernel-checking time inside the CI per-file budget: every declaration
@@ -106,6 +108,15 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyMapBaseLinear_add
   rw [Functor.map_add]
   rfl
 
+/-- The induced map on cohomology of a finite sum of morphisms of coefficient sheaves is the sum
+of the induced maps. -/
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyMapBaseLinear_sum
+    {ι : Type*} (s : Finset ι) (f : ι → (M ⟶ N)) (i : ℕ) :
+    cohomologyMapBaseLinear R X (∑ j ∈ s, f j) i = ∑ j ∈ s, cohomologyMapBaseLinear R X (f j) i :=
+  map_sum (AddMonoidHom.mk' (cohomologyMapBaseLinear R X · i)
+    fun g h ↦ cohomologyMapBaseLinear_add R X g h i) f s
+
 variable {X} in
 /-- An isomorphism of sheaves of modules on a scheme over a commutative ring induces a linear
 equivalence over the base ring on cohomology. -/
@@ -141,6 +152,27 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.isScalarTower_cohomology (M : X.Mo
   .of_algebraMap_smul fun r x ↦ by
     rw [RingHom.algebraMap_toAlgebra, Scheme.baseRingToStructurePresheaf_app_top,
       CommRingCat.hom_ofHom, base_smul_cohomology]
+
+section ScalarTower
+
+variable {R S : Type u} [CommRing R] [CommRing S] [Algebra R S] {X : Scheme.{u}}
+  [X.Over (Spec (.of R))] [X.Over (Spec (.of S))]
+
+/-- If the structure morphism of `X` to `Spec R` factors through `Spec S`, then the action of `R`
+on the cohomology of a sheaf of modules on `X` is the restriction of the action of `S`. -/
+lemma _root_.AlgebraicGeometry.Scheme.Modules.isScalarTower_cohomology_of_comp_eq
+    (h : (X ↘ Spec (.of S)) ≫ Spec.map (CommRingCat.ofHom (algebraMap R S)) =
+      (X ↘ Spec (.of R))) (M : X.Modules) (i : ℕ) :
+    IsScalarTower R S (Cohomology M i) :=
+  .of_algebraMap_smul fun r x ↦ by
+    -- On global functions, `R` acts through `S`.
+    have hr := X.baseRingToStructurePresheaf_app_algebraMap h ⊤ r
+    rw [Scheme.baseRingToStructurePresheaf_app_top,
+      Scheme.baseRingToStructurePresheaf_app_top] at hr
+    rw [base_smul_cohomology, base_smul_cohomology]
+    exact congrArg (· • x) hr
+
+end ScalarTower
 
 /-- For a scheme over a commutative ring, the canonical identification of zeroth cohomology with
 global sections is linear over the base ring. -/

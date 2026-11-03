@@ -151,7 +151,7 @@ theorem exists_ne_zero_forall_mem_symmetricAlgebra_iff_of_isClosed [IsAlgClosed 
     -- differs syntactically from the opens of `PrimeSpectrum`, so `PrimeSpectrum.mem_basicOpen`
     -- is applied by unification rather than by rewriting.
     refine (PrimeSpectrum.mem_basicOpen (Away.isLocalizationElem hφ hs) _).trans ?_
-    rw [TauCeti.AlgHom.kernelPoint_asIdeal, RingHom.mem_ker]
+    rw [AlgHom.kernelPoint_asIdeal, RingHom.mem_ker]
     have := key (n := n) (a := s ^ 1) (by simpa using hs)
     rw [map_pow, pow_one (SymmetricAlgebra.lift v s)] at this
     exact not_congr (Iff.of_eq (congrArg (· = (0 : k)) this))

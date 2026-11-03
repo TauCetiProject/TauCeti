@@ -9,8 +9,9 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.RingTheory.Algebraic.Defs
 public import Mathlib.RingTheory.Jacobson.Ideal
 import Mathlib.Algebra.Polynomial.FieldDivision
-import Mathlib.RingTheory.Polynomial.Basic
 import Mathlib.Tactic.LinearCombination
+import TauCeti.RingTheory.Algebraic.Basic
+import TauCeti.RingTheory.Idempotents.Jacobson
 import TauCeti.RingTheory.Jacobson.Basic
 
 /-!
@@ -22,18 +23,25 @@ a nonzero polynomial annihilating `x` and divisible by `X` as `X ^ k * g` with `
 `b`, and `e = a (x) * x ^ k` is an idempotent of the form `p (x) * x`. It is nonzero, for
 otherwise `b (x) * g (x) = 1` would force `x ^ k = 0`.
 
-Every element of a finite-dimensional left ideal is algebraic. A left ideal consisting of
-nilpotent elements lies in the Jacobson radical, so a finite-dimensional left ideal not contained
-in the radical contains a nonzero idempotent. In a semisimple algebra, meaning one with zero
-Jacobson radical, every nonzero finite-dimensional left ideal does. This is the source of the
-idempotents in the structure theory of separating ideals of Banach algebras.
+A left ideal consisting of nilpotent elements lies in the Jacobson radical, so a left ideal of
+algebraic elements lies in the radical exactly when its only idempotent is `0`. Every element of
+a finite-dimensional left ideal is algebraic, so this applies to finite-dimensional left ideals.
+In a semisimple algebra, meaning one with zero Jacobson radical, every nonzero finite-dimensional
+left ideal contains a nonzero idempotent. This is the source of the idempotents in the structure
+theory of separating ideals of Banach algebras.
 
 ## Main results
 
 * `IsAlgebraic.exists_isIdempotentElem_aeval_mul_ne_zero`: an algebraic element `x` that is not
   nilpotent has a multiple `p (x) * x` that is a nonzero idempotent.
+* `Submodule.exists_isIdempotentElem_ne_zero_mem_of_isAlgebraic`: a left ideal of algebraic
+  elements not contained in the Jacobson radical contains a nonzero idempotent.
 * `Submodule.exists_isIdempotentElem_ne_zero_mem`: a finite-dimensional left ideal not contained
   in the Jacobson radical contains a nonzero idempotent.
+* `Submodule.le_jacobson_iff_forall_isIdempotentElem_eq_zero_of_isAlgebraic`: a left ideal of
+  algebraic elements lies in the Jacobson radical exactly when its only idempotent is `0`.
+* `Submodule.le_jacobson_iff_forall_isIdempotentElem_eq_zero`: a finite-dimensional left ideal
+  lies in the Jacobson radical exactly when its only idempotent is `0`.
 * `Submodule.exists_isIdempotentElem_ne_zero_mem_of_jacobson_eq_bot`: in an algebra with zero
   Jacobson radical, every nonzero finite-dimensional left ideal contains a nonzero idempotent.
 
@@ -41,6 +49,8 @@ idempotents in the structure theory of separating ideals of Banach algebras.
 
 * H. G. Dales, *Banach Algebras and Automatic Continuity*, §1.5, for the idempotents of
   finite-dimensional ideals, and §5.2, for their use in the structure of separating ideals.
+* T. Y. Lam, *A First Course in Noncommutative Rings*, §4: nil one-sided ideals lie in the
+  Jacobson radical.
 -/
 
 public section
@@ -85,11 +95,11 @@ end IsAlgebraic
 
 namespace Submodule
 
-/-- **Idempotents in finite-dimensional left ideals.** A finite-dimensional left ideal `J` of an
-algebra `B` over a field, given as a scalar submodule closed under left multiplication, that is
-not contained in the Jacobson radical of `B` contains a nonzero idempotent. -/
-theorem exists_isIdempotentElem_ne_zero_mem (J : Submodule K B) [FiniteDimensional K J]
-    (hJ : ∀ (b : B) {y : B}, y ∈ J → b * y ∈ J)
+/-- **Idempotents in left ideals outside the radical.** A left ideal `J` of an algebra `B` over a
+field, given as a scalar submodule closed under left multiplication, whose elements are algebraic
+and which is not contained in the Jacobson radical of `B` contains a nonzero idempotent. -/
+theorem exists_isIdempotentElem_ne_zero_mem_of_isAlgebraic (J : Submodule K B)
+    (hJ : ∀ (b : B) {y : B}, y ∈ J → b * y ∈ J) (halg : ∀ y ∈ J, IsAlgebraic K y)
     (hrad : ¬ J ≤ (Ring.jacobson B).restrictScalars K) :
     ∃ e ∈ J, IsIdempotentElem e ∧ e ≠ 0 := by
   -- A left ideal of nilpotent elements lies in the radical.
@@ -97,17 +107,38 @@ theorem exists_isIdempotentElem_ne_zero_mem (J : Submodule K B) [FiniteDimension
     by_contra! h
     exact hrad fun x hx ↦ TauCeti.Ring.mem_jacobson_of_forall_isNilpotent_mul fun y ↦
       h _ (hJ y hx)
-  -- `p ↦ p (x) * x` maps the infinite-dimensional `K[X]` into `J`, so it has a nonzero kernel.
-  let φ : K[X] →ₗ[K] J := LinearMap.codRestrict J
-    (LinearMap.mulRight K x ∘ₗ (aeval x).toLinearMap) fun p ↦ hJ _ hxJ
-  obtain ⟨p, hp, hp0⟩ : ∃ p, φ p = 0 ∧ p ≠ 0 := by
-    by_contra! h
-    exact Polynomial.not_finite (Module.Finite.of_injective φ
-      ((injective_iff_map_eq_zero φ).2 h))
-  have hpx : aeval x p * x = 0 := congrArg Subtype.val hp
-  have hx : IsAlgebraic K x := ⟨p * X, mul_ne_zero hp0 X_ne_zero, by rw [map_mul, aeval_X, hpx]⟩
-  obtain ⟨q, he, he0⟩ := hx.exists_isIdempotentElem_aeval_mul_ne_zero hnil
+  obtain ⟨q, he, he0⟩ := (halg x hxJ).exists_isIdempotentElem_aeval_mul_ne_zero hnil
   exact ⟨_, hJ _ hxJ, he, he0⟩
+
+/-- **Idempotents in finite-dimensional left ideals.** A finite-dimensional left ideal `J` of an
+algebra `B` over a field, given as a scalar submodule closed under left multiplication, that is
+not contained in the Jacobson radical of `B` contains a nonzero idempotent. -/
+theorem exists_isIdempotentElem_ne_zero_mem (J : Submodule K B) [FiniteDimensional K J]
+    (hJ : ∀ (b : B) {y : B}, y ∈ J → b * y ∈ J)
+    (hrad : ¬ J ≤ (Ring.jacobson B).restrictScalars K) :
+    ∃ e ∈ J, IsIdempotentElem e ∧ e ≠ 0 :=
+  J.exists_isIdempotentElem_ne_zero_mem_of_isAlgebraic hJ (fun _ ↦ J.isAlgebraic_of_mem hJ) hrad
+
+/-- A left ideal of algebraic elements of an algebra over a field, given as a scalar submodule
+closed under left multiplication, lies in the Jacobson radical exactly when its only idempotent is
+`0`. -/
+theorem le_jacobson_iff_forall_isIdempotentElem_eq_zero_of_isAlgebraic (J : Submodule K B)
+    (hJ : ∀ (b : B) {y : B}, y ∈ J → b * y ∈ J) (halg : ∀ y ∈ J, IsAlgebraic K y) :
+    J ≤ (Ring.jacobson B).restrictScalars K ↔ ∀ e ∈ J, IsIdempotentElem e → e = 0 := by
+  refine ⟨fun h e he hidem ↦ hidem.eq_zero_of_mem_jacobson_bot ?_, fun h ↦ ?_⟩
+  · rw [Ideal.jacobson_bot]
+    exact (restrictScalars_mem K _ e).1 (h he)
+  · by_contra hrad
+    obtain ⟨e, he, hidem, he0⟩ := J.exists_isIdempotentElem_ne_zero_mem_of_isAlgebraic hJ halg hrad
+    exact he0 (h e he hidem)
+
+/-- A finite-dimensional left ideal of an algebra over a field, given as a scalar submodule closed
+under left multiplication, lies in the Jacobson radical exactly when its only idempotent is `0`. -/
+theorem le_jacobson_iff_forall_isIdempotentElem_eq_zero (J : Submodule K B)
+    [FiniteDimensional K J] (hJ : ∀ (b : B) {y : B}, y ∈ J → b * y ∈ J) :
+    J ≤ (Ring.jacobson B).restrictScalars K ↔ ∀ e ∈ J, IsIdempotentElem e → e = 0 :=
+  J.le_jacobson_iff_forall_isIdempotentElem_eq_zero_of_isAlgebraic hJ
+    fun _ ↦ J.isAlgebraic_of_mem hJ
 
 /-- In an algebra over a field with zero Jacobson radical, every nonzero finite-dimensional left
 ideal, given as a scalar submodule closed under left multiplication, contains a nonzero

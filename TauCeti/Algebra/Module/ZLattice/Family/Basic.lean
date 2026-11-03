@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Module.ZLattice.Basic
 public import Mathlib.Topology.Algebra.ConstMulAction
+public import Mathlib.Topology.Covering.Quotient
 
 import TauCeti.Analysis.Normed.Group.Int
 
@@ -59,16 +60,23 @@ trivialization of the family built from it is in
 * `TauCeti.properlyDiscontinuousVAdd_periodAddAction`, `TauCeti.isCancelVAdd_periodAddAction`,
   `TauCeti.continuousConstVAdd_periodAddAction`: the period translation action on `Y × E` is
   properly discontinuous, free, and continuous.
+* `TauCeti.isAddQuotientCoveringMap_torusFamily_mk`: the orbit map `Y × E → (Y × E)/Λ` is a
+  covering map, the quotient map of the period translation action.
 * `TauCeti.mem_orbit_periodAddAction_iff`: two points lie in one orbit exactly when they have the
   same parameter `y` and differ by a period at `y`.
 * `TauCeti.continuous_torusFamilyProjection`, `TauCeti.isOpenMap_torusFamilyProjection`: the
   projection of the family of tori is continuous and open.
+* `TauCeti.secondCountableTopology_torusFamily`: the total space is second countable over a
+  second-countable base.
 
 ## References
 
 * Christina Birkenhake and Herbert Lange, *Complex Abelian Varieties*, second edition,
   Grundlehren der mathematischen Wissenschaften 302, Springer, 2004, Chapter 8 (families of
   complex tori given by period matrices).
+* Tau Ceti PR [#20968](https://github.com/TauCetiProject/TauCeti/pull/20968) (closed, unmerged)
+  proved that the orbit map is a covering map along the lines of
+  `TauCeti.isAddQuotientCoveringMap_torusFamily_mk`.
 -/
 
 public section
@@ -115,6 +123,14 @@ omit [TopologicalSpace Y] in
   have h := Basis.ofZLatticeBasis_repr_apply ℝ (LinearMap.range (P y))
     (b.map (LinearEquiv.ofInjective (P y) (hinj y))) (LinearEquiv.ofInjective (P y) (hinj y) l) i
   rwa [Basis.map_repr, LinearEquiv.trans_apply, LinearEquiv.symm_apply_apply] at h
+
+omit [TopologicalSpace Y] in
+/-- The coordinate vector of a period `P y l` in the period basis at `y` is the integer coordinate
+vector of `l` in `b`. -/
+theorem periodBasis_equivFun_period {ι : Type*} [Finite ι] (b : Basis ι ℤ Λ)
+    (hinj : ∀ y, Injective (P y)) (y : Y) (l : Λ) :
+    (periodBasis P b hinj y).equivFun (P y l) = fun i ↦ (b.repr l i : ℝ) :=
+  funext fun i ↦ by simp
 
 /-- **Uniform bound for inverse period maps.** For a basis `b` of `Λ`, the real linear maps
 `x ↦ ∑ i, x i • P y (b i)` are bounded below by one constant `c > 0` as `y` ranges over a
@@ -289,6 +305,19 @@ theorem isOpenMap_torusFamilyProjection [TopologicalSpace Y] [TopologicalSpace E
   let _ := periodAddAction P
   IsOpenMap.of_comp continuous_quot_mk Quotient.mk_surjective isOpenMap_fst
 
+/-- **A family of tori over a second-countable base is second countable.** If the periods depend
+continuously on the parameter, the orbit space `(Y × E)/Λ` of the period translation action is
+second countable whenever `Y` and `E` are, since its orbit map is open. No lattice hypothesis on
+the periods is needed. -/
+theorem secondCountableTopology_torusFamily [TopologicalSpace Y] [SecondCountableTopology Y]
+    [TopologicalSpace E] [ContinuousAdd E] [SecondCountableTopology E]
+    (hcont : ∀ l, Continuous fun y ↦ P y l) :
+    letI := periodAddAction P
+    SecondCountableTopology (AddAction.orbitRel.Quotient Λ (Y × E)) :=
+  letI := periodAddAction P
+  haveI := continuousConstVAdd_periodAddAction P hcont
+  ContinuousConstVAdd.secondCountableTopology
+
 end Action
 
 /-- **Orbit-local finiteness.** The period translation action of a continuous family of full
@@ -313,5 +342,20 @@ theorem properlyDiscontinuousVAdd_periodAddAction [FiniteDimensional ℝ E]
   calc ‖P p.1 l‖ = ‖(p.2 + P p.1 l) - p.2‖ := by rw [add_sub_cancel_left]
     _ ≤ ‖p.2 + P p.1 l‖ + ‖p.2‖ := norm_sub_le _ _
     _ ≤ R₁ + R₂ := by linarith
+
+/-- **The orbit map is a covering map.** For a continuous family of full lattices, the orbit map
+`Y × E → (Y × E)/Λ` of the period translation action is a covering map, and `(Y × E)/Λ` is its
+quotient by the free action of `Λ`. -/
+theorem isAddQuotientCoveringMap_torusFamily_mk [FiniteDimensional ℝ E]
+    [∀ y, DiscreteTopology (LinearMap.range (P y))] [∀ y, IsZLattice ℝ (LinearMap.range (P y))]
+    [Free ℤ Λ] [Module.Finite ℤ Λ] [T2Space Y] [LocallyCompactSpace Y]
+    (hcont : ∀ l, Continuous fun y ↦ P y l) (hinj : ∀ y, Injective (P y)) :
+    letI := periodAddAction P
+    IsAddQuotientCoveringMap (Quotient.mk (AddAction.orbitRel Λ (Y × E))) Λ := by
+  let _ := periodAddAction P
+  have := continuousConstVAdd_periodAddAction P hcont
+  have := properlyDiscontinuousVAdd_periodAddAction P hcont hinj
+  have := isCancelVAdd_periodAddAction P hinj
+  exact isAddQuotientCoveringMap_quotientMk_of_properlyDiscontinuousVAdd
 
 end TauCeti

@@ -129,8 +129,8 @@ theorem jimboGenerator_mul_self (q : Rˣ) {j k : Fin n} (hjk : j ≠ k) :
   ext w : 2
   have hT := jimboGenerator_single_update_update q hjk w
   have hW : update (update w j (w j)) k (w k) = w := by simp
-  simp only [LinearMap.coe_comp, comp_apply, lsingle_apply, Module.End.mul_apply,
-    LinearMap.add_apply, LinearMap.smul_apply, Module.End.one_apply]
+  simp only [LinearMap.coe_comp, comp_apply, lsingle_apply, mul_apply_eq_comp,
+    LinearMap.add_apply, LinearMap.smul_apply, one_apply_eq_self]
   rw [← hW]
   clear hW
   generalize w j = x, w k = y
@@ -174,7 +174,7 @@ theorem jimboGenerator_mul_comm (q : Rˣ) {j k l m : Fin n} (h : [j, k, l, m].No
       else single (W x y v u) 1 + ((q : R) - ((q⁻¹ : Rˣ) : R)) • single (W x y u v) 1 :=
     jimboGenerator_single_update_update q hlm _ u v
   have hW : W (w j) (w k) (w l) (w m) = w := by simp [W]
-  simp only [LinearMap.coe_comp, comp_apply, lsingle_apply, Module.End.mul_apply]
+  simp only [LinearMap.coe_comp, comp_apply, lsingle_apply, mul_apply_eq_comp]
   rw [← hW]
   clear hW
   generalize w j = x, w k = y, w l = u, w m = v
@@ -203,7 +203,7 @@ theorem jimboGenerator_braid (q : Rˣ) {j k l : Fin n} (hjk : j ≠ k) (hkl : k 
       else single (W x z y) 1 + ((q : R) - ((q⁻¹ : Rˣ) : R)) • single (W x y z) 1 :=
     jimboGenerator_single_update_update q hkl _ y z
   have hW : W (w j) (w k) (w l) = w := by simp [W]
-  simp only [LinearMap.coe_comp, comp_apply, lsingle_apply, Module.End.mul_apply]
+  simp only [LinearMap.coe_comp, comp_apply, lsingle_apply, mul_apply_eq_comp]
   rw [← hW]
   clear hW
   generalize w j = x, w k = y, w l = z
@@ -300,14 +300,14 @@ theorem jimbo_one_apply_single (b : BraidGroup n) (w : Fin n → ι) (c : R) :
       BraidGroup.transposition_eq_swap, Equiv.swap_inv]
   | one => simp
   | mul b b' hb hb' =>
-    rw [map_mul, Units.val_mul, Module.End.mul_apply, hb', hb, map_mul, mul_inv_rev,
+    rw [map_mul, Units.val_mul, mul_apply_eq_comp, hb', hb, map_mul, mul_inv_rev,
       Equiv.Perm.coe_mul, comp_assoc]
   | inv b hb =>
     simp only [map_inv, inv_inv]
     -- `b` sends `w ∘ π` to `w`, so its inverse sends `w` to `w ∘ π`.
     have h := hb (w ∘ BraidGroup.permHom n b) c
     rw [comp_assoc, ← Equiv.Perm.coe_mul, mul_inv_cancel, Equiv.Perm.coe_one, comp_id] at h
-    rw [← h, ← Module.End.mul_apply, ← Units.val_mul, inv_mul_cancel, Units.val_one,
-      Module.End.one_apply]
+    rw [← h, ← mul_apply_eq_comp, ← Units.val_mul, inv_mul_cancel, Units.val_one,
+      one_apply_eq_self]
 
 end TauCeti.KnotTheory

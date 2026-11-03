@@ -5,19 +5,34 @@ Authors: Codex
 -/
 module
 
-public import Mathlib.Probability.Kernel.Composition.Comp
+public import Mathlib.Probability.Kernel.Composition.CompMap
 
 /-!
-# Powers of finite and Markov kernels
+# Powers of s-finite, finite and Markov kernels
 
-Iterating a uniformly finite kernel remains uniformly finite. This permits taking finite
-transition masses, and thus nonnegative real transition matrices, for every iterate.
+Iterating an s-finite kernel remains s-finite; iterating a uniformly finite kernel remains
+uniformly finite. The latter permits taking finite transition masses, and thus nonnegative real
+transition matrices, for every iterate.
 Iterating a Markov kernel also preserves the probability normalization of every row.
+
+The powers of a deterministic kernel are the deterministic kernels of the iterates. Restricting
+the Chapman–Kolmogorov integral to one intermediate state bounds `(κ ^ (m + n)) x s` below by
+`(κ ^ m) x {y} * (κ ^ n) y s`; this is how positivity of multi-step transition masses propagates
+along paths of states.
 -/
 
 public section
 
 namespace ProbabilityTheory
+
+/-- Every natural power of an s-finite kernel is s-finite. -/
+instance IsSFiniteKernel.pow {α : Type*} [MeasurableSpace α] (κ : Kernel α α)
+    [IsSFiniteKernel κ] (n : ℕ) : IsSFiniteKernel (κ ^ n) := by
+  induction n with
+  | zero => exact inferInstanceAs (IsSFiniteKernel Kernel.id)
+  | succ n ih =>
+    -- Multiplication in the kernel monoid is composition.
+    exact inferInstanceAs (IsSFiniteKernel ((κ ^ n) ∘ₖ κ))
 
 /-- Every natural power of a finite kernel is finite. -/
 instance IsFiniteKernel.pow {α : Type*} [MeasurableSpace α] (κ : Kernel α α)
@@ -36,5 +51,58 @@ instance IsMarkovKernel.pow {α : Type*} [MeasurableSpace α] (κ : Kernel α α
   | succ n ih =>
     -- Multiplication in the kernel monoid is composition.
     exact inferInstanceAs (IsMarkovKernel ((κ ^ n) ∘ₖ κ))
+
+namespace Kernel
+
+open MeasureTheory
+
+variable {α : Type*} [MeasurableSpace α]
+
+/-- The unit of the monoid of kernels `Kernel α α` is the identity kernel. -/
+theorem one_def : (1 : Kernel α α) = Kernel.id := (rfl)
+
+/-- A kernel intertwining two one-step kernels also intertwines all their powers. -/
+theorem comp_pow_eq_pow_comp_of_comp_eq {β : Type*} [MeasurableSpace β]
+    {e : Kernel β α} {η : Kernel β β} {κ : Kernel α α}
+    (h : e ∘ₖ η = κ ∘ₖ e) (n : ℕ) : e ∘ₖ (η ^ n) = (κ ^ n) ∘ₖ e := by
+  induction n with
+  | zero => simp [one_def]
+  | succ n ih =>
+    -- Use the composition form of powers; the monoid instance does not expose multiplication.
+    simp only [Nat.add_comm n 1, pow_add, pow_one]
+    rw [← comp_assoc, h, comp_assoc, ih, comp_assoc]
+
+/-- The `n`-th power of the deterministic kernel of `f` is the deterministic kernel of the
+`n`-th iterate of `f`. -/
+@[simp]
+theorem deterministic_pow {f : α → α} (hf : Measurable f) (n : ℕ) :
+    deterministic f hf ^ n = deterministic f^[n] (hf.iterate n) := by
+  induction n with
+  | zero =>
+    ext
+    simp [one_def, id_apply, deterministic_apply]
+  | succ n ih =>
+    rw [pow_add, pow_one, ih, deterministic_comp_deterministic]
+    simp_rw [Function.iterate_succ]
+
+/-- **Chapman–Kolmogorov lower bound.** The `m + n`-step mass of a measurable set `s` is at least
+the mass of the paths that sit at the intermediate state `y` at time `m`. -/
+theorem pow_apply_singleton_mul_le_pow_add_apply (κ : Kernel α α) (m n : ℕ) (x y : α)
+    {s : Set α} (hs : MeasurableSet s) :
+    (κ ^ m) x {y} * (κ ^ n) y s ≤ (κ ^ (m + n)) x s := by
+  rw [pow_add_apply_eq_lintegral _ _ _ _ hs, mul_comm,
+    ← lintegral_singleton' ((κ ^ n).measurable_coe hs)]
+  exact setLIntegral_le_lintegral _ _
+
+/-- Positive multi-step masses compose: if `x` reaches `y` with positive probability in `m` steps
+and `y` reaches `s` with positive probability in `n` steps, then `x` reaches `s` with positive
+probability in `m + n` steps. -/
+theorem pow_add_apply_pos {κ : Kernel α α} {m n : ℕ} {x y : α} {s : Set α}
+    (hs : MeasurableSet s) (hxy : 0 < (κ ^ m) x {y}) (hy : 0 < (κ ^ n) y s) :
+    0 < (κ ^ (m + n)) x s :=
+  (ENNReal.mul_pos hxy.ne' hy.ne').trans_le
+    (pow_apply_singleton_mul_le_pow_add_apply κ m n x y hs)
+
+end Kernel
 
 end ProbabilityTheory

@@ -18,6 +18,11 @@ model, while Galois-cohomological constructions are available on the standard mo
 These equivalences underlie the transport of cohomological Brauer groups along field
 isomorphisms in `TauCeti.NumberTheory.ClassFieldTheory.Brauer.Congr`.
 
+Subextensions of the chosen separable closures are transported by
+`IntermediateField.separableClosureCongr`. This preserves degree, finiteness and normality.
+The induced automorphism equivalence commutes with restriction from the absolute Galois
+groups and identifies the corresponding fixing subgroups.
+
 ## Main definitions
 
 * `RingEquiv.separableClosureCongr`: the chosen equivalence of separable closures induced by a
@@ -143,3 +148,158 @@ theorem restrictNormalHom_congr (e : K ≃+* L)
         IntermediateField.coe_val] using (congrArg e.separableClosureCongr.symm hr).symm
 
 end RingEquiv
+
+namespace IntermediateField
+
+variable {K L : Type*} [Field K] [Field L]
+    (E : IntermediateField K (SeparableClosure K)) (e : K ≃+* L)
+
+/-- Transport a subextension through the chosen identification of separable closures. -/
+def separableClosureCongr : IntermediateField L (SeparableClosure L) :=
+  (E.toSubfield.comap e.separableClosureCongr.toRingHom).toIntermediateField (fun r => by
+    -- Unpack comap membership to apply the separable-closure algebraMap formula.
+    change e.separableClosureCongr (algebraMap L (SeparableClosure L) r) ∈ E
+    simp)
+
+/-- Membership in a transported subextension is tested in the original separable closure. -/
+@[simp]
+theorem mem_separableClosureCongr (x : SeparableClosure L) :
+    x ∈ E.separableClosureCongr e ↔ e.separableClosureCongr x ∈ E := Iff.rfl
+
+/-- The chosen identification restricts to an isomorphism of the underlying fields. -/
+def separableClosureCongrEquiv : E ≃+* E.separableClosureCongr e where
+  toFun x := ⟨e.separableClosureCongr.symm x, by simp⟩
+  invFun x := ⟨e.separableClosureCongr x, x.property⟩
+  left_inv x := by ext; simp
+  right_inv x := by ext; simp
+  map_mul' x y := by ext; simp
+  map_add' x y := by ext; simp
+
+/-- The restricted field identification acts by the inverse separable-closure map. -/
+@[simp]
+theorem coe_separableClosureCongrEquiv (x : E) :
+    (E.separableClosureCongrEquiv e x : SeparableClosure L) =
+      e.separableClosureCongr.symm x := by rfl
+
+/-- The inverse restricted identification acts by the separable-closure map. -/
+@[simp]
+theorem coe_separableClosureCongrEquiv_symm (x : E.separableClosureCongr e) :
+    ((E.separableClosureCongrEquiv e).symm x : SeparableClosure K) =
+      e.separableClosureCongr x := by rfl
+
+/-- The restricted identification extends the base-field isomorphism. -/
+@[simp]
+theorem separableClosureCongrEquiv_algebraMap (r : K) :
+    E.separableClosureCongrEquiv e (algebraMap K E r) =
+      algebraMap L (E.separableClosureCongr e) (e r) := by
+  apply Subtype.val_injective
+  simp
+
+private theorem separableClosureCongr_algebraMap_comp :
+    (algebraMap L (E.separableClosureCongr e)).comp e.toRingHom =
+      (E.separableClosureCongrEquiv e).toRingHom.comp (algebraMap K E) := by
+  apply RingHom.ext
+  intro r
+  exact (E.separableClosureCongrEquiv_algebraMap e r).symm
+
+/-- Transport preserves and reflects inclusion of subextensions. -/
+@[simp]
+theorem separableClosureCongr_le_iff {E F : IntermediateField K (SeparableClosure K)} :
+    E.separableClosureCongr e ≤ F.separableClosureCongr e ↔ E ≤ F := by
+  constructor
+  · intro h x hx
+    have := h (x := e.separableClosureCongr.symm x) (by simpa using hx)
+    simpa using this
+  · intro h x hx
+    exact h hx
+
+/-- Refining a subextension refines its transported image. -/
+theorem separableClosureCongr_mono {E F : IntermediateField K (SeparableClosure K)}
+    (h : E ≤ F) : E.separableClosureCongr e ≤ F.separableClosureCongr e :=
+  (separableClosureCongr_le_iff e).2 h
+
+/-- Transport along a field isomorphism preserves the degree. -/
+@[simp]
+theorem finrank_separableClosureCongr :
+    Module.finrank L (E.separableClosureCongr e) = Module.finrank K E :=
+  (Algebra.finrank_eq_of_equiv_equiv e (E.separableClosureCongrEquiv e)
+    (E.separableClosureCongr_algebraMap_comp e)).symm
+
+/-- A finite subextension remains finite after transport. -/
+instance instFiniteDimensionalSeparableClosureCongr [FiniteDimensional K E] :
+    FiniteDimensional L (E.separableClosureCongr e) := by
+  apply Module.finite_of_finrank_pos
+  rw [finrank_separableClosureCongr]
+  exact Module.finrank_pos
+
+/-- Normality is preserved by transport along a field isomorphism. -/
+instance [Normal K E] : Normal L (E.separableClosureCongr e) :=
+  Normal.of_equiv_equiv (f := e) (g := E.separableClosureCongrEquiv e)
+    (E.separableClosureCongr_algebraMap_comp e)
+
+/-- A transported normal subextension is Galois, with separability inherited from the closure. -/
+instance [Normal K E] : IsGalois L (E.separableClosureCongr e) where
+
+/-- Identify automorphisms by conjugating through the restricted field identification. -/
+def separableClosureCongrAutEquiv :
+    (E ≃ₐ[K] E) ≃* (E.separableClosureCongr e ≃ₐ[L] E.separableClosureCongr e) where
+  toFun g :=
+    { toRingEquiv := (E.separableClosureCongrEquiv e).symm.trans
+        (g.toRingEquiv.trans (E.separableClosureCongrEquiv e))
+      commutes' r := by
+        obtain ⟨r, rfl⟩ := e.surjective r
+        -- Expose only composition of ring maps; keep the restricted identification opaque.
+        change E.separableClosureCongrEquiv e
+          (g ((E.separableClosureCongrEquiv e).symm
+            (algebraMap L (E.separableClosureCongr e) (e r)))) = _
+        rw [← separableClosureCongrEquiv_algebraMap, RingEquiv.symm_apply_apply,
+          AlgEquiv.commutes, separableClosureCongrEquiv_algebraMap] }
+  invFun g :=
+    { toRingEquiv := (E.separableClosureCongrEquiv e).trans
+        (g.toRingEquiv.trans (E.separableClosureCongrEquiv e).symm)
+      commutes' r := by
+        apply (E.separableClosureCongrEquiv e).injective
+        -- Expose only composition of ring maps to cancel the inverse identification.
+        change E.separableClosureCongrEquiv e
+          ((E.separableClosureCongrEquiv e).symm
+            (g (E.separableClosureCongrEquiv e (algebraMap K E r)))) = _
+        rw [RingEquiv.apply_symm_apply, separableClosureCongrEquiv_algebraMap,
+          AlgEquiv.commutes] }
+  left_inv g := by ext x; simp
+  right_inv g := by ext x; simp
+  map_mul' g h := by ext x; simp
+
+/-- The transported automorphism acts by conjugation through the field identification. -/
+@[simp]
+theorem separableClosureCongrAutEquiv_apply (g : E ≃ₐ[K] E)
+    (x : E.separableClosureCongr e) :
+    E.separableClosureCongrAutEquiv e g x = E.separableClosureCongrEquiv e
+      (g ((E.separableClosureCongrEquiv e).symm x)) := by rfl
+
+/-- The inverse automorphism transport acts by the reverse conjugation. -/
+@[simp]
+theorem separableClosureCongrAutEquiv_symm_apply
+    (g : E.separableClosureCongr e ≃ₐ[L] E.separableClosureCongr e) (x : E) :
+    (E.separableClosureCongrAutEquiv e).symm g x =
+      (E.separableClosureCongrEquiv e).symm (g (E.separableClosureCongrEquiv e x)) := by rfl
+
+/-- Restriction to a normal subextension commutes with transport of the absolute Galois group. -/
+theorem separableClosureCongrAutEquiv_restrictNormalHom [Normal K E]
+    (g : AbsoluteGaloisGroup L) :
+    E.separableClosureCongrAutEquiv e
+        (AlgEquiv.restrictNormalHom E (e.absoluteGaloisGroupCongr g)) =
+      AlgEquiv.restrictNormalHom (E.separableClosureCongr e) g := by
+  ext x
+  simp [AlgEquiv.restrictNormalHom_apply]
+
+/-- Fixing subgroups are transported by the same absolute-Galois-group equivalence. -/
+theorem fixingSubgroup_separableClosureCongr [Normal K E] :
+    (E.separableClosureCongr e).fixingSubgroup =
+      E.fixingSubgroup.comap e.absoluteGaloisGroupCongr.toMonoidHom := by
+  rw [← restrictNormalHom_ker, ← E.restrictNormalHom_ker]
+  ext g
+  simp only [Subgroup.mem_comap, MonoidHom.mem_ker]
+  rw [← separableClosureCongrAutEquiv_restrictNormalHom]
+  exact (E.separableClosureCongrAutEquiv e).map_eq_one_iff
+
+end IntermediateField

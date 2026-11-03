@@ -38,7 +38,7 @@ variable (R : Type u) [CommRing R]
 /-- A surjective homomorphism of character groups induces a closed immersion of the associated
 diagonalizable group schemes. -/
 theorem isClosedImmersion_groupSchemeMap_of_surjective {G H : FGCommGrpCat.{u}} (φ : G ⟶ H)
-    (hφ : Function.Surjective (FGCommGrpCat.toMonoidHom φ)) :
+    (hφ : Function.Surjective φ.hom.hom) :
     IsClosedImmersion (groupSchemeMap R φ).hom.hom.left := by
   rw [groupSchemeMap_def,
     CommHopfAlgCat.isClosedImmersion_eqToHom_comp_hopfSpec_map_comp_eqToHom_iff

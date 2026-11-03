@@ -187,10 +187,11 @@ theorem liuWangAffineD4AInfinityAlgebra_m_four_rotate (c : k) (j : Fin 4) :
     (liuWangAffineD4AInfinityAlgebra k c).m 4 (fun i ↦ liuWangAffineD4Arrow k (i - j)) =
       c • zigzagVolume k _ (liuWangAffineD4Walk (-j)).snd := by
   classical
-  have h := zigzagLoopAInfinityAlgebra_m_four_ofArrow
+  have h := zigzagLoopAInfinityAlgebra_m_ofArrow
     (hns := AffineDynkinType.exists_adj_graph (t := .D 4) (by decide))
     (liuWangAffineD4Coefficients k c)
-    (fst_eq_snd_of_mem_support_liuWangAffineD4Coefficients c) fun i ↦ liuWangAffineD4Walk (i - j)
+    (fst_eq_snd_of_mem_support_liuWangAffineD4Coefficients c) (by norm_num)
+    fun i ↦ liuWangAffineD4Walk (i - j)
   rw [liuWangAffineD4Coefficients_apply, ite_eq_left ⟨j, rfl⟩, zero_sub] at h
   exact h
 
@@ -247,7 +248,8 @@ theorem liuWangAffineD4AInfinityAlgebra_m_four_eq_zero (c : k)
     (liuWangAffineD4AInfinityAlgebra k c).m 4
         (fun i ↦ zigzagMk k _ (ofArrow (arrow _ (d i).adj))) = 0 := by
   classical
-  rw [liuWangAffineD4AInfinityAlgebra, zigzagLoopAInfinityAlgebra_m_four_ofArrow,
+  rw [liuWangAffineD4AInfinityAlgebra,
+    zigzagLoopAInfinityAlgebra_m_ofArrow (n := 4) _ _ (by norm_num),
     liuWangAffineD4Coefficients_apply, ite_eq_right fun ⟨j, hj⟩ ↦ hd j hj, zero_smul]
 
 /-- Liu--Wang's algebra is minimal. -/

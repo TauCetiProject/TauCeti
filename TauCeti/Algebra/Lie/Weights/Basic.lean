@@ -38,6 +38,8 @@ weight-space theory. The transport and finrank identities hold over any commutat
   submodule's generalized weight space.
 * `TauCeti.Weight.coe_neg_eq_add_of_coe_eq_add`: reading a vanishing sum of four weights as an
   equation between opposite pair sums.
+* `LieModuleHom.exists_mem_weight_of_injective`: if the weights of `N` lie in a set of linear
+  forms, then so do the weights of any module embedding in `N`.
 
 ## References
 
@@ -164,7 +166,7 @@ theorem finrank_inf_weightSpace {K : Type*} [CommRing K] [LieAlgebra K L]
     (N : LieSubmodule K L M) (χ : H → K) :
     finrank K ((weightSpace M χ).toSubmodule ⊓ N.toSubmodule : Submodule K M)
       = finrank K (weightSpace ↥N χ) := by
-  rw [← N.toSubmodule_map_weightSpace_incl χ, TauCeti.finrank_toSubmodule]
+  rw [← N.toSubmodule_map_weightSpace_incl χ, LieSubmodule.finrank_toSubmodule]
   exact (LieSubmodule.equivMapOfInjective (weightSpace ↥N χ)
     (f := N.incl.restrictLie H) (injective_incl N)).toLinearEquiv.finrank_eq.symm
 
@@ -188,7 +190,7 @@ theorem finrank_inf_genWeightSpace {K : Type*} [CommRing K] [LieAlgebra K L]
     (N : LieSubmodule K L M) (χ : H → K) :
     finrank K ((genWeightSpace M χ).toSubmodule ⊓ N.toSubmodule : Submodule K M)
       = finrank K (genWeightSpace ↥N χ) := by
-  rw [← N.toSubmodule_map_genWeightSpace_incl χ, TauCeti.finrank_toSubmodule]
+  rw [← N.toSubmodule_map_genWeightSpace_incl χ, LieSubmodule.finrank_toSubmodule]
   exact (LieSubmodule.equivMapOfInjective (genWeightSpace ↥N χ)
     (f := N.incl.restrictLie H) (injective_incl N)).toLinearEquiv.finrank_eq.symm
 
@@ -213,3 +215,31 @@ theorem Weight.coe_neg_eq_add_of_coe_eq_add {μ : Weight K H L} {a b c d : H →
   linear_combination -hy
 
 end TauCeti
+
+namespace LieModuleHom
+
+open LieModule
+
+section Injective
+
+variable {R L M N S : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [LieRing.IsNilpotent L]
+  [AddCommGroup M] [Module R M] [LieRingModule L M] [LieModule R L M]
+  [AddCommGroup N] [Module R N] [LieRingModule L N] [LieModule R L N]
+  [SetLike S (Module.Dual R L)]
+
+/-- **A module embedding in one whose weights lie in a set has its weights in that set.** Every
+weight of `M` is a weight of `N` when `M` maps injectively and equivariantly to `N`, so if each
+weight of `N` agrees with a linear form in `s`, such as an element of a weight lattice, then so
+does each weight of `M`. In particular this applies to the Lie submodules of `N`. -/
+theorem exists_mem_weight_of_injective {s : S} (f : M →ₗ⁅R,L⁆ N) (hf : Function.Injective f)
+    (hN : ∀ χ : Weight R L N, ∃ φ ∈ s, ⇑φ = ⇑χ) (χ : Weight R L M) : ∃ φ ∈ s, ⇑φ = ⇑χ := by
+  obtain ⟨m, hm, hm₀⟩ := χ.exists_ne_zero
+  refine hN ⟨χ, fun h ↦ hm₀ (hf ?_)⟩
+  have hfm : f m ∈ genWeightSpace N (χ : L → R) :=
+    map_genWeightSpace_le f (LieSubmodule.mem_map_of_mem hm)
+  rw [h, LieSubmodule.mem_bot] at hfm
+  rw [hfm, map_zero]
+
+end Injective
+
+end LieModuleHom

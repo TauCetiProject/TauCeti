@@ -35,6 +35,13 @@ conventions of every later differential graded construction.
   composition.
 * `CochainComplex.HomComplex.Cochain.v_apply_mem_ker_of_δ_eq_zero`: a closed degree-zero cochain
   of complexes of modules sends closed elements to closed elements.
+* `CochainComplex.HomComplex.δ_v_apply_of_d_eq_zero`: on a closed element, the differential of a
+  cochain of complexes of modules is the differential of its value.
+
+## Main definitions
+
+* `TauCeti.cochainEval`: evaluation of cochains of complexes of modules at an element of the
+  source, as a linear map.
 
 ## References
 
@@ -102,7 +109,35 @@ theorem dgComp_v {K L M : CochainComplex C ℤ} {a b c : ℤ} (z₁ : DGHom R a 
   rw [dgComp_linearHomComplex, Cochain.units_smul_v]
   exact congrArg _ (Cochain.comp_v (z₁ : Cochain K L a) (z₂ : Cochain L M b) h x y w h₁ h₂)
 
+/-- **Evaluation** of degree-`p` cochains between complexes of `R`-modules at an element `x` of
+degree `n` of the source, as an `R`-linear map to the degree-`q` part of the target. -/
+noncomputable def cochainEval {K L : CochainComplex (ModuleCat.{v} R) ℤ} {n : ℤ} (x : K.X n)
+    (p q : ℤ) (h : n + p = q) : DGHom R p K L →ₗ[R] L.X q where
+  toFun z := ((z : Cochain K L p).v n q h).hom x
+  map_add' z z' := congrArg (fun φ ↦ ModuleCat.Hom.hom φ x) (Cochain.add_v z z' n q h)
+  map_smul' r z := congrArg (fun φ ↦ ModuleCat.Hom.hom φ x) (Cochain.smul_v r z n q h)
+
+/-- Evaluating a cochain at `x` applies its component out of the degree of `x`. -/
+@[simp]
+theorem cochainEval_apply {K L : CochainComplex (ModuleCat.{v} R) ℤ} {n : ℤ} (x : K.X n)
+    (p q : ℤ) (h : n + p = q) (z : DGHom R p K L) :
+    cochainEval R x p q h z = ((z : Cochain K L p).v n q h).hom x :=
+  (rfl)
+
 end TauCeti
+
+namespace CochainComplex.HomComplex
+
+/-- On an element killed by the differential of the source, the differential of a cochain of
+complexes of modules is the differential of the target applied to the value of the cochain. -/
+theorem δ_v_apply_of_d_eq_zero {R : Type*} [Ring R] {K L : CochainComplex (ModuleCat R) ℤ}
+    {n m : ℤ} (hnm : n + 1 = m) (z : Cochain K L n) {p q r : ℤ} (hpq : p + n = q)
+    (hpr : p + m = r) {a : K.X p} (ha : (K.d p (p + 1)).hom a = 0) :
+    ((δ n m z).v p r hpr).hom a = (L.d q r).hom ((z.v p q hpq).hom a) := by
+  rw [δ_v n m hnm z p r hpr q (p + 1) (by omega) rfl]
+  simp [ha]
+
+end CochainComplex.HomComplex
 
 namespace CochainComplex.HomComplex.Cochain
 

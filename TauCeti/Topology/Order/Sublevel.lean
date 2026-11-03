@@ -9,6 +9,7 @@ public import Mathlib.Dynamics.Flow
 public import Mathlib.Topology.Order.Compact
 public import Mathlib.Topology.Instances.Real.Lemmas
 public import Mathlib.Topology.Homotopy.Basic
+public import TauCeti.Topology.Category.TopPair
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
 
@@ -21,12 +22,19 @@ then sufficiently small sublevels lie in any prescribed open neighbourhood of th
 This allows local descriptions near the minimum to describe whole sublevels. Continuity is
 needed only on the one compact sublevel, not on the entire space.
 
+Conversely, restricting a function to a set `S` which is not closed can destroy compactness of
+sublevels: if `S` accumulates at a point `p ∉ S` with `f p < r`, then `{x ∈ S | f x ≤ r}` is not
+compact (`TauCeti.not_isCompact_inter_preimage_Iic`).
+
 If a continuous motion of the space lowers `f` at unit speed through the band `a ≤ f ≤ b`, then
 following it until the level `a` is reached retracts the sublevel `{f ≤ b}` onto `{f ≤ a}`, by a
 homotopy fixing `{f ≤ a}` pointwise (`TauCeti.exists_sublevelDeformation_of_apply_eq_sub`); here
-`TauCeti.sublevelInclusion` is the inclusion of `{f ≤ a}` into `{f ≤ b}`. This
-is the topological half of the deformation of sublevels across a band without critical points,
-where the motion is the flow of a vector field `X` with `df(X) = -1` on the band.
+`TauCeti.sublevelInclusion` is the inclusion of `{f ≤ a}` into `{f ≤ b}`, a closed embedding when
+`f` is continuous (`TauCeti.isClosedEmbedding_sublevelInclusion`). This is the topological half
+of the deformation of sublevels across a band without critical points, where the motion is the
+flow of a vector field `X` with `df(X) = -1` on the band. The sublevels form the topological pair
+`TauCeti.sublevelPair f : ({f ≤ b}, {f ≤ a})`, whose relative homology measures the change in
+topology across the band.
 
 If the motion is a flow along whose lines `f` never increases, then its time-`(b - a)` map carries
 `{f ≤ b}` exactly onto `{f ≤ a}` (`Flow.apply_le_iff_of_apply_eq_sub`), and, when `f`
@@ -74,15 +82,47 @@ theorem exists_pos_sublevel_subset_of_unique_min {X : Type*} [TopologicalSpace X
     by_contra hyU
     exact hne ⟨y, ⟨by dsimp at hy ⊢; linarith, hyU⟩⟩
 
+/-- A sublevel of a function restricted to a set `S` of a Hausdorff space is not compact if `S`
+accumulates at a point `p ∉ S` where the function is continuous and strictly below the level.
+Then the sublevel accumulates at `p` as well, so it is not closed. -/
+theorem not_isCompact_inter_preimage_Iic {X β : Type*} [TopologicalSpace X] [T2Space X]
+    [TopologicalSpace β] [LinearOrder β] [ClosedIciTopology β] {f : X → β} {S : Set X} {p : X}
+    {r : β} (hpS : p ∈ closure S) (hp : p ∉ S) (hf : ContinuousAt f p) (hr : f p < r) :
+    ¬IsCompact (S ∩ f ⁻¹' Iic r) := by
+  intro hK
+  have hmem : p ∈ closure (S ∩ f ⁻¹' Iic r) := by
+    rw [mem_closure_iff_frequently] at hpS ⊢
+    exact (hpS.and_eventually (hf.eventually (eventually_lt_nhds hr))).mono
+      fun x hx ↦ ⟨hx.1, hx.2.le⟩
+  exact hp (hK.isClosed.closure_eq ▸ hmem).1
+
+/-- The sublevels `{f ≤ a}` of `f` increase with `a`. -/
+theorem sublevel_mono {X β : Type*} [Preorder β] (f : X → β) :
+    Monotone fun a : β ↦ {x | f x ≤ a} :=
+  fun _ _ hab ↦ ofPred_subset_ofPred.2 fun _ hx ↦ hx.trans hab
+
 /-- The inclusion `{f ≤ a} → {f ≤ b}` of sublevels of `f`, for `a ≤ b`. -/
 def sublevelInclusion {X β : Type*} [TopologicalSpace X] [Preorder β] (f : X → β) (a b : β)
     (hab : a ≤ b) : C({x | f x ≤ a}, {x | f x ≤ b}) :=
-  ContinuousMap.inclusion (ofPred_subset_ofPred.2 fun _ hx ↦ hx.trans hab)
+  ContinuousMap.inclusion (sublevel_mono f hab)
 
 @[simp]
 theorem coe_sublevelInclusion_apply {X β : Type*} [TopologicalSpace X] [Preorder β] (f : X → β)
     {a b : β} (hab : a ≤ b) (x : {x | f x ≤ a}) : (sublevelInclusion f a b hab x : X) = x :=
   (rfl)
+
+/-- For continuous `f`, the inclusion `{f ≤ a} → {f ≤ b}` of sublevels is a closed embedding. -/
+theorem isClosedEmbedding_sublevelInclusion {X β : Type*} [TopologicalSpace X] [Preorder β]
+    [TopologicalSpace β] [ClosedIicTopology β] {f : X → β} (hf : Continuous f) {a b : β}
+    (hab : a ≤ b) : Topology.IsClosedEmbedding (sublevelInclusion f a b hab) :=
+  .inclusion (sublevel_mono f hab)
+    ((isClosed_Iic.preimage hf).preimage continuous_subtype_val)
+
+/-- The sublevel pair `({f ≤ b}, {f ≤ a})` of a function `f` for `a ≤ b`, as a pair of subspaces
+of `X`. -/
+abbrev sublevelPair {X : Type*} [TopologicalSpace X] {β : Type*} [Preorder β] (f : X → β)
+    {a b : β} (hab : a ≤ b) : TopPair :=
+  TopPair.ofInclusion (X := TopCat.of X) (sublevel_mono f hab)
 
 /-- **Deformation of sublevels along a unit-speed descent.** Let `φ t` be a continuous motion of
 `X`, with `φ 0` the identity, which lowers `f` at unit speed through the band `a ≤ f ≤ b`: if

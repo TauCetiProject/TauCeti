@@ -324,6 +324,14 @@ theorem kyFanGauge_le_mul_nnnorm (T : E →L[𝕜] F) (k : ℕ) : T.kyFanGauge k
   simpa [kyFanGauge] using
     Finset.sum_le_sum fun n (_ : n ∈ Finset.range k) ↦ T.singularValue_le_nnnorm n
 
+/-- **Ky Fan comparison with the last term.** Since the approximation numbers decrease,
+`(k + 1) aₖ(T) ≤ Kₖ₊₁(T)`. -/
+theorem mul_singularValue_le_kyFanGauge_succ (T : E →L[𝕜] F) (k : ℕ) :
+    (k + 1) * T.singularValue k ≤ T.kyFanGauge (k + 1) := by
+  simpa [kyFanGauge] using Finset.card_nsmul_le_sum (Finset.range (k + 1)) T.singularValue
+    (T.singularValue k) fun n hn ↦
+      T.antitone_singularValue (Nat.lt_succ_iff.1 (Finset.mem_range.1 hn))
+
 /-- **Ky Fan homogeneity.** `Kₖ(c T) = ‖c‖ Kₖ(T)`. -/
 @[simp]
 theorem kyFanGauge_smul (c : 𝕜) (T : E →L[𝕜] F) (k : ℕ) :

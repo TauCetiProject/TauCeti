@@ -46,6 +46,11 @@ structure, so its global dimension is `p = 0`.
 * `TauCeti.SplitK0.leftDimChar` and `TauCeti.SplitK0.rightDimChar`: the left and right dimension
   characters of the Grothendieck ring;
 * `TauCeti.globalDim_eq_sum_leftDimChar_smul`: the global dimension as a scalar;
+* `TauCeti.SplitK0.rightDimChar_apply_eq_conj` and `TauCeti.norm_rightDim_eq_norm_leftDim`: over
+  `ℂ`, the right dimension character of a fusion category is the complex conjugate of the left
+  one, so the two categorical dimensions of an object have the same absolute value;
+* `TauCeti.endAlgEquivOfSimple_globalDim`: over `ℂ`, the global dimension of a fusion category is
+  `∑ S, |dim_L S|²`;
 * `TauCeti.globalDim_ne_zero`: the global dimension of a pivotal fusion category over a field of
   characteristic zero is nonzero.
 
@@ -174,6 +179,50 @@ theorem globalDim_eq_sum_leftDimChar_smul :
 
 end GlobalDim
 
+section Complex
+
+variable {C : Type u} [Category.{v} C] [Abelian C] [MonoidalCategory C] [MonoidalPreadditive C]
+  [RigidCategory C] [PivotalCategory C] [Linear ℂ C] [MonoidalLinear ℂ C]
+  [IsFiniteSemisimpleCategory C] [∀ X Y : C, FiniteDimensional ℂ (X ⟶ Y)] [Simple (𝟙_ C)]
+  [EssentiallySmall.{w} C]
+
+section Finite
+
+variable [Finite (SimpleClasses C)]
+
+/-- In a complex pivotal fusion category, the right dimension character is the complex conjugate
+of the left dimension character, since characters of the Grothendieck ring are ⋆-characters. -/
+theorem SplitK0.rightDimChar_apply_eq_conj (x : SplitK0 C) :
+    SplitK0.rightDimChar ℂ C x = conj (SplitK0.leftDimChar ℂ C x) := by
+  rw [← SplitK0.leftDimChar_dual, SplitK0.ringHom_apply_dual ℂ]
+
+/-- In a complex pivotal fusion category, the left and right categorical dimensions of an object
+have the same absolute value. -/
+theorem norm_rightDim_eq_norm_leftDim (X : C) :
+    ‖endAlgEquivOfSimple ℂ (𝟙_ C) (End.of (rightDim X))‖ =
+      ‖endAlgEquivOfSimple ℂ (𝟙_ C) (End.of (leftDim X))‖ := by
+  rw [← SplitK0.rightDimChar_of, ← SplitK0.leftDimChar_of, SplitK0.rightDimChar_apply_eq_conj,
+    RCLike.norm_conj]
+
+end Finite
+
+variable (C) [Fintype (SimpleClasses C)]
+
+/-- In a complex pivotal fusion category, the global dimension, read as a complex number, is the
+sum of the squared absolute values of the left dimensions of the simple classes. -/
+theorem endAlgEquivOfSimple_globalDim :
+    endAlgEquivOfSimple ℂ (𝟙_ C) (End.of (globalDim C)) =
+      ((∑ S : SimpleClasses C, ‖endAlgEquivOfSimple ℂ (𝟙_ C) (End.of (leftDim S.repr))‖ ^ 2 : ℝ) :
+        ℂ) := by
+  rw [globalDim_eq_sum_leftDimChar_smul ℂ, End.of_smul, End.of_id, map_smul, map_one,
+    smul_eq_mul, mul_one, Complex.ofReal_sum]
+  refine Finset.sum_congr rfl fun S _ ↦ ?_
+  rw [← SplitK0.dual_of, SplitK0.leftDimChar_dual, SplitK0.rightDimChar_apply_eq_conj,
+    RCLike.mul_conj, SplitK0.leftDimChar_of]
+  norm_cast
+
+end Complex
+
 section NeZero
 
 variable (k : Type w') [Field k] [IsAlgClosed k] [CharZero k]
@@ -197,7 +246,8 @@ theorem globalDim_ne_zero : globalDim C ≠ 0 := by
   let σ : algebraicClosure ℚ k →ₐ[ℚ] ℂ := IsAlgClosed.lift
   let ψ : SplitK0 C →+* ℂ := (σ : algebraicClosure ℚ k →+* ℂ).comp (χ.codRestrict _ hχ)
   intro h
-  rw [globalDim_eq_sum_leftDimChar_smul k, smul_eq_zero, or_iff_left (id_nonzero _)] at h
+  rw [globalDim_eq_sum_leftDimChar_smul k, smul_eq_zero,
+    or_iff_left (CategoryTheory.id_ne_zero _)] at h
   -- Transport the vanishing scalar `∑ S, χ [S] * χ [Sᘁ]` to `ℂ` along `σ`.
   have h₁ : ∑ S : SimpleClasses C, ψ (SplitK0.of S.repr) * ψ (SplitK0.of (S.repr)ᘁ) = 0 := by
     have h₀ : ∑ S : SimpleClasses C, χ.codRestrict _ hχ (SplitK0.of S.repr) *

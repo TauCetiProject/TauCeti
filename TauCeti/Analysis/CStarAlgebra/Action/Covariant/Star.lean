@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.Algebra
+public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.Normed
 public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Integrated
 
 /-!
@@ -14,7 +14,8 @@ public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Integrated
 The vector-integrated form of a covariant representation preserves the twisted involution:
 `(π ⋊ U)(f*) = ((π ⋊ U)(f))*`. Together with multiplicativity, this gives a nonunital complex
 ⋆-algebra homomorphism from the compact-support convolution algebra to bounded operators.
-This is the representation used to define the universal crossed-product norm.
+This is the representation used to define the universal crossed-product norm. It is bounded by
+the L¹ norm of the convolution algebra.
 
 The proof uses Haar inversion with the modular weight `c(g) = Δ(g)⁻¹`. All integrands tested
 in matrix coefficients have compact support, so no global σ-finiteness, separability, or
@@ -96,5 +97,10 @@ function underlying the convolution-algebra element. -/
 theorem integratedStarAlgHom_apply (f : ConvolutionAlgebra α μ) :
     P.integratedStarAlgHom μ f = P.integratedOperator μ f.ofConv :=
   (rfl)
+
+/-- The integrated ⋆-homomorphism is bounded by the L¹ norm of the convolution algebra. -/
+theorem norm_integratedStarAlgHom_le_norm (f : ConvolutionAlgebra α μ) :
+    ‖P.integratedStarAlgHom μ f‖ ≤ ‖f‖ := by
+  simpa [ConvolutionAlgebra.norm_eq_integral_norm] using P.norm_integratedOperator_le μ f.ofConv
 
 end TauCeti.CStarAction.CovariantRepresentation

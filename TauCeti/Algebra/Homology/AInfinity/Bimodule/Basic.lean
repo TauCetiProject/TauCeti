@@ -102,6 +102,46 @@ theorem barGrading_piece (AA : AInfinityAlgebra R A) (BB : AInfinityAlgebra R B)
         (TensorWords.grading (BB.grading.shift 1))).piece p :=
   (rfl)
 
+/-- A pure word on each side of a homogeneous module element has the sum of their
+suspended degrees in the bar bicomodule grading. -/
+theorem tmul_of_tprod_mem_barGrading (AA : AInfinityAlgebra R A) (BB : AInfinityAlgebra R B)
+    (G : InternalGrading R M) (i j : ℕ)
+    (a : Fin i → A) (d : Fin i → ℤ)
+    (ha : ∀ k, a k ∈ (AA.grading.shift 1).piece (d k))
+    {x : M} {p : ℤ} (hx : x ∈ (G.shift 1).piece p)
+    (b : Fin j → B) (e : Fin j → ℤ)
+    (hb : ∀ k, b k ∈ (BB.grading.shift 1).piece (e k)) :
+    ((TensorWords.of R A i (PiTensorProduct.tprod R a) ⊗ₜ x) ⊗ₜ
+      TensorWords.of R B j (PiTensorProduct.tprod R b)) ∈
+      (barGrading AA BB G).piece ((∑ k, d k) + p + (∑ k, e k)) := by
+  rw [barGrading_def]
+  exact InternalGrading.tmul_mem_tensorProduct _ _
+    (InternalGrading.tmul_mem_tensorProduct _ _
+      (by simpa only [TensorWords.grading_piece] using
+        TensorWords.mem_gradedPiece_of_tprod _ a d ha) hx)
+    (by simpa only [TensorWords.grading_piece] using
+      TensorWords.mem_gradedPiece_of_tprod _ b e hb)
+
+/-- The left coaction on the bar bicomodule preserves total suspended degree. -/
+theorem isHomogeneous_leftCoact (AA : AInfinityAlgebra R A) (BB : AInfinityAlgebra R B)
+    (G : InternalGrading R M) :
+    LinearMap.IsHomogeneous
+      (Comodule.leftCoactRTensor (TensorWords R B)
+        (Comodule.leftCofreeCoact R (TensorWords R A) M))
+      (barGrading AA BB G).piece
+      ((TensorWords.grading (AA.grading.shift 1)).tensorProduct
+        (barGrading AA BB G)).piece 0 := by
+  let W := TensorWords.grading (AA.grading.shift 1)
+  let Y := W.tensorProduct (G.shift 1)
+  let V := TensorWords.grading (BB.grading.shift 1)
+  rw [barGrading_def, Comodule.leftCoactRTensor_def, Comodule.leftCofreeCoact_def,
+    LinearMap.rTensor_def, LinearMap.rTensor_def, TensorWords.comul_eq_deconcatenation]
+  simpa only [add_zero] using (InternalGrading.isHomogeneous_assoc W Y V).comp
+    ((((InternalGrading.isHomogeneous_assoc W W (G.shift 1)).comp
+      ((TensorWords.isHomogeneous_deconcatenation (AA.grading.shift 1)).tensorProduct
+        (LinearMap.isHomogeneous_id (G.shift 1).piece))).tensorProduct
+          (LinearMap.isHomogeneous_id V.piece)))
+
 variable (R A B M) in
 /-- The two-sided counit projection of the cofree bar bicomodule `Tᶜ(sA) ⊗ sM ⊗ Tᶜ(sB)` onto
 `sM`: the counit of `Tᶜ(sB)` forgets the right word, and then the cofree counit projection of

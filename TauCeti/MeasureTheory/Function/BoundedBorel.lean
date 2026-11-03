@@ -285,7 +285,7 @@ theorem indicator_mul_indicator (s t : Set X) (hs : MeasurableSet s) (ht : Measu
     (f g : BoundedBorelFunction X) :
     indicator s hs f * indicator t ht g = indicator (s ∩ t) (hs.inter ht) (f * g) := by
   ext x
-  simp only [mul_apply, indicator_apply]
+  simp only [TauCeti.BoundedBorelFunction.mul_apply, indicator_apply]
   exact (Set.inter_indicator_mul _ _ x).symm
 
 /-- Pullback commutes with restriction and extension by zero. -/
@@ -317,6 +317,14 @@ noncomputable def ofSimpleFunc : MeasureTheory.SimpleFunc X ℂ →⋆ₐ[ℂ] B
 /-- Bundling a simple function preserves its values. -/
 @[simp] theorem ofSimpleFunc_apply (f : MeasureTheory.SimpleFunc X ℂ) (x : X) :
     ofSimpleFunc f x = f x := (rfl)
+
+/-- The simple function equal to `c` on a measurable set `s` and to zero off `s` is the symbol
+`c • indicator s hs 1`. -/
+theorem ofSimpleFunc_piecewise_const_zero (s : Set X) (hs : MeasurableSet s) (c : ℂ) :
+    ofSimpleFunc (MeasureTheory.SimpleFunc.piecewise s hs (MeasureTheory.SimpleFunc.const X c) 0) =
+      c • indicator s hs 1 := by
+  ext x
+  by_cases hx : x ∈ s <;> simp [MeasureTheory.SimpleFunc.piecewise_apply, hx]
 
 /-- **Uniform approximation by simple symbols.** Every bounded Borel symbol is the limit, in the
 supremum norm, of simple symbols whose values are bounded by its norm. -/

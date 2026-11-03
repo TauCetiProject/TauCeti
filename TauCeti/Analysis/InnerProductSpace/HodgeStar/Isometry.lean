@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Basic
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
 import Mathlib.Analysis.InnerProductSpace.PiL2
+import TauCeti.Analysis.InnerProductSpace.Trace.Free
 
 /-!
 # Metric and functorial properties of the Hodge star
@@ -16,10 +18,21 @@ The Hodge star preserves the inner product and hence defines a linear isometric 
 between complementary exterior powers. Combined with the defining identity
 `⟪⋆x, y⟫ = vol (x ∧ y)`, this gives the wedge characterization `α ∧ ⋆β = ⟪α, β⟫ vol`.
 On the top exterior power the inner product is the product of the volumes,
-`⟪x, y⟫ = vol x * vol y`, since `⋆1` is a unit vector representing the volume.
+`⟪x, y⟫ = vol x * vol y`, since `⋆1` is a unit vector representing the volume. In an even
+middle degree the Hodge star is an isometric involution, hence symmetric.
 Reversing the orientation negates the Hodge star, and transporting the orientation along a
 linear isometric equivalence commutes with it. These statements hold also in dimension zero, for
 either orientation.
+
+The derivation action `D_A` of a skew-adjoint endomorphism `A`, which applies `A` to one factor of
+a wedge at a time, commutes with the Hodge star in every degree (`Orientation.hodgeStar_lieMap`):
+`D_A` is skew-adjoint and acts on the top exterior power by `tr A = 0`, so it preserves the
+characterization `⟪⋆x, y⟫ = vol (x ∧ y)`. This is the infinitesimal form of the invariance of the
+star under rotations.
+
+In dimension four, the Hodge star of a wedge of two vectors pairs with another such wedge to the
+volume of the four vectors, `⟪⋆(a ∧ b), u ∧ w⟫ = vol(a, b, u, w)`
+(`Orientation.inner_hodgeStar_ιMulti_two`).
 
 ## References
 
@@ -92,6 +105,13 @@ theorem inner_hodgeStar_hodgeStar {k l : ℕ} (hkl : k + l = finrank ℝ V)
     (x y : ⋀[ℝ]^k V) : ⟪o.hodgeStar hkl x, o.hodgeStar hkl y⟫ = ⟪x, y⟫ := by
   simpa only [← o.hodgeStarIsometry_toLinearEquiv hkl, LinearIsometryEquiv.coe_toLinearEquiv]
     using (o.hodgeStarIsometry hkl).inner_map_map x y
+
+/-- In an even middle degree, `k + k = finrank ℝ V` with `k` even, the Hodge star is symmetric,
+`⟪⋆x, y⟫ = ⟪x, ⋆y⟫`, being an isometric involution. This covers two-forms in dimension four. -/
+theorem isSymmetric_hodgeStar_of_even {k : ℕ} (hk : Even k) (hkk : k + k = finrank ℝ V) :
+    (o.hodgeStar hkk : ⋀[ℝ]^k V →ₗ[ℝ] ⋀[ℝ]^k V).IsSymmetric := fun x y ↦ by
+  conv_lhs => rw [← o.hodgeStar_hodgeStar_of_even hk hkk y]
+  exact o.inner_hodgeStar_hodgeStar hkk x (o.hodgeStar hkk y)
 
 /-- **The wedge characterization of the Hodge star**: `α ∧ ⋆β = ⟪α, β⟫ vol`, that is, the
 volume of `α ∧ ⋆β` is the inner product of `α` and `β`, for `α β ∈ ⋀ᵏ V`. -/
@@ -166,5 +186,42 @@ theorem hodgeStar_map (φ : V ≃ₗᵢ[ℝ] W) {k l : ℕ}
   simp only [LinearMap.comp_apply, LinearEquiv.coe_coe]
   rw [hb, hodgeStar_orthonormalBasis, hodgeStar_orthonormalBasis, hvol,
     map_smul, map_zsmul_unit, hb]
+
+/-- **Skew-adjoint endomorphisms commute with the Hodge star**: `⋆ (D_A x) = D_A (⋆ x)` for the
+derivation action `D_A` of a skew-adjoint endomorphism `A` on forms of every degree. This is the
+infinitesimal form of the invariance of `⋆` under rotations. -/
+theorem hodgeStar_lieMap {k l : ℕ} (hkl : k + l = finrank ℝ V) {A : V →ₗ[ℝ] V}
+    (hA : ∀ u w, ⟪A u, w⟫ = -⟪u, A w⟫) (x : ⋀[ℝ]^k V) :
+    o.hodgeStar hkl (lieMap k A x) = lieMap l A (o.hodgeStar hkl x) := by
+  -- `D_A` is skew-adjoint, and it acts on the top exterior power by `tr A = 0`.
+  refine ext_inner_right ℝ fun y ↦ ?_
+  rw [inner_hodgeStar_apply, inner_lieMap_left hA, inner_hodgeStar_apply, eq_neg_iff_add_eq_zero,
+    wedgePairing_lieMap_add_wedgePairing_lieMap, LinearMap.trace_eq_zero_of_inner_left_eq_neg hA,
+    zero_mul]
+
+end Orientation
+
+/-! ### Two-forms in dimension four -/
+
+namespace Orientation
+
+variable [Fact (finrank ℝ V = 4)] (o : Orientation ℝ V (Fin 4))
+
+/-- In dimension four, the Hodge star of a wedge of two vectors pairs with another such wedge to
+the volume of the four vectors: `⟪⋆(a ∧ b), u ∧ w⟫ = vol(a, b, u, w)`. -/
+theorem inner_hodgeStar_ιMulti_two (hkl : 2 + 2 = finrank ℝ V) (a b u w : V) :
+    ⟪o.hodgeStar hkl (ιMulti ℝ 2 ![a, b]), ιMulti ℝ 2 ![u, w]⟫ = o.volumeForm ![a, b, u, w] := by
+  -- Read the wedge of the four vectors in the degree `finrank ℝ V`.
+  have key : ∀ {d : ℕ} (hd : d = 4) (f : Fin 4 → V),
+      ExteriorAlgebra.ιMulti ℝ d (f ∘ finCongr hd) = ExteriorAlgebra.ιMulti ℝ 4 f := by
+    rintro d rfl f
+    rfl
+  rw [inner_hodgeStar_apply, wedgePairing_apply_eq_of_coe_mul_eq _ hkl _ _
+    (ιMulti ℝ _ (![a, b, u, w] ∘ finCongr (Fact.out : finrank ℝ V = 4))), volumeEquiv_ιMulti]
+  · congr 1
+  · simp only [ιMulti_apply_coe, key, ExteriorAlgebra.ιMulti_mul_ιMulti]
+    congr 1
+    ext i
+    fin_cases i <;> rfl
 
 end Orientation

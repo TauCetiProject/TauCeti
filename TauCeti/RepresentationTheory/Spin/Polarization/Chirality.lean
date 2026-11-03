@@ -8,7 +8,7 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Chirality
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Complex
 public import TauCeti.RepresentationTheory.Spin.HalfSpin.Basic
-public import TauCeti.RepresentationTheory.Spin.Polarization.Fock
+public import TauCeti.RepresentationTheory.Spin.Polarization.Fock.Basic
 -- Private: the involution eigenspaces, orthonormal-basis orthogonality, the parity of the
 -- dimension, list products of endomorphisms and the half-spin dimensions are used only inside
 -- proofs.
@@ -109,7 +109,7 @@ private theorem fockAction_complexVolume_ι_mul (x : (J.spinPolarizationData hQJ
       -(ExteriorAlgebra.ι ℂ x * J.fockAction hQJ hQnd (complexVolume Q o) s) := by
   have h := congr(J.fockAction hQJ hQnd $(complexVolume_mul_ι_of_even o
     (even_of_almostComplexStructure J) (x : ℂ ⊗[ℝ] V)) s)
-  simp only [map_mul, map_neg, Module.End.mul_apply, LinearMap.neg_apply,
+  simp only [map_mul, map_neg, mul_apply_eq_comp, LinearMap.neg_apply,
     J.fockAction_ι_coe_W hQJ hQnd, LinearMap.smul_apply, SpinPolarizationData.wedge_apply,
     map_smul, ← smul_neg] at h
   exact smul_right_injective _ (by norm_num : (Real.sqrt 2 : ℂ) ≠ 0) h

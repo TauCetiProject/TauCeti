@@ -18,7 +18,7 @@ import Mathlib.Analysis.RCLike.Lemmas
 The zero count of `f` on an open disc is the finitely supported sum
 `∑ᶠ z ∈ ball c R, analyticOrderNatAt f z`. It is what the argument principle produces — through
 `TauCeti.Contour.argumentPrinciple_divisor` and the bridge
-`TauCeti.Contour.divisor_eq_analyticOrderNatAt` — and what Rouché's theorem
+`MeromorphicOn.divisor_eq_analyticOrderNatAt` — and what Rouché's theorem
 (`TauCeti.rouche_symm`) and Hurwitz's theorem (`TauCeti.hurwitz`) compare. This file collects the
 three facts about that sum which those consumers need, none of which mentions either theorem.
 They are stated for a function `f : 𝕜 → E` into a normed space; the detection criterion needs the

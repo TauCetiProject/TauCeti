@@ -17,7 +17,10 @@ public import TauCeti.Algebra.Category.ModuleCat.Tower.Exact
 The product `∏ₙ Aₙ` of the terms of a tower `A` of `R`-modules is functorial in `A`. This file
 packages it as an additive functor `ModuleTower R ⥤ ModuleCat R`, shows that it is exact (products
 of modules are exact), hence preserves homology, and records the shift maps
-`δ(x)ₙ = xₙ - φₙ(xₙ₊₁)` and the projections `∏ₖ Aₖ → Aₙ` as natural transformations.
+`δ(x)ₙ = xₙ - φₙ(xₙ₊₁)` and the projections `∏ₖ Aₖ → Aₙ` as natural transformations. The limit
+`lim A` is likewise functorial, and its inclusion into `∏ₙ Aₙ` is a natural transformation whose
+composite with the shift vanishes; for a tower with vanishing `lim¹`, for instance one with
+surjective transitions, the resulting sequence `0 → lim A → ∏ₙ Aₙ → ∏ₙ Aₙ → 0` is short exact.
 
 ## Main declarations
 
@@ -27,6 +30,10 @@ of modules are exact), hence preserves homology, and records the shift maps
   product functor.
 * `TauCeti.ModuleTower.productπ`: the projections `∏ₖ Aₖ → Aₙ`, related to the shift by
   `TauCeti.ModuleTower.shiftNatTrans_comp_productπ`.
+* `TauCeti.ModuleTower.limFunctor`: the limit functor `A ↦ lim A` on towers, with the inclusion
+  `TauCeti.ModuleTower.limι : lim A → ∏ₙ Aₙ`.
+* `TauCeti.ModuleTower.shortExact_limι_shiftNatTrans`: for a tower with vanishing `lim¹`,
+  `0 → lim A → ∏ₙ Aₙ → ∏ₙ Aₙ → 0` is short exact.
 -/
 
 public section
@@ -101,6 +108,54 @@ theorem shiftNatTrans_comp_productπ (n : ℕ) :
   ext x
   -- Both sides are `xₙ - φₙ(xₙ₊₁)`, by `shift_apply` and `transition_def`.
   exact (F.shift_apply x n).trans (by rw [transition_def]; rfl)
+
+/-- The limit functor `A ↦ lim A` on towers of `R`-modules. -/
+@[expose, simps]
+def limFunctor : ModuleTower.{v} R ⥤ ModuleCat.{v} R where
+  obj F := ModuleCat.of R F.lim
+  map f := ModuleCat.ofHom (limMap f)
+  map_id F := by
+    ext1
+    exact limMap_id
+  map_comp f g := by
+    ext1
+    exact limMap_comp f g
+
+instance : (limFunctor.{v} R).Additive where
+  map_add {_ _ f g} := by
+    ext1
+    exact limMap_add f g
+
+/-- The inclusion `lim A → ∏ₙ Aₙ`, as a natural transformation from the limit functor to the
+product functor. -/
+def limι : limFunctor.{v} R ⟶ productFunctor.{v} R where
+  app F := ModuleCat.ofHom F.lim.subtype
+  naturality _ _ f := by
+    ext x : 2
+    exact coe_limMap_apply f x
+
+@[simp]
+theorem limι_app (F : ModuleTower.{v} R) :
+    (limι R).app F = ModuleCat.ofHom F.lim.subtype :=
+  (rfl)
+
+/-- The inclusion of the limit followed by the shift vanishes: `lim A` is the kernel of `δ`. -/
+@[reassoc]
+theorem limι_app_comp_shiftNatTrans_app (F : ModuleTower.{v} R) :
+    (limι R).app F ≫ (shiftNatTrans R).app F = 0 := by
+  ext x : 2
+  exact (exact_lim_subtype_shift F).apply_apply_eq_zero x
+
+variable {R} in
+/-- For a tower with vanishing `lim¹`, `0 → lim A → ∏ₙ Aₙ → ∏ₙ Aₙ → 0` is short exact, the second
+map being the shift `δ`. This applies to towers with surjective transitions
+(`TauCeti.ModuleTower.subsingleton_limOne_of_surjective`). -/
+theorem shortExact_limι_shiftNatTrans {F : ModuleTower.{v} R} (hF : Subsingleton F.limOne) :
+    (ShortComplex.mk _ _ (limι_app_comp_shiftNatTrans_app R F)).ShortExact where
+  exact := (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).2
+    (exact_lim_subtype_shift F)
+  mono_f := (ModuleCat.mono_iff_injective _).2 F.lim.injective_subtype
+  epi_g := (ModuleCat.epi_iff_surjective _).2 (F.subsingleton_limOne_iff.1 hF)
 
 end ModuleTower
 

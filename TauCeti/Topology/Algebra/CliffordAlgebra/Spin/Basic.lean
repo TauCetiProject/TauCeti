@@ -11,6 +11,7 @@ public import TauCeti.Topology.Algebra.QuadraticForm.SpecialOrthogonal
 public import Mathlib.Algebra.CharP.Invertible
 public import Mathlib.Topology.Algebra.Ring.Real
 import Mathlib.Topology.Algebra.Module.FiniteDimension
+import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Basic
 
 /-!
 # Topology on Clifford Spin groups
@@ -58,6 +59,8 @@ topologized special orthogonal group.
   continuous.
 * `CliffordAlgebra.continuous_spinVectorAction_apply` proves fixed-vector continuity under the same
   hypotheses.
+* `CliffordAlgebra.joined_of_coe_eq_prod_mul_ι_mul_prod` moves one factor of a Spin element
+  written as a product of vectors along a path in its level set.
 * `QuadraticForm.isClosed_spinVectorStabilizer` proves that every vector stabilizer is closed when
   the vector space is T1, under the same hypotheses.
 * `CliffordAlgebra.continuous_spinToSpecialOrthogonal_pi` proves continuity of the Spin projection
@@ -248,6 +251,30 @@ theorem continuous_spinToSpecialOrthogonal_pi [Invertible (2 : R)]
       (continuous_apply i).comp
         (continuous_spinVectorAction_apply Q (Pi.single j 1))
   simpa only [MonoidHom.coe_comp] using h
+
+/-- **Moving one factor of a product of vectors.** Let a Spin element be a product
+`P₁ * ι b * P₂` of vectors whose norms multiply to one, with `P₁` and `P₂` products of vectors.
+Moving the factor `b` to `b'` along a path inside its level set `{v | Q v = Q b}` keeps the product
+in the Spin group, and so joins the element to `P₁ * ι b' * P₂`. -/
+theorem joined_of_coe_eq_prod_mul_ι_mul_prod [TopologicalSpace V] [IsModuleTopology R V]
+    {Q : QuadraticForm R V} [ContinuousMul (CliffordAlgebra Q)] {l₁ l₂ : List V} {b b' : V}
+    (hl : Even (l₁.length + l₂.length + 1)) (hQ : (l₁.map Q).prod * Q b * (l₂.map Q).prod = 1)
+    (h : JoinedIn {v | Q v = Q b} b b') {x y : spinGroup Q}
+    (hx : (x : CliffordAlgebra Q) = (l₁.map (ι Q)).prod * ι Q b * (l₂.map (ι Q)).prod)
+    (hy : (y : CliffordAlgebra Q) = (l₁.map (ι Q)).prod * ι Q b' * (l₂.map (ι Q)).prod) :
+    Joined x y := by
+  have hmem (v : {v : V // Q v = Q b}) :
+      (l₁.map (ι Q)).prod * ι Q v * (l₂.map (ι Q)).prod ∈ spinGroup Q := by
+    have h := prod_map_ι_mem_spinGroup (Q := Q) (l := l₁ ++ v.1 :: l₂)
+      (by rwa [List.length_append, List.length_cons, ← Nat.add_assoc])
+      (by rw [List.map_append, List.prod_append, List.map_cons, List.prod_cons, v.2, ← mul_assoc,
+        hQ])
+    rwa [List.map_append, List.prod_append, List.map_cons, List.prod_cons, ← mul_assoc] at h
+  let f : {v : V // Q v = Q b} → spinGroup Q := fun v ↦ ⟨_, hmem v⟩
+  have hf : Continuous f := continuous_induced_rng.mpr <|
+    (continuous_const.mul ((continuous_ι Q).comp continuous_subtype_val)).mul continuous_const
+  convert h.joined_subtype.map hf using 1
+  exacts [Subtype.ext hx, Subtype.ext hy]
 
 section Real
 

@@ -7,10 +7,10 @@ module
 
 public import TauCeti.Analysis.Distribution.LocalConstancy
 public import TauCeti.Analysis.Distribution.TestFunction.DualEquiv
-import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.Analysis.Distribution.Regularization
 import TauCeti.Analysis.Distribution.TestFunction.Convolution
+import TauCeti.Analysis.Distribution.TestFunction.Integral
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 
 /-!
@@ -26,8 +26,8 @@ derivatives of tests with integration against one fixed continuous linear map; w
 in alternating forms, this is the coordinate form of the constancy theorem for currents. The
 hypothesis quantifies over all directions; by linearity of `v ↦ ∂_v T` it amounts to the vanishing
 of the coordinate derivatives along any basis. On the real line,
-`TauCeti.Analysis.Distribution.Constancy.Line` states the result for the derivative `∂_1` with an
-elementary proof by primitives.
+`TauCeti.Analysis.Distribution.Constancy.Line` states the result for the derivative `∂_1`; its
+local statement has an elementary proof by primitives.
 
 The proof is by regularization. On a ball `B(x, r)` with `B(x, 2r) ⊆ Ω`, let `ρ` be a normalized
 bump of radius at most `r`. Since the derivatives of `T` vanish, its regularization
@@ -46,6 +46,8 @@ so `T φ = (∫ φ) • T χ`. These local constants glue on the connected domai
   constant.
 * `Distribution.lineDerivOp_ofFun_const`: integration against a constant has vanishing
   derivatives; `Distribution.forall_lineDerivOp_eq_zero_iff` is the resulting characterization.
+* `Distribution.existsUnique_sub_eq_ofFun_const_of_forall_lineDerivOp_eq`: two distributions with
+  the same derivatives differ by integration against a unique constant.
 * `TestFunction.existsUnique_eq_integralAgainstBilinCLM_of_forall_lineDeriv_eq_zero`: the version
   for functionals on finite-dimensional vector-valued tests.
 
@@ -159,19 +161,7 @@ theorem existsUnique_eq_ofFun_const_of_forall_lineDerivOp_eq_zero (T : 𝓓'(Ω,
 theorem lineDerivOp_ofFun_const (μ : Measure E) [μ.IsAddHaarMeasure] (c : F) (v : E) :
     ∂_{v} (ofFun Ω (fun _ ↦ c) μ ⊤) = 0 := by
   ext φ
-  have hint (ψ : 𝓓(Ω, ℝ)) : Integrable ψ μ :=
-    ψ.continuous.integrable_of_hasCompactSupport ψ.hasCompactSupport
-  have hφ' : ⇑(∂_{v} φ : 𝓓(Ω, ℝ)) = fun x => lineDeriv ℝ φ x v :=
-    funext fun x => TestFunction.lineDerivOp_apply φ v x
-  -- Integrating by parts against the constant function `1`.
-  have hd : ∫ x, lineDeriv ℝ φ x v ∂μ = 0 := by
-    have h := integral_bilinear_hasLineDerivAt_right_eq_neg_left_of_integrable (μ := μ)
-      (f := fun _ => (1 : ℝ)) (f' := fun _ => 0) (g := φ) (g' := fun x => lineDeriv ℝ φ x v)
-      (B := lsmul ℝ ℝ) (by simp) (by simpa [hφ'] using hint (∂_{v} φ))
-      (by simpa using hint φ)
-      (fun x _ => by simpa using (hasFDerivAt_const (1 : ℝ) x).hasLineDerivAt v)
-      fun x _ => ((φ.contDiff.differentiable (by simp) x).lineDifferentiableAt).hasLineDerivAt
-    simpa using h
+  have hd : ∫ x, lineDeriv ℝ φ x v ∂μ = 0 := TestFunction.integral_lineDeriv_eq_zero φ v
   simp [lineDerivOp_apply_apply, ofFun_apply (locallyIntegrableOn_const c), integral_smul_const,
     integral_neg, hd]
 
@@ -183,6 +173,15 @@ theorem forall_lineDerivOp_eq_zero_iff (T : 𝓓'(Ω, F)) (μ : Measure E) [μ.I
   refine ⟨T.existsUnique_eq_ofFun_const_of_forall_lineDerivOp_eq_zero μ hΩ, ?_⟩
   rintro ⟨c, rfl, -⟩ v
   exact lineDerivOp_ofFun_const μ c v
+
+/-- Two distributions with the same directional derivatives on a connected nonempty open domain
+differ by integration against a unique constant. -/
+theorem existsUnique_sub_eq_ofFun_const_of_forall_lineDerivOp_eq (T S : 𝓓'(Ω, F))
+    (μ : Measure E) [μ.IsAddHaarMeasure] (hΩ : IsConnected (Ω : Set E))
+    (hTS : ∀ v : E, ∂_{v} T = ∂_{v} S) :
+    ∃! c : F, T - S = ofFun Ω (fun _ ↦ c) μ ⊤ := by
+  refine (T - S).existsUnique_eq_ofFun_const_of_forall_lineDerivOp_eq_zero μ hΩ fun v ↦ ?_
+  simpa only [lineDerivOp_eq_lineDerivCLM, map_sub, sub_eq_zero] using hTS v
 
 end Distribution
 

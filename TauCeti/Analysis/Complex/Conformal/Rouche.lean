@@ -13,6 +13,7 @@ public import TauCeti.Analysis.Contour.Argument.Divisor
 import Mathlib.Analysis.Calculus.LogDeriv
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.MeasureTheory.Integral.CircleIntegral
+import TauCeti.Analysis.Meromorphic.Divisor
 
 /-!
 # Rouché's theorem
@@ -100,17 +101,6 @@ other. That transfer, not the numerical equality, is how Rouché is normally use
   `TauCeti.rouche_add_windingNumber_comp` — the "dog on a leash" form, in the same three phrasings:
   under the symmetric, the classical, respectively the additive hypothesis along the curve, the
   image curves wind equally often about the origin.
-
-## Coordination with upstream Mathlib
-
-Mathlib has no Rouché theorem. However, per the *Coordination with upstream Mathlib* section of
-`ConformalMapping/README.md`, this layer overlaps
-[mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505), the in-progress
-human-curated Riemann-mapping-theorem effort, which proves L0-level material (an argument
-principle, Hurwitz) internally as private lemmas. **This file is therefore a temporary shim**: once
-the corresponding Mathlib lemmas land, this statement should be backed by them — or deleted and its
-consumers refactored — rather than maintained as an independent re-proof. What Tau Ceti adds at L0
-is named, discoverable API, not first proof.
 
 ## References
 
@@ -240,7 +230,7 @@ private lemma finsum_divisor_cast {h : ℂ → ℂ} (hh : AnalyticOnNhd ℂ h (c
     obtain ⟨hzb, hzs⟩ := hz
     simp only [Function.mem_support, ne_eq] at hzs
     have hd : MeromorphicOn.divisor h (ball c R) z ≠ 0 := by
-      rw [Contour.divisor_eq_analyticOrderNatAt (hh.mono ball_subset_closedBall).meromorphicOn
+      rw [(hh.mono ball_subset_closedBall).meromorphicOn.divisor_eq_analyticOrderNatAt
         (hh _ (ball_subset_closedBall hzb)) hzb]
       exact_mod_cast hzs
     simpa [hS, Set.Finite.mem_toFinset] using hd
@@ -248,7 +238,7 @@ private lemma finsum_divisor_cast {h : ℂ → ℂ} (hh : AnalyticOnNhd ℂ h (c
   push_cast
   refine Finset.sum_congr rfl (fun z hz => ?_)
   have hzb' := hsub (by simpa [hS] using hz)
-  rw [Contour.divisor_eq_analyticOrderNatAt (hh.mono ball_subset_closedBall).meromorphicOn
+  rw [(hh.mono ball_subset_closedBall).meromorphicOn.divisor_eq_analyticOrderNatAt
     (hh _ (ball_subset_closedBall hzb')) hzb']
   push_cast
   ring
@@ -446,7 +436,7 @@ are analytic and never point in opposite directions, the contour integrals of `l
 symmetric hypothesis puts `g / f` in the slit plane. Nothing is assumed off the curve, so the
 statement is available to the meromorphic and the holomorphic form alike. -/
 private lemma integral_deriv_smul_logDeriv_eq_of_norm_sub_lt
-    (hγ : Contour.IsPiecewiseC1On γ a b) (hclosed : γ a = γ b)
+    (hγ : IsPiecewiseC1On γ a b) (hclosed : γ a = γ b)
     (hfa : ∀ t ∈ [[a, b]], AnalyticAt ℂ f (γ t)) (hga : ∀ t ∈ [[a, b]], AnalyticAt ℂ g (γ t))
     (hs : ∀ t ∈ [[a, b]], ‖f (γ t) - g (γ t)‖ < ‖f (γ t)‖ + ‖g (γ t)‖) :
     (∫ t in a..b, deriv γ t • logDeriv f (γ t))
@@ -492,7 +482,7 @@ theorem rouche_symm_nullHomologous {ordf ordg : ℂ → ℤ} (hU : IsOpen U)
     (hgmero : ∀ s ∈ S, s ∈ U → MeromorphicAt g s)
     (hford : ∀ s ∈ S, s ∈ U → meromorphicOrderAt f s = (ordf s : WithTop ℤ))
     (hgord : ∀ s ∈ S, s ∈ U → meromorphicOrderAt g s = (ordg s : WithTop ℤ))
-    (hγ : Contour.IsPiecewiseC1On γ a b) (hγU : ∀ t ∈ [[a, b]], γ t ∈ U) (hclosed : γ a = γ b)
+    (hγ : IsPiecewiseC1On γ a b) (hγU : ∀ t ∈ [[a, b]], γ t ∈ U) (hclosed : γ a = γ b)
     (hγoff : ∀ t ∈ [[a, b]], γ t ∉ (↑S : Set ℂ)) (hnull : Contour.IsNullHomologous γ a b U)
     (hs : ∀ t ∈ [[a, b]], ‖f (γ t) - g (γ t)‖ < ‖f (γ t)‖ + ‖g (γ t)‖) :
     (∑ z ∈ S, Contour.windingNumber γ a b z * (ordf z : ℂ))
@@ -518,7 +508,7 @@ specialization of `TauCeti.rouche_symm_nullHomologous`, with the orders read off
 theorem rouche_symm_nullHomologous_of_analyticOnNhd (hU : IsOpen U)
     (hf : AnalyticOnNhd ℂ f U) (hg : AnalyticOnNhd ℂ g U)
     (hfS : ∀ z ∈ U, f z = 0 → z ∈ S) (hgS : ∀ z ∈ U, g z = 0 → z ∈ S)
-    (hγ : Contour.IsPiecewiseC1On γ a b) (hγU : ∀ t ∈ [[a, b]], γ t ∈ U) (hclosed : γ a = γ b)
+    (hγ : IsPiecewiseC1On γ a b) (hγU : ∀ t ∈ [[a, b]], γ t ∈ U) (hclosed : γ a = γ b)
     (hnull : Contour.IsNullHomologous γ a b U)
     (hs : ∀ t ∈ [[a, b]], ‖f (γ t) - g (γ t)‖ < ‖f (γ t)‖ + ‖g (γ t)‖) :
     (∑ z ∈ S, Contour.windingNumber γ a b z * (analyticOrderNatAt f z : ℂ))
@@ -539,7 +529,7 @@ summand `‖g (γ t)‖`. -/
 theorem rouche_nullHomologous (hU : IsOpen U)
     (hf : AnalyticOnNhd ℂ f U) (hg : AnalyticOnNhd ℂ g U)
     (hfS : ∀ z ∈ U, f z = 0 → z ∈ S) (hgS : ∀ z ∈ U, g z = 0 → z ∈ S)
-    (hγ : Contour.IsPiecewiseC1On γ a b) (hγU : ∀ t ∈ [[a, b]], γ t ∈ U) (hclosed : γ a = γ b)
+    (hγ : IsPiecewiseC1On γ a b) (hγU : ∀ t ∈ [[a, b]], γ t ∈ U) (hclosed : γ a = γ b)
     (hnull : Contour.IsNullHomologous γ a b U)
     (hs : ∀ t ∈ [[a, b]], ‖f (γ t) - g (γ t)‖ < ‖f (γ t)‖) :
     (∑ z ∈ S, Contour.windingNumber γ a b z * (analyticOrderNatAt f z : ℂ))
@@ -554,7 +544,7 @@ off the unperturbed one. -/
 theorem rouche_add_nullHomologous (hU : IsOpen U)
     (hf : AnalyticOnNhd ℂ f U) (hg : AnalyticOnNhd ℂ g U)
     (hfS : ∀ z ∈ U, f z = 0 → z ∈ S) (hsumS : ∀ z ∈ U, f z + g z = 0 → z ∈ S)
-    (hγ : Contour.IsPiecewiseC1On γ a b) (hγU : ∀ t ∈ [[a, b]], γ t ∈ U) (hclosed : γ a = γ b)
+    (hγ : IsPiecewiseC1On γ a b) (hγU : ∀ t ∈ [[a, b]], γ t ∈ U) (hclosed : γ a = γ b)
     (hnull : Contour.IsNullHomologous γ a b U)
     (hs : ∀ t ∈ [[a, b]], ‖g (γ t)‖ < ‖f (γ t)‖) :
     (∑ z ∈ S, Contour.windingNumber γ a b z * (analyticOrderNatAt f z : ℂ))
@@ -577,7 +567,7 @@ because the equality of the two logarithmic-derivative integrals is already forc
 hypothesis: it
 puts `g / f` in `Complex.slitPlane`, where `Complex.log` is a single-valued primitive. It is only
 in *counting* the winding that those extra hypotheses are needed. -/
-theorem rouche_symm_windingNumber_comp (hγ : Contour.IsPiecewiseC1On γ a b) (hclosed : γ a = γ b)
+theorem rouche_symm_windingNumber_comp (hγ : IsPiecewiseC1On γ a b) (hclosed : γ a = γ b)
     (hfa : ∀ t ∈ [[a, b]], AnalyticAt ℂ f (γ t)) (hga : ∀ t ∈ [[a, b]], AnalyticAt ℂ g (γ t))
     (hs : ∀ t ∈ [[a, b]], ‖f (γ t) - g (γ t)‖ < ‖f (γ t)‖ + ‖g (γ t)‖) :
     Contour.windingNumber (f ∘ γ) a b 0 = Contour.windingNumber (g ∘ γ) a b 0 := by
@@ -590,7 +580,7 @@ theorem rouche_symm_windingNumber_comp (hγ : Contour.IsPiecewiseC1On γ a b) (h
 and `g ∘ γ` wind equally often about the origin. This is the special case of
 `TauCeti.rouche_symm_windingNumber_comp` obtained by discarding the nonnegative summand
 `‖g (γ t)‖`. -/
-theorem rouche_windingNumber_comp (hγ : Contour.IsPiecewiseC1On γ a b) (hclosed : γ a = γ b)
+theorem rouche_windingNumber_comp (hγ : IsPiecewiseC1On γ a b) (hclosed : γ a = γ b)
     (hfa : ∀ t ∈ [[a, b]], AnalyticAt ℂ f (γ t)) (hga : ∀ t ∈ [[a, b]], AnalyticAt ℂ g (γ t))
     (hs : ∀ t ∈ [[a, b]], ‖f (γ t) - g (γ t)‖ < ‖f (γ t)‖) :
     Contour.windingNumber (f ∘ γ) a b 0 = Contour.windingNumber (g ∘ γ) a b 0 :=
@@ -604,7 +594,7 @@ walker `f ∘ γ` and the dog `(f + g) ∘ γ`, on a leash shorter than the walk
 lamppost at the origin, circle it the same number of times.
 
 It is the special case of `TauCeti.rouche_windingNumber_comp` for the pair `f`, `f + g`. -/
-theorem rouche_add_windingNumber_comp (hγ : Contour.IsPiecewiseC1On γ a b) (hclosed : γ a = γ b)
+theorem rouche_add_windingNumber_comp (hγ : IsPiecewiseC1On γ a b) (hclosed : γ a = γ b)
     (hfa : ∀ t ∈ [[a, b]], AnalyticAt ℂ f (γ t)) (hga : ∀ t ∈ [[a, b]], AnalyticAt ℂ g (γ t))
     (hs : ∀ t ∈ [[a, b]], ‖g (γ t)‖ < ‖f (γ t)‖) :
     Contour.windingNumber (f ∘ γ) a b 0

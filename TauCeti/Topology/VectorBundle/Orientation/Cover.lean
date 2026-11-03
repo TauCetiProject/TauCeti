@@ -133,6 +133,11 @@ theorem isOpen_sheet_trivializationAt (b : B) (o : Orientation ℝ F ι) :
 theorem continuous_proj : Continuous (proj : VectorBundleOrientationCover F E ι → B) :=
   ⟨fun _ ↦ isOpen_preimage_proj⟩
 
+/-- The orientation-cover projection as a continuous map. It is an abbreviation so that
+fibres of its pullback are definitionally the original fibres. -/
+abbrev projection : C(VectorBundleOrientationCover F E ι, B) :=
+  ⟨proj, continuous_proj⟩
+
 /-- A map into the orientation double cover is continuous when its composite with the projection
 is continuous and the preimage of the sheet of every preferred trivialization is open. -/
 theorem continuous_of_isOpen_preimage_sheet {X : Type*} [TopologicalSpace X]
@@ -179,6 +184,12 @@ theorem deck_apply (p : VectorBundleOrientationCover F E ι) :
 @[simp]
 theorem proj_deck (p : VectorBundleOrientationCover F E ι) : (deck p).proj = p.proj :=
   (rfl)
+
+/-- The deck involution, as a continuous map, lies over the base. -/
+theorem proj_comp_deck :
+    proj ∘ ⇑(deck (F := F) (E := E) (ι := ι) :
+      C(VectorBundleOrientationCover F E ι, VectorBundleOrientationCover F E ι)) = proj :=
+  funext proj_deck
 
 /-- The deck involution reverses the orientation of each point. -/
 @[simp]
@@ -322,6 +333,21 @@ theorem eq_or_eq_deck (hι : Fintype.card ι = finrank ℝ F) {p q : VectorBundl
   · rw [← Trivialization.mapOrientation_neg] at h
     obtain rfl := hinj h
     exact .inr rfl
+
+/-- Every fibre of the orientation double cover has exactly two points, provided `ι` has
+cardinality the rank of the bundle. -/
+@[simp]
+theorem ncard_fiber (hι : Fintype.card ι = finrank ℝ F) (b : B) :
+    ((proj : VectorBundleOrientationCover F E ι → B) ⁻¹' {b}).ncard = 2 := by
+  rw [← Nat.card_coe_set_eq]
+  obtain ⟨p, hp⟩ := surjective_proj (F := F) (E := E) hι b
+  let p₀ : (proj : VectorBundleOrientationCover F E ι → B) ⁻¹' {b} := ⟨p, hp⟩
+  refine (Nat.card_eq_two_iff' p₀).mpr ⟨⟨deck p, hp⟩, ?_, ?_⟩
+  · exact fun h ↦ deck_ne_self p (congrArg Subtype.val h)
+  · intro q hq
+    apply Subtype.ext
+    exact (eq_or_eq_deck hι (q.2.trans hp.symm)).resolve_left
+      fun h ↦ hq (Subtype.ext h)
 
 /-- Over a preconnected base, a clopen subset of the orientation double cover that is invariant
 under the deck involution is empty or the whole cover, provided `ι` has cardinality the rank of

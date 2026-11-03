@@ -188,30 +188,8 @@ theorem f4ShortRootIdealFirstColumn_eq
     (k : Fin 4 ⊕ Fin 4) (a : Fin 26) :
     f4ShortRootIdealFirstColumn k a =
       (f4SimpleRootCoeff k a : ZMod 2) •
-        f4ShortRootLieIdealBasis (f4SimpleRootTarget k a) := by
-  apply f4ShortRootLieIdealBasis.repr.injective
-  ext b
-  have hentry :
-      (f4ShortRootLieIdealBasis.repr (f4ShortRootIdealFirstColumn k a)) b =
-        f4ShortRootSignedSimpleAdjointMatrix k b a := by
-    exact (f4ShortRootSignedSimpleAdjointMatrix_apply k b a).symm
-  calc
-    _ = f4ShortRootSignedSimpleAdjointMatrix k b a := hentry
-    _ = ((rootMatrix k).map (Int.cast : ℤ → ZMod 2)) b a :=
-      congrArg (fun M : Matrix (Fin 26) (Fin 26) (ZMod 2) ↦ M b a)
-        (f4ShortRootSignedSimpleAdjointMatrix_eq_rootMatrix_map k)
-    _ = if b = f4SimpleRootTarget k a then
-          (f4SimpleRootCoeff k a : ZMod 2) else 0 := by
-      rw [Matrix.map_apply, rootMatrix_apply]
-      split_ifs <;> rfl
-    _ = (f4ShortRootLieIdealBasis.repr
-        ((f4SimpleRootCoeff k a : ZMod 2) •
-          f4ShortRootLieIdealBasis (f4SimpleRootTarget k a))) b := by
-      simp only [map_smul, Module.Basis.repr_self, Finsupp.smul_single]
-      by_cases h : b = f4SimpleRootTarget k a
-      · subst b
-        simp
-      · simp [h]
+        f4ShortRootLieIdealBasis (f4SimpleRootTarget k a) :=
+  f4ShortRootSignedSimpleAdjoint_basis k a
 
 /-- The ideal's second divided-power canonical column is the corresponding sparse matrix
 column. -/

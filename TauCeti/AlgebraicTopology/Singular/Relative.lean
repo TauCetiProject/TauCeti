@@ -324,6 +324,15 @@ lemma singularHomologyMap_eq_zero_of_fac (g : P.fst ⟶ P'.snd) (hg : g ≫ P'.m
     ← singularChainComplexMap, singularChainComplexMap_eq_zero_of_fac f R g hg,
     HomologicalComplex.homologyMap_zero]
 
+/-- Whether the relative singular homology of a pair of subspaces vanishes only depends on the
+subspaces, not on how they are written. -/
+lemma isZero_singularHomology_ofInclusion_congr {X : TopCat.{w}} {A A' S S' : Set X}
+    (h : S ⊆ A) (h' : S' ⊆ A') (hA : A = A') (hS : S = S') (n : ℕ) :
+    IsZero ((ofInclusion h).singularHomology R n) ↔
+      IsZero ((ofInclusion h').singularHomology R n) := by
+  subst hA hS
+  rfl
+
 /-- Relative singular homology as a functor on topological pairs. -/
 @[no_expose]
 noncomputable def singularHomologyFunctor (n : ℕ) : TopPair.{w} ⥤ C :=

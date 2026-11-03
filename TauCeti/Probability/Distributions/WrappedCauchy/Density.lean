@@ -156,6 +156,20 @@ theorem wrappedCauchyPDFReal_nonneg (m : AddCircle (2 * π)) (γ : ℝ≥0)
       (by simpa using wrappedCauchy_pole_mem_ball m (pos_iff_ne_zero.mpr hγ))
     simp
 
+/-- At positive scale the wrapped Cauchy density is strictly positive at every circle point. -/
+theorem wrappedCauchyPDFReal_pos (m : AddCircle (2 * π)) {γ : ℝ≥0} (hγ : 0 < γ)
+    (θ : AddCircle (2 * π)) : 0 < wrappedCauchyPDFReal m γ θ := by
+  have hr : 0 < Real.exp (-(γ : ℝ)) := Real.exp_pos _
+  have hr1 : Real.exp (-(γ : ℝ)) < 1 :=
+    Real.exp_lt_one_iff.mpr (neg_neg_of_pos (NNReal.coe_pos.mpr hγ))
+  have hcos : Real.Angle.cos (θ - m) ≤ 1 := by
+    exact (Real.Angle.cos_toReal (θ - m)).symm.le.trans (Real.cos_le_one _)
+  have hsquare : 0 < (1 - Real.exp (-(γ : ℝ))) ^ 2 := sq_pos_of_pos (sub_pos.mpr hr1)
+  rw [wrappedCauchyPDFReal_apply]
+  apply div_pos
+  · nlinarith
+  · nlinarith [mul_nonneg hr.le (sub_nonneg.mpr hcos)]
+
 /-- At positive scale the wrapped Cauchy real density integrates to one against normalized Haar
 measure. -/
 theorem integral_wrappedCauchyPDFReal (m : AddCircle (2 * π)) {γ : ℝ≥0} (hγ : 0 < γ) :
