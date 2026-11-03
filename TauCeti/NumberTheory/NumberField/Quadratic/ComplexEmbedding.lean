@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Complex.Basic
 public import TauCeti.Algebra.QuadraticAlgebra.AlgEquiv
-public import TauCeti.Algebra.QuadraticAlgebra.Star
 public import TauCeti.NumberTheory.NumberField.Quadratic.InfinitePlace
 import TauCeti.Analysis.Real.Sqrt
 
