@@ -62,7 +62,8 @@ theorem Continuous.eq_zero_of_integral_conj_mul_self_eq_zero {X 𝕜 : Type*} [T
     (h0 : ∫ x, starRingEnd 𝕜 (h x) * h x ∂μ = 0) : h = 0 := by
   by_contra hne
   obtain ⟨x, hx⟩ := Function.ne_iff.1 hne
-  have hpos := integral_pos_of_integrable_nonneg_nonzero (μ := μ) (f := fun x => ‖h x‖ ^ 2)
+  have hpos := MeasureTheory.integral_pos_of_integrable_nonneg_ne_zero (μ := μ) (f :=
+    fun x => ‖h x‖ ^ 2)
     (x := x) (by fun_prop) (hL.integrable_norm_pow two_ne_zero) (fun _ => by positivity)
     (by simpa using hx)
   simp_rw [RCLike.conj_mul, ← RCLike.ofReal_pow, integral_ofReal, RCLike.ofReal_eq_zero] at h0

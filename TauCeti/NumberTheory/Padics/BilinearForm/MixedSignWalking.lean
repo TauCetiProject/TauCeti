@@ -101,7 +101,7 @@ private theorem mixed_sign_walking_hyperbolic {a : ℤ_[2]} (ha : IsUnit a) :
         !![5 * a, 0, 0; 0, 4 * a, 6 * a; 0, 6 * a, 4 * a] := by
       apply Matrix.ext
       intro i j
-      fin_cases i <;> fin_cases j <;> simp [P, mul_apply, Fin.sum_univ_three] <;> ring
+      fin_cases i <;> fin_cases j <;> simp [P, Matrix.mul_apply, Fin.sum_univ_three] <;> ring
     rw [← hmatrix, ← toBilin'_comp,
       ← toLinearEquiv'_apply P (P.invertibleOfIsUnitDet hP)]
     exact ⟨(toBilin' _).isometryEquivOfCompLinearEquiv _⟩
@@ -137,7 +137,7 @@ private theorem mixed_sign_walking_anisotropic {a : ℤ_[2]} (ha : IsUnit a) :
         !![5 * (5 * a), 0, 0; 0, 4, 2; 0, 2, 4] := by
       apply Matrix.ext
       intro i j
-      fin_cases i <;> fin_cases j <;> simp [P, mul_apply, Fin.sum_univ_three]
+      fin_cases i <;> fin_cases j <;> simp [P, Matrix.mul_apply, Fin.sum_univ_three]
       ring
     rw [← hmatrix, ← toBilin'_comp,
       ← toLinearEquiv'_apply P (P.invertibleOfIsUnitDet hP)]
