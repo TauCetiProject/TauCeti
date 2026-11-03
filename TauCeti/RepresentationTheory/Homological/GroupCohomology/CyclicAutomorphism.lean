@@ -7,7 +7,8 @@ module
 
 public import TauCeti.Algebra.Module.Torsion.Snake
 public import TauCeti.RepresentationTheory.Cyclic.Affine
-public import TauCeti.RepresentationTheory.Cyclic.Automorphism
+public import TauCeti.RepresentationTheory.Cyclic.Restriction
+public import TauCeti.RepresentationTheory.Homological.GroupCohomology.LongExactSequence
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.Corestriction
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.FiniteCyclic
 import Mathlib.Tactic.Abel
@@ -38,11 +39,14 @@ the cyclic representation of `A` these quotient maps read as follows.
   (`AddEquiv.groupCohomologyπEven_cyclicRep_eq_iff`).
 
 Every class arises in each case (`Rep.FiniteCyclicGroup.groupCohomologyπOdd_surjective`,
-`Rep.FiniteCyclicGroup.groupCohomologyπEven_surjective`). An additive map `f` with
-`f ∘ A = B ∘ f` acts on these classes through representatives: in degree one it sends the class
-of `t` to the class of `f t`, and in degree two the class of a fixed point `v` to the class of
-`f v` (`AddMonoidHom.map_cyclicRepHom_groupCohomologyπOdd_one`,
-`AddMonoidHom.map_cyclicRepHom_groupCohomologyπEven_two`).
+`Rep.FiniteCyclicGroup.groupCohomologyπEven_surjective`). For a homomorphism `χ : C_n → C_m`
+sending the generator to its `d`-th power, an additive map
+`f` intertwining `A^d` with `B` induces change-of-group maps on these classes. In degree one,
+the class of `t` maps to the class of `f (partialNorm A d t)`; in degree two, the class of a
+fixed point `v` maps to the class of `q • f v`, where `d * n = q * m`
+(`AddMonoidHom.map_cyclicRepResHom_groupCohomologyπOdd_one`,
+`AddMonoidHom.map_cyclicRepResHom_groupCohomologyπEven_two`). Coefficient maps are the case
+`χ = id` and `d = q = 1`.
 
 The representation itself is constructed in `TauCeti.RepresentationTheory.Cyclic.Automorphism`.
 
@@ -61,8 +65,9 @@ and `m • s = i v`, the class of the image of `s` is sent to the class of `v`, 
 (`TauCeti.δ_cyclicRepShortComplex_groupCohomologyπOdd_one_of_nsmul_eq`). When multiplication
 by `m` is bijective on `E`, as for a real vector space, the cohomology of `E` vanishes in positive
 degrees and `δ` is an isomorphism (`TauCeti.cyclicConnectingEquiv`). The connecting homomorphism
-is natural: maps between two such sequences which intertwine the automorphisms and commute with
-the maps of the sequences commute with `δ` (`TauCeti.map_δ_cyclicRepShortComplex`).
+is natural under arbitrary homomorphisms `χ : C_l → C_m`: maps between two such sequences
+which intertwine the appropriate powers of the automorphisms and commute with the sequence
+maps commute with `δ` (`TauCeti.map_δ_cyclicRepShortComplex`).
 
 The last part of the file specializes to the trivial action, given by the identity automorphism.
 Then the odd-degree cohomology of `C_m` is the `m`-torsion `T[m]`
@@ -96,17 +101,17 @@ description of its `m`-torsion points as `(1 / m) Λ ⧸ Λ ≃ Λ ⧸ m Λ`.
 * `AddEquiv.groupCohomologyπEven_cyclicRep_eq_zero_iff`,
   `AddEquiv.groupCohomologyπEven_cyclicRep_eq_iff`: positive even-degree classes are fixed points
   of `A` modulo the image of the norm.
-* `AddMonoidHom.map_cyclicRepHom_groupCohomologyπOdd_one`,
-  `AddMonoidHom.map_cyclicRepHom_groupCohomologyπEven_two`: an equivariant map acts on degree-`1`
-  and degree-`2` classes by acting on their representatives.
+* `AddMonoidHom.map_cyclicRepResHom_groupCohomologyπOdd_one`,
+  `AddMonoidHom.map_cyclicRepResHom_groupCohomologyπEven_two`: change-of-group maps act on
+  degree-one twists by partial norms and on degree-two fixed points by the degree factor.
 * `AddMonoidHom.shortExact_cyclicRepShortComplex`: an exact sequence of abelian groups with
   equivariant maps is a short exact sequence of cyclic representations.
 * `TauCeti.δ_cyclicRepShortComplex_groupCohomologyπOdd_one`,
   `TauCeti.δ_cyclicRepShortComplex_groupCohomologyπOdd_one_of_nsmul_eq`: the connecting
   homomorphism sends the class of `t` to the class of the norm of a lift of `t`, and the class of
   `v / m` to the class of `v`.
-* `TauCeti.map_δ_cyclicRepShortComplex`: naturality of the connecting homomorphism under maps of
-  equivariant exact sequences.
+* `TauCeti.map_δ_cyclicRepShortComplex`: naturality of the connecting homomorphism under
+  homomorphisms of cyclic groups and compatible maps of exact sequences.
 * `TauCeti.groupCohomologyEvenEquivQuotSMulTop_δ`: for trivial actions, the connecting
   homomorphism is the snake-lemma map `T[m] → Λ ⧸ m Λ`.
 * `TauCeti.torsionByδEquiv_eq_trans_cyclicConnectingEquiv`: for trivial actions and `m` bijective
@@ -183,46 +188,46 @@ namespace AddMonoidHom
 
 /-! ### Equivariant maps on the cohomology classes -/
 
-section CohomologyMap
+section ChangeOfCyclicGroup
 
-variable {T M : Type} [AddCommGroup T] [AddCommGroup M] {m : ℕ} [NeZero m] {A : T ≃+ T}
-  {B : M ≃+ M} (f : T →+ M) (hA : (⇑A)^[m] = _root_.id) (hB : (⇑B)^[m] = _root_.id)
-  (hf : ∀ x, f (A x) = B (f x))
+variable {T M : Type} [AddCommGroup T] [AddCommGroup M] {m n : ℕ} [NeZero m] [NeZero n]
+  {A : T ≃+ T} {B : M ≃+ M} (f : T →+ M)
+  (hA : (⇑A)^[m] = _root_.id) (hB : (⇑B)^[n] = _root_.id)
+  (χ : Multiplicative (ZMod n) →* Multiplicative (ZMod m)) (d : ℕ)
+  (hχ : χ (.ofAdd 1) = (.ofAdd 1) ^ d) (hf : ∀ x, f ((⇑A)^[d] x) = B (f x))
 
-/-- An additive map `f` with `f ∘ A = B ∘ f` sends the degree-`1` class of a norm-zero element
-`x` to the degree-`1` class of `f x`. -/
-theorem map_cyclicRepHom_groupCohomologyπOdd_one
+/-- Pulling back a degree-one class along a homomorphism sending the generator to its
+`d`-th power replaces its twist `x` by `f (partialNorm A d x)`. -/
+theorem map_cyclicRepResHom_groupCohomologyπOdd_one
     (x : LinearMap.ker (A.cyclicRep hA).norm.asHom.hom.toLinearMap)
-    (y : LinearMap.ker (B.cyclicRep hB).norm.asHom.hom.toLinearMap) (hy : (y : M) = f x) :
-    groupCohomology.map (MonoidHom.id (Multiplicative (ZMod m))) (f.cyclicRepHom hA hB hf) 1
+    (y : LinearMap.ker (B.cyclicRep hB).norm.asHom.hom.toLinearMap)
+    (hy : (y : M) = f (A.partialNorm d x)) :
+    groupCohomology.map χ (f.cyclicRepResHom hA hB χ d hχ hf) 1
         (groupCohomologyπOdd (A.cyclicRep hA) (.ofAdd 1) mem_zpowers_ofAdd_one 1 odd_one x) =
       groupCohomologyπOdd (B.cyclicRep hB) (.ofAdd 1) mem_zpowers_ofAdd_one 1 odd_one y := by
-  -- Specializing before unifying with the goal: unifying the general statement directly against
-  -- the goal, where `res (MonoidHom.id _)` meets the cyclic representations, is very slow.
   have h := map_groupCohomologyπOdd_one (B.cyclicRep hB) (.ofAdd 1) mem_zpowers_ofAdd_one
-    (MonoidHom.id _) mem_zpowers_ofAdd_one 1 (pow_one _).symm (f.cyclicRepHom hA hB hf) x y
-  refine h ?_
-  rw [Finset.sum_range_one, pow_zero, map_one, one_apply_eq_self, hy]
-  exact (congrFun (coe_cyclicRepHom_hom f hA hB hf) x.1).symm
+    χ mem_zpowers_ofAdd_one d hχ (f.cyclicRepResHom hA hB χ d hχ hf) x y
+  apply h
+  rw [hy, AddEquiv.partialNorm_def]
+  simp only [AddMonoidHom.coe_cyclicRepResHom_hom,
+    AddEquiv.cyclicRepresentation_ofAdd_one_pow_apply]
 
-/-- An additive map `f` with `f ∘ A = B ∘ f` sends the degree-`2` class of a fixed point `x` of
-`A` to the degree-`2` class of the fixed point `f x` of `B`. -/
-theorem map_cyclicRepHom_groupCohomologyπEven_two
+/-- Pulling back a degree-two class multiplies its fixed-point representative by `q`,
+where `d * n = q * m`. In particular, restriction along the standard inclusion of a cyclic
+subgroup (`m = d * n`) preserves the representative. -/
+theorem map_cyclicRepResHom_groupCohomologyπEven_two (q : ℕ) (hq : d * n = q * m)
     (x : LinearMap.ker (applyAsHom (A.cyclicRep hA) (.ofAdd 1) - 𝟙 _).hom.toLinearMap)
     (y : LinearMap.ker (applyAsHom (B.cyclicRep hB) (.ofAdd 1) - 𝟙 _).hom.toLinearMap)
-    (hy : (y : M) = f x) :
-    groupCohomology.map (MonoidHom.id (Multiplicative (ZMod m))) (f.cyclicRepHom hA hB hf) 2
+    (hy : (y : M) = q • f x) :
+    groupCohomology.map χ (f.cyclicRepResHom hA hB χ d hχ hf) 2
         (groupCohomologyπEven (A.cyclicRep hA) (.ofAdd 1) mem_zpowers_ofAdd_one 2 even_two x) =
       groupCohomologyπEven (B.cyclicRep hB) (.ofAdd 1) mem_zpowers_ofAdd_one 2 even_two y := by
-  -- Specializing before unifying with the goal: unifying the general statement directly against
-  -- the goal, where `res (MonoidHom.id _)` meets the cyclic representations, is very slow.
   have h := map_groupCohomologyπEven_two (B.cyclicRep hB) (.ofAdd 1) mem_zpowers_ofAdd_one
-    (MonoidHom.id _) mem_zpowers_ofAdd_one 1 (pow_one _).symm (f.cyclicRepHom hA hB hf) 1 rfl x y
-  refine h ?_
-  rw [one_nsmul, hy]
-  exact (congrFun (coe_cyclicRepHom_hom f hA hB hf) x.1).symm
+    χ mem_zpowers_ofAdd_one d hχ (f.cyclicRepResHom hA hB χ d hχ hf) q
+    (by simpa [Nat.card_eq_fintype_card] using hq) x y
+  exact h (by simpa only [AddMonoidHom.coe_cyclicRepResHom_hom] using hy)
 
-end CohomologyMap
+end ChangeOfCyclicGroup
 
 /-! ### The connecting class of an equivariant short exact sequence -/
 
@@ -323,46 +328,50 @@ theorem cyclicConnectingEquiv_apply (hm : Function.Bijective fun x : E ↦ m •
     cyclicConnectingEquiv hS hm x = δ hS 1 2 rfl x :=
   (rfl)
 
-/-- **Naturality of the connecting homomorphism.** Let `fΛ`, `fE`, `fT` be additive maps from
-an exact sequence `0 → Λ → E → T → 0` with automorphisms `AΛ`, `AE`, `AT` to another one
-`0 → Λ' → E' → T' → 0` with automorphisms `AΛ'`, `AE'`, `AT'`, intertwining the automorphisms and
-commuting with the maps of the two sequences. Then for `q = n + 1` the connecting homomorphisms
-`Hⁿ(C_m, T) ⟶ H^q(C_m, Λ)` and `Hⁿ(C_m, T') ⟶ H^q(C_m, Λ')` commute with the maps induced by
-`fT` and `fΛ`. -/
-theorem map_δ_cyclicRepShortComplex {Λ' E' T' : Type} [AddCommGroup Λ'] [AddCommGroup E']
-    [AddCommGroup T'] {AΛ' : Λ' ≃+ Λ'} {AE' : E' ≃+ E'} {AT' : T' ≃+ T'} {i' : Λ' →+ E'}
-    {p' : E' →+ T'} {hΛ' : (⇑AΛ')^[m] = _root_.id} {hE' : (⇑AE')^[m] = _root_.id}
-    {hT' : (⇑AT')^[m] = _root_.id} {hi' : ∀ x, i' (AΛ' x) = AE' (i' x)}
+/-- **Naturality under homomorphisms of cyclic groups.** Suppose `χ : C_l → C_m` sends the
+selected generator to its `d`-th power. Maps of exact sequences intertwining the `d`-th
+iterates of the source automorphisms with the target automorphisms commute with the
+connecting homomorphisms. This includes restriction, inflation, and coefficient maps. -/
+theorem map_δ_cyclicRepShortComplex {l : ℕ} [NeZero l]
+    {Λ' E' T' : Type} [AddCommGroup Λ'] [AddCommGroup E'] [AddCommGroup T']
+    {AΛ' : Λ' ≃+ Λ'} {AE' : E' ≃+ E'} {AT' : T' ≃+ T'} {i' : Λ' →+ E'}
+    {p' : E' →+ T'} {hΛ' : (⇑AΛ')^[l] = _root_.id} {hE' : (⇑AE')^[l] = _root_.id}
+    {hT' : (⇑AT')^[l] = _root_.id} {hi' : ∀ x, i' (AΛ' x) = AE' (i' x)}
     {hp' : ∀ x, p' (AE' x) = AT' (p' x)} {hpi' : ∀ x, p' (i' x) = 0}
     (hS' : (i'.cyclicRepShortComplex p' hΛ' hE' hT' hi' hp' hpi').ShortExact)
-    (fΛ : Λ →+ Λ') (fE : E →+ E') (fT : T →+ T') (hfΛ : ∀ x, fΛ (AΛ x) = AΛ' (fΛ x))
-    (hfE : ∀ x, fE (AE x) = AE' (fE x)) (hfT : ∀ x, fT (AT x) = AT' (fT x))
+    (χ : Multiplicative (ZMod l) →* Multiplicative (ZMod m)) (d : ℕ)
+    (hχ : χ (.ofAdd 1) = (.ofAdd 1) ^ d)
+    (fΛ : Λ →+ Λ') (fE : E →+ E') (fT : T →+ T')
+    (hfΛ : ∀ x, fΛ ((⇑AΛ)^[d] x) = AΛ' (fΛ x))
+    (hfE : ∀ x, fE ((⇑AE)^[d] x) = AE' (fE x))
+    (hfT : ∀ x, fT ((⇑AT)^[d] x) = AT' (fT x))
     (hfi : ∀ x, fE (i x) = i' (fΛ x)) (hfp : ∀ x, fT (p x) = p' (fE x))
     (n q : ℕ) (hnq : n + 1 = q) (x : groupCohomology (AT.cyclicRep hT) n) :
-    map (MonoidHom.id (Multiplicative (ZMod m))) (fΛ.cyclicRepHom hΛ hΛ' hfΛ) q
-        (δ hS n q hnq x) =
-      δ hS' n q hnq
-        (map (MonoidHom.id (Multiplicative (ZMod m))) (fT.cyclicRepHom hT hT' hfT) n x) := by
-  -- The squares of the morphism of short complexes, since `i' ∘ fΛ = fE ∘ i` and
-  -- `p' ∘ fE = fT ∘ p`.
-  have h₁₂ : fΛ.cyclicRepHom hΛ hΛ' hfΛ ≫ i'.cyclicRepHom hΛ' hE' hi' =
-      i.cyclicRepHom hΛ hE hi ≫ fE.cyclicRepHom hE hE' hfE := by
-    rw [← AddMonoidHom.cyclicRepHom_comp, ← AddMonoidHom.cyclicRepHom_comp]
-    congr 1
-    exact AddMonoidHom.ext fun x ↦ (hfi x).symm
-  have h₂₃ : fE.cyclicRepHom hE hE' hfE ≫ p'.cyclicRepHom hE' hT' hp' =
-      p.cyclicRepHom hE hT hp ≫ fT.cyclicRepHom hT hT' hfT := by
-    rw [← AddMonoidHom.cyclicRepHom_comp, ← AddMonoidHom.cyclicRepHom_comp]
-    congr 1
-    exact AddMonoidHom.ext fun x ↦ (hfp x).symm
-  let F : i.cyclicRepShortComplex p hΛ hE hT hi hp hpi ⟶
+    map χ (fΛ.cyclicRepResHom hΛ hΛ' χ d hχ hfΛ) q (δ hS n q hnq x) =
+      δ hS' n q hnq (map χ (fT.cyclicRepResHom hT hT' χ d hχ hfT) n x) := by
+  let F : (i.cyclicRepShortComplex p hΛ hE hT hi hp hpi).map (resFunctor χ) ⟶
       i'.cyclicRepShortComplex p' hΛ' hE' hT' hi' hp' hpi' :=
-    { τ₁ := fΛ.cyclicRepHom hΛ hΛ' hfΛ
-      τ₂ := fE.cyclicRepHom hE hE' hfE
-      τ₃ := fT.cyclicRepHom hT hT' hfT
-      comm₁₂ := h₁₂
-      comm₂₃ := h₂₃ }
-  exact congr($(δ_naturality hS hS' F n q hnq) x)
+    { τ₁ := fΛ.cyclicRepResHom hΛ hΛ' χ d hχ hfΛ
+      τ₂ := fE.cyclicRepResHom hE hE' χ d hχ hfE
+      τ₃ := fT.cyclicRepResHom hT hT' χ d hχ hfT
+      comm₁₂ := by
+        ext x
+        -- Extensionality exposes linear maps with restricted module instances. Express their
+        -- evaluations as intertwining maps so that the characteristic evaluation lemmas match.
+        change (i'.cyclicRepHom hΛ' hE' hi').hom
+            ((fΛ.cyclicRepResHom hΛ hΛ' χ d hχ hfΛ).hom x) =
+          (fE.cyclicRepResHom hE hE' χ d hχ hfE).hom ((i.cyclicRepHom hΛ hE hi).hom x)
+        simpa only [AddMonoidHom.coe_cyclicRepResHom_hom,
+          AddMonoidHom.coe_cyclicRepHom_hom] using (hfi x).symm
+      comm₂₃ := by
+        ext x
+        -- As in the first square, use the underlying intertwining-map evaluations.
+        change (p'.cyclicRepHom hE' hT' hp').hom
+            ((fE.cyclicRepResHom hE hE' χ d hχ hfE).hom x) =
+          (fT.cyclicRepResHom hT hT' χ d hχ hfT).hom ((p.cyclicRepHom hE hT hp).hom x)
+        simpa only [AddMonoidHom.coe_cyclicRepResHom_hom,
+          AddMonoidHom.coe_cyclicRepHom_hom] using (hfp x).symm }
+  exact congr($(TauCeti.groupCohomology.δ_naturality χ hS hS' F n q hnq) x)
 
 end TauCeti
 
