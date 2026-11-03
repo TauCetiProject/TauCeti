@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Probability.Independence.Basic
-public import Mathlib.Probability.Moments.Basic
 public import TauCeti.Probability.Moments.Basic
 
 /-!
