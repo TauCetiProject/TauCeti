@@ -15,6 +15,7 @@ public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
 import TauCeti.Analysis.Matrix.PosDef
 import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
+import Mathlib.Topology.Instances.Matrix
 -- Private: `ContinuousLinearMap.dual_finrank_eq` is used only inside proofs.
 import TauCeti.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Analysis.Normed.Module.QuadraticMap
@@ -57,6 +58,8 @@ use.
   space (`ContinuousLinearMap.dual_finrank_eq`).
 * `ContinuousLinearMap.isInvertible_of_separatingLeft`: in finite dimensions, a map into the dual
   with left-separating bilinear form is invertible.
+* `ContinuousLinearMap.isOpen_setOf_nondegenerate_toBilinForm`: in finite dimensions,
+  the continuous bilinear forms with nondegenerate bilinear form are an open set.
 * `ContinuousLinearMap.isInvertible_of_pos`: in finite dimensions, a map into the dual that is
   positive on nonzero diagonal vectors is invertible.
 * `ContinuousLinearMap.exists_pos_forall_le_neg_mul_sq`: a continuous bilinear form negative on
@@ -167,6 +170,24 @@ theorem isInvertible_toContinuousBilinearMap_iff_separatingLeft
     fun hb ↦ _root_.ContinuousLinearMap.isInvertible_of_injective (hsep.mp hb)⟩
 
 end FiniteDimensional
+
+/-- In finite dimensions, the continuous bilinear forms whose bilinear form is nondegenerate form
+an open set. -/
+theorem _root_.ContinuousLinearMap.isOpen_setOf_nondegenerate_toBilinForm
+    {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [FiniteDimensional 𝕜 E] :
+    IsOpen {B : E →L[𝕜] E →L[𝕜] 𝕜 | B.toBilinForm.Nondegenerate} := by
+  let b := Module.finBasis 𝕜 E
+  have hc : Continuous fun B : E →L[𝕜] E →L[𝕜] 𝕜 ↦ (B.toBilinForm.toMatrix b).det := by
+    refine Continuous.matrix_det (continuous_pi fun i ↦ continuous_pi fun j ↦ ?_)
+    simpa only [LinearMap.BilinForm.toMatrix_apply, ContinuousLinearMap.toBilinForm_apply] using
+      (continuous_id.clm_apply continuous_const).clm_apply continuous_const
+  have hset : {B : E →L[𝕜] E →L[𝕜] 𝕜 | B.toBilinForm.Nondegenerate} =
+      (fun B ↦ (B.toBilinForm.toMatrix b).det) ⁻¹' {0}ᶜ := by
+    ext B
+    exact LinearMap.BilinForm.nondegenerate_iff_det_ne_zero b
+  rw [hset]
+  exact isOpen_compl_singleton.preimage hc
 
 /-- In finite dimensions, a continuous linear map into the dual that is positive on nonzero
 diagonal vectors is invertible. This is the musical isomorphism of a Riemannian metric. -/
