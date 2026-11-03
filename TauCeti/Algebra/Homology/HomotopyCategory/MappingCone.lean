@@ -177,6 +177,21 @@ noncomputable def mapOfHomotopyHomotopy
       abel)
     (by simp [mapOfHomotopy])
 
+/-- The second homotopy of cone maps factors through the first projection of the source
+and the right inclusion of the target. -/
+@[simp]
+lemma mapOfHomotopyHomotopy_hom
+    (H₂ : Homotopy (φ₁ ≫ b) (a ≫ φ₂)) (s : Cochain K₁ L₂ (-2))
+    (hs : δ (-2) (-1) s = Cochain.ofHomotopy H - Cochain.ofHomotopy H₂)
+    (p q : ℤ) (hpq : p + -1 = q) :
+    (mapOfHomotopyHomotopy H H₂ s hs).hom p q =
+      (fst φ₁ : Cochain _ _ 1).v p (p + 1) rfl ≫
+        s.v (p + 1) q (by omega) ≫ (inr φ₂).f q := by
+  simp only [mapOfHomotopyHomotopy, descHomotopy, Cochain.equivHomotopy,
+    Equiv.coe_fn_symm_mk, hpq, ↓reduceDIte, descCochain, Cochain.comp_zero, add_zero]
+  rw [Cochain.comp_v _ _ _ p (p + 1) q rfl (by omega),
+    Cochain.comp_zero_cochain_v, Cochain.ofHom_v]
+
 end HomotopySquares
 
 section Shift

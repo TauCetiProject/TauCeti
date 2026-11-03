@@ -96,6 +96,42 @@ def mapOfHomotopyHomotopy (H H' : Homotopy (f₁ ≫ v) (u ≫ f₂))
     Homotopy (mapOfHomotopy H) (mapOfHomotopy H') :=
   (mappingCone.mapOfHomotopyHomotopy H H' s hs).shift (-1)
 
+/-- The second homotopy of fibre maps has the negative sign introduced by shifting the
+cone homotopy by `-1`. -/
+@[simp]
+lemma mapOfHomotopyHomotopy_hom (H H' : Homotopy (f₁ ≫ v) (u ≫ f₂))
+    (s : Cochain K₁ L₂ (-2))
+    (hs : δ (-2) (-1) s = Cochain.ofHomotopy H - Cochain.ofHomotopy H')
+    (p q : ℤ) (hpq : p + -1 = q) :
+    (mapOfHomotopyHomotopy H H' s hs).hom p q =
+      -((fst f₁).f p ≫ s.v p (q + -1) (by omega) ≫
+        (inr f₂ : Cochain _ _ 1).v (q + -1) q (by omega)) := by
+  have hi : (inr f₂ : Cochain L₂ (mappingCocone f₂) 1).v (q + -1) q (by omega) =
+      (mappingCone.inr f₂).f (q + -1) := by
+    -- Expose the inclusion's right-shifted cochain before applying its component formula.
+    change ((Cochain.ofHom (mappingCone.inr f₂)).rightShift (-1) 1 (by omega)).v
+      (q + -1) q (by omega) = _
+    rw [Cochain.rightShift_v _ _ _ _ _ _ _ (q + -1) (add_zero _)]
+    simp
+  rw [hi, fst_f]
+  -- Restate both sides on the cone objects before normalizing the shifted indices.
+  change (-1 : ℤ).negOnePow •
+    (mappingCone.mapOfHomotopyHomotopy H H' s hs).hom (p + -1) (q + -1) =
+      -((mappingCone.fst f₁ : Cochain _ _ 1).v (p + -1) p (by omega) ≫
+        s.v p (q + -1) (by omega) ≫ (mappingCone.inr f₂).f (q + -1))
+  have hc := mappingCone.mapOfHomotopyHomotopy_hom H H' s hs
+    (p + -1) (q + -1) (by omega)
+  -- Work with the underlying cochain to compare intermediate degrees without transports.
+  generalize (mappingCone.fst f₁ : Cochain (mappingCone f₁) K₁ 1) = t at hc ⊢
+  rw [hc]
+  simp only [Int.negOnePow_neg, Int.negOnePow_one, Units.neg_smul, one_smul]
+  congr 1
+  rw [← Category.assoc, ← Category.assoc,
+    ← Cochain.comp_v t s (show 1 + -2 = -1 by omega)
+      (p + -1) (p + -1 + 1) (q + -1) rfl (by omega),
+    ← Cochain.comp_v t s (show 1 + -2 = -1 by omega)
+      (p + -1) p (q + -1) (by omega) (by omega)]
+
 section Modules
 
 variable {R : Type*} [Ring R]
