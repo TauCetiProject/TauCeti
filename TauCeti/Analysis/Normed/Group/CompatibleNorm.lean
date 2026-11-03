@@ -58,7 +58,6 @@ noncomputable abbrev toNormedAddCommGroupOfUniformity (N : AddGroupNorm M)
     toMetricSpace := N.toNormedAddCommGroup.toMetricSpace.replaceUniformity h }
 
 /-- The compatible structure has the specified additive group norm. -/
-@[simp]
 theorem norm_toNormedAddCommGroupOfUniformity (N : AddGroupNorm M)
     (h : 𝓤 M = @uniformity M N.toNormedAddCommGroup.toUniformSpace) (x : M) :
     @norm M (N.toNormedAddCommGroupOfUniformity h).toNorm x = N x := (rfl)

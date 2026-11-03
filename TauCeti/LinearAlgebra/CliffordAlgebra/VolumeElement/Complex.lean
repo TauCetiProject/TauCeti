@@ -51,6 +51,8 @@ the positive orientation and `-1` for the negative one.
 * `CliffordAlgebra.map_complexVolume`: the complexification of an isometry of quadratic forms that
   also preserves the norms carries `Γ` to `Γ` for the transported orientation.
 * `CliffordAlgebra.complexVolume_mul_self`: `Γ² = 1` for `Q v = -‖v‖²`.
+* `CliffordAlgebra.complexVolume_smul_complexVolume_smul`,
+  `CliffordAlgebra.lsmul_complexVolume_involutive`: `Γ` acts as an involution on every module.
 * `CliffordAlgebra.conjStar_complexVolume`: `Γ` is fixed by the conjugate-linear Clifford
   involution, while `CliffordAlgebra.star_complexVolume` computes the complex-linear Clifford
   conjugation `star Γ = (-1) ^ ⌊(n + 1) / 2⌋ Γ`; in dimension `2ℓ` this is `(-1) ^ ℓ Γ`.
@@ -278,6 +280,19 @@ theorem complexVolume_mul_self : complexVolume Q o * complexVolume Q o = 1 := by
   rw [complexVolume_def, smul_mul_smul_comm, ← map_mul, volumeElement_mul_self o hQ, ← mul_pow,
     Complex.I_mul_I]
   simp [Algebra.smul_def, ← pow_add, ← two_mul]
+
+/-- **`Γ` acts as an involution** on every module: `Γ • Γ • ψ = ψ`. -/
+theorem complexVolume_smul_complexVolume_smul {M : Type*}
+    [MulAction (CliffordAlgebra (Q.baseChange ℂ)) M] (ψ : M) :
+    complexVolume Q o • complexVolume Q o • ψ = ψ := by
+  rw [← mul_smul, complexVolume_mul_self o hQ, one_smul]
+
+/-- Multiplication by `Γ` is an involution of every module. -/
+theorem lsmul_complexVolume_involutive {M : Type*} [AddCommGroup M] [Module ℂ M]
+    [Module (CliffordAlgebra (Q.baseChange ℂ)) M]
+    [IsScalarTower ℂ (CliffordAlgebra (Q.baseChange ℂ)) M] :
+    Function.Involutive (Algebra.lsmul ℂ ℂ M (complexVolume Q o)) :=
+  complexVolume_smul_complexVolume_smul o hQ
 
 /-- **In even dimension, conjugation by `Γ` is the grade involution**: `Γ x Γ = involute x`. -/
 theorem complexVolume_mul_mul_complexVolume (hn : Even n) (x : CliffordAlgebra (Q.baseChange ℂ)) :

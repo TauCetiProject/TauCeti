@@ -127,7 +127,7 @@ theorem momentDefect_eq_zero_iff {g : G} {x : M} :
 theorem momentDefect_mul (g h : G) (x : M) :
     momentDefect μ (g * h) x =
       momentDefect μ g (h • x) + Lie.coadjointRepresentation 𝕜 I G g (momentDefect μ h x) := by
-  simp only [momentDefect_def, map_sub, map_mul, Module.End.mul_apply, mul_smul]
+  simp only [momentDefect_def, map_sub, map_mul, mul_apply_eq_comp, mul_smul]
   abel
 
 /-- Shifting `μ` by a constant `ν ∈ 𝔤*` changes its defect by the coboundary `ν - Ad*_g ν`. -/

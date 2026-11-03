@@ -284,15 +284,16 @@ theorem op_smul_eq_of_op_mul_smul_eq {m n : ℕ} (hm : 0 < m) (hn : 0 < n)
   -- `Y` is integral after scaling by `n` and after scaling by `m`
   have hYn : (n : ℚ) • (↑Y : Matrix (Fin 2) (Fin 2) ℚ) =
       (B' * B.adjugate).map (Int.cast : ℤ → ℚ) := by
-    rw [hYdef, Units.val_mul, ← Matrix.mul_smul,
-      Matrix.GeneralLinearGroup.natCast_smul_coe_inv hB (det_of_mem_doubleCoset_natDiagGL hn hb),
-      hB', Matrix.map_mul_intCast]
+    rw [hYdef, Units.val_mul, ← Matrix.mul_smul, ← det_of_mem_doubleCoset_natDiagGL hn hb,
+      Matrix.GeneralLinearGroup.det_smul_coe_inv_eq_adjugate_map (Int.castRingHom ℚ) hB,
+      Int.coe_castRingHom, hB', Matrix.map_mul_intCast]
   have hYm : (m : ℚ) • (↑Y : Matrix (Fin 2) (Fin 2) ℚ) =
       (A'.adjugate * H * A).map (Int.cast : ℤ → ℚ) := by
     have hY : Y = a'⁻¹ * mapGL ℚ σh * a := by rw [hσh, hYdef]; group
     rw [hY, Units.val_mul, Units.val_mul, ← Matrix.smul_mul, ← Matrix.smul_mul,
-      Matrix.GeneralLinearGroup.natCast_smul_coe_inv hA' (det_of_mem_doubleCoset_natDiagGL hm ha'),
-      hA, hH,
+      ← det_of_mem_doubleCoset_natDiagGL hm ha',
+      Matrix.GeneralLinearGroup.det_smul_coe_inv_eq_adjugate_map (Int.castRingHom ℚ) hA',
+      Int.coe_castRingHom, hA, hH,
       Matrix.map_mul_intCast, Matrix.map_mul_intCast]
   have hYdet : (↑Y : Matrix (Fin 2) (Fin 2) ℚ).det = 1 := by
     rw [hYdef, Units.val_mul, Matrix.det_mul, Matrix.coe_units_inv, Matrix.det_nonsing_inv,

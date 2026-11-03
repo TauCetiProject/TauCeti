@@ -91,7 +91,7 @@ theorem LipschitzOnWith.aemeasurable_euclideanHausdorffMeasure_inter_preimage {E
     rw [← InnerProductSpace.euclideanHausdorffMeasure_eq_volume,
       euclideanHausdorffMeasure_eq_zero_iff] at h
     exact nonpos_iff_eq_zero.1 ((hausdorffMeasure_mono (by exact_mod_cast hk) _).trans h.le)
-  simp only [euclideanHausdorffMeasure_def, Measure.smul_apply]
+  simp only [euclideanHausdorffMeasure_def, _root_.smul_apply]
   exact (hf.aemeasurable_hausdorffMeasure_inter_preimage μ k.cast_nonneg hSA hS
     hnull).const_smul _
 

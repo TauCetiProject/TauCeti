@@ -5,12 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.Submodule.Range
+public import Mathlib.Algebra.Module.Submodule.Equiv
 
 /-!
 # Ranges of composite linear maps
 
-Range identities for factoring a composite through a linear map's image.
+Range identities for factoring a composite through a linear map's image, and for commuting
+squares whose horizontal sides are linear isomorphisms.
 -/
 
 public section
@@ -45,5 +46,16 @@ theorem range_comp_map_subtype
       LinearMap.comp_assoc, LinearMap.subtype_comp_rangeRestrict]
   simpa only [LinearMap.coe_range] using
     congrArg (fun p : Submodule R N => (p : Set N)) h
+
+/-- In a commuting square `g ∘ e₁ = e₂ ∘ f` with `e₁` and `e₂` linear isomorphisms, `e₂` carries the
+range of `f` onto that of `g`. -/
+theorem map_range_eq_range_of_comp_eq
+    {R M N M' N' : Type*} [Semiring R]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+    [AddCommMonoid M'] [Module R M'] [AddCommMonoid N'] [Module R N']
+    (f : M →ₗ[R] N) {g : M' →ₗ[R] N'} (e₁ : M ≃ₗ[R] M') (e₂ : N ≃ₗ[R] N')
+    (h : g ∘ₗ e₁.toLinearMap = e₂.toLinearMap ∘ₗ f) :
+    (range f).map e₂.toLinearMap = range g := by
+  rw [← range_comp, ← h, range_comp, LinearEquiv.range, Submodule.map_top]
 
 end LinearMap

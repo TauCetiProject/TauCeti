@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.Algebra.Group.TransferInstance
 public import Mathlib.Algebra.Module.Submodule.Basic
 public import Mathlib.LinearAlgebra.Quotient.Basic
@@ -46,8 +47,12 @@ linear maps.
 * `Submodule.orbitRelQuotient_mk_add`, `Submodule.orbitRelQuotient_mk_zero`,
   `Submodule.orbitRelQuotient_mk_neg`, `Submodule.orbitRelQuotient_mk_sub`: the orbit projection
   is additive.
+* `Submodule.orbitRelQuotient_mk_eq_mk_iff`: two points have the same orbit exactly when their
+  difference lies in `p`.
 * `Submodule.orbitRelQuotient_mk_eq_zero_iff`: its kernel is `p`.
 * `Submodule.orbitRelQuotientMkHom`: the orbit projection as an additive map.
+* `LinearMap.exact_orbitRelQuotientMkHom_range`: for a linear map `f`, the sequence
+  `N → M → M / range f` is exact.
 * `Submodule.orbitRelQuotientMap`: the additive map of orbit spaces induced by a semilinear map
   `f` carrying `p` into `q`, functorial in `f` (`Submodule.orbitRelQuotientMap_id`,
   `Submodule.orbitRelQuotientMap_comp`).
@@ -138,6 +143,13 @@ theorem Submodule.coe_orbitRelQuotientMkHom :
     ⇑p.orbitRelQuotientMkHom = _root_.Quotient.mk (AddAction.orbitRel p M) :=
   (rfl)
 
+/-- Two points of `M` have the same image in the orbit space of translation by `p` exactly when
+their difference lies in `p`. -/
+theorem Submodule.orbitRelQuotient_mk_eq_mk_iff {x y : M} :
+    _root_.Quotient.mk (AddAction.orbitRel p M) x = _root_.Quotient.mk (AddAction.orbitRel p M) y ↔
+      x - y ∈ p :=
+  _root_.Quotient.eq.trans p.orbitRel_apply_iff_sub_mem
+
 /-- A point of `M` projects to `0` in the orbit space of translation by `p` exactly when it lies
 in `p`. -/
 @[simp]
@@ -149,6 +161,13 @@ theorem Submodule.orbitRelQuotient_mk_eq_zero_iff {x : M} :
 @[simp]
 theorem Submodule.ker_orbitRelQuotientMkHom : p.orbitRelQuotientMkHom.ker = p.toAddSubgroup := by
   ext x
+  simp
+
+/-- **The period sequence is exact**: for a linear map `f : N → M`, the orbit projection for
+translation by the range of `f` is exact after `f`, in `N → M → M / range f`. Read through
+`Submodule.orbitRelQuotientAddEquiv`, this is `LinearMap.exact_map_mkQ_range`. -/
+theorem LinearMap.exact_orbitRelQuotientMkHom_range {N : Type*} [AddCommGroup N] [Module R N]
+    (f : N →ₗ[R] M) : Function.Exact f (LinearMap.range f).orbitRelQuotientMkHom := fun x ↦ by
   simp
 
 /-- The orbit projection for translation by `p` commutes with negation. -/

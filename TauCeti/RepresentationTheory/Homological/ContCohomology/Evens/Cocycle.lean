@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Tensor.Induction.Resolution
-public import TauCeti.RepresentationTheory.Tensor.Induction.TrivialF2
+public import TauCeti.RepresentationTheory.Tensor.Induction.TrivialF2.Basic
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Cochain
 import TauCeti.RepresentationTheory.Tensor.Induction.ChangeTransversal.Resolution
 import Mathlib.RingTheory.Ideal.Int
