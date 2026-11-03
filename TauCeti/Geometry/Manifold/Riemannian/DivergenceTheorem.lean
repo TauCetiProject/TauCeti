@@ -30,6 +30,8 @@ manifolds. No orientation is used: the measure is the orientation-free `TauCeti.
 ## Main results
 
 * `TauCeti.Manifold.integral_divergence_eq_zero`: the divergence theorem `∫ div X dV = 0`.
+* `TauCeti.Manifold.integral_laplaceBeltrami_eq_zero`: `∫ Δf dV = 0` for a compactly supported
+  `C²` function `f`.
 * `TauCeti.Manifold.integral_mul_divergence`,
   `TauCeti.Manifold.integral_mul_divergence_of_hasCompactSupport_right`:
   `∫ f div X dV = -∫ df(X) dV` when `f` or `X` has compact support.
@@ -249,6 +251,15 @@ theorem integral_divergence_eq_zero (hX : ContMDiff I I.tangent 1 (T% X))
     integral_finsetSum _ fun i _ ↦ integrable_divergence (hY i) (hK i)]
   exact Finset.sum_eq_zero fun i _ ↦ integral_divergence_eq_zero_of_tsupport_subset (hY i)
     (hK i) ((tsupport_smul_subset_left _ _).trans (hρ i))
+
+/-- The Laplacian of a compactly supported `C²` function on a manifold without boundary has
+integral zero: `∫ Δf dV = 0`. -/
+theorem integral_laplaceBeltrami_eq_zero {f : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
+    (hfc : HasCompactSupport f) : ∫ x, laplaceBeltrami I f x ∂riemannianVolume I M = 0 := by
+  have : IsManifold I (1 + 1) M := by rw [one_add_one_eq_two]; infer_instance
+  simp only [laplaceBeltrami_def]
+  exact integral_divergence_eq_zero (contMDiff_mgradient (n := 1) (by rwa [one_add_one_eq_two]))
+    (hfc.mgradient I)
 
 /-- Integration by parts for the divergence, assuming that `f X` has compact support and that
 `f div X` is integrable. -/
