@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Symplectic.StandardCompatible
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 import TauCeti.Geometry.Symplectic.WittExtension
 import TauCeti.Geometry.Manifold.Diffeomorph.NormedSpace
-import TauCeti.LinearAlgebra.BilinearMap.Multilinear
+import TauCeti.Geometry.Symplectic.ContinuousAlternatingMap
 
 /-!
 # Standard Euclidean Darboux coordinates
@@ -57,14 +57,9 @@ theorem exists_diffeomorph_eventually_fderiv_eq_stdSymplecticForm
       φ 0 = x₀ ∧ ∀ᶠ z in 𝓝 0, φ z ∈ W ∧ ∀ u v,
         ω (φ z) ![fderiv ℝ φ z u, fderiv ℝ φ z v] = stdSymplecticForm u v := by
   -- Read the value at the center as an algebraic symplectic form.
-  let B := (ω x₀).toAlternatingMap.toMultilinearMap.toBilinMap
-  have hB (v w : V) : B v w = ω x₀ ![v, w] :=
-    MultilinearMap.toBilinMap_apply _ v w
-  have halt : B.IsAlt := (ω x₀).toAlternatingMap.isAlt_toBilinMap
-  let σ : SymplecticForm V :=
-    ⟨B, halt, halt.isRefl.nondegenerate_iff_separatingLeft.mpr
-      (fun v hv ↦ hnd v fun w ↦ (hB v w).symm.trans (hv w))⟩
-  have hσ (v w : V) : σ v w = ω x₀ ![v, w] := hB v w
+  let σ := SymplecticForm.ofContinuousAlternatingMap (ω x₀) hnd
+  have hσ (v w : V) : σ v w = ω x₀ ![v, w] :=
+    SymplecticForm.ofContinuousAlternatingMap_apply _ _ v w
   have hdim' : Module.finrank ℝ
       (EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n)) = Module.finrank ℝ V := by
     simp only [Module.finrank_prod, finrank_euclideanSpace_fin, hdim, two_mul]
