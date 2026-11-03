@@ -28,8 +28,8 @@ It is zero if `r = 0` or `s` contains fewer than `r` successes. -/
 def failuresBeforeSuccess (s : Finset ℕ) (r : ℕ) : ℕ :=
   sInf {k : ℕ | r ≤ (s ∩ range (k + r)).card}
 
-/-- The stopping count is the least failure allowance for which the corresponding prefix
-contains at least `r` successes. -/
+/-- If `r ≤ s.card`, the stopping count is the least failure allowance for which the
+corresponding prefix contains at least `r` successes. Otherwise, the count is zero. -/
 theorem failuresBeforeSuccess_def (s : Finset ℕ) (r : ℕ) :
     s.failuresBeforeSuccess r = sInf {k : ℕ | r ≤ (s ∩ range (k + r)).card} := (rfl)
 
