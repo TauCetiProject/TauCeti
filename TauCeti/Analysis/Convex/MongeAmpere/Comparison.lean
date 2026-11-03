@@ -39,6 +39,8 @@ impossible.
 * `TauCeti.le_of_mongeAmpereMeasure_le_of_le_frontier` — **the comparison principle**;
 * `TauCeti.eqOn_of_mongeAmpereMeasure_eq_of_eqOn_frontier` — two convex functions with the same
   Monge–Ampère measure and the same boundary values agree.
+* `TauCeti.abs_sub_le_of_mongeAmpereMeasure_close` — two-sided density bounds give a quantitative
+  comparison with a zero-boundary unit-density reference.
 
 ## References
 
@@ -46,6 +48,9 @@ impossible.
   Equations and Their Applications 89, Birkhäuser, 2016, §1.4.
 * A. Figalli, *The Monge–Ampère Equation and Its Applications*, Zurich Lectures in Advanced
   Mathematics, EMS, 2017, Chapter 2.
+* G. De Philippis and A. Figalli, [The Monge–Ampère equation and its link to optimal
+  transportation](https://arxiv.org/abs/1310.6167v1), §2.4, the perturbation argument.
+* The density bracketing follows the [KLS formalization](https://github.com/human-ai-mathematics/kls-lean/blob/9cde7938fc09cd017519c7c8a498bee99c12f717/formalization/FunctionalInequalities/Analysis/Convex/Alexandrov/Comparison.lean#L404).
 -/
 
 public section
@@ -247,5 +252,74 @@ theorem eqOn_of_mongeAmpereMeasure_eq_of_eqOn_frontier (hΩo : IsOpen Ω)
       (fun _ hy => (hfr hy).le) hx)
     (le_of_mongeAmpereMeasure_le_of_le_frontier μ hΩo hΩ hu hv huc hvc hMA.le
       (fun _ hy => (hfr hy).ge) hx)
+
+omit [Nontrivial E] in
+private theorem mongeAmpereMeasure_ite_mul_pos (hΩ : IsOpen Ω) (hu : ConvexOn ℝ Ω u)
+    {c : ℝ} (hc : 0 < c) :
+    mongeAmpereMeasure μ (fun x => if x ∈ Ω then ((c * u x : ℝ) : EReal) else ⊤) =
+      ENNReal.ofReal (c ^ finrank ℝ E) •
+        mongeAmpereMeasure μ (fun x => if x ∈ Ω then (u x : EReal) else ⊤) := by
+  have hcu : ConvexOn ℝ Ω (fun x => c * u x) := by
+    simpa only [Pi.smul_apply, smul_eq_mul] using hu.smul hc.le
+  refine Measure.ext fun s hs => ?_
+  rw [_root_.smul_apply, smul_eq_mul,
+    mongeAmpereMeasure_ite_apply μ hΩ hcu AbsolutelyContinuous.rfl hs,
+    mongeAmpereMeasure_ite_apply μ hΩ hu AbsolutelyContinuous.rfl hs]
+  -- A supporting slope of the scaled potential is precisely a scaled supporting slope of u.
+  have hscale :
+      (⋃ x ∈ s ∩ Ω, {p : E | ∀ y ∈ Ω, c * u x + inner ℝ (y - x) p ≤ c * u y}) =
+      c • (⋃ x ∈ s ∩ Ω, {p : E | ∀ y ∈ Ω, u x + inner ℝ (y - x) p ≤ u y}) := by
+    ext p
+    simp only [mem_iUnion, mem_ofPred_eq, mem_smul_set, exists_prop]
+    constructor
+    · rintro ⟨x, hx, hp⟩
+      refine ⟨c⁻¹ • p, ⟨x, hx, fun y hy => ?_⟩,
+        by rw [smul_smul, mul_inv_cancel₀ hc.ne', one_smul]⟩
+      have h := mul_le_mul_of_nonneg_left (hp y hy) (inv_nonneg.mpr hc.le)
+      rw [mul_add, ← mul_assoc, inv_mul_cancel₀ hc.ne', one_mul,
+        ← mul_assoc, inv_mul_cancel₀ hc.ne', one_mul] at h
+      simpa only [real_inner_smul_right] using h
+    · rintro ⟨q, ⟨x, hx, hq⟩, rfl⟩
+      exact ⟨x, hx, fun y hy => by
+        simpa only [mul_add, real_inner_smul_right] using
+          mul_le_mul_of_nonneg_left (hq y hy) hc.le⟩
+  rw [hscale, addHaar_smul, abs_of_pos (pow_pos hc _)]
+
+/-- **Quantitative comparison with unit density.** On a bounded open set, suppose the convex
+potentials `u` and `v` are continuous on the closure and vanish on the frontier. If the
+Monge–Ampère density of `v` is one and the measure of `u` lies between the densities
+`(1 - ε)^n` and `(1 + ε)^n` for `0 ≤ ε < 1`, then `|u - v| ≤ ε |v|` pointwise. -/
+theorem abs_sub_le_of_mongeAmpereMeasure_close (hΩ : IsOpen Ω) (hΩb : Bornology.IsBounded Ω)
+    (hu : ConvexOn ℝ Ω u) (hv : ConvexOn ℝ Ω v)
+    (huc : ContinuousOn u (closure Ω)) (hvc : ContinuousOn v (closure Ω))
+    (hu0 : ∀ x ∈ frontier Ω, u x = 0) (hv0 : ∀ x ∈ frontier Ω, v x = 0)
+    {ε : ℝ} (hε : 0 ≤ ε) (hε1 : ε < 1)
+    (hlo : ENNReal.ofReal ((1 - ε) ^ finrank ℝ E) • μ.restrict Ω ≤
+      mongeAmpereMeasure μ (fun x => if x ∈ Ω then (u x : EReal) else ⊤))
+    (hhi : mongeAmpereMeasure μ (fun x => if x ∈ Ω then (u x : EReal) else ⊤) ≤
+      ENNReal.ofReal ((1 + ε) ^ finrank ℝ E) • μ.restrict Ω)
+    (href : mongeAmpereMeasure μ (fun x => if x ∈ Ω then (v x : EReal) else ⊤) = μ.restrict Ω) :
+    ∀ x ∈ Ω, |u x - v x| ≤ ε * |v x| := by
+  have hscaled (c : ℝ) (hc : 0 < c) :
+      mongeAmpereMeasure μ (fun x => if x ∈ Ω then ((c * v x : ℝ) : EReal) else ⊤) =
+        ENNReal.ofReal (c ^ finrank ℝ E) • μ.restrict Ω := by
+    rw [mongeAmpereMeasure_ite_mul_pos μ hΩ hv hc, href]
+  have hconv (c : ℝ) (hc : 0 ≤ c) : ConvexOn ℝ Ω (fun x => c * v x) := by
+    simpa only [Pi.smul_apply, smul_eq_mul] using hv.smul hc
+  have hfront (c : ℝ) (x : E) (hx : x ∈ frontier Ω) : c * v x = u x := by
+    rw [hu0 x hx, hv0 x hx, mul_zero]
+  intro x hx
+  have hl : (1 + ε) * v x ≤ u x :=
+    le_of_mongeAmpereMeasure_le_of_le_frontier μ hΩ hΩb hu
+      (hconv (1 + ε) (by positivity)) huc (continuousOn_const.mul hvc)
+      (by simpa only [hscaled (1 + ε) (by positivity)] using hhi)
+      (fun y hy => (hfront _ y hy).le) hx
+  have hh : u x ≤ (1 - ε) * v x :=
+    le_of_mongeAmpereMeasure_le_of_le_frontier μ hΩ hΩb
+      (hconv (1 - ε) (sub_nonneg.mpr hε1.le)) hu (continuousOn_const.mul hvc) huc
+      (by simpa only [hscaled (1 - ε) (sub_pos.mpr hε1)] using hlo)
+      (fun y hy => (hfront _ y hy).ge) hx
+  have hbound := mul_le_mul_of_nonneg_left (neg_abs_le (v x)) hε
+  exact abs_le.mpr ⟨by linarith, by linarith⟩
 
 end TauCeti
