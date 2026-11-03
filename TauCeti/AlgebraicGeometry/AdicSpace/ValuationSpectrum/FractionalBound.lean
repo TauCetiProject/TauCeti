@@ -154,6 +154,7 @@ theorem fracPowGE_zero : fracPowGE f g 0 = {v | v.toValuativeRel.vle 1 f} := by
 
 /-- For `g = 0` and a positive exponent, `|f| ≤ |0| ^ q` is the vanishing locus `{v(f) = 0}` of
 `f`, i.e. the points whose support contains `f`. -/
+@[simp]
 theorem fracPowLE_zero_right (hq : q ≠ 0) :
     fracPowLE f 0 q = {v | v.toValuativeRel.vle f 0} := by
   ext v
@@ -161,6 +162,7 @@ theorem fracPowLE_zero_right (hq : q ≠ 0) :
     vle_pow_zero_iff v f q.den_ne_zero]
 
 /-- For `g = 0` and a positive exponent, `|f| ≥ |0| ^ q` holds everywhere. -/
+@[simp]
 theorem fracPowGE_zero_right (hq : q ≠ 0) : fracPowGE f 0 q = Set.univ := by
   ext v
   rw [mem_fracPowGE, zero_pow (NNRat.num_ne_zero.mpr hq)]
