@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Bialgebra
 public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Basic
+public import TauCeti.LinearAlgebra.TensorProduct.Filtration
 
 /-!
 # Comultiplication and the PBW filtration
@@ -17,8 +18,10 @@ bound of `n` on each factor. This is the filtered coalgebra comparison needed wh
 integral enveloping forms and their Hopf operations with the rational PBW filtration.
 
 `pbwTensorFiltration` is the sum of the images of
-`F_i U(L) ⊗ F_j U(L)` for `i + j ≤ n`. No injectivity of the tensor maps is presumed.
-It is increasing, exhaustive, multiplicative, and has the scalars in degree zero.
+`F_i U(L) ⊗ F_j U(L)` for `i + j ≤ n`. It specializes
+`TauCeti.TensorProduct.filtration`, which works for arbitrary pairs of submodule filtrations.
+No injectivity of the tensor maps is presumed. It is increasing, exhaustive, multiplicative,
+and has the scalars in degree zero.
 `comul_mem_pbwTensorFiltration` proves the coproduct bound using the primitive-generator
 formula. Neither a basis of the Lie algebra nor a PBW independence theorem is required;
 the coefficient ring may have torsion or zero divisors.
@@ -46,8 +49,11 @@ local notation "T" => U ⊗[R] U
 /-- The total PBW filtration on the tensor square: the sum of the tensor images of the
 PBW steps of bidegrees `(i,j)` with `i + j ≤ n`. -/
 def pbwTensorFiltration (n : ℕ) : Submodule R T :=
-  ⨆ (i : ℕ) (j : ℕ) (_ : i + j ≤ n),
-    Submodule.map₂ (TensorProduct.mk R U U) (pbwFiltration R L i) (pbwFiltration R L j)
+  TensorProduct.filtration (pbwFiltration R L) (pbwFiltration R L) n
+
+/-- The tensor PBW filtration is the total tensor filtration of the PBW steps. -/
+theorem pbwTensorFiltration_def (n : ℕ) : pbwTensorFiltration R L n =
+    TensorProduct.filtration (pbwFiltration R L) (pbwFiltration R L) n := (rfl)
 
 /-- A submodule contains a total tensor step exactly when it contains the pure tensors
 whose factor degrees sum to at most that step. -/
@@ -55,78 +61,57 @@ theorem pbwTensorFiltration_le_iff {n : ℕ} {P : Submodule R T} :
     pbwTensorFiltration R L n ≤ P ↔
       ∀ i j, i + j ≤ n → ∀ x ∈ pbwFiltration R L i,
         ∀ y ∈ pbwFiltration R L j, x ⊗ₜ[R] y ∈ P := by
-  simp only [pbwTensorFiltration, iSup_le_iff, Submodule.map₂_le,
-    TensorProduct.mk_apply]
+  rw [pbwTensorFiltration_def]
+  exact TensorProduct.filtration_le_iff _ _
 
 /-- A pure tensor belongs to the step given by the sum of the factor degrees. -/
 theorem tmul_mem_pbwTensorFiltration {i j : ℕ} {x y : U}
     (hx : x ∈ pbwFiltration R L i) (hy : y ∈ pbwFiltration R L j) :
-    x ⊗ₜ[R] y ∈ pbwTensorFiltration R L (i + j) :=
-  (pbwTensorFiltration_le_iff R L).1 le_rfl i j le_rfl x hx y hy
+    x ⊗ₜ[R] y ∈ pbwTensorFiltration R L (i + j) := by
+  rw [pbwTensorFiltration_def]
+  exact TensorProduct.tmul_mem_filtration _ _ hx hy
 
 /-- The total tensor PBW filtration is increasing. -/
 theorem pbwTensorFiltration_mono : Monotone (pbwTensorFiltration R L) := by
-  intro m n hmn
-  refine (pbwTensorFiltration_le_iff R L).2 fun i j hij x hx y hy => ?_
-  exact (pbwTensorFiltration_le_iff R L).1 le_rfl i j (hij.trans hmn) x hx y hy
+  simp only [pbwTensorFiltration_def, Monotone]
+  exact TensorProduct.filtration_mono _ _
 
 /-- Degree zero in the tensor square consists precisely of scalars. -/
 @[simp]
 theorem pbwTensorFiltration_zero : pbwTensorFiltration R L 0 = 1 := by
-  have hblock : Submodule.map₂ (TensorProduct.mk R U U)
-      (pbwFiltration R L 0) (pbwFiltration R L 0) = 1 := by
-    simp [Submodule.one_eq_span, Submodule.map₂_span_span, Algebra.TensorProduct.one_def]
-  apply le_antisymm
-  · refine (pbwTensorFiltration_le_iff R L).2 fun i j hij => ?_
-    have hi : i = 0 := by omega
-    have hj : j = 0 := by omega
-    subst i
-    subst j
-    exact Submodule.map₂_le.1 hblock.le
-  · rw [← hblock]
-    exact le_iSup_of_le 0 (le_iSup_of_le 0 (le_iSup_of_le le_rfl le_rfl))
+  rw [pbwTensorFiltration_def]
+  exact TensorProduct.filtration_zero _ _ (pbwFiltration_zero R L) (pbwFiltration_zero R L)
 
 /-- The tensor unit belongs to every total PBW step. -/
 theorem one_mem_pbwTensorFiltration (n : ℕ) : (1 : T) ∈ pbwTensorFiltration R L n := by
-  simpa only [Algebra.TensorProduct.one_def] using
-    (pbwTensorFiltration_le_iff R L).1 le_rfl 0 0 (Nat.zero_le n)
-      1 (one_mem_pbwFiltration R L 0) 1 (one_mem_pbwFiltration R L 0)
+  rw [pbwTensorFiltration_def]
+  exact TensorProduct.one_mem_filtration _ _ n
 
 /-- Multiplication adds total tensor PBW degrees. -/
 theorem mul_mem_pbwTensorFiltration {m n : ℕ} {x y : T}
     (hx : x ∈ pbwTensorFiltration R L m) (hy : y ∈ pbwTensorFiltration R L n) :
     x * y ∈ pbwTensorFiltration R L (m + n) := by
-  have hleft : pbwTensorFiltration R L m ≤
-      (pbwTensorFiltration R L (m + n)).comap ((LinearMap.mul R T).flip y) := by
-    refine (pbwTensorFiltration_le_iff R L).2 fun i j hij a ha b hb => ?_
-    have hright : pbwTensorFiltration R L n ≤
-        (pbwTensorFiltration R L (m + n)).comap (LinearMap.mul R T (a ⊗ₜ[R] b)) := by
-      refine (pbwTensorFiltration_le_iff R L).2 fun k l hkl c hc d hd => ?_
-      simp only [Submodule.mem_comap, LinearMap.mul_apply', Algebra.TensorProduct.tmul_mul_tmul]
-      exact pbwTensorFiltration_mono R L (show (i + k) + (j + l) ≤ m + n by omega)
-        (tmul_mem_pbwTensorFiltration R L
-          (mul_mem_pbwFiltration R L ha hc) (mul_mem_pbwFiltration R L hb hd))
-    exact hright hy
-  exact hleft hx
+  simp only [pbwTensorFiltration_def] at hx hy ⊢
+  exact TensorProduct.mul_mem_filtration _ _ hx hy
+
+/-- The product of tensor PBW steps lies in the step of summed degree. -/
+theorem pbwTensorFiltration_mul_le (m n : ℕ) :
+    pbwTensorFiltration R L m * pbwTensorFiltration R L n ≤
+      pbwTensorFiltration R L (m + n) :=
+  Submodule.mul_le.2 fun _ hx _ hy => mul_mem_pbwTensorFiltration R L hx hy
 
 /-- The total PBW filtration exhausts the tensor square. -/
 theorem iSup_pbwTensorFiltration_eq_top : ⨆ n, pbwTensorFiltration R L n = ⊤ := by
-  apply top_unique
-  intro z hz
-  clear hz
-  induction z using TensorProduct.inductionOn with
-  | tmul x y =>
-    obtain ⟨i, hi⟩ := exists_mem_pbwFiltration R L x
-    obtain ⟨j, hj⟩ := exists_mem_pbwFiltration R L y
-    exact Submodule.mem_iSup_of_mem (i + j) (tmul_mem_pbwTensorFiltration R L hi hj)
-  | add x y hx hy => exact Submodule.add_mem _ hx hy
+  simp only [pbwTensorFiltration_def]
+  exact TensorProduct.iSup_filtration_eq_top _ _ (pbwFiltration_mono R L)
+    (pbwFiltration_mono R L) (iSup_pbwFiltration_eq_top R L) (iSup_pbwFiltration_eq_top R L)
 
 /-- Every tensor has finite total PBW degree. -/
 theorem exists_mem_pbwTensorFiltration (z : T) :
     ∃ n, z ∈ pbwTensorFiltration R L n := by
-  rw [← Submodule.mem_iSup_of_directed _ (pbwTensorFiltration_mono R L).directed_le,
-    iSup_pbwTensorFiltration_eq_top]
-  exact Submodule.mem_top
+  simp only [pbwTensorFiltration_def]
+  exact TensorProduct.exists_mem_filtration _ _ (pbwFiltration_mono R L)
+    (pbwFiltration_mono R L) (iSup_pbwFiltration_eq_top R L) (iSup_pbwFiltration_eq_top R L) z
 
 private theorem comul_ι_mem_pbwTensorFiltration_one (x : L) :
     Coalgebra.comul (R := R) (_root_.UniversalEnvelopingAlgebra.ι R x) ∈
@@ -148,10 +133,16 @@ theorem map_comul_pbwFiltration_le (n : ℕ) :
       pbwTensorFiltration R L l.length := by
     intro l
     induction l with
-    | nil => simpa using one_mem_pbwTensorFiltration R L 0
+    | nil =>
+      simpa only [List.map_nil, List.prod_nil, map_one, List.length_nil] using
+        one_mem_pbwTensorFiltration R L 0
     | cons a l ih =>
-      simpa [Nat.add_comm] using mul_mem_pbwTensorFiltration R L
+      simp only [List.map_cons, List.prod_cons, map_mul, Bialgebra.comulAlgHom_apply,
+        List.length_cons] at ih ⊢
+      rw [Nat.add_comm l.length 1]
+      exact mul_mem_pbwTensorFiltration R L
         (comul_ι_mem_pbwTensorFiltration_one R L a) ih
+  rw [Submodule.mem_comap, ← Bialgebra.comulAlgHom_apply]
   exact pbwTensorFiltration_mono R L hl (hword l)
 
 /-- The coproduct of a PBW-degree-`n` element is a sum of pure tensors with total factor
