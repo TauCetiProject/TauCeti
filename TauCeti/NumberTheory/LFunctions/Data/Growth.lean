@@ -38,11 +38,16 @@ def HasAverageCoefficientGrowth (d : AnalyticLFunctionData) : Prop :=
 
 variable {d e : AnalyticLFunctionData}
 
+/-- The defining bound on positive-index absolute coefficient sums. -/
+theorem hasAverageCoefficientGrowth_def :
+    d.HasAverageCoefficientGrowth ↔ ∀ t : ℝ, 1 < t →
+      (fun n ↦ ∑ k ∈ Icc 1 n, ‖d.coeff k‖) =O[atTop] fun n ↦ (n : ℝ) ^ t := (Iff.rfl)
+
 /-- Average absolute coefficient growth is exactly an upper bound of one on the
 abscissa of absolute convergence. -/
 theorem hasAverageCoefficientGrowth_iff_abscissaOfAbsConv_le :
     d.HasAverageCoefficientGrowth ↔ LSeries.abscissaOfAbsConv d.coeff ≤ 1 := by
-  exact (LSeries.abscissaOfAbsConv_le_iff_sum_norm_isBigO zero_le_one).symm
+  exact (TauCeti.LSeries.abscissaOfAbsConv_le_iff_sum_norm_isBigO zero_le_one).symm
 
 /-- The growth bound supplies the absolute convergence required on `Re s > 1`. -/
 theorem HasAverageCoefficientGrowth.LSeriesSummable (h : d.HasAverageCoefficientGrowth)

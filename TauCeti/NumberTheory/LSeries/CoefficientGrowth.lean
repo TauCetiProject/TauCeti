@@ -56,12 +56,12 @@ theorem isBigO_sum_norm {f : ℕ → ℂ} {s : ℂ} (h : LSeriesSummable f s)
 
 end LSeriesSummable
 
-namespace LSeries
+namespace TauCeti.LSeries
 
 /-- For a nonnegative `r`, absolute convergence to the right of `r` is equivalent
 to average absolute coefficient bounds with every exponent larger than `r`. -/
 theorem abscissaOfAbsConv_le_iff_sum_norm_isBigO {f : ℕ → ℂ} {r : ℝ} (hr : 0 ≤ r) :
-    abscissaOfAbsConv f ≤ (r : EReal) ↔
+    _root_.LSeries.abscissaOfAbsConv f ≤ (r : EReal) ↔
       ∀ t : ℝ, r < t →
         (fun n ↦ ∑ k ∈ Icc 1 n, ‖f k‖) =O[atTop] fun n ↦ (n : ℝ) ^ t := by
   constructor
@@ -70,9 +70,9 @@ theorem abscissaOfAbsConv_le_iff_sum_norm_isBigO {f : ℕ → ℂ} {r : ℝ} (hr
       LSeriesSummable_of_abscissaOfAbsConv_lt_re (h.trans_lt (by exact_mod_cast ht))
     simpa using hsum.isBigO_sum_norm (by simpa using hr.trans ht.le)
   · intro h
-    apply abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable
+    apply _root_.LSeries.abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable
     intro t ht
     obtain ⟨u, hru, hut⟩ := exists_between ht
     exact LSeriesSummable_of_sum_norm_bigO (h u hru) (hr.trans hru.le) (by simpa using hut)
 
-end LSeries
+end TauCeti.LSeries
