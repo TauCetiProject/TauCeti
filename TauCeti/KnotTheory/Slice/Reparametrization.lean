@@ -17,7 +17,8 @@ stated for a parametrized knot `K : S¹ → Sⁿ`, but they do not depend on the
 exactly when `K` is. That every diffeomorphism of the circle is given by such a lift is not proved
 here. A slice disc `Φ` for `K` is reparametrized along with the knot, by a
 diffeomorphism `D` of the closed unit disc which is `σ` on the boundary circle: `Φ ∘ D` is a slice
-disc for `K'` (`TauCeti.IsSmoothSliceDisc.comp_diffeomorph`).
+disc for `K'` (`TauCeti.IsSmoothSliceDisc.comp_diffeomorph`), so `K'` is slice exactly when `K` is
+(`TauCeti.isSmoothlySlice_congr_diffeomorph`).
 
 For an orientation-preserving `σ`, given by a lift `F`, `σ (Circle.exp x) = Circle.exp (F x)` with
 `F (x + 2π) = F x + 2π` and `F' > 0`, the disc diffeomorphism is
@@ -29,9 +30,6 @@ orientation-preserving diffeomorphism, and sliceness is invariant under reversal
 
 ## Main results
 
-* `TauCeti.isSmoothlySlice_congr_diffeomorph`, `TauCeti.isTopologicallySlice_congr_homeomorph`:
-  sliceness is invariant under reparametrization by the boundary values of a diffeomorphism
-  (respectively homeomorphism) of the closed unit disc.
 * `TauCeti.isSmoothlySlice_congr_lift`, `TauCeti.isTopologicallySlice_congr_lift`: sliceness is
   invariant under reparametrization by an orientation-preserving diffeomorphism of the circle with
   a lift.
@@ -59,45 +57,6 @@ attribute [local instance] Complex.finrank_real_complex_fact
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
   [Fact (Module.finrank ℝ E = n + 1)]
   {K K' : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)} {σ : Circle → Circle}
-
-/-! ### Reparametrization by the boundary values of a disc map -/
-
-/-- **Smooth sliceness is invariant under reparametrization by a disc diffeomorphism.** If a
-diffeomorphism `D` of the closed unit disc preserves the boundary circle and is `σ` there, then
-`K ∘ σ` is smoothly slice exactly when `K` is. -/
-theorem isSmoothlySlice_congr_diffeomorph
-    (D : closedBall (0 : ℂ) 1 ≃ₘ⟮𝓡∂ 2, 𝓡∂ 2⟯ closedBall (0 : ℂ) 1)
-    (hD : ∀ x, ‖(D x : ℂ)‖ = 1 ↔ ‖(x : ℂ)‖ = 1)
-    (hσ : ∀ z : Circle, D (Set.inclusion sphere_subset_closedBall z) =
-      Set.inclusion sphere_subset_closedBall (σ z))
-    (hK' : ∀ z, K' z = K (σ z)) :
-    IsSmoothlySlice K' ↔ IsSmoothlySlice K := by
-  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · obtain ⟨Φ, hΦ⟩ := h.elim
-    refine (hΦ.comp_diffeomorph D.symm (D.toEquiv.norm_symm_apply_eq_one_iff hD)
-      (fun z ↦ (D.toEquiv.inclusion_restrictUnitSphere_symm_apply hD z).symm)
-      fun z ↦ ?_).isSmoothlySlice
-    exact ((hK' _).trans (congrArg K (D.toEquiv.apply_restrictUnitSphere_symm hD hσ z))).symm
-  · obtain ⟨Φ, hΦ⟩ := h.elim
-    exact (hΦ.comp_diffeomorph D hD hσ hK').isSmoothlySlice
-
-/-- **Topological sliceness is invariant under reparametrization by a disc homeomorphism.** If a
-homeomorphism `D` of the closed unit disc preserves the boundary circle and is `σ` there, then
-`K ∘ σ` is topologically slice exactly when `K` is. -/
-theorem isTopologicallySlice_congr_homeomorph (D : closedBall (0 : ℂ) 1 ≃ₜ closedBall (0 : ℂ) 1)
-    (hD : ∀ x, ‖(D x : ℂ)‖ = 1 ↔ ‖(x : ℂ)‖ = 1)
-    (hσ : ∀ z : Circle, D (Set.inclusion sphere_subset_closedBall z) =
-      Set.inclusion sphere_subset_closedBall (σ z))
-    (hK' : ∀ z, K' z = K (σ z)) :
-    IsTopologicallySlice K' ↔ IsTopologicallySlice K := by
-  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · obtain ⟨Φ, hΦ⟩ := h.elim
-    refine (hΦ.comp_homeomorph D.symm (D.toEquiv.norm_symm_apply_eq_one_iff hD)
-      (fun z ↦ (D.toEquiv.inclusion_restrictUnitSphere_symm_apply hD z).symm)
-      fun z ↦ ?_).isTopologicallySlice
-    exact ((hK' _).trans (congrArg K (D.toEquiv.apply_restrictUnitSphere_symm hD hσ z))).symm
-  · obtain ⟨Φ, hΦ⟩ := h.elim
-    exact (hΦ.comp_homeomorph D hD hσ hK').isTopologicallySlice
 
 /-! ### Reparametrization by a diffeomorphism of the circle -/
 
