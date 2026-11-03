@@ -59,7 +59,7 @@ url = "https://bors.taucetiproject.org"
 repository_id = 1 # hosted supplies Neon only; YOU operate the runtime
 deployment = "cloudflare"
 
-# Shared machine ceilings apply across both job classes. The Namespace ceiling
+# Registered runners advertise each machine's slots and CI classes. The Namespace ceiling
 # counts queued/running builds; simultaneous picker decisions can exceed it briefly.
 [services.fleet]
 mode = "hosted"
