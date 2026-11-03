@@ -127,7 +127,7 @@ def relCWComplexTrans (h : ∀ n (i : cell C n), cellFrontier n i ∩ D ⊆ skel
   isClosedBase := isClosedBase D
   union' := by
     simp_rw [iUnion_sum, Sum.elim_inl, Sum.elim_inr, iUnion_union_distrib, ← union_assoc]
-    exact (congrArg (· ∪ _) (RelCWComplex.union (C := D))).trans (RelCWComplex.union (C := C))
+    rw [RelCWComplex.union' (C := D), RelCWComplex.union' (C := C)]
 
 variable (h : ∀ n (i : cell C n), cellFrontier n i ∩ D ⊆ skeletonLT D n)
 

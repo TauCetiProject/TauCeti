@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import Mathlib.Probability.Process.Predictable
 import Mathlib.Order.SuccPred.IntervalSucc
 
@@ -29,7 +30,9 @@ an adapted process when `X` is adapted and each `a j` is `ℱ (τ j)`-measurable
 (`TauCeti.Finance.stronglyAdapted_simpleGains`). At a rebalancing date the gains are the discrete
 transform `∑_{i < j} a i · (X (τ (i + 1)) - X (τ i))`
 (`TauCeti.Finance.simpleGains_apply_eq_sum`), and after the last date they stay at their terminal
-value (`TauCeti.Finance.simpleGains_of_ge`).
+value (`TauCeti.Finance.simpleGains_of_ge`). When a real-time price path is the indefinite
+integral of a rate `X'`, as a deterministic bond is, the gains are the time integral
+`∫ a_u X'_u du` (`TauCeti.Finance.simpleGains_eq_integral`).
 
 The strategy is *self-financing* (`TauCeti.Finance.IsSelfFinancing`) when every rebalancing is
 paid for by the old position: at each date `τ (j + 1)` with `j + 1 < n`, the new portfolio costs
@@ -62,9 +65,10 @@ chosen at the start of each interval (`TauCeti.Finance.stronglyMeasurable_selfFi
 Self-financing strategies are closed under sums and scaling (`TauCeti.Finance.IsSelfFinancing.add`,
 `TauCeti.Finance.IsSelfFinancing.smul`).
 
-All identities here are pathwise, for every `ω`, and the time index is any linear order. The
-elementary integral is the value that the stochastic integral of a simple predictable integrand
-takes; approximation of general strategies by simple ones is not addressed here.
+All identities here are pathwise, for every `ω`, and the time index is any linear order (the real
+line for `TauCeti.Finance.simpleGains_eq_integral`). The elementary integral is the value that the
+stochastic integral of a simple predictable integrand takes; approximation of general strategies
+by simple ones is not addressed here.
 
 ## References
 
@@ -270,6 +274,62 @@ theorem stronglyAdapted_simpleGains (hτ : MonotoneOn τ (Set.Iic n))
 end Measurability
 
 end Gains
+
+/-! ### Gains along absolutely continuous price paths -/
+
+/-- If a real-time price path is the indefinite integral of a rate `X'` on `[a, t]`, so that
+`dX = X' du` there, the elementary integral of a simple strategy starting no earlier than `a` is
+the time integral `∫ₐᵗ b_u X'_u du` of its holding `b` against that rate. This is the case of a
+deterministic bond, or of a stock with zero volatility. The identity is pathwise: the hypotheses
+concern the single path `ω`. -/
+theorem simpleGains_eq_integral {τ : ℕ → ℝ} {X X' : ℝ → Ω → ℝ} {a t : ℝ}
+    (hτ : MonotoneOn τ (Set.Iic n)) (ha : a ≤ τ 0) (ω : Ω)
+    (hX' : IntegrableOn (X' · ω) (Set.Icc a t))
+    (hX : ∀ x ∈ Set.Icc a t, X x ω = X a ω + ∫ u in a..x, X' u ω) (b : ℕ → Ω → ℝ) :
+    simpleGains τ n b X t ω = ∫ u in a..t, simpleHolding τ n b u ω * X' u ω := by
+  rcases lt_or_ge t a with hta | hat
+  · -- Before `a` nothing has been traded and nothing is held.
+    rw [simpleGains_of_le hτ (hta.le.trans ha)]
+    refine (intervalIntegral.integral_congr (g := fun _ ↦ 0) fun u hu ↦ ?_).trans
+      intervalIntegral.integral_zero |>.symm
+    rw [Set.uIcc_of_ge hta.le] at hu
+    simp [simpleHolding_of_notMem_Ioc hτ fun h ↦ (hu.2.trans ha).not_gt h.1]
+  -- Price increments over subintervals of `[a, t]` are integrals of `X'`.
+  have hint : ∀ x ∈ Set.Icc a t, IntervalIntegrable (X' · ω) volume a x := fun x hx ↦
+    (hX'.mono_set (by
+      rw [Set.uIcc_of_le hx.1]; exact Set.Icc_subset_Icc_right hx.2)).intervalIntegrable
+  have hincr : ∀ x ∈ Set.Icc a t, ∀ y ∈ Set.Icc a t, X y ω - X x ω = ∫ u in x..y, X' u ω := by
+    intro x hx y hy
+    rw [hX x hx, hX y hy, add_sub_add_left_eq_sub,
+      intervalIntegral.integral_interval_sub_left (hint y hy) (hint x hx)]
+  -- Holding one unit on `(c, d] ⊆ (a, ∞)` gains the price change over `(c ⊓ t, d ⊓ t]`.
+  have hpiece : ∀ c d, a ≤ c → c ≤ d →
+      ∫ u in a..t, (Set.Ioc c d).indicator (X' · ω) u = X (min d t) ω - X (min c t) ω := by
+    intro c d hc hcd
+    have hset : Set.Ioc a t ∩ Set.Ioc c d = Set.Ioc (min c t) (min d t) := by
+      rw [Set.Ioc_inter_Ioc, max_eq_right hc]
+      rcases le_total c t with h | h
+      · rw [min_eq_left h, min_comm]
+      · rw [min_eq_right h, min_eq_right (h.trans hcd), Set.Ioc_self,
+          Set.Ioc_eq_empty ((min_le_left t d).trans h).not_gt]
+    rw [hincr _ ⟨le_min hc hat, min_le_right _ _⟩ _ ⟨le_min (hc.trans hcd) hat, min_le_right _ _⟩,
+      intervalIntegral.integral_of_le hat,
+      intervalIntegral.integral_of_le (min_le_min_right t hcd),
+      setIntegral_indicator measurableSet_Ioc, hset]
+  have hholding : ∀ u, simpleHolding τ n b u ω * X' u ω =
+      ∑ j ∈ range n, b j ω * (Set.Ioc (τ j) (τ (j + 1))).indicator (X' · ω) u := by
+    intro u
+    rw [simpleHolding_def, sum_mul]
+    refine sum_congr rfl fun j _ ↦ ?_
+    by_cases hu : u ∈ Set.Ioc (τ j) (τ (j + 1)) <;> simp [hu]
+  simp_rw [hholding]
+  rw [intervalIntegral.integral_finsetSum fun j _ ↦ ?_, simpleGains_def]
+  · refine sum_congr rfl fun j hj ↦ ?_
+    have hj := mem_range.1 hj
+    rw [intervalIntegral.integral_const_mul,
+      hpiece _ _ (ha.trans (hτ (Nat.zero_le n) hj.le (Nat.zero_le j))) (hτ hj.le hj j.le_succ)]
+  · rw [intervalIntegrable_iff_integrableOn_Icc_of_le hat]
+    exact (hX'.indicator measurableSet_Ioc).const_mul _
 
 /-! ### Self-financing strategies -/
 

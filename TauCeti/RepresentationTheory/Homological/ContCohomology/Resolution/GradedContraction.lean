@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Continuous.TopRep.GradedCochainComplex
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.DegreeCast
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Cochain
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Cohomology
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Graded
 
@@ -66,6 +67,8 @@ a homogeneous cocycle is its class in continuous cohomology
   in equal degrees have classes related by `degreeCast`.
 * `TopRep.gradedCohomologyClass_gradedResolutionContraction`: on the total coinduced resolution,
   the class of a homogeneous cocycle is its class in continuous cohomology.
+* `TopRep.gradedCohomologyClass_eq_degreeCast_cochainClass`: the same, for a cocycle included by
+  `cochainToGradedResolution` and read in a degree equal to its own, through `degreeCast`.
 
 ## References
 
@@ -477,6 +480,22 @@ theorem gradedCohomologyClass_gradedResolutionContraction {n : ℕ}
   exact gradedResolutionComponent_apply X _ _
     ((gradedCochainComplexι_apply _ _ _ _ _ _ n _).trans
       (gradedCochainComplexInvariant_val _ _ _ _ _ _ n _ _ _))
+
+/-- **The class of an included homogeneous cocycle, in an equal degree**: a vector `y` of the total
+coinduced resolution that is the inclusion of a homogeneous cocycle `z` of degree `n`, regarded as
+homogeneous of an equal degree `k`, has as class through `gradedResolutionContraction` the
+transport along `n = k` of `X.cochainClass n z`. This reads off classes of cocycles produced in a
+degree, such as `1 · n`, that equals `n` but not definitionally. -/
+theorem gradedCohomologyClass_eq_degreeCast_cochainClass {n k : ℕ} (hk : n = k)
+    (z : (homogeneousCochains X).X n) (hz : ((homogeneousCochains X).d n (n + 1)).hom z = 0)
+    (y : X.gradedResolutionTopRep.V) (hy : y = X.cochainToGradedResolution n z) (hy' hinv hdy) :
+    (gradedResolutionContraction hX).gradedCohomologyClass (n := k) y hy' hinv hdy =
+      (TauCeti.ContinuousCohomology.degreeCast X hk).hom (X.cochainClass n z hz) := by
+  subst hk
+  rw [cochainToGradedResolution_apply] at hy
+  subst hy
+  rw [TauCeti.ContinuousCohomology.degreeCast_rfl, Iso.refl_hom, ConcreteCategory.id_apply]
+  exact gradedCohomologyClass_gradedResolutionContraction hX z (congrArg Subtype.val hz)
 
 end CoinducedResolution
 
