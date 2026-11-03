@@ -159,7 +159,7 @@ private theorem typeAOrthogonal_sign_product (i : Fin k) :
 
 /-- The paired coordinates and diagonal scaling give exactly a scalar multiple of
 Mathlib's split type-B form. This is a similarity, not an isometry to `JB`. -/
-theorem typeAOrthogonalDiagonal_transpose_mul_reindex_typeAGraphConjugator_inv_mul :
+theorem typeAOrthogonalDiagonal_transpose_mul_reindex_typeAGraphConjugator_inv_mul_eq_smul_JB :
     (typeAOrthogonalDiagonal k A)ᵀ *
         reindex (typeAOrthogonalIndex k).symm (typeAOrthogonalIndex k).symm
           (typeAGraphConjugator (2 * k) A :
@@ -237,7 +237,7 @@ noncomputable def typeAGraphSkewAdjointOrthogonalEquiv :
       (isUnit_typeAOrthogonalDiagonal k A).invertible).trans
       (LieEquiv.ofEq _ (LieAlgebra.Orthogonal.typeB (Fin k) A) (by
         rw [coe_reindexAlgEquiv,
-          typeAOrthogonalDiagonal_transpose_mul_reindex_typeAGraphConjugator_inv_mul]
+          typeAOrthogonalDiagonal_transpose_mul_reindex_typeAGraphConjugator_inv_mul_eq_smul_JB]
         ext X
         exact mem_skewAdjointMatricesLieSubalgebra_unit_smul
           (unitOfInvertible (2 : A) * (-1 : Aˣ) ^ k)
