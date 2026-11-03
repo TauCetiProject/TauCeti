@@ -195,7 +195,7 @@ of `Ω`: on the tests supported in a compact `K ⊆ Ω`, its norm is at most a c
 `K` times the sup norm. -/
 theorem hasLocallyFiniteMass_toLp :
     Distribution.HasLocallyFiniteMass (toLp p μ : 𝓓^{n}(Ω, F) → Lp F p μ) := by
-  rw [show ⇑(toLp p μ : 𝓓^{n}(Ω, F) →L[ℝ] Lp F p μ) = _ from funext toLp_apply]
+  rw [funext toLp_apply]
   exact hasLocallyFiniteMass_memLp_toLp
 
 /-- A representative of `toLp p μ φ` agrees almost everywhere with the restriction of `φ`. -/
@@ -241,8 +241,7 @@ theorem denseRange_toLp [FiniteDimensional ℝ E] [CompleteSpace F] [μ.Regular]
     (ENNReal.half_pos hε.ne').ne'
   refine ⟨_, mem_range_self φ, ?_⟩
   rw [Metric.mem_closedEBall', ← Lp.toLp_coeFn f (Lp.memLp f), toLp_apply, Lp.edist_toLp_toLp,
-    ← ENNReal.add_halves ε, show (⇑f - fun x : Ω => φ x) = (⇑f - g) + (g - fun x : Ω => φ x) by
-      abel]
+    ← ENNReal.add_halves ε, ← sub_add_sub_cancel (⇑f) g]
   exact (eLpNorm_add_le Fact.out).trans (add_le_add hfg hφ)
 
 end TestFunction

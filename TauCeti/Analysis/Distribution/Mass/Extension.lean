@@ -154,7 +154,7 @@ theorem enorm_massRestrict_apply_le (hA : MeasurableSet A) (φ : 𝓓^{n}(Ω, F)
 /-- A Borel restriction has locally finite mass. -/
 theorem hasLocallyFiniteMass_massRestrict (hA : MeasurableSet A) :
     HasLocallyFiniteMass (massRestrict T hA) := by
-  rw [show ⇑(massRestrict T hA) = _ from funext (massRestrict_apply hA)]
+  rw [funext (massRestrict_apply hA)]
   exact hasLocallyFiniteMass_comp_indicatorToLp hA
 
 /-- **Mass measure of a Borel restriction.** `‖T ⌞ A‖ ≤ ‖T‖ ⌞ A`. -/
