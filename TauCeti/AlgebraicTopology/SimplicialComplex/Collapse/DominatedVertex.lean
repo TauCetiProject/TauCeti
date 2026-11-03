@@ -44,7 +44,7 @@ private theorem collapsesTo_deletion_vertex_aux (v w : ι) (hwv : w ≠ v) :
       CollapsesTo K (deletion K {v}) := by
   intro n
   induction n using Nat.strong_induction_on with
-  | h n ih =>
+  | ind n ih =>
     intro K hfin hcard hdom
     by_cases hempty : ∀ σ ∈ K, v ∉ σ
     · have heq : deletion K {v} = K := by

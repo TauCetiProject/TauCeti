@@ -387,20 +387,20 @@ private theorem restT_of_lt {r : ℕ} (h : r < l - 1) : restT ρ r = ρ (T q ⟨
 
 private theorem restT_restT {r : ℕ} (h : r < l - 1) (u : U) :
     restT ρ r (restT ρ r u) = ((q : R) - ↑q⁻¹) • restT ρ r u + u := by
-  rw [restT_of_lt ρ h, ← Module.End.mul_apply, ← map_mul, T_mul_self]
+  rw [restT_of_lt ρ h, ← mul_apply_eq_comp, ← map_mul, T_mul_self]
   simp
 
 private theorem restT_braid {r : ℕ} (h : r + 1 < l - 1) (u : U) :
     restT ρ r (restT ρ (r + 1) (restT ρ r u)) =
       restT ρ (r + 1) (restT ρ r (restT ρ (r + 1) u)) := by
   rw [restT_of_lt ρ h, restT_of_lt ρ (by omega : r < l - 1)]
-  simp only [← Module.End.mul_apply, ← map_mul, ← mul_assoc]
+  simp only [← mul_apply_eq_comp, ← map_mul, ← mul_assoc]
   rw [T_braid (Or.inl rfl)]
 
 private theorem restT_comm {r r' : ℕ} (h : r + 2 ≤ r') (h' : r' < l - 1) (u : U) :
     restT ρ r (restT ρ r' u) = restT ρ r' (restT ρ r u) := by
   rw [restT_of_lt ρ h', restT_of_lt ρ (by omega : r < l - 1)]
-  simp only [← Module.End.mul_apply, ← map_mul]
+  simp only [← mul_apply_eq_comp, ← map_mul]
   rw [(commute_T (Or.inl h)).eq]
 
 /-- The operator of the shuffle module crossing the positions `a` and `b`. -/
@@ -430,8 +430,8 @@ private theorem shuffleOp_mul_self {a b : Fin (k + l)} (hab : (b : ℕ) = a + 1)
     shuffleOp ρ a b * shuffleOp ρ a b = ((q : R) - ↑q⁻¹) • shuffleOp ρ a b + 1 := by
   have hlt : a < b := by rw [Fin.lt_def]; omega
   refine LinearMap.ext fun f ↦ funext fun S ↦ ?_
-  simp only [Module.End.mul_apply, LinearMap.add_apply, LinearMap.smul_apply,
-    Module.End.one_apply, Pi.add_apply, Pi.smul_apply, shuffleOp_apply]
+  simp only [mul_apply_eq_comp, LinearMap.add_apply, LinearMap.smul_apply,
+    one_apply_eq_self, Pi.add_apply, Pi.smul_apply, shuffleOp_apply]
   by_cases ha : a ∈ S.1 <;> by_cases hb : b ∈ S.1 <;>
     simp only [ha, hb, ShuffleMask.mem_swap, Equiv.swap_apply_left, Equiv.swap_apply_right,
       ShuffleMask.swap_swap, ↓reduceIte]
@@ -458,7 +458,7 @@ private theorem shuffleOp_braid {a b c : Fin (k + l)} (hab : (b : ℕ) = a + 1)
   have h₄ (M : ShuffleMask k l) : (M.swap b c).restIndex a = M.restIndex a :=
     ShuffleMask.restIndex_swap (by simp [hab'.not_gt, (hab'.trans hbc').not_gt])
   refine LinearMap.ext fun f ↦ funext fun S ↦ ?_
-  simp only [Module.End.mul_apply, shuffleOp_apply]
+  simp only [mul_apply_eq_comp, shuffleOp_apply]
   by_cases ha : a ∈ S.1 <;> by_cases hb : b ∈ S.1 <;> by_cases hc : c ∈ S.1 <;>
     simp only [ha, hb, hc, ShuffleMask.mem_swap, Equiv.swap_apply_left, Equiv.swap_apply_right,
       Equiv.swap_apply_of_ne_of_ne, hab'.ne, hbc'.ne', hac, hac.symm,
@@ -496,7 +496,7 @@ private theorem shuffleOp_comm {a b c d : Fin (k + l)} (hab : (b : ℕ) = a + 1)
       (by simp [hab'.ne, hac, had, hbc'.ne, hbd, hcd'.ne] : [a, b, c, d].Nodup)).commute
     simp only [ShuffleMask.mem_swap, ← Equiv.Perm.mul_apply, hcomm.eq]
   refine LinearMap.ext fun f ↦ funext fun S ↦ ?_
-  simp only [Module.End.mul_apply, shuffleOp_apply]
+  simp only [mul_apply_eq_comp, shuffleOp_apply]
   by_cases ha : a ∈ S.1 <;> by_cases hb : b ∈ S.1 <;> by_cases hc : c ∈ S.1 <;>
     by_cases hd : d ∈ S.1 <;>
     simp only [ha, hb, hc, hd, ShuffleMask.mem_swap, Equiv.swap_apply_of_ne_of_ne, hac, had, hbd,

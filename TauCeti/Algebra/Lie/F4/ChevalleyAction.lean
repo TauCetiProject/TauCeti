@@ -348,7 +348,7 @@ theorem exists_f4_ad_sq_rootVector_eq_smul_of_long_add_two_short (α β γ : Fin
   · rw [Int.natAbs_mul, hN₁', hN₂']
   · -- Fold the local names for the Lie algebra, root vectors and weights.
     change ((ad ℚ L (x a)) ^ 2) (x b) = ((N₁ * N₂ : ℤ) : ℚ) • x g
-    rw [pow_two, Module.End.mul_apply, ad_apply, ad_apply, hlie₁, lie_smul, hlie₂,
+    rw [pow_two, mul_apply_eq_comp, ad_apply, ad_apply, hlie₁, lie_smul, hlie₂,
       smul_smul, Int.cast_mul]
 
 /-- The second divided adjoint power along a long--short--long F₄ string has unit coefficient.
@@ -570,7 +570,7 @@ theorem f4_dividedPower_two_ad_rootVector_opposite (α : Fin 48) :
       root_apply_coroot ha]
     module
   rw [hop, Associative.dividedPower_apply, pow_two,
-    Module.End.mul_apply, h1, h2, smul_smul]
+    mul_apply_eq_comp, h1, h2, smul_smul]
   norm_num
   rfl
 
@@ -631,7 +631,7 @@ theorem f4_dividedPower_two_ad_cartan_eq_zero (α : Fin 48)
       LieAlgebra.IsKilling.lie_eq_smul_of_mem_rootSpace
       (f4ChevalleyRootVector_isChevalleySystem.toIsSl2System.mem_rootSpace _), neg_smul]
   rw [Associative.dividedPower_apply, pow_two,
-    Module.End.mul_apply, ad_apply, ad_apply, hfirst, lie_smul, lie_self, smul_zero,
+    mul_apply_eq_comp, ad_apply, ad_apply, hfirst, lie_smul, lie_self, smul_zero,
     smul_zero]
 
 /-- Three adjoint applications annihilate every F4 root vector, regardless of root length. -/
@@ -651,7 +651,7 @@ theorem f4_ad_pow_three_rootVector_eq_zero (α β : Fin 48) :
       rw [f4KillingRoot_f4OppositeRootIndex]
       have h := congrArg (fun x : F4.lieAlgebra valid_F4 => (2 : ℚ) • x) hdiv
       simpa [smul_smul] using h
-    rw [hthree, pow_succ', Module.End.mul_apply, hpow, map_smul, ad_apply,
+    rw [hthree, pow_succ', mul_apply_eq_comp, hpow, map_smul, ad_apply,
       lie_self, smul_zero]
   · rcases f4Length_eq_one_or_eq_two β with hβ | hβ
     · have hdiv := f4_dividedPower_two_ad_rootVector_eq_zero_of_short α β hβ hopp

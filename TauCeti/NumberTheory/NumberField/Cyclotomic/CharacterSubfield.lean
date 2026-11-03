@@ -44,7 +44,7 @@ variable {R : Type*} [CommRing R]
 group conductor divides `m`. -/
 theorem characterSubfield_le_iff_dirichletConductor_dvd
     (Y : Subgroup (DirichletCharacter R n)) [Finite Y] (F : IntermediateField ℚ K)
-    [IsGalois ℚ F] [IsCyclotomicExtension {m} ℚ F] (hmn : m ∣ n) :
+    [IsCyclotomicExtension {m} ℚ F] (hmn : m ∣ n) :
     (IsCyclotomicExtension.Rat.intermediateFieldEquivSubgroupChar n K R).symm Y ≤ F ↔
       Y.dirichletConductor ∣ m := by
   let _ : NeZero m := ⟨fun h ↦ NeZero.ne n (Nat.eq_zero_of_zero_dvd (h ▸ hmn))⟩
