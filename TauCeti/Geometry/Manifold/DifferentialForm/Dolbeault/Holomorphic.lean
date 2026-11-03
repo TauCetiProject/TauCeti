@@ -72,7 +72,7 @@ theorem del_apply_apply (f : SmoothForm I M F 0) (x : M) (v : TangentSpace I x) 
       Complex.I • mvfderiv I (fun y ↦ f.1 y 0) x (J x v)) := by
   rw [(SmoothForm.isOfType_zero_zero f J).del_eq]
   simp only [coe_typeProjection, zero_add, ContinuousLinearMap.typeProjection_one_zero,
-    LinearMap.smul_apply, LinearMap.sub_apply, Module.End.one_apply,
+    LinearMap.smul_apply, LinearMap.sub_apply, one_apply_eq_self,
     ContinuousAlternatingMap.smul_apply, ContinuousAlternatingMap.sub_apply]
   rw [ContinuousLinearMap.alternatingDerivation_apply_vecCons_fin_one, mextDerivₗ_zero_apply,
     mextDerivₗ_zero_apply]
@@ -83,7 +83,7 @@ theorem delBar_apply_apply (f : SmoothForm I M F 0) (x : M) (v : TangentSpace I 
       Complex.I • mvfderiv I (fun y ↦ f.1 y 0) x (J x v)) := by
   rw [(SmoothForm.isOfType_zero_zero f J).delBar_eq]
   simp only [coe_typeProjection, zero_add, ContinuousLinearMap.typeProjection_zero_one,
-    LinearMap.smul_apply, LinearMap.add_apply, Module.End.one_apply,
+    LinearMap.smul_apply, LinearMap.add_apply, one_apply_eq_self,
     ContinuousAlternatingMap.smul_apply, ContinuousAlternatingMap.add_apply]
   rw [ContinuousLinearMap.alternatingDerivation_apply_vecCons_fin_one, mextDerivₗ_zero_apply,
     mextDerivₗ_zero_apply]
