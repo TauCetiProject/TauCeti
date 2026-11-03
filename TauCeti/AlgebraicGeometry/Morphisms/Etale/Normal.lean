@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Morphisms.StalkMap
+public import TauCeti.AlgebraicGeometry.Scheme.IntegrallyClosed
 public import TauCeti.RingTheory.Etale.Normal
 
 /-!
@@ -57,24 +58,22 @@ theorem isDomain_and_isIntegrallyClosed_stalk_iff_of_etale (f : X ⟶ Y) [Etale 
     have het := f.etale_appLE hU hV hVU
     algebraize [(f.appLE U V hVU).hom]
     set q := (hV.primeIdealOf ⟨x, hxV⟩).asIdeal
-    set p := (hU.primeIdealOf ⟨f x, hVU hxV⟩).asIdeal
-    have hqp : q.under Γ(Y, U) = p :=
-      congrArg PrimeSpectrum.asIdeal (IsAffineOpen.comap_primeIdealOf_appLE U hU V hV hVU hxV)
-    let := X.presheaf.algebra_section_stalk ⟨x, hxV⟩
-    let := Y.presheaf.algebra_section_stalk ⟨f x, hVU hxV⟩
-    have := hV.isLocalization_stalk ⟨x, hxV⟩
-    have : IsLocalization.AtPrime (Y.presheaf.stalk (f x)) (q.under Γ(Y, U)) := by
-      simpa only [IsLocalization.AtPrime, hqp] using hU.isLocalization_stalk ⟨f x, hVU hxV⟩
-    let eY := IsLocalization.algEquiv (q.under Γ(Y, U)).primeCompl (Y.presheaf.stalk (f x))
-      (Localization.AtPrime (q.under Γ(Y, U)))
-    have : IsDomain (Localization.AtPrime (q.under Γ(Y, U))) := eY.symm.toMulEquiv.isDomain _
-    have : IsIntegrallyClosed (Localization.AtPrime (q.under Γ(Y, U))) :=
-      .of_equiv eY.toRingEquiv
+    have hqp : (⟨q.under Γ(Y, U), inferInstance⟩ : PrimeSpectrum Γ(Y, U)) =
+        hU.primeIdealOf ⟨f x, hVU hxV⟩ :=
+      IsAffineOpen.comap_primeIdealOf_appLE U hU V hV hVU hxV
+    have hY : IsDomain (Localization.AtPrime (q.under Γ(Y, U))) ∧
+        IsIntegrallyClosed (Localization.AtPrime (q.under Γ(Y, U))) :=
+      (congrArg (fun p : PrimeSpectrum Γ(Y, U) ↦
+        IsDomain (Localization.AtPrime p.asIdeal) ∧
+          IsIntegrallyClosed (Localization.AtPrime p.asIdeal)) hqp).mpr <|
+        (hU.isDomain_and_isIntegrallyClosed_stalk_iff ⟨f x, hVU hxV⟩).mp
+          ⟨inferInstance, inferInstance⟩
+    obtain ⟨_, _⟩ := hY
     have := TauCeti.Algebra.Etale.isDomain_localization_atPrime_of_localization_under Γ(Y, U) q
     have := TauCeti.Algebra.Etale.isIntegrallyClosed_localization_atPrime_of_localization_under
       Γ(Y, U) q
-    let eX := IsLocalization.algEquiv q.primeCompl (Localization.AtPrime q) (X.presheaf.stalk x)
-    exact ⟨eX.symm.toMulEquiv.isDomain _, .of_equiv eX.toRingEquiv⟩
+    exact (hV.isDomain_and_isIntegrallyClosed_stalk_iff ⟨x, hxV⟩).mpr
+      ⟨inferInstance, inferInstance⟩
   · rintro ⟨_, _⟩
     let := (f.stalkMap x).hom.toAlgebra
     have := f.isLocalHom_stalkMap_toAlgebra x
