@@ -114,7 +114,7 @@ namespace Polynomial.Monic
 Then `f` has a root `a ≡ a₀` modulo `I`: Nakayama's lemma gives `e R[X]/(f) = R e`, so
 `X e = a e`, and `R e` is free on `e`. -/
 theorem exists_isRoot_of_isIdempotentElem {I : Ideal R} {f : R[X]} (hf : f.Monic)
-    (hjac : I ≤ Ideal.jacobson ⊥) {a₀ : R} {e : AdjoinRoot f} (he : IsIdempotentElem e)
+    (hjac : I ≤ Ring.jacobson R) {a₀ : R} {e : AdjoinRoot f} (he : IsIdempotentElem e)
     (hxe : (AdjoinRoot.root f - algebraMap R _ a₀) * e ∈ I.map (algebraMap R (AdjoinRoot f)))
     (hI : ∀ r : R, r • e ∈ I.map (algebraMap R (AdjoinRoot f)) → r ∈ I) :
     ∃ a : R, f.IsRoot a ∧ a - a₀ ∈ I := by
@@ -122,11 +122,12 @@ theorem exists_isRoot_of_isIdempotentElem {I : Ideal R} {f : R[X]} (hf : f.Monic
   have : Module.Finite R (AdjoinRoot f) := hf.finite_adjoinRoot
   set x := AdjoinRoot.root f
   have hσ : ∀ y : AdjoinRoot f, ∃ σ : R, σ • e = e * y :=
-    he.exists_smul_eq_mul_of_mul_sub_smul_mem hjac fun y ↦ by
-      induction y using AdjoinRoot.induction_on with | ih p =>
-      refine ⟨p.eval a₀, ?_⟩
-      rw [← AdjoinRoot.aeval_eq, Algebra.smul_def, mul_comm e, ← sub_mul]
-      exact aeval_sub_algebraMap_eval_mul_mem hxe p
+    he.exists_smul_eq_mul_of_mul_sub_smul_mem (by simpa only [Ideal.jacobson_bot] using hjac)
+      fun y ↦ by
+        induction y using AdjoinRoot.induction_on with | ih p =>
+        refine ⟨p.eval a₀, ?_⟩
+        rw [← AdjoinRoot.aeval_eq, Algebra.smul_def, mul_comm e, ← sub_mul]
+        exact aeval_sub_algebraMap_eval_mul_mem hxe p
   obtain ⟨a, ha⟩ := hσ x
   refine ⟨a, ?_, hI _ ?_⟩
   · -- `x e = a e` gives `f(a) e = f(x) e = 0`, and `r e = 0` forces `r c = 0` for a unit `c`.
@@ -136,7 +137,7 @@ theorem exists_isRoot_of_isIdempotentElem {I : Ideal R} {f : R[X]} (hf : f.Monic
     rw [Ideal.mem_bot, AdjoinRoot.aeval_eq, AdjoinRoot.mk_self, zero_sub, neg_mul, neg_eq_zero,
       ← Algebra.smul_def] at hfa
     obtain ⟨c, hce, hc⟩ := he.exists_smul_eq_self_and_mul_eq_zero hσ
-    have hcu : IsUnit c := Ideal.isUnit_of_sub_one_mem_jacobson_bot _ (hjac (hI _ (by
+    have hcu : IsUnit c := Ideal.isUnit_of_sub_one_mem_jacobson _ (hjac (hI _ (by
       rw [sub_smul, hce, one_smul, sub_self]; exact zero_mem _)))
     exact hcu.mul_left_eq_zero.mp (hc _ hfa)
   · convert hxe using 1

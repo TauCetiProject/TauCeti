@@ -78,7 +78,7 @@ every monic `f` over `R`, idempotents of `R[X]/(f)` modulo `I` lift to idempoten
 then `(R, I)` is Henselian. -/
 @[stacks 09XI "(3) ⇒ (1)"]
 theorem henselianRing_of_forall_exists_isIdempotentElem_adjoinRoot {I : Ideal R}
-    (hjac : I ≤ Ideal.jacobson ⊥)
+    (hjac : I ≤ Ring.jacobson R)
     (H : ∀ f : R[X], f.Monic → ∀ s : AdjoinRoot f,
       s * s - s ∈ I.map (algebraMap R (AdjoinRoot f)) →
       ∃ e : AdjoinRoot f, IsIdempotentElem e ∧ e - s ∈ I.map (algebraMap R (AdjoinRoot f))) :
@@ -178,7 +178,10 @@ an integral `R`-algebra, then `(S, IS)` is Henselian. -/
 instance henselianRing_map_of_isIntegral :
     HenselianRing S (I.map (algebraMap R S)) :=
   TauCeti.henselianRing_of_forall_exists_isIdempotentElem_adjoinRoot
-    (map_le_jacobson_bot_of_isIntegral HenselianRing.jac) fun f hf s hs ↦ by
+    (by
+      rw [← jacobson_bot]
+      exact map_le_jacobson_bot_of_isIntegral (by rw [jacobson_bot]; exact HenselianRing.jac))
+    fun f hf s hs ↦ by
       have : Module.Finite S (AdjoinRoot f) := hf.finite_adjoinRoot
       have : Algebra.IsIntegral R (AdjoinRoot f) := Algebra.IsIntegral.trans S
       rw [map_map, ← IsScalarTower.algebraMap_eq] at hs ⊢
@@ -199,6 +202,7 @@ theorem henselianRing_iff_forall_bijOn_isIdempotentElem {R : Type u} [CommRing R
   refine ⟨fun _ S _ _ _ ↦ HenselianRing.bijOn_quotient_mk_isIdempotentElem _,
     fun H ↦ henselianRing_of_forall_exists_isIdempotentElem_adjoinRoot ?_ fun f hf s hs ↦ ?_⟩
   · -- If `I ⊄ 𝔪` for a maximal ideal `𝔪`, then `0` and `1` in the field `R ⧸ 𝔪` both reduce to `0`.
+    rw [← Ideal.jacobson_bot]
     refine le_sInf fun m ⟨_, hm⟩ ↦ ?_
     by_contra hIm
     obtain ⟨i, hi, him⟩ := Set.not_subset.mp hIm

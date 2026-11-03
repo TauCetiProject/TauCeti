@@ -64,10 +64,10 @@ theorem existsUnique_monic_mul_eq {p : R[X]} (hp : p.Monic) {g₀ h₀ : (R ⧸ 
     (hp₀ : p.map (Ideal.Quotient.mk I) = g₀ * h₀) :
     ∃! gh : R[X] × R[X], gh.1.Monic ∧ gh.2.Monic ∧ gh.1 * gh.2 = p ∧
       gh.1.map (Ideal.Quotient.mk I) = g₀ ∧ gh.2.map (Ideal.Quotient.mk I) = h₀ := by
-  have hjac : I ≤ Ideal.jacobson ⊥ := HenselianRing.jac
+  have hjac : I ≤ Ring.jacobson R := HenselianRing.jac
   cases subsingleton_or_nontrivial (R ⧸ I) with
   | inl _ =>
-    have := Ideal.subsingleton_of_le_jacobson_bot hjac
+    have := Ideal.subsingleton_of_le_jacobson hjac
     exact ⟨(1, 1), ⟨monic_of_subsingleton _, monic_of_subsingleton _, Subsingleton.elim _ _,
       Subsingleton.elim _ _, Subsingleton.elim _ _⟩, fun _ _ ↦ Subsingleton.elim _ _⟩
   | inr _ =>
@@ -145,7 +145,7 @@ every factorization of a monic polynomial modulo `I` into coprime monic polynomi
 factorization over `R`, then `(R, I)` is Henselian: a simple root `a₀` modulo `I` of `p` splits off
 the coprime factor `X - a₀`, whose lift is `X - a` for a root `a ≡ a₀` of `p`. -/
 theorem henselianRing_of_forall_exists_monic_mul_eq {R : Type*} [CommRing R] {I : Ideal R}
-    (hjac : I ≤ Ideal.jacobson ⊥)
+    (hjac : I ≤ Ring.jacobson R)
     (H : ∀ p : R[X], p.Monic → ∀ g₀ h₀ : (R ⧸ I)[X], g₀.Monic → h₀.Monic → IsCoprime g₀ h₀ →
       p.map (Ideal.Quotient.mk I) = g₀ * h₀ →
       ∃ g h : R[X], g.Monic ∧ h.Monic ∧ g * h = p ∧
@@ -155,7 +155,7 @@ theorem henselianRing_of_forall_exists_monic_mul_eq {R : Type*} [CommRing R] {I 
   is_henselian p hp a₀ hpa₀ hunit := by
     cases subsingleton_or_nontrivial (R ⧸ I) with
     | inl _ =>
-      have := Ideal.subsingleton_of_le_jacobson_bot hjac
+      have := Ideal.subsingleton_of_le_jacobson hjac
       exact ⟨a₀, Subsingleton.elim _ _, Subsingleton.elim (a₀ - a₀) 0 ▸ I.zero_mem⟩
     | inr _ =>
     -- Modulo `I`, the simple root `a₀` splits off the coprime factor `X - a₀`.
@@ -189,7 +189,7 @@ coprime monic polynomials lifts to a factorization over `R`. The right-hand side
 of a Henselian pair in the Stacks Project. -/
 @[stacks 09XE "agrees with Mathlib's `HenselianRing`"]
 theorem henselianRing_iff_forall_exists_monic_mul_eq {R : Type*} [CommRing R] {I : Ideal R} :
-    HenselianRing R I ↔ I ≤ Ideal.jacobson ⊥ ∧
+    HenselianRing R I ↔ I ≤ Ring.jacobson R ∧
       ∀ p : R[X], p.Monic → ∀ g₀ h₀ : (R ⧸ I)[X], g₀.Monic → h₀.Monic → IsCoprime g₀ h₀ →
         p.map (Ideal.Quotient.mk I) = g₀ * h₀ →
         ∃ g h : R[X], g.Monic ∧ h.Monic ∧ g * h = p ∧

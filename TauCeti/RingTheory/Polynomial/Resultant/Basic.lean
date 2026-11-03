@@ -210,10 +210,10 @@ theorem isCoprime_X_sub_C_of_isUnit_eval {p : R[X]} {a : R} (h : IsUnit (p.eval 
 
 /-- **Coprimality lifts along the Jacobson radical.** If `g` is monic and the reductions of `g`
 and `h` modulo an ideal `I` in the Jacobson radical are coprime, then `g` and `h` are coprime. -/
-theorem isCoprime_of_isCoprime_map {I : Ideal R} (hI : I ≤ Ideal.jacobson ⊥) {g h : R[X]}
+theorem isCoprime_of_isCoprime_map {I : Ideal R} (hI : I ≤ Ring.jacobson R) {g h : R[X]}
     (hg : g.Monic) (hgh : IsCoprime (g.map (Ideal.Quotient.mk I)) (h.map (Ideal.Quotient.mk I))) :
     IsCoprime g h := by
-  have : IsLocalHom (Ideal.Quotient.mk I) := isLocalHom_of_le_jacobson_bot I hI
+  have : IsLocalHom (Ideal.Quotient.mk I) := isLocalHom_of_le_jacobson hI
   rw [← isUnit_resultant_iff_isCoprime hg]
   refine IsUnit.of_map (Ideal.Quotient.mk I) _ ?_
   cases subsingleton_or_nontrivial (R ⧸ I) with

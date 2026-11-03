@@ -34,7 +34,7 @@ mechanism behind the left-right symmetry of the radical, proved in
   are nilpotent lies in the radical.
 * `TauCeti.Ring.instNontrivialQuotientJacobson`: the quotient of a nontrivial ring by its Jacobson
   radical is nontrivial.
-* `Ideal.subsingleton_of_le_jacobson_bot`: a commutative ring is trivial if its quotient by some
+* `Ideal.subsingleton_of_le_jacobson`: a commutative ring is trivial if its quotient by some
   ideal in the Jacobson radical is.
 
 ## References
@@ -119,8 +119,9 @@ namespace Ideal
 
 /-- If `I` lies in the Jacobson radical of `R` and `R ⧸ I` is trivial, then `R` is trivial: the
 ideal `I = ⊤` can only lie in the Jacobson radical of the zero ring. -/
-theorem subsingleton_of_le_jacobson_bot {R : Type*} [CommRing R] {I : Ideal R}
-    (hI : I ≤ jacobson ⊥) [Subsingleton (R ⧸ I)] : Subsingleton R := by
+theorem subsingleton_of_le_jacobson {R : Type*} [CommRing R] {I : Ideal R}
+    (hI : I ≤ Ring.jacobson R) [Subsingleton (R ⧸ I)] : Subsingleton R := by
+  rw [← jacobson_bot] at hI
   have h : (⊥ : Ideal R) = ⊤ :=
     jacobson_eq_top_iff.mp <| top_le_iff.mp <| Quotient.subsingleton_iff.mp ‹_› ▸ hI
   exact subsingleton_of_zero_eq_one (mem_bot.mp (h ▸ Submodule.mem_top : (1 : R) ∈ ⊥)).symm
