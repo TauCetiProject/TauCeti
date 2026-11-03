@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Basic.ENNReal.Inv
 public import Mathlib.RingTheory.MvPolynomial.Ideal
 public import TauCeti.Data.Finsupp.ENNReal
 public import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
