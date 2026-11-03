@@ -97,7 +97,7 @@ theorem adjoin_prod_root_injective [NeZero (2 : K)]
     -- which is nonzero since every radicand is.
     have hfact : (∏ i ∈ S, d i) * ∏ i ∈ T, d i
         = (∏ i ∈ S ∆ T, d i) * (∏ i ∈ S ∩ T, d i) ^ 2 := by
-      rw [symmDiff_eq_sup_sdiff_inf, Finset.sup_eq_union, Finset.inf_eq_inter,
+      rw [symmDiff_eq_sup_sdiff_inf,
         ← Finset.prod_union_inter, ← Finset.prod_sdiff Finset.inter_subset_union]
       ring
     have hne : (∏ i ∈ S ∩ T, d i) ≠ 0 := Finset.prod_ne_zero_iff.mpr fun i _ h =>

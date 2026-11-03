@@ -265,7 +265,7 @@ theorem isPrimitiveIdempotent_of_isIndecomposableModule (he : IsIdempotentElem e
   have hφapp : ∀ x : (Ideal.span {e} : Ideal A), (φ x : A) = (x : A) * f := fun x ↦ by simp [φ]
   have hφ : IsIdempotentElem φ := by
     refine LinearMap.ext fun x ↦ Subtype.ext ?_
-    rw [Module.End.mul_apply, hφapp, hφapp, mul_assoc, hf.eq]
+    rw [mul_apply_eq_comp, hφapp, hφapp, mul_assoc, hf.eq]
   have hgen : (φ (spanSingletonGenerator e) : A) = e * f := by
     rw [hφapp, coe_spanSingletonGenerator]
   refine (hidem φ hφ).imp (fun hz ↦ ?_) fun ho ↦ ?_

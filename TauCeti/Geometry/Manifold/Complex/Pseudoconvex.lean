@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Complex.LeviForm
-public import TauCeti.Topology.LocallyFinite
+public import TauCeti.Topology.LocallyFinite.Basic
 
 /-!
 # Global perturbation tolerances for strong pseudoconvexity
