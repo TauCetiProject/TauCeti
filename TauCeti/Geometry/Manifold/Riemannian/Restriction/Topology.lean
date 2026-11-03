@@ -104,13 +104,8 @@ theorem continuous_restrictOpenTangentSpace (k : ℕ∞) (U : Opens M) :
       g.restrictOpenTangentSpace U) := by
   let _ := chartCkTopology (I := I) (M := M) k
   let _ := chartCkTopology (I := I) (M := U) k
-  refine (continuous_chartCk_iff k).2 fun x m hm ↦ ?_
-  let j : (extChartAt I x).target → (extChartAt I (x : M)).target :=
-    fun z ↦ ⟨z, U.extChartAt_target_subset x z.2⟩
-  have hj : Continuous j := continuous_subtype_val.subtype_mk _
-  have h := ((continuous_chartCk_iff (I := I) (M := M) k (g := id)).1
-    continuous_id (x : M) m hm).comp (continuous_id.prodMap hj)
-  exact h.congr fun q ↦
-    (iteratedFDeriv_chartMetric_restrictOpenTangentSpace q.1 U x m q.2.2).symm
+  simpa only [restrictOpenTangentSpace_eq_pullback] using
+    (continuous_pullback_chartCk k (f := (Subtype.val : U → M)) contMDiff_subtype_val
+      (TauCeti.Manifold.mfderiv_subtype_val_injective (I := I)))
 
 end Bundle.ContMDiffRiemannianMetric
