@@ -86,8 +86,9 @@ private lemma fibreWeight_pair_of_factorPair (n : ℕ) (hn : 0 < n) (p : ℕ × 
     fibreWeight ((p.1 : ℤ) + p.2) n + fibreWeight (-((p.1 : ℤ) + p.2)) n =
       12 * ((p.2 : ℚ) - p.1) := by
   have hnp : (0 : ℤ) < n := by exact_mod_cast hn
-  obtain ⟨ha, hd, hmul⟩ := Int.pos_pos_mul_eq_of_mem_divisorsAntidiagonal_toNat
-    (n := (n : ℤ)) (by simpa only [Int.toNat_natCast] using hp)
+  have ha := Nat.pos_of_mem_divisors (Nat.fst_mem_divisors_of_mem_antidiagonal hp)
+  have hmul : (p.1 : ℤ) * p.2 = n := by
+    exact_mod_cast (Nat.mem_divisorsAntidiagonal.mp hp).1
   have hspos : (0 : ℤ) < (p.1 : ℤ) + p.2 := by omega
   have hdisc : ((p.1 : ℤ) + p.2) ^ 2 - 4 * n = ((p.2 : ℤ) - p.1) ^ 2 := by nlinarith
   rw [fibreWeight_cast, fibreWeight_cast,
@@ -146,8 +147,8 @@ private lemma fibreWeight_pair (n : ℕ) (hn : 0 < n) (t : ℤ) :
       apply Finset.sum_eq_zero
       intro p hp
       obtain ⟨hpmem, hlt⟩ := Finset.mem_filter.mp hp
-      have hmul := (Int.pos_pos_mul_eq_of_mem_divisorsAntidiagonal_toNat
-        (n := (n : ℤ)) (by simpa only [Int.toNat_natCast] using hpmem)).2.2
+      have hmul : (p.1 : ℤ) * p.2 = n := by
+        exact_mod_cast (Nat.mem_divisorsAntidiagonal.mp hpmem).1
       apply ite_eq_right
       intro ht
       have hdiff : (0 : ℤ) < (p.2 : ℤ) - p.1 := by omega
@@ -187,8 +188,8 @@ private lemma sum_split_trace_mul_dickson (n w : ℕ) (hw : Even w) (p : ℕ × 
   set I := Finset.Icc (-4 * (n : ℤ)) (4 * n)
   let P (t : ℤ) : ℚ := (dickson 2 (n : ℚ) w).eval t
   obtain ⟨hp, hlt⟩ := Finset.mem_filter.mp hp
-  obtain ⟨ha, hd, hm⟩ := Int.pos_pos_mul_eq_of_mem_divisorsAntidiagonal_toNat
-    (n := (n : ℤ)) (by simpa only [Int.toNat_natCast] using hp)
+  have ha := Nat.pos_of_mem_divisors (Nat.fst_mem_divisors_of_mem_antidiagonal hp)
+  have hm := (Nat.mem_divisorsAntidiagonal.mp hp).1
   have hs : (0 : ℤ) < (p.1 : ℤ) + p.2 := by omega
   have ha_le := Nat.divisor_le (Nat.fst_mem_divisors_of_mem_antidiagonal hp)
   have hd_le := Nat.divisor_le (Nat.snd_mem_divisors_of_mem_antidiagonal hp)
@@ -241,8 +242,8 @@ private lemma sum_fibreWeight (n : ℕ) (hn : 0 < n) (w : ℕ) (hw : Even w) :
   -- Sum the paired-fibre identity and exchange the two finite sums in the split part.
   have hsym := Finset.sum_congr rfl fun t (_ : t ∈ I) ↦
     congrArg (fun x : ℚ ↦ x * P t) (fibreWeight_pair n hn t)
-  simp only [add_mul, Finset.sum_add_distrib, hneg, mul_assoc, Finset.mul_sum,
-    Finset.sum_mul] at hsym
+  simp only [add_mul, Finset.sum_add_distrib, hneg, Finset.sum_mul, mul_assoc,
+    ← Finset.mul_sum] at hsym
   have hswap : (∑ t ∈ I, ∑ p ∈ s,
       (if t = (p.1 : ℤ) + p.2 ∨ -t = (p.1 : ℤ) + p.2 then (p.2 : ℚ) - p.1 else 0) * P t) =
       2 * ∑ p ∈ s, ((p.2 : ℚ) ^ (w + 1) - (p.1 : ℚ) ^ (w + 1)) := by
@@ -261,8 +262,6 @@ private lemma sum_fibreWeight (n : ℕ) (hn : 0 < n) (w : ℕ) (hw : Even w) :
       -24 * (∑ t ∈ I.filter (fun t ↦ t ^ 2 ≤ 4 * (n : ℤ)),
         hurwitzClassNumber (4 * (n : ℤ) - t ^ 2).toNat * P t) +
       24 * (∑ p ∈ s, ((p.2 : ℚ) ^ (w + 1) - (p.1 : ℚ) ^ (w + 1))) := by
-    rw [← Finset.mul_sum] at hsym
-    simp only [← Finset.mul_sum] at hsym
     rw [hswap, hclass] at hsym
     linear_combination hsym
   dsimp only [s] at hsym'
