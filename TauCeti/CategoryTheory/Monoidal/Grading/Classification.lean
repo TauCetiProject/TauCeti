@@ -51,7 +51,7 @@ theorem monoidalAutCharacter_characterMonoidalAut (χ : universalGradingGroup C 
   apply universalGradingGroup.hom_ext
   intro S
   apply Units.ext
-  apply smul_left_injective k (id_nonzero S.repr)
+  apply smul_left_injective k (id_ne_zero S.repr)
   simpa only [characterMonoidalAut_app_of_simple, SimpleClasses.classOf_repr] using
     monoidalAutCharacter_degree_smul_id (hfin := hfin) k (characterMonoidalAut k χ) S.repr
 
