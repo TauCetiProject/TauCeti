@@ -135,7 +135,7 @@ theorem isPreconnected_range_projectiveOrbitMap_iff (m : V) (hm : Module.IsUnimo
     (AlgHom.kernelPoint (eval k G g))
   have hP (g : G) : P g = P 1 ↔ k ∙ ρ g m = k ∙ m := by
     have := projectiveOrbitMap_kernelPoint_eval_eq_iff_span_eq ρ m hm m hm g 1
-    rwa [map_one, Module.End.one_apply] at this
+    rwa [map_one, one_apply_eq_self] at this
   have hclosed (s : Set G) : IsClosed (P '' s) :=
     isClosed_image_projectiveOrbitMap_kernelPoint_eval ρ m hm s
   constructor

@@ -75,7 +75,7 @@ noncomputable def representationComodule (ρ : Representation R G V) :
     refine Finset.sum_congr rfl fun h _ ↦ ?_
     rw [← Equiv.sum_comp (Equiv.mulLeft h)
       (fun g ↦ ρ g v ⊗ₜ[R] (delta R G h ⊗ₜ[R] delta R G (h⁻¹ * g)))]
-    simp [Module.End.mul_apply]
+    simp
   lTensor_counit_comp_coact := by
     classical
     ext v
