@@ -297,13 +297,6 @@ private noncomputable def isometryPiOddCyclicOfEquiv (hp : Odd p) (k : ι → �
       (fun j : {j // l j ≠ 0} ↦ (oddCyclic (p ^ l j) hp.pow (η j)).quadratic) σ).symm.trans <|
     QuadraticMap.IsometryEquiv.pi fun i ↦ Isometry.ofEq (by rw [hσ i])
 
-/-- Matching the nontrivial summands along `σ` does not change the level products. -/
-private theorem prod_filter_equiv (k : ι → ℕ) (l : κ → ℕ) (f : κ → ℤ)
-    (σ : {i // k i ≠ 0} ≃ {j // l j ≠ 0}) (hσ : ∀ i, l (σ i) = k i) {m : ℕ} (hm : 0 < m) :
-    ∏ i ∈ ({i | k i = m} : Finset {i // k i ≠ 0}), f (σ i) = ∏ j with l j = m, f j := by
-  rw [← prod_filter_subtype_ne l f hm.ne', prod_filter, prod_filter]
-  exact Fintype.prod_equiv σ _ _ fun i ↦ by simp only [hσ i]
-
 /-- **Classification of orthogonal sums of odd cyclic generators at an odd prime.** For an odd
 prime `p`, exponents `k_i`, `l_j` and coefficients `θ_i`, `η_j` prime to `p`, the orthogonal sums
 `⊕ᵢ q_{θ_i}^{(p)}(p^{k_i})` and `⊕ⱼ q_{η_j}^{(p)}(p^{l_j})` are isometric exactly when, for every
@@ -334,7 +327,7 @@ theorem nonempty_isometry_pi_oddCyclic_iff (hp : Odd p) (k : ι → ℕ) (l : κ
           ∏ i ∈ ({i | k i = m} : Finset {i // k i ≠ 0}), legendreSym p (η (σ i))) ↔
           ∏ i with k i = m, legendreSym p (θ i) = ∏ j with l j = m, legendreSym p (η j) := by
       rw [prod_filter_subtype_ne k (fun i ↦ legendreSym p (θ i)) hm.ne',
-        prod_filter_equiv k l (fun j ↦ legendreSym p (η j)) σ hσ hm]
+        prod_filter_subtype_ne_equiv k l (fun j ↦ legendreSym p (η j)) σ hσ hm.ne']
     constructor
     · rintro ⟨f⟩ m hm
       exact (hprod m hm).mp (prod_legendreSym_eq_of_isometry_pi_oddCyclic hp

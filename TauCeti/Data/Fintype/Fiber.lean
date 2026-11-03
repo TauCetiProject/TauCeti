@@ -35,6 +35,8 @@ covering the range is weighted by its occurrence count.
   indices with value `z` keeps the other counts, so equal counts away from `z` match the
   remaining indices.
 * `Finset.prod_filter_subtype_ne`: a product over one fiber ignores the deletion of another.
+* `Finset.prod_filter_subtype_ne_equiv`: a product over one fiber is preserved by a value-preserving
+  matching of the indices away from another fiber.
 * `Function.occCount_eq_count_map_univ`: occurrence counts as multiset multiplicities.
 * `Function.exists_perm_of_map_univ_eq`: equal multisets give a permutation.
 * `Multiset.exists_map_univ_eq`: enumeration of a multiset by any type of matching size.
@@ -242,6 +244,19 @@ theorem prod_filter_subtype_ne [Fintype X] [DecidableEq S] {M : Type*} [CommMono
   rw [prod_filter, prod_filter, ← Fintype.prod_subtype_mul_prod_subtype (fun x => f x ≠ z),
     Fintype.prod_eq_one (fun x : {x // ¬f x ≠ z} => if f x = a then g x else 1)
       fun x => ite_eq_right_iff.mpr fun hx => absurd (hx ▸ ha) x.2, mul_one]
+
+/-- Matching the indices at which two families do not take a value `z` along a bijection that
+preserves the values does not change a product over the indices at which they take another value
+`a`. -/
+@[to_additive /-- Matching the indices at which two families do not take a value `z` along a
+bijection that preserves the values does not change a sum over the indices at which they take
+another value `a`. -/]
+theorem prod_filter_subtype_ne_equiv {Y : Type*} [Fintype X] [Fintype Y] [DecidableEq S]
+    {M : Type*} [CommMonoid M] (u : X → S) (v : Y → S) (g : Y → M) {z a : S}
+    (σ : {x // u x ≠ z} ≃ {y // v y ≠ z}) (hσ : ∀ x, v (σ x) = u x) (ha : a ≠ z) :
+    ∏ x ∈ ({x | u x = a} : Finset {x // u x ≠ z}), g (σ x) = ∏ y with v y = a, g y := by
+  rw [← prod_filter_subtype_ne v g ha, prod_filter, prod_filter]
+  exact Fintype.prod_equiv σ _ _ fun x => by simp only [hσ x]
 
 end Finset
 
