@@ -13,6 +13,7 @@ public import Mathlib.MeasureTheory.Integral.CurveIntegral.Basic
 import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.Convex.Topology
 import TauCeti.MeasureTheory.Integral.CurveIntegral.Line
+import TauCeti.MeasureTheory.Integral.CurveIntegral.Segment
 
 /-!
 # The oriented segment current
@@ -25,8 +26,9 @@ Let `Ω` be an open set of a real normed space `E` and let `p q : E`. The *orien
 `[[p, q]] ω = ∫ t in 0..1, ω (p + t • (q - p)) ![q - p]`.
 
 It is a continuous linear functional on the test `1`-forms `𝓓^{n}(Ω, E [⋀^Fin 1]→L[ℝ] ℝ)`, since
-it factors through the bounded continuous functions and is bounded there by `‖q - p‖` times the
-supremum norm. Its boundary is the difference of the endpoint point currents,
+it factors through the bounded continuous functions, where curve integration along the segment is
+the functional `BoundedContinuousFunction.curveIntegralSegmentCLM p q` of norm at most `‖q - p‖`.
+Its boundary is the difference of the endpoint point currents,
 
 `∂[[p, q]] = δ_q - δ_p`, that is, `[[p, q]] (d g) = g q - g p` for every test `0`-form `g`,
 
@@ -75,39 +77,13 @@ namespace Distribution
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {Ω Ω' : Opens E} {n : ℕ∞}
 
-/-- A `1`-form on `E`, as the continuous linear map `v ↦ α ![v]`. This is the identification
-used by Mathlib's curve integrals `curveIntegral`. -/
-private abbrev toDual : (E [⋀^Fin 1]→L[ℝ] ℝ) ≃ₗᵢ[ℝ] (E →L[ℝ] ℝ) :=
-  (ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := E) (F := ℝ) (0 : Fin 1)).symm
-
-/-- A continuous `1`-form field is curve integrable along every segment. -/
-private theorem curveIntegrable_segment_toDual {f : E → E [⋀^Fin 1]→L[ℝ] ℝ} (hf : Continuous f)
-    (p q : E) : CurveIntegrable (fun x => toDual (f x)) (.segment p q) :=
-  curveIntegrable_segment.2 <| ((toDual.continuous.comp hf).clm_apply continuous_const).comp
-    lineMap_continuous |>.intervalIntegrable 0 1
-
-/-- Curve integration of bounded continuous `1`-forms along the segment from `p` to `q`, as a
-continuous linear functional of norm at most `‖q - p‖`. -/
-private def segmentIntegralCLM (p q : E) : (E →ᵇ E [⋀^Fin 1]→L[ℝ] ℝ) →L[ℝ] ℝ :=
-  LinearMap.mkContinuous
-    { toFun f := ∫ᶜ x in .segment p q, toDual (f x)
-      map_add' f g := by
-        simp only [FunLike.coe_add, Pi.add_apply, map_add]
-        exact curveIntegral_fun_add (curveIntegrable_segment_toDual f.continuous p q)
-          (curveIntegrable_segment_toDual g.continuous p q)
-      map_smul' c f := by
-        simp only [FunLike.coe_smul, Pi.smul_apply, map_smul, RingHom.id_apply]
-        exact curveIntegral_fun_smul }
-    ‖q - p‖ fun f => (norm_curveIntegral_segment_le fun z _ =>
-      (toDual.norm_map (f z)).trans_le (f.norm_coe_le_norm z)).trans_eq (mul_comm _ _)
-
 /-- The **oriented segment current** `[[p, q]]`: the `1`-current on `Ω` integrating a test
 `1`-form along the segment from `p` to `q`. It is the curve integral along `Path.segment p q`
 (`Distribution.segmentCurrent_apply`), that is `ω ↦ ∫ t in 0..1, ω (lineMap p q t) ![q - p]`
 (`Distribution.segmentCurrent_apply_eq_intervalIntegral_lineMap`).
 Its boundary is `δ_q - δ_p` (`Distribution.segmentCurrent_extDerivCLM`). -/
 def segmentCurrent (p q : E) : 𝓓^{n}(Ω, E [⋀^Fin 1]→L[ℝ] ℝ) →L[ℝ] ℝ :=
-  segmentIntegralCLM p q ∘L toBoundedContinuousFunctionCLM ℝ
+  BoundedContinuousFunction.curveIntegralSegmentCLM p q ∘L toBoundedContinuousFunctionCLM ℝ
 
 /-- The segment current evaluated on a test `1`-form `ω` is the curve integral along the segment
 path of the `1`-form `ω`, seen as a field of continuous linear maps `v ↦ ω x ![v]`. -/
@@ -115,7 +91,7 @@ theorem segmentCurrent_apply (p q : E) (ω : 𝓓^{n}(Ω, E [⋀^Fin 1]→L[ℝ]
     segmentCurrent p q ω =
       ∫ᶜ x in .segment p q,
         (ContinuousAlternatingMap.ofSubsingleton ℝ E ℝ (0 : Fin 1)).symm (ω x) := by
-  simp [segmentCurrent, segmentIntegralCLM, toDual]
+  simp [segmentCurrent]
 
 /-- The segment current evaluated on a test `1`-form is the integral of the form along the
 affinely parametrized segment, applied to the direction `q - p`. -/
@@ -129,9 +105,10 @@ theorem segmentCurrent_apply_eq_intervalIntegral_lineMap (p q : E)
 `C * ‖q - p‖`. -/
 theorem norm_segmentCurrent_apply_le (p q : E) (ω : 𝓓^{n}(Ω, E [⋀^Fin 1]→L[ℝ] ℝ)) {C : ℝ}
     (hω : ∀ x, ‖ω x‖ ≤ C) : ‖segmentCurrent p q ω‖ ≤ C * ‖q - p‖ := by
-  have h := norm_curveIntegral_segment_le (ω := fun x => toDual (ω x)) (a := p) (b := q)
-    fun z _ => (toDual.norm_map (ω z)).trans_le (hω z)
-  simpa [segmentCurrent_apply, toDual] using h
+  let e := (ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := E) (F := ℝ) (0 : Fin 1)).symm
+  have h := norm_curveIntegral_segment_le (ω := fun x => e (ω x)) (a := p) (b := q)
+    fun z _ => (e.norm_map (ω z)).trans_le (hω z)
+  simpa [segmentCurrent_apply, e] using h
 
 /-- The degenerate segment current `[[p, p]]` is zero. -/
 @[simp]
