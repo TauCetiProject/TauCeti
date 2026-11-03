@@ -330,6 +330,25 @@ theorem oneSubPow_one (A : T ≃+ T) :
   ext x
   simp
 
+/-- For a periodic automorphism, `1 - A` annihilates the cyclic norm. -/
+theorem oneSubPow_comp_cyclicNormHom (A : T ≃+ T) {m : ℕ} (hA : (⇑A)^[m] = id) :
+    (A.oneSubPow 1).comp (A.cyclicNormHom m) = 0 := by
+  ext x
+  simp only [AddMonoidHom.comp_apply, cyclicNormHom_apply, oneSubPow_apply,
+    Function.iterate_one, AddMonoidHom.zero_apply]
+  -- Compute the same partial norm by appending or prepending one summand.
+  have h := A.partialNorm_add_exponent m 1 x
+  rw [partialNorm_one, partialNorm_succ, hA] at h
+  exact sub_eq_zero.mpr (add_left_cancel (h.trans (add_comm _ _))).symm
+
+/-- For a periodic automorphism, the cyclic norm annihilates `1 - A`. -/
+theorem cyclicNormHom_comp_oneSubPow (A : T ≃+ T) {m : ℕ} (hA : (⇑A)^[m] = id) :
+    (A.cyclicNormHom m).comp (A.oneSubPow 1) = 0 := by
+  ext x
+  simpa only [AddMonoidHom.comp_apply, cyclicNormHom_apply, oneSubPow_apply,
+    Function.iterate_one, partialNorm_sub, ← map_partialNorm, AddMonoidHom.zero_apply] using
+    DFunLike.congr_fun (A.oneSubPow_comp_cyclicNormHom hA) x
+
 /-- The norm of the cyclic representation of a linear part `A` of period dividing `m` is the partial
 norm `partialNorm A m` of order `m`. -/
 theorem cyclicRepresentation_norm_eq_partialNorm {m : ℕ} [NeZero m] (A : T ≃+ T)

@@ -79,32 +79,6 @@ theorem subCompNormHom_cyclicRep_g :
 
 end FiniteOrder
 
-/-- For a periodic automorphism, `1 - A` annihilates the cyclic norm.
-For nonzero period this is the zero-composite law of Mathlib's norm-then-difference complex. -/
-theorem oneSubPow_comp_cyclicNormHom {m : ℕ} (hA : (⇑A)^[m] = id) :
-    (A.oneSubPow 1).comp (A.cyclicNormHom m) = 0 := by
-  by_cases hm : m = 0
-  · subst m
-    simp
-  let : NeZero m := ⟨hm⟩
-  have hz := (normHomCompSub (A.cyclicRep hA) (.ofAdd 1)).zero
-  rw [A.normHomCompSub_cyclicRep_f hA, A.normHomCompSub_cyclicRep_g hA,
-    Preadditive.comp_neg, neg_eq_zero] at hz
-  exact (AddMonoidHom.ofHom_toIntLinearMap_comp_eq_zero_iff _ _).mp hz
-
-/-- For a periodic automorphism, the cyclic norm annihilates `1 - A`.
-For nonzero period this is the zero-composite law of Mathlib's difference-then-norm complex. -/
-theorem cyclicNormHom_comp_oneSubPow {m : ℕ} (hA : (⇑A)^[m] = id) :
-    (A.cyclicNormHom m).comp (A.oneSubPow 1) = 0 := by
-  by_cases hm : m = 0
-  · subst m
-    simp
-  let : NeZero m := ⟨hm⟩
-  have hz := (subCompNormHom (A.cyclicRep hA) (.ofAdd 1)).zero
-  rw [A.subCompNormHom_cyclicRep_f hA, A.subCompNormHom_cyclicRep_g hA,
-    Preadditive.neg_comp, neg_eq_zero] at hz
-  exact (AddMonoidHom.ofHom_toIntLinearMap_comp_eq_zero_iff _ _).mp hz
-
 variable {m : ℕ} [NeZero m] (hA : (⇑A)^[m] = id)
 
 /-- Negating the last object changes the periodic short complex `N_A, A - 1`
