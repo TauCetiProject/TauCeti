@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.CharP.Invertible
 public import TauCeti.RingTheory.IntegralOrder.Basic
 public import TauCeti.RepresentationTheory.GroupAlgebra.Average
 
@@ -42,6 +43,8 @@ only order in `F[G]`.
   fraction field.
 * `TauCeti.IntegralOrder.groupRing_not_isMaximalOrder`: if `#G` is invertible in `F` but not a unit
   of `R`, the group ring `R[G]` is not a maximal order in `F[G]`.
+* `TauCeti.IntegralOrder.zsmul_average_mem_groupRingSubalgebra_iff`: an integer multiple `k e` of
+  the averaging idempotent of `ℚ[G]` lies in `ℤ[G]` exactly when `#G ∣ k`.
 
 ## References
 
@@ -165,6 +168,20 @@ theorem groupRing_not_isMaximalOrder [Fintype G] [FaithfulSMul R F]
     simp [hr]
   exact fun h => Maximal.not_gt h ((groupRing_isOrder R F G).of_le hle)
     (lt_of_le_of_ne hle fun h => he (h ▸ Algebra.subset_adjoin (Set.mem_insert e _)))
+
+/-- In `ℚ[G]`, an integer multiple `k e₁` of the averaging idempotent `e₁ = #G⁻¹ ∑_g g` lies in
+the group ring `ℤ[G]` exactly when `#G` divides `k`. -/
+theorem zsmul_average_mem_groupRingSubalgebra_iff [Fintype G] {k : ℤ} :
+    k • GroupAlgebra.average ℚ G ∈ groupRingSubalgebra ℤ ℚ G ↔ (Fintype.card G : ℤ) ∣ k := by
+  have hG : (Fintype.card G : ℚ) ≠ 0 := Nat.cast_ne_zero.2 Fintype.card_ne_zero
+  have hcoeff (g : G) : (k • GroupAlgebra.average ℚ G).coeff g = k * (Fintype.card G : ℚ)⁻¹ := by
+    rw [← Int.cast_smul_eq_zsmul ℚ, MonoidAlgebra.coeff_smul, Finsupp.smul_apply,
+      GroupAlgebra.coeff_average, smul_eq_mul, invOf_eq_inv]
+  simp only [mem_groupRingSubalgebra, hcoeff, RingHom.mem_range, eq_intCast, forall_const]
+  refine ⟨fun ⟨m, hm⟩ => ⟨m, ?_⟩, fun ⟨m, hm⟩ => ⟨m, ?_⟩⟩
+  · rw [eq_mul_inv_iff_mul_eq₀ hG] at hm
+    exact_mod_cast hm.symm.trans (mul_comm _ _)
+  · rw [hm, Int.cast_mul, Int.cast_natCast, mul_comm, inv_mul_cancel_left₀ hG]
 
 /-- `ℤ[G]` is not a maximal order in `ℚ[G]` for a nontrivial finite group `G`. -/
 theorem groupRing_int_not_isMaximalOrder [Finite G] [Nontrivial G] :
