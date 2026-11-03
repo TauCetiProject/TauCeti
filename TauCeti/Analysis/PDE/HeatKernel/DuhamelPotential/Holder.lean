@@ -101,14 +101,18 @@ private theorem norm_heatDuhamelPotential_sub_le_of_le
   refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
   · refine (intervalIntegral.norm_integral_le_of_norm_le hs (g := fun _ =>
         (H * (1 + heatKernelMoment E α)) * (dist x y + √|t - s|) ^ (α : ℝ)) ?_
-        intervalIntegrable_const).trans_eq (by simp; ring)
+        intervalIntegrable_const).trans_eq (by
+          rw [intervalIntegral.integral_const, sub_zero, smul_eq_mul]
+          ring)
     filter_upwards [] with r hr
     have hrT : r ∈ Icc 0 T := ⟨hr.1.le, hr.2.trans hsT.2⟩
     have h := (holderWith_heatCauchyPotential (hH r hrT) ((hH r hrT).continuous hα)).dist_le
       (ofCoords x (t - r)) (ofCoords y (s - r))
     simpa [ParabolicSpaceTime.dist_eq, sub_sub_sub_cancel_right, dist_eq_norm] using h
   · refine (intervalIntegral.norm_integral_le_of_norm_le hst (g := fun _ => M) ?_
-        intervalIntegrable_const).trans_eq (by simp; ring)
+        intervalIntegrable_const).trans_eq (by
+          rw [intervalIntegral.integral_const, smul_eq_mul]
+          ring)
     filter_upwards [] with r hr
     exact norm_heatCauchyPotential_le (hM r ⟨hs.trans hr.1.le, hr.2.trans ht⟩) _ _
 

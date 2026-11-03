@@ -88,6 +88,35 @@ omit [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSp
 theorem timeExtension_def (hab : a ≤ b) (f : slab (E := E) a b → F) (x : E) :
     timeExtension hab f x = fun t ↦ f (slabMk x (projIcc a b hab t)) := (rfl)
 
+omit [NormedSpace ℝ E] in
+/-- The clamped time extension of a bounded parabolic Hölder map is jointly continuous. -/
+theorem timeExtension_continuous (hab : a ≤ b) (f : HolderSpace α (slab (E := E) a b) F) :
+    Continuous (fun p : ℝ × E => timeExtension hab f p.2 p.1) := by
+  simpa only [timeExtension_def, Function.comp_def] using f.continuous.comp (continuous_slabMk.comp
+    (continuous_snd.prodMk ((continuous_projIcc (h := hab)).comp continuous_fst)))
+
+omit [NormedSpace ℝ E] in
+/-- Clamping time preserves the uniform bound supplied by the bounded Hölder norm. -/
+theorem norm_timeExtension_le (hab : a ≤ b) (f : HolderSpace α (slab (E := E) a b) F)
+    (s : ℝ) (x : E) : ‖timeExtension hab f x s‖ ≤ ‖f‖ := by
+  rw [timeExtension_def]
+  exact f.norm_apply_le _
+
+omit [NormedSpace ℝ E] in
+/-- Every spatial slice of the clamped extension is Hölder, uniformly in time. -/
+theorem holderWith_timeExtension (hab : a ≤ b) (f : HolderSpace α (slab (E := E) a b) F)
+    (s : ℝ) : HolderWith ‖f‖₊ α (fun x => timeExtension hab f x s) := by
+  intro x y
+  have h := f.memHolder.holderWith (slabMk x (projIcc a b hab s))
+    (slabMk y (projIcc a b hab s))
+  simp only [HolderSpace.toBoundedContinuousFunction_apply] at h
+  simp only [timeExtension_def]
+  refine h.trans ?_
+  simp only [edist_slabMk, edist_self,
+    ENNReal.zero_rpow_of_pos (by norm_num : (0 : ℝ) < 1 / 2), add_zero]
+  gcongr
+  exact_mod_cast f.nnHolderNorm_le
+
 omit [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] in
 @[simp]
 theorem timeExtension_of_mem (hab : a ≤ b) (f : slab (E := E) a b → F)

@@ -40,42 +40,15 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
   {α T : ℝ≥0}
 
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-private theorem timeExtension_continuous (f : HolderSpace α (slab (E := E) 0 T) F) :
-    Continuous (fun p : ℝ × E => timeExtension T.coe_nonneg f p.2 p.1) := by
-  simpa only [timeExtension_def, Function.comp_def] using f.continuous.comp (continuous_slabMk.comp
-    (continuous_snd.prodMk ((continuous_projIcc (h := T.coe_nonneg)).comp continuous_fst)))
-
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-private theorem norm_timeExtension_le (f : HolderSpace α (slab (E := E) 0 T) F)
-    (s : ℝ) (x : E) :
-    ‖timeExtension T.coe_nonneg f x s‖ ≤ ‖f‖ := by
-  rw [timeExtension_def]
-  exact f.norm_apply_le _
-
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-private theorem holderWith_timeExtension (f : HolderSpace α (slab (E := E) 0 T) F) (s : ℝ) :
-    HolderWith ‖f‖₊ α (fun x => timeExtension T.coe_nonneg f x s) := by
-  intro x y
-  have h := f.memHolder.holderWith (slabMk x (projIcc (0 : ℝ) (T : ℝ) T.coe_nonneg s))
-    (slabMk y (projIcc (0 : ℝ) (T : ℝ) T.coe_nonneg s))
-  simp only [HolderSpace.toBoundedContinuousFunction_apply] at h
-  simp only [timeExtension_def]
-  refine h.trans ?_
-  simp only [edist_slabMk, edist_self,
-    ENNReal.zero_rpow_of_pos (by norm_num : (0 : ℝ) < 1 / 2), add_zero]
-  gcongr
-  exact_mod_cast f.nnHolderNorm_le
-
 private theorem holderWith_potential (hα : 0 < α) (hα₂ : α ≤ 2)
     (f : HolderSpace α (slab (E := E) 0 T) F) :
     HolderWith (T * ‖f‖₊ * (1 + heatKernelMoment E α) + ‖f‖₊ * max 1 T) α
       (fun p : slab (E := E) 0 T =>
         heatDuhamelPotential (fun s x => timeExtension T.coe_nonneg f x s)
           (p : ParabolicSpaceTime E).time (p : ParabolicSpaceTime E).space) :=
-  holderWith_heatDuhamelPotential (timeExtension_continuous f).stronglyMeasurable
-    (fun s _ x => norm_timeExtension_le f s x)
-    (fun s _ => holderWith_timeExtension f s) hα hα₂
+  holderWith_heatDuhamelPotential (timeExtension_continuous T.coe_nonneg f).stronglyMeasurable
+    (fun s _ x => norm_timeExtension_le T.coe_nonneg f s x)
+    (fun s _ => holderWith_timeExtension T.coe_nonneg f s) hα hα₂
 
 private theorem norm_forcing_potential_le (f : HolderSpace α (slab (E := E) 0 T) F)
     (p : slab (E := E) 0 T) :
@@ -85,7 +58,7 @@ private theorem norm_forcing_potential_le (f : HolderSpace α (slab (E := E) 0 T
   have hp := (slabTime p).2
   rw [coe_slabTime] at hp
   exact ((norm_heatDuhamelPotential_le hp.1
-    (ae_of_all _ fun s => ae_of_all _ fun x => norm_timeExtension_le f s x) _).trans
+    (ae_of_all _ fun s => ae_of_all _ fun x => norm_timeExtension_le T.coe_nonneg f s x) _).trans
     (mul_le_mul_of_nonneg_left hp.2 (norm_nonneg f))).trans_eq (mul_comm _ _)
 
 private def potentialBCF (hα : 0 < α) (hα₂ : α ≤ 2)
@@ -145,10 +118,10 @@ def heatDuhamelPotentialHolderL (hα : 0 < α) (hα₂ : α ≤ 2) :
           heatDuhamelPotential_add
             (f := fun s x => timeExtension T.coe_nonneg f x s)
             (g := fun s x => timeExtension T.coe_nonneg g x s)
-            (timeExtension_continuous f).stronglyMeasurable
-            (ae_of_all _ fun s => ae_of_all _ fun x => norm_timeExtension_le f s x)
-            (timeExtension_continuous g).stronglyMeasurable
-            (ae_of_all _ fun s => ae_of_all _ fun x => norm_timeExtension_le g s x)
+            (timeExtension_continuous T.coe_nonneg f).stronglyMeasurable
+            (ae_of_all _ fun s => ae_of_all _ fun x => norm_timeExtension_le T.coe_nonneg f s x)
+            (timeExtension_continuous T.coe_nonneg g).stronglyMeasurable
+            (ae_of_all _ fun s => ae_of_all _ fun x => norm_timeExtension_le T.coe_nonneg g s x)
             (slabTime p).2.1 (p : ParabolicSpaceTime E).space
       map_smul' c f := by
         ext p
