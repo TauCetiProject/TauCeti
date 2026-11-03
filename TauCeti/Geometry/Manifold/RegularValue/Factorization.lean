@@ -71,7 +71,7 @@ theorem IsRegularPoint.map_nhds_eq (hreg : IsRegularPoint I 𝓘(𝕜, V) F x)
   have : CompleteSpace V := FiniteDimensional.complete 𝕜 V
   set e := extChartAt I x
   have hFc := hF.contDiffAt_comp_extChartAt_symm
-  have hmap := (hFc.hasStrictFDerivAt hn).map_nhds_eq_of_surj
+  have hmap := (hFc.hasStrictFDerivAt_fderiv hn).map_nhds_eq_of_surj
     (LinearMap.range_eq_top.2 hreg.surjective_fderiv_comp_extChartAt_symm)
   have hFe : F =ᶠ[𝓝 x] (F ∘ e.symm) ∘ e := by
     filter_upwards [extChartAt_source_mem_nhds (I := I) x] with y hy

@@ -100,6 +100,8 @@ to the canonical fraction fields used by Mathlib's different API.
 * `TauCeti.Place.not_isSeparable_residueField_of_degree_eq_one`: over a place of degree one, the
   residue extension is not separable once the constants `k'` contain a purely inseparable element
   outside `k`.
+* `TauCeti.Place.isSeparable_residueField_iff_of_degree_eq_one`: at a rational place over a
+  rational place, the residue extension is separable exactly when the constant extension is.
 * `TauCeti.Place.isFractionRing_integralClosure`,
   `TauCeti.Place.isLocalization_integralClosure`,
   `TauCeti.Place.isDedekindDomain_integralClosure`,
@@ -639,6 +641,21 @@ theorem not_isSeparable_residueField_of_degree_eq_one (P' : Place k' F')
   obtain ⟨d, rfl⟩ := (degree_eq_one_iff_algebraMap_surjective _).mp hP s
   rw [algebraMap_residueField_algebraMap] at hs
   exact hα ⟨d, (algebraMap k' P'.ResidueField).injective hs⟩
+
+/-- **At a rational place over a rational place, the residue extension is the constant
+extension**: if `P'` and the place below it have degree one, then `F'_{P'}` is separable over the
+residue field of the place below exactly when `k'` is separable over `k`, since these residue
+fields are `k'` and `k`. -/
+theorem isSeparable_residueField_iff_of_degree_eq_one (P' : Place k' F') (h' : P'.degree = 1)
+    (h : (P'.restrict k F).degree = 1) :
+    Algebra.IsSeparable (P'.restrict k F).ResidueField P'.ResidueField ↔
+      Algebra.IsSeparable k k' := by
+  refine (Algebra.IsSeparable.iff_of_equiv_equiv
+    ((P'.restrict k F).residueFieldEquivOfDegreeEqOne h).toRingEquiv
+    (P'.residueFieldEquivOfDegreeEqOne h').toRingEquiv (RingHom.ext fun c ↦ ?_)).symm
+  simp only [RingHom.coe_comp, Function.comp_apply, RingEquiv.coe_toRingHom,
+    AlgEquiv.coe_toRingEquiv, residueFieldEquivOfDegreeEqOne_apply,
+    algebraMap_residueField_algebraMap]
 
 end ResidueConstants
 

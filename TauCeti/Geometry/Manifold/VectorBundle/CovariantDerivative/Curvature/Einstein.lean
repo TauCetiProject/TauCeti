@@ -100,8 +100,8 @@ private theorem IsMetricCompatible.derivRicciTensor_eq_mvfderiv_mul_inner
     {a : M → ℝ} (ha : ∀ y, cov.ricciTensor y = a y • innerₗ (TangentSpace I y)) {x : M}
     (hax : MDifferentiableAt I 𝓘(ℝ) a x) (u w v : TangentSpace I x) :
     cov.derivRicciTensor x u w v = mvfderiv I a x v * ⟪u, w⟫_ℝ := by
-  obtain ⟨B, hB, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E u
-  obtain ⟨C, hC, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E w
+  obtain ⟨B, hB, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ u
+  obtain ⟨C, hC, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ w
   have h := hcov.covariantDerivative_ricciTensor_eq ha hax (FiberBundle.extend E v) hB hC
   rw [FiberBundle.extend_apply_self] at h
   rw [derivRicciTensor_apply cov (hB.mdifferentiableAt (by simp))

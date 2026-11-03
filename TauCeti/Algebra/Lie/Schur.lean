@@ -172,7 +172,7 @@ theorem finrank_lieModuleHom_self : finrank K (M →ₗ⁅K,L⁆ M) = 1 := by
   obtain ⟨m₀, hm₀⟩ := exists_ne (0 : M)
   have hid : (LieModuleHom.id : M →ₗ⁅K,L⁆ M) ≠ 0 := fun h ↦
     hm₀ (by simpa using congrArg (fun g : M →ₗ⁅K,L⁆ M ↦ g m₀) h)
-  rw [finrank_eq_one_iff_of_nonzero' _ hid]
+  rw [finrank_eq_one_iff_of_ne_zero' _ hid]
   intro f
   obtain ⟨c, hc⟩ := exists_forall_apply_eq_smul K L M f
   exact ⟨c, by ext m; simpa using (hc m).symm⟩
