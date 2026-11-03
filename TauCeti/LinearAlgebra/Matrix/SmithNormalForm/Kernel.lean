@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Torsion.Basic
-public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Basic
+public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 
 /-!
 # Kernel coordinates from a diagonalization
@@ -63,9 +63,9 @@ theorem mulVec_eq_zero_iff_of_diagonalization (M : Matrix ι ι R)
       simpa only [mulVec_diagonal, Pi.zero_apply] using hx i
     have hz' := congrArg
       (fun y ↦ (GeneralLinearGroup.map f L⁻¹ : Matrix ι ι A) *ᵥ y) hz
-    simpa only [mulVec_mulVec, ← Matrix.mul_assoc, ← GeneralLinearGroup.coe_mul,
-      ← (GeneralLinearGroup.map f).map_mul, inv_mul_cancel, map_one,
-      GeneralLinearGroup.coe_one, Matrix.one_mul, mulVec_zero] using hz'
+    rw [mulVec_mulVec, ← GeneralLinearGroup.coe_mul,
+      GeneralLinearGroup.map_inv_mul_map, GeneralLinearGroup.coe_one, one_mulVec] at hz'
+    simpa only [mulVec_zero] using hz'
 
 /-- Given a diagonalization, the kernel over a new coefficient ring is the product of
 free coordinates at the original zero entries and annihilators at the other entries.
@@ -98,8 +98,8 @@ noncomputable def kerEquivProdTorsionOfDiagonalization (M : Matrix ι ι R)
         ext i <;> simp [read, mulVec_smul] }
   · apply (mulVec_eq_zero_iff_of_diagonalization M L Q d h f _).mpr
     intro i
-    simp only [mulVec_mulVec, ← GeneralLinearGroup.coe_mul, ← map_mul,
-      inv_mul_cancel, map_one, GeneralLinearGroup.coe_one, one_mulVec]
+    simp only [mulVec_mulVec, ← GeneralLinearGroup.coe_mul,
+      GeneralLinearGroup.map_inv_mul_map, GeneralLinearGroup.coe_one, one_mulVec]
     dsimp [assemble]
     split_ifs with hi
     · simp [hi]
@@ -109,14 +109,13 @@ noncomputable def kerEquivProdTorsionOfDiagonalization (M : Matrix ι ι R)
     have ha : assemble (fun i ↦ read x i, fun i ↦ ⟨read x i, hread x i⟩) = read x := by
       ext i
       simp [assemble]
-    simp only [ha, read, mulVec_mulVec, ← GeneralLinearGroup.coe_mul, ← map_mul,
-      mul_inv_cancel, map_one, GeneralLinearGroup.coe_one, one_mulVec]
+    simp only [ha, read, mulVec_mulVec, ← GeneralLinearGroup.coe_mul,
+      GeneralLinearGroup.map_mul_map_inv, GeneralLinearGroup.coe_one, one_mulVec]
   · intro z
     have hr : read ((GeneralLinearGroup.map f Q : Matrix ι ι A) *ᵥ assemble z) =
         assemble z := by
       simp only [read, mulVec_mulVec, ← GeneralLinearGroup.coe_mul,
-        ← (GeneralLinearGroup.map f).map_mul, inv_mul_cancel, map_one,
-        GeneralLinearGroup.coe_one, one_mulVec]
+        GeneralLinearGroup.map_inv_mul_map, GeneralLinearGroup.coe_one, one_mulVec]
     apply Prod.ext
     · funext i
       simp only [hr]
