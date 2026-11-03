@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.MetricSpace.ProperSpace
-public import Mathlib.Algebra.Order.Archimedean.Basic
 public import Mathlib.Topology.Order.MonotoneConvergence
 public import Mathlib.Topology.MetricSpace.Cauchy
 public import Mathlib.Topology.MetricSpace.Defs

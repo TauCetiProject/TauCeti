@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Normed.Module.Bases.TOrthogonal
 public import TauCeti.Topology.MetricSpace.SphericallyComplete
-public import Mathlib.Topology.Order.IsLUB
 
 /-!
 # Best approximation and orthogonal bases
