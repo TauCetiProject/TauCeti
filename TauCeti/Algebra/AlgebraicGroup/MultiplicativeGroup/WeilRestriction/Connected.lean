@@ -98,15 +98,9 @@ private theorem dvd_eval₂_pathPolynomial {S : Type*} [CommRing S] (κ : K →+
   ring
 
 private theorem eval_one_pathPolynomial (p : K[X]) : (pathPolynomial p).eval 1 = p.coeff 0 := by
-  rw [← eval₂_id, eval₂_pathPolynomial, Polynomial.map_id]
-  simp only [homogenize, map_sum, MvPolynomial.eval_monomial]
-  simp_rw [Finsupp.prod_fintype _ _ (fun _ ↦ pow_zero _), Fin.prod_univ_two]
-  rw [Finset.sum_eq_single (0, p.natDegree)]
-  · simp
-  · rintro ⟨i, j⟩ hij hne
-    have : i ≠ 0 := by rintro rfl; simp_all
-    simp [zero_pow this]
-  · simp
+  rw [← eval₂_id, eval₂_pathPolynomial, Polynomial.map_id, MvPolynomial.eval,
+    MvPolynomial.coe_eval₂Hom, eval₂_homogenize_of_eq_one le_rfl (RingHom.id K) ![1 - 1, 1] rfl,
+    sub_self, Matrix.cons_val_zero, eval₂_id, coeff_zero_eq_eval_zero]
 
 private theorem eval_zero_pathPolynomial (p : K[X]) :
     (pathPolynomial p).eval 0 = (-1) ^ p.natDegree * p.leadingCoeff := by
@@ -124,16 +118,6 @@ end PathPolynomial
 
 variable {k : Type u} {B : Type*} [Field k] [CommRing B] [Algebra k B]
 
-/-- Evaluation `s ↦ a` on `K[s][1/ρ]`, defined when `ρ(a) ≠ 0`. -/
-private noncomputable def evalAway {K : Type*} [Field K] (ρ : K[X]) (a : K) (ha : ρ.eval a ≠ 0) :
-    Localization.Away ρ →ₐ[K] K :=
-  IsLocalization.Away.liftAlgHom ρ (f := aeval a) (by simpa using isUnit_iff_ne_zero.mpr ha)
-
-private theorem evalAway_algebraMap {K : Type*} [Field K] (ρ : K[X]) (a : K)
-    (ha : ρ.eval a ≠ 0) (q : K[X]) :
-    evalAway ρ a ha (algebraMap K[X] (Localization.Away ρ) q) = q.eval a := by
-  simp [evalAway, IsLocalization.Away.lift_eq]
-
 section Path
 
 variable {K : Type*} [Field K] [Algebra k K] (p : K[X]) (u : B ⊗[k] K)
@@ -143,80 +127,51 @@ private noncomputable def pathElement : B ⊗[k] Localization.Away (pathPolynomi
   1 - 1 ⊗ₜ algebraMap K[X] _ X + 1 ⊗ₜ algebraMap K[X] _ X *
     Algebra.TensorProduct.lTensor (S := B) B (IsScalarTower.toAlgHom k K _) u
 
-/-- If `p` annihilates `u`, then the path `s ↦ 1 - s + s u` consists of units: it divides the
-unit `ρ(s)`. -/
-private theorem isUnit_pathElement
-    (hpu : p.eval₂ (Algebra.TensorProduct.includeRight : K →ₐ[k] B ⊗[k] K).toRingHom u = 0) :
+/-- If `p` annihilates `u`, viewed in the `K`-algebra `K ⊗[k] B`, then the path `s ↦ 1 - s + s u`
+consists of units: it divides the unit `ρ(s)`. -/
+private theorem isUnit_pathElement (hpu : aeval (Algebra.TensorProduct.comm k B K u) p = 0) :
     IsUnit (pathElement p u) := by
   let D := Localization.Away (pathPolynomial p)
-  let ι : B ⊗[k] K →ₐ[B] B ⊗[k] D :=
-    Algebra.TensorProduct.lTensor (S := B) B (IsScalarTower.toAlgHom k K D)
+  let ι : B ⊗[k] K →+* B ⊗[k] D :=
+    (Algebra.TensorProduct.lTensor (S := B) B (IsScalarTower.toAlgHom k K D)).toRingHom
   let ψ : K[X] →+* B ⊗[k] D :=
     (Algebra.TensorProduct.includeRight : D →ₐ[k] B ⊗[k] D).toRingHom.comp (algebraMap K[X] D)
-  have hC : ψ.comp C = ι.toRingHom.comp
-      (Algebra.TensorProduct.includeRight : K →ₐ[k] B ⊗[k] K).toRingHom := by
+  let c : K ⊗[k] B →+* B ⊗[k] D :=
+    ι.comp (Algebra.TensorProduct.comm k B K).symm.toRingEquiv.toRingHom
+  have hC : ψ.comp C = c.comp (algebraMap K (K ⊗[k] B)) := by
     ext a
-    simp [ψ, ι, IsScalarTower.algebraMap_apply K K[X] D]
+    simp [ψ, c, ι, IsScalarTower.algebraMap_apply K K[X] D, Algebra.TensorProduct.algebraMap_apply]
   have hu : p.eval₂ (ψ.comp C) (ι u) = 0 := by
-    have h := congrArg ι.toRingHom hpu
-    rw [Polynomial.hom_eval₂, map_zero] at h
-    rw [hC]
-    exact h
+    have h := congrArg c hpu
+    rw [aeval_def, Polynomial.hom_eval₂, map_zero, ← hC] at h
+    simpa [c] using h
   have hX : ψ X = 1 ⊗ₜ algebraMap K[X] D X := by simp [ψ]
   refine isUnit_of_dvd_unit (dvd_eval₂_pathPolynomial (ψ.comp C) p hu) ?_
   rw [← hX, ← Polynomial.hom_eval₂, eval₂_C_X]
   exact (IsLocalization.Away.algebraMap_isUnit (S := D) (pathPolynomial p)).map
     (Algebra.TensorProduct.includeRight : D →ₐ[k] B ⊗[k] D)
 
-/-- Evaluating the path `s ↦ 1 - s + s u` at `s = a`. -/
-private theorem lTensor_evalAway_pathElement (a : K) (ha : (pathPolynomial p).eval a ≠ 0) :
-    Algebra.TensorProduct.lTensor (S := B) B ((evalAway _ a ha).restrictScalars k)
-        (pathElement p u) = 1 - (1 : B) ⊗ₜ[k] a + (1 : B) ⊗ₜ[k] a * u := by
-  have hu : Algebra.TensorProduct.lTensor (S := B) B ((evalAway _ a ha).restrictScalars k)
+/-- Evaluating the path `s ↦ 1 - s + s u` along a `K`-algebra map `φ : K[s][1/ρ] → K`, that is,
+at `s = φ(s)`. -/
+private theorem lTensor_pathElement (φ : Localization.Away (pathPolynomial p) →ₐ[K] K) :
+    Algebra.TensorProduct.lTensor (S := B) B (φ.restrictScalars k) (pathElement p u) =
+      1 - (1 : B) ⊗ₜ[k] φ (algebraMap K[X] _ X) + (1 : B) ⊗ₜ[k] φ (algebraMap K[X] _ X) * u := by
+  have hu : Algebra.TensorProduct.lTensor (S := B) B (φ.restrictScalars k)
       (Algebra.TensorProduct.lTensor (S := B) B (IsScalarTower.toAlgHom k K _) u) = u := by
-    have h : (Algebra.TensorProduct.lTensor (S := B) B ((evalAway _ a ha).restrictScalars k)).comp
+    have h : (Algebra.TensorProduct.lTensor (S := B) B (φ.restrictScalars k)).comp
         (Algebra.TensorProduct.lTensor (S := B) B (IsScalarTower.toAlgHom k K _)) =
           AlgHom.id B (B ⊗[k] K) := by
       ext a'
       simp only [AlgHom.comp_apply, Algebra.TensorProduct.includeRight_apply,
         Algebra.TensorProduct.map_tmul, AlgHom.id_apply, IsScalarTower.coe_toAlgHom',
         AlgHom.coe_restrictScalars']
-      exact congrArg _ ((evalAway _ a ha).commutes a')
+      exact congrArg _ (φ.commutes a')
     exact AlgHom.congr_fun h u
-  simp [pathElement, hu, evalAway_algebraMap]
+  simp [pathElement, hu]
 
 end Path
 
 variable [Module.Finite k B]
-
-/-- A unit of `B ⊗[k] K` is annihilated by a nonzero polynomial over `K` with nonzero constant
-coefficient, for instance its minimal polynomial. -/
-private theorem exists_eval₂_eq_zero_of_unit {K : Type u} [Field K] [Algebra k K]
-    (u : (B ⊗[k] K)ˣ) :
-    ∃ p : K[X], p ≠ 0 ∧ p.coeff 0 ≠ 0 ∧
-      p.eval₂ (Algebra.TensorProduct.includeRight : K →ₐ[k] B ⊗[k] K).toRingHom u = 0 := by
-  let c := Algebra.TensorProduct.comm k B K
-  let v : K ⊗[k] B := c u
-  have hv : IsUnit v := u.isUnit.map c
-  have hint : IsIntegral K v := Algebra.IsIntegral.isIntegral v
-  set m := minpoly K v
-  have hm : m ≠ 0 := minpoly.ne_zero hint
-  have hmv : aeval v m = 0 := minpoly.aeval K v
-  refine ⟨m, hm, minpoly.coeff_zero_ne_zero_of_isUnit hint hv, ?_⟩
-  have hc : (c.symm : K ⊗[k] B →+* B ⊗[k] K).comp (algebraMap K (K ⊗[k] B)) =
-      (Algebra.TensorProduct.includeRight : K →ₐ[k] B ⊗[k] K).toRingHom := by
-    ext a
-    simp [c, Algebra.TensorProduct.algebraMap_apply]
-  have := congrArg (c.symm : K ⊗[k] B →+* B ⊗[k] K) hmv
-  rw [aeval_def, Polynomial.hom_eval₂, hc, map_zero] at this
-  simpa [v] using this
-
-/-- Base change along `k → K` sends the identity point to the identity point. -/
-private theorem liftEquiv_one {A : Type*} [Semiring A] [Bialgebra k A] {K : Type*} [Field K]
-    [Algebra k K] :
-    AlgHom.liftEquiv k K A K (1 : WithConv (A →ₐ[k] K)).ofConv =
-      (1 : WithConv (K ⊗[k] A →ₐ[K] K)).ofConv := by
-  rw [← AlgHom.baseChangePointsMulEquiv_apply_ofConv, map_one]
 
 /-- Every point of `Res_{B/k} 𝔾ₘ` with values in an algebraically closed field `K` is joined to
 the identity by a point with values in a domain. Consequently right translation by it fixes every
@@ -227,37 +182,50 @@ private theorem rightTranslationAlgHom_eq_self {K : Type u} [Field K] [Algebra k
     HopfAlgebra.rightTranslationAlgHom (k := K) g e = e := by
   let f := (AlgHom.liftEquiv k K _ K).symm g.ofConv
   let u := multiplicativeGroupPoints k B K (toConv f)
-  obtain ⟨p, hp, hp0, hpu⟩ := exists_eval₂_eq_zero_of_unit u
-  have hρ1 : (pathPolynomial p).eval 1 ≠ 0 := by rwa [eval_one_pathPolynomial]
-  have hρ0 : (pathPolynomial p).eval 0 ≠ 0 := by
-    rw [eval_zero_pathPolynomial]
-    exact mul_ne_zero (pow_ne_zero _ (neg_ne_zero.mpr one_ne_zero)) (leadingCoeff_ne_zero.mpr hp)
+  -- the minimal polynomial over `K` of `u`, viewed in the finite `K`-algebra `K ⊗[k] B`
+  let v := Algebra.TensorProduct.comm k B K u
+  have hv : IsIntegral K v := Algebra.IsIntegral.isIntegral v
+  let p := minpoly K v
+  have hρ1 : IsUnit ((pathPolynomial p).eval 1) := by
+    rw [eval_one_pathPolynomial, isUnit_iff_ne_zero]
+    exact minpoly.coeff_zero_ne_zero_of_isUnit hv (u.isUnit.map (Algebra.TensorProduct.comm k B K))
+  have hρ0 : IsUnit ((pathPolynomial p).eval 0) := by
+    rw [eval_zero_pathPolynomial, isUnit_iff_ne_zero]
+    exact mul_ne_zero (pow_ne_zero _ (neg_ne_zero.mpr one_ne_zero))
+      (leadingCoeff_ne_zero.mpr (minpoly.ne_zero hv))
   have : IsDomain (Localization.Away (pathPolynomial p)) :=
-    Localization.Away.isDomain fun h ↦ hρ1 (by rw [h, eval_zero])
+    Localization.Away.isDomain fun h ↦ hρ1.ne_zero (by rw [h, eval_zero])
+  -- evaluation of `K[s][1/ρ]` at `s = 1` and at `s = 0`
+  let ev₁ := IsLocalization.Away.liftAlgHom (S := Localization.Away (pathPolynomial p))
+    (pathPolynomial p) (f := aeval (1 : K)) (by simpa using hρ1)
+  let ev₀ := IsLocalization.Away.liftAlgHom (S := Localization.Away (pathPolynomial p))
+    (pathPolynomial p) (f := aeval (0 : K)) (by simpa using hρ0)
   -- the point of `Res_{B/k} 𝔾ₘ` over `K[s][1/ρ]` given by the path `s ↦ 1 - s + s u`
-  let x := ((multiplicativeGroupPoints k B _).symm (isUnit_pathElement p u hpu).unit).ofConv
-  have hpath (a : K) (ha : (pathPolynomial p).eval a ≠ 0) :
-      (multiplicativeGroupPoints k B K (toConv (((evalAway _ a ha).restrictScalars k).comp x)) :
-        B ⊗[k] K) = 1 - (1 : B) ⊗ₜ[k] a + (1 : B) ⊗ₜ[k] a * u := by
+  let x := ((multiplicativeGroupPoints k B _).symm
+    (isUnit_pathElement p u (minpoly.aeval K v)).unit).ofConv
+  have hpath (φ : Localization.Away (pathPolynomial p) →ₐ[K] K) :
+      (multiplicativeGroupPoints k B K (toConv ((φ.restrictScalars k).comp x)) : B ⊗[k] K) =
+        1 - (1 : B) ⊗ₜ[k] φ (algebraMap K[X] _ X) + (1 : B) ⊗ₜ[k] φ (algebraMap K[X] _ X) * u := by
     rw [multiplicativeGroupPoints_naturality]
-    simp [lTensor_evalAway_pathElement]
-  have h₁ : ((evalAway _ 1 hρ1).restrictScalars k).comp x = f := by
+    simp [lTensor_pathElement]
+  have h₁ : (ev₁.restrictScalars k).comp x = f := by
     refine toConv_injective ((multiplicativeGroupPoints k B K).injective (Units.ext ?_))
-    rw [hpath, ← Algebra.TensorProduct.one_def]
+    rw [hpath, show ev₁ (algebraMap K[X] _ X) = 1 by simp [ev₁],
+      ← Algebra.TensorProduct.one_def]
     ring
-  have h₀ : ((evalAway _ 0 hρ0).restrictScalars k).comp x =
+  have h₀ : (ev₀.restrictScalars k).comp x =
       (1 : WithConv (WeilRestriction k B B[T;T⁻¹] →ₐ[k] K)).ofConv := by
     refine toConv_injective ((multiplicativeGroupPoints k B K).injective (Units.ext ?_))
-    rw [hpath, toConv_ofConv, map_one]
+    rw [hpath, show ev₀ (algebraMap K[X] _ X) = 0 by simp [ev₀], toConv_ofConv, map_one]
     simp
-  have hΨ (a : K) (ha : (pathPolynomial p).eval a ≠ 0) :
-      (evalAway _ a ha).comp (AlgHom.liftEquiv k K _ _ x) =
-        AlgHom.liftEquiv k K _ K (((evalAway _ a ha).restrictScalars k).comp x) :=
+  have hΨ (φ : Localization.Away (pathPolynomial p) →ₐ[K] K) :
+      φ.comp (AlgHom.liftEquiv k K _ _ x) =
+        AlgHom.liftEquiv k K _ K ((φ.restrictScalars k).comp x) :=
     Algebra.TensorProduct.ext_ring (AlgHom.ext fun w ↦ by simp)
   refine HopfAlgebra.rightTranslationAlgHom_eq_self_of_path e he g
-    (toConv (AlgHom.liftEquiv k K _ _ x)) (evalAway _ 1 hρ1) (evalAway _ 0 hρ0) ?_ ?_
+    (toConv (AlgHom.liftEquiv k K _ _ x)) ev₁ ev₀ ?_ ?_
   · simp [hΨ, h₁, f]
-  · simp [hΨ, h₀, liftEquiv_one]
+  · simp [hΨ, h₀, ← AlgHom.baseChangePointsMulEquiv_apply_ofConv]
 
 /-- **The Weil restriction of `𝔾ₘ` is geometrically connected.** For a finite-dimensional
 commutative algebra `B` over a field `k`, the coordinate Hopf algebra
