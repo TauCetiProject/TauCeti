@@ -10,13 +10,15 @@ public import Mathlib.Analysis.Polynomial.Norm
 public import TauCeti.NumberTheory.DiophantineApproximation.LinearFormExponent
 import Mathlib.FieldTheory.PrimitiveElement
 import Mathlib.NumberTheory.NumberField.House
+import TauCeti.Algebra.Polynomial.Homogenize
 import TauCeti.Analysis.Polynomial.L1Norm
 import TauCeti.Analysis.Polynomial.SupNorm.Basic
+import TauCeti.Data.Rat.NumDenDvd
 import TauCeti.FieldTheory.Minpoly.Primitive
 import TauCeti.NumberTheory.NumberField.RingOfIntegers.Norm
 
 /-!
-# Liouville's bound for Mahler's exponent of an algebraic number
+# Mahler's exponent: Liouville's bound and Möbius invariance
 
 Let `ξ` be an algebraic number of degree `D` over `ℚ`. A nonzero value of an integer polynomial
 `P` of degree at most `n` at `ξ` cannot be too small: there is `c > 0`, depending only on `ξ` and
@@ -29,6 +31,16 @@ integer of `ℚ(ξ)`, so the product of its `D` conjugates, its norm, is a nonze
 conjugate at `ξ` itself is `a ^ (deg P) P(ξ)`, and only the other `D - 1` conjugates are bounded
 above in terms of `H(P)`.
 
+Mahler's exponent is also invariant under rational Möbius transformations
+`ξ ↦ (a ξ + b) / (c ξ + d)` with `a d - b c ≠ 0`, like the irrationality exponent
+(`TauCeti.irrationalityExponent_mul_add_div_mul_add`). After clearing denominators the coefficients
+are integers, and an integer polynomial `P` of degree at most `n` goes to the integer polynomial
+`(c X + d) ^ n P((a X + b) / (c X + d))` of degree at most `n`, obtained by substituting `a X + b`
+and `c X + d` into the homogenization of `P`. Its value at `ξ` is `(c ξ + d) ^ n` times the value of
+`P` at the image of `ξ`, and its coefficients are bounded by a constant times those of `P`, so the
+approximations transfer (`TauCeti.linearFormExponent_le_of_map`). The inverse transformation
+gives the reverse inequality.
+
 ## Main results
 
 * `IsAlgebraic.exists_pos_le_norm_aeval_mul_supNorm_pow`: **Liouville's inequality for the value
@@ -38,6 +50,11 @@ above in terms of `H(P)`.
 * `TauCeti.mahlerExponent_eq_of_natDegree_minpoly_eq`: for real `ξ` algebraic of degree `n + 1`,
   `wₙ(ξ) = n`, so the bound is attained.
 * `TauCeti.mahlerExponent_ratCast`: rational numbers have Mahler exponent `0` in every degree.
+* `TauCeti.mahlerExponent_mul_add_div_mul_add`: `wₙ` is invariant under rational Möbius
+  transformations of nonzero determinant; in particular under adding or multiplying by a nonzero
+  rational number, negation and inversion (`TauCeti.mahlerExponent_add_ratCast`,
+  `TauCeti.mahlerExponent_ratCast_mul`, `TauCeti.mahlerExponent_neg`,
+  `TauCeti.mahlerExponent_inv`).
 
 ## References
 
@@ -201,5 +218,125 @@ theorem mahlerExponent_ratCast (n : ℕ) (q : ℚ) : mahlerExponent n q = 0 := b
   have h := (isAlgebraic_algebraMap (R := ℚ) (A := ℝ) q).mahlerExponent_le n
   rw [minpoly.eq_X_sub_C] at h
   simpa using h
+
+/-! ### Invariance under rational Möbius transformations -/
+
+section Mobius
+
+/-- For integers `a, b, c, d` with `c ξ + d ≠ 0`, Mahler's exponent at `(a ξ + b) / (c ξ + d)` is at
+most that at `ξ`. A polynomial `P` of degree at most `n` is sent to
+`(c X + d) ^ n P((a X + b) / (c X + d))`, the substitution of `a X + b` and `c X + d` into its
+homogenization of degree `n`; this multiplies values by `(c ξ + d) ^ n` and the coefficient sup
+norm by at most `(|a| + |b| + |c| + |d|) ^ n`. -/
+private theorem mahlerExponent_mul_add_div_mul_add_le_of_int (n : ℕ) {ξ : ℝ} (a b c d : ℤ)
+    (h : (c : ℝ) * ξ + d ≠ 0) :
+    mahlerExponent n ((a * ξ + b) / (c * ξ + d)) ≤ mahlerExponent n ξ := by
+  set g : ℤ[X] := C a * X + C b
+  set k : ℤ[X] := C c * X + C d
+  rw [mahlerExponent_def, mahlerExponent_def]
+  refine linearFormExponent_le_of_map
+    (fun x ↦ coeffVec n (MvPolynomial.aeval ![g, k] ((linearFormPoly x).homogenize n)))
+    (r := ((c : ℝ) * ξ + d) ^ n) (A := (g.l1Norm + k.l1Norm) ^ n) (pow_ne_zero _ h)
+    (fun x ↦ ?_) (fun x ↦ ?_)
+  · have hdeg : (MvPolynomial.aeval ![g, k] ((linearFormPoly x).homogenize n)).natDegree ≤ n :=
+      (isHomogeneous_homogenize _).natDegree_aeval_le fun i ↦ by
+        fin_cases i <;> exact natDegree_linear_le
+    rw [coeffVec_linearForm hdeg, ← aeval_linearFormPoly, MvPolynomial.comp_aeval_apply,
+      aeval_homogenize (natDegree_linearFormPoly_le x) _ (by simpa [k] using h)]
+    simp [g, k, mul_comm]
+  · calc ‖coeffVec n (MvPolynomial.aeval ![g, k] ((linearFormPoly x).homogenize n))‖
+        ≤ (MvPolynomial.aeval ![g, k] ((linearFormPoly x).homogenize n)).l1Norm :=
+          (norm_coeffVec_le _ _).trans (supNorm_le_l1Norm _)
+      _ ≤ (linearFormPoly x).supNorm * (g.l1Norm + k.l1Norm) ^ n :=
+          l1Norm_aeval_homogenize_le _ _ _ _
+      _ ≤ (g.l1Norm + k.l1Norm) ^ n * ‖x‖ := by
+          rw [mul_comm]
+          exact mul_le_mul_of_nonneg_left (supNorm_linearFormPoly_le x)
+            (pow_nonneg (add_nonneg g.l1Norm_nonneg k.l1Norm_nonneg) n)
+
+/-- Mahler's exponent is invariant under a Möbius transformation with integer coefficients and
+nonzero determinant, away from its pole: the inverse transformation has matrix
+`(d, -b; -c, a)`. -/
+private theorem mahlerExponent_mul_add_div_mul_add_of_int (n : ℕ) {ξ : ℝ} {a b c d : ℤ}
+    (hdet : (a : ℝ) * d - b * c ≠ 0) (h : (c : ℝ) * ξ + d ≠ 0) :
+    mahlerExponent n ((a * ξ + b) / (c * ξ + d)) = mahlerExponent n ξ := by
+  refine le_antisymm (mahlerExponent_mul_add_div_mul_add_le_of_int n a b c d h) ?_
+  set η : ℝ := (a * ξ + b) / (c * ξ + d)
+  have e : η * (c * ξ + d) = a * ξ + b := div_mul_cancel₀ _ h
+  have hη : ((-c : ℤ) : ℝ) * η + a ≠ 0 := by
+    intro h0
+    push_cast at h0
+    exact hdet (by linear_combination (c * ξ + d) * h0 + c * e)
+  have hξ : ((d : ℝ) * η + ((-b : ℤ) : ℝ)) / (((-c : ℤ) : ℝ) * η + a) = ξ := by
+    rw [div_eq_iff hη]
+    push_cast
+    linear_combination e
+  have := mahlerExponent_mul_add_div_mul_add_le_of_int n d (-b) (-c) a hη
+  rwa [hξ] at this
+
+/-- Mahler's exponent `wₙ` is invariant under a Möbius transformation `ξ ↦ (a ξ + b) / (c ξ + d)`
+with rational coefficients and nonzero determinant `a d - b c`. At the pole `ξ = -d / c`, where
+Lean's convention `x / 0 = 0` applies, both sides vanish because both points are rational. -/
+theorem mahlerExponent_mul_add_div_mul_add (n : ℕ) (ξ : ℝ) {a b c d : ℚ}
+    (h : a * d - b * c ≠ 0) :
+    mahlerExponent n ((a * ξ + b) / (c * ξ + d)) = mahlerExponent n ξ := by
+  by_cases hξ : (c : ℝ) * ξ + d = 0
+  · -- The pole `ξ = -d / c` is rational, and so is its image `0`.
+    have hc : c ≠ 0 := by
+      rintro rfl
+      have hd : d = 0 := by exact_mod_cast (by simpa using hξ : (d : ℝ) = 0)
+      simp [hd] at h
+    have hxq : ξ = ((-d / c : ℚ) : ℝ) := by
+      have hc' : (c : ℝ) ≠ 0 := Rat.cast_ne_zero.2 hc
+      push_cast
+      field_simp
+      linarith
+    rw [hξ, div_zero, hxq, ← Rat.cast_zero, mahlerExponent_ratCast, mahlerExponent_ratCast]
+  -- Clear the denominators of the coefficients by multiplying them all by `m`.
+  have hint (q : ℚ) {m : ℕ} (hq : q.den ∣ m) : ∃ z : ℤ, (z : ℝ) = m * q := by
+    obtain ⟨z, hz⟩ := (Rat.den_dvd_iff_exists_mul_intCast_eq q m).1 (by exact_mod_cast hq)
+    exact ⟨z, by rw [mul_comm]; exact_mod_cast hz.symm⟩
+  set m : ℕ := a.den * b.den * c.den * d.den
+  have hm : (m : ℝ) ≠ 0 := by positivity
+  obtain ⟨a', ha'⟩ := hint a (m := m) ⟨b.den * c.den * d.den, by ring⟩
+  obtain ⟨b', hb'⟩ := hint b (m := m) ⟨a.den * c.den * d.den, by ring⟩
+  obtain ⟨c', hc'⟩ := hint c (m := m) ⟨a.den * b.den * d.den, by ring⟩
+  obtain ⟨d', hd'⟩ := hint d (m := m) ⟨a.den * b.den * c.den, by ring⟩
+  have hdet : (a' : ℝ) * d' - b' * c' ≠ 0 := by
+    have : ((a * d - b * c : ℚ) : ℝ) ≠ 0 := Rat.cast_ne_zero.2 h
+    push_cast at this
+    rw [ha', hb', hc', hd', show (m : ℝ) * a * (m * d) - m * b * (m * c) =
+      m ^ 2 * (a * d - b * c) by ring]
+    exact mul_ne_zero (pow_ne_zero _ hm) this
+  have hden : (c' : ℝ) * ξ + d' = m * (c * ξ + d) := by rw [hc', hd']; ring
+  have hnum : (a' : ℝ) * ξ + b' = m * (a * ξ + b) := by rw [ha', hb']; ring
+  have key : ((a : ℝ) * ξ + b) / (c * ξ + d) = (a' * ξ + b') / (c' * ξ + d') := by
+    rw [hden, hnum, mul_div_mul_left _ _ hm]
+  rw [key]
+  exact mahlerExponent_mul_add_div_mul_add_of_int n hdet (by rw [hden]; exact mul_ne_zero hm hξ)
+
+/-- Adding a rational number does not change Mahler's exponent. -/
+@[simp]
+theorem mahlerExponent_add_ratCast (n : ℕ) (ξ : ℝ) (q : ℚ) :
+    mahlerExponent n (ξ + q) = mahlerExponent n ξ := by
+  simpa using mahlerExponent_mul_add_div_mul_add n ξ (a := 1) (b := q) (c := 0) (d := 1) (by simp)
+
+/-- Multiplying by a nonzero rational number does not change Mahler's exponent. -/
+@[simp]
+theorem mahlerExponent_ratCast_mul (n : ℕ) (q : ℚ) (ξ : ℝ) (hq : q ≠ 0) :
+    mahlerExponent n (q * ξ) = mahlerExponent n ξ := by
+  simpa using mahlerExponent_mul_add_div_mul_add n ξ (a := q) (b := 0) (c := 0) (d := 1) (by simpa)
+
+/-- Negation does not change Mahler's exponent. -/
+@[simp]
+theorem mahlerExponent_neg (n : ℕ) (ξ : ℝ) : mahlerExponent n (-ξ) = mahlerExponent n ξ := by
+  simpa using mahlerExponent_ratCast_mul n (-1) ξ (by norm_num)
+
+/-- Inversion does not change Mahler's exponent. -/
+@[simp]
+theorem mahlerExponent_inv (n : ℕ) (ξ : ℝ) : mahlerExponent n ξ⁻¹ = mahlerExponent n ξ := by
+  simpa using mahlerExponent_mul_add_div_mul_add n ξ (a := 0) (b := 1) (c := 1) (d := 0) (by simp)
+
+end Mobius
 
 end TauCeti
