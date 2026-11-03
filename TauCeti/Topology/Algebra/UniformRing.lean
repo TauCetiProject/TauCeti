@@ -190,7 +190,7 @@ noncomputable def mapAlgEquiv (f : α ≃ₐ[R] β) (hf : Continuous f) (hf' : C
   .ofRingEquiv (f := mapRingEquiv f.toRingEquiv (by rwa [AlgEquiv.coe_toRingEquiv])
       (by rwa [AlgEquiv.toRingEquiv_symm, AlgEquiv.coe_toRingEquiv])) fun r ↦ by
     simp [mapRingEquiv_apply, algebraMap_def,
-      map_coe (uniformContinuous_addMonoidHom_of_continuous hf)]
+      map_coe (uniformContinuous_addMonoidHom_of_continuous (f := f) hf)]
 
 /-- The ring isomorphism underlying `mapAlgEquiv f` is `UniformSpace.Completion.mapRingEquiv`. -/
 @[simp]
@@ -202,14 +202,17 @@ theorem toRingEquiv_mapAlgEquiv (f : α ≃ₐ[R] β) (hf : Continuous f) (hf' :
 
 /-- The algebra isomorphism of completions induced by `f` is `UniformSpace.Completion.map f`. -/
 theorem mapAlgEquiv_apply (f : α ≃ₐ[R] β) (hf : Continuous f) (hf' : Continuous f.symm)
-    (x : Completion α) : mapAlgEquiv f hf hf' x = Completion.map f x :=
-  mapRingEquiv_apply f.toRingEquiv hf hf' x
+    (x : Completion α) : mapAlgEquiv f hf hf' x = Completion.map f x := by
+  rw [← AlgEquiv.coe_toRingEquiv (mapAlgEquiv f hf hf'), toRingEquiv_mapAlgEquiv,
+    mapRingEquiv_apply, AlgEquiv.coe_toRingEquiv]
 
 /-- The inverse of the algebra isomorphism of completions induced by `f` is
 `UniformSpace.Completion.map f.symm`. -/
 theorem mapAlgEquiv_symm_apply (f : α ≃ₐ[R] β) (hf : Continuous f) (hf' : Continuous f.symm)
-    (y : Completion β) : (mapAlgEquiv f hf hf').symm y = Completion.map f.symm y :=
-  mapRingEquiv_symm_apply f.toRingEquiv hf hf' y
+    (y : Completion β) : (mapAlgEquiv f hf hf').symm y = Completion.map f.symm y := by
+  rw [← AlgEquiv.coe_toRingEquiv (mapAlgEquiv f hf hf').symm, AlgEquiv.symm_toRingEquiv,
+    toRingEquiv_mapAlgEquiv, mapRingEquiv_symm_apply, AlgEquiv.toRingEquiv_symm,
+    AlgEquiv.coe_toRingEquiv]
 
 /-- The inverse of the algebra isomorphism of completions induced by `f` is the one induced by
 `f.symm`. -/
@@ -222,7 +225,7 @@ theorem mapAlgEquiv_symm (f : α ≃ₐ[R] β) (hf : Continuous f) (hf' : Contin
 @[simp]
 theorem mapAlgEquiv_coe (f : α ≃ₐ[R] β) (hf : Continuous f) (hf' : Continuous f.symm) (a : α) :
     mapAlgEquiv f hf hf' a = (f a : Completion β) := by
-  rw [mapAlgEquiv_apply, map_coe (uniformContinuous_addMonoidHom_of_continuous hf)]
+  rw [mapAlgEquiv_apply, map_coe (uniformContinuous_addMonoidHom_of_continuous (f := f) hf)]
 
 /-- The algebra isomorphism of completions induced by a topological algebra isomorphism is
 continuous. -/
