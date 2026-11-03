@@ -163,7 +163,8 @@ private theorem familyToPullback_pullbackToGrassmannian :
     exact (isPullback_schemeHopfIdealLocusFamily R H k).w.symm
   · rw [Category.assoc, pullbackToGrassmannian_snd, familyToPullback_fst, Category.assoc]
 
-private instance : IsClosedImmersion (familyToPullback R H k) := by
+private instance isClosedImmersion_familyToPullback :
+    IsClosedImmersion (familyToPullback R H k) := by
   have : IsClosedImmersion (familyToPullback R H k ≫ pullbackToGrassmannian R H k) := by
     rw [familyToPullback_pullbackToGrassmannian]
     infer_instance
@@ -191,8 +192,9 @@ theorem schemeHopfIdealLocusFamilyToGrp_left_fst :
         pullback.fst (Spec.map (CommRingCat.ofHom (algebraMap R H)))
           ((schemeHopfIdealLocus R H k).subschemeι ≫ toSpec R H k) =
       schemeHopfIdealLocusFamilyι R H k ≫ (schemeUniversalIdeal R H k).subschemeι ≫
-        pullback.snd _ _ :=
-  familyToPullback_fst
+        pullback.snd _ _ := by
+  rw [schemeHopfIdealLocusFamilyToGrp_left_eq]
+  exact familyToPullback_fst
 
 /-- The component in `L` of the inclusion of the universal family into `Spec H ×_{Spec R} L` is
 the projection of the universal family to `L`. -/
@@ -201,13 +203,15 @@ theorem schemeHopfIdealLocusFamilyToGrp_left_snd :
     (schemeHopfIdealLocusFamilyToGrp R H k).left ≫
         pullback.snd (Spec.map (CommRingCat.ofHom (algebraMap R H)))
           ((schemeHopfIdealLocus R H k).subschemeι ≫ toSpec R H k) =
-      schemeHopfIdealLocusFamilyHom R H k :=
-  familyToPullback_snd
+      schemeHopfIdealLocusFamilyHom R H k := by
+  rw [schemeHopfIdealLocusFamilyToGrp_left_eq]
+  exact familyToPullback_snd
 
 /-- The inclusion of the universal family into `Spec H ×_{Spec R} L` is a closed immersion. -/
 instance isClosedImmersion_schemeHopfIdealLocusFamilyToGrp_left :
-    IsClosedImmersion (schemeHopfIdealLocusFamilyToGrp R H k).left :=
-  inferInstanceAs (IsClosedImmersion (familyToPullback R H k))
+    IsClosedImmersion (schemeHopfIdealLocusFamilyToGrp R H k).left := by
+  rw [schemeHopfIdealLocusFamilyToGrp_left_eq]
+  exact isClosedImmersion_familyToPullback
 
 end Inclusion
 
@@ -263,17 +267,6 @@ private theorem fst_comp_specMap {T : Over (schemeHopfIdealLocus R H k).subschem
     rw [Category.assoc, Category.assoc, pullback.condition]
   exact (h p.left).trans (congrArg (· ≫ _) (Over.w p))
 
-/-- The point of `Spec H` over `Spec R` underlying a point of `Spec H ×_{Spec R} L` is its
-projection to `Spec H`. -/
-private theorem baseChangePointMulEquiv_left {T : Over (schemeHopfIdealLocus R H k).subscheme}
-    (p : T ⟶ (schemeHopfIdealLocusGrp R H k).X) :
-    (TauCeti.GroupScheme.baseChangePointMulEquiv
-        ((schemeHopfIdealLocus R H k).subschemeι ≫ toSpec R H k)
-        ((hopfSpec (CommRingCat.of R)).obj (op (CommHopfAlgCat.of R H))) T p).left =
-      p.left ≫ pullback.fst (Spec.map (CommRingCat.ofHom (algebraMap R H)))
-        ((schemeHopfIdealLocus R H k).subschemeι ≫ toSpec R H k) :=
-  TauCeti.GroupScheme.baseChangePointMulEquiv_apply_left _ _ _ p
-
 /-- The product of two points of `Spec H ×_{Spec R} L` projects to the product in `Spec H` of
 their projections. -/
 private theorem mul_left_fst {T : Over (schemeHopfIdealLocus R H k).subscheme}
@@ -285,19 +278,9 @@ private theorem mul_left_fst {T : Over (schemeHopfIdealLocus R H k).subscheme}
         (q.left ≫ pullback.fst (Spec.map (CommRingCat.ofHom (algebraMap R H)))
           ((schemeHopfIdealLocus R H k).subschemeι ≫ toSpec R H k))
         ((fst_comp_specMap p).trans (fst_comp_specMap q).symm) ≫
-        μ[((hopfSpec (CommRingCat.of R)).obj (op (CommHopfAlgCat.of R H))).X].left := by
-  have h := congrArg Over.Hom.left (map_mul (TauCeti.GroupScheme.baseChangePointMulEquiv
-    ((schemeHopfIdealLocus R H k).subschemeι ≫ toSpec R H k)
-    ((hopfSpec (CommRingCat.of R)).obj (op (CommHopfAlgCat.of R H))) T) p q)
-  refine (baseChangePointMulEquiv_left (p * q)).symm.trans (h.trans ?_)
-  -- the product of the two points over `Spec R` is the pair followed by the multiplication
-  have key {X : Scheme.{u}} {a a' b b' : X ⟶ Spec (.of H)} (w w') (ha : a = a') (hb : b = b') :
-      pullback.lift (f := Spec.map (CommRingCat.ofHom (algebraMap R H)))
-        (g := Spec.map (CommRingCat.ofHom (algebraMap R H))) a b w = pullback.lift a' b' w' := by
-    subst ha hb
-    rfl
-  exact congrArg (· ≫ _) (key ((Over.w _).trans (Over.w _).symm) _
-    (baseChangePointMulEquiv_left p) (baseChangePointMulEquiv_left q))
+        μ[((hopfSpec (CommRingCat.of R)).obj (op (CommHopfAlgCat.of R H))).X].left :=
+  -- the structure morphism of `Spec H` over `Spec R` is `Spec` of the algebra map by definition
+  TauCeti.GroupScheme.pullback_mapGrp_mul_left_fst _ _ _ p q
 
 /-- The identity point of `Spec H ×_{Spec R} L` projects to the identity of `Spec H`. -/
 private theorem one_left_fst {T : Over (schemeHopfIdealLocus R H k).subscheme} :
@@ -305,11 +288,11 @@ private theorem one_left_fst {T : Over (schemeHopfIdealLocus R H k).subscheme} :
         pullback.fst (Spec.map (CommRingCat.ofHom (algebraMap R H)))
           ((schemeHopfIdealLocus R H k).subschemeι ≫ toSpec R H k) =
       T.hom ≫ (schemeHopfIdealLocus R H k).subschemeι ≫ toSpec R H k ≫
-        Spec.map (CommRingCat.ofHom (Bialgebra.counitAlgHom R H)) := by
-  have h := congrArg Over.Hom.left (map_one (TauCeti.GroupScheme.baseChangePointMulEquiv
-    ((schemeHopfIdealLocus R H k).subschemeι ≫ toSpec R H k)
-    ((hopfSpec (CommRingCat.of R)).obj (op (CommHopfAlgCat.of R H))) T))
-  exact (baseChangePointMulEquiv_left 1).symm.trans h
+        Spec.map (CommRingCat.ofHom (Bialgebra.counitAlgHom R H)) :=
+  (TauCeti.GroupScheme.pullback_mapGrp_one_left_fst _ _ T).trans <| by
+    simp only [Category.assoc]
+    -- the identity of `hopfSpec` is `Spec` of the counit by definition
+    rfl
 
 /-- The inverse of a point of `Spec H ×_{Spec R} L` projects to the antipode of its projection
 to `Spec H`. -/
@@ -319,12 +302,9 @@ private theorem inv_left_fst {T : Over (schemeHopfIdealLocus R H k).subscheme}
         ((schemeHopfIdealLocus R H k).subschemeι ≫ toSpec R H k) =
       p.left ≫ pullback.fst (Spec.map (CommRingCat.ofHom (algebraMap R H)))
           ((schemeHopfIdealLocus R H k).subschemeι ≫ toSpec R H k) ≫
-        Spec.map (CommRingCat.ofHom (HopfAlgebra.antipodeAlgHom R H)) := by
-  have h := congrArg Over.Hom.left (map_inv (TauCeti.GroupScheme.baseChangePointMulEquiv
-    ((schemeHopfIdealLocus R H k).subschemeι ≫ toSpec R H k)
-    ((hopfSpec (CommRingCat.of R)).obj (op (CommHopfAlgCat.of R H))) T) p)
-  exact (baseChangePointMulEquiv_left p⁻¹).symm.trans
-    (h.trans (congrArg (· ≫ _) (baseChangePointMulEquiv_left p)))
+        Spec.map (CommRingCat.ofHom (HopfAlgebra.antipodeAlgHom R H)) :=
+  -- the inverse of `hopfSpec` is `Spec` of the antipode by definition
+  TauCeti.GroupScheme.pullback_mapGrp_inv_left_fst _ _ T p
 
 /-- A `C`-point of the universal family over the point `N` of the Hopf-ideal locus is a `C`-point
 `y` of `Spec H` with `N.evalIdeal y = ⊥`. -/
@@ -381,15 +361,9 @@ private theorem ker_familyToPullback_le_of_forall
   have hgN : (schemeHopfIdealLocusHomEquiv R H k C ⟨N.1, N.2⟩).1 = g ≫ T.hom := by
     rw [Subtype.coe_eta, Equiv.apply_symm_apply]
   obtain ⟨x, hx, hxN⟩ := h C N.1 N.2 g hgN.symm
-  have hp : p.left ≫ pullback.snd (Spec.map (CommRingCat.ofHom (algebraMap R H)))
-      ((schemeHopfIdealLocus R H k).subschemeι ≫ toSpec R H k) = T.hom := Over.w p
   refine (ker_familyToPullback_le_ker_iff N.1 x (g ≫ p.left) ?_ ?_).2 hxN
-  · have hp' : p.left ≫ pullback.snd (Spec.map (CommRingCat.ofHom (algebraMap R H)))
-          ((schemeHopfIdealLocus R H k).subschemeι ≫ toSpec R H k) ≫
-            (schemeHopfIdealLocus R H k).subschemeι =
-        T.hom ≫ (schemeHopfIdealLocus R H k).subschemeι :=
-      (Category.assoc _ _ _).symm.trans (congrArg (· ≫ _) hp)
-    refine (Category.assoc _ _ _).trans ((congrArg (g ≫ ·) hp').trans ?_)
+  · -- `rw` cannot see through the type of `p.left`, so reassociate by unification
+    refine (Category.assoc _ _ _).trans ((congrArg (g ≫ ·) (Over.w_assoc p _)).trans ?_)
     rw [← Category.assoc, ← hgN, schemeHopfIdealLocusHomEquiv_apply_comp_subschemeι]
   · exact (Category.assoc _ _ _).trans hx
 
@@ -508,8 +482,9 @@ instance isMonHom_schemeHopfIdealLocusFamilyToGrp :
 
 private instance : IsClosedImmersion (Grp.homMk
     (A := Grp.mk (Over.mk (schemeHopfIdealLocusFamilyHom R H k)))
-    (schemeHopfIdealLocusFamilyToGrp R H k)).hom.hom.left :=
-  isClosedImmersion_schemeHopfIdealLocusFamilyToGrp_left
+    (schemeHopfIdealLocusFamilyToGrp R H k)).hom.hom.left := by
+  rw [Grp.homMk_hom_hom]
+  infer_instance
 
 variable (R H k) in
 /-- **The universal subgroup over the Hopf-ideal locus.** The universal family over the closed

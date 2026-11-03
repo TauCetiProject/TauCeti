@@ -23,6 +23,8 @@ group objects.
 
 * `TauCeti.GroupScheme.baseChangePointMulEquiv`: the multiplicative point-group identification
   furnished by the pullback adjunction.
+* `TauCeti.GroupScheme.pullback_mapGrp_mul_left_fst` (and its `one`/`inv` analogues): the group
+  law of a base change projects to the group law of the original group scheme.
 * `TauCeti.GroupScheme.HasCentralKernel.baseChange`: central kernels remain central after arbitrary
   base change.
 * `TauCeti.GroupScheme.IsCentralIsogeny.baseChange`: central isogenies remain central after base
@@ -168,8 +170,42 @@ postcomposition with the first pullback projection. -/
 theorem baseChangePointMulEquiv_apply_left
     (s : Y ⟶ X) (G : Grp (Over X)) (T : Over Y)
     (p : T ⟶ ((Over.pullback s).mapGrp.obj G).X) :
-    (baseChangePointMulEquiv s G T p).left = p.left ≫ Limits.pullback.fst G.X.hom s :=
-  mapPullbackAdj_homEquiv_symm_left s G T p
+    (baseChangePointMulEquiv s G T p).left = p.left ≫ Limits.pullback.fst G.X.hom s := by
+  rw [baseChangePointMulEquiv_apply, mapPullbackAdj_homEquiv_symm_left]
+
+/-- The identity point of a base change projects to the identity point of the original group
+scheme. -/
+theorem pullback_mapGrp_one_left_fst (s : Y ⟶ X) (G : Grp (Over X)) (T : Over Y) :
+    (1 : T ⟶ ((Over.pullback s).mapGrp.obj G).X).left ≫ Limits.pullback.fst G.X.hom s =
+      T.hom ≫ s ≫ η[G.X].left := by
+  rw [← baseChangePointMulEquiv_apply_left, map_one, Hom.one_def, Over.comp_left]
+  simp
+
+/-- The product of two points of a base change projects to the product of their projections in
+the original group scheme. -/
+theorem pullback_mapGrp_mul_left_fst (s : Y ⟶ X) (G : Grp (Over X)) (T : Over Y)
+    (p q : T ⟶ ((Over.pullback s).mapGrp.obj G).X) :
+    (p * q).left ≫ Limits.pullback.fst G.X.hom s =
+      Limits.pullback.lift (p.left ≫ Limits.pullback.fst G.X.hom s)
+          (q.left ≫ Limits.pullback.fst G.X.hom s)
+          (by rw [← baseChangePointMulEquiv_apply_left, ← baseChangePointMulEquiv_apply_left,
+            Over.w, Over.w]) ≫
+        μ[G.X].left := by
+  rw [← baseChangePointMulEquiv_apply_left, map_mul, Hom.mul_def, Over.comp_left]
+  refine congrArg (· ≫ μ[G.X].left) (Limits.pullback.hom_ext ?_ ?_) <;>
+    simp only [Over.lift_left, Limits.pullback.lift_fst, Limits.pullback.lift_snd,
+      baseChangePointMulEquiv_apply_left]
+
+/-- The inverse of a point of a base change projects to the inverse of its projection in the
+original group scheme. -/
+theorem pullback_mapGrp_inv_left_fst (s : Y ⟶ X) (G : Grp (Over X)) (T : Over Y)
+    (p : T ⟶ ((Over.pullback s).mapGrp.obj G).X) :
+    p⁻¹.left ≫ Limits.pullback.fst G.X.hom s =
+      p.left ≫ Limits.pullback.fst G.X.hom s ≫ ι[G.X].left := by
+  rw [← baseChangePointMulEquiv_apply_left, map_inv, Hom.inv_def, Over.comp_left,
+    baseChangePointMulEquiv_apply_left]
+  -- `rw` cannot see through the type of `p.left`, so reassociate by unification
+  exact Category.assoc _ _ _
 
 /-- The point-group identification intertwines a base-changed morphism with the original
 morphism. -/
