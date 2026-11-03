@@ -11,13 +11,11 @@ public import TauCeti.RingTheory.Huber.BanachModule.CompletedTensor
 /-!
 # Split exactness of completed module tensor products
 
-Completed tensor products preserve finite products and topologically split short exact
-sequences. No completeness, separation or lattice assumptions on the factors are needed:
+Completed tensor products preserve topologically split short exact sequences.
+No completeness, separation or lattice assumptions on the factors are needed:
 the assertions follow from the completed tensor product's continuous bilinear universal
 property. The splitting maps must be continuous; algebraic splittings alone do not suffice.
 
-`TauCeti.Huber.BanachModule.CompletedTensor.prodLeft` identifies
-`(U × Q) ⊗̂ W` with `(U ⊗̂ W) × (Q ⊗̂ W)`.
 `TauCeti.Huber.BanachModule.CompletedTensor.exact_of_split` proves middle exactness from a
 continuous splitting identity. Retractions and sections remain retractions and sections by
 `map_comp` and `map_id`, so a topologically split short exact sequence remains such after
@@ -39,43 +37,6 @@ variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
   {V : Type*} [AddCommGroup V] [Module A V] [TopologicalSpace V]
   {Q : Type*} [AddCommGroup Q] [Module A Q] [TopologicalSpace Q]
   {W : Type*} [AddCommGroup W] [Module A W] [TopologicalSpace W]
-
-section Product
-
-/-- Completed tensoring in the first variable preserves binary products. -/
-noncomputable def prodLeft :
-    CompletedTensor A (U × Q) W ≃L[A]
-      CompletedTensor A U W × CompletedTensor A Q W :=
-  ContinuousLinearEquiv.equivOfInverse'
-    ((map (ContinuousLinearMap.fst A U Q) (.id A W)).prod
-      (map (ContinuousLinearMap.snd A U Q) (.id A W)))
-    ((map (ContinuousLinearMap.inl A U Q) (.id A W)).coprod
-      (map (ContinuousLinearMap.inr A U Q) (.id A W)))
-    (by ext v w <;> simp)
-    (by
-      apply ext
-      intro v w
-      simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.prod_apply,
-        ContinuousLinearMap.coprod_apply, map_tmul, ContinuousLinearMap.id_apply,
-        ContinuousLinearMap.inl_apply, ContinuousLinearMap.inr_apply]
-      rw [← LinearMap.add_apply, ← map_add]
-      simp)
-
-/-- The product comparison sends an elementary tensor to its two component tensors. -/
-@[simp]
-theorem prodLeft_tmul (v : U × Q) (w : W) :
-    prodLeft (tmul A (U × Q) W v w) = (tmul A U W v.1 w, tmul A Q W v.2 w) := by
-  simp [prodLeft]
-
-/-- The inverse product comparison is the sum of the two completed tensor inclusions. -/
-@[simp]
-theorem prodLeft_symm_apply (x : CompletedTensor A U W) (y : CompletedTensor A Q W) :
-    prodLeft.symm (x, y) =
-      map (ContinuousLinearMap.inl A U Q) (.id A W) x +
-        map (ContinuousLinearMap.inr A U Q) (.id A W) y := by
-  rfl
-
-end Product
 
 /-- Completed tensoring preserves the exactness of a continuously split pair.
 
