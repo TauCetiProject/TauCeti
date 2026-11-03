@@ -135,7 +135,8 @@ theorem rootGeneratorWeight_mem_nontrivialAdjointWeights (k : Fin 4 ⊕ Fin 4) :
     SplitTorus.weightCharacter (TypeDStd.rootGeneratorWeight 4 k) ∈
       Derivation.nontrivialAdjointWeights weightTorusIntegralCoordinateMap.hom := by
   rw [Derivation.mem_nontrivialAdjointWeights]
-  refine ⟨SplitTorus.weightCharacter_eq_one_iff.not.2 (rootGeneratorWeight_ne_zero k), ?_⟩
+  refine ⟨SplitTorus.weightCharacter_eq_one_iff.not.2
+    (TypeDStd.rootGeneratorWeight_ne_zero 4 k), ?_⟩
   · intro hbot
     have hv := rootVector_mem_adjointWeightSpace k
     rw [hbot, Submodule.mem_bot] at hv
