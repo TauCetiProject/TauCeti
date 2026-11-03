@@ -8,7 +8,6 @@ module
 public import TauCeti.QuantumGroups.QuantumInteger.QuantumOrder
 public import TauCeti.QuantumGroups.QuantumInteger.RootOfUnity
 
-import Mathlib.Data.Nat.Prime.Basic
 import Mathlib.Algebra.Field.ZMod
 
 /-!
@@ -35,12 +34,6 @@ public section
 namespace TauCeti
 
 variable {R : Type*} [CommRing R] [NoZeroDivisors R] {u : Rˣ}
-
-/-- Away from `±1`, the vanishing indices are the multiples of the multiplicative order of
-`u²`. This includes index zero and units of infinite order (`orderOf (u ^ 2) = 0`). -/
-theorem qInt_add_inv_eq_zero_iff_orderOf_sq_dvd (hu₁ : u ≠ 1) (hu₂ : u ≠ -1) (n : ℕ) :
-    qInt R (u + ↑u⁻¹) n = 0 ↔ orderOf (u ^ 2) ∣ n := by
-  rw [qInt_add_inv_eq_zero_iff hu₁ hu₂, orderOf_dvd_iff_pow_eq_one, ← pow_mul]
 
 /-- For a finite-order unit other than `±1`, the quantum order is the multiplicative order
 of its square. -/
@@ -74,17 +67,27 @@ theorem quantumOrder_add_inv_eq_div_gcd (hu₁ : u ≠ 1) (hu₂ : u ≠ -1)
     quantumOrder ((u : R) + ↑u⁻¹) = (orderOf u / (orderOf u).gcd 2 : ℕ) := by
   rw [quantumOrder_add_inv_eq_orderOf_sq hu₁ hu₂ hu, orderOf_pow' _ (by decide : 2 ≠ 0)]
 
-/-- A unit of even finite order `2ℓ`, other than `±1`, gives quantum order `ℓ`. -/
-theorem quantumOrder_add_inv_of_orderOf_eq_two_mul (hu₁ : u ≠ 1) (hu₂ : u ≠ -1)
+/-- A unit of even finite order `2ℓ`, other than `-1`, gives quantum order `ℓ`. -/
+theorem quantumOrder_add_inv_of_orderOf_eq_two_mul (hu₂ : u ≠ -1)
     {ℓ : ℕ} (hℓ : 0 < ℓ) (hu : orderOf u = 2 * ℓ) :
     quantumOrder ((u : R) + ↑u⁻¹) = ℓ := by
+  have hu₁ : u ≠ 1 := by
+    rintro rfl
+    simp only [orderOf_one] at hu
+    omega
   have hfin : IsOfFinOrder u := orderOf_pos_iff.mp (by omega)
   rw [quantumOrder_add_inv_eq_orderOf_sq hu₁ hu₂ hfin,
     orderOf_pow_of_dvd (by decide : 2 ≠ 0) (by simp [hu]), hu, Nat.mul_div_right _ (by decide)]
 
-/-- A unit of odd finite order, other than `±1`, gives the same quantum order. -/
-theorem quantumOrder_add_inv_of_odd_orderOf (hu₁ : u ≠ 1) (hu₂ : u ≠ -1)
+/-- A unit of odd finite order, other than `1`, gives the same quantum order. -/
+theorem quantumOrder_add_inv_of_odd_orderOf (hu₁ : u ≠ 1)
     (hu : Odd (orderOf u)) : quantumOrder ((u : R) + ↑u⁻¹) = (orderOf u : ℕ∞) := by
+  have hu₂ : u ≠ -1 := by
+    intro h
+    have hp := pow_orderOf_eq_one u
+    rw [h] at hu hp
+    rw [hu.neg_one_pow] at hp
+    exact hu₁ (h.trans hp)
   have hfin : IsOfFinOrder u := orderOf_pos_iff.mp hu.pos
   rw [quantumOrder_add_inv_eq_orderOf_sq hu₁ hu₂ hfin, hu.coprime_two_right.orderOf_pow]
 
@@ -113,12 +116,12 @@ example : quantumOrder (1 : ZMod 7) = 3 ∧ quantumOrder (-1 : ZMod 7) = 3 := by
     ⟨by decide, by intro m hm hp; interval_cases m <;> decide⟩
   constructor
   · have h := quantumOrder_add_inv_of_orderOf_eq_two_mul
-      (by decide : u ≠ 1) (by decide : u ≠ -1) (by decide : 0 < 3) hu
+      (by decide : u ≠ -1) (by decide : 0 < 3) hu
     have hδ : (u : ZMod 7) + ↑u⁻¹ = 1 := by decide
     rw [hδ] at h
     exact_mod_cast h
   · have h := quantumOrder_add_inv_of_odd_orderOf
-      (by decide : v ≠ 1) (by decide : v ≠ -1) (by rw [hv]; decide)
+      (by decide : v ≠ 1) (by rw [hv]; decide)
     have hδ : (v : ZMod 7) + ↑v⁻¹ = -1 := by decide
     rw [hδ, hv] at h
     exact_mod_cast h
