@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Calculus.ContDiff.Convolution
 public import Mathlib.Topology.MetricSpace.Holder
 public import TauCeti.Analysis.PDE.HeatKernel.Bounds
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Convolution
+import TauCeti.Analysis.Normed.Operator.Holder
 import TauCeti.Analysis.PDE.HeatKernel.ApproximateIdentity
 import TauCeti.Analysis.PDE.HeatKernel.Derivatives
 
@@ -198,17 +199,6 @@ theorem iteratedFDeriv_heatKernel_convolution_eq_integral_sub [CompleteSpace F] 
   exact ((ContinuousMultilinearMap.smulRightL ℝ (fun _ : Fin m => E) F).flip
     (g x)).integrable_comp (integrable_iteratedFDeriv_heatKernel ht m)
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- The pointwise Hölder step: for `g` `α`-Hölder with constant `H`,
-`‖L.smulRight (g (x - z) - g x)‖ ≤ H (‖L‖ ‖z‖^α)`. -/
-private theorem norm_smulRight_sub_le_of_holderWith {H α : ℝ≥0} (hH : HolderWith H α g) {m : ℕ}
-    (L : ContinuousMultilinearMap ℝ (fun _ : Fin m => E) ℝ) (x z : E) :
-    ‖L.smulRight (g (x - z) - g x)‖ ≤ H * (‖L‖ * ‖z‖ ^ (α : ℝ)) := by
-  rw [ContinuousMultilinearMap.norm_smulRight, mul_left_comm]
-  refine mul_le_mul_of_nonneg_left ?_ (norm_nonneg _)
-  have := hH.dist_le (x - z) x
-  rwa [dist_eq_norm, dist_eq_norm, sub_sub_cancel_left, norm_neg] at this
-
 /-- **Hölder bounds on the derivatives of a heat convolution.** If `g` is bounded and `α`-Hölder
 with constant `H`, then for `m ≥ 1` and `t > 0`,
 `‖D^m (K_t ⋆ g)(x)‖ ≤ H ∫ ‖D^m K_t(z)‖ ‖z‖^α dz`. By
@@ -222,7 +212,7 @@ theorem norm_iteratedFDeriv_heatKernel_convolution_le_of_holderWith [CompleteSpa
   rw [iteratedFDeriv_heatKernel_convolution_eq_integral_sub ht hg hM hm, ← integral_const_mul]
   refine norm_integral_le_of_norm_le
     ((integrable_norm_iteratedFDeriv_heatKernel_mul_rpow ht m α.coe_nonneg).const_mul _)
-    (ae_of_all _ fun z => norm_smulRight_sub_le_of_holderWith hH _ x z)
+    (ae_of_all _ fun z => by simpa using hH.norm_smulRight_sub_le _ (x - z) x)
 
 /-- **Time differences of the derivatives of a heat convolution.** If `g` is bounded and
 `α`-Hölder with constant `H`, then for `m ≥ 1` and times `a, b > 0`,
@@ -257,7 +247,7 @@ theorem norm_iteratedFDeriv_heatKernel_convolution_sub_le_of_holderWith [Complet
     ext v
     simp [sub_smul]
   rw [hsub]
-  exact norm_smulRight_sub_le_of_holderWith hH _ x z
+  simpa using hH.norm_smulRight_sub_le _ (x - z) x
 
 /-- **The Laplacian of a heat convolution.** For `t > 0` and `g` measurable and essentially
 bounded, `Δ (K_t ⋆ g) = ΔK_t ⋆ g`. -/
