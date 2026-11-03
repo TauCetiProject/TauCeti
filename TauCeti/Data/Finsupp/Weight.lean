@@ -104,6 +104,14 @@ theorem prod_pow_optionElim {α N : Type*} [CommMonoid N] (c : Option α → N) 
   rw [prod_option_index _ _ (fun _ ↦ pow_zero _) fun _ _ _ ↦ pow_add _ _ _,
     optionElim_apply_none, some_optionElim]
 
+/-- Joining finitely supported functions on disjoint domains is injective in both arguments. -/
+@[simp]
+theorem sumElim_inj {α β γ : Type*} [Zero γ] {a a' : α →₀ γ} {b b' : β →₀ γ} :
+    a.sumElim b = a'.sumElim b' ↔ a = a' ∧ b = b' := by
+  simpa only [sumFinsuppEquivProdFinsupp_symm_apply] using
+    (sumFinsuppEquivProdFinsupp.symm.injective.eq_iff
+      (a := (a, b)) (b := (a', b'))).trans Prod.ext_iff
+
 /-- The weighted product on a disjoint union of variables is the product of the weights
 on each set of variables. -/
 theorem prod_pow_sumElim {α β N : Type*} [CommMonoid N] (a : α →₀ ℕ) (b : β →₀ ℕ)

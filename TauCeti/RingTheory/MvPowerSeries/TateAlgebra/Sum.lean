@@ -98,7 +98,8 @@ private theorem isRestricted_sumSlices (f : Flat) : IsRestricted c (sumSlices f)
     (IsRestrictedFamily.Gauss.sumAddEquiv
       (IsRestrictedFamily.Gauss.ofAddSubgroup
         (IsRestrictedFamily.subringLinearEquiv f))).toAddSubgroup.2
-  rw [IsRestricted]
+  apply (isRestrictedFamily_coeff_iff _).mp
+  apply isRestrictedFamily_iff.mpr
   simpa only [norm_sumAddEquiv_subringLinearEquiv] using isRestrictedFamily_iff.mp h
 
 /-- Flattening a restricted series in `σ` over the restricted series in `τ` gives a restricted
@@ -110,9 +111,9 @@ private theorem isRestricted_sumAlgEquiv_symm (g : Iter) :
       (coeff s (g : MvPowerSeries σ Inner)))
   have ha : IsRestrictedFamily c a := by
     apply isRestrictedFamily_iff.mpr
-    have hg := IsRestricted.mem_subring.mp g.2
-    rw [IsRestricted] at hg
-    simpa only [a, IsRestrictedFamily.Gauss.norm_subringLinearEquiv] using hg
+    have hg := (isRestrictedFamily_coeff_iff _).mpr (IsRestricted.mem_subring.mp g.2)
+    simpa only [a, IsRestrictedFamily.Gauss.norm_subringLinearEquiv] using
+      isRestrictedFamily_iff.mp hg
   have h := IsRestrictedFamily.Gauss.isRestrictedFamily_flatten
     (.ofAddSubgroup ⟨a, IsRestrictedFamily.mem_addSubgroup.mpr ha⟩)
   apply (isRestrictedFamily_coeff_iff _).mp

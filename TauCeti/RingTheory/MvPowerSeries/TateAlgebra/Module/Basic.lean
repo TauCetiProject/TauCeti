@@ -174,8 +174,8 @@ theorem IsRestrictedFamily.comp_sumElim {τ : Type*} {d : τ → ℝ} [∀ i, Fa
     {a : ((σ ⊕ τ) →₀ ℕ) → E}
     (ha : IsRestrictedFamily (Sum.elim c d) a) (s : σ →₀ ℕ) :
     IsRestrictedFamily d (fun t ↦ a (s.sumElim t)) := by
-  have hi : Function.Injective (s.sumElim : (τ →₀ ℕ) → (σ ⊕ τ) →₀ ℕ) := fun t u h ↦ by
-    simpa using congrArg (Finsupp.comapDomain Sum.inr · Sum.inr_injective.injOn) h
+  have hi : Function.Injective (s.sumElim : (τ →₀ ℕ) → (σ ⊕ τ) →₀ ℕ) := fun _ _ h ↦
+    (Finsupp.sumElim_inj.mp h).2
   have h := ((isRestrictedFamily_iff.mp ha).comp hi.tendsto_cofinite).const_mul
     (s.prod (c · ^ ·))⁻¹
   rw [mul_zero] at h

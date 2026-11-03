@@ -40,11 +40,6 @@ open scoped Topology
 variable {σ τ E R : Type*} [SeminormedAddCommGroup E] {c : σ → ℝ} {d : τ → ℝ}
   [∀ i, Fact (0 < c i)] [∀ j, Fact (0 < d j)]
 
-/-- The combined polyradius is positive when each of its two parts is positive. -/
-instance instFactPosSumElim : ∀ k, Fact (0 < Sum.elim c d k)
-  | .inl i => ‹∀ i, Fact (0 < c i)› i
-  | .inr j => ‹∀ j, Fact (0 < d j)› j
-
 omit [∀ i, Fact (0 < c i)] [∀ j, Fact (0 < d j)] in
 /-- Rearranging a joint weighted coefficient norm as an inner weighted norm followed by
 an outer weight. -/
@@ -199,11 +194,8 @@ theorem sumLinearIsometryEquiv_ofFinsupp_single (s : σ →₀ ℕ) (t : τ →�
       ofFinsupp R c (Finsupp.single s (ofFinsupp R d (Finsupp.single t e))) := by
   classical
   ext u v
-  have hpair : s.sumElim t = u.sumElim v ↔ s = u ∧ t = v :=
-    by simpa only [Finsupp.sumFinsuppEquivProdFinsupp_symm_apply] using
-      (Finsupp.sumFinsuppEquivProdFinsupp.symm.injective.eq_iff
-        (a := (s, t)) (b := (u, v))).trans Prod.ext_iff
-  simp only [sumLinearIsometryEquiv_apply, ofFinsupp_apply, Finsupp.single_apply, hpair]
+  simp only [sumLinearIsometryEquiv_apply, ofFinsupp_apply, Finsupp.single_apply,
+    Finsupp.sumElim_inj]
   by_cases hs : s = u <;> by_cases ht : t = v <;> simp [hs, ht]
 
 variable {R} {F : Type*} [SeminormedAddCommGroup F] [Module R F] [IsBoundedSMul R F]
