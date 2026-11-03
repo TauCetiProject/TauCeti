@@ -77,14 +77,6 @@ private theorem getElem_stabilize_last :
   rw [List.getElem_append_right (by simp)]
   simp
 
-private theorem strand_castSucc (a : Fin (n + 1 - 1)) :
-    strand (n := n + 2) (a.castSucc : Fin (n + 1)) = (strand a).castSucc :=
-  Fin.ext (by simp)
-
-private theorem strandSucc_castSucc (a : Fin (n + 1 - 1)) :
-    strandSucc (n := n + 2) (a.castSucc : Fin (n + 1)) = (strandSucc a).castSucc :=
-  Fin.ext (by simp)
-
 private theorem strand_last : strand (n := n + 2) (Fin.last n) = (Fin.last n).castSucc :=
   Fin.ext (by simp)
 

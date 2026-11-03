@@ -67,6 +67,10 @@ one, which is not proved here (see the Roadmap section below).
 * `TauCeti.IsSerreSystem.map`, `TauCeti.IsSerreSystem.submatrix`, `TauCeti.IsSerreSystem.perm` and
   `TauCeti.IsSerreSystem.neg_swap`: Serre systems are preserved by Lie homomorphisms, reindexing,
   and the signed exchange of the raising and lowering families.
+* `TauCeti.IsSerreSystem.of_injective`: Serre relations can be checked after an injective map.
+* `TauCeti.IsSerreSystem.lie_lie_E_E_F_of_ne` and `TauCeti.IsSerreSystem.lie_lie_F_F_E_of_ne`:
+  the nested brackets `⁅⁅Eᵢ, Eⱼ⁆, Fⱼ⁆` and `⁅⁅Fᵢ, Fⱼ⁆, Eⱼ⁆` at distinct nodes are `-CMⱼᵢ • Eᵢ` and
+  `-CMⱼᵢ • Fᵢ`.
 * `TauCeti.serreLift_eq_id`: lifting the generators along their own Serre system is the identity.
 * `TauCeti.lieSpan_serreGenerators_eq_top`: the generators generate the presented algebra.
 * `TauCeti.lieSpan_serreE_union_serreF_eq_top`: the raising and lowering generators alone generate
@@ -307,6 +311,28 @@ theorem IsSerreSystem.map {L' : Type*} [LieRing L'] [LieAlgebra R L']
       h.ad_pow_lie_F_F i j, map_zero]
 
 omit [DecidableEq B] in
+/-- Serre relations can be checked after an injective Lie algebra homomorphism. -/
+theorem IsSerreSystem.of_injective {L' : Type*} [LieRing L'] [LieAlgebra R L']
+    (f : L →ₗ⁅R⁆ L') (hf : Function.Injective f)
+    (h : IsSerreSystem R CM (f ∘ H) (f ∘ E) (f ∘ F)) : IsSerreSystem R CM H E F where
+  lie_H_H i j := hf <| by
+    simpa only [Function.comp_apply, f.map_lie, map_zero] using h.lie_H_H i j
+  lie_E_F_self i := hf <| by
+    simpa only [Function.comp_apply, f.map_lie] using h.lie_E_F_self i
+  lie_E_F_of_ne i j hij := hf <| by
+    simpa only [Function.comp_apply, f.map_lie, map_zero] using h.lie_E_F_of_ne i j hij
+  lie_H_E i j := hf <| by
+    simpa only [Function.comp_apply, f.map_lie, map_zsmul] using h.lie_H_E i j
+  lie_H_F i j := hf <| by
+    simpa only [Function.comp_apply, f.map_lie, map_neg, map_zsmul] using h.lie_H_F i j
+  ad_pow_lie_E_E i j := hf <| by
+    simpa only [Function.comp_apply, LieHom.map_ad_pow, f.map_lie, map_zero] using
+      h.ad_pow_lie_E_E i j
+  ad_pow_lie_F_F i j := hf <| by
+    simpa only [Function.comp_apply, LieHom.map_ad_pow, f.map_lie, map_zero] using
+      h.ad_pow_lie_F_F i j
+
+omit [DecidableEq B] in
 /-- **A Serre system over one base ring transfers to any other base ring for which the same Lie
 ring has a Lie-algebra structure.** -/
 -- The other five fields are ring-independent as stated: the two eigenvector relations scale by
@@ -363,6 +389,33 @@ theorem IsSerreSystem.neg_swap (h : IsSerreSystem R CM H E F) :
     exact ad_neg_pow_apply_eq_zero (h.ad_pow_lie_E_E i j)
 
 end Stability
+
+/-! ### Nested brackets
+
+The bracket relations of a Serre system determine the nested bracket of two raising elements at
+distinct nodes with the lowering element at the second node, and, through the signed exchange
+`TauCeti.IsSerreSystem.neg_swap`, its lowering counterpart. -/
+
+section NestedBrackets
+
+variable {R CM} {H E F : B → L}
+
+omit [DecidableEq B] in
+/-- At distinct nodes `i ≠ j`, the nested bracket `⁅⁅Eᵢ, Eⱼ⁆, Fⱼ⁆` is `-CMⱼᵢ • Eᵢ`. -/
+theorem IsSerreSystem.lie_lie_E_E_F_of_ne (h : IsSerreSystem R CM H E F) {i j : B}
+    (hij : i ≠ j) : ⁅⁅E i, E j⁆, F j⁆ = -(CM j i • E i) := by
+  rw [lie_lie, h.lie_E_F_self, h.lie_E_F_of_ne i j hij, lie_zero, sub_zero,
+    ← lie_skew (E i) (H j), h.lie_H_E]
+
+omit [DecidableEq B] in
+/-- At distinct nodes `i ≠ j`, the nested bracket `⁅⁅Fᵢ, Fⱼ⁆, Eⱼ⁆` is `-CMⱼᵢ • Fᵢ`. -/
+theorem IsSerreSystem.lie_lie_F_F_E_of_ne (h : IsSerreSystem R CM H E F) {i j : B}
+    (hij : i ≠ j) : ⁅⁅F i, F j⁆, E j⁆ = -(CM j i • F i) := by
+  have hswap := h.neg_swap.lie_lie_E_E_F_of_ne hij
+  simp only [neg_lie, lie_neg, neg_neg, smul_neg] at hswap
+  exact neg_eq_iff_eq_neg.mp hswap
+
+end NestedBrackets
 
 /-! ### The universal property -/
 

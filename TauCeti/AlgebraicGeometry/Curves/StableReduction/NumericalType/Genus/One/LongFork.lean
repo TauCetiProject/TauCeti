@@ -305,4 +305,38 @@ theorem IsMinimal.isGenusOneLongForkShape (hT : T.IsMinimal) (hg : T.arithmeticG
   exact ⟨fun i hi ↦ (T.isMinusTwoIndex_iff.mp (htwo (c i))).1,
     (T.isMinusTwoIndex_iff.mp (htwo branch)).1, hf.isGenusOneLongForkShape hcard ht⟩
 
+/-- For a genus-one long fork on a minus-two fork exhausting all components, some component's
+weight divides every weight with quotient at most four, and some component's multiplicity
+divides every multiplicity with quotient at most six. -/
+lemma IsGenusOneLongForkShape.exists_weight_and_multiplicity_dvd_and_le
+    (hfork : T.IsGenusOneLongForkShape t c branch)
+    (hcard : Fintype.card T.Component = t + 1)
+    (hf : T.IsSelfIntersectionMinusTwoFork t c branch) :
+    (∃ j, ∀ i, (T.weight j : ℕ) ∣ T.weight i ∧ (T.weight i : ℕ) ≤ 4 * T.weight j) ∧
+      (∃ j, ∀ i, (T.multiplicity j : ℕ) ∣ T.multiplicity i ∧
+        (T.multiplicity i : ℕ) ≤ 6 * T.multiplicity j) := by
+  classical
+  have ht := hf.two_lt
+  obtain ⟨w, m, _, _, ⟨hw, hwb, hm, hmb, -⟩ | ⟨hw, hwb, hm, hmb, -⟩⟩ :=
+    isGenusOneLongForkShape_iff.mp hfork
+  · refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6) branch branch
+      (fun i ↦ ?_) (fun i ↦ ?_)
+    all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
+    · rcases hf.eq_or_exists_lt_eq_of_card_eq hcard i with rfl | ⟨k, hk, rfl⟩
+      · omega
+      · have hwk := hw k hk; split_ifs at hwk <;> omega
+    · rcases hf.eq_or_exists_lt_eq_of_card_eq hcard i with rfl | ⟨k, hk, rfl⟩
+      · omega
+      · have hmk := hm k hk; split_ifs at hmk <;> omega
+  · refine T.exists_weight_and_multiplicity_dvd_and_le_of_int (nw := 4) (nm := 6)
+      (c 0) branch (fun i ↦ ?_) (fun i ↦ ?_)
+    all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
+    · have hw0 := hw 0 (by omega); simp only [↓reduceIte] at hw0
+      rcases hf.eq_or_exists_lt_eq_of_card_eq hcard i with rfl | ⟨k, hk, rfl⟩
+      · omega
+      · have hwk := hw k hk; split_ifs at hwk <;> omega
+    · rcases hf.eq_or_exists_lt_eq_of_card_eq hcard i with rfl | ⟨k, hk, rfl⟩
+      · omega
+      · have hmk := hm k hk; split_ifs at hmk <;> omega
+
 end TauCeti.NumericalType

@@ -1,0 +1,139 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Geometry.Lie.Exponential.CommutativeGroup.Basic
+public import TauCeti.Algebra.Module.ZLattice.Quotient
+public import TauCeti.Topology.Circle.AddCircle
+
+/-!
+# Compact connected commutative Lie groups are products of circles
+
+For a compact connected commutative finite-dimensional real Lie group, a basis of the
+exponential kernel gives circle coordinates: take the real coordinates of a logarithm modulo
+the integral lattice. This identifies the group with a product of circles as topological
+groups, with one factor for each dimension of the manifold model.
+
+The basis-dependent equivalences include their values on exponentials, so that circle
+coordinates and their inverses can be computed without choosing a logarithm.
+
+## References
+
+* T. Bröcker and T. tom Dieck, *Representations of Compact Lie Groups*, Springer GTM 98 (1985),
+  Chapter I, § 3 (The Exponential Map).
+* D. Bump, *Lie Groups*, 2nd ed., Springer GTM 225 (2013), Chapter 15 (Tori).
+-/
+
+public section
+
+noncomputable section
+
+open TauCeti
+open scoped ContDiff Manifold
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
+  [FiniteDimensional ℝ E] [LieGroup I ∞ G] [T2Space G]
+  [IsMulCommutative G] [IsTopologicalGroup G] [CompactSpace G] [PreconnectedSpace G]
+
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
+attribute [local instance] ContMDiffMul.boundarylessManifold
+
+noncomputable local instance : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
+  finiteDimensional_leftInvariantDerivation
+    (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))
+
+namespace Module.Basis
+
+variable {ι : Type*} [Fintype ι]
+  (b : Module.Basis ι ℤ (lieExpAddMonoidHom (I := I) (G := G)).ker.toIntSubmodule)
+
+/-- Additive circle coordinates of a compact connected commutative Lie group, specified by a
+basis of its exponential kernel. -/
+def lieGroupUnitAddTorusEquiv : Additive G ≃ₜ+ UnitAddTorus ι :=
+  (lieExpQuotientKerContinuousAddEquiv (I := I) (G := G)).symm.trans b.quotientLatticeEquiv
+
+/-- Exponentiating a Lie algebra element reduces its lattice-basis coordinates modulo one. -/
+@[simp]
+theorem lieGroupUnitAddTorusEquiv_apply_lieExp (X : LeftInvariantDerivation I G) (i : ι) :
+    lieGroupUnitAddTorusEquiv b (Additive.ofMul (lieExp X)) i =
+      ((b.ofZLatticeBasis ℝ _).repr X i : UnitAddCircle) := by
+  rw [lieGroupUnitAddTorusEquiv, ContinuousAddEquiv.trans_apply,
+    lieExpQuotientKerContinuousAddEquiv_symm_apply, Module.Basis.quotientLatticeEquiv_apply_mk]
+
+/-- The inverse additive circle coordinates exponentiate the corresponding real linear
+combination of lattice basis vectors. -/
+@[simp]
+theorem lieGroupUnitAddTorusEquiv_symm_apply (x : ι → ℝ) :
+    (lieGroupUnitAddTorusEquiv b).symm (fun i => (x i : UnitAddCircle)) =
+      Additive.ofMul (lieExp ((b.ofZLatticeBasis ℝ _).equivFun.symm x)) := by
+  apply (lieGroupUnitAddTorusEquiv b).injective
+  ext i
+  simp only [ContinuousAddEquiv.apply_symm_apply, lieGroupUnitAddTorusEquiv_apply_lieExp,
+    ← Module.Basis.equivFun_apply, LinearEquiv.apply_symm_apply]
+
+/-- Circle coordinates of a compact connected commutative Lie group. Each integral period in
+the chosen exponential-kernel basis becomes one full turn in the corresponding circle. -/
+def lieGroupPiCircleEquiv : G ≃ₜ* (ι → Circle) :=
+  let e := (lieGroupUnitAddTorusEquiv b).trans unitAddTorusEquivPiCircle
+  { toFun := fun g => (e (Additive.ofMul g)).toMul
+    invFun := fun z => (e.symm (Additive.ofMul z)).toMul
+    left_inv := fun g => by simp
+    right_inv := fun z => by simp
+    continuous_toFun := continuous_toMul.comp (e.continuous.comp continuous_ofMul)
+    continuous_invFun := continuous_toMul.comp (e.symm.continuous.comp continuous_ofMul)
+    map_mul' := fun x y => by rw [ofMul_mul, map_add, toMul_add] }
+
+/-- Multiplicative circle coordinates are the canonical unit-circle images of additive ones. -/
+theorem lieGroupPiCircleEquiv_apply (g : G) (i : ι) :
+    lieGroupPiCircleEquiv b g i =
+      AddCircle.toCircle (lieGroupUnitAddTorusEquiv b (Additive.ofMul g) i) :=
+  toMul_unitAddTorusEquivPiCircle_apply _ i
+
+/-- In circle coordinates, the exponential is the coordinatewise complex exponential, with
+period one in the chosen lattice basis. -/
+@[simp]
+theorem lieGroupPiCircleEquiv_apply_lieExp (X : LeftInvariantDerivation I G) (i : ι) :
+    lieGroupPiCircleEquiv b (lieExp X) i =
+      Circle.exp (2 * Real.pi * (b.ofZLatticeBasis ℝ _).repr X i) := by
+  rw [lieGroupPiCircleEquiv_apply, lieGroupUnitAddTorusEquiv_apply_lieExp,
+    AddCircle.toCircle_apply_mk]
+  simp only [div_one]
+
+/-- The inverse circle coordinates exponentiate the real linear combination of lattice basis
+vectors. -/
+@[simp]
+theorem lieGroupPiCircleEquiv_symm_apply (x : ι → ℝ) :
+    (lieGroupPiCircleEquiv b).symm (fun i => Circle.exp (2 * Real.pi * x i)) =
+      lieExp ((b.ofZLatticeBasis ℝ _).equivFun.symm x) := by
+  apply (lieGroupPiCircleEquiv b).injective
+  apply funext
+  intro i
+  simp only [ContinuousMulEquiv.apply_symm_apply, lieGroupPiCircleEquiv_apply_lieExp,
+    ← Module.Basis.equivFun_apply, LinearEquiv.apply_symm_apply]
+
+end Module.Basis
+
+namespace TauCeti
+
+omit [IsTopologicalGroup G] in
+include I in
+/-- A compact connected commutative finite-dimensional real Lie group is a product of circles,
+with one factor for every dimension of its manifold model. -/
+theorem nonempty_continuousMulEquiv_pi_circle :
+    Nonempty (G ≃ₜ* (Fin (Module.finrank ℝ E) → Circle)) := by
+  let _ : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
+  let L := (lieExpAddMonoidHom (I := I) (G := G)).ker.toIntSubmodule
+  let _ : Module.Free ℤ L := ZLattice.module_free ℝ L
+  let _ : Module.Finite ℤ L := ZLattice.module_finite ℝ L
+  have hdim : Module.finrank ℤ L = Module.finrank ℝ E :=
+    (finrank_ker_lieExpAddMonoidHom (I := I) (G := G)).trans
+      (finrank_leftInvariantDerivation_eq_modelVectorSpace
+        (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G)))
+  exact ⟨Module.Basis.lieGroupPiCircleEquiv (Module.finBasisOfFinrankEq ℤ L hdim)⟩
+
+end TauCeti

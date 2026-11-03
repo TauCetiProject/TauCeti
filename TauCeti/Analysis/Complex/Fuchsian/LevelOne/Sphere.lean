@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Fuchsian.LevelOne.Extension
 public import TauCeti.Analysis.Complex.RiemannSurface.Degree
-public import TauCeti.Geometry.Manifold.Instances.OnePoint
+public import TauCeti.Geometry.Manifold.Instances.OnePoint.Basic
 
 /-!
 # The modular invariant identifies the level-one surface with the sphere

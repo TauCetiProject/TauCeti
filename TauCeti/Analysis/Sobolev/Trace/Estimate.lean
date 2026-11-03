@@ -8,6 +8,8 @@ module
 public import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.InnerProductSpace.Calculus
+import Mathlib.Analysis.InnerProductSpace.NormPow
+import Mathlib.Analysis.MeanInequalities
 
 /-!
 # The one-dimensional energy estimate for traces
@@ -16,9 +18,14 @@ A `C¹` function with values in a real inner product space has both endpoint nor
 by its value and derivative energies on a finite interval, with an explicit width-dependent
 constant. No compact support is needed for this finite-interval estimate.
 
-A compactly supported `C¹` real function has its squared value at the endpoint of a half-line
-bounded by the integral of its value and derivative squared on that half-line. Integrating this
-estimate over the transverse variables supplies the flat-boundary `H¹` trace inequality.
+For `1 ≤ r`, a compactly supported `C¹` real function has the `r`-th power of its value at the
+endpoint of a half-line bounded by the integral of `(r - 1) |g|ʳ + |g'|ʳ` on that half-line
+(`TauCeti.abs_rpow_le_integral_Ioi`); for `r = 2` this is the `H¹` energy. Integrating this
+estimate over the transverse variables supplies the flat-boundary `W^{1,p}` trace inequality.
+The energy density `(r - 1) |u|ʳ + ‖Du‖ʳ` of a compactly supported `C¹` function on any normed
+space is continuous with compact support (`TauCeti.continuous_rpow_energy`,
+`TauCeti.hasCompactSupport_rpow_energy`), and `TauCeti.le_rpow_inv_mul_of_rpow_le` turns an
+inequality `xʳ ≤ (r - 1) yʳ + zʳ` into the linear bound `x ≤ r ^ (1 / r) n` for `y, z ≤ n`.
 
 The estimate follows the fundamental-theorem-of-calculus proof of the trace theorem in
 L. C. Evans, *Partial Differential Equations*, Chapter 5, §5.5.
@@ -92,47 +99,107 @@ theorem norm_sq_add_norm_sq_le_integral_norm_sq_add_norm_deriv_sq
   rw [hleft] at hmono
   nlinarith
 
-/-- The endpoint value is controlled by the `H¹` energy on the right half-line. -/
-theorem sq_le_integral_Ioi_sq_add_deriv_sq {g : ℝ → ℝ} (hg : ContDiff ℝ 1 g)
-    (hs : HasCompactSupport g) (a : ℝ) :
-    g a ^ 2 ≤ ∫ t in Ioi a, g t ^ 2 + deriv g t ^ 2 := by
-  have hd : ∀ t, deriv (fun s ↦ g s * g s) t = 2 * g t * deriv g t := by
-    intro t
-    exact ((hg.differentiable one_ne_zero t).hasDerivAt.mul
-      (hg.differentiable one_ne_zero t).hasDerivAt).deriv.trans (by ring)
-  have hi := (hs.mul_right (f' := g)).integral_Ioi_deriv_eq (hg.mul hg) a
-  simp only [hd] at hi
-  have hdc : Continuous (deriv g) := hg.continuous_deriv le_rfl
-  have hs2 : HasCompactSupport (fun t ↦ g t ^ 2) :=
-    hs.mono (fun t ht hzero ↦ ht (by simp [hzero]))
-  have hds2 : HasCompactSupport (fun t ↦ deriv g t ^ 2) :=
-    hs.deriv.mono (fun t ht hzero ↦ ht (by simp [hzero]))
-  have hprod : Integrable (fun t ↦ 2 * g t * deriv g t) volume :=
-    ((continuous_const.mul hg.continuous).mul hdc).integrable_of_hasCompactSupport
-      (hs.mono (fun t ht hzero ↦ ht (by simp [hzero])))
-  have henergy : Integrable (fun t ↦ g t ^ 2 + deriv g t ^ 2) volume :=
-    ((hg.continuous.pow 2).add (hdc.pow 2)).integrable_of_hasCompactSupport (hs2.add hds2)
-  calc
-    g a ^ 2 = ∫ t in Ioi a, -(2 * g t * deriv g t) := by
-      rw [integral_neg, hi]
-      ring
-    _ ≤ ∫ t in Ioi a, g t ^ 2 + deriv g t ^ 2 := by
-      apply integral_mono hprod.neg.integrableOn henergy.integrableOn
-      intro t
-      dsimp only [Pi.neg_apply]
-      nlinarith [sq_nonneg (g t + deriv g t)]
+section Energy
 
-/-- A point value is bounded by the whole-line `H¹` energy. -/
-theorem sq_le_integral_sq_add_deriv_sq {g : ℝ → ℝ} (hg : ContDiff ℝ 1 g)
-    (hs : HasCompactSupport g) (a : ℝ) :
-    g a ^ 2 ≤ ∫ t, g t ^ 2 + deriv g t ^ 2 := by
-  refine (sq_le_integral_Ioi_sq_add_deriv_sq hg hs a).trans ?_
-  have hs2 : HasCompactSupport (fun t ↦ g t ^ 2) :=
-    hs.mono (fun t ht hzero ↦ ht (by simp [hzero]))
-  have hds2 : HasCompactSupport (fun t ↦ deriv g t ^ 2) :=
-    hs.deriv.mono (fun t ht hzero ↦ ht (by simp [hzero]))
-  have hc := (hg.continuous.pow 2).add ((hg.continuous_deriv le_rfl).pow 2)
-  exact setIntegral_le_integral (hc.integrable_of_hasCompactSupport (hs2.add hds2))
-    (Filter.Eventually.of_forall fun t ↦ add_nonneg (sq_nonneg _) (sq_nonneg _))
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- For `1 ≤ r`, the `Lʳ` energy density `(r - 1) |u|ʳ + ‖Du‖ʳ` of a `C¹` function is
+continuous. -/
+theorem continuous_rpow_energy {u : F → ℝ} (hu : ContDiff ℝ 1 u) {r : ℝ} (hr : 1 ≤ r) :
+    Continuous fun x ↦ (r - 1) * |u x| ^ r + ‖fderiv ℝ u x‖ ^ r :=
+  (continuous_const.mul (hu.continuous.abs.rpow_const fun _ ↦ Or.inr (zero_le_one.trans hr))).add
+    ((hu.continuous_fderiv one_ne_zero).norm.rpow_const fun _ ↦ Or.inr (zero_le_one.trans hr))
+
+/-- For `1 ≤ r`, the `Lʳ` energy density `(r - 1) |u|ʳ + ‖Du‖ʳ` of a compactly supported
+function has compact support. -/
+theorem hasCompactSupport_rpow_energy {u : F → ℝ} (hsupp : HasCompactSupport u) {r : ℝ}
+    (hr : 1 ≤ r) : HasCompactSupport fun x ↦ (r - 1) * |u x| ^ r + ‖fderiv ℝ u x‖ ^ r := by
+  have hr0 : r ≠ 0 := (zero_lt_one.trans_le hr).ne'
+  exact (hsupp.mono fun x hx hz ↦ hx (by simp [hz, hr0])).add
+    ((hsupp.fderiv ℝ).mono fun x hx hz ↦ hx (by
+      simp only [hz, norm_zero (E := F →L[ℝ] ℝ), Real.zero_rpow hr0]))
+
+end Energy
+
+private theorem integrable_rpow_energy {g : ℝ → ℝ} (hg : ContDiff ℝ 1 g)
+    (hs : HasCompactSupport g) {r : ℝ} (hr : 1 ≤ r) :
+    Integrable (fun t ↦ (r - 1) * |g t| ^ r + |deriv g t| ^ r) volume := by
+  simpa only [← norm_deriv_eq_norm_fderiv, Real.norm_eq_abs] using
+    (continuous_rpow_energy hg hr).integrable_of_hasCompactSupport
+      (hasCompactSupport_rpow_energy hs hr)
+
+/-- If `x ^ r ≤ (r - 1) y ^ r + z ^ r` for `1 ≤ r` and nonnegative `x`, `y`, `z`, with `y` and `z`
+at most `n`, then `x ≤ r ^ (1 / r) n`. This turns the `Lʳ` trace inequality into a bound with
+constant `r ^ (1 / r)` by the Sobolev norm. -/
+theorem le_rpow_inv_mul_of_rpow_le {r x y z n : ℝ} (hr : 1 ≤ r) (hx : 0 ≤ x) (hy : 0 ≤ y)
+    (hz : 0 ≤ z) (hyn : y ≤ n) (hzn : z ≤ n) (h : x ^ r ≤ (r - 1) * y ^ r + z ^ r) :
+    x ≤ r ^ r⁻¹ * n := by
+  have hr0 : 0 < r := zero_lt_one.trans_le hr
+  have hn : 0 ≤ n := hy.trans hyn
+  have h1 : y ^ r ≤ n ^ r := Real.rpow_le_rpow hy hyn hr0.le
+  have h2 : z ^ r ≤ n ^ r := Real.rpow_le_rpow hz hzn hr0.le
+  rw [← Real.rpow_le_rpow_iff hx (by positivity) hr0, Real.mul_rpow (by positivity) hn,
+    ← Real.rpow_mul hr0.le, inv_mul_cancel₀ hr0.ne', Real.rpow_one]
+  nlinarith [sub_nonneg.2 hr]
+
+/-- **The one-dimensional `Lᵖ` trace estimate.** For `1 ≤ r`, the `r`-th power of the value at
+the endpoint of a half-line of a compactly supported `C¹` function is controlled by
+`(r - 1) |g|ʳ + |g'|ʳ` on that half-line. For `r = 2` the right side is the `H¹` energy. -/
+theorem abs_rpow_le_integral_Ioi {g : ℝ → ℝ} (hg : ContDiff ℝ 1 g) (hs : HasCompactSupport g)
+    (a : ℝ) {r : ℝ} (hr : 1 ≤ r) :
+    |g a| ^ r ≤ ∫ t in Ioi a, (r - 1) * |g t| ^ r + |deriv g t| ^ r := by
+  have hr0 : r ≠ 0 := (zero_lt_one.trans_le hr).ne'
+  have hint := integrable_rpow_energy hg hs hr
+  rcases hr.eq_or_lt with rfl | hr1
+  · -- For `r = 1`, the fundamental theorem of calculus on `[a, ∞)`.
+    have hi := hs.integral_Ioi_deriv_eq hg a
+    simp only [Real.rpow_one, sub_self, zero_mul, zero_add] at hint ⊢
+    calc |g a| = |∫ t in Ioi a, deriv g t| := by rw [hi, abs_neg]
+      _ ≤ ∫ t in Ioi a, |deriv g t| := abs_integral_le_integral_abs
+  · -- For `r > 1`, the same argument for the `C¹` function `|g|ʳ`, whose derivative
+    -- `r |g|ʳ⁻¹ g'` is bounded by Young's inequality.
+    have hv : ContDiff ℝ 1 (fun t ↦ ‖g t‖ ^ r) := hg.norm_rpow hr1
+    have hvs : HasCompactSupport (fun t ↦ ‖g t‖ ^ r) :=
+      hs.mono fun t ht hzero ↦ ht (by simp [hzero, hr0])
+    have hi := hvs.integral_Ioi_deriv_eq hv a
+    have hdv : Integrable (fun t ↦ deriv (fun t ↦ ‖g t‖ ^ r) t) volume :=
+      (hv.continuous_deriv le_rfl).integrable_of_hasCompactSupport hvs.deriv
+    have hyoung : ∀ t, |deriv (fun t ↦ ‖g t‖ ^ r) t| ≤ (r - 1) * |g t| ^ r + |deriv g t| ^ r := by
+      intro t
+      have hd := norm_fderiv_norm_rpow_le (hg.differentiable one_ne_zero) (x := t) hr1
+      rw [← norm_deriv_eq_norm_fderiv, ← norm_deriv_eq_norm_fderiv] at hd
+      simp only [Real.norm_eq_abs] at hd
+      refine hd.trans ?_
+      -- Weighted AM-GM with weights `(r - 1) / r` and `1 / r`.
+      have hw := Real.geom_mean_le_arith_mean2_weighted
+        (div_nonneg (sub_nonneg.2 hr) (zero_le_one.trans hr))
+        (one_div_nonneg.2 (zero_le_one.trans hr))
+        (Real.rpow_nonneg (abs_nonneg (g t)) r) (Real.rpow_nonneg (abs_nonneg (deriv g t)) r)
+        (by field_simp; ring)
+      rw [← Real.rpow_mul (abs_nonneg _), ← Real.rpow_mul (abs_nonneg _),
+        show r * ((r - 1) / r) = r - 1 by field_simp, show r * (1 / r) = 1 by field_simp,
+        Real.rpow_one] at hw
+      have hr' : 0 < r := zero_lt_one.trans hr1
+      calc r * |g t| ^ (r - 1) * |deriv g t| = r * (|g t| ^ (r - 1) * |deriv g t|) := by ring
+        _ ≤ r * ((r - 1) / r * |g t| ^ r + 1 / r * |deriv g t| ^ r) := by gcongr
+        _ = (r - 1) * |g t| ^ r + |deriv g t| ^ r := by field_simp
+    calc |g a| ^ r = ∫ t in Ioi a, -deriv (fun t ↦ ‖g t‖ ^ r) t := by
+          rw [integral_neg, hi, neg_neg, Real.norm_eq_abs]
+      _ ≤ ∫ t in Ioi a, (r - 1) * |g t| ^ r + |deriv g t| ^ r :=
+          integral_mono hdv.neg.integrableOn hint.integrableOn fun t ↦
+            (neg_le_abs _).trans (hyoung t)
+
+/-- For `1 ≤ r`, the `r`-th power of a point value of a compactly supported `C¹` function is
+controlled by `(r - 1) |g|ʳ + |g'|ʳ` on the whole line. -/
+theorem abs_rpow_le_integral {g : ℝ → ℝ} (hg : ContDiff ℝ 1 g) (hs : HasCompactSupport g)
+    (a : ℝ) {r : ℝ} (hr : 1 ≤ r) :
+    |g a| ^ r ≤ ∫ t, (r - 1) * |g t| ^ r + |deriv g t| ^ r := by
+  refine (abs_rpow_le_integral_Ioi hg hs a hr).trans
+    (setIntegral_le_integral (integrable_rpow_energy hg hs hr)
+      (Filter.Eventually.of_forall fun t ↦ ?_))
+  have := Real.rpow_nonneg (abs_nonneg (g t)) r
+  have := Real.rpow_nonneg (abs_nonneg (deriv g t)) r
+  have := sub_nonneg.2 hr
+  positivity
 
 end TauCeti

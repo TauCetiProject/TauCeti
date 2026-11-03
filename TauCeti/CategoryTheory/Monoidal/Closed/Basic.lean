@@ -9,7 +9,7 @@ public import Mathlib.CategoryTheory.Monoidal.Braided.Basic
 public import Mathlib.CategoryTheory.Monoidal.Closed.Basic
 
 /-!
-# Precomposing an internal Hom with an isomorphism or an epimorphism
+# Precomposing an internal Hom with an isomorphism, an epimorphism or an equality
 
 `MonoidalClosed.pre_isIso` states that precomposition by an isomorphism of objects is an
 isomorphism of internal Hom functors, and `MonoidalClosed.mono_pre_app` that, in a braided
@@ -26,7 +26,9 @@ in `CategoryTheory.Functor.ihomComparison_isIso_of_iso`.  It is Mathlib's isomor
 ## Main declarations
 
 * `MonoidalClosed.pre_isIso`;
-* `MonoidalClosed.mono_pre_app`.
+* `MonoidalClosed.mono_pre_app`;
+* `MonoidalClosed.pre_eqToHom_app`: precomposition with the transport along an equality of
+  objects is the transport along the induced equality of internal Homs.
 -/
 
 public section
@@ -70,5 +72,14 @@ instance MonoidalClosed.mono_pre_app [BraidedCategory C] [MonoidalClosed C] {A B
     have e := congrArg MonoidalClosed.uncurry hgh
     rw [MonoidalClosed.uncurry_pre_app, MonoidalClosed.uncurry_pre_app] at e
     exact (cancel_epi _).1 e
+
+/-- Precomposition with the morphism `eqToHom h` induced by an equality of objects `h : A = B` is,
+at each object `X`, the transport along the induced equality of internal Homs into `X`. -/
+@[simp]
+theorem MonoidalClosed.pre_eqToHom_app [MonoidalClosed C] {A B : C} (h : A = B) (X : C) :
+    (MonoidalClosed.pre (eqToHom h)).app X =
+      eqToHom (congrArg (fun A : C ↦ (ihom A).obj X) h.symm) := by
+  subst h
+  simp only [eqToHom_refl, MonoidalClosed.pre_id, NatTrans.id_app]
 
 end CategoryTheory

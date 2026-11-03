@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Dynamic.LeviDecomposition.Coordinate
 public import TauCeti.Algebra.AlgebraicGroup.Smooth.CommHopfAlgCat
+import TauCeti.Algebra.MonoidAlgebra.Basic
 import TauCeti.Algebra.Polynomial.Laurent.Coeff
 
 /-!
@@ -127,7 +128,7 @@ private noncomputable def constCoeffAlgHom (hJ : J ^ 2 = ⊥)
       rw [← Ideal.Quotient.eq_zero_iff_mem, mk_coeff_of_mapValue_eq_constPoint hΨ]
       simp [hn]
     rw [map_mul]
-    exact LaurentPolynomial.mul_coeff_zero_of_coeff_mem hJ (hmem a) (hmem b)
+    exact AddMonoidAlgebra.coeff_zero_mul_of_coeff_mem hJ (hmem a) (hmem b)
   map_zero' := by simp
   map_add' a b := by simp
   commutes' r := by

@@ -13,7 +13,7 @@ public import TauCeti.LinearAlgebra.QuadraticForm.Transfer.QuadraticExtension
 
 import TauCeti.FieldTheory.IntermediateField.Quadratic
 import TauCeti.FieldTheory.QuadraticForm.StiefelWhitney.Evens.Kummer.Value
-import TauCeti.FieldTheory.Separable.Quadratic
+import TauCeti.FieldTheory.Separable.PrimeDegree
 import TauCeti.NumberTheory.HilbertSymbol.ExtensionNorm
 
 /-!
@@ -91,11 +91,13 @@ public section
 
 noncomputable section
 
+universe u
+
 namespace TauCeti
 
 open _root_.QuadraticMap _root_.ContinuousCohomology
 
-variable {K L : Type} [Field K] [Invertible (2 : K)]
+variable {K L : Type u} [Field K] [Invertible (2 : K)]
 
 section CommRing
 

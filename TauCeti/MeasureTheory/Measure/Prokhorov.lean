@@ -19,6 +19,8 @@ sequence is tight.
 
 ## Main declarations
 
+* `TauCeti.isCompact_closure_of_isTightMeasureSet_of_mass_le`: Prokhorov's theorem for finite
+  measures, a tight set with uniformly bounded mass has compact closure.
 * `TauCeti.finite_measure_cluster_limit`: a tight, mass-bounded sequence of finite measures has a
   weak cluster limit along an ultrafilter below `atTop`.
 * `TauCeti.finite_measure_subseq_limit`: the corresponding subsequence form when the weak topology
@@ -42,27 +44,31 @@ namespace TauCeti
 variable {α : Type*} [MeasurableSpace α] [TopologicalSpace α]
   [T2Space α] [BorelSpace α]
 
-omit [T2Space α] [BorelSpace α] in
-/-- A tight family of measures admits a **monotone** exhaustion by compact sets whose complements
-carry uniformly small mass: given tolerances `u j > 0`, there are compact `K j`, increasing in `j`,
-with `σ n (K j)ᶜ ≤ u j` for every `n`. Accumulating the sets supplied by tightness is what turns
-the unrelated compact sets into the monotone family Mathlib's Prokhorov criterion expects. -/
-private lemma exists_monotone_isCompact_measure_compl_le
-    {σ : ℕ → Measure α} (hTight : IsTightMeasureSet (Set.range σ))
-    {u : ℕ → ℝ≥0} (hu_pos : ∀ j, 0 < u j) :
-    ∃ K : ℕ → Set α, Monotone K ∧ (∀ j, IsCompact (K j)) ∧
-      ∀ j n, (σ n) (K j)ᶜ ≤ (u j : ENNReal) := by
-  have hchoose : ∀ j, ∃ K : Set α, IsCompact K ∧ ∀ n, (σ n) Kᶜ ≤ (u j : ENNReal) := by
-    intro j
-    obtain ⟨K, hK, htail⟩ :=
-      isTightMeasureSet_iff_exists_isCompact_measure_compl_le.mp hTight
-        (u j : ENNReal) (by exact_mod_cast hu_pos j)
-    exact ⟨K, hK, fun n => htail (σ n) (Set.mem_range_self n)⟩
+/-- **Prokhorov's theorem for finite measures.** A tight set of finite measures with uniformly
+bounded total mass has compact closure in the topology of weak convergence.
+
+This is the finite-measure counterpart of Mathlib's `isCompact_closure_of_isTightMeasureSet`
+for probability measures. -/
+theorem isCompact_closure_of_isTightMeasureSet_of_mass_le {S : Set (FiniteMeasure α)} {C : ℝ≥0}
+    (hTight : IsTightMeasureSet {(μ : Measure α) | μ ∈ S}) (hmass : ∀ μ ∈ S, μ.mass ≤ C) :
+    IsCompact (closure S) := by
+  -- Choose a positive sequence decreasing to zero; these values are the tail tolerances in
+  -- Prokhorov's compact set criterion.
+  obtain ⟨u, -, hu_pos, hu_lim⟩ :
+      ∃ u : ℕ → ℝ≥0, StrictAnti u ∧ (∀ n, 0 < u n) ∧ Tendsto u atTop (𝓝 0) :=
+    exists_seq_strictAnti_tendsto 0
+  have hchoose : ∀ j, ∃ K : Set α, IsCompact K ∧ ∀ μ ∈ S, (μ : Measure α) Kᶜ ≤ u j := fun j => by
+    obtain ⟨K, hK, htail⟩ := isTightMeasureSet_iff_exists_isCompact_measure_compl_le.mp hTight
+      (u j : ENNReal) (by exact_mod_cast hu_pos j)
+    exact ⟨K, hK, fun μ hμ => htail μ ⟨μ, hμ, rfl⟩⟩
   choose K hK_comp hK_tail using hchoose
-  refine ⟨Set.accumulate K, Set.monotone_accumulate,
-    fun j => isCompact_accumulate hK_comp j, fun j n => ?_⟩
-  exact (measure_mono (compl_subset_compl.mpr (Set.subset_accumulate (s := K) (x := j)))).trans
-    (hK_tail j n)
+  -- Accumulating the compact sets supplied by tightness gives the monotone exhaustion that
+  -- Mathlib's Prokhorov criterion expects.
+  refine (isCompact_setOfPred_finiteMeasure_mass_le_compl_isCompact_le (E := α) C hu_lim
+    (isCompact_accumulate hK_comp) (Or.inr Set.monotone_accumulate)).closure_of_subset
+    fun μ hμ => ⟨hmass μ hμ, fun j => ENNReal.coe_le_coe.mp ?_⟩
+  simpa using (measure_mono (compl_subset_compl.mpr
+    (Set.subset_accumulate (s := K) (x := j)))).trans (hK_tail j μ hμ)
 
 /-- A tight, uniformly mass-bounded sequence of finite measures has a weak cluster limit.
 
@@ -81,37 +87,25 @@ lemma finite_measure_cluster_limit (σ : ℕ → Measure α) (C : ℝ≥0)
   have hfin : ∀ n, IsFiniteMeasure (σ n) := fun n =>
     ⟨(hmass n).trans_lt ENNReal.coe_lt_top⟩
   let σf : ℕ → FiniteMeasure α := fun n => ⟨σ n, hfin n⟩
-  -- Choose a positive sequence decreasing to zero; these values are the tail tolerances in
-  -- Prokhorov's compact set criterion.
-  obtain ⟨u, -, hu_pos, hu_lim⟩ :
-      ∃ u : ℕ → ℝ≥0, StrictAnti u ∧ (∀ n, 0 < u n) ∧ Tendsto u atTop (𝓝 0) :=
-    exists_seq_strictAnti_tendsto 0
-  obtain ⟨K, hKmono, hK_comp, hK_tail⟩ :=
-    exists_monotone_isCompact_measure_compl_le hTight hu_pos
-  let S : Set (FiniteMeasure α) := {μ | μ.mass ≤ C ∧ ∀ j, μ (K j)ᶜ ≤ u j}
-  have hcompact : IsCompact S := by
-    simpa [S] using
-      isCompact_setOfPred_finiteMeasure_mass_le_compl_isCompact_le
-        (E := α) (C := C) (u := u) (K := K) hu_lim hK_comp (Or.inr hKmono)
-  -- The finite-measure sequence lies in the compact Prokhorov set.
-  have hσ_mem : ∀ n, σf n ∈ S := by
-    refine fun n => ⟨?_, fun j => ?_⟩
-    · dsimp [σf, S, FiniteMeasure.mass]
-      exact ENNReal.coe_le_coe.mp (by simpa using hmass n)
-    · exact ENNReal.coe_le_coe.mp (by simpa [σf] using hK_tail j n)
+  have hσf_mass : range σf ⊆ {μ | μ.mass ≤ C} := by
+    rintro - ⟨n, rfl⟩
+    rw [mem_ofPred_eq, ← ENNReal.coe_le_coe, FiniteMeasure.ennreal_mass]
+    exact hmass n
+  have hcompact : IsCompact (closure (range σf)) :=
+    isCompact_closure_of_isTightMeasureSet_of_mass_le
+      (hTight.subset (by rintro - ⟨-, ⟨n, rfl⟩, rfl⟩; exact ⟨n, rfl⟩)) hσf_mass
   -- Compactness gives a cluster point and an ultrafilter below `atTop` along which `σf`
   -- converges weakly.
-  have hmap_le : map σf atTop ≤ 𝓟 S :=
-    tendsto_principal.mpr (Eventually.of_forall hσ_mem)
-  obtain ⟨μf, hμfS, hcluster⟩ := hcompact hmap_le
-  have hmapcluster : MapClusterPt μf atTop σf := hcluster
-  obtain ⟨U, hUle, hUtend⟩ := mapClusterPt_iff_ultrafilter.mp hmapcluster
+  obtain ⟨μf, hμf, hcluster⟩ := hcompact (f := map σf atTop)
+    (tendsto_principal.mpr (.of_forall fun n => subset_closure (mem_range_self n)))
+  obtain ⟨U, hUle, hUtend⟩ := mapClusterPt_iff_ultrafilter.mp hcluster
   refine ⟨(μf : Measure α), U, hUle, inferInstance, ?_, ?_⟩
-  -- Finally unwrap the compact-set membership into the mass bound and weak convergence of
+  -- Finally unwrap the closure membership into the mass bound and weak convergence of
   -- integrals against bounded continuous test functions.
-  · have hle : (μf.mass : ENNReal) ≤ (C : ENNReal) := ENNReal.coe_le_coe.mpr hμfS.1
+  · have hle : μf.mass ≤ C := closure_minimal hσf_mass
+      (isClosed_le FiniteMeasure.continuous_mass continuous_const) hμf
     rw [← FiniteMeasure.ennreal_mass]
-    simpa using hle
+    exact_mod_cast hle
   · intro g
     have hweak :=
       (FiniteMeasure.tendsto_iff_forall_integral_tendsto.mp hUtend) g

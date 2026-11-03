@@ -95,9 +95,9 @@ def cellularChainRepresentation (n : ℕ) :
       (ModuleCat.of R R) n).hom
     map_one' := (cellularChainBasis (p ⁻¹' C) R n).ext fun c ↦ by
       simp only [cellularChainGroupMap_preimageSMul_cellularChainBasis, one_smul,
-        Module.End.one_apply]
+        one_apply_eq_self]
     map_mul' g h := (cellularChainBasis (p ⁻¹' C) R n).ext fun c ↦ by
-      simp only [Module.End.mul_apply, cellularChainGroupMap_preimageSMul_cellularChainBasis,
+      simp only [mul_apply_eq_comp, cellularChainGroupMap_preimageSMul_cellularChainBasis,
         mul_smul] }
 
 /-- An element `g` acts on the cellular chains of the lift by the chain map of translation by
@@ -203,6 +203,17 @@ def cellularChainComplexRepForget₂Iso :
       -- The remaining transports are between objects that are the cellular chain groups by
       -- definition, so both sides are the cellular differential.
       rfl
+
+/-- The components of `TauCeti.cellularChainComplexRepForget₂Iso` are the transports along the
+equalities of objects that hold by definition. -/
+@[simp]
+lemma cellularChainComplexRepForget₂Iso_hom_f (n : ℕ) :
+    letI := cwComplexPreimage C hG.isCoveringMap
+    haveI := hG.isCoveringMap.t2Space
+    (cellularChainComplexRepForget₂Iso C hG R).hom.f n = eqToHom (by
+      rw [Functor.mapHomologicalComplex_obj_X, cellularChainComplex_X, cellularChainComplexRep_X]
+      rfl) :=
+  (rfl)
 
 section Free
 

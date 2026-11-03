@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.PID
 public import TauCeti.Algebra.MonoidAlgebra.Basis
 public import TauCeti.RepresentationTheory.FDRep.Basic
+public import TauCeti.RepresentationTheory.Rep.OfMulAction
 public import TauCeti.RepresentationTheory.Subrepresentation
 public import TauCeti.RepresentationTheory.Rep.TensorShortExact
 
@@ -49,6 +50,10 @@ These constructions underlie the standard representation of the symmetric group.
 * `TauCeti.isCompl_invariantLine_augmentationSubrepresentation_iff`: the two subrepresentations
   are complementary exactly when `X` is empty or its cardinality is a unit in the coefficient ring.
 * `TauCeti.ofMulActionEquivProdAugmentation`: the explicit splitting as trivial plus augmentation.
+* `TauCeti.augmentationProjectionOfIsUnit`: the equivariant projection onto the augmentation
+  subrepresentation along the invariant line.
+* `TauCeti.dualRestrict_augmentationSubrepresentation_eq_zero_iff`: the linear forms vanishing on
+  the augmentation subrepresentation are the multiples of the coefficient sum.
 * `TauCeti.finrank_augmentationSubrepresentation`: the dimension is `|X| - 1`.
 * `TauCeti.character_augmentationSubrepresentation`: the character is the free-module character
   minus `1`.
@@ -173,6 +178,42 @@ instance [Finite X] :
     exact Module.Finite.span_of_finite k (Set.finite_range _)
 
 end SubrepRing
+
+/-! ### Linear forms on the augmentation subrepresentation -/
+
+section DualRestrict
+
+variable {k : Type*} [CommRing k] {G X : Type*} [Monoid G] [MulAction G X]
+
+/-- The coefficient sum vanishes on the augmentation subrepresentation. -/
+@[simp]
+theorem dualRestrict_augmentationSubrepresentation_sumCoords :
+    (augmentationSubrepresentation k G X).toSubmodule.dualRestrict
+      (MonoidAlgebra.basis X k).sumCoords = 0 :=
+  LinearMap.ext fun v ↦ by
+    rw [Submodule.dualRestrict_apply, LinearMap.zero_apply]
+    exact mem_augmentationSubrepresentation_iff.1 v.2
+
+/-- A linear form on `k[X]` vanishes on the augmentation subrepresentation exactly when it is a
+multiple of the coefficient sum. No hypothesis on `k` or `X` is needed. -/
+theorem dualRestrict_augmentationSubrepresentation_eq_zero_iff
+    {φ : Module.Dual k (MonoidAlgebra k X)} :
+    (augmentationSubrepresentation k G X).toSubmodule.dualRestrict φ = 0 ↔
+      φ ∈ k ∙ (MonoidAlgebra.basis X k).sumCoords := by
+  refine ⟨fun hφ ↦ ?_, fun hφ ↦ ?_⟩
+  · rcases isEmpty_or_nonempty X with hX | hX
+    · exact Submodule.mem_span_singleton.2 ⟨0, (MonoidAlgebra.basis X k).ext fun x ↦ hX.elim x⟩
+    -- `φ` takes the same value on every standard basis vector, since it kills their differences.
+    refine Submodule.mem_span_singleton.2
+      ⟨φ (MonoidAlgebra.single hX.some 1), (MonoidAlgebra.basis X k).ext fun x ↦ ?_⟩
+    have hx := LinearMap.congr_fun hφ
+      ⟨_, single_sub_single_mem_augmentationSubrepresentation (G := G) x hX.some⟩
+    rw [Submodule.dualRestrict_apply, LinearMap.zero_apply, map_sub, sub_eq_zero] at hx
+    simp [hx]
+  · obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.1 hφ
+    rw [map_smul, dualRestrict_augmentationSubrepresentation_sumCoords, smul_zero]
+
+end DualRestrict
 
 /-! ### The augmentation sequence -/
 
@@ -586,6 +627,49 @@ theorem coe_ofMulActionEquivProdAugmentation_apply_snd (h : IsUnit (Fintype.card
     ← ofMulActionEquivProdAugmentation_symm_apply k G X h,
     (ofMulActionEquivProdAugmentation k G X h).symm_apply_apply]
 
+/-- When `|X|` is a unit in a ring, the **projection of `k[X]` onto the augmentation
+subrepresentation** along the invariant line: the second component of the splitting
+`TauCeti.ofMulActionEquivProdAugmentation`. Unlike `TauCeti.augmentationProjection`, which
+projects along the line of a chosen basis vector, it is equivariant. -/
+noncomputable def augmentationProjectionOfIsUnit (h : IsUnit (Fintype.card X : k)) :
+    MonoidAlgebra k X →ₗ[k] (augmentationSubrepresentation k G X).toSubmodule :=
+  LinearMap.snd k k _ ∘ₗ (ofMulActionEquivProdAugmentation k G X h).toLinearMap
+
+/-- The equivariant projection is the augmentation component of the splitting. -/
+theorem augmentationProjectionOfIsUnit_apply (h : IsUnit (Fintype.card X : k))
+    (v : MonoidAlgebra k X) :
+    augmentationProjectionOfIsUnit k G X h v = (ofMulActionEquivProdAugmentation k G X h v).2 :=
+  (rfl)
+
+/-- The projection onto the augmentation subrepresentation subtracts the average coefficient
+from every coordinate. -/
+@[simp]
+theorem coe_augmentationProjectionOfIsUnit_apply (h : IsUnit (Fintype.card X : k))
+    (v : MonoidAlgebra k X) :
+    (augmentationProjectionOfIsUnit k G X h v : MonoidAlgebra k X) =
+      v - ((MonoidAlgebra.basis X k).sumCoords v * Ring.inverse (Fintype.card X : k)) •
+        permutationSum k X := by
+  rw [augmentationProjectionOfIsUnit_apply, coe_ofMulActionEquivProdAugmentation_apply_snd]
+
+/-- The projection onto the augmentation subrepresentation is a retraction of its inclusion. -/
+@[simp]
+theorem augmentationProjectionOfIsUnit_coe (h : IsUnit (Fintype.card X : k))
+    (v : (augmentationSubrepresentation k G X).toSubmodule) :
+    augmentationProjectionOfIsUnit k G X h v = v :=
+  Subtype.ext <| by
+    rw [coe_augmentationProjectionOfIsUnit_apply, mem_augmentationSubrepresentation_iff.1 v.2,
+      zero_mul, zero_smul, sub_zero]
+
+/-- The projection onto the augmentation subrepresentation is equivariant. -/
+theorem isIntertwiningMap_augmentationProjectionOfIsUnit (h : IsUnit (Fintype.card X : k)) :
+    Representation.IsIntertwiningMap (Representation.ofMulAction k G X)
+      (augmentationSubrepresentation k G X).toRepresentation
+      (augmentationProjectionOfIsUnit k G X h) :=
+  ⟨fun g v ↦ by
+    rw [augmentationProjectionOfIsUnit_apply, augmentationProjectionOfIsUnit_apply,
+      ← Representation.Equiv.coe_toIntertwiningMap, Representation.IntertwiningMap.isIntertwining]
+    rfl⟩
+
 end Splitting
 
 end RingScalars
@@ -649,3 +733,27 @@ theorem character_augmentationSubrepresentation [Finite X] [Nonempty X] (g : G) 
 end Field
 
 end TauCeti
+
+namespace MulActionHom
+
+universe u
+
+open CategoryTheory
+
+/-- Linear extension of an equivariant map preserves the coefficient-sum augmentation. -/
+@[reassoc (attr := simp)]
+theorem toRepRes_comp_permutationAugmentation {k : Type u} [Ring k]
+    {G H : Type*} [Monoid G] [Monoid H] {X Y : Type u}
+    [MulAction G X] [MulAction H Y] {φ : G →* H} (f : X →ₑ[φ] Y) :
+    f.toRepRes (k := k) ≫ (Rep.resFunctor φ).map (TauCeti.permutationAugmentation k H Y) =
+      TauCeti.permutationAugmentation k G X := by
+  apply Rep.ofMulAction_hom_ext
+  intro x
+  -- Evaluate the coefficient sums here: restriction and the trivial representation give
+  -- definitionally equal target actions with different implicit arguments to Rep.Hom.hom.
+  simp only [Rep.hom_comp, Representation.IntertwiningMap.comp_apply]
+  rw [Rep.resMap_hom_apply, toRepRes_hom_single, TauCeti.permutationAugmentation_apply]
+  exact (by simp : (MonoidAlgebra.basis Y k).sumCoords (MonoidAlgebra.single (f x) 1) = 1).trans
+    ((TauCeti.permutationAugmentation_apply k G X (MonoidAlgebra.single x 1)).trans (by simp)).symm
+
+end MulActionHom

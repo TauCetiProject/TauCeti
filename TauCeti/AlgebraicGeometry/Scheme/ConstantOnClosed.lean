@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.AlgClosed.Basic
 public import Mathlib.AlgebraicGeometry.IdealSheaf.Functorial
+public import Mathlib.AlgebraicGeometry.PullbackCarrier
 public import TauCeti.Topology.KrullDimension.Irreducible
 
 /-!
@@ -34,6 +35,13 @@ closed immersion through which the restriction to the reduced subscheme lifts.
 Applied to an irreducible component of a geometric fibre of a family of curves, these give the
 equivalent descriptions of a component contracted by a map from the curve.
 
+Constancy also survives base change from an algebraically closed field `K` to a one-point scheme
+over `K`, such as the spectrum of a field extension. The image of a closed subset on which `f` is
+constant is a closed point `y` of `Y`, which is the image of a `K`-point `σ` because `κ(y) = K`.
+Over a one-point scheme `T`, the fibre of `Y ×_K T ⟶ Y` over `y` is a single point, since it is
+the fibre product of `σ` with that projection, which is `Spec K ×_K T ≅ T`. So the base change of
+`f` is constant on the preimage of the closed subset.
+
 ## Main results
 
 * `AlgebraicGeometry.Scheme.Hom.exists_isClosed_singleton_image_eq`: a morphism constant on a
@@ -44,6 +52,11 @@ equivalent descriptions of a component contracted by a map from the curve.
   a nonempty closed subset is factorization of the restriction through some `Spec κ(y)`.
 * `AlgebraicGeometry.Scheme.Hom.subsingleton_image_iff_exists_subschemeι_comp_eq_section`: over
   an algebraically closed field `K`, constancy is factorization through a `K`-point of `Y`.
+* `AlgebraicGeometry.Scheme.Hom.subsingleton_preimage_range_pullback_fst`: after base change to a
+  one-point scheme, the fibre over a point in the image of a section is a single point.
+* `AlgebraicGeometry.Scheme.Hom.subsingleton_image_preimage_of_subsingleton_image`: over an
+  algebraically closed field, constancy on a locally closed subset survives base change to a
+  one-point scheme, for instance the spectrum of a field extension.
 
 ## References
 
@@ -53,7 +66,7 @@ equivalent descriptions of a component contracted by a map from the curve.
 
 public section
 
-open CategoryTheory TopologicalSpace AlgebraicGeometry
+open CategoryTheory Limits TopologicalSpace AlgebraicGeometry
 
 namespace AlgebraicGeometry.Scheme.Hom
 
@@ -153,5 +166,38 @@ theorem subsingleton_image_iff_exists_subschemeι_comp_eq_section {K : Type u} [
     rintro _ ⟨a, rfl⟩ _ ⟨b, rfl⟩
     simp only [comp_apply]
     exact congr(σ $(Subsingleton.elim _ _))
+
+/-- Let `q : X ⟶ S` have a section `σ`. After base change along a morphism `g : T ⟶ S` from a
+one-point scheme, for instance the spectrum of a field, the fibre of `X ×_S T ⟶ X` over the image
+of `σ` has at most one point: it is the fibre product of `σ` with that projection, which is
+`S ×_S T ≅ T`. -/
+theorem subsingleton_preimage_range_pullback_fst {S T : Scheme.{u}} (q : X ⟶ S) (g : T ⟶ S)
+    [Subsingleton T] {σ : S ⟶ X} (hσ : σ ≫ q = 𝟙 S) :
+    (pullback.fst q g ⁻¹' Set.range σ).Subsingleton := by
+  rw [← Scheme.Pullback.range_snd]
+  have e := pullbackRightPullbackFstIso q g σ ≪≫ pullback.congrHom hσ rfl ≪≫
+    asIso (pullback.snd (𝟙 S) g)
+  have : Subsingleton ↥(pullback σ (pullback.fst q g)) := e.hom.homeomorph.subsingleton
+  exact Set.subsingleton_range _
+
+/-- Let `K` be an algebraically closed field, `q : Y ⟶ Spec K` locally of finite type, and
+`f : X ⟶ Y` locally of finite type. Let `f' : X' ⟶ Y ×_K T` lie over `f` along `p : X' ⟶ X`, where
+`T` is a one-point scheme over `K`, for instance the spectrum of a field extension of `K`. If `f` is
+constant on a locally closed subset `Z` of `X`, then `f'` is constant on its preimage `p ⁻¹' Z`. -/
+theorem subsingleton_image_preimage_of_subsingleton_image {K : Type u} [Field K] [IsAlgClosed K]
+    {X' T : Scheme.{u}} (q : Y ⟶ Spec (.of K)) [LocallyOfFiniteType q] [LocallyOfFiniteType f]
+    (g : T ⟶ Spec (.of K)) [Subsingleton T] (p : X' ⟶ X) (f' : X' ⟶ pullback q g)
+    (w : f' ≫ pullback.fst q g = p ≫ f) {Z : Set X} (hZ : IsLocallyClosed Z)
+    (h : (f '' Z).Subsingleton) : (f' '' (p ⁻¹' Z)).Subsingleton := by
+  have := LocallyOfFiniteType.jacobsonSpace q
+  rcases Z.eq_empty_or_nonempty with rfl | hne
+  · simp
+  -- `f` maps `Z` to a closed point `y`, the image of the `K`-point at `y`.
+  obtain ⟨y, hy, hZy⟩ := f.exists_isClosed_singleton_image_eq hZ hne h
+  refine (q.subsingleton_preimage_range_pullback_fst g (pointOfClosedPoint_comp q y hy)).anti ?_
+  rintro _ ⟨x', hx', rfl⟩
+  have hx'y : f (p x') = y := hZy.subset ⟨_, hx', rfl⟩
+  refine ⟨Nonempty.some inferInstance, ?_⟩
+  rw [pointOfClosedPoint_apply, ← hx'y, ← Scheme.Hom.comp_apply p f, ← w, Scheme.Hom.comp_apply]
 
 end AlgebraicGeometry.Scheme.Hom

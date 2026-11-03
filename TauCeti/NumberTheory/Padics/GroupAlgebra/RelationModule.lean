@@ -10,7 +10,7 @@ public import TauCeti.NumberTheory.Padics.GroupAlgebra.Cancellation
 import Mathlib.LinearAlgebra.TensorProduct.Prod
 import TauCeti.Algebra.MonoidAlgebra.RelationModule.FractionRing
 import TauCeti.NumberTheory.Padics.GroupAlgebra.Swan
-import TauCeti.RingTheory.KrullSchmidt.FractionRing
+import TauCeti.RingTheory.KrullSchmidt.Localization
 
 /-!
 # Surjections from relation modules over `ℤ_p[G]`
@@ -137,7 +137,8 @@ theorem nonempty_ker_linearEquiv_of_relationModule_surjective {A : Type*} [AddCo
       LinearEquiv.prodAssoc Λ _ _ _
   -- So `(ker β × X) ⊗ ℚ_p ≃ (ℤ_p[G] × X) ⊗ ℚ_p` for `X = ℤ_p[G]^n × ℤ_p[G] ⧸ I_G`, and
   -- `X ⊗ ℚ_p` cancels, as `X` is finitely generated over `ℤ_p`.
-  obtain ⟨e⟩ := IsFractionRing.nonempty_tensor_linearEquiv_of_prod_tensor_linearEquiv ℚ_[p]
+  obtain ⟨e⟩ := IsLocalization.nonempty_tensor_linearEquiv_of_prod_tensor_linearEquiv
+    (nonZeroDivisors ℤ_[p]) ℚ_[p]
     (M := LinearMap.ker β) (N := Λ)
     ⟨TensorProduct.prodLeft _ _ _ _ _ ≪≫ₗ (LinearEquiv.refl Λ _).prodCongr eA.symm ≪≫ₗ
       (TensorProduct.prodLeft _ _ _ _ _).symm ≪≫ₗ e₁.symm ≪≫ₗ e₂ ≪≫ₗ

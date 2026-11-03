@@ -43,6 +43,20 @@ theorem norm_pow_succ_mul_pow_lt_one {K : Type*} [SeminormedRing K]
         (pow_nonneg (norm_nonneg _) _)
     _ < 1 := by simpa using pow_lt_one₀ (norm_nonneg _) hu (Nat.succ_ne_zero n)
 
+/-- For `‖q‖ < 1` also `‖qⁿ‖ < 1` for every `n ≠ 0`. -/
+theorem norm_pow_lt_one {R : Type*} [SeminormedRing R] {q : R} (hq : ‖q‖ < 1) {n : ℕ}
+    (hn : n ≠ 0) : ‖q ^ n‖ < 1 :=
+  (norm_pow_le' q (Nat.pos_of_ne_zero hn)).trans_lt (pow_lt_one₀ (norm_nonneg q) hq hn)
+
+/-- Without the normalisation `‖1‖ = 1`, powers are still bounded by `‖xⁿ‖ ≤ max ‖1‖ 1 * ‖x‖ⁿ`,
+including the power `x⁰ = 1`. -/
+theorem norm_pow_le_max_mul {R : Type*} [SeminormedRing R] (x : R) (n : ℕ) :
+    ‖x ^ n‖ ≤ max ‖(1 : R)‖ 1 * ‖x‖ ^ n := by
+  rcases n with _ | n
+  · simp
+  · exact (norm_pow_le' x n.succ_pos).trans
+      (le_mul_of_one_le_left (by positivity) (le_max_right _ _))
+
 end TauCeti
 
 end

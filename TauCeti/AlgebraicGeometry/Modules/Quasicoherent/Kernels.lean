@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Modules.Tilde.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Restriction
-public import TauCeti.AlgebraicGeometry.Modules.Restriction
+public import TauCeti.AlgebraicGeometry.Modules.Restriction.Basic
 public import Mathlib.CategoryTheory.ObjectProperty.Kernels
 
 /-!

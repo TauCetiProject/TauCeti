@@ -121,7 +121,7 @@ test("current activity presents runner counts without exposing raw run records",
     current: {
       computed_at: new Date().toISOString(),
       as_of: new Date(Date.now() - 20 * 60 * 1000).toISOString(),
-      running: { github: 12, namespace: 9, "self-hosted": 1 },
+      running: { github: 12, namespace: 9, eastanglia: 2, leanfro: 1, "self-hosted": 1 },
       queued: { github: 2 },
       builds: [{ repo: "TauCetiProject/TauCeti", run: "39201955793", attempt: 1, status: "in_progress" }],
       ready_to_merge: { count: 4, complete: true, at: new Date().toISOString() },
@@ -129,9 +129,12 @@ test("current activity presents runner counts without exposing raw run records",
   };
   const b = await browser([Response.json(manifest)]);
   const cells = b.elements["[data-ci-counts]"].children;
-  assert.deepEqual(cells.map((cell) => cell.dataset.runner), ["github", "namespace", "self-hosted"]);
+  assert.deepEqual(cells.map((cell) => cell.dataset.runner), ["github", "namespace", "eastanglia", "leanfro", "self-hosted"]);
   assert.match(cells[0].textContent, /GitHub-hosted12 running 2 waiting/);
   assert.match(cells[1].textContent, /Namespace9 running 0 waiting/);
+  assert.match(cells[2].textContent, /eastanglia2 running 0 waiting/);
+  assert.match(cells[3].textContent, /leanfro1 running 0 waiting/);
+  assert.match(cells[4].textContent, /Other self-hosted1 running/);
   assert.match(b.elements["[data-ci-status]"].textContent, /^Updated just now$/);
   assert.equal(b.root.dataset.stale, "false");
   assert.equal(b.elements["[data-ci-backlog]"].textContent, "4 pull requests ready to merge.");

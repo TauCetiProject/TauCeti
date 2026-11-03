@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Symmetric.Partitions
 public import TauCeti.RepresentationTheory.Symmetric.PermutationModule.Basic
-public import TauCeti.RingTheory.MvPolynomial.Symmetric.PowerSum
+public import TauCeti.RingTheory.MvPolynomial.Symmetric.PowerSum.Basic
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Basis
 
 /-!

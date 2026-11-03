@@ -55,6 +55,12 @@ vectors in it, since the partial sums of an integral vector are integers.
   roots is `CartanMatrix.A n`.
 * `TauCeti.IntegralLattice.typeAIsometryZeroSumLattice`: the isometry from the simple-root model
   of `Aₙ` onto the coordinate model, carrying the `i`-th simple root to `eᵢ - eᵢ₊₁`.
+* `TauCeti.IntegralLattice.typeAIsometryZeroSumLattice_typeAFundamentalWeight_apply`: it carries
+  the first fundamental weight `ω₁` to `e₀ - (1 / (n + 1)) (1, …, 1)`.
+* `TauCeti.IntegralLattice.typeARootLattice_form_self_eq_dotProduct`: it turns the norm of the
+  simple-root model into the dot product of classical coordinates.
+* `TauCeti.IntegralLattice.exists_typeAIsometryZeroSumLattice_apply_eq_intCast_sub_of_mk_eq`: the
+  classical coordinates of a dual vector in the class `k ω₁` lie in `ℤ - k / (n + 1)`.
 * `TauCeti.IntegralLattice.isEven_zeroSumLattice`, `isPosDef_zeroSumLattice` and
   `determinant_zeroSumLattice`: the coordinate model is even and positive definite, of
   determinant `n + 1`.
@@ -278,6 +284,56 @@ theorem typeAIsometryZeroSumLattice_typeASimpleRoot (i : Fin n) :
       zeroSumSimpleRoot n i := by
   rw [← coe_typeASimpleRootBasis_apply, typeAIsometryZeroSumLattice,
     Isometry.ofGramMatrixEq_apply_basis, coe_zeroSumSimpleRootBasis_apply]
+
+/-- **The first fundamental weight in classical coordinates.** The isometry
+`typeAIsometryZeroSumLattice` carries `ω₁` to `e₀ - (1 / (n + 1)) (1, …, 1)`. -/
+@[simp]
+theorem typeAIsometryZeroSumLattice_typeAFundamentalWeight_apply (j : Fin (n + 1)) :
+    (typeAIsometryZeroSumLattice n (typeAFundamentalWeight n) : Fin (n + 1) → ℚ) j =
+      (if j = 0 then 1 else 0) - 1 / ((n : ℚ) + 1) := by
+  set w : Fin (n + 1) → ℚ := fun j ↦ (if j = 0 then 1 else 0) - 1 / ((n : ℚ) + 1)
+  have hn : (n : ℚ) + 1 ≠ 0 := by positivity
+  have hw : w ∈ singleParityCheckCode ℚ (Fin (n + 1)) := by
+    rw [mem_singleParityCheckCode]
+    simp [w, sum_sub_distrib]
+    field_simp
+    norm_num
+  have key : (typeAIsometryZeroSumLattice n (typeAFundamentalWeight n) : Fin (n + 1) → ℚ) = w := by
+    rw [← sum_smul_zeroSumSimpleRoot n hw]
+    conv_lhs => rw [← sum_smul_typeASimpleRoot (typeAFundamentalWeight n), map_sum]
+    simp only [map_smul, Submodule.coe_sum, Submodule.coe_smul,
+      typeAIsometryZeroSumLattice_typeASimpleRoot]
+    refine sum_congr rfl fun k _ ↦ congrArg (· • zeroSumSimpleRoot n k) ?_
+    simp [w, typeAFundamentalWeight_apply, sum_sub_distrib]
+    field_simp
+    ring
+  exact congrFun key j
+
+variable {n} in
+/-- The norm of a vector of the ambient space of the simple-root model of `Aₙ` is the dot product
+of its classical coordinates with themselves. -/
+theorem typeARootLattice_form_self_eq_dotProduct (x : Fin n → ℚ) :
+    (typeARootLattice n).form x x =
+      (typeAIsometryZeroSumLattice n x : Fin (n + 1) → ℚ) ⬝ᵥ
+        (typeAIsometryZeroSumLattice n x : Fin (n + 1) → ℚ) := by
+  rw [← (typeAIsometryZeroSumLattice n).map_app, zeroSumLattice_form, zeroSumForm_apply]
+
+variable {n} in
+/-- **The classical coordinates of the class `k ω₁`.** The classical coordinates of a dual vector
+of `Aₙ` in the discriminant class `k ω₁` all lie in `ℤ - k / (n + 1)`. -/
+theorem exists_typeAIsometryZeroSumLattice_apply_eq_intCast_sub_of_mk_eq {k : ℤ}
+    (x : (typeARootLattice n).dualCarrier)
+    (hx : (Submodule.Quotient.mk x : (typeARootLattice n).DiscriminantGroup) =
+      k • typeAFundamentalWeightClass n) (j : Fin (n + 1)) :
+    ∃ m : ℤ, (typeAIsometryZeroSumLattice n x : Fin (n + 1) → ℚ) j = m - k / (n + 1) := by
+  rw [mk_eq_zsmul_typeAFundamentalWeightClass_iff,
+    ← (typeAIsometryZeroSumLattice n).apply_mem_carrier_iff, mem_zeroSumLattice_carrier_iff] at hx
+  obtain ⟨m, hm⟩ := hx j
+  refine ⟨m + k * if j = 0 then 1 else 0, ?_⟩
+  rw [map_sub, map_zsmul] at hm
+  simp at hm
+  push_cast
+  linear_combination hm
 
 /-! ## Invariants of the coordinate model -/
 

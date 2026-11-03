@@ -77,9 +77,8 @@ theorem sum_char_permutationModule_mul_char_permutationModule (ν ξ : n.Partiti
       n.factorial * ∑ μ : n.Partition, (kostkaNumber μ ν * kostkaNumber μ ξ : ℚ) := by
   -- a partition of `n` has at most `n` parts, so `n` letters record its sorted monomial
   have hξ : ξ.parts.card ≤ Fintype.card (Fin n) := by
-    have h := Multiset.card_nsmul_le_sum (s := ξ.parts) (a := 1) fun x hx => ξ.parts_pos hx
-    rw [smul_eq_mul, mul_one, ξ.parts_sum] at h
-    rwa [Fintype.card_fin]
+    rw [Fintype.card_fin]
+    exact ξ.card_parts_le
   have key := congrArg (fun p : MvPolynomial (Fin n) ℚ => p.coeff (partWeight (Fin n) ξ))
     (sum_card_fixedPoints_smul_psumPart_partition (σ := Fin n) ℚ ν)
   simp only [← Nat.cast_smul_eq_nsmul ℚ, coeff_sum, coeff_smul, smul_eq_mul,
@@ -109,7 +108,7 @@ theorem sum_spechtChar_shapePartition_mul_char_permutationModule (D : YoungDiagr
 /-- The pairing of `χ^λ` with `ψ^ν` vanishes unless `λ` dominates `ν`: this is the vanishing of the
 Specht multiplicity outside the dominance cone. -/
 private theorem sum_spechtChar_mul_char_permutationModule_eq_zero {l ν : n.Partition}
-    (h : ¬Dominates l ν) :
+    (h : ¬l.Dominates ν) :
     ∑ π, (spechtChar l π : ℚ) * (permutationModule ν).ρ.character π = 0 := by
   obtain ⟨D, hc, rfl⟩ : ∃ (D : YoungDiagram) (hc : D.card = n), D.toPartition hc = l :=
     ⟨_, _, YoungDiagram.toPartition_ofPartition (p := l)⟩

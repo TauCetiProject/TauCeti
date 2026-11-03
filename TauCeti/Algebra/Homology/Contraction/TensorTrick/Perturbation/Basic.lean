@@ -104,7 +104,7 @@ private theorem exists_pow_perturbationTensor_apply_eq_zero
           simp [hy]
         have hdx : d x ∈ filtration R M a := hd a ⟨x, hx, rfl⟩
         have hdy : d y ∈ filtration R M b := hd b ⟨y, hy, rfl⟩
-        rw [pow_succ, Module.End.mul_apply]
+        rw [pow_succ, mul_apply_eq_comp]
         simp only [K, LinearMap.comp_apply, LinearMap.add_apply, TensorProduct.map_tmul,
           LinearMap.id_apply, map_add]
         rw [ih a (b + 1) _ _ (mem hf hdx le_rfl) (mem hg hy le_rfl) (by omega),
@@ -121,8 +121,8 @@ private theorem exists_pow_perturbationTensor_apply_eq_zero
       obtain ⟨m, hm⟩ := hz
       obtain ⟨k, hk⟩ := hw
       refine ⟨k + m, ?_⟩
-      rw [map_add, pow_add, Module.End.mul_apply, hm, map_zero, zero_add, pow_mul_comm,
-        Module.End.mul_apply, hk, map_zero]
+      rw [map_add, pow_add, mul_apply_eq_comp, hm, map_zero, zero_add, pow_mul_comm,
+        mul_apply_eq_comp, hk, map_zero]
 
 end ReducedTensorWords
 
@@ -260,7 +260,7 @@ theorem isCoalgHom_reducedTensorWords_perturb_incl (hδ : IsGradedCoderivation G
   have e1 := LinearMap.congr_fun h1 z
   have e2 := LinearMap.congr_fun h2 (deconcatenation R N z)
   simp only [LinearMap.add_apply, LinearMap.comp_apply] at e1 e2
-  simp only [LinearMap.add_apply, Module.End.one_apply, LinearMap.comp_apply, e1, e2]
+  simp only [LinearMap.add_apply, one_apply_eq_self, LinearMap.comp_apply, e1, e2]
 
 include hsq hU in
 /-- **The perturbed projection is a coalgebra morphism.**  Perturbing the tensor-trick
@@ -339,7 +339,7 @@ theorem isCoalgHom_reducedTensorWords_perturb_proj (hδ : IsGradedCoderivation G
   have e1 := LinearMap.congr_fun h1 w
   have e2 := LinearMap.congr_fun h2 w
   simp only [LinearMap.add_apply, LinearMap.comp_apply] at e1 e2
-  simp only [LinearMap.add_apply, Module.End.one_apply, Module.End.mul_apply, LinearMap.comp_apply,
+  simp only [LinearMap.add_apply, one_apply_eq_self, mul_apply_eq_comp, LinearMap.comp_apply,
     map_add, e1, e2]
 
 include hsq hU in
@@ -377,7 +377,7 @@ theorem isGradedCoderivation_reducedTensorWords_perturbedDifferential
     exact neg_one_smul R (δ ∘ₗ τ)
   have hτi : τ ∘ₗ i = i ∘ₗ τN := by
     have hτincl : G.koszulTwist 1 ∘ₗ c.incl = c.incl ∘ₗ H.koszulTwist 1 := by
-      simpa using hincl.koszulTwist_comp 1
+      simpa using hincl.koszulTwist_comp_eq_smul 1
     simp only [τ, i, τN, ← ReducedTensorWords.map_comp, hτincl]
   -- `i'` commutes with the twists, since both `τ i'` and `i' τ` solve `F + h δ F = i τ`.
   have hinj : Function.Injective (1 + h * δ : Module.End R (ReducedTensorWords R M)) := by
@@ -395,7 +395,7 @@ theorem isGradedCoderivation_reducedTensorWords_perturbedDifferential
     have e4 := LinearMap.congr_fun hτh (δ (i' z))
     have e5 := LinearMap.congr_fun hτδ (i' z)
     simp only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.neg_apply] at e1 e2 e3 e4 e5
-    simp only [LinearMap.add_apply, Module.End.one_apply, Module.End.mul_apply,
+    simp only [LinearMap.add_apply, one_apply_eq_self, mul_apply_eq_comp,
       LinearMap.comp_apply, e2]
     rw [← e3, ← e1, map_add, e4, e5, map_neg, neg_neg]
   -- `D'` is conjugate to the coderivation `D + δ` by the coalgebra morphism `i'`.

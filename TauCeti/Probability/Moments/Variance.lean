@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Integral.Prod
+import Mathlib.Probability.Moments.Variance
 
 /-!
 # The mean squared distance between two independent copies
@@ -25,11 +26,17 @@ This identity is what turns the strong-convexity remainder of an interaction ene
 transport plan, an integral over pairs of transported pairs, into the variance of the
 displacement.
 
+The file also records the elementary bound of the mean of a real function by the square root of
+its second moment, which is the nonnegativity of its variance.
+
 ## Main statements
 
 * `MeasureTheory.MemLp.integrable_norm_sub_sq_prod`: for `f ∈ L²(μ)` and a finite measure `μ`,
   the function `(x, y) ↦ ‖f x - f y‖²` is integrable for `μ ⊗ μ`.
 * `TauCeti.integral_norm_sub_sq_prod`: the identity above.
+* `MeasureTheory.integral_le_sqrt_integral_sq`: on a probability space, the mean of a real
+  square-integrable function is at most the square root of its second moment, which is the
+  nonnegativity of its variance.
 -/
 
 public section
@@ -50,6 +57,20 @@ theorem integrable_norm_sub_sq_prod [IsFiniteMeasure μ] {f : α → E} (hf : Me
     ((hf.comp_fst μ).sub (hf.comp_snd μ))
 
 end MeasureTheory.MemLp
+
+namespace MeasureTheory
+
+/-- On a probability space, the mean of a square-integrable function is at most the square root of
+its second moment. -/
+theorem integral_le_sqrt_integral_sq {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+    [IsProbabilityMeasure μ] {g : Ω → ℝ} (hg : MemLp g 2 μ) :
+    ∫ x, g x ∂μ ≤ √(∫ x, g x ^ 2 ∂μ) := by
+  apply Real.le_sqrt_of_sq_le
+  have h := ProbabilityTheory.variance_nonneg g μ
+  rw [ProbabilityTheory.variance_eq_sub hg] at h
+  simpa only [Pi.pow_apply, sub_nonneg] using h
+
+end MeasureTheory
 
 namespace TauCeti
 

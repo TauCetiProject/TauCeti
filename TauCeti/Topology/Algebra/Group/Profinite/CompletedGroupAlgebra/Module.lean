@@ -196,28 +196,6 @@ variable [TopologicalSpace R] [CompactSpace R] [CompactSpace Γ] [SeparatelyCont
   [TopologicalSpace M] [ContinuousSMul Γ M] (hM : IsCompactModule R M)
 include hM
 
-omit [CompactSpace R] [CompactSpace Γ] in
-/-- Every invariant open submodule of a compact module admits an open normal subgroup of `Γ`
-acting trivially on the quotient. -/
-theorem exists_le_ker_quotientToModuleEnd (hV : ∀ γ : Γ, ∀ x ∈ V, γ • x ∈ V)
-    (hVo : IsOpen (V : Set M)) :
-    ∃ U : OpenNormalSubgroup Γ, U.toSubgroup ≤ (Submodule.quotientToModuleEnd hV).ker :=
-  have := hM.compactSpace
-  have := hM.isTopologicalAddGroup
-  ⟨Submodule.quotientActionKernel hV hVo, (Submodule.quotientActionKernel_toSubgroup hV hVo).le⟩
-
-omit [SeparatelyContinuousMul Γ] in
-variable (Γ) in
-/-- **Separation by the invariant open submodules**, for a compact module: two elements that
-agree modulo every `Γ`-invariant open submodule are equal. -/
-theorem eq_of_forall_invariant_mkQ_eq {m m' : M}
-    (h : ∀ V : Submodule R M, IsOpen (V : Set M) → (∀ γ : Γ, ∀ x ∈ V, γ • x ∈ V) →
-      V.mkQ m = V.mkQ m') : m = m' :=
-  have := hM.isTopologicalAddGroup
-  have := hM.t2Space
-  have := hM.isLinearTopology
-  IsLinearTopology.eq_of_forall_invariant_mkQ_eq Γ h
-
 /-- **The inverse-limit construction of the scalar action.** For `x : R[[Γ]]` and `m : M` there
 is exactly one element of `M` whose class modulo every `Γ`-invariant open submodule `V` is the
 level action of `x` on the class of `m`, for every open normal subgroup `U` acting trivially on
@@ -290,14 +268,14 @@ variable (Γ) in
 theorem one_completedSMul (m : M) : hM.completedSMul (1 : completedGroupAlgebra R Γ) m = m :=
   hM.eq_of_forall_invariant_mkQ_eq Γ fun V hVo hV ↦ by
     obtain ⟨U, hU⟩ := hM.exists_le_ker_quotientToModuleEnd hV hVo
-    rw [hM.mkQ_completedSMul hV hVo U hU, map_one, Module.End.one_apply]
+    rw [hM.mkQ_completedSMul hV hVo U hU, map_one, one_apply_eq_self]
 
 /-- Multiplication in `R[[Γ]]` acts by successive scalar actions. -/
 theorem mul_completedSMul (x y : completedGroupAlgebra R Γ) (m : M) :
     hM.completedSMul (x * y) m = hM.completedSMul x (hM.completedSMul y m) :=
   hM.eq_of_forall_invariant_mkQ_eq Γ fun V hVo hV ↦ by
     obtain ⟨U, hU⟩ := hM.exists_le_ker_quotientToModuleEnd hV hVo
-    simp only [hM.mkQ_completedSMul hV hVo U hU, map_mul, Module.End.mul_apply]
+    simp only [hM.mkQ_completedSMul hV hVo U hU, map_mul, mul_apply_eq_comp]
 
 /-- Every element of `R[[Γ]]` sends the zero element of `M` to zero. -/
 @[simp]

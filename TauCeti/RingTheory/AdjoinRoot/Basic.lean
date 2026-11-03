@@ -30,6 +30,10 @@ polynomial ring `R[X]/(X ^ n)`.
   evaluation of `p` at the image of the root.
 * `AdjoinRoot.root_X_pow_sub_one_pow`: the class of `X` in `R[X]/(X ^ n - 1)` is an `n`th root of
   unity.
+* `AdjoinRoot.root_X_pow_sub_C_pow`: the class of `X` in `R[X]/(X ^ n - C a)` is an `n`th root
+  of `a`, over any commutative ring. Mathlib states this only over a field.
+* `AdjoinRoot.mk_modByMonic`: for any relator, a polynomial and its remainder have the same
+  class.
 * `AdjoinRoot.exists_degree_lt_mk_eq`, `AdjoinRoot.mk_eq_mk_iff_of_degree_lt`: for a monic
   relator, every class is represented by a polynomial of degree less than that of the relator, and
   that representative is unique. Mathlib has division with remainder by a monic polynomial but
@@ -54,6 +58,11 @@ polynomial ring `R[X]/(X ^ n)`.
   `AdjoinRoot.finrank_quotient_map_mkQ_span_op_root_X_pow_pow`: the same count for the cyclic
   right modules `M_j`, the quotients of the opposite ring by `op (x ^ j)`, and the quotient of
   `M_j` by the image of `x ^ m`, which has rank `min j m`.
+
+* `Polynomial.quotientSpanEquivAdjoinRoot`: the cyclic polynomial quotient as an `R`-module
+  is `AdjoinRoot f`; polynomial scalar multiplication becomes multiplication by its image.
+  This connects cyclic module structure theorems with `AdjoinRoot.mkₐ` through
+  `LinearMap.quotKerEquivOfSurjective`.
 
 Stated over arbitrary commutative rings.
 
@@ -116,12 +125,25 @@ theorem algHom_mk {g : R[X]} {B F : Type*} [Semiring B] [Algebra R B] [FunLike F
 theorem root_X_pow_sub_one_pow (n : ℕ) : root (X ^ n - 1 : R[X]) ^ n = 1 := by
   rw [← sub_eq_zero, ← mk_X, ← map_pow, ← map_one (mk _), ← map_sub, mk_self]
 
+/-- The class of `X` in `R[X]/(X ^ n - C a)` is an `n`th root of `a`. Mathlib's
+`root_X_pow_sub_C_pow` is the same statement over a field. -/
+@[simp]
+theorem root_X_pow_sub_C_pow (n : ℕ) (a : R) : root (X ^ n - C a) ^ n = of _ a := by
+  rw [← sub_eq_zero, ← eval₂_root, eval₂_sub, eval₂_C, eval₂_pow, eval₂_X]
+
+/-- For any relator `g`, the remainder `p %ₘ g` has the same class as `p` in
+`AdjoinRoot g`. -/
+@[simp]
+lemma mk_modByMonic {g : R[X]} (p : R[X]) : mk g (p %ₘ g) = mk g p := by
+  rw [Polynomial.modByMonic_eq_sub_mul_div, map_sub, map_mul, mk_self]
+  simp
+
 /-- **Every class in `AdjoinRoot g`, for `g` monic, is represented by a polynomial of degree
 less than `deg g`.** Division with remainder by a monic polynomial supplies the representative. -/
 lemma exists_degree_lt_mk_eq [Nontrivial R] {g : R[X]} (hg : g.Monic) (a : AdjoinRoot g) :
     ∃ p, p.degree < g.degree ∧ a = mk g p := by
   obtain ⟨q, rfl⟩ := mk_surjective a
-  exact ⟨q %ₘ g, degree_modByMonic_lt q hg, by simpa using (mk_leftInverse hg (mk g q)).symm⟩
+  exact ⟨q %ₘ g, degree_modByMonic_lt q hg, by simp⟩
 
 /-- **Two polynomials of degree less than that of a monic relator have the same class in
 `AdjoinRoot` only if they are equal.** Together with `AdjoinRoot.exists_degree_lt_mk_eq` this says
@@ -261,6 +283,45 @@ theorem algebraTensorAlgEquiv_symm_root :
 end TensorProduct
 
 end AdjoinRoot
+
+
+namespace Polynomial
+
+variable {R : Type*} [CommRing R]
+
+/-- The cyclic polynomial quotient, as an `R`-module, is `AdjoinRoot f`. -/
+-- Use the kernel of mkₐ to identify the quotients explicitly, including their module structures.
+noncomputable def quotientSpanEquivAdjoinRoot (f : R[X]) :
+    (R[X] ⧸ R[X] ∙ f) ≃ₗ[R] AdjoinRoot f :=
+  (Submodule.Quotient.restrictScalarsEquiv R (R[X] ∙ f)).symm.trans
+    ((Submodule.quotEquivOfEq _ _ (by
+        ext g
+        simp only [Submodule.restrictScalars_mem, Submodule.mem_span_singleton, smul_eq_mul,
+          LinearMap.mem_ker, AlgHom.toLinearMap_apply, AdjoinRoot.coe_mkₐ,
+          AdjoinRoot.mk_eq_zero, dvd_iff_exists_eq_mul_left]
+        exact exists_congr fun _ => eq_comm)).trans
+      ((AdjoinRoot.mkₐ f).toLinearMap.quotKerEquivOfSurjective (by
+        rw [AlgHom.coe_toLinearMap, AdjoinRoot.coe_mkₐ]
+        exact AdjoinRoot.mk_surjective)))
+
+/-- The equivalence sends the class of a polynomial to its image in `AdjoinRoot`. -/
+@[simp]
+theorem quotientSpanEquivAdjoinRoot_mk (f g : R[X]) :
+    quotientSpanEquivAdjoinRoot f (Ideal.Quotient.mk (R[X] ∙ f) g) = AdjoinRoot.mk f g := (rfl)
+
+/-- Polynomial scalar multiplication on the cyclic quotient becomes multiplication
+by the image of that polynomial in `AdjoinRoot`. -/
+@[simp]
+theorem quotientSpanEquivAdjoinRoot_smul (f g : R[X]) (y : R[X] ⧸ R[X] ∙ f) :
+    quotientSpanEquivAdjoinRoot f (g • y) =
+      AdjoinRoot.mk f g * quotientSpanEquivAdjoinRoot f y := by
+  induction y using Submodule.Quotient.induction_on with
+  | H h =>
+    rw [← Submodule.Quotient.mk_smul]
+    simp only [smul_eq_mul, Ideal.Quotient.mk_eq_mk, quotientSpanEquivAdjoinRoot_mk]
+    exact map_mul _ _ _
+
+end Polynomial
 
 
 end

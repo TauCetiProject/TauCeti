@@ -83,7 +83,7 @@ end TauCeti.GridInitialPentagonRectangleDecomposition
 
 namespace TauCeti.GridDiagram
 
-variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G) {x z : GridState n}
+variable {n : ℕ} (G : GridDiagram n) (C : ColumnTurn n) {x z : GridState n}
 
 /-- A counted initial-side-pentagon--rectangle domain sharing its terminal side, with the
 pentagon's initial side inside the rectangle's column interval, is the recut of a counted mixed
@@ -145,8 +145,7 @@ theorem mem_initialPentagonRightLeftOverlapPartners_iff_sides
     obtain ⟨hR, hP⟩ := (G.mem_rectangleInitialPentagonDecompositions C D).1 hcounted
     have hf := G.isEmpty_of_mem_unblockedRectangles hR
     have hp := ((G.mem_initialPentagons _).1 hP).1
-    have hs : D.second.IsEmpty := by
-      simpa only [D.pentagon_toGridRectangleBetween] using hp
+    have hs : D.second.IsEmpty := D.underlying_second_isEmpty hp
     have hone := D.toGridRectangleDecomposition.hasOneCommonSide_of_right_eq_left hcommon
       (D.first_left_ne_second_right_of_right_eq_left hcommon hturn)
     have hEq : D.recutRightEqLeft hcommon hf hp hturn = E := by

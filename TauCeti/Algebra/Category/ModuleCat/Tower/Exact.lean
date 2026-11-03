@@ -41,6 +41,8 @@ exact sequences of derived limits of towers.
   exactness of the six-term sequence; exactness at the two ends is
   `TauCeti.ModuleTower.limMap_injective` and `TauCeti.ModuleTower.limOneMap_surjective`.
 * `TauCeti.ModuleTower.connecting_naturality`: naturality of the connecting map.
+* `TauCeti.ModuleTower.exact_lim_subtype_shift`: `lim A ↪ ∏ₙ Aₙ → ∏ₙ Aₙ` is exact, the input to
+  the short exact sequence of a tower of complexes.
 * `TauCeti.ModuleTower.limMap_surjective_of_subsingleton_limOne`: `lim B → lim C` is surjective
   when `lim¹ A = 0`.
 
@@ -149,7 +151,7 @@ end LimOne
 section Connecting
 
 /-- `lim A ↪ ∏ₙ Aₙ → ∏ₙ Aₙ` is exact: `lim A` is the kernel of the shift. -/
-private theorem exact_lim_subtype_shift (F : ModuleTower.{v} R) :
+theorem exact_lim_subtype_shift (F : ModuleTower.{v} R) :
     Function.Exact F.lim.subtype F.shift := by
   rw [lim_eq_ker]
   exact LinearMap.exact_subtype_ker_map F.shift

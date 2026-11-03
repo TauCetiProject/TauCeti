@@ -345,16 +345,19 @@ theorem Connected.exists_pos_smul_le_sum (hG : G.Connected) {c : C} {δ : V → 
 
 omit [DecidableEq V] in
 /-- **A positive superadditive weight on a graph excludes isolated vertices.** If a weight `δ` on
-the vertices of a finite simple graph, over a strictly ordered commutative ring, is positive at
+the vertices of a finite simple graph, over an ordered semiring, is positive at
 every vertex and satisfies `2 δ i ≤ ∑_{j ∼ i} δ j` at every vertex, then every vertex of the graph
 has a neighbour. -/
 theorem exists_adj_of_pos_two_mul_le_sum
-    {S : Type*} [CommRing S] [LinearOrder S] [IsStrictOrderedRing S]
+    {S : Type*} [Semiring S] [PartialOrder S] [IsOrderedRing S]
     (δ : V → S) (hδ : ∀ i, 0 < δ i)
     (hδle : ∀ i, 2 * δ i ≤ ∑ j ∈ G.neighborFinset i, δ j)
     (i : V) : ∃ j, G.Adj i j := by
+  have hpos : 0 < 2 * δ i := by
+    rw [two_mul]
+    exact (hδ i).trans_le (le_add_of_nonneg_right (hδ i).le)
   obtain ⟨j, hj, -⟩ :=
-    Finset.exists_ne_zero_of_sum_ne_zero ((mul_pos two_pos (hδ i)).trans_le (hδle i)).ne'
+    Finset.exists_ne_zero_of_sum_ne_zero (hpos.trans_le (hδle i)).ne'
   exact ⟨j, (G.mem_neighborFinset i j).1 hj⟩
 
 end Superadditive

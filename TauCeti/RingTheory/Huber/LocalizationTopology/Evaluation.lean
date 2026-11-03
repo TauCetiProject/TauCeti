@@ -17,6 +17,7 @@ public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Basic
 
 import TauCeti.RingTheory.Huber.OpenMapping
 import TauCeti.Topology.Algebra.GroupCompletion
+import Mathlib.Topology.Baire.CompleteMetrizable
 
 /-!
 # Evaluating `A⟨X₁, …, Xₖ⟩` at the fractions of a rational localisation
@@ -447,7 +448,7 @@ theorem isOpenMap_rationalEvalHom [IsTateRing A] [(nhds (0 : A)).IsCountablyGene
     IsUniformAddGroup.uniformity_countably_generated
   have _ : (uniformity (restrictedMvPowerSeriesCompletion k A)).IsCountablyGenerated :=
     IsUniformAddGroup.uniformity_countably_generated
-  exact IsTateRing.isOpenMap
+  exact LinearMap.isOpenMap_of_isTateRing
     ({ rationalEvalHom P T s S hden t ht with
         commutes' := fun a ↦ by
           have h := congrArg (fun f ↦ f a) (rationalEvalHom_comp_algebraMap P T s S hden t ht)

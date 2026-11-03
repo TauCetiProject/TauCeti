@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.DynkinType
+import Mathlib.LinearAlgebra.Determinant
 import TauCeti.Data.Fin.DistinctPairs
 import TauCeti.LinearAlgebra.Matrix.Dual
 import TauCeti.LinearAlgebra.Matrix.Gram
@@ -52,6 +53,8 @@ squared-length-two vectors and proved involutive.
 * `TauCeti.DynkinType.linearIndependent_typeDSimpleRoot_cast` says that basis stays linearly
   independent over any ring in which `2` is right-regular; `linearIndependent_typeDSimpleRoot` is
   its case `ℤ`.
+* `TauCeti.DynkinType.typeDSimpleRootBasis` gives the simple roots as a basis over a
+  commutative ring with invertible two; `typeDSimpleRootBasis_repr_apply` computes its coordinates.
 * `TauCeti.DynkinType.typeDRootReflectionEquiv` is reflection in a root, acting on the coordinates
   by `TauCeti.DynkinType.typeDSimpleRootCoordinates_typeDRootReflection`.
 
@@ -513,6 +516,43 @@ private lemma typeDDoubleCoweight_dotProduct_typeDSimpleRoot (hn : 4 ≤ n) (k i
     simp only [typeDDoubleCoweight, mul_one]
     split_ifs <;> omega
 
+private lemma cast_typeDDoubleCoweight_dotProduct_cast_typeDSimpleRoot {R : Type*} [Ring R]
+    (hn : 4 ≤ n) (k i : Fin n) :
+    (fun j => (typeDDoubleCoweight n k j : R)) ⬝ᵥ
+      (fun j => (typeDSimpleRoot n hn i j : R)) = if k = i then 2 else 0 := by
+  calc
+    _ = ((typeDDoubleCoweight n k ⬝ᵥ typeDSimpleRoot n hn i : ℤ) : R) :=
+      ((Int.castRingHom R).map_dotProduct _ _).symm
+    _ = _ := by simp [typeDDoubleCoweight_dotProduct_typeDSimpleRoot, Fin.val_inj]
+
+private lemma cast_typeDDoubleCoweight_dotProduct {R : Type*} [CommRing R]
+    (hn : 4 ≤ n) (a : Fin n → R) (k : Fin n) :
+    (fun j => (typeDDoubleCoweight n k j : R)) ⬝ᵥ a =
+      if (k : ℕ) + 2 < n then 2 * ∑ j ∈ Finset.Iic k, a j
+      else if (k : ℕ) + 1 < n then (∑ j, a j) - 2 * a ⟨n - 1, by omega⟩
+      else ∑ j, a j := by
+  simp only [typeDDoubleCoweight, dotProduct]
+  split_ifs with h₁ h₂
+  · simp only [Int.cast_ite, Int.cast_ofNat, Int.cast_zero, ite_mul, zero_mul,
+      Finset.sum_ite, Finset.sum_const_zero, add_zero, ← Finset.mul_sum]
+    congr 1
+    exact Finset.sum_congr (by ext j; simp) fun _ _ => rfl
+  · have hterm (j : Fin n) :
+        ((if (j : ℕ) + 1 = n then (-1 : ℤ) else 1) : R) * a j =
+          a j - 2 * if j = ⟨n - 1, by omega⟩ then a j else 0 := by
+      have hj : (j : ℕ) + 1 = n ↔ j = ⟨n - 1, by omega⟩ := by
+        simp only [Fin.ext_iff]
+        omega
+      by_cases hlast : (j : ℕ) + 1 = n
+      · simp only [ite_eq_left hlast, ite_eq_left (hj.mp hlast), Int.cast_neg, Int.cast_one]
+        ring
+      · simp only [ite_eq_right hlast, ite_eq_right (mt hj.mpr hlast)]
+        ring
+    simp only [Int.cast_ite, Int.cast_neg, Int.cast_one] at hterm ⊢
+    simp only [hterm, Finset.sum_sub_distrib, ← Finset.mul_sum, Finset.sum_ite_eq',
+      Finset.mem_univ, ite_true]
+  · simp
+
 /-- Pairing an integral combination of the simple roots against a doubled fundamental coweight
 isolates twice the corresponding coefficient. -/
 private lemma typeDDoubleCoweight_dotProduct_sum_smul (hn : 4 ≤ n) (c : Fin n → ℤ) (k : Fin n) :
@@ -527,37 +567,89 @@ is right-regular.** The doubled fundamental coweights pair with them diagonally,
 theorem linearIndependent_typeDSimpleRoot_cast {R : Type*} [Ring R] (h2 : IsRightRegular (2 : R))
     (hn : 4 ≤ n) : LinearIndependent R (fun i j => (typeDSimpleRoot n hn i j : R)) := by
   have hpair (i k : Fin n) :
-      (fun j => (typeDSimpleRoot n hn i j : R)) ⬝ᵥ (fun j => (typeDDoubleCoweight n k j : R)) =
-        ((if (k : ℕ) = (i : ℕ) then 2 else 0 : ℤ) : R) := by
-    rw [← typeDDoubleCoweight_dotProduct_typeDSimpleRoot hn k i,
-      dotProduct_comm (typeDDoubleCoweight n k)]
-    exact ((Int.castRingHom R).map_dotProduct _ _).symm
+      (fun j => (typeDSimpleRoot n hn i j : R)) ⬝ᵥ
+        (fun j => (typeDDoubleCoweight n k j : R)) = if k = i then 2 else 0 := by
+    calc
+      _ = ((typeDSimpleRoot n hn i ⬝ᵥ typeDDoubleCoweight n k : ℤ) : R) :=
+        ((Int.castRingHom R).map_dotProduct _ _).symm
+      _ = ((typeDDoubleCoweight n k ⬝ᵥ typeDSimpleRoot n hn i : ℤ) : R) := by
+        rw [dotProduct_comm]
+      _ = _ := ((Int.castRingHom R).map_dotProduct _ _).trans
+        (cast_typeDDoubleCoweight_dotProduct_cast_typeDSimpleRoot hn k i)
   exact linearIndependent_of_dotProduct_diagonal (c := fun _ => 2)
     (w := fun k j => (typeDDoubleCoweight n k j : R)) (fun _ => h2)
     (fun i => by rw [hpair]; simp)
-    (fun i j hij => by rw [hpair]; simp [Fin.val_inj, Ne.symm hij])
+    (fun i j hij => by rw [hpair]; simp [Ne.symm hij])
 
 /-- **The Bourbaki simple roots of type `Dₙ` are linearly independent** over `ℤ`. -/
 theorem linearIndependent_typeDSimpleRoot (hn : 4 ≤ n) :
     LinearIndependent ℤ (typeDSimpleRoot n hn) :=
   linearIndependent_typeDSimpleRoot_cast (IsRegular.of_ne_zero (by norm_num)).right hn
 
+section InvertibleTwo
+
+variable (R : Type*) [CommRing R] [Invertible (2 : R)]
+
+private theorem isBasis_typeDSimpleRoot_cast (hn : 4 ≤ n) :
+    LinearIndependent R (fun i j => (typeDSimpleRoot n hn i j : R)) ∧
+      Submodule.span R (Set.range (fun i j => (typeDSimpleRoot n hn i j : R))) = ⊤ := by
+  apply (Pi.basisFun R (Fin n)).is_basis_iff_det.mpr
+  rw [Pi.basisFun_det_apply]
+  have hmap : Matrix.of (fun i j => (typeDSimpleRoot n hn i j : R)) =
+      (Int.castRingHom R).mapMatrix (Matrix.of (typeDSimpleRoot n hn)) := by
+    ext i j
+    rfl
+  rw [hmap, ← RingHom.map_det, det_typeDSimpleRoot_eq_two]
+  simpa using isUnit_of_invertible (2 : R)
+
+/-- The Bourbaki simple roots of type `Dₙ` form a basis when two is invertible. -/
+noncomputable def typeDSimpleRootBasis (n : ℕ) (hn : 4 ≤ n) :
+    Module.Basis (Fin n) R (Fin n → R) :=
+  Module.Basis.mk (isBasis_typeDSimpleRoot_cast R hn).1
+    (isBasis_typeDSimpleRoot_cast R hn).2.ge
+
+/-- The simple-root basis consists of the cast Bourbaki simple roots. -/
+@[simp]
+theorem typeDSimpleRootBasis_apply (hn : 4 ≤ n) (i : Fin n) :
+    typeDSimpleRootBasis R n hn i = fun j => (typeDSimpleRoot n hn i j : R) :=
+  Module.Basis.mk_apply _ _ _
+
+private theorem typeDSimpleRootBasis_repr_eq_pairing (hn : 4 ≤ n)
+    (a : Fin n → R) (k : Fin n) :
+    (typeDSimpleRootBasis R n hn).repr a k =
+      ⅟ (2 : R) * ((fun j => (typeDDoubleCoweight n k j : R)) ⬝ᵥ a) := by
+  have h := congrArg (fun v => (fun j => (typeDDoubleCoweight n k j : R)) ⬝ᵥ v)
+    ((typeDSimpleRootBasis R n hn).sum_repr a)
+  simp only [dotProduct_sum, dotProduct_smul, typeDSimpleRootBasis_apply,
+    cast_typeDDoubleCoweight_dotProduct_cast_typeDSimpleRoot,
+    smul_eq_mul, mul_ite, mul_zero, Finset.sum_ite_eq, Finset.mem_univ, ite_true] at h
+  rw [← h, mul_comm ((typeDSimpleRootBasis R n hn).repr a k), invOf_mul_cancel_left]
+
+/-- Simple-root coordinates are prefix sums for `k < n - 2`. At the two fork nodes they are,
+respectively, half the total minus the last coordinate and half the total. -/
+theorem typeDSimpleRootBasis_repr_apply (hn : 4 ≤ n) (a : Fin n → R) (k : Fin n) :
+    (typeDSimpleRootBasis R n hn).repr a k =
+      if (k : ℕ) + 2 < n then ∑ j ∈ Finset.Iic k, a j
+      else if (k : ℕ) + 1 < n then ⅟ (2 : R) * (∑ j, a j) - a ⟨n - 1, by omega⟩
+      else ⅟ (2 : R) * (∑ j, a j) := by
+  rw [typeDSimpleRootBasis_repr_eq_pairing, cast_typeDDoubleCoweight_dotProduct hn]
+  split_ifs <;> simp only [mul_sub, invOf_mul_cancel_left]
+
+end InvertibleTwo
+
 /-- Twice the coefficients of a vector of even coordinate sum in the Bourbaki simple-root basis
 are its dot products with the doubled fundamental coweights. -/
 private lemma two_mul_typeDSimpleRootCoordinates (hn : 4 ≤ n) {v : Fin n → ℤ}
     (hv : Even (∑ i : Fin n, v i)) (k : Fin n) :
     2 * typeDSimpleRootCoordinates n hn v k = typeDDoubleCoweight n k ⬝ᵥ v := by
-  have h2 := two_mul_typeDHalfTotal hv
-  simp only [typeDSimpleRootCoordinates, typeDDoubleCoweight, dotProduct]
-  split_ifs with h₁ h₂
-  · simp only [ite_mul, zero_mul, Finset.sum_ite, Finset.sum_const_zero, add_zero, Finset.mul_sum]
-    exact Finset.sum_congr (by ext i; simp) fun _ _ => rfl
-  · have (j : Fin n) : (if (j : ℕ) + 1 = n then (-1 : ℤ) else 1) * v j =
-        v j - 2 * if j = ⟨n - 1, by omega⟩ then v j else 0 := by
-      split_ifs with ha hb hb <;> simp_all [Fin.ext_iff] <;> omega
-    simp only [this, Finset.sum_sub_distrib, ← Finset.mul_sum, Finset.sum_ite_eq', Finset.mem_univ,
-      ite_true, mul_sub, h2]
-  · simp [h2]
+  have hpair : typeDDoubleCoweight n k ⬝ᵥ v =
+      if (k : ℕ) + 2 < n then 2 * ∑ j ∈ Finset.Iic k, v j
+      else if (k : ℕ) + 1 < n then (∑ j, v j) - 2 * v ⟨n - 1, by omega⟩
+      else ∑ j, v j :=
+    cast_typeDDoubleCoweight_dotProduct hn v k
+  rw [hpair]
+  simp only [typeDSimpleRootCoordinates]
+  split_ifs <;> simp only [mul_sub, two_mul_typeDHalfTotal hv]
 
 /-- Every integral vector of even coordinate sum, in particular every type `Dₙ` root, is the
 indicated integral combination of the Bourbaki simple roots. -/

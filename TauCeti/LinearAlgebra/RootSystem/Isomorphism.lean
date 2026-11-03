@@ -10,6 +10,8 @@ module
 -- supplies the relabelling the proof feeds to Mathlib's `RootPairing.Base.equivOfCartanMatrixEq`.
 -- It re-exports `Mathlib.LinearAlgebra.RootSystem.CartanMatrix`, hence that theorem.
 public import TauCeti.LinearAlgebra.RootSystem.DynkinType
+-- `TauCeti.LinearAlgebra.RootSystem.Height` supplies `RootPairing.Base.ext`, used in a proof only.
+import TauCeti.LinearAlgebra.RootSystem.Height
 
 /-!
 # Root systems of the same Dynkin type are isomorphic
@@ -89,20 +91,6 @@ chosen simple coroot to the simple coroot selected by the supplied relabelling. 
   simpa only [hindex] using
     (_root_.RootPairing.Hom.coroot_coweightMap_apply P P₂ (e i) E.toHom).symm
 
-omit [CharZero R] [IsDomain R] [Finite ι] [P.IsRootSystem] [P.IsCrystallographic]
-  [P.IsReduced] in
-/-- A base of a fixed root pairing is determined by its support. All remaining fields assert
-propositions about that support, so proof irrelevance identifies them once the supports agree. -/
-private theorem rootPairingBase_eq_of_support_eq (b c : P.Base)
-    (h : b.support = c.support) : b = c := by
-  cases b with
-  | mk s hsRoot hsCoroot hsPos hsPosCoroot =>
-    cases c with
-    | mk t htRoot htCoroot htPos htPosCoroot =>
-      dsimp only at h
-      subst t
-      rfl
-
 /-- Transporting a base along the root-system equivalence constructed from equal Cartan matrices
 gives the target base exactly. Thus the construction remembers the supplied simple-root
 relabelling as an equivalence of based root systems. -/
@@ -111,7 +99,7 @@ relabelling as an equivalence of based root systems. -/
     (he : ∀ i j, b₂.cartanMatrix (e i) (e j) = b.cartanMatrix i j) :
     b.map (b.equivOfCartanMatrixEq b₂ e he) = b₂ := by
   classical
-  apply rootPairingBase_eq_of_support_eq
+  apply RootPairing.Base.ext
   rw [b.support_map_eq]
   ext j
   simp only [Finset.mem_image]

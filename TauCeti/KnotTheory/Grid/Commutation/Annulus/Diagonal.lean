@@ -15,11 +15,11 @@ import TauCeti.KnotTheory.Grid.Rectangle.Swap
 /-!
 # The diagonal coefficient of the commutation chain-map equation
 
-Let `C` be a validated column commutation of a grid diagram, exchanging the column `a` with the
-next column `b = finRotate n a`, with turn row `s`. The diagonal coefficient of the chain-map
-equation `Φ ∘ ∂ = ∂' ∘ Φ` for the commutation map counts two-step domains from a grid state `x`
-back to itself: a rectangle followed by a pentagon of either kind, or a pentagon of either kind
-followed by a rectangle. Such a domain is a thin annulus, vertical or horizontal
+Let `C` be a column turn (`GridDiagram.ColumnTurn`) for a grid diagram, exchanging the column `a`
+with the next column `b = finRotate n a`, with turn row `s`. The diagonal coefficient of the
+chain-map equation `Φ ∘ ∂ = ∂' ∘ Φ` for the commutation map counts two-step domains from a grid
+state `x` back to itself: a rectangle followed by a pentagon of either kind, or a pentagon of either
+kind followed by a rectangle. Such a domain is a thin annulus, vertical or horizontal
 (`Annulus/Basic.lean`, `InitialPentagon/Annulus/Basic.lean`), and each of the eight resulting
 families has at most one counted element, determined by `x`.
 
@@ -68,7 +68,7 @@ public section
 
 namespace TauCeti.GridDiagram
 
-variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G)
+variable {n : ℕ} (G : GridDiagram n) (C : ColumnTurn n)
   (R : Type*) [CommSemiring R]
 
 /-! ### Vertical annuli

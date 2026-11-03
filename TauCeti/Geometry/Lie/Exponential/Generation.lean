@@ -42,7 +42,7 @@ public section
 open Filter Set
 open scoped ContDiff Topology
 
-attribute [local instance] LieGroup.minSmoothnessThree
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 
 namespace TauCeti
 

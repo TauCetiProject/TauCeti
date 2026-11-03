@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.VectorBundle.Functoriality
 public import TauCeti.AlgebraicGeometry.VectorBundle.Rank
 
 /-!
@@ -23,7 +24,8 @@ morphisms; it only changes which equivalent rank-one condition is bundled with t
 
 * `FiniteLocallyFreeSheaf.isConstantRank`: the property that the rank is constantly `r`;
 * `FiniteLocallyFreeSheaf.FixedRank X r`: finite locally free sheaves of fixed rank `r`;
-* `FiniteLocallyFreeSheaf.FixedRank.pullback`: pullback of fixed-rank sheaves;
+* `FiniteLocallyFreeSheaf.FixedRank.pullback`: pullback of fixed-rank sheaves, with its identity
+  and composition comparisons `FixedRank.pullbackId` and `FixedRank.pullbackComp`;
 * `InvertibleSheaf.fixedRankOneEquiv`: the equivalence between invertible sheaves and finite
   locally free sheaves of fixed rank one.
 -/
@@ -120,6 +122,67 @@ theorem pullback_map_hom {Y : Scheme.{u}} (f : X ⟶ Y) {E F : FixedRank Y r}
       eqToHom (pullback_obj_obj f E) ≫ (FiniteLocallyFreeSheaf.pullback f).map g.hom ≫
         eqToHom (pullback_obj_obj f F).symm :=
   (rfl)
+
+variable (X r) in
+/-- Pullback of fixed-rank sheaves along the identity is naturally isomorphic to the identity
+functor. On underlying finite locally free sheaves it is `FiniteLocallyFreeSheaf.pullbackId`. -/
+def pullbackId : pullback (r := r) (𝟙 X) ≅ 𝟭 (FixedRank X r) :=
+  NatIso.ofComponents
+    (fun E ↦ ObjectProperty.isoMk _ ((FiniteLocallyFreeSheaf.pullbackId X).app E.obj))
+    -- Morphisms of fixed-rank sheaves are those of the underlying finite locally free sheaves.
+    fun φ ↦ ObjectProperty.hom_ext _
+      ((FiniteLocallyFreeSheaf.pullbackId X).hom.naturality φ.hom)
+
+variable (X r) in
+/-- On underlying finite locally free sheaves, the identity comparison of fixed-rank pullback is
+`FiniteLocallyFreeSheaf.pullbackId`. -/
+@[simp]
+theorem pullbackId_hom_app_hom (E : FixedRank X r) :
+    ((pullbackId X r).hom.app E).hom =
+      eqToHom (pullback_obj_obj (𝟙 X) E) ≫ (FiniteLocallyFreeSheaf.pullbackId X).hom.app E.obj :=
+  (Category.id_comp _).symm
+
+variable (X r) in
+/-- On underlying finite locally free sheaves, the inverse identity comparison of fixed-rank
+pullback is the inverse of `FiniteLocallyFreeSheaf.pullbackId`. -/
+@[simp]
+theorem pullbackId_inv_app_hom (E : FixedRank X r) :
+    ((pullbackId X r).inv.app E).hom =
+      (FiniteLocallyFreeSheaf.pullbackId X).inv.app E.obj ≫
+        eqToHom (pullback_obj_obj (𝟙 X) E).symm :=
+  (Category.comp_id _).symm
+
+/-- Pullback of fixed-rank sheaves along a composite is naturally isomorphic to successive
+pullback. On underlying finite locally free sheaves it is `FiniteLocallyFreeSheaf.pullbackComp`. -/
+def pullbackComp {Y Z : Scheme.{u}} (f : X ⟶ Y) (g : Y ⟶ Z) :
+    pullback (r := r) g ⋙ pullback f ≅ pullback (f ≫ g) :=
+  NatIso.ofComponents
+    (fun E ↦ ObjectProperty.isoMk _ ((FiniteLocallyFreeSheaf.pullbackComp f g).app E.obj))
+    -- Morphisms of fixed-rank sheaves are those of the underlying finite locally free sheaves.
+    fun φ ↦ ObjectProperty.hom_ext _
+      ((FiniteLocallyFreeSheaf.pullbackComp f g).hom.naturality φ.hom)
+
+/-- On underlying finite locally free sheaves, the composition comparison of fixed-rank pullback
+is `FiniteLocallyFreeSheaf.pullbackComp`. -/
+@[simp]
+theorem pullbackComp_hom_app_hom {Y Z : Scheme.{u}} (f : X ⟶ Y) (g : Y ⟶ Z)
+    (E : FixedRank Z r) :
+    ((pullbackComp f g).hom.app E).hom =
+      eqToHom (by simp only [Functor.comp_obj, pullback_obj_obj]) ≫
+        (FiniteLocallyFreeSheaf.pullbackComp f g).hom.app E.obj ≫
+        eqToHom (pullback_obj_obj (f ≫ g) E).symm :=
+  ((Category.id_comp _).trans (congrArg _ (Category.comp_id _))).symm
+
+/-- On underlying finite locally free sheaves, the inverse composition comparison of fixed-rank
+pullback is the inverse of `FiniteLocallyFreeSheaf.pullbackComp`. -/
+@[simp]
+theorem pullbackComp_inv_app_hom {Y Z : Scheme.{u}} (f : X ⟶ Y) (g : Y ⟶ Z)
+    (E : FixedRank Z r) :
+    ((pullbackComp f g).inv.app E).hom =
+      eqToHom (pullback_obj_obj (f ≫ g) E) ≫
+        (FiniteLocallyFreeSheaf.pullbackComp f g).inv.app E.obj ≫
+        eqToHom (by simp only [Functor.comp_obj, pullback_obj_obj]) :=
+  ((Category.id_comp _).trans (congrArg _ (Category.comp_id _))).symm
 
 end FixedRank
 

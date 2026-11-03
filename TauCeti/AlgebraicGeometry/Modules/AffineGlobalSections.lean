@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicGeometry.Modules.GlobalSections
 public import TauCeti.AlgebraicGeometry.Modules.Localization
 public import Mathlib.Algebra.Category.ModuleCat.EpiMono
 public import Mathlib.Algebra.Homology.ShortComplex.ExactFunctor
+import TauCeti.AlgebraicGeometry.AffineScheme
 
 /-!
 # Global sections of quasicoherent modules on an affine scheme
@@ -148,10 +149,7 @@ lemma isOver_fromSpec (X : Scheme.{u}) [X.Over (Spec (.of R))] (U : X.affineOpen
   let : Algebra R Γ(X, U) :=
     ((X.baseRingToStructurePresheaf R).app (op U.val)).hom.toAlgebra
   rw [Scheme.Hom.isOver_iff, specOverSpec_over]
-  have h := IsAffineOpen.SpecMap_appLE_fromSpec (X ↘ Spec (.of R))
-    (isAffineOpen_top _) U.property (by simp)
-  rw [IsAffineOpen.fromSpec_top, Scheme.isoSpec_Spec_inv, ← Spec.map_comp] at h
-  refine h.symm.trans ?_
+  refine (U.property.fromSpec_comp_eq_SpecMap (X ↘ Spec (.of R))).trans ?_
   congr 1
   ext r
   -- The displayed `letI` chooses exactly the local base-ring homomorphism.

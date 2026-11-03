@@ -7,20 +7,21 @@ module
 
 public import TauCeti.Analysis.Normed.Module.Dual.Goldstine
 import Mathlib.Analysis.LocallyConvex.WeakSpace
+import TauCeti.Analysis.Normed.Module.DoubleDual
 
 /-!
 # Reflexivity and weak compactness
 
-A real or complex normed space is reflexive if and only if its closed unit ball is
+A real or complex seminormed space is reflexive if and only if its closed unit ball is
 weakly compact. More generally, every bounded set in a reflexive space has weakly
-compact closure, and every norm-closed bounded convex set is weakly compact.
+compact closure, and every norm-closed bounded real-convex set is weakly compact.
 
-Reflexivity means surjectivity of `NormedSpace.inclusionInDoubleDual`. No completeness
-or separability hypothesis is needed for the equivalence: weak compactness of the
-unit ball already forces reflexivity, and hence completeness. The topology changes
-are explicit, using `toWeakSpace` and `NormedSpace.inclusionInDoubleDualWeak`.
+Reflexivity means surjectivity of `NormedSpace.inclusionInDoubleDual`. No completeness,
+separability or separation hypothesis is needed for the equivalence. For normed spaces,
+either condition also implies completeness. The topology changes are explicit, using
+`toWeakSpace` and `NormedSpace.inclusionInDoubleDualWeak`.
 
-The forward direction uses Mathlib's bidual weak embedding and Banach–Alaoglu;
+The forward direction transports Banach–Alaoglu along the inducing bidual map;
 the reverse direction uses Goldstine's theorem.
 
 ## References
@@ -35,42 +36,9 @@ open NormedSpace
 
 namespace TauCeti
 
-variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+variable {𝕜 E : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
 
-/-- In a reflexive normed space, every norm-bounded set has weakly compact closure. -/
-theorem isCompact_closure_toWeakSpace
-    (hE : Surjective (inclusionInDoubleDual 𝕜 E)) {s : Set E} (hs : IsBounded s) :
-    IsCompact (closure (toWeakSpace 𝕜 E '' s)) := by
-  apply NormedSpace.isCompact_closure_of_isBounded 𝕜 E
-  · simpa only [preimage_image_eq _ (toWeakSpace 𝕜 E).injective] using hs
-  · intro φ _
-    obtain ⟨x, hx⟩ := hE (WeakDual.toStrongDual φ)
-    refine ⟨toWeakSpace 𝕜 E x, ?_⟩
-    apply WeakDual.toStrongDual.injective
-    simpa only [inclusionInDoubleDualWeak_apply, LinearEquiv.symm_apply_apply,
-      StrongDual.toStrongDual_toWeakDual] using hx
-
-/-- Norm-closed bounded real-convex subsets of a reflexive normed space are weakly compact.
-Convexity over real scalars also covers complex normed spaces. -/
-theorem isCompact_toWeakSpace_of_isClosed_of_convex_of_isBounded
-    (hE : Surjective (inclusionInDoubleDual 𝕜 E))
-    [NormedSpace ℝ E] [IsScalarTower ℝ 𝕜 E] {s : Set E}
-    (hclosed : IsClosed s) (hconv : Convex ℝ s) (hbound : IsBounded s) :
-    IsCompact (toWeakSpace 𝕜 E '' s) := by
-  rw [← hclosed.closure_eq, hconv.toWeakSpace_closure 𝕜]
-  exact isCompact_closure_toWeakSpace hE hbound
-
-/-- Every closed ball in a reflexive normed space is weakly compact, including balls
-of zero or negative radius. -/
-theorem isCompact_toWeakSpace_closedBall
-    (hE : Surjective (inclusionInDoubleDual 𝕜 E)) (x : E) (r : ℝ) :
-    IsCompact (toWeakSpace 𝕜 E '' closedBall x r) := by
-  let : NormedSpace ℝ E := .restrictScalars ℝ 𝕜 E
-  let : IsScalarTower ℝ 𝕜 E := .of_algebraMap_smul fun _ _ ↦ rfl
-  exact isCompact_toWeakSpace_of_isClosed_of_convex_of_isBounded hE
-    isClosed_closedBall (convex_closedBall x r) isBounded_closedBall
-
-/-- A normed space whose closed unit ball is weakly compact is reflexive. -/
+/-- A seminormed space whose closed unit ball is weakly compact is reflexive. -/
 theorem surjective_inclusionInDoubleDual_of_isCompact_toWeakSpace_closedBall
     (hball : IsCompact (toWeakSpace 𝕜 E '' closedBall 0 1)) :
     Surjective (inclusionInDoubleDual 𝕜 E) := by
@@ -92,8 +60,42 @@ theorem surjective_inclusionInDoubleDual_of_isCompact_toWeakSpace_closedBall
     StrongDual.toStrongDual_toWeakDual, ContinuousLinearMap.coe_coe] using
       congrArg WeakDual.toStrongDual hx
 
-/-- A real or complex normed space is reflexive exactly when its closed unit ball is
-weakly compact. Completeness follows from either condition and is not assumed. -/
+/-- In a reflexive seminormed space, every norm-bounded set has weakly compact closure. -/
+theorem isCompact_closure_toWeakSpace
+    (hE : Surjective (inclusionInDoubleDual 𝕜 E)) {s : Set E} (hs : IsBounded s) :
+    IsCompact (closure (toWeakSpace 𝕜 E '' s)) := by
+  apply NormedSpace.isCompact_closure_weakSpace_of_isBounded 𝕜 E
+  · simpa only [preimage_image_eq _ (toWeakSpace 𝕜 E).injective] using hs
+  · intro φ _
+    obtain ⟨x, hx⟩ := hE (WeakDual.toStrongDual φ)
+    refine ⟨toWeakSpace 𝕜 E x, ?_⟩
+    apply WeakDual.toStrongDual.injective
+    simpa only [inclusionInDoubleDualWeak_apply, LinearEquiv.symm_apply_apply,
+      StrongDual.toStrongDual_toWeakDual] using hx
+
+/-- Norm-closed bounded real-convex subsets of a reflexive seminormed space are weakly compact.
+Convexity over real scalars also covers complex seminormed spaces. -/
+theorem isCompact_toWeakSpace_of_isClosed_of_convex_of_isBounded
+    (hE : Surjective (inclusionInDoubleDual 𝕜 E))
+    [Module ℝ E] [IsScalarTower ℝ 𝕜 E] {s : Set E}
+    (hclosed : IsClosed s) (hconv : Convex ℝ s) (hbound : IsBounded s) :
+    IsCompact (toWeakSpace 𝕜 E '' s) := by
+  have : LocallyConvexSpace ℝ E := NormedSpace.toLocallyConvexSpace' 𝕜
+  rw [← hclosed.closure_eq, hconv.toWeakSpace_closure 𝕜]
+  exact isCompact_closure_toWeakSpace hE hbound
+
+/-- Every closed ball in a reflexive seminormed space is weakly compact, including balls
+of zero or negative radius. -/
+theorem isCompact_toWeakSpace_closedBall
+    (hE : Surjective (inclusionInDoubleDual 𝕜 E)) (x : E) (r : ℝ) :
+    IsCompact (toWeakSpace 𝕜 E '' closedBall x r) := by
+  let : NormedSpace ℝ E := .restrictScalars ℝ 𝕜 E
+  let : IsScalarTower ℝ 𝕜 E := .of_algebraMap_smul fun _ _ ↦ rfl
+  exact isCompact_toWeakSpace_of_isClosed_of_convex_of_isBounded hE
+    isClosed_closedBall (convex_closedBall x r) isBounded_closedBall
+
+/-- A real or complex seminormed space is reflexive exactly when its closed unit ball is
+weakly compact. No completeness or separation assumption is needed. -/
 theorem surjective_inclusionInDoubleDual_iff_isCompact_toWeakSpace_closedBall :
     Surjective (inclusionInDoubleDual 𝕜 E) ↔
       IsCompact (toWeakSpace 𝕜 E '' closedBall 0 1) :=

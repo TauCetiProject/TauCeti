@@ -42,6 +42,26 @@ universe u
 
 variable (T : NumericalType.{u})
 
+/-- The numerical data of a genus-one affine E₈ diagram: constant weights, multiplicities
+proportional to its marks, and intersection matrix given by its affine Cartan matrix.
+Component genera are imposed separately in the minimal classification. -/
+def IsGenusOneAffineE8Shape (T : NumericalType.{u}) : Prop :=
+  ∃ e : Fin 9 ≃ T.Component,
+  (∀ i, T.weight (e i) = T.weight (e 0)) ∧
+  (∀ i, (T.multiplicity (e i) : ℤ) =
+    AffineDynkinType.E8.marks i * T.multiplicity (e 8)) ∧
+  (∀ i j, T.intersection (e i) (e j) =
+    -(T.weight (e 0) : ℤ) * AffineDynkinType.E8.cartanMatrix i j)
+
+/-- The complete numerical data recorded by `IsGenusOneAffineE8Shape`. -/
+theorem isGenusOneAffineE8Shape_iff : T.IsGenusOneAffineE8Shape ↔
+  ∃ e : Fin 9 ≃ T.Component,
+  (∀ i, T.weight (e i) = T.weight (e 0)) ∧
+  (∀ i, (T.multiplicity (e i) : ℤ) =
+    AffineDynkinType.E8.marks i * T.multiplicity (e 8)) ∧
+  (∀ i j, T.intersection (e i) (e j) =
+    -(T.weight (e 0) : ℤ) * AffineDynkinType.E8.cartanMatrix i j) := Iff.rfl
+
 /-- The finite E₈ calculation and affine exclusion determine the full intersection data. -/
 private lemma affineE8_weights_intersections (l : Fin 9 → T.Component)
     (hl : Function.Injective l)
@@ -121,8 +141,15 @@ private lemma affineE8_weights_intersections (l : Fin 9 → T.Component)
     erw [AffineDynkinType.cartanMatrix_apply AffineDynkinType.isGraphical_E8 i j]
     rw [hw0]
     fin_cases i <;> fin_cases j <;>
-      simp! [hc0, hc1, hc2, hc3, hc4, hc5, hc6, hc7,
-        hentry, hbentry, T.intersection_comm (l 1), hself 1, hwb]
+      simp! only [Fin.zero_eta, Fin.isValue, hc5, Nat.reduceLT, hentry, ↓reduceIte,
+        AffineDynkinType.nodes_E8, neg_mul, neg_inj, Fin.mk_one, hbentry, zero_ne_one,
+        Int.reduceNeg, mul_ite, mul_neg, mul_one, neg_neg, mul_zero, left_eq_ite_iff,
+        Int.natCast_eq_zero, PNat.ne_zero, imp_false, Decidable.not_not, Fin.reduceFinMk, hc6,
+        Nat.reduceEqDiff, Nat.reduceAdd, or_false, Fin.reduceEq, hc7, Nat.lt_add_one, or_self,
+        right_eq_ite_iff, hc4, Nat.succ_ne_self, or_true, hc3, hc2, hc1, Nat.one_lt_ofNat,
+        OfNat.ofNat_ne_one, hc0, Nat.ofNat_pos, OfNat.ofNat_ne_zero, zero_add,
+        OfNat.one_ne_ofNat, T.intersection_comm (l 1), one_ne_zero, hself 1, hwb,
+        OfNat.zero_ne_ofNat]
     all_goals first
       | (erw [AffineDynkinType.graph_E8_adj]; norm_num)
       | ring
@@ -185,5 +212,21 @@ theorem IsMinimal.exists_equiv_affineE8 (hT : T.IsMinimal) (hg : T.arithmeticGen
   obtain ⟨e, he, hw, hm, ha⟩ := T.exists_equiv_affineE8 l hl
     (fun i ↦ (T.isMinusTwoIndex_iff.mp (h₂ (l i))).2) hadj
   exact ⟨e, he, fun i ↦ (T.isMinusTwoIndex_iff.mp (h₂ (e i))).1, hw, hm, ha⟩
+
+/-- In the affine E₈ shape, a component weight divides all weights with quotient at most four,
+and a component multiplicity divides all multiplicities with quotient at most six. -/
+lemma IsGenusOneAffineE8Shape.exists_weight_and_multiplicity_dvd_and_le
+    (hshape : T.IsGenusOneAffineE8Shape) :
+    (∃ j, ∀ i, (T.weight j : ℕ) ∣ T.weight i ∧ (T.weight i : ℕ) ≤ 4 * T.weight j) ∧
+      (∃ j, ∀ i, (T.multiplicity j : ℕ) ∣ T.multiplicity i ∧
+        (T.multiplicity i : ℕ) ≤ 6 * T.multiplicity j) := by
+  classical
+  obtain ⟨e, hw, hm, -⟩ := (isGenusOneAffineE8Shape_iff T).mp hshape
+  refine T.exists_weight_and_multiplicity_dvd_and_le_of_int_of_equiv (nw := 4) (nm := 6)
+    e 0 8 (fun i ↦ ?_) (fun i ↦ ?_)
+  all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
+  · rw [hw i]; omega
+  · rw [hm i]
+    fin_cases i <;> simp
 
 end TauCeti.NumericalType

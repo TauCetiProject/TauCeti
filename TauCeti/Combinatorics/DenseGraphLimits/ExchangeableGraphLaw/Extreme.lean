@@ -9,6 +9,7 @@ public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.ArrayL
 public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.Infinite.Sampling
 public import Mathlib.Probability.Kernel.Composition.MeasureComp
 import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Convex
+import TauCeti.Analysis.Convex.Extreme
 
 /-!
 # Extreme exchangeable graph laws
@@ -111,32 +112,17 @@ theorem mem_extremePoints_iff_arrayLaw_mem_extremePoints {μ : Measure (SimpleGr
     μ ∈ extremePoints ℝ≥0∞ exchangeableGraphProbabilityMeasures ↔
       arrayLaw μ ∈ extremePoints ℝ≥0∞
         (jointlyExchangeableProbabilityMeasuresOnSymmetricArraysWithDiag Bool false) := by
-  simp only [mem_extremePoints_iff_left]
-  constructor
-  · rintro ⟨hμ, h⟩
-    refine ⟨arrayLaw_mem_iff.2 hμ, ?_⟩
-    rintro ρ₁ hρ₁ ρ₂ hρ₂ ⟨a, b, ha, hb, hab, hmix⟩
-    -- pull the two ends back to graph laws
-    have hs₁ := (mem_jointlyExchangeableProbabilityMeasuresOnSymmetricArraysWithDiag_iff.1 hρ₁).2
-    have hs₂ := (mem_jointlyExchangeableProbabilityMeasuresOnSymmetricArraysWithDiag_iff.1 hρ₂).2
-    have e₁ : arrayLaw (graphLawOfArray ρ₁) = ρ₁ := arrayLaw_graphLawOfArray hs₁
-    have e₂ : arrayLaw (graphLawOfArray ρ₂) = ρ₂ := arrayLaw_graphLawOfArray hs₂
-    have h₁ : graphLawOfArray ρ₁ ∈ exchangeableGraphProbabilityMeasures := by
-      rw [← arrayLaw_mem_iff, e₁]; exact hρ₁
-    have h₂ : graphLawOfArray ρ₂ ∈ exchangeableGraphProbabilityMeasures := by
-      rw [← arrayLaw_mem_iff, e₂]; exact hρ₂
-    have hμeq : μ = a • graphLawOfArray ρ₁ + b • graphLawOfArray ρ₂ := by
-      rw [← graphLawOfArray_arrayLaw μ, ← hmix, graphLawOfArray_add, graphLawOfArray_smul,
-        graphLawOfArray_smul]
-    have := h _ h₁ _ h₂ ⟨a, b, ha, hb, hab, hμeq.symm⟩
-    rw [← e₁, ← this]
-  · rintro ⟨hρ, h⟩
-    refine ⟨arrayLaw_mem_iff.1 hρ, ?_⟩
-    rintro μ₁ hμ₁ μ₂ hμ₂ ⟨a, b, ha, hb, hab, hmix⟩
-    have hmix' : a • arrayLaw μ₁ + b • arrayLaw μ₂ = arrayLaw μ := by
-      rw [← hmix, arrayLaw_add, arrayLaw_smul, arrayLaw_smul]
-    have := h _ (arrayLaw_mem_iff.2 hμ₁) _ (arrayLaw_mem_iff.2 hμ₂) ⟨a, b, ha, hb, hab, hmix'⟩
-    rw [← graphLawOfArray_arrayLaw μ₁, this, graphLawOfArray_arrayLaw]
+  let f : Measure (SimpleGraph ℕ) →ₗ[ℝ≥0∞] Measure (ℕ × ℕ → Bool) :=
+    { toFun := arrayLaw
+      map_add' := arrayLaw_add
+      map_smul' := arrayLaw_smul }
+  apply TauCeti.mem_extremePoints_iff_linearMap_mem_extremePoints
+    μ (IsExtreme.refl ℝ≥0∞ _) f
+    (Function.LeftInverse.injective graphLawOfArray_arrayLaw)
+    (fun _ => arrayLaw_mem_iff) (fun _ hμ => arrayLaw_mem_iff.2 hμ)
+  intro ρ hρ
+  exact ⟨graphLawOfArray ρ, arrayLaw_graphLawOfArray
+    (mem_jointlyExchangeableProbabilityMeasuresOnSymmetricArraysWithDiag_iff.1 hρ).2⟩
 
 /-- **Extremality is dissociation**: an exchangeable law on infinite graphs is an extreme point of
 the exchangeable probability measures on graphs if and only if its finite law is dissociated. -/

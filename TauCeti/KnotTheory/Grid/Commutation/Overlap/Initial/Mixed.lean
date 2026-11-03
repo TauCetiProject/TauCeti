@@ -10,7 +10,7 @@ public import TauCeti.KnotTheory.Grid.Commutation.Overlap.Initial.Sum
 /-!
 # The mixed partners of common-initial-side overlaps
 
-Let `C` be a validated column commutation of a grid diagram `G`, replacing the grid line
+Let `C` be a column turn (`GridDiagram.ColumnTurn`) for a grid diagram `G`, replacing the line
 `b = finRotate n a`. `GridDiagram.initialOverlapPartners` collects the recuts of the counted
 rectangle--pentagon domains whose two pieces share their initial side and no other side; these
 recuts are pentagon--rectangle domains. This file identifies them without reference to the
@@ -329,7 +329,7 @@ end TauCeti.GridRectanglePentagonDecomposition
 
 namespace TauCeti.GridDiagram
 
-variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G) {x z : GridState n}
+variable {n : ℕ} (G : GridDiagram n) (C : ColumnTurn n) {x z : GridState n}
 
 /-- A counted pentagon--rectangle domain is a partner of a common-initial-side source when its
 generic recut consists of two rectangles sharing their initial side, the second ending on the

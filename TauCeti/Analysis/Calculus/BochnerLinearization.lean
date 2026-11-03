@@ -13,9 +13,11 @@ public import Mathlib.Topology.OpenPartialHomeomorph.Continuity
 public import Mathlib.Topology.OpenPartialHomeomorph.IsImage
 public import Mathlib.RepresentationTheory.Continuous.Basic
 public import Mathlib.RepresentationTheory.Invariants
+public import TauCeti.RepresentationTheory.InvariantForm.InnerProduct
 public import TauCeti.Topology.Algebra.GroupAction.GermKernel
+public import TauCeti.Topology.OpenPartialHomeomorph.MulAction
+import Mathlib.Analysis.Convex.PathConnected
 import TauCeti.Algebra.BigOperators.Finset.Average
-import TauCeti.Topology.OpenPartialHomeomorph.MulAction
 import TauCeti.RepresentationTheory.Invariants
 
 /-!
@@ -47,8 +49,9 @@ identity.
 * `ContRepresentation.bochnerAverage ρ c`: the Bochner average of `c : X → F` with respect to `ρ`.
 * `TauCeti.isotropyRepresentation`: the derivative representation of `G` at a fixed point, in the
   coordinates of a chart.
-* `OpenPartialHomeomorph.bochnerChart χ ρ c hA`: the inverse-function-theorem chart of the
-  Bochner average, restricted to the largest `G`-invariant open subset of its domain.
+
+The Bochner chart `(χ.trans Θ).restrInvariant G` composes `χ` with a chart `Θ` of the
+Bochner average and restricts to the largest `G`-invariant open subset of its domain.
 
 ## Main results
 
@@ -62,7 +65,7 @@ identity.
   maps `c (g • ·)`; `OpenPartialHomeomorph.contDiffOn_bochnerChart_comp_symm` is the
   corresponding statement for the Bochner chart, and
   `OpenPartialHomeomorph.contDiffAt_comp_bochnerChart_symm` the one for its inverse.
-* `OpenPartialHomeomorph.smul_mem_bochnerChart_source`,
+* `OpenPartialHomeomorph.smul_mem_restrInvariant_source`,
   `OpenPartialHomeomorph.map_mem_bochnerChart_target`: the Bochner chart has a `G`-invariant
   domain and a `ρ`-invariant target.
 * `OpenPartialHomeomorph.bochnerChart_smul`, `OpenPartialHomeomorph.bochnerChart_symm_map`: the
@@ -74,6 +77,10 @@ identity.
 * `OpenPartialHomeomorph.map_eq_one_iff_mem_germKernel`: the derivative representation
   detects the ineffective kernel. An element of `G` lies in the germ kernel at the fixed point,
   that is, acts as the identity near it, exactly when its derivative there is the identity.
+* `OpenPartialHomeomorph.exists_target_eq_sumOfConjugatesInnerSublevel`: over `ℝ`, in finite
+  dimensions, a chart in which `G` acts linearly restricts, inside any neighbourhood of a point it
+  sends to `0`, to an equivariant chart onto an invariant ball of an averaged inner product
+  (`Representation.sumOfConjugatesInnerSublevel`), with invariant preconnected domain.
 
 ## References
 
@@ -240,123 +247,95 @@ end ContRepresentation
 
 namespace OpenPartialHomeomorph
 
-section Chart
+section AverageChart
 
 variable {𝕜 G X E F : Type*} [NontriviallyNormedField 𝕜] [Group G] [Fintype G]
   [Invertible (Fintype.card G : 𝕜)] [TopologicalSpace X] [MulAction G X] [ContinuousConstSMul G X]
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
-  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-  (χ : OpenPartialHomeomorph X E) (ρ : ContRepresentation 𝕜 G F) (c : X → F)
-  {D : E ≃L[𝕜] F} {z : E}
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {χ : OpenPartialHomeomorph X E} {ρ : ContRepresentation 𝕜 G F} {c : X → F}
+  {D : E ≃L[𝕜] F} {z : E} {Θ : OpenPartialHomeomorph E F}
+  (hΘ : EqOn Θ (ρ.bochnerAverage c ∘ χ.symm) Θ.source)
 
-/-- The composite of `χ` with the inverse-function-theorem chart of the Bochner average in the
-coordinates of `χ`, before restricting to a `G`-invariant domain. -/
-private def bochnerChartAux
-    (hA : HasStrictFDerivAt (ρ.bochnerAverage c ∘ χ.symm) (D : E →L[𝕜] F) z) :
-    OpenPartialHomeomorph X F :=
-  χ.trans (hA.toOpenPartialHomeomorph _)
+section Equivariance
 
-/-- The Bochner chart: given a strict derivative `D`, invertible, of the Bochner average in the
-coordinates of `χ`, this is the inverse-function-theorem chart of the Bochner average, restricted
-to the largest `G`-invariant open subset of its domain. On its domain it agrees with the Bochner
-average (`OpenPartialHomeomorph.bochnerChart_apply`), so it intertwines the action of `G` with `ρ`
-(`OpenPartialHomeomorph.bochnerChart_smul`). -/
-def bochnerChart (hA : HasStrictFDerivAt (ρ.bochnerAverage c ∘ χ.symm) (D : E →L[𝕜] F) z) :
-    OpenPartialHomeomorph X F :=
-  (bochnerChartAux χ ρ c hA).restrOpen (⋂ g : G, (g • ·) ⁻¹' (bochnerChartAux χ ρ c hA).source)
-    (isOpen_iInter_of_finite fun g =>
-      (bochnerChartAux χ ρ c hA).open_source.preimage (continuous_const_smul g))
-
-variable {χ ρ c}
-variable (hA : HasStrictFDerivAt (ρ.bochnerAverage c ∘ χ.symm) (D : E →L[𝕜] F) z)
-
-private theorem mem_bochnerChart_source_iff {y : X} :
-    y ∈ (bochnerChart χ ρ c hA).source ↔ ∀ g : G, g • y ∈ (bochnerChartAux χ ρ c hA).source := by
-  rw [bochnerChart, restrOpen_source, mem_inter_iff, mem_iInter]
-  refine ⟨And.right, fun h => ⟨by simpa using h 1, h⟩⟩
-
-/-- The domain of the Bochner chart is `G`-invariant. -/
-theorem smul_mem_bochnerChart_source {y : X} (hy : y ∈ (bochnerChart χ ρ c hA).source) (g : G) :
-    g • y ∈ (bochnerChart χ ρ c hA).source := by
-  rw [mem_bochnerChart_source_iff] at hy ⊢
-  intro g'
-  simpa [smul_smul] using hy (g' * g)
-
-/-- The domain of the Bochner chart is contained in the domain of `χ`. -/
-theorem bochnerChart_source_subset : (bochnerChart χ ρ c hA).source ⊆ χ.source := fun y hy => by
-  have hy1 := (mem_bochnerChart_source_iff hA).1 hy 1
-  rw [one_smul, bochnerChartAux, trans_source] at hy1
-  exact hy1.1
-
-/-- A point fixed by `G` whose `χ`-coordinate is the base point `z` lies in the domain of the
-Bochner chart. -/
-theorem mem_bochnerChart_source {x : X} (hx : ∀ g : G, g • x = x) (hxχ : x ∈ χ.source)
-    (hxz : χ x = z) : x ∈ (bochnerChart χ ρ c hA).source := by
-  rw [mem_bochnerChart_source_iff]
-  intro g
-  rw [hx, bochnerChartAux, trans_source]
-  exact ⟨hxχ, hxz ▸ hA.mem_toOpenPartialHomeomorph_source⟩
+include hΘ
+omit [NormedSpace 𝕜 E]
 
 /-- On its domain, the Bochner chart is the Bochner average. -/
-theorem bochnerChart_apply {y : X} (hy : y ∈ (bochnerChart χ ρ c hA).source) :
-    bochnerChart χ ρ c hA y = ρ.bochnerAverage c y := by
-  simp [bochnerChart, bochnerChartAux, χ.left_inv (bochnerChart_source_subset hA hy)]
+theorem bochnerChart_apply {y : X} (hy : y ∈ ((χ.trans Θ).restrInvariant G).source) :
+    (χ.trans Θ).restrInvariant G y = ρ.bochnerAverage c y := by
+  have hy₀ := (χ.trans Θ).restrInvariant_source_subset hy
+  simp only [coe_restrInvariant, coe_trans, Function.comp_apply]
+  calc
+    Θ (χ y) = (ρ.bochnerAverage c ∘ χ.symm) (χ y) := hΘ hy₀.2
+    _ = ρ.bochnerAverage c y := by
+      rw [Function.comp_apply, χ.left_inv hy₀.1]
 
 /-- The Bochner chart intertwines the action of `G` with `ρ`. -/
-theorem bochnerChart_smul {y : X} (hy : y ∈ (bochnerChart χ ρ c hA).source) (g : G) :
-    bochnerChart χ ρ c hA (g • y) = ρ g (bochnerChart χ ρ c hA y) := by
-  rw [bochnerChart_apply hA (smul_mem_bochnerChart_source hA hy g), bochnerChart_apply hA hy,
+theorem bochnerChart_smul {y : X} (hy : y ∈ ((χ.trans Θ).restrInvariant G).source) (g : G) :
+    (χ.trans Θ).restrInvariant G (g • y) = ρ g ((χ.trans Θ).restrInvariant G y) := by
+  rw [bochnerChart_apply hΘ ((χ.trans Θ).smul_mem_restrInvariant_source hy g),
+    bochnerChart_apply hΘ hy,
     ContRepresentation.bochnerAverage_smul]
 
 /-- The target of the Bochner chart is invariant under `ρ`. -/
-theorem map_mem_bochnerChart_target {w : F} (hw : w ∈ (bochnerChart χ ρ c hA).target) (g : G) :
-    ρ g w ∈ (bochnerChart χ ρ c hA).target := by
-  set e := bochnerChart χ ρ c hA
-  rw [← e.right_inv hw, ← bochnerChart_smul hA (e.map_target hw)]
-  exact e.map_source (smul_mem_bochnerChart_source hA (e.map_target hw) g)
+theorem map_mem_bochnerChart_target {w : F}
+    (hw : w ∈ ((χ.trans Θ).restrInvariant G).target) (g : G) :
+    ρ g w ∈ ((χ.trans Θ).restrInvariant G).target := by
+  set e := (χ.trans Θ).restrInvariant G
+  rw [← e.right_inv hw, ← bochnerChart_smul hΘ (e.map_target hw)]
+  exact e.map_source ((χ.trans Θ).smul_mem_restrInvariant_source (e.map_target hw) g)
 
 /-- The inverse of the Bochner chart intertwines `ρ` with the action of `G`. -/
-theorem bochnerChart_symm_map {w : F} (hw : w ∈ (bochnerChart χ ρ c hA).target) (g : G) :
-    (bochnerChart χ ρ c hA).symm (ρ g w) = g • (bochnerChart χ ρ c hA).symm w := by
-  set e := bochnerChart χ ρ c hA
-  rw [← e.right_inv hw, ← bochnerChart_smul hA (e.map_target hw), e.right_inv hw,
-    e.left_inv (smul_mem_bochnerChart_source hA (e.map_target hw) g)]
+theorem bochnerChart_symm_map {w : F} (hw : w ∈ ((χ.trans Θ).restrInvariant G).target) (g : G) :
+    ((χ.trans Θ).restrInvariant G).symm (ρ g w) = g • ((χ.trans Θ).restrInvariant G).symm w := by
+  set e := (χ.trans Θ).restrInvariant G
+  rw [← e.right_inv hw, ← bochnerChart_smul hΘ (e.map_target hw), e.right_inv hw,
+    e.left_inv ((χ.trans Θ).smul_mem_restrInvariant_source (e.map_target hw) g)]
+
+end Equivariance
 
 /-- In the coordinates of `χ`, the Bochner chart has strict derivative `D` at the base point. -/
-theorem hasStrictFDerivAt_bochnerChart_comp_symm (hz : z ∈ χ.target) :
-    HasStrictFDerivAt (bochnerChart χ ρ c hA ∘ χ.symm) (D : E →L[𝕜] F) z := by
+theorem hasStrictFDerivAt_bochnerChart_comp_symm [CompleteSpace E]
+    (hA : HasStrictFDerivAt (ρ.bochnerAverage c ∘ χ.symm) (D : E →L[𝕜] F) z)
+    (hz : z ∈ χ.target) :
+    HasStrictFDerivAt ((χ.trans (hA.toOpenPartialHomeomorph _)).restrInvariant G ∘ χ.symm)
+      (D : E →L[𝕜] F) z := by
   refine hA.congr_of_eventuallyEq ?_
   filter_upwards [χ.eventually_right_inverse hz] with w hw
-  simp [bochnerChart, bochnerChartAux, hw]
+  simp [hw]
+
+include hΘ
 
 /-- In the coordinates of `χ`, the Bochner chart is `C^n` on any set where the maps
 `w ↦ c (g • χ.symm w)` are, intersected with the domain of the chart. -/
 theorem contDiffOn_bochnerChart_comp_symm {n : WithTop ℕ∞} {s : Set E}
     (hc : ∀ g : G, ContDiffOn 𝕜 n (fun w => c (g • χ.symm w)) s) :
-    ContDiffOn 𝕜 n (bochnerChart χ ρ c hA ∘ χ.symm)
-      (s ∩ χ.symm ⁻¹' (bochnerChart χ ρ c hA).source) :=
+    ContDiffOn 𝕜 n ((χ.trans Θ).restrInvariant G ∘ χ.symm)
+      (s ∩ χ.symm ⁻¹' ((χ.trans Θ).restrInvariant G).source) :=
   ((ρ.contDiffOn_bochnerAverage_comp hc).mono inter_subset_left).congr fun _ hw =>
-    bochnerChart_apply hA hw.2
+    bochnerChart_apply hΘ hw.2
 
 /-- In the coordinates of `χ`, the inverse of the Bochner chart is `C^n` at a point `w` of its
 target, provided that, in the coordinates of `χ`, the Bochner average is `C^n` with an invertible
 derivative at the point corresponding to `w`. -/
-theorem contDiffAt_comp_bochnerChart_symm {n : WithTop ℕ∞} {w : F}
-    (hw : w ∈ (bochnerChart χ ρ c hA).target) {D' : E ≃L[𝕜] F}
+theorem contDiffAt_comp_bochnerChart_symm [CompleteSpace E] {n : WithTop ℕ∞} {w : F}
+    (hw : w ∈ ((χ.trans Θ).restrInvariant G).target) {D' : E ≃L[𝕜] F}
     (hD' : HasFDerivAt (ρ.bochnerAverage c ∘ χ.symm) (D' : E →L[𝕜] F)
-      (χ ((bochnerChart χ ρ c hA).symm w)))
-    (hc : ContDiffAt 𝕜 n (ρ.bochnerAverage c ∘ χ.symm) (χ ((bochnerChart χ ρ c hA).symm w))) :
-    ContDiffAt 𝕜 n (χ ∘ (bochnerChart χ ρ c hA).symm) w := by
-  set e := bochnerChart χ ρ c hA
+      (χ (((χ.trans Θ).restrInvariant G).symm w)))
+    (hc : ContDiffAt 𝕜 n (ρ.bochnerAverage c ∘ χ.symm)
+      (χ (((χ.trans Θ).restrInvariant G).symm w))) :
+    ContDiffAt 𝕜 n (χ ∘ ((χ.trans Θ).restrInvariant G).symm) w := by
+  set e := (χ.trans Θ).restrInvariant G
   have hy := e.map_target hw
-  have hyχ := bochnerChart_source_subset hA hy
+  have hyχ : e.symm w ∈ χ.source := ((χ.trans Θ).restrInvariant_source_subset hy).1
   have heq : e ∘ χ.symm =ᶠ[𝓝 (χ (e.symm w))] ρ.bochnerAverage c ∘ χ.symm := by
     have hmem : ∀ᶠ v in 𝓝 (χ (e.symm w)), χ.symm v ∈ e.source := by
       refine (χ.continuousAt_symm (χ.map_source hyχ)).preimage_mem_nhds ?_
       rw [χ.left_inv hyχ]
       exact e.open_source.mem_nhds hy
     filter_upwards [hmem] with v hv
-    exact bochnerChart_apply hA hv
+    exact bochnerChart_apply hΘ hv
   have hw' : w ∈ (χ.symm.trans e).target := by
     rw [trans_target, symm_target]
     exact ⟨hw, hyχ⟩
@@ -366,7 +345,7 @@ theorem contDiffAt_comp_bochnerChart_symm {n : WithTop ℕ∞} {w : F}
   · exact hD'.congr_of_eventuallyEq heq
   · exact hc.congr_of_eventuallyEq heq
 
-end Chart
+end AverageChart
 
 end OpenPartialHomeomorph
 
@@ -442,12 +421,19 @@ theorem exists_equivariant_chart (χ : OpenPartialHomeomorph X E) {x : X} (hxχ 
       ((ContinuousLinearEquiv.refl 𝕜 E : E ≃L[𝕜] E) : E →L[𝕜] E) (χ x) := by
     refine ContRepresentation.hasStrictFDerivAt_bochnerAverage_comp_of_intertwining fun g => ?_
     simpa using (hσ g).sub_const (χ x)
-  have hxs := mem_bochnerChart_source hA hx hxχ rfl
-  refine ⟨bochnerChart χ σ _ hA, hxs, ?_, bochnerChart_source_subset hA,
-    fun g y hy => ⟨smul_mem_bochnerChart_source hA hy g, bochnerChart_smul hA hy g⟩, ?_⟩
-  · rw [bochnerChart_apply hA hxs, ContRepresentation.bochnerAverage_apply_of_forall_smul_eq _ _ hx,
+  have hΘ : EqOn (hA.toOpenPartialHomeomorph _)
+      (σ.bochnerAverage (fun y => χ y - χ x) ∘ χ.symm)
+      (hA.toOpenPartialHomeomorph _).source := fun _ _ => rfl
+  let e₀ := χ.trans (hA.toOpenPartialHomeomorph _)
+  have hxs : x ∈ (e₀.restrInvariant G).source :=
+    e₀.mem_restrInvariant_source_of_forall_smul_eq hx
+      ⟨hxχ, hA.mem_toOpenPartialHomeomorph_source⟩
+  refine ⟨e₀.restrInvariant G, hxs, ?_, ?_,
+    fun g y hy => ⟨e₀.smul_mem_restrInvariant_source hy g, bochnerChart_smul hΘ hy g⟩, ?_⟩
+  · rw [bochnerChart_apply hΘ hxs, ContRepresentation.bochnerAverage_apply_of_forall_smul_eq _ _ hx,
       sub_self, map_zero]
-  · simpa using hasStrictFDerivAt_bochnerChart_comp_symm hA (χ.map_source hxχ)
+  · exact fun y hy => (e₀.restrInvariant_source_subset hy).1
+  · exact hasStrictFDerivAt_bochnerChart_comp_symm hA (χ.map_source hxχ)
 
 /-- **The derivative representation detects the ineffective kernel.** In the setting of
 `OpenPartialHomeomorph.exists_equivariant_chart`, an element of `G` acts as the identity near the
@@ -473,5 +459,58 @@ theorem map_eq_one_iff_mem_germKernel (χ : OpenPartialHomeomorph X E) {x : X}
     exact (hσ g).hasFDerivAt.unique ((hasFDerivAt_id _).congr_of_eventuallyEq hev)
 
 end Linearization
+
+section InvariantBall
+
+variable {G X E : Type*} [Group G] [Fintype G] [TopologicalSpace X] [MulAction G X]
+  [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+
+/-- **Shrinking an equivariant chart to an invariant ball.** Let `e` be a chart centred at `x`,
+with `G`-invariant domain, in which `G` acts linearly through a representation `σ` on a
+finite-dimensional real inner product space. Inside any neighbourhood `s` of `x`, the chart `e`
+restricts to a chart `e'` onto a positive strict sublevel set of the orbit-sum inner product of
+`σ`, an open convex `σ`-invariant neighbourhood of `0`. The restriction `e'` has the same
+underlying map as `e`, and its domain is `G`-invariant and preconnected. -/
+theorem exists_target_eq_sumOfConjugatesInnerSublevel (e : OpenPartialHomeomorph X E)
+    (σ : Representation ℝ G E) {x : X} (hxe : x ∈ e.source) (hex : e x = 0)
+    (he : ∀ g : G, ∀ y ∈ e.source, g • y ∈ e.source ∧ e (g • y) = σ g (e y))
+    {s : Set X} (hs : s ∈ 𝓝 x) :
+    ∃ (e' : OpenPartialHomeomorph X E) (c : ℝ), 0 < c ∧ x ∈ e'.source ∧ ⇑e' = ⇑e ∧
+      e'.source ⊆ e.source ∩ s ∧ e'.target = σ.sumOfConjugatesInnerSublevel c ∧
+      IsPreconnected e'.source ∧
+      ∀ g : G, ∀ y ∈ e'.source, g • y ∈ e'.source ∧ e' (g • y) = σ g (e' y) := by
+  -- Choose an invariant sublevel set `W` among the coordinates of points of `interior s`.
+  have hV : IsOpen (e.target ∩ e.symm ⁻¹' interior s) :=
+    e.isOpen_inter_preimage_symm isOpen_interior
+  have h0 : (0 : E) ∈ e.target ∩ e.symm ⁻¹' interior s := by
+    rw [← hex, mem_inter_iff, mem_preimage, e.left_inv hxe]
+    exact ⟨e.map_source hxe, mem_interior_iff_mem_nhds.2 hs⟩
+  obtain ⟨c, hc, hcV⟩ := σ.exists_pos_sumOfConjugatesInnerSublevel_subset hV h0
+  set W := σ.sumOfConjugatesInnerSublevel c
+  have hW : IsOpen W := σ.isOpen_sumOfConjugatesInnerSublevel c
+  -- Restrict `e` to the points with coordinates in `W`.
+  set e' := (e.symm.restrOpen W hW).symm
+  have hcoe : ⇑e' = ⇑e := rfl
+  have hmem {y : X} : y ∈ e'.source ↔ y ∈ e.source ∧ e y ∈ W := by
+    simp [e']
+  have htarget : e'.target = W := by
+    have hWt : W ⊆ e.target := fun w hw => (hcV hw).1
+    simpa [e'] using hWt
+  refine ⟨e', c, hc, hmem.2 ⟨hxe, hex ▸ ?_⟩, hcoe, fun y hy => ⟨(hmem.1 hy).1, ?_⟩, htarget,
+    ?_, fun g y hy => ?_⟩
+  · simpa [W] using hc
+  · have hyW := (hcV (hmem.1 hy).2).2
+    rw [mem_preimage, e.left_inv (hmem.1 hy).1] at hyW
+    exact interior_subset hyW
+  · rw [← e'.symm_image_target_eq_source, htarget]
+    exact (σ.convex_sumOfConjugatesInnerSublevel c).isPreconnected.image _
+      (e'.continuousOn_symm.mono htarget.ge)
+  · obtain ⟨hgy, hgye⟩ := he g y (hmem.1 hy).1
+    rw [hcoe, hgye]
+    refine ⟨hmem.2 ⟨hgy, ?_⟩, rfl⟩
+    rw [hgye, ← mem_preimage, σ.preimage_sumOfConjugatesInnerSublevel]
+    exact (hmem.1 hy).2
+
+end InvariantBall
 
 end OpenPartialHomeomorph

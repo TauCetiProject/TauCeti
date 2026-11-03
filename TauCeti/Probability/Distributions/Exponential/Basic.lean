@@ -42,12 +42,15 @@ the `a = 1` cases of the Gamma results in `TauCeti.Probability.Distributions.Gam
 * `integrable_expMeasure_iff`, `integral_expMeasure_eq`,
   `integrable_expMeasure_iff_integrableOn_Ioi`, `integral_expMeasure_eq_integral_Ioi` —
   integrability and integration against the exponential law, transferred to the real density;
+* `ae_pos_of_hasLaw_expMeasure`, `pos_of_hasLaw_expMeasure` — an exponential random variable is
+  almost surely positive, and on a probability space its rate is positive;
 * `integrable_pow_expMeasure` — every moment is integrable, for `0 < r`;
 * `integral_pow_expMeasure` — the `n`-th moment, `n ! / r ^ n`, for `0 < r`;
 * `integrable_rpow_expMeasure_iff`, `integral_rpow_expMeasure` — the exact real-power moment
   threshold `-1 < q` and formula `Gamma (1 + q) / r ^ q`, for `0 < r`;
 * `integral_id_expMeasure`, `integral_sq_expMeasure` — the mean and the second moment;
 * `variance_id_expMeasure` — the variance `(r ^ 2)⁻¹`;
+* `memLp_id_expMeasure` — the identity is square-integrable, for `0 < r`;
 * `memLp_log_expMeasure`, `integrable_log_expMeasure`, `integral_log_expMeasure` — finite moments,
   integrability, and the mean of the logarithm under a positive-rate exponential law;
 * `integrable_exp_mul_expMeasure_iff` — exact exponential integrability threshold `t < r`;
@@ -56,6 +59,7 @@ the `a = 1` cases of the Gamma results in `TauCeti.Probability.Distributions.Gam
 * `cgf_id_expMeasure` — cumulant-generating function `log (r / (r - t))`;
 * `charFun_expMeasure` — characteristic function `(r : ℂ) / (r - I * t)`;
 * `measureReal_Ioi_expMeasure`, `measure_Ioi_expMeasure` — tail probabilities;
+* `expMeasure_map_const_mul` — positive scaling divides the rate;
 * `memoryless_expMeasure` — the conditional tail is unchanged by elapsed time;
 * `map_sub_cond_expMeasure` — conditional on exceeding a nonnegative threshold, the excess
   has the original exponential law;
@@ -88,6 +92,25 @@ variable {a r s t : ℝ} {n : ℕ}
 theorem expMeasure_eq_withDensity (r : ℝ) :
     expMeasure r = volume.withDensity (exponentialPDF r) := rfl
 
+end TauCeti.Probability
+
+namespace ProbabilityTheory
+
+/-- The exponential measure is zero when its rate is nonpositive. -/
+@[simp]
+theorem expMeasure_of_nonpos {r : ℝ} (hr : r ≤ 0) : expMeasure r = 0 := by
+  have hpdf : exponentialPDF r = 0 := by
+    funext x
+    rw [exponentialPDF_eq, Pi.zero_apply, ENNReal.ofReal_eq_zero]
+    split_ifs
+    · exact mul_nonpos_of_nonpos_of_nonneg hr (Real.exp_nonneg _)
+    · exact le_rfl
+  rw [TauCeti.Probability.expMeasure_eq_withDensity, hpdf, withDensity_zero]
+
+end ProbabilityTheory
+
+namespace TauCeti.Probability
+
 /-- Every singleton has zero exponential measure, for every rate. -/
 instance nullSingletonClass_expMeasure (r : ℝ) : NullSingletonClass (expMeasure r) := by
   rw [expMeasure_eq_withDensity]
@@ -107,6 +130,25 @@ zero and the statement holds trivially. -/
 theorem ae_pos_expMeasure (r : ℝ) : ∀ᵐ x ∂expMeasure r, 0 < x := by
   rw [expMeasure]
   exact ae_pos_gammaMeasure 1 r
+
+/-- A random variable with an exponential law is almost surely positive. -/
+theorem ae_pos_of_hasLaw_expMeasure {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
+    {X : Ω → ℝ} (hX : HasLaw X (expMeasure r) P) : ∀ᵐ ω ∂P, 0 < X ω :=
+  (hX.ae_iff measurableSet_Ioi.mem).2 (ae_pos_expMeasure r)
+
+/-- The rate of an exponential law of a random variable on a probability space is positive,
+because `expMeasure r` is the zero measure for `r ≤ 0`. -/
+theorem pos_of_hasLaw_expMeasure {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
+    [IsProbabilityMeasure P] {X : Ω → ℝ} (hX : HasLaw X (expMeasure r) P) : 0 < r := by
+  by_contra! hr
+  obtain ⟨h⟩ := hX.isProbabilityMeasure_iff.1 ‹_›
+  simp [expMeasure_of_nonpos hr] at h
+
+/-- Scaling an exponential variable by a positive constant divides its rate by that constant. -/
+@[simp]
+theorem expMeasure_map_const_mul (hr : 0 < r) {c : ℝ} (hc : 0 < c) :
+    (expMeasure r).map (c * ·) = expMeasure (r / c) := by
+  simpa only [expMeasure] using gammaMeasure_map_const_mul one_pos hr hc
 
 /-- `expMeasure r` presented by its real-valued density, the form in which the shared density
 bridge of `TauCeti/Probability/Density.lean` applies. -/
@@ -197,6 +239,11 @@ theorem integral_sq_expMeasure (hr : 0 < r) : ∫ x, x ^ 2 ∂(expMeasure r) = 2
 @[simp]
 theorem variance_id_expMeasure (hr : 0 < r) : Var[id; expMeasure r] = (r ^ 2)⁻¹ := by
   rw [expMeasure, variance_id_gammaMeasure one_pos hr, one_div]
+
+/-- The identity function belongs to `L²` of an exponential law with positive rate. -/
+theorem memLp_id_expMeasure (hr : 0 < r) : MemLp id 2 (expMeasure r) := by
+  rw [expMeasure]
+  exact memLp_id_gammaMeasure one_pos hr
 
 /-- The logarithm belongs to every finite `Lᵖ` space under a positive-rate exponential law. -/
 theorem memLp_log_expMeasure (hr : 0 < r) (p : ℝ≥0) : MemLp log p (expMeasure r) := by

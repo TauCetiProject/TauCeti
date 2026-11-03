@@ -18,11 +18,11 @@ Let `a` be measurable and uniformly elliptic on `Ω ⊆ ℝⁿ`, `n ≥ 1`, with
 This file proves the two steps of De Giorgi's proof of Hölder continuity that turn the measure
 estimates for level sets into a pointwise gain on a smaller ball.
 
-* **Reduction of the supremum.** Let `u ∈ H¹(Ω)` be a weak subsolution of `-∂ⱼ(aⁱʲ ∂ᵢu) ≤ 0` with
+* **Reduction of the supremum.** Let `u ∈ H¹(Ω)` be a weak subsolution of `-∂ᵢ(aⁱʲ ∂ⱼu) ≤ 0` with
   `u ≤ M` on `B(x₀, 2R) ⊆ Ω`, and suppose the sublevel set `{u ≤ k}` occupies at least a
   proportion `θ > 0` of `B(x₀, R)`. Then `u ≤ M - δ (M - k)` on `B(x₀, R/2)`, where `δ ∈ (0, 1)`
   depends only on `λ`, `Λ`, `θ`, the dimension and the normalization of the Haar measure.
-* **Oscillation decay.** If `u` is a weak solution of `-∂ⱼ(aⁱʲ ∂ᵢu) = 0` with `m ≤ u ≤ M` on
+* **Oscillation decay.** If `u` is a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = 0` with `m ≤ u ≤ M` on
   `B(x₀, 2R)`, then on `B(x₀, R/2)` either `u ≤ M - δ (M - m)` or `u ≥ m + δ (M - m)`. Either
   way the oscillation of `u` drops from `M - m` to at most `(1 - δ)(M - m)`.
 * **Power-law decay.** Iterating over the balls `B(x₀, R / 4ʲ)`, the oscillation of a weak
@@ -51,22 +51,22 @@ almost everywhere on a ball, rather than through an essential oscillation functi
 ## Lower-order terms
 
 The reduction of the supremum is proved for weak subsolutions of the full operator
-`-∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu + c u` with `‖b‖ ≤ β`, `c ≥ 0`, at levels `0 ≤ k ≤ M`, the setting of the
+`-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u` with `‖b‖ ≤ β`, `c ≥ 0`, at levels `0 ≤ k ≤ M`, the setting of the
 two estimates it combines. The drift is not invariant
 under dilations, so `δ` depends on a bound `σ` for `βR/λ`. When there is no mass term, constants
 solve the equation, and shifting `u` by `k` on the ball `B(x₀, 2R)` removes the sign condition on
 the levels. Then `u` and `-u` are both subsolutions, and oscillation decay, its iteration and the
-power law hold for weak solutions of `-∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu = 0`, with constants depending on `σ`.
+power law hold for weak solutions of `-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu = 0`, with constants depending on `σ`.
 The bound `βr ≤ σλ` holds on every ball of radius `r ≤ R` once it holds at the radius `R`, so a
-single `δ` serves all the balls of the iteration. The estimates for `-∂ⱼ(aⁱʲ ∂ᵢu)` are the
+single `δ` serves all the balls of the iteration. The estimates for `-∂ᵢ(aⁱʲ ∂ⱼu)` are the
 case `b = 0`, `σ = 0`.
 
 ## Main declarations
 
 * `TauCeti.PDE.exists_ae_value_le_sub_mul_sub_lowerOrder`: the reduction of the supremum for
-  subsolutions of `-∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu + c u ≤ 0` with `c ≥ 0`, at nonnegative levels.
+  subsolutions of `-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u ≤ 0` with `c ≥ 0`, at nonnegative levels.
 * `TauCeti.PDE.exists_ae_value_le_sub_mul_sub_drift`: the reduction of the supremum for
-  subsolutions of `-∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu ≤ 0`, at all levels.
+  subsolutions of `-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu ≤ 0`, at all levels.
 * `TauCeti.PDE.exists_ae_value_le_sub_mul_sub`: the reduction of the supremum.
 * `TauCeti.PDE.exists_ae_value_le_sub_mul_sub_or_add_mul_sub_le_drift`,
   `TauCeti.PDE.exists_ae_value_le_sub_mul_sub_or_add_mul_sub_le`: oscillation decay.
@@ -110,7 +110,7 @@ dimension, and fix a proportion `θ > 0` and a bound `σ` for `βR/λ`. There is
 depending only on `λ`, `Λ`, `θ`, `σ`, the dimension and the normalization of the additive Haar
 measure `mu`, such that the following holds. Let `a` be measurable and uniformly elliptic on `Ω`
 with constants `λ, Λ`, let `b` and `c` be measurable with `‖b‖ ≤ β`, `‖c‖ ≤ γ` and `c ≥ 0` on
-`Ω`, and let `u ∈ H¹(Ω)` be a weak subsolution of `-∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu + c u ≤ 0`, that is
+`Ω`, and let `u ∈ H¹(Ω)` be a weak subsolution of `-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u ≤ 0`, that is
 `a(u, v) ≤ 0` for every nonnegative `v ∈ H¹₀(Ω)`, where `a(·, ·)` is the energy form with drift
 `b` and mass coefficient `c`. Let `B(x₀, 2R) ⊆ Ω` with `βR ≤ σλ`, and let `0 ≤ k ≤ M` be levels
 such that `u ≤ M` almost everywhere on `B(x₀, 2R)` and `|{u ≤ k} ∩ B(x₀, R)| ≥ θ |B(x₀, R)|`.
@@ -240,7 +240,7 @@ a proportion `θ > 0` and a bound `σ` for `βR/λ`. There is `δ ∈ (0, 1)`, d
 `Λ`, `θ`, `σ`, the dimension and the normalization of the additive Haar measure `mu`, such that
 the following holds. Let `a` be measurable and uniformly elliptic on `Ω` with constants `λ, Λ`,
 let `b` be measurable with `‖b‖ ≤ β` on `Ω`, and let `u ∈ H¹(Ω)` be a weak subsolution of
-`-∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu ≤ 0`, that is `a(u, v) ≤ 0` for every nonnegative `v ∈ H¹₀(Ω)`, where
+`-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu ≤ 0`, that is `a(u, v) ≤ 0` for every nonnegative `v ∈ H¹₀(Ω)`, where
 `a(·, ·)` is the energy form with drift `b` and no mass term. Let `B(x₀, 2R) ⊆ Ω` with
 `βR ≤ σλ`, and let `k ≤ M` be levels such that `u ≤ M` almost everywhere on `B(x₀, 2R)` and
 `|{u ≤ k} ∩ B(x₀, R)| ≥ θ |B(x₀, R)|`. Then
@@ -301,7 +301,7 @@ theorem exists_ae_value_le_sub_mul_sub_drift [Nonempty ι] {θ : ℝ} (hθ : 0 <
 `θ > 0`. There is `δ ∈ (0, 1)`, depending only on `λ`, `Λ`, `θ`, the dimension and the
 normalization of the additive Haar measure `mu`, such that the following holds. Let `a` be
 measurable and uniformly elliptic on `Ω` with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a weak
-subsolution of `-∂ⱼ(aⁱʲ ∂ᵢu) ≤ 0`, that is `a(u, v) ≤ 0` for every nonnegative `v ∈ H¹₀(Ω)`. Let
+subsolution of `-∂ᵢ(aⁱʲ ∂ⱼu) ≤ 0`, that is `a(u, v) ≤ 0` for every nonnegative `v ∈ H¹₀(Ω)`. Let
 `B(x₀, 2R) ⊆ Ω` and levels `k ≤ M` be such that `u ≤ M` almost everywhere on `B(x₀, 2R)` and
 `|{u ≤ k} ∩ B(x₀, R)| ≥ θ |B(x₀, R)|`. Then
 
@@ -333,7 +333,7 @@ dimension, and fix a bound `σ` for `βR/λ`. There is `δ ∈ (0, 1)`, dependin
 `σ`, the dimension and the normalization of the additive Haar measure `mu`, such that the
 following holds. Let `a` be measurable and uniformly elliptic on `Ω` with constants `λ, Λ`, let
 `b` be measurable with `‖b‖ ≤ β` on `Ω`, and let `u ∈ H¹(Ω)` be a weak solution of
-`-∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu = 0`, that is `a(u, v) = 0` for every `v ∈ H¹₀(Ω)`, where `a(·, ·)` is the
+`-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu = 0`, that is `a(u, v) = 0` for every `v ∈ H¹₀(Ω)`, where `a(·, ·)` is the
 energy form with drift `b` and no mass term. Let `B(x₀, 2R) ⊆ Ω` with `βR ≤ σλ`, and let `m, M`
 be such that `m ≤ u ≤ M` almost everywhere on `B(x₀, 2R)`. Then almost everywhere on
 `B(x₀, R/2)`, either
@@ -418,7 +418,7 @@ theorem exists_ae_value_le_sub_mul_sub_or_add_mul_sub_le_drift [Nonempty ι] (σ
 /-- **Oscillation decay for weak solutions (De Giorgi).** Let `n ≥ 1` be the dimension. There
 is `δ ∈ (0, 1)`, depending only on `λ`, `Λ`, the dimension and the normalization of the additive
 Haar measure `mu`, such that the following holds. Let `a` be measurable and uniformly elliptic on
-`Ω` with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a weak solution of `-∂ⱼ(aⁱʲ ∂ᵢu) = 0`, that is
+`Ω` with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = 0`, that is
 `a(u, v) = 0` for every `v ∈ H¹₀(Ω)`. Let `B(x₀, 2R) ⊆ Ω` and `m, M` be such that
 `m ≤ u ≤ M` almost everywhere on `B(x₀, 2R)`. Then almost everywhere on `B(x₀, R/2)`, either
 
@@ -447,7 +447,7 @@ theorem exists_ae_value_le_sub_mul_sub_or_add_mul_sub_le [Nonempty ι] :
 fix a bound `σ` for `βR/λ`. There is `δ ∈ (0, 1)`, depending only on `λ`, `Λ`, `σ`, the
 dimension and the normalization of the additive Haar measure `mu`, such that the following holds.
 Let `a` be measurable and uniformly elliptic on `Ω` with constants `λ, Λ`, let `b` be measurable
-with `‖b‖ ≤ β` on `Ω`, and let `u ∈ H¹(Ω)` be a weak solution of `-∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu = 0`. If
+with `‖b‖ ≤ β` on `Ω`, and let `u ∈ H¹(Ω)` be a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu = 0`. If
 `B(x₀, R) ⊆ Ω`, `βR ≤ σλ` and `u ∈ [m, M]` almost everywhere on `B(x₀, R)`, then for every `j`,
 almost everywhere on `B(x₀, R / 4ʲ)` the function `u` takes values in an interval of length
 `(1 - δ)ʲ (M - m)`.
@@ -513,7 +513,7 @@ theorem exists_ae_value_mem_Icc_add_pow_mul_sub_drift [Nonempty ι] (σ : ℝ) :
 /-- **Iterated oscillation decay (De Giorgi).** Let `n ≥ 1` be the dimension. There is
 `δ ∈ (0, 1)`, depending only on `λ`, `Λ`, the dimension and the normalization of the additive
 Haar measure `mu`, such that the following holds. Let `a` be measurable and uniformly elliptic on
-`Ω` with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a weak solution of `-∂ⱼ(aⁱʲ ∂ᵢu) = 0`. If
+`Ω` with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = 0`. If
 `B(x₀, R) ⊆ Ω` and `u ∈ [m, M]` almost everywhere on `B(x₀, R)`, then for every `j`, almost
 everywhere on `B(x₀, R / 4ʲ)` the function `u` takes values in an interval of length
 `(1 - δ)ʲ (M - m)`. This is the case `b = 0` of
@@ -540,7 +540,7 @@ fix a bound `σ` for `βR/λ`. There are `α ∈ (0, 1]` and `C > 0`, depending 
 the dimension and the normalization of the additive Haar measure `mu`, such that the following
 holds. Let `a` be measurable and uniformly elliptic on `Ω` with constants `λ, Λ`, let `b` be
 measurable with `‖b‖ ≤ β` on `Ω`, and let `u ∈ H¹(Ω)` be a weak solution of
-`-∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu = 0`. If `B(x₀, R) ⊆ Ω`, `βR ≤ σλ` and `u ∈ [m, M]` almost everywhere on
+`-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu = 0`. If `B(x₀, R) ⊆ Ω`, `βR ≤ σλ` and `u ∈ [m, M]` almost everywhere on
 `B(x₀, R)`, then for every radius `0 < r ≤ R`, almost everywhere on `B(x₀, r)` the function `u`
 takes values in an interval of length `C (r / R)^α (M - m)`.
 
@@ -613,7 +613,7 @@ theorem exists_ae_value_mem_Icc_add_mul_rpow_mul_sub_drift [Nonempty ι] (σ : �
 `α ∈ (0, 1]` and `C > 0`, depending only on `λ`, `Λ`, the dimension and the normalization of the
 additive Haar measure `mu`, such that the following holds. Let `a` be measurable and uniformly
 elliptic on `Ω` with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a weak solution of
-`-∂ⱼ(aⁱʲ ∂ᵢu) = 0`. If `B(x₀, R) ⊆ Ω` and `u ∈ [m, M]` almost everywhere on `B(x₀, R)`, then
+`-∂ᵢ(aⁱʲ ∂ⱼu) = 0`. If `B(x₀, R) ⊆ Ω` and `u ∈ [m, M]` almost everywhere on `B(x₀, R)`, then
 for every radius `0 < r ≤ R`, almost everywhere on `B(x₀, r)` the function `u` takes values in
 an interval of length `C (r / R)^α (M - m)`. This is the case `b = 0` of
 `TauCeti.PDE.exists_ae_value_mem_Icc_add_mul_rpow_mul_sub_drift`. -/
@@ -639,7 +639,7 @@ and fix a bound `σ` for `βR/λ`. There are `α ∈ (0, 1]` and `C > 0`, depend
 `σ`, the dimension and the normalization of the additive Haar measure `mu`, such that the
 following holds. Let `a` be measurable and uniformly elliptic on `Ω` with constants `λ, Λ`, let
 `b` be measurable with `‖b‖ ≤ β` on `Ω`, and let `u ∈ H¹(Ω)` be a weak solution of
-`-∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu = 0`. If `B(x₀, R) ⊆ Ω`, `βR ≤ σλ` and `0 < r ≤ R/2`, then almost
+`-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu = 0`. If `B(x₀, R) ⊆ Ω`, `βR ≤ σλ` and `0 < r ≤ R/2`, then almost
 everywhere on `B(x₀, r)` the function `u` takes values in an interval of length
 
 `C (r / R)^α R^{-n/2} ‖u‖_{L²(B(x₀, R))}`.
@@ -703,7 +703,7 @@ theorem exists_ae_value_mem_Icc_add_mul_rpow_mul_rpow_mul_sqrt_setIntegral_drift
 `α ∈ (0, 1]` and `C > 0`, depending only on `λ`, `Λ`, the dimension and the normalization of the
 additive Haar measure `mu`, such that the following holds. Let `a` be measurable and uniformly
 elliptic on `Ω` with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a weak solution of
-`-∂ⱼ(aⁱʲ ∂ᵢu) = 0`. If `B(x₀, R) ⊆ Ω` and `0 < r ≤ R/2`, then almost everywhere on `B(x₀, r)`
+`-∂ᵢ(aⁱʲ ∂ⱼu) = 0`. If `B(x₀, R) ⊆ Ω` and `0 < r ≤ R/2`, then almost everywhere on `B(x₀, r)`
 the function `u` takes values in an interval of length
 
 `C (r / R)^α R^{-n/2} ‖u‖_{L²(B(x₀, R))}`.

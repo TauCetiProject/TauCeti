@@ -76,8 +76,8 @@ restated here.
 * `TauCeti.BrauerDiagram.bottomCap_capCup`, `TauCeti.BrauerDiagram.topCup_capCup`: its cap and its
   cup are the pair, and `TauCeti.BrauerDiagram.bottomThrough_capCup`,
   `TauCeti.BrauerDiagram.topThrough_capCup`: its through strands are the rest.
-* `TauCeti.capCup_ne_permToBrauer`: a cap-cup diagram on a pair of distinct indices is not a
-  permutation diagram.
+* `TauCeti.capCup_ne_permToBrauer` and `TauCeti.permToBrauer_ne_capCup`: a cap-cup diagram on a
+  pair of distinct indices is not a permutation diagram, in either orientation.
 * `TauCeti.BrauerDiagram.propagatingNumber_capCup`: a cap-cup diagram propagates `k - 2` strands,
   so the propagating number is not constant.
 * `TauCeti.BrauerDiagram.flip_capCup`: a cap-cup diagram is its own reflection.
@@ -295,6 +295,14 @@ theorem capCup_ne_permToBrauer (hab : a ≠ b) (σ : Equiv.Perm (Fin k)) :
   rw [h] at hcap
   exact BrauerDiagram.not_isThrough_of_isCap _ _ hcap
     (BrauerDiagram.isThrough_permToBrauer σ (Sum.inl a))
+
+/-- **A permutation diagram is not a cap-cup diagram on a pair of distinct indices**, the other
+orientation of `TauCeti.capCup_ne_permToBrauer`, which `simp` needs to rewrite an equation whose
+left-hand side is the permutation diagram. -/
+@[simp]
+theorem permToBrauer_ne_capCup (hab : a ≠ b) (σ : Equiv.Perm (Fin k)) :
+    permToBrauer σ ≠ capCup a b :=
+  (capCup_ne_permToBrauer hab σ).symm
 
 /-! ### A cap-cup diagram depends only on the unordered pair -/
 

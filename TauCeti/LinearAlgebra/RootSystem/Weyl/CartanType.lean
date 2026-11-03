@@ -7,6 +7,10 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.Isomorphism
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Transport
+-- `TauCeti.LinearAlgebra.RootSystem.Weyl.Bases` supplies the simple transitivity of the Weyl group
+-- on the bases, `RootPairing.Base.existsUnique_map_eq`, behind the independence of the Cartan type
+-- from the base. It appears in no statement here.
+import TauCeti.LinearAlgebra.RootSystem.Weyl.Bases
 
 /-!
 # The Weyl group is an invariant of the Cartan type
@@ -28,10 +32,12 @@ of a given type carries no preferred labelling of its base by the nodes of the D
 
 * `TauCeti.nonempty_weylGroup_mulEquiv_of_hasCartanType`: **two root systems carrying bases of the
   same Cartan type have isomorphic Weyl groups.**
+* `TauCeti.HasCartanType.of_base`: the Cartan type does not depend on the base, because the Weyl
+  group acts transitively on the bases (`RootPairing.Base.existsUnique_map_eq`).
 
 ## References
 
-* N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Ch. VI, §4.
+* N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Ch. VI, §1.5 and §4.
 -/
 
 public section
@@ -57,5 +63,14 @@ theorem nonempty_weylGroup_mulEquiv_of_hasCartanType (b : P.Base) (b₂ : Q.Base
     (h : HasCartanType P b t) (h₂ : HasCartanType Q b₂ t) :
     Nonempty (RootPairing.weylGroup P ≃* RootPairing.weylGroup Q) :=
   (nonempty_equiv_of_hasCartanType b b₂ t h h₂).elim fun e ↦ ⟨e.weylGroupEquiv⟩
+
+omit [P.IsRootSystem] in
+/-- **The Cartan type does not depend on the base.** Any two bases are related by an element of the
+Weyl group (`RootPairing.Base.existsUnique_map_eq`), and the Cartan type of a base is transported
+along it (`TauCeti.HasCartanType.map`). -/
+theorem HasCartanType.of_base {b : P.Base} {t : DynkinType} (h : HasCartanType P b t)
+    (b' : P.Base) : HasCartanType P b' t := by
+  obtain ⟨w, rfl, -⟩ := b.existsUnique_map_eq b'
+  exact h.map _
 
 end TauCeti

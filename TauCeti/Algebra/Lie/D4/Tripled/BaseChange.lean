@@ -272,7 +272,7 @@ noncomputable def baseChangePointsMulEquiv (B : CommAlgCat.{w} A) :
           (baseChangeDefiningIdeal A)) B ≃*
       points B :=
   (CommHopfAlgCat.baseChangeIsoPointsMulEquiv (baseChangeCoordinateIso A) B).trans
-    (pointsPresentation (TauCeti.CommAlgCat.restrictScalarsObj (algebraMap ℤ A) B)).mulEquiv
+    (pointsPresentation (CommAlgCat.restrictScalarsObj (algebraMap ℤ A) B)).mulEquiv
 
 /-- The base-change points equivalence preserves the ambient invertible matrix. -/
 @[simp]
@@ -317,14 +317,14 @@ theorem baseChangePointsMulEquiv_mapPoints {B C : CommAlgCat.{w} A} (f : B ⟶ C
   simp only [baseChangePointsMulEquiv, MulEquiv.trans_apply]
   rw [CommHopfAlgCat.baseChangeIsoPointsMulEquiv_mapPoints,
     (pointsPresentation
-      (TauCeti.CommAlgCat.restrictScalarsObj (algebraMap ℤ A) B)).mulEquiv_mapPoints
+      (CommAlgCat.restrictScalarsObj (algebraMap ℤ A) B)).mulEquiv_mapPoints
       (pointsPresentation
-        (TauCeti.CommAlgCat.restrictScalarsObj (algebraMap ℤ A) C))
-      ((TauCeti.CommAlgCat.restrictScalars (algebraMap ℤ A)).map f)]
+        (CommAlgCat.restrictScalarsObj (algebraMap ℤ A) C))
+      ((CommAlgCat.restrictScalars (algebraMap ℤ A)).map f)]
   have hring :
-      ((((TauCeti.CommAlgCat.restrictScalars (algebraMap ℤ A)).map f).hom : ↑B →+* ↑C)) =
+      ((((CommAlgCat.restrictScalars (algebraMap ℤ A)).map f).hom : ↑B →+* ↑C)) =
         (f.hom : ↑B →+* ↑C) := by
-    rw [TauCeti.CommAlgCat.restrictScalars_map, TauCeti.CommAlgCat.restrictScalarsMap_hom]
+    rw [CommAlgCat.restrictScalars_map, CommAlgCat.restrictScalarsMap_hom]
     exact RingHom.ext fun x ↦ AlgHom.restrictScalars_apply ℤ f.hom x
   rw [hring]
 
@@ -505,6 +505,16 @@ theorem mkQuotient_comp_weightTorusIntegralCoordinateMap :
     (TauCeti.serreH ℚ weightTable.cartanMatrix) rep lattice.toAddSubgroup
     rep_kostantForm_mem_lattice isNilpotent_rep_serreRootGenerator latticeBasis
     d4TripledWeight definingIdeal_def
+
+/-- Composing the integral weight-torus bialgebra map with the quotient map recovers the
+represented weight-torus bialgebra map inside `GL₂₄`. -/
+theorem weightTorusIntegralCoordinateMap_comp_quotient :
+    weightTorusIntegralCoordinateMap.hom.comp
+        (Bialgebra.Quotient.mkBialgHom definingIdeal.toIdeal) =
+      GeneralLinear.weightTorusCoordinateBialgHom (S := ℤ) d4TripledWeight := by
+  rw [← CommHopfAlgCat.hom_mkQuotient, ← CommHopfAlgCat.hom_comp,
+    mkQuotient_comp_weightTorusIntegralCoordinateMap,
+    GeneralLinear.hom_weightTorusCoordinateMap]
 
 /-- On points, the integral factored coordinate map is the named weight torus. -/
 @[simp]

@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Subgroup.Defs
+public import Mathlib.Data.Set.Card
 public import Mathlib.GroupTheory.GroupAction.Defs
 public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.Data.Multiset.MapFold
+import Mathlib.SetTheory.Cardinal.NatCard
 
 /-!
 # The multiset of orbit sizes
@@ -15,9 +18,15 @@ import Mathlib.Data.Multiset.MapFold
 For a group `G` acting on a finite type `X`, the multiset of the sizes of the orbits of `G` on
 `X` is a basic invariant of the action. This file records two ways in which it is preserved: by a
 change of the acting group that does not change the orbits, and by an equivariant bijection of
-the underlying types.
+the underlying types. It also bounds the length of a list of group elements with distinct images of
+a point by the size of the orbit of that point.
 
 ## Main results
+
+* `MulAction.orbitRel.Quotient.card_orbit_ne_zero`: an orbit in a finite action has nonzero
+  natural cardinality.
+* `MulAction.orbitRel.Quotient.card_filter_quotient_mk`: the fiber of the orbit quotient
+  map has the cardinality of the corresponding orbit.
 
 * `Equiv.map_card_orbit_eq_of_image_orbit_eq`: a bijection carrying the orbits of one action onto
   the orbits of another preserves the multiset of orbit sizes.
@@ -25,11 +34,35 @@ the underlying types.
   sizes.
 * `TauCeti.map_card_orbit_eq_of_orbit_eq`: two actions on the same finite type with the same
   orbits have the same multiset of orbit sizes.
+* `Subgroup.length_le_ncard_orbit`: a list of elements of a subgroup `K` with distinct images of `x`
+  is no longer than the orbit of `x` under `K`, if that orbit is finite.
 -/
 
 public section
 
 open MulAction
+
+namespace MulAction.orbitRel.Quotient
+
+/-- Every orbit in an action on a finite type has nonzero natural cardinality. -/
+theorem card_orbit_ne_zero {G X : Type*} [Group G] [MulAction G X] [Finite X]
+    (O : orbitRel.Quotient G X) : Nat.card O.orbit ≠ 0 := by
+  have : Nonempty O.orbit := O.nonempty_orbit.to_subtype
+  exact Nat.card_pos.ne'
+
+open Classical in
+/-- The fiber of the orbit quotient map has the natural cardinality of that orbit. -/
+theorem card_filter_quotient_mk {G X : Type*} [Group G] [MulAction G X] [Fintype X]
+    (O : orbitRel.Quotient G X) :
+    (Finset.univ.filter (fun x ↦ Quotient.mk (orbitRel G X) x = O)).card =
+      Nat.card O.orbit := by
+  classical
+  rw [Nat.card_eq_fintype_card, Fintype.card_subtype]
+  congr 1
+  ext x
+  simp [orbitRel.Quotient.mem_orbit]
+
+end MulAction.orbitRel.Quotient
 
 namespace Equiv
 
@@ -88,3 +121,18 @@ theorem map_card_orbit_eq_of_orbit_eq {G G' X : Type*} [Group G] [Group G'] [Mul
     rw [Equiv.coe_refl, Set.image_id, h, id_eq]
 
 end TauCeti
+
+namespace Subgroup
+
+/-- The images of `x` under a list of elements of a subgroup `K` lie in the orbit of `x` under `K`,
+so if that orbit is finite, a list with distinct images of `x` is no longer than it. -/
+theorem length_le_ncard_orbit {G α : Type*} [Group G] [MulAction G α] {K : Subgroup G}
+    {x : α} {R : List G} (hR : ∀ r ∈ R, r ∈ K) (hnodup : (R.map (· • x)).Nodup)
+    (horbit : (orbit K x).Finite := by toFinite_tac) :
+    R.length ≤ (orbit K x).ncard := by
+  rw [← List.length_map (· • x)]
+  refine hnodup.length_le_ncard horbit fun y hy ↦ ?_
+  obtain ⟨r, hr, rfl⟩ := List.mem_map.1 hy
+  exact mem_orbit_iff.2 ⟨⟨r, hR r hr⟩, rfl⟩
+
+end Subgroup

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.FieldTheory.Galois.FixedField
 public import TauCeti.FieldTheory.GaloisGroups.Orbits
-public import TauCeti.GroupTheory.GroupAction.Transitive
 
 /-!
 # Point stabilizers of the Galois action on the roots
@@ -174,36 +173,13 @@ theorem isPretransitive_rootSet_of_irreducible {q : F[X]} (hq : Irreducible q) :
       ((Set.ext_iff.mp (coe_rootSet_eq_orbit_of_irreducible hq x.2) y).mp y.2)
     exact ⟨g, Subtype.ext hg⟩
 
-omit [Normal F M] in
-/-- The stabilizer of a root, as a point of the root set, is its stabilizer as an element of the
-field. -/
-theorem stabilizer_rootSet_mk {q : F[X]} {α : M} (hα : α ∈ q.rootSet M) :
-    stabilizer (M ≃ₐ[F] M) (⟨α, hα⟩ : q.rootSet M) = stabilizer (M ≃ₐ[F] M) α := by
-  ext g
-  simp only [mem_stabilizer_iff, Subtype.ext_iff, rootSet.coe_smul]
-
 /-- The roots in a normal extension `M / F` of an irreducible polynomial over `F`, as the cosets
-of the stabilizer in `Gal(M/F)` of a chosen root: the transitive-action identification
-`TauCeti.quotientStabilizerEquiv`, transported along `TauCeti.stabilizer_rootSet_mk`. -/
+of the stabilizer in `Gal(M/F)` of a chosen root. This is
+`MulAction.orbitEquivQuotientStabilizer` under the root-orbit identification. -/
 noncomputable def rootSetEquivQuotientStabilizer {q : F[X]} (hq : Irreducible q) {α : M}
     (hα : α ∈ q.rootSet M) : q.rootSet M ≃ (M ≃ₐ[F] M) ⧸ stabilizer (M ≃ₐ[F] M) α :=
-  have := isPretransitive_rootSet_of_irreducible (M := M) hq
-  (quotientStabilizerEquiv (M ≃ₐ[F] M) (⟨α, hα⟩ : q.rootSet M)).symm.trans
-    (Subgroup.quotientEquivOfEq (stabilizer_rootSet_mk hα))
-
-/-- The root `ρ α` corresponds to the coset of `ρ`. -/
-@[simp]
-theorem rootSetEquivQuotientStabilizer_apply_mk {q : F[X]} (hq : Irreducible q) {α : M}
-    (hα : α ∈ q.rootSet M) (ρ : M ≃ₐ[F] M) (h : ρ α ∈ q.rootSet M) :
-    rootSetEquivQuotientStabilizer hq hα ⟨ρ α, h⟩ =
-      (ρ : (M ≃ₐ[F] M) ⧸ stabilizer (M ≃ₐ[F] M) α) := by
-  have := isPretransitive_rootSet_of_irreducible (M := M) hq
-  have h1 : (quotientStabilizerEquiv (M ≃ₐ[F] M) (⟨α, hα⟩ : q.rootSet M)).symm ⟨ρ α, h⟩ =
-      (ρ : (M ≃ₐ[F] M) ⧸ stabilizer (M ≃ₐ[F] M) (⟨α, hα⟩ : q.rootSet M)) := by
-    rw [Equiv.symm_apply_eq, quotientStabilizerEquiv_mk]
-    rfl
-  rw [rootSetEquivQuotientStabilizer, Equiv.trans_apply, h1]
-  exact Subgroup.quotientEquivOfEq_mk _ _
+  (Set.equivOfEq (coe_rootSet_eq_orbit_of_irreducible hq hα)).trans
+    (orbitEquivQuotientStabilizer (M ≃ₐ[F] M) α)
 
 /-- The coset of `ρ` corresponds to the root `ρ • α`. -/
 @[simp]
@@ -211,29 +187,33 @@ theorem coe_rootSetEquivQuotientStabilizer_symm_apply_mk {q : F[X]} (hq : Irredu
     (hα : α ∈ q.rootSet M) (ρ : M ≃ₐ[F] M) :
     (((rootSetEquivQuotientStabilizer hq hα).symm
       (ρ : (M ≃ₐ[F] M) ⧸ stabilizer (M ≃ₐ[F] M) α) : q.rootSet M) : M) = ρ • α := by
-  rw [(Equiv.symm_apply_eq _).mpr
-    (rootSetEquivQuotientStabilizer_apply_mk hq hα ρ (smul_mem_rootSet ρ hα)).symm]
-  rfl
+  simp only [rootSetEquivQuotientStabilizer, Equiv.symm_trans_apply,
+    Set.equivOfEq_symm_apply, orbitEquivQuotientStabilizer_symm_apply]
+
+/-- The root `ρ α` corresponds to the coset of `ρ`. -/
+@[simp]
+theorem rootSetEquivQuotientStabilizer_apply_mk {q : F[X]} (hq : Irreducible q) {α : M}
+    (hα : α ∈ q.rootSet M) (ρ : M ≃ₐ[F] M) (h : ρ α ∈ q.rootSet M) :
+    rootSetEquivQuotientStabilizer hq hα ⟨ρ α, h⟩ =
+      (ρ : (M ≃ₐ[F] M) ⧸ stabilizer (M ≃ₐ[F] M) α) := by
+  apply (rootSetEquivQuotientStabilizer hq hα).symm.injective
+  apply Subtype.ext
+  simp only [Equiv.symm_apply_apply, coe_rootSetEquivQuotientStabilizer_symm_apply_mk,
+    AlgEquiv.smul_def]
 
 /-- The identification of the roots with the cosets of a stabilizer is equivariant. -/
 @[simp]
 theorem rootSetEquivQuotientStabilizer_smul {q : F[X]} (hq : Irreducible q) {α : M}
     (hα : α ∈ q.rootSet M) (g : M ≃ₐ[F] M) (x : q.rootSet M) :
     rootSetEquivQuotientStabilizer hq hα (g • x) = g • rootSetEquivQuotientStabilizer hq hα x := by
-  have := isPretransitive_rootSet_of_irreducible (M := M) hq
-  -- The inverse of the transitive-action identification is equivariant, and so is the transport
-  -- along the equality of stabilizers.
-  have h1 : ∀ y : q.rootSet M,
-      (quotientStabilizerEquiv (M ≃ₐ[F] M) (⟨α, hα⟩ : q.rootSet M)).symm (g • y) =
-        g • (quotientStabilizerEquiv (M ≃ₐ[F] M) (⟨α, hα⟩ : q.rootSet M)).symm y := fun y => by
-    rw [Equiv.symm_apply_eq, quotientStabilizerEquiv_smul, Equiv.apply_symm_apply]
-  have h2 : ∀ c, Subgroup.quotientEquivOfEq (stabilizer_rootSet_mk hα) (g • c) =
-      g • Subgroup.quotientEquivOfEq (stabilizer_rootSet_mk hα) c := fun c => by
-    induction c using QuotientGroup.induction_on with
-    | H a =>
-      rw [MulAction.Quotient.smul_mk, Subgroup.quotientEquivOfEq_mk, Subgroup.quotientEquivOfEq_mk,
-        MulAction.Quotient.smul_mk]
-  simp only [rootSetEquivQuotientStabilizer, Equiv.trans_apply, h1, h2]
+  obtain ⟨c, rfl⟩ := (rootSetEquivQuotientStabilizer hq hα).symm.surjective x
+  induction c using QuotientGroup.induction_on with
+  | H ρ =>
+    apply (rootSetEquivQuotientStabilizer hq hα).symm.injective
+    apply Subtype.ext
+    simp only [Equiv.apply_symm_apply, Equiv.symm_apply_apply, rootSet.coe_smul,
+      MulAction.Quotient.smul_mk, coe_rootSetEquivQuotientStabilizer_symm_apply_mk, smul_eq_mul,
+      mul_smul]
 
 end Normal
 

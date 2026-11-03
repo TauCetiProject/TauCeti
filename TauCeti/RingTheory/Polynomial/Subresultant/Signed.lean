@@ -20,7 +20,8 @@ conversion; its two binomial terms and column-block sign simplify to
 
 The degree-drop identities retain the formal bounds and include the smaller
 terminal index. Mapping coefficients commutes with the signed coefficients
-without a degree-preservation assumption. The specialization formulas use
+without a degree-preservation assumption at fixed bounds, and at the actual
+degrees when the map preserves both degrees. The specialization formulas use
 reducta taken before mapping, so they can be used with nullified leading terms.
 These are the scalar coefficients for permanences-minus-variations formulas.
 
@@ -100,6 +101,17 @@ theorem _root_.Polynomial.signedPsc_map_map [CommRing S] (f : R →+* S)
     (p q : R[X]) (m n j : ℕ) :
     signedPsc (p.map f) (q.map f) m n j = f (signedPsc p q m n j) := by
   simp [signedPsc, apply_ite f]
+
+/-- At the actual degrees, signed coefficients commute with a coefficient map that preserves both
+degrees, for instance one that does not kill the leading coefficients
+(`Polynomial.natDegree_map_of_leadingCoeff_ne_zero`). When a degree drops,
+`Polynomial.map_signedPsc_of_right_degree_drop` and `Polynomial.map_signedPsc_of_left_degree_drop`
+apply instead. -/
+theorem _root_.Polynomial.signedPsc_map_of_natDegree_eq [CommRing S] (f : R →+* S) {p q : R[X]}
+    (hp : (p.map f).natDegree = p.natDegree) (hq : (q.map f).natDegree = q.natDegree) (j : ℕ) :
+    signedPsc (p.map f) (q.map f) (p.map f).natDegree (q.map f).natDegree j =
+      f (signedPsc p q p.natDegree q.natDegree j) := by
+  rw [hp, hq, signedPsc_map_map]
 
 /-- The smaller left bound has no sign correction; a larger left bound retains
 the left input coefficient itself. -/

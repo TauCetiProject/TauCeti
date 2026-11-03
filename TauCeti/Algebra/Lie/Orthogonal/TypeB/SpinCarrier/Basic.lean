@@ -667,9 +667,14 @@ theorem weightTorus_conj_rootSubgroup (k : Fin (n + 1) ⊕ Fin (n + 1))
               (SplitTorus.schemePointsMulEquiv (R := ℤ) (A := A) s)
               (rootGeneratorWeight n k) : A) * u)) ≫
         (rootSubgroup n k).hom.hom := by
-  exact kostantWeightTorusToToral_conj_kostantRootSubgroupToToralParam
-    _ _ _ _ _ _ _ (isCartanWeightVector_latticeBasis n)
-    (isNilpotent_rep_rootGenerator n) A (lie_coroot_rootGenerator n k) s u
+  have h := kostantWeightTorusToToral_conj_kostantRootSubgroupToToralParam _ _ _ _ _ _ _
+      (isCartanWeightVector_latticeBasis n) (isNilpotent_rep_rootGenerator n) A
+      (lie_coroot_rootGenerator n k) s u =≫
+    (eqToHom (groupScheme_eq_kostantToralGroupScheme n).symm).hom.hom
+  -- Once simplified, `h` and the goal differ only by reducible unfolding inside instance
+  -- arguments; closing at reducible transparency avoids unfolding `*` on scheme points.
+  with_reducible simpa only [weightTorus_def, rootSubgroup_def, Grp.comp_hom_hom, Category.assoc,
+    MonObj.mul_comp, GrpObj.inv_comp] using h
 
 /-! ## Identification with the named simple roots -/
 

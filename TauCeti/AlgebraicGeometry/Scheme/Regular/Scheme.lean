@@ -9,6 +9,9 @@ public import TauCeti.AlgebraicGeometry.Scheme.Normal
 public import TauCeti.RingTheory.RegularLocalRing.Normal
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Regular
 
+import TauCeti.RingTheory.RegularLocalRing.UniqueFactorization
+import TauCeti.Topology.KrullDimension.Basic
+
 /-!
 # Regular schemes
 
@@ -18,7 +21,9 @@ immersions and smooth morphisms and can be checked on affine neighbourhoods of e
 It is also equivalent to regularity of every affine-open section ring. The spectrum of a
 ring is regular exactly when the ring is regular, and regular schemes are normal. Normality
 follows from the affine criterion and the ring-level theorem
-`TauCeti.IsRegularRing.isIntegrallyClosed`.
+`TauCeti.IsRegularRing.isIntegrallyClosed`. Conversely, in dimension at most one a locally
+Noetherian normal scheme is regular, since its local rings are fields or discrete valuation
+rings.
 
 ## Main declarations
 
@@ -34,6 +39,10 @@ follows from the affine criterion and the ring-level theorem
 * `TauCeti.AlgebraicGeometry.IsRegular.component_regular`: regular affine-open section rings.
 * `TauCeti.AlgebraicGeometry.isRegular_Spec_iff`: regularity of an affine scheme.
 * `TauCeti.AlgebraicGeometry.IsRegular.isNormal`: regular schemes are normal.
+* `TauCeti.AlgebraicGeometry.IsRegular.of_isNormalScheme_of_topologicalKrullDim_le_one`: a locally
+  Noetherian normal scheme of dimension at most one is regular.
+* `TauCeti.AlgebraicGeometry.IsRegular.uniqueFactorizationMonoid_stalk`: the local ring of a regular
+  scheme at a point of codimension at most two is factorial.
 
 ## References
 
@@ -42,6 +51,7 @@ follows from the affine criterion and the ring-level theorem
 * [Stacks Project, Lemma 28.9.4](https://stacks.math.columbia.edu/tag/0569).
 * [Stacks Project, Definition 28.9.1](https://stacks.math.columbia.edu/tag/02IS).
 * [Stacks Project, Lemma 35.18.4](https://stacks.math.columbia.edu/tag/036D).
+* [Stacks Project, Lemma 10.119.7](https://stacks.math.columbia.edu/tag/00PD).
 -/
 
 public section
@@ -167,5 +177,30 @@ instance IsRegular.isNormal [IsRegular X] : IsNormalScheme X := by
   have : IsRegularRing Γ(X, U) := IsRegular.component_regular U
   exact (isNormalScheme_Spec_iff_forall_localization Γ(X, U)).mpr fun _ _ ↦
     ⟨inferInstance, inferInstance⟩
+
+/-- A locally Noetherian normal scheme of dimension at most one is regular: each local ring is a
+Noetherian integrally closed local domain of dimension at most one, hence a field or a discrete
+valuation ring. Stacks, Lemma 10.119.7 (00PD). -/
+@[stacks 00PD "dimension at most one"]
+theorem IsRegular.of_isNormalScheme_of_topologicalKrullDim_le_one [IsLocallyNoetherian X]
+    [IsNormalScheme X] (hX : topologicalKrullDim X ≤ 1) : IsRegular X := by
+  refine ⟨fun x ↦ ?_⟩
+  have : Ring.KrullDimLE 1 (X.presheaf.stalk x) := by
+    rw [Ring.krullDimLE_iff, ringKrullDim_stalk_eq_coheight]
+    exact (coheight_le_topologicalKrullDim x).trans hX
+  have : IsPrincipalIdealRing (X.presheaf.stalk x) := by
+    by_cases hx : IsField (X.presheaf.stalk x)
+    · exact hx.isPrincipalIdealRing
+    · exact (IsDiscreteValuationRing.of_krullDimLE_one hx).toIsPrincipalIdealRing
+  infer_instance
+
+/-- **Regular schemes are factorial in codimension at most two.** The local ring of a regular
+scheme at a point of codimension at most two, such as any point of a regular model of a curve
+over a discrete valuation ring, is a unique factorization domain. -/
+theorem IsRegular.uniqueFactorizationMonoid_stalk [IsRegular X] (x : X)
+    (hx : Order.coheight x ≤ 2) : UniqueFactorizationMonoid (X.presheaf.stalk x) :=
+  TauCeti.IsRegularLocalRing.uniqueFactorizationMonoid <| by
+    rw [ringKrullDim_stalk_eq_coheight]
+    exact WithBot.coe_le_coe.mpr hx
 
 end TauCeti.AlgebraicGeometry

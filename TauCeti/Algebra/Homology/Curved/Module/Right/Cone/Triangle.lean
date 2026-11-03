@@ -12,7 +12,8 @@ public import Mathlib.CategoryTheory.Triangulated.Rotate
 # Cone triangles of curved differential graded right modules
 
 The closed maps `M ⟶ N ⟶ cone(f) ⟶ M[1]` give a triangle in the existing curved homotopy
-category, using its coherent integer shift. All three adjacent composites vanish there.
+category, using its coherent integer shift. Its third arrow is the negative cone projection,
+as required by the canonical stable-suspension comparison. All three adjacent composites vanish.
 A square of closed maps commuting up to homotopy gives a morphism of these cone triangles.
 Every commutative square on their first arrows in the homotopy category therefore extends to
 a morphism of cone triangles.
@@ -43,49 +44,65 @@ variable {R A : Type u} [CommRing R] [Ring A] [Algebra R A]
   (f : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M ⟶
     ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) N)
 
-/-- The canonical mapping-cone triangle in the curved homotopy category. -/
+/-- The mapping-cone triangle with the negative projection as third arrow, compatible with the
+canonical stable-suspension comparison on the curved homotopy category. -/
 @[expose, implicit_reducible]
 noncomputable def coneTriangle :
     Triangle (DGHomotopyCategory R (CurvedDGRightModuleCat.{u, u, u} h)) :=
   Triangle.mk ((dgClosedToHomotopy R).map f)
     ((dgClosedToHomotopy R).map (coneInclusion f))
-    ((dgClosedToHomotopy R).map (coneProjection f))
+    (-((dgClosedToHomotopy R).map (coneProjection f)))
 
-/-- Rotating the cone triangle gives the cone inclusion, projection, and negative shifted map. -/
+/-- The first arrow of the cone triangle is the homotopy class of the original map. -/
+@[simp]
+theorem coneTriangle_mor₁ : (coneTriangle f).mor₁ = (dgClosedToHomotopy R).map f :=
+  rfl
+
+/-- The second arrow of the cone triangle is the homotopy class of the cone inclusion. -/
+@[simp]
+theorem coneTriangle_mor₂ :
+    (coneTriangle f).mor₂ = (dgClosedToHomotopy R).map (coneInclusion f) :=
+  rfl
+
+/-- The third arrow of the cone triangle is the negative class of the cone projection. -/
+@[simp]
+theorem coneTriangle_mor₃ :
+    (coneTriangle f).mor₃ = -((dgClosedToHomotopy R).map (coneProjection f)) :=
+  rfl
+
+/-- Rotation gives the cone inclusion, negative projection, and negative shifted map. -/
 theorem coneTriangle_rotate :
     (coneTriangle f).rotate =
       Triangle.mk ((dgClosedToHomotopy R).map (coneInclusion f))
-        ((dgClosedToHomotopy R).map (coneProjection f))
+        (-((dgClosedToHomotopy R).map (coneProjection f)))
         (-((dgClosedToHomotopy R).map ((closedShiftFunctor 1).map f))) := by
   -- Rotation has this constructor normal form; the shift on the quotient is the actual
   -- homotopy shift. This reduction lets the quotient-map computation match its third arrow.
   change Triangle.mk ((dgClosedToHomotopy R).map (coneInclusion f))
-    ((dgClosedToHomotopy R).map (coneProjection f))
+    (-((dgClosedToHomotopy R).map (coneProjection f)))
     (-((homotopyShiftFunctor 1).map ((dgClosedToHomotopy R).map f))) = _
   rw [homotopyShiftFunctor_map_quotient]
 
 /-- The first and second arrows of the cone triangle compose to zero. -/
-@[reassoc (attr := simp), simp]
+@[reassoc (attr := simp↓), simp↓]
 theorem coneTriangle_mor₁_comp_mor₂ : (coneTriangle f).mor₁ ≫ (coneTriangle f).mor₂ = 0 :=
   quotient_map_comp_coneInclusion f
 
 /-- The second and third arrows of the cone triangle compose to zero. -/
-@[reassoc (attr := simp), simp]
+@[reassoc (attr := simp↓), simp↓]
 theorem coneTriangle_mor₂_comp_mor₃ : (coneTriangle f).mor₂ ≫ (coneTriangle f).mor₃ = 0 := by
-  -- The triangle constructor stores the images of the closed inclusion and projection.
-  change (dgClosedToHomotopy R).map (coneInclusion f) ≫
-    (dgClosedToHomotopy R).map (coneProjection f) = 0
-  rw [← Functor.map_comp, coneInclusion_comp_coneProjection, Functor.map_zero]
+  rw [coneTriangle_mor₂, coneTriangle_mor₃, Preadditive.comp_neg, ← Functor.map_comp,
+    coneInclusion_comp_coneProjection, Functor.map_zero, neg_zero]
 
 /-- The third arrow followed by the shift of the first arrow composes to zero. -/
-@[reassoc (attr := simp), simp]
+@[reassoc (attr := simp↓), simp↓]
 theorem coneTriangle_mor₃_comp_shift_mor₁ :
     (coneTriangle f).mor₃ ≫ (coneTriangle f).mor₁⟦(1 : ℤ)⟧' = 0 := by
   -- Its shifted first arrow uses the existing homotopy shift, whose quotient formula applies.
-  change (dgClosedToHomotopy R).map (coneProjection f) ≫
+  change (-((dgClosedToHomotopy R).map (coneProjection f))) ≫
     (homotopyShiftFunctor 1).map ((dgClosedToHomotopy R).map f) = 0
-  rw [homotopyShiftFunctor_map_quotient]
-  exact quotient_map_coneProjection_comp_shift f
+  rw [Preadditive.neg_comp, homotopyShiftFunctor_map_quotient,
+    quotient_map_coneProjection_comp_shift, neg_zero]
 
 variable {M' N' : CurvedDGRightModuleCat.{u, u, u} h}
   (g : ForgetEnrichment.of (CochainComplex (ModuleCat R) ℤ) M' ⟶
@@ -122,10 +139,12 @@ noncomputable def coneTriangleMap : coneTriangle f ⟶ coneTriangle g where
     rw [← Functor.map_comp, ← Functor.map_comp, coneInclusion_comp_coneMap]
   comm₃ := by
     -- The third square uses the concrete projection and the actual shifted quotient map.
-    change (dgClosedToHomotopy R).map (coneProjection f) ≫
+    change (-((dgClosedToHomotopy R).map (coneProjection f))) ≫
         (homotopyShiftFunctor 1).map ((dgClosedToHomotopy R).map a) =
       (dgClosedToHomotopy R).map (coneMap f g a b k hsq) ≫
-        (dgClosedToHomotopy R).map (coneProjection g)
+        (-((dgClosedToHomotopy R).map (coneProjection g)))
+    rw [Preadditive.neg_comp, Preadditive.comp_neg]
+    congr 1
     rw [homotopyShiftFunctor_map_quotient, ← Functor.map_comp, ← Functor.map_comp,
       coneMap_comp_coneProjection]
 

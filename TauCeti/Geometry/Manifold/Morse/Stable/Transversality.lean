@@ -48,6 +48,8 @@ for a negative-gradient flow on a vector space. The intersection is read in the 
   the dimensions of the tangent spaces of the unstable and stable manifolds.
 * `TauCeti.IsAdaptedPseudoGradient.mem_mtangentConeAt_of_isInvariant`: the velocity of a trajectory
   is tangent to every invariant set containing it, such as `W^u(a) ∩ W^s(b)`.
+* `TauCeti.IsAdaptedPseudoGradient.mfderiv_ne_zero_of_mem_unstableSet_inter_stableSet`: a trajectory
+  joining distinct critical points meets no critical point.
 * `TauCeti.IsAdaptedPseudoGradient.exists_unstableSet_inter_stableSet_chart`: a transverse
   intersection of an unstable and a stable manifold is flattened by a chart of the maximal atlas
   onto the intersection of their tangent spaces.
@@ -60,6 +62,8 @@ for a negative-gradient flow on a vector space. The intersection is read in the 
 * `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale`: the Morse–Smale condition, with
   `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.exists_unstableSet_inter_stableSet_isManifold`:
   the space of trajectories from `a` to `b` is a smooth manifold of dimension `ind a - ind b`.
+* `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.of_manifoldMorseIndex_eq_zero_or_eq_finrank`: if
+  every critical point has index `0` or `n`, every adapted pseudo-gradient is Morse–Smale.
 
 ## References
 
@@ -111,6 +115,27 @@ theorem mem_mtangentConeAt_of_isInvariant {S : Set M} (hS : IsInvariant hX.flow 
     (Filter.Eventually.of_forall fun t ↦ hS t hy)
   rwa [Flow.map_zero_apply] at h
 
+/-- The velocity `X y` of the trajectory through a point `y` of `W^u(a) ∩ W^s(b)` is tangent to
+`W^u(a) ∩ W^s(b)`. -/
+theorem mem_span_mtangentConeAt_unstableSet_inter_stableSet
+    (hy : y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) :
+    X y ∈ Submodule.span ℝ
+      (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet a ∩ hX.flow.stableSet b) y) :=
+  Submodule.subset_span
+    (hX.mem_mtangentConeAt_of_isInvariant (hX.flow.isInvariant_unstableSet_inter_stableSet a b) hy)
+
+/-- **Connecting trajectories avoid the critical points.** A point `y` on a trajectory running from
+a critical point `a` to a different critical point `b` is not a critical point of `f`: a critical
+point is a rest point of the flow, and the constant orbit of `y` cannot have two different limits.
+-/
+theorem mfderiv_ne_zero_of_mem_unstableSet_inter_stableSet (hab : a ≠ b)
+    (hy : y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) :
+    mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y ≠ 0 := fun h0 ↦ by
+  have h01 : (0 : ℝ) = 1 :=
+    Flow.orbit_injective_of_ne_of_mem_unstableSet_inter_stableSet hab hy
+      (by simp [hX.flow_apply_of_mfderiv_eq_zero h0])
+  exact zero_ne_one h01
+
 /-- **Transverse unstable and stable manifolds meet in an embedded submanifold.** If the unstable
 manifold of a critical point `a` and the stable manifold of a critical point `b` meet transversally
 at `y`, then near `y` a chart of the maximal atlas flattens their intersection, the set of points
@@ -130,6 +155,12 @@ theorem exists_unstableSet_inter_stableSet_chart (hf : IsMorse 𝓘(ℝ, E) f)
     hX.exists_isSliceChart_stableSet (hf.contMDiff.mdifferentiable (by simp)) hb hy.2
   exact exists_isSliceChart_inter_of_span_mtangentConeAt_sup_eq_top (by simp) hq₁ hq₂ h₁ h₂ hy₁
     hy₂ hy.1 hy.2 htr
+    (Submodule.ClosedComplemented.of_finiteDimensional_quotient
+      (Submodule.closed_of_finiteDimensional _))
+    (Submodule.ClosedComplemented.of_finiteDimensional_quotient
+      (Submodule.closed_of_finiteDimensional _))
+    (Submodule.ClosedComplemented.of_finiteDimensional_quotient
+      (Submodule.closed_of_finiteDimensional _))
 
 /-- **The tangent space of a transverse intersection.** If the unstable manifold of a critical
 point `a` and the stable manifold of a critical point `b` meet transversally at `y`, then the
@@ -148,6 +179,12 @@ theorem span_mtangentConeAt_unstableSet_inter_stableSet (hf : IsMorse 𝓘(ℝ, 
     hX.exists_isSliceChart_stableSet (hf.contMDiff.mdifferentiable (by simp)) hb hy.2
   exact span_mtangentConeAt_inter_of_span_mtangentConeAt_sup_eq_top (by simp) hq₁ hq₂ h₁ h₂ hy₁
     hy₂ hy.1 hy.2 htr
+    (Submodule.ClosedComplemented.of_finiteDimensional_quotient
+      (Submodule.closed_of_finiteDimensional _))
+    (Submodule.ClosedComplemented.of_finiteDimensional_quotient
+      (Submodule.closed_of_finiteDimensional _))
+    (Submodule.ClosedComplemented.of_finiteDimensional_quotient
+      (Submodule.closed_of_finiteDimensional _))
 
 /-- **The intersection has dimension the index difference.** If the unstable manifold of a critical
 point `a` and the stable manifold of a critical point `b` meet transversally at `y`, then the
@@ -182,17 +219,11 @@ theorem manifoldMorseIndex_lt_of_mem_unstableSet_inter_stableSet (hf : IsMorse �
   have hdim :=
     hX.finrank_span_mtangentConeAt_unstableSet_inter_stableSet_add_manifoldMorseIndex hf ha hb hy
       htr
-  -- The velocity `X y` is tangent to `W^u(a) ∩ W^s(b)`, and it is nonzero: otherwise `y` would be
-  -- a critical point, hence a rest point, and the orbit of `y` could not run from `a` to `b ≠ a`.
-  have hmem : X y ∈ Submodule.span ℝ
-      (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet a ∩ hX.flow.stableSet b) y) :=
-    Submodule.subset_span (hX.mem_mtangentConeAt_of_isInvariant (fun t _ hz ↦
-      ⟨Flow.isInvariant_unstableSet _ a t hz.1, Flow.isInvariant_stableSet _ b t hz.2⟩) hy)
-  have hX0 : X y ≠ 0 := fun h0 ↦ by
-    have hfix := hX.flow_apply_of_mfderiv_eq_zero (hX.eq_zero_iff.1 h0)
-    have h01 : (0 : ℝ) = 1 :=
-      Flow.orbit_injective_of_ne_of_mem_unstableSet_inter_stableSet hab hy (by simp [hfix])
-    exact zero_ne_one h01
+  -- The velocity `X y` is tangent to `W^u(a) ∩ W^s(b)`, and it is nonzero since `y` is not a
+  -- critical point.
+  have hmem := hX.mem_span_mtangentConeAt_unstableSet_inter_stableSet hy
+  have hX0 : X y ≠ 0 :=
+    hX.ne_zero_of_mfderiv_ne_zero (hX.mfderiv_ne_zero_of_mem_unstableSet_inter_stableSet hab hy)
   have hpos : 0 < Module.finrank ℝ (Submodule.span ℝ
       (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet a ∩ hX.flow.stableSet b) y)) := by
     refine Nat.pos_of_ne_zero fun h ↦ hX0 ?_
@@ -221,6 +252,38 @@ theorem IsMorseSmale.of_forall {hX : IsAdaptedPseudoGradient f X}
         Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.stableSet b) y) = ⊤) :
     hX.IsMorseSmale :=
   h
+
+omit hX in
+/-- **Extremal indices force the Morse–Smale condition.** If every critical point of a Morse
+function `f` has Morse index `0` or `n`, then every pseudo-gradient adapted to `f` is Morse–Smale.
+This applies, for instance, to the height function on the sphere. -/
+theorem IsMorseSmale.of_manifoldMorseIndex_eq_zero_or_eq_finrank
+    {hX : IsAdaptedPseudoGradient f X} (hf : IsMorse 𝓘(ℝ, E) f)
+    (hind : ∀ x, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0 →
+      manifoldMorseIndex 𝓘(ℝ, E) f x = 0 ∨
+        manifoldMorseIndex 𝓘(ℝ, E) f x = Module.finrank ℝ E) :
+    hX.IsMorseSmale := by
+  intro a b y ha hb hy
+  have hu := hX.finrank_span_mtangentConeAt_unstableSet hf ha hy.1
+  have hs := hX.finrank_span_mtangentConeAt_stableSet_add_manifoldMorseIndex
+    (hf.contMDiff.mdifferentiable (by simp)) hb hy.2
+  rcases hind a ha with ha0 | han
+  · rcases hind b hb with hb0 | hbn
+    · rw [Submodule.eq_top_of_finrank_eq (by omega : Module.finrank ℝ (Submodule.span ℝ
+        (mtangentConeAt 𝓘(ℝ, E) (hX.flow.stableSet b) y)) = Module.finrank ℝ E), sup_top_eq]
+    -- Here `ind a = 0` and `ind b = n`. If `a ≠ b`, the velocity `X y` is a nonzero tangent vector
+    -- of `W^u(a)`, which has no tangent directions; if `a = b`, then `n = ind b = ind a = 0`.
+    obtain rfl | hab := eq_or_ne a b
+    · rw [Submodule.eq_top_of_finrank_eq (by omega : Module.finrank ℝ (Submodule.span ℝ
+        (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet a) y)) = Module.finrank ℝ E), top_sup_eq]
+    refine absurd ?_ (hX.ne_zero_of_mfderiv_ne_zero
+      (hX.mfderiv_ne_zero_of_mem_unstableSet_inter_stableSet hab hy))
+    have hmem : X y ∈ Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet a) y) :=
+      Submodule.subset_span
+        (hX.mem_mtangentConeAt_of_isInvariant (hX.flow.isInvariant_unstableSet a) hy.1)
+    rw [Submodule.finrank_eq_zero.1 (hu.trans ha0)] at hmem
+    exact (Submodule.mem_bot ℝ).1 hmem
+  · rw [Submodule.eq_top_of_finrank_eq (hu.trans han), top_sup_eq]
 
 omit hX in
 /-- **The pointwise elimination rule for `IsMorseSmale`.** Under the Morse–Smale condition, at a

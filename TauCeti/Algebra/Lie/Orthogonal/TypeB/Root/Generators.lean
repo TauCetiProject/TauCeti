@@ -540,6 +540,29 @@ theorem coe_typeBShortNegativeRootGenerator (i : ι) :
       Matrix (Unit ⊕ ι ⊕ ι) (Unit ⊕ ι ⊕ ι) K) = typeBShortNegativeRootMatrix i :=
   (rfl)
 
+/-- A difference-root vector raises the short-root vector at its second index. -/
+@[simp]
+theorem typeBDifferenceRootGenerator_lie_shortRootGenerator
+    (i j : ι) (hij : i ≠ j) :
+    ⁅typeBDifferenceRootGenerator (K := K) i j hij,
+      typeBShortRootGenerator (K := K) j⁆ = typeBShortRootGenerator i := by
+  apply Subtype.ext
+  simp only [LieSubalgebra.coe_bracket, coe_typeBDifferenceRootGenerator,
+    coe_typeBShortRootGenerator]
+  rw [(lie_skew _ _).symm, typeBShortRootMatrix_lie_differenceRootMatrix]
+  simp
+
+/-- A negative short-root vector brackets with a difference-root vector to the negative
+short-root vector at its second index. -/
+@[simp]
+theorem typeBShortNegativeRootGenerator_lie_differenceRootGenerator
+    (i j : ι) (hij : i ≠ j) :
+    ⁅typeBShortNegativeRootGenerator (K := K) j,
+      typeBDifferenceRootGenerator (K := K) j i hij.symm⁆ =
+        typeBShortNegativeRootGenerator i := by
+  apply Subtype.ext
+  simp [LieSubalgebra.coe_bracket, typeBShortNegativeRootMatrix_lie_differenceRootMatrix]
+
 /-! ### Diagonal action on root generators -/
 
 /-- A split diagonal element acts on the root vector of weight `εᵢ - εⱼ` by that

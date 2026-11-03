@@ -14,11 +14,26 @@ import Mathlib.Data.Nat.Cast.Commute
 The factorial quotient formula for a binomial coefficient gives identities between products of
 inverse factorials in a characteristic-zero division semiring. These are the scalar identities
 used in the multiplication and binomial formulas for divided powers.
+
+In any ring, `Nat.cast_choose_mul_sub` casts the recurrence `Nat.choose_succ_right_eq` with the
+subtraction `n - k` taken in the ring.
 -/
 
 public section
 
 namespace Nat
+
+/-- The binomial identity `(n choose k) (n - k) = (k + 1) (n choose (k + 1))` in a ring. When
+`n < k` both sides vanish. -/
+theorem cast_choose_mul_sub {R : Type*} [Ring R] (n k : ℕ) :
+    (n.choose k : R) * ((n : R) - k) = ((k : R) + 1) * (n.choose (k + 1) : R) := by
+  rcases le_or_gt k n with h | h
+  · rw [← Nat.cast_sub h, ← Nat.cast_mul, ← Nat.choose_succ_right_eq, Nat.cast_mul,
+      Nat.cast_succ]
+    exact (Nat.cast_commute _ _).eq
+  · simp [Nat.choose_eq_zero_of_lt h, Nat.choose_eq_zero_of_lt (h.trans (Nat.lt_succ_self k))]
+
+section DivisionSemiring
 
 variable {K : Type*} [DivisionSemiring K] [CharZero K]
 
@@ -40,5 +55,7 @@ theorem inv_factorial_mul_choose (n i j : ℕ) (hij : i + j = n) :
   subst n
   rw [(Nat.commute_cast _ (Nat.choose (i + j) i)).eq]
   exact (inv_factorial_mul_inv_factorial i j).symm
+
+end DivisionSemiring
 
 end Nat

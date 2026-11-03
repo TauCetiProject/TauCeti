@@ -172,7 +172,11 @@ class WorkflowTests(unittest.TestCase):
         self.assertLess(prepare, build)
         self.assertNotIn("continue-on-error", steps[prepare])
         self.assertEqual(steps[prepare]["env"]["LAKE_NO_CACHE"], "true")
-        self.assertTrue(any("test_bulk_unpack_cache.py --integration" in text for text in commands))
+        self.assertFalse(any("test_bulk_unpack_cache.py --integration" in text for text in commands))
+        infrastructure = yaml.safe_load((ROOT / ".github/workflows/infrastructure-tests.yml").read_text())
+        fixtures = infrastructure["jobs"]["lean-fixtures"]["steps"]
+        self.assertTrue(any("test_bulk_unpack_cache.py --integration" in step.get("run", "")
+                            for step in fixtures))
 
 
 @unittest.skipUnless(INTEGRATION, "pass --integration with the pinned Lake installed")

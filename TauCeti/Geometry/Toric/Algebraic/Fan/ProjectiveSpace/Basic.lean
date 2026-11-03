@@ -23,9 +23,9 @@ of their index sets, a face of both, and the cones form a fan. It is complete: s
 the coefficients of a point the least of them writes it as a conical combination omitting one
 generator.
 
-Classically, the affine chart of the maximal cone omitting the generator indexed by `k` is the
-standard affine chart of projective space on which the `k`-th homogeneous coordinate does not
-vanish; that identification is not made here.
+The affine chart of the maximal cone omitting the generator indexed by `k` is the standard affine
+chart of projective space on which the `k`-th homogeneous coordinate does not vanish; this is
+proved in `TauCeti.Geometry.Toric.Algebraic.Fan.ProjectiveSpace.Proj`.
 
 ## Main declarations
 
@@ -328,6 +328,13 @@ noncomputable abbrev projectiveSpaceMaximalCone (hi : IsIntegralLattice i) (k : 
     (projectiveSpace b hi).cones :=
   ⟨projectiveSpaceCone b i {k}ᶜ,
     (mem_projectiveSpace_cones b hi).2 ⟨_, by simp, rfl⟩⟩
+
+/-- Every cone of the fan of projective space lies in the maximal cone omitting some ray. -/
+theorem exists_le_projectiveSpaceCone_compl (hi : IsIntegralLattice i) {σ : PointedCone ℝ V}
+    (hσ : σ ∈ (projectiveSpace b hi).cones) : ∃ k, σ ≤ projectiveSpaceCone b i {k}ᶜ := by
+  obtain ⟨S, hS, rfl⟩ := (mem_projectiveSpace_cones b hi).1 hσ
+  obtain ⟨k, hk⟩ := (ne_univ_iff_exists_notMem S).1 hS
+  exact ⟨k, projectiveSpaceCone_mono b (subset_compl_singleton_iff.2 hk)⟩
 
 /-- The fan of projective space is regular. -/
 theorem isRegular_projectiveSpace (hi : IsIntegralLattice i) :

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Basic.Sign.Basic
 public import Mathlib.Topology.Connected.TotallyDisconnected
 public import Mathlib.Topology.Instances.Sign
 import TauCeti.Topology.LocallyConstant.Preconnected
@@ -22,6 +23,9 @@ The basic source of sign-invariance is connectedness: a function that is continu
 zero on a preconnected set is sign-invariant there, since its sign is a continuous map to the
 discrete space `SignType`.
 
+Sign-invariance is preserved by restriction, by precomposition, and by the operations whose result
+has a sign determined by the signs of the inputs: negation, products and powers.
+
 A set on which each function of a family is sign-invariant lies inside or outside each set
 described by a condition on their signs. If the sets of a cover each have this property, one sample
 point from each of them realizes every sign vector that the functions take.
@@ -32,6 +36,11 @@ point from each of them realizes every sign vector that the functions take.
 * `TauCeti.signInvariant_iff_exists`: a sign-invariant function has a single sign on the set.
 * `TauCeti.signInvariant_image`: sign-invariance on an image is sign-invariance of the
   composite.
+* `TauCeti.SignInvariant.comp`, `TauCeti.SignInvariant.union`: precomposition with a map into
+  the set, and unions of two sets that meet.
+* `TauCeti.SignInvariant.neg`, `TauCeti.SignInvariant.mul`, `TauCeti.SignInvariant.pow`,
+  `TauCeti.signInvariant_finsetProd`: negations, products, powers and finite products of
+  sign-invariant functions are sign-invariant.
 * `TauCeti.subset_or_disjoint_setOf_sign`: a set on which the functions are sign-invariant lies
   inside or outside each sign-condition set.
 * `TauCeti.range_sign_sample_eq`: sample points of a cover by sets on which the functions are
@@ -91,6 +100,20 @@ theorem signInvariant_image {u : β → α} {s : Set β} :
     SignInvariant f (u '' s) ↔ SignInvariant (f ∘ u) s := by
   simp [SignInvariant]
 
+/-- Sign-invariance is preserved by precomposition with a map into the set. -/
+theorem SignInvariant.comp (h : SignInvariant f t) {u : β → α} {s : Set β} (hu : MapsTo u s t) :
+    SignInvariant (f ∘ u) s :=
+  fun x hx y hy ↦ h (u x) (hu hx) (u y) (hu hy)
+
+/-- Sign-invariance on two sets that meet is sign-invariance on their union. -/
+theorem SignInvariant.union (hs : SignInvariant f s) (ht : SignInvariant f t)
+    (hst : (s ∩ t).Nonempty) : SignInvariant f (s ∪ t) := by
+  obtain ⟨z, hzs, hzt⟩ := hst
+  have key : ∀ x ∈ s ∪ t, SignType.sign (f x) = SignType.sign (f z) := by
+    rintro x (hx | hx)
+    exacts [hs x hx z hzs, ht x hx z hzt]
+  exact fun x hx y hy ↦ (key x hx).trans (key y hy).symm
+
 /-- A function is sign-invariant on a set containing at most one point. -/
 theorem _root_.Set.Subsingleton.signInvariant (hs : s.Subsingleton) : SignInvariant f s :=
   fun x hx y hy ↦ by rw [hs hx hy]
@@ -140,6 +163,50 @@ theorem range_sign_sample_eq {𝒞 : Set (Set α)} (h𝒞 : ⋃₀ 𝒞 = univ)
 end SignCondition
 
 end Preorder
+
+/-! ### Algebraic operations
+
+The sign of a negation, a product or a power is determined by the signs of its inputs, so these
+operations preserve sign-invariance. -/
+
+section AddGroup
+
+variable [AddGroup R] [Preorder R] [DecidableLT R] [AddLeftStrictMono R] {f : α → R} {s : Set α}
+
+/-- The negation of a sign-invariant function is sign-invariant. -/
+theorem SignInvariant.neg (h : SignInvariant f s) : SignInvariant (fun x ↦ -f x) s :=
+  fun x hx y hy ↦ by simp only [Left.sign_neg, h x hx y hy]
+
+/-- A function is sign-invariant exactly when its negation is. -/
+@[simp]
+theorem signInvariant_neg_iff : SignInvariant (fun x ↦ -f x) s ↔ SignInvariant f s :=
+  ⟨fun h ↦ by simpa using h.neg, SignInvariant.neg⟩
+
+end AddGroup
+
+section Ring
+
+variable [Ring R] [LinearOrder R] [IsStrictOrderedRing R] {f g : α → R} {s : Set α}
+
+/-- The product of two sign-invariant functions is sign-invariant. -/
+theorem SignInvariant.mul (hf : SignInvariant f s) (hg : SignInvariant g s) :
+    SignInvariant (fun x ↦ f x * g x) s :=
+  fun x hx y hy ↦ by simp only [sign_mul, hf x hx y hy, hg x hx y hy]
+
+/-- A power of a sign-invariant function is sign-invariant. -/
+theorem SignInvariant.pow (hf : SignInvariant f s) (n : ℕ) :
+    SignInvariant (fun x ↦ f x ^ n) s :=
+  fun x hx y hy ↦ by simp only [sign_pow, hf x hx y hy]
+
+end Ring
+
+/-- A finite product of sign-invariant functions is sign-invariant. -/
+theorem signInvariant_finsetProd [CommRing R] [LinearOrder R] [IsStrictOrderedRing R] {ι : Type*}
+    {f : ι → α → R} {s : Set α} (I : Finset ι) (hf : ∀ i ∈ I, SignInvariant (f i) s) :
+    SignInvariant (fun x ↦ ∏ i ∈ I, f i x) s := by
+  intro x hx y hy
+  simp only [← signHom_apply, map_prod]
+  exact Finset.prod_congr rfl fun i hi ↦ hf i hi x hx y hy
 
 /-- A function that is continuous and nowhere zero on a preconnected set is sign-invariant
 there. -/

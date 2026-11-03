@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Etale.Pi
 public import Mathlib.RingTheory.Localization.Away.Basic
+public import TauCeti.RingTheory.Idempotents.BaseChange
 
 /-!
 # Étale algebras and idempotent decompositions
@@ -17,6 +18,10 @@ algebras is étale (`TauCeti.Algebra.Etale.prod`), and the quotient of an étale
 idempotent, which is the complementary component, is étale
 (`TauCeti.Algebra.Etale.quotient_span_singleton`). Mathlib supplies the finite products
 `Π i, A i` indexed by a type; the binary product `A × B` is reduced to these.
+
+Idempotents of the base split it in the same way, and étaleness is local for such a splitting: an
+algebra is étale if its base change to every component of a complete orthogonal family of
+idempotents of the base is (`TauCeti.Algebra.Etale.of_completeOrthogonalIdempotents`).
 -/
 
 public section
@@ -83,5 +88,19 @@ theorem quotient_span_singleton {S : Type v} [CommRing S] [Algebra R S] [Algebra
       Ideal.Quotient.mk_surjective
   have : Algebra.Etale S (S ⧸ Ideal.span {e}) := .of_isLocalizationAway (1 - e)
   exact .comp R S _
+
+open TensorProduct in
+/-- Étaleness is local for a decomposition of the base by complete orthogonal idempotents: if the
+base change of `X` to every component `T ⧸ (1 - f i)` is étale, then `X` is étale over `T`. -/
+theorem of_completeOrthogonalIdempotents {T X : Type*} [CommRing T] [CommRing X]
+    [Algebra T X] {ι : Type*} [Fintype ι] {f : ι → T} (hf : CompleteOrthogonalIdempotents f)
+    (h : ∀ i, Algebra.Etale (T ⧸ Ideal.span {1 - f i}) ((T ⧸ Ideal.span {1 - f i}) ⊗[T] X)) :
+    Algebra.Etale T X := by
+  classical
+  have (i : ι) : Algebra.Etale T ((T ⧸ Ideal.span {1 - f i}) ⊗[T] X) := by
+    have := quotient_span_singleton (R := T) (S := T) (hf.idem i).one_sub
+    have := h i
+    exact Algebra.Etale.comp T (T ⧸ Ideal.span {1 - f i}) _
+  exact .of_equiv (hf.tensorProductEquiv X).symm
 
 end TauCeti.Algebra.Etale

@@ -24,6 +24,11 @@ and its truncations `G_T z = ∫ t in 0..T, f t * exp (-z t)`:
   `[0, T]`, then `‖G_T z‖ ≤ M exp (-T re z) / (-re z)` for `re z < 0`
   (`norm_intervalIntegral_mul_cexp_neg_mul_le_of_re_neg`).
 
+The substitution `x = exp t` identifies `∫ x in u..v, x ^ (-z - 1)` with the truncated Laplace
+transform `∫ t in log u..log v, exp (-z t)` of the constant function `1`
+(`intervalIntegral_ofReal_cpow_neg_sub_one`); this links Dirichlet series, via integrals against
+`x ^ (-z - 1)`, to Laplace transforms of step functions `t ↦ a ⌊exp t⌋₊`.
+
 These are the analytic inputs of Newman's contour argument for his Tauberian theorem.
 -/
 
@@ -82,6 +87,26 @@ theorem differentiable_intervalIntegral_mul_cexp_neg_mul {a b : ℝ}
       _ = C * K * ‖f t‖ := by ring
   · have h := ((hasDerivAt_id' z).neg.mul_const (t : ℂ)).cexp.const_mul (f t)
     simpa using h
+
+/-- **Substitution `x = exp t`.** For `0 < u` and `0 < v`, the integral of `x ^ (-z - 1)` over
+`[u, v]` is the truncated Laplace transform `∫ t in log u..log v, exp (-z t)` of the constant
+function `1`. -/
+theorem intervalIntegral_ofReal_cpow_neg_sub_one {u v : ℝ} (hu : 0 < u) (hv : 0 < v) (z : ℂ) :
+    ∫ x in u..v, (x : ℂ) ^ (-z - 1) = ∫ t in Real.log u..Real.log v, cexp (-z * t) := by
+  have hg : ContinuousOn (fun x : ℝ ↦ (x : ℂ) ^ (-z - 1))
+      (Real.exp '' [[Real.log u, Real.log v]]) := by
+    rintro _ ⟨t, -, rfl⟩
+    exact (Complex.continuousAt_ofReal_cpow_const _ _
+      (Or.inr (Real.exp_pos t).ne')).continuousWithinAt
+  have h := intervalIntegral.integral_deriv_smul_comp' (fun t _ ↦ Real.hasDerivAt_exp t)
+    Real.continuous_exp.continuousOn hg
+  rw [Real.exp_log hu, Real.exp_log hv] at h
+  rw [← h]
+  refine intervalIntegral.integral_congr fun t _ ↦ ?_
+  rw [Function.comp_apply, Complex.real_smul, Complex.cpow_def_of_ne_zero
+    (Complex.ofReal_ne_zero.mpr (Real.exp_pos t).ne'), ← Complex.ofReal_log (Real.exp_pos t).le,
+    Real.log_exp, Complex.ofReal_exp, ← Complex.exp_add]
+  ring_nf
 
 /-- Pointwise bound on the Laplace integrand: if `‖w‖ ≤ M`, then
 `‖w * exp (-z t)‖ ≤ M * exp (-re z * t)` for real `t`. -/

@@ -122,15 +122,18 @@ theorem pointsDivisor_le_ker (x : A → (𝟙_ (Over S) ⟶ Over.mk E.structureM
   rw [pointsDivisor, ← Finset.mul_prod_erase _ _ (Finset.mem_univ a)]
   exact mul_le_of_le_one_right bot_le le_top
 
+/-- The support of the ideal of a section is its image in the elliptic curve. -/
+theorem coe_support_ker_left (x : 𝟙_ (Over S) ⟶ Over.mk E.structureMap) :
+    SetLike.coe x.left.ker.support = Set.range x.left := by
+  have : IsClosedImmersion x.left :=
+    x.left.isClosedImmersion_of_comp_eq_id (left_comp_structureMap _)
+  rw [Scheme.Hom.support_ker, x.left.isClosedEmbedding.isClosed_range.closure_eq]
+
 /-- The support of the divisor `∑_a [x a]` is the union of the images of the sections `x a`. -/
 theorem coe_support_pointsDivisor (x : A → (𝟙_ (Over S) ⟶ Over.mk E.structureMap)) :
     ((E.pointsDivisor x).support : Set E.carrier) = ⋃ a, Set.range (x a).left := by
-  have (a : A) : IsClosedImmersion (x a).left :=
-    (x a).left.isClosedImmersion_of_comp_eq_id (left_comp_structureMap _)
   rw [pointsDivisor_def, Scheme.IdealSheafData.coe_support_prod]
-  exact Set.iUnion_congr fun a ↦ by
-    rw [Scheme.Hom.support_ker,
-      (IsClosedImmersion.isClosedEmbedding (x a).left).isClosed_range.closure_eq]
+  exact Set.iUnion_congr fun a ↦ coe_support_ker_left (x a)
 
 /-- **Over a field, the points of `E` on `∑_a [x a]` are the `x a`.** -/
 theorem mem_support_pointsDivisor_iff {K : Type u} [Field K] {E : EllipticCurveGeom (Spec (.of K))}

@@ -79,7 +79,8 @@ public section
 namespace Representation
 
 open scoped MonoidAlgebra
-open TauCeti (spanSingletonGenerator coe_spanSingletonGenerator)
+open TauCeti (spanSingletonGenerator coe_spanSingletonGenerator
+  exists_smul_spanSingletonGenerator smul_spanSingletonGenerator_self)
 
 variable {k G V : Type*} [CommSemiring k] [Monoid G] [AddCommMonoid V] [Module k V]
 variable (σ : Representation k G V) {a : k[G]} {κ : k}
@@ -87,18 +88,6 @@ variable (σ : Representation k G V) {a : k[G]} {κ : k}
 /-- The representation of `G` on the left ideal `k[G] a` by left multiplication. -/
 local notation "ρₐ" a =>
   ofModule' (k := k) (G := G) (Ideal.span {a} : Ideal k[G])
-
-/-- An element of the left ideal `k[G] a` is a left multiple of the generator `a`. -/
-private theorem exists_smul_spanSingletonGenerator (x : (Ideal.span {a} : Ideal k[G])) :
-    ∃ r : k[G], r • spanSingletonGenerator a = x := by
-  obtain ⟨r, hr⟩ := Ideal.mem_span_singleton'.mp x.2
-  exact ⟨r, Subtype.ext (by rwa [Submodule.coe_smul, coe_spanSingletonGenerator, smul_eq_mul])⟩
-
-/-- Under quasi-idempotence, `a` acting on the generator of `k[G] a` scales it by `κ`. -/
-private theorem smul_spanSingletonGenerator_self (ha : a * a = κ • a) :
-    a • spanSingletonGenerator a = κ • spanSingletonGenerator a :=
-  Subtype.ext (by
-    rwa [Submodule.coe_smul, Submodule.coe_smul_of_tower, coe_spanSingletonGenerator, smul_eq_mul])
 
 /-- An intertwining map out of `k[G] a` sends `r a` to `r` applied to its value at `a`. -/
 private theorem intertwining_apply_smul_generator (f : IntertwiningMap (ρₐ a) σ) (r : k[G]) :
@@ -126,7 +115,7 @@ private noncomputable def intertwiningOfVector (hκ : IsUnit κ) (v : V) :
     ext x
     simp only [LinearMap.coe_comp, LinearMap.coe_mk, AddHom.coe_mk, Function.comp_apply,
       TauCeti.Representation.ofModule'_apply, Submodule.coe_smul, smul_eq_mul, map_mul,
-      Module.End.mul_apply, asAlgebraHom_single_one, map_smul]
+      mul_apply_eq_comp, asAlgebraHom_single_one, map_smul]
 
 private theorem intertwiningOfVector_apply (hκ : IsUnit κ) (v : V)
     (x : (Ideal.span {a} : Ideal k[G])) :
@@ -149,7 +138,7 @@ noncomputable def spanSingletonHomEquivRange (hκ : IsUnit κ) (ha : a * a = κ 
     rw [IntertwiningMap.toLinearMap_apply, IntertwiningMap.toLinearMap_apply,
       intertwiningOfVector_apply,
       intertwining_apply_smul_generator, Submodule.coe_smul, smul_eq_mul,
-      coe_spanSingletonGenerator, map_mul, Module.End.mul_apply]
+      coe_spanSingletonGenerator, map_mul, mul_apply_eq_comp]
     -- `a` applied to the value at `a` is the value at `a • a = κ • a`, so `κ⁻¹` cancels
     rw [← intertwining_apply_smul_generator, smul_spanSingletonGenerator_self ha, map_smul,
       map_smul, smul_smul, hκ.val_inv_mul, one_smul]
@@ -157,7 +146,7 @@ noncomputable def spanSingletonHomEquivRange (hκ : IsUnit κ) (ha : a * a = κ 
     rintro ⟨_, u, rfl⟩
     refine Subtype.ext ?_
     dsimp only
-    rw [intertwiningOfVector_apply, coe_spanSingletonGenerator, ← Module.End.mul_apply,
+    rw [intertwiningOfVector_apply, coe_spanSingletonGenerator, ← mul_apply_eq_comp,
       ← map_mul, ha, map_smul, LinearMap.smul_apply, smul_smul, hκ.val_inv_mul, one_smul]
 
 /-- The dictionary evaluates an intertwining map at the generator `a`. -/

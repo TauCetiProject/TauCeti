@@ -7,13 +7,17 @@ module
 
 public import Mathlib.Algebra.Module.Submodule.Pointwise
 public import Mathlib.Algebra.Ring.Subring.Basic
+import Mathlib.Algebra.Ring.Action.Pointwise.Set
 
 /-!
 # Pointwise scalar actions on submodules
 
 This file also records how scalar products that fix or annihilate a scalar control its
 pointwise image of the whole module. The image-membership result needs only a distributive
-monoid action.
+monoid action. Over a ring of scalars, negating the scalar does not change the pointwise image
+of a submodule, since a submodule is closed under negation. A unit of a ring stabilizes an
+additive subgroup, viewed as a `ℤ`-submodule, exactly when multiplication by the unit and by its
+inverse both preserve it.
 
 Let `S` be a subring of a commutative ring `A`, `M` an `A`-module and `M₀` an `S`-submodule of
 `M`. This file collects the elementary facts about the family `rⁿ • M₀`, for `r : S`, in
@@ -30,6 +34,10 @@ this file to restate both.
   `sⁿ : A` lands in `⟨s, _⟩ⁿ • M₀`, so a consumer speaking `A` needs no coercion plumbing.
 * `Submodule.pow_smul_antitone`: the family is antitone in the exponent.
 * `Submodule.pow_add_smul_mem`: `M₀` absorbs further powers of a scalar drawn from `S`.
+* `Submodule.neg_smul_eq_smul`: over a ring of scalars, `(-a) • N = a • N`.
+* `Submodule.mem_stabilizer_units_iff`: a unit `u` of a ring stabilizes an additive subgroup `L`
+  under the pointwise action exactly when multiplication by `u` and by `u⁻¹` carries `L` into
+  itself.
 -/
 
 public section
@@ -92,6 +100,34 @@ theorem smul_mem_pow_smul {S : Subring A} (M₀ : Submodule S M) {s : A} (hs0 : 
     rw [← smul_assoc, ← smul_assoc, hscal]
   rw [he]
   exact Submodule.smul_mem_pointwise_smul _ _ _ hmem
+
+section Ring
+
+variable {α R M : Type*} [Ring α] [Ring R] [AddCommGroup M] [Module α M] [Module R M]
+  [SMulCommClass α R M]
+
+/-- **Negating the scalar does not change the image.** Over a ring of scalars,
+`(-a) • N = -(a • N)`, and a submodule is its own negation. -/
+@[simp]
+theorem neg_smul_eq_smul (a : α) (N : Submodule R M) : (-a) • N = a • N :=
+  SetLike.coe_injective <| by
+    rw [coe_pointwise_smul, Set.neg_smul_set, ← coe_pointwise_smul, ← coe_set_neg, neg_eq_self]
+
+/-- A unit `u` of a ring stabilizes an additive subgroup `L` exactly when multiplication by `u` and
+by `u⁻¹` both carry `L` into itself. -/
+theorem mem_stabilizer_units_iff {R : Type*} [Ring R] {L : Submodule ℤ R} {u : Rˣ} :
+    u ∈ MulAction.stabilizer Rˣ L ↔
+      (∀ l ∈ L, (u : R) * l ∈ L) ∧ ∀ l ∈ L, ((u⁻¹ : Rˣ) : R) * l ∈ L := by
+  have hle {v : Rˣ} : v • L ≤ L ↔ ∀ l ∈ L, (v : R) * l ∈ L := by
+    simp [IsConcreteLE.le_iff, mem_smul_pointwise_iff_exists, Units.smul_def]
+  rw [MulAction.mem_stabilizer_iff, ← hle, ← hle]
+  refine ⟨fun h ↦ ⟨h.le, ?_⟩, fun ⟨h, h'⟩ ↦ h.antisymm fun l hl ↦ ?_⟩
+  · calc u⁻¹ • L = u⁻¹ • u • L := by rw [h]
+      _ ≤ L := (inv_smul_smul u L).le
+  · have := smul_mem_pointwise_smul _ u L (h' (smul_mem_pointwise_smul l u⁻¹ L hl))
+    rwa [smul_inv_smul] at this
+
+end Ring
 
 end Submodule
 

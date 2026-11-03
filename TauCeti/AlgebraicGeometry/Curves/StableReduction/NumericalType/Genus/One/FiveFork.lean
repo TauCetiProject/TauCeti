@@ -46,6 +46,48 @@ universe u
 
 variable {T : NumericalType.{u}}
 
+/-- The two numerical patterns of a genus-one five-component fork, including an indexing
+equivalence and the complete weight, multiplicity, and intersection data.
+Component genera are imposed separately in the minimal classification. -/
+def IsGenusOneFiveForkShape (T : NumericalType.{u}) : Prop :=
+  ∃ e : Fin 5 ≃ T.Component, ∃ w m : ℕ+,
+  ((∀ i, (T.weight (e i) : ℤ) = ![2 * (w : ℤ), w, w, w, w] i) ∧
+    (∀ i, (T.multiplicity (e i) : ℤ) = ![(m : ℤ), 2 * m, 2 * m, m, m] i) ∧
+    (∀ i j, T.intersection (e i) (e j) =
+      !![-4 * (w : ℤ), 2 * w, 0, 0, 0;
+         2 * w, -2 * w, w, 0, 0;
+         0, w, -2 * w, w, w;
+         0, 0, w, -2 * w, 0;
+         0, 0, w, 0, -2 * w] i j)) ∨
+  ((∀ i, (T.weight (e i) : ℤ) = ![(w : ℤ), 2 * w, 2 * w, 2 * w, 2 * w] i) ∧
+    (∀ i, (T.multiplicity (e i) : ℤ) = ![2 * (m : ℤ), 2 * m, 2 * m, m, m] i) ∧
+    (∀ i j, T.intersection (e i) (e j) =
+      !![-2 * (w : ℤ), 2 * w, 0, 0, 0;
+         2 * w, -4 * w, 2 * w, 0, 0;
+         0, 2 * w, -4 * w, 2 * w, 2 * w;
+         0, 0, 2 * w, -4 * w, 0;
+         0, 0, 2 * w, 0, -4 * w] i j))
+
+/-- The complete numerical data recorded by `IsGenusOneFiveForkShape`. -/
+theorem isGenusOneFiveForkShape_iff : T.IsGenusOneFiveForkShape ↔
+  ∃ e : Fin 5 ≃ T.Component, ∃ w m : ℕ+,
+  ((∀ i, (T.weight (e i) : ℤ) = ![2 * (w : ℤ), w, w, w, w] i) ∧
+    (∀ i, (T.multiplicity (e i) : ℤ) = ![(m : ℤ), 2 * m, 2 * m, m, m] i) ∧
+    (∀ i j, T.intersection (e i) (e j) =
+      !![-4 * (w : ℤ), 2 * w, 0, 0, 0;
+         2 * w, -2 * w, w, 0, 0;
+         0, w, -2 * w, w, w;
+         0, 0, w, -2 * w, 0;
+         0, 0, w, 0, -2 * w] i j)) ∨
+  ((∀ i, (T.weight (e i) : ℤ) = ![(w : ℤ), 2 * w, 2 * w, 2 * w, 2 * w] i) ∧
+    (∀ i, (T.multiplicity (e i) : ℤ) = ![2 * (m : ℤ), 2 * m, 2 * m, m, m] i) ∧
+    (∀ i j, T.intersection (e i) (e j) =
+      !![-2 * (w : ℤ), 2 * w, 0, 0, 0;
+         2 * w, -4 * w, 2 * w, 0, 0;
+         0, 2 * w, -4 * w, 2 * w, 2 * w;
+         0, 0, 2 * w, -4 * w, 0;
+         0, 0, 2 * w, 0, -4 * w] i j)) := Iff.rfl
+
 /-- Fibre relations for a five-component fork, after identifying its four equal weights
 and its three simply laced edges. -/
 private lemma fiveFork_multiplicity_relations (e : Fin 5 ≃ T.Component)
@@ -218,5 +260,33 @@ theorem IsMinimal.exists_weight_multiplicity_intersection_eq_fiveFork
       fin_cases i <;> fin_cases j <;>
         norm_num [hself, hw₁, hw₂, hw₃, hw₄] <;>
         first | omega | rw [T.intersection_comm]; omega
+
+/-- In the five-component fork shape, a component weight divides all weights with quotient at most
+four, and a component multiplicity divides all multiplicities with quotient at most six. -/
+lemma IsGenusOneFiveForkShape.exists_weight_and_multiplicity_dvd_and_le
+    (hshape : T.IsGenusOneFiveForkShape) :
+    (∃ j, ∀ i, (T.weight j : ℕ) ∣ T.weight i ∧ (T.weight i : ℕ) ≤ 4 * T.weight j) ∧
+      (∃ j, ∀ i, (T.multiplicity j : ℕ) ∣ T.multiplicity i ∧
+        (T.multiplicity i : ℕ) ≤ 6 * T.multiplicity j) := by
+  classical
+  rcases isGenusOneFiveForkShape_iff.mp hshape with
+    ⟨e, w, m, ⟨hw, hm, -⟩ | ⟨hw, hm, -⟩⟩
+  · -- In the first five-fork vector, indices one and zero have the minimum weight and
+    -- multiplicity respectively. Each coefficient is one or two.
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int_of_equiv (nw := 4) (nm := 6)
+      e 1 0 (fun i ↦ ?_) (fun i ↦ ?_)
+    all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
+    · rw [hw i, hw 1]
+      fin_cases i <;> simp
+    · rw [hm i, hm 0]
+      fin_cases i <;> simp
+  · -- The second five-fork vector has its minima at indices zero and three.
+    refine T.exists_weight_and_multiplicity_dvd_and_le_of_int_of_equiv (nw := 4) (nm := 6)
+      e 0 3 (fun i ↦ ?_) (fun i ↦ ?_)
+    all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
+    · rw [hw i, hw 0]
+      fin_cases i <;> simp
+    · rw [hm i, hm 3]
+      fin_cases i <;> simp
 
 end TauCeti.NumericalType

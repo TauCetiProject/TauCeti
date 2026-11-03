@@ -12,13 +12,14 @@ public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 # Local rings modulo prime powers
 
 For a positive power of a prime, a residue is a unit exactly when its reduction
-modulo the prime is nonzero. This criterion makes the prime-power ring local.
-The statements include the prime two and exclude the exponent-zero trivial ring.
+modulo the prime is nonzero. Mathlib's instance in `Mathlib.RingTheory.ZMod.LocalRing` makes the
+prime-power ring local; in that local ring, equality in the residue field is equality after
+reduction modulo the prime. The statements include the prime two and exclude the exponent-zero
+trivial ring.
 
 ## Main declarations
 
 * `ZMod.isUnit_prime_pow_iff_castHom_ne_zero`: the unit criterion under reduction.
-* `ZMod.isLocalRing_prime_pow`: every positive prime-power residue ring is local.
 * `ZMod.residue_eq_residue_iff_castHom_eq`: equality in the residue field is equality after
   reduction modulo the prime.
 -/
@@ -40,20 +41,6 @@ theorem isUnit_prime_pow_iff_castHom_ne_zero (p k : ℕ) [Fact p.Prime] (hk : 0 
       (x.val : ZMod p) := by
     rw [ZMod.castHom_apply, ZMod.cast_eq_val]
   rw [hx, Ne, ZMod.natCast_eq_zero_iff]
-
-/-- The residue ring modulo a positive power of a prime is a local ring. -/
-theorem isLocalRing_prime_pow (p k : ℕ) [Fact p.Prime] (hk : 0 < k) :
-    IsLocalRing (ZMod (p ^ k)) := by
-  have : NeZero (p ^ k) := ⟨pow_ne_zero _ (Fact.out : p.Prime).ne_zero⟩
-  have : Fact (1 < p ^ k) := ⟨Nat.one_lt_pow hk.ne' (Fact.out : p.Prime).one_lt⟩
-  apply IsLocalRing.of_isUnit_or_isUnit_one_sub_self
-  intro x
-  rw [isUnit_prime_pow_iff_castHom_ne_zero p k hk,
-    isUnit_prime_pow_iff_castHom_ne_zero p k hk, map_sub, map_one]
-  by_cases h : ZMod.castHom (dvd_pow_self p (Nat.ne_of_gt hk)) (ZMod p) x = 0
-  · right
-    simp [h]
-  · exact Or.inl h
 
 /-- For a positive prime power, two residues have the same image in the local-ring residue field
 exactly when their reductions modulo the prime are equal. -/

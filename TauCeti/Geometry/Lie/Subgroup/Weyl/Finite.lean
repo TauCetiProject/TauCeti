@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Lie.Subgroup.Torus
 public import TauCeti.Algebra.Group.NormalizerQuotient.Basic
-import TauCeti.Geometry.Lie.Exponential.CommutativeGroup
+import TauCeti.Geometry.Lie.Exponential.CommutativeGroup.Basic
 import TauCeti.Geometry.Lie.Subgroup.CartanChart
 import TauCeti.Geometry.Lie.Subgroup.Differential
 import TauCeti.Geometry.Lie.Adjoint.Representation.Basic
@@ -65,7 +65,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
   [FiniteDimensional ℝ E] [LieGroup I ∞ G] [T2Space G]
 
-attribute [local instance] LieGroup.minSmoothnessThree
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 attribute [local instance] ContMDiffMul.boundarylessManifold
 
 /-- **The integral lattice of a torus spans its Lie algebra**: the elements `X ∈ Lie(T)` with
@@ -73,20 +73,12 @@ attribute [local instance] ContMDiffMul.boundarylessManifold
 theorem IsTorus.span_setOf_lieExp_eq_one {T : Subgroup G} (hT : IsTorus T) :
     Submodule.span ℝ {X | X ∈ lieSubalgebraOfSubgroup (I := I) T ∧ lieExp (I := I) X = 1} =
       (lieSubalgebraOfSubgroup (I := I) T).toSubmodule := by
-  let _ : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
-  let _ : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
-    finiteDimensional_leftInvariantDerivation
-      (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))
-  refine le_antisymm (Submodule.span_le.mpr fun X hX => hX.1) ?_
   -- Through the closed-subgroup theorem, `T` is a compact commutative Lie group modelled on
   -- `Lie(T)`, and the differential of its inclusion identifies its Lie algebra with `Lie(T)`.
-  obtain ⟨d⟩ :=
-    nonempty_embeddedLieSubgroupData_lieSubalgebraOfSubgroup_of_isClosed (I := I) hT.isClosed
+  refine hT.elim (I := I) fun d => ?_
+  intros
   let F := (lieSubalgebraOfSubgroup (I := I) T).toSubmodule
-  let _ : ChartedSpace F T := d.chartedSpace
-  let _ : LieGroup 𝓘(ℝ, F) ∞ T := d.lieGroup
-  have _ : CompactSpace T := isCompact_iff_compactSpace.mp hT.isCompact
-  have _ : IsMulCommutative T := hT.isMulCommutative
+  refine le_antisymm (Submodule.span_le.mpr fun X hX => hX.1) ?_
   have hrange := d.range_lieMapSubtypeVal_eq
   dsimp only at hrange
   conv_lhs => rw [← hrange]

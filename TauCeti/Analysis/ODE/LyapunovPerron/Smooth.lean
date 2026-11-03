@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
+public import TauCeti.Analysis.Calculus.ContDiff.UniformOn
 public import TauCeti.Analysis.ODE.LyapunovPerron.Graph
 public import TauCeti.Analysis.ODE.LyapunovPerron.Linear
 import Mathlib.Analysis.Calculus.ImplicitContDiff
@@ -43,17 +44,24 @@ along the solution `γ₀`:
 `η t = exp (t A) (P v) + lyapunovPerronIntegral A P (s ↦ N' (γ₀ s) (η s)) t`.
 
 The Lyapunov--Perron graph map, the value at time `0` minus `P ξ`, is therefore `C¹` as well.
-After a cutoff, the graph map describes the local stable manifold at a hyperbolic equilibrium
+If `N` is uniformly `C^n` on `s` (`TauCeti.UniformContDiffOn`), the same argument with
+`BoundedContinuousFunction.contDiffAt_comp_of_uniformContDiffOn` gives a `C^n` solution and graph
+map. After a cutoff, the graph map describes the local stable manifold at a hyperbolic equilibrium
 (`TauCeti/Analysis/ODE/LyapunovPerron/Local.lean`), so these results upgrade that Lipschitz graph
 to a `C¹` one.
 
 ## Main declarations
 
+* `ContinuousLinearMap.contDiffAt_lyapunovPerronSolution_of_uniformContDiffOn`: the
+  Lyapunov--Perron solution is `C^n` in its parameter when the nonlinearity is uniformly `C^n`
+  near the solution.
 * `ContinuousLinearMap.contDiffAt_lyapunovPerronSolution`: the Lyapunov--Perron solution is `C¹`
   in its parameter at every parameter whose solution stays a positive distance inside the region
   where the nonlinearity is `C¹` with uniformly continuous derivative.
 * `ContinuousLinearMap.fderiv_lyapunovPerronSolution_apply`: its derivative solves the
   variational Lyapunov--Perron equation.
+* `ContinuousLinearMap.contDiffAt_lyapunovPerronGraphMap_of_uniformContDiffOn`: the graph map is
+  `C^n` at such parameters.
 * `ContinuousLinearMap.contDiffAt_lyapunovPerronGraphMap`: the Lyapunov--Perron graph map is `C¹`
   at such parameters.
 
@@ -148,13 +156,17 @@ private theorem norm_lyapunovPerronIntegralCLM_comp_applyCLM_lt_one
 variable {N' : X → X →L[ℝ] X} {s : Set X} {δ : ℝ} {ξ₀ : X}
 
 /-- Near a parameter whose solution stays a positive distance inside the region where the
-nonlinearity is `C¹`, the Lyapunov--Perron solution agrees with a `C¹` function: the implicit
-function of the equation `γ - T ξ γ = 0`. -/
-private theorem exists_contDiffAt_eventuallyEq_lyapunovPerronSolution
-    (hNs : ∀ x ∈ s, HasFDerivAt N (N' x) x) (hN' : UniformContinuousOn N' s) (hδ : 0 < δ)
+nonlinearity is uniformly `C^n` (`n ≥ 1`), the Lyapunov--Perron solution agrees with a `C^n`
+function: the implicit function of the equation `γ - T ξ γ = 0`. -/
+private theorem exists_contDiffAt_eventuallyEq_lyapunovPerronSolution {n : ℕ} (hn : 1 ≤ n)
+    (hNn : TauCeti.UniformContDiffOn ℝ n N s) (hδ : 0 < δ)
     (hξ₀ : ∀ t, ball (lyapunovPerronSolution A P N hs hu hα hN hsmall ξ₀ t) δ ⊆ s) :
-    ∃ ψ : X → ℝ≥0 →ᵇ X, ContDiffAt ℝ 1 ψ ξ₀ ∧
+    ∃ ψ : X → ℝ≥0 →ᵇ X, ContDiffAt ℝ n ψ ξ₀ ∧
       ψ =ᶠ[𝓝 ξ₀] lyapunovPerronSolution A P N hs hu hα hN hsmall := by
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' hn
+  obtain ⟨_, N', hNs, -, hN'm⟩ := TauCeti.uniformContDiffOn_succ_iff.1 hNn
+  have hN' := hN'm.uniformContinuousOn
+  have hn0 : ((m + 1 : ℕ) : WithTop ℕ∞) ≠ 0 := Nat.cast_ne_zero.2 m.succ_ne_zero
   set γ₀ := lyapunovPerronSolution A P N hs hu hα hN hsmall ξ₀
   set E := lyapunovPerronHomogeneousCLM hs
   set I := lyapunovPerronIntegralCLM A P hs hu hα
@@ -162,11 +174,11 @@ private theorem exists_contDiffAt_eventuallyEq_lyapunovPerronSolution
     fun t ↦ hξ₀ t (mem_ball_self hδ)
   -- The equation `γ - T ξ γ = 0`, whose zeros are the Lyapunov--Perron solutions.
   set F : X × (ℝ≥0 →ᵇ X) → ℝ≥0 →ᵇ X := fun p ↦ p.2 - (E p.1 + I (p.2.comp N hN)) with hFdef
-  have hF : ContDiffAt ℝ 1 F (ξ₀, γ₀) :=
+  have hF : ContDiffAt ℝ (m + 1 : ℕ) F (ξ₀, γ₀) :=
     contDiffAt_snd.sub ((E.contDiff.contDiffAt.comp (ξ₀, γ₀) contDiffAt_fst).add
       (I.contDiff.contDiffAt.comp (ξ₀, γ₀)
-        ((BoundedContinuousFunction.contDiffAt_comp hN hNs hN' hδ hξ₀).comp (ξ₀, γ₀)
-          contDiffAt_snd)))
+        ((BoundedContinuousFunction.contDiffAt_comp_of_uniformContDiffOn hN hNn hδ hξ₀).comp
+          (ξ₀, γ₀) contDiffAt_snd)))
   have hsup : HasFDerivAt (fun p : X × (ℝ≥0 →ᵇ X) ↦ p.2.comp N hN)
       (BoundedContinuousFunction.applyCLM Φ ∘L snd ℝ X (ℝ≥0 →ᵇ X)) (ξ₀, γ₀) :=
     HasFDerivAt.comp (g := BoundedContinuousFunction.comp N hN) (f := Prod.snd) (ξ₀, γ₀)
@@ -194,16 +206,33 @@ private theorem exists_contDiffAt_eventuallyEq_lyapunovPerronSolution
   have hF0 : F (ξ₀, γ₀) = 0 := by
     rw [hFdef, sub_eq_zero]
     exact lyapunovPerronSolution_eq_add hs hu hα hN hsmall ξ₀
-  refine ⟨hF.implicitFunction one_ne_zero hinv,
-    hF.contDiffAt_implicitFunction one_ne_zero hinv, ?_⟩
-  filter_upwards [hF.eventually_apply_implicitFunction one_ne_zero hinv] with ξ hξ
+  refine ⟨hF.implicitFunction hn0 hinv,
+    hF.contDiffAt_implicitFunction hn0 hinv, ?_⟩
+  filter_upwards [hF.eventually_apply_implicitFunction hn0 hinv] with ξ hξ
   -- A zero of the equation is a fixed point of the contraction `T ξ`, hence the solution.
-  have hfix : hF.implicitFunction one_ne_zero hinv ξ =
-      lyapunovPerronMap A P N hs hu hα hN ξ (hF.implicitFunction one_ne_zero hinv ξ) := by
+  have hfix : hF.implicitFunction hn0 hinv ξ =
+      lyapunovPerronMap A P N hs hu hα hN ξ (hF.implicitFunction hn0 hinv ξ) := by
     rw [lyapunovPerronMap_eq_add hs hu hα hN]
     exact sub_eq_zero.1 (hξ.trans hF0)
   exact eq_lyapunovPerronSolution hs hu hα hN hsmall fun t ↦ by
     rw [← lyapunovPerronMap_apply hs hu hα hN, ← hfix]
+
+/-- **The Lyapunov--Perron solution is `C^n` in its parameter.** Suppose that the nonlinearity `N`
+is uniformly `C^n` on a set `s` (`TauCeti.UniformContDiffOn`), and that the values
+of the Lyapunov--Perron solution with parameter `ξ₀` stay a distance `δ > 0` inside `s`. Then the
+solution, as a bounded continuous curve with the sup norm, is `C^n` in the parameter near `ξ₀`. -/
+theorem contDiffAt_lyapunovPerronSolution_of_uniformContDiffOn {n : ℕ}
+    (hNn : TauCeti.UniformContDiffOn ℝ n N s) (hδ : 0 < δ)
+    (hξ₀ : ∀ t, ball (lyapunovPerronSolution A P N hs hu hα hN hsmall ξ₀ t) δ ⊆ s) :
+    ContDiffAt ℝ n (lyapunovPerronSolution A P N hs hu hα hN hsmall) ξ₀ := by
+  cases n with
+  | zero =>
+    exact (contDiff_zero.2 (lipschitzWith_lyapunovPerronSolution hs hu hα hN hsmall).continuous
+      ).contDiffAt
+  | succ m =>
+    obtain ⟨_, hψ, hψeq⟩ := exists_contDiffAt_eventuallyEq_lyapunovPerronSolution hs hu hα hN
+      hsmall le_add_self hNn hδ hξ₀
+    exact hψ.congr_of_eventuallyEq hψeq.symm
 
 /-- **The Lyapunov--Perron solution is `C¹` in its parameter.** Suppose that the nonlinearity `N`
 has derivative `N' x` at every point `x` of a set `s`, with `N'` uniformly continuous on `s`, and
@@ -214,9 +243,8 @@ theorem contDiffAt_lyapunovPerronSolution
     (hNs : ∀ x ∈ s, HasFDerivAt N (N' x) x) (hN' : UniformContinuousOn N' s) (hδ : 0 < δ)
     (hξ₀ : ∀ t, ball (lyapunovPerronSolution A P N hs hu hα hN hsmall ξ₀ t) δ ⊆ s) :
     ContDiffAt ℝ 1 (lyapunovPerronSolution A P N hs hu hα hN hsmall) ξ₀ :=
-  let ⟨_, hψ, hψeq⟩ :=
-    exists_contDiffAt_eventuallyEq_lyapunovPerronSolution hs hu hα hN hsmall hNs hN' hδ hξ₀
-  hψ.congr_of_eventuallyEq hψeq.symm
+  contDiffAt_lyapunovPerronSolution_of_uniformContDiffOn hs hu hα hN hsmall
+    (hN.uniformContDiffOn_one hNs hN') hδ hξ₀
 
 /-- **The derivative of the Lyapunov--Perron solution solves the variational equation.** Under
 the hypotheses of `ContinuousLinearMap.contDiffAt_lyapunovPerronSolution`, the derivative `η` of
@@ -250,13 +278,12 @@ theorem fderiv_lyapunovPerronSolution_apply
   have hD := congrArg (fun L : X →L[ℝ] ℝ≥0 →ᵇ X ↦ L v t) (hS.unique hrhs)
   simpa [lyapunovPerronHomogeneousCLM_apply, hΦ] using hD
 
-/-- **The Lyapunov--Perron graph map is `C¹`** at every parameter whose solution stays a
-positive distance inside the region where the nonlinearity is `C¹` with uniformly continuous
-derivative. -/
-theorem contDiffAt_lyapunovPerronGraphMap
-    (hNs : ∀ x ∈ s, HasFDerivAt N (N' x) x) (hN' : UniformContinuousOn N' s) (hδ : 0 < δ)
+/-- **The Lyapunov--Perron graph map is `C^n`** at every parameter whose solution stays
+a positive distance inside the region where the nonlinearity is uniformly `C^n`. -/
+theorem contDiffAt_lyapunovPerronGraphMap_of_uniformContDiffOn {n : ℕ}
+    (hNn : TauCeti.UniformContDiffOn ℝ n N s) (hδ : 0 < δ)
     (hξ₀ : ∀ t, ball (lyapunovPerronSolution A P N hs hu hα hN hsmall ξ₀ t) δ ⊆ s) :
-    ContDiffAt ℝ 1 (lyapunovPerronGraphMap A P N hs hu hα hN hsmall) ξ₀ := by
+    ContDiffAt ℝ n (lyapunovPerronGraphMap A P N hs hu hα hN hsmall) ξ₀ := by
   have hgraph : lyapunovPerronGraphMap A P N hs hu hα hN hsmall =
       fun ξ ↦ BoundedContinuousFunction.evalCLM ℝ 0
         (lyapunovPerronSolution A P N hs hu hα hN hsmall ξ) - P ξ := by
@@ -265,8 +292,18 @@ theorem contDiffAt_lyapunovPerronGraphMap
       lyapunovPerronSolution_zero_eq_add_lyapunovPerronGraphMap, add_sub_cancel_left]
   rw [hgraph]
   exact ((BoundedContinuousFunction.evalCLM ℝ 0).contDiff.contDiffAt.comp ξ₀
-    (contDiffAt_lyapunovPerronSolution hs hu hα hN hsmall hNs hN' hδ hξ₀)).sub
+    (contDiffAt_lyapunovPerronSolution_of_uniformContDiffOn hs hu hα hN hsmall hNn hδ hξ₀)).sub
     P.contDiff.contDiffAt
+
+/-- **The Lyapunov--Perron graph map is `C¹`** at every parameter whose solution stays a
+positive distance inside the region where the nonlinearity is `C¹` with uniformly continuous
+derivative. -/
+theorem contDiffAt_lyapunovPerronGraphMap
+    (hNs : ∀ x ∈ s, HasFDerivAt N (N' x) x) (hN' : UniformContinuousOn N' s) (hδ : 0 < δ)
+    (hξ₀ : ∀ t, ball (lyapunovPerronSolution A P N hs hu hα hN hsmall ξ₀ t) δ ⊆ s) :
+    ContDiffAt ℝ 1 (lyapunovPerronGraphMap A P N hs hu hα hN hsmall) ξ₀ :=
+  contDiffAt_lyapunovPerronGraphMap_of_uniformContDiffOn hs hu hα hN hsmall
+    (hN.uniformContDiffOn_one hNs hN') hδ hξ₀
 
 end ContinuousLinearMap
 

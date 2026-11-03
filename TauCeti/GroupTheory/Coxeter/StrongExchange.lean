@@ -38,6 +38,8 @@ reducedness is: a reduced word repeats no letter adjacently, and prefixing a red
 ## Main results
 
 * `CoxeterSystem.IsReduced.isChain_ne`: **a reduced word has no two adjacent equal letters.**
+* `CoxeterSystem.IsReduced.isLeftDescent_wordProd_cons`: the first letter of a reduced word is a
+  left descent of the element it spells.
 * `CoxeterSystem.isReduced_cons_of_isLeftDescent`: a left descent `i` of `w` turns a reduced word
   for `s_i * w` into a reduced word for `w`.
 * `CoxeterSystem.mem_rightInvSeq_of_isRightInversion` and
@@ -50,6 +52,8 @@ reducedness is: a reduced word repeats no letter adjacently, and prefixing a red
   condition**, in its left and right multiplication forms.
 * `CoxeterSystem.exchangeCondition` and `CoxeterSystem.exchangeCondition_right`: **the exchange
   condition**, the case of a simple reflection, where the shortened word is again reduced.
+* `CoxeterSystem.simple_mul_eq_mul_simple_of_length_eq`: if `s i * w * s j` has the length of `w`
+  and `s i * w` that of `w * s j`, then `s i * w = w * s j`.
 * `CoxeterSystem.deletionCondition`: **the deletion condition**, that a word which is not reduced
   spells the same element as the word with two of its letters deleted.
 * `CoxeterSystem.exists_isReduced_sublist`: **every word has a reduced sublist spelling the same
@@ -111,6 +115,13 @@ theorem IsReduced.isChain_ne {ω : List B} (hω : cs.IsReduced ω) : ω.IsChain 
           rw [hprod] at heq
           simp only [List.length_cons] at heq
           omega
+
+/-- The first letter of a reduced word is a left descent of the element it spells. -/
+theorem IsReduced.isLeftDescent_wordProd_cons {a : B} {ω : List B} (hω : cs.IsReduced (a :: ω)) :
+    cs.IsLeftDescent (π (a :: ω)) a := by
+  have hω' : cs.IsReduced ω := by simpa using hω.drop 1
+  rw [cs.isLeftDescent_iff, cs.wordProd_cons, cs.simple_mul_simple_cancel_left, hω'.eq,
+    ← cs.wordProd_cons, hω.eq, List.length_cons]
 
 end Reduced
 
@@ -455,6 +466,50 @@ theorem exchangeCondition_right {ω : List B} (hω : cs.IsReduced ω) {i : B}
     rw [← hje, cs.isRightDescent_iff.mp hi, hω.eq]
   -- `IsReduced` is a length equation.
   exact show ℓ (π (ω.eraseIdx j)) = (ω.eraseIdx j).length from by omega
+
+/-- The case of `CoxeterSystem.simple_mul_eq_mul_simple_of_length_eq` in which `i` is not a left
+descent of `w`. -/
+private theorem simple_mul_eq_mul_simple_of_length_eq_aux {i j : B} {w : W}
+    (hw : ℓ (cs.simple i * w) = ℓ w + 1) (h₁ : ℓ (cs.simple i * w * cs.simple j) = ℓ w)
+    (h₂ : ℓ (cs.simple i * w) = ℓ (w * cs.simple j)) :
+    cs.simple i * w = w * cs.simple j := by
+  obtain ⟨ω, hω, rfl⟩ := cs.exists_isReduced w
+  have hred : cs.IsReduced (i :: ω) := by
+    rw [IsReduced, cs.wordProd_cons, hw, hω.eq, List.length_cons]
+  have hdesc : cs.IsRightDescent (π (i :: ω)) j := by
+    rw [IsRightDescent, cs.wordProd_cons, h₁, hw]
+    omega
+  obtain ⟨k, hk, hprod, -⟩ := cs.exchangeCondition_right hred hdesc
+  rw [cs.wordProd_cons] at hprod
+  rcases k with _ | k
+  · -- Deleting the first letter: `s i * w * s j = w`.
+    rw [List.eraseIdx_cons_zero] at hprod
+    conv_rhs => rw [← hprod]
+    rw [mul_assoc _ (cs.simple j), cs.simple_mul_simple_self, mul_one]
+  · -- Deleting a later letter would make `w * s j` shorter than `w`.
+    rw [List.eraseIdx_cons_succ, cs.wordProd_cons, mul_assoc, mul_right_inj] at hprod
+    have hle := cs.length_wordProd_le (ω.eraseIdx k)
+    rw [← hprod, List.length_eraseIdx_of_lt (by simpa using hk), ← h₂, hw, hω.eq] at hle
+    omega
+
+/-- If `ℓ (s i * w * s j) = ℓ w` and `ℓ (s i * w) = ℓ (w * s j)`, then `s i * w = w * s j`. This
+is the case in which multiplying `w` by `s i` on the left and by `s j` on the right cannot be told
+apart by lengths alone; it is what makes the left and right regular actions of an Iwahori–Hecke
+algebra commute (J. E. Humphreys, *Reflection Groups and Coxeter Groups*, Chapter 7). -/
+theorem simple_mul_eq_mul_simple_of_length_eq {i j : B} {w : W}
+    (h₁ : ℓ (cs.simple i * w * cs.simple j) = ℓ w)
+    (h₂ : ℓ (cs.simple i * w) = ℓ (w * cs.simple j)) :
+    cs.simple i * w = w * cs.simple j := by
+  rcases cs.length_simple_mul w i with hw | hw
+  · exact simple_mul_eq_mul_simple_of_length_eq_aux cs hw h₁ h₂
+  -- Otherwise the first case applies to `s i * w`, whose roles of `w` and `s i * w * s j` swap.
+  have h := simple_mul_eq_mul_simple_of_length_eq_aux cs (w := cs.simple i * w)
+    (by rw [cs.simple_mul_simple_cancel_left]; omega)
+    (by rw [cs.simple_mul_simple_cancel_left]; exact h₂.symm)
+    (by rw [cs.simple_mul_simple_cancel_left]; exact h₁.symm)
+  rw [cs.simple_mul_simple_cancel_left] at h
+  conv_rhs => rw [h]
+  rw [mul_assoc _ (cs.simple j), cs.simple_mul_simple_self, mul_one]
 
 /-! ### The deletion condition -/
 

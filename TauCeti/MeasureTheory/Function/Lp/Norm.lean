@@ -24,6 +24,11 @@ bounds.
   two-term linear combination.
 * `MeasureTheory.Lp.integral_norm_sq_eq_norm_sq`: the integral of the squared pointwise
   norm of an `L²` function is its squared `L²` norm.
+* `MeasureTheory.Lp.ae_norm_le_norm_top` and `MeasureTheory.Lp.norm_top_le_of_ae_bound`: an `L∞`
+  function is bounded almost everywhere by its norm, and an almost everywhere bound bounds the
+  norm, for any measure.
+* `MeasureTheory.Lp.ae_eq_max_min_norm_top`: a representative of a real `L∞` class agrees almost
+  everywhere with its truncation to `[-‖f‖, ‖f‖]`.
 * `MeasureTheory.Lp.measure_lt_norm_ne_zero`: every level strictly below the `L∞` norm is
   exceeded on a set of nonzero measure.
 * `MeasureTheory.Lp.integral_norm_le_mul_norm`: on a finite measure space, the `L¹` norm of an
@@ -81,6 +86,28 @@ namespace MeasureTheory
 
 open scoped ENNReal
 
+/-- An `L∞` function is bounded almost everywhere by its norm. -/
+theorem Lp.ae_norm_le_norm_top {alpha F : Type*} [MeasurableSpace alpha] [NormedAddCommGroup F]
+    {m : Measure alpha} (f : Lp F ∞ m) : ∀ᵐ x ∂m, ‖f x‖ ≤ ‖f‖ := by
+  simpa [Lp.norm_def, toReal_eLpNorm] using ae_le_lpNorm_exponent_top (Lp.memLp f)
+
+/-- An almost everywhere bound on an `L∞` function bounds its norm, whatever the measure. Compare
+`MeasureTheory.Lp.norm_le_of_ae_bound`, which needs a finite measure. -/
+theorem Lp.norm_top_le_of_ae_bound {alpha F : Type*} [MeasurableSpace alpha]
+    [NormedAddCommGroup F] {m : Measure alpha} {f : Lp F ∞ m} {c : ℝ} (hc : 0 ≤ c)
+    (h : ∀ᵐ x ∂m, ‖f x‖ ≤ c) : ‖f‖ ≤ c := by
+  rw [Lp.norm_def, eLpNorm_exponent_top (Lp.aestronglyMeasurable f)]
+  exact ENNReal.toReal_le_of_le_ofReal hc (eLpNormEssSup_le_of_ae_bound h)
+
+/-- A representative `g` of a real `L∞` class `f` agrees almost everywhere with its truncation to
+`[-‖f‖, ‖f‖]`. The truncation is bounded everywhere by `‖f‖` (`TauCeti.abs_max_min_le`). -/
+theorem Lp.ae_eq_max_min_norm_top {alpha : Type*} [MeasurableSpace alpha] {m : Measure alpha}
+    {f : Lp ℝ ∞ m} {g : alpha → ℝ} (hg : f =ᵐ[m] g) :
+    g =ᵐ[m] fun x => max (-‖f‖) (min ‖f‖ (g x)) := by
+  filter_upwards [hg, Lp.ae_norm_le_norm_top f] with x h hx
+  rw [h, Real.norm_eq_abs, abs_le] at hx
+  rw [min_eq_right hx.2, max_eq_right hx.1]
+
 /-- Every nonnegative level strictly below the `L∞` norm of `f` is exceeded by `‖f‖` on a set
 of nonzero measure. -/
 theorem Lp.measure_lt_norm_ne_zero {alpha F : Type*} [MeasurableSpace alpha]
@@ -89,28 +116,26 @@ theorem Lp.measure_lt_norm_ne_zero {alpha F : Type*} [MeasurableSpace alpha]
   intro hms
   have hae : ∀ᵐ x ∂m, ‖f x‖ ≤ c :=
     (measure_eq_zero_iff_ae_notMem.mp hms).mono fun x hx ↦ le_of_not_gt hx
-  have hf_le : ‖f‖ ≤ c := by
-    rw [Lp.norm_def, eLpNorm_exponent_top (Lp.aestronglyMeasurable f)]
-    exact ENNReal.toReal_le_of_le_ofReal hc_nonneg (eLpNormEssSup_le_of_ae_bound hae)
-  exact (not_lt_of_ge hf_le) hc
+  exact (not_lt_of_ge (Lp.norm_top_le_of_ae_bound hc_nonneg hae)) hc
+
+/-- For `0 < p < ∞`, the integral of the `p`-th power of the pointwise norm of an `Lᵖ` function
+is the `p`-th power of its `Lᵖ` norm. -/
+theorem Lp.integral_norm_rpow_eq_norm_rpow {alpha F : Type*} [MeasurableSpace alpha]
+    {m : Measure alpha} [NormedAddCommGroup F] {p : ℝ≥0∞} (hp0 : p ≠ 0) (hp : p ≠ ∞)
+    (f : Lp F p m) :
+    ∫ x, ‖f x‖ ^ p.toReal ∂m = ‖f‖ ^ p.toReal := by
+  have h_nonneg : 0 ≤ ∫ x, ‖f x‖ ^ p.toReal ∂m :=
+    integral_nonneg fun x => Real.rpow_nonneg (norm_nonneg _) _
+  rw [Lp.norm_def, toReal_eLpNorm,
+    lpNorm_eq_integral_norm_rpow_toReal hp0 hp (Lp.aestronglyMeasurable f),
+    ← Real.rpow_mul h_nonneg, inv_mul_cancel₀ (ENNReal.toReal_pos hp0 hp).ne', Real.rpow_one]
 
 /-- The integral of the squared pointwise norm of an `L²` function is its squared `L²` norm. -/
 theorem Lp.integral_norm_sq_eq_norm_sq {alpha F : Type*} [MeasurableSpace alpha]
     {m : Measure alpha} [NormedAddCommGroup F] (f : Lp F 2 m) :
     ∫ x, ‖f x‖ ^ 2 ∂m = ‖f‖ ^ 2 := by
-  have hp0 : (2 : ℝ≥0∞) ≠ 0 := by norm_num
-  have hptop : (2 : ℝ≥0∞) ≠ ∞ := by norm_num
-  have h_lp := lpNorm_eq_integral_norm_rpow_toReal hp0 hptop (Lp.aestronglyMeasurable f)
-  rw [ENNReal.toReal_ofNat] at h_lp
-  have h_norm : ‖f‖ = lpNorm (⇑f) 2 m := by
-    rw [Lp.norm_def, toReal_eLpNorm]
-  have h_rpow : (fun x => ‖f x‖ ^ (2 : ℝ)) = fun x => ‖f x‖ ^ 2 := by
-    funext x
-    exact Real.rpow_two (‖f x‖)
-  rw [h_rpow] at h_lp
-  have h_nonneg : 0 ≤ ∫ x, ‖f x‖ ^ 2 ∂m := integral_nonneg fun x => sq_nonneg _
-  rw [h_norm, h_lp, ← Real.rpow_two, ← Real.rpow_mul h_nonneg, inv_mul_cancel₀ (by norm_num),
-    Real.rpow_one]
+  simpa only [ENNReal.toReal_ofNat, Real.rpow_two] using
+    Lp.integral_norm_rpow_eq_norm_rpow (by norm_num) (by norm_num) f
 
 /-- On a finite measure space, the `L¹` norm of an `Lᵖ` function, `1 ≤ p`, is at most
 `μ(univ)^{1 - 1/p}` times its `Lᵖ` norm. -/

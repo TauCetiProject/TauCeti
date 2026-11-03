@@ -49,39 +49,18 @@ private theorem lie_differenceRootGenerator_opposite (i j : ι) :
     ⁅differenceRootGenerator (K := K) i j, differenceRootGenerator (K := K) j i⁆ =
       (typeDDiagonalEquiv (K := K) (Pi.single i 1 - Pi.single j 1) :
         typeDDiagonalCartan K ι) := by
-  apply Subtype.ext
-  rw [LieSubalgebra.coe_bracket, val_differenceRootGenerator,
-    val_differenceRootGenerator, coe_typeDDiagonalEquiv_apply]
-  -- All terms now lie in the matrix subtype, so expose the underlying block-matrix identity.
-  change ⁅differenceRootMatrix (K := K) i j, differenceRootMatrix j i⁆ =
-    typeDDiagonalMatrix (Pi.single i 1 - Pi.single j 1)
-  rw [LieRing.of_associative_ring_bracket, differenceRootMatrix_def,
-    differenceRootMatrix_def, Matrix.fromBlocks_multiply, Matrix.fromBlocks_multiply]
-  ext (a | a) (b | b) <;>
-    simp only [typeDDiagonalMatrix_apply, Matrix.fromBlocks, Matrix.transpose_single,
-      typeDDiagonalValue_inl, typeDDiagonalValue_inr, Pi.sub_apply, Pi.single_apply, neg_sub]
-  all_goals split_ifs <;> simp_all [eq_comm]
+  rw [lie_differenceRootGenerator_differenceRootGenerator_eq_ite]
+  simp only [↓reduceIte, differenceRootGenerator_self_eq_typeDDiagonalEquiv,
+    map_sub, AddSubgroupClass.coe_sub]
 
 private theorem lie_sumRootGenerator_negSumRootGenerator (i j : ι) (hij : i ≠ j) :
     ⁅sumRootGenerator (K := K) i j, negSumRootGenerator (K := K) i j⁆ =
       (typeDDiagonalEquiv (K := K) (Pi.single i (-1) + Pi.single j (-1)) :
         typeDDiagonalCartan K ι) := by
-  have hii : Matrix.single i j (1 : K) * Matrix.single i j 1 = 0 :=
-    Matrix.single_mul_single_of_ne (c := (1 : K)) i j i hij.symm 1
-  have hjj : Matrix.single j i (1 : K) * Matrix.single j i 1 = 0 :=
-    Matrix.single_mul_single_of_ne (c := (1 : K)) j i j hij 1
-  apply Subtype.ext
-  rw [LieSubalgebra.coe_bracket, val_sumRootGenerator,
-    val_negSumRootGenerator, coe_typeDDiagonalEquiv_apply]
-  -- All terms now lie in the matrix subtype, so expose the underlying block-matrix identity.
-  change ⁅sumRootMatrix (K := K) i j, negSumRootMatrix i j⁆ =
-    typeDDiagonalMatrix (Pi.single i (-1) + Pi.single j (-1))
-  rw [LieRing.of_associative_ring_bracket, sumRootMatrix_def,
-    negSumRootMatrix_def, Matrix.fromBlocks_multiply, Matrix.fromBlocks_multiply]
-  ext (a | a) (b | b) <;>
-    simp [Matrix.mul_sub, Matrix.sub_mul, hii, hjj,
-      typeDDiagonalMatrix_apply, Matrix.fromBlocks, Matrix.single_apply]
-  all_goals split_ifs <;> aesop
+  rw [lie_sumRootGenerator_negSumRootGenerator_eq_ite]
+  simp only [hij.symm, ↓reduceIte, differenceRootGenerator_self_eq_typeDDiagonalEquiv,
+    sub_eq_add_neg, hij, add_zero, zero_add, Pi.single_neg, map_add, map_neg,
+    AddMemClass.coe_add, NegMemClass.coe_neg]
 
 private theorem typeDDiagonalEquiv_sub_ne_zero (i j : ι) (hij : i ≠ j) :
     (typeDDiagonalEquiv (K := K) (Pi.single i 1 - Pi.single j 1) :

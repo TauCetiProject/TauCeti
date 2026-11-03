@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.LeviCivita
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Metric
+import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongCurve.Tangent
 
 /-!
 # Covariant differentiation along curves under Riemannian isometries
@@ -120,7 +121,8 @@ theorem mfderiv_alongCurveWithin (Φ : RiemannianIsometry I J M N)
       (sectionCoord (F := F) (Φ ∘ γ)
         (fun r ↦ mfderiv I J Φ (γ r) (V r)) (Φ (γ t))) s t := by
     simpa only [coe_toDiffeomorph] using
-      Φ.toDiffeomorph.differentiableWithinAt_sectionCoord_mfderiv hγ hV
+      Φ.toDiffeomorph.contMDiff.contMDiffAt.differentiableWithinAt_sectionCoord_mfderiv
+        (by simp) hγ hV
   -- Test both sides against pullbacks of differentiable fields `Y` on the target: the
   -- metric-compatible product rules on source and target differentiate the same inner product.
   refine injective_inner_mdifferentiableAt_section J F (TangentSpace J) (Φ (γ t)) ?_

@@ -43,6 +43,26 @@ universe u
 
 variable {T : NumericalType.{u}}
 
+/-- The numerical data of a genus-one affine E₆ diagram: constant weights, multiplicities
+proportional to its marks, and intersection matrix given by its affine Cartan matrix.
+Component genera are imposed separately in the minimal classification. -/
+def IsGenusOneAffineE6Shape (T : NumericalType.{u}) : Prop :=
+  ∃ e : Fin 7 ≃ T.Component,
+  (∀ i, T.weight (e i) = T.weight (e 0)) ∧
+  (∀ i, (T.multiplicity (e i) : ℤ) =
+    (T.multiplicity (e 2) : ℤ) * AffineDynkinType.E6.marks i) ∧
+  (∀ i j, T.intersection (e i) (e j) =
+    -(T.weight (e 0) : ℤ) * AffineDynkinType.E6.cartanMatrix i j)
+
+/-- The complete numerical data recorded by `IsGenusOneAffineE6Shape`. -/
+theorem isGenusOneAffineE6Shape_iff : T.IsGenusOneAffineE6Shape ↔
+  ∃ e : Fin 7 ≃ T.Component,
+  (∀ i, T.weight (e i) = T.weight (e 0)) ∧
+  (∀ i, (T.multiplicity (e i) : ℤ) =
+    (T.multiplicity (e 2) : ℤ) * AffineDynkinType.E6.marks i) ∧
+  (∀ i j, T.intersection (e i) (e j) =
+    -(T.weight (e 0) : ℤ) * AffineDynkinType.E6.cartanMatrix i j) := Iff.rfl
+
 /-- Overlapping proper E₆ subdiagrams determine every weight and matrix entry. -/
 private lemma affineE6_weights_intersections (c : Fin 7 → T.Component)
     (hc : Function.Injective c)
@@ -205,5 +225,22 @@ theorem IsMinimal.exists_equiv_affineE6 (hT : T.IsMinimal) (hg : T.arithmeticGen
   obtain ⟨e, he, hw, hm, ha⟩ := T.exists_equiv_affineE6 c hc
     (fun i ↦ (T.isMinusTwoIndex_iff.mp (h₂ (c i))).2) hadj
   exact ⟨e, he, fun i ↦ (T.isMinusTwoIndex_iff.mp (h₂ (e i))).1, hw, hm, ha⟩
+
+/-- In the affine E₆ shape, a component weight divides all weights with quotient at most four,
+and a component multiplicity divides all multiplicities with quotient at most six. -/
+lemma IsGenusOneAffineE6Shape.exists_weight_and_multiplicity_dvd_and_le
+    (hshape : T.IsGenusOneAffineE6Shape) :
+    (∃ j, ∀ i, (T.weight j : ℕ) ∣ T.weight i ∧ (T.weight i : ℕ) ≤ 4 * T.weight j) ∧
+      (∃ j, ∀ i, (T.multiplicity j : ℕ) ∣ T.multiplicity i ∧
+        (T.multiplicity i : ℕ) ≤ 6 * T.multiplicity j) := by
+  classical
+  -- The affine E cases have constant weights; their marks bound the multiplicity ratios.
+  obtain ⟨e, hw, hm, -⟩ := isGenusOneAffineE6Shape_iff.mp hshape
+  refine T.exists_weight_and_multiplicity_dvd_and_le_of_int_of_equiv (nw := 4) (nm := 6)
+    e 0 2 (fun i ↦ ?_) (fun i ↦ ?_)
+  all_goals simp only [← Nat.lt_succ_iff, Nat.exists_lt_succ_right]
+  · rw [hw i]; omega
+  · rw [hm i]
+    fin_cases i <;> simp [mul_comm]
 
 end TauCeti.NumericalType

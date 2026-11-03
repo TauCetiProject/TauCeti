@@ -39,6 +39,9 @@ sigma-currying equivalences; no second direct-sum or graded-module framework is 
   the number of states in that bidegree.
 * `TauCeti.OddComponentGridDiagram.sum_finrank_bigradedChainPiece`: the ranks of the occupied pieces
   add to `n!`.
+* `TauCeti.OddComponentGridDiagram.map_bigradedChainInclusion_bigradedChainProjection`: a linear
+  map shifting the bidegree of every generator by `r` sends homogeneous parts of bidegree `g` to
+  homogeneous parts of bidegree `g + r`.
 
 ## References
 
@@ -202,6 +205,51 @@ theorem sum_finrank_bigradedChainPiece (R : Type*) [Semiring R] [StrongRankCondi
   simp_rw [G.finrank_bigradedChainPiece R]
   rw [Finset.sum_card_fiberwise_eq_card_filter]
   simp
+
+/-! ### Homogeneous parts of chains -/
+
+/-- The homogeneous part of bidegree `g` of a state generator is the generator itself when the
+state has bidegree `g`, and zero otherwise. -/
+theorem bigradedChainInclusion_bigradedChainProjection_single (R : Type*) [Semiring R]
+    (g : ℤ × ℤ) (x : GridState n) (a : R) :
+    G.bigradedChainInclusion R g (G.bigradedChainProjection R g (Finsupp.single x a)) =
+      if G.bidegree x = g then Finsupp.single x a else 0 := by
+  ext y
+  by_cases hxy : x = y
+  · subst hxy
+    by_cases hx : G.bidegree x = g <;> simp [hx]
+  · by_cases hx : G.bidegree x = g <;> simp [hx, hxy]
+
+/-- A linear map of grid chain modules that shifts the bidegree of every state generator by `r`
+commutes with taking homogeneous parts: it sends the part of bidegree `g` of a chain to the part
+of bidegree `g + r` of the image. -/
+theorem map_bigradedChainInclusion_bigradedChainProjection {m : ℕ}
+    (G' : OddComponentGridDiagram m) {R : Type*} [Semiring R]
+    (f : GridChain R n →ₗ[R] GridChain R m) (r : ℤ × ℤ)
+    (hf : ∀ (x : GridState n) (y : GridState m), G'.bidegree y ≠ G.bidegree x + r →
+      f (Finsupp.single x 1) y = 0)
+    (g : ℤ × ℤ) (c : GridChain R n) :
+    f (G.bigradedChainInclusion R g (G.bigradedChainProjection R g c)) =
+      G'.bigradedChainInclusion R (g + r) (G'.bigradedChainProjection R (g + r) (f c)) := by
+  have hsingle (x : GridState n) (a : R) (y : GridState m)
+      (hy : G'.bidegree y ≠ G.bidegree x + r) : f (Finsupp.single x a) y = 0 := by
+    have ha : Finsupp.single x a = a • Finsupp.single x 1 := by
+      rw [Finsupp.smul_single, smul_eq_mul, mul_one]
+    rw [ha, map_smul, Finsupp.smul_apply, hf x y hy, smul_zero]
+  have key : f ∘ₗ (G.bigradedChainInclusion R g ∘ₗ G.bigradedChainProjection R g) =
+      (G'.bigradedChainInclusion R (g + r) ∘ₗ G'.bigradedChainProjection R (g + r)) ∘ₗ f := by
+    refine Finsupp.lhom_ext fun x a => ?_
+    ext y
+    simp only [LinearMap.comp_apply, bigradedChainInclusion_bigradedChainProjection_single,
+      bigradedChainInclusion_apply, bigradedChainProjection_apply]
+    by_cases hx : G.bidegree x = g <;> by_cases hy : G'.bidegree y = g + r
+    · simp [hx, hy]
+    · simpa [hx, hy] using hsingle x a y (hx ▸ hy)
+    · have hne : G'.bidegree y ≠ G.bidegree x + r := fun h =>
+        hx (add_right_cancel (hy.symm.trans h).symm)
+      simpa [hx, hy] using (hsingle x a y hne).symm
+    · simp [hx, hy]
+  exact LinearMap.congr_fun key c
 
 end OddComponentGridDiagram
 

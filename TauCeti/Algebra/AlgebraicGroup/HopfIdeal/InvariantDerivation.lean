@@ -7,7 +7,8 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Basic
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Tangent
-public import TauCeti.Algebra.AlgebraicGroup.Tangent.Exponential
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.InvariantDerivation
+public import TauCeti.RingTheory.Derivation.TaylorExp
 
 /-!
 # Invariant derivations of closed subgroups
@@ -26,8 +27,9 @@ closed unipotent subgroups. The ideal-preservation results work over arbitrary c
 base rings, without smoothness, reducedness, finite type, or a characteristic assumption.
 
 Over a `ℚ`-algebra, if the invariant vector field `D` of a subgroup tangent vector is locally
-nilpotent, its Taylor exponential `∑ Dⁿ / n!` therefore also preserves `I`. Since the counit
-vanishes on `I`, the exponential point `ε ∘ exp D` is a point of the subgroup.
+nilpotent, its Taylor exponential `∑ Dⁿ / n!` therefore also preserves `I`. Polynomial subgroup
+membership is proved in
+`TauCeti.Algebra.AlgebraicGroup.HopfIdeal.OneParameter`.
 
 ## Main declarations
 
@@ -35,8 +37,6 @@ vanishes on `I`, the exponential point `ε ∘ exp D` is a point of the subgroup
   the subgroup Lie algebra exactly when its invariant vector field preserves the defining ideal.
 * `TauCeti.HopfIdeal.taylorExp_leftInvariantDerivation_mem`: the Taylor exponential of the
   invariant vector field of a subgroup tangent vector preserves the defining ideal.
-* `TauCeti.HopfIdeal.toConv_expPoint_mem_quotientPointsSubgroup`: the exponential of a subgroup
-  tangent vector is a point of the subgroup.
 
 ## References
 
@@ -108,27 +108,6 @@ theorem taylorExp_leftInvariantDerivation_mem (I : HopfIdeal R H)
     (leftInvariantDerivation d).taylorExp hD x ∈ I.toIdeal :=
   (leftInvariantDerivation d).taylorExp_apply_mem hD
     (fun _ hy => I.leftInvariantDerivation_mem hd hy) hx
-
-/-- The exponential of a tangent vector of a closed subgroup vanishes on the defining Hopf
-ideal. -/
-theorem expPoint_apply_eq_zero (I : HopfIdeal R H)
-    {d : Derivation R H (CounitAlgebra R H R)} (hd : d ∈ I.lieSubalgebra (B := R))
-    (hD : ∀ h, ∃ n, (leftInvariantDerivation d)^[n] h = 0) {x : H} (hx : x ∈ I) :
-    expPoint d hD x = 0 := by
-  rw [expPoint_apply]
-  exact I.counit_eq_zero (mem_toIdeal.mp (I.taylorExp_leftInvariantDerivation_mem hd hD
-    (mem_toIdeal.mpr hx)))
-
-/-- **The exponential of a subgroup tangent vector is a point of the subgroup.** -/
-theorem toConv_expPoint_mem_quotientPointsSubgroup (I : HopfIdeal R H)
-    {d : Derivation R H (CounitAlgebra R H R)} (hd : d ∈ I.lieSubalgebra (B := R))
-    (hD : ∀ h, ∃ n, (leftInvariantDerivation d)^[n] h = 0) :
-    (WithConv.toConv (expPoint d hD) :
-        HopfAlgebra.points (R := R) (H := _root_.CommHopfAlgCat.of R H) (CommAlgCat.of R R)) ∈
-      CommHopfAlgCat.quotientPointsSubgroup (_root_.CommHopfAlgCat.of R H) I
-        (CommAlgCat.of R R) := by
-  rw [CommHopfAlgCat.mem_quotientPointsSubgroup_iff]
-  exact fun _ hx => I.expPoint_apply_eq_zero hd hD hx
 
 end Exponential
 

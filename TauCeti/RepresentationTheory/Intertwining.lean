@@ -44,6 +44,8 @@ caller has already done.
   by the original intertwining map on the underlying types.
 * `Representation.IntertwiningMap.apply_asAlgebraHom`: an intertwining map commutes with the
   action of the monoid algebra, not only with that of the group elements.
+* `Representation.IsIntertwiningMap.dualMap`: the transpose of an intertwining map intertwines
+  the dual representations.
 
 -/
 
@@ -236,6 +238,19 @@ theorem dual_apply_apply (e : Equiv ρ σ) (f : Module.Dual A V) (w : W) :
 end Dual
 
 end Representation.Equiv
+
+namespace Representation
+
+/-- The transpose of an intertwining map intertwines the dual representations, in the reverse
+direction. This is the unbundled counterpart of `Representation.Equiv.dual`, for maps that need
+not be bijective. -/
+theorem IsIntertwiningMap.dualMap {A G V W : Type*} [CommSemiring A] [Group G]
+    [AddCommMonoid V] [Module A V] [AddCommMonoid W] [Module A W] {ρ : Representation A G V}
+    {σ : Representation A G W} {f : V →ₗ[A] W} (hf : IsIntertwiningMap ρ σ f) :
+    IsIntertwiningMap σ.dual ρ.dual f.dualMap :=
+  ⟨fun g φ ↦ LinearMap.ext fun v ↦ congrArg φ (hf.isIntertwining g⁻¹ v).symm⟩
+
+end Representation
 
 namespace DistribMulActionHom
 

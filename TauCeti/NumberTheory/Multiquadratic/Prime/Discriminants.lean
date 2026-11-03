@@ -6,25 +6,32 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Squarefree
-public import TauCeti.NumberTheory.Multiquadratic.EvenPrimeDiscriminant
 public import TauCeti.NumberTheory.Multiquadratic.Prime.Discriminant.Basic
+public import TauCeti.NumberTheory.Multiquadratic.Prime.Discriminant.Even
 public import Mathlib.Data.Rat.Lemmas
 import Mathlib.Algebra.GCDMonoid.FinsetLemmas
 import Mathlib.Data.Int.NatAbs
-import TauCeti.NumberTheory.LegendreSymbol.SquareClass
+import TauCeti.Algebra.Prime.Basic
 
 /-!
 # Prime discriminants
 
-The genus-field layer of the multiquadratic roadmap uses the **prime discriminants**
-`-4`, `8`, `-8`, and `p* = (-1)^((p - 1) / 2) p` for odd primes `p`. The files
-`PrimeDiscriminant` and `EvenPrimeDiscriminant` develop the odd and 2-adic pieces separately;
-this file packages them into one predicate and one radicand map for later genus-field
-constructions.
+The **prime discriminants** are the fundamental discriminants divisible by exactly one prime:
+the three even ones `-4`, `8`, `-8`, and `p* = (-1)^((p - 1) / 2) p` for odd primes `p`.
+Classically, every fundamental discriminant is a product of pairwise coprime prime
+discriminants, which is how genus theory attaches a quadratic character to each prime dividing
+it; see D. A. Cox, *Primes of the Form x² + ny²*, and F. Lemmermeyer, *Reciprocity Laws*.
+
+The odd and even cases are developed separately in
+`TauCeti.NumberTheory.Multiquadratic.Prime.Discriminant.Basic` and
+`TauCeti.NumberTheory.Multiquadratic.Prime.Discriminant.Even`. This file combines them into one
+predicate, one radicand map, and one map to the underlying rational prime, together with the
+divisibility and coprimality facts used to multiply prime discriminants together.
 
 For an odd prime discriminant the radicand is the discriminant itself. For an even prime
 discriminant `D ∈ {-4, 8, -8}`, the radicand is `D / 4`, so the three even cases give
-`-1`, `2`, and `-2`.
+`-1`, `2`, and `-2`. In both cases `D` and its radicand differ by a square factor, so they
+generate the same quadratic field `ℚ(√D)`.
 
 ## Main definitions and results
 
@@ -195,12 +202,13 @@ theorem dvd_primeDiscriminant_iff_dvd_radicand (D : ℤ) (hq : q ≠ 2) :
     intro hdiv
     have hdiv_nat : q ∣ 2 := by exact_mod_cast hdiv
     exact hq ((Nat.prime_dvd_prime_iff_eq Fact.out Nat.prime_two).mp hdiv_nat)
+  have hqZ : Prime (q : ℤ) := Nat.prime_iff_prime_int.mp Fact.out
   rcases eq_or_ne D (-4) with rfl | hneg4
-  · simpa [pow_two] using (TauCeti.dvd_mul_sq_iff (p := q) (a := (-1 : ℤ)) (u := 2) hq2)
+  · simpa [pow_two] using hqZ.dvd_mul_pow_iff (a := (-1 : ℤ)) (n := 2) hq2
   rcases eq_or_ne D 8 with rfl | h8
-  · simpa [pow_two] using (TauCeti.dvd_mul_sq_iff (p := q) (a := (2 : ℤ)) (u := 2) hq2)
+  · simpa [pow_two] using hqZ.dvd_mul_pow_iff (a := (2 : ℤ)) (n := 2) hq2
   rcases eq_or_ne D (-8) with rfl | hneg8
-  · simpa [pow_two] using (TauCeti.dvd_mul_sq_iff (p := q) (a := (-2 : ℤ)) (u := 2) hq2)
+  · simpa [pow_two] using hqZ.dvd_mul_pow_iff (a := (-2 : ℤ)) (n := 2) hq2
   · simp [primeDiscriminantRadicand, hneg4, h8, hneg8]
 
 /-- Away from `2`, an indexed family of integers and its associated prime-discriminant

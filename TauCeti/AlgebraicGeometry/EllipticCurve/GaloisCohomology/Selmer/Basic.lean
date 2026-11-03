@@ -128,6 +128,13 @@ theorem mem_shafarevichTateGroup_iff {c : H1 (AbsoluteGaloisGroup K) W.PointCoef
   simp only [shafarevichTateGroup, SelmerStructure.mem_selmerGroup_iff,
     shaSelmerStructure_localization, shaSelmerStructure_localCondition, AddSubgroup.mem_bot]
 
+/-- Imposing local triviality along a subfamily `τ ∘ f` of the localisations gives a larger
+Shafarevich–Tate group. -/
+theorem shafarevichTateGroup_le_comp {κ : Type*} (f : κ → ι) :
+    W.shafarevichTateGroup τ ≤ W.shafarevichTateGroup fun j => τ (f j) := fun _ hc => by
+  simp only [mem_shafarevichTateGroup_iff] at hc ⊢
+  exact fun j => hc (f j)
+
 /-! ### The Selmer group -/
 
 variable (m : ℕ)
@@ -177,6 +184,13 @@ theorem mem_selmerGroup_iff {c : H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)} 
   simp only [selmerGroup, SelmerStructure.mem_selmerGroup_iff, selmerStructure_localization,
     selmerStructure_localCondition, AddMonoidHom.mem_ker, mem_shafarevichTateGroup_iff,
     pointRes_torsionCoeffIncl]
+
+/-- Imposing the local conditions along a subfamily `τ ∘ f` of the localisations gives a larger
+`m`-Selmer group. -/
+theorem selmerGroup_le_comp {κ : Type*} (f : κ → ι) :
+    W.selmerGroup τ m ≤ W.selmerGroup (fun j => τ (f j)) m := fun _ hc => by
+  rw [mem_selmerGroup_iff] at hc ⊢
+  exact W.shafarevichTateGroup_le_comp τ f hc
 
 variable {m} in
 /-- **The Selmer group is cut out by the local Kummer images**: a class in `H¹(G_K, E(Kˢ)[m])` is

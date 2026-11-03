@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.FunctionField.Place.Basic
+public import TauCeti.FieldTheory.FunctionField.Place.Map
 
 /-!
 # Transport of places under semilinear field isomorphisms
@@ -14,7 +14,9 @@ An isomorphism of fields carrying one constant field onto another transports nor
 by composing their valuations with its inverse. The residue fields are correspondingly
 isomorphic, semilinearly over the constant-field isomorphism, so residue degrees are preserved.
 This permits coefficient automorphisms to act on places even when they do not fix the constants
-pointwise, as in Galois actions on base-changed curves.
+pointwise, as in Galois actions on base-changed curves. Over the identity of the constants it is
+the transport `TauCeti.Place.map` along an algebra isomorphism
+(`TauCeti.Place.map_eq_equivOfRingEquiv`).
 
 ## References
 
@@ -69,6 +71,13 @@ theorem ord_equivOfRingEquiv (P : Place k L) (z : L') :
 @[simp]
 theorem valuation_equivOfRingEquiv_symm (Q : Place k' L') (z : L) :
     ((equivOfRingEquiv σ τ h).symm Q).valuation z = Q.valuation (τ z) := (rfl)
+
+/-- **Transport along an algebra isomorphism is semilinear transport over the identity** of the
+constants. -/
+theorem map_eq_equivOfRingEquiv {F F' : Type*} [Field F] [Field F'] [Algebra k F] [Algebra k F']
+    (e : F ≃ₐ[k] F') (P : Place k F) :
+    P.map e = equivOfRingEquiv (RingEquiv.refl k) e.toRingEquiv (fun c ↦ by simp) P :=
+  Place.ext (Valuation.ext fun x ↦ by simp [valuation_map])
 
 /-- Transport restricts to an isomorphism of the valuation rings. -/
 noncomputable def integersEquivOfRingEquiv (P : Place k L) :

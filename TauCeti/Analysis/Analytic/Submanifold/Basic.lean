@@ -62,6 +62,7 @@ defined without the hypothesis `d ≤ n`, so that charts and analytic functions 
 * `TauCeti.IsAnalyticSubmanifold.of_isOpen_preimage_val`: nonempty relatively open subsets.
 * `TauCeti.isAnalyticSubmanifold_coordSubspace`, `IsOpen.isAnalyticSubmanifold`,
   `TauCeti.isAnalyticSubmanifold_singleton`: coordinate subspaces, open sets and points.
+* `TauCeti.isConnected_coordSubspace`: coordinate subspaces are connected over a connected field.
 
 ## References
 
@@ -249,6 +250,16 @@ theorem isAnalyticSubmanifold_coordSubspace (h : d ≤ n) :
   refine ⟨⟨0, fun _ _ ↦ rfl⟩, h, fun x _ ↦ ⟨OpenPartialHomeomorph.refl _, mem_univ x, ?_⟩⟩
   exact ⟨analyticOnNhd_id, analyticOnNhd_id, fun x _ ↦ Iff.rfl⟩
 
+/-- Over a connected field, the subspace of the first `d` coordinates of `𝕜ⁿ` is connected: it is
+the range of `firstCoords 𝕜 d n`. -/
+theorem isConnected_coordSubspace [ConnectedSpace 𝕜] :
+    IsConnected {y : Fin n → 𝕜 | ∀ i : Fin n, d ≤ i.val → y i = 0} := by
+  convert isConnected_range (firstCoords 𝕜 d n).continuous using 1
+  ext x
+  refine ⟨fun hx ↦ ⟨firstCoords 𝕜 n d x, firstCoords_firstCoords_of_forall hx⟩, ?_⟩
+  rintro ⟨u, rfl⟩ i hi
+  exact firstCoords_apply_of_le u hi
+
 /-- A nonempty open subset of `𝕜ⁿ` is an `n`-dimensional analytic submanifold. -/
 theorem _root_.IsOpen.isAnalyticSubmanifold (hU : IsOpen U) (hne : U.Nonempty) :
     IsAnalyticSubmanifold n U := by
@@ -398,6 +409,21 @@ theorem inter (hf : AnalyticOnSubmanifold d f S) (hU : IsOpen U) :
   intro x hx
   obtain ⟨e, hxe, he, hf'⟩ := hf x hx.1
   exact ⟨e.restrOpen U hU, ⟨hxe, hx.2⟩, he.restrOpen_inter hU, by simpa using hf'⟩
+
+/-- Restricting an analytic function to an analytic submanifold is analytic, even when its
+dimension is smaller. The smaller submanifold has the same ambient coordinate space. -/
+theorem mono (hf : AnalyticOnSubmanifold d f S) (hTS : T ⊆ S)
+    (hT : IsAnalyticSubmanifold d' T) : AnalyticOnSubmanifold d' f T := by
+  intro x hx
+  obtain ⟨U, hU, hxU, g, hg, hfg⟩ := hf.exists_analyticAt_eqOn (hTS hx)
+  obtain ⟨e, hxe, he⟩ := hT.exists_isAnalyticChart x hx
+  refine ⟨e, hxe, he, ?_⟩
+  have hparam := he.analyticAt_symm_firstCoords hxe hx
+  have hbase := he.symm_firstCoords_firstCoords_apply hxe hx
+  refine (hg.comp_of_eq hparam hbase).congr ?_
+  filter_upwards [he.eventually_symm_firstCoords_mem hxe hx,
+    hparam.continuousAt.preimage_mem_nhds (hbase ▸ hU.mem_nhds hxU)] with u hu huU
+  exact (hfg ⟨hTS hu.2, huU⟩).symm
 
 /-- A pair of analytic functions on `S` is analytic on `S`. -/
 theorem prod {g : (Fin n → 𝕜) → F} (hf : AnalyticOnSubmanifold d f S)

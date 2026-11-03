@@ -17,7 +17,8 @@ The off-diagonal sum of `f : α → α → M` over a finite set `s` is
 once. When `f` is symmetric the two members of each unordered pair contribute equal terms, so the
 whole sum is even; this is `Finset.even_sum_sum_erase`, proved by induction on `s`. When `f` is
 antisymmetric the two contributions cancel, so the whole sum vanishes; this is
-`Finset.sum_sum_erase_eq_zero`, proved by pairing each ordered pair with its transpose.
+`Finset.sum_sum_erase_eq_zero`, proved by pairing each ordered pair with its transpose. If the
+diagonal terms vanish too, then so does the full double sum (`Finset.sum_sum_eq_zero_of_diag`).
 
 ## Main results
 
@@ -25,6 +26,8 @@ antisymmetric the two contributions cancel, so the whole sum vanishes; this is
   even.
 * `Finset.sum_sum_erase_eq_zero`: the off-diagonal sum of an antisymmetric function over a finite
   set vanishes.
+* `Finset.sum_sum_eq_zero_of_diag`: the full double sum of an antisymmetric function vanishing on
+  the diagonal vanishes.
 -/
 
 public section
@@ -72,5 +75,14 @@ theorem sum_sum_erase_eq_zero {α M : Type*} [DecidableEq α] [AddCommMonoid M] 
     exact ⟨hx.2.2, Ne.symm hx.2.1, hx.1⟩
   · rintro ⟨i, j⟩ _
     rfl
+
+/-- **The double sum of an antisymmetric function vanishing on the diagonal vanishes.** The
+diagonal terms are zero, and the off-diagonal sum vanishes by `Finset.sum_sum_erase_eq_zero`. -/
+theorem sum_sum_eq_zero_of_diag {α M : Type*} [AddCommMonoid M] {f : α → α → M} (s : Finset α)
+    (hdiag : ∀ i ∈ s, f i i = 0) (hf : ∀ i ∈ s, ∀ j ∈ s, i ≠ j → f i j + f j i = 0) :
+    ∑ i ∈ s, ∑ j ∈ s, f i j = 0 := by
+  classical
+  rw [← s.sum_sum_erase_eq_zero hf]
+  exact Finset.sum_congr rfl fun i hi ↦ by rw [← Finset.add_sum_erase s _ hi, hdiag i hi, zero_add]
 
 end Finset

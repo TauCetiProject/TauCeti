@@ -135,7 +135,8 @@ theorem localEulerCharacteristic_eq_localCardNorm_of_forall_prime
   have : Finite (TopRep.ker f).V := .of_injective _ hι
   have : Finite (TopRep.coker ι).V := .of_surjective _ hπ
   have : Fact (IsSmoothDiscrete (ZMod n) (TopRep.ker f)) := ⟨.of_injective ι hι Fact.out⟩
-  have : Fact (IsSmoothDiscrete (ZMod n) (TopRep.coker ι)) := ⟨.of_surjective π hπ Fact.out⟩
+  have : Fact (IsSmoothDiscrete (ZMod n) (TopRep.coker ι)) :=
+    ⟨.of_surjective π hπ (IsSmoothDiscrete.stabilizer_isOpen Fact.out)⟩
   have : Fintype (TopRep.ker f).V := Fintype.ofFinite _
   have : Fintype (TopRep.coker ι).V := Fintype.ofFinite _
   -- `A[ℓ] ≠ A` because `ℓ • x ≠ 0`, and `A[ℓ] ≠ 0` by Cauchy's theorem.

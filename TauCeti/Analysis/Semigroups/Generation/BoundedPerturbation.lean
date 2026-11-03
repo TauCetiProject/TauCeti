@@ -116,7 +116,7 @@ private def liftPMap (A : X →ₗ.[ℝ] X) :
         apply (equiv S hb).injective
         simp only [equiv_apply, val_add]
         convert A.map_add ⟨x.val.val, x.property⟩ ⟨y.val.val, y.property⟩ using 1
-        all_goals rfl
+        rfl
       map_smul' c x := by
         apply (equiv S hb).injective
         simp only [equiv_apply]
@@ -471,7 +471,7 @@ theorem exists_generator_eq_vadd (S : StronglyContinuousSemigroup X)
     hUbound.mono_omega <| LinearMap.mkContinuous_norm_le _
       (mul_nonneg (zero_le_one.trans hb.one_le) (norm_nonneg B)) _
   refine ⟨U.expShift (-omega), ?_, ?_⟩
-  · rw [generator_expShift, hUgen, TauCeti.LinearPMap.vadd_subScalar,
+  · rw [generator_expShift, hUgen, LinearPMap.vadd_subScalar,
       LinearPMap.subScalar_subScalar, add_neg_cancel, LinearPMap.subScalar_zero]
   · simpa [sub_eq_add_neg, add_comm, add_left_comm, add_assoc] using
       hUbound'.expShift (lambda := -omega)

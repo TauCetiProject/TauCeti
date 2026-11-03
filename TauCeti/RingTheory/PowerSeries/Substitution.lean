@@ -5,10 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Algebraic.Defs
+public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import Mathlib.RingTheory.PowerSeries.Binomial
 public import Mathlib.RingTheory.PowerSeries.Derivative
+public import Mathlib.RingTheory.PowerSeries.PiTopology
 public import Mathlib.RingTheory.PowerSeries.Substitution
 public import Mathlib.RingTheory.PowerSeries.Trunc
+-- Proof-only: lowest homogeneous components of powers.
+import TauCeti.RingTheory.MvPowerSeries.Order
+-- Proof-only: algebra maps out of `R⟦X⟧` agree with `aeval` on polynomials.
+import TauCeti.RingTheory.PowerSeries.Evaluation
 import Mathlib.RingTheory.PowerSeries.Inverse
 
 /-!
@@ -21,11 +28,15 @@ Mathlib substitutes a power series `b` with nilpotent constant coefficient into 
 Over a ring without zero divisors, substituting a series `φ` of zero constant coefficient
 multiplies orders: `ord (f (φ)) = ord φ * ord f`. Mathlib records only the inequality
 `PowerSeries.le_order_subst`. The equality shows that substitution of a nonzero such `φ` is
-injective, which is what extends it to Laurent series by passing to fraction fields.
+injective, which is what extends it to Laurent series by passing to fraction fields. Injectivity
+of polynomial evaluation means such a `φ` is transcendental; over a field `K` it follows that the
+power series algebraic over `K` are the constants.
 
 Substitution of series of zero constant coefficient is compatible with congruences modulo
 powers of `X`, in both the substituted series and the series substituted into. This makes
-truncation modulo `X ^ n` compatible with composition of formal coordinates. For a family of
+truncation modulo `X ^ n` compatible with composition of formal coordinates. Substituting a
+multivariate series `φ` of zero constant coefficient into `f = c Xⁿ + ⋯` gives
+`f (φ) = c φ₁ ^ n + ⋯` in lowest degree, where `φ₁` is the linear part of `φ`. For a family of
 series substituted into a multivariate series `G`, a perturbation `X ^ m * r` of the entry `a s`
 is invisible below degree `m` and acts in degree `m` through the coefficient of `Xₛ` alone;
 this drives degree-by-degree solutions of equations such as `G(f(X), X) = 0`.
@@ -41,14 +52,24 @@ endomorphism of the power series ring has this form. In particular, a perturbati
 with `h ^ 2 = 0` substitutes by the first-order Taylor formula `f (X + h) = f + h f'`, since the
 right-hand side is multiplicative in `f` by the Leibniz rule.
 
+The coefficients of `f (X * M)` satisfy a shift recurrence: the coefficient of degree `n + 1` is
+`[X^n](M * g (X * M))`, the coefficient of degree `n` of the product of `M` with `g (X * M)`, where
+`g = (f - f(0)) / X` is the shift of `f`. This proves functional equations of generating functions
+such as `M = C (X * M)` coefficientwise.
+
 This file also records that the substitution `X ↦ (1 + X) ^ u - 1`, for a binomial series
 `(1 + X) ^ u`, is legitimate: it is the change of variable relating the power-series coordinates
 of a completed group algebra attached to two topological generators.
 
 ## Main results
 
+* `PowerSeries.coeff_subst_eq_sum_range`: a finite coefficient formula when the inner series
+  has zero constant coefficient.
+* `Continuous.powerSeries_subst`: substitution is jointly continuous in coefficientwise
+  continuous families whose inner series have zero constant coefficient.
 * `PowerSeries.HasSubst.C`: a nilpotent constant can be substituted.
 * `PowerSeries.subst_one`: substitution preserves the constant series one.
+* `PowerSeries.subst_X_add_C_mul_X_pow`: substituting `a` into `X + e Xᵏ` gives `a + e aᵏ`.
 * `PowerSeries.subst_eq_aeval_trunc_of_pow_eq_zero`: substitution at a series with a vanishing
   power is evaluation of a finite truncation.
 * `PowerSeries.subst_C_eq_C_aeval_trunc`: substitution at a nilpotent constant is the constant
@@ -58,16 +79,25 @@ of a completed group algebra attached to two topological generators.
 * `PowerSeries.subst_eq_zero_iff`: substitution of a nonzero `φ` of zero constant coefficient
   has trivial kernel.
 * `PowerSeries.toNat_order_ne_zero`: such a `φ` has positive integer order.
+* `PowerSeries.transcendental_of_constantCoeff_eq_zero`: such a `φ` is transcendental over the
+  coefficients.
+* `PowerSeries.isIntegrallyClosedIn`: a field `K` is integrally closed in `K⟦X⟧`.
 * `PowerSeries.coeff_one_subst`: linear coefficients multiply under substitution.
+* `PowerSeries.coeff_succ_subst_X_mul`: the `(n + 1)`-st coefficient of `f (X * M)` is
+  `[X^n](M * g (X * M))`, where `g` is the shift of `f`.
 * `PowerSeries.X_pow_dvd_subst`: substitution preserves divisibility by `X ^ n`.
 * `PowerSeries.X_pow_dvd_subst_sub_subst`: substitution respects congruence modulo `X ^ n` of
   the substituted series.
+* `PowerSeries.homogeneousComponent_subst_of_le_order`: if `f` has order at least `n`, the
+  degree-`n` homogeneous component of `f (φ)` is `c φ₁ ^ n`, for `c` the coefficient of `Xⁿ` in
+  `f` and `φ₁` the linear part of `φ`.
 * `PowerSeries.coeff_subst_update_add_X_pow_mul`: perturbing one entry `a s` of a substituted
   family by `X ^ m * r` changes coefficients only from degree `m` on, and in degree `m` only
   through the linear term `Xₛ` of the multivariate series.
 * `PowerSeries.algHom_eq_substAlgHom`: an algebra map `R⟦X⟧ → S⟦X⟧` sending `X` to a
   substitutable series is a substitution.
-* `PowerSeries.subst_X_add_of_sq_eq_zero`: `f (X + h) = f + h f'` when `h ^ 2 = 0`.
+* `PowerSeries.subst_add_of_sq_eq_zero`: `f (a + h) = f (a) + h f' (a)` when `h ^ 2 = 0`, and
+  its special case `PowerSeries.subst_X_add_of_sq_eq_zero`, `f (X + h) = f + h f'`.
 * `AlgHom.apply_eq_subst`: over a field, every algebra endomorphism of `K⟦X⟧` is substitution by
   its value at `X`.
 * `TauCeti.hasSubst_binomialSeries_sub_one`: `(1 + X) ^ u - 1` can be substituted.
@@ -77,10 +107,30 @@ public section
 
 namespace PowerSeries
 
+/-- When the inner series has zero constant coefficient, the coefficient of degree `n` of a
+substitution depends only on the first `n + 1` coefficients of the outer series. -/
+theorem coeff_subst_eq_sum_range {R S : Type*} [CommRing R] [CommRing S]
+    [Algebra R S] (f : R⟦X⟧) {g : S⟦X⟧} (hg : constantCoeff g = 0) (n : ℕ) :
+    coeff n (f.subst g) = ∑ k ∈ Finset.range (n + 1), coeff k f • coeff n (g ^ k) := by
+  rw [coeff_subst' (.of_constantCoeff_zero' hg)]
+  refine finsum_eq_sum_of_support_subset _ fun k hk ↦ ?_
+  rw [Function.mem_support] at hk
+  simp only [Finset.coe_range, Set.mem_Iio]
+  by_contra h
+  exact hk (by rw [coeff_of_lt_order _ ((Nat.cast_lt.mpr (by omega : n < k)).trans_le
+    (le_order_pow_of_constantCoeff_eq_zero k hg)), smul_zero])
+
 /-- A nilpotent constant can be substituted into a power series. -/
 theorem HasSubst.C {R : Type*} [CommRing R] {x : R} (hx : IsNilpotent x) :
     HasSubst (C x) := by
   simpa only [HasSubst, ← constantCoeff_eq, constantCoeff_C] using hx
+
+/-- Substituting into the zero series gives zero, even without a substitutability hypothesis. -/
+@[simp]
+theorem subst_zero {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
+    {τ : Type*} (a : MvPowerSeries τ S) : (0 : R⟦X⟧).subst a = 0 := by
+  simpa only [subst_def, MvPolynomial.coe_zero, map_zero] using
+    (MvPowerSeries.subst_coe (a := fun _ : Unit ↦ a) (0 : MvPolynomial Unit R))
 
 /-- Substitution preserves the constant series one. -/
 @[simp]
@@ -88,6 +138,23 @@ theorem subst_one {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
     {τ : Type*} {a : MvPowerSeries τ S} (ha : HasSubst a) :
     (1 : R⟦X⟧).subst a = 1 := by
   rw [← coe_substAlgHom ha, map_one]
+
+/-- Substituting `a` into `X + e Xᵏ` gives `a + e aᵏ`. -/
+theorem subst_X_add_C_mul_X_pow {R τ : Type*} [CommRing R] {a : MvPowerSeries τ R}
+    (ha : HasSubst a) (e : R) (k : ℕ) :
+    subst a (X + C e * X ^ k) = a + MvPowerSeries.C e * a ^ k := by
+  rw [subst_add ha, subst_mul ha, subst_pow ha, subst_X ha, subst_C]
+
+/-- The `(n + 1)`-st coefficient of `f (X * M)` is the `n`-th coefficient of `M * g (X * M)`,
+where `g = (f - f(0)) / X` is the shift of `f`. -/
+theorem coeff_succ_subst_X_mul {R : Type*} [CommRing R] (M f : R⟦X⟧) (n : ℕ) :
+    coeff (n + 1) (f.subst (X * M)) =
+      coeff n (M * (mk fun p => coeff (p + 1) f).subst (X * M)) := by
+  have hP : HasSubst (X * M) := HasSubst.of_constantCoeff_zero' (by simp)
+  conv_lhs => rw [f.eq_X_mul_shift_add_const]
+  rw [subst_add hP, subst_mul hP, subst_X hP, subst_C, mul_assoc, map_add, coeff_succ_X_mul,
+    add_eq_left]
+  exact (coeff_C _ _).trans (ite_eq_right_iff.2 fun h => absurd h n.succ_ne_zero)
 
 section Nilpotent
 
@@ -152,6 +219,15 @@ theorem subst_eq_zero_iff (hφ : constantCoeff φ = 0) (hφ₀ : φ ≠ 0) {f : 
   rw [← order_eq_top, ← order_eq_top (φ := f), order_subst hφ]
   exact WithTop.mul_eq_top_iff.trans (by tauto)
 
+/-- A nonzero power series `φ` of zero constant coefficient is transcendental over the
+coefficients: evaluating a polynomial at `φ` is substituting `φ` into it, which is injective. -/
+theorem transcendental_of_constantCoeff_eq_zero (hφ : constantCoeff φ = 0) (hφ₀ : φ ≠ 0) :
+    Transcendental R φ := by
+  rintro ⟨q, hq, hq0⟩
+  rw [← subst_coe (.of_constantCoeff_zero' hφ), subst_eq_zero_iff hφ hφ₀,
+    Polynomial.coe_eq_zero_iff] at hq0
+  exact hq hq0
+
 section Algebra
 
 variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
@@ -172,9 +248,8 @@ theorem coeff_one_subst {a : S⟦X⟧} (ha : constantCoeff a = 0) (f : R⟦X⟧)
 substitution `f ↦ f (σ X)`. No continuity hypothesis is needed. -/
 theorem algHom_eq_substAlgHom {σ : R⟦X⟧ →ₐ[R] S⟦X⟧} (hσ : HasSubst (σ X)) :
     σ = substAlgHom hσ := by
-  have hpoly : σ.comp (Polynomial.coeToPowerSeries.algHom R) =
-      (substAlgHom hσ).comp (Polynomial.coeToPowerSeries.algHom R) :=
-    Polynomial.algHom_ext (by simp [substAlgHom_X])
+  have hpoly (g : Polynomial R) : σ (g : R⟦X⟧) = substAlgHom hσ (g : R⟦X⟧) := by
+    rw [algHom_coe_eq_aeval, algHom_coe_eq_aeval, substAlgHom_X]
   refine AlgHom.ext fun f ↦ ext fun n ↦ ?_
   obtain ⟨m, hm⟩ := (hσ.eventually_coeff_pow_eq_zero n).exists_forall_of_atTop
   have key (g : S⟦X⟧) : coeff n (σ X ^ m * g) = 0 := by
@@ -186,30 +261,38 @@ theorem algHom_eq_substAlgHom {σ : R⟦X⟧ →ₐ[R] S⟦X⟧} (hσ : HasSubst
   -- zero coefficients through degree `n` after either map is applied.
   rw [eq_X_pow_mul_shift_add_trunc m f]
   simp only [map_add, map_mul, map_pow, substAlgHom_X, key, zero_add]
-  exact congr(coeff n ($hpoly (trunc m f)))
+  rw [hpoly]
 
-/-- The first-order Taylor formula: substituting a square-zero perturbation `X + h` of `X` gives
-`f (X + h) = f + h f'`. -/
-theorem subst_X_add_of_sq_eq_zero {h : S⟦X⟧} (hh : h ^ 2 = 0) (f : S⟦X⟧) :
-    f.subst (X + h) = f + h * d⁄dX f := by
-  -- `f ↦ f + h f'` is an algebra map, multiplicative by the Leibniz rule and `h ^ 2 = 0`, and it
-  -- sends `X` to `X + h`, so it is the substitution of `X + h`.
-  let T : S⟦X⟧ →ₐ[S] S⟦X⟧ :=
-    { toFun g := g + h * d⁄dX g
+/-- The first-order Taylor formula: substituting a square-zero perturbation `a + h` of a
+substitutable series `a` gives `f (a + h) = f (a) + h f' (a)`. -/
+theorem subst_add_of_sq_eq_zero {a h : S⟦X⟧} (ha : HasSubst a) (hh : h ^ 2 = 0) (f : R⟦X⟧) :
+    f.subst (a + h) = f.subst a + h * (d⁄dX f).subst a := by
+  -- `g ↦ g (a) + h g' (a)` is an algebra map, multiplicative by the Leibniz rule and `h ^ 2 = 0`,
+  -- and it sends `X` to `a + h`, so it is the substitution of `a + h`.
+  let T : R⟦X⟧ →ₐ[R] S⟦X⟧ :=
+    { toFun g := substAlgHom ha g + h * substAlgHom ha (d⁄dX g)
       map_one' := by simp
       map_mul' g₁ g₂ := by
-        simp only [Derivation.leibniz, smul_eq_mul]
-        linear_combination (-(d⁄dX g₁ * d⁄dX g₂)) * hh
+        simp only [map_mul, Derivation.leibniz, smul_eq_mul, map_add]
+        linear_combination (-(substAlgHom ha (d⁄dX g₁) * substAlgHom ha (d⁄dX g₂))) * hh
       map_zero' := by simp
       map_add' g₁ g₂ := by
         simp only [map_add]
         ring
-      commutes' r := by simp }
-  have hT (g : S⟦X⟧) : T g = g + h * d⁄dX g := rfl
-  have hTX : T X = X + h := by rw [hT, derivative_X, mul_one]
-  have hσ := congr($(algHom_eq_substAlgHom (σ := T) (hTX ▸ HasSubst.X'.add (.map ⟨2, hh⟩ _))) f)
+      commutes' r := by
+        simp only [Derivation.map_algebraMap, map_zero, mul_zero, add_zero, AlgHom.commutes] }
+  have hT (g : R⟦X⟧) : T g = g.subst a + h * (d⁄dX g).subst a := by
+    simp [T, coe_substAlgHom]
+  have hTX : T X = a + h := by rw [hT, derivative_X, subst_X ha, subst_one ha, mul_one]
+  have hσ := congr($(algHom_eq_substAlgHom (σ := T) (hTX ▸ ha.add (.map ⟨2, hh⟩ _))) f)
   rw [coe_substAlgHom, hTX, hT] at hσ
   exact hσ.symm
+
+/-- The first-order Taylor formula at `X`: substituting a square-zero perturbation `X + h` of
+`X` gives `f (X + h) = f + h f'`. -/
+theorem subst_X_add_of_sq_eq_zero {h : S⟦X⟧} (hh : h ^ 2 = 0) (f : S⟦X⟧) :
+    f.subst (X + h) = f + h * d⁄dX f := by
+  rw [subst_add_of_sq_eq_zero HasSubst.X' hh, X_subst, X_subst]
 
 /-- Substituting a series of zero constant coefficient preserves divisibility by `X ^ n`. -/
 theorem X_pow_dvd_subst {a : S⟦X⟧} (ha : constantCoeff a = 0) {n : ℕ} {f : R⟦X⟧}
@@ -234,6 +317,28 @@ theorem X_pow_dvd_subst_sub_subst {a b : S⟦X⟧} (ha : constantCoeff a = 0)
   rw [subst_coe ha', subst_coe hb', ← Polynomial.eval_map_algebraMap,
     ← Polynomial.eval_map_algebraMap]
   exact Polynomial.sub_dvd_eval_sub _ _ _
+
+/-- **The lowest homogeneous component of a substitution.** If `φ` is a multivariate power
+series of zero constant coefficient and `f` has order at least `n`, then the degree-`n` homogeneous
+component of `f (φ)` is `c φ₁ ^ n`, where `c` is the coefficient of `Xⁿ` in `f` and `φ₁` is the
+linear part of `φ`. -/
+theorem homogeneousComponent_subst_of_le_order {σ : Type*} {φ : MvPowerSeries σ S}
+    (hφ : MvPowerSeries.constantCoeff φ = 0) {f : R⟦X⟧} {n : ℕ} (hn : n ≤ f.order) :
+    MvPowerSeries.homogeneousComponent n (f.subst φ) =
+      MvPowerSeries.C (algebraMap R S (coeff n f)) *
+        MvPowerSeries.homogeneousComponent 1 φ ^ n := by
+  have hφ' : HasSubst φ := .of_constantCoeff_zero hφ
+  obtain ⟨g, rfl⟩ : X ^ n ∣ f :=
+    X_pow_dvd_iff.mpr fun m hm ↦ coeff_of_lt_order m ((Nat.cast_lt.mpr hm).trans_le hn)
+  -- `f (φ) = φ ^ n * g (φ)`, and the degree-zero component of `g (φ)` is its constant term
+  have hmul := MvPowerSeries.homogeneousComponent_mul_of_le_order (p := n) (q := 0)
+    (MvPowerSeries.le_order_pow_of_constantCoeff_eq_zero n hφ)
+    (zero_le (a := (g.subst φ : MvPowerSeries σ S).order))
+  have hpow := MvPowerSeries.homogeneousComponent_pow_of_le_order (p := 1)
+    (MvPowerSeries.one_le_order_iff_constCoeff_eq_zero.mpr hφ) n
+  simp only [add_zero, mul_one] at hmul hpow
+  rw [subst_mul hφ', subst_pow hφ', subst_X hφ', hmul, hpow]
+  simp [mul_comm, constantCoeff_subst_of_constantCoeff_zero hφ, coeff_mul_X_pow']
 
 end Algebra
 
@@ -327,6 +432,22 @@ end Perturbation
 
 end PowerSeries
 
+open scoped PowerSeries PowerSeries.WithPiTopology in
+/-- Substitution is jointly continuous for coefficientwise continuous families, provided the
+inner series always has zero constant coefficient. No discrete coefficient topology is needed. -/
+theorem Continuous.powerSeries_subst {A R S : Type*} [TopologicalSpace A]
+    [CommRing R] [TopologicalSpace R] [CommRing S] [TopologicalSpace S]
+    [IsTopologicalRing S] [Algebra R S] [ContinuousSMul R S]
+    {f : A → R⟦X⟧} {g : A → S⟦X⟧} (hf : Continuous f) (hg : Continuous g)
+    (hg₀ : ∀ a, PowerSeries.constantCoeff (g a) = 0) :
+    Continuous fun a ↦ (f a).subst (g a) := by
+  refine continuous_iff_continuousAt.mpr fun a ↦
+    (PowerSeries.WithPiTopology.tendsto_iff_coeff_tendsto _ _ _ _).mpr fun n ↦ ?_
+  simp_rw [PowerSeries.coeff_subst_eq_sum_range _ (hg₀ _)]
+  exact (continuous_finsetSum _ fun k _ ↦
+    ((PowerSeries.WithPiTopology.continuous_coeff R k).comp hf).smul
+      ((PowerSeries.WithPiTopology.continuous_coeff S n).comp (hg.pow k))).continuousAt
+
 section Field
 
 open PowerSeries
@@ -349,6 +470,15 @@ theorem AlgHom.apply_eq_subst {K : Type*} [Field K] (σ : K⟦X⟧ →ₐ[K] K�
     σ f = f.subst (σ X) := by
   let hσ : HasSubst (σ X) := .of_constantCoeff_zero' σ.constantCoeff_apply_X
   rw [← coe_substAlgHom hσ, ← algHom_eq_substAlgHom hσ]
+
+/-- A field `K` is integrally closed in `K⟦X⟧`: the power series algebraic over `K` are the
+constants. A series `f` algebraic over `K` gives the algebraic series `f - C (constantCoeff f)`
+of zero constant coefficient, which therefore vanishes. -/
+instance PowerSeries.isIntegrallyClosedIn (K : Type*) [Field K] : IsIntegrallyClosedIn K K⟦X⟧ :=
+  isIntegrallyClosedIn_iff.mpr ⟨(algebraMap K K⟦X⟧).injective, fun {f} hf ↦
+    ⟨constantCoeff f, Eq.symm <| sub_eq_zero.mp <| not_not.mp fun hne ↦
+      transcendental_of_constantCoeff_eq_zero (by simp) hne
+        (hf.sub isIntegral_algebraMap).isAlgebraic⟩⟩
 
 end Field
 

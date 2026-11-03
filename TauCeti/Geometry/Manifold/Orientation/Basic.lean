@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Orientation.Lift
+public import TauCeti.Geometry.Manifold.IsManifold.Basic
 
 /-!
 # Orientations of manifolds with corners
@@ -81,6 +82,16 @@ theorem inductionOn {p : Orientation I M ι → Prop} (o : Orientation I M ι)
 /-- The index type has the dimension of the model space. -/
 theorem card_eq (o : Orientation I M ι) : Fintype.card ι = Module.finrank ℝ E :=
   Quotient.inductionOn o OrientationLift.card_eq
+
+/-- The tangent space has the dimension encoded by the orientation index. -/
+theorem finrank_tangentSpace_eq (o : Orientation I M ι) (x : M) :
+    Module.finrank ℝ (TangentSpace I x) = Fintype.card ι :=
+  (TauCeti.finrank_tangentSpace (I := I) x).trans o.card_eq.symm
+
+/-- The orientation index supplies the tangent-space finrank as a `Fact` instance. -/
+theorem fact_finrank_tangentSpace {m : ℕ} (o : Orientation I M (Fin m)) (x : M) :
+    Fact (Module.finrank ℝ (TangentSpace I x) = m) :=
+  ⟨by simpa using o.finrank_tangentSpace_eq x⟩
 
 /-- Reverse the tangent orientations by reversing the model orientation of a lift. -/
 def neg (o : Orientation I M ι) : Orientation I M ι :=
@@ -222,19 +233,19 @@ theorem ofVectorBundleOrientation_toVectorBundleOrientation
 
 /-- The constant orientation of a model with corners. -/
 def model (o : _root_.Orientation ℝ E ι) (hι : Fintype.card ι = Module.finrank ℝ E) :
-    Orientation I H ι := mk (OrientationLift.model (I := I) o hι)
+    Orientation I H ι := mk (OrientationLift.ofHasGroupoid (I := I) (M := H) o hι)
 
 /-- The constant model orientation is represented by its actual constant orientation lift. -/
 theorem model_eq_mk (o : _root_.Orientation ℝ E ι)
     (hι : Fintype.card ι = Module.finrank ℝ E) :
-    model (I := I) o hι = mk (OrientationLift.model (I := I) o hι) := (rfl)
+    model (I := I) o hι = mk (OrientationLift.ofHasGroupoid (I := I) (M := H) o hι) := (rfl)
 
 @[simp]
 theorem orientationAt_model (o : _root_.Orientation ℝ E ι)
     (hι : Fintype.card ι = Module.finrank ℝ E) (x : H) :
     orientationAt (model (I := I) o hι) x = o := by
   simp only [model, orientationAt, toVectorBundleOrientation_mk,
-    OrientationLift.toVectorBundleOrientation_apply, OrientationLift.orientationAt_model]
+    OrientationLift.toVectorBundleOrientation_apply, OrientationLift.orientationAt_ofHasGroupoid]
   -- The tangent space of the model uses its model-space scalar structure.
   rfl
 

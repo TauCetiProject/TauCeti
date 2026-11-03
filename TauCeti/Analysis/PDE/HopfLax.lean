@@ -8,7 +8,9 @@ module
 public import Mathlib.Analysis.Convex.Function
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+public import Mathlib.Topology.MetricSpace.ProperSpace
 public import Mathlib.Topology.Semicontinuity.Basic
+import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import TauCeti.Analysis.Convex.StrictConvexSpace
 
 /-!
@@ -57,6 +59,10 @@ are not studied here.
 * `TauCeti.hopfLax_norm_rpow` and `TauCeti.hopfLax_norm_rpow_add_add_smul_le`: for the cost
   `L w = ‖w‖ ^ p`, the formula reads `u (t, x) = inf_y (φ y + ‖x - y‖ ^ p / t ^ (p - 1))`, and the
   subsolution inequality holds in real seminormed spaces for `1 ≤ p`.
+* `TauCeti.abs_hopfLax_norm_rpow_le`: for this cost, `u` stays within the bounds of `φ`.
+* `TauCeti.lowerSemicontinuousOn_hopfLax_norm_rpow` and `TauCeti.continuousOn_hopfLax_norm_rpow`:
+  in a proper space, for `1 ≤ p`, `u` is lower semicontinuous on `t > 0` when `φ` is lower
+  semicontinuous and bounded below, and continuous there when `φ` is continuous and bounded below.
 
 ## References
 
@@ -69,7 +75,7 @@ public section
 
 noncomputable section
 
-open Set
+open Set Filter Topology
 
 namespace TauCeti
 
@@ -209,6 +215,102 @@ theorem hopfLax_norm_rpow_add_add_smul_le (hp : 1 ≤ p) (hφ : BddBelow (range 
     hopfLax (‖·‖ ^ p) φ (t + h) (x + h • w) ≤ hopfLax (‖·‖ ^ p) φ t x + h * ‖w‖ ^ p :=
   hopfLax_add_add_smul_le hφ ⟨0, forall_mem_range.2 fun _ ↦ by positivity⟩
     (convexOn_norm_rpow (E := E) hp) ht hh x w
+
+/-- For the cost `L w = ‖w‖ ^ p` with `p ≠ 0`, the Hopf–Lax value at a time `t ≥ 0` stays within
+any bound `C` of the initial datum: `|φ| ≤ C` gives `|u (t, x)| ≤ C`. -/
+theorem abs_hopfLax_norm_rpow_le (hp : p ≠ 0) {C : ℝ} (hφC : ∀ y, |φ y| ≤ C) (ht : 0 ≤ t)
+    (x : E) : |hopfLax (‖·‖ ^ p) φ t x| ≤ C := by
+  refine abs_le.2 ⟨?_, ?_⟩
+  · simpa using add_mul_le_hopfLax (l := 0) (fun y ↦ (abs_le.1 (hφC y)).1)
+      (fun w ↦ Real.rpow_nonneg (norm_nonneg w) p) ht x
+  · refine le_trans ?_ (abs_le.1 (hφC x)).2
+    simpa [Real.zero_rpow hp] using hopfLax_le_add_mul
+      ⟨-C, forall_mem_range.2 fun y ↦ (abs_le.1 (hφC y)).1⟩
+      ⟨0, forall_mem_range.2 fun w ↦ Real.rpow_nonneg (norm_nonneg w) p⟩ ht x
+
+/-- **Lower semicontinuity of the Hopf–Lax value for the `p`-th power cost.** In a proper real
+seminormed space, for `1 ≤ p` and a lower semicontinuous initial datum `φ` bounded below, the
+Hopf–Lax value `u (t, x) = inf_y (φ y + ‖x - y‖ ^ p / t ^ (p - 1))` is jointly lower
+semicontinuous on the open half-space `t > 0`. -/
+theorem lowerSemicontinuousOn_hopfLax_norm_rpow [ProperSpace E] (hp : 1 ≤ p)
+    (hφ : LowerSemicontinuous φ) (hφb : BddBelow (range φ)) :
+    LowerSemicontinuousOn (fun q : ℝ × E ↦ hopfLax (‖·‖ ^ p) φ q.1 q.2) {q | 0 < q.1} := by
+  -- Near a point `(t₀, x₀)` with `t₀ > 0`, the penalty `‖x - y‖ ^ p / t ^ (p - 1)` makes every `y`
+  -- outside a fixed closed ball around `x₀` irrelevant to the infimum, and an infimum over a
+  -- compact set of a jointly lower semicontinuous function is lower semicontinuous.
+  obtain ⟨m, hm⟩ := hφb
+  have hm' (y : E) : m ≤ φ y := hm (mem_range_self y)
+  rintro ⟨t₀, x₀⟩ (ht₀ : 0 < t₀) c hc
+  obtain ⟨c', hcc', hc'⟩ := exists_between hc
+  -- Freezing the time below `t₀ / 2` turns the penalized value into a lower semicontinuous
+  -- function of `(t, x, y)` everywhere.
+  set τ := t₀ / 2
+  set D := (2 * t₀) ^ (p - 1)
+  have hD : 0 < D := Real.rpow_pos_of_pos (by linarith) _
+  set R := 2 + |c' - m| * D
+  set F : ℝ × E → E → ℝ := fun q y ↦ φ y + ‖q.2 - y‖ ^ p / max q.1 τ ^ (p - 1)
+  have hτ : 0 < τ := half_pos ht₀
+  have hu (q : ℝ × E) (hq : τ < q.1) : hopfLax (‖·‖ ^ p) φ q.1 q.2 = ⨅ y, F q y := by
+    rw [hopfLax_norm_rpow φ (hτ.trans hq)]
+    simp only [F, max_eq_left hq.le]
+  have hFb (q : ℝ × E) : BddBelow (range (F q)) :=
+    ⟨m, forall_mem_range.2 fun y ↦ le_add_of_le_of_nonneg (hm' y) (by positivity)⟩
+  have hF₀ (y : E) : c' < F (t₀, x₀) y := by
+    have h : c' < hopfLax (‖·‖ ^ p) φ t₀ x₀ := hc'
+    rw [hu (t₀, x₀) (half_lt_self ht₀)] at h
+    exact h.trans_le (ciInf_le (hFb _) y)
+  have hFlsc (y : E) : LowerSemicontinuousAt (fun z : (ℝ × E) × E ↦ F z.1 z.2) ((t₀, x₀), y) := by
+    refine ((hφ.comp continuous_snd).lowerSemicontinuousAt _).add
+      (ContinuousAt.lowerSemicontinuousAt ?_)
+    refine ContinuousAt.div (by fun_prop) ?_ (Real.rpow_pos_of_pos (lt_max_of_lt_right hτ) _).ne'
+    exact ((continuous_fst.comp continuous_fst).max continuous_const).continuousAt.rpow_const
+      (Or.inl (lt_max_of_lt_right hτ).ne')
+  -- Uniformly over the compact ball `closedBall x₀ R`, the penalized values stay above `c'`.
+  have hK : ∀ᶠ q in 𝓝 (t₀, x₀), ∀ y ∈ Metric.closedBall x₀ R, c' < F q y :=
+    (isCompact_closedBall x₀ R).eventually_forall_of_forall_eventually fun y _ ↦
+      hFlsc y c' (hF₀ y)
+  have hnear : ∀ᶠ q : ℝ × E in 𝓝 (t₀, x₀), (τ < q.1 ∧ q.1 < 2 * t₀) ∧ ‖q.2 - x₀‖ < 1 := by
+    refine ((continuous_fst.tendsto (t₀, x₀)).eventually
+      (Ioo_mem_nhds (half_lt_self ht₀ : t₀ / 2 < t₀) (by linarith : t₀ < 2 * t₀))).and ?_
+    simpa [← dist_eq_norm] using (continuous_snd.tendsto (t₀, x₀)).eventually
+      (Metric.ball_mem_nhds x₀ one_pos)
+  filter_upwards [nhdsWithin_le_nhds (hK.and hnear)] with q ⟨hqK, ⟨hτ', hS⟩, hx⟩
+  rw [hu q hτ']
+  refine hcc'.trans_le (le_ciInf fun y ↦ ?_)
+  by_cases hy : y ∈ Metric.closedBall x₀ R
+  · exact (hqK y hy).le
+  -- Far from `x₀`, the penalty alone exceeds `c' - m`.
+  rw [Metric.mem_closedBall, not_le, dist_eq_norm] at hy
+  have hfar : R - 1 ≤ ‖q.2 - y‖ := by
+    have := norm_sub_le_norm_sub_add_norm_sub y q.2 x₀
+    rw [norm_sub_rev y q.2] at this
+    linarith
+  have hR : R - 1 = 1 + |c' - m| * D := by simp only [R]; ring
+  have h1 : 1 ≤ ‖q.2 - y‖ := le_trans (by nlinarith [abs_nonneg (c' - m)]) hfar
+  have hmax : max q.1 τ ^ (p - 1) ≤ D := by
+    rw [max_eq_left hτ'.le]
+    exact Real.rpow_le_rpow (hτ.trans hτ').le hS.le (by linarith)
+  have hmax0 : 0 < max q.1 τ ^ (p - 1) := Real.rpow_pos_of_pos (lt_max_of_lt_right hτ) _
+  calc c' ≤ m + (R - 1) / D := by
+        rw [hR, add_div, mul_div_assoc, div_self hD.ne', mul_one]
+        linarith [le_abs_self (c' - m), one_div_pos.2 hD]
+    _ ≤ m + ‖q.2 - y‖ ^ p / D := by
+        gcongr
+        exact hfar.trans (Real.self_le_rpow_of_one_le h1 hp)
+    _ ≤ m + ‖q.2 - y‖ ^ p / max q.1 τ ^ (p - 1) := by gcongr
+    _ ≤ F q y := by simp only [F]; linarith [hm' y]
+
+/-- **Continuity of the Hopf–Lax value for the `p`-th power cost.** In a proper real seminormed
+space, for `1 ≤ p` and a continuous initial datum `φ` bounded below, the Hopf–Lax value
+`u (t, x) = inf_y (φ y + ‖x - y‖ ^ p / t ^ (p - 1))` is jointly continuous on the open half-space
+`t > 0`. -/
+theorem continuousOn_hopfLax_norm_rpow [ProperSpace E] (hp : 1 ≤ p) (hφ : Continuous φ)
+    (hφb : BddBelow (range φ)) :
+    ContinuousOn (fun q : ℝ × E ↦ hopfLax (‖·‖ ^ p) φ q.1 q.2) {q | 0 < q.1} :=
+  continuousOn_iff_lower_upperSemicontinuousOn.2
+    ⟨lowerSemicontinuousOn_hopfLax_norm_rpow hp hφ.lowerSemicontinuous hφb,
+      upperSemicontinuousOn_hopfLax hφb ⟨0, forall_mem_range.2 fun _ ↦ by positivity⟩
+        (continuous_norm.rpow_const fun _ ↦ Or.inr (zero_le_one.trans hp))⟩
 
 end Seminormed
 

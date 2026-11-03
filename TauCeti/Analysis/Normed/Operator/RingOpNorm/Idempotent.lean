@@ -25,6 +25,8 @@ coordinates, it shows that row-compact idempotents have finitely generated proje
 
 ## Main results
 
+* `ContinuousLinearMap.exists_mul_mul_mul_eq_of_isIdempotentElem`: if `‖e - e ∘ c ∘ e‖ < 1`, then
+  `e = e ∘ c ∘ e ∘ w` for a continuous endomorphism `w`.
 * `ContinuousLinearMap.exists_comp_eq_id_of_isIdempotentElem`: if `‖e - e ∘ c ∘ e‖ < 1` and `c`
   factors through `P`, the range of the idempotent `e` is a direct summand of `P`.
 -/
@@ -40,6 +42,24 @@ variable {R E P : Type*} [SeminormedRing R] [TauCeti.NormedRing.IsTate R]
   [AddCommMonoid P] [Module R P]
 
 /-- Over Tate scalars, let `e` be an idempotent endomorphism of a complete normed module whose
+compression `e ∘ c ∘ e` satisfies `‖e - e ∘ c ∘ e‖ < 1`. Then `e` factors through its compression:
+`e = e ∘ c ∘ e ∘ w` for a continuous endomorphism `w`, the inverse of `1 - (e - e ∘ c ∘ e)`. -/
+theorem exists_mul_mul_mul_eq_of_isIdempotentElem {e c : E →L[R] E} (he : IsIdempotentElem e)
+    (h : ‖e - e * c * e‖ < 1) : ∃ w : E →L[R] E, e * c * e * w = e := by
+  set t := e - e * c * e
+  set w : E →L[R] E := ((oneSub t h).symm : E →L[R] E)
+  refine ⟨w, ?_⟩
+  -- `e * t = t` since `e` is idempotent, so `e * (1 - t) = e * c * e`, and `1 - t` has the
+  -- inverse `w`.
+  have het : e * t = t := by simp only [t, mul_sub, ← mul_assoc, he.eq]
+  have hw : (1 - t) * w = 1 := by
+    rw [← coe_oneSub t h]
+    ext x
+    exact (oneSub t h).apply_symm_apply x
+  calc e * c * e * w = e * (1 - t) * w := by rw [mul_sub, mul_one, het, sub_sub_cancel]
+    _ = e := by rw [mul_assoc, hw, mul_one]
+
+/-- Over Tate scalars, let `e` be an idempotent endomorphism of a complete normed module whose
 compression `e ∘ c ∘ e` satisfies `‖e - e ∘ c ∘ e‖ < 1`, where `c = b ∘ a` factors through an
 `R`-module `P`. Then the range of `e` is a direct summand of `P`: there are linear maps
 `f : P → range e` and `g : range e → P` with `f ∘ g = id`. -/
@@ -47,18 +67,7 @@ theorem exists_comp_eq_id_of_isIdempotentElem {e c : E →L[R] E} (he : IsIdempo
     (a : E →ₗ[R] P) (b : P →ₗ[R] E) (hc : (c : E →ₗ[R] E) = b ∘ₗ a) (h : ‖e - e * c * e‖ < 1) :
     ∃ (f : P →ₗ[R] LinearMap.range (e : E →ₗ[R] E)) (g : LinearMap.range (e : E →ₗ[R] E) →ₗ[R] P),
       f ∘ₗ g = .id := by
-  set t := e - e * c * e
-  set w : E →L[R] E := ((oneSub t h).symm : E →L[R] E)
-  -- `e * t = t` since `e` is idempotent, so `e * (1 - t) = e * c * e`, and `1 - t` has the
-  -- inverse `w`.
-  have hew : e * c * e * w = e := by
-    have het : e * t = t := by simp only [t, mul_sub, ← mul_assoc, he.eq]
-    have hw : (1 - t) * w = 1 := by
-      rw [← coe_oneSub t h]
-      ext x
-      exact (oneSub t h).apply_symm_apply x
-    calc e * c * e * w = e * (1 - t) * w := by rw [mul_sub, mul_one, het, sub_sub_cancel]
-      _ = e := by rw [mul_assoc, hw, mul_one]
+  obtain ⟨w, hew⟩ := exists_mul_mul_mul_eq_of_isIdempotentElem he h
   refine ⟨LinearMap.codRestrict _ ((e : E →ₗ[R] E) ∘ₗ b) fun y ↦
     LinearMap.mem_range_self (e : E →ₗ[R] E) (b y),
     a ∘ₗ ((e * w : E →L[R] E) : E →ₗ[R] E) ∘ₗ (LinearMap.range (e : E →ₗ[R] E)).subtype, ?_⟩

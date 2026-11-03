@@ -45,10 +45,14 @@ that affinoid algebras are Jacobson rings.
 
 * `TauCeti.IsAffinoidAlgebra.pointNorm_le_norm`: `|f(x)| ≤ ‖f‖` for every complete ultrametric
   algebra norm on an affinoid algebra.
+* `TauCeti.IsAffinoidAlgebra.isUnit_iff_forall_pointNorm_ne_zero`: `f` is a unit if and only if
+  `|f(x)| ≠ 0` at every classical point `x`.
 * `TauCeti.IsAffinoidAlgebra.bddAbove_range_pointNorm`: the point norms of `f` are bounded.
 * `TauCeti.IsAffinoidAlgebra.isPowMul_supSeminorm`: `|f ^ n|sup = |f|sup ^ n` for `n ≥ 1`.
 * `TauCeti.IsAffinoidAlgebra.supSeminorm_eq_zero_iff`: `|f|sup = 0` if and only if `f` is
   nilpotent.
+* `TauCeti.IsAffinoidAlgebra.isReduced_iff_supSeminorm_eq_zero`: `|·|sup` separates points
+  exactly when `A` is reduced.
 * `TauCeti.IsAffinoidAlgebra.supSeminorm_map_le`: algebra homomorphisms contract `|·|sup`.
 * `TauCeti.IsAffinoidAlgebra.supSeminorm_map_of_isIntegral`: integral injective algebra
   homomorphisms preserve `|·|sup`.
@@ -202,6 +206,23 @@ theorem pointNorm_add_le (hA : IsAffinoidAlgebra K A) (x : MaximalSpectrum A) (f
   have := hA.isAlgebraic_quotient x
   simp only [pointNorm, map_add]
   exact isNonarchimedean_spectralNorm _ _
+
+/-- **The units of an affinoid algebra are the functions without zeros**: `f` is a unit if and
+only if `|f(x)| ≠ 0` at every classical point `x`. -/
+theorem isUnit_iff_forall_pointNorm_ne_zero (hA : IsAffinoidAlgebra K A) {f : A} :
+    IsUnit f ↔ ∀ x : MaximalSpectrum A, pointNorm K x f ≠ 0 := by
+  simp_rw [Ne, hA.pointNorm_eq_zero_iff]
+  refine ⟨fun hf x hx ↦ x.isMaximal.ne_top (Ideal.eq_top_of_isUnit_mem _ hx hf), fun h ↦ ?_⟩
+  by_contra hf
+  obtain ⟨M, hM, hfM⟩ := Ideal.exists_le_maximal _ (Ideal.span_singleton_ne_top hf)
+  exact h ⟨M, hM⟩ (hfM (Ideal.mem_span_singleton_self f))
+
+/-- The absolute value of the inverse of a unit is the inverse absolute value:
+`|u⁻¹(x)| = |u(x)|⁻¹`. -/
+theorem pointNorm_inverse (hA : IsAffinoidAlgebra K A) (x : MaximalSpectrum A) {u : A}
+    (hu : IsUnit u) : pointNorm K x (Ring.inverse u) = (pointNorm K x u)⁻¹ :=
+  eq_inv_of_mul_eq_one_left <| by rw [← hA.pointNorm_mul, Ring.inverse_mul_cancel u hu,
+    pointNorm_one]
 
 /-- A surjective algebra map from a completely normed affinoid algebra onto a finite field
 extension of `K` does not increase norms, for the spectral norm of the extension. It is stated
@@ -374,6 +395,11 @@ theorem supSeminorm_eq_zero_iff (hA : IsAffinoidAlgebra K A) {f : A} :
   rw [← Ideal.jacobson_bot, ← Ideal.radical_eq_jacobson, Ideal.mem_radical_iff] at hf
   obtain ⟨n, hn⟩ := hf
   exact ⟨n, Ideal.mem_bot.mp hn⟩
+
+/-- **The supremum seminorm is a norm exactly on reduced affinoid algebras.** -/
+theorem isReduced_iff_supSeminorm_eq_zero (hA : IsAffinoidAlgebra K A) :
+    IsReduced A ↔ ∀ f : A, supSeminorm K f = 0 → f = 0 := by
+  simp_rw [hA.supSeminorm_eq_zero_iff, isReduced_iff]
 
 /-- An algebra homomorphism of affinoid algebras does not increase supremum seminorms. -/
 theorem supSeminorm_map_le (hA : IsAffinoidAlgebra K A) (hB : IsAffinoidAlgebra K B)

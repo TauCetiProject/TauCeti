@@ -78,7 +78,6 @@ private theorem perWindow_boundary_tendsto_of_interior {γ : ℝ → ℂ} {a b t
   have hab : a < b := ht₀.1.trans ht₀.2
   have hmin : min a b = a := min_eq_left hab.le
   have hmax : max a b = b := max_eq_right hab.le
-  have ht₀' : t₀ ∈ Ioo (min a b) (max a b) := by rwa [hmin, hmax]
   obtain ⟨L_R, hL_R, h_tend_R⟩ := h_imm.exists_deriv_right_limit
     (by rw [hmin, hmax]; exact ⟨ht₀.1.le, ht₀.2⟩)
   obtain ⟨L_L, hL_L, h_tend_L⟩ := h_imm.exists_deriv_left_limit
@@ -87,10 +86,7 @@ private theorem perWindow_boundary_tendsto_of_interior {γ : ℝ → ℂ} {a b t
     (h_imm.continuousOn.mono (by
       rw [uIcc_of_le hab.le]
       exact Icc_subset_Icc (by linarith) h_hi))
-    hL_R hL_L h_tend_R h_tend_L
-    (h_imm.isPiecewiseC1On.eventually_differentiableAt_right ht₀')
-    (h_imm.isPiecewiseC1On.eventually_differentiableAt_left ht₀')
-    hP
+    hL_R hL_L h_tend_R h_tend_L hP
     (fun t ht => hγ_diffP t ⟨by
       rw [hmin, hmax]
       exact ⟨by linarith [ht.1.1], by linarith [ht.1.2]⟩, ht.2⟩)
@@ -140,7 +136,7 @@ theorem IsPwC1ImmersionOn.hasCauchyPVAt_pow_inv {γ : ℝ → ℂ} {a b : ℝ} {
         c * (-(↑(k - 1) : ℂ)⁻¹ * ((γ a - s) ^ (k - 1))⁻¹)) := by
   classical
   rcases hab.eq_or_lt with rfl | hab
-  · simpa using HasCauchyPVAt.of_eq γ rfl (fun z => c / (z - s) ^ k) s
+  · simpa using HasCauchyPVAt.refl γ a (fun z => c / (z - s) ^ k) s
   set T : Finset ℝ := (h_imm.finite_crossings (z₀ := s)).toFinset with hT_def
   have hT_mem : ∀ {t : ℝ}, t ∈ T ↔ t ∈ Icc a b ∧ γ t = s := fun {_} => by
     rw [hT_def, h_imm.mem_toFinset_finite_crossings_of_le hab.le]

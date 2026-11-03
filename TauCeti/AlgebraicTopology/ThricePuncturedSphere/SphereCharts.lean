@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.PuncturedNeighborhoods
-public import TauCeti.Geometry.Manifold.Instances.OnePoint
+public import TauCeti.Geometry.Manifold.Instances.OnePoint.Basic
 
 /-!
 # Extending the puncture coordinates to the sphere

@@ -54,7 +54,7 @@ theorem definingIdeal_eq_specialLinearDefiningHopfIdeal :
       rw [baseChangeDefiningIdeal_def]
       exact UniversalEnvelopingAlgebra.map_tmul_mem_kostantToralBaseChangePresentationIdeal_of_mem
         (rootGenerator r) (cartanGenerator r) (rep r) (lattice r).toAddSubgroup
-        (fun _ hu _ hv => rep_kostantForm_mem_lattice r hu hv)
+        (rep_kostantForm_mem_lattice r)
         (isNilpotent_rep_rootGenerator r) (latticeBasis r) (weight r) K (1 : K) hf
     rw [baseChangeDefiningIdeal_eq_specialLinearDefiningHopfIdeal] at hmem
     have hzero : (SpecialLinear.coordinateMap K (r + 1)).hom

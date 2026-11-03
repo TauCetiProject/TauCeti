@@ -119,6 +119,18 @@ theorem map (h : IsFreelyIndependentElements φ a) (f : A →ₐ[R] A') {φ' : A
 
 end IsFreelyIndependentElements
 
+/-- Free independence of elements can be tested after applying an algebra homomorphism,
+provided that the functional is pulled back along the same homomorphism. Injectivity is not
+required. -/
+theorem isFreelyIndependentElements_map_iff (φ' : A' →ₗ[R] R) (f : A →ₐ[R] A') (a : ι → A) :
+    IsFreelyIndependentElements φ' (f ∘ a) ↔
+      IsFreelyIndependentElements (φ'.comp f.toLinearMap) a := by
+  refine ⟨fun h => ?_, fun h => h.map f rfl⟩
+  apply IsFreelyIndependent.mono (IsFreelyIndependent.comap h f)
+  intro i
+  rw [Function.comp_apply, ← AlgHom.map_adjoin_singleton]
+  exact Subalgebra.map_le.mp le_rfl
+
 /-- Every family indexed by a subsingleton type is freely independent. -/
 theorem isFreelyIndependentElements_of_subsingleton [Subsingleton ι] (φ : A →ₗ[R] R)
     (a : ι → A) : IsFreelyIndependentElements φ a :=

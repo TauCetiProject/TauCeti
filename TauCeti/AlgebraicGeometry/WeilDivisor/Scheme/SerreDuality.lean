@@ -42,6 +42,10 @@ Combined with the function-field duality `L(W - D) ≃ Ω(D)`, `x ↦ x · ω`, 
 nonzero Weil differential `ω`, this is Serre duality. The pairing is explicit: a section `f` of
 `𝒪_X(K - D)` pairs with the class of a repartition `a` to `ω(f · a)`.
 
+For `D ≤ E`, the duality is natural: the dual of the map on `H¹` induced by
+`𝒪_X(D) ⟶ 𝒪_X(E)` corresponds to the map on `H⁰` induced by
+`𝒪_X(K - E) ⟶ 𝒪_X(K - D)`.
+
 Under the same constant-field hypothesis, taking `D = 0` computes the genus:
 `dim_k H¹(X, 𝒪_X)` is the genus of the function field, and a canonical divisor has degree
 `2g - 2`.
@@ -51,6 +55,8 @@ Under the same constant-field hypothesis, taking `D = 0` computes the genus:
 * `SchemeWeilDivisor.cohomologyOneDualEquivCohomologyZero`: **Serre duality**,
   `H¹(X, 𝒪_X(D))^∨ ≃ H⁰(X, 𝒪_X(K - D))`, with the pairing
   `SchemeWeilDivisor.cohomologyOneDualEquivCohomologyZero_symm_apply_repartitionToCohomologyOne`;
+* `SchemeWeilDivisor.cohomologyOneDualEquivCohomologyZero_naturality`: compatibility with
+  the sheaf-cohomology maps induced by inclusions of divisors;
 * `SchemeWeilDivisor.finrank_cohomology_one_sheaf_eq_finrank_cohomology_zero_sheaf_sub`:
   `dim_k H¹(X, 𝒪_X(D)) = dim_k H⁰(X, 𝒪_X(K - D))` for every canonical divisor `K`;
 * `SchemeWeilDivisor.finrank_cohomology_zero_sheaf_zero_eq_one` and
@@ -137,6 +143,46 @@ lemma cohomologyOneDualEquivCohomologyZero_symm_apply_repartitionToCohomologyOne
         ((sheafι (K - D)).app ⊤ (Scheme.Modules.cohomologyZeroEquiv _ s))) a) := by
   rw [← cohomologyOneDualEquivWeilDifferentialFiltration_apply_apply hex hdim hF]
   simp [cohomologyOneDualEquivCohomologyZero, repartitionDualMul_apply_apply]
+
+/-- The Serre pairing is natural under `D ≤ E`: the cohomology map induced by
+`𝒪(D) ⟶ 𝒪(E)` is adjoint to that induced by `𝒪(K - E) ⟶ 𝒪(K - D)`. -/
+theorem cohomologyOneDualEquivCohomologyZero_symm_naturality
+    {D E : SchemeWeilDivisor X} (h : D ≤ E)
+    (s : Scheme.Modules.Cohomology (sheaf (K - E)) 0)
+    (x : Scheme.Modules.Cohomology (sheaf D) 1) :
+    (cohomologyOneDualEquivCohomologyZero hex hdim hF hk hω hK D).symm
+        (Scheme.Modules.cohomologyMapBaseLinear k X (sheafHomOfLE (sub_le_sub_left h K)) 0 s) x =
+      (cohomologyOneDualEquivCohomologyZero hex hdim hF hk hω hK E).symm s
+        (Scheme.Modules.cohomologyMapBaseLinear k X (sheafHomOfLE h) 1 x) := by
+  obtain ⟨a, rfl⟩ := repartitionToCohomologyOne_surjective hex hdim D x
+  rw [repartitionToCohomologyOne_naturality,
+    cohomologyOneDualEquivCohomologyZero_symm_apply_repartitionToCohomologyOne,
+    cohomologyOneDualEquivCohomologyZero_symm_apply_repartitionToCohomologyOne]
+  congr 3
+  rw [← Scheme.Modules.cohomologyZeroBaseLinearEquiv_apply k X,
+    Scheme.Modules.cohomologyZeroBaseLinearEquiv_naturality]
+  apply congrArg (Scheme.rationalFunctionsEquiv ⊤)
+  rw [Scheme.Modules.cohomologyZeroBaseLinearEquiv_apply]
+  simpa only [Scheme.Modules.Hom.comp_app, ConcreteCategory.comp_apply] using
+    ConcreteCategory.congr_hom
+      (congrArg (fun f ↦ Scheme.Modules.Hom.app f ⊤)
+        (sheafHomOfLE_ι (sub_le_sub_left h K)))
+      (Scheme.Modules.cohomologyZeroEquiv _ s)
+
+/-- Serre duality intertwines the dual of the map on `H¹` induced by `D ≤ E` with the
+opposite map on `H⁰` induced by `K - E ≤ K - D`. -/
+theorem cohomologyOneDualEquivCohomologyZero_naturality
+    {D E : SchemeWeilDivisor X} (h : D ≤ E)
+    (φ : Module.Dual k (Scheme.Modules.Cohomology (sheaf E) 1)) :
+    cohomologyOneDualEquivCohomologyZero hex hdim hF hk hω hK D
+        ((Scheme.Modules.cohomologyMapBaseLinear k X (sheafHomOfLE h) 1).dualMap φ) =
+      Scheme.Modules.cohomologyMapBaseLinear k X (sheafHomOfLE (sub_le_sub_left h K)) 0
+        (cohomologyOneDualEquivCohomologyZero hex hdim hF hk hω hK E φ) := by
+  apply (cohomologyOneDualEquivCohomologyZero hex hdim hF hk hω hK D).symm.injective
+  rw [LinearEquiv.symm_apply_apply]
+  ext x
+  rw [cohomologyOneDualEquivCohomologyZero_symm_naturality, LinearEquiv.symm_apply_apply]
+  rfl
 
 end Duality
 

@@ -220,8 +220,7 @@ theorem exists_isBounded_image_realWindingIntegrand_of_lipschitzOnWith_derivWith
   rw [Metric.mem_closedBall, dist_zero_right, Real.norm_eq_abs]
   rcases eq_or_ne t t₀ with rfl | htne
   · have hz0 : γ t - w = 0 := by rw [h_eq, sub_self]
-    simp only [hz0, realWindingIntegrand_eq_div, Complex.zero_re, Complex.zero_im, zero_mul,
-      sub_zero, Complex.normSq_zero, div_zero, abs_zero]
+    rw [hz0, realWindingIntegrand_zero_left, abs_zero]
     exact hr_nonneg
   · have htcd : t ∈ Icc t₀ d := ⟨ht.1, by linarith [ht.2]⟩
     have hDeq : deriv γ t = derivWithin γ (Icc t₀ d) t :=

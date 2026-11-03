@@ -40,7 +40,7 @@ higher order, so `Δ` is a unit times a square. This gives three criteria for `E
 
 * `Δ ∉ 𝔪²`; for a discrete valuation with normalized additive valuation `ord` this is
   `ord(Δ) ≤ 1`, the reduction symbols `I₀` and `I₁`;
-* the reduction is a nonsplit node and `v(Δ)` is not the valuation of a square; for a discrete
+* the reduction is a nonsplit node and `Δ` is not a unit times a square; for a discrete
   valuation this is nonsplit multiplicative reduction of type `Iₙ` with `n = ord(Δ)` odd;
 * the reduction is singular at the origin and `a₆ ∉ 𝔪²`; on such an equation with `b₂ ∈ 𝔪` this
   is Tate's test for the reduction symbol `II`.
@@ -290,23 +290,20 @@ theorem nonsingularReduction_eq_top_of_forall_mem_maximalIdeal_not_equation
     have hxy := mem_maximalIdeal_of_isSingular _ h₃ h₄ h₆ hs
     h x y hxy.1 hxy.2 hE
 
-/-- **At a nonsplit node with `v(Δ)` not a square, every point has nonsingular reduction**:
-`E₀(F) = W(F)`. Here `c₄` of the integral model is a unit and its node polynomial
+/-- **At a nonsplit node with `Δ` not a unit times a square, every point has nonsingular
+reduction**: `E₀(F) = W(F)`. Here `c₄` of the integral model is a unit, its node polynomial
 (`WeierstrassCurve.nodePolynomial`) does not split over the residue field, so the singular point
-of the reduced curve, if any, is a node without rational tangent directions. For a discrete
-valuation, on a minimal equation, this is nonsplit multiplicative reduction of type `Iₙ` with `n`
-odd. -/
+of the reduced curve, if any, is a node without rational tangent directions, and the discriminant
+of the integral model is not associated to a square. For a discrete valuation, on a minimal
+equation, this is nonsplit multiplicative reduction of type `Iₙ` with `n` odd. -/
 theorem nonsingularReduction_eq_top_of_not_splits
     (hc₄ : residue _ (integralModel v.valuationSubring W).c₄ ≠ 0)
     (hn : ¬ ((integralModel v.valuationSubring W).nodePolynomial.map (residue _)).Splits)
-    (hΔ : ∀ z : F, v W.Δ ≠ v z ^ 2) :
+    (hΔ : ∀ m : v.valuationSubring, ¬ Associated (m ^ 2) (integralModel v.valuationSubring W).Δ) :
     W.nonsingularReduction v = ⊤ :=
-  nonsingularReduction_eq_top_of_forall_not_isSingular v fun _ _ hE hs ↦ by
-    obtain ⟨m, u, hu⟩ := exists_associated_sq_Δ_of_isSingular _ hE hs hc₄ hn
-    refine hΔ m ?_
-    rw [← integralModel_Δ_eq v.valuationSubring W, ← hu, map_mul, map_pow, map_mul, map_pow,
-      (Valuation.valuationSubring.integers v).isUnit_iff_valuation_eq_one.mp u.isUnit, mul_one,
-      ValuationSubring.algebraMap_apply]
+  nonsingularReduction_eq_top_of_forall_not_isSingular v fun _ _ hE hs ↦
+    have ⟨m, hm⟩ := exists_associated_sq_Δ_of_isSingular _ hE hs hc₄ hn
+    hΔ m hm
 
 /-- **If the reduction is singular at the origin and `a₆ ∉ 𝔪²`, every point has nonsingular
 reduction**: `E₀(F) = W(F)`. Here `a₃`, `a₄` and `a₆` of the integral model lie in the maximal

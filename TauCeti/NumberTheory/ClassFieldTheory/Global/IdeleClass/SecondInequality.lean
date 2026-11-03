@@ -65,6 +65,8 @@ The steps are the following.
   Kummer case, the order of `H²` of every layer divides its degree.
 * `TauCeti.ClassFieldTheory.subsingleton_h1_globalFormation`: `H¹` of every layer of the
   idele-class formation vanishes.
+* `TauCeti.ClassFieldTheory.subsingleton_groupCohomology_one_ideleClassRep`: `H¹(Gal(L/K), C_L)`
+  vanishes for every finite Galois extension `L/K` of number fields.
 * `TauCeti.ClassFieldTheory.natCard_H2_globalFormation_dvd_degree`: the second fundamental
   inequality for every layer of the idele-class formation.
 
@@ -192,6 +194,15 @@ theorem subsingleton_h1_globalFormation
   subsingleton_h1_globalFormation_of_forall_index_le
     (fun F L _ _ _ _ _ _ p _ _ hfin ↦
       index_range_ideleClassNormMap_le_of_finrank_prime F L p hfin) Lay
+
+variable (K) in
+/-- **`H¹` of the idele classes of a finite Galois extension vanishes.** For every finite Galois
+extension `L/K` of number fields, `H¹(Gal(L/K), C_L)` is trivial. -/
+theorem subsingleton_groupCohomology_one_ideleClassRep (L : Type) [Field L] [NumberField L]
+    [Algebra K L] [IsGalois K L] :
+    Subsingleton (groupCohomology (ideleClassRep K L) 1) :=
+  (subsingleton_groupCohomology_ideleClassRep_iff_subsingleton_H 1).2
+    (subsingleton_h1_globalFormation _)
 
 /-- **The second fundamental inequality for the global idele-class formation.** For every finite
 normal layer `V ◁ U` of `G_K`, the order of `H²(U/V, C_L)` divides `[U : V]`. -/

@@ -13,7 +13,7 @@ public import TauCeti.Analysis.PDE.Caccioppoli.Truncation
 
 Let `u ∈ H¹(Ω)` be a weak subsolution of the full divergence-form equation
 
-`-∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu + c u ≤ f` in `Ω`,
+`-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u ≤ f` in `Ω`,
 
 that is, `a(u, v) ≤ ∫_Ω f v` for every nonnegative `v ∈ H¹₀(Ω)`, where `a(·, ·)` is the energy
 form with drift `b` and mass coefficient `c`. Let `a` be measurable and uniformly elliptic with
@@ -84,7 +84,7 @@ lower-order terms.** Let `a` be measurable and uniformly elliptic on `Ω` with c
 `a(u, v) ≤ ∫_Ω f v`
 
 for every nonnegative `v ∈ H¹₀(Ω)`, where `a` is the energy form of
-`-∂ⱼ(aⁱʲ ∂ᵢ ·) + bⁱ ∂ᵢ + c`. At any level `k` for which `w = (u - k)⁺` belongs to `L²(Ω)`, every
+`-∂ᵢ(aⁱʲ ∂ⱼ ·) + bⁱ ∂ᵢ + c`. At any level `k` for which `w = (u - k)⁺` belongs to `L²(Ω)`, every
 smooth `ψ` compactly supported in `Ω` satisfies
 
 `∫_Ω ψ² ‖∇w‖² ≤ 2 (2Λ/λ)² ∫_Ω ‖∇ψ‖² w² + (2β/λ)² ∫_Ω ψ² w² + (4/λ) ∫_Ω ψ² (f - c u) w`.
@@ -274,7 +274,7 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_posPartAbove_sq_le_
 /-- **The zero-forcing Caccioppoli inequality for a nonnegative-level truncation with
 lower-order terms.** Let `a` be measurable and uniformly elliptic on `Ω` with constants
 `0 < λ ≤ Λ`, let `b` and `c` be measurable with `‖b‖ ≤ β`, `‖c‖ ≤ γ` and `c ≥ 0` on `Ω`, and let
-`u ∈ H¹(Ω)` be a weak subsolution of `-∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu + c u ≤ 0`. At any level `k ≥ 0`,
+`u ∈ H¹(Ω)` be a weak subsolution of `-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u ≤ 0`. At any level `k ≥ 0`,
 with `w = (u - k)⁺`, every smooth `ψ` compactly supported in `Ω` satisfies
 
 `∫_Ω ψ² ‖∇w‖² ≤ 2 (2Λ/λ)² ∫_Ω ‖∇ψ‖² w² + (2β/λ)² ∫_Ω ψ² w²`.
@@ -327,7 +327,7 @@ theorem
 constant `C > 0`, depending only on the dimension, such that the following holds for every
 additive Haar measure `μ`. Let `a` be measurable and uniformly elliptic on `Ω` with constants
 `0 < λ ≤ Λ`, let `b` and `c` be measurable with `‖b‖ ≤ β`, `‖c‖ ≤ γ` and `c ≥ 0` on `Ω`, and let
-`u ∈ H¹(Ω)` be a weak subsolution of `-∂ⱼ(aⁱʲ ∂ᵢu) + bⁱ ∂ᵢu + c u ≤ 0`. At any level `k ≥ 0`,
+`u ∈ H¹(Ω)` be a weak subsolution of `-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u ≤ 0`. At any level `k ≥ 0`,
 with `w = (u - k)⁺`, and for every pair of balls `B(x₀, r) ⊆ B(x₀, R) ⊆ Ω` with `0 < r < R`,
 
 `∫_{B(x₀, r)} ‖∇w‖² ≤ (2 (2Λ/λ)² (C / (R - r))² + (2β/λ)²) ∫_{B(x₀, R)} w²`. -/

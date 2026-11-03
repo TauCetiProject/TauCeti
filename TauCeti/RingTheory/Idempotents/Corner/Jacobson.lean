@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Idempotents.Quotient
-public import TauCeti.RingTheory.Jacobson.MulOpposite
+public import TauCeti.RingTheory.Jacobson.Basic
 import Mathlib.Tactic.NoncommRing
 
 /-!

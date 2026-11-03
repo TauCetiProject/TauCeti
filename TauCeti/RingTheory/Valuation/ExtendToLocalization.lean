@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Valuation.ExtendToLocalization
-public import TauCeti.RingTheory.Localization.Away
+public import TauCeti.RingTheory.Localization.Away.Basic
 
 /-!
 # Extending a valuation to a localisation away from one element

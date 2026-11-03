@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.GroupWithZero.Units.Basic
-public import TauCeti.Algebra.Homology.Contraction.Linear
+public import TauCeti.Algebra.Homology.Contraction.Linear.Basic
 public import TauCeti.LinearAlgebra.End.LocallyNilpotent
 public import TauCeti.Algebra.Ring.Units
 import Mathlib.Tactic.LinearCombination
@@ -52,6 +52,8 @@ Crainic's `1 - δ h` and `+ h X i`.
 
 * `TauCeti.LinearSpecialContraction.perturbationSeries_maurerCartan`: the identity
   `dM X + X dM + X i p X = 0`.
+* `TauCeti.LinearSpecialContraction.perturbationSeries_mem`: the perturbation operator preserves
+  every additive subgroup preserved by `δ` and `h`, wherever the geometric series is finite.
 * `TauCeti.LinearSpecialContraction.perturbedDifferential_comp_perturbedDifferential`: the
   perturbed differential of the retract squares to the square of `dN`.
 * `TauCeti.LinearSpecialContraction.perturb_proj_comp_one_add_mul`: the perturbed projection
@@ -140,15 +142,31 @@ theorem perturbationSeries_apply_eq_sum_of_pow_apply_eq_zero {z : M} {k : ℕ}
   have hgeom : (1 + u) * ∑ j ∈ Finset.range k, (-u) ^ j = 1 - (-u) ^ k := by
     simpa only [sub_neg_eq_add] using mul_neg_geom_sum (-u) k
   have hk : ((-u) ^ k) (δ z) = 0 := by
-    rw [neg_pow, Module.End.mul_apply, hz, map_zero]
+    rw [neg_pow, mul_apply_eq_comp, hz, map_zero]
   have h1 : (1 + u) ((∑ j ∈ Finset.range k, (-u) ^ j) (δ z)) = δ z := by
-    rw [← Module.End.mul_apply, hgeom, LinearMap.sub_apply, Module.End.one_apply, hk, sub_zero]
+    rw [← mul_apply_eq_comp, hgeom, LinearMap.sub_apply, one_apply_eq_self, hk, sub_zero]
   calc c.perturbationSeries δ z
       = Ring.inverse (1 + u) ((1 + u) ((∑ j ∈ Finset.range k, (-u) ^ j) (δ z))) := by
-        rw [h1, perturbationSeries_def, Module.End.mul_apply]
+        rw [h1, perturbationSeries_def, mul_apply_eq_comp]
     _ = (∑ j ∈ Finset.range k, (-u) ^ j) (δ z) := by
-        rw [← Module.End.mul_apply, Ring.inverse_mul_cancel _ hU, Module.End.one_apply]
+        rw [← mul_apply_eq_comp, Ring.inverse_mul_cancel _ hU, one_apply_eq_self]
     _ = ∑ j ∈ Finset.range k, ((-u) ^ j) (δ z) := LinearMap.sum_apply _ _ _
+
+/-- **The perturbation operator preserves invariant subgroups.**  If `δ` and `h` preserve an
+additive subgroup `S`, such as a submodule, then the perturbation operator sends every `z ∈ S` with
+`(δ h)^k δ z = 0` back into `S`, being the finite geometric series `∑_{j < k} (-1)^j (δ h)^j δ`
+on `z`. -/
+theorem perturbationSeries_mem {S : AddSubgroup M} (hδ : ∀ z ∈ S, δ z ∈ S)
+    (hh : ∀ z ∈ S, c.homotopy z ∈ S) {z : M} (hz : z ∈ S) {k : ℕ}
+    (hk : ((δ * c.homotopy) ^ k) (δ z) = 0) : c.perturbationSeries δ z ∈ S := by
+  rw [c.perturbationSeries_apply_eq_sum_of_pow_apply_eq_zero δ hU hk]
+  have key (j : ℕ) : ((-(δ * c.homotopy)) ^ j) (δ z) ∈ S := by
+    induction j with
+    | zero => simpa using hδ z hz
+    | succ j ih =>
+      rw [pow_succ', mul_apply_eq_comp, LinearMap.neg_apply, mul_apply_eq_comp]
+      exact S.neg_mem (hδ _ (hh _ ih))
+  exact sum_mem fun j _ ↦ key j
 
 /-- The perturbation operator satisfies the Maurer--Cartan-type identity
 `dM X + X dM + X i p X = 0`; this single identity drives every equation of the basic

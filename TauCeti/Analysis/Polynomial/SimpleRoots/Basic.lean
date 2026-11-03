@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Analytic.Basic
-public import Mathlib.Analysis.RCLike.Basic
 public import TauCeti.Analysis.Polynomial.SymmetricPower
 import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Analytic.Linear
@@ -70,9 +69,8 @@ ordered lift of the (unordered) inverse chart, not analyticity of a preferred ro
   those of the polynomial whose roots are the `φ`-images of its roots; it is analytic at every
   coefficient tuple whose roots are distinct and at which `φ` is analytic.
 
-Lane F4.1 of the analytic Heegaard Floer roadmap opens with "`Sym^g(Σ)` geometry: smooth complex
-structure (elementary symmetric functions)", after Ozsváth--Szabó
-([arXiv:math/0101206](https://arxiv.org/abs/math/0101206), §2.1). A holomorphic coordinate on the
+Following Ozsváth--Szabó
+([arXiv:math/0101206](https://arxiv.org/abs/math/0101206), §2.1), a holomorphic coordinate on the
 surface identifies a neighbourhood in `Sym^g(Σ)` with an open subset of `Sym^g(ℂ)`
 (`TauCeti.Sym.isOpenEmbedding_coeffEquiv_comp_map`), and
 `TauCeti.Sym.analyticAt_coeffEquiv_map_coeffEquiv_symm` says that changing that coordinate acts
@@ -85,8 +83,8 @@ coefficients along a bijection `(Σ i, Fin (m i)) ≃ Fin n`; the general blockw
 over `ℂ` by `TauCeti.Sym.analyticAt_coeffEquiv_map_coeffEquiv_symm_of_analyticAt` in
 `TauCeti/Analysis/Polynomial/RootSum.lean`.
 
-Everything is stated over an `RCLike` field, so it covers the real as well as the complex case,
-except for the elementary polynomial calculus, which needs only a nontrivially normed field; only
+Everything is stated over a complete nontrivially normed field, so it covers the real as well as
+the complex case, except for the elementary polynomial calculus, which needs no completeness; only
 the statements that mention the chart itself need the field algebraically closed.
 -/
 
@@ -121,7 +119,7 @@ end Elementary
 
 section SimpleRoot
 
-variable {𝕜 : Type*} [RCLike 𝕜] {n : ℕ}
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] {n : ℕ}
 
 /-- **A simple root moves analytically.** If `z₀` is a root of the monic polynomial with lower
 coefficients `c₀` at which the derivative does not vanish, then there is a function `ψ` of the
@@ -138,7 +136,7 @@ theorem exists_analyticAt_isRoot_monicOfCoeff {c₀ : Fin n → 𝕜} {z₀ : �
       ∀ᶠ c in 𝓝 c₀, (monicOfCoeff c).IsRoot (ψ c) := by
   obtain ⟨ψ, hψa, hψ₀, hψ, -⟩ :=
     (analyticAt_eval_monicOfCoeff (c₀, z₀)).exists_analyticAt_eventually_eq_zero_iff hroot
-      (by simpa using hsimple)
+      (by simpa only [Polynomial.deriv] using hsimple)
   exact ⟨ψ, hψ₀, hψa, hψ⟩
 
 /-! ### An analytic ordered parametrization of a multiplicity-free root tuple -/
@@ -146,14 +144,14 @@ theorem exists_analyticAt_isRoot_monicOfCoeff {c₀ : Fin n → 𝕜} {z₀ : �
 /-- **The roots of a monic polynomial with distinct roots move analytically.** If the monic
 polynomial with lower coefficients `c₀` is `∏ i, (X - z i)` for a tuple `z` of pairwise distinct
 points, then there is a tuple-valued function `Ψ`, analytic at `c₀`, with `Ψ c₀ = z`, which orders
-the roots of every nearby monic polynomial.
+the roots of every nearby monic polynomial and remains injective there.
 
-No ordering of the roots is canonical, so the ordered lift `Ψ` is not unique; what is asserted is
-that some analytic ordering exists near `c₀`. -/
+The initial tuple `z` fixes the labels locally; no ordering of an unordered root tuple is
+canonical. -/
 theorem exists_analyticAt_monicOfCoeff_eq_prod_X_sub_C {c₀ z : Fin n → 𝕜}
     (hz : Function.Injective z) (hc₀ : monicOfCoeff c₀ = ∏ i, (X - C (z i))) :
     ∃ Ψ : (Fin n → 𝕜) → (Fin n → 𝕜), Ψ c₀ = z ∧ AnalyticAt 𝕜 Ψ c₀ ∧
-      ∀ᶠ c in 𝓝 c₀, monicOfCoeff c = ∏ i, (X - C (Ψ c i)) := by
+      ∀ᶠ c in 𝓝 c₀, monicOfCoeff c = ∏ i, (X - C (Ψ c i)) ∧ Function.Injective (Ψ c) := by
   have hroot : ∀ i, (monicOfCoeff c₀).eval (z i) = 0 := by
     intro i
     rw [hc₀, eval_prod]
@@ -163,19 +161,15 @@ theorem exists_analyticAt_monicOfCoeff_eq_prod_X_sub_C {c₀ z : Fin n → 𝕜}
     hsep.eval₂_derivative_ne_zero (RingHom.id 𝕜) (hroot i)
   choose ψ hψ₀ hψa hψr using fun i => exists_analyticAt_isRoot_monicOfCoeff (hroot i) (hsimple i)
   refine ⟨fun c i => ψ i c, funext hψ₀, AnalyticAt.pi hψa, ?_⟩
-  have hne : ∀ i j : Fin n, ∀ᶠ c in 𝓝 c₀, i ≠ j → ψ i c ≠ ψ j c := by
-    intro i j
-    rcases eq_or_ne i j with rfl | hij
-    · exact .of_forall fun _ h => absurd rfl h
-    · filter_upwards [((hψa i).continuousAt.ne_iff_eventually_ne (hψa j).continuousAt).1
-        (by rw [hψ₀ i, hψ₀ j]; exact fun h => hij (hz h))] with c hc _ using hc
-  filter_upwards [eventually_all.2 hψr,
-    eventually_all.2 fun i => eventually_all.2 fun j => hne i j] with c hcr hcne
-  have hcinj : Function.Injective fun i => ψ i c := fun i j hij => by
-    by_contra h
-    exact hcne i j h hij
-  exact (Sym.toMonic_ofFn_eq_of_forall_isRoot (monic_monicOfCoeff c) (natDegree_monicOfCoeff c)
-    hcinj hcr).symm.trans (Sym.toMonic_ofFn _)
+  have hinj : ∀ᶠ c in 𝓝 c₀, Function.Injective (fun i => ψ i c) := by
+    simp only [Function.injective_iff_pairwise_ne, Pairwise, Function.onFun,
+      eventually_all]
+    intro i j hij
+    exact ((hψa i).continuousAt.ne_iff_eventually_ne (hψa j).continuousAt).1
+      (by simpa only [hψ₀] using hz.ne hij)
+  filter_upwards [eventually_all.2 hψr, hinj] with c hcr hcinj
+  exact ⟨(Sym.toMonic_ofFn_eq_of_forall_isRoot (monic_monicOfCoeff c) (natDegree_monicOfCoeff c)
+    hcinj hcr).symm.trans (Sym.toMonic_ofFn _), hcinj⟩
 
 end SimpleRoot
 
@@ -185,7 +179,7 @@ namespace Sym
 
 section AlgClosed
 
-variable {𝕜 : Type*} [RCLike 𝕜] [IsAlgClosed 𝕜] {n : ℕ}
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [IsAlgClosed 𝕜] {n : ℕ}
 
 /-- The inverse elementary symmetric chart admits an analytic ordered lift at every
 multiplicity-free coefficient tuple: near such a tuple the unordered root tuple is `ofFn` of an
@@ -200,7 +194,7 @@ theorem exists_analyticAt_coeffEquiv_symm_eq_ofFn {c₀ z : Fin n → 𝕜} (hz 
   refine ⟨Ψ, hΨ₀, hΨa, ?_⟩
   filter_upwards [hΨ] with c hc
   exact toMonic_injective
-    (Subtype.ext (((toMonic_coeffEquiv_symm c).trans hc).trans (toMonic_ofFn _).symm))
+    (Subtype.ext (((toMonic_coeffEquiv_symm c).trans hc.1).trans (toMonic_ofFn _).symm))
 
 /-- **The coefficient map is a local analytic isomorphism away from the diagonal.** At an ordered
 tuple `z` of pairwise distinct points there is an analytic `Ψ` inverting, on both sides and near
@@ -229,18 +223,16 @@ theorem exists_analyticAt_coeffEquiv_ofFn_localInverse {z : Fin n → 𝕜}
         mem_ofFn.2 ⟨i, rfl⟩
       rw [← hw] at hmem
       exact mem_ofFn.1 hmem
-    have hne : ∀ i j : Fin n,
-        ∀ᶠ w in 𝓝 z, i ≠ j → Ψ (coeffEquiv 𝕜 n (ofFn w)) i ≠ w j := by
-      intro i j
-      rcases eq_or_ne i j with rfl | hij
-      · exact .of_forall fun _ h => absurd rfl h
-      · have hΨi : ContinuousAt (fun w : Fin n → 𝕜 => Ψ (coeffEquiv 𝕜 n (ofFn w)) i) z :=
-          ContinuousAt.comp' (f := fun w : Fin n → 𝕜 => coeffEquiv 𝕜 n (ofFn w))
-            (analyticAt_pi_iff.1 hΨa i).continuousAt hσ
-        filter_upwards [(hΨi.ne_iff_eventually_ne (continuousAt_apply j z)).1
-          (by rw [hΨ₀]; exact fun h => hij (hz h))] with w hw _ using hw
-    filter_upwards [hmem, eventually_all.2 fun i => eventually_all.2 fun j => hne i j] with
-      w hw hwne
+    have hne : ∀ᶠ w in 𝓝 z,
+        ∀ i j : Fin n, i ≠ j → Ψ (coeffEquiv 𝕜 n (ofFn w)) i ≠ w j := by
+      simp only [eventually_all]
+      intro i j hij
+      have hΨi : ContinuousAt (fun w : Fin n → 𝕜 => Ψ (coeffEquiv 𝕜 n (ofFn w)) i) z :=
+        ContinuousAt.comp' (f := fun w : Fin n → 𝕜 => coeffEquiv 𝕜 n (ofFn w))
+          (analyticAt_pi_iff.1 hΨa i).continuousAt hσ
+      exact (hΨi.ne_iff_eventually_ne (continuousAt_apply j z)).1
+        (by simpa only [hΨ₀] using hz.ne hij)
+    filter_upwards [hmem, hne] with w hw hwne
     refine funext fun i => ?_
     obtain ⟨j, hj⟩ := hw i
     rcases eq_or_ne i j with rfl | hij

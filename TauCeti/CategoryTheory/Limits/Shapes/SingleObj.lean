@@ -85,9 +85,6 @@ theorem nonempty_isColimit_iff :
   refine ((Setoid.lift_injective_iff_ker_eq_of_le hle).and (Quot.surjective_lift _)).trans ?_
   rw [and_comm, Setoid.ext_iff]
   simp only [Setoid.ker_def, MulAction.orbitRel_apply]
-  -- The two sides now differ only in how the codomain of the leg is written, as
-  -- `(J.coconeTypesEquiv.symm c).pt` or as `((Functor.const _).obj c.pt).obj _`; both are `c.pt`.
-  rfl
 
 /-- A cocone over `J : SingleObj G ⥤ Type u` whose leg is surjective, and identifies two elements
 only when they lie in the same orbit of the action of `G`, is a colimit. -/
@@ -139,9 +136,11 @@ noncomputable def isColimitMapCoconeOfTransfer {D : Type*} [Category D] [Preaddi
     F.isIso_nsmul_id_obj _ (J.obj _)
   have : IsIso (Fintype.card G • 𝟙 (F.mapCocone c).pt) := F.isIso_nsmul_id_obj _ c.pt
   isColimitOfTransfer (F.mapCocone c) (F.map t)
-    (by simp only [Functor.mapCocone_pt, Functor.mapCocone_ι_app, ← F.map_comp, ht,
+    (by simp only [CategoryTheory.Functor.mapCocone_pt, CategoryTheory.Functor.mapCocone_ι_app,
+      ← F.map_comp, ht,
       F.map_nsmul, F.map_id])
-    (by simp only [Functor.mapCocone_ι_app, ← F.map_comp, ht', F.map_sum, Functor.comp_map])
+    (by simp only [CategoryTheory.Functor.mapCocone_ι_app, ← F.map_comp, ht', F.map_sum,
+      CategoryTheory.Functor.comp_map])
 
 end Preadditive
 
@@ -227,9 +226,11 @@ noncomputable def isLimitMapConeOfTransfer {D : Type*} [Category D] [Preadditive
     [IsIso (Fintype.card G • 𝟙 (F.mapCone c).pt)] :
     IsLimit (F.mapCone c) :=
   isLimitOfTransfer (F.mapCone c) (F.map p)
-    (by simp only [Functor.mapCone_pt, Functor.mapCone_π_app, ← F.map_comp, hp,
+    (by simp only [CategoryTheory.Functor.mapCone_pt, CategoryTheory.Functor.mapCone_π_app,
+      ← F.map_comp, hp,
       F.map_nsmul, F.map_id])
-    (by simp only [Functor.mapCone_π_app, ← F.map_comp, hp', F.map_sum, Functor.comp_map])
+    (by simp only [CategoryTheory.Functor.mapCone_π_app, ← F.map_comp, hp', F.map_sum,
+      CategoryTheory.Functor.comp_map])
 
 end PreadditiveLimit
 

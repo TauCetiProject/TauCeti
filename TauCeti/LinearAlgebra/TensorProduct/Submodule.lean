@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.TensorProduct.Maps
 public import Mathlib.Algebra.Algebra.Operations
+public import Mathlib.RingTheory.Ideal.Operations
 
 /-!
 # Scalar extension of images and powers of submodules
@@ -14,6 +15,15 @@ public import Mathlib.Algebra.Algebra.Operations
 Extension of scalars commutes with taking images of submodules under linear maps, and preserves
 powers of submodules of an algebra. The latter applies, in particular, to the homogeneous pieces of
 tensor and exterior algebras, defined as powers of their generators.
+
+For submodules `p` and `q`, every element of `(p ⊔ q) ⊗[R] M` is the sum of images of elements of
+`p ⊗[R] M` and `q ⊗[R] M` under the maps induced by the inclusions
+(`Submodule.exists_eq_rTensor_inclusion_add`). For an ideal `I` and a submodule `J`, the image of
+`M ⊗[R] (I • J)` in `M ⊗[R] J` is contained in `I • (M ⊗[R] J)`
+(`LinearMap.range_lTensor_inclusion_smul_le`).
+
+Multiplication of tensor products of submodules is compatible with multiplication in each
+factor (`Submodule.map₂_tmul_mul_le`).
 -/
 
 public section
@@ -21,6 +31,34 @@ public section
 open scoped TensorProduct Pointwise
 
 namespace Submodule
+
+section Congruence
+
+variable {R A : Type*} [CommSemiring R] [AddCommMonoid A] [Module R A]
+
+/-- Two endomorphisms agreeing on two submodules have the same twisted co-Leibniz term on
+tensors of elements of those submodules, where an auxiliary twist `τ` acts on the left tensor
+factor before `b` is applied to the right tensor factor. -/
+theorem rTensor_add_lTensor_rTensor_congr
+    {b₁ b₂ τ : A →ₗ[R] A}
+    (P Q : Submodule R A) (hP : ∀ z ∈ P, b₁ z = b₂ z)
+    (hQ : ∀ z ∈ Q, b₁ z = b₂ z) (w : P ⊗[R] Q) :
+    LinearMap.rTensor A b₁ (TensorProduct.mapIncl P Q w) +
+        LinearMap.lTensor A b₁
+          (LinearMap.rTensor A τ (TensorProduct.mapIncl P Q w)) =
+      LinearMap.rTensor A b₂ (TensorProduct.mapIncl P Q w) +
+        LinearMap.lTensor A b₂
+          (LinearMap.rTensor A τ (TensorProduct.mapIncl P Q w)) := by
+  induction w using TensorProduct.inductionOn with
+  | tmul u v =>
+      simp only [TensorProduct.mapIncl, TensorProduct.map_tmul, Submodule.coe_subtype,
+        LinearMap.rTensor_tmul, LinearMap.lTensor_tmul]
+      rw [hP _ u.2, hQ _ v.2]
+  | add u v hu hv =>
+      simp only [map_add]
+      rw [add_add_add_comm, hu, hv, ← add_add_add_comm]
+
+end Congruence
 
 section Map
 
@@ -42,6 +80,71 @@ theorem _root_.LinearMap.baseChange_range (f : M →ₗ[R] N) :
   rw [← Submodule.map_top, baseChange_map, baseChange_top, Submodule.map_top]
 
 end Map
+
+section Inclusion
+
+variable {R M N : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+  [AddCommMonoid N] [Module R N]
+
+/-- The images of `p ⊗[R] M` and `q ⊗[R] M` span `(p ⊔ q) ⊗[R] M`. -/
+theorem exists_eq_rTensor_inclusion_add (p q : Submodule R N) (t : ↥(p ⊔ q) ⊗[R] M) :
+    ∃ a b, t = (inclusion le_sup_left).rTensor M a + (inclusion le_sup_right).rTensor M b := by
+  induction t with
+  | tmul x m =>
+    obtain ⟨y, hy, z, hz, hyz⟩ := mem_sup.mp x.2
+    refine ⟨⟨y, hy⟩ ⊗ₜ m, ⟨z, hz⟩ ⊗ₜ m, ?_⟩
+    rw [LinearMap.rTensor_tmul, LinearMap.rTensor_tmul, ← TensorProduct.add_tmul]
+    exact congrArg (· ⊗ₜ m) (Subtype.ext hyz.symm)
+  | add t₁ t₂ h₁ h₂ =>
+    obtain ⟨a₁, b₁, rfl⟩ := h₁
+    obtain ⟨a₂, b₂, rfl⟩ := h₂
+    exact ⟨a₁ + a₂, b₁ + b₂, by rw [map_add, map_add, add_add_add_comm]⟩
+
+/-- The image of `M ⊗[R] (I • J)` in `M ⊗[R] J` is contained in `I • (M ⊗[R] J)`. -/
+theorem _root_.LinearMap.range_lTensor_inclusion_smul_le (I : Ideal R) (J : Submodule R N) :
+    LinearMap.range ((inclusion (Submodule.smul_le_right : I • J ≤ J)).lTensor M) ≤
+      (I • ⊤ : Submodule R (M ⊗[R] J)) := by
+  rintro _ ⟨u, rfl⟩
+  induction u using TensorProduct.inductionOn with
+  | add u v hu hv => rw [map_add]; exact add_mem hu hv
+  | tmul m y =>
+    -- In `J`, the element `y` of `I • J` lies in `I • ⊤`, since `I • J` is the image of `I • ⊤`.
+    have hy : (y : N) ∈ (I • ⊤ : Submodule R J).map J.subtype := by
+      rw [map_smul'', map_top, range_subtype]
+      exact y.2
+    obtain ⟨z, hz, hzy⟩ := hy
+    have hz' : inclusion Submodule.smul_le_right y = z := Subtype.ext hzy.symm
+    rw [LinearMap.lTensor_tmul, hz']
+    have := mem_map_of_mem (f := TensorProduct.mk R M J m) hz
+    rw [map_smul''] at this
+    exact smul_mono le_rfl le_top this
+
+end Inclusion
+
+section Multiplication
+
+variable {R A B : Type*} [CommSemiring R] [Semiring A] [Semiring B]
+  [Algebra R A] [Algebra R B]
+
+/-- Products of tensor products of submodules lie in the tensor product of their products. -/
+theorem map₂_tmul_mul_le (P S : Submodule R A) (Q T : Submodule R B) :
+    map₂ (TensorProduct.mk R A B) P Q * map₂ (TensorProduct.mk R A B) S T ≤
+      map₂ (TensorProduct.mk R A B) (P * S) (Q * T) := by
+  apply mul_le.mpr
+  intro x hx y hy
+  rw [← TensorProduct.range_mapIncl] at hx hy
+  obtain ⟨a, rfl⟩ := hx
+  obtain ⟨b, rfl⟩ := hy
+  induction a with
+  | tmul p q =>
+    induction b with
+    | tmul s t =>
+      simpa using apply_mem_map₂ (TensorProduct.mk R A B)
+        (mul_mem_mul p.2 s.2) (mul_mem_mul q.2 t.2)
+    | add b c hb hc => simpa [mul_add] using Submodule.add_mem _ hb hc
+  | add a c ha hc => simpa [add_mul] using Submodule.add_mem _ ha hc
+
+end Multiplication
 
 variable {R A B : Type*} [CommSemiring R] [CommSemiring A] [Semiring B]
 variable [Algebra R A] [Algebra R B]

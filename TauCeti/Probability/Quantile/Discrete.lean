@@ -24,7 +24,12 @@ for individual distributions can be used directly, without computing an infimum 
   `MeasureTheory.Measure.isLeast_quantile_map_intCast` identify the least cumulative crossings;
 * `MeasureTheory.Measure.quantile_map_natCast_eq_iff` and
   `MeasureTheory.Measure.quantile_map_intCast_eq_iff` characterize an individual crossing;
-* `MeasureTheory.Measure.quantile_map_natCast_eq_find` gives the natural least-search formula.
+* `MeasureTheory.Measure.quantile_map_natCast_eq_succ_iff` and
+  `MeasureTheory.Measure.quantile_map_intCast_eq_iff_lt_le` characterize quantiles by their
+  two adjacent cumulative masses;
+* `MeasureTheory.Measure.quantile_map_natCast_eq_find` gives the natural least-search formula;
+* `MeasureTheory.Measure.quantile_map_natCast_eq_of_measureReal_Iic_eq_one` identifies
+  quantiles at a full-mass upper endpoint above the last cumulative jump.
 -/
 
 public section
@@ -81,6 +86,40 @@ theorem quantile_map_natCast_eq_iff (hu : u ∈ Ioo 0 1) (k : ℕ) :
   rw [hleast.isLeast_iff_eq, ← Nat.cast_inj (R := ℝ),
     ← quantile_map_natCast_eq_floor μ hu]
 
+/-- A positive natural quantile is characterized by the strict crossing above the preceding
+cumulative mass and the weak crossing at the count itself. -/
+theorem quantile_map_natCast_eq_succ_iff (hu : u ∈ Ioo 0 1) (k : ℕ) :
+    (μ.map (Nat.cast : ℕ → ℝ)).quantile u = (k + 1 : ℕ) ↔
+      μ.real (Iic k) < u ∧ u ≤ μ.real (Iic (k + 1)) := by
+  rw [quantile_map_natCast_eq_iff μ hu]
+  constructor
+  · intro h
+    exact ⟨lt_of_not_ge (fun hk ↦ Nat.not_succ_le_self k (h.2 hk)), h.1⟩
+  · rintro ⟨hprev, hnext⟩
+    refine ⟨hnext, fun j hj ↦ ?_⟩
+    by_contra hjk
+    have hle : μ.real (Iic j) ≤ μ.real (Iic k) :=
+      measureReal_mono (Iic_subset_Iic.mpr (by omega))
+    exact hprev.not_ge (hj.trans hle)
+
+/-- Above one minus the mass at a full-mass upper endpoint, an interior quantile equals
+that endpoint. -/
+theorem quantile_map_natCast_eq_of_measureReal_Iic_eq_one (hu : u ∈ Ioo 0 1) {k : ℕ}
+    (hfull : μ.real (Iic k) = 1) (hlevel : 1 - μ.real {k} < u) :
+    (μ.map (Nat.cast : ℕ → ℝ)).quantile u = k := by
+  rw [quantile_map_natCast_eq_iff μ hu]
+  refine ⟨by simpa only [Set.mem_ofPred_eq, hfull] using hu.2.le, fun j hj ↦ ?_⟩
+  by_contra hnot
+  have hsubset : (Iic j : Set ℕ) ⊆ ({k} : Set ℕ)ᶜ := by
+    intro i hi
+    simp only [mem_compl_iff, mem_singleton_iff]
+    exact ne_of_lt (hi.trans_lt (lt_of_not_ge hnot))
+  have hmass : μ.real (Iic j) ≤ 1 - μ.real {k} := by
+    calc
+      _ ≤ μ.real ({k} : Set ℕ)ᶜ := measureReal_mono hsubset
+      _ = _ := probReal_compl_eq_one_sub .of_discrete
+  exact hlevel.not_ge (hj.trans hmass)
+
 /-- The quantile of a natural-valued law is the first index at which its native cumulative mass
 reaches the level, expressed by `Nat.find`. -/
 theorem quantile_map_natCast_eq_find (hu : u ∈ Ioo 0 1) :
@@ -127,6 +166,26 @@ theorem quantile_map_intCast_eq_iff (hu : u ∈ Ioo 0 1) (k : ℤ) :
   have hleast := isLeast_quantile_map_intCast μ hu
   rw [hleast.isLeast_iff_eq, ← Int.cast_inj (α := ℝ),
     ← quantile_map_intCast_eq_floor μ hu]
+
+/-- An integer quantile is characterized by the strict crossing above the preceding
+cumulative mass and the weak crossing at the integer itself. -/
+theorem quantile_map_intCast_eq_iff_lt_le (hu : u ∈ Ioo 0 1) (k : ℤ) :
+    (μ.map (Int.cast : ℤ → ℝ)).quantile u = k ↔
+      μ.real (Iic (k - 1)) < u ∧ u ≤ μ.real (Iic k) := by
+  rw [quantile_map_intCast_eq_iff μ hu]
+  constructor
+  · intro h
+    refine ⟨?_, h.1⟩
+    by_contra! hprev
+    have := h.2 hprev
+    omega
+  · rintro ⟨hprev, hk⟩
+    refine ⟨hk, ?_⟩
+    intro j hj
+    by_contra! hjk
+    have hmono : μ.real (Iic j) ≤ μ.real (Iic (k - 1)) :=
+      measureReal_mono (Iic_subset_Iic.mpr (by omega))
+    exact hprev.not_ge (hj.trans hmono)
 
 end Int
 

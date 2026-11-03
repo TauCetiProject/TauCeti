@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.QuadraticForm.Transfer.Basic
-public import TauCeti.Algebra.QuadraticAlgebra.NormTrace
+public import Mathlib.RingTheory.QuadraticAlgebra
 
 /-!
 # Trace transfer in a quadratic algebra
@@ -48,7 +48,7 @@ noncomputable def traceTransferSqIsometryEquivWeightedSumSquares (d : K) :
     have hb : b.equivFun = QuadraticAlgebra.linearEquivTuple d 0 := by
       simp only [b, QuadraticAlgebra.basis, Module.Basis.equivFun_ofEquivFun]
     rw [hb, QuadraticAlgebra.linearEquivTuple_symm_apply]
-    rw [QuadraticAlgebra.algebraTrace_eq_trace]
+    rw [Algebra.trace_quadraticAlgebra_apply]
     simp [QuadraticAlgebra.trace_def, weightedSumSquares_apply, Fin.sum_univ_two]
     ring
   let e := ((QuadraticMap.sq (R := QuadraticAlgebra K d 0)

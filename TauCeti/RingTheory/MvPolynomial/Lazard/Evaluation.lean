@@ -43,7 +43,8 @@ of `p` at `a`, and the Lazard evaluation is that coefficient (`lazardExponent_eq
 
 ## Main results
 
-* `MvPolynomial.lazardEval_ne_zero`: the Lazard evaluation of a nonzero polynomial is nonzero.
+* `MvPolynomial.lazardEval_ne_zero`, `MvPolynomial.lazardEval_eq_zero_iff`: the Lazard evaluation
+  of a nonzero polynomial is nonzero.
 * `MvPolynomial.lazardEval_eq_eval`, `MvPolynomial.lazardExponent_eq_zero_iff`: where `p` does
   not vanish, Lazard evaluation is ordinary evaluation, and these are exactly the points where
   no power is removed.
@@ -153,6 +154,12 @@ theorem lazardEval_ne_zero {p : MvPolynomial (Fin n) S} (hp : p ≠ 0) (a : Fin 
   | succ n ih =>
     rw [lazardEval_fin_succ]
     exact ih (Polynomial.eval_divByMonic_pow_rootMultiplicity_ne_zero _ (by simpa using hp)) _
+
+/-- The Lazard evaluation of `p` vanishes exactly when `p` does. -/
+@[simp]
+theorem lazardEval_eq_zero_iff {p : MvPolynomial (Fin n) S} (a : Fin n → S) :
+    p.lazardEval a = 0 ↔ p = 0 :=
+  ⟨not_imp_not.1 fun hp ↦ lazardEval_ne_zero hp a, fun hp ↦ hp ▸ lazardEval_zero a⟩
 
 /-- The Lazard evaluation of `p` at `a` is the Taylor coefficient of `p` at `a` whose exponent is
 the vector of removed exponents. -/

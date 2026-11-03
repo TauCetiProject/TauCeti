@@ -5,6 +5,7 @@ Authors: Codex
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Tangent
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Infinitesimal
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Cotangent
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Representation
@@ -16,6 +17,9 @@ public import TauCeti.Algebra.AlgebraicGroup.Representation.Differential
 The differentiated action of the adjoint comodule is the Lie bracket on the dual of the
 augmentation cotangent space. This connects the dual-number description of the infinitesimal
 adjoint action with the differentiated representation used to study invariant subspaces.
+Restricting the adjoint comodule to a closed subgroup, the differentiated action of a tangent
+vector of the subgroup is the bracket with its image under the differential of the inclusion
+(`TauCeti.differential_corestrict_adjointComodule`).
 
 ## References
 
@@ -47,7 +51,7 @@ theorem differential_adjointComodule (d : Derivation R H (Bialgebra.CounitAlgebr
     Comodule.differential (R := R) (H := H) d x =
       ⁅(cotangentDualLieEquiv (R := R) (H := H)).symm d, x⁆ := by
   -- The proof combines `Derivation.adDerivation_dualNumber_apply` with
-  -- `TauCeti.Comodule.snd_endOfPoint_derivationToDualNumberEquivLift`.
+  -- `TauCeti.Comodule.snd_endOfPoint_derivationToTrivSqZeroExtEquivLift`.
   let C := Bialgebra.CounitAlgebra R H R
   let V := Module.Dual R (Bialgebra.CotangentSpace R H)
   let s : DualNumber C →ₗ[R] R := (Bialgebra.CounitAlgebra.algEquivSelf R H R).toLinearMap ∘ₗ
@@ -97,7 +101,7 @@ theorem differential_adjointComodule (d : Derivation R H (Bialgebra.CounitAlgebr
   ext a
   apply (Bialgebra.CounitAlgebra.algEquivSelf R H R).injective
   rw [cotangentDualLieEquiv_apply,
-    ← Comodule.snd_endOfPoint_derivationToDualNumberEquivLift, hcoeff]
+    ← Comodule.snd_endOfPoint_derivationToTrivSqZeroExtEquivLift, hcoeff]
   rw [hinit] at haction
   have ha := DFunLike.congr_fun haction a
   -- The tangent-point equivalence packages the same dual-number lift.
@@ -116,3 +120,28 @@ theorem differential_adjointComodule (d : Derivation R H (Bialgebra.CounitAlgebr
   simp only [snd_add, snd_inl, snd_inr, zero_add, cotangentDualLieEquiv_apply]
 
 end Derivation
+
+namespace TauCeti
+
+universe u
+
+variable {R H : Type u} [CommRing R] [CommRing H] [HopfAlgebra R H]
+variable [Module.Finite R (Bialgebra.CotangentSpace R H)]
+variable [Module.Projective R (Bialgebra.CotangentSpace R H)]
+
+attribute [local instance] Derivation.adjointComodule
+
+/-- **The restricted adjoint representation differentiates to the bracket.** A tangent vector `d`
+of the closed subgroup cut out by `J` acts on `𝔤` by the bracket with its image in `𝔤` under the
+differential of the inclusion. -/
+theorem differential_corestrict_adjointComodule (J : HopfIdeal R H)
+    (d : Derivation R (H ⧸ J.toIdeal) (Bialgebra.CounitAlgebra R (H ⧸ J.toIdeal) R))
+    (y : Module.Dual R (Bialgebra.CotangentSpace R H)) :
+    letI := Comodule.Corestrict (M := Module.Dual R (Bialgebra.CotangentSpace R H))
+      (Bialgebra.Quotient.mkBialgHom (R := R) J.toIdeal).toCoalgHom
+    Comodule.differential (R := R) (H := H ⧸ J.toIdeal) d y =
+      ⁅(Derivation.cotangentDualLieEquiv (R := R) (H := H)).symm (J.quotientLieHom d), y⁆ := by
+  rw [Comodule.differential_corestrict, Derivation.differential_adjointComodule,
+    HopfIdeal.quotientLieHom_apply]
+
+end TauCeti

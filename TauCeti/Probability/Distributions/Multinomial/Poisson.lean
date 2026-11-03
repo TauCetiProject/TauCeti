@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Distributions.Multinomial.Basic
 public import TauCeti.Probability.Distributions.Poisson.Sum
 public import TauCeti.Probability.HasLaw
+import TauCeti.Geometry.Convex.ConvexSpace.NNReal
 
 /-!
 # Poisson allocation and conditioning
@@ -43,9 +44,7 @@ private theorem poisson_mul_multinomialWeight (r : ℝ≥0) (p : StdSimplex ℝ�
       ∏ i, poissonMeasure (r * p.weights i) {k i} := by
   classical
   have htotal : ∑ i, ((r * p.weights i : ℝ≥0) : ℝ) = r := by
-    simp only [NNReal.coe_mul, ← Finset.mul_sum]
-    have hp : ∑ i, (p.weights i : ℝ) = 1 := by exact_mod_cast p.total_of_fintype
-    rw [hp, mul_one]
+    simpa only [NNReal.coe_mul] using p.sum_mul_coe_weights r
   have hcoeff : (Nat.multinomial Finset.univ k : ℝ) *
       ∏ i, ((k i).factorial : ℝ) = ((∑ i, k i).factorial : ℝ) := by
     rw [mul_comm]
@@ -97,7 +96,7 @@ theorem restrict_pi_poissonMeasure_mul_weights (r : ℝ≥0) (p : StdSimplex ℝ
   classical
   apply Measure.ext_of_singleton
   intro k
-  rw [Measure.restrict_apply (measurableSet_singleton k), Measure.smul_apply,
+  rw [Measure.restrict_apply (measurableSet_singleton k), _root_.smul_apply,
     smul_eq_mul, multinomialMeasure_singleton]
   by_cases hk : ∑ i, k i = n
   · rw [ite_eq_left hk, Set.singleton_inter_of_mem (s := {l : ι → ℕ | ∑ i, l i = n}) hk]

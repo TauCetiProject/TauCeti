@@ -397,6 +397,11 @@ lemma cartanMatrix_isSymm_of_isSimplyLaced {t : DynkinType} (ht : t.cartanMatrix
   · have hzero := cartanMatrix_apply_eq_zero_iff_symm t j i
     rcases ht hji with h | h <;> rcases ht hji.symm with h' | h' <;> omega
 
+/-- **The Cartan matrix of a simply-laced Dynkin type is symmetric.** -/
+theorem IsSimplyLaced.isSymm_cartanMatrix {t : DynkinType} (ht : t.IsSimplyLaced) :
+    t.cartanMatrix.IsSymm :=
+  cartanMatrix_isSymm_of_isSimplyLaced ((isSimplyLaced_cartanMatrix_iff t).mpr (Or.inl ht))
+
 end DynkinType
 
 section RootPairing
@@ -456,6 +461,18 @@ lemma HasCartanType.card_support {b : P.Base} {t : DynkinType} (h : HasCartanTyp
     b.support.card = t.rank := by
   obtain ⟨e, -⟩ := h
   simpa using Fintype.card_congr e
+
+/-- **The Cartan type is transported by an equivalence of root pairings.** The push-forward of a
+base along an equivalence has the same Cartan matrix, up to the induced relabelling of the simple
+roots (`RootPairing.Base.map_equiv_cartanMatrix`). -/
+theorem HasCartanType.map [CharZero R] {ι₂ M₂ N₂ : Type*} [AddCommGroup M₂] [Module R M₂]
+    [AddCommGroup N₂] [Module R N₂] {P₂ : RootPairing ι₂ R M₂ N₂} [P₂.IsCrystallographic]
+    {b : P.Base} {t : DynkinType} (h : HasCartanType P b t) (e : P.Equiv P₂) :
+    HasCartanType P₂ (b.map e) t := by
+  classical
+  obtain ⟨f, hf⟩ := (hasCartanType_iff b t).mp h
+  refine (hasCartanType_iff _ t).mpr ⟨(b.supportMapEquiv e).symm.trans f, fun i j ↦ ?_⟩
+  simp [b.map_equiv_cartanMatrix e, hf]
 
 /-- **A base of Cartan type `t` is simply laced exactly when `t` is, or `t` has rank at most one.**
 The second alternative adds only the degenerate types `B 0`, `B 1`, `C 0` and `C 1`: the remaining

@@ -46,11 +46,13 @@ products of quaternion symbols become sums of Kummer cup products.
 
 public section
 
+universe u
+
 namespace TauCeti
 
 open Finset _root_.ContinuousCohomology
 
-variable {K : Type} [Field K] [Invertible (2 : K)]
+variable {K : Type u} [Field K] [Invertible (2 : K)]
 
 /-- The comparison with multiplicative coefficients sends the Hasse invariant of a regular
 form class to the image of its second Stiefel–Whitney class under the Kummer injection. -/

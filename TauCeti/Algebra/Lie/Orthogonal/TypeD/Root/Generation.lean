@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.Root.PositiveSpan
+public import TauCeti.Algebra.Lie.Orthogonal.TypeD.Root.Coordinates
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.CartanBasis
 
 /-!
@@ -15,8 +16,8 @@ This file proves that the positive and negative simple root generators of the sp
 orthogonal Lie algebra generate the whole Lie algebra. The proof first obtains every positive root
 generator from the positive simple generators. Root-string brackets of the negative simple
 generators then produce every negative root generator, while mixed simple brackets produce the
-diagonal Cartan. Finally, the standard block description of the orthogonal Lie algebra decomposes
-an arbitrary element into its three root-matrix families.
+diagonal Cartan. Finally, the native entry-basis expansion writes an arbitrary element as a sum
+of those three root-matrix families.
 
 The resulting generation theorem supplies the spanning field for the standard type-D basis and
 the Lie-algebraic input for its Borel subalgebra.
@@ -37,146 +38,11 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 
 variable {K : Type*} [Field K]
 
-private theorem sum_smul_differenceRootMatrix {n : Type*} [Fintype n] [DecidableEq n]
-    (A : Matrix n n K) :
-    (∑ i : n, ∑ j : n, A i j • differenceRootMatrix (K := K) i j) =
-      Matrix.fromBlocks A 0 0 (-A.transpose) := by
-  have hA : (∑ i : n, ∑ j : n, A i j • Matrix.single i j (1 : K)) = A := by
-    simpa [Matrix.smul_single] using (Matrix.matrix_eq_sum_single A).symm
-  have hAT :
-      (∑ i : n, ∑ j : n, A i j • (-(Matrix.single i j (1 : K)).transpose)) =
-        -A.transpose := by
-    simpa only [Matrix.transpose_sum, Matrix.transpose_smul, Finset.sum_neg_distrib,
-        smul_neg] using congrArg (fun M : Matrix n n K => -M.transpose) hA
-  simp_rw [differenceRootMatrix_def, Matrix.fromBlocks_smul]
-  ext (i | i) (j | j)
-  · simpa only [Matrix.sum_apply, Matrix.fromBlocks_apply₁₁] using
-      congrFun (congrFun hA i) j
-  · simp only [Matrix.sum_apply, Matrix.fromBlocks_apply₁₂,
-      smul_zero, Matrix.zero_apply, Finset.sum_const_zero]
-  · simp only [Matrix.sum_apply, Matrix.fromBlocks_apply₂₁,
-      smul_zero, Matrix.zero_apply, Finset.sum_const_zero]
-  · simpa only [Matrix.sum_apply, Matrix.fromBlocks_apply₂₂] using
-      congrFun (congrFun hAT i) j
-
-private theorem sum_half_smul_sumRootMatrices {n : Type*} [Fintype n] [DecidableEq n]
-    [NeZero (2 : K)] (A : Matrix n n K) (hA : A.transpose = -A) :
-    ((∑ i : n, ∑ j : n,
-        ((2 : K)⁻¹ * A i j) • sumRootMatrix (K := K) i j) =
-        Matrix.fromBlocks 0 A 0 0) ∧
-      (∑ i : n, ∑ j : n,
-        ((2 : K)⁻¹ * A i j) • negSumRootMatrix (K := K) i j) =
-        Matrix.fromBlocks 0 0 A 0 := by
-  have hsingle : (∑ i : n, ∑ j : n, A i j • Matrix.single i j (1 : K)) = A := by
-    simpa [Matrix.smul_single] using (Matrix.matrix_eq_sum_single A).symm
-  have hsingleTranspose :
-      (∑ i : n, ∑ j : n, A i j • Matrix.single j i (1 : K)) = A.transpose := by
-    simpa only [Matrix.transpose_sum, Matrix.transpose_smul, Matrix.transpose_single] using
-      congrArg Matrix.transpose hsingle
-  have hsum :
-      (∑ i : n, ∑ j : n,
-        ((2 : K)⁻¹ * A i j) •
-          (Matrix.single i j (1 : K) - Matrix.single j i (1 : K))) = A := by
-    calc
-      _ = (2 : K)⁻¹ •
-          ((∑ i : n, ∑ j : n, A i j • Matrix.single i j (1 : K)) -
-            (∑ i : n, ∑ j : n, A i j • Matrix.single j i (1 : K))) := by
-        simp only [mul_smul, smul_sub, Finset.smul_sum, Finset.sum_sub_distrib]
-      _ = (2 : K)⁻¹ • (A - A.transpose) := by
-        rw [hsingle, hsingleTranspose]
-      _ = A := by
-        rw [hA]
-        simp only [sub_neg_eq_add]
-        rw [← two_smul K A, smul_smul]
-        convert one_smul K A using 1
-        field_simp
-  constructor
-  · simp_rw [sumRootMatrix_def, Matrix.fromBlocks_smul]
-    ext (i | i) (j | j)
-    · simp only [Matrix.sum_apply, Matrix.fromBlocks_apply₁₁,
-        smul_zero, Matrix.zero_apply, Finset.sum_const_zero]
-    · simpa only [Matrix.sum_apply, Matrix.fromBlocks_apply₁₂] using
-        congrFun (congrFun hsum i) j
-    · simp only [Matrix.sum_apply, Matrix.fromBlocks_apply₂₁,
-        smul_zero, Matrix.zero_apply, Finset.sum_const_zero]
-    · simp only [Matrix.sum_apply, Matrix.fromBlocks_apply₂₂,
-        smul_zero, Matrix.zero_apply, Finset.sum_const_zero]
-  · simp_rw [negSumRootMatrix_def, Matrix.fromBlocks_smul]
-    ext (i | i) (j | j)
-    · simp only [Matrix.sum_apply, Matrix.fromBlocks_apply₁₁,
-        smul_zero, Matrix.zero_apply, Finset.sum_const_zero]
-    · simp only [Matrix.sum_apply, Matrix.fromBlocks_apply₁₂,
-        smul_zero, Matrix.zero_apply, Finset.sum_const_zero]
-    · simpa only [Matrix.sum_apply, Matrix.fromBlocks_apply₂₁] using
-        congrFun (congrFun hsum i) j
-    · simp only [Matrix.sum_apply, Matrix.fromBlocks_apply₂₂,
-        smul_zero, Matrix.zero_apply, Finset.sum_const_zero]
-
-private theorem decomposition [NeZero (2 : K)] (n : ℕ)
-    (X : LieAlgebra.Orthogonal.typeD (Fin n) K) :
-    X =
-      (∑ i : Fin n, ∑ j : Fin n,
-        (X : Matrix (Fin n ⊕ Fin n) (Fin n ⊕ Fin n) K) (.inl i) (.inl j) •
-          differenceRootGenerator (K := K) i j) +
-      (∑ i : Fin n, ∑ j : Fin n,
-        ((2 : K)⁻¹ *
-          (X : Matrix (Fin n ⊕ Fin n) (Fin n ⊕ Fin n) K) (.inl i) (.inr j)) •
-          sumRootGenerator (K := K) i j) +
-      (∑ i : Fin n, ∑ j : Fin n,
-        ((2 : K)⁻¹ *
-          (X : Matrix (Fin n ⊕ Fin n) (Fin n ⊕ Fin n) K) (.inr i) (.inl j)) •
-          negSumRootGenerator (K := K) i j) := by
-  apply Subtype.ext
-  simp only [AddMemClass.coe_add, AddSubmonoidClass.coe_finsetSum, SetLike.val_smul,
-    val_differenceRootGenerator, val_sumRootGenerator, val_negSumRootGenerator]
-  let A : Matrix (Fin n) (Fin n) K := fun i j =>
-    (X : Matrix (Fin n ⊕ Fin n) (Fin n ⊕ Fin n) K) (.inl i) (.inl j)
-  let B : Matrix (Fin n) (Fin n) K := fun i j =>
-    (X : Matrix (Fin n ⊕ Fin n) (Fin n ⊕ Fin n) K) (.inl i) (.inr j)
-  let C : Matrix (Fin n) (Fin n) K := fun i j =>
-    (X : Matrix (Fin n ⊕ Fin n) (Fin n ⊕ Fin n) K) (.inr i) (.inl j)
-  have hB : B.transpose = -B := by
-    ext i j
-    exact LieAlgebra.Orthogonal.typeD.apply_inl_inr X j i
-  have hC : C.transpose = -C := by
-    ext i j
-    exact LieAlgebra.Orthogonal.typeD.apply_inr_inl X j i
-  have hX : (X : Matrix (Fin n ⊕ Fin n) (Fin n ⊕ Fin n) K) =
-      Matrix.fromBlocks A B C (-A.transpose) := by
-    ext (i | i) (j | j)
-    · rfl
-    · rfl
-    · rfl
-    · exact LieAlgebra.Orthogonal.typeD.apply_inr_inr X i j
-  -- Expose the local block abbreviations across the subtype's matrix coercion.
-  change (X : Matrix (Fin n ⊕ Fin n) (Fin n ⊕ Fin n) K) =
-    (∑ i : Fin n, ∑ j : Fin n, A i j • differenceRootMatrix (K := K) i j) +
-    (∑ i : Fin n, ∑ j : Fin n,
-      ((2 : K)⁻¹ * B i j) • sumRootMatrix (K := K) i j) +
-    (∑ i : Fin n, ∑ j : Fin n,
-      ((2 : K)⁻¹ * C i j) • negSumRootMatrix (K := K) i j)
-  rw [sum_smul_differenceRootMatrix A, (sum_half_smul_sumRootMatrices B hB).1,
-    (sum_half_smul_sumRootMatrices C hC).2, Matrix.fromBlocks_add, Matrix.fromBlocks_add]
-  simpa using hX
-
 private theorem lie_differenceRootGenerator_negSumRootGenerator
     {n : ℕ} (i j k : Fin n) (hjk : j ≠ k) :
     ⁅differenceRootGenerator (K := K) j i, negSumRootGenerator (K := K) j k⁆ =
       -negSumRootGenerator (K := K) i k := by
-  apply Subtype.ext
-  rw [LieSubalgebra.coe_bracket, val_differenceRootGenerator,
-    val_negSumRootGenerator, NegMemClass.coe_neg, val_negSumRootGenerator]
-  -- Reduce the equality of bundled orthogonal elements to the root matrices it contains.
-  change ⁅differenceRootMatrix (K := K) j i, negSumRootMatrix (K := K) j k⁆ =
-    -negSumRootMatrix (K := K) i k
-  rw [LieRing.of_associative_ring_bracket, differenceRootMatrix_def,
-    negSumRootMatrix_def, negSumRootMatrix_def, Matrix.fromBlocks_neg,
-    Matrix.fromBlocks_multiply, Matrix.fromBlocks_multiply]
-  ext (a | a) (b | b)
-  all_goals
-    simp [Matrix.fromBlocks, Matrix.transpose_single, Matrix.single_apply,
-      Matrix.mul_sub, Matrix.sub_mul, hjk, hjk.symm]
-  all_goals ring
+  simp [lie_differenceRootGenerator_negSumRootGenerator_eq_ite, hjk]
 
 private theorem reverseDifferenceRootGenerator_mem_lieSpan
     (n : ℕ) (hn : 4 ≤ n) (i j : Fin n) (hij : i < j) :
@@ -326,10 +192,10 @@ theorem lieSpan_rootGenerator_eq_top [NeZero (2 : K)] (n : ℕ) (hn : 4 ≤ n) :
       exact S.neg_mem (negSumRootGenerator_mem_lieSpan n hn j i hij)
   apply eq_top_iff.mpr
   intro X _
-  rw [decomposition n X]
+  rw [eq_sum_rootEntryBasis (NeZero.ne (2 : K)).isUnit.eq_zero_of_add_self_eq_zero X]
   exact S.add_mem (S.add_mem
-    (S.sum_mem fun i _ => S.sum_mem fun j _ => S.smul_mem _ (hdiff i j))
-    (S.sum_mem fun i _ => S.sum_mem fun j _ => S.smul_mem _ (hsum i j)))
-    (S.sum_mem fun i _ => S.sum_mem fun j _ => S.smul_mem _ (hneg i j))
+    (S.sum_mem fun p _ => S.smul_mem _ (hdiff p.1 p.2))
+    (S.sum_mem fun p _ => S.smul_mem _ (hsum p.val.1 p.val.2)))
+    (S.sum_mem fun p _ => S.smul_mem _ (hneg p.val.2 p.val.1))
 
 end TauCeti.TypeDStd

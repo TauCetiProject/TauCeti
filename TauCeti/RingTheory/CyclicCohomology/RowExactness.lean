@@ -121,10 +121,6 @@ theorem cyclicRowHomotopy_def :
       ∑ j ∈ Finset.range (n + 1), ∑ k ∈ Finset.range j, cyclicOperator R A M n ^ k :=
   (rfl)
 
-private theorem invOf_natCast_smul_nsmul {E : Type*} [AddCommMonoid E] [Module R E]
-    (x : E) : ⅟(n + 1 : R) • ((n + 1) • x) = x := by
-  simp [← Nat.cast_smul_eq_nsmul R]
-
 /-- The row homotopy splits `1 - λ` on the left, up to the cyclic projection. -/
 theorem one_sub_cyclicOperator_mul_cyclicRowHomotopy :
     (1 - cyclicOperator R A M n) * cyclicRowHomotopy R A M n =
@@ -132,7 +128,7 @@ theorem one_sub_cyclicOperator_mul_cyclicRowHomotopy :
   rw [cyclicRowHomotopy_def, mul_smul_comm, Finset.mul_sum]
   simp only [mul_neg_geom_sum, Finset.sum_sub_distrib, Finset.sum_const,
     Finset.card_range, ← cyclicNorm_def]
-  rw [smul_sub, invOf_natCast_smul_nsmul, cyclicAverage]
+  simp [smul_sub, ← Nat.cast_smul_eq_nsmul R, cyclicAverage]
 
 /-- The row homotopy splits `1 - λ` on the right, up to the cyclic projection. -/
 theorem cyclicRowHomotopy_mul_one_sub_cyclicOperator :
@@ -141,14 +137,14 @@ theorem cyclicRowHomotopy_mul_one_sub_cyclicOperator :
   rw [cyclicRowHomotopy_def, smul_mul_assoc, Finset.sum_mul]
   simp only [geom_sum_mul_neg, Finset.sum_sub_distrib, Finset.sum_const,
     Finset.card_range, ← cyclicNorm_def]
-  rw [smul_sub, invOf_natCast_smul_nsmul, cyclicAverage]
+  simp [smul_sub, ← Nat.cast_smul_eq_nsmul R, cyclicAverage]
 
 /-- Applying the row homotopy gives a preimage of `φ - P φ` under `1 - λ`. -/
 theorem one_sub_cyclicOperator_apply_cyclicRowHomotopy
     (φ : MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M) :
     (1 - cyclicOperator R A M n) (cyclicRowHomotopy R A M n φ) =
       φ - cyclicAverage R A M n φ := by
-  simpa only [Module.End.mul_apply, LinearMap.sub_apply, Module.End.one_apply] using
+  simpa only [mul_apply_eq_comp, LinearMap.sub_apply, one_apply_eq_self] using
     LinearMap.congr_fun one_sub_cyclicOperator_mul_cyclicRowHomotopy φ
 
 /-- The cyclic norm surjects onto the cyclic cochains. -/
@@ -174,8 +170,8 @@ theorem range_one_sub_cyclicOperator_eq_ker_cyclicNorm :
       LinearMap.ker (cyclicNorm R A M n) := by
   apply le_antisymm
   · rintro _ ⟨φ, rfl⟩
-    simp only [LinearMap.mem_ker, LinearMap.sub_apply, Module.End.one_apply, map_sub]
-    rw [← Module.End.mul_apply, cyclicNorm_mul_cyclicOperator, sub_self]
+    simp only [LinearMap.mem_ker, LinearMap.sub_apply, one_apply_eq_self, map_sub]
+    rw [← mul_apply_eq_comp, cyclicNorm_mul_cyclicOperator, sub_self]
   · intro φ hφ
     refine ⟨cyclicRowHomotopy R A M n φ, ?_⟩
     rw [one_sub_cyclicOperator_apply_cyclicRowHomotopy, cyclicAverage_apply,

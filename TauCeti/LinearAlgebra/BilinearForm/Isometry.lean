@@ -11,11 +11,14 @@ public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.BilinearForm.TensorProduct
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
+public import Mathlib.LinearAlgebra.SymplecticGroup
 public import TauCeti.Algebra.Group.Subgroup.Map
+public import TauCeti.Algebra.Module.Equiv.AutCongr
 public import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
-public import TauCeti.LinearAlgebra.GeneralLinearGroup.Congr
-public import TauCeti.LinearAlgebra.Matrix.IsometryMatrices
+public import TauCeti.LinearAlgebra.Matrix.IsometryMatrices.Basic
 import Mathlib.LinearAlgebra.Charpoly.BaseChange
+import TauCeti.LinearAlgebra.BilinearForm.BaseChange
+import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
 
 /-!
 # The isometry group of a bilinear form
@@ -78,6 +81,10 @@ Two statements are worth singling out.
   membership of a matrix in `Matrix.isometryMatrices` of the Gram matrix.
 * `TauCeti.BilinForm.IsIsometry.det_sq_eq_one`: `(det f) ^ 2 = 1` for an isometry of a form whose
   Gram determinant is a non-zero-divisor.
+* `TauCeti.BilinForm.IsIsometry.det_eq_one`: an isometry of a nondegenerate alternating form on a
+  finite-dimensional vector space has determinant `1`.
+* `LinearMap.BilinForm.Isometry.injective`: an isometric embedding of a left-separating form is
+  injective.
 * `TauCeti.BilinForm.IsIsometry.bijective`: over an integral domain, an isometry of a
   left-separating form on a finite free module is bijective.
 * `TauCeti.BilinForm.IsIsometry.map_orthogonal`: a surjective isometry carries `B`-orthogonal
@@ -90,7 +97,9 @@ Mathlib, the group, transport along a linear equivalence, the Gram-matrix criter
 change need only a `CommSemiring` and additive monoids, which is where every Mathlib ingredient
 they consume is stated; injectivity needs subtraction in `M`; the determinant results need `M` to
 be an additive group over a `CommRing`; the automatic invertibility of an isometry of a
-left-separating form needs an integral domain and a finite free module.
+left-separating form needs an integral domain and a finite free module; determinant one for an
+isometry of a nondegenerate alternating form needs a field, over which such a form has a symplectic
+basis.
 
 This is the bilinear-form counterpart of `TauCeti.QuadraticMap.orthogonalGroup` in
 `TauCeti/LinearAlgebra/QuadraticForm/OrthogonalGroup/Basic.lean`, whose API it follows; for a
@@ -100,6 +109,23 @@ isometry group of `Q.polarBilin`,
 -/
 
 public section
+
+/-! ### Isometric embeddings -/
+
+namespace LinearMap.BilinForm.Isometry
+
+variable {R M M' : Type*} [CommSemiring R] [AddCommGroup M] [Module R M] [AddCommGroup M']
+  [Module R M'] {B : LinearMap.BilinForm R M} {B' : LinearMap.BilinForm R M'}
+
+/-- An isometric embedding of a left-separating form is injective: a vector in its kernel pairs
+trivially with everything. -/
+theorem injective (ι : B →bᵢ B') (hB : B.SeparatingLeft) : Function.Injective ι := by
+  intro x y hxy
+  rw [← sub_eq_zero]
+  refine hB (x - y) fun z => ?_
+  rw [← ι.map_app, map_sub, hxy, sub_self, LinearMap.map_zero₂]
+
+end LinearMap.BilinForm.Isometry
 
 namespace TauCeti
 
@@ -290,15 +316,8 @@ variable (A : Type*) [CommSemiring A] [Algebra R A]
 /-- Base change along an `R`-algebra `A` carries an isometry of `B` to an isometry of the
 base-changed form. -/
 theorem IsIsometry.baseChange (hf : IsIsometry B f) :
-    IsIsometry (LinearMap.BilinForm.baseChange A B) (f.baseChange A) := by
-  rw [isIsometry_iff]
-  intro x y
-  induction x using TensorProduct.inductionOn with
-  | add x₁ x₂ h₁ h₂ => simp only [map_add, LinearMap.add_apply, h₁, h₂]
-  | tmul a m =>
-      induction y using TensorProduct.inductionOn with
-      | add y₁ y₂ h₁ h₂ => simp only [map_add, h₁, h₂]
-      | tmul a' m' => simp [hf.apply m m']
+    IsIsometry (LinearMap.BilinForm.baseChange A B) (f.baseChange A) :=
+  isIsometry_iff.mpr (LinearMap.BilinForm.baseChange_baseChange_baseChange (A := A) hf.apply)
 
 /-- Base change along an `R`-algebra `A` is a group homomorphism
 `Aut(M, B) →* Aut(A ⊗[R] M, B_A)`. For `R = ℤ` and `A = ℂ` this is the action of the arithmetic
@@ -328,11 +347,8 @@ variable {R M : Type*} [CommSemiring R] [AddCommGroup M] [Module R M]
 /-- An isometry of a left-separating form is injective: it cannot collapse a vector that pairs
 nontrivially with something. -/
 theorem IsIsometry.injective (hB : B.SeparatingLeft) (hf : IsIsometry B f) :
-    Function.Injective f := by
-  intro x y hxy
-  rw [← sub_eq_zero]
-  refine hB (x - y) fun z => ?_
-  rw [← hf.apply (x - y) z, map_sub, hxy, sub_self, LinearMap.map_zero₂]
+    Function.Injective f :=
+  LinearMap.BilinForm.Isometry.injective ⟨f, hf.apply⟩ hB
 
 end AddCommGroup
 
@@ -372,6 +388,15 @@ theorem isUnit_det (b : Basis ι R M)
     (hG : (LinearMap.BilinForm.toMatrix b B).det ∈ nonZeroDivisors R)
     (hf : IsIsometry B f) : IsUnit (LinearMap.det f) :=
   IsUnit.of_mul_eq_one _ (by rw [← sq]; exact hf.det_sq_eq_one b hG)
+
+/-- An isometry of a form whose matrix in some basis is the standard symplectic matrix
+`Matrix.J` has determinant `1`: its matrix in that basis is symplectic. -/
+theorem det_eq_one_of_toMatrix_eq_J {l : Type*} [Fintype l] [DecidableEq l]
+    (b : Basis (l ⊕ l) R M) (hb : LinearMap.BilinForm.toMatrix b B = Matrix.J l R)
+    (hf : IsIsometry B f) : LinearMap.det f = 1 := by
+  have h := (isIsometry_iff_toMatrix b).mp hf
+  rw [hb, ← SymplecticGroup.mem_iff'] at h
+  rw [← LinearMap.det_toMatrix b, SymplecticGroup.det_eq_one h]
 
 end IsIsometry
 
@@ -448,6 +473,21 @@ end IsIsometry
 end SeparatingLeft
 
 end CommRing
+
+section Field
+
+variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+  {B : BilinForm K V} {f : V →ₗ[K] V}
+
+/-- **Isometries of a nondegenerate alternating form have determinant one.** On a
+finite-dimensional space the form has a symplectic basis, in which the matrix of an isometry is
+symplectic. -/
+theorem IsIsometry.det_eq_one (hB : B.IsAlt) (hnd : B.Nondegenerate) (hf : IsIsometry B f) :
+    LinearMap.det f = 1 := by
+  obtain ⟨m, b, hb⟩ := hB.exists_basis_toMatrix_eq_J hnd
+  exact hf.det_eq_one_of_toMatrix_eq_J b hb
+
+end Field
 
 end BilinForm
 
@@ -580,7 +620,7 @@ private theorem map_specialIsometryGroup (B : BilinForm R M) (e : M ≃ₗ[R] M'
   rw [Subgroup.map_equiv_eq_comap_symm, MonoidHom.comap_ker]
   congr 1
   ext g
-  simpa [LinearEquiv.autCongr_symm_apply] using LinearMap.det_conj (g : M' →ₗ[R] M') e.symm
+  simpa [LinearEquiv.autCongr_apply] using LinearMap.det_conj (g : M' →ₗ[R] M') e.symm
 
 /-- Transporting a bilinear form along a linear equivalence transports its determinant-one
 isometry group. -/

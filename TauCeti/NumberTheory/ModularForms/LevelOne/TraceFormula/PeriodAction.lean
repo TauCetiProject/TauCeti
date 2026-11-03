@@ -53,14 +53,15 @@ theorem binaryFormAction_mk (hw : Even w) (A : TraceFormulaMatrix n) :
 noncomputable def periodAction (hw : Even w) :
     R[TraceFormulaMatrixModule n] →ₗ[R]
       Module.End R (homogeneousSubmodule (Fin 2) R w) :=
-  (Finsupp.lsum R fun x ↦ (LinearMap.id : R →ₗ[R] R).smulRight (binaryFormAction (R := R) hw x)) ∘ₗ
-    (MonoidAlgebra.coeffLinearEquiv R).toLinearMap
+  linearLift (fun A ↦ binaryFormRep R w (op A.1)) fun A ↦ by
+    rw [TraceFormulaMatrix.val_neg, binaryFormRep_op_neg_of_even hw]
 
 /-- A basis element acts by its coefficient times the matrix substitution. -/
 @[simp]
 theorem periodAction_single (hw : Even w) (x : TraceFormulaMatrixModule n) (c : R) :
     periodAction (R := R) hw (single x c) = c • binaryFormAction (R := R) hw x := by
-  simp [periodAction]
+  induction x using TraceFormulaMatrixModule.induction with
+  | h A => rw [periodAction, linearLift_single, binaryFormAction_mk]
 
 /-- Left multiplication of a determinant matrix precomposes its substitution action. -/
 @[simp]
@@ -74,7 +75,7 @@ theorem binaryFormAction_smul (hw : Even w) (g : SL(2, ℤ))
     rw [TraceFormulaMatrixModule.smul_mk, binaryFormAction_mk, binaryFormAction_mk]
     apply LinearMap.ext
     intro P
-    simpa only [FixedDetMatrices.smul_coe, Module.End.mul_apply] using
+    simpa only [FixedDetMatrices.smul_coe, mul_apply_eq_comp] using
       binaryFormRep_op_mul_apply (g : Matrix (Fin 2) (Fin 2) ℤ) A.1 P
 
 /-- Right multiplication of a determinant matrix postcomposes its substitution action. -/
@@ -89,7 +90,7 @@ theorem binaryFormAction_op_smul (hw : Even w) (g : SL(2, ℤ))
     rw [TraceFormulaMatrixModule.op_smul_mk, binaryFormAction_mk, binaryFormAction_mk]
     apply LinearMap.ext
     intro P
-    simpa only [val_traceFormulaMatrixRight, inv_inv, Module.End.mul_apply] using
+    simpa only [val_traceFormulaMatrixRight, inv_inv, mul_apply_eq_comp] using
       binaryFormRep_op_mul_apply A.1 (g : Matrix (Fin 2) (Fin 2) ℤ) P
 
 /-- The free matrix action turns left multiplication in the matrix module into

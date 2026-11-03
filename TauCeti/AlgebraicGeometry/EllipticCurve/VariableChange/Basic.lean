@@ -25,7 +25,8 @@ automorphism fixes it) and `map_smul_baseChange_eq` (the conjugate of an isomorp
 changes is again one). Comparing an isomorphism with its conjugate via the last of these is what
 produces the Galois cocycle used by the twist classification. A change of variables over an
 extension descends to the base field exactly when its four coefficients do
-(`VariableChange.mem_range_baseChange_iff`).
+(`VariableChange.mem_range_baseChange_iff`). Conjugation by algebra automorphisms is an action
+(`VariableChange.map_map_algEquiv`).
 
 That cocycle comparison lands on a product `C * [-1]`, whose four components are read off here as
 `mul_negVariableChange_u/_r/_s/_t` rather than by unfolding `VariableChange.mul_def` against the
@@ -35,6 +36,8 @@ by `C` (`negVariableChange_smul`).
 Similarly, the components of `C * D⁻¹`, the change of variables carrying `D • W` to `C • W`, are
 recorded as `VariableChange.mul_inv_u/_r/_s/_t`. A translation `x ↦ x + r`, `y ↦ y + t` leaves the
 discriminant and `c₄` alone (`variableChange_translate_Δ`, `variableChange_translate_c₄`).
+Every change of variables multiplies `c₄` and `Δ` by units, so it preserves the ideal
+`(c₄, Δ)` cutting out the cuspidal locus (`span_variableChange_c₄_Δ`).
 
 The negation is the nontrivial automorphism in the `Aut (E, O)`
 milestone of `TauCetiRoadmap/EllipticCurves/README.md` §Layer 1, proved in
@@ -61,6 +64,13 @@ FLT's field-level statements to a commutative ring.
 public section
 
 namespace WeierstrassCurve
+
+/-- Conjugating a change of variables by `σ` and then by `τ` is conjugating by `τ * σ`. -/
+lemma VariableChange.map_map_algEquiv {R L : Type*} [CommSemiring R] [CommRing L] [Algebra R L]
+    (C : VariableChange L) (σ τ : L ≃ₐ[R] L) :
+    (C.map (σ : L →+* L)).map (τ : L →+* L) = C.map ((τ * σ : L ≃ₐ[R] L) : L →+* L) := by
+  rw [VariableChange.map_map]
+  exact congrArg C.map (RingHom.ext fun x ↦ (AlgEquiv.mul_apply τ σ x).symm)
 
 variable {R : Type*} [CommRing R] (E : WeierstrassCurve R)
 
@@ -222,6 +232,14 @@ theorem variableChange_translate_c₄ : (VariableChange.mk 1 x 0 y • W).c₄ =
   simp [variableChange_c₄]
 
 end Translate
+
+/-- A change of variables multiplies `c₄` and `Δ` by units, so it preserves the ideal they
+generate: the cuspidal locus `V(c₄, Δ)` is stable under the coordinate-change group. -/
+theorem span_variableChange_c₄_Δ (W : WeierstrassCurve R) (C : VariableChange R) :
+    Ideal.span {(C • W).c₄, (C • W).Δ} = Ideal.span {W.c₄, W.Δ} := by
+  rw [variableChange_c₄, variableChange_Δ, Ideal.span_insert, Ideal.span_insert,
+    Ideal.span_singleton_mul_left_unit ((C.u⁻¹).isUnit.pow 4),
+    Ideal.span_singleton_mul_left_unit ((C.u⁻¹).isUnit.pow 12)]
 
 section BaseChange
 

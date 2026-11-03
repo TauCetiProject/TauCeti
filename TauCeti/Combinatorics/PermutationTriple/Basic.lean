@@ -10,6 +10,7 @@ public import Mathlib.Data.Fintype.Perm
 public import Mathlib.SetTheory.Cardinal.Finite
 public import Mathlib.Tactic.Group
 public import TauCeti.GroupTheory.Perm.Centralizer
+import TauCeti.GroupTheory.Perm.Basic
 
 /-!
 # Permutation triples
@@ -254,6 +255,18 @@ def equivOppositeConvention (n : ℕ) : PermutationTriple n ≃
 @[simp] theorem equivOppositeConvention_apply_coe :
     (equivOppositeConvention n t).1 = (t.σ0⁻¹, t.σ1⁻¹, t.σinf⁻¹) := (rfl)
 
+@[simp] theorem equivOppositeConvention_symm_apply_σ0
+    (p : {q : Perm (Fin n) × Perm (Fin n) × Perm (Fin n) // q.1 * q.2.1 * q.2.2 = 1}) :
+    ((equivOppositeConvention n).symm p).σ0 = p.1.1⁻¹ := (rfl)
+
+@[simp] theorem equivOppositeConvention_symm_apply_σ1
+    (p : {q : Perm (Fin n) × Perm (Fin n) × Perm (Fin n) // q.1 * q.2.1 * q.2.2 = 1}) :
+    ((equivOppositeConvention n).symm p).σ1 = p.1.2.1⁻¹ := (rfl)
+
+@[simp] theorem equivOppositeConvention_symm_apply_σinf
+    (p : {q : Perm (Fin n) × Perm (Fin n) × Perm (Fin n) // q.1 * q.2.1 * q.2.2 = 1}) :
+    ((equivOppositeConvention n).symm p).σinf = p.1.2.2⁻¹ := (rfl)
+
 /-! ### Relabeling the sheets -/
 
 /-- Relabeling the sheets by `τ` conjugates all three components simultaneously. -/
@@ -383,14 +396,7 @@ theorem apply_eq_of_mem_monodromyGroup {β : Type*} {f : Fin n → β}
     (h0 : ∀ x, f (t.σ0 x) = f x) (h1 : ∀ x, f (t.σ1 x) = f x) {g : Perm (Fin n)}
     (hg : g ∈ t.monodromyGroup) (x : Fin n) : f (g x) = f x := by
   rw [← closure_pair_eq_monodromyGroup] at hg
-  induction hg using Subgroup.closure_induction generalizing x with
-  | mem g hg =>
-    rcases hg with rfl | rfl
-    · exact h0 x
-    · exact h1 x
-  | one => rfl
-  | mul g g' _ _ ih ih' => rw [Perm.mul_apply, ih, ih']
-  | inv g _ ih => rw [← ih (g⁻¹ x), Perm.inv_def, apply_symm_apply]
+  exact apply_eq_of_mem_closure (by rintro g (rfl | rfl) <;> assumption) hg x
 
 /-- The monodromy group of a triple built from the images of two group elements is the image
 of the subgroup they generate. -/

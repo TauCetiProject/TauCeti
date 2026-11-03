@@ -10,7 +10,11 @@ public import Mathlib.Algebra.Ring.Int.Units
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.Orientation
 public import Mathlib.LinearAlgebra.SpecialLinearGroup
+public import Mathlib.RingTheory.QuotSMulTop
+public import TauCeti.LinearAlgebra.BilinearForm.Isometry
 public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Basic
+import TauCeti.Algebra.Module.Torsion.Int
+import TauCeti.LinearAlgebra.Determinant.Basic
 
 /-!
 # The isometry group of an integral lattice
@@ -23,6 +27,13 @@ unit of `ℤ`, hence `±1`. Its kernel is the **special isometry group** `SO(L)`
 index at most two. Negation is a self-isometry of every lattice, the element `-1` of `O(L)`, and
 its determinant is `(-1) ^ rank L`; so `SO(L)` is a proper subgroup in odd rank.
 
+A self-isometry is the same as a rational isometry of the ambient form which, together with its
+inverse, preserves the carrier; `toIsometryGroup` and `ofIsometryGroup` pass between the two. The
+self-isometries acting trivially on the finite quotient `L / d L` form the principal congruence
+subgroup of level `d`, which has finite index for `d ≠ 0`. Conjugation by an isometry `L ≅ M`
+identifies `O(L)` with `O(M)`, preserving determinants. In rank at most one `SO(L)` is trivial,
+and in rank one `O(L) = {±1}`.
+
 ## Main definitions
 
 * The `Group` instance on `Isometry L L`: composition, identity and inversion of self-isometries.
@@ -31,10 +42,19 @@ its determinant is `(-1) ^ rank L`; so `SO(L)` is a proper subgroup in odd rank.
 * `TauCeti.IntegralLattice.Isometry.det`: the determinant `O(L) →* ℤˣ`.
 * `TauCeti.IntegralLattice.specialOrthogonalGroup`: the subgroup `SO(L)` of determinant one.
 * `TauCeti.IntegralLattice.Isometry.neg`: negation, the element `-1` of `O(L)`.
+* `TauCeti.IntegralLattice.Isometry.unitsSMul`: multiplication by a unit `u` of `ℤ`, so the
+  identity for `u = 1` and negation for `u = -1`.
 * `TauCeti.IntegralLattice.specialOrthogonalGroup.toSpecialLinearGroup`: restriction to the
   carrier as a group homomorphism from `SO(L)` to the special linear group of the carrier.
 * `TauCeti.IntegralLattice.specialOrthogonalGroup.toMatrix`: the matrix of a proper isometry in a
   finite carrier basis, as a group homomorphism into `Matrix.SpecialLinearGroup ι ℤ`.
+* `TauCeti.IntegralLattice.Isometry.toIsometryGroup`: a self-isometry as an element of the isometry
+  group of the rational form, with partial inverse
+  `TauCeti.IntegralLattice.Isometry.ofIsometryGroup`.
+* `TauCeti.IntegralLattice.Isometry.reductionHom`: the action of `O(L)` on `L / d L`, and
+  `TauCeti.IntegralLattice.Isometry.congruenceSubgroup`: its kernel.
+* `TauCeti.IntegralLattice.Isometry.conjMulEquiv`: conjugation by an isometry `L ≅ M`, as a group
+  isomorphism `O(L) ≃* O(M)`.
 
 ## Main results
 
@@ -47,6 +67,18 @@ its determinant is `(-1) ^ rank L`; so `SO(L)` is a proper subgroup in odd rank.
 * `TauCeti.IntegralLattice.Isometry.det_neg`: the determinant of negation is `(-1) ^ rank L`.
 * `TauCeti.IntegralLattice.specialOrthogonalGroup.toMatrix_injective`: a proper isometry is
   determined by its matrix in a finite carrier basis.
+* `TauCeti.IntegralLattice.Isometry.mem_congruenceSubgroup_iff`: an isometry lies in the
+  congruence subgroup of level `d` when it moves every lattice vector by `d` times a lattice
+  vector, and `TauCeti.IntegralLattice.Isometry.finiteIndex_congruenceSubgroup`: for `d ≠ 0` this
+  subgroup has finite index.
+* `TauCeti.IntegralLattice.Isometry.mem_range_toIsometryGroup_iff`: a rational isometry comes from
+  a self-isometry exactly when it preserves membership in the carrier.
+* `TauCeti.IntegralLattice.Isometry.natCard_isometry_eq`: isometric lattices have isometry groups
+  of the same order.
+* `TauCeti.IntegralLattice.Isometry.det_conjMulEquiv` and
+  `TauCeti.IntegralLattice.Isometry.natCard_specialOrthogonalGroup_eq`: conjugation preserves the
+  determinant, so isometric lattices have special isometry groups of the same order.
+* `TauCeti.IntegralLattice.natCard_isometry_of_finrank_eq_one`: in rank one `O(L)` has order two.
 
 ## References
 
@@ -175,6 +207,54 @@ theorem det_neg (L : IntegralLattice V) : det L (neg L) = (-1) ^ Module.finrank 
     simp
   rw [h, LinearMap.det_smul, LinearMap.det_id, mul_one]
 
+/-- Multiplication by a unit `u` of `ℤ`, that is by `±1`, is a self-isometry of every integral
+lattice. -/
+def unitsSMul (u : ℤˣ) (L : IntegralLattice V) : Isometry L L where
+  toIsometryEquiv :=
+    { toFun x := (u : ℤ) • x
+      invFun x := (u : ℤ) • x
+      map_add' := smul_add _
+      map_smul' c x := smul_comm _ c x
+      left_inv x := by simp [smul_smul]
+      right_inv x := by simp [smul_smul]
+      map_app' x y := by
+        simp only [map_zsmul, LinearMap.smul_apply, smul_smul, ← Units.val_mul,
+          Int.units_mul_self, Units.val_one, one_smul] }
+  map_carrier := by
+    ext x
+    simp only [Submodule.mem_map]
+    refine ⟨?_, fun hx ↦ ⟨(u : ℤ) • x, zsmul_mem hx _, by simp [smul_smul]⟩⟩
+    rintro ⟨y, hy, rfl⟩
+    exact zsmul_mem hy _
+
+@[simp]
+theorem unitsSMul_apply (u : ℤˣ) (L : IntegralLattice V) (x : V) :
+    unitsSMul u L x = (u : ℤ) • x := (rfl)
+
+/-- Multiplication by the unit `1` is the identity of `O(L)`. -/
+@[simp]
+theorem unitsSMul_one (L : IntegralLattice V) : unitsSMul 1 L = 1 := by
+  ext x
+  simp
+
+/-- Multiplication by the unit `-1` is negation. -/
+@[simp]
+theorem unitsSMul_neg_one (L : IntegralLattice V) : unitsSMul (-1) L = neg L := by
+  ext x
+  simp
+
+/-- Multiplication by a product of units is the product in `O(L)` of the multiplications. -/
+theorem unitsSMul_mul (u v : ℤˣ) (L : IntegralLattice V) :
+    unitsSMul (u * v) L = unitsSMul u L * unitsSMul v L := by
+  ext x
+  simp [mul_smul]
+
+/-- Multiplication by a unit of `ℤ` is an involution, since `u * u = 1`. -/
+@[simp]
+theorem symm_unitsSMul (u : ℤˣ) (L : IntegralLattice V) :
+    (unitsSMul u L).symm = unitsSMul u L := by
+  rw [← inv_def, inv_eq_iff_mul_eq_one, ← unitsSMul_mul, Int.units_mul_self, unitsSMul_one]
+
 end Isometry
 
 /-- The special isometry group `SO(L)`: the subgroup of the isometry group `O(L) = Isometry L L`
@@ -275,6 +355,206 @@ theorem toMatrix_injective (b : Module.Basis ι ℤ L) : Function.Injective (toM
   (Matrix.SpecialLinearGroup.toLin_equiv b).symm.injective.comp (toSpecialLinearGroup_injective L)
 
 end specialOrthogonalGroup
+
+/-- In rank at most one `SO(L)` is trivial, since the determinant kernel of a free module of
+rank at most one is trivial. -/
+theorem specialOrthogonalGroup_eq_bot_of_finrank_le_one (h : Module.finrank ℤ L ≤ 1) :
+    specialOrthogonalGroup L = ⊥ := by
+  refine (Subgroup.eq_bot_iff_forall _).mpr fun g hg ↦ Isometry.carrierEquivHom_injective L ?_
+  have hk : g.carrierEquiv ∈ (LinearEquiv.det (R := ℤ) (M := L)).ker := by
+    rw [MonoidHom.mem_ker, ← Isometry.det_apply]
+    exact mem_specialOrthogonalGroup_iff.mp hg
+  rw [LinearEquiv.det_ker_eq_bot_of_finrank_le_one h, Subgroup.mem_bot] at hk
+  rw [map_one, Isometry.carrierEquivHom_apply, hk]
+
+/-- In rank one the isometry group is `{±1}`, of order two. -/
+theorem natCard_isometry_of_finrank_eq_one (h : Module.finrank ℤ L = 1) :
+    Nat.card (Isometry L L) = 2 := by
+  have hi : (specialOrthogonalGroup L).index = 2 :=
+    (index_specialOrthogonalGroup_eq_two_iff L).mpr ⟨Isometry.neg L, by
+      rw [Isometry.det_neg, h, pow_one]⟩
+  rw [← (specialOrthogonalGroup L).card_mul_index, hi,
+    specialOrthogonalGroup_eq_bot_of_finrank_le_one h.le, Subgroup.card_bot, one_mul]
+
+namespace Isometry
+
+open LinearMap (BilinForm)
+open TauCeti.BilinForm
+open scoped Pointwise
+
+/-! ### Rational isometries preserving the carrier -/
+
+/-- A self-isometry of a lattice, as an element of the isometry group of its rational form. -/
+noncomputable def toIsometryGroup (L : IntegralLattice V) :
+    Isometry L L →* isometryGroup L.form where
+  toFun g := (isometryGroupEquivIsometryEquiv L.form).symm g.toIsometryEquiv
+  map_one' := Subtype.ext (LinearEquiv.ext fun x ↦ by simp)
+  map_mul' g h := Subtype.ext (LinearEquiv.ext fun x ↦ by simp)
+
+@[simp]
+theorem toIsometryGroup_apply (g : Isometry L L) (x : V) :
+    (toIsometryGroup L g : V ≃ₗ[ℚ] V) x = g x := by
+  simp [toIsometryGroup]
+
+theorem toIsometryGroup_injective (L : IntegralLattice V) :
+    Function.Injective (toIsometryGroup L) := fun g h hgh ↦
+  Isometry.ext fun x ↦ by simpa using LinearEquiv.congr_fun (congrArg Subtype.val hgh) x
+
+/-- A rational isometry of `L` which, together with its inverse, maps the carrier into itself is an
+isometry of `L`. -/
+noncomputable def ofIsometryGroup (G : isometryGroup L.form)
+    (h : ∀ x ∈ L.carrier, (G : V ≃ₗ[ℚ] V) x ∈ L.carrier)
+    (h' : ∀ x ∈ L.carrier, (G : V ≃ₗ[ℚ] V).symm x ∈ L.carrier) : Isometry L L where
+  toIsometryEquiv := isometryGroupEquivIsometryEquiv L.form G
+  map_carrier := by
+    apply le_antisymm
+    · rintro _ ⟨x, hx, rfl⟩
+      simpa using h x hx
+    · intro x hx
+      exact ⟨_, h' x hx, by simp⟩
+
+@[simp]
+theorem ofIsometryGroup_apply (G : isometryGroup L.form) (h h') (x : V) :
+    ofIsometryGroup G h h' x = (G : V ≃ₗ[ℚ] V) x := by
+  simp [ofIsometryGroup, ← Isometry.coe_toIsometryEquiv]
+
+@[simp]
+theorem toIsometryGroup_ofIsometryGroup (G : isometryGroup L.form) (h h') :
+    toIsometryGroup L (ofIsometryGroup G h h') = G :=
+  Subtype.ext (LinearEquiv.ext fun x ↦ by simp)
+
+@[simp]
+theorem ofIsometryGroup_toIsometryGroup (g : Isometry L L) (h h') :
+    ofIsometryGroup (toIsometryGroup L g) h h' = g :=
+  Isometry.ext fun x ↦ by simp
+
+/-- A rational isometry of `L` comes from a self-isometry of `L` exactly when it preserves
+membership in the carrier. -/
+theorem mem_range_toIsometryGroup_iff {G : isometryGroup L.form} :
+    G ∈ (toIsometryGroup L).range ↔ ∀ x, (G : V ≃ₗ[ℚ] V) x ∈ L.carrier ↔ x ∈ L.carrier := by
+  refine ⟨?_, fun h ↦ ⟨ofIsometryGroup G (fun x hx ↦ (h x).mpr hx) fun x hx ↦ (h _).mp ?_,
+    toIsometryGroup_ofIsometryGroup G _ _⟩⟩
+  · rintro ⟨g, rfl⟩ x
+    simp
+  · rwa [LinearEquiv.apply_symm_apply]
+
+/-- A subgroup of rational isometries of `L` each mapping the carrier into itself consists of
+self-isometries of `L`. -/
+theorem le_range_toIsometryGroup {H : Subgroup (isometryGroup L.form)}
+    (hH : ∀ G ∈ H, ∀ x ∈ L.carrier, (G : V ≃ₗ[ℚ] V) x ∈ L.carrier) :
+    H ≤ (toIsometryGroup L).range := fun G hG ↦
+  mem_range_toIsometryGroup_iff.mpr fun x ↦ ⟨fun hx ↦ by
+    simpa using hH _ (inv_mem hG) _ hx, hH G hG x⟩
+
+/-! ### Congruence subgroups -/
+
+/-- The action of a self-isometry of `L` on the quotient `L / d L` of its carrier. -/
+noncomputable def reductionHom (L : IntegralLattice V) (d : ℤ) :
+    Isometry L L →* Module.End ℤ (QuotSMulTop d L) where
+  toFun g := QuotSMulTop.map d (g.carrierEquiv : L →ₗ[ℤ] L)
+  map_one' := by
+    rw [one_def, carrierEquiv_refl]
+    exact QuotSMulTop.map_id d L
+  map_mul' g h := by
+    rw [mul_def, carrierEquiv_trans, LinearEquiv.coe_trans, QuotSMulTop.map_comp,
+      Module.End.mul_eq_comp]
+
+@[simp]
+theorem reductionHom_apply_mk (d : ℤ) (g : Isometry L L) (x : L) :
+    reductionHom L d g (Submodule.Quotient.mk x) = Submodule.Quotient.mk (g.carrierEquiv x) :=
+  QuotSMulTop.map_apply_mk ..
+
+/-- The principal congruence subgroup of level `d`: the self-isometries of `L` acting trivially
+on `L / d L`. -/
+noncomputable def congruenceSubgroup (L : IntegralLattice V) (d : ℤ) : Subgroup (Isometry L L) :=
+  (reductionHom L d).ker
+
+/-- An isometry lies in the congruence subgroup of level `d` exactly when it moves every lattice
+vector by `d` times a lattice vector. -/
+theorem mem_congruenceSubgroup_iff {d : ℤ} {g : Isometry L L} :
+    g ∈ congruenceSubgroup L d ↔ ∀ x : L, ∃ y : L, g.carrierEquiv x - x = d • y := by
+  rw [congruenceSubgroup, MonoidHom.mem_ker]
+  refine ⟨fun hg x ↦ ?_, fun hg ↦ Submodule.linearMap_qext _ (LinearMap.ext fun x ↦ ?_)⟩
+  · have h := LinearMap.congr_fun hg (Submodule.Quotient.mk x)
+    rw [one_apply_eq_self, reductionHom_apply_mk, Submodule.Quotient.eq,
+      Submodule.mem_smul_pointwise_iff_exists] at h
+    obtain ⟨y, -, hy⟩ := h
+    exact ⟨y, hy.symm⟩
+  · obtain ⟨y, hy⟩ := hg x
+    rw [LinearMap.comp_apply, LinearMap.comp_apply, Submodule.mkQ_apply, one_apply_eq_self,
+      reductionHom_apply_mk, Submodule.Quotient.eq, Submodule.mem_smul_pointwise_iff_exists]
+    exact ⟨y, Submodule.mem_top, hy.symm⟩
+
+/-- The congruence subgroups of levels `-d` and `d` coincide. -/
+@[simp]
+theorem congruenceSubgroup_neg (L : IntegralLattice V) (d : ℤ) :
+    congruenceSubgroup L (-d) = congruenceSubgroup L d := by
+  ext g
+  simp only [mem_congruenceSubgroup_iff]
+  exact forall_congr' fun x ↦ ⟨fun ⟨y, hy⟩ ↦ ⟨-y, by rw [hy, neg_smul, smul_neg]⟩,
+    fun ⟨y, hy⟩ ↦ ⟨-y, by rw [hy, neg_smul_neg]⟩⟩
+
+/-- For a positive level `d`, the congruence subgroup of level `d` has finite index in `O(L)`. -/
+instance (L : IntegralLattice V) (d : ℕ) [NeZero d] : (congruenceSubgroup L d).FiniteIndex := by
+  have : Finite (Module.End ℤ (QuotSMulTop (d : ℤ) L)) :=
+    Finite.of_injective _ DFunLike.coe_injective
+  rw [congruenceSubgroup, ← MonoidHom.ker_toHomUnits]
+  infer_instance
+
+/-- For `d ≠ 0`, the congruence subgroup of level `d` has finite index in `O(L)`. -/
+theorem finiteIndex_congruenceSubgroup (L : IntegralLattice V) {d : ℤ} (hd : d ≠ 0) :
+    (congruenceSubgroup L d).FiniteIndex := by
+  have : NeZero d.natAbs := ⟨Int.natAbs_ne_zero.mpr hd⟩
+  rcases Int.natAbs_eq d with h | h <;> rw [h]
+  · infer_instance
+  · rw [congruenceSubgroup_neg]
+    infer_instance
+
+/-! ### Conjugation -/
+
+variable {W : Type*} [AddCommGroup W] [Module ℚ W] {M : IntegralLattice W}
+
+/-- Conjugation by an isometry `e : L ≅ M` identifies the isometry groups `O(L)` and `O(M)`:
+a self-isometry `g` of `L` goes to `e ∘ g ∘ e⁻¹`. -/
+def conjMulEquiv (e : Isometry L M) : Isometry L L ≃* Isometry M M where
+  toFun g := (e.symm.trans g).trans e
+  invFun g := (e.trans g).trans e.symm
+  left_inv g := Isometry.ext fun x ↦ by simp [trans_apply, symm_apply_apply]
+  right_inv g := Isometry.ext fun x ↦ by simp [trans_apply, apply_symm_apply]
+  map_mul' f g := Isometry.ext fun x ↦ by simp [mul_apply, trans_apply, symm_apply_apply]
+
+@[simp]
+theorem conjMulEquiv_apply (e : Isometry L M) (g : Isometry L L) (y : W) :
+    e.conjMulEquiv g y = e (g (e.symm y)) := by
+  simp [conjMulEquiv, trans_apply]
+
+@[simp]
+theorem conjMulEquiv_symm_apply (e : Isometry L M) (g : Isometry M M) (x : V) :
+    e.conjMulEquiv.symm g x = e.symm (g (e x)) := by
+  simp [conjMulEquiv, trans_apply]
+
+/-- Conjugation by an isometry preserves the determinant. -/
+@[simp]
+theorem det_conjMulEquiv (e : Isometry L M) (g : Isometry L L) :
+    det M (e.conjMulEquiv g) = det L g := by
+  have h : (e.conjMulEquiv g).carrierEquiv =
+      (e.carrierEquiv.symm.trans g.carrierEquiv).trans e.carrierEquiv := by
+    ext x
+    simp [coe_carrierEquiv_apply, coe_carrierEquiv_symm_apply]
+  rw [det_apply, det_apply, h, LinearEquiv.det_conj]
+
+/-- Isometric lattices have isometry groups of the same cardinality. -/
+theorem natCard_isometry_eq (e : Isometry L M) :
+    Nat.card (Isometry L L) = Nat.card (Isometry M M) :=
+  Nat.card_congr e.conjMulEquiv.toEquiv
+
+/-- Isometric lattices have special isometry groups of the same cardinality. -/
+theorem natCard_specialOrthogonalGroup_eq (e : Isometry L M) :
+    Nat.card (specialOrthogonalGroup L) = Nat.card (specialOrthogonalGroup M) :=
+  Nat.card_congr <| e.conjMulEquiv.toEquiv.subtypeEquiv fun g ↦ by
+    simp [mem_specialOrthogonalGroup_iff]
+
+end Isometry
 
 end IntegralLattice
 

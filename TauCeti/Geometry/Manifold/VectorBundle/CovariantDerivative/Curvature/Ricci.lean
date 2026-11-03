@@ -31,7 +31,8 @@ orthonormal basis. The constant-curvature calculation fixes the sign convention:
 The calculation is stated for any bilinear form in place of `κ g`, and then specialised
 to `κ g`.
 
-The Ricci coefficients of a smooth connection in a chart-local frame are smooth on the chart.
+The Ricci coefficients of a smooth connection in a chart-local frame are smooth on the chart, so
+the Ricci tensor pairs vector fields differentiable at a point to a function differentiable there.
 
 The convention follows J. M. Lee, *Introduction to Riemannian Manifolds*, 2nd ed.,
 Springer GTM 176 (2018), Chapter 7. The curvature tensor being contracted is
@@ -213,5 +214,37 @@ theorem contMDiffOn_ricciTensor_chartLocalFrame (a : M) (i j : Fin (Module.finra
   refine Finset.sum_congr rfl fun k _ ↦ ?_
   rw [e.localFrameCoeff_apply_of_mem_baseSet b hy (cov.curvatureOperator (X k) (X i) (X j)) k,
     ← curvatureTensor_apply cov y (hX k) (hX i) (hX j), hXy, hXy, hXy, hb]
+
+open Riemannian.Tensor in
+/-- The Ricci tensor of a smooth connection pairs two vector fields differentiable at `x` to a
+function differentiable at `x`. No metric is involved. -/
+theorem mdifferentiableAt_ricciTensor_apply {σ τ : Π x : M, TangentSpace I x} {x : M}
+    (hσ : MDiffAt (T% σ) x) (hτ : MDiffAt (T% τ) x) :
+    MDiffAt (fun y ↦ cov.ricciTensor y (σ y) (τ y)) x := by
+  let e := trivializationAt E (TangentSpace I : M → Type _) x
+  let b := Module.finBasis ℝ E
+  have hx : x ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' x
+  have hfin {f : Fin (Module.finrank ℝ E) → M → ℝ} (hf : ∀ i, MDiffAt (f i) x) :
+      MDiffAt (fun y ↦ ∑ i, f i y) x := by
+    simpa only [Finset.sum_fn] using MDifferentiableAt.sum (t := Finset.univ) fun i _ ↦ hf i
+  -- Expand both fields in the chart-local frame at `x`, whose Ricci coefficients are smooth.
+  have hsum : MDiffAt (fun y ↦ ∑ i, ∑ j, e.localFrameCoeff I b i y (σ y) *
+      e.localFrameCoeff I b j y (τ y) *
+        cov.ricciTensor y (chartLocalFrame (I := I) x i y) (chartLocalFrame (I := I) x j y)) x :=
+    hfin fun i ↦ hfin fun j ↦
+      ((mdifferentiableAt_localFrameCoeff b hx hσ i).mul
+        (mdifferentiableAt_localFrameCoeff b hx hτ j)).mul
+      (((cov.contMDiffOn_ricciTensor_chartLocalFrame x i j).contMDiffAt
+        ((chartAt H x).open_source.mem_nhds (mem_chart_source H x))).mdifferentiableAt
+          (by simp))
+  refine hsum.congr_of_eventuallyEq ?_
+  filter_upwards [e.eventually_eq_localFrame_sum_coeff_smul (I := I) b (s := σ) hx,
+    e.eventually_eq_localFrame_sum_coeff_smul (I := I) b (s := τ) hx] with y hσy hτy
+  conv_lhs => rw [hσy, hτy]
+  simp only [map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply, smul_eq_mul,
+    chartLocalFrame_def, Finset.mul_sum]
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
+  ring
 
 end CovariantDerivative

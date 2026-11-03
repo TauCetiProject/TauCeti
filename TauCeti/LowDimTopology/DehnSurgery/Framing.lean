@@ -28,8 +28,11 @@ the knot exterior, this frames the boundary torus of the exterior by `Φ`
 (`TauCeti.IsSolidTorusNeighborhood.framedBoundaryTorus`). Its meridian is the boundary
 `t ↦ Φ (exp (2πit), 1)` of a disc fibre of the solid torus, and its longitude is the push-off
 `t ↦ Φ (1, exp (2πit))` of the knot. This is the framed torus along which a Dehn filling of the
-exterior is specified by a slope. The longitude is the one determined by `Φ`; it is the preferred
-(Seifert) longitude only for a suitable choice of `Φ`, which is not addressed here.
+exterior is specified by a slope. The longitude determined by `Φ` is generally not the preferred
+(Seifert) longitude. Under vanishing first and second integral homology of the ambient space,
+`TauCeti.IsSolidTorusNeighborhood.preferredFramedBoundaryTorus` in
+`TauCeti/LowDimTopology/DehnSurgery/SeifertFraming.lean` constructs the preferred framing
+`(μ, λ - n · μ)`, where `n` is the framing number of `Φ`.
 
 ## Main definitions
 
@@ -60,6 +63,8 @@ public section
 
 noncomputable section
 
+open ContinuousMap (singularHomologyMap singularHomologyMap_torusClass)
+
 open CategoryTheory unitInterval TauCeti.HurewiczOne
 
 namespace TauCeti
@@ -83,15 +88,22 @@ def ofHomeomorph (e : Circle × Circle ≃ₜ Y) : FramedBoundaryTorus where
 variable (e : Circle × Circle ≃ₜ Y)
 
 /-- The homology class of the `(p, q)` curve `t ↦ e (exp (2πipt), exp (2πiqt))` on the torus
-framed by `e`. -/
+framed by `e`: the image under `e` of the class `TauCeti.torusClass p q` of the `(p, q)` curve of
+`S¹ × S¹`. -/
 def torusCurveClass (p q : ℤ) : (ofHomeomorph e).H :=
-  H₁AddEquivHomology (TopCat.of Y) (loopClass ((torusCurve p q).map e.continuous))
+  singularHomologyMap ℤ 1 (e : C(Circle × Circle, Y)) (torusClass p q)
+
+/-- The class of the `(p, q)` curve on the torus framed by `e` is the image under `e` of the class
+of the `(p, q)` curve of `S¹ × S¹`. -/
+theorem torusCurveClass_eq_singularHomologyMap (p q : ℤ) :
+    torusCurveClass e p q = singularHomologyMap ℤ 1 (e : C(Circle × Circle, Y)) (torusClass p q) :=
+  (rfl)
 
 /-- The class of the `(p, q)` curve is its Hurewicz class in `H₁(Y; ℤ)`. -/
 theorem torusCurveClass_def (p q : ℤ) :
     torusCurveClass e p q =
       H₁AddEquivHomology (TopCat.of Y) (loopClass ((torusCurve p q).map e.continuous)) :=
-  (rfl)
+  singularHomologyMap_torusClass (e : C(Circle × Circle, Y)) p q
 
 /-- **The coordinates of the `(p, q)` curve.** For the torus framed by a parametrization `e`, the
 homology class of the curve `t ↦ e (exp (2πipt), exp (2πiqt))` has `(μ, λ)`-coordinates
@@ -102,7 +114,8 @@ theorem coord_torusCurveClass (p q : ℤ) :
   have hE : (ofHomeomorph e).basis.equivFun (torusCurveClass e p q) = ![p, q] :=
     (congrArg (· (torusCurveClass e p q))
       (Module.Basis.equivFun_ofEquivFun (circleProdFirstHomologyEquiv e))).trans
-      (circleProdFirstHomologyEquiv_torusCurve e p q)
+      ((congrArg (circleProdFirstHomologyEquiv e) (torusCurveClass_def e p q)).trans
+        (circleProdFirstHomologyEquiv_torusCurve e p q))
   rw [← LinearEquiv.eq_symm_apply, coord_symm_apply]
   apply (ofHomeomorph e).basis.equivFun.injective
   rw [hE]

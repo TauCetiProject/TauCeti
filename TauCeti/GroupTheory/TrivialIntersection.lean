@@ -115,6 +115,10 @@ equivalent statement `H ⊓ g H g⁻¹ = ⊥` about the subgroup lattice. -/
 def IsTISubgroup (H : Subgroup G) : Prop :=
   ∀ ⦃g x : G⦄, g ∉ H → x ∈ H → g * x * g⁻¹ ∈ H → x = 1
 
+/-- The defining elementwise condition for a trivial-intersection subgroup. -/
+theorem isTISubgroup_iff :
+    IsTISubgroup H ↔ ∀ ⦃g x : G⦄, g ∉ H → x ∈ H → g * x * g⁻¹ ∈ H → x = 1 := Iff.rfl
+
 namespace IsTISubgroup
 
 /-- The whole group is malnormal. -/

@@ -9,6 +9,7 @@ public import Mathlib.NumberTheory.LocalField.Basic
 public import Mathlib.GroupTheory.Index
 public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
 public import Mathlib.Topology.Algebra.Group.Units
+public import TauCeti.NumberTheory.LocalField.NormalizedValuation
 import Mathlib.Topology.Algebra.Group.Pointwise
 
 /-!
@@ -50,6 +51,9 @@ action on a finite extension, and its behaviour under a field embedding.
   and `TauCeti.mem_unitFiltration_iff_valuation_sub_one_le`: the valuation form of membership, an
   inequality on `x - 1` measured against a uniformizer. At positive depth the inequality alone
   already forces `x` to be a unit of `𝒪[K]`.
+* `TauCeti.mem_unitFiltration_iff_le_log_normalizedValuationWithZero_sub_one`: for `x ≠ 1` and
+  `i ≠ 0`, membership in `U(K,i)` is the inequality `i ≤ v_K(x - 1)` on the normalized additive
+  valuation.
 * `TauCeti.unitFiltration_zero` and `TauCeti.unitFiltration_one`: the two shallow steps are
   Mathlib's `ValuationSubring.unitGroup` and `ValuationSubring.principalUnitGroup`.
 * `TauCeti.unitFiltrationGradedZeroEquivResidueFieldUnits`: reduction identifies the
@@ -186,6 +190,21 @@ theorem mem_unitFiltration_iff_valuation_sub_one_le {i : ℕ} (hi : i ≠ 0) {π
     x ∈ unitFiltration K i ↔ valuation K ((x : K) - 1) ≤ valuation K (π : K) ^ i := by
   obtain ⟨j, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hi
   rw [mem_unitFiltration_succ_valuation j x π hπ, map_pow]
+
+/-- For `x ≠ 1` and a positive depth `i`, membership of `x` in the unit filtration step `U(K,i)`
+is the inequality `i ≤ v_K(x - 1)` on the normalized valuation of `x - 1`. -/
+theorem mem_unitFiltration_iff_le_log_normalizedValuationWithZero_sub_one {i : ℕ} (hi : i ≠ 0)
+    {x : Kˣ} (hx : x ≠ 1) :
+    x ∈ unitFiltration K i ↔
+      (i : ℤ) ≤ WithZero.log (normalizedValuationWithZero K ((x : K) - 1)) := by
+  obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
+  have h : (x : K) - 1 ≠ 0 := sub_ne_zero.mpr fun h ↦ hx (Units.ext h)
+  have hϖ := normalizedValuation_irreducible hπ
+  rw [mem_unitFiltration_iff_valuation_sub_one_le hi hπ,
+    ← Units.val_mk0 h, normalizedValuationWithZero_coe,
+    ← ofAdd_toAdd (normalizedValuation K _), ← WithZero.exp_eq_coe_ofAdd, WithZero.log_exp,
+    le_toAdd_normalizedValuation_iff_valuation_le_zpow hϖ]
+  simp
 
 /-- The depth-one step of the unit filtration is Mathlib's principal unit group of the valuation
 subring of `K`. -/

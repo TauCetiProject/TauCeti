@@ -82,7 +82,6 @@ theorem exists_eq_range_sectionSet_union_range_sectorSet [PreconnectedSpace X] [
       (∀ x, StrictMono fun i ↦ θ i x) ∧ A ∈ range (sectionSet θ) ∪ range (sectorSet θ)) :
     ∃ k, ∃ θ : Fin k → X → ℝ, (∀ i, Continuous (θ i)) ∧ (∀ x, StrictMono fun i ↦ θ i x) ∧
       𝒜 = range (sectionSet θ) ∪ range (sectorSet θ) := by
-  obtain ⟨x₀⟩ := ‹Nonempty X›
   have hgraph {k : ℕ} (θ : Fin k → X → ℝ) (i : Fin k) : sectionSet θ i = (θ i).graph := by
     ext ⟨x, t⟩
     simp
@@ -136,18 +135,12 @@ theorem exists_eq_range_sectionSet_union_range_sectorSet [PreconnectedSpace X] [
     · rcases B.eq_empty_or_nonempty with rfl | hBne
       · -- The empty set is not a cell, since sectors are nonempty.
         obtain ⟨k', θ', -, hθ', ⟨i, hi⟩ | ⟨j, hj⟩⟩ := hcell ∅ hB
-        · exact absurd hi (nonempty_of_mem (mem_sectionSet.2 rfl :
-            (x₀, θ' i x₀) ∈ sectionSet θ' i)).ne_empty
-        · obtain ⟨z, hz, -⟩ : x₀ ∈ Prod.fst '' sectorSet θ' j := by
-            rw [fst_image_sectorSet hθ' j]
-            exact mem_univ x₀
-          exact absurd hj (nonempty_of_mem hz).ne_empty
+        · exact absurd hi (sectionSet_nonempty θ' i).ne_empty
+        · exact absurd hj (sectorSet_nonempty hθ' j).ne_empty
       · exact Or.inr (hcellSector B hB hBS hBne)
   · exact hsection.trans_subset (sep_subset _ _)
   · rintro _ ⟨j, rfl⟩
-    obtain ⟨w, hw, -⟩ : x₀ ∈ Prod.fst '' sectorSet θ j := by
-      rw [fst_image_sectorSet hθ j]
-      exact mem_univ x₀
+    obtain ⟨w, hw⟩ := sectorSet_nonempty hθ j
     obtain ⟨B, hB, hBS, hwB⟩ := hmem hw
     obtain ⟨j', rfl⟩ := hcellSector B hB hBS ⟨w, hwB⟩
     rwa [pairwise_disjoint_sectorSet θ |>.eq (not_disjoint_iff.2 ⟨w, hwB, hw⟩)] at hB

@@ -26,6 +26,9 @@ half-line, squaring is undone by `Real.sqrt`, so the pushforward determines the 
   absolute value into the two half-lines;
 * `MeasureTheory.Measure.map_abs_apply_zero` — the image under absolute value preserves the atom
   at zero;
+* `MeasureTheory.Measure.ae_eq_preimage_Ioc`,
+  `MeasureTheory.Measure.measureReal_eq_sub_of_preimage_Ioo_subset` — for a law without atoms,
+  endpoint conventions of an interval with extended bounds do not matter;
 * `MeasureTheory.Measure.eq_of_map_sq_eq_of_map_neg_eq_self` — two symmetric finite real
   measures with the same pushforward after squaring are equal.
 * `MeasureTheory.Measure.map_sqrt_map_sq` — on the nonnegative half-line, taking square roots
@@ -53,8 +56,8 @@ theorem map_abs_eq_restrict_add_restrict (μ : Measure ℝ) :
   have hdisj : Disjoint (s ∩ Ici 0) (-s ∩ Iio 0) :=
     disjoint_left.2 fun x hx hx' => not_le.2 hx'.2 hx.2
   rw [Measure.map_apply measurable_abs hs, hpre,
-    measure_union hdisj (hs.neg.inter measurableSet_Iio), Measure.add_apply,
-    Measure.restrict_apply hs, Measure.restrict_apply hs, Measure.neg_apply,
+    measure_union hdisj (hs.neg.inter measurableSet_Iio), _root_.add_apply,
+    Measure.restrict_apply hs, Measure.restrict_apply hs, MeasureTheory.Measure.neg_apply,
     (by ext x; simp : -(s ∩ Ioi (0 : ℝ)) = -s ∩ Iio 0)]
 
 /-- The atom of the folded law at `0` is the atom of `μ` at `0`. -/
@@ -64,6 +67,41 @@ theorem map_abs_apply_zero (μ : Measure ℝ) : μ.map (|·|) {0} = μ {0} := by
   congr 1
   ext x
   simp
+
+section NullSingleton
+
+variable {μ : Measure ℝ} [NullSingletonClass μ] {s : Set ℝ} {l r : EReal}
+
+/-- For a law without atoms, a set between the open and the closed interval with extended bounds
+`l, r` agrees with the half-open interval `(l, r]` off a null set: the two candidate endpoints
+carry no mass. -/
+theorem ae_eq_preimage_Ioc (hs₁ : Real.toEReal ⁻¹' Ioo l r ⊆ s)
+    (hs₂ : s ⊆ Real.toEReal ⁻¹' Icc l r) :
+    s =ᵐ[μ] Real.toEReal ⁻¹' Ioc l r := by
+  have hnull : μ (Real.toEReal ⁻¹' Icc l r \ Real.toEReal ⁻¹' Ioo l r) = 0 := by
+    refine measure_mono_null (t := {l.toReal, r.toReal}) ?_ ((toFinite _).measure_zero _)
+    rintro x ⟨⟨hlx, hxr⟩, hx⟩
+    by_contra hne
+    simp only [mem_insert_iff, mem_singleton_iff, not_or] at hne
+    exact hx ⟨hlx.lt_of_ne fun h => hne.1 (by rw [h, EReal.toReal_coe]),
+      hxr.lt_of_ne fun h => hne.2 (by rw [← h, EReal.toReal_coe])⟩
+  have hopen {t : Set ℝ} (h₁ : Real.toEReal ⁻¹' Ioo l r ⊆ t)
+      (h₂ : t ⊆ Real.toEReal ⁻¹' Icc l r) :
+      t =ᵐ[μ] Real.toEReal ⁻¹' Ioo l r :=
+    (ae_le_set.2 (measure_mono_null (sdiff_subset_sdiff_left h₂) hnull)).antisymm h₁.eventuallyLE
+  exact (hopen hs₁ hs₂).trans (hopen (preimage_mono Ioo_subset_Ioc_self)
+    (preimage_mono Ioc_subset_Icc_self)).symm
+
+/-- For a finite law without atoms, the mass of a set between the open and the closed interval
+with extended bounds `l ≤ r` is the difference of the masses up to the two bounds. -/
+theorem measureReal_eq_sub_of_preimage_Ioo_subset [IsFiniteMeasure μ] (hlr : l ≤ r)
+    (hs₁ : Real.toEReal ⁻¹' Ioo l r ⊆ s) (hs₂ : s ⊆ Real.toEReal ⁻¹' Icc l r) :
+    μ.real s = μ.real (Real.toEReal ⁻¹' Iic r) - μ.real (Real.toEReal ⁻¹' Iic l) := by
+  rw [measureReal_congr (μ.ae_eq_preimage_Ioc hs₁ hs₂), ← Iic_sdiff_Iic, preimage_sdiff,
+    measureReal_sdiff (preimage_mono (Iic_subset_Iic.2 hlr))
+      (measurableSet_Iic.preimage measurable_coe_real_ereal)]
+
+end NullSingleton
 
 end MeasureTheory.Measure
 

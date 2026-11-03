@@ -6,7 +6,7 @@ Authors: Chris Birkbeck
 module
 
 public import TauCeti.Analysis.Contour.Dixon.Def
-import TauCeti.Analysis.Calculus.DSlope.Integral
+import TauCeti.Analysis.Calculus.DSlope.Continuous
 import Mathlib.Analysis.Calculus.ParametricIntervalIntegral
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 
@@ -25,8 +25,8 @@ integrand stays holomorphic even for `w` on the curve.
   on `U`, for `f` differentiable on the open set `U` and `γ` continuous on `uIcc a b` with
   interval-integrable derivative and image in `U`.
 
-This feeds the `homologyCauchyTheorem` roadmap target
-(`TauCetiRoadmap/ContourIntegration/Suggested.lean`, Layer 3, Dixon's argument).
+This feeds Dixon's proof of the homology form of Cauchy's theorem,
+recorded as `TauCeti.Contour.homologyCauchyTheorem`.
 
 ## Provenance
 
@@ -48,12 +48,6 @@ section
 
 variable {f : ℂ → ℂ} {U : Set ℂ} {γ : ℝ → ℂ} {a b : ℝ} {w₀ : ℂ}
 
-/-- `dslope` is symmetric in its two point arguments. -/
-private theorem dslope_comm (g : ℂ → ℂ) (x y : ℂ) : dslope g x y = dslope g y x := by
-  by_cases h : y = x
-  · rw [h]
-  · rw [dslope_of_ne g h, dslope_of_ne g (Ne.symm h), slope_comm]
-
 /-- The `w`-derivative of `w' ↦ dslope f w' c` at an interior point `w` is `deriv (dslope f c) w`,
 using symmetry of `dslope` to move the varying argument into first position. -/
 private theorem dslope_first_arg_hasDerivAt (hU : IsOpen U) (hf : DifferentiableOn ℂ f U) {c w : ℂ}
@@ -66,9 +60,9 @@ private theorem dslope_first_arg_hasDerivAt (hU : IsOpen U) (hf : Differentiable
 /-- For `w ∈ U`, the fixed-point section `t ↦ dslope f w (γ t)` is continuous on `uIcc a b`. -/
 private theorem dslope_comp_curve_continuousOn (hU : IsOpen U) (hf : DifferentiableOn ℂ f U)
     (hγ_cont : ContinuousOn γ (uIcc a b)) (hγU : ∀ t ∈ uIcc a b, γ t ∈ U) {w : ℂ} (hw : w ∈ U) :
-    ContinuousOn (fun t ↦ dslope f w (γ t)) (uIcc a b) := by
-  simp_rw [dslope_comm f w]
-  exact (continuousOn_dslope_first_arg hU hf hw).comp hγ_cont hγU
+    ContinuousOn (fun t ↦ dslope f w (γ t)) (uIcc a b) :=
+  ((continuousOn_dslope (hU.mem_nhds hw)).mpr
+    ⟨hf.continuousOn, hf.differentiableAt (hU.mem_nhds hw)⟩).comp hγ_cont hγU
 
 /-- A factor continuous on `uIcc a b` times `deriv γ` is a.e. strongly measurable on `Ι a b`. -/
 private theorem factor_mul_deriv_aestronglyMeasurable {g : ℝ → ℂ} (hg : ContinuousOn g (uIcc a b)) :
@@ -105,8 +99,10 @@ private theorem dslope_diffquot_aestronglyMeasurable (hU : IsOpen U) (hf : Diffe
       (fun t ↦ (dslope f (γ t) (w₀ + s) - dslope f (γ t) w₀) / s * deriv γ t)
       (volume.restrict (Ι a b)) := by
   refine factor_mul_deriv_aestronglyMeasurable (ContinuousOn.div_const (ContinuousOn.sub ?_ ?_) _)
-  · exact (continuousOn_dslope_first_arg hU hf hs).comp hγ_cont hγU
-  · exact (continuousOn_dslope_first_arg hU hf hw₀).comp hγ_cont hγU
+  · exact (continuousOn_dslope_first_arg (hU.mem_nhds hs) hf.continuousOn
+      (hf.differentiableAt (hU.mem_nhds hs))).comp hγ_cont hγU
+  · exact (continuousOn_dslope_first_arg (hU.mem_nhds hw₀) hf.continuousOn
+      (hf.differentiableAt (hU.mem_nhds hw₀))).comp hγ_cont hγU
 
 /-- The `F'`-integrand `t ↦ deriv (dslope f (γ t)) w₀ · deriv γ t` is a.e. strongly measurable:
 `deriv (dslope f (γ t)) w₀` is the a.e.-limit of the measurable difference quotients above, since

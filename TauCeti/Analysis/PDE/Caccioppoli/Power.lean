@@ -14,7 +14,7 @@ public import TauCeti.Analysis.Sobolev.W1p.ChainRule
 Let `a` be measurable and uniformly elliptic on `Ω ⊆ ℝⁿ` with constants `0 < λ ≤ Λ`, and let
 `u ∈ H¹(Ω)` be a weak supersolution of the divergence-form equation
 
-`-∂ⱼ(aⁱʲ ∂ᵢu) ≥ 0` in `Ω`,
+`-∂ᵢ(aⁱʲ ∂ⱼu) ≥ 0` in `Ω`,
 
 meaning `a(u, v) ≥ 0` for every nonnegative `v ∈ H¹₀(Ω)`, which is bounded below by a constant
 `ε > 0`. For every exponent `p < 1` and every smooth `ψ` compactly supported in `Ω`, this file
@@ -147,7 +147,7 @@ private theorem mul_sq_mul_rpow_mul_norm_sq_le_neg_matrixBilinearForm_add {A : M
     simp only [X, g, W, hs2', hUs, smul_add, smul_smul]
     match_scalars
     all_goals field_simp
-    all_goals ring
+    ring
   have hB : -(1 - p)⁻¹ * matrixBilinearForm A (((p - 1) * s) • X) G =
       matrixBilinearForm A X g := by
     simp only [g, map_smul, _root_.smul_apply, smul_eq_mul]
@@ -167,7 +167,7 @@ private theorem mul_sq_mul_rpow_mul_norm_sq_le_neg_matrixBilinearForm_add {A : M
 
 /-- **The Caccioppoli inequality for powers of a positive supersolution.** Let `a` be measurable
 and uniformly elliptic on `Ω` with constants `0 < λ ≤ Λ`, and let `u ∈ H¹(Ω)` be a weak
-supersolution of `-∂ⱼ(aⁱʲ ∂ᵢu) ≥ 0`, that is `a(u, v) ≥ 0` for every nonnegative
+supersolution of `-∂ᵢ(aⁱʲ ∂ⱼu) ≥ 0`, that is `a(u, v) ≥ 0` for every nonnegative
 `v ∈ H¹₀(Ω)`, with `u ≥ ε` almost everywhere for some `ε > 0`. Then for every `p < 1` and every
 smooth `ψ` compactly supported in `Ω`,
 

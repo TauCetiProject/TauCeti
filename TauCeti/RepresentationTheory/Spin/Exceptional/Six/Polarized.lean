@@ -65,28 +65,13 @@ theorem
         ((stdSLRep K 4).comp f.toMonoidHom)) ∧
       Nonempty ((spinMinusSubrep P hline).toRepresentation.Equiv
         (Representation.dual ((stdSLRep K 4).comp f.toMonoidHom))) := by
-  let _ : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
+  have : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
   let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
-  let hline : P.line = ⊥ := P.line_eq_bot_of_even_finrank (hV ▸ by decide)
-  have hWfin : finrank K P.W = 3 :=
-    P.finrank_W_eq_of_finrank_eq_two_mul (l := 3) (by omega)
-  have hW : P.W ≠ ⊥ := Submodule.finrank_eq_zero.not.1 (by omega)
-  have hplus : finrank K (spinPlus Q P) = 4 := by
-    rw [finrank_spinPlus P hW, hWfin]
-    norm_num
-  let _ : FiniteDimensional K (spinPlus Q P) := Module.finite_of_finrank_pos (by omega)
-  let b := Module.finBasisOfFinrankEq K (spinPlus Q P) hplus
-  have hb : b = Module.finBasisOfFinrankEq K (spinPlus Q P) hplus := rfl
-  let φ := spinGroupEquivSpecialLinearGroupOfFinrankEqSix P hline hWfin hW hplus hV b hb
-  obtain ⟨eplus⟩ :=
-    nonempty_spinPlusSubrep_equiv_stdSLRep_of_matrix_action hline b φ.toMonoidHom
-      (fun s ↦ coe_spinGroupEquivSpecialLinearGroupOfFinrankEqSix_apply P hline hWfin hW hplus hV b
-        hb s)
-  let heplus : Nonempty ((spinPlusSubrep P hline).toRepresentation.Equiv
-      ((stdSLRep K 4).comp φ.toMonoidHom)) := ⟨eplus⟩
-  obtain ⟨eminus⟩ := nonempty_spinMinusSubrep_equiv_dual_of_spinPlusSubrep_equiv P hV hline
-    ((stdSLRep K 4).comp φ.toMonoidHom) heplus
-  exact ⟨hline, φ, heplus, ⟨eminus⟩⟩
+  have hline : P.line = ⊥ := P.line_eq_bot_of_even_finrank (hV ▸ by decide)
+  let φ := spinGroupEquivSpecialLinearGroupOfFinrankEqSix P hV
+  have h := nonempty_spinPlusSubrep_equiv_stdSLRep_of_matrix_action hline _ φ.toMonoidHom
+    (coe_spinGroupEquivSpecialLinearGroupOfFinrankEqSix_apply P hV)
+  exact ⟨hline, φ, h, nonempty_spinMinusSubrep_equiv_dual_of_spinPlusSubrep_equiv P hV hline _ h⟩
 
 /-- A nondegenerate six-dimensional quadratic space over a separably closed field with `2 ≠ 0`
 admits a polarization and an equivalence from its Spin group to `SL₄` under which the half-spin

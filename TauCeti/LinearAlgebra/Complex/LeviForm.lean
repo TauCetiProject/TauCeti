@@ -49,6 +49,9 @@ bilinear, and its contribution to a real Hessian is killed by the Levi form.
 * `LinearMap.BilinForm.leviForm_compl₁₂_apply`: pullback along a complex-linear map.
 * `LinearMap.BilinForm.leviForm_eq_zero_iff`: the Levi form vanishes exactly on the forms which
   anticommute with multiplication by `I`, such as real parts of complex bilinear forms.
+* `LinearMap.BilinForm.finrank_add_finrank_le_of_re_leviForm_pos`: if the Levi form is positive
+  on a complex subspace `P`, every real subspace on which `B` is nonpositive has dimension at most
+  `dim_ℝ V - dim_ℂ P`.
 * `LinearMap.BilinForm.sigNeg_add_finrank_le_of_re_leviForm_pos`: if the Levi form of `B` is
   positive definite on a complex subspace `P` of the `n`-dimensional space `V`, then the negative
   index of inertia of `B` is at most `2n - dim_ℂ P`. In particular, if the Levi form has at least
@@ -191,11 +194,11 @@ open Module
 variable [FiniteDimensional ℂ V]
 
 /-- **Real index bound from a complex positive subspace.** If the Levi form of `B` is positive
-definite on a complex subspace `P`, then every real subspace on which `B` is negative definite
+definite on a complex subspace `P`, then every real subspace on which `B` is nonpositive
 has dimension at most `dim_ℝ V - dim_ℂ P`. -/
 theorem finrank_add_finrank_le_of_re_leviForm_pos {P : Submodule ℂ V}
     (hP : ∀ v ∈ P, v ≠ 0 → 0 < (B.leviForm v v).re) {W : Submodule ℝ V}
-    (hW : ((-B.toQuadraticMap).restrict W).PosDef) :
+    (hW : ∀ v ∈ W, B v v ≤ 0) :
     finrank ℝ W + finrank ℂ P ≤ finrank ℝ V := by
   have : FiniteDimensional ℝ V := Module.Finite.trans ℂ V
   have : FiniteDimensional ℝ P := Module.Finite.trans ℂ P
@@ -209,9 +212,9 @@ theorem finrank_add_finrank_le_of_re_leviForm_pos {P : Submodule ℂ V}
     have := hP v v.2 (by simpa using hv)
     rw [re_leviForm_apply] at this
     simpa [Q, J, ι] using (by linarith : 0 < B v v + B (I • (v : V)) (I • (v : V)))
-  have hWP : ((-Q).restrict (W.comap ι)).PosDef := fun w hw ↦ by
-    simpa [Q] using hW ⟨ι w, w.2⟩ (by simpa [ι] using hw)
-  have h₁ := Q.two_mul_finrank_le_of_add_comp_posDef J hQJ hWP
+  have h₁ := Q.two_mul_finrank_le_of_add_comp_posDef (W := W.comap ι) J hQJ fun v hv ↦ by
+    simpa only [Q, QuadraticMap.comp_apply, LinearMap.BilinMap.toQuadraticMap_apply]
+      using hW (ι v) hv
   have h₂ := Submodule.finrank_add_finrank_le_finrank_comap_add_finrank ι W
   have h₃ : finrank ℝ P = 2 * finrank ℂ P := TauCeti.finrank_real_eq_two_mul_finrank_complex
   have h₄ : finrank ℝ V = 2 * finrank ℂ V := TauCeti.finrank_real_eq_two_mul_finrank_complex
@@ -227,7 +230,9 @@ theorem sigNeg_add_finrank_le_of_re_leviForm_pos {P : Submodule ℂ V}
   have : FiniteDimensional ℝ V := Module.Finite.trans ℂ V
   obtain ⟨W, hWdim, hW⟩ := exists_finrank_eq_sigNeg_and_negDef B.toQuadraticMap
   rw [← hWdim]
-  exact B.finrank_add_finrank_le_of_re_leviForm_pos hP hW
+  exact B.finrank_add_finrank_le_of_re_leviForm_pos hP fun v hv ↦ by
+    simpa only [QuadraticMap.restrict_apply, _root_.neg_apply,
+      LinearMap.BilinMap.toQuadraticMap_apply, neg_nonneg] using hW.nonneg ⟨v, hv⟩
 
 end FiniteDimensional
 

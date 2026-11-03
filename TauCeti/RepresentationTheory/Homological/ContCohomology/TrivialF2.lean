@@ -29,8 +29,9 @@ with `ℤ` as the scalar ring used by the all-degree cup product.
 
 For `G : Type u`, Mathlib's continuous-cohomology resolution requires the coefficient module to
 live in `Type u`. The carrier of `trivialF2 G` is therefore `ULift.{u} (ZMod 2)`, not
-`ZMod 2`. The action is trivial, and restriction to a subgroup is definitionally the corresponding
-trivial coefficient object for that subgroup.
+`ZMod 2`. The action is trivial, and restriction along a monoid homomorphism gives the corresponding
+trivial coefficient object for its source. Coefficient transport needs no group topology; continuity
+is required for the induced cohomology maps.
 
 ## Main definitions
 
@@ -58,16 +59,19 @@ trivial coefficient object for that subgroup.
 * `TauCeti.trivialF2_ρ_apply_apply`: every monoid element acts trivially.
 * `TauCeti.trivialF2_two_nsmul_eq_zero`, `TauCeti.cohomF2.two_nsmul_eq_zero`: the coefficients,
   and hence every cohomology class, are killed by `2`.
+* `TauCeti.trivialF2_add_self`: every coefficient is its own additive inverse.
 * `TauCeti.trivialF2Pairing`: multiplication in `𝔽₂` as a biadditive pairing on the lifted
   carrier, with `TauCeti.trivialF2Pairing_smul_smul` its equivariance.
 * `TauCeti.ofDiscreteModule_trivialF2`: the coefficient dictionary recovers `trivialF2`, with
   `TauCeti.eqToHom_ofDiscreteModule_trivialF2_apply` and
   `TauCeti.eqToHom_ofDiscreteModule_trivialF2_symm_apply` its carrier-level reading.
-* `TauCeti.res_trivialF2`: restriction preserves the coefficient object on the nose.
+* `TauCeti.res_trivialF2_hom`: restriction preserves the coefficient object on the nose.
 * `TauCeti.trivialF2Map_subgroupSubtype`: the general pullback recovers subgroup restriction.
 * `TauCeti.trivialF2Map_id`, `TauCeti.trivialF2Map_comp`: the functoriality laws.
 * `TauCeti.trivialF2Map_eq_of_conj`: over a locally compact target, pullbacks along two
   homomorphisms that differ by an inner automorphism agree.
+* `TauCeti.trivialF2ResMap_injective_of_index_eq_one`: restriction to a subgroup of index one is
+  injective.
 * `TauCeti.eqToHom_comp_trivialF2Map`: read in discrete models of the coefficients, the pullback
   is the compatible-pair map of any coefficient map that is the identity of `𝔽₂`.
 * `TauCeti.isSmoothDiscrete_trivialF2`: the coefficient object is smooth discrete.
@@ -200,6 +204,10 @@ theorem trivialF2Pairing_smul_smul (g : G) (x y : (trivialF2 G).V) :
 theorem trivialF2_two_nsmul_eq_zero (x : (trivialF2 G).V) : 2 • x = 0 :=
   (trivialF2Equiv G).injective (by rw [map_nsmul, map_zero, two_nsmul, CharTwo.add_self_eq_zero])
 
+/-- Every element of the trivial `𝔽₂` coefficient object is its own additive inverse. -/
+theorem trivialF2_add_self (x : (trivialF2 G).V) : x + x = 0 := by
+  simpa only [two_nsmul] using trivialF2_two_nsmul_eq_zero G x
+
 variable [TopologicalSpace G]
 
 /-- The trivial `𝔽₂` coefficient object is smooth discrete. -/
@@ -208,15 +216,21 @@ theorem isSmoothDiscrete_trivialF2 : IsSmoothDiscrete ℤ (trivialF2 G) :=
 
 end Monoid
 
+section Transport
+
+variable {G H : Type u} [Group G] [Monoid H]
+
+/-- Restriction along a monoid homomorphism preserves trivial `𝔽₂` coefficients. -/
+@[simp]
+theorem res_trivialF2_hom (φ : H →* G) :
+    TopRep.res φ (trivialF2 G) = trivialF2 H :=
+  res_trivial ℤ G (ULift.{u} (ZMod 2)) φ
+
+end Transport
+
 section Group
 
 variable (G : Type u) [Group G]
-
-/-- Restriction preserves the trivial `𝔽₂` coefficient object on the nose. -/
-@[simp]
-theorem res_trivialF2 (S : Subgroup G) :
-    TopRep.res (S.subtype : S →* G) (trivialF2 G) = trivialF2 S :=
-  res_trivial ℤ G (ULift.{u} (ZMod 2)) S.subtype
 
 open CategoryTheory _root_.ContinuousCohomology
 
@@ -228,16 +242,16 @@ noncomputable abbrev DiscreteRep.trivialF2 : DiscreteRep.{0, u, u} ℤ G :=
   (ofSmoothDiscrete ℤ G).obj ⟨TauCeti.trivialF2 G, isSmoothDiscrete_trivialF2 G⟩
 
 /-- Restriction on continuous cohomology with trivial `𝔽₂` coefficients. This is the
-generic restriction map followed by the on-the-nose identification `res_trivialF2`. -/
+generic restriction map followed by the on-the-nose identification `res_trivialF2_hom`. -/
 noncomputable def trivialF2ResMap (S : Subgroup G) (n : ℕ) :
     continuousCohomology n (trivialF2 G) ⟶ continuousCohomology n (trivialF2 S) :=
   ContinuousCohomology.res S (trivialF2 G) n ≫
-    eqToHom (congrArg (continuousCohomology n) (res_trivialF2 G S))
+    eqToHom (congrArg (continuousCohomology n) (res_trivialF2_hom S.subtype))
 
 /-- The defining equation of restriction with trivial `𝔽₂` coefficients. -/
 theorem trivialF2ResMap_def (S : Subgroup G) (n : ℕ) :
     trivialF2ResMap G S n = ContinuousCohomology.res S (trivialF2 G) n ≫
-      eqToHom (congrArg (continuousCohomology n) (res_trivialF2 G S)) :=
+      eqToHom (congrArg (continuousCohomology n) (res_trivialF2_hom S.subtype)) :=
   (rfl)
 
 /-- Continuous cohomology with trivial `𝔽₂` coefficients, indexed by its degree. It is the
@@ -287,25 +301,17 @@ variable {G H J : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
   [Group J] [TopologicalSpace J] [IsTopologicalGroup J]
 
-omit [IsTopologicalGroup G] [IsTopologicalGroup H] in
-/-- Pulling trivial `𝔽₂` coefficients back along a continuous group homomorphism gives the
-trivial coefficient object on its source. -/
-@[simp]
-theorem res_trivialF2_hom (φ : H →ₜ* G) :
-    TopRep.res (φ : H →* G) (trivialF2 G) = trivialF2 H :=
-  res_trivial ℤ G (ULift.{u} (ZMod 2)) φ.toMonoidHom
-
 /-- Contravariant continuous cohomology with trivial `𝔽₂` coefficients along a continuous
 group homomorphism. -/
 noncomputable def trivialF2Map (φ : H →ₜ* G) (n : ℕ) :
     continuousCohomology n (trivialF2 G) ⟶ continuousCohomology n (trivialF2 H) :=
-  _root_.ContinuousCohomology.map φ (eqToHom (res_trivialF2_hom φ)) n
+  _root_.ContinuousCohomology.map φ (eqToHom (res_trivialF2_hom φ.toMonoidHom)) n
 
 /-- The trivial-coefficient map is Mathlib's compatible-pair map with the canonical coefficient
 identification. -/
 theorem trivialF2Map_def (φ : H →ₜ* G) (n : ℕ) :
     trivialF2Map φ n =
-      _root_.ContinuousCohomology.map φ (eqToHom (res_trivialF2_hom φ)) n :=
+      _root_.ContinuousCohomology.map φ (eqToHom (res_trivialF2_hom φ.toMonoidHom)) n :=
   (rfl)
 
 /-- Pullback along a subgroup inclusion is the named restriction map. -/
@@ -314,17 +320,11 @@ theorem trivialF2Map_subgroupSubtype (G : Type u) [Group G] [TopologicalSpace G]
     [IsTopologicalGroup G] (S : Subgroup G) (n : ℕ) :
     trivialF2Map (ContinuousMonoidHom.subgroupSubtype S) n =
       trivialF2ResMap G S n := by
-  have hsubtype :
-      ((ContinuousMonoidHom.subgroupSubtype S : S →ₜ* G) : S →* G) = S.subtype := rfl
-  have hcoeff :
-      TopRep.res ((ContinuousMonoidHom.subgroupSubtype S : S →ₜ* G) : S →* G)
-        (trivialF2 G) = trivialF2 S := by
-    rw [hsubtype]
-    exact res_trivialF2 G S
+  have hcoeff := res_trivialF2_hom S.subtype
   have hmap : eqToHom
-      (res_trivialF2_hom (ContinuousMonoidHom.subgroupSubtype S)) =
+      (res_trivialF2_hom (ContinuousMonoidHom.subgroupSubtype S).toMonoidHom) =
       𝟙 (trivialF2 S) := eqToHom_refl _ _
-  have hres : eqToHom (congrArg (continuousCohomology n) (res_trivialF2 G S)) =
+  have hres : eqToHom (congrArg (continuousCohomology n) (res_trivialF2_hom S.subtype)) =
       𝟙 (continuousCohomology n (trivialF2 S)) := eqToHom_refl _ _
   have hcomparison :
       _root_.ContinuousCohomology.map (ContinuousMonoidHom.subgroupSubtype S)
@@ -333,7 +333,6 @@ theorem trivialF2Map_subgroupSubtype (G : Type u) [Group G] [TopologicalSpace G]
         (𝟙 (TopRep.res (S.subtype : S →* G) (trivialF2 G))) n := by
     have hmaps : HEq (𝟙 (trivialF2 S))
         (𝟙 (TopRep.res (S.subtype : S →* G) (trivialF2 G))) := by
-      rw [hsubtype] at hcoeff
       cases hcoeff
       rfl
     exact TauCeti.ContinuousCohomology.map_congr rfl hmaps n
@@ -353,7 +352,7 @@ theorem trivialF2Map_subgroupSubtype (G : Type u) [Group G] [TopologicalSpace G]
 @[simp]
 theorem trivialF2Map_id (n : ℕ) :
     trivialF2Map (ContinuousMonoidHom.id G) n = 𝟙 _ := by
-  have h : eqToHom (res_trivialF2_hom (ContinuousMonoidHom.id G)) =
+  have h : eqToHom (res_trivialF2_hom (ContinuousMonoidHom.id G).toMonoidHom) =
       𝟙 (trivialF2 G) := eqToHom_refl _ _
   simpa only [trivialF2Map, h] using
     (_root_.ContinuousCohomology.map_id (trivialF2 G) n)
@@ -362,18 +361,18 @@ theorem trivialF2Map_id (n : ℕ) :
 @[simp]
 theorem trivialF2Map_comp (φ : H →ₜ* G) (ψ : J →ₜ* H) (n : ℕ) :
     trivialF2Map (φ.comp ψ) n = trivialF2Map φ n ≫ trivialF2Map ψ n := by
-  have hφ : eqToHom (res_trivialF2_hom φ) = 𝟙 (trivialF2 H) := eqToHom_refl _ _
-  have hψ : eqToHom (res_trivialF2_hom ψ) = 𝟙 (trivialF2 J) := eqToHom_refl _ _
-  have hcomp : eqToHom (res_trivialF2_hom (φ.comp ψ)) =
+  have hφ : eqToHom (res_trivialF2_hom φ.toMonoidHom) = 𝟙 (trivialF2 H) := eqToHom_refl _ _
+  have hψ : eqToHom (res_trivialF2_hom ψ.toMonoidHom) = 𝟙 (trivialF2 J) := eqToHom_refl _ _
+  have hcomp : eqToHom (res_trivialF2_hom (φ.comp ψ).toMonoidHom) =
       𝟙 (trivialF2 J) := eqToHom_refl _ _
   unfold trivialF2Map
   rw [← _root_.ContinuousCohomology.map_comp]
   exact TauCeti.ContinuousCohomology.map_congr rfl
     (heq_of_eq (by simpa only [hφ, hψ, hcomp, Functor.map_id,
       Category.id_comp] :
-        (TopRep.resFunctor (ψ : J →* H)).map (eqToHom (res_trivialF2_hom φ)) ≫
-          eqToHom (res_trivialF2_hom ψ) =
-            eqToHom (res_trivialF2_hom (φ.comp ψ))).symm) n
+        (TopRep.resFunctor (ψ : J →* H)).map (eqToHom (res_trivialF2_hom φ.toMonoidHom)) ≫
+          eqToHom (res_trivialF2_hom ψ.toMonoidHom) =
+            eqToHom (res_trivialF2_hom (φ.comp ψ).toMonoidHom)).symm) n
 
 /-- **Pullback is invariant under inner automorphisms of the target**: if two continuous
 homomorphisms `φ ψ : H →ₜ* G` differ by conjugation by `g : G`, they induce the same map on
@@ -389,6 +388,19 @@ theorem trivialF2Map_eq_of_conj [LocallyCompactSpace G] (φ ψ : H →ₜ* G) (g
       (fun v => by rw [TopRep.eqToHom_hom_apply, trivialF2_ρ_apply_apply, cast_eq])
       (isSmoothDiscrete_trivialF2 G) n
   rw [hψ, trivialF2Map_comp, hc, Category.id_comp]
+
+/-- **Restriction to a subgroup of index one is injective**: corestricting the identity of `G` to
+`S` gives it a left inverse. -/
+theorem trivialF2ResMap_injective_of_index_eq_one {S : Subgroup G} (hS : S.index = 1) (n : ℕ) :
+    Function.Injective (trivialF2ResMap G S n) := by
+  let ι : G →ₜ* S :=
+    ⟨(MonoidHom.id G).codRestrict S fun g ↦ by simp [Subgroup.index_eq_one.1 hS],
+      continuous_id.subtype_mk _⟩
+  have hι : (ContinuousMonoidHom.subgroupSubtype S).comp ι = ContinuousMonoidHom.id G :=
+    ContinuousMonoidHom.ext fun _ ↦ rfl
+  refine Function.LeftInverse.injective (g := trivialF2Map ι n) fun a ↦ ?_
+  rw [← trivialF2Map_subgroupSubtype, ← ConcreteCategory.comp_apply, ← trivialF2Map_comp, hι,
+    trivialF2Map_id, ConcreteCategory.id_apply]
 
 /-- A topological group isomorphism induces an equivalence on continuous cohomology with
 trivial `𝔽₂` coefficients. The cohomology map runs along the inverse group isomorphism. -/

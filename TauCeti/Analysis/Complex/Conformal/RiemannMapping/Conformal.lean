@@ -16,11 +16,8 @@ The Riemann mapping theorem in `RiemannMapping/Existence.lean` produces a holomo
 between a simply connected proper domain and the open unit disc, together with a holomorphic
 inverse. This file packages the same result as an `OpenPartialHomeomorph ℂ ℂ`. Its source and
 target are exactly the domain and the disc, and both it and its inverse are holomorphic and
-conformal on those sets.
-
-This is the packaged-equivalence and `ConformalAt` companion required by the generality bar in
-`TauCetiRoadmap/ConformalMapping/README.md`: the roadmap asks that the unbundled Riemann-map
-statement be accompanied by the natural equivalence and conformality API.
+conformal on those sets. It is the packaged-equivalence and `ConformalAt` companion of the
+unbundled Riemann-map statement.
 
 ## Main result
 
@@ -28,13 +25,6 @@ statement be accompanied by the natural equivalence and conformality API.
   source, target, holomorphy, and conformality.
 * `TauCeti.riemannMapping_homeomorph` — the resulting homeomorphism
   `Ω ≃ₜ Complex.UnitDisc`.
-
-## Coordination with upstream Mathlib
-
-The Riemann mapping theorem is being formalized upstream in
-[mathlib4#33505](https://github.com/leanprover-community/mathlib4/pull/33505). This L3 theorem is
-an explicitly temporary shim: delete it and refactor consumers to the public human-curated
-Mathlib theorem and packaging once those land.
 
 ## References
 

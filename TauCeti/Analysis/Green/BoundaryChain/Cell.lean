@@ -103,16 +103,27 @@ theorem integrable_and_integral_cellBoundary_of_deriv (d : Coordinate) {a b : �
       integral d.proj P (cellBoundary d a b lower upper
         (by rwa [uIcc_of_le hab]) (by rwa [uIcc_of_le hab])) =
         -(d.orientation : ℝ) * ∫ z in d.region a b lower upper, R z := by
+  have hmem (g : ℝ → ℝ) {x : ℝ} (hx : x ∈ Icc a b)
+      (hg : g x ∈ Icc (lower x) (upper x)) : d.graph g x ∈ d.region a b lower upper := by
+    cases d <;> simpa only [Coordinate.region_re, Coordinate.region_im, Coordinate.graph_re_apply,
+      Coordinate.graph_im_apply, mem_verticalRegion, mem_horizontalRegion] using ⟨hx, hg⟩
   have hgraph (g : ℝ → ℝ) (hg : ∀ x ∈ Icc a b, lower x ≤ g x ∧ g x ≤ upper x) :
       ContinuousOn P (d.graph g '' Icc a b) := by
     apply hP.mono
     rintro z ⟨x, hx, rfl⟩
-    cases d <;> simpa only [Coordinate.region_re, Coordinate.region_im, Coordinate.graph_re_apply,
-      Coordinate.graph_im_apply, mem_verticalRegion, mem_horizontalRegion] using ⟨hx, hg x hx⟩
+    exact hmem g hx (hg x hx)
   have hPl := hgraph lower (fun x hx ↦ ⟨le_rfl, hlu x hx⟩)
   have hPu := hgraph upper (fun x hx ↦ ⟨hlu x hx, le_rfl⟩)
   have h := integrable_and_integral_cellBoundary d hab hl hu hdl hdu hPl hPu
   refine ⟨h.1, h.2.trans ?_⟩
+  have hP_slice (x : ℝ) (hx : x ∈ Icc a b) :
+      ContinuousOn (fun y ↦ P (d.graph (fun _ ↦ y) x)) (Icc (lower x) (upper x)) := by
+    have hc : Continuous (fun y ↦ d.graph (fun _ ↦ y) x) := by
+      cases d <;> simp only [Coordinate.graph_re_apply, Coordinate.graph_im_apply,
+        Complex.mk_eq_add_mul_I] <;> fun_prop
+    apply hP.comp hc.continuousOn
+    intro y hy
+    exact hmem (fun _ ↦ y) hx hy
   have hiL := (hPl.comp (d.continuousOn_graph hl) (mapsTo_image _ _)).intervalIntegrable_of_Icc
     (μ := volume) hab
   have hiU := (hPu.comp (d.continuousOn_graph hu) (mapsTo_image _ _)).intervalIntegrable_of_Icc
@@ -123,11 +134,11 @@ theorem integrable_and_integral_cellBoundary_of_deriv (d : Coordinate) {a b : �
     rw [← intervalIntegral.integral_sub hiL hiU]
     cases d with
     | re =>
-      simp only [Coordinate.region_re, Coordinate.graph_re_apply] at hdP hR hP ⊢
-      exact integral_graphs_sub_eq_neg_integral_verticalRegion hab hl hu hlu hP hdP hR
+      simp only [Coordinate.region_re, Coordinate.graph_re_apply] at hdP hR hP_slice ⊢
+      exact integral_graphs_sub_eq_neg_integral_verticalRegion hab hl hu hlu hP_slice hdP hR
     | im =>
-      simp only [Coordinate.region_im, Coordinate.graph_im_apply] at hdP hR hP ⊢
-      rw [← integral_graphs_sub_eq_integral_horizontalRegion hab hl hu hlu hP hdP hR,
+      simp only [Coordinate.region_im, Coordinate.graph_im_apply] at hdP hR hP_slice ⊢
+      rw [← integral_graphs_sub_eq_integral_horizontalRegion hab hl hu hlu hP_slice hdP hR,
         ← intervalIntegral.integral_neg]
       congr 1
       funext t

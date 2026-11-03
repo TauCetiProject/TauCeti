@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.ProperSubgraph
+public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Topology
 import TauCeti.Algebra.BigOperators.Finset.Range
 import Mathlib.Tactic.IntervalCases
 import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
 
 /-!
@@ -182,6 +184,15 @@ lemma card_image_range (hc : T.IsSelfIntersectionMinusTwoChain t c) :
     hc.injOn i (mem_range.mp hi) j (mem_range.mp hj) h, card_range]
 
 end IsSelfIntersectionMinusTwoChain
+
+/-- Nonconsecutive vanishing intersections are preserved by reversing the index order. -/
+lemma intersection_reverse_eq_zero_of_nonconsecutive {n : ℕ} {c : ℕ → T.Component}
+    (hzero : ∀ i < n, ∀ j < n, i ≠ j → i + 1 ≠ j → j + 1 ≠ i →
+      T.intersection (c i) (c j) = 0) :
+    ∀ i < n, ∀ j < n, i ≠ j → i + 1 ≠ j → j + 1 ≠ i →
+      T.intersection (c (n - 1 - i)) (c (n - 1 - j)) = 0 := by
+  intro i hi j hj hij hnext hprev
+  apply hzero (n - 1 - i) (by omega) (n - 1 - j) (by omega) <;> omega
 
 /-- Every set of components contains a longest chain. -/
 lemma exists_chain_forall_le (S : Finset T.Component) :
@@ -528,6 +539,75 @@ theorem IsSelfIntersectionMinusTwoChain.right_sum_eq {t : ℕ} {c : ℕ → T.Co
         hc.intersection_eq_zero hcard hj (by omega) (by omega) (by omega) (by omega), zero_mul])
     rfl
 
+/-- At a constant-weight interior triple of a proper chain, a fibre relation with an
+external contribution `w * b` gives the unweighted multiplicity recurrence. The coefficients
+`y` may be any integers satisfying that relation. -/
+lemma IsSelfIntersectionMinusTwoChain.interior_relation_of_weight_eq
+    {t : ℕ} {c : ℕ → T.Component} (hc : T.IsSelfIntersectionMinusTwoChain t c)
+    (hcard : t < Fintype.card T.Component) {i : ℕ} (hi : 0 < i) (hit : i + 1 < t)
+    {w : ℕ+} (hprev : (T.weight (c (i - 1)) : ℤ) = w)
+    (hself : (T.weight (c i) : ℤ) = w) (hnext : (T.weight (c (i + 1)) : ℤ) = w)
+    {y : ℕ → ℤ} {b : ℤ}
+    (hfib : ∑ j ∈ range t, T.intersection (c i) (c j) * y j + w * b = 0) :
+    y (i - 1) + y (i + 1) + b = 2 * y i := by
+  have hleft := T.intersection_eq_max_weight (by omega)
+    (hc.intersection_self (i - 1) (by omega)) (hc.intersection_self i (by omega))
+    (hc.intersection_pos (by omega) (by omega))
+  have hright := T.intersection_eq_max_weight (by omega)
+    (hc.intersection_self i (by omega)) (hc.intersection_self (i + 1) hit)
+    (hc.intersection_succ_pos i hit)
+  rw [hprev, hself, max_self] at hleft
+  rw [hself, hnext, max_self] at hright
+  rw [hc.interior_sum_eq hcard y hi hit, T.intersection_comm (c i) (c (i - 1)),
+    hleft, hc.intersection_self i (by omega), hself, hright] at hfib
+  exact mul_left_cancel₀ (show (w : ℤ) ≠ 0 by positivity) (by linear_combination hfib)
+
+/-- At the right end of a proper chain, constant weights on the preceding two components
+and one of the three allowed terminal weight ratios force one of two relations between their
+coefficients. Only the last two fibre relations are needed. -/
+lemma IsSelfIntersectionMinusTwoChain.right_end_relation_of_weight_eq
+    {t : ℕ} {c : ℕ → T.Component} (hc : T.IsSelfIntersectionMinusTwoChain t c)
+    (hcard : t < Fintype.card T.Component) (ht : 3 ≤ t) {w : ℕ+}
+    (hprev : (T.weight (c (t - 3)) : ℤ) = w)
+    (hpen : (T.weight (c (t - 2)) : ℤ) = w)
+    (hright : (T.weight (c (t - 1)) : ℤ) = w ∨
+      (T.weight (c (t - 1)) : ℤ) = 2 * w ∨ 2 * (T.weight (c (t - 1)) : ℤ) = w)
+    {y : ℕ → ℤ}
+    (hfib_pen : ∑ j ∈ range t, T.intersection (c (t - 2)) (c j) * y j = 0)
+    (hfib_last : ∑ j ∈ range t, T.intersection (c (t - 1)) (c j) * y j = 0) :
+    2 * y (t - 3) = 3 * y (t - 2) ∨ y (t - 3) = y (t - 2) := by
+  have hprev_index : t - 2 - 1 = t - 3 := by omega
+  have hnext_index : t - 2 + 1 = t - 1 := by omega
+  have hedge := T.intersection_eq_max_weight (by omega)
+    (hc.intersection_self (t - 3) (by omega))
+    (hc.intersection_self (t - 2) (by omega))
+    (hc.intersection_pos (by omega) (by omega))
+  rw [hprev, hpen, max_self] at hedge
+  have hlast_edge := T.intersection_eq_max_weight (by omega)
+    (hc.intersection_self (t - 2) (by omega))
+    (hc.intersection_self (t - 1) (by omega))
+    (hc.intersection_pos (by omega) (by omega))
+  rw [hpen] at hlast_edge
+  rw [hc.interior_sum_eq hcard y (by omega) (by omega), hprev_index, hnext_index,
+    T.intersection_comm (c (t - 2)) (c (t - 3)), hedge,
+    hc.intersection_self (t - 2) (by omega), hpen] at hfib_pen
+  rw [hc.right_sum_eq hcard (by omega) y, T.intersection_comm (c (t - 1)) (c (t - 2)),
+    hc.intersection_self (t - 1) (by omega)] at hfib_last
+  have hw_ne : (w : ℤ) ≠ 0 := by positivity
+  have hwpos : (0 : ℤ) < w := by positivity
+  rcases hright with hright | hright | hright
+  · left
+    rw [hlast_edge, hright, max_self] at hfib_pen hfib_last
+    exact mul_left_cancel₀ hw_ne (by linear_combination 2 * hfib_pen + hfib_last)
+  · right
+    rw [hlast_edge, hright, max_eq_right (by omega)] at hfib_pen hfib_last
+    exact mul_left_cancel₀ (show 2 * (w : ℤ) ≠ 0 by positivity)
+      (by linear_combination 2 * hfib_pen + hfib_last)
+  · right
+    rw [hlast_edge, max_eq_left (by omega)] at hfib_pen hfib_last
+    exact mul_left_cancel₀ hw_ne
+      (by linear_combination hfib_pen + hfib_last + y (t - 1) * hright)
+
 /-- For a sequence of components which are distinct below `t` and exhaust a numerical type, the
 fibre relation at any position is a sum over the positions below `t`. -/
 theorem sum_range_multiplicity_mul_intersection_eq_zero {t : ℕ} {c : ℕ → T.Component}
@@ -813,6 +893,79 @@ theorem IsSelfIntersectionMinusTwoChain.exists_weight_eq_except_one_end {t : ℕ
         2 * (T.weight (c (t - 1)) : ℤ) = W) ∧
       ((T.weight (c 0) : ℤ) = W ∨ (T.weight (c (t - 1)) : ℤ) = W) :=
   T.exists_weight_eq_except_one_end_aux t c hc hcard ht
+
+/-- In a chain exhausting all components of a numerical type, any two nonconsecutive components
+other than the pair of endpoints do not meet, because the subchain between them is proper. If the
+endpoints do not meet when `2 < t`, then no two nonconsecutive components meet. -/
+lemma IsSelfIntersectionMinusTwoChain.intersection_eq_zero_of_card_eq
+    {t : ℕ} {c : ℕ → T.Component} (hc : T.IsSelfIntersectionMinusTwoChain t c)
+    (hcard : Fintype.card T.Component = t)
+    (hends : 2 < t → T.intersection (c 0) (c (t - 1)) = 0) (i : ℕ) (hi : i < t) (j : ℕ)
+    (hj : j < t) (hij : i ≠ j) (hij₁ : i + 1 ≠ j) (hji₁ : j + 1 ≠ i) :
+    T.intersection (c i) (c j) = 0 := by
+  have hlt : ∀ u v : ℕ, u + 1 < v → v < t → T.intersection (c u) (c v) = 0 := by
+    intro u v huv hv
+    by_cases he : u = 0 ∧ v = t - 1
+    · rcases he with ⟨rfl, rfl⟩
+      exact hends (by omega)
+    · have hsub := (hc.shift (r := u) (s := v - u + 1) (by omega)).intersection_eq_zero
+        (by omega) (p := 0) (q := v - u) (by omega) (by omega) (by omega) (by omega) (by omega)
+      have huv_eq : u + (v - u) = v := by omega
+      simpa [huv_eq] using hsub
+  rcases lt_or_gt_of_ne hij with h | h
+  · exact hlt i j (by omega) hj
+  · rw [T.intersection_comm]
+    exact hlt j i (by omega) hi
+
+/-- Every component of a numerical type exhausted by a chain `c` of length `t` has the form `c i`
+for some `i < t`. -/
+lemma IsSelfIntersectionMinusTwoChain.exists_lt_eq_of_card_eq {t : ℕ} {c : ℕ → T.Component}
+    (hc : T.IsSelfIntersectionMinusTwoChain t c) (hcard : Fintype.card T.Component = t)
+    (v : T.Component) : ∃ i < t, c i = v := by
+  classical
+  have hu : (range t).image c = univ := eq_univ_of_card _ (by rw [hc.card_image_range, hcard])
+  simpa [← hu] using mem_univ v
+
+/-- If a chain of at least three components exhausts a numerical type and its two endpoints meet,
+then every component has at least two neighbours in the intersection graph, so the topological
+genus is positive. -/
+lemma IsSelfIntersectionMinusTwoChain.topologicalGenus_pos_of_card_eq_of_intersection_pos
+    {t : ℕ} {c : ℕ → T.Component} (hc : T.IsSelfIntersectionMinusTwoChain t c)
+    (hcard : Fintype.card T.Component = t) (ht : 2 < t)
+    (hends : 0 < T.intersection (c 0) (c (t - 1))) :
+    0 < T.topologicalGenus := by
+  classical
+  apply T.topologicalGenus_pos_of_two_le_degree
+  intro v
+  obtain ⟨i, hi, rfl⟩ := hc.exists_lt_eq_of_card_eq hcard v
+  suffices ∃ j k, j ≠ k ∧ T.Adj (c i) j ∧ T.Adj (c i) k by
+    obtain ⟨j, k, hjk, hj, hk⟩ := this
+    rw [← SimpleGraph.card_neighborFinset_eq_degree]
+    have hsub : ({j, k} : Finset T.Component) ⊆ T.intersectionGraph.neighborFinset (c i) := by
+      intro z hz
+      simp only [mem_insert, mem_singleton] at hz
+      rw [SimpleGraph.mem_neighborFinset, T.intersectionGraph_adj_iff]
+      rcases hz with rfl | rfl <;> assumption
+    exact (card_pair hjk).symm.trans_le (card_le_card hsub)
+  rcases Nat.eq_zero_or_pos i with rfl | hi0
+  · exact ⟨c 1, c (t - 1), hc.ne (by omega) (by omega) (by omega),
+      T.adj_iff.mpr ⟨hc.ne (by omega) (by omega) (by omega),
+        hc.intersection_succ_pos 0 (by omega)⟩,
+      T.adj_iff.mpr ⟨hc.ne (by omega) (by omega) (by omega), hends⟩⟩
+  by_cases hilast : i = t - 1
+  · subst i
+    refine ⟨c 0, c (t - 2), hc.ne (by omega) (by omega) (by omega),
+      T.adj_iff.mpr ⟨hc.ne (by omega) (by omega) (by omega),
+        by rwa [T.intersection_comm]⟩,
+      T.adj_iff.mpr ⟨hc.ne (by omega) (by omega) (by omega), ?_⟩⟩
+    rw [T.intersection_comm]
+    exact hc.intersection_pos (by omega) (by omega)
+  · refine ⟨c (i - 1), c (i + 1), hc.ne (by omega) (by omega) (by omega),
+      T.adj_iff.mpr ⟨hc.ne (by omega) (by omega) (by omega), ?_⟩,
+      T.adj_iff.mpr ⟨hc.ne (by omega) (by omega) (by omega),
+        hc.intersection_succ_pos i (by omega)⟩⟩
+    rw [T.intersection_comm]
+    exact hc.intersection_pos (by omega) (by omega)
 
 end NumericalType
 

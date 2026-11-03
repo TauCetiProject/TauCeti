@@ -5,21 +5,25 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.RingTheory.Valuation.CofinalIdeal.Greatest
+import TauCeti.RingTheory.Valuation.SpanPow
 import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Basic
+public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.CompletedHomeomorph
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Basis
+public import TauCeti.RingTheory.Huber.AdicHom.Basic
 public import TauCeti.RingTheory.Huber.Continuous.Coarsen
 import TauCeti.RingTheory.Huber.Continuous.PowerBounded
 public import TauCeti.RingTheory.Huber.LocalizationTopology.Completion
 public import TauCeti.RingTheory.Huber.OpenIdeal
 public import TauCeti.RingTheory.Valuation.Microbial
+import TauCeti.RingTheory.Huber.LocalizationTopology.WeightedEvaluation
+import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Adic
 
 /-!
 # Analytic points and the analytic locus of `Spa(A, A⁺)`
 
 **Wedhorn, *Adic Spaces* (arXiv:1910.05934v1), Definition 7.39, Remark 7.40(1), (2), (3), (5),
-Remark 7.42(2), and Proposition 7.49.**
+Remark 7.42(2), Lemma 7.46(1), and Proposition 7.49.**
 
 This file formalizes the analytic locus of the adic spectrum `Spa(A, A⁺)`.
 
@@ -54,11 +58,21 @@ This file formalizes the analytic locus of the adic spectrum `Spa(A, A⁺)`.
   definition give a finite rational cover of the analytic locus.
 * `TauCeti.ValuationSpectrum.isTateRing_completion_locTopology_of_mem_generators` : the completed
   coordinate ring of each chart in that cover is Tate.
+* `TauCeti.ValuationSpectrum.IsAnalyticPoint.comap` : the pullback of an analytic point along an
+  adic homomorphism is analytic.
+* `TauCeti.ValuationSpectrum.IsAnalyticPoint.of_comap` : a point whose pullback along a
+  continuous homomorphism is analytic is itself analytic.
+* `TauCeti.ValuationSpectrum.mapsTo_comap_spa_diff_spaAnalytic` : **Wedhorn Lemma 7.46(1)**, the
+  non-analytic locus maps into the non-analytic locus.
+* `TauCeti.Huber.IsAdicHom.mapsTo_spaAnalytic` : **Wedhorn Lemma 7.46(1)**, for an adic
+  homomorphism the analytic locus maps into the analytic locus.
+* `TauCeti.ValuationSpectrum.rationalSubset_subset_spaAnalytic_of_isTateRing` : conversely, a
+  rational subset whose completed coordinate ring is Tate consists of analytic points.
 
 ## References
 
 * T. Wedhorn, *Adic Spaces*, arXiv:1910.05934v1, Definition 7.39, Remark 7.40(1), (2), (3), (5),
-  Remark 7.42(2), and Proposition 7.49.
+  Remark 7.42(2), Lemma 7.46(1), and Proposition 7.49.
 -/
 
 public section
@@ -110,15 +124,38 @@ theorem spaAnalytic_antitone : Antitone (spaAnalytic (A := A)) := fun _ _ hle �
 contain `I`. -/
 theorem isAnalyticPoint_iff_not_le_supp_of_isAdic {I : Ideal A} (hI : IsAdic I) (v : Spv A) :
     IsAnalyticPoint v ↔ ¬ I ≤ v.supp := by
-  have : IsTopologicalRing A := hI ▸ I.nonarchimedean.toIsTopologicalRing
   rw [isAnalyticPoint_def, not_iff_not]
-  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · -- an open prime ideal contains a power of `I`, hence `I` itself
-    obtain ⟨n, -, hn⟩ := hI.hasBasis_nhds_zero.mem_iff.mp (h.mem_nhds v.supp.zero_mem)
-    exact Ideal.IsPrime.le_of_pow_le hn
-  · -- a prime containing `I` contains the open subgroup `I`
-    exact AddSubgroup.isOpen_mono (H₁ := I.toAddSubgroup) (H₂ := v.supp.toAddSubgroup) h
-      (by simpa using IsAdic.isOpen_pow hI 1)
+  exact hI.isOpen_iff_le_of_isRadical (Ideal.IsPrime.isRadical inferInstance)
+
+/-- **Analytic points pull back along adic homomorphisms**: if `φ : A → B` is adic and `w` is an
+analytic point of `Spv B`, then its pullback to `Spv A` is analytic. -/
+theorem IsAnalyticPoint.comap {B : Type*} [CommRing B] [TopologicalSpace B] [IsTopologicalRing B]
+    {φ : A →+* B} (hφ : IsAdicHom φ) {w : Spv B} (hw : IsAnalyticPoint w) :
+    IsAnalyticPoint (comap φ w) := by
+  intro h
+  rw [supp_comap] at h
+  exact hw (Submodule.isOpen_mono Ideal.map_comap_le (hφ.isOpen_map h))
+
+/-- **A point whose pullback is analytic is analytic**, for a continuous homomorphism `φ`.
+Equivalently, pullback along `φ` preserves non-analytic points. -/
+theorem IsAnalyticPoint.of_comap {B : Type*} [CommRing B] [TopologicalSpace B] {φ : A →+* B}
+    (hφ : Continuous φ) {v : Spv B} (hv : IsAnalyticPoint (ValuationSpectrum.comap φ v)) :
+    IsAnalyticPoint v := by
+  refine (isAnalyticPoint_def v).mpr fun h ↦ (isAnalyticPoint_def _).mp hv ?_
+  -- the support of the pullback is the preimage of the support
+  rw [supp_comap, Ideal.coe_comap]
+  exact h.preimage hφ
+
+/-- **Wedhorn Lemma 7.46(1), the non-analytic locus.** If `φ : A → B` is continuous and carries
+`A⁺` into `B⁺`, then `Spa(φ)` maps the non-analytic points of `Spa(B, B⁺)` to non-analytic points
+of `Spa(A, A⁺)`. -/
+theorem mapsTo_comap_spa_diff_spaAnalytic {B : Type*} [CommRing B] [TopologicalSpace B]
+    {φ : A →+* B} (hφ : Continuous φ) {Aplus : Subring A} {Bplus : Subring B}
+    (hplus : ∀ a ∈ Aplus, φ a ∈ Bplus) :
+    Set.MapsTo (comap φ) (spa Bplus \ spaAnalytic Bplus) (spa Aplus \ spaAnalytic Aplus) := by
+  rintro v ⟨hv, hna⟩
+  exact ⟨comap_mem_spa hφ hplus hv, fun h ↦ hna ((mem_spaAnalytic_iff _ _).mpr
+    ⟨hv, ((mem_spaAnalytic_iff _ _).mp h).2.of_comap hφ⟩)⟩
 
 section TopologicalRing
 
@@ -141,7 +178,9 @@ topologically nilpotent element is outside its support. Unlike
 chosen. -/
 theorem isAnalyticPoint_iff_exists_isTopologicallyNilpotent_notMem_supp [IsHuberRing A]
     (v : Spv A) : IsAnalyticPoint v ↔ ∃ a : A, IsTopologicallyNilpotent a ∧ a ∉ v.supp := by
-  rw [isAnalyticPoint_def, isOpen_iff_setOf_isTopologicallyNilpotent_subset_of_isPrime]
+  rw [isAnalyticPoint_def,
+    isOpen_iff_setOf_isTopologicallyNilpotent_subset_of_isRadical
+      (inferInstance : v.supp.IsPrime).isRadical]
   exact Set.not_subset
 
 /-- An analytic point supplies an element of an ideal of definition which is outside its
@@ -274,7 +313,7 @@ theorem spaAnalytic_eq_biUnion_rationalSubset_of_span_eq_extendedIdealOfDefiniti
       exact ha0
     obtain ⟨t, htT, ht0, hmax⟩ :=
       Valuation.exists_mem_max_restrict_ne_zero (v := v.valuation)
-        (I := P.extendedIdealOfDefinition) hspan rfl haI ha0
+        (by rw [hspan]; exact Ideal.le_radical haI) ha0
     refine Set.mem_iUnion₂_of_mem htT
       ((mem_rationalSubset_iff Aplus T t v).mpr ⟨hvSpa, ?_, ?_⟩)
     · intro u huT
@@ -394,4 +433,60 @@ theorem spaAnalytic_eq_spa_of_isTateRing (Aplus : Subring A) :
 
 end TateRing
 
+section TopologicalRing
+
+variable [IsTopologicalRing A]
+
+/-- **A rational subset with Tate coordinate ring consists of analytic points.** Let `R(T/s)` be a
+rational subset of `Spa(A, A⁺)`, where `A⁺` contains the ring of definition of `P`. If
+`A⟨T/s⟩` is a Tate ring, then every point of `R(T/s)` is analytic. This is a partial converse of
+`isTateRing_completion_locTopology_of_mem_generators`. -/
+theorem rationalSubset_subset_spaAnalytic_of_isTateRing (P : PairOfDefinition A)
+    {Aplus : Subring A} (hP : P.ringOfDefinition ≤ Aplus) (T : Finset A) (s : A) (S : Type*)
+    [CommRing S] [Algebra A S] [IsLocalization.Away s S] (hden : HasDenominatorPower P T s S)
+    (hT : IsOpen (Ideal.span (T : Set A) : Set A)) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    IsTateRing (UniformSpace.Completion S) → rationalSubset Aplus T s ⊆ spaAnalytic Aplus := by
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  have : IsHuberRing A := ⟨⟨P⟩⟩
+  intro hTate v hv
+  -- `v` is the pullback of a point `w` of `Spa(A⟨T/s⟩, A_U⁺)` along the adic map `A → A⟨T/s⟩`,
+  -- and `w` is analytic because `A⟨T/s⟩` is Tate
+  have hvspa : v ∈ spa Aplus := ((mem_rationalSubset_iff Aplus T s v).mp hv).1
+  set w := (spaCompletedLocalizationHomeomorph P Aplus hP T s S hden).symm ⟨⟨v, hvspa⟩, hv⟩
+  have hvw : v = comap (toCompletionLoc P T s S hden) w.1 := by
+    have h := congrFun (val_comp_spaCompletedLocalizationHomeomorph P Aplus hP T s S hden) w
+    simp only [Function.comp_apply, w, Homeomorph.apply_symm_apply] at h
+    rw [← spaComapLoc_val, ← h]
+  have hw : IsAnalyticPoint w.1 := isAnalyticPoint_of_isTateRing w.1
+  -- adding the denominator to the numerators keeps the ideal open
+  have hT' : IsOpen (Ideal.span (insert s (T : Set A)) : Set A) :=
+    Submodule.isOpen_mono (Ideal.span_mono (Set.subset_insert _ _)) hT
+  refine ⟨hvspa, ?_⟩
+  rw [hvw]
+  exact hw.comap (isTopologicallyFiniteType_toCompletionLoc P T s S hden hT').isAdicHom
+
+end TopologicalRing
+
 end TauCeti.ValuationSpectrum
+
+namespace TauCeti.Huber
+
+open TauCeti.ValuationSpectrum
+
+/-- **Wedhorn Lemma 7.46(1), the analytic locus.** If `φ : A → B` is adic and carries `A⁺` into
+`B⁺`, then `Spa(φ)` maps the analytic points of `Spa(B, B⁺)` to analytic points of
+`Spa(A, A⁺)`. -/
+theorem IsAdicHom.mapsTo_spaAnalytic {A B : Type*} [CommRing A] [TopologicalSpace A]
+    [IsTopologicalRing A] [CommRing B] [TopologicalSpace B] [IsTopologicalRing B]
+    {φ : A →+* B} (hφ : IsAdicHom φ) {Aplus : Subring A} {Bplus : Subring B}
+    (hplus : ∀ a ∈ Aplus, φ a ∈ Bplus) :
+    Set.MapsTo (comap φ) (spaAnalytic Bplus) (spaAnalytic Aplus) :=
+  fun _ hv ↦ (mem_spaAnalytic_iff _ _).mpr ⟨comap_mem_spa hφ.continuous hplus
+    ((mem_spaAnalytic_iff _ _).mp hv).1, ((mem_spaAnalytic_iff _ _).mp hv).2.comap hφ⟩
+
+end TauCeti.Huber

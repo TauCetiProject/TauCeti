@@ -13,7 +13,7 @@ public import Mathlib.Topology.Instances.NNReal.Lemmas
 
 The finite simplex `Convexity.StdSimplex ℝ≥0 ι` carries the topology induced by its weight
 vector. This makes continuity of probability vectors equivalent to continuity of their weights,
-including at zero weights.
+including at zero weights. The weights also sum to one after casting them to `ℝ`.
 
 This is the finite-coordinate construction of Mathlib's
 `Convexity.StdSimplex.topologicalSpaceInduced`. That construction requires a coefficient ring
@@ -26,6 +26,19 @@ open Topology
 open scoped NNReal
 
 namespace Convexity.StdSimplex
+
+variable {X : Type*}
+
+/-- The weights of a point of a standard simplex over `ℝ≥0`, cast to `ℝ`, sum to `1`. -/
+theorem sum_coe_weights [Fintype X] (p : StdSimplex ℝ≥0 X) : ∑ i, (p.weights i : ℝ) = 1 := by
+  exact_mod_cast p.total_of_fintype
+
+/-- Scaling the real weights of a point of a standard simplex over `ℝ≥0` by `c` gives weights
+summing to `c`. -/
+theorem sum_mul_coe_weights [Fintype X] (p : StdSimplex ℝ≥0 X) (c : ℝ) :
+    ∑ i, c * (p.weights i : ℝ) = c := by
+  rw [← Finset.mul_sum, sum_coe_weights, mul_one]
+
 
 variable {ι : Type*} [Finite ι]
 

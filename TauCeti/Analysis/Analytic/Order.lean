@@ -14,9 +14,11 @@ Extensions of Mathlib's analytic-order calculus: `analyticOrderNatAt` respects e
 the order is additive over finite products, composing with `q ↦ q ^ N` at `0` multiplies the order
 by `N`, the power map `w ↦ w ^ m` recentred at `0` has order `m` there for `m ≠ 0`, the
 recentred function `f · - f x` has order `1` at `x` exactly when `deriv f x ≠ 0`, and the order is
-monotone under domination (`=O`), hence invariant under equivalence up to constant factors (`=Θ`).
-The finiteness a zero count also needs is
-`TauCeti.finite_setOf_mem_and_eq_zero_of_isCompact`, provided by
+monotone under domination (`=O`), hence invariant under equivalence up to constant factors (`=Θ`),
+and at a zero the divided difference `dslope f a` has order one less than `f`. The order is
+finite at a point with a punctured neighbourhood free of zeros, in particular wherever the zeros
+nearby are confined to a finite set. The finiteness of the zero set itself on a compact is
+`AnalyticOnNhd.finite_setOf_mem_and_eq_zero_of_isCompact`, provided by
 `TauCeti.Analysis.Analytic.IsolatedZeros`, which mentions no order.
 
 ## Main declarations
@@ -35,6 +37,12 @@ The finiteness a zero count also needs is
 * `AnalyticAt.analyticOrderAt_le_of_isBigO` and `AnalyticAt.analyticOrderAt_eq_of_isTheta`: an
   analytic function dominated by `f` vanishes to at least the order of `f`, so analytic functions
   equivalent up to constant factors have the same order.
+* `AnalyticAt.analyticOrderAt_dslope_add_one`: at a zero `a` of `f`, the divided difference
+  `dslope f a` has order one less than `f` at `a`.
+* `TauCeti.analyticOrderAt_ne_top_of_forall_ne_zero`: a function with no zero in a punctured
+  ball has finite order at its centre.
+* `TauCeti.analyticOrderAt_ne_top_of_zeros_subset`: if the zeros in an open set `U` lie in a
+  finite set, the order is finite at every point of `U`.
 
 ## References
 
@@ -137,6 +145,47 @@ theorem _root_.AnalyticAt.analyticOrderAt_eq_of_isTheta {E F : Type*} [NormedAdd
     (hf : AnalyticAt 𝕜 f z₀) (hg : AnalyticAt 𝕜 g z₀) (hfg : f =Θ[𝓝 z₀] g) :
     analyticOrderAt f z₀ = analyticOrderAt g z₀ :=
   le_antisymm (hg.analyticOrderAt_le_of_isBigO hfg.2) (hf.analyticOrderAt_le_of_isBigO hfg.isBigO)
+
+/-- At a zero `a` of an analytic function `f`, the divided difference `dslope f a` vanishes to
+order one less than `f` at `a`. -/
+theorem _root_.AnalyticAt.analyticOrderAt_dslope_add_one {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E] {f : 𝕜 → E} {a : 𝕜} (hf : AnalyticAt 𝕜 f a) (ha : f a = 0) :
+    analyticOrderAt (dslope f a) a + 1 = analyticOrderAt f a := by
+  have hfa : ((· - a) • dslope f a) = f := funext fun z ↦ sub_smul_dslope_of_zero ha z
+  calc analyticOrderAt (dslope f a) a + 1
+      = analyticOrderAt ((· - a) • dslope f a) a := by
+        rw [analyticOrderAt_smul (by fun_prop) (hf.dslope a), analyticOrderAt_id_sub_const_self,
+          add_comm]
+    _ = analyticOrderAt f a := by rw [hfa]
+
+/-- **A function with no zero off the centre does not vanish identically there.** If `f` is
+nonzero at every point of an open ball of positive radius other than its centre `z₀`, then `f`
+has finite analytic order at `z₀`.
+
+Nothing is assumed about `f z₀`, which may or may not be zero, nor about analyticity of `f`. -/
+theorem analyticOrderAt_ne_top_of_forall_ne_zero {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E] {f : 𝕜 → E} {ρ : ℝ} (hρ : 0 < ρ)
+    (hzf : ∀ z ∈ Metric.ball z₀ ρ, z ≠ z₀ → f z ≠ 0) : analyticOrderAt f z₀ ≠ ⊤ := fun h ↦
+  have hne : ∀ᶠ z in 𝓝[≠] z₀, f z ≠ 0 :=
+    eventually_nhdsWithin_iff.mpr <| mem_of_superset (Metric.ball_mem_nhds z₀ hρ) fun z hz ↦
+      hzf z hz
+  (hne.and (nhdsWithin_le_nhds (analyticOrderAt_eq_top.mp h))).exists.elim fun _ h ↦ h.1 h.2
+
+/-- **A function whose zeros are confined to a finite set has finite order.** If every zero of `f`
+in an open set `U` lies in a finite set `S`, then `f` does not vanish identically near any point
+of `U`, so `analyticOrderAt f z₀ ≠ ⊤` there.
+
+The point `z₀` itself is allowed to be a zero, indeed to lie in `S`. This is the finite-set form
+of `TauCeti.analyticOrderAt_ne_top_of_forall_ne_zero`. -/
+theorem analyticOrderAt_ne_top_of_zeros_subset {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E] {f : 𝕜 → E} {U : Set 𝕜} {S : Finset 𝕜} (hU : IsOpen U) (hz : z₀ ∈ U)
+    (hzeros : ∀ w ∈ U, f w = 0 → w ∈ S) : analyticOrderAt f z₀ ≠ ⊤ := by
+  -- Deleting `z₀`, the finite set `S` is closed and misses `z₀`, so `U` minus it is an open
+  -- neighbourhood of `z₀`; any ball inside it has no zero of `f` off its centre.
+  obtain ⟨ρ, hρ, hball⟩ := Metric.isOpen_iff.mp
+    (hU.inter (S.finite_toSet.sdiff (t := {z₀})).isClosed.isOpen_compl) z₀ ⟨hz, by simp⟩
+  exact analyticOrderAt_ne_top_of_forall_ne_zero hρ fun w hw hwz hw0 ↦
+    (hball hw).2 ⟨hzeros w (hball hw).1 hw0, hwz⟩
 
 end TauCeti
 

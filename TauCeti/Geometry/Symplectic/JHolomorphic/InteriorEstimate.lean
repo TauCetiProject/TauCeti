@@ -262,7 +262,7 @@ theorem integral_cutoff_sq_mul_norm_partialDeriv_sq_le
           ‖A z (u z)‖ ≤ ‖A z (u z) - J (u z)‖ + ‖J (u z)‖ := norm_le_norm_sub_add _ _
           _ ≤ (1 / 2 : ℝ) * ‖u z‖ + ‖u z‖ :=
             add_le_add (hclose z hz _)
-              (le_of_eq (ω.norm_apply_eq_norm_of_apply_apply_eq_inner hg _))
+              (le_of_eq (ω.norm_apply_eq_norm_of_apply_apply_self_eq_inner (fun v => hg v v) _))
           _ ≤ _ := by nlinarith [norm_nonneg (u z)]
       simpa only [mul_assoc] using cutoff_defect_density_le hu hχ z hAnorm
     · have hχzero : χ z = 0 := image_eq_zero_of_notMem_tsupport hz

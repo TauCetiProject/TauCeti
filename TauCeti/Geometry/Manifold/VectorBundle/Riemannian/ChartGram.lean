@@ -9,9 +9,13 @@ module
 public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 public import Mathlib.Analysis.Matrix.PosDef
 public import Mathlib.Geometry.Manifold.Algebra.Structures
+public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric
 public import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
+import TauCeti.Geometry.Manifold.MFDeriv.Det
+import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
+import TauCeti.LinearAlgebra.Matrix.Trace.NonsingularInverse
 
 /-!
 # Chart Gram matrices of a Riemannian metric
@@ -34,14 +38,24 @@ API replace them.
 * `Riemannian.Tensor.chartLocalFrame` and `Riemannian.Tensor.chartLocalFrame_def`: the frame
   induced by the tangent trivialization at a chart centre and `Module.finBasis`, and its
   identification with that trivialization's local frame.
+* `Riemannian.Tensor.chartLocalFrame_eq_symmL`: the frame is the inverse trivialization applied to
+  the basis of the model space.
+* `Riemannian.Tensor.mvfderiv_chartLocalFrame`: on a boundaryless manifold, differentiating along
+  the frame is taking coordinate partial derivatives in the chart.
 * `Riemannian.Tensor.chartGramMatrix`: the metric Gram matrix in this frame.
 * `Riemannian.Tensor.chartGramMatrix_eq_toMatrix`: on the base set, it is the matrix of the fiber
   inner product in the basis given by the trivialization.
+* `Riemannian.Tensor.gram_basisAt_finBasis_reindex`: it is the Gram matrix of the basis of the
+  tangent space given by the trivialization and a reindexing of the basis of the model space.
 * `Riemannian.Tensor.posDef_chartGramMatrix`: positive-definiteness on the base set.
 * `Riemannian.Tensor.chartGramMatrix_det_pos`: strict positivity of its determinant there.
 * `Riemannian.Tensor.contMDiffOn_chartGramMatrix_entry`: smoothness of Gram-matrix entries.
 * `Riemannian.Tensor.chartInvGramMatrix`: the inverse Gram matrix.
 * `Riemannian.Tensor.contMDiffOn_chartInvGramMatrix_entry`: smoothness of inverse entries.
+* `Riemannian.Tensor.mvfderiv_chartGramMatrix_apply`,
+  `Riemannian.Tensor.mvfderiv_det_chartGramMatrix`: the derivatives of the Gram matrix and of its
+  determinant for a metric-compatible connection, `dG = Pᵀ G + G P` and
+  `d (det G) = 2 det G trace P`, where `P` is the matrix of the connection form in the chart frame.
 
 ## References
 
@@ -94,6 +108,39 @@ theorem chartLocalFrame_apply_of_mem_chart_source (α : M) {x : M}
       (Module.finBasis ℝ E) (i := i) (by
         simpa only [TangentBundle.trivializationAt_baseSet] using hx)
 
+/-- The chart-local frame is the inverse tangent trivialization at `α` applied to the
+`Module.finBasis` basis of the model space. Both sides vanish off the trivialization base set, so
+no membership hypothesis is needed. -/
+theorem chartLocalFrame_eq_symmL (α x : M) (i : Fin (Module.finrank ℝ E)) :
+    chartLocalFrame (I := I) α i x =
+      (trivializationAt E (TangentSpace I) α).symmL ℝ x (Module.finBasis ℝ E i) := by
+  by_cases hx : x ∈ (trivializationAt E (TangentSpace I) α).baseSet
+  · rw [chartLocalFrame_def, TauCeti.Manifold.symmL_basis_eq_localFrame _ hx]
+  · rw [chartLocalFrame_def, Trivialization.localFrame_apply_of_notMem _ _ hx,
+      Trivialization.symmL_apply_of_notMem _ hx]
+
+/-- On a boundaryless manifold, the derivative of a function along the chart-local frame at `α` is
+the partial derivative, along the corresponding basis vector of the model space, of the function
+read in the extended chart at `α`. -/
+theorem mvfderiv_chartLocalFrame [I.Boundaryless] (α : M) {y : M}
+    (hy : y ∈ (chartAt H α).source) {f : M → ℝ} (hf : MDifferentiableAt I 𝓘(ℝ) f y)
+    (k : Fin (Module.finrank ℝ E)) :
+    mvfderiv I f y (chartLocalFrame (I := I) α k y) =
+      fderiv ℝ (f ∘ (extChartAt I α).symm) (extChartAt I α y) (Module.finBasis ℝ E k) := by
+  have hz : extChartAt I α y ∈ (extChartAt I α).target :=
+    (extChartAt I α).map_source (by rwa [extChartAt_source])
+  have hsymm : MDifferentiableAt 𝓘(ℝ, E) I (extChartAt I α).symm (extChartAt I α y) := by
+    have := mdifferentiableWithinAt_extChartAt_symm (I := I) hz
+    rwa [I.range_eq_univ, mdifferentiableWithinAt_univ] at this
+  have hy' : (extChartAt I α).symm (extChartAt I α y) = y :=
+    (extChartAt I α).left_inv (by rwa [extChartAt_source])
+  have h := mvfderiv_comp_apply_of_eq (g := f) (extChartAt I α y) (hy'.symm ▸ hf) hsymm hy'
+    (Module.finBasis ℝ E k)
+  rw [mvfderiv_eq_fderiv] at h
+  rw [chartLocalFrame_eq_symmL, TangentBundle.symmL_trivializationAt hy, I.range_eq_univ,
+    mfderivWithin_univ]
+  exact h.symm
+
 /-- Each member of `chartLocalFrame` is `C^n` on the tangent-trivialization base set. -/
 theorem contMDiffOn_chartLocalFrame {n : ℕ∞ω} [IsManifold I (n + 1) M]
     (α : M) (i : Fin (Module.finrank ℝ E)) :
@@ -119,6 +166,16 @@ def chartGramMatrix (α : M) (x : M) :
 theorem chartGramMatrix_apply (α : M) (x : M) (i j : Fin (Module.finrank ℝ E)) :
     chartGramMatrix (I := I) α x i j =
       inner ℝ (chartLocalFrame (I := I) α i x) (chartLocalFrame (I := I) α j x) := (rfl)
+
+/-- The chart Gram matrix, reindexed along `σ`, is the Gram matrix of the basis of the tangent
+space given by the trivialization at `α` and the reindexed basis `Module.finBasis ℝ E`. -/
+theorem gram_basisAt_finBasis_reindex {ι : Type*} (σ : Fin (Module.finrank ℝ E) ≃ ι) (α : M)
+    {x : M} (hx : x ∈ (trivializationAt E (TangentSpace I) α).baseSet) :
+    Matrix.gram ℝ ((trivializationAt E (TangentSpace I) α).basisAt
+      ((Module.finBasis ℝ E).reindex σ) hx) =
+      (chartGramMatrix (I := I) α x).submatrix σ.symm σ.symm := by
+  ext i j
+  simp [Matrix.gram_apply, TauCeti.Manifold.basisAt_apply, chartLocalFrame_eq_symmL]
 
 /-- On the chart domain, the Gram matrix at `α` is the matrix of the inner product in the basis
 of the tangent space given by the trivialization at `α`. -/
@@ -231,6 +288,11 @@ def chartInvGramMatrix (α : M) (x : M) :
     Matrix (Fin (Module.finrank ℝ E)) (Fin (Module.finrank ℝ E)) ℝ :=
   (chartGramMatrix (I := I) α x)⁻¹
 
+/-- The inverse coordinate-metric matrix is the matrix inverse of the chart Gram matrix. This
+unfolds `Riemannian.Tensor.chartInvGramMatrix` outside the module where it is defined. -/
+theorem chartInvGramMatrix_def (α x : M) :
+    chartInvGramMatrix (I := I) α x = (chartGramMatrix (I := I) α x)⁻¹ := (rfl)
+
 /-- On the chart source, the inverse Gram matrix is a left inverse. -/
 @[simp]
 theorem chartInvGramMatrix_mul_chartGramMatrix (α : M) {x : M}
@@ -282,6 +344,72 @@ theorem contMDiffOn_chartInvGramMatrix_entry
   · exact contMDiffOn_adjugate_chartGramMatrix_entry (I := I) α i j
 
 end Smooth
+
+section Derivative
+
+variable [IsManifold I 2 M] [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+
+/-- **The derivative of the chart metric.** For a connection `∇` compatible with the metric, the
+derivative along `v` of the metric coefficient `gᵢⱼ = ⟪eᵢ, eⱼ⟫` in the chart frame at `α` is
+`⟪∇ᵥ eᵢ, eⱼ⟫ + ⟪eᵢ, ∇ᵥ eⱼ⟫`. -/
+theorem mvfderiv_chartGramMatrix_apply
+    {cov : CovariantDerivative I E (TangentSpace I : M → Type _)}
+    (hcov : CovariantDerivative.IsMetricCompatible (V := fun x : M ↦ TangentSpace I x) cov)
+    (α : M) {y : M} (hy : y ∈ (trivializationAt E (TangentSpace I) α).baseSet)
+    (v : TangentSpace I y) (i j : Fin (Module.finrank ℝ E)) :
+    mvfderiv I (fun z ↦ chartGramMatrix (I := I) α z i j) y v =
+      inner ℝ (cov (chartLocalFrame (I := I) α i) y v) (chartLocalFrame (I := I) α j y) +
+        inner ℝ (chartLocalFrame (I := I) α i y) (cov (chartLocalFrame (I := I) α j) y v) := by
+  have : IsManifold I (1 + 1) M := by norm_num; infer_instance
+  have hframe (k : Fin (Module.finrank ℝ E)) : MDiffAt (T% (chartLocalFrame (I := I) α k)) y :=
+    ((contMDiffOn_chartLocalFrame (n := 1) α k).contMDiffAt
+      ((trivializationAt E (TangentSpace I) α).open_baseSet.mem_nhds hy)).mdifferentiableAt
+        one_ne_zero
+  have := hcov.mvfderiv_inner_eq (extend E v) (hframe i) (hframe j)
+  simpa only [extend_apply_self, chartGramMatrix_apply] using this
+
+/-- **The derivative of the Gram determinant.** For a connection `∇` compatible with the metric,
+the derivative along `v` of the determinant of the chart Gram matrix at `α` is `2 det G` times the
+trace `∑ₖ (∇ᵥ eₖ)ᵏ` of the connection form in the chart frame. -/
+theorem mvfderiv_det_chartGramMatrix
+    {cov : CovariantDerivative I E (TangentSpace I : M → Type _)}
+    (hcov : CovariantDerivative.IsMetricCompatible (V := fun x : M ↦ TangentSpace I x) cov)
+    (α : M) {y : M} (hy : y ∈ (trivializationAt E (TangentSpace I) α).baseSet)
+    (v : TangentSpace I y) :
+    mvfderiv I (fun z ↦ (chartGramMatrix (I := I) α z).det) y v =
+      2 * (chartGramMatrix (I := I) α y).det *
+        ∑ k, (trivializationAt E (TangentSpace I) α).localFrameCoeff I (Module.finBasis ℝ E) k y
+          (cov (chartLocalFrame (I := I) α k) y v) := by
+  let e := trivializationAt E (TangentSpace I) α
+  let b := Module.finBasis ℝ E
+  let G := chartGramMatrix (I := I) α y
+  -- The matrix `P` of the connection form along `v`: `∇ᵥ eᵢ = ∑ₖ Pₖᵢ eₖ`.
+  let P : Matrix (Fin (Module.finrank ℝ E)) (Fin (Module.finrank ℝ E)) ℝ :=
+    Matrix.of fun k i ↦ e.localFrameCoeff I b k y (cov (chartLocalFrame (I := I) α i) y v)
+  have hexp (i : Fin (Module.finrank ℝ E)) :
+      cov (chartLocalFrame (I := I) α i) y v = ∑ k, P k i • chartLocalFrame (I := I) α k y := by
+    simpa [P, chartLocalFrame_def] using
+      e.eq_sum_localFrameCoeff_smul (I := I) (b := b)
+        (s := fun _ ↦ cov (chartLocalFrame (I := I) α i) y v) hy
+  -- Metric compatibility says `dG = Pᵀ G + G P`.
+  have hdG : (Matrix.of fun i j ↦ mvfderiv I (fun z ↦ chartGramMatrix (I := I) α z i j) y v) =
+      Pᵀ * G + G * P := by
+    ext i j
+    rw [Matrix.of_apply, mvfderiv_chartGramMatrix_apply hcov α hy v i j, hexp i, hexp j,
+      sum_inner, inner_sum]
+    simp [Matrix.mul_apply, G, inner_smul_left, inner_smul_right, mul_comm]
+  have hGdet : IsUnit G.det := (chartGramMatrix_det_pos α hy).ne'.isUnit
+  have : IsManifold I (1 + 1) M := by norm_num; infer_instance
+  have hentry (i j : Fin (Module.finrank ℝ E)) :
+      MDifferentiableAt I 𝓘(ℝ) (fun z ↦ chartGramMatrix (I := I) α z i j) y :=
+    ((contMDiffOn_chartGramMatrix_entry (n := 1) α i j).contMDiffAt
+      (e.open_baseSet.mem_nhds hy)).mdifferentiableAt one_ne_zero
+  -- Jacobi's formula: `d (det G) = det G * trace (G⁻¹ (Pᵀ G + G P)) = 2 det G * trace P`.
+  rw [TauCeti.mvfderiv_det_apply hentry hGdet, hdG,
+    Matrix.trace_nonsing_inv_mul_transpose_mul_add_mul hGdet]
+  simp [P, Matrix.trace, e, b, mul_assoc, mul_left_comm]
+
+end Derivative
 
 end Tensor
 end Riemannian

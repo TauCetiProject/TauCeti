@@ -18,8 +18,7 @@ strict monotonicity, the derivative, and the limits at both infinities.
 Since `erf` is a strictly increasing continuous bijection from `ℝ` onto `(-1, 1)`, it has an
 inverse `erfInv` on that interval, which expresses the quantile function of the Gaussian law.
 
-These are the error-function targets of `TauCetiRoadmap/StandardDistributions/README.md`,
-Layer 2.  The names and statement shapes follow those proposed for Mathlib in
+The names and statement shapes follow those proposed for Mathlib in
 [mathlib4#34053](https://github.com/leanprover-community/mathlib4/pull/34053), so that the
 declarations here can be replaced by Mathlib's once it provides them.  The identification
 `erf x = regularizedGamma (1 / 2) (x ^ 2)`, which holds for `0 ≤ x` — the right-hand side is even
@@ -309,6 +308,16 @@ theorem le_erfInv_iff (hy : y ∈ Ioo (-1) 1) : x ≤ erfInv y ↔ erf x ≤ y :
 @[simp]
 theorem erfInv_zero : erfInv 0 = 0 := by
   simpa using erfInv_erf 0
+
+/-- The inverse error function is positive exactly on `(0, 1)`, including at the junk values
+outside `(-1, 1)`. -/
+@[simp]
+theorem erfInv_pos_iff : 0 < erfInv y ↔ y ∈ Ioo 0 1 := by
+  by_cases hy : y ∈ Ioo (-1) 1
+  · rw [lt_erfInv_iff hy, erf_zero]
+    exact ⟨fun h => ⟨h, hy.2⟩, fun h => h.1⟩
+  · rw [erfInv_of_notMem hy, lt_self_iff_false, false_iff]
+    exact fun h => hy ⟨by linarith [h.1], h.2⟩
 
 /-- The inverse error function is odd, including at the junk values outside `(-1, 1)`. -/
 @[simp]

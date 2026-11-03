@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.Flat.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Gram
 public import TauCeti.LinearAlgebra.IntegralLattice.Rationalization
 public import TauCeti.RingTheory.TensorProduct.IsBaseChange
+import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
 
 /-!
 # Localizing an integral lattice at a prime
@@ -37,6 +38,11 @@ applies at `p = 2` exactly as at odd `p`.  The Gram matrix of `L_p` in a base-ch
 image of the integral Gram matrix of `L`, and both local forms are nondegenerate exactly when `B`
 is.
 
+An isometry of the integral localizations of two lattices extends to an isometry of their
+completed rational spaces, so integral local isometry implies rational local isometry
+(`completedRationalForm_equivalent_of_localIntegralForm_equivalent`). This is what carries the
+local data of the genus over to the rational quadratic spaces.
+
 ## Main definitions
 
 * `TauCeti.IntegralLattice.LocalCarrier`: the integral localization `ℤ_p ⊗[ℤ] L`.
@@ -47,6 +53,10 @@ is.
 * `TauCeti.IntegralLattice.Isometry.localCarrierIsometry` and
   `TauCeti.IntegralLattice.Isometry.completedIsometry`: an isometry `L ≅ M` induces isometries
   `L_p ≅ M_p` and `V_p ≅ W_p`.
+* `TauCeti.IntegralLattice.completedRationalFormIsometryEquiv`: the scalar extension of the
+  localized integral form to `ℚ_p` is the completed rational form.
+* `TauCeti.IntegralLattice.completedIsometryEquiv`: an isometry `L_p ≅ M_p` of the localized
+  integral forms extends to an isometry `V_p ≅ W_p` of the completed rational forms.
 
 ## Main results
 
@@ -54,6 +64,8 @@ is.
   of `L_p` from `ℤ_p` to `ℚ_p` along the canonical map.
 * `TauCeti.IntegralLattice.localizationToCompletion_injective`: the canonical map is injective.
 * `TauCeti.IntegralLattice.span_range_localizationToCompletion`: its image spans `V_p` over `ℚ_p`.
+* `TauCeti.IntegralLattice.mem_range_localizationToCompletion_iff`: in the rational basis of a
+  basis of `L`, its image consists of the vectors with `p`-adic integral coordinates.
 * `TauCeti.IntegralLattice.completedRationalForm_localizationToCompletion`: the localized integral
   form is the restriction of the completed rational form.
 * `TauCeti.IntegralLattice.toMatrix_localIntegralForm`: the Gram matrix of `L_p` is the image of
@@ -65,6 +77,8 @@ is.
   nondegenerate exactly when the rational form of `L` is.
 * `TauCeti.IntegralLattice.Isometry.localizationToCompletion_localCarrierIsometry`: the canonical
   map is natural in isometries.
+* `TauCeti.IntegralLattice.completedRationalForm_equivalent_of_localIntegralForm_equivalent`:
+  isometric integral localizations have isometric completed rational spaces.
 
 ## References
 
@@ -187,6 +201,57 @@ instance isLattice_range_localizationToCompletion :
     rw [LinearMap.coe_range]
     exact L.span_range_localizationToCompletion p
 
+section Coordinates
+
+variable {ι : Type*} (e : Basis ι ℤ L)
+
+/-- The canonical map `L_p → V_p` carries the scalar extension of a basis of `L` to the scalar
+extension of the corresponding rational basis of `V`. -/
+theorem localizationToCompletion_basis_baseChange (i : ι) :
+    L.localizationToCompletion p (e.baseChange ℤ_[p] i) =
+      (e.extendOfIsLattice ℚ).baseChange ℚ_[p] i := by
+  simp [Basis.baseChange_apply, Basis.extendOfIsLattice_apply]
+
+/-- The coordinates of a vector of `L_p`, read in `V_p`, are the images of its `ℤ_p`-coordinates:
+in the rational basis of a basis `e` of `L`, the image of `L_p` has `p`-adic integral
+coordinates. -/
+theorem repr_localizationToCompletion (x : L.LocalCarrier p) (i : ι) :
+    ((e.extendOfIsLattice ℚ).baseChange ℚ_[p]).repr (L.localizationToCompletion p x) i =
+      ((e.baseChange ℤ_[p]).repr x i : ℚ_[p]) := by
+  classical
+  -- Both sides are `ℤ_p`-linear in `x`; compare them on the basis `e.baseChange ℤ_p`.
+  have h : (((e.extendOfIsLattice ℚ).baseChange ℚ_[p]).coord i).restrictScalars ℤ_[p] ∘ₗ
+      L.localizationToCompletion p =
+        Algebra.linearMap ℤ_[p] ℚ_[p] ∘ₗ (e.baseChange ℤ_[p]).coord i :=
+    (e.baseChange ℤ_[p]).ext fun j ↦ by
+      simp only [LinearMap.coe_comp, Function.comp_apply,
+        localizationToCompletion_basis_baseChange, LinearMap.restrictScalars_apply,
+        Basis.coord_apply, Basis.repr_self, Algebra.linearMap_apply]
+      rw [Finsupp.single_apply, Finsupp.single_apply]
+      split_ifs <;> simp
+  exact LinearMap.congr_fun h x
+
+/-- In the rational basis of a basis `e` of `L`, the image of `L_p` in `V_p` consists of the
+vectors whose coordinates are `p`-adic integers. -/
+theorem mem_range_localizationToCompletion_iff (x : ℚ_[p] ⊗[ℚ] V) :
+    x ∈ LinearMap.range (L.localizationToCompletion p) ↔
+      ∀ i, ‖((e.extendOfIsLattice ℚ).baseChange ℚ_[p]).repr x i‖ ≤ 1 := by
+  refine ⟨?_, fun h ↦ ?_⟩
+  · rintro ⟨t, rfl⟩ i
+    rw [repr_localizationToCompletion]
+    exact (PadicInt.mem_subring_iff p).mp ((e.baseChange ℤ_[p]).repr t i).property
+  · let b := (e.extendOfIsLattice ℚ).baseChange ℚ_[p]
+    -- The `p`-adic integral coordinates of `x` are those of a vector of `L_p`.
+    refine ⟨(e.baseChange ℤ_[p]).repr.symm (Finsupp.ofSupportFinite
+      (fun i ↦ Padic.lift (b.repr x i) (h i))
+      ((b.repr x).support.finite_toSet.subset fun i hi ↦
+        Finsupp.mem_support_iff.mpr fun h0 ↦ hi (PadicInt.ext h0))), b.repr.injective ?_⟩
+    ext i
+    rw [repr_localizationToCompletion, LinearEquiv.apply_symm_apply, Finsupp.ofSupportFinite_coe,
+      PadicInt.coe_lift]
+
+end Coordinates
+
 /-- **The localized integral form is the restriction of the completed rational form** along the
 canonical map `L_p → V_p`. -/
 @[simp]
@@ -242,6 +307,57 @@ theorem nondegenerate_completedRationalForm_iff :
     (L.completedRationalForm p).Nondegenerate ↔ L.form.Nondegenerate := by
   rw [completedRationalForm, L.form.nondegenerate_baseChange_iff L.rationalBasis]
 
+section LocalIsometry
+
+/-- The scalar extension from `ℤ_p` to `ℚ_p` of the localized integral form is the completed
+rational form, through the canonical isomorphism `ℚ_p ⊗[ℤ_p] L_p ≃ V_p`. -/
+noncomputable def completedRationalFormIsometryEquiv :
+    ((L.localIntegralForm p).baseChange ℚ_[p]).IsometryEquiv (L.completedRationalForm p) :=
+  (L.isBaseChange_localizationToCompletion p).bilinFormIsometryEquiv _ _
+    (L.completedRationalForm_localizationToCompletion p)
+
+/-- The isomorphism `ℚ_p ⊗[ℤ_p] L_p ≃ V_p` sends `a ⊗ x` to `a` times the image of `x` in the
+completion. -/
+@[simp]
+theorem completedRationalFormIsometryEquiv_tmul (a : ℚ_[p]) (x : L.LocalCarrier p) :
+    L.completedRationalFormIsometryEquiv p (a ⊗ₜ x) = a • L.localizationToCompletion p x := by
+  rw [completedRationalFormIsometryEquiv, IsBaseChange.bilinFormIsometryEquiv_apply,
+    IsBaseChange.equiv_tmul]
+
+variable {W : Type*} [AddCommGroup W] [Module ℚ W] {L} {M : IntegralLattice W}
+
+/-- **An isometry of integral localizations extends to the completed rational spaces.** An
+isometry `L_p ≃ M_p` of the localized integral forms extends `ℚ_p`-linearly to an isometry
+`V_p ≃ W_p` of the completed rational forms. -/
+noncomputable def completedIsometryEquiv
+    (e : (L.localIntegralForm p).IsometryEquiv (M.localIntegralForm p)) :
+    (L.completedRationalForm p).IsometryEquiv (M.completedRationalForm p) :=
+  (L.completedRationalFormIsometryEquiv p).symm.trans
+    ((e.baseChange ℚ_[p]).trans (M.completedRationalFormIsometryEquiv p))
+
+/-- The completed isometry extends the integral one along the canonical maps `L_p → V_p` and
+`M_p → W_p`. -/
+@[simp]
+theorem completedIsometryEquiv_localizationToCompletion
+    (e : (L.localIntegralForm p).IsometryEquiv (M.localIntegralForm p)) (x : L.LocalCarrier p) :
+    completedIsometryEquiv p e (L.localizationToCompletion p x) =
+      M.localizationToCompletion p (e x) := by
+  have hx : L.localizationToCompletion p x = L.completedRationalFormIsometryEquiv p (1 ⊗ₜ x) := by
+    rw [completedRationalFormIsometryEquiv_tmul, one_smul]
+  rw [hx, completedIsometryEquiv]
+  simp only [LinearMap.BilinForm.IsometryEquiv.trans_apply,
+    LinearMap.BilinForm.IsometryEquiv.symm_apply_apply]
+  simp
+
+/-- **Integral local isometry implies rational local isometry**: if the integral localizations of
+`L` and `M` at `p` are isometric, then so are their completed rational spaces. -/
+theorem completedRationalForm_equivalent_of_localIntegralForm_equivalent
+    (h : (L.localIntegralForm p).Equivalent (M.localIntegralForm p)) :
+    (L.completedRationalForm p).Equivalent (M.completedRationalForm p) :=
+  h.map (completedIsometryEquiv p)
+
+end LocalIsometry
+
 namespace Isometry
 
 variable {W : Type*} [AddCommGroup W] [Module ℚ W] {L} {M : IntegralLattice W}
@@ -279,6 +395,18 @@ theorem localizationToCompletion_localCarrierIsometry (e : Isometry L M)
   induction x using TensorProduct.inductionOn with
   | add x₁ x₂ h₁ h₂ => simp only [map_add, h₁, h₂]
   | tmul a x => simp
+
+/-- Extending the localized isometry of a lattice isometry to the completions recovers the
+completed isometry. -/
+@[simp]
+theorem completedIsometryEquiv_localCarrierIsometry (e : Isometry L M) :
+    completedIsometryEquiv p (e.localCarrierIsometry p) = e.completedIsometry p := by
+  -- Both are `ℚ_p`-linear, so they agree once they agree on the image of `L_p`, which spans.
+  have h := (L.isBaseChange_localizationToCompletion p).algHom_ext
+    (completedIsometryEquiv p (e.localCarrierIsometry p)).toLinearEquiv.toLinearMap
+    (e.completedIsometry p).toLinearEquiv.toLinearMap fun x ↦ by
+      simp [localizationToCompletion_localCarrierIsometry]
+  exact DFunLike.ext _ _ fun v ↦ by simpa using LinearMap.congr_fun h v
 
 end Isometry
 

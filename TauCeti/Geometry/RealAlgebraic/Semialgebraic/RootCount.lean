@@ -46,6 +46,8 @@ their `Polynomial.roots` is empty, so they lie in the sets with count zero.
   prescribed number of distinct roots.
 * `TauCeti.isSemialgebraic_setOf_card_roots_map_eval_lt`: the parameters whose specialization has a
   prescribed number of distinct roots below `T(x)`.
+* `TauCeti.isSemialgebraic_setOf_mem_roots_card_roots_lt_and_eval_eq`: equality of a polynomial
+  threshold with the distinct root of a prescribed zero-based index.
 * `TauCeti.isSemialgebraic_setOf_isRoot_card_roots_lt`,
   `TauCeti.isSemialgebraic_setOf_not_isRoot_card_roots_lt`: the root locus with `i` roots below
   and the non-root locus with `j` roots below of a family over `R ^ n`, as subsets of
@@ -185,6 +187,24 @@ theorem isSemialgebraic_setOf_card_roots_map_eval_lt (P : (MvPolynomial σ R)[X]
   rcases eq_or_ne k 0 with rfl | hk
   · simpa using hZ
   · simp [hk]
+
+/-- **Equality with the `i`-th distinct root.** For polynomials `P` and `T`, the parameters `x` at
+which `P.map (MvPolynomial.eval x)` has an `i`-th distinct root `r` (with `i` distinct roots
+strictly below `r`, so `i = 0` is the smallest root) and `MvPolynomial.eval x T = r` form a
+semialgebraic set. -/
+theorem isSemialgebraic_setOf_mem_roots_card_roots_lt_and_eval_eq
+    (P : (MvPolynomial σ R)[X]) (T : MvPolynomial σ R) (i : ℕ) :
+    IsSemialgebraic {x : σ → R | ∃ r ∈ (P.map (MvPolynomial.eval x)).roots.toFinset,
+      {z ∈ (P.map (MvPolynomial.eval x)).roots.toFinset | z < r}.card = i ∧
+        MvPolynomial.eval x T = r} := by
+  convert (isSemialgebraic_setOf_map_eval_eq_zero P).compl.inter
+    ((isSemialgebraic_eval_eq_zero (P.eval T)).inter
+      (isSemialgebraic_setOf_card_roots_map_eval_lt P T i)) using 1
+  ext x
+  simp only [mem_ofPred_eq, mem_inter_iff, mem_compl_iff, ← eval_map_apply,
+    Multiset.mem_toFinset, Polynomial.mem_roots', IsRoot.def]
+  exact ⟨fun ⟨r, ⟨hp, hr⟩, hcard, h⟩ => h ▸ ⟨hp, hr, hcard⟩,
+    fun ⟨hp, hr, hcard⟩ => ⟨_, ⟨hp, hr⟩, hcard, rfl⟩⟩
 
 /-! ### Roots and sectors in cylinder coordinates
 

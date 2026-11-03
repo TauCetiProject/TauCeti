@@ -116,6 +116,15 @@ section Absolute
 
 variable {X : Type w} [TopologicalSpace X] [T2Space X] (C : Set X) [CWComplex C]
 
+/-- Ordinary singular homology of a finite-dimensional CW complex vanishes in any degree in which
+it has no cells. -/
+theorem isZero_singularHomology_of_isEmpty_cell [FiniteDimensional C] {A : Type u}
+    [Category.{v} A] [HasCoproducts.{w} A] [Abelian A]
+    [∀ m, HasExactColimitsOfShape (Discrete (cell C m)) A] (R : A) (n : ℕ) [IsEmpty (cell C n)] :
+    IsZero (((AlgebraicTopology.singularHomologyFunctor.{w} A n).obj R).obj (TopCat.of C)) :=
+  (asIso ((complexBasePair C).singularHomologyπ R n)).isZero_iff.mpr
+    (isZero_singularHomology_complexBasePair_of_isEmpty_cell C R n)
+
 section Ring
 
 variable {k : Type w} [Ring k] (M : ModuleCat.{w} k)
@@ -130,6 +139,15 @@ theorem finite_singularHomology_of_cwComplex [IsNoetherianRing k] [Module.Finite
   have := finite_singularHomology_complexBasePair C M n
   Module.Finite.equiv
     (asIso ((complexBasePair C).singularHomologyπ (C := ModuleCat.{w} k) M n)).symm.toLinearEquiv
+
+/-- The ordinary singular homology of a CW complex has the dimension of its singular homology
+relative to the empty subspace. -/
+theorem finrank_singularHomology_eq_complexBasePair (i : ℕ) :
+    finrank k (((AlgebraicTopology.singularHomologyFunctor.{w} (ModuleCat.{w} k) i).obj M).obj
+        (TopCat.of C)) =
+      finrank k ((complexBasePair C).singularHomology M i : ModuleCat k) :=
+  (asIso
+    ((complexBasePair C).singularHomologyπ (C := ModuleCat.{w} k) M i)).toLinearEquiv.finrank_eq
 
 end Ring
 
@@ -147,8 +165,7 @@ theorem finsum_finrank_singularHomology_of_finite_cwComplex [RelCWComplex.Finite
     _ = ∑ᶠ i : ℕ, (-1 : ℤ) ^ i *
         finrank k ((complexBasePair C).singularHomology M i : ModuleCat k) :=
       finsum_congr fun i ↦ congrArg (fun d : ℕ ↦ (-1 : ℤ) ^ i * d)
-        (asIso ((complexBasePair C).singularHomologyπ
-          (C := ModuleCat.{w} k) M i)).toLinearEquiv.finrank_eq
+        (finrank_singularHomology_eq_complexBasePair C M i)
     _ = _ := finsum_finrank_singularHomology_complexBasePair C M
 
 end Absolute

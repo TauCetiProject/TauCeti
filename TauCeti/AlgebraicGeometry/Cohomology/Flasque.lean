@@ -8,14 +8,14 @@ module
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Flasque
 public import TauCeti.AlgebraicGeometry.Cohomology.LongExactSequence
 public import TauCeti.AlgebraicGeometry.Modules.RationalFunctions
-public import TauCeti.Topology.Sheaves.Flasque
+public import TauCeti.Topology.Sheaves.Flasque.Basic
 
 /-!
 # Flasque sheaves of modules and the cohomology of rational functions
 
 A sheaf of modules on a scheme is flasque when its underlying abelian presheaf is, that is, when
-all of its restriction maps are surjective. `TauCeti/Topology/Sheaves/Flasque.lean` proves that a
-flasque abelian sheaf has no higher cohomology; this file transports that statement to the
+all of its restriction maps are surjective. `TauCeti/Topology/Sheaves/Flasque/Basic.lean` proves
+that a flasque abelian sheaf has no higher cohomology; this file transports that statement to the
 cohomology `Hⁿ(X, M)` of `TauCeti/AlgebraicGeometry/Cohomology/Basic.lean` and applies it to the
 sheaf `𝒦_X` of rational functions on an irreducible scheme.
 
@@ -159,12 +159,8 @@ def cohomologyOneLinearEquivOfIsFlasque :
       Cohomology S.X₁ 1 :=
   (Submodule.quotEquivOfEq _ _ (by
       ext x
-      have e (y : Cohomology S.X₂ 0) :
-          Scheme.Modules.cohomologyMapBaseLinear R X S.g 0 y = cohomologyMap S.g 0 y := by
-        rw [Scheme.Modules.cohomologyMapBaseLinear_apply, cohomologyFunctor_map]
-        rfl
       rw [LinearMap.mem_ker, LinearMap.mem_range, cohomologyδBaseLinear_apply]
-      simp only [e]
+      simp only [coe_cohomologyMapBaseLinear]
       exact (exact_cohomologyMap_cohomologyδ hS 0 1 rfl x).symm)).trans
     ((cohomologyδBaseLinear R X hS 0 1 rfl).quotKerEquivOfSurjective (by
       intro y

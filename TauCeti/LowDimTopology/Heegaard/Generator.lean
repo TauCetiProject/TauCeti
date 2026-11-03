@@ -227,9 +227,10 @@ theorem generatorChain_eq_sum_single [DecidableEq Point] (g : D.Generator) :
   · simp
 
 /-- Pairing the `0`-chain of a generator with a function on intersection points sums the
-function over the points of the generator. -/
-theorem sum_generatorChain_smul [Fintype Point] {M : Type*} [AddCommGroup M] (g : D.Generator)
-    (f : Point → M) :
+function over the points of the generator. Only the zero and one scalar laws are needed, so
+the values may lie in any commutative additive monoid with a zero-preserving `ℤ`-action. -/
+theorem sum_generatorChain_smul [Fintype Point] {M : Type*} [AddCommMonoid M]
+    [MulActionWithZero ℤ M] (g : D.Generator) (f : Point → M) :
     ∑ q, D.generatorChain g q • f q = ∑ i, f (D.point g i) := by
   classical
   simp only [generatorChain_apply, ite_smul, one_smul, zero_smul]

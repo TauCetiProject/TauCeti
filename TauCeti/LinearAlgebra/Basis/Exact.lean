@@ -29,6 +29,12 @@ transition matrix between two such bases is block upper triangular
 ## Main declarations
 
 * `Module.Basis.ofExactLift`: the basis of `B` assembled from `a`, `c` and the lifts `s`.
+* `Module.Basis.eq_ofExactLift`: every basis of `B` made of the image of `a` followed by lifts
+  of `c` is of this form.
+* `Module.Basis.eq_reindex_ofExactLift`: the same for a basis indexed by `Fin (m + n)`.
+* `Module.Basis.ofExactLift_det_eq_mul`: the determinant with respect to such a basis of a family
+  made of images of a family `x` of `A` and of lifts of a family `y` of `C` is
+  `a.det x * c.det y`.
 * `Module.Basis.ofExactLift_det_ofExactLift`: the determinant of one such basis with respect to
   another is `a.det a' * c.det c'`.
 * `Module.Basis.det_ofExactLift`: the corresponding transformation law for the determinant with
@@ -117,6 +123,30 @@ theorem ofExactLift_repr_apply_inl (x : A) (i : κ) :
     (ofExactLift hf hfg a c s hs).repr (f x) (Sum.inl i) = a.repr x i := by
   simp [ofExactLift, prod_repr_inl, exactLiftEquiv_apply]
 
+/-- A basis of `B` indexed by `κ ⊕ σ` that is the image of the basis `a` of `A` on the left
+summand, and whose vectors on the right summand lift the basis `c` of `C`, is the basis
+`ofExactLift` with these lifts. -/
+theorem eq_ofExactLift (b : Basis (κ ⊕ σ) R B) (hb : ∀ i, b (.inl i) = f (a i))
+    (hb' : ∀ j, g (b (.inr j)) = c j) :
+    b = ofExactLift hf hfg a c (fun j ↦ b (.inr j)) hb' :=
+  eq_of_apply_eq fun | .inl i => by simp [hb] | .inr j => by simp
+
+/-- A basis of `B` indexed by `Fin (m + n)` that is the image of the basis `a` of `A` on the first
+`m` indices, and whose last `n` vectors lift the basis `c` of `C`, is the basis `ofExactLift`
+with these lifts, reindexed by `finSumFinEquiv`. -/
+theorem eq_reindex_ofExactLift {m n : ℕ} (a : Basis (Fin m) R A) (c : Basis (Fin n) R C)
+    (b : Basis (Fin (m + n)) R B) (hb : ∀ i, b (Fin.castAdd n i) = f (a i))
+    (hb' : ∀ j, g (b (Fin.natAdd m j)) = c j) :
+    b = (ofExactLift hf hfg a c (fun j ↦ b (Fin.natAdd m j)) hb').reindex finSumFinEquiv :=
+  calc b = (b.reindex finSumFinEquiv.symm).reindex finSumFinEquiv :=
+        eq_of_apply_eq fun _ ↦ by simp
+    _ = _ := by
+      rw [eq_ofExactLift hf hfg a c (b.reindex finSumFinEquiv.symm) (by simp [hb])
+        fun j ↦ by simpa using hb' j]
+      congr 2
+      ext j
+      simp
+
 section CommSemiring
 
 variable {R A B C : Type*} [CommSemiring R] [AddCommGroup A] [AddCommGroup B] [AddCommGroup C]
@@ -125,18 +155,16 @@ variable {R A B C : Type*} [CommSemiring R] [AddCommGroup A] [AddCommGroup B] [A
   (a a' : Basis κ R A) (c c' : Basis σ R C) (s s' : σ → B)
   (hs : ∀ j, g (s j) = c j) (hs' : ∀ j, g (s' j) = c' j)
 
-/-- The transition matrix between two bases of the form `ofExactLift` is block upper triangular,
-with diagonal blocks the transition matrices of the bases of `A` and of `C`. -/
-theorem toMatrix_ofExactLift :
-    (ofExactLift hf hfg a c s hs).toMatrix (ofExactLift hf hfg a' c' s' hs') =
-      Matrix.fromBlocks (a.toMatrix a')
-        (Matrix.of fun i j ↦ (ofExactLift hf hfg a c s hs).repr (s' j) (Sum.inl i)) 0
-        (c.toMatrix c') := by
-  ext (i | j) (k | l)
-  · simp [toMatrix_apply]
-  · simp [toMatrix_apply]
-  · simp [toMatrix_apply, hfg.apply_apply_eq_zero]
-  · simp [toMatrix_apply, hs']
+/-- The matrix with respect to `ofExactLift a c s` of a family `v` of `B`, made of the images of a
+family `x` of `A` followed by lifts of a family `y` of `C`, is block upper triangular, with
+diagonal blocks the matrices of `x` with respect to `a` and of `y` with respect to `c`. -/
+theorem toMatrix_ofExactLift {κ' σ' : Type*} (x : κ' → A) (y : σ' → C) (v : κ' ⊕ σ' → B)
+    (hx : ∀ i, v (.inl i) = f (x i)) (hy : ∀ j, g (v (.inr j)) = y j) :
+    (ofExactLift hf hfg a c s hs).toMatrix v =
+      Matrix.fromBlocks (a.toMatrix x)
+        (Matrix.of fun i j ↦ (ofExactLift hf hfg a c s hs).repr (v (.inr j)) (.inl i)) 0
+        (c.toMatrix y) := by
+  ext (i | j) (k | l) <;> simp [toMatrix_apply, hx, hy, hfg.apply_apply_eq_zero]
 
 end CommSemiring
 
@@ -149,12 +177,21 @@ variable {R A B C : Type*} [CommRing R] [AddCommGroup A] [AddCommGroup B] [AddCo
   (hs : ∀ j, g (s j) = c j) (hs' : ∀ j, g (s' j) = c' j)
   [Fintype κ] [Fintype σ] [DecidableEq κ] [DecidableEq σ]
 
+/-- The determinant with respect to `ofExactLift a c s` of a family `v` of `B`, made of the
+images of a family `x` of `A` followed by lifts of a family `y` of `C`, is `a.det x * c.det y`:
+the matrix of `v` is block upper triangular. -/
+theorem ofExactLift_det_eq_mul (x : κ → A) (y : σ → C) (v : κ ⊕ σ → B)
+    (hx : ∀ i, v (.inl i) = f (x i)) (hy : ∀ j, g (v (.inr j)) = y j) :
+    (ofExactLift hf hfg a c s hs).det v = a.det x * c.det y := by
+  rw [det_apply, toMatrix_ofExactLift hf hfg a c s hs x y v hx hy, Matrix.det_fromBlocks_zero₂₁,
+    det_apply, det_apply]
+
 /-- The determinant of one basis of the form `ofExactLift` with respect to another is the
 product of the determinants of the bases of `A` and of `C`; in particular it does not depend on
 the lifts. -/
 theorem ofExactLift_det_ofExactLift :
-    (ofExactLift hf hfg a c s hs).det (ofExactLift hf hfg a' c' s' hs') = a.det a' * c.det c' := by
-  rw [det_apply, toMatrix_ofExactLift, Matrix.det_fromBlocks_zero₂₁, det_apply, det_apply]
+    (ofExactLift hf hfg a c s hs).det (ofExactLift hf hfg a' c' s' hs') = a.det a' * c.det c' :=
+  ofExactLift_det_eq_mul hf hfg a c s hs a' c' _ (by simp) (by simp [hs'])
 
 /-- Replacing the bases `a`, `c` and the lifts `s` in `ofExactLift` multiplies its determinant
 with respect to any basis `b` of `B` by `a.det a' * c.det c'`. In particular the determinant

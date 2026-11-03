@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.QExpansion
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.Raising
+import TauCeti.NumberTheory.DirichletCharacter.Basic
 import TauCeti.NumberTheory.DirichletCharacter.GaussSum
 import TauCeti.NumberTheory.ModularForms.Cusps.Basic
 
@@ -88,13 +89,9 @@ theorem qExpansion_normalizedCharEisensteinSeriesMF_coeff (hk : 3 ≤ (k : ℤ))
   have hphiInv : (phi⁻¹).IsPrimitive := by
     rw [DirichletCharacter.isPrimitive_def, DirichletCharacter.conductor_inv]
     exact hphi
-  have hgauss : gaussSum phi⁻¹ stdAddChar ≠ 0 := by
-    intro hzero
-    have hprod := DirichletCharacter.gaussSum_mul_gaussSum_inv_eq_card_of_isPrimitive
-      hphiInv (isPrimitive_stdAddChar v)
-    rw [hzero, zero_mul, ZMod.card] at hprod
-    exact Nat.cast_ne_zero.mpr (NeZero.ne v) hprod.symm
   have hv : (v : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne v)
+  have hgauss := DirichletCharacter.gaussSum_ne_zero_of_isPrimitive hv hphiInv
+    (isPrimitive_stdAddChar v)
   have hfactorial : ((k - 1).factorial : ℂ) ≠ 0 :=
     Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _)
   have hpi : (-2 * π * I : ℂ) ≠ 0 := by
@@ -290,21 +287,7 @@ theorem normalizedCharEisensteinSeriesMFRaise_mem_modFormCharSpace (hk : 3 ≤ (
   have hbase := normalizedCharEisensteinSeriesMF_mem_modFormCharSpace
     (N := u * v) psi phi hk dvd_rfl
   have hraise := ModularForm.levelRaise_mem_modFormCharSpace_of_dvd htuv _ hbase
-  rw [normalizedCharEisensteinSeriesMFRaise]
-  have hpsi := DirichletCharacter.changeLevel_trans psi (dvd_mul_right u v)
-    ((dvd_mul_left (u * v) t).trans htuv)
-  have hphi := DirichletCharacter.changeLevel_trans phi (dvd_mul_left v u)
-    ((dvd_mul_left (u * v) t).trans htuv)
-  have hchar :
-      (psi.changeLevel ((dvd_mul_right u v).trans
-            ((dvd_mul_left (u * v) t).trans htuv)) *
-          phi.changeLevel ((dvd_mul_left v u).trans
-            ((dvd_mul_left (u * v) t).trans htuv))).toUnitHom =
-        ((psi.changeLevel (dvd_mul_right u v) *
-          phi.changeLevel (dvd_mul_left v u)).toUnitHom).comp
-            (ZMod.unitsMap ((dvd_mul_left (u * v) t).trans htuv)) := by
-    rw [hpsi, hphi, ← map_mul, DirichletCharacter.changeLevel_toUnitHom]
-  rw [hchar]
+  rw [normalizedCharEisensteinSeriesMFRaise, DirichletCharacter.changeLevel_trans_mul_toUnitHom]
   exact hraise
 
 end TauCeti.EisensteinSeries

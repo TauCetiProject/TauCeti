@@ -37,6 +37,7 @@ subset of a space is a genus-`g` handlebody when it is homeomorphic to `TauCeti.
 ## Main results
 
 * `TauCeti.isCompact_handlebody`: the standard handlebodies are compact.
+* `TauCeti.isClosed_handlebody`: the standard handlebodies are closed.
 * `TauCeti.handlebody_zero`: the genus-zero handlebody is the closed unit ball of `ℂ × ℝ`.
 * `TauCeti.nonempty_homeomorph_handlebody_zero`: the closed unit ball of any real normed space of
   dimension three is homeomorphic to the genus-zero handlebody.
@@ -93,6 +94,10 @@ theorem mem_handlebody {g : ℕ} {x : ℂ × ℝ} :
 /-- The standard handlebodies are compact. -/
 theorem isCompact_handlebody (g : ℕ) : IsCompact (handlebody g) :=
   (isCompact_planarSurface g).prod isCompact_Icc
+
+/-- The standard handlebodies are closed. -/
+theorem isClosed_handlebody (g : ℕ) : IsClosed (handlebody g) :=
+  (isCompact_handlebody g).isClosed
 
 /-- The genus-zero handlebody is the closed unit ball of `ℂ × ℝ`, for the sup norm. -/
 theorem handlebody_zero : handlebody 0 = closedBall 0 1 := by

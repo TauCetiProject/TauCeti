@@ -7,17 +7,23 @@ module
 
 public import TauCeti.Probability.Distributions.Exponential.Basic
 public import TauCeti.Probability.Distributions.Gamma.Pi
+public import TauCeti.Probability.Distributions.DiscreteLaplace.Basic
 public import TauCeti.Probability.Distributions.Gamma.Sum
 public import TauCeti.Probability.Distributions.Geometric.Basic
 public import TauCeti.Probability.Distributions.Laplace.Basic
 public import TauCeti.Probability.Distributions.NegativeBinomial.Basic
-import Mathlib.Probability.Independence.CharacteristicFunction
+import Mathlib.Analysis.SpecificLimits.Basic
+import Mathlib.MeasureTheory.Integral.Lebesgue.Countable
+import TauCeti.MeasureTheory.Measure.Prod
+import TauCeti.Probability.Distributions.AsymmetricLaplace.Basic
 
 /-!
 # Sums and differences of classical distributions
 
-This file identifies three laws obtained from independent scalar random variables. The difference
-of two exponential variables with common rate `b⁻¹` has the centered Laplace law of scale `b`.
+This file identifies four laws obtained from independent scalar random variables. The difference
+of two exponential variables with common rate `b⁻¹` has the centered Laplace law of scale `b`, and
+the integer difference of two geometric counts with common success probability `p ≠ 0` has the
+centered discrete Laplace law with parameter `1 - p`.
 A finite sum of geometric variables with nonzero success probability has a negative-binomial law,
 including the empty sum and the success-probability-one boundary. A nonempty finite sum of
 exponential variables with common rate has the corresponding Erlang law.
@@ -29,11 +35,13 @@ resulting random variables.
 ## Main results
 
 * `TauCeti.Probability.IndepFun.hasLaw_sub_expMeasure` identifies an exponential difference;
+* `ProbabilityTheory.IndepFun.hasLaw_sub_discreteLaplaceMeasure` identifies a geometric difference;
 * `TauCeti.Probability.iIndepFun.hasLaw_sum_geometricMeasure` identifies a finite geometric sum;
 * `TauCeti.Probability.iIndepFun.hasLaw_sum_expMeasure` identifies a finite exponential sum;
-* `TauCeti.Probability.map_sub_prod_expMeasure`, `TauCeti.Probability.map_sum_pi_geometricMeasure`
-  and `TauCeti.Probability.map_sum_pi_expMeasure` state the same three laws as pushforwards of
-  product measures.
+* `TauCeti.Probability.map_sub_prod_expMeasure`,
+  `TauCeti.Probability.map_sub_prod_geometricMeasure`,
+  `TauCeti.Probability.map_sum_pi_geometricMeasure` and `TauCeti.Probability.map_sum_pi_expMeasure`
+  state the same four laws as pushforwards of product measures.
 
 ## References
 
@@ -41,6 +49,8 @@ resulting random variables.
   2nd ed., Wiley (1994), chapters 19 and 23.
 * N. L. Johnson, A. W. Kemp, and S. Kotz, *Univariate Discrete Distributions*, 3rd ed., Wiley
   (2005), chapter 5.
+* S. Inusah and T. J. Kozubowski, *A discrete analogue of the Laplace distribution*, Journal of
+  Statistical Planning and Inference 136 (2006), 1090–1102.
 -/
 
 public section
@@ -58,55 +68,69 @@ variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
 /-! ### A difference of exponential variables -/
 
 /-- The difference of independent exponential variables with common rate `b⁻¹` has the centered
-Laplace law of scale `b`. -/
+Laplace law of scale `b`. This is the equal-rate case of
+`ProbabilityTheory.IndepFun.hasLaw_asymmetricLaplaceMeasure`. -/
 theorem IndepFun.hasLaw_sub_expMeasure {X Y : Ω → ℝ} {b : ℝ} (hindep : IndepFun X Y P)
-    (hb : 0 < b) (hX : HasLaw X (expMeasure b⁻¹) P)
+    (hX : HasLaw X (expMeasure b⁻¹) P)
     (hY : HasLaw Y (expMeasure b⁻¹) P) :
     HasLaw (fun ω => X ω - Y ω) (laplaceMeasure 0 b) P := by
-  have hr : 0 < b⁻¹ := inv_pos.mpr hb
-  let _ : IsProbabilityMeasure (expMeasure b⁻¹) := isProbabilityMeasure_expMeasure hr
-  let _ : IsProbabilityMeasure (laplaceMeasure 0 b) :=
-    isProbabilityMeasure_laplaceMeasure hb 0
-  let _ : IsProbabilityMeasure P := hX.isProbabilityMeasure
-  have hindepNeg : IndepFun X (fun ω => -Y ω) P := by
-    simpa only [Function.comp_def, id_eq] using
-      hindep.comp measurable_id measurable_neg
-  refine ⟨hX.aemeasurable.sub hY.aemeasurable, ?_⟩
-  apply Measure.ext_of_charFun
-  funext t
-  have hneg :
-      charFun (P.map (-Y)) t = charFun (expMeasure b⁻¹) (-t) := by
-    -- `charFun_map_mul_comp` expresses scalar negation as multiplication by `-1`.
-    have hneg_eq_mul : (-Y) = fun ω => (-1 : ℝ) * Y ω := by
-      funext ω
-      simp
-    rw [hneg_eq_mul, charFun_map_mul_comp hY.aemeasurable, hY.map_eq]
-    congr 1
-    ring
-  simp only [sub_eq_add_neg]
-  have hsum := congrFun
-    (hindepNeg.charFun_map_fun_add_eq_mul hX.aemeasurable hY.aemeasurable.neg) t
-  simp only [Pi.mul_apply, Pi.neg_apply] at hsum
-  rw [hsum, hX.map_eq, hneg, charFun_expMeasure hr, charFun_expMeasure hr,
-    charFun_laplaceMeasure hb]
-  push_cast
-  have hb0 : b ≠ 0 := hb.ne'
-  have hden₁ : (b⁻¹ : ℂ) - Complex.I * t ≠ 0 := by
-    intro h
-    have hreal : b⁻¹ = 0 := by
-      simpa using congrArg Complex.re h
-    exact inv_ne_zero hb0 hreal
-  have hden₂ : (b⁻¹ : ℂ) - Complex.I * (-t) ≠ 0 := by
-    intro h
-    have hreal : b⁻¹ = 0 := by
-      simpa using congrArg Complex.re h
-    exact inv_ne_zero hb0 hreal
-  simp only [mul_zero, zero_mul, Complex.exp_zero, one_div]
-  field_simp [hden₁, hden₂, hb0]
-  congr 1
-  ring_nf
-  rw [Complex.I_sq]
-  ring
+  simpa using hindep.hasLaw_asymmetricLaplaceMeasure hX hY 0
+
+/-! ### A difference of geometric variables -/
+
+/-- The mass of a natural number under the difference of two geometric counts. -/
+private theorem map_sub_prod_geometricMeasure_singleton_natCast {p : unitInterval} (hp : p ≠ 0)
+    (n : ℕ) :
+    ((geometricMeasure p).prod (geometricMeasure p)).map (fun z : ℕ × ℕ => (z.1 : ℤ) - z.2)
+        {(n : ℤ)} =
+      ENNReal.ofReal (discreteLaplaceWeightReal 0 (1 - p) n) := by
+  have hp0 : (0 : ℝ) < p := unitInterval.pos_iff_ne_zero.mpr hp
+  have hq0 : (0 : ℝ) ≤ 1 - p := by simp [p.2.2]
+  rw [Measure.map_apply (by fun_prop) (measurableSet_singleton _),
+    Measure.prod_apply_symm (by measurability), lintegral_countable']
+  have hpre (j : ℕ) : (fun a : ℕ => (a : ℤ) - (j : ℤ)) ⁻¹' {(n : ℤ)} = {j + n} := by
+    ext a
+    simp only [Set.mem_preimage, Set.mem_singleton_iff]
+    omega
+  simp only [Set.preimage_preimage, hpre, geometricMeasure_singleton hp,
+    ← ENNReal.ofReal_mul (geometricMeasure_nonneg p _)]
+  -- The masses form a geometric series of ratio `(1 - p) ^ 2`.
+  have hterm : HasSum (fun j : ℕ => (1 - (p : ℝ)) ^ (j + n) * p * ((1 - (p : ℝ)) ^ j * p))
+      (discreteLaplaceWeightReal 0 (1 - p) n) := by
+    have hsq : (1 - (p : ℝ)) ^ 2 < 1 := by nlinarith
+    have h := (hasSum_geometric_of_lt_one (sq_nonneg _) hsq).mul_left
+      ((p : ℝ) ^ 2 * (1 - (p : ℝ)) ^ n)
+    convert h using 1
+    · funext j
+      rw [← pow_mul, pow_add]
+      ring
+    · have hden : 1 - (1 - (p : ℝ)) ^ 2 ≠ 0 := by nlinarith
+      rw [discreteLaplaceWeightReal_def, sub_zero, Int.natAbs_natCast]
+      field_simp
+      ring
+  rw [← ENNReal.ofReal_tsum_of_nonneg (fun j => by positivity) hterm.summable, hterm.tsum_eq]
+
+/-- Pushing the product of two geometric laws with common success probability `p ≠ 0` forward by
+the integer difference of the coordinates gives the centered discrete Laplace law with parameter
+`1 - p`. -/
+theorem map_sub_prod_geometricMeasure {p : unitInterval} (hp : p ≠ 0) :
+    ((geometricMeasure p).prod (geometricMeasure p)).map (fun z : ℕ × ℕ => (z.1 : ℤ) - z.2) =
+      discreteLaplaceMeasure 0 (1 - p) := by
+  have hp0 : (0 : ℝ) < p := unitInterval.pos_iff_ne_zero.mpr hp
+  have hq0 : (0 : ℝ) ≤ 1 - p := by simp [p.2.2]
+  have hq1 : (1 : ℝ) - p < 1 := by simp [hp0]
+  refine Measure.ext_of_singleton fun k => ?_
+  obtain ⟨n, rfl | rfl⟩ := k.eq_nat_or_neg
+  · rw [map_sub_prod_geometricMeasure_singleton_natCast hp,
+      discreteLaplaceMeasure_singleton 0 hq0 hq1]
+  · -- Negative integers reduce to natural ones by the symmetry of both laws.
+    have hpre : Neg.neg ⁻¹' {-(n : ℤ)} = {(n : ℤ)} := by ext; simp
+    rw [← Measure.map_neg_map_sub_prod_self _ (f := ((↑) : ℕ → ℤ)) measurable_from_top,
+      ← neg_zero, ← map_neg_discreteLaplaceMeasure,
+      Measure.map_apply (by fun_prop) (measurableSet_singleton _),
+      Measure.map_apply (by fun_prop) (measurableSet_singleton _), hpre,
+      map_sub_prod_geometricMeasure_singleton_natCast hp,
+      discreteLaplaceMeasure_singleton 0 hq0 hq1]
 
 /-! ### Sums of geometric variables -/
 
@@ -165,19 +189,12 @@ theorem iIndepFun.hasLaw_sum_expMeasure {ι : Type*} [Fintype ι] [Nonempty ι]
 /-! ### Pushforwards of product measures -/
 
 /-- Pushing the product of two exponential laws with common rate `b⁻¹` forward by the difference
-of the coordinates gives the centered Laplace law of scale `b`. -/
-theorem map_sub_prod_expMeasure {b : ℝ} (hb : 0 < b) :
+of the coordinates gives the centered Laplace law of scale `b`. This is the equal-rate case of
+`TauCeti.Probability.asymmetricLaplaceMeasure_eq_map`. -/
+theorem map_sub_prod_expMeasure {b : ℝ} :
     ((expMeasure b⁻¹).prod (expMeasure b⁻¹)).map (fun z : ℝ × ℝ ↦ z.1 - z.2) =
       laplaceMeasure 0 b := by
-  let _ : IsProbabilityMeasure (expMeasure b⁻¹) :=
-    isProbabilityMeasure_expMeasure (inv_pos.mpr hb)
-  have hfst : HasLaw Prod.fst (expMeasure b⁻¹) ((expMeasure b⁻¹).prod (expMeasure b⁻¹)) :=
-    (measurePreserving_fst (μ := expMeasure b⁻¹) (ν := expMeasure b⁻¹)).hasLaw
-  have hsnd : HasLaw Prod.snd (expMeasure b⁻¹) ((expMeasure b⁻¹).prod (expMeasure b⁻¹)) :=
-    (measurePreserving_snd (μ := expMeasure b⁻¹) (ν := expMeasure b⁻¹)).hasLaw
-  have hindep : IndepFun Prod.fst Prod.snd ((expMeasure b⁻¹).prod (expMeasure b⁻¹)) :=
-    (indepFun_iff_hasLaw_prodMk_prod hfst hsnd).2 HasLaw.id
-  exact (IndepFun.hasLaw_sub_expMeasure hindep hb hfst hsnd).map_eq
+  simpa using (asymmetricLaplaceMeasure_eq_map 0 b⁻¹ b⁻¹).symm
 
 /-- Pushing a finite product of geometric laws with success probability `p ≠ 0` forward by the sum
 of the coordinates gives the negative-binomial law whose shape is the number of factors. For an
@@ -202,3 +219,19 @@ theorem map_sum_pi_expMeasure {ι : Type*} [Fintype ι] [Nonempty ι] {r : ℝ} 
 end Probability
 
 end TauCeti
+
+namespace ProbabilityTheory.IndepFun
+
+/-- The integer difference of independent geometric counts with common success probability
+`p ≠ 0` has the centered discrete Laplace law with parameter `1 - p`. -/
+theorem hasLaw_sub_discreteLaplaceMeasure {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
+    {X Y : Ω → ℕ} {p : unitInterval} (hXY : IndepFun X Y P) (hp : p ≠ 0)
+    (hX : HasLaw X (geometricMeasure p) P) (hY : HasLaw Y (geometricMeasure p) P) :
+    HasLaw (fun ω => (X ω : ℤ) - (Y ω : ℤ))
+      (TauCeti.Probability.discreteLaplaceMeasure 0 (1 - p)) P := by
+  let _ := hX.isProbabilityMeasure
+  rw [← TauCeti.Probability.map_sub_prod_geometricMeasure hp]
+  exact (hasLaw_map (by fun_prop) : HasLaw
+    (fun z : ℕ × ℕ => (z.1 : ℤ) - (z.2 : ℤ)) _ _).fun_comp (hXY.hasLaw_prod hX hY)
+
+end ProbabilityTheory.IndepFun

@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.ModularForms.EisensteinSeries.Basic
-import Mathlib.Analysis.Complex.LocallyUniformLimit
 import Mathlib.NumberTheory.ModularForms.Identities
+import TauCeti.Analysis.Complex.UpperHalfPlane.Manifold
 
 /-!
 # Eisenstein series weighted by a function of residues
@@ -97,7 +97,7 @@ theorem weightedEisensteinSeries_slash_apply (γ : SL(2, ℤ)) :
       weightedEisensteinSeries (fun a ↦
         W (a ᵥ* (((γ⁻¹ : SL(2, ℤ)) : SL(2, ZMod N)) : Matrix (Fin 2) (Fin 2) (ZMod N)))) k := by
   ext1 z
-  simp_rw [SL_slash_apply, zpow_neg,
+  simp_rw [SL_slash_apply, _root_.zpow_neg,
     mul_inv_eq_iff_eq_mul₀ (zpow_ne_zero _ <| denom_ne_zero _ z), weightedEisensteinSeries,
     eisSummand_SL2_apply, mul_left_comm _ (_ ^ k), tsum_mul_left, mul_comm (_ ^ k)]
   congr 1
@@ -166,30 +166,16 @@ theorem weightedEisensteinSeries_tendstoLocallyUniformly (hk : 3 ≤ k) :
   rw [norm_mul]
   refine mul_le_mul (norm_le_sum_norm W _) ?_ (norm_nonneg _)
     (Finset.sum_nonneg fun _ _ ↦ norm_nonneg _)
-  simpa only [eisSummand, one_div, ← zpow_neg, norm_zpow, ← Real.rpow_intCast,
+  simpa only [eisSummand, one_div, ← _root_.zpow_neg, norm_zpow, ← Real.rpow_intCast,
     Int.cast_neg] using summand_bound_of_mem_verticalStrip (by positivity) v hB hz
 
 /-- The weighted series is holomorphic on `ℍ`. -/
 theorem weightedEisensteinSeries_mdifferentiable (hk : 3 ≤ k) :
-    MDiff (weightedEisensteinSeriesSIF W k) := by
-  intro τ
-  suffices DifferentiableAt ℂ (↑ₕweightedEisensteinSeriesSIF W k) τ.1 by
-    convert!
-      MDifferentiableAt.comp τ (DifferentiableAt.mdifferentiableAt this) τ.mdifferentiable_coe
-    exact funext fun z ↦ (comp_ofComplex (weightedEisensteinSeriesSIF W k) z).symm
-  refine DifferentiableOn.differentiableAt ?_ (isOpen_upperHalfPlaneSet.mem_nhds τ.2)
-  have hloc : TendstoLocallyUniformlyOn (fun s : Finset (Fin 2 → ℤ) ↦
-      ↑ₕ(fun z : ℍ ↦ ∑ v ∈ s, W ((↑) ∘ v) * eisSummand k v z))
-        (↑ₕ(weightedEisensteinSeriesSIF W k)) atTop {z : ℂ | 0 < z.im} := by
-    rw [← upperHalfPlaneSet, ← range_coe, ← image_univ]
-    apply TendstoLocallyUniformlyOn.comp (s := ⊤) _ _ _
-      (OpenPartialHomeomorph.continuousOn_symm _)
-    · simp only [Set.top_eq_univ, tendstoLocallyUniformlyOn_univ]
-      exact weightedEisensteinSeries_tendstoLocallyUniformly W hk
-    · simp only [Topology.IsOpenEmbedding.toOpenPartialHomeomorph_target, Set.top_eq_univ,
-        mapsTo_range_iff, Set.mem_univ, forall_const]
-  exact hloc.differentiableOn (Eventually.of_forall fun s ↦ DifferentiableOn.fun_sum
-    fun v _ ↦ (eisSummand_extension_differentiableOn k v).const_mul _) isOpen_upperHalfPlaneSet
+    MDiff (weightedEisensteinSeriesSIF W k) :=
+  TauCeti.UpperHalfPlane.mdifferentiable_of_tendstoLocallyUniformly
+    (weightedEisensteinSeries_tendstoLocallyUniformly W hk) (Eventually.of_forall fun _ ↦
+      UpperHalfPlane.mdifferentiable_iff.mpr (DifferentiableOn.fun_sum
+        fun v _ ↦ (eisSummand_extension_differentiableOn k v).const_mul _))
 
 /-- Every `SL(2, ℤ)`-translate of the weighted series is bounded at `i∞`. -/
 theorem isBoundedAtImInfty_weightedEisensteinSeriesSIF (hk : 3 ≤ k) (γ : SL(2, ℤ)) :
@@ -245,7 +231,7 @@ theorem weightedEisensteinSeries_eq_tsum_eisensteinSeries (hk : 3 ≤ k) (z : �
   · have hk0 : k ≠ 0 := by omega
     have h0 (x : gammaSet 1 0 0) : x.1 = 0 := by
       simpa using gammaSet_eq_gcd_mul_divIntMap x.2
-    simp [h0, eisSummand, zero_zpow _ hk0, zero_zpow _ (neg_ne_zero.mpr hk0)]
+    simp [h0, eisSummand, _root_.zero_zpow _ hk0, _root_.zero_zpow _ (neg_ne_zero.mpr hk0)]
   have : NeZero r := ⟨hr⟩
   -- write each pair of gcd `r` as `r` times a coprime pair
   rw [← (gammaSetDivGcdEquiv r).symm.tsum_eq]
@@ -262,7 +248,7 @@ theorem weightedEisensteinSeries_eq_tsum_eisensteinSeries (hk : 3 ≤ k) (z : �
       simp
     rw [hcast]
     simp only [eisSummand, Pi.smul_apply, nsmul_eq_mul, Int.cast_mul, Int.cast_natCast,
-      mul_assoc, ← mul_add, mul_zpow, zpow_neg]
+      mul_assoc, ← mul_add, mul_zpow, _root_.zpow_neg]
     ring
   simp_rw [hsmul, tsum_mul_left]
   congr 1

@@ -48,6 +48,8 @@ involution, `changeForm` commutes with the grade involution for every bilinear f
 
 ## Main results
 
+* `CliffordAlgebra.contractLeft_map`: contraction is natural under quadratic isometries.
+
 * `CliffordAlgebra.contractLeft_mem_evenOdd`: **contraction shifts the parity**.
 * `CliffordAlgebra.involute_contractLeft`: `involute (d ⌋ x) = -(d ⌋ involute x)`.
 * `CliffordAlgebra.contractLeft_mul`: the graded Leibniz rule
@@ -62,10 +64,12 @@ involution, `changeForm` commutes with the grade involution for every bilinear f
   commutes with the grade involution, and with reversion for a symmetric form.
 * `CliffordAlgebra.equivExterior_involute` and `CliffordAlgebra.equivExterior_reverse`: the same
   for the isomorphism with the exterior algebra.
+* `CliffordAlgebra.equivExterior_mem_evenOdd_iff`: that isomorphism preserves the `ℤ/2`-grading.
 * `CliffordAlgebra.equivExterior_ι_mul` and `CliffordAlgebra.equivExterior_mul_ι`: that
   isomorphism on left and right vector factors.
 * `CliffordAlgebra.equivExterior_prod_map_ι_of_pairwise_isOrtho`: that isomorphism sends a product
   of pairwise orthogonal vectors to their exterior product.
+* `CliffordAlgebra.equivExterior_map`: that isomorphism is natural under quadratic isometries.
 
 ## References
 
@@ -76,12 +80,32 @@ involution, `changeForm` commutes with the grade involution for every bilinear f
 public section
 
 
-universe u v
+universe u v w
 
 namespace CliffordAlgebra
 
 variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
   {Q : QuadraticForm R M}
+
+section Naturality
+
+variable {M₁ : Type v} [AddCommGroup M₁] [Module R M₁]
+  {M₂ : Type w} [AddCommGroup M₂] [Module R M₂]
+  {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂}
+
+/-- Contraction against a linear functional commutes with the algebra map induced by a
+quadratic isometry, after pulling back the functional. -/
+theorem contractLeft_map (f : Q₁ →qᵢ Q₂) (d : Module.Dual R M₂)
+    (x : CliffordAlgebra Q₁) :
+    contractLeft d (map f x) = map f (contractLeft (d ∘ₗ f.toLinearMap) x) := by
+  induction x using CliffordAlgebra.left_induction with
+  | algebraMap r => simp only [AlgHom.commutes, contractLeft_algebraMap, map_zero]
+  | add x y hx hy => simp only [map_add, hx, hy]
+  | ι_mul x m hx =>
+    simp only [map_mul, map_apply_ι, contractLeft_ι_mul, hx, map_sub,
+      map_smul, LinearMap.comp_apply, QuadraticMap.Isometry.coe_toLinearMap]
+
+end Naturality
 
 /-- **The grade involution anticommutes with contraction.** Contracting against a linear
 functional lowers the degree by one, hence swaps the even and odd parts of the Clifford algebra,
@@ -261,6 +285,16 @@ theorem equivExterior_involute (x : CliffordAlgebra Q) :
     equivExterior Q (involute x) = involute (equivExterior Q x) :=
   changeForm_involute changeForm.associated_neg_proof x
 
+/-- **`CliffordAlgebra.equivExterior` preserves the `ℤ/2`-grading**: a Clifford element has
+parity `i` exactly when its image in the exterior algebra has parity `i`. -/
+theorem equivExterior_mem_evenOdd_iff {i : ZMod 2} {x : CliffordAlgebra Q} :
+    equivExterior Q x ∈ evenOdd (0 : QuadraticForm R M) i ↔ x ∈ evenOdd Q i := by
+  obtain rfl | rfl : i = 0 ∨ i = 1 := by revert i; decide
+  · rw [← involute_eq_self_iff, ← involute_eq_self_iff, ← equivExterior_involute,
+      (equivExterior Q).injective.eq_iff]
+  · rw [← involute_eq_neg_iff, ← involute_eq_neg_iff, ← equivExterior_involute, ← map_neg,
+      (equivExterior Q).injective.eq_iff]
+
 /-- `CliffordAlgebra.equivExterior` intertwines reversion, because the bilinear form
 `QuadraticMap.associated (-Q)` it changes the form by is symmetric.
 
@@ -283,6 +317,34 @@ theorem equivExterior_prod_map_ι_of_pairwise_isOrtho {l : List M} (hl : l.Pairw
       contractLeft_prod_map_ι_eq_zero, sub_zero, List.map_cons, List.prod_cons]
     intro m hm
     simp [hl.1 m hm]
+
+variable {Q}
+
+/-- **`CliffordAlgebra.equivExterior` is natural under quadratic isometries**: it intertwines the
+algebra map `CliffordAlgebra.map f` with the exterior-algebra map `ExteriorAlgebra.map f`. The
+correction terms of `CliffordAlgebra.equivExterior_ι_mul` are contractions against
+`QuadraticMap.associated (-Q)`, which an isometry preserves.
+
+Not a `simp` lemma, for the same reason as `CliffordAlgebra.equivExterior_involute`. -/
+theorem equivExterior_map {M' : Type w} [AddCommGroup M'] [Module R M']
+    {Q' : QuadraticForm R M'} (f : Q →qᵢ Q') (x : CliffordAlgebra Q) :
+    equivExterior Q' (map f x) = ExteriorAlgebra.map f.toLinearMap (equivExterior Q x) := by
+  induction x using CliffordAlgebra.left_induction with
+  | algebraMap r => simp [equivExterior]
+  | add x y hx hy => simp only [map_add, hx, hy]
+  | ι_mul x m hx =>
+    have hB : QuadraticMap.associated (-Q') (f m) ∘ₗ f.toLinearMap =
+        QuadraticMap.associated (-Q) m := by
+      ext m'
+      simp [QuadraticMap.associated_apply, ← map_add, f.map_app]
+    -- `ExteriorAlgebra.map` is the Clifford map of an isometry of zero forms, so contractions
+    -- commute with it by `CliffordAlgebra.contractLeft_map`.
+    have hmap (d : Module.Dual R M') (y : ExteriorAlgebra R M) :
+        contractLeft d (ExteriorAlgebra.map f.toLinearMap y) =
+          ExteriorAlgebra.map f.toLinearMap (contractLeft (d ∘ₗ f.toLinearMap) y) :=
+      contractLeft_map { f.toLinearMap with map_app' := fun _ ↦ rfl } d y
+    rw [map_mul, map_apply_ι, equivExterior_ι_mul, equivExterior_ι_mul, hx]
+    simp only [map_sub, map_mul, ExteriorAlgebra.map_apply_ι, f.coe_toLinearMap, hmap, hB]
 
 end equivExterior
 

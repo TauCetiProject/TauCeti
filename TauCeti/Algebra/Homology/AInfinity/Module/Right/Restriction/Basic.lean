@@ -127,7 +127,7 @@ theorem isHomogeneous_lTensor_coaugmentedBarMap (G : InternalGrading R M) :
 private theorem koszulTwist_comp_lTensor_coaugmentedBarMap (G : InternalGrading R M) :
     (barGrading BB G).koszulTwist 1 ∘ₗ f.coaugmentedBarMap.lTensor M =
       f.coaugmentedBarMap.lTensor M ∘ₗ (barGrading AA G).koszulTwist 1 := by
-  simpa using (isHomogeneous_lTensor_coaugmentedBarMap f G).koszulTwist_comp 1
+  simpa using (isHomogeneous_lTensor_coaugmentedBarMap f G).koszulTwist_comp_eq_smul 1
 
 /-- `id ⊗ F` is compatible with the cofree coactions along the coalgebra morphism `F`. -/
 private theorem coact_comp_lTensor_coaugmentedBarMap :
@@ -337,7 +337,7 @@ theorem restrictScalars_toAInfinityHom_m (g : AInfinityStrictHom AA BB) (n : ℕ
     (a : Fin n → A) :
     (MM.restrictScalars g.toAInfinityHom).m (n + 1) x a = MM.m (n + 1) x fun i ↦ g (a i) := by
   have hg (k : ℤ) (y : A) : g (AA.grading.koszulTwist k y) = BB.grading.koszulTwist k (g y) := by
-    simpa using (LinearMap.congr_fun (g.isHomogeneous.koszulTwist_comp k) y).symm
+    simpa using (g.isHomogeneous.koszulTwist_apply k y).symm
   rw [m_apply, m_apply, ← taylor_tmul_of, ← taylor_tmul_of, restrictScalars_taylor,
     restrictScalars_grading, LinearMap.comp_apply, LinearMap.lTensor_tmul,
     AInfinityStrictHom.coaugmentedBarMap_toAInfinityHom, TensorWords.map_of_tprod]

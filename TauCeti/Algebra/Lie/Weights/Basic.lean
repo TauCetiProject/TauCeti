@@ -23,6 +23,9 @@ weight-space theory. The transport and finrank identities hold over any commutat
   weight space with the intersection of the target weight space and its range.
 * `LieModule.map_weightSpace_eq`: a Lie-module equivalence maps each weight space onto the
   corresponding weight space.
+* `LieModule.genWeightSpaceOf_eq_iSup_genWeightSpace`: for a finite-dimensional triangularizable
+  module, a generalized eigenspace of one element is the sum of the generalized weight spaces of
+  the weights taking that eigenvalue there.
 * `LieModuleEquiv.finrank_weightSpace_eq`: equivalent Lie modules have weight spaces of equal
   dimension.
 * `LieSubmodule.toSubmodule_map_weightSpace_incl`: inclusion identifies a submodule's weight space
@@ -35,6 +38,8 @@ weight-space theory. The transport and finrank identities hold over any commutat
   submodule's generalized weight space.
 * `TauCeti.Weight.coe_neg_eq_add_of_coe_eq_add`: reading a vanishing sum of four weights as an
   equation between opposite pair sums.
+* `LieModuleHom.exists_mem_weight_of_injective`: if the weights of `N` lie in a set of linear
+  forms, then so do the weights of any module embedding in `N`.
 
 ## References
 
@@ -93,6 +98,28 @@ theorem map_weightSpace_eq (e : LieModuleEquiv R L M M₂) (χ : L → R) :
     (weightSpace M χ).map e = weightSpace M₂ χ := by
   simp [map_weightSpace_eq_of_injective χ e.injective]
 
+section Field
+
+variable {K L M : Type*} [Field K] [LieRing L] [LieAlgebra K L] [LieRing.IsNilpotent L]
+  [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M] [FiniteDimensional K M]
+  [IsTriangularizable K L M]
+
+/-- **A generalized eigenspace of one element is the sum of the matching weight spaces.** The
+generalized `μ`-eigenspace of `x` is spanned by the generalized weight spaces of the weights taking
+the value `μ` at `x`. -/
+theorem genWeightSpaceOf_eq_iSup_genWeightSpace (μ : K) (x : L) :
+    genWeightSpaceOf M μ x = ⨆ (χ : Weight K L M) (_ : χ x = μ), genWeightSpace M χ := by
+  refine le_antisymm ?_ (iSup₂_le fun χ hχ ↦ hχ ▸ genWeightSpace_le_genWeightSpaceOf M x χ)
+  refine (eq_iSup_inf_genWeightSpace K L M (genWeightSpaceOf M μ x)).le.trans
+    (iSup_le fun χ ↦ ?_)
+  by_cases hχ : χ x = μ
+  · exact inf_le_right.trans (le_iSup₂_of_le χ hχ le_rfl)
+  · have hdisj := (disjoint_genWeightSpaceOf K L M (Ne.symm hχ)).mono_right
+      (genWeightSpace_le_genWeightSpaceOf M x χ)
+    exact hdisj.eq_bot.le.trans bot_le
+
+end Field
+
 end LieModule
 
 namespace LieModuleEquiv
@@ -139,7 +166,7 @@ theorem finrank_inf_weightSpace {K : Type*} [CommRing K] [LieAlgebra K L]
     (N : LieSubmodule K L M) (χ : H → K) :
     finrank K ((weightSpace M χ).toSubmodule ⊓ N.toSubmodule : Submodule K M)
       = finrank K (weightSpace ↥N χ) := by
-  rw [← N.toSubmodule_map_weightSpace_incl χ, TauCeti.finrank_toSubmodule]
+  rw [← N.toSubmodule_map_weightSpace_incl χ, LieSubmodule.finrank_toSubmodule]
   exact (LieSubmodule.equivMapOfInjective (weightSpace ↥N χ)
     (f := N.incl.restrictLie H) (injective_incl N)).toLinearEquiv.finrank_eq.symm
 
@@ -163,7 +190,7 @@ theorem finrank_inf_genWeightSpace {K : Type*} [CommRing K] [LieAlgebra K L]
     (N : LieSubmodule K L M) (χ : H → K) :
     finrank K ((genWeightSpace M χ).toSubmodule ⊓ N.toSubmodule : Submodule K M)
       = finrank K (genWeightSpace ↥N χ) := by
-  rw [← N.toSubmodule_map_genWeightSpace_incl χ, TauCeti.finrank_toSubmodule]
+  rw [← N.toSubmodule_map_genWeightSpace_incl χ, LieSubmodule.finrank_toSubmodule]
   exact (LieSubmodule.equivMapOfInjective (genWeightSpace ↥N χ)
     (f := N.incl.restrictLie H) (injective_incl N)).toLinearEquiv.finrank_eq.symm
 
@@ -188,3 +215,31 @@ theorem Weight.coe_neg_eq_add_of_coe_eq_add {μ : Weight K H L} {a b c d : H →
   linear_combination -hy
 
 end TauCeti
+
+namespace LieModuleHom
+
+open LieModule
+
+section Injective
+
+variable {R L M N S : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] [LieRing.IsNilpotent L]
+  [AddCommGroup M] [Module R M] [LieRingModule L M] [LieModule R L M]
+  [AddCommGroup N] [Module R N] [LieRingModule L N] [LieModule R L N]
+  [SetLike S (Module.Dual R L)]
+
+/-- **A module embedding in one whose weights lie in a set has its weights in that set.** Every
+weight of `M` is a weight of `N` when `M` maps injectively and equivariantly to `N`, so if each
+weight of `N` agrees with a linear form in `s`, such as an element of a weight lattice, then so
+does each weight of `M`. In particular this applies to the Lie submodules of `N`. -/
+theorem exists_mem_weight_of_injective {s : S} (f : M →ₗ⁅R,L⁆ N) (hf : Function.Injective f)
+    (hN : ∀ χ : Weight R L N, ∃ φ ∈ s, ⇑φ = ⇑χ) (χ : Weight R L M) : ∃ φ ∈ s, ⇑φ = ⇑χ := by
+  obtain ⟨m, hm, hm₀⟩ := χ.exists_ne_zero
+  refine hN ⟨χ, fun h ↦ hm₀ (hf ?_)⟩
+  have hfm : f m ∈ genWeightSpace N (χ : L → R) :=
+    map_genWeightSpace_le f (LieSubmodule.mem_map_of_mem hm)
+  rw [h, LieSubmodule.mem_bot] at hfm
+  rw [hfm, map_zero]
+
+end Injective
+
+end LieModuleHom

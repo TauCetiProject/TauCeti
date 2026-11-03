@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.QuaternionicProjectiveSpace.Charts
 public import Mathlib.Geometry.Manifold.IsManifold.Basic
+public import TauCeti.Analysis.Calculus.ContDiff.FinInsertNth
 
 /-!
 # The standard smooth manifold structure on quaternionic projective space
@@ -62,11 +63,9 @@ theorem contDiffOn_affineChart_transition (k l : Fin (n + 1)) (r : ℕ∞ω) :
     ContDiffOn ℝ r ((affineChart k).symm.trans (affineChart l))
       ((affineChart k).symm.trans (affineChart l)).source := by
   have hcoord (j : Fin (n + 1)) :
-      ContDiff ℝ r (fun z : Fin n → ℍ ↦ Fin.insertNth (α := fun _ ↦ ℍ) k 1 z j) := by
-    induction j using k.succAboveCases with
-    | x => simpa only [Fin.insertNth_apply_same] using
-        (contDiff_const : ContDiff ℝ r (fun _ : Fin n → ℍ ↦ (1 : ℍ)))
-    | p j => simpa only [Fin.insertNth_apply_succAbove] using contDiff_apply ℝ (fun _ ↦ ℍ) j
+      ContDiff ℝ r (fun z : Fin n → ℍ ↦ Fin.insertNth (α := fun _ ↦ ℍ) k 1 z j) :=
+    contDiff_pi.1 ((contDiff_const (c := (1 : ℍ))).finInsertNth (𝕜 := ℝ) (F := fun _ ↦ ℍ) k
+      contDiff_id) j
   apply contDiffOn_pi.2
   intro j
   have hden (z) (hz : z ∈ ((affineChart k).symm.trans (affineChart l)).source) :

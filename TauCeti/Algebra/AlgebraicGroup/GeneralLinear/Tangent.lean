@@ -11,6 +11,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Tangent.Smooth
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.SmoothConnected
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Coordinate.BaseChange
+public import TauCeti.Algebra.AlgebraicGroup.Tangent.InvariantDerivation
 
 /-!
 # The tangent Lie algebra of the general linear group
@@ -29,6 +30,8 @@ and surjectivity without choosing a presentation of derivations on the determina
 
 * `TauCeti.GeneralLinear.tangentMatrix`: evaluate a tangent derivation on the generic entries.
 * `TauCeti.GeneralLinear.trace_tangentMatrix`: the derivative of the determinant is matrix trace.
+* `TauCeti.GeneralLinear.iterate_leftInvariantDerivation_genericMatrix`: the left-invariant vector
+  field of a tangent vector acts on the generic matrix `x` by `Dᵐ x = x Xᵐ`.
 * `TauCeti.GeneralLinear.tangentLinearEquivMatrix`: the tangent space of `GLₙ` is linearly
   equivalent to `n × n` matrices.
 * `TauCeti.GeneralLinear.cotangentDualMatrixEquiv`: the cotangent-dual Lie algebra of `GLₙ`
@@ -380,6 +383,47 @@ theorem tangentLieEquivMatrix_apply (d : Derivation R (H (R := R) n)
   change tangentMatrix n d = tangentMatrix n d
   rfl
 
+section InvariantDerivation
+
+variable (d : Derivation R (coordinateHopfAlgebra R n)
+  (Bialgebra.CounitAlgebra R (coordinateHopfAlgebra R n) R))
+
+/-- **The invariant vector field of a tangent vector to `GLₙ` is right multiplication by its
+matrix** on the generic matrix: `D x_ij = ∑ₖ x_ik X_kj`. -/
+theorem leftInvariantDerivation_genericMatrix (i j : Fin n) :
+    Bialgebra.leftInvariantDerivation d (genericMatrix R n i j) =
+      ∑ k, tangentMatrix n d k j • genericMatrix R n i k := by
+  simp only [genericMatrix_apply, Bialgebra.leftInvariantDerivation_apply,
+    coordinateHopfAlgebra_comul_X, map_sum, LinearMap.tensorComponent_tmul, LinearMap.comp_apply,
+    AlgEquiv.toLinearMap_apply, Derivation.coeFn_coe, tangentMatrix_apply]
+
+/-- Iterating the invariant vector field of a tangent vector to `GLₙ` multiplies the generic
+matrix on the right by the powers of its matrix: `Dᵐ x_ij = ∑ₖ x_ik (Xᵐ)_kj`. -/
+theorem iterate_leftInvariantDerivation_genericMatrix (m : ℕ) (i j : Fin n) :
+    (Bialgebra.leftInvariantDerivation d)^[m] (genericMatrix R n i j) =
+      ∑ k, (tangentMatrix n d ^ m) k j • genericMatrix R n i k := by
+  induction m generalizing j with
+  | zero => simp [Matrix.one_apply]
+  | succ m ih =>
+    rw [Function.iterate_succ_apply', ih, map_sum]
+    simp only [Derivation.map_smul, leftInvariantDerivation_genericMatrix, Finset.smul_sum,
+      smul_smul]
+    rw [Finset.sum_comm]
+    refine Finset.sum_congr rfl fun l _ => ?_
+    rw [← Finset.sum_smul, pow_succ', Matrix.mul_apply]
+    simp only [mul_comm]
+
+/-- The counit of the iterated invariant vector field on a generic entry is the corresponding
+entry of the power of the tangent matrix. -/
+theorem counit_iterate_leftInvariantDerivation_genericMatrix (m : ℕ) (i j : Fin n) :
+    Coalgebra.counit (R := R)
+        ((Bialgebra.leftInvariantDerivation d)^[m] (genericMatrix R n i j)) =
+      (tangentMatrix n d ^ m) i j := by
+  rw [iterate_leftInvariantDerivation_genericMatrix, map_sum]
+  simp [coordinateHopfAlgebra_counit_X]
+
+end InvariantDerivation
+
 variable {k : Type u} [CommRing k] {n : ℕ}
 
 /-- The cotangent-dual Lie algebra of `GL_n` identified linearly with `n × n` matrices. -/
@@ -401,6 +445,16 @@ theorem cotangentDualMatrixEquiv_apply
           (A := coordinateHopfAlgebra k n) (B := k)) x) := by
   simp only [cotangentDualMatrixEquiv, LinearEquiv.trans_apply,
     tangentLinearEquivMatrix_apply]
+
+/-- The cotangent-dual matrix equivalence carries the Lie bracket of `GLₙ` to the matrix
+commutator. -/
+theorem cotangentDualMatrixEquiv_lie
+    (x y : Module.Dual k (Bialgebra.CotangentSpace k (coordinateHopfAlgebra k n))) :
+    cotangentDualMatrixEquiv ⁅x, y⁆ =
+      cotangentDualMatrixEquiv x * cotangentDualMatrixEquiv y -
+        cotangentDualMatrixEquiv y * cotangentDualMatrixEquiv x := by
+  simp only [cotangentDualMatrixEquiv_apply, ← Derivation.cotangentDualLieEquiv_apply,
+    LieEquiv.map_lie, tangentMatrix_lie, LieRing.of_associative_ring_bracket]
 
 /-- Scalar extension of a cotangent-dual tangent vector applies the scalar map entrywise to its
 matrix.  This is the compatibility that lets computations on coefficient-valued derivations be

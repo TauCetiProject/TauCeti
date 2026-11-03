@@ -9,7 +9,7 @@ import Mathlib.Tactic.NoncommRing
 public import Mathlib.Algebra.Lie.OfAssociative
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Even
 import TauCeti.Algebra.Lie.Derivation.Basic
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Bivector.Basic
 
 /-!
 # The quadratic elements of a Clifford algebra as a Lie subalgebra
@@ -55,6 +55,8 @@ scope.
   products of Clifford generators.
 * `CliffordAlgebra.quadraticLieSubalgebra_toSubmodule_le_of_bivector_mem`: the
   universal property of the underlying submodule, from which the containments below are read off.
+* `CliffordAlgebra.map_mem_quadraticLieSubalgebra`: the algebra map induced by a quadratic
+  isometry preserves the quadratic elements.
 * `CliffordAlgebra.quadraticLieSubalgebra_le_evenOdd_zero`,
   `CliffordAlgebra.quadraticLieSubalgebra_le_even` and
   `CliffordAlgebra.quadraticLieSubalgebra_le_filtration_two`: the quadratic elements are
@@ -84,33 +86,6 @@ variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
   (Q : QuadraticForm R M) [Invertible (2 : R)]
 
 omit [Invertible (2 : R)] in
-/-- The commutator of a product of two Clifford generators with a third generator. -/
-private theorem lie_ι_mul_ι_ι (x y z : M) :
-    ⁅ι Q x * ι Q y, ι Q z⁆ =
-      QuadraticMap.polar Q y z • ι Q x - QuadraticMap.polar Q x z • ι Q y := by
-  rw [Ring.lie_def]
-  calc
-    ι Q x * ι Q y * ι Q z - ι Q z * (ι Q x * ι Q y) =
-        ι Q x * ι Q y * ι Q z -
-          (algebraMap R (CliffordAlgebra Q) (QuadraticMap.polar Q z x) -
-            ι Q x * ι Q z) * ι Q y := by
-      rw [← mul_assoc, ι_mul_ι_comm (Q := Q) z x]
-    _ = ι Q x * ι Q y * ι Q z -
-          algebraMap R (CliffordAlgebra Q) (QuadraticMap.polar Q z x) * ι Q y +
-          ι Q x * (ι Q z * ι Q y) := by noncomm_ring
-    _ = ι Q x * ι Q y * ι Q z -
-          algebraMap R (CliffordAlgebra Q) (QuadraticMap.polar Q z x) * ι Q y +
-          ι Q x * (algebraMap R (CliffordAlgebra Q) (QuadraticMap.polar Q z y) -
-            ι Q y * ι Q z) := by
-      rw [ι_mul_ι_comm (Q := Q) z y]
-    _ = QuadraticMap.polar Q y z • ι Q x -
-          QuadraticMap.polar Q x z • ι Q y := by
-      rw [QuadraticMap.polar_comm Q y z, QuadraticMap.polar_comm Q x z]
-      simp only [mul_sub, Algebra.smul_def,
-        ← Algebra.commutes (QuadraticMap.polar Q z y) (ι Q x)]
-      noncomm_ring
-
-omit [Invertible (2 : R)] in
 /-- The commutator of two products of Clifford generators, in a form that does not divide by
 `2`. -/
 theorem lie_ι_mul_ι_ι_mul_ι (x y z w : M) :
@@ -126,7 +101,7 @@ theorem lie_ι_mul_ι_ι_mul_ι (x y z w : M) :
       simp only [Ring.lie_def]
       noncomm_ring
     _ = _ := by
-      rw [lie_ι_mul_ι_ι, lie_ι_mul_ι_ι]
+      rw [ι_mul_ι_lie_ι, ι_mul_ι_lie_ι, map_sub, map_smul, map_smul, map_sub, map_smul, map_smul]
       simp only [sub_mul, mul_sub, smul_mul_assoc, mul_smul_comm]
       rw [QuadraticMap.polar_comm Q y z, QuadraticMap.polar_comm Q x z,
         QuadraticMap.polar_comm Q y w]
@@ -290,6 +265,24 @@ theorem lie_ι_mem_range_ι_of_mem_quadraticLieSubalgebra {x : CliffordAlgebra Q
     quadraticLieSubalgebra_toSubmodule_le_of_bivector_mem Q fun a b m =>
       ⟨_, (bivector_lie_ι Q a b m).symm⟩
   exact key hx m
+
+section Map
+
+variable {Q} {M₂ : Type*} [AddCommGroup M₂] [Module R M₂] {Q₂ : QuadraticForm R M₂}
+
+/-- The algebra map induced by a quadratic isometry carries quadratic elements to quadratic
+elements. -/
+theorem map_mem_quadraticLieSubalgebra (f : Q →qᵢ Q₂) {x : CliffordAlgebra Q}
+    (hx : x ∈ quadraticLieSubalgebra Q) : map f x ∈ quadraticLieSubalgebra Q₂ := by
+  have key : (quadraticLieSubalgebra Q).toSubmodule ≤
+      (quadraticLieSubalgebra Q₂).toSubmodule.comap (map f).toLinearMap :=
+    quadraticLieSubalgebra_toSubmodule_le_of_bivector_mem Q fun a b => by
+      rw [Submodule.mem_comap, AlgHom.toLinearMap_apply, map_bivector,
+        LieSubalgebra.mem_toSubmodule]
+      exact bivector_mem_quadraticLieSubalgebra Q₂ _ _
+  exact key hx
+
+end Map
 
 end CommRing
 

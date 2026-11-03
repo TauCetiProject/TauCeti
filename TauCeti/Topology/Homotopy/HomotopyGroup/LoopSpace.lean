@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Homotopy.GenLoop.Loop
+public import TauCeti.Topology.Homotopy.HomotopyGroup.Basic
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Homeomorph
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Homotopy
 
@@ -427,3 +428,63 @@ theorem _root_.ContinuousMap.pathLoopSpaceMulEquiv_map (f : C(X, Y)) (hf : f x =
 end Natural
 
 end HomotopyGroup
+
+namespace TauCeti
+
+open HomotopyGroup
+
+variable {X : Type*} [TopologicalSpace X]
+
+/-- The fixed-interval loop space `Ω X x` is path connected if and only if the fundamental group
+`FundamentalGroup X x` is trivial. -/
+theorem pathConnectedSpace_loopSpace_iff (x : X) :
+    PathConnectedSpace (Ω X x) ↔ Subsingleton (FundamentalGroup X x) := by
+  rw [pathConnectedSpace_iff_zerothHomotopy]
+  have hne : Nonempty (ZerothHomotopy (Ω X x)) := ⟨ZerothHomotopy.mk (Path.refl x)⟩
+  simp only [hne, true_and]
+  exact zerothHomotopyLoopSpaceEquivFundamentalGroup.subsingleton_congr
+
+/-- The fixed-interval loop space `Ω X x` is path connected if and only if `π_ 1 X x` is trivial. -/
+theorem pathConnectedSpace_loopSpace_iff_subsingleton_pi1 (x : X) :
+    PathConnectedSpace (Ω X x) ↔ Subsingleton (π_ 1 X x) :=
+  (pathConnectedSpace_loopSpace_iff x).trans
+    pi1MulEquivFundamentalGroup.symm.toEquiv.subsingleton_congr
+
+/-- The fixed-interval double loop space `Ω (Ω X x) (Path.refl x)` is path connected if and only if
+`π_ 2 X x` is trivial. -/
+theorem pathConnectedSpace_doubleLoopSpace_iff (x : X) :
+    PathConnectedSpace (Ω (Ω X x) (Path.refl x)) ↔ Subsingleton (π_ 2 X x) :=
+  (pathConnectedSpace_loopSpace_iff_subsingleton_pi1 (Path.refl x)).trans
+    (pathLoopSpaceMulEquiv (X := X) (x := x) 0).toEquiv.subsingleton_congr
+
+/-- All homotopy groups `π_ k (Ω X x) (Path.refl x)` (including `k = 0`) are trivial if and only if
+`π_ (n + 1) X x` is trivial for every `n : ℕ`. -/
+theorem forall_subsingleton_homotopyGroup_loopSpace_iff (x : X) :
+    (∀ k : ℕ, Subsingleton (π_ k (Ω X x) (Path.refl x))) ↔
+      ∀ n : ℕ, Subsingleton (π_ (n + 1) X x) := by
+  constructor
+  · intro h n
+    cases n with
+    | zero =>
+      exact (pathConnectedSpace_loopSpace_iff_subsingleton_pi1 x).mp
+        ((pathConnectedSpace_iff_subsingleton_homotopyGroup_zero (Path.refl x)).mpr (h 0))
+    | succ m =>
+      exact (pathLoopSpaceMulEquiv (X := X) (x := x) m).toEquiv.subsingleton_congr.mp (h (m + 1))
+  · intro h k
+    cases k with
+    | zero =>
+      exact (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero (Path.refl x)).mp
+        ((pathConnectedSpace_loopSpace_iff_subsingleton_pi1 x).mpr (h 0))
+    | succ m =>
+      exact (pathLoopSpaceMulEquiv (X := X) (x := x) m).toEquiv.subsingleton_congr.mpr (h (m + 1))
+
+/-- All homotopy groups of the fixed-interval double loop space `Ω (Ω X x) (Path.refl x)`
+(including `k = 0`) are trivial if and only if `π_ (n + 2) X x` is trivial for every `n : ℕ`. -/
+theorem forall_subsingleton_homotopyGroup_doubleLoopSpace_iff (x : X) :
+    (∀ k : ℕ, Subsingleton (π_ k (Ω (Ω X x) (Path.refl x)) (Path.refl (Path.refl x)))) ↔
+      ∀ n : ℕ, Subsingleton (π_ (n + 2) X x) :=
+  (forall_subsingleton_homotopyGroup_loopSpace_iff (Path.refl x)).trans
+    (forall_congr' fun n ↦
+      (pathLoopSpaceMulEquiv (X := X) (x := x) n).toEquiv.subsingleton_congr)
+
+end TauCeti

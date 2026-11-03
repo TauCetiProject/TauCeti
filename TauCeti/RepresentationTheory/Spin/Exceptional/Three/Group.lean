@@ -149,7 +149,7 @@ private theorem spinAction_positiveRoot_singleton
     (z : P.line) (hcoord : P.lineCoordinate z = 1) :
     spinAction Q P (bivector Q (b 0 : V) (z : V)) (b.ExteriorAlgebra {0}) = 0 := by
   rw [bivector_eq_ι_mul_ι_of_isOrtho Q (P.isOrtho_W_line (b 0) z), map_mul,
-    Module.End.mul_apply, spinAction_ι_lineOperator, hcoord, one_smul,
+    mul_apply_eq_comp, spinAction_ι_lineOperator, hcoord, one_smul,
     TauCeti.ExteriorAlgebra.basis_singleton, CliffordAlgebra.involute_ι,
     spinAction_ι_wedge]
   simp
@@ -160,7 +160,7 @@ private theorem spinAction_negativeRoot_empty
     spinAction Q P (bivector Q (z : V) (P.dualVector b 0 : V))
         (b.ExteriorAlgebra ∅) = 0 := by
   rw [bivector_eq_ι_mul_ι_of_isOrtho Q (P.isOrtho_line_W' z (P.dualVector b 0)), map_mul,
-    Module.End.mul_apply, spinAction_ι_contract]
+    mul_apply_eq_comp, spinAction_ι_contract]
   simp [ExteriorAlgebra.basis_apply]
 
 private noncomputable def vacuumIndex : Fin 2 := spinThreeIndexEquiv ∅
@@ -347,6 +347,22 @@ theorem exists_spinGroup_mulEquiv_specialLinearGroup_and_spinRep_equiv_stdSLRep_
   simpa only [spinThreeEquivMatrix] using
     P.evenCliffordEquivEnd_toMatrix_intertwines_spinRep
       (hV ▸ by decide) (spinThreeExteriorBasis P b) g
+
+/-- A nondegenerate three-dimensional quadratic space over a separably closed field of
+characteristic different from two admits polarization data identifying its Spin group with
+`SL₂`, under which the spin representation is standard. -/
+theorem
+    exists_spinGroup_mulEquiv_specialLinearGroup_and_spinRep_equiv_stdSLRep_of_isSepClosed
+    [NeZero (2 : K)] [IsSepClosed K] (hQ : Q.Nondegenerate) (hV : finrank K V = 3) :
+    ∃ P : SpinPolarizationData Q, ∃ f : spinGroup Q ≃* Matrix.SpecialLinearGroup (Fin 2) K,
+      Nonempty ((spinRep Q P).Equiv ((stdSLRep K 2).comp f.toMonoidHom)) := by
+  let _ : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
+  let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
+  let P := SpinPolarizationData.ofNondegenerate Q hQ
+  obtain ⟨f, hf⟩ :=
+    exists_spinGroup_mulEquiv_specialLinearGroup_and_spinRep_equiv_stdSLRep_of_finrank_eq_three
+      P hV
+  exact ⟨P, f, hf⟩
 
 /-- A nondegenerate three-dimensional quadratic space over a separably closed field of
 characteristic not two has Spin group isomorphic to `SL₂`. The equivalence is noncanonical because

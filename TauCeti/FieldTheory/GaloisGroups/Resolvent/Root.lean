@@ -11,18 +11,17 @@ public import TauCeti.RingTheory.Polynomial.Factors
 
 import Mathlib.FieldTheory.Galois.Infinite
 import TauCeti.FieldTheory.GaloisGroups.Orbits
-import TauCeti.FieldTheory.Separable.OfRootCount
-import TauCeti.RingTheory.Polynomial.Roots
+import TauCeti.RingTheory.Polynomial.RootEnumeration
 
 /-!
 # Roots and factors of a resolvent over the base field
 
 A resolvent specification `TauCeti.ResolventSpec n` carries an invariant `Φ` in `n` formal roots
 whose stabilizer under renaming the variables is exactly its subgroup `H ≤ Equiv.Perm (Fin n)`.
-Specializing it at a monic separable `f : F[X]` of degree `n` gives
-`TauCeti.ResolventSpec.specialize`, a monic polynomial over `F` whose image in an extension `E`
-where `f` splits is the product of `X - Ψ(x)` over the orbit of `Φ`, evaluated at the roots `x`
-of `f`.
+Specializing it at a monic `f : F[X]` of degree `n` gives
+`TauCeti.ResolventSpec.specialize`, a monic polynomial over `F` whose image in a field extension `E`
+with a complete numbering of the roots of `f` is the product of `X - Ψ(x)` over the orbit of `Φ`,
+evaluated at those roots `x`.
 
 This file compares the roots of that polynomial in `F` with the Galois group. Numbering the roots
 of `f` in `E` by an equivalence `e : f.rootSet E ≃ Fin n` turns the image of the Galois action on
@@ -40,8 +39,9 @@ the orbit pairwise distinct, so a root in `F` is the value of exactly one rename
 invariant is fixed by every element of the Galois image, and the image lies in its stabilizer,
 which is a conjugate of `H`.
 
-Both readings pass through a numbering of the roots, while the resolvent itself and the property
-of being conjugate into `H` do not depend on one.
+Both readings pass through a numbering of the roots by the degree of `f`. Over fields this already
+forces `f` to be separable, so the root criterion needs no separate separability hypothesis on `f`.
+The resolvent itself and the property of being conjugate into `H` do not depend on the numbering.
 
 The root criterion is the linear case of a description of the whole factorization. The value of
 the invariant renamed along `τ` depends only on the coset `τH`, and an automorphism of `E` moves it
@@ -62,8 +62,6 @@ Galois image on the cosets, and the degree of a factor is the size of its orbit.
   a conjugate of `H`.
 * `TauCeti.ResolventSpec.exists_isRoot_specialize_iff_exists_le_map_conj`: the two together, the
   criterion that a separable resolvent provides.
-* `TauCeti.ResolventSpec.splits_specialize`: the specialized resolvent splits in the field
-  containing the numbered roots of `f`.
 * `TauCeti.ResolventSpec.orbitQuotientEquivFactors`: **the factorization theorem**, the bijection
   between the orbits of the Galois image on the cosets of `H` and the monic irreducible factors of
   a separable resolvent.
@@ -100,22 +98,13 @@ private theorem rootEnum_def (e : f.rootSet E ≃ Fin n) :
     rootEnum e = fun i => ((e.symm i : f.rootSet E) : E) :=
   (rfl)
 
--- Over `E` the resolvent of `f` is the orbit product at the numbered roots.
-private theorem map_specialize_eq_galResolvent_rootEnum (spec : ResolventSpec n) (hf : f.Monic)
-    (hsep : f.Separable) (hdeg : f.natDegree = n) (e : f.rootSet E ≃ Fin n) :
-    (spec.specialize F f).map (algebraMap F E) = galResolvent spec.Φ (rootEnum e) := by
-  subst hdeg
-  exact spec.map_specialize_eq_galResolvent _ hf rfl
-    (Polynomial.Separable.roots_map_eq_map_numbering hsep e.symm)
-
 -- The numbering lists all roots of the base-changed polynomial.
-private theorem map_eq_prod_rootEnum (hf : f.Monic) (hsep : f.Separable)
+private theorem map_eq_prod_rootEnum (hf : f.Monic)
     (hdeg : f.natDegree = n) (e : f.rootSet E ≃ Fin n) :
     f.map (algebraMap F E) = ∏ i, (X - C (rootEnum e i)) := by
   subst hdeg
-  apply Polynomial.eq_prod_X_sub_C_of_monic_of_roots_eq (hf.map _)
-  · rw [hf.natDegree_map, Fintype.card_fin]
-  · exact Polynomial.Separable.roots_map_eq_map_numbering hsep e.symm
+  simpa [hf.leadingCoeff, rootEnum] using
+    (Polynomial.isRootEnumeration_numbering e.symm).map_eq_C_mul_prod_X_sub_C
 
 section
 
@@ -169,14 +158,14 @@ section
 variable [Fact ((f.map (algebraMap F E)).Splits)]
 
 /-- **A Galois image inside `H` gives the resolvent a root in the base field.** If, read through
-some numbering of the roots of a monic separable `f` of degree `n` in a Galois splitting extension
+some numbering of the roots of a monic `f` of degree `n` in a Galois splitting extension
 `E`, the image of the Galois action lies in the subgroup of the specification, then the value of
 the invariant at those roots is fixed by every automorphism of `E` over `F`, hence lies in `F`,
 and it is a root of the resolvent of `f`.
 
 Nothing is assumed about the resolvent here; the converse
 `TauCeti.ResolventSpec.exists_le_map_conj_of_isRoot_specialize` does assume its separability. -/
-theorem exists_isRoot_specialize_of_le [IsGalois F E] (hf : f.Monic) (hsep : f.Separable)
+theorem exists_isRoot_specialize_of_le [IsGalois F E] (hf : f.Monic)
     (hdeg : f.natDegree = n) (e : f.rootSet E ≃ Fin n)
     (hle : (Gal.galActionHom f E).range.map
       (e.permCongrHom : _ →* Equiv.Perm (Fin n)) ≤ spec.H) :
@@ -195,20 +184,20 @@ theorem exists_isRoot_specialize_of_le [IsGalois F E] (hf : f.Monic) (hsep : f.S
   have hroot : ((spec.specialize F f).map (algebraMap F E)).IsRoot (algebraMap F E a) := by
     rw [spec.specialize_map, ha]
     simpa using spec.isRoot_specialize_eval₂_rename
-      (map_eq_prod_rootEnum hf hsep hdeg e) 1
+      (map_eq_prod_rootEnum hf hdeg e) 1
   rw [Polynomial.IsRoot, Polynomial.eval_map, Polynomial.eval₂_at_apply] at hroot
   exact (map_eq_zero_iff _ (algebraMap F E).injective).1 hroot
 
 /-- **A Galois image inside a conjugate of `H` gives the resolvent a root in the base field.**
 The conjugated subgroup is the subgroup of the specification of the renamed invariant, and
 renaming the invariant does not change the resolvent. -/
-theorem exists_isRoot_specialize_of_le_map_conj [IsGalois F E] (hf : f.Monic) (hsep : f.Separable)
+theorem exists_isRoot_specialize_of_le_map_conj [IsGalois F E] (hf : f.Monic)
     (hdeg : f.natDegree = n) (e : f.rootSet E ≃ Fin n) (τ : Equiv.Perm (Fin n))
     (hle : (Gal.galActionHom f E).range.map
       (e.permCongrHom : _ →* Equiv.Perm (Fin n))
       ≤ spec.H.map (MulAut.conj τ).toMonoidHom) :
     ∃ a : F, (spec.specialize F f).IsRoot a := by
-  have h := (spec.rename τ).exists_isRoot_specialize_of_le hf hsep hdeg e (by rwa [rename_H])
+  have h := (spec.rename τ).exists_isRoot_specialize_of_le hf hdeg e (by rwa [rename_H])
   rwa [specialize_rename] at h
 
 end
@@ -231,18 +220,19 @@ private theorem cosetValue_mk (e : f.rootSet E ≃ Fin n) (τ : Equiv.Perm (Fin 
   (rfl)
 
 -- Each value of the orbit is a root of the resolvent.
-private theorem aeval_cosetValue (hf : f.Monic) (hsep : f.Separable) (hdeg : f.natDegree = n)
+private theorem aeval_cosetValue (hf : f.Monic) (hdeg : f.natDegree = n)
     (e : f.rootSet E ≃ Fin n) (c : Equiv.Perm (Fin n) ⧸ spec.H) :
     aeval (cosetValue spec e c) (spec.specialize F f) = 0 := by
   induction c using QuotientGroup.induction_on with | H τ => ?_
   rw [aeval_def, eval₂_eq_eval_map, spec.specialize_map]
-  exact spec.isRoot_specialize_eval₂_rename (map_eq_prod_rootEnum hf hsep hdeg e) τ
+  exact spec.isRoot_specialize_eval₂_rename (map_eq_prod_rootEnum hf hdeg e) τ
 
 -- Every root of the resolvent in `E` is a value of the orbit.
-private theorem exists_cosetValue_eq (hf : f.Monic) (hsep : f.Separable) (hdeg : f.natDegree = n)
+private theorem exists_cosetValue_eq (hf : f.Monic) (hdeg : f.natDegree = n)
     (e : f.rootSet E ≃ Fin n) {z : E} (hz : aeval z (spec.specialize F f) = 0) :
     ∃ c, cosetValue spec e c = z := by
-  rw [aeval_def, eval₂_eq_eval_map, map_specialize_eq_galResolvent_rootEnum spec hf hsep hdeg e]
+  rw [aeval_def, eval₂_eq_eval_map, spec.map_specialize_eq_galResolvent_numbering hf hdeg e,
+    ← rootEnum_def]
     at hz
   have hmem : z ∈ (galResolvent spec.Φ (rootEnum e)).roots :=
     mem_roots'.2 ⟨(MvPolynomial.monic_galResolvent _ _).ne_zero, hz⟩
@@ -252,10 +242,11 @@ private theorem exists_cosetValue_eq (hf : f.Monic) (hsep : f.Separable) (hdeg :
   exact ⟨τ, cosetValue_mk spec e τ⟩
 
 -- A separable resolvent takes pairwise distinct values on the cosets of `H`.
-private theorem cosetValue_injective (hf : f.Monic) (hsep : f.Separable) (hdeg : f.natDegree = n)
+private theorem cosetValue_injective (hf : f.Monic) (hdeg : f.natDegree = n)
     (e : f.rootSet E ≃ Fin n) (hres : (spec.specialize F f).Separable) :
     Function.Injective (cosetValue spec e) := by
-  have hmap := map_specialize_eq_galResolvent_rootEnum spec hf hsep hdeg e
+  have hmap := spec.map_specialize_eq_galResolvent_numbering hf hdeg e
+  rw [← rootEnum_def] at hmap
   have hressep : (galResolvent spec.Φ (rootEnum e)).Separable := hmap ▸ hres.map
   have hinj := Multiset.inj_on_of_nodup_map
     (MvPolynomial.roots_galResolvent spec.Φ (rootEnum e) ▸ nodup_roots hressep)
@@ -286,9 +277,10 @@ private theorem apply_cosetValue (e : f.rootSet E ≃ Fin n) (ϕ : E ≃ₐ[F] E
     apply_eval₂_rootEnum, MvPolynomial.rename_rename, ← Equiv.Perm.coe_mul]
 
 /-- **A root of a separable resolvent confines the Galois image to a conjugate of `H`.** Let `f`
-be monic and separable of degree `n`, let `E` be a normal splitting extension, and let the
-resolvent of `f` for the specification be separable. The values of the orbit of the invariant at
-the roots of `f` are then pairwise distinct, so a root of the resolvent in `F` is the value of
+be monic of degree `n`, let `E` be a normal splitting extension, number the roots of `f` in `E`
+by `Fin n`, and let the resolvent of `f` for the specification be separable. The values of the
+orbit of the invariant at the roots of `f` are then pairwise distinct, so a root of the resolvent
+in `F` is the value of
 exactly one renamed invariant; that invariant is fixed by every element of the Galois image, which
 therefore lies in its stabilizer, a conjugate of `H`.
 
@@ -296,7 +288,7 @@ Separability of the resolvent is what makes the argument work, and it cannot be 
 cosets whose invariants happen to collide at the roots of a particular `f` produce a root of the
 resolvent in `F` that constrains the Galois image no further. The opposite implication,
 `TauCeti.ResolventSpec.exists_isRoot_specialize_of_le_map_conj`, holds unconditionally. -/
-theorem exists_le_map_conj_of_isRoot_specialize [Normal F E] (hf : f.Monic) (hsep : f.Separable)
+theorem exists_le_map_conj_of_isRoot_specialize [Normal F E] (hf : f.Monic)
     (hdeg : f.natDegree = n) (e : f.rootSet E ≃ Fin n)
     (hres : ResolventSeparationEvidence spec f) {a : F}
     (ha : (spec.specialize F f).IsRoot a) :
@@ -306,7 +298,7 @@ theorem exists_le_map_conj_of_isRoot_specialize [Normal F E] (hf : f.Monic) (hse
         ≤ spec.H.map (MulAut.conj τ).toMonoidHom := by
   have hae : aeval (algebraMap F E a) (spec.specialize F f) = 0 := by
     rw [aeval_def, eval₂_eq_eval_map, eval_map, eval₂_at_apply, ha, map_zero]
-  obtain ⟨c, hc⟩ := exists_cosetValue_eq spec hf hsep hdeg e hae
+  obtain ⟨c, hc⟩ := exists_cosetValue_eq spec hf hdeg e hae
   induction c using QuotientGroup.induction_on with | H τ => ?_
   refine ⟨τ, ?_⟩
   rintro π hπ
@@ -317,59 +309,43 @@ theorem exists_le_map_conj_of_isRoot_specialize [Normal F E] (hf : f.Monic) (hse
     rw [← apply_cosetValue spec e ϕ, hc]
     exact ϕ.commutes a
   have hcos :=
-    (cosetValue_injective spec hf hsep hdeg e hres.specializationSeparated hfix).symm
+    (cosetValue_injective spec hf hdeg e hres.specializationSeparated hfix).symm
   rw [MulAction.Quotient.smul_mk, smul_eq_mul, QuotientGroup.eq] at hcos
   rw [Subgroup.mem_map_equiv]
   simpa only [MulAut.conj_symm_apply, MulEquiv.coe_toMonoidHom, mul_assoc,
     inv_mul_cancel_left] using hcos
 
-/-- **The resolvent criterion.** Let `f` be monic and separable of degree `n`, let `E` be a Galois
-splitting extension, and let the resolvent of `f` for the specification be separable. The resolvent
-then has a root in the base field exactly when the Galois image, read through a numbering of the
-roots, lies in a conjugate of the subgroup of the specification. -/
+/-- **The resolvent criterion.** Let `f` be monic of degree `n`, let `E` be a Galois splitting
+extension, number the roots of `f` in `E` by `Fin n`, and let the resolvent of `f` for the
+specification be separable. The resolvent then has a root in the base field exactly when the
+Galois image, read through the numbering, lies in a conjugate of the subgroup of the
+specification. -/
 theorem exists_isRoot_specialize_iff_exists_le_map_conj [IsGalois F E] (hf : f.Monic)
-    (hsep : f.Separable) (hdeg : f.natDegree = n) (e : f.rootSet E ≃ Fin n)
+    (hdeg : f.natDegree = n) (e : f.rootSet E ≃ Fin n)
     (hres : ResolventSeparationEvidence spec f) :
     (∃ a : F, (spec.specialize F f).IsRoot a) ↔
       ∃ τ : Equiv.Perm (Fin n),
         (Gal.galActionHom f E).range.map
           (e.permCongrHom : _ →* Equiv.Perm (Fin n))
           ≤ spec.H.map (MulAut.conj τ).toMonoidHom :=
-  ⟨fun ⟨_, ha⟩ => spec.exists_le_map_conj_of_isRoot_specialize hf hsep hdeg e hres ha,
-    fun ⟨τ, hτ⟩ => spec.exists_isRoot_specialize_of_le_map_conj hf hsep hdeg e τ hτ⟩
+  ⟨fun ⟨_, ha⟩ => spec.exists_le_map_conj_of_isRoot_specialize hf hdeg e hres ha,
+    fun ⟨τ, hτ⟩ => spec.exists_isRoot_specialize_of_le_map_conj hf hdeg e τ hτ⟩
 
 end
 
 /-! ## The factorization of a separable resolvent -/
-
-/-- The specialized resolvent splits over the field containing the numbered roots of a monic
-polynomial of degree `n`. No separability of the resolvent is required. -/
-theorem splits_specialize (hf : f.Monic) (hdeg : f.natDegree = n)
-    (e : f.rootSet E ≃ Fin n) :
-    ((spec.specialize F f).map (algebraMap F E)).Splits := by
-  classical
-  have hsep : f.Separable := (separable_map (algebraMap F E)).mp
-    (separable_of_natDegree_le_card_roots (hf.map _).ne_zero
-      (by simpa [rootSet_def, hdeg] using (Fintype.card_congr e).ge))
-  rw [map_specialize_eq_galResolvent_rootEnum spec hf hsep hdeg e,
-    MvPolynomial.galResolvent_def]
-  exact Splits.prod fun _ _ => Splits.X_sub_C _
 
 -- A separable resolvent identifies the cosets with its roots.
 private noncomputable def cosetValueEquiv (hf : f.Monic)
     (hdeg : f.natDegree = n) (e : f.rootSet E ≃ Fin n)
     (hres : (spec.specialize F f).Separable) :
     Equiv.Perm (Fin n) ⧸ spec.H ≃ (spec.specialize F f).rootSet E := by
-  classical
-  have hsep : f.Separable := (separable_map (algebraMap F E)).mp
-    (separable_of_natDegree_le_card_roots (hf.map _).ne_zero
-      (by simpa [rootSet_def, hdeg] using (Fintype.card_congr e).ge))
   exact Equiv.ofBijective
     (fun c => ⟨cosetValue spec e c, mem_rootSet.mpr
-      ⟨(spec.monic_specialize F f).ne_zero, aeval_cosetValue spec hf hsep hdeg e c⟩⟩)
-    ⟨fun _ _ h => cosetValue_injective spec hf hsep hdeg e hres (congrArg Subtype.val h), by
+      ⟨(spec.monic_specialize F f).ne_zero, aeval_cosetValue spec hf hdeg e c⟩⟩)
+    ⟨fun _ _ h => cosetValue_injective spec hf hdeg e hres (congrArg Subtype.val h), by
       intro x
-      obtain ⟨c, hc⟩ := exists_cosetValue_eq spec hf hsep hdeg e
+      obtain ⟨c, hc⟩ := exists_cosetValue_eq spec hf hdeg e
         (aeval_eq_zero_of_mem_rootSet x.2)
       exact ⟨c, Subtype.ext hc⟩⟩
 
@@ -390,15 +366,12 @@ private theorem minpoly_cosetValue_eq_iff [Normal F E] (hf : f.Monic)
     minpoly F (cosetValue spec e c) = minpoly F (cosetValue spec e d) ↔
       c ∈ MulAction.orbit ((Gal.galActionHom f E).range.map
         (e.permCongrHom : _ →* Equiv.Perm (Fin n))) d := by
-  have hsep : f.Separable :=
-    (card_rootSet_eq_natDegree_iff_of_splits hf.ne_zero Fact.out).mp
-      (by simpa [hdeg] using Fintype.card_congr e)
   constructor
   · intro h
     obtain ⟨ϕ, hϕ⟩ := (Normal.minpoly_eq_iff_mem_orbit E).1 h
     refine MulAction.mem_orbit_iff.2
       ⟨⟨_, Subgroup.mem_map_of_mem _ (MonoidHom.mem_range.2 ⟨Gal.restrict f E ϕ, rfl⟩)⟩,
-        cosetValue_injective spec hf hsep hdeg e hres ?_⟩
+        cosetValue_injective spec hf hdeg e hres ?_⟩
     rw [Subgroup.smul_def]
     exact (apply_cosetValue spec e ϕ d).symm.trans hϕ
   · intro h

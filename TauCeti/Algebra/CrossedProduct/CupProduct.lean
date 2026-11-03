@@ -58,11 +58,13 @@ noncomputable section
 
 namespace TauCeti
 
+universe u
+
 open CategoryTheory ContCohomology _root_.ContinuousCohomology _root_.IntermediateField
 
 attribute [local instance] TopRep.distribMulAction
 
-variable {K : Type} [Field K]
+variable {K : Type u} [Field K]
 
 /-- The trivial `𝔽₂` coefficients are a discrete `G_K`-module. -/
 local instance : ContinuousSMul (AbsoluteGaloisGroup K) (trivialF2 (AbsoluteGaloisGroup K)).V :=
@@ -280,7 +282,7 @@ private theorem inflateZ2_quadratic_sub_mem_B2 {a b : Kˣ} {α β : (SeparableCl
     simp only [hg, hk, or_self, ↓reduceIte]
     ext
     simp
-  simp only [Pi.sub_apply, hW, TwoCocycle.coe_inflateZ2, TwoCocycle.coe_toCocycles₂,
+  simp only [Pi.sub_apply, hW, TwoCocycle.coe_inflateZ2,
     TwoCocycle.inflate_toFun, hq]
   apply Additive.toMul.injective
   simp only [toMul_add, toMul_sub, Additive.toMul_smul, toMul_ofMul, apply_ite Additive.toMul,
@@ -306,7 +308,7 @@ theorem TwoCocycle.inflateClass_quadratic_eq_h2MuToUnits_cup {a b : Kˣ}
         (kummerClass a) (kummerClass b)) := by
   obtain ⟨β, hβ⟩ := exists_pow_eq_units_map (n := 2) (isUnit_of_invertible (2 : K)) b
   obtain ⟨W, hW, hWv⟩ := exists_h2MuToUnits_cup_kummerClass hα hβ
-  rw [TwoCocycle.inflateClass_def, hW]
+  rw [TwoCocycle.inflateClass_def, TwoCocycle.inflateH2_def, hW]
   exact congrArg _ (H2pi_eq_iff.2
     (inflateZ2_quadratic_sub_mem_B2 hα hβ L hcard hr W hWv))
 
@@ -333,7 +335,7 @@ theorem brauerCohomologyEquiv_quaternionClass (a b : Kˣ) :
   let L := K⟮(α : SeparableClosure K)⟯
   have h2 : Module.finrank K L = 2 :=
     IntermediateField.finrank_adjoin_simple_eq_two_of_not_isSquare hα'
-    (mt isSquare_units_val_iff.1 (mt Subgroup.mem_square.2 ha))
+    (mt Units.isSquare_coe_iff.1 (mt Subgroup.mem_square.2 ha))
   have : Algebra.IsQuadraticExtension K L := ⟨h2⟩
   have : FiniteDimensional K L := Module.finite_of_finrank_eq_succ h2
   have : IsGalois K L := Algebra.IsQuadraticExtension.isGalois K L

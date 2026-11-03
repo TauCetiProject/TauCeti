@@ -76,7 +76,7 @@ theorem map_reindex_weylModuleOfShape (μ : d.Partition) :
             ⨂[k]^(YoungDiagram.ofPartition μ).card (Fin n → k) →ₗ[k] ⨂[k]^d (Fin n → k)) =
       LinearMap.range ((permTensorAction k n d).asAlgebraHom (μ.youngSymmetrizer k)) := by
   rw [weylModuleOfShape_toSubmodule, permTensorActionAlgHom_def,
-    map_reindex_range_asAlgebraHom, Nat.Partition.youngSymmetrizer_def]
+    map_reindex_range_permTensorAction_asAlgebraHom, Nat.Partition.youngSymmetrizer_def]
 
 /-- **The Weyl module of the shape of `μ` as the image of `c_μ`**: relabeling the tensor factors
 is an equivalence of representations of `GL n k` from `𝕊^μ(kⁿ)` onto `c_μ (kⁿ)^{⊗d}`. -/
@@ -136,10 +136,10 @@ noncomputable def schurWeylEquiv :
         Representation.IntertwiningMap.isIntertwining, Representation.subrepresentation_apply,
         LinearMap.coe_restrict_apply,
         Representation.youngSymmetrizerEval_lof_tmul,
-        permTensorPowerRep_apply, Module.End.mul_apply,
+        permTensorPowerRep_apply, mul_apply_eq_comp,
         TauCeti.Representation.ofModule'_apply, Submodule.coe_smul, smul_eq_mul, map_mul,
         Representation.asAlgebraHom_single_one]
-      rw [← Module.End.mul_apply _ ((tensorPowerRep k n d) g), h.eq, Module.End.mul_apply]
+      rw [← mul_apply_eq_comp _ ((tensorPowerRep k n d) g), h.eq, mul_apply_eq_comp]
 
 /-- The Schur-Weyl decomposition sends `a ⊗ w` in the summand of `μ` to `a · w`. -/
 @[simp]

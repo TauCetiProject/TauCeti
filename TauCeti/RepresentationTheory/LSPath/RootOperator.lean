@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Reflection
+public import TauCeti.Algebra.Module.Basic
 public import TauCeti.RepresentationTheory.LSPath.PLPath
+import Mathlib.Algebra.Order.Group.MinMax
+import TauCeti.LinearAlgebra.Reflection
 
 /-!
 # Running heights and root operators on piecewise-linear paths
@@ -40,10 +43,12 @@ The operators are defined on segment lists (`TauCeti.PLPath.reflectRecords`,
 `TauCeti.PLPath.listLower`) and then on `TauCeti.PLPath`, using its reduced presentation. The
 main result of this file is that the operators do not depend on the chosen presentation: the
 elementary moves (subdividing a segment, inserting a stationary segment) commute with them up to
-the same moves. The weight changes by `-α` under `f_α` and by `α` under `e_α`.
+the same moves. The weight changes by `-α` under `f_α` and by `α` under `e_α`, while the minimal
+height changes by `-1` and `+1`, respectively, when `f x = 2`.
 
-This file works with the ambient operators on all paths. It does not prove that `e_α` and `f_α`
-are partial inverses, nor the integral string-length identities of Littelmann's path crystals.
+This file works with the ambient operators on all paths. That `e_α` and `f_α` are partial
+inverses is proved in `TauCeti.RepresentationTheory.LSPath.PartialInverse`, and the lengths
+of the root strings through a path in `TauCeti.RepresentationTheory.LSPath.StringLength`.
 
 ## Main definitions
 
@@ -58,11 +63,18 @@ are partial inverses, nor the integral string-length identities of Littelmann's 
 * `TauCeti.PLPath.minHeight_ofSegments`, `TauCeti.PLPath.minHeight_mul`,
   `TauCeti.PLPath.minHeight_reverse`: the minimal height is independent of the presentation, and
   its behaviour under concatenation and reversal.
+* `TauCeti.PLPath.reflectRecords_append`: capped reflection `TauCeti.PLPath.reflectRecords` of a
+  concatenation.
+* `TauCeti.PLPath.reflectRecords_of_le_listMinHeight`: capped reflection is the identity when
+  the cap is at most the minimal height.
 * `TauCeti.PLPath.lower_ofSegments`: the lowering operator may be computed on any presentation.
 * `TauCeti.PLPath.lower_eq_none_iff`, `TauCeti.PLPath.raise_eq_none_iff`: `f_α π = 0` exactly when
   `f (π 1) - h < 1`, and `e_α π = 0` exactly when `-1 < h`.
 * `TauCeti.PLPath.endpoint_of_lower_eq_some`, `TauCeti.PLPath.endpoint_of_raise_eq_some`: the
   root operators change the endpoint by `∓ α`.
+* `TauCeti.PLPath.listMinHeight_reflectRecords`: the minimal height of capped reflection.
+* `TauCeti.PLPath.minHeight_of_lower_eq_some`, `TauCeti.PLPath.minHeight_of_raise_eq_some`:
+  `f_α` lowers and `e_α` raises the minimal height by one.
 * `TauCeti.PLPath.lower_straight`: lowering a straight path `t ↦ t • v` with `f v ≥ 1`.
 
 ## References
@@ -79,52 +91,47 @@ namespace PLPath
 
 open Module Relation
 
-variable {𝕜 : Type*} {V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
-  [AddCommGroup V] [Module 𝕜 V]
+variable {𝕜 : Type*} {V : Type*}
 
-/-! ### The minimal height -/
+/-! ### The minimal height of a segment list -/
 
-section MinHeight
+section ListMinHeight
+
+variable [Semiring 𝕜] [LinearOrder 𝕜] [AddCommMonoid V] [Module 𝕜 V]
 
 variable (f : Dual 𝕜 V)
 
-/-- The minimal running height of the path presented by a segment list: the minimum of `f` over
-the vertices `0, v₁, v₁ + v₂, …, v₁ + ⋯ + vₙ`, at which the minimum of the piecewise-affine
-function `t ↦ f (π t)` is attained. -/
+/-- The running-height recursion for a segment list. When addition preserves the scalar order,
+this is the minimum of `f` over the vertices `0, v₁, v₁ + v₂, …, v₁ + ⋯ + vₙ`. For a
+piecewise-linear path over an ordered field, the minimum of its affine height on each segment
+is attained at a vertex. -/
 def listMinHeight : List V → 𝕜
   | [] => 0
   | v :: l => min 0 (f v + listMinHeight l)
 
 variable {f} {v w : V} {l l₁ l₂ : List V}
 
-omit [IsStrictOrderedRing 𝕜] in
 @[simp]
 theorem listMinHeight_nil : listMinHeight f ([] : List V) = 0 :=
   (rfl)
 
-omit [IsStrictOrderedRing 𝕜] in
 @[simp]
 theorem listMinHeight_cons (v : V) (l : List V) :
     listMinHeight f (v :: l) = min 0 (f v + listMinHeight f l) :=
   (rfl)
 
-omit [IsStrictOrderedRing 𝕜] in
+/-- The vertex heights of a linear image are computed by the pulled-back form. -/
+@[simp]
+theorem listMinHeight_map {W : Type*} [AddCommMonoid W] [Module 𝕜 W]
+    (g : V →ₗ[𝕜] W) (f' : Dual 𝕜 W) (l : List V) :
+    listMinHeight f' (l.map g) = listMinHeight (f'.comp g) l := by
+  induction l with
+  | nil => simp
+  | cons v l ih => simp [listMinHeight_cons, ih]
+
 theorem listMinHeight_nonpos (l : List V) : listMinHeight f l ≤ 0 := by
   cases l <;> simp
 
-/-- The minimal height is at most the height of each vertex. -/
-theorem listMinHeight_le_apply_sum_take (l : List V) (n : ℕ) :
-    listMinHeight f l ≤ f (l.take n).sum := by
-  induction l generalizing n with
-  | nil => simp
-  | cons v l ih =>
-    cases n with
-    | zero => simp
-    | succ n =>
-      rw [listMinHeight_cons, List.take_succ_cons, List.sum_cons, map_add]
-      exact min_le_of_right_le (by linarith [ih n])
-
-omit [IsStrictOrderedRing 𝕜] in
 /-- The minimal height is the height of some vertex. -/
 theorem exists_listMinHeight_eq (l : List V) : ∃ n, listMinHeight f l = f (l.take n).sum := by
   induction l with
@@ -136,6 +143,20 @@ theorem exists_listMinHeight_eq (l : List V) : ∃ n, listMinHeight f l = f (l.t
     · exact ⟨n + 1, by rw [listMinHeight_cons, min_eq_right h, hn, List.take_succ_cons,
         List.sum_cons, map_add]⟩
 
+variable [IsOrderedAddMonoid 𝕜]
+
+/-- The minimal height is at most the height of each vertex. -/
+theorem listMinHeight_le_apply_sum_take (l : List V) (n : ℕ) :
+    listMinHeight f l ≤ f (l.take n).sum := by
+  induction l generalizing n with
+  | nil => simp
+  | cons v l ih =>
+    cases n with
+    | zero => simp
+    | succ n =>
+      rw [listMinHeight_cons, List.take_succ_cons, List.sum_cons, map_add]
+      exact min_le_of_right_le (add_le_add le_rfl (ih n))
+
 theorem listMinHeight_le_apply_sum (l : List V) : listMinHeight f l ≤ f l.sum := by
   simpa using listMinHeight_le_apply_sum_take (f := f) l l.length
 
@@ -145,6 +166,53 @@ theorem listMinHeight_append (l₁ l₂ : List V) :
   induction l₁ with
   | nil => simpa using (min_eq_right (listMinHeight_nonpos (f := f) l₂)).symm
   | cons v l ih => simp [ih, ← min_add_add_left, min_assoc, add_assoc]
+
+end ListMinHeight
+
+section ListMinHeightReverse
+
+variable [Ring 𝕜] [LinearOrder 𝕜] [IsOrderedAddMonoid 𝕜]
+  [AddCommGroup V] [Module 𝕜 V] {f : Dual 𝕜 V}
+
+/-- Reversing and negating the segments shifts their minimal height by the negative final
+height. -/
+theorem listMinHeight_reverse_map_neg (l : List V) :
+    listMinHeight f (l.map Neg.neg).reverse = listMinHeight f l - f l.sum := by
+  induction l with
+  | nil => simp
+  | cons v l ih =>
+    have hl : listMinHeight f l - f l.sum ≤ -f l.sum := by
+      simpa using sub_le_sub_right (listMinHeight_nonpos (f := f) l) (f l.sum)
+    simp only [List.map_cons, List.reverse_cons, listMinHeight_append, ih, listMinHeight_cons,
+      listMinHeight_nil, map_neg, add_zero, ← List.sum_neg_reverse, List.sum_cons, map_add]
+    -- Translate the minimum for the final reversed segment by the tail's final height.
+    have hshift : -f l.sum + min 0 (-f v) = min (-f l.sum) (-(f v + f l.sum)) := by
+      rw [← min_add_add_left, add_zero]
+      congr 1
+      abel
+    calc
+      min (listMinHeight f l - f l.sum) (-f l.sum + min 0 (-f v)) =
+          min (min (listMinHeight f l - f l.sum) (-f l.sum)) (-(f v + f l.sum)) := by
+        rw [hshift, min_assoc]
+      -- The tail minimum is nonpositive, so its shifted value lies below this endpoint.
+      _ = min (listMinHeight f l - f l.sum) (-(f v + f l.sum)) := by
+        rw [min_eq_left hl]
+      _ = min (-(f v + f l.sum)) (listMinHeight f l - f l.sum) := min_comm _ _
+      -- Translate both candidates back by the total height of the original list.
+      _ = min 0 (f v + listMinHeight f l) - (f v + f l.sum) := by
+        rw [← min_sub_sub_right]
+        congr 1 <;> abel
+
+end ListMinHeightReverse
+
+variable [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
+  [AddCommGroup V] [Module 𝕜 V]
+
+/-! ### The minimal height of a path -/
+
+section MinHeight
+
+variable {f : Dual 𝕜 V} {l l₁ l₂ : List V}
 
 theorem listMinHeight_consMerge (v : V) (l : List V) :
     listMinHeight f (consMerge 𝕜 v l) = listMinHeight f (v :: l) := by
@@ -176,17 +244,6 @@ theorem listMinHeight_normalize (l : List V) :
 theorem Move.listMinHeight_eq (h : Move 𝕜 l₁ l₂) : listMinHeight f l₁ = listMinHeight f l₂ := by
   rw [← listMinHeight_normalize, h.normalize_eq, listMinHeight_normalize]
 
-theorem listMinHeight_reverse_map_neg (l : List V) :
-    listMinHeight f (l.map Neg.neg).reverse = listMinHeight f l - f l.sum := by
-  induction l with
-  | nil => simp
-  | cons v l ih =>
-    have hl := listMinHeight_nonpos (f := f) l
-    have hs : ((l.map Neg.neg).reverse).sum = -l.sum := (List.sum_neg_reverse l).symm
-    simp only [List.map_cons, List.reverse_cons, listMinHeight_append, ih, listMinHeight_cons,
-      listMinHeight_nil, map_neg, add_zero, hs, List.sum_cons, map_add, min_def]
-    split_ifs <;> linarith
-
 variable (f) in
 /-- The minimal running height `min_t f (π t)` of a path. -/
 def minHeight (p : PLPath 𝕜 V) : 𝕜 :=
@@ -199,6 +256,14 @@ theorem minHeight_def (p : PLPath 𝕜 V) : p.minHeight f = listMinHeight f p.se
 @[simp]
 theorem minHeight_ofSegments (l : List V) : (ofSegments 𝕜 l).minHeight f = listMinHeight f l := by
   rw [minHeight_def, segments_ofSegments, listMinHeight_normalize]
+
+/-- Minimum height is natural under arbitrary linear maps. -/
+@[simp]
+theorem minHeight_map {W : Type*} [AddCommGroup W] [Module 𝕜 W]
+    (p : PLPath 𝕜 V) (g : V →ₗ[𝕜] W) (f' : Dual 𝕜 W) :
+    (p.map g).minHeight f' = p.minHeight (f'.comp g) := by
+  obtain ⟨l, rfl⟩ := ofSegments_surjective p
+  simp only [map_ofSegments, minHeight_ofSegments, listMinHeight_map]
 
 @[simp]
 theorem minHeight_one : (1 : PLPath 𝕜 V).minHeight f = 0 := by
@@ -308,6 +373,47 @@ theorem sum_reflectRecords (c : 𝕜) (l : List V) :
       simp only [List.sum_cons, ih]
       module
 
+/-- Reflecting the records up to height `c` lowers the minimal height by the increase, along the
+path, of the minimum of `c` and the later minimal height. Compare
+`TauCeti.PLPath.sum_reflectRecords`, by which the final height drops by twice this amount. -/
+theorem listMinHeight_reflectRecords (hx : f x = 2) (c : 𝕜) (l : List V) :
+    listMinHeight f (reflectRecords f x c l) =
+      listMinHeight f l - (min (f l.sum) c - min (listMinHeight f l) c) := by
+  induction l generalizing c with
+  | nil => simp
+  | cons v l ih =>
+    have hl := listMinHeight_nonpos (f := f) l
+    have hls := listMinHeight_le_apply_sum (f := f) l
+    by_cases h : 0 < min (f v + listMinHeight f l) c
+    · set r := min (f v + listMinHeight f l) c with hr
+      have hfv : f v ≠ 0 := (h.trans_le ((min_le_left _ _).trans (by linarith))).ne'
+      -- The reflected initial piece of `v` descends by `r`; the kept piece climbs by `f v - r`.
+      have h₁ : f (preReflection x f ((r / f v) • v)) = -r := by
+        rw [apply_preReflection hx, map_smul, smul_eq_mul, div_mul_cancel₀ _ hfv]
+      have h₂ : f ((1 - r / f v) • v) = f v - r := by
+        rw [map_smul, smul_eq_mul, sub_mul, one_mul, div_mul_cancel₀ _ hfv]
+      have hr₁ : r ≤ f v + listMinHeight f l := min_le_left _ _
+      have hr₂ : r ≤ c := min_le_right _ _
+      have hpos : 0 < f v + listMinHeight f l := h.trans_le hr₁
+      have hc : 0 < c := h.trans_le hr₂
+      rw [reflectRecords_cons_of_pos h, ← hr]
+      simp only [listMinHeight_cons, ih, h₁, h₂, List.sum_cons, map_add, min_eq_left hpos.le,
+        min_eq_left hc.le]
+      rcases min_choice (f v + listMinHeight f l) c with hr₃ | hr₃ <;> rw [← hr] at hr₃
+      · -- The whole of `v` lies below the cap, so the cap on `l` is above its minimal height.
+        rw [min_eq_left (show listMinHeight f l ≤ c - f v by linarith)]
+        simp only [min_def]
+        split_ifs <;> linarith
+      · -- The cap is reached inside `v`, so it stays below every later height.
+        rw [min_eq_right (show c - f v ≤ f l.sum by linarith),
+          min_eq_right (show c - f v ≤ listMinHeight f l by linarith)]
+        simp only [min_def]
+        split_ifs <;> linarith
+    · rw [reflectRecords_cons_of_nonpos (not_lt.1 h)]
+      simp only [listMinHeight_cons, ih, List.sum_cons, map_add]
+      simp only [min_def] at h ⊢
+      split_ifs at h ⊢ <;> linarith
+
 omit [IsStrictOrderedRing 𝕜] in
 @[simp]
 theorem listLower_eq_none_iff : listLower f x l = none ↔ f l.sum - listMinHeight f l < 1 := by
@@ -319,6 +425,45 @@ theorem sum_of_listLower_eq_some (h : listLower f x l₁ = some l₂) : l₂.sum
   split_ifs at h with h₁
   rw [← Option.some.inj h, sum_reflectRecords, min_eq_right (by linarith),
     min_eq_left (by linarith), add_sub_cancel_left, one_smul]
+
+/-- Reflecting the records of a concatenation `l₁ ++ l₂` up to the cap `c`: on `l₁`, the later
+heights in `l₂` act as a further cap. -/
+theorem reflectRecords_append (c : 𝕜) (l₁ l₂ : List V) :
+    reflectRecords f x c (l₁ ++ l₂) =
+      reflectRecords f x (min c (f l₁.sum + listMinHeight f l₂)) l₁ ++
+        reflectRecords f x (c - f l₁.sum) l₂ := by
+  induction l₁ generalizing c with
+  | nil => simp
+  | cons v l ih =>
+    have key : min (f v + listMinHeight f (l ++ l₂)) c =
+        min (f v + listMinHeight f l) (min c (f (v :: l).sum + listMinHeight f l₂)) := by
+      rw [listMinHeight_append, List.sum_cons, map_add, ← min_add_add_left, add_assoc]
+      ac_rfl
+    have hcap : min (c - f v) (f l.sum + listMinHeight f l₂) =
+        min c (f (v :: l).sum + listMinHeight f l₂) - f v := by
+      rw [← min_sub_sub_right, List.sum_cons, map_add]
+      congr 1
+      abel
+    have hrest : c - f v - f l.sum = c - f (v :: l).sum := by
+      rw [List.sum_cons, map_add, sub_sub]
+    rw [List.cons_append]
+    by_cases h : 0 < min (f v + listMinHeight f (l ++ l₂)) c
+    · rw [reflectRecords_cons_of_pos h, reflectRecords_cons_of_pos (key ▸ h), key, ih, hcap,
+        hrest, List.cons_append, List.cons_append]
+    · rw [not_lt] at h
+      rw [reflectRecords_cons_of_nonpos h, reflectRecords_cons_of_nonpos (key ▸ h), ih, hcap,
+        hrest, List.cons_append]
+
+/-- Reflecting the records up to a cap that is at most the minimal height does nothing. -/
+@[simp]
+theorem reflectRecords_of_le_listMinHeight (h : c ≤ listMinHeight f l) :
+    reflectRecords f x c l = l := by
+  induction l generalizing c with
+  | nil => exact reflectRecords_nil c
+  | cons v l ih =>
+    rw [listMinHeight_cons] at h
+    rw [reflectRecords_cons_of_nonpos (min_le_of_right_le (h.trans (min_le_left _ _))),
+      ih (by linarith [min_le_right 0 (f v + listMinHeight f l)])]
 
 /-! ### Independence of the presentation -/
 
@@ -337,12 +482,10 @@ private theorem normalize_reflectRecords_cons_smul_of_pos {μ : 𝕜} (hfv : 0 <
   have hfμ : f (μ • v) = μ * f v := by simp
   have hf1μ : f ((1 + μ) • v) = (1 + μ) * f v := by simp
   have hl := listMinHeight_nonpos (f := f) l
-  set r := min (μ * f v + listMinHeight f l) (c - f v) with hr₂
   have e₁ : min (f v + min 0 (μ * f v + listMinHeight f l)) c = f v := by
-    have := min_le_left (μ * f v + listMinHeight f l) (c - f v)
-    have := min_le_right (μ * f v + listMinHeight f l) (c - f v)
-    rw [min_eq_left (by linarith : (0 : 𝕜) ≤ μ * f v + listMinHeight f l), add_zero,
-      min_eq_left (by linarith)]
+    simp only [min_def] at h₂ ⊢
+    split_ifs at h₂ ⊢ <;> linarith
+  set r := min (μ * f v + listMinHeight f l) (c - f v) with hr₂
   have e' : min ((1 + μ) * f v + listMinHeight f l) c = f v + r := by
     rw [hr₂, ← min_add_add_left]
     congr 1 <;> ring
@@ -354,26 +497,16 @@ private theorem normalize_reflectRecords_cons_smul_of_pos {μ : 𝕜} (hfv : 0 <
     reflectRecords_cons_of_pos h', listMinHeight_cons, hfμ, hf1μ, e₁, e', ← hr₂,
     show c - f v - μ * f v = c - (1 + μ) * f v by ring, div_self hfv.ne', one_smul, sub_self,
     zero_smul]
-  have hk : 0 ≤ r / f v := div_nonneg h₂.le hfv.le
   have h1μ : (1 + μ) ≠ 0 := (by linarith : (0 : 𝕜) < 1 + μ).ne'
   have hfr : (f v + r) / f v = 1 + r / f v := by rw [add_div, div_self hfv.ne']
-  have hd₁ (a : 𝕜) : (a / (μ * f v)) • μ • v = (a / f v) • v := by
-    rw [smul_smul, div_mul_eq_mul_div, mul_comm a, mul_div_mul_left _ _ hμ.ne']
-  have hd₂ (a : 𝕜) : (a / ((1 + μ) * f v)) • (1 + μ) • v = (a / f v) • v := by
-    rw [smul_smul, div_mul_eq_mul_div, mul_comm a, mul_div_mul_left _ _ h1μ]
-  have e₃ : (1 - r / (μ * f v)) • μ • v = (μ - r / f v) • v := by
-    rw [sub_smul, one_smul, hd₁, sub_smul]
-  have e₅ : (1 - (f v + r) / ((1 + μ) * f v)) • (1 + μ) • v = (μ - r / f v) • v := by
-    rw [sub_smul, one_smul, hd₂, hfr]; module
-  have hm₁ := (Move.erase_zero (𝕜 := 𝕜) [preReflection x f v]
-    (preReflection x f ((r / f v) • v) :: (μ - r / f v) • v ::
-      reflectRecords f x (c - (1 + μ) * f v) l)).normalize_eq
-  have hm₂ := (Move.merge [] ((μ - r / f v) • v :: reflectRecords f x (c - (1 + μ) * f v) l)
-    (by rw [map_smul]; exact SameRay.sameRay_nonneg_smul_right _ hk :
-      SameRay 𝕜 (preReflection x f v) (preReflection x f ((r / f v) • v)))).normalize_eq
-  simp only [List.cons_append, List.nil_append] at hm₁ hm₂
-  rw [hd₁, e₃, hd₂, hfr, e₅, add_smul, one_smul,
-    map_add, hm₁, hm₂]
+  have hray : SameRay 𝕜 (preReflection x f v) (preReflection x f ((r / f v) • v)) := by
+    rw [map_smul]; exact SameRay.sameRay_nonneg_smul_right _ (div_nonneg h₂.le hfv.le)
+  simp only [sub_smul, one_smul, div_mul_smul_smul_cancel_left hμ.ne',
+    div_mul_smul_smul_cancel_left h1μ, hfr]
+  rw [show (1 + μ) • v - (1 + r / f v) • v = μ • v - (r / f v) • v by module, add_smul,
+    one_smul, map_add]
+  -- Erase the stationary segment, then merge the two reflected pieces.
+  simp only [normalize_cons, consMerge_zero, consMerge_consMerge hray]
 
 /-- Merging `v` and `μ • v` when the first segment is reflected in part and the second one is
 kept. -/
@@ -398,16 +531,39 @@ private theorem normalize_reflectRecords_cons_smul_of_nonpos {μ : 𝕜} (hfv : 
     show c - f v - μ * f v = c - (1 + μ) * f v by ring]
   have hk : 0 ≤ 1 - r / f v := sub_nonneg.2 ((div_le_one hfv).2 hr)
   have h1μ : (1 + μ) ≠ 0 := (by linarith : (0 : 𝕜) < 1 + μ).ne'
-  have hd (a : 𝕜) : (a / ((1 + μ) * f v)) • (1 + μ) • v = (a / f v) • v := by
-    rw [smul_smul, div_mul_eq_mul_div, mul_comm a, mul_div_mul_left _ _ h1μ]
   have e₂ : (1 - r / ((1 + μ) * f v)) • (1 + μ) • v = (1 - r / f v) • v + μ • v := by
-    rw [sub_smul, one_smul, hd]; module
+    rw [sub_smul, one_smul, div_mul_smul_smul_cancel_left h1μ]; module
   have hm := (Move.merge [preReflection x f ((r / f v) • v)]
     (reflectRecords f x (c - (1 + μ) * f v) l)
     ((SameRay.sameRay_nonneg_smul_left v hk).nonneg_smul_right hμ :
       SameRay 𝕜 ((1 - r / f v) • v) (μ • v))).normalize_eq
   simp only [List.cons_append, List.nil_append] at hm
-  rw [hm, hd, e₂]
+  rw [hm, div_mul_smul_smul_cancel_left h1μ, e₂]
+
+/-- Merging `v` and `μ • v` when no part of either segment is reflected. -/
+private theorem normalize_reflectRecords_cons_smul_of_cap_nonpos {μ : 𝕜} (hμ : 0 ≤ μ)
+    (h₁ : min (f v + listMinHeight f (μ • v :: l)) c ≤ 0) :
+    normalize 𝕜 (reflectRecords f x c (v :: μ • v :: l)) =
+      normalize 𝕜 (reflectRecords f x c ((1 + μ) • v :: l)) := by
+  have hl := listMinHeight_nonpos (f := f) l
+  have hfμ : f (μ • v) = μ * f v := by simp
+  have hf1μ : f ((1 + μ) • v) = (1 + μ) * f v := by simp
+  have h₁' := h₁
+  rw [listMinHeight_cons, hfμ] at h₁'
+  -- `μ * f v` has the sign of `f v`, which is what the bound `h₁'` needs.
+  obtain ⟨h₂, h'⟩ : min (μ * f v + listMinHeight f l) (c - f v) ≤ 0 ∧
+      min ((1 + μ) * f v + listMinHeight f l) c ≤ 0 := by
+    have hs : 0 < f v ∧ 0 ≤ μ * f v ∨ f v ≤ 0 ∧ μ * f v ≤ 0 :=
+      (lt_or_ge 0 (f v)).imp (fun h ↦ ⟨h, mul_nonneg hμ h.le⟩)
+      (fun h ↦ ⟨h, mul_nonpos_of_nonneg_of_nonpos hμ h⟩)
+    simp only [min_def] at h₁' ⊢
+    rcases hs with ⟨_, _⟩ | ⟨_, _⟩ <;> split_ifs at h₁' ⊢ <;> constructor <;> linarith
+  rw [reflectRecords_cons_of_nonpos h₁, reflectRecords_cons_of_nonpos (by rwa [hfμ]),
+    reflectRecords_cons_of_nonpos (by rwa [hf1μ]), hfμ, hf1μ,
+    show c - f v - μ * f v = c - (1 + μ) * f v by ring]
+  have hm := (Move.merge [] (reflectRecords f x (c - (1 + μ) * f v) l)
+    (SameRay.sameRay_nonneg_smul_right (R := 𝕜) v hμ)).normalize_eq
+  simpa only [List.nil_append, show v + μ • v = (1 + μ) • v by module] using hm
 
 /-- Reflecting the records commutes with merging the first two segments, up to elementary
 moves. -/
@@ -437,26 +593,7 @@ private theorem normalize_reflectRecords_cons_cons (hvw : SameRay 𝕜 v w) (c :
           linarith [min_le_left (listMinHeight f l) (c - f v)]
       exact normalize_reflectRecords_cons_smul_of_pos hfv hμ0 h₂
     · exact normalize_reflectRecords_cons_smul_of_nonpos hfv hμ h₁ (not_lt.1 h₂)
-  · -- No part of the first two segments is reflected.
-    rw [not_lt] at h₁
-    have h₁' := h₁
-    rw [listMinHeight_cons, hfμ] at h₁'
-    have hf1μ : f ((1 + μ) • v) = (1 + μ) * f v := by simp
-    -- `μ * f v` has the sign of `f v`, which is what the bound `h₁'` needs.
-    obtain ⟨h₂, h'⟩ : min (μ * f v + listMinHeight f l) (c - f v) ≤ 0 ∧
-        min ((1 + μ) * f v + listMinHeight f l) c ≤ 0 := by
-      have hs : 0 < f v ∧ 0 ≤ μ * f v ∨ f v ≤ 0 ∧ μ * f v ≤ 0 :=
-        (lt_or_ge 0 (f v)).imp (fun h ↦ ⟨h, mul_nonneg hμ h.le⟩)
-        (fun h ↦ ⟨h, mul_nonpos_of_nonneg_of_nonpos hμ h⟩)
-      simp only [min_def] at h₁' ⊢
-      rcases hs with ⟨_, _⟩ | ⟨_, _⟩ <;> split_ifs at h₁' ⊢ <;> constructor <;> linarith
-    rw [reflectRecords_cons_of_nonpos h₁, reflectRecords_cons_of_nonpos (by rwa [hfμ]),
-      reflectRecords_cons_of_nonpos (by rwa [hf1μ]), hfμ, hf1μ,
-      show c - f v - μ * f v = c - (1 + μ) * f v by ring]
-    have hm := (Move.merge [] (reflectRecords f x (c - (1 + μ) * f v) l)
-      (SameRay.sameRay_nonneg_smul_right (R := 𝕜) v hμ)).normalize_eq
-    simp only [List.nil_append, hvμ] at hm
-    exact hm
+  · exact normalize_reflectRecords_cons_smul_of_cap_nonpos hμ (not_lt.1 h₁)
 
 /-- Reflecting the records commutes with the elementary moves, up to elementary moves. -/
 theorem Move.normalize_reflectRecords (h : Move 𝕜 l₁ l₂) (c : 𝕜) :
@@ -579,6 +716,33 @@ theorem endpoint_of_raise_eq_some (h : raise f x p = some q) : q.endpoint = p.en
   obtain ⟨r, hr, rfl⟩ := Option.map_eq_some_iff.1 h
   rw [endpoint_reverse, endpoint_of_lower_eq_some hr, endpoint_reverse]
   abel
+
+/-- **Lowering lowers the minimal height by one**: `min H(f_α π) = min H(π) - 1`. -/
+theorem minHeight_of_lower_eq_some (hx : f x = 2) (h : lower f x p = some q) :
+    q.minHeight f = p.minHeight f - 1 := by
+  rw [← ofSegments_segments p, lower_ofSegments] at h
+  obtain ⟨l, hl, rfl⟩ := Option.map_eq_some_iff.1 h
+  rw [listLower_def] at hl
+  split_ifs at hl with hdef
+  obtain rfl := Option.some.inj hl
+  rw [minHeight_ofSegments, listMinHeight_reflectRecords hx, minHeight_def,
+    min_eq_right (by linarith), min_eq_left (by linarith)]
+  ring
+
+/-- **Raising raises the minimal height by one**: `min H(e_α π) = min H(π) + 1`. -/
+theorem minHeight_of_raise_eq_some (hx : f x = 2) (h : raise f x p = some q) :
+    q.minHeight f = p.minHeight f + 1 := by
+  rw [raise_def] at h
+  obtain ⟨r, hr, rfl⟩ := Option.map_eq_some_iff.1 h
+  rw [minHeight_reverse, minHeight_of_lower_eq_some hx hr, endpoint_of_lower_eq_some hr,
+    minHeight_reverse, map_sub, endpoint_reverse, map_neg, hx]
+  ring
+
+/-- Lowering shortens the lowering string by one: `H(1) - min H` drops by one under `f_α`. -/
+theorem apply_endpoint_sub_minHeight_of_lower_eq_some (hx : f x = 2) (h : lower f x p = some q) :
+    f q.endpoint - q.minHeight f + 1 = f p.endpoint - p.minHeight f := by
+  rw [endpoint_of_lower_eq_some h, minHeight_of_lower_eq_some hx h, map_sub, hx]
+  ring
 
 /-- Lowering the straight path `t ↦ t • v` with `f v ≥ 1` reflects its initial piece, up to the
 time `1 / f v` at which the height reaches `1`. -/

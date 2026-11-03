@@ -83,9 +83,9 @@ constructed group is finite or simple.
   `TauCeti.TypeALieIndex.steinberg_ofTwistedA`: Frobenius on `A_r(q)` and graph-twisted Frobenius
   on `²A_r(q)`.
 * `TauCeti.TypeALieIndex.steinberg_simpleRootSubgroup`: the pinned simple-root-subgroup equation.
-* `TauCeti.TypeALieIndex.frobenius` and
-  `TauCeti.TypeALieIndex.frobenius_simpleRootSubgroup`: the `q`-power Frobenius factor and its
-  pinned equation.
+* `TauCeti.TypeALieIndex.frobenius`, `TauCeti.TypeALieIndex.coe_frobenius_apply` and
+  `TauCeti.TypeALieIndex.frobenius_simpleRootSubgroup`: the `q`-power Frobenius factor, its
+  entrywise description, and its pinned equation.
 * `TauCeti.TypeALieIndex.graphAut`, with `TauCeti.TypeALieIndex.graphAut_ofA` and
   `TauCeti.TypeALieIndex.graphAut_ofTwistedA`: the pinned graph automorphism factor.
 * `TauCeti.TypeALieIndex.graphAut_simpleRootSubgroup`: its pinned simple-root-subgroup equation
@@ -221,6 +221,17 @@ theorem frobenius_def (d : TypeALieIndex) :
     d.frobenius =
       SlStd.frobenius d.1.rank d.1.characteristic d.1.fieldExponent d.1.Closure :=
   (rfl)
+
+/-- The Frobenius raises every matrix entry to the field order recorded by the index. -/
+@[simp]
+theorem coe_frobenius_apply (d : TypeALieIndex) (g : d.AmbientGroup)
+    (i j : Fin (d.1.rank + 1)) :
+    ((d.frobenius g : Matrix.GeneralLinearGroup (Fin (d.1.rank + 1)) d.1.Closure) :
+        Matrix (Fin (d.1.rank + 1)) (Fin (d.1.rank + 1)) d.1.Closure) i j =
+      ((g : Matrix.GeneralLinearGroup (Fin (d.1.rank + 1)) d.1.Closure) :
+        Matrix (Fin (d.1.rank + 1)) (Fin (d.1.rank + 1)) d.1.Closure) i j ^ d.1.fieldOrder := by
+  rw [frobenius_def, d.1.fieldOrder_eq_characteristic_pow]
+  exact SlStd.coe_frobenius_apply _ _ _ _ g i j
 
 /-- **The Frobenius fixes the Bourbaki numbering of a positive simple-root subgroup and raises its
 parameter to the `q`-th power**, that is, `Frob_q (x_i(u)) = x_i(u ^ q)`. -/

@@ -91,6 +91,16 @@ reverses the standard basis and then applies alternating signs. -/
 def typeAGraphConjugator (r : ℕ) (A : Type u) [Ring A] : GL (Fin (r + 1)) A :=
   diagGL (typeAGraphSign (A := A)) * permutationGL (k := A) Fin.revPerm
 
+/-- The signed reversal matrix has its alternating signs on the anti-diagonal. -/
+@[simp]
+theorem typeAGraphConjugator_apply (r : ℕ) (i j : Fin (r + 1)) :
+    (typeAGraphConjugator r A : Matrix (Fin (r + 1)) (Fin (r + 1)) A) i j =
+      if j = i.rev then (-1 : A) ^ (i : ℕ) else 0 := by
+  rw [typeAGraphConjugator, coe_mul_permutationGL_apply]
+  have h : (i = j.rev) ↔ (j = i.rev) := by
+    rw [← Fin.rev_eq_iff, eq_comm]
+  simp only [Fin.revPerm_apply, diagGL_apply, coe_typeAGraphSign, h]
+
 private theorem permutationGL_rev_inv {A : Type u} [Semiring A] (r : ℕ) :
     (permutationGL (k := A) (Fin.revPerm : Equiv.Perm (Fin (r + 1))))⁻¹ =
       permutationGL (k := A) Fin.revPerm := by
@@ -173,11 +183,25 @@ theorem typeAGraphAutomorphism_apply_apply (r : ℕ) (g : GL (Fin (r + 1)) A)
     Matrix.mul_diagonal, Matrix.diagonal_mul, hmiddle]
   simp [Matrix.GeneralLinearGroup.coe_inverseTranspose, typeAGraphSign]
 
-private theorem inverseTranspose_typeAGraphConjugator (r : ℕ) :
+/-- Inverse transpose fixes the signed reversal matrix. -/
+@[simp]
+theorem inverseTranspose_typeAGraphConjugator (r : ℕ) :
     Matrix.GeneralLinearGroup.inverseTranspose (typeAGraphConjugator r A) =
       typeAGraphConjugator r A := by
   simp only [typeAGraphConjugator, map_mul, inverseTranspose_diagGL,
     inverseTranspose_permutationGL, typeAGraphSign_inv]
+
+/-- The inverse of the native signed reversal matrix is its transpose. -/
+theorem typeAGraphConjugator_inv_eq_transpose (r : ℕ) :
+    (typeAGraphConjugator r A : Matrix (Fin (r + 1)) (Fin (r + 1)) A)⁻¹ =
+      (typeAGraphConjugator r A : Matrix (Fin (r + 1)) (Fin (r + 1)) A)ᵀ := by
+  have h := congrArg
+    (fun g : GeneralLinearGroup (Fin (r + 1)) A ↦
+      (g : Matrix (Fin (r + 1)) (Fin (r + 1)) A))
+    (inverseTranspose_typeAGraphConjugator (A := A) r)
+  rw [GeneralLinearGroup.coe_inverseTranspose] at h
+  simpa only [transpose_transpose, GeneralLinearGroup.coe_inv] using
+    congrArg Matrix.transpose h
 
 private theorem typeAGraphAutomorphism_eq_iff_gl (r : ℕ) (g h : GL (Fin (r + 1)) A) :
     typeAGraphAutomorphism r A g = h ↔

@@ -29,6 +29,8 @@ the composite, which sends a linear automorphism to its invertible matrix in the
 * `Module.Basis.toGL_smulOfUnit`: multiplication by a unit has the scalar matrix of that unit.
 * `Module.Basis.finTwoProd_toGL_symm_apply`: in the standard basis of `R × R`, an invertible
   `2 × 2` matrix acts by multiplication of column vectors.
+* `Module.Basis.fin_two_basis_generators`: an invertible two-by-two change of basis has
+  nonzero first generator and generates the whole module.
 -/
 
 public section
@@ -92,5 +94,27 @@ theorem finTwoProd_toGL_symm_apply {R : Type*} [CommRing R] (g : GL (Fin 2) R) (
   have hxy : ((x, y) : R × R) = x • (1, 0) + y • (0, 1) := by simp
   rw [MulEquiv.symm_apply_apply, hxy, map_add, map_smul, map_smul]
   ext <;> simp [LinearMap.toMatrix_apply, mul_comm]
+
+
+/-- An invertible change of a two-element basis has nonzero first generator and
+still generates every element over the coefficient ring. -/
+theorem fin_two_basis_generators
+    {R M : Type*} [CommRing R] [Nontrivial R] [AddCommGroup M] [Module R M]
+    (b : Module.Basis (Fin 2) R M) (γ : Matrix.GeneralLinearGroup (Fin 2) R) :
+    (γ 0 0 • b 0 + γ 1 0 • b 1) ≠ 0 ∧
+      ∀ z : M, ∃ m n : R,
+        m • (γ 0 0 • b 0 + γ 1 0 • b 1) +
+          n • (γ 0 1 • b 0 + γ 1 1 • b 1) = z := by
+  let e := (Matrix.GeneralLinearGroup.toLin' b γ).toLinearEquiv
+  let c := b.map e
+  have hc (i : Fin 2) : c i = γ 0 i • b 0 + γ 1 i • b 1 := by
+    simp [c, e, Matrix.GeneralLinearGroup.toLin'_apply, Finsupp.single_eq_pi_single,
+      Fintype.linearCombination_apply, Fin.sum_univ_two]
+  constructor
+  · simpa only [hc] using c.ne_zero 0
+  · intro z
+    refine ⟨c.repr z 0, c.repr z 1, ?_⟩
+    simpa only [Fin.sum_univ_two, hc] using c.sum_repr z
+
 
 end Module.Basis

@@ -111,6 +111,14 @@ theorem manifoldLeviForm_def :
     manifoldLeviForm E f x = leviForm (f ∘ (chartAt E x).symm) (chartAt E x x) :=
   (rfl)
 
+/-- On the model space itself, whose preferred charts are the identity, the manifold Levi form is
+the Levi form. -/
+@[simp]
+theorem manifoldLeviForm_eq_leviForm (u : E → ℝ) (z : E) :
+    manifoldLeviForm E u z = leviForm u z := by
+  simp only [manifoldLeviForm_def, chartAt_self_eq, OpenPartialHomeomorph.refl_symm,
+    OpenPartialHomeomorph.refl_apply, comp_id, id_eq]
+
 /-- The Levi form of a function depends only on its germ. -/
 theorem manifoldLeviForm_congr_of_eventuallyEq {g : M → ℝ} (hfg : f =ᶠ[𝓝 x] g) :
     manifoldLeviForm E f x = manifoldLeviForm E g x := by

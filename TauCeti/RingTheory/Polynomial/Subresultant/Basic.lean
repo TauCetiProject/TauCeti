@@ -32,9 +32,9 @@ the scalar data used by subresultant gcd criteria and projection operators.
 * `Polynomial.psc_zero`: the zeroth principal subresultant coefficient is the resultant.
 * `Polynomial.psc_map_map`: fixed-bound principal subresultant coefficients commute with coefficient
   maps.
+* `Polynomial.psc_map_of_natDegree_eq`: at the actual degrees, they commute with coefficient maps
+  that preserve both degrees.
 * `Polynomial.psc_comm`: swapping the polynomials multiplies by `(-1) ^ ((m - j) * (n - j))`.
-* `Polynomial.psc_C_mul_left`, `Polynomial.psc_C_mul_right`: scaling one polynomial by a constant
-  scales the coefficient by a power of that constant.
 * `Polynomial.psc_left_bound`, `Polynomial.psc_right_bound`: at a formal degree bound, the
   determinant is a power of the coefficient at that bound.
 * `Polynomial.psc_min`: the terminal determinant is a power of the coefficient at the smaller
@@ -187,6 +187,18 @@ theorem _root_.Polynomial.psc_map_map [CommRing R] [CommRing S] (f : R →+* S)
     psc (p.map f) (q.map f) m n j = f (psc p q m n j) := by
   simp [psc_def, RingHom.map_det]
 
+/-- At the actual degrees, principal subresultant coefficients commute with a coefficient map that
+preserves both degrees, for instance one that does not kill the leading coefficients
+(`Polynomial.natDegree_map_of_leadingCoeff_ne_zero`). When a degree drops, the specialized
+coefficients at the smaller actual degrees are given instead by the degree-drop formulas
+`Polynomial.map_psc_of_right_degree_drop` and `Polynomial.map_psc_of_left_degree_drop`. -/
+theorem _root_.Polynomial.psc_map_of_natDegree_eq [CommRing R] [CommRing S] (f : R →+* S)
+    {p q : R[X]} (hp : (p.map f).natDegree = p.natDegree) (hq : (q.map f).natDegree = q.natDegree)
+    (j : ℕ) :
+    psc (p.map f) (q.map f) (p.map f).natDegree (q.map f).natDegree j =
+      f (psc p q p.natDegree q.natDegree j) := by
+  rw [hp, hq, psc_map_map]
+
 /-- Swapping the polynomials and their bounds changes the principal subresultant coefficient by
 the sign `(-1) ^ ((m - j) * (n - j))`. -/
 theorem _root_.Polynomial.psc_comm [CommRing R] (p q : R[X]) (m n j : ℕ) :
@@ -194,30 +206,6 @@ theorem _root_.Polynomial.psc_comm [CommRing R] (p q : R[X]) (m n j : ℕ) :
   rw [psc_def, psc_def, subresultantMatrix_comm, Matrix.det_reindex, finCongr_symm,
     sign_finAddFlip_trans_finCongr, mul_comm (n - j)]
   simp
-
-/-- Scaling the left polynomial by a constant `r` scales its `n - j` columns, hence the principal
-subresultant coefficient, by `r ^ (n - j)`. -/
-theorem _root_.Polynomial.psc_C_mul_left [CommRing R] (p q : R[X]) (r : R) (m n j : ℕ) :
-    psc (C r * p) q m n j = r ^ (n - j) * psc p q m n j := by
-  have : subresultantMatrix (C r * p) q m n j = .of fun i k =>
-      Fin.addCases (fun _ => 1) (fun _ => r) k * subresultantMatrix p q m n j i k := by
-    ext i k
-    induction k using Fin.addCases <;> simp [subresultantMatrix, coeff_C_mul]
-  rw [psc_def, psc_def, this, Matrix.det_mul_row, Fin.prod_univ_add]
-  simp
-
-/-- Scaling the right polynomial by a constant `r` scales its `m - j` columns, hence the principal
-subresultant coefficient, by `r ^ (m - j)`. -/
-theorem _root_.Polynomial.psc_C_mul_right [CommRing R] (p q : R[X]) (r : R) (m n j : ℕ) :
-    psc p (C r * q) m n j = r ^ (m - j) * psc p q m n j := by
-  calc
-    psc p (C r * q) m n j =
-        (-1) ^ ((m - j) * (n - j)) * psc (C r * q) p n m j := psc_comm ..
-    _ = (-1) ^ ((m - j) * (n - j)) * (r ^ (m - j) * psc q p n m j) := by
-      rw [psc_C_mul_left]
-    _ = r ^ (m - j) * ((-1) ^ ((m - j) * (n - j)) * psc q p n m j) := by
-      ac_rfl
-    _ = r ^ (m - j) * psc p q m n j := by rw [← psc_comm]
 
 /-- At the left formal degree bound, the principal coefficient is the corresponding power of the
 left polynomial's coefficient.  This is the terminal coefficient when `m ≤ n`; when `n < m`,

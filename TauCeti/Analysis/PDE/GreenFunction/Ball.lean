@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Basic
 public import TauCeti.Analysis.InnerProductSpace.Harmonic.Dilation
 public import Mathlib.MeasureTheory.Constructions.HaarToSphere
 import TauCeti.Analysis.InnerProductSpace.CompleteSquare
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # The Green kernel and the Poisson kernel of the Euclidean unit ball
@@ -136,7 +137,7 @@ theorem ballGreenCorrector_eq_newtonianKernel {x : EuclideanSpace ℝ (Fin n)} (
     ballGreenCorrector n x y = newtonianKernel n (‖x‖ • y - ‖x‖⁻¹ • x) := by
   rw [ballGreenCorrector_def, newtonianKernel_def,
     ← norm_sq_norm_smul_sub_inv_norm_smul (norm_ne_zero_iff.mpr hx) y,
-    norm_rpow_eq_norm_sq_rpow]
+    ← Real.sq_rpow_div_two (norm_nonneg _)]
 
 /-- At the pole `x = 0`, the corrector is the constant value of the Newtonian kernel on the unit
 sphere. -/
@@ -160,7 +161,7 @@ theorem ballGreenCorrector_eq_newtonianKernel_sub_of_norm_eq_one_right
     (x : EuclideanSpace ℝ (Fin n)) {y : EuclideanSpace ℝ (Fin n)} (hy : ‖y‖ = 1) :
     ballGreenCorrector n x y = newtonianKernel n (y - x) := by
   rw [ballGreenCorrector_def, newtonianKernel_def, ← norm_sub_sq_eq_of_norm_eq_one x hy,
-    norm_rpow_eq_norm_sq_rpow]
+    ← Real.sq_rpow_div_two (norm_nonneg _)]
 
 /-- For a pole `x` on the unit sphere, the corrector agrees with the Newtonian kernel with
 pole `x`. -/
@@ -329,7 +330,7 @@ theorem ballGreenKernel_pos (hn : n ≠ 2) {x y : EuclideanSpace ℝ (Fin n)} (h
     rw [norm_sub_sq_real, real_inner_comm x y]
     nlinarith [mul_pos hx' hy']
   rw [ballGreenKernel_def, ballGreenCorrector_def, newtonianKernel_def,
-    norm_rpow_eq_norm_sq_rpow, mul_sub]
+    ← Real.sq_rpow_div_two (norm_nonneg _), mul_sub]
   exact sub_pos.mpr (by simpa only [mul_sub] using
     (newtonianKernel_rpow_sq_lt n hn
       (pos_of_ne_zero_euclideanSpace (sub_ne_zero.mpr hxy)) hsub hlt))
@@ -491,7 +492,7 @@ theorem fderiv_ballGreenKernel_normal (hn : n ≠ 2) {x y : EuclideanSpace ℝ (
   rw [(hasFDerivAt_ballGreenKernel hn hxy h).fderiv, ← norm_sub_sq_eq_of_norm_eq_one x hy,
     ballPoissonKernel_def, norm_sub_rev x y]
   have hpow : (‖y - x‖ ^ 2) ^ (-(n : ℝ) / 2) = ‖y - x‖ ^ (-(n : ℝ)) :=
-    (norm_rpow_eq_norm_sq_rpow (y - x) _).symm
+    Real.sq_rpow_div_two (norm_nonneg _) _
   have hinv : ‖y - x‖ ^ (-(n : ℝ)) = (‖y - x‖ ^ n)⁻¹ := by
     rw [Real.rpow_neg (norm_nonneg _), Real.rpow_natCast]
   simp only [sub_apply, smul_apply, smul_eq_mul, innerSL_apply_apply, inner_sub_left,

@@ -17,7 +17,7 @@ import Mathlib.RingTheory.MvPolynomial.Basic
 /-!
 # The rectangle--pentagon overlap terms of the commutation chain-map equation
 
-Let `C` be a validated column commutation of a grid diagram `G`, replacing the grid line
+Let `C` be a column turn (`GridDiagram.ColumnTurn`) for a grid diagram `G`, replacing the line
 `b = finRotate n a`. In the chain-map equation of the commutation map, the coefficient of the
 commutation map after the original differential counts, among others, the rectangle--pentagon
 domains: a rectangle of `G` followed by a pentagon turning on its terminal side `b`. Off the
@@ -66,7 +66,7 @@ public section
 
 namespace TauCeti.GridDiagram
 
-variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G) {x z : GridState n}
+variable {n : ℕ} (G : GridDiagram n) (C : ColumnTurn n) {x z : GridState n}
 
 /-- Off the diagonal, a rectangle and a pentagon share a side column exactly when they share exactly
 one, and never both pairs of sides. -/
@@ -137,8 +137,8 @@ theorem filter_not_hasDisjointSides_rectanglePentagonDecompositions_eq_union (hz
         G.leftRightOverlapSources C x z ∪ G.rightLeftOverlapSources C x z ∪
           G.rectanglePentagonTurnCuts C x z ∪ G.terminalSelfPairs C x z := by
   ext D
-  obtain ⟨hdisjoint, hone, hsame, _⟩ := G.overlap_side_facts C D hzx
-  obtain ⟨horder, hexclusive⟩ := G.overlap_column_order C D
+  obtain ⟨hdisjoint, hone, hsame, _⟩ := overlap_side_facts C D hzx
+  obtain ⟨horder, hexclusive⟩ := overlap_column_order C D
   have hb := D.pentagon.right_eq
   have hr := D.rectangle.left_ne_right
   have hP := D.pentagon.left_ne_right
@@ -168,8 +168,8 @@ theorem disjoint_overlap_families (hzx : z ≠ x) :
         (G.leftRightOverlapSources C x z) ∧
       Disjoint (G.initialOverlapSources C x z) (G.terminalCrossOverlapSources C x z) := by
   refine ⟨?_, ?_, ?_, ?_, ?_⟩ <;> refine Finset.disjoint_left.2 fun D h₁ h₂ => ?_ <;>
-  · obtain ⟨-, hone, hsame, hmixed⟩ := G.overlap_side_facts C D hzx
-    obtain ⟨-, hexclusive⟩ := G.overlap_column_order C D
+  · obtain ⟨-, hone, hsame, hmixed⟩ := overlap_side_facts C D hzx
+    obtain ⟨-, hexclusive⟩ := overlap_column_order C D
     have hb := D.pentagon.right_eq
     have hr := D.rectangle.left_ne_right
     have hP := D.pentagon.left_ne_right

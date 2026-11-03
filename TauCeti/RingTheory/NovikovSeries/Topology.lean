@@ -47,6 +47,8 @@ to a complete separated uniform space extends uniquely to the Novikov series. Th
 ## Main results
 
 * `TauCeti.NovikovSeries.exists_mem_periodFiltration`: every series lies in some `U_C`.
+* `TauCeti.NovikovSeries.mem_periodFiltration_iff_le_order`: a nonzero series lies in `U_C`
+  exactly when `C` is at most its order.
 * `TauCeti.NovikovSeries.exists_pos_mem_periodFiltration_iff`: a series vanishes at every exponent
   of period `≤ 0` exactly when it lies in `U_C` for some `C > 0`.
 * `TauCeti.NovikovSeries.hasBasis_nhds_zero` and `TauCeti.NovikovSeries.hasBasis_uniformity`:
@@ -97,6 +99,12 @@ def periodFiltration (C : ℝ) : AddSubgroup (NovikovSeries R H N) where
 @[simp]
 theorem mem_periodFiltration : a ∈ periodFiltration R N C ↔ ∀ h, N h < C → a.coeff h = 0 :=
   Iff.rfl
+
+/-- A nonzero Novikov series lies in the period neighbourhood `U_C` exactly when `C` is at most
+its order. -/
+theorem mem_periodFiltration_iff_le_order (ha : a ≠ 0) :
+    a ∈ periodFiltration R N C ↔ C ≤ a.order :=
+  mem_periodFiltration.trans (le_order_iff ha).symm
 
 theorem antitone_periodFiltration : Antitone (periodFiltration R N) :=
   fun _ _ hCD _ ha h hh => ha h (hh.trans_le hCD)

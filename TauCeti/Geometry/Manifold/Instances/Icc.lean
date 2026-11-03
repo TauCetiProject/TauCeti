@@ -20,7 +20,10 @@ maps. These support reversal and stationary-time concatenation of smooth isotopi
 
 The constructions reuse Mathlib’s interval immersion and `Real.smoothTransition`.
 The preferred interval charts also expose their actual affine coordinate formulas and the
-within-range derivatives of the inclusion composed with their inverses.
+within-range derivatives of the inclusion composed with their inverses. The derivative of the
+inclusion is invertible at every point, including both endpoints.
+
+Both preferred charts send their endpoints to `0` (`extChartAt_Icc_bot`, `extChartAt_Icc_top`).
 -/
 
 public section
@@ -227,6 +230,15 @@ theorem subtypeValIccTangentEquiv_toContinuousLinearMap (x : Icc a b) :
     simp only [subtypeValIccTangentEquiv, hx, ↓reduceIte, one_smul, neg_smul]
   all_goals rfl
 
+/-- The derivative of the interval inclusion is invertible at every point, including both
+endpoints. -/
+theorem isInvertible_mfderiv_subtypeVal_Icc (x : Icc a b) :
+    (mfderiv (𝓡∂ 1) 𝓘(ℝ) (Subtype.val : Icc a b → ℝ) x).IsInvertible := by
+  have h := subtypeValIccTangentEquiv_toContinuousLinearMap x
+  rw [← ContinuousLinearMap.isInvertible_equiv_comp (e := NormedSpace.fromTangentSpace (x : ℝ))]
+  rw [← h]
+  exact ContinuousLinearMap.isInvertible_equiv
+
 /-- The derivative of an affine map from the interval to any real normed space is its linear
 part applied to the actual interval inclusion derivative, including at both endpoints. -/
 theorem mfderiv_interval_affine_apply {a b : ℝ} [Fact (a < b)]
@@ -250,5 +262,17 @@ theorem mfderiv_interval_affine_apply {a b : ℝ} [Fact (a < b)]
       (mfderiv (𝓡∂ 1) 𝓘(ℝ) Subtype.val x w) at he
   rw [he]
   rfl
+
+open Fact.Manifold in
+/-- The preferred chart of `[a, b]` at its bottom endpoint sends it to `0`. -/
+theorem extChartAt_Icc_bot : extChartAt (𝓡∂ 1) (⊥ : Icc a b) ⊥ = 0 := by
+  rw [extChartAt, Icc_chartedSpaceChartAt_of_le_top (by simpa using hab.out)]
+  exact IccLeftChart_extend_bot
+
+open Fact.Manifold in
+/-- The preferred chart of `[a, b]` at its top endpoint sends it to `0`. -/
+theorem extChartAt_Icc_top : extChartAt (𝓡∂ 1) (⊤ : Icc a b) ⊤ = 0 := by
+  rw [extChartAt, Icc_chartedSpaceChartAt_of_top_le (by simp)]
+  exact IccRightChart_extend_top
 
 end TauCeti

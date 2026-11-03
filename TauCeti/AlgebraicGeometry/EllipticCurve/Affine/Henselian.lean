@@ -11,7 +11,7 @@ public import Mathlib.RingTheory.Henselian
 import Mathlib.Tactic.ComputeDegree
 -- Proof-only: finite-field norms supply points on the residue conic.
 import Mathlib.FieldTheory.Finite.GaloisField
-import TauCeti.Algebra.QuadraticAlgebra.NormTrace
+import Mathlib.RingTheory.QuadraticAlgebra
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.VariableChange
 import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.Weierstrass
@@ -246,7 +246,7 @@ theorem exists_equation_mem_maximalIdeal_of_a₃_eq_zero_of_a₄_eq_zero {R : Ty
   obtain ⟨q, hq⟩ := @FiniteField.norm_surjective (ResidueField R)
     (QuadraticAlgebra (ResidueField R) (residue R W.a₂) (residue R W.a₁)) _ _
     QuadraticAlgebra.instAlgebra _ (residue R A)
-  rw [QuadraticAlgebra.algebraNorm_eq_norm, QuadraticAlgebra.norm_def] at hq
+  rw [Algebra.norm_quadraticAlgebra_apply, QuadraticAlgebra.norm_def] at hq
   obtain ⟨X₀, hX₀⟩ := residue_surjective q.im
   obtain ⟨Y₀, hY₀⟩ := residue_surjective q.re
   obtain ⟨X, Y, hXY, -, -⟩ := TauCeti.HenselianLocalRing.exists_conic_eq

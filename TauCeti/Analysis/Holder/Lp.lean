@@ -81,7 +81,7 @@ theorem enorm_le_add_eLpNorm (hg : HolderWith C α g) (hp : 1 ≤ p) (hp' : p �
       simpa only [edist_zero_right] using edist_triangle (g x) (ballAverage mu r g x) 0
     _ ≤ C * ENNReal.ofReal r ^ (α : ℝ) + mu (ball (0 : E) r) ^ (-(p.toReal)⁻¹) * eLpNorm g p mu :=
       add_le_add (by rw [edist_comm]; simpa only [edist_eq_enorm_sub] using hdev)
-        (enorm_ballAverage_le hp hp' hgLp.aestronglyMeasurable hr x)
+        (enorm_ballAverage_le hp hp' x)
 
 /-- A global Hölder function in `Lᵖ`, bundled as an element of the Hölder Banach space. -/
 def toHolderSpace (hg : HolderWith C α g) (hα : 0 < α) (hp : 1 ≤ p) (hp' : p ≠ ∞)

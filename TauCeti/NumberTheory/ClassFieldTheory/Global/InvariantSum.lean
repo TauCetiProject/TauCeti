@@ -78,7 +78,7 @@ noncomputable section
 
 namespace TauCeti.ClassFieldTheory
 
-open IsDedekindDomain NumberField groupCohomology
+open IsDedekindDomain _root_.NumberField groupCohomology
 open scoped AdicCompletionExtension
 
 variable (K : Type) [Field K] [NumberField K]

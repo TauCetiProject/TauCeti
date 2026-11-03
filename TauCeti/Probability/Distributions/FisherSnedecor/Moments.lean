@@ -270,48 +270,6 @@ theorem integral_pow_fisherSnedecorMeasure (hm : 0 < m) (q : ℕ)
   · intro u hu
     rw [betaPDFReal, ite_eq_right (by simpa only [mem_Ioo] using hu), zero_mul]
 
-private lemma beta_add_one_sub_one_div {a b : ℝ} (ha : 0 < a) (hb : 1 < b) :
-    beta (a + 1) (b - 1) / beta a b = a / (b - 1) := by
-  have hab : a + (b - 1) ≠ 0 := by linarith
-  have hb1 : b - 1 ≠ 0 := by linarith
-  have hbase : beta a (b - 1) ≠ 0 := (beta_pos ha (by linarith)).ne'
-  have hleft : beta (a + 1) (b - 1) =
-      a / (a + (b - 1)) * beta a (b - 1) :=
-    beta_add_one_left ha.ne' hab
-  have hright : beta a b =
-      (b - 1) / (a + (b - 1)) * beta a (b - 1) := by
-    calc
-      beta a b = beta b a := beta_comm a b
-      _ = beta ((b - 1) + 1) a := by ring_nf
-      _ = (b - 1) / ((b - 1) + a) * beta (b - 1) a :=
-        beta_add_one_left hb1 (by linarith)
-      _ = (b - 1) / (a + (b - 1)) * beta a (b - 1) := by
-        rw [beta_comm (b - 1) a, add_comm (b - 1) a]
-  rw [hleft, hright]
-  field_simp
-
-private lemma beta_add_two_sub_two_div {a b : ℝ} (ha : 0 < a) (hb : 2 < b) :
-    beta (a + 2) (b - 2) / beta a b =
-      a * (a + 1) / ((b - 1) * (b - 2)) := by
-  have hstep1 := beta_add_one_sub_one_div ha (by linarith : 1 < b)
-  have hstep2 := beta_add_one_sub_one_div (a := a + 1) (b := b - 1)
-    (by linarith) (by linarith)
-  have hsub : (b - 1) - 1 = b - 2 := by ring
-  rw [hsub] at hstep2
-  have hbeta : beta (a + 1) (b - 1) ≠ 0 :=
-    (beta_pos (by linarith) (by linarith)).ne'
-  have hb1 : b - 1 ≠ 0 := by linarith
-  have hb2 : b - 2 ≠ 0 := by linarith
-  have ha2 : a + 2 = (a + 1) + 1 := by ring
-  rw [ha2]
-  calc
-    beta ((a + 1) + 1) (b - 2) / beta a b =
-        (beta ((a + 1) + 1) (b - 2) / beta (a + 1) (b - 1)) *
-          (beta (a + 1) (b - 1) / beta a b) := by field_simp
-    _ = ((a + 1) / (b - 2)) * (a / (b - 1)) := by rw [hstep1, hstep2]
-    _ = a * (a + 1) / ((b - 1) * (b - 2)) := by
-      field_simp [hb1, hb2]
-
 /-- The mean of a Fisher--Snedecor law is `n / (n - 2)` when `2 < n`. -/
 @[simp]
 theorem integral_id_fisherSnedecorMeasure (hm : 0 < m) (hn : 2 < n) :

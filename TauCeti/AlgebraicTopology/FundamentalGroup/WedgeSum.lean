@@ -141,25 +141,6 @@ private lemma range_inter_range_subset {i j : ι} (hij : i ≠ j) :
 private lemma homotopy_base (i : ι) (t : I) : H i (t, ⟨x i, hxV i⟩) = ⟨x i, hxV i⟩ :=
   (H i).eq_fst t rfl
 
-/-- The contraction of the wedge sum of the neighbourhoods `V i` onto the wedge point. -/
-private def contraction :
-    Homotopy (ContinuousMap.id (WedgeSum fun i => (⟨x i, hxV i⟩ : V i)))
-      (.const _ (base _)) where
-  toContinuousMap := liftProd (fun i => (incl _ i).comp (H i).toContinuousMap)
-    (.const _ (base _)) fun i t => by
-      simp only [ContinuousMap.comp_apply, HomotopyWith.coe_toContinuousMap,
-        ContinuousMap.const_apply]
-      rw [homotopy_base]
-      exact incl_apply_self i
-  map_zero_left w := by
-    induction w using ind with
-    | base => simp [ContinuousMap.toFun_eq_coe]
-    | incl i a => simp [ContinuousMap.toFun_eq_coe]
-  map_one_left w := by
-    induction w using ind with
-    | base => simp [ContinuousMap.toFun_eq_coe]
-    | incl i a => simp [ContinuousMap.toFun_eq_coe]
-
 /-- The deformation retraction of the wedge sum of the sets `nbhd V i j` onto `X i`: it fixes
 `X i` and contracts each `V j`, `j ≠ i`, onto the base point. -/
 private def retraction (i : ι) :
@@ -255,8 +236,7 @@ theorem fundamentalGroupLift_bijective :
       exact ⟨i, (hUo i).mem_nhds ((incl_mem_range_subtypeVal_iff _).2 (mem_nbhd_self V i z))⟩
   -- `C` is contractible, and `X i` is homotopy equivalent to `U i` by the inclusion.
   have hC : IsSimplyConnected C := by
-    have : ContractibleSpace (WedgeSum fun i => (⟨x i, hxV i⟩ : V i)) :=
-      (contractible_iff_id_nullhomotopic _).2 ⟨_, ⟨contraction V hxV H⟩⟩
+    have : ContractibleSpace (WedgeSum fun i => (⟨x i, hxV i⟩ : V i)) := contractibleSpace hH
     have : ContractibleSpace C :=
       (isOpenEmbedding_subtypeVal hxV hVo).isEmbedding.toHomeomorph.symm.contractibleSpace
     exact SimplyConnectedSpace.ofContractible C

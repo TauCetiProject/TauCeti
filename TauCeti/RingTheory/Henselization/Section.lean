@@ -13,7 +13,6 @@ import Mathlib.RingTheory.Ideal.Pure
 import Mathlib.RingTheory.Unramified.LocalStructure
 import TauCeti.RingTheory.Henselian.Idempotent
 import TauCeti.RingTheory.QuasiFinite.ZariskisMainTheorem
-import TauCeti.RingTheory.Unramified.Diagonal
 
 /-!
 # Sections of étale neighbourhoods of a Henselian pair
@@ -38,6 +37,8 @@ Nakayama's lemma gives `e C = S e`. Flatness then makes `S → C ⧸ (1 - e)` an
   quasi-finite `S`-algebra `C` with `S ⧸ J ≅ C ⧸ JC` has an `S`-algebra map to `S`.
 * `TauCeti.Henselization.nonempty_unique_algHom_of_isNeighbourhood`: an étale neighbourhood of a
   Henselian pair has exactly one `S`-algebra map to `S`.
+* `TauCeti.Henselization.IsNeighbourhood.nonempty_algHom`: an étale neighbourhood of `(R, I)` has
+  an `R`-algebra map to every Henselian pair `(S, J)` with `IS ⊆ J`.
 
 ## References
 
@@ -49,7 +50,7 @@ public section
 
 open Filter
 
-universe u v
+universe u v w
 
 namespace TauCeti.Henselization
 
@@ -85,7 +86,8 @@ private theorem nonempty_algHom_of_isIdempotentElem [Algebra.FinitePresentation 
   have : K.Pure :=
     Module.Flat.of_linearEquiv (Ideal.quotientKerAlgEquivOfSurjective hsurj).toLinearEquiv
   have hK : K = ⊥ := by
-    refine Submodule.eq_bot_of_le_smul_of_le_jacobson_bot J K hKfg ?_ hJ
+    refine Submodule.eq_bot_of_le_smul_of_le_jacobson J K hKfg ?_
+      (by simpa only [Ideal.jacobson_bot] using hJ)
     rw [Ideal.smul_eq_mul, mul_comm, ← Ideal.inf_eq_mul_of_pure, inf_eq_left.mpr hKJ]
   have hinj : Function.Injective (Algebra.ofId S D) :=
     (RingHom.injective_iff_ker_eq_bot _).mpr hK
@@ -214,7 +216,8 @@ private theorem exists_isIdempotentElem_smul_eq_mul [HenselianRing S J]
   obtain ⟨e, he, heγ⟩ := HenselianRing.exists_isIdempotentElem_sub_mem_map J hγ
     fun x ↦ (hP x).imp fun _ h ↦ h.2
   refine ⟨e, he, heγ,
-    he.exists_smul_eq_mul_of_mul_sub_smul_mem (HenselianRing.jac (I := J)) fun x ↦ ?_⟩
+    he.exists_smul_eq_mul_of_mul_sub_smul_mem (show J ≤ Ideal.jacobson ⊥ by
+      simpa only [Ideal.jacobson_bot] using (HenselianRing.jac (I := J))) fun x ↦ ?_⟩
   obtain ⟨σ, -, h2⟩ := hP x
   refine ⟨σ, ?_⟩
   convert sub_mem (add_mem (Ideal.mul_mem_right x _ heγ) h2)
@@ -267,7 +270,8 @@ is an `S`-algebra map `C → S`. -/
 theorem nonempty_algHom_of_bijective_reducedMap [HenselianRing S J]
     [Algebra.FinitePresentation S C] [Module.Flat S C] [Algebra.QuasiFinite S C]
     (hC : Function.Bijective (reducedMap J C)) : Nonempty (C →ₐ[S] S) := by
-  have hJ : J ≤ Ideal.jacobson ⊥ := HenselianRing.jac
+  have hJ : J ≤ Ideal.jacobson ⊥ := by
+    simpa only [Ideal.jacobson_bot] using (HenselianRing.jac (I := J))
   obtain ⟨C', s, hfg, hsC', hspan, hZ⟩ :=
     Algebra.QuasiFinite.exists_fg_subalgebra_and_span_eq_top (R := S) (A := C)
   have : Module.Finite S C' := ⟨(Submodule.fg_top _).mpr hfg⟩
@@ -291,11 +295,30 @@ theorem nonempty_unique_algHom_of_isNeighbourhood [HenselianRing S J] {C : CommA
     (hC : IsNeighbourhood J C) : Nonempty (Unique (C →ₐ[S] S)) := by
   obtain ⟨hEt, hbij⟩ := (isNeighbourhood_iff J C).mp hC
   obtain ⟨σ⟩ := nonempty_algHom_of_bijective_reducedMap J hbij
-  refine ⟨{ default := σ, uniq := fun τ ↦ ?_ }⟩
-  refine TauCeti.Algebra.FormallyUnramified.ext_of_quotient_eq S C J HenselianRing.jac ?_
-  ext c
-  have h := quotient_mk_eq_of_reducedMap_surjective J hbij.2 τ σ c
-  rw [Ideal.Quotient.eq, Algebra.algebraMap_self, Ideal.map_id] at h
-  simpa using Ideal.Quotient.eq.mpr h
+  have hJ : J.map (algebraMap S S) ≤ Ideal.jacobson ⊥ := by
+    rw [Algebra.algebraMap_self, Ideal.map_id]
+    simpa only [Ideal.jacobson_bot] using (HenselianRing.jac (I := J))
+  exact ⟨{ default := σ, uniq := fun _ ↦ hC.algHom_ext hJ }⟩
+
+end TauCeti.Henselization
+
+namespace TauCeti.Henselization
+
+variable {R : Type*} [CommRing R] {I : Ideal R}
+
+open TensorProduct in
+/-- An étale neighbourhood of `(R, I)` has an `R`-algebra map to every henselian pair `(S, J)`
+receiving a map of pairs from `(R, I)`: the base change `S ⊗[R] B` is an étale neighbourhood of
+`(S, J)`, and so has a section. -/
+theorem IsNeighbourhood.nonempty_algHom {B : CommAlgCat.{w} R} (hB : IsNeighbourhood I B)
+    {S : Type*} [CommRing S] [Algebra R S] {J : Ideal S} [HenselianRing S J]
+    (hIJ : I.map (algebraMap R S) ≤ J) : Nonempty (B →ₐ[R] S) := by
+  obtain ⟨hEtale, hBij⟩ := (isNeighbourhood_iff I B).mp hB
+  -- Record the base-changed étale structure, from which instance search finds the flatness,
+  -- finite presentation and quasi-finiteness that sections over `(S, J)` need.
+  have : Algebra.Etale S (S ⊗[R] B) := inferInstance
+  obtain ⟨σ⟩ := nonempty_algHom_of_bijective_reducedMap J (C := S ⊗[R] B)
+    (reducedMap_bijective_of_le _ hIJ _ (reducedMap_bijective_baseChange I S B hBij))
+  exact ⟨(σ.restrictScalars R).comp Algebra.TensorProduct.includeRight⟩
 
 end TauCeti.Henselization

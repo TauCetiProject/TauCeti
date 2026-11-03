@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Dynamic.Points
 
 import Mathlib.Algebra.Group.End
+import Mathlib.Tactic.Group
 import TauCeti.Algebra.Polynomial.Laurent.Polynomial
 
 /-!
@@ -61,6 +62,9 @@ degenerates: `P(l)` and `Z(l)` are everything and `U(l)` is trivial.
   `TauCeti.Cocharacter.eq_of_unipotent_mul_levi_eq`: the Levi decomposition.
 * `TauCeti.Cocharacter.parabolic_le_comap`, `TauCeti.Cocharacter.levi_le_comap` and
   `TauCeti.Cocharacter.unipotent_le_comap`: the three subgroups are subgroup functors.
+
+* `BialgHom.conj_genericPoint_mem_levi_iff`: a point of `P(l)` conjugates the generic point
+  `l(T)` into `Z(l)` exactly when it lies in `Z(l)`.
 
 ## References
 
@@ -293,6 +297,12 @@ theorem unipotent_inf_levi : unipotent A l ⊓ levi A l = ⊥ := by
   obtain ⟨hgP, hg1⟩ := mem_unipotent_iff.mp hg.1
   rw [Subgroup.mem_bot, ← limit_of_mem_levi hg.2, ← hg1]
 
+/-- A point lying in both the dynamic unipotent subgroup and the Levi subgroup is trivial. -/
+theorem eq_one_of_mem_unipotent_of_mem_levi {g : WithConv (H →ₐ[R] A)} (hu : g ∈ unipotent A l)
+    (hz : g ∈ levi A l) : g = 1 := by
+  have hg : g ∈ unipotent A l ⊓ levi A l := ⟨hu, hz⟩
+  rwa [unipotent_inf_levi, Subgroup.mem_bot] at hg
+
 /-! ### Cocharacter values, and the commutative case -/
 
 /-- **The values of the cocharacter lie in its own Levi subgroup.** They commute with the generic
@@ -306,6 +316,12 @@ theorem pointsHom_mem_levi (u : Aˣ) : pointsHom A l u ∈ levi A l := by
     (pointsHom_commute (A := LaurentPolynomial A) l (LaurentPolynomial.genericUnit A) v).eq,
     mul_assoc,
     mul_inv_cancel, mul_one]
+
+variable (l) in
+/-- The generic point `λ(T)` of a cocharacter lies in its own Levi subgroup. -/
+theorem genericPoint_mem_levi : genericPoint A l ∈ levi (LaurentPolynomial A) l := by
+  rw [genericPoint_eq_pointsHom]
+  exact pointsHom_mem_levi _
 
 /-- For a commutative affine group every point is fixed by conjugation, so the dynamic Levi
 subgroup attached to any cocharacter is everything. -/
@@ -366,6 +382,19 @@ theorem unipotent_le_comap : unipotent A l ≤ (unipotent B l).comap (AlgHom.map
   rw [← mapValue_limit φ ⟨g, hgP⟩, hg1, map_one]
 
 end Functoriality
+
+/-- Constant points of the Levi subgroup are Laurent-valued points of the Levi subgroup. -/
+theorem constPoint_mem_levi {g : WithConv (H →ₐ[R] A)} (hg : g ∈ levi A l) :
+    constPoint A g ∈ levi (LaurentPolynomial A) l := by
+  simpa only [Subgroup.mem_comap, constPoint_apply, AlgHom.mapValue_apply] using
+    levi_le_comap (IsScalarTower.toAlgHom R A (LaurentPolynomial A)) hg
+
+/-- Constant points of the unipotent subgroup are Laurent-valued points of the unipotent
+subgroup. -/
+theorem constPoint_mem_unipotent {g : WithConv (H →ₐ[R] A)} (hg : g ∈ unipotent A l) :
+    constPoint A g ∈ unipotent (LaurentPolynomial A) l := by
+  simpa only [Subgroup.mem_comap, constPoint_apply, AlgHom.mapValue_apply] using
+    unipotent_le_comap (IsScalarTower.toAlgHom R A (LaurentPolynomial A)) hg
 
 /-! ### The limit lies in the Levi subgroup -/
 
@@ -580,11 +609,9 @@ theorem conj_mem_unipotent {p u : WithConv (H →ₐ[R] A)} (hp : p ∈ paraboli
 with Laurent-polynomial values. -/
 theorem conjugate_mem_unipotent {g : WithConv (H →ₐ[R] A)} (hg : g ∈ unipotent A l) :
     conjugate A l g ∈ unipotent (LaurentPolynomial A) l := by
-  rw [conjugate_apply, genericPoint_eq_pointsHom]
-  apply conj_mem_unipotent
-    (levi_le_parabolic (pointsHom_mem_levi (LaurentPolynomial.genericUnit A)))
-  simpa only [Subgroup.mem_comap, constPoint_apply, AlgHom.mapValue_apply] using
-    unipotent_le_comap (IsScalarTower.toAlgHom R A (LaurentPolynomial A)) hg
+  rw [conjugate_apply]
+  exact conj_mem_unipotent (levi_le_parabolic (genericPoint_mem_levi l))
+    (constPoint_mem_unipotent hg)
 
 /-- The Levi decomposition of a point of the dynamic parabolic is unique. -/
 theorem eq_of_unipotent_mul_levi_eq {u₁ u₂ z₁ z₂ : WithConv (H →ₐ[R] A)}
@@ -594,9 +621,9 @@ theorem eq_of_unipotent_mul_levi_eq {u₁ u₂ z₁ z₂ : WithConv (H →ₐ[R]
   have hcross : u₂⁻¹ * u₁ = z₂ * z₁⁻¹ := by
     have h' := congrArg (fun t => u₂⁻¹ * t * z₁⁻¹) h
     simpa [mul_assoc] using h'
-  have hbot : u₂⁻¹ * u₁ ∈ unipotent A l ⊓ levi A l :=
-    Subgroup.mem_inf.mpr ⟨mul_mem (inv_mem hu₂) hu₁, hcross ▸ mul_mem hz₂ (inv_mem hz₁)⟩
-  rw [unipotent_inf_levi, Subgroup.mem_bot, inv_mul_eq_one] at hbot
+  have hbot := eq_one_of_mem_unipotent_of_mem_levi (mul_mem (inv_mem hu₂) hu₁)
+    (hcross ▸ mul_mem hz₂ (inv_mem hz₁))
+  rw [inv_mul_eq_one] at hbot
   refine ⟨hbot.symm, ?_⟩
   rw [hbot] at h
   exact mul_left_cancel h
@@ -634,5 +661,39 @@ theorem commute_pointsHom_of_mem_levi (l : H →ₐc[R] LaurentPolynomial R)
   simp only [mapValue_conjugate, hunit, hconst, AlgHom.mapValue_id,
     MonoidHom.id_apply, heval] at h
   exact ((mul_inv_eq_iff_eq_mul).mp h).symm
+
+/-- **The normalizer of the dynamic Levi in the dynamic parabolic, on points.** A point `p` of
+`P(λ)` conjugates the generic point `λ(T)` into `Z(λ)` exactly when `p` lies in `Z(λ)`. -/
+theorem conj_genericPoint_mem_levi_iff (l : H →ₐc[R] LaurentPolynomial R)
+    {p : WithConv (H →ₐ[R] A)} (hp : p ∈ parabolic A l) :
+    constPoint A p * genericPoint A l * (constPoint A p)⁻¹ ∈ levi (LaurentPolynomial A) l ↔
+      p ∈ levi A l := by
+  refine ⟨fun h => ?_, fun h => mul_mem (mul_mem (constPoint_mem_levi h)
+    (genericPoint_mem_levi l)) (inv_mem (constPoint_mem_levi h))⟩
+  obtain ⟨u, hu, z, hz, rfl⟩ := exists_mem_unipotent_mem_levi hp
+  -- The Levi factor `z` commutes with `λ(T)`, so `u` alone conjugates `λ(T)` into the Levi.
+  have hzT : constPoint A z * genericPoint A l * (constPoint A z)⁻¹ = genericPoint A l := by
+    have hz' := mem_levi_iff.mp hz
+    rw [conjugate_apply, mul_inv_eq_iff_eq_mul] at hz'
+    rw [mul_inv_eq_iff_eq_mul, hz']
+  have hu' : constPoint A u * genericPoint A l * (constPoint A u)⁻¹ ∈
+      levi (LaurentPolynomial A) l := by
+    have hsplit : constPoint A (u * z) * genericPoint A l * (constPoint A (u * z))⁻¹ =
+        constPoint A u * (constPoint A z * genericPoint A l * (constPoint A z)⁻¹) *
+          (constPoint A u)⁻¹ := by
+      simp only [map_mul, mul_inv_rev, mul_assoc]
+    rwa [hsplit, hzT] at h
+  -- The commutator of `u` with `λ(T)` lies in both the unipotent and the Levi subgroup.
+  have hc : constPoint A u * conjugate A l u⁻¹ =
+      constPoint A u * genericPoint A l * (constPoint A u)⁻¹ * (genericPoint A l)⁻¹ := by
+    rw [conjugate_apply, map_inv]
+    group
+  have hw := eq_one_of_mem_unipotent_of_mem_levi
+    (mul_mem (constPoint_mem_unipotent hu) (conjugate_mem_unipotent (inv_mem hu)))
+    (by
+      rw [hc]
+      exact mul_mem hu' (inv_mem (genericPoint_mem_levi l)))
+  rw [mul_eq_one_iff_eq_inv, ← map_inv, inv_inv] at hw
+  rwa [eq_one_of_mem_unipotent_of_mem_levi hu (mem_levi_iff.mpr hw.symm), one_mul]
 
 end BialgHom

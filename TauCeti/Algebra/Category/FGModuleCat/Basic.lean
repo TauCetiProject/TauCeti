@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.FGModuleCat.Colimits
+public import Mathlib.Algebra.Category.ModuleCat.Algebra
 public import Mathlib.Algebra.Category.ModuleCat.Biproducts
 public import Mathlib.RingTheory.Finiteness.Prod
 
@@ -20,8 +21,11 @@ feeds the Grothendieck-group computation for finite-dimensional vector spaces.
 
 * `FGModuleCat.hom_hom_ofHom`: the linear map underlying `FGModuleCat.ofHom f` is `f`, the
   analogue of Mathlib's `ModuleCat.hom_ofHom`.
-* `FGModuleCat.hom_hom_add`: morphisms of finitely generated modules add pointwise, the
-  companion of Mathlib's `FGModuleCat.hom_hom_comp` and `FGModuleCat.hom_hom_id`.
+* `FGModuleCat.forget₂_obj`, `FGModuleCat.forget₂_map`: the forgetful functor to `ModuleCat R`
+  takes underlying modules and morphisms.
+* `FGModuleCat.hom_hom_add`, `FGModuleCat.hom_hom_smul`: morphisms of finitely generated modules
+  add and scale pointwise, the companions of Mathlib's `FGModuleCat.hom_hom_comp` and
+  `FGModuleCat.hom_hom_id`.
 * `FGModuleCat.braiding_hom_hom_hom`: the braiding of finitely generated modules is the swap
   `TensorProduct.comm` of the tensor product.
 * `FGModuleCat.whiskerRight_hom_hom`: right whiskering of finitely generated modules is
@@ -30,6 +34,9 @@ feeds the Grothendieck-group computation for finite-dimensional vector spaces.
   the analogue of Mathlib's `ModuleCat.biprodIsoProd`, with its projection lemmas
   `FGModuleCat.biprodIsoProd_inv_comp_fst` and `FGModuleCat.biprodIsoProd_inv_comp_snd`.
 * `FGModuleCat.finrank_biprod`: rank is additive on biproducts of finite free modules.
+* `TauCeti.FGModuleCat.homLinearEquivOfIsScalarTower`: for an algebra `R` over a field `k`,
+  morphisms into `FGModuleCat.of R M` are the `R`-linear maps into `M`, `k`-linearly for the
+  original `k`-action on `M` rather than the category's restricted scalar action.
 -/
 
 public section
@@ -38,7 +45,7 @@ namespace TauCeti
 
 open CategoryTheory CategoryTheory.Limits
 
-universe u v
+universe u v w
 
 /-- The linear map underlying `FGModuleCat.ofHom f` is `f`. -/
 @[simp]
@@ -47,12 +54,33 @@ theorem _root_.FGModuleCat.hom_hom_ofHom {R : Type u} [Ring R] {V W : Type v} [A
     (f : V →ₗ[R] W) : (FGModuleCat.ofHom f).hom.hom = f :=
   (rfl)
 
+/-- The forgetful functor from finitely generated modules sends an object to its underlying
+module: it is the inclusion of a full subcategory. -/
+@[simp]
+theorem _root_.FGModuleCat.forget₂_obj {R : Type u} [Ring R] (X : FGModuleCat.{v} R) :
+    (forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).obj X = X.obj :=
+  rfl
+
+/-- The forgetful functor from finitely generated modules sends a morphism to its underlying
+morphism of modules. -/
+@[simp]
+theorem _root_.FGModuleCat.forget₂_map {R : Type u} [Ring R] {X Y : FGModuleCat.{v} R}
+    (f : X ⟶ Y) : (forget₂ (FGModuleCat.{v} R) (ModuleCat.{v} R)).map f = f.hom :=
+  rfl
+
 /-- The linear map underlying a sum of morphisms of finitely generated modules is the sum of the
 linear maps underlying them: addition of morphisms in a full subcategory of `ModuleCat R` is the
 addition of the underlying linear maps. -/
 @[simp]
 theorem _root_.FGModuleCat.hom_hom_add {R : Type u} [Ring R] {V W : FGModuleCat.{v} R}
     (f g : V ⟶ W) : (f + g).hom.hom = f.hom.hom + g.hom.hom :=
+  (rfl)
+
+/-- The linear map underlying a scalar multiple of a morphism of finitely generated modules over a
+commutative ring is the scalar multiple of the underlying linear map. -/
+@[simp]
+theorem _root_.FGModuleCat.hom_hom_smul {R : Type u} [CommRing R] {V W : FGModuleCat.{v} R}
+    (r : R) (f : V ⟶ W) : (r • f).hom.hom = r • f.hom.hom :=
   (rfl)
 
 open MonoidalCategory in
@@ -127,5 +155,41 @@ theorem _root_.FGModuleCat.finrank_biprod (R : Type u) [Ring R] [StrongRankCondi
       Module.finrank R X + Module.finrank R Y :=
   (FGModuleCat.isoToLinearEquiv (FGModuleCat.biprodIsoProd X Y)).finrank_eq.trans
     Module.finrank_prod
+
+
+namespace FGModuleCat
+
+variable (k : Type w) [Field k] {R : Type u} [Ring R] [Algebra k R] {M : Type v}
+  [AddCommGroup M] [Module R M] [Module.Finite R M] [Module k M] [IsScalarTower k R M]
+
+/-- Category morphisms into `M` identify with linear maps into `M`, respecting its original
+`k`-action rather than the category's restricted scalar action. -/
+noncomputable def homLinearEquivOfIsScalarTower (N : FGModuleCat.{v} R) :
+    (N ⟶ FGModuleCat.of R M) ≃ₗ[k] (N →ₗ[R] M) where
+  toFun f := f.hom.hom
+  invFun f := FGModuleCat.ofHom f
+  left_inv _ := rfl
+  right_inv _ := rfl
+  map_add' _ _ := rfl
+  map_smul' c f := by
+    apply LinearMap.ext
+    intro x
+    -- `ModuleCat.linearOverField` acts on morphisms through `ModuleCat.moduleOfAlgebraModule`,
+    -- so `(c • f) x` unfolds by definition to `algebraMap k R c • f x`.
+    exact algebraMap_smul R c (f.hom.hom x)
+
+/-- The comparison preserves the underlying linear map. -/
+@[simp]
+theorem homLinearEquivOfIsScalarTower_apply (N : FGModuleCat.{v} R)
+    (f : N ⟶ FGModuleCat.of R M) :
+    homLinearEquivOfIsScalarTower k N f = f.hom.hom := (rfl)
+
+/-- The inverse comparison bundles a linear map as a category morphism. -/
+@[simp]
+theorem homLinearEquivOfIsScalarTower_symm_apply (N : FGModuleCat.{v} R)
+    (f : N →ₗ[R] M) :
+    (homLinearEquivOfIsScalarTower k N).symm f = FGModuleCat.ofHom f := (rfl)
+
+end FGModuleCat
 
 end TauCeti

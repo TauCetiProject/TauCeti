@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Category.GradedModuleCat.Abelian
 public import Mathlib.Algebra.Category.ModuleCat.Products
 public import TauCeti.CategoryTheory.Linear.Biproduct
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
+public import TauCeti.CategoryTheory.Preadditive.Projective.Basic
 
 /-!
 # Coproducts of internally graded modules
@@ -19,8 +20,8 @@ property lifts from modules to graded modules. The forgetful functor to modules 
 these coproducts.
 
 The universal property follows `ModuleCat.coproductCoconeIsColimit` in
-`Mathlib.Algebra.Category.ModuleCat.Products`. The grading argument follows the
-direct-sum argument in `GradedModuleCat.freeLift`.
+`Mathlib.Algebra.Category.ModuleCat.Products`. The grading argument is
+`InternalGrading.toModule_mem_of_mem_directSumPiece`, as in `GradedModuleCat.freeLift`.
 
 These coproducts provide the sums required for Mathlib's totalization of cochain
 bifunctors, including balanced tensor composition of graded bimodule complexes.
@@ -70,14 +71,11 @@ theorem mem_coproductCofan_pt_piece_iff {p : ℤ} {x : (coproductCofan M).pt} :
 /-- Extend a cofan of graded maps along the direct-sum universal property. -/
 def coproductDesc (s : Cofan M) : (coproductCofan M).pt ⟶ s.pt := by
   classical
-  let f := DirectSum.toModule A J s.pt fun j ↦ (s.inj j).hom
-  refine ofHom f (LinearMap.isHomogeneous_def.2 fun p x hx ↦ ?_)
-  have hx' := (mem_coproductCofan_pt_piece_iff M).1 hx
-  rw [← DFinsupp.sum_single (f := x), DFinsupp.sum, map_sum]
-  refine (s.pt.grading.piece (p + 0)).sum_mem fun j _ ↦ ?_
-  dsimp only [f]
-  rw [DirectSum.single_eq_lof A, DirectSum.toModule_lof]
-  simpa using map_mem (s.inj j) (hx' j)
+  refine ofHom (DirectSum.toModule A J s.pt fun j ↦ (s.inj j).hom)
+    (LinearMap.isHomogeneous_def.2 fun p x hx ↦ ?_)
+  simpa only [add_zero] using InternalGrading.toModule_mem_of_mem_directSumPiece
+    (fun j ↦ (M j).grading) s.pt.grading.piece (fun j ↦ (s.inj j).hom)
+    (fun j x hx ↦ map_mem (s.inj j) hx) (by simpa only [InternalGrading.directSum_piece] using hx)
 
 /-- The underlying universal map is the direct-sum universal linear map. -/
 @[simp]
@@ -132,14 +130,8 @@ instance : PreservesColimit (Discrete.functor M) toModuleCat := by
 
 /-- A degreewise direct sum of projective graded modules is projective, with no finiteness
 assumption on the index type. -/
-instance projective_directSumObj [∀ j, Projective (M j)] : Projective (directSumObj M) := by
-  -- Mathlib's coproduct-projectivity instance indexes in the morphism universe.
-  let e : ULift.{v} J ≃ J := Equiv.ulift
-  let hc := (Cofan.isColimitEquivOfEquiv e (coproductCofan M)) (coproductCofanIsColimit M)
-  let : HasCoproduct (M ∘ e) := HasColimit.mk ⟨_, hc⟩
-  let (j : ULift.{v} J) : Projective ((M ∘ e) j) := inferInstanceAs (Projective (M (e j)))
-  exact Projective.of_iso ((colimit.isColimit _).coconePointUniqueUpToIso hc)
-    (inferInstanceAs (Projective (∐ (M ∘ e))))
+instance projective_directSumObj [∀ j, Projective (M j)] : Projective (directSumObj M) :=
+  Projective.of_isColimit_cofan (coproductCofanIsColimit M)
 
 /-- The dimension of graded maps from a finite degreewise direct sum is the sum of the
 Hom dimensions of its summands. The Hom modules must be finite and free over `k`. -/

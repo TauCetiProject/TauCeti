@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Sites.SmallAffineZariski
-public import Mathlib.RingTheory.RingHom.FiniteType
 public import TauCeti.Algebra.Module.LocalizedModule.DirectSum
 public import TauCeti.AlgebraicGeometry.Modules.GradedAlgebra.Sections
 public import TauCeti.AlgebraicGeometry.Modules.Localization
@@ -27,16 +26,14 @@ corresponding open subscheme of the construction over `U`, as needed to glue aff
 constructions with graded algebras. It is the graded counterpart of
 `CategoryTheory.CommMon.isLocalization_basicOpen` for commutative `𝒪_X`-algebras.
 
-Since this localization is the base change of the graded-section algebra along the localization
-of the base ring, finite generation over the ring of regular functions is preserved on basic
-opens (`CategoryTheory.CommMon.finiteType_gradedSections_basicOpen`).
-
 ## Main statements
 
 * `CategoryTheory.CommMon.isLocalization_gradedSections_basicOpen`: the restriction
   `⨁ n, Γ(Aₙ, U) → ⨁ n, Γ(Aₙ, X.basicOpen f)` is a localization away from `f`.
-* `CategoryTheory.CommMon.finiteType_gradedSections_basicOpen`: if the graded-section algebra over
-  `U` is finitely generated, then so is the graded-section algebra over `X.basicOpen f`.
+* `CategoryTheory.CommMon.isBaseChange_restrictGradedSections`: the same restriction exhibits
+  `⨁ n, Γ(Aₙ, X.basicOpen f)` as the base change of `⨁ n, Γ(Aₙ, U)` along
+  `Γ(X, U) → Γ(X, X.basicOpen f)`, for the algebra structure
+  `CategoryTheory.CommMon.algebraGradedSectionsBasicOpen`.
 * `CategoryTheory.CommMon.coequifibered_toGradedSectionsPresheaf`: on the affine opens of `X`, the
   presheaf of graded rings of sections is coequifibered over the structure presheaf.
 -/
@@ -102,39 +99,59 @@ theorem _root_.CategoryTheory.CommMon.isLocalization_gradedSections_basicOpen
     dsimp only
     rwa [← map_pow]
 
-/-- Finite generation of a graded ring of sections over the ring of regular functions is
-preserved on basic opens. The target algebra is the base change of the source algebra along
-`Γ(X, U) → Γ(X, X.basicOpen f)`, because both rings are localized away from `f`. -/
-theorem _root_.CategoryTheory.CommMon.finiteType_gradedSections_basicOpen
-    [∀ n, (A.X n).IsQuasicoherent] {U : X.Opens} (hU : IsAffineOpen U) (f : Γ(X, U))
-    [Algebra.FiniteType Γ(X, U) (⨁ n, Γ(A.X n, U))] :
-    Algebra.FiniteType Γ(X, X.basicOpen f) (⨁ n, Γ(A.X n, X.basicOpen f)) := by
-  let i : X.basicOpen f ⟶ U := homOfLE (X.basicOpen_le f)
-  let := (X.presheaf.map i.op).hom.toAlgebra
-  let := (A.restrictGradedSections i).toAlgebra
+section BaseChange
+
+variable {U : X.Opens} (f : Γ(X, U))
+
+/-- The `Γ(X, U)`-algebra structure on `⨁ n, Γ(Aₙ, D(f))` whose underlying module structure is the
+one by restriction of scalars along `Γ(X, U) → Γ(X, D(f))` (`Scheme.Modules.moduleBasicOpen`). -/
+abbrev _root_.CategoryTheory.CommMon.algebraGradedSectionsBasicOpen :
+    Algebra Γ(X, U) (⨁ n, Γ(A.X n, X.basicOpen f)) :=
+  Algebra.ofModule
+    (fun r x y ↦ by rw [← algebraMap_smul Γ(X, X.basicOpen f) r, ← algebraMap_smul
+      Γ(X, X.basicOpen f) r, smul_mul_assoc])
+    (fun r x y ↦ by rw [← algebraMap_smul Γ(X, X.basicOpen f) r, ← algebraMap_smul
+      Γ(X, X.basicOpen f) r, mul_smul_comm])
+
+/-- Restriction of sections from `U` to `D(f)` is a homomorphism of `Γ(X, U)`-algebras. -/
+theorem _root_.CategoryTheory.CommMon.restrictGradedSections_algebraMap_basicOpen (r : Γ(X, U)) :
+    let := A.algebraGradedSectionsBasicOpen f
+    A.restrictGradedSectionsGradedHom (homOfLE (X.basicOpen_le f))
+        (algebraMap Γ(X, U) (⨁ n, Γ(A.X n, U)) r) =
+      algebraMap Γ(X, U) (⨁ n, Γ(A.X n, X.basicOpen f)) r := by
+  intro
+  rw [CommMon.restrictGradedSectionsGradedHom_apply, CommMon.restrictGradedSections_algebraMap,
+    Algebra.algebraMap_eq_smul_one, Algebra.algebraMap_eq_smul_one]
+  exact algebraMap_smul Γ(X, X.basicOpen f) r (1 : ⨁ n, Γ(A.X n, X.basicOpen f))
+
+/-- Over an affine open `U` and `f ∈ Γ(X, U)`, restriction of sections exhibits
+`⨁ n, Γ(Aₙ, D(f))` as the base change of `⨁ n, Γ(Aₙ, U)` along `Γ(X, U) → Γ(X, D(f))`. -/
+theorem _root_.CategoryTheory.CommMon.isBaseChange_restrictGradedSections
+    [∀ n, (A.X n).IsQuasicoherent] (hU : IsAffineOpen U) :
+    let := A.algebraGradedSectionsBasicOpen f
+    IsBaseChange Γ(X, X.basicOpen f)
+      (AlgHom.mk (R := Γ(X, U))
+        (A.restrictGradedSectionsGradedHom (homOfLE (X.basicOpen_le f))).toRingHom
+        (A.restrictGradedSections_algebraMap_basicOpen f)).toLinearMap := by
+  intro
+  let := (A.restrictGradedSections (homOfLE (X.basicOpen_le f))).toAlgebra
+  have := IsScalarTower.of_algebraMap_eq (R := Γ(X, U)) (S := ⨁ n, Γ(A.X n, U))
+    (A := ⨁ n, Γ(A.X n, X.basicOpen f)) fun r ↦
+      ((A.restrictGradedSectionsGradedHom_apply _ _).symm.trans
+        (A.restrictGradedSections_algebraMap_basicOpen f r)).symm
   have : IsLocalization.Away f Γ(X, X.basicOpen f) := hU.isLocalization_basicOpen f
-  have : IsLocalization.Away
-      (algebraMap Γ(X, U) (⨁ n, Γ(A.X n, U)) f)
-      (⨁ n, Γ(A.X n, X.basicOpen f)) :=
-    A.isLocalization_gradedSections_basicOpen hU f
-  rw [← RingHom.finiteType_algebraMap]
-  let g := IsLocalization.Away.map Γ(X, X.basicOpen f)
-    (⨁ n, Γ(A.X n, X.basicOpen f))
-      (algebraMap Γ(X, U) (⨁ n, Γ(A.X n, U))) f
-  have hg : g.FiniteType := RingHom.localization_away_map_finiteType
-    Γ(X, U) (⨁ n, Γ(A.X n, U)) Γ(X, X.basicOpen f)
-      (⨁ n, Γ(A.X n, X.basicOpen f))
-      (algebraMap Γ(X, U) (⨁ n, Γ(A.X n, U))) f
-      (RingHom.finiteType_algebraMap.mpr inferInstance)
-  have heq : algebraMap Γ(X, X.basicOpen f)
-      (⨁ n, Γ(A.X n, X.basicOpen f)) = g := by
-    apply IsLocalization.ringHom_ext (Submonoid.powers f)
-    dsimp only [g]
-    rw [IsLocalization.Away.map, IsLocalization.map_comp]
-    apply RingHom.ext
-    intro r
-    exact (A.restrictGradedSections_algebraMap i r).symm
-  rwa [heq]
+  have hloc := A.isLocalization_gradedSections_basicOpen hU f
+  have : IsLocalization (Algebra.algebraMapSubmonoid (⨁ n, Γ(A.X n, U)) (Submonoid.powers f))
+      (⨁ n, Γ(A.X n, X.basicOpen f)) := by
+    rwa [Algebra.algebraMapSubmonoid, Submonoid.map_powers]
+  have key : IsBaseChange Γ(X, X.basicOpen f) (IsScalarTower.toAlgHom Γ(X, U)
+      (⨁ n, Γ(A.X n, U)) (⨁ n, Γ(A.X n, X.basicOpen f))).toLinearMap :=
+    (isLocalizedModule_iff_isBaseChange (Submonoid.powers f) Γ(X, X.basicOpen f) _).mp
+      ((isLocalizedModule_iff_isLocalization (S := Submonoid.powers f)).mpr inferInstance)
+  convert key using 1
+  exact LinearMap.ext fun x ↦ A.restrictGradedSectionsGradedHom_apply _ x
+
+end BaseChange
 
 /-- On the affine opens of `X`, the presheaf of graded rings of sections of a graded algebra with
 quasicoherent homogeneous components is coequifibered over the structure presheaf: its graded rings

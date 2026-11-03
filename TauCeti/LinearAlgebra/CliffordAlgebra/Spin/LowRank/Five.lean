@@ -13,7 +13,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.LowRank.Four
 import TauCeti.LinearAlgebra.CliffordAlgebra.Lipschitz.CliffordGroup
 import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Five
 import TauCeti.LinearAlgebra.CliffordAlgebra.Vectors
-import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement
+import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
 import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalBasis
 
 /-!

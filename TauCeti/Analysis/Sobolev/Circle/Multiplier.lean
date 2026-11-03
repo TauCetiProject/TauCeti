@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Circle.Basic
+public import TauCeti.Analysis.Sobolev.Circle.Lp
+public import TauCeti.MeasureTheory.Function.Lp.Multiplication
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 
 import Mathlib.Analysis.Calculus.ContDiff.Operations
@@ -37,6 +39,9 @@ are needed to patch boundary estimates with smooth partitions of unity and cutof
   Fourier coefficients `g`; when the series does not converge it is the junk value `0`.
 * `TauCeti.CircleSobolev.mulFourierSeriesEquiv`: for a smooth nowhere-vanishing function `f`,
   multiplication by `f` as a continuous linear automorphism of `H^s`.
+* `TauCeti.CircleSobolev.multiplicationOperator a`: multiplication by an essentially bounded
+  function `a` on `H⁰ = L²`, for instance by a continuous function, which need not satisfy the
+  summability hypothesis of `mulFourierSeries`.
 
 ## Main statements
 
@@ -57,6 +62,15 @@ are needed to patch boundary estimates with smooth partitions of unity and cutof
   (`TauCeti.CircleSobolev.summable_weight_mul_norm_fourierCoeff_of_contDiff`).
 * `TauCeti.CircleSobolev.mulFourierSeries_fourierCoeff_comp`: for smooth `f` and `g`,
   multiplication by `f` after multiplication by `g` is multiplication by `f * g`.
+* `TauCeti.CircleSobolev.toLpₗᵢ_multiplicationOperator_ae` and
+  `TauCeti.CircleSobolev.norm_multiplicationOperator_apply_le`: on `H⁰`, `multiplicationOperator a`
+  is pointwise multiplication by `a` almost everywhere, and `‖a · u‖ ≤ ‖a‖∞ ‖u‖`.
+* `TauCeti.CircleSobolev.multiplicationOperator_add`,
+  `TauCeti.CircleSobolev.multiplicationOperator_smul`,
+  `TauCeti.CircleSobolev.multiplicationOperator_comp_multiplicationOperator`: on `H⁰`,
+  `multiplicationOperator a` is linear in `a`, and composing two of them multiplies the symbols.
+* `TauCeti.CircleSobolev.mulFourierSeries_fourierCoeff_eq_multiplicationOperator`: on `H⁰`, the
+  two multiplication operators by a smooth function agree.
 
 ## References
 
@@ -399,6 +413,104 @@ theorem coe_mulFourierSeriesEquiv_symm (f : AddCircle T → ℂ) (hf : ContDiff 
   (rfl)
 
 end Smooth
+
+/-! ### Multiplication by essentially bounded functions on `H⁰` -/
+
+section Lp
+
+open MeasureTheory
+
+variable {T : ℝ} [Fact (0 < T)]
+
+/-- Multiplication by an essentially bounded function `a` on `H⁰ = L²`: the multiplication
+operator `MeasureTheory.Lp.multiplicationOperator a`, transported along `CircleSobolev.toLpₗᵢ`. -/
+def multiplicationOperator (a : Lp ℂ ⊤ (AddCircle.haarAddCircle (T := T))) :
+    CircleSobolev 0 ℂ →L[ℂ] CircleSobolev 0 ℂ :=
+  (toLpₗᵢ T).symm.toContinuousLinearEquiv.toContinuousLinearMap ∘L
+    Lp.multiplicationOperator a ∘L (toLpₗᵢ T).toContinuousLinearEquiv.toContinuousLinearMap
+
+/-- The `L²` function of `a · u` is the `L²` multiplication operator of `a` applied to that of
+`u`. -/
+@[simp]
+theorem toLpₗᵢ_multiplicationOperator (a : Lp ℂ ⊤ (AddCircle.haarAddCircle (T := T)))
+    (u : CircleSobolev 0 ℂ) :
+    toLpₗᵢ T (multiplicationOperator a u) = Lp.multiplicationOperator a (toLpₗᵢ T u) := by
+  simp [multiplicationOperator]
+
+/-- Multiplication by `a` on `H⁰` is pointwise multiplication almost everywhere. -/
+theorem toLpₗᵢ_multiplicationOperator_ae (a : Lp ℂ ⊤ (AddCircle.haarAddCircle (T := T)))
+    (u : CircleSobolev 0 ℂ) :
+    toLpₗᵢ T (multiplicationOperator a u) =ᵐ[AddCircle.haarAddCircle]
+      fun x ↦ a x * toLpₗᵢ T u x := by
+  rw [toLpₗᵢ_multiplicationOperator]
+  exact Lp.multiplicationOperator_ae a (toLpₗᵢ T u)
+
+/-- Multiplication by `a` changes the `H⁰` norm by at most `‖a‖∞`. -/
+theorem norm_multiplicationOperator_apply_le (a : Lp ℂ ⊤ (AddCircle.haarAddCircle (T := T)))
+    (u : CircleSobolev 0 ℂ) : ‖multiplicationOperator a u‖ ≤ ‖a‖ * ‖u‖ := by
+  rw [← (toLpₗᵢ T).norm_map, ← (toLpₗᵢ T).norm_map u, toLpₗᵢ_multiplicationOperator]
+  exact Lp.norm_multiplicationOperator_apply_le a _
+
+/-- Multiplication by the zero symbol is the zero operator on `H⁰`. -/
+@[simp]
+theorem multiplicationOperator_zero :
+    multiplicationOperator (0 : Lp ℂ ⊤ (AddCircle.haarAddCircle (T := T))) = 0 := by
+  ext1 u
+  apply (toLpₗᵢ T).injective
+  simp
+
+/-- Multiplication operators on `H⁰` depend additively on their symbols. -/
+@[simp]
+theorem multiplicationOperator_add (a b : Lp ℂ ⊤ (AddCircle.haarAddCircle (T := T))) :
+    multiplicationOperator (a + b) = multiplicationOperator a + multiplicationOperator b := by
+  ext1 u
+  apply (toLpₗᵢ T).injective
+  simp
+
+/-- Multiplication operators on `H⁰` depend complex-linearly on their symbols. -/
+@[simp]
+theorem multiplicationOperator_smul (c : ℂ) (a : Lp ℂ ⊤ (AddCircle.haarAddCircle (T := T))) :
+    multiplicationOperator (c • a) = c • multiplicationOperator a := by
+  ext1 u
+  apply (toLpₗᵢ T).injective
+  simp
+
+/-- Composing multiplication operators on `H⁰` multiplies their symbols in the same order. -/
+theorem multiplicationOperator_comp_multiplicationOperator
+    (a b : Lp ℂ ⊤ (AddCircle.haarAddCircle (T := T))) :
+    multiplicationOperator a ∘L multiplicationOperator b =
+      multiplicationOperator (a • b : Lp ℂ ⊤ (AddCircle.haarAddCircle (T := T))) := by
+  ext1 u
+  apply (toLpₗᵢ T).injective
+  simp only [ContinuousLinearMap.comp_apply, toLpₗᵢ_multiplicationOperator]
+  rw [← ContinuousLinearMap.comp_apply, Lp.multiplicationOperator_comp_multiplicationOperator]
+
+/-- On `H⁰ = L²`, multiplication by a smooth function `f` through its Fourier coefficients is the
+multiplication operator by `f`. -/
+theorem mulFourierSeries_fourierCoeff_eq_multiplicationOperator {f : C(AddCircle T, ℂ)}
+    (hf : ContDiff ℝ ∞ fun x : ℝ ↦ f x) :
+    (mulFourierSeries (fourierCoeff f) : CircleSobolev 0 ℂ →L[ℂ] CircleSobolev 0 ℂ) =
+      multiplicationOperator (ContinuousMap.toLp ⊤ AddCircle.haarAddCircle ℂ f) := by
+  -- Compare on Fourier monomials, which lie in `H¹`, where both operators are pointwise
+  -- multiplication of continuous representatives.
+  have h₁ : (1 : ℝ) / 2 < 1 := by norm_num
+  have hsum := summable_weight_mul_norm_fourierCoeff_of_contDiff hf
+  refine continuousLinearMap_ext_single fun n x ↦ ?_
+  rw [← inclusion_single (show (0 : ℝ) ≤ 1 by norm_num) n x,
+    ← inclusion_mulFourierSeries zero_le_one (hsum _) (hsum _)]
+  refine (toLpₗᵢ T).injective (Lp.ext ?_)
+  rw [toLpₗᵢ_inclusion_eq_toLp_toContinuousMap T h₁, toLpₗᵢ_multiplicationOperator,
+    toLpₗᵢ_inclusion_eq_toLp_toContinuousMap T h₁]
+  filter_upwards [Lp.multiplicationOperator_ae (E := ℂ) _ _,
+    ContinuousMap.coeFn_toLp (p := 2) (𝕜 := ℂ) AddCircle.haarAddCircle
+      (toContinuousMap T h₁ (mulFourierSeries (fourierCoeff f) (single n x : CircleSobolev 1 ℂ))),
+    ContinuousMap.coeFn_toLp (p := 2) (𝕜 := ℂ) AddCircle.haarAddCircle
+      (toContinuousMap T h₁ (single n x : CircleSobolev 1 ℂ)),
+    ContinuousMap.coeFn_toLp (p := ⊤) (𝕜 := ℂ) AddCircle.haarAddCircle f] with y hy₁ hy₂ hy₃ hy₄
+  rw [hy₁, hy₂, hy₃, hy₄, toContinuousMap_mulFourierSeries_fourierCoeff_of_contDiff h₁ hf,
+    smul_eq_mul]
+
+end Lp
 
 end CircleSobolev
 

@@ -11,7 +11,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Colimits
 public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 public import Mathlib.Data.ENat.Lattice
 public import TauCeti.KnotTheory.Slice.Basic
-import TauCeti.Geometry.Manifold.Orientation.ClosedBall
+public import TauCeti.Geometry.Manifold.Orientation.ClosedBall
 import Mathlib.Analysis.Convex.Contractible
 import TauCeti.AlgebraicTopology.Singular.Contractible
 
@@ -42,9 +42,17 @@ boundary of `S` is homeomorphic to the image of `K`, a circle, so `S` has exactl
 component; and `S` is Hausdorff, being embedded in the ball. Only the image of `K` enters, so the
 slice genus does not depend on the parametrization or orientation of the knot.
 
-The **genus** of a slice surface (`TauCeti.SmoothSliceSurface.genus`) is read off its rational
+The surface, its embedding into the ball and the two boundary conditions are the data
+`TauCeti.SliceSurfaceData K` shared with the topological slice surfaces of
+`TauCeti.KnotTheory.Slice.TopologicalGenus`, which differ only in asking for a locally flat rather
+than a smooth embedding; a smooth slice surface extends this data by the smooth embedding
+condition. The genus, the transports along knots with the same image and along linear isometries,
+and the disc are constructed once on the shared data.
+
+The **genus** of a slice surface (`TauCeti.SliceSurfaceData.genus`) is read off its rational
 singular homology: a compact, connected, orientable surface of genus `g` with one boundary circle
-has `H₁(S; ℚ) ≅ ℚ²ᵍ`, so its genus is half the dimension of `H₁(S; ℚ)`. The slice genus
+has `H₁(S; ℚ) ≅ ℚ²ᵍ`, so its genus is half the dimension of `H₁(S; ℚ)`. The one-circle hypothesis
+holds because the shared data asks the map to be a topological embedding. The slice genus
 (`TauCeti.sliceGenus K`) is the infimum of the genera of the slice surfaces of `K`, valued in `ℕ∞`
 so that it is `⊤` rather than `0` should `K` have no slice surface at all. (Every knot in `S³`
 bounds a Seifert surface, whose interior can be pushed into `D⁴`, so `g_s(K)` is finite for
@@ -58,8 +66,11 @@ compact surfaces and is not proved here.
 
 ## Main definitions
 
+* `TauCeti.SliceSurfaceData K`: a compact, connected, orientable surface properly embedded in the
+  ball with boundary onto `K`, the data shared by smooth and topological slice surfaces.
+* `TauCeti.SliceSurfaceData.genus`: the genus `dim H₁(S; ℚ) / 2` of a slice surface.
+* `TauCeti.SliceSurfaceData.ofClosedBall`: the closed unit disc as slice surface data.
 * `TauCeti.SmoothSliceSurface K`: a smooth slice surface for `K`.
-* `TauCeti.SmoothSliceSurface.genus`: the genus `dim H₁(S; ℚ) / 2` of a slice surface.
 * `TauCeti.sliceGenus K`: the smooth slice genus of `K`, in `ℕ∞`.
 * `TauCeti.IsSmoothSliceDisc.toSmoothSliceSurface`: a smooth slice disc as a slice surface.
 * `TauCeti.SmoothSliceSurface.mapLinearIsometryEquiv`: a slice surface for `K`, transported along
@@ -75,7 +86,8 @@ compact surfaces and is not proved here.
   slice genus only depends on the image of the knot.
 * `TauCeti.sliceGenus_congr_linearIsometryEquiv`: the slice genus is invariant under linear
   isometries of the ambient spaces.
-* `TauCeti.IsSmoothSliceDisc.genus_toSmoothSliceSurface`: a slice disc has genus `0`.
+* `TauCeti.SliceSurfaceData.genus_ofClosedBall`,
+  `TauCeti.IsSmoothSliceDisc.genus_toSmoothSliceSurface`: a slice disc has genus `0`.
 * `TauCeti.IsSmoothlySlice.sliceGenus_eq_zero`, `TauCeti.sliceGenus_unknot`: smoothly slice knots,
   and in particular the unknot, have slice genus `0`.
 
@@ -102,12 +114,14 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ
   [Fact (finrank ℝ E = n + 1)] [NormedAddCommGroup F] [InnerProductSpace ℝ F]
   [Fact (finrank ℝ F = n + 1)]
 
-/-- A **smooth slice surface** for a smooth circle embedding `K : S¹ → Sⁿ` in the unit sphere of
-`E`: a compact, connected, orientable smooth surface with boundary, together with a smooth
-embedding into the closed unit ball of `E`, in the sense of manifolds with boundary, which is
-properly embedded (the preimage of the boundary sphere is the boundary of the surface) and carries
-the boundary of the surface onto the image of `K`. -/
-structure SmoothSliceSurface (K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)) where
+/-- The data shared by smooth and topological slice surfaces for a smooth circle embedding
+`K : S¹ → Sⁿ` in the unit sphere of `E`: a compact, connected, orientable smooth surface with
+boundary, together with a topological embedding into the closed unit ball of `E` which is proper in
+the sense that the preimage of the boundary sphere is the boundary of the surface, and which carries
+the boundary of the surface onto the image of `K`. No further regularity is asked of the embedding:
+smooth slice surfaces (`TauCeti.SmoothSliceSurface`) add that it is a smooth embedding, topological
+slice surfaces (`TauCeti.TopologicalSliceSurface`) that it is locally flat. -/
+structure SliceSurfaceData (K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)) where
   /-- The underlying surface. -/
   carrier : Type
   /-- The topology of the surface. -/
@@ -122,61 +136,60 @@ structure SmoothSliceSurface (K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E)
   [connectedSpace : ConnectedSpace carrier]
   /-- The surface is orientable. -/
   [orientable : Orientable (𝓡∂ 2) carrier]
-  /-- The embedding of the surface into the closed unit ball. -/
+  /-- The map of the surface into the closed unit ball. -/
   toFun : carrier → closedBall (0 : E) 1
-  /-- The surface is smoothly embedded, as a manifold with boundary. -/
-  isSmoothEmbedding : IsSmoothEmbedding (𝓡∂ 2) (𝓡∂ (n + 1)) ∞ toFun
-  /-- The surface is properly embedded: it meets the boundary sphere exactly along its boundary. -/
+  /-- The map is a topological embedding. -/
+  isEmbedding : Topology.IsEmbedding toFun
+  /-- The surface is properly mapped: it meets the boundary sphere exactly along its boundary. -/
   preimage_boundary :
     toFun ⁻¹' (𝓡∂ (n + 1)).boundary (closedBall (0 : E) 1) = (𝓡∂ 2).boundary carrier
   /-- The boundary of the surface is carried onto the image of `K`. -/
   image_boundary : (Subtype.val ∘ toFun) '' (𝓡∂ 2).boundary carrier = Subtype.val '' range K
 
-namespace SmoothSliceSurface
+namespace SliceSurfaceData
 
 attribute [instance] topologicalSpace chartedSpace isManifold compactSpace connectedSpace orientable
 
 variable {K K' : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)}
 
 /-- The first singular homology `H₁(S; ℚ)` of a slice surface, with rational coefficients. -/
-abbrev firstHomology (S : SmoothSliceSurface K) : Type :=
+abbrev firstHomology (S : SliceSurfaceData K) : Type :=
   ((singularHomologyFunctor (ModuleCat ℚ) 1).obj (ModuleCat.of ℚ ℚ)).obj (TopCat.of S.carrier)
 
 /-- The **genus** of a slice surface: half the dimension of its first rational homology. A
 compact, connected, orientable surface of genus `g` with one boundary circle has
-`H₁(S; ℚ) ≅ ℚ²ᵍ`. -/
-def genus (S : SmoothSliceSurface K) : ℕ :=
+`H₁(S; ℚ) ≅ ℚ²ᵍ`, so this is the genus of `S`: since `S.toFun` is an embedding, the boundary of `S`
+is homeomorphic to the image of `K`, a single circle. -/
+def genus (S : SliceSurfaceData K) : ℕ :=
   finrank ℚ S.firstHomology / 2
 
 /-- The genus of a slice surface is half the dimension of its first rational homology. -/
-theorem genus_def (S : SmoothSliceSurface K) : S.genus = finrank ℚ S.firstHomology / 2 :=
+theorem genus_def (S : SliceSurfaceData K) : S.genus = finrank ℚ S.firstHomology / 2 :=
   (rfl)
 
-/-- A slice surface for `K` is one for every knot `K'` with the same image. -/
-def congrRange (S : SmoothSliceSurface K) (h : range K = range K') : SmoothSliceSurface K' where
+/-- Slice surface data for `K` is slice surface data for every knot `K'` with the same image. -/
+@[expose] def congrRange (S : SliceSurfaceData K) (h : range K = range K') :
+    SliceSurfaceData K' where
   carrier := S.carrier
   toFun := S.toFun
-  isSmoothEmbedding := S.isSmoothEmbedding
+  isEmbedding := S.isEmbedding
   preimage_boundary := S.preimage_boundary
   image_boundary := h ▸ S.image_boundary
 
-/-- Transporting a slice surface to a knot with the same image keeps its genus. -/
+/-- Transporting slice surface data to a knot with the same image keeps its genus. -/
 @[simp]
-theorem genus_congrRange (S : SmoothSliceSurface K) (h : range K = range K') :
+theorem genus_congrRange (S : SliceSurfaceData K) (h : range K = range K') :
     (S.congrRange h).genus = S.genus :=
   (rfl)
 
-/-- Transport of a slice surface for `K` along a linear isometry `e : E ≃ₗᵢ[ℝ] F` of the ambient
-spaces: the same surface, embedded by `e ∘ S.toFun`, is a slice surface for `K' = e ∘ K`. -/
-def mapLinearIsometryEquiv (S : SmoothSliceSurface K) (e : E ≃ₗᵢ[ℝ] F)
+/-- Transport of slice surface data for `K` along a linear isometry `e : E ≃ₗᵢ[ℝ] F` of the ambient
+spaces: the same surface, mapped by `e ∘ S.toFun`, is slice surface data for `K' = e ∘ K`. -/
+@[expose] def mapLinearIsometryEquiv (S : SliceSurfaceData K) (e : E ≃ₗᵢ[ℝ] F)
     {K' : SmoothCircleEmbedding (𝓡 n) (sphere (0 : F) 1)} (hK' : ∀ z, (K' z : F) = e (K z)) :
-    SmoothSliceSurface K' where
+    SliceSurfaceData K' where
   carrier := S.carrier
   toFun := e.toLinearIsometry.unitClosedBallMap ∘ S.toFun
-  isSmoothEmbedding := by
-    have := isSmoothEmbedding_diffeomorph_comp S.isSmoothEmbedding
-      (e.unitClosedBallDiffeomorph (k := ∞))
-    rwa [LinearIsometryEquiv.coe_unitClosedBallDiffeomorph] at this
+  isEmbedding := e.toLinearIsometry.isEmbedding_unitClosedBallMap.comp S.isEmbedding
   preimage_boundary := by
     rw [← S.preimage_boundary]
     ext x
@@ -189,12 +202,97 @@ def mapLinearIsometryEquiv (S : SmoothSliceSurface K) (e : E ≃ₗᵢ[ℝ] F)
     simp only [← range_comp]
     exact congrArg range (funext fun z ↦ by simp [hK'])
 
+/-- Transporting slice surface data along a linear isometry of the ambient spaces keeps its
+genus. -/
+@[simp]
+theorem genus_mapLinearIsometryEquiv (S : SliceSurfaceData K) (e : E ≃ₗᵢ[ℝ] F)
+    {K' : SmoothCircleEmbedding (𝓡 n) (sphere (0 : F) 1)} (hK' : ∀ z, (K' z : F) = e (K z)) :
+    (S.mapLinearIsometryEquiv e hK').genus = S.genus :=
+  (rfl)
+
+/-- Slice surface data whose carrier is the closed unit disc, for an embedding `Φ` of the disc into
+the ball which meets the boundary sphere exactly along the unit circle and carries the unit circle
+onto the image of `K`: the disc is compact, connected and orientable. -/
+@[expose] def ofClosedBall (Φ : closedBall (0 : ℂ) 1 → closedBall (0 : E) 1)
+    (hΦ : Topology.IsEmbedding Φ) (hpre : Φ ⁻¹' (𝓡∂ (n + 1)).boundary (closedBall (0 : E) 1) =
+      (𝓡∂ 2).boundary (closedBall (0 : ℂ) 1))
+    (himg : (Subtype.val ∘ Φ) '' range (fun z : Circle ↦ Set.inclusion sphere_subset_closedBall z) =
+      Subtype.val '' range K) :
+    SliceSurfaceData K where
+  carrier := closedBall (0 : ℂ) 1
+  compactSpace := isCompact_iff_compactSpace.1 (isCompact_closedBall 0 1)
+  connectedSpace := isConnected_iff_connectedSpace.1
+    ((convex_closedBall 0 1).isConnected (nonempty_closedBall.2 zero_le_one))
+  orientable := orientable_closedBall
+  toFun := Φ
+  isEmbedding := hΦ
+  preimage_boundary := hpre
+  image_boundary := by
+    rw [← himg, boundary_closedBall]
+    congr 1
+    exact (Set.range_inclusion _).symm
+
+/-- Slice surface data on the closed unit disc has genus `0`: the disc is contractible, so its first
+homology vanishes. -/
+@[simp]
+theorem genus_ofClosedBall (Φ : closedBall (0 : ℂ) 1 → closedBall (0 : E) 1)
+    (hΦ : Topology.IsEmbedding Φ) (hpre : Φ ⁻¹' (𝓡∂ (n + 1)).boundary (closedBall (0 : E) 1) =
+      (𝓡∂ 2).boundary (closedBall (0 : ℂ) 1))
+    (himg : (Subtype.val ∘ Φ) '' range (fun z : Circle ↦ Set.inclusion sphere_subset_closedBall z) =
+      Subtype.val '' range K) :
+    (ofClosedBall Φ hΦ hpre himg).genus = 0 := by
+  have : ContractibleSpace (ofClosedBall Φ hΦ hpre himg).carrier :=
+    (convex_closedBall (0 : ℂ) 1).contractibleSpace (nonempty_closedBall.2 zero_le_one)
+  have := ModuleCat.isZero_iff_subsingleton.1 <|
+    isZero_singularHomologyFunctor_of_contractibleSpace (ModuleCat.of ℚ ℚ)
+      (TopCat.of (ofClosedBall Φ hΦ hpre himg).carrier) one_ne_zero
+  rw [genus_def, finrank_zero_of_subsingleton, Nat.zero_div]
+
+end SliceSurfaceData
+
+/-- A **smooth slice surface** for a smooth circle embedding `K : S¹ → Sⁿ` in the unit sphere of
+`E`: a compact, connected, orientable smooth surface with boundary, together with a smooth
+embedding into the closed unit ball of `E`, in the sense of manifolds with boundary, which is
+properly embedded (the preimage of the boundary sphere is the boundary of the surface) and carries
+the boundary of the surface onto the image of `K`. Its genus is the genus
+`TauCeti.SliceSurfaceData.genus` of the underlying slice surface data. -/
+structure SmoothSliceSurface (K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1))
+    extends SliceSurfaceData K where
+  /-- The surface is smoothly embedded, as a manifold with boundary. -/
+  isSmoothEmbedding : IsSmoothEmbedding (𝓡∂ 2) (𝓡∂ (n + 1)) ∞ toFun
+
+namespace SmoothSliceSurface
+
+variable {K K' : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)}
+
+/-- A slice surface for `K` is one for every knot `K'` with the same image. -/
+def congrRange (S : SmoothSliceSurface K) (h : range K = range K') : SmoothSliceSurface K' where
+  toSliceSurfaceData := S.toSliceSurfaceData.congrRange h
+  isSmoothEmbedding := S.isSmoothEmbedding
+
+/-- Transporting a slice surface to a knot with the same image keeps its genus. -/
+@[simp]
+theorem genus_congrRange (S : SmoothSliceSurface K) (h : range K = range K') :
+    (S.congrRange h).genus = S.genus :=
+  S.toSliceSurfaceData.genus_congrRange h
+
+/-- Transport of a slice surface for `K` along a linear isometry `e : E ≃ₗᵢ[ℝ] F` of the ambient
+spaces: the same surface, embedded by `e ∘ S.toFun`, is a slice surface for `K' = e ∘ K`. -/
+def mapLinearIsometryEquiv (S : SmoothSliceSurface K) (e : E ≃ₗᵢ[ℝ] F)
+    {K' : SmoothCircleEmbedding (𝓡 n) (sphere (0 : F) 1)} (hK' : ∀ z, (K' z : F) = e (K z)) :
+    SmoothSliceSurface K' where
+  toSliceSurfaceData := S.toSliceSurfaceData.mapLinearIsometryEquiv e hK'
+  isSmoothEmbedding := by
+    have := isSmoothEmbedding_diffeomorph_comp S.isSmoothEmbedding
+      (e.unitClosedBallDiffeomorph (k := ∞))
+    rwa [LinearIsometryEquiv.coe_unitClosedBallDiffeomorph] at this
+
 /-- Transporting a slice surface along a linear isometry of the ambient spaces keeps its genus. -/
 @[simp]
 theorem genus_mapLinearIsometryEquiv (S : SmoothSliceSurface K) (e : E ≃ₗᵢ[ℝ] F)
     {K' : SmoothCircleEmbedding (𝓡 n) (sphere (0 : F) 1)} (hK' : ∀ z, (K' z : F) = e (K z)) :
     (S.mapLinearIsometryEquiv e hK').genus = S.genus :=
-  (rfl)
+  S.toSliceSurfaceData.genus_mapLinearIsometryEquiv e hK'
 
 end SmoothSliceSurface
 
@@ -264,31 +362,16 @@ theorem sliceGenus_congr_linearIsometryEquiv (e : E ≃ₗᵢ[ℝ] F)
 the disc is compact, connected and orientable. -/
 def IsSmoothSliceDisc.toSmoothSliceSurface {Φ : closedBall (0 : ℂ) 1 → closedBall (0 : E) 1}
     (h : IsSmoothSliceDisc K Φ) : SmoothSliceSurface K where
-  carrier := closedBall (0 : ℂ) 1
-  compactSpace := isCompact_iff_compactSpace.1 (isCompact_closedBall 0 1)
-  connectedSpace := isConnected_iff_connectedSpace.1
-    ((convex_closedBall 0 1).isConnected (nonempty_closedBall.2 zero_le_one))
-  orientable := orientable_closedBall
-  toFun := Φ
+  toSliceSurfaceData := .ofClosedBall Φ h.isEmbedding h.preimage_boundary h.image_range_inclusion
   isSmoothEmbedding := h.isSmoothEmbedding
-  preimage_boundary := h.preimage_boundary
-  image_boundary := by
-    rw [← h.image_range_inclusion, boundary_closedBall]
-    congr 1
-    exact (Set.range_inclusion _).symm
 
 /-- A smooth slice disc has genus `0`: the disc is contractible, so its first homology
 vanishes. -/
 @[simp]
 theorem IsSmoothSliceDisc.genus_toSmoothSliceSurface
     {Φ : closedBall (0 : ℂ) 1 → closedBall (0 : E) 1} (h : IsSmoothSliceDisc K Φ) :
-    h.toSmoothSliceSurface.genus = 0 := by
-  have : ContractibleSpace h.toSmoothSliceSurface.carrier :=
-    (convex_closedBall (0 : ℂ) 1).contractibleSpace (nonempty_closedBall.2 zero_le_one)
-  have := ModuleCat.isZero_iff_subsingleton.1 <|
-    isZero_singularHomologyFunctor_of_contractibleSpace (ModuleCat.of ℚ ℚ)
-      (TopCat.of h.toSmoothSliceSurface.carrier) one_ne_zero
-  rw [genus_def, finrank_zero_of_subsingleton, Nat.zero_div]
+    h.toSmoothSliceSurface.genus = 0 :=
+  SliceSurfaceData.genus_ofClosedBall _ h.isEmbedding h.preimage_boundary h.image_range_inclusion
 
 /-- **Smoothly slice knots have slice genus `0`.** -/
 theorem IsSmoothlySlice.sliceGenus_eq_zero (h : IsSmoothlySlice K) : sliceGenus K = 0 := by

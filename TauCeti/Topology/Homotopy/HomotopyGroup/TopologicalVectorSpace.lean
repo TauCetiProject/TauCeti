@@ -27,7 +27,7 @@ is a subsingleton.
 
 public section
 
-open scoped unitInterval Topology Topology.Homotopy
+open scoped Topology.Homotopy
 
 variable {N E : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E]
   [IsTopologicalAddGroup E] [ContinuousSMul ℝ E] {x : E}
@@ -37,10 +37,9 @@ namespace GenLoop
 /-- Any two generalized loops based at the same point in a real topological vector space are
 homotopic relative to the cube boundary. The homotopy is pointwise linear interpolation. -/
 theorem homotopic_of_topologicalVectorSpace (f g : Ω^ N E x) :
-    _root_.GenLoop.Homotopic f g :=
+    Homotopic f g :=
   ⟨{ toHomotopy := .affine f.1 g.1
-     prop' := fun _ u hu ↦ by
-       simp [_root_.GenLoop.boundary f u hu, _root_.GenLoop.boundary g u hu] }⟩
+     prop' := fun _ u hu ↦ by simp [boundary f u hu, boundary g u hu] }⟩
 
 end GenLoop
 
@@ -48,10 +47,7 @@ namespace HomotopyGroup
 
 /-- Every homotopy group of a real topological vector space is a subsingleton. This includes
 dimension zero: a real topological vector space is path connected. -/
-instance subsingleton_of_topologicalVectorSpace : Subsingleton (HomotopyGroup N E x) := by
-  constructor
-  intro a b
-  refine Quotient.inductionOn₂ a b fun f g ↦ ?_
-  exact Quotient.sound (GenLoop.homotopic_of_topologicalVectorSpace f g)
+instance subsingleton_of_topologicalVectorSpace : Subsingleton (HomotopyGroup N E x) :=
+  ⟨Quotient.ind₂ fun f g ↦ Quotient.sound (GenLoop.homotopic_of_topologicalVectorSpace f g)⟩
 
 end HomotopyGroup

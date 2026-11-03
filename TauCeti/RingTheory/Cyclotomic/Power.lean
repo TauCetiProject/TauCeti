@@ -26,16 +26,13 @@ namespace TauCeti.Cyclotomic
 
 variable {e n : ℕ} [NeZero e]
 
-/-- A coprime power of the distinguished exact generator annihilates the cyclotomic polynomial. -/
+/-- For `n` coprime to `e`, the power `ζ_e ^ n` of the distinguished generator is a root of the
+cyclotomic polynomial `Φ_e`, so `TauCeti.Cyclotomic.evalRingHom` can evaluate at it. -/
 theorem eval₂_cyclotomic_zeta_pow (hn : e.Coprime n) :
     (Polynomial.cyclotomic e ℤ).eval₂ (Int.castRingHom (Cyclotomic e)) (zeta e ^ n) = 0 := by
   apply complexEmbedding_injective
   rw [Polynomial.hom_eval₂, map_pow, complexEmbedding_zeta, map_zero]
-  have hcomp : complexEmbedding.comp (Int.castRingHom (Cyclotomic e)) = Int.castRingHom ℂ :=
-    RingHom.ext_int _ _
-  rw [hcomp, ← Polynomial.eval_map, Polynomial.map_cyclotomic]
-  exact (isPrimitiveRoot_complexRoot.pow_of_coprime n hn.symm).isRoot_cyclotomic
-    (NeZero.pos e)
+  exact (isPrimitiveRoot_complexRoot.pow_of_coprime n hn.symm).eval₂_cyclotomic _
 
 /-- The computable coprime power substitution `ζ_e ↦ ζ_e ^ n`. -/
 def powRingHom (hn : e.Coprime n) : Cyclotomic e →+* Cyclotomic e where

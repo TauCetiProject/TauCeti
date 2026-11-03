@@ -16,6 +16,9 @@ on `Kˣ`, where the normalized valuation is defined.  The characterization below
 the irreducible elements of the ring of integers, the convention used by the local-fields
 infrastructure.
 
+An element of `𝒪[K]` with the valuation of an irreducible element is itself irreducible
+(`TauCeti.irreducible_of_valuation_eq`).
+
 The last two results only need `𝒪[K]` to be a discrete valuation ring. They recognise
 uniformizers without choosing one: an element of `𝒪[K]` has valuation at least that of every
 element of valuation below `1` exactly when it does not lie in `𝓂[K] ^ 2`
@@ -34,6 +37,12 @@ open ValuativeRel IsNonarchimedeanLocalField
 namespace TauCeti
 
 variable {K : Type*} [Field K] [ValuativeRel K]
+
+/-- An element of `𝒪[K]` with the valuation of an irreducible element is irreducible. -/
+theorem irreducible_of_valuation_eq {ϖ c : 𝒪[K]} (hϖ : Irreducible ϖ)
+    (h : valuation K (c : K) = valuation K (ϖ : K)) : Irreducible c :=
+  have hv := Valuation.integer.integers (valuation K)
+  (associated_of_dvd_dvd (hv.dvd_iff_le.2 h.le) (hv.dvd_iff_le.2 h.ge)).irreducible hϖ
 
 section LocalField
 

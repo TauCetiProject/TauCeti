@@ -18,10 +18,10 @@ import TauCeti.MeasureTheory.Measure.OpenPos
 
 Let `a` be measurable and uniformly elliptic on an open set `Ω ⊆ ℝⁿ`, `n ≥ 1`, with constants
 `0 < λ ≤ Λ`, and let `f ∈ Lʳ` with `r > 1` and `r > n/2`. This file extends De Giorgi's theorem
-`TauCeti.PDE.exists_holderOnWith_preciseRepresentative` from `-∂ⱼ(aⁱʲ ∂ᵢu) = 0` to weak solutions
+`TauCeti.PDE.exists_holderOnWith_preciseRepresentative` from `-∂ᵢ(aⁱʲ ∂ⱼu) = 0` to weak solutions
 `u ∈ H¹(Ω)` of
 
-`-∂ⱼ(aⁱʲ ∂ᵢu) = f` in `Ω`, that is `a(u, v) = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`.
+`-∂ᵢ(aⁱʲ ∂ⱼu) = f` in `Ω`, that is `a(u, v) = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`.
 
 Such a solution is locally bounded and has a locally Hölder continuous representative, with an
 exponent depending only on `λ`, `Λ`, `n`, `r` and the normalization of the Haar measure, and with
@@ -29,7 +29,7 @@ constants controlled by `‖u‖_{L²}` and `‖f‖_{Lʳ}/λ`. No regularity of
 measurability is assumed.
 
 The right-hand side is split off one ball at a time. On `B = B(x₀, ρ) ⊆ Ω`, the Dirichlet problem
-`-∂ⱼ(aⁱʲ ∂ᵢw) = f` in `B`, `w ∈ H¹₀(B)`, has a solution
+`-∂ᵢ(aⁱʲ ∂ⱼw) = f` in `B`, `w ∈ H¹₀(B)`, has a solution
 (`TauCeti.PDE.UniformlyEllipticOn.existsUnique_forall_energyFormH1_eq_setIntegral_of_memLp`), and
 Stampacchia's bound `TauCeti.PDE.exists_ae_abs_value_le_mul_div_mul_rpow` gives
 `|w| ≤ C ρ^(2 - n/r) ‖f‖_{Lʳ(B)} / λ`. The difference `h = u - w` solves the homogeneous equation
@@ -86,10 +86,10 @@ namespace PDE
 /-- **Splitting off the right-hand side on a ball.** Let `n ≥ 1` be the dimension and let `r > 1`
 with `r > n/2`. There is `K > 0`, depending only on `n`, `r` and the normalization of `mu`, such
 that the following holds. Let `a` be measurable and uniformly elliptic on `Ω` with constants
-`λ, Λ`, and let `u ∈ H¹(Ω)` be a weak solution of `-∂ⱼ(aⁱʲ ∂ᵢu) = f`, that is
+`λ, Λ`, and let `u ∈ H¹(Ω)` be a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = f`, that is
 `a(u, v) = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`, with `f ∈ Lʳ(B(x₀, ρ))` and `B(x₀, ρ) ⊆ Ω`. Then on
 `B = B(x₀, ρ)` there is a weak solution `h ∈ H¹(B)` of the homogeneous equation
-`-∂ⱼ(aⁱʲ ∂ᵢh) = 0` with
+`-∂ᵢ(aⁱʲ ∂ⱼh) = 0` with
 
 `|u - h| ≤ K ρ^(2 - n/r) ‖f‖_{Lʳ(B)} / λ` almost everywhere on `B`.
 
@@ -127,7 +127,7 @@ theorem exists_forall_energyFormH1_eq_zero_ae_abs_sub_le [Nonempty ι] {r : ℝ�
   have hBell : UniformlyEllipticOn (B : Set (EuclideanSpace ℝ ι)) a lam Lam := h.mono_set hball
   have hBmeas : AEStronglyMeasurable a (mu.restrict B) :=
     ha.mono_measure (Measure.restrict_mono hball le_rfl)
-  -- The weak solution `w ∈ H¹₀(B)` of `-∂ⱼ(aⁱʲ ∂ᵢw) = f` on `B`, and its bound.
+  -- The weak solution `w ∈ H¹₀(B)` of `-∂ᵢ(aⁱʲ ∂ⱼw) = f` on `B`, and its bound.
   obtain ⟨w, hw, -⟩ :=
     hBell.existsUnique_forall_energyFormH1_eq_setIntegral_of_memLp (c := 0) (gamma := 0) hBmeas
       aestronglyMeasurable_const (fun _ _ => by simp) (fun _ _ => le_rfl) hBfin hr hrn' hf
@@ -161,7 +161,7 @@ theorem exists_forall_energyFormH1_eq_zero_ae_abs_sub_le [Nonempty ι] {r : ℝ�
 and let `r > 1` with `r > n/2`. There is `D > 0`, depending only on `λ`, `Λ`, `n`, `r` and the
 normalization of `mu`, such that the following holds. Let `a` be measurable and uniformly
 elliptic on `Ω` with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a weak solution of
-`-∂ⱼ(aⁱʲ ∂ᵢu) = f` with `f ∈ Lʳ(B(x₀, R))`. If `B(x₀, R) ⊆ Ω`, then almost everywhere on
+`-∂ᵢ(aⁱʲ ∂ⱼu) = f` with `f ∈ Lʳ(B(x₀, R))`. If `B(x₀, R) ⊆ Ω`, then almost everywhere on
 `B(x₀, R/2)`
 
 `|u| ≤ D (R^(-n/2) ‖u‖_{L²(B(x₀, R))} + R^(2 - n/r) ‖f‖_{Lʳ(B(x₀, R))} / λ)`.
@@ -271,7 +271,7 @@ theorem exists_ae_abs_value_le_mul_add_of_memLp [Nonempty ι] {lam Lam : ℝ} {r
 let `r > 1` with `r > n/2`. There are `α ∈ (0, 1]` and `C, K > 0`, depending only on `λ`, `Λ`,
 `n`, `r` and the normalization of `mu`, such that the following holds. Let `a` be measurable and
 uniformly elliptic on `Ω` with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a weak solution of
-`-∂ⱼ(aⁱʲ ∂ᵢu) = f` with `f ∈ Lʳ(B(x₀, ρ))`. If `B(x₀, ρ) ⊆ Ω`, `u` is essentially bounded on
+`-∂ᵢ(aⁱʲ ∂ⱼu) = f` with `f ∈ Lʳ(B(x₀, ρ))`. If `B(x₀, ρ) ⊆ Ω`, `u` is essentially bounded on
 `B(x₀, ρ)` and `0 < s ≤ ρ`, then the essential oscillations `osc_s` and `osc_ρ` of `u` on
 `B(x₀, s)` and `B(x₀, ρ)` satisfy
 
@@ -345,7 +345,7 @@ theorem exists_essSup_sub_essInf_le_mul_rpow_mul_add_of_memLp [Nonempty ι] {lam
 dimension and let `r > 1` with `r > n/2`. There are `α ∈ (0, 1]` and `C > 0`, depending only on
 `λ`, `Λ`, `n`, `r` and the normalization of `mu`, such that the following holds. Let `a` be
 measurable and uniformly elliptic on `Ω` with constants `λ, Λ`, and let `u ∈ H¹(Ω)` be a weak
-solution of `-∂ⱼ(aⁱʲ ∂ᵢu) = f` with `f ∈ Lʳ(B(x₀, R))`. If `B(x₀, R) ⊆ Ω` and `0 < s ≤ R/2`,
+solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = f` with `f ∈ Lʳ(B(x₀, R))`. If `B(x₀, R) ⊆ Ω` and `0 < s ≤ R/2`,
 then almost everywhere on `B(x₀, s)` the function `u` takes values in an interval of length
 
 `C (s / R)^α (R^(-n/2) ‖u‖_{L²(B(x₀, R))} + R^(2 - n/r) ‖f‖_{Lʳ(B(x₀, R))} / λ)`.
@@ -502,7 +502,7 @@ theorem exists_ae_value_mem_Icc_add_mul_rpow_mul_add_of_memLp [Nonempty ι] {lam
 with `r > n/2`. There are `α ∈ (0, 1]` and `C > 0`, depending only on `λ`, `Λ`, `n`, `r` and the
 normalization of the additive Haar measure `mu`, such that the following holds. Let `a` be
 measurable and uniformly elliptic on `Ω` with constants `λ, Λ`, let `f ∈ Lʳ(Ω)`, and let
-`u ∈ H¹(Ω)` be a weak solution of `-∂ⱼ(aⁱʲ ∂ᵢu) = f`, that is `a(u, v) = ∫_Ω f v` for every
+`u ∈ H¹(Ω)` be a weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = f`, that is `a(u, v) = ∫_Ω f v` for every
 `v ∈ H¹₀(Ω)`. If the closed `R`-thickening of a set `K` lies in `Ω`, then the precise
 representative of `u` is Hölder continuous on `K` with exponent `α` and constant
 

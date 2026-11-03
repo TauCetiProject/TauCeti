@@ -21,7 +21,8 @@ module is trivial. Together with `QuadraticMap.IsometryEquiv.prodComm` they are 
 orthogonal sum a commutative monoid operation on isometry classes of quadratic forms; the
 left-commutativity isometry `Q₁ ⊕ (Q₂ ⊕ Q₃) ≅ Q₂ ⊕ (Q₁ ⊕ Q₃)` is recorded as a composite of them.
 For an orthogonal sum `QuadraticMap.pi` indexed by `Fin (n + 1)`, splitting off the first summand
-is likewise isometric, which lets such a sum be assembled one summand at a time.
+is likewise isometric, which lets such a sum be assembled one summand at a time; and reindexing an
+orthogonal sum along an equivalence of its index types is isometric.
 
 For a quadratic form over a commutative ring, it also records the isometry associated to a
 direct-sum decomposition of the underlying module that is orthogonal for the polar form.
@@ -32,7 +33,8 @@ the image: an orthogonal transformation of `Q₁.prod Q₂` is such an orthogona
 maps each summand into itself. No finiteness is needed for this, since a linear automorphism of
 `M₁ × M₂` preserving both summands is automatically a product of automorphisms of the summands.
 For finite free modules the determinant of an orthogonal sum is the product of the determinants,
-so the embedding restricts to the special orthogonal groups.
+so the embedding restricts to the special orthogonal groups. Concatenating orthogonal families of
+the two summands gives an orthogonal family of the orthogonal sum.
 
 ## Main definitions
 
@@ -41,6 +43,7 @@ so the embedding restricts to the special orthogonal groups.
   `Q₁ ⊕ (Q₂ ⊕ Q₃)` is isometric.
 * `QuadraticMap.IsometryEquiv.uniqueProd`: `LinearEquiv.uniqueProd` is isometric.
 * `QuadraticMap.IsometryEquiv.consPi`: `Fin.consLinearEquiv` is isometric.
+* `QuadraticMap.IsometryEquiv.piCongrLeft`: `LinearEquiv.piCongrLeft` is isometric.
 * `QuadraticMap.IsometryEquiv.prodRestrictOrthogonal`: an orthogonal direct sum is isometric to
   the original form.
 * `QuadraticMap.orthogonalGroupProd`: the orthogonal sum `O(Q₁) × O(Q₂) →* O(Q₁.prod Q₂)`.
@@ -58,6 +61,8 @@ so the embedding restricts to the special orthogonal groups.
   summands whose two diagonal blocks have determinant one.
 * `QuadraticMap.det_orthogonalGroupProd`: the determinant of an orthogonal sum is the product of
   the determinants.
+* `QuadraticMap.isOrthoᵢ_associated_prod`: orthogonal families of the summands concatenate to an
+  orthogonal family of `Q₁.prod Q₂`.
 
 ## References
 
@@ -169,6 +174,26 @@ theorem IsometryEquiv.consPi_apply {n : ℕ} {M : Fin (n + 1) → Type*} [∀ i,
     [∀ i, Module R (M i)] (Q : ∀ i, QuadraticMap R (M i) P) (x : M 0) (y : ∀ i : Fin n, M i.succ) :
     IsometryEquiv.consPi Q (x, y) = Fin.cons x y :=
   (rfl)
+
+/-- `LinearEquiv.piCongrLeft` is isometric: reindexing an orthogonal sum along an equivalence of
+its finite index types does not change it. -/
+def IsometryEquiv.piCongrLeft {ι ι' : Type*} [Fintype ι] [Fintype ι'] {M : ι → Type*}
+    [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)] (Q : ∀ i, QuadraticMap R (M i) P)
+    (e : ι' ≃ ι) :
+    (QuadraticMap.pi fun i' ↦ Q (e i')).IsometryEquiv (QuadraticMap.pi Q) where
+  toLinearEquiv := LinearEquiv.piCongrLeft R M e
+  map_app' x := by
+    rw [pi_apply, pi_apply]
+    exact (Fintype.sum_equiv e (fun i' ↦ Q (e i') (x i')) _ fun i' ↦
+      congrArg (Q (e i')) (Equiv.piCongrLeft_apply_apply M e x i').symm).symm
+
+/-- The forward map of `QuadraticMap.IsometryEquiv.piCongrLeft` at a reindexed coordinate. -/
+@[simp]
+theorem IsometryEquiv.piCongrLeft_apply_apply {ι ι' : Type*} [Fintype ι] [Fintype ι']
+    {M : ι → Type*} [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
+    (Q : ∀ i, QuadraticMap R (M i) P) (e : ι' ≃ ι) (x : ∀ i', M (e i')) (i' : ι') :
+    IsometryEquiv.piCongrLeft Q e x (e i') = x i' :=
+  Equiv.piCongrLeft_apply_apply M e x i'
 
 section OrthogonalDecomposition
 
@@ -404,5 +429,25 @@ theorem orthogonalGroupProd_one_reflectionOrthogonal (w : M₂) [Invertible (Q�
   ext x <;> simp [reflection_apply]
 
 end Reflection
+
+section Orthogonal
+
+variable {R M₁ M₂ N : Type*} [CommRing R] [Invertible (2 : R)] [AddCommGroup M₁] [Module R M₁]
+  [AddCommGroup M₂] [Module R M₂] [AddCommGroup N] [Module R N]
+  {Q₁ : QuadraticMap R M₁ N} {Q₂ : QuadraticMap R M₂ N}
+
+/-- Concatenating a `Q₁`-orthogonal family of `M₁` and a `Q₂`-orthogonal family of `M₂`, placed in
+the two summands, gives a family orthogonal for the orthogonal sum `Q₁.prod Q₂`. -/
+theorem isOrthoᵢ_associated_prod {ι₁ ι₂ : Type*} {v₁ : ι₁ → M₁} {v₂ : ι₂ → M₂}
+    (h₁ : (associated Q₁).IsOrthoᵢ v₁) (h₂ : (associated Q₂).IsOrthoᵢ v₂) :
+    (associated (Q₁.prod Q₂)).IsOrthoᵢ (Sum.elim (fun i ↦ (v₁ i, 0)) fun j ↦ (0, v₂ j)) := by
+  rw [LinearMap.isOrthoᵢ_def] at h₁ h₂ ⊢
+  rintro (i | i) (j | j) hij
+  · simpa using h₁ i j (Sum.inl.inj_iff.not.1 hij)
+  · simp
+  · simp
+  · simpa using h₂ i j (Sum.inr.inj_iff.not.1 hij)
+
+end Orthogonal
 
 end QuadraticMap

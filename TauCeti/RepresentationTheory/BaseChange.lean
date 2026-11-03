@@ -35,8 +35,10 @@ import TauCeti.RepresentationTheory.FDRep.Basic
 # Base change of representations
 
 This file extends a representation's scalars to a possibly noncommutative algebra by base-changing
-each linear endomorphism. A nonzero common fixed vector after scalar extension to a base-field
-algebra descends to a nonzero common fixed vector over the base field.
+each linear endomorphism. A nonzero common fixed vector after scalar extension to an algebra free
+over the base semiring descends to a nonzero common fixed vector over that semiring. Freeness is
+inferred automatically for ring algebras over a field. For a semiring algebra `A` over a field `K`,
+first install `let : AddCommGroup A := Module.addCommMonoidToAddCommGroup K`.
 
 Two invariants survive the extension unchanged. The **character** is the trace of a linear map, and
 the trace of a base-changed endomorphism is the image of the trace
@@ -72,6 +74,8 @@ to torsion modules and do not require the coefficient algebra to be flat.
 * `Representation.baseChange`: scalar extension of a representation.
 * `Representation.invariantsBaseChangeEquiv`: flat scalar extension commutes with taking the
   invariants of a finite group.
+* `Representation.averageMap_baseChange`: the averaging projection commutes with scalar
+  extension.
 * `Representation.exists_common_fixed_vector_of_baseChange`: descent of a nonzero common
   fixed vector.
 * `Representation.character_baseChange`: the character of a base-changed representation is the
@@ -85,6 +89,8 @@ to torsion modules and do not require the coefficient algebra to be flat.
   commutative base-field algebra preserves the dimension of an intertwiner space.
 * `Representation.IntertwiningMap.baseChange`: base change transports an intertwining map.
 * `Representation.Equiv.baseChange`: base change transports an equivalence of representations.
+* `LinearMap.isIntertwiningMap_liftBaseChange_iff`: the `A`-linear extension of an `R`-linear map
+  intertwines the base-changed representation exactly when the map intertwines on `V`.
 * `Representation.baseChangeQuotSMulTopEquiv`: if `r` maps to `0` in `A`, the base change of `ρ`
   is the base change of its reduction `ρ.quotSMulTop r` modulo `r`.
 * `TauCeti.baseChangeOfMulActionEquiv`: the base change of `R[X]` is `A[X]`.
@@ -247,28 +253,54 @@ theorem _root_.Representation.coe_invariantsBaseChangeEquiv [Finite G]
 
 end Invariants
 
-variable {K : Type u} {L : Type v} [Field K] [Semiring L] [Algebra K L]
-variable [AddCommGroup V] [Module K V]
+section Average
 
-/-- A nonzero common fixed vector after scalar extension to a base-field algebra descends to a
-nonzero common fixed vector over the base field. Neither commutativity nor nontriviality of the
-coefficient algebra is needed. -/
+variable {G : Type w} [Group G] [Fintype G]
+variable {R : Type u} {A : Type v} [CommRing R] [CommRing A] [Algebra R A]
+variable [Invertible (Fintype.card G : R)] [Invertible (Fintype.card G : A)]
+variable [AddCommGroup V] [Module R V]
+
+/-- **Averaging commutes with scalar extension.** When `#G` is invertible, the averaging
+projection of the scalar-extended representation is the scalar extension of the averaging
+projection. No flatness of `A` over `R` is needed. -/
+theorem _root_.Representation.averageMap_baseChange (ρ : _root_.Representation R G V) :
+    (_root_.Representation.baseChange A ρ).averageMap = ρ.averageMap.baseChange A := by
+  -- The inverse of `#G` in `A` is the image of its inverse in `R`.
+  have hinv : (⅟(Fintype.card G : A)) = algebraMap R A ⅟(Fintype.card G : R) :=
+    invOf_eq_right_inv <| by rw [← map_natCast (algebraMap R A), ← map_mul, mul_invOf_self, map_one]
+  simp only [_root_.Representation.averageMap, GroupAlgebra.average, MonoidAlgebra.of_apply]
+  rw [map_smul, map_smul, map_sum, map_sum]
+  simp only [_root_.Representation.asAlgebraHom_single_one,
+    _root_.Representation.baseChange_apply, LinearMap.baseChange_smul, hinv, algebraMap_smul]
+  exact congrArg _ (map_sum (LinearMap.baseChangeHom R A V V) _ _).symm
+
+end Average
+
+variable {R : Type u} {A : Type v} [CommSemiring R] [Semiring A] [Algebra R A]
+variable [Module.Free R A] [AddCommMonoid V] [Module R V]
+
+/-- A nonzero common fixed vector after scalar extension to an algebra free over the base
+semiring descends to a nonzero common fixed vector over the base semiring. Neither commutativity
+nor nontriviality of the coefficient algebra is needed.
+
+Freeness is inferred automatically for ring algebras over a field. For a semiring algebra `A` over
+a field `K`, first install
+`let : AddCommGroup A := Module.addCommMonoidToAddCommGroup K`. -/
 theorem _root_.Representation.exists_common_fixed_vector_of_baseChange
-    (ρ : _root_.Representation K G V) {w : L ⊗[K] V} (hw : w ≠ 0)
-    (hfixed : ∀ g, _root_.Representation.baseChange L ρ g w = w) :
+    (ρ : _root_.Representation R G V) {w : A ⊗[R] V} (hw : w ≠ 0)
+    (hfixed : ∀ g, _root_.Representation.baseChange A ρ g w = w) :
     ∃ v : V, v ≠ 0 ∧ ∀ g, ρ g v = v := by
   classical
-  -- A module over the base field has its canonical additive group structure, even when the
-  -- coefficient algebra is presented as a semiring.
-  let : AddCommGroup L := Module.addCommMonoidToAddCommGroup K
-  let b := Module.Free.chooseBasis K L
+  let b := Module.Free.chooseBasis R A
   let e := TensorProduct.equivFinsuppOfBasisLeft b (N := V)
   have he : e w ≠ 0 := fun h ↦ hw (e.map_eq_zero_iff.mp h)
   obtain ⟨i, hi⟩ := Finsupp.ne_iff.mp he
   simp only [Finsupp.coe_zero, Pi.zero_apply] at hi
   refine ⟨e w i, hi, fun g ↦ ?_⟩
   rw [← Module.Basis.equivFinsuppOfBasisLeft_lTensor_apply]
-  exact congrArg (fun x ↦ e x i) (hfixed g)
+  have h := hfixed g
+  rw [_root_.Representation.baseChange_apply, LinearMap.baseChange_eq_lTensor] at h
+  exact congrArg (fun x ↦ e x i) h
 
 end
 
@@ -436,6 +468,19 @@ theorem _root_.Representation.Equiv.baseChange_symm_tmul (φ : ρ.Equiv σ) (A :
     rw [_root_.Representation.Equiv.baseChange_tmul,
       _root_.Representation.Equiv.apply_symm_apply]
   rw [← h, _root_.Representation.Equiv.symm_apply_apply]
+
+/-- **The `A`-linear extension of an `R`-linear map intertwines exactly when the map does**: for
+a representation `σ` on an `A`-module `U`, the extension `A ⊗[R] V → U` of `c : V → U` intertwines
+the base change of `ρ` with `σ` if and only if `c (ρ g v) = σ g (c v)` for all `g` and `v`. -/
+theorem _root_.LinearMap.isIntertwiningMap_liftBaseChange_iff {A : Type*} [CommSemiring A]
+    [Algebra R A] {U : Type*} [AddCommMonoid U] [Module R U] [Module A U] [IsScalarTower R A U]
+    (ρ : _root_.Representation R G V) (σ : _root_.Representation A G U) (c : V →ₗ[R] U) :
+    (_root_.Representation.baseChange A ρ).IsIntertwiningMap σ (c.liftBaseChange A) ↔
+      ∀ g v, c (ρ g v) = σ g (c v) := by
+  refine ⟨fun h g v ↦ by simpa using h.isIntertwining g (1 ⊗ₜ v), fun h ↦ ⟨fun g x ↦ ?_⟩⟩
+  induction x using TensorProduct.inductionOn with
+  | tmul a v => simp [h]
+  | add x y hx hy => simp only [map_add, hx, hy]
 
 end Transport
 

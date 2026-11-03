@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Basic
+public import Mathlib.Analysis.Complex.Basic
 
 /-!
 # The standard complex line as a source for constant-structure `J`-holomorphic maps
@@ -28,6 +29,9 @@ energy and elliptic estimates.
 
 * `TauCeti.stdComplexLineReal` and `TauCeti.stdComplexLineImag`: the coordinate vectors
   `(1, 0)` and `(0, 1)` in the standard complex line.
+* `TauCeti.equivRealProdCLM_symm_stdComplexLineReal` and
+  `TauCeti.equivRealProdCLM_symm_stdComplexLineImag`: under `Complex.equivRealProdCLM` they are
+  the complex numbers `1` and `i`.
 * `LinearMap.apply_stdComplexLine`: a real-linear map is determined by its values on the
   coordinate vectors.
 * `TauCeti.isComplexLinearMap_stdComplexLine_iff`: complex-linearity out of the standard
@@ -63,6 +67,14 @@ def stdComplexLineReal : ℝ × ℝ :=
 def stdComplexLineImag : ℝ × ℝ :=
   (0, 1)
 
+/-- The real coordinate vector is the standard pair `(1, 0)`. -/
+lemma stdComplexLineReal_eq : stdComplexLineReal = (1, 0) :=
+  rfl
+
+/-- The imaginary coordinate vector is the standard pair `(0, 1)`. -/
+lemma stdComplexLineImag_eq : stdComplexLineImag = (0, 1) :=
+  rfl
+
 @[simp]
 lemma stdComplexLineReal_fst : stdComplexLineReal.1 = 1 :=
   rfl
@@ -78,6 +90,18 @@ lemma stdComplexLineImag_fst : stdComplexLineImag.1 = 0 :=
 @[simp]
 lemma stdComplexLineImag_snd : stdComplexLineImag.2 = 1 :=
   rfl
+
+/-- The real coordinate vector of `ℝ × ℝ` is the complex number `1`. -/
+@[simp]
+lemma equivRealProdCLM_symm_stdComplexLineReal :
+    Complex.equivRealProdCLM.symm stdComplexLineReal = 1 := by
+  apply Complex.ext <;> simp [stdComplexLineReal_eq]
+
+/-- The imaginary coordinate vector of `ℝ × ℝ` is the complex number `i`. -/
+@[simp]
+lemma equivRealProdCLM_symm_stdComplexLineImag :
+    Complex.equivRealProdCLM.symm stdComplexLineImag = Complex.I := by
+  apply Complex.ext <;> simp [stdComplexLineImag_eq]
 
 lemma AlmostComplexStructure.product_apply_stdComplexLineReal :
     AlmostComplexStructure.product ℝ stdComplexLineReal = stdComplexLineImag :=

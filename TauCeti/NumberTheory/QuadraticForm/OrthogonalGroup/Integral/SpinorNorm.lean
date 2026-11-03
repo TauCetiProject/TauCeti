@@ -30,8 +30,8 @@ class of a `p`-adic unit as its spinor norm, every integral isometry has spinor 
 In dimension at least two every unit square class arises from an integral proper isometry,
 because a binary form with unit coefficients represents every unit of `ℤ_[p]`. The image of the
 integral special orthogonal group under the spinor norm is therefore exactly the group of unit
-square classes. The spinor norm takes values in `Multiplicative (SquareClassGroup ℚ_[p])`, so the
-unit square classes are transported there along `multiplicativeSquareClassEquiv`.
+square classes. Both the spinor norm and `unitSquareClasses` use the literal quotient
+`ℚ_[p]ˣ ⧸ Subgroup.square ℚ_[p]ˣ`.
 
 ## Main results
 
@@ -222,7 +222,7 @@ private theorem exists_mem_closure_mul_apply_basis_eq (hp : p ≠ 2) (s : Set ι
     refine ⟨reflectionOrthogonal Q (f - e),
       reflectionOrthogonal_mem_closure (sub_mem hf he) hnorm, ?_, fun i hi ↦ ?_⟩
     · simpa using reflection_sub_apply_eq_of_map_eq Q f e hfe
-    · simp only [Subgroup.coe_mul, LinearEquiv.mul_apply, coe_reflectionOrthogonal, hfix i hi]
+    · simp only [Subgroup.coe_mul, mul_apply_eq_comp, coe_reflectionOrthogonal, hfix i hi]
       apply reflection_apply_of_polar_eq_zero
       rw [polar_sub_left, horth i hi, horth' i hi, sub_zero]
   · -- Reflecting in `f + e` carries `f` to `-e`, and reflecting in `e` carries `-e` to `e`.
@@ -236,11 +236,11 @@ private theorem exists_mem_closure_mul_apply_basis_eq (hp : p ≠ 2) (s : Set ι
         (reflectionOrthogonal_mem_closure (add_mem hf he) hnorm), ?_, fun i hi ↦ ?_⟩
     · have hneg : reflection Q (f + e) ((g : V ≃ₗ[ℚ_[p]] V) e) = -e :=
         reflection_add_apply_eq_neg_of_map_eq Q f e hfe
-      simp only [Subgroup.coe_mul, LinearEquiv.mul_apply, coe_reflectionOrthogonal]
+      simp only [Subgroup.coe_mul, mul_apply_eq_comp, coe_reflectionOrthogonal]
       rw [hneg, map_neg, reflection_apply_self, neg_neg]
     · have hpolar : polar Q (f + e) (b i) = 0 := by
         rw [polar_add_left, horth i hi, horth' i hi, add_zero]
-      simp only [Subgroup.coe_mul, LinearEquiv.mul_apply, coe_reflectionOrthogonal, hfix i hi]
+      simp only [Subgroup.coe_mul, mul_apply_eq_comp, coe_reflectionOrthogonal, hfix i hi]
       rw [reflection_apply_of_polar_eq_zero Q _ hpolar,
         reflection_apply_of_polar_eq_zero Q _ (horth i hi)]
 
@@ -284,8 +284,7 @@ unit. -/
 theorem orthogonalSpinorNorm_mem_unitSquareClasses (hp : p ≠ 2) {g : orthogonalGroup Q}
     (hg : g ∈ integralOrthogonalSubgroup Q b) :
     orthogonalSpinorNorm Q hQ g ∈
-      (unitSquareClasses ℚ_[p]).map (N := Multiplicative (SquareClassGroup ℚ_[p]))
-        (multiplicativeSquareClassEquiv (K := ℚ_[p])).toMonoidHom := by
+      unitSquareClasses ℚ_[p] := by
   rw [integralOrthogonalSubgroup_eq_closure_reflectionOrthogonal hb hunit hp] at hg
   induction hg using Subgroup.closure_induction with
   | mem g hg =>
@@ -294,10 +293,8 @@ theorem orthogonalSpinorNorm_mem_unitSquareClasses (hp : p ≠ 2) {g : orthogona
     have hval := Padic.norm_eq_zpow_neg_valuation hv
     rw [hQv, eq_comm, zpow_eq_one_iff_right₀ (by exact_mod_cast (Fact.out : p.Prime).pos.le)
       (by exact_mod_cast (Fact.out : p.Prime).one_lt.ne'), neg_eq_zero] at hval
-    refine ⟨QuotientGroup.mk (unitOfInvertible (Q v)),
-      (mk_mem_unitSquareClasses_padic_iff p _).mpr (by simp [hval]), ?_⟩
     rw [orthogonalSpinorNorm_reflectionOrthogonal, squareClassHom_apply]
-    exact multiplicativeSquareClassEquiv_mk _
+    exact (mk_mem_unitSquareClasses_padic_iff p _).mpr (by simp [hval])
   | one => exact (map_one (orthogonalSpinorNorm Q hQ)).symm ▸ one_mem _
   | mul x y _ _ hx hy => exact (map_mul (orthogonalSpinorNorm Q hQ) x y).symm ▸ mul_mem hx hy
   | inv x _ hx => exact (map_inv (orthogonalSpinorNorm Q hQ) x).symm ▸ inv_mem hx
@@ -364,20 +361,18 @@ theorem map_spinorNorm_comap_integralOrthogonalSubgroup_eq_unitSquareClasses (hp
     [Nontrivial ι] :
     ((integralOrthogonalSubgroup Q b).comap (specialOrthogonalToOrthogonal Q)).map
       (spinorNorm Q hQ) =
-      (unitSquareClasses ℚ_[p]).map (N := Multiplicative (SquareClassGroup ℚ_[p]))
-        (multiplicativeSquareClassEquiv (K := ℚ_[p])).toMonoidHom := by
+      unitSquareClasses ℚ_[p] := by
   ext c
   constructor
   · rintro ⟨g, hg, rfl⟩
     rw [spinorNorm_apply]
     exact orthogonalSpinorNorm_mem_unitSquareClasses hb hunit hQ hp hg
-  · rintro ⟨c, hc, rfl⟩
+  · intro hc
     rw [unitSquareClasses_padic_eq_range] at hc
     obtain ⟨u, rfl⟩ := hc
     obtain ⟨g, hg, hgu⟩ := exists_spinorNorm_eq_squareClassHom hb hunit hQ hp u
     refine ⟨g, hg, ?_⟩
-    rw [hgu, squareClassHom_apply]
-    exact (multiplicativeSquareClassEquiv_mk _).symm
+    simpa only [squareClassHom_apply, MonoidHom.comp_apply, QuotientGroup.mk'_apply] using hgu
 
 end Orthogonal
 

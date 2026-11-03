@@ -24,6 +24,8 @@ natural.
 
 Nested subsets `s ⊆ t ⊆ u` of a topological space give the triple `TopTriple.ofInclusions`, whose
 three pairs are the pairs `TopPair.ofInclusion` of the three inclusions among them.
+Nested subsets `B ⊆ A` of a topological space `X` give the triple `TopTriple.ofSubset`, whose outer
+and total pairs are the pairs `TopPair.ofSubset A` and `TopPair.ofSubset B`.
 -/
 
 @[expose] public section
@@ -74,6 +76,11 @@ lemma isEmbedding_totalMap : IsEmbedding T.totalMap := by
   rw [← T.innerMap_comp_outerMap]
   exact T.property.2.comp T.property.1
 
+/-- The image of `B` in `X` lies in the image of `A`. -/
+lemma range_totalMap_subset_range_outerMap : Set.range T.totalMap ⊆ Set.range T.outerMap := by
+  rintro _ ⟨b, rfl⟩
+  exact ⟨T.innerMap b, T.innerMap_comp_outerMap_apply b⟩
+
 /-- Construct a triple of topological spaces from two composable embeddings. -/
 abbrev of {B A X : TopCat.{u}} (i : B ⟶ A) (j : A ⟶ X) (hi : IsEmbedding i)
     (hj : IsEmbedding j) : TopTriple.{u} := ⟨.mk₂ i j, hi, hj⟩
@@ -96,6 +103,12 @@ abbrev ofInclusions {X : TopCat.{u}} {s t u : Set X} (hst : s ⊆ t) (htu : t �
   of (B := TopCat.of s) (A := TopCat.of t) (X := TopCat.of u)
     (TopCat.ofHom (ContinuousMap.inclusion hst)) (TopCat.ofHom (ContinuousMap.inclusion htu))
     (Topology.IsEmbedding.inclusion hst) (Topology.IsEmbedding.inclusion htu)
+
+/-- The triple `(X, A, B)` determined by nested subsets `B ⊆ A` of a topological space `X`, with
+the inclusion of `B` into `A` and the embedding of `A` into `X`. -/
+abbrev ofSubset {X : TopCat.{u}} {A B : Set X} (h : B ⊆ A) : TopTriple.{u} :=
+  of (TopCat.ofHom (ContinuousMap.inclusion h)) (TopPair.ofSubset A).map
+    (Topology.IsEmbedding.inclusion h) (TopPair.ofSubset A).isEmbedding_map
 
 variable {T} {T' : TopTriple.{u}}
 
@@ -184,8 +197,9 @@ end
 @[simp] lemma outerPair_map_snd (φ : T ⟶ T') :
     TopPair.Hom.snd (outerPair.map φ) = Hom.snd φ := rfl
 
+-- Expose the pair maps so dependent coefficient pullback types can compute their components.
+
 /-- The map of pairs `(A, B) ⟶ (X, B)` determined by a triple `(X, A, B)`. -/
-@[no_expose]
 def innerToTotal : innerPair.{u} ⟶ totalPair.{u} where
   app T := TopPair.ofHom T.outerMap (𝟙 _)
     ((Category.id_comp _).trans T.innerMap_comp_outerMap.symm)
@@ -193,7 +207,6 @@ def innerToTotal : innerPair.{u} ⟶ totalPair.{u} where
     ((Category.comp_id _).trans (Category.id_comp _).symm) (Hom.snd_comp_outerMap φ)
 
 /-- The map of pairs `(X, B) ⟶ (X, A)` determined by a triple `(X, A, B)`. -/
-@[no_expose]
 def totalToOuter : totalPair.{u} ⟶ outerPair.{u} where
   app T := TopPair.ofHom (𝟙 _) T.innerMap
     (T.innerMap_comp_outerMap.trans (Category.comp_id _).symm)

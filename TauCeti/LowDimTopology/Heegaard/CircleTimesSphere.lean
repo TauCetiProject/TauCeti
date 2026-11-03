@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LowDimTopology.Heegaard.Nice
+public import TauCeti.LowDimTopology.Heegaard.HatDifferential
 public import TauCeti.LowDimTopology.Heegaard.RelativeGrading
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Tactic.FinCases
@@ -39,6 +39,11 @@ relative grading of `p₀` over `p₁` is `1`, consistent with `HF̂(S¹ × S²)
 generators in adjacent gradings. With the basepoint in a bigon, the periodic domain `A + 2 B₂`
 has Maslov index `2`, and the two bigons give different values of `μ(D) - 2 n_z(D)`.
 
+With the basepoint in the annulus the diagram is nice and weakly admissible, and its hat
+differential counts exactly the two bigons from `p₀` to `p₁`. They cancel modulo two, so the hat
+differential vanishes and the hat chain complex is `𝔽₂²` with zero differential, as
+`HF̂(S¹ × S²) ≅ 𝔽₂²` predicts.
+
 ## Main definitions
 
 * `TauCeti.HeegaardRegionSystem.circleTimesSphere`: the diagram, with its basepoint in a given
@@ -68,6 +73,10 @@ has Maslov index `2`, and the two bigons give different values of `μ(D) - 2 n_z
   annulus, the relative grading of `p₀` over `p₁` is one.
 * `TauCeti.HeegaardRegionSystem.maslovIndex_sub_two_mul_circleTimesSphere_one`: with the
   basepoint in a bigon, `μ(D) - 2 n_z(D)` depends on the domain `D` from `p₀` to `p₁`.
+* `TauCeti.HeegaardRegionSystem.hatDomains_circleTimesSphere_zero_zero_one`: with the basepoint
+  in the annulus, the hat differential counts the two bigons from `p₀` to `p₁`.
+* `TauCeti.HeegaardRegionSystem.hatDifferential_circleTimesSphere_zero`: these cancel, and the hat
+  differential vanishes.
 
 ## References
 
@@ -353,6 +362,77 @@ theorem maslovIndex_sub_two_mul_circleTimesSphere_one :
           2 * (Pi.single 2 1 : Fin 3 → ℤ) ((circleTimesSphere 1).basepoint ()) = 1 := by
   rw [maslovIndex_circleTimesSphere_single_one, maslovIndex_circleTimesSphere_single_two]
   norm_num
+
+/-- Every generator of `circleTimesSphere r` is the generator at its intersection point. -/
+@[simp]
+theorem circleTimesSphereGenerator_snd_zero (r : Fin 3) (x : (circleTimesSphere r).Generator) :
+    circleTimesSphereGenerator r (x.2 0) = x :=
+  HeegaardIntersectionSystem.point_injective _ (funext fun i => by simp [Subsingleton.elim i 0])
+
+/-- With the basepoint in the annulus, the domains counted by the hat differential from `p₀` to
+`p₁` are the two bigons. -/
+theorem hatDomains_circleTimesSphere_zero_zero_one :
+    (circleTimesSphere 0).hatDomains ![0, 1, 1] (circleTimesSphereGenerator 0 0)
+      (circleTimesSphereGenerator 0 1) = {Pi.single 1 1, Pi.single 2 1} := by
+  ext D
+  rw [mem_hatDomains_iff]
+  constructor
+  · rintro ⟨hD, hz, hD0, -⟩
+    -- `D - B₁` is periodic, so `D` vanishes on the annulus and `D B₁ + D B₂ = 1`.
+    have hP := (isDomainBetween_circleTimesSphere_single_one 0).sub_mem_periodicDomains_iff.mpr
+      ⟨hD, fun z => by simpa using hz z⟩
+    rw [mem_periodicDomains_circleTimesSphere_iff] at hP
+    simp only [Pi.sub_apply, Pi.single_eq_same, Pi.single_eq_of_ne (show (0 : Fin 3) ≠ 1 by decide),
+      Pi.single_eq_of_ne (show (2 : Fin 3) ≠ 1 by decide), sub_zero] at hP
+    have h1 : 0 ≤ D 1 := hD0 1
+    have h2 : 0 ≤ D 2 := hD0 2
+    rw [Set.mem_insert_iff, Set.mem_singleton_iff]
+    rcases (by omega : D 1 = 1 ∧ D 2 = 0 ∨ D 1 = 0 ∧ D 2 = 1) with ⟨h1, h2⟩ | ⟨h1, h2⟩
+    · exact Or.inl (funext fun i => by fin_cases i <;> simp [hP.1, h1, h2])
+    · exact Or.inr (funext fun i => by fin_cases i <;> simp [hP.1, h1, h2])
+  · rintro (rfl | rfl)
+    · exact ⟨isDomainBetween_circleTimesSphere_single_one 0, fun _ => by simp,
+        Pi.single_nonneg.mpr zero_le_one, maslovIndex_circleTimesSphere_single_one 0⟩
+    · exact ⟨isDomainBetween_circleTimesSphere_single_two 0, fun _ => by simp,
+        Pi.single_nonneg.mpr zero_le_one, maslovIndex_circleTimesSphere_single_two 0⟩
+
+/-- With the basepoint in the annulus, no domain is counted by the hat differential from `p₁` to
+`p₀`: such a domain plus the bigon `B₁` would be a nonnegative periodic domain that is nonzero on
+`B₁`, while it must vanish on the annulus. -/
+@[simp]
+theorem hatDomains_circleTimesSphere_zero_one_zero :
+    (circleTimesSphere 0).hatDomains ![0, 1, 1] (circleTimesSphereGenerator 0 1)
+      (circleTimesSphereGenerator 0 0) = ∅ := by
+  refine Set.eq_empty_of_forall_notMem fun D hD => ?_
+  obtain ⟨hD, hz, hD0, -⟩ := mem_hatDomains_iff.mp hD
+  have hP := (isDomainBetween_circleTimesSphere_single_one 0).neg.sub_mem_periodicDomains_iff.mpr
+    ⟨hD, fun z => by simpa using hz z⟩
+  rw [mem_periodicDomains_circleTimesSphere_iff] at hP
+  simp only [Pi.sub_apply, Pi.neg_apply, Pi.single_eq_same,
+    Pi.single_eq_of_ne (show (0 : Fin 3) ≠ 1 by decide),
+    Pi.single_eq_of_ne (show (2 : Fin 3) ≠ 1 by decide), neg_zero, sub_neg_eq_add] at hP
+  have h1 : 0 ≤ D 1 := hD0 1
+  have h2 : 0 ≤ D 2 := hD0 2
+  omega
+
+/-- With the basepoint in the annulus, the hat differential of the genus-one diagram of
+`S¹ × S²` vanishes: it counts the two bigons from `p₀` to `p₁`, which cancel modulo two, and
+nothing else. So the hat chain complex on the two generators `p₀` and `p₁` has zero
+differential. -/
+@[simp]
+theorem hatDifferential_circleTimesSphere_zero :
+    (circleTimesSphere 0).hatDifferential ![0, 1, 1] = 0 := by
+  refine hatDifferential_eq_zero_iff.mpr fun x y => ?_
+  rw [← circleTimesSphereGenerator_snd_zero 0 x, ← circleTimesSphereGenerator_snd_zero 0 y]
+  generalize (x.2 0 : Fin 2) = a
+  generalize (y.2 0 : Fin 2) = b
+  fin_cases a <;> fin_cases b <;> simp only [Fin.zero_eta, Fin.mk_one]
+  · exact weaklyAdmissible_circleTimesSphere_zero.hatCoefficient_self _ _
+  · rw [hatCoefficient_def, hatDomains_circleTimesSphere_zero_zero_one,
+      Set.ncard_pair (by simp [funext_iff, Fin.forall_fin_succ, Pi.single_apply]),
+      ZMod.natCast_self]
+  · exact hatCoefficient_eq_zero_of_hatDomains_eq_empty hatDomains_circleTimesSphere_zero_one_zero
+  · exact weaklyAdmissible_circleTimesSphere_zero.hatCoefficient_self _ _
 
 end HeegaardRegionSystem
 

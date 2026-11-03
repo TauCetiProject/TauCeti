@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Polynomial.Norm
 public import Mathlib.Algebra.Polynomial.Reverse
 public import Mathlib.Data.Nat.Choose.Bounds
+public import TauCeti.Analysis.Normed.Module.Basic
 import Mathlib.Algebra.Polynomial.BigOperators
 import Mathlib.Data.Nat.Choose.Vandermonde
 import Mathlib.Tactic.NormNum
@@ -16,8 +17,8 @@ import Mathlib.Tactic.Ring
 /-!
 # Basic coefficient sup-norm estimates
 
-Reversal preserves the coefficient sup norm. Multiplication by a constant scales
-it when the coefficient norm is multiplicative.
+Reversal and norm-preserving maps of coefficients preserve the coefficient sup norm.
+Multiplication by a constant scales it when the coefficient norm is multiplicative.
 
 A coefficient of a finite product is bounded by its binomial weight in the sum of
 the degrees times the product of the coefficient sup norms. Consequently the sup
@@ -37,6 +38,13 @@ public section
 open Polynomial
 
 namespace TauCeti
+
+/-- A norm-preserving ring homomorphism preserves the coefficient sup norm. -/
+@[simp]
+theorem _root_.Polynomial.supNorm_map {R S : Type*} [SeminormedRing R] [SeminormedRing S]
+    (p : R[X]) (f : R →+* S) [RingHomIsometric f] :
+    (p.map f).supNorm = p.supNorm := by
+  simp only [supNorm_eq_iSup, coeff_map, RingHomIsometric.norm_map]
 
 /-- Reversing a polynomial preserves its coefficient sup norm. -/
 @[simp]

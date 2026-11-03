@@ -30,6 +30,8 @@ same product up to sign.
 
 ## Main results
 
+* `CliffordAlgebra.even_ι_bilin_add_swap`: the Clifford relation for the even generators,
+  `ι(m) ι(e) + ι(e) ι(m) = polar Q m e`.
 * `CliffordAlgebra.coe_evenEquivEvenNeg_prod_map_ι`: on a product of `2k` vectors,
   `evenEquivEvenNeg` is `(-1) ^ k` times the same product in the Clifford algebra of `-Q`.
 -/
@@ -69,6 +71,16 @@ theorem coe_even_ι_bilin (m e : M) :
     (((even.ι Q).bilin m e : even Q) : CliffordAlgebra Q) = ι Q m * ι Q e := by
   rw [← rightIotaEven_apply Q e m]
   exact coe_rightIotaEven Q e m
+
+omit [Invertible (2 : R)] in
+/-- The Clifford relation for the even generators: `ι(m) ι(e) + ι(e) ι(m)` is the polar form of
+`Q` at `m` and `e`. -/
+theorem even_ι_bilin_add_swap (m e : M) :
+    (even.ι Q).bilin m e + (even.ι Q).bilin e m =
+      algebraMap R (even Q) (QuadraticMap.polar Q m e) :=
+  Subtype.ext (by
+    rw [Subalgebra.coe_add, Subalgebra.coe_algebraMap, coe_even_ι_bilin, coe_even_ι_bilin,
+      ι_mul_ι_add_swap])
 
 omit [Invertible (2 : R)] in
 private theorem iota_sq_neg_one (e : M) (he : Q e = -1) :

@@ -51,12 +51,15 @@ the skeletal induction inside the compression lemma.
 * `ContinuousMap.IsWeakHomotopyEquivalence.exists_comp_homotopic`: maps out of spaces of CW
   type lift through a weak homotopy equivalence up to homotopy.
 * `ContinuousMap.IsWeakHomotopyEquivalence.homotopyEquiv`: **Whitehead's theorem**.
+* `TauCeti.contractibleSpace_of_subsingleton_homotopyGroup`: a weakly contractible space of CW
+  type is contractible.
 
 ## References
 
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
   Section 4.1, Theorem 4.5 (Whitehead's theorem), Lemma 4.6 (the compression lemma), and
-  Proposition 4.22 (its surjectivity half).
+  Proposition 4.22 (its surjectivity half), and the corollary after Theorem 4.5 on weakly
+  contractible CW complexes.
 -/
 
 public section
@@ -178,3 +181,20 @@ theorem ContinuousMap.isWeakHomotopyEquivalence_iff_exists_homotopyEquiv
     f.IsWeakHomotopyEquivalence ↔ ∃ e : ContinuousMap.HomotopyEquiv X Y, e.toFun = f :=
   ⟨fun hf ↦ ⟨hf.homotopyEquiv, hf.homotopyEquiv_toFun⟩,
     fun ⟨e, he⟩ ↦ he ▸ e.isWeakHomotopyEquivalence⟩
+
+/-- **A weakly contractible space of CW type is contractible** (Hatcher, the corollary after
+Theorem 4.5). A path-connected space of CW type whose homotopy groups in every positive dimension
+vanish at one base point is contractible: its map to a point is a weak homotopy equivalence, hence
+a homotopy equivalence by Whitehead's theorem. -/
+theorem TauCeti.contractibleSpace_of_subsingleton_homotopyGroup {X : Type w} [TopologicalSpace X]
+    [TauCeti.CWType X] [PathConnectedSpace X] (x : X)
+    (h : ∀ n : ℕ, Subsingleton (π_ (n + 1) X x)) : ContractibleSpace X := by
+  let f : C(X, PUnit.{w + 1}) := ContinuousMap.const X PUnit.unit
+  have hf : f.IsWeakHomotopyEquivalence := by
+    refine (ContinuousMap.isWeakHomotopyEquivalence_iff_forall_bijective x).2 fun n ↦ ?_
+    have : Subsingleton (π_ n X x) := by
+      cases n with
+      | zero => exact HomotopyGroup.pi0EquivZerothHomotopy.subsingleton
+      | succ n => exact h n
+    exact Function.bijective_of_subsingleton' _
+  exact hf.homotopyEquiv.contractibleSpace

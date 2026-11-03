@@ -29,19 +29,30 @@ Concurrent picker decisions can admit jobs above this snapshot-based cap. When N
 full, staging falls through to GitHub; if all eligible destinations are full or
 unknown, the build waits for a GitHub-hosted slot. A failed picker uses that same
 GitHub fallback. `HOSTED_RUNNER_BUDGET` defaults to 18 running GitHub-hosted jobs,
-including the picker. Set it below the provider's total job limit to preserve
-headroom for short control jobs.
+including other GitHub-hosted control jobs. All runner pickers run on Namespace
+and do not count toward that budget. Set it below the provider's total job limit
+to preserve headroom for short control jobs.
 
 Shared capacity observations must be complete, match the organization, remain unexpired,
 and be at most 150 seconds old. This retains the two-minute shared-cache allowance.
 
-Capacity scans preserve the existing App API reserve (default 1,500 requests),
-then try one complete scan using the repository token (reserve 250). Incomplete
-scans cannot authorize spare cloud capacity. Fleet selection also requires a
-complete observation of queued guest targets.
+Capacity scans use the repository workflow token, preserving the reserve set by
+`PICKER_REPOSITORY_API_RESERVE` (default 250 requests). Incomplete scans cannot
+authorize spare cloud capacity. Fleet placement uses complete online/idle runner
+inventory, class labels and machine limits, retaining any observed queued guest
+reservations even when global queue coverage is incomplete. Concurrent or unseen
+reservations can still collide; the acquisition watcher below recovers those runs.
+Staging tries dedicated machines first. If no machine is eligible,
+staging uses the existing bounded cloud discovery and fallback.
 The existing shared state service coalesces cloud and queued-target discovery;
-older snapshots can still answer the first GitHub preference. Picker control jobs
-remain on GitHub so Namespace queueing cannot block selection of a fleet guest.
+older snapshots can still answer the first GitHub preference. Every picker runs
+on the existing Namespace 2x4 priority-zero control profile with a run-specific
+label. Ordinary PR selection can reach ready fleet runners even when the
+GitHub-hosted build queue is saturated.
+
+During a Namespace outage, set repository variable `PICKER_GITHUB_FALLBACK=true`
+to run fresh picker attempts on GitHub. Clear it to restore Namespace control
+capacity. This switches the picker only; build placement and merge gates still apply.
 
 The existing `fleet-recovery.yml` watcher waits for placement and allows two
 minutes for a dedicated guest to acquire the build. It cancels an unacquired

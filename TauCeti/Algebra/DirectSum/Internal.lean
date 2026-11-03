@@ -25,19 +25,28 @@ with the homogeneous projections, while `DirectSum.isInternal_comap` and
 map whose range contains the homogeneous projections of its elements, with
 `DirectSum.map_decompose_restrict` computing the projections of the restricted decomposition.
 
-A third group is about maps compatible with a decomposition: if a linear map carries each
-summand of a spanning family into the corresponding member of an independent family, then its
-kernel is spanned by its homogeneous parts, `LinearMap.ker_eq_iSup_inf_of_map_le`. Conversely,
-`iSupIndep.map_of_ker_inf_iSup_le` shows that a linear map preserves independence when the
-part of its kernel in the span is spanned by its intersections with the summands.
+A third group is about maps compatible with a decomposition. Two linear maps agreeing on every
+member of a spanning family of submodules are equal, `LinearMap.ext_of_iSup_eq_top`; for an
+internal direct sum the spanning hypothesis is `DirectSum.IsInternal.submodule_iSup_eq_top`. If a
+linear map carries each summand of a spanning family into the corresponding member of an
+independent family, then its kernel is spanned by its homogeneous parts,
+`LinearMap.ker_eq_iSup_inf_of_map_le`. Conversely, `iSupIndep.map_of_ker_inf_iSup_le` shows that a
+linear map preserves independence when the part of its kernel in the span is spanned by its
+intersections with the summands.
 
-`DirectSum.IsInternal.iSup_fiber` collects an internal decomposition along the fibers of any map.
+`DirectSum.IsInternal.iSup_fiber` collects an internal decomposition along the fibers of any map,
+and `DirectSum.IsInternal.comp_equiv` reindexes one along an equivalence of the index types.
 
 `DirectSum.IsInternal.iSup_inf_eq_of_component_mem` restricts an internal decomposition to any
 submodule that contains the canonical components of each of its elements.
 
-Finally, `DirectSum.coe_decompose_smul_add_of_right_mem` computes the components of a scalar
+`DirectSum.coe_decompose_smul_add_of_right_mem` computes the components of a scalar
 action on a homogeneous element when the scalar and module decompositions are compatible.
+
+Finally, the external direct sum `⨁ i, M i` of a family of `R`-modules is the internal direct sum
+of its summands `DirectSum.summand R M i`, the ranges of the inclusions `DirectSum.lof R ι M i`
+(`DirectSum.isInternal_summand`). The resulting decomposition `DirectSum.instDecompositionSummand`
+has `i`-th component `DirectSum.of M i (x i)` (`DirectSum.coe_decompose_summand`).
 -/
 
 public section
@@ -280,6 +289,17 @@ theorem DirectSum.isInternal_of_lof {R ι M : Type*} [Semiring R] [DecidableEq �
   rw [DirectSum.isInternal_iff_bijective_coeLinearMap, hcoe]
   exact F.bijective
 
+/-- Two semilinear maps that agree on every member of a family of submodules spanning the source
+are equal. -/
+theorem _root_.LinearMap.ext_of_iSup_eq_top {R R₂ ι M M₂ : Type*} [Semiring R] [Semiring R₂]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid M₂] [Module R₂ M₂] {σ : R →+* R₂}
+    {A : ι → Submodule R M} (hA : ⨆ i, A i = ⊤) {f g : M →ₛₗ[σ] M₂}
+    (h : ∀ i, ∀ x ∈ A i, f x = g x) : f = g :=
+  LinearMap.ext_on (s := ⋃ i, (A i : Set M)) (by rw [← Submodule.iSup_eq_span, hA])
+    fun x hx ↦ by
+      obtain ⟨i, hi⟩ := Set.mem_iUnion.1 hx
+      exact h i x hi
+
 /-- **The kernel of a map compatible with a decomposition is spanned by its homogeneous parts.**
 If the submodules `A i` span the source, the submodules `A' i` are independent, and `g` carries
 `A i` into `A' i`, then the kernel of `g` is the supremum of its intersections with the `A i`.
@@ -401,6 +421,26 @@ theorem iSup_fiber {R M ι κ : Type*} [Semiring R] [AddCommMonoid M] [Module R 
   · rw [← LinearMap.range_eq_top, DirectSum.range_coeLinearMap, iSup_comm]
     simpa only [iSup_iSup_eq_right] using hP.submodule_iSup_eq_top
 
+/-- An internal direct sum of submodules can be reindexed along an equivalence of the index
+types. -/
+theorem comp_equiv {R M κ κ' : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+    [DecidableEq κ] [DecidableEq κ'] {A : κ' → Submodule R M} (hA : DirectSum.IsInternal A)
+    (e : κ ≃ κ') : DirectSum.IsInternal (A ∘ e) := by
+  convert hA.iSup_fiber e.symm with k
+  simp [Equiv.symm_apply_eq]
+
+/-- Prepending the zero submodule to a natural-number-indexed internal decomposition
+again gives an internal decomposition. -/
+theorem nat_cons_bot {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+    {N : ℕ → Submodule R M} (h : DirectSum.IsInternal N) :
+    DirectSum.IsInternal (fun | 0 => ⊥ | i + 1 => N i) := by
+  have hfamily : (fun j ↦ ⨆ i, ⨆ _ : Nat.succ i = j, N i) =
+      (fun | 0 => ⊥ | i + 1 => N i) := by
+    funext j
+    cases j <;> simp
+  rw [← hfamily]
+  exact h.iSup_fiber Nat.succ
+
 /-- **Restricting an internal decomposition to a component-stable subspace.** If a subspace
 contains every canonical component of each of its elements, then it is the internal sum of its
 intersections with the original summands. -/
@@ -447,5 +487,67 @@ theorem coe_decompose_smul_add_of_right_mem {a : A} {x : M} {i j : ι} (hx : x �
     · rw [decompose_of_mem_ne ℳ hmem (fun h ↦ hki (add_right_cancel h)),
         decompose_of_mem_ne 𝒜 a.2 hki, zero_smul]
   | add a b ha hb => simp [add_smul, ha, hb]
+
+end DirectSum
+
+namespace DirectSum
+
+section Module
+
+variable {ι : Type*} (R : Type*) (M : ι → Type*) [DecidableEq ι] [Semiring R]
+  [∀ i, AddCommMonoid (M i)] [∀ i, Module R (M i)]
+
+/-- The `i`-th summand of the external direct sum `⨁ i, M i`: the image of `M i` under the
+inclusion `DirectSum.lof R ι M i`. -/
+def summand (i : ι) : Submodule R (⨁ i, M i) :=
+  LinearMap.range (DirectSum.lof R ι M i)
+
+/-- The `i`-th summand is the range of the inclusion `DirectSum.lof R ι M i`. -/
+theorem summand_def (i : ι) : summand R M i = LinearMap.range (DirectSum.lof R ι M i) :=
+  (rfl)
+
+variable {R M}
+
+/-- An element of `⨁ i, M i` lies in the `i`-th summand exactly when it is `DirectSum.of M i m`
+for some `m : M i`. -/
+theorem mem_summand {i : ι} {x : ⨁ i, M i} :
+    x ∈ summand R M i ↔ ∃ m : M i, DirectSum.of M i m = x := by
+  simp [summand, DirectSum.lof_eq_of]
+
+/-- The element `DirectSum.lof R ι M i m` lies in the `i`-th summand. -/
+theorem lof_mem_summand (i : ι) (m : M i) : DirectSum.lof R ι M i m ∈ summand R M i :=
+  LinearMap.mem_range_self _ m
+
+/-- The element `DirectSum.of M i m` lies in the `i`-th summand. -/
+theorem of_mem_summand (i : ι) (m : M i) : DirectSum.of M i m ∈ summand R M i :=
+  mem_summand.mpr ⟨m, rfl⟩
+
+/-- The summands of the external direct sum form an internal direct sum: they are the ranges of
+the inclusions `DirectSum.lof R ι M i`. -/
+theorem isInternal_summand : DirectSum.IsInternal (summand R M) :=
+  TauCeti.DirectSum.isInternal_of_lof
+    (e := fun i ↦ LinearEquiv.ofInjective (DirectSum.lof R ι M i) (DirectSum.of_injective i))
+    (E := LinearEquiv.refl R _) fun _ _ ↦ rfl
+
+/-- The external direct sum decomposes as the direct sum of its summands. -/
+noncomputable instance instDecompositionSummand : DirectSum.Decomposition (summand R M) :=
+  isInternal_summand.chooseDecomposition
+
+/-- The `i`-th component of an element `x` of `⨁ i, M i` for the summand decomposition is the
+summand `x i`. -/
+@[simp]
+theorem coe_decompose_summand (x : ⨁ i, M i) (i : ι) :
+    (DirectSum.decompose (summand R M) x i : ⨁ i, M i) = DirectSum.of M i (x i) := by
+  induction x using DirectSum.induction_on with
+  | zero => simp
+  | of j m =>
+    rw [DirectSum.decompose_of_mem (summand R M) (of_mem_summand j m)]
+    by_cases h : j = i
+    · subst h
+      simp
+    · simp [DirectSum.of_eq_of_ne _ _ _ (Ne.symm h)]
+  | add x y hx hy => simp [hx, hy]
+
+end Module
 
 end DirectSum

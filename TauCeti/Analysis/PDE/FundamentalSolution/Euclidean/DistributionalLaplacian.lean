@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Basic
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Regularization
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Distribution
 import TauCeti.MeasureTheory.Constructions.HaarToSphere
 import TauCeti.MeasureTheory.Integral.DominatedConvergence
@@ -78,7 +79,7 @@ private def regKernelDeriv (n : ℕ) (v : EuclideanSpace ℝ (Fin n)) (t : ℝ)
 
 private lemma regKernel_zero (n : ℕ) : regKernel n 0 = newtonianKernel n := by
   funext x
-  rw [regKernel, newtonianKernel_def, add_zero, sq_rpow_div_two (norm_nonneg x)]
+  rw [regKernel, newtonianKernel_def, add_zero, Real.sq_rpow_div_two (norm_nonneg x)]
 
 private lemma regKernelDeriv_zero (hn : 3 ≤ n) (v : EuclideanSpace ℝ (Fin n))
     {x : EuclideanSpace ℝ (Fin n)} (hx : x ≠ 0) :
@@ -86,7 +87,7 @@ private lemma regKernelDeriv_zero (hn : 3 ≤ n) (v : EuclideanSpace ℝ (Fin n)
   have hnℝ : (3 : ℝ) ≤ n := by exact_mod_cast hn
   have hvol := (volume_real_unitBall_pos n).ne'
   rw [regKernelDeriv, fderiv_newtonianKernel_apply n (by omega) hx, add_zero,
-    show (2 - (n : ℝ)) / 2 - 1 = -(n : ℝ) / 2 by ring, sq_rpow_div_two (norm_nonneg x)]
+    show (2 - (n : ℝ)) / 2 - 1 = -(n : ℝ) / 2 by ring, Real.sq_rpow_div_two (norm_nonneg x)]
   have h2 : (n : ℝ) - 2 ≠ 0 := by linarith
   have h0 : (n : ℝ) ≠ 0 := by linarith
   field_simp
@@ -184,15 +185,19 @@ theorem integral_newtonianKernel_mul_fderiv_eq_neg_fderiv_mul (hn : 3 ≤ n)
     filter_upwards [volume.ae_ne 0] with x hx
     rw [regKernelDeriv_zero hn v hx]
   -- Both sides converge as `t → 0⁺`.
-  have hL := tendsto_integral_mul_of_dominated_away (0 : EuclideanSpace ℝ (Fin n))
-    (l := 𝓝[>] (0 : ℝ)) (K := regKernel n) (K₀ := regKernel n 0) hg'
-    (eventually_mem_nhdsWithin.mono fun t ht ↦ continuous_regKernel ht)
+  have hL := tendsto_integral_mul_of_dominated_away
+    (measure_singleton (0 : EuclideanSpace ℝ (Fin n))) (μ := volume)
+    (l := 𝓝[>] (0 : ℝ)) (K := regKernel n) (K₀ := regKernel n 0) hg'.aestronglyMeasurable
+    (eventually_mem_nhdsWithin.mono fun t ht ↦ (continuous_regKernel ht).aestronglyMeasurable)
     (by simpa [regKernel_zero] using integrable_newtonianKernel_mul hg' hcg')
     (eventually_mem_nhdsWithin.mono fun t ht x hx ↦ abs_regKernel_le hn (le_of_lt ht) hx)
     (fun x hx ↦ (tendsto_sq_add_rpow (norm_ne_zero_iff.mpr hx) _).const_mul _)
-  have hR := tendsto_integral_mul_of_dominated_away (0 : EuclideanSpace ℝ (Fin n))
-    (l := 𝓝[>] (0 : ℝ)) (K := regKernelDeriv n v) (K₀ := regKernelDeriv n v 0) hg.continuous
-    (eventually_mem_nhdsWithin.mono fun t ht ↦ continuous_regKernelDeriv v ht)
+  have hR := tendsto_integral_mul_of_dominated_away
+    (measure_singleton (0 : EuclideanSpace ℝ (Fin n))) (μ := volume)
+    (l := 𝓝[>] (0 : ℝ)) (K := regKernelDeriv n v) (K₀ := regKernelDeriv n v 0)
+    hg.continuous.aestronglyMeasurable
+    (eventually_mem_nhdsWithin.mono fun t ht ↦
+      (continuous_regKernelDeriv v ht).aestronglyMeasurable)
     ((integrable_fderiv_newtonianKernel_mul v hg.continuous hc).congr hderiv)
     (eventually_mem_nhdsWithin.mono fun t ht x hx ↦
       abs_regKernelDeriv_le hn v (le_of_lt ht) hx)

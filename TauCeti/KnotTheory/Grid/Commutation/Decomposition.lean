@@ -18,8 +18,8 @@ in the other, a pentagon is followed by a rectangle in the commuted diagram. Thi
 the two kinds of decomposition and rewrites the two matrix products in the chain-map equation as
 sums over them.
 
-For a validated column commutation `C` of `G`, write `G'` for the diagram obtained by swapping
-the columns of `C`, and `Phi` for `GridDiagram.pentagonMap`. The coefficient of
+For a column turn `C` (`GridDiagram.ColumnTurn`) for `G`, write `G'` for the diagram obtained by
+swapping the columns of `C`, and `Phi` for `GridDiagram.pentagonMap`. The coefficient of
 `Phi (partial x)` at `z` is the sum over
 `GridRectanglePentagonDecomposition C.column C.turnRow x z`; its weight is the rectangle weight,
 renamed into the coefficient variables of `G'`, times the pentagon weight. The coefficient of
@@ -401,7 +401,7 @@ end GridRectanglePentagonDecomposition
 
 namespace GridDiagram
 
-variable {n : ℕ} (G : GridDiagram n) (C : ColumnCommutationData G)
+variable {n : ℕ} (G : GridDiagram n) (C : ColumnTurn n)
 
 local notation "b" => finRotate n C.column
 

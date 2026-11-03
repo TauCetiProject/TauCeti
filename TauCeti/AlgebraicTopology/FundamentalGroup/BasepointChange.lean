@@ -27,6 +27,7 @@ independent of the chosen path.
 It also records the element-level behaviour of the transport: path-quotient formulas, its
 compatibility with concatenation of paths and with induced maps, and the comparison of the maps
 induced by freely homotopic maps, which differ by basepoint change along the trace of the homotopy.
+Surjectivity of an induced fundamental-group map transports along a path in its source.
 
 Mathlib already supplies the fundamental-group isomorphism
 `FundamentalGroup.fundamentalGroupMulEquivOfPath`; the declarations here are the computation
@@ -49,6 +50,8 @@ rules, subgroup, and normalizer-quotient bookkeeping built on it.
   conjugation by its class.
 * `FundamentalGroup.map_fundamentalGroupMulEquivOfPath`: induced maps commute with basepoint
   change.
+* `FundamentalGroup.map_surjective_of_path`: surjectivity of an induced map transports along
+  paths.
 * `ContinuousMap.Homotopy.fundamentalGroupMulEquivOfPath_evalAt_map`: **freely homotopic maps
   induce the same map on fundamental groups, up to basepoint change along the trace of the
   homotopy.**
@@ -205,6 +208,16 @@ lemma map_fundamentalGroupMulEquivOfPath {X Y : Type*} [TopologicalSpace X] [Top
   -- Mathlib defines basepoint change as `Iso.conj` and `FundamentalGroup.map` as
   -- `Functor.mapEnd`, so the two sides now agree by unfolding these definitions.
   rfl
+
+/-- **Surjectivity of an induced map moves along paths.** If `f` induces a surjection of
+fundamental groups at `x₀`, then it induces one at every point joined to `x₀` by a path. -/
+lemma map_surjective_of_path {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+    (f : C(X, Y)) {x₀ x₁ : X} (γ : Path x₀ x₁) (hf : Function.Surjective (map f x₀)) :
+    Function.Surjective (map f x₁) := by
+  intro h
+  obtain ⟨k, hk⟩ := hf ((fundamentalGroupMulEquivOfPath (γ.map f.continuous)).symm h)
+  exact ⟨fundamentalGroupMulEquivOfPath γ k, by
+    rw [map_fundamentalGroupMulEquivOfPath, hk, MulEquiv.apply_symm_apply]⟩
 
 open CategoryTheory in
 /-- **Freely homotopic maps induce the same map on fundamental groups, up to basepoint change.**
@@ -598,3 +611,21 @@ lemma basepointChangeNormalizerQuotientEquiv_mk_coe (γ : Path x₀ x₁)
     Subgroup.normalizerQuotientCongr_mk]
 
 end FundamentalGroup
+
+namespace ContinuousMap
+
+open _root_.FundamentalGroup
+
+/-- Surjectivity on fundamental groups at the end of a path implies surjectivity at its start. -/
+lemma fundamentalGroupMap_surjective_of_path
+    {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] {x y : X}
+    (f : C(X, Y)) (p : Path x y) (h : Function.Surjective (FundamentalGroup.map f y)) :
+    Function.Surjective (FundamentalGroup.map f x) := by
+  intro g
+  obtain ⟨k, hk⟩ := h (fundamentalGroupMulEquivOfPath (p.map f.continuous) g)
+  refine ⟨(fundamentalGroupMulEquivOfPath p).symm k, ?_⟩
+  apply (fundamentalGroupMulEquivOfPath (p.map f.continuous)).injective
+  rw [← _root_.FundamentalGroup.map_fundamentalGroupMulEquivOfPath, MulEquiv.apply_symm_apply]
+  exact hk
+
+end ContinuousMap
