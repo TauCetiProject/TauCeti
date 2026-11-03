@@ -114,9 +114,9 @@ section Cover
 
 open MulAction Pointwise
 
-/-- If left multiplication by every element of `S` maps `R * K` into itself, for a subgroup `K` and
-a finite set `R`, then `S` generates a subgroup stabilizing the finite set `R * K`, and right
-multiplication by a point of `R * K` embeds that subgroup into `R * K`. -/
+/-- If left multiplication by every element of `S` maps `R * K` into itself, for a finite subgroup
+`K` and a finite nonempty set `R`, then `S` generates a subgroup stabilizing the finite set `R * K`,
+and right multiplication by a point of `R * K` embeds that subgroup into `R * K`. -/
 theorem exists_injective_closure_to_mul {G : Type*} [Group G] {S R : Set G} {K : Subgroup G}
     (hR : R.Finite) (hR' : R.Nonempty) [Finite K] (h : ∀ s ∈ S, ∀ r ∈ R, s * r ∈ R * (K : Set G)) :
     ∃ f : closure S → (R * (K : Set G) : Set G), Function.Injective f := by
