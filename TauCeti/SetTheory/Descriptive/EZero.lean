@@ -11,6 +11,7 @@ public import Mathlib.Topology.Baire.BaireMeasurable
 public import TauCeti.SetTheory.Descriptive.BorelReducibility
 public import TauCeti.Topology.Instances.CantorSpace
 import Mathlib.Topology.Baire.LocallyCompactRegular
+import TauCeti.SetTheory.Descriptive.GenericErgodicity
 import TauCeti.Topology.Baire.KuratowskiUlam
 import TauCeti.Topology.Baire.Perfect
 import TauCeti.Topology.Perfect
@@ -184,30 +185,12 @@ theorem isMeagre_or_mem_residual_of_eZero_invariant (hB : BaireMeasurableSet B)
 `Quotient eZero`, with Mathlib's quotient σ-algebra, is not countably separated. This is the
 non-smoothness of `E₀`. -/
 theorem not_countablySeparated_quotient_eZero :
-    ¬ MeasurableSpace.CountablySeparated (Quotient eZero) := by
-  intro h
-  obtain ⟨S, hSc, hSm, hS⟩ :=
-    exists_countable_separating (Quotient eZero) MeasurableSet univ
-  -- Each preimage of a set of `S` is invariant and Borel, so it is meagre or comeagre: membership
-  -- in it is constant on a comeagre set.
-  have hconst : ∀ s ∈ S, ∃ c : Prop,
-      ∀ᶠ x in residual (ℕ → Bool), (Quotient.mk eZero x ∈ s ↔ c) := by
-    intro s hs
-    have hinv : Quotient.mk eZero ⁻¹' (Quotient.mk eZero '' (Quotient.mk eZero ⁻¹' s)) =
-        Quotient.mk eZero ⁻¹' s := by
-      rw [image_preimage_eq s Quotient.mk_surjective]
-    rcases isMeagre_or_mem_residual_of_eZero_invariant
-      (measurableSet_quotient.1 (hSm s hs)).baireMeasurableSet hinv with hm | hr
-    · exact ⟨False, mem_of_superset hm fun x hx => iff_false_intro hx⟩
-    · exact ⟨True, mem_of_superset hr fun x hx => iff_true_intro hx⟩
-  choose! c hc using hconst
-  have hall := (eventually_countable_ball hSc).2 hc
-  obtain ⟨x₀, hx₀⟩ := (dense_of_mem_residual hall).nonempty
-  -- That comeagre set lies in the class of `x₀`, which is countable, hence meagre.
-  refine not_isMeagre_of_mem_residual hall ((countable_setOf_eZero x₀).isMeagre.mono ?_)
-  intro x hx
-  exact Quotient.exact <| hS _ (mem_univ _) _ (mem_univ _) fun s hs =>
-    (hx₀ s hs).trans (hx s hs).symm
+    ¬ MeasurableSpace.CountablySeparated (Quotient eZero) :=
+  eZero.not_countablySeparated_quotient_of_isMeagre_or_mem_residual
+    (fun x => (countable_setOf_eZero x).isMeagre) fun s hs =>
+      isMeagre_or_mem_residual_of_eZero_invariant
+        (measurableSet_quotient.1 hs).baireMeasurableSet
+        (by rw [image_preimage_eq s Quotient.mk_surjective])
 
 /-- **`E₀` is not smooth**: no Borel map into Cantor space has the classes of `E₀` as its
 fibres. -/
