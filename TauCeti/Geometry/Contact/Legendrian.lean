@@ -270,7 +270,7 @@ theorem isLegendrianImmersion_contactization_iff
         (by simp) y ?_
       have h0 : (mfderiv J I g y).prod (mfderiv J 𝓘(ℝ) h y) v = 0 := by
         rw [ContinuousLinearMap.prod_apply, hiso, hv, (θ.1 (g y)).map_coord_zero 0 rfl]
-        rfl
+        exact Prod.mk_zero_zero
       rw [mfderiv_prodMk (hg₁ y) (hh₁ y)]
       exact h0.trans (map_zero _).symm
     have hdim' : 2 * finrank ℝ E' = finrank ℝ E := by
@@ -334,11 +334,10 @@ theorem isLegendrianImmersion_section_iff (β : SmoothForm I M ℝ 1) {g : M →
   simp only [symplecticForm_eq_neg_mextDerivₗ]
   refine ⟨And.right, fun hE ↦ ⟨⟨?_, hE.isLagrangianMap.isIsotropicMap, ?_⟩, hE⟩⟩
   · -- The bundle projection is a smooth left inverse of the section.
-    exact isImmersion_iff_forall_isImmersionAt.mpr fun x ↦
-      (SmoothForm.degreeOneEquiv β).contMDiff.contMDiffOn.isImmersionAt_of_comp_eventuallyEq_id
-        isOpen_univ (Set.mem_univ x) (by simp)
-        ((contMDiff_proj (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) _).mdifferentiableAt one_ne_zero)
-        (Filter.Eventually.of_forall fun _ ↦ rfl)
+    exact (SmoothForm.degreeOneEquiv β).contMDiff.isImmersion_of_leftInverse (by simp)
+      (fun p ↦ (contMDiff_proj (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) p).mdifferentiableAt
+        one_ne_zero)
+      fun _ ↦ rfl
   · rw [finrank_prod, ContinuousLinearMap.dual_finrank_eq, two_mul]
 
 /-- **One-jets are Legendrian.** The one-jet `j¹g : x ↦ (dg_x, g x)` of a smooth function is a

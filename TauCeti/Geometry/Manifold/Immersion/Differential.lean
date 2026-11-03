@@ -33,9 +33,10 @@ model the manifold derivative is the derivative of the map read in these charts.
 finite-dimensional target model, a smooth map with injective differential everywhere is an
 immersion (`ContMDiff.isImmersion_of_injective_mfderiv`). A `C^n` map with a left inverse near a
 point, differentiable at the image of that point, is an immersion there
-(`ContMDiffOn.isImmersionAt_of_comp_eventuallyEq_id`); for example, a smooth section of a fiber
-bundle is an immersion. A parameter-preserving map
-`(p, x) ↦ (p, G (p, x))` is then an immersion at every point where its slice `x ↦ G (p, x)` is
+(`ContMDiffOn.isImmersionAt_of_comp_eventuallyEq_id`). Hence, again for a finite-dimensional
+target model, a smooth map with a differentiable global left inverse, such as a smooth section of
+a fiber bundle, is an immersion (`ContMDiff.isImmersion_of_leftInverse`). A parameter-preserving
+map `(p, x) ↦ (p, G (p, x))` is then an immersion at every point where its slice `x ↦ G (p, x)` is
 one in the sense of differentials, as for the space-time track of a moving embedded submanifold.
 Likewise, postcomposing an immersion with a diffeomorphism onto a manifold with a different
 finite-dimensional model gives an immersion (`Diffeomorph.isImmersion_comp`), for example after
@@ -290,6 +291,16 @@ theorem ContMDiffOn.isImmersionAt_of_comp_eventuallyEq_id {g : N → M}
   have hcomp := mfderiv_comp x hg ((hf.contMDiffAt (hs.mem_nhds hx)).mdifferentiableAt hn0)
   rw [hgf.mfderiv_eq, mfderiv_id] at hcomp
   exact hf.isImmersionAt_of_hasLeftInverse_mfderiv hs hx hn ⟨_, fun u ↦ congr($hcomp u).symm⟩
+
+/-- A `C^n` map between boundaryless manifolds, with a finite-dimensional target model, is an
+immersion when it has a differentiable left inverse; for example, a smooth section of a fiber
+bundle, with the bundle projection as left inverse. -/
+theorem ContMDiff.isImmersion_of_leftInverse [FiniteDimensional 𝕜 E'] {g : N → M}
+    (hf : ContMDiff I J n f) (hn : 1 ≤ n)
+    (hg : MDifferentiable J I g) (hgf : LeftInverse g f) : IsImmersion I J n f :=
+  TauCeti.isImmersion_iff_forall_isImmersionAt.mpr fun x =>
+    hf.contMDiffOn.isImmersionAt_of_comp_eventuallyEq_id isOpen_univ (mem_univ x) hn (hg (f x))
+      (Filter.Eventually.of_forall hgf)
 
 variable {EP HP P : Type*} [NormedAddCommGroup EP] [NormedSpace 𝕜 EP] [CompleteSpace EP]
   [TopologicalSpace HP] {IP : ModelWithCorners 𝕜 EP HP} [TopologicalSpace P] [ChartedSpace HP P]
