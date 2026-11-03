@@ -114,9 +114,9 @@ theorem IsMorseSmale.exists_unstableSet_level_param {hX : IsAdaptedPseudoGradien
         hind]) hX0 hX0'
       (hX.mvfderiv_apply_lt_zero y
         (hX.mfderiv_ne_zero_of_mem_unstableSet_inter_stableSet hpx hy)).ne
-      φ.mem_maximalAtlas hyφ hPs (by simpa [P, MorseChart.splitCoordL_apply] using hloc)
+      φ.mem_maximalAtlas hyφ hPs (by simpa [P] using hloc)
   refine ⟨F, ι, φ.splitCoordL ∘L ι', hι0, hι, hιs, ?_, ?_, hexh⟩
-  · simpa [MorseChart.splitCoordL_apply] using φ.splitCoordL.hasStrictFDerivAt.comp 0 hd
+  · simpa using φ.splitCoordL.hasStrictFDerivAt.comp 0 hd
   · rwa [← ContinuousLinearMap.comp_assoc]
 
 /-- **The exit disc of a stable manifold.** Let `x` be a critical point with Morse chart `φ`, and
@@ -165,9 +165,9 @@ theorem IsMorseSmale.exists_stableSet_level_param {hX : IsAdaptedPseudoGradient 
       (by rw [sup_comm]; exact h.span_mtangentConeAt_sup_eq_top hx hr hy) (by omega) hX0 hX0'
       (hX.mvfderiv_apply_lt_zero y
         (hX.mfderiv_ne_zero_of_mem_unstableSet_inter_stableSet hxr hy)).ne
-      φ.mem_maximalAtlas hyφ hPs (by simpa [P, MorseChart.splitCoordL_apply] using hloc)
+      φ.mem_maximalAtlas hyφ hPs (by simpa [P] using hloc)
   refine ⟨F, ι, φ.splitCoordL ∘L ι', hι0, hι, hιs, ?_, ?_, hexh⟩
-  · simpa [MorseChart.splitCoordL_apply] using φ.splitCoordL.hasStrictFDerivAt.comp 0 hd
+  · simpa using φ.splitCoordL.hasStrictFDerivAt.comp 0 hd
   · rwa [← ContinuousLinearMap.comp_assoc]
 
 /-- **Gluing a broken trajectory in a Morse box.** Let `p`, `x`, `r` be critical points of

@@ -225,6 +225,7 @@ noncomputable def splitCoordL :
     E →L[ℝ] WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ)))
 
 /-- The split coordinates of a vector of the model space. -/
+@[simp]
 theorem splitCoordL_apply (v : E) : φ.splitCoordL v = φ.splitCoord (φ.coord v) := by
   rfl
 
