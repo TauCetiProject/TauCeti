@@ -63,6 +63,23 @@ theorem _root_.Function.Exact.prodMap
   · rintro ⟨y, rfl⟩
     exact Prod.ext ((h₁ _).2 ⟨y.1, rfl⟩) ((h₂ _).2 ⟨y.2, rfl⟩)
 
+/-- If `M --f--> N --g--> P` is exact at `N`, then so is `M --f--> N --g--> range g`, with `g`
+corestricted to its range. When `f` is injective, `0 → M → N → range g → 0` is then a short exact
+sequence. -/
+theorem _root_.Function.Exact.rangeRestrict {R M N P : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] [AddCommMonoid N] [Module R N] [AddCommMonoid P] [Module R P] {f : M →ₗ[R] N}
+    {g : N →ₗ[R] P} (h : Function.Exact f g) : Function.Exact f g.rangeRestrict := fun x ↦ by
+  rw [← h x, ← Subtype.coe_inj]
+  simp
+
+/-- If `M --f--> N --g--> P` is exact at `N`, then so is `range f --> N --g--> P`, with the
+inclusion of the range of `f`. -/
+theorem _root_.Function.Exact.range_subtype {R M N P : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] [AddCommMonoid N] [Module R N] [AddCommMonoid P] [Module R P] {f : M →ₗ[R] N}
+    {g : N →ₗ[R] P} (h : Function.Exact f g) :
+    Function.Exact (LinearMap.range f).subtype g :=
+  LinearMap.exact_iff.2 (by rw [Submodule.range_subtype, h.linearMap_ker_eq])
+
 /-- If `M --f--> N --g--> P` is exact at `N` and both `M` and `P` are finite-dimensional, then so
 is `N`.
 
@@ -73,8 +90,7 @@ theorem finiteDimensional_of_exact {k M N P : Type*} [DivisionRing k] [AddCommGr
     {g : N →ₗ[k] P}
     (h : Function.Exact f g) [FiniteDimensional k M] [FiniteDimensional k P] :
     FiniteDimensional k N :=
-  Module.Finite.of_exact (g := g.rangeRestrict)
-    (fun x ↦ by rw [← h x, ← Subtype.coe_inj]; simp) g.surjective_rangeRestrict
+  Module.Finite.of_exact h.rangeRestrict g.surjective_rangeRestrict
 
 /-- In a short exact sequence `0 ⟶ M ⟶ N ⟶ P ⟶ 0` of vector spaces with `N` finite-dimensional,
 `dim N = dim M + dim P`. -/
