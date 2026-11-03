@@ -432,6 +432,8 @@ noncomputable def hamiltonianFlowQuotientHomeomorph
   letI : AddAction (ι → ℝ) M :=
     { vadd v y := (hσ.hamiltonianFlowAction hF hcomm hc v).toMul y
       zero_vadd y := by
+        -- The goal `0 +ᵥ y = y` refers to the `vadd` field of the structure being built, which
+        -- `simp` cannot unfold (bare `simp` makes no progress), so expose it first.
         change (hσ.hamiltonianFlowAction hF hcomm hc 0).toMul y = y
         simp
       add_vadd := hσ.hamiltonianFlowAction_add_apply hF hcomm hc }
