@@ -41,6 +41,9 @@ open MulAction
 /-- The ordered points `0, 1, 2, …`, reduced modulo 100, used for the stabilizer chain. -/
 def basePoint (i : ℕ) : Fin 100 := Fin.ofNat 100 i
 
+/-- The stabilizer-chain base is the natural-number sequence reduced modulo 100. -/
+theorem basePoint_def (i : ℕ) : basePoint i = Fin.ofNat 100 i := (rfl)
+
 /-! ### Explicit orbit witnesses -/
 
 private def word (w : List (Fin 2)) : Equiv.Perm (Fin 100) :=
