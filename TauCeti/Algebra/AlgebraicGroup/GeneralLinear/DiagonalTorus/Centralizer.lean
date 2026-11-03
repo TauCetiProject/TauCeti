@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.DiagonalizableGroup.Centralizer.Basic
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.DiagonalTorus.Maximal
+import TauCeti.LinearAlgebra.Matrix.MonoidAlgebra
 
 /-!
 # The centralizer of the diagonal torus in the general linear group
@@ -84,23 +85,20 @@ private theorem isDiag_pointsMulEquiv_of_centralizerHopfIdeal_le_ker
   -- The point itself, viewed over `B`, has entries `m ⊗ 1`.
   have hM : ((pointsMulEquiv n (AlgHom.mapValue
         (Algebra.TensorProduct.includeLeft : A →ₐ[R] B) g) :
-        Matrix.GeneralLinearGroup (Fin n) B) : Matrix (Fin n) (Fin n) B) i j =
-      (pointsMulEquiv n g : Matrix (Fin n) (Fin n) A) i j ⊗ₜ[R] (1 : MonoidAlgebra R X) := by
+        Matrix.GeneralLinearGroup (Fin n) B) : Matrix (Fin n) (Fin n) B) =
+      (pointsMulEquiv n g : Matrix (Fin n) (Fin n) A).map
+        (Algebra.TensorProduct.includeLeft : A →ₐ[R] B) := by
     rw [pointsMulEquiv_mapValue]
-    simp only [Matrix.GeneralLinearGroup.map_apply, AlgHom.coe_toRingHom]
-    exact Algebra.TensorProduct.includeLeft_apply _
-  have hentry := congrArg (fun h ↦ ((pointsMulEquiv n h : Matrix.GeneralLinearGroup (Fin n) B) :
-    Matrix (Fin n) (Fin n) B) i j) hcomm.eq
-  simp only [map_mul, Units.val_mul] at hentry
-  rw [hD, Matrix.mul_diagonal, Matrix.diagonal_mul, hM, Algebra.TensorProduct.tmul_mul_tmul,
-    Algebra.TensorProduct.tmul_mul_tmul, mul_one, one_mul, one_mul, mul_one] at hentry
-  -- Read off the coefficient at the `i`-th coordinate character.
-  have hcoeff := congrArg
-    (LinearMap.tensorComponent (R := R) (M := A) (Comodule.monoidCoeff R X (e i))) hentry
+    ext a b
+    simp only [Matrix.GeneralLinearGroup.map_apply, AlgHom.coe_toRingHom, Matrix.map_apply]
+  have hm := congrArg (fun h ↦ ((pointsMulEquiv n h : Matrix.GeneralLinearGroup (Fin n) B) :
+    Matrix (Fin n) (Fin n) B)) hcomm.eq
+  simp only [map_mul, Units.val_mul] at hm
+  rw [hM, hD] at hm
   have he : e j ≠ e i := fun h ↦ hij
     (ULift.up_injective (Finsupp.single_left_injective one_ne_zero
       (Multiplicative.ofAdd.injective h))).symm
-  simpa [MonoidAlgebra.coeff_single, he] using hcoeff.symm
+  exact Matrix.apply_eq_zero_of_commute_diagonal_monomial _ e hm he
 
 /-- **The centralizer of the diagonal torus of `GL_n` is the diagonal torus**, as closed subgroup
 schemes over an arbitrary commutative ring. In coordinates, the centralizer ideal of the

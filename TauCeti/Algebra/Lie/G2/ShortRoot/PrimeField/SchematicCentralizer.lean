@@ -64,27 +64,12 @@ private theorem isDiag_of_centralizerHopfIdeal_le_ker
         Matrix.GeneralLinearGroup (Fin 7) B) : Matrix (Fin 7) (Fin 7) B) =
       Matrix.diagonal fun i ↦ (1 : A) ⊗ₜ[ZMod 3]
         MonoidAlgebra.single (χ i) (1 : ZMod 3) := by
-    have hπ : weightTorusCoordinateMap.hom.comp carrierQuotient.hom =
-        (GeneralLinear.weightTorusCoordinateMap (R := ZMod 3) weight).hom := by
-      rw [← CommHopfAlgCat.hom_comp,
-        CommHopfAlgCat.mkQuotient_comp_commonKernelLift, generator_inr,
-        GeneralLinear.weightTorusBaseChangeCoordinateMap_eq]
-    have hT : carrierGenericMatrix.map weightTorusCoordinateMap.hom.toAlgHom =
-        Matrix.diagonal (fun i ↦ MonoidAlgebra.single (χ i) (1 : ZMod 3)) := by
-      rw [carrierGenericMatrix_def, Matrix.map_map, ← AlgHom.coe_comp,
-        ← BialgHom.comp_toAlgHom, hπ]
-      apply Matrix.ext
-      intro i j
-      have hχ : Multiplicative.ofAdd (Finsupp.equivFunOnFinite.symm (weight i)) = χ i := by
-        apply Multiplicative.toAdd.injective
-        ext l
-        simp [χ, SplitTorus.toAdd_weightCharacter]
-      simpa only [Matrix.map_apply, BialgHom.coe_toAlgHom,
-        GeneralLinear.genericMatrix_apply, Matrix.diagonal_apply, hχ] using
-        (GeneralLinear.weightTorusCoordinateMap_X (R := ZMod 3) weight i j)
     rw [coe_pointsMulEquiv_eq_map_carrierGenericMatrix, BialgHom.mapDomain_apply,
-      ofConv_toConv, AlgHom.coe_comp, ← Matrix.map_map, hT, Matrix.diagonal_map (map_zero u.ofConv)]
-    rfl
+      ofConv_toConv, AlgHom.coe_comp, ← Matrix.map_map,
+      carrierGenericMatrix_map_weightTorusCoordinateMap, Matrix.diagonal_map (map_zero u.ofConv)]
+    apply congrArg Matrix.diagonal
+    funext i
+    exact Algebra.TensorProduct.includeRight_apply _
   have hM : ((pointsMulEquiv (CommAlgCat.of (ZMod 3) B)
         (AlgHom.mapValue (Algebra.TensorProduct.includeLeft : A →ₐ[ZMod 3] B) g) :
         Matrix.GeneralLinearGroup (Fin 7) B) : Matrix (Fin 7) (Fin 7) B) =
@@ -143,7 +128,7 @@ theorem centralizerHopfIdeal_weightTorusCoordinateMap :
 /-- A tangent vector has trivial adjoint character exactly when it lies in the tangent Lie
 algebra of the weight torus. In particular there are no additional infinitesimal centralizer
 directions. -/
-theorem cotangentLinearEquiv_mem_weightTorus_lieSubalgebra_iff
+theorem cotangentLinearEquiv_mem_weightTorusDefiningIdeal_lieSubalgebra_iff
     (x : Module.Dual (ZMod 3) (Bialgebra.CotangentSpace (ZMod 3) carrierAlgebra)) :
     Derivation.cotangentLinearEquiv (B := ZMod 3) x ∈ weightTorusDefiningIdeal.lieSubalgebra ↔
       x ∈ Derivation.adjointWeightSpace weightTorusCoordinateMap.hom 1 := by
