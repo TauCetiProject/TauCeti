@@ -12,7 +12,6 @@ public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Basis
 public import TauCeti.Algebra.Lie.Weights.Basis
 import TauCeti.Algebra.Lie.Weights.Basic
 import TauCeti.Algebra.Module.Submodule.Finite
-import TauCeti.Algebra.Lie.UniversalEnveloping.Module
 
 /-!
 # Comparing integral and rational weight spaces

@@ -55,8 +55,6 @@ space over the fraction field.
   submodule is a localization at the nonzero divisors.
 * `Submodule.exists_ne_zero_smul_mem_of_span_eq_top`: some nonzero multiple of every ambient
   vector lies in a submodule spanning the ambient space over the fraction field.
-* `Submodule.IsLattice.exists_ne_zero_smul_mem`: some nonzero multiple of every ambient
-  vector lies in a free full lattice submodule.
 * `Submodule.IsLattice.exists_ne_zero_forall_smul_mem`: a single nonzero scalar multiplies a
   finitely generated submodule into a full lattice submodule.
 * `Submodule.IsLattice.exists_maximalIdeal_pow_smul_le`: over a discrete valuation ring, a power
@@ -433,17 +431,6 @@ theorem isLocalizedModule_subtype (S : Submodule R V') [Module.Free R S] [S.IsLa
     IsLocalizedModule (nonZeroDivisors R) S.subtype :=
   (isLocalizedModule_iff_isBaseChange (nonZeroDivisors R) K _).mpr
     (Submodule.isBaseChange_subtype S)
-
-variable (K) in
-/-- Some nonzero multiple of every ambient vector lies in a free full lattice submodule. -/
-theorem exists_ne_zero_smul_mem (S : Submodule R V') [Module.Free R S] [S.IsLattice K]
-    (v : V') : ∃ r : R, r ≠ 0 ∧ r • v ∈ S := by
-  have hS := isLocalizedModule_subtype K S
-  obtain ⟨⟨x, r⟩, hr⟩ := hS.surj v
-  refine ⟨r, nonZeroDivisors.coe_ne_zero r, ?_⟩
-  rw [Submonoid.smul_def] at hr
-  rw [hr]
-  exact x.2
 
 variable (K) in
 /-- **Clearing denominators.** A single nonzero scalar multiplies a finitely generated submodule
