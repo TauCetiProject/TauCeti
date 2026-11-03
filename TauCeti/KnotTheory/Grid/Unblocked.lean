@@ -377,6 +377,7 @@ theorem prod_OColumnsOfSquares_univ_erase_product_singleton {M : Type*} [CommMon
   simp only [Finset.mem_erase, Finset.mem_univ, and_true, ne_eq, h, ite_not]
 
 /-- The `O`-markings covered by a union of sets of squares are those covered by either set. -/
+@[simp]
 theorem OColumnsOfSquares_union (A B : Finset (Fin n × Fin n)) :
     G.OColumnsOfSquares (A ∪ B) = G.OColumnsOfSquares A ∪ G.OColumnsOfSquares B := by
   ext c
@@ -384,6 +385,7 @@ theorem OColumnsOfSquares_union (A B : Finset (Fin n × Fin n)) :
 
 /-- The `O`-markings covered by an intersection of sets of squares are those covered by both
 sets. -/
+@[simp]
 theorem OColumnsOfSquares_inter (A B : Finset (Fin n × Fin n)) :
     G.OColumnsOfSquares (A ∩ B) = G.OColumnsOfSquares A ∩ G.OColumnsOfSquares B := by
   ext c
