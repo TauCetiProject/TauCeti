@@ -63,6 +63,9 @@ the real place of `ℚ` in that of `ℚ(i)/ℚ` (`mem_abelianConductor_infiniteP
 
 * `TauCeti.ClassFieldTheory.isAdmissibleModulus_iff_abelianConductor_dvd`: a modulus is
   admissible exactly when the conductor divides it.
+* `TauCeti.ClassFieldTheory.exponent_abelianConductor_le_iff`: the exponent of a finite place
+  `v` in the conductor is at most `n` exactly when the classes of the ideles concentrated at `v`
+  with component in `U(K_v, n)` are norms from `L`.
 * `TauCeti.ClassFieldTheory.abelianConductor_dvd_abelianConductor`: in a tower `K ⊆ L ⊆ M`, the
   conductor of `L/K` divides that of `M/K`.
 * `TauCeti.ClassFieldTheory.ofCompletion_neg_one_notMem_range_ideleClassNormMap`: if `L` contains a
@@ -202,6 +205,16 @@ theorem isAdmissibleModulus_iff_abelianConductor_dvd (𝔪 : Modulus K) :
   rw [abelianConductor, OpenSubgroup.ideleClassConductor_dvd_iff]
   -- The open subgroup `⟨N_{L/K}(C_L), _⟩` coerces to `N_{L/K}(C_L)` by projection.
   exact isAdmissibleModulus_iff.symm
+
+/-- **The exponents of the conductor are local.** The exponent of a finite place `v` of `K` in the
+conductor of `L/K` is at most `n` exactly when the class of every idele concentrated at `v` with
+component in `U(K_v, n)` is a norm from `L`. -/
+theorem exponent_abelianConductor_le_iff (v : HeightOneSpectrum (𝓞 K)) {n : ℕ} :
+    (abelianConductor K L).exponent v ≤ n ↔
+      ∀ u ∈ TauCeti.unitFiltration (v.adicCompletion K) n,
+        (IdeleGroup.ofAdicCompletion (𝓞 K) K v u : IdeleClassGroup (𝓞 K) K) ∈
+          (ideleClassNormMap K L : IdeleClassGroup (𝓞 L) L →* IdeleClassGroup (𝓞 K) K).range :=
+  OpenSubgroup.exponent_ideleClassConductor_le_iff
 
 variable (K L) in
 /-- The conductor of `L/K` is admissible for `L/K`. -/
