@@ -35,9 +35,8 @@ variable {V : Type u} {G : SimpleGraph V}
 theorem IsVertexConnected.exists_isCycle_mem_support [Finite V] (hG : G.IsVertexConnected 2)
     {u v : V} (huv : u ≠ v) : ∃ c : G.Walk u u, c.IsCycle ∧ v ∈ c.support := by
   have hcard : 2 < Nat.card V := by
-    have h := hG.add_one_le_card
-    rw [ENat.card_eq_coe_natCard] at h
-    exact_mod_cast h
+    have hcard' : 2 + 1 ≤ Nat.card V := hG.add_one_le_natCard
+    omega
   obtain ⟨P, hPinj, hP, hPdisj⟩ :=
     (isVertexConnected_iff_forall_exists_paths hcard).1 hG u v huv
   let p := P 0
@@ -63,7 +62,7 @@ theorem isVertexConnected_two_iff_forall_exists_isCycle_mem_support [Finite V]
     rw [isVertexConnected_def]
     refine ⟨?_, fun u v ↦ ?_⟩
     · rw [ENat.card_eq_coe_natCard]
-      exact_mod_cast hcard
+      exact Nat.cast_le.2 hcard
     · obtain rfl | huv := eq_or_ne u v
       · exact .rfl
       obtain ⟨c, hc, hvc⟩ := hcyc u v huv
@@ -86,52 +85,42 @@ private theorem IsVertexConnected.exists_isCycle_mem_edges_of_notMem [Finite V]
     (hG : G.IsVertexConnected 2) {v : V} {e : Sym2 V} (he : e ∈ G.edgeSet) (hv : v ∉ e) :
     ∃ c : G.Walk v v, c.IsCycle ∧ e ∈ c.edges := by
   classical
-  let a := e.out.1
-  let b := e.out.2
-  have hab : a ≠ b := by
-    intro hab
-    apply G.not_isDiag_of_mem_edgeSet he
-    rw [← Sym2.mk_fst_out_snd_out e, Sym2.mk_isDiag_iff]
-    exact hab
-  have hva : v ≠ a := fun h ↦ hv (h ▸ Sym2.out_fst_mem e)
-  have hvb : v ≠ b := fun h ↦ hv (h ▸ Sym2.out_snd_mem e)
-  let U : Finset V := {a, b}
-  have hvU : v ∉ U := by simp [U, hva, hvb]
-  obtain ⟨u, P, huinj, huU, hP, hint, hdisj⟩ := hG.exists_fan hvU (by simp [U, hab])
-  have hu01 : u 0 ≠ u 1 := huinj.ne (by decide)
-  have hue : ∀ i, u i ∈ e := fun i ↦ by
-    have h := huU i
-    simp only [U, mem_insert, mem_singleton] at h
-    obtain h | h := h
-    · exact h ▸ Sym2.out_fst_mem e
-    · exact h ▸ Sym2.out_snd_mem e
-  have heq : s(u 0, u 1) = e := (Sym2.mem_and_mem_iff hu01).1 ⟨hue 0, hue 1⟩ |>.symm
-  have hadj : G.Adj (u 0) (u 1) := by
-    rw [← G.mem_edgeSet, heq]
-    exact he
-  have hu0P1 : u 0 ∉ (P 1).support := by
-    intro hmem
-    have := hint 1 (u 0) hmem hu01
-    exact this (huU 0)
-  let q : G.Walk (u 0) v := (P 1).reverse.cons hadj
-  have hq : q.IsPath := (Walk.isPath_reverse_iff (P 1) |>.2 (hP 1)).cons (by
-    simpa [Walk.support_reverse] using hu0P1)
-  have htail : (P 0).support.tail.Disjoint q.support.tail := by
-    rw [List.disjoint_left]
-    intro x hx0 hxq
-    have hx1 : x ∈ (P 1).support := by simpa [q, Walk.support_reverse] using hxq
-    have hxv := hdisj (by decide : (0 : Fin 2) ≠ 1) x
-      (List.mem_of_mem_tail hx0) hx1
-    subst x
-    exact (hP 0).start_notMem_tail_support hx0
-  refine ⟨(P 0).append q, (hP 0).isCycle_append hq htail ?_, ?_⟩
-  · right
-    simp only [q, Walk.length_cons, Walk.length_reverse]
-    have hvu1 : v ≠ u 1 := fun h ↦ hvU (h ▸ huU 1)
-    have := (P 1).not_nil_of_ne hvu1
-    rw [Walk.not_nil_iff_lt_length] at this
-    omega
-  · rw [Walk.edges_append, List.mem_append]
+  induction e using Sym2.ind with
+  | _ a b =>
+    have hab : a ≠ b := G.ne_of_adj (G.mem_edgeSet.1 he)
+    have hva : v ≠ a := fun h ↦ hv (by simp [h])
+    have hvb : v ≠ b := fun h ↦ hv (by simp [h])
+    let U : Finset V := {a, b}
+    have hvU : v ∉ U := by simp [U, hva, hvb]
+    obtain ⟨u, P, huinj, huU, hP, hint, hdisj⟩ := hG.exists_fan hvU (by simp [U, hab])
+    have hu01 : u 0 ≠ u 1 := huinj.ne (by decide)
+    have hue : ∀ i, u i ∈ s(a, b) := fun i ↦ by simpa [U, Sym2.mem_iff] using huU i
+    have heq : s(u 0, u 1) = s(a, b) :=
+      (Sym2.mem_and_mem_iff hu01).1 ⟨hue 0, hue 1⟩ |>.symm
+    have hadj : G.Adj (u 0) (u 1) := by
+      rw [← G.mem_edgeSet, heq]
+      exact he
+    have hu0P1 : u 0 ∉ (P 1).support := by
+      intro hmem
+      have := hint 1 (u 0) hmem hu01
+      exact this (huU 0)
+    let q : G.Walk v (u 0) := (P 1).concat hadj.symm
+    have hq : q.IsPath := (hP 1).concat hu0P1 hadj.symm
+    have hpq : (P 0).InternallyDisjoint q := by
+      rw [Walk.internallyDisjoint_def]
+      intro x hx0 hxq
+      obtain hx1 | rfl : x ∈ (P 1).support ∨ x = u 0 := by simpa [q] using hxq
+      · exact .inl (hdisj (by decide : (0 : Fin 2) ≠ 1) x hx0 hx1)
+      · exact .inr rfl
+    have hu1P0 : u 1 ∉ (P 0).support :=
+      fun hmem ↦ hint 0 (u 1) hmem hu01.symm (huU 1)
+    have hpq_ne : P 0 ≠ q := by
+      intro hpq_eq
+      apply hu1P0
+      rw [hpq_eq]
+      simp [q]
+    refine ⟨(P 0).append q.reverse, hpq.isCycle_append_reverse (hP 0) hq hpq_ne, ?_⟩
+    rw [Walk.edges_append, List.mem_append]
     right
     rw [← heq]
     simp [q]
@@ -147,9 +136,7 @@ theorem IsVertexConnected.exists_isCycle_mem_edges [Finite V]
       (G.not_isDiag_of_mem_edgeSet he)
     obtain ⟨w, -, hw⟩ := exists_mem_notMem_of_card_lt_card (s := e.toFinset) (t := univ) (by
       rw [hedge, card_univ, ← Nat.card_eq_fintype_card]
-      have hcard := hG.add_one_le_card
-      rw [ENat.card_eq_coe_natCard] at hcard
-      exact_mod_cast hcard)
+      exact hG.add_one_le_natCard)
     obtain ⟨c, hc, hec⟩ := hG.exists_isCycle_mem_edges_of_notMem he
       (by simpa [Sym2.mem_toFinset] using hw)
     have hvc : v ∈ c.support := c.mem_support_of_mem_edges hec hv
@@ -170,7 +157,7 @@ theorem isVertexConnected_two_iff_forall_exists_isCycle_mem_edges [Finite V]
     intro u v huv
     have hcardEN : (3 : ℕ∞) ≤ ENat.card V := by
       rw [ENat.card_eq_coe_natCard]
-      exact_mod_cast hcard
+      exact Nat.cast_le.2 hcard
     obtain ⟨w, hwv, -⟩ := ENat.exists_ne_ne_of_three_le hcardEN v v
     obtain ⟨x, hvx⟩ := (hconn.preconnected v w).nonempty_neighborSet_left hwv.symm
     obtain ⟨c, hc, hec⟩ := hcyc u (G.mem_edgeSet.2 hvx)
