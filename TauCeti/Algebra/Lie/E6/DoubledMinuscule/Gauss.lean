@@ -60,19 +60,19 @@ private theorem inl_mul_inr_mulVec_block (i : Fin 6) (k : Fin 54)
   set r := matrixIndexEquiv (reflection i (matrixIndexEquiv.symm k)) with hrdef
   set s := (summandSign (matrixIndexEquiv.symm k) : A) with hsdef
   have hr : matrixWeight r i = 1 := by
-    have hw : matrixWeight r i = -matrixWeight k i := by simp [r, matrixWeight_apply]
-    omega
-  have hs : s ^ 2 = 1 := by
-    rw [hsdef, sq, ← Int.cast_mul, summandSign_mul_self, Int.cast_one]
-  have hrback : matrixIndexEquiv (reflection i (matrixIndexEquiv.symm r)) = k := by
-    simp [r]
-  have hsr : (summandSign (matrixIndexEquiv.symm r) : A) = s := by simp [r, s]
+    rw [hrdef, matrixWeight_reflection_apply_self, hk]
+    norm_num
+  have hs : s ^ 2 = 1 := summandSign_cast_sq _
+  have hrback : matrixIndexEquiv (reflection i (matrixIndexEquiv.symm r)) = k :=
+    matrixIndexEquiv_reflection_involutive i k
+  have hsr : (summandSign (matrixIndexEquiv.symm r) : A) = s :=
+    congrArg (Int.cast : ℤ → A) (summandSign_matrixIndexEquiv_reflection i k)
   simp only [← Matrix.mulVec_mulVec, Matrix.mulVec_add, rootSubgroupPoints_mulVec_single,
     Sum.elim_inl, Sum.elim_inr, id_eq, hk, hr, hrback, hsr, ← hrdef, ← hsdef,
     Int.reduceEq, ↓reduceIte, add_zero]
   ext l
   simp only [Pi.add_apply, Pi.single_apply]
-  split_ifs <;> ring_nf <;> simp [hs]
+  split_ifs <;> first | ring1 | linear_combination a * b * y * hs
 
 private theorem inr_torus_inl_mulVec_block (i : Fin 6) (k : Fin 54)
     (hk : matrixWeight k i = -1) (c d x y : A) (u : Aˣ) :
@@ -91,11 +91,12 @@ private theorem inr_torus_inl_mulVec_block (i : Fin 6) (k : Fin 54)
   set r := matrixIndexEquiv (reflection i (matrixIndexEquiv.symm k)) with hrdef
   set s := (summandSign (matrixIndexEquiv.symm k) : A) with hsdef
   have hr : matrixWeight r i = 1 := by
-    have hw : matrixWeight r i = -matrixWeight k i := by simp [r, matrixWeight_apply]
-    omega
-  have hrback : matrixIndexEquiv (reflection i (matrixIndexEquiv.symm r)) = k := by
-    simp [r]
-  have hsr : (summandSign (matrixIndexEquiv.symm r) : A) = s := by simp [r, s]
+    rw [hrdef, matrixWeight_reflection_apply_self, hk]
+    norm_num
+  have hrback : matrixIndexEquiv (reflection i (matrixIndexEquiv.symm r)) = k :=
+    matrixIndexEquiv_reflection_involutive i k
+  have hsr : (summandSign (matrixIndexEquiv.symm r) : A) = s :=
+    congrArg (Int.cast : ℤ → A) (summandSign_matrixIndexEquiv_reflection i k)
   simp only [← Matrix.mulVec_mulVec, Matrix.mulVec_add, rootSubgroupPoints_mulVec_single,
     weightTorusPoints_mulVec_single, Sum.elim_inl, Sum.elim_inr, id_eq, hk, hr,
     hrback, hsr, ← hrdef, ← hsdef, Int.reduceEq, ↓reduceIte, add_zero,
@@ -122,9 +123,8 @@ private theorem gauss_mulVec_block (i : Fin 6) (k : Fin 54)
         (Pi.single k x + Pi.single r y) := by
   dsimp only
   rw [inl_mul_inr_mulVec_block i k hk, inr_torus_inl_mulVec_block i k hk]
-  set s := (summandSign (matrixIndexEquiv.symm k) : A) with hsdef
-  have hs : s ^ 2 = 1 := by
-    rw [hsdef, sq, ← Int.cast_mul, summandSign_mul_self, Int.cast_one]
+  set s := (summandSign (matrixIndexEquiv.symm k) : A)
+  have hs : s ^ 2 = 1 := summandSign_cast_sq _
   have htop : (u : A) * (y + a * ↑u⁻¹ * s * x) = a * s * x + (1 + a * b) * y := by
     calc
       _ = a * s * x * (↑u * ↑u⁻¹) + ↑u * y := by ring
@@ -134,8 +134,7 @@ private theorem gauss_mulVec_block (i : Fin 6) (k : Fin 54)
   symm
   calc
     _ = (↑u⁻¹ * (1 + a * b)) * x + (↑u⁻¹ * (1 + a * b)) * b * s * y := by
-      ring_nf
-      simp [hs]
+      linear_combination ↑u⁻¹ * a * b * x * hs
     _ = _ := by rw [← hu, Units.inv_mul]; ring
 
 /-- The positive-negative simple-root product admits Gauss factorization with pivot
@@ -163,10 +162,11 @@ theorem rootSubgroupPoints_inl_mul_inr (i : Fin 6) (a b : A) (u : Aˣ)
       add_zero, zpow_zero, Units.val_one, one_mul]
   · set r := matrixIndexEquiv (reflection i (matrixIndexEquiv.symm k)) with hrdef
     have hr : matrixWeight r i = -1 := by
-      have hw : matrixWeight r i = -matrixWeight k i := by simp [r, matrixWeight_apply]
-      rw [hw, hk]
-    simpa only [r, Equiv.symm_apply_apply, reflection_apply_apply, Equiv.apply_symm_apply,
-      Pi.single_zero, zero_add] using gauss_mulVec_block i r hr a b 0 1 u hu
+      rw [hrdef, matrixWeight_reflection_apply_self, hk]
+    have hrback : matrixIndexEquiv (reflection i (matrixIndexEquiv.symm r)) = k :=
+      matrixIndexEquiv_reflection_involutive i k
+    simpa only [hrback, Pi.single_zero, zero_add] using
+      gauss_mulVec_block i r hr a b 0 1 u hu
 
 /-- The negative-positive simple-root product has the reverse Gauss factorization, with
 simple-coroot factor `αᵢ∨(u⁻¹)` for the same pivot `u = 1 + a * b`. -/

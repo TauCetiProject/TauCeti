@@ -230,6 +230,12 @@ theorem summandSign_mul_self (a : Fin 27 ⊕ Fin 27) :
     summandSign a * summandSign a = 1 := by
   cases a <;> simp
 
+/-- The summand sign still squares to one after changing the coefficient ring. -/
+@[simp]
+theorem summandSign_cast_sq {A : Type*} [Ring A] (a : Fin 27 ⊕ Fin 27) :
+    (summandSign a : A) ^ 2 = 1 := by
+  rw [sq, ← Int.cast_mul, summandSign_mul_self, Int.cast_one]
+
 /-- The Cartan generators are diagonal with the doubled minuscule weights on the diagonal. -/
 @[simp]
 theorem cartanGeneratorMatrix_apply (i : Fin 6) (a b : Fin 27 ⊕ Fin 27) :

@@ -206,7 +206,9 @@ theorem rootSubgroupPoints_mulVec_single {A : Type*} [CommRing A]
   rw [coe_rootSubgroupPoints_eq_one_add_smul, toAdd_ofAdd, Matrix.add_mulVec,
     Matrix.one_mulVec, Matrix.smul_mulVec, Matrix.mulVec_single]
   ext l
-  simp [Matrix.col_apply, rootIntMatrix_apply, Pi.single_apply]
-  split_ifs <;> simp_all [mul_left_comm, mul_comm]
+  simp only [Matrix.col_apply, Matrix.map_apply, rootIntMatrix_apply,
+    Pi.add_apply, Pi.smul_apply, Pi.single_apply, ite_apply, Pi.zero_apply,
+    op_smul_eq_smul, smul_eq_mul]
+  split_ifs <;> ring
 
 end TauCeti.E6DoubledMinuscule
