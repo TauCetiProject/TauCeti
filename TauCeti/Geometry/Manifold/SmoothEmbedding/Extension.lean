@@ -13,7 +13,10 @@ public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 # Extending smooth data from an embedded submanifold
 
 A smooth embedding of a boundaryless manifold admits local smooth retractions.
-Consequently, vector-valued smooth data on its source extend to the ambient
+In particular a smooth map which near a point takes values in the image of the embedding factors
+there through the embedding by a map smooth at that point
+(`Manifold.IsImmersionAt.exists_contMDiffAt_comp_eventuallyEq`). Consequently,
+vector-valued smooth data on its source extend to the ambient
 manifold along any closed portion of its image. The ambient extension can be
 supported inside a prescribed open neighbourhood, and has compact support when
 the portion is compact. Neither the full embedded image nor the source needs to
@@ -99,6 +102,24 @@ theorem exists_contMDiffOn_retraction (h : IsImmersionAt I J n f x) (hf : IsEmbe
       exact hy.2
     rw [Function.comp_apply, hqf y hydom]
     exact (h.domChart.extend I).left_inv (by rwa [h.domChart.extend_source])
+
+/-- A map `g` which is `C^n` at `p`, with `g p = f x`, and which near `p` takes values in the image
+of a topological embedding `f` with a `C^n` immersion normal form at `x`, factors near `p` through
+`f` by a map which is `C^n` at `p` and sends `p` to `x`: compose `g` with a local retraction. -/
+theorem exists_contMDiffAt_comp_eventuallyEq (h : IsImmersionAt I J n f x) (hf : IsEmbedding f)
+    {E'' H'' P : Type*} [NormedAddCommGroup E''] [NormedSpace 𝕜 E''] [TopologicalSpace H'']
+    {K : ModelWithCorners 𝕜 E'' H''} [TopologicalSpace P] [ChartedSpace H'' P]
+    {g : P → N} {p : P} (hg : ContMDiffAt K J n g p) (hgp : g p = f x)
+    (hrange : ∀ᶠ q in 𝓝 p, g q ∈ range f) :
+    ∃ τ : P → M, ContMDiffAt K I n τ p ∧ τ p = x ∧ f ∘ τ =ᶠ[𝓝 p] g := by
+  obtain ⟨V, hV, hxV, r, hr, hrf⟩ := h.exists_contMDiffOn_retraction hf
+  have hgV : g p ∈ V := hgp ▸ hxV
+  refine ⟨r ∘ g, (hr.contMDiffAt (hV.mem_nhds hgV)).comp p hg, by
+    rw [Function.comp_apply, hgp, hrf x hxV], ?_⟩
+  filter_upwards [hg.continuousAt.preimage_mem_nhds (hV.mem_nhds hgV), hrange] with q hqV hq
+  obtain ⟨y, hy⟩ := hq
+  have hyV : f y ∈ V := hy ▸ hqV
+  rw [Function.comp_apply, Function.comp_apply, ← hy, hrf y hyV]
 
 end Local
 
