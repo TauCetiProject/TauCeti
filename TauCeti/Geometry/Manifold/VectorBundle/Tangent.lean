@@ -7,10 +7,10 @@ module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 public import TauCeti.Geometry.Manifold.Instances.Icc
+public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 public import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 import TauCeti.Geometry.Manifold.MFDeriv.Chart
-import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # Tangent-bundle trivializations, coordinate changes on `T(TM)`, and open submanifolds
@@ -72,6 +72,9 @@ are those of its summands, so its tangent coordinate changes are those of the su
   tangent-space equivalence.
 * `TauCeti.Manifold.tangentMap_subtype_val`: the tangent map of the inclusion under this
   equivalence.
+* `TauCeti.Manifold.mvfderiv_subtype_val_apply` and
+  `TauCeti.Manifold.injective_mvfderiv_subtype_val`: for an open subset of a normed space, the
+  derivative of the inclusion, read in the normed space, fixes each tangent vector.
 * `TauCeti.Manifold.tangentSpaceOpenEquiv_mfderiv_apply`: under this equivalence, the differential
   of a map between open submanifolds is that of any ambient map it restricts.
 * `TauCeti.Manifold.instT2SpaceTangentBundleModelSpace`: a model space has a Hausdorff tangent
@@ -741,6 +744,19 @@ theorem mfderiv_inclusion_apply {U V : Opens M} (h : U ≤ V) (x : U)
     ((contMDiff_inclusion h).mdifferentiableAt one_ne_zero) mdifferentiableAt_id rfl v
   rw [tangentSpaceOpenEquiv_apply, tangentSpaceOpenEquiv_apply, mfderiv_id] at h'
   exact h'
+
+/-- The derivative of the inclusion of an open subset of a normed space, read in the normed space,
+maps each tangent vector to itself. -/
+theorem mvfderiv_subtype_val_apply {U : Opens E} (x : U) (v : TangentSpace 𝓘(𝕜, E) x) :
+    mvfderiv 𝓘(𝕜, E) (Subtype.val : U → E) x v = v := by
+  rw [mvfderiv_apply_eq_mfderiv_apply, mfderiv_subtype_val]
+  exact tangentSpaceOpenEquiv_apply x v
+
+/-- The derivative of the inclusion of an open subset of a normed space, read in the normed space,
+is injective. -/
+theorem injective_mvfderiv_subtype_val {U : Opens E} (x : U) :
+    Function.Injective (mvfderiv 𝓘(𝕜, E) (Subtype.val : U → E) x) := fun v w h ↦ by
+  rwa [mvfderiv_subtype_val_apply, mvfderiv_subtype_val_apply] at h
 
 /-- The tangent bundle of a model space is Hausdorff. -/
 theorem instT2SpaceTangentBundleModelSpace :

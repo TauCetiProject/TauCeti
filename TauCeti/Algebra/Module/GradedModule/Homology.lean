@@ -35,7 +35,8 @@ moves every homogeneous piece of the homology by the same degree
 * `TauCeti.InternalGrading.mem_homology_piece_iff`: a homology class is homogeneous of degree `p`
   exactly when it is the class of a cycle of degree `p`, and
   `TauCeti.InternalGrading.homologyπ_mem_homology_piece`: the class of a homogeneous cycle is
-  homogeneous of the same degree.
+  homogeneous of the same degree, so the quotient map from the cycles has degree zero
+  (`TauCeti.InternalGrading.isHomogeneous_homologyπ`).
 * `TauCeti.InternalGrading.smul_mem_homology_piece`: a scalar moving the degree of `M` by `q`
   moves the degree of the homology by `q`.
 -/
@@ -90,6 +91,13 @@ theorem mem_homology_piece_iff {p : ι} {y : d.homology hd} :
 theorem homologyπ_mem_homology_piece {p : ι} {z : _root_.LinearMap.ker d}
     (hz : (z : M) ∈ G.piece p) : d.homologyπ hd z ∈ (G.homology hhom hd).piece p :=
   (G.mem_homology_piece_iff hhom hd).mpr ⟨z, hz, rfl⟩
+
+/-- The quotient map from the cycles onto the homology has degree zero. -/
+theorem isHomogeneous_homologyπ :
+    LinearMap.IsHomogeneous (d.homologyπ hd) (G.ker hhom).piece (G.homology hhom hd).piece 0 :=
+  LinearMap.isHomogeneous_def.2 fun _ z hz ↦ by
+    rw [add_zero]
+    exact G.homologyπ_mem_homology_piece hhom hd ((G.mem_ker_piece hhom).1 hz)
 
 /-- An element of the ring of `d` which moves every homogeneous piece of `M` up by `q` moves every
 homogeneous piece of the homology of `d` up by `q`. -/

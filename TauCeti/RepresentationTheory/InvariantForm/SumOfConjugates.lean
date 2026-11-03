@@ -105,7 +105,7 @@ theorem le_sumOfConjugatesForm_apply_self {σ : Representation k G W} {B : Bilin
   rw [sumOfConjugatesForm_apply]
   have h := Finset.single_le_sum (f := fun g : G => B (σ g x) (σ g x)) (fun g _ => hB _)
     (Finset.mem_univ 1)
-  rwa [map_one, Module.End.one_apply] at h
+  rwa [map_one, one_apply_eq_self] at h
 
 /-- The sum over the conjugates of a positive-definite form is positive definite. -/
 theorem posDef_toQuadraticMap_sumOfConjugatesForm {σ : Representation k G W} {B : BilinForm k W}

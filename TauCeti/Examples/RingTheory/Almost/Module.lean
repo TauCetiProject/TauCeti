@@ -7,91 +7,81 @@ module
 
 import TauCeti.RingTheory.Almost.Module
 import TauCeti.RingTheory.Almost.ValuationRing
-import TauCeti.NumberTheory.Padics.Complex.MaximalIdeal
 
 /-!
-# Examples for the category of almost modules
+# Examples of almost modules
 
-These examples test `TauCeti.Almost.Module` and the almostification functor `toAlmost`:
+These examples test the category `TauCeti.Almost.Module S` of almost modules and the
+almostification functor `toAlmost S`:
 
-* for the setup of `𝓞_ℂ_[p]`, the almostification of the residue field is zero, while that of
-  `𝓞_ℂ_[p] ⧸ (p)` is not;
-* for every setup, the almostification of `V ⧸ m` is zero, the inclusion `m → V` becomes an
-  isomorphism, and Hom-types of almost modules are `V`-modules;
-* for the classical setup, almostification is an equivalence, and the almostification of `ℤ` is
-  nonzero;
-* for the zero setup, every almost module is zero, although `ℤ` is not;
-* multiplication by `2` on `ℤ` becomes a monomorphism but not an epimorphism for the classical
-  setup;
-* every exact functor out of `ModuleCat ℤ` factors exactly through almostification for the
-  classical setup, while the identity functor does not for the zero setup.
+* `V ⧸ m` almostifies to zero for every setup; for a valuation ring with non-finitely-generated
+  maximal ideal `m` so does the residue field, while `V ⧸ (ε)` does not for `ε ∈ m`;
+* for the classical setup `(ℤ, ℤ)`, `ℤ^a` is not zero, multiplication by `2` on `ℤ` becomes a
+  monomorphism but neither an epimorphism nor an isomorphism, and `toAlmost` is an equivalence;
+* for the zero setup every almost module is zero;
+* the inclusion `m ⊆ V` becomes an isomorphism, `toAlmost` is exact and `V`-linear, and the
+  factorisation of `toAlmost` through itself is the identity.
+
+## References
+
+* O. Gabber, L. Ramero, *Almost ring theory*, Lecture Notes in Mathematics 1800, §2.2.
+* P. Scholze, *Perfectoid spaces*, Publ. Math. IHÉS 116 (2012), §4.
 -/
 
 open CategoryTheory Limits IsLocalRing TauCeti.Almost TauCeti.Almost.BasicSetup
+  TauCeti.Almost.Module
 
 variable {V : Type*} [CommRing V]
 
-/-! ### Every setup -/
+/-! ### Zero and nonzero almost modules -/
 
--- The almostification of `V ⧸ m` is zero.
+-- `V ⧸ m` almostifies to zero for every setup.
 example (S : BasicSetup V) : IsZero ((toAlmost S).obj (ModuleCat.of V (V ⧸ S.ideal))) :=
-  (isZero_toAlmost_obj_iff _).mpr S.isAlmostZero_quotient
+  (isZero_toAlmost_obj_iff S _).mpr S.isAlmostZero_quotient
 
--- The inclusion `m → V` becomes an isomorphism of almost modules.
+section ValuationRing
+
+variable [IsDomain V] [ValuationRing V] (h : ¬ (maximalIdeal V).FG)
+
+-- For a valuation ring, the residue field almostifies to zero.
+example : IsZero ((toAlmost (ofValuationRing h)).obj (ModuleCat.of V (ResidueField V))) :=
+  (isZero_toAlmost_obj_iff _ _).mpr (ofValuationRing_isAlmostZero_residueField h)
+
+-- For `ε ∈ m`, `V ⧸ (ε)` does not almostify to zero.
+example {ε : V} (hε : ε ∈ maximalIdeal V) :
+    ¬ IsZero ((toAlmost (ofValuationRing h)).obj (ModuleCat.of V (V ⧸ Ideal.span {ε}))) := by
+  rw [isZero_toAlmost_obj_iff, ofValuationRing_isAlmostZero_quotient_span_singleton_iff]
+  exact (mem_maximalIdeal ε).mp hε
+
+end ValuationRing
+
+-- For the classical setup, `ℤ^a` is not zero.
+example : ¬ IsZero ((toAlmost (classical ℤ)).obj (ModuleCat.of ℤ ℤ)) := by
+  rw [isZero_toAlmost_obj_iff, isAlmostZero_classical_iff]
+  intro h
+  exact zero_ne_one (Subsingleton.elim (0 : ℤ) 1)
+
+-- For the zero setup, every almost module is zero.
+example (X : Module (zero V)) : IsZero X :=
+  isZero_of_ideal_eq_bot _ zero_ideal X
+
+/-! ### Almost isomorphisms -/
+
+-- The inclusion `m ⊆ V` becomes an isomorphism `m^a ≅ V^a`.
 example (S : BasicSetup V) : IsIso ((toAlmost S).map (ModuleCat.ofHom S.ideal.subtype)) :=
-  (isIso_toAlmost_map_iff _).mpr S.isAlmostIso_subtype
-
--- Hom-types of almost modules are `V`-modules, and almostification is `V`-linear.
-noncomputable example (S : BasicSetup V) (X Y : Module S) : _root_.Module V (X ⟶ Y) :=
   inferInstance
 
-example (S : BasicSetup V) : (toAlmost S).Linear V := inferInstance
+-- For the classical setup, multiplication by `2` on `ℤ` does not become an isomorphism.
+example : ¬ IsIso ((toAlmost (classical ℤ)).map
+    (ModuleCat.ofHom ((2 : ℤ) • LinearMap.id (R := ℤ) (M := ℤ)))) := by
+  rw [isIso_toAlmost_map_iff, ModuleCat.hom_ofHom, isAlmostIso_classical_iff]
+  rintro ⟨-, hs⟩
+  obtain ⟨x, hx⟩ := hs 1
+  simp only [LinearMap.smul_apply, LinearMap.id_apply, smul_eq_mul] at hx
+  omega
 
-/-! ### The integers of `ℂ_p` -/
-
-section PadicComplex
-
-variable (p : ℕ) [Fact p.Prime]
-
--- The almostification of the residue field of `𝓞_ℂ_[p]` is zero, while that of `𝓞_ℂ_[p] ⧸ (p)`
--- is not.
-example : IsZero ((toAlmost (ofValuationRing (TauCeti.PadicComplexInt.not_fg_maximalIdeal p))).obj
-    (ModuleCat.of 𝓞_ℂ_[p] (ResidueField 𝓞_ℂ_[p]))) := by
-  simp
-
-example : ¬ IsZero ((toAlmost (ofValuationRing (TauCeti.PadicComplexInt.not_fg_maximalIdeal p))).obj
-    (ModuleCat.of 𝓞_ℂ_[p] (𝓞_ℂ_[p] ⧸ Ideal.span {(p : 𝓞_ℂ_[p])}))) := by
-  refine (isZero_toAlmost_obj_iff _).not.mpr
-    ((ofValuationRing_isAlmostZero_quotient_span_singleton_iff _).not.mpr
-      ((mem_maximalIdeal _).mp (TauCeti.PadicComplexInt.natCast_mem_maximalIdeal p)))
-
-end PadicComplex
-
-/-! ### The classical and zero setups -/
-
--- For the classical setup, almostification is an equivalence of categories.
-example : (toAlmost (classical V)).IsEquivalence := inferInstance
-
--- The almostification of `ℤ` is nonzero for the classical setup.
-example : ¬ IsZero ((toAlmost (classical ℤ)).obj (ModuleCat.of ℤ ℤ)) := by
-  refine (isZero_toAlmost_obj_iff _).not.mpr (isAlmostZero_classical_iff.not.mpr ?_)
-  exact fun h ↦ zero_ne_one (Subsingleton.elim (0 : ℤ) 1)
-
--- For the zero setup, every almost module is zero: it is the almostification of a module, and
--- every module is almost zero.
-example (X : Module (zero V)) : IsZero X :=
-  ((isZero_toAlmost_obj_iff _).mpr isAlmostZero_zero).of_iso
-    ((toAlmost (zero V)).objObjPreimageIso X).symm
-
--- The ring `ℤ` itself is not a zero module, so the zero setup changes it.
-example : ¬ IsZero (ModuleCat.of ℤ ℤ) := by
-  rw [ModuleCat.isZero_iff_subsingleton]
-  exact fun h ↦ zero_ne_one (Subsingleton.elim (0 : ℤ) 1)
-
-/-! ### Monomorphisms and epimorphisms -/
-
--- Multiplication by `2` on `ℤ` almostifies to a monomorphism but not to an epimorphism for the
--- classical setup: its kernel is zero, while its cokernel `ℤ ⧸ 2ℤ` is nonzero.
+-- For the classical setup, multiplication by `2` on `ℤ` becomes a monomorphism, since its kernel
+-- is zero, but not an epimorphism, since its cokernel `ℤ ⧸ 2ℤ` is nonzero.
 example : Mono ((toAlmost (classical ℤ)).map (ModuleCat.ofHom (LinearMap.mulLeft ℤ (2 : ℤ)))) := by
   rw [mono_toAlmost_map_iff, isAlmostZero_classical_iff, ModuleCat.hom_ofHom,
     LinearMap.ker_eq_bot.mpr (mul_right_injective₀ two_ne_zero)]
@@ -108,28 +98,28 @@ example : ¬ Epi ((toAlmost (classical ℤ)).map
   rw [LinearMap.mulLeft_apply] at hx
   omega
 
-/-! ### Exact functors -/
+-- For the classical setup, `toAlmost` is an equivalence.
+example : (toAlmost (classical V)).IsEquivalence :=
+  inferInstance
 
--- A functor out of almost modules is left exact iff its composite with almostification is.
-example {E : Type*} [Category E] [Abelian E] (S : BasicSetup V) (G : Module S ⥤ E) :
-    PreservesFiniteLimits (toAlmost S ⋙ G) ↔ PreservesFiniteLimits G :=
-  ObjectProperty.SerreClassLocalization.preservesFiniteLimits_comp_iff _ S.almostZero G
+example : (classicalEquiv (V := V)).functor = toAlmost (classical V) :=
+  classicalEquiv_functor
 
--- For the classical setup, every exact functor out of `ModuleCat ℤ` factors exactly through
--- almostification: the only almost zero modules are zero.
-example (F : ModuleCat.{0} ℤ ⥤ₑ ModuleCat.{0} ℤ) :
-    (ObjectProperty.SerreClassLocalization.whiskeringLeft (toAlmost (classical ℤ))
-      (classical ℤ).almostZero (ModuleCat.{0} ℤ)).essImage F := by
-  have := F.property.1
-  refine (mem_essImage_whiskeringLeft_toAlmost_iff _ _ F).mpr fun M hM ↦ ?_
-  have : Subsingleton M := isAlmostZero_classical_iff.mp hM
-  exact F.obj.map_isZero (ModuleCat.isZero_of_subsingleton M)
+/-! ### Structure of the category -/
 
--- For the zero setup, the identity functor of `ModuleCat ℤ` does not factor exactly through
--- almostification: it does not kill the almost zero module `ℤ`.
-example : ¬ (ObjectProperty.SerreClassLocalization.whiskeringLeft (toAlmost (zero ℤ))
-    (zero ℤ).almostZero (ModuleCat.{0} ℤ)).essImage (ExactFunctor.of (𝟭 (ModuleCat.{0} ℤ))) := by
-  rw [mem_essImage_whiskeringLeft_toAlmost_iff]
-  intro h
-  exact zero_ne_one (@Subsingleton.elim ℤ
-    (ModuleCat.isZero_iff_subsingleton.mp (h (ModuleCat.of ℤ ℤ) isAlmostZero_zero)) 0 1)
+noncomputable example (S : BasicSetup V) : Abelian (Module S) :=
+  inferInstance
+
+example (S : BasicSetup V) :
+    PreservesFiniteLimits (toAlmost S) ∧ PreservesFiniteColimits (toAlmost S) :=
+  ⟨inferInstance, inferInstance⟩
+
+-- `toAlmost` is `V`-linear.
+example (S : BasicSetup V) {M N : ModuleCat V} (ε : V) (f : M ⟶ N) :
+    (toAlmost S).map (ε • f) = ε • (toAlmost S).map f :=
+  (toAlmost S).map_smul ε f
+
+-- `toAlmost` kills almost zero modules, and its factorisation through itself is the identity.
+noncomputable example (S : BasicSetup V) :
+    𝟭 (Module S) ≅ lift S (toAlmost S) fun M hM ↦ (isZero_toAlmost_obj_iff S M).mpr hM :=
+  liftUniq S _ _ (𝟭 _) (Functor.rightUnitor _)

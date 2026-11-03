@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.MvPowerSeries.PiTopology
+public import Mathlib.RingTheory.Polynomial.Quotient
 public import TauCeti.Analysis.Normed.Ring.Ultra
 public import TauCeti.RingTheory.Dagger.GaussNorm
 
@@ -25,11 +26,23 @@ formal cohomology: weak completions of finitely generated `O_K`-algebras are its
 inverting a uniformiser recovers the Monsky–Washnitzer algebra `K⟨X⟩†`. Its elements are the
 overconvergent series of Gauss norm at most one.
 
+Over an ultrametric normed field `K`, reduction modulo a nonzero `ϖ ∈ K°` turns `K°⟨X⟩†` into a
+polynomial ring: `K°⟨X⟩† ⧸ ϖ ≃ (K° ⧸ ϖ)[X]`. Indeed the coefficients of an overconvergent series
+tend to zero, so all but finitely many of them lie in `ϖ K°`. Taking `ϖ = πᵐ` gives the
+isomorphisms `O_K⟨X⟩† ⧸ πᵐ ≃ (O_K ⧸ πᵐ)[X]` through which weak completions are compared with
+`π`-adic completions.
+
 ## Main definitions
 
 * `TauCeti.Dagger.intWashnitzerAlgebra σ R`: the subring `R°⟨X⟩†` of overconvergent series with
   coefficients of norm at most one.
 * `TauCeti.Dagger.intWashnitzerAlgebra.toWashnitzerAlgebra`: its inclusion into `R⟨X⟩†`.
+* `TauCeti.Dagger.intWashnitzerAlgebra.restrictRingEquiv`: the restriction of a
+  Gauss-norm-preserving isomorphism `R⟨X⟩† ≃ R⟨Y⟩†` to an isomorphism `R°⟨X⟩† ≃ R°⟨Y⟩†`.
+* `TauCeti.Dagger.intWashnitzerAlgebra.ofMvPolynomial`: the inclusion `R°[X] → R°⟨X⟩†` of the
+  polynomials, an `R°`-algebra map for the structure of `R°⟨X⟩†` given by the constant series.
+* `TauCeti.Dagger.intWashnitzerAlgebra.quotientSpanEquivMvPolynomial`: the reduction
+  `K°⟨X⟩† ⧸ ϖ ≃ₐ[K°] (K° ⧸ ϖ)[X]` for a nonzero `ϖ ∈ K°`.
 
 ## Main results
 
@@ -46,6 +59,8 @@ overconvergent series of Gauss norm at most one.
   `Pⱼ` with integral coefficients and `deg Pⱼ ≤ c (j + 1)` for some `c`.
 * `TauCeti.Dagger.mem_washnitzerAlgebra_iff_exists_C_pow_mul_mem`: `K⟨X⟩† = K°⟨X⟩†[1/π]`, that
   is, every overconvergent series becomes integral after multiplication by a power of `π`.
+* `TauCeti.Dagger.intWashnitzerAlgebra.mem_span_algebraMap_iff_norm_le`: over a field, a series in
+  `K°⟨X⟩†` is a multiple of the constant `a ∈ K°` iff its Gauss norm is at most `‖a‖`.
 * `TauCeti.Dagger.isUnit_intWashnitzerAlgebra_iff`: over a complete ultrametric normed field, `f`
   is a unit of `K°⟨X⟩†` iff its constant coefficient has norm one and all other coefficients have
   norm less than one.
@@ -53,6 +68,10 @@ overconvergent series of Gauss norm at most one.
   `K°⟨X⟩†` consists of the series all of whose coefficients have norm less than one. In
   particular every constant `π` with `‖π‖ < 1` lies in it, so `1 + π f` is a unit for every
   `f ∈ K°⟨X⟩†`.
+* `TauCeti.Dagger.intWashnitzerAlgebra.exists_ofMvPolynomial_add_algebraMap_mul_eq`: every
+  series in `K°⟨X⟩†` is a polynomial over `K°` plus `ϖ` times a series in `K°⟨X⟩†`, and
+  `TauCeti.Dagger.intWashnitzerAlgebra.ker_mkₐ_comp_ofMvPolynomial`: for any `ϖ ∈ R°`, a
+  polynomial over `R°` is divisible by `ϖ` in `R°⟨X⟩†` only if it is divisible by `ϖ` in `R°[X]`.
 
 ## References
 
@@ -170,6 +189,101 @@ noncomputable def toWashnitzerAlgebra : intWashnitzerAlgebra σ R →+* washnitz
 theorem coe_toWashnitzerAlgebra (f : intWashnitzerAlgebra σ R) :
     (toWashnitzerAlgebra σ R f : MvPowerSeries σ R) = f :=
   (rfl)
+
+/-- The inclusion into `R⟨X⟩†` sends an integral overconvergent series to itself. -/
+@[simp]
+theorem toWashnitzerAlgebra_mk (f : washnitzerAlgebra σ R)
+    (hf : (f : MvPowerSeries σ R) ∈ intWashnitzerAlgebra σ R) :
+    toWashnitzerAlgebra σ R ⟨f, hf⟩ = f :=
+  Subtype.ext (coe_toWashnitzerAlgebra _)
+
+/-- The inclusion `R°⟨X⟩† → R⟨X⟩†` is injective. -/
+theorem toWashnitzerAlgebra_injective : Function.Injective (toWashnitzerAlgebra σ R) :=
+  fun _ _ h ↦ Subtype.ext (by simpa using congrArg Subtype.val h)
+
+/-- An element of `R°⟨X⟩†` has Gauss norm at most one in `R⟨X⟩†`. -/
+theorem norm_toWashnitzerAlgebra_le_one (f : intWashnitzerAlgebra σ R) :
+    ‖toWashnitzerAlgebra σ R f‖ ≤ 1 :=
+  mem_intWashnitzerAlgebra_iff_norm_le_one.1 (by rw [coe_toWashnitzerAlgebra]; exact f.2)
+
+/-- A Gauss-norm-preserving ring isomorphism of Monsky–Washnitzer algebras restricts to their
+integral subrings. -/
+noncomputable def restrictRingEquiv {τ : Type*}
+    (e : washnitzerAlgebra σ R ≃+* washnitzerAlgebra τ R) (he : ∀ f, ‖e f‖ = ‖f‖) :
+    intWashnitzerAlgebra σ R ≃+* intWashnitzerAlgebra τ R where
+  toFun f := ⟨e (toWashnitzerAlgebra σ R f),
+    mem_intWashnitzerAlgebra_iff_norm_le_one.2
+      ((he _).trans_le (norm_toWashnitzerAlgebra_le_one f))⟩
+  invFun f := ⟨e.symm (toWashnitzerAlgebra τ R f),
+    mem_intWashnitzerAlgebra_iff_norm_le_one.2 <| by
+      rw [← he, e.apply_symm_apply]
+      exact norm_toWashnitzerAlgebra_le_one f⟩
+  left_inv f := Subtype.ext (by simp)
+  right_inv f := Subtype.ext (by simp)
+  map_mul' f g := Subtype.ext (by simp)
+  map_add' f g := Subtype.ext (by simp)
+
+/-- The restricted isomorphism acts as the given one on the underlying overconvergent series. -/
+@[simp]
+theorem toWashnitzerAlgebra_restrictRingEquiv {τ : Type*}
+    (e : washnitzerAlgebra σ R ≃+* washnitzerAlgebra τ R) (he : ∀ f, ‖e f‖ = ‖f‖)
+    (f : intWashnitzerAlgebra σ R) :
+    toWashnitzerAlgebra τ R (restrictRingEquiv e he f) = e (toWashnitzerAlgebra σ R f) :=
+  toWashnitzerAlgebra_mk _ _
+
+/-- `R°⟨X⟩†` is an `R°`-algebra through the constant series. -/
+noncomputable instance : Algebra (Subring.unitClosedBall R) (intWashnitzerAlgebra σ R) :=
+  RingHom.toAlgebra <| ((C : R →+* MvPowerSeries σ R).comp
+    (Subring.unitClosedBall R).subtype).codRestrict _ fun a ↦
+      C_mem_intWashnitzerAlgebra_iff.2 (Subring.mem_unitClosedBall.1 a.2)
+
+/-- The structure map `R° → R°⟨X⟩†` sends `a` to the constant series `a`. -/
+@[simp]
+theorem coe_algebraMap (a : Subring.unitClosedBall R) :
+    (algebraMap (Subring.unitClosedBall R) (intWashnitzerAlgebra σ R) a : MvPowerSeries σ R) =
+      C (a : R) :=
+  (rfl)
+
+/-- The inclusion into `R⟨X⟩†` sends the constant `a ∈ R°` to the constant `a`. -/
+@[simp]
+theorem toWashnitzerAlgebra_algebraMap (a : Subring.unitClosedBall R) :
+    toWashnitzerAlgebra σ R (algebraMap (Subring.unitClosedBall R) (intWashnitzerAlgebra σ R) a) =
+      algebraMap R (washnitzerAlgebra σ R) a :=
+  Subtype.ext (by simp [MvPowerSeries.algebraMap_apply])
+
+/-- A multiple of the constant `a ∈ R°` in `R°⟨X⟩†` has Gauss norm at most `‖a‖`. -/
+theorem norm_toWashnitzerAlgebra_le_of_mem_span {a : Subring.unitClosedBall R}
+    {f : intWashnitzerAlgebra σ R}
+    (hf : f ∈ Ideal.span {algebraMap (Subring.unitClosedBall R) (intWashnitzerAlgebra σ R) a}) :
+    ‖toWashnitzerAlgebra σ R f‖ ≤ ‖(a : R)‖ := by
+  obtain ⟨b, rfl⟩ := Ideal.mem_span_singleton'.1 hf
+  rw [map_mul, toWashnitzerAlgebra_algebraMap]
+  refine (norm_mul_le _ _).trans ?_
+  rw [washnitzerAlgebra.norm_algebraMap]
+  exact mul_le_of_le_one_left (norm_nonneg _) (norm_toWashnitzerAlgebra_le_one b)
+
+variable (σ R) in
+/-- The inclusion of the polynomials with coefficients in `R°` into `R°⟨X⟩†`. -/
+noncomputable def ofMvPolynomial :
+    MvPolynomial σ (Subring.unitClosedBall R) →ₐ[Subring.unitClosedBall R]
+      intWashnitzerAlgebra σ R :=
+  MvPolynomial.aeval fun i ↦ ⟨MvPowerSeries.X i, X_mem_intWashnitzerAlgebra i⟩
+
+/-- A polynomial over `R°` viewed in `R°⟨X⟩†` is the polynomial viewed as a power series over
+`R`. -/
+@[simp]
+theorem coe_ofMvPolynomial (p : MvPolynomial σ (Subring.unitClosedBall R)) :
+    (ofMvPolynomial σ R p : MvPowerSeries σ R) =
+      ((p.map (Subring.unitClosedBall R).subtype : MvPolynomial σ R) : MvPowerSeries σ R) := by
+  induction p using MvPolynomial.induction_on with
+  | C a => simp [ofMvPolynomial]
+  | add p q hp hq => simp [hp, hq]
+  | mul_X p i hp => simp_all [ofMvPolynomial]
+
+/-- The coefficients of a polynomial over `R°` viewed in `R°⟨X⟩†` are its coefficients. -/
+theorem coeff_ofMvPolynomial (p : MvPolynomial σ (Subring.unitClosedBall R)) (t : σ →₀ ℕ) :
+    coeff t (ofMvPolynomial σ R p : MvPowerSeries σ R) = p.coeff t := by
+  simp [MvPolynomial.coeff_map]
 
 end intWashnitzerAlgebra
 
@@ -321,6 +435,30 @@ theorem mem_washnitzerAlgebra_iff_exists_C_pow_mul_mem {π : K} (hπ0 : π ≠ 0
   · have := mul_mem (C_mem_washnitzerAlgebra (π ^ k)⁻¹) (intWashnitzerAlgebra_le hk)
     simpa [← mul_assoc, ← map_mul, ← map_pow, hπ0] using this
 
+namespace intWashnitzerAlgebra
+
+/-- **Divisibility by constants.** Over a field, a series in `K°⟨X⟩†` is a multiple of the
+constant `a ∈ K°` iff its Gauss norm is at most `‖a‖`. -/
+theorem mem_span_algebraMap_iff_norm_le {a : Subring.unitClosedBall K}
+    {f : intWashnitzerAlgebra σ K} :
+    f ∈ Ideal.span {algebraMap (Subring.unitClosedBall K) (intWashnitzerAlgebra σ K) a} ↔
+      ‖toWashnitzerAlgebra σ K f‖ ≤ ‖(a : K)‖ := by
+  refine ⟨norm_toWashnitzerAlgebra_le_of_mem_span, fun hf ↦ ?_⟩
+  rcases eq_or_ne (a : K) 0 with ha | ha
+  · rw [ha, norm_zero, norm_le_zero_iff, ← map_zero (toWashnitzerAlgebra σ K)] at hf
+    rw [toWashnitzerAlgebra_injective hf]
+    exact zero_mem _
+  refine Ideal.mem_span_singleton'.2
+    ⟨⟨((algebraMap K (washnitzerAlgebra σ K) (a : K)⁻¹ * toWashnitzerAlgebra σ K f :
+      washnitzerAlgebra σ K) : MvPowerSeries σ K), mem_intWashnitzerAlgebra_iff_norm_le_one.2 ?_⟩,
+      toWashnitzerAlgebra_injective ?_⟩
+  · rw [norm_mul, washnitzerAlgebra.norm_algebraMap, norm_inv]
+    exact inv_mul_le_one_of_le₀ hf (norm_nonneg _)
+  · refine Subtype.ext ?_
+    simp [MvPowerSeries.algebraMap_apply, mul_right_comm _ (f : MvPowerSeries σ K), ← map_mul, ha]
+
+end intWashnitzerAlgebra
+
 variable [CompleteSpace K]
 
 /-- **Units of the integral Monsky–Washnitzer algebra.** Over a complete ultrametric normed
@@ -372,7 +510,7 @@ every `f ∈ K°⟨X⟩†`, the series `1 + π f` is a unit. -/
 theorem mem_jacobson_bot_intWashnitzerAlgebra_iff {f : intWashnitzerAlgebra σ K} :
     f ∈ Ideal.jacobson ⊥ ↔ ∀ t, ‖coeff t (f : MvPowerSeries σ K)‖ < 1 := by
   classical
-  rw [Ideal.mem_jacobson_bot]
+  rw [Ideal.jacobson_bot, Ring.mem_jacobson_iff]
   constructor
   · intro h t
     by_contra! ht
@@ -415,5 +553,134 @@ theorem mem_jacobson_bot_intWashnitzerAlgebra_iff {f : intWashnitzerAlgebra σ K
     · simpa [coeff_one, ht] using hfy t
 
 end NormedField
+
+section Reduction
+
+section NormedCommRing
+
+variable {σ R : Type*} [NormedCommRing R] [IsUltrametricDist R] [NormOneClass R]
+
+local notation "R°" => Subring.unitClosedBall R
+
+namespace intWashnitzerAlgebra
+
+/-- **The polynomials divisible by `ϖ` in `R°⟨X⟩†` are those divisible by `ϖ` in `R°[X]`.** The
+kernel of `R°[X] → R°⟨X⟩† ⧸ ϖ` is generated by `ϖ`. No hypothesis on `ϖ` is needed. -/
+theorem ker_mkₐ_comp_ofMvPolynomial (ϖ : R°) :
+    RingHom.ker ((Ideal.Quotient.mkₐ R° (Ideal.span
+      {algebraMap R° (intWashnitzerAlgebra σ R) ϖ})).comp (ofMvPolynomial σ R)) =
+      Ideal.span {MvPolynomial.C ϖ} := by
+  ext p
+  simp only [RingHom.mem_ker, AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk,
+    Ideal.Quotient.eq_zero_iff_mem, Ideal.mem_span_singleton]
+  refine ⟨fun ⟨g, hg⟩ ↦ (MvPolynomial.C_dvd_iff_dvd_coeff ϖ p).2 fun t ↦ ?_, fun h ↦ ?_⟩
+  · -- The coefficients of `p = ϖ g` are `ϖ` times the coefficients of `g`, which lie in `R°`.
+    refine ⟨⟨coeff t (g : MvPowerSeries σ R), Subring.mem_unitClosedBall.2
+      (norm_coeff_le_one g t)⟩, Subtype.ext ?_⟩
+    have := congrArg (fun x : intWashnitzerAlgebra σ R ↦ coeff t (x : MvPowerSeries σ R)) hg
+    simp only [coeff_ofMvPolynomial, MulMemClass.coe_mul, coe_algebraMap, coeff_C_mul] at this
+    exact this
+  · simpa using map_dvd (ofMvPolynomial σ R) h
+
+end intWashnitzerAlgebra
+
+end NormedCommRing
+
+section NormedField
+
+variable {σ K : Type*} [NormedField K] [IsUltrametricDist K]
+
+local notation "K°" => Subring.unitClosedBall K
+
+namespace intWashnitzerAlgebra
+
+/-- **Series in `K°⟨X⟩†` are polynomials modulo `ϖ`.** For every nonzero `ϖ ∈ K°`, a series in
+`K°⟨X⟩†` is the sum of a polynomial with coefficients in `K°` and of `ϖ` times a series in
+`K°⟨X⟩†`: only finitely many of its coefficients have norm at least `‖ϖ‖`. -/
+theorem exists_ofMvPolynomial_add_algebraMap_mul_eq {ϖ : K°} (hϖ : ϖ ≠ 0)
+    (f : intWashnitzerAlgebra σ K) : ∃ (p : MvPolynomial σ K°) (g : intWashnitzerAlgebra σ K),
+      ofMvPolynomial σ K p + algebraMap K° _ ϖ * g = f := by
+  classical
+  have hϖ0 : 0 < ‖(ϖ : K)‖ := norm_pos_iff.2 (by simpa using hϖ)
+  -- The coefficients of `f` tend to zero, so only finitely many have norm at least `‖ϖ‖`.
+  have hf : Filter.Tendsto (fun t ↦ ‖coeff t (f : MvPowerSeries σ K)‖) Filter.cofinite
+      (nhds 0) :=
+    isRestricted_one_iff.1
+      (isRestricted_of_mem_washnitzerAlgebra (intWashnitzerAlgebra_le f.2) zero_le_one le_rfl)
+  have hS : {t | ¬ ‖coeff t (f : MvPowerSeries σ K)‖ < ‖(ϖ : K)‖}.Finite :=
+    Filter.eventually_cofinite.1 (hf.eventually (gt_mem_nhds hϖ0))
+  -- `p` is the part of `f` made of these coefficients.
+  let F : MvPowerSeries σ K° := fun t ↦
+    ⟨coeff t (f : MvPowerSeries σ K), Subring.mem_unitClosedBall.2 (norm_coeff_le_one f t)⟩
+  let p : MvPolynomial σ K° := truncFinset K° hS.toFinset F
+  have hp (t : σ →₀ ℕ) : coeff t (ofMvPolynomial σ K p : MvPowerSeries σ K) =
+      if ‖coeff t (f : MvPowerSeries σ K)‖ < ‖(ϖ : K)‖ then 0
+      else coeff t (f : MvPowerSeries σ K) := by
+    -- `MvPowerSeries` is a function type, and `coeff t` evaluates at `t`.
+    have hF : coeff t F = ⟨coeff t (f : MvPowerSeries σ K), _⟩ := coeff_apply F t
+    simp only [coeff_ofMvPolynomial, p, coeff_truncFinset, Set.Finite.mem_toFinset, hF]
+    by_cases ht : ‖coeff t (f : MvPowerSeries σ K)‖ < ‖(ϖ : K)‖
+    · simp [ht]
+    · simp [ht, not_lt.1 ht]
+  -- The remainder `f - p` has coefficients of norm at most `‖ϖ‖`, so it is divisible by `ϖ`.
+  set h := f - ofMvPolynomial σ K p
+  have hh (t : σ →₀ ℕ) : ‖(ϖ : K)⁻¹ * coeff t (h : MvPowerSeries σ K)‖ ≤ 1 := by
+    rw [norm_mul, norm_inv, inv_mul_le_one₀ hϖ0, AddSubgroupClass.coe_sub, map_sub, hp]
+    split_ifs with ht
+    · simpa using ht.le
+    · simp
+  refine ⟨p, ⟨C (ϖ : K)⁻¹ * (h : MvPowerSeries σ K), mem_intWashnitzerAlgebra_iff.2
+    ⟨mul_mem (C_mem_washnitzerAlgebra _) (intWashnitzerAlgebra_le h.2), fun t ↦ ?_⟩⟩,
+    Subtype.ext ?_⟩
+  · simpa [coeff_C_mul] using hh t
+  · simp [h, ← mul_assoc, ← map_mul, mul_inv_cancel₀ (show (ϖ : K) ≠ 0 by simpa using hϖ)]
+
+/-- **Polynomials surject onto `K°⟨X⟩† ⧸ ϖ`** for every nonzero `ϖ ∈ K°`. -/
+theorem surjective_mkₐ_comp_ofMvPolynomial {ϖ : K°} (hϖ : ϖ ≠ 0) :
+    Function.Surjective ((Ideal.Quotient.mkₐ K° (Ideal.span
+      {algebraMap K° (intWashnitzerAlgebra σ K) ϖ})).comp (ofMvPolynomial σ K)) := by
+  intro x
+  obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective x
+  obtain ⟨p, g, rfl⟩ := exists_ofMvPolynomial_add_algebraMap_mul_eq hϖ f
+  refine ⟨p, ?_⟩
+  simp only [AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk, map_add, map_mul,
+    Ideal.Quotient.eq_zero_iff_mem.2 (Ideal.mem_span_singleton_self _), zero_mul, add_zero]
+
+/-- **Reduction of the integral Monsky–Washnitzer algebra.** For every nonzero `ϖ ∈ K°`,
+`K°⟨X⟩† ⧸ ϖ ≃ (K° ⧸ ϖ)[X]`: overconvergent series with integral coefficients reduce modulo `ϖ`
+to polynomials. For a uniformiser `π` and `ϖ = πᵐ` this is
+`O_K⟨X⟩† ⧸ πᵐ ≃ (O_K ⧸ πᵐ)[X]`. -/
+noncomputable def quotientSpanEquivMvPolynomial {ϖ : K°} (hϖ : ϖ ≠ 0) :
+    (intWashnitzerAlgebra σ K ⧸ Ideal.span {algebraMap K° (intWashnitzerAlgebra σ K) ϖ}) ≃ₐ[K°]
+      MvPolynomial σ (K° ⧸ Ideal.span {ϖ}) :=
+  (Ideal.quotientKerAlgEquivOfSurjective (surjective_mkₐ_comp_ofMvPolynomial hϖ)).symm.trans <|
+    (Ideal.quotientEquivAlgOfEq K° (J := Ideal.map MvPolynomial.C (Ideal.span {ϖ})) (by
+      rw [ker_mkₐ_comp_ofMvPolynomial, Ideal.map_span, Set.image_singleton])).trans
+      (MvPolynomial.quotientEquivQuotientMvPolynomial (Ideal.span {ϖ})).symm
+
+/-- The reduction of the class of a polynomial over `K°` is its coefficientwise reduction. -/
+@[simp]
+theorem quotientSpanEquivMvPolynomial_mk_ofMvPolynomial {ϖ : K°} (hϖ : ϖ ≠ 0)
+    (p : MvPolynomial σ K°) :
+    quotientSpanEquivMvPolynomial hϖ (Ideal.Quotient.mk _ (ofMvPolynomial σ K p)) =
+      p.map (Ideal.Quotient.mk (Ideal.span {ϖ})) := by
+  have h : Ideal.Quotient.mk (Ideal.span {algebraMap K° (intWashnitzerAlgebra σ K) ϖ})
+      (ofMvPolynomial σ K p) = (Ideal.Quotient.mkₐ K° _).comp (ofMvPolynomial σ K) p := by
+    rw [AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk]
+  rw [quotientSpanEquivMvPolynomial, AlgEquiv.trans_apply, AlgEquiv.trans_apply, h,
+    Ideal.quotientKerAlgEquivOfSurjective_symm_apply, Ideal.quotientEquivAlgOfEq_mk,
+    AlgEquiv.symm_apply_eq]
+  clear h
+  -- It remains to evaluate Mathlib's `(K° ⧸ ϖ)[X] ≃ K°[X] ⧸ ϖ` on a reduced polynomial.
+  induction p using MvPolynomial.induction_on with
+  | C a => simp [MvPolynomial.quotientEquivQuotientMvPolynomial]
+  | add p q hp hq => simp only [map_add, hp, hq]
+  | mul_X p i hp => simp [hp, MvPolynomial.quotientEquivQuotientMvPolynomial]
+
+end intWashnitzerAlgebra
+
+end NormedField
+
+end Reduction
 
 end TauCeti.Dagger

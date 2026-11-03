@@ -302,7 +302,7 @@ theorem hasStrictFDerivAt_mulInvariantCoordinateVectorField_zero_one
     rw [mulInvariantCoordinateLinearMap_one]
     rfl
   exact (contDiffAt_mulInvariantCoordinateVectorField (I := I) (G := G) (v := 0) (n := 1)
-    h1).hasStrictFDerivAt' hderiv one_ne_zero
+    h1).hasStrictFDerivAt hderiv one_ne_zero
 
 /-- Near the zero tangent vector and the identity coordinate, the parameterized invariant ODE has
 a single solution family that is continuous jointly in its initial condition and time and

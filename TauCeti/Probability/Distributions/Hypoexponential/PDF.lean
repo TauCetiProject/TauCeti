@@ -125,6 +125,20 @@ theorem measurable_hypoexponentialPDFReal (r : ι → ℝ) :
 theorem measurable_hypoexponentialPDF (r : ι → ℝ) : Measurable (hypoexponentialPDF r) :=
   (measurable_hypoexponentialPDFReal r).ennreal_ofReal
 
+/-- The real density is continuous on the positive half-line, including for empty or
+invalid families. -/
+@[fun_prop]
+theorem continuousOn_hypoexponentialPDFReal (r : ι → ℝ) :
+    ContinuousOn (hypoexponentialPDFReal r) (Set.Ioi 0) := by
+  by_cases hr : ∀ i, 0 < r i
+  · apply ContinuousOn.congr (f := fun x ↦ ∑ ρ ∈ univ.image r,
+      ∑ k ∈ Icc 1 #{i | r i = ρ},
+        hypoexponentialCoeff r ρ k * x ^ (k - 1) * exp (-(ρ * x)) / (k - 1)!)
+    · fun_prop
+    · intro x hx
+      exact hypoexponentialPDFReal_of_pos hr hx
+  · exact continuousOn_const.congr fun x _ ↦ hypoexponentialPDFReal_of_not_pos hr x
+
 /-- For positive rates and `x > 0`, the density is the combination of Erlang densities with the
 weights `A ρ k / ρ ^ k`. For a nonempty family these weights sum to one by
 `sum_hypoexponentialCoeff_div_pow`. -/
@@ -169,10 +183,10 @@ private theorem withDensity_erlangMixturePDF (r : ι → ℝ) (c : (Σ _ : ℝ, 
       ∑ p ∈ poles r, ENNReal.ofReal (c p) • gammaMeasure p.2 p.1 := by
   ext s hs
   unfold erlangMixturePDF
-  rw [withDensity_apply _ hs, Measure.finsetSum_apply,
+  rw [withDensity_apply _ hs, _root_.sum_apply,
     lintegral_finsetSum _ fun p _ ↦ (measurable_gammaPDF _ _).const_mul _]
   refine sum_congr rfl fun p _ ↦ ?_
-  rw [lintegral_const_mul _ (measurable_gammaPDF _ _), Measure.smul_apply,
+  rw [lintegral_const_mul _ (measurable_gammaPDF _ _), _root_.smul_apply,
     gammaMeasure, withDensity_apply _ hs, smul_eq_mul]
 
 private theorem isFiniteMeasure_withDensity_erlangMixturePDF (hr : ∀ i, 0 < r i)

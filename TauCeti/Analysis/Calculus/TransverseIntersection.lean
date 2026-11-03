@@ -105,7 +105,7 @@ private theorem exists_isSliceChart_inter_and_tangentConeAt {n : ℕ∞ω} (hn :
     (P₁.contDiff.contDiffAt.comp z (hc₁ z hz.1)).prodMk
       (P₂.contDiff.contDiffAt.comp z (hc₂ z hz.2))
   have hg : HasStrictFDerivAt g g' y :=
-    (hgC y ⟨hy₁, hy₂⟩).hasStrictFDerivAt'
+    (hgC y ⟨hy₁, hy₂⟩).hasStrictFDerivAt
       ((P₁.hasFDerivAt.comp y hA₁).prodMk (P₂.hasFDerivAt.comp y hA₂)) hn
   have hker₁ : (P₁.comp (A₁ : E →L[𝕜] E)).ker = L₁.comap (A₁ : E →ₗ[𝕜] E) := by
     ext v; simp [hP₁]

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.Perm.Cycle.Coeff
-public import TauCeti.LinearAlgebra.WeightedCycle.Family.Signed
+public import TauCeti.LinearAlgebra.WeightedCycle.Family.BaseChange
 
 /-!
 # The integral fixed basis of a signed permutation of a basis
@@ -26,6 +26,11 @@ fixed vector at such a cycle is its coefficient on the representative
 vector. This is `Module.Basis.fixedBasisSignedFamily` applied to the enumeration
 `Equiv.Perm.sigmaCycleEquiv` of `ι` along the cycles of `π`. For an unsigned permutation of
 coordinates, compare `Equiv.Perm.permutationFixedBasis`.
+
+The canonical scalar-extension comparison is injective over every commutative ring, and
+`Module.Basis.fixedSubmoduleBaseChange_signedPerm_surjective_iff` characterizes its
+surjectivity by negative monodromy and `2`-torsion. This uses the signed-family scalar-extension
+comparison, retaining the extra fixed vectors on negative cycles.
 
 ## Main definitions
 
@@ -59,7 +64,7 @@ theorem pow_apply_of_apply_eq_smul (f : Module.End R V) (π : Equiv.Perm ι) (s 
   induction r with
   | zero => simp
   | succ r ih =>
-    rw [pow_succ', Module.End.mul_apply, ih, map_smul, h, Equiv.Perm.cycleCoeff_succ, smul_smul,
+    rw [pow_succ', mul_apply_eq_comp, ih, map_smul, h, Equiv.Perm.cycleCoeff_succ, smul_smul,
       pow_succ', Equiv.Perm.mul_apply]
 
 end Module.End
@@ -86,10 +91,14 @@ private theorem apply_sigmaCycleEquiv (j : J) (i : Fin (minimalPeriod π (rep j)
       cycleSign π s rep hrep j i • b (π.sigmaCycleEquiv rep hrep ⟨j, finRotate _ i⟩) := by
   rw [h, Units.smul_def, cycleSign, Equiv.Perm.sigmaCycleEquiv_finRotate]
 
+private theorem prod_cycleSign (j : J) :
+    ∏ i, cycleSign π s rep hrep j i = ((π.monodromy s (rep j) : ℤˣ) : ℤ) := by
+  rw [Equiv.Perm.monodromy_def, Equiv.Perm.cycleCoeff_def, Units.coe_prod]
+  exact π.prod_sigmaCycleEquiv_eq_prod_range rep hrep (fun x ↦ (s x : ℤ)) j
+
 private theorem prod_cycleSign_eq_one_iff (j : J) :
     ∏ i, cycleSign π s rep hrep j i = 1 ↔ π.monodromy s (rep j) = 1 := by
-  rw [← Units.val_eq_one, Equiv.Perm.monodromy_def, Equiv.Perm.cycleCoeff_def, Units.coe_prod]
-  exact Eq.congr_left (π.prod_sigmaCycleEquiv_eq_prod_range rep hrep (fun x ↦ (s x : ℤ)) j)
+  rw [prod_cycleSign, Units.val_eq_one]
 
 include b h hrep in
 /-- **The integral fixed basis of a signed permutation of a basis.** Let `f (b i) = s i • b (π i)`
@@ -131,5 +140,36 @@ theorem fixedBasisSignedPerm_repr (v : f.fixedSubmodule)
   rw [fixedBasisSignedPerm, Module.Basis.repr_reindex_apply, fixedBasisSignedFamily_repr,
     Equiv.subtypeEquivRight_symm_apply_coe, Equiv.Perm.sigmaCycleEquiv_apply, Fin.val_zero,
     pow_zero, Equiv.Perm.one_apply]
+
+/-! ### Scalar extension of the integral fixed lattice -/
+
+variable (A : Type*) [CommRing A]
+
+include b π s h in
+/-- Scalar extension embeds the integral fixed lattice of a signed permutation of a basis,
+even when the coefficient ring is not flat over `ℤ`. -/
+theorem fixedSubmoduleBaseChange_signedPerm_injective :
+    Function.Injective (f.fixedSubmoduleBaseChange A) := by
+  let rep : Quotient (Equiv.Perm.SameCycle.setoid π) → ι := Quotient.out
+  have hrep := π.existsUnique_sameCycle_out
+  exact b.fixedSubmoduleBaseChange_injective
+    (π.sigmaCycleEquiv rep hrep) (cycleSign π s rep hrep)
+    (cycleSign_eq_one_or π s rep hrep) f (apply_sigmaCycleEquiv b π s f h rep hrep) A
+
+include b h hrep in
+/-- Scalar extension of a signed-permutation fixed lattice is surjective precisely when there
+are no negative-monodromy cycles or the coefficient ring has no `2`-torsion. -/
+theorem fixedSubmoduleBaseChange_signedPerm_surjective_iff :
+    Function.Surjective (f.fixedSubmoduleBaseChange A) ↔
+      IsEmpty {j // π.monodromy s (rep j) = -1} ∨ Submodule.torsionBy A A 2 = ⊥ := by
+  have := π.finite_of_existsUnique_sameCycle rep hrep
+  have hneg (j : J) :
+      ∏ i, cycleSign π s rep hrep j i = -1 ↔ π.monodromy s (rep j) = -1 := by
+    rw [prod_cycleSign]
+    exact Units.val_inj (a := π.monodromy s (rep j)) (b := (-1 : ℤˣ))
+  rw [b.fixedSubmoduleBaseChange_surjective_iff
+    (π.sigmaCycleEquiv rep hrep) (cycleSign π s rep hrep)
+    (cycleSign_eq_one_or π s rep hrep) f (apply_sigmaCycleEquiv b π s f h rep hrep) A]
+  exact or_congr_left (Equiv.subtypeEquivRight hneg).isEmpty_congr
 
 end Module.Basis

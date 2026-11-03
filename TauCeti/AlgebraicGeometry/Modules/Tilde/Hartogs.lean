@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Modules.Tilde
+public import Mathlib.AlgebraicGeometry.Restrict
 public import TauCeti.RingTheory.Regular.RegularSequence
+import Mathlib.RingTheory.Regular.Flat
 
 /-!
 # Extending sections of `M~` across a closed subset of depth at least two
@@ -38,6 +40,9 @@ section over `U` is determined by its restriction to `U ∩ D(a)`.
   injective when `D(a) ⊆ U` for an `M`-regular `a`.
 * `TauCeti.AlgebraicGeometry.StructureSheaf.toOpenₗ_bijective_of_isWeaklyRegular`: `M → M~(U)` is
   bijective when `D(a), D(b) ⊆ U` for a weakly `M`-regular sequence `a, b`.
+* `TauCeti.AlgebraicGeometry.StructureSheaf.exists_isWeaklyRegular_basicOpen_le_of_two_le_depth`:
+  for a finite module over a Noetherian ring with `depth M_p ≥ 2` at every prime `p ∉ U`, there
+  is a weakly `M`-regular sequence `a, b` with `D(a), D(b) ⊆ U`.
 * `TauCeti.AlgebraicGeometry.StructureSheaf.toOpenₗ_bijective_of_two_le_depth`: for a finite
   module over a Noetherian ring, `M → M~(U)` is bijective when `depth M_p ≥ 2` at every prime
   `p ∉ U`.
@@ -46,6 +51,9 @@ section over `U` is determined by its restriction to `U ∩ D(a)`.
 * `TauCeti.AlgebraicGeometry.Spec.presheaf_map_leTop_bijective_iff`: restriction of sections of
   `Spec R` to `U` is bijective exactly when `R → 𝒪(U)` is, so the statements above for `M = R`
   describe sections of the scheme `Spec R`.
+* `TauCeti.AlgebraicGeometry.isIso_appTop_pullback_fst_ι_of_isWeaklyRegular`: for a flat
+  `R`-algebra `C` and `D(a), D(b) ⊆ U` with `a, b` weakly regular on `R`, global sections of
+  `Spec C` do not change under restriction to the preimage of `U`.
 
 ## References
 
@@ -172,14 +180,14 @@ theorem toOpenₗ_bijective_of_isWeaklyRegular {U : Opens (PrimeSpectrum.Top R)}
     (⟨a ^ n, n, rfl⟩ : Submonoid.powers a) ?_
   simp only [hc, hx, Submonoid.smul_def, map_smul]
 
-/-- **Hartogs principle for the structure sheaf of a module.** Let `M` be a finite module over a
-Noetherian ring `R` and `U` an open subset of `Spec R` such that `depth M_p ≥ 2` for every prime
-`p ∉ U`. Then every section of `M~` over `U` comes from a unique element of `M`. -/
-theorem toOpenₗ_bijective_of_two_le_depth [IsNoetherianRing R] [Module.Finite R M]
-    (U : Opens (PrimeSpectrum.Top R))
+/-- Let `M` be a finite module over a Noetherian ring `R` and `U` an open subset of `Spec R` such
+that `depth M_p ≥ 2` for every prime `p ∉ U`. Then there is a weakly `M`-regular sequence `a, b`
+with `D(a), D(b) ⊆ U`, taken from the vanishing ideal of the complement of `U`. -/
+theorem exists_isWeaklyRegular_basicOpen_le_of_two_le_depth [IsNoetherianRing R]
+    [Module.Finite R M] (U : Opens (PrimeSpectrum.Top R))
     (h : ∀ p : PrimeSpectrum R, p ∉ U → 2 ≤ depth (ModuleCat.of (Localization.AtPrime p.asIdeal)
       (LocalizedModule p.asIdeal.primeCompl M))) :
-    Function.Bijective (toOpenₗ R M U) := by
+    ∃ a b : R, IsWeaklyRegular M [a, b] ∧ basicOpen a ≤ U ∧ basicOpen b ≤ U := by
   -- The vanishing ideal of the closed set `Spec R ∖ U` contains a weakly `M`-regular pair.
   let I := PrimeSpectrum.vanishingIdeal (U : Set (PrimeSpectrum.Top R))ᶜ
   obtain ⟨rs, hlen, hmem, hreg⟩ := exists_isWeaklyRegular_of_le_depth_localizedModule I 2
@@ -191,7 +199,18 @@ theorem toOpenₗ_bijective_of_two_le_depth [IsNoetherianRing R] [Module.Finite 
   have hD (r : R) (hr : r ∈ [a, b]) : basicOpen r ≤ U := fun q hq ↦ by
     by_contra hqU
     exact hq ((PrimeSpectrum.mem_vanishingIdeal _ _).1 (hmem r hr) q hqU)
-  exact toOpenₗ_bijective_of_isWeaklyRegular hreg (hD a (by simp)) (hD b (by simp))
+  exact ⟨a, b, hreg, hD a (by simp), hD b (by simp)⟩
+
+/-- **Hartogs principle for the structure sheaf of a module.** Let `M` be a finite module over a
+Noetherian ring `R` and `U` an open subset of `Spec R` such that `depth M_p ≥ 2` for every prime
+`p ∉ U`. Then every section of `M~` over `U` comes from a unique element of `M`. -/
+theorem toOpenₗ_bijective_of_two_le_depth [IsNoetherianRing R] [Module.Finite R M]
+    (U : Opens (PrimeSpectrum.Top R))
+    (h : ∀ p : PrimeSpectrum R, p ∉ U → 2 ≤ depth (ModuleCat.of (Localization.AtPrime p.asIdeal)
+      (LocalizedModule p.asIdeal.primeCompl M))) :
+    Function.Bijective (toOpenₗ R M U) :=
+  have ⟨_, _, hreg, ha, hb⟩ := exists_isWeaklyRegular_basicOpen_le_of_two_le_depth U h
+  toOpenₗ_bijective_of_isWeaklyRegular hreg ha hb
 
 end StructureSheaf
 
@@ -224,5 +243,30 @@ theorem tilde_toOpen_bijective_of_two_le_depth [IsNoetherianRing R] (M : ModuleC
   -- sections; the composite is unfolded by `exact`, as Mathlib states no lemma for it.
   ((tilde.modulesSpecToSheafIso M).app _).symm.toLinearEquiv.bijective.comp
     (StructureSheaf.toOpenₗ_bijective_of_two_le_depth U h)
+
+/-- Let `C` be a flat `R`-algebra and `W` an open subset of `Spec R` containing `D(a)` and `D(b)`
+for a weakly regular sequence `a, b` on `R`. Then restriction of global sections
+`Γ(Spec C, 𝒪) → Γ(Spec C ×_{Spec R} W, 𝒪)` is an isomorphism. -/
+theorem isIso_appTop_pullback_fst_ι_of_isWeaklyRegular (C : Type u) [CommRing C] [Algebra R C]
+    [Module.Flat R C] (W : (Spec R).Opens) {a b : R} (hab : IsWeaklyRegular R [a, b])
+    (ha : PrimeSpectrum.basicOpen a ≤ W) (hb : PrimeSpectrum.basicOpen b ≤ W) :
+    IsIso (Limits.pullback.fst (Spec.map (CommRingCat.ofHom (algebraMap R C))) W.ι).appTop := by
+  set f := Spec.map (CommRingCat.ofHom (algebraMap R C))
+  rw [← pullbackRestrictIsoRestrict_hom_ι, Scheme.Hom.comp_appTop]
+  suffices IsIso (f ⁻¹ᵁ W).ι.appTop from
+    have : IsIso (pullbackRestrictIsoRestrict f W).hom.appTop :=
+      inferInstanceAs (IsIso ((pullbackRestrictIsoRestrict f W).hom.app ⊤))
+    inferInstance
+  -- The preimage of `W` contains the basic opens of the images of `a` and `b`.
+  have hD {r : R} (hr : PrimeSpectrum.basicOpen r ≤ W) :
+      PrimeSpectrum.basicOpen (algebraMap R C r) ≤ (f ⁻¹ᵁ W).ι ''ᵁ ⊤ := by
+    rw [Scheme.Opens.ι_image_top]
+    exact fun p hp ↦ hr hp
+  have hreg : IsWeaklyRegular C [algebraMap R C a, algebraMap R C b] := by
+    simpa using hab.of_flat (S := C)
+  have hbij := AlgebraicGeometry.StructureSheaf.toOpenₗ_bijective_of_isWeaklyRegular hreg
+    (hD ha) (hD hb)
+  rw [ConcreteCategory.isIso_iff_bijective, Scheme.Opens.ι_appTop]
+  exact (Spec.presheaf_map_leTop_bijective_iff _).mpr hbij
 
 end TauCeti.AlgebraicGeometry

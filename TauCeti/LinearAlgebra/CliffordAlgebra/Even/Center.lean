@@ -358,7 +358,7 @@ theorem isField_center_even_iff_not_isSquare_discriminant [NeZero (2 : K)] {l : 
       ¬ IsSquare ((-1 : K) ^ l.length.choose 2 * (l.map Q).prod) := by
   let e := adjoinRootEquivCenterEven hl hlen hne hspan hQl
   rw [← e.toMulEquiv.isField_congr, AdjoinRoot.isField_iff_irreducible,
-    X_pow_sub_C_irreducible_iff_of_prime Nat.prime_two, isSquare_iff_exists_sq]
+    irreducible_X_pow_sub_C_iff_of_prime Nat.prime_two, isSquare_iff_exists_sq]
   simp only [not_exists]
   exact forall_congr' fun _ ↦ not_congr eq_comm
 

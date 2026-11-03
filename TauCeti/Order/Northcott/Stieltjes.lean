@@ -65,7 +65,7 @@ theorem measure_summatoryStieltjes {w : ι → ℝ} (hw : ∀ i, 0 ≤ w i) :
   rw [StieltjesFunction.measure_Ioc, summatoryStieltjes_apply, summatoryStieltjes_apply,
     summatory_sub_summatory_eq_sum_filter N w hab.le,
     ENNReal.ofReal_sum_of_nonneg fun i _ ↦ hw i, Measure.sum_apply _ measurableSet_Ioc]
-  simp only [Measure.smul_apply, Measure.dirac_apply' _ measurableSet_Ioc, smul_eq_mul]
+  simp only [_root_.smul_apply, Measure.dirac_apply' _ measurableSet_Ioc, smul_eq_mul]
   have hmem (i : ι) : i ∈ {j ∈ normLE N b | a < N j} ↔ (N i : ℝ) ∈ Ioc a b := by
     simp only [Finset.mem_filter, mem_normLE, mem_Ioc, and_comm]
   rw [tsum_eq_sum (s := {j ∈ normLE N b | a < N j}) fun i hi ↦ ?_]
@@ -80,8 +80,8 @@ theorem restrict_Ioc_measure_summatoryStieltjes {w : ι → ℝ} (hw : ∀ i, 0 
       ∑ i ∈ {j ∈ normLE N b | a < N j}, ENNReal.ofReal (w i) • Measure.dirac (N i : ℝ) := by
   ext s hs
   rw [Measure.restrict_apply hs, measure_summatoryStieltjes,
-    Measure.sum_apply _ (hs.inter measurableSet_Ioc), Measure.finsetSum_apply]
-  simp only [Measure.smul_apply, Measure.dirac_apply' _ (hs.inter measurableSet_Ioc),
+    Measure.sum_apply _ (hs.inter measurableSet_Ioc), _root_.sum_apply]
+  simp only [_root_.smul_apply, Measure.dirac_apply' _ (hs.inter measurableSet_Ioc),
     Measure.dirac_apply' _ hs, smul_eq_mul]
   have hmem (i : ι) : i ∈ {j ∈ normLE N b | a < N j} ↔ (N i : ℝ) ∈ Ioc a b := by
     simp only [Finset.mem_filter, mem_normLE, mem_Ioc, and_comm]
