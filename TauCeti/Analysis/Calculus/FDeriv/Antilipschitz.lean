@@ -27,23 +27,22 @@ open Set Metric
 namespace IsCompact
 
 /-- An injective map on a compact convex set whose continuous derivative is uniformly bounded
-below on chord directions has a positive global lower bound on differences. The derivative
+below on chord directions is antilipschitz on that set. The derivative
 need only exist within the set, and need not be injective on the whole ambient space. -/
-theorem exists_pos_mul_norm_sub_le_of_hasFDerivWithinAt
+theorem exists_antilipschitzWith_of_hasFDerivWithinAt
     {V E : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
     [NormedAddCommGroup E] [NormedSpace ℝ E] {s : Set V}
     (hs : IsCompact s) (hconv : Convex ℝ s) {F : V → E} {F' : V → V →L[ℝ] E}
     (hF : ∀ x ∈ s, HasFDerivWithinAt F (F' x) s x) (hF' : ContinuousOn F' s)
     (hinj : InjOn F s) {c : ℝ} (hc : 0 < c)
     (hbound : ∀ x ∈ s, ∀ y ∈ s, ∀ z ∈ s, c * ‖y - z‖ ≤ ‖F' x (y - z)‖) :
-    ∃ b > 0, ∀ x ∈ s, ∀ y ∈ s, b * ‖x - y‖ ≤ ‖F x - F y‖ := by
+    ∃ K > 0, AntilipschitzWith K (s.domRestrict F) := by
   obtain ⟨δ, hδ, hclose⟩ := Metric.uniformContinuousOn_iff.mp
     (hs.uniformContinuousOn_of_continuous hF') (c / 2) (by positivity)
   suffices hlocal : ∀ x ∈ s, ∀ y ∈ s,
       dist x y < δ → c / 2 * dist x y ≤ dist (F x) (F y) by
-    obtain ⟨b, hb, hglobal⟩ := hs.exists_pos_mul_dist_le_of_locally
+    exact hs.exists_antilipschitzWith_of_locally
       (fun x hx => (hF x hx).continuousWithinAt) hinj (half_pos hc) hδ hlocal
-    exact ⟨b, hb, fun x hx y hy => by simpa only [dist_eq_norm] using hglobal x hx y hy⟩
   intro x hx y hy hxy
   let T := s ∩ closedBall x (dist x y)
   have hderiv : ∀ z ∈ T, HasFDerivWithinAt F (F' z) T z :=

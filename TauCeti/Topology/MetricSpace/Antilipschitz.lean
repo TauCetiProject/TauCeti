@@ -24,14 +24,14 @@ open Set Metric
 namespace IsCompact
 
 /-- A continuous injection on a compact set with a positive uniform lower distance bound for
-nearby pairs has a positive lower distance bound for all pairs. -/
-theorem exists_pos_mul_dist_le_of_locally
+nearby pairs is antilipschitz on that set. -/
+theorem exists_antilipschitzWith_of_locally
     {X Y : Type*} [PseudoMetricSpace X] [MetricSpace Y] {s : Set X}
     (hs : IsCompact s) {f : X → Y} (hf : ContinuousOn f s)
     (hinj : InjOn f s)
     {c δ : ℝ} (hc : 0 < c) (hδ : 0 < δ)
     (hlocal : ∀ x ∈ s, ∀ y ∈ s, dist x y < δ → c * dist x y ≤ dist (f x) (f y)) :
-    ∃ b > 0, ∀ x ∈ s, ∀ y ∈ s, b * dist x y ≤ dist (f x) (f y) := by
+    ∃ K > 0, AntilipschitzWith K (s.domRestrict f) := by
   let T : Set (X × X) := (s ×ˢ s) ∩ {p | δ ≤ dist p.1 p.2}
   have hT : IsCompact T := (hs.prod hs).inter_right
     (isClosed_le continuous_const (continuous_fst.dist continuous_snd))
@@ -47,8 +47,17 @@ theorem exists_pos_mul_dist_le_of_locally
     refine div_pos (dist_pos.mpr fun h => ?_) (hδ.trans_le hp.2)
     have heq := hinj hp.1.1 hp.1.2 h
     exact (ne_of_gt (hδ.trans_le hp.2)) (by rw [heq, dist_self])
-  refine ⟨min c a, lt_min hc ha, fun x hx y hy => ?_⟩
-  by_cases hxy : dist x y < δ
+  have hb : 0 < min c a := lt_min hc ha
+  refine ⟨⟨(min c a)⁻¹, (inv_pos.mpr hb).le⟩, inv_pos.mpr hb,
+    AntilipschitzWith.of_le_mul_dist ?_⟩
+  intro x y
+  -- Unwrap the restriction, subtype metric and chosen constant together: simplifying them
+  -- separately can unfold NNReal to a subtype and invalidate the coercion's type.
+  change dist (x : X) y ≤ (min c a)⁻¹ * dist (f x) (f y)
+  rw [← div_eq_inv_mul, le_div_iff₀ hb, mul_comm]
+  have hx := x.2
+  have hy := y.2
+  by_cases hxy : dist (x : X) y < δ
   · exact (mul_le_mul_of_nonneg_right (min_le_left _ _) dist_nonneg).trans
       (hlocal x hx y hy hxy)
   · have h := hbound (x, y) ⟨⟨hx, hy⟩, le_of_not_gt hxy⟩
