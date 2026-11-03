@@ -486,7 +486,8 @@ theorem SeparatelyExchangeable.separatelyDissociated_iff_jointlyDissociated
   have hsep := hd.separatelyDissociated_arrayBlock_evenOdd
   rw [← hlaw]
   refine separatelyDissociated_iff.mpr fun e f e' f' hee' hff' => ?_
-  rw [indepFun_map_iff_comp hB (by fun_prop) (by fun_prop)]
+  rw [indepFun_map_iff_comp hB.aemeasurable (Measurable.aemeasurable (by fun_prop))
+    (Measurable.aemeasurable (by fun_prop))]
   simpa only [arrayBlock_apply, Function.comp_def] using
     separatelyDissociated_iff.mp hsep e f e' f' hee' hff'
 
