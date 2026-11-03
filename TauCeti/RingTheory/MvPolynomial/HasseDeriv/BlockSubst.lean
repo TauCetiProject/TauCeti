@@ -98,14 +98,14 @@ theorem eval_blockSubst (A : Matrix ι ι R) (y : κ × ι → R) (P : MvPolynom
 theorem blockSubst_one [DecidableEq ι] :
     (blockSubst (1 : Matrix ι ι R) : MvPolynomial (κ × ι) R →ₐ[R] _) = AlgHom.id R _ := by
   refine algHom_ext fun ⟨h, j⟩ ↦ ?_
-  simp [one_apply, apply_ite C, ite_mul]
+  simp [Matrix.one_apply, apply_ite C, ite_mul]
 
 /-- Block substitution is the linear substitution `MvPolynomial.linearSubst` of the
 block-diagonal matrix `1 ⊗ₖ A`, with one copy of `A` for each block. -/
 theorem blockSubst_eq_linearSubst [Fintype κ] [DecidableEq κ] (A : Matrix ι ι R) :
     (blockSubst A : MvPolynomial (κ × ι) R →ₐ[R] _) = linearSubst ((1 : Matrix κ κ R) ⊗ₖ A) := by
   refine algHom_ext fun ⟨h, j⟩ ↦ ?_
-  simp [linearSubst_X, Fintype.sum_prod_type, one_apply, ite_mul, apply_ite C]
+  simp [linearSubst_X, Fintype.sum_prod_type, Matrix.one_apply, ite_mul, apply_ite C]
 
 /-- Block substitution is a right action of the matrix monoid. -/
 theorem blockSubst_mul (A B : Matrix ι ι R) :
@@ -113,7 +113,7 @@ theorem blockSubst_mul (A B : Matrix ι ι R) :
       (blockSubst B).comp (blockSubst A) := by
   refine algHom_ext fun ⟨h, j⟩ ↦ ?_
   simp only [blockSubst_X, AlgHom.comp_apply, map_sum, map_mul, algHom_C, algebraMap_eq,
-    mul_apply, sum_mul, mul_sum, mul_assoc]
+    Matrix.mul_apply, sum_mul, mul_sum, mul_assoc]
   exact sum_comm
 
 theorem blockSubst_mul_apply (A B : Matrix ι ι R) (P : MvPolynomial (κ × ι) R) :

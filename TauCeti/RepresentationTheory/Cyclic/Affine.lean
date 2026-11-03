@@ -86,6 +86,8 @@ cohomology, as shown in
   `AddEquiv.partialNorm_zero_right`, `AddEquiv.partialNorm_add_exponent`: the partial norm is
   additive in its translation argument, vanishes on the zero translation part, and splits over the
   exponent.
+* `AddEquiv.partialNorm_refl`: for the identity linear part, the partial norm of `k` iterates is
+  `k • t`.
 * `AddEquiv.cyclicRepresentation_norm_eq_partialNorm`: the norm of the cyclic representation of `A`
   is the partial norm of order `m`.
 * `AddEquiv.affineEquiv_iterate_eq_id_iff`, `AddEquiv.affineEquiv_pow_eq_one_iff`: the affine
@@ -244,6 +246,12 @@ theorem partialNorm_sub (A : T ≃+ T) (k : ℕ) (u v : T) :
 @[simp]
 theorem partialNorm_zero_right (A : T ≃+ T) (k : ℕ) : partialNorm A k 0 = 0 := by
   simp only [partialNorm_def, iterate_map_zero, Finset.sum_const_zero]
+
+/-- For the identity linear part, the partial norm of `k` iterates is `k • t`: the affine
+equivalence is the translation by `t`. -/
+@[simp]
+theorem partialNorm_refl (k : ℕ) (t : T) : partialNorm (AddEquiv.refl T) k t = k • t := by
+  simp [partialNorm_def]
 
 /-- Shifting the linear part through the partial norm: `A (N_{A,k} t) = N_{A,k} (A t)`. -/
 theorem map_partialNorm (A : T ≃+ T) (k : ℕ) (t : T) :

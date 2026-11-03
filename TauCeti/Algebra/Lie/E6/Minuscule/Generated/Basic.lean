@@ -294,6 +294,28 @@ theorem baseChangeMap_generatedCoordinateMap_comp_generatedCoordinateHopfAlgebra
   CommHopfAlgCat.baseChangeMap_mkQuotient_comp_quotientBaseChangeIsoOfMapEq_hom _ _ _
     (map_baseChangeHopfIdeal_generatedDefiningIdeal k K)
 
+/-- Free scalar extension intertwines every numbered root-subgroup and weight-torus lift. -/
+@[reassoc (attr := simp)]
+theorem baseChangeMap_generatedCoordinateLift_comp_generatorCoordinateAlgebraBaseChangeIso_hom
+    [Module.Free k K] (j : Sum (Fin 6 ⊕ Fin 6) Unit) :
+    CommHopfAlgCat.baseChangeMap (K := K) (generatedCoordinateLift k j) ≫
+        (generatorCoordinateAlgebraBaseChangeIso k K j).hom =
+      (generatedCoordinateHopfAlgebraBaseChangeIso k K).hom ≫
+        generatedCoordinateLift K j := by
+  let q := CommHopfAlgCat.baseChangeMap (K := K) (generatedCoordinateMap k)
+  let _ : Epi q := ConcreteCategory.epi_of_surjective q
+    (CommHopfAlgCat.baseChangeMap_surjective (generatedCoordinateMap k)
+      (generatedCoordinateMap_surjective k))
+  apply (cancel_epi q).mp
+  dsimp only [q]
+  rw [← Category.assoc, ← (CommHopfAlgCat.baseChangeFunctor (K := K)).map_comp,
+    generatedCoordinateMap_comp_generatedCoordinateLift]
+  rw [← Category.assoc,
+    baseChangeMap_generatedCoordinateMap_comp_generatedCoordinateHopfAlgebraBaseChangeIso_hom,
+    Category.assoc, generatedCoordinateMap_comp_generatedCoordinateLift]
+  exact (Iso.inv_comp_eq (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K 27)).mp
+    (generatorCoordinateMap_baseChange k K j)
+
 end BaseChange
 
 end TauCeti.E6Minuscule

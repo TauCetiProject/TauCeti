@@ -176,7 +176,7 @@ private theorem exists_lieEquiv_apply_eq_of_sub_mem (hhe : ⁅h, e⁆ = 2 • e)
     · have hmem := expAd_toLinearEquiv_mem_expAdSubgroup hy hyU
       convert Subgroup.mul_mem _ (Subgroup.inv_mem _ hmem) hψ using 1
       ext x
-      rw [LinearEquiv.mul_apply, LinearEquiv.coe_inv, LinearEquiv.eq_symm_apply]
+      rw [mul_apply_eq_comp, LinearEquiv.coe_inv, LinearEquiv.eq_symm_apply]
       -- Cancel the inverse before putting inner automorphisms in exponential normal form.
       simp only [LieEquiv.coe_toLinearEquiv, LieEquiv.trans_apply, LieEquiv.apply_symm_apply]
     · rw [LieEquiv.trans_apply, hψh, LieEquiv.symm_apply_eq, add_sub_cancel]
