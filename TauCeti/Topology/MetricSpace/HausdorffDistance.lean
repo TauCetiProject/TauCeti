@@ -12,8 +12,9 @@ public import Mathlib.Topology.MetricSpace.HausdorffDistance
 
 For a set `s` in a pseudometric space and a scale `t > 0`, the cutoff
 `x ↦ min 1 (t⁻¹ * infDist x s)` vanishes on `s`, equals `1` at points at distance at least `t`
-from `s`, and is `t⁻¹`-Lipschitz. It is the standard Lipschitz approximation of the indicator of
-the complement of `s`, increasing to it as `t → 0`.
+from `s`, and is `t⁻¹`-Lipschitz. As `t → 0` it increases pointwise to the indicator of
+`{x | 0 < infDist x s}`. When `s` is nonempty this set is the complement of `closure s`, so for a
+nonempty closed `s` the cutoffs are Lipschitz approximations of the indicator of `sᶜ`.
 -/
 
 public section
