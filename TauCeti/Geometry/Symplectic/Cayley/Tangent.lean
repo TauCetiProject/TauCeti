@@ -234,12 +234,10 @@ theorem Compatible.exists_contDiff_hasDerivAt {J : AlmostComplexStructure V}
   simp only [hφ0, zero_smul, sub_zero, add_zero, mul_one, hG0, zero_add, zero_sub,
     mul_neg] at heq
   have hJC : Jc * C = (1 / 2 : ℝ) • Y := by
-    simp only [C]
-    rw [neg_smul, mul_neg, mul_smul_comm, ← mul_assoc, hJJ, neg_one_mul, smul_neg, neg_neg]
+    simp [C, ← mul_assoc, hJJ]
   have hY' : deriv G 0 = Y := by
-    rw [hJC, ← sub_eq_add_neg, sub_eq_iff_eq_add, ← add_smul] at heq
-    rw [heq]
-    norm_num
+    rw [hJC] at heq
+    linear_combination (norm := module) heq
   rwa [hY'] at hG
 
 /-- **The compatible tangent space consists of velocities.** For an `ω`-compatible `J`, a
@@ -327,13 +325,18 @@ theorem Tames.exists_contDiff_hasDerivAt {J : AlmostComplexStructure V} (h : ω.
   have hKP (t : ℝ) : K t * P t = P t * Jc := by
     simp only [K]
     rw [mul_assoc, Ring.inverse_mul_cancel _ (hPu t), mul_one]
-  set c : ℝ → AlmostComplexStructure V := fun t =>
-    J.transport (ContinuousLinearEquiv.ofUnit (hPu t).unit).toLinearEquiv
+  set e : ℝ → V ≃L[ℝ] V := fun t => ContinuousLinearEquiv.unitsEquiv ℝ V (hPu t).unit
+  have he (t : ℝ) (v : V) : e t v = P t v := by simp [e]
+  have he' (t : ℝ) (v : V) : (e t).symm v = Ring.inverse (P t) v := by
+    rw [ContinuousLinearEquiv.symm_apply_eq, he, ← mul_apply_eq_comp,
+      Ring.mul_inverse_cancel _ (hPu t), one_apply_eq_self]
+  set c : ℝ → AlmostComplexStructure V := fun t => J.transport (e t).toLinearEquiv
   have hcK : (fun t => LinearMap.toContinuousLinearMap (c t).toLinearMap) = K := by
     funext t
     ext v
-    simp only [K, Ring.inverse_of_isUnit (hPu t)]
-    rfl
+    simp only [c, K, Jc, LinearMap.coe_toContinuousLinearMap', mul_apply_eq_comp,
+      AlmostComplexStructure.transport_apply, ContinuousLinearEquiv.coe_toLinearEquiv,
+      ContinuousLinearEquiv.coe_symm_toLinearEquiv, he, he']
   have hP0 : P 0 = 1 := by simp [P, hφ0]
   have hK0 : K 0 = Jc := by simp [K, hP0]
   have hKs : ContDiff ℝ ⊤ K := by
@@ -350,15 +353,15 @@ theorem Tames.exists_contDiff_hasDerivAt {J : AlmostComplexStructure V} (h : ω.
     obtain ⟨u, hu⟩ := hPu t
     set w := (↑u⁻¹ : V →L[ℝ] V) v
     have hvw : v = P t w := by
-      have h1 : ((u : V →L[ℝ] V) * ↑u⁻¹) v = v := by rw [Units.mul_inv]; rfl
+      have h1 : ((u : V →L[ℝ] V) * ↑u⁻¹) v = v := by rw [Units.mul_inv, one_apply_eq_self]
       rw [← hu]
       exact h1.symm
     have hw : w ≠ 0 := by
       rintro hw0
       exact hv (by rw [hvw, hw0, map_zero])
     have hKv : K t v = P t (J w) := by
-      simp only [K, ← hu, Ring.inverse_unit, mul_apply_eq_comp, w]
-      rfl
+      simp only [K, ← hu, Ring.inverse_unit, mul_apply_eq_comp, w, Jc,
+        LinearMap.coe_toContinuousLinearMap']
     have hcv : c t v = K t v := congrArg (fun A : V →L[ℝ] V => A v) (congrFun hcK t)
     rw [hcv, hKv, hvw]
     exact (hsmall _ (hφ t)).2 w hw
@@ -374,16 +377,14 @@ theorem Tames.exists_contDiff_hasDerivAt {J : AlmostComplexStructure V} (h : ω.
   rw [show (fun t => K t * P t) = fun t => P t * Jc from funext hKP] at hL
   have heq := hL.unique hR
   have hZJ : Z * Jc = (1 / 2 : ℝ) • Y := by
-    simp only [Z]
-    rw [smul_mul_assoc, mul_assoc, hJJ, mul_neg_one, smul_neg, neg_smul, neg_neg]
+    simp [Z, mul_assoc, hJJ]
   have hJZ : Jc * Z = -((1 / 2 : ℝ) • Y) := by
-    simp only [Z]
-    rw [mul_smul_comm, ← mul_assoc, hYJ, neg_mul, mul_assoc, hJJ, mul_neg_one, neg_neg, neg_smul]
-  rw [hP0, hK0, mul_one, mul_zero, add_zero, hZJ, hJZ, ← sub_eq_add_neg, sub_eq_iff_eq_add,
-    ← add_smul] at heq
-  rw [heq] at hK
-  norm_num at hK
-  exact hK
+    simp only [Z, mul_smul_comm, ← mul_assoc, hYJ]
+    simp [mul_assoc, hJJ]
+  have hK' : deriv K 0 = Y := by
+    simp only [hP0, hK0, mul_one, mul_zero, add_zero, hZJ, hJZ] at heq
+    linear_combination (norm := module) heq
+  rwa [hK'] at hK
 
 /-- **The tangent space at a tame structure consists of velocities.** For an `ω`-tame `J`, a
 continuous endomorphism `Y` anticommutes with `J` exactly when it is the velocity at `0` of a
