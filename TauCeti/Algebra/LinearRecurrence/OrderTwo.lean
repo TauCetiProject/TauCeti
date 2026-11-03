@@ -124,15 +124,22 @@ theorem linearRec₂_mul_eq_sum_pow_mul (h0 : d 0 = 1) (h1 : d 1 = D) (hDS : Com
     -- Multiplying the `i`-th term of the expansion of `d (r + 1) * d s` by `D` shifts it up.
     have key (i : ℕ) (hi : i < r + 2) : D * (S ^ i * d (r + 1 + s - 2 * i)) =
         S ^ i * d (r + 2 + s - 2 * i) + S ^ (i + 1) * d (r + s - 2 * i) := by
-      rw [← mul_assoc, (hDS.pow_right i).eq, mul_assoc,
-        linearRec₂_mul_eq_succ_add_mul_pred hd (m := r + 1 + s - 2 * i) (by omega), pow_succ,
-        mul_assoc, mul_add, show r + 1 + s - 2 * i + 1 = r + 2 + s - 2 * i by omega,
-        show r + 1 + s - 2 * i - 1 = r + s - 2 * i by omega]
-    rw [hd r, sub_mul, mul_assoc, mul_assoc, ih2 (by omega), ih1 (by omega), mul_sum, mul_sum,
-      sum_congr rfl fun i hi ↦ key i (mem_range.1 hi), sum_add_distrib,
-      sum_range_succ (fun i ↦ S ^ (i + 1) * d (r + s - 2 * i)) (r + 1),
-      sum_range_succ (fun i ↦ S ^ i * d (r + 2 + s - 2 * i)) (r + 2),
-      show r + 2 + s - 2 * (r + 2) = r + s - 2 * (r + 1) by omega]
+      have hup : r + 1 + s - 2 * i + 1 = r + 2 + s - 2 * i := by omega
+      have hdown : r + 1 + s - 2 * i - 1 = r + s - 2 * i := by omega
+      have h := linearRec₂_mul_eq_succ_add_mul_pred hd (m := r + 1 + s - 2 * i) (by omega)
+      rw [hup, hdown] at h
+      rw [← mul_assoc, (hDS.pow_right i).eq, mul_assoc, h]
+      simp only [mul_add, pow_succ, mul_assoc]
+    -- Expand `d (r + 2) * d s` by the recurrence, then both products by the induction hypotheses.
+    have hL : d (r + 2) * d s = D * (d (r + 1) * d s) - S * (d r * d s) := by
+      simp only [hd r, sub_mul, mul_assoc]
+    rw [hL, ih2 (by omega), ih1 (by omega), mul_sum, mul_sum]
+    -- Shift each term with `key`; what remains is a telescoping comparison of two sums.
+    rw [sum_congr rfl fun i hi ↦ key i (mem_range.1 hi), sum_add_distrib]
+    -- Split off the top terms: the `S`-shifted sum cancels below them, and they agree.
+    have htop : r + 2 + s - 2 * (r + 2) = r + s - 2 * (r + 1) := by omega
+    rw [sum_range_succ (fun i ↦ S ^ (i + 1) * d (r + s - 2 * i)) (r + 1),
+      sum_range_succ (fun i ↦ S ^ i * d (r + 2 + s - 2 * i)) (r + 2), htop]
     simp only [← mul_assoc, ← pow_succ']
     abel
 
