@@ -477,6 +477,12 @@ private def twoPointOrbit : Finset (Fin 100) :=
     43, 45, 48, 51, 53, 54, 56, 58, 60, 62, 63, 64, 65, 68, 72, 73, 75, 76, 77, 79, 80,
     81, 84, 85, 86, 87, 88, 89, 90, 92, 93, 94, 95, 96, 97, 98, 99}
 
+private theorem twoPointOrbit_eq : (twoPointOrbit : Set (Fin 100)) =
+    (↑({2, 3, 5, 6, 7, 13, 14, 15, 16, 18, 19, 21, 22, 23, 25, 27, 29, 30, 31, 33, 34, 36,
+      41, 43, 45, 48, 51, 53, 54, 56, 58, 60, 62, 63, 64, 65, 68, 72, 73, 75, 76, 77,
+      79, 80, 81, 84, 85, 86, 87, 88, 89, 90, 92, 93, 94, 95, 96, 97, 98, 99} :
+      Finset (Fin 100)) : Set (Fin 100)) := (rfl)
+
 private theorem mem_twoPointOrbit_iff : ∀ x,
     x ∈ twoPointOrbit ↔ related 0 x = true ∧ related 1 x = true := by
   decide +kernel
@@ -597,8 +603,7 @@ theorem orbit_stabilizerChain_two :
         41, 43, 45, 48, 51, 53, 54, 56, 58, 60, 62, 63, 64, 65, 68, 72, 73, 75, 76, 77,
         79, 80, 81, 84, 85, 86, 87, 88, 89, 90, 92, 93, 94, 95, 96, 97, 98, 99} :
         Finset (Fin 100)) : Set (Fin 100)) := by
-  -- The displayed finite set is the private table twoPointOrbit.
-  change orbit (HS.stabilizerChain pointSequence 2) (2 : Fin 100) = ↑twoPointOrbit
+  rw [← twoPointOrbit_eq]
   ext x
   constructor
   · rintro ⟨g, rfl⟩
