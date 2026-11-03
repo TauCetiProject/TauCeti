@@ -51,11 +51,36 @@ theorem eval_of (n : ℕ) (s : S) :
     eval π n (of π S s) = Ideal.Quotient.mk _ s := by
   rw [eval_eq, coe_of, AdicCompletion.evalₐ_of]
 
+/-- Reduction sends base scalars to their residue classes. -/
+theorem eval_algebraMap (n : ℕ) (a : O) :
+    eval π n (algebraMap O (weakCompletion π S) a) =
+      Ideal.Quotient.mk _ (algebraMap O S a) :=
+  (eval π n).commutes a
+
 /-- Reduction from the weak completion onto each parameter-power quotient is surjective. -/
 theorem eval_surjective (n : ℕ) : Function.Surjective (eval π n (S := S)) := by
   intro s
   obtain ⟨s, rfl⟩ := Ideal.Quotient.mk_surjective s
   exact ⟨of π S s, eval_of π n s⟩
+
+/-- The parameter has vanishing n-th power after reduction modulo its n-th power. -/
+theorem eval_parameter_pow (n : ℕ) :
+    eval π n (algebraMap O (weakCompletion π S) π) ^ n = 0 := by
+  rw [eval_algebraMap, ← map_pow, Ideal.Quotient.eq_zero_iff_mem]
+  exact Ideal.pow_mem_pow (Ideal.subset_span rfl) n
+
+/-- An expansion may be evaluated using extra terms, which vanish at level k. -/
+private theorem eval_eq_sum_range_add (z : weakCompletion π S) (a : ℕ → S)
+    (hz : ∀ k, AdicCompletion.evalₐ _ k (z : piAdicCompletion π S) =
+      Ideal.Quotient.mk _ (∑ j ∈ range k, algebraMap O S π ^ j * a j)) (n k : ℕ) :
+    AdicCompletion.evalₐ _ k (z : piAdicCompletion π S) =
+      Ideal.Quotient.mk _ (∑ j ∈ range (n + k), algebraMap O S π ^ j * a j) := by
+  rw [hz k]
+  symm
+  rw [Nat.add_comm n k, sum_range_add, map_add, add_eq_left, map_sum]
+  apply sum_eq_zero
+  intro j hj
+  simp only [map_mul, map_pow, pow_add, ← eval_algebraMap, eval_parameter_pow, zero_mul]
 
 /-- Every weakly completed element has a finite head in the original algebra and a
 weakly completed tail, after factoring out any prescribed power of the parameter. -/
@@ -68,6 +93,7 @@ private theorem exists_eq_of_add_pow_mul (z : weakCompletion π S) (n : ℕ) :
   have hx : Algebra.adjoin O (Set.range x) = ⊤ := by
     simpa only [x, Subtype.range_coe_subtype, Finset.setOfPred_mem] using hg
   obtain ⟨c, P, hP, hz⟩ := (mem_weakCompletion_iff π hx).mp z.property
+  -- Shift the expansion by n, enlarging its linear degree bound for the tail.
   have htail (j : ℕ) : (P (n + j)).totalDegree ≤ (c * (n + 1)) * (j + 1) := by
     refine (hP (n + j)).trans ?_
     calc c * (n + j + 1) ≤ c * ((n + 1) * (j + 1)) := by
@@ -83,30 +109,15 @@ private theorem exists_eq_of_add_pow_mul (z : weakCompletion π S) (n : ℕ) :
   apply Subtype.ext
   apply AdicCompletion.ext_evalₐ
   intro k
-  have htruncate : Ideal.Quotient.mk (Ideal.span {algebraMap O S π} ^ k)
-      (∑ j ∈ range (n + k), algebraMap O S π ^ j * aeval x (P j)) =
-      Ideal.Quotient.mk _ (∑ j ∈ range k, algebraMap O S π ^ j * aeval x (P j)) := by
-    rw [Nat.add_comm n k, sum_range_add, map_add, add_eq_left]
-    rw [map_sum]
-    apply sum_eq_zero
-    intro j hj
-    rw [map_mul, map_pow, pow_add]
-    have hπ : Ideal.Quotient.mk (Ideal.span {algebraMap O S π} ^ k)
-        (algebraMap O S π) ^ k = 0 := by
-      rw [← map_pow, Ideal.Quotient.eq_zero_iff_mem]
-      exact Ideal.pow_mem_pow (Ideal.subset_span rfl) k
-    rw [hπ, zero_mul, zero_mul]
-  -- Compute at level k using n + k terms, then split off the first n terms.
-  rw [hz k, ← htruncate]
+  -- Compare at each level k using n + k terms, then split off the first n terms.
+  rw [eval_eq_sum_range_add π z (fun j ↦ aeval x (P j)) hz n k]
   simp only [Subalgebra.coe_add, Subalgebra.coe_mul, Subalgebra.coe_pow,
     Subalgebra.coe_algebraMap, coe_of]
   rw [map_add, map_mul, map_pow, AdicCompletion.evalₐ_of, hte k]
   have hscalar : AdicCompletion.evalₐ (Ideal.span {algebraMap O S π}) k
       (algebraMap O (piAdicCompletion π S) π) =
-      Ideal.Quotient.mk _ (algebraMap O S π) := by
-    rw [IsScalarTower.algebraMap_apply O S (piAdicCompletion π S),
-      AdicCompletion.algebraMap_apply, AdicCompletion.evalₐ_of,
-      Algebra.algebraMap_self_apply]
+      Ideal.Quotient.mk _ (algebraMap O S π) :=
+    ((AdicCompletion.evalₐ _ k).restrictScalars O).commutes π
   rw [hscalar, ← map_pow, ← map_mul, ← map_add]
   congr 1
   simp only [sum_range_add, mul_sum, pow_add, mul_assoc]
@@ -126,16 +137,11 @@ completion, rather than its contraction from an unspecified larger ring. -/
 theorem ker_eval (n : ℕ) :
     RingHom.ker (eval π n (S := S)) =
       Ideal.span {algebraMap O (weakCompletion π S) π} ^ n := by
-  have hπ : eval π n (algebraMap O (weakCompletion π S) π) ^ n = 0 := by
-    rw [← map_pow, eval_eq, Subalgebra.coe_pow, Subalgebra.coe_algebraMap,
-      AdicCompletion.algebraMap_apply, map_pow, AdicCompletion.evalₐ_of,
-      ← map_pow, Ideal.Quotient.eq_zero_iff_mem]
-    exact Ideal.pow_mem_pow (Ideal.subset_span rfl) n
   have hle : Ideal.span {algebraMap O (weakCompletion π S) π} ^ n ≤
       RingHom.ker (eval π n (S := S)) := by
     rw [Ideal.span_singleton_pow, Ideal.span_singleton_le_iff_mem, RingHom.mem_ker,
       map_pow]
-    exact hπ
+    exact eval_parameter_pow π n
   apply le_antisymm _ hle
   intro z hz
   obtain ⟨s, hs⟩ := exists_sub_mem_span_pow π z n
