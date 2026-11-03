@@ -15,10 +15,11 @@ import TauCeti.Topology.Algebra.ConstMulAction
 /-!
 # Stabilizers of smooth actions and their Lie algebras
 
-Let a Lie group `G` with Lie algebra `𝔤 = GroupLieAlgebra I G` act smoothly on the left on a
-manifold `M`. The **stabilizer** `G_x = {g ∈ G | g • x = x}` of a point `x` is Mathlib's
-`MulAction.stabilizer G x`, and the **isotropy algebra** `𝔤_x = {ξ ∈ 𝔤 | ξ_M(x) = 0}` of `x` is the
-kernel of the evaluation `ξ ↦ ξ_M(x)` of the fundamental vector fields at `x`
+Let a finite-dimensional real Lie group `G` with Lie algebra `𝔤 = GroupLieAlgebra I G` act
+smoothly on the left on a manifold `M`. The **stabilizer** `G_x = {g ∈ G | g • x = x}` of a point
+`x` is Mathlib's `MulAction.stabilizer G x`, and the **isotropy algebra**
+`𝔤_x = {ξ ∈ 𝔤 | ξ_M(x) = 0}` of `x` is the kernel of the evaluation `ξ ↦ ξ_M(x)` of the
+fundamental vector fields at `x`
 (`TauCeti.InfinitesimalAction.isotropy` of `TauCeti.InfinitesimalAction.fundamental`).
 
 This file relates the two. On a `T₁` manifold the stabilizer is closed, hence an embedded Lie
@@ -38,7 +39,7 @@ with discrete stabilizer, at which the form is nondegenerate, a regular point of
 ## Main results
 
 * `TauCeti.Lie.isEmbeddedLieSubgroup_stabilizer`: the stabilizer of a point of a `T₁` space under a
-  continuous action of a Lie group is an embedded Lie subgroup.
+  continuous action of a finite-dimensional real Lie group is an embedded Lie subgroup.
 * `TauCeti.Lie.lieSubalgebraOfSubgroup_stabilizer`: **the Lie algebra of `G_x` is the isotropy
   algebra `𝔤_x`**, transported to left-invariant derivations by evaluation at the identity.
 * `TauCeti.Lie.adjointContinuousLinearMap_mem_isotropy_smul_iff`: `Ad_g ξ ∈ 𝔤_{g • x}` exactly
