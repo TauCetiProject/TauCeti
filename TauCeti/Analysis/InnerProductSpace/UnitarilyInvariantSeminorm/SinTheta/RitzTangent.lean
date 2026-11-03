@@ -71,7 +71,7 @@ transverse.  Thus the tangent has no `π/2` pole; this is a conclusion, not an
 extra hypothesis. -/
 private theorem isTransverse_of_tanThetaIntervalGap
     {A : E →ₗ[𝕜] E} (hA : A.IsSymmetric)
-    {U : Submodule 𝕜 E} [U.HasOrthogonalProjection] (hU : U ∈ Module.End.invtSubmodule A)
+    {U : Submodule 𝕜 E} (hU : U ∈ Module.End.invtSubmodule A)
     (X : F →ₗᵢ[𝕜] E) {β α δ : ℝ} (hδ : 0 < δ)
     (hgap : (Module.End.PointSpectrumIn (X.toLinearMap.adjoint ∘ₗ A ∘ₗ X.toLinearMap) ⊤ (Set.Icc β
       α) ∧ Module.End.PointSpectrumIn A Uᗮ (Set.Ici (α + δ)))) :
