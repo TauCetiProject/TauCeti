@@ -40,6 +40,11 @@ category.  If `g - g' = d k` for a degree-zero morphism `k : Q ⟶ P`, then the 
 summands together with `k` in the block from `Q` to `P` is a closed morphism
 `extension P Q g ⟶ extension P Q g'`, with inverse the same construction for `-k`.
 
+The extension is functorial in the second summand: a closed degree-zero morphism `φ : Q ⟶ Q'`
+with `φ` followed by `g'` equal to `g` induces a closed morphism
+`extension P Q g ⟶ extension P Q' g'`, the identity on `P` and `φ` on `Q`, and an isomorphism `φ`
+induces an isomorphism in the homotopy category.
+
 With `Q` the shift `P'⟦1⟧` of a twisted object `P'` and `g` the degree-one morphism
 `P'⟦1⟧ ⟶ P' ⟶ P` underlying a closed degree-zero morphism `u : P' ⟶ P`, the extension is the
 cone of `u`, the basic construction of the pretriangulated envelope of Bondal and Kapranov; see
@@ -56,6 +61,10 @@ cone of `u`, the basic construction of the pretriangulated envelope of Bondal an
   degree-zero morphism `k : Q ⟶ P`.
 * `TauCeti.DGTwistedObject.extensionIsoOfHomotopy`: the isomorphism in the homotopy category
   between extensions along homotopic morphisms.
+* `TauCeti.DGTwistedObject.extensionMap`: the morphism of extensions induced by a morphism of
+  second summands.
+* `TauCeti.DGTwistedObject.extensionIsoOfIso`: the isomorphism in the homotopy category between
+  extensions along isomorphic second summands.
 
 ## Main results
 
@@ -86,6 +95,9 @@ cone of `u`, the basic construction of the pretriangulated envelope of Bondal an
 * `TauCeti.DGTwistedObject.dgDifferential_extensionHomOfHomotopy` and
   `TauCeti.DGTwistedObject.dgComp_extensionHomOfHomotopy_neg`: the morphism induced by a homotopy
   `k` from `g` to `g'` is closed, and the morphisms induced by `k` and `-k` are mutually inverse.
+* `TauCeti.DGTwistedObject.dgDifferential_extensionMap` and
+  `TauCeti.DGTwistedObject.dgComp_extensionMap`: the morphism of extensions induced by a closed
+  morphism compatible with the gluing morphisms is closed, and these morphisms compose.
 
 ## References
 
@@ -127,7 +139,7 @@ private theorem dgHom_ext' {M N : DGTwistedObject R (DGAdditiveClosure E)} {n : 
 variable {R} in
 /-- The twisted differential of a morphism of twisted objects of the additive closure,
 entrywise. -/
-private theorem dgDifferential_apply {M N : DGTwistedObject R (DGAdditiveClosure E)} {n : ℤ}
+theorem dgDifferential_apply {M N : DGTwistedObject R (DGAdditiveClosure E)} {n : ℤ}
     (f : DGHom R n M N) (i : M.obj.ι) (j : N.obj.ι) :
     matrixEquiv R _ _ (n + 1) (dgHomEquiv R M N (n + 1) (dgDifferential R n f)) i j =
       dgDifferential R n (matrixEquiv R _ _ n (dgHomEquiv R M N n f) i j) +
@@ -142,7 +154,7 @@ private theorem dgDifferential_apply {M N : DGTwistedObject R (DGAdditiveClosure
 
 variable {R} in
 /-- Composition of twisted objects of the additive closure, entrywise. -/
-private theorem dgComp_apply {L M N : DGTwistedObject R (DGAdditiveClosure E)} {p q n : ℤ}
+theorem dgComp_apply {L M N : DGTwistedObject R (DGAdditiveClosure E)} {p q n : ℤ}
     (f : DGHom R p L M) (f' : DGHom R q M N) (h : p + q = n) (i : L.obj.ι) (j : N.obj.ι) :
     matrixEquiv R _ _ n (dgHomEquiv R L N n (dgComp R f f' h)) i j =
       ∑ k, dgComp R (matrixEquiv R _ _ p (dgHomEquiv R L M p f) i k)
@@ -158,7 +170,7 @@ private theorem dgId_apply (M : DGTwistedObject R (DGAdditiveClosure E)) (i j : 
 variable {R} in
 /-- The twisted differential of a degree-zero morphism of twisted objects of the additive
 closure, entrywise. -/
-private theorem dgDifferential_apply_zero {M N : DGTwistedObject R (DGAdditiveClosure E)}
+theorem dgDifferential_apply_zero {M N : DGTwistedObject R (DGAdditiveClosure E)}
     (f : DGHom R 0 M N) (i : M.obj.ι) (j : N.obj.ι) :
     matrixEquiv R _ _ 1 (dgHomEquiv R M N 1 (dgDifferential R 0 f)) i j =
       ((dgHomComplex R (M.obj.X i) (N.obj.X j)).d 0 1).hom
@@ -835,6 +847,194 @@ theorem extensionIsoOfHomotopy_hom_comp_homOf_extensionSnd {k : DGHom R 0 Q P}
     dgComp_extensionHomOfHomotopy_extensionSnd]
 
 end homotopy
+
+/-! ### Extensions along isomorphic second summands are isomorphic -/
+
+section map
+
+variable {P Q Q' : DGTwistedObject R (DGAdditiveClosure E)} {g : DGHom R 1 Q P}
+  {g' : DGHom R 1 Q' P} (hg : dgDifferential R 1 g = 0) (hg' : dgDifferential R 1 g' = 0)
+
+/-- The degree-zero morphism `extension P Q g ⟶ extension P Q' g'` induced by a degree-zero
+morphism `φ : Q ⟶ Q'`: the identity on the summand `P` and `φ` on the second summand.  It is
+closed when `φ` is closed and `φ` followed by `g'` is `g`
+(`TauCeti.DGTwistedObject.dgDifferential_extensionMap`). -/
+noncomputable def extensionMap (φ : DGHom R 0 Q Q') :
+    DGHom R 0 (extension P Q g hg) (extension P Q' g' hg') :=
+  dgComp R (extensionFst R hg) (extensionInl R hg') (add_zero 0) +
+    dgComp R (extensionSnd R hg) (dgComp R φ (extensionInr R hg') (add_zero 0)) (add_zero 0)
+
+theorem extensionMap_def (φ : DGHom R 0 Q Q') :
+    extensionMap R hg hg' φ =
+      dgComp R (extensionFst R hg) (extensionInl R hg') (add_zero 0) +
+        dgComp R (extensionSnd R hg) (dgComp R φ (extensionInr R hg') (add_zero 0)) (add_zero 0) :=
+  (rfl)
+
+/-- The morphism of extensions induced by the identity is the identity. -/
+@[simp↓]
+theorem extensionMap_dgId : extensionMap R hg hg (dgId R Q) = dgId R (extension P Q g hg) := by
+  rw [extensionMap_def, dgId_dgComp,
+    dgComp_extensionFst_extensionInl_add_dgComp_extensionSnd_extensionInr]
+
+/-- **The morphism of extensions induced by a closed morphism compatible with the gluing morphisms
+is closed**: if `φ : Q ⟶ Q'` is closed and `φ` followed by `g'` is `g`, then the differential of
+`TauCeti.DGTwistedObject.extensionMap` vanishes. -/
+theorem dgDifferential_extensionMap {φ : DGHom R 0 Q Q'} (hφ : dgDifferential R 0 φ = 0)
+    (h : dgComp R φ g' (zero_add 1) = g) :
+    dgDifferential R 0 (extensionMap R hg hg' φ) = 0 := by
+  rw [extensionMap_def, map_add]
+  simp only [dgDifferential_dgComp, dgDifferential_extensionFst, dgDifferential_extensionInl,
+    dgDifferential_extensionSnd, dgDifferential_extensionInr, hφ, neg_dgComp, dgComp_zero,
+    zero_dgComp, smul_zero, add_zero, zero_add, Int.negOnePow_zero, one_smul]
+  rw [dgComp_assoc R _ g (extensionInl R hg') (zero_add 1) (add_zero 1) (by omega),
+    ← dgComp_assoc R φ g' (extensionInl R hg') (zero_add 1) (add_zero 1) (by omega), h]
+  abel
+
+/-- The inclusion of `P` followed by the morphism of extensions induced by `φ` is the inclusion
+of `P`. -/
+@[simp↓]
+theorem dgComp_extensionInl_extensionMap (φ : DGHom R 0 Q Q') :
+    dgComp R (extensionInl R hg) (extensionMap R hg hg' φ) (add_zero 0) = extensionInl R hg' := by
+  simp only [extensionMap_def, dgComp_add, dgComp_extensionInl_extensionFst_assoc,
+    dgComp_extensionInl_extensionSnd_assoc, add_zero]
+
+/-- The inclusion of `Q` followed by the morphism of extensions induced by `φ` is `φ` followed by
+the inclusion of `Q'`. -/
+@[simp↓]
+theorem dgComp_extensionInr_extensionMap (φ : DGHom R 0 Q Q') :
+    dgComp R (extensionInr R hg) (extensionMap R hg hg' φ) (add_zero 0) =
+      dgComp R φ (extensionInr R hg') (add_zero 0) := by
+  simp only [extensionMap_def, dgComp_add, dgComp_extensionInr_extensionFst_assoc,
+    dgComp_extensionInr_extensionSnd_assoc, zero_add]
+
+/-- The morphism of extensions induced by `φ` followed by the projection onto `P` is the
+projection onto `P`. -/
+@[simp↓]
+theorem dgComp_extensionMap_extensionFst (φ : DGHom R 0 Q Q') :
+    dgComp R (extensionMap R hg hg' φ) (extensionFst R hg') (add_zero 0) = extensionFst R hg := by
+  simp only [extensionMap_def, add_dgComp,
+    dgComp_assoc R _ _ (extensionFst R hg') (add_zero 0) (add_zero 0) (add_zero 0),
+    dgComp_extensionInl_extensionFst, dgComp_extensionInr_extensionFst, dgComp_zero, add_zero,
+    dgComp_dgId]
+
+/-- The morphism of extensions induced by `φ` followed by the projection onto `Q'` is the
+projection onto `Q` followed by `φ`. -/
+@[simp↓]
+theorem dgComp_extensionMap_extensionSnd (φ : DGHom R 0 Q Q') :
+    dgComp R (extensionMap R hg hg' φ) (extensionSnd R hg') (add_zero 0) =
+      dgComp R (extensionSnd R hg) φ (add_zero 0) := by
+  simp only [extensionMap_def, add_dgComp,
+    dgComp_assoc R _ _ (extensionSnd R hg') (add_zero 0) (add_zero 0) (add_zero 0),
+    dgComp_extensionInl_extensionSnd, dgComp_extensionInr_extensionSnd, dgComp_zero, zero_add,
+    dgComp_dgId]
+
+/-- The inclusion of `P`, followed by the morphism of extensions induced by `φ` and then `x`, is
+the inclusion of `P` followed by `x`. -/
+@[simp↓]
+theorem dgComp_extensionInl_extensionMap_assoc (φ : DGHom R 0 Q Q')
+    {Z : DGTwistedObject R (DGAdditiveClosure E)} {n : ℤ}
+    (x : DGHom R n (extension P Q' g' hg') Z) :
+    dgComp R (extensionInl R hg) (dgComp R (extensionMap R hg hg' φ) x (zero_add n))
+        (zero_add n) =
+      dgComp R (extensionInl R hg') x (zero_add n) := by
+  rw [← dgComp_assoc R _ _ x (add_zero 0) (zero_add n) (by omega),
+    dgComp_extensionInl_extensionMap]
+
+/-- The inclusion of `Q`, followed by the morphism of extensions induced by `φ` and then `x`, is
+`φ` followed by the inclusion of `Q'` and then `x`. -/
+@[simp↓]
+theorem dgComp_extensionInr_extensionMap_assoc (φ : DGHom R 0 Q Q')
+    {Z : DGTwistedObject R (DGAdditiveClosure E)} {n : ℤ}
+    (x : DGHom R n (extension P Q' g' hg') Z) :
+    dgComp R (extensionInr R hg) (dgComp R (extensionMap R hg hg' φ) x (zero_add n))
+        (zero_add n) =
+      dgComp R φ (dgComp R (extensionInr R hg') x (zero_add n)) (zero_add n) := by
+  rw [← dgComp_assoc R _ _ x (add_zero 0) (zero_add n) (by omega),
+    dgComp_extensionInr_extensionMap, dgComp_assoc R _ _ x (add_zero 0) (zero_add n) (by omega)]
+
+/-- The morphism of extensions induced by `φ`, followed by the projection onto `P` and then `x`,
+is the projection onto `P` followed by `x`. -/
+@[simp↓]
+theorem dgComp_extensionMap_extensionFst_assoc (φ : DGHom R 0 Q Q')
+    {Z : DGTwistedObject R (DGAdditiveClosure E)} {n : ℤ} (x : DGHom R n P Z) :
+    dgComp R (extensionMap R hg hg' φ) (dgComp R (extensionFst R hg') x (zero_add n))
+        (zero_add n) =
+      dgComp R (extensionFst R hg) x (zero_add n) := by
+  rw [← dgComp_assoc R _ _ x (add_zero 0) (zero_add n) (by omega),
+    dgComp_extensionMap_extensionFst]
+
+/-- The morphism of extensions induced by `φ`, followed by the projection onto `Q'` and then `x`,
+is the projection onto `Q` followed by `φ` and then `x`. -/
+@[simp↓]
+theorem dgComp_extensionMap_extensionSnd_assoc (φ : DGHom R 0 Q Q')
+    {Z : DGTwistedObject R (DGAdditiveClosure E)} {n : ℤ} (x : DGHom R n Q' Z) :
+    dgComp R (extensionMap R hg hg' φ) (dgComp R (extensionSnd R hg') x (zero_add n))
+        (zero_add n) =
+      dgComp R (extensionSnd R hg) (dgComp R φ x (zero_add n)) (zero_add n) := by
+  rw [← dgComp_assoc R _ _ x (add_zero 0) (zero_add n) (by omega),
+    dgComp_extensionMap_extensionSnd, dgComp_assoc R _ _ x (add_zero 0) (zero_add n) (by omega)]
+
+/-- **The morphisms of extensions compose**: the morphisms induced by `φ : Q ⟶ Q'` and
+`ψ : Q' ⟶ Q''` compose to the morphism induced by `φ` followed by `ψ`. -/
+@[simp↓]
+theorem dgComp_extensionMap {Q'' : DGTwistedObject R (DGAdditiveClosure E)} {g'' : DGHom R 1 Q'' P}
+    (hg'' : dgDifferential R 1 g'' = 0) (φ : DGHom R 0 Q Q') (ψ : DGHom R 0 Q' Q'') :
+    dgComp R (extensionMap R hg hg' φ) (extensionMap R hg' hg'' ψ) (add_zero 0) =
+      extensionMap R hg hg'' (dgComp R φ ψ (add_zero 0)) := by
+  simp only [extensionMap_def, add_dgComp, dgComp_add,
+    dgComp_assoc R _ _ _ (add_zero 0) (add_zero 0) (add_zero 0),
+    dgComp_extensionInl_extensionFst_assoc, dgComp_extensionInl_extensionSnd_assoc,
+    dgComp_extensionInr_extensionFst_assoc, dgComp_extensionInr_extensionSnd_assoc, dgComp_zero,
+    add_zero, zero_add]
+
+variable {hg hg'} in
+/-- **Extensions along isomorphic second summands are isomorphic**: if `φ : Q ⟶ Q'` is a closed
+degree-zero morphism with two-sided inverse `ψ` and `φ` followed by `g'` is `g`, then
+`extension P Q g` and `extension P Q' g'` are isomorphic in the homotopy category, through the
+morphisms induced by `φ` and `ψ`. -/
+noncomputable def extensionIsoOfIso {φ : DGHom R 0 Q Q'} {ψ : DGHom R 0 Q' Q}
+    (hφ : dgDifferential R 0 φ = 0) (hφψ : dgComp R φ ψ (add_zero 0) = dgId R Q)
+    (hψφ : dgComp R ψ φ (add_zero 0) = dgId R Q') (h : dgComp R φ g' (zero_add 1) = g) :
+    DGHomotopyCategory.of R (extension P Q g hg) ≅ DGHomotopyCategory.of R (extension P Q' g' hg')
+    where
+  hom := DGHomotopyCategory.homOf R (extensionMap R hg hg' φ)
+    ((mem_dgCycles R).mpr (dgDifferential_extensionMap R hg hg' hφ h))
+  inv := DGHomotopyCategory.homOf R (extensionMap R hg' hg ψ)
+    ((mem_dgCycles R).mpr (dgDifferential_extensionMap R hg' hg
+      (dgDifferential_eq_zero_of_dgComp_eq_dgId R hφ (add_zero 0) hφψ hψφ)
+      (by rw [← h, ← dgComp_assoc R ψ φ g' (add_zero 0) (zero_add 1) (by omega), hψφ,
+        dgId_dgComp])))
+  hom_inv_id := by
+    simp only [DGHomotopyCategory.homOf_comp, dgCompZero_def, dgComp_extensionMap, hφψ,
+      extensionMap_dgId, DGHomotopyCategory.homOf_dgId]
+  inv_hom_id := by
+    simp only [DGHomotopyCategory.homOf_comp, dgCompZero_def, dgComp_extensionMap, hψφ,
+      extensionMap_dgId, DGHomotopyCategory.homOf_dgId]
+
+variable {hg hg'} in
+@[simp]
+theorem extensionIsoOfIso_hom {φ : DGHom R 0 Q Q'} {ψ : DGHom R 0 Q' Q}
+    (hφ : dgDifferential R 0 φ = 0) (hφψ : dgComp R φ ψ (add_zero 0) = dgId R Q)
+    (hψφ : dgComp R ψ φ (add_zero 0) = dgId R Q') (h : dgComp R φ g' (zero_add 1) = g) :
+    (extensionIsoOfIso R (hg := hg) (hg' := hg') hφ hφψ hψφ h).hom =
+      DGHomotopyCategory.homOf R (extensionMap R hg hg' φ)
+        ((mem_dgCycles R).mpr (dgDifferential_extensionMap R hg hg' hφ h)) :=
+  (rfl)
+
+variable {hg hg'} in
+@[simp]
+theorem extensionIsoOfIso_inv {φ : DGHom R 0 Q Q'} {ψ : DGHom R 0 Q' Q}
+    (hφ : dgDifferential R 0 φ = 0) (hφψ : dgComp R φ ψ (add_zero 0) = dgId R Q)
+    (hψφ : dgComp R ψ φ (add_zero 0) = dgId R Q') (h : dgComp R φ g' (zero_add 1) = g) :
+    (extensionIsoOfIso R (hg := hg) (hg' := hg') hφ hφψ hψφ h).inv =
+      DGHomotopyCategory.homOf R (extensionMap R hg' hg ψ)
+        ((mem_dgCycles R).mpr (dgDifferential_extensionMap R hg' hg
+          (dgDifferential_eq_zero_of_dgComp_eq_dgId R hφ (add_zero 0) hφψ hψφ)
+          (by rw [← h, ← dgComp_assoc R ψ φ g' (add_zero 0) (zero_add 1) (by omega), hψφ,
+            dgId_dgComp]))) :=
+  (rfl)
+
+end map
 
 end DGTwistedObject
 

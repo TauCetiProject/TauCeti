@@ -14,7 +14,8 @@ public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
 This file records sequential consequences of compactness for bounded sequences in seminormed
 spaces. These give the subsequence and separation arguments used in Riesz theory for compact
 perturbations of the identity. It also shows that a compact operator descends to a compact
-operator on the quotient by a submodule of its kernel.
+operator on the quotient by a submodule of its kernel, and characterizes compact operators into
+complete spaces by total boundedness of the image of a closed ball.
 
 ## Main declarations
 
@@ -24,6 +25,10 @@ operator on the quotient by a submodule of its kernel.
   images of a bounded sequence pairwise separated.
 * `IsCompactOperator.liftQL`: the operator induced by a compact operator on a quotient by a
   submodule of its kernel is compact.
+* `IsCompactOperator.totallyBounded_image_closedBall`: a compact operator maps closed balls to
+  totally bounded sets.
+* `isCompactOperator_of_totallyBounded_image_closedBall`: conversely, a linear map into a complete
+  Hausdorff space that maps a closed ball of positive radius to a totally bounded set is compact.
 -/
 
 public section
@@ -78,5 +83,28 @@ theorem liftQL {S : Submodule R₁ M} {f : M →SL[σ] N} (hf : IsCompactOperato
 end Quotient
 
 end IsCompactOperator
+
+section TotallyBounded
+
+variable {𝕜₁ 𝕜₂ M₁ M₂ : Type*} [NontriviallyNormedField 𝕜₁] [SeminormedRing 𝕜₂]
+  {σ₁₂ : 𝕜₁ →+* 𝕜₂} [SeminormedAddCommGroup M₁] [NormedSpace 𝕜₁ M₁]
+  [UniformSpace M₂] [AddCommMonoid M₂] [Module 𝕜₂ M₂] [ContinuousConstSMul 𝕜₂ M₂]
+  {f : M₁ →ₛₗ[σ₁₂] M₂}
+
+/-- A compact operator maps every closed ball to a totally bounded set. -/
+theorem IsCompactOperator.totallyBounded_image_closedBall (hf : IsCompactOperator f) (r : ℝ) :
+    TotallyBounded (f '' Metric.closedBall 0 r) := by
+  obtain ⟨K, hK, hfK⟩ := hf.image_closedBall_subset_compact r
+  exact hK.totallyBounded.subset hfK
+
+/-- A linear map into a complete Hausdorff space that maps a closed ball of positive radius to a
+totally bounded set is a compact operator. -/
+theorem isCompactOperator_of_totallyBounded_image_closedBall [T2Space M₂] [CompleteSpace M₂]
+    {r : ℝ} (hr : 0 < r) (hf : TotallyBounded (f '' Metric.closedBall 0 r)) :
+    IsCompactOperator f :=
+  (isCompactOperator_iff_isCompact_closure_image_closedBall f hr).mpr <|
+    hf.closure.isCompact_of_isClosed isClosed_closure
+
+end TotallyBounded
 
 end

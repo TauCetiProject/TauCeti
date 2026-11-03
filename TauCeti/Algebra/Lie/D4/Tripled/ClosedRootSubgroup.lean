@@ -86,7 +86,7 @@ private theorem represented_rootSubgroupCoordinateMap_surjective (k : Fin 4 ⊕ 
   have h := congrArg (fun f : Module.End ℚ (Fin 24 → ℚ) =>
     f ((latticeBasis s : lattice) : Fin 24 → ℚ))
     (weightTable.rep_serreRootGenerator_pow_two k)
-  simpa only [rep_def, pow_two, Module.End.mul_apply, LinearMap.zero_apply] using h
+  simpa only [rep_def, pow_two, mul_apply_eq_comp, LinearMap.zero_apply] using h
 
 /-- Every numbered root-subgroup coordinate map of the tripled carrier is surjective over `ℤ`.
 Thus the additive parameter is a regular function on its scheme-theoretic image. -/

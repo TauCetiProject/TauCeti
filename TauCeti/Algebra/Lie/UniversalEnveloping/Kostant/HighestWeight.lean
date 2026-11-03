@@ -159,7 +159,7 @@ private theorem dividedPower_f_apply_loweringWord (i : ι) (n : ℕ) (l : List (
     ρ (TauCeti.Associative.dividedPower n (_root_.UniversalEnvelopingAlgebra.ι ℚ (b.f i)))
         (ρ (b.loweringWord l) v) =
       ρ (b.loweringWord ((i, n) :: l)) v := by
-  rw [loweringWord_cons, map_mul, Module.End.mul_apply]
+  rw [loweringWord_cons, map_mul, mul_apply_eq_comp]
 
 /-- The divided powers of the lowering generators preserve the span of the lowering words applied
 to `v`. -/
@@ -198,26 +198,26 @@ private theorem dividedPower_e_apply_loweringWord_mem_span
   induction l generalizing m with
   | nil =>
     -- On `v` itself, `eⱼ⁽ᵐ⁾` is the identity for `m = 0` and zero otherwise.
-    rw [loweringWord_nil, map_one, Module.End.one_apply]
+    rw [loweringWord_nil, map_one, one_apply_eq_self]
     rcases m with _ | m
-    · rw [TauCeti.Associative.dividedPower_zero, map_one, Module.End.one_apply]
+    · rw [TauCeti.Associative.dividedPower_zero, map_one, one_apply_eq_self]
       exact Submodule.subset_span ⟨[], by simp⟩
     · have h0 : TauCeti.Associative.dividedPower (m + 1)
           (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (b.e j))) • v = 0 := by
-        rw [TauCeti.Associative.dividedPower_apply_eq_zero_iff, pow_succ, Module.End.mul_apply,
+        rw [TauCeti.Associative.dividedPower_apply_eq_zero_iff, pow_succ, mul_apply_eq_comp,
           he, map_zero]
       rw [TauCeti.Associative.map_dividedPower, ← Module.End.smul_def, h0]
       exact zero_mem _
   | cons p l ih =>
     obtain ⟨i, n⟩ := p
-    rw [loweringWord_cons, map_mul, Module.End.mul_apply, ← Module.End.mul_apply, ← map_mul]
+    rw [loweringWord_cons, map_mul, mul_apply_eq_comp, ← mul_apply_eq_comp, ← map_mul]
     by_cases hji : j = i
     · -- Same index: straighten `eⱼ⁽ᵐ⁾ fⱼ⁽ⁿ⁾` into `fⱼ⁽ⁿ⁻ᵏ⁾ (hⱼ - m - n + 2k choose k) eⱼ⁽ᵐ⁻ᵏ⁾`.
       subst hji
       rw [TauCeti.Sl2.dividedPower_ι_e_mul_dividedPower_ι_f (b.sl2 j).lie_e_f
         (b.sl2 j).lie_h_e_nsmul (b.sl2 j).lie_h_f_nsmul m n, map_sum, LinearMap.sum_apply]
       refine Submodule.sum_mem _ fun k _ => ?_
-      rw [map_mul, map_mul, Module.End.mul_apply, Module.End.mul_apply]
+      rw [map_mul, map_mul, mul_apply_eq_comp, mul_apply_eq_comp]
       refine b.dividedPower_f_apply_mem_span_loweringWord ρ j _ ?_
       have hshift : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (b.h j) - ((m + n : ℕ) : U) +
           ((2 * k : ℕ) : U)) = ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (b.h j)) +
@@ -239,7 +239,7 @@ private theorem dividedPower_e_apply_loweringWord_mem_span
               (_root_.UniversalEnvelopingAlgebra.ι ℚ (b.e j))) := by
         simp only [map_mul, TauCeti.Associative.map_dividedPower]
         exact (TauCeti.Associative.commute_dividedPower_dividedPower hc m n).eq
-      rw [hcomm, Module.End.mul_apply]
+      rw [hcomm, mul_apply_eq_comp]
       exact b.dividedPower_f_apply_mem_span_loweringWord ρ i n (ih m)
 
 /-- **The Kostant orbit of a highest weight vector is spanned by its lowering words**

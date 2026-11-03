@@ -36,6 +36,9 @@ lemma: on at least one boundary point, some arc joins two consecutive points.
 * `TauCeti.PlanarMatching.rotate k`: rotating every arc one step around the circle,
   `{a, b} ↦ {a + 1, b + 1}` modulo `k`.
 * `TauCeti.PlanarMatching.reflect k`: reflecting every arc in the order reversal `Fin.rev`.
+* `TauCeti.PlanarMatching.cast h`: transport along an equality `k = k'` of the numbers of points.
+* `TauCeti.PlanarMatching.nested n`: the fully nested planar matching of `n + n` points, joining
+  each point `a` to `Fin.rev a`.
 
 ## Main results
 
@@ -43,7 +46,8 @@ lemma: on at least one boundary point, some arc joins two consecutive points.
 * `TauCeti.PlanarMatching.rotate_pow_self`: `rotate k ^ k = 1`.
 * `TauCeti.PlanarMatching.reflect_mul_self`: `reflect k * reflect k = 1`.
 * `TauCeti.PlanarMatching.reflect_mul_rotate_mul_reflect`: the dihedral relation
-  `reflect k * rotate k * reflect k = (rotate k)⁻¹`.
+  `reflect k * rotate k * reflect k = (rotate k)⁻¹`, and its form
+  `TauCeti.PlanarMatching.reflect_mul_rotate_pow_mul_reflect` for powers of the rotation.
 
 ## References
 
@@ -76,6 +80,12 @@ theorem ext {x y : PlanarMatching k} (h : ∀ a, x.1.val a = y.1.val a) : x = y 
 theorem isEmpty_of_not_even (hk : ¬ Even k) : IsEmpty (PlanarMatching k) :=
   have := isEmpty_perfectMatching_of_not_even (α := Fin k) (by simpa using hk)
   inferInstance
+
+/-- **Arcs are nested.** If the point `b` lies strictly inside the arc `{a, x a}`, with `a < x a`,
+then so does its partner `x b`: an arc starting inside another arc ends inside it. -/
+theorem val_apply_mem_Ioo (x : PlanarMatching k) {a b : Fin k} (hab : a < b)
+    (hb : b < x.1.val a) : x.1.val b ∈ Set.Ioo a (x.1.val a) :=
+  x.2.apply_mem_Ioo x.1.2.involutive hab hb
 
 /-- **The innermost cup lemma.** A planar matching of at least one point joins some point `a` to
 the next point `a + 1`. Equivalently, its diagram has an arc enclosing no other boundary point. -/
@@ -187,6 +197,114 @@ theorem reflect_mul_rotate_mul_reflect (k : ℕ) :
     simp
   refine Equiv.ext fun x => Subtype.ext ?_
   simp [Perm.inv_def, Equiv.trans_assoc, hrev]
+
+/-- Reflecting a rotated planar matching is rotating the reflected one backwards. -/
+theorem reflect_rotate (x : PlanarMatching k) :
+    reflect k (rotate k x) = (rotate k).symm (reflect k x) := by
+  have := congrArg (· (reflect k x)) (reflect_mul_rotate_mul_reflect k)
+  simpa [Perm.mul_apply, Perm.inv_def] using this
+
+/-- Reflecting a backward-rotated planar matching is rotating the reflected one forwards. -/
+theorem reflect_rotate_symm (x : PlanarMatching k) :
+    reflect k ((rotate k).symm x) = rotate k (reflect k x) := by
+  have h := reflect_rotate (reflect k x)
+  rw [reflect_reflect] at h
+  rw [← h, reflect_reflect]
+
+/-- The dihedral relation for powers: conjugating the `j`-th power of the rotation by the
+reflection inverts it. -/
+theorem reflect_mul_rotate_pow_mul_reflect (k j : ℕ) :
+    reflect k * rotate k ^ j * reflect k = (rotate k ^ j)⁻¹ := by
+  have h := (conj_pow (a := reflect k) (b := rotate k) (i := j)).symm
+  have hs : (reflect k)⁻¹ = reflect k := reflect_symm k
+  rwa [hs, reflect_mul_rotate_mul_reflect, inv_pow] at h
+
+/-- Reflecting a planar matching rotated `j` times is rotating the reflected one `j` times
+backwards. -/
+theorem reflect_rotate_pow (j : ℕ) (x : PlanarMatching k) :
+    reflect k ((rotate k ^ j) x) = (rotate k ^ j)⁻¹ (reflect k x) := by
+  have := congrArg (· (reflect k x)) (reflect_mul_rotate_pow_mul_reflect k j)
+  simpa [Perm.mul_apply] using this
+
+/-! ### Changing the number of points -/
+
+/-- Transport of planar matchings along an equality `k = k'` of the numbers of boundary points,
+relabelling each point by `Fin.cast`. -/
+def cast {k' : ℕ} (h : k = k') : PlanarMatching k ≃ PlanarMatching k' :=
+  (PerfectMatching.congr (finCongr h)).subtypeEquiv fun D => by
+    subst h
+    simp [finCongr_refl]
+
+variable {k' k'' : ℕ}
+
+/-- The perfect matching underlying a transported planar matching is the transport of the
+original one along `finCongr h`. -/
+@[simp]
+theorem coe_cast_apply (h : k = k') (x : PlanarMatching k) :
+    (cast h x : PerfectMatching (Fin k')) = PerfectMatching.congr (finCongr h) x := (rfl)
+
+/-- Transport along `k = k'` moves the arc `{a, x a}` to `{Fin.cast h a, Fin.cast h (x a)}`. -/
+theorem cast_apply_val_apply (h : k = k') (x : PlanarMatching k) (a : Fin k) :
+    (cast h x).1.val (Fin.cast h a) = Fin.cast h (x.1.val a) :=
+  PerfectMatching.congr_val_apply_apply (finCongr h) x.1 a
+
+/-- Transport along an equality `k = k` is the identity. -/
+@[simp]
+theorem cast_refl (h : k = k) : cast h = Equiv.refl (PlanarMatching k) := by
+  ext x a
+  simp
+
+/-- Transporting back along `k = k'` is transporting along `k' = k`. -/
+@[simp]
+theorem cast_symm (h : k = k') : (cast h).symm = cast h.symm := by
+  subst h
+  simp
+
+/-- Transports compose. -/
+@[simp]
+theorem cast_cast (h : k = k') (h' : k' = k'') (x : PlanarMatching k) :
+    cast h' (cast h x) = cast (h.trans h') x := by
+  subst h h'
+  simp
+
+/-- Transport commutes with rotation. -/
+theorem cast_rotate (h : k = k') (x : PlanarMatching k) :
+    cast h (rotate k x) = rotate k' (cast h x) := by
+  subst h
+  simp
+
+/-- Transport commutes with backward rotation. -/
+theorem cast_rotate_symm (h : k = k') (x : PlanarMatching k) :
+    cast h ((rotate k).symm x) = (rotate k').symm (cast h x) := by
+  subst h
+  simp
+
+/-- Transport commutes with powers of the rotation. -/
+theorem cast_rotate_pow (h : k = k') (j : ℕ) (x : PlanarMatching k) :
+    cast h ((rotate k ^ j) x) = (rotate k' ^ j) (cast h x) := by
+  subst h
+  simp
+
+/-- Transport commutes with reflection. -/
+theorem cast_reflect (h : k = k') (x : PlanarMatching k) :
+    cast h (reflect k x) = reflect k' (cast h x) := by
+  subst h
+  simp
+
+/-! ### The fully nested matching -/
+
+/-- The **fully nested planar matching** of `n + n` points: the order reversal `Fin.rev` joins
+each point `a` to the point `2n - 1 - a`, so its `n` arcs are nested one inside the next. -/
+def nested (n : ℕ) : PlanarMatching (n + n) :=
+  ⟨⟨Fin.revPerm, isPerfectMatching_iff.mpr ⟨Fin.rev_rev, fun a h => by
+      have := congrArg Fin.val h
+      simp only [Fin.revPerm_apply, Fin.val_rev] at this
+      omega⟩⟩,
+    Perm.isNoncrossingMatching_iff.mpr fun _ _ hab _ h => (Fin.rev_lt_rev.mp h).not_gt hab⟩
+
+/-- The fully nested planar matching joins each point to its order reversal. -/
+@[simp]
+theorem nested_val (n : ℕ) : (nested n).1.val = Fin.revPerm := (rfl)
 
 end PlanarMatching
 

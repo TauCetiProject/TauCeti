@@ -88,7 +88,7 @@ def charTwist (χ : G →* kˣ) (ρ : Representation k G V) : Representation k G
   map_one' := by simp
   map_mul' g h := by
     ext v
-    simp only [map_mul, Units.val_mul, Module.End.mul_apply, LinearMap.smul_apply, map_smul,
+    simp only [map_mul, Units.val_mul, mul_apply_eq_comp, LinearMap.smul_apply, map_smul,
       smul_smul, mul_comm]
 
 @[simp]

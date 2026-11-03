@@ -270,12 +270,13 @@ theorem linearIndependent_of_rec {ι : Type*} [NoZeroDivisors R] {w : ℕ → R}
     intro t g n
     induction t using Finset.induction with
     | empty => simp
-    | insert a t ha ih => rw [Finset.sum_insert ha, Finset.sum_insert ha, add_apply, smul_map, ih,
+    | insert a t ha ih => rw [Finset.sum_insert ha, Finset.sum_insert ha, _root_.add_apply,
+      _root_.smul_apply, ih,
         smul_eq_mul]
   refine linearIndependent_iff'.2 fun t g hg ↦
     eq_zero_of_sum_mul_eq_zero (fun i _ ↦ hmul i) (fun i _ ↦ hrec i)
       (fun i _ j _ hij hGij ↦ hij (hdist hGij)) fun n _ ↦ ?_
-  rw [← happly t g n, hg, zero_apply]
+  rw [← happly t g n, hg, _root_.zero_apply]
 
 end IsMultiplicative
 

@@ -275,7 +275,7 @@ theorem ae_posSemidef_wishartGramMeasure (ν : ℕ) (S : Matrix (Fin p) (Fin p) 
       (A : Matrix (Fin p) (Fin p) ℝ).PosSemidef := by
   refine (ae_iff_prob_eq_one ?_).2 (wishartGramMeasure_setOf_posSemidef ν S)
   apply measurableSet_setOfPred.mp
-  exact (Matrix.posSemidef_is_closed (n := Fin p) (𝕜 := ℝ)).measurableSet.preimage
+  exact (_root_.isClosed_setOfPred_posSemidef (n := Fin p) (R := ℝ)).measurableSet.preimage
     continuous_subtype_val.measurable
 
 /-- Every value of the congruated Gram sum has rank at most `min ν S.rank`: the Gram sum of `ν`

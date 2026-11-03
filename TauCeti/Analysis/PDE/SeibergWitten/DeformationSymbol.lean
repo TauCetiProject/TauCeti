@@ -198,7 +198,7 @@ theorem hodgeStar_deformationComplexStructure_snd {p : ℝ × ⋀[ℝ]^2 V}
     o.hodgeStar hkl (deformationComplexStructure J p).2 = (deformationComplexStructure J p).2 := by
   rw [deformationComplexStructure_apply_snd, map_add, map_smul, map_smul,
     AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂ hkl he,
-    o.hodgeStar_lieMap_two hkl (AlmostComplexStructure.inner_apply_left
+    o.hodgeStar_lieMap hkl (AlmostComplexStructure.inner_apply_left
       (AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂)), hp]
 
 /-- **`J′` is a complex structure on `ℝ ⊕ Λ⁺`**: `J′ (J′ (f, η)) = -(f, η)` for self-dual `η`. -/
@@ -213,7 +213,7 @@ theorem deformationComplexStructure_deformationComplexStructure {p : ℝ × ⋀[
     AlmostComplexStructure.lieMap_kahlerForm hJ
   -- `⟪ω, D_J η⟫ = -⟪D_J ω, η⟫ = 0`.
   have hωD : ⟪J.kahlerForm, exteriorPower.lieMap 2 J.toLinearMap p.2⟫ = 0 := by
-    rw [real_inner_comm, inner_lieMap_two_left
+    rw [real_inner_comm, inner_lieMap_left
       (AlmostComplexStructure.inner_apply_left hJ), hDω, inner_zero_right, neg_zero]
   have hDD :=
     AlmostComplexStructure.lieMap_lieMap_of_hodgeStar_eq_self
@@ -248,7 +248,7 @@ theorem deformationSymbol_comp_toLinearMap (ξ : V) :
     linear_combination (-⟪ξ, J a⟫ / 2) * Real.mul_self_sqrt zero_le_two
   · simp only [deformationSymbol_apply_snd, deformationComplexStructure_apply_snd,
       deformationSymbol_apply_fst, map_smul, map_add,
-      ← o.hodgeStar_lieMap_two hkl (AlmostComplexStructure.inner_apply_left hJ),
+      ← o.hodgeStar_lieMap hkl (AlmostComplexStructure.inner_apply_left hJ),
       exteriorPower.lieMap_two_apply_ιMulti]
     rw [map_sub] at hz
     linear_combination (norm := module) (√2 / 4 : ℝ) • hz

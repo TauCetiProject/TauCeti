@@ -144,7 +144,7 @@ theorem contDiffAt_cotangentFamilyFiberDeriv {n : WithTop ℕ∞} (hS : ContDiff
 theorem hasStrictFDerivAt_cotangentFamilyFiberDeriv (hS : ContDiffAt ℝ 2 S x) :
     HasStrictFDerivAt (cotangentFamilyFiberDeriv S)
       (fderiv ℝ (cotangentFamilyFiberDeriv S) x) x :=
-  (contDiffAt_cotangentFamilyFiberDeriv (n := 1) hS).hasStrictFDerivAt one_ne_zero
+  (contDiffAt_cotangentFamilyFiberDeriv (n := 1) hS).hasStrictFDerivAt_fderiv one_ne_zero
 
 /-! ### The linear algebra at one point -/
 
@@ -196,7 +196,7 @@ private theorem eq_zero_of_fderiv_cotangentGeneratingSource_eq_zero
   have hH (w : V × A) : fderiv ℝ (fderiv ℝ S) x (0, b) w = 0 := by
     have h₁ := DFunLike.congr_fun hq w.1
     have h₂ := DFunLike.congr_fun hu w.2
-    simp only [comp_apply, inl_apply, inr_apply, zero_apply] at h₁ h₂
+    simp only [comp_apply, inl_apply, inr_apply, _root_.zero_apply] at h₁ h₂
     rw [← Prod.fst_add_snd w, map_add, h₁, h₂, add_zero]
   refine Prod.ext rfl (SeparatingDual.eq_zero_of_forall_dual_eq_zero (R := ℝ) fun β ↦ ?_)
   obtain ⟨w, rfl⟩ := hsurj β

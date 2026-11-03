@@ -93,17 +93,17 @@ private theorem apply_sub_smul_mem_range_pow_and_apply_eq_zero (hef : E * F - F 
     have h₂ : H * E ^ (n + 1) = E ^ (n + 1) * (H + ((2 * (n + 1) : ℕ) : Module.End K V)) := by
       rw [h_mul_e_pow hhe, Nat.cast_mul, Nat.cast_ofNat]
     have h₂ := congr($h₂ w)
-    simp only [Module.End.mul_apply, LinearMap.sub_apply, LinearMap.smul_apply, map_sub,
-      LinearMap.add_apply, Module.End.natCast_apply, map_add, hFv, map_zero,
+    simp only [mul_apply_eq_comp, LinearMap.sub_apply, LinearMap.smul_apply, map_sub,
+      LinearMap.add_apply, natCast_apply_eq_smul, map_add, hFv, map_zero,
       ← Nat.cast_smul_eq_nsmul K, map_smul] at h₁ h₂
-    simp only [pow_succ', Module.End.mul_apply, map_smul] at h₁ h₂ ⊢
+    simp only [pow_succ', mul_apply_eq_comp, map_smul] at h₁ h₂ ⊢
     rw [eq_of_sub_eq_zero h₁.symm, smul_smul,
       inv_mul_cancel₀ (Nat.cast_ne_zero.mpr n.succ_ne_zero), one_smul]
     push_cast at h₂ ⊢
     linear_combination (norm := module) -h₂
   · -- `F H = H F + 2 F`, so `F` kills `H v` along with `v`.
     have := congr($hhf v)
-    simp only [LinearMap.sub_apply, Module.End.mul_apply, hFv, map_zero, LinearMap.neg_apply,
+    simp only [LinearMap.sub_apply, mul_apply_eq_comp, hFv, map_zero, LinearMap.neg_apply,
       LinearMap.smul_apply, smul_zero, neg_zero, zero_sub, neg_eq_zero] at this
     simp [this, hFv]
 
