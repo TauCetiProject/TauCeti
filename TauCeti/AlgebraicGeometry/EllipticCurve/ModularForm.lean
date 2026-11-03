@@ -154,24 +154,29 @@ lemma pow (hf : IsIntegralModularForm k f) (n : ℕ) : IsIntegralModularForm (k 
 
 end IsIntegralModularForm
 
-open TauCeti.WeierstrassChange.Universal (CoordinateRing change) in
+open TauCeti.WeierstrassChange.Universal (CoordinateRing) in
+open TauCeti.WeierstrassChange.ChangeRing (universalChange) in
 /-- **The universal transformation law.** It suffices to check the transformation law of an
 integral modular form once, for the universal Weierstrass curve and the universal change of
 variables over `Γ = ℤ[u, u⁻¹, r, s, t][a₁, ⋯, a₆]`, the polynomial ring in the Weierstrass
 coefficients over the coordinate ring `TauCeti.WeierstrassChange.Universal.CoordinateRing` of
 the changes of variables: every pair `(W, C)` is a specialization of that one. -/
 theorem isIntegralModularForm_iff_universal : IsIntegralModularForm k f ↔
-    (change.map (algebraMap CoordinateRing (MvPolynomial Coeff CoordinateRing)) •
+    ((universalChange ℤ).map (algebraMap CoordinateRing (MvPolynomial Coeff CoordinateRing)) •
         Universal.curve.map (MvPolynomial.map (Int.castRingHom CoordinateRing))).specialize f =
-      ↑(change.map (algebraMap CoordinateRing (MvPolynomial Coeff CoordinateRing))).u⁻¹ ^ k *
+      ↑((universalChange ℤ).map
+          (algebraMap CoordinateRing (MvPolynomial Coeff CoordinateRing))).u⁻¹ ^ k *
         (Universal.curve.map (MvPolynomial.map (Int.castRingHom CoordinateRing))).specialize f := by
   refine ⟨fun hf ↦ hf.specialize_smul _ _, fun h R _ W C ↦ ?_⟩
   -- Specialize `h` along the classifying homomorphism `ψ` of `(W, C)`.
   set ψ := eval₂Hom C.specialize (Coeff.rec W.a₁ W.a₂ W.a₃ W.a₄ W.a₆) with hψ
   have hW : (Universal.curve.map (MvPolynomial.map (Int.castRingHom _))).map ψ = W := by
     ext <;> simp [hψ]
-  have hC : (change.map (algebraMap _ _)).map ψ = C := by
-    ext <;> simp [hψ]
+  -- On the change-of-variables coordinates, `ψ` restricts to the classifying map of `C`.
+  have hψC : ψ.comp (algebraMap CoordinateRing _) = C.specialize :=
+    RingHom.ext fun _ ↦ by simp [hψ]
+  have hC : ((universalChange ℤ).map (algebraMap _ _)).map ψ = C := by
+    rw [VariableChange.map_map, hψC, VariableChange.map_specialize]
   clear_value ψ
   rw [← hW, ← hC, map_variableChange, specialize_map, specialize_map, RingHom.comp_apply, h,
     map_mul, map_pow]
