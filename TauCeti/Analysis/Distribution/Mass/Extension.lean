@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Operator.Extend
 public import TauCeti.Analysis.Distribution.Mass.Measure
 public import TauCeti.Analysis.Distribution.TestFunction.Lp
 public import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # Borel weights and Borel restrictions of functionals of locally finite mass
@@ -25,8 +26,9 @@ forms, and on tests multiplied by Borel weights.
 For a function `g : Ω → ℝ` locally integrable for `‖T‖` this defines the *weighted* functional
 `T ⌞ g = Distribution.withDensity T g`, `(T ⌞ g) φ = extendL1 T (g φ)`. It is
 again continuous and real-linear with locally finite mass, its mass measure is at most
-`|g| ‖T‖`, it is additive in `g`, and for a smooth `g` it is the smooth multiple
-`T ∘ (g ·)`. Locally bounded Borel weights are locally integrable for `‖T‖`, which is finite on
+`|g| ‖T‖`, it depends only on the `‖T‖`-a.e. class of `g`, it is additive and homogeneous in `g`,
+and for `g` the restriction to `Ω` of a `C^n` function `f : E → ℝ` it is the smooth multiple
+`T ∘ (f ·)`. Locally bounded Borel weights are locally integrable for `‖T‖`, which is finite on
 compact subsets of `Ω`; so are the indicators of Borel sets.
 
 The *Borel restriction* `T ⌞ s = Distribution.restrict T s` to a measurable subset `s` of `Ω` is
@@ -41,10 +43,10 @@ not have locally finite mass even when the boundary of `T` does.
   `norm_extendL1_apply_le` and the uniqueness statement `extendL1_unique`.
 * `Distribution.withDensity`: the weighted functional `T ⌞ g`, with `withDensity_apply`, the
   domination `enorm_withDensity_apply_le`, `hasLocallyFiniteMass_withDensity`,
-  `massMeasure_withDensity_le`, `withDensity_one_apply`, `withDensity_add` and
-  `withDensity_apply_of_contDiff`.
+  `massMeasure_withDensity_le`, `withDensity_congr_ae`, `withDensity_one_apply`,
+  `withDensity_add`, `withDensity_smul` and `withDensity_apply_of_contDiff`.
 * `Distribution.restrict`: the Borel restriction `T ⌞ s`, with `massMeasure_restrict`,
-  `restrict_apply_add_restrict_compl_apply` and `mass_restrict`.
+  `restrict_congr_set_ae`, `restrict_apply_add_restrict_compl_apply` and `mass_restrict`.
 
 ## References
 
@@ -106,13 +108,6 @@ private theorem enorm_smulToL1 (hg : LocallyIntegrable g (massMeasure T)) (φ : 
     ‖smulToL1 hg φ‖ₑ = ∫⁻ x, ‖g x‖ₑ * ‖φ x‖ₑ ∂massMeasure T := by
   simp [smulToL1, Integrable.enorm_toL1, enorm_smul]
 
-/-- The weight `|g| ‖T‖` is finite on compact sets for locally integrable `g`. -/
-private theorem isFiniteMeasureOnCompacts_withDensity (hg : LocallyIntegrable g (massMeasure T)) :
-    IsFiniteMeasureOnCompacts ((massMeasure T).withDensity fun x => ‖g x‖ₑ) := by
-  refine ⟨fun K hK => ?_⟩
-  rw [withDensity_apply _ hK.measurableSet]
-  exact (hg.integrableOn_isCompact hK).hasFiniteIntegral
-
 private theorem lintegral_withDensity_enorm (hg : LocallyIntegrable g (massMeasure T))
     (φ : 𝓓^{n}(Ω, F)) :
     ∫⁻ x, ‖φ x‖ₑ ∂(massMeasure T).withDensity (fun x => ‖g x‖ₑ) =
@@ -168,12 +163,13 @@ open Classical in
 variable (T) in
 /-- The **weighted functional** `T ⌞ g`: for a weight `g : Ω → ℝ` locally integrable for the mass
 measure `‖T‖`, the continuous linear map `φ ↦ extendL1 T (g φ)`, where
-`Distribution.extendL1 T` is the extension of `T` to `L¹(‖T‖)`. For a smooth `g` it is `T ∘ (g ·)`
-(`Distribution.withDensity_apply_of_contDiff`). If `T` does not have locally finite mass or `g` is
-not locally integrable, it is zero by convention. -/
+`Distribution.extendL1 T` is the extension of `T` to `L¹(‖T‖)`. For `g` the restriction to `Ω` of
+a `C^n` function `f : E → ℝ` it is `T ∘ (f ·)` (`Distribution.withDensity_apply_of_contDiff`).
+If `T` does not have locally finite mass or `g` is not locally integrable, it is zero by
+convention. -/
 def withDensity (g : Ω → ℝ) : 𝓓^{n}(Ω, F) →L[ℝ] ℝ :=
   if h : HasLocallyFiniteMass T ∧ LocallyIntegrable g (massMeasure T) then
-    haveI := isFiniteMeasureOnCompacts_withDensity h.2
+    haveI := h.2.isFiniteMeasureOnCompacts_withDensity_enorm
     { toLinearMap := withDensityLM h.2
       cont := (hasLocallyFiniteMass_of_enorm_apply_le _ fun φ => by
         rw [lintegral_withDensity_enorm h.2]
@@ -198,7 +194,7 @@ theorem enorm_withDensity_apply_le (φ : 𝓓^{n}(Ω, F)) :
 /-- The weighted functional has locally finite mass. -/
 theorem hasLocallyFiniteMass_withDensity (hg : LocallyIntegrable g (massMeasure T)) :
     HasLocallyFiniteMass (withDensity T g) :=
-  haveI := isFiniteMeasureOnCompacts_withDensity hg
+  haveI := hg.isFiniteMeasureOnCompacts_withDensity_enorm
   hasLocallyFiniteMass_of_enorm_apply_le _ fun φ => by
     rw [lintegral_withDensity_enorm hg]
     exact enorm_withDensity_apply_le φ
@@ -206,11 +202,24 @@ theorem hasLocallyFiniteMass_withDensity (hg : LocallyIntegrable g (massMeasure 
 /-- **The mass measure of a weighted functional** is at most `|g| ‖T‖`. -/
 theorem massMeasure_withDensity_le (hg : LocallyIntegrable g (massMeasure T)) :
     massMeasure (withDensity T g) ≤ (massMeasure T).withDensity fun x => ‖g x‖ₑ := by
-  have := isFiniteMeasureOnCompacts_withDensity hg
+  have := hg.isFiniteMeasureOnCompacts_withDensity_enorm
   have : LocallyCompactSpace Ω := Ω.isOpen.locallyCompactSpace
   refine massMeasure_le_of_enorm_apply_le _ fun φ => ?_
   rw [lintegral_withDensity_enorm hg]
   exact enorm_withDensity_apply_le φ
+
+/-- The weighted functional depends only on the `‖T‖`-a.e. class of the weight. -/
+theorem withDensity_congr_ae (h : g =ᵐ[massMeasure T] g') : withDensity T g = withDensity T g' := by
+  by_cases hT : HasLocallyFiniteMass T
+  · by_cases hg : LocallyIntegrable g (massMeasure T)
+    · ext φ
+      have hφ := (integrable_smul hg φ).coeFn_toL1
+      rw [withDensity_apply hT hg φ hφ, withDensity_apply hT (hg.congr h) φ]
+      filter_upwards [hφ, h] with x hx hx'
+      rw [hx, hx']
+    · have hg' : ¬LocallyIntegrable g' (massMeasure T) := fun hg' => hg (hg'.congr h.symm)
+      simp [withDensity, hg, hg']
+  · simp [withDensity, hT]
 
 /-- The weight one gives back the functional. -/
 @[simp]
@@ -236,8 +245,19 @@ theorem withDensity_add (hg : LocallyIntegrable g (massMeasure T))
     rw [hx, Pi.add_apply, hx₁, hx₂, Pi.add_apply, add_smul]
   · simp [withDensity, hT]
 
-/-- **Smooth weights.** For a smooth function `f`, the weighted functional `T ⌞ f` is the smooth
-multiple `T ∘ (f ·)`. -/
+/-- The weighted functional is homogeneous in the weight. -/
+theorem withDensity_smul (c : ℝ) (hg : LocallyIntegrable g (massMeasure T)) :
+    withDensity T (c • g) = c • withDensity T g := by
+  by_cases hT : HasLocallyFiniteMass T
+  · ext φ
+    have h := (integrable_smul hg φ).coeFn_toL1
+    rw [smul_apply, withDensity_apply hT hg φ h, ← map_smul, withDensity_apply hT (hg.smul c) φ]
+    filter_upwards [Lp.coeFn_smul c (integrable_smul hg φ |>.toL1 _), h] with x hx hx₁
+    rw [hx, Pi.smul_apply, hx₁, Pi.smul_apply, smul_smul, smul_eq_mul]
+  · simp [withDensity, hT]
+
+/-- **Smooth weights.** For a `C^n` function `f : E → ℝ`, the weighted functional `T ⌞ f` by its
+restriction to `Ω` is the smooth multiple `T ∘ (f ·)`. -/
 theorem withDensity_apply_of_contDiff (hT : HasLocallyFiniteMass T) {f : E → ℝ}
     (hf : ContDiff ℝ n f) (φ : 𝓓^{n}(Ω, F)) :
     withDensity T (fun x : Ω => f x) φ = T (TestFunction.smulLeftCLM hf φ) := by
@@ -271,6 +291,11 @@ def restrict (s : Set Ω) : 𝓓^{n}(Ω, F) →L[ℝ] ℝ :=
 /-- The Borel restriction is the weighted functional for the indicator of `s`. -/
 theorem restrict_eq_withDensity : restrict T s = withDensity T (s.indicator 1) :=
   (rfl)
+
+/-- The Borel restriction depends only on the `‖T‖`-a.e. class of the set. -/
+theorem restrict_congr_set_ae {t : Set Ω} (h : s =ᵐ[massMeasure T] t) :
+    restrict T s = restrict T t :=
+  withDensity_congr_ae (indicator_ae_eq_of_ae_eq_set h)
 
 /-- **Domination of the Borel restriction:** `|(T ⌞ s) φ| ≤ ∫_s ‖φ‖ d‖T‖`. -/
 theorem enorm_restrict_apply_le (hs : MeasurableSet s) (φ : 𝓓^{n}(Ω, F)) :

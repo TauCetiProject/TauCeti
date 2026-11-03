@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
 import Mathlib.Analysis.Normed.Module.Normalize
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
+import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # Weak derivatives and absolutely continuous derivative measures
@@ -79,11 +80,8 @@ theorem HasWeakFDerivOn.variationMeasure_eq_withDensity [μ.IsAddHaarMeasure]
   have hΩ := Ω.isOpen.measurableSet
   -- The candidate measure is finite on compact sets, hence regular.
   have : IsFiniteMeasureOnCompacts ((μ.comap ((↑) : Ω → E)).withDensity fun x => ‖U x‖ₑ) :=
-    ⟨fun K hK => by
-      rw [withDensity_apply' _ K]
-      exact (setLIntegral_subtype hΩ K fun y => ‖U y‖ₑ).trans_lt
-        (h.locallyIntegrableOn_deriv.integrableOn_compact_subset
-          (Subtype.coe_image_subset _ _) (hK.image continuous_subtype_val)).2⟩
+    LocallyIntegrable.isFiniteMeasureOnCompacts_withDensity_enorm
+      ((locallyIntegrable_comap hΩ).2 h.locallyIntegrableOn_deriv)
   refine (eq_variationMeasure h.locallyIntegrableOn
     (fun K hK hKΩ => h.exists_totalVariationOn_ne_top hK hKΩ) fun V hV => ?_).symm
   rw [withDensity_apply _ (V.isOpen.measurableSet.preimage measurable_subtype_coe)]

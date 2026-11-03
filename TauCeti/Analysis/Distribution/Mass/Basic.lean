@@ -434,7 +434,7 @@ theorem hasLocallyFiniteMass_of_mass_ne_top (T : 𝓕) (hT : mass T ≠ ⊤) :
 mass is continuous: on the tests supported in a compact `K ⊆ Ω` it is bounded by a multiple of the
 sup norm, which is a continuous seminorm there. -/
 theorem HasLocallyFiniteMass.continuous {T : 𝓕} (hT : HasLocallyFiniteMass T) : Continuous T := by
-  change Continuous (LinearMap.ofClass T : 𝓓^{n}(Ω, F) →ₗ[ℝ] V)
+  rw [← LinearMap.coe_ofClass (f := T)]
   refine (TestFunction.continuous_iff_continuous_comp _).2 fun K hK => ?_
   obtain ⟨C, hC, hTC⟩ := hT K K.isCompact hK
   refine WithSeminorms.continuous_normedSpace_rng V (ContDiffMapSupportedIn.withSeminorms ℝ E F n K)

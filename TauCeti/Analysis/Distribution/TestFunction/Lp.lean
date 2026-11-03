@@ -18,8 +18,8 @@ that is finite on compact sets. A test function on `Ω` is continuous with compa
 `Ω`, so its restriction to `Ω` lies in `Lᵖ(μ; F)` for every `p`. This gives a linear map
 `TestFunction.toLp p μ : 𝓓^{n}(Ω, F) →ₗ[ℝ] Lp F p μ`.
 
-When `E` is finite-dimensional, `μ` is regular and `p < ∞`, the image is dense. Compactly
-supported continuous functions on `Ω` are dense in `Lᵖ(μ)`
+When `E` is finite-dimensional, `F` is complete, `μ` is regular and `1 ≤ p < ∞`, the image is
+dense. Compactly supported continuous functions on `Ω` are dense in `Lᵖ(μ)`
 (`MeasureTheory.MemLp.exists_hasCompactSupport_eLpNorm_sub_le`), and each of them is a uniform
 limit of test functions supported in a fixed compact subset of `Ω`
 (`Continuous.exists_testFunction_dist_le`), which is a limit in `Lᵖ(μ)` since `μ` is finite on
@@ -32,8 +32,8 @@ to all of `L¹(μ)`; for the mass measure of a current this gives its Borel rest
 * `TestFunction.memLp_subtype`: a test function lies in `Lᵖ(μ)` for every measure `μ` on `Ω`
   finite on compact sets.
 * `TestFunction.toLp`: the linear map from test functions to `Lp F p μ`.
-* `TestFunction.denseRange_toLp`: test functions are dense in `Lp F p μ` for `p < ∞` and a regular
-  measure `μ` on `Ω`.
+* `TestFunction.denseRange_toLp`: test functions are dense in `Lp F p μ` for `1 ≤ p < ∞`, a
+  complete space `F` and a regular measure `μ` on `Ω`.
 
 ## References
 
@@ -71,10 +71,10 @@ def toLp (p : ℝ≥0∞) (μ : Measure Ω) [IsFiniteMeasureOnCompacts μ] :
   toFun φ := (φ.memLp_subtype p μ).toLp _
   map_add' φ ψ := by
     rw [← MemLp.toLp_add]
-    rfl
+    exact MemLp.toLp_congr _ _ (Filter.Eventually.of_forall fun x => by simp)
   map_smul' c φ := by
     rw [RingHom.id_apply, ← MemLp.toLp_const_smul]
-    rfl
+    exact MemLp.toLp_congr _ _ (Filter.Eventually.of_forall fun x => by simp)
 
 variable {p : ℝ≥0∞} {μ : Measure Ω}
 
@@ -144,8 +144,8 @@ private theorem exists_eLpNorm_sub_le [IsFiniteMeasureOnCompacts μ] {g : Ω →
   exact hηε.le
 
 /-- **Test functions are dense in `Lᵖ`.** For a regular measure `μ` on an open set `Ω` of a
-finite-dimensional real normed space and `p < ∞`, the image of the test functions on `Ω` is dense
-in `Lp F p μ`. -/
+finite-dimensional real normed space, a complete space `F` and `1 ≤ p < ∞`, the image of the test
+functions on `Ω` is dense in `Lp F p μ`. -/
 theorem denseRange_toLp [μ.Regular] (hp : p ≠ ∞) :
     DenseRange (toLp p μ : 𝓓^{n}(Ω, F) →ₗ[ℝ] Lp F p μ) := by
   have : LocallyCompactSpace Ω := Ω.isOpen.locallyCompactSpace

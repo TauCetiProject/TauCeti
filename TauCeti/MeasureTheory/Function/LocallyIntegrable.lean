@@ -43,6 +43,8 @@ locally integrable on it.
 Pairing a locally integrable function with a fixed vector in an inner product space gives a
 locally integrable scalar function, as Mathlib records for `Integrable` and `MemLp`.
 
+The measure with density the norm of a locally integrable function is finite on compact sets.
+
 For a locally finite measure, Lipschitz postcomposition preserves local integrability on any
 set, without a condition on the value of the outer map at zero.
 
@@ -82,6 +84,8 @@ everywhere there with a function that is locally integrable on the whole space a
   integrability.
 * `MeasureTheory.LocallyIntegrable.indicator₀`: restriction to a null-measurable set preserves
   local integrability.
+* `MeasureTheory.LocallyIntegrable.isFiniteMeasureOnCompacts_withDensity_enorm`: the measure
+  with density `‖g‖ₑ` for a locally integrable `g` is finite on compact sets.
 * `MeasureTheory.Lp.locallyIntegrableOn`: an `Lᵖ` function on a set, with `1 ≤ p`, is locally
   integrable on it.
 * `ContinuousOn.memLp_restrict_of_subset_isCompact`: a function continuous on a compact set is in
@@ -368,6 +372,15 @@ theorem indicator₀ {F : Type*} [TopologicalSpace F] [ESeminormedAddMonoid F] {
     LocallyIntegrable (s.indicator g) μ :=
   (hg.indicator (measurableSet_toMeasurable μ s)).congr
     (indicator_ae_eq_of_ae_eq_set hs.toMeasurable_ae_eq)
+
+/-- The measure with density `‖g‖ₑ` for a locally integrable function `g` is finite on compact
+sets. -/
+theorem isFiniteMeasureOnCompacts_withDensity_enorm [OpensMeasurableSpace X] [T2Space X]
+    {F : Type*} [TopologicalSpace F] [ContinuousENorm F] [PseudoMetrizableSpace F] {g : X → F}
+    (hg : LocallyIntegrable g μ) : IsFiniteMeasureOnCompacts (μ.withDensity fun x => ‖g x‖ₑ) :=
+  ⟨fun K hK => by
+    rw [withDensity_apply _ hK.measurableSet]
+    exact (hg.integrableOn_isCompact hK).hasFiniteIntegral⟩
 
 end MeasureTheory.LocallyIntegrable
 
