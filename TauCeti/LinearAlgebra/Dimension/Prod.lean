@@ -13,14 +13,14 @@ public import Mathlib.LinearAlgebra.Dimension.Constructions
 Mathlib's `Module.finrank_prod` computes the dimension of `M × M'` for finite free modules. For
 `M × M` no finiteness is needed: if `M` is not finite then neither is `M × M`, and both
 dimensions are `0` by convention. So `finrank (M × M) = 2 * finrank M` for every free module `M`
-over a ring with the strong rank condition (`Module.finrank_prod_self`).
+over a semiring with the strong rank condition (`Module.finrank_prod_self`).
 -/
 
 public section
 
 namespace Module
 
-variable (R M : Type*) [Ring R] [StrongRankCondition R] [AddCommGroup M] [Module R M]
+variable (R M : Type*) [Semiring R] [StrongRankCondition R] [AddCommMonoid M] [Module R M]
   [Module.Free R M]
 
 /-- The dimension of `M × M` is twice that of `M`, whether or not `M` is finite. -/
