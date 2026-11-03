@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.LowRank.Zero
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Basic
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Descent
 public import Mathlib.Topology.Covering.Quotient
@@ -17,6 +18,13 @@ whenever its domain is compact. Indeed, the projection is a continuous surjectio
 space to a Hausdorff space, hence a quotient map. Its kernel is the finite image of the included
 group `Multiplicative (ZMod 2)`, so the standard quotient-covering construction applies.
 
+The two lowest ranks are degenerate. In rank one, `Spin(1) = {1, -1}` is finite
+(`CliffordAlgebra.finite_realCliffordSpinGroupZero_one`), hence discrete, and `SO(1)` is trivial,
+so the double cover is the trivial two-sheeted cover of a point. In rank zero Mathlib's Spin
+group is trivial and the geometric double cover is instead the even unitary group `μ₂ = {1, -1}`
+of the Clifford algebra over the trivial group `SO(0)`
+(`CliffordAlgebra.evenUnitaryDoubleCoverOfSubsingleton`); its projection is again a covering map.
+
 ## Main results
 
 * `CliffordAlgebra.isQuotientCoveringMap_realCliffordSpinDoubleCoverZero_rightHom` packages the
@@ -27,6 +35,8 @@ group `Multiplicative (ZMod 2)`, so the standard quotient-covering construction 
   bundled continuous homomorphism.
 * `CliffordAlgebra.realCliffordSpinHomEquivKer` identifies continuous homomorphisms out of
   `SO(n)` with continuous homomorphisms out of `Spin(n)` that kill the double-cover kernel.
+* `CliffordAlgebra.isCoveringMap_evenUnitaryDoubleCoverOfSubsingleton_rightHom`: the rank-zero
+  double cover `μ₂ → SO(0)` is a covering map.
 
 ## References
 
@@ -144,5 +154,18 @@ theorem realCliffordSpinHomEquivKer_symm_apply_comp (n : ℕ) [NeZero n]
   have h := congrArg Subtype.val ((realCliffordSpinHomEquivKer n).apply_symm_apply f)
   rw [realCliffordSpinHomEquivKer_apply_coe] at h
   exact h
+
+/-- In dimension zero, the projection of the even unitary group `μ₂ = {1, -1}` onto the trivial
+special orthogonal group is a covering map, for the subgroup topology on Clifford units and any
+topology on the one-point special orthogonal group, such as the coordinate topology on
+`ι → K`. For `realCliffordForm 0 0` this is the rank-zero geometric replacement for
+`CliffordAlgebra.isCoveringMap_realCliffordSpinDoubleCoverZero_rightHom`, since Mathlib's Spin
+group is trivial in dimension zero. -/
+theorem isCoveringMap_evenUnitaryDoubleCoverOfSubsingleton_rightHom
+    {K : Type*} [Field K] [TopologicalSpace K] [IsTopologicalSemiring K] [T2Space K]
+    {V : Type*} [AddCommGroup V] [Module K V] [Subsingleton V] (Q : QuadraticForm K V)
+    [TopologicalSpace (TauCeti.QuadraticMap.specialOrthogonalGroup Q)] (h2 : (2 : K) ≠ 0) :
+    IsCoveringMap (evenUnitaryDoubleCoverOfSubsingleton Q h2).rightHom :=
+  .of_discreteTopology _
 
 end CliffordAlgebra

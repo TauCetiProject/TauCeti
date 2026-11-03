@@ -18,8 +18,8 @@ multiple, the cancellation of leading terms by an S-polynomial, the behaviour of
 under a change of coefficients, leading data of the weighted homogeneous component containing
 the leading monomial, leading data of renamed polynomials, elimination orders and the
 lexicographic ones among them, agreement of leading exponents under two monomial orders, leading
-data of polynomials obtained by substituting monic polynomials, descent on the largest weight of
-an exponent, and algebraic independence from leading monomials.
+data of substitutions of monic families, descent on the largest weight of an exponent, and
+algebraic independence from leading monomials.
 
 The product `X^a * b`, normalized to leading coefficient one when `b` has a unit leading
 coefficient, differs from another such product of the same degree by a monomial multiple of
@@ -70,13 +70,13 @@ the images of the generators of the Lazard ring in a polynomial ring.
   polynomial whose leading monomial only involves the variables `e τ` is a renamed polynomial.
 * `MonomialOrder.coe_support_subset_of_lex_le`: monomials supported in an upper set of variables
   form a lower set for the lexicographic order.
-* `MonomialOrder.monic_aeval_monomial_one`, `MonomialOrder.degree_aeval_monomial_one_of_monic`:
-  substituting monic polynomials `c i` into `X^u` gives a monic polynomial of leading exponent
-  `∑ i, u i • m.degree (c i)`.
-* `MonomialOrder.coeff_aeval_eq_sum_of_forall_le`, `MonomialOrder.degree_aeval_le_of_forall_le`:
-  if these combinations of leading exponents are at most `d` on the support of `P`, then the
-  coefficient of `aeval c P` at `d` only involves the exponents of `P` whose combination is `d`,
-  and `aeval c P` has leading exponent at most `d`.
+* `MonomialOrder.monic_aeval_monomial_one`, `MonomialOrder.degree_aeval_monomial_one`: for a
+  family `c` of monic polynomials, `∏ i, c i ^ w i` is monic with leading exponent
+  `A w = ∑ i, w i • m.degree (c i)`.
+* `MonomialOrder.coeff_aeval_of_forall_le`, `MonomialOrder.degree_aeval_le_of_forall_le`: if all
+  exponents `w` of `P` have `A w ≼ e`, then the coefficient of `X^e` in `aeval c P` is the sum of
+  the coefficients of `P` at the `w` with `A w = e`, and `aeval c P` has leading exponent at
+  most `e`.
 * `MonomialOrder.induction_on_weight_support`: well-founded descent on the largest weight
   `∑ i, w i • a i` of an exponent `w` of a polynomial, compared by a monomial order.
 * `MonomialOrder.weight_lt_of_mem_support_sub_weightedHomogeneousComponent`: removing the
@@ -404,58 +404,61 @@ end Lex
 
 section Substitution
 
-variable [CommSemiring R] {ι : Type*} {m} {c : ι → MvPolynomial σ R}
+variable {ι : Type*} [CommSemiring R] {m} {c : ι → MvPolynomial σ R}
 
-/-- Substituting monic polynomials into a coefficient-one monomial gives a monic polynomial. -/
-theorem monic_aeval_monomial_one (hc : ∀ i, m.Monic (c i)) (u : ι →₀ ℕ) :
-    m.Monic (aeval c (monomial u (1 : R))) := by
-  simp only [aeval_monomial, map_one, one_mul, Finsupp.prod]
+/-- The image of the monomial `Y^w` under the substitution of a monic family is monic. -/
+theorem monic_aeval_monomial_one (hc : ∀ i, m.Monic (c i)) (w : ι →₀ ℕ) :
+    m.Monic (aeval c (monomial w (1 : R))) := by
+  rw [aeval_monomial, map_one, one_mul, Finsupp.prod]
   exact Monic.prod fun i _ ↦ (hc i).pow
 
-/-- Substituting monic polynomials over a nontrivial ring into a coefficient-one monomial adds
-their leading exponents, with the multiplicities prescribed by the monomial. -/
-theorem degree_aeval_monomial_one_of_monic [Nontrivial R] (hc : ∀ i, m.Monic (c i))
-    (u : ι →₀ ℕ) :
-    m.degree (aeval c (monomial u (1 : R))) = Finsupp.linearCombination ℕ (m.degree ∘ c) u := by
-  simp only [aeval_monomial, map_one, one_mul, Finsupp.prod]
-  rw [m.degree_prod_of_regular fun i _ ↦ by
-    rw [(hc i).pow.leadingCoeff_eq_one]; exact isRegular_one]
-  simp only [Finsupp.linearCombination_apply, Finsupp.sum, Function.comp_apply]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [m.degree_pow_of_pow_leadingCoeff_ne_zero (by simp [(hc i).leadingCoeff_eq_one])]
+variable [Nontrivial R]
 
-/-- If `c` is a family of monic polynomials and every exponent `w` of `P` satisfies
-`∑ i, w i • m.degree (c i) ≼[m] d`, then the coefficient of `aeval c P` at `d` is the sum of the
-coefficients of `P` at the exponents `w` with `∑ i, w i • m.degree (c i) = d`. -/
-theorem coeff_aeval_eq_sum_of_forall_le [DecidableEq (σ →₀ ℕ)] (hc : ∀ i, m.Monic (c i))
-    {P : MvPolynomial ι R} {d : σ →₀ ℕ}
-    (hP : ∀ w ∈ P.support, Finsupp.linearCombination ℕ (m.degree ∘ c) w ≼[m] d) :
-    (aeval c P).coeff d =
-      ∑ w ∈ P.support with Finsupp.linearCombination ℕ (m.degree ∘ c) w = d, P.coeff w := by
-  nontriviality R
+/-- The image of the monomial `Y^w` under the substitution of a monic family `c` has leading
+exponent `∑ i, w i • m.degree (c i)`. -/
+theorem degree_aeval_monomial_one (hc : ∀ i, m.Monic (c i)) (w : ι →₀ ℕ) :
+    m.degree (aeval c (monomial w (1 : R))) =
+      Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) w := by
+  rw [aeval_monomial, map_one, one_mul, Finsupp.prod,
+    m.degree_prod_of_regular fun i _ ↦ by rw [(hc i).pow.leadingCoeff_eq_one]; exact isRegular_one,
+    Finsupp.linearCombination_apply, Finsupp.sum]
+  exact Finset.sum_congr rfl fun i _ ↦
+    m.degree_pow_of_pow_leadingCoeff_ne_zero (by simp [(hc i).leadingCoeff_eq_one])
+
+open scoped Classical in
+/-- Let `c` be a monic family and write `A w = ∑ i, w i • m.degree (c i)`. If every exponent `w` of
+`P` satisfies `A w ≼ e`, then the coefficient of `X^e` in `aeval c P` is the sum of the
+coefficients of `P` at the exponents `w` with `A w = e`: the images of the other monomials of `P`
+have leading exponent below `e`. -/
+theorem coeff_aeval_of_forall_le (hc : ∀ i, m.Monic (c i)) {P : MvPolynomial ι R}
+    {e : σ →₀ ℕ}
+    (hP : ∀ w ∈ P.support, Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) w ≼[m] e) :
+    (aeval c P).coeff e = ∑ w ∈ P.support with
+      Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) w = e, P.coeff w := by
+  classical
   conv_lhs => rw [P.as_sum]
   rw [map_sum, coeff_sum, Finset.sum_filter]
   refine Finset.sum_congr rfl fun w hw ↦ ?_
-  have hdeg := degree_aeval_monomial_one_of_monic hc w
-  rw [← mul_one (P.coeff w), ← smul_eq_mul, ← smul_monomial, map_smul, coeff_smul]
+  conv_lhs => rw [← mul_one (P.coeff w), ← C_mul_monomial]
+  rw [map_mul, aeval_C, algebraMap_eq, coeff_C_mul]
   split_ifs with h
-  · rw [← h, ← hdeg, (monic_aeval_monomial_one hc w).coeff_degree, smul_eq_mul, mul_one]
-  · rw [m.coeff_eq_zero_of_lt (hdeg ▸ lt_of_le_of_ne (hP w hw) (m.toSyn.injective.ne h)),
-      smul_zero]
+  · rw [← h, ← degree_aeval_monomial_one hc, (monic_aeval_monomial_one hc w).coeff_degree, mul_one]
+  · rw [m.coeff_eq_zero_of_lt, mul_zero]
+    rw [degree_aeval_monomial_one hc]
+    exact lt_of_le_of_ne (hP w hw) fun h' ↦ h (m.toSyn.injective h')
 
-/-- If `c` is a family of monic polynomials and every exponent `w` of `P` satisfies
-`∑ i, w i • m.degree (c i) ≼[m] d`, then `aeval c P` has leading exponent at most `d`. -/
+/-- Let `c` be a monic family and write `A w = ∑ i, w i • m.degree (c i)`. If every exponent `w` of
+`P` satisfies `A w ≼ e`, then `aeval c P` has leading exponent at most `e`. -/
 theorem degree_aeval_le_of_forall_le (hc : ∀ i, m.Monic (c i)) {P : MvPolynomial ι R}
-    {d : σ →₀ ℕ} (hP : ∀ w ∈ P.support, Finsupp.linearCombination ℕ (m.degree ∘ c) w ≼[m] d) :
-    m.degree (aeval c P) ≼[m] d := by
-  nontriviality R
-  conv_lhs => rw [P.as_sum]
-  rw [map_sum]
-  refine m.degree_sum_le.trans (Finset.sup_le fun w hw ↦ ?_)
-  rw [← mul_one (P.coeff w), ← smul_eq_mul, ← smul_monomial, map_smul]
-  refine m.degree_smul_le.trans ?_
-  rw [degree_aeval_monomial_one_of_monic hc w]
-  exact hP w hw
+    {e : σ →₀ ℕ}
+    (hP : ∀ w ∈ P.support, Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) w ≼[m] e) :
+    m.degree (aeval c P) ≼[m] e := by
+  classical
+  refine m.degree_le_iff.2 fun d hd ↦ le_of_not_gt fun hlt ↦ ?_
+  rw [mem_support_iff, coeff_aeval_of_forall_le hc fun w hw ↦ (hP w hw).trans hlt.le] at hd
+  refine hd (Finset.sum_eq_zero fun w hw ↦ ?_)
+  rw [Finset.mem_filter] at hw
+  exact absurd (hP w hw.1) (by rw [hw.2]; exact not_le_of_gt hlt)
 
 end Substitution
 

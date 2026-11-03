@@ -37,6 +37,10 @@ most one, such as the trace of `A` along an orthonormal basis, is bounded by `#s
 Over `ℝ` or `ℂ`, two-sided norm bounds `1 - δ < ‖T v‖ < 1 + δ` on a `δ`-net of the unit sphere
 extend to bounds `(1 - 3 δ) ‖v‖ ≤ ‖T v‖ ≤ (1 + 3 δ) ‖v‖` on the whole space
 (`ContinuousLinearMap.norm_apply_bounds_of_net`).
+
+A **metric quotient map**, an operator `q` with `‖q‖ ≤ 1` lifting every vector of norm less than
+`r` to a vector of norm less than `r`, maps each open ball about `0` onto the open ball of the same
+radius (`ContinuousLinearMap.image_ball_eq_ball`).
 -/
 
 public section
@@ -189,6 +193,24 @@ theorem norm_apply_bounds_of_net (T : V →L[𝕜] F) {t : Set V} {δ : ℝ}
   exact mul_le_mul_of_nonneg_left (hsphere _ (norm_smul_inv_norm hv)) (norm_nonneg v)
 
 end Net
+
+section MetricQuotient
+
+variable {𝕜 𝕜₂ E F : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜₂]
+  {σ₁₂ : 𝕜 →+* 𝕜₂} [RingHomIsometric σ₁₂] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜₂ F]
+
+/-- A **metric quotient map** maps each open ball onto the open ball of the same radius: if
+`‖q‖ ≤ 1` and `q` lifts every vector of norm less than `r` to a vector of norm less than `r`,
+then `q` maps each open ball about `0` onto the open ball of the same radius. -/
+theorem image_ball_eq_ball {q : E →SL[σ₁₂] F} (h₁ : ‖q‖ ≤ 1)
+    (h : ∀ r, Metric.ball (0 : F) r ⊆ q '' Metric.ball 0 r) (r : ℝ) :
+    q '' Metric.ball 0 r = Metric.ball 0 r := by
+  refine subset_antisymm ?_ (h r)
+  have h' : ‖q‖₊ ≤ 1 := by rwa [← NNReal.coe_le_one, coe_nnnorm]
+  simpa using ((q.lipschitzWith.weaken h').mapsTo_ball one_ne_zero 0 r).image_subset
+
+end MetricQuotient
 
 end ContinuousLinearMap
 

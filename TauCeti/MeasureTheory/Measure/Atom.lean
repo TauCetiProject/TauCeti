@@ -80,14 +80,14 @@ theorem _root_.AEMeasurable.exists_ae_eq_const_restrict_of_atom
   have hInvne : (μ A)⁻¹ ≠ 0 := ENNReal.inv_ne_zero.2 hAfin
   let _ : IsZeroOneMeasure ρ := ⟨by
       intro B hB
-      simp only [ρ, Measure.smul_apply, smul_eq_mul]
+      simp only [ρ, _root_.smul_apply, smul_eq_mul]
       rw [Measure.restrict_apply hB]
       rcases hAatom (hB.inter hA) Set.inter_subset_right with hzero | hfull
       · exact Or.inl (by simp [hzero])
       · exact Or.inr (by rw [hfull, ENNReal.inv_mul_cancel hAne hAfin])⟩
   have hρne : ρ ≠ 0 := by
     rw [← Measure.measure_univ_ne_zero]
-    simp only [ρ, Measure.smul_apply, smul_eq_mul]
+    simp only [ρ, _root_.smul_apply, smul_eq_mul]
     rw [Measure.restrict_apply_univ, ENNReal.inv_mul_cancel hAne hAfin]
     exact one_ne_zero
   let _ : NeZero ρ := ⟨hρne⟩

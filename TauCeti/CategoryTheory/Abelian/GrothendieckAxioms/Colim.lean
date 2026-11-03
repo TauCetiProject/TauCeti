@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+import Mathlib.CategoryTheory.Preadditive.FunctorCategory
+
 public import Mathlib.CategoryTheory.Abelian.GrothendieckAxioms.Basic
 import Mathlib.CategoryTheory.Limits.FunctorCategory.EpiMono
 import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Kernels
@@ -37,7 +39,7 @@ theorem IsColimit.mono_of_comp_map_succ_eq_zero [HasColimitsOfShape ℕ C]
     (h : ∀ (k : ℕ) {X : C} (g : X ⟶ F.obj k), g ≫ c.ι.app k ≫ ψ = 0 →
       g ≫ F.map (homOfLE (k.le_add_right 1)) = 0) :
     Mono ψ := by
-  let α : F ⟶ (Functor.const ℕ).obj T :=
+  let α : F ⟶ (CategoryTheory.Functor.const ℕ).obj T :=
     { app k := c.ι.app k ≫ ψ
       naturality _ _ _ := by simp }
   -- the kernels of the stages form a sequence with zero transitions, so its colimit is zero
@@ -57,18 +59,19 @@ theorem IsColimit.mono_of_comp_map_succ_eq_zero [HasColimitsOfShape ℕ C]
   -- `colim.map α` is `ψ` followed by the inclusion of `T` into the colimit of the constant
   -- sequence
   have hfac : colim.map α = (IsColimit.coconePointUniqueUpToIso (colimit.isColimit F) hc).hom ≫
-      ψ ≫ colimit.ι ((Functor.const ℕ).obj T) 0 := by
+      ψ ≫ colimit.ι ((CategoryTheory.Functor.const ℕ).obj T) 0 := by
     refine colimit.hom_ext fun k ↦ ?_
-    rw [colim_map, ι_colimMap, ← colimit.w ((Functor.const ℕ).obj T) (homOfLE (Nat.zero_le k))]
+    rw [colim_map, ι_colimMap,
+      ← colimit.w ((CategoryTheory.Functor.const ℕ).obj T) (homOfLE (Nat.zero_le k))]
     have := IsColimit.comp_coconePointUniqueUpToIso_hom (colimit.isColimit F) hc k
     simp only [colimit.cocone_ι] at this
     simp [α, reassoc_of% this]
   rw [hfac] at this
-  have : Mono (ψ ≫ colimit.ι ((Functor.const ℕ).obj T) 0) := by
+  have : Mono (ψ ≫ colimit.ι ((CategoryTheory.Functor.const ℕ).obj T) 0) := by
     simpa using mono_comp
       (IsColimit.coconePointUniqueUpToIso (colimit.isColimit F) hc).inv
       ((IsColimit.coconePointUniqueUpToIso (colimit.isColimit F) hc).hom ≫
-        ψ ≫ colimit.ι ((Functor.const ℕ).obj T) 0)
-  exact mono_of_mono ψ (colimit.ι ((Functor.const ℕ).obj T) 0)
+        ψ ≫ colimit.ι ((CategoryTheory.Functor.const ℕ).obj T) 0)
+  exact mono_of_mono ψ (colimit.ι ((CategoryTheory.Functor.const ℕ).obj T) 0)
 
 end CategoryTheory.Limits

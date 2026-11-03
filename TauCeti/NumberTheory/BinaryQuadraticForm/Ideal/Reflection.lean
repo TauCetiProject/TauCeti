@@ -30,7 +30,9 @@ form is properly equivalent to its opposite exactly when its class has order div
 `NarrowPic` for positive nonsquare discriminant
 (`exists_eq_smul_reflected_iff_narrowPicClass_sq_eq_one`). On proper classes of primitive positive
 definite forms the opposite form represents the inverse class
-(`posDefProperClassToPic_mk_eq_inv_of_eq_reflected`).
+(`posDefProperClassToPic_mk_eq_inv_of_eq_reflected`), and likewise on proper classes of positive
+nonsquare discriminant in the narrow Picard group
+(`properClassToNarrowPic_mk_eq_inv_of_eq_reflected`).
 
 ## References
 
@@ -239,5 +241,23 @@ theorem posDefProperClassToPic_mk_eq_inv_of_eq_reflected
   exact picClass_reflected hn hfD hfp
 
 end PosDef
+
+section Narrow
+
+variable (hD : D % 4 = 0 ∨ D % 4 = 1) (hpos : 0 < D)
+
+/-- **The opposite form represents the inverse narrow class.** -/
+theorem properClassToNarrowPic_mk_eq_inv_of_eq_reflected {f g : primitiveForms D}
+    (hg : (g : BinaryQuadraticForm ℤ) = (f : BinaryQuadraticForm ℤ).reflected) :
+    properClassToNarrowPic D hD hpos (Quotient.mk'' g) =
+      (properClassToNarrowPic D hD hpos (Quotient.mk'' f))⁻¹ := by
+  obtain ⟨hfD, hfp⟩ := (mem_primitiveForms D _).mp f.2
+  obtain ⟨g, hgm⟩ := g
+  simp only at hg
+  subst hg
+  simp only [properClassToNarrowPic_mk]
+  exact narrowPicClass_reflected hfD hfp
+
+end Narrow
 
 end TauCeti.BinaryQuadraticForm

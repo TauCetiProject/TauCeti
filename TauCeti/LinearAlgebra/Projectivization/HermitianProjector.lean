@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.RCLike.Basic
+public import TauCeti.LinearAlgebra.Projectivization.AffineChart
 public import TauCeti.LinearAlgebra.Projectivization.Projector
 
 /-!
@@ -21,7 +22,11 @@ The *Hermitian projector locus* `TauCeti.hermitianProjectorLocus ι K` consists 
 projections (self-adjoint idempotents, `IsStarProjection`) of trace one. In characteristic zero a
 matrix of the locus is the Hermitian projector of each of its columns with nonzero diagonal entry
 (`TauCeti.rankOneHermitianProjector_col_eq_self`). Over `ℝ` or `ℂ` the map
-`Projectivization.hermitianProjector` is a bijection from `ℙ 𝕜 (ι → 𝕜)` onto the locus.
+`Projectivization.hermitianProjector` is a bijection from `ℙ 𝕜 (ι → 𝕜)` onto the locus. It
+carries the standard affine open `{x_i ≠ 0}` onto the matrices of the locus with nonzero `i`-th
+diagonal entry, and the standard affine chart at `i` is read off the `i`-th column of the
+Hermitian projector `A` as the ratios `A (i.succAbove k) i / A i i`, so the affine charts of
+projective space are rational in the matrix entries.
 
 For a field with trivial involution, such as `ℝ`, this is the rank-one projector
 `TauCeti.rankOneProjector` and its locus is `TauCeti.projectorLocus`
@@ -46,6 +51,9 @@ imaginary parts of the entries. Its topological and semialgebraic properties are
   projector of each of its columns with nonzero diagonal entry.
 * `Projectivization.hermitianProjector_injective` and `Projectivization.range_hermitianProjector`:
   over `ℝ` or `ℂ` the Hermitian projector map is a bijection from `ℙ 𝕜 (ι → 𝕜)` onto the locus.
+* `Projectivization.image_hermitianProjector_affineOpen`: the image of a standard affine open.
+* `Projectivization.affineChart_eq_hermitianProjector_div`: the standard affine charts in terms of
+  the entries of the Hermitian projector.
 
 ## References
 
@@ -181,11 +189,11 @@ theorem rankOneHermitianProjector_col_eq_self {A : Matrix ι ι K}
   -- The idempotent `A` fixes its column `v`, and since `A` is self-adjoint, `v* v = A i i ≠ 0`.
   have hAv : A *ᵥ v = v := funext fun j ↦ by
     simp only [mulVec, dotProduct, v]
-    simpa only [mul_apply] using congr_fun₂ hI.eq j i
+    simpa only [Matrix.mul_apply] using congr_fun₂ hI.eq j i
   have hv : star v ⬝ᵥ v ≠ 0 := by
     have hS' : ∀ k, star (A k i) = A i k := fun k ↦ by
       simpa [star_eq_conjTranspose, conjTranspose_apply] using congr_fun₂ hS.star_eq i k
-    have : star v ⬝ᵥ v = (A * A) i i := by simp [v, dotProduct, mul_apply, hS']
+    have : star v ⬝ᵥ v = (A * A) i i := by simp [v, dotProduct, Matrix.mul_apply, hS']
     rwa [this, hI.eq]
   -- So `A` fixes the line of `P = rankOneHermitianProjector v`: `A * P = P`.
   have hAP : A * rankOneHermitianProjector v = rankOneHermitianProjector v := by
@@ -273,6 +281,46 @@ theorem range_hermitianProjector :
     (Set.range_subset_iff.mpr hermitianProjector_mem_hermitianProjectorLocus) fun A hA ↦ ?_
   obtain ⟨x, hx, rfl⟩ := exists_rankOneHermitianProjector_eq_of_mem_hermitianProjectorLocus hA
   exact ⟨mk 𝕜 x hx, hermitianProjector_mk x hx⟩
+
+/-- Over `ℝ` or `ℂ` the `i`-th diagonal entry of the Hermitian projector of a line, `|x_i|² / ‖x‖²`,
+vanishes exactly when the line lies outside the standard affine open `{x_i ≠ 0}`. -/
+@[simp]
+theorem hermitianProjector_apply_self_eq_zero_iff {p : ℙ 𝕜 (ι → 𝕜)} {i : ι} :
+    hermitianProjector p i i = 0 ↔ p ∉ affineOpen i := by
+  induction p using ind with
+  | h x hx =>
+    simp [rankOneHermitianProjector_apply, dotProduct_star_self_eq_zero.not.mpr hx]
+
+/-- Over `ℝ` or `ℂ` the Hermitian projector map sends the standard affine open `{x_i ≠ 0}` onto
+the matrices of the Hermitian projector locus with nonzero `i`-th diagonal entry. -/
+theorem image_hermitianProjector_affineOpen (i : ι) :
+    hermitianProjector '' affineOpen i = hermitianProjectorLocus ι 𝕜 ∩ {A | A i i ≠ 0} := by
+  ext A
+  constructor
+  · rintro ⟨p, hp, rfl⟩
+    exact ⟨hermitianProjector_mem_hermitianProjectorLocus p,
+      fun h ↦ hermitianProjector_apply_self_eq_zero_iff.mp h hp⟩
+  · rintro ⟨hA, hAi⟩
+    obtain ⟨p, rfl⟩ := range_hermitianProjector.symm.subset hA
+    exact ⟨p, not_not.mp (mt hermitianProjector_apply_self_eq_zero_iff.mpr hAi), rfl⟩
+
+/-- **The standard affine charts in the Hermitian projector model.** Over `ℝ` or `ℂ` the
+standard affine chart at `i` reads the coordinates of a line off its Hermitian projector `A`: the
+`k`-th coordinate is the ratio `A (i.succAbove k) i / A i i` of two entries of the `i`-th column.
+Outside the chart domain both sides are `0`. -/
+theorem affineChart_eq_hermitianProjector_div {n : ℕ} (i : Fin (n + 1))
+    (p : ℙ 𝕜 (Fin (n + 1) → 𝕜)) :
+    affineChart i p =
+      fun k ↦ hermitianProjector p (i.succAbove k) i / hermitianProjector p i i := by
+  induction p using ind with
+  | h x hx =>
+    have hs : star x ⬝ᵥ x ≠ 0 := dotProduct_star_self_eq_zero.not.mpr hx
+    funext k
+    simp only [affineChart_mk, hermitianProjector_mk, rankOneHermitianProjector_apply]
+    rcases eq_or_ne (x i) 0 with hi | hi
+    · simp [hi]
+    · have hi' : star (x i) ≠ 0 := star_ne_zero.mpr hi
+      field_simp
 
 end RCLike
 
