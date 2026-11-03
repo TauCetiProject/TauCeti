@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.LocallyUniformLimit
+public import Mathlib.Analysis.Complex.Periodic
+public import Mathlib.Analysis.Complex.UpperHalfPlane.FunctionsBoundedAtInfty
 public import Mathlib.Analysis.Normed.Module.MultipliableUniformlyOn
 public import TauCeti.Algebra.Ring.Parity
 public import TauCeti.Analysis.Normed.Ring.InfiniteProd
@@ -60,6 +62,8 @@ holomorphy argument is adapted from `Mathlib.NumberTheory.ModularForms.DedekindE
   derivative `-1` at `s = 0`.
 * `TauCeti.tendsto_tprod_one_sub_pow_odd_pow_sub_neg_div`: for `P(s) = ∏_{n ≥ 0} (1 - s^{2n+1})`,
   `(P(s)ᵏ - P(-s)ᵏ) / s → -2k` as `s → 0`.
+* `TauCeti.tendsto_tprod_one_sub_qParam_pow_odd_pow`: `P(q)ᵏ → 1` at `i∞`, for
+  `q = e^{2π i τ}` on the upper half-plane.
 * `TauCeti.hasProdLocallyUniformlyOn_one_sub_pow_mul`: for `q` and `w` continuous on an open set
   `U` with `‖q‖ < 1` there, `∏_{n ≥ 1} (1 - q(τ)ⁿ w(τ))` converges locally uniformly on `U`.
 * `TauCeti.differentiableOn_tprod_one_sub_pow_mul`: for `q` and `w` holomorphic on such a `U`,
@@ -346,6 +350,15 @@ theorem tendsto_tprod_one_sub_pow_odd_pow_sub_neg_div (k : ℕ) :
   · ring
 
 end NontriviallyNormedField
+
+open Filter Topology UpperHalfPlane in
+/-- `(∏_{n ≥ 0} (1 - q^{2n+1}))ᵏ → 1` at `i∞`, for `q = e^{2π i τ}`. -/
+theorem tendsto_tprod_one_sub_qParam_pow_odd_pow (k : ℕ) :
+    Tendsto (fun τ : ℍ ↦ (∏' n : ℕ, (1 - Function.Periodic.qParam 1 τ ^ (2 * n + 1))) ^ k)
+      atImInfty (𝓝 1) := by
+  simpa using ((hasDerivAt_tprod_one_sub_pow_odd (𝕜 := ℂ)).continuousAt.tendsto.comp
+    (((Function.Periodic.qParam_tendsto one_pos).mono_right nhdsWithin_le_nhds).comp
+      tendsto_coe_atImInfty)).pow k
 
 section LocallyUniform
 
