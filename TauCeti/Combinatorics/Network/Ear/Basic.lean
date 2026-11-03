@@ -147,6 +147,10 @@ def toSubnetwork : Ear S → N.Subnetwork
 def adjoin (P : Ear S) : N.Subnetwork :=
   S ⊔ P.toSubnetwork
 
+/-- Adjoining an ear is the union of the current subnetwork and the ear's subnetwork. -/
+theorem adjoin_def (P : Ear S) : P.adjoin = S ⊔ P.toSubnetwork :=
+  (rfl)
+
 @[simp]
 theorem toSubnetwork_open (P : OpenEar S) : (Ear.open P).toSubnetwork = P.walk.toSubnetwork :=
   Eq.refl _
@@ -231,6 +235,10 @@ def singleton (x : V) : EarDecomposition (N.singletonSubnetwork x) where
 
 @[simp]
 theorem singleton_length (x : V) : (singleton (N := N) x).length = 0 :=
+  rfl
+
+@[simp]
+theorem singleton_initialVertex (x : V) : (singleton (N := N) x).initialVertex = x :=
   rfl
 
 @[simp]
