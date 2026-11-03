@@ -20,11 +20,12 @@ to the computation of its Fredholm index.
 
 The proof is the Hardy product argument. A Hardy function `f` lies in the kernel of `T_a` exactly
 when `a f` has only negative Fourier modes (`TauCeti.toeplitz_apply_eq_zero_iff`). Suppose that
-`T_a f = 0` and `T_ā g = 0`. The conjugate `ḡ` of a Hardy function has only nonpositive modes, so
-the integrable product `a f ḡ` has only negative modes. Its complex conjugate `ā g f̄` has only
-negative modes for the same reason, so `a f ḡ` also has only positive modes. Hence all Fourier
-coefficients of `a f ḡ` vanish and `a f ḡ = 0` almost everywhere. If `f` and `g` are nonzero, then
-by boundary uniqueness they are nonzero almost everywhere, which forces `a = 0`.
+`T_a f = 0` and `T_ā g = 0`. The conjugate `conj g` of a Hardy function has only nonpositive
+modes, so the integrable product `a f conj g` has only negative modes. Its complex conjugate
+`ā g conj f` has only negative modes for the same reason, so `a f conj g` also has only positive
+modes. Hence all Fourier coefficients of `a f conj g` vanish and `a f conj g = 0` almost
+everywhere. If `f` and `g` are nonzero, then by boundary uniqueness they are nonzero almost
+everywhere, which forces `a = 0`.
 
 ## Main results
 
@@ -65,8 +66,8 @@ theorem toeplitz_apply_eq_zero_iff (a : Lp ℂ ∞ (AddCircle.haarAddCircle (T :
   simp only [toeplitz_apply, ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply,
     Lp.multiplicationOperator_apply, Submodule.orthogonalProjectionOnto_eq_zero_iff]
 
-/-- If `T_a f = 0`, then for every Hardy function `g` the product `a f ḡ` has no Fourier modes
-`n ≥ 0`: the factor `a f` has only negative modes and `ḡ` only nonpositive ones. -/
+/-- If `T_a f = 0`, then for every Hardy function `g` the product `a f conj g` has no Fourier modes
+`n ≥ 0`: the factor `a f` has only negative modes and `conj g` only nonpositive ones. -/
 private theorem fourierCoeff_mul_star_eq_zero {a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1))}
     {f : HardySpace} (hf : toeplitz a f = 0) (g : HardySpace) {n : ℤ} (hn : 0 ≤ n) :
     fourierCoeff (⇑(a • (f : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1)))) *
@@ -85,12 +86,12 @@ theorem eq_zero_of_toeplitz_apply_eq_zero_of_toeplitz_star_apply_eq_zero
     (hg₀ : g ≠ 0) (hf : toeplitz a f = 0) (hg : toeplitz (star a) g = 0) : a = 0 := by
   set F : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1)) := ↑f
   set G : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1)) := ↑g
-  -- The product `w = a f ḡ` is integrable; we show that all its Fourier coefficients vanish.
+  -- The product `w = a f conj g` is integrable; we show that all its Fourier coefficients vanish.
   have hint : Integrable (⇑(a • F) * ⇑(star G)) AddCircle.haarAddCircle :=
     (Lp.memLp _).integrable_mul (Lp.memLp _)
   set w : Lp ℂ 1 (AddCircle.haarAddCircle (T := 1)) := hint.toL1 _
   have hw : ⇑w =ᵐ[AddCircle.haarAddCircle] ⇑(a • F) * ⇑(star G) := hint.coeFn_toL1
-  -- The conjugate of `w` is the product `ā g f̄` built from the kernel vector `g` of `T_ā`.
+  -- The conjugate of `w` is the product `ā g conj f` built from the kernel vector `g` of `T_ā`.
   have hw' : ⇑(star w) =ᵐ[AddCircle.haarAddCircle] ⇑(star a • G) * ⇑(star F) := by
     filter_upwards [Lp.coeFn_star w, hw, Lp.coeFn_lpSMul (r := 2) a F,
       Lp.coeFn_lpSMul (r := 2) (star a) G, Lp.coeFn_star a, Lp.coeFn_star G, Lp.coeFn_star F]
@@ -105,7 +106,7 @@ theorem eq_zero_of_toeplitz_apply_eq_zero_of_toeplitz_star_apply_eq_zero
     · have h := fourierCoeff_mul_star_eq_zero hg f (n := -n) (by omega)
       rwa [← fourierCoeff_congr_ae hw', fourierCoeff_star, neg_neg, map_eq_zero] at h
   have hw₀ := (L1.integrable_coeFn w).ae_eq_zero_of_forall_fourierCoeff_eq_zero hcoeff
-  -- Since `f` and `g` are nonzero almost everywhere, `a f ḡ = 0` forces `a = 0`.
+  -- Since `f` and `g` are nonzero almost everywhere, `a f conj g = 0` forces `a = 0`.
   rw [Lp.eq_zero_iff_ae_eq_zero]
   filter_upwards [hw₀, hw, HardySpace.ae_ne_zero hf₀, HardySpace.ae_ne_zero hg₀,
     Lp.coeFn_lpSMul (r := 2) a F, Lp.coeFn_star G] with t h₀ h₁ hft hgt h₂ h₃
