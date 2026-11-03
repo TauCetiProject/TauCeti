@@ -91,53 +91,6 @@ structure EvenFredholmModule extends FredholmModule A H where
 
 variable {A H}
 
-/-! ### Relative compactness
-
-The perturbations below are operators `K` with `K π(a)` compact for every `a`. Such an operator
-need not be compact itself, and the two conditions on `F` survive replacing `F` by `F + K`
-provided `π(a) K` is compact as well. -/
-
-section Perturbation
-
-variable (π : A →⋆ₙₐ[ℂ] H →L[ℂ] H)
-
-/-- `π(a)` is the adjoint of `π(a*)`. -/
-private theorem star_rep_star (a : A) : star (π (star a)) = π a := by
-  rw [map_star, star_star]
-
-/-- If `K π(b)` is compact for every `b`, then so is `π(a) K*`. -/
-private theorem isCompactOperator_rep_mul_star {K : H →L[ℂ] H}
-    (hK : ∀ a, IsCompactOperator ⇑(K * π a)) (a : A) : IsCompactOperator ⇑(π a * star K) := by
-  have := (hK (star a)).star
-  rwa [star_mul, star_rep_star] at this
-
-/-- Adding to `F` an operator `K` with `K π(a)` and `π(a) K` compact keeps the commutators
-`[F, π(a)]` compact. -/
-private theorem isCompactOperator_add_commutator {F K : H →L[ℂ] H}
-    (hc : ∀ a, IsCompactOperator ⇑(F * π a - π a * F))
-    (hK : ∀ a, IsCompactOperator ⇑(K * π a)) (hK' : ∀ a, IsCompactOperator ⇑(π a * K)) (a : A) :
-    IsCompactOperator ⇑((F + K) * π a - π a * (F + K)) := by
-  have e : (F + K) * π a - π a * (F + K) = (F * π a - π a * F) + K * π a - π a * K := by
-    noncomm_ring
-  rw [e, FunLike.coe_sub, FunLike.coe_add]
-  exact ((hc a).add (hK a)).sub (hK' a)
-
-/-- Adding to `F` an operator `K` with `K π(a)` compact keeps the defects `(F² - 1) π(a)`
-compact, provided the commutators `[F, π(a)]` are compact. -/
-private theorem isCompactOperator_add_mul_self_sub_one_mul {F K : H →L[ℂ] H}
-    (hc : ∀ a, IsCompactOperator ⇑(F * π a - π a * F))
-    (hs : ∀ a, IsCompactOperator ⇑((F * F - 1) * π a))
-    (hK : ∀ a, IsCompactOperator ⇑(K * π a)) (a : A) :
-    IsCompactOperator ⇑(((F + K) * (F + K) - 1) * π a) := by
-  have e : ((F + K) * (F + K) - 1) * π a = (F * F - 1) * π a + F * (K * π a) +
-      (K * π a) * F + K * (F * π a - π a * F) + K * (K * π a) := by
-    noncomm_ring
-  simp only [e, FunLike.coe_add]
-  exact (((((hs a).add ((hK a).mul_left F)).add ((hK a).mul_right F)).add
-    ((hc a).mul_left K)).add ((hK a).mul_left K))
-
-end Perturbation
-
 /-! ### Odd Fredholm modules -/
 
 namespace FredholmModule
@@ -152,24 +105,8 @@ theorem star_operator : star M.operator = M.operator :=
 /-- **Mirror image of the defect condition.** `π(a) (F² - 1)` is compact for every `a`. -/
 theorem isCompactOperator_rep_mul_mul_self_sub_one (a : A) :
     IsCompactOperator ⇑(M.rep a * (M.operator * M.operator - 1)) := by
-  have := (M.isCompactOperator_mul_self_sub_one_mul (star a)).star
-  rwa [star_mul, star_rep_star, star_sub, star_mul, star_one, M.star_operator] at this
-
-/-- If the skew part of `F` is compact relative to `π`, so is `(F* - F) π(a) / 2`. -/
-private theorem isCompactOperator_half_star_sub_self_mul (π : A →⋆ₙₐ[ℂ] H →L[ℂ] H)
-    {F : H →L[ℂ] H} (hskew : ∀ a, IsCompactOperator ⇑((F - star F) * π a)) (a : A) :
-    IsCompactOperator ⇑(((2 : ℝ)⁻¹ • (star F - F)) * π a) := by
-  rw [smul_mul_assoc, ← neg_sub, neg_mul, FunLike.coe_smul, FunLike.coe_neg]
-  exact (hskew a).neg.smul _
-
-/-- If the skew part of `F` is compact relative to `π`, so is `π(a) (F* - F) / 2`. -/
-private theorem isCompactOperator_rep_mul_half_star_sub_self (π : A →⋆ₙₐ[ℂ] H →L[ℂ] H)
-    {F : H →L[ℂ] H} (hskew : ∀ a, IsCompactOperator ⇑((F - star F) * π a)) (a : A) :
-    IsCompactOperator ⇑(π a * ((2 : ℝ)⁻¹ • (star F - F))) := by
-  have h := isCompactOperator_rep_mul_star π hskew a
-  rw [star_sub, star_star] at h
-  rw [mul_smul_comm, FunLike.coe_smul]
-  exact h.smul _
+  simpa only [star_mul, map_star, star_star, star_sub, star_one, M.star_operator] using
+    (M.isCompactOperator_mul_self_sub_one_mul (star a)).star
 
 /-- **Self-adjoint replacement.** Let `F` be a bounded operator whose skew part is compact
 relative to `π`, i.e. `(F - F*) π(a)` is compact for every `a`. If `[F, π(a)]` and
@@ -184,13 +121,18 @@ def ofRealPart (π : A →⋆ₙₐ[ℂ] H →L[ℂ] H) (F : H →L[ℂ] H)
   isSelfAdjoint_operator := (ℜ F).2
   isCompactOperator_commutator a := by
     rw [realPart_eq_add_half_star_sub]
-    exact isCompactOperator_add_commutator π hc
-      (isCompactOperator_half_star_sub_self_mul π hskew)
-      (isCompactOperator_rep_mul_half_star_sub_self π hskew) a
+    refine ContinuousLinearMap.isCompactOperator_add_commutator (hc a) ?_ ?_
+    · rw [smul_mul_assoc, ← neg_sub, neg_mul]
+      exact (hskew a).neg.smul _
+    · have h : IsCompactOperator ⇑(π a * (star F - F)) := by
+        simpa only [star_mul, map_star, star_star, star_sub] using (hskew (star a)).star
+      rw [mul_smul_comm, FunLike.coe_smul]
+      exact h.smul _
   isCompactOperator_mul_self_sub_one_mul a := by
     rw [realPart_eq_add_half_star_sub]
-    exact isCompactOperator_add_mul_self_sub_one_mul π hc hs
-      (isCompactOperator_half_star_sub_self_mul π hskew) a
+    refine ContinuousLinearMap.isCompactOperator_add_mul_self_sub_one_mul (hc a) (hs a) ?_
+    rw [smul_mul_assoc, ← neg_sub, neg_mul]
+    exact (hskew a).neg.smul _
 
 @[simp]
 theorem ofRealPart_rep (π : A →⋆ₙₐ[ℂ] H →L[ℂ] H) (F : H →L[ℂ] H) (hc hs hskew) :
@@ -210,12 +152,12 @@ def perturb (K : H →L[ℂ] H) (hK : IsSelfAdjoint K)
   rep := M.rep
   operator := M.operator + K
   isSelfAdjoint_operator := M.isSelfAdjoint_operator.add hK
-  isCompactOperator_commutator :=
-    isCompactOperator_add_commutator M.rep M.isCompactOperator_commutator hKc fun a ↦ by
-      simpa [hK.star_eq] using isCompactOperator_rep_mul_star M.rep hKc a
-  isCompactOperator_mul_self_sub_one_mul :=
-    isCompactOperator_add_mul_self_sub_one_mul M.rep M.isCompactOperator_commutator
-      M.isCompactOperator_mul_self_sub_one_mul hKc
+  isCompactOperator_commutator a :=
+    ContinuousLinearMap.isCompactOperator_add_commutator (M.isCompactOperator_commutator a)
+      (hKc a) (by simpa only [star_mul, map_star, star_star, hK.star_eq] using (hKc (star a)).star)
+  isCompactOperator_mul_self_sub_one_mul a :=
+    ContinuousLinearMap.isCompactOperator_add_mul_self_sub_one_mul
+      (M.isCompactOperator_commutator a) (M.isCompactOperator_mul_self_sub_one_mul a) (hKc a)
 
 @[simp]
 theorem perturb_rep (K : H →L[ℂ] H) (hK hKc) : (M.perturb K hK hKc).rep = M.rep :=

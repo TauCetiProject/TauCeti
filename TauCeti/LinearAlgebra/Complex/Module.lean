@@ -29,7 +29,7 @@ conjugacy `g z = w * f z * w⁻¹` by a unit `w` between two such maps holds eve
 at `I` (`Units.conj_complexAlgHom_apply`).
 
 The real part `ℜ a = (a + a*) / 2` of an element of a complex star module is `a` corrected by
-half its skew difference `a* - a` (`realPart_eq_add_half_star_sub`).
+half its skew difference `a* - a` (`TauCeti.realPart_eq_add_half_star_sub`).
 -/
 
 public section
@@ -84,6 +84,8 @@ lemma re_smul_add_im_smul {V : Type*} [AddCommGroup V] [Module ℝ V] [Module �
 
 end Complex
 
+namespace TauCeti
+
 open scoped ComplexStarModule in
 /-- The real part `(a + a*) / 2` is `a` plus half the skew difference `a* - a`. -/
 theorem realPart_eq_add_half_star_sub {A : Type*} [AddCommGroup A] [Module ℂ A]
@@ -91,6 +93,8 @@ theorem realPart_eq_add_half_star_sub {A : Type*} [AddCommGroup A] [Module ℂ A
     (ℜ a : A) = a + (2 : ℝ)⁻¹ • (star a - a) := by
   rw [realPart_apply_coe]
   module
+
+end TauCeti
 
 section ComplexOfMapISmul
 
