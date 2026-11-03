@@ -24,7 +24,7 @@ there. For a solution on the plane that is nonzero outside a compact set, the ze
 is finite. No curvature equation or analyticity of the coefficient is needed.
 
 The integrating factor comes from the Cauchy transform; the holomorphic zero
-factorization is Mathlib's `AnalyticAt.exists_eventuallyEq_pow_smul_nonzero_iff`.
+factorization is Mathlib's `AnalyticAt.exists_eventuallyEq_pow_smul_ne_zero_iff`.
 
 ## References
 
@@ -128,7 +128,7 @@ theorem exists_contDiffAt_pow_mul_of_conjWirtingerDeriv_apply_one_eq_mul {a f : 
   obtain ⟨g, hg, hA, hgn⟩ :=
     exists_contDiff_analyticAt_exp_neg_mul_not_eventually_eq_zero
       hn hU ha hf heq hz hne
-  obtain ⟨n, u, hu, hun, he⟩ := hA.exists_eventuallyEq_pow_smul_nonzero_iff.mpr hgn
+  obtain ⟨n, u, hu, hun, he⟩ := hA.exists_eventuallyEq_pow_smul_ne_zero_iff.mpr hgn
   refine ⟨n, fun w ↦ exp (g w) * u w,
     hg.contDiffAt.cexp.mul (hu.contDiffAt.restrict_scalars ℝ), mul_ne_zero (exp_ne_zero _) hun, ?_⟩
   filter_upwards [he] with w hw
