@@ -7,6 +7,9 @@ module
 
 public import Mathlib.AlgebraicTopology.SimplexCategory.SemiSimplexCategory
 public import Mathlib.AlgebraicTopology.TopologicalSimplex
+public import Mathlib.Topology.CompactOpen
+public import Mathlib.Topology.Homeomorph.Lemmas
+public import Mathlib.Topology.Homotopy.Basic
 
 /-!
 # The fat realization of a semi-simplicial space
@@ -26,7 +29,10 @@ This file constructs `TauCeti.fatRealization X` with its characteristic maps
 (`TauCeti.fatRealization.desc`), its quotient topology (`TauCeti.fatRealization.isOpen_iff`,
 `TauCeti.fatRealization.continuous_iff`) and its functoriality
 (`TauCeti.fatRealizationFunctor`). An augmentation `ε : X ⟶ const Z` induces the map
-`TauCeti.fatRealization.augment ε : ‖X‖ ⟶ Z` sending `[x, t]` to `ε x`.
+`TauCeti.fatRealization.augment ε : ‖X‖ ⟶ Z` sending `[x, t]` to `ε x`. A family of maps
+`φ s : X ⟶ Y`, `s ∈ [0, 1]`, depending continuously on `s` in each level, induces a homotopy
+`TauCeti.fatRealization.homotopy` from `‖φ 0‖` to `‖φ 1‖`: since `[0, 1]` is locally compact, the
+product of `‖X‖` with `[0, 1]` is still a quotient of `Σ n, Xₙ × Δⁿ × [0, 1]`.
 
 The main result is the open restriction theorem. If `φ : Y ⟶ X` is levelwise an open embedding
 and its image is closed under passing from a face back to the simplex, then `‖φ‖ : ‖Y‖ ⟶ ‖X‖` is
@@ -219,6 +225,41 @@ theorem map_comp_augment {Y : SemiSimplexCategoryᵒᵖ ⥤ TopCat.{u}} (φ : Y 
   ext; simp
 
 end Augment
+
+section Homotopy
+
+variable {X} {Y : SemiSimplexCategoryᵒᵖ ⥤ TopCat.{u}}
+
+/-- A family `φ s : X ⟶ Y` of maps of semi-simplicial spaces, indexed by `s ∈ [0, 1]` and
+continuous jointly in `s` and the point in each level, induces the homotopy
+`(s, [x, t]) ↦ [φ s x, t]` from `‖φ 0‖` to `‖φ 1‖`. -/
+def homotopy (φ : unitInterval → (X ⟶ Y))
+    (hφ : ∀ n : SemiSimplexCategory,
+      Continuous fun p : unitInterval × X.obj (op n) ↦ (φ p.1).app (op n) p.2) :
+    ContinuousMap.Homotopy (map (φ 0)).hom (map (φ 1)).hom where
+  toFun p := map (φ p.1) p.2
+  continuous_toFun := (isQuotientMap_sigma X).continuous_lift_prod_right <| by
+    -- `[0, 1]` is locally compact, so it suffices to check continuity on each `Xₙ × Δⁿ × [0, 1]`.
+    have : Continuous fun q : Σ n : SemiSimplexCategory,
+        (X.obj (op n) × toTop.{u}.obj n) × unitInterval ↦
+          ι Y q.1 ((φ q.2.2).app (op q.1) q.2.1.1, q.2.1.2) :=
+      continuous_sigma fun n ↦ (ι Y n).continuous.comp <|
+        ((hφ n).comp (continuous_snd.prodMk (continuous_fst.comp continuous_fst))).prodMk
+          (continuous_snd.comp continuous_fst)
+    exact (this.comp (Homeomorph.sigmaProdDistrib.continuous.comp continuous_swap)).congr
+      fun ⟨_, n, x, t⟩ ↦ (map_ι _ n x t).symm
+  map_zero_left _ := rfl
+  map_one_left _ := rfl
+
+@[simp]
+theorem homotopy_apply_ι (φ : unitInterval → (X ⟶ Y))
+    (hφ : ∀ n : SemiSimplexCategory,
+      Continuous fun p : unitInterval × X.obj (op n) ↦ (φ p.1).app (op n) p.2)
+    (s : unitInterval) (n : SemiSimplexCategory) (x : X.obj (op n)) (t : toTop.{u}.obj n) :
+    homotopy φ hφ (s, ι X n (x, t)) = ι Y n ((φ s).app (op n) x, t) :=
+  (rfl)
+
+end Homotopy
 
 section OpenRestriction
 
