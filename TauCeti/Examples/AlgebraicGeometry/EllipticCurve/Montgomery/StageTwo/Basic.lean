@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Montgomery.StageTwo
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Montgomery.StageTwo.Basic
 
 /-!
 # Examples of Montgomery stage-2 detection
