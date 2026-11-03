@@ -21,30 +21,20 @@ import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 Let `K` be the Hamiltonian perturbation of the pair of pants `S = ℂ ∖ {0, 1}` built from
 period-one Hamiltonians `H_q` on its three ends (`TauCeti.Floer.pairOfPantsPerturbation`), equal
 to `H_q(t) dt` far out on each end, and let `u` be a `C²` map from `S` to a symplectic vector space
-`(V, ω)`. This file proves the energy identity of the pair-of-pants product,
+`(V, ω)`. Assume that the Floer energy density of `u` and the curvature term `R_K(u)` are
+integrable over `S`, and that on each end `q` the actions `A_{H_q}` of the loops
+`t ↦ u(φ_q(s, t))` (`TauCeti.SymplecticForm.hamiltonianAction`) converge to a limit `A_q` as the
+signed longitudinal coordinate `±s` tends to infinity. This file proves the energy identity of the
+pair-of-pants product,
 
 `E(u) = A₀ + A₁ - A_∞ - ∫_S R_K(u)`,
 
-where `E(u)` is the integral of the Floer energy density, `R_K` is the curvature of `K`, and
-`A_q` is the limit of the actions `A_{H_q}` of the loops `t ↦ u(φ_q(s, t))` of the end `q`
-(`TauCeti.SymplecticForm.hamiltonianAction`) as the signed longitudinal coordinate `±s` tends to
-infinity. The two positive ends at `0` and `1` are the inputs and the negative end at `∞` is the
+where `E(u)` is the integral of the Floer energy density and `R_K` is the curvature of `K`.
+The two positive ends at `0` and `1` are the inputs and the negative end at `∞` is the
 output. The actions cap each loop by the cone over it, which fixes the area convention. Two caps
 of a loop differ by a sphere, and every sphere in `V` has area zero because the symplectic form of
 a vector space is exact, `ω = dλ`. So the actions do not depend on the caps, and the spherical
 correction `ω(A)` of a product coefficient vanishes.
-
-The proof does not need Stokes' theorem on the non-rectangular core of `S`. Pointwise, the energy
-density plus the curvature is the exterior derivative of the one-form `α = K(u) + λ(u)`, where
-`λₓ(v) = ½ ω(x, v)` is the primitive of `ω`
-(`TauCeti.SymplecticForm.floerEnergyDensity_add_hamiltonianCurvature_eq`). Multiply by the smooth
-cutoff `χ_T = ∏_q (1 - β(±s_q - T))`, which is compactly supported in `S` and equal to `1`
-away from the parts `±s_q > T` of the ends. Integration by parts on the plane gives
-`∫ χ_T (e + R_K(u)) = -∫ dχ_T ∧ α` for the energy density `e`. The two-form `dχ_T ∧ α` is
-supported in the collars `T ≤ ±s_q ≤ T + 1`, where `K = H_q dt`. Transported to the coordinates
-of the ends, the collar integrals are the averages `±∫ β'(±s - T) A_{H_q}(s) ds` of the loop
-actions. Letting `T → ∞`, dominated convergence and the convergence of the actions give the
-identity.
 
 ## Main results
 
@@ -74,6 +64,18 @@ namespace SymplecticForm
 open Floer
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+
+/- Proof outline. The proof does not need Stokes' theorem on the non-rectangular core of `S`.
+Pointwise, the energy density plus the curvature is the exterior derivative of the one-form
+`α = K(u) + λ(u)`, where `λₓ(v) = ½ ω(x, v)` is the primitive of `ω`
+(`TauCeti.SymplecticForm.floerEnergyDensity_add_hamiltonianCurvature_eq`). Multiply by the smooth
+cutoff `χ_T = ∏_q (1 - β(±s_q - T))`, which is compactly supported in `S` and equal to `1`
+away from the parts `±s_q > T` of the ends. Integration by parts on the plane gives
+`∫ χ_T (e + R_K(u)) = -∫ dχ_T ∧ α` for the energy density `e`. The two-form `dχ_T ∧ α` is
+supported in the collars `T ≤ ±s_q ≤ T + 1`, where `K = H_q dt`. Transported to the coordinates
+of the ends, the collar integrals are the averages `±∫ β'(±s - T) A_{H_q}(s) ds` of the loop
+actions. Letting `T → ∞`, dominated convergence and the convergence of the actions give the
+identity. -/
 
 section Cutoff
 
