@@ -89,8 +89,24 @@ theorem timeExtension_def (hab : a ≤ b) (f : slab (E := E) a b → F) (x : E) 
     timeExtension hab f x = fun t ↦ f (slabMk x (projIcc a b hab t)) := (rfl)
 
 omit [NormedSpace ℝ E] in
+/-- Clamped time extension preserves addition of bounded parabolic Hölder maps. -/
+@[simp]
+theorem timeExtension_add (hab : a ≤ b) (f g : HolderSpace α (slab (E := E) a b) F) :
+    timeExtension hab (f + g) = timeExtension hab f + timeExtension hab g := by
+  funext x t
+  simp only [timeExtension_def, HolderSpace.add_apply, Pi.add_apply]
+
+omit [NormedSpace ℝ E] in
+/-- Clamped time extension preserves scalar multiplication of bounded parabolic Hölder maps. -/
+@[simp]
+theorem timeExtension_smul (hab : a ≤ b) (c : ℝ) (f : HolderSpace α (slab (E := E) a b) F) :
+    timeExtension hab (c • f) = c • timeExtension hab f := by
+  funext x t
+  simp only [timeExtension_def, HolderSpace.smul_apply, Pi.smul_apply]
+
+omit [NormedSpace ℝ E] in
 /-- The clamped time extension of a bounded parabolic Hölder map is jointly continuous. -/
-theorem timeExtension_continuous (hab : a ≤ b) (f : HolderSpace α (slab (E := E) a b) F) :
+theorem continuous_timeExtension (hab : a ≤ b) (f : HolderSpace α (slab (E := E) a b) F) :
     Continuous (fun p : ℝ × E => timeExtension hab f p.2 p.1) := by
   simpa only [timeExtension_def, Function.comp_def] using f.continuous.comp (continuous_slabMk.comp
     (continuous_snd.prodMk ((continuous_projIcc (h := hab)).comp continuous_fst)))
