@@ -99,6 +99,10 @@ noncomputable def ofKaehler : Ω[A⁄K] →ₗ[A] Omega K A :=
 theorem ofKaehler_surjective : Function.Surjective (ofKaehler K A) :=
   (finiteKer K A).mkQ_surjective
 
+/-- Universally finite differentials vanish whenever algebraic differentials vanish. -/
+instance [Subsingleton Ω[A⁄K]] : Subsingleton (Omega K A) :=
+  (ofKaehler_surjective K A).subsingleton
+
 variable {K A} in
 /-- A Kähler differential vanishes in `Omega K A` iff it lies in every submodule of `Ω[A⁄K]` with
 finite quotient. -/

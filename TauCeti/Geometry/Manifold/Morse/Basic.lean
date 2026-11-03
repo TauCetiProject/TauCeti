@@ -44,7 +44,7 @@ The definition follows Audin--Damian, *Morse Theory and Floer Homology*, Chapter
 public section
 
 open Function Set
-open scoped ContDiff Manifold
+open scoped ContDiff Manifold Topology
 
 namespace TauCeti
 
@@ -84,6 +84,15 @@ theorem IsManifoldNondegenerateCriticalPoint.neg {I : ModelWithCorners ℝ E H}
 theorem isManifoldNondegenerateCriticalPoint_neg_iff {I : ModelWithCorners ℝ E H} :
     IsManifoldNondegenerateCriticalPoint I (-f) x ↔ IsManifoldNondegenerateCriticalPoint I f x :=
   ⟨fun h ↦ by simpa using h.neg, IsManifoldNondegenerateCriticalPoint.neg⟩
+
+/-- Nondegeneracy of a critical point depends only on the germ of the function there. -/
+theorem IsManifoldNondegenerateCriticalPoint.congr_of_eventuallyEq {I : ModelWithCorners ℝ E H}
+    (h : IsManifoldNondegenerateCriticalPoint I f x) (hfg : f =ᶠ[𝓝 x] g) :
+    IsManifoldNondegenerateCriticalPoint I g x := by
+  rw [isManifoldNondegenerateCriticalPoint_iff] at h ⊢
+  have ht := (continuousAt_extChartAt_symm (I := I) x).tendsto
+  rw [extChartAt_to_inv] at ht
+  exact h.congr_of_eventuallyEq (hfg.comp_tendsto ht)
 
 /-- On a normed vector space with its self-model manifold structure, a manifold nondegenerate
 critical point is exactly a nondegenerate critical point in the existing calculus sense. -/
@@ -142,6 +151,29 @@ theorem IsMorseOn.mono {I : ModelWithCorners ℝ E H}
     (h : IsMorseOn I f t) (hst : s ⊆ t) : IsMorseOn I f s :=
   ⟨h.contMDiffOn.mono hst, fun _ hx ↦ h.isManifoldNondegenerateCriticalPoint (hst hx)⟩
 
+/-- Being Morse is a local property: a function is Morse on `s` if each point of `s` has a
+neighbourhood on which it is Morse. -/
+theorem isMorseOn_of_forall_exists_mem_nhds {I : ModelWithCorners ℝ E H}
+    (h : ∀ x ∈ s, ∃ t ∈ 𝓝 x, IsMorseOn I f t) : IsMorseOn I f s := by
+  refine ⟨fun x hx ↦ ?_, fun x hx ↦ ?_⟩
+  · obtain ⟨t, ht, hft⟩ := h x hx
+    exact (hft.contMDiffOn.contMDiffAt ht).contMDiffWithinAt
+  · obtain ⟨t, ht, hft⟩ := h x hx
+    exact hft.isManifoldNondegenerateCriticalPoint (mem_of_mem_nhds ht)
+
+/-- A function which agrees on an open set with a function Morse there is Morse there. -/
+theorem IsMorseOn.congr {I : ModelWithCorners ℝ E H} (h : IsMorseOn I f s) (hs : IsOpen s)
+    (hfg : EqOn g f s) : IsMorseOn I g s := by
+  refine ⟨h.contMDiffOn.congr hfg, fun x hx hcrit ↦ ?_⟩
+  have hgf : g =ᶠ[𝓝 x] f := Filter.eventuallyEq_of_mem (hs.mem_nhds hx) hfg
+  have ht := (continuousAt_extChartAt_symm (I := I) x).tendsto
+  rw [extChartAt_to_inv] at ht
+  have hchart : g ∘ (extChartAt I x).symm =ᶠ[𝓝 (extChartAt I x x)]
+      f ∘ (extChartAt I x).symm :=
+    hgf.comp_tendsto ht
+  rw [hchart.fderiv_eq] at hcrit
+  exact (h.isManifoldNondegenerateCriticalPoint hx hcrit).congr_of_eventuallyEq hgf.symm
+
 /-- Negating a function preserves the property of being Morse on a set. -/
 theorem IsMorseOn.neg {I : ModelWithCorners ℝ E H}
     (h : IsMorseOn I f s) : IsMorseOn I (-f) s := by
@@ -184,6 +216,11 @@ def IsMorse (I : ModelWithCorners ℝ E H) (f : M → ℝ) : Prop :=
 @[simp]
 theorem isMorseOn_univ {I : ModelWithCorners ℝ E H} : IsMorseOn I f univ ↔ IsMorse I f :=
   Iff.rfl
+
+/-- Every function is Morse on the empty set. -/
+@[simp]
+theorem isMorseOn_empty {I : ModelWithCorners ℝ E H} : IsMorseOn I f ∅ :=
+  ⟨contMDiffOn_empty, fun _ hx ↦ hx.elim⟩
 
 /-- A function is Morse exactly when it is smooth and all of its critical points are
 nondegenerate. -/

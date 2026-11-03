@@ -130,6 +130,18 @@ theorem mem_quotientPointsSubgroup_centralizerHopfIdeal_iff
     Algebra.ofId_self, Derivation.mapValue_id, LinearMap.id_apply,
     Derivation.cotangentDualLieEquiv_apply]
 
+/-- An algebra-valued point centralizes `x` precisely when its adjoint action fixes `1 ⊗ x`.
+This criterion retains the equations over nonreduced coefficient algebras. -/
+theorem centralizerHopfIdeal_le_ker_iff_adjointAction
+    (x : Module.Dual k (Bialgebra.CotangentSpace k H))
+    (A : CommAlgCat.{u} k) (g : WithConv (H →ₐ[k] A)) :
+    (centralizerHopfIdeal H x).toIdeal ≤ RingHom.ker g.ofConv ↔
+      (Derivation.adjointAction A g).val (1 ⊗ₜ[k] x) = 1 ⊗ₜ[k] x := by
+  rw [← (Derivation.tangentScalarExtensionEquiv (R := k) (A := H) (B := A)).injective.eq_iff,
+    Derivation.tangentScalarExtensionEquiv_adjointAction,
+    Derivation.tangentScalarExtensionEquiv_tmul, one_smul]
+  exact centralizerHopfIdeal_le_ker_iff x g
+
 /-- The centralizer of `x` is the whole group exactly when `x` is fixed by the adjoint
 coaction. -/
 theorem centralizerHopfIdeal_eq_bot_iff (x : Module.Dual k (Bialgebra.CotangentSpace k H)) :
