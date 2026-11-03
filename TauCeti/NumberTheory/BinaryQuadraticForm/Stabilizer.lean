@@ -133,11 +133,7 @@ private theorem trace_castGeneratorMatrix (hfD : f.discrim = D) :
 
 private theorem det_castGeneratorMatrix (hfD : f.discrim = D) :
     (castGeneratorMatrix R f hfD).det = -(((D - D ^ 2) / 4 : ℤ) : R) := by
-  have h := congrArg (Int.cast : ℤ → R) (det_generatorMatrix f hfD)
-  rw [generatorMatrix_eq, det_fin_two_of] at h
-  rw [castGeneratorMatrix_eq, det_fin_two_of]
-  push_cast at h ⊢
-  linear_combination h
+  rw [castGeneratorMatrix, ← Int.cast_det, det_generatorMatrix, Int.cast_neg]
 
 private theorem castGeneratorMatrix_mul_self (hfD : f.discrim = D) :
     castGeneratorMatrix R f hfD * castGeneratorMatrix R f hfD =

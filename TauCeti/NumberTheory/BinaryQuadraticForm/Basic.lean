@@ -304,6 +304,44 @@ def evalLinearMap (x y : R) : BinaryQuadraticForm R →ₗ[R] R where
     (n • f).eval x y = n • f.eval x y :=
   map_nsmul (evalLinearMap x y) n f
 
+section Map
+
+variable {S T : Type*} [Semiring S] [Semiring T]
+
+/-- The form `φ(a) x² + φ(b) x y + φ(c) y²` obtained by applying `φ : R →+* S` to the
+coefficients of `f = a x² + b x y + c y²`. -/
+def map (φ : R →+* S) (f : BinaryQuadraticForm R) : BinaryQuadraticForm S :=
+  ⟨φ f.a, φ f.b, φ f.c⟩
+
+@[simp]
+theorem map_a (φ : R →+* S) (f : BinaryQuadraticForm R) : (f.map φ).a = φ f.a :=
+  (rfl)
+
+@[simp]
+theorem map_b (φ : R →+* S) (f : BinaryQuadraticForm R) : (f.map φ).b = φ f.b :=
+  (rfl)
+
+@[simp]
+theorem map_c (φ : R →+* S) (f : BinaryQuadraticForm R) : (f.map φ).c = φ f.c :=
+  (rfl)
+
+@[simp]
+theorem map_id (f : BinaryQuadraticForm R) : f.map (RingHom.id R) = f :=
+  (rfl)
+
+@[simp]
+theorem map_map (φ : R →+* S) (ψ : S →+* T) (f : BinaryQuadraticForm R) :
+    (f.map φ).map ψ = f.map (ψ.comp φ) :=
+  (rfl)
+
+/-- Mapping the coefficients maps the values: `(f.map φ)(φ x, φ y) = φ (f(x, y))`. -/
+@[simp]
+theorem eval_map (φ : R →+* S) (f : BinaryQuadraticForm R) (x y : R) :
+    (f.map φ).eval (φ x) (φ y) = φ (f.eval x y) := by
+  simp [eval_def]
+
+end Map
+
 end Semiring
 
 section Ring
@@ -460,39 +498,7 @@ theorem discrim_natCast_smul_eq_neg_iff {D g : ℕ} (hg : g ^ 2 ∣ D) (hg0 : g 
 
 section Map
 
-variable {S T : Type*} [CommRing S] [CommRing T]
-
-/-- The form `φ(a) x² + φ(b) x y + φ(c) y²` obtained by applying `φ : R →+* S` to the
-coefficients of `f = a x² + b x y + c y²`. -/
-def map (φ : R →+* S) (f : BinaryQuadraticForm R) : BinaryQuadraticForm S :=
-  ⟨φ f.a, φ f.b, φ f.c⟩
-
-@[simp]
-theorem map_a (φ : R →+* S) (f : BinaryQuadraticForm R) : (f.map φ).a = φ f.a :=
-  (rfl)
-
-@[simp]
-theorem map_b (φ : R →+* S) (f : BinaryQuadraticForm R) : (f.map φ).b = φ f.b :=
-  (rfl)
-
-@[simp]
-theorem map_c (φ : R →+* S) (f : BinaryQuadraticForm R) : (f.map φ).c = φ f.c :=
-  (rfl)
-
-@[simp]
-theorem map_id (f : BinaryQuadraticForm R) : f.map (RingHom.id R) = f :=
-  (rfl)
-
-@[simp]
-theorem map_map (φ : R →+* S) (ψ : S →+* T) (f : BinaryQuadraticForm R) :
-    (f.map φ).map ψ = f.map (ψ.comp φ) :=
-  (rfl)
-
-/-- Mapping the coefficients maps the values: `(f.map φ)(φ x, φ y) = φ (f(x, y))`. -/
-@[simp]
-theorem eval_map (φ : R →+* S) (f : BinaryQuadraticForm R) (x y : R) :
-    (f.map φ).eval (φ x) (φ y) = φ (f.eval x y) := by
-  simp [eval_def]
+variable {S : Type*} [CommRing S]
 
 /-- Mapping the coefficients maps the discriminant. -/
 @[simp]
