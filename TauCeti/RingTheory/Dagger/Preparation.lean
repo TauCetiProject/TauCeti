@@ -123,8 +123,8 @@ private theorem lift_preparation {g : W} {s : ℕ} {ρ r : ℝ} [Fact (0 < ρ)]
   let Inner := IsRestricted.subring (R := K) (fun _ : σ ↦ ρ)
   let Flat := IsRestricted.subring (R := K) c
   -- Flatten at the unequal polyradii, then restrict to the common radius `ρ > 1`.
-  let a : Flat →+* W := ofRestricted hρ (le_splitRadius hρr)
-  let b : Inner →+* W₀ := ofRestricted hρ fun _ ↦ le_rfl
+  let a : Flat →+* W := (ofRestricted hρ (le_splitRadius hρr)).toRingHom
+  let b : Inner →+* W₀ := (ofRestricted hρ fun _ ↦ le_rfl).toRingHom
   let E := a ((restrictedOptionEquiv (c := c)).symm e)
   let Ω := ω.map b
   refine ⟨E, Ω, ?_, ?_, ?_⟩

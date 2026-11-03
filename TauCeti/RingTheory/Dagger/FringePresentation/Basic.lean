@@ -189,13 +189,8 @@ theorem stageMap_comp {ρ ρ' ρ'' : Set.Ioc (1 : ℝ) P.radius} (h : ρ ≤ ρ'
 
 /-- The inclusion `T_n(ρ) ⊆ W_n` for `ρ > 1` followed by the presentation `W_n ↠ A`. -/
 private noncomputable def restrictedToAlgebra (ρ : Set.Ioc (1 : ℝ) P.radius) :
-    IsRestricted.subring (R := K) (fun _ : Fin P.n ↦ (ρ : ℝ)) →ₐ[K] A where
-  toRingHom := P.proj.toRingHom.comp (washnitzerAlgebra.ofRestricted ρ.2.1 fun _ ↦ le_rfl)
-  commutes' a := by
-    have : washnitzerAlgebra.ofRestricted ρ.2.1 (fun _ ↦ le_rfl) (algebraMap K _ a) =
-        algebraMap K (washnitzerAlgebra (Fin P.n) K) a :=
-      Subtype.ext (by simp [MvPowerSeries.algebraMap_apply])
-    simp [this]
+    IsRestricted.subring (R := K) (fun _ : Fin P.n ↦ (ρ : ℝ)) →ₐ[K] A :=
+  P.proj.comp (washnitzerAlgebra.ofRestricted ρ.2.1 fun _ ↦ le_rfl)
 
 private theorem restrictedToAlgebra_apply (ρ : Set.Ioc (1 : ℝ) P.radius)
     (f : IsRestricted.subring (R := K) (fun _ : Fin P.n ↦ (ρ : ℝ))) :
