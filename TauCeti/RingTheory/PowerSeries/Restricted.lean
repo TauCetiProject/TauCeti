@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.Degree.IsMonicOfDegree
+public import Mathlib.Algebra.Polynomial.Monic
 public import Mathlib.RingTheory.PowerSeries.Restricted
 public import Mathlib.RingTheory.PowerSeries.Trunc
 public import TauCeti.Analysis.Asymptotics.Lemmas
@@ -43,6 +45,8 @@ an algebra homomorphism; it gives the comparisons used in Weierstrass division a
   `TauCeti.PowerSeries.coe_smul_isRestrictedSubring`: scalar maps and scalar multiplication agree
   with those on the ambient formal series.
 * `TauCeti.PowerSeries.polynomialToRestricted`: the polynomial inclusion as an algebra map.
+* `TauCeti.PowerSeries.exists_isUnit_isMonicOfDegree_mul_eq_of_isUnit_leadingCoeff`: move a unit
+  leading coefficient from a polynomial factor to its restricted-unit cofactor.
 -/
 
 public section
@@ -215,6 +219,28 @@ theorem polynomialToRestricted_trunc_eq_of_coeff_eq_zero {s : ℕ}
   split_ifs with hn
   · rfl
   · exact (hr n (by omega)).symm
+
+/-- Move an invertible leading coefficient from a polynomial to its restricted-unit factor. -/
+theorem exists_isUnit_isMonicOfDegree_mul_eq_of_isUnit_leadingCoeff
+    {d : ℕ} {f : PowerSeries R} {P : Polynomial R}
+    {U : PowerSeries.IsRestricted.subring (R := R) c} (ha : IsUnit P.leadingCoeff)
+    (hd : P.natDegree = d) (hU : IsUnit U)
+    (hf : f = (P : PowerSeries R) * (U : PowerSeries R)) :
+    ∃ e : PowerSeries.IsRestricted.subring (R := R) c, IsUnit e ∧
+      (ha.unit⁻¹ • P).IsMonicOfDegree d ∧
+      (e : PowerSeries R) = P.leadingCoeff • (U : PowerSeries R) ∧
+      (e : PowerSeries R) * ((ha.unit⁻¹ • P : Polynomial R) : PowerSeries R) = f := by
+  set u := ha.unit
+  have hu : (u : R) = P.leadingCoeff := ha.unit_spec
+  refine ⟨algebraMap R _ u * U, (u.isUnit.map (algebraMap R _)).mul hU,
+    ⟨by rw [Polynomial.natDegree_smul_of_smul_regular P (IsSMulRegular.all _), hd],
+      Polynomial.monic_of_isUnit_leadingCoeff_inv_smul ha⟩, ?_, ?_⟩
+  · rw [Subring.coe_mul, coe_algebraMap_isRestrictedSubring, Algebra.algebraMap_self_apply,
+      hu, PowerSeries.smul_eq_C_mul]
+  · rw [Subring.coe_mul, coe_algebraMap_isRestrictedSubring, Algebra.algebraMap_self_apply,
+      ← PowerSeries.smul_eq_C_mul, Units.smul_def, Polynomial.coe_smul,
+      smul_mul_smul_comm, u.mul_inv, one_smul, mul_comm]
+    exact hf.symm
 
 end CommAlgebra
 
