@@ -238,7 +238,7 @@ theorem ι_mul_prod_map_ι_rootVector_eq_zero {y : L} (hy : y ∈ positiveNilrad
   have hone : Module.finrank K (rootSpace H (α : H → K)) = 1 :=
     IsKilling.finrank_rootSpace_eq_one (α : Weight K H L) (H.isNonZero_coe_root α)
   obtain ⟨t, rfl⟩ : ∃ t : K, y = t • e α := by
-    obtain ⟨t, ht⟩ := (finrank_eq_one_iff_of_nonzero' (⟨e α, he α hα⟩ : rootSpace H (α : H → K))
+    obtain ⟨t, ht⟩ := (finrank_eq_one_iff_of_ne_zero' (⟨e α, he α hα⟩ : rootSpace H (α : H → K))
       fun h ↦ he0 α hα (by simpa using congrArg ((↑) : rootSpace H (α : H → K) → L) h)).mp
       hone ⟨y, hy⟩
     have hy' := (congrArg ((↑) : rootSpace H (α : H → K) → L) ht).symm
