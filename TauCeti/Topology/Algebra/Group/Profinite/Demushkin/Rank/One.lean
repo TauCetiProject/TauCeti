@@ -66,7 +66,7 @@ theorem IsDemushkin.cupFp_self_ne_zero_of_demushkinRank_eq_one (hG : IsDemushkin
     (h : demushkinRank hG = 1) {a : cohomFp p G 1} (ha : a ≠ 0) : cupFp p G a a ≠ 0 := by
   have : Module.Finite (ZMod p) (cohomFp p G 1) := hG.finite_cohomFp_one
   obtain ⟨b, hb⟩ := hG.cup_separatingLeft a ha
-  obtain ⟨c, rfl⟩ := (finrank_eq_one_iff_of_nonzero' a ha).1 (hG.finrank_cohomFp_one.trans h) b
+  obtain ⟨c, rfl⟩ := (finrank_eq_one_iff_of_ne_zero' a ha).1 (hG.finrank_cohomFp_one.trans h) b
   intro h0
   apply hb
   rw [map_smul, h0, smul_zero]

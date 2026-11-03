@@ -106,7 +106,7 @@ omit [Fintype l] in
 /-- `J` is antisymmetric, entrywise: `Jᵀ = -J` read at a pair of indices. -/
 theorem J_apply_swap (x y : l ⊕ l) : J l R y x = -J l R x y := by
   have h := congrFun (congrFun (J_transpose l R) x) y
-  simpa only [transpose_apply, neg_apply] using h
+  simpa only [transpose_apply, Matrix.neg_apply] using h
 
 /-- Each row of `J` pairs with itself to `1`, because `J * Jᵀ = 1`. -/
 theorem sum_J_mul_J (x : l ⊕ l) : ∑ y : l ⊕ l, J l R x y * J l R x y = 1 := by
@@ -114,7 +114,7 @@ theorem sum_J_mul_J (x : l ⊕ l) : ∑ y : l ⊕ l, J l R x y * J l R x y = 1 :
     rw [J_transpose]
     exact J_mul_neg_J l R
   have h := congrFun (congrFun hJ x) x
-  simpa only [mul_apply, one_apply_eq, transpose_apply] using h
+  simpa only [Matrix.mul_apply, one_apply_eq, transpose_apply] using h
 
 /-- The columns of `J` are orthonormal for the standard coordinate dot product, because
 `Jᵀ * J = 1`. -/
@@ -124,7 +124,7 @@ theorem sum_J_mul_J_eq_ite (y p : l ⊕ l) :
     rw [J_transpose]
     exact neg_J_mul_J l R
   have h := congrFun (congrFun hJ y) p
-  simpa only [mul_apply, one_apply, transpose_apply] using h
+  simpa only [Matrix.mul_apply, Matrix.one_apply, transpose_apply] using h
 
 /-- **`J` contracted against itself** is `tr (J * Jᵀ) = tr 1 = 2 * card l`: the double sum of
 `Matrix.sum_J_mul_J` over the `2 * card l` rows. -/

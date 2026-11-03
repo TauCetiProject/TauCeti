@@ -197,7 +197,7 @@ theorem lie_pow_toEnd_eq_smul {x f : L} {a c : R} {v : M} (hv : ⁅x, v⁆ = a �
   | succ k ih =>
       have hstep : ∀ m : M, ((toEnd R L M f) ^ (k + 1)) m = ⁅f, ((toEnd R L M f) ^ k) m⁆ := by
         intro m
-        rw [pow_succ', Module.End.mul_apply, toEnd_apply_apply]
+        rw [pow_succ', mul_apply_eq_comp, toEnd_apply_apply]
       rw [hstep, leibniz_lie, hf, ih, smul_lie, lie_smul, ← add_smul]
       congr 1
       push_cast
@@ -223,8 +223,8 @@ theorem apply_eq_of_mem_genWeightSpace {chi : L → R} {v : M} (hv : v ∈ genWe
     induction n with
     | zero => simp
     | succ n ih =>
-      rw [pow_succ', Module.End.mul_apply, LinearMap.sub_apply, map_sub, toEnd_apply_apply, hφ,
-        LinearMap.smul_apply, Module.End.one_apply, map_smul, ih, smul_eq_mul]
+      rw [pow_succ', mul_apply_eq_comp, LinearMap.sub_apply, map_sub, toEnd_apply_apply, hφ,
+        LinearMap.smul_apply, one_apply_eq_self, map_smul, ih, smul_eq_mul]
       ring
   have h0 := key k
   rw [hk, map_zero, eq_comm, mul_eq_zero] at h0

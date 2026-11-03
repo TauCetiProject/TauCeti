@@ -318,7 +318,7 @@ theorem waldschmidtOperatorEntry_eq_sum_hasseDeriv {K : Type*} [Field K]
         MvPolynomial.eval (waldschmidtPoint b s) ((pderiv 0)^[k] F)) * ∏ j, α j ^ (t * s j) := by
   rw [waldschmidtOperatorEntry_apply, Polynomial.aeval_eq_sum_range, Polynomial.natDegree_taylor]
   simp only [LinearMap.coe_sum, Finset.sum_apply, map_sum, LinearMap.smul_apply,
-    Module.End.pow_apply, smul_eval, Polynomial.taylor_coeff, Derivation.coeFn_coe]
+    pow_apply_eq_iterate, smul_eval, Polynomial.taylor_coeff, Derivation.coeFn_coe]
 
 /-- For the operator `∂^σ/∂z₀^σ` the entry is the entry `TauCeti.waldschmidtEntry` of the
 iterated derivative. -/
