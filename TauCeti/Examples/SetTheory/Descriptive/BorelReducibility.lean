@@ -7,7 +7,7 @@ module
 
 import Mathlib.Analysis.Real.Cardinality
 import TauCeti.SetTheory.Descriptive.EZero
-import TauCeti.SetTheory.Descriptive.CountableQuotient
+import TauCeti.SetTheory.Descriptive.BorelReducibility
 
 /-!
 # Regression examples: Borel reducibility and smoothness
