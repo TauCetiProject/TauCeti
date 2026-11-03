@@ -21,7 +21,9 @@ Surjectivity on the right is already supplied by `AdicCompletion.map_surjective`
 More generally, completion preserves a right exact sequence when the first map is injective
 modulo every power of the defining ideal. The unique preimages of a compatible family in the
 kernel are automatically compatible. For a principal ideal, regularity on the last term gives
-this injectivity at every power by `Ideal.mapQSMulTop_span_singleton_injective`.
+this injectivity for the range inclusion by `Ideal.mapQSMulTop_span_singleton_injective`.
+Surjectivity of completion onto the completed range then gives middle exactness without an
+injectivity assumption on the original first map.
 
 The maps and compatible-residue model are Mathlib's `AdicCompletion`, due to Judith Ludwig
 and Christian Merten. The finite-level exactness results are those of
@@ -79,18 +81,22 @@ theorem map_span_singleton_injective_of_isSMulRegular {r : R}
   -- Both reductions are induced by `f` on the quotient by `rⁿ`.
   exact Ideal.mapQSMulTop_span_singleton_injective hfg hf (hr.pow n)
 
-/-- Principal-adic completion preserves a short exact sequence when the parameter acts
+/-- Principal-adic completion preserves a right exact sequence when the parameter acts
 injectively on the last term, without any Noetherian or finite-generation assumption. Together
-with `map_span_singleton_injective_of_isSMulRegular` and `map_surjective`, this gives all three
-parts of short exactness. -/
+with `map_span_singleton_injective_of_isSMulRegular` and `map_surjective`, this also gives all
+three parts of short exactness when the first map is injective. -/
 theorem map_span_singleton_exact_of_isSMulRegular {r : R}
-    (hf : Function.Injective f) (hfg : Function.Exact f g) (hg : Function.Surjective g)
-    (hr : IsSMulRegular P r) :
+    (hfg : Function.Exact f g) (hg : Function.Surjective g) (hr : IsSMulRegular P r) :
     Function.Exact (map (Ideal.span {r}) f) (map (Ideal.span {r}) g) := by
-  apply map_exact_of_reduceModIdeal_injective hfg hg
+  have hfg' : Function.Exact f.range.subtype g := by
+    apply f.surjective_rangeRestrict.comp_exact_iff_exact.mp
+    simpa only [LinearMap.subtype_comp_rangeRestrict] using hfg
+  rw [← f.subtype_comp_rangeRestrict, ← map_comp]
+  apply (map_surjective _ f.surjective_rangeRestrict).comp_exact_iff_exact.mpr
+  apply map_exact_of_reduceModIdeal_injective hfg' hg
   intro n
   rw [Ideal.span_singleton_pow]
-  -- Regularity of `rⁿ` gives injectivity of the finite-level first map.
-  exact Ideal.mapQSMulTop_span_singleton_injective hfg hf (hr.pow n)
+  -- Regularity of `rⁿ` gives injectivity of the finite-level range inclusion.
+  exact Ideal.mapQSMulTop_span_singleton_injective hfg' f.range.injective_subtype (hr.pow n)
 
 end AdicCompletion
