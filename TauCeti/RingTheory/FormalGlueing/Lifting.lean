@@ -6,10 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.FormalGlueing.Torsion
-public import TauCeti.Algebra.Module.LocalizedModule.Map
+public import Mathlib.Algebra.Module.LocalizedModule.Basic
 import TauCeti.RingTheory.Flat.EffectiveDescent
 import TauCeti.Algebra.Module.Torsion.PrimaryComponent
-import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 
 /-!
 # Lifting compatible elements in formal glueing
