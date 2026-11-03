@@ -97,22 +97,12 @@ theorem ae_hausdorffMeasure_inter_preimage_eq_zero_of_hasFDerivWithinAt_zero_of_
     (hf : ∀ x ∈ s, HasFDerivWithinAt f (0 : E →L[ℝ] F) s x) {t : ℝ} (ht : 0 ≤ t)
     (hs : μH[finrank ℝ F + t] s ≠ ∞) :
     ∀ᵐ y ∂μ, μH[t] (s ∩ f ⁻¹' {y}) = 0 := by
-  let ε : ℕ → ℝ≥0 := fun n ↦ ⟨1 / ((n : ℝ) + 1), by positivity⟩
-  -- The real coercion of the chosen NNReal radius is the reciprocal sequence.
-  have hεreal (n : ℕ) : (ε n : ℝ) = 1 / ((n : ℝ) + 1) := rfl
-  have hε (n : ℕ) : ε n ≠ 0 := by
-    have hpos : 0 < (ε n : ℝ) := by rw [hεreal]; positivity
-    exact ne_of_gt (NNReal.coe_pos.mp hpos)
+  let ε : ℕ → ℝ≥0 := fun n ↦ 1 / ((n : ℝ≥0) + 1)
+  have hε (n : ℕ) : ε n ≠ 0 := by positivity
   choose G hGm hGle hGint using fun n ↦
     exists_measurable_majorant_of_hasFDerivWithinAt_zero μ hf ht (ε n) (hε n)
-  have hlim : Tendsto (fun n ↦ (ε n : ℝ≥0∞)) atTop (𝓝 0) := by
-    have hcoe (n : ℕ) : (ε n : ℝ≥0∞) = ENNReal.ofReal (1 / ((n : ℝ) + 1)) :=
-      ENNReal.coe_nnreal_eq (ε n)
-    simp_rw [hcoe]
-    simpa only [Function.comp_def, ENNReal.ofReal_zero] using
-      (ENNReal.continuous_ofReal.tendsto 0).comp
-        (tendsto_one_div_add_atTop_nhds_zero_nat :
-          Tendsto (fun n : ℕ ↦ (1 / ((n : ℝ) + 1) : ℝ)) atTop (𝓝 0))
+  have hlim : Tendsto (fun n ↦ (ε n : ℝ≥0∞)) atTop (𝓝 0) :=
+    ENNReal.tendsto_coe.2 tendsto_one_div_add_atTop_nhds_zero_nat
   have hbound : Tendsto (fun n ↦ μ (Metric.ball (0 : F) 1) *
       (ε n : ℝ≥0∞) ^ finrank ℝ F * μH[finrank ℝ F + t] s) atTop (𝓝 0) := by
     have hp := ENNReal.Tendsto.pow (n := finrank ℝ F) hlim
@@ -158,11 +148,12 @@ theorem ae_euclideanHausdorffMeasure_inter_preimage_eq_zero_of_hasFDerivWithinAt
   · exact measure_iUnion_null hy
 
 /-- For a Lipschitz map, the zero set of its totalized Fréchet derivative meets almost every
-fiber in a Hausdorff-null set. Nondifferentiability points are included: their ambient nullity
-and Eilenberg's inequality make their intersections with almost every fiber null as well.
+fiber in a Hausdorff-null set. The set includes nondifferentiability points, where the
+totalized derivative `fderiv ℝ f x` is `0`.
 For a real-valued function this is the nullity of the critical part of almost every level
 surface. -/
-theorem _root_.LipschitzWith.ae_euclideanHausdorffMeasure_inter_preimage_fderiv_eq_zero
+theorem
+    _root_.LipschitzWith.ae_euclideanHausdorffMeasure_setOf_fderiv_eq_zero_inter_preimage_eq_zero
     {K : ℝ≥0} (hf : LipschitzWith K f) (μ : Measure F) [μ.IsAddHaarMeasure]
     (hdim : finrank ℝ F ≤ finrank ℝ E) :
     ∀ᵐ y ∂μ, μHE[finrank ℝ E - finrank ℝ F]
