@@ -14,9 +14,7 @@ The numbered positive and negative simple-root points of `V(ϖ₁) ⊕ V(ϖ₆)`
 rank-one Gauss relation. In simple-coroot coordinates, dual to the fundamental weights,
 the simple coroot `αᵢ∨(u)` is `Pi.mulSingle i u`. Both multiplication orders are covered over
 every commutative value ring, assuming only that the pivot `1 + a * b` is a unit. Neither
-parameter need be invertible, and value rings may be nonreduced. The factorizations use
-`rootSubgroupPoints_mulVec_single` from `IntegralMatrix` to retain the negative root-matrix
-coefficients in the dual summand.
+parameter need be invertible, and value rings may be nonreduced.
 
 The carrier is not identified here with the independently pinned simply connected group
 scheme of type E₆; transfer of these identities to that group requires such an identification.
