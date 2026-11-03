@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.Basic
-public import TauCeti.MeasureTheory.Group.ConvolutionSupport
+public import TauCeti.MeasureTheory.Group.Convolution.Support
 public import TauCeti.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Group.Integral
 public import Mathlib.MeasureTheory.Integral.Prod

@@ -276,7 +276,7 @@ theorem lieSpan_F_le_biSup_iInf_eigenspace_ad :
   | lie _ _ _ _ hx hy => exact lie_mem_biSup_iInf_eigenspace_ad_intCast hx hy
 
 /-- The Cartan generators commute, so their span has weight `0`. -/
-private theorem span_H_le_iInf_eigenspace_ad_zero :
+theorem span_H_le_iInf_eigenspace_ad_zero :
     Submodule.span R (Set.range H) ≤ ⨅ i, (ad R L (H i)).eigenspace 0 := by
   rw [Submodule.span_le]
   rintro _ ⟨j, rfl⟩

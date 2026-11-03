@@ -33,7 +33,8 @@ the complementarity of two different parts through points that cover the whole s
 the determination of a partition by its parts through each point, the factor of the part through
 a point in a product over the parts, the parts of a restriction, the
 monotonicity of `Finpartition.part` under refinement and the characterization of refinement by
-the parts through each point, the parts through a point of the finest and the coarsest partitions,
+the parts through each point, the fact that a refinement with no more parts than the coarser
+partition is equal to it, the parts through a point of the finest and the coarsest partitions,
 the count of the parts by points singled out in each part (in a linear order, the first or the last
 point of each part), the part of a point in a linear order as its part before the last point of that
 part with the last point adjoined, the coarse parent
@@ -119,7 +120,7 @@ theorem sum_card_inter_parts {ι : Type*} [DecidableEq ι] {s X : Finset ι} (P 
     (hX : X ⊆ s) : ∑ C ∈ P.parts, (X ∩ C).card = X.card := by
   have h := P.sum_restrict hX (fun C ↦ C.card) (by simp)
   rw [Finpartition.sum_card_parts] at h
-  simp_rw [h, Finset.inf_eq_inter, Finset.inter_comm]
+  simp_rw [h, Finset.inter_comm]
 
 /-- Juxtaposing finite partitions of the parts of `P` refines `P`. -/
 theorem bind_le {α : Type*} [Lattice α] [OrderBot α] [IsModularLattice α] [DecidableEq α]
@@ -471,6 +472,29 @@ theorem sum_apply_part_part (h : Q ≤ P) {M : Type*} [AddCommMonoid M]
   exact Finset.sum_congr rfl fun a ha => by
     rw [Q.part_eq_of_mem B.2 ha, part_eq_refinementParent h B ha]
 
+/-- A refinement `Q ≤ P` with at most as many parts as `P` is `P` itself. -/
+theorem eq_of_le_of_card_parts_le (h : Q ≤ P) (hc : #Q.parts ≤ #P.parts) : Q = P := by
+  classical
+  have hsurj : Function.Surjective (refinementParent h) := fun A => by
+    obtain ⟨B, hB, hBA⟩ := exists_le_of_le h A.2
+    exact ⟨⟨B, hB⟩, (refinementParent_eq_iff h).2 hBA⟩
+  have hinj : Function.Injective (refinementParent h) :=
+    ((Fintype.bijective_iff_surjective_and_card _).2
+      ⟨hsurj, by simpa using hc.antisymm (card_mono h)⟩).1
+  -- Each fine part is the only fine part below its coarse parent, so it equals that parent.
+  have key (B : Q.parts) : B.1 = (refinementParent h B).1 := by
+    rw [← biUnion_filter_refinementParent_eq h (refinementParent h B)]
+    have hB : ({B' | refinementParent h B' = refinementParent h B} : Finset Q.parts) = {B} :=
+      Finset.ext fun B' => by simp [hinj.eq_iff]
+    rw [hB, singleton_biUnion]
+  ext C
+  refine ⟨fun hC => ?_, fun hC => ?_⟩
+  · have hC' : C = (refinementParent h ⟨C, hC⟩).1 := key ⟨C, hC⟩
+    exact hC' ▸ (refinementParent h _).2
+  · obtain ⟨B, hB⟩ := hsurj ⟨C, hC⟩
+    have hBC : B.1 = C := by rw [key B, hB]
+    exact hBC ▸ B.2
+
 /-- A finite partition of a set with at most two elements is either the partition into singletons
 or the partition into one part. -/
 theorem eq_bot_or_eq_top_of_pair {i j : α} (P : Finpartition ({i, j} : Finset α)) :
@@ -525,7 +549,7 @@ theorem parts_restrict_erase_of_singleton_mem {i : α} (hi : {i} ∈ P.parts) :
     inter_eq_left.2 fun x hx => mem_erase.2
       ⟨fun hxi => hBi (P.eq_of_mem_parts hB hi hx (hxi ▸ mem_singleton_self i)), P.le hB hx⟩
   ext B
-  simp only [parts_restrict, inf_eq_inter, mem_erase, mem_image]
+  simp only [parts_restrict, mem_erase, mem_image]
   constructor
   · rintro ⟨hB, C, hC, rfl⟩
     obtain rfl | hCi := eq_or_ne C {i}

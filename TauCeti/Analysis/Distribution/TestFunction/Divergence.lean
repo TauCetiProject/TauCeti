@@ -35,6 +35,8 @@ total variation of a function and the perimeter of a set are suprema of the pair
   the coordinate functions `b.repr (φ ·) i` in the directions `b i`.
 * `TauCeti.divergenceCLM_translateTestFunction`: the divergence of a translated test vector field
   is the translate of its divergence.
+* `TauCeti.integral_divergenceCLM_mul_congr_ae`: the pairing `∫ u div φ` only depends on `u`
+  almost everywhere on `Ω`.
 * `TauCeti.trace_fderiv_smul` and `TauCeti.trace_fderiv_smul_const`: the Leibniz rule
   `div (χ φ) = χ div φ + Dχ φ` for the divergence `tr (D ·)` of a vector field multiplied by a
   scalar function.
@@ -137,5 +139,18 @@ theorem trace_fderiv_smul {χ : E → ℝ} {φ : E → E} {x : E} (hχ : Differe
 theorem trace_fderiv_smul_const {χ : E → ℝ} {x : E} (hχ : DifferentiableAt ℝ χ x) (v : E) :
     LinearMap.trace ℝ E (fderiv ℝ (fun y => χ y • v) x : E →ₗ[ℝ] E) = fderiv ℝ χ x v := by
   simpa using trace_fderiv_smul hχ (differentiableAt_const v)
+
+/-- The pairing `∫ u div φ` of `u` with a test vector field `φ` on `Ω` only depends on `u` almost
+everywhere on `Ω`, since `div φ` vanishes off `Ω`. -/
+theorem integral_divergenceCLM_mul_congr_ae [MeasurableSpace E] {μ : MeasureTheory.Measure E}
+    {u v : E → ℝ} (huv : u =ᵐ[μ.restrict Ω] v) (φ : 𝓓(Ω, E)) :
+    ∫ x, divergenceCLM φ x * u x ∂μ = ∫ x, divergenceCLM φ x * v x ∂μ := by
+  have hΩ (w : E → ℝ) :
+      ∫ x in (Ω : Set E), divergenceCLM φ x * w x ∂μ = ∫ x, divergenceCLM φ x * w x ∂μ :=
+    MeasureTheory.setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => by
+      rw [image_eq_zero_of_notMem_tsupport fun hmem =>
+        hx ((divergenceCLM φ).tsupport_subset hmem), zero_mul]
+  rw [← hΩ, ← hΩ]
+  exact MeasureTheory.integral_congr_ae (huv.mono fun x hx => by simp only [hx])
 
 end TauCeti

@@ -177,6 +177,15 @@ theorem isPullback_blowupChart {U : X.Opens} (hU : IsAffineOpen U) :
   exact (Category.assoc _ _ _).symm.trans
     (congrArg (· ≫ hU.isoSpec.inv) (I.map_reesAlgebraSectionsGradedHom_toSpecCoeff hU))
 
+/-- The affine chart of the blowup over `U` is the base change of the blowup along
+`Spec Γ(X, U) ⟶ X`: the form of `isPullback_blowupChart` over the spectrum of the sections. -/
+theorem isPullback_blowupChart_fromSpec {U : X.Opens} (hU : IsAffineOpen U) :
+    IsPullback (Proj.toSpecCoeff (reesAlgebra.grade (I.ideal ⟨U, hU⟩))) (I.blowupChart hU)
+      hU.fromSpec I.blowupToBase :=
+  (I.isPullback_blowupChart hU).of_iso (Iso.refl _) hU.isoSpec (Iso.refl _) (Iso.refl _)
+    (by simp) (by simp)
+    (by rw [← hU.isoSpec_inv_ι, Iso.hom_inv_id_assoc, Iso.refl_hom, Category.comp_id]) (by simp)
+
 /-- **The blowup along an ideal sheaf of finite type is proper.** If the ideal `I(U)` is finitely
 generated for every affine open `U` of `X`, then `Bl_I X ⟶ X` is proper. -/
 theorem isProper_blowupToBase (hI : ∀ U : X.affineOpens, (I.ideal U).FG) :

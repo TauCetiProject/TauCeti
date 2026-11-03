@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Module.ZLattice.Basic
 public import Mathlib.GroupTheory.IndexNSmul
+public import Mathlib.LinearAlgebra.FreeModule.ModN
 public import TauCeti.Algebra.Module.Submodule.OrbitRelQuotient
 public import Mathlib.Topology.Instances.AddCircle.Real
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
@@ -14,6 +15,7 @@ public import TauCeti.Algebra.Module.ZLattice.Basic
 public import TauCeti.Topology.Algebra.Group.DiscontinuousSubgroup
 public import TauCeti.Topology.Algebra.Module.Quotient
 public import TauCeti.Topology.Algebra.Module.Submodule
+import TauCeti.LinearAlgebra.FreeModule.ModN
 
 /-!
 # Quotients by full lattices: compactness, circle coordinates and `L / cL`
@@ -33,7 +35,8 @@ inclusion is a closed embedding, so the compact torus `V / (L ∩ V)` is identif
 subgroup of `E / L`.
 
 For `c : ℕ`, the lattice `cL` is `(c : ℝ) • L`, read in `L` through `Submodule.submoduleOf`. The
-quotient `L / cL` has `c ^ n` elements when `L` has rank `n`, so it is finite for `c ≠ 0`.
+quotient `L / cL` has `c ^ n` elements when `L` has rank `n`, so it is finite for `c ≠ 0`, and
+for `c ≠ 0` a `ℤ`-basis of `L` identifies it with `(ℤ / c)^n` by reducing coordinates modulo `c`.
 
 ## Main results
 
@@ -41,10 +44,13 @@ quotient `L / cL` has `c ^ n` elements when `L` has rank `n`, so it is finite fo
 * `QuotientAddGroup.instCompactSpaceOfIsZLattice`: the additive quotient is compact.
 * `Module.Basis.latticeCircleCoordinates`: the continuous homomorphism of circle coordinates.
 * `Module.Basis.quotientLatticeEquiv`: the quotient is a product of additive circles.
+* `Module.Basis.orbitRelQuotientLatticeEquiv`: the same circle coordinates on the orbit space.
 * `Submodule.isClosedEmbedding_orbitRelQuotientMap_subtype`: if `L ∩ V` is a full lattice in `V`,
   then `V / (L ∩ V) → E / L` is a closed embedding.
 * `ZLattice.card_quotient_smul_submoduleOf`: `L / cL` has `c ^ n` elements for a full lattice
   `L` of rank `n`; it is finite for `c ≠ 0`.
+* `Module.Basis.quotientSmulEquivPiZMod`: for `c ≠ 0`, the coordinates modulo `c` in a `ℤ`-basis
+  of `L` identify `L / cL` with `(ℤ / c)^n`.
 
 ## References
 
@@ -67,18 +73,11 @@ instance Submodule.instCompactSpaceOrbitRelQuotient {E : Type*} [NormedAddCommGr
 /-- The additive quotient of a finite-dimensional real normed space by a full lattice is compact. -/
 instance QuotientAddGroup.instCompactSpaceOfIsZLattice {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] [FiniteDimensional ℝ E] (L : AddSubgroup E) [DiscreteTopology L]
-    [IsZLattice ℝ L.toIntSubmodule] : CompactSpace (E ⧸ L) := by
+    [IsZLattice ℝ L.toIntSubmodule] : CompactSpace (E ⧸ L) :=
   -- Reuse the compact orbit space above. The quotient by L.toIntSubmodule is the quotient
   -- by L: toIntSubmodule retains L as its underlying additive subgroup.
-  let e := L.toIntSubmodule.orbitRelQuotientAddEquiv
-  apply e.surjective.compactSpace
-  apply isQuotientMap_quotient_mk'.continuous_iff.mpr
-  -- The quotient-map criterion uses Quotient.mk', while the evaluation lemma for e uses
-  -- Quotient.mk with an explicit relation; expose that constructor to apply the lemma.
-  change Continuous (fun x : E => e (_root_.Quotient.mk _ x))
-  simpa only [e, Submodule.orbitRelQuotientAddEquiv_mk] using
-    (show Continuous (Submodule.Quotient.mk : E → E ⧸ L.toIntSubmodule) from
-      continuous_quotient_mk')
+  L.toIntSubmodule.orbitRelQuotientContinuousAddEquiv.surjective.compactSpace
+    (map_continuous L.toIntSubmodule.orbitRelQuotientContinuousAddEquiv)
 
 noncomputable section
 
@@ -163,6 +162,50 @@ theorem quotientLatticeEquiv_symm_apply (x : ι → ℝ) :
 
 end Module.Basis
 
+namespace Module.Basis
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {L : Submodule ℤ E} [DiscreteTopology L] [IsZLattice ℝ L] {ι : Type*} [Fintype ι]
+  (b : Basis ι ℤ L)
+
+/-- A lattice basis identifies the orbit space `E / L` of translation by the lattice with a product
+of additive circles: `Module.Basis.quotientLatticeEquiv`, read on the orbit space through
+`Submodule.orbitRelQuotientContinuousAddEquiv`. -/
+def orbitRelQuotientLatticeEquiv : AddAction.orbitRel.Quotient L E ≃ₜ+ UnitAddTorus ι :=
+  -- `quotientLatticeEquiv` is stated for an additive subgroup `L'` through `L'.toIntSubmodule`.
+  -- For `L' = L.toAddSubgroup` this submodule is `L` itself, by `AddSubgroup.toIntSubmodule` and
+  -- `Submodule.toAddSubgroup` being structure projections, so the instance, the basis `b` and the
+  -- quotient `E ⧸ L` are those of `L`.
+  haveI : IsZLattice ℝ L.toAddSubgroup.toIntSubmodule := ‹IsZLattice ℝ L›
+  L.orbitRelQuotientContinuousAddEquiv.trans (quotientLatticeEquiv (L := L.toAddSubgroup) b)
+
+/-- The `i`-th circle coordinate of the orbit of `x` is the `i`-th real basis coordinate of `x`
+modulo one. -/
+@[simp]
+theorem orbitRelQuotientLatticeEquiv_apply_mk (x : E) (i : ι) :
+    b.orbitRelQuotientLatticeEquiv (_root_.Quotient.mk (AddAction.orbitRel L E) x) i =
+      ((b.ofZLatticeBasis ℝ L).repr x i : UnitAddCircle) :=
+  -- As in `orbitRelQuotientLatticeEquiv`, `L.toAddSubgroup.toIntSubmodule` is `L` by structure
+  -- projections. The instance term of the definition is not syntactically `‹IsZLattice ℝ L›`, so
+  -- `simp` and `rw` cannot see through it; compose the two evaluation lemmas directly.
+  haveI : IsZLattice ℝ L.toAddSubgroup.toIntSubmodule := ‹IsZLattice ℝ L›
+  (congrArg (fun y ↦ quotientLatticeEquiv (L := L.toAddSubgroup) b y i)
+    (L.orbitRelQuotientContinuousAddEquiv_mk x)).trans
+    (quotientLatticeEquiv_apply_mk (L := L.toAddSubgroup) b x i)
+
+/-- The inverse circle coordinates send reduced real coordinates to the orbit of their linear
+combination in the lattice basis. -/
+@[simp]
+theorem orbitRelQuotientLatticeEquiv_symm_apply (x : ι → ℝ) :
+    b.orbitRelQuotientLatticeEquiv.symm (fun i => (x i : UnitAddCircle)) =
+      _root_.Quotient.mk (AddAction.orbitRel L E) ((b.ofZLatticeBasis ℝ L).equivFun.symm x) := by
+  apply b.orbitRelQuotientLatticeEquiv.injective
+  ext i
+  simp only [ContinuousAddEquiv.apply_symm_apply, orbitRelQuotientLatticeEquiv_apply_mk,
+    ← Basis.equivFun_apply, LinearEquiv.apply_symm_apply]
+
+end Module.Basis
+
 /-! ### Subtori -/
 
 section Subtorus
@@ -205,6 +248,35 @@ theorem mem_smul_submoduleOf_iff {c : ℕ} {v : L} :
     exact ⟨⟨w, hw⟩, Subtype.ext (by rw [← h, Submodule.coe_smul_of_tower, Nat.cast_smul_eq_nsmul])⟩
   · rintro ⟨w, rfl⟩
     exact ⟨w, w.2, by rw [Submodule.coe_smul_of_tower, Nat.cast_smul_eq_nsmul]⟩
+
+variable (L) in
+/-- For `c : ℕ`, the lattice `cL = (c : ℝ) • L` is contained in `L`. -/
+theorem natCast_smul_le (c : ℕ) : (c : ℝ) • L ≤ L := by
+  rintro _ ⟨w, hw, rfl⟩
+  simpa [Nat.cast_smul_eq_nsmul] using L.nsmul_mem hw c
+
+/-- The lattice `cL` is the image of multiplication by `c` on `L`, the submodule that Mathlib's
+`ModN L c` quotients by. -/
+theorem smul_submoduleOf_eq_range_lsmul (c : ℕ) :
+    ((c : ℝ) • L).submoduleOf L = LinearMap.range (LinearMap.lsmul ℤ L c) := by
+  ext v
+  simp [mem_smul_submoduleOf_iff]
+
+/-- For a `ℤ`-basis `b` of `L` and `c ≠ 0`, reduction modulo `c` of the coordinates in `b`
+identifies `L / cL` with `(ℤ / c)^ι`. This is the coordinate map of the basis `ModN.basis b` of
+`L / cL` over `ℤ / c`. -/
+noncomputable def _root_.Module.Basis.quotientSmulEquivPiZMod {ι : Type*} [Finite ι]
+    (b : Basis ι ℤ L) (c : ℕ) [NeZero c] : (L ⧸ ((c : ℝ) • L).submoduleOf L) ≃ₗ[ℤ] (ι → ZMod c) :=
+  (Submodule.quotEquivOfEq _ _ (smul_submoduleOf_eq_range_lsmul c)).trans
+    ((ModN.basis b).equivFun.restrictScalars ℤ)
+
+/-- The class of `v ∈ L` has the coordinates of `v` in `b`, reduced modulo `c`. -/
+@[simp]
+theorem _root_.Module.Basis.quotientSmulEquivPiZMod_mk {ι : Type*} [Finite ι] (b : Basis ι ℤ L)
+    (c : ℕ) [NeZero c] (v : L) (i : ι) :
+    b.quotientSmulEquivPiZMod c (Submodule.Quotient.mk v) i = (b.repr v i : ZMod c) := by
+  rw [Module.Basis.quotientSmulEquivPiZMod, LinearEquiv.trans_apply, quotEquivOfEq_mk,
+    LinearEquiv.restrictScalars_apply, Basis.equivFun_apply, ModN.basis_repr_mk]
 
 variable (L) [FiniteDimensional ℝ E] [DiscreteTopology L] [IsZLattice ℝ L]
 

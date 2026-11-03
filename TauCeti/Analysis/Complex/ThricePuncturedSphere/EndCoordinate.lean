@@ -20,17 +20,20 @@ Each end lift `cylindricalEndLift q` of the thrice-punctured sphere is a scaled 
 `(0, 1/2)`, `(1, -1/2)` and `(0, 2)` at `0`, `1` and `∞`. A logarithm inverts it: the end
 coordinate `ζ_q(w) = -log ((w - c_q) / b_q) / (2π)` satisfies `cylindricalEndLift q (ζ_q w) = w`
 for `w ≠ c_q` (`Puncture.cylindricalEndLift_endCoord`), and recovers a cylinder point `z` up to
-an integer multiple of `i` (`Puncture.exists_endCoord_cylindricalEndLift`). Its real part is the
-longitudinal coordinate `s`, a smooth function away from `c_q` (`Puncture.contDiffAt_re_endCoord`).
-Its imaginary part is the angular coordinate `t`; it jumps by `1` across a ray, so only period-one
-functions of it are smooth (`Puncture.contMDiffAt_comp_im_endCoord`). The angular one-form `dt` of
-the end is `v ↦ Im (v / (-2π (w - c_q)))` (`Puncture.endAngularForm`), and it pulls back to `dt`
-along the end lift (`Puncture.endAngularForm_cylindricalEndLift`).
+an integer multiple of `i` (`Puncture.exists_endCoord_cylindricalEndLift`), so the end lift is
+injective on the strip `-1/2 ≤ Im z < 1/2` (`Puncture.injOn_cylindricalEndLift`). Its real part
+is the longitudinal coordinate `s`, a smooth function away from `c_q`
+(`Puncture.contDiffAt_re_endCoord`). Its imaginary part is the angular coordinate `t`, with values
+in `[-1/2, 1/2)` (`Puncture.im_endCoord_mem_Ico`); it jumps by `1` across a ray, so only
+period-one functions of it are smooth (`Puncture.contMDiffAt_comp_im_endCoord`). The angular
+one-form `dt` of the end is `v ↦ Im (v / (-2π (w - c_q)))` (`Puncture.endAngularForm`), and it
+pulls back to `dt` along the end lift (`Puncture.endAngularForm_cylindricalEndLift`).
 
 The ends at `0` and `1` are positive, parameterized by `s > 0`, and the end at `∞` is negative,
 parameterized by `s < 0`; `Puncture.endSign` records the sign. Points with positive signed
 longitudinal coordinate lie in the standard punctured neighborhood of the puncture
-(`Puncture.exists_mem_neighborhood_cylindricalEndLift`), so the three ends have disjoint images
+(`Puncture.exists_mem_neighborhood_cylindricalEndLift`), hence in the thrice-punctured sphere
+(`Puncture.cylindricalEndLift_ne_zero_and_ne_one`), and the three ends have disjoint images
 (`Puncture.cylindricalEndLift_ne_cylindricalEndLift`).
 
 These coordinates are what is needed to install data prescribed on the ends, such as the
@@ -91,9 +94,18 @@ def endScale : Puncture → ℂ
 theorem endScale_ne_zero (q : Puncture) : q.endScale ≠ 0 := by
   cases q <;> norm_num
 
+/-- The ends other than the one at `∞` are positive. -/
+theorem endSign_eq_one {q : Puncture} (hq : q ≠ inf) : q.endSign = 1 := by
+  cases q <;> simp_all
+
 /-- The end centers are the two finite punctures, so they lie outside the punctured sphere. -/
 theorem endCenter_eq_zero_or_eq_one (q : Puncture) : q.endCenter = 0 ∨ q.endCenter = 1 := by
   cases q <;> simp
+
+/-- Points of the thrice-punctured sphere are not end centers. -/
+theorem ne_endCenter {w : ℂ} (hw : w ≠ 0 ∧ w ≠ 1) (q : Puncture) : w ≠ q.endCenter := by
+  rcases q.endCenter_eq_zero_or_eq_one with h | h <;> rw [h]
+  exacts [hw.1, hw.2]
 
 /-- Every end lift is a scaled exponential about its center. -/
 theorem cylindricalEndLift_eq (q : Puncture) (z : ℂ) :
@@ -119,11 +131,34 @@ imaginary part an angular coordinate, determined by the point only modulo `1`. -
 def endCoord (q : Puncture) (w : ℂ) : ℂ :=
   -Complex.log ((w - q.endCenter) / q.endScale) / (2 * π)
 
+theorem endCoord_def (q : Puncture) (w : ℂ) :
+    q.endCoord w = -Complex.log ((w - q.endCenter) / q.endScale) / (2 * π) :=
+  (rfl)
+
 /-- The longitudinal coordinate of a point of an end. -/
 theorem re_endCoord (q : Puncture) (w : ℂ) :
     (q.endCoord w).re = -Real.log ‖(w - q.endCenter) / q.endScale‖ / (2 * π) := by
   rw [endCoord, ← Complex.ofReal_ofNat, ← Complex.ofReal_mul, Complex.div_ofReal_re,
     Complex.neg_re, Complex.log_re]
+
+/-- The center of an end has longitudinal coordinate `0`, the junk value of the logarithm of
+`0`. -/
+@[simp]
+theorem re_endCoord_endCenter (q : Puncture) : (q.endCoord q.endCenter).re = 0 := by
+  simp [re_endCoord]
+
+/-- On the end at `∞` the point `1` has longitudinal coordinate `log 2 / (2π) > 0`. -/
+theorem re_endCoord_inf_one_pos : 0 < (inf.endCoord 1).re := by
+  rw [re_endCoord, endCenter_inf, endScale_inf, sub_zero]
+  have : ‖(1 : ℂ) / 2‖ = 2⁻¹ := by norm_num
+  rw [this, Real.log_inv, neg_neg]
+  exact div_pos (Real.log_pos one_lt_two) (by positivity)
+
+/-- A point with nonzero longitudinal coordinate is not the center of the end. -/
+theorem ne_endCenter_of_re_endCoord_ne_zero (q : Puncture) {w : ℂ}
+    (h : (q.endCoord w).re ≠ 0) : w ≠ q.endCenter := by
+  rintro rfl
+  exact h q.re_endCoord_endCenter
 
 /-- The angular coordinate of a point of an end. -/
 theorem im_endCoord (q : Puncture) (w : ℂ) :
@@ -154,6 +189,30 @@ theorem exists_endCoord_cylindricalEndLift (q : Puncture) (z : ℂ) :
   field_simp
   push_cast
   ring
+
+/-- The angular coordinate takes values in the period `[-1/2, 1/2)`. -/
+theorem im_endCoord_mem_Ico (q : Puncture) (w : ℂ) :
+    (q.endCoord w).im ∈ Ico (-1 / 2 : ℝ) (1 / 2) := by
+  have h₁ := Complex.neg_pi_lt_arg ((w - q.endCenter) / q.endScale)
+  have h₂ := Complex.arg_le_pi ((w - q.endCenter) / q.endScale)
+  have hπ := Real.pi_pos
+  rw [im_endCoord, mem_Ico, le_div_iff₀ (by positivity), div_lt_iff₀ (by positivity)]
+  constructor <;> linarith
+
+/-- An end lift is injective on every horizontal strip of height one whose angular coordinate
+ranges over `[-1/2, 1/2)`. -/
+theorem injOn_cylindricalEndLift (q : Puncture) :
+    InjOn q.cylindricalEndLift {z | z.im ∈ Ico (-1 / 2 : ℝ) (1 / 2)} := by
+  intro a ha b hb hab
+  replace ha : -1 / 2 ≤ a.im ∧ a.im < 1 / 2 := ha
+  replace hb : -1 / 2 ≤ b.im ∧ b.im < 1 / 2 := hb
+  rw [cylindricalEndLift_eq, cylindricalEndLift_eq, add_right_inj,
+    mul_right_inj' q.endScale_ne_zero] at hab
+  have hπ := Real.pi_pos
+  have him (z : ℂ) : (-(2 * (π : ℂ)) * z).im = -(2 * π) * z.im := by simp
+  have h := Complex.exp_inj_of_neg_pi_lt_of_le_pi (by rw [him]; nlinarith)
+    (by rw [him]; nlinarith) (by rw [him]; nlinarith) (by rw [him]; nlinarith) hab
+  exact mul_left_cancel₀ (by simp [Real.pi_ne_zero]) h
 
 /-- The longitudinal coordinate is smooth away from the center of the end. -/
 theorem contDiffAt_re_endCoord (q : Puncture) {w : ℂ} (hw : w ≠ q.endCenter)
@@ -259,6 +318,23 @@ theorem exists_mem_neighborhood_cylindricalEndLift (q : Puncture) {z : ℂ}
       (⟨z.re, by simpa using hz⟩, (z.im : AddCircle (1 : ℝ)))).2, ?_⟩
     rw [coe_negativeEnd_apply_mk]
     simp [Complex.re_add_im]
+
+/-- A point of an end with positive signed longitudinal coordinate lies in the thrice-punctured
+sphere: it is neither `0` nor `1`. -/
+theorem cylindricalEndLift_ne_zero_and_ne_one (q : Puncture) {z : ℂ}
+    (hz : 0 < q.endSign * z.re) :
+    q.cylindricalEndLift z ≠ 0 ∧ q.cylindricalEndLift z ≠ 1 := by
+  obtain ⟨p, -, hp⟩ := q.exists_mem_neighborhood_cylindricalEndLift hz
+  rw [← hp]
+  exact p.2
+
+/-- A point with positive signed longitudinal coordinate on an end lies in the thrice-punctured
+sphere: it is neither `0` nor `1`. -/
+theorem ne_zero_and_ne_one_of_endSign_mul_re_endCoord_pos (q : Puncture) {w : ℂ}
+    (h : 0 < q.endSign * (q.endCoord w).re) : w ≠ 0 ∧ w ≠ 1 := by
+  have hw : w ≠ q.endCenter := q.ne_endCenter_of_re_endCoord_ne_zero fun h' => by simp [h'] at h
+  rw [← q.cylindricalEndLift_endCoord hw]
+  exact q.cylindricalEndLift_ne_zero_and_ne_one h
 
 /-- Distinct ends have disjoint images on their parts with positive signed longitudinal
 coordinate. -/

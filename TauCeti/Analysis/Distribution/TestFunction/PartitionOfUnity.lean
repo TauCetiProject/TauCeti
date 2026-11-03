@@ -17,6 +17,11 @@ support. Consequently, an additive map on test functions which vanishes locally 
 continuity of the additive map is not required. Every compact subset of the domain also has a
 cutoff test function equal to one on a neighbourhood of it.
 
+Multiplication by a smooth function `χ` whose closed support meets `Ω` only inside an open set `U`
+sends tests on `Ω` to tests on `U`. This is `TestFunction.cutoffCLM`, a continuous linear map
+`𝓓^{n}(Ω, F) →L[ℝ] 𝓓^{n}(U, F)` for the LF topologies; it is the localization step used to glue
+distributions and currents defined on the members of an open cover.
+
 The decomposition uses Mathlib's `SmoothPartitionOfUnity.exists_isSubordinate`, applied to the
 compact support, and the cutoff packages `IsCompact.exists_contDiff_cutoff` as a test function.
 This is the partition-of-unity localization of distributions described in Hörmander, *The Analysis
@@ -29,6 +34,54 @@ open Set TopologicalSpace Filter
 open scoped Distributions ContDiff Manifold Topology
 
 namespace TestFunction
+
+section Cutoff
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] {Ω U : Opens E} {n : ℕ∞} {χ : E → ℝ}
+
+/-- Multiplication `φ ↦ χ φ` by a `C^n` function `χ` whose topological support meets `Ω` only
+inside `U`, as a continuous linear map from tests on `Ω` to tests on `U`. When `U = Ω` this is
+`TestFunction.smulLeftCLM`. -/
+noncomputable def cutoffCLM (hχ : ContDiff ℝ n χ) (hχU : tsupport χ ∩ Ω ⊆ U) :
+    𝓓^{n}(Ω, F) →L[ℝ] 𝓓^{n}(U, F) :=
+  TestFunction.limitCLM ℝ
+    (fun φ ↦ ⟨fun x ↦ χ x • φ x, hχ.smul φ.contDiff, φ.hasCompactSupport.smul_left,
+      (subset_inter (tsupport_smul_subset_left _ _) (tsupport_smul_subset_right _ _)).trans <|
+        (inter_subset_inter_right _ φ.tsupport_subset).trans hχU⟩)
+    (fun K hKΩ ↦
+      -- On tests supported in `K`, the product is supported in the compact set `K ∩ tsupport χ`,
+      -- which lies in `U`. Its structure maps are those of the product in `𝓓^{n}_{K}(E, F)`.
+      letI K' : Compacts E := ⟨K ∩ tsupport χ, K.isCompact.inter_right (isClosed_tsupport χ)⟩
+      haveI hsupp (f : 𝓓^{n}_{K}(E, F)) : Function.support (fun x ↦ χ x • f x) ⊆ (K' : Set E) :=
+        fun _ hx ↦ ⟨f.support_subset (Function.support_smul_subset_right _ _ hx),
+          subset_tsupport _ (Function.support_smul_subset_left _ _ hx)⟩
+      letI M : 𝓓^{n}_{K}(E, F) →L[ℝ] 𝓓^{n}_{K'}(E, F) :=
+        { toFun f := .of_support_subset (hχ.smul f.contDiff) (hsupp f)
+          map_add' f g := by ext; simp [ContDiffMapSupportedIn.coe_of_support_subset, smul_add]
+          map_smul' c f := by
+            ext; simp [ContDiffMapSupportedIn.coe_of_support_subset, smul_comm c]
+          cont := by
+            refine (ContDiffMapSupportedIn.continuous_iff_comp _).2 fun i ↦ ?_
+            refine ((ContDiffMapSupportedIn.structureMapCLM ℝ n i).continuous.comp
+              (ContDiffMapSupportedIn.bilinLeftCLM (ContinuousLinearMap.lsmul ℝ ℝ).flip hχ
+                (K := K)).continuous).congr fun f ↦ ?_
+            have hf : ⇑(ContDiffMapSupportedIn.of_support_subset (hχ.smul f.contDiff) (hsupp f)) =
+                fun x ↦ χ x • f x :=
+              funext <| ContDiffMapSupportedIn.coe_of_support_subset _ _
+            ext x : 1
+            simp [ContDiffMapSupportedIn.structureMapCLM_apply, hf] }
+      ofSupportedInCLM ℝ (K := K') (fun _ hx ↦ hχU ⟨hx.2, hKΩ hx.1⟩) ∘L M)
+    (fun _ _ _ ↦ rfl)
+
+@[simp]
+theorem cutoffCLM_apply (hχ : ContDiff ℝ n χ) (hχU : tsupport χ ∩ Ω ⊆ U) (φ : 𝓓^{n}(Ω, F))
+    (x : E) : cutoffCLM hχ hχU φ x = χ x • φ x := by
+  -- This is the pointwise formula defining `cutoffCLM`; its body is not exported, so the
+  -- definitional unfolding happens inside the proof.
+  exact rfl
+
+end Cutoff
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]

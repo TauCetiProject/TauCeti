@@ -190,14 +190,14 @@ private theorem exists_exp_raise_eq :
 private theorem exp_raise_apply_last (v : Sl2Std K n) :
     (IsNilpotent.exp (raise K n) v) (Fin.last n) = v (Fin.last n) := by
   obtain ⟨g, hg, -⟩ := exists_exp_raise_eq K n
-  rw [hg, LinearMap.add_apply, Module.End.one_apply, add_apply, Module.End.mul_apply, raise_apply,
+  rw [hg, LinearMap.add_apply, one_apply_eq_self, add_apply, mul_apply_eq_comp, raise_apply,
     dite_eq_right (by simp : ¬ ((Fin.last n : Fin (n + 1)) : ℕ) < n), add_zero]
 
 /-- The exponential of the raising operator fixes the highest weight vector, which it kills. -/
 private theorem exp_raise_basis_zero :
     IsNilpotent.exp (raise K n) (basis K n 0) = basis K n 0 := by
   obtain ⟨g, -, hg⟩ := exists_exp_raise_eq K n
-  rw [hg, LinearMap.add_apply, Module.End.one_apply, Module.End.mul_apply, raise_basis_zero,
+  rw [hg, LinearMap.add_apply, one_apply_eq_self, mul_apply_eq_comp, raise_basis_zero,
     g.map_zero, add_zero]
 
 /-- The lowest coordinate of `exp (-f) · v₀` is the sign `(-1) ^ n`: only the last term of the
@@ -255,11 +255,11 @@ private theorem weylUnit_apply_basis_zero :
   have hlow : lower K n w = 0 := by
     have := congrArg (fun g : Module.End K (Sl2Std K n) => g (basis K n 0))
       (weylUnit_mul_raise K n)
-    simp only [Module.End.mul_apply, raise_basis_zero, map_zero, LinearMap.neg_apply] at this
+    simp only [mul_apply_eq_comp, raise_basis_zero, map_zero, LinearMap.neg_apply] at this
     rw [hw, ← neg_eq_zero]
     exact this.symm
   have hcoord : w (Fin.last n) = (-1 : K) ^ n := by
-    rw [hw, coe_weylUnit, Module.End.mul_apply, Module.End.mul_apply, exp_raise_basis_zero,
+    rw [hw, coe_weylUnit, mul_apply_eq_comp, mul_apply_eq_comp, exp_raise_basis_zero,
       exp_raise_apply_last, exp_neg_lower_basis_zero_apply_last]
   calc w = w (Fin.last n) • basis K n (Fin.last n) :=
         eq_smul_basis_last_of_lower_eq_zero hlow
@@ -314,7 +314,7 @@ theorem weylUnit_apply_basis (i : Fin (n + 1)) :
       simpa only [Fin.val_castSucc] using (Nat.cast_sub (R := K) (le_of_lt i.isLt))
     have hstep := congrArg (fun g : Module.End K (Sl2Std K n) => g (basis K n i.castSucc))
       (weylUnit_mul_lower K n)
-    simp only [Module.End.mul_apply, LinearMap.neg_apply] at hstep
+    simp only [mul_apply_eq_comp, LinearMap.neg_apply] at hstep
     rw [lower_basis _ hlt, map_smul, ih, map_smul, raise_basis] at hstep
     have hrevval : (((i.castSucc : Fin (n + 1)).rev : Fin (n + 1)) : ℕ) = m + 1 := by
       rw [Fin.val_rev]; omega
@@ -336,8 +336,8 @@ theorem coe_weylUnit_sq :
     ((weylUnit K n : (Module.End K (Sl2Std K n))ˣ) : Module.End K (Sl2Std K n)) ^ 2 =
       ((-1 : K) ^ n) • 1 := by
   refine (basis K n).ext fun i => ?_
-  rw [sq, Module.End.mul_apply, weylUnit_apply_basis, map_smul, weylUnit_apply_basis,
-    Fin.rev_rev, smul_smul, LinearMap.smul_apply, Module.End.one_apply, ← pow_add]
+  rw [sq, mul_apply_eq_comp, weylUnit_apply_basis, map_smul, weylUnit_apply_basis,
+    Fin.rev_rev, smul_smul, LinearMap.smul_apply, one_apply_eq_self, ← pow_add]
   congr 2
   have : (i.rev : ℕ) = n - (i : ℕ) := by simp [Fin.val_rev]
   omega
@@ -357,7 +357,7 @@ theorem weylUnit_weylUnit_apply (v : Sl2Std K n) :
     (weylUnit K n : Module.End K (Sl2Std K n))
         ((weylUnit K n : Module.End K (Sl2Std K n)) v) = ((-1 : K) ^ n) • v := by
   have := congrArg (fun g : Module.End K (Sl2Std K n) => g v) (coe_weylUnit_sq K n)
-  simpa [sq, Module.End.mul_apply] using this
+  simpa [sq, mul_apply_eq_comp] using this
 
 /-! ## The Weyl element in coordinates -/
 

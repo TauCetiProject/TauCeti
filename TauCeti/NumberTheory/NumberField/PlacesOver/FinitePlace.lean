@@ -10,7 +10,7 @@ public import Mathlib.NumberTheory.NumberField.Completion.FinitePlace
 
 import TauCeti.Analysis.AbsoluteValue.Equivalence
 import TauCeti.Analysis.AbsoluteValue.Nonarchimedean
-import TauCeti.NumberTheory.NumberField.FinitePlace
+import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
 import TauCeti.RingTheory.DedekindDomain.PrimesAbove
 
 /-!
@@ -276,6 +276,38 @@ theorem exists_finitePlace_rpow_inv_eq_of_liesOver (v : FinitePlace K) [w.LiesOv
   have h : (1 : ℝ) ≤ 𝔓.asIdeal.ramificationIdx (𝓞 K) * 𝔓.asIdeal.inertiaDeg (𝓞 K) := by
     exact_mod_cast ramificationIdx_mul_inertiaDeg_pos K 𝔓
   exact ⟨𝔓, _, inv_pos.mpr (one_pos.trans_le h), inv_le_one_of_one_le₀ h, hw⟩
+
+/-- Absolute values over distinct finite places are roots of distinct finite places of the
+extension. The exponents are positive and at most `1`. This permits comparing products of local
+factors without counting an extension place twice. -/
+theorem exists_injective_finitePlace_rpow_eq_of_liesOver
+    (S : Set (FinitePlace K)) (w : S → AbsoluteValue F ℝ)
+    (hw : ∀ v, (w v).LiesOver v.val.1) :
+    ∃ (V : S → FinitePlace F) (t : S → ℝ), Function.Injective V ∧
+      ∀ v, 0 < t v ∧ t v ≤ 1 ∧ ∀ x, w v x = V v x ^ t v := by
+  classical
+  have hclass (v : S) := by
+    have hmk : (FinitePlace.mk v.val.maximalIdeal).1 = v.val.1 :=
+      congrArg Subtype.val v.val.mk_maximalIdeal
+    let : (w v).LiesOver (FinitePlace.mk v.val.maximalIdeal).1 := hmk ▸ hw v
+    exact (existsUnique_finitePlace_rpow_inv_eq_of_liesOver
+      (𝔭 := v.val.maximalIdeal) (w := w v)).exists
+  choose P hP hroot using hclass
+  have hinj : Function.Injective (fun v ↦ FinitePlace.mk (P v)) := by
+    intro v u h
+    apply Subtype.ext
+    apply FinitePlace.maximalIdeal_injective
+    apply HeightOneSpectrum.ext
+    let := hP v
+    let := hP u
+    have hprime : P v = P u := FinitePlace.mk_eq_iff.mp h
+    rw [Ideal.over_def (P v).asIdeal v.val.maximalIdeal.asIdeal,
+      Ideal.over_def (P u).asIdeal u.val.maximalIdeal.asIdeal, hprime]
+  have ht (v : S) : (1 : ℝ) ≤
+      (P v).asIdeal.ramificationIdx (𝓞 K) * (P v).asIdeal.inertiaDeg (𝓞 K) := by
+    exact_mod_cast ramificationIdx_mul_inertiaDeg_pos K (P v)
+  exact ⟨fun v ↦ FinitePlace.mk (P v), _, hinj, fun v ↦
+    ⟨inv_pos.mpr (one_pos.trans_le (ht v)), inv_le_one_of_one_le₀ (ht v), hroot v⟩⟩
 
 variable (F 𝔭)
 

@@ -56,9 +56,10 @@ none of this assumes σ-finiteness.
   `map (· * g) μ = c(g) • μ` for a regular Haar measure `μ`.
 * `MeasureTheory.Measure.inv_eq_withDensity_modularCharacter_of_regular`:
   `μ.inv = μ.withDensity c` for a regular Haar measure `μ`.
-* `MeasureTheory.Measure.quasiMeasurePreserving_mul_right_of_regular` and
-  `MeasureTheory.Measure.quasiMeasurePreserving_inv_of_regular`: right translation and inversion
-  preserve null sets of a regular Haar measure.
+* `MeasureTheory.Measure.quasiMeasurePreserving_mul_right_of_regular`,
+  `MeasureTheory.Measure.quasiMeasurePreserving_inv_of_regular` and
+  `MeasureTheory.Measure.quasiMeasurePreserving_inv_mul_of_regular`: right translation, inversion
+  and `y ↦ y⁻¹ * x` preserve null sets of a regular Haar measure.
 * `TauCeti.integral_mul_right_eq_modularCharacter_smul_of_regular`,
   `TauCeti.integral_inv_eq_integral_modularCharacter_smul_of_regular` and their lower Lebesgue
   versions `TauCeti.lintegral_mul_right_eq_modularCharacter_mul_of_regular` and
@@ -101,13 +102,19 @@ theorem continuous_modularCharacter : Continuous (Measure.modularCharacter : G �
   borelize G
   obtain ⟨f, hfc, hfn, hf1⟩ := exists_continuous_nonneg_pos (1 : G)
   have hfi : ∫ x, f x ∂(Measure.haar : Measure G) ≠ 0 :=
-    (f.continuous.integral_pos_of_hasCompactSupport_nonneg_nonzero hfc hfn hf1).ne'
+    (f.continuous.integral_pos_of_hasCompactSupport_nonneg_ne_zero hfc hfn hf1).ne'
   have hc : Continuous (fun g : G => ∫ x, f (x * g) ∂(Measure.haar : Measure G)) := by
     have h := continuous_integral_apply_inv_mul (μ := (Measure.haar : Measure G).inv)
       f.continuous hfc
     simpa only [integral_inv_measure, inv_inv] using h
   exact continuous_induced_rng.mpr <| (hc.div_const _).congr fun g =>
     (modularCharacter_eq_integral_div f.continuous hfc hfi g).symm
+
+/-- The real powers `c(x)^r` and `c(x⁻¹)^r` of the modular character multiply to one. -/
+theorem modularCharacter_rpow_mul_inv (r : ℝ) (x : G) :
+    (Measure.modularCharacter x : ℝ) ^ r * (Measure.modularCharacter x⁻¹ : ℝ) ^ r = 1 := by
+  rw [← Real.mul_rpow (by positivity) (by positivity), ← NNReal.coe_mul, ← map_mul,
+    mul_inv_cancel, map_one, NNReal.coe_one, Real.one_rpow]
 
 
 section Integral
@@ -148,7 +155,7 @@ private theorem integral_modularCharacter_mul_inv_eq_self_real {F : G → ℝ} (
   -- computed by the right-translation formula.
   obtain ⟨g, hgc, hgn, hg1⟩ := exists_continuous_nonneg_pos (1 : G)
   have hgi : 0 < ∫ x, g x ∂μ :=
-    g.continuous.integral_pos_of_hasCompactSupport_nonneg_nonzero hgc hgn hg1
+    g.continuous.integral_pos_of_hasCompactSupport_nonneg_ne_zero hgc hgn hg1
   have hD : ∀ y, ∫ z, g (z⁻¹ * y) ∂μ.inv = (Measure.modularCharacter y : ℝ) * ∫ x, g x ∂μ := by
     intro y
     rw [integral_inv_measure (fun z => g (z⁻¹ * y)) μ]
@@ -260,7 +267,7 @@ private theorem haarScalarFactor_inv_withDensity_modularCharacter
   set ν := μ.withDensity fun x => (modularCharacter x : ℝ≥0∞) with hν
   obtain ⟨g, hgc, hgn, hg1⟩ := exists_continuous_nonneg_pos (1 : G)
   have hgi : 0 < ∫ x, g x ∂μ :=
-    g.continuous.integral_pos_of_hasCompactSupport_nonneg_nonzero hgc hgn hg1
+    g.continuous.integral_pos_of_hasCompactSupport_nonneg_ne_zero hgc hgn hg1
   have hint : ∫ x, g x ∂ν.inv = ∫ x, g x ∂μ := by
     rw [integral_inv_measure, hν,
       integral_withDensity_eq_integral_smul continuous_modularCharacter.measurable]
@@ -330,7 +337,7 @@ theorem measure_preimage_mul_right_eq_modularCharacter_mul_of_regular (g : G) (s
     μ ((· * g) ⁻¹' s) = modularCharacter g * μ s := by
   have h := (MeasurableEquiv.mulRight g).map_apply (μ := μ) s
   rw [MeasurableEquiv.coe_mulRight, map_right_mul_eq_modularCharacter_smul_of_regular,
-    smul_apply, nnreal_smul_coe_apply] at h
+    _root_.smul_apply, nnreal_smul_coe_apply] at h
   exact h.symm
 
 /-- Right translation preserves null sets of a regular Haar measure. -/
@@ -405,7 +412,8 @@ theorem absolutelyContinuous_inv_of_regular : μ ≪ μ.inv := by
     .of_forall fun x => ENNReal.coe_ne_zero.2 (modularCharacterFun_pos x).ne'
 
 /-- Inversion preserves null sets of a regular Haar measure. -/
-@[simp]
+-- Use inversion’s measure-class formula before simplifying the inverse image.
+@[simp↓]
 theorem measure_inv_null_of_regular {s : Set G} : μ s⁻¹ = 0 ↔ μ s = 0 := by
   rw [← inv_apply]
   exact ⟨fun h => absolutelyContinuous_inv_of_regular μ h,
@@ -415,6 +423,13 @@ theorem measure_inv_null_of_regular {s : Set G} : μ s⁻¹ = 0 ↔ μ s = 0 := 
 @[fun_prop]
 theorem quasiMeasurePreserving_inv_of_regular : QuasiMeasurePreserving Inv.inv μ μ :=
   ⟨measurable_inv, inv_absolutelyContinuous_of_regular μ⟩
+
+/-- For a regular Haar measure, `y ↦ y⁻¹ * x` is quasi-measure-preserving: it is inversion
+followed by right translation by `x`. -/
+@[fun_prop]
+theorem quasiMeasurePreserving_inv_mul_of_regular (x : G) :
+    QuasiMeasurePreserving (fun y => y⁻¹ * x) μ μ :=
+  (quasiMeasurePreserving_mul_right_of_regular μ x).comp (quasiMeasurePreserving_inv_of_regular μ)
 
 end Regular
 

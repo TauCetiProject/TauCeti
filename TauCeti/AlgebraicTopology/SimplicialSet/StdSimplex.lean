@@ -23,6 +23,7 @@ an initial and a final segment.
 * `SSet.stdSimplex.const_app_apply`: the constant map at a vertex of `Δ[n]` sends every simplex
   to the constant simplex at that vertex.
 * `SSet.stdSimplex.quasicategory`: standard simplices are quasicategories.
+* `SSet.horn_one_ι_eq_const`: each horn `Λ[1, i]` of `Δ[1]` is the vertex `i`.
 -/
 
 public section
@@ -54,3 +55,20 @@ instance quasicategory (n : ℕ) : Quasicategory (Δ[n] : SSet.{u}) where
     exact ⟨σ ≫ (isoNerve n).inv, by rw [← Category.assoc, ← hσ]; simp⟩
 
 end SSet.stdSimplex
+
+namespace SSet
+
+/-- The horn `Λ[1, i]` is the vertex `i` of `Δ[1]`: every simplex of it is constant at `i`. -/
+lemma horn_one_ι_eq_const (i : Fin 2) : Λ[1, i].ι = const (stdSimplex.obj₀Equiv.{u}.symm i) := by
+  ext ⟨n⟩ x
+  induction n using SimplexCategory.rec with | _ n
+  obtain ⟨σ, hσ⟩ := x
+  refine stdSimplex.ext _ _ fun k ↦ ?_
+  rw [mem_horn_iff_notMem_range] at hσ
+  obtain ⟨j, hj, hj'⟩ := hσ
+  have hk : σ k ≠ j := fun h ↦ hj' ⟨k, h⟩
+  rw [stdSimplex.obj₀Equiv_symm_apply]
+  -- The inclusion `Λ[1, i].ι` sends `⟨σ, hσ⟩` to `σ`.
+  exact (by omega : σ k = i).trans (stdSimplex.const_app_apply i _ k).symm
+
+end SSet

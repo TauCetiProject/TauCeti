@@ -44,10 +44,10 @@ uniqueness theorem rests on Mathlib's identity principle
 `AnalyticOnNhd.eqOn_of_preconnected_of_eventuallyEq` and on the openness of the analyticity locus
 `AnalyticAt.exists_ball_analyticOnNhd`; `DifferentiableOn.analyticOnNhd` produces continuations
 from holomorphy; and the closure lemmas below consume `AnalyticAt.deriv`, `.add` and `.neg`, and
-`AnalyticAt.mul` and `.pow` for the two that multiply germs. In the words of the generality bar of
-`TauCetiRoadmap/ConformalMapping/README.md`, these are *inputs consumed from Mathlib at whatever
-generality Mathlib provides*; the conformal-mapping theorems that consume this file — the
-reflection and boundary layers — are scalar and stay scalar, instantiating `E = ℂ`.
+`AnalyticAt.mul` and `.pow` for the two that multiply germs. These are inputs consumed from Mathlib
+at whatever generality Mathlib provides; the conformal-mapping theorems that consume this file —
+the monodromy theorem (`Conformal/Monodromy.lean`) and global branches
+(`Conformal/GlobalBranch.lean`) — are scalar and stay scalar, instantiating `E = ℂ`.
 
 Completeness of `E` is asked for exactly where those Mathlib inputs ask for it, and nowhere else:
 the definition itself, the gluing and reparametrisation lemmas, and the closure of continuations
@@ -55,11 +55,11 @@ under sums and products need none, while everything resting on the identity prin
 `TauCeti.IsAnalyticContinuationAlong.eventuallyEq` and all of its consequences — needs `E` to be a
 Banach space.
 
-The *domain* stays `ℂ`. That is where the roadmap's scalar bar bites: a path in a higher-dimensional
-domain is not the object the monodromy theorem and its consumers are about, and `deriv` — under
-which continuations are closed below — is one-dimensional. The two closure lemmas that multiply
-germs, `TauCeti.IsAnalyticContinuationAlong.mul` and `.pow`, ask for a complex normed algebra `A`
-in place of `E`, again the generality at which Mathlib states `AnalyticAt.mul`.
+The *domain* stays `ℂ`: a path in a higher-dimensional domain is not the object the monodromy
+theorem and its consumers are about, and `deriv` — under which continuations are closed below — is
+one-dimensional. The two closure lemmas that multiply germs,
+`TauCeti.IsAnalyticContinuationAlong.mul` and `.pow`, ask for a complex normed algebra `A` in place
+of `E`, again the generality at which Mathlib states `AnalyticAt.mul`.
 
 ## The uniqueness theorem
 
@@ -94,14 +94,14 @@ They are also closed under concatenating paths, which `Continuation/Trans.lean` 
 
 ## Relation to the monodromy theorem
 
-This is the L4 prerequisite that the monodromy theorem of the conformal-mapping roadmap needs:
-uniqueness of the continuation along a *fixed* path. The monodromy theorem itself compares
-continuations along *homotopic* paths, and in the étale-space picture is an instance of Mathlib's
-abstract `IsLocalHomeomorph.monodromy_theorem` (`Mathlib/Topology/Homotopy/Lifting.lean`), whose
-docstring describes exactly this application; the uniqueness proved here is the concrete form of
-the separatedness hypothesis that abstract theorem consumes. That étale space is built in
-`TauCeti/Analysis/Complex/HolomorphicSheaf.lean`, and `Conformal/Continuation/Etale.lean` supplies
-the continuation/lift correspondence needed to apply the abstract theorem to it.
+This is the prerequisite that the monodromy theorem needs: uniqueness of the continuation along a
+*fixed* path. The monodromy theorem itself compares continuations along *homotopic* paths, and in
+the étale-space picture is an instance of Mathlib's abstract `IsLocalHomeomorph.monodromy_theorem`
+(`Mathlib/Topology/Homotopy/Lifting.lean`), whose docstring describes exactly this application; the
+uniqueness proved here is the concrete form of the separatedness hypothesis that abstract theorem
+consumes. That étale space is built in `TauCeti/Analysis/Complex/HolomorphicSheaf.lean`, and
+`Conformal/Continuation/Etale.lean` supplies the continuation/lift correspondence needed to apply
+the abstract theorem to it.
 
 ## Main definitions and results
 
