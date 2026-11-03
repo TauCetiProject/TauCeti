@@ -121,7 +121,7 @@ theorem commute_atkinLehnerOperator_heckeSlashGamma0ModularFormEnd (hQ : 0 < Q) 
     (h : IsAtkinLehnerMatrix N Q M) (hD : CoprimeDetCoset N Q D) :
     Commute (atkinLehnerOperator hQ hQN h k) (heckeSlashGamma0ModularFormEnd k D) := by
   refine LinearMap.ext fun f ↦ DFunLike.coe_injective ?_
-  simp only [Module.End.mul_apply, coe_atkinLehnerOperator, coe_heckeSlashGamma0ModularFormEnd]
+  simp only [mul_apply_eq_comp, coe_atkinLehnerOperator, coe_heckeSlashGamma0ModularFormEnd]
   exact heckeSlashSum_slash_atkinLehnerGL hQ hQN h hD f fun _ hγ ↦
     SlashInvariantFormClass.slash_eq_of_mem_map_mapGL f hγ
 
@@ -131,7 +131,7 @@ theorem commute_atkinLehnerOperatorCusp_heckeSlashGamma0CuspFormEnd (hQ : 0 < Q)
     (h : IsAtkinLehnerMatrix N Q M) (hD : CoprimeDetCoset N Q D) :
     Commute (atkinLehnerOperatorCusp hQ hQN h k) (heckeSlashGamma0CuspFormEnd k D) := by
   refine LinearMap.ext fun f ↦ DFunLike.coe_injective ?_
-  simp only [Module.End.mul_apply, coe_atkinLehnerOperatorCusp, coe_heckeSlashGamma0CuspFormEnd]
+  simp only [mul_apply_eq_comp, coe_atkinLehnerOperatorCusp, coe_heckeSlashGamma0CuspFormEnd]
   exact heckeSlashSum_slash_atkinLehnerGL hQ hQN h hD f fun _ hγ ↦
     SlashInvariantFormClass.slash_eq_of_mem_map_mapGL f hγ
 
@@ -343,7 +343,7 @@ theorem atkinLehnerOperatorGamma1_heckeTNat (hQ : 0 < Q) (hQN : Q ∣ N)
   have hc := fun g ↦ DFunLike.congr_fun
     (commute_heckeTNat_diamondOp k n ((Gamma0Map N).toHomUnits ⟨γ, hγ⟩)).eq g
   have hc' := DFunLike.congr_fun (commute_heckeTNat_diamondOp k n u).eq
-  simp only [Module.End.mul_apply] at hc hc'
+  simp only [mul_apply_eq_comp] at hc hc'
   rw [atkinLehnerOperatorGamma1_mul_left hQ hQN h₀ k hγ, LinearMap.comp_apply,
     LinearMap.comp_apply, ← hc, ← hc', ← hAu]
   exact atkinLehnerOperatorGamma1_heckeTNat_of_mul_eq hQ hQN h₀ hA hB hmul _
@@ -406,7 +406,7 @@ theorem atkinLehnerOperatorGamma1_heckeTNat_of_mem_modFormCharSpace (hQ : 0 < Q)
   obtain ⟨u, hu, hu', hψ⟩ := exists_unit_charSpace_eq ψ φ (h.isExactDivisor hQ.ne' hQN) hn
   have hc := DFunLike.congr_fun (commute_heckeTNat_diamondOp k n u).eq
     (atkinLehnerOperatorGamma1 hQ hQN h k f)
-  simp only [Module.End.mul_apply] at hc
+  simp only [mul_apply_eq_comp] at hc
   rw [atkinLehnerOperatorGamma1_heckeTNat hQ hQN h hn hu hu', ← hc,
     diamondOp_apply_of_mem_modFormCharSpace k _ u
       (atkinLehnerOperatorGamma1_mem_modFormCharSpace hQ hQN h hf), map_smul, hψ]
@@ -425,7 +425,7 @@ theorem atkinLehnerOperatorGamma1Cusp_heckeTCuspNat_of_mem_cuspFormCharSpace (hQ
   obtain ⟨u, hu, hu', hψ⟩ := exists_unit_charSpace_eq ψ φ (h.isExactDivisor hQ.ne' hQN) hn
   have hc := DFunLike.congr_fun (commute_heckeTCuspNat_diamondOpCusp k n u).eq
     (atkinLehnerOperatorGamma1Cusp hQ hQN h k f)
-  simp only [Module.End.mul_apply] at hc
+  simp only [mul_apply_eq_comp] at hc
   rw [atkinLehnerOperatorGamma1Cusp_heckeTCuspNat hQ hQN h hn hu hu', ← hc,
     diamondOpCusp_apply_of_mem_cuspFormCharSpace k _ u
       (atkinLehnerOperatorGamma1Cusp_mem_cuspFormCharSpace hQ hQN h hf), map_smul, hψ]

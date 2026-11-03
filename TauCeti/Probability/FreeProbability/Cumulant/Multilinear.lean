@@ -268,21 +268,13 @@ section Relabel
 
 variable [CommRing R] [Semiring A] [Algebra R A] (φ : A →ₗ[R] R)
 
-/-- Relabelling a finite set of positions increasingly by `Fin #s` identifies its free cumulant
-with the bundled multilinear cumulant. -/
-theorem freeCumulant_eq_freeCumulantMultilinear_comp_orderEmbOfFin (a : α → A)
-    (s : Finset α) :
-    freeCumulant φ a s = freeCumulantMultilinear φ (a ∘ s.orderEmbOfFin rfl) := by
-  rw [freeCumulantMultilinear_apply, freeCumulant_comp_of_strictMonoOn φ
-    ((s.orderEmbOfFin rfl).strictMono.strictMonoOn _), image_orderEmbOfFin_univ]
-
 /-- Scaling each letter scales the free cumulant by the product of the corresponding scalars. -/
 @[simp]
 theorem freeCumulant_smul (c : α → R) (a : α → A) (s : Finset α) :
     freeCumulant φ (fun i => c i • a i) s = (∏ i ∈ s, c i) * freeCumulant φ a s := by
   classical
-  simp only [freeCumulant_eq_freeCumulantMultilinear_comp_orderEmbOfFin φ,
-    Function.comp_def]
+  simp only [freeCumulant_eq_freeCumulant_comp_orderEmbOfFin φ _ s,
+    ← freeCumulantMultilinear_apply, Function.comp_def]
   rw [MultilinearMap.map_smul_univ, smul_eq_mul]
   congr 1
   symm

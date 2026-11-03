@@ -111,6 +111,26 @@ theorem IsFolded.path_eq_of_word_eq (hS : S.IsFolded) {a b : S.graph.V}
       congr 1
       exact ih q hword
 
+/-- Paths with the same initial vertex and label word have the same terminal vertex in a
+folded graph. The terminal vertices are not assumed equal. -/
+theorem IsFolded.eq_tgt_of_word_eq (hS : S.IsFolded) {a b c : S.graph.V}
+    (p : S.graph.Path a b) (q : S.graph.Path a c) (h : S.word p = S.word q) : b = c := by
+  induction p generalizing c with
+  | nil =>
+    cases q with
+    | nil => rfl
+    | cons q f => simp at h
+  | cons p e ih =>
+    cases q with
+    | nil => simp at h
+    | cons q f =>
+      simp only [word_cons] at h
+      obtain ⟨hw, hl⟩ := List.append_inj' h (by simp)
+      obtain rfl := ih q hw
+      have he : e.1 = f.1 := hS _ _ (e.2.1.trans f.2.1.symm)
+        (List.singleton_inj.mp hl)
+      exact e.2.2.symm.trans ((congrArg S.graph.tgt he).trans f.2.2)
+
 /-- The reduced word of a reduced path's reading is its actual label word. -/
 @[simp] theorem IsFolded.toWord_read_eq_word [DecidableEq α] (hS : S.IsFolded)
     {a b : S.graph.V} (p : S.graph.Path a b)
@@ -130,6 +150,31 @@ theorem IsFolded.path_eq_of_read_eq (hS : S.IsFolded)
   simpa only [IsFolded.toWord_read_eq_word S hS p hp,
     IsFolded.toWord_read_eq_word S hS q hq] using
     congrArg FreeGroup.toWord h
+
+/-- Paths with the same initial vertex and free-group reading have the same terminal vertex
+in a folded graph, even when the paths are not reduced. -/
+theorem IsFolded.eq_tgt_of_read_eq (hS : S.IsFolded) {a b c : S.graph.V}
+    (p : S.graph.Path a b) (q : S.graph.Path a c) (h : S.read p = S.read q) : b = c := by
+  classical
+  obtain ⟨p', hp', hrp⟩ := S.exists_reduced_path_read_eq p
+  obtain ⟨q', hq', hrq⟩ := S.exists_reduced_path_read_eq q
+  apply hS.eq_tgt_of_word_eq S p' q'
+  have hr : S.read p' = S.read q' := hrp.trans (h.trans hrq.symm)
+  simpa only [hS.toWord_read_eq_word S p' hp', hS.toWord_read_eq_word S q' hq'] using
+    congrArg FreeGroup.toWord hr
+
+/-- The endpoint of a based path in a folded graph is determined by the coset of its reading.
+No reducedness assumption on the paths is necessary. -/
+theorem IsFolded.eq_tgt_iff_read_mul_inv_mem (hS : S.IsFolded) {a b c : S.graph.V}
+    (p : S.graph.Path a b) (q : S.graph.Path a c) :
+    b = c ↔ S.read p * (S.read q)⁻¹ ∈ S.subgroup a := by
+  constructor
+  · rintro rfl
+    simpa using S.read_mem_subgroup (p.comp q.reverse)
+  · intro h
+    obtain ⟨l, hl⟩ := S.mem_subgroup_iff.mp h
+    apply hS.eq_tgt_of_read_eq S p (l.comp q)
+    simp [hl]
 
 end StallingsGraph
 end TauCeti

@@ -10,7 +10,7 @@ public import TauCeti.NumberTheory.LocalField.QuadraticForm.Cup.Basic
 public import TauCeti.NumberTheory.LocalField.QuadraticForm.StiefelWhitney.LocalHasse
 
 import TauCeti.FieldTheory.QuadraticForm.StiefelWhitney.Evens.Kummer.Value
-import TauCeti.FieldTheory.Separable.Quadratic
+import TauCeti.FieldTheory.Separable.PrimeDegree
 
 /-!
 # The relative Stiefel–Whitney formula over a local field

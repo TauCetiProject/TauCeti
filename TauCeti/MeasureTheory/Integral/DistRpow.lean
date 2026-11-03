@@ -101,7 +101,7 @@ theorem setLIntegral_ofReal_dist_rpow_neg_le {y : X} {A : ℝ≥0∞} {n s : ℝ
   calc ∫⁻ x in {x | R < dist x y}, ENNReal.ofReal (dist x y ^ (-s)) ∂μ
       ≤ ∫⁻ x in ⋃ k, S k, ENNReal.ofReal (dist x y ^ (-s)) ∂μ := lintegral_mono_set hcover
     _ ≤ ∑' k, ∫⁻ x in S k, ENNReal.ofReal (dist x y ^ (-s)) ∂μ := lintegral_iUnion_le _ _
-    _ ≤ ∑' k, A * ENNReal.ofReal (2 ^ n * R ^ (n - s) * q ^ k) := ENNReal.tsum_le_tsum hS
+    _ ≤ ∑' k, A * ENNReal.ofReal (2 ^ n * R ^ (n - s) * q ^ k) := _root_.tsum_le_tsum hS
     _ = A * ENNReal.ofReal (∑' k, 2 ^ n * R ^ (n - s) * q ^ k) := by
         rw [ENNReal.tsum_mul_left, ENNReal.ofReal_tsum_of_nonneg (fun _ => by positivity) hsum]
     _ = A * ENNReal.ofReal (2 ^ n / (1 - q) * R ^ (n - s)) := by

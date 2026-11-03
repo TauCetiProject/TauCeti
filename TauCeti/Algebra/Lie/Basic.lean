@@ -45,6 +45,8 @@ This file supplies general constructions for Lie modules that are missing from M
   each `L`-submodule of `V`.
 * `LieModule.toEnd_eq_zero_of_isTrivial` and `LieAlgebra.ad_eq_zero_of_isLieAbelian`: on a
   trivial Lie module, in particular in an abelian Lie algebra, every element acts by zero.
+* `LieSubalgebra.lie_eq_zero_of_mem` and `LieIdeal.lie_eq_zero_of_mem`: two elements of an
+  abelian Lie subalgebra, or of an abelian Lie ideal, have zero bracket in the ambient Lie algebra.
 * `LieHom.map_ad_pow`: a Lie homomorphism carries `(ad x) ^ n y` to `(ad (f x)) ^ n (f y)`.
 * `LieHom.isNilpotent_ad_of_surjective`: adjoint nilpotence descends along a surjective
   Lie homomorphism.
@@ -116,6 +118,18 @@ theorem LieModule.toEnd_eq_zero_of_isTrivial {R L M : Type*} [CommRing R] [LieRi
 theorem LieAlgebra.ad_eq_zero_of_isLieAbelian {R L : Type*} [CommRing R] [LieRing L]
     [LieAlgebra R L] [IsLieAbelian L] (x : L) : LieAlgebra.ad R L x = 0 :=
   LieModule.toEnd_eq_zero_of_isTrivial x
+
+/-- Two elements of an abelian Lie subalgebra have zero bracket in the ambient Lie algebra. -/
+theorem LieSubalgebra.lie_eq_zero_of_mem {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+    {H : LieSubalgebra R L} [IsLieAbelian H] {x y : L} (hx : x ∈ H) (hy : y ∈ H) :
+    ⁅x, y⁆ = 0 := by
+  simpa using congr_arg ((↑) : H → L) (trivial_lie_zero H H ⟨x, hx⟩ ⟨y, hy⟩)
+
+/-- Two elements of an abelian Lie ideal have zero bracket in the ambient Lie algebra. -/
+theorem LieIdeal.lie_eq_zero_of_mem {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+    {I : LieIdeal R L} [IsLieAbelian I] {x y : L} (hx : x ∈ I) (hy : y ∈ I) : ⁅x, y⁆ = 0 :=
+  have : IsLieAbelian (I : LieSubalgebra R L) := ‹IsLieAbelian I›
+  LieSubalgebra.lie_eq_zero_of_mem (H := (I : LieSubalgebra R L)) hx hy
 
 section EndSubalgebra
 
@@ -339,7 +353,7 @@ theorem ad_pow_apply_eq_ad_pow_apply {L : Type*} [LieRing L] (R S : Type*) [Comm
   induction k generalizing y with
   | zero => simp
   | succ k ih =>
-      simp only [pow_succ, Module.End.mul_apply, LieAlgebra.ad_apply]
+      simp only [pow_succ, _root_.mul_apply_eq_comp, LieAlgebra.ad_apply]
       exact ih ⁅x, y⁆
 
 section Adjoint
@@ -350,7 +364,7 @@ variable {R L L' : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
 /-- An additional adjoint action can be applied to the argument before the preceding powers. -/
 theorem ad_pow_succ_apply (x y : L) (n : ℕ) :
     (LieAlgebra.ad R L x ^ (n + 1)) y = (LieAlgebra.ad R L x ^ n) ⁅x, y⁆ := by
-  rw [pow_succ, Module.End.mul_apply, LieAlgebra.ad_apply]
+  rw [pow_succ, _root_.mul_apply_eq_comp, LieAlgebra.ad_apply]
 
 /-- If the `n`-fold adjoint action of `x` annihilates `y`, then so does that of `-x`. -/
 theorem ad_neg_pow_apply_eq_zero {x y : L} {n : ℕ} (h : (LieAlgebra.ad R L x ^ n) y = 0) :
@@ -378,7 +392,7 @@ theorem _root_.LieHom.map_ad_pow (f : L →ₗ⁅R⁆ L') (x : L) (n : ℕ) (y :
   induction n generalizing y with
   | zero => simp
   | succ n ih =>
-    simp only [pow_succ, Module.End.mul_apply, LieAlgebra.ad_apply] at ih ⊢
+    simp only [pow_succ, _root_.mul_apply_eq_comp, LieAlgebra.ad_apply] at ih ⊢
     rw [ih, f.map_lie]
 
 /-- Adjoint nilpotence descends along a surjective Lie homomorphism. In particular it descends

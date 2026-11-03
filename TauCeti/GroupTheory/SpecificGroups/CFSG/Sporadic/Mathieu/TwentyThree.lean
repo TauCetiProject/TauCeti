@@ -28,10 +28,10 @@ s₁³ s₋₁ s₂ (s₁s₋₁)² s₁³ s₋₁³,
 The eighth of these, `(abab²ab²)⁶`, is annotated "Is redundant, but very useful." in the source, and
 the source's header records the two resulting counts as "NoRels: 8 [or 9]" with lengths 190 and 238.
 Unlike the redundant words of the neighbouring ATLAS files — `M24G1-P1`, transcribed in
-`TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Mathieu.TwentyFour`, comments its redundant word
-out of the Magma `Group<x, y | ...>` constructor — this word stands inside the relator list as
-written, so it is transcribed and the recorded relator count is nine. The source's demonstration of
-correctness covers the list both with and without it.
+`TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Mathieu.TwentyFour.Presentation`, comments its
+redundant word out of the Magma `Group<x, y | ...>` constructor — this word stands inside the
+relator list as written, so it is transcribed and the recorded relator count is nine. The source's
+demonstration of correctness covers the list both with and without it.
 
 The source's commutator convention is `[r,s] = r⁻¹s⁻¹rs`, opposite to Mathlib's
 `commutatorElement`, so the commutator is stored as `Relator.commInvInv r s` as

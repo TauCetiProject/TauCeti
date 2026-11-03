@@ -142,7 +142,7 @@ theorem adjoin_setOf_repartitionDualMul_eq_adjoin (hF : IsFunctionField k F)
       hspan ▸ Submodule.subset_span ⟨⟨i, hi⟩, rfl⟩
     refine IntermediateField.adjoin_simple_le_iff.mpr (IntermediateField.subset_adjoin _ _ ?_)
     refine ⟨_, hmem 1 (by omega), ω₀, ?_, hω₀, by rw [pow_one]⟩
-    simpa only [pow_zero, map_one, Module.End.one_apply] using hmem 0 (by omega)
+    simpa only [pow_zero, map_one, one_apply_eq_self] using hmem 0 (by omega)
 
 end IndexTwo
 

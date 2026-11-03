@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightTwo.Congruence
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightTwo.Subspace
 import TauCeti.NumberTheory.ModularForms.CharacterDecomp
-import TauCeti.NumberTheory.ModularForms.Cusps.WeightTwo
+import TauCeti.NumberTheory.ModularForms.Cusps.Weight.Two
 import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightTwo.Raising
 import TauCeti.NumberTheory.ModularForms.SturmBound
 
