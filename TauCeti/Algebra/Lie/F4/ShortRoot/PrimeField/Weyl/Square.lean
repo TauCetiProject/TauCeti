@@ -55,6 +55,20 @@ theorem simpleWeylPoint_inv (i : Fin 4) (A : Type v) [CommRing A] [Algebra (ZMod
     (simpleWeylPoint i A)⁻¹ = simpleWeylPoint i A :=
   inv_eq_of_mul_eq_one_right (by rw [← sq, simpleWeylPoint_sq])
 
+/-- Two equal adjacent pinned simple Weyl representatives cancel in characteristic two. -/
+@[simp]
+theorem simpleWeylPoint_mul_self (i : Fin 4) (A : Type v) [CommRing A]
+    [Algebra (ZMod 2) A] :
+    simpleWeylPoint i A * simpleWeylPoint i A = 1 := by
+  rw [← sq, simpleWeylPoint_sq]
+
+/-- Equal adjacent pinned simple Weyl representatives cancel before any remaining factor. -/
+@[simp]
+theorem simpleWeylPoint_mul_self_mul (i : Fin 4) (A : Type v) [CommRing A]
+    [Algebra (ZMod 2) A] (g : points A) :
+    simpleWeylPoint i A * (simpleWeylPoint i A * g) = g := by
+  rw [← mul_assoc, simpleWeylPoint_mul_self, one_mul]
+
 /-- Reversing a Weyl word in characteristic two gives its inverse. This does not assert
 independence of the chosen word representing an abstract Weyl-group element. -/
 @[simp]
