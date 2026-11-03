@@ -503,15 +503,19 @@ theorem hasLaw_markovChainLaw_iff [IsFiniteMeasure ν] (hX : ∀ n, AEMeasurable
   rw [pathLaw_def, h.map_eq]
   exact ⟨markovChainLaw_map_eval_zero ν κ, markovChainLaw_map_prefix_succ_eq_compProd ν κ⟩
 
+omit [IsMarkovKernel κ] in
 /-- The joint law of a prefix `(X 0, …, X n)` of a process and one further `κ`-step from its last
 coordinate, evaluated on a rectangle `A ×ˢ C`: it is the integral of `κ (X n) C` over the event
 `{(X 0, …, X n) ∈ A}`. -/
-theorem prefixLaw_compProd_apply_prod [IsFiniteMeasure μ] (hX : ∀ n, Measurable (X n)) (n : ℕ)
-    {A : Set (Fin (n + 1) → α)} (hA : MeasurableSet A) {C : Set α} (hC : MeasurableSet C) :
+theorem prefixLaw_compProd_apply_prod [SFinite μ] [IsSFiniteKernel κ] (hX : ∀ n, Measurable (X n))
+    (n : ℕ) {A : Set (Fin (n + 1) → α)} (hA : MeasurableSet A) {C : Set α} (hC : MeasurableSet C) :
     (prefixLaw μ X (n + 1) ⊗ₘ κ.comap (fun w : Fin (n + 1) → α => w (Fin.last n))
         (measurable_pi_apply (Fin.last n))) (A ×ˢ C) =
       ∫⁻ ω in (fun ω (i : Fin (n + 1)) => X i ω) ⁻¹' A, κ (X n ω) C ∂μ := by
   have hpre : Measurable fun ω (i : Fin (n + 1)) => X i ω := measurable_pi_iff.2 fun i => hX i
+  have : SFinite (prefixLaw μ X (n + 1)) := by
+    rw [prefixLaw_def, blockLaw_def]
+    infer_instance
   rw [Measure.compProd_apply_prod hA hC, prefixLaw_def, blockLaw_def]
   simp only [Kernel.comap_apply]
   rw [setLIntegral_map (f := fun w : Fin (n + 1) → α => κ (w (Fin.last n)) C) hA
