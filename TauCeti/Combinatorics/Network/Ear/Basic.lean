@@ -69,16 +69,6 @@ theorem trace_arrowSet {s t : V} (p : ArrowWalk N.Hom s t) :
     p.trace.arrowSet = {a | a ∈ p.arrows} :=
   (rfl)
 
-@[simp]
-theorem mem_trace_vertexSet {s t : V} {p : ArrowWalk N.Hom s t} {x : V} :
-    x ∈ p.trace.vertexSet ↔ x ∈ p.vertices :=
-  Iff.rfl
-
-@[simp]
-theorem mem_trace_arrowSet {s t : V} {p : ArrowWalk N.Hom s t}
-    {a : Σ x y, N.Hom x y} : a ∈ p.trace.arrowSet ↔ a ∈ p.arrows :=
-  Iff.rfl
-
 theorem source_mem_trace {s t : V} (p : ArrowWalk N.Hom s t) : s ∈ p.trace.vertexSet :=
   @Quiver.Path.start_mem_vertices V ⟨N.Hom⟩ s t p
 
