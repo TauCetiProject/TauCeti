@@ -159,7 +159,7 @@ private theorem exists_row_waldschmidtInterpolationMatrix_mem_map {ι κ : Type*
     have hfj (i : Fin (n + 1)) (j : Fin d) : pderiv j (f i) = C ((ψ j : Fin (n + 1) → K) i) := by
       simp [f, pderiv_X, Pi.single_apply]
     calc D (aeval f G) = ∑ i, aeval f (pderiv i G) * C (∑ j, a j * (ψ j : Fin (n + 1) → K) i) := by
-          simp only [_root_.sum_apply, Derivation.coe_smul, Pi.smul_apply, pderiv_aeval, hfj,
+          simp only [_root_.sum_apply, FunLike.coe_smul, Pi.smul_apply, pderiv_aeval, hfj,
             smul_sum, map_sum, C_mul, mul_sum, D]
           rw [Finset.sum_comm]
           refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
@@ -191,7 +191,7 @@ private theorem exists_row_waldschmidtInterpolationMatrix_mem_map {ι κ : Type*
       ((aeval (u c)).toLinearMap ∘ₗ D.toLinearMap ^ k), fun r ↦ ?_⟩
   refine ⟨aeval f (F r), aeval_mem_restrictTotalDegree hf (hF r), ?_⟩
   ext c
-  simp [waldschmidtOperatorEntry_eq_sum_hasseDeriv, Module.End.pow_apply, hDk, heval, mul_comm]
+  simp [waldschmidtOperatorEntry_eq_sum_hasseDeriv, pow_apply_eq_iterate, hDk, heval, mul_comm]
 
 /-- **Rank of the interpolation matrix on a subspace.** Let the polynomials `F r` have total degree
 at most `T₀` and the exponents `t r` lie in a finite set `T`. If the grid points `s c · y` of the
