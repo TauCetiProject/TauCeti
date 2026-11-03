@@ -187,14 +187,10 @@ theorem norm_tateUniformizationY_le_one (q u : Kˣ) (hq : ‖(q : K)‖ < 1)
 theorem norm_tateUniformizationX_add_tateUniformizationY (q u : Kˣ) (hq : ‖(q : K)‖ < 1)
     (hu : ‖(u : K)‖ = 1) (h : ‖1 - (u : K)‖ = 1) :
     ‖tateUniformizationX q u + tateUniformizationY q u‖ = 1 := by
-  have h0 : (1 - (u : K)) ≠ 0 := norm_ne_zero_iff.mp (by rw [h]; exact one_ne_zero)
-  have hsum : (u : K) / (1 - u) ^ 2 + (u : K) ^ 2 / (1 - u) ^ 3 = u / (1 - u) ^ 3 := by
-    field_simp
-    ring
   have hmain : ‖(u : K) / (1 - u) ^ 3‖ = 1 := by rw [norm_div, norm_pow, hu, h, one_pow, div_one]
   rw [← hmain]
   refine (IsUltrametricDist.norm_eq_of_norm_sub_lt_left ?_).symm
-  rw [norm_sub_rev, hmain, ← hsum, add_sub_add_comm]
+  rw [norm_sub_rev, hmain, ← div_one_sub_sq_add_sq_div_one_sub_cube (u : K), add_sub_add_comm]
   exact ((IsUltrametricDist.norm_add_le_max _ _).trans (max_le
     (norm_tateUniformizationX_sub_le_of_norm_eq_one q u hq hu)
     (norm_tateUniformizationY_sub_le_of_norm_eq_one q u hq hu))).trans_lt hq

@@ -677,14 +677,9 @@ lemma bijective_toLocallyFiniteChains [CompactSpace X] :
   · rw [← toLocallyFiniteChains_apply, ← toLocallyFiniteChains_apply, h]
   · let S := (IsLocallyFiniteChain.finite_setOf_ne_zero (mem_locallyFiniteChains.1 hc)).toFinset
     refine ⟨∑ σ ∈ S, (ιTwistedChainComplex L k σ).hom (c σ), Subtype.ext <| funext fun ρ ↦ ?_⟩
-    rw [toLocallyFiniteChains_apply, map_sum]
-    by_cases hρ : ρ ∈ S
-    · rw [Finset.sum_eq_single_of_mem ρ hρ fun σ _ h ↦
-        twistedChainComplexCoeff_ιTwistedChainComplex_apply_of_ne L h _,
-        twistedChainComplexCoeff_ιTwistedChainComplex_apply]
-    · rw [Finset.sum_eq_zero fun σ hσ ↦ twistedChainComplexCoeff_ιTwistedChainComplex_apply_of_ne
-        L (fun (h : σ = ρ) ↦ hρ (h ▸ hσ)) _]
-      exact (by simpa [S] using hρ : c ρ = 0).symm
+    rw [toLocallyFiniteChains_apply]
+    exact twistedChainComplexCoeff_sum_ιTwistedChainComplex_apply L c fun hρ ↦ by
+      simpa [S] using hρ
 
 /-- On a compact space, the inclusion of twisted chains into locally finite chains is an
 isomorphism of chain complexes. -/
