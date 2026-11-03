@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Colimits
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Closed
 public import Mathlib.Algebra.Homology.Monoidal
 public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
+public import TauCeti.Algebra.Homology.Bifunctor.Basic
 
 /-!
 # The monoidal structure of homological complexes on homogeneous summands
@@ -74,23 +75,16 @@ lemma ι_tensorHom {K₁ K₂ L₁ L₂ : HomologicalComplex C c} (f₁ : K₁ �
   simp [tensorHom_def]
 
 /-- The tensor product of homological complexes of the zero morphism with any morphism is zero. -/
-@[simp]
 lemma zero_tensorHom {K₁ K₂ L₁ L₂ : HomologicalComplex C c} (f₂ : K₂ ⟶ L₂)
     [HasTensor K₁ K₂] [HasTensor L₁ L₂] :
-    tensorHom (0 : K₁ ⟶ L₁) f₂ = 0 := by
-  ext j : 1
-  refine mapBifunctor.hom_ext fun i₁ i₂ h ↦ ?_
-  rw [ι_mapBifunctorMap, zero_f, Functor.map_zero, NatTrans.app_zero, zero_comp, zero_f,
-    comp_zero]
+    tensorHom (0 : K₁ ⟶ L₁) f₂ = 0 :=
+  mapBifunctorMap_zero_left (curriedTensor C) c K₁ L₁ f₂
 
 /-- The tensor product of homological complexes of any morphism with the zero morphism is zero. -/
-@[simp]
 lemma tensorHom_zero {K₁ K₂ L₁ L₂ : HomologicalComplex C c} (f₁ : K₁ ⟶ L₁)
     [HasTensor K₁ K₂] [HasTensor L₁ L₂] :
-    tensorHom f₁ (0 : K₂ ⟶ L₂) = 0 := by
-  ext j : 1
-  refine mapBifunctor.hom_ext fun i₁ i₂ h ↦ ?_
-  rw [ι_mapBifunctorMap, zero_f, Functor.map_zero, zero_comp, comp_zero, zero_f, comp_zero]
+    tensorHom f₁ (0 : K₂ ⟶ L₂) = 0 :=
+  mapBifunctorMap_zero_right (curriedTensor C) c f₁ K₂ L₂
 
 variable [HasZeroObject C] (c) [∀ (X₁ X₂ : GradedObject I C), GradedObject.HasTensor X₁ X₂]
   [∀ X₁, PreservesColimit (Functor.empty.{0} C) ((curriedTensor C).obj X₁)]
