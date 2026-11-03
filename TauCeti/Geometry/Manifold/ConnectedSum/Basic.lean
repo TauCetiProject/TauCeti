@@ -477,10 +477,12 @@ connected sum along `e₁` and `e₂`, through the second punctured summand. -/
 def inrBall (g : E → N) (h : e₂ 0 ∉ range g) : E → ConnectedSum e₁ e₂ :=
   inr e₁ e₂ ∘ punctureBall e₂ g h
 
+@[simp]
 theorem inlBall_apply (h : e₁ 0 ∉ range f) (w : E) :
     inlBall e₁ e₂ f h w = inl e₁ e₂ (punctureBall e₁ f h w) :=
   (rfl)
 
+@[simp]
 theorem inrBall_apply (h : e₂ 0 ∉ range g) (w : E) :
     inrBall e₁ e₂ g h w = inr e₁ e₂ (punctureBall e₂ g h w) :=
   (rfl)
