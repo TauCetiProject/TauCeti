@@ -58,18 +58,14 @@ allowed.
 
 ## Implementation notes
 
-Attainment runs the max-flow/min-cut theorem over `ℤ` (`TauCeti.Flow.exists_val_eq_arrowSum`) on
-the bidirected arrow family `Graph.BidirectedHom G`, with capacity one on every arrow. A maximum
-flow has the value of a cut `S`, which is the number of arrows leaving `S`. Each edge crossing `S`
-gives exactly one arrow leaving `S`, so these arrows come from as many distinct edges, and deleting
-those edges separates `s` from `t`. Directed paths carrying a unit flow may still use the two
-opposite arrows of a single edge, so the flow is first replaced by an acyclic flow of the same
-value (`TauCeti.Flow.exists_isAcyclic`), which is positive on at most one of any two opposite
-arrows. Its decomposition into unit paths then gives arrow-disjoint directed paths no two of which
-use the same edge, and these are edge-disjoint paths of `G`. The set-to-set proof starts from
-`TauCeti.SetFlow.exists_val_eq_arrowSum`, uses `TauCeti.SetFlow.exists_isAcyclic` to cancel cycles
-without changing the flow value, and trims the decomposed paths so their interiors avoid `A ∪ B`.
-The local theorem is the singleton-terminal corollary.
+Attainment starts from `TauCeti.SetFlow.exists_val_eq_arrowSum` over `ℤ` on the bidirected arrow
+family `Graph.BidirectedHom G`, with capacity one on every arrow. A maximum set-to-set flow has the
+value of a cut `S`, the number of arrows leaving `S`. It is replaced by an acyclic flow of the same
+value using `TauCeti.SetFlow.exists_isAcyclic`, decomposed into arrow-disjoint unit paths, and
+trimmed so the path interiors avoid `A ∪ B`. Acyclicity prevents two paths from using opposite
+orientations of one edge. Each cut edge supplies exactly one arrow leaving `S`, so the cut arrows
+have distinct underlying edges; deleting those edges separates `B` from `A`. The local theorem is
+the singleton-terminal corollary.
 
 ## References
 
@@ -94,7 +90,7 @@ variable {α : Type u} {β : Type v} {G : Graph α β} {s t : α}
 /-- **Weak duality for edge-disjoint set-to-set walks.** A family of walks, each from a vertex of
 `A` to a vertex of `B`, of which no two traverse a common edge has at most as many members as any
 set of edges whose deletion leaves no vertex of `B` reachable from a vertex of `A`. No finiteness
-assumption is needed. -/
+assumption is needed, but `A` must consist of actual vertices. -/
 theorem card_le_encard_of_forall_not_reachable_deleteEdges {A B : Set α} {ι : Type*}
     {a b : ι → α} {P : ∀ i, G.Walk (a i) (b i)} (ha : ∀ i, a i ∈ A) (hb : ∀ i, b i ∈ B)
     (hA : A ⊆ V(G)) (hP : Pairwise fun i j ↦ (P i).edges.Disjoint (P j).edges) {F : Set β}
@@ -156,35 +152,24 @@ theorem exists_paths_setEdgeSeparator_card_eq [Finite V(G)] [Finite E(G)] {A B :
     (cap := (1 : Assignment G.BidirectedHom ℤ)) hAB' fun _ _ _ ↦ zero_le_one
   -- Cancel cycles without changing the flow value, then decompose into arrow-disjoint unit paths.
   obtain ⟨g, hg, hgval, -⟩ := f.exists_isAcyclic
-  obtain ⟨k, a, b, P, hk, ha, hb, hP, hone, hdisj⟩ :=
+  obtain ⟨k, a, b, P, hk, ha, hb, hP, hint, hone, hdisj⟩ :=
     g.exists_paths_card_eq_val fun _ _ e ↦ g.le_cap e
-  -- Trim each path so that its internal vertices avoid both terminal sets.
-  have htrim (i : Fin k) : ∃ a' ∈ A', ∃ b' ∈ B', ∃ q : ArrowWalk G.BidirectedHom a' b',
-      q.IsPath ∧ q.arrows ⊆ (P i).arrows ∧
-      ∀ v ∈ q.vertices, v ≠ a' → v ≠ b' → v ∉ A' ∧ v ∉ B' := by
-    obtain ⟨a', ha', b', hb', q, hq, -, hsub, hint⟩ :=
-      ArrowWalk.exists_isPath_interior_notMem (A := (A' : Set V(G))) (B := (B' : Set V(G)))
-        (P i) (ha i) (hb i)
-    exact ⟨a', ha', b', hb', q, hq, hsub, by simpa using hint⟩
-  choose a' ha' b' hb' Q hQ hQsub hQint using htrim
   -- The acyclic assignment cannot support opposite orientations of one edge, so the trimmed
   -- arrow-disjoint paths are also edge-disjoint in the multigraph.
-  have hQdisj : Pairwise fun i j ↦ (Q i).toGraphWalk.edges.Disjoint (Q j).toGraphWalk.edges :=
-    pairwise_disjoint_edges_toGraphWalk hg
-      (fun i e he ↦ hone i e (hQsub i he))
-      fun i j hij _ hi hj ↦ hdisj hij (hQsub i hi) (hQsub j hj)
+  have hPdisj : Pairwise fun i j ↦ (P i).toGraphWalk.edges.Disjoint (P j).toGraphWalk.edges :=
+    pairwise_disjoint_edges_toGraphWalk hg hone hdisj
   -- The edges underlying the cut arrows separate the terminal sets.
   let C : Finset (Σ x y, G.BidirectedHom x y) := {e | e.1 ∈ S ∧ e.2.1 ∈ Sᶜ}
-  refine ⟨k, fun i ↦ a' i, fun i ↦ b' i, fun i ↦ (Q i).toGraphWalk,
-    C.image fun e ↦ e.2.2.1, fun i ↦ by simpa [A'] using ha' i,
-    fun i ↦ by simpa [B'] using hb' i,
-    fun i ↦ (ArrowWalk.isPath_toGraphWalk_iff _).2 (hQ i), ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨k, fun i ↦ a i, fun i ↦ b i, fun i ↦ (P i).toGraphWalk,
+    C.image fun e ↦ e.2.2.1, fun i ↦ by simpa [A'] using ha i,
+    fun i ↦ by simpa [B'] using hb i,
+    fun i ↦ (ArrowWalk.isPath_toGraphWalk_iff _).2 (hP i), ?_, ?_, ?_, ?_, ?_⟩
   · intro i v hv hva hvb
     obtain ⟨hvG, hvQ⟩ := (ArrowWalk.mem_support_toGraphWalk_iff _).1 hv
-    have hvint := hQint i ⟨v, hvG⟩ hvQ
+    have hvint := hint i ⟨v, hvG⟩ hvQ
       (fun h ↦ hva (congrArg Subtype.val h)) (fun h ↦ hvb (congrArg Subtype.val h))
     simpa [A', B'] using hvint
-  · exact hQdisj
+  · exact hPdisj
   · rintro e he
     obtain ⟨a, -, rfl⟩ := mem_image.1 he
     exact a.2.2.2.edge_mem
@@ -197,12 +182,9 @@ theorem exists_paths_setEdgeSeparator_card_eq [Finite V(G)] [Finite E(G)] {A B :
       ⟨p.toBidirected hxG, fun e he heC ↦ hp e.2.2.1
         (p.edges_toBidirected hxG ▸ List.mem_map_of_mem he)
         (mem_coe.2 (mem_image_of_mem _ heC))⟩
-    refine disjoint_left.1 hS.disjoint
-      (hC.mem_of_mem (C := (S : Set V(G))) (hS.subset ?_) fun v w e hv he ↦ ?_) ?_
-    · simpa [A'] using hx
-    · by_contra hw
-      exact he (by simpa [C] using ⟨hv, hw⟩)
-    · simpa [B'] using hy
+    exact hS.not_reachableWithout_of_cut_subset
+      (by intro v w e hv hw; simpa [C] using ⟨hv, hw⟩)
+      ⟨x, hxG⟩ (by simpa [A'] using hx) ⟨y, hyG⟩ (by simpa [B'] using hy) hC
   · -- Cut arrows have distinct underlying edges, giving the cardinality equality.
     rw [card_image_of_injOn, ← Nat.cast_inj (R := ℤ), hk, hgval, hval, arrowSum_one]
     rintro e he e' he' h
@@ -252,14 +234,15 @@ theorem isEdgeReachable_iff_exists_paths [Finite V(G)] [Finite E(G)] (hs : s ∈
     obtain ⟨m, P, F, hP, hdisj, -, hF, hFm⟩ := exists_paths_edgeSeparator_card_eq (G := G) hst
     have hkm : k ≤ m := hFm ▸ not_lt.1 fun hlt ↦ hF (isEdgeReachable_def.1 h (by simpa using hlt))
     exact ⟨fun i ↦ P (Fin.castLE hkm i), fun i ↦ hP _,
-      fun i j hij ↦ hdisj fun h ↦ hij (Fin.castLE_injective hkm h)⟩
+      hdisj.comp_of_injective (Fin.castLE_injective hkm)⟩
   · by_contra h
     exact hF.not_ge (by simpa using card_le_encard_of_not_reachable_deleteEdges hP hs h)
 
 /-- **Menger's theorem for edge-disjoint paths between vertex sets in a multigraph, predicate
-form.** For disjoint finite sets `A` and `B` in a finite multigraph, deleting fewer than `k` edges
-always leaves some vertex of `B` reachable from some vertex of `A` exactly when there are `k`
-pairwise edge-disjoint `A`–`B` paths with no internal terminal vertex. -/
+form.** For disjoint finite sets `A` and `B` in a finite multigraph, with `A` consisting of actual
+vertices, deleting fewer than `k` edges always leaves some vertex of `B` reachable from some vertex
+of `A` exactly when there are `k` pairwise edge-disjoint `A`–`B` paths with no internal terminal
+vertex. -/
 theorem forall_exists_reachable_deleteEdges_iff_exists_paths [Finite V(G)] [Finite E(G)]
     {A B : Finset α} (hA : (A : Set α) ⊆ V(G)) (hAB : Disjoint A B) (k : ℕ) :
     (∀ F : Finset β, #F < k → ∃ a ∈ A, ∃ b ∈ B, (G.deleteEdges F).Reachable a b) ↔
@@ -275,7 +258,7 @@ theorem forall_exists_reachable_deleteEdges_iff_exists_paths [Finite V(G)] [Fini
       hsep a ha b hb hab
     exact ⟨fun i ↦ a (Fin.castLE hkm i), fun i ↦ b (Fin.castLE hkm i),
       fun i ↦ P (Fin.castLE hkm i), fun i ↦ ha _, fun i ↦ hb _, fun i ↦ hP _,
-      fun i ↦ hint _, fun i j hij ↦ hdisj fun h ↦ hij (Fin.castLE_injective hkm h)⟩
+      fun i ↦ hint _, hdisj.comp_of_injective (Fin.castLE_injective hkm)⟩
   · by_contra h
     push Not at h
     have hle := card_le_encard_of_forall_not_reachable_deleteEdges (G := G)
@@ -379,19 +362,26 @@ theorem forall_exists_reachable_deleteEdges_iff_exists_paths [Finite α] {A B : 
         (∀ i, b i ∈ B) ∧ (∀ i, (P i).IsPath) ∧
         (∀ i, ∀ v ∈ (P i).support, v ≠ a i → v ≠ b i → v ∉ A ∧ v ∉ B) ∧
         Pairwise fun i j ↦ (P i).edges.Disjoint (P j).edges := by
-  refine ⟨fun h ↦ ?_, fun ⟨a, b, P, ha, hb, _hP, _hint, hdisj⟩ F hF ↦ ?_⟩
-  · obtain ⟨m, a, b, P, F, ha, hb, hP, hint, hdisj, -, hsep, hFm⟩ :=
-      exists_paths_setEdgeSeparator_card_eq (G := G) hAB
-    have hkm : k ≤ m := hFm ▸ not_lt.1 fun hlt ↦
-      let ⟨a, ha, b, hb, hab⟩ := h F hlt
-      hsep a ha b hb hab
-    exact ⟨fun i ↦ a (Fin.castLE hkm i), fun i ↦ b (Fin.castLE hkm i),
-      fun i ↦ P (Fin.castLE hkm i), fun i ↦ ha _, fun i ↦ hb _, fun i ↦ hP _,
-      fun i ↦ hint _, fun i j hij ↦ hdisj fun h ↦ hij (Fin.castLE_injective hkm h)⟩
-  · by_contra h
-    push Not at h
-    have hle := card_le_encard_of_forall_not_reachable_deleteEdges (G := G)
-      (A := (A : Set α)) (B := (B : Set α)) ha hb hdisj (F := (F : Set (Sym2 α))) h
-    exact hF.not_ge (by simpa using hle)
+  have : Finite (Graph.ofSimpleGraph G).vertexSet := Subtype.finite
+  have : Finite (Graph.ofSimpleGraph G).edgeSet := Subtype.finite
+  have hgraph := Graph.forall_exists_reachable_deleteEdges_iff_exists_paths
+    (G := Graph.ofSimpleGraph G) (fun _ _ ↦ Set.mem_univ _) hAB k
+  rw [show (∀ F : Finset (Sym2 α), #F < k →
+      ∃ a ∈ A, ∃ b ∈ B, (G.deleteEdges F).Reachable a b) ↔
+      ∃ (a b : Fin k → α) (P : ∀ i, (Graph.ofSimpleGraph G).Walk (a i) (b i)),
+        (∀ i, a i ∈ A) ∧ (∀ i, b i ∈ B) ∧ (∀ i, (P i).IsPath) ∧
+        (∀ i, ∀ v ∈ (P i).support, v ≠ a i → v ≠ b i → v ∉ A ∧ v ∉ B) ∧
+        Pairwise fun i j ↦ (P i).edges.Disjoint (P j).edges by
+    simpa only [Graph.ofSimpleGraph_deleteEdges, reachable_ofSimpleGraph_iff] using hgraph]
+  refine ⟨fun ⟨a, b, P, ha, hb, hP, hint, hdisj⟩ ↦
+    ⟨a, b, fun i ↦ (P i).toSimpleGraph, ha, hb, fun i ↦ ?_, ?_, ?_⟩,
+    fun ⟨a, b, P, ha, hb, hP, hint, hdisj⟩ ↦
+    ⟨a, b, fun i ↦ (P i).toGraph, ha, hb, fun i ↦ ?_, ?_, ?_⟩⟩
+  · exact (Graph.Walk.isPath_toSimpleGraph_iff _).2 (hP i)
+  · simpa only [Graph.Walk.support_toSimpleGraph] using hint
+  · simpa only [Graph.Walk.edges_toSimpleGraph] using hdisj
+  · exact (Walk.isPath_toGraph_iff _).2 (hP i)
+  · simpa only [Walk.support_toGraph] using hint
+  · simpa only [Walk.edges_toGraph] using hdisj
 
 end SimpleGraph
