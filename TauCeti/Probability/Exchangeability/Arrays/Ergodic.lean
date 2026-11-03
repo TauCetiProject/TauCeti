@@ -113,8 +113,8 @@ private theorem measure_eq_zero_or_one_of_jointlyDissociated
     ?_
   intro ε hε
   -- Step 1: the approximating cylinder `t` on a finite square `I × I` inside `[0, N)²`.
-  obtain ⟨F, S, hS, hFS⟩ := TauCeti.MeasureTheory.exists_cylinder_measure_symmDiff_lt (ρ := ρ) hs
-    (ε := ENNReal.ofReal ε) (ENNReal.ofReal_pos.mpr hε)
+  obtain ⟨F, S, hS, hFS⟩ := TauCeti.MeasureTheory.exists_cylinder_measure_symmDiff_lt
+    (ρ := ρ) hs.nullMeasurableSet (ε := ENNReal.ofReal ε) (ENNReal.ofReal_pos.mpr hε)
   let I : Finset ℕ := F.image Prod.fst ∪ F.image Prod.snd
   have hFI : ∀ p ∈ F, p.1 ∈ I ∧ p.2 ∈ I := by
     intro p hp
@@ -197,7 +197,7 @@ theorem ergodicSMul_of_jointlyDissociated {ρ : Measure (ℕ × ℕ → α)} [Is
     [SMulInvariantMeasure FinitaryPerm (ℕ × ℕ → α) ρ]
     (hdiss : JointlyDissociated ρ fun p x => x p) :
     ErgodicSMul FinitaryPerm (ℕ × ℕ → α) ρ := by
-  refine TauCeti.MeasureTheory.ergodicSMul_of_forall_smul_invariant fun s hs hinv => ?_
+  refine TauCeti.MeasureTheory.ergodicSMul_iff_forall_smul_invariant.2 fun s hs hinv => ?_
   rcases eq_zero_or_isProbabilityMeasure ρ with rfl | _
   · exact eventuallyEmptyOrUniv_iff'.mpr (Or.inl (by rw [ae_zero]; exact Filter.eventually_bot))
   refine eventuallyEmptyOrUniv_iff'.mpr ?_
@@ -375,7 +375,7 @@ theorem jointlyDissociated_iff_ergodicSMul_pair {ρ : Measure (ℕ × ℕ → α
     let := hexch.jointlyExchangeable.smulInvariantMeasure
     let : ErgodicSMul FinitaryPerm (ℕ × ℕ → α) ρ :=
       ergodicSMul_of_jointlyDissociated hdiss
-    apply TauCeti.MeasureTheory.ergodicSMul_of_forall_smul_invariant
+    apply TauCeti.MeasureTheory.ergodicSMul_iff_forall_smul_invariant.2
     intro s hs hinv
     apply MeasureTheory.aeconst_of_forall_preimage_smul_ae_eq FinitaryPerm hs.nullMeasurableSet
     intro g
