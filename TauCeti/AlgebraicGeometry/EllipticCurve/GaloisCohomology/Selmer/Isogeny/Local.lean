@@ -29,9 +29,9 @@ where `H¹_φ(K_v) ⊆ H¹(G_{K_v}, E₁[φ])` is the image of the local Kummer 
 This file identifies the local conditions with these indices and computes them where the residue
 characteristic does not divide `deg φ`:
 
-* over every field, the image of the Kummer map has order `[E₂(K) : φ(E₁(K))]`, and so does the
-  local condition at `L i` of the `φ`-Selmer structure of a family of extensions `L i`;
-* over a separably closed field (for instance at a complex place) the Kummer image is trivial;
+* over every field, the image of the Kummer map has order `[E₂(K) : φ(E₁(K))]`
+  (`TauCeti.Isogeny.natCard_range_kummerMap`), and so does the local condition at `L i` of the
+  `φ`-Selmer structure of a family of extensions `L i`;
 * at a finite place `u` of a Dedekind domain with finite residue field, prime to `deg φ`, the
   Kummer image is finite;
 * over the fraction field `K` of a Dedekind domain with finite residue fields, when `deg φ` is
@@ -45,13 +45,8 @@ formal group and the real period, are not computed here.
 
 ## Main results
 
-* `TauCeti.Isogeny.quotientRangeEquivRangeKummerMap`: the Kummer map identifies
-  `E₂(K) ⧸ φ(E₁(K))` with its image.
-* `TauCeti.Isogeny.natCard_range_kummerMap`: `#im(κ_φ) = [E₂(K) : φ(E₁(K))]`.
 * `TauCeti.Isogeny.natCard_localCondition_selmerStructure`: the local condition of the `φ`-Selmer
   structure at `L i` has order `[E₂(L i) : φ(E₁(L i))]`.
-* `TauCeti.Isogeny.natCard_range_kummerMap_of_isSepClosed`: the Kummer image is trivial over a
-  separably closed field.
 * `TauCeti.Isogeny.finite_range_kummerMap_of_degree_notMem`: the local Kummer image at a finite
   place prime to `deg φ` is finite.
 * `TauCeti.Isogeny.eventually_natCard_localCondition_selmerStructure_eq`: for almost every finite
@@ -79,51 +74,6 @@ section Field
 
 variable {K : Type*} [Field K] {W₁ W₂ : WeierstrassCurve K} [W₁.IsElliptic] [W₂.IsElliptic]
   (φ : Isogeny W₁.toAffine W₂.toAffine)
-
-section Kummer
-
-variable [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.toAffine.FunctionField] [DecidableEq K]
-
-/-- **The Kummer image is a copy of the cokernel**: the Kummer map of a separable isogeny induces
-an isomorphism of `E₂(K) ⧸ φ(E₁(K))` onto its image in `H¹(G_K, E₁[φ])`, its kernel being
-`φ(E₁(K))` (`TauCeti.Isogeny.ker_kummerMap`). -/
-def quotientRangeEquivRangeKummerMap :
-    W₂.toAffine.Point ⧸ (ofIsogeny φ).pointMapHom.range ≃+ φ.kummerMap.range :=
-  (QuotientAddGroup.quotientAddEquivOfEq φ.ker_kummerMap.symm).trans
-    (QuotientAddGroup.quotientKerEquivRange φ.kummerMap)
-
-/-- `quotientRangeEquivRangeKummerMap` sends the class of `P` to its Kummer class. -/
-@[simp]
-theorem coe_quotientRangeEquivRangeKummerMap_mk (P : W₂.toAffine.Point) :
-    (φ.quotientRangeEquivRangeKummerMap (QuotientAddGroup.mk P) :
-        H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff) = φ.kummerMap P :=
-  (rfl)
-
-/-- **The Kummer image has order the Kummer-cokernel index** `[E₂(K) : φ(E₁(K))]`. As a
-`Nat.card` identity it holds without finiteness hypotheses, both sides being `0` when the
-cokernel is infinite. -/
-theorem natCard_range_kummerMap :
-    Nat.card φ.kummerMap.range = (ofIsogeny φ).pointMapHom.range.index := by
-  rw [AddSubgroup.index_eq_card]
-  exact (Nat.card_congr φ.quotientRangeEquivRangeKummerMap.toEquiv).symm
-
-variable {φ} in
-/-- The Kummer image is finite exactly when the image of `E₁(K)` has finite index in `E₂(K)`. -/
-theorem finite_range_kummerMap_iff :
-    Finite φ.kummerMap.range ↔ (ofIsogeny φ).pointMapHom.range.FiniteIndex := by
-  rw [AddSubgroup.finiteIndex_iff_finite_quotient]
-  exact (Equiv.finite_iff φ.quotientRangeEquivRangeKummerMap.toEquiv).symm
-
-/-- **Over a separably closed field the Kummer image is trivial**, a separable isogeny being
-onto on points there. This is the local factor at a complex place. -/
-theorem natCard_range_kummerMap_of_isSepClosed [IsSepClosed K] :
-    Nat.card φ.kummerMap.range = 1 := by
-  rw [natCard_range_kummerMap, AddSubgroup.index_eq_one, AddMonoidHom.range_eq_top]
-  intro Q
-  obtain ⟨P, rfl⟩ := φ.toPointHom_surjective Q
-  exact ⟨P, by rw [Hom.pointMapHom_apply, Hom.pointMap_ofIsogeny_eq_toPointHom]⟩
-
-end Kummer
 
 /-! ### The local conditions of the `φ`-Selmer structure -/
 

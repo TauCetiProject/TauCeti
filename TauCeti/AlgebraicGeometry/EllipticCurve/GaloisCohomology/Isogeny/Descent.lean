@@ -52,6 +52,8 @@ out of the middle term by local conditions, as in `WeierstrassCurve.selmerGroup`
 * `TauCeti.Isogeny.kummerShortExact`: the Kummer sequence of a separable isogeny.
 * `TauCeti.Isogeny.kummerMap`: the Kummer map `E₂(K) → H¹(G_K, E₁[φ])`.
 * `TauCeti.Isogeny.kummerClassMap`: the induced map on `E₂(K) ⧸ φ(E₁(K))`.
+* `TauCeti.Isogeny.quotientRangeEquivRangeKummerMap`: the identification of `E₂(K) ⧸ φ(E₁(K))`
+  with the image of the Kummer map.
 * `TauCeti.Isogeny.kerCoeffInclH1`: the map `H¹(G_K, E₁[φ]) → H¹(G_K, E₁)[φ]`.
 
 ## Main results
@@ -60,6 +62,9 @@ out of the middle term by local conditions, as in `WeierstrassCurve.selmerGroup`
   `E₁(K)`.
 * `TauCeti.Isogeny.kummerMap_eq_H1pi`: the Kummer class of `P` is the class of `σ ↦ σ Q - Q`.
 * `TauCeti.Isogeny.ker_kummerMap`: the kernel of the Kummer map is `φ(E₁(K))`.
+* `TauCeti.Isogeny.natCard_range_kummerMap`: the image of the Kummer map has order
+  `[E₂(K) : φ(E₁(K))]`; it is trivial over a separably closed field
+  (`TauCeti.Isogeny.natCard_range_kummerMap_of_isSepClosed`).
 * `TauCeti.Isogeny.kummerClassMap_injective`, `TauCeti.Isogeny.exact_kummerClassMap_kerCoeffInclH1`
   and `TauCeti.Isogeny.kerCoeffInclH1_surjective`: the `φ`-descent sequence.
 
@@ -349,6 +354,45 @@ theorem kummerClassMap_mk (P : W₂.toAffine.Point) :
 exactly `φ(E₁(K))`. -/
 theorem kummerClassMap_injective : Function.Injective φ.kummerClassMap :=
   (QuotientAddGroup.injective_lift_iff _ _ _).2 φ.ker_kummerMap.symm
+
+/-- **The Kummer image is a copy of the cokernel**: the Kummer map of a separable isogeny induces
+an isomorphism of `E₂(K) ⧸ φ(E₁(K))` onto its image in `H¹(G_K, E₁[φ])`, its kernel being
+`φ(E₁(K))` (`TauCeti.Isogeny.ker_kummerMap`). -/
+def quotientRangeEquivRangeKummerMap :
+    W₂.toAffine.Point ⧸ (ofIsogeny φ).pointMapHom.range ≃+ φ.kummerMap.range :=
+  (QuotientAddGroup.quotientAddEquivOfEq φ.ker_kummerMap.symm).trans
+    (QuotientAddGroup.quotientKerEquivRange φ.kummerMap)
+
+/-- `quotientRangeEquivRangeKummerMap` sends the class of `P` to its Kummer class. -/
+@[simp]
+theorem coe_quotientRangeEquivRangeKummerMap_mk (P : W₂.toAffine.Point) :
+    (φ.quotientRangeEquivRangeKummerMap (QuotientAddGroup.mk P) :
+        H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).KerCoeff) = φ.kummerMap P :=
+  (rfl)
+
+/-- **The Kummer image has order the Kummer-cokernel index** `[E₂(K) : φ(E₁(K))]`. As a
+`Nat.card` identity it holds without finiteness hypotheses, both sides being `0` when the
+cokernel is infinite. -/
+theorem natCard_range_kummerMap :
+    Nat.card φ.kummerMap.range = (ofIsogeny φ).pointMapHom.range.index := by
+  rw [← AddSubgroup.index_ker, φ.ker_kummerMap]
+
+variable {φ} in
+/-- The Kummer image is finite exactly when the image of `E₁(K)` has finite index in `E₂(K)`. -/
+theorem finite_range_kummerMap_iff :
+    Finite φ.kummerMap.range ↔ (ofIsogeny φ).pointMapHom.range.FiniteIndex := by
+  rw [AddSubgroup.finiteIndex_iff_finite_quotient]
+  exact (Equiv.finite_iff φ.quotientRangeEquivRangeKummerMap.toEquiv).symm
+
+/-- **Over a separably closed field the Kummer image is trivial**, a separable isogeny being
+onto on points there. At a complex place this is the numerator of the local factor
+`#H¹_φ(K_v) / #E₁(K_v)[φ]`, which is therefore `1 / deg φ`. -/
+theorem natCard_range_kummerMap_of_isSepClosed [IsSepClosed K] :
+    Nat.card φ.kummerMap.range = 1 := by
+  rw [natCard_range_kummerMap, AddSubgroup.index_eq_one, AddMonoidHom.range_eq_top]
+  intro Q
+  obtain ⟨P, rfl⟩ := φ.toPointHom_surjective Q
+  exact ⟨P, by rw [Hom.pointMapHom_apply, Hom.pointMap_ofIsogeny_eq_toPointHom]⟩
 
 /-- **The image of the Kummer map is the kernel of `H¹(G_K, E₁[φ]) → H¹(G_K, E₁)`.** -/
 theorem range_kummerMap :
