@@ -15,8 +15,11 @@ public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 /-!
 # Constructions on chain homotopies
 
-Four constructions of chain homotopies: two produce new homotopies from old ones, and the
-other two assemble a null-homotopy from components given all at once.
+Constructions of chain homotopies, including composition of homotopy-commutative squares,
+transport and iteration of homotopies, and assembly of null-homotopies from components.
+
+`Homotopy.compSquare` composes specified square homotopies by postcomposing the first
+and precomposing the second, retaining their sum rather than choosing a new outer homotopy.
 
 `Homotopy.descCokernel` descends a homotopy along a degreewise cokernel.  Let `p : L ⟶ M` exhibit
 `M` in each degree as the cokernel of `u : K ⟶ L`, and let `p' : L' ⟶ M'` be any morphism of
@@ -71,6 +74,32 @@ open CategoryTheory Limits
 universe v u
 
 namespace Homotopy
+
+section Squares
+
+variable {C : Type u} [Category.{v} C] [Preadditive C]
+  {ι : Type*} {c : ComplexShape ι}
+  {K₁ L₁ K₂ L₂ K₃ L₃ : HomologicalComplex C c}
+  {φ₁ : K₁ ⟶ L₁} {φ₂ : K₂ ⟶ L₂} {φ₃ : K₃ ⟶ L₃}
+  {a : K₁ ⟶ K₂} {b : L₁ ⟶ L₂} {a' : K₂ ⟶ K₃} {b' : L₂ ⟶ L₃}
+
+/-- Compose two specified homotopy-commutative squares. The homotopy is the sum of the
+postcomposition of the first homotopy and the precomposition of the second. -/
+def compSquare (H : Homotopy (φ₁ ≫ b) (a ≫ φ₂))
+    (H' : Homotopy (φ₂ ≫ b') (a' ≫ φ₃)) :
+    Homotopy (φ₁ ≫ (b ≫ b')) ((a ≫ a') ≫ φ₃) :=
+  (Homotopy.ofEq (Category.assoc _ _ _).symm).trans
+    ((H.compRight b').trans
+      ((Homotopy.ofEq (Category.assoc _ _ _)).trans
+        ((H'.compLeft a).trans (Homotopy.ofEq (Category.assoc _ _ _).symm))))
+
+@[simp]
+lemma compSquare_hom (H : Homotopy (φ₁ ≫ b) (a ≫ φ₂))
+    (H' : Homotopy (φ₂ ≫ b') (a' ≫ φ₃)) (p q : ι) :
+    (H.compSquare H').hom p q = H.hom p q ≫ b'.f q + a.f p ≫ H'.hom p q := by
+  simp [compSquare]
+
+end Squares
 
 /-- On cycles, the difference of homotopic maps factors through the preceding target term.
 This identity does not require exactness of either complex. -/
