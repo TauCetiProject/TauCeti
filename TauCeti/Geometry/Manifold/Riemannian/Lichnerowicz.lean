@@ -126,7 +126,7 @@ theorem finrank_mul_le_of_laplaceBeltrami_eq_neg_mul
     integral_const_mul, integral_const_mul, hzero, mul_zero, henergy] at hint
   obtain ⟨x, hx⟩ := hne
   have hpos : 0 < ∫ x, f x ^ 2 ∂μ :=
-    (hf.continuous.pow 2).integral_pos_of_hasCompactSupport_nonneg_nonzero
+    (hf.continuous.pow 2).integral_pos_of_hasCompactSupport_nonneg_ne_zero
       (HasCompactSupport.of_compactSpace _) (fun _ ↦ sq_nonneg _) (pow_ne_zero 2 hx)
   have hn' : 1 < n := by dsimp [n]; exact_mod_cast (show 1 < Module.finrank ℝ E by omega)
   -- The integrated inequality factors as 2 * lam * (n - 1) * (∫ f²) * (n * k - lam) ≤ 0.
