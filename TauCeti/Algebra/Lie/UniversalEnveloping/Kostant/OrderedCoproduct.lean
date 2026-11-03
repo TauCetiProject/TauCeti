@@ -24,8 +24,6 @@ Chevalley relations, or finite-dimensionality hypothesis is needed.
 
 ## Main results
 
-* `TauCeti.UniversalEnvelopingAlgebra.kostantFormComul_generator`: the common coproduct
-  formula for the two families.
 * `TauCeti.UniversalEnvelopingAlgebra.kostantFormComul_prod_ofFn_generator`: the
   coefficient-one expansion for any ordered mixed product, including the empty product.
 
@@ -47,28 +45,6 @@ variable {L : Type u} [LieRing L] [LieAlgebra ℚ L]
 variable {ι : Type v} {κ : Type w}
 
 attribute [local instance] TauCeti.moduleNNRat
-
-/-- Root divided powers and Cartan binomials share the coefficient-one integral coproduct. -/
-@[simp]
-theorem kostantFormComul_generator (e : ι → L) (h : κ → L) (i : ι ⊕ κ) (n : ℕ) :
-    kostantFormComul e h (kostantGenerator e h i n) =
-      ∑ p ∈ Finset.antidiagonal n,
-        kostantGenerator e h i p.1 ⊗ₜ[ℤ] kostantGenerator e h i p.2 := by
-  cases i with
-  | inl i =>
-    have hgen (m : ℕ) : kostantGenerator e h (.inl i) m =
-        ⟨Associative.dividedPower m (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)),
-          dividedPower_mem_kostantForm e h i m⟩ :=
-      Subtype.ext (coe_kostantGenerator_inl e h i m)
-    simpa only [hgen, _root_.UniversalEnvelopingAlgebra.ι_apply] using
-      kostantFormComul_dividedPower e h i n
-  | inr j =>
-    have hgen (m : ℕ) : kostantGenerator e h (.inr j) m =
-        ⟨Ring.choose (_root_.UniversalEnvelopingAlgebra.ι ℚ (h j)) m,
-          ringChoose_mem_kostantForm e h j m⟩ :=
-      Subtype.ext (coe_kostantGenerator_inr e h j m)
-    simpa only [hgen, _root_.UniversalEnvelopingAlgebra.ι_apply] using
-      kostantFormComul_ringChoose e h j n
 
 /-- **The integral coproduct of an ordered mixed Kostant monomial.** Split each exponent
 independently into two nonnegative parts and retain the original order in each tensor leg.
