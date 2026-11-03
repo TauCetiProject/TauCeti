@@ -39,12 +39,21 @@ theorem representation_dual :
     hopfAlgebraStructAntipode_eq_antipode, _root_.UniversalEnvelopingAlgebra.antipode_ι,
     map_neg, LinearMap.neg_apply, Module.Dual.lie_apply]
 
+end TauCeti.UniversalEnvelopingAlgebra
+
+namespace UniversalEnvelopingAlgebra
+
+open TauCeti.UniversalEnvelopingAlgebra
+
+variable (R L V : Type*) [CommRing R] [LieRing L] [LieAlgebra R L]
+  [AddCommGroup V] [Module R V] [LieRingModule L V] [LieModule R L V]
+
 /-- The dual Lie module's enveloping action is precomposition with the antipode action. -/
 @[simp]
-theorem representation_dual_apply (u : _root_.UniversalEnvelopingAlgebra R L)
+theorem representation_dual_apply (u : UniversalEnvelopingAlgebra R L)
     (φ : Module.Dual R V) (v : V) :
     representation R L (Module.Dual R V) u φ v =
       φ (representation R L V (HopfAlgebra.antipode R u) v) := by
   rw [representation_dual, AlgHom.hopfDual_apply]
 
-end TauCeti.UniversalEnvelopingAlgebra
+end UniversalEnvelopingAlgebra
