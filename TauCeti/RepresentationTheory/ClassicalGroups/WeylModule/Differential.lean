@@ -23,8 +23,9 @@ side the irreducible finite-dimensional module of a dominant weight `μ` is name
   (`TauCeti.IsRationalRep.nonempty_lieModuleEquiv_glIrreducible`). Hence the rational Weyl module
   `V_λ = TauCeti.rationalWeylRep ℂ n λ` of every dominant weight `λ` differentiates to
   `glIrreducible n λ`
-  (`TauCeti.nonempty_lieModuleEquiv_rationalWeylRep_glIrreducible`); for a weight with vanishing
-  last entry, `V_λ` is the Weyl module of the Young diagram `λ`.
+  (`TauCeti.nonempty_lieModuleEquiv_rationalWeylRep_glIrreducible`), and the Weyl module
+  `𝕊^μ(ℂⁿ)` of a Young diagram `μ` with at most `n` rows differentiates to `glIrreducible n μ`
+  (`TauCeti.nonempty_lieModuleEquiv_weylRepOfShape_glIrreducible`).
 * Since the differential of a tensor product is the tensor product of the differentials
   (`TauCeti.IsRationalRep.differential_tprod`, `TauCeti.IsRationalRep.tprodLieModuleEquiv`), the
   tensor product `V_λ ⊗ V_μ` differentiates to `glIrreducible n λ ⊗ glIrreducible n μ`
@@ -47,6 +48,10 @@ built from it.
 
 * `TauCeti.nonempty_lieModuleEquiv_rationalWeylRep_glIrreducible`: the rational Weyl module of a
   dominant weight `λ` differentiates to `glIrreducible n λ`.
+* `TauCeti.nonempty_lieModuleEquiv_weylRepOfShape_glIrreducible`: the Weyl module of a Young
+  diagram `μ` with at most `n` rows differentiates to `glIrreducible n μ`.
+* `TauCeti.nonempty_lieModuleEquiv_glIrreducible_rowLen_iff`: Young diagrams with at most `n` rows
+  are determined by the isomorphism classes of their named irreducibles.
 * `TauCeti.nonempty_lieModuleEquiv_tprod_rationalWeylRep_glIrreducible`: the tensor product of
   two rational Weyl modules differentiates to the tensor product of the named irreducibles.
 
@@ -79,6 +84,49 @@ theorem nonempty_lieModuleEquiv_rationalWeylRep_glIrreducible (l : DominantWeigh
     Submodule.exists_mem_ne_zero_of_ne_bot (weightSpace_rationalWeylRep_self_ne_bot ℂ l)
   exact (isRationalRep_rationalWeylRep n l).nonempty_lieModuleEquiv_glIrreducible hv0 hvl
     fun _ _ hij ↦ rationalWeylRep_apply_transvectionUnit_eq_self l hij hvl
+
+/-- **The Weyl module of a Young diagram `μ` with at most `n` rows differentiates to
+`glIrreducible n μ`**: `𝕊^μ(ℂⁿ)`, with the action of `𝔤𝔩ₙ(ℂ)` through the differential of
+`TauCeti.weylRepOfShape ℂ n μ`, is isomorphic to the named irreducible `𝔤𝔩ₙ`-module whose highest
+weight is the row-length vector `(μ₀, …, μₙ₋₁)` of `μ`. -/
+theorem nonempty_lieModuleEquiv_weylRepOfShape_glIrreducible {μ : YoungDiagram}
+    (hμ : μ.colLen 0 ≤ n) :
+    letI : AddCommGroup (weylModuleOfShape ℂ n μ).toSubmodule := inferInstance
+    letI := LieRingModule.compLieHom (weylModuleOfShape ℂ n μ).toSubmodule
+      (isPolynomialRep_weylRepOfShape n μ).isRationalRep.differential
+    Nonempty ((weylModuleOfShape ℂ n μ).toSubmodule ≃ₗ⁅ℂ,Matrix (Fin n) (Fin n) ℂ⁆
+      glIrreducible n fun i ↦ (μ.rowLen i : ℂ)) := by
+  have := (isIrreducible_weylRepOfShape_iff (k := ℂ) μ).mpr hμ
+  obtain ⟨v, hvμ, hv0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot
+    (weightSpace_weylRepOfShape_weightOfShape_ne_bot (k := ℂ) hμ)
+  have h := (isPolynomialRep_weylRepOfShape n μ).isRationalRep.nonempty_lieModuleEquiv_glIrreducible
+    hv0 hvμ fun _ _ hij ↦ weylRepOfShape_apply_transvectionUnit_eq_self μ hij hvμ
+  have hμ' : (fun i : Fin n ↦ ((weightOfShape n μ).1 i : ℂ)) =
+      fun i : Fin n ↦ (μ.rowLen i : ℂ) :=
+    funext fun i ↦ by rw [weightOfShape_apply, Int.cast_natCast]
+  rwa [hμ'] at h
+
+/-- The row-length vector of a Young diagram is a dominant integral weight. -/
+theorem isGlDominantIntegral_rowLen {R : Type*} [CommRing R] [CharZero R] (μ : YoungDiagram) :
+    IsGlDominantIntegral fun i : Fin n ↦ (μ.rowLen i : R) :=
+  isGlDominantIntegral_iff.mpr fun i j hij ↦
+    ⟨μ.rowLen i - μ.rowLen j, by rw [Nat.cast_sub (μ.rowLen_anti _ _ (by omega))]⟩
+
+/-- **The named irreducibles of Young diagrams with at most `n` rows are pairwise non-isomorphic**:
+for such diagrams `μ` and `ν`, the `𝔤𝔩ₙ`-modules `glIrreducible n μ` and `glIrreducible n ν` are
+isomorphic exactly when `μ = ν`. This is the Lie counterpart of
+`TauCeti.nonempty_equiv_rationalWeylRep_iff`. -/
+theorem nonempty_lieModuleEquiv_glIrreducible_rowLen_iff {K : Type*} [Field K] [CharZero K]
+    {μ ν : YoungDiagram} (hμ : μ.colLen 0 ≤ n) (hν : ν.colLen 0 ≤ n) :
+    Nonempty ((glIrreducible n fun i ↦ (μ.rowLen i : K)) ≃ₗ⁅K,Matrix (Fin n) (Fin n) K⁆
+      glIrreducible n fun i ↦ (ν.rowLen i : K)) ↔ μ = ν := by
+  rw [nonempty_lieModuleEquiv_glIrreducible_iff (isGlDominantIntegral_rowLen μ)
+    (isGlDominantIntegral_rowLen ν)]
+  refine ⟨fun hw ↦ ?_, fun h ↦ h ▸ rfl⟩
+  have hweight : weightOfShape n μ = weightOfShape n ν := Subtype.ext <| funext fun i ↦ by
+    rw [weightOfShape_apply, weightOfShape_apply]
+    exact_mod_cast congrFun hw i
+  rw [← shape_weightOfShape hμ, ← shape_weightOfShape hν, hweight]
 
 /-- **The tensor product of two rational Weyl modules differentiates to the tensor product of the
 named irreducibles**: `V_λ ⊗ V_μ`, with the action of `𝔤𝔩ₙ(ℂ)` through the differential of the
