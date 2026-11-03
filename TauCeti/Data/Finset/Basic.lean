@@ -11,6 +11,7 @@ import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Logic.Equiv.Fintype
 public import Mathlib.Algebra.Ring.Defs
 public import Mathlib.Data.Finset.Interval
+public import Mathlib.Data.Finset.Max
 public import Mathlib.Data.Finset.Prod
 public import Mathlib.Data.Finset.SymmDiff
 import Mathlib.Data.Nat.Choose.Sum
@@ -49,6 +50,9 @@ import TauCeti.Data.Set.PowersetCard
   halves of a finset inside an open interval between the split point and an endpoint;
   `Finset.add_one_add_card_erase_eq_zero` and `Finset.neg_card_filter_lt_add_neg_card_filter_gt`
   are the corresponding identities for an integer cancelling the cardinality of the finset.
+* `Finset.Nonempty.exists_subset_Ioi_insert_eq` writes a nonempty finset of a linear order as its
+  minimum inserted into a finset above it, and `Finset.min'_insert_of_subset_Ioi` recovers that
+  minimum.
 * `Finset.card_filter_eq_of_ite_eq` counts the elements of a finset satisfying a predicate against
   a pointwise decomposition of its indicator.
 * `Finset.exists_adjacent_eq_of_not_card_image_and_image_subset_Ioo` finds two consecutive points
@@ -582,6 +586,21 @@ theorem filter_gt_subset_Ioo {α : Type*} [Preorder α] [LocallyFiniteOrder α] 
   fun _ hx ↦ by
     rw [mem_filter] at hx
     exact mem_Ioo.2 ⟨hx.2, (mem_Ioo.1 (hs hx.1)).2⟩
+
+/-- Inserting an element `a` into a finset above `a` makes `a` the minimum. -/
+theorem min'_insert_of_subset_Ioi {α : Type*} [LinearOrder α] [LocallyFiniteOrderTop α] {a : α}
+    {s : Finset α} (hs : s ⊆ Ioi a) : (insert a s).min' (insert_nonempty a s) = a :=
+  le_antisymm (min'_le _ _ (mem_insert_self a s)) (le_min' _ _ _ fun y hy ↦ by
+    rcases mem_insert.1 hy with rfl | hy
+    · exact le_rfl
+    · exact (mem_Ioi.1 (hs hy)).le)
+
+/-- A nonempty finset of a linear order is an element `a` inserted into a finset above `a`. -/
+theorem Nonempty.exists_subset_Ioi_insert_eq {α : Type*} [LinearOrder α]
+    [LocallyFiniteOrderTop α] {s : Finset α} (hs : s.Nonempty) :
+    ∃ a t, t ⊆ Ioi a ∧ insert a t = s :=
+  ⟨s.min' hs, s.erase (s.min' hs), fun _ ht ↦ mem_Ioi.2 (min'_lt_of_mem_erase_min' _ _ ht),
+    insert_erase (min'_mem s hs)⟩
 
 /-- If a monotone map `f` is not injective on a finset `T` inside `Ioo a b`, or does not map `T`
 strictly between `f a` and `f b`, then it identifies two consecutive points `u < v` of
