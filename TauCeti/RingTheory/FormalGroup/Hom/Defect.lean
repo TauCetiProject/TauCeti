@@ -78,11 +78,12 @@ section Leading
 
 variable {F G : FormalGroup R}
 
-/-- Subtracting `c Xⁿ` from `g` keeps the homomorphism defect zero below degree `n` and subtracts
-`c ((X + Y)ⁿ - Xⁿ - Yⁿ)` from its degree-`n` part. -/
+/-- Subtracting `c Xⁿ` from `g` keeps the homomorphism defect zero below degree `n` if it was, and
+subtracts `c ((X + Y)ⁿ - Xⁿ - Yⁿ)` from its degree-`n` part. -/
 private theorem homDefect_sub_smul_X_pow {n : ℕ} (hn₀ : n ≠ 0) {g : PowerSeries R}
-    (hg : PowerSeries.constantCoeff g = 0) (hn : n ≤ (homDefect F G g).order) (c : R) :
-    (n : ℕ∞) ≤ (homDefect F G (g - c • PowerSeries.X ^ n)).order ∧
+    (hg : PowerSeries.constantCoeff g = 0) (c : R) :
+    ((n : ℕ∞) ≤ (homDefect F G g).order →
+      (n : ℕ∞) ≤ (homDefect F G (g - c • PowerSeries.X ^ n)).order) ∧
       homogeneousComponent n (homDefect F G (g - c • PowerSeries.X ^ n)) =
         homogeneousComponent n (homDefect F G g) -
           ((c • ((MvPolynomial.X 0 + MvPolynomial.X 1) ^ n - MvPolynomial.X 0 ^ n -
@@ -126,26 +127,24 @@ private theorem homDefect_sub_smul_X_pow {n : ℕ} (hn₀ : n ≠ 0) {g : PowerS
       homogeneousComponent n f = 0 :=
     homogeneousComponent_of_lt_order_eq_zero ((Nat.cast_lt.mpr (Nat.lt_succ_self n)).trans_le hf)
   rw [heq]
-  refine ⟨le_order_sub (le_order_sub (le_order_sub hn hQ) (hlt _ h₀)) (hlt _ h₁), ?_⟩
+  refine ⟨fun hn ↦ le_order_sub (le_order_sub (le_order_sub hn hQ) (hlt _ h₀)) (hlt _ h₁), ?_⟩
   rw [map_sub, map_sub, map_sub, hzero _ h₀, hzero _ h₁, hQc, sub_zero, sub_zero]
 
 /-- If the homomorphism defect of `g` vanishes below degree `n ≠ 0`, so does that of `g - c Xⁿ`. -/
 theorem le_order_homDefect_sub_smul_X_pow {n : ℕ} (hn₀ : n ≠ 0) {g : PowerSeries R}
     (hg : PowerSeries.constantCoeff g = 0) (hn : n ≤ (homDefect F G g).order) (c : R) :
     (n : ℕ∞) ≤ (homDefect F G (g - c • PowerSeries.X ^ n)).order :=
-  (homDefect_sub_smul_X_pow hn₀ hg hn c).1
+  (homDefect_sub_smul_X_pow hn₀ hg c).1 hn
 
-/-- **Correcting the leading defect.** If the homomorphism defect of `g` vanishes below degree
-`n ≠ 0`, subtracting `c Xⁿ` from `g` subtracts `c ((X + Y)ⁿ - Xⁿ - Yⁿ)` from the degree-`n` part
-of the defect. -/
+/-- **Correcting the leading defect.** For `n ≠ 0`, subtracting `c Xⁿ` from `g` subtracts
+`c ((X + Y)ⁿ - Xⁿ - Yⁿ)` from the degree-`n` part of the homomorphism defect. -/
 theorem homogeneousComponent_homDefect_sub_smul_X_pow {n : ℕ} (hn₀ : n ≠ 0)
-    {g : PowerSeries R} (hg : PowerSeries.constantCoeff g = 0) (hn : n ≤ (homDefect F G g).order)
-    (c : R) :
+    {g : PowerSeries R} (hg : PowerSeries.constantCoeff g = 0) (c : R) :
     homogeneousComponent n (homDefect F G (g - c • PowerSeries.X ^ n)) =
       homogeneousComponent n (homDefect F G g) -
         ((c • ((MvPolynomial.X 0 + MvPolynomial.X 1) ^ n - MvPolynomial.X 0 ^ n -
           MvPolynomial.X 1 ^ n) : MvPolynomial (Fin 2) R) : MvPowerSeries (Fin 2) R) :=
-  (homDefect_sub_smul_X_pow hn₀ hg hn c).2
+  (homDefect_sub_smul_X_pow hn₀ hg c).2
 
 end Leading
 
@@ -170,7 +169,7 @@ theorem exists_succ_le_order_homDefect_sub_smul_X_pow {n : ℕ} (hn₂ : 2 ≤ n
       smul_smul, mul_assoc, hd.val_inv_mul, mul_one]
   refine ⟨_, succ_le_order_of_homogeneousComponent_eq_zero
     (le_order_homDefect_sub_smul_X_pow (by omega) hg hn (r * ↑hd.unit⁻¹)) ?_⟩
-  rw [homogeneousComponent_homDefect_sub_smul_X_pow (by omega) hg hn, hr, hc, sub_self]
+  rw [homogeneousComponent_homDefect_sub_smul_X_pow (by omega) hg, hr, hc, sub_self]
 
 /-- **No defect in degree `pᵏ` when the `p`-series agree.** Let `F` and `G` be commutative and let
 the homomorphism defect of `g = X + ⋯` vanish below degree `n = pᵏ`, `k ≥ 1`. If the `p`-series of
