@@ -47,11 +47,11 @@ theorem ENNReal.le_one_add_tsum_pow_indicator (y : ℝ≥0∞) :
     | zero => exact lt_of_le_of_lt (by simp [R]) hR
     | succ k ih =>
       refine lt_of_le_of_lt (le_trans ?_ le_add_self) hR
-      exact le_trans (by simp [ih]) (ENNReal.le_tsum k)
+      exact le_trans (by simp [ih]) (le_tsum _ k)
   have hRtop : R ≠ ∞ := hR.ne_top
   obtain ⟨n, hn⟩ := ENNReal.exists_nat_gt hRtop
   have h2 : (2 : ℝ≥0∞) ^ (n + 1) ≤ R :=
-    le_trans (by simp [hk n]) ((ENNReal.le_tsum n).trans le_add_self)
+    le_trans (by simp [hk n]) ((le_tsum _ n).trans le_add_self)
   have : (n : ℝ≥0∞) < 2 ^ (n + 1) := by
     exact_mod_cast (Nat.lt_two_pow_self).trans (Nat.pow_lt_pow_right (by norm_num) (by omega))
   exact (hn.trans (this.trans_le h2)).false

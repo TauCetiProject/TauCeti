@@ -196,7 +196,7 @@ theorem lintegral_iSup_sqrt_le [TopologicalSpace.SeparableSpace ι] [IsFiniteMea
             (measurableSet_toMeasurable _ _)).aemeasurable]
         simp_rw [lintegral_indicator_const (measurableSet_toMeasurable _ _),
           measure_toMeasurable]
-    _ ≤ μ univ + ∑' k : ℕ, 2 * 2⁻¹ ^ k * E := add_le_add le_rfl (ENNReal.tsum_le_tsum hlevel)
+    _ ≤ μ univ + ∑' k : ℕ, 2 * 2⁻¹ ^ k * E := add_le_add le_rfl (tsum_le_tsum hlevel)
     _ = μ univ + 4 * E := by
         rw [ENNReal.tsum_mul_right, ENNReal.tsum_mul_left, ENNReal.tsum_geometric,
           ENNReal.one_sub_inv_two, inv_inv]
