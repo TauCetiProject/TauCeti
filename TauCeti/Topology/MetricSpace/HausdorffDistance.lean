@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.MulAction
 public import Mathlib.Topology.MetricSpace.HausdorffDistance
 
 /-!
@@ -28,12 +29,8 @@ variable {X : Type*} [PseudoMetricSpace X]
 /-- The cutoff `min 1 (d / t)`, built from the distance `d` to a set, is `t⁻¹`-Lipschitz. -/
 theorem lipschitzWith_min_one_inv_mul_infDist (s : Set X) {t : ℝ} (ht : 0 < t) :
     LipschitzWith (Real.toNNReal t⁻¹) fun x => min 1 (t⁻¹ * infDist x s) := by
-  have h1 : LipschitzWith (Real.toNNReal t⁻¹) fun x => t⁻¹ * infDist x s :=
-    LipschitzWith.of_dist_le_mul fun x y => by
-      rw [Real.dist_eq, ← mul_sub, abs_mul, abs_of_pos (inv_pos.2 ht),
-        Real.coe_toNNReal _ (inv_pos.2 ht).le]
-      exact mul_le_mul_of_nonneg_left ((lipschitz_infDist_pt s).dist_le_mul x y |>.trans
-        (by simp)) (inv_pos.2 ht).le
+  have h1 := (lipschitzWith_smul (β := ℝ) t⁻¹).comp (lipschitz_infDist_pt s)
+  rw [mul_one, ← Real.toNNReal_eq_nnnorm_of_nonneg (inv_pos.2 ht).le] at h1
   exact h1.const_min 1
 
 /-- The cutoff `min 1 (d / t)` equals `1` where the distance `d` to the set is at least `t`. -/
