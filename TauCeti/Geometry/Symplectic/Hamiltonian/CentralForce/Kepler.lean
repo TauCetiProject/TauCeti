@@ -177,13 +177,8 @@ theorem effectivePotential_kepler_le_iff (hm : 0 < m) (hκ : 0 < κ) (hℓ : ℓ
     mul_assoc, mul_nonneg_iff_of_pos_left
       (by nlinarith [mul_pos hm (neg_pos.2 hE)] : 0 < -2 * m * E)]
   have horder := (kepler_turningRadii_pos_le hm hκ hℓ hmin hE).2
-  constructor
-  · intro h
-    rcases mul_nonneg_iff.1 h with h | h
-    · exact ⟨by linarith [h.1], by linarith [h.2]⟩
-    · exact ⟨by linarith [h.2], by linarith [h.1]⟩
-  · rintro ⟨h₁, h₂⟩
-    exact mul_nonneg (sub_nonneg.2 h₁) (sub_nonneg.2 h₂)
+  simpa only [← neg_sub r (keplerApoapsisRadius m κ ℓ E), mul_neg, neg_nonneg,
+    mem_Icc] using sub_mul_sub_nonpos_iff r horder
 
 /-- At the circular energy the pericentre is the circular radius. -/
 @[simp]
