@@ -127,7 +127,7 @@ theorem Subring.b2RootDividedPowers_subset (S : Subring A)
   have hzw : ∀ n, dividedPower n z ∈ S ∧ dividedPower n w ∈ S := by
     intro n
     induction n using Nat.strong_induction_on with
-    | h n ih =>
+    | ind n ih =>
       -- First extract the unique highest z-term, indexed by (n, 0).
       have hz := S.b2DividedPower_z_mem hxy hxz hxw hyz hx hy n ih
       refine ⟨hz, S.b2DividedPower_w_mem hxy hxz hxw hyz hx hy n ?_ (fun m hm => (ih m hm).2)⟩
