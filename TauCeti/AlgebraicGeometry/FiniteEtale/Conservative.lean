@@ -74,8 +74,7 @@ theorem nonempty_fiber_obj_iff_range_subset_range (x : Spec (.of Ω) ⟶ S)
       (IsInitial.isInitialIffObj (equivOfIsSepClosed Ω).functor _).symm
         ((Concrete.initial_iff_empty_of_preserves_of_reflects _).mpr
           (not_nonempty_iff.mp hW)).some
-    have : IsEmpty ((pullback x).obj Z).obj.left := isInitial_iff_isEmpty.mp
-      ⟨hi.isInitialObj ((finiteEtaleSchemeProperty (Spec (.of Ω))).ι ⋙ Over.forget _) _⟩
+    have : IsEmpty ((pullback x).obj Z).obj.left := (isInitial_iff_isEmpty _).mp ⟨hi⟩
     exact this.false w
 
 /-- Over a connected base `S`, a finite étale `S`-scheme is nonempty if and only if its

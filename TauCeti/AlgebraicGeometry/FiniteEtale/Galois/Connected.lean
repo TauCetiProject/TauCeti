@@ -29,8 +29,6 @@ continuous sets under the fundamental group, connected covers correspond to tran
 
 ## Main results
 
-* `TauCeti.FiniteEtaleScheme.isInitial_iff_isEmpty`: a finite étale scheme is initial if and only
-  if it is empty.
 * `TauCeti.FiniteEtaleScheme.isConnected_iff_connectedSpace`: a finite étale scheme is a connected
   object if and only if its underlying scheme is connected.
 * `TauCeti.FiniteEtaleScheme.connectedSpace_iff_isPretransitive`: over a connected base, a
@@ -53,17 +51,6 @@ universe u
 namespace TauCeti.FiniteEtaleScheme
 
 variable {S : Scheme.{u}}
-
-/-- A finite étale scheme is an initial object if and only if its underlying scheme is empty. -/
-theorem isInitial_iff_isEmpty (X : FiniteEtaleScheme S) :
-    Nonempty (IsInitial X) ↔ IsEmpty X.obj.left := by
-  refine ⟨fun ⟨h⟩ ↦ AlgebraicGeometry.isInitial_iff_isEmpty.mp
-    ⟨h.isInitialObj ((finiteEtaleSchemeProperty S).ι ⋙ Over.forget S) X⟩, fun _ ↦ ?_⟩
-  -- Maps out of the empty scheme exist and are unique, and commute over `S` for the same reason.
-  exact ⟨IsInitial.ofUniqueHom
-    (fun Y ↦ ObjectProperty.homMk (Over.homMk (isInitialOfIsEmpty.to _)
-      (isInitialOfIsEmpty.hom_ext _ _)))
-    fun _ _ ↦ ObjectProperty.hom_ext _ (Over.OverMorphism.ext (isInitialOfIsEmpty.hom_ext _ _))⟩
 
 /-- **Connected finite étale schemes.** A finite étale `S`-scheme is a connected object of the
 category of finite étale `S`-schemes if and only if its underlying scheme is connected. -/

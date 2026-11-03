@@ -27,6 +27,8 @@ the remaining half of (G2), are not treated here.
 * `TauCeti.FiniteEtaleScheme.isOpenImmersion_hom_left`,
   `TauCeti.FiniteEtaleScheme.isClosedImmersion_hom_left`: the underlying morphism of a
   monomorphism of finite étale schemes is an open and closed immersion.
+* `TauCeti.FiniteEtaleScheme.isInitial_iff_isEmpty`: a finite étale scheme is initial if and only
+  if it is empty.
 * `TauCeti.FiniteEtaleScheme.clopenSubscheme`: an open and closed subscheme of a finite étale
   `S`-scheme, as a finite étale `S`-scheme, with its inclusion `clopenSubschemeι`.
 * `TauCeti.FiniteEtaleScheme.exists_isColimit_binaryCofanMk_of_mono`: every monomorphism of
@@ -111,6 +113,17 @@ instance : (finiteEtaleSchemeProperty S).IsClosedUnderColimitsOfShape (Discrete 
     obtain ⟨t⟩ := (ObjectProperty.colimitsOfShape_isEmpty_iff _ _ _).mp hX
     have : IsEmpty X.left := isInitial_iff_isEmpty.mp ⟨t.isInitialObj (Over.forget S) X⟩
     exact (finiteEtaleSchemeProperty_iff X).mpr ⟨inferInstance, inferInstance⟩
+
+/-- A finite étale scheme is an initial object if and only if its underlying scheme is empty. -/
+theorem isInitial_iff_isEmpty (X : FiniteEtaleScheme S) :
+    Nonempty (IsInitial X) ↔ IsEmpty X.obj.left := by
+  refine ⟨fun ⟨h⟩ ↦ AlgebraicGeometry.isInitial_iff_isEmpty.mp
+    ⟨h.isInitialObj ((finiteEtaleSchemeProperty S).ι ⋙ Over.forget S) X⟩, fun _ ↦ ?_⟩
+  -- Maps out of the empty scheme exist and are unique, and commute over `S` for the same reason.
+  exact ⟨IsInitial.ofUniqueHom
+    (fun Y ↦ ObjectProperty.homMk (Over.homMk (isInitialOfIsEmpty.to _)
+      (isInitialOfIsEmpty.hom_ext _ _)))
+    fun _ _ ↦ ObjectProperty.hom_ext _ (Over.OverMorphism.ext (isInitialOfIsEmpty.hom_ext _ _))⟩
 
 instance : (finiteEtaleSchemeProperty S).IsClosedUnderColimitsOfShape (Discrete WalkingPair) where
   colimitsOfShape_le X hX := by
