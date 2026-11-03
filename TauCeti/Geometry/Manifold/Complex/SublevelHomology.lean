@@ -5,11 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Morse.Cell.Homology
+public import TauCeti.Geometry.Manifold.MFDeriv.RestrictScalars
+public import TauCeti.Geometry.Manifold.Morse.Cell.Band
+public import TauCeti.Geometry.Manifold.Morse.SquaredDistance
 public import TauCeti.Geometry.Manifold.RegularValue.Polynomial
+public import TauCeti.Topology.Maps.Proper.Metric
 
 /-!
-# Sublevel homology of pseudoconvex Morse functions
+# Homology of pseudoconvex Morse functions and of affine complete intersections
 
 On a complex manifold of complex dimension `n`, a real Morse function which is strongly
 `q`-pseudoconvex at its critical points has Morse index at most `n + q` at each of them
@@ -24,11 +27,22 @@ holomorphic immersion `i` into a complex inner product space
 (`TauCeti.exists_isZero_singularHomology_sublevelPair_norm_sq_sub_comp`), and in particular to the
 Euclidean squared distance on a smooth affine complete intersection in `ℂ^σ`, where every band is
 compact because the squared distance is proper
-(`TauCeti.exists_isZero_singularHomology_sublevelPair_norm_sq_sub_toLp_affineZeroLocus`). These
-single-level statements are the steps from which, along a proper Morse exhaustion, one obtains
-that a manifold with a strongly `q`-pseudoconvex exhaustion has no homology above degree `n + q`,
-and a smooth affine variety of complex dimension `n` none above degree `n`; that assembly is not
-carried out here.
+(`TauCeti.exists_isZero_singularHomology_sublevelPair_norm_sq_sub_toLp_affineZeroLocus`).
+
+Assembled along a proper Morse exhaustion
+(`TauCeti.IsMorse.isZero_singularHomology_of_manifoldMorseIndex_le`), these single-level
+statements show that a manifold with a proper, bounded below, strongly `q`-pseudoconvex Morse
+function has no homology above degree `n + q`
+(`TauCeti.IsMorse.isZero_singularHomology_of_isManifoldStronglyPseudoconvexAt`). For a closed
+holomorphic embedding into a finite-dimensional complex inner product space, the squared distance
+from almost every point is such a function with `q = 0`, so a closed complex submanifold of complex
+dimension `n` has no homology above degree `n`
+(`TauCeti.isZero_singularHomology_of_isClosedEmbedding`). This applies in particular to a smooth
+affine complete intersection (`TauCeti.isZero_singularHomology_affineZeroLocus`). These are the
+homological forms of the theorem of Andreotti and Frankel, in Milnor's Morse-theoretic proof, that
+a closed complex submanifold of `ℂᴺ` of complex dimension `n` has the homotopy type of a CW complex
+of dimension at most `n`, and of its extension to strongly `q`-pseudoconvex exhaustions, with
+dimension at most `n + q`.
 
 ## Main results
 
@@ -39,11 +53,20 @@ carried out here.
   of a Morse squared distance along a holomorphic immersion, it vanishes above degree `n`.
 * `TauCeti.exists_isZero_singularHomology_sublevelPair_norm_sq_sub_toLp_affineZeroLocus`: the same
   on a smooth affine complete intersection, at every level.
+* `TauCeti.IsMorse.isZero_singularHomology_of_isManifoldStronglyPseudoconvexAt`: a manifold with a
+  proper, bounded below, strongly `q`-pseudoconvex Morse function has no homology above degree
+  `n + q`.
+* `TauCeti.isZero_singularHomology_of_isClosedEmbedding`: a closed complex submanifold of a
+  finite-dimensional complex inner product space has no homology above its complex dimension.
+* `TauCeti.isZero_singularHomology_affineZeroLocus`: a smooth affine complete intersection has no
+  homology above its complex dimension.
 
 ## References
 
 * J. Milnor, *Morse Theory*, Annals of Mathematics Studies 51, Princeton University Press, 1963,
-  Section 7.
+  Section 7, Theorems 7.1 and 7.2.
+* A. Andreotti and T. Frankel, *The Lefschetz theorem on hyperplane sections*, Annals of
+  Mathematics 69 (1959), 713–717.
 * R. Hain, *Notes on the Morse theory of complex manifolds*, Section 2.
 -/
 
@@ -51,7 +74,7 @@ public section
 
 noncomputable section
 
-open CategoryTheory Limits Module Set
+open AlgebraicTopology CategoryTheory Limits MeasureTheory Module Set Topology
 open scoped ContDiff Manifold
 
 universe u v w
@@ -126,5 +149,72 @@ theorem exists_isZero_singularHomology_sublevelPair_norm_sq_sub_toLp_affineZeroL
     (fun x hx ↦ manifoldMorseIndex_norm_sq_sub_toLp_affineZeroLocus_le hp a x
       (mem_criticalPoints.1 hx.1)) hδ
     ((isProperMap_norm_sq_sub_toLp_affineZeroLocus p a).isCompact_preimage isCompact_Icc)
+
+/-- **A manifold with a strongly `q`-pseudoconvex Morse exhaustion has no homology above degree
+`n + q`.** Let `f` be a proper real Morse function, bounded below, on a complex manifold of complex
+dimension `n`, which is strongly `q`-pseudoconvex at each of its critical points. Then the singular
+homology `Hₖ(M; R)` vanishes for every `k > n + q`, with coefficients in any abelian category with
+coproducts in which colimits of sequences are exact. -/
+theorem IsMorse.isZero_singularHomology_of_isManifoldStronglyPseudoconvexAt
+    {A : Type v} [Category.{w} A] [Abelian A] [HasCoproducts.{u} A] [HasColimitsOfShape ℕ A]
+    [HasExactColimitsOfShape ℕ A] {f : M → ℝ} {q : ℕ} (hf : IsMorse 𝓘(ℝ, E) f)
+    (hp : IsProperMap f) (hbdd : BddBelow (range f))
+    (hq : ∀ x ∈ criticalPoints 𝓘(ℝ, E) f, IsManifoldStronglyPseudoconvexAt E q f x) (R : A)
+    {k : ℕ} (hk : finrank ℂ E + q < k) :
+    IsZero (((singularHomologyFunctor A k).obj R).obj (TopCat.of M)) := by
+  have : IsManifold 𝓘(ℝ, E) ∞ M :=
+    IsManifold.restrictScalars ℝ (inferInstance : IsManifold 𝓘(ℂ, E) ∞ M)
+  exact hf.isZero_singularHomology_of_manifoldMorseIndex_le hp hbdd
+    (fun x hx ↦ (hq x hx).manifoldMorseIndex_le (hf.contMDiff x |>.of_le (by norm_cast))
+      (mem_criticalPoints.1 hx)) R hk
+
+/-- **A closed complex submanifold of a complex inner product space has no homology above its
+complex dimension.** Let `i` be a holomorphic immersion of a complex manifold of complex
+dimension `n` into a finite-dimensional complex inner product space, which is a closed embedding.
+Then the singular homology `Hₖ(M; R)` vanishes for every `k > n`, with coefficients in
+any abelian category with coproducts in which colimits of sequences are exact. -/
+theorem isZero_singularHomology_of_isClosedEmbedding {A : Type v} [Category.{w} A] [Abelian A]
+    [HasCoproducts.{u} A] [HasColimitsOfShape ℕ A] [HasExactColimitsOfShape ℕ A] {F : Type*}
+    [NormedAddCommGroup F] [InnerProductSpace ℂ F] [FiniteDimensional ℂ F] {i : M → F}
+    (hi : ContMDiff 𝓘(ℂ, E) 𝓘(ℂ, F) ∞ i)
+    (hinj : ∀ x, Function.Injective (mvfderiv 𝓘(ℂ, E) i x)) (hclosed : IsClosedEmbedding i)
+    (R : A) {k : ℕ} (hk : finrank ℂ E < k) :
+    IsZero (((singularHomologyFunctor A k).obj R).obj (TopCat.of M)) := by
+  have : SecondCountableTopology M := hclosed.isEmbedding.secondCountableTopology
+  let : InnerProductSpace ℝ F := InnerProductSpace.rclikeToReal ℂ F
+  let : MeasurableSpace F := borel F
+  have : BorelSpace F := ⟨rfl⟩
+  have : IsManifold 𝓘(ℝ, E) ∞ M :=
+    IsManifold.restrictScalars ℝ (inferInstance : IsManifold 𝓘(ℂ, E) ∞ M)
+  -- The real derivative of `i` is its complex derivative, so `i` is also a real immersion.
+  have hinjℝ (x : M) : Function.Injective (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, F) i x) :=
+    ((hi x).mdifferentiableAt (by simp)).injective_mfderiv_restrictScalars ℝ fun v w hvw ↦
+      hinj x (by rwa [mvfderiv_apply_eq_mfderiv_apply, mvfderiv_apply_eq_mfderiv_apply])
+  have hiℝ : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, F) ∞ i := by simpa using hi.restrictScalars ℝ
+  obtain ⟨a, ha⟩ := (ae_isMorse_norm_sq_sub_comp Measure.addHaar hiℝ hinjℝ).exists
+  exact ha.isZero_singularHomology_of_manifoldMorseIndex_le
+    (isProperMap_norm_sq_sub_comp hclosed a) ⟨0, by rintro _ ⟨x, rfl⟩; positivity⟩
+    (fun x hx ↦ manifoldMorseIndex_norm_sq_sub_comp_le ((hi x).of_le (by simp)) (hinj x)
+      (mem_criticalPoints.1 hx)) R hk
+
+/-- **A smooth affine complete intersection has no homology above its complex dimension.** Let
+`X ⊆ ℂ^σ` be the common zero set of a polynomial family `p : ι → ℂ[X_σ]` whose Jacobian is
+surjective at every common zero, a complex manifold of dimension `|σ| - |ι|`. Then the singular
+homology `Hₖ(X; R)` vanishes for every `k > |σ| - |ι|`, with coefficients in any abelian category
+with coproducts in which colimits of sequences are exact. -/
+theorem isZero_singularHomology_affineZeroLocus {σ : Type u} {ι : Type*} [Fintype σ] [Fintype ι]
+    {p : ι → MvPolynomial σ ℂ}
+    (hp : ∀ x ∈ affineZeroLocus p, Function.Surjective (jacobiMatrixAt p x).mulVec)
+    {A : Type v} [Category.{w} A] [Abelian A] [HasCoproducts.{u} A] [HasColimitsOfShape ℕ A]
+    [HasExactColimitsOfShape ℕ A] (R : A) {k : ℕ} (hk : Fintype.card σ - Fintype.card ι < k) :
+    IsZero (((singularHomologyFunctor A k).obj R).obj (TopCat.of (affineZeroLocus p))) := by
+  let _ := affineZeroLocusChartedSpace hp
+  have := isManifold_affineZeroLocus hp ∞
+  have hdim : Module.finrank ℂ (Fin (Fintype.card σ - Fintype.card ι) → ℂ) =
+      Fintype.card σ - Fintype.card ι := Module.finrank_fin_fun ℂ
+  exact isZero_singularHomology_of_isClosedEmbedding (contMDiff_toLp_coe_affineZeroLocus hp ∞)
+    (injective_mvfderiv_toLp_coe_affineZeroLocus hp)
+    ((EuclideanSpace.equiv σ ℂ).symm.toHomeomorph.isClosedEmbedding.comp
+      (isClosed_affineZeroLocus p).isClosedEmbedding_subtypeVal) R (by rw [hdim]; exact hk)
 
 end TauCeti

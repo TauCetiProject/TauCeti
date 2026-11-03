@@ -42,6 +42,8 @@ its complex tangent coordinate changes regarded as `ℝ`-linear maps.
 * `MDifferentiableWithinAt.restrictScalars_mfderivWithin`,
   `MDifferentiableAt.mfderiv_restrictScalars`: the derivative over `𝕜` is the derivative over `𝕜'`
   with scalars restricted to `𝕜`.
+* `MDifferentiableAt.injective_mfderiv_restrictScalars`: an immersion for the models over `𝕜'` is
+  an immersion for the models over `𝕜`.
 * `TauCeti.tangentCoordChange_restrictScalars`: the tangent coordinate changes over `𝕜` are those
   over `𝕜'` with scalars restricted to `𝕜`; in particular they are `𝕜'`-linear
   (`TauCeti.tangentCoordChange_smul`), and so is the derivative of the inverse of a chart
@@ -183,6 +185,20 @@ theorem MDifferentiableAt.mfderiv_restrictScalars
         ((tangentSpaceCastModel 𝓘(𝕜', E) x).symm : E →L[𝕜'] _)).restrictScalars 𝕜 := by
   simpa only [mfderivWithin_univ] using
     (h.mdifferentiableWithinAt.restrictScalars_mfderivWithin 𝕜 (uniqueMDiffWithinAt_univ _)).symm
+
+/-- At a point where `f` is differentiable for the models over `𝕜'`, if its derivative over `𝕜'`
+is injective then so is its derivative over the smaller field `𝕜`. For instance, a holomorphic
+immersion between complex manifolds is a real immersion. -/
+theorem MDifferentiableAt.injective_mfderiv_restrictScalars
+    (h : MDifferentiableAt 𝓘(𝕜', E) 𝓘(𝕜', E') f x)
+    (hinj : Function.Injective (mfderiv 𝓘(𝕜', E) 𝓘(𝕜', E') f x)) :
+    Function.Injective (mfderiv 𝓘(𝕜, E) 𝓘(𝕜, E') f x) := by
+  intro v w hvw
+  have hv := DFunLike.congr_fun (h.mfderiv_restrictScalars 𝕜) v
+  have hw := DFunLike.congr_fun (h.mfderiv_restrictScalars 𝕜) w
+  -- The identifications `tangentSpaceCastModel` are the identity of the model spaces, so `hv`
+  -- and `hw` compare the two derivatives on the same vectors `v` and `w` of `E`.
+  exact hinj (hv.symm.trans (hvw ▸ hw))
 
 namespace TauCeti
 
