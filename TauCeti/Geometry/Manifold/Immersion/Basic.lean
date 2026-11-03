@@ -48,6 +48,8 @@ both sides, in order to apply the rule to `e.symm` as well.
   `Manifold.IsImmersionAtOfComplement` counterparts: precomposing a map on a vector space with a
   continuous linear equivalence `E₀ ≃L E` preserves immersions, although the source model changes
   from `E` to `E₀`.
+* `ContinuousLinearMap.HasLeftInverse.isImmersion`: a continuous linear map with a continuous
+  linear left inverse is an immersion.
 * `TauCeti.isImmersion_iff_forall_isImmersionAt`: for a finite-dimensional target model, a map is
   an immersion exactly when it is an immersion at every point.
 * `Manifold.IsImmersion.nonempty_complement_continuousLinearEquiv`: for nonempty manifolds
@@ -285,6 +287,20 @@ theorem isImmersion_comp_continuousLinearEquiv (e : E₀ ≃L[𝕜] E)
     e (h.isImmersionOfComplement_complement (e x)))
 
 end LinearEquiv
+
+/-! ### Linear maps with a continuous left inverse -/
+
+/-- A continuous linear map `f : E →L F` with a continuous linear left inverse `g` is a `C^n`
+immersion, with complement `ker g`: the continuous linear equivalence `F ≃L E × ker g` sending `y`
+to `(g y, y - f (g y))` carries `f` to the inclusion `u ↦ (u, 0)`. For instance, the inclusion
+of a closed complemented subspace is an immersion. -/
+theorem _root_.ContinuousLinearMap.HasLeftInverse.isImmersion {f : E →L[𝕜] E'}
+    (hf : f.HasLeftInverse) : IsImmersion 𝓘(𝕜, E) 𝓘(𝕜, E') n f := by
+  let e := ContinuousLinearEquiv.equivOfRightInverse hf.leftInverse f hf.leftInverse_leftInverse
+  refine IsImmersionOfComplement.isImmersion (F := LinearMap.ker (hf.leftInverse : E' →ₗ[𝕜] E))
+    fun x ↦ IsImmersionAtOfComplement.mk_of_continuousAt_of_extChartAt f.continuous.continuousAt
+      e.symm fun u _ ↦ ?_
+  simp [e]
 
 /-! ### Immersions into finite-dimensional models -/
 

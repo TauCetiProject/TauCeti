@@ -38,6 +38,10 @@ are the basic examples of the latter
 * `TauCeti.isImmersionAtOfComplement_comp_isLocalDiffeomorphAt`,
   `TauCeti.isImmersionAtOfComplement_isLocalDiffeomorphAt_comp`: the pointwise normal form with a
   fixed complement survives composing with a local diffeomorphism on the source or on the target.
+* `TauCeti.isImmersionAtOfComplement_comp_isLocalDiffeomorphAt_iff`,
+  `TauCeti.isImmersionAt_comp_isLocalDiffeomorphAt_iff`: on the source, precomposing with a local
+  diffeomorphism also reflects the pointwise normal form, since a local inverse is again a local
+  diffeomorphism.
 * `TauCeti.isImmersion_comp_isLocalDiffeomorph`, `TauCeti.isImmersion_isLocalDiffeomorphAt_comp`:
   the corresponding statements for immersions.
 * `TauCeti.isSmoothEmbedding_comp_isLocalDiffeomorph`,
@@ -137,6 +141,36 @@ theorem isSmoothEmbedding_comp_isLocalDiffeomorph [IsManifold I n M']
     {g : M' → M} (hg : IsLocalDiffeomorph I I n g) (hge : IsEmbedding g)
     (h : IsSmoothEmbedding I J n f) : IsSmoothEmbedding I J n (f ∘ g) :=
   ⟨isImmersion_comp_isLocalDiffeomorph hg h.isImmersion, h.isEmbedding.comp hge⟩
+
+/-- Precomposing with a local diffeomorphism of the source neither creates nor destroys the
+immersion normal form at a point: `f ∘ g` is an immersion at `x`, with complement `F`, exactly
+when `f` is one at `g x`. -/
+theorem isImmersionAtOfComplement_comp_isLocalDiffeomorphAt_iff [IsManifold I n M]
+    [IsManifold I n M'] {g : M' → M} {x : M'} (hg : IsLocalDiffeomorphAt I I n g x) :
+    IsImmersionAtOfComplement F I J n (f ∘ g) x ↔ IsImmersionAtOfComplement F I J n f (g x) := by
+  refine ⟨fun h ↦ ?_, isImmersionAtOfComplement_comp_isLocalDiffeomorphAt hg⟩
+  -- Near `g x`, `f` is `f ∘ g` composed with the local inverse `Φ⁻¹` of `g`, itself a local
+  -- diffeomorphism.
+  obtain ⟨Φ, hxΦ, hgΦ⟩ := hg
+  have hgx : g x ∈ Φ.target := hgΦ hxΦ ▸ Φ.map_source hxΦ
+  have hΦ : IsLocalDiffeomorphAt I I n Φ.symm (g x) := ⟨Φ.symm, hgx, fun _ _ ↦ rfl⟩
+  have hx : Φ.symm (g x) = x := by rw [hgΦ hxΦ]; exact Φ.left_inv hxΦ
+  refine (isImmersionAtOfComplement_comp_isLocalDiffeomorphAt hΦ (hx ▸ h)).congr_of_eventuallyEq
+    <| Filter.eventuallyEq_of_mem (Φ.open_target.mem_nhds hgx) fun y hy ↦ ?_
+  -- On the target of `Φ`, the local inverse `Φ⁻¹` is a right inverse of `g = Φ`.
+  have hy' : Φ.symm.toPartialEquiv y ∈ Φ.source := Φ.toPartialEquiv.map_target hy
+  simp only [Function.comp_apply]
+  rw [hgΦ hy']
+  exact congrArg f (Φ.toPartialEquiv.right_inv hy)
+
+/-- Precomposing with a local diffeomorphism of the source neither creates nor destroys
+immersions at a point: `f ∘ g` is an immersion at `x` exactly when `f` is one at `g x`. -/
+theorem isImmersionAt_comp_isLocalDiffeomorphAt_iff [IsManifold I n M] [IsManifold I n M']
+    {g : M' → M} {x : M'} (hg : IsLocalDiffeomorphAt I I n g x) :
+    IsImmersionAt I J n (f ∘ g) x ↔ IsImmersionAt I J n f (g x) :=
+  ⟨fun h ↦ ((isImmersionAtOfComplement_comp_isLocalDiffeomorphAt_iff hg).1
+    h.isImmersionAtOfComplement_complement).isImmersionAt,
+    isImmersionAt_comp_isLocalDiffeomorphAt hg⟩
 
 /-! ### Postcomposing with a local diffeomorphism -/
 
