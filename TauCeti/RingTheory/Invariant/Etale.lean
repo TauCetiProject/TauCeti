@@ -159,13 +159,10 @@ theorem isEtaleAt_of_inertia_eq_bot {R : Type*} [CommRing R] [Algebra R B] [SMul
   have : IsScalarTower R (FixedPoints.subring B G) (Localization.AtPrime q) :=
     .of_algebraMap_eq fun r ↦ by
       rw [IsScalarTower.algebraMap_apply R B (Localization.AtPrime q),
-        IsScalarTower.algebraMap_apply (FixedPoints.subring B G) B (Localization.AtPrime q),
-        Algebra.algebraMap_ofSubsemiring_apply, RingHom.algebraMap_toAlgebra,
-        RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom, he]
+        IsScalarTower.algebraMap_apply (FixedPoints.subring B G) B (Localization.AtPrime q)]
+      simp [RingHom.algebraMap_toAlgebra, Algebra.algebraMap_ofSubsemiring_apply, he]
   have : Algebra.FormallyEtale R (FixedPoints.subring B G) :=
-    .of_equiv (AlgEquiv.ofRingEquiv (f := e) fun r ↦ by
-      rw [Algebra.algebraMap_self_apply, RingHom.algebraMap_toAlgebra,
-        RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom])
+    .of_equiv (AlgEquiv.ofRingEquiv (f := e) fun r ↦ by simp [RingHom.algebraMap_toAlgebra])
   exact Algebra.FormallyEtale.comp R (FixedPoints.subring B G) (Localization.AtPrime q)
 
 end Ideal
