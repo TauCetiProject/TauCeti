@@ -137,6 +137,12 @@ noncomputable def classTwoSpan (x y z : A) : AddSubgroup A :=
   AddSubgroup.closure (Set.range fun p : ℕ × ℕ × ℕ =>
     classTwoMonomial x y z p.1 p.2.1 p.2.2)
 
+/-- The ordered span is the additive closure of the ordered divided-power monomials. -/
+theorem classTwoSpan_def (x y z : A) :
+    classTwoSpan x y z = AddSubgroup.closure (Set.range fun p : ℕ × ℕ × ℕ =>
+      classTwoMonomial x y z p.1 p.2.1 p.2.2) :=
+  (rfl)
+
 /-- Containment of the ordered span is equivalent to containment of every ordered monomial. -/
 @[simp]
 theorem classTwoSpan_le_iff {x y z : A} {S : AddSubgroup A} :
