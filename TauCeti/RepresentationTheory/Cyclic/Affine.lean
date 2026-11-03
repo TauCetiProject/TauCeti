@@ -67,6 +67,8 @@ cohomology, as shown in
   translation part `t`.
 * `AddEquiv.partialNorm A k t`: the partial norm `∑ i < k, A^i t` of the translation part, that is
   the translation accumulated by `k` iterates.
+* `AddEquiv.cyclicNormHom A k`: the partial norm bundled as an additive endomorphism.
+* `AddEquiv.oneSubPow A k`: the difference endomorphism `1 - A^k`.
 * `AddEquiv.affineAddAction`: the action of `ZMod m` on `T` by the iterates of an affine
   equivalence whose `m`-th power is the identity.
 
@@ -266,6 +268,59 @@ appends one more translate of the linear part. -/
 theorem partialNorm_succ (A : T ≃+ T) (k : ℕ) (t : T) :
     partialNorm A (k + 1) t = t + A (partialNorm A k t) := by
   rw [Nat.add_comm k 1, partialNorm_add_exponent, partialNorm_one, Function.iterate_one]
+
+/-- The partial cyclic norm as an additive endomorphism, with no periodicity assumption. -/
+def cyclicNormHom (A : T ≃+ T) (k : ℕ) : T →+ T where
+  toFun := A.partialNorm k
+  map_zero' := A.partialNorm_zero_right k
+  map_add' := A.partialNorm_add k
+
+/-- Evaluating the bundled partial norm gives the translation accumulated by an affine iterate. -/
+@[simp]
+theorem cyclicNormHom_apply (A : T ≃+ T) (k : ℕ) (x : T) :
+    A.cyclicNormHom k x = A.partialNorm k x := (rfl)
+
+/-- The empty partial norm is the zero endomorphism. -/
+@[simp]
+theorem cyclicNormHom_zero (A : T ≃+ T) : A.cyclicNormHom 0 = 0 := by
+  ext x
+  simp
+
+/-- The partial norm for one iterate is the identity endomorphism. -/
+@[simp]
+theorem cyclicNormHom_one (A : T ≃+ T) : A.cyclicNormHom 1 = AddMonoidHom.id T := by
+  ext x
+  simp
+
+/-- The difference from the `k`-th power of an additive automorphism. -/
+def oneSubPow (A : T ≃+ T) (k : ℕ) : T →+ T :=
+  AddMonoidHom.id T - (A.toIntLinearEquiv ^ k).toLinearMap.toAddMonoidHom
+
+/-- The difference endomorphism sends `x` to `x - A^k x`. -/
+@[simp]
+theorem oneSubPow_apply (A : T ≃+ T) (k : ℕ) (x : T) :
+    A.oneSubPow k x = x - (⇑A)^[k] x := by
+  simp [oneSubPow, LinearEquiv.coe_pow]
+
+/-- The difference from the zeroth power vanishes. -/
+@[simp]
+theorem oneSubPow_zero (A : T ≃+ T) : A.oneSubPow 0 = 0 := by
+  ext x
+  simp
+
+/-- The norm for two iterates is `1 + A`, also in the presence of 2-torsion. -/
+@[simp]
+theorem cyclicNormHom_two (A : T ≃+ T) :
+    A.cyclicNormHom 2 = AddMonoidHom.id T + A.toAddMonoidHom := by
+  ext x
+  simp [partialNorm_succ]
+
+/-- The difference for one iterate is `1 - A`. -/
+@[simp]
+theorem oneSubPow_one (A : T ≃+ T) :
+    A.oneSubPow 1 = AddMonoidHom.id T - A.toAddMonoidHom := by
+  ext x
+  simp
 
 /-- The norm of the cyclic representation of a linear part `A` of period dividing `m` is the partial
 norm `partialNorm A m` of order `m`. -/
