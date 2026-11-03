@@ -27,10 +27,11 @@ specialization of the integral minuscule carrier or with a pinned simply connect
 * B. Conrad, *Reductive Group Schemes*, §1.
 * J. S. Milne, *Algebraic Groups* (2017), §2.h.
 
-The construction uses `CommHopfAlgCat.baseChangeHopfIdeal_commonKernelHopfIdeal_le` and
-`CommHopfAlgCat.quotientBaseChangeIso`. The generator identifications and free comparison
-are those of `TauCeti.Algebra.Lie.E6.Minuscule.Generated.Basic`.
 -/
+
+-- The construction uses `CommHopfAlgCat.baseChangeHopfIdeal_commonKernelHopfIdeal_le` and
+-- `CommHopfAlgCat.quotientBaseChangeIso`. The generator identifications and free comparison
+-- are those of `TauCeti.Algebra.Lie.E6.Minuscule.Generated.Basic`.
 
 public section
 
@@ -55,11 +56,7 @@ theorem map_baseChangeHopfIdeal_generatedDefiningIdeal_le :
     (CommHopfAlgCat.baseChangeHopfIdeal_commonKernelHopfIdeal_le
       (K := S) (generatorCoordinateMap R))
   rw [generatedDefiningIdeal_def]
-  refine h.trans_eq ?_
-  rw [generatedDefiningIdeal_def S, CommHopfAlgCat.map_commonKernelHopfIdeal,
-    ← funext (generatorCoordinateMap_baseChange R S),
-    CommHopfAlgCat.commonKernelHopfIdeal_comp_of_injective _ _ fun j ↦
-      (ConcreteCategory.bijective_of_isIso (generatorCoordinateAlgebraBaseChangeIso R S j).hom).1]
+  exact h.trans_eq (map_commonKernelHopfIdeal_baseChangeMap_generatorCoordinateMap R S)
 
 private theorem baseChangeDefiningIdeal_le_ker_generatedCoordinateMap :
     (CommHopfAlgCat.baseChangeHopfIdeal (K := S) (generatedDefiningIdeal R)).toIdeal ≤
@@ -78,6 +75,8 @@ scalar extension of the subgroup generated over `R`. No flatness hypothesis is n
 def generatedCoordinateHopfAlgebraBaseChangeMap :
     CommHopfAlgCat.baseChange (K := S) (generatedCoordinateHopfAlgebra R) ⟶
       generatedCoordinateHopfAlgebra S :=
+  -- The quotient presentation is not exposed across the `Basic` module boundary;
+  -- use its public equality rather than exposing the implementation of the algebra.
   (eqToIso (congrArg (CommHopfAlgCat.baseChange (K := S))
       (generatedCoordinateHopfAlgebra_def R))).hom ≫
     (CommHopfAlgCat.quotientBaseChangeIso (K := S) (generatedDefiningIdeal R)).inv ≫
@@ -160,12 +159,26 @@ theorem generatedCoordinateHopfAlgebraBaseChangeMap_comp_generatedCoordinateLift
     (generatorCoordinateMap_baseChange R S j)).symm
 
 /-- Over a free extension, the arbitrary-base-change comparison is the existing isomorphism. -/
-theorem generatedCoordinateHopfAlgebraBaseChangeMap_eq_hom [Module.Free R S] :
+theorem
+  generatedCoordinateHopfAlgebraBaseChangeMap_eq_generatedCoordinateHopfAlgebraBaseChangeIso_hom
+    [Module.Free R S] :
     generatedCoordinateHopfAlgebraBaseChangeMap R S =
       (generatedCoordinateHopfAlgebraBaseChangeIso R S).hom :=
   (generatedCoordinateHopfAlgebraBaseChangeMap_unique R S _
     (baseChangeMap_generatedCoordinateMap_comp_generatedCoordinateHopfAlgebraBaseChangeIso_hom
       R S)).symm
+
+/-- Free scalar extension intertwines every numbered root-subgroup and weight-torus lift. -/
+@[reassoc (attr := simp)]
+theorem baseChangeMap_generatedCoordinateLift_comp_generatorCoordinateAlgebraBaseChangeIso_hom
+    [Module.Free R S] (j : Sum (Fin 6 ⊕ Fin 6) Unit) :
+    CommHopfAlgCat.baseChangeMap (K := S) (generatedCoordinateLift R j) ≫
+        (generatorCoordinateAlgebraBaseChangeIso R S j).hom =
+      (generatedCoordinateHopfAlgebraBaseChangeIso R S).hom ≫
+        generatedCoordinateLift S j := by
+  rw [←
+    generatedCoordinateHopfAlgebraBaseChangeMap_eq_generatedCoordinateHopfAlgebraBaseChangeIso_hom]
+  exact (generatedCoordinateHopfAlgebraBaseChangeMap_comp_generatedCoordinateLift R S j).symm
 
 end
 
