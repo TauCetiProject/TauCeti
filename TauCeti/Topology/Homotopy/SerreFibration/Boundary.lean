@@ -8,7 +8,7 @@ module
 public import TauCeti.Topology.Category.TopCat.Fiber
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Map
 public import TauCeti.Topology.Homotopy.SerreFibration.RelativeCube
-import TauCeti.AlgebraicTopology.Homotopy.Relative.Group
+public import TauCeti.AlgebraicTopology.Homotopy.Relative.Group
 
 /-!
 # The boundary map of a Serre fibration
@@ -59,6 +59,7 @@ maps `π_1(B, b)` to the set `π_0(F, e)` of path components of the fibre.
 * `TopCat.Hom.IsCubeLift`: a lift of a generalized loop of the base that is constant on the face
   `{1} × I^N` and on the sides of the cube.
 * `TopCat.Hom.IsCubeLift.face`: its free face, a generalized loop of the fibre.
+* `TopCat.Hom.IsCubeLift.toRelGenLoop`: a cube lift as a relative cube of the pair `(E, F)`.
 * `TauCeti.TopCat.fibrationBoundary`: the boundary map `π_{n+1}(B, b) → π_n(F, e)`.
 * `TauCeti.TopCat.fibrationBoundaryHom`: the boundary map as a group homomorphism, in positive
   dimensions.
@@ -124,6 +125,17 @@ def face (hG : p.IsCubeLift e γ G) : Ω^ N (p.fiber b) e :=
 @[simp]
 theorem coe_face_apply (hG : p.IsCubeLift e γ G) (t : I^N) : (hG.face t : E) = G (0, t) :=
   (rfl)
+
+/-- A cube lift, as a relative cube (`TauCeti.RelGenLoop`) of the based pair `(E, p⁻¹(b), e)`. -/
+def toRelGenLoop (hG : p.IsCubeLift e γ G) :
+    TauCeti.RelGenLoop N ⟨TopPair.ofSubset (p ⁻¹' {b}), e⟩ :=
+  ⟨G, TauCeti.RelGenLoop.mem_iff.2 ⟨fun t ↦ ⟨⟨_, hG.apply_zero_mem t⟩, rfl⟩, hG.apply_eq⟩⟩
+
+/-- The face of the relative cube of a cube lift is the face of the cube lift. -/
+@[simp]
+theorem boundary_toRelGenLoop (hG : p.IsCubeLift e γ G) :
+    TauCeti.RelGenLoop.boundary hG.toRelGenLoop = hG.face :=
+  GenLoop.ext _ _ fun _ ↦ (TauCeti.RelGenLoop.boundary_apply_eq_iff _ _ _).2 rfl
 
 end IsCubeLift
 
@@ -349,16 +361,9 @@ theorem exists_transAt [DecidableEq N] (j : N) {γ₁ γ₂ : Ω^ (Option N) B b
     {G₁ G₂ : C(I × (I^N), E)} (hG₁ : p.IsCubeLift e γ₁ G₁) (hG₂ : p.IsCubeLift e γ₂ G₂) :
     ∃ (G : C(I × (I^N), E)) (hG : p.IsCubeLift e (GenLoop.transAt (some j) γ₁ γ₂) G),
       hG.face = GenLoop.transAt j hG₁.face hG₂.face := by
-  -- A cube lift is a relative cube of the based pair `(E, p⁻¹(b), e)`, with the same face; the
-  -- concatenation is that of relative cubes.
-  let X : TauCeti.BasedTopPair := ⟨TopPair.ofSubset (p ⁻¹' {b}), e⟩
-  have hR : ∀ {γ G}, p.IsCubeLift e γ G → G ∈ TauCeti.RelGenLoop N X := fun hG ↦
-    TauCeti.RelGenLoop.mem_iff.2 ⟨fun t ↦ ⟨⟨_, hG.apply_zero_mem t⟩, rfl⟩, hG.apply_eq⟩
-  have hface : ∀ {γ G} (hG : p.IsCubeLift e γ G),
-      TauCeti.RelGenLoop.boundary ⟨G, hR hG⟩ = hG.face := fun hG ↦
-    GenLoop.ext _ _ fun t ↦ (TauCeti.RelGenLoop.boundary_apply_eq_iff _ _ _).2 rfl
-  set Q := TauCeti.RelGenLoop.transAt j ⟨G₁, hR hG₁⟩ ⟨G₂, hR hG₂⟩
-  -- The ambient space of `X` is `E` only after unfolding `TopPair.ofSubset`, so `p` cannot be
+  -- The concatenation is that of the relative cubes of the two lifts.
+  set Q := TauCeti.RelGenLoop.transAt j hG₁.toRelGenLoop hG₂.toRelGenLoop
+  -- The ambient space of the pair is `E` only after unfolding `TopPair.ofSubset`, so `p` cannot be
   -- rewritten along values of `Q`; name its underlying map as a map to `E` instead.
   obtain ⟨G, hGQ⟩ : ∃ G : C(I × (I^N), E), G = Q.1 := ⟨_, rfl⟩
   have hQ : ∀ s t, G (s, t) = if (t j : ℝ) ≤ 1 / 2
@@ -376,7 +381,7 @@ theorem exists_transAt [DecidableEq N] (j : N) {γ₁ γ₂ : Ω^ (Option N) B b
     · rw [hG₁.map_apply, TauCeti.piOptionEquivProdHomeomorph_symm_update]
     · rw [hG₂.map_apply, TauCeti.piOptionEquivProdHomeomorph_symm_update]
   refine ⟨G, hG, ?_⟩
-  rw [← hface hG, ← hface hG₁, ← hface hG₂]
+  rw [← boundary_toRelGenLoop hG, ← boundary_toRelGenLoop hG₁, ← boundary_toRelGenLoop hG₂]
   subst hGQ
   exact TauCeti.RelGenLoop.boundary_transAt j _ _
 
@@ -432,18 +437,15 @@ theorem map_fiberι_fibrationBoundary (hp : serreFibrations p) (e : p.fiber b)
   induction a using Quotient.inductionOn with
   | h γ =>
     obtain ⟨G, hG⟩ := exists_isCubeLift hp e γ
-    rw [fibrationBoundary_mk hp hG, HomotopyGroup.map_mk]
-    refine Quotient.sound ⟨{ toContinuousMap := G
-                             map_zero_left := fun t ↦ ?_
-                             map_one_left := fun t ↦ ?_
-                             prop' := fun r t ht ↦ ?_ }⟩
-    · simp only [ContinuousMap.toFun_eq_coe, GenLoop.coe_coe, GenLoop.map_apply]
-      exact ((p.fiberι_apply b _).trans (hG.coe_face_apply t)).symm
-    · simp only [ContinuousMap.toFun_eq_coe, GenLoop.coe_coe, GenLoop.const_apply]
-      exact hG.apply_eq 1 t (.inl rfl)
-    · simp only [ContinuousMap.toFun_eq_coe, GenLoop.coe_coe, GenLoop.map_apply]
-      exact (hG.apply_eq r t (.inr ht)).trans ((p.fiberι_apply b _).trans
-        ((hG.coe_face_apply t).trans (hG.apply_eq 0 t (.inr ht)))).symm
+    -- The fibre inclusion is the embedding of the pair `(E, p⁻¹(b))` of `hG.toRelGenLoop`.
+    set R := hG.toRelGenLoop
+    have hι : GenLoop.map (p.fiberι b).hom (p.fiberι_apply b e) (RelGenLoop.boundary R) =
+        GenLoop.map (TopPair.ofSubset (p ⁻¹' {b})).map.hom rfl (RelGenLoop.boundary R) :=
+      GenLoop.ext _ _ fun t ↦ (GenLoop.map_apply _ _ _ t).trans
+        ((p.fiberι_apply b _).trans
+          (GenLoop.map_apply (TopPair.ofSubset (p ⁻¹' {b})).map.hom rfl _ t).symm)
+    rw [fibrationBoundary_mk hp hG, HomotopyGroup.map_mk, ← hG.boundary_toRelGenLoop, hι]
+    exact Quotient.sound (RelGenLoop.homotopic_map_boundary_const R)
 
 /-- **Naturality of the boundary map** for a map of Serre fibrations, that is, a commutative
 square from `p` to `p'`. -/

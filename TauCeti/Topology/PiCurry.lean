@@ -129,19 +129,13 @@ theorem piOptionEquivProdHomeomorph_symm_apply_some {ι : Type*} (Y : Option ι 
   (rfl)
 
 /-- Reassembling a tuple from its `none` component and its `some` components commutes with
-changing one of the `some` components. -/
+changing one of the `some` components. This is Mathlib's `Option.rec_update`, restated for
+`piOptionEquivProdHomeomorph`, whose definition is not exposed to importing modules. -/
 theorem piOptionEquivProdHomeomorph_symm_update {ι : Type*} [DecidableEq ι] (Y : Option ι → Type*)
     [∀ i, TopologicalSpace (Y i)] (y : Y none) (x : ∀ i : ι, Y (some i)) (i : ι)
     (a : Y (some i)) :
     (piOptionEquivProdHomeomorph Y).symm (y, Function.update x i a) =
-      Function.update ((piOptionEquivProdHomeomorph Y).symm (y, x)) (some i) a := by
-  funext o
-  cases o with
-  | none => rfl
-  | some j =>
-    by_cases h : j = i
-    · subst h
-      simp
-    · simp [Function.update_of_ne h, Function.update_of_ne (Option.some_injective _ |>.ne h)]
+      Function.update ((piOptionEquivProdHomeomorph Y).symm (y, x)) (some i) a :=
+  Option.rec_update y x i a
 
 end TauCeti
