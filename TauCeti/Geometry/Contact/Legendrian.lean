@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Contact.Contactization
 public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 public import TauCeti.Geometry.Manifold.Immersion.Differential
 public import TauCeti.Geometry.Symplectic.Lagrangian.Exact
-import TauCeti.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Geometry.Contact.Pullback
 import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Graph
 
