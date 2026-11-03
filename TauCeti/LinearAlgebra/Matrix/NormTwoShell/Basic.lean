@@ -261,7 +261,7 @@ theorem exists_invariant_pairing_ne_zero (hB : B.PosDef) (hev : ∀ i, Even (B i
   refine ⟨h, ?_, ?_⟩
   · have hc := cramer_reindex σ B (fun _ ↦ (1 : ℤ))
     rw [hσ] at hc
-    exact hc.symm
+    simpa only [h, Function.comp_def] using hc.symm
   · intro a
     have hpair : h ⬝ᵥ B *ᵥ (a : I → ℤ) = B.det * ∑ i, (a : I → ℤ) i := by
       rw [hB.isHermitian.isSymm.dotProduct_mulVec_comm]
