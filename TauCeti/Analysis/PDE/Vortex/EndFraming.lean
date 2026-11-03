@@ -68,20 +68,10 @@ theorem tendsto_sectionValue_amplitudeField_mul_inv_phase_iff
     Tendsto (fun z ↦ Real.exp (u z) * ‖z‖ ^ P.natDegree) (cocompact ℂ) (𝓝 1) := by
   obtain ⟨q, hq, hfactor⟩ := exists_amplitudeField_end_factor hP u
   rw [tendsto_congr' hfactor]
-  constructor
-  · intro h
-    have hdiv := h.div hq one_ne_zero
-    rw [div_one] at hdiv
-    have hrad : Tendsto (fun z ↦ ((Real.exp (u z) * ‖z‖ ^ P.natDegree : ℝ) : ℂ))
-        (cocompact ℂ) (𝓝 1) := by
-      apply hdiv.congr'
-      filter_upwards [hq.eventually_ne one_ne_zero] with z hz
-      exact mul_div_cancel_right₀ _ hz
-    simpa only [Function.comp_def, ofReal_re, one_re] using
-      (continuous_re.tendsto 1).comp hrad
-  · intro h
-    have hc := (continuous_ofReal.tendsto 1).comp h
-    simpa only [Function.comp_def, ofReal_one, one_mul] using hc.mul hq
+  simpa only [mul_one, ofReal_one] using
+    (tendsto_mul_iff_of_ne_zero (x := (1 : ℂ))
+      (f := fun z ↦ ((Real.exp (u z) * ‖z‖ ^ P.natDegree : ℝ) : ℂ)) hq one_ne_zero).trans
+      (tendsto_ofReal_iff (x := 1))
 
 /-- The scalar logarithmic boundary condition is exactly the degree-`m` phase framing
 for the section reconstructed from a monic divisor polynomial. -/
@@ -126,17 +116,14 @@ theorem tendsto_sectionValue_amplitudeField_mul_inv_phase_iff_norm
   · intro h
     rw [tendsto_sectionValue_amplitudeField_mul_inv_phase_iff hP]
     obtain ⟨q, hq, hfactor⟩ := exists_amplitudeField_end_factor hP u
-    have hh := h.div hq.norm (by simp)
-    simp only [norm_one, div_one] at hh
-    apply hh.congr'
-    filter_upwards [hz, hq.eventually_ne one_ne_zero, hfactor] with z hz hqz hfactor
-    have hnorm : ‖sectionValue (amplitudeField u P.eval) z‖ =
-        (Real.exp (u z) * ‖z‖ ^ P.natDegree) * ‖q z‖ := by
+    have hnorm : (fun z ↦ ‖sectionValue (amplitudeField u P.eval) z‖) =ᶠ[cocompact ℂ]
+        (fun z ↦ (Real.exp (u z) * ‖z‖ ^ P.natDegree) * ‖q z‖) := by
+      filter_upwards [hz, hfactor] with z hz hfactor
       have hn := congrArg norm hfactor
       simpa only [norm_mul, norm_inv, norm_pow, norm_div, norm_real, Real.norm_eq_abs,
         abs_of_pos (Real.exp_pos _), abs_norm,
         div_self (norm_ne_zero_iff.mpr hz), one_pow, inv_one, mul_one] using hn
-    simpa only [Pi.div_apply, hnorm] using
-      mul_div_cancel_right₀ (Real.exp (u z) * ‖z‖ ^ P.natDegree) (norm_ne_zero_iff.mpr hqz)
+    apply (tendsto_mul_iff_of_ne_zero (x := (1 : ℝ)) hq.norm (by simp)).mp
+    simpa only [norm_one, mul_one] using (tendsto_congr' hnorm).mp h
 
 end TauCeti.Vortex
