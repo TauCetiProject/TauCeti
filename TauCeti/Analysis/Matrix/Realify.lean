@@ -77,6 +77,6 @@ theorem posDef_realify_iff [Finite n] {A : Matrix n n 𝕜} :
     have hR : A.realify.PosSemidef := posSemidef_realify_iff.mpr hA.posSemidef
     exact hR.posDef_iff_isUnit.mpr
       ((isUnit_iff_isUnit_det A.realify).mpr
-        (isUnit_det_realify ((isUnit_iff_isUnit_det A).mp hA.isUnit)))
+        (isUnit_det_realify_iff.mpr ((isUnit_iff_isUnit_det A).mp hA.isUnit)))
 
 end Matrix
