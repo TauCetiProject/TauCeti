@@ -323,18 +323,9 @@ image of those directions in the original cokernel. -/
 @[simp]
 theorem ker_cokerCoprodHom :
     LinearMap.ker (cokerCoprodHom D₁ D₂) = LinearMap.range (parameterToCoker D₁ D₂) := by
-  have hcomp : (cokerCoprodHom D₁ D₂).comp D₁.range.mkQ = (D₁.coprod D₂).range.mkQ := by
-    ext y
-    simp
-  have hker : LinearMap.ker (cokerCoprodHom D₁ D₂) =
-      (D₁.coprod D₂).range.map D₁.range.mkQ := by
-    apply Submodule.comap_injective_of_surjective D₁.range.mkQ_surjective
-    rw [← LinearMap.ker_comp, hcomp, Submodule.ker_mkQ,
-      Submodule.comap_map_eq_self]
-    rw [Submodule.ker_mkQ]
-    exact range_le_range_coprod D₁ D₂
-  rw [hker, range_coprod, Submodule.map_sup, Submodule.mkQ_map_self, bot_sup_eq,
-    range_parameterToCoker]
+  -- `Submodule.factor` abbreviates the identity-induced `mapQ`, whose kernel has a named lemma.
+  rw [cokerCoprodHom, Submodule.ker_mapQ, Submodule.comap_id, range_coprod,
+    Submodule.map_sup, Submodule.mkQ_map_self, bot_sup_eq, range_parameterToCoker]
 
 /-- Exactness at the original cokernel in the domain-extension sequence.
 Together with `exact_kerCoprodHom_parameterProj`,
@@ -458,6 +449,14 @@ theorem finiteDimensional_ker_parameterProj [FiniteDimensional 𝕜 D₁.ker] :
     FiniteDimensional 𝕜 ((parameterProj D₁ D₂).ker) :=
   (kerEquivKerParameterProj D₁ D₂).toLinearEquiv.finiteDimensional
 
+/-- Adjoining finitely many domain variables preserves finite-dimensionality of the kernel. -/
+theorem finiteDimensional_ker_coprod [FiniteDimensional 𝕜 D₁.ker]
+    [FiniteDimensional 𝕜 Λ] : FiniteDimensional 𝕜 (D₁.coprod D₂).ker := by
+  have := finiteDimensional_ker_parameterProj D₁ D₂
+  have : FiniteDimensional 𝕜 ((D₁.coprod D₂).ker ⧸ (parameterProj D₁ D₂).ker) :=
+    (LinearMap.quotKerEquivRange (parameterProj D₁ D₂).toLinearMap).symm.finiteDimensional
+  exact Module.Finite.of_submodule_quotient (parameterProj D₁ D₂).ker
+
 /-- The cokernel of the parameter projection is finite dimensional as soon as that of `D₁` is;
 surjectivity of the total linearization is not needed. -/
 theorem finiteDimensional_quotient_range_parameterProj
@@ -494,10 +493,7 @@ Neither Fredholmness nor surjectivity of the extension is required. -/
 theorem index_coprod [FiniteDimensional 𝕜 D₁.ker]
     [FiniteDimensional 𝕜 (F ⧸ D₁.range)] [FiniteDimensional 𝕜 Λ] :
     (D₁.coprod D₂).index = D₁.index + finrank 𝕜 Λ := by
-  have := finiteDimensional_ker_parameterProj D₁ D₂
-  have : FiniteDimensional 𝕜 ((D₁.coprod D₂).ker ⧸ (parameterProj D₁ D₂).ker) :=
-    (LinearMap.quotKerEquivRange (parameterProj D₁ D₂).toLinearMap).symm.finiteDimensional
-  have := Module.Finite.of_submodule_quotient (parameterProj D₁ D₂).ker
+  have := finiteDimensional_ker_coprod D₁ D₂
   have hker := finrank_ker_coprod_add_finrank_range_parameterToCoker D₁ D₂
   have hcoker := finrank_coker_coprod_add_finrank_range_parameterToCoker D₁ D₂
   rw [index_eq_finrank_sub, index_eq_finrank_sub]
