@@ -49,16 +49,6 @@ def keplerActionHamiltonian (m κ : ℝ) (I : ℝ × ℝ) : ℝ :=
 theorem keplerActionHamiltonian_def (m κ : ℝ) (I : ℝ × ℝ) :
     keplerActionHamiltonian m κ I = -(m * κ ^ 2) / (2 * (I.1 + |I.2|) ^ 2) := (rfl)
 
-/-- The evaluated radial action gives precisely the Kepler action Hamiltonian, with the
-angular action equal to `ℓ`, not `|ℓ|`. -/
-@[simp]
-theorem keplerActionHamiltonian_radialAction {m κ ℓ E r₁ r₂ : ℝ}
-    (hm : 0 < m) (hℓ : ℓ ≠ 0) (h₁ : 0 < r₁) (hlt : r₁ < r₂)
-    (hr₁ : 2 * m * (E + κ / r₁) = ℓ ^ 2 / r₁ ^ 2)
-    (hr₂ : 2 * m * (E + κ / r₂) = ℓ ^ 2 / r₂ ^ 2) :
-    keplerActionHamiltonian m κ (radialAction m (fun r ↦ -κ / r) ℓ E r₁ r₂, ℓ) = E :=
-  (kepler_energy_eq_neg_div_sq_radialAction_add_abs hm hℓ h₁ hlt hr₁ hr₂).symm
-
 /-- The action Hamiltonian is smooth away from zero angular action and zero total action. -/
 theorem contDiffAt_keplerActionHamiltonian (m κ : ℝ) {I : ℝ × ℝ} {k : ℕ∞}
     (hℓ : I.2 ≠ 0) (hI : I.1 + |I.2| ≠ 0) :
