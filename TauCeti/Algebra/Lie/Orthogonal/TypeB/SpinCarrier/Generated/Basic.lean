@@ -237,6 +237,28 @@ theorem baseChangeMap_generatedCoordinateMap_comp_generatedCoordinateHopfAlgebra
   CommHopfAlgCat.baseChangeMap_mkQuotient_comp_quotientBaseChangeIsoOfMapEq_hom _ _ _
     (map_baseChangeHopfIdeal_generatedDefiningIdeal n k K)
 
+/-- The generated-carrier comparison intertwines every numbered root-subgroup and weight-torus
+coordinate lift. -/
+@[reassoc (attr := simp)]
+theorem baseChangeMap_generatedCoordinateLift_comp_generatorCoordinateAlgebraBaseChangeIso_hom
+    [Module.Free k K] (j : (Fin (n + 1) ⊕ Fin (n + 1)) ⊕ Unit) :
+    CommHopfAlgCat.baseChangeMap (K := K) (generatedCoordinateLift n k j) ≫
+        (generatorCoordinateAlgebraBaseChangeIso n k K j).hom =
+      (generatedCoordinateHopfAlgebraBaseChangeIso n k K).hom ≫
+        generatedCoordinateLift n K j := by
+  apply CommHopfAlgCat.baseChangeMap_lift_comp_iso_hom
+    (generatedCoordinateMap n k) (generatedCoordinateMap_surjective n k)
+    (generatedCoordinateLift n k j) (generatedCoordinateMap n K)
+    (generatedCoordinateLift n K j)
+    (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K (dimension n))
+    (generatedCoordinateHopfAlgebraBaseChangeIso n k K)
+    (generatorCoordinateAlgebraBaseChangeIso n k K j)
+    (baseChangeMap_generatedCoordinateMap_comp_generatedCoordinateHopfAlgebraBaseChangeIso_hom
+      n k K)
+  rw [generatedCoordinateMap_comp_generatedCoordinateLift,
+    generatedCoordinateMap_comp_generatedCoordinateLift]
+  exact generatorCoordinateMap_baseChange n k K j
+
 end BaseChange
 
 end TauCeti.TypeBSpinCarrier
