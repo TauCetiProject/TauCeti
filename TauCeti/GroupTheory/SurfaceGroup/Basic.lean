@@ -75,17 +75,9 @@ surface group `S⁺(g, m)`. -/
 def orientableWord (α β : Fin g → G) (γ : Fin m → G) : G :=
   (List.ofFn fun i ↦ (α i)⁻¹ * (β i)⁻¹ * α i * β i).prod * (List.ofFn γ).prod
 
-/-- The nonorientable surface word `κ₁ ^ 2 ⋯ κ_g ^ 2 γ₁ ⋯ γ_m` in a group. Its vanishing is the
-defining relation of the nonorientable surface group `S⁻(g, m)`. -/
-def nonorientableWord (κ : Fin g → G) (γ : Fin m → G) : G :=
-  (List.ofFn fun i ↦ κ i ^ 2).prod * (List.ofFn γ).prod
-
 theorem orientableWord_def (α β : Fin g → G) (γ : Fin m → G) :
     orientableWord α β γ =
       (List.ofFn fun i ↦ (α i)⁻¹ * (β i)⁻¹ * α i * β i).prod * (List.ofFn γ).prod := (rfl)
-
-theorem nonorientableWord_def (κ : Fin g → G) (γ : Fin m → G) :
-    nonorientableWord κ γ = (List.ofFn fun i ↦ κ i ^ 2).prod * (List.ofFn γ).prod := (rfl)
 
 /-- A homomorphism carries the orientable surface word to the surface word of the images. -/
 theorem map_orientableWord (f : G →* H) (α β : Fin g → G) (γ : Fin m → G) :
@@ -93,10 +85,24 @@ theorem map_orientableWord (f : G →* H) (α β : Fin g → G) (γ : Fin m → 
       orientableWord (fun i ↦ f (α i)) (fun i ↦ f (β i)) fun j ↦ f (γ j) := by
   simp [orientableWord, map_list_prod, List.map_ofFn, Function.comp_def]
 
+section Nonorientable
+
+variable {M N : Type*} [Monoid M] [Monoid N]
+
+/-- The nonorientable surface word `κ₁ ^ 2 ⋯ κ_g ^ 2 γ₁ ⋯ γ_m` in a monoid. Its vanishing is the
+defining relation of the nonorientable surface group `S⁻(g, m)`. -/
+def nonorientableWord (κ : Fin g → M) (γ : Fin m → M) : M :=
+  (List.ofFn fun i ↦ κ i ^ 2).prod * (List.ofFn γ).prod
+
+theorem nonorientableWord_def (κ : Fin g → M) (γ : Fin m → M) :
+    nonorientableWord κ γ = (List.ofFn fun i ↦ κ i ^ 2).prod * (List.ofFn γ).prod := (rfl)
+
 /-- A homomorphism carries the nonorientable surface word to the surface word of the images. -/
-theorem map_nonorientableWord (f : G →* H) (κ : Fin g → G) (γ : Fin m → G) :
+theorem map_nonorientableWord (f : M →* N) (κ : Fin g → M) (γ : Fin m → M) :
     f (nonorientableWord κ γ) = nonorientableWord (fun i ↦ f (κ i)) fun j ↦ f (γ j) := by
   simp [nonorientableWord, map_list_prod, List.map_ofFn, Function.comp_def]
+
+end Nonorientable
 
 end Words
 

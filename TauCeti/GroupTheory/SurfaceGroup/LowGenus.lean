@@ -174,6 +174,11 @@ theorem torusEquiv_a (i : Fin 1) : torusEquiv (a 1 0 i) = .ofAdd (Pi.single 0 1)
 theorem torusEquiv_b (i : Fin 1) : torusEquiv (b 1 0 i) = .ofAdd (Pi.single 1 1) := by
   simp [torusEquiv]
 
+@[simp]
+theorem torusEquiv_symm_apply (v : Multiplicative (Fin 2 → ℤ)) :
+    torusEquiv.symm v = a 1 0 0 ^ v.toAdd 0 * b 1 0 0 ^ v.toAdd 1 :=
+  (rfl)
+
 end Orientable
 
 namespace Nonorientable
@@ -208,6 +213,11 @@ def projectivePlaneEquiv : Nonorientable 1 0 ≃* Multiplicative (ZMod 2) :=
 @[simp]
 theorem projectivePlaneEquiv_c (i : Fin 1) : projectivePlaneEquiv (c 1 0 i) = .ofAdd 1 := by
   simp [projectivePlaneEquiv]
+
+@[simp]
+theorem projectivePlaneEquiv_symm_ofAdd_intCast (k : ℤ) :
+    projectivePlaneEquiv.symm (.ofAdd (k : ZMod 2)) = c 1 0 0 ^ k :=
+  projectivePlaneEquivSymm_intCast k
 
 /-- The nonorientable surface group `S⁻(1, 0)` of the projective plane has order two. -/
 theorem natCard_projectivePlane : Nat.card (Nonorientable 1 0) = 2 := by
