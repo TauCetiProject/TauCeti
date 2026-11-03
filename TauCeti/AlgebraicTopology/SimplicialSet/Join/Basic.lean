@@ -626,6 +626,22 @@ lemma univ_right_app_inr_app {n : SimplexCategoryᵒᵖ} (x : L.obj n)
     (univ K L).right.app n ⟨(inr K L).app n x, hx⟩ = x :=
   JoinData.congr_right_app (homEquiv.apply_symm_apply _) x hx (by simp)
 
+/-- The join data of the inclusion of `K` into `K ⋆ L` restrict to the identity of `K` over the
+vertex `0`. -/
+lemma homEquiv_inl_left_app {n : SimplexCategoryᵒᵖ} (x : K.obj n)
+    (hx : x ∈ (joinFiber (homEquiv (inl K L)).p 0).obj n) :
+    (homEquiv (inl K L)).left.app n ⟨x, hx⟩ = x :=
+  (JoinData.congr_left_app (homEquiv_apply _) x hx
+    (by rwa [homEquiv_apply] at hx)).trans (univ_left_app_inl_app x _)
+
+/-- The join data of the inclusion of `L` into `K ⋆ L` restrict to the identity of `L` over the
+vertex `1`. -/
+lemma homEquiv_inr_right_app {n : SimplexCategoryᵒᵖ} (x : L.obj n)
+    (hx : x ∈ (joinFiber (homEquiv (inr K L)).p 1).obj n) :
+    (homEquiv (inr K L)).right.app n ⟨x, hx⟩ = x :=
+  (JoinData.congr_right_app (homEquiv_apply _) x hx
+    (by rwa [homEquiv_apply] at hx)).trans (univ_right_app_inr_app x _)
+
 variable (K L) in
 /-- Every simplex of the join over the vertex `0` is the inclusion of its image in `K` under the map
 to `K` of the tautological join data. -/
