@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Order.Star.Real
 public import Mathlib.Analysis.Matrix.MeasurableSpace
 public import Mathlib.Analysis.Matrix.Order
 public import Mathlib.LinearAlgebra.Matrix.PosDef
+public import Mathlib.MeasureTheory.Integral.Pi
 public import Mathlib.Probability.Distributions.Gaussian.Real
 public import TauCeti.Analysis.Matrix.MeasurableSpace
 public import TauCeti.Probability.Distributions.Gaussian.ProperComplex.Modulus
@@ -356,31 +357,19 @@ theorem integral_trace_re_gaussianGramComplex (m n : ℕ) :
   have hscalar_int := integrable_norm_sq_properComplexGaussianScalar
   have hscalar_val := integral_norm_sq_properComplexGaussianScalar
   have hint : ∀ i j, Integrable (fun z : Fin m × Fin n → ℂ ↦ ‖z (i, j)‖ ^ 2)
-      (Measure.pi fun _ : Fin m × Fin n ↦ properComplexGaussianScalar) := by
-    intro i j
-    let e := measurePreserving_eval
-      (fun _ : Fin m × Fin n ↦ properComplexGaussianScalar) (i, j)
-    have hmap : Integrable (fun z : ℂ ↦ ‖z‖ ^ 2)
-        ((Measure.pi fun _ : Fin m × Fin n ↦ properComplexGaussianScalar).map
-          (fun z ↦ z (i, j))) := by
-      rw [e.map_eq]
-      exact hscalar_int
-    have hcont : Continuous (fun z : ℂ ↦ ‖z‖ ^ 2) := by fun_prop
-    exact (integrable_map_measure (f := fun z : Fin m × Fin n → ℂ ↦ z (i, j))
-      (g := fun z : ℂ ↦ ‖z‖ ^ 2) hcont.aestronglyMeasurable
-      (measurable_pi_apply (i, j)).aemeasurable).mp hmap
+      (Measure.pi fun _ : Fin m × Fin n ↦ properComplexGaussianScalar) :=
+    fun i j ↦ integrable_comp_eval
+      (μ := fun _ : Fin m × Fin n ↦ properComplexGaussianScalar)
+      (X := fun _ : Fin m × Fin n ↦ ℂ) (i := (i, j)) (E := ℝ)
+      (f := fun z : ℂ ↦ ‖z‖ ^ 2) hscalar_int
   have hval : ∀ i j,
       ∫ z : Fin m × Fin n → ℂ, ‖z (i, j)‖ ^ 2
-        ∂(Measure.pi fun _ : Fin m × Fin n ↦ properComplexGaussianScalar) = 1 := by
-    intro i j
-    let e := measurePreserving_eval
-      (fun _ : Fin m × Fin n ↦ properComplexGaussianScalar) (i, j)
-    calc
-      _ = ∫ z : ℂ, ‖z‖ ^ 2
-          ∂((Measure.pi fun _ : Fin m × Fin n ↦ properComplexGaussianScalar).map
-            (fun z ↦ z (i, j))) :=
-        (integral_map (measurable_pi_apply (i, j)).aemeasurable (by fun_prop)).symm
-      _ = 1 := by rw [e.map_eq]; exact hscalar_val
+        ∂(Measure.pi fun _ : Fin m × Fin n ↦ properComplexGaussianScalar) = 1 :=
+    fun i j ↦ by
+      rw [integral_comp_eval (μ := fun _ : Fin m × Fin n ↦ properComplexGaussianScalar)
+        (X := fun _ : Fin m × Fin n ↦ ℂ) (i := (i, j)) (E := ℝ)
+        (f := fun z : ℂ ↦ ‖z‖ ^ 2)
+        hscalar_int.aestronglyMeasurable, hscalar_val]
   have he : ∀ X : Matrix (Fin m) (Fin n) ℂ,
       (X * Xᴴ).trace.re = ∑ i, ∑ j, ‖X i j‖ ^ 2 := fun X ↦ by
     simpa using re_trace_mul_conjTranspose_self X
