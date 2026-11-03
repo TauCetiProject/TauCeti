@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Module.Basic
+import TauCeti.Analysis.Normed.Group.OpenMapping
 
 /-!
 # Gauss norms on module-valued restricted series
@@ -15,7 +16,10 @@ weighted supremum seminorm at every positive real polyradius. Coefficient projec
 bounded, bounded maps of coefficient modules induce bounded maps of restricted families, and
 convolution by a scalar restricted series satisfies the Gauss norm inequality. These estimates
 equip module-valued series with the norm needed for bounded analytic operations and
-presentations of coefficient modules.
+presentations of coefficient modules. Bounded coefficient lifts give Gauss lifts with the same
+norm bound, so the induced map is open and is a quotient map. This extends the
+coefficient-lifting argument of
+`TauCeti.MvPowerSeries.exists_restrictedMap_eq_and_norm_coeff_le` to module coefficients.
 
 Complete coefficient groups give complete restricted families. The construction allows arbitrary
 variable sets and seminormed additive coefficient groups. It is a norm for normed coefficients.
@@ -326,6 +330,51 @@ theorem uniformContinuous_mapLinearMap (φ : E →ₗ[R] F) {C : ℝ} (hC : 0 �
     UniformContinuous (mapLinearMap (c := c) φ hφ) :=
   AddMonoidHomClass.uniformContinuous_of_bound (mapLinearMap (c := c) φ hφ) C
     (norm_mapLinearMap_le φ hC hφ)
+
+variable (φ : E →ₗ[R] F) {C : ℝ} (hφ : ∀ e, ‖φ e‖ ≤ C * ‖e‖)
+
+/-- Bounded coefficient lifts give Gauss lifts with the same bound. -/
+theorem exists_mapLinearMap_eq_and_norm_le {L : ℝ} (hL : 0 ≤ L)
+    (hlift : ∀ y, ∃ x, φ x = y ∧ ‖x‖ ≤ L * ‖y‖) (b : Gauss c F) :
+    ∃ a, mapLinearMap φ hφ a = b ∧ ‖a‖ ≤ L * ‖b‖ := by
+  obtain ⟨a, ha, hcoeff⟩ :=
+    IsRestrictedFamily.exists_mapLinearMap_eq_and_norm_coeff_le φ hφ hlift b.toAddSubgroup
+  refine ⟨ofAddSubgroup a, ?_, norm_le_mul_of_norm_coeff_le hL hcoeff⟩
+  · apply ext
+    intro t
+    simpa only [mapLinearMap_apply, ofAddSubgroup_apply,
+      IsRestrictedFamily.coe_mapLinearMap, Function.comp_apply]
+      using congrFun (congrArg Subtype.val ha) t
+
+/-- A bounded coefficient map with uniformly bounded lifts induces an open map of Gauss
+families, without completeness assumptions. -/
+theorem isOpenMap_mapLinearMap {L : ℝ}
+    (hlift : ∀ y, ∃ x, φ x = y ∧ ‖x‖ ≤ L * ‖y‖) :
+    IsOpenMap (mapLinearMap (c := c) φ hφ) := by
+  apply TauCeti.isOpenMap_of_exists_norm_le (mapLinearMap (c := c) φ hφ) (K := max L 0)
+  apply exists_mapLinearMap_eq_and_norm_le φ hφ (le_max_right L 0)
+  intro y
+  obtain ⟨x, hx, hnorm⟩ := hlift y
+  exact ⟨x, hx, hnorm.trans
+    (mul_le_mul_of_nonneg_right (le_max_left L 0) (norm_nonneg y))⟩
+
+/-- Bounded coefficient maps with uniformly bounded lifts induce quotient maps for the Gauss
+topologies at positive real polyradii. -/
+theorem isQuotientMap_mapLinearMap {L : ℝ}
+    (hlift : ∀ y, ∃ x, φ x = y ∧ ‖x‖ ≤ L * ‖y‖) :
+    Topology.IsQuotientMap (mapLinearMap (c := c) φ hφ) := by
+  have hbound (e : E) : ‖φ e‖ ≤ max C 0 * ‖e‖ :=
+    (hφ e).trans (mul_le_mul_of_nonneg_right (le_max_left C 0) (norm_nonneg e))
+  have hcont : Continuous (mapLinearMap (c := c) φ hφ) :=
+    (uniformContinuous_mapLinearMap (c := c) φ (le_max_right C 0) hbound).continuous.congr
+      (fun a ↦ ext fun t ↦ by simp only [mapLinearMap_apply])
+  apply (isOpenMap_mapLinearMap φ hφ hlift).isQuotientMap hcont
+  intro b
+  obtain ⟨a, ha⟩ := IsRestrictedFamily.mapLinearMap_surjective φ hφ hlift b.toAddSubgroup
+  refine ⟨ofAddSubgroup a, ext fun t ↦ ?_⟩
+  simpa only [mapLinearMap_apply, ofAddSubgroup_apply,
+    IsRestrictedFamily.coe_mapLinearMap, Function.comp_apply]
+    using congrFun (congrArg Subtype.val ha) t
 
 end Scalar
 

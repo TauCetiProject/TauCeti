@@ -13,11 +13,6 @@ import TauCeti.Analysis.Normed.Group.OpenMapping
 /-!
 # Quotients of module-valued restricted series
 
-Bounded lifts of coefficient linear maps give lifts of restricted families with the same
-coefficient bounds, and with the same Gauss norm bound at positive polyradii. Consequently the
-induced map is open and is a quotient map. This extends the coefficient-lifting argument of
-`TauCeti.MvPowerSeries.exists_restrictedMap_eq_and_norm_coeff_le` to module coefficients.
-
 For a closed coefficient submodule `N ≤ E`, the native quotient map `E → E ⧸ N` has bounded
 lifts. Restricted families therefore preserve its short exact sequence, and Gauss families
 carry the quotient topology. Neither completeness nor finitely many variables is required.
@@ -28,62 +23,6 @@ they do not assert independence of such presentations.
 public section
 
 noncomputable section
-
-namespace TauCeti.MvPowerSeries.IsRestrictedFamily
-
-variable {σ R E F : Type*} [SeminormedRing R]
-  [SeminormedAddCommGroup E] [SeminormedAddCommGroup F]
-  [Module R E] [IsBoundedSMul R E] [Module R F] [IsBoundedSMul R F]
-  {c : σ → ℝ} (φ : E →ₗ[R] F) {C : ℝ} (hφ : ∀ e, ‖φ e‖ ≤ C * ‖e‖)
-
-namespace Gauss
-
-/-- Bounded coefficient lifts give Gauss lifts with the same bound. -/
-theorem exists_mapLinearMap_eq_and_norm_le [∀ i, Fact (0 < c i)] {L : ℝ} (hL : 0 ≤ L)
-    (hlift : ∀ y, ∃ x, φ x = y ∧ ‖x‖ ≤ L * ‖y‖) (b : Gauss c F) :
-    ∃ a, mapLinearMap φ hφ a = b ∧ ‖a‖ ≤ L * ‖b‖ := by
-  obtain ⟨a, ha, hcoeff⟩ :=
-    IsRestrictedFamily.exists_mapLinearMap_eq_and_norm_coeff_le φ hφ hlift b.toAddSubgroup
-  refine ⟨ofAddSubgroup a, ?_, norm_le_mul_of_norm_coeff_le hL hcoeff⟩
-  · apply ext
-    intro t
-    simpa only [mapLinearMap_apply, ofAddSubgroup_apply,
-      IsRestrictedFamily.coe_mapLinearMap, Function.comp_apply]
-      using congrFun (congrArg Subtype.val ha) t
-
-/-- A bounded coefficient map with uniformly bounded lifts induces an open map of Gauss
-families, without completeness assumptions. -/
-theorem isOpenMap_mapLinearMap [∀ i, Fact (0 < c i)] {L : ℝ}
-    (hlift : ∀ y, ∃ x, φ x = y ∧ ‖x‖ ≤ L * ‖y‖) :
-    IsOpenMap (mapLinearMap (c := c) φ hφ) := by
-  apply TauCeti.isOpenMap_of_exists_norm_le (mapLinearMap (c := c) φ hφ) (K := max L 0)
-  apply exists_mapLinearMap_eq_and_norm_le φ hφ (le_max_right L 0)
-  intro y
-  obtain ⟨x, hx, hnorm⟩ := hlift y
-  exact ⟨x, hx, hnorm.trans
-    (mul_le_mul_of_nonneg_right (le_max_left L 0) (norm_nonneg y))⟩
-
-/-- Bounded coefficient maps with uniformly bounded lifts induce quotient maps for the Gauss
-topologies at positive real polyradii. -/
-theorem isQuotientMap_mapLinearMap [∀ i, Fact (0 < c i)] {L : ℝ}
-    (hlift : ∀ y, ∃ x, φ x = y ∧ ‖x‖ ≤ L * ‖y‖) :
-    Topology.IsQuotientMap (mapLinearMap (c := c) φ hφ) := by
-  have hbound (e : E) : ‖φ e‖ ≤ max C 0 * ‖e‖ :=
-    (hφ e).trans (mul_le_mul_of_nonneg_right (le_max_left C 0) (norm_nonneg e))
-  have hcont : Continuous (mapLinearMap (c := c) φ hφ) :=
-    (uniformContinuous_mapLinearMap (c := c) φ (le_max_right C 0) hbound).continuous.congr
-      (fun a ↦ ext fun t ↦ by simp only [mapLinearMap_apply])
-  apply (isOpenMap_mapLinearMap φ hφ hlift).isQuotientMap hcont
-  intro b
-  obtain ⟨a, ha⟩ := IsRestrictedFamily.mapLinearMap_surjective φ hφ hlift b.toAddSubgroup
-  refine ⟨ofAddSubgroup a, ext fun t ↦ ?_⟩
-  simpa only [mapLinearMap_apply, ofAddSubgroup_apply,
-    IsRestrictedFamily.coe_mapLinearMap, Function.comp_apply]
-    using congrFun (congrArg Subtype.val ha) t
-
-end Gauss
-
-end TauCeti.MvPowerSeries.IsRestrictedFamily
 
 namespace Submodule
 
@@ -219,6 +158,17 @@ theorem gaussFamilyMkQ_gaussFamilySubtype (a : Gauss c N) :
     gaussFamilyMkQ N (gaussFamilySubtype N a) = 0 :=
   LinearMap.mem_ker.mp (range_gaussFamilySubtype N ▸ LinearMap.mem_range_self _ a)
 
+/-- The quotient map on coefficients is surjective on Gauss families, without any positivity
+assumption on the radii. -/
+theorem gaussFamilyMkQ_surjective [IsClosed (N : Set E)] :
+    Function.Surjective (gaussFamilyMkQ (c := c) N) := by
+  intro b
+  obtain ⟨a, ha⟩ := restrictedFamilyMkQ_surjective N b.toAddSubgroup
+  refine ⟨Gauss.ofAddSubgroup a, Gauss.ext fun t ↦ ?_⟩
+  simpa only [gaussFamilyMkQ_apply, Gauss.ofAddSubgroup_apply,
+    restrictedFamilyMkQ_apply]
+    using congrFun (congrArg Subtype.val ha) t
+
 variable [∀ i, Fact (0 < c i)]
 
 /-- The coefficient submodule inclusion preserves the Gauss seminorm. -/
@@ -246,12 +196,6 @@ theorem exists_gaussFamilyMkQ_eq_and_norm_le {L : ℝ} (hL : 1 < L)
   simpa only [gaussFamilyMkQ_apply, Gauss.ofAddSubgroup_apply,
     restrictedFamilyMkQ_apply]
     using congrFun (congrArg Subtype.val ha) t
-
-/-- The quotient map on coefficients is surjective on Gauss families. -/
-theorem gaussFamilyMkQ_surjective : Function.Surjective (gaussFamilyMkQ (c := c) N) := by
-  intro b
-  obtain ⟨a, ha, -⟩ := exists_gaussFamilyMkQ_eq_and_norm_le N (L := 2) (by norm_num) b
-  exact ⟨a, ha⟩
 
 /-- The quotient map on coefficients is open on Gauss families. -/
 theorem isOpenMap_gaussFamilyMkQ : IsOpenMap (gaussFamilyMkQ (c := c) N) :=
