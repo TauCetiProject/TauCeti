@@ -50,31 +50,6 @@ open scoped Real ModularForm
 
 namespace TauCeti
 
-section Entire
-
-variable {q : ℂ}
-
-/-- For `‖q‖ < 1`, `z ↦ θ_q(e^{2π i z})` is an entire function. -/
-private theorem differentiable_qTheta_exp (hq : ‖q‖ < 1) :
-    Differentiable ℂ fun z : ℂ ↦ qTheta q (cexp (2 * π * I * z)) := fun z ↦
-  ((differentiableOn_qTheta hq).differentiableAt
-    (isOpen_compl_singleton.mem_nhds (exp_ne_zero _))).comp (f := fun z ↦ cexp (2 * π * I * z)) z
-    (by fun_prop)
-
-/-- The derivative of `z ↦ θ_q(e^{2π i z})` at `z = 0` is `-2π i (∏_{n ≥ 1} (1 - qⁿ))²`. -/
-private theorem hasDerivAt_qTheta_exp_zero (hq : ‖q‖ < 1) :
-    HasDerivAt (fun z : ℂ ↦ qTheta q (cexp (2 * π * I * z)))
-      (-(2 * π * I) * (∏' n : ℕ, (1 - q ^ (n + 1))) ^ 2) 0 := by
-  have h := (hasDerivAt_qTheta_one hq).comp_of_eq (0 : ℂ)
-    ((hasDerivAt_id (0 : ℂ)).const_mul (2 * π * I)).cexp (by simp)
-  convert h using 1
-  · funext z
-    simp
-  · simp only [id, mul_zero, Complex.exp_zero, mul_one]
-    ring
-
-end Entire
-
 section Inversion
 
 variable {τ : ℂ}

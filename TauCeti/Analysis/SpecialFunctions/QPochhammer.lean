@@ -49,6 +49,9 @@ holomorphy argument is adapted from `Mathlib.NumberTheory.ModularForms.DedekindE
 * `TauCeti.qTheta_one`, `TauCeti.differentiableOn_qTheta`, `TauCeti.hasDerivAt_qTheta_one`:
   `θ_q(1) = 0`, and for `‖q‖ < 1` the theta product is holomorphic on `ℂ \ {0}` with derivative
   `-(∏_{n ≥ 1} (1 - qⁿ))²` at `w = 1`.
+* `TauCeti.qTheta_eq_mul_tprod_mul_tprod`: `θ_q(w)` is `1 - w` times its two half products.
+* `TauCeti.differentiable_qTheta_exp`, `TauCeti.hasDerivAt_qTheta_exp_zero`: for `‖q‖ < 1`,
+  `z ↦ θ_q(e^{2π i z})` is entire, with derivative `-2π i (∏_{n ≥ 1} (1 - qⁿ))²` at `z = 0`.
 * `TauCeti.qTheta_neg_one`, `TauCeti.qTheta_sq_self`: `θ_q(-1) = 2 (∏_{n ≥ 1} (1 + qⁿ))²` and
   `θ_{s²}(s) = (∏_{n ≥ 0} (1 - s^{2n+1}))²`.
 * `TauCeti.tprod_one_sub_pow_eq_tprod_one_sub_pow_odd_mul`,
@@ -157,6 +160,13 @@ converges. -/
 theorem multipliable_qTheta {q : 𝕜} (hq : ‖q‖ < 1) (w : 𝕜) :
     Multipliable fun n : ℕ ↦ (1 - q ^ (n + 1) * w) * (1 - q ^ (n + 1) * w⁻¹) :=
   (multipliable_one_sub_pow_mul hq w).mul (multipliable_one_sub_pow_mul hq w⁻¹)
+
+/-- For `‖q‖ < 1` the theta product `θ_q(w)` is `1 - w` times its two half products
+`∏_{n ≥ 1} (1 - qⁿ w)` and `∏_{n ≥ 1} (1 - qⁿ w⁻¹)`. -/
+theorem qTheta_eq_mul_tprod_mul_tprod {q : 𝕜} (hq : ‖q‖ < 1) (w : 𝕜) :
+    qTheta q w = (1 - w) *
+      ((∏' n : ℕ, (1 - q ^ (n + 1) * w)) * ∏' n : ℕ, (1 - q ^ (n + 1) * w⁻¹)) := by
+  rw [qTheta_def, (multipliable_one_sub_pow_mul hq _).tprod_mul (multipliable_one_sub_pow_mul hq _)]
 
 /-- For `‖q‖ < 1` the theta product is bounded by
 `‖θ_q(w)‖ ≤ ‖1 - w‖ exp (‖q‖ (‖w‖ + ‖w‖⁻¹) / (1 - ‖q‖))`. -/
@@ -376,12 +386,6 @@ section Holomorphic
 
 variable {q : ℂ}
 
-/-- The theta product `θ_q(w)` as `1 - w` times its two half products. -/
-private theorem qTheta_eq_mul_tprod_mul_tprod (hq : ‖q‖ < 1) (w : ℂ) :
-    qTheta q w = (1 - w) *
-      ((∏' n : ℕ, (1 - q ^ (n + 1) * w)) * ∏' n : ℕ, (1 - q ^ (n + 1) * w⁻¹)) := by
-  rw [qTheta_def, (multipliable_one_sub_pow_mul hq _).tprod_mul (multipliable_one_sub_pow_mul hq _)]
-
 /-- The product of the two half products of `θ_q(w)` is holomorphic on `ℂ \ {0}`. -/
 private theorem differentiableOn_tprod_mul_tprod (hq : ‖q‖ < 1) :
     DifferentiableOn ℂ (fun w : ℂ ↦
@@ -409,6 +413,30 @@ theorem hasDerivAt_qTheta_one (hq : ‖q‖ < 1) :
   · funext w
     simp
   · simp [sq]
+
+open Complex in
+open scoped Real in
+/-- For `‖q‖ < 1`, `z ↦ θ_q(e^{2π i z})` is an entire function. -/
+theorem differentiable_qTheta_exp (hq : ‖q‖ < 1) :
+    Differentiable ℂ fun z : ℂ ↦ qTheta q (cexp (2 * π * I * z)) := fun z ↦
+  ((differentiableOn_qTheta hq).differentiableAt
+    (isOpen_compl_singleton.mem_nhds (exp_ne_zero _))).comp (f := fun z ↦ cexp (2 * π * I * z)) z
+    (by fun_prop)
+
+open Complex in
+open scoped Real in
+/-- For `‖q‖ < 1` the derivative of `z ↦ θ_q(e^{2π i z})` at `z = 0` is
+`-2π i (∏_{n ≥ 1} (1 - qⁿ))²`. -/
+theorem hasDerivAt_qTheta_exp_zero (hq : ‖q‖ < 1) :
+    HasDerivAt (fun z : ℂ ↦ qTheta q (cexp (2 * π * I * z)))
+      (-(2 * π * I) * (∏' n : ℕ, (1 - q ^ (n + 1))) ^ 2) 0 := by
+  have h := (hasDerivAt_qTheta_one hq).comp_of_eq (0 : ℂ)
+    ((hasDerivAt_id (0 : ℂ)).const_mul (2 * π * I)).cexp (by simp)
+  convert h using 1
+  · funext z
+    simp
+  · simp only [id, mul_zero, Complex.exp_zero, mul_one]
+    ring
 
 end Holomorphic
 
