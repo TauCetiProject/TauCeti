@@ -56,7 +56,11 @@ every Gram matrix entry `B (b i) (b j)` lies in `R`. Then the Gram determinant
 `r = det (B (b i) (b j))` multiplies the dual of the `R`-span of `b` into that span: `r • x` lies in
 the `R`-span of `b` whenever every `B x (b j)` lies in `R`. When `B` is nondegenerate, `r ≠ 0`
 (`LinearMap.BilinForm.nondegenerate_iff_det_ne_zero`), so the dual lattice lies in
-`r⁻¹ • span R (Set.range b)`. -/
+`r⁻¹ • span R (Set.range b)`.
+
+The adjugate argument is adapted from Mathlib's `Algebra.discr_mul_isIntegral_mem_adjoin`, which
+treats the trace form of a separable field extension and a power basis; here it is stated for an
+arbitrary bilinear form and basis. -/
 theorem _root_.LinearMap.BilinForm.det_toMatrix_smul_mem_span (B : LinearMap.BilinForm K V)
     {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Basis ι K V)
     (hb : ∀ i j, B (b i) (b j) ∈ (1 : Submodule R K)) {x : V}
