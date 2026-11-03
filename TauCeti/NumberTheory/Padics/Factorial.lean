@@ -50,7 +50,7 @@ theorem tendsto_padic_natCast_factorial (p : ℕ) [hp : Fact p.Prime] :
   have hd : (p : ℤ) ^ k ∣ (n.factorial : ℤ) := by
     exact_mod_cast Nat.dvd_factorial (pow_pos hp.out.pos _) hn
   have hnorm := (Padic.norm_int_le_pow_iff_dvd (p := p) (n.factorial : ℤ) k).mpr hd
-  simp only [Int.cast_natCast, zpow_neg, zpow_natCast, ← inv_pow] at hnorm
+  simp only [Int.cast_natCast, _root_.zpow_neg, zpow_natCast, ← inv_pow] at hnorm
   simpa only [dist_zero_right] using hnorm.trans_lt hk
 
 /-- **Legendre's formula, truncated at level `h`.** The `p`-adic valuation of `n!` exceeds that of
@@ -58,18 +58,19 @@ theorem tendsto_padic_natCast_factorial (p : ℕ) [hp : Fact p.Prime] :
 theorem padicValNat_factorial_eq_add_sum (p : ℕ) [Fact p.Prime] (n h : ℕ) :
     padicValNat p n.factorial =
       padicValNat p (n / p ^ h).factorial + ∑ k ∈ Finset.range h, n / p ^ (k + 1) := by
+  simp only [Nat.padicValNat_def]
   induction h with
   | zero => simp
   | succ h ih =>
-    rw [ih, Finset.sum_range_succ, ← padicValNat_mul_div_factorial (n / p ^ h),
-      padicValNat_factorial_mul, Nat.div_div_eq_div_mul, ← pow_succ]
+    rw [ih, Finset.sum_range_succ, ← _root_.multiplicity_mul_div_factorial (n / p ^ h),
+      _root_.multiplicity_factorial_mul, Nat.div_div_eq_div_mul, ← pow_succ]
     ring
 
 /-- **Legendre's formula for `(pᵏ)!`.** Since `pᵏ` has base-`p` digit sum one,
 `(p - 1) v_p((pᵏ)!) = pᵏ - 1`. -/
 theorem sub_one_mul_padicValNat_factorial_pow (p : ℕ) [hp : Fact p.Prime] (k : ℕ) :
     (p - 1) * padicValNat p (p ^ k).factorial = p ^ k - 1 := by
-  rw [sub_one_mul_padicValNat_factorial, ← mul_one (p ^ k),
+  rw [Nat.padicValNat_def, Nat.Prime.sub_one_mul_multiplicity_factorial hp.out, ← mul_one (p ^ k),
     Nat.digits_base_pow_mul hp.out.one_lt one_pos, Nat.digits_of_lt p 1 one_ne_zero hp.out.one_lt]
   simp
 
@@ -113,7 +114,7 @@ theorem rpow_neg_div_le_norm_factorial (n : ℕ) :
   refine Real.rpow_le_rpow_of_exponent_le hp1.le (neg_le_neg ?_)
   rw [le_div_iff₀ (sub_pos.mpr hp1)]
   have hleg : (p - 1) * padicValNat p n.factorial ≤ n := by
-    rw [sub_one_mul_padicValNat_factorial]
+    rw [Nat.padicValNat_def, Nat.Prime.sub_one_mul_multiplicity_factorial hp]
     exact Nat.sub_le _ _
   have hcast : ((p - 1 : ℕ) : ℝ) = (p : ℝ) - 1 := by
     rw [Nat.cast_sub hp.one_le, Nat.cast_one]
@@ -125,7 +126,8 @@ theorem norm_factorial_mul (k : ℕ) :
     ‖((p * k)! : ℚ_[p])‖ = (p : ℝ) ^ (-(k : ℤ)) * ‖(k ! : ℚ_[p])‖ := by
   have hp : (p : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
   rw [norm_natCast_eq_zpow (factorial_ne_zero _), norm_natCast_eq_zpow (factorial_ne_zero _),
-    padicValNat_factorial_mul, ← zpow_add₀ hp]
+    Nat.padicValNat_def, _root_.multiplicity_factorial_mul, ← zpow_add₀ hp]
+  simp only [Nat.padicValNat_def]
   congr 1
   push_cast
   ring

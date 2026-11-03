@@ -270,8 +270,8 @@ theorem extendAction_lie (hρL : ∀ p q : P, ρ ⁅p, q⁆ = ρ p * ρ q - ρ q
   obtain ⟨N, h, huv, hvu⟩ := (eventually_apply_lie_trunc_eq ρ hρ u v m |>.and <|
     eventually_apply_trunc_apply_trunc_eq ρ hρ u v m |>.and <|
     eventually_apply_trunc_apply_trunc_eq ρ hρ v u m).exists
-  rw [← h, hρL, LinearMap.sub_apply, LinearMap.sub_apply, Module.End.mul_apply,
-    Module.End.mul_apply, Module.End.mul_apply, Module.End.mul_apply, huv, hvu]
+  rw [← h, hρL, LinearMap.sub_apply, LinearMap.sub_apply, mul_apply_eq_comp,
+    mul_apply_eq_comp, mul_apply_eq_comp, mul_apply_eq_comp, huv, hvu]
 
 /-- A linear map intertwines the extensions of two smooth polynomial actions exactly when it
 intertwines the polynomial actions. -/
@@ -491,14 +491,14 @@ theorem extendExtensionAction_lie (ρ : ofTwoCocycle cP →ₗ[R] Module.End R M
       eventually_apply_trunc_apply_trunc_eq _ hρ v u m |>.and <|
       eventually_ge_atTop (1 - Mu) |>.and <| eventually_ge_atTop (1 - Mv)).exists
     have h := congr($(hρL (sP (trunc R L N u)) (sP (trunc R L N v))) m)
-    rw [LinearMap.add_apply, LinearMap.sub_apply, Module.End.mul_apply, Module.End.mul_apply,
+    rw [LinearMap.add_apply, LinearMap.sub_apply, mul_apply_eq_comp, mul_apply_eq_comp,
       ← h₁, ← h₂, ← h₃, ← residuePairing_ofLoop_trunc R L Φ hu hv (by omega : 0 < N + Mv)
         (by omega : 0 < Mu + N)]
     simp only [LinearMap.coe_comp, LinearEquiv.coe_coe, coe_ofProdLinearEquiv, LinearMap.coe_inl,
       Function.comp_apply, bracket_ofTwoCocycle, Equiv.symm_apply_apply,
       LoopAlgebra.twoCocycleOfBilinear_coe, twoCochain_val_apply,
       LoopAlgebra.twoCochainOfBilinear_apply_apply, trivial_lie_zero, add_zero, sub_zero,
-      LinearMap.sub_apply, Module.End.mul_apply, residuePairing_ofLoop] at h ⊢
+      LinearMap.sub_apply, mul_apply_eq_comp, residuePairing_ofLoop] at h ⊢
     rw [← h, ← LinearMap.add_apply, ← map_add, ← of_add, Prod.mk_add_mk, add_zero, zero_add]
   have hK (z : ZP) := commute_extendAction ρ hρ hρL z
   have hKK (z z' : ZP) : ρ (ofProd cP (0, z)) * ρ (ofProd cP (0, z')) =

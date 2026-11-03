@@ -190,8 +190,8 @@ theorem one_sub_apply_mem_range_one_sub_mul_of_mem_sup (hσ : σ ^ 2 = 1) (hυ :
     (hx : x ∈ range (1 + σ) ⊔ range (1 + υ + υ ^ 2)) : (1 - σ) x ∈ range (1 - υ * σ) := by
   obtain ⟨-, ⟨a, rfl⟩, -, ⟨b, rfl⟩, rfl⟩ := Submodule.mem_sup.1 hx
   refine ⟨(-(σ * (1 + υ + υ ^ 2)) : End R M) b, ?_⟩
-  simp only [map_add, ← End.mul_apply, one_sub_mul_one_add_of_sq_eq_one hσ,
-    one_sub_mul_one_add_add_sq hσ hυ, zero_apply, zero_add]
+  simp only [map_add, ← _root_.mul_apply_eq_comp, one_sub_mul_one_add_of_sq_eq_one hσ,
+    one_sub_mul_one_add_add_sq hσ hυ, LinearMap.zero_apply, zero_add]
 
 /-- **The ranges of `1 - σ` and `1 - υ` are disjoint** when `σ ^ 2 = 1`, `υ ^ 3 = 1` and
 `ker (1 + σ)`, `ker (1 + υ + υ²)` are disjoint. -/
@@ -218,7 +218,7 @@ theorem one_sub_apply_mem_range_one_sub_mul_iff [Invertible (2 : R)] [Invertible
   have h1 : x - η ∈ range (1 + σ) := (range_one_add_eq_ker_one_sub hσ).ge (mem_ker.2 h0)
   obtain ⟨w, hw⟩ := (range_one_add_add_sq_eq_ker_one_sub hυ).ge (mem_ker.2 (hc.symm.trans h0))
   have hx : x = (x - η) + (1 + σ) η + (1 + υ + υ ^ 2 : End R M) (-w) := by
-    rw [map_neg, hw, add_apply, End.one_apply]
+    rw [map_neg, hw, LinearMap.add_apply, _root_.one_apply_eq_self]
     abel
   rw [hx]
   exact add_mem (add_mem (Submodule.mem_sup_left h1) (Submodule.mem_sup_left (mem_range_self _ η)))
@@ -283,7 +283,7 @@ theorem exists_mem_sup_one_add_apply_sub_mem [Invertible (2 : R)] [Invertible (3
     (isIdempotentElem_invOf_three_smul_one_add_add_sq (Subring.center R) hυ)
     (Module.End.invtSubmodule_le_invtSubmodule_smul _ _ hP)
     (Module.End.invtSubmodule_le_invtSubmodule_smul _ _ hQ)
-  simp only [smul_apply] at key
+  simp only [LinearMap.smul_apply] at key
   obtain ⟨ι, hι, h₁, h₂⟩ :=
     key (Submodule.smul_of_tower_mem _ _ hσξ) (Submodule.smul_of_tower_mem _ _ hυξ)
   -- multiply back by `2` and `3`

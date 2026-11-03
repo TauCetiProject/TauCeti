@@ -301,7 +301,7 @@ private theorem mem_span_iff_forall_wedgeForms_eq_zero
       · simp
       · simp [Function.update_of_ne hb, Matrix.updateCol_ne hb, hf, Matrix.one_apply,
           t.injective.eq_iff]
-    rw [wedgeForms_plucker, hmat, ← Matrix.cramer_apply, Matrix.cramer_one, Module.End.one_apply,
+    rw [wedgeForms_plucker, hmat, ← Matrix.cramer_apply, Matrix.cramer_one, one_apply_eq_self,
       ha₀] at H₀
     exact hj₀ H₀
 
